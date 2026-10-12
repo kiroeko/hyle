@@ -1,0 +1,361 @@
+{
+  "candidate": "546b0d2468e5de29031c34668f4afa4bc31b9a17",
+  "mode": "ubsan",
+  "source": "/home/kiro/hyle-f1/sanitizers/source-03242e7723cb",
+  "build": "/home/kiro/hyle-f1/sanitizers/ubsan-03242e7723cb",
+  "scope": "Foundation A shared metadata exact/control/alias and original GraphBuilder semantics only; no GPU or full library catalogue",
+  "compiler": "g++-14 (Ubuntu 14.2.0-4ubuntu2~24.04.1) 14.2.0\nCopyright (C) 2024 Free Software Foundation, Inc.\nThis is free software; see the source for copying conditions.  There is NO\nwarranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.\n\n",
+  "stages": [
+    {
+      "name": "configure",
+      "command": [
+        "/usr/bin/cmake",
+        "-S",
+        "/home/kiro/hyle-f1/sanitizers/source-03242e7723cb",
+        "-B",
+        "/home/kiro/hyle-f1/sanitizers/ubsan-03242e7723cb",
+        "-UHYLE_COMPONENTS",
+        "-UHYLE_COMPUTE_ROUTES",
+        "-DHYLE_DEV_FACTORS:STRING=graph",
+        "-DHYLE_BUILD_TESTS:BOOL=ON",
+        "-DHYLE_BUILD_BENCH:BOOL=OFF",
+        "-DHYLE_INSTALL:BOOL=OFF",
+        "-DHYLE_SANITIZER:STRING=ubsan",
+        "-DHYLE_WERROR:BOOL=OFF"
+      ],
+      "pid": 627,
+      "state": "terminal",
+      "available_bytes": 32482103296,
+      "log": "configure.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "elapsed": 12.971863735000028,
+      "sha256": "4cd9502a970d225101417f89e94cd1d9b775331619676f179d82565cbbf03657"
+    },
+    {
+      "name": "build",
+      "command": [
+        "/usr/bin/cmake",
+        "--build",
+        "/home/kiro/hyle-f1/sanitizers/ubsan-03242e7723cb",
+        "--target",
+        "hyle_graph_test",
+        "--parallel",
+        "4"
+      ],
+      "pid": 704,
+      "state": "terminal",
+      "available_bytes": 32446201856,
+      "log": "build.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "elapsed": 13.98930750300002,
+      "sha256": "ef6ec312e7b90c417afd1fb1422ef5ffedb1fb99b10410e21d12860a17a701f2"
+    },
+    {
+      "name": "tests",
+      "command": [
+        "/home/kiro/hyle-f1/sanitizers/ubsan-03242e7723cb/bin/hyle_graph_test",
+        "--gtest_filter=ExactNativeVariants.*:NativeReachability.*:GraphBuilder.*:GraphViewSpec.*",
+        "--gtest_output=xml:/root/hyle-scratch/compute-unified/foundation-a-ubsan-546b0d246/tests.xml"
+      ],
+      "pid": 757,
+      "state": "terminal",
+      "available_bytes": 31989796864,
+      "log": "tests.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "elapsed": 0.007746087000015223,
+      "sha256": "b04041b0dc6b1bdc799782d1d176d58695a3f19c28dce830d77a0e17ac0382fe"
+    },
+    {
+      "name": "tests-graph-query",
+      "command": [
+        "/home/kiro/hyle-f1/sanitizers/ubsan-03242e7723cb/bin/hyle_graph_test",
+        "--gtest_filter=Graph.*",
+        "--gtest_output=xml:/root/hyle-scratch/compute-unified/foundation-a-ubsan-546b0d246/graph-query.xml"
+      ],
+      "pid": 636,
+      "state": "terminal",
+      "remaining_seconds": 119.99225391299998,
+      "log": "graph-query.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "elapsed": 0.0036794829999848844,
+      "sha256": "f968722db2c9f3926e5cd15a39308587eb75100dc992ffe82c12daf9010d9cab"
+    },
+    {
+      "name": "configure-effect",
+      "command": [
+        "/usr/bin/cmake",
+        "-S",
+        "/home/kiro/hyle-f1/sanitizers/source-03242e7723cb",
+        "-B",
+        "/home/kiro/hyle-f1/sanitizers/ubsan-03242e7723cb",
+        "-DCMAKE_PROJECT_TOP_LEVEL_INCLUDES=/root/hyle-scratch/compute-unified/foundation-a-effect-preflight.cmake"
+      ],
+      "pid": 746,
+      "state": "terminal",
+      "available_bytes": 32242753536,
+      "remaining_seconds": 287.02813626499994,
+      "log": "configure-effect.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "elapsed": 13.737701688000001,
+      "sha256": "2f2234eae49d463f1a850217038b277a16e2bd5d7e3cc425c31d3a655df030f3"
+    },
+    {
+      "name": "build-effect",
+      "command": [
+        "/usr/bin/cmake",
+        "--build",
+        "/home/kiro/hyle-f1/sanitizers/ubsan-03242e7723cb",
+        "--target",
+        "hyle_graph_test",
+        "--parallel",
+        "4"
+      ],
+      "pid": 829,
+      "state": "terminal",
+      "available_bytes": 32301256704,
+      "remaining_seconds": 1786.010692497,
+      "log": "build-effect.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "elapsed": 11.690109372000002,
+      "sha256": "92dcb98681ef679feb2586c349eeb4543f6faf0391cc913a7f3e90b6efb90e69"
+    },
+    {
+      "name": "tests-effect",
+      "command": [
+        "/home/kiro/hyle-f1/sanitizers/ubsan-03242e7723cb/bin/hyle_graph_test",
+        "--gtest_filter=EffectPreflight.*",
+        "--gtest_output=xml:/root/hyle-scratch/compute-unified/foundation-a-ubsan-546b0d246/effect.xml"
+      ],
+      "pid": 845,
+      "state": "terminal",
+      "available_bytes": 32429928448,
+      "remaining_seconds": 119.98857443,
+      "log": "tests-effect.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "elapsed": 0.0038520319999975072,
+      "sha256": "4e328fce6495657109020322c13cfba3520f19629cc2ca1fb1bca5a376ef25c3"
+    }
+  ],
+  "inputs": [
+    {
+      "path": "src/graph/CMakeLists.txt",
+      "sha256": "c922263f5bc03c5cbda1af8b9a0db7a9c6f22b28b99d720862870621468260f0"
+    },
+    {
+      "path": "src/graph/compile_internal.h",
+      "sha256": "6f0a74bdb5cb47701f5c968437e074b29dac2f13ede32b61d7b6401b16f53259"
+    },
+    {
+      "path": "src/graph/constant_artifact.cc",
+      "sha256": "8036eb7024df9b4bf5fd247d0d1300213498c08c1a5c1805fff543bee60186f3"
+    },
+    {
+      "path": "src/graph/constant_artifact.h",
+      "sha256": "960a061d1e43d6fcd3164fe5e4fa13a6abba4ca3b048102ce2af1165c9870037"
+    },
+    {
+      "path": "src/graph/effect_order.cc",
+      "sha256": "e8c9fb549e26a75e48d409b8f9d98dbc1722e131b452ea51d7b1d4d52e362afc"
+    },
+    {
+      "path": "src/graph/executable.cc",
+      "sha256": "c117e575a05b69a6f9a38c22197f256ae7e30aa17cbe08232e79311f52b2b2c4"
+    },
+    {
+      "path": "src/graph/graph.cc",
+      "sha256": "e964ebad097fe7393c4fde7f5f3059203255ef1f64b5e46b744fa9a0ce886c46"
+    },
+    {
+      "path": "src/graph/graph_state.h",
+      "sha256": "e7b4b8e9c7d72c14e9e2990ba04727a83b4ca75ebd34c142cd92694779f76cce"
+    },
+    {
+      "path": "src/graph/lease_submission.cc",
+      "sha256": "7d287bc99a8050631068d454f21dcc15bc6fe02f7f0fdac76207e727d428bd1c"
+    },
+    {
+      "path": "src/graph/leased_invocation.cc",
+      "sha256": "de12aea1cc3fdb483a1b8a84aa7893e27c9358fcfa41fa5a7ecd340f159fe604"
+    },
+    {
+      "path": "src/graph/native_analysis.h",
+      "sha256": "b17494cde57686878536bfbbe57a180665594206013ecd4d3db1f3b8d196976f"
+    },
+    {
+      "path": "src/graph/plan_state.h",
+      "sha256": "487cf8b66bd74689d85552e4b3c9da4cce443ddc2e5ae24caa59c3763d4e7256"
+    },
+    {
+      "path": "src/graph/storage_budget.h",
+      "sha256": "3a2cd29a84f4b87bc58e8894e8bd59ac9e1404b370508d3c560889d16a3e4965"
+    },
+    {
+      "path": "src/graph/submission_internal.h",
+      "sha256": "6b9c9dbd5b52463a6eaef28d9412f990ad8abd838f865348c186590ce541dbda"
+    },
+    {
+      "path": "src/graph/view_domain.cc",
+      "sha256": "45269669ec92378f7b347458767f9aec4dd75608453bf84d103ef1b3a84ff176"
+    },
+    {
+      "path": "src/graph/view_domain.h",
+      "sha256": "cc50063a966d0092ca6fd456a2fa3a137ec104a2e0252f23c7d5ecb45d7cdf1b"
+    },
+    {
+      "path": "include/hyle/graph/apple.h",
+      "sha256": "afd3f28ad05fe0ec9ec392ef5d6838cdda63b4125c1a09aa902cfa4dfe6f31a1"
+    },
+    {
+      "path": "include/hyle/graph/compile_report.h",
+      "sha256": "c42c30527d581975c49ddfebb182b0ae7928d799eed91172cb631779a2ad5b4f"
+    },
+    {
+      "path": "include/hyle/graph/cpu.h",
+      "sha256": "207f78caafbec1e73966f0ead5563b51aa2aaf3e5eccabde15b6a20447a25f99"
+    },
+    {
+      "path": "include/hyle/graph/cpu_apple.h",
+      "sha256": "f5dc0e62fc68b0a65e129293f37b4bfad39e1732268d9b26cf130ecdac9fdfbd"
+    },
+    {
+      "path": "include/hyle/graph/cpu_cuda.h",
+      "sha256": "b3fe45dc75ce6c999857bca3130816132018eb3c845e0c889d577165d8f1b098"
+    },
+    {
+      "path": "include/hyle/graph/cpu_vulkan.h",
+      "sha256": "ddd1a867ea7f8ca3a574b70c639ea6e5b60378da1f9ea7038d62f8b3c1f7486b"
+    },
+    {
+      "path": "include/hyle/graph/cuda.h",
+      "sha256": "059264fb0360cfd298ea7e543ac153b334209e04ab90f0e5a66ea2857f4986e3"
+    },
+    {
+      "path": "include/hyle/graph/executable.h",
+      "sha256": "8494f631596c1fefa336385fb909e9a9baee7708549abd4c8b5e8ce1a203e75f"
+    },
+    {
+      "path": "include/hyle/graph/graph.h",
+      "sha256": "c7a93ccf9fd1c86fb9dec286e7d3345aabcb1810c2fb6793a66093480a5a2136"
+    },
+    {
+      "path": "include/hyle/graph/leased_invocation.h",
+      "sha256": "adf1b31c77c4aaa82c6dc1d87273fa30c53ba695d30f97d91459dbe0a1341714"
+    },
+    {
+      "path": "include/hyle/graph/native_variants.h",
+      "sha256": "59132374915cb4ca88528952f4aa4c0a091e6660e4a128c49e4f503d21f4a96b"
+    },
+    {
+      "path": "include/hyle/graph/region_provider.h",
+      "sha256": "22b75e8e11f0763324385b607a14abec27ce1080d1302bfd9cdc8e9a99734d6b"
+    },
+    {
+      "path": "include/hyle/graph/visibility.h",
+      "sha256": "77700b210193f978cdec750c765fbf728e824409ace0566c1d870785fcb97005"
+    },
+    {
+      "path": "include/hyle/graph/vulkan.h",
+      "sha256": "b0c6285c265ad0290233b116200e292ee55bd1e68e95cc0bd74e9e521d8cf17b"
+    },
+    {
+      "path": "tests/graph/CMakeLists.txt",
+      "sha256": "5009bfce8528a2f65532559d077dfb45c2ee035aa027416ac09d228d2b791897"
+    },
+    {
+      "path": "tests/graph/aggregate_native_retirement_test.cc",
+      "sha256": "54fab08437757ea6eda760ee59be354ef0e969cc156ae1b0698bc0beb71d7451"
+    },
+    {
+      "path": "tests/graph/cpu_apple_contracts.cc",
+      "sha256": "d4ee1d0cea8c590d3651afd58be35c3575d6186259a5d737ad59ab18434f10ba"
+    },
+    {
+      "path": "tests/graph/cpu_context_fixture.h",
+      "sha256": "cbe40e69400008bb067a4d0d7ab3d30ba06bff09a2bf147c4dc9254d23619e1c"
+    },
+    {
+      "path": "tests/graph/cpu_cuda_contracts.cc",
+      "sha256": "48428d68a56fc603cdc6c4bcbbb0ba4e916b124d5b94b73e62c73e629b662ad1"
+    },
+    {
+      "path": "tests/graph/cpu_vulkan_contracts.cc",
+      "sha256": "56798b950720f4119d3c1a1fa171b2cd1ca01639f3b3428850db1aeab8e4ec6b"
+    },
+    {
+      "path": "tests/graph/cpu_vulkan_native_overlap.cc",
+      "sha256": "6e2180110b067c5b1189b3958eb54230febc09d9c2ade22e02441943701e6670"
+    },
+    {
+      "path": "tests/graph/cpu_vulkan_transfer_failure.cc",
+      "sha256": "c0309da0606d8f4411ac2da225764f3fb1175a0175e03d9660b799a2244cc299"
+    },
+    {
+      "path": "tests/graph/cuda_graph_test.cc",
+      "sha256": "078131e5c0615df12e78c1c53fa911c6fbd357a2e0e3e422158dbd57529d55f8"
+    },
+    {
+      "path": "tests/graph/custom_kernel_test.cc",
+      "sha256": "9ca1b2da0f117c25b77b1f1efee86d2a45a8f4c694ef6437b52d29731978e6e6"
+    },
+    {
+      "path": "tests/graph/executable_test.cc",
+      "sha256": "8f029acb09571cae588fa5c5877964d2cc0debc27b6490762f1e9507b5ba6e96"
+    },
+    {
+      "path": "tests/graph/graph_test.cc",
+      "sha256": "10203ee16060dc3aad5e3514ea27c4c76d30776bfbc573e76871b95189e3f101"
+    },
+    {
+      "path": "tests/graph/lease_submission_test.cc",
+      "sha256": "8cca068e1f67875abf1f4d3906296dfdb411e3fb8f1b6b61ea47426892aea6f1"
+    },
+    {
+      "path": "tests/graph/native_report_allocation_failure.h",
+      "sha256": "ac1744997dba05e7e7c54c0d3a83a22931dc061893be1fff53eb4b2f7db849ef"
+    },
+    {
+      "path": "tests/graph/native_variants_test.cc",
+      "sha256": "d03b53a152c014ea5bd0c5764d2a42f7de04e82908e3df5fa9bc8f4794d50088"
+    },
+    {
+      "path": "tests/graph/public_effect_consumer.cc",
+      "sha256": "3f83cc96b8425d7f890a18c973758fd076f1f0207fd7511ce9a8f007d82a4ee6"
+    },
+    {
+      "path": "tests/graph/region_provider_test.cc",
+      "sha256": "bc3016b2641054483a8e55ea01987f414da4d44dcf8e8b269d5a615726ad9eea"
+    },
+    {
+      "path": "tests/graph/route_effects_test.cc",
+      "sha256": "0c5269a1f5e55a4406b92394856475d693c8a5893570cbe9c80e2729f388a435"
+    },
+    {
+      "path": "tests/graph/route_symmetry_apple.cc",
+      "sha256": "14814563906c217e8e8ff1da70dab83a5df89b19a87d3186d8ac6f28336681b8"
+    },
+    {
+      "path": "tests/graph/route_symmetry_cuda.cc",
+      "sha256": "f150a82c4d370070617c5748a17770d79915242b96aa48f51b08487a50064209"
+    },
+    {
+      "path": "tests/graph/route_symmetry_vulkan.cc",
+      "sha256": "01dea9806240c903933ae9942914066395851bd174a2ee14fb15aeaef9bba354"
+    },
+    {
+      "path": "tests/graph/test_environment.h",
+      "sha256": "bfb5e481c57e78e0939a7641ebc15e9e3c15e4abe8894093bcd526e2ef9d6d32"
+    }
+  ],
+  "effect_preflight_append": {
+    "reason": "Directly exercise the extracted common whole-graph footprint/alias/OOM helper under sanitizer. Test-only overlay, product files unchanged.",
+    "fixture_sha256": "d992a98e802654d988c93ccfd3ecd49a7b8959abc5b1c8bad97059a9707e85b3",
+    "budget_reset": false
+  }
+}

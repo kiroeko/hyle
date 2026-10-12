@@ -1,0 +1,9 @@
+[1/9] cd /Users/kiro/hyle-scratch/compute-unified/foundation-a-sdk-cpu-apple-shared-546b0d246/consumer && /opt/homebrew/bin/cmake -P /Users/kiro/hyle-scratch/compute-unified/foundation-a-sdk-cpu-apple-shared-546b0d246/consumer/hyle-apple-runtime/finite-Release.cmake
+[2/9] cd /Users/kiro/hyle-scratch/compute-unified/foundation-a-sdk-cpu-apple-shared-546b0d246/consumer && /opt/homebrew/bin/cmake -P /Users/kiro/hyle-scratch/compute-unified/foundation-a-sdk-cpu-apple-shared-546b0d246/consumer/hyle-apple-runtime/effects-Release.cmake
+[3/9] Building CXX object CMakeFiles/finite.dir/Users/kiro/hyle-scratch/compute-unified/source-c8874688/tests/graph/route_symmetry_apple.cc.o
+[4/9] Building CXX object CMakeFiles/effects.dir/Users/kiro/hyle-scratch/compute-unified/source-c8874688/tests/graph/public_effect_consumer.cc.o
+[5/9] Linking CXX executable finite
+[6/9] Linking CXX executable effects
+[7/9] Building CXX object CMakeFiles/headers.dir/header-0.cc.o
+[8/9] Building CXX object CMakeFiles/headers.dir/header-1.cc.o
+[9/9] Building CXX object CMakeFiles/headers.dir/header-2.cc.o

@@ -1,0 +1,3 @@
+[0/2] Re-checking globbed directories...
+[1/2] Building CXX object tests/graph/CMakeFiles/hyle_graph_test.dir/effect_preflight_test.cc.o
+[2/2] Linking CXX executable bin/hyle_graph_test

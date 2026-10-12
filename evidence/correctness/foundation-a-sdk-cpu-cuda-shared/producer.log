@@ -1,0 +1,39 @@
+[0/2] Re-checking globbed directories...
+[1/41] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\generated\simd-dispatch\ops\ops_scalar.cc.obj
+[2/41] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\generated\simd-dispatch\ops\ops_sse4.cc.obj
+[3/41] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\generated\simd-dispatch\dtype_convert\dtype_convert_scalar.cc.obj
+[4/41] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\generated\simd-dispatch\ops\ops_avx2.cc.obj
+[5/41] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\generated\simd-dispatch\ops\ops_avx512.cc.obj
+[6/41] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\generated\simd-dispatch\dtype_convert\dtype_convert_sse4.cc.obj
+[7/41] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\generated\simd-dispatch\scan\scan_scalar.cc.obj
+[8/41] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\generated\simd-dispatch\dtype_convert\dtype_convert_avx2.cc.obj
+[9/41] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\generated\simd-dispatch\dtype_convert\dtype_convert_avx512.cc.obj
+[10/41] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\generated\simd-dispatch\scan\scan_sse4.cc.obj
+[11/41] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\generated\simd-dispatch\scan\scan_avx2.cc.obj
+[12/41] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\generated\simd-dispatch\random\random_scalar.cc.obj
+[13/41] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\generated\simd-dispatch\scan\scan_avx512.cc.obj
+[14/41] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\generated\simd-dispatch\random\random_sse4.cc.obj
+[15/41] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\generated\simd-dispatch\random\random_avx2.cc.obj
+[16/41] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\generated\simd-dispatch\random\random_avx512.cc.obj
+[17/41] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\generated\simd-dispatch\search\search_scalar.cc.obj
+[18/41] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\generated\simd-dispatch\narrow\narrow_scalar.cc.obj
+[19/41] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\generated\simd-dispatch\search\search_sse4.cc.obj
+[20/41] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\generated\simd-dispatch\narrow\narrow_sse4.cc.obj
+[21/41] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\generated\simd-dispatch\search\search_avx512.cc.obj
+[22/41] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\generated\simd-dispatch\narrow\narrow_avx2.cc.obj
+[23/41] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\generated\simd-dispatch\search\search_avx2.cc.obj
+[24/41] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\generated\simd-dispatch\bitpack\bitpack_scalar.cc.obj
+[25/41] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\generated\simd-dispatch\narrow\narrow_avx512.cc.obj
+[26/41] Building CXX object src\graph\CMakeFiles\hyle_graph.dir\executable.cc.obj
+[27/41] Linking CXX shared library bin\hyle_graph.dll
+[28/41] Linking CXX shared library bin\hyle_graph_provider_ggml_cuda.dll
+[29/41] Linking CXX shared library bin\hyle_graph_route_cuda.dll
+[30/41] Building CXX object src\graph_route_cpu_cuda\CMakeFiles\hyle_graph_route_cpu_cuda.dir\compile.cc.obj
+[31/41] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\generated\simd-dispatch\bitpack\bitpack_sse4.cc.obj
+[32/41] Building CXX object src\graph_route_cpu_cuda\CMakeFiles\hyle_graph_route_cpu_cuda.dir\invocation.cc.obj
+[33/41] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\generated\simd-dispatch\bitpack\bitpack_avx2.cc.obj
+[34/41] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\generated\simd-dispatch\bitpack\bitpack_avx512.cc.obj
+[35/41] Linking CXX shared library bin\hyle_simd.dll
+[36/39] Linking CXX shared library bin\hyle_graph_provider_onednn.dll
+[37/39] Linking CXX shared library bin\hyle_graph_route_cpu.dll
+[38/39] Linking CXX shared library bin\hyle_graph_route_cpu_cuda.dll

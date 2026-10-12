@@ -1,0 +1,395 @@
+[0/2] Re-checking globbed directories...
+[1/363] Building CXX object src/error/CMakeFiles/hyle_error.dir/status.cc.o
+[2/363] Linking CXX shared library bin/libhyle_error.0.1.0.dylib
+[3/363] Creating library symlink bin/libhyle_error.dylib
+[4/363] Building CXX object src/time/CMakeFiles/hyle_time.dir/clock.cc.o
+[5/363] Building CXX object src/time/CMakeFiles/hyle_time.dir/interop.cc.o
+[6/363] Building CXX object src/platform/CMakeFiles/hyle_platform_cpu_probe.dir/cpu.cc.o
+[7/363] Building CXX object src/platform/CMakeFiles/hyle_platform_cgroup_parser.dir/linux_cgroup.cc.o
+[8/363] Building CXX object src/platform/CMakeFiles/hyle_platform.dir/cpu_resource.cc.o
+[9/363] Building CXX object src/platform/CMakeFiles/hyle_platform.dir/dynlib.cc.o
+[10/363] Building CXX object src/platform/CMakeFiles/hyle_platform.dir/environment.cc.o
+[11/363] Building CXX object src/platform/CMakeFiles/hyle_platform.dir/host_memory.cc.o
+[12/363] Building CXX object src/platform/CMakeFiles/hyle_platform.dir/numa.cc.o
+[13/363] Building CXX object src/platform/CMakeFiles/hyle_platform.dir/process.cc.o
+[14/363] Building CXX object src/platform/CMakeFiles/hyle_platform.dir/random.cc.o
+[15/363] Building CXX object src/platform/CMakeFiles/hyle_platform.dir/virtual_memory.cc.o
+[16/363] Linking CXX shared library bin/libhyle_time.0.1.0.dylib
+[17/363] Linking CXX shared library bin/libhyle_platform.0.1.0.dylib
+[18/363] Creating library symlink bin/libhyle_time.dylib
+[19/363] Creating library symlink bin/libhyle_platform.dylib
+[20/363] Building CXX object src/platform_fs/CMakeFiles/hyle_platform_fs.dir/fs.cc.o
+[21/363] Building CXX object src/mem/CMakeFiles/hyle_mem.dir/buffer.cc.o
+[22/363] Building CXX object src/mem/CMakeFiles/hyle_mem.dir/buffer_pool.cc.o
+[23/363] Building CXX object src/mem/CMakeFiles/hyle_mem.dir/composite_buffer.cc.o
+[24/363] Building CXX object src/mem/CMakeFiles/hyle_mem.dir/heap.cc.o
+[25/363] Building CXX object src/mem/CMakeFiles/hyle_mem.dir/lifetime_plan.cc.o
+[26/363] Building CXX object src/mem/CMakeFiles/hyle_mem.dir/range_allocator.cc.o
+[27/363] Building CXX object src/mem/CMakeFiles/hyle_mem.dir/resource.cc.o
+[28/363] Building CXX object src/mem/CMakeFiles/hyle_mem.dir/system.cc.o
+[29/363] Building CXX object src/mem/CMakeFiles/hyle_mem.dir/stats.cc.o
+[30/363] Linking CXX shared library bin/libhyle_platform_fs.0.1.0.dylib
+[31/363] Linking CXX shared library bin/libhyle_mem.0.1.0.dylib
+[32/363] Building C object src/compute_ggml_runtime/vendor/src/CMakeFiles/ggml-base.dir/ggml.c.o
+[33/363] Building CXX object src/compute_ggml_runtime/vendor/src/CMakeFiles/ggml-base.dir/ggml.cpp.o
+[34/363] Building CXX object src/compute_ggml_runtime/vendor/src/CMakeFiles/ggml-base.dir/ggml-backend.cpp.o
+[35/363] Building CXX object src/compute_ggml_runtime/vendor/src/CMakeFiles/ggml-base.dir/ggml-backend-meta.cpp.o
+[36/363] Building CXX object src/compute_ggml_runtime/vendor/src/CMakeFiles/ggml-base.dir/ggml-opt.cpp.o
+[37/363] Building CXX object src/compute_ggml_runtime/vendor/src/CMakeFiles/ggml-base.dir/ggml-threading.cpp.o
+[38/363] Building CXX object src/compute_ggml_runtime/vendor/src/CMakeFiles/ggml-base.dir/gguf.cpp.o
+[39/363] Building CXX object src/platform_thread/CMakeFiles/hyle_platform_thread.dir/thread.cc.o
+[40/363] Building CXX object src/platform_thread/CMakeFiles/hyle_platform_thread.dir/wait.cc.o
+[41/363] Creating library symlink bin/libhyle_platform_fs.dylib
+[42/363] Creating library symlink bin/libhyle_mem.dylib
+[43/363] Building CXX object src/mem_vm/CMakeFiles/hyle_mem_vm.dir/mapping.cc.o
+[44/363] Building CXX object src/mem_vm/CMakeFiles/hyle_mem_vm.dir/file_mapping.cc.o
+[45/363] Building CXX object src/mem_vm/CMakeFiles/hyle_mem_vm.dir/shared_mapping.cc.o
+[46/363] Building CXX object src/compute_ops/CMakeFiles/hyle_compute_ops.dir/operation.cc.o
+[47/363] Building CXX object src/compute_ops/CMakeFiles/hyle_compute_ops.dir/tensor_desc.cc.o
+[48/363] Building CXX object src/compute_ops/CMakeFiles/hyle_compute_ops.dir/low_precision.cc.o
+[49/363] Building CXX object src/compute_ops/CMakeFiles/hyle_compute_ops.dir/weight_decode.cc.o
+[50/363] Linking CXX static library bin/libggml-base.a
+[51/363] Linking CXX shared library bin/libhyle_platform_thread.0.1.0.dylib
+[52/363] Linking CXX shared library bin/libhyle_mem_vm.0.1.0.dylib
+[53/363] Linking CXX shared library bin/libhyle_compute_ops.0.1.0.dylib
+[54/363] Creating library symlink bin/libhyle_platform_thread.dylib
+[55/363] Creating library symlink bin/libhyle_mem_vm.dylib
+[56/363] Building CXX object src/container/CMakeFiles/hyle_container.dir/hash.cc.o
+[57/363] Building CXX object src/container/CMakeFiles/hyle_container.dir/pod_vector.cc.o
+[58/363] Building CXX object src/container/CMakeFiles/hyle_container.dir/flat_hash_map.cc.o
+[59/363] Building CXX object src/container/CMakeFiles/hyle_container.dir/dynamic_bitset.cc.o
+[60/363] Building CXX object src/container/CMakeFiles/hyle_container.dir/bitset_ops_neon.cc.o
+[61/363] Building CXX object src/container/CMakeFiles/hyle_container.dir/generated/simd-dispatch/container_bitset/container_bitset_scalar.cc.o
+[62/363] Building CXX object src/container/CMakeFiles/hyle_container.dir/generated/simd-dispatch/container_bitset/container_bitset_neon.cc.o
+[63/363] Building CXX object src/sched/CMakeFiles/hyle_sched.dir/fiber.cc.o
+[64/363] Building CXX object src/sched/CMakeFiles/hyle_sched.dir/scheduler.cc.o
+[65/363] Building CXX object src/sched/CMakeFiles/hyle_sched.dir/sync.cc.o
+[66/363] Building CXX object src/sched/CMakeFiles/hyle_sched.dir/join.cc.o
+[67/363] Building CXX object src/sched/CMakeFiles/hyle_sched.dir/blocking.cc.o
+[68/363] Building CXX object src/sched/CMakeFiles/hyle_sched.dir/cancel.cc.o
+[69/363] Building CXX object src/sched/CMakeFiles/hyle_sched.dir/task_scope.cc.o
+[70/363] Building CXX object src/sched/CMakeFiles/hyle_sched.dir/bulk.cc.o
+[71/363] Creating library symlink bin/libhyle_compute_ops.dylib
+[72/363] Building CXX object src/compute/CMakeFiles/hyle_compute.dir/batch_transfer.cc.o
+[73/363] Building CXX object src/compute/CMakeFiles/hyle_compute.dir/command_capture.cc.o
+[74/363] Building CXX object src/compute/CMakeFiles/hyle_compute.dir/completion.cc.o
+[75/363] Building CXX object src/compute/CMakeFiles/hyle_compute.dir/copy_control.cc.o
+[76/363] Building CXX object src/compute/CMakeFiles/hyle_compute.dir/copy_ranges.cc.o
+[77/363] Building CXX object src/compute/CMakeFiles/hyle_compute.dir/custom_kernel.cc.o
+[78/363] Building CXX object src/compute/CMakeFiles/hyle_compute.dir/device.cc.o
+[79/363] Building CXX object src/compute/CMakeFiles/hyle_compute.dir/operation.cc.o
+[80/363] Building CXX object src/compute/CMakeFiles/hyle_compute.dir/provider.cc.o
+[81/363] Building CXX object src/compute/CMakeFiles/hyle_compute.dir/resource_budget.cc.o
+[82/363] Building CXX object src/compute/CMakeFiles/hyle_compute.dir/resource_leases.cc.o
+/Users/kiro/hyle-scratch/compute-unified/source-c8874688/src/compute/resource_leases.cc:517:79: warning: result of comparison of constant 1152921504606846970 with expression of type 'std::uint32_t' (aka 'unsigned int') is always false [-Wtautological-constant-out-of-range-compare]
+  517 |       options.max_resources_per_batch == 0 || options.max_resources_per_batch >
+      |                                               ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ^
+  518 |           (SIZE_MAX - detail::kEntryOffset) / sizeof(detail::LeaseUseEntry))
+      |           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+1 warning generated.
+[83/363] Building CXX object src/compute/CMakeFiles/hyle_compute.dir/retained_completion.cc.o
+[84/363] Building CXX object src/compute/CMakeFiles/hyle_compute.dir/leased_operation.cc.o
+[85/363] Building CXX object src/compute/CMakeFiles/hyle_compute.dir/route_policy.cc.o
+[86/363] Building CXX object src/compute/CMakeFiles/hyle_compute.dir/result.cc.o
+[87/363] Building CXX object src/compute/CMakeFiles/hyle_compute.dir/shape_domain.cc.o
+[88/363] Building CXX object src/compute/CMakeFiles/hyle_compute.dir/shape_program.cc.o
+[89/363] Building CXX object src/compute/CMakeFiles/hyle_compute.dir/tensor_view.cc.o
+[90/363] Building CXX object src/compute/CMakeFiles/hyle_compute.dir/transfer.cc.o
+[91/363] Building CXX object src/compute/CMakeFiles/hyle_compute.dir/workload.cc.o
+[92/363] Building CXX object src/compute_ggml_runtime/vendor/src/CMakeFiles/ggml-cpu.dir/ggml-cpu/ggml-cpu.cpp.o
+[93/363] Building CXX object src/compute_ggml_runtime/vendor/src/CMakeFiles/ggml-cpu.dir/ggml-cpu/repack.cpp.o
+[94/363] Building CXX object src/compute_ggml_runtime/vendor/src/CMakeFiles/ggml-cpu.dir/ggml-cpu/iqp.cpp.o
+[95/363] Building CXX object src/compute_ggml_runtime/vendor/src/CMakeFiles/ggml-cpu.dir/ggml-cpu/hbm.cpp.o
+[96/363] Building CXX object src/compute_ggml_runtime/vendor/src/CMakeFiles/ggml-cpu.dir/ggml-cpu/traits.cpp.o
+[97/363] Building CXX object src/compute_ggml_runtime/vendor/src/CMakeFiles/ggml-cpu.dir/ggml-cpu/amx/amx.cpp.o
+[98/363] Building CXX object src/compute_ggml_runtime/vendor/src/CMakeFiles/ggml-cpu.dir/ggml-cpu/amx/mmq.cpp.o
+[99/363] Building CXX object src/compute_ggml_runtime/vendor/src/CMakeFiles/ggml-cpu.dir/ggml-cpu/binary-ops.cpp.o
+[100/363] Building CXX object src/compute_ggml_runtime/vendor/src/CMakeFiles/ggml-cpu.dir/ggml-cpu/unary-ops.cpp.o
+[101/363] Building CXX object src/compute_ggml_runtime/vendor/src/CMakeFiles/ggml-cpu.dir/ggml-cpu/vec.cpp.o
+[102/363] Building CXX object src/compute_ggml_runtime/vendor/src/CMakeFiles/ggml-cpu.dir/ggml-cpu/ops.cpp.o
+[103/363] Building CXX object src/compute_ggml_runtime/vendor/src/CMakeFiles/ggml-cpu.dir/ggml-cpu/arch/arm/repack.cpp.o
+[104/363] Building CXX object src/compute_ggml_runtime/vendor/src/ggml-metal/CMakeFiles/ggml-metal.dir/ggml-metal.cpp.o
+/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-build/src/compute_ggml_runtime/source-da5abe30b13e6512/src/ggml-metal/ggml-metal.cpp:841:34: warning: no previous prototype for function 'ggml_hyle_metal_import' [-Wmissing-prototypes]
+  841 | extern "C" ggml_backend_buffer_t ggml_hyle_metal_import(ggml_backend_t backend, void * raw) {
+      |                                  ^
+/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-build/src/compute_ggml_runtime/source-da5abe30b13e6512/src/ggml-metal/ggml-metal.cpp:841:12: note: declare 'static' if the function is not intended to be used outside of this translation unit
+  841 | extern "C" ggml_backend_buffer_t ggml_hyle_metal_import(ggml_backend_t backend, void * raw) {
+      |            ^
+      |            static 
+/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-build/src/compute_ggml_runtime/source-da5abe30b13e6512/src/ggml-metal/ggml-metal.cpp:853:20: warning: no previous prototype for function 'ggml_hyle_metal_checked_sync' [-Wmissing-prototypes]
+  853 | extern "C" int64_t ggml_hyle_metal_checked_sync(ggml_backend_t backend) {
+      |                    ^
+/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-build/src/compute_ggml_runtime/source-da5abe30b13e6512/src/ggml-metal/ggml-metal.cpp:853:12: note: declare 'static' if the function is not intended to be used outside of this translation unit
+  853 | extern "C" int64_t ggml_hyle_metal_checked_sync(ggml_backend_t backend) {
+      |            ^
+      |            static 
+/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-build/src/compute_ggml_runtime/source-da5abe30b13e6512/src/ggml-metal/ggml-metal.cpp:856:17: warning: no previous prototype for function 'ggml_hyle_metal_prepare_gdn' [-Wmissing-prototypes]
+  856 | extern "C" bool ggml_hyle_metal_prepare_gdn(ggml_backend_t backend, const ggml_tensor * tensor) {
+      |                 ^
+/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-build/src/compute_ggml_runtime/source-da5abe30b13e6512/src/ggml-metal/ggml-metal.cpp:856:12: note: declare 'static' if the function is not intended to be used outside of this translation unit
+  856 | extern "C" bool ggml_hyle_metal_prepare_gdn(ggml_backend_t backend, const ggml_tensor * tensor) {
+      |            ^
+      |            static 
+3 warnings generated.
+[105/363] Building CXX object src/compute_ggml_runtime/vendor/src/ggml-metal/CMakeFiles/ggml-metal.dir/ggml-metal-device.cpp.o
+[106/363] Building CXX object src/compute_ggml_runtime/vendor/src/ggml-metal/CMakeFiles/ggml-metal.dir/ggml-metal-common.cpp.o
+[107/363] Building CXX object src/compute_ggml_runtime/vendor/src/ggml-metal/CMakeFiles/ggml-metal.dir/ggml-metal-fusion.cpp.o
+[108/363] Building CXX object src/compute_ggml_runtime/vendor/src/ggml-metal/CMakeFiles/ggml-metal.dir/ggml-metal-ops.cpp.o
+[109/363] Building CXX object src/compute_ggml_runtime/vendor/src/ggml-metal/CMakeFiles/ggml-metal.dir/ggml-metal-tuning.cpp.o
+[110/363] Linking CXX shared library bin/libhyle_container.0.1.0.dylib
+[111/363] Linking CXX shared library bin/libhyle_sched.0.1.0.dylib
+[112/363] Linking CXX shared library bin/libhyle_compute.0.1.0.dylib
+[113/363] Building CXX object src/compute_ggml_runtime/vendor/src/CMakeFiles/ggml.dir/ggml-backend-dl.cpp.o
+[114/363] Building CXX object src/compute_ggml_runtime/vendor/src/CMakeFiles/ggml.dir/ggml-backend-reg.cpp.o
+[115/363] Linking CXX static library bin/libggml-cpu.a
+[116/363] Linking CXX static library bin/libggml-metal.a
+[117/363] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/runtime.cc.o
+[118/363] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/ops/dispatch_ops.cc.o
+[119/363] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/random/random_dispatch.cc.o
+[120/363] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/search/search_dispatch.cc.o
+[121/363] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/narrow/narrow_dispatch.cc.o
+[122/363] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/scan/scan_dispatch.cc.o
+[123/363] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/dtype/dtype_dispatch.cc.o
+[124/363] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/dtype/cvt_fp8_scalar.cc.o
+[125/363] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/math/math_dispatch.cc.o
+[126/363] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/math/transcendental_scalar.cc.o
+[127/363] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/math/activations.cc.o
+[128/363] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/sort/sort_dispatch.cc.o
+[129/363] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/sort/top_k.cc.o
+[130/363] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/sort/vqsort_scalar.cc.o
+[131/363] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/sort/radix_sort.cc.o
+[132/363] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/bitpack/bitpack_dispatch.cc.o
+[133/363] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/math/transcendental_highway_neon.cc.o
+[134/363] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/sort/vqsort_hyle_neon.cc.o
+[135/363] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/generated/simd-dispatch/ops/ops_scalar.cc.o
+[136/363] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/generated/simd-dispatch/ops/ops_neon.cc.o
+[137/363] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/generated/simd-dispatch/dtype_convert/dtype_convert_scalar.cc.o
+[138/363] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/generated/simd-dispatch/dtype_convert/dtype_convert_neon.cc.o
+[139/363] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/generated/simd-dispatch/scan/scan_scalar.cc.o
+[140/363] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/generated/simd-dispatch/scan/scan_neon.cc.o
+[141/363] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/generated/simd-dispatch/random/random_scalar.cc.o
+[142/363] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/generated/simd-dispatch/random/random_neon.cc.o
+[143/363] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/generated/simd-dispatch/search/search_scalar.cc.o
+[144/363] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/generated/simd-dispatch/search/search_neon.cc.o
+[145/363] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/generated/simd-dispatch/narrow/narrow_scalar.cc.o
+[146/363] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/generated/simd-dispatch/narrow/narrow_neon.cc.o
+[147/363] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/generated/simd-dispatch/bitpack/bitpack_scalar.cc.o
+[148/363] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/generated/simd-dispatch/bitpack/bitpack_neon.cc.o
+[149/363] Creating library symlink bin/libhyle_container.dylib
+[150/363] Creating library symlink bin/libhyle_sched.dylib
+[151/363] Building CXX object src/io_core/CMakeFiles/hyle_io_core.dir/proactor.cc.o
+[152/363] Building CXX object src/io_core/CMakeFiles/hyle_io_core.dir/endpoint.cc.o
+[153/363] Building CXX object src/io_core/CMakeFiles/hyle_io_core.dir/operation.cc.o
+[154/363] Building CXX object src/io_core/CMakeFiles/hyle_io_core.dir/io_uring.cc.o
+[155/363] Building CXX object src/io_core/CMakeFiles/hyle_io_core.dir/io_context.cc.o
+[156/363] Building CXX object src/io_core/CMakeFiles/hyle_io_core.dir/tcp.cc.o
+[157/363] Building CXX object src/io_core/CMakeFiles/hyle_io_core.dir/udp.cc.o
+[158/363] Building CXX object src/io_core/CMakeFiles/hyle_io_core.dir/file.cc.o
+[159/363] Building CXX object src/io_core/CMakeFiles/hyle_io_core.dir/file_region.cc.o
+[160/363] Building CXX object src/io_core/CMakeFiles/hyle_io_core.dir/local.cc.o
+[161/363] Building CXX object src/io_core/CMakeFiles/hyle_io_core.dir/signal.cc.o
+[162/363] Building CXX object src/io_core/CMakeFiles/hyle_io_core.dir/dns.cc.o
+[163/363] Creating library symlink bin/libhyle_compute.dylib
+[164/363] Building CXX object src/compute_backend_cpu/CMakeFiles/hyle_compute_backend_cpu.dir/cpu_backend.cc.o
+[165/363] Building CXX object src/compute_ggml_runtime/CMakeFiles/hyle_compute_ggml_runtime.dir/metadata_arena.cc.o
+[166/363] Building CXX object src/compute_ggml_runtime/CMakeFiles/hyle_compute_ggml_runtime.dir/cpu_execution.cc.o
+[167/363] Building CXX object src/compute_ggml_runtime/CMakeFiles/hyle_compute_ggml_runtime.dir/cpu_program.cc.o
+[168/363] Linking CXX static library bin/libggml.a
+[169/363] Building CXX object _deps/mlx-build/CMakeFiles/mlx.dir/mlx/array.cpp.o
+[170/363] Building CXX object _deps/mlx-build/CMakeFiles/mlx.dir/mlx/compile.cpp.o
+/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-build/_deps/mlx-338da189e54c0743/source/mlx/compile.cpp:863:21: warning: expression with side effects will be evaluated despite being used as an operand to 'typeid' [-Wpotentially-evaluated-expression]
+  863 |           (typeid(a.primitive()) == typeid(AsType) &&
+      |                     ^
+1 warning generated.
+[171/363] Building CXX object _deps/mlx-build/CMakeFiles/mlx.dir/mlx/device.cpp.o
+[172/363] Building CXX object _deps/mlx-build/CMakeFiles/mlx.dir/mlx/dtype.cpp.o
+[173/363] Building CXX object _deps/mlx-build/CMakeFiles/mlx.dir/mlx/dtype_utils.cpp.o
+[174/363] Building CXX object _deps/mlx-build/CMakeFiles/mlx.dir/mlx/export.cpp.o
+[175/363] Building CXX object _deps/mlx-build/CMakeFiles/mlx.dir/mlx/einsum.cpp.o
+[176/363] Building CXX object _deps/mlx-build/CMakeFiles/mlx.dir/mlx/fast.cpp.o
+[177/363] Building CXX object _deps/mlx-build/CMakeFiles/mlx.dir/mlx/fft.cpp.o
+[178/363] Building CXX object _deps/mlx-build/CMakeFiles/mlx.dir/mlx/ops.cpp.o
+[179/363] Building CXX object _deps/mlx-build/CMakeFiles/mlx.dir/mlx/graph_utils.cpp.o
+[180/363] Building CXX object _deps/mlx-build/CMakeFiles/mlx.dir/mlx/primitives.cpp.o
+[181/363] Building CXX object _deps/mlx-build/CMakeFiles/mlx.dir/mlx/random.cpp.o
+[182/363] Building CXX object _deps/mlx-build/CMakeFiles/mlx.dir/mlx/scheduler.cpp.o
+[183/363] Building CXX object _deps/mlx-build/CMakeFiles/mlx.dir/mlx/stream.cpp.o
+[184/363] Building CXX object _deps/mlx-build/CMakeFiles/mlx.dir/mlx/transforms.cpp.o
+[185/363] Building CXX object _deps/mlx-build/CMakeFiles/mlx.dir/mlx/utils.cpp.o
+[186/363] Building CXX object _deps/mlx-build/CMakeFiles/mlx.dir/mlx/linalg.cpp.o
+[187/363] Building CXX object _deps/mlx-build/CMakeFiles/mlx.dir/mlx/backend/common/broadcasting.cpp.o
+[188/363] Building CXX object _deps/mlx-build/CMakeFiles/mlx.dir/mlx/backend/common/compiled.cpp.o
+[189/363] Building CXX object _deps/mlx-build/CMakeFiles/mlx.dir/mlx/backend/common/common.cpp.o
+[190/363] Building CXX object _deps/mlx-build/CMakeFiles/mlx.dir/mlx/backend/common/load.cpp.o
+[191/363] Building CXX object _deps/mlx-build/CMakeFiles/mlx.dir/mlx/backend/common/metal_kernel.cpp.o
+[192/363] Building CXX object _deps/mlx-build/CMakeFiles/mlx.dir/mlx/backend/common/reduce.cpp.o
+[193/363] Building CXX object _deps/mlx-build/CMakeFiles/mlx.dir/mlx/backend/common/slicing.cpp.o
+[194/363] Building CXX object _deps/mlx-build/CMakeFiles/mlx.dir/mlx/backend/common/utils.cpp.o
+[195/363] Building CXX object _deps/mlx-build/CMakeFiles/mlx.dir/mlx/backend/no_cpu/device_info.cpp.o
+[196/363] Building CXX object _deps/mlx-build/CMakeFiles/mlx.dir/mlx/backend/no_cpu/primitives.cpp.o
+[197/363] Building CXX object _deps/mlx-build/CMakeFiles/mlx.dir/mlx/backend/cpu/eval.cpp.o
+[198/363] Building CXX object _deps/mlx-build/CMakeFiles/mlx.dir/mlx/backend/cpu/encoder.cpp.o
+[199/363] Building CXX object _deps/mlx-build/CMakeFiles/mlx.dir/mlx/backend/no_cpu/compiled.cpp.o
+[200/363] Building CXX object _deps/mlx-build/CMakeFiles/mlx.dir/mlx/distributed/primitives.cpp.o
+[201/363] Building CXX object _deps/mlx-build/CMakeFiles/mlx.dir/mlx/distributed/ops.cpp.o
+[202/363] Building CXX object _deps/mlx-build/CMakeFiles/mlx.dir/mlx/distributed/distributed.cpp.o
+[203/363] Building CXX object _deps/mlx-build/CMakeFiles/mlx.dir/mlx/distributed/mpi/no_mpi.cpp.o
+[204/363] Building CXX object _deps/mlx-build/CMakeFiles/mlx.dir/mlx/distributed/ring/no_ring.cpp.o
+[205/363] Building CXX object _deps/mlx-build/CMakeFiles/mlx.dir/mlx/distributed/nccl/no_nccl.cpp.o
+[206/363] Building CXX object _deps/mlx-build/CMakeFiles/mlx.dir/mlx/distributed/jaccl/no_jaccl.cpp.o
+[207/363] Building CXX object _deps/mlx-build/CMakeFiles/mlx.dir/mlx/io/load.cpp.o
+[208/363] Building CXX object _deps/mlx-build/CMakeFiles/mlx.dir/mlx/io/no_safetensors.cpp.o
+[209/363] Building CXX object _deps/mlx-build/CMakeFiles/mlx.dir/mlx/io/no_gguf.cpp.o
+[210/363] Building CXX object _deps/mlx-build/CMakeFiles/mlx.dir/mlx/backend/metal/jit/utils.cpp.o
+[211/363] Building CXX object _deps/mlx-build/CMakeFiles/mlx.dir/mlx/backend/metal/jit/unary_ops.cpp.o
+[212/363] Building CXX object _deps/mlx-build/CMakeFiles/mlx.dir/mlx/backend/metal/jit/binary_ops.cpp.o
+[213/363] Building CXX object _deps/mlx-build/CMakeFiles/mlx.dir/mlx/backend/metal/jit/ternary_ops.cpp.o
+[214/363] Building CXX object _deps/mlx-build/CMakeFiles/mlx.dir/mlx/backend/metal/jit/reduce_utils.cpp.o
+[215/363] Building CXX object _deps/mlx-build/CMakeFiles/mlx.dir/mlx/backend/metal/jit/scatter.cpp.o
+[216/363] Building CXX object _deps/mlx-build/CMakeFiles/mlx.dir/mlx/backend/metal/jit/masked_scatter.cpp.o
+[217/363] Building CXX object _deps/mlx-build/CMakeFiles/mlx.dir/mlx/backend/metal/jit/gather.cpp.o
+[218/363] Building CXX object _deps/mlx-build/CMakeFiles/mlx.dir/mlx/backend/metal/jit/gather_front.cpp.o
+[219/363] Building CXX object _deps/mlx-build/CMakeFiles/mlx.dir/mlx/backend/metal/jit/gather_axis.cpp.o
+[220/363] Building CXX object _deps/mlx-build/CMakeFiles/mlx.dir/mlx/backend/metal/jit/scatter_axis.cpp.o
+[221/363] Building CXX object _deps/mlx-build/CMakeFiles/mlx.dir/mlx/backend/metal/jit/hadamard.cpp.o
+[222/363] Building CXX object _deps/mlx-build/CMakeFiles/mlx.dir/mlx/backend/metal/jit_kernels.cpp.o
+[223/363] Building CXX object _deps/mlx-build/CMakeFiles/mlx.dir/mlx/backend/metal/jit/arange.cpp.o
+[224/363] Building CXX object _deps/mlx-build/CMakeFiles/mlx.dir/mlx/backend/metal/jit/copy.cpp.o
+[225/363] Building CXX object _deps/mlx-build/CMakeFiles/mlx.dir/mlx/backend/metal/jit/unary.cpp.o
+[226/363] Building CXX object _deps/mlx-build/CMakeFiles/mlx.dir/mlx/backend/metal/jit/binary.cpp.o
+[227/363] Building CXX object _deps/mlx-build/CMakeFiles/mlx.dir/mlx/backend/metal/jit/binary_two.cpp.o
+[228/363] Building CXX object _deps/mlx-build/CMakeFiles/mlx.dir/mlx/backend/metal/jit/fft.cpp.o
+[229/363] Building CXX object _deps/mlx-build/CMakeFiles/mlx.dir/mlx/backend/metal/jit/logsumexp.cpp.o
+[230/363] Building CXX object _deps/mlx-build/CMakeFiles/mlx.dir/mlx/backend/metal/jit/ternary.cpp.o
+[231/363] Building CXX object _deps/mlx-build/CMakeFiles/mlx.dir/mlx/backend/metal/jit/softmax.cpp.o
+[232/363] Building CXX object _deps/mlx-build/CMakeFiles/mlx.dir/mlx/backend/metal/jit/scan.cpp.o
+[233/363] Building CXX object _deps/mlx-build/CMakeFiles/mlx.dir/mlx/backend/metal/jit/sort.cpp.o
+[234/363] Building CXX object _deps/mlx-build/CMakeFiles/mlx.dir/mlx/backend/metal/jit/searchsorted.cpp.o
+[235/363] Building CXX object _deps/mlx-build/CMakeFiles/mlx.dir/mlx/backend/metal/jit/reduce.cpp.o
+[236/363] Building CXX object _deps/mlx-build/CMakeFiles/mlx.dir/mlx/backend/metal/jit/gemm.cpp.o
+[237/363] Building CXX object _deps/mlx-build/CMakeFiles/mlx.dir/mlx/backend/metal/jit/steel_gemm_fused.cpp.o
+[238/363] Building CXX object _deps/mlx-build/CMakeFiles/mlx.dir/mlx/backend/metal/jit/steel_gemm_masked.cpp.o
+[239/363] Building CXX object _deps/mlx-build/CMakeFiles/mlx.dir/mlx/backend/metal/jit/steel_gemm_gather.cpp.o
+[240/363] Building CXX object _deps/mlx-build/CMakeFiles/mlx.dir/mlx/backend/metal/jit/steel_gemm_splitk.cpp.o
+[241/363] Building CXX object _deps/mlx-build/CMakeFiles/mlx.dir/mlx/backend/metal/jit/steel_gemm_segmented.cpp.o
+[242/363] Building CXX object _deps/mlx-build/CMakeFiles/mlx.dir/mlx/backend/metal/jit/conv.cpp.o
+[243/363] Building CXX object _deps/mlx-build/CMakeFiles/mlx.dir/mlx/backend/metal/jit/steel_conv.cpp.o
+[244/363] Building CXX object _deps/mlx-build/CMakeFiles/mlx.dir/mlx/backend/metal/jit/steel_conv_3d.cpp.o
+[245/363] Building CXX object _deps/mlx-build/CMakeFiles/mlx.dir/mlx/backend/metal/jit/steel_conv_general.cpp.o
+[246/363] Building CXX object _deps/mlx-build/CMakeFiles/mlx.dir/mlx/backend/metal/jit/quantized_utils.cpp.o
+[247/363] Building CXX object _deps/mlx-build/CMakeFiles/mlx.dir/mlx/backend/metal/jit/quantized.cpp.o
+[248/363] Building CXX object _deps/mlx-build/CMakeFiles/mlx.dir/mlx/backend/metal/jit/fp_quantized.cpp.o
+[249/363] Building CXX object _deps/mlx-build/CMakeFiles/mlx.dir/mlx/backend/metal/jit/gemv.cpp.o
+[250/363] Building CXX object _deps/mlx-build/CMakeFiles/mlx.dir/mlx/backend/metal/jit/gemv_masked.cpp.o
+[251/363] Building CXX object _deps/mlx-build/CMakeFiles/mlx.dir/mlx/backend/metal/jit/steel_attention.cpp.o
+[252/363] Building CXX object _deps/mlx-build/CMakeFiles/mlx.dir/mlx/backend/metal/allocator.cpp.o
+[253/363] Building CXX object _deps/mlx-build/CMakeFiles/mlx.dir/mlx/backend/metal/binary.cpp.o
+[254/363] Building CXX object _deps/mlx-build/CMakeFiles/mlx.dir/mlx/backend/metal/device_info.cpp.o
+[255/363] Building CXX object _deps/mlx-build/CMakeFiles/mlx.dir/mlx/backend/metal/compiled.cpp.o
+[256/363] Building CXX object _deps/mlx-build/CMakeFiles/mlx.dir/mlx/backend/metal/conv.cpp.o
+[257/363] Building CXX object _deps/mlx-build/CMakeFiles/mlx.dir/mlx/backend/metal/copy.cpp.o
+[258/363] Building CXX object _deps/mlx-build/CMakeFiles/mlx.dir/mlx/backend/metal/custom_kernel.cpp.o
+[259/363] Building CXX object _deps/mlx-build/CMakeFiles/mlx.dir/mlx/backend/metal/distributed.cpp.o
+[260/363] Building CXX object _deps/mlx-build/CMakeFiles/mlx.dir/mlx/backend/metal/device.cpp.o
+[261/363] Building CXX object _deps/mlx-build/CMakeFiles/mlx.dir/mlx/backend/metal/event.cpp.o
+[262/363] Building CXX object _deps/mlx-build/CMakeFiles/mlx.dir/mlx/backend/metal/eval.cpp.o
+[263/363] Building CXX object _deps/mlx-build/CMakeFiles/mlx.dir/mlx/backend/metal/fence.cpp.o
+[264/363] Building CXX object _deps/mlx-build/CMakeFiles/mlx.dir/mlx/backend/metal/fft.cpp.o
+[265/363] Building CXX object _deps/mlx-build/CMakeFiles/mlx.dir/mlx/backend/metal/hadamard.cpp.o
+[266/363] Building CXX object _deps/mlx-build/CMakeFiles/mlx.dir/mlx/backend/metal/indexing.cpp.o
+[267/363] Building CXX object _deps/mlx-build/CMakeFiles/mlx.dir/mlx/backend/metal/logsumexp.cpp.o
+[268/363] Building CXX object _deps/mlx-build/CMakeFiles/mlx.dir/mlx/backend/metal/matmul.cpp.o
+[269/363] Building CXX object _deps/mlx-build/CMakeFiles/mlx.dir/mlx/backend/metal/scaled_dot_product_attention.cpp.o
+[270/363] Building CXX object _deps/mlx-build/CMakeFiles/mlx.dir/mlx/backend/metal/metal.cpp.o
+[271/363] Building CXX object _deps/mlx-build/CMakeFiles/mlx.dir/mlx/backend/metal/primitives.cpp.o
+[272/363] Building CXX object _deps/mlx-build/CMakeFiles/mlx.dir/mlx/backend/metal/quantized.cpp.o
+[273/363] Building CXX object _deps/mlx-build/CMakeFiles/mlx.dir/mlx/backend/metal/normalization.cpp.o
+[274/363] Building CXX object _deps/mlx-build/CMakeFiles/mlx.dir/mlx/backend/metal/rope.cpp.o
+[275/363] Building CXX object _deps/mlx-build/CMakeFiles/mlx.dir/mlx/backend/metal/scan.cpp.o
+[276/363] Building CXX object _deps/mlx-build/CMakeFiles/mlx.dir/mlx/backend/metal/slicing.cpp.o
+[277/363] Building CXX object _deps/mlx-build/CMakeFiles/mlx.dir/mlx/backend/metal/softmax.cpp.o
+[278/363] Building CXX object _deps/mlx-build/CMakeFiles/mlx.dir/mlx/backend/metal/sort.cpp.o
+[279/363] Building CXX object _deps/mlx-build/CMakeFiles/mlx.dir/mlx/backend/metal/reduce.cpp.o
+[280/363] Building CXX object _deps/mlx-build/CMakeFiles/mlx.dir/mlx/backend/metal/ternary.cpp.o
+[281/363] Building CXX object _deps/mlx-build/CMakeFiles/mlx.dir/mlx/backend/metal/unary.cpp.o
+[282/363] Building CXX object _deps/mlx-build/CMakeFiles/mlx.dir/mlx/backend/metal/resident.cpp.o
+[283/363] Building CXX object _deps/mlx-build/CMakeFiles/mlx.dir/mlx/backend/metal/utils.cpp.o
+[284/363] Building CXX object _deps/mlx-build/CMakeFiles/mlx.dir/mlx/backend/cuda/no_cuda.cpp.o
+[285/363] Building CXX object _deps/mlx-build/CMakeFiles/mlx.dir/mlx/backend/gpu/copy.cpp.o
+[286/363] Building CXX object _deps/mlx-build/CMakeFiles/mlx.dir/mlx/backend/gpu/primitives.cpp.o
+[287/363] Building CXX object _deps/mlx-build/CMakeFiles/mlx.dir/mlx/backend/gpu/slicing.cpp.o
+[288/363] Building CXX object _deps/mlx-build/mlx/CMakeFiles/mlx_version.dir/version.cpp.o
+[289/363] Linking CXX shared library bin/libhyle_simd.0.1.0.dylib
+[290/363] Linking CXX shared library bin/libhyle_io_core.0.1.0.dylib
+[291/363] Linking CXX shared library bin/libhyle_compute_backend_cpu.0.1.0.dylib
+[292/363] Linking CXX shared library bin/libhyle_compute_ggml_runtime.0.1.0.dylib
+[293/363] Linking CXX shared library bin/libmlx.dylib
+[294/363] Creating library symlink bin/libhyle_simd.dylib
+[295/363] Creating library symlink bin/libhyle_io_core.dylib
+[296/363] Creating library symlink bin/libhyle_compute_backend_cpu.dylib
+[297/363] Creating library symlink bin/libhyle_compute_ggml_runtime.dylib
+[298/363] Building CXX object src/compute_provider_ggml/CMakeFiles/hyle_compute_provider_ggml.dir/ggml_cpu_provider.cc.o
+[299/363] Building CXX object src/compute_provider_ggml/CMakeFiles/hyle_compute_provider_ggml.dir/standard_index.cc.o
+[300/363] Building CXX object src/compute_provider_native/CMakeFiles/hyle_compute_provider_native.dir/aten_cpu_provider.cc.o
+[301/363] Building CXX object src/compute_provider_native/CMakeFiles/hyle_compute_provider_native.dir/cast.cc.o
+[302/363] Building CXX object src/compute_provider_native/CMakeFiles/hyle_compute_provider_native.dir/default_rules.cc.o
+[303/363] Building CXX object src/compute_provider_native/CMakeFiles/hyle_compute_provider_native.dir/ds4_quantization.cc.o
+[304/363] Building CXX object src/compute_provider_native/CMakeFiles/hyle_compute_provider_native.dir/elementwise.cc.o
+[305/363] Building CXX object src/compute_provider_native/CMakeFiles/hyle_compute_provider_native.dir/indexing.cc.o
+[306/363] Building CXX object src/compute_provider_native/CMakeFiles/hyle_compute_provider_native.dir/native_provider.cc.o
+[307/363] Building CXX object src/compute_provider_native/CMakeFiles/hyle_compute_provider_native.dir/normalization.cc.o
+[308/363] Building CXX object src/compute_provider_native/CMakeFiles/hyle_compute_provider_native.dir/reduction.cc.o
+[309/363] Building CXX object src/compute_provider_native/CMakeFiles/hyle_compute_provider_native.dir/transform.cc.o
+[310/363] Building CXX object src/compute_provider_native/CMakeFiles/hyle_compute_provider_native.dir/transformer.cc.o
+[311/363] Building CXX object src/compute_provider_native/CMakeFiles/hyle_compute_provider_native.dir/torch_cpu_program.cc.o
+[312/363] Building CXX object src/compute_stream/CMakeFiles/hyle_compute_stream.dir/file_stream.cc.o
+[313/363] Building CXX object src/compute_stream/CMakeFiles/hyle_compute_stream.dir/stream_sources.cc.o
+[314/363] Building CXX object src/compute_provider_ggml_metal/CMakeFiles/hyle_compute_provider_ggml_metal.dir/native_program.cc.o
+[315/363] Linking CXX shared library bin/libhyle_compute_provider_ggml.0.1.0.dylib
+[316/363] Linking CXX shared library bin/libhyle_compute_provider_native.0.1.0.dylib
+[317/363] Linking CXX shared library bin/libhyle_compute_stream.0.1.0.dylib
+[318/363] Linking CXX shared library bin/libhyle_compute_provider_ggml_metal.0.1.0.dylib
+[319/363] cd /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-build/src/compute_route_apple && /opt/homebrew/bin/cmake -E copy_if_different /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-build/_deps/mlx-build/mlx/backend/metal/kernels/mlx.metallib /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-build/bin/mlx.metallib
+[320/363] Building CXX object src/graph/CMakeFiles/hyle_graph.dir/graph.cc.o
+[321/363] Building CXX object src/graph/CMakeFiles/hyle_graph.dir/effect_order.cc.o
+[322/363] Building CXX object src/graph/CMakeFiles/hyle_graph.dir/executable.cc.o
+[323/363] Building CXX object src/graph/CMakeFiles/hyle_graph.dir/view_domain.cc.o
+[324/363] Building CXX object src/graph/CMakeFiles/hyle_graph.dir/constant_artifact.cc.o
+[325/363] Building CXX object src/graph/CMakeFiles/hyle_graph.dir/leased_invocation.cc.o
+[326/363] Building CXX object src/graph/CMakeFiles/hyle_graph.dir/lease_submission.cc.o
+[327/363] Creating library symlink bin/libhyle_compute_provider_ggml.dylib
+[328/363] Creating library symlink bin/libhyle_compute_provider_native.dylib
+[329/363] Creating library symlink bin/libhyle_compute_stream.dylib
+[330/363] Building CXX object src/compute_route_cpu/CMakeFiles/hyle_compute_route_cpu.dir/cpu_context.cc.o
+[331/363] Building CXX object src/compute_route_cpu/CMakeFiles/hyle_compute_route_cpu.dir/default_policy.cc.o
+[332/363] Building CXX object src/compute_route_cpu/CMakeFiles/hyle_compute_route_cpu.dir/file_stream.cc.o
+[333/363] Creating library symlink bin/libhyle_compute_provider_ggml_metal.dylib
+[334/363] Building CXX object src/compute_route_apple/CMakeFiles/hyle_compute_route_apple.dir/apple_context.cc.o
+[335/363] Building CXX object src/compute_route_apple/CMakeFiles/hyle_compute_route_apple.dir/apple_operations.cc.o
+[336/363] Building CXX object src/compute_route_apple/CMakeFiles/hyle_compute_route_apple.dir/apple_tensor.cc.o
+[337/363] Building CXX object src/compute_route_apple/CMakeFiles/hyle_compute_route_apple.dir/apple_leased_invocation.cc.o
+[338/363] Building CXX object src/compute_route_apple/CMakeFiles/hyle_compute_route_apple.dir/file_stream.cc.o
+[339/363] Building CXX object src/compute_route_apple/CMakeFiles/hyle_compute_route_apple.dir/apple_copy_program.cc.o
+[340/363] Building CXX object src/compute_route_apple/CMakeFiles/hyle_compute_route_apple.dir/apple_recurrent.cc.o
+[341/363] Building CXX object src/compute_route_apple/CMakeFiles/hyle_compute_route_apple.dir/apple_mature_indexing.cc.o
+[342/363] Building CXX object src/compute_route_apple/CMakeFiles/hyle_compute_route_apple.dir/apple_mature_reduction.cc.o
+[343/363] Building CXX object src/compute_route_apple/CMakeFiles/hyle_compute_route_apple.dir/apple_mature_float.cc.o
+[344/363] Building CXX object src/compute_route_apple/CMakeFiles/hyle_compute_route_apple.dir/apple_mature_artifact.cc.o
+[345/363] Building CXX object src/compute_route_apple/CMakeFiles/hyle_compute_route_apple.dir/apple_mature_gguf.cc.o
+[346/363] Linking CXX shared library bin/libhyle_graph.0.1.0.dylib
+[347/363] Linking CXX shared library bin/libhyle_compute_route_cpu.0.1.0.dylib
+[348/363] Linking CXX shared library bin/libhyle_compute_route_apple.0.1.0.dylib
+[349/363] Creating library symlink bin/libhyle_graph.dylib
+[350/363] Creating library symlink bin/libhyle_compute_route_cpu.dylib
+[351/363] Building CXX object src/graph_route_cpu/CMakeFiles/hyle_graph_route_cpu.dir/cpu_context.cc.o
+[352/363] Building CXX object src/graph_route_cpu/CMakeFiles/hyle_graph_route_cpu.dir/ggml_region.cc.o
+[353/363] Creating library symlink bin/libhyle_compute_route_apple.dylib
+[354/363] Building CXX object src/graph_route_apple/CMakeFiles/hyle_graph_route_apple.dir/apple_lowering.cc.o
+[355/363] Linking CXX shared library bin/libhyle_graph_route_cpu.0.1.0.dylib
+[356/363] Linking CXX shared library bin/libhyle_graph_route_apple.0.1.0.dylib
+[357/363] Creating library symlink bin/libhyle_graph_route_cpu.dylib
+[358/363] Creating library symlink bin/libhyle_graph_route_apple.dylib
+[359/363] Building CXX object src/graph_route_cpu_apple/CMakeFiles/hyle_graph_route_cpu_apple.dir/compile.cc.o
+[360/363] Building CXX object src/graph_route_cpu_apple/CMakeFiles/hyle_graph_route_cpu_apple.dir/invocation.cc.o
+[361/363] Linking CXX shared library bin/libhyle_graph_route_cpu_apple.0.1.0.dylib
+[362/363] Creating library symlink bin/libhyle_graph_route_cpu_apple.dylib

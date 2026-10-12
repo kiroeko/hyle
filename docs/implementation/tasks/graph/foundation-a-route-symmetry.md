@@ -161,3 +161,25 @@ private/managed 成本；warm 无新的 table 搜索/shape JIT/DAG合法性检�
 [CPU+CUDA static SDK](../../../../evidence/correctness/foundation-a-sdk-cpu-cuda-static/README.md)
 真实安装/rename迁址、public finite consumer、两个新/受影响头独立 TU、runtime与缺路线诊断 PASS。
 其余格仍待固定候选资格，不能据此关闭七 owner。
+
+## 固定候选风险矩阵（持续对证，不按测试数关闭）
+
+| 能力 / public journey | 正常与边界 | failure / OOM / overflow | ownership / teardown | cancel / concurrency | consumer / 正交 | 平台 / delivery |
+|---|---|---|---|---|---|---|
+| 共同 exact snapshot / finite table | Win41项中 IDs/guard/View/表外/重复表 PASS | 配额OOM/前缀factory失败 PASS；算术沿原shape program边界 | 原Graph不变、allocator回收与原ID PASS | 表immutable；native两独立slot/旧结果 PASS；无新线程/全局 | 有限batch shape与变长资产/矩阵共享same opaque shape API | Win/Air source、Win CUDA static/shared PASS；其余SDK与WSL待验 |
+| pure control / data+control reachability | shared control祖先/dead剪枝、Win/Air native+hybrid PASS | Win checked control前驱OutOfRange、cold OOM PASS；Air错误完整格待核对 | 原完成边界与旧output PASS；物化/managed等待明确 | public CPU prefix cancel Win/Air PASS；禁止hostwait拒绝 PASS | 独立张量分支顺序，无模型策略 | 候选Win/Air source PASS；Air Vulkan/其他SDK待验 |
+| qualified CPU effects / 全图 footprints | public write→GPU→read、effect-only、CPU明确placement PASS | 缺/重复ID、不同ID alias、constant/input alias及原common OOM PASS；accepted DataLoss前缀 PASS | fixedborrowed backing、close-old-result与Context再用 PASS | public实际已开始prefix cancel Win/Air PASS；跨invocation冲突caller同步 | 显式sidecar候选更新与资产集合更新，schema/body由consumer声明 | Win/Air public source PASS；installed effects消费者待全部格 |
+| native权限/不支持域 | 无实际GPUeffect端口明确拒绝；活mandatory-alias custom拒绝 | opaque native input+named effects alias未证者拒绝，不消费输入 | 原readonly native/F1 owner不改，效果回滚不承诺 | 原runtime退休/slot规则；本轮没有native producer实现变化 | pure initial/final保留，mutable业务动作显式分离 | 正向native pure+显式拒绝需各SKU；缺路线不得作math PASS |
+
+Sanitizer：共同静态/metadata的新控制/shape/alias与原effect校验适用 ASan、UBSan，等待候选
+定向结果；GPU math 不由sanitizer代签。TSan 无新增 mutable global/runtime机制，按上文裁决
+NOT_APPLICABLE，本轮真实多slot/取消门仍须完成。producer unknown/native失联等未改原机制
+只复用 tree/toolchain/配置匹配证据，若本轮反例改变退休路径则退回 AUDITED 后定向补证。
+此矩阵中的“待验”是 INCONCLUSIVE，不是最终 correctness PASS。
+
+候选定向追加：Win CPU+CUDA shared SDK、Air CPU+Apple static/shared SDK的真实迁址/public
+consumer/newheads/缺路线/runtime通过；Air原错误profile缓存身份与原配置日志保留，恢复后
+才签对应profile。共同 [ASan/UBSan](../../../../evidence/correctness/foundation-a-sanitizers/README.md)
+各42项定向语义/Graph查询/全图effect预检通过，旧维护selector冲突FAIL及累计预算保留。
+新增effect_preflight仅为候选后测试专用维护，不改产品算法/API/candidate。剩余Vulkan与WSL
+CUDA实际source/package格、P0/LOC和终局红队尚待完成，状态仍CANDIDATE。

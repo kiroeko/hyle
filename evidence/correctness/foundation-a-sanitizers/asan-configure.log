@@ -1,0 +1,9 @@
+CMake Error at cmake/HyleComponents.cmake:617 (message):
+  HYLE_DEV_FACTORS and HYLE_COMPONENTS are mutually exclusive; use a fresh
+  build tree and choose either an internal maintenance root or a consumer
+  product
+Call Stack (most recent call first):
+  CMakeLists.txt:102 (include)
+
+
+-- Configuring incomplete, errors occurred!

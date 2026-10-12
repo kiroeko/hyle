@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites tests="1" failures="0" disabled="0" errors="0" time="0." timestamp="2026-10-12T10:50:43.114" name="AllTests">
+  <testsuite name="Graph" tests="1" failures="0" disabled="0" skipped="0" errors="0" time="0." timestamp="2026-10-12T10:50:43.114">
+    <testcase name="InvalidOutOfRangeAndForeignQueriesAreRecoverable" file="/home/kiro/hyle-f1/sanitizers/source-03242e7723cb/tests/graph/graph_test.cc" line="916" status="run" result="completed" time="0." timestamp="2026-10-12T10:50:43.114" classname="Graph" />
+  </testsuite>
+</testsuites>

@@ -1,0 +1,20 @@
+-- The CXX compiler identification is MSVC 19.50.35728.0
+-- Detecting CXX compiler ABI info
+-- Detecting CXX compiler ABI info - done
+-- Check for working CXX compiler: C:/Program Files/Microsoft Visual Studio/18/Enterprise/VC/Tools/MSVC/14.50.35717/bin/Hostx64/x64/cl.exe - skipped
+-- Detecting CXX compile features
+-- Detecting CXX compile features - done
+CMake Error at CMakeLists.txt:4 (find_package):
+  Found package configuration file:
+
+    C:/h7/foundation-a-sdk/cpu-cuda-shared-546b0d246/relocated/lib/cmake/Hyle/HyleConfig.cmake
+
+  but it set Hyle_FOUND to FALSE so package "Hyle" is considered to be NOT
+  FOUND.  Reason given by package:
+
+  Hyle SDK does not contain requested Compute route 'apple'; available:
+  cpu;cuda
+
+
+
+-- Configuring incomplete, errors occurred!
