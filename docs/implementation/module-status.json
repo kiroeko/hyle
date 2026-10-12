@@ -621,7 +621,7 @@
     {
       "module": "compute_batch",
       "state": "AUDITED",
-      "summary": "F5 AUDITED实施：四路线Direct/Graph controller与实际页闭环已有首批证据；CPU各32矩阵+16页、native三profile各96矩阵+24页oracle及common33项九头通过。CPU阶段wait/native双mirror费用明确；ragged append/完整故障/SDK/san/终审继续。",
+      "summary": "F5 AUDITED实施：四路线Direct/Graph controller、paged与ragged实际append/F4已验；新多request ragged跨七profile合72episode通过，prefix/append/tail费用明确。原矩阵/common33项九头证据复用；完整故障/18SDK格/san/P0/guide/终审未签。",
       "record": "docs/implementation/tasks/compute/foundation-f5-paged-ragged-batch.md"
     },
     {

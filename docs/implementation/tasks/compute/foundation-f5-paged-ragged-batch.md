@@ -372,3 +372,30 @@ Apple/Vulkan typed Direct/原native Graph controller已按
 各96矩阵+24页oracle、same-generation F2镜像/两固定banks/旧result gate/额度与最后quota0
 通过。CPU/CUDA已有controller不替代它们的原native runtime；native controller第一档有
 真实闭环，完整ragged append/fault/SDK/san/P0/guide/终审仍全部scope，产品保持AUDITED。
+
+## AUDITED RAGGED-JOURNEY：多请求有效前缀与显式容量初始化
+
+baseline fc9e425bf。只补已准入F5-05的实际consumer证据，不新增ragged API或改F1/F2/F4。
+固定两request：old KV offsets0/3/5，first request append一行后new0/4/6；第二request
+有效两行必须搬到新offset。Qcap3/active2，KVcap8，Hq4/Hkv2/D64，F16/BF16。
+
+旧K/V whole readonly版本保活，另取独立capacity writer；原F2 phase0 clone两request
+的有效prefix并初始化unused tail，phase1显式依赖append first request。F2只导出成功写过
+的logical bytes，不能导出未初始化tail假装whole ready；因此tail初始化显式计费：K/V
+clone2560bytes、append512、tail1024，total4096，不伪称ragged独立页CoW或忽略容量费用。
+padding NaN来自ready source，实际math只用同版本有效区；报告与原whole clone+append区别。
+
+F4完整K/V/layout/clean query目录在实际成功ready后dirty替换和expected-base发布，query
+原block保持分享。Direct/Graph各old/new/old独立uniform oracle，两request预期first
+0.25/0.375/0.25、second一直0.625；旧readonly与旧版重读保持，不能把indptr更新当append。
+actual Win/WSL CPU、原WSL CUDA FI Direct/Graph、Win Vulkan与Air Apple/Vulkan typed
+controllers；只原factor/直接consumer，各root预算累计、重型串行，未变产品头不重跑。
+其余完整fault/SDK/san/P0/guide/终审仍未签，发生不符合原能力的事实再沿合法owner审计。
+
+[RAGGED-JOURNEY实际收据](../../../../evidence/correctness/foundation-f5-ragged-append-first/README.md)：
+Win/WSL CPU、原WSL CUDA Direct/Graph、Win Vulkan/Air Apple/Vulkan原controller全部通过，
+合72episode两request独立oracle。old0/3/5→new0/4/6实际搬移second request，clone2560+
+append512+tail init1024=4096如实计费；原F2完整ready→F4 dirty/layout成功发布、clean
+query分享与old新old重读保持。只consumer验证，无产品API/math改动；common33/九头及
+原矩阵复用。原fixture默认paged extents拒绝及两编译FAIL保存；最终--ragged-append-only
+只本轮旅程，同root累计预算、重型串行。接下来按有限清单收fault/SDK/san/P0/guide/终审。

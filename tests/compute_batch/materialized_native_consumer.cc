@@ -4,6 +4,7 @@
 #include <hyle/compute/state_versions.h>
 #include <hyle/compute/detail/paged_arena_access.h>
 #include <hyle/compute/detail/lease_access.h>
+#include "ragged_append_journey.h"
 #if defined(HYLE_F5_APPLE_TEST)
 #include <hyle/compute/apple_batch.h>
 #include <hyle/compute/apple_memory.h>
@@ -112,7 +113,24 @@ Status exercise_native_impl(n::Context&context,n::MemoryResource&memory,n::Memor
 Status exercise_native(n::Context&context,n::MemoryResource&memory,n::MemoryResource&staging,bool paged,bool bf16,bool causal){
   hyle::mem::QuotaAllocator metadata(hyle::mem::system_allocator());const auto status=exercise_native_impl(context,memory,staging,paged,bf16,causal,metadata.get());if(!status.ok()){context.close().IgnoreError();return status;}return require(metadata.used()==0,"native recipe retains common metadata after all controls/results retired");
 }
-Status native_run(){HYLE_ASSIGN_OR_RETURN(auto context,n::Context::create());
+Status native_ragged_append(n::Context&context,n::MemoryResource&memory,n::MemoryResource&staging){
+  for(bool graph:{false,true})for(bool bf16:{false,true}){hyle::mem::QuotaAllocator metadata(hyle::mem::system_allocator());
+    {
+      HYLE_ASSIGN_OR_RETURN(auto pool,c::LeasePool::create(memory.ref(),1u<<20));n::MaterializedBatchInvocation controller;
+      const auto loader=[&](c::TensorDesc description,std::span<const std::byte> bytes){return native_load(context,memory,pool,description,bytes);};
+      const auto prepare=[&](std::span<const c::CopyResourceSpec> specs,c::CopyBatchOptions options){return n::CopyBatchProgram::prepare(context,specs,options);};
+      const auto copier=[](const n::CopyBatchProgram&program){return n::CopyBatchInvocation::create(program);};
+      const auto execute=[&](c::MaterializedBatchProgram recipe,c::BatchLayoutVersion layout,c::ReadLease q,c::ReadLease k,c::ReadLease v)->Result<c::ReadLease>{
+        if(!controller.valid()){const c::MaterializedNativeBatchOptions options{.max_metadata_backing_bytes=1u<<20,.allocator=metadata.get()};if(graph){HYLE_ASSIGN_OR_RETURN(controller,ng::prepare_materialized_batch(context,recipe,memory,staging,options));}else{HYLE_ASSIGN_OR_RETURN(controller,n::MaterializedBatchInvocation::create(context,recipe,memory,staging,options));}}
+        HYLE_RETURN_IF_ERROR(controller.prepare_batch(layout));HYLE_RETURN_IF_ERROR(controller.bind(q,k,v));HYLE_ASSIGN_OR_RETURN(auto submitted,controller.submit());HYLE_ASSIGN_OR_RETURN(auto result,submitted.wait());return download(context,memory,*result,recipe.descriptions()[0]);
+      };
+      const auto reader=[](const c::ReadLease&source,std::span<std::byte> bytes){return source.view()->read(bytes);};
+      const auto status=hyle_f5_ragged_journey::exercise(bf16,memory.ref(),metadata.get(),loader,prepare,copier,execute,reader,graph?"native Graph":"native Direct");if(!status.ok()){context.close().IgnoreError();return status;}
+    }
+    HYLE_RETURN_IF_ERROR(require(metadata.used()==0,"ragged native controller metadata leaked"));
+  }return Status::Ok();
+}
+Status native_run(bool ragged_only=false){HYLE_ASSIGN_OR_RETURN(auto context,n::Context::create());
 #if defined(HYLE_F5_APPLE_TEST)
   HYLE_ASSIGN_OR_RETURN(auto memory,n::MemoryResource::create(context));HYLE_ASSIGN_OR_RETURN(auto staging,n::MemoryResource::create(context));
   HYLE_ASSIGN_OR_RETURN(auto environment,context.environment());std::printf("Apple actual GPU %s / %s / %s\n",environment.device_name.c_str(),environment.architecture.c_str(),environment.os_runtime.c_str());
@@ -121,7 +139,7 @@ Status native_run(){HYLE_ASSIGN_OR_RETURN(auto context,n::Context::create());
   const auto&environment=context.environment();HYLE_RETURN_IF_ERROR(require(!environment.software_device,"software Vulkan cannot qualify actual reference math"));std::printf("Vulkan actual GPU %s / %s / %s\n",environment.device_name.c_str(),environment.driver_name.c_str(),environment.driver_info.c_str());
 #endif
   struct CloseBeforeResources{n::Context&context;~CloseBeforeResources(){context.close().IgnoreError();}}close_before_resources{context};
-  for(bool paged:{true,false})for(bool bf16:{false,true})for(bool causal:{false,true})HYLE_RETURN_IF_ERROR(exercise_native(context,memory,staging,paged,bf16,causal));HYLE_RETURN_IF_ERROR(hyle_f5_native_paged_fixture::run(context,memory,staging));return context.close();
+  if(!ragged_only){for(bool paged:{true,false})for(bool bf16:{false,true})for(bool causal:{false,true})HYLE_RETURN_IF_ERROR(exercise_native(context,memory,staging,paged,bf16,causal));HYLE_RETURN_IF_ERROR(hyle_f5_native_paged_fixture::run(context,memory,staging));}HYLE_RETURN_IF_ERROR(native_ragged_append(context,memory,staging));return context.close();
 }
 } // namespace
-int main(){std::setvbuf(stdout,nullptr,_IONBF,0);const auto status=native_run();if(status.ok())return 0;char text[768]{};status.ToString(text,sizeof(text));std::fprintf(stderr,"F5 materialized %s: %s\n",route,text);return 1;}
+int main(int argc,char**){std::setvbuf(stdout,nullptr,_IONBF,0);const auto status=native_run(argc>1);if(status.ok())return 0;char text[768]{};status.ToString(text,sizeof(text));std::fprintf(stderr,"F5 materialized %s: %s\n",route,text);return 1;}

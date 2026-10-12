@@ -6,6 +6,7 @@
 #include <hyle/compute/detail/lease_access.h>
 #include <hyle/compute/detail/paged_arena_access.h>
 #include <hyle/graph/detail/region_access.h>
+#include "ragged_append_journey.h"
 #endif
 #include <hyle/compute/leased_operation.h>
 #include <hyle/simd/dtype.h>
@@ -75,9 +76,26 @@ Status exercise(c::Context&context,c::Queue&queue,bool paged,bool bf16,bool caus
   std::printf("CPU explicit materialized %s %s causal=%d Direct/Graph NaN-padding PASS; host=%zu gather=%zu logical=%zu\n",paged?"paged":"ragged",bf16?"BF16":"F16",int(causal),program.costs().index_bytes+program.costs().mask_bytes,program.costs().gathered_kv_bytes,program.costs().logical_intermediate_bytes);return Status::Ok();
 }
 #include "materialized_host_controller_consumer.h"
-Status run(){HYLE_ASSIGN_OR_RETURN(auto context,g::cpu::create_context());HYLE_ASSIGN_OR_RETURN(auto queue,context.create_queue());struct Drain{c::Context&context;~Drain(){context.drain().IgnoreError();}}drain{context};for(bool paged:{true,false})for(bool bf16:{false,true})for(bool causal:{false,true})HYLE_RETURN_IF_ERROR(exercise(context,queue,paged,bf16,causal));HYLE_RETURN_IF_ERROR(hyle_f5_host_controller_fixture::run(context,queue));return context.drain();}
+Status ragged_append(c::Context&context,c::Queue&queue){
+  for(bool graph:{false,true})for(bool bf16:{false,true}){hyle::mem::QuotaAllocator metadata(hyle::mem::system_allocator());
+    {
+      HYLE_ASSIGN_OR_RETURN(auto pool,c::LeasePool::create(hyle::mem::system_resource(),1u<<20));c::MaterializedBatchInvocation direct;g::batch::MaterializedInvocation controlled;
+      const auto loader=[&](c::TensorDesc,std::span<const std::byte> bytes)->Result<c::ReadLease>{HYLE_ASSIGN_OR_RETURN(auto writer,pool.allocate(bytes.size()));HYLE_RETURN_IF_ERROR(writer.view()->write(bytes));return writer.publish();};
+      const auto prepare=[&](std::span<const c::CopyResourceSpec> specs,c::CopyBatchOptions options){return c::CopyBatchProgram::prepare(context,specs,options);};
+      const auto copier=[&](const c::CopyBatchProgram&program){return c::CopyBatchInvocation::create(program,queue);};
+      const auto execute=[&](c::MaterializedBatchProgram recipe,c::BatchLayoutVersion layout,c::ReadLease q,c::ReadLease k,c::ReadLease v)->Result<c::ReadLease>{
+        if(graph){if(!controlled.valid()){HYLE_ASSIGN_OR_RETURN(controlled,g::batch::MaterializedInvocation::create(context,recipe,queue,{.max_output_bytes=2048,.leases={.allocator=metadata.get()}}));}HYLE_RETURN_IF_ERROR(controlled.prepare_batch(layout));HYLE_RETURN_IF_ERROR(controlled.bind(q,k,v));HYLE_ASSIGN_OR_RETURN(auto done,controlled.submit());HYLE_RETURN_IF_ERROR(done.wait());HYLE_ASSIGN_OR_RETURN(auto output,controlled.output());return output.storage_lease();}
+        if(!direct.valid()){HYLE_ASSIGN_OR_RETURN(direct,c::MaterializedBatchInvocation::create(context,recipe,queue,{.max_payload_bytes=1u<<20,.max_workspace_bytes=1u<<20,.allocator=metadata.get()}));}HYLE_RETURN_IF_ERROR(direct.prepare_batch(layout));HYLE_RETURN_IF_ERROR(direct.bind(q,k,v));HYLE_ASSIGN_OR_RETURN(auto done,direct.submit());HYLE_RETURN_IF_ERROR(done.wait());return direct.output();
+      };
+      const auto reader=[](const c::ReadLease&source,std::span<std::byte> bytes){return source.view()->read(bytes);};
+      const auto status=hyle_f5_ragged_journey::exercise(bf16,hyle::mem::system_resource(),metadata.get(),loader,prepare,copier,execute,reader,graph?"CPU Graph":"CPU Direct");if(!status.ok()){context.drain().IgnoreError();return status;}
+    }
+    HYLE_RETURN_IF_ERROR(require(metadata.used()==0,"ragged host controller metadata leaked"));
+  }return Status::Ok();
+}
+Status run(bool ragged_only=false){HYLE_ASSIGN_OR_RETURN(auto context,g::cpu::create_context());HYLE_ASSIGN_OR_RETURN(auto queue,context.create_queue());struct Drain{c::Context&context;~Drain(){context.drain().IgnoreError();}}drain{context};if(!ragged_only){for(bool paged:{true,false})for(bool bf16:{false,true})for(bool causal:{false,true})HYLE_RETURN_IF_ERROR(exercise(context,queue,paged,bf16,causal));HYLE_RETURN_IF_ERROR(hyle_f5_host_controller_fixture::run(context,queue));}HYLE_RETURN_IF_ERROR(ragged_append(context,queue));return context.drain();}
 #endif
 } // namespace
 #if !defined(HYLE_F5_NATIVE_FIXTURE_ONLY)
-int main(){const auto status=run();if(status.ok())return 0;char text[768]{};status.ToString(text,sizeof(text));std::fprintf(stderr,"F5 materialized CPU: %s\n",text);return 1;}
+int main(int argc,char**){std::setvbuf(stdout,nullptr,_IONBF,0);const auto status=run(argc>1);if(status.ok())return 0;char text[768]{};status.ToString(text,sizeof(text));std::fprintf(stderr,"F5 materialized CPU: %s\n",text);return 1;}
 #endif

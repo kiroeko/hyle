@@ -1,0 +1,16 @@
+CPU Direct ragged append F16 episode=0 first=0.250 second=0.625 PASS
+CPU Direct ragged append F16 episode=1 first=0.375 second=0.625 PASS
+CPU Direct ragged append F16 episode=2 first=0.250 second=0.625 PASS
+CPU Direct ragged append/F4/repacked-second-request F16 clone=2560 append=512 tail-init=1024 total=4096 PASS
+CPU Direct ragged append BF16 episode=0 first=0.250 second=0.625 PASS
+CPU Direct ragged append BF16 episode=1 first=0.375 second=0.625 PASS
+CPU Direct ragged append BF16 episode=2 first=0.250 second=0.625 PASS
+CPU Direct ragged append/F4/repacked-second-request BF16 clone=2560 append=512 tail-init=1024 total=4096 PASS
+CPU Graph ragged append F16 episode=0 first=0.250 second=0.625 PASS
+CPU Graph ragged append F16 episode=1 first=0.375 second=0.625 PASS
+CPU Graph ragged append F16 episode=2 first=0.250 second=0.625 PASS
+CPU Graph ragged append/F4/repacked-second-request F16 clone=2560 append=512 tail-init=1024 total=4096 PASS
+CPU Graph ragged append BF16 episode=0 first=0.250 second=0.625 PASS
+CPU Graph ragged append BF16 episode=1 first=0.375 second=0.625 PASS
+CPU Graph ragged append BF16 episode=2 first=0.250 second=0.625 PASS
+CPU Graph ragged append/F4/repacked-second-request BF16 clone=2560 append=512 tail-init=1024 total=4096 PASS

@@ -3,6 +3,7 @@
 #undef main
 #include <hyle/graph/batch.h>
 #include "native_arena_graph_consumer.h"
+#include "native_ragged_graph_append_consumer.h"
 namespace {
 namespace g=hyle::graph;namespace gb=g::batch;
 template<class T>Status graph_case(bool paged,unsigned depth,bool large){
@@ -64,6 +65,6 @@ template<class T>Status graph_case(bool paged,unsigned depth,bool large){
   }
   const auto end=std::chrono::steady_clock::now()+std::chrono::seconds(5);while(metadata.used()&&std::chrono::steady_clock::now()<end)std::this_thread::sleep_for(std::chrono::milliseconds(1));return require(metadata.used()==0,"Graph batch configuration/slot metadata leaked");
 }
-Status graph_run(){HYLE_RETURN_IF_ERROR(graph_case<half>(true,64,false));HYLE_RETURN_IF_ERROR(graph_case<__nv_bfloat16>(false,128,true));return hyle_f5_graph_arena_fixture::run();}
+Status graph_run(bool ragged_only=false){if(!ragged_only){HYLE_RETURN_IF_ERROR(graph_case<half>(true,64,false));HYLE_RETURN_IF_ERROR(graph_case<__nv_bfloat16>(false,128,true));HYLE_RETURN_IF_ERROR(hyle_f5_graph_arena_fixture::run());}return hyle_f5_cuda_ragged_graph_fixture::run();}
 } // namespace
-int main(){std::setvbuf(stdout,nullptr,_IONBF,0);const auto status=graph_run();if(status.ok())return 0;char text[768]{};status.ToString(text,sizeof(text));std::fprintf(stderr,"F5 Graph: %s\n",text);return 1;}
+int main(int argc,char**){std::setvbuf(stdout,nullptr,_IONBF,0);const auto status=graph_run(argc>1);if(status.ok())return 0;char text[768]{};status.ToString(text,sizeof(text));std::fprintf(stderr,"F5 Graph: %s\n",text);return 1;}
