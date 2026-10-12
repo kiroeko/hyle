@@ -1,0 +1,256 @@
+{
+  "candidate": "29d3c7a3ebe81f0e627986e2e8c8a393aa7832c8",
+  "snapshot": "29d3c7a3ebe81f0e627986e2e8c8a393aa7832c8",
+  "host": "air",
+  "profile": "vulkan",
+  "mode": "shared",
+  "source": "/Users/kiro/hyle-scratch/compute-unified/source-c8874688",
+  "producer": "/Users/kiro/hyle-scratch/compute-unified/a-vulkan/selected-graph/shared-sdk-build",
+  "identity": {
+    "hardware": "Mac16,12",
+    "memory": "17179869184",
+    "os": "ProductName:\t\tmacOS\nProductVersion:\t\t27.0.1\nBuildVersion:\t\t26A434",
+    "compiler": "Apple clang version 21.0.0 (clang-2100.3.34.2)\nTarget: arm64-apple-darwin27.0.0\nThread model: posix\nInstalledDir: /Library/Developer/CommandLineTools/usr/bin"
+  },
+  "test_parallel": 1,
+  "stages": [
+    {
+      "name": "configure",
+      "command": [
+        "/opt/homebrew/bin/cmake",
+        "-S",
+        "/Users/kiro/hyle-scratch/compute-unified/source-c8874688",
+        "-B",
+        "/Users/kiro/hyle-scratch/compute-unified/a-vulkan/selected-graph/shared-sdk-build",
+        "-G",
+        "Ninja",
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DCMAKE_CXX_COMPILER=/usr/bin/clang++",
+        "-DHYLE_COMPONENTS:STRING=compute;graph",
+        "-DHYLE_COMPUTE_ROUTES:STRING=vulkan",
+        "-DHYLE_BUILD_TESTS:BOOL=OFF",
+        "-DHYLE_BUILD_BENCH:BOOL=OFF",
+        "-DHYLE_INSTALL:BOOL=ON",
+        "-DHYLE_STATIC:BOOL=OFF"
+      ],
+      "pid": 63477,
+      "state": "terminal",
+      "available_bytes": 7356399616,
+      "log": "configure.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "elapsed": 13.313048458,
+      "sha256": "e323db2e6f5e5bd3739f7b4c8193f4b504dcfc57edce6fe1e4ca449b637c780c"
+    },
+    {
+      "name": "producer",
+      "command": [
+        "/opt/homebrew/bin/cmake",
+        "--build",
+        "/Users/kiro/hyle-scratch/compute-unified/a-vulkan/selected-graph/shared-sdk-build",
+        "--target",
+        "hyle_compute_state",
+        "hyle_graph_route_vulkan",
+        "--parallel",
+        "1"
+      ],
+      "pid": 63564,
+      "state": "terminal",
+      "available_bytes": 7267614720,
+      "log": "producer.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "elapsed": 0.8100194999999992,
+      "sha256": "a7d1015c783f745bf38724f676e67759ff1d0efedee88afa736d8d98b48f22e3"
+    },
+    {
+      "name": "install",
+      "command": [
+        "/opt/homebrew/bin/cmake",
+        "--install",
+        "/Users/kiro/hyle-scratch/compute-unified/a-vulkan/selected-graph/shared-sdk-build",
+        "--prefix",
+        "/Users/kiro/hyle-scratch/compute-unified/foundation-f4-native-sdk-vulkan-shared-29d3c7a3e/staging"
+      ],
+      "pid": 63586,
+      "state": "terminal",
+      "available_bytes": 7267778560,
+      "log": "install.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "elapsed": 0.307586208,
+      "sha256": "4a6d43030868f442e131434bf8beafb42cc563537acad8a12a9d08485854074c"
+    },
+    {
+      "name": "consumer-configure",
+      "command": [
+        "/opt/homebrew/bin/cmake",
+        "-S",
+        "/Users/kiro/hyle-scratch/compute-unified/foundation-f4-native-sdk-vulkan-shared-29d3c7a3e/consumer-source",
+        "-B",
+        "/Users/kiro/hyle-scratch/compute-unified/foundation-f4-native-sdk-vulkan-shared-29d3c7a3e/consumer",
+        "-G",
+        "Ninja",
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DCMAKE_CXX_COMPILER=/usr/bin/clang++",
+        "-DCMAKE_PREFIX_PATH=/Users/kiro/hyle-scratch/compute-unified/foundation-f4-native-sdk-vulkan-shared-29d3c7a3e/relocated",
+        "-DHYLE_COMPUTE_ROUTES=vulkan"
+      ],
+      "pid": 63609,
+      "state": "terminal",
+      "available_bytes": 7267254272,
+      "log": "consumer-configure.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "elapsed": 0.20532962499999918,
+      "sha256": "2316f0b3b20cb48d2d178071bc3357709375c41bb7c813b4607a71ad788f9500"
+    },
+    {
+      "name": "consumer-build",
+      "command": [
+        "/opt/homebrew/bin/cmake",
+        "--build",
+        "/Users/kiro/hyle-scratch/compute-unified/foundation-f4-native-sdk-vulkan-shared-29d3c7a3e/consumer",
+        "--parallel",
+        "1"
+      ],
+      "pid": 63669,
+      "state": "terminal",
+      "available_bytes": 7266910208,
+      "log": "consumer-build.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "elapsed": 1.8303562080000013,
+      "sha256": "227d6ab4109e5a65ba8cbf6033859421c171c9c48bc778f619b045e13a1abbbb"
+    },
+    {
+      "name": "dependencies-state",
+      "command": [
+        "/usr/bin/otool",
+        "-L",
+        "/Users/kiro/hyle-scratch/compute-unified/foundation-f4-native-sdk-vulkan-shared-29d3c7a3e/consumer/state"
+      ],
+      "pid": 63684,
+      "state": "terminal",
+      "available_bytes": 7267319808,
+      "log": "dependencies-state.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "elapsed": 0.011669333000000393,
+      "sha256": "6154ed986ab1fc23944158463fa7b5402f714592e2228a24683ace31dcd94697"
+    },
+    {
+      "name": "run-state",
+      "command": [
+        "/Users/kiro/hyle-scratch/compute-unified/foundation-f4-native-sdk-vulkan-shared-29d3c7a3e/consumer/state"
+      ],
+      "pid": 63688,
+      "state": "terminal",
+      "available_bytes": 7267155968,
+      "log": "run-state.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "elapsed": 5.6690535,
+      "sha256": "8c678a53107dee781e4ab2c374666abf16ad6d76b66de3f20e9bde90ad1363ee"
+    },
+    {
+      "name": "absence-cpu",
+      "command": [
+        "/opt/homebrew/bin/cmake",
+        "-S",
+        "/Users/kiro/hyle-scratch/compute-unified/foundation-f4-native-sdk-vulkan-shared-29d3c7a3e/absence-cpu",
+        "-B",
+        "/Users/kiro/hyle-scratch/compute-unified/foundation-f4-native-sdk-vulkan-shared-29d3c7a3e/absence-build-cpu",
+        "-G",
+        "Ninja",
+        "-DCMAKE_PREFIX_PATH=/Users/kiro/hyle-scratch/compute-unified/foundation-f4-native-sdk-vulkan-shared-29d3c7a3e/relocated"
+      ],
+      "pid": 63691,
+      "state": "terminal",
+      "available_bytes": 7245496320,
+      "log": "absence-cpu.log",
+      "exit_code": 1,
+      "verdict": "PASS_EXPECTED_ABSENT",
+      "elapsed": 0.2099814170000016,
+      "sha256": "a0aa44f32b663f6ac5dce0dd74b19dcbb2c3b17bed7a5fe53c116bcb755c88b9"
+    },
+    {
+      "name": "absence-cuda",
+      "command": [
+        "/opt/homebrew/bin/cmake",
+        "-S",
+        "/Users/kiro/hyle-scratch/compute-unified/foundation-f4-native-sdk-vulkan-shared-29d3c7a3e/absence-cuda",
+        "-B",
+        "/Users/kiro/hyle-scratch/compute-unified/foundation-f4-native-sdk-vulkan-shared-29d3c7a3e/absence-build-cuda",
+        "-G",
+        "Ninja",
+        "-DCMAKE_PREFIX_PATH=/Users/kiro/hyle-scratch/compute-unified/foundation-f4-native-sdk-vulkan-shared-29d3c7a3e/relocated"
+      ],
+      "pid": 63750,
+      "state": "terminal",
+      "available_bytes": 7245037568,
+      "log": "absence-cuda.log",
+      "exit_code": 1,
+      "verdict": "PASS_EXPECTED_ABSENT",
+      "elapsed": 0.20673845900000032,
+      "sha256": "aee5fc047f08dc513dcc29600762b143de708023898bff4f91ee7b1ca94598fc"
+    },
+    {
+      "name": "absence-apple",
+      "command": [
+        "/opt/homebrew/bin/cmake",
+        "-S",
+        "/Users/kiro/hyle-scratch/compute-unified/foundation-f4-native-sdk-vulkan-shared-29d3c7a3e/absence-apple",
+        "-B",
+        "/Users/kiro/hyle-scratch/compute-unified/foundation-f4-native-sdk-vulkan-shared-29d3c7a3e/absence-build-apple",
+        "-G",
+        "Ninja",
+        "-DCMAKE_PREFIX_PATH=/Users/kiro/hyle-scratch/compute-unified/foundation-f4-native-sdk-vulkan-shared-29d3c7a3e/relocated"
+      ],
+      "pid": 63809,
+      "state": "terminal",
+      "available_bytes": 7244677120,
+      "log": "absence-apple.log",
+      "exit_code": 1,
+      "verdict": "PASS_EXPECTED_ABSENT",
+      "elapsed": 0.21000366699999873,
+      "sha256": "5d909afffea04a9416495d1369d91d1df65ee550b77e8e8437e63c3b949c2477"
+    }
+  ],
+  "scope": "F4 candidate native-only ordinary State Direct/Graph consumer, new heads, absent CPU/routes, relocated loader; WSL software Vulkan package-only",
+  "relocation": {
+    "staging_absent": true,
+    "relocated": "/Users/kiro/hyle-scratch/compute-unified/foundation-f4-native-sdk-vulkan-shared-29d3c7a3e/relocated",
+    "Hyle_metadata_no_source_build_staging_paths": true
+  },
+  "actual_dyld": {
+    "run-state": [
+      "dyld[63688]: <F54335EA-91BD-3AC8-A904-C972FBD53336> /Users/kiro/hyle-scratch/compute-unified/foundation-f4-native-sdk-vulkan-shared-29d3c7a3e/relocated/lib/libhyle_compute_state.0.1.0.dylib",
+      "dyld[63688]: <8B10EE6F-F307-3664-A36E-3A753341DCA2> /Users/kiro/hyle-scratch/compute-unified/foundation-f4-native-sdk-vulkan-shared-29d3c7a3e/relocated/lib/libhyle_graph_route_vulkan.0.1.0.dylib",
+      "dyld[63688]: <41F719E8-3D7C-36FD-82D9-F30123007DC4> /Users/kiro/hyle-scratch/compute-unified/foundation-f4-native-sdk-vulkan-shared-29d3c7a3e/relocated/lib/libhyle_compute_route_vulkan.0.1.0.dylib",
+      "dyld[63688]: <58DF3A8C-EC8F-31F9-BA09-174F4E910C6C> /Users/kiro/hyle-scratch/compute-unified/foundation-f4-native-sdk-vulkan-shared-29d3c7a3e/relocated/lib/libhyle_compute_stream.0.1.0.dylib",
+      "dyld[63688]: <639FEF94-78B6-3963-9004-3871906D7981> /Users/kiro/hyle-scratch/compute-unified/foundation-f4-native-sdk-vulkan-shared-29d3c7a3e/relocated/lib/libhyle_io_core.0.1.0.dylib",
+      "dyld[63688]: <B38631A6-66A2-3A7F-8CB9-AFAFB4F8ABA1> /Users/kiro/hyle-scratch/compute-unified/foundation-f4-native-sdk-vulkan-shared-29d3c7a3e/relocated/lib/libhyle_sched.0.1.0.dylib",
+      "dyld[63688]: <78D2AB84-ABA8-397F-85D6-541F16B6A0D2> /Users/kiro/hyle-scratch/compute-unified/foundation-f4-native-sdk-vulkan-shared-29d3c7a3e/relocated/lib/libhyle_mem_vm.0.1.0.dylib",
+      "dyld[63688]: <47CCDD7A-5D58-3EA2-ACBA-C9198905C57D> /Users/kiro/hyle-scratch/compute-unified/foundation-f4-native-sdk-vulkan-shared-29d3c7a3e/relocated/lib/libhyle_platform_thread.0.1.0.dylib",
+      "dyld[63688]: <1DD379BC-25BD-3B9B-B3AC-C160B1513F5B> /Users/kiro/hyle-scratch/compute-unified/foundation-f4-native-sdk-vulkan-shared-29d3c7a3e/relocated/lib/libhyle_platform_fs.0.1.0.dylib",
+      "dyld[63688]: <BF554C74-1967-32FB-B11C-5C794E4936BD> /Users/kiro/hyle-scratch/compute-unified/foundation-f4-native-sdk-vulkan-shared-29d3c7a3e/relocated/lib/libhyle_time.0.1.0.dylib",
+      "dyld[63688]: <8B434A9B-1610-359C-8DF8-C604B0CF33EF> /Users/kiro/hyle-scratch/compute-unified/foundation-f4-native-sdk-vulkan-shared-29d3c7a3e/relocated/lib/libhyle_graph.0.1.0.dylib",
+      "dyld[63688]: <8ED4BF7B-DF66-3D33-AB0C-C1BDF2105D7C> /Users/kiro/hyle-scratch/compute-unified/foundation-f4-native-sdk-vulkan-shared-29d3c7a3e/relocated/lib/libhyle_compute.0.1.0.dylib",
+      "dyld[63688]: <1AF4C12C-5F54-3AE2-90C8-441FF528438C> /Users/kiro/hyle-scratch/compute-unified/foundation-f4-native-sdk-vulkan-shared-29d3c7a3e/relocated/lib/libhyle_container.0.1.0.dylib",
+      "dyld[63688]: <FC127C38-8573-3033-9EB3-F3CAB4955805> /Users/kiro/hyle-scratch/compute-unified/foundation-f4-native-sdk-vulkan-shared-29d3c7a3e/relocated/lib/libhyle_mem.0.1.0.dylib",
+      "dyld[63688]: <5526CB1C-D866-3680-870F-509DA4A0332D> /Users/kiro/hyle-scratch/compute-unified/foundation-f4-native-sdk-vulkan-shared-29d3c7a3e/relocated/lib/libhyle_platform.0.1.0.dylib",
+      "dyld[63688]: <CFAF5EBC-CBC7-3F05-9E36-089A2C3498C3> /Users/kiro/hyle-scratch/compute-unified/foundation-f4-native-sdk-vulkan-shared-29d3c7a3e/relocated/lib/libhyle_compute_ops.0.1.0.dylib",
+      "dyld[63688]: <BC34FF44-65A9-394A-882E-448D0AA70096> /Users/kiro/hyle-scratch/compute-unified/foundation-f4-native-sdk-vulkan-shared-29d3c7a3e/relocated/lib/libhyle_error.0.1.0.dylib",
+      "dyld[63688]: <A1CB8CCA-1043-3F14-9B44-51A205DD0DDD> /Users/kiro/hyle-scratch/compute-unified/foundation-f4-native-sdk-vulkan-shared-29d3c7a3e/relocated/lib/libhyle_compute_provider_iree_vulkan.0.1.0.dylib",
+      "dyld[63688]: <37C0BA21-2764-30C3-92CF-60BE3A2F1D55> /Users/kiro/hyle-scratch/compute-unified/foundation-f4-native-sdk-vulkan-shared-29d3c7a3e/relocated/lib/libhyle_compute_provider_ggml_vulkan.0.1.0.dylib",
+      "dyld[63688]: <79123E5E-A673-3777-9089-962BC45FF370> /Users/kiro/hyle-scratch/compute-unified/foundation-f4-native-sdk-vulkan-shared-29d3c7a3e/relocated/lib/libhyle_compute_ggml_runtime.0.1.0.dylib"
+    ]
+  },
+  "verdict": "PASS_FOUNDATION_F4_NATIVE_ONLY_AIR_VULKAN_SHARED_RELOCATED_SDK",
+  "raw_archive": {
+    "name": "raw-logs.zip",
+    "sha256": "5ef9b758f9bc0b322d5dce9e6deb1d6caac7a69e810c2f8a5973e4c9ebb62d3f",
+    "stage_hashes_refer_to": "original archive entries"
+  }
+}

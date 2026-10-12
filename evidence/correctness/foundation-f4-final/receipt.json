@@ -1,0 +1,604 @@
+{
+  "candidate": "29d3c7a3ebe81f0e627986e2e8c8a393aa7832c8",
+  "sdk_expected": 18,
+  "sdk_verified": 18,
+  "sdk": [
+    {
+      "path": "evidence\\correctness\\foundation-f4-sdk-windows-cpu-cuda-static",
+      "verdict": "PASS_ACTUAL_RUNTIME",
+      "cumulative_seconds": {
+        "identity": 0.04699999999957072,
+        "configure": 51.8119999999999,
+        "producer": 22.60900000000038,
+        "install": 2.563000000000102,
+        "consumer-configure": 50.21900000000005,
+        "consumer-build": 12.811999999999898,
+        "imports-state": 0.032000000000152795,
+        "run-state": 1.030999999999949,
+        "absence-apple": 0.6090000000003783,
+        "absence-vulkan": 0.6090000000003783
+      }
+    },
+    {
+      "path": "evidence\\correctness\\foundation-f4-sdk-windows-cpu-cuda-shared",
+      "verdict": "PASS_ACTUAL_RUNTIME",
+      "cumulative_seconds": {
+        "identity": 0.04699999999957072,
+        "configure": 57.6869999999999,
+        "producer": 21.78099999999995,
+        "install": 1.4070000000001528,
+        "consumer-configure": 48.95399999999972,
+        "consumer-build": 11.75,
+        "imports-state": 0.03099999999994907,
+        "run-state": 0.75,
+        "absence-apple": 0.625,
+        "absence-vulkan": 0.5779999999995198
+      }
+    },
+    {
+      "path": "evidence\\correctness\\foundation-f4-sdk-windows-cpu-vulkan-static",
+      "verdict": "PASS_ACTUAL_RUNTIME",
+      "cumulative_seconds": {
+        "identity": 0.04700000000048021,
+        "configure": 97.04699999999957,
+        "producer": 22.532000000000153,
+        "install": 2.375,
+        "consumer-configure": 12.092999999999847,
+        "consumer-build": 6.828000000000429,
+        "imports-state": 0.015000000000327418,
+        "run-state": 0.6559999999999491,
+        "absence-cuda": 0.6090000000003783,
+        "absence-apple": 0.6720000000004802
+      }
+    },
+    {
+      "path": "evidence\\correctness\\foundation-f4-sdk-windows-cpu-vulkan-shared",
+      "verdict": "PASS_ACTUAL_RUNTIME",
+      "cumulative_seconds": {
+        "identity": 0.04699999999957072,
+        "configure": 57.90700000000015,
+        "producer": 25.75,
+        "install": 1.219000000000051,
+        "consumer-configure": 12.45300000000043,
+        "consumer-build": 6.686999999999898,
+        "imports-state": 0.032000000000152795,
+        "run-state": 0.5929999999998472,
+        "absence-cuda": 0.6570000000001528,
+        "absence-apple": 0.6719999999995707
+      }
+    },
+    {
+      "path": "evidence\\correctness\\foundation-f4-sdk-wsl-cpu-cuda-static",
+      "verdict": "PASS_ACTUAL_RUNTIME",
+      "cumulative_seconds": {
+        "configure": 16.91311566899998,
+        "producer": 14.824050074000013,
+        "install": 0.26450149100003273,
+        "consumer-configure": 4.9744192,
+        "consumer-build": 4.547417165000013,
+        "dependencies-state": 0.016322392000006403,
+        "run-state": 0.7644516369999792,
+        "absence-apple": 0.11534908700002688,
+        "absence-vulkan": 0.11583898699996098
+      }
+    },
+    {
+      "path": "evidence\\correctness\\foundation-f4-sdk-wsl-cpu-cuda-shared",
+      "verdict": "PASS_ACTUAL_RUNTIME",
+      "cumulative_seconds": {
+        "configure": 11.243241912999963,
+        "producer": 14.527225919000045,
+        "install": 0.16421598599998788,
+        "consumer-configure": 5.113867859999971,
+        "consumer-build": 4.145141834000015,
+        "dependencies-state": 0.01615859100002126,
+        "run-state": 0.6561009259999651,
+        "absence-apple": 0.11598998599998822,
+        "absence-vulkan": 0.11556065499996748
+      }
+    },
+    {
+      "path": "evidence\\correctness\\foundation-f4-sdk-air-cpu-apple-static",
+      "verdict": "PASS_ACTUAL_RUNTIME",
+      "cumulative_seconds": {
+        "configure": 5.658266458,
+        "producer": 12.945548666999999,
+        "install": 0.44366462500000026,
+        "consumer-configure": 2.2817665419999997,
+        "consumer-build": 2.302467958000001,
+        "dependencies-state": 0.011881874999996711,
+        "run-state": 14.643874750000002,
+        "absence-cuda": 0.2684307500000003,
+        "absence-vulkan": 0.21009387499999832
+      }
+    },
+    {
+      "path": "evidence\\correctness\\foundation-f4-sdk-air-cpu-apple-shared",
+      "verdict": "PASS_ACTUAL_RUNTIME",
+      "cumulative_seconds": {
+        "configure": 5.519382209,
+        "producer": 13.322410667,
+        "install": 0.3849291249999993,
+        "consumer-configure": 1.2211197919999996,
+        "consumer-build": 2.3104749580000004,
+        "dependencies-state": 0.011851541999998716,
+        "run-state": 7.893276499999999,
+        "absence-cuda": 0.20659200000000055,
+        "absence-vulkan": 0.1999828749999999
+      }
+    },
+    {
+      "path": "evidence\\correctness\\foundation-f4-sdk-air-cpu-vulkan-static",
+      "verdict": "PASS_ACTUAL_RUNTIME",
+      "cumulative_seconds": {
+        "configure": 14.90706975,
+        "producer": 13.215403042,
+        "install": 0.5000876660000024,
+        "consumer-configure": 1.3331796249999996,
+        "consumer-build": 2.370621209000003,
+        "dependencies-state": 0.012146209000000852,
+        "run-state": 0.9823264589999994,
+        "absence-cuda": 0.2006073340000043,
+        "absence-apple": 0.19512020800000585
+      }
+    },
+    {
+      "path": "evidence\\correctness\\foundation-f4-sdk-air-cpu-vulkan-shared",
+      "verdict": "PASS_ACTUAL_RUNTIME",
+      "cumulative_seconds": {
+        "configure": 14.597902165999999,
+        "producer": 13.505734749999998,
+        "install": 0.38362783399999856,
+        "consumer-configure": 1.2676797499999992,
+        "consumer-build": 2.250583541000001,
+        "dependencies-state": 0.011782625000002156,
+        "run-state": 7.751528999999998,
+        "absence-cuda": 0.20190204100000386,
+        "absence-apple": 0.1971916250000021
+      }
+    },
+    {
+      "path": "evidence\\correctness\\foundation-f4-native-sdk-windows-vulkan-static",
+      "verdict": "PASS_ACTUAL_RUNTIME",
+      "cumulative_seconds": {
+        "identity": 0.046000000000276486,
+        "configure": 78.84400000000005,
+        "producer": 1.280999999999949,
+        "install": 0.7660000000005311,
+        "consumer-configure": 1.1869999999998981,
+        "consumer-build": 5.015999999999622,
+        "imports-state": 0.03099999999994907,
+        "run-state": 0.26599999999962165,
+        "absence-cpu": 0.625,
+        "absence-cuda": 0.6090000000003783,
+        "absence-apple": 0.6409999999996217
+      }
+    },
+    {
+      "path": "evidence\\correctness\\foundation-f4-native-sdk-windows-vulkan-shared",
+      "verdict": "PASS_ACTUAL_RUNTIME",
+      "cumulative_seconds": {
+        "identity": 0.046000000000276486,
+        "configure": 73.23400000000038,
+        "producer": 1.2659999999996217,
+        "install": 0.9220000000004802,
+        "consumer-configure": 0.7349999999996726,
+        "consumer-build": 4.921999999999571,
+        "imports-state": 0.032000000000152795,
+        "run-state": 0.25,
+        "absence-cpu": 0.5780000000004293,
+        "absence-cuda": 0.5779999999995198,
+        "absence-apple": 0.5940000000000509
+      }
+    },
+    {
+      "path": "evidence\\correctness\\foundation-f4-native-sdk-wsl-vulkan-static",
+      "verdict": "PASS_PACKAGE_ONLY",
+      "cumulative_seconds": {
+        "configure": 18.727386394999996,
+        "producer": 1.627811386000019,
+        "install": 0.06402637000002187,
+        "consumer-configure": 0.16474624200003518,
+        "consumer-build": 2.942005986999959,
+        "dependencies-state": 0.007823577999999998,
+        "absence-cpu": 0.1141655280000009,
+        "absence-cuda": 0.11424960300001885,
+        "absence-apple": 0.11442311299998664
+      }
+    },
+    {
+      "path": "evidence\\correctness\\foundation-f4-native-sdk-wsl-vulkan-shared",
+      "verdict": "PASS_PACKAGE_ONLY",
+      "cumulative_seconds": {
+        "configure": 16.64039741900001,
+        "producer": 1.6205626420000385,
+        "install": 0.06416018599998097,
+        "consumer-configure": 0.11408001000000922,
+        "consumer-build": 2.7693073500000196,
+        "dependencies-state": 0.007796866000035152,
+        "absence-cpu": 0.11487988199996835,
+        "absence-cuda": 0.11442665100003069,
+        "absence-apple": 0.1147231009999814
+      }
+    },
+    {
+      "path": "evidence\\correctness\\foundation-f4-native-sdk-air-apple-static",
+      "verdict": "PASS_ACTUAL_RUNTIME",
+      "cumulative_seconds": {
+        "configure": 3.269735667,
+        "producer": 0.7492242079999998,
+        "install": 0.37169604199999995,
+        "consumer-configure": 0.3208754589999998,
+        "consumer-build": 1.8891519159999994,
+        "dependencies-state": 0.011833917000000582,
+        "run-state": 14.578875750000002,
+        "absence-cpu": 0.24210354199999884,
+        "absence-cuda": 0.20740754199999856,
+        "absence-vulkan": 0.19862308400000117
+      }
+    },
+    {
+      "path": "evidence\\correctness\\foundation-f4-native-sdk-air-apple-shared",
+      "verdict": "PASS_ACTUAL_RUNTIME",
+      "cumulative_seconds": {
+        "configure": 2.951124042,
+        "producer": 0.7497892089999998,
+        "install": 0.25006866699999986,
+        "consumer-configure": 0.25515362500000016,
+        "consumer-build": 1.886051708,
+        "dependencies-state": 0.011854083000000237,
+        "run-state": 5.299778167,
+        "absence-cpu": 0.20542058299999866,
+        "absence-cuda": 0.21019354100000065,
+        "absence-vulkan": 0.19820304200000116
+      }
+    },
+    {
+      "path": "evidence\\correctness\\foundation-f4-native-sdk-air-vulkan-static",
+      "verdict": "PASS_ACTUAL_RUNTIME",
+      "cumulative_seconds": {
+        "configure": 13.63591275,
+        "producer": 0.8074480829999988,
+        "install": 0.43737354199999956,
+        "consumer-configure": 0.3126046250000005,
+        "consumer-build": 1.890107166,
+        "dependencies-state": 0.011952125000000535,
+        "run-state": 1.0904444170000005,
+        "absence-cpu": 0.19614999999999938,
+        "absence-cuda": 0.19593733299999982,
+        "absence-apple": 0.2052779170000001
+      }
+    },
+    {
+      "path": "evidence\\correctness\\foundation-f4-native-sdk-air-vulkan-shared",
+      "verdict": "PASS_ACTUAL_RUNTIME",
+      "cumulative_seconds": {
+        "configure": 13.313048458,
+        "producer": 0.8100194999999992,
+        "install": 0.307586208,
+        "consumer-configure": 0.20532962499999918,
+        "consumer-build": 1.8303562080000013,
+        "dependencies-state": 0.011669333000000393,
+        "run-state": 5.6690535,
+        "absence-cpu": 0.2099814170000016,
+        "absence-cuda": 0.20673845900000032,
+        "absence-apple": 0.21000366699999873
+      }
+    }
+  ],
+  "product_scope": "F4 only; not F5 or full engine",
+  "correctness": [
+    {
+      "path": "evidence\\correctness\\foundation-f4-source-windows-cpu-cuda",
+      "verdict": "PASS_FIXED_PRODUCT_ACTUAL_JOURNEY",
+      "cumulative_seconds": {
+        "configure": 173.88999999999987,
+        "build": 142.5950000000007,
+        "consumer": 4.187000000000353
+      },
+      "preserved_failures": [
+        {
+          "name": "consumer",
+          "exit_code": 1,
+          "elapsed": 0.8910000000000764
+        },
+        {
+          "name": "consumer-resume1",
+          "exit_code": 1,
+          "elapsed": 0.875
+        },
+        {
+          "name": "consumer-resume2",
+          "exit_code": 1,
+          "elapsed": 0.8119999999998981
+        }
+      ]
+    },
+    {
+      "path": "evidence\\correctness\\foundation-f4-source-windows-cpu-vulkan",
+      "verdict": "PASS_FIXED_PRODUCT_ACTUAL_JOURNEY",
+      "cumulative_seconds": {
+        "configure": 137.75,
+        "build": 37.28199999999924,
+        "consumer": 0.7650000000003274
+      },
+      "preserved_failures": [
+        {
+          "name": "build",
+          "exit_code": 2,
+          "elapsed": 28.53099999999995
+        },
+        {
+          "name": "build-resume1",
+          "exit_code": 2,
+          "elapsed": 2.4849999999996726
+        }
+      ]
+    },
+    {
+      "path": "evidence\\correctness\\foundation-f4-source-wsl-cpu-cuda",
+      "verdict": "PASS_FIXED_PRODUCT_ACTUAL_JOURNEY",
+      "cumulative_seconds": {
+        "configure": 16.803769359999997,
+        "build": 16.627651077,
+        "consumer": 0.7656083500000008
+      },
+      "preserved_failures": []
+    },
+    {
+      "path": "evidence\\correctness\\foundation-f4-source-air-cpu-apple",
+      "verdict": "PASS_FIXED_PRODUCT_ACTUAL_JOURNEY",
+      "cumulative_seconds": {
+        "configure": 6.081626958,
+        "build": 17.414869251000002,
+        "consumer": 16.496477
+      },
+      "preserved_failures": [
+        {
+          "name": "build",
+          "exit_code": 1,
+          "elapsed": 14.005303042000001
+        },
+        {
+          "name": "consumer",
+          "exit_code": 1,
+          "elapsed": 15.824141583
+        }
+      ]
+    },
+    {
+      "path": "evidence\\correctness\\foundation-f4-source-air-cpu-vulkan",
+      "verdict": "PASS_FIXED_PRODUCT_ACTUAL_JOURNEY",
+      "cumulative_seconds": {
+        "configure": 17.588100459000003,
+        "build": 51.882338459,
+        "consumer": 5.3652295419999945
+      },
+      "preserved_failures": []
+    },
+    {
+      "path": "evidence\\correctness\\foundation-f4-native-risk-windows-cpu-cuda",
+      "verdict": "PASS_FIXED_PRODUCT_ACTUAL_JOURNEY",
+      "cumulative_seconds": {
+        "configure": 52.29699999999957,
+        "build": 40.125,
+        "consumer": 0.39100000000053114
+      },
+      "preserved_failures": [
+        {
+          "name": "build",
+          "exit_code": 2,
+          "elapsed": 23.171000000000276
+        }
+      ]
+    },
+    {
+      "path": "evidence\\correctness\\foundation-f4-native-risk-wsl-cpu-cuda",
+      "verdict": "PASS_FIXED_PRODUCT_ACTUAL_JOURNEY",
+      "cumulative_seconds": {
+        "configure": 10.690484927999997,
+        "build": 16.01774829300001,
+        "consumer": 2.583795729000016
+      },
+      "preserved_failures": [
+        {
+          "name": "consumer",
+          "exit_code": -6,
+          "elapsed": 2.2190187409999993
+        }
+      ]
+    },
+    {
+      "path": "evidence\\correctness\\foundation-f4-native-risk-windows-cpu-vulkan",
+      "verdict": "PASS_FIXED_PRODUCT_ACTUAL_JOURNEY",
+      "cumulative_seconds": {
+        "configure": 55.98499999999967,
+        "build": 36.251000000000204,
+        "consumer": 96.03099999999904
+      },
+      "preserved_failures": [
+        {
+          "name": "consumer",
+          "exit_code": 4294967295,
+          "elapsed": 95.35899999999947
+        },
+        {
+          "name": "consumer-resume1",
+          "exit_code": 1,
+          "elapsed": 0.18800000000010186
+        }
+      ]
+    },
+    {
+      "path": "evidence\\correctness\\foundation-f4-native-risk-air-cpu-apple",
+      "verdict": "PASS_FIXED_PRODUCT_ACTUAL_JOURNEY",
+      "cumulative_seconds": {
+        "configure": 5.762172916,
+        "build": 14.499109459000001,
+        "consumer": 2.581589832999999
+      },
+      "preserved_failures": [
+        {
+          "name": "consumer",
+          "exit_code": 1,
+          "elapsed": 2.075508124999999
+        }
+      ]
+    },
+    {
+      "path": "evidence\\correctness\\foundation-f4-native-risk-air-cpu-vulkan",
+      "verdict": "PASS_FIXED_PRODUCT_ACTUAL_JOURNEY",
+      "cumulative_seconds": {
+        "configure": 17.786190833000003,
+        "build": 13.4777315,
+        "consumer": 2.0827005000000014
+      },
+      "preserved_failures": []
+    }
+  ],
+  "sanitizers": [
+    {
+      "mode": "asan",
+      "candidate": "29d3c7a3ebe81f0e627986e2e8c8a393aa7832c8",
+      "actual_cases": 24,
+      "archive": "asan-raw.zip",
+      "sha256": "5aa345205f4892bf25081d28e4e84f458bbd9cd4807382ee992228792e4e46eb",
+      "verdict": "PASS_F4_ASAN_24",
+      "preserved_failures": [],
+      "cumulative_seconds": {
+        "configure": 6.576642575000001,
+        "build": 5.133774669999994,
+        "tests": 0.11522420000000011
+      }
+    },
+    {
+      "mode": "ubsan",
+      "candidate": "29d3c7a3ebe81f0e627986e2e8c8a393aa7832c8",
+      "actual_cases": 24,
+      "archive": "ubsan-raw.zip",
+      "sha256": "120c8ac404dcb515792d17ab8e708be9fff4fbe7de9669c7940e9c7a51643bc3",
+      "verdict": "PASS_F4_UBSAN_24",
+      "preserved_failures": [],
+      "cumulative_seconds": {
+        "configure": 5.403149834000004,
+        "build": 3.9343737420000053,
+        "tests": 0.007963470999996503
+      }
+    },
+    {
+      "mode": "tsan",
+      "candidate": "29d3c7a3ebe81f0e627986e2e8c8a393aa7832c8",
+      "actual_cases": 24,
+      "archive": "tsan-raw.zip",
+      "sha256": "b4a59dc8cc6075bae5baccb375cceea469d7c22524fd57a643b479f640b5e731",
+      "verdict": "PASS_F4_TSAN_24",
+      "preserved_failures": [
+        {
+          "name": "tests",
+          "command": [
+            "/home/kiro/hyle-f1/sanitizers/tsan-03242e7723cb/bin/hyle_compute_state_test",
+            "--gtest_output=xml:/root/hyle-scratch/compute-unified/foundation-f4-tsan-29d3c7a3e/tests.xml"
+          ],
+          "pid": 975,
+          "state": "terminal",
+          "available_bytes": 32157487104,
+          "log": "tests.log",
+          "exit_code": 66,
+          "verdict": "FAIL",
+          "elapsed": 0.007654544999994073,
+          "sha256": "ffc44c5b3827d0cdfc5310ea6147bdb2d4d137979301642825e9e58b0ea726d9"
+        }
+      ],
+      "cumulative_seconds": {
+        "configure": 5.994583863000003,
+        "build": 3.5382170470000034,
+        "tests": 0.04007466800000259
+      }
+    }
+  ],
+  "common": {
+    "path": "evidence\\correctness\\foundation-f4-core-candidate",
+    "actual_gtest_count": 24,
+    "cumulative_seconds": {
+      "configure": 8.8900000000001,
+      "build": 33.00099999999952,
+      "test": 0.8600000000005821
+    },
+    "product_equivalence": "b1e37d75c product inputs match29d3c7a3e"
+  },
+  "p0": {
+    "path": "evidence\\performance\\foundation-f4-p0",
+    "loc": [
+      {
+        "id": "repository",
+        "label": "full repository code",
+        "code": 2505378,
+        "files": 6111,
+        "selected_files": 13126,
+        "paths": [
+          "Git-tracked files at immutable commit"
+        ],
+        "languages": [
+          "all languages recognized by cloc"
+        ]
+      },
+      {
+        "id": "self_without_tests",
+        "label": "self-written excluding tests",
+        "code": 171728,
+        "files": 700,
+        "selected_files": 786,
+        "paths": [
+          "include/hyle",
+          "src"
+        ],
+        "languages": [
+          "C++",
+          "C/C++ Header",
+          "C",
+          "CUDA",
+          "Objective-C++",
+          "GLSL"
+        ]
+      },
+      {
+        "id": "module",
+        "label": "module implementation (compute_state)",
+        "code": 1147,
+        "files": 5,
+        "selected_files": 6,
+        "paths": [
+          "src/compute_state",
+          "include/hyle/compute/state_versions.h",
+          "include/hyle/compute/state_clone.h",
+          "include/hyle/compute/detail/state_clone_access.h"
+        ],
+        "languages": [
+          "C++",
+          "C/C++ Header",
+          "C",
+          "CUDA",
+          "Objective-C++",
+          "GLSL"
+        ]
+      }
+    ],
+    "verdict": "PASS_STRUCTURAL_COST_ONLY"
+  },
+  "candidate_tree": "b0a1660130619dc8b6c5fa6de229f159cddbc645",
+  "audit_snapshot": "317cac64bf80796b47679de292e62136833f1324",
+  "reviewer": "root; separate candidate-after review; no subagent",
+  "date": "2026-10-12",
+  "verdict": "PASS_F4_01_06_AND_PACKAGE_SEAM; not F5 or whole goal",
+  "gates": {
+    "scope": "PASS",
+    "architecture": "PASS",
+    "correctness": "PASS",
+    "delivery": "PASS",
+    "usability_docs": "PASS",
+    "red_team": "PASS",
+    "engineering_performance": "PASS"
+  },
+  "performance_tier": "P0",
+  "closure_record": "docs/implementation/tasks/compute/foundation-f4-final-closure.md"
+}

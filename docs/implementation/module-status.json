@@ -270,10 +270,14 @@
     },
     {
       "module": "compute",
-      "state": "CANDIDATE",
-      "record": "docs/implementation/tasks/compute/foundation-f4-package-seam.md",
-      "summary": "F4 CANDIDATE：显式state集合/typed原F2 clone及Compute façade新增root固定；共同24项与四route真实source主/正交Direct+Graph通过，剩余三sanitizer/额外native风险/SDK/P0/终审待验；旧F1–F3/native算法范围保持，不运行全库算子。",
-      "candidate": "29d3c7a3ebe81f0e627986e2e8c8a393aa7832c8"
+      "state": "CLOSED",
+      "record": "docs/implementation/tasks/compute/foundation-f4-final-closure.md",
+      "summary": "F4 CLOSED：显式immutable集合/分享/dirty原F2 clone/成功发布/旧version与native-use保活，common24/三san及实际native故障、五source/18适用迁址SDK、P0/LOC/指南/红队通过；旧F1–F3与九package-only源码范围不改，F5/engine性能未代签。",
+      "candidate": "29d3c7a3ebe81f0e627986e2e8c8a393aa7832c8",
+      "performance": {
+        "tier": "P0",
+        "evidence": "evidence/performance/foundation-f4-p0/README.md"
+      }
     },
     {
       "module": "graph",
@@ -358,10 +362,14 @@
     },
     {
       "module": "compute_provider_onednn",
-      "state": "CANDIDATE",
-      "record": "docs/implementation/tasks/compute/foundation-f4-package-seam.md",
-      "summary": "F4 CANDIDATE：显式state集合/typed原F2 clone及Compute façade新增root固定；共同24项与四route真实source主/正交Direct+Graph通过，剩余三sanitizer/额外native风险/SDK/P0/终审待验；旧F1–F3/native算法范围保持，不运行全库算子。",
-      "candidate": "29d3c7a3ebe81f0e627986e2e8c8a393aa7832c8"
+      "state": "CLOSED",
+      "record": "docs/implementation/tasks/compute/foundation-f4-final-closure.md",
+      "summary": "F4 CLOSED：显式immutable集合/分享/dirty原F2 clone/成功发布/旧version与native-use保活，common24/三san及实际native故障、五source/18适用迁址SDK、P0/LOC/指南/红队通过；旧F1–F3与九package-only源码范围不改，F5/engine性能未代签。",
+      "candidate": "29d3c7a3ebe81f0e627986e2e8c8a393aa7832c8",
+      "performance": {
+        "tier": "P0",
+        "evidence": "evidence/performance/foundation-f4-p0/README.md"
+      }
     },
     {
       "module": "compute_provider_ggml",
@@ -398,31 +406,47 @@
     },
     {
       "module": "compute_backend_cpu",
-      "state": "CANDIDATE",
-      "record": "docs/implementation/tasks/compute/foundation-f4-package-seam.md",
-      "summary": "F4 CANDIDATE：显式state集合/typed原F2 clone及Compute façade新增root固定；共同24项与四route真实source主/正交Direct+Graph通过，剩余三sanitizer/额外native风险/SDK/P0/终审待验；旧F1–F3/native算法范围保持，不运行全库算子。",
-      "candidate": "29d3c7a3ebe81f0e627986e2e8c8a393aa7832c8"
+      "state": "CLOSED",
+      "record": "docs/implementation/tasks/compute/foundation-f4-final-closure.md",
+      "summary": "F4 CLOSED：显式immutable集合/分享/dirty原F2 clone/成功发布/旧version与native-use保活，common24/三san及实际native故障、五source/18适用迁址SDK、P0/LOC/指南/红队通过；旧F1–F3与九package-only源码范围不改，F5/engine性能未代签。",
+      "candidate": "29d3c7a3ebe81f0e627986e2e8c8a393aa7832c8",
+      "performance": {
+        "tier": "P0",
+        "evidence": "evidence/performance/foundation-f4-p0/README.md"
+      }
     },
     {
       "module": "compute_backend_cuda",
-      "state": "CANDIDATE",
-      "record": "docs/implementation/tasks/compute/foundation-f4-package-seam.md",
-      "summary": "F4 CANDIDATE：显式state集合/typed原F2 clone及Compute façade新增root固定；共同24项与四route真实source主/正交Direct+Graph通过，剩余三sanitizer/额外native风险/SDK/P0/终审待验；旧F1–F3/native算法范围保持，不运行全库算子。",
-      "candidate": "29d3c7a3ebe81f0e627986e2e8c8a393aa7832c8"
+      "state": "CLOSED",
+      "record": "docs/implementation/tasks/compute/foundation-f4-final-closure.md",
+      "summary": "F4 CLOSED：显式immutable集合/分享/dirty原F2 clone/成功发布/旧version与native-use保活，common24/三san及实际native故障、五source/18适用迁址SDK、P0/LOC/指南/红队通过；旧F1–F3与九package-only源码范围不改，F5/engine性能未代签。",
+      "candidate": "29d3c7a3ebe81f0e627986e2e8c8a393aa7832c8",
+      "performance": {
+        "tier": "P0",
+        "evidence": "evidence/performance/foundation-f4-p0/README.md"
+      }
     },
     {
       "module": "compute_provider_native",
-      "state": "CANDIDATE",
-      "record": "docs/implementation/tasks/compute/foundation-f4-package-seam.md",
-      "summary": "F4 CANDIDATE：显式state集合/typed原F2 clone及Compute façade新增root固定；共同24项与四route真实source主/正交Direct+Graph通过，剩余三sanitizer/额外native风险/SDK/P0/终审待验；旧F1–F3/native算法范围保持，不运行全库算子。",
-      "candidate": "29d3c7a3ebe81f0e627986e2e8c8a393aa7832c8"
+      "state": "CLOSED",
+      "record": "docs/implementation/tasks/compute/foundation-f4-final-closure.md",
+      "summary": "F4 CLOSED：显式immutable集合/分享/dirty原F2 clone/成功发布/旧version与native-use保活，common24/三san及实际native故障、五source/18适用迁址SDK、P0/LOC/指南/红队通过；旧F1–F3与九package-only源码范围不改，F5/engine性能未代签。",
+      "candidate": "29d3c7a3ebe81f0e627986e2e8c8a393aa7832c8",
+      "performance": {
+        "tier": "P0",
+        "evidence": "evidence/performance/foundation-f4-p0/README.md"
+      }
     },
     {
       "module": "compute_route_cpu",
-      "state": "CANDIDATE",
-      "record": "docs/implementation/tasks/compute/foundation-f4-package-seam.md",
-      "summary": "F4 CANDIDATE：显式state集合/typed原F2 clone及Compute façade新增root固定；共同24项与四route真实source主/正交Direct+Graph通过，剩余三sanitizer/额外native风险/SDK/P0/终审待验；旧F1–F3/native算法范围保持，不运行全库算子。",
-      "candidate": "29d3c7a3ebe81f0e627986e2e8c8a393aa7832c8"
+      "state": "CLOSED",
+      "record": "docs/implementation/tasks/compute/foundation-f4-final-closure.md",
+      "summary": "F4 CLOSED：显式immutable集合/分享/dirty原F2 clone/成功发布/旧version与native-use保活，common24/三san及实际native故障、五source/18适用迁址SDK、P0/LOC/指南/红队通过；旧F1–F3与九package-only源码范围不改，F5/engine性能未代签。",
+      "candidate": "29d3c7a3ebe81f0e627986e2e8c8a393aa7832c8",
+      "performance": {
+        "tier": "P0",
+        "evidence": "evidence/performance/foundation-f4-p0/README.md"
+      }
     },
     {
       "module": "graph_route_cpu",
@@ -471,10 +495,14 @@
     },
     {
       "module": "compute_route_cuda",
-      "state": "CANDIDATE",
-      "record": "docs/implementation/tasks/compute/foundation-f4-package-seam.md",
-      "summary": "F4 CANDIDATE：显式state集合/typed原F2 clone及Compute façade新增root固定；共同24项与四route真实source主/正交Direct+Graph通过，剩余三sanitizer/额外native风险/SDK/P0/终审待验；旧F1–F3/native算法范围保持，不运行全库算子。",
-      "candidate": "29d3c7a3ebe81f0e627986e2e8c8a393aa7832c8"
+      "state": "CLOSED",
+      "record": "docs/implementation/tasks/compute/foundation-f4-final-closure.md",
+      "summary": "F4 CLOSED：显式immutable集合/分享/dirty原F2 clone/成功发布/旧version与native-use保活，common24/三san及实际native故障、五source/18适用迁址SDK、P0/LOC/指南/红队通过；旧F1–F3与九package-only源码范围不改，F5/engine性能未代签。",
+      "candidate": "29d3c7a3ebe81f0e627986e2e8c8a393aa7832c8",
+      "performance": {
+        "tier": "P0",
+        "evidence": "evidence/performance/foundation-f4-p0/README.md"
+      }
     },
     {
       "module": "graph_route_cuda",
@@ -489,10 +517,14 @@
     },
     {
       "module": "compute_route_apple",
-      "state": "CANDIDATE",
-      "record": "docs/implementation/tasks/compute/foundation-f4-package-seam.md",
-      "summary": "F4 CANDIDATE：显式state集合/typed原F2 clone及Compute façade新增root固定；共同24项与四route真实source主/正交Direct+Graph通过，剩余三sanitizer/额外native风险/SDK/P0/终审待验；旧F1–F3/native算法范围保持，不运行全库算子。",
-      "candidate": "29d3c7a3ebe81f0e627986e2e8c8a393aa7832c8"
+      "state": "CLOSED",
+      "record": "docs/implementation/tasks/compute/foundation-f4-final-closure.md",
+      "summary": "F4 CLOSED：显式immutable集合/分享/dirty原F2 clone/成功发布/旧version与native-use保活，common24/三san及实际native故障、五source/18适用迁址SDK、P0/LOC/指南/红队通过；旧F1–F3与九package-only源码范围不改，F5/engine性能未代签。",
+      "candidate": "29d3c7a3ebe81f0e627986e2e8c8a393aa7832c8",
+      "performance": {
+        "tier": "P0",
+        "evidence": "evidence/performance/foundation-f4-p0/README.md"
+      }
     },
     {
       "module": "graph_route_apple",
@@ -507,10 +539,14 @@
     },
     {
       "module": "compute_route_vulkan",
-      "state": "CANDIDATE",
-      "record": "docs/implementation/tasks/compute/foundation-f4-package-seam.md",
-      "summary": "F4 CANDIDATE：显式state集合/typed原F2 clone及Compute façade新增root固定；共同24项与四route真实source主/正交Direct+Graph通过，剩余三sanitizer/额外native风险/SDK/P0/终审待验；旧F1–F3/native算法范围保持，不运行全库算子。",
-      "candidate": "29d3c7a3ebe81f0e627986e2e8c8a393aa7832c8"
+      "state": "CLOSED",
+      "record": "docs/implementation/tasks/compute/foundation-f4-final-closure.md",
+      "summary": "F4 CLOSED：显式immutable集合/分享/dirty原F2 clone/成功发布/旧version与native-use保活，common24/三san及实际native故障、五source/18适用迁址SDK、P0/LOC/指南/红队通过；旧F1–F3与九package-only源码范围不改，F5/engine性能未代签。",
+      "candidate": "29d3c7a3ebe81f0e627986e2e8c8a393aa7832c8",
+      "performance": {
+        "tier": "P0",
+        "evidence": "evidence/performance/foundation-f4-p0/README.md"
+      }
     },
     {
       "module": "graph_route_vulkan",
@@ -658,10 +694,14 @@
     },
     {
       "module": "compute_state",
-      "state": "CANDIDATE",
-      "summary": "F4 CANDIDATE：显式state集合/typed原F2 clone及Compute façade新增root固定；共同24项与四route真实source主/正交Direct+Graph通过，剩余三sanitizer/额外native风险/SDK/P0/终审待验；旧F1–F3/native算法范围保持，不运行全库算子。",
-      "record": "docs/implementation/tasks/compute/foundation-f4-state-versions.md",
-      "candidate": "29d3c7a3ebe81f0e627986e2e8c8a393aa7832c8"
+      "state": "CLOSED",
+      "summary": "F4 CLOSED：显式immutable集合/分享/dirty原F2 clone/成功发布/旧version与native-use保活，common24/三san及实际native故障、五source/18适用迁址SDK、P0/LOC/指南/红队通过；旧F1–F3与九package-only源码范围不改，F5/engine性能未代签。",
+      "record": "docs/implementation/tasks/compute/foundation-f4-final-closure.md",
+      "candidate": "29d3c7a3ebe81f0e627986e2e8c8a393aa7832c8",
+      "performance": {
+        "tier": "P0",
+        "evidence": "evidence/performance/foundation-f4-p0/README.md"
+      }
     }
   ]
 }
