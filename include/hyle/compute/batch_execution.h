@@ -29,6 +29,7 @@ struct BatchPlanReport final {
 namespace detail { struct BatchProgramData; struct BatchInvocationData; struct BatchGraphAccess; }
 class BatchInvocation;
 class PreparedBatch;
+class PagedArenaRead;
 // Cold, immutable native domain. Only explicit batch users acquire buffers,
 // slots or planning; ordinary operation and Graph v19 contracts are unchanged.
 class BatchProgram final {
@@ -96,6 +97,10 @@ public:
   // Q/K/V exact capacity descriptions; actual rows are from this layout.
   // Runs this prepared plan once. No plan/JIT/metadata reread occurs here.
   HYLE_COMPUTE_BATCH_API Result<Completion> run(std::span<const ReadLease> inputs) noexcept;
+  // Explicit paged arena footprint: Q is an ordinary lease, K/V retain only
+  // this prepared layout's actual physical pages through native retirement.
+  HYLE_COMPUTE_BATCH_API Result<Completion> run(const ReadLease&query,
+      const PagedArenaRead&keys,const PagedArenaRead&values) noexcept;
 private:
   friend class BatchInvocation;
   friend struct detail::BatchGraphAccess;

@@ -1,0 +1,24 @@
+HYLE batch oracle maxError=0.000125930453 PASS
+HYLE batch oracle maxError=6.26935057e-05 PASS
+HYLE batch oracle maxError=0.000125930453 PASS
+HYLE Direct paged F16 D64 native plan/update/run/old-result PASS
+HYLE batch oracle maxError=0.000213178406 PASS
+HYLE batch oracle maxError=0.000192357259 PASS
+HYLE batch oracle maxError=0.000195605147 PASS
+HYLE Direct paged BF16 D128 native plan/update/run/old-result PASS
+HYLE batch oracle maxError=0.000114918598 PASS
+HYLE batch oracle maxError=0.000114918598 PASS
+HYLE batch oracle maxError=0.000114918598 PASS
+HYLE Direct ragged F16 D64 native plan/update/run/old-result PASS
+HYLE batch oracle maxError=0.000206542791 PASS
+HYLE batch oracle maxError=0.000206542791 PASS
+HYLE batch oracle maxError=0.000206542791 PASS
+HYLE Direct ragged BF16 D128 native plan/update/run/old-result PASS
+native page branch oracle expected=0.250 PASS
+native page branch oracle expected=0.375 PASS
+native page branch oracle expected=0.250 PASS
+HYLE native paged arena F16 append/F4/publish/old-version/precise-page-use PASS; cloned=1024 appended=512 full-arena=4096
+native page branch oracle expected=0.250 PASS
+native page branch oracle expected=0.375 PASS
+native page branch oracle expected=0.250 PASS
+HYLE native paged arena BF16 append/F4/publish/old-version/precise-page-use PASS; cloned=1024 appended=512 full-arena=4096

@@ -263,7 +263,8 @@ writer；同backing的两个独立F1 block可以分别native-read和write，但�
   可原数学读，未改成员保持共享。计实际页copy/append/materialize bytes，失败prefix/取消/
   unknown不发布或误复用。具体F4目录/schema由consumer完整列明，不新建模型事务。
 
-P0：cold O(max physical pages) F1 slots/metadata，read预检/保活O(unique referenced pages)；
+P0：cold O(max physical pages) F1 slots/metadata；read显式冷排序/去重O(page refs log(page refs))，
+native permission保活O(unique referenced pages)；
 数学仍用原连续arena地址与page表，未使用页没有read权限，因此可在独立slot写入。原F1
 block计数保证old reader/native use阻止reuse。mutable writer弃用/accepted copy未结束时
 不得假空闲；无法证明ready者保留Unavailable/失败状态。无自动grow/页cache或热DAG遍历。
@@ -273,3 +274,28 @@ block计数保证old reader/native use阻止reuse。mutable writer弃用/accepte
 native read-use/abandon/close、真实F4 branch与普通single/multi request append/read；原CUDA
 Direct/Graph以及CPU/Apple/Vulkan explicit reference完整闭环/预算/数学oracle；原SDK/san/
 P0/guide/终审。全部预算与失败沿原根累计，不以新文件/提交重置。owner仍AUDITED。
+
+## AUDITED 逐页权限与原native Direct append首批
+
+[逐页/append证据](../../../../evidence/correctness/foundation-f5-paged-arena-first/README.md)：
+PagedArena/PagedPageWriter/PagedArenaRead已实现，Win实际32项与八头独立TU通过。原F1
+不同page block保证used页readonly/native use和free页writer独立；只trusted adapter可见
+continuous native capacity，Frame保same-layout/schema与exact actual页集合。独立schema/
+accounting backing owner不反持Pool；控制析构时冷detach原pool root，旧page/native guard
+继续保原allocation。真正最后reader/native use退休后，原固定pool重获页range，无grow。
+
+F4 ledger不能与arena各持readonly keeper后互等unique。本实现arena只保weak block/
+generation/ready事实，原Frame/StateVersion/NativeUse保真实reader；F4 collect后原pool才
+回收range，再以新generation获取writer。未提交writer恢复原权限；F2已consume后弃用者
+保Unavailable，不猜测完成。metadata quota在最后guard释放后0，ordinary对象字段不改。
+
+actual WSL RTX4070原FlashInfer native Direct F16/BF16各旧→新→旧三episode，独立uniform
+SDPA oracle0.25/0.375/0.25通过；保旧state/frame同时new physical page可写。原F2两phase
+显式clone→append边，clone K/V页1024bytes、append device rows512，whole K/V arena4096
+未复制。F4完整目录列K0/K1/V0/V1/layout，成功ready后dirty替换/expected-base publish，
+clean页继续原block分享；same query/KV indptr的native显式update证明plan reuse，不warm plan。
+
+原whole-read/view fixture FAIL、cold detach缺独立owner FATAL、MSVC ternary编译FAIL及
+CUDA错误退出资源早析构FATAL完整封存；最后者覆盖原拒绝Status，不凭猜测补填。产品
+仍AUDITED；ARENA-03只Direct有首批证据，Graph/private projected binding、CPU/Apple/
+Vulkan reference逐页消费、完整控制器/ragged旅程/其余风险/三交付/san/P0/guide/终审继续。

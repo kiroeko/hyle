@@ -1,6 +1,7 @@
 #include "hyle/compute/batch_execution.h"
 #include "hyle/compute/detail/batch_provider.h"
 #include "hyle/compute/detail/batch_graph_access.h"
+#include "hyle/compute/detail/paged_arena_access.h"
 #include "hyle/compute/detail/lease_access.h"
 #include "hyle/compute/detail/retained_completion.h"
 #include "hyle/core/assert.h"
@@ -75,11 +76,14 @@ Result<d::BatchWorkspaceViews> workspace_views(d::BatchInvocationData&s)noexcept
   if(s.output.valid()){HYLE_ASSIGN_OR_RETURN(views.output,s.output.view());}return views;
 }
 Result<Completion> submit_native(d::BatchInvocationData&s,bool planning,
-    std::span<const ReadLease> leases,std::span<const ConstTensorView> inputs,d::BatchWorkspaceViews views)noexcept{
+    std::span<const ReadLease> leases,std::span<const ConstTensorView> inputs,d::BatchWorkspaceViews views,
+    std::span<const ReadLease> key_pages={},std::span<const ReadLease> value_pages={})noexcept{
   if(!s.completion.available() || s.pending.load(std::memory_order_acquire) || s.uses.active_batches())
     return std::unexpected(Status::Unavailable("batch native slot or old completion retained"));
   HYLE_ASSIGN_OR_RETURN(auto use,s.uses.begin());
   for(const auto&lease:leases)HYLE_RETURN_IF_ERROR(use.read(lease));
+  for(const auto&lease:key_pages)HYLE_RETURN_IF_ERROR(use.read(lease));
+  for(const auto&lease:value_pages)HYLE_RETURN_IF_ERROR(use.read(lease));
   HYLE_RETURN_IF_ERROR(use.read(s.mirror_ready));
   HYLE_RETURN_IF_ERROR(use.write(s.float_workspace));HYLE_RETURN_IF_ERROR(use.write(s.int_workspace));
   if(planning)HYLE_RETURN_IF_ERROR(use.write(s.host_workspace));
@@ -160,7 +164,9 @@ Result<BatchInvocation> BatchInvocation::create(const BatchProgram&program,Queue
   const auto retain_domain=[&](LeasePool&pool){s->buffers->incref();d::LeaseAccess::retain_resource_owner(pool,s->buffers,[](void*p)noexcept{static_cast<d::BatchBuffers*>(p)->decref();});d::LeaseAccess::detach_pool_root(pool);};
   retain_domain(s->buffers->device);retain_domain(s->buffers->host);
   HYLE_ASSIGN_OR_RETURN(s->upload,CopyBatchInvocation::create(p->upload,queue));
-  HYLE_ASSIGN_OR_RETURN(s->uses,LeaseUsePool::create({.max_batches=1,.max_resources_per_batch=8,.allocator=p->allocator,.resource_budget=p->options.resource_budget}));
+  const auto refs=p->schema.capacity().max_page_refs;
+  if(refs>(UINT32_MAX-8u)/2u)return std::unexpected(Status::OutOfRange("batch page-use capacity overflow"));
+  HYLE_ASSIGN_OR_RETURN(s->uses,LeaseUsePool::create({.max_batches=1,.max_resources_per_batch=8u+2u*refs,.allocator=p->allocator,.resource_budget=p->options.resource_budget}));
   HYLE_ASSIGN_OR_RETURN(s->completion,d::RetainedCompletion::create(p->allocator));
   HYLE_RETURN_IF_ERROR(d::ProviderExtensionAccess::call(p->extension,[](void*context,const void*table,void*opaque)noexcept{
     auto&s=*static_cast<d::BatchInvocationData*>(opaque);return static_cast<const d::BatchProviderVTable*>(table)->create(context,s.program->schema.capacity(),s.program->options,s.program->allocator,&s.native);
@@ -242,6 +248,21 @@ Result<Completion> PreparedBatch::run(std::span<const ReadLease>leases)noexcept{
 }
 Result<BatchProgram> d::BatchGraphAccess::prepare(const Context&context,BatchSchema schema,BatchProgramOptions options,ProviderInstanceId instance)noexcept{
   return BatchProgram::prepare(context,std::move(schema),std::move(options),instance);
+}
+Result<Completion> PreparedBatch::run(const ReadLease&query,const PagedArenaRead&keys,const PagedArenaRead&values)noexcept{
+  if(!data_ || data_->closed || data_->failed || !data_->prepared || data_->ran || epoch_!=data_->epoch)
+    return std::unexpected(Status::FailedPrecondition("batch token is closed/stale/already consumed"));
+  auto&s=*data_;if(s.external_output || s.program->schema.capacity().storage!=BatchStorage::kPaged)
+    return std::unexpected(Status::FailedPrecondition("paged arena Direct needs its prepared paged native slot"));
+  if(keys.layout()!=s.layout || values.layout()!=s.layout)
+    return std::unexpected(Status::InvalidArgument("paged arena read layout differs from prepared metadata"));
+  HYLE_ASSIGN_OR_RETURN(auto descriptions,input_descriptions(s.program->schema.capacity()));std::array<ConstTensorView,3> inputs;
+  HYLE_ASSIGN_OR_RETURN(inputs[0],query.tensor(descriptions[0]));HYLE_ASSIGN_OR_RETURN(inputs[1],d::PagedArenaAccess::tensor(keys));HYLE_ASSIGN_OR_RETURN(inputs[2],d::PagedArenaAccess::tensor(values));
+  for(std::size_t i=1;i<3;++i)if(inputs[i].description()!=descriptions[i] || inputs[i].storage().resource()!=s.program->options.resource)
+    return std::unexpected(Status::InvalidArgument("paged arena capacity/resource differs from native slot"));
+  HYLE_ASSIGN_OR_RETURN(auto views,workspace_views(s));const std::array ordinary{query};
+  auto submitted=submit_native(s,false,ordinary,inputs,views,d::PagedArenaAccess::pages(keys),d::PagedArenaAccess::pages(values));
+  if(!submitted){s.failed=true;s.prepared=false;return std::unexpected(submitted.error());}s.ran=true;s.prepared=false;return std::move(*submitted);
 }
 Result<BatchInvocation> d::BatchGraphAccess::create(const BatchProgram&program,Queue&queue)noexcept{return BatchInvocation::create(program,queue,true);}
 Result<ReadLease> d::BatchGraphAccess::metadata(const BatchInvocation&invocation)noexcept{

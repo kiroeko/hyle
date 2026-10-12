@@ -556,10 +556,11 @@ _hyle_declare_component(compute_state
     PRIVATE_DEPS core util_core
     PUBLIC_DEPS compute compute_ops error mem
     PUBLIC_TYPE_DEPS compute compute_ops error mem
-    TEST_DEPS compute_state
+    TEST_DEPS compute_state compute_backend_cpu
     SPLIT_PUBLIC_HEADERS hyle/compute/batch_layout.h hyle/compute/batch_ops.h
       hyle/compute/batch_execution.h hyle/compute/detail/batch_provider.h
-      hyle/compute/detail/batch_graph_access.h hyle/compute/batch_materialize.h)
+      hyle/compute/detail/batch_graph_access.h hyle/compute/batch_materialize.h
+      hyle/compute/paged_arena.h hyle/compute/detail/paged_arena_access.h)
   _hyle_declare_component(graph_batch
     PRIVATE_DEPS core util_core
     PUBLIC_DEPS graph compute_batch compute error mem

@@ -12,6 +12,7 @@
 #include <thread>
 #include <type_traits>
 #include <vector>
+#include "native_arena_direct_consumer.h"
 
 namespace {
 namespace c=hyle::compute;namespace cu=c::cuda;
@@ -72,7 +73,9 @@ template<class T>Status exercise(c::Context&context,c::Queue&queue,cu::MemoryRes
   std::printf("HYLE Direct %s %s D%u native plan/update/run/old-result PASS\n",paged?"paged":"ragged",std::is_same_v<T,half>?"F16":"BF16",depth);return Status::Ok();
 }
 Status run(){hyle::mem::QuotaAllocator metadata(hyle::mem::system_allocator());HYLE_ASSIGN_OR_RETURN(auto device_id,cu::device(0));HYLE_ASSIGN_OR_RETURN(auto context,c::Context::create(device_id,c::flashinfer::provider()));HYLE_ASSIGN_OR_RETURN(auto queue,context.create_queue());HYLE_ASSIGN_OR_RETURN(auto device,cu::MemoryResource::create(context,cu::MemoryKind::kDevice));HYLE_ASSIGN_OR_RETURN(auto host,cu::MemoryResource::create(context,cu::MemoryKind::kPinnedHost));
+  struct DrainBeforeResources{c::Context&context;~DrainBeforeResources(){context.drain().IgnoreError();}}drain_before_resources{context};
   for(auto paged:{true,false}){HYLE_RETURN_IF_ERROR(exercise<half>(context,queue,device,host,metadata.get(),paged,64,false));HYLE_RETURN_IF_ERROR(exercise<__nv_bfloat16>(context,queue,device,host,metadata.get(),paged,128,true));}
+  HYLE_RETURN_IF_ERROR(hyle_f5_arena_fixture::run(context,queue,device,host,metadata.get()));
   HYLE_RETURN_IF_ERROR(context.drain());const auto deadline=std::chrono::steady_clock::now()+std::chrono::seconds(5);while(metadata.used()&&std::chrono::steady_clock::now()<deadline)std::this_thread::sleep_for(std::chrono::milliseconds(1));HYLE_RETURN_IF_ERROR(require(metadata.used()==0,"batch metadata/provider/root ownership leaked"));return Status::Ok();}
 } // namespace
-int main(){const auto status=run();if(status.ok())return 0;char text[768]{};status.ToString(text,sizeof(text));std::fprintf(stderr,"F5 native Direct: %s\n",text);return 1;}
+int main(){std::setvbuf(stdout,nullptr,_IONBF,0);const auto status=run();if(status.ok())return 0;char text[768]{};status.ToString(text,sizeof(text));std::fprintf(stderr,"F5 native Direct: %s\n",text);return 1;}

@@ -621,7 +621,7 @@
     {
       "module": "compute_batch",
       "state": "AUDITED",
-      "summary": "F5 AUDITED实施：typed schema/owned layout与原F1/F2 batch执行shell、同slot mirror/epoch、explicit prepare/update/run/旧结果容量已接；Win23项/六头、WSL原native Direct与Graph有限旅程、Win/WSL CPU explicit materialize Direct/Graph各16oracle通过，Apple/Vulkan native reference各48oracle通过，完整控制器/append/故障/交付/san/终审未完成。",
+      "summary": "F5 AUDITED实施：typed布局/原native规划与reference四路线首批已验；逐页arena/32项八头、CUDA Direct实际页clone+append/F4发布及旧版六oracle通过；Graph/reference逐页桥、完整控制器/ragged/故障/SDK/san/终审未完成。",
       "record": "docs/implementation/tasks/compute/foundation-f5-paged-ragged-batch.md"
     },
     {
