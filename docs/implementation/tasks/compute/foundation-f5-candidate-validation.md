@@ -60,12 +60,26 @@ Compute/Graph不含SIMD，本批次数学不需要它。只把固定0/.125/.25/.
 为明确F16/BF16 word，不加产品边/API或新数学；原FAIL与同root预算保留，消费者重编译。
 product candidate77df未变，当前测试可补但资格按各实际fixture hash区分。
 
-当前SDK8/18：25e已完成Linux和Windows cpu,cuda static/shared的link修复后重新资格，
+当前SDK18/18矩阵齐：actual Air四SKU各static/shared共八格全部公开Direct/Graph/
+迁址/头/缺route/loader PASS，Apple-only证据为
+[static](../../../../evidence/correctness/foundation-f5-sdk-air-apple-static/README.md)与
+[shared](../../../../evidence/correctness/foundation-f5-sdk-air-apple-shared/README.md)。cpu,vulkan
+[static证据](../../../../evidence/correctness/foundation-f5-sdk-air-cpu-vulkan-static/README.md)与
+[shared证据](../../../../evidence/correctness/foundation-f5-sdk-air-cpu-vulkan-shared/README.md)独立签实际MoltenVK。
+Vulkan-only [static证据](../../../../evidence/correctness/foundation-f5-sdk-air-vulkan-static/README.md)与
+[shared证据](../../../../evidence/correctness/foundation-f5-sdk-air-vulkan-shared/README.md)不含CPU factor。
+证据为[static](../../../../evidence/correctness/foundation-f5-sdk-air-cpu-apple-static/README.md)与
+[shared](../../../../evidence/correctness/foundation-f5-sdk-air-cpu-apple-shared/README.md)。
+25e已完成Linux和Windows cpu,cuda static/shared的link修复后重新资格，
 shared原具名link FAIL已实际修复；Windows新negative factory门也PASS，证据见
 [static](../../../../evidence/correctness/foundation-f5-sdk-windows-cpu-cuda-static-link-recheck/README.md)
 与[shared](../../../../evidence/correctness/foundation-f5-sdk-windows-cpu-cuda-shared-link-recheck/README.md)。
 Win Vulkan四格不含此次CUDA seam，[精确图/输入映射](../../../../evidence/architecture/foundation-f5-cuda-link-impact/README.md)
-保留其新candidate资格，不冒充新run。其他10格仍NOT_RUN。
+保留其新candidate资格，不冒充新run。WSL Vulkan
+[static](../../../../evidence/correctness/foundation-f5-sdk-wsl-vulkan-static/README.md)与
+[shared](../../../../evidence/correctness/foundation-f5-sdk-wsl-vulkan-shared/README.md)软件设备包/loader
+PASS，不签GPU数学。源头缺席符号/native host-control san/P0/LOC/guide/红队等原待办仍保留，
+18格齐不等于完整F5 CLOSED。
 Windows CUDA native batch只签
 具名拒绝，数学资格不冒充Linux FlashInfer。common33 ASan/UBSan/
 TSan均PASS，TSan启动exit66与process-local ASLR恢复保留；CPU控制器补验见下文，native

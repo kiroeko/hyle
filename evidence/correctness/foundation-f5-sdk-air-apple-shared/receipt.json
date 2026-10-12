@@ -1,0 +1,528 @@
+{
+  "candidate": "25e4fb398e2a782ee60f916c3c6351c4736b6eda",
+  "stage": "CANDIDATE actual Air public CPU/native Direct/Graph relocated SDK; not final closure",
+  "raw_sha256": "01b0414d3424c499f48451e31d88138ab94d30c78ec014778ccf19e3b04f0741",
+  "job": {
+    "candidate": "25e4fb398e2a782ee60f916c3c6351c4736b6eda",
+    "snapshot": "80738b4a7",
+    "host": "air",
+    "profile": "apple",
+    "mode": "shared",
+    "source": "/Users/kiro/hyle-scratch/compute-unified/source-c8874688",
+    "producer": "/Users/kiro/hyle-scratch/compute-unified/a-apple/selected-graph/shared-sdk-build",
+    "identity": {
+      "hardware": "Mac16,12",
+      "memory": "17179869184",
+      "os": "ProductName:\t\tmacOS\nProductVersion:\t\t27.0.1\nBuildVersion:\t\t26A434",
+      "compiler": "Apple clang version 21.0.0 (clang-2100.3.34.2)\nTarget: arm64-apple-darwin27.0.0\nThread model: posix\nInstalledDir: /Library/Developer/CommandLineTools/usr/bin"
+    },
+    "test_parallel": 1,
+    "stages": [
+      {
+        "name": "configure",
+        "command": [
+          "/opt/homebrew/bin/cmake",
+          "-S",
+          "/Users/kiro/hyle-scratch/compute-unified/source-c8874688",
+          "-B",
+          "/Users/kiro/hyle-scratch/compute-unified/a-apple/selected-graph/shared-sdk-build",
+          "-G",
+          "Ninja",
+          "-DCMAKE_BUILD_TYPE=Release",
+          "-DCMAKE_CXX_COMPILER=/usr/bin/clang++",
+          "-DHYLE_COMPONENTS:STRING=compute;graph",
+          "-DHYLE_COMPUTE_ROUTES:STRING=apple",
+          "-DHYLE_BUILD_TESTS:BOOL=OFF",
+          "-DHYLE_BUILD_BENCH:BOOL=OFF",
+          "-DHYLE_INSTALL:BOOL=ON",
+          "-DHYLE_STATIC:BOOL=OFF"
+        ],
+        "pid": 71508,
+        "state": "terminal",
+        "available_bytes": 7038074880,
+        "log": "configure.log",
+        "exit_code": 0,
+        "verdict": "PASS",
+        "elapsed": 2.8338145,
+        "sha256": "3ea74a7686270bdf769f4f91ad3ccd8898d3c172a5130fd0167751cd366e678e"
+      },
+      {
+        "name": "producer",
+        "command": [
+          "/opt/homebrew/bin/cmake",
+          "--build",
+          "/Users/kiro/hyle-scratch/compute-unified/a-apple/selected-graph/shared-sdk-build",
+          "--target",
+          "hyle_compute_batch",
+          "hyle_graph_batch",
+          "hyle_graph_route_apple",
+          "--parallel",
+          "1"
+        ],
+        "pid": 71572,
+        "state": "terminal",
+        "available_bytes": 7042039808,
+        "log": "producer.log",
+        "exit_code": 0,
+        "verdict": "PASS",
+        "elapsed": 28.200333708,
+        "sha256": "98e8563452b4a61dd037f5b027eded186f89827b28c3aaa83409bebb6629df21"
+      },
+      {
+        "name": "install",
+        "command": [
+          "/opt/homebrew/bin/cmake",
+          "--install",
+          "/Users/kiro/hyle-scratch/compute-unified/a-apple/selected-graph/shared-sdk-build",
+          "--prefix",
+          "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-sdk-apple-shared-77df1c10c/staging"
+        ],
+        "pid": 71702,
+        "state": "terminal",
+        "available_bytes": 7162150912,
+        "log": "install.log",
+        "exit_code": 0,
+        "verdict": "PASS",
+        "elapsed": 0.26265812499999797,
+        "sha256": "ada082f8c54b306253ecf111d9fda6307d2562b6f5a79522a2a0a5672054bd8a"
+      },
+      {
+        "name": "consumer-configure",
+        "command": [
+          "/opt/homebrew/bin/cmake",
+          "-S",
+          "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-sdk-apple-shared-77df1c10c/consumer-source",
+          "-B",
+          "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-sdk-apple-shared-77df1c10c/consumer",
+          "-G",
+          "Ninja",
+          "-DCMAKE_BUILD_TYPE=Release",
+          "-DCMAKE_CXX_COMPILER=/usr/bin/clang++",
+          "-DCMAKE_PREFIX_PATH=/Users/kiro/hyle-scratch/compute-unified/foundation-f5-sdk-apple-shared-77df1c10c/relocated",
+          "-DHYLE_COMPUTE_ROUTES=apple"
+        ],
+        "pid": 71727,
+        "state": "terminal",
+        "available_bytes": 7161495552,
+        "log": "consumer-configure.log",
+        "exit_code": 0,
+        "verdict": "PASS",
+        "elapsed": 0.2501303340000014,
+        "sha256": "7b0945edb6ca7273e1a7554edcff904f0bb94302948b1b9d1784a8572ca3e7f5"
+      },
+      {
+        "name": "consumer-build",
+        "command": [
+          "/opt/homebrew/bin/cmake",
+          "--build",
+          "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-sdk-apple-shared-77df1c10c/consumer",
+          "--parallel",
+          "1"
+        ],
+        "pid": 71787,
+        "state": "terminal",
+        "available_bytes": 7160987648,
+        "log": "consumer-build.log",
+        "exit_code": 0,
+        "verdict": "PASS",
+        "elapsed": 4.591741709000004,
+        "sha256": "fc9562891fcb12d611c09d485eb376e0534caefa19c8f30be171b219dfe48c31"
+      },
+      {
+        "name": "dependencies-native",
+        "command": [
+          "/usr/bin/otool",
+          "-L",
+          "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-sdk-apple-shared-77df1c10c/consumer/native"
+        ],
+        "pid": 71826,
+        "state": "terminal",
+        "available_bytes": 7161118720,
+        "log": "dependencies-native.log",
+        "exit_code": 0,
+        "verdict": "PASS",
+        "elapsed": 0.012021750000002385,
+        "sha256": "bb9f0895dfc0c64032eb2b8477e9900f7d13a99bfa6add649f4acea955ad854c"
+      },
+      {
+        "name": "run-native",
+        "command": [
+          "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-sdk-apple-shared-77df1c10c/consumer/native"
+        ],
+        "pid": 71830,
+        "state": "terminal",
+        "available_bytes": 7161102336,
+        "log": "run-native.log",
+        "exit_code": 0,
+        "verdict": "PASS",
+        "elapsed": 6.373595709,
+        "sha256": "a145eedb00a365443b990724d40ac24eab80aea4dd3473bc016c758ce2b25425"
+      },
+      {
+        "name": "absence-cpu",
+        "command": [
+          "/opt/homebrew/bin/cmake",
+          "-S",
+          "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-sdk-apple-shared-77df1c10c/absence-cpu",
+          "-B",
+          "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-sdk-apple-shared-77df1c10c/absence-build-cpu",
+          "-G",
+          "Ninja",
+          "-DCMAKE_PREFIX_PATH=/Users/kiro/hyle-scratch/compute-unified/foundation-f5-sdk-apple-shared-77df1c10c/relocated"
+        ],
+        "pid": 71833,
+        "state": "terminal",
+        "available_bytes": 7167229952,
+        "log": "absence-cpu.log",
+        "exit_code": 1,
+        "verdict": "PASS_EXPECTED_ABSENT",
+        "elapsed": 0.19919887500000044,
+        "sha256": "de0079447b494ad08fbb9d4b8cf416fcc5c7d157d7f8c4372912054220a810b4"
+      },
+      {
+        "name": "absence-cuda",
+        "command": [
+          "/opt/homebrew/bin/cmake",
+          "-S",
+          "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-sdk-apple-shared-77df1c10c/absence-cuda",
+          "-B",
+          "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-sdk-apple-shared-77df1c10c/absence-build-cuda",
+          "-G",
+          "Ninja",
+          "-DCMAKE_PREFIX_PATH=/Users/kiro/hyle-scratch/compute-unified/foundation-f5-sdk-apple-shared-77df1c10c/relocated"
+        ],
+        "pid": 71892,
+        "state": "terminal",
+        "available_bytes": 7167148032,
+        "log": "absence-cuda.log",
+        "exit_code": 1,
+        "verdict": "PASS_EXPECTED_ABSENT",
+        "elapsed": 0.20657258299999626,
+        "sha256": "c1d5504c105043e69ce48b7a60f3b06e32a4dd67fadf72b48d7876472b6acaa4"
+      },
+      {
+        "name": "absence-vulkan",
+        "command": [
+          "/opt/homebrew/bin/cmake",
+          "-S",
+          "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-sdk-apple-shared-77df1c10c/absence-vulkan",
+          "-B",
+          "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-sdk-apple-shared-77df1c10c/absence-build-vulkan",
+          "-G",
+          "Ninja",
+          "-DCMAKE_PREFIX_PATH=/Users/kiro/hyle-scratch/compute-unified/foundation-f5-sdk-apple-shared-77df1c10c/relocated"
+        ],
+        "pid": 71951,
+        "state": "terminal",
+        "available_bytes": 7167295488,
+        "log": "absence-vulkan.log",
+        "exit_code": 1,
+        "verdict": "PASS_EXPECTED_ABSENT",
+        "elapsed": 0.2046612500000009,
+        "sha256": "9b3f1e993a558f0fcc9a1351c0452569c1044545dbc5a19df093c36c065adba4"
+      }
+    ],
+    "scope": "F5 candidate ordinary public Batch Direct/Graph, selected heads/absence/relocation/loader; WSL Vulkan package-only",
+    "inputs": {
+      "candidate": "25e4fb398e2a782ee60f916c3c6351c4736b6eda",
+      "base_manifest": "29d3c7a3ebe81f0e627986e2e8c8a393aa7832c8",
+      "direction": "Windows canonical -> Air disposable only",
+      "inputs": [
+        {
+          "path": "cmake/HyleComponents.cmake",
+          "sha256": "8b19cf0328a40704dec7768156b9f90d382ead6bb27f4dc4f1a680089b5cac25"
+        },
+        {
+          "path": "include/hyle/compute/apple.h",
+          "sha256": "8abdb414b5fce2bf8bfb2a275f3f4f253da2f607c4942f27936c15bfe074154a"
+        },
+        {
+          "path": "include/hyle/compute/apple_batch.h",
+          "sha256": "cd256de9121b04eeb8d4acd1f385893859dd27e74a515f2dfbc1bd458f88e227"
+        },
+        {
+          "path": "include/hyle/compute/batch_execution.h",
+          "sha256": "a6ddc0c55fe71bc1715aa9a358aee0d34ffce3f866fc2d4f6ca7ade838306752"
+        },
+        {
+          "path": "include/hyle/compute/batch_layout.h",
+          "sha256": "654d7d3aedcbb9e50532e137ea3d89bb8aa0c5f5697879d4ff79455843fe5402"
+        },
+        {
+          "path": "include/hyle/compute/batch_materialize.h",
+          "sha256": "20b5bf296f10e6f2dd63c08334e1563caa300bb6c44733ad409c76c7ee147bb7"
+        },
+        {
+          "path": "include/hyle/compute/batch_ops.h",
+          "sha256": "fe837a188f82beb01570a817ce5fdaa804ee7abbe24a7aa64d48c31522f0d7c0"
+        },
+        {
+          "path": "include/hyle/compute/cuda.h",
+          "sha256": "13757830a7d376d94d9ffc1993dd56b6872d5c7168961eb630c014e1efa57fa6"
+        },
+        {
+          "path": "include/hyle/compute/detail/apple_batch_access.h",
+          "sha256": "a95da58c17a2bd565c5019b306fb0e7f47af3e826df692df9af37747173fd817"
+        },
+        {
+          "path": "include/hyle/compute/detail/batch_graph_access.h",
+          "sha256": "5fd73efbbe44befba9f4359550eb45a5fc5b24b583750faacbb8398de0c83184"
+        },
+        {
+          "path": "include/hyle/compute/detail/batch_provider.h",
+          "sha256": "1850c8e70ec085f83b6480bcac367c55a83b4a984dcc2cc6baf19e776872c146"
+        },
+        {
+          "path": "include/hyle/compute/detail/lease_access.h",
+          "sha256": "a51b7fd93c33f76820189c18ae37377d49b7aa320399dc32a75c78a2d6c10e18"
+        },
+        {
+          "path": "include/hyle/compute/detail/materialized_native_controller.h",
+          "sha256": "1ce8b83b0ad37f0012d5ea1fcb16331866274b8b5b4c456a78f1fb5ba0bd99ae"
+        },
+        {
+          "path": "include/hyle/compute/detail/paged_arena_access.h",
+          "sha256": "a1f07762dab2d3aa6cdca1f04a0a611a57deebd6e2c20cd64488e1009b3b40f7"
+        },
+        {
+          "path": "include/hyle/compute/detail/vulkan_batch_access.h",
+          "sha256": "50f4ee81a898193dd665f799caa922b7cfc385aa99943071ca30fa38533f3cbe"
+        },
+        {
+          "path": "include/hyle/compute/paged_arena.h",
+          "sha256": "b6177829901b03735ef1f9bf45adc50e58933243c0ad6f19b509fc8eca1a5fdc"
+        },
+        {
+          "path": "include/hyle/compute/vulkan.h",
+          "sha256": "f9a0db613b0bcdc1670cb5c77109ef040ed71b2dc15e73640e1e401b940b5dff"
+        },
+        {
+          "path": "include/hyle/compute/vulkan_batch.h",
+          "sha256": "37bc537000870b4aafa0ee703a13e35b2bc84f1b85159d111bb899d221259beb"
+        },
+        {
+          "path": "include/hyle/graph/apple.h",
+          "sha256": "1da9da16a29e46222562a2985a22180028e70368ee1f57427e966c066b03156e"
+        },
+        {
+          "path": "include/hyle/graph/batch.h",
+          "sha256": "834c0e74920647b79dfa6e765c63f95ad9cf0d50f1aab06e42276e95f323705b"
+        },
+        {
+          "path": "include/hyle/graph/detail/region_access.h",
+          "sha256": "d17b32f7c1fa319fd83100c588dcebf22fbcc9220b3e9e0b456f8f556a03910d"
+        },
+        {
+          "path": "include/hyle/graph/leased_invocation.h",
+          "sha256": "093f1c04307abcc885c9d8ba0319531d10848ef500293da2289b6b038679ee75"
+        },
+        {
+          "path": "include/hyle/graph/vulkan.h",
+          "sha256": "08184fd1767ac709d98cec7eda2883b0856247d409375487761aec8c52d125b7"
+        },
+        {
+          "path": "src/compute/resource_leases.cc",
+          "sha256": "6d6caa01b517ae13cd04044ebc8eb481d9b3338f45623dc5d341038f37729801"
+        },
+        {
+          "path": "src/compute_batch/CMakeLists.txt",
+          "sha256": "0eda46ceb8cef71b087ba3d02ce4bc972d83e78e0c03a7074fc4259577603a16"
+        },
+        {
+          "path": "src/compute_batch/batch_execution.cc",
+          "sha256": "6af0d9b26e37cde36972e3b0d40674c772cfdc3adbcaff83fb1ca3be967a8bb9"
+        },
+        {
+          "path": "src/compute_batch/batch_layout.cc",
+          "sha256": "9643f20396e320aac8f2184ddd243f996a70ee46e81487eb397fa3a54ac020f4"
+        },
+        {
+          "path": "src/compute_batch/batch_materialize.cc",
+          "sha256": "6313f696f2041ce06cc31f0ceeb8506906689bf3c475368d69232de7a943e967"
+        },
+        {
+          "path": "src/compute_batch/materialized_invocation.cc",
+          "sha256": "860a21558c660eba7c581507b62e89c5a75c57db7547c13c7d860c454b7b272a"
+        },
+        {
+          "path": "src/compute_batch/paged_arena.cc",
+          "sha256": "ee4fcd775f6cc9b1da8f781c40f8bc98481233444209316a48b2527b3964f142"
+        },
+        {
+          "path": "src/compute_provider_flashinfer/CMakeLists.txt",
+          "sha256": "3fdbbff300d73e419d7703752de90a38962665f22edd6678668b3f72f84237e0"
+        },
+        {
+          "path": "src/compute_provider_flashinfer/flashinfer_provider.cc",
+          "sha256": "d6f0e55ac6ed4198dd43f94d4f980594c7d971831ba75d15c5508c0021ac9cd3"
+        },
+        {
+          "path": "src/compute_provider_flashinfer/native_batch.cu",
+          "sha256": "aecdbf870616f08600359e00179e4a054513bdff861be5ebc1136db13e33d136"
+        },
+        {
+          "path": "src/compute_provider_flashinfer/native_batch.h",
+          "sha256": "503b895787443169bec1efbc299c6cbf5982e7baae0911d2f316f6980e7a5140"
+        },
+        {
+          "path": "src/compute_provider_ggml_vulkan/region.cc",
+          "sha256": "e45af5a6708333a154a6339e6622361da267640150979a94bec581d17c097855"
+        },
+        {
+          "path": "src/compute_route_apple/CMakeLists.txt",
+          "sha256": "639a01cf0f57164ca8621ec2643c3dde8ab18d1c1ce94ef1da0ea4de4b7aba83"
+        },
+        {
+          "path": "src/compute_route_apple/apple_batch.cc",
+          "sha256": "602591bba2369ab2c3d2a647f60c24686509ec50396ea5af55878b99ddc63532"
+        },
+        {
+          "path": "src/compute_route_apple/apple_context.cc",
+          "sha256": "7bb949f53603c381a12734ea2a18806ff161945480cb62f387f99328ec4d0d5a"
+        },
+        {
+          "path": "src/compute_route_apple/apple_leased_invocation.cc",
+          "sha256": "9674b5eaff32201aa4741497b966604796601137f8a3e8267248572d1375c111"
+        },
+        {
+          "path": "src/compute_route_apple/apple_materialized_invocation.cc",
+          "sha256": "07ad568281b499cd50be00ec5f6bcaa2432b3ef617be11ac6b5540243adbf19a"
+        },
+        {
+          "path": "src/compute_route_apple/apple_memory.mm",
+          "sha256": "e198c51ed78d57c8bc1bac98122f78001e8866c0c31dd87438bf5ab1da5a2548"
+        },
+        {
+          "path": "src/compute_route_cuda/CMakeLists.txt",
+          "sha256": "a25a80c551ee2a050e6f7f5d2f0b258d83f8e7d0588373ca4a8a3321e9b0f7af"
+        },
+        {
+          "path": "src/compute_route_vulkan/CMakeLists.txt",
+          "sha256": "3ffb023d8db69d54a6bc285033a59663e637e41bf392f69e890662439b2ee9f8"
+        },
+        {
+          "path": "src/compute_route_vulkan/vulkan_batch.cc",
+          "sha256": "02dabf16dcc3d4e0319b037b928685a6d1c640fe29ba659bf5fc951c1859f89d"
+        },
+        {
+          "path": "src/compute_route_vulkan/vulkan_leased_invocation.cc",
+          "sha256": "8a245d9d8fcc29ae88d80406dfd65ce548db7f46cf6ea3b01177b35bf522ba83"
+        },
+        {
+          "path": "src/compute_route_vulkan/vulkan_materialized_invocation.cc",
+          "sha256": "12a33cc0e3570dfaa87cfe30a28a1c9b50e9bd702fef3b9ea920773d6c2d0e0e"
+        },
+        {
+          "path": "src/compute_route_vulkan/vulkan_memory.cc",
+          "sha256": "efbcb16afb63a5f952380c19df371666f690213aac1fb00123a3f0585734405d"
+        },
+        {
+          "path": "src/compute_route_vulkan/vulkan_program.cc",
+          "sha256": "04152b4ce4736ab0d9d7c3d5e81abc41ac3c14393e1315eb771cad761c51a912"
+        },
+        {
+          "path": "src/graph/CMakeLists.txt",
+          "sha256": "51897f736b32321f1a85b650db8e212acbdc4d61ff3d4507996a8a59689716f3"
+        },
+        {
+          "path": "src/graph/leased_invocation.cc",
+          "sha256": "7c69275859c78bb99fbd76fa9e420493abab0d26939ddc5f74972da9e304bd7f"
+        },
+        {
+          "path": "src/graph/plan_state.h",
+          "sha256": "4f4388b8098fd6b85305fed8133d333ab779fe491403113f86ecd177bd9418fe"
+        },
+        {
+          "path": "src/graph/region_access.cc",
+          "sha256": "d313b47bc92b93f021aff1e8ca2410ee74513a933dd842e4c99fb561bdcdbbae"
+        },
+        {
+          "path": "src/graph_batch/CMakeLists.txt",
+          "sha256": "beaa8f4be0d7a016c772ac01616d9e1bc74b8b54b5f2f05bd57be35e471e5763"
+        },
+        {
+          "path": "src/graph_batch/batch.cc",
+          "sha256": "0cc4ef55f0a082fb800bdd3a5ab9de1d8786d117e082bce17d9d7773a9bfb54a"
+        },
+        {
+          "path": "src/graph_batch/materialized_invocation.cc",
+          "sha256": "f1e03803924b84b160512ec4e84f44b6a85e52adab9e4b9f8443a5c86df2360a"
+        },
+        {
+          "path": "src/graph_route_apple/CMakeLists.txt",
+          "sha256": "de6cc242aaf95d21c15aeb2abb5c2876c78f9b7233d331d475ec71ae10e47743"
+        },
+        {
+          "path": "src/graph_route_apple/apple_batch.cc",
+          "sha256": "072e7f7903b201609812592fa9d4162a9f470763a1e9564cb6afce954a579e55"
+        },
+        {
+          "path": "src/graph_route_vulkan/CMakeLists.txt",
+          "sha256": "7fd82b970eaa026ed17d3f656b291ebd3d627a2a5e43bcffca95a0191bfd2181"
+        },
+        {
+          "path": "src/graph_route_vulkan/vulkan_batch.cc",
+          "sha256": "8469d8ca534fa63352a051ff78e9782c361b3cf1136092be50abf81261d07385"
+        },
+        {
+          "path": "tests/compute_batch/public_batch_cpu_consumer.cc",
+          "sha256": "70c2ae42b2a752577872ccabd399e7b3804e98cb3db15505c8dc6919144c773a"
+        },
+        {
+          "path": "tests/compute_batch/public_batch_native_consumer.cc",
+          "sha256": "b0947ad77c35d973f14c7abf80c2fdd0ebd77da3e62fc413161db789b4c334df"
+        },
+        {
+          "path": "tests/compute_batch/public_batch_cuda_consumer.cc",
+          "sha256": "eaef48f8b6b5e9770873a99505de354bf52bd2b9424b24256fef0a858ce93aed"
+        }
+      ]
+    },
+    "relocation": {
+      "staging_absent": true,
+      "relocated": "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-sdk-apple-shared-77df1c10c/relocated",
+      "Hyle_metadata_no_source_build_staging_paths": true
+    },
+    "installed_header_tus": 14,
+    "absent_header_files": {
+      "hyle/compute/vulkan_batch.h": true,
+      "hyle/compute/detail/vulkan_batch_access.h": true,
+      "hyle/graph/vulkan.h": true,
+      "hyle/compute/cuda.h": true,
+      "hyle/graph/cuda.h": true,
+      "hyle/graph/cpu.h": true
+    },
+    "consumer_inputs": [
+      {
+        "path": "public_batch_native_consumer.cc",
+        "sha256": "b0947ad77c35d973f14c7abf80c2fdd0ebd77da3e62fc413161db789b4c334df"
+      }
+    ],
+    "actual_dyld": {
+      "run-native": [
+        "dyld[71830]: <F3EE10CA-1C6E-32C2-AED3-6294628E70BC> /Users/kiro/hyle-scratch/compute-unified/foundation-f5-sdk-apple-shared-77df1c10c/relocated/lib/libhyle_compute_state.0.1.0.dylib",
+        "dyld[71830]: <CA30FBD2-34E5-381F-8AE6-5C50008E81A0> /Users/kiro/hyle-scratch/compute-unified/foundation-f5-sdk-apple-shared-77df1c10c/relocated/lib/libhyle_graph_route_apple.0.1.0.dylib",
+        "dyld[71830]: <AC6C3D34-46C7-3AC1-B11A-076CB7BD894F> /Users/kiro/hyle-scratch/compute-unified/foundation-f5-sdk-apple-shared-77df1c10c/relocated/lib/libhyle_compute_route_apple.0.1.0.dylib",
+        "dyld[71830]: <1A899B28-692B-3EF9-9ACC-BA76E2AF2F2C> /Users/kiro/hyle-scratch/compute-unified/foundation-f5-sdk-apple-shared-77df1c10c/relocated/lib/libhyle_compute_stream.0.1.0.dylib",
+        "dyld[71830]: <F6DAD5DF-DE80-3D1A-B5D2-60A57615DF9E> /Users/kiro/hyle-scratch/compute-unified/foundation-f5-sdk-apple-shared-77df1c10c/relocated/lib/libhyle_io_core.0.1.0.dylib",
+        "dyld[71830]: <5CD70AA2-EE24-3175-87A0-CCC61CDB4654> /Users/kiro/hyle-scratch/compute-unified/foundation-f5-sdk-apple-shared-77df1c10c/relocated/lib/libhyle_sched.0.1.0.dylib",
+        "dyld[71830]: <1C158A88-1104-331E-A937-CC9A0224C662> /Users/kiro/hyle-scratch/compute-unified/foundation-f5-sdk-apple-shared-77df1c10c/relocated/lib/libhyle_mem_vm.0.1.0.dylib",
+        "dyld[71830]: <DAC19DA5-B254-3857-9291-F7098B0C7650> /Users/kiro/hyle-scratch/compute-unified/foundation-f5-sdk-apple-shared-77df1c10c/relocated/lib/libhyle_platform_fs.0.1.0.dylib",
+        "dyld[71830]: <5E0C53BE-854F-3692-9A0B-8743030B5607> /Users/kiro/hyle-scratch/compute-unified/foundation-f5-sdk-apple-shared-77df1c10c/relocated/lib/libhyle_platform_thread.0.1.0.dylib",
+        "dyld[71830]: <BF554C74-1967-32FB-B11C-5C794E4936BD> /Users/kiro/hyle-scratch/compute-unified/foundation-f5-sdk-apple-shared-77df1c10c/relocated/lib/libhyle_time.0.1.0.dylib",
+        "dyld[71830]: <E55EF2F6-63F4-30BB-A430-F536E51F32CC> /Users/kiro/hyle-scratch/compute-unified/foundation-f5-sdk-apple-shared-77df1c10c/relocated/lib/libhyle_graph_batch.0.1.0.dylib",
+        "dyld[71830]: <11FA52E9-D038-38D7-9E93-9596D7048916> /Users/kiro/hyle-scratch/compute-unified/foundation-f5-sdk-apple-shared-77df1c10c/relocated/lib/libhyle_compute_batch.0.1.0.dylib",
+        "dyld[71830]: <51D2C89E-28EB-3D31-9867-FD934B122E9C> /Users/kiro/hyle-scratch/compute-unified/foundation-f5-sdk-apple-shared-77df1c10c/relocated/lib/libhyle_graph.0.1.0.dylib",
+        "dyld[71830]: <FBA62B23-8EBD-3794-A882-925B14EAF197> /Users/kiro/hyle-scratch/compute-unified/foundation-f5-sdk-apple-shared-77df1c10c/relocated/lib/libhyle_compute.0.1.0.dylib",
+        "dyld[71830]: <EAF22D75-1E58-3296-A8F7-74F03B3E25A8> /Users/kiro/hyle-scratch/compute-unified/foundation-f5-sdk-apple-shared-77df1c10c/relocated/lib/libhyle_container.0.1.0.dylib",
+        "dyld[71830]: <D888A757-DE44-38B1-9161-6D2EEB76B436> /Users/kiro/hyle-scratch/compute-unified/foundation-f5-sdk-apple-shared-77df1c10c/relocated/lib/libhyle_mem.0.1.0.dylib",
+        "dyld[71830]: <B66A4AA3-2C22-3E98-B07B-20E2FF55ABCE> /Users/kiro/hyle-scratch/compute-unified/foundation-f5-sdk-apple-shared-77df1c10c/relocated/lib/libhyle_platform.0.1.0.dylib",
+        "dyld[71830]: <DC74D916-7C80-3656-813C-E7DC4A93CC8A> /Users/kiro/hyle-scratch/compute-unified/foundation-f5-sdk-apple-shared-77df1c10c/relocated/lib/libhyle_compute_ops.0.1.0.dylib",
+        "dyld[71830]: <BC34FF44-65A9-394A-882E-448D0AA70096> /Users/kiro/hyle-scratch/compute-unified/foundation-f5-sdk-apple-shared-77df1c10c/relocated/lib/libhyle_error.0.1.0.dylib",
+        "dyld[71830]: <4B5E78D9-7CDE-3041-BF0E-0115D281FF86> /Users/kiro/hyle-scratch/compute-unified/foundation-f5-sdk-apple-shared-77df1c10c/relocated/lib/libhyle_compute_provider_ggml_metal.0.1.0.dylib",
+        "dyld[71830]: <3E6646F9-73DB-3FE8-9A54-A3F92883E11E> /Users/kiro/hyle-scratch/compute-unified/foundation-f5-sdk-apple-shared-77df1c10c/relocated/lib/libhyle_compute_ggml_runtime.0.1.0.dylib"
+      ]
+    },
+    "verdict": "PASS_F5_CANDIDATE_AIR_APPLE_SHARED_RELOCATED_SDK"
+  }
+}

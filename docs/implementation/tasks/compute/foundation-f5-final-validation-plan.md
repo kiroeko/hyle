@@ -35,11 +35,11 @@ native paged未准入，验证具名拒绝。WSL native Vulkan只有包资格，
 | Windows | cpu,vulkan | 2 | CPU与actual Vulkan两条Direct/Graph；迁址/heads/absence/loader | static/shared CANDIDATE PASS |
 | Windows | vulkan only | 2 | actual Vulkan，无CPU factor/回退 | static/shared CANDIDATE PASS |
 | WSL | cpu,cuda | 2 | CPU与actual CUDA FI paged/ragged/D256 Direct/Graph | 25e static/shared CANDIDATE PASS；原shared link/owned-header FAIL保留 |
-| WSL | vulkan only | 2 | source/package/headers/absence/relocation；软件GPU不代签数学 | NOT_RUN |
-| actual Air | cpu,apple | 2 | CPU与actual M4 MLX Direct/Graph | NOT_RUN |
-| actual Air | cpu,vulkan | 2 | CPU与actual M4 MoltenVK Direct/Graph | NOT_RUN |
-| actual Air | apple only | 2 | actual Apple，无CPU factor/回退 | NOT_RUN |
-| actual Air | vulkan only | 2 | actual Vulkan，无CPU factor/回退 | NOT_RUN |
+| WSL | vulkan only | 2 | source/package/headers/absence/relocation；软件GPU不代签数学 | 25e static/shared软件包/loader CANDIDATE PASS |
+| actual Air | cpu,apple | 2 | CPU与actual M4 MLX Direct/Graph | 25e static/shared CANDIDATE PASS |
+| actual Air | cpu,vulkan | 2 | CPU与actual M4 MoltenVK Direct/Graph | 25e static/shared CANDIDATE PASS |
+| actual Air | apple only | 2 | actual Apple，无CPU factor/回退 | 25e static/shared CANDIDATE PASS |
+| actual Air | vulkan only | 2 | actual Vulkan，无CPU factor/回退 | 25e static/shared CANDIDATE PASS |
 
 全部18格中实际供应的新common/Graph/route头独立TU、缺路线find_package具名拒绝、未选
 factor头不供应；完整源码另核缺席route头可include且无route类型/符号，SDK按现有factor

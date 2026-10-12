@@ -347,6 +347,34 @@ CUDA factor的FI直接边PUBLIC/PRIVATE归属变化，全部dependency union和�
 不变。Win Vulkan四格未选此factor且实际prefix没有cuda.h，保留77df原artifact/run/hash的
 25e资格，不伪造新run。当前完整SDK8/18，其他10格及上述剩余门保持未验。
 
+## Graph batch正常测试登记与Air Apple SDK
+
+[Graph batch三测试/头](../../../../evidence/correctness/foundation-f5-graph-batch-test-registration/README.md)
+正常登记且实际PASS，product25e无变化。原component配置合同通过tests=ON归属位置，
+graph-only façade旧断言按独立工具卡修一行并通过该用例；随后全factor all配置因private
+runner缺Vulkan SDK环境失败，原累计272.140/300秒，聚合INCONCLUSIVE而非PASS。
+[精确反证/差分](../../../../evidence/correctness/foundation-f5-component-vulkan-environment/README.md)
+不驱动产品扩依赖或撤销定向交付证据。
+
+actual Air身份重新核对Mac16,12/M4/16GiB、macOS27.0.1/26A434、Clang21/CMake4.3.4。
+固定25e的CPU+Apple static/shared与Apple-only static分别普通installed公开Direct/Graph
+四域GPU数学、供头/缺route/迁址/loader PASS；Apple-only不含CPU factor。当前SDK11/18，
+原数学/private成本差异不变；其余SDK/native host-control san/P0/LOC/guide/终审继续。
+
+## 固定18 SDK矩阵齐
+
+25e下actual Air四SKU×static/shared八格全部通过；native-only Apple/Vulkan没有CPU factor，
+原MLX/MoltenVK实际Direct/Graph四域数学与公开copy/loader/迁址合同齐。Windows六格与
+Linux CUDA两格按此前真实资格/精确未影响映射保留，WSL Vulkan最后两个software package
+格实际供头/隔离公开probe/迁址/缺route/ldd/软件设备Context loader PASS。software probe
+显式沿原allow_software_device=true；首次默认拒绝正确，原fixture FAIL/同root预算保留。
+软件格不运行数学，不把它叫actual-GPU PASS。完整证据在候选卡与18格计划各行链接。
+
+18/18只完成SDK矩阵：完整源码disabled-header/no-symbol门、native host-control sanitizer
+适用facet、P0/default tax/codegen/LOC、guide正交消费、分离红队及最终foundation/engine
+自有代码量评估继续。公共component工具聚合仍INCONCLUSIVE，环境/原累计预算完整保留；
+module-status仍20 owner CANDIDATE，goal active，不把18格齐改成缩小的完成定义。
+
 [公开native源码收据](../../../../evidence/correctness/foundation-f5-public-native-source/README.md)：
 Win Vulkan/Air Apple/Vulkan各四域Direct/Graph独立oracle共24、原F2/public页权限/同镜像/
 old result通过。用户guide已加四路线选择、生命周期、explicit reference成本与capture缺席，
