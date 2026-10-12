@@ -45,15 +45,15 @@ if(HYLE_COMPUTE_CUDA_ENABLED)
     list(APPEND _cuda_interface "$<LINK_ONLY:$<BUILD_INTERFACE:hyle_compute_provider_torch_cuda>>")
     set_property(TARGET hyle_compute_route_cuda PROPERTY INTERFACE_LINK_LIBRARIES "${_cuda_interface}")
   endif()
-  if(HYLE_STATIC AND NOT CMAKE_SYSTEM_NAME STREQUAL "Linux")
+  if(NOT CMAKE_SYSTEM_NAME STREQUAL "Linux")
     # This pin's FlashInfer factor is a build-only absent placeholder here.
-    # Static PRIVATE dependencies otherwise become installed link requirements,
-    # which would demand an unqualified, intentionally unexported provider.
+    # Its public factory is available only on the admitted Linux route. Keep
+    # the absent build identity out of both static and shared SDK interfaces.
     get_target_property(_cuda_interface hyle_compute_route_cuda
       INTERFACE_LINK_LIBRARIES)
-    list(REMOVE_ITEM _cuda_interface "$<LINK_ONLY:hyle_compute_provider_flashinfer>")
+    list(REMOVE_ITEM _cuda_interface "hyle_compute_provider_flashinfer")
     list(APPEND _cuda_interface
-      "$<LINK_ONLY:$<BUILD_INTERFACE:hyle_compute_provider_flashinfer>>")
+      "$<BUILD_INTERFACE:hyle_compute_provider_flashinfer>")
     set_property(TARGET hyle_compute_route_cuda PROPERTY
       INTERFACE_LINK_LIBRARIES "${_cuda_interface}")
   endif()
