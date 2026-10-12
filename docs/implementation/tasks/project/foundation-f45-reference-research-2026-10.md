@@ -74,5 +74,5 @@ explicit CPU materialization不冒充原生paged，也不能因为某路线没�
 
 文档/状态检查与change-impact selector只运行docs/closure，140项skipped/reused理由保留于
 [验证收据](../../../../evidence/architecture/foundation-f45-design/validation-result.json)。
-实际结果：61个component合同、941篇Markdown/4,820相对链接及diff检查通过；产品/registry/依赖锁
+实际结果：61个component合同、Markdown/相对链接及diff检查通过；产品/registry/依赖锁
 与三个peer checkout HEAD均未改变。只有研究文档PASS，native prototype/engine correctness/P1均NOT_RUN。
