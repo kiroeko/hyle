@@ -1,0 +1,294 @@
+{
+  "candidate": "29d3c7a3ebe81f0e627986e2e8c8a393aa7832c8",
+  "snapshot": "29d3c7a3ebe81f0e627986e2e8c8a393aa7832c8",
+  "host": "wsl",
+  "profile": "vulkan",
+  "mode": "shared",
+  "source": "/root/hyle-scratch/compute-unified/source-7a7b4c3b",
+  "producer": "/root/hyle-scratch/compute-unified/l-vulkan/selected-graph/shared-sdk-build",
+  "identity": {
+    "os": "Linux kiro-workstation 6.18.40.1-microsoft-standard-WSL2 #1 SMP PREEMPT_DYNAMIC Fri Jul 31 22:12:15 UTC 2026 x86_64 x86_64 x86_64 GNU/Linux",
+    "compiler": "g++-14 (Ubuntu 14.2.0-4ubuntu2~24.04.1) 14.2.0\nCopyright (C) 2024 Free Software Foundation, Inc.\nThis is free software; see the source for copying conditions.  There is NO\nwarranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.",
+    "gpu": "NVIDIA GeForce RTX 4070, GPU-e7376560-6f5d-ec19-6ee4-3dd3a2c81ef8, 617.14"
+  },
+  "test_parallel": 1,
+  "stages": [
+    {
+      "name": "configure",
+      "command": [
+        "/usr/bin/cmake",
+        "-S",
+        "/root/hyle-scratch/compute-unified/source-7a7b4c3b",
+        "-B",
+        "/root/hyle-scratch/compute-unified/l-vulkan/selected-graph/shared-sdk-build",
+        "-G",
+        "Ninja",
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DCMAKE_CXX_COMPILER=/usr/bin/g++-14",
+        "-DHYLE_COMPONENTS:STRING=compute;graph",
+        "-DHYLE_COMPUTE_ROUTES:STRING=vulkan",
+        "-DHYLE_BUILD_TESTS:BOOL=OFF",
+        "-DHYLE_BUILD_BENCH:BOOL=OFF",
+        "-DHYLE_INSTALL:BOOL=ON",
+        "-DHYLE_STATIC:BOOL=OFF"
+      ],
+      "pid": 1799,
+      "state": "terminal",
+      "available_bytes": 32074752000,
+      "log": "configure.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "elapsed": 16.64039741900001,
+      "sha256": "8f6d584146b29034dd6bbfe7dc705f961c1d6730201e2d51c15991a6706e23c7"
+    },
+    {
+      "name": "producer",
+      "command": [
+        "/usr/bin/cmake",
+        "--build",
+        "/root/hyle-scratch/compute-unified/l-vulkan/selected-graph/shared-sdk-build",
+        "--target",
+        "hyle_compute_state",
+        "hyle_graph_route_vulkan",
+        "--parallel",
+        "4"
+      ],
+      "pid": 1886,
+      "state": "terminal",
+      "available_bytes": 32377245696,
+      "log": "producer.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "elapsed": 1.6205626420000385,
+      "sha256": "ade1bb8b2e93ff76bfac36f4c3f2cdfd3d7846809b1719b6f38a606f8fb820d2"
+    },
+    {
+      "name": "install",
+      "command": [
+        "/usr/bin/cmake",
+        "--install",
+        "/root/hyle-scratch/compute-unified/l-vulkan/selected-graph/shared-sdk-build",
+        "--prefix",
+        "/root/hyle-scratch/compute-unified/foundation-f4-native-sdk-vulkan-shared-29d3c7a3e/staging"
+      ],
+      "pid": 1973,
+      "state": "terminal",
+      "available_bytes": 32154595328,
+      "log": "install.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "elapsed": 0.06416018599998097,
+      "sha256": "bc88a0eba3eb06ed8d778b5cc5e9aa1be8a19e9df5aaa85505f793410bc93aae"
+    },
+    {
+      "name": "consumer-configure",
+      "command": [
+        "/usr/bin/cmake",
+        "-S",
+        "/root/hyle-scratch/compute-unified/foundation-f4-native-sdk-vulkan-shared-29d3c7a3e/consumer-source",
+        "-B",
+        "/root/hyle-scratch/compute-unified/foundation-f4-native-sdk-vulkan-shared-29d3c7a3e/consumer",
+        "-G",
+        "Ninja",
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DCMAKE_CXX_COMPILER=/usr/bin/g++-14",
+        "-DCMAKE_PREFIX_PATH=/root/hyle-scratch/compute-unified/foundation-f4-native-sdk-vulkan-shared-29d3c7a3e/relocated",
+        "-DHYLE_COMPUTE_ROUTES=vulkan"
+      ],
+      "pid": 1974,
+      "state": "terminal",
+      "available_bytes": 32155623424,
+      "log": "consumer-configure.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "elapsed": 0.11408001000000922,
+      "sha256": "65ab8efd1d70b5e385562ed537fcb2300cd418cd36c09ee79e7966893aa5d644"
+    },
+    {
+      "name": "consumer-build",
+      "command": [
+        "/usr/bin/cmake",
+        "--build",
+        "/root/hyle-scratch/compute-unified/foundation-f4-native-sdk-vulkan-shared-29d3c7a3e/consumer",
+        "--parallel",
+        "4"
+      ],
+      "pid": 2008,
+      "state": "terminal",
+      "available_bytes": 32143978496,
+      "log": "consumer-build.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "elapsed": 2.7693073500000196,
+      "sha256": "c5063718bf7a470eed7448a2c400f94096b82cc4c1f5d987a0deaf2c8732fdd8"
+    },
+    {
+      "name": "dependencies-state",
+      "command": [
+        "/usr/bin/ldd",
+        "/root/hyle-scratch/compute-unified/foundation-f4-native-sdk-vulkan-shared-29d3c7a3e/consumer/state"
+      ],
+      "pid": 2030,
+      "state": "terminal",
+      "available_bytes": 31813578752,
+      "log": "dependencies-state.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "elapsed": 0.007796866000035152,
+      "sha256": "21cc02f06386c1d3aa817063d304d432b8daacaab4c6071d81f72c755ca63fcc"
+    },
+    {
+      "name": "absence-cpu",
+      "command": [
+        "/usr/bin/cmake",
+        "-S",
+        "/root/hyle-scratch/compute-unified/foundation-f4-native-sdk-vulkan-shared-29d3c7a3e/absence-cpu",
+        "-B",
+        "/root/hyle-scratch/compute-unified/foundation-f4-native-sdk-vulkan-shared-29d3c7a3e/absence-build-cpu",
+        "-G",
+        "Ninja",
+        "-DCMAKE_PREFIX_PATH=/root/hyle-scratch/compute-unified/foundation-f4-native-sdk-vulkan-shared-29d3c7a3e/relocated"
+      ],
+      "pid": 2040,
+      "state": "terminal",
+      "available_bytes": 31814909952,
+      "log": "absence-cpu.log",
+      "exit_code": 1,
+      "verdict": "PASS_EXPECTED_ABSENT",
+      "elapsed": 0.11487988199996835,
+      "sha256": "98dabd73187cef1561c7c6b78ec03f392fbd4472deefca639bd70e0c2b48ccf4"
+    },
+    {
+      "name": "absence-cuda",
+      "command": [
+        "/usr/bin/cmake",
+        "-S",
+        "/root/hyle-scratch/compute-unified/foundation-f4-native-sdk-vulkan-shared-29d3c7a3e/absence-cuda",
+        "-B",
+        "/root/hyle-scratch/compute-unified/foundation-f4-native-sdk-vulkan-shared-29d3c7a3e/absence-build-cuda",
+        "-G",
+        "Ninja",
+        "-DCMAKE_PREFIX_PATH=/root/hyle-scratch/compute-unified/foundation-f4-native-sdk-vulkan-shared-29d3c7a3e/relocated"
+      ],
+      "pid": 2073,
+      "state": "terminal",
+      "available_bytes": 31822262272,
+      "log": "absence-cuda.log",
+      "exit_code": 1,
+      "verdict": "PASS_EXPECTED_ABSENT",
+      "elapsed": 0.11442665100003069,
+      "sha256": "dbec5cfdd9381aa3634aa06e40ecc9295233e4048ff2f950bcb3376866e683be"
+    },
+    {
+      "name": "absence-apple",
+      "command": [
+        "/usr/bin/cmake",
+        "-S",
+        "/root/hyle-scratch/compute-unified/foundation-f4-native-sdk-vulkan-shared-29d3c7a3e/absence-apple",
+        "-B",
+        "/root/hyle-scratch/compute-unified/foundation-f4-native-sdk-vulkan-shared-29d3c7a3e/absence-build-apple",
+        "-G",
+        "Ninja",
+        "-DCMAKE_PREFIX_PATH=/root/hyle-scratch/compute-unified/foundation-f4-native-sdk-vulkan-shared-29d3c7a3e/relocated"
+      ],
+      "pid": 2106,
+      "state": "terminal",
+      "available_bytes": 31803482112,
+      "log": "absence-apple.log",
+      "exit_code": 1,
+      "verdict": "PASS_EXPECTED_ABSENT",
+      "elapsed": 0.1147231009999814,
+      "sha256": "39b043c39113b44c06618e883383b6c0c771b3445ff2fa4eac8597f5bf7cd5dc"
+    }
+  ],
+  "scope": "F4 candidate native-only ordinary State Direct/Graph consumer, new heads, absent CPU/routes, relocated loader; WSL software Vulkan package-only",
+  "relocation": {
+    "staging_absent": true,
+    "relocated": "/root/hyle-scratch/compute-unified/foundation-f4-native-sdk-vulkan-shared-29d3c7a3e/relocated",
+    "Hyle_metadata_no_source_build_staging_paths": true
+  },
+  "device_qualification": {
+    "vulkan": {
+      "loader": "libvulkan.so.1",
+      "devices": [
+        {
+          "api_version": 4211006,
+          "driver_version": 104865800,
+          "vendor_id": 65541,
+          "device_id": 0,
+          "device_type": 4,
+          "name": "llvmpipe (LLVM 20.1.2, 256 bits)",
+          "software": true
+        }
+      ],
+      "icds": {
+        "lvp_icd.json": {
+          "ICD": {
+            "api_version": "1.4.318",
+            "library_path": "libvulkan_lvp.so"
+          },
+          "file_format_version": "1.0.1"
+        },
+        "gfxstream_vk_icd.json": {
+          "ICD": {
+            "api_version": "1.1.318",
+            "library_path": "libvulkan_gfxstream.so"
+          },
+          "file_format_version": "1.0.1"
+        },
+        "radeon_icd.json": {
+          "ICD": {
+            "api_version": "1.4.318",
+            "library_path": "libvulkan_radeon.so"
+          },
+          "file_format_version": "1.0.1"
+        },
+        "intel_hasvk_icd.json": {
+          "ICD": {
+            "api_version": "1.3.318",
+            "library_path": "libvulkan_intel_hasvk.so"
+          },
+          "file_format_version": "1.0.1"
+        },
+        "asahi_icd.json": {
+          "ICD": {
+            "api_version": "1.4.318",
+            "library_path": "libvulkan_asahi.so"
+          },
+          "file_format_version": "1.0.1"
+        },
+        "virtio_icd.json": {
+          "ICD": {
+            "api_version": "1.4.318",
+            "library_path": "libvulkan_virtio.so"
+          },
+          "file_format_version": "1.0.1"
+        },
+        "intel_icd.json": {
+          "ICD": {
+            "api_version": "1.4.318",
+            "library_path": "libvulkan_intel.so"
+          },
+          "file_format_version": "1.0.1"
+        },
+        "nouveau_icd.json": {
+          "ICD": {
+            "api_version": "1.4.318",
+            "library_path": "libvulkan_nouveau.so"
+          },
+          "file_format_version": "1.0.1"
+        }
+      },
+      "qualified_gpu": false,
+      "scope": "current physical-device qualification only; no product math verdict",
+      "verdict": "NO_QUALIFIED_GPU"
+    }
+  },
+  "gpu_math": "NOT_APPLICABLE: only llvmpipe/software Vulkan exposed; current card requires package build, not GPU verdict",
+  "verdict": "PASS_FOUNDATION_F4_NATIVE_ONLY_WSL_VULKAN_SHARED_RELOCATED_SDK",
+  "raw_archive": {
+    "name": "raw-logs.zip",
+    "sha256": "e6624c0824d0c0d60520ec5af6e9a36ea32d11982a48399585aa4ea3c1e2a1a4",
+    "stage_hashes_refer_to": "original archive entries"
+  }
+}

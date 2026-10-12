@@ -1,0 +1,241 @@
+{
+  "candidate": "29d3c7a3ebe81f0e627986e2e8c8a393aa7832c8",
+  "snapshot": "29d3c7a3ebe81f0e627986e2e8c8a393aa7832c8",
+  "host": "air",
+  "profile": "cpu-apple",
+  "mode": "shared",
+  "source": "/Users/kiro/hyle-scratch/compute-unified/source-c8874688",
+  "producer": "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-build",
+  "identity": {
+    "hardware": "Mac16,12",
+    "memory": "17179869184",
+    "os": "ProductName:\t\tmacOS\nProductVersion:\t\t27.0.1\nBuildVersion:\t\t26A434",
+    "compiler": "Apple clang version 21.0.0 (clang-2100.3.34.2)\nTarget: arm64-apple-darwin27.0.0\nThread model: posix\nInstalledDir: /Library/Developer/CommandLineTools/usr/bin"
+  },
+  "test_parallel": 1,
+  "stages": [
+    {
+      "name": "configure",
+      "command": [
+        "/opt/homebrew/bin/cmake",
+        "-S",
+        "/Users/kiro/hyle-scratch/compute-unified/source-c8874688",
+        "-B",
+        "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-build",
+        "-G",
+        "Ninja",
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DCMAKE_CXX_COMPILER=/usr/bin/clang++",
+        "-DHYLE_COMPONENTS:STRING=compute;graph",
+        "-DHYLE_COMPUTE_ROUTES:STRING=cpu;apple",
+        "-DHYLE_BUILD_TESTS:BOOL=OFF",
+        "-DHYLE_BUILD_BENCH:BOOL=OFF",
+        "-DHYLE_INSTALL:BOOL=ON",
+        "-DHYLE_STATIC:BOOL=OFF"
+      ],
+      "pid": 60599,
+      "state": "terminal",
+      "available_bytes": 7465156608,
+      "log": "configure.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "elapsed": 5.519382209,
+      "sha256": "baedf08c35dfa28a5c314b3a1bed56f51ca5e1d6a620c8b02dd37a8af144052e"
+    },
+    {
+      "name": "producer",
+      "command": [
+        "/opt/homebrew/bin/cmake",
+        "--build",
+        "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-build",
+        "--target",
+        "hyle_compute_state",
+        "hyle_graph_route_cpu_apple",
+        "--parallel",
+        "1"
+      ],
+      "pid": 60674,
+      "state": "terminal",
+      "available_bytes": 7457292288,
+      "log": "producer.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "elapsed": 13.322410667,
+      "sha256": "5675b52316ea22bb58676e29f9ff565012c27c0649d66e6e50074d34bf1ecf96"
+    },
+    {
+      "name": "install",
+      "command": [
+        "/opt/homebrew/bin/cmake",
+        "--install",
+        "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-build",
+        "--prefix",
+        "/Users/kiro/hyle-scratch/compute-unified/foundation-f4-sdk-cpu-apple-shared-29d3c7a3e/staging"
+      ],
+      "pid": 60764,
+      "state": "terminal",
+      "available_bytes": 7408943104,
+      "log": "install.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "elapsed": 0.3849291249999993,
+      "sha256": "73af9e30189c0afa8c7c9ff91ba91fda779e4aa0b6a95a5c9b7ab4ba2cbc0bd1"
+    },
+    {
+      "name": "consumer-configure",
+      "command": [
+        "/opt/homebrew/bin/cmake",
+        "-S",
+        "/Users/kiro/hyle-scratch/compute-unified/foundation-f4-sdk-cpu-apple-shared-29d3c7a3e/consumer-source",
+        "-B",
+        "/Users/kiro/hyle-scratch/compute-unified/foundation-f4-sdk-cpu-apple-shared-29d3c7a3e/consumer",
+        "-G",
+        "Ninja",
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DCMAKE_CXX_COMPILER=/usr/bin/clang++",
+        "-DCMAKE_PREFIX_PATH=/Users/kiro/hyle-scratch/compute-unified/foundation-f4-sdk-cpu-apple-shared-29d3c7a3e/relocated",
+        "-DHYLE_COMPUTE_ROUTES=cpu;apple"
+      ],
+      "pid": 60794,
+      "state": "terminal",
+      "available_bytes": 7406714880,
+      "log": "consumer-configure.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "elapsed": 1.2211197919999996,
+      "sha256": "c3ebe4371140ee224b19f7940fa92324ab4533eb5b09fd955181a0d016837a33"
+    },
+    {
+      "name": "consumer-build",
+      "command": [
+        "/opt/homebrew/bin/cmake",
+        "--build",
+        "/Users/kiro/hyle-scratch/compute-unified/foundation-f4-sdk-cpu-apple-shared-29d3c7a3e/consumer",
+        "--parallel",
+        "1"
+      ],
+      "pid": 60858,
+      "state": "terminal",
+      "available_bytes": 7399424000,
+      "log": "consumer-build.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "elapsed": 2.3104749580000004,
+      "sha256": "644d0df590bccbc4ad713f21b77f4f1dc3302c0bf3d547fe8458cdd630f1c0b2"
+    },
+    {
+      "name": "dependencies-state",
+      "command": [
+        "/usr/bin/otool",
+        "-L",
+        "/Users/kiro/hyle-scratch/compute-unified/foundation-f4-sdk-cpu-apple-shared-29d3c7a3e/consumer/state"
+      ],
+      "pid": 60886,
+      "state": "terminal",
+      "available_bytes": 7252180992,
+      "log": "dependencies-state.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "elapsed": 0.011851541999998716,
+      "sha256": "72083599ec79cc804a60bc75051b1db15442748f65e726e922f0d7b83ca191bd"
+    },
+    {
+      "name": "run-state",
+      "command": [
+        "/Users/kiro/hyle-scratch/compute-unified/foundation-f4-sdk-cpu-apple-shared-29d3c7a3e/consumer/state"
+      ],
+      "pid": 60890,
+      "state": "terminal",
+      "available_bytes": 7252131840,
+      "log": "run-state.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "elapsed": 7.893276499999999,
+      "sha256": "55cb4044a8da08655731cd6fec0a7bdbd9c4e0f0cfead922a01a2f882338e3e6"
+    },
+    {
+      "name": "absence-cuda",
+      "command": [
+        "/opt/homebrew/bin/cmake",
+        "-S",
+        "/Users/kiro/hyle-scratch/compute-unified/foundation-f4-sdk-cpu-apple-shared-29d3c7a3e/absence-cuda",
+        "-B",
+        "/Users/kiro/hyle-scratch/compute-unified/foundation-f4-sdk-cpu-apple-shared-29d3c7a3e/absence-build-cuda",
+        "-G",
+        "Ninja",
+        "-DCMAKE_PREFIX_PATH=/Users/kiro/hyle-scratch/compute-unified/foundation-f4-sdk-cpu-apple-shared-29d3c7a3e/relocated"
+      ],
+      "pid": 60893,
+      "state": "terminal",
+      "available_bytes": 7247134720,
+      "log": "absence-cuda.log",
+      "exit_code": 1,
+      "verdict": "PASS_EXPECTED_ABSENT",
+      "elapsed": 0.20659200000000055,
+      "sha256": "16665db0145ec7b1c6333bb621a5859b024c0eacc1c1c84ebcfd3df5a674bde5"
+    },
+    {
+      "name": "absence-vulkan",
+      "command": [
+        "/opt/homebrew/bin/cmake",
+        "-S",
+        "/Users/kiro/hyle-scratch/compute-unified/foundation-f4-sdk-cpu-apple-shared-29d3c7a3e/absence-vulkan",
+        "-B",
+        "/Users/kiro/hyle-scratch/compute-unified/foundation-f4-sdk-cpu-apple-shared-29d3c7a3e/absence-build-vulkan",
+        "-G",
+        "Ninja",
+        "-DCMAKE_PREFIX_PATH=/Users/kiro/hyle-scratch/compute-unified/foundation-f4-sdk-cpu-apple-shared-29d3c7a3e/relocated"
+      ],
+      "pid": 60952,
+      "state": "terminal",
+      "available_bytes": 7246692352,
+      "log": "absence-vulkan.log",
+      "exit_code": 1,
+      "verdict": "PASS_EXPECTED_ABSENT",
+      "elapsed": 0.1999828749999999,
+      "sha256": "fd6a6f1a3bf5d5913820910f95f1741c9c20ccd5ac42450762f680923b1c5710"
+    }
+  ],
+  "scope": "F4 candidate ordinary State Direct/Graph consumers, three new heads, missing routes, relocated actual native runtime",
+  "relocation": {
+    "staging_absent": true,
+    "relocated": "/Users/kiro/hyle-scratch/compute-unified/foundation-f4-sdk-cpu-apple-shared-29d3c7a3e/relocated",
+    "Hyle_metadata_no_source_build_staging_paths": true
+  },
+  "actual_dyld": {
+    "run-state": [
+      "dyld[60890]: <9ABD44D6-EAFD-311F-872B-DC928B3C7B18> /Users/kiro/hyle-scratch/compute-unified/foundation-f4-sdk-cpu-apple-shared-29d3c7a3e/relocated/lib/libhyle_compute_state.0.1.0.dylib",
+      "dyld[60890]: <57FC1D94-67D0-36F5-8A77-9EC8E485A116> /Users/kiro/hyle-scratch/compute-unified/foundation-f4-sdk-cpu-apple-shared-29d3c7a3e/relocated/lib/libhyle_graph_route_cpu_apple.0.1.0.dylib",
+      "dyld[60890]: <1CD04A8C-6AC1-397A-A71B-CAF32F515D93> /Users/kiro/hyle-scratch/compute-unified/foundation-f4-sdk-cpu-apple-shared-29d3c7a3e/relocated/lib/libhyle_graph_route_cpu.0.1.0.dylib",
+      "dyld[60890]: <7449D65F-9EB9-3160-9878-89E3D0970E5B> /Users/kiro/hyle-scratch/compute-unified/foundation-f4-sdk-cpu-apple-shared-29d3c7a3e/relocated/lib/libhyle_compute_route_cpu.0.1.0.dylib",
+      "dyld[60890]: <F4F4F49B-AFDE-3356-8A5E-3A2FCC6F4727> /Users/kiro/hyle-scratch/compute-unified/foundation-f4-sdk-cpu-apple-shared-29d3c7a3e/relocated/lib/libhyle_compute_provider_native.0.1.0.dylib",
+      "dyld[60890]: <D72350D6-850C-3513-A071-30159B8190C4> /Users/kiro/hyle-scratch/compute-unified/foundation-f4-sdk-cpu-apple-shared-29d3c7a3e/relocated/lib/libhyle_compute_backend_cpu.0.1.0.dylib",
+      "dyld[60890]: <51A11778-2533-3529-AD7B-0E9AE27C9E18> /Users/kiro/hyle-scratch/compute-unified/foundation-f4-sdk-cpu-apple-shared-29d3c7a3e/relocated/lib/libhyle_graph_route_apple.0.1.0.dylib",
+      "dyld[60890]: <F612D5DF-D6D2-3DA0-BDE5-1796454467AF> /Users/kiro/hyle-scratch/compute-unified/foundation-f4-sdk-cpu-apple-shared-29d3c7a3e/relocated/lib/libhyle_compute_route_apple.0.1.0.dylib",
+      "dyld[60890]: <9B7DC5A7-6C1C-3749-9195-30AABD5E88A6> /Users/kiro/hyle-scratch/compute-unified/foundation-f4-sdk-cpu-apple-shared-29d3c7a3e/relocated/lib/libhyle_compute_stream.0.1.0.dylib",
+      "dyld[60890]: <CA64C973-C675-382B-AB45-63EAE15C9E63> /Users/kiro/hyle-scratch/compute-unified/foundation-f4-sdk-cpu-apple-shared-29d3c7a3e/relocated/lib/libhyle_io_core.0.1.0.dylib",
+      "dyld[60890]: <4CA6E41E-468F-3076-B607-745A3BBF3071> /Users/kiro/hyle-scratch/compute-unified/foundation-f4-sdk-cpu-apple-shared-29d3c7a3e/relocated/lib/libhyle_graph.0.1.0.dylib",
+      "dyld[60890]: <95711783-A563-373F-BF5C-2EF6948C893C> /Users/kiro/hyle-scratch/compute-unified/foundation-f4-sdk-cpu-apple-shared-29d3c7a3e/relocated/lib/libhyle_compute.0.1.0.dylib",
+      "dyld[60890]: <70FD4203-5094-3704-B634-D3D704EF06BE> /Users/kiro/hyle-scratch/compute-unified/foundation-f4-sdk-cpu-apple-shared-29d3c7a3e/relocated/lib/libhyle_container.0.1.0.dylib",
+      "dyld[60890]: <7288DE23-144B-3D3C-BA31-5828FA8360A2> /Users/kiro/hyle-scratch/compute-unified/foundation-f4-sdk-cpu-apple-shared-29d3c7a3e/relocated/lib/libhyle_compute_ops.0.1.0.dylib",
+      "dyld[60890]: <B111436B-B422-3923-BF20-069F33C6E9E8> /Users/kiro/hyle-scratch/compute-unified/foundation-f4-sdk-cpu-apple-shared-29d3c7a3e/relocated/lib/libhyle_sched.0.1.0.dylib",
+      "dyld[60890]: <D76EBB10-635E-3EE8-8EEC-CCF53EB74112> /Users/kiro/hyle-scratch/compute-unified/foundation-f4-sdk-cpu-apple-shared-29d3c7a3e/relocated/lib/libhyle_mem_vm.0.1.0.dylib",
+      "dyld[60890]: <ED3EC086-CA4D-30C8-ACE7-8F04F20722CB> /Users/kiro/hyle-scratch/compute-unified/foundation-f4-sdk-cpu-apple-shared-29d3c7a3e/relocated/lib/libhyle_mem.0.1.0.dylib",
+      "dyld[60890]: <9ACF7711-E27C-3EAC-A695-66AF8CDD5BCC> /Users/kiro/hyle-scratch/compute-unified/foundation-f4-sdk-cpu-apple-shared-29d3c7a3e/relocated/lib/libhyle_platform_fs.0.1.0.dylib",
+      "dyld[60890]: <A6DFEFB2-A716-31C4-A4FB-591BC757263F> /Users/kiro/hyle-scratch/compute-unified/foundation-f4-sdk-cpu-apple-shared-29d3c7a3e/relocated/lib/libhyle_platform_thread.0.1.0.dylib",
+      "dyld[60890]: <BE2B1AFD-B5D9-35D0-A390-497A306D564A> /Users/kiro/hyle-scratch/compute-unified/foundation-f4-sdk-cpu-apple-shared-29d3c7a3e/relocated/lib/libhyle_platform.0.1.0.dylib",
+      "dyld[60890]: <BC34FF44-65A9-394A-882E-448D0AA70096> /Users/kiro/hyle-scratch/compute-unified/foundation-f4-sdk-cpu-apple-shared-29d3c7a3e/relocated/lib/libhyle_error.0.1.0.dylib",
+      "dyld[60890]: <BF554C74-1967-32FB-B11C-5C794E4936BD> /Users/kiro/hyle-scratch/compute-unified/foundation-f4-sdk-cpu-apple-shared-29d3c7a3e/relocated/lib/libhyle_time.0.1.0.dylib",
+      "dyld[60890]: <E18A132A-2D7F-3C7A-AEC3-78C404105A9B> /Users/kiro/hyle-scratch/compute-unified/foundation-f4-sdk-cpu-apple-shared-29d3c7a3e/relocated/lib/libhyle_compute_provider_ggml.0.1.0.dylib",
+      "dyld[60890]: <259C0BBE-F4DA-36A3-B084-5701FF7E2E88> /Users/kiro/hyle-scratch/compute-unified/foundation-f4-sdk-cpu-apple-shared-29d3c7a3e/relocated/lib/libhyle_simd.0.1.0.dylib",
+      "dyld[60890]: <5CFF0A90-C175-30F3-9E03-1F45CCB4ECF5> /Users/kiro/hyle-scratch/compute-unified/foundation-f4-sdk-cpu-apple-shared-29d3c7a3e/relocated/lib/libhyle_compute_ggml_runtime.0.1.0.dylib",
+      "dyld[60890]: <AAAE008C-29B2-3BC5-BAD6-BE0D8F787D26> /Users/kiro/hyle-scratch/compute-unified/foundation-f4-sdk-cpu-apple-shared-29d3c7a3e/relocated/lib/libhyle_compute_provider_ggml_metal.0.1.0.dylib"
+    ]
+  },
+  "verdict": "PASS_FOUNDATION_F4_AIR_CPU_APPLE_SHARED_RELOCATED_SDK",
+  "raw_archive": {
+    "name": "raw-logs.zip",
+    "sha256": "c53d07f7a27e95efb775ee8c1652c9551f9fc3ae68c8a810dd07144f7c716713",
+    "stage_hashes_refer_to": "original archive entries"
+  }
+}

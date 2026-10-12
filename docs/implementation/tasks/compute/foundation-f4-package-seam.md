@@ -82,3 +82,13 @@ imports、受限PATH运行在各job/raw archive。native-only、WSL与Air对应�
 实际PASS，普通Direct/Graph state旅程与独立oracle、3头、迁址/缺路线通过；shared ldd
 证明HYLE运行库来自新prefix，无missing依赖。累计8/18个installed格。WSL Vulkan仅预声明
 软件GPU package资格，其runtime数学未运行、不写PASS；实际GPU由Win/Air分别验。
+
+[WSL native Vulkan static](../../../../evidence/correctness/foundation-f4-native-sdk-wsl-vulkan-static/README.md)、
+[shared](../../../../evidence/correctness/foundation-f4-native-sdk-wsl-vulkan-shared/README.md)两格适用
+package/逐头/迁址/loader依赖/缺路线检查实际通过；仅software GPU资格，未执行runtime数学。
+[Air CPU+Apple static](../../../../evidence/correctness/foundation-f4-sdk-air-cpu-apple-static/README.md)、
+[shared](../../../../evidence/correctness/foundation-f4-sdk-air-cpu-apple-shared/README.md)实际Mac16,12
+M4原CPU/MLX/Metal Direct+Graph五成员state和资产、独立oracle、copy/旧版本/cancel消费者
+均通过；shared DYLD_PRINT_LIBRARIES确认HYLE运行库来自迁址prefix。实时约7GiB按库j1，
+无跨机器重型并跑。累计12/18个installed格，余下Air CPU+Vulkan和两native-only各static/shared
+六格仍按29候选待验；这组package结果没有扩大原GPU/native成本或capture资格。

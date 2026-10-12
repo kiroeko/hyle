@@ -1,0 +1,211 @@
+{
+  "candidate": "29d3c7a3ebe81f0e627986e2e8c8a393aa7832c8",
+  "snapshot": "29d3c7a3ebe81f0e627986e2e8c8a393aa7832c8",
+  "host": "air",
+  "profile": "cpu-apple",
+  "mode": "static",
+  "source": "/Users/kiro/hyle-scratch/compute-unified/source-c8874688",
+  "producer": "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-build",
+  "identity": {
+    "hardware": "Mac16,12",
+    "memory": "17179869184",
+    "os": "ProductName:\t\tmacOS\nProductVersion:\t\t27.0.1\nBuildVersion:\t\t26A434",
+    "compiler": "Apple clang version 21.0.0 (clang-2100.3.34.2)\nTarget: arm64-apple-darwin27.0.0\nThread model: posix\nInstalledDir: /Library/Developer/CommandLineTools/usr/bin"
+  },
+  "test_parallel": 1,
+  "stages": [
+    {
+      "name": "configure",
+      "command": [
+        "/opt/homebrew/bin/cmake",
+        "-S",
+        "/Users/kiro/hyle-scratch/compute-unified/source-c8874688",
+        "-B",
+        "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-build",
+        "-G",
+        "Ninja",
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DCMAKE_CXX_COMPILER=/usr/bin/clang++",
+        "-DHYLE_COMPONENTS:STRING=compute;graph",
+        "-DHYLE_COMPUTE_ROUTES:STRING=cpu;apple",
+        "-DHYLE_BUILD_TESTS:BOOL=OFF",
+        "-DHYLE_BUILD_BENCH:BOOL=OFF",
+        "-DHYLE_INSTALL:BOOL=ON",
+        "-DHYLE_STATIC:BOOL=ON"
+      ],
+      "pid": 60085,
+      "state": "terminal",
+      "available_bytes": 7416152064,
+      "log": "configure.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "elapsed": 5.658266458,
+      "sha256": "6c0fdde8116c12a913a12288c889753061b5b546891e811bc6f0fef782c4411e"
+    },
+    {
+      "name": "producer",
+      "command": [
+        "/opt/homebrew/bin/cmake",
+        "--build",
+        "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-build",
+        "--target",
+        "hyle_compute_state",
+        "hyle_graph_route_cpu_apple",
+        "--parallel",
+        "1"
+      ],
+      "pid": 60167,
+      "state": "terminal",
+      "available_bytes": 7557922816,
+      "log": "producer.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "elapsed": 12.945548666999999,
+      "sha256": "69fb0b1f2f167ce619e8381b036c72621ead461eceedfa1a1f27c234be0f5d44"
+    },
+    {
+      "name": "install",
+      "command": [
+        "/opt/homebrew/bin/cmake",
+        "--install",
+        "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-build",
+        "--prefix",
+        "/Users/kiro/hyle-scratch/compute-unified/foundation-f4-sdk-cpu-apple-static-29d3c7a3e/staging"
+      ],
+      "pid": 60252,
+      "state": "terminal",
+      "available_bytes": 7401603072,
+      "log": "install.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "elapsed": 0.44366462500000026,
+      "sha256": "4db2727f02ce55bd921c170f411bd7fbfe175a163609dce7846b06c543cf71a3"
+    },
+    {
+      "name": "consumer-configure",
+      "command": [
+        "/opt/homebrew/bin/cmake",
+        "-S",
+        "/Users/kiro/hyle-scratch/compute-unified/foundation-f4-sdk-cpu-apple-static-29d3c7a3e/consumer-source",
+        "-B",
+        "/Users/kiro/hyle-scratch/compute-unified/foundation-f4-sdk-cpu-apple-static-29d3c7a3e/consumer",
+        "-G",
+        "Ninja",
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DCMAKE_CXX_COMPILER=/usr/bin/clang++",
+        "-DCMAKE_PREFIX_PATH=/Users/kiro/hyle-scratch/compute-unified/foundation-f4-sdk-cpu-apple-static-29d3c7a3e/relocated",
+        "-DHYLE_COMPUTE_ROUTES=cpu;apple"
+      ],
+      "pid": 60287,
+      "state": "terminal",
+      "available_bytes": 7517421568,
+      "log": "consumer-configure.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "elapsed": 2.2817665419999997,
+      "sha256": "9bb4eb6e267107f4f2471637a0469d7cf6e3bed5feefa39b224b2fa83a453074"
+    },
+    {
+      "name": "consumer-build",
+      "command": [
+        "/opt/homebrew/bin/cmake",
+        "--build",
+        "/Users/kiro/hyle-scratch/compute-unified/foundation-f4-sdk-cpu-apple-static-29d3c7a3e/consumer",
+        "--parallel",
+        "1"
+      ],
+      "pid": 60388,
+      "state": "terminal",
+      "available_bytes": 7447576576,
+      "log": "consumer-build.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "elapsed": 2.302467958000001,
+      "sha256": "cc714e4fabd10bed23a45f5f367982733c2e0b5957d61b7f74686ad0c1061238"
+    },
+    {
+      "name": "dependencies-state",
+      "command": [
+        "/usr/bin/otool",
+        "-L",
+        "/Users/kiro/hyle-scratch/compute-unified/foundation-f4-sdk-cpu-apple-static-29d3c7a3e/consumer/state"
+      ],
+      "pid": 60405,
+      "state": "terminal",
+      "available_bytes": 7447756800,
+      "log": "dependencies-state.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "elapsed": 0.011881874999996711,
+      "sha256": "cb96d2aeb8b141e6c6e3af328422af9d91dfff3819502b5a71395af48cb52be8"
+    },
+    {
+      "name": "run-state",
+      "command": [
+        "/Users/kiro/hyle-scratch/compute-unified/foundation-f4-sdk-cpu-apple-static-29d3c7a3e/consumer/state"
+      ],
+      "pid": 60409,
+      "state": "terminal",
+      "available_bytes": 7447691264,
+      "log": "run-state.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "elapsed": 14.643874750000002,
+      "sha256": "aec01e4a4b25bacd4be0d0150db331caed2fc7610ffca47cfeafa38afdff45a9"
+    },
+    {
+      "name": "absence-cuda",
+      "command": [
+        "/opt/homebrew/bin/cmake",
+        "-S",
+        "/Users/kiro/hyle-scratch/compute-unified/foundation-f4-sdk-cpu-apple-static-29d3c7a3e/absence-cuda",
+        "-B",
+        "/Users/kiro/hyle-scratch/compute-unified/foundation-f4-sdk-cpu-apple-static-29d3c7a3e/absence-build-cuda",
+        "-G",
+        "Ninja",
+        "-DCMAKE_PREFIX_PATH=/Users/kiro/hyle-scratch/compute-unified/foundation-f4-sdk-cpu-apple-static-29d3c7a3e/relocated"
+      ],
+      "pid": 60417,
+      "state": "terminal",
+      "available_bytes": 7413350400,
+      "log": "absence-cuda.log",
+      "exit_code": 1,
+      "verdict": "PASS_EXPECTED_ABSENT",
+      "elapsed": 0.2684307500000003,
+      "sha256": "99ba30e8d3f939f93a167c746e4b1cb18409b8644f8dfb51a5eb087435d0c5a5"
+    },
+    {
+      "name": "absence-vulkan",
+      "command": [
+        "/opt/homebrew/bin/cmake",
+        "-S",
+        "/Users/kiro/hyle-scratch/compute-unified/foundation-f4-sdk-cpu-apple-static-29d3c7a3e/absence-vulkan",
+        "-B",
+        "/Users/kiro/hyle-scratch/compute-unified/foundation-f4-sdk-cpu-apple-static-29d3c7a3e/absence-build-vulkan",
+        "-G",
+        "Ninja",
+        "-DCMAKE_PREFIX_PATH=/Users/kiro/hyle-scratch/compute-unified/foundation-f4-sdk-cpu-apple-static-29d3c7a3e/relocated"
+      ],
+      "pid": 60476,
+      "state": "terminal",
+      "available_bytes": 7459422208,
+      "log": "absence-vulkan.log",
+      "exit_code": 1,
+      "verdict": "PASS_EXPECTED_ABSENT",
+      "elapsed": 0.21009387499999832,
+      "sha256": "3494b9bfab60550fccd0f6afa970946785421a23b88b2d5ba1b8ae581cdd69ae"
+    }
+  ],
+  "scope": "F4 candidate ordinary State Direct/Graph consumers, three new heads, missing routes, relocated actual native runtime",
+  "relocation": {
+    "staging_absent": true,
+    "relocated": "/Users/kiro/hyle-scratch/compute-unified/foundation-f4-sdk-cpu-apple-static-29d3c7a3e/relocated",
+    "Hyle_metadata_no_source_build_staging_paths": true
+  },
+  "verdict": "PASS_FOUNDATION_F4_AIR_CPU_APPLE_STATIC_RELOCATED_SDK",
+  "raw_archive": {
+    "name": "raw-logs.zip",
+    "sha256": "f7a199a8abd2e315f9697ad524055e29b7c7a0ce34069949c7f35053f2b261d2",
+    "stage_hashes_refer_to": "original archive entries"
+  }
+}
