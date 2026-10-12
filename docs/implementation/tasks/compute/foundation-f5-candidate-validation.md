@@ -13,6 +13,14 @@ Linux shared SDK新反证使compute_route_cuda单owner退AUDITED，按
 当前逐能力/风险与七门的有限回映见[最终风险矩阵](foundation-f5-final-risk-matrix.md)。
 它补足当前sanitizer facet/外库限制与未裁决组件门，不改变原完成定义或提前签terminal。
 
+2026-10-13最新范围：原20 owner的F5数学/API固定25e；实际Air TSan发现IREE依赖配置ABI
+反证，compute_provider_iree_vulkan依法独立窄reopen后两行修复固定11c348e40，当前合计
+21个CANDIDATE owner。所有原F5宿主适用san facet及修复后的IREE/runtime消费者现已取证，
+原静态MLX/外库泄漏/线程报告仍保限定INCONCLUSIVE，不写整进程PASS。普通18 SDK经
+[TSan条件影响](../../../../evidence/architecture/foundation-f5-iree-tsan-impact/README.md)保资格。
+当前没有运行中的重型gate；完整closure尚缺原component配置聚合复跑及其后的最终terminal/
+goal后统计回映。该门原272.140/300秒与三FAIL保留，之前追加300秒问题尚待答复，不擅自续时。
+
 65e配置owned-header反证使compute_route_cuda再次退AUDITED，按同一link卡补实际资格guard
 include，25e4fb398的同root Linux shared普通公开Direct/Graph/D256 SDK已恢复PASS。
 20 owner现统一固定25e，[当前快照](../../../../evidence/architecture/foundation-f5-cuda-link-final-scope/owners.json)
