@@ -300,6 +300,20 @@ rename、无源码/build路径的package metadata、imports/干净loader与DLL h
 static helper初次把已选CUDA头误列入Vulkan缺头断言，测试脚本已纠正；没有产品改动，
 原成功stage和elapsed保留。当前SDK6/18，Linux FI/D256及Air等其余12格未由此代签。
 
+## Linux CUDA公开installed D256消费与shared反证
+
+固定77df的WSL cpu,cuda static自然Compute/Graph消费、四域D256两请求/容量有效区/GQA/
+causal/乱页/tail/旧输出的Direct/Graph八次非uniform独立oracle PASS，最大误差0.00228内。
+[static证据](../../../../evidence/correctness/foundation-f5-sdk-wsl-cpu-cuda-static/README.md)
+补齐standalone Direct D256 installed这一精确门；不代签shared。新增测试首次Result::ok
+误用已修正，原fixture编译FAIL/输入history与elapsed保留。
+
+shared相同公开消费者真实未解析flashinfer::provider()，其原PRIVATE边未供应普通产品链接。
+[失败证据](../../../../evidence/correctness/foundation-f5-cuda-shared-link-failure/README.md)
+不能通过消费者补内部target绕过；compute_route_cuda已合法退AUDITED，执行
+[唯一package FIX](foundation-f5-cuda-public-provider-link.md)。其他19 owner数学/API候选未变；
+原完整F5/18格/适用san等保留，当前7 PASS、1 FAIL待修、10 NOT_RUN。
+
 [公开native源码收据](../../../../evidence/correctness/foundation-f5-public-native-source/README.md)：
 Win Vulkan/Air Apple/Vulkan各四域Direct/Graph独立oracle共24、原F2/public页权限/同镜像/
 old result通过。用户guide已加四路线选择、生命周期、explicit reference成本与capture缺席，

@@ -1,0 +1,7 @@
+{
+  "module": "compute_route_cuda",
+  "state": "CANDIDATE",
+  "record": "docs/implementation/tasks/compute/foundation-f5-candidate-validation.md",
+  "summary": "F5 CANDIDATE\uff1a\u51bb\u7ed377df1c10c\u5b9e\u73b0/API/\u7b97\u6cd5\uff0c\u539fowner\u6709\u9650scope\u4e0e\u5df2\u8fc7\u8bc1\u636e\u4fdd\u7559\uff1b\u5b8c\u657418 SDK/\u9002\u7528san/P0/LOC/guide/\u5206\u79bb\u7ea2\u961f\u7b49\u5f85\u88c1\u51b3\uff0c\u672aCLOSED\u3002",
+  "candidate": "77df1c10c7a909d6f2a99a99551e599ddb74f096"
+}

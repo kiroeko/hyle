@@ -4,6 +4,10 @@
 或完整goal。主范围仍[F5六FIX](foundation-f5-paged-ragged-batch.md)，完整验证矩阵仍
 [最终计划](foundation-f5-final-validation-plan.md)，guide为[公开用法](../../../user/batch-attention.md)。
 
+Linux shared SDK新反证使compute_route_cuda单owner退AUDITED，按
+[公开Provider link修复卡](foundation-f5-cuda-public-provider-link.md)执行唯一package FIX；
+其他19 owner仍固定77df候选。原六FIX与风险/失败预算不变，修复后再统一候选身份与证据资格。
+
 20个本轮owners从AUDITED合法进入CANDIDATE，旧record/范围快照见
 [owner scope](../../../../evidence/architecture/foundation-f5-candidate-scope/owners.json)。实际
 桥、package-only、native factory和UNIT-STRIDE分别保其原有限范围；A/F4及其余CLOSED
@@ -48,8 +52,9 @@ Compute/Graph不含SIMD，本批次数学不需要它。只把固定0/.125/.25/.
 为明确F16/BF16 word，不加产品边/API或新数学；原FAIL与同root预算保留，消费者重编译。
 product candidate77df未变，当前测试可补但资格按各实际fixture hash区分。
 
-当前SDK6/18：Win cpu,cuda、cpu,vulkan static/shared与native-only Vulkan static/shared实际公开
-消费/迁址/供头/缺route/loader PASS；其他12格仍NOT_RUN。Windows CUDA native batch只签
+当前SDK7/18：Win cpu,cuda、cpu,vulkan static/shared与native-only Vulkan static/shared，另WSL
+cpu,cuda static实际公开消费/迁址/供头/缺route/loader PASS；WSL shared具名link FAIL待修，
+其他10格仍NOT_RUN。Windows CUDA native batch只签
 具名拒绝，数学资格不冒充Linux FlashInfer。common33 ASan/UBSan/
 TSan均PASS，TSan启动exit66与process-local ASLR恢复保留，不代签控制器/native host-control。
 证据分别在foundation-f5-sdk-windows-cpu-vulkan-*、foundation-f5-native-sdk-windows-vulkan-*
