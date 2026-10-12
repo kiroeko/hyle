@@ -272,15 +272,15 @@
       "module": "compute",
       "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/foundation-f5-candidate-validation.md",
-      "summary": "F5 CANDIDATE65e2143ad：唯一CUDA公开factory link修复冻结，数学/API/算法与77df相同；原scope/FAIL/elapsed保留，交付证据按实际影响重新资格，未CLOSED。",
-      "candidate": "65e2143ad181b6e6c5a55036270b76b8c63bd90d"
+      "summary": "F5 CANDIDATE25e4fb398：唯一CUDA公开factory link与资格guard include修复冻结，Linux shared真实普通SDK消费恢复；数学/API/算法与77df相同，原scope/FAIL/elapsed保留，未CLOSED。",
+      "candidate": "25e4fb398e2a782ee60f916c3c6351c4736b6eda"
     },
     {
       "module": "graph",
       "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/foundation-f5-candidate-validation.md",
-      "summary": "F5 CANDIDATE65e2143ad：唯一CUDA公开factory link修复冻结，数学/API/算法与77df相同；原scope/FAIL/elapsed保留，交付证据按实际影响重新资格，未CLOSED。",
-      "candidate": "65e2143ad181b6e6c5a55036270b76b8c63bd90d"
+      "summary": "F5 CANDIDATE25e4fb398：唯一CUDA公开factory link与资格guard include修复冻结，Linux shared真实普通SDK消费恢复；数学/API/算法与77df相同，原scope/FAIL/elapsed保留，未CLOSED。",
+      "candidate": "25e4fb398e2a782ee60f916c3c6351c4736b6eda"
     },
     {
       "module": "container_concurrent",
@@ -356,8 +356,8 @@
       "module": "compute_provider_onednn",
       "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/foundation-f5-candidate-validation.md",
-      "summary": "F5 CANDIDATE65e2143ad：唯一CUDA公开factory link修复冻结，数学/API/算法与77df相同；原scope/FAIL/elapsed保留，交付证据按实际影响重新资格，未CLOSED。",
-      "candidate": "65e2143ad181b6e6c5a55036270b76b8c63bd90d"
+      "summary": "F5 CANDIDATE25e4fb398：唯一CUDA公开factory link与资格guard include修复冻结，Linux shared真实普通SDK消费恢复；数学/API/算法与77df相同，原scope/FAIL/elapsed保留，未CLOSED。",
+      "candidate": "25e4fb398e2a782ee60f916c3c6351c4736b6eda"
     },
     {
       "module": "compute_provider_ggml",
@@ -374,8 +374,8 @@
       "module": "graph_provider_onednn",
       "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/foundation-f5-candidate-validation.md",
-      "summary": "F5 CANDIDATE65e2143ad：唯一CUDA公开factory link修复冻结，数学/API/算法与77df相同；原scope/FAIL/elapsed保留，交付证据按实际影响重新资格，未CLOSED。",
-      "candidate": "65e2143ad181b6e6c5a55036270b76b8c63bd90d"
+      "summary": "F5 CANDIDATE25e4fb398：唯一CUDA公开factory link与资格guard include修复冻结，Linux shared真实普通SDK消费恢复；数学/API/算法与77df相同，原scope/FAIL/elapsed保留，未CLOSED。",
+      "candidate": "25e4fb398e2a782ee60f916c3c6351c4736b6eda"
     },
     {
       "module": "compute_ops",
@@ -392,36 +392,36 @@
       "module": "compute_backend_cpu",
       "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/foundation-f5-candidate-validation.md",
-      "summary": "F5 CANDIDATE65e2143ad：唯一CUDA公开factory link修复冻结，数学/API/算法与77df相同；原scope/FAIL/elapsed保留，交付证据按实际影响重新资格，未CLOSED。",
-      "candidate": "65e2143ad181b6e6c5a55036270b76b8c63bd90d"
+      "summary": "F5 CANDIDATE25e4fb398：唯一CUDA公开factory link与资格guard include修复冻结，Linux shared真实普通SDK消费恢复；数学/API/算法与77df相同，原scope/FAIL/elapsed保留，未CLOSED。",
+      "candidate": "25e4fb398e2a782ee60f916c3c6351c4736b6eda"
     },
     {
       "module": "compute_backend_cuda",
       "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/foundation-f5-candidate-validation.md",
-      "summary": "F5 CANDIDATE65e2143ad：唯一CUDA公开factory link修复冻结，数学/API/算法与77df相同；原scope/FAIL/elapsed保留，交付证据按实际影响重新资格，未CLOSED。",
-      "candidate": "65e2143ad181b6e6c5a55036270b76b8c63bd90d"
+      "summary": "F5 CANDIDATE25e4fb398：唯一CUDA公开factory link与资格guard include修复冻结，Linux shared真实普通SDK消费恢复；数学/API/算法与77df相同，原scope/FAIL/elapsed保留，未CLOSED。",
+      "candidate": "25e4fb398e2a782ee60f916c3c6351c4736b6eda"
     },
     {
       "module": "compute_provider_native",
       "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/foundation-f5-candidate-validation.md",
-      "summary": "F5 CANDIDATE65e2143ad：唯一CUDA公开factory link修复冻结，数学/API/算法与77df相同；原scope/FAIL/elapsed保留，交付证据按实际影响重新资格，未CLOSED。",
-      "candidate": "65e2143ad181b6e6c5a55036270b76b8c63bd90d"
+      "summary": "F5 CANDIDATE25e4fb398：唯一CUDA公开factory link与资格guard include修复冻结，Linux shared真实普通SDK消费恢复；数学/API/算法与77df相同，原scope/FAIL/elapsed保留，未CLOSED。",
+      "candidate": "25e4fb398e2a782ee60f916c3c6351c4736b6eda"
     },
     {
       "module": "compute_route_cpu",
       "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/foundation-f5-candidate-validation.md",
-      "summary": "F5 CANDIDATE65e2143ad：唯一CUDA公开factory link修复冻结，数学/API/算法与77df相同；原scope/FAIL/elapsed保留，交付证据按实际影响重新资格，未CLOSED。",
-      "candidate": "65e2143ad181b6e6c5a55036270b76b8c63bd90d"
+      "summary": "F5 CANDIDATE25e4fb398：唯一CUDA公开factory link与资格guard include修复冻结，Linux shared真实普通SDK消费恢复；数学/API/算法与77df相同，原scope/FAIL/elapsed保留，未CLOSED。",
+      "candidate": "25e4fb398e2a782ee60f916c3c6351c4736b6eda"
     },
     {
       "module": "graph_route_cpu",
       "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/foundation-f5-candidate-validation.md",
-      "summary": "F5 CANDIDATE65e2143ad：唯一CUDA公开factory link修复冻结，数学/API/算法与77df相同；原scope/FAIL/elapsed保留，交付证据按实际影响重新资格，未CLOSED。",
-      "candidate": "65e2143ad181b6e6c5a55036270b76b8c63bd90d"
+      "summary": "F5 CANDIDATE25e4fb398：唯一CUDA公开factory link与资格guard include修复冻结，Linux shared真实普通SDK消费恢复；数学/API/算法与77df相同，原scope/FAIL/elapsed保留，未CLOSED。",
+      "candidate": "25e4fb398e2a782ee60f916c3c6351c4736b6eda"
     },
     {
       "module": "compute_provider_cublas",
@@ -459,51 +459,52 @@
     },
     {
       "module": "compute_route_cuda",
-      "state": "AUDITED",
-      "record": "docs/implementation/tasks/compute/foundation-f5-cuda-public-provider-link.md",
-      "summary": "F5 CUDA PUBLIC-link AUDITED：中央owned-header检查要求资格guard内公开包含原FI factory头；同一有限package FIX继续，原配置FAIL/预算保留。"
+      "state": "CANDIDATE",
+      "record": "docs/implementation/tasks/compute/foundation-f5-candidate-validation.md",
+      "summary": "F5 CANDIDATE25e4fb398：唯一CUDA公开factory link与资格guard include修复冻结，Linux shared真实普通SDK消费恢复；数学/API/算法与77df相同，原scope/FAIL/elapsed保留，未CLOSED。",
+      "candidate": "25e4fb398e2a782ee60f916c3c6351c4736b6eda"
     },
     {
       "module": "graph_route_cuda",
       "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/foundation-f5-candidate-validation.md",
-      "summary": "F5 CANDIDATE65e2143ad：唯一CUDA公开factory link修复冻结，数学/API/算法与77df相同；原scope/FAIL/elapsed保留，交付证据按实际影响重新资格，未CLOSED。",
-      "candidate": "65e2143ad181b6e6c5a55036270b76b8c63bd90d"
+      "summary": "F5 CANDIDATE25e4fb398：唯一CUDA公开factory link与资格guard include修复冻结，Linux shared真实普通SDK消费恢复；数学/API/算法与77df相同，原scope/FAIL/elapsed保留，未CLOSED。",
+      "candidate": "25e4fb398e2a782ee60f916c3c6351c4736b6eda"
     },
     {
       "module": "compute_route_apple",
       "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/foundation-f5-candidate-validation.md",
-      "summary": "F5 CANDIDATE65e2143ad：唯一CUDA公开factory link修复冻结，数学/API/算法与77df相同；原scope/FAIL/elapsed保留，交付证据按实际影响重新资格，未CLOSED。",
-      "candidate": "65e2143ad181b6e6c5a55036270b76b8c63bd90d"
+      "summary": "F5 CANDIDATE25e4fb398：唯一CUDA公开factory link与资格guard include修复冻结，Linux shared真实普通SDK消费恢复；数学/API/算法与77df相同，原scope/FAIL/elapsed保留，未CLOSED。",
+      "candidate": "25e4fb398e2a782ee60f916c3c6351c4736b6eda"
     },
     {
       "module": "graph_route_apple",
       "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/foundation-f5-candidate-validation.md",
-      "summary": "F5 CANDIDATE65e2143ad：唯一CUDA公开factory link修复冻结，数学/API/算法与77df相同；原scope/FAIL/elapsed保留，交付证据按实际影响重新资格，未CLOSED。",
-      "candidate": "65e2143ad181b6e6c5a55036270b76b8c63bd90d"
+      "summary": "F5 CANDIDATE25e4fb398：唯一CUDA公开factory link与资格guard include修复冻结，Linux shared真实普通SDK消费恢复；数学/API/算法与77df相同，原scope/FAIL/elapsed保留，未CLOSED。",
+      "candidate": "25e4fb398e2a782ee60f916c3c6351c4736b6eda"
     },
     {
       "module": "compute_route_vulkan",
       "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/foundation-f5-candidate-validation.md",
-      "summary": "F5 CANDIDATE65e2143ad：唯一CUDA公开factory link修复冻结，数学/API/算法与77df相同；原scope/FAIL/elapsed保留，交付证据按实际影响重新资格，未CLOSED。",
-      "candidate": "65e2143ad181b6e6c5a55036270b76b8c63bd90d"
+      "summary": "F5 CANDIDATE25e4fb398：唯一CUDA公开factory link与资格guard include修复冻结，Linux shared真实普通SDK消费恢复；数学/API/算法与77df相同，原scope/FAIL/elapsed保留，未CLOSED。",
+      "candidate": "25e4fb398e2a782ee60f916c3c6351c4736b6eda"
     },
     {
       "module": "graph_route_vulkan",
       "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/foundation-f5-candidate-validation.md",
-      "summary": "F5 CANDIDATE65e2143ad：唯一CUDA公开factory link修复冻结，数学/API/算法与77df相同；原scope/FAIL/elapsed保留，交付证据按实际影响重新资格，未CLOSED。",
-      "candidate": "65e2143ad181b6e6c5a55036270b76b8c63bd90d"
+      "summary": "F5 CANDIDATE25e4fb398：唯一CUDA公开factory link与资格guard include修复冻结，Linux shared真实普通SDK消费恢复；数学/API/算法与77df相同，原scope/FAIL/elapsed保留，未CLOSED。",
+      "candidate": "25e4fb398e2a782ee60f916c3c6351c4736b6eda"
     },
     {
       "module": "compute_provider_ggml_vulkan",
       "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/foundation-f5-candidate-validation.md",
-      "summary": "F5 CANDIDATE65e2143ad：唯一CUDA公开factory link修复冻结，数学/API/算法与77df相同；原scope/FAIL/elapsed保留，交付证据按实际影响重新资格，未CLOSED。",
-      "candidate": "65e2143ad181b6e6c5a55036270b76b8c63bd90d"
+      "summary": "F5 CANDIDATE25e4fb398：唯一CUDA公开factory link与资格guard include修复冻结，Linux shared真实普通SDK消费恢复；数学/API/算法与77df相同，原scope/FAIL/elapsed保留，未CLOSED。",
+      "candidate": "25e4fb398e2a782ee60f916c3c6351c4736b6eda"
     },
     {
       "module": "compute_ggml_runtime",
@@ -542,8 +543,8 @@
       "module": "compute_provider_flashinfer",
       "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/foundation-f5-candidate-validation.md",
-      "summary": "F5 CANDIDATE65e2143ad：唯一CUDA公开factory link修复冻结，数学/API/算法与77df相同；原scope/FAIL/elapsed保留，交付证据按实际影响重新资格，未CLOSED。",
-      "candidate": "65e2143ad181b6e6c5a55036270b76b8c63bd90d"
+      "summary": "F5 CANDIDATE25e4fb398：唯一CUDA公开factory link与资格guard include修复冻结，Linux shared真实普通SDK消费恢复；数学/API/算法与77df相同，原scope/FAIL/elapsed保留，未CLOSED。",
+      "candidate": "25e4fb398e2a782ee60f916c3c6351c4736b6eda"
     },
     {
       "module": "compute_provider_ggml_metal",
@@ -627,22 +628,22 @@
       "module": "compute_state",
       "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/foundation-f5-candidate-validation.md",
-      "summary": "F5 CANDIDATE65e2143ad：唯一CUDA公开factory link修复冻结，数学/API/算法与77df相同；原scope/FAIL/elapsed保留，交付证据按实际影响重新资格，未CLOSED。",
-      "candidate": "65e2143ad181b6e6c5a55036270b76b8c63bd90d"
+      "summary": "F5 CANDIDATE25e4fb398：唯一CUDA公开factory link与资格guard include修复冻结，Linux shared真实普通SDK消费恢复；数学/API/算法与77df相同，原scope/FAIL/elapsed保留，未CLOSED。",
+      "candidate": "25e4fb398e2a782ee60f916c3c6351c4736b6eda"
     },
     {
       "module": "compute_batch",
       "state": "CANDIDATE",
-      "summary": "F5 CANDIDATE65e2143ad：唯一CUDA公开factory link修复冻结，数学/API/算法与77df相同；原scope/FAIL/elapsed保留，交付证据按实际影响重新资格，未CLOSED。",
+      "summary": "F5 CANDIDATE25e4fb398：唯一CUDA公开factory link与资格guard include修复冻结，Linux shared真实普通SDK消费恢复；数学/API/算法与77df相同，原scope/FAIL/elapsed保留，未CLOSED。",
       "record": "docs/implementation/tasks/compute/foundation-f5-candidate-validation.md",
-      "candidate": "65e2143ad181b6e6c5a55036270b76b8c63bd90d"
+      "candidate": "25e4fb398e2a782ee60f916c3c6351c4736b6eda"
     },
     {
       "module": "graph_batch",
       "state": "CANDIDATE",
-      "summary": "F5 CANDIDATE65e2143ad：唯一CUDA公开factory link修复冻结，数学/API/算法与77df相同；原scope/FAIL/elapsed保留，交付证据按实际影响重新资格，未CLOSED。",
+      "summary": "F5 CANDIDATE25e4fb398：唯一CUDA公开factory link与资格guard include修复冻结，Linux shared真实普通SDK消费恢复；数学/API/算法与77df相同，原scope/FAIL/elapsed保留，未CLOSED。",
       "record": "docs/implementation/tasks/compute/foundation-f5-candidate-validation.md",
-      "candidate": "65e2143ad181b6e6c5a55036270b76b8c63bd90d"
+      "candidate": "25e4fb398e2a782ee60f916c3c6351c4736b6eda"
     }
   ]
 }
