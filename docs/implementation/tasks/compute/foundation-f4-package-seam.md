@@ -1,6 +1,6 @@
 # F4 Compute façade 安装闭包接缝
 
-状态：AUDITED。新[compute_state活动卡](foundation-f4-state-versions.md)已AUDITED，原Compute
+状态：CANDIDATE，固定29d3c7a3e。新[compute_state活动卡](foundation-f4-state-versions.md)实现已固定，原Compute
 公开产品新增state root是实际source/install/public发现合同变化；不是原F1–F3或native算法缺陷。
 
 ## Closure card

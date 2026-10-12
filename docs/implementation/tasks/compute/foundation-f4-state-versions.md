@@ -39,8 +39,8 @@
 
 ## 当前阶段
 
-AUDITED。两轮owner/consumer审计已结束，下列公开对象与生命周期冻结后实施六FIX。
-本checkpoint仍无target/header产品代码；实现与状态晋级分开提交。
+CANDIDATE。不可变实现与普通consumer提交29d3c7a3e；产品实现等价b1e37d75c。
+下列AUDITED冻结与施工事实保留；剩余适用资格不由本次状态晋级代签。
 
 ## 能力初审与已确认复用
 
@@ -158,6 +158,15 @@ replace，F4-03 ready版本/head冲突+old versions，F4-04原native退休/取�
 records，F4-05四route主/正交ordinary consumers，F4-06自然入口/指南。准备提交不可变candidate；
 WSL/三sanitizer/installed交付、更多native fault适用风险、P0/LOC及candidate后红队仍待裁决，
 这些未运行项不写PASS。
+
+## Candidate
+
+commit：29d3c7a3e（registry保存完整SHA，tree从Git导出）。共同schema/身份/目录/ledger/head与
+typed F2 slots/writer/cold rearm、公头/Compute façade新root及四route普通consumer API固定。
+主GDN/conv+显式page布局和正交资产旅程通过原计算，对独立oracle；不是完整推理引擎或F5数学。
+candidate后只补测试/说明/证据；若出现产品反例，先退回AUDITED再改，预算不重置。
+实际risk资格仍待三sanitizer、更多native失败/unknown/并发、WSL/source、各installed格、
+P0/LOC与红队。CANDIDATE不是CLOSED，总goal继续完整F4/F5及完成后的基础库差额统计。
 
 正常草图：schema/Store→import complete members→Head.current→begin(base)→share/replace或
 clone_for_write→poll/wait取得writer→原数学/byte更新→publish/complete→finalize→

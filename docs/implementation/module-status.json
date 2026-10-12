@@ -270,9 +270,10 @@
     },
     {
       "module": "compute",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/foundation-f4-package-seam.md",
-      "summary": "F4 package AUDITED：仅Compute façade新增state root/交付闭包；原F1–F3及native数学/执行/退休源码不改、已签范围保留；F4实际source/SDK与新头/缺路线/迁址按窄卡验证，不跑算子全集。"
+      "summary": "F4 CANDIDATE：显式state集合/typed原F2 clone及Compute façade新增root固定；共同24项与四route真实source主/正交Direct+Graph通过，剩余三sanitizer/额外native风险/SDK/P0/终审待验；旧F1–F3/native算法范围保持，不运行全库算子。",
+      "candidate": "29d3c7a3ebe81f0e627986e2e8c8a393aa7832c8"
     },
     {
       "module": "graph",
@@ -357,9 +358,10 @@
     },
     {
       "module": "compute_provider_onednn",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/foundation-f4-package-seam.md",
-      "summary": "F4 package AUDITED：仅Compute façade新增state root/交付闭包；原F1–F3及native数学/执行/退休源码不改、已签范围保留；F4实际source/SDK与新头/缺路线/迁址按窄卡验证，不跑算子全集。"
+      "summary": "F4 CANDIDATE：显式state集合/typed原F2 clone及Compute façade新增root固定；共同24项与四route真实source主/正交Direct+Graph通过，剩余三sanitizer/额外native风险/SDK/P0/终审待验；旧F1–F3/native算法范围保持，不运行全库算子。",
+      "candidate": "29d3c7a3ebe81f0e627986e2e8c8a393aa7832c8"
     },
     {
       "module": "compute_provider_ggml",
@@ -396,27 +398,31 @@
     },
     {
       "module": "compute_backend_cpu",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/foundation-f4-package-seam.md",
-      "summary": "F4 package AUDITED：仅Compute façade新增state root/交付闭包；原F1–F3及native数学/执行/退休源码不改、已签范围保留；F4实际source/SDK与新头/缺路线/迁址按窄卡验证，不跑算子全集。"
+      "summary": "F4 CANDIDATE：显式state集合/typed原F2 clone及Compute façade新增root固定；共同24项与四route真实source主/正交Direct+Graph通过，剩余三sanitizer/额外native风险/SDK/P0/终审待验；旧F1–F3/native算法范围保持，不运行全库算子。",
+      "candidate": "29d3c7a3ebe81f0e627986e2e8c8a393aa7832c8"
     },
     {
       "module": "compute_backend_cuda",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/foundation-f4-package-seam.md",
-      "summary": "F4 package AUDITED：仅Compute façade新增state root/交付闭包；原F1–F3及native数学/执行/退休源码不改、已签范围保留；F4实际source/SDK与新头/缺路线/迁址按窄卡验证，不跑算子全集。"
+      "summary": "F4 CANDIDATE：显式state集合/typed原F2 clone及Compute façade新增root固定；共同24项与四route真实source主/正交Direct+Graph通过，剩余三sanitizer/额外native风险/SDK/P0/终审待验；旧F1–F3/native算法范围保持，不运行全库算子。",
+      "candidate": "29d3c7a3ebe81f0e627986e2e8c8a393aa7832c8"
     },
     {
       "module": "compute_provider_native",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/foundation-f4-package-seam.md",
-      "summary": "F4 package AUDITED：仅Compute façade新增state root/交付闭包；原F1–F3及native数学/执行/退休源码不改、已签范围保留；F4实际source/SDK与新头/缺路线/迁址按窄卡验证，不跑算子全集。"
+      "summary": "F4 CANDIDATE：显式state集合/typed原F2 clone及Compute façade新增root固定；共同24项与四route真实source主/正交Direct+Graph通过，剩余三sanitizer/额外native风险/SDK/P0/终审待验；旧F1–F3/native算法范围保持，不运行全库算子。",
+      "candidate": "29d3c7a3ebe81f0e627986e2e8c8a393aa7832c8"
     },
     {
       "module": "compute_route_cpu",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/foundation-f4-package-seam.md",
-      "summary": "F4 package AUDITED：仅Compute façade新增state root/交付闭包；原F1–F3及native数学/执行/退休源码不改、已签范围保留；F4实际source/SDK与新头/缺路线/迁址按窄卡验证，不跑算子全集。"
+      "summary": "F4 CANDIDATE：显式state集合/typed原F2 clone及Compute façade新增root固定；共同24项与四route真实source主/正交Direct+Graph通过，剩余三sanitizer/额外native风险/SDK/P0/终审待验；旧F1–F3/native算法范围保持，不运行全库算子。",
+      "candidate": "29d3c7a3ebe81f0e627986e2e8c8a393aa7832c8"
     },
     {
       "module": "graph_route_cpu",
@@ -465,9 +471,10 @@
     },
     {
       "module": "compute_route_cuda",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/foundation-f4-package-seam.md",
-      "summary": "F4 package AUDITED：仅Compute façade新增state root/交付闭包；原F1–F3及native数学/执行/退休源码不改、已签范围保留；F4实际source/SDK与新头/缺路线/迁址按窄卡验证，不跑算子全集。"
+      "summary": "F4 CANDIDATE：显式state集合/typed原F2 clone及Compute façade新增root固定；共同24项与四route真实source主/正交Direct+Graph通过，剩余三sanitizer/额外native风险/SDK/P0/终审待验；旧F1–F3/native算法范围保持，不运行全库算子。",
+      "candidate": "29d3c7a3ebe81f0e627986e2e8c8a393aa7832c8"
     },
     {
       "module": "graph_route_cuda",
@@ -482,9 +489,10 @@
     },
     {
       "module": "compute_route_apple",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/foundation-f4-package-seam.md",
-      "summary": "F4 package AUDITED：仅Compute façade新增state root/交付闭包；原F1–F3及native数学/执行/退休源码不改、已签范围保留；F4实际source/SDK与新头/缺路线/迁址按窄卡验证，不跑算子全集。"
+      "summary": "F4 CANDIDATE：显式state集合/typed原F2 clone及Compute façade新增root固定；共同24项与四route真实source主/正交Direct+Graph通过，剩余三sanitizer/额外native风险/SDK/P0/终审待验；旧F1–F3/native算法范围保持，不运行全库算子。",
+      "candidate": "29d3c7a3ebe81f0e627986e2e8c8a393aa7832c8"
     },
     {
       "module": "graph_route_apple",
@@ -499,9 +507,10 @@
     },
     {
       "module": "compute_route_vulkan",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/foundation-f4-package-seam.md",
-      "summary": "F4 package AUDITED：仅Compute façade新增state root/交付闭包；原F1–F3及native数学/执行/退休源码不改、已签范围保留；F4实际source/SDK与新头/缺路线/迁址按窄卡验证，不跑算子全集。"
+      "summary": "F4 CANDIDATE：显式state集合/typed原F2 clone及Compute façade新增root固定；共同24项与四route真实source主/正交Direct+Graph通过，剩余三sanitizer/额外native风险/SDK/P0/终审待验；旧F1–F3/native算法范围保持，不运行全库算子。",
+      "candidate": "29d3c7a3ebe81f0e627986e2e8c8a393aa7832c8"
     },
     {
       "module": "graph_route_vulkan",
@@ -649,9 +658,10 @@
     },
     {
       "module": "compute_state",
-      "state": "AUDITED",
-      "summary": "F4 AUDITED：显式readonly集合schema/版本/有界draft、原F1/F2 dirty clone、expected-base发布及旧版本/native uses容量与退休；六FIX冻结，未有产品资格，单机高性能消费目标不以参考档代签。",
-      "record": "docs/implementation/tasks/compute/foundation-f4-state-versions.md"
+      "state": "CANDIDATE",
+      "summary": "F4 CANDIDATE：显式state集合/typed原F2 clone及Compute façade新增root固定；共同24项与四route真实source主/正交Direct+Graph通过，剩余三sanitizer/额外native风险/SDK/P0/终审待验；旧F1–F3/native算法范围保持，不运行全库算子。",
+      "record": "docs/implementation/tasks/compute/foundation-f4-state-versions.md",
+      "candidate": "29d3c7a3ebe81f0e627986e2e8c8a393aa7832c8"
     }
   ]
 }
