@@ -705,13 +705,15 @@
     },
     {
       "module": "compute_batch",
-      "state": "QUEUED",
-      "summary": "F5身份预留：typed paged/ragged容量与metadata版本、原native显式batch preparation及四路线显式资格；无产品实现/target/公头。"
+      "state": "SCOPED",
+      "summary": "F5 SCOPED：六FIX/主与正交consumer、typed容量/metadata版本、原native显式prepare/update/run与Graph同slot opt-in边界及有限原型/验证预算已绑定；无产品实现，API/owner审计未完成。",
+      "record": "docs/implementation/tasks/compute/foundation-f5-paged-ragged-batch.md"
     },
     {
       "module": "graph_batch",
-      "state": "QUEUED",
-      "summary": "F5身份预留：opt-in BatchPlanning与原Graph/region同slot协调接缝；普通19版region/Invocation不变，无产品实现。"
+      "state": "SCOPED",
+      "summary": "F5 SCOPED：六FIX/主与正交consumer、typed容量/metadata版本、原native显式prepare/update/run与Graph同slot opt-in边界及有限原型/验证预算已绑定；无产品实现，API/owner审计未完成。",
+      "record": "docs/implementation/tasks/compute/foundation-f5-paged-ragged-batch.md"
     }
   ]
 }
