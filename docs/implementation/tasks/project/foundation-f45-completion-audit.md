@@ -18,10 +18,10 @@
 | F4-06 | F4普通Compute façade/source/18 SDK/guide/P0 | 原范围CLOSED；F5新package公开FI link另有反证修复与复验 |
 | F5-01 | common33/CPU三san/native同版本、九disabled头/四负API、18 SDK | 实现/多数门已证明，native剩余san和最终风险裁决未完整 |
 | F5-02 | 原FI12域/long split、公开installed D256四域Direct/Graph | finite native资格已证明；仅Linux CUDA/SM89，Windows具名unsupported |
-| F5-03 | 原native prepare/run/unknown/close/failure与actual guards、各route风险/ASan | 各证据按facet汇总，CUDA UBSan/TSan尚在验证；整进程LSan非PASS |
-| F5-04 | 原v19同slot/共享metadata与页权限、六submit/字段P0 | 默认tax/已声明失败同slot已证；分离终审未裁决 |
+| F5-03 | 原native prepare/run/unknown/close/failure与actual guards、各route风险/ASan；CUDA UBSan/TSan数据竞争 | Linux宿主有限facet通过；Air Apple/Vulkan UBSan/TSan补验中，整进程LSan/外库线程生命周期非PASS |
+| F5-04 | 原v19同slot/共享metadata与页权限、六submit/字段P0 | 默认tax/已声明失败同slot及分离源码终审已证；完整聚合仍待裁决 |
 | F5-05 | 七profile72 ragged、四路线paged/F2/F4、private UNKNOWN成本账 | bounded组合已证；guide正交已核，不签全平台同吞吐/capture |
-| F5-06 | 18 SDK raw/hash/candidate映射、source头/缺符号、模块测试/guide/P0/LOC | delivery矩阵已证明；剩余native san、组件聚合、红队、最终评估未完成 |
+| F5-06 | 18 SDK raw/hash/candidate映射、source头/缺符号、模块测试/guide/P0/LOC及分离红队 | delivery矩阵/分离审查已证明；剩余Air san、组件聚合及最终terminal回映未完成，固定实现后engine评估已补但尚非goal完成后裁决 |
 
 权威旧范围分别为[A terminal](../graph/foundation-a-final-closure.md)、
 [F4 terminal](../compute/foundation-f4-final-closure.md)。F5当前状态仍唯一由registry/活动

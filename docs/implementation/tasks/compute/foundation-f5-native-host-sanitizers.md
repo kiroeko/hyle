@@ -95,3 +95,8 @@ pending/retiring/observer状态且接受新F5页权限；因此Air Vulkan Clang�
 两consumer累计180。实际flags核对Vulkan program/memory/原退休/模板与Graph factory。
 四配置跨机器串行，原同名mode root累计不重置；Apple不代签Vulkan，Air不代签Windows
 MSVC或NVIDIA/MoltenVK私有代码instrument。此有限补验只补原适用风险，不新增产品范围。
+
+Air Apple UBSan两消费者已实际PASS：
+[证据](../../../../evidence/correctness/foundation-f5-native-apple-host-ubsan/README.md)，configure
+4.164/300、build165.829/1800、consumer3.863/180。actual flags覆盖新native模板/Graph
+factory及原apple_context/paged import。Apple TSan独立配置已启动，Vulkan两facet待跑。

@@ -14,7 +14,7 @@
 | F5-03 失效/失败/H2D/actual退役 | CUDA Graph四prepare失败/run suffix/unknown/open错误；Direct open失败及正常public放弃；Vulkan16 driver错误/unknown/open错误；Apple八queued失败/cancel/abandon；CPU actual error与failed F2 ready→F5/F4不发布八episode | 逐项汇总不同风险facet、语义不适用精确说明与san后方可最终裁决；新反证不能藏在既有PASS后 |
 | F5-04 原Graph同slot规划/权限、普通warm不变 | 原region/两slot/共享镜像、native/gather资格拒绝、failure cleanup/drain；原state声明不变/GCC六submit无新增指令P0 | 剩余风险facet与分离终审，不把本配置代码比对签为所有编译器吞吐 |
 | F5-05 native/reference/pending、append/read/version/oracle/cost | 七profile72 ragged episode、四路线paged/F2/F4；完整P0成本账/UNKNOWN与user guide已落盘 | guide与正交消费最终核对；不宣称所有route吞吐/capture对称 |
-| F5-06 ordinary三交付、头/缺席/迁址/loader、风险/guide/P0/redteam | 18 SDK完整矩阵与source新头/缺API；CPU三san、Win Vulkan/Air Apple宿主ASan；P0/产品LOC2610净增 | CUDA等native剩余san；测试/工具LOC、guide、分离红队与全goal后engine估计；component工具聚合环境/预算未PASS；全部适用门证明后合法closure |
+| F5-06 ordinary三交付、头/缺席/迁址/loader、风险/guide/P0/redteam | 18 SDK与source新头/缺API；CPU三san、Win Vulkan/Air Apple ASan、CUDA地址ASan/UBSan/TSan数据竞争；guide/P0/测试工具LOC/分离审查与固定实现后engine估计 | Air Apple/Vulkan UBSan/TSan剩余补验；外库LSan/线程facet精确限定；component工具聚合环境/预算未PASS；全部适用门裁决后合法closure与最终goal后统计 |
 
 cold OOM已覆盖CPU118、native684位置；不能把经caller allocator失败当driver私有heap失败。
 控制API thread-compatible不伪造并发控制要求；immutable版本/实际native退役仍有并发与san
