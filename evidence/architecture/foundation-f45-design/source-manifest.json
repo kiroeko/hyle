@@ -1,0 +1,283 @@
+{
+  "hyle_baseline": "df796ce4846333b42c8f98c6ee1855dec7d527ae",
+  "peers": [
+    {
+      "name": "sglang",
+      "checkout": "C:/public/project-hyle/sglang",
+      "checkout_head": "234ccba7f625e12639e621044496bcc6197c3758",
+      "commit": "e6072935bfa1036d4e20e8ed042ce1ff09872f57",
+      "remote": "https://github.com/sgl-project/sglang.git",
+      "files": [
+        {
+          "path": "python/sglang/srt/mem_cache/memory_pool.py",
+          "sha256": "049dc7f6f1f4c4fef32f0721b54808246e5f5842c1914849125d2f92cb4a20f7"
+        },
+        {
+          "path": "python/sglang/srt/mem_cache/allocator/paged.py",
+          "sha256": "c72f28d9c5b953a05fcc0a0451307ecdbfbfb756eca3f0073f7be3eb737d38f6"
+        },
+        {
+          "path": "python/sglang/srt/layers/attention/flashinfer_backend.py",
+          "sha256": "a5649f67038153c35864b3f50d5c368071a56cbef75f266bec804dbf7e64363f"
+        },
+        {
+          "path": "python/sglang/srt/model_executor/runner/decode_cuda_graph_runner.py",
+          "sha256": "efc9bcb776d8621968222c4928a189b1936f004c6c8f8ec46f9c278a6653d392"
+        },
+        {
+          "path": "python/sglang/srt/layers/attention/triton_backend.py",
+          "sha256": "7b614b08ef06eff8fe999988e1a5553d9d8fba2bf8d8ae3def85738bfe451062"
+        }
+      ],
+      "missing_paths": [
+        "python/sglang/srt/layers/attention/mamba/mamba2_backend.py"
+      ],
+      "changed_relevant": [
+        "python/sglang/srt/mem_cache/memory_pool.py"
+      ]
+    },
+    {
+      "name": "vllm",
+      "checkout": "C:/public/project-hyle/vllm",
+      "checkout_head": "276fbcff2717bd934cfa37c8a2e4c391f3e7237b",
+      "commit": "cc9b0f097d49abfa6fc94d1d773dca1cc2b9619c",
+      "remote": "https://github.com/vllm-project/vllm.git",
+      "files": [
+        {
+          "path": "vllm/v1/core/single_type_kv_cache_manager.py",
+          "sha256": "3fc3d6cb7c332438e554e1e3388addce00a843c4d529ab497abdb535e830fa74"
+        },
+        {
+          "path": "vllm/v1/core/block_pool.py",
+          "sha256": "6d1e0d89b43e3b2ae396906b9c2f0551dbe192b60d05f8c1ca2d93a91bbbeea3"
+        },
+        {
+          "path": "vllm/v1/core/sched/scheduler.py",
+          "sha256": "d546a324891860fbaeb2d82a85b2a7970825972cac7c8f7327d84632fa53d04d"
+        },
+        {
+          "path": "vllm/v1/worker/gpu/cudagraph_utils.py",
+          "sha256": "ef2aae2eb3ec5ea97d4732f65c886b7a4688247721aacf23e536485e0ffc05ab"
+        },
+        {
+          "path": "vllm/v1/attention/backends/flashinfer.py",
+          "sha256": "6cddac75c203ae2c8a257b275d42777d83466eb76c36f64d8e73630e79ace760"
+        },
+        {
+          "path": "vllm/v1/attention/backends/utils.py",
+          "sha256": "948d12a45b4b58452af69a629de4ceae37f35aff5057f338acb13fcc8e0c71e4"
+        },
+        {
+          "path": "vllm/v1/worker/block_table.py",
+          "sha256": "4068aea7336627f809def92f45401659d7c7c592d4da5dace6a11c90e7850c4a"
+        },
+        {
+          "path": "vllm/v1/attention/backends/flash_attn.py",
+          "sha256": "131be4f05c0d35e5b615eb66f32280cffaa4e5794fbe34682580fb5bfe50ce3e"
+        }
+      ],
+      "missing_paths": [],
+      "changed_relevant": [
+        "vllm/v1/core/single_type_kv_cache_manager.py",
+        "vllm/v1/core/sched/scheduler.py"
+      ]
+    },
+    {
+      "name": "llama.cpp",
+      "checkout": "C:/public/project-hyle/llama.cpp",
+      "checkout_head": "23b0202a189c44a54625aadcb37a946dd1d6278d",
+      "commit": "f2cc7282ce0042641df55e0e563b75e824e2b647",
+      "remote": "https://github.com/ggml-org/llama.cpp.git",
+      "files": [
+        {
+          "path": "src/llama-memory-recurrent.cpp",
+          "sha256": "51172be188d0eece2267c9105dc5a8d2c3ef7ebd58e88a6f562ac6ee36326f98"
+        },
+        {
+          "path": "src/llama-kv-cache.cpp",
+          "sha256": "4ac534956aa0b384a9a707c778527a4e7cd4ebfbea9c895e531b0935485de3c8"
+        },
+        {
+          "path": "src/llama-memory.h",
+          "sha256": "c9ed12cafb89336408a700739a0d985daca1de599c7baa9db8ba62ecbedb1bd3"
+        },
+        {
+          "path": "src/llama-graph.cpp",
+          "sha256": "8bbd999f27bcda009fbe65b1b0c99451f0e6cff5d6a82d110ad68c23ca011dee"
+        },
+        {
+          "path": "ggml/src/ggml-backend.cpp",
+          "sha256": "9a1e17bb2ff6089e597a9bb487f004863e2ac486c1289a444058783a070e10ac"
+        },
+        {
+          "path": "ggml/include/ggml.h",
+          "sha256": "12ee71f99db7db9b353bc02b1fbb57c344ee17c01ac5fb7952b41a637a747ea9"
+        },
+        {
+          "path": "ggml/src/ggml-metal/ggml-metal-ops.cpp",
+          "sha256": "07429c0b0cf93766865e44d89a39a1384c68a4ad8332dfaa667f4b65ae439e96"
+        },
+        {
+          "path": "ggml/src/ggml-vulkan/ggml-vulkan.cpp",
+          "sha256": "38a5c5c73d90c269682580716cb0f7d8b2265bbf7a236881b0391ad1be9a020d"
+        }
+      ],
+      "missing_paths": [],
+      "changed_relevant": [
+        "src/llama-graph.cpp",
+        "ggml/src/ggml-vulkan/ggml-vulkan.cpp"
+      ]
+    }
+  ],
+  "locked_providers": [
+    {
+      "name": "flashinfer",
+      "commit": "69ff11fc4954396d98326656dc85debd2223f637",
+      "files": [
+        {
+          "path": "flashinfer/prefill.py",
+          "sha256": "743953a8d301d89c6943dc48a8f6b393c0d636b71b165ae1842c2c65c7defaab"
+        },
+        {
+          "path": "flashinfer/decode.py",
+          "sha256": "d82d107a644596a9349780b839b34e690c50169ea4cea3d0ee02b78e9dc88c1a"
+        },
+        {
+          "path": "include/flashinfer/page.cuh",
+          "sha256": "98e0b40aa6a5007d767cc49b9a2421bf8df2fbea5045394982ea451892d03ace"
+        },
+        {
+          "path": "include/flashinfer/attention/scheduler.cuh",
+          "sha256": "a11a39aea393cdb380ad9439aac9170cd96849d7426ebbb920c5c8cdadfcc575"
+        }
+      ]
+    },
+    {
+      "name": "mlx",
+      "commit": "1f8e74e3f12f31365464a6867c6579f0e9b29d85",
+      "files": [
+        {
+          "path": "mlx/fast.h",
+          "sha256": "f3ed6a3a4e47e1061beda2594cb4dc916cf364d5021bf5e16b80ce60da8ff380"
+        },
+        {
+          "path": "mlx/compile.h",
+          "sha256": "d6405672fe2470b9c304a9816644b94b1bd79981f430799dbd2ac2dc2cdbf739"
+        }
+      ]
+    }
+  ],
+  "hyle_inputs": [
+    {
+      "path": "include/hyle/compute/resource_leases.h",
+      "sha256": "22d7f2153ef8c0b1f6602b84ab00d96d75afc576f3b093a59749ab4f6891446d"
+    },
+    {
+      "path": "include/hyle/compute/batch_transfer.h",
+      "sha256": "32556fbd059940dcab2b4bc2b5090f7fab8ca583da48a58f88f04796953d9c50"
+    },
+    {
+      "path": "include/hyle/compute/file_stream.h",
+      "sha256": "b668f8b7480df6e0ade7785fe8a6581c6753ac422f1aae419caa33c38dae9cc6"
+    },
+    {
+      "path": "include/hyle/compute/operation.h",
+      "sha256": "e4ee275e58618a5e18e4c4cd4e5c749f9dd209102a3bdb854a5fac11acb2e079"
+    },
+    {
+      "path": "include/hyle/compute/provider.h",
+      "sha256": "1a4650e03cb2a0f6f46d22d914db197fb4bb7a59cd5aced180140feee0a7f337"
+    },
+    {
+      "path": "include/hyle/compute/providers/flashinfer.h",
+      "sha256": "a430e5cabd6b93bebef5b8c9d89b6f3bce7e6b0a081763b49362ae94f3e72984"
+    },
+    {
+      "path": "include/hyle/graph/graph.h",
+      "sha256": "c7a93ccf9fd1c86fb9dec286e7d3345aabcb1810c2fb6793a66093480a5a2136"
+    },
+    {
+      "path": "include/hyle/graph/executable.h",
+      "sha256": "8494f631596c1fefa336385fb909e9a9baee7708549abd4c8b5e8ce1a203e75f"
+    },
+    {
+      "path": "include/hyle/graph/region_provider.h",
+      "sha256": "22b75e8e11f0763324385b607a14abec27ce1080d1302bfd9cdc8e9a99734d6b"
+    },
+    {
+      "path": "include/hyle/graph/cpu_cuda.h",
+      "sha256": "a7bb69686ae5f1e42449f4b9f8ecf2f3d6713a3329773aa154e3bd7cc9ac5207"
+    },
+    {
+      "path": "include/hyle/graph/cpu_apple.h",
+      "sha256": "c1e1a285c8d3a5a4847446060ad734f9beba8a02ba02cd7de86471587c73feb2"
+    },
+    {
+      "path": "include/hyle/graph/cpu_vulkan.h",
+      "sha256": "8dc437f6289030c55ff4a450170e6b804a4b788d5c999b2211b90aed9396c638"
+    },
+    {
+      "path": "include/hyle/graph/apple.h",
+      "sha256": "03354cb3a0153e3bf5e2c88ab4597c97d0abdbfad703cf28d7e2beee29602fcd"
+    },
+    {
+      "path": "include/hyle/graph/vulkan.h",
+      "sha256": "43e5994289d6d7631703bff42c03005b1e197b48a4ad24ae9ed3780b43bdc8c7"
+    },
+    {
+      "path": "src/graph_route_cpu_cuda/compile.cc",
+      "sha256": "ac51efee0c84ccf4a06aea54b8a10bbbb6dccc792ffcb781b07598c08f09295b"
+    },
+    {
+      "path": "src/graph_route_cpu_apple/compile.cc",
+      "sha256": "c38c6dc53dd4be5d65fd9bad6d3b8dbc9389a08605b90f09e5404b0508c092e5"
+    },
+    {
+      "path": "src/graph_route_cpu_vulkan/compile.cc",
+      "sha256": "dfacaf5b2d4462cf3bb29b638a0b7399efe168630164c50ab73f46b687cd0232"
+    },
+    {
+      "path": "src/graph/executable.cc",
+      "sha256": "c48cbbd64137d99e7345613a0f99f84347e0762f816388a4f795b0b90ca36117"
+    },
+    {
+      "path": "src/compute_provider_flashinfer/flashinfer_provider.cc",
+      "sha256": "1e892862053dcdf665d1bced57e67bcda7537f470bb67f6a30e3377b6400ff5f"
+    },
+    {
+      "path": "src/compute_provider_flashinfer/native_attention.cu",
+      "sha256": "ee2638f5b4cb9f7f25be71027ab2e0f12a3e0229a6da574ef10e76be4d724146"
+    },
+    {
+      "path": "src/compute_provider_flashinfer/native_attention.h",
+      "sha256": "f8efa77d2aaa406a9992f5921c1dab0e675eaa6edac3105f16e683248bb724d7"
+    },
+    {
+      "path": "src/compute_provider_flashinfer/CMakeLists.txt",
+      "sha256": "6299bdd62591d0f9e8a93b432d825d2e553a528ba66ccf95943291bb45021a31"
+    },
+    {
+      "path": "src/compute_route_apple/apple_operations.cc",
+      "sha256": "4c90b14e44cc3a438c16c9935ef19e1e14a1642790179261004cb2d8d6065ee2"
+    },
+    {
+      "path": "src/compute_route_vulkan/vulkan_operations.cc",
+      "sha256": "8bcf46b8c05cc096c5761657d10049c83db83852827bb6b42b5694b7dac1d9d2"
+    },
+    {
+      "path": "cmake/HyleDependencyLock.json",
+      "sha256": "bea30e32b7348f8001a2a47728a8d516c61a5516b64c1d8fc2c2bd7568fc832f"
+    }
+  ],
+  "contract": {
+    "scope": "F4/F5 and CPU+CUDA vs native Apple/Vulkan asymmetry research/design only",
+    "product_changes": false,
+    "registry_changes": false,
+    "runtime_or_performance_tests": "NOT_RUN",
+    "peer_checkout_moved": false,
+    "peer_fetch": "Exact remote HEAD objects fetched; sources read with git show, no pull/reset/clean.",
+    "primary_peer_files": 21,
+    "locked_provider_files": 6,
+    "bounded_stop": "One fixed snapshot pass and related upstream diff; no project builds, model downloads, global validation or new implementation goal."
+  }
+}

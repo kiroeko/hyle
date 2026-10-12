@@ -1,5 +1,12 @@
 # 推理引擎实际需求与 HYLE 基础机制缺口调研
 
+> 阅读边界（2026-10-12）：本页现状表固定在原baseline00fdc40，不反向改写当时调查事实。
+> F1–F3随后已分别[收口F1](../compute/foundation-f1-resource-leases.md)、
+> [F2](../compute/foundation-f2-final-closure.md)、[F3](../compute/foundation-f3-final-closure.md)。
+> 用户新要求的F4/F5及CPU+CUDA与Apple/Vulkan不对称见
+> [定向源码研究](foundation-f45-reference-research-2026-10.md)和
+> [拟议设计](../../../architecture/compute-state-paged-design.md)；当前产品状态仍只看registry。
+
 ## 本轮合同
 
 - 状态：`RESEARCH_COMPLETE`；本卡不是产品模块 closure card，不重开 CLOSED owner。
