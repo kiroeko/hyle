@@ -1,0 +1,453 @@
+Vulkan actual GPU Apple M4 / MoltenVK / 1.4.1
+Vulkan Direct actual fault mode=0 submits=1 accepted=0 guards=0 no-publication/no-reuse PASS
+Vulkan Direct actual fault mode=1 submits=1 accepted=0 guards=0 no-publication/no-reuse PASS
+Vulkan Direct actual fault mode=2 submits=2 accepted=1 guards=0 no-publication/no-reuse PASS
+Vulkan unknown observed=1 injected=1 active_uses=3
+Vulkan Direct actual fault mode=3 submits=5 accepted=5 guards=0 no-publication/no-reuse PASS
+Vulkan Direct ragged query-cap=1 kv-cap=1 nonuniform 128-value independent oracle PASS
+Vulkan Direct unit shape actual completion/retirement PASS
+Vulkan Graph actual fault mode=0 submits=1 accepted=0 guards=0 no-publication/no-reuse PASS
+Vulkan Graph actual fault mode=1 submits=1 accepted=0 guards=0 no-publication/no-reuse PASS
+Vulkan Graph actual fault mode=2 submits=2 accepted=1 guards=0 no-publication/no-reuse PASS
+Vulkan unknown observed=1 injected=1 active_uses=3
+Vulkan Graph actual fault mode=3 submits=5 accepted=5 guards=0 no-publication/no-reuse PASS
+Vulkan Graph ragged query-cap=1 kv-cap=1 nonuniform 128-value independent oracle PASS
+Vulkan Graph unit shape actual completion/retirement PASS
+Vulkan metadata layout=1 staged=1920 uploaded=1920 hostWaits=1 PASS
+materialized independent oracle maxError=3.0380168e-05 PASS
+materialized independent oracle maxError=3.0380168e-05 PASS
+Vulkan metadata layout=2 staged=1920 uploaded=1920 hostWaits=1 PASS
+materialized independent oracle maxError=3.03596683e-05 PASS
+materialized independent oracle maxError=3.0380168e-05 PASS
+materialized independent oracle maxError=3.0380168e-05 PASS
+Vulkan metadata layout=3 staged=1920 uploaded=1920 hostWaits=1 PASS
+materialized independent oracle maxError=3.03596683e-05 PASS
+materialized independent oracle maxError=3.0380168e-05 PASS
+materialized independent oracle maxError=3.0380168e-05 PASS
+materialized independent oracle maxError=3.03596683e-05 PASS
+Vulkan native controller Direct paged F16 causal=0 two-banks/same-generation/two-slots/update PASS; backing=6138 uploaded=1920 waits=1
+materialized independent oracle maxError=3.0380168e-05 PASS
+materialized independent oracle maxError=3.0380168e-05 PASS
+materialized independent oracle maxError=3.03596683e-05 PASS
+Vulkan native controller Graph paged F16 causal=0 two-banks/same-generation/two-slots/update PASS; backing=6138 uploaded=1920 waits=1
+Vulkan explicit materialized paged F16 causal=0 native Direct/Graph NaN-padding/two-slots/update/old-result PASS
+Vulkan metadata layout=1 staged=1920 uploaded=1920 hostWaits=1 PASS
+materialized independent oracle maxError=5.72360158e-05 PASS
+materialized independent oracle maxError=5.72360158e-05 PASS
+Vulkan metadata layout=2 staged=1920 uploaded=1920 hostWaits=1 PASS
+materialized independent oracle maxError=3.03596683e-05 PASS
+materialized independent oracle maxError=5.72360158e-05 PASS
+materialized independent oracle maxError=5.72360158e-05 PASS
+Vulkan metadata layout=3 staged=1920 uploaded=1920 hostWaits=1 PASS
+materialized independent oracle maxError=3.03596683e-05 PASS
+materialized independent oracle maxError=5.72360158e-05 PASS
+materialized independent oracle maxError=5.72360158e-05 PASS
+materialized independent oracle maxError=3.03596683e-05 PASS
+Vulkan native controller Direct paged F16 causal=1 two-banks/same-generation/two-slots/update PASS; backing=6138 uploaded=1920 waits=1
+materialized independent oracle maxError=5.72360158e-05 PASS
+materialized independent oracle maxError=5.72360158e-05 PASS
+materialized independent oracle maxError=3.03596683e-05 PASS
+Vulkan native controller Graph paged F16 causal=1 two-banks/same-generation/two-slots/update PASS; backing=6138 uploaded=1920 waits=1
+Vulkan explicit materialized paged F16 causal=1 native Direct/Graph NaN-padding/two-slots/update/old-result PASS
+Vulkan metadata layout=1 staged=1920 uploaded=1920 hostWaits=1 PASS
+materialized independent oracle maxError=0.000243569365 PASS
+materialized independent oracle maxError=0.000243569365 PASS
+Vulkan metadata layout=2 staged=1920 uploaded=1920 hostWaits=1 PASS
+materialized independent oracle maxError=0.000243374406 PASS
+materialized independent oracle maxError=0.000243569365 PASS
+materialized independent oracle maxError=0.000243569365 PASS
+Vulkan metadata layout=3 staged=1920 uploaded=1920 hostWaits=1 PASS
+materialized independent oracle maxError=0.000243374406 PASS
+materialized independent oracle maxError=0.000243569365 PASS
+materialized independent oracle maxError=0.000243569365 PASS
+materialized independent oracle maxError=0.000243374406 PASS
+Vulkan native controller Direct paged BF16 causal=0 two-banks/same-generation/two-slots/update PASS; backing=6138 uploaded=1920 waits=1
+materialized independent oracle maxError=0.000243569365 PASS
+materialized independent oracle maxError=0.000243569365 PASS
+materialized independent oracle maxError=0.000243374406 PASS
+Vulkan native controller Graph paged BF16 causal=0 two-banks/same-generation/two-slots/update PASS; backing=6138 uploaded=1920 waits=1
+Vulkan explicit materialized paged BF16 causal=0 native Direct/Graph NaN-padding/two-slots/update/old-result PASS
+Vulkan metadata layout=1 staged=1920 uploaded=1920 hostWaits=1 PASS
+materialized independent oracle maxError=0.000483878487 PASS
+materialized independent oracle maxError=0.000483878487 PASS
+Vulkan metadata layout=2 staged=1920 uploaded=1920 hostWaits=1 PASS
+materialized independent oracle maxError=0.000243374406 PASS
+materialized independent oracle maxError=0.000483878487 PASS
+materialized independent oracle maxError=0.000483878487 PASS
+Vulkan metadata layout=3 staged=1920 uploaded=1920 hostWaits=1 PASS
+materialized independent oracle maxError=0.000243374406 PASS
+materialized independent oracle maxError=0.000483878487 PASS
+materialized independent oracle maxError=0.000483878487 PASS
+materialized independent oracle maxError=0.000243374406 PASS
+Vulkan native controller Direct paged BF16 causal=1 two-banks/same-generation/two-slots/update PASS; backing=6138 uploaded=1920 waits=1
+materialized independent oracle maxError=0.000483878487 PASS
+materialized independent oracle maxError=0.000483878487 PASS
+materialized independent oracle maxError=0.000243374406 PASS
+Vulkan native controller Graph paged BF16 causal=1 two-banks/same-generation/two-slots/update PASS; backing=6138 uploaded=1920 waits=1
+Vulkan explicit materialized paged BF16 causal=1 native Direct/Graph NaN-padding/two-slots/update/old-result PASS
+Vulkan metadata layout=1 staged=1920 uploaded=1920 hostWaits=1 PASS
+materialized independent oracle maxError=6.030212e-05 PASS
+materialized independent oracle maxError=6.030212e-05 PASS
+Vulkan metadata layout=2 staged=1920 uploaded=1920 hostWaits=1 PASS
+materialized independent oracle maxError=6.030212e-05 PASS
+materialized independent oracle maxError=6.030212e-05 PASS
+materialized independent oracle maxError=6.030212e-05 PASS
+Vulkan metadata layout=3 staged=1920 uploaded=1920 hostWaits=1 PASS
+materialized independent oracle maxError=6.030212e-05 PASS
+materialized independent oracle maxError=6.030212e-05 PASS
+materialized independent oracle maxError=6.030212e-05 PASS
+materialized independent oracle maxError=6.030212e-05 PASS
+Vulkan native controller Direct ragged F16 causal=0 two-banks/same-generation/two-slots/update PASS; backing=6138 uploaded=1920 waits=1
+materialized independent oracle maxError=6.030212e-05 PASS
+materialized independent oracle maxError=6.030212e-05 PASS
+materialized independent oracle maxError=6.030212e-05 PASS
+Vulkan native controller Graph ragged F16 causal=0 two-banks/same-generation/two-slots/update PASS; backing=6138 uploaded=1920 waits=1
+Vulkan explicit materialized ragged F16 causal=0 native Direct/Graph NaN-padding/two-slots/update/old-result PASS
+Vulkan metadata layout=1 staged=1920 uploaded=1920 hostWaits=1 PASS
+materialized independent oracle maxError=6.04093309e-05 PASS
+materialized independent oracle maxError=6.04093309e-05 PASS
+Vulkan metadata layout=2 staged=1920 uploaded=1920 hostWaits=1 PASS
+materialized independent oracle maxError=6.030212e-05 PASS
+materialized independent oracle maxError=6.04093309e-05 PASS
+materialized independent oracle maxError=6.04093309e-05 PASS
+Vulkan metadata layout=3 staged=1920 uploaded=1920 hostWaits=1 PASS
+materialized independent oracle maxError=6.030212e-05 PASS
+materialized independent oracle maxError=6.04093309e-05 PASS
+materialized independent oracle maxError=6.04093309e-05 PASS
+materialized independent oracle maxError=6.030212e-05 PASS
+Vulkan native controller Direct ragged F16 causal=1 two-banks/same-generation/two-slots/update PASS; backing=6138 uploaded=1920 waits=1
+materialized independent oracle maxError=6.04093309e-05 PASS
+materialized independent oracle maxError=6.04093309e-05 PASS
+materialized independent oracle maxError=6.030212e-05 PASS
+Vulkan native controller Graph ragged F16 causal=1 two-banks/same-generation/two-slots/update PASS; backing=6138 uploaded=1920 waits=1
+Vulkan explicit materialized ragged F16 causal=1 native Direct/Graph NaN-padding/two-slots/update/old-result PASS
+Vulkan metadata layout=1 staged=1920 uploaded=1920 hostWaits=1 PASS
+materialized independent oracle maxError=0.000483024423 PASS
+materialized independent oracle maxError=0.000483024423 PASS
+Vulkan metadata layout=2 staged=1920 uploaded=1920 hostWaits=1 PASS
+materialized independent oracle maxError=0.000483024423 PASS
+materialized independent oracle maxError=0.000483024423 PASS
+materialized independent oracle maxError=0.000483024423 PASS
+Vulkan metadata layout=3 staged=1920 uploaded=1920 hostWaits=1 PASS
+materialized independent oracle maxError=0.000483024423 PASS
+materialized independent oracle maxError=0.000483024423 PASS
+materialized independent oracle maxError=0.000483024423 PASS
+materialized independent oracle maxError=0.000483024423 PASS
+Vulkan native controller Direct ragged BF16 causal=0 two-banks/same-generation/two-slots/update PASS; backing=6138 uploaded=1920 waits=1
+materialized independent oracle maxError=0.000483024423 PASS
+materialized independent oracle maxError=0.000483024423 PASS
+materialized independent oracle maxError=0.000483024423 PASS
+Vulkan native controller Graph ragged BF16 causal=0 two-banks/same-generation/two-slots/update PASS; backing=6138 uploaded=1920 waits=1
+Vulkan explicit materialized ragged BF16 causal=0 native Direct/Graph NaN-padding/two-slots/update/old-result PASS
+Vulkan metadata layout=1 staged=1920 uploaded=1920 hostWaits=1 PASS
+materialized independent oracle maxError=0.000487680542 PASS
+materialized independent oracle maxError=0.000487680542 PASS
+Vulkan metadata layout=2 staged=1920 uploaded=1920 hostWaits=1 PASS
+materialized independent oracle maxError=0.000483024423 PASS
+materialized independent oracle maxError=0.000487680542 PASS
+materialized independent oracle maxError=0.000487680542 PASS
+Vulkan metadata layout=3 staged=1920 uploaded=1920 hostWaits=1 PASS
+materialized independent oracle maxError=0.000483024423 PASS
+materialized independent oracle maxError=0.000487680542 PASS
+materialized independent oracle maxError=0.000487680542 PASS
+materialized independent oracle maxError=0.000483024423 PASS
+Vulkan native controller Direct ragged BF16 causal=1 two-banks/same-generation/two-slots/update PASS; backing=6138 uploaded=1920 waits=1
+materialized independent oracle maxError=0.000487680542 PASS
+materialized independent oracle maxError=0.000487680542 PASS
+materialized independent oracle maxError=0.000483024423 PASS
+Vulkan native controller Graph ragged BF16 causal=1 two-banks/same-generation/two-slots/update PASS; backing=6138 uploaded=1920 waits=1
+Vulkan explicit materialized ragged BF16 causal=1 native Direct/Graph NaN-padding/two-slots/update/old-result PASS
+Vulkan metadata layout=1 staged=160 uploaded=160 hostWaits=1 PASS
+Vulkan paged reference F16 Direct episode=0 oracle=0.250 exact-page-guards PASS
+Vulkan metadata layout=2 staged=160 uploaded=160 hostWaits=1 PASS
+Vulkan paged reference F16 Direct episode=1 oracle=0.375 exact-page-guards PASS
+Vulkan metadata layout=1 staged=160 uploaded=160 hostWaits=1 PASS
+Vulkan paged reference F16 Direct episode=2 oracle=0.250 exact-page-guards PASS
+Vulkan metadata layout=1 staged=160 uploaded=160 hostWaits=1 PASS
+Vulkan paged reference F16 Graph episode=0 oracle=0.250 exact-page-guards PASS
+Vulkan metadata layout=2 staged=160 uploaded=160 hostWaits=1 PASS
+Vulkan paged reference F16 Graph episode=1 oracle=0.375 exact-page-guards PASS
+Vulkan metadata layout=1 staged=160 uploaded=160 hostWaits=1 PASS
+Vulkan paged reference F16 Graph episode=2 oracle=0.250 exact-page-guards PASS
+Vulkan Direct F16 cold metadata OOM baseline=59 live=0
+Vulkan Direct F16 cold metadata OOM point=1/59 cleanup PASS
+Vulkan Direct F16 cold metadata OOM point=2/59 cleanup PASS
+Vulkan Direct F16 cold metadata OOM point=3/59 cleanup PASS
+Vulkan Direct F16 cold metadata OOM point=4/59 cleanup PASS
+Vulkan Direct F16 cold metadata OOM point=5/59 cleanup PASS
+Vulkan Direct F16 cold metadata OOM point=6/59 cleanup PASS
+Vulkan Direct F16 cold metadata OOM point=7/59 cleanup PASS
+Vulkan Direct F16 cold metadata OOM point=8/59 cleanup PASS
+Vulkan Direct F16 cold metadata OOM point=9/59 cleanup PASS
+Vulkan Direct F16 cold metadata OOM point=10/59 cleanup PASS
+Vulkan Direct F16 cold metadata OOM point=11/59 cleanup PASS
+Vulkan Direct F16 cold metadata OOM point=12/59 cleanup PASS
+Vulkan Direct F16 cold metadata OOM point=13/59 cleanup PASS
+Vulkan Direct F16 cold metadata OOM point=14/59 cleanup PASS
+Vulkan Direct F16 cold metadata OOM point=15/59 cleanup PASS
+Vulkan Direct F16 cold metadata OOM point=16/59 cleanup PASS
+Vulkan Direct F16 cold metadata OOM point=17/59 cleanup PASS
+Vulkan Direct F16 cold metadata OOM point=18/59 cleanup PASS
+Vulkan Direct F16 cold metadata OOM point=19/59 cleanup PASS
+Vulkan Direct F16 cold metadata OOM point=20/59 cleanup PASS
+Vulkan Direct F16 cold metadata OOM point=21/59 cleanup PASS
+Vulkan Direct F16 cold metadata OOM point=22/59 cleanup PASS
+Vulkan Direct F16 cold metadata OOM point=23/59 cleanup PASS
+Vulkan Direct F16 cold metadata OOM point=24/59 cleanup PASS
+Vulkan Direct F16 cold metadata OOM point=25/59 cleanup PASS
+Vulkan Direct F16 cold metadata OOM point=26/59 cleanup PASS
+Vulkan Direct F16 cold metadata OOM point=27/59 cleanup PASS
+Vulkan Direct F16 cold metadata OOM point=28/59 cleanup PASS
+Vulkan Direct F16 cold metadata OOM point=29/59 cleanup PASS
+Vulkan Direct F16 cold metadata OOM point=30/59 cleanup PASS
+Vulkan Direct F16 cold metadata OOM point=31/59 cleanup PASS
+Vulkan Direct F16 cold metadata OOM point=32/59 cleanup PASS
+Vulkan Direct F16 cold metadata OOM point=33/59 cleanup PASS
+Vulkan Direct F16 cold metadata OOM point=34/59 cleanup PASS
+Vulkan Direct F16 cold metadata OOM point=35/59 cleanup PASS
+Vulkan Direct F16 cold metadata OOM point=36/59 cleanup PASS
+Vulkan Direct F16 cold metadata OOM point=37/59 cleanup PASS
+Vulkan Direct F16 cold metadata OOM point=38/59 cleanup PASS
+Vulkan Direct F16 cold metadata OOM point=39/59 cleanup PASS
+Vulkan Direct F16 cold metadata OOM point=40/59 cleanup PASS
+Vulkan Direct F16 cold metadata OOM point=41/59 cleanup PASS
+Vulkan Direct F16 cold metadata OOM point=42/59 cleanup PASS
+Vulkan Direct F16 cold metadata OOM point=43/59 cleanup PASS
+Vulkan Direct F16 cold metadata OOM point=44/59 cleanup PASS
+Vulkan Direct F16 cold metadata OOM point=45/59 cleanup PASS
+Vulkan Direct F16 cold metadata OOM point=46/59 cleanup PASS
+Vulkan Direct F16 cold metadata OOM point=47/59 cleanup PASS
+Vulkan Direct F16 cold metadata OOM point=48/59 cleanup PASS
+Vulkan Direct F16 cold metadata OOM point=49/59 cleanup PASS
+Vulkan Direct F16 cold metadata OOM point=50/59 cleanup PASS
+Vulkan Direct F16 cold metadata OOM point=51/59 cleanup PASS
+Vulkan Direct F16 cold metadata OOM point=52/59 cleanup PASS
+Vulkan Direct F16 cold metadata OOM point=53/59 cleanup PASS
+Vulkan Direct F16 cold metadata OOM point=54/59 cleanup PASS
+Vulkan Direct F16 cold metadata OOM point=55/59 cleanup PASS
+Vulkan Direct F16 cold metadata OOM point=56/59 cleanup PASS
+Vulkan Direct F16 cold metadata OOM point=57/59 cleanup PASS
+Vulkan Direct F16 cold metadata OOM point=58/59 cleanup PASS
+Vulkan Direct F16 cold metadata OOM point=59/59 cleanup PASS
+Vulkan typed page controller F16 Direct episode=0 oracle=0.250 PASS
+Vulkan typed page controller F16 Direct episode=1 oracle=0.375 PASS
+Vulkan typed page controller F16 Direct episode=2 oracle=0.250 PASS
+Vulkan Graph F16 cold metadata OOM baseline=59 live=0
+Vulkan Graph F16 cold metadata OOM point=1/59 cleanup PASS
+Vulkan Graph F16 cold metadata OOM point=2/59 cleanup PASS
+Vulkan Graph F16 cold metadata OOM point=3/59 cleanup PASS
+Vulkan Graph F16 cold metadata OOM point=4/59 cleanup PASS
+Vulkan Graph F16 cold metadata OOM point=5/59 cleanup PASS
+Vulkan Graph F16 cold metadata OOM point=6/59 cleanup PASS
+Vulkan Graph F16 cold metadata OOM point=7/59 cleanup PASS
+Vulkan Graph F16 cold metadata OOM point=8/59 cleanup PASS
+Vulkan Graph F16 cold metadata OOM point=9/59 cleanup PASS
+Vulkan Graph F16 cold metadata OOM point=10/59 cleanup PASS
+Vulkan Graph F16 cold metadata OOM point=11/59 cleanup PASS
+Vulkan Graph F16 cold metadata OOM point=12/59 cleanup PASS
+Vulkan Graph F16 cold metadata OOM point=13/59 cleanup PASS
+Vulkan Graph F16 cold metadata OOM point=14/59 cleanup PASS
+Vulkan Graph F16 cold metadata OOM point=15/59 cleanup PASS
+Vulkan Graph F16 cold metadata OOM point=16/59 cleanup PASS
+Vulkan Graph F16 cold metadata OOM point=17/59 cleanup PASS
+Vulkan Graph F16 cold metadata OOM point=18/59 cleanup PASS
+Vulkan Graph F16 cold metadata OOM point=19/59 cleanup PASS
+Vulkan Graph F16 cold metadata OOM point=20/59 cleanup PASS
+Vulkan Graph F16 cold metadata OOM point=21/59 cleanup PASS
+Vulkan Graph F16 cold metadata OOM point=22/59 cleanup PASS
+Vulkan Graph F16 cold metadata OOM point=23/59 cleanup PASS
+Vulkan Graph F16 cold metadata OOM point=24/59 cleanup PASS
+Vulkan Graph F16 cold metadata OOM point=25/59 cleanup PASS
+Vulkan Graph F16 cold metadata OOM point=26/59 cleanup PASS
+Vulkan Graph F16 cold metadata OOM point=27/59 cleanup PASS
+Vulkan Graph F16 cold metadata OOM point=28/59 cleanup PASS
+Vulkan Graph F16 cold metadata OOM point=29/59 cleanup PASS
+Vulkan Graph F16 cold metadata OOM point=30/59 cleanup PASS
+Vulkan Graph F16 cold metadata OOM point=31/59 cleanup PASS
+Vulkan Graph F16 cold metadata OOM point=32/59 cleanup PASS
+Vulkan Graph F16 cold metadata OOM point=33/59 cleanup PASS
+Vulkan Graph F16 cold metadata OOM point=34/59 cleanup PASS
+Vulkan Graph F16 cold metadata OOM point=35/59 cleanup PASS
+Vulkan Graph F16 cold metadata OOM point=36/59 cleanup PASS
+Vulkan Graph F16 cold metadata OOM point=37/59 cleanup PASS
+Vulkan Graph F16 cold metadata OOM point=38/59 cleanup PASS
+Vulkan Graph F16 cold metadata OOM point=39/59 cleanup PASS
+Vulkan Graph F16 cold metadata OOM point=40/59 cleanup PASS
+Vulkan Graph F16 cold metadata OOM point=41/59 cleanup PASS
+Vulkan Graph F16 cold metadata OOM point=42/59 cleanup PASS
+Vulkan Graph F16 cold metadata OOM point=43/59 cleanup PASS
+Vulkan Graph F16 cold metadata OOM point=44/59 cleanup PASS
+Vulkan Graph F16 cold metadata OOM point=45/59 cleanup PASS
+Vulkan Graph F16 cold metadata OOM point=46/59 cleanup PASS
+Vulkan Graph F16 cold metadata OOM point=47/59 cleanup PASS
+Vulkan Graph F16 cold metadata OOM point=48/59 cleanup PASS
+Vulkan Graph F16 cold metadata OOM point=49/59 cleanup PASS
+Vulkan Graph F16 cold metadata OOM point=50/59 cleanup PASS
+Vulkan Graph F16 cold metadata OOM point=51/59 cleanup PASS
+Vulkan Graph F16 cold metadata OOM point=52/59 cleanup PASS
+Vulkan Graph F16 cold metadata OOM point=53/59 cleanup PASS
+Vulkan Graph F16 cold metadata OOM point=54/59 cleanup PASS
+Vulkan Graph F16 cold metadata OOM point=55/59 cleanup PASS
+Vulkan Graph F16 cold metadata OOM point=56/59 cleanup PASS
+Vulkan Graph F16 cold metadata OOM point=57/59 cleanup PASS
+Vulkan Graph F16 cold metadata OOM point=58/59 cleanup PASS
+Vulkan Graph F16 cold metadata OOM point=59/59 cleanup PASS
+Vulkan typed page controller F16 Graph episode=0 oracle=0.250 PASS
+Vulkan typed page controller F16 Graph episode=1 oracle=0.375 PASS
+Vulkan typed page controller F16 Graph episode=2 oracle=0.250 PASS
+Vulkan native page append/F4 F16 clone=1024 append=512 whole-arena=5120 PASS
+Vulkan metadata layout=1 staged=160 uploaded=160 hostWaits=1 PASS
+Vulkan paged reference BF16 Direct episode=0 oracle=0.250 exact-page-guards PASS
+Vulkan metadata layout=2 staged=160 uploaded=160 hostWaits=1 PASS
+Vulkan paged reference BF16 Direct episode=1 oracle=0.375 exact-page-guards PASS
+Vulkan metadata layout=1 staged=160 uploaded=160 hostWaits=1 PASS
+Vulkan paged reference BF16 Direct episode=2 oracle=0.250 exact-page-guards PASS
+Vulkan metadata layout=1 staged=160 uploaded=160 hostWaits=1 PASS
+Vulkan paged reference BF16 Graph episode=0 oracle=0.250 exact-page-guards PASS
+Vulkan metadata layout=2 staged=160 uploaded=160 hostWaits=1 PASS
+Vulkan paged reference BF16 Graph episode=1 oracle=0.375 exact-page-guards PASS
+Vulkan metadata layout=1 staged=160 uploaded=160 hostWaits=1 PASS
+Vulkan paged reference BF16 Graph episode=2 oracle=0.250 exact-page-guards PASS
+Vulkan Direct BF16 cold metadata OOM baseline=59 live=0
+Vulkan Direct BF16 cold metadata OOM point=1/59 cleanup PASS
+Vulkan Direct BF16 cold metadata OOM point=2/59 cleanup PASS
+Vulkan Direct BF16 cold metadata OOM point=3/59 cleanup PASS
+Vulkan Direct BF16 cold metadata OOM point=4/59 cleanup PASS
+Vulkan Direct BF16 cold metadata OOM point=5/59 cleanup PASS
+Vulkan Direct BF16 cold metadata OOM point=6/59 cleanup PASS
+Vulkan Direct BF16 cold metadata OOM point=7/59 cleanup PASS
+Vulkan Direct BF16 cold metadata OOM point=8/59 cleanup PASS
+Vulkan Direct BF16 cold metadata OOM point=9/59 cleanup PASS
+Vulkan Direct BF16 cold metadata OOM point=10/59 cleanup PASS
+Vulkan Direct BF16 cold metadata OOM point=11/59 cleanup PASS
+Vulkan Direct BF16 cold metadata OOM point=12/59 cleanup PASS
+Vulkan Direct BF16 cold metadata OOM point=13/59 cleanup PASS
+Vulkan Direct BF16 cold metadata OOM point=14/59 cleanup PASS
+Vulkan Direct BF16 cold metadata OOM point=15/59 cleanup PASS
+Vulkan Direct BF16 cold metadata OOM point=16/59 cleanup PASS
+Vulkan Direct BF16 cold metadata OOM point=17/59 cleanup PASS
+Vulkan Direct BF16 cold metadata OOM point=18/59 cleanup PASS
+Vulkan Direct BF16 cold metadata OOM point=19/59 cleanup PASS
+Vulkan Direct BF16 cold metadata OOM point=20/59 cleanup PASS
+Vulkan Direct BF16 cold metadata OOM point=21/59 cleanup PASS
+Vulkan Direct BF16 cold metadata OOM point=22/59 cleanup PASS
+Vulkan Direct BF16 cold metadata OOM point=23/59 cleanup PASS
+Vulkan Direct BF16 cold metadata OOM point=24/59 cleanup PASS
+Vulkan Direct BF16 cold metadata OOM point=25/59 cleanup PASS
+Vulkan Direct BF16 cold metadata OOM point=26/59 cleanup PASS
+Vulkan Direct BF16 cold metadata OOM point=27/59 cleanup PASS
+Vulkan Direct BF16 cold metadata OOM point=28/59 cleanup PASS
+Vulkan Direct BF16 cold metadata OOM point=29/59 cleanup PASS
+Vulkan Direct BF16 cold metadata OOM point=30/59 cleanup PASS
+Vulkan Direct BF16 cold metadata OOM point=31/59 cleanup PASS
+Vulkan Direct BF16 cold metadata OOM point=32/59 cleanup PASS
+Vulkan Direct BF16 cold metadata OOM point=33/59 cleanup PASS
+Vulkan Direct BF16 cold metadata OOM point=34/59 cleanup PASS
+Vulkan Direct BF16 cold metadata OOM point=35/59 cleanup PASS
+Vulkan Direct BF16 cold metadata OOM point=36/59 cleanup PASS
+Vulkan Direct BF16 cold metadata OOM point=37/59 cleanup PASS
+Vulkan Direct BF16 cold metadata OOM point=38/59 cleanup PASS
+Vulkan Direct BF16 cold metadata OOM point=39/59 cleanup PASS
+Vulkan Direct BF16 cold metadata OOM point=40/59 cleanup PASS
+Vulkan Direct BF16 cold metadata OOM point=41/59 cleanup PASS
+Vulkan Direct BF16 cold metadata OOM point=42/59 cleanup PASS
+Vulkan Direct BF16 cold metadata OOM point=43/59 cleanup PASS
+Vulkan Direct BF16 cold metadata OOM point=44/59 cleanup PASS
+Vulkan Direct BF16 cold metadata OOM point=45/59 cleanup PASS
+Vulkan Direct BF16 cold metadata OOM point=46/59 cleanup PASS
+Vulkan Direct BF16 cold metadata OOM point=47/59 cleanup PASS
+Vulkan Direct BF16 cold metadata OOM point=48/59 cleanup PASS
+Vulkan Direct BF16 cold metadata OOM point=49/59 cleanup PASS
+Vulkan Direct BF16 cold metadata OOM point=50/59 cleanup PASS
+Vulkan Direct BF16 cold metadata OOM point=51/59 cleanup PASS
+Vulkan Direct BF16 cold metadata OOM point=52/59 cleanup PASS
+Vulkan Direct BF16 cold metadata OOM point=53/59 cleanup PASS
+Vulkan Direct BF16 cold metadata OOM point=54/59 cleanup PASS
+Vulkan Direct BF16 cold metadata OOM point=55/59 cleanup PASS
+Vulkan Direct BF16 cold metadata OOM point=56/59 cleanup PASS
+Vulkan Direct BF16 cold metadata OOM point=57/59 cleanup PASS
+Vulkan Direct BF16 cold metadata OOM point=58/59 cleanup PASS
+Vulkan Direct BF16 cold metadata OOM point=59/59 cleanup PASS
+Vulkan typed page controller BF16 Direct episode=0 oracle=0.250 PASS
+Vulkan typed page controller BF16 Direct episode=1 oracle=0.375 PASS
+Vulkan typed page controller BF16 Direct episode=2 oracle=0.250 PASS
+Vulkan Graph BF16 cold metadata OOM baseline=59 live=0
+Vulkan Graph BF16 cold metadata OOM point=1/59 cleanup PASS
+Vulkan Graph BF16 cold metadata OOM point=2/59 cleanup PASS
+Vulkan Graph BF16 cold metadata OOM point=3/59 cleanup PASS
+Vulkan Graph BF16 cold metadata OOM point=4/59 cleanup PASS
+Vulkan Graph BF16 cold metadata OOM point=5/59 cleanup PASS
+Vulkan Graph BF16 cold metadata OOM point=6/59 cleanup PASS
+Vulkan Graph BF16 cold metadata OOM point=7/59 cleanup PASS
+Vulkan Graph BF16 cold metadata OOM point=8/59 cleanup PASS
+Vulkan Graph BF16 cold metadata OOM point=9/59 cleanup PASS
+Vulkan Graph BF16 cold metadata OOM point=10/59 cleanup PASS
+Vulkan Graph BF16 cold metadata OOM point=11/59 cleanup PASS
+Vulkan Graph BF16 cold metadata OOM point=12/59 cleanup PASS
+Vulkan Graph BF16 cold metadata OOM point=13/59 cleanup PASS
+Vulkan Graph BF16 cold metadata OOM point=14/59 cleanup PASS
+Vulkan Graph BF16 cold metadata OOM point=15/59 cleanup PASS
+Vulkan Graph BF16 cold metadata OOM point=16/59 cleanup PASS
+Vulkan Graph BF16 cold metadata OOM point=17/59 cleanup PASS
+Vulkan Graph BF16 cold metadata OOM point=18/59 cleanup PASS
+Vulkan Graph BF16 cold metadata OOM point=19/59 cleanup PASS
+Vulkan Graph BF16 cold metadata OOM point=20/59 cleanup PASS
+Vulkan Graph BF16 cold metadata OOM point=21/59 cleanup PASS
+Vulkan Graph BF16 cold metadata OOM point=22/59 cleanup PASS
+Vulkan Graph BF16 cold metadata OOM point=23/59 cleanup PASS
+Vulkan Graph BF16 cold metadata OOM point=24/59 cleanup PASS
+Vulkan Graph BF16 cold metadata OOM point=25/59 cleanup PASS
+Vulkan Graph BF16 cold metadata OOM point=26/59 cleanup PASS
+Vulkan Graph BF16 cold metadata OOM point=27/59 cleanup PASS
+Vulkan Graph BF16 cold metadata OOM point=28/59 cleanup PASS
+Vulkan Graph BF16 cold metadata OOM point=29/59 cleanup PASS
+Vulkan Graph BF16 cold metadata OOM point=30/59 cleanup PASS
+Vulkan Graph BF16 cold metadata OOM point=31/59 cleanup PASS
+Vulkan Graph BF16 cold metadata OOM point=32/59 cleanup PASS
+Vulkan Graph BF16 cold metadata OOM point=33/59 cleanup PASS
+Vulkan Graph BF16 cold metadata OOM point=34/59 cleanup PASS
+Vulkan Graph BF16 cold metadata OOM point=35/59 cleanup PASS
+Vulkan Graph BF16 cold metadata OOM point=36/59 cleanup PASS
+Vulkan Graph BF16 cold metadata OOM point=37/59 cleanup PASS
+Vulkan Graph BF16 cold metadata OOM point=38/59 cleanup PASS
+Vulkan Graph BF16 cold metadata OOM point=39/59 cleanup PASS
+Vulkan Graph BF16 cold metadata OOM point=40/59 cleanup PASS
+Vulkan Graph BF16 cold metadata OOM point=41/59 cleanup PASS
+Vulkan Graph BF16 cold metadata OOM point=42/59 cleanup PASS
+Vulkan Graph BF16 cold metadata OOM point=43/59 cleanup PASS
+Vulkan Graph BF16 cold metadata OOM point=44/59 cleanup PASS
+Vulkan Graph BF16 cold metadata OOM point=45/59 cleanup PASS
+Vulkan Graph BF16 cold metadata OOM point=46/59 cleanup PASS
+Vulkan Graph BF16 cold metadata OOM point=47/59 cleanup PASS
+Vulkan Graph BF16 cold metadata OOM point=48/59 cleanup PASS
+Vulkan Graph BF16 cold metadata OOM point=49/59 cleanup PASS
+Vulkan Graph BF16 cold metadata OOM point=50/59 cleanup PASS
+Vulkan Graph BF16 cold metadata OOM point=51/59 cleanup PASS
+Vulkan Graph BF16 cold metadata OOM point=52/59 cleanup PASS
+Vulkan Graph BF16 cold metadata OOM point=53/59 cleanup PASS
+Vulkan Graph BF16 cold metadata OOM point=54/59 cleanup PASS
+Vulkan Graph BF16 cold metadata OOM point=55/59 cleanup PASS
+Vulkan Graph BF16 cold metadata OOM point=56/59 cleanup PASS
+Vulkan Graph BF16 cold metadata OOM point=57/59 cleanup PASS
+Vulkan Graph BF16 cold metadata OOM point=58/59 cleanup PASS
+Vulkan Graph BF16 cold metadata OOM point=59/59 cleanup PASS
+Vulkan typed page controller BF16 Graph episode=0 oracle=0.250 PASS
+Vulkan typed page controller BF16 Graph episode=1 oracle=0.375 PASS
+Vulkan typed page controller BF16 Graph episode=2 oracle=0.250 PASS
+Vulkan native page append/F4 BF16 clone=1024 append=512 whole-arena=5120 PASS
+native Direct ragged append F16 episode=0 first=0.250 second=0.625 PASS
+native Direct ragged append F16 episode=1 first=0.375 second=0.625 PASS
+native Direct ragged append F16 episode=2 first=0.250 second=0.625 PASS
+native Direct ragged append/F4/repacked-second-request F16 clone=2560 append=512 tail-init=1024 total=4096 PASS
+native Direct ragged append BF16 episode=0 first=0.250 second=0.625 PASS
+native Direct ragged append BF16 episode=1 first=0.375 second=0.625 PASS
+native Direct ragged append BF16 episode=2 first=0.250 second=0.625 PASS
+native Direct ragged append/F4/repacked-second-request BF16 clone=2560 append=512 tail-init=1024 total=4096 PASS
+native Graph ragged append F16 episode=0 first=0.250 second=0.625 PASS
+native Graph ragged append F16 episode=1 first=0.375 second=0.625 PASS
+native Graph ragged append F16 episode=2 first=0.250 second=0.625 PASS
+native Graph ragged append/F4/repacked-second-request F16 clone=2560 append=512 tail-init=1024 total=4096 PASS
+native Graph ragged append BF16 episode=0 first=0.250 second=0.625 PASS
+native Graph ragged append BF16 episode=1 first=0.375 second=0.625 PASS
+native Graph ragged append BF16 episode=2 first=0.250 second=0.625 PASS
+native Graph ragged append/F4/repacked-second-request BF16 clone=2560 append=512 tail-init=1024 total=4096 PASS

@@ -802,6 +802,12 @@ Result<Region> Region::create(NativeDevice device,
           right = ggml_transpose(context, right);
           if (!ggml_is_contiguous(right))
             right = ggml_cont(context, right);
+          else if (ggml_is_transposed(right))
+            // A unit axis can be contiguous despite its inherited transpose
+            // stride. Rebuild dense unit strides with the original zero-copy
+            // view before ggml_mul_mat checks its stronger input contract.
+            right = ggml_reshape_4d(context, right, right->ne[0], right->ne[1],
+                                    right->ne[2], right->ne[3]);
         }
         auto *product = ggml_mul_mat(context, right, left);
         if (!ggml_prec_set_acc(product, GGML_PREC_F32))

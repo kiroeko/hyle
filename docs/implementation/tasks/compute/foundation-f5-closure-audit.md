@@ -191,3 +191,27 @@ Win Vulkan与Air Vulkan各Direct/Graph×F16/BF16×59=236位置、Air Apple各53=
 共802。三个实际GPU profile的原正常/精确页/F4/metadata/old result/close/escaped result/
 ragged消费继续PASS。只签caller可控cold metadata，不签私有device heap或accepted partial。
 原profile root/config/tree/预算累计与actual Air身份保留；无产品/API变化，其他风险与收口继续。
+
+## AUDITED VK-FAIL-02：实际driver接纳/观察边界
+
+baseline135954d68。复用原Vulkan lifecycle/copy测试已经采用的same-build native PFN观察装饰，
+只在独立真实Context替换QueueSubmit/GetFenceStatus/WaitForFences，全部成功分支转发原函数。
+固定F16 ragged一request/D64参考档，Direct/Graph各四episode：metadata第一次native submit
+拒绝；math第一次native submit拒绝；math第二次submit拒绝（实际原第一prefix已接纳，
+不凭shape猜成本）；math真正submit后一次GetFenceStatus返回非退休错误。核首错、无输出/
+不可复用、真实native guards及drain；最后必须原wait/fence证明退休、guards与metadata归零。
+每episode独立Context，避免故障poison污染后续正常消费者。没有产品hook/新runtime/数学kernel。
+
+只Vulkan fixture借原private头访问实际PFNs，必要SDK header include只在私有验证parent补充，
+不改变产品构建系统。沿原Win Vulkan与Air Vulkan root/config/tree/consumer180累计，实际
+GPU/identity先核对，重型串行。Apple不能冒充相同PFN门，其queued原生边界另按原合同验证。
+若有真实反证，再固定实际owner局部FIX；当前测试不授权改旧runtime算法或全局工具。
+
+VK-FAIL-02首次在注入前发现合法单KV reference冷factory触发ggml transposed assert，
+独立[UNIT-STRIDE卡](foundation-f5-vulkan-degenerate-matmul.md)合法SCOPED/AUDITED重开
+compute_provider_ggml_vulkan；其余原owner范围不重开。借原零拷贝同形reshape修复unit
+stride后，Win/Air Direct/Graph共四个nonuniform128-value oracle与16个actual native PFN
+错误episode通过，[收据](../../../../evidence/correctness/foundation-f5-vulkan-failure-unit-stride/README.md)。
+unknown原Vulkan合同为Pending且保三input uses，后原wait/fence退休保首错，不发布/closed
+不可复用；首次fatal与fixture误读poll语义的FAIL保留。原正常/页/ragged/OOM消费与六个
+source-contract测试PASS。保持AUDITED，其他原未验项与18 SDK/san/P0/guide/终审继续。

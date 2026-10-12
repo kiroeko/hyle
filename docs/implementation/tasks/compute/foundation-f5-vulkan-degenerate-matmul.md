@@ -45,3 +45,13 @@ typed schema的合法unit容量应直接工作，不要求consumer人为增加ca
 | FIX | 固定改动 | 验收 |
 |---|---|---|
 | UNIT-STRIDE-01 | plain MatMul right transpose后，非连续仍cont；连续却标transposed时借原同形4D reshape规范化unit stride | 无fatal、非uniform V原位数值正确、Direct/Graph与原非退化域不回归；无新payload复制/公共API |
+
+## 实际裁决
+
+SCOPED03ecbafa1→AUDITED611498817，实际owner合法准入后才改region.cc。[当前定向收据](../../../../evidence/correctness/foundation-f5-vulkan-failure-unit-stride/README.md)
+Win/Air Vulkan Direct/Graph单KV非uniform128-value oracle各两次全部PASS，无原fatal；
+原F16/BF16/GQA/causal/精确页/ragged/236 OOM位置/profile与四类actual driver错误组合保持。
+六个原source-contract测试PASS。只有plain unit metadata同形view重建，无新copy/kernel/API；
+IREE只借未变NativeDevice并不调用本lowerer，旧数学catalogue不回放，selector理由封存。
+原FAIL、metadata未知、原root/config/tree/预算保留；Win/Air累计见收据。installed static/
+shared、适用san/P0/LOC/guide/红队尚未由此签，状态保持AUDITED，随F5固定候选收口。

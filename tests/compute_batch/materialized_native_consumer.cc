@@ -15,6 +15,7 @@
 #include <hyle/compute/vulkan_memory.h>
 #include <hyle/graph/vulkan.h>
 #include <hyle/compute/detail/vulkan_batch_access.h>
+#include "native_vulkan_failure_fixture.h"
 #endif
 namespace {
 #if defined(HYLE_F5_APPLE_TEST)
@@ -139,6 +140,9 @@ Status native_run(bool ragged_only=false){HYLE_ASSIGN_OR_RETURN(auto context,n::
   const auto&environment=context.environment();HYLE_RETURN_IF_ERROR(require(!environment.software_device,"software Vulkan cannot qualify actual reference math"));std::printf("Vulkan actual GPU %s / %s / %s\n",environment.device_name.c_str(),environment.driver_name.c_str(),environment.driver_info.c_str());
 #endif
   struct CloseBeforeResources{n::Context&context;~CloseBeforeResources(){context.close().IgnoreError();}}close_before_resources{context};
+#if !defined(HYLE_F5_APPLE_TEST)
+  if(!ragged_only)HYLE_RETURN_IF_ERROR(hyle_f5_vk_failure_fixture::run());
+#endif
   if(!ragged_only){for(bool paged:{true,false})for(bool bf16:{false,true})for(bool causal:{false,true})HYLE_RETURN_IF_ERROR(exercise_native(context,memory,staging,paged,bf16,causal));HYLE_RETURN_IF_ERROR(hyle_f5_native_paged_fixture::run(context,memory,staging));}HYLE_RETURN_IF_ERROR(native_ragged_append(context,memory,staging));return context.close();
 }
 } // namespace
