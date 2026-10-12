@@ -691,7 +691,7 @@
     {
       "module": "compute_batch",
       "state": "AUDITED",
-      "summary": "F5 compute_batch AUDITED：typed paged/ragged容量/schema、owned host metadata版本/身份/有效区与F1 export的API/依赖/生命周期及三项有限共同FIX已冻结；原Provider与Graph桥仍SCOPED，F5全部六FIX继续。",
+      "summary": "F5 AUDITED实施：typed schema/owned layout与原F1/F2 batch执行shell、同slot mirror/epoch、explicit prepare/update/run/旧结果容量已接；Win16项/四头及WSL原native Direct四域三布局通过，Graph/四路线reference/append/交付/san/终审未完成。",
       "record": "docs/implementation/tasks/compute/foundation-f5-paged-ragged-batch.md"
     },
     {

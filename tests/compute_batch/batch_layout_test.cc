@@ -1,5 +1,6 @@
 #include <hyle/compute/batch_ops.h>
 #include <hyle/compute/state_versions.h>
+#include <hyle/compute/detail/lease_access.h>
 #include <hyle/mem/quota_allocator.h>
 #include <gtest/gtest.h>
 #include <algorithm>
@@ -92,5 +93,17 @@ TEST(BatchLayout, F4BranchSharesAndPublishesLayoutBlobWithoutMutatingOldVersion)
   auto old_map=old.view()->map_host().value(),new_map=current.view()->map_host().value();const auto offset=batch.metadata_offsets().page_indices;
   std::int32_t old_id=0,new_id=0;std::memcpy(&old_id,old_map.bytes().data()+offset,sizeof(old_id));std::memcpy(&new_id,new_map.bytes().data()+offset,sizeof(new_id));
   EXPECT_EQ(old_id,2);EXPECT_EQ(new_id,6);EXPECT_TRUE(batch.owns(layout));EXPECT_TRUE(batch.owns(next));
+}
+TEST(BatchLayout, FixedBlockRootTransferKeepsNativeAdmissionWithoutOwnerCycle){
+  std::atomic<unsigned> released{0};struct Owner{std::atomic<unsigned>*released;};
+  hyle::mem::QuotaAllocator quota(hyle::mem::system_allocator());c::ReadLease reader;
+  {
+    auto pool=c::LeasePool::create(hyle::mem::system_resource(),1024,{.max_blocks=1,.allocator=quota.get()}).value();
+    auto writer=pool.allocate(256).value();ASSERT_TRUE(writer.view()->fill(std::byte{37}).ok());
+    c::detail::LeaseAccess::retain_resource_owner(pool,new Owner{&released},[](void*p)noexcept{auto*owner=static_cast<Owner*>(p);++*owner->released;delete owner;});
+    c::detail::LeaseAccess::detach_pool_root(pool);EXPECT_FALSE(pool.valid());reader=writer.publish().value();
+  }
+  auto use_pool=c::LeaseUsePool::create().value();auto use=use_pool.begin().value();ASSERT_TRUE(use.read(reader).ok());
+  reader.reset();EXPECT_EQ(released.load(),0u);use={};EXPECT_EQ(released.load(),1u);EXPECT_EQ(quota.used(),0u);
 }
 } // namespace

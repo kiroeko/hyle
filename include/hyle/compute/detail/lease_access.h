@@ -26,6 +26,10 @@ struct LeaseAccess final {
                                                      ReleaseOwnerFn release) noexcept;
   static HYLE_COMPUTE_API void retain_resource_owner(LeasePool &pool, void *owner,
                                                      ReleaseOwnerFn release) noexcept;
+  // Cold fixed-block adapters: retain an independent resource owner, allocate
+  // all blocks, then relinquish allocation authority without closing their
+  // readonly/native admission. The owner must not hold this pool root.
+  static HYLE_COMPUTE_API void detach_pool_root(LeasePool &pool) noexcept;
   // Native route calls this only after its original actual-retirement proof.
   static HYLE_COMPUTE_API void retire_native(LeaseUseBatch &uses, Status terminal) noexcept;
   // F2 only: cold binding has deduplicated roots. The owning copy controller

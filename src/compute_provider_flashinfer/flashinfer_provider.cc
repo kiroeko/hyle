@@ -11,6 +11,8 @@
 
 #include "hyle/compute/route_policy.h"
 #include "native_attention.h"
+#include "native_batch.h"
+#include "hyle/compute/detail/batch_provider.h"
 #include "native_context.h"
 #include "provider_internal.h"
 
@@ -111,6 +113,103 @@ struct ProviderContext final {
   CUcontext primary = nullptr;
   std::uint64_t maximum_grid = 0;
 };
+
+struct BatchSlot final {
+  CUcontext primary=nullptr;
+  native::BatchSpec spec{};
+  void*plan=nullptr;
+  std::size_t plan_bytes=0;
+  std::uint64_t generation=0;
+  BatchLayoutVersion layout;
+  BatchPlanReport report;
+};
+Status qualify_batch(void*opaque,BatchCapacity capacity,const BatchProgramOptions&options)noexcept {
+  auto&context=*static_cast<ProviderContext*>(opaque);
+  HYLE_RETURN_IF_ERROR(validate_batch_capacity(capacity));
+  const auto group=capacity.query_heads/capacity.kv_heads;
+  if(!context.maximum_grid || !options.causal ||
+     (capacity.head_dim!=64 && capacity.head_dim!=128 && capacity.head_dim!=256) ||
+     (group!=1 && group!=2 && group!=4 && group!=8))return Status::Unimplemented("FlashInfer batch domain is not qualified");
+  return Status::Ok();
+}
+Status create_batch_slot(void*opaque,BatchCapacity capacity,const BatchProgramOptions&options,
+                         mem::AllocatorRef allocator,void**output)noexcept {
+  *output=nullptr;HYLE_RETURN_IF_ERROR(qualify_batch(opaque,capacity,options));auto&context=*static_cast<ProviderContext*>(opaque);
+  HYLE_ASSIGN_OR_RETURN(auto offsets,batch_metadata_offsets(capacity));
+  auto*p=allocator.construct<BatchSlot>();if(!p)return Status::ResourceExhausted("FlashInfer batch slot metadata");
+  p->primary=context.primary;p->plan_bytes=native::batch_state_bytes();p->plan=allocator.allocate(p->plan_bytes,16);
+  if(!p->plan){allocator.destroy(p);return Status::ResourceExhausted("FlashInfer batch plan metadata");}
+  native::initialize_batch_state(p->plan);
+  p->spec={.query_heads=capacity.query_heads,.kv_heads=capacity.kv_heads,.head_dim=capacity.head_dim,.page_size=capacity.page_size,
+    .query_indptr_offset=offsets.query_indptr,.kv_indptr_offset=offsets.kv_indptr,.page_indices_offset=offsets.page_indices,.tail_offset=offsets.last_page_lengths,
+    .scale=options.scale,.paged=capacity.storage==BatchStorage::kPaged,.bfloat16=capacity.data_type==DataType::kBFloat16};
+  *output=p;return Status::Ok();
+}
+void destroy_batch_slot(void*opaque,mem::AllocatorRef allocator)noexcept {
+  auto*p=static_cast<BatchSlot*>(opaque);if(!p)return;
+  native::destroy_batch_state(p->plan);allocator.deallocate(p->plan,p->plan_bytes,16);allocator.destroy(p);
+}
+detail::EnqueueResult plan_batch_slot(void*opaque,Queue&queue,const BatchLayoutVersion&layout,
+                                    detail::BatchWorkspaceViews workspace,BatchPlanReport*report)noexcept {
+  auto&slot=*static_cast<BatchSlot*>(opaque);slot.generation=0;
+  auto stream=cuda::stream(queue);if(!stream)return detail::EnqueueResult::rejected(stream.error());
+  auto floating=cuda::detail::mutable_pointer(workspace.float_workspace,16,1);if(!floating)return detail::EnqueueResult::rejected(floating.error());
+  auto integer=cuda::detail::mutable_pointer(workspace.int_workspace,16,1);if(!integer)return detail::EnqueueResult::rejected(integer.error());
+  const auto resource=workspace.host_workspace.resource();
+  if(resource!=mem::system_resource() && (!resource.properties().has(mem::MemoryProperty::kHostPinned) ||
+      resource.properties().domain.authority!=workspace.int_workspace.resource().properties().domain.authority))
+    return detail::EnqueueResult::rejected(Status::Unimplemented("batch planning host workspace requires system or original CUDA pinned storage"));
+  // These two admitted resources have persistent host maps; original CUDA
+  // pinned storage is a host carrier, not a GPU tensor pointer.
+  auto host=workspace.host_workspace.map_host();if(!host)return detail::EnqueueResult::rejected(host.error());
+  auto hostbytes=host->writable_bytes();if(!hostbytes)return detail::EnqueueResult::rejected(hostbytes.error());
+  void*host_pointer=hostbytes->data();
+  cuda::detail::ScopedPrimaryContext scope(slot.primary);if(!scope)return detail::EnqueueResult::rejected(scope.status());
+  auto spec=slot.spec;spec.query_rows=layout.facts().query_rows;spec.requests=layout.facts().requests;
+  const auto metadata=layout.host();native::BatchFacts facts;
+  try {
+    auto status=cuda::status(native::query_batch_workspace(spec,metadata.query_indptr.data(),metadata.kv_indptr.data(),*stream,facts));
+    if(!status.ok())return detail::EnqueueResult::rejected(status);
+    if(facts.float_bytes>workspace.float_workspace.size() || facts.int_bytes>workspace.int_workspace.size() || facts.int_bytes>workspace.host_workspace.size())
+      return detail::EnqueueResult::rejected(Status::ResourceExhausted("FlashInfer batch workspace capacity exhausted"));
+    // After this boundary preserve a possibly accepted original H2D prefix.
+    try {
+      status=cuda::status(native::plan_batch(slot.plan,spec,metadata.query_indptr.data(),metadata.kv_indptr.data(),*floating,workspace.float_workspace.size(),*integer,host_pointer,workspace.int_workspace.size(),*stream,facts));
+      if(status.ok()){slot.spec=spec;slot.generation=layout.generation();slot.layout=layout;*report={.layout_generation=layout.generation(),.float_workspace_bytes=facts.float_bytes,.int_workspace_bytes=facts.int_bytes,.cta_tile_q=facts.cta_tile_q,.padded_batch_size=facts.padded_batch_size,.split_kv=facts.split_kv};slot.report=*report;}
+      return detail::EnqueueResult::accepted_command(status);
+    }catch(const std::bad_alloc&){return detail::EnqueueResult::accepted_command(Status::ResourceExhausted("FlashInfer batch planning host allocation"));}
+     catch(const std::exception&e){return detail::EnqueueResult::accepted_command(Status::Internal(e.what()));}
+  }catch(const std::bad_alloc&){return detail::EnqueueResult::rejected(Status::ResourceExhausted("FlashInfer batch workspace query host allocation"));}
+   catch(const std::exception&e){return detail::EnqueueResult::rejected(Status::Internal(e.what()));}
+}
+detail::EnqueueResult run_batch_slot(void*opaque,Queue&queue,std::span<const ConstTensorView>inputs,
+                                   detail::BatchWorkspaceViews workspace)noexcept {
+  auto&slot=*static_cast<BatchSlot*>(opaque);
+  if(!slot.generation || inputs.size()!=3)return detail::EnqueueResult::rejected(Status::FailedPrecondition("FlashInfer batch slot has no prepared layout"));
+  auto stream=cuda::stream(queue);if(!stream)return detail::EnqueueResult::rejected(stream.error());
+  std::array<const void*,3> pointers{};
+  for(std::size_t i=0;i<3;++i){auto p=cuda::detail::const_pointer(inputs[i].storage(),16,1);if(!p)return detail::EnqueueResult::rejected(p.error());pointers[i]=*p;}
+  auto metadata=cuda::detail::const_pointer(mem::ConstBufferView(workspace.metadata),8,1);if(!metadata)return detail::EnqueueResult::rejected(metadata.error());
+  auto floating=cuda::detail::mutable_pointer(workspace.float_workspace,16,1);if(!floating)return detail::EnqueueResult::rejected(floating.error());
+  auto integer=cuda::detail::mutable_pointer(workspace.int_workspace,16,1);if(!integer)return detail::EnqueueResult::rejected(integer.error());
+  auto output=cuda::detail::mutable_pointer(workspace.output,16,1);if(!output)return detail::EnqueueResult::rejected(output.error());
+  cuda::detail::ScopedPrimaryContext scope(slot.primary);if(!scope)return detail::EnqueueResult::rejected(scope.status());
+  try{return detail::EnqueueResult::accepted_command(cuda::status(native::run_batch(slot.plan,slot.spec,pointers[0],pointers[1],pointers[2],*metadata,*output,*floating,*integer,*stream)));}
+  catch(const std::bad_alloc&){return detail::EnqueueResult::accepted_command(Status::ResourceExhausted("FlashInfer batch run host allocation"));}
+  catch(const std::exception&e){return detail::EnqueueResult::accepted_command(Status::Internal(e.what()));}
+}
+Result<bool> update_batch_slot(void*opaque,const BatchLayoutVersion&layout,BatchPlanReport*report)noexcept{
+  auto&slot=*static_cast<BatchSlot*>(opaque);if(!slot.generation || !slot.layout.schema().owns(layout))return false;
+  const auto old=slot.layout.host(),next=layout.host();
+  const auto equal=[](auto a,auto b){return a.size()==b.size()&&std::equal(a.begin(),a.end(),b.begin());};
+  // Original PrefillPlan consumes these indptr values and the immutable spec,
+  // not physical page IDs/tails. Ragged KV offsets are part of this full key.
+  if(!equal(old.query_indptr,next.query_indptr)||!equal(old.kv_indptr,next.kv_indptr))return false;
+  slot.layout=layout;slot.generation=layout.generation();*report=slot.report;report->layout_generation=slot.generation;report->reused_native_plan=true;
+  slot.report=*report;return true;
+}
+const detail::BatchProviderVTable kBatchVTable{&qualify_batch,&create_batch_slot,&destroy_batch_slot,&update_batch_slot,&plan_batch_slot,&run_batch_slot};
+const void*query_extension(void*,ProviderExtensionId id)noexcept{return id==detail::kBatchPlanningExtensionId?&kBatchVTable:nullptr;}
 
 struct Prepared final {
   CUcontext primary = nullptr;
@@ -420,6 +519,7 @@ const detail::ProviderVTable kProviderVTable{
     .propose = &propose,
     .prepare = &prepare,
     .drain_context = &drain_context,
+    .query_extension = &query_extension,
 };
 
 } // namespace

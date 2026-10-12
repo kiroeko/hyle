@@ -304,6 +304,11 @@ void detail::LeaseAccess::retire_native(LeaseUseBatch &uses, Status terminal) no
   HYLE_FATAL_ASSERT(uses.attach(retired).ok());
 }
 
+void detail::LeaseAccess::detach_pool_root(LeasePool &pool) noexcept {
+  HYLE_FATAL_ASSERT(pool.state_ && pool.state_->resource_owner && pool.state_->release_resource_owner);
+  detail::release_domain(std::exchange(pool.state_,nullptr));
+}
+
 Status detail::LeaseAccess::read_unique(LeaseUseBatch &uses, const ReadLease &lease) noexcept {
   return detail::add_use<true>(uses.state_, lease.block_, false);
 }

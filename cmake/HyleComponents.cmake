@@ -492,7 +492,7 @@ _hyle_declare_component(graph_provider_ggml_cuda
   PUBLIC_DEPS core compute
   SPLIT_PUBLIC_HEADERS hyle/graph/providers/ggml_cuda.h)
 _hyle_declare_component(compute_provider_flashinfer
-  PRIVATE_DEPS compute_backend_cuda compute_ops error mem
+    PRIVATE_DEPS compute_backend_cuda compute_batch compute_ops error mem
   PUBLIC_DEPS core compute
   SPLIT_PUBLIC_HEADERS hyle/compute/providers/flashinfer.h)
 
@@ -557,7 +557,8 @@ _hyle_declare_component(compute_state
     PUBLIC_DEPS compute compute_ops error mem
     PUBLIC_TYPE_DEPS compute compute_ops error mem
     TEST_DEPS compute_state
-    SPLIT_PUBLIC_HEADERS hyle/compute/batch_layout.h hyle/compute/batch_ops.h)
+    SPLIT_PUBLIC_HEADERS hyle/compute/batch_layout.h hyle/compute/batch_ops.h
+      hyle/compute/batch_execution.h hyle/compute/detail/batch_provider.h)
   _hyle_declare_component(graph_batch QUEUED)
 
 # Product facades are deliberately outside the factor DAG. They have no source,

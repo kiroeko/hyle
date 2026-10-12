@@ -153,3 +153,11 @@ GQA/整数与stride overflow/empty/OOM/并发版本/晚于schema的F1导出；�
 现产品仍AUDITED，不是candidate或F5六FIX完成：device mirror、真正HYLE native规划/执行、
 Graph同slot、四路线明确参考/append闭环、三交付/san/P0/终审继续按活动卡。新factor未加入
 普通Compute façade，此发现接缝后续须独立合法scope，不在CLOSED旧owner顺手改产品根。
+
+原native执行首批已按[owner卡](foundation-f5-owner-bridges.md)落地：BatchProgram/
+BatchInvocation/PreparedBatch opt-in shell、原named Provider capability、原F2 pinned metadata
+上传/原planner与kernel/explicit update、fixed slot/旧结果/actual-retirement及容量额度。
+Win共同16项/四头与WSL实际Direct四域各三布局oracle通过，原失败/预算保留。共同层仍
+AUDITED；F5六FIX未全部完成，尤其Graph实际same-slot与四路线reference/append完整消费
+旅程/三交付/san/P0/终审继续。本轮不改原Graph v19/普通Invocation形状，不把native Direct
+证据替代Graph或Apple/Vulkan，也不声称Windows已有FlashInfer native paged。

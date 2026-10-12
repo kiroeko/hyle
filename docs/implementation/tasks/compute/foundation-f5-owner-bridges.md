@@ -82,3 +82,32 @@ compute_batch沿已AUDITED合同增加以下opt-in执行shell，数学和native 
 opt-in原F1/F2/Completion shell、epochs/old outputs/close/cancel。它们是F5-02/03/04的实现分解，
 F5全部六FIX与四路线明确reference/append闭环/三交付未缩减。native Direct不是Graph/全F5证书。
 两纵切仅输入/布局不同；owner/alias/metadata版本/硬容量/生命周期相同，无默认Tensor字段税。
+
+本轮实现反证确认F1 retain_resource_owner位于整个LeaseDomain，不是单block：把仍持该pool
+root的owner挂回domain会成环。F5固定块集合因此复用ReadLease::adopt已有的冷root释放语义：
+新增private LeaseAccess::detach_pool_root，仅在全部固定writer块已分配且真实resource owner
+已接入后，放弃allocation root而不关闭已分配lease域。每个block/native use保domain，domain
+保不回指pool的实际provider/resource owner，最后引用释放。常规LeasePool析构/close、所有
+原F1–F4 public行为不变，不新增常态字段或fence。此窄C-02是同F5 owner生命周期FIX，仍
+AUDITED；必须追加escaped output/native admission及allocator归零反证，不以结果能读掩盖环。
+
+## AUDITED 首批执行事实
+
+[真实HYLE native Direct](../../../../evidence/correctness/foundation-f5-native-direct-first/README.md)
+四个域（paged/ragged各F16 D64短KV、BF16 D128长KV）各三layout episode对独立oracle通过。
+schema→owned host layout→原Context pinned staging→原F2同slot device mirror→原FlashInfer
+planning/int H2D→run/实际完成→原F1 readonly output。长KV实际split-KV/原merge，metadata
+staging bytes/上传bytes/host wait单列，原planner临时vectors/occupancy/private UNKNOWN不隐去。
+
+显式update_batch只有Provider证明完整native key（同schema、query/KV indptr和固定spec）
+不变时复用；page IDs/tails不参与原scheduler拓扑但更新镜像/版本。indptr变更在update中
+重新plan，run不重规划。原native slot保owned layout，token/报告/镜像generation一致。
+旧output禁止覆写，释放invocation/Program后结果仍接原F1 native read-use，escaped output
+仍占冷slot容量；实际resource/domain最后释放才归还额度，metadata quota最终0。
+
+[Win共同16项/四头](../../../../evidence/correctness/foundation-f5-common-execution/README.md)
+同时通过，新增fixed-block root转交原F1生存规则反证。保留原两次Direct源资源拒绝、
+update lambda编译FAIL/原输入历史与累计预算；原typed host/source合同修正用pinned staging，
+没有放宽旧CUDA validate/copy算法。只此新shell/原FI/真实直接消费者，不回放算子全集。
+产品仍AUDITED；Graph同slot、四路线显式reference/append闭环、完整故障/SDK/san/P0/终审
+尚未完成，不能CANDIDATE/CLOSED，也不能据四个Direct域代签整个F5或单机吞吐。
