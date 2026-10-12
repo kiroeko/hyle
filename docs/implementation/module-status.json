@@ -464,7 +464,7 @@
       "module": "compute_route_apple",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/foundation-f5-native-reference-bridges.md",
-      "summary": "F5 native reference AUDITED实施：原Direct冷适配/新头已接，Win Vulkan及Air Apple/Vulkan各八域双slots/版本更新48oracle与新头独立TU通过；完整控制器/append/F4/故障/SDK/san/终审未完成，原范围保留。"
+      "summary": "F5 native reference AUDITED实施：原Direct/Graph八域48oracle及private精确页桥/原提交守卫已验；Win Vulkan、Air Apple/Vulkan各新增12次append/F4旧新旧oracle与两private头通过，quota0。CPU精确页桥/完整controller/ragged/其他故障/SDK/san/终审继续，原范围保留。"
     },
     {
       "module": "graph_route_apple",
@@ -476,7 +476,7 @@
       "module": "compute_route_vulkan",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/foundation-f5-native-reference-bridges.md",
-      "summary": "F5 native reference AUDITED实施：原Direct冷适配/新头已接，Win Vulkan及Air Apple/Vulkan各八域双slots/版本更新48oracle与新头独立TU通过；完整控制器/append/F4/故障/SDK/san/终审未完成，原范围保留。"
+      "summary": "F5 native reference AUDITED实施：原Direct/Graph八域48oracle及private精确页桥/原提交守卫已验；Win Vulkan、Air Apple/Vulkan各新增12次append/F4旧新旧oracle与两private头通过，quota0。CPU精确页桥/完整controller/ragged/其他故障/SDK/san/终审继续，原范围保留。"
     },
     {
       "module": "graph_route_vulkan",
@@ -621,7 +621,7 @@
     {
       "module": "compute_batch",
       "state": "AUDITED",
-      "summary": "F5 AUDITED实施：typed布局/原native规划与reference四路线首批已验；逐页arena/32项八头、CUDA Direct实际页clone+append/F4发布及旧版六oracle通过；Graph/reference逐页桥、完整控制器/ragged/故障/SDK/san/终审未完成。",
+      "summary": "F5 AUDITED实施：typed布局/原native规划与四路线reference已具首批证据；逐页arena与inactive Q读取footprint修正33项八头通过，CUDA Direct/Graph和Apple/Vulkan实际页append/F4旧新旧已验。CPU精确页桥/完整controller/ragged/其他故障/SDK/san/终审未完成。",
       "record": "docs/implementation/tasks/compute/foundation-f5-paged-ragged-batch.md"
     },
     {

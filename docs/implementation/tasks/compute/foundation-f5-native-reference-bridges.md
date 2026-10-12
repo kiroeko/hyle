@@ -73,3 +73,40 @@ UNKNOWN，不用common quota0代签driver。Vulkan只冷Plan借原prepare_plan�
 
 两FIX有首批实际证据，owner仍AUDITED：同版本batch组合控制器、append/F4完整页消费、
 其他故障/producer/unknown/alias/OOM和全部SDK/san/P0/guide/终审继续主卡；不签完整F5。
+
+## AUDITED REF-PAGE：原native精确页绑定与权限提交桥
+
+baseline c9bc4fa69。原MemoryResource::binding(ReadLease,whole TensorDesc)不能接单页
+guard，原LeasedInvocation只按输入数预留整块权限；ARENA-03要求真实页footprint，不能
+用whole arena ReadLease或clone掩盖。固定以下实际owner桥后才写产品，仍本卡AUDITED。
+
+- REF-PAGE-APPLE/VULKAN：各route private PagedBatchAccess::binding(memory,frame,options)
+  只接受不可伪造PagedArenaRead与exact resource，从原continuous capacity构造readonly
+  MLX array/Vulkan Tensor；owner保frame/全部actual page guards及原native backing。原
+  offset/dense/尺寸/tail/runtime资源规则保留，wrapper metadata按原预算，opaque UNKNOWN。
+  公共MemoryResource::binding与普通LeasedInvocation保持原语义/字段/容量。
+- 同private桥把调用者已资格的固定F1 LeaseUseBatch交给原Invocation::submit_guarded，
+  wait_native只委托原native actual retirement。原Program/slot/OwnedResult/runtime保活，
+  不新增队列/执行器/数学、默认输入字段或捕获资格。权限必须覆盖Q、exact K/V pages、
+  owned同版本indices/mask；上层controller仅对固定materialize recipe接桥，不能把private
+  whole capacity赋给普通任意数学/consumer。完整production controller继续本goal。
+- 新private头按原route SPLIT_PUBLIC_HEADERS登记，缺席头可include、不暴露route符号；
+  PUBLIC依赖沿已签compute_batch正向边，common不反依赖native route/Graph。
+- 验证：actual Win Vulkan/Air Apple/Vulkan原Direct与原native Graph的同一recipe上paged
+  exact page guards、无page0引用/首request无Q/NaN空余页/GQA及same-generation，保旧页
+  时free writer；逐页原F2 append/F4发布/旧新旧独立oracle；wrong exact resource拒绝，
+  原old result/close/escaped owner及quota0。普通四分段八域原48oracle复用同根定向运行。
+  改动owner/新头Werror、source/shared实际消费者及后续SDK/san/终审仍原固定预算；不能
+  用本private桥首批代签完整controller/F5。原所有FAIL保留，机器重型串行。
+
+[REF-PAGE实际收据](../../../../evidence/correctness/foundation-f5-native-page-reference-first/README.md)：
+Win Vulkan、Air M4/MLX与M4/MoltenVK均PASS。每profile新增F16/BF16 Direct/原native Graph
+旧新旧12oracle，原48oracle保持；actual native提交时free page4可写，used page2只读，
+old IDs2/3→new2/1无page0。clone1024+append512，对比whole K/V arena5120未复制。
+原F4 dirty替换/同版本layout/expected-base成功发布、clean share与metadata quota0通过。
+新private头三profile实际工具链各独立TU通过；完整SDK/san/终审仍未签。
+
+新fixture错误假定native old result也必须阻止readonly bind的FAIL保留；原合同只保证
+输出slot不可覆盖，修正测原submit拒绝，没有扩大产品权限。错误路径在原Context实际
+close/drain之后才销毁借用allocator/resource。bridge owner无普通对象字段变化，仍AUDITED。
+production same-generation controller、CPU精确页桥/ragged及其他完整F5风险继续本goal。

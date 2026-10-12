@@ -1,4 +1,6 @@
 #include "vulkan_memory_internal.h"
+#include "hyle/compute/detail/vulkan_batch_access.h"
+#include "hyle/compute/detail/paged_arena_access.h"
 
 #include <algorithm>
 #include <cstdint>
@@ -14,6 +16,10 @@ struct AllocationToken final {
 struct LeaseViewOwner final {
   std::shared_ptr<Buffer> backing;
   ReadLease source;
+};
+struct PagedViewOwner final {
+  std::shared_ptr<Buffer> backing;
+  PagedArenaRead frame;
 };
 
 struct MemoryState final : mem::MemoryResource {
@@ -193,6 +199,33 @@ Result<Tensor> MemoryResource::binding(ReadLease source, const TensorDesc &descr
   } catch (const std::bad_alloc &) {
     return std::unexpected(Status::ResourceExhausted("Vulkan lease binding metadata"));
   }
+}
+
+Result<Tensor> detail::PagedBatchAccess::binding(const MemoryResource&memory,
+    PagedArenaRead frame,LeaseImportOptions options)noexcept{
+  if(!memory.valid() || !options.allocator.valid())
+    return std::unexpected(Status::InvalidArgument("Vulkan paged binding requires a resource/allocator"));
+  HYLE_ASSIGN_OR_RETURN(auto tensor,compute::detail::PagedArenaAccess::tensor(frame));
+  const auto storage=tensor.storage();const auto&description=tensor.description();
+  if(storage.resource()!=memory.ref() || storage.native_handle()==nullptr ||
+      static_cast<const detail::MemoryState&>(memory.ref().resource()).kind!=MemoryKind::kDevice)
+    return std::unexpected(Status::InvalidArgument("Vulkan page arena belongs to another device resource"));
+  HYLE_ASSIGN_OR_RETURN(auto bytes,description.required_bytes());HYLE_ASSIGN_OR_RETURN(auto capacity,detail::buffer_capacity(bytes));
+  const auto&backing=static_cast<const detail::AllocationToken*>(storage.native_handle())->buffer;
+  if(!bytes || ((backing->offset+storage.offset())&3u)!=0 || capacity>storage.size() ||
+      storage.offset()>backing->bytes || storage.size()>backing->bytes-storage.offset())
+    return std::unexpected(Status::InvalidArgument("Vulkan paged origin/tail exceeds original capacity"));
+  try{
+    auto allocator=options.allocator;if(options.resource_budget.valid()){
+      HYLE_ASSIGN_OR_RETURN(allocator,options.resource_budget.metadata_allocator());
+    }
+    auto retained=std::allocate_shared<detail::PagedViewOwner>(mem::StdAllocator<detail::PagedViewOwner>(allocator));
+    retained->backing=backing;retained->frame=std::move(frame);
+    auto view=std::allocate_shared<detail::Buffer>(mem::StdAllocator<detail::Buffer>(allocator));
+    view->device=backing->device;detail::bind_view_buffer(*view,backing,storage.offset());
+    view->bytes=storage.size();view->external_owner=std::move(retained);
+    return detail::Access::tensor(description,std::move(view));
+  }catch(const std::bad_alloc&){return std::unexpected(Status::ResourceExhausted("Vulkan paged binding metadata"));}
 }
 
 Result<ReadLease> MemoryResource::import_readonly(const Tensor &source, LeaseImportOptions options) const noexcept {

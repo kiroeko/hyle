@@ -49,6 +49,7 @@ namespace detail {
 struct Buffer;
 struct Runtime;
 struct Access;
+struct PagedBatchAccess;
 struct Pipeline;
 struct ProgramState;
 struct InvocationState;
@@ -323,6 +324,7 @@ public:
 private:
   friend struct detail::Access;
   friend class LeasedInvocation;
+  friend struct detail::PagedBatchAccess;
   HYLE_COMPUTE_ROUTE_VULKAN_API Result<OwnedResult<Results>> submit_guarded(LeaseUseBatch uses) noexcept;
   HYLE_COMPUTE_ROUTE_VULKAN_API Status wait_native() noexcept;
   explicit Invocation(std::shared_ptr<detail::InvocationState> state) noexcept

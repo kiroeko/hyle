@@ -1,4 +1,5 @@
 #include "hyle/compute/apple_memory.h"
+#include "hyle/compute/detail/apple_batch_access.h"
 
 #include <memory>
 #include <new>
@@ -10,6 +11,10 @@
 
 namespace hyle::compute::apple {
 namespace detail {
+Result<OwnedResult<Results>> PagedBatchAccess::submit(Invocation&invocation,LeaseUseBatch uses)noexcept{
+  return invocation.submit_guarded(std::move(uses));
+}
+Status PagedBatchAccess::wait_native(Invocation&invocation)noexcept{return invocation.wait_native();}
 struct LeasedInvocationState final {
   explicit LeasedInvocationState(mem::AllocatorRef selected)
       : allocator(selected), inputs(selected) {}

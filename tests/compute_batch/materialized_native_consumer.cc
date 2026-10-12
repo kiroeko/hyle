@@ -1,14 +1,19 @@
 #define HYLE_F5_NATIVE_FIXTURE_ONLY 1
 #include "materialized_cpu_consumer.cc"
 #include <hyle/mem/quota_allocator.h>
+#include <hyle/compute/state_versions.h>
+#include <hyle/compute/detail/paged_arena_access.h>
+#include <hyle/compute/detail/lease_access.h>
 #if defined(HYLE_F5_APPLE_TEST)
 #include <hyle/compute/apple_batch.h>
 #include <hyle/compute/apple_memory.h>
 #include <hyle/graph/apple.h>
+#include <hyle/compute/detail/apple_batch_access.h>
 #else
 #include <hyle/compute/vulkan_batch.h>
 #include <hyle/compute/vulkan_memory.h>
 #include <hyle/graph/vulkan.h>
+#include <hyle/compute/detail/vulkan_batch_access.h>
 #endif
 namespace {
 #if defined(HYLE_F5_APPLE_TEST)
@@ -75,8 +80,9 @@ Status exercise_native_impl(n::Context&context,n::MemoryResource&memory,n::Memor
   std::printf("%s explicit materialized %s %s causal=%d native Direct/Graph NaN-padding/two-slots/update/old-result PASS\n",route,paged?"paged":"ragged",bf16?"BF16":"F16",int(causal));return Status::Ok();
 }
 Status exercise_native(n::Context&context,n::MemoryResource&memory,n::MemoryResource&staging,bool paged,bool bf16,bool causal){
-  hyle::mem::QuotaAllocator metadata(hyle::mem::system_allocator());HYLE_RETURN_IF_ERROR(exercise_native_impl(context,memory,staging,paged,bf16,causal,metadata.get()));return require(metadata.used()==0,"native recipe retains common metadata after all controls/results retired");
+  hyle::mem::QuotaAllocator metadata(hyle::mem::system_allocator());const auto status=exercise_native_impl(context,memory,staging,paged,bf16,causal,metadata.get());if(!status.ok()){context.close().IgnoreError();return status;}return require(metadata.used()==0,"native recipe retains common metadata after all controls/results retired");
 }
+#include "native_arena_reference_consumer.h"
 Status native_run(){HYLE_ASSIGN_OR_RETURN(auto context,n::Context::create());
 #if defined(HYLE_F5_APPLE_TEST)
   HYLE_ASSIGN_OR_RETURN(auto memory,n::MemoryResource::create(context));HYLE_ASSIGN_OR_RETURN(auto staging,n::MemoryResource::create(context));
@@ -85,7 +91,8 @@ Status native_run(){HYLE_ASSIGN_OR_RETURN(auto context,n::Context::create());
   HYLE_ASSIGN_OR_RETURN(auto memory,n::MemoryResource::create(context,n::MemoryKind::kDevice));HYLE_ASSIGN_OR_RETURN(auto staging,n::MemoryResource::create(context,n::MemoryKind::kStaging));
   const auto&environment=context.environment();HYLE_RETURN_IF_ERROR(require(!environment.software_device,"software Vulkan cannot qualify actual reference math"));std::printf("Vulkan actual GPU %s / %s / %s\n",environment.device_name.c_str(),environment.driver_name.c_str(),environment.driver_info.c_str());
 #endif
-  for(bool paged:{true,false})for(bool bf16:{false,true})for(bool causal:{false,true})HYLE_RETURN_IF_ERROR(exercise_native(context,memory,staging,paged,bf16,causal));return context.close();
+  struct CloseBeforeResources{n::Context&context;~CloseBeforeResources(){context.close().IgnoreError();}}close_before_resources{context};
+  for(bool paged:{true,false})for(bool bf16:{false,true})for(bool causal:{false,true})HYLE_RETURN_IF_ERROR(exercise_native(context,memory,staging,paged,bf16,causal));HYLE_RETURN_IF_ERROR(hyle_f5_native_paged_fixture::run(context,memory,staging));return context.close();
 }
 } // namespace
-int main(){const auto status=native_run();if(status.ok())return 0;char text[768]{};status.ToString(text,sizeof(text));std::fprintf(stderr,"F5 materialized %s: %s\n",route,text);return 1;}
+int main(){std::setvbuf(stdout,nullptr,_IONBF,0);const auto status=native_run();if(status.ok())return 0;char text[768]{};status.ToString(text,sizeof(text));std::fprintf(stderr,"F5 materialized %s: %s\n",route,text);return 1;}

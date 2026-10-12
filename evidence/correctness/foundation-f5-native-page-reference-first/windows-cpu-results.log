@@ -1,0 +1,24 @@
+materialized independent oracle maxError=3.0380168e-05 PASS
+materialized independent oracle maxError=3.0380168e-05 PASS
+CPU explicit materialized paged F16 causal=0 Direct/Graph NaN-padding PASS; host=1920 gather=98304 logical=553984
+materialized independent oracle maxError=5.72360158e-05 PASS
+materialized independent oracle maxError=5.72360158e-05 PASS
+CPU explicit materialized paged F16 causal=1 Direct/Graph NaN-padding PASS; host=1920 gather=98304 logical=553984
+materialized independent oracle maxError=0.000243569365 PASS
+materialized independent oracle maxError=0.000243569365 PASS
+CPU explicit materialized paged BF16 causal=0 Direct/Graph NaN-padding PASS; host=1920 gather=98304 logical=553984
+materialized independent oracle maxError=0.000483878487 PASS
+materialized independent oracle maxError=0.000483878487 PASS
+CPU explicit materialized paged BF16 causal=1 Direct/Graph NaN-padding PASS; host=1920 gather=98304 logical=553984
+materialized independent oracle maxError=6.030212e-05 PASS
+materialized independent oracle maxError=6.030212e-05 PASS
+CPU explicit materialized ragged F16 causal=0 Direct/Graph NaN-padding PASS; host=1920 gather=98304 logical=529408
+materialized independent oracle maxError=6.04093309e-05 PASS
+materialized independent oracle maxError=6.04093309e-05 PASS
+CPU explicit materialized ragged F16 causal=1 Direct/Graph NaN-padding PASS; host=1920 gather=98304 logical=529408
+materialized independent oracle maxError=0.000483024423 PASS
+materialized independent oracle maxError=0.000483024423 PASS
+CPU explicit materialized ragged BF16 causal=0 Direct/Graph NaN-padding PASS; host=1920 gather=98304 logical=529408
+materialized independent oracle maxError=0.000487680542 PASS
+materialized independent oracle maxError=0.000487680542 PASS
+CPU explicit materialized ragged BF16 causal=1 Direct/Graph NaN-padding PASS; host=1920 gather=98304 logical=529408

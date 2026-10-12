@@ -1,4 +1,6 @@
 #include "hyle/compute/apple_memory.h"
+#include "hyle/compute/detail/apple_batch_access.h"
+#include "hyle/compute/detail/paged_arena_access.h"
 
 #import <Metal/Metal.h>
 #include <cstdint>
@@ -71,6 +73,10 @@ struct ArrayStorage final {
 struct LeasedArrayStorage final {
   ResourceBudget::Reservation private_metadata;
   ReadLease source;
+};
+struct PagedArrayStorage final {
+  ResourceBudget::Reservation private_metadata;
+  PagedArenaRead frame;
 };
 struct ImportedArrayStorage final : MemoryState {
   ImportedArrayStorage(mx::array source, mem::AllocatorRef selected) noexcept
@@ -193,6 +199,39 @@ Result<mx::array> MemoryResource::binding(ReadLease source, const TensorDesc &de
     result.set_status(mx::array::available);
     return result;
   } catch (...) { return std::unexpected(detail::native_exception()); }
+}
+
+Result<mx::array> detail::PagedBatchAccess::binding(const MemoryResource&memory,
+    PagedArenaRead frame,LeaseImportOptions options)noexcept{
+  if(!memory.valid() || !options.allocator.valid())
+    return std::unexpected(Status::InvalidArgument("Apple paged binding requires a resource/allocator"));
+  HYLE_ASSIGN_OR_RETURN(auto tensor,compute::detail::PagedArenaAccess::tensor(frame));
+  const auto storage=tensor.storage();const auto&description=tensor.description();
+  if(storage.resource()!=memory.ref() || dynamic_cast<detail::MemoryState*>(&storage.resource().resource())==nullptr ||
+      !description.is_dense())return std::unexpected(Status::InvalidArgument("Apple page arena belongs to another resource/carrier"));
+  HYLE_ASSIGN_OR_RETURN(auto spec,input_spec(description));HYLE_ASSIGN_OR_RETURN(auto bytes,description.required_bytes());
+  if(!bytes)return std::unexpected(Status::InvalidArgument("empty Apple page arena"));
+  try{
+    auto allocator=options.allocator;if(options.resource_budget.valid()){
+      HYLE_ASSIGN_OR_RETURN(allocator,options.resource_budget.metadata_allocator());
+    }
+    auto owner=std::allocate_shared<detail::PagedArrayStorage>(mem::StdAllocator<detail::PagedArrayStorage>(allocator));
+    if(options.resource_budget.valid()){
+      HYLE_ASSIGN_OR_RETURN(owner->private_metadata,options.resource_budget.reserve_unattributed(std::nullopt));
+    }
+    mx::array result(spec.shape,spec.dtype,nullptr,{});
+    if(storage.offset()%result.itemsize()!=0 || bytes!=result.nbytes() ||
+       storage.offset()/result.itemsize()>static_cast<std::size_t>(INT64_MAX))
+      return std::unexpected(Status::InvalidArgument("Apple paged carrier origin/size mismatch"));
+    id<MTLBuffer> metal=(__bridge id<MTLBuffer>)storage.native_handle();
+    if(metal==nil || metal.storageMode!=MTLStorageModeShared || storage.offset()>metal.length || bytes>metal.length-storage.offset())
+      return std::unexpected(Status::InvalidArgument("Apple paged capacity exceeds shared Metal backing"));
+    owner->frame=std::move(frame);
+    mx::array base(mx::Shape{1},mx::uint8,nullptr,{});
+    base.set_data(mx::allocator::Buffer(storage.native_handle()),[retained=std::move(owner)](mx::allocator::Buffer){});
+    result.copy_shared_buffer(base,result.strides(),result.flags(),result.size(),static_cast<std::int64_t>(storage.offset()/result.itemsize()));
+    result.set_status(mx::array::available);return result;
+  }catch(...){return std::unexpected(detail::native_exception());}
 }
 
 Result<ReadLease> MemoryResource::import_readonly(const mx::array &source, const TensorDesc &description,

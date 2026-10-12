@@ -27,6 +27,28 @@ TEST(BatchMaterialize, NoncausalUsesEveryValidKvButNeverTailPadding){
   auto schema=c::BatchSchema::create(capacity()).value();Host h;auto o=options();o.causal=false;auto program=c::MaterializedBatchProgram::prepare(schema,o).value();auto version=program.version(schema.version(h.value()).value()).value();auto mask=read<float>(version.mask().value());
   EXPECT_EQ(mask[19+9],0);EXPECT_TRUE(std::isinf(mask[19+10]));EXPECT_EQ(mask[18],0);
 }
+TEST(BatchMaterialize, InactiveQueryCapacityReadsOnlyPagesOfTheFirstActiveQuery){
+  auto schema=c::BatchSchema::create(capacity()).value();Host h;
+  h.q={0,0,3};h.pages={2,2,3};
+  auto program=c::MaterializedBatchProgram::prepare(schema,options()).value();
+  auto version=program.version(schema.version(h.value()).value()).value();
+  const auto ids=read<std::int32_t>(version.indices().value());
+  const auto cap=capacity();const auto bound=options().max_kv_per_request;
+  // Request zero has no Q; its page 2 does not choose inactive-row padding.
+  // The actual first query reads page 3. No generated gather may read page 0.
+  for(std::size_t head=0;head<cap.query_heads;++head){
+    const auto begin=(std::size_t(3)*cap.query_heads+head)*bound;
+    for(std::size_t j=0;j<bound;++j)EXPECT_EQ(ids[begin+j],96+std::int32_t(head/2));
+  }
+  for(auto id:ids){const auto page=id/std::int32_t(cap.kv_heads*cap.page_size);EXPECT_TRUE(page==2 || page==3);}
+  auto ragged=cap;ragged.storage=c::BatchStorage::kRagged;ragged.max_pages=ragged.max_page_refs=0;ragged.page_size=1;
+  auto ragged_schema=c::BatchSchema::create(ragged).value();h.kv={0,19,29};
+  auto ragged_program=c::MaterializedBatchProgram::prepare(ragged_schema,options()).value();
+  auto ragged_version=ragged_program.version(ragged_schema.version({h.q,h.kv,{},{}}).value()).value();
+  const auto ragged_ids=read<std::int32_t>(ragged_version.indices().value());
+  for(std::size_t head=0;head<cap.query_heads;++head)
+    for(std::size_t j=0;j<bound;++j)EXPECT_EQ(ragged_ids[(3*cap.query_heads+head)*bound+j],38+std::int32_t(head/2));
+}
 TEST(BatchMaterialize, RaggedOffsetsAndNewLayoutDoNotChangeOldOwnedIndices){
   auto cap=capacity();cap.storage=c::BatchStorage::kRagged;cap.max_pages=cap.max_page_refs=0;cap.page_size=1;auto schema=c::BatchSchema::create(cap).value();Host h;h.kv={0,19,29};auto program=c::MaterializedBatchProgram::prepare(schema,options()).value();
   auto layout=schema.version({h.q,h.kv,{},{}}).value();auto old=program.version(layout).value();auto old_indices=old.indices().value();h.q[1]=2;auto next=program.version(schema.version({h.q,h.kv,{},{}}).value()).value();

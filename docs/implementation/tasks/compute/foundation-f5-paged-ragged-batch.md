@@ -306,3 +306,23 @@ CUDA F16/BF16各旧新旧六oracle、原Graph两域12oracle，普通reader/alias
 拒绝及mixed generation/old result/escaped结果/quota0通过；仍只实际页clone/append和
 原F4发布，没有whole arena copy或第二executor。CPU/Apple/Vulkan reference同权限与
 完整controller、ragged append和其他终审风险继续；checkpoint不替代全F5验收。
+
+## AUDITED REF-FOOTPRINT：未使用Q容量行的实际读取
+
+baseline c9bc4fa69。实际反例：Qcap4/active3、首request无Q、页表只含physical2/3时，
+原materialize的inactive row indices为0，Gather仍读取没有page0 guard的地址。原共同
+33项中该反例失败，另32项通过；失败沿common-1原预算保存。inactive结果未定义不豁免
+实际内存读取权限，不能给page0虚假guard或全arena读取权限来掩盖。
+
+固定REF-FOOTPRINT有限修正：compute_batch生成所有inactive Q/head的indices时，取第一
+条真实Q/head的首个有效KV索引重复填充；不能取无Q的首request，也不能取arena0。
+active数学/同版本owned metadata/端口/容量/recipe与mask不变，仍原native Gather数学。
+验证paged/ragged首request无Q、GQA与全部generated读取均在实际允许范围，原CPU实际
+Direct+Graph八域16oracle定向复核。其余route逐页桥/完整controller/SDK/san/终审仍未完成。
+P0仍O(Qcap*Hq*KVbound)冷owned metadata，额外原生/private bytes未变；同失败预算不重置。
+
+[本轮实际证据](../../../../evidence/correctness/foundation-f5-native-page-reference-first/README.md)
+封存反例FAIL、修正后33项/八头、Win/WSL CPU各16oracle与三GPU profile原48+新增12
+oracle。REF-FOOTPRINT及Apple/Vulkan private页绑定/原权限提交桥通过有限首批验收；
+同布局无page0引用、Q容量padding、GQA、F2实际页append/F4发布/旧新旧重读与quota0已
+验证。CPU精确页桥、完整controller/ragged、其他风险/SDK/san/P0/guide/终审仍未完成。

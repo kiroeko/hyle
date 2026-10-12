@@ -122,6 +122,12 @@ Result<MaterializedBatchVersion> MaterializedBatchProgram::version(BatchLayoutVe
         }
       }
     }
+    // Native Gather also evaluates unused Q capacity. These reads must stay
+    // inside the exact page footprint; row zero is the first actual query,
+    // even when preceding requests have no Q. Preserve its GQA head mapping.
+    for(std::size_t row=p->layout.facts().query_rows;row<c.max_query_rows;++row)
+      for(std::size_t head=0;head<c.query_heads;++head)
+        std::fill_n(indices+(row*c.query_heads+head)*l,l,indices[head*l]);
     HYLE_RETURN_IF_ERROR(mapping.close());
   }
   HYLE_ASSIGN_OR_RETURN(p->bytes,ReadLease::adopt(std::move(buffer),{.allocator=data_->allocator,.resource_budget=data_->options.resource_budget}));return result;

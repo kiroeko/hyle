@@ -38,6 +38,7 @@ struct ProgramState;
 struct InvocationState;
 struct ResultValues;
 struct ContextAccess;
+struct PagedBatchAccess;
 } // namespace detail
 
 // MLX types are intentional in this native route header, never in the common
@@ -241,6 +242,7 @@ public:
 private:
   friend class Program;
   friend class LeasedInvocation;
+  friend struct detail::PagedBatchAccess;
   HYLE_COMPUTE_ROUTE_APPLE_API Result<OwnedResult<Results>> submit_guarded(LeaseUseBatch uses) noexcept;
   HYLE_COMPUTE_ROUTE_APPLE_API Status wait_native() noexcept;
   explicit Invocation(detail::InvocationState *state) noexcept
