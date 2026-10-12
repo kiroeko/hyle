@@ -1,0 +1,131 @@
+{
+  "candidate": "25e4fb398e2a782ee60f916c3c6351c4736b6eda",
+  "verdict": "INCONCLUSIVE_MLX_METAL_HOST_RACE_REPORT",
+  "original_consumer_verdicts": "two FAIL/-6 retained; no PASS",
+  "scope": "Actual Apple F5 host TSan cannot currently qualify whole consumer through foreign GCD/MLX deleter report; no-HYLE matching control reproduces",
+  "raw_sha256": "e66e1d0724b6b0835904d089fd3f92c08d495405c738f89cf81d009a332ff6e5",
+  "job": {
+    "candidate": "25e4fb398e2a782ee60f916c3c6351c4736b6eda",
+    "mode": "tsan",
+    "scope": "Actual Air Apple F5 host wrappers/Graph/worker ownership tsan; no GPU-private instrumentation claim",
+    "identity": {
+      "hardware": "Mac16,12",
+      "memory": "17179869184",
+      "os": "ProductName:\t\tmacOS\nProductVersion:\t\t27.0.1\nBuildVersion:\t\t26A434",
+      "compiler": "Apple clang version 21.0.0 (clang-2100.3.34.2)\nTarget: arm64-apple-darwin27.0.0\nThread model: posix\nInstalledDir: /Library/Developer/CommandLineTools/usr/bin",
+      "cmake": "cmake version 4.3.4\n\nCMake suite maintained and supported by Kitware (kitware.com/cmake)."
+    },
+    "build": "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-apple-tsan/build",
+    "stages": [
+      {
+        "name": "configure",
+        "budget_group": "configure",
+        "command": [
+          "/opt/homebrew/bin/cmake",
+          "-S",
+          "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-apple-tsan/parent",
+          "-B",
+          "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-apple-tsan/build",
+          "-G",
+          "Ninja",
+          "-DCMAKE_BUILD_TYPE=Release",
+          "-DCMAKE_CXX_COMPILER=/usr/bin/clang++",
+          "-DHYLE_COMPONENTS=compute;graph",
+          "-DHYLE_COMPUTE_ROUTES=apple",
+          "-DHYLE_STATIC=ON",
+          "-DHYLE_BUILD_TESTS=OFF",
+          "-DHYLE_BUILD_BENCH=OFF",
+          "-DHYLE_INSTALL=OFF",
+          "-DHYLE_SANITIZER=tsan",
+          "-DHYLE_WERROR=OFF"
+        ],
+        "pid": 78992,
+        "state": "terminal",
+        "log": "configure.log",
+        "available_bytes": 7161004032,
+        "elapsed": 4.097604625,
+        "exit_code": 0,
+        "verdict": "PASS",
+        "sha256": "2645c5cccf4658594acc4b8e9045e102591c464a288200acf1af65bcece53d00"
+      },
+      {
+        "name": "build",
+        "budget_group": "build",
+        "command": [
+          "/opt/homebrew/bin/cmake",
+          "--build",
+          "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-apple-tsan/build",
+          "--target",
+          "native",
+          "public_native",
+          "--parallel",
+          "1"
+        ],
+        "pid": 79282,
+        "state": "terminal",
+        "log": "build.log",
+        "available_bytes": 7083737088,
+        "elapsed": 146.18286725000002,
+        "exit_code": 0,
+        "verdict": "PASS",
+        "sha256": "7f77df9a28e0f7ead5e327de272eba0f057920321e9f529cd6fa0cb39828878a"
+      },
+      {
+        "name": "run-public_native",
+        "budget_group": "consumer",
+        "command": [
+          "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-apple-tsan/build/public_native"
+        ],
+        "pid": 80916,
+        "state": "terminal",
+        "log": "run-public_native.log",
+        "available_bytes": 7210008576,
+        "elapsed": 1.1650530000000003,
+        "exit_code": -6,
+        "verdict": "FAIL",
+        "sha256": "f16976b7f83b3772f2b0c0e3ff727e0f68905acf080608e21682e3f581027db9"
+      },
+      {
+        "name": "run-public_native-resume1",
+        "budget_group": "consumer",
+        "command": [
+          "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-apple-tsan/build/public_native"
+        ],
+        "pid": 81009,
+        "state": "terminal",
+        "log": "run-public_native-resume1.log",
+        "available_bytes": 7135084544,
+        "elapsed": 0.568501208,
+        "exit_code": -6,
+        "verdict": "FAIL",
+        "sha256": "40c96d575283a2eec10a7b76ac95d252b32a292190036d0a5ba9c6ed8726e02a"
+      }
+    ],
+    "fixture_inputs": {
+      "tests/compute_batch/host_failure_fixture.h": "57bb705c7bbe4c2fc71e4cf228138b0fdbf03b6c78521343a018be3a120cdbd5",
+      "tests/compute_batch/native_fault_consumer.cc": "66a502d6ad383b2569b99f3f551a9b62812cb2d5cb466982e06776526e8190cd",
+      "tests/compute_batch/materialized_cpu_consumer.cc": "dc25540478345eb4f169f7bfc766ff6560e1b5af44bef5c130a090710f2273a3",
+      "tests/compute_batch/CMakeLists.txt": "c1edd25e57c49dc096e3dc94031e445834d9c555297e85c203001b41a153cc05",
+      "tests/compute_batch/ragged_append_journey.h": "a4a236ece69637f6aa9e4d785ea94adea98e80b9d46ba4ca1229cbb5b8afce95",
+      "tests/compute_batch/native_ragged_graph_append_consumer.h": "075ca164a8b9989b3994c19c6679cb07d58d6985e456ec0b1c86c555479065a0",
+      "tests/compute_batch/native_arena_reference_consumer.h": "645db5b2f1ceb1dc8265f02724ed26a1212228a99876bbb15c25468c30a56ff0",
+      "tests/compute_batch/native_arena_graph_consumer.h": "d58f9c6e255c987a60ce30c8a8a8a2a06e4a3150e413875051b551acfd6ad1f8",
+      "tests/compute_batch/native_graph_faults.h": "3ac208d6e43c0825f64a31d5426aa079ed4da3f24f6754926ee3fbd5122b734c",
+      "tests/compute_batch/batch_materialize_test.cc": "d3e982acb98ccc6f6d22a5c04b0205a74df9d404117dc0a91460e0b5809eff3c",
+      "tests/compute_batch/materialized_host_controller_consumer.h": "e487b5249d1f65b8af7c3e3e466b4368a41de8f5d43f10c939e20a648b6af1a8",
+      "tests/compute_batch/batch_layout_test.cc": "420b26027914ebc73c5654f49a363b7f5e707c031fe6100763de9295e03c5167",
+      "tests/compute_batch/public_batch_native_consumer.cc": "b0947ad77c35d973f14c7abf80c2fdd0ebd77da3e62fc413161db789b4c334df",
+      "tests/compute_batch/materialized_native_consumer.cc": "7b6c8292c693e3464040f92108dd06ee186d0ae927f0991eef650e2801f3a9c9",
+      "tests/compute_batch/public_batch_cuda_consumer.cc": "eaef48f8b6b5e9770873a99505de354bf52bd2b9424b24256fef0a858ce93aed",
+      "tests/compute_batch/native_vulkan_failure_fixture.h": "955af6a8f8ea20160f36f760866676997b99a12848dbd456108a72c20b030b90",
+      "tests/compute_batch/native_apple_failure_fixture.h": "fdb33f4f810aa078793a464450808da43e3d386721725a506e2c3697d4be2208",
+      "tests/compute_batch/paged_arena_test.cc": "9f42b74ba3b35df0daf73347e91be201ae461aceb76f38d944a9fb0f018fbdae",
+      "tests/compute_batch/native_direct_consumer.cc": "42ad7ea08a7e4a24fbccdfa7f80ae34c4ba170b4951c1cf6389183974f3ff7c0",
+      "tests/compute_batch/native_ragged_append_consumer.h": "74b44c5808eea2718ac7734ba53603c340ffbd23ba03ed390509114ce2156064",
+      "tests/compute_batch/native_graph_consumer.cc": "c9a100e55a0a32fe221419db8e322fd01bb31bc51781d350b4b5e9c523906a6e",
+      "tests/compute_batch/native_arena_direct_consumer.h": "42bbb89bd43d12f752719ef10efa261127004880d87cd005f2cd19c232ba888e",
+      "tests/compute_batch/public_batch_cpu_consumer.cc": "70c2ae42b2a752577872ccabd399e7b3804e98cb3db15505c8dc6919144c773a",
+      "tests/compute_batch/allocation_fault_fixture.h": "7fc5d108ebfbe46853a14fb74b4c504721442757cd4aeab10f1314a9f03943dc"
+    }
+  }
+}

@@ -100,3 +100,11 @@ Air Apple UBSan两消费者已实际PASS：
 [证据](../../../../evidence/correctness/foundation-f5-native-apple-host-ubsan/README.md)，configure
 4.164/300、build165.829/1800、consumer3.863/180。actual flags覆盖新native模板/Graph
 factory及原apple_context/paged import。Apple TSan独立配置已启动，Vulkan两facet待跑。
+
+Apple TSan实际公开consumer两次FAIL/-6：第一ragged F16数学通过后，后续cold prepare
+报告MLX Data函数指针deleter的GCD读/构造线程写。两个简单no-HYLE对照未复现，第三个
+按实际宿主template实例化匹配deleter后、只链接同MLX archive的对照复现同读/写/Data/GCD
+报告。实际vendor CMake明示Darwin USE_TSAN不支持。完整
+[失败与对照](../../../../evidence/correctness/foundation-f5-native-apple-host-tsan-diagnostic/README.md)
+保留，仍INCONCLUSIVE_MLX_METAL_HOST_RACE_REPORT，不认定假阳性、不签PASS/NA，原native
+风险consumer尚未运行。当前无产品反证归因，产品仍固定；继续独立Vulkan补验与有限诊断。
