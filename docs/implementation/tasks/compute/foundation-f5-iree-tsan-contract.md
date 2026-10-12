@@ -2,7 +2,7 @@
 
 ## Closure card
 
-- 状态：SCOPED；owner compute_provider_iree_vulkan，baseline176fabcc331f193d9c93d1f525f9798319277762。
+- 状态：AUDITED；owner compute_provider_iree_vulkan，baseline176fabcc331f193d9c93d1f525f9798319277762。
 - trigger：actual Air Vulkan F5 TSan消费者原数学通过后IREE wait count异常；
   [具体反证](../../../../evidence/correctness/foundation-f5-native-vulkan-tsan-layout-failure/README.md)
   证明同一公开operation在adapter64字节/runtime56字节，count偏移80/72不同。
@@ -33,4 +33,5 @@
 准入由真实consumer与原ABI定义共同证明，唯一FIX已定，无benchmark驱动入口或领域策略。
 原锁/许可不变；原HYLE/F1/F2/native owner复用；成本P0仅instrumented配置；无新FFI；
 source与san配置必须匹配、普通SDK投影复用；无新用户API，文档只记录san资格和失败预算。
-本卡尚未授权写产品，必须先在registry完成SCOPED→AUDITED并提交该阶段再实施唯一FIX。
+实际SCOPED记录已先于产品独立提交；现按原sizeof/offsetof反证固定唯一IRE-TSAN-01，
+完成SCOPED→AUDITED后只实施该开关同步。其余原F5完成定义、失败预算和未裁决门不变。

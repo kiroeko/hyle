@@ -560,7 +560,7 @@
     },
     {
       "module": "compute_provider_iree_vulkan",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/foundation-f5-iree-tsan-contract.md",
       "summary": "Finite F5 consumer sanitizer seam: synchronize original IREE TSan runtime with adapter conditional operation layout; no normal math/API/provider/build-core change."
     },
