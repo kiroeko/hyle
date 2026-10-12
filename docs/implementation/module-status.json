@@ -270,15 +270,17 @@
     },
     {
       "module": "compute",
-      "state": "AUDITED",
-      "record": "docs/implementation/tasks/compute/foundation-f5-owner-bridges.md",
-      "summary": "F5 AUDITED：冷同instance BatchPlanning extension与原FlashInfer native paged/ragged prepare/plan/run接缝及有限Direct生命周期FIX冻结；旧dense/F1–F4范围保留，Graph原region同slot桥已AUDITED实现并有有限native消费证据。"
+      "state": "CANDIDATE",
+      "record": "docs/implementation/tasks/compute/foundation-f5-candidate-validation.md",
+      "summary": "F5 CANDIDATE：冻结77df1c10c实现/API/算法，原owner有限scope与已过证据保留；完整18 SDK/适用san/P0/LOC/guide/分离红队等待裁决，未CLOSED。",
+      "candidate": "77df1c10c7a909d6f2a99a99551e599ddb74f096"
     },
     {
       "module": "graph",
-      "state": "AUDITED",
-      "record": "docs/implementation/tasks/compute/foundation-f5-owner-bridges.md",
-      "summary": "F5 Graph AUDITED实施：CUDA原region精确页闭环已验；CPU fixed host Graph controller/同版本metadata/reshape→Gather guards已实现，Win/WSL各24矩阵+8页oracle、五资格图/OOM/old-result/storage/close/escaped native-read/quota0通过。CPU Direct/native controllers/ragged/其他风险/SDK/san/终审继续。"
+      "state": "CANDIDATE",
+      "record": "docs/implementation/tasks/compute/foundation-f5-candidate-validation.md",
+      "summary": "F5 CANDIDATE：冻结77df1c10c实现/API/算法，原owner有限scope与已过证据保留；完整18 SDK/适用san/P0/LOC/guide/分离红队等待裁决，未CLOSED。",
+      "candidate": "77df1c10c7a909d6f2a99a99551e599ddb74f096"
     },
     {
       "module": "container_concurrent",
@@ -352,9 +354,10 @@
     },
     {
       "module": "compute_provider_onednn",
-      "state": "AUDITED",
-      "record": "docs/implementation/tasks/compute/foundation-f5-package-seam.md",
-      "summary": "F5 package-only AUDITED：固定Compute/Graph新增batch roots/public发现与真实三交付/新头/缺路线/迁址/loader一个FIX，旧已签源码/算法范围保持。"
+      "state": "CANDIDATE",
+      "record": "docs/implementation/tasks/compute/foundation-f5-candidate-validation.md",
+      "summary": "F5 CANDIDATE：冻结77df1c10c实现/API/算法，原owner有限scope与已过证据保留；完整18 SDK/适用san/P0/LOC/guide/分离红队等待裁决，未CLOSED。",
+      "candidate": "77df1c10c7a909d6f2a99a99551e599ddb74f096"
     },
     {
       "module": "compute_provider_ggml",
@@ -369,9 +372,10 @@
     },
     {
       "module": "graph_provider_onednn",
-      "state": "AUDITED",
-      "record": "docs/implementation/tasks/compute/foundation-f5-package-seam.md",
-      "summary": "F5 package-only AUDITED：固定Compute/Graph新增batch roots/public发现与真实三交付/新头/缺路线/迁址/loader一个FIX，旧已签源码/算法范围保持。"
+      "state": "CANDIDATE",
+      "record": "docs/implementation/tasks/compute/foundation-f5-candidate-validation.md",
+      "summary": "F5 CANDIDATE：冻结77df1c10c实现/API/算法，原owner有限scope与已过证据保留；完整18 SDK/适用san/P0/LOC/guide/分离红队等待裁决，未CLOSED。",
+      "candidate": "77df1c10c7a909d6f2a99a99551e599ddb74f096"
     },
     {
       "module": "compute_ops",
@@ -386,33 +390,38 @@
     },
     {
       "module": "compute_backend_cpu",
-      "state": "AUDITED",
-      "record": "docs/implementation/tasks/compute/foundation-f5-package-seam.md",
-      "summary": "F5 package-only AUDITED：固定Compute/Graph新增batch roots/public发现与真实三交付/新头/缺路线/迁址/loader一个FIX，旧已签源码/算法范围保持。"
+      "state": "CANDIDATE",
+      "record": "docs/implementation/tasks/compute/foundation-f5-candidate-validation.md",
+      "summary": "F5 CANDIDATE：冻结77df1c10c实现/API/算法，原owner有限scope与已过证据保留；完整18 SDK/适用san/P0/LOC/guide/分离红队等待裁决，未CLOSED。",
+      "candidate": "77df1c10c7a909d6f2a99a99551e599ddb74f096"
     },
     {
       "module": "compute_backend_cuda",
-      "state": "AUDITED",
-      "record": "docs/implementation/tasks/compute/foundation-f5-package-seam.md",
-      "summary": "F5 package-only AUDITED：固定Compute/Graph新增batch roots/public发现与真实三交付/新头/缺路线/迁址/loader一个FIX，旧已签源码/算法范围保持。"
+      "state": "CANDIDATE",
+      "record": "docs/implementation/tasks/compute/foundation-f5-candidate-validation.md",
+      "summary": "F5 CANDIDATE：冻结77df1c10c实现/API/算法，原owner有限scope与已过证据保留；完整18 SDK/适用san/P0/LOC/guide/分离红队等待裁决，未CLOSED。",
+      "candidate": "77df1c10c7a909d6f2a99a99551e599ddb74f096"
     },
     {
       "module": "compute_provider_native",
-      "state": "AUDITED",
-      "record": "docs/implementation/tasks/compute/foundation-f5-package-seam.md",
-      "summary": "F5 package-only AUDITED：固定Compute/Graph新增batch roots/public发现与真实三交付/新头/缺路线/迁址/loader一个FIX，旧已签源码/算法范围保持。"
+      "state": "CANDIDATE",
+      "record": "docs/implementation/tasks/compute/foundation-f5-candidate-validation.md",
+      "summary": "F5 CANDIDATE：冻结77df1c10c实现/API/算法，原owner有限scope与已过证据保留；完整18 SDK/适用san/P0/LOC/guide/分离红队等待裁决，未CLOSED。",
+      "candidate": "77df1c10c7a909d6f2a99a99551e599ddb74f096"
     },
     {
       "module": "compute_route_cpu",
-      "state": "AUDITED",
-      "record": "docs/implementation/tasks/compute/foundation-f5-package-seam.md",
-      "summary": "F5 package-only AUDITED：固定Compute/Graph新增batch roots/public发现与真实三交付/新头/缺路线/迁址/loader一个FIX，旧已签源码/算法范围保持。"
+      "state": "CANDIDATE",
+      "record": "docs/implementation/tasks/compute/foundation-f5-candidate-validation.md",
+      "summary": "F5 CANDIDATE：冻结77df1c10c实现/API/算法，原owner有限scope与已过证据保留；完整18 SDK/适用san/P0/LOC/guide/分离红队等待裁决，未CLOSED。",
+      "candidate": "77df1c10c7a909d6f2a99a99551e599ddb74f096"
     },
     {
       "module": "graph_route_cpu",
-      "state": "AUDITED",
-      "record": "docs/implementation/tasks/compute/foundation-f5-package-seam.md",
-      "summary": "F5 package-only AUDITED：固定Compute/Graph新增batch roots/public发现与真实三交付/新头/缺路线/迁址/loader一个FIX，旧已签源码/算法范围保持。"
+      "state": "CANDIDATE",
+      "record": "docs/implementation/tasks/compute/foundation-f5-candidate-validation.md",
+      "summary": "F5 CANDIDATE：冻结77df1c10c实现/API/算法，原owner有限scope与已过证据保留；完整18 SDK/适用san/P0/LOC/guide/分离红队等待裁决，未CLOSED。",
+      "candidate": "77df1c10c7a909d6f2a99a99551e599ddb74f096"
     },
     {
       "module": "compute_provider_cublas",
@@ -450,45 +459,52 @@
     },
     {
       "module": "compute_route_cuda",
-      "state": "AUDITED",
-      "record": "docs/implementation/tasks/compute/foundation-f5-package-seam.md",
-      "summary": "F5 package-only AUDITED：固定Compute/Graph新增batch roots/public发现与真实三交付/新头/缺路线/迁址/loader一个FIX，旧已签源码/算法范围保持。"
+      "state": "CANDIDATE",
+      "record": "docs/implementation/tasks/compute/foundation-f5-candidate-validation.md",
+      "summary": "F5 CANDIDATE：冻结77df1c10c实现/API/算法，原owner有限scope与已过证据保留；完整18 SDK/适用san/P0/LOC/guide/分离红队等待裁决，未CLOSED。",
+      "candidate": "77df1c10c7a909d6f2a99a99551e599ddb74f096"
     },
     {
       "module": "graph_route_cuda",
-      "state": "AUDITED",
-      "record": "docs/implementation/tasks/compute/foundation-f5-package-seam.md",
-      "summary": "F5 package-only AUDITED：固定Compute/Graph新增batch roots/public发现与真实三交付/新头/缺路线/迁址/loader一个FIX，旧已签源码/算法范围保持。"
+      "state": "CANDIDATE",
+      "record": "docs/implementation/tasks/compute/foundation-f5-candidate-validation.md",
+      "summary": "F5 CANDIDATE：冻结77df1c10c实现/API/算法，原owner有限scope与已过证据保留；完整18 SDK/适用san/P0/LOC/guide/分离红队等待裁决，未CLOSED。",
+      "candidate": "77df1c10c7a909d6f2a99a99551e599ddb74f096"
     },
     {
       "module": "compute_route_apple",
-      "state": "AUDITED",
-      "record": "docs/implementation/tasks/compute/foundation-f5-native-reference-bridges.md",
-      "summary": "F5 native controller AUDITED实施：typed Direct/原Graph fixed factory、同版本F2镜像/两banks与精确页消费已接；Win Vulkan/Air Apple/Vulkan各96矩阵+24页oracle、六头及old-result/cap/OOM/close/escaped结果/quota0通过。ragged append/完整故障/SDK/san/终审继续，原范围保留。"
+      "state": "CANDIDATE",
+      "record": "docs/implementation/tasks/compute/foundation-f5-candidate-validation.md",
+      "summary": "F5 CANDIDATE：冻结77df1c10c实现/API/算法，原owner有限scope与已过证据保留；完整18 SDK/适用san/P0/LOC/guide/分离红队等待裁决，未CLOSED。",
+      "candidate": "77df1c10c7a909d6f2a99a99551e599ddb74f096"
     },
     {
       "module": "graph_route_apple",
-      "state": "AUDITED",
-      "record": "docs/implementation/tasks/compute/foundation-f5-native-reference-bridges.md",
-      "summary": "F5 native Graph controller AUDITED：固定不可变recipe冷factory与真实类型/依赖边已实现；三GPU profile各96矩阵+24页oracle/六独立头通过。原compiler/runtime/数学与已签范围保留，ragged/完整风险/SDK/san/终审继续。"
+      "state": "CANDIDATE",
+      "record": "docs/implementation/tasks/compute/foundation-f5-candidate-validation.md",
+      "summary": "F5 CANDIDATE：冻结77df1c10c实现/API/算法，原owner有限scope与已过证据保留；完整18 SDK/适用san/P0/LOC/guide/分离红队等待裁决，未CLOSED。",
+      "candidate": "77df1c10c7a909d6f2a99a99551e599ddb74f096"
     },
     {
       "module": "compute_route_vulkan",
-      "state": "AUDITED",
-      "record": "docs/implementation/tasks/compute/foundation-f5-native-reference-bridges.md",
-      "summary": "F5 native controller AUDITED实施：typed Direct/原Graph fixed factory、同版本F2镜像/两banks与精确页消费已接；Win Vulkan/Air Apple/Vulkan各96矩阵+24页oracle、六头及old-result/cap/OOM/close/escaped结果/quota0通过。ragged append/完整故障/SDK/san/终审继续，原范围保留。"
+      "state": "CANDIDATE",
+      "record": "docs/implementation/tasks/compute/foundation-f5-candidate-validation.md",
+      "summary": "F5 CANDIDATE：冻结77df1c10c实现/API/算法，原owner有限scope与已过证据保留；完整18 SDK/适用san/P0/LOC/guide/分离红队等待裁决，未CLOSED。",
+      "candidate": "77df1c10c7a909d6f2a99a99551e599ddb74f096"
     },
     {
       "module": "graph_route_vulkan",
-      "state": "AUDITED",
-      "record": "docs/implementation/tasks/compute/foundation-f5-native-reference-bridges.md",
-      "summary": "F5 native Graph controller AUDITED：固定不可变recipe冷factory与真实类型/依赖边已实现；三GPU profile各96矩阵+24页oracle/六独立头通过。原compiler/runtime/数学与已签范围保留，ragged/完整风险/SDK/san/终审继续。"
+      "state": "CANDIDATE",
+      "record": "docs/implementation/tasks/compute/foundation-f5-candidate-validation.md",
+      "summary": "F5 CANDIDATE：冻结77df1c10c实现/API/算法，原owner有限scope与已过证据保留；完整18 SDK/适用san/P0/LOC/guide/分离红队等待裁决，未CLOSED。",
+      "candidate": "77df1c10c7a909d6f2a99a99551e599ddb74f096"
     },
     {
       "module": "compute_provider_ggml_vulkan",
-      "state": "AUDITED",
-      "record": "docs/implementation/tasks/compute/foundation-f5-vulkan-degenerate-matmul.md",
-      "summary": "F5 unit MatMul缺陷AUDITED：冻结UNIT-STRIDE-01，plain right transpose后连续但transposed的unit域借原同形reshape重建stride；原非连续cont/量化/其他数学/runtime与API不变。"
+      "state": "CANDIDATE",
+      "record": "docs/implementation/tasks/compute/foundation-f5-candidate-validation.md",
+      "summary": "F5 CANDIDATE：冻结77df1c10c实现/API/算法，原owner有限scope与已过证据保留；完整18 SDK/适用san/P0/LOC/guide/分离红队等待裁决，未CLOSED。",
+      "candidate": "77df1c10c7a909d6f2a99a99551e599ddb74f096"
     },
     {
       "module": "compute_ggml_runtime",
@@ -525,9 +541,10 @@
     },
     {
       "module": "compute_provider_flashinfer",
-      "state": "AUDITED",
-      "record": "docs/implementation/tasks/compute/foundation-f5-owner-bridges.md",
-      "summary": "F5 AUDITED：冷同instance BatchPlanning extension与原FlashInfer native paged/ragged prepare/plan/run接缝及有限Direct生命周期FIX冻结；旧dense/F1–F4范围保留，Graph原region同slot桥已AUDITED实现并有有限native消费证据。"
+      "state": "CANDIDATE",
+      "record": "docs/implementation/tasks/compute/foundation-f5-candidate-validation.md",
+      "summary": "F5 CANDIDATE：冻结77df1c10c实现/API/算法，原owner有限scope与已过证据保留；完整18 SDK/适用san/P0/LOC/guide/分离红队等待裁决，未CLOSED。",
+      "candidate": "77df1c10c7a909d6f2a99a99551e599ddb74f096"
     },
     {
       "module": "compute_provider_ggml_metal",
@@ -609,21 +626,24 @@
     },
     {
       "module": "compute_state",
-      "state": "AUDITED",
-      "record": "docs/implementation/tasks/compute/foundation-f5-package-seam.md",
-      "summary": "F5 package-only AUDITED：固定Compute/Graph新增batch roots/public发现与真实三交付/新头/缺路线/迁址/loader一个FIX，旧已签源码/算法范围保持。"
+      "state": "CANDIDATE",
+      "record": "docs/implementation/tasks/compute/foundation-f5-candidate-validation.md",
+      "summary": "F5 CANDIDATE：冻结77df1c10c实现/API/算法，原owner有限scope与已过证据保留；完整18 SDK/适用san/P0/LOC/guide/分离红队等待裁决，未CLOSED。",
+      "candidate": "77df1c10c7a909d6f2a99a99551e599ddb74f096"
     },
     {
       "module": "compute_batch",
-      "state": "AUDITED",
-      "summary": "F5 AUDITED：四路线controller/页与ragged实证保留；native Graph四prepare失败/run suffix/unknown退役、D256四域已验；Direct unknown open失败slot反证后加actual退休门后的terminal检查，三episode通过。CPU118 OOM位置通过。其他完整风险/SDK/san/P0/终审未完成。",
-      "record": "docs/implementation/tasks/compute/foundation-f5-closure-audit.md"
+      "state": "CANDIDATE",
+      "summary": "F5 CANDIDATE：冻结77df1c10c实现/API/算法，原owner有限scope与已过证据保留；完整18 SDK/适用san/P0/LOC/guide/分离红队等待裁决，未CLOSED。",
+      "record": "docs/implementation/tasks/compute/foundation-f5-candidate-validation.md",
+      "candidate": "77df1c10c7a909d6f2a99a99551e599ddb74f096"
     },
     {
       "module": "graph_batch",
-      "state": "AUDITED",
-      "summary": "F5 Graph AUDITED实施：CUDA原region精确页闭环已验；CPU fixed host Graph controller/同版本metadata/reshape→Gather guards已实现，Win/WSL各24矩阵+8页oracle、五资格图/OOM/old-result/storage/close/escaped native-read/quota0通过。CPU Direct/native controllers/ragged/其他风险/SDK/san/终审继续。",
-      "record": "docs/implementation/tasks/compute/foundation-f5-owner-bridges.md"
+      "state": "CANDIDATE",
+      "summary": "F5 CANDIDATE：冻结77df1c10c实现/API/算法，原owner有限scope与已过证据保留；完整18 SDK/适用san/P0/LOC/guide/分离红队等待裁决，未CLOSED。",
+      "record": "docs/implementation/tasks/compute/foundation-f5-candidate-validation.md",
+      "candidate": "77df1c10c7a909d6f2a99a99551e599ddb74f096"
     }
   ]
 }
