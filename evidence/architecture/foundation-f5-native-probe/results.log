@@ -1,0 +1,4 @@
+NATIVE_CXX_PROBE paged F16 rows=3 requests=2 qlens=1,2 kvlens=19,10 physicalPages=2,0,3 tail=3,10 GQA=2 cta=16 split=0 floatWorkspace=0 intWorkspace=64 maxError=0.000114918598 PASS
+NATIVE_CXX_PROBE ragged F16 rows=3 requests=2 qlens=1,2 kvlens=19,10 physicalPages=2,0,3 tail=3,10 GQA=2 cta=16 split=0 floatWorkspace=0 intWorkspace=64 maxError=0.000114918598 PASS
+NATIVE_CXX_PROBE paged BF16 rows=3 requests=2 qlens=1,2 kvlens=19,10 physicalPages=2,0,3 tail=3,10 GQA=2 cta=16 split=0 floatWorkspace=0 intWorkspace=64 maxError=0.00100582627 PASS
+NATIVE_CXX_PROBE ragged BF16 rows=3 requests=2 qlens=1,2 kvlens=19,10 physicalPages=2,0,3 tail=3,10 GQA=2 cta=16 split=0 floatWorkspace=0 intWorkspace=64 maxError=0.00100582627 PASS

@@ -73,3 +73,19 @@ existing Operation::custom的64-byte typed schema可避免改旧variant；原Pro
 QUEUED登记只加两identity，没有源码/头/target/产品root/依赖边。selector保守选全图的原plan
 在.scratch/foundation-f4/f5-queued-plan.json；本轮只执行中央身份/状态/docs，不构建未影响
 模块/全算子，不修改公共selector缩表。后续真实product seam扩展按本卡再选适用门。
+
+## SCOPED native原型事实
+
+[锁定C++ lowering原型](../../../../evidence/architecture/foundation-f5-native-probe/README.md)
+实际PASS：直接原FlashInfer PrefillPlanWorkspaceSize/PrefillPlan与paged/ragged原kernel，
+F16/BF16四场景对独立double dense oracle。head64/GQA2，两request Q长1/2、KV长19/10，
+page16、物理页2/0/3、尾3/10，padding填64，causal右对齐；最大误差F16约1.15e-4、
+BF16约1.01e-3。原planner选CTA16/no split，float workspace0/int64bytes只适用于这个域。
+WSL RTX4070/GCC14.2/NVCC13.3，build16.807/run0.365秒计预算，不是性能计时资格。
+原代码/锁定输入hash/精确身份/命令与日志封存；没有Python/Torch runtime或新kernel。
+
+原型只证明承载，不签HYLE lifecycle、Graph同slot、其他head/layout/capture/私有allocation。
+Graph现存v19 PreparedRegion/RegionInvocation确实拥有opaque slot和workspace，外部规划一个
+独立Direct slot不能冒充它；opt-in桥必须访问这同一原slot。Apple/Vulkan的原typed Program
+同样保留自身native owner，不能为统一签名转成共同Queue/CPU数学。原native原型后继续
+有限owner/API审计，状态仍SCOPED，六个FIX产品未开始。
