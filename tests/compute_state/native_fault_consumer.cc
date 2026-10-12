@@ -35,12 +35,14 @@ struct Gate {
   void release()noexcept{open.store(true,std::memory_order_release);open.notify_all();}
 };
 Status cuda_pending(bool abandon,bool concurrent) {
+  // The injected allocator outlives the original native endpoints and their
+  // asynchronous retirement cleanup, including every failure return.
+  m::QuotaAllocator metadata(m::system_allocator());
   HYLE_ASSIGN_OR_RETURN(auto context,c::Context::create(cu::device(0).value()));HYLE_ASSIGN_OR_RETURN(auto queue,context.create_queue());
   HYLE_ASSIGN_OR_RETURN(auto memory,cu::MemoryResource::create(context,cu::MemoryKind::kDevice));
   HYLE_ASSIGN_OR_RETURN(auto source_pool,c::LeasePool::create(memory.ref(),4096));
   HYLE_ASSIGN_OR_RETURN(auto source_writer,source_pool.allocate(256));HYLE_RETURN_IF_ERROR(source_writer.view()->fill(std::byte{37}));HYLE_ASSIGN_OR_RETURN(auto source,source_writer.publish());
   HYLE_ASSIGN_OR_RETURN(auto contract,schema());HYLE_ASSIGN_OR_RETURN(auto id,contract.entry(0));
-  m::QuotaAllocator metadata(m::system_allocator());
   HYLE_ASSIGN_OR_RETURN(auto store,c::StateStore::create(contract,{.allocator=metadata.get()}));
   HYLE_ASSIGN_OR_RETURN(auto base,store.import(std::array{c::StateMember{id,source}}));
   const std::array specs{c::CopyResourceSpec{memory.ref(),256},c::CopyResourceSpec{memory.ref(),256}};
@@ -76,6 +78,10 @@ Status cuda_pending(bool abandon,bool concurrent) {
   HYLE_ASSIGN_OR_RETURN(auto view,source.view());std::array<std::byte,256> bytes;HYLE_RETURN_IF_ERROR(view.read(bytes));
   for(auto value:bytes)HYLE_RETURN_IF_ERROR(require(value==std::byte{37},"CUDA cancelled/abandoned clone modified source"));
   if(!abandon){ticket={};draft={};base.reset();route={};store={};}
+  // LeaseUse retirement is observable before the original CUDA reaper drops
+  // the final native descriptor/pool metadata. Observe that cleanup explicitly.
+  const auto cleanup_deadline=std::chrono::steady_clock::now()+std::chrono::seconds(5);
+  while(metadata.used()&&std::chrono::steady_clock::now()<cleanup_deadline)std::this_thread::sleep_for(std::chrono::milliseconds(1));
   HYLE_RETURN_IF_ERROR(require(metadata.used()==0,"F4 store metadata retained after controls/actual copy retirement"));
   std::printf("F4 CUDA native pending %s/%s PASS\n",abandon?"abandon":"cancel",concurrent?"concurrent-close":"serial-close");return Status::Ok();
 }

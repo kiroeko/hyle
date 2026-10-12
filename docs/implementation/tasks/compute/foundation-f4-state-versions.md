@@ -208,6 +208,16 @@ expected-base冲突、实际prefix/unknown和opaque不能raw-clone。没有timed
 当前CANDIDATE继续；WSL普通source、各installed static/shared与其loader/迁址/缺路线、新头，
 完整风险矩阵和候选后红队尚未全部裁决，不能CLOSED，也不表示F5已有产品实现。
 
+WSL续记：[普通CPU+CUDA源码消费者](../../../../evidence/correctness/foundation-f4-source-wsl-cpu-cuda/README.md)
+实际PASS，主GDN/conv五成员state及正交资产Direct/Graph、独立oracle、dirty单成员copy与
+原native endpoint、取消/冷rearm/旧版本通过；只43个增量构建步骤，不回放旧operator tests。
+[实际CUDA故障](../../../../evidence/correctness/foundation-f4-native-risk-wsl-cpu-cuda/README.md)
+三场景亦通过。首次fixture在原CUDA reaper末元数据清理前销毁borrowed QuotaAllocator，
+触发exit -6；已明确allocator先于native endpoints构造、F4 controls释放后显式有界观察
+原reaper cleanup。保持原失败、旧fixture Git/hash、阶段时间与同树累计预算，产品29不变；
+Windows同fixture按原根/预算定向复核通过。LeaseUse计数归零不等于native owner已释放
+最后描述符，不能删掉这段清理成本或给F4添加隐式GPU wait。
+
 QUEUED identity只新增一条未实现声明，未改变原产品闭包/头/target；selector对中央manifest
 保守选择全图，原plan在.scratch/foundation-a/f4-queued-plan.json。按用户要求及本卡语义仅做
 closure中央身份/顺序与docs检查；不启动未受影响模块/全目录构建，不改公共selector来缩表。

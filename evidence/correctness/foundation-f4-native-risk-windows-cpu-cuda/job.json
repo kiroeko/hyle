@@ -74,13 +74,47 @@
       "verdict": "PASS",
       "elapsed": 0.1570000000001528,
       "sha256": "2bdfcf1e45b4e956a7614b55c31a745b4b64b5a5ab6e0dd684bb62f5af00a184"
+    },
+    {
+      "name": "build-resume2",
+      "command": [
+        "cmake",
+        "--build",
+        "C:\\h7\\w-cpu-cuda\\selected-graph\\source-build",
+        "--target",
+        "hyle_f4_native_risks",
+        "--parallel",
+        "4"
+      ],
+      "pid": 38800,
+      "state": "terminal",
+      "available_bytes": 31865257984,
+      "log": "build-resume2.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "elapsed": 9.469000000000051,
+      "sha256": "446e52e4ce801f58f806753bae91017e5f24b56cf33c7ae4b6c2d0e6c36c3ebd"
+    },
+    {
+      "name": "consumer-resume1",
+      "command": [
+        "C:\\h7\\w-cpu-cuda\\selected-graph\\source-build\\hyle_f4_native_risks.exe"
+      ],
+      "pid": 15356,
+      "state": "terminal",
+      "available_bytes": 31914172416,
+      "log": "consumer-resume1.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "elapsed": 0.23400000000037835,
+      "sha256": "2bdfcf1e45b4e956a7614b55c31a745b4b64b5a5ab6e0dd684bb62f5af00a184"
     }
   ],
   "test_parallel": 1,
   "inputs": [
     {
       "path": "tests/compute_state/native_fault_consumer.cc",
-      "sha256": "d54cffb01c466254d542688f05d640f646a9a3724a36f42e07691fbdbde0a984"
+      "sha256": "6864e11f848314ab80be8b12472648a5cb98736d0ce4ca317bd76688160c7b85"
     },
     {
       "path": "cmake/HyleComponents.cmake",
@@ -115,7 +149,7 @@
   "qualification": "PASS_F4_NATIVE_FAULT_JOURNEY; test-only overlay; product candidate unchanged",
   "raw_archive": {
     "name": "raw-logs.zip",
-    "sha256": "60d977f51176c45286cf61c5280c2ad9753b565935dfbed19b156ae9961f496b",
+    "sha256": "26d0f075f219b5b3f44012c320667ff6a9dc22c2a9a3b7a7ec88b1d005b40549",
     "stage_hashes_refer_to": "original archive entries"
   }
 }

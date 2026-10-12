@@ -1,0 +1,106 @@
+{
+  "candidate": "29d3c7a3ebe81f0e627986e2e8c8a393aa7832c8",
+  "identity": {
+    "os": "Linux kiro-workstation 6.18.40.1-microsoft-standard-WSL2 #1 SMP PREEMPT_DYNAMIC Fri Jul 31 22:12:15 UTC 2026 x86_64 x86_64 x86_64 GNU/Linux",
+    "compiler": "g++-14 (Ubuntu 14.2.0-4ubuntu2~24.04.1) 14.2.0\nCopyright (C) 2024 Free Software Foundation, Inc.\nThis is free software; see the source for copying conditions.  There is NO\nwarranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.",
+    "cuda": "nvcc: NVIDIA (R) Cuda compiler driver\nCopyright (c) 2005-2026 NVIDIA Corporation\nBuilt on Tue_Jun_09_02:43:40_PM_PDT_2026\nCuda compilation tools, release 13.3, V13.3.73\nBuild cuda_13.3.r13.3/compiler.38244171_0",
+    "gpu": "NVIDIA GeForce RTX 4070, GPU-e7376560-6f5d-ec19-6ee4-3dd3a2c81ef8, 617.14"
+  },
+  "profile": "cpu-cuda",
+  "scope": "F4 actual CPU/CUDA public source State Direct/Graph or native fault journey only; no old operator tests",
+  "stages": [
+    {
+      "name": "configure",
+      "command": [
+        "/usr/bin/cmake",
+        "-S",
+        "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/source-parent",
+        "-B",
+        "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/source-build"
+      ],
+      "pid": 655,
+      "state": "terminal",
+      "available_bytes": 32422608896,
+      "log": "configure.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "elapsed": 16.803769359999997,
+      "sha256": "6bdc8fd471010696b079074c926f9f4f0c14d0237e3ae9ec15d725f47ee67d6e"
+    },
+    {
+      "name": "build",
+      "command": [
+        "/usr/bin/cmake",
+        "--build",
+        "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/source-build",
+        "--target",
+        "hyle_f4_state_consumer",
+        "--parallel",
+        "4"
+      ],
+      "pid": 697,
+      "state": "terminal",
+      "available_bytes": 32476438528,
+      "log": "build.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "elapsed": 16.627651077,
+      "sha256": "85f869ca1cfec6e555558ee3d9a9883646e6375f8405c7ca9942033e098fe974"
+    },
+    {
+      "name": "consumer",
+      "command": [
+        "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/source-build/hyle_f4_state_consumer"
+      ],
+      "pid": 884,
+      "state": "terminal",
+      "available_bytes": 31464837120,
+      "log": "consumer.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "elapsed": 0.7656083500000008,
+      "sha256": "ca2720a64167aa439d949f51b16a32b9373531d2a73309925d6589c1b2db927f"
+    }
+  ],
+  "test_parallel": 1,
+  "inputs": [
+    {
+      "path": "tests/compute_state/public_state_consumer.cc",
+      "sha256": "6a82c25a36838ca6b05c04205ec7f43a53408908286c44b9ccc4c5c54c5aa297"
+    },
+    {
+      "path": "cmake/HyleComponents.cmake",
+      "sha256": "80ba60ecfa94bc73672a1a1f7cda765c943ccdfd2af685e2047ce9f55e9da092"
+    },
+    {
+      "path": "src/compute_state/CMakeLists.txt",
+      "sha256": "74c451450ce59a4f0f465f654211b34f683db2bb5e2fcd8e19ca030073bab76c"
+    },
+    {
+      "path": "src/compute_state/state_internal.h",
+      "sha256": "20f419f2361a13d224eba3023f630b360bcd37e7135a28e13ba931b5d4073b05"
+    },
+    {
+      "path": "src/compute_state/state_versions.cc",
+      "sha256": "65a605065c4df264f093fe164ec1579d8e8cc45db773e17922c07f1faed056b9"
+    },
+    {
+      "path": "include/hyle/compute/state_versions.h",
+      "sha256": "a83193baa10ff4f00fc6eb7289b7f25091038096877ee3dc3aa0053a7b5ca878"
+    },
+    {
+      "path": "include/hyle/compute/state_clone.h",
+      "sha256": "1e20c2363bb1fc6c1aa7b6b72247d5f1a2fde4d4f5ab04e5c2e7791c14d64b3f"
+    },
+    {
+      "path": "include/hyle/compute/detail/state_clone_access.h",
+      "sha256": "b56629d38582f595a9b46eb74d9e6d4b983868bf3a73cf91fb4a965248ee9608"
+    }
+  ],
+  "raw_archive": {
+    "name": "raw-logs.zip",
+    "sha256": "52036126abb13d2b634c585100ecb98f54318860dbfe0f46b57601ccb65527e0",
+    "stage_hashes_refer_to": "original archive entries"
+  },
+  "qualification": "PASS_F4_WSL_SOURCE_JOURNEY"
+}

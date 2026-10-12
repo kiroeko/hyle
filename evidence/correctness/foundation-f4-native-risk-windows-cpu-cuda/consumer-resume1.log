@@ -1,0 +1,3 @@
+F4 CUDA native pending cancel/serial-close PASS
+F4 CUDA native pending abandon/serial-close PASS
+F4 CUDA native pending cancel/concurrent-close PASS
