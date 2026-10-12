@@ -464,7 +464,7 @@
       "module": "compute_route_apple",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/foundation-f5-native-reference-bridges.md",
-      "summary": "F5 native reference AUDITED：两有限Direct冷Program适配FIX/API/依赖冻结，复用原MLX/Vulkan计划/资源/leased结果；原package与数学范围保留，尚未实现。"
+      "summary": "F5 native reference AUDITED实施：原Direct冷适配/新头已接，Win Vulkan及Air Apple/Vulkan各八域双slots/版本更新48oracle与新头独立TU通过；完整控制器/append/F4/故障/SDK/san/终审未完成，原范围保留。"
     },
     {
       "module": "graph_route_apple",
@@ -476,7 +476,7 @@
       "module": "compute_route_vulkan",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/foundation-f5-native-reference-bridges.md",
-      "summary": "F5 native reference AUDITED：两有限Direct冷Program适配FIX/API/依赖冻结，复用原MLX/Vulkan计划/资源/leased结果；原package与数学范围保留，尚未实现。"
+      "summary": "F5 native reference AUDITED实施：原Direct冷适配/新头已接，Win Vulkan及Air Apple/Vulkan各八域双slots/版本更新48oracle与新头独立TU通过；完整控制器/append/F4/故障/SDK/san/终审未完成，原范围保留。"
     },
     {
       "module": "graph_route_vulkan",
@@ -621,7 +621,7 @@
     {
       "module": "compute_batch",
       "state": "AUDITED",
-      "summary": "F5 AUDITED实施：typed schema/owned layout与原F1/F2 batch执行shell、同slot mirror/epoch、explicit prepare/update/run/旧结果容量已接；Win23项/六头、WSL原native Direct与Graph有限旅程、Win/WSL CPU explicit materialize Direct/Graph各16oracle通过，完整控制器/Apple/Vulkan reference/append/交付/san/终审未完成。",
+      "summary": "F5 AUDITED实施：typed schema/owned layout与原F1/F2 batch执行shell、同slot mirror/epoch、explicit prepare/update/run/旧结果容量已接；Win23项/六头、WSL原native Direct与Graph有限旅程、Win/WSL CPU explicit materialize Direct/Graph各16oracle通过，Apple/Vulkan native reference各48oracle通过，完整控制器/append/故障/交付/san/终审未完成。",
       "record": "docs/implementation/tasks/compute/foundation-f5-paged-ragged-batch.md"
     },
     {

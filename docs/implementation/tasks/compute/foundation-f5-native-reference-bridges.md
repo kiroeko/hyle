@@ -19,8 +19,11 @@
   两route增加compute_batch顺向依赖与独立新头apple_batch.h/vulkan_batch.h；无反向Graph边。
 - 非目标：新kernel/math/SDPA mask解禁、复制原native执行器、自动fallback、warm recipe
   遍历/JIT/prepare、普通Program/Invocation字段变化、升级锁、公共工具重写。
-- 生命周期：cold callback拥有common program副本；原native编译后不retain callback。
-  Program只保原native artifact，输入顺序Q/K/V/I32 indices/F32 mask；版本更新仅原native
+- 生命周期：Apple原MLX compiled function保immutable tracing callback及有限recipe的value
+  copy，不借common program/schema/allocator到native artifact；这部分native metadata追加
+  于common logical上界，原opaque bytes仍UNKNOWN。固定InputSpec只沿已冷准备trace replay，
+  不warm遍历。Vulkan丢弃冷Plan，只保原
+  native artifact。输入顺序Q/K/V/I32 indices/F32 mask；版本更新仅原native
   idle bind重新绑定同capacity metadata，不重compile。准备失败不返回partial Program。
 - 性能：P0，显式reference档；common byte caps和gather/GQA/F32/Copy逻辑上界保留，
   原native scratch/driver UNKNOWN不写0。MLX managed/native Vk命令分别报告，未签capture。
@@ -49,3 +52,24 @@ source/installed均由自然Compute产品发现新route头；route缺席时头�
 七问沿锁定MLX MIT及ggml/IREE原许可、双纵切、原F1/F2/Program复用、显式成本P0、
 同工具链C++/无新FFI、三交付与独立头、具名guide/误用风险。两FIX与API/依赖/成本冻结，
 原owner继续AUDITED，尚未产品实现；不把已有AUDITED owner写回SCOPED或伪造BLOCKED。
+
+## AUDITED 首批实际原生消费
+
+[原生reference证据](../../../../evidence/correctness/foundation-f5-native-reference-first/README.md)
+已落地两冷适配、新route头及compute_batch顺向依赖：actual Win RTX4070 Vulkan、Air
+Mac16,12 Apple M4/MLX和M4/MoltenVK，各八域、Direct/Graph初始/第二slot/metadata更新
+三episode，共48次独立oracle。NaN padding、乱页/尾/GQA、原native旧result覆写拒绝与
+同capacity不重compile验证通过；common injected schema/recipe/version metadata quota0。
+
+实际host snapshot→原native staging→原F2镜像保持owned version；示例每phase staging与
+upload各1920bytes，host waits Apple2/Vulkan1如实报告。新头actual presence宏/依赖路径下
+分别独立TU；缺席另一路头可include。Win编译fixture误用Environment/printf类型及头fixture
+缺原MSVC alignment warning政策的FAIL都保留；产品数学和公共工具未放宽。
+
+原MLX compiled function确实保tracing callable，因此Apple只value-copy有限typed记录，
+不retain common program/schema借用到native artifact；这部分native metadata额外且仍
+UNKNOWN，不用common quota0代签driver。Vulkan只冷Plan借原prepare_plan；两者warm执行
+沿原Program/leased wrapper、独立slots与Completion，未新造Queue/runtime或kernel。
+
+两FIX有首批实际证据，owner仍AUDITED：同版本batch组合控制器、append/F4完整页消费、
+其他故障/producer/unknown/alias/OOM和全部SDK/san/P0/guide/终审继续主卡；不签完整F5。

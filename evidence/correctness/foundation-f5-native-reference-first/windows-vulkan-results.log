@@ -1,0 +1,81 @@
+Vulkan actual GPU NVIDIA GeForce RTX 4070 / NVIDIA / 617.14
+Vulkan metadata layout=1 staged=1920 uploaded=1920 hostWaits=1 PASS
+materialized independent oracle maxError=3.0380168e-05 PASS
+materialized independent oracle maxError=3.0380168e-05 PASS
+Vulkan metadata layout=2 staged=1920 uploaded=1920 hostWaits=1 PASS
+materialized independent oracle maxError=3.03596683e-05 PASS
+materialized independent oracle maxError=3.0380168e-05 PASS
+materialized independent oracle maxError=3.0380168e-05 PASS
+Vulkan metadata layout=3 staged=1920 uploaded=1920 hostWaits=1 PASS
+materialized independent oracle maxError=3.03596683e-05 PASS
+Vulkan explicit materialized paged F16 causal=0 native Direct/Graph NaN-padding/two-slots/update/old-result PASS
+Vulkan metadata layout=1 staged=1920 uploaded=1920 hostWaits=1 PASS
+materialized independent oracle maxError=5.72360158e-05 PASS
+materialized independent oracle maxError=5.72360158e-05 PASS
+Vulkan metadata layout=2 staged=1920 uploaded=1920 hostWaits=1 PASS
+materialized independent oracle maxError=3.03596683e-05 PASS
+materialized independent oracle maxError=5.72360158e-05 PASS
+materialized independent oracle maxError=5.72360158e-05 PASS
+Vulkan metadata layout=3 staged=1920 uploaded=1920 hostWaits=1 PASS
+materialized independent oracle maxError=3.03596683e-05 PASS
+Vulkan explicit materialized paged F16 causal=1 native Direct/Graph NaN-padding/two-slots/update/old-result PASS
+Vulkan metadata layout=1 staged=1920 uploaded=1920 hostWaits=1 PASS
+materialized independent oracle maxError=0.000243569365 PASS
+materialized independent oracle maxError=0.000243569365 PASS
+Vulkan metadata layout=2 staged=1920 uploaded=1920 hostWaits=1 PASS
+materialized independent oracle maxError=0.000243374406 PASS
+materialized independent oracle maxError=0.000243569365 PASS
+materialized independent oracle maxError=0.000243569365 PASS
+Vulkan metadata layout=3 staged=1920 uploaded=1920 hostWaits=1 PASS
+materialized independent oracle maxError=0.000243374406 PASS
+Vulkan explicit materialized paged BF16 causal=0 native Direct/Graph NaN-padding/two-slots/update/old-result PASS
+Vulkan metadata layout=1 staged=1920 uploaded=1920 hostWaits=1 PASS
+materialized independent oracle maxError=0.000483878487 PASS
+materialized independent oracle maxError=0.000483878487 PASS
+Vulkan metadata layout=2 staged=1920 uploaded=1920 hostWaits=1 PASS
+materialized independent oracle maxError=0.000243374406 PASS
+materialized independent oracle maxError=0.000483878487 PASS
+materialized independent oracle maxError=0.000483878487 PASS
+Vulkan metadata layout=3 staged=1920 uploaded=1920 hostWaits=1 PASS
+materialized independent oracle maxError=0.000243374406 PASS
+Vulkan explicit materialized paged BF16 causal=1 native Direct/Graph NaN-padding/two-slots/update/old-result PASS
+Vulkan metadata layout=1 staged=1920 uploaded=1920 hostWaits=1 PASS
+materialized independent oracle maxError=6.030212e-05 PASS
+materialized independent oracle maxError=6.030212e-05 PASS
+Vulkan metadata layout=2 staged=1920 uploaded=1920 hostWaits=1 PASS
+materialized independent oracle maxError=6.030212e-05 PASS
+materialized independent oracle maxError=6.030212e-05 PASS
+materialized independent oracle maxError=6.030212e-05 PASS
+Vulkan metadata layout=3 staged=1920 uploaded=1920 hostWaits=1 PASS
+materialized independent oracle maxError=6.030212e-05 PASS
+Vulkan explicit materialized ragged F16 causal=0 native Direct/Graph NaN-padding/two-slots/update/old-result PASS
+Vulkan metadata layout=1 staged=1920 uploaded=1920 hostWaits=1 PASS
+materialized independent oracle maxError=6.04093309e-05 PASS
+materialized independent oracle maxError=6.04093309e-05 PASS
+Vulkan metadata layout=2 staged=1920 uploaded=1920 hostWaits=1 PASS
+materialized independent oracle maxError=6.030212e-05 PASS
+materialized independent oracle maxError=6.04093309e-05 PASS
+materialized independent oracle maxError=6.04093309e-05 PASS
+Vulkan metadata layout=3 staged=1920 uploaded=1920 hostWaits=1 PASS
+materialized independent oracle maxError=6.030212e-05 PASS
+Vulkan explicit materialized ragged F16 causal=1 native Direct/Graph NaN-padding/two-slots/update/old-result PASS
+Vulkan metadata layout=1 staged=1920 uploaded=1920 hostWaits=1 PASS
+materialized independent oracle maxError=0.000483024423 PASS
+materialized independent oracle maxError=0.000483024423 PASS
+Vulkan metadata layout=2 staged=1920 uploaded=1920 hostWaits=1 PASS
+materialized independent oracle maxError=0.000483024423 PASS
+materialized independent oracle maxError=0.000483024423 PASS
+materialized independent oracle maxError=0.000483024423 PASS
+Vulkan metadata layout=3 staged=1920 uploaded=1920 hostWaits=1 PASS
+materialized independent oracle maxError=0.000483024423 PASS
+Vulkan explicit materialized ragged BF16 causal=0 native Direct/Graph NaN-padding/two-slots/update/old-result PASS
+Vulkan metadata layout=1 staged=1920 uploaded=1920 hostWaits=1 PASS
+materialized independent oracle maxError=0.000487680542 PASS
+materialized independent oracle maxError=0.000487680542 PASS
+Vulkan metadata layout=2 staged=1920 uploaded=1920 hostWaits=1 PASS
+materialized independent oracle maxError=0.000483024423 PASS
+materialized independent oracle maxError=0.000487680542 PASS
+materialized independent oracle maxError=0.000487680542 PASS
+Vulkan metadata layout=3 staged=1920 uploaded=1920 hostWaits=1 PASS
+materialized independent oracle maxError=0.000483024423 PASS
+Vulkan explicit materialized ragged BF16 causal=1 native Direct/Graph NaN-padding/two-slots/update/old-result PASS

@@ -1,5 +1,7 @@
 #include <hyle/graph/batch.h>
+#if !defined(HYLE_F5_NATIVE_FIXTURE_ONLY)
 #include <hyle/graph/cpu.h>
+#endif
 #include <hyle/compute/leased_operation.h>
 #include <hyle/simd/dtype.h>
 #include <algorithm>
@@ -27,6 +29,7 @@ Status oracle(const std::vector<std::uint16_t>&q,const std::vector<std::uint16_t
   }
   std::printf("materialized independent oracle maxError=%.9g PASS\n",high_error);return Status::Ok();
 }
+#if !defined(HYLE_F5_NATIVE_FIXTURE_ONLY)
 Status exercise(c::Context&context,c::Queue&queue,bool paged,bool bf16,bool causal){
   c::BatchCapacity cap{.storage=paged?c::BatchStorage::kPaged:c::BatchStorage::kRagged,.data_type=bf16?c::DataType::kBFloat16:c::DataType::kFloat16,.max_requests=2,.max_query_rows=4,.max_kv_rows=32,.max_pages=paged?5u:0u,.max_page_refs=paged?3u:0u,.query_heads=4,.kv_heads=2,.head_dim=64,.page_size=paged?16u:1u};
   HYLE_ASSIGN_OR_RETURN(auto schema,c::BatchSchema::create(cap));const std::array<std::int32_t,3> qptr{0,1,3},kvptr{0,paged?2:19,paged?3:29},pages{2,0,3};const std::array<std::int32_t,2> tails{3,10};
@@ -51,5 +54,8 @@ Status exercise(c::Context&context,c::Queue&queue,bool paged,bool bf16,bool caus
   std::printf("CPU explicit materialized %s %s causal=%d Direct/Graph NaN-padding PASS; host=%zu gather=%zu logical=%zu\n",paged?"paged":"ragged",bf16?"BF16":"F16",int(causal),program.costs().index_bytes+program.costs().mask_bytes,program.costs().gathered_kv_bytes,program.costs().logical_intermediate_bytes);return Status::Ok();
 }
 Status run(){HYLE_ASSIGN_OR_RETURN(auto context,g::cpu::create_context());HYLE_ASSIGN_OR_RETURN(auto queue,context.create_queue());for(bool paged:{true,false})for(bool bf16:{false,true})for(bool causal:{false,true})HYLE_RETURN_IF_ERROR(exercise(context,queue,paged,bf16,causal));return context.drain();}
+#endif
 } // namespace
+#if !defined(HYLE_F5_NATIVE_FIXTURE_ONLY)
 int main(){const auto status=run();if(status.ok())return 0;char text[768]{};status.ToString(text,sizeof(text));std::fprintf(stderr,"F5 materialized CPU: %s\n",text);return 1;}
+#endif

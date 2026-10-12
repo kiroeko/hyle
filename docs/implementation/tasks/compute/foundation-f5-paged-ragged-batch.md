@@ -225,3 +225,11 @@ caps、same-schema/每request bound/overflow/empty拒绝、owned旧版本/只读
 逐步submit/wait，不在sample运行时规划，也不把它当完整生产batch controller。路线Direct
 组合控制器、Apple/Vulkan实际native Direct/Graph、F2同版本上传、append/F4完整闭环及
 其他故障/SDK/san/P0/guide/终审继续。产品保持AUDITED，不签F5-05/06完整完成。
+
+Apple/Vulkan Direct冷适配已按[独立实际owner卡](foundation-f5-native-reference-bridges.md)
+合法纳入并实现。actual Win Vulkan、Air Apple/Vulkan各八域/双slots/metadata更新后的
+48次Direct+Graph oracle及两个route新头独立TU通过，见
+[原生reference证据](../../../../evidence/correctness/foundation-f5-native-reference-first/README.md)。
+共享typed recipe在GPU由原MLX/ggml/IREE/native Program承载，原F2镜像上传与版本更新
+明确发生，旧result保护仍原native owner；没有CPU fallback或capture/native paged假报。
+F5-05/06向四route实际数学消费推进，batch控制器、append/F4完整闭环和其他最终门仍待验。
