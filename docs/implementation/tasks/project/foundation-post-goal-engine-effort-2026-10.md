@@ -2,8 +2,9 @@
 
 2026-10-12，RESEARCH_ESTIMATE。用户在活动 goal 中要求评估：少量模型、四路线、量化、流式输出，
 并明确最终目标是**单机高性能推理，单请求及多请求都覆盖**。此记录是按既定 goal **全部通过后的条件预测**，不是引擎实现、当前能力证书或
-新模块施工卡。A现已有限范围CLOSED，F4/F5尚未实施，状态只以registry为准。
-产品候选546b0d2468e5de29031c34668f4afa4bc31b9a17；调查时HEAD41d8f60784b358822a4b1a7abe5482d2a53d593f。
+新模块施工卡。原估计调查时A已有限范围CLOSED、F4/F5未实施，原产品候选546b0d2468e5de29031c34668f4afa4bc31b9a17、HEAD41d8f60784b358822a4b1a7abe5482d2a53d593f。
+当前A与F4已CLOSED，F5实现固定25e4fb398 CANDIDATE，完整goal尚未收口；状态只以registry为准。
+以下原条件估计不冒充最终goal后统计，完成定义及剩余门见[completion audit](foundation-f45-completion-audit.md)。
 
 ## 评估口径
 
@@ -207,6 +208,14 @@ cancel/close及独立模型数值参照；第二步迁到另两种native路线�
 
 本次只增加研究记录和输入尺度，不改变活动goal的16项ledger，不启动整引擎产品或新增owner。
 到goal收口时按最终真实支持矩阵再校正此条件估计；F4/F5未实施的当前结果不能被写成已完成。
+
+2026-10-13阶段实测更新：F5产品对F4的native净增2610行，compute_batch/graph_batch含公开头
+分别1437/400；F5自有native测试净增1862，测试登记/本轮工具修复净增5。口径和固定输入见
+[LOC清单](../../../../evidence/architecture/foundation-f5-loc-inventory/README.md)。18 SDK及普通公开
+consumer已真实取证，CPU/Apple/Vulkan参考与Linux FI路径的额外copy/wait/prepare账见
+[P0结构](../../../../evidence/performance/foundation-f5-cost-structure/README.md)。这些是基础库实测，
+不是同一engine迁移前后差值，也不证明14–30k区间已经被实际engine校准。最终收口后仍须
+以具体单机高性能目标逐类核残留glue、Provider资格和未验证模型接缝，不能直接减去2610。
 
 用户追加要求：当前goal完成后必须统计一轮，不停在本文条件预测。验收使用最终registry/
 candidate/actual consumer证据，按单机高性能单/多请求目标逐项分列：已通过的基础机制、

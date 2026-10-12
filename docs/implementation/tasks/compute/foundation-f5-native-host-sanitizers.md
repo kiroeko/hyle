@@ -62,3 +62,9 @@ suppression/改产品；LSan总体INCONCLUSIVE_NATIVE_VENDOR_REPORTS，不称GPU
 
 UBSan已在合法top-level maintainer factor入口构建；首次误把该选项用于embedding parent
 的配置FAIL保留后，只修私有入口，不改产品/公共工具。TSan仍待同有限facet实际验证。
+
+Linux native UBSan现已三consumer实际PASS：
+[证据](../../../../evidence/correctness/foundation-f5-native-cuda-host-ubsan/README.md)，configure
+11.498/300、build859.339/1800、运行2.145/180。first parent option FAIL与top-level bin/
+launcher未启动测试的ENOENT记录保留，按实际路径运行，不重建或重取预算。TSan单独
+配置已启动，同product/source/直接consumer和原budget；尚未运行项不计PASS。

@@ -89,6 +89,10 @@ PagedArena冷分配连续backing和独立page权限。acquire取得具体physica
 F2 clone/append成功后complete/publish，read(layout, exact ready pages)产生精确页frame。
 未引用的页可以写，仍有旧reader/native use的页不能覆写；整个arena的subview不是独立writer。
 
+原F2已消费page writer时，保留PagedPageWriter，等成功ready输出后调用complete；若放弃
+这个已消费的控制对象，arena不会猜测该页已退休或重新ready。失败/无法完成观察的页按
+已声明合同保持不可再acquire，显式close/recreate arena；不能把它当普通未提交writer归还。
+
 F4 StateStore/StateDraft列出完整K/V/layout及其他需要保留的成员。共享干净页，dirty页显式
 clone到新writer；只把所有成功ready成员finalize为candidate，再由StateHead.publish用
 expected-base切换。失败copy不产生ready writer/lease，不能送进F5，也不能发布F4 head。

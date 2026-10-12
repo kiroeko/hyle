@@ -109,6 +109,10 @@ alignment warning合同遗漏的编译FAIL保留。installed只按实际供应�
 保原日志/同树预算/独立no-HYLE对照；只地址门PASS，LSan总体仍外库报告INCONCLUSIVE，
 不隐藏cuRAND差异或写成零泄漏。剩余native UBSan/TSan与整体risk audit继续。
 
+[CUDA宿主UBSan](../../../../evidence/correctness/foundation-f5-native-cuda-host-ubsan/README.md)
+也已实际三consumer PASS，原配置/launcher错误与原预算保留；TSan独立树仍在构建，
+没有借ASan或UBSan签跨线程退休检查。
+
 [固定产品LOC](../../../../evidence/architecture/foundation-f5-loc-inventory/README.md)已统计：
 compute_batch1437、graph_batch400（含public头），F5对F4净增2610；全部自有native174338，
 本轮20 owner完整union57297。源码/依赖/测试/全仓库口径不混用；测试/工具与最终引擎估计
