@@ -205,3 +205,23 @@ host/intermediate cap、整数乘积/flatten I32 overflow、empty拒绝、只读
 旧版本/native保活；原source/static/shared/缺路线/迁址/loader及san/P0/guide/红队继续主卡。
 预算、失败历史与串行机器规则沿原卡，不因reference档另起累计预算。旧route真实接口若需
 修改，先独立owner scope；本冻结不授权重写CLOSED数学/图编译器或公共构建/验证工具。
+
+## AUDITED 显式reference共同层与CPU首批
+
+[本轮证据](../../../../evidence/correctness/foundation-f5-materialized-first/README.md)：
+MaterializedBatchProgram/Version与普通Graph构造已实现；Win共同23项/六头，实际Win/WSL
+CPU paged/ragged ×F16/BF16 ×causal/noncausal各8域、Direct/Graph各16次独立oracle通过。
+未用物理页/尾padding填NaN，active结果仍正确。masked容量gather重复当前request真正
+有效行，避免读padding再以0*NaN污染；原checked Gather保留native界限拒绝，不以host
+预检代替用户直接使用普通recipe时的native检查。
+
+固定typed序列由原View/Gather/Cast/Copy/MatMul/additive Softmax承载；最终Copy为独立
+输出显式计费，原Graph不导出private reshape alias作为外部F1输出。示例host1920bytes、
+gather98304、logical保守上界paged553984/ragged529408；含GQA重复/F32转换/permute/
+alias view及output Copy，不称精确resident，原Provider/private仍UNKNOWN。冷explicit byte
+caps、same-schema/每request bound/overflow/empty拒绝、owned旧版本/只读export/OOM已测。
+
+这是共同能力与CPU数学承载证明；Direct样例先冷prepare全部step，再沿原leased operation
+逐步submit/wait，不在sample运行时规划，也不把它当完整生产batch controller。路线Direct
+组合控制器、Apple/Vulkan实际native Direct/Graph、F2同版本上传、append/F4完整闭环及
+其他故障/SDK/san/P0/guide/终审继续。产品保持AUDITED，不签F5-05/06完整完成。

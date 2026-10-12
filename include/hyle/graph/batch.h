@@ -1,6 +1,7 @@
 #pragma once
 #include "hyle/graph/leased_invocation.h"
 #include "hyle/compute/batch_execution.h"
+#include "hyle/compute/batch_materialize.h"
 
 #if defined(HYLE_STATIC)
 #define HYLE_GRAPH_BATCH_API
@@ -17,6 +18,16 @@ inline constexpr compute::ProviderId kProviderId{0x48594c4547524241ULL,0x5443485
 HYLE_GRAPH_BATCH_API Result<compute::Provider> provider(compute::Provider base,
     compute::BatchSchema,compute::BatchProgramOptions) noexcept;
 struct NodeLayout final {NodeId node;compute::BatchLayoutVersion layout;};
+struct MaterializedGraph final {
+  Graph graph;
+  std::array<ValueId,5> inputs{};
+  ValueId output;
+};
+// Explicitly selected reference recipe over the original ordinary Graph.
+// Native route compile/prepare still qualifies each operation and its cost.
+// Bind owned same-version indices/mask; upload them with original F2 first.
+HYLE_GRAPH_BATCH_API Result<MaterializedGraph> materialized_graph(
+    const compute::MaterializedBatchProgram&,GraphBuilderOptions = {}) noexcept;
 namespace detail {struct InvocationData;}
 // Thread-compatible control over the original leased Graph invocation.
 // Borrowed Context/resources/Queue/allocator outlive native work and results.

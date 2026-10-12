@@ -1,0 +1,1637 @@
+{
+  "stage": "AUDITED explicit reference recipe/metadata and first real CPU Direct/Graph; not candidate/final",
+  "common_gtests": 23,
+  "common_headers": 6,
+  "cpu_oracle_count_per_machine": 16,
+  "windows_budget_note": "original graph-windows gate/root extended with explicit CPU target; all original graph FAIL/time retained, no reset",
+  "jobs": {
+    "common": {
+      "scope": "F5 AUDITED typed capacity/layout snapshots, identity/ownership/OOM/old version/concurrency only; no provider or old operator catalogue",
+      "stage": "AUDITED implementation, not candidate",
+      "stages": [
+        {
+          "name": "configure",
+          "command": [
+            "cmake",
+            "-S",
+            "C:\\public\\project-hyle\\hyle",
+            "-B",
+            "C:\\h7\\foundation-f4\\core-static",
+            "-G",
+            "Ninja",
+            "-DCMAKE_BUILD_TYPE=Release",
+            "-DCMAKE_CXX_COMPILER=C:/Program Files/Microsoft Visual Studio/18/Enterprise/VC/Tools/MSVC/14.50.35717/bin/Hostx64/x64/cl.exe",
+            "-DHYLE_DEV_FACTORS:STRING=compute_batch",
+            "-DHYLE_BUILD_TESTS:BOOL=ON",
+            "-DHYLE_BUILD_BENCH:BOOL=OFF",
+            "-DHYLE_INSTALL:BOOL=OFF",
+            "-DHYLE_STATIC:BOOL=ON",
+            "-DHYLE_TEST_INSTRUMENTATION:BOOL=OFF",
+            "-DHYLE_WERROR:BOOL=ON",
+            "-DHYLE_DEP_SOURCE_CACHE:PATH=C:/public/tools/hyle-dependencies/v1"
+          ],
+          "pid": 28360,
+          "state": "terminal",
+          "available_bytes": 45562523648,
+          "log": "configure.log",
+          "exit_code": 0,
+          "verdict": "PASS",
+          "elapsed": 4.860000000000582,
+          "sha256": "dc25e91584aa4ea29a317245e99e5d34b270016a9af05e5076fff8ce088cdcf4"
+        },
+        {
+          "name": "build",
+          "command": [
+            "cmake",
+            "--build",
+            "C:\\h7\\foundation-f4\\core-static",
+            "--target",
+            "hyle_compute_batch_tests",
+            "--parallel",
+            "4"
+          ],
+          "pid": 45824,
+          "state": "terminal",
+          "available_bytes": 45940772864,
+          "log": "build.log",
+          "exit_code": 0,
+          "verdict": "PASS",
+          "elapsed": 1.875,
+          "sha256": "6eee28dbdd2f8ff9d04cf0a4b21ee46d2a6a35080379d98360e367c310244897"
+        },
+        {
+          "name": "test",
+          "command": [
+            "ctest",
+            "--test-dir",
+            "C:\\h7\\foundation-f4\\core-static",
+            "-R",
+            "^hyle_compute_batch_test$",
+            "--verbose",
+            "--output-on-failure",
+            "--parallel",
+            "1"
+          ],
+          "pid": 34352,
+          "state": "terminal",
+          "available_bytes": 45852114944,
+          "log": "test.log",
+          "exit_code": 8,
+          "verdict": "FAIL",
+          "elapsed": 0.15599999999903957,
+          "sha256": "06a587c4133121664508d7018399c9d78b5c9d8e729a87cde4b1c0c4297723af"
+        },
+        {
+          "name": "build-resume1",
+          "command": [
+            "cmake",
+            "--build",
+            "C:\\h7\\foundation-f4\\core-static",
+            "--target",
+            "hyle_compute_batch_tests",
+            "--parallel",
+            "4"
+          ],
+          "pid": 19172,
+          "state": "terminal",
+          "available_bytes": 45990862848,
+          "log": "build-resume1.log",
+          "exit_code": 0,
+          "verdict": "PASS",
+          "elapsed": 1.7970000000004802,
+          "sha256": "abadb2255cbdb1ab2db65a8fb96c93f50efd303397ca6341882f59877e4524cf"
+        },
+        {
+          "name": "test-resume1",
+          "command": [
+            "ctest",
+            "--test-dir",
+            "C:\\h7\\foundation-f4\\core-static",
+            "-R",
+            "^hyle_compute_batch_test$",
+            "--verbose",
+            "--output-on-failure",
+            "--parallel",
+            "1"
+          ],
+          "pid": 47512,
+          "state": "terminal",
+          "available_bytes": 46018678784,
+          "log": "test-resume1.log",
+          "exit_code": 0,
+          "verdict": "PASS",
+          "elapsed": 0.09399999999914144,
+          "sha256": "444db269fb349383a7baa1ce525619f2539ca84dc194a488f54ef42c93ac779f"
+        },
+        {
+          "name": "build-resume2",
+          "command": [
+            "cmake",
+            "--build",
+            "C:\\h7\\foundation-f4\\core-static",
+            "--target",
+            "hyle_compute_batch_tests",
+            "--parallel",
+            "4"
+          ],
+          "pid": 7496,
+          "state": "terminal",
+          "available_bytes": 46077423616,
+          "log": "build-resume2.log",
+          "exit_code": 0,
+          "verdict": "PASS",
+          "elapsed": 5.5,
+          "sha256": "b4888b1d42375545e9d07ccfd599593f5918e57ac53473555c31189cc4c54182"
+        },
+        {
+          "name": "test-resume2",
+          "command": [
+            "ctest",
+            "--test-dir",
+            "C:\\h7\\foundation-f4\\core-static",
+            "-R",
+            "^hyle_compute_batch_test$",
+            "--verbose",
+            "--output-on-failure",
+            "--parallel",
+            "1"
+          ],
+          "pid": 46740,
+          "state": "terminal",
+          "available_bytes": 45984210944,
+          "log": "test-resume2.log",
+          "exit_code": 0,
+          "verdict": "PASS",
+          "elapsed": 0.125,
+          "sha256": "65f94f4c8ada56407c50845769abe13aa25520af1541712bf8ed4e9bf5272905"
+        },
+        {
+          "name": "build-resume3",
+          "command": [
+            "cmake",
+            "--build",
+            "C:\\h7\\foundation-f4\\core-static",
+            "--target",
+            "hyle_compute_batch_tests",
+            "--parallel",
+            "4"
+          ],
+          "pid": 41308,
+          "state": "terminal",
+          "available_bytes": 45986287616,
+          "log": "build-resume3.log",
+          "exit_code": 0,
+          "verdict": "PASS",
+          "elapsed": 1.9369999999998981,
+          "sha256": "abadb2255cbdb1ab2db65a8fb96c93f50efd303397ca6341882f59877e4524cf"
+        },
+        {
+          "name": "test-resume3",
+          "command": [
+            "ctest",
+            "--test-dir",
+            "C:\\h7\\foundation-f4\\core-static",
+            "-R",
+            "^hyle_compute_batch_test$",
+            "--verbose",
+            "--output-on-failure",
+            "--parallel",
+            "1"
+          ],
+          "pid": 45824,
+          "state": "terminal",
+          "available_bytes": 45984047104,
+          "log": "test-resume3.log",
+          "exit_code": 0,
+          "verdict": "PASS",
+          "elapsed": 0.07899999999972351,
+          "sha256": "9825159b0c42bc5637ef595fe3545f627c3dbc6ed4f6e70b6dd89116f5691d6b"
+        },
+        {
+          "name": "headers",
+          "command": [
+            "ctest",
+            "--test-dir",
+            "C:\\h7\\foundation-f4\\core-static",
+            "-R",
+            "^hyle_compute_batch_header_self_contained_test$",
+            "--verbose",
+            "--output-on-failure",
+            "--parallel",
+            "1"
+          ],
+          "pid": 43556,
+          "state": "terminal",
+          "available_bytes": 45919404032,
+          "log": "headers.log",
+          "exit_code": 0,
+          "verdict": "PASS",
+          "elapsed": 1.125,
+          "sha256": "6e19f8f3900b8f0a81badba19e61ad9f593b2a52d05f47a9696887571cd0087f"
+        },
+        {
+          "name": "build-resume4",
+          "command": [
+            "cmake",
+            "--build",
+            "C:\\h7\\foundation-f4\\core-static",
+            "--target",
+            "hyle_compute_batch_tests",
+            "--parallel",
+            "4"
+          ],
+          "pid": 39460,
+          "state": "terminal",
+          "available_bytes": 46355943424,
+          "log": "build-resume4.log",
+          "exit_code": 0,
+          "verdict": "PASS",
+          "elapsed": 5.516000000001441,
+          "sha256": "9e8a6ca9d1ddcc8c06c3241abe9010d884b5ff52b0ac171fad5fdcecbea2d28b"
+        },
+        {
+          "name": "test-resume4",
+          "command": [
+            "ctest",
+            "--test-dir",
+            "C:\\h7\\foundation-f4\\core-static",
+            "-R",
+            "^hyle_compute_batch_test$",
+            "--verbose",
+            "--output-on-failure",
+            "--parallel",
+            "1"
+          ],
+          "pid": 41680,
+          "state": "terminal",
+          "available_bytes": 46341001216,
+          "log": "test-resume4.log",
+          "exit_code": 0,
+          "verdict": "PASS",
+          "elapsed": 0.11000000000058208,
+          "sha256": "96cd7100f6df1e294eedcf31317a611b169806a5cf5cbdb90f2e3996ee3bf770"
+        },
+        {
+          "name": "headers-resume1",
+          "command": [
+            "ctest",
+            "--test-dir",
+            "C:\\h7\\foundation-f4\\core-static",
+            "-R",
+            "^hyle_compute_batch_header_self_contained_test$",
+            "--verbose",
+            "--output-on-failure",
+            "--parallel",
+            "1"
+          ],
+          "pid": 26252,
+          "state": "terminal",
+          "available_bytes": 46337617920,
+          "log": "headers-resume1.log",
+          "exit_code": 0,
+          "verdict": "PASS",
+          "elapsed": 1.139999999999418,
+          "sha256": "5e115f1aefcedf73457ec5aa700db47f05e828d65b2864ab68de121cacd5c483"
+        },
+        {
+          "name": "build-resume5",
+          "command": [
+            "cmake",
+            "--build",
+            "C:\\h7\\foundation-f4\\core-static",
+            "--target",
+            "hyle_compute_batch_tests",
+            "--parallel",
+            "4"
+          ],
+          "pid": 39324,
+          "state": "terminal",
+          "available_bytes": 45955088384,
+          "log": "build-resume5.log",
+          "exit_code": 0,
+          "verdict": "PASS",
+          "elapsed": 3.5,
+          "sha256": "5932286256586dca586d57c8e1995fdb37b61a77a71dbba40cc3387df3dc0537"
+        },
+        {
+          "name": "test-resume5",
+          "command": [
+            "ctest",
+            "--test-dir",
+            "C:\\h7\\foundation-f4\\core-static",
+            "-R",
+            "^hyle_compute_batch_test$",
+            "--verbose",
+            "--output-on-failure",
+            "--parallel",
+            "1"
+          ],
+          "pid": 43324,
+          "state": "terminal",
+          "available_bytes": 45946097664,
+          "log": "test-resume5.log",
+          "exit_code": 0,
+          "verdict": "PASS",
+          "elapsed": 0.046999999998661224,
+          "sha256": "8db8a0d19236cb6ed8977917a01566fe6a59927dd783d25e37c4aa9b1b7ff8f0"
+        },
+        {
+          "name": "headers-resume2",
+          "command": [
+            "ctest",
+            "--test-dir",
+            "C:\\h7\\foundation-f4\\core-static",
+            "-R",
+            "^hyle_compute_batch_header_self_contained_test$",
+            "--verbose",
+            "--output-on-failure",
+            "--parallel",
+            "1"
+          ],
+          "pid": 43992,
+          "state": "terminal",
+          "available_bytes": 45946806272,
+          "log": "headers-resume2.log",
+          "exit_code": 0,
+          "verdict": "PASS",
+          "elapsed": 2.313000000000102,
+          "sha256": "44fff8f94d80b1ca4f1cee3b269340b3d0c3bd77c18bb17ebbdae2927c950685"
+        },
+        {
+          "name": "build-resume6",
+          "command": [
+            "cmake",
+            "--build",
+            "C:\\h7\\foundation-f4\\core-static",
+            "--target",
+            "hyle_compute_batch_tests",
+            "--parallel",
+            "4"
+          ],
+          "pid": 37728,
+          "state": "terminal",
+          "available_bytes": 45497577472,
+          "log": "build-resume6.log",
+          "exit_code": 0,
+          "verdict": "PASS",
+          "elapsed": 2.0310000000008586,
+          "sha256": "6142b32ef8cfa79c878f5f6ebcd5524c54ddc1ebae6987d14c030554822f3619"
+        },
+        {
+          "name": "test-resume6",
+          "command": [
+            "ctest",
+            "--test-dir",
+            "C:\\h7\\foundation-f4\\core-static",
+            "-R",
+            "^hyle_compute_batch_test$",
+            "--verbose",
+            "--output-on-failure",
+            "--parallel",
+            "1"
+          ],
+          "pid": 30680,
+          "state": "terminal",
+          "available_bytes": 45391212544,
+          "log": "test-resume6.log",
+          "exit_code": 0,
+          "verdict": "PASS",
+          "elapsed": 0.09399999999914144,
+          "sha256": "2169c6c6d92a1c5402c97868fd9e62a67225c604a836c4c3a1ed9a60aafd1134"
+        },
+        {
+          "name": "headers-resume3",
+          "command": [
+            "ctest",
+            "--test-dir",
+            "C:\\h7\\foundation-f4\\core-static",
+            "-R",
+            "^hyle_compute_batch_header_self_contained_test$",
+            "--verbose",
+            "--output-on-failure",
+            "--parallel",
+            "1"
+          ],
+          "pid": 19472,
+          "state": "terminal",
+          "available_bytes": 45376188416,
+          "log": "headers-resume3.log",
+          "exit_code": 0,
+          "verdict": "PASS",
+          "elapsed": 2.3439999999991414,
+          "sha256": "5804dbdbe126559879708813dc5d29b40532049b69fdd5d46f1c95c16e7a7919"
+        },
+        {
+          "name": "build-resume7",
+          "command": [
+            "cmake",
+            "--build",
+            "C:\\h7\\foundation-f4\\core-static",
+            "--target",
+            "hyle_compute_batch_tests",
+            "--parallel",
+            "4"
+          ],
+          "pid": 48208,
+          "state": "terminal",
+          "available_bytes": 34298327040,
+          "log": "build-resume7.log",
+          "exit_code": 0,
+          "verdict": "PASS",
+          "elapsed": 1.9529999999995198,
+          "sha256": "cb3365945d11bff1129ab01e34dfa079266d71043c28b879cc1f09ff69cfd4ac"
+        },
+        {
+          "name": "test-resume7",
+          "command": [
+            "ctest",
+            "--test-dir",
+            "C:\\h7\\foundation-f4\\core-static",
+            "-R",
+            "^hyle_compute_batch_test$",
+            "--verbose",
+            "--output-on-failure",
+            "--parallel",
+            "1"
+          ],
+          "pid": 23952,
+          "state": "terminal",
+          "available_bytes": 34305355776,
+          "log": "test-resume7.log",
+          "exit_code": 0,
+          "verdict": "PASS",
+          "elapsed": 0.10900000000037835,
+          "sha256": "b5c3c7a760bbade58ab9e1df86b97f3f95c6dff5cb444eb670f167495599e7c3"
+        },
+        {
+          "name": "headers-resume4",
+          "command": [
+            "ctest",
+            "--test-dir",
+            "C:\\h7\\foundation-f4\\core-static",
+            "-R",
+            "^hyle_compute_batch_header_self_contained_test$",
+            "--verbose",
+            "--output-on-failure",
+            "--parallel",
+            "1"
+          ],
+          "pid": 17652,
+          "state": "terminal",
+          "available_bytes": 34292928512,
+          "log": "headers-resume4.log",
+          "exit_code": 0,
+          "verdict": "PASS",
+          "elapsed": 2.313000000000102,
+          "sha256": "5e83d049e4f6b6c81cfe4b6ccef8c6eb1cc5a63a882fa7d9fa10fae4e26bd77f"
+        },
+        {
+          "name": "build-resume8",
+          "command": [
+            "cmake",
+            "--build",
+            "C:\\h7\\foundation-f4\\core-static",
+            "--target",
+            "hyle_compute_batch_tests",
+            "--parallel",
+            "4"
+          ],
+          "pid": 1852,
+          "state": "terminal",
+          "available_bytes": 33075286016,
+          "log": "build-resume8.log",
+          "exit_code": 0,
+          "verdict": "PASS",
+          "elapsed": 1.2189999999991414,
+          "sha256": "6d01a3b6f7facde976c933755226d1ab3045adc4dd86f5cda3455b6c433fc936"
+        },
+        {
+          "name": "test-resume8",
+          "command": [
+            "ctest",
+            "--test-dir",
+            "C:\\h7\\foundation-f4\\core-static",
+            "-R",
+            "^hyle_compute_batch_test$",
+            "--verbose",
+            "--output-on-failure",
+            "--parallel",
+            "1"
+          ],
+          "pid": 47300,
+          "state": "terminal",
+          "available_bytes": 33067462656,
+          "log": "test-resume8.log",
+          "exit_code": 0,
+          "verdict": "PASS",
+          "elapsed": 0.09399999999914144,
+          "sha256": "d9e8f6dd8a112344e67ee8de38aaaf2ed40d7caeac91014474440577f7f68805"
+        },
+        {
+          "name": "headers-resume5",
+          "command": [
+            "ctest",
+            "--test-dir",
+            "C:\\h7\\foundation-f4\\core-static",
+            "-R",
+            "^hyle_compute_batch_header_self_contained_test$",
+            "--verbose",
+            "--output-on-failure",
+            "--parallel",
+            "1"
+          ],
+          "pid": 48644,
+          "state": "terminal",
+          "available_bytes": 33067102208,
+          "log": "headers-resume5.log",
+          "exit_code": 0,
+          "verdict": "PASS",
+          "elapsed": 2.311999999999898,
+          "sha256": "ea510c2a9882efb9895dd44563a5fdd7f6fa730708e2a5797cc48d8013f91196"
+        },
+        {
+          "name": "build-resume9",
+          "command": [
+            "cmake",
+            "--build",
+            "C:\\h7\\foundation-f4\\core-static",
+            "--target",
+            "hyle_compute_batch_tests",
+            "--parallel",
+            "4"
+          ],
+          "pid": 48556,
+          "state": "terminal",
+          "available_bytes": 46537302016,
+          "log": "build-resume9.log",
+          "exit_code": 2,
+          "verdict": "FAIL",
+          "elapsed": 0.7340000000003783,
+          "sha256": "217468f56092d261fcf4db0e21614a9558ff357b720b9c8cc5db22131292f1c5"
+        },
+        {
+          "name": "build-resume10",
+          "command": [
+            "cmake",
+            "--build",
+            "C:\\h7\\foundation-f4\\core-static",
+            "--target",
+            "hyle_compute_batch_tests",
+            "--parallel",
+            "4"
+          ],
+          "pid": 48224,
+          "state": "terminal",
+          "available_bytes": 42895667200,
+          "log": "build-resume10.log",
+          "exit_code": 0,
+          "verdict": "PASS",
+          "elapsed": 1.2659999999996217,
+          "sha256": "6d01a3b6f7facde976c933755226d1ab3045adc4dd86f5cda3455b6c433fc936"
+        },
+        {
+          "name": "test-resume9",
+          "command": [
+            "ctest",
+            "--test-dir",
+            "C:\\h7\\foundation-f4\\core-static",
+            "-R",
+            "^hyle_compute_batch_test$",
+            "--verbose",
+            "--output-on-failure",
+            "--parallel",
+            "1"
+          ],
+          "pid": 47592,
+          "state": "terminal",
+          "available_bytes": 42913370112,
+          "log": "test-resume9.log",
+          "exit_code": 0,
+          "verdict": "PASS",
+          "elapsed": 0.10900000000037835,
+          "sha256": "5e03cc7a3100683275bfd9b877667ae9b6aaa2c896c24ce898fbbc4434847f1e"
+        },
+        {
+          "name": "headers-resume6",
+          "command": [
+            "ctest",
+            "--test-dir",
+            "C:\\h7\\foundation-f4\\core-static",
+            "-R",
+            "^hyle_compute_batch_header_self_contained_test$",
+            "--verbose",
+            "--output-on-failure",
+            "--parallel",
+            "1"
+          ],
+          "pid": 26252,
+          "state": "terminal",
+          "available_bytes": 42890891264,
+          "log": "headers-resume6.log",
+          "exit_code": 0,
+          "verdict": "PASS",
+          "elapsed": 2.4840000000003783,
+          "sha256": "b5fc3ec14a19f30803a88189b0a6cf1f847c4e52c5da29550cbf2ad2a25c27fe"
+        },
+        {
+          "name": "build-resume11",
+          "command": [
+            "cmake",
+            "--build",
+            "C:\\h7\\foundation-f4\\core-static",
+            "--target",
+            "hyle_compute_batch_tests",
+            "--parallel",
+            "4"
+          ],
+          "pid": 48412,
+          "state": "terminal",
+          "available_bytes": 47060877312,
+          "log": "build-resume11.log",
+          "exit_code": 2,
+          "verdict": "FAIL",
+          "elapsed": 4.265000000001237,
+          "sha256": "f30bd44a7dc7c43ba697cefeb3e6a317c64b02aa27938d16bf2836f5faac7fb0"
+        },
+        {
+          "name": "build-resume12",
+          "command": [
+            "cmake",
+            "--build",
+            "C:\\h7\\foundation-f4\\core-static",
+            "--target",
+            "hyle_compute_batch_tests",
+            "--parallel",
+            "4"
+          ],
+          "pid": 23636,
+          "state": "terminal",
+          "available_bytes": 47103692800,
+          "log": "build-resume12.log",
+          "exit_code": 0,
+          "verdict": "PASS",
+          "elapsed": 4.485000000000582,
+          "sha256": "c0d7db1260e5257bafc05fb7b07cfd7d7ba27a69561e732e02938298b7acc503"
+        },
+        {
+          "name": "test-resume10",
+          "command": [
+            "ctest",
+            "--test-dir",
+            "C:\\h7\\foundation-f4\\core-static",
+            "-R",
+            "^hyle_compute_batch_test$",
+            "--verbose",
+            "--output-on-failure",
+            "--parallel",
+            "1"
+          ],
+          "pid": 8560,
+          "state": "terminal",
+          "available_bytes": 47120740352,
+          "log": "test-resume10.log",
+          "exit_code": 0,
+          "verdict": "PASS",
+          "elapsed": 0.10899999999855936,
+          "sha256": "5e03cc7a3100683275bfd9b877667ae9b6aaa2c896c24ce898fbbc4434847f1e"
+        },
+        {
+          "name": "headers-resume7",
+          "command": [
+            "ctest",
+            "--test-dir",
+            "C:\\h7\\foundation-f4\\core-static",
+            "-R",
+            "^hyle_compute_batch_header_self_contained_test$",
+            "--verbose",
+            "--output-on-failure",
+            "--parallel",
+            "1"
+          ],
+          "pid": 44688,
+          "state": "terminal",
+          "available_bytes": 47125643264,
+          "log": "headers-resume7.log",
+          "exit_code": 0,
+          "verdict": "PASS",
+          "elapsed": 2.9219999999986612,
+          "sha256": "d0c148fddf91bbe558c202aac023eef0ad2d6690046d6876cd762d9a1b7c257a"
+        },
+        {
+          "name": "build-resume13",
+          "command": [
+            "cmake",
+            "--build",
+            "C:\\h7\\foundation-f4\\core-static",
+            "--target",
+            "hyle_compute_batch_tests",
+            "--parallel",
+            "4"
+          ],
+          "pid": 48620,
+          "state": "terminal",
+          "available_bytes": 41452851200,
+          "log": "build-resume13.log",
+          "exit_code": 0,
+          "verdict": "PASS",
+          "elapsed": 1.2659999999996217,
+          "sha256": "6d01a3b6f7facde976c933755226d1ab3045adc4dd86f5cda3455b6c433fc936"
+        },
+        {
+          "name": "test-resume11",
+          "command": [
+            "ctest",
+            "--test-dir",
+            "C:\\h7\\foundation-f4\\core-static",
+            "-R",
+            "^hyle_compute_batch_test$",
+            "--verbose",
+            "--output-on-failure",
+            "--parallel",
+            "1"
+          ],
+          "pid": 4816,
+          "state": "terminal",
+          "available_bytes": 41459875840,
+          "log": "test-resume11.log",
+          "exit_code": 0,
+          "verdict": "PASS",
+          "elapsed": 0.18800000000010186,
+          "sha256": "8f2f7aa474f7233185f811772493c7c9d699d3899818c5f37c8fe4e74b59eed8"
+        },
+        {
+          "name": "headers-resume8",
+          "command": [
+            "ctest",
+            "--test-dir",
+            "C:\\h7\\foundation-f4\\core-static",
+            "-R",
+            "^hyle_compute_batch_header_self_contained_test$",
+            "--verbose",
+            "--output-on-failure",
+            "--parallel",
+            "1"
+          ],
+          "pid": 19816,
+          "state": "terminal",
+          "available_bytes": 41457614848,
+          "log": "headers-resume8.log",
+          "exit_code": 0,
+          "verdict": "PASS",
+          "elapsed": 2.9060000000008586,
+          "sha256": "d25e9c2fac40819456757dcb21ba02b95ef9ab24503c61f2b18c7aeb879c1547"
+        },
+        {
+          "name": "build-resume14",
+          "command": [
+            "cmake",
+            "--build",
+            "C:\\h7\\foundation-f4\\core-static",
+            "--target",
+            "hyle_compute_batch_tests",
+            "--parallel",
+            "4"
+          ],
+          "pid": 25604,
+          "state": "terminal",
+          "available_bytes": 45938937856,
+          "log": "build-resume14.log",
+          "exit_code": 0,
+          "verdict": "PASS",
+          "elapsed": 6.859000000000378,
+          "sha256": "018fa88d08b287f97074a73f39bb23cc9216491744284085dab5cdc898869739"
+        },
+        {
+          "name": "test-resume12",
+          "command": [
+            "ctest",
+            "--test-dir",
+            "C:\\h7\\foundation-f4\\core-static",
+            "-R",
+            "^hyle_compute_batch_test$",
+            "--verbose",
+            "--output-on-failure",
+            "--parallel",
+            "1"
+          ],
+          "pid": 29048,
+          "state": "terminal",
+          "available_bytes": 45480067072,
+          "log": "test-resume12.log",
+          "exit_code": 0,
+          "verdict": "PASS",
+          "elapsed": 0.125,
+          "sha256": "9e1e82fa6e55ac435fa146f9910e7c2253ba9d9c47fbe29ddaded1cbf497c971"
+        },
+        {
+          "name": "headers-resume9",
+          "command": [
+            "ctest",
+            "--test-dir",
+            "C:\\h7\\foundation-f4\\core-static",
+            "-R",
+            "^hyle_compute_batch_header_self_contained_test$",
+            "--verbose",
+            "--output-on-failure",
+            "--parallel",
+            "1"
+          ],
+          "pid": 45756,
+          "state": "terminal",
+          "available_bytes": 45447458816,
+          "log": "headers-resume9.log",
+          "exit_code": 0,
+          "verdict": "PASS",
+          "elapsed": 3.6560000000008586,
+          "sha256": "596a077599d1abef894ce6ff20d9117af568ec76b8c2e99014679b1793d7f299"
+        },
+        {
+          "name": "build-resume15",
+          "command": [
+            "cmake",
+            "--build",
+            "C:\\h7\\foundation-f4\\core-static",
+            "--target",
+            "hyle_compute_batch_tests",
+            "--parallel",
+            "4"
+          ],
+          "pid": 39672,
+          "state": "terminal",
+          "available_bytes": 46033616896,
+          "log": "build-resume15.log",
+          "exit_code": 0,
+          "verdict": "PASS",
+          "elapsed": 1.7340000000003783,
+          "sha256": "0c9c308ad8e9508934865f4063be64dfa6fdd8f0be7eaeb81ebbf94272f0dfbe"
+        },
+        {
+          "name": "test-resume13",
+          "command": [
+            "ctest",
+            "--test-dir",
+            "C:\\h7\\foundation-f4\\core-static",
+            "-R",
+            "^hyle_compute_batch_test$",
+            "--verbose",
+            "--output-on-failure",
+            "--parallel",
+            "1"
+          ],
+          "pid": 37832,
+          "state": "terminal",
+          "available_bytes": 46033006592,
+          "log": "test-resume13.log",
+          "exit_code": 0,
+          "verdict": "PASS",
+          "elapsed": 0.07799999999951979,
+          "sha256": "cffafb3460cdacfc06f00d3478cea676be14da4827c4996785618dd7c5134cf5"
+        },
+        {
+          "name": "headers-resume10",
+          "command": [
+            "ctest",
+            "--test-dir",
+            "C:\\h7\\foundation-f4\\core-static",
+            "-R",
+            "^hyle_compute_batch_header_self_contained_test$",
+            "--verbose",
+            "--output-on-failure",
+            "--parallel",
+            "1"
+          ],
+          "pid": 31384,
+          "state": "terminal",
+          "available_bytes": 46031843328,
+          "log": "headers-resume10.log",
+          "exit_code": 0,
+          "verdict": "PASS",
+          "elapsed": 3.54700000000048,
+          "sha256": "00dd12dac064e7ae224a4dc5737c535de2bb44873b812fef843af1c4ae4d89a1"
+        },
+        {
+          "name": "build-resume16",
+          "command": [
+            "cmake",
+            "--build",
+            "C:\\h7\\foundation-f4\\core-static",
+            "--target",
+            "hyle_compute_batch_tests",
+            "--parallel",
+            "4"
+          ],
+          "pid": 17072,
+          "state": "terminal",
+          "available_bytes": 42094624768,
+          "log": "build-resume16.log",
+          "exit_code": 0,
+          "verdict": "PASS",
+          "elapsed": 0.07799999999951979,
+          "sha256": "7716162f3cd3b99cf3b8a8dd6decf324e08c7e941aae7e730baba5e4fc8c075b"
+        },
+        {
+          "name": "test-resume14",
+          "command": [
+            "ctest",
+            "--test-dir",
+            "C:\\h7\\foundation-f4\\core-static",
+            "-R",
+            "^hyle_compute_batch_test$",
+            "--verbose",
+            "--output-on-failure",
+            "--parallel",
+            "1"
+          ],
+          "pid": 2348,
+          "state": "terminal",
+          "available_bytes": 42097893376,
+          "log": "test-resume14.log",
+          "exit_code": 0,
+          "verdict": "PASS",
+          "elapsed": 0.04700000000048021,
+          "sha256": "2ec41d5eb173f78de4a2f3c4aa4aa0a4a2f0d62491085e0a0fd559885386ace2"
+        },
+        {
+          "name": "headers-resume11",
+          "command": [
+            "ctest",
+            "--test-dir",
+            "C:\\h7\\foundation-f4\\core-static",
+            "-R",
+            "^hyle_compute_batch_header_self_contained_test$",
+            "--verbose",
+            "--output-on-failure",
+            "--parallel",
+            "1"
+          ],
+          "pid": 40976,
+          "state": "terminal",
+          "available_bytes": 42097688576,
+          "log": "headers-resume11.log",
+          "exit_code": 0,
+          "verdict": "PASS",
+          "elapsed": 3.5780000000013388,
+          "sha256": "3b954875e73a7420c2ac33d3e4a2457801f1574632f6c87740220e5ba9de6bcc"
+        }
+      ],
+      "test_parallel": 1
+    },
+    "windows": {
+      "stage": "AUDITED F5 explicit CPU materialization; not candidate/final",
+      "scope": "explicit CPU reference cold Direct/original Graph oracle; only batch targets /WX and actual linked closure; no old tests",
+      "stages": [
+        {
+          "name": "configure",
+          "command": [
+            "cmake",
+            "-S",
+            "C:\\h7\\w-cpu-cuda\\selected-graph\\source-parent",
+            "-B",
+            "C:\\h7\\w-cpu-cuda\\selected-graph\\source-build"
+          ],
+          "pid": 45576,
+          "state": "terminal",
+          "available_bytes": 42056224768,
+          "log": "configure.log",
+          "elapsed": 186.96899999999914,
+          "exit_code": 0,
+          "verdict": "PASS",
+          "sha256": "deabb739696d52198e1620a0cdda382c35ed97cabe8ea18c5c0d50061ddbb16f"
+        },
+        {
+          "name": "build",
+          "command": [
+            "cmake",
+            "--build",
+            "C:\\h7\\w-cpu-cuda\\selected-graph\\source-build",
+            "--target",
+            "hyle_f5_graph_headers",
+            "--parallel",
+            "4"
+          ],
+          "pid": 5412,
+          "state": "terminal",
+          "available_bytes": 46315974656,
+          "log": "build.log",
+          "elapsed": 35.39100000000144,
+          "exit_code": 2,
+          "verdict": "FAIL",
+          "sha256": "40ed24b7de1a3873e61406cde4cfeecdf29b61d03081239d18b36dc4be6cd67a"
+        },
+        {
+          "name": "build-resume1",
+          "command": [
+            "cmake",
+            "--build",
+            "C:\\h7\\w-cpu-cuda\\selected-graph\\source-build",
+            "--target",
+            "hyle_f5_graph_headers",
+            "--parallel",
+            "4"
+          ],
+          "pid": 47088,
+          "state": "terminal",
+          "available_bytes": 42814922752,
+          "log": "build-resume1.log",
+          "elapsed": 6.640999999999622,
+          "exit_code": 0,
+          "verdict": "PASS",
+          "sha256": "a13477f5ab7c6a7f7cb7476b8bec04ea6fd8cd6bb89972a7c70ecb9f6ed98674"
+        },
+        {
+          "name": "consumer",
+          "command": [
+            "C:\\h7\\w-cpu-cuda\\selected-graph\\source-build\\hyle_f5_graph_headers.exe"
+          ],
+          "pid": 48000,
+          "state": "terminal",
+          "available_bytes": 42917474304,
+          "log": "consumer.log",
+          "elapsed": 0.04700000000048021,
+          "exit_code": 0,
+          "verdict": "PASS",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "name": "build-resume2",
+          "command": [
+            "cmake",
+            "--build",
+            "C:\\h7\\w-cpu-cuda\\selected-graph\\source-build",
+            "--target",
+            "hyle_f5_materialized_cpu",
+            "--parallel",
+            "4"
+          ],
+          "pid": 32308,
+          "state": "terminal",
+          "available_bytes": 33725276160,
+          "log": "build-resume2.log",
+          "elapsed": 78.03100000000086,
+          "exit_code": 0,
+          "verdict": "PASS",
+          "sha256": "b80b94688976271eec1dee72baf49ea7691e293b32194dcb79aa18d752503210"
+        },
+        {
+          "name": "consumer-resume1",
+          "command": [
+            "C:\\h7\\w-cpu-cuda\\selected-graph\\source-build\\hyle_f5_materialized_cpu.exe"
+          ],
+          "pid": 27200,
+          "state": "terminal",
+          "available_bytes": 45806575616,
+          "log": "consumer-resume1.log",
+          "elapsed": 0.26599999999962165,
+          "exit_code": 0,
+          "verdict": "PASS",
+          "sha256": "8e4a91a16ee506d348c56860737e1984a6bd56b1ea2a24eb6a3aa495ff3ae97b"
+        },
+        {
+          "name": "build-resume3",
+          "command": [
+            "cmake",
+            "--build",
+            "C:\\h7\\w-cpu-cuda\\selected-graph\\source-build",
+            "--target",
+            "hyle_f5_materialized_cpu",
+            "--parallel",
+            "4"
+          ],
+          "pid": 8688,
+          "state": "terminal",
+          "available_bytes": 45868011520,
+          "log": "build-resume3.log",
+          "elapsed": 5.686999999999898,
+          "exit_code": 0,
+          "verdict": "PASS",
+          "sha256": "36f7b5deeff4042b51410a4409de833dcd14ed2c5edbe9aeef7ce92b5b126250"
+        },
+        {
+          "name": "consumer-resume2",
+          "command": [
+            "C:\\h7\\w-cpu-cuda\\selected-graph\\source-build\\hyle_f5_materialized_cpu.exe"
+          ],
+          "pid": 22060,
+          "state": "terminal",
+          "available_bytes": 45878124544,
+          "log": "consumer-resume2.log",
+          "elapsed": 0.2029999999995198,
+          "exit_code": 0,
+          "verdict": "PASS",
+          "sha256": "8e4a91a16ee506d348c56860737e1984a6bd56b1ea2a24eb6a3aa495ff3ae97b"
+        }
+      ],
+      "inputs": [
+        {
+          "path": "cmake/HyleComponents.cmake",
+          "sha256": "a2b63a2acca1bc61803a60e9493eac92b33332516aa3d3032ff890b9ec5337a2"
+        },
+        {
+          "path": "include/hyle/compute/batch_execution.h",
+          "sha256": "7ef7d2a547bda190310374e098ecdeddb029f140dc3c25bf3fb7384ebd4a084b"
+        },
+        {
+          "path": "include/hyle/compute/batch_layout.h",
+          "sha256": "654d7d3aedcbb9e50532e137ea3d89bb8aa0c5f5697879d4ff79455843fe5402"
+        },
+        {
+          "path": "include/hyle/compute/batch_materialize.h",
+          "sha256": "3c5c41b6aec52a2ecb0fa106f81bf8f114cc17fcb53033538d8e54ce5de9fe6e"
+        },
+        {
+          "path": "include/hyle/compute/batch_ops.h",
+          "sha256": "fe837a188f82beb01570a817ce5fdaa804ee7abbe24a7aa64d48c31522f0d7c0"
+        },
+        {
+          "path": "include/hyle/compute/detail/batch_graph_access.h",
+          "sha256": "5fd73efbbe44befba9f4359550eb45a5fc5b24b583750faacbb8398de0c83184"
+        },
+        {
+          "path": "include/hyle/compute/detail/batch_provider.h",
+          "sha256": "1850c8e70ec085f83b6480bcac367c55a83b4a984dcc2cc6baf19e776872c146"
+        },
+        {
+          "path": "include/hyle/compute/detail/lease_access.h",
+          "sha256": "a51b7fd93c33f76820189c18ae37377d49b7aa320399dc32a75c78a2d6c10e18"
+        },
+        {
+          "path": "include/hyle/graph/batch.h",
+          "sha256": "60ec0fe5d644c2437797b14b10f4a386660d28bcfc200cdc15cc91c350fb32d2"
+        },
+        {
+          "path": "include/hyle/graph/detail/region_access.h",
+          "sha256": "e330856ae980f677301e3e47a0329445c848f65f90a3e0588064213e0cee5e5a"
+        },
+        {
+          "path": "include/hyle/graph/leased_invocation.h",
+          "sha256": "093f1c04307abcc885c9d8ba0319531d10848ef500293da2289b6b038679ee75"
+        },
+        {
+          "path": "src/compute/resource_leases.cc",
+          "sha256": "6d6caa01b517ae13cd04044ebc8eb481d9b3338f45623dc5d341038f37729801"
+        },
+        {
+          "path": "src/compute_batch/CMakeLists.txt",
+          "sha256": "1eedbbd77b1ab9fd6f1c774cc9286cf0a3233bf31504fb2ec9a4183fa7d44ff4"
+        },
+        {
+          "path": "src/compute_batch/batch_execution.cc",
+          "sha256": "f065607c0553cd13646960867afdc39ee5fc2d9d820e509ba2417167b3d9d4f6"
+        },
+        {
+          "path": "src/compute_batch/batch_layout.cc",
+          "sha256": "9643f20396e320aac8f2184ddd243f996a70ee46e81487eb397fa3a54ac020f4"
+        },
+        {
+          "path": "src/compute_batch/batch_materialize.cc",
+          "sha256": "ab1d1183a5408365822ca73a7ff1e06ebf149aba0f404c6cea8c04d14f1e6a6f"
+        },
+        {
+          "path": "src/compute_provider_flashinfer/CMakeLists.txt",
+          "sha256": "3fdbbff300d73e419d7703752de90a38962665f22edd6678668b3f72f84237e0"
+        },
+        {
+          "path": "src/compute_provider_flashinfer/flashinfer_provider.cc",
+          "sha256": "d6f0e55ac6ed4198dd43f94d4f980594c7d971831ba75d15c5508c0021ac9cd3"
+        },
+        {
+          "path": "src/compute_provider_flashinfer/native_batch.cu",
+          "sha256": "aecdbf870616f08600359e00179e4a054513bdff861be5ebc1136db13e33d136"
+        },
+        {
+          "path": "src/compute_provider_flashinfer/native_batch.h",
+          "sha256": "503b895787443169bec1efbc299c6cbf5982e7baae0911d2f316f6980e7a5140"
+        },
+        {
+          "path": "src/graph/CMakeLists.txt",
+          "sha256": "51897f736b32321f1a85b650db8e212acbdc4d61ff3d4507996a8a59689716f3"
+        },
+        {
+          "path": "src/graph/leased_invocation.cc",
+          "sha256": "772f274d379f37af3dc05afda63e7305eb208e2fbbc851f11db35b45b3a02f0b"
+        },
+        {
+          "path": "src/graph/plan_state.h",
+          "sha256": "4f4388b8098fd6b85305fed8133d333ab779fe491403113f86ecd177bd9418fe"
+        },
+        {
+          "path": "src/graph/region_access.cc",
+          "sha256": "d313b47bc92b93f021aff1e8ca2410ee74513a933dd842e4c99fb561bdcdbbae"
+        },
+        {
+          "path": "src/graph_batch/CMakeLists.txt",
+          "sha256": "a1559a5745d51324405d7e89ecbf1c96d1fd59c556dda097ac548e19e9569420"
+        },
+        {
+          "path": "src/graph_batch/batch.cc",
+          "sha256": "8b23def95905331859735dd0b8d16f765a5edd1b2b806123a7de687521b06d7a"
+        },
+        {
+          "path": "tests/compute_batch/CMakeLists.txt",
+          "sha256": "f9d9fbf8fa960b8aa20e3fa954ad14fe25255bba0e522d6df4ff749f04019601"
+        },
+        {
+          "path": "tests/compute_batch/batch_layout_test.cc",
+          "sha256": "8dac343cd30d4d2de1ac7c3f81bdb5cf40743c915b601a2c52435116578a21b5"
+        },
+        {
+          "path": "tests/compute_batch/batch_materialize_test.cc",
+          "sha256": "52fbb3de001c0889f4dc0da33df9c9f22d381447273c9bd56e59891615e5d2c4"
+        },
+        {
+          "path": "tests/compute_batch/materialized_cpu_consumer.cc",
+          "sha256": "739f2bf2d94ac3e91c298b790ca1442b8872178694efc05b4c264739ce228c27"
+        },
+        {
+          "path": "tests/compute_batch/native_direct_consumer.cc",
+          "sha256": "544225c8b6cc5414b50a1ad13d683d656b371112952e8764f679e6d37dfad600"
+        },
+        {
+          "path": "tests/compute_batch/native_graph_consumer.cc",
+          "sha256": "630ef3c63a34954dde09d80b60604f64d2eaa6eaf2355ece1f076a4a03783601"
+        }
+      ],
+      "scope_history": [
+        {
+          "stage": "AUDITED F5 Graph Windows compile; not native CUDA paged qualification",
+          "scope": "new batch targets /WX and two new Graph headers, ordinary Compute/Graph roots; no old tests"
+        }
+      ]
+    },
+    "wsl": {
+      "stage": "AUDITED F5 explicit CPU materialization; not candidate/final",
+      "identity": {
+        "os": "Linux kiro-workstation 6.18.40.1-microsoft-standard-WSL2 #1 SMP PREEMPT_DYNAMIC Fri Jul 31 22:12:15 UTC 2026 x86_64 x86_64 x86_64 GNU/Linux",
+        "gpu": "NVIDIA GeForce RTX 4070, GPU-e7376560-6f5d-ec19-6ee4-3dd3a2c81ef8, 617.14",
+        "compiler": "g++-14 (Ubuntu 14.2.0-4ubuntu2~24.04.1) 14.2.0\nCopyright (C) 2024 Free Software Foundation, Inc.\nThis is free software; see the source for copying conditions.  There is NO\nwarranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.",
+        "nvcc": "nvcc: NVIDIA (R) Cuda compiler driver\nCopyright (c) 2005-2026 NVIDIA Corporation\nBuilt on Tue_Jun_09_02:43:40_PM_PDT_2026\nCuda compilation tools, release 13.3, V13.3.73\nBuild cuda_13.3.r13.3/compiler.38244171_0"
+      },
+      "scope": "F5 explicit CPU typed recipe cold Direct/original Graph oracle only; no old operator tests",
+      "stages": [
+        {
+          "name": "configure",
+          "command": [
+            "cmake",
+            "-S",
+            "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/source-parent",
+            "-B",
+            "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/source-build"
+          ],
+          "pid": 652,
+          "state": "terminal",
+          "available_bytes": 32345399296,
+          "log": "configure.log",
+          "elapsed": 16.204131117,
+          "exit_code": 0,
+          "verdict": "PASS",
+          "sha256": "3a55e9dabfd2a09ff037b281cde8b4b292e2c31dfe27167f01d4115d155e02c4"
+        },
+        {
+          "name": "build",
+          "command": [
+            "cmake",
+            "--build",
+            "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/source-build",
+            "--target",
+            "hyle_f5_materialized_cpu",
+            "--parallel",
+            "4"
+          ],
+          "pid": 695,
+          "state": "terminal",
+          "available_bytes": 32386584576,
+          "log": "build.log",
+          "elapsed": 15.614560701000002,
+          "exit_code": 0,
+          "verdict": "PASS",
+          "sha256": "dbe6007a3acc0d1b7d66fd720ab310aab253df6b26197983019994571e0df4ef"
+        },
+        {
+          "name": "consumer",
+          "command": [
+            "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/source-build/hyle_f5_materialized_cpu"
+          ],
+          "pid": 883,
+          "state": "terminal",
+          "available_bytes": 31284772864,
+          "log": "consumer.log",
+          "elapsed": 0.16421297400000157,
+          "exit_code": 0,
+          "verdict": "PASS",
+          "sha256": "de8aaa7d11c22b2f26ae148a906c7a77af362045579d6ff0066dddde3d972be4"
+        },
+        {
+          "name": "build-resume1",
+          "command": [
+            "cmake",
+            "--build",
+            "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/source-build",
+            "--target",
+            "hyle_f5_materialized_cpu",
+            "--parallel",
+            "4"
+          ],
+          "pid": 656,
+          "state": "terminal",
+          "available_bytes": 32333709312,
+          "log": "build-resume1.log",
+          "elapsed": 2.8213180049999997,
+          "exit_code": 0,
+          "verdict": "PASS",
+          "sha256": "b5d3a82f115719412d01afd379d8f5440ad5883ffacd5a0e9f94d5b2cf4fab14"
+        },
+        {
+          "name": "consumer-resume1",
+          "command": [
+            "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/source-build/hyle_f5_materialized_cpu"
+          ],
+          "pid": 673,
+          "state": "terminal",
+          "available_bytes": 32109780992,
+          "log": "consumer-resume1.log",
+          "elapsed": 0.21434687600000046,
+          "exit_code": 0,
+          "verdict": "PASS",
+          "sha256": "de8aaa7d11c22b2f26ae148a906c7a77af362045579d6ff0066dddde3d972be4"
+        }
+      ],
+      "test_parallel": 1,
+      "inputs": [
+        {
+          "path": "cmake/HyleComponents.cmake",
+          "sha256": "a2b63a2acca1bc61803a60e9493eac92b33332516aa3d3032ff890b9ec5337a2"
+        },
+        {
+          "path": "include/hyle/compute/batch_execution.h",
+          "sha256": "7ef7d2a547bda190310374e098ecdeddb029f140dc3c25bf3fb7384ebd4a084b"
+        },
+        {
+          "path": "include/hyle/compute/batch_layout.h",
+          "sha256": "654d7d3aedcbb9e50532e137ea3d89bb8aa0c5f5697879d4ff79455843fe5402"
+        },
+        {
+          "path": "include/hyle/compute/batch_materialize.h",
+          "sha256": "3c5c41b6aec52a2ecb0fa106f81bf8f114cc17fcb53033538d8e54ce5de9fe6e"
+        },
+        {
+          "path": "include/hyle/compute/batch_ops.h",
+          "sha256": "fe837a188f82beb01570a817ce5fdaa804ee7abbe24a7aa64d48c31522f0d7c0"
+        },
+        {
+          "path": "include/hyle/compute/detail/batch_graph_access.h",
+          "sha256": "5fd73efbbe44befba9f4359550eb45a5fc5b24b583750faacbb8398de0c83184"
+        },
+        {
+          "path": "include/hyle/compute/detail/batch_provider.h",
+          "sha256": "1850c8e70ec085f83b6480bcac367c55a83b4a984dcc2cc6baf19e776872c146"
+        },
+        {
+          "path": "include/hyle/compute/detail/lease_access.h",
+          "sha256": "a51b7fd93c33f76820189c18ae37377d49b7aa320399dc32a75c78a2d6c10e18"
+        },
+        {
+          "path": "include/hyle/graph/batch.h",
+          "sha256": "60ec0fe5d644c2437797b14b10f4a386660d28bcfc200cdc15cc91c350fb32d2"
+        },
+        {
+          "path": "include/hyle/graph/detail/region_access.h",
+          "sha256": "e330856ae980f677301e3e47a0329445c848f65f90a3e0588064213e0cee5e5a"
+        },
+        {
+          "path": "include/hyle/graph/leased_invocation.h",
+          "sha256": "093f1c04307abcc885c9d8ba0319531d10848ef500293da2289b6b038679ee75"
+        },
+        {
+          "path": "src/compute/resource_leases.cc",
+          "sha256": "6d6caa01b517ae13cd04044ebc8eb481d9b3338f45623dc5d341038f37729801"
+        },
+        {
+          "path": "src/compute_batch/CMakeLists.txt",
+          "sha256": "1eedbbd77b1ab9fd6f1c774cc9286cf0a3233bf31504fb2ec9a4183fa7d44ff4"
+        },
+        {
+          "path": "src/compute_batch/batch_execution.cc",
+          "sha256": "f065607c0553cd13646960867afdc39ee5fc2d9d820e509ba2417167b3d9d4f6"
+        },
+        {
+          "path": "src/compute_batch/batch_layout.cc",
+          "sha256": "9643f20396e320aac8f2184ddd243f996a70ee46e81487eb397fa3a54ac020f4"
+        },
+        {
+          "path": "src/compute_batch/batch_materialize.cc",
+          "sha256": "ab1d1183a5408365822ca73a7ff1e06ebf149aba0f404c6cea8c04d14f1e6a6f"
+        },
+        {
+          "path": "src/compute_provider_flashinfer/CMakeLists.txt",
+          "sha256": "3fdbbff300d73e419d7703752de90a38962665f22edd6678668b3f72f84237e0"
+        },
+        {
+          "path": "src/compute_provider_flashinfer/flashinfer_provider.cc",
+          "sha256": "d6f0e55ac6ed4198dd43f94d4f980594c7d971831ba75d15c5508c0021ac9cd3"
+        },
+        {
+          "path": "src/compute_provider_flashinfer/native_batch.cu",
+          "sha256": "aecdbf870616f08600359e00179e4a054513bdff861be5ebc1136db13e33d136"
+        },
+        {
+          "path": "src/compute_provider_flashinfer/native_batch.h",
+          "sha256": "503b895787443169bec1efbc299c6cbf5982e7baae0911d2f316f6980e7a5140"
+        },
+        {
+          "path": "src/graph/CMakeLists.txt",
+          "sha256": "51897f736b32321f1a85b650db8e212acbdc4d61ff3d4507996a8a59689716f3"
+        },
+        {
+          "path": "src/graph/leased_invocation.cc",
+          "sha256": "772f274d379f37af3dc05afda63e7305eb208e2fbbc851f11db35b45b3a02f0b"
+        },
+        {
+          "path": "src/graph/plan_state.h",
+          "sha256": "4f4388b8098fd6b85305fed8133d333ab779fe491403113f86ecd177bd9418fe"
+        },
+        {
+          "path": "src/graph/region_access.cc",
+          "sha256": "d313b47bc92b93f021aff1e8ca2410ee74513a933dd842e4c99fb561bdcdbbae"
+        },
+        {
+          "path": "src/graph_batch/CMakeLists.txt",
+          "sha256": "a1559a5745d51324405d7e89ecbf1c96d1fd59c556dda097ac548e19e9569420"
+        },
+        {
+          "path": "src/graph_batch/batch.cc",
+          "sha256": "8b23def95905331859735dd0b8d16f765a5edd1b2b806123a7de687521b06d7a"
+        },
+        {
+          "path": "tests/compute_batch/CMakeLists.txt",
+          "sha256": "f9d9fbf8fa960b8aa20e3fa954ad14fe25255bba0e522d6df4ff749f04019601"
+        },
+        {
+          "path": "tests/compute_batch/batch_layout_test.cc",
+          "sha256": "8dac343cd30d4d2de1ac7c3f81bdb5cf40743c915b601a2c52435116578a21b5"
+        },
+        {
+          "path": "tests/compute_batch/batch_materialize_test.cc",
+          "sha256": "52fbb3de001c0889f4dc0da33df9c9f22d381447273c9bd56e59891615e5d2c4"
+        },
+        {
+          "path": "tests/compute_batch/materialized_cpu_consumer.cc",
+          "sha256": "739f2bf2d94ac3e91c298b790ca1442b8872178694efc05b4c264739ce228c27"
+        },
+        {
+          "path": "tests/compute_batch/native_direct_consumer.cc",
+          "sha256": "544225c8b6cc5414b50a1ad13d683d656b371112952e8764f679e6d37dfad600"
+        },
+        {
+          "path": "tests/compute_batch/native_graph_consumer.cc",
+          "sha256": "630ef3c63a34954dde09d80b60604f64d2eaa6eaf2355ece1f076a4a03783601"
+        }
+      ],
+      "input_history": [
+        [
+          {
+            "path": "cmake/HyleComponents.cmake",
+            "sha256": "a2b63a2acca1bc61803a60e9493eac92b33332516aa3d3032ff890b9ec5337a2"
+          },
+          {
+            "path": "include/hyle/compute/batch_execution.h",
+            "sha256": "7ef7d2a547bda190310374e098ecdeddb029f140dc3c25bf3fb7384ebd4a084b"
+          },
+          {
+            "path": "include/hyle/compute/batch_layout.h",
+            "sha256": "654d7d3aedcbb9e50532e137ea3d89bb8aa0c5f5697879d4ff79455843fe5402"
+          },
+          {
+            "path": "include/hyle/compute/batch_materialize.h",
+            "sha256": "3c5c41b6aec52a2ecb0fa106f81bf8f114cc17fcb53033538d8e54ce5de9fe6e"
+          },
+          {
+            "path": "include/hyle/compute/batch_ops.h",
+            "sha256": "fe837a188f82beb01570a817ce5fdaa804ee7abbe24a7aa64d48c31522f0d7c0"
+          },
+          {
+            "path": "include/hyle/compute/detail/batch_graph_access.h",
+            "sha256": "5fd73efbbe44befba9f4359550eb45a5fc5b24b583750faacbb8398de0c83184"
+          },
+          {
+            "path": "include/hyle/compute/detail/batch_provider.h",
+            "sha256": "1850c8e70ec085f83b6480bcac367c55a83b4a984dcc2cc6baf19e776872c146"
+          },
+          {
+            "path": "include/hyle/compute/detail/lease_access.h",
+            "sha256": "a51b7fd93c33f76820189c18ae37377d49b7aa320399dc32a75c78a2d6c10e18"
+          },
+          {
+            "path": "include/hyle/graph/batch.h",
+            "sha256": "60ec0fe5d644c2437797b14b10f4a386660d28bcfc200cdc15cc91c350fb32d2"
+          },
+          {
+            "path": "include/hyle/graph/detail/region_access.h",
+            "sha256": "e330856ae980f677301e3e47a0329445c848f65f90a3e0588064213e0cee5e5a"
+          },
+          {
+            "path": "include/hyle/graph/leased_invocation.h",
+            "sha256": "093f1c04307abcc885c9d8ba0319531d10848ef500293da2289b6b038679ee75"
+          },
+          {
+            "path": "src/compute/resource_leases.cc",
+            "sha256": "6d6caa01b517ae13cd04044ebc8eb481d9b3338f45623dc5d341038f37729801"
+          },
+          {
+            "path": "src/compute_batch/CMakeLists.txt",
+            "sha256": "1eedbbd77b1ab9fd6f1c774cc9286cf0a3233bf31504fb2ec9a4183fa7d44ff4"
+          },
+          {
+            "path": "src/compute_batch/batch_execution.cc",
+            "sha256": "f065607c0553cd13646960867afdc39ee5fc2d9d820e509ba2417167b3d9d4f6"
+          },
+          {
+            "path": "src/compute_batch/batch_layout.cc",
+            "sha256": "9643f20396e320aac8f2184ddd243f996a70ee46e81487eb397fa3a54ac020f4"
+          },
+          {
+            "path": "src/compute_batch/batch_materialize.cc",
+            "sha256": "ab1d1183a5408365822ca73a7ff1e06ebf149aba0f404c6cea8c04d14f1e6a6f"
+          },
+          {
+            "path": "src/compute_provider_flashinfer/CMakeLists.txt",
+            "sha256": "3fdbbff300d73e419d7703752de90a38962665f22edd6678668b3f72f84237e0"
+          },
+          {
+            "path": "src/compute_provider_flashinfer/flashinfer_provider.cc",
+            "sha256": "d6f0e55ac6ed4198dd43f94d4f980594c7d971831ba75d15c5508c0021ac9cd3"
+          },
+          {
+            "path": "src/compute_provider_flashinfer/native_batch.cu",
+            "sha256": "aecdbf870616f08600359e00179e4a054513bdff861be5ebc1136db13e33d136"
+          },
+          {
+            "path": "src/compute_provider_flashinfer/native_batch.h",
+            "sha256": "503b895787443169bec1efbc299c6cbf5982e7baae0911d2f316f6980e7a5140"
+          },
+          {
+            "path": "src/graph/CMakeLists.txt",
+            "sha256": "51897f736b32321f1a85b650db8e212acbdc4d61ff3d4507996a8a59689716f3"
+          },
+          {
+            "path": "src/graph/leased_invocation.cc",
+            "sha256": "772f274d379f37af3dc05afda63e7305eb208e2fbbc851f11db35b45b3a02f0b"
+          },
+          {
+            "path": "src/graph/plan_state.h",
+            "sha256": "4f4388b8098fd6b85305fed8133d333ab779fe491403113f86ecd177bd9418fe"
+          },
+          {
+            "path": "src/graph/region_access.cc",
+            "sha256": "d313b47bc92b93f021aff1e8ca2410ee74513a933dd842e4c99fb561bdcdbbae"
+          },
+          {
+            "path": "src/graph_batch/CMakeLists.txt",
+            "sha256": "a1559a5745d51324405d7e89ecbf1c96d1fd59c556dda097ac548e19e9569420"
+          },
+          {
+            "path": "src/graph_batch/batch.cc",
+            "sha256": "c224f9de7b4a98a94b30684df0b4e96de1c44539a581de808c14554e35efc121"
+          },
+          {
+            "path": "tests/compute_batch/CMakeLists.txt",
+            "sha256": "f9d9fbf8fa960b8aa20e3fa954ad14fe25255bba0e522d6df4ff749f04019601"
+          },
+          {
+            "path": "tests/compute_batch/batch_layout_test.cc",
+            "sha256": "8dac343cd30d4d2de1ac7c3f81bdb5cf40743c915b601a2c52435116578a21b5"
+          },
+          {
+            "path": "tests/compute_batch/batch_materialize_test.cc",
+            "sha256": "52fbb3de001c0889f4dc0da33df9c9f22d381447273c9bd56e59891615e5d2c4"
+          },
+          {
+            "path": "tests/compute_batch/materialized_cpu_consumer.cc",
+            "sha256": "739f2bf2d94ac3e91c298b790ca1442b8872178694efc05b4c264739ce228c27"
+          },
+          {
+            "path": "tests/compute_batch/native_direct_consumer.cc",
+            "sha256": "544225c8b6cc5414b50a1ad13d683d656b371112952e8764f679e6d37dfad600"
+          },
+          {
+            "path": "tests/compute_batch/native_graph_consumer.cc",
+            "sha256": "630ef3c63a34954dde09d80b60604f64d2eaa6eaf2355ece1f076a4a03783601"
+          }
+        ]
+      ]
+    }
+  },
+  "archives": [
+    {
+      "name": "common-raw.zip",
+      "sha256": "7d979b0f4c81b3d558fc0aedaba7481d234b0bfde94cb7e4cf8ba08e8a1e7d2a"
+    },
+    {
+      "name": "windows-raw.zip",
+      "sha256": "f2e4e160687faac9f377144e84484a05719f1e0a023de31693b03231c314523b"
+    },
+    {
+      "name": "wsl-raw.zip",
+      "sha256": "fd0efea5ca34273d1afff0004576f062084815cf22cfd5ed3119ff2621d63f63"
+    }
+  ]
+}

@@ -559,7 +559,7 @@ _hyle_declare_component(compute_state
     TEST_DEPS compute_state
     SPLIT_PUBLIC_HEADERS hyle/compute/batch_layout.h hyle/compute/batch_ops.h
       hyle/compute/batch_execution.h hyle/compute/detail/batch_provider.h
-      hyle/compute/detail/batch_graph_access.h)
+      hyle/compute/detail/batch_graph_access.h hyle/compute/batch_materialize.h)
   _hyle_declare_component(graph_batch
     PRIVATE_DEPS core util_core
     PUBLIC_DEPS graph compute_batch compute error mem

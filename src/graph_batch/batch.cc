@@ -34,11 +34,13 @@ Status supports(const Graph&graph,NodeId node,const Config&config)noexcept{
   HYLE_ASSIGN_OR_RETURN(auto op,graph.operation(node));
   if(const auto value=op.custom_as<c::PagedAttention>()){
     if(value->capacity!=config.schema.capacity() || value->scale!=config.options.scale || value->causal!=config.options.causal)
-      return Status::Unimplemented("paged graph node differs from batch domain");return Status::Ok();
+      return Status::Unimplemented("paged graph node differs from batch domain");
+    return Status::Ok();
   }
   if(const auto value=op.custom_as<c::RaggedAttention>()){
     if(value->capacity!=config.schema.capacity() || value->scale!=config.options.scale || value->causal!=config.options.causal)
-      return Status::Unimplemented("ragged graph node differs from batch domain");return Status::Ok();
+      return Status::Unimplemented("ragged graph node differs from batch domain");
+    return Status::Ok();
   }return Status::Unimplemented("graph batch provider does not support this node");
 }
 Status propose(void*opaque,const Graph&graph,mem::AllocatorRef,RegionProposalWriter&writer)noexcept{
@@ -113,6 +115,19 @@ struct InvocationData final {
 };
 void destroy(InvocationData*p)noexcept{if(p){const auto allocator=p->allocator;allocator.destroy(p);}}
 } // namespace detail
+Result<MaterializedGraph> materialized_graph(const c::MaterializedBatchProgram&program,GraphBuilderOptions options)noexcept{
+  if(!program.valid())return std::unexpected(Status::InvalidArgument("materialized Graph program is empty"));
+  HYLE_ASSIGN_OR_RETURN(auto builder,GraphBuilder::create(options));MaterializedGraph result;
+  std::array<ValueId,24> values;const auto descriptions=program.descriptions();
+  for(std::size_t i=0;i<5;++i){HYLE_ASSIGN_OR_RETURN(values[i],builder.input(descriptions[i]));result.inputs[i]=values[i];}
+  for(const auto&step:program.steps()){
+    std::array<ValueId,2> inputs;for(std::size_t i=0;i<step.input_count;++i)inputs[i]=values[step.inputs[i]];
+    HYLE_ASSIGN_OR_RETURN(auto node,builder.add_node(step.operation,std::span(inputs).first(step.input_count)));
+    HYLE_ASSIGN_OR_RETURN(values[step.output],builder.result(node));
+  }
+  result.output=values[program.output_value()];HYLE_RETURN_IF_ERROR(builder.publish(result.output));
+  HYLE_ASSIGN_OR_RETURN(result.graph,std::move(builder).finish());return result;
+}
 Result<c::Provider> provider(c::Provider base,c::BatchSchema schema,c::BatchProgramOptions options)noexcept{
   if(!base.valid() || !schema.valid() || !options.allocator.valid())return std::unexpected(Status::InvalidArgument("Graph batch provider configuration"));
   const auto a=options.allocator;auto*p=a.construct<Config>(std::move(base),std::move(schema),std::move(options),a);if(!p)return std::unexpected(Status::ResourceExhausted("Graph batch provider configuration metadata"));return cd::ProviderAccess::make(&provider_table,p);
@@ -131,7 +146,8 @@ Result<Invocation> Invocation::create(const Executable&executable,const c::Conte
     HYLE_ASSIGN_OR_RETURN(s.native,cd::BatchGraphAccess::create(r.program,*call.queue));
     try{call.data->bindings.push_back({r.node,r.metadata,&r,&s});}catch(...){return Status::ResourceExhausted("Graph batch node binding metadata");}return Status::Ok();
   },&call));
-  if(p->bindings.empty())return std::unexpected(Status::Unimplemented("executable has no selected native batch region"));return result;
+  if(p->bindings.empty())return std::unexpected(Status::Unimplemented("executable has no selected native batch region"));
+  return result;
 }
 Status Invocation::prepare_batch(std::span<const NodeLayout>layouts,bool update)noexcept{
   if(!data_ || layouts.size()!=data_->bindings.size())return Status::InvalidArgument("Graph batch needs a complete node/layout set");
