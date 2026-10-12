@@ -352,9 +352,9 @@
     },
     {
       "module": "compute_provider_onednn",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/foundation-f5-package-seam.md",
-      "summary": "F5 package-only SCOPED：自然Compute/Graph新增batch roots/public发现触发，旧已签源码/算法范围保持，无全库math回放。"
+      "summary": "F5 package-only AUDITED：固定Compute/Graph新增batch roots/public发现与真实三交付/新头/缺路线/迁址/loader一个FIX，旧已签源码/算法范围保持。"
     },
     {
       "module": "compute_provider_ggml",
@@ -369,9 +369,9 @@
     },
     {
       "module": "graph_provider_onednn",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/foundation-f5-package-seam.md",
-      "summary": "F5 package-only SCOPED：自然Compute/Graph新增batch roots/public发现触发，旧已签源码/算法范围保持，无全库math回放。"
+      "summary": "F5 package-only AUDITED：固定Compute/Graph新增batch roots/public发现与真实三交付/新头/缺路线/迁址/loader一个FIX，旧已签源码/算法范围保持。"
     },
     {
       "module": "compute_ops",
@@ -386,33 +386,33 @@
     },
     {
       "module": "compute_backend_cpu",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/foundation-f5-package-seam.md",
-      "summary": "F5 package-only SCOPED：自然Compute/Graph新增batch roots/public发现触发，旧已签源码/算法范围保持，无全库math回放。"
+      "summary": "F5 package-only AUDITED：固定Compute/Graph新增batch roots/public发现与真实三交付/新头/缺路线/迁址/loader一个FIX，旧已签源码/算法范围保持。"
     },
     {
       "module": "compute_backend_cuda",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/foundation-f5-package-seam.md",
-      "summary": "F5 package-only SCOPED：自然Compute/Graph新增batch roots/public发现触发，旧已签源码/算法范围保持，无全库math回放。"
+      "summary": "F5 package-only AUDITED：固定Compute/Graph新增batch roots/public发现与真实三交付/新头/缺路线/迁址/loader一个FIX，旧已签源码/算法范围保持。"
     },
     {
       "module": "compute_provider_native",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/foundation-f5-package-seam.md",
-      "summary": "F5 package-only SCOPED：自然Compute/Graph新增batch roots/public发现触发，旧已签源码/算法范围保持，无全库math回放。"
+      "summary": "F5 package-only AUDITED：固定Compute/Graph新增batch roots/public发现与真实三交付/新头/缺路线/迁址/loader一个FIX，旧已签源码/算法范围保持。"
     },
     {
       "module": "compute_route_cpu",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/foundation-f5-package-seam.md",
-      "summary": "F5 package-only SCOPED：自然Compute/Graph新增batch roots/public发现触发，旧已签源码/算法范围保持，无全库math回放。"
+      "summary": "F5 package-only AUDITED：固定Compute/Graph新增batch roots/public发现与真实三交付/新头/缺路线/迁址/loader一个FIX，旧已签源码/算法范围保持。"
     },
     {
       "module": "graph_route_cpu",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/foundation-f5-package-seam.md",
-      "summary": "F5 package-only SCOPED：自然Compute/Graph新增batch roots/public发现触发，旧已签源码/算法范围保持，无全库math回放。"
+      "summary": "F5 package-only AUDITED：固定Compute/Graph新增batch roots/public发现与真实三交付/新头/缺路线/迁址/loader一个FIX，旧已签源码/算法范围保持。"
     },
     {
       "module": "compute_provider_cublas",
@@ -450,39 +450,39 @@
     },
     {
       "module": "compute_route_cuda",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/foundation-f5-package-seam.md",
-      "summary": "F5 package-only SCOPED：自然Compute/Graph新增batch roots/public发现触发，旧已签源码/算法范围保持，无全库math回放。"
+      "summary": "F5 package-only AUDITED：固定Compute/Graph新增batch roots/public发现与真实三交付/新头/缺路线/迁址/loader一个FIX，旧已签源码/算法范围保持。"
     },
     {
       "module": "graph_route_cuda",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/foundation-f5-package-seam.md",
-      "summary": "F5 package-only SCOPED：自然Compute/Graph新增batch roots/public发现触发，旧已签源码/算法范围保持，无全库math回放。"
+      "summary": "F5 package-only AUDITED：固定Compute/Graph新增batch roots/public发现与真实三交付/新头/缺路线/迁址/loader一个FIX，旧已签源码/算法范围保持。"
     },
     {
       "module": "compute_route_apple",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/foundation-f5-package-seam.md",
-      "summary": "F5 package-only SCOPED：自然Compute/Graph新增batch roots/public发现触发，旧已签源码/算法范围保持，无全库math回放。"
+      "summary": "F5 package-only AUDITED：固定Compute/Graph新增batch roots/public发现与真实三交付/新头/缺路线/迁址/loader一个FIX，旧已签源码/算法范围保持。"
     },
     {
       "module": "graph_route_apple",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/foundation-f5-package-seam.md",
-      "summary": "F5 package-only SCOPED：自然Compute/Graph新增batch roots/public发现触发，旧已签源码/算法范围保持，无全库math回放。"
+      "summary": "F5 package-only AUDITED：固定Compute/Graph新增batch roots/public发现与真实三交付/新头/缺路线/迁址/loader一个FIX，旧已签源码/算法范围保持。"
     },
     {
       "module": "compute_route_vulkan",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/foundation-f5-package-seam.md",
-      "summary": "F5 package-only SCOPED：自然Compute/Graph新增batch roots/public发现触发，旧已签源码/算法范围保持，无全库math回放。"
+      "summary": "F5 package-only AUDITED：固定Compute/Graph新增batch roots/public发现与真实三交付/新头/缺路线/迁址/loader一个FIX，旧已签源码/算法范围保持。"
     },
     {
       "module": "graph_route_vulkan",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/foundation-f5-package-seam.md",
-      "summary": "F5 package-only SCOPED：自然Compute/Graph新增batch roots/public发现触发，旧已签源码/算法范围保持，无全库math回放。"
+      "summary": "F5 package-only AUDITED：固定Compute/Graph新增batch roots/public发现与真实三交付/新头/缺路线/迁址/loader一个FIX，旧已签源码/算法范围保持。"
     },
     {
       "module": "compute_provider_ggml_vulkan",
@@ -614,9 +614,9 @@
     },
     {
       "module": "compute_state",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/foundation-f5-package-seam.md",
-      "summary": "F5 package-only SCOPED：自然Compute/Graph新增batch roots/public发现触发，旧已签源码/算法范围保持，无全库math回放。"
+      "summary": "F5 package-only AUDITED：固定Compute/Graph新增batch roots/public发现与真实三交付/新头/缺路线/迁址/loader一个FIX，旧已签源码/算法范围保持。"
     },
     {
       "module": "compute_batch",

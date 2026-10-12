@@ -1,6 +1,6 @@
 # F5 Compute/Graph 自然产品发现接缝
 
-状态：SCOPED，仅本轮新增batch roots的package/public发现；不改旧已签算法。
+状态：AUDITED，仅本轮新增batch roots的package/public发现；不改旧已签算法。
 baseline b8baece49；预算沿[F5主卡](foundation-f5-paged-ragged-batch.md)，不重置任何gate。
 
 - trigger：新compute_batch/graph_batch已AUDITED实现，普通消费者必须自然只选择Compute/
@@ -27,4 +27,7 @@ baseline b8baece49；预算沿[F5主卡](foundation-f5-paged-ragged-batch.md)，
 - stop：无法给合法组件/发现/包verdict则BLOCKED/INCONCLUSIVE；不伪造旧module数学缺陷。
   API/owner尚未固定者沿主卡停阶段，不用façade提交修改未AUDITED产品。
 
-本卡仅登记SCOPED；下一独立AUDITED checkpoint固定上述一个FIX后才改产品roots。
+SCOPED checkpoint5df14ddfb独立完成。现固定一个F5-PKG-01进入AUDITED：原root仅façade
+新增发现资格，旧factor源码/原公头不得由本卡改动；新batch API由其已AUDITED实际owner。
+七问沿原锁/许可、F5两纵切和原native承载、顺向依赖、P0 opt-in无默认税、同工具链C++、
+真实三交付/新头/缺路线/loader、guide风险。当前仅准入，包与功能的最终七门仍未签。
