@@ -1,0 +1,16 @@
+-- The CXX compiler identification is MSVC 19.50.35728.0
+-- Detecting CXX compiler ABI info
+-- Detecting CXX compiler ABI info - done
+-- Check for working CXX compiler: C:/Program Files/Microsoft Visual Studio/18/Enterprise/VC/Tools/MSVC/14.50.35717/bin/Hostx64/x64/cl.exe - skipped
+-- Detecting CXX compile features
+-- Detecting CXX compile features - done
+-- HYLE developer factors: requested='compute_state' resolved='core,util_core,error,math,platform,mem,compute_ops,compute,compute_backend_cpu,compute_state' products=''
+CMake Error at cmake/HyleComponents.cmake:1097 (message):
+  component 'compute_state' declares PUBLIC_DEPS 'core', but no owned public
+  header directly includes that component and it is not an explicit
+  PUBLIC_TYPE_DEPS edge
+Call Stack (most recent call first):
+  CMakeLists.txt:102 (include)
+
+
+-- Configuring incomplete, errors occurred!

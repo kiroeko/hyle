@@ -87,4 +87,42 @@ TEST(StateClone, AcceptedProducerFailurePreventsReadyVersionAndPreservesOriginal
   EXPECT_TRUE(draft.finalize().error().IsDataLoss());
   EXPECT_EQ(first(base.member(f.id).value()),std::byte{11});
 }
+TEST(StateClone, UnfinishedWriterUseRejectsPublishWithoutConsumingPermission) {
+  Fixture f;auto base=f.base();auto draft=f.store.begin(base).value();
+  auto ticket=draft.clone_for_write(f.id,f.route).value();auto writer=ticket.wait().value();
+  auto pool=LeaseUsePool::create().value();auto use=pool.begin().value();ASSERT_TRUE(use.write(writer.lease()).ok());
+  EXPECT_TRUE(writer.publish().IsUnavailable());EXPECT_TRUE(writer.lease().valid());EXPECT_FALSE(draft.finalize());
+  use={};ASSERT_TRUE(writer.publish().ok());EXPECT_TRUE(draft.finalize());
+  EXPECT_EQ(first(base.member(f.id).value()),std::byte{11});
+}
+TEST(StateClone, CancelledCandidateDoesNotAdmitUnstartedSuffixClone) {
+  Fixture f;auto base=f.base();auto draft=f.store.begin(base).value();
+  auto ticket=draft.clone_for_write(f.id,f.route).value();ticket.request_cancel().IgnoreError();
+  EXPECT_TRUE(draft.clone_for_write(f.id,f.route).error().IsCancelled());
+  EXPECT_TRUE(draft.finalize().error().IsCancelled());EXPECT_EQ(f.route.report()->native_calls,1u);
+  EXPECT_EQ(first(base.member(f.id).value()),std::byte{11});
+}
+TEST(StateClone, NewReadonlyResultRetainsClonePoolAfterCallerStoreAndRouteDrop) {
+  Fixture f;auto base=f.base();auto draft=f.store.begin(base).value();
+  auto ticket=draft.clone_for_write(f.id,f.route).value();auto writer=ticket.wait().value();
+  ASSERT_TRUE(writer.lease().view()->fill(std::byte{61}).ok());ASSERT_TRUE(writer.publish().ok());
+  auto version=draft.finalize().value();auto head=StateHead::create(f.store,version).value();
+  f.route={};f.store={};base.reset();draft={};writer={};
+  EXPECT_EQ(first(head.current()->member(f.id).value()),std::byte{61});
+  auto readers=LeaseUsePool::create().value();auto use=readers.begin().value();
+  EXPECT_TRUE(use.read(version.member(f.id).value()).ok()); // pool domain is still open through version/head
+}
+TEST(StateClone, OpaqueReadonlyMemberSharesButCannotBeRawCloned) {
+  Fixture f;
+  const auto format=StorageFormat::opaque({0x53544154454f5041ULL,0x5155450000000001ULL}).value();
+  const auto description=TensorDesc::opaque(DataType::kFloat32,std::array<std::int64_t,1>{4},format,16).value();
+  auto schema=StateSchema::create(std::array{StateEntrySpec{.description=description}}).value();auto id=schema.entry(0).value();
+  auto store=StateStore::create(schema).value();auto buffer=m::Buffer::create(m::system_resource(),16,64).value();buffer.view().fill(std::byte{71}).IgnoreError();
+  auto source=ReadLease::adopt(std::move(buffer)).value();auto version=store.import(std::array{StateMember{id,source}}).value();
+  auto route=StateCloneRoute::prepare(store,{.resource=m::system_resource(),.capacity_bytes=1024},f.copy,
+      [&f](const CopyBatchProgram &p) noexcept {return CopyBatchInvocation::create(p,f.queue);}).value();
+  auto draft=store.begin(version).value();EXPECT_TRUE(draft.clone_for_write(id,route).error().IsUnimplemented());
+  EXPECT_EQ(first(draft.finalize()->member(id).value()),std::byte{71});
+  EXPECT_EQ(route.report()->native_calls,0u);
+}
 } // namespace

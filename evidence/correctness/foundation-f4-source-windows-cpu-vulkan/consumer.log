@@ -1,0 +1,12 @@
+F4 common Direct op=gated-delta-net
+F4 common Graph op=gated-delta-net
+F4 common Direct op=causal-conv1d
+F4 common Graph op=causal-conv1d
+F4 common Direct op=gated-delta-net
+F4 common Graph op=gated-delta-net
+F4 common Direct op=causal-conv1d
+F4 common Graph op=causal-conv1d
+F4 common Graph op=unary
+F4 common Direct op=unary
+F4 CPU: two-step recurrent/conv + layout/state + asset Direct/Graph/old-version/cancel PASS
+F4 Vulkan: two-step recurrent/conv + layout/state + asset Direct/Graph/old-version/cancel PASS

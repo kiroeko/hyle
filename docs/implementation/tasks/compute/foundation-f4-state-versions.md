@@ -135,6 +135,30 @@ DataLoss阻止ready版本、旧base保持。原配置/编译FAIL及首次ctest�
 Compute façade新增root的授权与交付沿[独立窄卡](foundation-f4-package-seam.md)处理，原factor
 cpp/已签F1–F3机制不改；活动状态仍AUDITED，有限六FIX尚未全部验收。
 
+第二批consumer：Win CPU/CUDA的GDN/conv Direct+Graph、五成员state与资产旅程已首跑通过；
+Win Vulkan与Air Apple增加原生readonly pure output实际source endpoint clone后通过，见
+[Win Vulkan](../../../../evidence/correctness/foundation-f4-source-windows-cpu-vulkan/README.md)与
+[Air Apple](../../../../evidence/correctness/foundation-f4-source-air-cpu-apple/README.md)。
+CUDA锁定conv需channels%128==0，fixture从32改为128；native取消不可抢占返回Unimplemented
+不能当提前停止；Apple array import为逐object readonly资源身份，必须用真实endpoint冷计划/
+保活source，managed conv/KV域可用原F1固定池。Vulkan按原prepare/staging copy接口接线。
+原fixture拒绝/编译失败保持，原SDK/Provider不升级、不改旧factor源码。页layout只是F4元数据，
+F5 attention并未由此实现；这些source旅程不代签sanitizer/三交付/故障完整格/P0/终局红队。
+普通指南见[State](../../../user/state-versions.md)。剩余Air Vulkan、WSL/source与额外适用风险继续按卡。
+
+Air Vulkan与更新后的Win CUDA同一consumer完整旅程已实际PASS：
+[Air Vulkan](../../../../evidence/correctness/foundation-f4-source-air-cpu-vulkan/README.md)、
+[Win CUDA](../../../../evidence/correctness/foundation-f4-source-windows-cpu-cuda/README.md)。
+共同risk fixture现24项实际PASS，新增pending write禁止publish、cancel拒绝未启动suffix、
+释放caller Store/route后版本/native admission保持pool开放，opaque readonly可分享但raw clone
+明确拒绝、不同resource约束拒绝。candidate前产品与b1e37d75c相同，仅补tests/consumer/guide。
+
+当前实现有限FIX已接线固定：F4-01 schema/ID/完整目录+snapshot，F4-02 typed dirty clone/share/
+replace，F4-03 ready版本/head冲突+old versions，F4-04原native退休/取消/producer与bounded
+records，F4-05四route主/正交ordinary consumers，F4-06自然入口/指南。准备提交不可变candidate；
+WSL/三sanitizer/installed交付、更多native fault适用风险、P0/LOC及candidate后红队仍待裁决，
+这些未运行项不写PASS。
+
 正常草图：schema/Store→import complete members→Head.current→begin(base)→share/replace或
 clone_for_write→poll/wait取得writer→原数学/byte更新→publish/complete→finalize→
 head.publish(base.identity,candidate)。recurrent/conv/KV与资产集合只有schema/body不同。

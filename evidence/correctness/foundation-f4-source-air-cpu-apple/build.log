@@ -1,0 +1,53 @@
+[0/2] Re-checking globbed directories...
+[1/42] Building CXX object hyle/src/simd/CMakeFiles/hyle_simd.dir/runtime.cc.o
+[2/42] Building CXX object hyle/src/simd/CMakeFiles/hyle_simd.dir/ops/dispatch_ops.cc.o
+[3/42] Building CXX object hyle/src/simd/CMakeFiles/hyle_simd.dir/random/random_dispatch.cc.o
+[4/42] Building CXX object hyle/src/simd/CMakeFiles/hyle_simd.dir/search/search_dispatch.cc.o
+[5/42] Building CXX object hyle/src/simd/CMakeFiles/hyle_simd.dir/narrow/narrow_dispatch.cc.o
+[6/42] Building CXX object hyle/src/simd/CMakeFiles/hyle_simd.dir/scan/scan_dispatch.cc.o
+[7/42] Building CXX object hyle/src/simd/CMakeFiles/hyle_simd.dir/dtype/dtype_dispatch.cc.o
+[8/42] Building CXX object hyle/src/simd/CMakeFiles/hyle_simd.dir/math/math_dispatch.cc.o
+[9/42] Building CXX object hyle/src/simd/CMakeFiles/hyle_simd.dir/sort/sort_dispatch.cc.o
+[10/42] Building CXX object hyle/src/simd/CMakeFiles/hyle_simd.dir/bitpack/bitpack_dispatch.cc.o
+[11/42] Building CXX object hyle/src/simd/CMakeFiles/hyle_simd.dir/generated/simd-dispatch/ops/ops_scalar.cc.o
+[12/42] Building CXX object hyle/src/simd/CMakeFiles/hyle_simd.dir/generated/simd-dispatch/ops/ops_neon.cc.o
+[13/42] Building CXX object hyle/src/simd/CMakeFiles/hyle_simd.dir/generated/simd-dispatch/dtype_convert/dtype_convert_scalar.cc.o
+[14/42] Building CXX object hyle/src/simd/CMakeFiles/hyle_simd.dir/generated/simd-dispatch/dtype_convert/dtype_convert_neon.cc.o
+[15/42] Building CXX object hyle/src/simd/CMakeFiles/hyle_simd.dir/generated/simd-dispatch/scan/scan_scalar.cc.o
+[16/42] Building CXX object hyle/src/simd/CMakeFiles/hyle_simd.dir/generated/simd-dispatch/scan/scan_neon.cc.o
+[17/42] Building CXX object hyle/src/simd/CMakeFiles/hyle_simd.dir/generated/simd-dispatch/random/random_scalar.cc.o
+[18/42] Building CXX object hyle/src/simd/CMakeFiles/hyle_simd.dir/generated/simd-dispatch/random/random_neon.cc.o
+[19/42] Building CXX object hyle/src/simd/CMakeFiles/hyle_simd.dir/generated/simd-dispatch/search/search_scalar.cc.o
+[20/42] Building CXX object hyle/src/simd/CMakeFiles/hyle_simd.dir/generated/simd-dispatch/search/search_neon.cc.o
+[21/42] Building CXX object hyle/src/simd/CMakeFiles/hyle_simd.dir/generated/simd-dispatch/narrow/narrow_scalar.cc.o
+[22/42] Building CXX object hyle/src/simd/CMakeFiles/hyle_simd.dir/generated/simd-dispatch/narrow/narrow_neon.cc.o
+[23/42] Building CXX object hyle/src/simd/CMakeFiles/hyle_simd.dir/generated/simd-dispatch/bitpack/bitpack_scalar.cc.o
+[24/42] Building CXX object hyle/src/simd/CMakeFiles/hyle_simd.dir/generated/simd-dispatch/bitpack/bitpack_neon.cc.o
+[25/42] Linking CXX shared library hyle/src/simd/libhyle_simd.0.1.0.dylib
+[26/42] Creating library symlink hyle/src/simd/libhyle_simd.dylib
+[27/42] Linking CXX shared library hyle/src/compute_provider_native/libhyle_compute_provider_native.0.1.0.dylib
+[28/42] cd /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-build/hyle/src/compute_route_apple && /opt/homebrew/bin/cmake -E copy_if_different /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-build/hyle/_deps/mlx-build/mlx/backend/metal/kernels/mlx.metallib /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-build/hyle/_deps/mlx-build/mlx.metallib
+[29/42] Creating library symlink hyle/src/compute_provider_native/libhyle_compute_provider_native.dylib
+[30/42] Linking CXX shared library hyle/src/compute_route_cpu/libhyle_compute_route_cpu.0.1.0.dylib
+[31/42] Creating library symlink hyle/src/compute_route_cpu/libhyle_compute_route_cpu.dylib
+[32/42] Linking CXX shared library hyle/src/graph_route_cpu/libhyle_graph_route_cpu.0.1.0.dylib
+[33/42] Creating library symlink hyle/src/graph_route_cpu/libhyle_graph_route_cpu.dylib
+[34/42] Building CXX object hyle/src/compute_state/CMakeFiles/hyle_compute_state.dir/state_versions.cc.o
+[35/42] cd /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-build && /opt/homebrew/bin/cmake -P /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-build/hyle-apple-runtime/hyle_f4_state_consumer-Release.cmake
+[36/42] Linking CXX shared library hyle/src/graph_route_cpu_apple/libhyle_graph_route_cpu_apple.0.1.0.dylib
+[37/42] Linking CXX shared library hyle/src/compute_state/libhyle_compute_state.0.1.0.dylib
+[38/42] Building CXX object CMakeFiles/hyle_f4_state_consumer.dir/Users/kiro/hyle-scratch/compute-unified/source-c8874688/tests/compute_state/public_state_consumer.cc.o
+FAILED: [code=1] CMakeFiles/hyle_f4_state_consumer.dir/Users/kiro/hyle-scratch/compute-unified/source-c8874688/tests/compute_state/public_state_consumer.cc.o
+/usr/bin/clang++ -DHYLE_COMPUTE_APPLE=1 -DHYLE_COMPUTE_CPU=1 -DHYLE_IO_HAS_COROUTINE_TRANSPORT=1 -I/Users/kiro/hyle-scratch/compute-unified/source-c8874688/include -isystem /Users/kiro/Library/Caches/hyle/dependencies/v1/sources/metal_cpp-f567ed836e4c-3874e9e28e8e -isystem /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-build/hyle/_deps/mlx-338da189e54c0743/source -O3 -DNDEBUG -std=gnu++23 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk -mmacosx-version-min=14.4 -MD -MT CMakeFiles/hyle_f4_state_consumer.dir/Users/kiro/hyle-scratch/compute-unified/source-c8874688/tests/compute_state/public_state_consumer.cc.o -MF CMakeFiles/hyle_f4_state_consumer.dir/Users/kiro/hyle-scratch/compute-unified/source-c8874688/tests/compute_state/public_state_consumer.cc.o.d -o CMakeFiles/hyle_f4_state_consumer.dir/Users/kiro/hyle-scratch/compute-unified/source-c8874688/tests/compute_state/public_state_consumer.cc.o -c /Users/kiro/hyle-scratch/compute-unified/source-c8874688/tests/compute_state/public_state_consumer.cc
+/Users/kiro/hyle-scratch/compute-unified/source-c8874688/tests/compute_state/public_state_consumer.cc:112:39: error: member reference type 'BufferView' is not a pointer; did you mean to use '.'?
+  112 |     HYLE_RETURN_IF_ERROR(buffer.view()->write(std::as_bytes(data)));HYLE_ASSIGN_OR_RETURN(auto host,c::ConstTensorView::create(desc,buffer.view()));
+      |                          ~~~~~~~~~~~~~^~
+      |                                       .
+/Users/kiro/hyle-scratch/compute-unified/source-c8874688/include/hyle/error/result.h:811:76: note: expanded from macro 'HYLE_RETURN_IF_ERROR'
+  811 |   HYLE_RETURN_IF_ERROR_IMPL(HYLE_DETAIL_CONCAT(hyle_status_, __COUNTER__), expr)
+      |                                                                            ^~~~
+/Users/kiro/hyle-scratch/compute-unified/source-c8874688/include/hyle/error/result.h:815:19: note: expanded from macro 'HYLE_RETURN_IF_ERROR_IMPL'
+  815 |     auto &&tmp = (expr);                                                     \
+      |                   ^~~~
+1 error generated.
+ninja: build stopped: subcommand failed.

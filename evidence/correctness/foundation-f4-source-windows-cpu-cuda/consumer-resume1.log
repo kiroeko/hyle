@@ -1,0 +1,17 @@
+F4 common Direct op=gated-delta-net
+F4 common Graph op=gated-delta-net
+F4 common Direct op=causal-conv1d
+F4 common Graph op=causal-conv1d
+F4 common Direct op=gated-delta-net
+F4 common Graph op=gated-delta-net
+F4 common Direct op=causal-conv1d
+F4 common Graph op=causal-conv1d
+F4 common Graph op=unary
+F4 common Direct op=unary
+ggml_cuda_init: found 1 CUDA devices (Total VRAM: 12281 MiB):
+  Device 0: NVIDIA GeForce RTX 4070, compute capability 8.9, VMM: yes, VRAM: 12281 MiB
+F4 CPU: two-step recurrent/conv + layout/state + asset Direct/Graph/old-version/cancel PASS
+F4 common Direct op=gated-delta-net
+F4 common Graph op=gated-delta-net
+F4 common Direct op=causal-conv1d
+F4 public consumer: Unimplemented: ggml CUDA native graph node declined

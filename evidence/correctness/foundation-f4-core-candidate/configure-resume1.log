@@ -1,0 +1,22 @@
+-- HYLE developer factors: requested='compute_state' resolved='core,util_core,error,math,platform,mem,compute_ops,compute,compute_backend_cpu,compute_state' products=''
+-- The C compiler identification is MSVC 19.50.35728.0
+-- Detecting C compiler ABI info
+-- Detecting C compiler ABI info - done
+-- Check for working C compiler: C:/Program Files/Microsoft Visual Studio/18/Enterprise/VC/Tools/MSVC/14.50.35717/bin/Hostx64/x64/cl.exe - skipped
+-- Detecting C compile features
+-- Detecting C compile features - done
+-- HYLE_SANITIZER = off
+-- HYLE_TESTING = OFF (tests exercise the shipping layout/hot paths)
+-- HYLE_TRACE = OFF (hooks compile to nothing -- zero cost)
+-- Performing Test CMAKE_HAVE_LIBC_PTHREAD
+-- Performing Test CMAKE_HAVE_LIBC_PTHREAD - Failed
+-- Looking for pthread_create in pthreads
+-- Looking for pthread_create in pthreads - not found
+-- Looking for pthread_create in pthread
+-- Looking for pthread_create in pthread - not found
+-- Found Threads: TRUE
+-- Found Python3: C:/Program Files/Python312/python.exe (found version "3.12.10") found components: Interpreter
+-- HYLE 0.1.0 | MSVC 19.50.35728.0 | C++23 | sanitizer=off | linkage=static | products= | factors=core,util_core,error,math,platform,mem,compute_ops,compute,compute_backend_cpu,compute_state
+-- Configuring done (6.3s)
+-- Generating done (0.1s)
+-- Build files have been written to: C:/h7/foundation-f4/core-static

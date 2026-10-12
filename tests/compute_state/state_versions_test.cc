@@ -133,4 +133,17 @@ TEST(StateVersions, FailedSnapshotReplacementLeavesTheSharedBaseIntact) {
   auto unchanged=draft.finalize().value();EXPECT_EQ(bytes(unchanged.member(id).value())[0],std::byte{7});
   EXPECT_EQ(store.stats().host_snapshot_bytes,16u);
 }
+class DistinctHostResource final : public m::MemoryResource {
+public:
+  std::string_view name()const noexcept override{return "state-test-distinct-host";}
+  m::MemoryProperties properties()const noexcept override{return m::system_resource().properties();}
+  hyle::Result<m::ResourceAllocation> allocate(std::size_t size,std::size_t alignment)noexcept override{return m::system_resource().resource().allocate(size,alignment);}
+  void deallocate(m::ResourceAllocation allocation)noexcept override{m::system_resource().resource().deallocate(allocation);}
+};
+TEST(StateVersions, ResourceConstraintRejectsForeignBackingBeforeImport) {
+  DistinctHostResource other;auto spec=resource_spec();spec.resource=m::MemoryResourceRef(other);
+  auto schema=StateSchema::create(std::array{spec}).value();auto store=StateStore::create(schema).value();auto source=ready(std::byte{8});
+  EXPECT_TRUE(store.import(std::array{StateMember{schema.entry(0).value(),source}}).error().IsInvalidArgument());
+  EXPECT_TRUE(source.valid());EXPECT_EQ(store.stats().retained_blocks,0u);
+}
 } // namespace

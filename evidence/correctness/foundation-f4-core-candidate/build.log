@@ -1,0 +1,69 @@
+[0/2] Re-checking globbed directories...
+[1/60] Building CXX object src\platform\CMakeFiles\hyle_platform_cgroup_parser.dir\linux_cgroup.cc.obj
+[2/60] Building CXX object src\platform\CMakeFiles\hyle_platform.dir\cpu_resource.cc.obj
+[3/60] Building CXX object src\error\CMakeFiles\hyle_error.dir\status.cc.obj
+[4/60] Building CXX object src\platform\CMakeFiles\hyle_platform.dir\dynlib.cc.obj
+[5/60] Linking CXX static library bin\hyle_error.lib
+[6/60] Building CXX object src\platform\CMakeFiles\hyle_platform_cpu_probe.dir\cpu.cc.obj
+[7/60] Building CXX object src\platform\CMakeFiles\hyle_platform.dir\process.cc.obj
+[8/60] Building CXX object src\platform\CMakeFiles\hyle_platform.dir\environment.cc.obj
+[9/60] Building CXX object src\platform\CMakeFiles\hyle_platform.dir\host_memory.cc.obj
+[10/60] Building CXX object src\platform\CMakeFiles\hyle_platform.dir\numa.cc.obj
+[11/60] Building CXX object src\platform\CMakeFiles\hyle_platform.dir\random.cc.obj
+[12/60] Building CXX object src\platform\CMakeFiles\hyle_platform.dir\virtual_memory.cc.obj
+[13/60] Linking CXX static library bin\hyle_platform.lib
+[14/60] Building CXX object src\mem\CMakeFiles\hyle_mem.dir\buffer.cc.obj
+[15/60] Building CXX object src\mem\CMakeFiles\hyle_mem.dir\buffer_pool.cc.obj
+[16/60] Building CXX object src\mem\CMakeFiles\hyle_mem.dir\heap.cc.obj
+[17/60] Building CXX object src\mem\CMakeFiles\mimalloc_static.dir\__\__\third_party\mimalloc\src\static.c.obj
+[18/60] Building CXX object src\mem\CMakeFiles\hyle_mem.dir\composite_buffer.cc.obj
+[19/60] Building CXX object src\mem\CMakeFiles\hyle_mem.dir\resource.cc.obj
+[20/60] Building CXX object src\mem\CMakeFiles\hyle_mem.dir\range_allocator.cc.obj
+[21/60] Linking CXX static library bin\mimalloc_static.lib
+[22/60] Building CXX object src\mem\CMakeFiles\hyle_mem.dir\system.cc.obj
+[23/60] Building CXX object src\mem\CMakeFiles\hyle_mem.dir\stats.cc.obj
+[24/60] Building CXX object src\mem\CMakeFiles\hyle_mem.dir\lifetime_plan.cc.obj
+[25/60] Building CXX object src\compute_ops\CMakeFiles\hyle_compute_ops.dir\tensor_desc.cc.obj
+[26/60] Linking CXX static library bin\hyle_mem.lib
+[27/60] Building CXX object src\compute_ops\CMakeFiles\hyle_compute_ops.dir\low_precision.cc.obj
+[28/60] Building CXX object src\compute_ops\CMakeFiles\hyle_compute_ops.dir\operation.cc.obj
+[29/60] Building CXX object src\compute\CMakeFiles\hyle_compute.dir\command_capture.cc.obj
+[30/60] Building CXX object src\compute_ops\CMakeFiles\hyle_compute_ops.dir\weight_decode.cc.obj
+[31/60] Linking CXX static library bin\hyle_compute_ops.lib
+[32/60] Building CXX object src\compute\CMakeFiles\hyle_compute.dir\completion.cc.obj
+[33/60] Building CXX object src\compute\CMakeFiles\hyle_compute.dir\batch_transfer.cc.obj
+[34/60] Building CXX object src\compute\CMakeFiles\hyle_compute.dir\copy_control.cc.obj
+[35/60] Building CXX object src\compute\CMakeFiles\hyle_compute.dir\copy_ranges.cc.obj
+[36/60] Building CXX object src\compute\CMakeFiles\hyle_compute.dir\custom_kernel.cc.obj
+[37/60] Building CXX object src\compute\CMakeFiles\hyle_compute.dir\device.cc.obj
+[38/60] Building CXX object src\compute\CMakeFiles\hyle_compute.dir\resource_budget.cc.obj
+[39/60] Building CXX object src\compute\CMakeFiles\hyle_compute.dir\provider.cc.obj
+[40/60] Building CXX object src\compute\CMakeFiles\hyle_compute.dir\retained_completion.cc.obj
+[41/60] Building CXX object src\compute\CMakeFiles\hyle_compute.dir\resource_leases.cc.obj
+[42/60] Building CXX object src\compute\CMakeFiles\hyle_compute.dir\operation.cc.obj
+[43/60] Building CXX object src\compute\CMakeFiles\hyle_compute.dir\leased_operation.cc.obj
+[44/60] Building CXX object src\compute\CMakeFiles\hyle_compute.dir\result.cc.obj
+[45/60] Building CXX object src\compute\CMakeFiles\hyle_compute.dir\route_policy.cc.obj
+[46/60] Building CXX object src\compute\CMakeFiles\hyle_compute.dir\shape_domain.cc.obj
+[47/60] Building CXX object src\compute\CMakeFiles\hyle_compute.dir\shape_program.cc.obj
+[48/60] Building CXX object src\compute\CMakeFiles\hyle_compute.dir\tensor_view.cc.obj
+[49/60] Building CXX object src\compute\CMakeFiles\hyle_compute.dir\transfer.cc.obj
+[50/60] Building CXX object src\compute\CMakeFiles\hyle_compute.dir\workload.cc.obj
+[51/60] Linking CXX static library bin\hyle_compute.lib
+[52/60] Building CXX object src\compute_state\CMakeFiles\hyle_compute_state.dir\state_versions.cc.obj
+FAILED: [code=2] src/compute_state/CMakeFiles/hyle_compute_state.dir/state_versions.cc.obj
+"C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\bin\Hostx64\x64\cl.exe"  /nologo /TP -DHYLE_COMPUTE_STATE_BUILD -DHYLE_STATIC -IC:\public\project-hyle\hyle\include -IC:\public\project-hyle\hyle\src\compute_state /DWIN32 /D_WINDOWS /EHsc /O2 /Ob2 /DNDEBUG -std:c++latest -MD /W4 /permissive- /wd4324 /WX /Zc:__cplusplus /utf-8 /Zc:preprocessor /showIncludes /Fosrc\compute_state\CMakeFiles\hyle_compute_state.dir\state_versions.cc.obj /Fdsrc\compute_state\CMakeFiles\hyle_compute_state.dir\hyle_compute_state.pdb /FS -c C:\public\project-hyle\hyle\src\compute_state\state_versions.cc
+C:\public\project-hyle\hyle\src\compute_state\state_versions.cc(182): error C2039: 'new_object': is not a member of 'hyle::mem::AllocatorRef'
+C:\public\project-hyle\hyle\include\hyle/mem/allocator.h(56): note: see declaration of 'hyle::mem::AllocatorRef'
+C:\public\project-hyle\hyle\src\compute_state\state_versions.cc(183): error C3536: 'p': cannot be used before it is initialized
+C:\public\project-hyle\hyle\src\compute_state\state_versions.cc(222): error C2039: 'new_object': is not a member of 'hyle::mem::AllocatorRef'
+C:\public\project-hyle\hyle\include\hyle/mem/allocator.h(56): note: see declaration of 'hyle::mem::AllocatorRef'
+C:\public\project-hyle\hyle\src\compute_state\state_versions.cc(222): warning C4834: discarding return value of function with [[nodiscard]] attribute
+C:\public\project-hyle\hyle\src\compute_state\state_versions.cc(223): error C3536: 'p': cannot be used before it is initialized
+C:\public\project-hyle\hyle\src\compute_state\state_versions.cc(389): error C2039: 'new_object': is not a member of 'hyle::mem::AllocatorRef'
+C:\public\project-hyle\hyle\include\hyle/mem/allocator.h(56): note: see declaration of 'hyle::mem::AllocatorRef'
+C:\public\project-hyle\hyle\src\compute_state\state_versions.cc(390): error C3536: 'p': cannot be used before it is initialized
+[53/60] Building CXX object _deps\googletest-build\googletest\CMakeFiles\gtest_main.dir\src\gtest_main.cc.obj
+[54/60] Building CXX object tests\compute_state\CMakeFiles\hyle_compute_state_test.dir\state_versions_test.cc.obj
+[55/60] Building CXX object _deps\googletest-build\googletest\CMakeFiles\gtest.dir\src\gtest-all.cc.obj
+ninja: build stopped: subcommand failed.

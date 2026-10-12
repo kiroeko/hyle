@@ -1,0 +1,85 @@
+UpdateCTestConfiguration  from :C:/h7/foundation-f4/core-static/DartConfiguration.tcl
+Test project C:/h7/foundation-f4/core-static
+Constructing a list of tests
+Done constructing a list of tests
+Updating test list for fixtures
+Added 0 tests to meet fixture requirements
+Checking test dependency graph...
+Checking test dependency graph end
+test 36
+    Start 36: hyle_compute_state_test
+
+36: Test command: C:\h7\foundation-f4\core-static\bin\hyle_compute_state_test.exe
+36: Working Directory: C:/h7/foundation-f4/core-static/tests/compute_state
+36: Test timeout computed to be: 10000000
+36: Running main() from C:\public\tools\hyle-dependencies\v1\sources\googletest-063de7e9578f-162765170ae6\googletest\src\gtest_main.cc
+36: [==========] Running 24 tests from 2 test suites.
+36: [----------] Global test environment set-up.
+36: [----------] 13 tests from StateVersions
+36: [ RUN      ] StateVersions.SchemaIdentityAndCompleteImportAreCheckedBeforeConsumption
+36: [       OK ] StateVersions.SchemaIdentityAndCompleteImportAreCheckedBeforeConsumption (0 ms)
+36: [ RUN      ] StateVersions.SharedBranchReplacementAndExpectedBaseKeepOldVersion
+36: [       OK ] StateVersions.SharedBranchReplacementAndExpectedBaseKeepOldVersion (0 ms)
+36: [ RUN      ] StateVersions.MetadataSnapshotIsOwnedAndSeparateFromResource
+36: [       OK ] StateVersions.MetadataSnapshotIsOwnedAndSeparateFromResource (0 ms)
+36: [ RUN      ] StateVersions.EscapedReaderKeepsBackingCapacityAfterDirectoryRelease
+36: [       OK ] StateVersions.EscapedReaderKeepsBackingCapacityAfterDirectoryRelease (0 ms)
+36: [ RUN      ] StateVersions.BackingCapacityDeduplicatesDifferentBlocksOfOnePool
+36: [       OK ] StateVersions.BackingCapacityDeduplicatesDifferentBlocksOfOnePool (0 ms)
+36: [ RUN      ] StateVersions.CapacityCancelCloseAndCrossStoreAreExplicit
+36: [       OK ] StateVersions.CapacityCancelCloseAndCrossStoreAreExplicit (0 ms)
+36: [ RUN      ] StateVersions.MetadataQuotaFailureLeavesSourceAndReturnsAllocation
+36: [       OK ] StateVersions.MetadataQuotaFailureLeavesSourceAndReturnsAllocation (0 ms)
+36: [ RUN      ] StateVersions.HeadConcurrentExpectedBaseHasExactlyOneWinner
+36: [       OK ] StateVersions.HeadConcurrentExpectedBaseHasExactlyOneWinner (0 ms)
+36: [ RUN      ] StateVersions.EmptySchemaHasAnActualEmptyVersion
+36: [       OK ] StateVersions.EmptySchemaHasAnActualEmptyVersion (0 ms)
+36: [ RUN      ] StateVersions.PendingAdmittedUseKeepsBackingLedgerUntilReleased
+36: [       OK ] StateVersions.PendingAdmittedUseKeepsBackingLedgerUntilReleased (0 ms)
+36: [ RUN      ] StateVersions.HostSnapshotCapacityRejectsBeforeAnyDirectoryPublication
+36: [       OK ] StateVersions.HostSnapshotCapacityRejectsBeforeAnyDirectoryPublication (0 ms)
+36: [ RUN      ] StateVersions.FailedSnapshotReplacementLeavesTheSharedBaseIntact
+36: [       OK ] StateVersions.FailedSnapshotReplacementLeavesTheSharedBaseIntact (0 ms)
+36: [ RUN      ] StateVersions.ResourceConstraintRejectsForeignBackingBeforeImport
+36: [       OK ] StateVersions.ResourceConstraintRejectsForeignBackingBeforeImport (0 ms)
+36: [----------] 13 tests from StateVersions (0 ms total)
+36:
+36: [----------] 11 tests from StateClone
+36: [ RUN      ] StateClone.OnlyDirtyMemberIsCopiedAndWriterCannotModifyOldVersion
+36: [       OK ] StateClone.OnlyDirtyMemberIsCopiedAndWriterCannotModifyOldVersion (0 ms)
+36: [ RUN      ] StateClone.AbandonedTicketCancelsCandidateAndExplicitColdRearmRestoresSlot
+36: [       OK ] StateClone.AbandonedTicketCancelsCandidateAndExplicitColdRearmRestoresSlot (0 ms)
+36: [ RUN      ] StateClone.AbandonedWriterNeverPublishesAndPoolOutlivesStoreHandle
+36: [       OK ] StateClone.AbandonedWriterNeverPublishesAndPoolOutlivesStoreHandle (0 ms)
+36: [ RUN      ] StateClone.NativeConsumerMustReturnTheExactWriterRootAndGeneration
+36: [       OK ] StateClone.NativeConsumerMustReturnTheExactWriterRootAndGeneration (0 ms)
+36: [ RUN      ] StateClone.RegistrationCapacityIsCheckedBeforeOriginalFactory
+36: [       OK ] StateClone.RegistrationCapacityIsCheckedBeforeOriginalFactory (0 ms)
+36: [ RUN      ] StateClone.ForeignMutableReplacementCannotBePublishedAsOriginalClone
+36: [       OK ] StateClone.ForeignMutableReplacementCannotBePublishedAsOriginalClone (0 ms)
+36: [ RUN      ] StateClone.AcceptedProducerFailurePreventsReadyVersionAndPreservesOriginal
+36: [       OK ] StateClone.AcceptedProducerFailurePreventsReadyVersionAndPreservesOriginal (0 ms)
+36: [ RUN      ] StateClone.UnfinishedWriterUseRejectsPublishWithoutConsumingPermission
+36: [       OK ] StateClone.UnfinishedWriterUseRejectsPublishWithoutConsumingPermission (0 ms)
+36: [ RUN      ] StateClone.CancelledCandidateDoesNotAdmitUnstartedSuffixClone
+36: [       OK ] StateClone.CancelledCandidateDoesNotAdmitUnstartedSuffixClone (0 ms)
+36: [ RUN      ] StateClone.NewReadonlyResultRetainsClonePoolAfterCallerStoreAndRouteDrop
+36: [       OK ] StateClone.NewReadonlyResultRetainsClonePoolAfterCallerStoreAndRouteDrop (0 ms)
+36: [ RUN      ] StateClone.OpaqueReadonlyMemberSharesButCannotBeRawCloned
+36: [       OK ] StateClone.OpaqueReadonlyMemberSharesButCannotBeRawCloned (0 ms)
+36: [----------] 11 tests from StateClone (0 ms total)
+36:
+36: [----------] Global test environment tear-down
+36: [==========] 24 tests from 2 test suites ran. (0 ms total)
+36: [  PASSED  ] 24 tests.
+1/1 Test #36: hyle_compute_state_test ..........   Passed    0.03 sec
+
+The following tests passed:
+	hyle_compute_state_test
+
+100% tests passed out of 1
+
+Label Time Summary:
+compute_state    =   0.03 sec*proc (1 test)
+
+Total Test time (real) =   0.07 sec

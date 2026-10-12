@@ -1,0 +1,524 @@
+{
+  "scope": "Final implementation before candidate: actual24 core permission/encoding/ownership and original CPU F2 cases; old failures/cumulative budgets preserved; no GPU/package/sanitizer or final verdict",
+  "stage": "AUDITED implementation, not candidate",
+  "stages": [
+    {
+      "name": "configure",
+      "command": [
+        "cmake",
+        "-S",
+        "C:\\public\\project-hyle\\hyle",
+        "-B",
+        "C:\\h7\\foundation-f4\\core-static",
+        "-G",
+        "Ninja",
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DCMAKE_CXX_COMPILER=C:/Program Files/Microsoft Visual Studio/18/Enterprise/VC/Tools/MSVC/14.50.35717/bin/Hostx64/x64/cl.exe",
+        "-DHYLE_DEV_FACTORS:STRING=compute_state",
+        "-DHYLE_BUILD_TESTS:BOOL=ON",
+        "-DHYLE_BUILD_BENCH:BOOL=OFF",
+        "-DHYLE_INSTALL:BOOL=OFF",
+        "-DHYLE_STATIC:BOOL=ON",
+        "-DHYLE_TEST_INSTRUMENTATION:BOOL=OFF",
+        "-DHYLE_WERROR:BOOL=ON",
+        "-DHYLE_DEP_SOURCE_CACHE:PATH=C:/public/tools/hyle-dependencies/v1"
+      ],
+      "pid": 40324,
+      "state": "terminal",
+      "available_bytes": 46978756608,
+      "log": "configure.log",
+      "exit_code": 1,
+      "verdict": "FAIL",
+      "elapsed": 2.4220000000000255,
+      "sha256": "04ea0f2c529ef8b756b1ea925ba0cbf6cb8fe96dde403d58705a1c51257f8d89"
+    },
+    {
+      "name": "configure-resume1",
+      "command": [
+        "cmake",
+        "-S",
+        "C:\\public\\project-hyle\\hyle",
+        "-B",
+        "C:\\h7\\foundation-f4\\core-static",
+        "-G",
+        "Ninja",
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DCMAKE_CXX_COMPILER=C:/Program Files/Microsoft Visual Studio/18/Enterprise/VC/Tools/MSVC/14.50.35717/bin/Hostx64/x64/cl.exe",
+        "-DHYLE_DEV_FACTORS:STRING=compute_state",
+        "-DHYLE_BUILD_TESTS:BOOL=ON",
+        "-DHYLE_BUILD_BENCH:BOOL=OFF",
+        "-DHYLE_INSTALL:BOOL=OFF",
+        "-DHYLE_STATIC:BOOL=ON",
+        "-DHYLE_TEST_INSTRUMENTATION:BOOL=OFF",
+        "-DHYLE_WERROR:BOOL=ON",
+        "-DHYLE_DEP_SOURCE_CACHE:PATH=C:/public/tools/hyle-dependencies/v1"
+      ],
+      "pid": 14716,
+      "state": "terminal",
+      "available_bytes": 46951161856,
+      "log": "configure-resume1.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "elapsed": 6.468000000000075,
+      "sha256": "1d0eafc058901e490125c38896d8af0d80d6a8f8d55dbc5e3a6334b353e7bdff"
+    },
+    {
+      "name": "build",
+      "command": [
+        "cmake",
+        "--build",
+        "C:\\h7\\foundation-f4\\core-static",
+        "--target",
+        "hyle_compute_state_tests",
+        "--parallel",
+        "4"
+      ],
+      "pid": 30208,
+      "state": "terminal",
+      "available_bytes": 46942539776,
+      "log": "build.log",
+      "exit_code": 2,
+      "verdict": "FAIL",
+      "elapsed": 10.32899999999995,
+      "sha256": "8f97ca3a8b804682d8ae5bd70ea25e76696f8b260c38d7b03d1abc913be39c3e"
+    },
+    {
+      "name": "build-resume1",
+      "command": [
+        "cmake",
+        "--build",
+        "C:\\h7\\foundation-f4\\core-static",
+        "--target",
+        "hyle_compute_state_tests",
+        "--parallel",
+        "4"
+      ],
+      "pid": 23152,
+      "state": "terminal",
+      "available_bytes": 46764744704,
+      "log": "build-resume1.log",
+      "exit_code": 2,
+      "verdict": "FAIL",
+      "elapsed": 0.7810000000001764,
+      "sha256": "73fd08a972038fb8b42b3774028a25923427031d5f2543b84e9eb65444d0a24b"
+    },
+    {
+      "name": "build-resume2",
+      "command": [
+        "cmake",
+        "--build",
+        "C:\\h7\\foundation-f4\\core-static",
+        "--target",
+        "hyle_compute_state_tests",
+        "--parallel",
+        "4"
+      ],
+      "pid": 37600,
+      "state": "terminal",
+      "available_bytes": 46772953088,
+      "log": "build-resume2.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "elapsed": 1.2039999999999509,
+      "sha256": "9a1b80b3f2f53dabfa2740b623f3ca54b0f51247f9f66d3ff4cea5de7faab282"
+    },
+    {
+      "name": "test",
+      "command": [
+        "ctest",
+        "--test-dir",
+        "C:\\h7\\foundation-f4\\core-static",
+        "-R",
+        "StateVersions",
+        "--output-on-failure",
+        "--parallel",
+        "1"
+      ],
+      "pid": 38804,
+      "state": "terminal",
+      "available_bytes": 46771896320,
+      "log": "test.log",
+      "exit_code": 0,
+      "verdict": "FAIL_NO_MATCHED_TESTS",
+      "elapsed": 0.1089999999999236,
+      "sha256": "d62a1754b1fbe49c704f01f367607d15edf96b27cfc71fd59c173cf6d1c5c6f4",
+      "count": 0
+    },
+    {
+      "name": "build-resume3",
+      "command": [
+        "cmake",
+        "--build",
+        "C:\\h7\\foundation-f4\\core-static",
+        "--target",
+        "hyle_compute_state_tests",
+        "--parallel",
+        "4"
+      ],
+      "pid": 41600,
+      "state": "terminal",
+      "available_bytes": 46132600832,
+      "log": "build-resume3.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "elapsed": 5.0,
+      "sha256": "ff8bf278c71e02a5d6fa6622e7bae7d62554ef2856e80710ccf2696a8b1e5912"
+    },
+    {
+      "name": "test-resume1",
+      "command": [
+        "ctest",
+        "--test-dir",
+        "C:\\h7\\foundation-f4\\core-static",
+        "-R",
+        "^hyle_compute_state_test$",
+        "--output-on-failure",
+        "--parallel",
+        "1"
+      ],
+      "pid": 42660,
+      "state": "terminal",
+      "available_bytes": 46429003776,
+      "log": "test-resume1.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "elapsed": 0.09400000000005093,
+      "sha256": "e70be35b5f96e2657ddc3efb146e57c607cd81554d697edbe9b9d3b2e1e230e4"
+    },
+    {
+      "name": "build-resume4",
+      "command": [
+        "cmake",
+        "--build",
+        "C:\\h7\\foundation-f4\\core-static",
+        "--target",
+        "hyle_compute_state_tests",
+        "--parallel",
+        "4"
+      ],
+      "pid": 34184,
+      "state": "terminal",
+      "available_bytes": 47618576384,
+      "log": "build-resume4.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "elapsed": 1.7339999999999236,
+      "sha256": "69712c48f056b5448e8ea752003384f369640c9ca5ae8b42c9e9270c493548db"
+    },
+    {
+      "name": "test-resume2",
+      "command": [
+        "ctest",
+        "--test-dir",
+        "C:\\h7\\foundation-f4\\core-static",
+        "-R",
+        "^hyle_compute_state_test$",
+        "--verbose",
+        "--output-on-failure",
+        "--parallel",
+        "1"
+      ],
+      "pid": 32536,
+      "state": "terminal",
+      "available_bytes": 47625666560,
+      "log": "test-resume2.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "elapsed": 0.07799999999997453,
+      "sha256": "7ee42fafc7354ea887ca5d42cb1af96a2ab4e38471078224ddda3d4a4c5e07c7"
+    },
+    {
+      "name": "build-resume5",
+      "command": [
+        "cmake",
+        "--build",
+        "C:\\h7\\foundation-f4\\core-static",
+        "--target",
+        "hyle_compute_state_tests",
+        "--parallel",
+        "4"
+      ],
+      "pid": 6684,
+      "state": "terminal",
+      "available_bytes": 46902226944,
+      "log": "build-resume5.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "elapsed": 1.7339999999999236,
+      "sha256": "04234510db9cbe05bbd19ad688afeac4bcb0217c06fd529498befb8d70559df9"
+    },
+    {
+      "name": "test-resume3",
+      "command": [
+        "ctest",
+        "--test-dir",
+        "C:\\h7\\foundation-f4\\core-static",
+        "-R",
+        "^hyle_compute_state_test$",
+        "--verbose",
+        "--output-on-failure",
+        "--parallel",
+        "1"
+      ],
+      "pid": 19532,
+      "state": "terminal",
+      "available_bytes": 46901751808,
+      "log": "test-resume3.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "elapsed": 0.09400000000005093,
+      "sha256": "11cb6145153429b59bc91e80a67e631633d37003963177ba2c32d95a9ffe0f47"
+    },
+    {
+      "name": "build-resume6",
+      "command": [
+        "cmake",
+        "--build",
+        "C:\\h7\\foundation-f4\\core-static",
+        "--target",
+        "hyle_compute_state_tests",
+        "--parallel",
+        "4"
+      ],
+      "pid": 42656,
+      "state": "terminal",
+      "available_bytes": 46760767488,
+      "log": "build-resume6.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "elapsed": 1.625,
+      "sha256": "e8a3a197c18b60827bc8f5ee1faff4659ef2f08a09c7c1c0614bdec9ab1e6252"
+    },
+    {
+      "name": "test-resume4",
+      "command": [
+        "ctest",
+        "--test-dir",
+        "C:\\h7\\foundation-f4\\core-static",
+        "-R",
+        "^hyle_compute_state_test$",
+        "--verbose",
+        "--output-on-failure",
+        "--parallel",
+        "1"
+      ],
+      "pid": 30136,
+      "state": "terminal",
+      "available_bytes": 46757584896,
+      "log": "test-resume4.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "elapsed": 0.07900000000017826,
+      "sha256": "748ab9e7d19af5d2b1006d03237ca665ebae3a942d55a1576fedf74698566357"
+    },
+    {
+      "name": "build-resume7",
+      "command": [
+        "cmake",
+        "--build",
+        "C:\\h7\\foundation-f4\\core-static",
+        "--target",
+        "hyle_compute_state_tests",
+        "--parallel",
+        "4"
+      ],
+      "pid": 13912,
+      "state": "terminal",
+      "available_bytes": 46756155392,
+      "log": "build-resume7.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "elapsed": 1.75,
+      "sha256": "04234510db9cbe05bbd19ad688afeac4bcb0217c06fd529498befb8d70559df9"
+    },
+    {
+      "name": "test-resume5",
+      "command": [
+        "ctest",
+        "--test-dir",
+        "C:\\h7\\foundation-f4\\core-static",
+        "-R",
+        "^hyle_compute_state_test$",
+        "--verbose",
+        "--output-on-failure",
+        "--parallel",
+        "1"
+      ],
+      "pid": 34316,
+      "state": "terminal",
+      "available_bytes": 46751154176,
+      "log": "test-resume5.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "elapsed": 0.09400000000005093,
+      "sha256": "37ebb4582239d6c1fcce5566d33c7d3a52c99ffc524971b1db748f4a31597278"
+    },
+    {
+      "name": "build-resume8",
+      "command": [
+        "cmake",
+        "--build",
+        "C:\\h7\\foundation-f4\\core-static",
+        "--target",
+        "hyle_compute_state_tests",
+        "--parallel",
+        "4"
+      ],
+      "pid": 42284,
+      "state": "terminal",
+      "available_bytes": 45009793024,
+      "log": "build-resume8.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "elapsed": 5.0470000000000255,
+      "sha256": "136887162ced040f80e0f33b0201ff4d2f5e593c9c00892587eedc5da00302fa"
+    },
+    {
+      "name": "test-resume6",
+      "command": [
+        "ctest",
+        "--test-dir",
+        "C:\\h7\\foundation-f4\\core-static",
+        "-R",
+        "^hyle_compute_state_test$",
+        "--verbose",
+        "--output-on-failure",
+        "--parallel",
+        "1"
+      ],
+      "pid": 692,
+      "state": "terminal",
+      "available_bytes": 44999479296,
+      "log": "test-resume6.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "elapsed": 0.11000000000012733,
+      "sha256": "db1a320891325dd3af4b61503c8aaf38bbb9714428c24606d6d5196380b8acbc"
+    },
+    {
+      "name": "build-resume9",
+      "command": [
+        "cmake",
+        "--build",
+        "C:\\h7\\foundation-f4\\core-static",
+        "--target",
+        "hyle_compute_state_tests",
+        "--parallel",
+        "4"
+      ],
+      "pid": 35656,
+      "state": "terminal",
+      "available_bytes": 45798785024,
+      "log": "build-resume9.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "elapsed": 1.8589999999994689,
+      "sha256": "d5a89481873f7406e0ec582bb59040b50614e322a74362fcbdd814d948ed3ea4"
+    },
+    {
+      "name": "test-resume7",
+      "command": [
+        "ctest",
+        "--test-dir",
+        "C:\\h7\\foundation-f4\\core-static",
+        "-R",
+        "^hyle_compute_state_test$",
+        "--verbose",
+        "--output-on-failure",
+        "--parallel",
+        "1"
+      ],
+      "pid": 29608,
+      "state": "terminal",
+      "available_bytes": 45684903936,
+      "log": "test-resume7.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "elapsed": 0.0929999999998472,
+      "sha256": "68984cf0a3fce2a1e250681f13576573a29ca42d82a16a20013202dfdcbdc22e"
+    },
+    {
+      "name": "build-resume10",
+      "command": [
+        "cmake",
+        "--build",
+        "C:\\h7\\foundation-f4\\core-static",
+        "--target",
+        "hyle_compute_state_tests",
+        "--parallel",
+        "4"
+      ],
+      "pid": 41680,
+      "state": "terminal",
+      "available_bytes": 45910913024,
+      "log": "build-resume10.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "elapsed": 1.9380000000001019,
+      "sha256": "04d35957ba115f1d32fb10d1f1e268c26d6528d8ba913ea511af31be6c65bc5e"
+    },
+    {
+      "name": "test-resume8",
+      "command": [
+        "ctest",
+        "--test-dir",
+        "C:\\h7\\foundation-f4\\core-static",
+        "-R",
+        "^hyle_compute_state_test$",
+        "--verbose",
+        "--output-on-failure",
+        "--parallel",
+        "1"
+      ],
+      "pid": 10976,
+      "state": "terminal",
+      "available_bytes": 45923155968,
+      "log": "test-resume8.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "elapsed": 0.10900000000037835,
+      "sha256": "e0eb7cc2ba5d02873a47bc9d57917af8c0616c5ab8b33e4683c0279dd7116f0e"
+    }
+  ],
+  "test_parallel": 1,
+  "actual_gtest_count": 24,
+  "raw_logs": {
+    "archive": "raw-logs.zip",
+    "sha256": "a08ae2672ba0d2cecbd7c23b1264da06fbbba27ceee2dda43459c37cdb403fd2",
+    "stage_hashes_refer_to": "original archive byte entries"
+  },
+  "inputs": [
+    {
+      "path": "src/compute_state/CMakeLists.txt",
+      "sha256": "74c451450ce59a4f0f465f654211b34f683db2bb5e2fcd8e19ca030073bab76c"
+    },
+    {
+      "path": "src/compute_state/state_internal.h",
+      "sha256": "20f419f2361a13d224eba3023f630b360bcd37e7135a28e13ba931b5d4073b05"
+    },
+    {
+      "path": "src/compute_state/state_versions.cc",
+      "sha256": "65a605065c4df264f093fe164ec1579d8e8cc45db773e17922c07f1faed056b9"
+    },
+    {
+      "path": "tests/compute_state/CMakeLists.txt",
+      "sha256": "e83afb1bde79a86f519eb0afa80a4442aabd362f8177973eaec8f08b332bb75b"
+    },
+    {
+      "path": "tests/compute_state/public_consumer/CMakeLists.txt",
+      "sha256": "61c53e179c83396e2eb1387dfe89789f482be9786ff28ac8b66830a49afbd025"
+    },
+    {
+      "path": "tests/compute_state/public_state_consumer.cc",
+      "sha256": "6a82c25a36838ca6b05c04205ec7f43a53408908286c44b9ccc4c5c54c5aa297"
+    },
+    {
+      "path": "tests/compute_state/state_clone_test.cc",
+      "sha256": "6ab9e748f0af893e981236c33fe1b2f00cdd6b9211f427dbd1c7f144d1c3c52b"
+    },
+    {
+      "path": "tests/compute_state/state_versions_test.cc",
+      "sha256": "02f5c867ea12cac0bbf74fe176efb742749dfec098497993efadb5544640faea"
+    }
+  ]
+}

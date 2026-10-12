@@ -1,0 +1,236 @@
+{
+  "profile": "cpu-cuda",
+  "stage": "AUDITED implementation, not candidate",
+  "scope": "F4 public ordinary source Direct/Graph recurrent/conv/layout + orthogonal asset/state clone only",
+  "stages": [
+    {
+      "name": "configure",
+      "command": [
+        "cmake",
+        "-S",
+        "C:\\h7\\w-cpu-cuda\\selected-graph\\source-parent",
+        "-B",
+        "C:\\h7\\w-cpu-cuda\\selected-graph\\source-build"
+      ],
+      "pid": 22516,
+      "state": "terminal",
+      "available_bytes": 45246197760,
+      "log": "configure.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "elapsed": 173.88999999999987,
+      "sha256": "8b34bfbc785537a5d74f883907c4a9388538164dc8f3166911c565d05398c9b5"
+    },
+    {
+      "name": "build",
+      "command": [
+        "cmake",
+        "--build",
+        "C:\\h7\\w-cpu-cuda\\selected-graph\\source-build",
+        "--target",
+        "hyle_f4_state_consumer",
+        "--parallel",
+        "4"
+      ],
+      "pid": 15620,
+      "state": "terminal",
+      "available_bytes": 45529903104,
+      "log": "build.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "elapsed": 30.516000000000076,
+      "sha256": "afdef0b51b8f24334acaf36aa622e9090800a29b3eedaab4b5375a5faf1daf25"
+    },
+    {
+      "name": "consumer",
+      "command": [
+        "C:\\h7\\w-cpu-cuda\\selected-graph\\source-build\\hyle_f4_state_consumer.exe"
+      ],
+      "pid": 16824,
+      "state": "terminal",
+      "available_bytes": 45530013696,
+      "log": "consumer.log",
+      "exit_code": 1,
+      "verdict": "FAIL",
+      "elapsed": 0.8910000000000764,
+      "sha256": "5ddcab077983f9f4da86055377e385987c937c7baefcec9db758066bda217f02"
+    },
+    {
+      "name": "build-resume1",
+      "command": [
+        "cmake",
+        "--build",
+        "C:\\h7\\w-cpu-cuda\\selected-graph\\source-build",
+        "--target",
+        "hyle_f4_state_consumer",
+        "--parallel",
+        "4"
+      ],
+      "pid": 42024,
+      "state": "terminal",
+      "available_bytes": 45994917888,
+      "log": "build-resume1.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "elapsed": 77.125,
+      "sha256": "f2774d92b1834207225753f004278945b7b2c11e01ec32964a4d67d7e4397400"
+    },
+    {
+      "name": "consumer-resume1",
+      "command": [
+        "C:\\h7\\w-cpu-cuda\\selected-graph\\source-build\\hyle_f4_state_consumer.exe"
+      ],
+      "pid": 38680,
+      "state": "terminal",
+      "available_bytes": 46669713408,
+      "log": "consumer-resume1.log",
+      "exit_code": 1,
+      "verdict": "FAIL",
+      "elapsed": 0.875,
+      "sha256": "e3dd37ced19868718e408608b12a6eaf7e457799b4ccfc8cfda374bf0754f6ff"
+    },
+    {
+      "name": "build-resume2",
+      "command": [
+        "cmake",
+        "--build",
+        "C:\\h7\\w-cpu-cuda\\selected-graph\\source-build",
+        "--target",
+        "hyle_f4_state_consumer",
+        "--parallel",
+        "4"
+      ],
+      "pid": 24600,
+      "state": "terminal",
+      "available_bytes": 46644260864,
+      "log": "build-resume2.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "elapsed": 11.530999999999949,
+      "sha256": "107c70f439f9e6e62cb0425f0d0e84f29ac9eb8ae4a818d6cba3ebaf84aa56e8"
+    },
+    {
+      "name": "consumer-resume2",
+      "command": [
+        "C:\\h7\\w-cpu-cuda\\selected-graph\\source-build\\hyle_f4_state_consumer.exe"
+      ],
+      "pid": 27952,
+      "state": "terminal",
+      "available_bytes": 46685663232,
+      "log": "consumer-resume2.log",
+      "exit_code": 1,
+      "verdict": "FAIL",
+      "elapsed": 0.8119999999998981,
+      "sha256": "790fe59009d6472194f88d0a5107518f8cf5c551cea7ec64aa8a355fda4448a6"
+    },
+    {
+      "name": "build-resume3",
+      "command": [
+        "cmake",
+        "--build",
+        "C:\\h7\\w-cpu-cuda\\selected-graph\\source-build",
+        "--target",
+        "hyle_f4_state_consumer",
+        "--parallel",
+        "4"
+      ],
+      "pid": 9212,
+      "state": "terminal",
+      "available_bytes": 46759059456,
+      "log": "build-resume3.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "elapsed": 11.282000000000153,
+      "sha256": "107c70f439f9e6e62cb0425f0d0e84f29ac9eb8ae4a818d6cba3ebaf84aa56e8"
+    },
+    {
+      "name": "consumer-resume3",
+      "command": [
+        "C:\\h7\\w-cpu-cuda\\selected-graph\\source-build\\hyle_f4_state_consumer.exe"
+      ],
+      "pid": 26288,
+      "state": "terminal",
+      "available_bytes": 46754684928,
+      "log": "consumer-resume3.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "elapsed": 0.8119999999998981,
+      "sha256": "9b39fbc491c14d82c3f9f567280de17794d52f293d0c65c780fd537b82bece6b"
+    },
+    {
+      "name": "build-resume4",
+      "command": [
+        "cmake",
+        "--build",
+        "C:\\h7\\w-cpu-cuda\\selected-graph\\source-build",
+        "--target",
+        "hyle_f4_state_consumer",
+        "--parallel",
+        "4"
+      ],
+      "pid": 42208,
+      "state": "terminal",
+      "available_bytes": 45754163200,
+      "log": "build-resume4.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "elapsed": 12.141000000000531,
+      "sha256": "107c70f439f9e6e62cb0425f0d0e84f29ac9eb8ae4a818d6cba3ebaf84aa56e8"
+    },
+    {
+      "name": "consumer-resume4",
+      "command": [
+        "C:\\h7\\w-cpu-cuda\\selected-graph\\source-build\\hyle_f4_state_consumer.exe"
+      ],
+      "pid": 10472,
+      "state": "terminal",
+      "available_bytes": 45645033472,
+      "log": "consumer-resume4.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "elapsed": 0.7970000000004802,
+      "sha256": "9b39fbc491c14d82c3f9f567280de17794d52f293d0c65c780fd537b82bece6b"
+    }
+  ],
+  "test_parallel": 1,
+  "inputs": [
+    {
+      "path": "tests/compute_state/public_state_consumer.cc",
+      "sha256": "6a82c25a36838ca6b05c04205ec7f43a53408908286c44b9ccc4c5c54c5aa297"
+    },
+    {
+      "path": "cmake/HyleComponents.cmake",
+      "sha256": "80ba60ecfa94bc73672a1a1f7cda765c943ccdfd2af685e2047ce9f55e9da092"
+    },
+    {
+      "path": "src/compute_state/CMakeLists.txt",
+      "sha256": "74c451450ce59a4f0f465f654211b34f683db2bb5e2fcd8e19ca030073bab76c"
+    },
+    {
+      "path": "src/compute_state/state_internal.h",
+      "sha256": "20f419f2361a13d224eba3023f630b360bcd37e7135a28e13ba931b5d4073b05"
+    },
+    {
+      "path": "src/compute_state/state_versions.cc",
+      "sha256": "65a605065c4df264f093fe164ec1579d8e8cc45db773e17922c07f1faed056b9"
+    },
+    {
+      "path": "include/hyle/compute/state_versions.h",
+      "sha256": "a83193baa10ff4f00fc6eb7289b7f25091038096877ee3dc3aa0053a7b5ca878"
+    },
+    {
+      "path": "include/hyle/compute/state_clone.h",
+      "sha256": "1e20c2363bb1fc6c1aa7b6b72247d5f1a2fde4d4f5ab04e5c2e7791c14d64b3f"
+    },
+    {
+      "path": "include/hyle/compute/detail/state_clone_access.h",
+      "sha256": "b56629d38582f595a9b46eb74d9e6d4b983868bf3a73cf91fb4a965248ee9608"
+    }
+  ],
+  "raw_archive": {
+    "name": "raw-logs.zip",
+    "sha256": "afe63fbf2c7a8cfc702b6b8bc317d578903cc0033b2fdad59bc19978e80d0efb",
+    "stage_hashes_refer_to": "original archive entries"
+  },
+  "scope_verdict": "PASS_F4_PUBLIC_SOURCE_JOURNEY; AUDITED only, not candidate or final qualification"
+}

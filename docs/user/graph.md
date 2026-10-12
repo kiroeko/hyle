@@ -49,6 +49,9 @@ CPU+CUDA 的既有 effect 能力保持原规则；其新增 `compile_variants` �
 上述有限shape/control/qualified CPU effects范围已完成适用source/static/shared资格。
 general/capture、任意GPU mutation和整引擎性能仍按实际路线能力裁决。
 
+外部recurrent/conv/KV布局或资产集合的显式版本/dirty clone/成功发布属于
+[State集合接口](state-versions.md)，当前F4仍在实施与资格验证；普通Graph不解释模型状态。
+
 当前已支持 exact specialization 与显式声明域的 general 路线（目前动态 Native RMSNorm、固定 hidden
 width），以及有限派生维度/guards、具名资源副作用域、有限 region 发现/重选、完整计划可行性规划、
 常量物化后的 source release、有限 exact variants、canonical 常量共享、编译制品累计存储准入、
