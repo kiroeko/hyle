@@ -489,7 +489,7 @@ file(WRITE "${_route_source}/CMakeLists.txt"
 "add_subdirectory(\"${HYLE_SOURCE_DIR}\" hyle)\n"
 [=[
 if(HYLE_CONTRACT_COMPUTE)
-  foreach(_product IN ITEMS compute graph)
+  foreach(_product IN ITEMS graph)
     if(NOT TARGET hyle::${_product})
       message(FATAL_ERROR "missing public product ${_product}")
     endif()

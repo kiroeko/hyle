@@ -26,3 +26,11 @@ factor检查不变；不修改产品选择、façade规则、closure checker、s
 不能把工具失败写PASS或NOT_APPLICABLE。产品candidate25e不受这个验证脚本修复影响。
 
 原日志见[component失败证据](../../../../evidence/correctness/foundation-f5-component-facade-assertion/README.md)。
+
+唯一断言修复已实施，同原contract第三次运行通过原CPU/tests=ON/OFF graph-only用例，
+随后在全factor all配置因private runner未传VULKAN_SDK/glslc环境失败。原三次elapsed总
+272.140秒，原300剩27.860；聚合gate保持INCONCLUSIVE，未签PASS或NA。
+该环境失败不能驱动产品依赖/SDK改动；后续先按实际已准备的Vulkan SDK身份补运行环境，
+不得重置预算。原定向F5模块/显式SKU交付证据不由这个全factor配置失败撤销。
+
+第三次日志见[环境失败与断言修复范围](../../../../evidence/correctness/foundation-f5-component-vulkan-environment/README.md)。
