@@ -233,3 +233,43 @@ Apple/Vulkan Direct冷适配已按[独立实际owner卡](foundation-f5-native-re
 共享typed recipe在GPU由原MLX/ggml/IREE/native Program承载，原F2镜像上传与版本更新
 明确发生，旧result保护仍原native owner；没有CPU fallback或capture/native paged假报。
 F5-05/06向四route实际数学消费推进，batch控制器、append/F4完整闭环和其他最终门仍待验。
+
+## AUDITED 逐页权限与append接缝冻结
+
+baseline 780c666e2。本轮真实反证：F1整块arena reader的subview不能单独变成free-page
+writer；同backing的两个独立F1 block可以分别native-read和write，但单页ReadLease不能
+绑定当前整个arena的数学TensorDesc。F1合同正确，缺的是F5物理视图与实际page footprint
+的接缝；不得用raw alias绕过readonly，也不得把全arena clone当有成本优势的页CoW。
+原25项测试保存反证；首新增fixture以整个view读1byte的尺寸假设错误保留，修正显式subview。
+
+有限实现分解（仍属F5-05/06，不扩页淘汰/模型策略或新kernel）：
+
+- ARENA-01 compute_batch的PagedArena冷分配原resource一个连续arena；固定物理page slots
+  各自原F1 block，另有cold lifetime sentinel。acquire(page ID)只给没有旧reader/native use
+  的原WriteLease，PagedPageWriter::publish/complete在成功实际退休后登记ready page。
+  old-state分享的是page lease，不是整arena reader。页选择/free/LRU策略留consumer；借用
+  native resource/allocator的原生命周期保留，无普通对象字段变化。
+- ARENA-02 PagedArena::read(layout,readonly page leases)先核same-schema、每个actual page
+  ID/原block/完整page范围、集合完整且无foreign，再给不可伪造的PagedArenaRead快照。
+  它保layout、arena和去重的actual页permissions。whole native TensorView只供trusted private
+  adapter；公开API不导出一个虚假的whole-arena ReadLease或可写raw alias。
+- ARENA-03 原native Direct增加query lease+两PagedArenaRead的显式run档；核same layout/
+  resource/容量，原LeaseUseBatch持全部actual页到原Completion实际退休。Graph/native
+  reference接同footprint，仍原region/slot/Program/Completion；private projected binding只许
+  已资格batch readers，禁止给普通dense节点或直接发布整个arena。需要实际旧owner bridge时
+  在其AUDITED卡补固定FIX后才改产品，不在common factor反依赖Graph或native route。
+- ARENA-04 actual append：旧page只读→原F2/原pure Scatter产生private新page→原arena新slot
+  writer成功ready→F4 draft替换dirty page与layout→expected-base成功发布；旧page/版本仍
+  可原数学读，未改成员保持共享。计实际页copy/append/materialize bytes，失败prefix/取消/
+  unknown不发布或误复用。具体F4目录/schema由consumer完整列明，不新建模型事务。
+
+P0：cold O(max physical pages) F1 slots/metadata，read预检/保活O(unique referenced pages)；
+数学仍用原连续arena地址与page表，未使用页没有read权限，因此可在独立slot写入。原F1
+block计数保证old reader/native use阻止reuse。mutable writer弃用/accepted copy未结束时
+不得假空闲；无法证明ready者保留Unavailable/失败状态。无自动grow/页cache或热DAG遍历。
+只有本显式paged档改变，ragged既有域与本goal的完整消费验收仍保留，不能冒充general。
+
+适用验证：原共同factor的错page/schema/backing/尺寸/duplicate/empty/OOM/overflow/旧reader/
+native read-use/abandon/close、真实F4 branch与普通single/multi request append/read；原CUDA
+Direct/Graph以及CPU/Apple/Vulkan explicit reference完整闭环/预算/数学oracle；原SDK/san/
+P0/guide/终审。全部预算与失败沿原根累计，不以新文件/提交重置。owner仍AUDITED。

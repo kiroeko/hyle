@@ -106,4 +106,17 @@ TEST(BatchLayout, FixedBlockRootTransferKeepsNativeAdmissionWithoutOwnerCycle){
   auto use_pool=c::LeaseUsePool::create().value();auto use=use_pool.begin().value();ASSERT_TRUE(use.read(reader).ok());
   reader.reset();EXPECT_EQ(released.load(),0u);use={};EXPECT_EQ(released.load(),1u);EXPECT_EQ(quota.used(),0u);
 }
+TEST(BatchLayout, WholeArenaSubviewCannotBecomeAnIndependentFreePageWriter){
+  auto pool=c::LeasePool::create(hyle::mem::system_resource(),4096,{.max_blocks=2}).value();auto writer=pool.allocate(1024).value();ASSERT_TRUE(writer.view()->fill(std::byte{7}).ok());auto arena=writer.publish().value();auto old_version=arena;auto free_page=arena.subview(512,512).value();
+  EXPECT_TRUE(free_page.try_write().error().IsUnavailable());auto description=c::TensorDesc::dense(c::DataType::kFloat16,std::array<std::int64_t,4>{2,2,2,64}).value();EXPECT_TRUE(arena.tensor(description));EXPECT_FALSE(free_page.tensor(description));
+  std::array<std::byte,1> bytes;ASSERT_TRUE(old_version.view()->subview(0,1)->read(bytes).ok());EXPECT_EQ(bytes[0],std::byte{7});
+}
+TEST(BatchLayout, SeparatePageBlocksKeepReadUseAndFreePageWriteIndependent){
+  auto pool=c::LeasePool::create(hyle::mem::system_resource(),4096,{.max_blocks=4}).value();auto first=pool.allocate(512).value();auto second=pool.allocate(512).value();ASSERT_TRUE(first.view()->fill(std::byte{7}).ok());auto used=first.publish().value();auto uses=c::LeaseUsePool::create().value();auto use=uses.begin().value();ASSERT_TRUE(use.read(used).ok());
+  ASSERT_TRUE(second.view()->fill(std::byte{9}).ok());auto next=second.publish().value();EXPECT_EQ(c::detail::LeaseAccess::backing(used)->identity,c::detail::LeaseAccess::backing(next)->identity);
+  // F1 independently tracks the pages; neither page permission can describe
+  // the whole contiguous arena demanded by the current mathematical port.
+  auto description=c::TensorDesc::dense(c::DataType::kFloat16,std::array<std::int64_t,4>{2,2,2,64}).value();EXPECT_FALSE(used.tensor(description));EXPECT_FALSE(next.tensor(description));
+  std::array<std::byte,1> bytes;ASSERT_TRUE(used.view()->subview(0,1)->read(bytes).ok());EXPECT_EQ(bytes[0],std::byte{7});ASSERT_TRUE(next.view()->subview(0,1)->read(bytes).ok());EXPECT_EQ(bytes[0],std::byte{9});
+}
 } // namespace
