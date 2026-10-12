@@ -486,14 +486,9 @@
     },
     {
       "module": "compute_provider_ggml_vulkan",
-      "state": "CLOSED",
-      "record": "docs/implementation/tasks/compute/compute-h3-cpu-vulkan-composition.md",
-      "summary": "H3 CLOSED: native CPU/Vulkan composition, bounded two-slot migration, budgets/replay reports and real queue handoff; Win/Air all three deliveries/math/lifetime/P0, WSL applicable build/install qualified with user-accepted GPU UNQUALIFIED.",
-      "candidate": "97f9332ac358b95face192a7edd39cebadfb0265",
-      "performance": {
-        "tier": "P0",
-        "evidence": "evidence/correctness/compute-h3-vulkan-handoff/README.md"
-      }
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/compute/foundation-f5-vulkan-degenerate-matmul.md",
+      "summary": "F5具名unit MatMul缺陷SCOPED：真实ragged单query/单KV native Vulkan冷factory触发ggml transposed assert；仅plain right descriptor规范化，旧runtime/量化/其他数学不重开。"
     },
     {
       "module": "compute_ggml_runtime",

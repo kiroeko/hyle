@@ -1,0 +1,17 @@
+{
+  "baseline": "135954d689e6458f693986f4e1ecbde269cdf108",
+  "owners": [
+    {
+      "module": "compute_provider_ggml_vulkan",
+      "state": "CLOSED",
+      "record": "docs/implementation/tasks/compute/compute-h3-cpu-vulkan-composition.md",
+      "summary": "H3 CLOSED: native CPU/Vulkan composition, bounded two-slot migration, budgets/replay reports and real queue handoff; Win/Air all three deliveries/math/lifetime/P0, WSL applicable build/install qualified with user-accepted GPU UNQUALIFIED.",
+      "candidate": "97f9332ac358b95face192a7edd39cebadfb0265",
+      "performance": {
+        "tier": "P0",
+        "evidence": "evidence/correctness/compute-h3-vulkan-handoff/README.md"
+      }
+    }
+  ],
+  "source_sha256": "380ed3b194f0f3d21260f9e988b5ef8a2c2ddee84d59dba1819977c10405bc12"
+}
