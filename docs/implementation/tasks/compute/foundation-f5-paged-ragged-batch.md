@@ -299,3 +299,10 @@ clean页继续原block分享；same query/KV indptr的native显式update证明pl
 CUDA错误退出资源早析构FATAL完整封存；最后者覆盖原拒绝Status，不凭猜测补填。产品
 仍AUDITED；ARENA-03只Direct有首批证据，Graph/private projected binding、CPU/Apple/
 Vulkan reference逐页消费、完整控制器/ragged旅程/其余风险/三交付/san/P0/guide/终审继续。
+
+ARENA-03原Graph同slot消费已沿[合法owner G-PAGE合同](foundation-f5-owner-bridges.md)实现，
+见[实际Graph页闭环](../../../../evidence/correctness/foundation-f5-graph-page-first/README.md)。
+CUDA F16/BF16各旧新旧六oracle、原Graph两域12oracle，普通reader/alias/published容量
+拒绝及mixed generation/old result/escaped结果/quota0通过；仍只实际页clone/append和
+原F4发布，没有whole arena copy或第二executor。CPU/Apple/Vulkan reference同权限与
+完整controller、ragged append和其他终审风险继续；checkpoint不替代全F5验收。

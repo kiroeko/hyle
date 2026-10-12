@@ -1,0 +1,2611 @@
+{
+  "stage": "AUDITED G-PAGE: original Graph exact page permissions/native CUDA append/F4; not reference/candidate/final",
+  "native_new_page_oracles": 6,
+  "native_existing_graph_oracles": 12,
+  "projected_rejections": 3,
+  "windows_independent_headers": 2,
+  "windows_owner_werror": true,
+  "native": {
+    "stage": "AUDITED F5 native Graph implementation; not candidate/final",
+    "identity": {
+      "os": "Linux kiro-workstation 6.18.40.1-microsoft-standard-WSL2 #1 SMP PREEMPT_DYNAMIC Fri Jul 31 22:12:15 UTC 2026 x86_64 x86_64 x86_64 GNU/Linux",
+      "gpu": "NVIDIA GeForce RTX 4070, GPU-e7376560-6f5d-ec19-6ee4-3dd3a2c81ef8, 617.14",
+      "compiler": "g++-14 (Ubuntu 14.2.0-4ubuntu2~24.04.1) 14.2.0\nCopyright (C) 2024 Free Software Foundation, Inc.\nThis is free software; see the source for copying conditions.  There is NO\nwarranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.",
+      "nvcc": "nvcc: NVIDIA (R) Cuda compiler driver\nCopyright (c) 2005-2026 NVIDIA Corporation\nBuilt on Tue_Jun_09_02:43:40_PM_PDT_2026\nCuda compilation tools, release 13.3, V13.3.73\nBuild cuda_13.3.r13.3/compiler.38244171_0"
+    },
+    "scope": "F5 original Graph region/native batch same-slot public consumer only; no old operator tests",
+    "stages": [
+      {
+        "name": "configure",
+        "command": [
+          "cmake",
+          "-S",
+          "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/source-parent",
+          "-B",
+          "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/source-build"
+        ],
+        "pid": 655,
+        "state": "terminal",
+        "available_bytes": 32368996352,
+        "log": "configure.log",
+        "elapsed": 16.402683882999998,
+        "exit_code": 0,
+        "verdict": "PASS",
+        "sha256": "39215490d0c74fcd4a6c7daf6f7f3d832134c9f5c241527b89160f4cb280efee"
+      },
+      {
+        "name": "build",
+        "command": [
+          "cmake",
+          "--build",
+          "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/source-build",
+          "--target",
+          "hyle_f5_native_graph",
+          "--parallel",
+          "4"
+        ],
+        "pid": 698,
+        "state": "terminal",
+        "available_bytes": 32426381312,
+        "log": "build.log",
+        "elapsed": 20.712575335,
+        "exit_code": 0,
+        "verdict": "PASS",
+        "sha256": "d21cfd48fc683a5cbd9f9bf1c64833a5180acc0b0be8881c7e8af91e3284cef2"
+      },
+      {
+        "name": "consumer",
+        "command": [
+          "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/source-build/hyle_f5_native_graph"
+        ],
+        "pid": 926,
+        "state": "terminal",
+        "available_bytes": 31607119872,
+        "log": "consumer.log",
+        "elapsed": 0.6656575129999993,
+        "exit_code": 0,
+        "verdict": "PASS",
+        "sha256": "60c2a0deea48ed9064ec3abe08ffc3864a6dcbfe7e75e296c5df8053feaf7950"
+      },
+      {
+        "name": "build-resume1",
+        "command": [
+          "cmake",
+          "--build",
+          "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/source-build",
+          "--target",
+          "hyle_f5_native_graph",
+          "--parallel",
+          "4"
+        ],
+        "pid": 659,
+        "state": "terminal",
+        "available_bytes": 32357347328,
+        "log": "build-resume1.log",
+        "elapsed": 3.3228383260000003,
+        "exit_code": 0,
+        "verdict": "PASS",
+        "sha256": "ba1b3c313866c4583297aa853f69ce40a31b5272c07e68146d53a883e0192ddf"
+      },
+      {
+        "name": "consumer-resume1",
+        "command": [
+          "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/source-build/hyle_f5_native_graph"
+        ],
+        "pid": 688,
+        "state": "terminal",
+        "available_bytes": 32069718016,
+        "log": "consumer-resume1.log",
+        "elapsed": 1.3669290820000004,
+        "exit_code": 0,
+        "verdict": "PASS",
+        "sha256": "3ed7dd5a3a4ff4c9ee7d4abb7d85cede4e440edd5d2745d42909e2827a7e3eb3"
+      },
+      {
+        "name": "build-resume2",
+        "command": [
+          "cmake",
+          "--build",
+          "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/source-build",
+          "--target",
+          "hyle_f5_native_graph",
+          "--parallel",
+          "4"
+        ],
+        "pid": 659,
+        "state": "terminal",
+        "available_bytes": 32490475520,
+        "log": "build-resume2.log",
+        "elapsed": 3.423390656999999,
+        "exit_code": 0,
+        "verdict": "PASS",
+        "sha256": "62fa89fa48ed25c2f12ec57dafb6fc9a532db5cb8caa49c976414047918a0ec4"
+      },
+      {
+        "name": "consumer-resume2",
+        "command": [
+          "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/source-build/hyle_f5_native_graph"
+        ],
+        "pid": 680,
+        "state": "terminal",
+        "available_bytes": 32270479360,
+        "log": "consumer-resume2.log",
+        "elapsed": 1.4675804570000004,
+        "exit_code": 0,
+        "verdict": "PASS",
+        "sha256": "3ed7dd5a3a4ff4c9ee7d4abb7d85cede4e440edd5d2745d42909e2827a7e3eb3"
+      },
+      {
+        "name": "build-resume3",
+        "command": [
+          "cmake",
+          "--build",
+          "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/source-build",
+          "--target",
+          "hyle_f5_native_graph",
+          "--parallel",
+          "4"
+        ],
+        "pid": 661,
+        "state": "terminal",
+        "available_bytes": 32399687680,
+        "log": "build-resume3.log",
+        "elapsed": 4.827532959000001,
+        "exit_code": 0,
+        "verdict": "PASS",
+        "sha256": "56dbe3eec50bce196dd7ce128b6c4ef6df13fafd41ba7948eb293ade19ae4354"
+      },
+      {
+        "name": "consumer-resume3",
+        "command": [
+          "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/source-build/hyle_f5_native_graph"
+        ],
+        "pid": 694,
+        "state": "terminal",
+        "available_bytes": 32069177344,
+        "log": "consumer-resume3.log",
+        "elapsed": 1.4172816610000005,
+        "exit_code": 0,
+        "verdict": "PASS",
+        "sha256": "8f315e5579b7976dbba49ef1ebcc9923126abd7efbc69f5a9dce04009c737a5f"
+      },
+      {
+        "name": "build-resume4",
+        "command": [
+          "cmake",
+          "--build",
+          "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/source-build",
+          "--target",
+          "hyle_f5_native_graph",
+          "--parallel",
+          "4"
+        ],
+        "pid": 648,
+        "state": "terminal",
+        "available_bytes": 32429428736,
+        "log": "build-resume4.log",
+        "elapsed": 2.019765819,
+        "exit_code": 1,
+        "verdict": "FAIL",
+        "sha256": "c0cd26ed797ce9932e729be52320189e70e8d09bf7ebc830cb473d9610abb9d9"
+      },
+      {
+        "name": "build-resume5",
+        "command": [
+          "cmake",
+          "--build",
+          "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/source-build",
+          "--target",
+          "hyle_f5_native_graph",
+          "--parallel",
+          "4"
+        ],
+        "pid": 690,
+        "state": "terminal",
+        "available_bytes": 32558227456,
+        "log": "build-resume5.log",
+        "elapsed": 5.277779828999996,
+        "exit_code": 0,
+        "verdict": "PASS",
+        "sha256": "6513566764b5967c83252defd59739fd00b041562ee98db762db791ff3e54236"
+      },
+      {
+        "name": "consumer-resume4",
+        "command": [
+          "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/source-build/hyle_f5_native_graph"
+        ],
+        "pid": 703,
+        "state": "terminal",
+        "available_bytes": 32382029824,
+        "log": "consumer-resume4.log",
+        "elapsed": 0.7159371850000014,
+        "exit_code": 0,
+        "verdict": "PASS",
+        "sha256": "1103a364e5242c271841b5fa57b79862d74adefa3e88a5f10955401ec29fecad"
+      },
+      {
+        "name": "build-resume6",
+        "command": [
+          "cmake",
+          "--build",
+          "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/source-build",
+          "--target",
+          "hyle_f5_native_graph",
+          "--parallel",
+          "4"
+        ],
+        "pid": 660,
+        "state": "terminal",
+        "available_bytes": 32364838912,
+        "log": "build-resume6.log",
+        "elapsed": 5.378104084999999,
+        "exit_code": 0,
+        "verdict": "PASS",
+        "sha256": "6513566764b5967c83252defd59739fd00b041562ee98db762db791ff3e54236"
+      },
+      {
+        "name": "consumer-resume5",
+        "command": [
+          "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/source-build/hyle_f5_native_graph"
+        ],
+        "pid": 673,
+        "state": "terminal",
+        "available_bytes": 32175878144,
+        "log": "consumer-resume5.log",
+        "elapsed": 0.8160837919999988,
+        "exit_code": 0,
+        "verdict": "PASS",
+        "sha256": "1103a364e5242c271841b5fa57b79862d74adefa3e88a5f10955401ec29fecad"
+      },
+      {
+        "name": "build-resume7",
+        "command": [
+          "cmake",
+          "--build",
+          "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/source-build",
+          "--target",
+          "hyle_f5_native_graph",
+          "--parallel",
+          "4"
+        ],
+        "pid": 671,
+        "state": "terminal",
+        "available_bytes": 32417607680,
+        "log": "build-resume7.log",
+        "elapsed": 2.922431094,
+        "exit_code": 0,
+        "verdict": "PASS",
+        "sha256": "6231d63a4ebe8aaa70967518e09348c5d868669cf56ae46fd79f22a19793f7b8"
+      },
+      {
+        "name": "consumer-resume6",
+        "command": [
+          "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/source-build/hyle_f5_native_graph"
+        ],
+        "pid": 688,
+        "state": "terminal",
+        "available_bytes": 32196456448,
+        "log": "consumer-resume6.log",
+        "elapsed": 0.8660928349999999,
+        "exit_code": 0,
+        "verdict": "PASS",
+        "sha256": "1103a364e5242c271841b5fa57b79862d74adefa3e88a5f10955401ec29fecad"
+      }
+    ],
+    "test_parallel": 1,
+    "inputs": [
+      {
+        "path": "cmake/HyleComponents.cmake",
+        "sha256": "9571a0f11387a554d81879c0ce240be36af215505cba6287449cc51176f3c9e6"
+      },
+      {
+        "path": "include/hyle/compute/apple_batch.h",
+        "sha256": "b4c682322704a792293667c45dc1370a6d9d6e23e527794a0fb8a40fd97427ea"
+      },
+      {
+        "path": "include/hyle/compute/batch_execution.h",
+        "sha256": "a6ddc0c55fe71bc1715aa9a358aee0d34ffce3f866fc2d4f6ca7ade838306752"
+      },
+      {
+        "path": "include/hyle/compute/batch_layout.h",
+        "sha256": "654d7d3aedcbb9e50532e137ea3d89bb8aa0c5f5697879d4ff79455843fe5402"
+      },
+      {
+        "path": "include/hyle/compute/batch_materialize.h",
+        "sha256": "3c5c41b6aec52a2ecb0fa106f81bf8f114cc17fcb53033538d8e54ce5de9fe6e"
+      },
+      {
+        "path": "include/hyle/compute/batch_ops.h",
+        "sha256": "fe837a188f82beb01570a817ce5fdaa804ee7abbe24a7aa64d48c31522f0d7c0"
+      },
+      {
+        "path": "include/hyle/compute/detail/batch_graph_access.h",
+        "sha256": "5fd73efbbe44befba9f4359550eb45a5fc5b24b583750faacbb8398de0c83184"
+      },
+      {
+        "path": "include/hyle/compute/detail/batch_provider.h",
+        "sha256": "1850c8e70ec085f83b6480bcac367c55a83b4a984dcc2cc6baf19e776872c146"
+      },
+      {
+        "path": "include/hyle/compute/detail/lease_access.h",
+        "sha256": "a51b7fd93c33f76820189c18ae37377d49b7aa320399dc32a75c78a2d6c10e18"
+      },
+      {
+        "path": "include/hyle/compute/detail/paged_arena_access.h",
+        "sha256": "a1f07762dab2d3aa6cdca1f04a0a611a57deebd6e2c20cd64488e1009b3b40f7"
+      },
+      {
+        "path": "include/hyle/compute/paged_arena.h",
+        "sha256": "b6177829901b03735ef1f9bf45adc50e58933243c0ad6f19b509fc8eca1a5fdc"
+      },
+      {
+        "path": "include/hyle/compute/vulkan_batch.h",
+        "sha256": "bacb9b0b2979d7ee5887303a19b704f403c7bfdbc6884f4dc07a53c8bdcc1d5f"
+      },
+      {
+        "path": "include/hyle/graph/batch.h",
+        "sha256": "bf0e02614e2f8ac9ba6b4e83a841379105457b3ccd4e878a44c55ef00488a808"
+      },
+      {
+        "path": "include/hyle/graph/detail/region_access.h",
+        "sha256": "dbcb8f827d1245452b5ae1ec91435316aaed3196cb264edc3c662bdb9664b0f5"
+      },
+      {
+        "path": "include/hyle/graph/leased_invocation.h",
+        "sha256": "093f1c04307abcc885c9d8ba0319531d10848ef500293da2289b6b038679ee75"
+      },
+      {
+        "path": "src/compute/resource_leases.cc",
+        "sha256": "6d6caa01b517ae13cd04044ebc8eb481d9b3338f45623dc5d341038f37729801"
+      },
+      {
+        "path": "src/compute_batch/CMakeLists.txt",
+        "sha256": "17e5e4717df7aad90f07b949526dd78679551b0555b616911641088385e4f1f0"
+      },
+      {
+        "path": "src/compute_batch/batch_execution.cc",
+        "sha256": "4aca28da83696100c914c1bd642d84eb965fd95722a1c22d21457352627c8722"
+      },
+      {
+        "path": "src/compute_batch/batch_layout.cc",
+        "sha256": "9643f20396e320aac8f2184ddd243f996a70ee46e81487eb397fa3a54ac020f4"
+      },
+      {
+        "path": "src/compute_batch/batch_materialize.cc",
+        "sha256": "ab1d1183a5408365822ca73a7ff1e06ebf149aba0f404c6cea8c04d14f1e6a6f"
+      },
+      {
+        "path": "src/compute_batch/paged_arena.cc",
+        "sha256": "ee4fcd775f6cc9b1da8f781c40f8bc98481233444209316a48b2527b3964f142"
+      },
+      {
+        "path": "src/compute_provider_flashinfer/CMakeLists.txt",
+        "sha256": "3fdbbff300d73e419d7703752de90a38962665f22edd6678668b3f72f84237e0"
+      },
+      {
+        "path": "src/compute_provider_flashinfer/flashinfer_provider.cc",
+        "sha256": "d6f0e55ac6ed4198dd43f94d4f980594c7d971831ba75d15c5508c0021ac9cd3"
+      },
+      {
+        "path": "src/compute_provider_flashinfer/native_batch.cu",
+        "sha256": "aecdbf870616f08600359e00179e4a054513bdff861be5ebc1136db13e33d136"
+      },
+      {
+        "path": "src/compute_provider_flashinfer/native_batch.h",
+        "sha256": "503b895787443169bec1efbc299c6cbf5982e7baae0911d2f316f6980e7a5140"
+      },
+      {
+        "path": "src/compute_route_apple/CMakeLists.txt",
+        "sha256": "8e5ec2eeeb08ec3763724e84d97081c8c3b24fa6cd688fa00295af2d5c8e1c2b"
+      },
+      {
+        "path": "src/compute_route_apple/apple_batch.cc",
+        "sha256": "602591bba2369ab2c3d2a647f60c24686509ec50396ea5af55878b99ddc63532"
+      },
+      {
+        "path": "src/compute_route_vulkan/CMakeLists.txt",
+        "sha256": "c2c9837b98e2646dc89944a870c8bd1012a50d851ce79033535ea2dee9452826"
+      },
+      {
+        "path": "src/compute_route_vulkan/vulkan_batch.cc",
+        "sha256": "02dabf16dcc3d4e0319b037b928685a6d1c640fe29ba659bf5fc951c1859f89d"
+      },
+      {
+        "path": "src/graph/CMakeLists.txt",
+        "sha256": "51897f736b32321f1a85b650db8e212acbdc4d61ff3d4507996a8a59689716f3"
+      },
+      {
+        "path": "src/graph/leased_invocation.cc",
+        "sha256": "8fc80b4b02852132408ce40c138c101566dedf328bdb599febd8701fdb726541"
+      },
+      {
+        "path": "src/graph/plan_state.h",
+        "sha256": "4f4388b8098fd6b85305fed8133d333ab779fe491403113f86ecd177bd9418fe"
+      },
+      {
+        "path": "src/graph/region_access.cc",
+        "sha256": "d313b47bc92b93f021aff1e8ca2410ee74513a933dd842e4c99fb561bdcdbbae"
+      },
+      {
+        "path": "src/graph_batch/CMakeLists.txt",
+        "sha256": "a1559a5745d51324405d7e89ecbf1c96d1fd59c556dda097ac548e19e9569420"
+      },
+      {
+        "path": "src/graph_batch/batch.cc",
+        "sha256": "0cc4ef55f0a082fb800bdd3a5ab9de1d8786d117e082bce17d9d7773a9bfb54a"
+      },
+      {
+        "path": "tests/compute_batch/CMakeLists.txt",
+        "sha256": "2feaae993a7dfa1ea40555b2c683e91667742bf396957812dea202463db3decc"
+      },
+      {
+        "path": "tests/compute_batch/batch_layout_test.cc",
+        "sha256": "420b26027914ebc73c5654f49a363b7f5e707c031fe6100763de9295e03c5167"
+      },
+      {
+        "path": "tests/compute_batch/batch_materialize_test.cc",
+        "sha256": "52fbb3de001c0889f4dc0da33df9c9f22d381447273c9bd56e59891615e5d2c4"
+      },
+      {
+        "path": "tests/compute_batch/materialized_cpu_consumer.cc",
+        "sha256": "7f361f5941cc742458f5c128ed8b43fab5e420bec04149670379c49b539ecffb"
+      },
+      {
+        "path": "tests/compute_batch/materialized_native_consumer.cc",
+        "sha256": "5bc3b0cc89168b229fae6597394b706f44bad6397433f152b32494a9b15d3113"
+      },
+      {
+        "path": "tests/compute_batch/native_arena_direct_consumer.h",
+        "sha256": "42bbb89bd43d12f752719ef10efa261127004880d87cd005f2cd19c232ba888e"
+      },
+      {
+        "path": "tests/compute_batch/native_arena_graph_consumer.h",
+        "sha256": "d58f9c6e255c987a60ce30c8a8a8a2a06e4a3150e413875051b551acfd6ad1f8"
+      },
+      {
+        "path": "tests/compute_batch/native_direct_consumer.cc",
+        "sha256": "5db1b9aee0e4f9dbfee5f866a9c157de97a844eb23cf1e12ba638eba3c8f21cc"
+      },
+      {
+        "path": "tests/compute_batch/native_graph_consumer.cc",
+        "sha256": "00c08fa8b169fe327ac9bde97167fb962a51163354ffef3e2246f2e1290a5017"
+      },
+      {
+        "path": "tests/compute_batch/paged_arena_test.cc",
+        "sha256": "9f42b74ba3b35df0daf73347e91be201ae461aceb76f38d944a9fb0f018fbdae"
+      }
+    ],
+    "input_history": [
+      [
+        {
+          "path": "cmake/HyleComponents.cmake",
+          "sha256": "39932ad552831721509411d18c5f0774334c4583dd7f565e733c8c8a6aefb26f"
+        },
+        {
+          "path": "src/compute_batch/CMakeLists.txt",
+          "sha256": "6f8c76bbeb7ca34e5351cecb8ccdb2ccd5d3b76def4f817488ef379255d53216"
+        },
+        {
+          "path": "src/compute_batch/batch_execution.cc",
+          "sha256": "b40d3f32f667a6371329a88b678d713446e277d02d1546f538ab80dbe47207c0"
+        },
+        {
+          "path": "src/compute_batch/batch_layout.cc",
+          "sha256": "9643f20396e320aac8f2184ddd243f996a70ee46e81487eb397fa3a54ac020f4"
+        },
+        {
+          "path": "src/compute_provider_flashinfer/CMakeLists.txt",
+          "sha256": "3fdbbff300d73e419d7703752de90a38962665f22edd6678668b3f72f84237e0"
+        },
+        {
+          "path": "src/compute_provider_flashinfer/flashinfer_provider.cc",
+          "sha256": "d6f0e55ac6ed4198dd43f94d4f980594c7d971831ba75d15c5508c0021ac9cd3"
+        },
+        {
+          "path": "src/compute_provider_flashinfer/native_attention.cu",
+          "sha256": "ee2638f5b4cb9f7f25be71027ab2e0f12a3e0229a6da574ef10e76be4d724146"
+        },
+        {
+          "path": "src/compute_provider_flashinfer/native_attention.h",
+          "sha256": "f8efa77d2aaa406a9992f5921c1dab0e675eaa6edac3105f16e683248bb724d7"
+        },
+        {
+          "path": "src/compute_provider_flashinfer/native_batch.cu",
+          "sha256": "aecdbf870616f08600359e00179e4a054513bdff861be5ebc1136db13e33d136"
+        },
+        {
+          "path": "src/compute_provider_flashinfer/native_batch.h",
+          "sha256": "503b895787443169bec1efbc299c6cbf5982e7baae0911d2f316f6980e7a5140"
+        },
+        {
+          "path": "include/hyle/compute/batch_layout.h",
+          "sha256": "654d7d3aedcbb9e50532e137ea3d89bb8aa0c5f5697879d4ff79455843fe5402"
+        },
+        {
+          "path": "include/hyle/compute/batch_ops.h",
+          "sha256": "fe837a188f82beb01570a817ce5fdaa804ee7abbe24a7aa64d48c31522f0d7c0"
+        },
+        {
+          "path": "include/hyle/compute/batch_execution.h",
+          "sha256": "7ef7d2a547bda190310374e098ecdeddb029f140dc3c25bf3fb7384ebd4a084b"
+        },
+        {
+          "path": "include/hyle/compute/detail/batch_provider.h",
+          "sha256": "1850c8e70ec085f83b6480bcac367c55a83b4a984dcc2cc6baf19e776872c146"
+        },
+        {
+          "path": "tests/compute_batch/native_graph_consumer.cc",
+          "sha256": "80a9a3e4fa34f731da5cf9ac4c58deecb8dea6aca667ee5e68cfa7922adfac9d"
+        }
+      ],
+      [
+        {
+          "path": "cmake/HyleComponents.cmake",
+          "sha256": "39932ad552831721509411d18c5f0774334c4583dd7f565e733c8c8a6aefb26f"
+        },
+        {
+          "path": "include/hyle/compute/batch_execution.h",
+          "sha256": "7ef7d2a547bda190310374e098ecdeddb029f140dc3c25bf3fb7384ebd4a084b"
+        },
+        {
+          "path": "include/hyle/compute/batch_layout.h",
+          "sha256": "654d7d3aedcbb9e50532e137ea3d89bb8aa0c5f5697879d4ff79455843fe5402"
+        },
+        {
+          "path": "include/hyle/compute/batch_ops.h",
+          "sha256": "fe837a188f82beb01570a817ce5fdaa804ee7abbe24a7aa64d48c31522f0d7c0"
+        },
+        {
+          "path": "include/hyle/compute/detail/batch_graph_access.h",
+          "sha256": "5fd73efbbe44befba9f4359550eb45a5fc5b24b583750faacbb8398de0c83184"
+        },
+        {
+          "path": "include/hyle/compute/detail/batch_provider.h",
+          "sha256": "1850c8e70ec085f83b6480bcac367c55a83b4a984dcc2cc6baf19e776872c146"
+        },
+        {
+          "path": "include/hyle/compute/detail/lease_access.h",
+          "sha256": "a51b7fd93c33f76820189c18ae37377d49b7aa320399dc32a75c78a2d6c10e18"
+        },
+        {
+          "path": "include/hyle/graph/batch.h",
+          "sha256": "57e56fb9beb49ef75f3e44b612e87be9102b761b77ae3abcde1309269389bc08"
+        },
+        {
+          "path": "include/hyle/graph/detail/region_access.h",
+          "sha256": "e330856ae980f677301e3e47a0329445c848f65f90a3e0588064213e0cee5e5a"
+        },
+        {
+          "path": "include/hyle/graph/leased_invocation.h",
+          "sha256": "093f1c04307abcc885c9d8ba0319531d10848ef500293da2289b6b038679ee75"
+        },
+        {
+          "path": "src/compute/resource_leases.cc",
+          "sha256": "6d6caa01b517ae13cd04044ebc8eb481d9b3338f45623dc5d341038f37729801"
+        },
+        {
+          "path": "src/compute_batch/CMakeLists.txt",
+          "sha256": "6f8c76bbeb7ca34e5351cecb8ccdb2ccd5d3b76def4f817488ef379255d53216"
+        },
+        {
+          "path": "src/compute_batch/batch_execution.cc",
+          "sha256": "f065607c0553cd13646960867afdc39ee5fc2d9d820e509ba2417167b3d9d4f6"
+        },
+        {
+          "path": "src/compute_batch/batch_layout.cc",
+          "sha256": "9643f20396e320aac8f2184ddd243f996a70ee46e81487eb397fa3a54ac020f4"
+        },
+        {
+          "path": "src/compute_provider_flashinfer/CMakeLists.txt",
+          "sha256": "3fdbbff300d73e419d7703752de90a38962665f22edd6678668b3f72f84237e0"
+        },
+        {
+          "path": "src/compute_provider_flashinfer/flashinfer_provider.cc",
+          "sha256": "d6f0e55ac6ed4198dd43f94d4f980594c7d971831ba75d15c5508c0021ac9cd3"
+        },
+        {
+          "path": "src/compute_provider_flashinfer/native_batch.cu",
+          "sha256": "aecdbf870616f08600359e00179e4a054513bdff861be5ebc1136db13e33d136"
+        },
+        {
+          "path": "src/compute_provider_flashinfer/native_batch.h",
+          "sha256": "503b895787443169bec1efbc299c6cbf5982e7baae0911d2f316f6980e7a5140"
+        },
+        {
+          "path": "src/graph/CMakeLists.txt",
+          "sha256": "51897f736b32321f1a85b650db8e212acbdc4d61ff3d4507996a8a59689716f3"
+        },
+        {
+          "path": "src/graph/leased_invocation.cc",
+          "sha256": "772f274d379f37af3dc05afda63e7305eb208e2fbbc851f11db35b45b3a02f0b"
+        },
+        {
+          "path": "src/graph/plan_state.h",
+          "sha256": "4f4388b8098fd6b85305fed8133d333ab779fe491403113f86ecd177bd9418fe"
+        },
+        {
+          "path": "src/graph/region_access.cc",
+          "sha256": "d313b47bc92b93f021aff1e8ca2410ee74513a933dd842e4c99fb561bdcdbbae"
+        },
+        {
+          "path": "src/graph_batch/CMakeLists.txt",
+          "sha256": "a1559a5745d51324405d7e89ecbf1c96d1fd59c556dda097ac548e19e9569420"
+        },
+        {
+          "path": "src/graph_batch/batch.cc",
+          "sha256": "8d6f16ebf5c8c173c7d7a68e3fa3e581c57d08d84cd540cc374ab195b7fe97f7"
+        },
+        {
+          "path": "tests/compute_batch/CMakeLists.txt",
+          "sha256": "176fcd583fe9a535326878e0817185263264f5d2fdfa7f6df6b5e965b5f7474a"
+        },
+        {
+          "path": "tests/compute_batch/batch_layout_test.cc",
+          "sha256": "8dac343cd30d4d2de1ac7c3f81bdb5cf40743c915b601a2c52435116578a21b5"
+        },
+        {
+          "path": "tests/compute_batch/native_direct_consumer.cc",
+          "sha256": "544225c8b6cc5414b50a1ad13d683d656b371112952e8764f679e6d37dfad600"
+        },
+        {
+          "path": "tests/compute_batch/native_graph_consumer.cc",
+          "sha256": "630ef3c63a34954dde09d80b60604f64d2eaa6eaf2355ece1f076a4a03783601"
+        }
+      ],
+      [
+        {
+          "path": "cmake/HyleComponents.cmake",
+          "sha256": "39932ad552831721509411d18c5f0774334c4583dd7f565e733c8c8a6aefb26f"
+        },
+        {
+          "path": "include/hyle/compute/batch_execution.h",
+          "sha256": "7ef7d2a547bda190310374e098ecdeddb029f140dc3c25bf3fb7384ebd4a084b"
+        },
+        {
+          "path": "include/hyle/compute/batch_layout.h",
+          "sha256": "654d7d3aedcbb9e50532e137ea3d89bb8aa0c5f5697879d4ff79455843fe5402"
+        },
+        {
+          "path": "include/hyle/compute/batch_ops.h",
+          "sha256": "fe837a188f82beb01570a817ce5fdaa804ee7abbe24a7aa64d48c31522f0d7c0"
+        },
+        {
+          "path": "include/hyle/compute/detail/batch_graph_access.h",
+          "sha256": "5fd73efbbe44befba9f4359550eb45a5fc5b24b583750faacbb8398de0c83184"
+        },
+        {
+          "path": "include/hyle/compute/detail/batch_provider.h",
+          "sha256": "1850c8e70ec085f83b6480bcac367c55a83b4a984dcc2cc6baf19e776872c146"
+        },
+        {
+          "path": "include/hyle/compute/detail/lease_access.h",
+          "sha256": "a51b7fd93c33f76820189c18ae37377d49b7aa320399dc32a75c78a2d6c10e18"
+        },
+        {
+          "path": "include/hyle/graph/batch.h",
+          "sha256": "6dc43568ab21202ba2ae793febc28f0e1a2adda6b4d203242da0ae74a7abca8a"
+        },
+        {
+          "path": "include/hyle/graph/detail/region_access.h",
+          "sha256": "e330856ae980f677301e3e47a0329445c848f65f90a3e0588064213e0cee5e5a"
+        },
+        {
+          "path": "include/hyle/graph/leased_invocation.h",
+          "sha256": "093f1c04307abcc885c9d8ba0319531d10848ef500293da2289b6b038679ee75"
+        },
+        {
+          "path": "src/compute/resource_leases.cc",
+          "sha256": "6d6caa01b517ae13cd04044ebc8eb481d9b3338f45623dc5d341038f37729801"
+        },
+        {
+          "path": "src/compute_batch/CMakeLists.txt",
+          "sha256": "6f8c76bbeb7ca34e5351cecb8ccdb2ccd5d3b76def4f817488ef379255d53216"
+        },
+        {
+          "path": "src/compute_batch/batch_execution.cc",
+          "sha256": "f065607c0553cd13646960867afdc39ee5fc2d9d820e509ba2417167b3d9d4f6"
+        },
+        {
+          "path": "src/compute_batch/batch_layout.cc",
+          "sha256": "9643f20396e320aac8f2184ddd243f996a70ee46e81487eb397fa3a54ac020f4"
+        },
+        {
+          "path": "src/compute_provider_flashinfer/CMakeLists.txt",
+          "sha256": "3fdbbff300d73e419d7703752de90a38962665f22edd6678668b3f72f84237e0"
+        },
+        {
+          "path": "src/compute_provider_flashinfer/flashinfer_provider.cc",
+          "sha256": "d6f0e55ac6ed4198dd43f94d4f980594c7d971831ba75d15c5508c0021ac9cd3"
+        },
+        {
+          "path": "src/compute_provider_flashinfer/native_batch.cu",
+          "sha256": "aecdbf870616f08600359e00179e4a054513bdff861be5ebc1136db13e33d136"
+        },
+        {
+          "path": "src/compute_provider_flashinfer/native_batch.h",
+          "sha256": "503b895787443169bec1efbc299c6cbf5982e7baae0911d2f316f6980e7a5140"
+        },
+        {
+          "path": "src/graph/CMakeLists.txt",
+          "sha256": "51897f736b32321f1a85b650db8e212acbdc4d61ff3d4507996a8a59689716f3"
+        },
+        {
+          "path": "src/graph/leased_invocation.cc",
+          "sha256": "772f274d379f37af3dc05afda63e7305eb208e2fbbc851f11db35b45b3a02f0b"
+        },
+        {
+          "path": "src/graph/plan_state.h",
+          "sha256": "4f4388b8098fd6b85305fed8133d333ab779fe491403113f86ecd177bd9418fe"
+        },
+        {
+          "path": "src/graph/region_access.cc",
+          "sha256": "d313b47bc92b93f021aff1e8ca2410ee74513a933dd842e4c99fb561bdcdbbae"
+        },
+        {
+          "path": "src/graph_batch/CMakeLists.txt",
+          "sha256": "a1559a5745d51324405d7e89ecbf1c96d1fd59c556dda097ac548e19e9569420"
+        },
+        {
+          "path": "src/graph_batch/batch.cc",
+          "sha256": "07b8f3ad9610cda6bf1527509c734e07d8736ea2c41173fce526c22767628ed5"
+        },
+        {
+          "path": "tests/compute_batch/CMakeLists.txt",
+          "sha256": "176fcd583fe9a535326878e0817185263264f5d2fdfa7f6df6b5e965b5f7474a"
+        },
+        {
+          "path": "tests/compute_batch/batch_layout_test.cc",
+          "sha256": "8dac343cd30d4d2de1ac7c3f81bdb5cf40743c915b601a2c52435116578a21b5"
+        },
+        {
+          "path": "tests/compute_batch/native_direct_consumer.cc",
+          "sha256": "544225c8b6cc5414b50a1ad13d683d656b371112952e8764f679e6d37dfad600"
+        },
+        {
+          "path": "tests/compute_batch/native_graph_consumer.cc",
+          "sha256": "630ef3c63a34954dde09d80b60604f64d2eaa6eaf2355ece1f076a4a03783601"
+        }
+      ],
+      [
+        {
+          "path": "cmake/HyleComponents.cmake",
+          "sha256": "9571a0f11387a554d81879c0ce240be36af215505cba6287449cc51176f3c9e6"
+        },
+        {
+          "path": "include/hyle/compute/apple_batch.h",
+          "sha256": "b4c682322704a792293667c45dc1370a6d9d6e23e527794a0fb8a40fd97427ea"
+        },
+        {
+          "path": "include/hyle/compute/batch_execution.h",
+          "sha256": "a6ddc0c55fe71bc1715aa9a358aee0d34ffce3f866fc2d4f6ca7ade838306752"
+        },
+        {
+          "path": "include/hyle/compute/batch_layout.h",
+          "sha256": "654d7d3aedcbb9e50532e137ea3d89bb8aa0c5f5697879d4ff79455843fe5402"
+        },
+        {
+          "path": "include/hyle/compute/batch_materialize.h",
+          "sha256": "3c5c41b6aec52a2ecb0fa106f81bf8f114cc17fcb53033538d8e54ce5de9fe6e"
+        },
+        {
+          "path": "include/hyle/compute/batch_ops.h",
+          "sha256": "fe837a188f82beb01570a817ce5fdaa804ee7abbe24a7aa64d48c31522f0d7c0"
+        },
+        {
+          "path": "include/hyle/compute/detail/batch_graph_access.h",
+          "sha256": "5fd73efbbe44befba9f4359550eb45a5fc5b24b583750faacbb8398de0c83184"
+        },
+        {
+          "path": "include/hyle/compute/detail/batch_provider.h",
+          "sha256": "1850c8e70ec085f83b6480bcac367c55a83b4a984dcc2cc6baf19e776872c146"
+        },
+        {
+          "path": "include/hyle/compute/detail/lease_access.h",
+          "sha256": "a51b7fd93c33f76820189c18ae37377d49b7aa320399dc32a75c78a2d6c10e18"
+        },
+        {
+          "path": "include/hyle/compute/detail/paged_arena_access.h",
+          "sha256": "a1f07762dab2d3aa6cdca1f04a0a611a57deebd6e2c20cd64488e1009b3b40f7"
+        },
+        {
+          "path": "include/hyle/compute/paged_arena.h",
+          "sha256": "b6177829901b03735ef1f9bf45adc50e58933243c0ad6f19b509fc8eca1a5fdc"
+        },
+        {
+          "path": "include/hyle/compute/vulkan_batch.h",
+          "sha256": "bacb9b0b2979d7ee5887303a19b704f403c7bfdbc6884f4dc07a53c8bdcc1d5f"
+        },
+        {
+          "path": "include/hyle/graph/batch.h",
+          "sha256": "bf0e02614e2f8ac9ba6b4e83a841379105457b3ccd4e878a44c55ef00488a808"
+        },
+        {
+          "path": "include/hyle/graph/detail/region_access.h",
+          "sha256": "dbcb8f827d1245452b5ae1ec91435316aaed3196cb264edc3c662bdb9664b0f5"
+        },
+        {
+          "path": "include/hyle/graph/leased_invocation.h",
+          "sha256": "093f1c04307abcc885c9d8ba0319531d10848ef500293da2289b6b038679ee75"
+        },
+        {
+          "path": "src/compute/resource_leases.cc",
+          "sha256": "6d6caa01b517ae13cd04044ebc8eb481d9b3338f45623dc5d341038f37729801"
+        },
+        {
+          "path": "src/compute_batch/CMakeLists.txt",
+          "sha256": "17e5e4717df7aad90f07b949526dd78679551b0555b616911641088385e4f1f0"
+        },
+        {
+          "path": "src/compute_batch/batch_execution.cc",
+          "sha256": "4aca28da83696100c914c1bd642d84eb965fd95722a1c22d21457352627c8722"
+        },
+        {
+          "path": "src/compute_batch/batch_layout.cc",
+          "sha256": "9643f20396e320aac8f2184ddd243f996a70ee46e81487eb397fa3a54ac020f4"
+        },
+        {
+          "path": "src/compute_batch/batch_materialize.cc",
+          "sha256": "ab1d1183a5408365822ca73a7ff1e06ebf149aba0f404c6cea8c04d14f1e6a6f"
+        },
+        {
+          "path": "src/compute_batch/paged_arena.cc",
+          "sha256": "ee4fcd775f6cc9b1da8f781c40f8bc98481233444209316a48b2527b3964f142"
+        },
+        {
+          "path": "src/compute_provider_flashinfer/CMakeLists.txt",
+          "sha256": "3fdbbff300d73e419d7703752de90a38962665f22edd6678668b3f72f84237e0"
+        },
+        {
+          "path": "src/compute_provider_flashinfer/flashinfer_provider.cc",
+          "sha256": "d6f0e55ac6ed4198dd43f94d4f980594c7d971831ba75d15c5508c0021ac9cd3"
+        },
+        {
+          "path": "src/compute_provider_flashinfer/native_batch.cu",
+          "sha256": "aecdbf870616f08600359e00179e4a054513bdff861be5ebc1136db13e33d136"
+        },
+        {
+          "path": "src/compute_provider_flashinfer/native_batch.h",
+          "sha256": "503b895787443169bec1efbc299c6cbf5982e7baae0911d2f316f6980e7a5140"
+        },
+        {
+          "path": "src/compute_route_apple/CMakeLists.txt",
+          "sha256": "8e5ec2eeeb08ec3763724e84d97081c8c3b24fa6cd688fa00295af2d5c8e1c2b"
+        },
+        {
+          "path": "src/compute_route_apple/apple_batch.cc",
+          "sha256": "602591bba2369ab2c3d2a647f60c24686509ec50396ea5af55878b99ddc63532"
+        },
+        {
+          "path": "src/compute_route_vulkan/CMakeLists.txt",
+          "sha256": "c2c9837b98e2646dc89944a870c8bd1012a50d851ce79033535ea2dee9452826"
+        },
+        {
+          "path": "src/compute_route_vulkan/vulkan_batch.cc",
+          "sha256": "02dabf16dcc3d4e0319b037b928685a6d1c640fe29ba659bf5fc951c1859f89d"
+        },
+        {
+          "path": "src/graph/CMakeLists.txt",
+          "sha256": "51897f736b32321f1a85b650db8e212acbdc4d61ff3d4507996a8a59689716f3"
+        },
+        {
+          "path": "src/graph/leased_invocation.cc",
+          "sha256": "0726bd966a94b9c4b031f0e2190db9c98d048b40a33b37a0ee27394a254a2731"
+        },
+        {
+          "path": "src/graph/plan_state.h",
+          "sha256": "4f4388b8098fd6b85305fed8133d333ab779fe491403113f86ecd177bd9418fe"
+        },
+        {
+          "path": "src/graph/region_access.cc",
+          "sha256": "d313b47bc92b93f021aff1e8ca2410ee74513a933dd842e4c99fb561bdcdbbae"
+        },
+        {
+          "path": "src/graph_batch/CMakeLists.txt",
+          "sha256": "a1559a5745d51324405d7e89ecbf1c96d1fd59c556dda097ac548e19e9569420"
+        },
+        {
+          "path": "src/graph_batch/batch.cc",
+          "sha256": "0cc4ef55f0a082fb800bdd3a5ab9de1d8786d117e082bce17d9d7773a9bfb54a"
+        },
+        {
+          "path": "tests/compute_batch/CMakeLists.txt",
+          "sha256": "2feaae993a7dfa1ea40555b2c683e91667742bf396957812dea202463db3decc"
+        },
+        {
+          "path": "tests/compute_batch/batch_layout_test.cc",
+          "sha256": "420b26027914ebc73c5654f49a363b7f5e707c031fe6100763de9295e03c5167"
+        },
+        {
+          "path": "tests/compute_batch/batch_materialize_test.cc",
+          "sha256": "52fbb3de001c0889f4dc0da33df9c9f22d381447273c9bd56e59891615e5d2c4"
+        },
+        {
+          "path": "tests/compute_batch/materialized_cpu_consumer.cc",
+          "sha256": "7f361f5941cc742458f5c128ed8b43fab5e420bec04149670379c49b539ecffb"
+        },
+        {
+          "path": "tests/compute_batch/materialized_native_consumer.cc",
+          "sha256": "5bc3b0cc89168b229fae6597394b706f44bad6397433f152b32494a9b15d3113"
+        },
+        {
+          "path": "tests/compute_batch/native_arena_direct_consumer.h",
+          "sha256": "42bbb89bd43d12f752719ef10efa261127004880d87cd005f2cd19c232ba888e"
+        },
+        {
+          "path": "tests/compute_batch/native_arena_graph_consumer.h",
+          "sha256": "3d42dd02ba8abed0e1caebc846bbb08947f118578698f457b58f44b09f11d5eb"
+        },
+        {
+          "path": "tests/compute_batch/native_direct_consumer.cc",
+          "sha256": "5db1b9aee0e4f9dbfee5f866a9c157de97a844eb23cf1e12ba638eba3c8f21cc"
+        },
+        {
+          "path": "tests/compute_batch/native_graph_consumer.cc",
+          "sha256": "618f9b7063d24f6471b47846d52deeec133751ce58052b59ce22794c928991a5"
+        },
+        {
+          "path": "tests/compute_batch/paged_arena_test.cc",
+          "sha256": "9f42b74ba3b35df0daf73347e91be201ae461aceb76f38d944a9fb0f018fbdae"
+        }
+      ],
+      [
+        {
+          "path": "cmake/HyleComponents.cmake",
+          "sha256": "9571a0f11387a554d81879c0ce240be36af215505cba6287449cc51176f3c9e6"
+        },
+        {
+          "path": "include/hyle/compute/apple_batch.h",
+          "sha256": "b4c682322704a792293667c45dc1370a6d9d6e23e527794a0fb8a40fd97427ea"
+        },
+        {
+          "path": "include/hyle/compute/batch_execution.h",
+          "sha256": "a6ddc0c55fe71bc1715aa9a358aee0d34ffce3f866fc2d4f6ca7ade838306752"
+        },
+        {
+          "path": "include/hyle/compute/batch_layout.h",
+          "sha256": "654d7d3aedcbb9e50532e137ea3d89bb8aa0c5f5697879d4ff79455843fe5402"
+        },
+        {
+          "path": "include/hyle/compute/batch_materialize.h",
+          "sha256": "3c5c41b6aec52a2ecb0fa106f81bf8f114cc17fcb53033538d8e54ce5de9fe6e"
+        },
+        {
+          "path": "include/hyle/compute/batch_ops.h",
+          "sha256": "fe837a188f82beb01570a817ce5fdaa804ee7abbe24a7aa64d48c31522f0d7c0"
+        },
+        {
+          "path": "include/hyle/compute/detail/batch_graph_access.h",
+          "sha256": "5fd73efbbe44befba9f4359550eb45a5fc5b24b583750faacbb8398de0c83184"
+        },
+        {
+          "path": "include/hyle/compute/detail/batch_provider.h",
+          "sha256": "1850c8e70ec085f83b6480bcac367c55a83b4a984dcc2cc6baf19e776872c146"
+        },
+        {
+          "path": "include/hyle/compute/detail/lease_access.h",
+          "sha256": "a51b7fd93c33f76820189c18ae37377d49b7aa320399dc32a75c78a2d6c10e18"
+        },
+        {
+          "path": "include/hyle/compute/detail/paged_arena_access.h",
+          "sha256": "a1f07762dab2d3aa6cdca1f04a0a611a57deebd6e2c20cd64488e1009b3b40f7"
+        },
+        {
+          "path": "include/hyle/compute/paged_arena.h",
+          "sha256": "b6177829901b03735ef1f9bf45adc50e58933243c0ad6f19b509fc8eca1a5fdc"
+        },
+        {
+          "path": "include/hyle/compute/vulkan_batch.h",
+          "sha256": "bacb9b0b2979d7ee5887303a19b704f403c7bfdbc6884f4dc07a53c8bdcc1d5f"
+        },
+        {
+          "path": "include/hyle/graph/batch.h",
+          "sha256": "bf0e02614e2f8ac9ba6b4e83a841379105457b3ccd4e878a44c55ef00488a808"
+        },
+        {
+          "path": "include/hyle/graph/detail/region_access.h",
+          "sha256": "dbcb8f827d1245452b5ae1ec91435316aaed3196cb264edc3c662bdb9664b0f5"
+        },
+        {
+          "path": "include/hyle/graph/leased_invocation.h",
+          "sha256": "093f1c04307abcc885c9d8ba0319531d10848ef500293da2289b6b038679ee75"
+        },
+        {
+          "path": "src/compute/resource_leases.cc",
+          "sha256": "6d6caa01b517ae13cd04044ebc8eb481d9b3338f45623dc5d341038f37729801"
+        },
+        {
+          "path": "src/compute_batch/CMakeLists.txt",
+          "sha256": "17e5e4717df7aad90f07b949526dd78679551b0555b616911641088385e4f1f0"
+        },
+        {
+          "path": "src/compute_batch/batch_execution.cc",
+          "sha256": "4aca28da83696100c914c1bd642d84eb965fd95722a1c22d21457352627c8722"
+        },
+        {
+          "path": "src/compute_batch/batch_layout.cc",
+          "sha256": "9643f20396e320aac8f2184ddd243f996a70ee46e81487eb397fa3a54ac020f4"
+        },
+        {
+          "path": "src/compute_batch/batch_materialize.cc",
+          "sha256": "ab1d1183a5408365822ca73a7ff1e06ebf149aba0f404c6cea8c04d14f1e6a6f"
+        },
+        {
+          "path": "src/compute_batch/paged_arena.cc",
+          "sha256": "ee4fcd775f6cc9b1da8f781c40f8bc98481233444209316a48b2527b3964f142"
+        },
+        {
+          "path": "src/compute_provider_flashinfer/CMakeLists.txt",
+          "sha256": "3fdbbff300d73e419d7703752de90a38962665f22edd6678668b3f72f84237e0"
+        },
+        {
+          "path": "src/compute_provider_flashinfer/flashinfer_provider.cc",
+          "sha256": "d6f0e55ac6ed4198dd43f94d4f980594c7d971831ba75d15c5508c0021ac9cd3"
+        },
+        {
+          "path": "src/compute_provider_flashinfer/native_batch.cu",
+          "sha256": "aecdbf870616f08600359e00179e4a054513bdff861be5ebc1136db13e33d136"
+        },
+        {
+          "path": "src/compute_provider_flashinfer/native_batch.h",
+          "sha256": "503b895787443169bec1efbc299c6cbf5982e7baae0911d2f316f6980e7a5140"
+        },
+        {
+          "path": "src/compute_route_apple/CMakeLists.txt",
+          "sha256": "8e5ec2eeeb08ec3763724e84d97081c8c3b24fa6cd688fa00295af2d5c8e1c2b"
+        },
+        {
+          "path": "src/compute_route_apple/apple_batch.cc",
+          "sha256": "602591bba2369ab2c3d2a647f60c24686509ec50396ea5af55878b99ddc63532"
+        },
+        {
+          "path": "src/compute_route_vulkan/CMakeLists.txt",
+          "sha256": "c2c9837b98e2646dc89944a870c8bd1012a50d851ce79033535ea2dee9452826"
+        },
+        {
+          "path": "src/compute_route_vulkan/vulkan_batch.cc",
+          "sha256": "02dabf16dcc3d4e0319b037b928685a6d1c640fe29ba659bf5fc951c1859f89d"
+        },
+        {
+          "path": "src/graph/CMakeLists.txt",
+          "sha256": "51897f736b32321f1a85b650db8e212acbdc4d61ff3d4507996a8a59689716f3"
+        },
+        {
+          "path": "src/graph/leased_invocation.cc",
+          "sha256": "4203d554c74657968869873d8328905e417dde191da277d8f599ffd039e25a1f"
+        },
+        {
+          "path": "src/graph/plan_state.h",
+          "sha256": "4f4388b8098fd6b85305fed8133d333ab779fe491403113f86ecd177bd9418fe"
+        },
+        {
+          "path": "src/graph/region_access.cc",
+          "sha256": "d313b47bc92b93f021aff1e8ca2410ee74513a933dd842e4c99fb561bdcdbbae"
+        },
+        {
+          "path": "src/graph_batch/CMakeLists.txt",
+          "sha256": "a1559a5745d51324405d7e89ecbf1c96d1fd59c556dda097ac548e19e9569420"
+        },
+        {
+          "path": "src/graph_batch/batch.cc",
+          "sha256": "0cc4ef55f0a082fb800bdd3a5ab9de1d8786d117e082bce17d9d7773a9bfb54a"
+        },
+        {
+          "path": "tests/compute_batch/CMakeLists.txt",
+          "sha256": "2feaae993a7dfa1ea40555b2c683e91667742bf396957812dea202463db3decc"
+        },
+        {
+          "path": "tests/compute_batch/batch_layout_test.cc",
+          "sha256": "420b26027914ebc73c5654f49a363b7f5e707c031fe6100763de9295e03c5167"
+        },
+        {
+          "path": "tests/compute_batch/batch_materialize_test.cc",
+          "sha256": "52fbb3de001c0889f4dc0da33df9c9f22d381447273c9bd56e59891615e5d2c4"
+        },
+        {
+          "path": "tests/compute_batch/materialized_cpu_consumer.cc",
+          "sha256": "7f361f5941cc742458f5c128ed8b43fab5e420bec04149670379c49b539ecffb"
+        },
+        {
+          "path": "tests/compute_batch/materialized_native_consumer.cc",
+          "sha256": "5bc3b0cc89168b229fae6597394b706f44bad6397433f152b32494a9b15d3113"
+        },
+        {
+          "path": "tests/compute_batch/native_arena_direct_consumer.h",
+          "sha256": "42bbb89bd43d12f752719ef10efa261127004880d87cd005f2cd19c232ba888e"
+        },
+        {
+          "path": "tests/compute_batch/native_arena_graph_consumer.h",
+          "sha256": "3a538981637e57e175357783e1b874016b8b28995403463a0da0075355eaad19"
+        },
+        {
+          "path": "tests/compute_batch/native_direct_consumer.cc",
+          "sha256": "5db1b9aee0e4f9dbfee5f866a9c157de97a844eb23cf1e12ba638eba3c8f21cc"
+        },
+        {
+          "path": "tests/compute_batch/native_graph_consumer.cc",
+          "sha256": "618f9b7063d24f6471b47846d52deeec133751ce58052b59ce22794c928991a5"
+        },
+        {
+          "path": "tests/compute_batch/paged_arena_test.cc",
+          "sha256": "9f42b74ba3b35df0daf73347e91be201ae461aceb76f38d944a9fb0f018fbdae"
+        }
+      ],
+      [
+        {
+          "path": "cmake/HyleComponents.cmake",
+          "sha256": "9571a0f11387a554d81879c0ce240be36af215505cba6287449cc51176f3c9e6"
+        },
+        {
+          "path": "include/hyle/compute/apple_batch.h",
+          "sha256": "b4c682322704a792293667c45dc1370a6d9d6e23e527794a0fb8a40fd97427ea"
+        },
+        {
+          "path": "include/hyle/compute/batch_execution.h",
+          "sha256": "a6ddc0c55fe71bc1715aa9a358aee0d34ffce3f866fc2d4f6ca7ade838306752"
+        },
+        {
+          "path": "include/hyle/compute/batch_layout.h",
+          "sha256": "654d7d3aedcbb9e50532e137ea3d89bb8aa0c5f5697879d4ff79455843fe5402"
+        },
+        {
+          "path": "include/hyle/compute/batch_materialize.h",
+          "sha256": "3c5c41b6aec52a2ecb0fa106f81bf8f114cc17fcb53033538d8e54ce5de9fe6e"
+        },
+        {
+          "path": "include/hyle/compute/batch_ops.h",
+          "sha256": "fe837a188f82beb01570a817ce5fdaa804ee7abbe24a7aa64d48c31522f0d7c0"
+        },
+        {
+          "path": "include/hyle/compute/detail/batch_graph_access.h",
+          "sha256": "5fd73efbbe44befba9f4359550eb45a5fc5b24b583750faacbb8398de0c83184"
+        },
+        {
+          "path": "include/hyle/compute/detail/batch_provider.h",
+          "sha256": "1850c8e70ec085f83b6480bcac367c55a83b4a984dcc2cc6baf19e776872c146"
+        },
+        {
+          "path": "include/hyle/compute/detail/lease_access.h",
+          "sha256": "a51b7fd93c33f76820189c18ae37377d49b7aa320399dc32a75c78a2d6c10e18"
+        },
+        {
+          "path": "include/hyle/compute/detail/paged_arena_access.h",
+          "sha256": "a1f07762dab2d3aa6cdca1f04a0a611a57deebd6e2c20cd64488e1009b3b40f7"
+        },
+        {
+          "path": "include/hyle/compute/paged_arena.h",
+          "sha256": "b6177829901b03735ef1f9bf45adc50e58933243c0ad6f19b509fc8eca1a5fdc"
+        },
+        {
+          "path": "include/hyle/compute/vulkan_batch.h",
+          "sha256": "bacb9b0b2979d7ee5887303a19b704f403c7bfdbc6884f4dc07a53c8bdcc1d5f"
+        },
+        {
+          "path": "include/hyle/graph/batch.h",
+          "sha256": "bf0e02614e2f8ac9ba6b4e83a841379105457b3ccd4e878a44c55ef00488a808"
+        },
+        {
+          "path": "include/hyle/graph/detail/region_access.h",
+          "sha256": "dbcb8f827d1245452b5ae1ec91435316aaed3196cb264edc3c662bdb9664b0f5"
+        },
+        {
+          "path": "include/hyle/graph/leased_invocation.h",
+          "sha256": "093f1c04307abcc885c9d8ba0319531d10848ef500293da2289b6b038679ee75"
+        },
+        {
+          "path": "src/compute/resource_leases.cc",
+          "sha256": "6d6caa01b517ae13cd04044ebc8eb481d9b3338f45623dc5d341038f37729801"
+        },
+        {
+          "path": "src/compute_batch/CMakeLists.txt",
+          "sha256": "17e5e4717df7aad90f07b949526dd78679551b0555b616911641088385e4f1f0"
+        },
+        {
+          "path": "src/compute_batch/batch_execution.cc",
+          "sha256": "4aca28da83696100c914c1bd642d84eb965fd95722a1c22d21457352627c8722"
+        },
+        {
+          "path": "src/compute_batch/batch_layout.cc",
+          "sha256": "9643f20396e320aac8f2184ddd243f996a70ee46e81487eb397fa3a54ac020f4"
+        },
+        {
+          "path": "src/compute_batch/batch_materialize.cc",
+          "sha256": "ab1d1183a5408365822ca73a7ff1e06ebf149aba0f404c6cea8c04d14f1e6a6f"
+        },
+        {
+          "path": "src/compute_batch/paged_arena.cc",
+          "sha256": "ee4fcd775f6cc9b1da8f781c40f8bc98481233444209316a48b2527b3964f142"
+        },
+        {
+          "path": "src/compute_provider_flashinfer/CMakeLists.txt",
+          "sha256": "3fdbbff300d73e419d7703752de90a38962665f22edd6678668b3f72f84237e0"
+        },
+        {
+          "path": "src/compute_provider_flashinfer/flashinfer_provider.cc",
+          "sha256": "d6f0e55ac6ed4198dd43f94d4f980594c7d971831ba75d15c5508c0021ac9cd3"
+        },
+        {
+          "path": "src/compute_provider_flashinfer/native_batch.cu",
+          "sha256": "aecdbf870616f08600359e00179e4a054513bdff861be5ebc1136db13e33d136"
+        },
+        {
+          "path": "src/compute_provider_flashinfer/native_batch.h",
+          "sha256": "503b895787443169bec1efbc299c6cbf5982e7baae0911d2f316f6980e7a5140"
+        },
+        {
+          "path": "src/compute_route_apple/CMakeLists.txt",
+          "sha256": "8e5ec2eeeb08ec3763724e84d97081c8c3b24fa6cd688fa00295af2d5c8e1c2b"
+        },
+        {
+          "path": "src/compute_route_apple/apple_batch.cc",
+          "sha256": "602591bba2369ab2c3d2a647f60c24686509ec50396ea5af55878b99ddc63532"
+        },
+        {
+          "path": "src/compute_route_vulkan/CMakeLists.txt",
+          "sha256": "c2c9837b98e2646dc89944a870c8bd1012a50d851ce79033535ea2dee9452826"
+        },
+        {
+          "path": "src/compute_route_vulkan/vulkan_batch.cc",
+          "sha256": "02dabf16dcc3d4e0319b037b928685a6d1c640fe29ba659bf5fc951c1859f89d"
+        },
+        {
+          "path": "src/graph/CMakeLists.txt",
+          "sha256": "51897f736b32321f1a85b650db8e212acbdc4d61ff3d4507996a8a59689716f3"
+        },
+        {
+          "path": "src/graph/leased_invocation.cc",
+          "sha256": "4203d554c74657968869873d8328905e417dde191da277d8f599ffd039e25a1f"
+        },
+        {
+          "path": "src/graph/plan_state.h",
+          "sha256": "4f4388b8098fd6b85305fed8133d333ab779fe491403113f86ecd177bd9418fe"
+        },
+        {
+          "path": "src/graph/region_access.cc",
+          "sha256": "d313b47bc92b93f021aff1e8ca2410ee74513a933dd842e4c99fb561bdcdbbae"
+        },
+        {
+          "path": "src/graph_batch/CMakeLists.txt",
+          "sha256": "a1559a5745d51324405d7e89ecbf1c96d1fd59c556dda097ac548e19e9569420"
+        },
+        {
+          "path": "src/graph_batch/batch.cc",
+          "sha256": "0cc4ef55f0a082fb800bdd3a5ab9de1d8786d117e082bce17d9d7773a9bfb54a"
+        },
+        {
+          "path": "tests/compute_batch/CMakeLists.txt",
+          "sha256": "2feaae993a7dfa1ea40555b2c683e91667742bf396957812dea202463db3decc"
+        },
+        {
+          "path": "tests/compute_batch/batch_layout_test.cc",
+          "sha256": "420b26027914ebc73c5654f49a363b7f5e707c031fe6100763de9295e03c5167"
+        },
+        {
+          "path": "tests/compute_batch/batch_materialize_test.cc",
+          "sha256": "52fbb3de001c0889f4dc0da33df9c9f22d381447273c9bd56e59891615e5d2c4"
+        },
+        {
+          "path": "tests/compute_batch/materialized_cpu_consumer.cc",
+          "sha256": "7f361f5941cc742458f5c128ed8b43fab5e420bec04149670379c49b539ecffb"
+        },
+        {
+          "path": "tests/compute_batch/materialized_native_consumer.cc",
+          "sha256": "5bc3b0cc89168b229fae6597394b706f44bad6397433f152b32494a9b15d3113"
+        },
+        {
+          "path": "tests/compute_batch/native_arena_direct_consumer.h",
+          "sha256": "42bbb89bd43d12f752719ef10efa261127004880d87cd005f2cd19c232ba888e"
+        },
+        {
+          "path": "tests/compute_batch/native_arena_graph_consumer.h",
+          "sha256": "d58f9c6e255c987a60ce30c8a8a8a2a06e4a3150e413875051b551acfd6ad1f8"
+        },
+        {
+          "path": "tests/compute_batch/native_direct_consumer.cc",
+          "sha256": "5db1b9aee0e4f9dbfee5f866a9c157de97a844eb23cf1e12ba638eba3c8f21cc"
+        },
+        {
+          "path": "tests/compute_batch/native_graph_consumer.cc",
+          "sha256": "618f9b7063d24f6471b47846d52deeec133751ce58052b59ce22794c928991a5"
+        },
+        {
+          "path": "tests/compute_batch/paged_arena_test.cc",
+          "sha256": "9f42b74ba3b35df0daf73347e91be201ae461aceb76f38d944a9fb0f018fbdae"
+        }
+      ],
+      [
+        {
+          "path": "cmake/HyleComponents.cmake",
+          "sha256": "9571a0f11387a554d81879c0ce240be36af215505cba6287449cc51176f3c9e6"
+        },
+        {
+          "path": "include/hyle/compute/apple_batch.h",
+          "sha256": "b4c682322704a792293667c45dc1370a6d9d6e23e527794a0fb8a40fd97427ea"
+        },
+        {
+          "path": "include/hyle/compute/batch_execution.h",
+          "sha256": "a6ddc0c55fe71bc1715aa9a358aee0d34ffce3f866fc2d4f6ca7ade838306752"
+        },
+        {
+          "path": "include/hyle/compute/batch_layout.h",
+          "sha256": "654d7d3aedcbb9e50532e137ea3d89bb8aa0c5f5697879d4ff79455843fe5402"
+        },
+        {
+          "path": "include/hyle/compute/batch_materialize.h",
+          "sha256": "3c5c41b6aec52a2ecb0fa106f81bf8f114cc17fcb53033538d8e54ce5de9fe6e"
+        },
+        {
+          "path": "include/hyle/compute/batch_ops.h",
+          "sha256": "fe837a188f82beb01570a817ce5fdaa804ee7abbe24a7aa64d48c31522f0d7c0"
+        },
+        {
+          "path": "include/hyle/compute/detail/batch_graph_access.h",
+          "sha256": "5fd73efbbe44befba9f4359550eb45a5fc5b24b583750faacbb8398de0c83184"
+        },
+        {
+          "path": "include/hyle/compute/detail/batch_provider.h",
+          "sha256": "1850c8e70ec085f83b6480bcac367c55a83b4a984dcc2cc6baf19e776872c146"
+        },
+        {
+          "path": "include/hyle/compute/detail/lease_access.h",
+          "sha256": "a51b7fd93c33f76820189c18ae37377d49b7aa320399dc32a75c78a2d6c10e18"
+        },
+        {
+          "path": "include/hyle/compute/detail/paged_arena_access.h",
+          "sha256": "a1f07762dab2d3aa6cdca1f04a0a611a57deebd6e2c20cd64488e1009b3b40f7"
+        },
+        {
+          "path": "include/hyle/compute/paged_arena.h",
+          "sha256": "b6177829901b03735ef1f9bf45adc50e58933243c0ad6f19b509fc8eca1a5fdc"
+        },
+        {
+          "path": "include/hyle/compute/vulkan_batch.h",
+          "sha256": "bacb9b0b2979d7ee5887303a19b704f403c7bfdbc6884f4dc07a53c8bdcc1d5f"
+        },
+        {
+          "path": "include/hyle/graph/batch.h",
+          "sha256": "bf0e02614e2f8ac9ba6b4e83a841379105457b3ccd4e878a44c55ef00488a808"
+        },
+        {
+          "path": "include/hyle/graph/detail/region_access.h",
+          "sha256": "dbcb8f827d1245452b5ae1ec91435316aaed3196cb264edc3c662bdb9664b0f5"
+        },
+        {
+          "path": "include/hyle/graph/leased_invocation.h",
+          "sha256": "093f1c04307abcc885c9d8ba0319531d10848ef500293da2289b6b038679ee75"
+        },
+        {
+          "path": "src/compute/resource_leases.cc",
+          "sha256": "6d6caa01b517ae13cd04044ebc8eb481d9b3338f45623dc5d341038f37729801"
+        },
+        {
+          "path": "src/compute_batch/CMakeLists.txt",
+          "sha256": "17e5e4717df7aad90f07b949526dd78679551b0555b616911641088385e4f1f0"
+        },
+        {
+          "path": "src/compute_batch/batch_execution.cc",
+          "sha256": "4aca28da83696100c914c1bd642d84eb965fd95722a1c22d21457352627c8722"
+        },
+        {
+          "path": "src/compute_batch/batch_layout.cc",
+          "sha256": "9643f20396e320aac8f2184ddd243f996a70ee46e81487eb397fa3a54ac020f4"
+        },
+        {
+          "path": "src/compute_batch/batch_materialize.cc",
+          "sha256": "ab1d1183a5408365822ca73a7ff1e06ebf149aba0f404c6cea8c04d14f1e6a6f"
+        },
+        {
+          "path": "src/compute_batch/paged_arena.cc",
+          "sha256": "ee4fcd775f6cc9b1da8f781c40f8bc98481233444209316a48b2527b3964f142"
+        },
+        {
+          "path": "src/compute_provider_flashinfer/CMakeLists.txt",
+          "sha256": "3fdbbff300d73e419d7703752de90a38962665f22edd6678668b3f72f84237e0"
+        },
+        {
+          "path": "src/compute_provider_flashinfer/flashinfer_provider.cc",
+          "sha256": "d6f0e55ac6ed4198dd43f94d4f980594c7d971831ba75d15c5508c0021ac9cd3"
+        },
+        {
+          "path": "src/compute_provider_flashinfer/native_batch.cu",
+          "sha256": "aecdbf870616f08600359e00179e4a054513bdff861be5ebc1136db13e33d136"
+        },
+        {
+          "path": "src/compute_provider_flashinfer/native_batch.h",
+          "sha256": "503b895787443169bec1efbc299c6cbf5982e7baae0911d2f316f6980e7a5140"
+        },
+        {
+          "path": "src/compute_route_apple/CMakeLists.txt",
+          "sha256": "8e5ec2eeeb08ec3763724e84d97081c8c3b24fa6cd688fa00295af2d5c8e1c2b"
+        },
+        {
+          "path": "src/compute_route_apple/apple_batch.cc",
+          "sha256": "602591bba2369ab2c3d2a647f60c24686509ec50396ea5af55878b99ddc63532"
+        },
+        {
+          "path": "src/compute_route_vulkan/CMakeLists.txt",
+          "sha256": "c2c9837b98e2646dc89944a870c8bd1012a50d851ce79033535ea2dee9452826"
+        },
+        {
+          "path": "src/compute_route_vulkan/vulkan_batch.cc",
+          "sha256": "02dabf16dcc3d4e0319b037b928685a6d1c640fe29ba659bf5fc951c1859f89d"
+        },
+        {
+          "path": "src/graph/CMakeLists.txt",
+          "sha256": "51897f736b32321f1a85b650db8e212acbdc4d61ff3d4507996a8a59689716f3"
+        },
+        {
+          "path": "src/graph/leased_invocation.cc",
+          "sha256": "4203d554c74657968869873d8328905e417dde191da277d8f599ffd039e25a1f"
+        },
+        {
+          "path": "src/graph/plan_state.h",
+          "sha256": "4f4388b8098fd6b85305fed8133d333ab779fe491403113f86ecd177bd9418fe"
+        },
+        {
+          "path": "src/graph/region_access.cc",
+          "sha256": "d313b47bc92b93f021aff1e8ca2410ee74513a933dd842e4c99fb561bdcdbbae"
+        },
+        {
+          "path": "src/graph_batch/CMakeLists.txt",
+          "sha256": "a1559a5745d51324405d7e89ecbf1c96d1fd59c556dda097ac548e19e9569420"
+        },
+        {
+          "path": "src/graph_batch/batch.cc",
+          "sha256": "0cc4ef55f0a082fb800bdd3a5ab9de1d8786d117e082bce17d9d7773a9bfb54a"
+        },
+        {
+          "path": "tests/compute_batch/CMakeLists.txt",
+          "sha256": "2feaae993a7dfa1ea40555b2c683e91667742bf396957812dea202463db3decc"
+        },
+        {
+          "path": "tests/compute_batch/batch_layout_test.cc",
+          "sha256": "420b26027914ebc73c5654f49a363b7f5e707c031fe6100763de9295e03c5167"
+        },
+        {
+          "path": "tests/compute_batch/batch_materialize_test.cc",
+          "sha256": "52fbb3de001c0889f4dc0da33df9c9f22d381447273c9bd56e59891615e5d2c4"
+        },
+        {
+          "path": "tests/compute_batch/materialized_cpu_consumer.cc",
+          "sha256": "7f361f5941cc742458f5c128ed8b43fab5e420bec04149670379c49b539ecffb"
+        },
+        {
+          "path": "tests/compute_batch/materialized_native_consumer.cc",
+          "sha256": "5bc3b0cc89168b229fae6597394b706f44bad6397433f152b32494a9b15d3113"
+        },
+        {
+          "path": "tests/compute_batch/native_arena_direct_consumer.h",
+          "sha256": "42bbb89bd43d12f752719ef10efa261127004880d87cd005f2cd19c232ba888e"
+        },
+        {
+          "path": "tests/compute_batch/native_arena_graph_consumer.h",
+          "sha256": "d58f9c6e255c987a60ce30c8a8a8a2a06e4a3150e413875051b551acfd6ad1f8"
+        },
+        {
+          "path": "tests/compute_batch/native_direct_consumer.cc",
+          "sha256": "5db1b9aee0e4f9dbfee5f866a9c157de97a844eb23cf1e12ba638eba3c8f21cc"
+        },
+        {
+          "path": "tests/compute_batch/native_graph_consumer.cc",
+          "sha256": "00c08fa8b169fe327ac9bde97167fb962a51163354ffef3e2246f2e1290a5017"
+        },
+        {
+          "path": "tests/compute_batch/paged_arena_test.cc",
+          "sha256": "9f42b74ba3b35df0daf73347e91be201ae461aceb76f38d944a9fb0f018fbdae"
+        }
+      ]
+    ]
+  },
+  "windows": {
+    "stage": "AUDITED F5 Graph Windows compile; not native CUDA paged qualification",
+    "scope": "new batch targets /WX and two new Graph headers, ordinary Compute/Graph roots; no old tests",
+    "stages": [
+      {
+        "name": "configure",
+        "command": [
+          "cmake",
+          "-S",
+          "C:\\h7\\w-cpu-cuda\\selected-graph\\source-parent",
+          "-B",
+          "C:\\h7\\w-cpu-cuda\\selected-graph\\source-build"
+        ],
+        "pid": 45576,
+        "state": "terminal",
+        "available_bytes": 42056224768,
+        "log": "configure.log",
+        "elapsed": 186.96899999999914,
+        "exit_code": 0,
+        "verdict": "PASS",
+        "sha256": "deabb739696d52198e1620a0cdda382c35ed97cabe8ea18c5c0d50061ddbb16f"
+      },
+      {
+        "name": "build",
+        "command": [
+          "cmake",
+          "--build",
+          "C:\\h7\\w-cpu-cuda\\selected-graph\\source-build",
+          "--target",
+          "hyle_f5_graph_headers",
+          "--parallel",
+          "4"
+        ],
+        "pid": 5412,
+        "state": "terminal",
+        "available_bytes": 46315974656,
+        "log": "build.log",
+        "elapsed": 35.39100000000144,
+        "exit_code": 2,
+        "verdict": "FAIL",
+        "sha256": "40ed24b7de1a3873e61406cde4cfeecdf29b61d03081239d18b36dc4be6cd67a"
+      },
+      {
+        "name": "build-resume1",
+        "command": [
+          "cmake",
+          "--build",
+          "C:\\h7\\w-cpu-cuda\\selected-graph\\source-build",
+          "--target",
+          "hyle_f5_graph_headers",
+          "--parallel",
+          "4"
+        ],
+        "pid": 47088,
+        "state": "terminal",
+        "available_bytes": 42814922752,
+        "log": "build-resume1.log",
+        "elapsed": 6.640999999999622,
+        "exit_code": 0,
+        "verdict": "PASS",
+        "sha256": "a13477f5ab7c6a7f7cb7476b8bec04ea6fd8cd6bb89972a7c70ecb9f6ed98674"
+      },
+      {
+        "name": "consumer",
+        "command": [
+          "C:\\h7\\w-cpu-cuda\\selected-graph\\source-build\\hyle_f5_graph_headers.exe"
+        ],
+        "pid": 48000,
+        "state": "terminal",
+        "available_bytes": 42917474304,
+        "log": "consumer.log",
+        "elapsed": 0.04700000000048021,
+        "exit_code": 0,
+        "verdict": "PASS",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "name": "build-resume2",
+        "command": [
+          "cmake",
+          "--build",
+          "C:\\h7\\w-cpu-cuda\\selected-graph\\source-build",
+          "--target",
+          "hyle_f5_materialized_cpu",
+          "--parallel",
+          "4"
+        ],
+        "pid": 32308,
+        "state": "terminal",
+        "available_bytes": 33725276160,
+        "log": "build-resume2.log",
+        "elapsed": 78.03100000000086,
+        "exit_code": 0,
+        "verdict": "PASS",
+        "sha256": "b80b94688976271eec1dee72baf49ea7691e293b32194dcb79aa18d752503210"
+      },
+      {
+        "name": "consumer-resume1",
+        "command": [
+          "C:\\h7\\w-cpu-cuda\\selected-graph\\source-build\\hyle_f5_materialized_cpu.exe"
+        ],
+        "pid": 27200,
+        "state": "terminal",
+        "available_bytes": 45806575616,
+        "log": "consumer-resume1.log",
+        "elapsed": 0.26599999999962165,
+        "exit_code": 0,
+        "verdict": "PASS",
+        "sha256": "8e4a91a16ee506d348c56860737e1984a6bd56b1ea2a24eb6a3aa495ff3ae97b"
+      },
+      {
+        "name": "build-resume3",
+        "command": [
+          "cmake",
+          "--build",
+          "C:\\h7\\w-cpu-cuda\\selected-graph\\source-build",
+          "--target",
+          "hyle_f5_materialized_cpu",
+          "--parallel",
+          "4"
+        ],
+        "pid": 8688,
+        "state": "terminal",
+        "available_bytes": 45868011520,
+        "log": "build-resume3.log",
+        "elapsed": 5.686999999999898,
+        "exit_code": 0,
+        "verdict": "PASS",
+        "sha256": "36f7b5deeff4042b51410a4409de833dcd14ed2c5edbe9aeef7ce92b5b126250"
+      },
+      {
+        "name": "consumer-resume2",
+        "command": [
+          "C:\\h7\\w-cpu-cuda\\selected-graph\\source-build\\hyle_f5_materialized_cpu.exe"
+        ],
+        "pid": 22060,
+        "state": "terminal",
+        "available_bytes": 45878124544,
+        "log": "consumer-resume2.log",
+        "elapsed": 0.2029999999995198,
+        "exit_code": 0,
+        "verdict": "PASS",
+        "sha256": "8e4a91a16ee506d348c56860737e1984a6bd56b1ea2a24eb6a3aa495ff3ae97b"
+      },
+      {
+        "name": "build-resume4",
+        "command": [
+          "cmake",
+          "--build",
+          "C:\\h7\\w-cpu-cuda\\selected-graph\\source-build",
+          "--target",
+          "hyle_f5_graph_headers",
+          "--parallel",
+          "4"
+        ],
+        "pid": 640,
+        "state": "terminal",
+        "available_bytes": 41282428928,
+        "log": "build-resume4.log",
+        "elapsed": 78.73500000000058,
+        "exit_code": 0,
+        "verdict": "PASS",
+        "sha256": "1a79e22314e91a211e9dc0f66270f5c8f1fe2f70c757fd7c46dcabb74603d58a"
+      },
+      {
+        "name": "consumer-resume3",
+        "command": [
+          "C:\\h7\\w-cpu-cuda\\selected-graph\\source-build\\hyle_f5_graph_headers.exe"
+        ],
+        "pid": 27672,
+        "state": "terminal",
+        "available_bytes": 44790300672,
+        "log": "consumer-resume3.log",
+        "elapsed": 0.0470000000022992,
+        "exit_code": 0,
+        "verdict": "PASS",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "name": "build-resume5",
+        "command": [
+          "cmake",
+          "--build",
+          "C:\\h7\\w-cpu-cuda\\selected-graph\\source-build",
+          "--target",
+          "hyle_f5_graph_headers",
+          "--parallel",
+          "4"
+        ],
+        "pid": 50648,
+        "state": "terminal",
+        "available_bytes": 39531212800,
+        "log": "build-resume5.log",
+        "elapsed": 6.797000000002299,
+        "exit_code": 0,
+        "verdict": "PASS",
+        "sha256": "054b8e30e93bb1ae05c0b426ee7c7261485de7dfdf669c3415d56af36a0762b6"
+      },
+      {
+        "name": "consumer-resume4",
+        "command": [
+          "C:\\h7\\w-cpu-cuda\\selected-graph\\source-build\\hyle_f5_graph_headers.exe"
+        ],
+        "pid": 7084,
+        "state": "terminal",
+        "available_bytes": 40525529088,
+        "log": "consumer-resume4.log",
+        "elapsed": 0.046999999998661224,
+        "exit_code": 0,
+        "verdict": "PASS",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "name": "headers",
+        "commands": [
+          [
+            "C:/Program Files/Microsoft Visual Studio/18/Enterprise/VC/Tools/MSVC/14.50.35717/bin/Hostx64/x64/cl.exe",
+            "/nologo",
+            "/std:c++latest",
+            "/EHsc",
+            "/Zc:__cplusplus",
+            "/utf-8",
+            "/W4",
+            "/wd4324",
+            "/WX",
+            "/c",
+            "/DHYLE_STATIC",
+            "/DHYLE_COMPUTE_CPU=1",
+            "/DHYLE_COMPUTE_CUDA=1",
+            "/DHYLE_COMPUTE_ONEDNN=1",
+            "/DHYLE_COMPUTE_TORCH_CUDA=1",
+            "/DHYLE_GRAPH_ONEDNN=1",
+            "/DHYLE_IO_HAS_COROUTINE_TRANSPORT=1",
+            "/IC:\\public\\project-hyle\\hyle\\include",
+            "/external:IC:/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v13.3/include",
+            "/external:IC:/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v13.3/include/cccl",
+            "/external:W0",
+            "C:\\public\\project-hyle\\hyle\\.scratch\\foundation-f5\\graph-windows\\batch.h.cc",
+            "/FoC:\\public\\project-hyle\\hyle\\.scratch\\foundation-f5\\graph-windows\\batch.h.obj"
+          ],
+          [
+            "C:/Program Files/Microsoft Visual Studio/18/Enterprise/VC/Tools/MSVC/14.50.35717/bin/Hostx64/x64/cl.exe",
+            "/nologo",
+            "/std:c++latest",
+            "/EHsc",
+            "/Zc:__cplusplus",
+            "/utf-8",
+            "/W4",
+            "/wd4324",
+            "/WX",
+            "/c",
+            "/DHYLE_STATIC",
+            "/DHYLE_COMPUTE_CPU=1",
+            "/DHYLE_COMPUTE_CUDA=1",
+            "/DHYLE_COMPUTE_ONEDNN=1",
+            "/DHYLE_COMPUTE_TORCH_CUDA=1",
+            "/DHYLE_GRAPH_ONEDNN=1",
+            "/DHYLE_IO_HAS_COROUTINE_TRANSPORT=1",
+            "/IC:\\public\\project-hyle\\hyle\\include",
+            "/external:IC:/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v13.3/include",
+            "/external:IC:/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v13.3/include/cccl",
+            "/external:W0",
+            "C:\\public\\project-hyle\\hyle\\.scratch\\foundation-f5\\graph-windows\\detail_region_access.h.cc",
+            "/FoC:\\public\\project-hyle\\hyle\\.scratch\\foundation-f5\\graph-windows\\detail_region_access.h.obj"
+          ]
+        ],
+        "state": "terminal",
+        "elapsed": 1.5,
+        "exit_code": 0,
+        "verdict": "PASS",
+        "log": "headers.log",
+        "sha256": "122fce67d68f252396e89d933aceb57554cb4c6d410e3245013b236ffff61518",
+        "presence_defines_from": "actual hyle_f5_graph_headers Ninja consumer"
+      },
+      {
+        "name": "build-resume6",
+        "command": [
+          "C:/Program Files/Microsoft Visual Studio/18/Enterprise/VC/Tools/MSVC/14.50.35717/bin/Hostx64/x64/cl.exe",
+          "/nologo",
+          "/std:c++latest",
+          "/EHsc",
+          "/Zc:__cplusplus",
+          "/utf-8",
+          "/Zc:preprocessor",
+          "/W4",
+          "/permissive-",
+          "/wd4324",
+          "/WX",
+          "/O2",
+          "/Ob2",
+          "/MD",
+          "/DWIN32",
+          "/D_WINDOWS",
+          "/DNDEBUG",
+          "/DHYLE_STATIC",
+          "/DHYLE_GRAPH_BUILD",
+          "/IC:\\public\\project-hyle\\hyle\\include",
+          "/IC:\\public\\project-hyle\\hyle\\src\\graph",
+          "/c",
+          "C:\\public\\project-hyle\\hyle\\src\\graph\\leased_invocation.cc",
+          "/FoC:\\public\\project-hyle\\hyle\\.scratch\\foundation-f5\\graph-windows\\leased-invocation-werror.obj"
+        ],
+        "state": "terminal",
+        "elapsed": 1.4219999999986612,
+        "exit_code": 0,
+        "verdict": "PASS",
+        "log": "build-resume6.log",
+        "sha256": "3a23d83d590cf5bbecbe1282466e726658598f8aa2724b94044c682fe8a1b2d1",
+        "scope": "actual modified graph owner TU, same Ninja macros/options plus /WX; no old operator tests"
+      },
+      {
+        "name": "build-resume7",
+        "command": [
+          "C:/Program Files/Microsoft Visual Studio/18/Enterprise/VC/Tools/MSVC/14.50.35717/bin/Hostx64/x64/cl.exe",
+          "/nologo",
+          "/std:c++latest",
+          "/EHsc",
+          "/Zc:__cplusplus",
+          "/utf-8",
+          "/Zc:preprocessor",
+          "/W4",
+          "/permissive-",
+          "/wd4324",
+          "/WX",
+          "/O2",
+          "/Ob2",
+          "/MD",
+          "/DWIN32",
+          "/D_WINDOWS",
+          "/DNDEBUG",
+          "/DHYLE_STATIC",
+          "/DHYLE_GRAPH_BUILD",
+          "/IC:\\public\\project-hyle\\hyle\\include",
+          "/IC:\\public\\project-hyle\\hyle\\src\\graph",
+          "/c",
+          "C:\\public\\project-hyle\\hyle\\src\\graph\\leased_invocation.cc",
+          "/FoC:\\public\\project-hyle\\hyle\\.scratch\\foundation-f5\\graph-windows\\leased-invocation-werror.obj"
+        ],
+        "state": "terminal",
+        "elapsed": 1.4059999999990396,
+        "exit_code": 0,
+        "verdict": "PASS",
+        "log": "build-resume7.log",
+        "sha256": "3a23d83d590cf5bbecbe1282466e726658598f8aa2724b94044c682fe8a1b2d1",
+        "scope": "actual modified graph owner TU, same Ninja macros/options plus /WX; no old operator tests"
+      },
+      {
+        "name": "build-resume8",
+        "command": [
+          "cmake",
+          "--build",
+          "C:\\h7\\w-cpu-cuda\\selected-graph\\source-build",
+          "--target",
+          "hyle_f5_graph_headers",
+          "--parallel",
+          "4"
+        ],
+        "pid": 46892,
+        "state": "terminal",
+        "available_bytes": 41384124416,
+        "log": "build-resume8.log",
+        "elapsed": 6.625,
+        "exit_code": 0,
+        "verdict": "PASS",
+        "sha256": "054b8e30e93bb1ae05c0b426ee7c7261485de7dfdf669c3415d56af36a0762b6"
+      },
+      {
+        "name": "consumer-resume5",
+        "command": [
+          "C:\\h7\\w-cpu-cuda\\selected-graph\\source-build\\hyle_f5_graph_headers.exe"
+        ],
+        "pid": 50748,
+        "state": "terminal",
+        "available_bytes": 41370329088,
+        "log": "consumer-resume5.log",
+        "elapsed": 0.03200000000288128,
+        "exit_code": 0,
+        "verdict": "PASS",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "name": "build-resume9",
+        "command": [
+          "C:/Program Files/Microsoft Visual Studio/18/Enterprise/VC/Tools/MSVC/14.50.35717/bin/Hostx64/x64/cl.exe",
+          "/nologo",
+          "/std:c++latest",
+          "/EHsc",
+          "/Zc:__cplusplus",
+          "/utf-8",
+          "/Zc:preprocessor",
+          "/W4",
+          "/permissive-",
+          "/wd4324",
+          "/WX",
+          "/O2",
+          "/Ob2",
+          "/MD",
+          "/DWIN32",
+          "/D_WINDOWS",
+          "/DNDEBUG",
+          "/DHYLE_STATIC",
+          "/DHYLE_GRAPH_BUILD",
+          "/IC:\\public\\project-hyle\\hyle\\include",
+          "/IC:\\public\\project-hyle\\hyle\\src\\graph",
+          "/c",
+          "C:\\public\\project-hyle\\hyle\\src\\graph\\leased_invocation.cc",
+          "/FoC:\\public\\project-hyle\\hyle\\.scratch\\foundation-f5\\graph-windows\\leased-invocation-werror.obj"
+        ],
+        "state": "terminal",
+        "elapsed": 1.4219999999986612,
+        "exit_code": 0,
+        "verdict": "PASS",
+        "log": "build-resume9.log",
+        "sha256": "3a23d83d590cf5bbecbe1282466e726658598f8aa2724b94044c682fe8a1b2d1",
+        "scope": "actual modified graph owner TU, same Ninja macros/options plus /WX; no old operator tests"
+      }
+    ],
+    "inputs": [
+      {
+        "path": "cmake/HyleComponents.cmake",
+        "sha256": "9571a0f11387a554d81879c0ce240be36af215505cba6287449cc51176f3c9e6"
+      },
+      {
+        "path": "include/hyle/compute/apple_batch.h",
+        "sha256": "b4c682322704a792293667c45dc1370a6d9d6e23e527794a0fb8a40fd97427ea"
+      },
+      {
+        "path": "include/hyle/compute/batch_execution.h",
+        "sha256": "a6ddc0c55fe71bc1715aa9a358aee0d34ffce3f866fc2d4f6ca7ade838306752"
+      },
+      {
+        "path": "include/hyle/compute/batch_layout.h",
+        "sha256": "654d7d3aedcbb9e50532e137ea3d89bb8aa0c5f5697879d4ff79455843fe5402"
+      },
+      {
+        "path": "include/hyle/compute/batch_materialize.h",
+        "sha256": "3c5c41b6aec52a2ecb0fa106f81bf8f114cc17fcb53033538d8e54ce5de9fe6e"
+      },
+      {
+        "path": "include/hyle/compute/batch_ops.h",
+        "sha256": "fe837a188f82beb01570a817ce5fdaa804ee7abbe24a7aa64d48c31522f0d7c0"
+      },
+      {
+        "path": "include/hyle/compute/detail/batch_graph_access.h",
+        "sha256": "5fd73efbbe44befba9f4359550eb45a5fc5b24b583750faacbb8398de0c83184"
+      },
+      {
+        "path": "include/hyle/compute/detail/batch_provider.h",
+        "sha256": "1850c8e70ec085f83b6480bcac367c55a83b4a984dcc2cc6baf19e776872c146"
+      },
+      {
+        "path": "include/hyle/compute/detail/lease_access.h",
+        "sha256": "a51b7fd93c33f76820189c18ae37377d49b7aa320399dc32a75c78a2d6c10e18"
+      },
+      {
+        "path": "include/hyle/compute/detail/paged_arena_access.h",
+        "sha256": "a1f07762dab2d3aa6cdca1f04a0a611a57deebd6e2c20cd64488e1009b3b40f7"
+      },
+      {
+        "path": "include/hyle/compute/paged_arena.h",
+        "sha256": "b6177829901b03735ef1f9bf45adc50e58933243c0ad6f19b509fc8eca1a5fdc"
+      },
+      {
+        "path": "include/hyle/compute/vulkan_batch.h",
+        "sha256": "bacb9b0b2979d7ee5887303a19b704f403c7bfdbc6884f4dc07a53c8bdcc1d5f"
+      },
+      {
+        "path": "include/hyle/graph/batch.h",
+        "sha256": "bf0e02614e2f8ac9ba6b4e83a841379105457b3ccd4e878a44c55ef00488a808"
+      },
+      {
+        "path": "include/hyle/graph/detail/region_access.h",
+        "sha256": "dbcb8f827d1245452b5ae1ec91435316aaed3196cb264edc3c662bdb9664b0f5"
+      },
+      {
+        "path": "include/hyle/graph/leased_invocation.h",
+        "sha256": "093f1c04307abcc885c9d8ba0319531d10848ef500293da2289b6b038679ee75"
+      },
+      {
+        "path": "src/compute/resource_leases.cc",
+        "sha256": "6d6caa01b517ae13cd04044ebc8eb481d9b3338f45623dc5d341038f37729801"
+      },
+      {
+        "path": "src/compute_batch/CMakeLists.txt",
+        "sha256": "17e5e4717df7aad90f07b949526dd78679551b0555b616911641088385e4f1f0"
+      },
+      {
+        "path": "src/compute_batch/batch_execution.cc",
+        "sha256": "4aca28da83696100c914c1bd642d84eb965fd95722a1c22d21457352627c8722"
+      },
+      {
+        "path": "src/compute_batch/batch_layout.cc",
+        "sha256": "9643f20396e320aac8f2184ddd243f996a70ee46e81487eb397fa3a54ac020f4"
+      },
+      {
+        "path": "src/compute_batch/batch_materialize.cc",
+        "sha256": "ab1d1183a5408365822ca73a7ff1e06ebf149aba0f404c6cea8c04d14f1e6a6f"
+      },
+      {
+        "path": "src/compute_batch/paged_arena.cc",
+        "sha256": "ee4fcd775f6cc9b1da8f781c40f8bc98481233444209316a48b2527b3964f142"
+      },
+      {
+        "path": "src/compute_provider_flashinfer/CMakeLists.txt",
+        "sha256": "3fdbbff300d73e419d7703752de90a38962665f22edd6678668b3f72f84237e0"
+      },
+      {
+        "path": "src/compute_provider_flashinfer/flashinfer_provider.cc",
+        "sha256": "d6f0e55ac6ed4198dd43f94d4f980594c7d971831ba75d15c5508c0021ac9cd3"
+      },
+      {
+        "path": "src/compute_provider_flashinfer/native_batch.cu",
+        "sha256": "aecdbf870616f08600359e00179e4a054513bdff861be5ebc1136db13e33d136"
+      },
+      {
+        "path": "src/compute_provider_flashinfer/native_batch.h",
+        "sha256": "503b895787443169bec1efbc299c6cbf5982e7baae0911d2f316f6980e7a5140"
+      },
+      {
+        "path": "src/compute_route_apple/CMakeLists.txt",
+        "sha256": "8e5ec2eeeb08ec3763724e84d97081c8c3b24fa6cd688fa00295af2d5c8e1c2b"
+      },
+      {
+        "path": "src/compute_route_apple/apple_batch.cc",
+        "sha256": "602591bba2369ab2c3d2a647f60c24686509ec50396ea5af55878b99ddc63532"
+      },
+      {
+        "path": "src/compute_route_vulkan/CMakeLists.txt",
+        "sha256": "c2c9837b98e2646dc89944a870c8bd1012a50d851ce79033535ea2dee9452826"
+      },
+      {
+        "path": "src/compute_route_vulkan/vulkan_batch.cc",
+        "sha256": "02dabf16dcc3d4e0319b037b928685a6d1c640fe29ba659bf5fc951c1859f89d"
+      },
+      {
+        "path": "src/graph/CMakeLists.txt",
+        "sha256": "51897f736b32321f1a85b650db8e212acbdc4d61ff3d4507996a8a59689716f3"
+      },
+      {
+        "path": "src/graph/leased_invocation.cc",
+        "sha256": "8fc80b4b02852132408ce40c138c101566dedf328bdb599febd8701fdb726541"
+      },
+      {
+        "path": "src/graph/plan_state.h",
+        "sha256": "4f4388b8098fd6b85305fed8133d333ab779fe491403113f86ecd177bd9418fe"
+      },
+      {
+        "path": "src/graph/region_access.cc",
+        "sha256": "d313b47bc92b93f021aff1e8ca2410ee74513a933dd842e4c99fb561bdcdbbae"
+      },
+      {
+        "path": "src/graph_batch/CMakeLists.txt",
+        "sha256": "a1559a5745d51324405d7e89ecbf1c96d1fd59c556dda097ac548e19e9569420"
+      },
+      {
+        "path": "src/graph_batch/batch.cc",
+        "sha256": "0cc4ef55f0a082fb800bdd3a5ab9de1d8786d117e082bce17d9d7773a9bfb54a"
+      },
+      {
+        "path": "tests/compute_batch/CMakeLists.txt",
+        "sha256": "2feaae993a7dfa1ea40555b2c683e91667742bf396957812dea202463db3decc"
+      },
+      {
+        "path": "tests/compute_batch/batch_layout_test.cc",
+        "sha256": "420b26027914ebc73c5654f49a363b7f5e707c031fe6100763de9295e03c5167"
+      },
+      {
+        "path": "tests/compute_batch/batch_materialize_test.cc",
+        "sha256": "52fbb3de001c0889f4dc0da33df9c9f22d381447273c9bd56e59891615e5d2c4"
+      },
+      {
+        "path": "tests/compute_batch/materialized_cpu_consumer.cc",
+        "sha256": "7f361f5941cc742458f5c128ed8b43fab5e420bec04149670379c49b539ecffb"
+      },
+      {
+        "path": "tests/compute_batch/materialized_native_consumer.cc",
+        "sha256": "5bc3b0cc89168b229fae6597394b706f44bad6397433f152b32494a9b15d3113"
+      },
+      {
+        "path": "tests/compute_batch/native_arena_direct_consumer.h",
+        "sha256": "42bbb89bd43d12f752719ef10efa261127004880d87cd005f2cd19c232ba888e"
+      },
+      {
+        "path": "tests/compute_batch/native_arena_graph_consumer.h",
+        "sha256": "d58f9c6e255c987a60ce30c8a8a8a2a06e4a3150e413875051b551acfd6ad1f8"
+      },
+      {
+        "path": "tests/compute_batch/native_direct_consumer.cc",
+        "sha256": "5db1b9aee0e4f9dbfee5f866a9c157de97a844eb23cf1e12ba638eba3c8f21cc"
+      },
+      {
+        "path": "tests/compute_batch/native_graph_consumer.cc",
+        "sha256": "00c08fa8b169fe327ac9bde97167fb962a51163354ffef3e2246f2e1290a5017"
+      },
+      {
+        "path": "tests/compute_batch/paged_arena_test.cc",
+        "sha256": "9f42b74ba3b35df0daf73347e91be201ae461aceb76f38d944a9fb0f018fbdae"
+      }
+    ],
+    "scope_history": [
+      {
+        "stage": "AUDITED F5 Graph Windows compile; not native CUDA paged qualification",
+        "scope": "new batch targets /WX and two new Graph headers, ordinary Compute/Graph roots; no old tests"
+      },
+      {
+        "stage": "AUDITED F5 explicit CPU materialization; not candidate/final",
+        "scope": "explicit CPU reference cold Direct/original Graph oracle; only batch targets /WX and actual linked closure; no old tests"
+      }
+    ],
+    "input_history": [
+      [
+        {
+          "path": "cmake/HyleComponents.cmake",
+          "sha256": "a2b63a2acca1bc61803a60e9493eac92b33332516aa3d3032ff890b9ec5337a2"
+        },
+        {
+          "path": "include/hyle/compute/batch_execution.h",
+          "sha256": "7ef7d2a547bda190310374e098ecdeddb029f140dc3c25bf3fb7384ebd4a084b"
+        },
+        {
+          "path": "include/hyle/compute/batch_layout.h",
+          "sha256": "654d7d3aedcbb9e50532e137ea3d89bb8aa0c5f5697879d4ff79455843fe5402"
+        },
+        {
+          "path": "include/hyle/compute/batch_materialize.h",
+          "sha256": "3c5c41b6aec52a2ecb0fa106f81bf8f114cc17fcb53033538d8e54ce5de9fe6e"
+        },
+        {
+          "path": "include/hyle/compute/batch_ops.h",
+          "sha256": "fe837a188f82beb01570a817ce5fdaa804ee7abbe24a7aa64d48c31522f0d7c0"
+        },
+        {
+          "path": "include/hyle/compute/detail/batch_graph_access.h",
+          "sha256": "5fd73efbbe44befba9f4359550eb45a5fc5b24b583750faacbb8398de0c83184"
+        },
+        {
+          "path": "include/hyle/compute/detail/batch_provider.h",
+          "sha256": "1850c8e70ec085f83b6480bcac367c55a83b4a984dcc2cc6baf19e776872c146"
+        },
+        {
+          "path": "include/hyle/compute/detail/lease_access.h",
+          "sha256": "a51b7fd93c33f76820189c18ae37377d49b7aa320399dc32a75c78a2d6c10e18"
+        },
+        {
+          "path": "include/hyle/graph/batch.h",
+          "sha256": "60ec0fe5d644c2437797b14b10f4a386660d28bcfc200cdc15cc91c350fb32d2"
+        },
+        {
+          "path": "include/hyle/graph/detail/region_access.h",
+          "sha256": "e330856ae980f677301e3e47a0329445c848f65f90a3e0588064213e0cee5e5a"
+        },
+        {
+          "path": "include/hyle/graph/leased_invocation.h",
+          "sha256": "093f1c04307abcc885c9d8ba0319531d10848ef500293da2289b6b038679ee75"
+        },
+        {
+          "path": "src/compute/resource_leases.cc",
+          "sha256": "6d6caa01b517ae13cd04044ebc8eb481d9b3338f45623dc5d341038f37729801"
+        },
+        {
+          "path": "src/compute_batch/CMakeLists.txt",
+          "sha256": "1eedbbd77b1ab9fd6f1c774cc9286cf0a3233bf31504fb2ec9a4183fa7d44ff4"
+        },
+        {
+          "path": "src/compute_batch/batch_execution.cc",
+          "sha256": "f065607c0553cd13646960867afdc39ee5fc2d9d820e509ba2417167b3d9d4f6"
+        },
+        {
+          "path": "src/compute_batch/batch_layout.cc",
+          "sha256": "9643f20396e320aac8f2184ddd243f996a70ee46e81487eb397fa3a54ac020f4"
+        },
+        {
+          "path": "src/compute_batch/batch_materialize.cc",
+          "sha256": "ab1d1183a5408365822ca73a7ff1e06ebf149aba0f404c6cea8c04d14f1e6a6f"
+        },
+        {
+          "path": "src/compute_provider_flashinfer/CMakeLists.txt",
+          "sha256": "3fdbbff300d73e419d7703752de90a38962665f22edd6678668b3f72f84237e0"
+        },
+        {
+          "path": "src/compute_provider_flashinfer/flashinfer_provider.cc",
+          "sha256": "d6f0e55ac6ed4198dd43f94d4f980594c7d971831ba75d15c5508c0021ac9cd3"
+        },
+        {
+          "path": "src/compute_provider_flashinfer/native_batch.cu",
+          "sha256": "aecdbf870616f08600359e00179e4a054513bdff861be5ebc1136db13e33d136"
+        },
+        {
+          "path": "src/compute_provider_flashinfer/native_batch.h",
+          "sha256": "503b895787443169bec1efbc299c6cbf5982e7baae0911d2f316f6980e7a5140"
+        },
+        {
+          "path": "src/graph/CMakeLists.txt",
+          "sha256": "51897f736b32321f1a85b650db8e212acbdc4d61ff3d4507996a8a59689716f3"
+        },
+        {
+          "path": "src/graph/leased_invocation.cc",
+          "sha256": "772f274d379f37af3dc05afda63e7305eb208e2fbbc851f11db35b45b3a02f0b"
+        },
+        {
+          "path": "src/graph/plan_state.h",
+          "sha256": "4f4388b8098fd6b85305fed8133d333ab779fe491403113f86ecd177bd9418fe"
+        },
+        {
+          "path": "src/graph/region_access.cc",
+          "sha256": "d313b47bc92b93f021aff1e8ca2410ee74513a933dd842e4c99fb561bdcdbbae"
+        },
+        {
+          "path": "src/graph_batch/CMakeLists.txt",
+          "sha256": "a1559a5745d51324405d7e89ecbf1c96d1fd59c556dda097ac548e19e9569420"
+        },
+        {
+          "path": "src/graph_batch/batch.cc",
+          "sha256": "8b23def95905331859735dd0b8d16f765a5edd1b2b806123a7de687521b06d7a"
+        },
+        {
+          "path": "tests/compute_batch/CMakeLists.txt",
+          "sha256": "f9d9fbf8fa960b8aa20e3fa954ad14fe25255bba0e522d6df4ff749f04019601"
+        },
+        {
+          "path": "tests/compute_batch/batch_layout_test.cc",
+          "sha256": "8dac343cd30d4d2de1ac7c3f81bdb5cf40743c915b601a2c52435116578a21b5"
+        },
+        {
+          "path": "tests/compute_batch/batch_materialize_test.cc",
+          "sha256": "52fbb3de001c0889f4dc0da33df9c9f22d381447273c9bd56e59891615e5d2c4"
+        },
+        {
+          "path": "tests/compute_batch/materialized_cpu_consumer.cc",
+          "sha256": "739f2bf2d94ac3e91c298b790ca1442b8872178694efc05b4c264739ce228c27"
+        },
+        {
+          "path": "tests/compute_batch/native_direct_consumer.cc",
+          "sha256": "544225c8b6cc5414b50a1ad13d683d656b371112952e8764f679e6d37dfad600"
+        },
+        {
+          "path": "tests/compute_batch/native_graph_consumer.cc",
+          "sha256": "630ef3c63a34954dde09d80b60604f64d2eaa6eaf2355ece1f076a4a03783601"
+        }
+      ],
+      [
+        {
+          "path": "cmake/HyleComponents.cmake",
+          "sha256": "9571a0f11387a554d81879c0ce240be36af215505cba6287449cc51176f3c9e6"
+        },
+        {
+          "path": "include/hyle/compute/apple_batch.h",
+          "sha256": "b4c682322704a792293667c45dc1370a6d9d6e23e527794a0fb8a40fd97427ea"
+        },
+        {
+          "path": "include/hyle/compute/batch_execution.h",
+          "sha256": "a6ddc0c55fe71bc1715aa9a358aee0d34ffce3f866fc2d4f6ca7ade838306752"
+        },
+        {
+          "path": "include/hyle/compute/batch_layout.h",
+          "sha256": "654d7d3aedcbb9e50532e137ea3d89bb8aa0c5f5697879d4ff79455843fe5402"
+        },
+        {
+          "path": "include/hyle/compute/batch_materialize.h",
+          "sha256": "3c5c41b6aec52a2ecb0fa106f81bf8f114cc17fcb53033538d8e54ce5de9fe6e"
+        },
+        {
+          "path": "include/hyle/compute/batch_ops.h",
+          "sha256": "fe837a188f82beb01570a817ce5fdaa804ee7abbe24a7aa64d48c31522f0d7c0"
+        },
+        {
+          "path": "include/hyle/compute/detail/batch_graph_access.h",
+          "sha256": "5fd73efbbe44befba9f4359550eb45a5fc5b24b583750faacbb8398de0c83184"
+        },
+        {
+          "path": "include/hyle/compute/detail/batch_provider.h",
+          "sha256": "1850c8e70ec085f83b6480bcac367c55a83b4a984dcc2cc6baf19e776872c146"
+        },
+        {
+          "path": "include/hyle/compute/detail/lease_access.h",
+          "sha256": "a51b7fd93c33f76820189c18ae37377d49b7aa320399dc32a75c78a2d6c10e18"
+        },
+        {
+          "path": "include/hyle/compute/detail/paged_arena_access.h",
+          "sha256": "a1f07762dab2d3aa6cdca1f04a0a611a57deebd6e2c20cd64488e1009b3b40f7"
+        },
+        {
+          "path": "include/hyle/compute/paged_arena.h",
+          "sha256": "b6177829901b03735ef1f9bf45adc50e58933243c0ad6f19b509fc8eca1a5fdc"
+        },
+        {
+          "path": "include/hyle/compute/vulkan_batch.h",
+          "sha256": "bacb9b0b2979d7ee5887303a19b704f403c7bfdbc6884f4dc07a53c8bdcc1d5f"
+        },
+        {
+          "path": "include/hyle/graph/batch.h",
+          "sha256": "bf0e02614e2f8ac9ba6b4e83a841379105457b3ccd4e878a44c55ef00488a808"
+        },
+        {
+          "path": "include/hyle/graph/detail/region_access.h",
+          "sha256": "dbcb8f827d1245452b5ae1ec91435316aaed3196cb264edc3c662bdb9664b0f5"
+        },
+        {
+          "path": "include/hyle/graph/leased_invocation.h",
+          "sha256": "093f1c04307abcc885c9d8ba0319531d10848ef500293da2289b6b038679ee75"
+        },
+        {
+          "path": "src/compute/resource_leases.cc",
+          "sha256": "6d6caa01b517ae13cd04044ebc8eb481d9b3338f45623dc5d341038f37729801"
+        },
+        {
+          "path": "src/compute_batch/CMakeLists.txt",
+          "sha256": "17e5e4717df7aad90f07b949526dd78679551b0555b616911641088385e4f1f0"
+        },
+        {
+          "path": "src/compute_batch/batch_execution.cc",
+          "sha256": "4aca28da83696100c914c1bd642d84eb965fd95722a1c22d21457352627c8722"
+        },
+        {
+          "path": "src/compute_batch/batch_layout.cc",
+          "sha256": "9643f20396e320aac8f2184ddd243f996a70ee46e81487eb397fa3a54ac020f4"
+        },
+        {
+          "path": "src/compute_batch/batch_materialize.cc",
+          "sha256": "ab1d1183a5408365822ca73a7ff1e06ebf149aba0f404c6cea8c04d14f1e6a6f"
+        },
+        {
+          "path": "src/compute_batch/paged_arena.cc",
+          "sha256": "ee4fcd775f6cc9b1da8f781c40f8bc98481233444209316a48b2527b3964f142"
+        },
+        {
+          "path": "src/compute_provider_flashinfer/CMakeLists.txt",
+          "sha256": "3fdbbff300d73e419d7703752de90a38962665f22edd6678668b3f72f84237e0"
+        },
+        {
+          "path": "src/compute_provider_flashinfer/flashinfer_provider.cc",
+          "sha256": "d6f0e55ac6ed4198dd43f94d4f980594c7d971831ba75d15c5508c0021ac9cd3"
+        },
+        {
+          "path": "src/compute_provider_flashinfer/native_batch.cu",
+          "sha256": "aecdbf870616f08600359e00179e4a054513bdff861be5ebc1136db13e33d136"
+        },
+        {
+          "path": "src/compute_provider_flashinfer/native_batch.h",
+          "sha256": "503b895787443169bec1efbc299c6cbf5982e7baae0911d2f316f6980e7a5140"
+        },
+        {
+          "path": "src/compute_route_apple/CMakeLists.txt",
+          "sha256": "8e5ec2eeeb08ec3763724e84d97081c8c3b24fa6cd688fa00295af2d5c8e1c2b"
+        },
+        {
+          "path": "src/compute_route_apple/apple_batch.cc",
+          "sha256": "602591bba2369ab2c3d2a647f60c24686509ec50396ea5af55878b99ddc63532"
+        },
+        {
+          "path": "src/compute_route_vulkan/CMakeLists.txt",
+          "sha256": "c2c9837b98e2646dc89944a870c8bd1012a50d851ce79033535ea2dee9452826"
+        },
+        {
+          "path": "src/compute_route_vulkan/vulkan_batch.cc",
+          "sha256": "02dabf16dcc3d4e0319b037b928685a6d1c640fe29ba659bf5fc951c1859f89d"
+        },
+        {
+          "path": "src/graph/CMakeLists.txt",
+          "sha256": "51897f736b32321f1a85b650db8e212acbdc4d61ff3d4507996a8a59689716f3"
+        },
+        {
+          "path": "src/graph/leased_invocation.cc",
+          "sha256": "0726bd966a94b9c4b031f0e2190db9c98d048b40a33b37a0ee27394a254a2731"
+        },
+        {
+          "path": "src/graph/plan_state.h",
+          "sha256": "4f4388b8098fd6b85305fed8133d333ab779fe491403113f86ecd177bd9418fe"
+        },
+        {
+          "path": "src/graph/region_access.cc",
+          "sha256": "d313b47bc92b93f021aff1e8ca2410ee74513a933dd842e4c99fb561bdcdbbae"
+        },
+        {
+          "path": "src/graph_batch/CMakeLists.txt",
+          "sha256": "a1559a5745d51324405d7e89ecbf1c96d1fd59c556dda097ac548e19e9569420"
+        },
+        {
+          "path": "src/graph_batch/batch.cc",
+          "sha256": "0cc4ef55f0a082fb800bdd3a5ab9de1d8786d117e082bce17d9d7773a9bfb54a"
+        },
+        {
+          "path": "tests/compute_batch/CMakeLists.txt",
+          "sha256": "2feaae993a7dfa1ea40555b2c683e91667742bf396957812dea202463db3decc"
+        },
+        {
+          "path": "tests/compute_batch/batch_layout_test.cc",
+          "sha256": "420b26027914ebc73c5654f49a363b7f5e707c031fe6100763de9295e03c5167"
+        },
+        {
+          "path": "tests/compute_batch/batch_materialize_test.cc",
+          "sha256": "52fbb3de001c0889f4dc0da33df9c9f22d381447273c9bd56e59891615e5d2c4"
+        },
+        {
+          "path": "tests/compute_batch/materialized_cpu_consumer.cc",
+          "sha256": "7f361f5941cc742458f5c128ed8b43fab5e420bec04149670379c49b539ecffb"
+        },
+        {
+          "path": "tests/compute_batch/materialized_native_consumer.cc",
+          "sha256": "5bc3b0cc89168b229fae6597394b706f44bad6397433f152b32494a9b15d3113"
+        },
+        {
+          "path": "tests/compute_batch/native_arena_direct_consumer.h",
+          "sha256": "42bbb89bd43d12f752719ef10efa261127004880d87cd005f2cd19c232ba888e"
+        },
+        {
+          "path": "tests/compute_batch/native_direct_consumer.cc",
+          "sha256": "5db1b9aee0e4f9dbfee5f866a9c157de97a844eb23cf1e12ba638eba3c8f21cc"
+        },
+        {
+          "path": "tests/compute_batch/native_graph_consumer.cc",
+          "sha256": "630ef3c63a34954dde09d80b60604f64d2eaa6eaf2355ece1f076a4a03783601"
+        },
+        {
+          "path": "tests/compute_batch/paged_arena_test.cc",
+          "sha256": "9f42b74ba3b35df0daf73347e91be201ae461aceb76f38d944a9fb0f018fbdae"
+        }
+      ],
+      [
+        {
+          "path": "cmake/HyleComponents.cmake",
+          "sha256": "9571a0f11387a554d81879c0ce240be36af215505cba6287449cc51176f3c9e6"
+        },
+        {
+          "path": "include/hyle/compute/apple_batch.h",
+          "sha256": "b4c682322704a792293667c45dc1370a6d9d6e23e527794a0fb8a40fd97427ea"
+        },
+        {
+          "path": "include/hyle/compute/batch_execution.h",
+          "sha256": "a6ddc0c55fe71bc1715aa9a358aee0d34ffce3f866fc2d4f6ca7ade838306752"
+        },
+        {
+          "path": "include/hyle/compute/batch_layout.h",
+          "sha256": "654d7d3aedcbb9e50532e137ea3d89bb8aa0c5f5697879d4ff79455843fe5402"
+        },
+        {
+          "path": "include/hyle/compute/batch_materialize.h",
+          "sha256": "3c5c41b6aec52a2ecb0fa106f81bf8f114cc17fcb53033538d8e54ce5de9fe6e"
+        },
+        {
+          "path": "include/hyle/compute/batch_ops.h",
+          "sha256": "fe837a188f82beb01570a817ce5fdaa804ee7abbe24a7aa64d48c31522f0d7c0"
+        },
+        {
+          "path": "include/hyle/compute/detail/batch_graph_access.h",
+          "sha256": "5fd73efbbe44befba9f4359550eb45a5fc5b24b583750faacbb8398de0c83184"
+        },
+        {
+          "path": "include/hyle/compute/detail/batch_provider.h",
+          "sha256": "1850c8e70ec085f83b6480bcac367c55a83b4a984dcc2cc6baf19e776872c146"
+        },
+        {
+          "path": "include/hyle/compute/detail/lease_access.h",
+          "sha256": "a51b7fd93c33f76820189c18ae37377d49b7aa320399dc32a75c78a2d6c10e18"
+        },
+        {
+          "path": "include/hyle/compute/detail/paged_arena_access.h",
+          "sha256": "a1f07762dab2d3aa6cdca1f04a0a611a57deebd6e2c20cd64488e1009b3b40f7"
+        },
+        {
+          "path": "include/hyle/compute/paged_arena.h",
+          "sha256": "b6177829901b03735ef1f9bf45adc50e58933243c0ad6f19b509fc8eca1a5fdc"
+        },
+        {
+          "path": "include/hyle/compute/vulkan_batch.h",
+          "sha256": "bacb9b0b2979d7ee5887303a19b704f403c7bfdbc6884f4dc07a53c8bdcc1d5f"
+        },
+        {
+          "path": "include/hyle/graph/batch.h",
+          "sha256": "bf0e02614e2f8ac9ba6b4e83a841379105457b3ccd4e878a44c55ef00488a808"
+        },
+        {
+          "path": "include/hyle/graph/detail/region_access.h",
+          "sha256": "dbcb8f827d1245452b5ae1ec91435316aaed3196cb264edc3c662bdb9664b0f5"
+        },
+        {
+          "path": "include/hyle/graph/leased_invocation.h",
+          "sha256": "093f1c04307abcc885c9d8ba0319531d10848ef500293da2289b6b038679ee75"
+        },
+        {
+          "path": "src/compute/resource_leases.cc",
+          "sha256": "6d6caa01b517ae13cd04044ebc8eb481d9b3338f45623dc5d341038f37729801"
+        },
+        {
+          "path": "src/compute_batch/CMakeLists.txt",
+          "sha256": "17e5e4717df7aad90f07b949526dd78679551b0555b616911641088385e4f1f0"
+        },
+        {
+          "path": "src/compute_batch/batch_execution.cc",
+          "sha256": "4aca28da83696100c914c1bd642d84eb965fd95722a1c22d21457352627c8722"
+        },
+        {
+          "path": "src/compute_batch/batch_layout.cc",
+          "sha256": "9643f20396e320aac8f2184ddd243f996a70ee46e81487eb397fa3a54ac020f4"
+        },
+        {
+          "path": "src/compute_batch/batch_materialize.cc",
+          "sha256": "ab1d1183a5408365822ca73a7ff1e06ebf149aba0f404c6cea8c04d14f1e6a6f"
+        },
+        {
+          "path": "src/compute_batch/paged_arena.cc",
+          "sha256": "ee4fcd775f6cc9b1da8f781c40f8bc98481233444209316a48b2527b3964f142"
+        },
+        {
+          "path": "src/compute_provider_flashinfer/CMakeLists.txt",
+          "sha256": "3fdbbff300d73e419d7703752de90a38962665f22edd6678668b3f72f84237e0"
+        },
+        {
+          "path": "src/compute_provider_flashinfer/flashinfer_provider.cc",
+          "sha256": "d6f0e55ac6ed4198dd43f94d4f980594c7d971831ba75d15c5508c0021ac9cd3"
+        },
+        {
+          "path": "src/compute_provider_flashinfer/native_batch.cu",
+          "sha256": "aecdbf870616f08600359e00179e4a054513bdff861be5ebc1136db13e33d136"
+        },
+        {
+          "path": "src/compute_provider_flashinfer/native_batch.h",
+          "sha256": "503b895787443169bec1efbc299c6cbf5982e7baae0911d2f316f6980e7a5140"
+        },
+        {
+          "path": "src/compute_route_apple/CMakeLists.txt",
+          "sha256": "8e5ec2eeeb08ec3763724e84d97081c8c3b24fa6cd688fa00295af2d5c8e1c2b"
+        },
+        {
+          "path": "src/compute_route_apple/apple_batch.cc",
+          "sha256": "602591bba2369ab2c3d2a647f60c24686509ec50396ea5af55878b99ddc63532"
+        },
+        {
+          "path": "src/compute_route_vulkan/CMakeLists.txt",
+          "sha256": "c2c9837b98e2646dc89944a870c8bd1012a50d851ce79033535ea2dee9452826"
+        },
+        {
+          "path": "src/compute_route_vulkan/vulkan_batch.cc",
+          "sha256": "02dabf16dcc3d4e0319b037b928685a6d1c640fe29ba659bf5fc951c1859f89d"
+        },
+        {
+          "path": "src/graph/CMakeLists.txt",
+          "sha256": "51897f736b32321f1a85b650db8e212acbdc4d61ff3d4507996a8a59689716f3"
+        },
+        {
+          "path": "src/graph/leased_invocation.cc",
+          "sha256": "4203d554c74657968869873d8328905e417dde191da277d8f599ffd039e25a1f"
+        },
+        {
+          "path": "src/graph/plan_state.h",
+          "sha256": "4f4388b8098fd6b85305fed8133d333ab779fe491403113f86ecd177bd9418fe"
+        },
+        {
+          "path": "src/graph/region_access.cc",
+          "sha256": "d313b47bc92b93f021aff1e8ca2410ee74513a933dd842e4c99fb561bdcdbbae"
+        },
+        {
+          "path": "src/graph_batch/CMakeLists.txt",
+          "sha256": "a1559a5745d51324405d7e89ecbf1c96d1fd59c556dda097ac548e19e9569420"
+        },
+        {
+          "path": "src/graph_batch/batch.cc",
+          "sha256": "0cc4ef55f0a082fb800bdd3a5ab9de1d8786d117e082bce17d9d7773a9bfb54a"
+        },
+        {
+          "path": "tests/compute_batch/CMakeLists.txt",
+          "sha256": "2feaae993a7dfa1ea40555b2c683e91667742bf396957812dea202463db3decc"
+        },
+        {
+          "path": "tests/compute_batch/batch_layout_test.cc",
+          "sha256": "420b26027914ebc73c5654f49a363b7f5e707c031fe6100763de9295e03c5167"
+        },
+        {
+          "path": "tests/compute_batch/batch_materialize_test.cc",
+          "sha256": "52fbb3de001c0889f4dc0da33df9c9f22d381447273c9bd56e59891615e5d2c4"
+        },
+        {
+          "path": "tests/compute_batch/materialized_cpu_consumer.cc",
+          "sha256": "7f361f5941cc742458f5c128ed8b43fab5e420bec04149670379c49b539ecffb"
+        },
+        {
+          "path": "tests/compute_batch/materialized_native_consumer.cc",
+          "sha256": "5bc3b0cc89168b229fae6597394b706f44bad6397433f152b32494a9b15d3113"
+        },
+        {
+          "path": "tests/compute_batch/native_arena_direct_consumer.h",
+          "sha256": "42bbb89bd43d12f752719ef10efa261127004880d87cd005f2cd19c232ba888e"
+        },
+        {
+          "path": "tests/compute_batch/native_arena_graph_consumer.h",
+          "sha256": "d58f9c6e255c987a60ce30c8a8a8a2a06e4a3150e413875051b551acfd6ad1f8"
+        },
+        {
+          "path": "tests/compute_batch/native_direct_consumer.cc",
+          "sha256": "5db1b9aee0e4f9dbfee5f866a9c157de97a844eb23cf1e12ba638eba3c8f21cc"
+        },
+        {
+          "path": "tests/compute_batch/native_graph_consumer.cc",
+          "sha256": "618f9b7063d24f6471b47846d52deeec133751ce58052b59ce22794c928991a5"
+        },
+        {
+          "path": "tests/compute_batch/paged_arena_test.cc",
+          "sha256": "9f42b74ba3b35df0daf73347e91be201ae461aceb76f38d944a9fb0f018fbdae"
+        }
+      ]
+    ]
+  },
+  "archives": [
+    {
+      "name": "native-raw.zip",
+      "sha256": "ecb74ba6472b68ea1681256edeeed6752a760e2d76d00e01de7452dc18a9e2eb"
+    },
+    {
+      "name": "windows-raw.zip",
+      "sha256": "7920fdf24da2a9ea0734a62fe9e0e5e6262da85c16c652df807b9a9e3b96c56e"
+    }
+  ]
+}

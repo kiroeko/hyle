@@ -112,6 +112,39 @@ update lambda编译FAIL/原输入历史与累计预算；原typed host/source合
 产品仍AUDITED；Graph同slot、四路线显式reference/append闭环、完整故障/SDK/san/P0/终审
 尚未完成，不能CANDIDATE/CLOSED，也不能据四个Direct域代签整个F5或单机吞吐。
 
+## AUDITED G-PAGE：原Graph精确页权限绑定
+
+baseline 9d9ab550b。ARENA-03 Direct已证明整块容量视图与actual page guards必须分立；
+原LeasedInvocation::bind(ReadLease)要求完整TensorDesc覆盖，不能承载这项真实消费者。
+graph/graph_batch沿本卡AUDITED有限FIX增加G-PAGE，不重开F1/F4产品、不改v19或普通对象字段。
+
+- graph private RegionAccess冷create显式预留额外readonly guards容量。沿原bindings容器
+  保存实际F1 page guards，尾部guard-only项用无效ValueId表示，不参与公开binding查找。
+  原submit不增加分支/第二executor：同一原LeaseUseBatch读取所有项，原prefix retirement
+  统一保活。reset冷移除guard-only项；普通调用无额外项、无扩容及use容量变化。
+- private projected bind仅input、不可直接published、不可有physical alias descendant；
+  扫描实际physical plan所有读者，必须是调用者给定exact ProviderId下的selected region
+  step且在给定allow-list中。普通operation/copy/其他region或无读者拒绝。再沿原Invocation
+  bind检查描述/resource/alias；实际page guards必须同resource/native handle且在容量范围。
+  trusted graph_batch负责从不可伪造PagedArenaRead取得容量/guards，并核每个消费slot的
+  K/V端口、same-schema与完全相同layout版本；query/metadata或混合layout不能借此绑定。
+- graph_batch Slot保immutable K/V frames到原Invocation/Completion/result退休；shared_submit
+  核实际输入storage精确身份，prevent raw容量或同slot版本替换。prepare只有原控制门通过
+  后清frames/guards/token，部分失败不能提交混合generation。一次prepare内projected端口
+  不接受覆绑；prepare/reset是显式更新边界，ordinary dense路径不自动升级资格。
+- 验证：原native Graph同树/累计预算新增F16/BF16实际页append→F4发布→旧新旧oracle，
+  used-page/free-page分离；错误schema/layout/port/公开whole-arena输出/非batch读者拒绝，
+  旧result阻止更新、close/escaped result/最后metadata归零。Win真实owner/WX与新头检查。
+  源码/SDK/san及其他全F5风险继续按主卡，不能用此checkpoint代签整个F5。
+
+G-PAGE已实现，见[逐页Graph收据](../../../../evidence/correctness/foundation-f5-graph-page-first/README.md)。
+实际CUDA Graph F16/BF16旧→新→旧六oracle、原两域双节点12oracle、CPU实际Copy/
+alias/published容量三拒绝、原result/close/escaped result/最后quota0通过。原F2 clone1024+
+append512bytes与F4脏成员/同版本metadata成功发布，whole arena4096未复制。Win原产品
+source/static消费、modified Graph owner TU/WX和两个独立Graph头通过。新test错误View
+构造器编译FAIL保留，按原slice工厂修正。六FIX及四路线reference/完整控制器/ragged/
+其他风险/SDK/san/P0/guide/终审未缩减，仍AUDITED；本次不签candidate/完整F5。
+
 ## AUDITED Graph opt-in同slot冻结
 
 graph与graph_batch进入AUDITED。Graph只增加cold private region访问桥：Executable访问实际

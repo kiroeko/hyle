@@ -2,6 +2,7 @@
 #include "hyle/graph/detail/region_access.h"
 #include "hyle/graph/region_provider.h"
 #include "hyle/compute/detail/batch_graph_access.h"
+#include "hyle/compute/detail/paged_arena_access.h"
 #include "hyle/mem/std_allocator.h"
 #include "hyle/util/ref_counted.h"
 #include "../compute/provider_internal.h"
@@ -22,11 +23,15 @@ struct Context final {Config*config=nullptr;void*base=nullptr;const cd::Provider
 struct Region final {
   explicit Region(Config*p):config(p){p->incref();}
   ~Region(){config->decref();}
-  Config*config;NodeId node;ValueId metadata;std::array<std::size_t,4> inputs{};
+  Config*config;NodeId node;ValueId metadata;std::array<ValueId,4> values{};std::array<std::size_t,4> inputs{};
   c::BatchProgramOptions options;
   std::mutex cold_lock;c::BatchProgram program;
 };
-struct Slot final {Region*region=nullptr;c::BatchInvocation native;c::PreparedBatch token;};
+struct Slot final {Region*region=nullptr;c::BatchInvocation native;c::PreparedBatch token;
+  c::BatchLayoutVersion layout;c::PagedArenaRead keys,values;};
+bool same_storage(mem::ConstBufferView a,mem::ConstBufferView b)noexcept{
+  return a.resource()==b.resource() && a.native_handle()==b.native_handle() && a.offset()==b.offset() && a.size()==b.size();
+}
 constexpr c::ProviderRuntimeProperties runtime{.mode=c::ProviderRuntimeMode::kSharedQueue,
   .workspace_owner=c::ProviderWorkspaceOwner::kProvider,.replay_class=c::ProviderReplayClass::kManaged,
   .blocks_host=false,.uses_private_threads=false,.supports_concurrent_invocations=true,.capture_compatible=false};
@@ -70,6 +75,11 @@ cd::EnqueueResult submit_region(void*prepared,void*invocation,c::Queue&queue,std
   const auto&r=*static_cast<Region*>(prepared);auto&s=*static_cast<Slot*>(invocation);
   if(!s.token.valid() || inputs.size()!=4)return cd::EnqueueResult::rejected(Status::FailedPrecondition("Graph batch region has no explicit prepared token"));
   std::array<c::ConstTensorView,4> ordered;for(std::size_t i=0;i<4;++i)ordered[i]=inputs[r.inputs[i]];
+  for(std::size_t port=1;port<3;++port){const auto&frame=port==1?s.keys:s.values;if(!frame.valid())continue;
+    auto view=cd::PagedArenaAccess::tensor(frame);if(!view)return cd::EnqueueResult::rejected(view.error());
+    if(frame.layout()!=s.layout || !same_storage(view->storage(),ordered[port].storage()))
+      return cd::EnqueueResult::rejected(Status::InvalidArgument("Graph paged input differs from its prepared page permissions"));
+  }
   return cd::BatchGraphAccess::enqueue(s.token,queue,ordered,outputs);
 }
 const ProviderRegionPreparedVTable region_table{.destroy_prepared=&destroy_region,.alias_support=&alias,.create_invocation=&create_slot,.destroy_invocation=&destroy_slot,.shared_submit=&submit_region};
@@ -81,7 +91,7 @@ c::ProviderPrepareOutcome compile_region(void*opaque,const RegionCompileRequest&
   *out={.vtable=&region_table,.state=p,.properties={.workspace={0,16},.persistent_bytes=std::nullopt,.runtime=runtime,.invocation_private_bytes=std::nullopt}};
   p->node=r.nodes[0];
   p->options=context.config->options;p->options.resource=r.output_resources[0];
-  for(std::size_t i=0;i<4;++i){auto value=r.graph->node_input(p->node,i);if(!value)return c::ProviderPrepareOutcome::error(value.error());auto found=std::find(r.inputs.begin(),r.inputs.end(),*value);if(found==r.inputs.end())return c::ProviderPrepareOutcome::error(Status::Internal("batch region port mapping"));p->inputs[i]=std::size_t(found-r.inputs.begin());if(i==3){if(value->kind()!=ValueKind::kInput)return c::ProviderPrepareOutcome::unsupported(Status::Unimplemented("batch metadata must be an explicit host-known Graph input"));p->metadata=*value;}}
+  for(std::size_t i=0;i<4;++i){auto value=r.graph->node_input(p->node,i);if(!value)return c::ProviderPrepareOutcome::error(value.error());auto found=std::find(r.inputs.begin(),r.inputs.end(),*value);if(found==r.inputs.end())return c::ProviderPrepareOutcome::error(Status::Internal("batch region port mapping"));p->inputs[i]=std::size_t(found-r.inputs.begin());p->values[i]=*value;if(i==3){if(value->kind()!=ValueKind::kInput)return c::ProviderPrepareOutcome::unsupported(Status::Unimplemented("batch metadata must be an explicit host-known Graph input"));p->metadata=*value;}}
   return c::ProviderPrepareOutcome::prepared();
 }
 const RegionProviderVTable region_provider{&propose,&resources,&compile_region};
@@ -108,7 +118,7 @@ const cd::ProviderVTable provider_table{.identity={kProviderId,"graph-batch","1"
 } // namespace
 namespace detail {
 struct InvocationData final {
-  struct Binding{NodeId node;ValueId metadata;Region*region=nullptr;Slot*slot=nullptr;};
+  struct Binding{NodeId node;ValueId metadata;Region*region=nullptr;Slot*slot=nullptr;std::uint32_t step=0;};
   explicit InvocationData(mem::AllocatorRef a):allocator(a),bindings(mem::StdAllocator<Binding>(a)){}
   mem::AllocatorRef allocator;LeasedInvocation original;c::Queue*queue=nullptr;
   std::vector<Binding,mem::StdAllocator<Binding>>bindings;
@@ -144,20 +154,24 @@ Result<Invocation> Invocation::create(const Executable&executable,const c::Conte
     if(view.owner->provider().id!=kProviderId)return Status::Ok();auto&call=*static_cast<Call*>(opaque);auto&r=*static_cast<Region*>(view.prepared);auto&s=*static_cast<Slot*>(view.invocation);
     {std::lock_guard guard(r.cold_lock);if(!r.program.valid()){r.options.host_workspace=call.host_workspace;HYLE_ASSIGN_OR_RETURN(r.program,cd::BatchGraphAccess::prepare(*call.context,r.config->schema,r.options,view.owner->provider_instance_id()));}else if(r.options.host_workspace!=call.host_workspace)return Status::InvalidArgument("Graph batch host resource differs from its cold program");}
     HYLE_ASSIGN_OR_RETURN(s.native,cd::BatchGraphAccess::create(r.program,*call.queue));
-    try{call.data->bindings.push_back({r.node,r.metadata,&r,&s});}catch(...){return Status::ResourceExhausted("Graph batch node binding metadata");}return Status::Ok();
+    try{call.data->bindings.push_back({r.node,r.metadata,&r,&s,view.step});}catch(...){return Status::ResourceExhausted("Graph batch node binding metadata");}return Status::Ok();
   },&call));
   if(p->bindings.empty())return std::unexpected(Status::Unimplemented("executable has no selected native batch region"));
+  std::uint64_t extra=0;for(const auto&binding:p->bindings)extra+=2ULL*binding.region->config->schema.capacity().max_page_refs;
+  if(extra>UINT32_MAX-1)return std::unexpected(Status::ResourceExhausted("Graph page guard capacity overflow"));
+  if(extra)HYLE_RETURN_IF_ERROR(gd::RegionAccess::reserve_reads(p->original,std::uint32_t(extra),options));
   return result;
 }
 Status Invocation::prepare_batch(std::span<const NodeLayout>layouts,bool update)noexcept{
   if(!data_ || layouts.size()!=data_->bindings.size())return Status::InvalidArgument("Graph batch needs a complete node/layout set");
   for(std::size_t i=0;i<layouts.size();++i){auto found=std::find_if(data_->bindings.begin(),data_->bindings.end(),[&](auto&b){return b.node==layouts[i].node;});if(found==data_->bindings.end() || !found->region->config->schema.owns(layouts[i].layout))return Status::InvalidArgument("Graph batch node/schema is foreign");for(std::size_t j=0;j<i;++j){if(layouts[j].node==layouts[i].node)return Status::InvalidArgument("Graph batch duplicate node layout");auto previous=std::find_if(data_->bindings.begin(),data_->bindings.end(),[&](auto&b){return b.node==layouts[j].node;});if(previous->metadata==found->metadata && layouts[j].layout!=layouts[i].layout)return Status::InvalidArgument("one Graph metadata input requires one layout version");}}
   HYLE_RETURN_IF_ERROR(data_->original.reset());
-  for(auto&binding:data_->bindings){binding.slot->token={};cd::BatchGraphAccess::clear_shared_metadata(binding.slot->native);}
+  for(auto&binding:data_->bindings){binding.slot->token={};binding.slot->layout={};binding.slot->keys={};binding.slot->values={};cd::BatchGraphAccess::clear_shared_metadata(binding.slot->native);}
   const auto prepare=[&]()noexcept->Status{
   for(const auto&layout:layouts){auto&binding=*std::find_if(data_->bindings.begin(),data_->bindings.end(),[&](auto&b){return b.node==layout.node;});binding.slot->token={};
     if(update){HYLE_ASSIGN_OR_RETURN(binding.slot->token,binding.slot->native.update_batch(layout.layout));}
     else{HYLE_ASSIGN_OR_RETURN(binding.slot->token,binding.slot->native.prepare_batch(layout.layout));}
+    binding.slot->layout=layout.layout;
   }
   for(std::size_t i=0;i<data_->bindings.size();++i){auto&binding=data_->bindings[i];auto previous=std::find_if(data_->bindings.begin(),data_->bindings.begin()+i,[&](auto&b){return b.metadata==binding.metadata;});
     if(previous!=data_->bindings.begin()+i){HYLE_RETURN_IF_ERROR(cd::BatchGraphAccess::share_metadata(binding.slot->native,previous->slot->native));continue;}
@@ -165,8 +179,25 @@ Status Invocation::prepare_batch(std::span<const NodeLayout>layouts,bool update)
   }return Status::Ok();};
   const auto status=prepare();if(!status.ok()){for(auto&binding:data_->bindings){binding.slot->token={};cd::BatchGraphAccess::clear_shared_metadata(binding.slot->native);}data_->original.reset().IgnoreError();}return status;
 }
-Status Invocation::bind(ValueId value,c::TensorDesc description,c::ReadLease lease)noexcept{if(!data_)return Status::FailedPrecondition("Graph batch coordinator is empty");for(auto&b:data_->bindings)if(b.metadata==value)return Status::InvalidArgument("Graph batch metadata is library-owned");return data_->original.bind(value,description,std::move(lease));}
-Status Invocation::bind(ValueId value,c::TensorDesc description,c::WriteLease&&lease)noexcept{if(!data_)return Status::FailedPrecondition("Graph batch coordinator is empty");for(auto&b:data_->bindings)if(b.metadata==value)return Status::InvalidArgument("Graph batch metadata is library-owned");return data_->original.bind(value,description,std::move(lease));}
+Status Invocation::bind(ValueId value,c::TensorDesc description,c::ReadLease lease)noexcept{if(!data_)return Status::FailedPrecondition("Graph batch coordinator is empty");for(auto&b:data_->bindings){if(b.metadata==value)return Status::InvalidArgument("Graph batch metadata is library-owned");if((b.region->values[1]==value && b.slot->keys.valid()) || (b.region->values[2]==value && b.slot->values.valid()))return Status::FailedPrecondition("Graph projected input needs explicit prepare before rebinding");}return data_->original.bind(value,description,std::move(lease));}
+Status Invocation::bind(ValueId value,c::TensorDesc description,c::WriteLease&&lease)noexcept{if(!data_)return Status::FailedPrecondition("Graph batch coordinator is empty");for(auto&b:data_->bindings){if(b.metadata==value)return Status::InvalidArgument("Graph batch metadata is library-owned");if((b.region->values[1]==value && b.slot->keys.valid()) || (b.region->values[2]==value && b.slot->values.valid()))return Status::FailedPrecondition("Graph projected input needs explicit prepare before rebinding");}return data_->original.bind(value,description,std::move(lease));}
+Status Invocation::bind(ValueId value,c::PagedArenaRead frame)noexcept{
+  if(!data_ || !frame.valid())return Status::InvalidArgument("Graph paged binding requires a coordinator and frame");
+  std::vector<std::uint32_t,mem::StdAllocator<std::uint32_t>> readers{mem::StdAllocator<std::uint32_t>(data_->allocator)};
+  try{readers.reserve(data_->bindings.size());for(const auto&b:data_->bindings){const auto&r=*b.region;
+    if(r.values[0]==value || r.values[3]==value)return Status::InvalidArgument("paged arena cannot bind query or metadata");
+    if(r.values[1]!=value && r.values[2]!=value)continue;
+    if(r.config->schema.capacity().storage!=c::BatchStorage::kPaged || !r.config->schema.owns(frame.layout()) ||
+       !b.slot->token.valid() || b.slot->layout!=frame.layout())return Status::InvalidArgument("Graph page layout/schema differs from its prepared slot");
+    if((r.values[1]==value && b.slot->keys.valid()) || (r.values[2]==value && b.slot->values.valid()))
+      return Status::FailedPrecondition("Graph projected input needs explicit prepare before rebinding");
+    readers.push_back(b.step);
+  }}catch(...){return Status::ResourceExhausted("Graph page reader qualification metadata");}
+  HYLE_ASSIGN_OR_RETURN(auto tensor,cd::PagedArenaAccess::tensor(frame));
+  HYLE_RETURN_IF_ERROR(gd::RegionAccess::bind_projected(data_->original,value,tensor,cd::PagedArenaAccess::pages(frame),kProviderId,readers));
+  for(auto&b:data_->bindings){if(b.region->values[1]==value)b.slot->keys=frame;if(b.region->values[2]==value)b.slot->values=frame;}
+  return Status::Ok();
+}
 Result<c::Completion> Invocation::submit()noexcept{if(!data_)return std::unexpected(Status::FailedPrecondition("Graph batch coordinator is empty"));return data_->original.submit(*data_->queue);}
 Result<LeasedGraphOutput> Invocation::output(ValueId value)noexcept{if(!data_)return std::unexpected(Status::FailedPrecondition("Graph batch coordinator is empty"));return data_->original.output(value);}
 Result<c::BatchPlanReport> Invocation::report(NodeId node)const noexcept{if(!data_)return std::unexpected(Status::FailedPrecondition("Graph batch coordinator is empty"));for(const auto&b:data_->bindings)if(b.node==node)return b.slot->native.report();return std::unexpected(Status::InvalidArgument("Graph batch report node is foreign"));}

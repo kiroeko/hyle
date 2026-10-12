@@ -2,6 +2,7 @@
 #include "hyle/graph/detail/region_access.h"
 
 #include <atomic>
+#include <algorithm>
 #include <array>
 #include <mutex>
 #include <new>
@@ -84,6 +85,64 @@ Status control_ready(LeasedInvocationState *state) noexcept {
     return Status::Unavailable("leased graph results still retain this invocation");
   if (!state->completion.available())
     return Status::Unavailable("old leased graph completion retains its slot");
+  return Status::Ok();
+}
+Status RegionAccess::reserve_reads(LeasedInvocation&invocation,std::uint32_t extra,
+    LeasedInvocationOptions options)noexcept{
+  auto*state=invocation.state_;HYLE_RETURN_IF_ERROR(control_ready(state));
+  for(const auto&binding:state->bindings)if(binding.read.valid() || binding.write.valid())
+    return Status::FailedPrecondition("projected capacity must be reserved before bindings");
+  if(extra>UINT32_MAX-1 || state->bindings.size()>UINT32_MAX-1-extra)
+    return Status::ResourceExhausted("projected graph permission capacity overflow");
+  HYLE_ASSIGN_OR_RETURN(auto uses,compute::LeaseUsePool::create({.max_batches=1,
+    .max_resources_per_batch=std::uint32_t(state->bindings.size()+extra+1),
+    .allocator=options.allocator,.resource_budget=options.resource_budget}));
+  try{state->bindings.reserve(state->bindings.size()+extra);}
+  catch(...){return Status::ResourceExhausted("projected graph fixed permission metadata");}
+  state->uses=std::move(uses);return Status::Ok();
+}
+Status RegionAccess::bind_projected(LeasedInvocation&invocation,ValueId value,
+    compute::ConstTensorView tensor,std::span<const compute::ReadLease> pages,
+    compute::ProviderId provider,std::span<const std::uint32_t> readers)noexcept{
+  auto*state=invocation.state_;HYLE_RETURN_IF_ERROR(control_ready(state));
+  auto*binding=find_binding(state,value);
+  if(!binding || !binding->input || !tensor.valid() || pages.empty() || readers.empty())
+    return Status::InvalidArgument("projected graph requires an input and actual page permissions");
+  if(binding->read.valid() || binding->write.valid())
+    return Status::FailedPrecondition("projected graph input needs an explicit reset before rebinding");
+  const auto&plan=*InvocationAccess::state(state->invocation)->plan;
+  const auto logical=value.ordinal();const auto physical=plan.external_instances[logical];
+  if((plan.binding_roles[logical]&kExternalOutput)!=0)
+    return Status::InvalidArgument("projected capacity cannot be a graph output");
+  for(std::size_t i=0;i<plan.alias_sources.size();++i){
+    // Every descendant chain must contain a direct child of this root.
+    if(i!=physical && plan.alias_sources[i]==physical)
+      return Status::InvalidArgument("projected capacity cannot have a physical alias descendant");
+  }
+  bool consumed=false;
+  for(std::size_t i=0;i<plan.steps.size();++i){const auto&step=plan.steps[i];
+    for(std::size_t port=0;port<step.input_count;++port){
+      const auto input=plan.node_inputs[step.input_begin+port];
+      if(plan.instance_values[input]!=logical)continue;
+      consumed=true;
+      if(input!=physical || step.kind!=PlanStepKind::kRegion ||
+         step.region.provider().id!=provider || std::find(readers.begin(),readers.end(),i)==readers.end())
+        return Status::InvalidArgument("projected capacity has an unqualified physical reader");
+    }
+  }
+  if(!consumed)return Status::InvalidArgument("projected capacity has no qualified reader");
+  if(pages.size()-1>state->bindings.capacity()-state->bindings.size())
+    return Status::ResourceExhausted("projected graph permission capacity exhausted");
+  const auto storage=tensor.storage();
+  for(const auto&page:pages){HYLE_ASSIGN_OR_RETURN(auto view,page.view());
+    if(view.resource()!=storage.resource() || view.native_handle()!=storage.native_handle() ||
+       view.offset()<storage.offset() || view.offset()-storage.offset()>storage.size() ||
+       view.size()>storage.size()-(view.offset()-storage.offset()))
+      return Status::InvalidArgument("projected page permission is outside its native capacity");
+  }
+  HYLE_RETURN_IF_ERROR(state->invocation.bind(value,tensor));
+  binding->read=pages.front();binding->description=tensor.description();binding->exclusive=false;
+  for(std::size_t i=1;i<pages.size();++i)state->bindings.push_back({.read=pages[i]});
   return Status::Ok();
 }
 void record_error(LeasedInvocationState *state, const Status &error) noexcept {
@@ -284,6 +343,7 @@ Result<ReplayReport> LeasedInvocation::replay_report() const noexcept {
 Status LeasedInvocation::reset() noexcept {
   HYLE_RETURN_IF_ERROR(detail::control_ready(state_));
   HYLE_RETURN_IF_ERROR(state_->invocation.reset());
+  std::erase_if(state_->bindings,[](const auto&binding){return !binding.value.valid();});
   for (auto &binding : state_->bindings) {
     binding.read.reset(); binding.write.reset(); binding.exclusive = false;
   }

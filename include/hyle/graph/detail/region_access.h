@@ -17,5 +17,13 @@ struct RegionAccess final {
   HYLE_GRAPH_API static Status visit(const Executable&,RegionAccessFn,void*) noexcept;
   HYLE_GRAPH_API static Status visit(Invocation&,RegionAccessFn,void*) noexcept;
   HYLE_GRAPH_API static Status visit(LeasedInvocation&,RegionAccessFn,void*) noexcept;
+  // Cold opt-in capacity; ordinary leased invocations retain their old cost.
+  HYLE_GRAPH_API static Status reserve_reads(LeasedInvocation&,std::uint32_t,
+      LeasedInvocationOptions) noexcept;
+  // Trusted adapters supply the exact footprint and qualify every reader.
+  // Rejects copies, ordinary operations, aliases and published capacity views.
+  HYLE_GRAPH_API static Status bind_projected(LeasedInvocation&,ValueId,
+      compute::ConstTensorView,std::span<const compute::ReadLease>,
+      compute::ProviderId,std::span<const std::uint32_t> reader_steps) noexcept;
 };
 } // namespace hyle::graph::detail

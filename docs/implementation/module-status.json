@@ -278,7 +278,7 @@
       "module": "graph",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/foundation-f5-owner-bridges.md",
-      "summary": "F5 Graph AUDITED实施：原region同slot/native kernel直接写Graph输出；WSL两域双节点共享metadata/双独立slot与拓扑更新12次oracle通过，旧结果/错版本/第三slot拒绝；完整风险/四路线reference/append/交付/san/终审未完成。"
+      "summary": "F5 Graph AUDITED实施：原region同slot/精确页guards消费，CUDA F16/BF16 append→F4发布→旧新旧六oracle及原两域12oracle通过；普通reader/alias/published容量拒绝，Win owner/WX与两独立头通过。reference逐页桥/完整controller/ragged/其他风险/SDK/san/终审未完成。"
     },
     {
       "module": "container_concurrent",
@@ -627,7 +627,7 @@
     {
       "module": "graph_batch",
       "state": "AUDITED",
-      "summary": "F5 Graph AUDITED实施：原region同slot/native kernel直接写Graph输出；WSL两域双节点共享metadata/双独立slot与拓扑更新12次oracle通过，旧结果/错版本/第三slot拒绝；完整风险/四路线reference/append/交付/san/终审未完成。",
+      "summary": "F5 Graph AUDITED实施：原region同slot/精确页guards消费，CUDA F16/BF16 append→F4发布→旧新旧六oracle及原两域12oracle通过；普通reader/alias/published容量拒绝，Win owner/WX与两独立头通过。reference逐页桥/完整controller/ragged/其他风险/SDK/san/终审未完成。",
       "record": "docs/implementation/tasks/compute/foundation-f5-owner-bridges.md"
     }
   ]

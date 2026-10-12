@@ -1,0 +1,25 @@
+HYLE batch oracle maxError=0.000128634051 PASS
+HYLE batch oracle maxError=0.000140543438 PASS
+HYLE batch oracle maxError=0.000128634051 PASS
+HYLE batch oracle maxError=0.000140543438 PASS
+HYLE batch oracle maxError=7.07328965e-05 PASS
+HYLE batch oracle maxError=0.000105221591 PASS
+HYLE Graph original region paged F16 D64 same-slot/shared-metadata/two-slots/oracle/old-result PASS
+HYLE batch oracle maxError=3.63346144e-05 PASS
+HYLE batch oracle maxError=3.66750425e-06 PASS
+HYLE batch oracle maxError=3.63346144e-05 PASS
+HYLE batch oracle maxError=3.66750425e-06 PASS
+HYLE batch oracle maxError=3.63346144e-05 PASS
+HYLE batch oracle maxError=2.83173151e-06 PASS
+HYLE Graph original region ragged BF16 D128 same-slot/shared-metadata/two-slots/oracle/old-result PASS
+Graph projected rejection mode=0: InvalidArgument: projected capacity has an unqualified physical reader PASS
+Graph projected rejection mode=1: InvalidArgument: projected capacity cannot have a physical alias descendant PASS
+Graph projected rejection mode=2: InvalidArgument: projected capacity cannot be a graph output PASS
+Graph page branch oracle expected=0.250 PASS
+Graph page branch oracle expected=0.375 PASS
+Graph page branch oracle expected=0.250 PASS
+HYLE Graph paged arena F16 append/F4/publish/old-version/precise-page-use/escaped-result PASS; cloned=1024 appended=512 full-arena=4096
+Graph page branch oracle expected=0.250 PASS
+Graph page branch oracle expected=0.375 PASS
+Graph page branch oracle expected=0.250 PASS
+HYLE Graph paged arena BF16 append/F4/publish/old-version/precise-page-use/escaped-result PASS; cloned=1024 appended=512 full-arena=4096

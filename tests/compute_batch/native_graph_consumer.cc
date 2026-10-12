@@ -2,6 +2,7 @@
 #include "native_direct_consumer.cc"
 #undef main
 #include <hyle/graph/batch.h>
+#include "native_arena_graph_consumer.h"
 namespace {
 namespace g=hyle::graph;namespace gb=g::batch;
 template<class T>Status graph_case(bool paged,unsigned depth,bool large){
@@ -14,6 +15,7 @@ template<class T>Status graph_case(bool paged,unsigned depth,bool large){
     HYLE_ASSIGN_OR_RETURN(auto wrapped,gb::provider(c::flashinfer::provider(),schema,{.max_float_workspace_bytes=8u*1024u*1024u,.max_int_workspace_bytes=64u*1024u,.scale=1.f/std::sqrt(float(depth)),.allocator=metadata.get()}));
     HYLE_ASSIGN_OR_RETURN(auto device_id,cu::device(0));HYLE_ASSIGN_OR_RETURN(auto context,c::Context::create(device_id,wrapped));HYLE_ASSIGN_OR_RETURN(auto queue,context.create_queue());
     HYLE_ASSIGN_OR_RETURN(auto device,cu::MemoryResource::create(context,cu::MemoryKind::kDevice));HYLE_ASSIGN_OR_RETURN(auto host,cu::MemoryResource::create(context,cu::MemoryKind::kPinnedHost));
+    struct DrainBeforeResources{c::Context&context;~DrainBeforeResources(){context.drain().IgnoreError();}}drain_before_resources{context};
     const std::array<std::int32_t,3> query{0,1,3};const std::array<std::int32_t,3> kv{0,std::int32_t(paged?refs1:n1),std::int32_t(paged?refs1+refs2:n1+n2)};
     const std::array<std::int32_t,2> tails{std::int32_t((n1-1)%16+1),std::int32_t((n2-1)%16+1)};
     std::vector<std::int32_t> ids(paged?refs1+refs2:0);for(unsigned i=0;i<ids.size();++i)ids[i]=std::int32_t((i+7)%ids.size());
@@ -62,6 +64,6 @@ template<class T>Status graph_case(bool paged,unsigned depth,bool large){
   }
   const auto end=std::chrono::steady_clock::now()+std::chrono::seconds(5);while(metadata.used()&&std::chrono::steady_clock::now()<end)std::this_thread::sleep_for(std::chrono::milliseconds(1));return require(metadata.used()==0,"Graph batch configuration/slot metadata leaked");
 }
-Status graph_run(){HYLE_RETURN_IF_ERROR(graph_case<half>(true,64,false));return graph_case<__nv_bfloat16>(false,128,true);}
+Status graph_run(){HYLE_RETURN_IF_ERROR(graph_case<half>(true,64,false));HYLE_RETURN_IF_ERROR(graph_case<__nv_bfloat16>(false,128,true));return hyle_f5_graph_arena_fixture::run();}
 } // namespace
-int main(){const auto status=graph_run();if(status.ok())return 0;char text[768]{};status.ToString(text,sizeof(text));std::fprintf(stderr,"F5 Graph: %s\n",text);return 1;}
+int main(){std::setvbuf(stdout,nullptr,_IONBF,0);const auto status=graph_run();if(status.ok())return 0;char text[768]{};status.ToString(text,sizeof(text));std::fprintf(stderr,"F5 Graph: %s\n",text);return 1;}

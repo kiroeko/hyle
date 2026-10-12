@@ -2,6 +2,7 @@
 #include "hyle/graph/leased_invocation.h"
 #include "hyle/compute/batch_execution.h"
 #include "hyle/compute/batch_materialize.h"
+#include "hyle/compute/paged_arena.h"
 
 #if defined(HYLE_STATIC)
 #define HYLE_GRAPH_BATCH_API
@@ -51,6 +52,9 @@ public:
   // preparation error clears every token, so submit cannot mix old/new plans.
   HYLE_GRAPH_BATCH_API Status prepare_batch(std::span<const NodeLayout>,bool update=true) noexcept;
   HYLE_GRAPH_BATCH_API Status bind(ValueId,compute::TensorDesc,compute::ReadLease) noexcept;
+  // Exact same-layout paged K/V permissions. Only qualified batch readers;
+  // capacity cannot be published or consumed by ordinary dense operations.
+  HYLE_GRAPH_BATCH_API Status bind(ValueId,compute::PagedArenaRead) noexcept;
   HYLE_GRAPH_BATCH_API Status bind(ValueId,compute::TensorDesc,compute::WriteLease&&) noexcept;
   HYLE_GRAPH_BATCH_API Result<compute::Completion> submit() noexcept;
   HYLE_GRAPH_BATCH_API Result<LeasedGraphOutput> output(ValueId) noexcept;
