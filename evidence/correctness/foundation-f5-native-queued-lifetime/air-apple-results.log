@@ -1,0 +1,423 @@
+Apple actual GPU Apple M4 / applegpu_g16g / Version 27.0.1 (Build 26A434)
+Apple Direct queued metadata prepare waited=1 failed-prefix/no-publication PASS
+Apple Direct queued math mode=1 guards-before=3 guards-after=0 cancel/abandon/failure/no-reuse PASS
+Apple Direct queued math mode=2 guards-before=3 guards-after=0 cancel/abandon/failure/no-reuse PASS
+Apple Direct queued math mode=3 guards-before=3 guards-after=0 cancel/abandon/failure/no-reuse PASS
+Apple Graph queued metadata prepare waited=1 failed-prefix/no-publication PASS
+Apple Graph queued math mode=1 guards-before=3 guards-after=0 cancel/abandon/failure/no-reuse PASS
+Apple Graph queued math mode=2 guards-before=3 guards-after=0 cancel/abandon/failure/no-reuse PASS
+Apple Graph queued math mode=3 guards-before=3 guards-after=0 cancel/abandon/failure/no-reuse PASS
+Apple metadata layout=1 staged=1920 uploaded=1920 hostWaits=2 PASS
+materialized independent oracle maxError=3.0380168e-05 PASS
+materialized independent oracle maxError=3.0380168e-05 PASS
+Apple metadata layout=2 staged=1920 uploaded=1920 hostWaits=2 PASS
+materialized independent oracle maxError=3.03596683e-05 PASS
+materialized independent oracle maxError=3.0380168e-05 PASS
+materialized independent oracle maxError=3.0380168e-05 PASS
+Apple metadata layout=3 staged=1920 uploaded=1920 hostWaits=2 PASS
+materialized independent oracle maxError=3.03596683e-05 PASS
+materialized independent oracle maxError=3.0380168e-05 PASS
+materialized independent oracle maxError=3.0380168e-05 PASS
+materialized independent oracle maxError=3.03596683e-05 PASS
+Apple native controller Direct paged F16 causal=0 two-banks/same-generation/two-slots/update PASS; backing=6138 uploaded=1920 waits=2
+materialized independent oracle maxError=3.0380168e-05 PASS
+materialized independent oracle maxError=3.0380168e-05 PASS
+materialized independent oracle maxError=3.03596683e-05 PASS
+Apple native controller Graph paged F16 causal=0 two-banks/same-generation/two-slots/update PASS; backing=6138 uploaded=1920 waits=2
+Apple explicit materialized paged F16 causal=0 native Direct/Graph NaN-padding/two-slots/update/old-result PASS
+Apple metadata layout=1 staged=1920 uploaded=1920 hostWaits=2 PASS
+materialized independent oracle maxError=5.72360158e-05 PASS
+materialized independent oracle maxError=5.72360158e-05 PASS
+Apple metadata layout=2 staged=1920 uploaded=1920 hostWaits=2 PASS
+materialized independent oracle maxError=3.03596683e-05 PASS
+materialized independent oracle maxError=5.72360158e-05 PASS
+materialized independent oracle maxError=5.72360158e-05 PASS
+Apple metadata layout=3 staged=1920 uploaded=1920 hostWaits=2 PASS
+materialized independent oracle maxError=3.03596683e-05 PASS
+materialized independent oracle maxError=5.72360158e-05 PASS
+materialized independent oracle maxError=5.72360158e-05 PASS
+materialized independent oracle maxError=3.03596683e-05 PASS
+Apple native controller Direct paged F16 causal=1 two-banks/same-generation/two-slots/update PASS; backing=6138 uploaded=1920 waits=2
+materialized independent oracle maxError=5.72360158e-05 PASS
+materialized independent oracle maxError=5.72360158e-05 PASS
+materialized independent oracle maxError=3.03596683e-05 PASS
+Apple native controller Graph paged F16 causal=1 two-banks/same-generation/two-slots/update PASS; backing=6138 uploaded=1920 waits=2
+Apple explicit materialized paged F16 causal=1 native Direct/Graph NaN-padding/two-slots/update/old-result PASS
+Apple metadata layout=1 staged=1920 uploaded=1920 hostWaits=2 PASS
+materialized independent oracle maxError=0.000243569365 PASS
+materialized independent oracle maxError=0.000243569365 PASS
+Apple metadata layout=2 staged=1920 uploaded=1920 hostWaits=2 PASS
+materialized independent oracle maxError=0.000243374406 PASS
+materialized independent oracle maxError=0.000243569365 PASS
+materialized independent oracle maxError=0.000243569365 PASS
+Apple metadata layout=3 staged=1920 uploaded=1920 hostWaits=2 PASS
+materialized independent oracle maxError=0.000243374406 PASS
+materialized independent oracle maxError=0.000243569365 PASS
+materialized independent oracle maxError=0.000243569365 PASS
+materialized independent oracle maxError=0.000243374406 PASS
+Apple native controller Direct paged BF16 causal=0 two-banks/same-generation/two-slots/update PASS; backing=6138 uploaded=1920 waits=2
+materialized independent oracle maxError=0.000243569365 PASS
+materialized independent oracle maxError=0.000243569365 PASS
+materialized independent oracle maxError=0.000243374406 PASS
+Apple native controller Graph paged BF16 causal=0 two-banks/same-generation/two-slots/update PASS; backing=6138 uploaded=1920 waits=2
+Apple explicit materialized paged BF16 causal=0 native Direct/Graph NaN-padding/two-slots/update/old-result PASS
+Apple metadata layout=1 staged=1920 uploaded=1920 hostWaits=2 PASS
+materialized independent oracle maxError=0.000483878487 PASS
+materialized independent oracle maxError=0.000483878487 PASS
+Apple metadata layout=2 staged=1920 uploaded=1920 hostWaits=2 PASS
+materialized independent oracle maxError=0.000243374406 PASS
+materialized independent oracle maxError=0.000483878487 PASS
+materialized independent oracle maxError=0.000483878487 PASS
+Apple metadata layout=3 staged=1920 uploaded=1920 hostWaits=2 PASS
+materialized independent oracle maxError=0.000243374406 PASS
+materialized independent oracle maxError=0.000483878487 PASS
+materialized independent oracle maxError=0.000483878487 PASS
+materialized independent oracle maxError=0.000243374406 PASS
+Apple native controller Direct paged BF16 causal=1 two-banks/same-generation/two-slots/update PASS; backing=6138 uploaded=1920 waits=2
+materialized independent oracle maxError=0.000483878487 PASS
+materialized independent oracle maxError=0.000483878487 PASS
+materialized independent oracle maxError=0.000243374406 PASS
+Apple native controller Graph paged BF16 causal=1 two-banks/same-generation/two-slots/update PASS; backing=6138 uploaded=1920 waits=2
+Apple explicit materialized paged BF16 causal=1 native Direct/Graph NaN-padding/two-slots/update/old-result PASS
+Apple metadata layout=1 staged=1920 uploaded=1920 hostWaits=2 PASS
+materialized independent oracle maxError=6.030212e-05 PASS
+materialized independent oracle maxError=6.030212e-05 PASS
+Apple metadata layout=2 staged=1920 uploaded=1920 hostWaits=2 PASS
+materialized independent oracle maxError=6.030212e-05 PASS
+materialized independent oracle maxError=6.030212e-05 PASS
+materialized independent oracle maxError=6.030212e-05 PASS
+Apple metadata layout=3 staged=1920 uploaded=1920 hostWaits=2 PASS
+materialized independent oracle maxError=6.030212e-05 PASS
+materialized independent oracle maxError=6.030212e-05 PASS
+materialized independent oracle maxError=6.030212e-05 PASS
+materialized independent oracle maxError=6.030212e-05 PASS
+Apple native controller Direct ragged F16 causal=0 two-banks/same-generation/two-slots/update PASS; backing=6138 uploaded=1920 waits=2
+materialized independent oracle maxError=6.030212e-05 PASS
+materialized independent oracle maxError=6.030212e-05 PASS
+materialized independent oracle maxError=6.030212e-05 PASS
+Apple native controller Graph ragged F16 causal=0 two-banks/same-generation/two-slots/update PASS; backing=6138 uploaded=1920 waits=2
+Apple explicit materialized ragged F16 causal=0 native Direct/Graph NaN-padding/two-slots/update/old-result PASS
+Apple metadata layout=1 staged=1920 uploaded=1920 hostWaits=2 PASS
+materialized independent oracle maxError=6.04093309e-05 PASS
+materialized independent oracle maxError=6.04093309e-05 PASS
+Apple metadata layout=2 staged=1920 uploaded=1920 hostWaits=2 PASS
+materialized independent oracle maxError=6.030212e-05 PASS
+materialized independent oracle maxError=6.04093309e-05 PASS
+materialized independent oracle maxError=6.04093309e-05 PASS
+Apple metadata layout=3 staged=1920 uploaded=1920 hostWaits=2 PASS
+materialized independent oracle maxError=6.030212e-05 PASS
+materialized independent oracle maxError=6.04093309e-05 PASS
+materialized independent oracle maxError=6.04093309e-05 PASS
+materialized independent oracle maxError=6.030212e-05 PASS
+Apple native controller Direct ragged F16 causal=1 two-banks/same-generation/two-slots/update PASS; backing=6138 uploaded=1920 waits=2
+materialized independent oracle maxError=6.04093309e-05 PASS
+materialized independent oracle maxError=6.04093309e-05 PASS
+materialized independent oracle maxError=6.030212e-05 PASS
+Apple native controller Graph ragged F16 causal=1 two-banks/same-generation/two-slots/update PASS; backing=6138 uploaded=1920 waits=2
+Apple explicit materialized ragged F16 causal=1 native Direct/Graph NaN-padding/two-slots/update/old-result PASS
+Apple metadata layout=1 staged=1920 uploaded=1920 hostWaits=2 PASS
+materialized independent oracle maxError=0.000483024423 PASS
+materialized independent oracle maxError=0.000483024423 PASS
+Apple metadata layout=2 staged=1920 uploaded=1920 hostWaits=2 PASS
+materialized independent oracle maxError=0.000483024423 PASS
+materialized independent oracle maxError=0.000483024423 PASS
+materialized independent oracle maxError=0.000483024423 PASS
+Apple metadata layout=3 staged=1920 uploaded=1920 hostWaits=2 PASS
+materialized independent oracle maxError=0.000483024423 PASS
+materialized independent oracle maxError=0.000483024423 PASS
+materialized independent oracle maxError=0.000483024423 PASS
+materialized independent oracle maxError=0.000483024423 PASS
+Apple native controller Direct ragged BF16 causal=0 two-banks/same-generation/two-slots/update PASS; backing=6138 uploaded=1920 waits=2
+materialized independent oracle maxError=0.000483024423 PASS
+materialized independent oracle maxError=0.000483024423 PASS
+materialized independent oracle maxError=0.000483024423 PASS
+Apple native controller Graph ragged BF16 causal=0 two-banks/same-generation/two-slots/update PASS; backing=6138 uploaded=1920 waits=2
+Apple explicit materialized ragged BF16 causal=0 native Direct/Graph NaN-padding/two-slots/update/old-result PASS
+Apple metadata layout=1 staged=1920 uploaded=1920 hostWaits=2 PASS
+materialized independent oracle maxError=0.000487680542 PASS
+materialized independent oracle maxError=0.000487680542 PASS
+Apple metadata layout=2 staged=1920 uploaded=1920 hostWaits=2 PASS
+materialized independent oracle maxError=0.000483024423 PASS
+materialized independent oracle maxError=0.000487680542 PASS
+materialized independent oracle maxError=0.000487680542 PASS
+Apple metadata layout=3 staged=1920 uploaded=1920 hostWaits=2 PASS
+materialized independent oracle maxError=0.000483024423 PASS
+materialized independent oracle maxError=0.000487680542 PASS
+materialized independent oracle maxError=0.000487680542 PASS
+materialized independent oracle maxError=0.000483024423 PASS
+Apple native controller Direct ragged BF16 causal=1 two-banks/same-generation/two-slots/update PASS; backing=6138 uploaded=1920 waits=2
+materialized independent oracle maxError=0.000487680542 PASS
+materialized independent oracle maxError=0.000487680542 PASS
+materialized independent oracle maxError=0.000483024423 PASS
+Apple native controller Graph ragged BF16 causal=1 two-banks/same-generation/two-slots/update PASS; backing=6138 uploaded=1920 waits=2
+Apple explicit materialized ragged BF16 causal=1 native Direct/Graph NaN-padding/two-slots/update/old-result PASS
+Apple metadata layout=1 staged=160 uploaded=160 hostWaits=2 PASS
+Apple paged reference F16 Direct episode=0 oracle=0.250 exact-page-guards PASS
+Apple metadata layout=2 staged=160 uploaded=160 hostWaits=2 PASS
+Apple paged reference F16 Direct episode=1 oracle=0.375 exact-page-guards PASS
+Apple metadata layout=1 staged=160 uploaded=160 hostWaits=2 PASS
+Apple paged reference F16 Direct episode=2 oracle=0.250 exact-page-guards PASS
+Apple metadata layout=1 staged=160 uploaded=160 hostWaits=2 PASS
+Apple paged reference F16 Graph episode=0 oracle=0.250 exact-page-guards PASS
+Apple metadata layout=2 staged=160 uploaded=160 hostWaits=2 PASS
+Apple paged reference F16 Graph episode=1 oracle=0.375 exact-page-guards PASS
+Apple metadata layout=1 staged=160 uploaded=160 hostWaits=2 PASS
+Apple paged reference F16 Graph episode=2 oracle=0.250 exact-page-guards PASS
+Apple Direct F16 cold metadata OOM baseline=53 live=0
+Apple Direct F16 cold metadata OOM point=1/53 cleanup PASS
+Apple Direct F16 cold metadata OOM point=2/53 cleanup PASS
+Apple Direct F16 cold metadata OOM point=3/53 cleanup PASS
+Apple Direct F16 cold metadata OOM point=4/53 cleanup PASS
+Apple Direct F16 cold metadata OOM point=5/53 cleanup PASS
+Apple Direct F16 cold metadata OOM point=6/53 cleanup PASS
+Apple Direct F16 cold metadata OOM point=7/53 cleanup PASS
+Apple Direct F16 cold metadata OOM point=8/53 cleanup PASS
+Apple Direct F16 cold metadata OOM point=9/53 cleanup PASS
+Apple Direct F16 cold metadata OOM point=10/53 cleanup PASS
+Apple Direct F16 cold metadata OOM point=11/53 cleanup PASS
+Apple Direct F16 cold metadata OOM point=12/53 cleanup PASS
+Apple Direct F16 cold metadata OOM point=13/53 cleanup PASS
+Apple Direct F16 cold metadata OOM point=14/53 cleanup PASS
+Apple Direct F16 cold metadata OOM point=15/53 cleanup PASS
+Apple Direct F16 cold metadata OOM point=16/53 cleanup PASS
+Apple Direct F16 cold metadata OOM point=17/53 cleanup PASS
+Apple Direct F16 cold metadata OOM point=18/53 cleanup PASS
+Apple Direct F16 cold metadata OOM point=19/53 cleanup PASS
+Apple Direct F16 cold metadata OOM point=20/53 cleanup PASS
+Apple Direct F16 cold metadata OOM point=21/53 cleanup PASS
+Apple Direct F16 cold metadata OOM point=22/53 cleanup PASS
+Apple Direct F16 cold metadata OOM point=23/53 cleanup PASS
+Apple Direct F16 cold metadata OOM point=24/53 cleanup PASS
+Apple Direct F16 cold metadata OOM point=25/53 cleanup PASS
+Apple Direct F16 cold metadata OOM point=26/53 cleanup PASS
+Apple Direct F16 cold metadata OOM point=27/53 cleanup PASS
+Apple Direct F16 cold metadata OOM point=28/53 cleanup PASS
+Apple Direct F16 cold metadata OOM point=29/53 cleanup PASS
+Apple Direct F16 cold metadata OOM point=30/53 cleanup PASS
+Apple Direct F16 cold metadata OOM point=31/53 cleanup PASS
+Apple Direct F16 cold metadata OOM point=32/53 cleanup PASS
+Apple Direct F16 cold metadata OOM point=33/53 cleanup PASS
+Apple Direct F16 cold metadata OOM point=34/53 cleanup PASS
+Apple Direct F16 cold metadata OOM point=35/53 cleanup PASS
+Apple Direct F16 cold metadata OOM point=36/53 cleanup PASS
+Apple Direct F16 cold metadata OOM point=37/53 cleanup PASS
+Apple Direct F16 cold metadata OOM point=38/53 cleanup PASS
+Apple Direct F16 cold metadata OOM point=39/53 cleanup PASS
+Apple Direct F16 cold metadata OOM point=40/53 cleanup PASS
+Apple Direct F16 cold metadata OOM point=41/53 cleanup PASS
+Apple Direct F16 cold metadata OOM point=42/53 cleanup PASS
+Apple Direct F16 cold metadata OOM point=43/53 cleanup PASS
+Apple Direct F16 cold metadata OOM point=44/53 cleanup PASS
+Apple Direct F16 cold metadata OOM point=45/53 cleanup PASS
+Apple Direct F16 cold metadata OOM point=46/53 cleanup PASS
+Apple Direct F16 cold metadata OOM point=47/53 cleanup PASS
+Apple Direct F16 cold metadata OOM point=48/53 cleanup PASS
+Apple Direct F16 cold metadata OOM point=49/53 cleanup PASS
+Apple Direct F16 cold metadata OOM point=50/53 cleanup PASS
+Apple Direct F16 cold metadata OOM point=51/53 cleanup PASS
+Apple Direct F16 cold metadata OOM point=52/53 cleanup PASS
+Apple Direct F16 cold metadata OOM point=53/53 cleanup PASS
+Apple typed page controller F16 Direct episode=0 oracle=0.250 PASS
+Apple typed page controller F16 Direct episode=1 oracle=0.375 PASS
+Apple typed page controller F16 Direct episode=2 oracle=0.250 PASS
+Apple Graph F16 cold metadata OOM baseline=53 live=0
+Apple Graph F16 cold metadata OOM point=1/53 cleanup PASS
+Apple Graph F16 cold metadata OOM point=2/53 cleanup PASS
+Apple Graph F16 cold metadata OOM point=3/53 cleanup PASS
+Apple Graph F16 cold metadata OOM point=4/53 cleanup PASS
+Apple Graph F16 cold metadata OOM point=5/53 cleanup PASS
+Apple Graph F16 cold metadata OOM point=6/53 cleanup PASS
+Apple Graph F16 cold metadata OOM point=7/53 cleanup PASS
+Apple Graph F16 cold metadata OOM point=8/53 cleanup PASS
+Apple Graph F16 cold metadata OOM point=9/53 cleanup PASS
+Apple Graph F16 cold metadata OOM point=10/53 cleanup PASS
+Apple Graph F16 cold metadata OOM point=11/53 cleanup PASS
+Apple Graph F16 cold metadata OOM point=12/53 cleanup PASS
+Apple Graph F16 cold metadata OOM point=13/53 cleanup PASS
+Apple Graph F16 cold metadata OOM point=14/53 cleanup PASS
+Apple Graph F16 cold metadata OOM point=15/53 cleanup PASS
+Apple Graph F16 cold metadata OOM point=16/53 cleanup PASS
+Apple Graph F16 cold metadata OOM point=17/53 cleanup PASS
+Apple Graph F16 cold metadata OOM point=18/53 cleanup PASS
+Apple Graph F16 cold metadata OOM point=19/53 cleanup PASS
+Apple Graph F16 cold metadata OOM point=20/53 cleanup PASS
+Apple Graph F16 cold metadata OOM point=21/53 cleanup PASS
+Apple Graph F16 cold metadata OOM point=22/53 cleanup PASS
+Apple Graph F16 cold metadata OOM point=23/53 cleanup PASS
+Apple Graph F16 cold metadata OOM point=24/53 cleanup PASS
+Apple Graph F16 cold metadata OOM point=25/53 cleanup PASS
+Apple Graph F16 cold metadata OOM point=26/53 cleanup PASS
+Apple Graph F16 cold metadata OOM point=27/53 cleanup PASS
+Apple Graph F16 cold metadata OOM point=28/53 cleanup PASS
+Apple Graph F16 cold metadata OOM point=29/53 cleanup PASS
+Apple Graph F16 cold metadata OOM point=30/53 cleanup PASS
+Apple Graph F16 cold metadata OOM point=31/53 cleanup PASS
+Apple Graph F16 cold metadata OOM point=32/53 cleanup PASS
+Apple Graph F16 cold metadata OOM point=33/53 cleanup PASS
+Apple Graph F16 cold metadata OOM point=34/53 cleanup PASS
+Apple Graph F16 cold metadata OOM point=35/53 cleanup PASS
+Apple Graph F16 cold metadata OOM point=36/53 cleanup PASS
+Apple Graph F16 cold metadata OOM point=37/53 cleanup PASS
+Apple Graph F16 cold metadata OOM point=38/53 cleanup PASS
+Apple Graph F16 cold metadata OOM point=39/53 cleanup PASS
+Apple Graph F16 cold metadata OOM point=40/53 cleanup PASS
+Apple Graph F16 cold metadata OOM point=41/53 cleanup PASS
+Apple Graph F16 cold metadata OOM point=42/53 cleanup PASS
+Apple Graph F16 cold metadata OOM point=43/53 cleanup PASS
+Apple Graph F16 cold metadata OOM point=44/53 cleanup PASS
+Apple Graph F16 cold metadata OOM point=45/53 cleanup PASS
+Apple Graph F16 cold metadata OOM point=46/53 cleanup PASS
+Apple Graph F16 cold metadata OOM point=47/53 cleanup PASS
+Apple Graph F16 cold metadata OOM point=48/53 cleanup PASS
+Apple Graph F16 cold metadata OOM point=49/53 cleanup PASS
+Apple Graph F16 cold metadata OOM point=50/53 cleanup PASS
+Apple Graph F16 cold metadata OOM point=51/53 cleanup PASS
+Apple Graph F16 cold metadata OOM point=52/53 cleanup PASS
+Apple Graph F16 cold metadata OOM point=53/53 cleanup PASS
+Apple typed page controller F16 Graph episode=0 oracle=0.250 PASS
+Apple typed page controller F16 Graph episode=1 oracle=0.375 PASS
+Apple typed page controller F16 Graph episode=2 oracle=0.250 PASS
+Apple native page append/F4 F16 clone=1024 append=512 whole-arena=5120 PASS
+Apple metadata layout=1 staged=160 uploaded=160 hostWaits=2 PASS
+Apple paged reference BF16 Direct episode=0 oracle=0.250 exact-page-guards PASS
+Apple metadata layout=2 staged=160 uploaded=160 hostWaits=2 PASS
+Apple paged reference BF16 Direct episode=1 oracle=0.375 exact-page-guards PASS
+Apple metadata layout=1 staged=160 uploaded=160 hostWaits=2 PASS
+Apple paged reference BF16 Direct episode=2 oracle=0.250 exact-page-guards PASS
+Apple metadata layout=1 staged=160 uploaded=160 hostWaits=2 PASS
+Apple paged reference BF16 Graph episode=0 oracle=0.250 exact-page-guards PASS
+Apple metadata layout=2 staged=160 uploaded=160 hostWaits=2 PASS
+Apple paged reference BF16 Graph episode=1 oracle=0.375 exact-page-guards PASS
+Apple metadata layout=1 staged=160 uploaded=160 hostWaits=2 PASS
+Apple paged reference BF16 Graph episode=2 oracle=0.250 exact-page-guards PASS
+Apple Direct BF16 cold metadata OOM baseline=53 live=0
+Apple Direct BF16 cold metadata OOM point=1/53 cleanup PASS
+Apple Direct BF16 cold metadata OOM point=2/53 cleanup PASS
+Apple Direct BF16 cold metadata OOM point=3/53 cleanup PASS
+Apple Direct BF16 cold metadata OOM point=4/53 cleanup PASS
+Apple Direct BF16 cold metadata OOM point=5/53 cleanup PASS
+Apple Direct BF16 cold metadata OOM point=6/53 cleanup PASS
+Apple Direct BF16 cold metadata OOM point=7/53 cleanup PASS
+Apple Direct BF16 cold metadata OOM point=8/53 cleanup PASS
+Apple Direct BF16 cold metadata OOM point=9/53 cleanup PASS
+Apple Direct BF16 cold metadata OOM point=10/53 cleanup PASS
+Apple Direct BF16 cold metadata OOM point=11/53 cleanup PASS
+Apple Direct BF16 cold metadata OOM point=12/53 cleanup PASS
+Apple Direct BF16 cold metadata OOM point=13/53 cleanup PASS
+Apple Direct BF16 cold metadata OOM point=14/53 cleanup PASS
+Apple Direct BF16 cold metadata OOM point=15/53 cleanup PASS
+Apple Direct BF16 cold metadata OOM point=16/53 cleanup PASS
+Apple Direct BF16 cold metadata OOM point=17/53 cleanup PASS
+Apple Direct BF16 cold metadata OOM point=18/53 cleanup PASS
+Apple Direct BF16 cold metadata OOM point=19/53 cleanup PASS
+Apple Direct BF16 cold metadata OOM point=20/53 cleanup PASS
+Apple Direct BF16 cold metadata OOM point=21/53 cleanup PASS
+Apple Direct BF16 cold metadata OOM point=22/53 cleanup PASS
+Apple Direct BF16 cold metadata OOM point=23/53 cleanup PASS
+Apple Direct BF16 cold metadata OOM point=24/53 cleanup PASS
+Apple Direct BF16 cold metadata OOM point=25/53 cleanup PASS
+Apple Direct BF16 cold metadata OOM point=26/53 cleanup PASS
+Apple Direct BF16 cold metadata OOM point=27/53 cleanup PASS
+Apple Direct BF16 cold metadata OOM point=28/53 cleanup PASS
+Apple Direct BF16 cold metadata OOM point=29/53 cleanup PASS
+Apple Direct BF16 cold metadata OOM point=30/53 cleanup PASS
+Apple Direct BF16 cold metadata OOM point=31/53 cleanup PASS
+Apple Direct BF16 cold metadata OOM point=32/53 cleanup PASS
+Apple Direct BF16 cold metadata OOM point=33/53 cleanup PASS
+Apple Direct BF16 cold metadata OOM point=34/53 cleanup PASS
+Apple Direct BF16 cold metadata OOM point=35/53 cleanup PASS
+Apple Direct BF16 cold metadata OOM point=36/53 cleanup PASS
+Apple Direct BF16 cold metadata OOM point=37/53 cleanup PASS
+Apple Direct BF16 cold metadata OOM point=38/53 cleanup PASS
+Apple Direct BF16 cold metadata OOM point=39/53 cleanup PASS
+Apple Direct BF16 cold metadata OOM point=40/53 cleanup PASS
+Apple Direct BF16 cold metadata OOM point=41/53 cleanup PASS
+Apple Direct BF16 cold metadata OOM point=42/53 cleanup PASS
+Apple Direct BF16 cold metadata OOM point=43/53 cleanup PASS
+Apple Direct BF16 cold metadata OOM point=44/53 cleanup PASS
+Apple Direct BF16 cold metadata OOM point=45/53 cleanup PASS
+Apple Direct BF16 cold metadata OOM point=46/53 cleanup PASS
+Apple Direct BF16 cold metadata OOM point=47/53 cleanup PASS
+Apple Direct BF16 cold metadata OOM point=48/53 cleanup PASS
+Apple Direct BF16 cold metadata OOM point=49/53 cleanup PASS
+Apple Direct BF16 cold metadata OOM point=50/53 cleanup PASS
+Apple Direct BF16 cold metadata OOM point=51/53 cleanup PASS
+Apple Direct BF16 cold metadata OOM point=52/53 cleanup PASS
+Apple Direct BF16 cold metadata OOM point=53/53 cleanup PASS
+Apple typed page controller BF16 Direct episode=0 oracle=0.250 PASS
+Apple typed page controller BF16 Direct episode=1 oracle=0.375 PASS
+Apple typed page controller BF16 Direct episode=2 oracle=0.250 PASS
+Apple Graph BF16 cold metadata OOM baseline=53 live=0
+Apple Graph BF16 cold metadata OOM point=1/53 cleanup PASS
+Apple Graph BF16 cold metadata OOM point=2/53 cleanup PASS
+Apple Graph BF16 cold metadata OOM point=3/53 cleanup PASS
+Apple Graph BF16 cold metadata OOM point=4/53 cleanup PASS
+Apple Graph BF16 cold metadata OOM point=5/53 cleanup PASS
+Apple Graph BF16 cold metadata OOM point=6/53 cleanup PASS
+Apple Graph BF16 cold metadata OOM point=7/53 cleanup PASS
+Apple Graph BF16 cold metadata OOM point=8/53 cleanup PASS
+Apple Graph BF16 cold metadata OOM point=9/53 cleanup PASS
+Apple Graph BF16 cold metadata OOM point=10/53 cleanup PASS
+Apple Graph BF16 cold metadata OOM point=11/53 cleanup PASS
+Apple Graph BF16 cold metadata OOM point=12/53 cleanup PASS
+Apple Graph BF16 cold metadata OOM point=13/53 cleanup PASS
+Apple Graph BF16 cold metadata OOM point=14/53 cleanup PASS
+Apple Graph BF16 cold metadata OOM point=15/53 cleanup PASS
+Apple Graph BF16 cold metadata OOM point=16/53 cleanup PASS
+Apple Graph BF16 cold metadata OOM point=17/53 cleanup PASS
+Apple Graph BF16 cold metadata OOM point=18/53 cleanup PASS
+Apple Graph BF16 cold metadata OOM point=19/53 cleanup PASS
+Apple Graph BF16 cold metadata OOM point=20/53 cleanup PASS
+Apple Graph BF16 cold metadata OOM point=21/53 cleanup PASS
+Apple Graph BF16 cold metadata OOM point=22/53 cleanup PASS
+Apple Graph BF16 cold metadata OOM point=23/53 cleanup PASS
+Apple Graph BF16 cold metadata OOM point=24/53 cleanup PASS
+Apple Graph BF16 cold metadata OOM point=25/53 cleanup PASS
+Apple Graph BF16 cold metadata OOM point=26/53 cleanup PASS
+Apple Graph BF16 cold metadata OOM point=27/53 cleanup PASS
+Apple Graph BF16 cold metadata OOM point=28/53 cleanup PASS
+Apple Graph BF16 cold metadata OOM point=29/53 cleanup PASS
+Apple Graph BF16 cold metadata OOM point=30/53 cleanup PASS
+Apple Graph BF16 cold metadata OOM point=31/53 cleanup PASS
+Apple Graph BF16 cold metadata OOM point=32/53 cleanup PASS
+Apple Graph BF16 cold metadata OOM point=33/53 cleanup PASS
+Apple Graph BF16 cold metadata OOM point=34/53 cleanup PASS
+Apple Graph BF16 cold metadata OOM point=35/53 cleanup PASS
+Apple Graph BF16 cold metadata OOM point=36/53 cleanup PASS
+Apple Graph BF16 cold metadata OOM point=37/53 cleanup PASS
+Apple Graph BF16 cold metadata OOM point=38/53 cleanup PASS
+Apple Graph BF16 cold metadata OOM point=39/53 cleanup PASS
+Apple Graph BF16 cold metadata OOM point=40/53 cleanup PASS
+Apple Graph BF16 cold metadata OOM point=41/53 cleanup PASS
+Apple Graph BF16 cold metadata OOM point=42/53 cleanup PASS
+Apple Graph BF16 cold metadata OOM point=43/53 cleanup PASS
+Apple Graph BF16 cold metadata OOM point=44/53 cleanup PASS
+Apple Graph BF16 cold metadata OOM point=45/53 cleanup PASS
+Apple Graph BF16 cold metadata OOM point=46/53 cleanup PASS
+Apple Graph BF16 cold metadata OOM point=47/53 cleanup PASS
+Apple Graph BF16 cold metadata OOM point=48/53 cleanup PASS
+Apple Graph BF16 cold metadata OOM point=49/53 cleanup PASS
+Apple Graph BF16 cold metadata OOM point=50/53 cleanup PASS
+Apple Graph BF16 cold metadata OOM point=51/53 cleanup PASS
+Apple Graph BF16 cold metadata OOM point=52/53 cleanup PASS
+Apple Graph BF16 cold metadata OOM point=53/53 cleanup PASS
+Apple typed page controller BF16 Graph episode=0 oracle=0.250 PASS
+Apple typed page controller BF16 Graph episode=1 oracle=0.375 PASS
+Apple typed page controller BF16 Graph episode=2 oracle=0.250 PASS
+Apple native page append/F4 BF16 clone=1024 append=512 whole-arena=5120 PASS
+native Direct ragged append F16 episode=0 first=0.250 second=0.625 PASS
+native Direct ragged append F16 episode=1 first=0.375 second=0.625 PASS
+native Direct ragged append F16 episode=2 first=0.250 second=0.625 PASS
+native Direct ragged append/F4/repacked-second-request F16 clone=2560 append=512 tail-init=1024 total=4096 PASS
+native Direct ragged append BF16 episode=0 first=0.250 second=0.625 PASS
+native Direct ragged append BF16 episode=1 first=0.375 second=0.625 PASS
+native Direct ragged append BF16 episode=2 first=0.250 second=0.625 PASS
+native Direct ragged append/F4/repacked-second-request BF16 clone=2560 append=512 tail-init=1024 total=4096 PASS
+native Graph ragged append F16 episode=0 first=0.250 second=0.625 PASS
+native Graph ragged append F16 episode=1 first=0.375 second=0.625 PASS
+native Graph ragged append F16 episode=2 first=0.250 second=0.625 PASS
+native Graph ragged append/F4/repacked-second-request F16 clone=2560 append=512 tail-init=1024 total=4096 PASS
+native Graph ragged append BF16 episode=0 first=0.250 second=0.625 PASS
+native Graph ragged append BF16 episode=1 first=0.375 second=0.625 PASS
+native Graph ragged append BF16 episode=2 first=0.250 second=0.625 PASS
+native Graph ragged append/F4/repacked-second-request BF16 clone=2560 append=512 tail-init=1024 total=4096 PASS

@@ -66,11 +66,15 @@ inline Status episode(unsigned mode,bool graph){
         HYLE_RETURN_IF_ERROR(check(submitted.has_value() && boundary.accepted>0,"Vulkan unknown episode never accepted actual work"));boundary.fail_poll=true;const auto observed=submitted->poll();
         std::printf("Vulkan unknown observed=%d injected=%d active_uses=%llu\n",observed.has_value(),!boundary.fail_poll.load(),static_cast<unsigned long long>(pool.stats().active_uses));
         HYLE_RETURN_IF_ERROR(check(observed && *observed==c::CompletionPoll::kPending && !boundary.fail_poll.load() && pool.stats().active_uses==3,"Vulkan unknown observation fabricated retirement/result"));
-        *submitted={};terminal=controller.drain();HYLE_RETURN_IF_ERROR(check(terminal.IsResourceExhausted() && boundary.waits.load()>0,"Vulkan drain lost original error/actual fence proof"));
+        auto failed=submitted->wait();HYLE_RETURN_IF_ERROR(check(!failed && failed.error().IsResourceExhausted() && boundary.waits.load()>0 && pool.stats().active_uses==0,"Vulkan wait lost original error/actual fence proof"));*submitted={};
+        HYLE_RETURN_IF_ERROR(check(!controller.prepare_batch(layout).ok() && !controller.submit(),"Vulkan open unknown-failed slot reused after actual retirement"));terminal=controller.drain();
+        HYLE_RETURN_IF_ERROR(check(terminal.IsResourceExhausted(),"Vulkan drain replaced original observation error"));
+        std::printf("Vulkan %s unknown actual-wait/open-failed-no-reuse PASS\n",graph?"Graph":"Direct");
       }else{
         if(submitted){auto result=submitted->wait();if(!result)terminal=result.error();}else terminal=submitted.error();
         HYLE_RETURN_IF_ERROR(check(terminal.IsResourceExhausted() && boundary.submits==mode && boundary.accepted==mode-1,"Vulkan rejected math prefix/suffix contract differs"));
-        if(submitted){HYLE_RETURN_IF_ERROR(check(!submitted->result(),"Vulkan failed math published output"));*submitted={};}controller.drain().IgnoreError();
+        if(submitted){HYLE_RETURN_IF_ERROR(check(!submitted->result(),"Vulkan failed math published output"));*submitted={};}
+        HYLE_RETURN_IF_ERROR(check(!controller.prepare_batch(layout).ok() && !controller.submit(),"Vulkan open rejected-math slot reused"));controller.drain().IgnoreError();
       }
     }
     controller.drain().IgnoreError();HYLE_RETURN_IF_ERROR(check(pool.stats().active_uses==0 && !controller.prepare_batch(layout).ok() && !controller.submit(),"Vulkan failed/closed controller reused or retained input guards"));

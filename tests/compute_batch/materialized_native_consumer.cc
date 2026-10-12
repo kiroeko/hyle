@@ -10,6 +10,7 @@
 #include <hyle/compute/apple_memory.h>
 #include <hyle/graph/apple.h>
 #include <hyle/compute/detail/apple_batch_access.h>
+#include "native_apple_failure_fixture.h"
 #else
 #include <hyle/compute/vulkan_batch.h>
 #include <hyle/compute/vulkan_memory.h>
@@ -142,6 +143,8 @@ Status native_run(bool ragged_only=false){HYLE_ASSIGN_OR_RETURN(auto context,n::
   struct CloseBeforeResources{n::Context&context;~CloseBeforeResources(){context.close().IgnoreError();}}close_before_resources{context};
 #if !defined(HYLE_F5_APPLE_TEST)
   if(!ragged_only)HYLE_RETURN_IF_ERROR(hyle_f5_vk_failure_fixture::run());
+#else
+  if(!ragged_only)HYLE_RETURN_IF_ERROR(hyle_f5_apple_failure_fixture::run());
 #endif
   if(!ragged_only){for(bool paged:{true,false})for(bool bf16:{false,true})for(bool causal:{false,true})HYLE_RETURN_IF_ERROR(exercise_native(context,memory,staging,paged,bf16,causal));HYLE_RETURN_IF_ERROR(hyle_f5_native_paged_fixture::run(context,memory,staging));}HYLE_RETURN_IF_ERROR(native_ragged_append(context,memory,staging));return context.close();
 }

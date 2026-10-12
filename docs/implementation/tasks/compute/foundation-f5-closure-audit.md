@@ -215,3 +215,27 @@ stride后，Win/Air Direct/Graph共四个nonuniform128-value oracle与16个actua
 unknown原Vulkan合同为Pending且保三input uses，后原wait/fence退休保首错，不发布/closed
 不可复用；首次fatal与fixture误读poll语义的FAIL保留。原正常/页/ragged/OOM消费与六个
 source-contract测试PASS。保持AUDITED，其他原未验项与18 SDK/san/P0/guide/终审继续。
+
+## AUDITED APPLE-QUEUE-03 / VK-OPEN-03
+
+baselinef9c4be383。Apple复用原lifecycle/copy测试的MLX GPU Checkpoint：原square prefix后
+只挡住同一个原Runtime worker或抛具名native异常，CPU路径拒绝；不加产品hook/数学kernel。
+固定既有F16 ragged D64、物理Q/KV容量2、active Q1/KV2，Direct/Graph各四独立Context：
+先失败的原native job挡住F5 metadata prepare（异步调用只拥有该controller控制，main不并发
+操作controller），Gate前prepare等待、后传播Internal、不提交混合镜像/复用失败slot；已
+prepared/bound F5 math排在Gate后，分别cancel、释放结果和controller、前序native失败。
+核queued三input guards不早退、关闭/取消/放弃真实退休、失败无输出、quota0。所有原生成功
+路径仍原MLX/worker/F2，Gate只属于test primitive；原API与普通字段不改。
+
+Vulkan在原故障fixture添加不先close的已退休错误复用检查：known rejection与unknown实际
+wait后释放public result，再prepare必须失败，保原错误；原unknown放弃结果后drain路径的
+已有证据保留，不以closed拒绝假充open失败。只actual Win/Air Vulkan与Air Apple同root/tree/
+config/consumer180累计，库j4/j2/j1、consumer1、重型串行，原FAIL/TIMEOUT不重置。
+有实际反证先固定局部owner FIX；产品/公用验证工具不顺手改，原SDK/san/P0/guide/终审保留。
+
+[queued lifetime收据](../../../../evidence/correctness/foundation-f5-native-queued-lifetime/README.md)：
+actual Air Apple Direct/Graph八episode通过，metadata prepare Gate前等待/后传播前序Internal，
+queued math cancel/abandon/failure三input guards保持到原worker实际退休，失败不发布，
+open失败slot拒复用、quota0。Win/Air Vulkan known/unknown错误actual wait后未先close的
+prepare/submit均拒绝，原首错/fence证明/guards正确；旧Pending-result放弃路径证据保留。
+原正常/页/ragged/单KV与caller OOM通过，无产品/API变化，后续完整风险汇总与SDK/san等继续。
