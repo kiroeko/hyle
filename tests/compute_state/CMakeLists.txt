@@ -1,0 +1,3 @@
+hyle_add_header_self_contained_test(compute_state HEADER_DIR compute
+  HEADERS state_versions.h state_clone.h detail/state_clone_access.h)
+hyle_add_test(compute_state SOURCES state_versions_test.cc state_clone_test.cc DEPS hyle_compute_backend_cpu)

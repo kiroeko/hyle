@@ -541,9 +541,15 @@ _hyle_declare_component(compute_stream
   SPLIT_PUBLIC_HEADERS hyle/compute/file_stream.h
     hyle/compute/detail/file_stream_access.h hyle/compute/detail/file_stream_copy.h)
 
-# F4 explicit immutable resource-set versions. Reserve identity before scope;
-# no target, dependency or public header exists at this QUEUED checkpoint.
-_hyle_declare_component(compute_state QUEUED)
+# F4 collection ownership sits above the original lease/copy mechanisms.
+# Compute core and native routes never acquire a reverse dependency here.
+_hyle_declare_component(compute_state
+  PRIVATE_DEPS core util_core
+  PUBLIC_DEPS compute compute_ops error mem
+  PUBLIC_TYPE_DEPS compute compute_ops error mem
+  TEST_DEPS compute_backend_cpu
+  SPLIT_PUBLIC_HEADERS hyle/compute/state_versions.h hyle/compute/state_clone.h
+    hyle/compute/detail/state_clone_access.h)
 
 # Product facades are deliberately outside the factor DAG. They have no source,
 # module status, or decision authority and must never be used by an internal
@@ -606,7 +612,7 @@ _hyle_declare_product(io FACTORS
   io_core io_tls io_http io_http2 io_transfer io_watch io_websocket)
 _hyle_declare_product(process FACTORS process)
 _hyle_declare_product(compute FACTORS
-  compute compute_route_cpu compute_route_cuda compute_route_apple compute_route_vulkan compute_backend_cpu compute_backend_cuda compute_provider_native
+  compute compute_state compute_route_cpu compute_route_cuda compute_route_apple compute_route_vulkan compute_backend_cpu compute_backend_cuda compute_provider_native
   compute_provider_onednn)
 _hyle_declare_product(graph FACTORS
   graph graph_route_cpu graph_route_cuda graph_route_apple graph_route_vulkan compute_backend_cpu compute_backend_cuda compute_provider_native

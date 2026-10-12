@@ -103,6 +103,11 @@ collection版本generation不同于单F1 block generation；opaque IDs不能用�
   保留typed Program与冷create factory，错误/取消已实际退休的槽显式StateCloneRoute::rearm
   才可重建原invocation；不在submit隐式重建、不开caller Queue/Context、不保留数学执行回调。
   此冷恢复有原F2 metadata/未知native分配成本，OOM保留原退休槽，unknown不能rearm。
+  冷factory仅借用稳定native endpoint，限定trivially-destructible capture，不持StateStore/
+  Version owning handle制造反向环。route.report是原每slot最近episode快照，shared program
+  metadata一次，rearm切换原slot身份，不能当lifetime累计或整个状态系统总成本。
+  report在native工作/显式wait observer活跃时返回Unavailable，不并发读取原thread-compatible
+  F2 report。显式wait由每个原slot的host observer gate串行，close/collect不等待该gate。
 - draft.clone_for_write(id,route)返回CloneTicket：保留draft/base和原native slot，非阻塞poll或
   显式wait；源必须是成功readonly member，目的fresh独占。原F2 output→drop submission→
   reset→try_write成功后才给StateWriter；此顺序不能借file-stream私有take_mutable绕开权限。
@@ -119,6 +124,16 @@ collection版本generation不同于单F1 block generation；opaque IDs不能用�
   util_core/refcount与原F1 ledger，无Graph反向边。正常用户只用hyle::compute；新factor进入
   Compute facade，native typed参数依原已选route。测试只取CPU backend以验证原F2 bytes copy，
   不因copy消费CPU数学默认Provider全目录。
+
+## 首批实施事实（非候选/终局）
+
+[共同层首批](../../../../evidence/correctness/foundation-f4-core-first/README.md)实际Win static
+19项+三个公开头通过。已接schema/有限目录/backing ledger、host snapshot、share/replace/head、
+原typed F2 clone/poll/wait/writer/rearm；dirty16bytes/一次CPU native copy，accepted CPU producer
+DataLoss阻止ready版本、旧base保持。原配置/编译FAIL及首次ctest零匹配FAIL均保留并更正，
+同树累计预算没有重置。不能据此签四route/完整consumer/sanitizer/SDK/P0/红队。
+Compute façade新增root的授权与交付沿[独立窄卡](foundation-f4-package-seam.md)处理，原factor
+cpp/已签F1–F3机制不改；活动状态仍AUDITED，有限六FIX尚未全部验收。
 
 正常草图：schema/Store→import complete members→Head.current→begin(base)→share/replace或
 clone_for_write→poll/wait取得writer→原数学/byte更新→publish/complete→finalize→

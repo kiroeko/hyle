@@ -1,0 +1,24 @@
+Start testing: Oct 12 12:45 中国标准时间
+----------------------------------------------------------
+35/36 Testing: hyle_compute_state_header_self_contained_test
+35/36 Test: hyle_compute_state_header_self_contained_test
+Command: "C:/Program Files/Python312/python.exe" "C:/public/project-hyle/hyle/scripts/header-self-contained.py" "--module" "compute_state" "--include-dir" "C:/public/project-hyle/hyle/include" "--cxx" "C:/Program Files/Microsoft Visual Studio/18/Enterprise/VC/Tools/MSVC/14.50.35717/bin/Hostx64/x64/cl.exe" "--cxx-compiler-id" "MSVC" "--cxx-frontend" "MSVC" "--header-dir" "compute" "--header" "state_versions.h" "--header" "state_clone.h" "--header" "detail/state_clone_access.h"
+Directory: C:/h7/foundation-f4/core-static/tests/compute_state
+"hyle_compute_state_header_self_contained_test" start time: Oct 12 12:45 中国标准时间
+Output:
+----------------------------------------------------------
+compute_state C++ headers self-contained: 3
+<end of output>
+Test time =   2.85 sec
+----------------------------------------------------------
+Test Passed.
+"hyle_compute_state_header_self_contained_test" end time: Oct 12 12:45 中国标准时间
+"hyle_compute_state_header_self_contained_test" time elapsed: 00:00:02
+----------------------------------------------------------
+
+End testing: Oct 12 12:45 中国标准时间
+
+compute_state =   2.85 sec*proc
+
+headers =   2.85 sec*proc
+
