@@ -2,7 +2,7 @@
 
 ## Closure card
 
-- 状态：SCOPED，仅本轮审计/有限native原型；尚无产品实现/API资格。新compute_batch与
+- 状态：AUDITED，按下文各有限冻结段实施；尚未candidate/最终资格。新compute_batch与
   graph_batch已在0cc357684以QUEUED登记；本卡绑定同一F5六FIX，不缩成单次read。
 - baseline：db8861394（F4已CLOSED，candidate29d3c7a3e）；A/F1–F4与R1–R7原范围不重开。
 - trigger：用户活动goal、[固定peer研究](../project/foundation-f45-reference-research-2026-10.md)、
@@ -169,3 +169,39 @@ Graph原region同slot首批已实际通过，见[owner卡](foundation-f5-owner-b
 Graph控制门之后释放/回收，未改变普通v19/Invocation常态字段。每region自己的显式
 metadata上传和规划费用保留。F5-04由接口落地推进到有限实际消费，仍不签完整风险，
 产品保持AUDITED；四路线reference/append/F4闭环及交付/san/P0/终审继续。
+
+## AUDITED 显式materialize参考档冻结
+
+baseline 9d7041ce6；这是F5-05/06已准入reference的有限分解，不新增数学/kernel/runtime。
+已核现有Apple MLX Gather/MatMul/Softmax、Vulkan原ggml Gather/MatMul/additive Softmax与
+CPU原Provider。Vulkan原SDPA不接外部mask，不能把固定capacity padding算作真实KV。
+本档明确展开原typed操作，qualification仍由实际route冷prepare/compile裁决；不改旧route
+产品源码或默认选择。缺数学域明确拒绝，不偷跑CPU，不称native paged/capture。
+
+- REF-01 compute_batch拥有MaterializedBatchProgram：冷固定same-schema、每request KV硬上限、
+  host metadata与全部逻辑intermediate byte上限、scale/causal、allocator/ResourceBudget。
+  原typed recipe以五输入Q/K/V/owned I32 gather indices/F32 additive mask承载，输出同Q容量。
+  recipe只由原View/Gather/Cast/Copy/MatMul/Softmax构成，cold一次推导每value描述；每query
+  作为独立batch，gather显式展开KV heads至Q heads，F32 score/softmax/value累积后转回原dtype。
+  物理索引把(page,row,KV head)映到原arena，right-aligned causal mask不让padding进入有效区。
+- REF-02 version(layout)先完整same-schema/每request上限预检，再产生owned readonly host
+  index/mask快照并保layout/program。每layout更新生成新同版本快照；原F1导出、F2显式上传，
+  不接受caller/device raw表冒充layout。空active batch明确拒绝；inactive capacity输出仍未定义，
+  其mask只保一个dummy可读位置，避免全mask softmax，无业务有效区或额外有效KV。
+- REF-03 graph_batch从同recipe建立普通原Graph input/nodes/published output；CPU/Apple/Vulkan
+  原编译器与Direct原operation Program均消费同typed序列，原native owner/Completion继续自身
+  生存规则。此阶段先共享recipe/metadata/Graph构造；实际route Direct组合控制器和完整native
+  运行必须后续取证，不能由graph构造API代签全部旅程或要求用户重写生命周期状态机。
+
+成本：host生成O(Qcap*Hq*KVbound)，index I32及mask F32，两个gather输出明确
+O(Qcap*Hq*KVbound*D)字节，GQA重复、F32转换/permute materialize、scores/probabilities均
+计入logical intermediate保守上界；该上界不是native resident精确值，Provider/driver仍UNKNOWN。
+硬上限不满足在接纳前拒绝。metadata上传、native scratch、host wait与每层重复费用分别报告，
+不从native Direct workspace小值推导本档免费。常态非batch对象无新增字段/路径。
+
+有限预声明：乱页/非整尾/非uniform Q/GQA/causal及noncausal，foreign schema、超per-request/
+host/intermediate cap、整数乘积/flatten I32 overflow、empty拒绝、只读导出/旧版本/allocator OOM；
+共同schema测试/公头，四实际route Direct+Graph独立oracle、F2同版本上传及F4 append/branch/
+旧版本/native保活；原source/static/shared/缺路线/迁址/loader及san/P0/guide/红队继续主卡。
+预算、失败历史与串行机器规则沿原卡，不因reference档另起累计预算。旧route真实接口若需
+修改，先独立owner scope；本冻结不授权重写CLOSED数学/图编译器或公共构建/验证工具。
