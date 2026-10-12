@@ -21,7 +21,24 @@
   失败不重置，重型 gate 串行，库按实际可用内存 j4/j2/j1，test1。
 - stop：原 native 机制无法完成显式控制顺序则 BLOCKED/INCONCLUSIVE；系统合同改变退回 AUDITED。
 
-当前 SCOPED；产品尚未修改。原 `foundation-f3-final-closure.md` 仅为原已签事实。
+当前 AUDITED；原 `foundation-f3-final-closure.md` 仅为原已签事实。
+
+定向审计：vulkan_program.cc 相邻 managed_operation 合并；vulkan_region.cc 只把 last_uses≥end
+或 published 输出交给原 ggml recipe。Graph 所需控制前驱需冷保留输出并在端点截断合并。
+vulkan_pipeline.cc 的原 native record 在 dispatch 间建立 compute execution/memory barrier；
+vulkan_run.cc 的原 managed/native stages 与 IREE continuation 负责完成/失败/实际退休。
+本轮 BORROW 原机制，不更改队列、provider 或 GPU completion 模型；native 故障资格仍待测试。
+
+冻结：PlanStep 末尾增加 control_boundary/preserve_outputs 两个冷 bool；默认 false 保留旧
+aggregate 初始化与无控制图路径。原 prepare_plan 在 boundary 两侧截断 managed region，
+preserve_outputs 只抬高原 last_uses，最终 commands/managed recipes 复用原执行路径。
+无新 public Compute 用户对象/线程；普通 Graph 自身必须完成合法性与 liveness。
+全图 typed ports/alias、取消/close 与 unknown storage 保持原 owner，额外 materialized
+control outputs 如实计入现 storage facts，不声称零成本。
+
+七问：原锁/许可证 KEEP，无 fallback；本有限复合控制旅程 SELF 冷 glue/BORROW 原 native；
+不复制 barrier/runtime；P0 冷 O(N+E)、warm 原 commands；无新 FFI；现公开 detail 头/三交付
+适用；Graph guide 解释 controlled materialization 与 managed waits。资格仍为 UNPROVEN。
 
 ## 有限 FIX
 

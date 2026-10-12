@@ -529,9 +529,9 @@
     },
     {
       "module": "compute_route_vulkan",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/foundation-a-vulkan-control-seam.md",
-      "summary": "Foundation A Vulkan control seam SCOPED：真实 pure control consumer 重开冷原生分片接缝；原 F3 范围保持已签事实。"
+      "summary": "Foundation A Vulkan control seam AUDITED：有限 A-VK-01，冷控制端点分片与物化输出复用原 native barriers/完成；验证尚未裁决。"
     },
     {
       "module": "graph_route_vulkan",
