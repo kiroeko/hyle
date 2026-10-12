@@ -1,0 +1,257 @@
+{
+  "candidate": "546b0d2468e5de29031c34668f4afa4bc31b9a17",
+  "snapshot": "d86ea3b989ba992c31e257a4823c46cb0d8b839e",
+  "profile": "cpu-vulkan",
+  "mode": "static",
+  "producer": "C:\\h7\\foundation-a-sdk\\producer-cpu-vulkan-static",
+  "stages": [
+    {
+      "name": "identity",
+      "command": [
+        "nvidia-smi",
+        "--query-gpu=name,uuid,driver_version",
+        "--format=csv,noheader"
+      ],
+      "pid": 89684,
+      "state": "terminal",
+      "available_bytes": 41256382464,
+      "log": "identity.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "elapsed": 0.06199999991804361,
+      "sha256": "fc0da0dd7e8d2c9d1419aa11e4801acb7158a0e185c28122c0fd6292a65f4044"
+    },
+    {
+      "name": "configure",
+      "command": [
+        "C:\\Program Files\\CMake\\bin\\cmake.EXE",
+        "-S",
+        "C:\\public\\project-hyle\\hyle",
+        "-B",
+        "C:\\h7\\foundation-a-sdk\\producer-cpu-vulkan-static",
+        "-G",
+        "Ninja",
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DCMAKE_CXX_COMPILER=C:/Program Files/Microsoft Visual Studio/18/Enterprise/VC/Tools/MSVC/14.50.35717/bin/Hostx64/x64/cl.exe",
+        "-DHYLE_COMPONENTS=graph",
+        "-DHYLE_COMPUTE_ROUTES=cpu;vulkan",
+        "-DHYLE_BUILD_TESTS=OFF",
+        "-DHYLE_BUILD_BENCH=OFF",
+        "-DHYLE_INSTALL=ON",
+        "-DHYLE_STATIC=ON",
+        "-DHYLE_DEP_SOURCE_CACHE=C:/public/tools/hyle-dependencies/v1"
+      ],
+      "pid": 96288,
+      "state": "terminal",
+      "available_bytes": 41260875776,
+      "log": "configure.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "elapsed": 59.15599999995902,
+      "sha256": "e250c5e96dea3df4e827a304133eca09f402a94b4701b4394f32cae187bda368"
+    },
+    {
+      "name": "producer",
+      "command": [
+        "C:\\Program Files\\CMake\\bin\\cmake.EXE",
+        "--build",
+        "C:\\h7\\foundation-a-sdk\\producer-cpu-vulkan-static",
+        "--target",
+        "hyle_graph_route_cpu_vulkan",
+        "--parallel",
+        "4"
+      ],
+      "pid": 98680,
+      "state": "terminal",
+      "available_bytes": 41072340992,
+      "log": "producer.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "elapsed": 446.89100000006147,
+      "sha256": "14b9e1cd9ade6253293bf82ba5e4fd48f8bf7a49e7a7baddc689fd931f9ed6ef"
+    },
+    {
+      "name": "install",
+      "command": [
+        "C:\\Program Files\\CMake\\bin\\cmake.EXE",
+        "--install",
+        "C:\\h7\\foundation-a-sdk\\producer-cpu-vulkan-static",
+        "--prefix",
+        "C:\\h7\\foundation-a-sdk\\cpu-vulkan-static-546b0d246\\staging"
+      ],
+      "pid": 23108,
+      "state": "terminal",
+      "available_bytes": 40693694464,
+      "log": "install.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "elapsed": 2.375,
+      "sha256": "77cfc510af1d0217b872b535a10253cc339847edaebfe06a7c0e38a62664b468"
+    },
+    {
+      "name": "consumer-configure",
+      "command": [
+        "C:\\Program Files\\CMake\\bin\\cmake.EXE",
+        "-S",
+        "C:\\h7\\foundation-a-sdk\\cpu-vulkan-static-546b0d246\\consumer-source",
+        "-B",
+        "C:\\h7\\foundation-a-sdk\\cpu-vulkan-static-546b0d246\\consumer",
+        "-G",
+        "Ninja",
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DCMAKE_CXX_COMPILER=C:/Program Files/Microsoft Visual Studio/18/Enterprise/VC/Tools/MSVC/14.50.35717/bin/Hostx64/x64/cl.exe",
+        "-DCMAKE_PREFIX_PATH=C:\\h7\\foundation-a-sdk\\cpu-vulkan-static-546b0d246\\relocated",
+        "-DHYLE_COMPUTE_ROUTES=cpu;vulkan",
+        "-DHYLE_DEP_SOURCE_CACHE=C:/public/tools/hyle-dependencies/v1"
+      ],
+      "pid": 88968,
+      "state": "terminal",
+      "available_bytes": 39797293056,
+      "log": "consumer-configure.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "elapsed": 20.484000000171363,
+      "sha256": "59812cceb1bcaca8a13b26cf5e8920f7f9ad50503502997975609a82df7c2ad7"
+    },
+    {
+      "name": "consumer-build",
+      "command": [
+        "C:\\Program Files\\CMake\\bin\\cmake.EXE",
+        "--build",
+        "C:\\h7\\foundation-a-sdk\\cpu-vulkan-static-546b0d246\\consumer",
+        "--parallel",
+        "4"
+      ],
+      "pid": 31860,
+      "state": "terminal",
+      "available_bytes": 40354197504,
+      "log": "consumer-build.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "elapsed": 5.469000000040978,
+      "sha256": "e3e95f3c4104f6664d6f2358f1c7fa7d3a372215292674780f7288cc2db889ad"
+    },
+    {
+      "name": "imports-finite",
+      "command": [
+        "C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\bin\\Hostx64\\x64\\dumpbin.exe",
+        "/DEPENDENTS",
+        "C:\\h7\\foundation-a-sdk\\cpu-vulkan-static-546b0d246\\consumer\\finite.exe"
+      ],
+      "pid": 73352,
+      "state": "terminal",
+      "available_bytes": 40210489344,
+      "log": "imports-finite.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "elapsed": 0.031999999890103936,
+      "sha256": "ed9cf29525e89b79e28dc221736371b2695c60d7da94d8f20fcb927014cef59b"
+    },
+    {
+      "name": "run-finite",
+      "command": [
+        "C:\\h7\\foundation-a-sdk\\cpu-vulkan-static-546b0d246\\consumer\\finite.exe"
+      ],
+      "pid": 10236,
+      "state": "terminal",
+      "available_bytes": 40206581760,
+      "log": "run-finite.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "elapsed": 0.5159999998286366,
+      "sha256": "c9a5b1a0e133e4341c612c1f24082d9e0bb844a3d4922973d2269f98109fa135"
+    },
+    {
+      "name": "imports-effects",
+      "command": [
+        "C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\bin\\Hostx64\\x64\\dumpbin.exe",
+        "/DEPENDENTS",
+        "C:\\h7\\foundation-a-sdk\\cpu-vulkan-static-546b0d246\\consumer\\effects.exe"
+      ],
+      "pid": 97876,
+      "state": "terminal",
+      "available_bytes": 40467918848,
+      "log": "imports-effects.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "elapsed": 0.09300000010989606,
+      "sha256": "4e8c9ccdf6c8f959a162b9d042be3ad4edd7b64c3084086247e2f7f0c750c36e"
+    },
+    {
+      "name": "run-effects",
+      "command": [
+        "C:\\h7\\foundation-a-sdk\\cpu-vulkan-static-546b0d246\\consumer\\effects.exe"
+      ],
+      "pid": 28696,
+      "state": "terminal",
+      "available_bytes": 40462204928,
+      "log": "run-effects.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "elapsed": 0.25,
+      "sha256": "89b2c49365a0e257594d1e4f9d81f7990fa6150952ea38772c7514862f2492c5"
+    },
+    {
+      "name": "absence-cuda",
+      "command": [
+        "C:\\Program Files\\CMake\\bin\\cmake.EXE",
+        "-S",
+        "C:\\h7\\foundation-a-sdk\\cpu-vulkan-static-546b0d246\\absence-cuda",
+        "-B",
+        "C:\\h7\\foundation-a-sdk\\cpu-vulkan-static-546b0d246\\absence-build-cuda",
+        "-G",
+        "Ninja",
+        "-DCMAKE_CXX_COMPILER=C:/Program Files/Microsoft Visual Studio/18/Enterprise/VC/Tools/MSVC/14.50.35717/bin/Hostx64/x64/cl.exe",
+        "-DCMAKE_PREFIX_PATH=C:\\h7\\foundation-a-sdk\\cpu-vulkan-static-546b0d246\\relocated"
+      ],
+      "pid": 78616,
+      "state": "terminal",
+      "available_bytes": 40441212928,
+      "log": "absence-cuda.log",
+      "exit_code": 1,
+      "verdict": "PASS_EXPECTED_ABSENT",
+      "elapsed": 0.8279999999795109,
+      "sha256": "99f7eb3d5a67a6ea4840db2c4d5ed9c45e76a24df59bc45c7ff9980c28240400"
+    },
+    {
+      "name": "absence-apple",
+      "command": [
+        "C:\\Program Files\\CMake\\bin\\cmake.EXE",
+        "-S",
+        "C:\\h7\\foundation-a-sdk\\cpu-vulkan-static-546b0d246\\absence-apple",
+        "-B",
+        "C:\\h7\\foundation-a-sdk\\cpu-vulkan-static-546b0d246\\absence-build-apple",
+        "-G",
+        "Ninja",
+        "-DCMAKE_CXX_COMPILER=C:/Program Files/Microsoft Visual Studio/18/Enterprise/VC/Tools/MSVC/14.50.35717/bin/Hostx64/x64/cl.exe",
+        "-DCMAKE_PREFIX_PATH=C:\\h7\\foundation-a-sdk\\cpu-vulkan-static-546b0d246\\relocated"
+      ],
+      "pid": 29496,
+      "state": "terminal",
+      "available_bytes": 40460095488,
+      "log": "absence-apple.log",
+      "exit_code": 1,
+      "verdict": "PASS_EXPECTED_ABSENT",
+      "elapsed": 1.125,
+      "sha256": "3ba1be2758cdc4fa4fe85ce71c244e29771d80e4c201ec79f42f1162f6b3f7cd"
+    }
+  ],
+  "scope": "Immutable foundation A actual route factor build, installed relocated public consumers/new headers/absence/runtime only",
+  "test_parallel": 1,
+  "relocation": {
+    "staging_absent": true,
+    "renamed_prefix": "C:\\h7\\foundation-a-sdk\\cpu-vulkan-static-546b0d246\\relocated",
+    "Hyle_metadata_no_source_build_staging_paths": true
+  },
+  "runtime_dlls": {
+    "asmjit.dll": "eb8f9c478bfc4b671f83b630c97424c60b4c948c0a8645fe588aed4f6bab5df5",
+    "c10.dll": "93bff2548e330df0f94ce3c71c531887d049ae645d1e38e3c08689e2d86a7888",
+    "fbgemm.dll": "250dc6f79b26e022ca3088e9b71a023598c7e997c96b62ef350a74fa1b501d81",
+    "hyle_ggml_cpu_avx2_456172ec_7d4fea280f67f983.dll": "5c059ce4139647d1d14b6ce004dfc6809a45e4ecc0d00490c0f9c83fdfffc2c6",
+    "libiomp5md.dll": "d9d66ed25f1a0ea725fa3a41b22cfd5d182c19dbe4771d9c90ca02ad7466f6a1",
+    "torch.dll": "16a220e55b35fbfd946c26663eb3eefc76782872280cdc47ab0caea1babf0613",
+    "torch_cpu.dll": "2cb91cf2ba957fad5a17eab5bb7af6b3d73bbc98d94e2deeadc9fb9294eea809",
+    "uv.dll": "fa569e682fc5fb7a8eb94c6829af9f30a569748dbbc6bce39735d48bc960bcf8"
+  },
+  "verdict": "PASS_FOUNDATION_A_CPU_VULKAN_STATIC_RELOCATED_SDK"
+}

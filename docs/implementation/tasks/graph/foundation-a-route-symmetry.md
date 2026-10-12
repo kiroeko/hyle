@@ -183,3 +183,10 @@ consumer/newheads/缺路线/runtime通过；Air原错误profile缓存身份与�
 各42项定向语义/Graph查询/全图effect预检通过，旧维护selector冲突FAIL及累计预算保留。
 新增effect_preflight仅为候选后测试专用维护，不改产品算法/API/candidate。剩余Vulkan与WSL
 CUDA实际source/package格、P0/LOC和终局红队尚待完成，状态仍CANDIDATE。
+
+候选再追加：Win CPU+Vulkan static/shared SDK两个公开finite/control与effect/cancel消费者、
+四独立公开头、actualruntime/rename迁址/缺CUDA与Apple诊断 PASS。静态的新独立树只编译该
+交付闭包，锁源码cache共享、binary不跨配置复用。P0/LOC见
+[结构证据](../../../../evidence/architecture/foundation-a-p0/README.md)：统一self-check通过，
+七owner去重27,286行/83files，self不含tests170,581行/695files；无P1/timing胜负声明。
+剩余Air Vulkan与WSL CUDA当前candidate适用格，以及最终矩阵/终审仍待裁决。

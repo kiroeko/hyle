@@ -1,0 +1,285 @@
+{
+  "candidate": "546b0d2468e5de29031c34668f4afa4bc31b9a17",
+  "snapshot": "d86ea3b989ba992c31e257a4823c46cb0d8b839e",
+  "profile": "cpu-vulkan",
+  "mode": "shared",
+  "producer": "C:\\h7\\w-cpu-vulkan\\selected-graph\\source-build",
+  "stages": [
+    {
+      "name": "identity",
+      "command": [
+        "nvidia-smi",
+        "--query-gpu=name,uuid,driver_version",
+        "--format=csv,noheader"
+      ],
+      "pid": 46360,
+      "state": "terminal",
+      "available_bytes": 41066016768,
+      "log": "identity.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "elapsed": 0.06199999991804361,
+      "sha256": "fc0da0dd7e8d2c9d1419aa11e4801acb7158a0e185c28122c0fd6292a65f4044"
+    },
+    {
+      "name": "configure",
+      "command": [
+        "C:\\Program Files\\CMake\\bin\\cmake.EXE",
+        "-S",
+        "C:\\h7\\w-cpu-vulkan\\selected-graph\\source-parent",
+        "-B",
+        "C:\\h7\\w-cpu-vulkan\\selected-graph\\source-build",
+        "-G",
+        "Ninja",
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DCMAKE_CXX_COMPILER=C:/Program Files/Microsoft Visual Studio/18/Enterprise/VC/Tools/MSVC/14.50.35717/bin/Hostx64/x64/cl.exe",
+        "-DHYLE_COMPONENTS=graph",
+        "-DHYLE_COMPUTE_ROUTES=cpu;vulkan",
+        "-DHYLE_BUILD_TESTS=OFF",
+        "-DHYLE_BUILD_BENCH=OFF",
+        "-DHYLE_INSTALL=ON",
+        "-DHYLE_STATIC=OFF",
+        "-DHYLE_DEP_SOURCE_CACHE=C:/public/tools/hyle-dependencies/v1"
+      ],
+      "pid": 69780,
+      "state": "terminal",
+      "available_bytes": 41068597248,
+      "log": "configure.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "elapsed": 56.17200000002049,
+      "sha256": "6558e7182c4b5e15df2c242ee27ef591614a4a38bcc2c88b983241459534f0ec"
+    },
+    {
+      "name": "producer",
+      "command": [
+        "C:\\Program Files\\CMake\\bin\\cmake.EXE",
+        "--build",
+        "C:\\h7\\w-cpu-vulkan\\selected-graph\\source-build",
+        "--target",
+        "hyle_graph_route_cpu_vulkan",
+        "--parallel",
+        "4"
+      ],
+      "pid": 87008,
+      "state": "terminal",
+      "available_bytes": 41015545856,
+      "log": "producer.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "elapsed": 24.436999999918044,
+      "sha256": "dc4e950e74f8a946e6003554e24c58a4e2f44d15e96a2413392f735ad32baa01"
+    },
+    {
+      "name": "install",
+      "command": [
+        "C:\\Program Files\\CMake\\bin\\cmake.EXE",
+        "--install",
+        "C:\\h7\\w-cpu-vulkan\\selected-graph\\source-build",
+        "--prefix",
+        "C:\\h7\\foundation-a-sdk\\cpu-vulkan-shared-546b0d246\\staging"
+      ],
+      "pid": 99108,
+      "state": "terminal",
+      "available_bytes": 40260128768,
+      "log": "install.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "elapsed": 1.0310000001918525,
+      "sha256": "2427dbb47ea2842293b7b6189bfa81250a920360a2ae8b2441ab0c012c04805d"
+    },
+    {
+      "name": "consumer-configure",
+      "command": [
+        "C:\\Program Files\\CMake\\bin\\cmake.EXE",
+        "-S",
+        "C:\\h7\\foundation-a-sdk\\cpu-vulkan-shared-546b0d246\\consumer-source",
+        "-B",
+        "C:\\h7\\foundation-a-sdk\\cpu-vulkan-shared-546b0d246\\consumer",
+        "-G",
+        "Ninja",
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DCMAKE_CXX_COMPILER=C:/Program Files/Microsoft Visual Studio/18/Enterprise/VC/Tools/MSVC/14.50.35717/bin/Hostx64/x64/cl.exe",
+        "-DCMAKE_PREFIX_PATH=C:\\h7\\foundation-a-sdk\\cpu-vulkan-shared-546b0d246\\relocated",
+        "-DHYLE_COMPUTE_ROUTES=cpu;vulkan",
+        "-DHYLE_DEP_SOURCE_CACHE=C:/public/tools/hyle-dependencies/v1"
+      ],
+      "pid": 83640,
+      "state": "terminal",
+      "available_bytes": 40163233792,
+      "log": "consumer-configure.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "elapsed": 12.218000000109896,
+      "sha256": "732af26df5a01ecc254bf02aac2089327c0f3976809e2b3c08eaddf8661afb49"
+    },
+    {
+      "name": "consumer-build",
+      "command": [
+        "C:\\Program Files\\CMake\\bin\\cmake.EXE",
+        "--build",
+        "C:\\h7\\foundation-a-sdk\\cpu-vulkan-shared-546b0d246\\consumer",
+        "--parallel",
+        "4"
+      ],
+      "pid": 96188,
+      "state": "terminal",
+      "available_bytes": 40432959488,
+      "log": "consumer-build.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "elapsed": 5.469000000040978,
+      "sha256": "293699cf875e99cd85a762b9e998fe45dcf3f81507316dc3b2e073af171ada4a"
+    },
+    {
+      "name": "imports-finite",
+      "command": [
+        "C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\bin\\Hostx64\\x64\\dumpbin.exe",
+        "/DEPENDENTS",
+        "C:\\h7\\foundation-a-sdk\\cpu-vulkan-shared-546b0d246\\consumer\\finite.exe"
+      ],
+      "pid": 92684,
+      "state": "terminal",
+      "available_bytes": 40227725312,
+      "log": "imports-finite.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "elapsed": 0.0779999999795109,
+      "sha256": "97032df7f41cec30a7847bc68f23e8fc73f5fd7dce9fdaf4bfb81ecaf633e5ee"
+    },
+    {
+      "name": "run-finite",
+      "command": [
+        "C:\\h7\\foundation-a-sdk\\cpu-vulkan-shared-546b0d246\\consumer\\finite.exe"
+      ],
+      "pid": 27056,
+      "state": "terminal",
+      "available_bytes": 40227549184,
+      "log": "run-finite.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "elapsed": 0.6400000001303852,
+      "sha256": "c9a5b1a0e133e4341c612c1f24082d9e0bb844a3d4922973d2269f98109fa135"
+    },
+    {
+      "name": "imports-effects",
+      "command": [
+        "C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\bin\\Hostx64\\x64\\dumpbin.exe",
+        "/DEPENDENTS",
+        "C:\\h7\\foundation-a-sdk\\cpu-vulkan-shared-546b0d246\\consumer\\effects.exe"
+      ],
+      "pid": 99068,
+      "state": "terminal",
+      "available_bytes": 40569552896,
+      "log": "imports-effects.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "elapsed": 0.01600000006146729,
+      "sha256": "a4adc47b9c0ca5e2a428072599e2c696859b9c3d87e8b8ca3534e5c105a5127d"
+    },
+    {
+      "name": "run-effects",
+      "command": [
+        "C:\\h7\\foundation-a-sdk\\cpu-vulkan-shared-546b0d246\\consumer\\effects.exe"
+      ],
+      "pid": 79968,
+      "state": "terminal",
+      "available_bytes": 40569450496,
+      "log": "run-effects.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "elapsed": 0.25,
+      "sha256": "89b2c49365a0e257594d1e4f9d81f7990fa6150952ea38772c7514862f2492c5"
+    },
+    {
+      "name": "absence-cuda",
+      "command": [
+        "C:\\Program Files\\CMake\\bin\\cmake.EXE",
+        "-S",
+        "C:\\h7\\foundation-a-sdk\\cpu-vulkan-shared-546b0d246\\absence-cuda",
+        "-B",
+        "C:\\h7\\foundation-a-sdk\\cpu-vulkan-shared-546b0d246\\absence-build-cuda",
+        "-G",
+        "Ninja",
+        "-DCMAKE_CXX_COMPILER=C:/Program Files/Microsoft Visual Studio/18/Enterprise/VC/Tools/MSVC/14.50.35717/bin/Hostx64/x64/cl.exe",
+        "-DCMAKE_PREFIX_PATH=C:\\h7\\foundation-a-sdk\\cpu-vulkan-shared-546b0d246\\relocated"
+      ],
+      "pid": 76516,
+      "state": "terminal",
+      "available_bytes": 40565219328,
+      "log": "absence-cuda.log",
+      "exit_code": 1,
+      "verdict": "PASS_EXPECTED_ABSENT",
+      "elapsed": 0.7190000000409782,
+      "sha256": "5d9708e2a815005671e7f4f893dab7ee9ac0d827a81d7bd94fdd382b6037837a"
+    },
+    {
+      "name": "absence-apple",
+      "command": [
+        "C:\\Program Files\\CMake\\bin\\cmake.EXE",
+        "-S",
+        "C:\\h7\\foundation-a-sdk\\cpu-vulkan-shared-546b0d246\\absence-apple",
+        "-B",
+        "C:\\h7\\foundation-a-sdk\\cpu-vulkan-shared-546b0d246\\absence-build-apple",
+        "-G",
+        "Ninja",
+        "-DCMAKE_CXX_COMPILER=C:/Program Files/Microsoft Visual Studio/18/Enterprise/VC/Tools/MSVC/14.50.35717/bin/Hostx64/x64/cl.exe",
+        "-DCMAKE_PREFIX_PATH=C:\\h7\\foundation-a-sdk\\cpu-vulkan-shared-546b0d246\\relocated"
+      ],
+      "pid": 88304,
+      "state": "terminal",
+      "available_bytes": 40543629312,
+      "log": "absence-apple.log",
+      "exit_code": 1,
+      "verdict": "PASS_EXPECTED_ABSENT",
+      "elapsed": 0.75,
+      "sha256": "cb4402c9871ca7251b129a27144b29fab0db0ca60788a2c328d4218eda418309"
+    }
+  ],
+  "scope": "Immutable foundation A actual route factor build, installed relocated public consumers/new headers/absence/runtime only",
+  "test_parallel": 1,
+  "relocation": {
+    "staging_absent": true,
+    "renamed_prefix": "C:\\h7\\foundation-a-sdk\\cpu-vulkan-shared-546b0d246\\relocated",
+    "Hyle_metadata_no_source_build_staging_paths": true
+  },
+  "runtime_dlls": {
+    "asmjit.dll": "eb8f9c478bfc4b671f83b630c97424c60b4c948c0a8645fe588aed4f6bab5df5",
+    "c10.dll": "93bff2548e330df0f94ce3c71c531887d049ae645d1e38e3c08689e2d86a7888",
+    "fbgemm.dll": "250dc6f79b26e022ca3088e9b71a023598c7e997c96b62ef350a74fa1b501d81",
+    "hyle_compute.dll": "4aa0f2f04d76b168330c594c7c21765d27586e958b9db78f08d0a717d84b279b",
+    "hyle_compute_backend_cpu.dll": "5a106a24ee0461c0e3cc80330d84420e8a8cb993223d9ac4c8aacf062dd690b3",
+    "hyle_compute_ggml_runtime.dll": "1505a4e48e404546eb00bfe3e11be9935c0339c9bee4006895e13890b3aac503",
+    "hyle_compute_ops.dll": "aef8bb0029787136079913c8463e2cd8709b6fa969e3945f927e487a53eaa9a0",
+    "hyle_compute_provider_ggml.dll": "bf0cf300b58fc18c3ca3d571449a68a51d33b2491863b51a50a9374ea029911d",
+    "hyle_compute_provider_ggml_vulkan.dll": "c25d01f625f35958c96e9d590f81538149ed8171f760f2a15650d188c383f7bf",
+    "hyle_compute_provider_iree_vulkan.dll": "01be72a5d7ade56da2d18ce766a5de3e8fcb7e3f8d4c12c01f56d7614fd68206",
+    "hyle_compute_provider_native.dll": "2eae32345830dd299da5f4582c8b7287c1f48cf5e9b01c867f86fae7a37458d8",
+    "hyle_compute_provider_onednn.dll": "cc65c569bed6677fb089805e399760d40e7bb97b11cd4d0992322ee59b6d2006",
+    "hyle_compute_route_cpu.dll": "2a33597f8039d38ecb6f363881125f633b6257aec3c7eaa0835081f1f1d8e228",
+    "hyle_compute_route_vulkan.dll": "f52f5af67bbda5cb3d497476968740b882ea8a6b6c10fe657136846b1570cb66",
+    "hyle_compute_stream.dll": "71195a60523ca094cda74c09736084a66a08fd9bb6e8513c8183360427a97d60",
+    "hyle_container.dll": "7587468a6fae4136651d597e9b7cd1eb410879af7305a91fedd5b29f49430978",
+    "hyle_error.dll": "09803ee2b5a8466a270e61917260f8dedf454a95b6b6963dbe1cd1528454d5da",
+    "hyle_ggml_cpu_avx2_456172ec_7d4fea280f67f983.dll": "b7b9b39ff34dcd3348a42e58c4928a6a3f55b7a55f3986b34e8fa8dfd6ab670a",
+    "hyle_graph.dll": "79dd460ed913dc7458447f66dc15bd4846cd2f46564829d820e93292bacfe73d",
+    "hyle_graph_provider_onednn.dll": "bd0a226e45064cf06ddb50f63924e9c184ee00e5ae3c8f651146aa8cf7a821c8",
+    "hyle_graph_route_cpu.dll": "fe835e74a3d4081f0453420d4f50159ca7b8edc0a20cd571c3801dd08950cd84",
+    "hyle_graph_route_cpu_vulkan.dll": "37cb176f136778908d2d9649fb6ed72d34f27351a0948d88c8ccae0eb4dcbebd",
+    "hyle_graph_route_vulkan.dll": "4de15b01b7903f9098339df5f43bf0e3bae6a3eed854f5e6ce57ca0d16f290d9",
+    "hyle_io_core.dll": "f6fda55177a9c5c5d30e01ed67eeb7e9efeb49f5c96a0de1793eef89ee4017e9",
+    "hyle_mem.dll": "10d29dbfd5eb761289b41161687b326eec11678a876d68799722b7941cc3c9fa",
+    "hyle_mem_vm.dll": "d308e502fdcf5724f7e75cba045aae86b7121af0a5dc553620403b02a7b1084a",
+    "hyle_platform.dll": "e30ff2073aa39c7adda9fabd947b1d81f393d7f449cf526d7a4ed13bef4f0e98",
+    "hyle_platform_fs.dll": "f273afe9d2564c5d42ee5b311f86708c53b0d9e09a6ae10534e39fca7749977c",
+    "hyle_platform_thread.dll": "6a1bd95106a7c26b07da72e14c30594dbcc20f2ad35a8d1735c14e048915801c",
+    "hyle_sched.dll": "c3e93e7390863d7dfffb63c8325959af493234e71c2d9a165a5e8fb76d55b074",
+    "hyle_simd.dll": "3c4396909c61dcdf51a6ba90386ec8635a78aaa5afb6376ace7df1e0170c65de",
+    "hyle_time.dll": "a4d6f78d233af94b20d5437592ccf4a58e705cbe583d5aa34b40fab3de618661",
+    "libiomp5md.dll": "d9d66ed25f1a0ea725fa3a41b22cfd5d182c19dbe4771d9c90ca02ad7466f6a1",
+    "torch.dll": "16a220e55b35fbfd946c26663eb3eefc76782872280cdc47ab0caea1babf0613",
+    "torch_cpu.dll": "2cb91cf2ba957fad5a17eab5bb7af6b3d73bbc98d94e2deeadc9fb9294eea809",
+    "uv.dll": "fa569e682fc5fb7a8eb94c6829af9f30a569748dbbc6bce39735d48bc960bcf8"
+  },
+  "verdict": "PASS_FOUNDATION_A_CPU_VULKAN_SHARED_RELOCATED_SDK"
+}

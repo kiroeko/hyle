@@ -1,0 +1,40 @@
+Microsoft (R) COFF/PE Dumper Version 14.50.35728.0
+Copyright (C) Microsoft Corporation.  All rights reserved.
+
+
+Dump of file C:\h7\foundation-a-sdk\cpu-vulkan-static-546b0d246\consumer\finite.exe
+
+File Type: EXECUTABLE IMAGE
+
+  Image has the following dependencies:
+
+    torch_cpu.dll
+    c10.dll
+    api-ms-win-core-synch-l1-2-0.dll
+    KERNEL32.dll
+    ADVAPI32.dll
+    MSVCP140.dll
+    MSVCP140_ATOMIC_WAIT.dll
+    VCRUNTIME140.dll
+    VCRUNTIME140_1.dll
+    api-ms-win-crt-heap-l1-1-0.dll
+    api-ms-win-crt-runtime-l1-1-0.dll
+    api-ms-win-crt-stdio-l1-1-0.dll
+    api-ms-win-crt-string-l1-1-0.dll
+    api-ms-win-crt-math-l1-1-0.dll
+    api-ms-win-crt-time-l1-1-0.dll
+    api-ms-win-crt-convert-l1-1-0.dll
+    api-ms-win-crt-environment-l1-1-0.dll
+    api-ms-win-crt-filesystem-l1-1-0.dll
+    api-ms-win-crt-locale-l1-1-0.dll
+    WS2_32.dll
+
+  Summary
+
+      102000 .data
+       4A000 .pdata
+     2A65000 .rdata
+        F000 .reloc
+        1000 .rsrc
+     1383000 .text
+        1000 _RDATA
