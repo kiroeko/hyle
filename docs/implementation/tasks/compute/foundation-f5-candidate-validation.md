@@ -82,6 +82,10 @@ Win Vulkan四格不含此次CUDA seam，[精确图/输入映射](../../../../evi
 PASS，不签GPU数学。源头缺席符号/native host-control san/P0/LOC/guide/红队等原待办仍保留，
 18格齐不等于完整F5 CLOSED。
 
+完整原A/F4/F5编号回映与未完成门见[completion audit](../project/foundation-f45-completion-audit.md)，
+只核证据，不缩goal；18格原raw/hash/映射的逐stage复核在
+[SDK总矩阵](../../../../evidence/correctness/foundation-f5-sdk-complete-matrix/README.md)。
+
 [源码路线缺席](../../../../evidence/correctness/foundation-f5-source-route-absence/README.md)已完成：
 九个disabled route/access头独立TU、四组新native API具名缺席PASS；原private MSVC
 alignment warning合同遗漏的编译FAIL保留。installed只按实际供应闭包验头，不借source越SKU。

@@ -1,0 +1,151 @@
+{
+  "candidate": "25e4fb398e2a782ee60f916c3c6351c4736b6eda",
+  "verified_cells": 18,
+  "cells": [
+    {
+      "cell": "foundation-f5-sdk-windows-cpu-cuda-static-link-recheck",
+      "candidate": "25e4fb398e2a782ee60f916c3c6351c4736b6eda",
+      "qualified_for": "25e4fb398e2a782ee60f916c3c6351c4736b6eda",
+      "fixture_verdict": "PASS_F5_CANDIDATE_CPU_NATIVE_SDK_CPU_CUDA_STATIC_RELOCATED_SDK",
+      "raw_sha256": "b7f974ae63bc8c098d61d709585e6fd8d14cb960f3d912f3855a44b3f98b12aa",
+      "math_scope": "exact CPU/native/Windows unsupported contract as original receipt; no cross-route substitution"
+    },
+    {
+      "cell": "foundation-f5-sdk-windows-cpu-cuda-shared-link-recheck",
+      "candidate": "25e4fb398e2a782ee60f916c3c6351c4736b6eda",
+      "qualified_for": "25e4fb398e2a782ee60f916c3c6351c4736b6eda",
+      "fixture_verdict": "PASS_F5_CANDIDATE_CPU_NATIVE_SDK_CPU_CUDA_SHARED_RELOCATED_SDK",
+      "raw_sha256": "7dd7848a17d7cd82f1c7a3ada0dd071e51fa2ab71ef40741cc2f24f9b1f59b54",
+      "math_scope": "exact CPU/native/Windows unsupported contract as original receipt; no cross-route substitution"
+    },
+    {
+      "cell": "foundation-f5-sdk-windows-cpu-vulkan-static",
+      "candidate": "77df1c10c7a909d6f2a99a99551e599ddb74f096",
+      "qualified_for": "25e4fb398e2a782ee60f916c3c6351c4736b6eda",
+      "fixture_verdict": "PASS_F5_CANDIDATE_CPU_NATIVE_SDK_CPU_VULKAN_STATIC_RELOCATED_SDK",
+      "raw_sha256": "9a6533f90761845369e36fd6d4825f14e262377e09e0e371552aede80fca12f5",
+      "math_scope": "exact CPU/native/Windows unsupported contract as original receipt; no cross-route substitution"
+    },
+    {
+      "cell": "foundation-f5-sdk-windows-cpu-vulkan-shared",
+      "candidate": "77df1c10c7a909d6f2a99a99551e599ddb74f096",
+      "qualified_for": "25e4fb398e2a782ee60f916c3c6351c4736b6eda",
+      "fixture_verdict": "PASS_F5_CANDIDATE_CPU_NATIVE_SDK_CPU_VULKAN_SHARED_RELOCATED_SDK",
+      "raw_sha256": "7d366d631267492cbcad914d1cd9acc524cb1724a54176f21c271bb1bbc8c1e3",
+      "math_scope": "exact CPU/native/Windows unsupported contract as original receipt; no cross-route substitution"
+    },
+    {
+      "cell": "foundation-f5-native-sdk-windows-vulkan-static",
+      "candidate": "77df1c10c7a909d6f2a99a99551e599ddb74f096",
+      "qualified_for": "25e4fb398e2a782ee60f916c3c6351c4736b6eda",
+      "fixture_verdict": "PASS_F5_CANDIDATE_NATIVE_ONLY_SDK_VULKAN_STATIC_RELOCATED_SDK",
+      "raw_sha256": "51806ada8d6d0d203264f8b580699e37be0628a98ed51f0fafcc0da675e4e5e0",
+      "math_scope": "exact CPU/native/Windows unsupported contract as original receipt; no cross-route substitution"
+    },
+    {
+      "cell": "foundation-f5-native-sdk-windows-vulkan-shared",
+      "candidate": "77df1c10c7a909d6f2a99a99551e599ddb74f096",
+      "qualified_for": "25e4fb398e2a782ee60f916c3c6351c4736b6eda",
+      "fixture_verdict": "PASS_F5_CANDIDATE_NATIVE_ONLY_SDK_VULKAN_SHARED_RELOCATED_SDK",
+      "raw_sha256": "3d2e1b292d6fca5e0d39b99e96ebdf1aeecc09c8b6f0b78a71f9f4e28b85666a",
+      "math_scope": "exact CPU/native/Windows unsupported contract as original receipt; no cross-route substitution"
+    },
+    {
+      "cell": "foundation-f5-sdk-wsl-cpu-cuda-static-link-recheck",
+      "candidate": "25e4fb398e2a782ee60f916c3c6351c4736b6eda",
+      "qualified_for": "25e4fb398e2a782ee60f916c3c6351c4736b6eda",
+      "fixture_verdict": "PASS_F5_CANDIDATE_WSL_CPU_CUDA_STATIC_RELOCATED_SDK",
+      "raw_sha256": "1a962f9ad197e09572ef0b5e5f862acc7451797bbaa154667248f4feb51abc7d",
+      "math_scope": "exact CPU/native/Windows unsupported contract as original receipt; no cross-route substitution"
+    },
+    {
+      "cell": "foundation-f5-sdk-wsl-cpu-cuda-shared",
+      "candidate": "25e4fb398e2a782ee60f916c3c6351c4736b6eda",
+      "qualified_for": "25e4fb398e2a782ee60f916c3c6351c4736b6eda",
+      "fixture_verdict": "PASS_F5_CANDIDATE_WSL_CPU_CUDA_SHARED_RELOCATED_SDK",
+      "raw_sha256": "68ee1b6c8bbdbdc5950165eee40fbd19ed7bbd3cbd5a8ae29232d6844f5d86e4",
+      "math_scope": "exact CPU/native/Windows unsupported contract as original receipt; no cross-route substitution"
+    },
+    {
+      "cell": "foundation-f5-sdk-wsl-vulkan-static",
+      "candidate": "25e4fb398e2a782ee60f916c3c6351c4736b6eda",
+      "qualified_for": "25e4fb398e2a782ee60f916c3c6351c4736b6eda",
+      "fixture_verdict": "PASS_F5_CANDIDATE_WSL_VULKAN_STATIC_RELOCATED_SDK",
+      "raw_sha256": "daf860681c6d613dcd8728a626c3d1ec5f3d9a004ebcf18ac123cfabed9f4f3e",
+      "math_scope": "software package/actual loader only; no hardware GPU math"
+    },
+    {
+      "cell": "foundation-f5-sdk-wsl-vulkan-shared",
+      "candidate": "25e4fb398e2a782ee60f916c3c6351c4736b6eda",
+      "qualified_for": "25e4fb398e2a782ee60f916c3c6351c4736b6eda",
+      "fixture_verdict": "PASS_F5_CANDIDATE_WSL_VULKAN_SHARED_RELOCATED_SDK",
+      "raw_sha256": "4fcb394a3b72cbf52d213520011e7cab4e9bd64bb58569b8a8379c192f194d74",
+      "math_scope": "software package/actual loader only; no hardware GPU math"
+    },
+    {
+      "cell": "foundation-f5-sdk-air-cpu-apple-static",
+      "candidate": "25e4fb398e2a782ee60f916c3c6351c4736b6eda",
+      "qualified_for": "25e4fb398e2a782ee60f916c3c6351c4736b6eda",
+      "fixture_verdict": "PASS_F5_CANDIDATE_AIR_CPU_APPLE_STATIC_RELOCATED_SDK",
+      "raw_sha256": "1068e610978ff85f239d1639ba09ea7d36659446c7e48f6bf4fe0da3b0c1555d",
+      "math_scope": "exact CPU/native/Windows unsupported contract as original receipt; no cross-route substitution"
+    },
+    {
+      "cell": "foundation-f5-sdk-air-cpu-apple-shared",
+      "candidate": "25e4fb398e2a782ee60f916c3c6351c4736b6eda",
+      "qualified_for": "25e4fb398e2a782ee60f916c3c6351c4736b6eda",
+      "fixture_verdict": "PASS_F5_CANDIDATE_AIR_CPU_APPLE_SHARED_RELOCATED_SDK",
+      "raw_sha256": "627e46200f4d4aaf3bc222c6d49c7695d79f0f4b02bcf9d570074ee61f7a22b6",
+      "math_scope": "exact CPU/native/Windows unsupported contract as original receipt; no cross-route substitution"
+    },
+    {
+      "cell": "foundation-f5-sdk-air-cpu-vulkan-static",
+      "candidate": "25e4fb398e2a782ee60f916c3c6351c4736b6eda",
+      "qualified_for": "25e4fb398e2a782ee60f916c3c6351c4736b6eda",
+      "fixture_verdict": "PASS_F5_CANDIDATE_AIR_CPU_VULKAN_STATIC_RELOCATED_SDK",
+      "raw_sha256": "37e94345a93fd636bb0d896c81604871508e723341411a35f62fecb0f9e02038",
+      "math_scope": "exact CPU/native/Windows unsupported contract as original receipt; no cross-route substitution"
+    },
+    {
+      "cell": "foundation-f5-sdk-air-cpu-vulkan-shared",
+      "candidate": "25e4fb398e2a782ee60f916c3c6351c4736b6eda",
+      "qualified_for": "25e4fb398e2a782ee60f916c3c6351c4736b6eda",
+      "fixture_verdict": "PASS_F5_CANDIDATE_AIR_CPU_VULKAN_SHARED_RELOCATED_SDK",
+      "raw_sha256": "5000f792aa8f148e0e9e4ef6ac458e6bbdff3205d38c92f62619a04af4e6b8cf",
+      "math_scope": "exact CPU/native/Windows unsupported contract as original receipt; no cross-route substitution"
+    },
+    {
+      "cell": "foundation-f5-sdk-air-apple-static",
+      "candidate": "25e4fb398e2a782ee60f916c3c6351c4736b6eda",
+      "qualified_for": "25e4fb398e2a782ee60f916c3c6351c4736b6eda",
+      "fixture_verdict": "PASS_F5_CANDIDATE_AIR_APPLE_STATIC_RELOCATED_SDK",
+      "raw_sha256": "6b6338ca805ac5db0f119a8faab742edb61cb4cda660de9e3df244c205a6437b",
+      "math_scope": "exact CPU/native/Windows unsupported contract as original receipt; no cross-route substitution"
+    },
+    {
+      "cell": "foundation-f5-sdk-air-apple-shared",
+      "candidate": "25e4fb398e2a782ee60f916c3c6351c4736b6eda",
+      "qualified_for": "25e4fb398e2a782ee60f916c3c6351c4736b6eda",
+      "fixture_verdict": "PASS_F5_CANDIDATE_AIR_APPLE_SHARED_RELOCATED_SDK",
+      "raw_sha256": "01b0414d3424c499f48451e31d88138ab94d30c78ec014778ccf19e3b04f0741",
+      "math_scope": "exact CPU/native/Windows unsupported contract as original receipt; no cross-route substitution"
+    },
+    {
+      "cell": "foundation-f5-sdk-air-vulkan-static",
+      "candidate": "25e4fb398e2a782ee60f916c3c6351c4736b6eda",
+      "qualified_for": "25e4fb398e2a782ee60f916c3c6351c4736b6eda",
+      "fixture_verdict": "PASS_F5_CANDIDATE_AIR_VULKAN_STATIC_RELOCATED_SDK",
+      "raw_sha256": "a187f0af33f09cd74a2abd5a75599b1b9d0a09b32976de71c24d188c65e3f26f",
+      "math_scope": "exact CPU/native/Windows unsupported contract as original receipt; no cross-route substitution"
+    },
+    {
+      "cell": "foundation-f5-sdk-air-vulkan-shared",
+      "candidate": "25e4fb398e2a782ee60f916c3c6351c4736b6eda",
+      "qualified_for": "25e4fb398e2a782ee60f916c3c6351c4736b6eda",
+      "fixture_verdict": "PASS_F5_CANDIDATE_AIR_VULKAN_SHARED_RELOCATED_SDK",
+      "raw_sha256": "df99668b811c9dcba1672aa0bdd6c786cec999f08caf516a4ad5c721e9ad4d5a",
+      "math_scope": "exact CPU/native/Windows unsupported contract as original receipt; no cross-route substitution"
+    }
+  ],
+  "aggregate_scope": "SDK matrix only; not complete F5 or whole goal"
+}
