@@ -1,0 +1,44 @@
+Microsoft (R) COFF/PE Dumper Version 14.50.35728.0
+Copyright (C) Microsoft Corporation.  All rights reserved.
+
+
+Dump of file C:\h7\foundation-a-sdk\cpu-cuda-static-546b0d246\consumer\finite.exe
+
+File Type: EXECUTABLE IMAGE
+
+  Image has the following dependencies:
+
+    torch_cpu.dll
+    c10.dll
+    torch_cuda.dll
+    c10_cuda.dll
+    cublas64_13.dll
+    cublasLt64_13.dll
+    api-ms-win-core-synch-l1-2-0.dll
+    KERNEL32.dll
+    ADVAPI32.dll
+    MSVCP140.dll
+    MSVCP140_ATOMIC_WAIT.dll
+    VCRUNTIME140.dll
+    VCRUNTIME140_1.dll
+    api-ms-win-crt-heap-l1-1-0.dll
+    api-ms-win-crt-runtime-l1-1-0.dll
+    api-ms-win-crt-stdio-l1-1-0.dll
+    api-ms-win-crt-string-l1-1-0.dll
+    api-ms-win-crt-math-l1-1-0.dll
+    api-ms-win-crt-time-l1-1-0.dll
+    api-ms-win-crt-convert-l1-1-0.dll
+    api-ms-win-crt-environment-l1-1-0.dll
+    api-ms-win-crt-locale-l1-1-0.dll
+
+  Summary
+
+      13F000 .data
+        1000 .nvFatBi
+     4A18000 .nv_fatb
+       6B000 .pdata
+      90A000 .rdata
+        E000 .reloc
+        1000 .rsrc
+     1D13000 .text
+        1000 _RDATA

@@ -1,0 +1,5 @@
+[1/5] Building CXX object CMakeFiles\headers.dir\header-0.cc.obj
+[2/5] Building CXX object CMakeFiles\headers.dir\header-1.cc.obj
+[3/5] C:\WINDOWS\system32\cmd.exe /C "cd /D C:\h7\foundation-a-sdk\cpu-cuda-static-546b0d246\consumer && "C:\Program Files\CMake\bin\cmake.exe" -P C:/h7/foundation-a-sdk/cpu-cuda-static-546b0d246/consumer/hyle-runtime/finite-Release.cmake"
+[4/5] Building CXX object CMakeFiles\finite.dir\C_\public\project-hyle\hyle\tests\graph\route_symmetry_cuda.cc.obj
+[5/5] Linking CXX executable finite.exe

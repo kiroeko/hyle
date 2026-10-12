@@ -1,0 +1,12 @@
+{
+  "candidate": "9d0aa797a376b4855791509fb5902a0965ba9dd9",
+  "tree": "2a2a1eb30b0f165d9cb8bbc08ac4465baf379f95",
+  "archive": "C:\\public\\project-hyle\\hyle\\.scratch\\foundation-f3\\native-air-9d0aa797a.tar.gz",
+  "sha256": "9c31add2911505f28bbe42018945129bf495bb1ed7854371415f4389038a741e",
+  "bytes": 177318742,
+  "source": "/Users/kiro/hyle-scratch/compute-unified/source-c8874688",
+  "stage": "/Users/kiro/hyle-scratch/compute-unified/foundation-f3-source-9d0aa797a",
+  "host": "kiro@172.22.10.198",
+  "hardware": "Mac16,12",
+  "sync": "Canonical full archive/checksum rsync; verification copy only."
+}

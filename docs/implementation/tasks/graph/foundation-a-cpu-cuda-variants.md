@@ -43,3 +43,6 @@ Win source 首批 PASS：RTX4070 / CUDA13.3，两个有限精确形状、表外�
 
 Candidate：546b0d2468e5de29031c34668f4afa4bc31b9a17；finite typed factory/自然消费者已固定，
 原 budgets 与 failures 保持。剩余适用 WSL/三交付/缺席/迁址及终审需实际证据。
+
+[Win static SDK](../../../../evidence/correctness/foundation-a-sdk-cpu-cuda-static/README.md) 已通过
+普通 public consumer、新头、真正迁址、runtime和缺 Apple/Vulkan 诊断；shared/WSL/终局仍待验。

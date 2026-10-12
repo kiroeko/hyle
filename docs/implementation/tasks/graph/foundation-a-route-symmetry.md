@@ -155,3 +155,9 @@ private/managed 成本；warm 无新的 table 搜索/shape JIT/DAG合法性检�
 本轮共同 helper 未新增线程/全局状态；现有并发框架不变，定向 ASan/UBSan 适用，
 新的 mutable global/shared 并发机制不存在，TSan 不为此重复全库。两槽/取消/旧結果仍有真实旅程门。
 后续只补 immutable 候选证据与说明；产品反例须先退回 AUDITED，预算延续。
+
+候选追加：[最终 Air 公开 consumer](../../../../evidence/correctness/foundation-a-apple-candidate/README.md)
+含真实 CPU prefix cancellation、正常/失败/zero-output/close-old-result PASS；
+[CPU+CUDA static SDK](../../../../evidence/correctness/foundation-a-sdk-cpu-cuda-static/README.md)
+真实安装/rename迁址、public finite consumer、两个新/受影响头独立 TU、runtime与缺路线诊断 PASS。
+其余格仍待固定候选资格，不能据此关闭七 owner。
