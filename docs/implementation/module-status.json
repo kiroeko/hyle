@@ -281,9 +281,9 @@
     },
     {
       "module": "graph",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/graph/foundation-a-route-symmetry.md",
-      "summary": "Foundation A SCOPED：用户授权四路线静态语义、有限 exact variants、控制边与真实 effect 接缝；有限 A-01..04，尚无产品资格。"
+      "summary": "Foundation A AUDITED：A-01..04 与冷精确 specialization/有限 native variants、control 活性和真实 native ordering 合同已冻结；仅有限 owner 实施，验证未裁决。"
     },
     {
       "module": "container_concurrent",
@@ -523,9 +523,9 @@
     },
     {
       "module": "graph_route_apple",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/graph/foundation-a-route-symmetry.md",
-      "summary": "Foundation A SCOPED：用户授权四路线静态语义、有限 exact variants、控制边与真实 effect 接缝；有限 A-01..04，尚无产品资格。"
+      "summary": "Foundation A AUDITED：A-01..04 与冷精确 specialization/有限 native variants、control 活性和真实 native ordering 合同已冻结；仅有限 owner 实施，验证未裁决。"
     },
     {
       "module": "compute_route_vulkan",
@@ -540,9 +540,9 @@
     },
     {
       "module": "graph_route_vulkan",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/graph/foundation-a-route-symmetry.md",
-      "summary": "Foundation A SCOPED：用户授权四路线静态语义、有限 exact variants、控制边与真实 effect 接缝；有限 A-01..04，尚无产品资格。"
+      "summary": "Foundation A AUDITED：A-01..04 与冷精确 specialization/有限 native variants、control 活性和真实 native ordering 合同已冻结；仅有限 owner 实施，验证未裁决。"
     },
     {
       "module": "compute_provider_ggml_vulkan",
@@ -646,15 +646,15 @@
     },
     {
       "module": "graph_route_cpu_apple",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/graph/foundation-a-route-symmetry.md",
-      "summary": "Foundation A SCOPED：用户授权四路线静态语义、有限 exact variants、控制边与真实 effect 接缝；有限 A-01..04，尚无产品资格。"
+      "summary": "Foundation A AUDITED：A-01..04 与冷精确 specialization/有限 native variants、control 活性和真实 native ordering 合同已冻结；仅有限 owner 实施，验证未裁决。"
     },
     {
       "module": "graph_route_cpu_vulkan",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/graph/foundation-a-route-symmetry.md",
-      "summary": "Foundation A SCOPED：用户授权四路线静态语义、有限 exact variants、控制边与真实 effect 接缝；有限 A-01..04，尚无产品资格。"
+      "summary": "Foundation A AUDITED：A-01..04 与冷精确 specialization/有限 native variants、control 活性和真实 native ordering 合同已冻结；仅有限 owner 实施，验证未裁决。"
     },
     {
       "module": "compute_stream",

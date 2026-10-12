@@ -39,8 +39,45 @@
 
 ## 当前阶段
 
-SCOPED。尚未写产品代码；下一步审计原有 specialization、liveness 与 native ordering，
-固定有限 FIX 的 API、ownership、成本与验证后才进入 AUDITED。
+AUDITED。GraphBuilder::finish 已统一验证 shape program、控制边身份/拓扑及 effect 冲突；
+共同 executable 的 bind_shape_values / specialize_bound_descriptions / make_specialized_graph
+已拥有精确形状求值和原身份保留。BORROW 这些实现，禁止第二套表达式/guard 校验。
+原生 lowerer 的数据剪枝不能保留 control-only 前驱，必须改成数据+控制可达性。
+Apple evaluate_mlx 逐 region 等成功 outputs，hybrid 逐 fragment 等原 Completion；
+控制端点冷分片并显式物化前驱输出可以复用这些顺序，不需要新 Compute runtime。
+Vulkan 原生控制端点的 command barrier/managed region 仍需实现期对原录制代码定向核实。
+
+### 能力与 API freeze
+
+| 能力 | 当前裁决 | 有限动作 |
+|---|---|---|
+| GraphBuilder 形状/控制/effect 合法性 | COMPLETE | KEEP/BORROW 原规则 |
+| native 精确形状 | MISSING | 共同冷 specialize 快照，保留原 ValueId/NodeId；不宣称 general |
+| 有限原生 artifact 表 | MISSING | SELF 冷 `ExactNativeVariants<Artifact>`，声明表全量预检后编译；select 时校验 binding，未覆盖拒绝 |
+| control-only 活性与顺序 | MISSING | SELF 冷可达性/端点分片，BORROW 原完成边界；等待/物化成本明确报告 |
+| 原生 pure inputs/results/旧结果 | ROUTED | KEEP 原 native Program/Executable/Invocation/ResultLease |
+| 外部 effects/resource ports | PARTIAL | 原 CPU+CUDA 规则 KEEP；native 无真实可写端口者明确 REJECT；不得假报 preserves_effects |
+
+共同精确快照以 `specialize_exact(graph, shape, allocator)` 返回 Graph 与原
+SpecializationSignature；只在冷调用分配，完整复用既有求值、输出推导和 ViewSpec 绑定。
+native/hybrid CompileOptions 增加 `shape`，原无 dimension 调用保留原形状。
+`compile_variants` 为各 route 的冷 typed factory，返回拥有原 artifact 的有限 family；
+`select(shape)` 返回该 artifact 的共享 handle，再用原 create_invocation 管理独立 slot。
+不在 submit 查表/JIT，也不增加万能执行接口；无法准备任一声明 shape 则整表拒绝，
+缺省没有隐式增长，重复 signature 拒绝，完整 bounds 内的表外点仍 Unimplemented。
+声明/选择都检查原 graph identity、derived guards、完整 independent bindings。
+
+metadata 与原 native artifact 的 allocation/OOM 发生在冷准备，失败不消费调用者 tensor；
+family 复制不复制 payload。共享 ResourceBudget 继续累计各 artifact 的原收费，未知
+MLX/driver bytes 保留 UNKNOWN；无总预算配置不声称硬内存上限。常态每 slot 原生对象与
+旧结果权限不变。control 默认允许原 managed waits，禁止等待按原 workload 拒绝。
+source/static/shared 使用同一 typed entry；公开新头归 Graph；文档提供显式两形状选型。
+所有新增入口回指有限 shape consumer，取消/close/producer 沿原 Invocation，family 不起任务。
+
+七问：依赖锁与许可证沿固定研究 KEEP；功能仅按上表且外部 effects 不伪支持；复用原 Graph
+求值/Compute runtime/F1 owner；P0 冷 O(V(D+N+E))、选择 O(DV)、warm 原 artifact；C++ typed
+入口无新 FFI；新增公共头及四 factory 三交付需实际验证；guide 要明示 exact-only、等待与
+未知 private 成本。当前均为合同冻结，正确性/交付/红队尚未裁决。
 
 ## 有限改动 ledger
 
