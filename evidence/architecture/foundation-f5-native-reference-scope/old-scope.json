@@ -1,0 +1,17 @@
+{
+  "baseline": "aa4fc569e",
+  "owners": [
+    {
+      "module": "compute_route_apple",
+      "state": "AUDITED",
+      "record": "docs/implementation/tasks/compute/foundation-f5-package-seam.md",
+      "summary": "F5 package-only AUDITED：固定Compute/Graph新增batch roots/public发现与真实三交付/新头/缺路线/迁址/loader一个FIX，旧已签源码/算法范围保持。"
+    },
+    {
+      "module": "compute_route_vulkan",
+      "state": "AUDITED",
+      "record": "docs/implementation/tasks/compute/foundation-f5-package-seam.md",
+      "summary": "F5 package-only AUDITED：固定Compute/Graph新增batch roots/public发现与真实三交付/新头/缺路线/迁址/loader一个FIX，旧已签源码/算法范围保持。"
+    }
+  ]
+}

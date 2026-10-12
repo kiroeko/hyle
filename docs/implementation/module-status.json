@@ -463,8 +463,8 @@
     {
       "module": "compute_route_apple",
       "state": "AUDITED",
-      "record": "docs/implementation/tasks/compute/foundation-f5-package-seam.md",
-      "summary": "F5 package-only AUDITED：固定Compute/Graph新增batch roots/public发现与真实三交付/新头/缺路线/迁址/loader一个FIX，旧已签源码/算法范围保持。"
+      "record": "docs/implementation/tasks/compute/foundation-f5-native-reference-bridges.md",
+      "summary": "F5 native reference AUDITED：两有限Direct冷Program适配FIX/API/依赖冻结，复用原MLX/Vulkan计划/资源/leased结果；原package与数学范围保留，尚未实现。"
     },
     {
       "module": "graph_route_apple",
@@ -475,8 +475,8 @@
     {
       "module": "compute_route_vulkan",
       "state": "AUDITED",
-      "record": "docs/implementation/tasks/compute/foundation-f5-package-seam.md",
-      "summary": "F5 package-only AUDITED：固定Compute/Graph新增batch roots/public发现与真实三交付/新头/缺路线/迁址/loader一个FIX，旧已签源码/算法范围保持。"
+      "record": "docs/implementation/tasks/compute/foundation-f5-native-reference-bridges.md",
+      "summary": "F5 native reference AUDITED：两有限Direct冷Program适配FIX/API/依赖冻结，复用原MLX/Vulkan计划/资源/leased结果；原package与数学范围保留，尚未实现。"
     },
     {
       "module": "graph_route_vulkan",
