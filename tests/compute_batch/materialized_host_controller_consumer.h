@@ -12,6 +12,21 @@ Status qualification(c::Context&context){
   }
   return Status::Ok();
 }
+struct DirectOutput final {
+  c::ReadLease lease;
+  Result<c::ReadLease> storage_lease()const noexcept{return lease;}
+  void reset()noexcept{lease.reset();}
+};
+struct DirectDriver final {
+  c::MaterializedBatchInvocation value;
+  static Result<DirectDriver> create(c::Context&context,c::MaterializedBatchProgram recipe,c::Queue&queue,g::batch::MaterializedInvocationOptions options){HYLE_ASSIGN_OR_RETURN(auto value,c::MaterializedBatchInvocation::create(context,std::move(recipe),queue,{.max_payload_bytes=options.max_output_bytes<1087?1u:1u<<20,.max_workspace_bytes=1u<<20,.allocator=options.leases.allocator,.resource_budget=options.leases.resource_budget}));return DirectDriver{std::move(value)};}
+  Status prepare_batch(c::BatchLayoutVersion layout){return value.prepare_batch(std::move(layout));}
+  Status bind(c::ReadLease q,c::PagedArenaRead k,c::PagedArenaRead v){return value.bind(std::move(q),std::move(k),std::move(v));}
+  Result<c::Completion> submit(){return value.submit();}
+  Result<DirectOutput> output(){HYLE_ASSIGN_OR_RETURN(auto lease,value.output());return DirectOutput{std::move(lease)};}
+  Status close(){return value.close();}
+};
+template<class Driver=g::batch::MaterializedInvocation>
 Status exercise(c::Context&context,c::Queue&queue,bool bf16){
   hyle::mem::QuotaAllocator metadata(hyle::mem::system_allocator());c::ReadLease escaped;
   {
@@ -20,9 +35,9 @@ Status exercise(c::Context&context,c::Queue&queue,bool bf16){
     for(unsigned i=0;i<2;++i){std::vector<std::uint16_t> key(256,encode(0,bf16)),val(256);for(unsigned row=0;row<2;++row){const float x=i?row?NAN:.375f:row?.25f:.125f;std::fill_n(val.begin()+row*128,128,encode(x,bf16));if(i&&row)std::fill_n(key.begin()+128,128,encode(NAN,bf16));}HYLE_ASSIGN_OR_RETURN(auto kw,keys.acquire(i+2));HYLE_ASSIGN_OR_RETURN(auto vw,values.acquire(i+2));HYLE_RETURN_IF_ERROR(kw.lease().view()->write(std::as_bytes(std::span(key))));HYLE_RETURN_IF_ERROR(vw.lease().view()->write(std::as_bytes(std::span(val))));HYLE_ASSIGN_OR_RETURN(k[i],kw.publish());HYLE_ASSIGN_OR_RETURN(v[i],vw.publish());}
     const std::array<std::int32_t,2> qptr{0,1},kvptr{0,2},old_ids{2,3},new_ids{2,1};const std::array<std::int32_t,1> old_tail{1},new_tail{2};HYLE_ASSIGN_OR_RETURN(auto old_layout,schema.version({qptr,kvptr,old_ids,old_tail}));HYLE_ASSIGN_OR_RETURN(auto old_keys,keys.read(old_layout,k));HYLE_ASSIGN_OR_RETURN(auto old_values,values.read(old_layout,v));
     HYLE_ASSIGN_OR_RETURN(auto recipe,c::MaterializedBatchProgram::prepare(schema,{.max_kv_per_request=4,.max_host_metadata_bytes=1u<<20,.max_logical_intermediate_bytes=1u<<20,.scale=.125f,.allocator=metadata.get()}));g::batch::MaterializedInvocationOptions options{.max_output_bytes=1088,.leases={.allocator=metadata.get()}};
-    auto small=options;small.max_output_bytes=1086;HYLE_RETURN_IF_ERROR(require(g::batch::MaterializedInvocation::create(context,recipe,queue,small).error().IsResourceExhausted(),"host controller output byte cap ignored"));
-    {auto exhausted=metadata.try_reserve_bytes(metadata.remaining());HYLE_RETURN_IF_ERROR(require(bool(exhausted),"host controller quota fixture"));HYLE_RETURN_IF_ERROR(require(g::batch::MaterializedInvocation::create(context,recipe,queue,options).error().IsResourceExhausted(),"host controller cold metadata OOM ignored"));}
-    HYLE_ASSIGN_OR_RETURN(auto invocation,g::batch::MaterializedInvocation::create(context,recipe,queue,options));HYLE_ASSIGN_OR_RETURN(auto pool,c::LeasePool::create(hyle::mem::system_resource(),8192,{.max_blocks=4}));std::vector<std::uint16_t> zero(512,encode(0,bf16)),row_zero(128,encode(0,bf16)),row_value(128,encode(.75f,bf16));HYLE_ASSIGN_OR_RETURN(auto query,load(pool,zero));HYLE_ASSIGN_OR_RETURN(auto incoming_k,load(pool,row_zero));HYLE_ASSIGN_OR_RETURN(auto incoming_v,load(pool,row_value));
+    auto small=options;small.max_output_bytes=1086;HYLE_RETURN_IF_ERROR(require(Driver::create(context,recipe,queue,small).error().IsResourceExhausted(),"host controller output byte cap ignored"));
+    {auto exhausted=metadata.try_reserve_bytes(metadata.remaining());HYLE_RETURN_IF_ERROR(require(bool(exhausted),"host controller quota fixture"));HYLE_RETURN_IF_ERROR(require(Driver::create(context,recipe,queue,options).error().IsResourceExhausted(),"host controller cold metadata OOM ignored"));}
+    HYLE_ASSIGN_OR_RETURN(auto invocation,Driver::create(context,recipe,queue,options));HYLE_ASSIGN_OR_RETURN(auto pool,c::LeasePool::create(hyle::mem::system_resource(),8192,{.max_blocks=4}));std::vector<std::uint16_t> zero(512,encode(0,bf16)),row_zero(128,encode(0,bf16)),row_value(128,encode(.75f,bf16));HYLE_ASSIGN_OR_RETURN(auto query,load(pool,zero));HYLE_ASSIGN_OR_RETURN(auto incoming_k,load(pool,row_zero));HYLE_ASSIGN_OR_RETURN(auto incoming_v,load(pool,row_value));
     HYLE_ASSIGN_OR_RETURN(auto page_desc,c::TensorDesc::dense(cap.data_type,std::array<std::int64_t,3>{2,2,64}));HYLE_ASSIGN_OR_RETURN(auto state_schema,c::StateSchema::create(std::array{c::StateEntrySpec{.description=page_desc},c::StateEntrySpec{.description=page_desc},c::StateEntrySpec{.description=page_desc},c::StateEntrySpec{.description=page_desc},c::StateEntrySpec{.description=schema.metadata_description().value()}},metadata.get()));std::array<c::StateEntryId,5> ids;for(unsigned i=0;i<5;++i){HYLE_ASSIGN_OR_RETURN(ids[i],state_schema.entry(i));}HYLE_ASSIGN_OR_RETURN(auto store,c::StateStore::create(state_schema,{.allocator=metadata.get()}));HYLE_ASSIGN_OR_RETURN(auto base,store.import(std::array{c::StateMember{ids[0],k[0]},c::StateMember{ids[1],k[1]},c::StateMember{ids[2],v[0]},c::StateMember{ids[3],v[1]},c::StateMember{ids[4],old_layout.metadata().value()}}));HYLE_ASSIGN_OR_RETURN(auto head,c::StateHead::create(store,base));HYLE_ASSIGN_OR_RETURN(auto draft,store.begin(base));
     const auto check=[&](float expected)->Status{HYLE_ASSIGN_OR_RETURN(auto output,invocation.output());HYLE_ASSIGN_OR_RETURN(auto lease,output.storage_lease());std::vector<std::uint16_t> actual(512);HYLE_RETURN_IF_ERROR(lease.view()->read(std::as_writable_bytes(std::span(actual))));for(unsigned i=0;i<256;++i)HYLE_RETURN_IF_ERROR(require(std::abs(decode(actual[i],bf16)-expected)<.003f,"host controller independent uniform attention oracle differs"));std::printf("host page controller %s oracle=%.3f PASS\n",bf16?"BF16":"F16",expected);return Status::Ok();};
     HYLE_RETURN_IF_ERROR(require(!invocation.submit(),"host controller submitted before preparation"));HYLE_RETURN_IF_ERROR(invocation.prepare_batch(old_layout));HYLE_RETURN_IF_ERROR(invocation.bind(query,old_keys,old_values));HYLE_ASSIGN_OR_RETURN(auto discarded,invocation.submit());HYLE_RETURN_IF_ERROR(discarded.wait());discarded={};
@@ -41,5 +56,5 @@ Status exercise(c::Context&context,c::Queue&queue,bool bf16){
   }
   HYLE_RETURN_IF_ERROR(require(metadata.used()>0,"escaped host output lost its owner"));HYLE_ASSIGN_OR_RETURN(auto uses,c::LeaseUsePool::create());HYLE_ASSIGN_OR_RETURN(auto use,uses.begin());HYLE_RETURN_IF_ERROR(use.read(escaped));escaped.reset();HYLE_RETURN_IF_ERROR(require(metadata.used()>0,"host output native read-use did not retain owner"));use={};return require(metadata.used()==0,"host controller/recipe/output metadata leaked");
 }
-Status run(c::Context&context,c::Queue&queue){HYLE_RETURN_IF_ERROR(qualification(context));HYLE_RETURN_IF_ERROR(exercise(context,queue,false));return exercise(context,queue,true);}
+Status run(c::Context&context,c::Queue&queue){HYLE_RETURN_IF_ERROR(qualification(context));HYLE_RETURN_IF_ERROR(exercise(context,queue,false));HYLE_RETURN_IF_ERROR(exercise(context,queue,true));HYLE_RETURN_IF_ERROR(exercise<DirectDriver>(context,queue,false));return exercise<DirectDriver>(context,queue,true);}
 } // namespace hyle_f5_host_controller_fixture

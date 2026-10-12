@@ -2,6 +2,8 @@
 
 #include <array>
 #include "hyle/compute/batch_ops.h"
+#include "hyle/compute/prepared_operation.h"
+#include "hyle/compute/paged_arena.h"
 
 namespace hyle::compute {
 struct MaterializedBatchOptions final {
@@ -76,5 +78,46 @@ private:
   friend class MaterializedBatchProgram;
   explicit MaterializedBatchVersion(detail::MaterializedBatchVersionData*p)noexcept:data_(p){}
   detail::MaterializedBatchVersionData*data_=nullptr;
+};
+struct MaterializedBatchInvocationOptions final {
+  std::size_t max_payload_bytes=0,max_workspace_bytes=0;
+  mem::AllocatorRef allocator=mem::system_allocator();
+  ResourceBudget resource_budget{};
+};
+struct MaterializedBatchRunReport final {
+  std::uint64_t layout_generation=0;
+  std::uint32_t submitted_stages=0,host_waits=0;
+};
+namespace detail {struct MaterializedBatchInvocationData;}
+// Explicit host/system-memory reference over original prepared Direct math.
+// Cold fixed buffers/operations; submit waits each accepted stage and reports
+// that cost. Native GPU routes retain their own typed resources/controllers.
+// Control is thread-compatible; Context/Queue and injected allocators outlive
+// all native work/results. One successful output is readonly and may escape.
+class MaterializedBatchInvocation final {
+public:
+  MaterializedBatchInvocation()noexcept=default;
+  MaterializedBatchInvocation(const MaterializedBatchInvocation&)=delete;
+  MaterializedBatchInvocation&operator=(const MaterializedBatchInvocation&)=delete;
+  HYLE_COMPUTE_BATCH_API MaterializedBatchInvocation(MaterializedBatchInvocation&&)noexcept;
+  HYLE_COMPUTE_BATCH_API MaterializedBatchInvocation&operator=(MaterializedBatchInvocation&&)noexcept;
+  HYLE_COMPUTE_BATCH_API ~MaterializedBatchInvocation();
+  HYLE_COMPUTE_BATCH_API static Result<MaterializedBatchInvocation> create(const Context&,
+      MaterializedBatchProgram,Queue&,MaterializedBatchInvocationOptions)noexcept;
+  bool valid()const noexcept{return data_!=nullptr;}
+  HYLE_COMPUTE_BATCH_API Status prepare_batch(BatchLayoutVersion)noexcept;
+  HYLE_COMPUTE_BATCH_API Status bind(ReadLease,PagedArenaRead,PagedArenaRead)noexcept;
+  HYLE_COMPUTE_BATCH_API Status bind(ReadLease,ReadLease,ReadLease)noexcept;
+  // Synchronous stage submission/waits. Returned success is already terminal;
+  // cancelling it cannot preempt earlier stages. Unknown/failure never publishes
+  // an output or reuses its slot; drain waits original actual native retirement.
+  HYLE_COMPUTE_BATCH_API Result<Completion> submit()noexcept;
+  HYLE_COMPUTE_BATCH_API Result<ReadLease> output()const noexcept;
+  HYLE_COMPUTE_BATCH_API MaterializedBatchRunReport report()const noexcept;
+  HYLE_COMPUTE_BATCH_API Status close()noexcept;
+  HYLE_COMPUTE_BATCH_API Status drain()noexcept;
+private:
+  explicit MaterializedBatchInvocation(detail::MaterializedBatchInvocationData*p)noexcept:data_(p){}
+  detail::MaterializedBatchInvocationData*data_=nullptr;
 };
 } // namespace hyle::compute

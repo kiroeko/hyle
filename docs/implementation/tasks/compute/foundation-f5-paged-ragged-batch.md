@@ -332,3 +332,36 @@ CPU固定host Graph已按[REF-HOST-GATHER owner合同](foundation-f5-owner-bridg
 same-generation owned metadata、exact reshape→Gather page guards、原Graph/math/退休
 复用与CPU真实append/F4/旧新旧均通过，保旧storage/OOM/escaped owner/最后quota0有实际
 反证。CPU Direct及其他native完整controller、ragged append和最终门仍继续全部六FIX。
+
+## AUDITED REF-HOST-DIRECT：固定原operation控制器
+
+baseline 5e9907196，owner compute_batch。当前CPU Direct sample逐step手写生命周期，不是
+可复用消费者合同；以下固定FIX在实现前冻结，复用原PreparedOperation/OperationInvocation/
+Queue/F1/Completion，common factor不依赖Graph/native route，不新建executor/runtime/math。
+
+- MaterializedBatchInvocation::create(context,recipe,queue,options)只host/system resource。
+  cold prepare全部非View原操作，固定独立scratch/output/workspace原F1块，显式payload/
+  workspace byte cap/allocator/ResourceBudget；Views只按固定已推导description重描述。
+- prepare_batch(layout)生成owned同版本indices/mask；paged bind exact same-layout K/V frames，
+  ragged bind whole ready readonly leases。submit只运行这份已固定recipe，按原Queue逐阶段
+  明确wait，计实际submitted stages/host waits，无warm plan/JIT或不声明的async/capture。
+  这是有费用的明确reference档，不伪称高性能原生paged或GPU通用控制器。
+- native阶段前原LeaseUseBatch覆盖Q/metadata、所有actual K/V pages及全部scratch/output/
+  workspace writers；原submit返回的实际Completion按既有LeasedOperation合同附fresh use，
+  保全部backing到真实退休。等待错误/unknown不发布，不假称已退休，不复用失败slot；原
+  retained completion/use pool留待drain。无controller→completion→controller强环。
+- 全部cold块先分配再接独立backing owner（recipe/allocator/budget），随后detach原pool root；
+  readonly输出逃逸仍原F1/native use可接，最后metadata归零。old result/native use阻止output
+  重获writer；未提交重复prepare和metadata OOM保原成功结果；普通对象无常态字段税。
+- 预声明：Win/WSL原16+Graph controller8域与新Direct同八域，F16/BF16页append/F4旧新旧/
+  OOM保旧、foreign/layout/resource/bind与cold cap/OOM、old output/native guard、closed/
+  escaped owner/实际quota0、same-version metadata/stage waits；新公头/owner Werror与原
+  common33项八头。所有预算原根累计、重型跨机器串行，不回放成熟math全集。其他native
+  controller/ragged/fault/SDK/san/P0/guide/终审仍全F5 scope，不能由本FIX缩减或代签。
+
+[Direct host实际收据](../../../../evidence/correctness/foundation-f5-direct-host-controller-first/README.md)：
+Win/WSL各原16+Graph controller8+新Direct8=32矩阵oracle，两个controller的F16/BF16
+页旅程合16oracle/profile、same-generation/old result/exported storage/OOM/close/escaped
+native guard/quota0通过。每Direct run实际11 stages/11 host waits，明确同步reference费用。
+common33项/八头、Win owner/WX通过；原GCC misleading-indentation warning修正及历史
+保留，预算同根。产品仍AUDITED；native controller/ragged/完整fault/SDK/san/终审继续。

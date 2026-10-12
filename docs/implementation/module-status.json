@@ -621,7 +621,7 @@
     {
       "module": "compute_batch",
       "state": "AUDITED",
-      "summary": "F5 AUDITED实施：typed布局/native规划/四路线reference、逐页arena/33项八头、CUDA和Apple/Vulkan页闭环已验；CPU host Graph完整控制器/同版本metadata/精确Gather页消费与页append/F4也已验。CPU Direct/native controllers/ragged/其他故障/SDK/san/终审未完成。",
+      "summary": "F5 AUDITED实施：四路线math/页闭环首批已验；CPU Direct与Graph固定控制器/同版本metadata/精确页消费已接，Win/WSL各32矩阵+16页oracle与common33项八头通过，Direct11stages/11waits明确计费。native controllers/ragged/完整故障/SDK/san/终审继续。",
       "record": "docs/implementation/tasks/compute/foundation-f5-paged-ragged-batch.md"
     },
     {
