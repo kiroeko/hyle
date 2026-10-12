@@ -52,5 +52,15 @@ HYLE-owned地址/权限与quota证据不冒充GPU/driver总量；公共component
 原剩27.860秒预算未PASS，追加300秒问题待用户答复。相同阻因没有导致当前impasse，
 因为san和终审仍有可推进动作，goal保持active。
 
+随后Air Apple UBSan已实际两consumer PASS；Apple TSan公开consumer两次FAIL/-6，
+报告MLX Data deleter的GCD读/冷线程写。无HYLE匹配模板对照复现同报告，简单两个对照
+未复现的差异也保留，实际vendor Darwin USE_TSAN不支持；不能直接定为假阳性或签PASS。
+[完整诊断](../../../../evidence/correctness/foundation-f5-native-apple-host-tsan-diagnostic/README.md)
+保持INCONCLUSIVE_MLX_METAL_HOST_RACE_REPORT。Air Vulkan UBSan正在原有限配置构建，
+其TSan尚未启动。产品25e未改、20 owner仍CANDIDATE，无新产品缺陷归因或虚假terminal。
+固定实现后的剩余基础库工作量和engine估计已补入
+[评估](foundation-post-goal-engine-effort-2026-10.md#2026-10-13固定实现后的核算)，但完整goal
+后验收与terminal仍待上述门真实裁决，不能以评估写完代替产品完成。
+
 最终必须补完全部原编号/七门的真实范围裁决、reopen triggers、20 owner合法terminal与
 用户要求的goal后基础库剩余缺口/单机单多请求engine自有LOC评估。现在不签CLOSED或complete。
