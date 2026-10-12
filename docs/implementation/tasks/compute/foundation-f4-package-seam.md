@@ -76,3 +76,9 @@ imports、受限PATH运行在各job/raw archive。native-only、WSL与Air对应�
 [Windows native-only Vulkan shared](../../../../evidence/correctness/foundation-f4-native-sdk-windows-vulkan-shared/README.md)
 实际PASS，迁址后state DLL及实际native运行通过、CPU/CUDA/Apple缺席请求拒绝；至此Windows
 六个预声明installed格完成。WSL与实际Air余下12格按原候选继续，不扩全库算子测试。
+
+[WSL CPU+CUDA static](../../../../evidence/correctness/foundation-f4-sdk-wsl-cpu-cuda-static/README.md)、
+[shared](../../../../evidence/correctness/foundation-f4-sdk-wsl-cpu-cuda-shared/README.md)同29候选
+实际PASS，普通Direct/Graph state旅程与独立oracle、3头、迁址/缺路线通过；shared ldd
+证明HYLE运行库来自新prefix，无missing依赖。累计8/18个installed格。WSL Vulkan仅预声明
+软件GPU package资格，其runtime数学未运行、不写PASS；实际GPU由Win/Air分别验。

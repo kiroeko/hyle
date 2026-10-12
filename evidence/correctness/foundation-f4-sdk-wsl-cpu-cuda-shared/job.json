@@ -1,0 +1,209 @@
+{
+  "candidate": "29d3c7a3ebe81f0e627986e2e8c8a393aa7832c8",
+  "snapshot": "29d3c7a3ebe81f0e627986e2e8c8a393aa7832c8",
+  "host": "wsl",
+  "profile": "cpu-cuda",
+  "mode": "shared",
+  "source": "/root/hyle-scratch/compute-unified/source-7a7b4c3b",
+  "producer": "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/shared-sdk-build",
+  "identity": {
+    "os": "Linux kiro-workstation 6.18.40.1-microsoft-standard-WSL2 #1 SMP PREEMPT_DYNAMIC Fri Jul 31 22:12:15 UTC 2026 x86_64 x86_64 x86_64 GNU/Linux",
+    "compiler": "g++-14 (Ubuntu 14.2.0-4ubuntu2~24.04.1) 14.2.0\nCopyright (C) 2024 Free Software Foundation, Inc.\nThis is free software; see the source for copying conditions.  There is NO\nwarranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.",
+    "gpu": "NVIDIA GeForce RTX 4070, GPU-e7376560-6f5d-ec19-6ee4-3dd3a2c81ef8, 617.14"
+  },
+  "test_parallel": 1,
+  "stages": [
+    {
+      "name": "configure",
+      "command": [
+        "/usr/bin/cmake",
+        "-S",
+        "/root/hyle-scratch/compute-unified/source-7a7b4c3b",
+        "-B",
+        "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/shared-sdk-build",
+        "-G",
+        "Ninja",
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DCMAKE_CXX_COMPILER=/usr/bin/g++-14",
+        "-DHYLE_COMPONENTS:STRING=compute;graph",
+        "-DHYLE_COMPUTE_ROUTES:STRING=cpu;cuda",
+        "-DHYLE_BUILD_TESTS:BOOL=OFF",
+        "-DHYLE_BUILD_BENCH:BOOL=OFF",
+        "-DHYLE_INSTALL:BOOL=ON",
+        "-DHYLE_STATIC:BOOL=OFF"
+      ],
+      "pid": 1036,
+      "state": "terminal",
+      "available_bytes": 31888265216,
+      "log": "configure.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "elapsed": 11.243241912999963,
+      "sha256": "c15cbeec4d449ca68ea2b133c06749b6c72bd69733933d35da0157547bd1f6ed"
+    },
+    {
+      "name": "producer",
+      "command": [
+        "/usr/bin/cmake",
+        "--build",
+        "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/shared-sdk-build",
+        "--target",
+        "hyle_compute_state",
+        "hyle_graph_route_cpu_cuda",
+        "--parallel",
+        "4"
+      ],
+      "pid": 1079,
+      "state": "terminal",
+      "available_bytes": 32130691072,
+      "log": "producer.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "elapsed": 14.527225919000045,
+      "sha256": "599b2a7546e3e23097dfcb4207d21b9c057def8e0748966096ce6fd791e235bb"
+    },
+    {
+      "name": "install",
+      "command": [
+        "/usr/bin/cmake",
+        "--install",
+        "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/shared-sdk-build",
+        "--prefix",
+        "/root/hyle-scratch/compute-unified/foundation-f4-sdk-cpu-cuda-shared-29d3c7a3e/staging"
+      ],
+      "pid": 1289,
+      "state": "terminal",
+      "available_bytes": 31415222272,
+      "log": "install.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "elapsed": 0.16421598599998788,
+      "sha256": "a792c4ec963a2bcf645fd739cb61e98ef016cb08a086adfee2bf92476f4d2747"
+    },
+    {
+      "name": "consumer-configure",
+      "command": [
+        "/usr/bin/cmake",
+        "-S",
+        "/root/hyle-scratch/compute-unified/foundation-f4-sdk-cpu-cuda-shared-29d3c7a3e/consumer-source",
+        "-B",
+        "/root/hyle-scratch/compute-unified/foundation-f4-sdk-cpu-cuda-shared-29d3c7a3e/consumer",
+        "-G",
+        "Ninja",
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DCMAKE_CXX_COMPILER=/usr/bin/g++-14",
+        "-DCMAKE_PREFIX_PATH=/root/hyle-scratch/compute-unified/foundation-f4-sdk-cpu-cuda-shared-29d3c7a3e/relocated",
+        "-DHYLE_COMPUTE_ROUTES=cpu;cuda"
+      ],
+      "pid": 1290,
+      "state": "terminal",
+      "available_bytes": 31418773504,
+      "log": "consumer-configure.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "elapsed": 5.113867859999971,
+      "sha256": "fe258bfe7cc51f96abece3c12f5fbf24fb4c0ab3807fe8081340bd3c002661ec"
+    },
+    {
+      "name": "consumer-build",
+      "command": [
+        "/usr/bin/cmake",
+        "--build",
+        "/root/hyle-scratch/compute-unified/foundation-f4-sdk-cpu-cuda-shared-29d3c7a3e/consumer",
+        "--parallel",
+        "4"
+      ],
+      "pid": 1344,
+      "state": "terminal",
+      "available_bytes": 31725641728,
+      "log": "consumer-build.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "elapsed": 4.145141834000015,
+      "sha256": "29a6d09988efcbbe48f1cc0f6f5c4e621336e37b33c9fd1164e4ae4d9297fbfb"
+    },
+    {
+      "name": "dependencies-state",
+      "command": [
+        "/usr/bin/ldd",
+        "/root/hyle-scratch/compute-unified/foundation-f4-sdk-cpu-cuda-shared-29d3c7a3e/consumer/state"
+      ],
+      "pid": 1366,
+      "state": "terminal",
+      "available_bytes": 31621083136,
+      "log": "dependencies-state.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "elapsed": 0.01615859100002126,
+      "sha256": "84d8b9530a20520654b81a67147de046397ae8e41fcbea8e29756077b4c40f90"
+    },
+    {
+      "name": "run-state",
+      "command": [
+        "/root/hyle-scratch/compute-unified/foundation-f4-sdk-cpu-cuda-shared-29d3c7a3e/consumer/state"
+      ],
+      "pid": 1376,
+      "state": "terminal",
+      "available_bytes": 31635496960,
+      "log": "run-state.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "elapsed": 0.6561009259999651,
+      "sha256": "ca2720a64167aa439d949f51b16a32b9373531d2a73309925d6589c1b2db927f"
+    },
+    {
+      "name": "absence-apple",
+      "command": [
+        "/usr/bin/cmake",
+        "-S",
+        "/root/hyle-scratch/compute-unified/foundation-f4-sdk-cpu-cuda-shared-29d3c7a3e/absence-apple",
+        "-B",
+        "/root/hyle-scratch/compute-unified/foundation-f4-sdk-cpu-cuda-shared-29d3c7a3e/absence-build-apple",
+        "-G",
+        "Ninja",
+        "-DCMAKE_PREFIX_PATH=/root/hyle-scratch/compute-unified/foundation-f4-sdk-cpu-cuda-shared-29d3c7a3e/relocated"
+      ],
+      "pid": 1384,
+      "state": "terminal",
+      "available_bytes": 31713550336,
+      "log": "absence-apple.log",
+      "exit_code": 1,
+      "verdict": "PASS_EXPECTED_ABSENT",
+      "elapsed": 0.11598998599998822,
+      "sha256": "9289cc3230daa4d756338c73228a7c650ed9d01d33fec272b262c720465307f9"
+    },
+    {
+      "name": "absence-vulkan",
+      "command": [
+        "/usr/bin/cmake",
+        "-S",
+        "/root/hyle-scratch/compute-unified/foundation-f4-sdk-cpu-cuda-shared-29d3c7a3e/absence-vulkan",
+        "-B",
+        "/root/hyle-scratch/compute-unified/foundation-f4-sdk-cpu-cuda-shared-29d3c7a3e/absence-build-vulkan",
+        "-G",
+        "Ninja",
+        "-DCMAKE_PREFIX_PATH=/root/hyle-scratch/compute-unified/foundation-f4-sdk-cpu-cuda-shared-29d3c7a3e/relocated"
+      ],
+      "pid": 1417,
+      "state": "terminal",
+      "available_bytes": 31753023488,
+      "log": "absence-vulkan.log",
+      "exit_code": 1,
+      "verdict": "PASS_EXPECTED_ABSENT",
+      "elapsed": 0.11556065499996748,
+      "sha256": "b73d998aac0993a8396cd7a2a1df7f96353cc02e38525033025b6f896278742b"
+    }
+  ],
+  "scope": "F4 candidate ordinary State Direct/Graph consumers, three new heads, missing routes, relocated actual native runtime",
+  "relocation": {
+    "staging_absent": true,
+    "relocated": "/root/hyle-scratch/compute-unified/foundation-f4-sdk-cpu-cuda-shared-29d3c7a3e/relocated",
+    "Hyle_metadata_no_source_build_staging_paths": true
+  },
+  "verdict": "PASS_FOUNDATION_F4_WSL_CPU_CUDA_SHARED_RELOCATED_SDK",
+  "raw_archive": {
+    "name": "raw-logs.zip",
+    "sha256": "dd65b5479be9bb1a6c8874c82866e5d60e002650f6b4a1e16207a0bed91041ef",
+    "stage_hashes_refer_to": "original archive entries"
+  }
+}
