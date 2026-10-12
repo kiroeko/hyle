@@ -1,0 +1,47 @@
+[0/2] Re-checking globbed directories...
+[1/47] Building CXX object hyle/src/simd/CMakeFiles/hyle_simd.dir/runtime.cc.o
+[2/47] Building CXX object hyle/src/simd/CMakeFiles/hyle_simd.dir/ops/dispatch_ops.cc.o
+[3/47] Building CXX object hyle/src/simd/CMakeFiles/hyle_simd.dir/random/random_dispatch.cc.o
+[4/47] Building CXX object hyle/src/simd/CMakeFiles/hyle_simd.dir/search/search_dispatch.cc.o
+[5/47] Building CXX object hyle/src/simd/CMakeFiles/hyle_simd.dir/narrow/narrow_dispatch.cc.o
+[6/47] Building CXX object hyle/src/simd/CMakeFiles/hyle_simd.dir/scan/scan_dispatch.cc.o
+[7/47] Building CXX object hyle/src/simd/CMakeFiles/hyle_simd.dir/dtype/dtype_dispatch.cc.o
+[8/47] Building CXX object hyle/src/simd/CMakeFiles/hyle_simd.dir/math/math_dispatch.cc.o
+[9/47] Building CXX object hyle/src/simd/CMakeFiles/hyle_simd.dir/sort/sort_dispatch.cc.o
+[10/47] Building CXX object hyle/src/simd/CMakeFiles/hyle_simd.dir/bitpack/bitpack_dispatch.cc.o
+[11/47] Building CXX object hyle/src/simd/CMakeFiles/hyle_simd.dir/generated/simd-dispatch/ops/ops_scalar.cc.o
+[12/47] Building CXX object hyle/src/simd/CMakeFiles/hyle_simd.dir/generated/simd-dispatch/ops/ops_neon.cc.o
+[13/47] Building CXX object hyle/src/simd/CMakeFiles/hyle_simd.dir/generated/simd-dispatch/dtype_convert/dtype_convert_scalar.cc.o
+[14/47] Building CXX object hyle/src/simd/CMakeFiles/hyle_simd.dir/generated/simd-dispatch/dtype_convert/dtype_convert_neon.cc.o
+[15/47] Building CXX object hyle/src/simd/CMakeFiles/hyle_simd.dir/generated/simd-dispatch/scan/scan_scalar.cc.o
+[16/47] Building CXX object hyle/src/simd/CMakeFiles/hyle_simd.dir/generated/simd-dispatch/scan/scan_neon.cc.o
+[17/47] Building CXX object hyle/src/simd/CMakeFiles/hyle_simd.dir/generated/simd-dispatch/random/random_scalar.cc.o
+[18/47] Building CXX object hyle/src/simd/CMakeFiles/hyle_simd.dir/generated/simd-dispatch/random/random_neon.cc.o
+[19/47] Building CXX object hyle/src/simd/CMakeFiles/hyle_simd.dir/generated/simd-dispatch/search/search_scalar.cc.o
+[20/47] Building CXX object hyle/src/simd/CMakeFiles/hyle_simd.dir/generated/simd-dispatch/search/search_neon.cc.o
+[21/47] Building CXX object hyle/src/simd/CMakeFiles/hyle_simd.dir/generated/simd-dispatch/narrow/narrow_scalar.cc.o
+[22/47] Building CXX object hyle/src/simd/CMakeFiles/hyle_simd.dir/generated/simd-dispatch/narrow/narrow_neon.cc.o
+[23/47] Building CXX object hyle/src/simd/CMakeFiles/hyle_simd.dir/generated/simd-dispatch/bitpack/bitpack_scalar.cc.o
+[24/47] Building CXX object hyle/src/simd/CMakeFiles/hyle_simd.dir/generated/simd-dispatch/bitpack/bitpack_neon.cc.o
+[25/47] Linking CXX shared library hyle/src/simd/libhyle_simd.0.1.0.dylib
+[26/47] Creating library symlink hyle/src/simd/libhyle_simd.dylib
+[27/47] Linking CXX shared library hyle/src/compute_provider_native/libhyle_compute_provider_native.0.1.0.dylib
+[28/47] cd /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-build/hyle/src/compute_route_apple && /opt/homebrew/bin/cmake -E copy_if_different /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-build/hyle/_deps/mlx-build/mlx/backend/metal/kernels/mlx.metallib /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-build/hyle/_deps/mlx-build/mlx.metallib
+[29/47] Building CXX object hyle/src/graph/CMakeFiles/hyle_graph.dir/executable.cc.o
+[30/47] Creating library symlink hyle/src/compute_provider_native/libhyle_compute_provider_native.dylib
+[31/47] Linking CXX shared library hyle/src/graph/libhyle_graph.0.1.0.dylib
+[32/47] Linking CXX shared library hyle/src/compute_route_cpu/libhyle_compute_route_cpu.0.1.0.dylib
+[33/47] Creating library symlink hyle/src/graph/libhyle_graph.dylib
+[34/47] Creating library symlink hyle/src/compute_route_cpu/libhyle_compute_route_cpu.dylib
+[35/47] Building CXX object hyle/src/graph_route_apple/CMakeFiles/hyle_graph_route_apple.dir/apple_lowering.cc.o
+[36/47] Linking CXX shared library hyle/src/graph_route_cpu/libhyle_graph_route_cpu.0.1.0.dylib
+[37/47] Linking CXX shared library hyle/src/graph_route_apple/libhyle_graph_route_apple.0.1.0.dylib
+[38/47] Creating library symlink hyle/src/graph_route_cpu/libhyle_graph_route_cpu.dylib
+[39/47] Creating library symlink hyle/src/graph_route_apple/libhyle_graph_route_apple.dylib
+[40/47] Building CXX object hyle/src/graph_route_cpu_apple/CMakeFiles/hyle_graph_route_cpu_apple.dir/compile.cc.o
+[41/47] Building CXX object hyle/src/graph_route_cpu_apple/CMakeFiles/hyle_graph_route_cpu_apple.dir/invocation.cc.o
+[42/47] cd /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-build && /opt/homebrew/bin/cmake -P /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-build/hyle-apple-runtime/hyle_foundation_a_apple-Release.cmake
+[43/47] Linking CXX shared library hyle/src/graph_route_cpu_apple/libhyle_graph_route_cpu_apple.0.1.0.dylib
+[44/47] Building CXX object CMakeFiles/hyle_foundation_a_apple.dir/Users/kiro/hyle-scratch/compute-unified/source-c8874688/tests/graph/route_symmetry_apple.cc.o
+[45/47] Creating library symlink hyle/src/graph_route_cpu_apple/libhyle_graph_route_cpu_apple.dylib
+[46/47] Linking CXX executable hyle_foundation_a_apple

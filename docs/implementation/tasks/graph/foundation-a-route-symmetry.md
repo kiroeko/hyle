@@ -83,9 +83,9 @@ source/static/shared 使用同一 typed entry；公开新头归 Graph；文档�
 
 | ID | 工作 | 当前结果 |
 |---|---|---|
-| A-01 | 共用既有静态合法性与身份，保留 native artifact/owner | 已接线；共同39项与 Win Vulkan source PASS；其他格待验 |
-| A-02 | 冷有限 exact artifact 表与创建时 coverage 拒绝、独立 slots | 已接线；Win native/hybrid Vulkan PASS；Apple/三交付待验 |
-| A-03 | 真实 pure control liveness/顺序与禁止等待裁决 | 已接线；Win native/hybrid Vulkan PASS；Apple/三交付待验 |
+| A-01 | 共用既有静态合法性与身份，保留 native artifact/owner | 已接线；共同39项与 Win Vulkan/Air Apple source PASS；其他格待验 |
+| A-02 | 冷有限 exact artifact 表与创建时 coverage 拒绝、独立 slots | 已接线；Win Vulkan/Air Apple native+hybrid PASS；CPU+CUDA新表入口/三交付待验 |
+| A-03 | 真实 pure control liveness/顺序与禁止等待裁决 | 已接线；Win Vulkan/Air Apple native+hybrid PASS；完整风险/三交付待验 |
 | A-04 | 真实支持 effect 的端口/权限/alias；其余明确拒绝与旧结果合同 | UNPROVEN |
 
 ## Gate
@@ -101,6 +101,8 @@ scope、architecture、correctness、delivery、usability_docs、red_team、engi
 CPU hybrid 的有限形状、两个独立 slot/旧输出、控制前驱错误与禁止等待旅程 PASS。
 原 fixture 失败保留，累计预算在对应 evidence。代码仍 AUDITED，尚无 candidate/终局。
 
-Apple fixture 已写，尚未运行；CPU+CUDA 保持原 compiler/公开路线，本轮新 finite-only table 的
+[Air Apple source](../../../../evidence/correctness/foundation-a-apple-source/README.md) native 与
+CPU hybrid 的 exact/control/旧槽结果数学 PASS，真实可用内存7GiB 按规则 j1，build20秒。
+这不代签 Apple 的全部失败/取消及 installed 交付。CPU+CUDA 保持原 compiler/公开路线，本轮新 finite-only table 的
 自然入口仍需纳入实际 owner 审计。A-04 尤其需要 CPU 岛上的原 effect/footprint 接线资格，
 不能把所有 native effects 的明确拒绝写成四路线整体对称完成。F4/F5 尚未启动产品施工。
