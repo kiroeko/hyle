@@ -99,6 +99,10 @@ collection版本generation不同于单F1 block generation；opaque IDs不能用�
   冷创建有限原F2 slots与目标LeasePool。factory只冷调用，不保留执行回调。共同core仅保存
   对原typed objects的有限poll/cancel/drain/destroy生命周期桥，不增加native调度/Queue。
   默认每slot完整dirty成员一次原F2 phase/range；不clone全集合，不半截伪编码块。
+  定向实现核对发现原F2 request_cancel关闭该copy invocation，reset不会重新开放。route因此
+  保留typed Program与冷create factory，错误/取消已实际退休的槽显式StateCloneRoute::rearm
+  才可重建原invocation；不在submit隐式重建、不开caller Queue/Context、不保留数学执行回调。
+  此冷恢复有原F2 metadata/未知native分配成本，OOM保留原退休槽，unknown不能rearm。
 - draft.clone_for_write(id,route)返回CloneTicket：保留draft/base和原native slot，非阻塞poll或
   显式wait；源必须是成功readonly member，目的fresh独占。原F2 output→drop submission→
   reset→try_write成功后才给StateWriter；此顺序不能借file-stream私有take_mutable绕开权限。
