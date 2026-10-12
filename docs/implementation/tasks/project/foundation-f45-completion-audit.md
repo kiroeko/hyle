@@ -37,6 +37,10 @@
 未在这些固定合同发现需改产品的新反证；这不等于全红队完成，余下入口/证据/平台限制
 必须核齐。调用只读原签范围，不凭“再看一遍”重开closed模块。
 
+随后已完成本轮分离源码/API/证据边界审查：
+[有限结论](../../../../evidence/correctness/foundation-f5-separated-redteam/README.md)。没有新产品
+缺陷，两个文档阶段/失效恢复遗漏已补；该审查不替代尚未运行的Tsan/组件聚合或最终评估。
+
 明确未完成：native UBSan/TSan适用facet；整进程CUDA LSan仍NVIDIA库报告且无抑制，
 HYLE-owned地址/权限与quota证据不冒充GPU/driver总量；公共component all聚合因为环境/
 原剩27.860秒预算未PASS，追加300秒问题待用户答复。相同阻因没有导致当前impasse，
