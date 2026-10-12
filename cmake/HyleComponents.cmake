@@ -541,6 +541,10 @@ _hyle_declare_component(compute_stream
   SPLIT_PUBLIC_HEADERS hyle/compute/file_stream.h
     hyle/compute/detail/file_stream_access.h hyle/compute/detail/file_stream_copy.h)
 
+# F4 explicit immutable resource-set versions. Reserve identity before scope;
+# no target, dependency or public header exists at this QUEUED checkpoint.
+_hyle_declare_component(compute_state QUEUED)
+
 # Product facades are deliberately outside the factor DAG. They have no source,
 # module status, or decision authority and must never be used by an internal
 # factor edge. A facade only selects the exact factor roots that make one

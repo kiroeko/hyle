@@ -73,6 +73,7 @@
 | graph_route_cpu_apple | CLOSED | P0 / [PASS](../../evidence/architecture/foundation-a-p0/README.md) | [record](tasks/graph/foundation-a-final-closure.md) | Foundation A CLOSED：有限exact/control/qualified CPU effects与原身份/alias/OOM/失败前缀/取消/旧结果完成；18 installed格、原生缺CPU、实际Win/WSL/Air适用source及sanitizer、P0/LOC和终审通过。general/capture/GPU mutable/paged与整引擎性能不外推，F4/F5继续独立goal。 |
 | graph_route_cpu_vulkan | CLOSED | P0 / [PASS](../../evidence/architecture/foundation-a-p0/README.md) | [record](tasks/graph/foundation-a-final-closure.md) | Foundation A CLOSED：有限exact/control/qualified CPU effects与原身份/alias/OOM/失败前缀/取消/旧结果完成；18 installed格、原生缺CPU、实际Win/WSL/Air适用source及sanitizer、P0/LOC和终审通过。general/capture/GPU mutable/paged与整引擎性能不外推，F4/F5继续独立goal。 |
 | compute_stream | CLOSED | P0 / [PASS](tasks/compute/foundation-f3-p0-cost-review.md) | [record](tasks/compute/foundation-f3-final-closure.md) | F3 CLOSED：原八FIX的有界双向文件/资源管线、四自然路线/逐组ready、实际Qwen BF16/F32与原编码Direct+Graph往返、当前native寿命/错误/取消/direct IO和三sanitizer风险、适用source/迁址static/shared/新头/缺席/运行库、P0与红队通过；原suffix FAIL/有限纠正保留，未测硬件/软件GPU及driver私有成本不外推。 |
+| compute_state | QUEUED | — | — | F4显式不可变资源集合版本身份登记；schema/版本目录/有界draft、原F1/F2 dirty clone、expected-base发布与旧版本/native use保活按本goal定界，尚无产品API/target。 |
 
 <!-- END GENERATED MODULE STATUS -->
 

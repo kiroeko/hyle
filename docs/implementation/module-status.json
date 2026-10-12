@@ -691,6 +691,11 @@
         "tier": "P0",
         "evidence": "docs/implementation/tasks/compute/foundation-f3-p0-cost-review.md"
       }
+    },
+    {
+      "module": "compute_state",
+      "state": "QUEUED",
+      "summary": "F4显式不可变资源集合版本身份登记；schema/版本目录/有界draft、原F1/F2 dirty clone、expected-base发布与旧版本/native use保活按本goal定界，尚无产品API/target。"
     }
   ]
 }
