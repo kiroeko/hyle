@@ -19,3 +19,8 @@ build-resume12 PASS；consumer-resume10在remaining167.929秒终端TIMEOUT/exit-
 INCONCLUSIVE；其余已通过正常/append证据保留，整个goal没有完成。恢复需明确批准同
 root/config/tree一次有限追加，再SCOPED→AUDITED冻结只本风险的定位/修正；保全部旧失败
 与计账。未批准前不运行本门或修改blocked owner产品。
+
+追加预算待答期间的[静态补查](static-followup.json)核对实际Ninja include与锁定header hash：
+ragged kernel分派在prefill.cuh:4278、launch前调用cudaFuncSetAttribute，当前fixture却先
+阻塞stream；原Graph退休test在装Gate前已有warm submit/wait。这支持调整测试阻塞位置
+和阶段日志，不能证明哪条API卡住或F5 drain有缺陷。本次没有启动新run、改产品或重置预算。

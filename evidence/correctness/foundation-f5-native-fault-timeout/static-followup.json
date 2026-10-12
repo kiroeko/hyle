@@ -1,0 +1,16 @@
+{
+  "stage": "read-only followup while budget approval pending; not runtime proof",
+  "product_head": "5f5aeb100",
+  "fixture_gate_placement": "native_fault_consumer.cc inserts cudaLaunchHostFunc before the first PreparedBatch.run in that process",
+  "actual_compiler_include": "/root/.cache/hyle/dependencies/v1/sources/flashinfer-69ff11fc4954-dda66e35e348/include",
+  "source": "flashinfer/attention/prefill.cuh",
+  "source_sha256": "f93cbea96e3a723254c15f5a52d6dd4c13e3892e88eb9b9fed1c0c0048c7d710",
+  "ragged_kernel_selection_line": 4264,
+  "prelaunch_function_attribute_call_line": 4278,
+  "call": "cudaFuncSetAttribute(kernel, cudaFuncAttributeMaxDynamicSharedMemorySize, smem_size)",
+  "existing_reference": "tests/graph/aggregate_native_retirement_test.cc submits and waits a warm run before installing its stream gate",
+  "inference": "The fixture may block a prelaunch API or cold initialization. Static evidence does not identify the observed hang or prove the drain defect.",
+  "next_authorized_attempt": "Only after explicit budget approval: add phase stdout anchors, warm exact domain, and install the gate after provider kernel enqueue but before native sequence completion. Preserve the original TIMEOUT and same root budget.",
+  "runs_started": 0,
+  "budget_approval": "pending"
+}

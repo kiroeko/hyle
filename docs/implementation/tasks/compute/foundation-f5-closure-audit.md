@@ -61,3 +61,9 @@ build PASS，consumer在断言前无stdout并TIMEOUT；consumer累计180.030/180
 合法BLOCKED→SCOPED→AUDITED重新固定**仅本观察装饰定位/actual retirement**有限FIX。
 先让fixture给出阶段锚或移到已接纳kernel之后阻塞，不能假定当前hang就是drain缺陷；
 只有实际反证才改产品。若不追加则保本阻塞裁决，不转其他日志根或预算躲过停止条件。
+
+预算审批待答时只读核对实际compiler include的锁定prefill.cuh：ragged分派launch前确有
+cudaFuncSetAttribute（4278），header hash和原Graph warm-before-Gate参照保存在
+[静态补查](../../../../evidence/correctness/foundation-f5-native-fault-timeout/static-followup.json)。
+这不是hang根因/运行断言；获有限追加后应先加阶段锚、warm原domain，并把Gate移到provider
+已接受kernel之后/sequence completion之前。没有获批就不启动本门或改blocked产品。
