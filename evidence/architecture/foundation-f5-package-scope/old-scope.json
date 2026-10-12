@@ -1,0 +1,164 @@
+{
+  "baseline": "b8baece49",
+  "scope": "new Compute/Graph batch facade roots only",
+  "owners": [
+    {
+      "module": "compute_provider_onednn",
+      "state": "CLOSED",
+      "record": "docs/implementation/tasks/compute/foundation-f4-final-closure.md",
+      "summary": "F4 CLOSED：显式immutable集合/分享/dirty原F2 clone/成功发布/旧version与native-use保活，common24/三san及实际native故障、五source/18适用迁址SDK、P0/LOC/指南/红队通过；旧F1–F3与九package-only源码范围不改，F5/engine性能未代签。",
+      "candidate": "29d3c7a3ebe81f0e627986e2e8c8a393aa7832c8",
+      "performance": {
+        "tier": "P0",
+        "evidence": "evidence/performance/foundation-f4-p0/README.md"
+      }
+    },
+    {
+      "module": "graph_provider_onednn",
+      "state": "CLOSED",
+      "record": "docs/implementation/tasks/compute/cpu-final-f1-build-contract.md",
+      "summary": "CPU最终F1 CLOSED：recipe/软件资格、同core原CPU端口、预编译程序与安全ISA/重放、逐合同成熟默认、oneDNN3.13.4和三平台单/具名混合三交付已验；原失败/skip保留。未签新的WIN。",
+      "candidate": "560eb1d2332bb69ee5148e899b000fae85d80074",
+      "performance": {
+        "tier": "P0",
+        "evidence": "docs/implementation/tasks/compute/cpu-final-f1-build-contract.md"
+      }
+    },
+    {
+      "module": "compute_backend_cpu",
+      "state": "CLOSED",
+      "record": "docs/implementation/tasks/compute/foundation-f4-final-closure.md",
+      "summary": "F4 CLOSED：显式immutable集合/分享/dirty原F2 clone/成功发布/旧version与native-use保活，common24/三san及实际native故障、五source/18适用迁址SDK、P0/LOC/指南/红队通过；旧F1–F3与九package-only源码范围不改，F5/engine性能未代签。",
+      "candidate": "29d3c7a3ebe81f0e627986e2e8c8a393aa7832c8",
+      "performance": {
+        "tier": "P0",
+        "evidence": "evidence/performance/foundation-f4-p0/README.md"
+      }
+    },
+    {
+      "module": "compute_backend_cuda",
+      "state": "CLOSED",
+      "record": "docs/implementation/tasks/compute/foundation-f4-final-closure.md",
+      "summary": "F4 CLOSED：显式immutable集合/分享/dirty原F2 clone/成功发布/旧version与native-use保活，common24/三san及实际native故障、五source/18适用迁址SDK、P0/LOC/指南/红队通过；旧F1–F3与九package-only源码范围不改，F5/engine性能未代签。",
+      "candidate": "29d3c7a3ebe81f0e627986e2e8c8a393aa7832c8",
+      "performance": {
+        "tier": "P0",
+        "evidence": "evidence/performance/foundation-f4-p0/README.md"
+      }
+    },
+    {
+      "module": "compute_provider_native",
+      "state": "CLOSED",
+      "record": "docs/implementation/tasks/compute/foundation-f4-final-closure.md",
+      "summary": "F4 CLOSED：显式immutable集合/分享/dirty原F2 clone/成功发布/旧version与native-use保活，common24/三san及实际native故障、五source/18适用迁址SDK、P0/LOC/指南/红队通过；旧F1–F3与九package-only源码范围不改，F5/engine性能未代签。",
+      "candidate": "29d3c7a3ebe81f0e627986e2e8c8a393aa7832c8",
+      "performance": {
+        "tier": "P0",
+        "evidence": "evidence/performance/foundation-f4-p0/README.md"
+      }
+    },
+    {
+      "module": "compute_route_cpu",
+      "state": "CLOSED",
+      "record": "docs/implementation/tasks/compute/foundation-f4-final-closure.md",
+      "summary": "F4 CLOSED：显式immutable集合/分享/dirty原F2 clone/成功发布/旧version与native-use保活，common24/三san及实际native故障、五source/18适用迁址SDK、P0/LOC/指南/红队通过；旧F1–F3与九package-only源码范围不改，F5/engine性能未代签。",
+      "candidate": "29d3c7a3ebe81f0e627986e2e8c8a393aa7832c8",
+      "performance": {
+        "tier": "P0",
+        "evidence": "evidence/performance/foundation-f4-p0/README.md"
+      }
+    },
+    {
+      "module": "graph_route_cpu",
+      "state": "CLOSED",
+      "record": "docs/implementation/tasks/compute/compute-h1-cpu-cuda-composition.md",
+      "summary": "H1 CLOSED：CPU+CUDA混合执行、双槽迁移、普通CPU主存/有界staging、共享预算及准备诊断完成；Windows/WSL三交付、安装头/搬迁、错误/寿命与当前native重叠通过。引擎策略、多GPU、Apple/Vulkan混合不在本包。",
+      "candidate": "7eaf67b8a496ee19b609533980cd69e7efb5aa49",
+      "performance": {
+        "tier": "P0",
+        "evidence": "docs/implementation/tasks/compute/compute-h1-cpu-cuda-composition.md"
+      }
+    },
+    {
+      "module": "compute_route_cuda",
+      "state": "CLOSED",
+      "record": "docs/implementation/tasks/compute/foundation-f4-final-closure.md",
+      "summary": "F4 CLOSED：显式immutable集合/分享/dirty原F2 clone/成功发布/旧version与native-use保活，common24/三san及实际native故障、五source/18适用迁址SDK、P0/LOC/指南/红队通过；旧F1–F3与九package-only源码范围不改，F5/engine性能未代签。",
+      "candidate": "29d3c7a3ebe81f0e627986e2e8c8a393aa7832c8",
+      "performance": {
+        "tier": "P0",
+        "evidence": "evidence/performance/foundation-f4-p0/README.md"
+      }
+    },
+    {
+      "module": "graph_route_cuda",
+      "state": "CLOSED",
+      "record": "docs/implementation/tasks/compute/compute-h1-cpu-cuda-composition.md",
+      "summary": "H1 CLOSED：CPU+CUDA混合执行、双槽迁移、普通CPU主存/有界staging、共享预算及准备诊断完成；Windows/WSL三交付、安装头/搬迁、错误/寿命与当前native重叠通过。引擎策略、多GPU、Apple/Vulkan混合不在本包。",
+      "candidate": "7eaf67b8a496ee19b609533980cd69e7efb5aa49",
+      "performance": {
+        "tier": "P0",
+        "evidence": "docs/implementation/tasks/compute/compute-h1-cpu-cuda-composition.md"
+      }
+    },
+    {
+      "module": "compute_route_apple",
+      "state": "CLOSED",
+      "record": "docs/implementation/tasks/compute/foundation-f4-final-closure.md",
+      "summary": "F4 CLOSED：显式immutable集合/分享/dirty原F2 clone/成功发布/旧version与native-use保活，common24/三san及实际native故障、五source/18适用迁址SDK、P0/LOC/指南/红队通过；旧F1–F3与九package-only源码范围不改，F5/engine性能未代签。",
+      "candidate": "29d3c7a3ebe81f0e627986e2e8c8a393aa7832c8",
+      "performance": {
+        "tier": "P0",
+        "evidence": "evidence/performance/foundation-f4-p0/README.md"
+      }
+    },
+    {
+      "module": "graph_route_apple",
+      "state": "CLOSED",
+      "record": "docs/implementation/tasks/graph/foundation-a-final-closure.md",
+      "summary": "Foundation A CLOSED：有限exact/control/qualified CPU effects与原身份/alias/OOM/失败前缀/取消/旧结果完成；18 installed格、原生缺CPU、实际Win/WSL/Air适用source及sanitizer、P0/LOC和终审通过。general/capture/GPU mutable/paged与整引擎性能不外推，F4/F5继续独立goal。",
+      "candidate": "546b0d2468e5de29031c34668f4afa4bc31b9a17",
+      "performance": {
+        "tier": "P0",
+        "evidence": "evidence/architecture/foundation-a-p0/README.md"
+      }
+    },
+    {
+      "module": "compute_route_vulkan",
+      "state": "CLOSED",
+      "record": "docs/implementation/tasks/compute/foundation-f4-final-closure.md",
+      "summary": "F4 CLOSED：显式immutable集合/分享/dirty原F2 clone/成功发布/旧version与native-use保活，common24/三san及实际native故障、五source/18适用迁址SDK、P0/LOC/指南/红队通过；旧F1–F3与九package-only源码范围不改，F5/engine性能未代签。",
+      "candidate": "29d3c7a3ebe81f0e627986e2e8c8a393aa7832c8",
+      "performance": {
+        "tier": "P0",
+        "evidence": "evidence/performance/foundation-f4-p0/README.md"
+      }
+    },
+    {
+      "module": "graph_route_vulkan",
+      "state": "CLOSED",
+      "record": "docs/implementation/tasks/graph/foundation-a-final-closure.md",
+      "summary": "Foundation A CLOSED：有限exact/control/qualified CPU effects与原身份/alias/OOM/失败前缀/取消/旧结果完成；18 installed格、原生缺CPU、实际Win/WSL/Air适用source及sanitizer、P0/LOC和终审通过。general/capture/GPU mutable/paged与整引擎性能不外推，F4/F5继续独立goal。",
+      "candidate": "546b0d2468e5de29031c34668f4afa4bc31b9a17",
+      "performance": {
+        "tier": "P0",
+        "evidence": "evidence/architecture/foundation-a-p0/README.md"
+      }
+    },
+    {
+      "module": "compute_state",
+      "state": "CLOSED",
+      "summary": "F4 CLOSED：显式immutable集合/分享/dirty原F2 clone/成功发布/旧version与native-use保活，common24/三san及实际native故障、五source/18适用迁址SDK、P0/LOC/指南/红队通过；旧F1–F3与九package-only源码范围不改，F5/engine性能未代签。",
+      "record": "docs/implementation/tasks/compute/foundation-f4-final-closure.md",
+      "candidate": "29d3c7a3ebe81f0e627986e2e8c8a393aa7832c8",
+      "performance": {
+        "tier": "P0",
+        "evidence": "evidence/performance/foundation-f4-p0/README.md"
+      }
+    }
+  ],
+  "already_active": [
+    "compute",
+    "graph"
+  ]
+}
