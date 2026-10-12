@@ -1,0 +1,8 @@
+[1/8] Building CXX object CMakeFiles/finite.dir/Users/kiro/hyle-scratch/compute-unified/source-c8874688/tests/graph/route_symmetry_vulkan.cc.o
+[2/8] Building CXX object CMakeFiles/effects.dir/Users/kiro/hyle-scratch/compute-unified/source-c8874688/tests/graph/public_effect_consumer.cc.o
+[3/8] Linking CXX executable finite
+[4/8] Linking CXX executable effects
+[5/8] Building CXX object CMakeFiles/headers.dir/header-0.cc.o
+[6/8] Building CXX object CMakeFiles/headers.dir/header-1.cc.o
+[7/8] Building CXX object CMakeFiles/headers.dir/header-2.cc.o
+[8/8] Building CXX object CMakeFiles/headers.dir/header-3.cc.o

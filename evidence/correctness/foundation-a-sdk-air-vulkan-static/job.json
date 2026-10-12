@@ -1,0 +1,235 @@
+{
+  "candidate": "546b0d2468e5de29031c34668f4afa4bc31b9a17",
+  "snapshot": "9d0aa797a376b4855791509fb5902a0965ba9dd9",
+  "host": "air",
+  "profile": "cpu-vulkan",
+  "mode": "static",
+  "source": "/Users/kiro/hyle-scratch/compute-unified/source-c8874688",
+  "producer": "/Users/kiro/hyle-scratch/compute-unified/a-cpu-vulkan/selected-graph/static-sdk-build",
+  "identity": {
+    "hardware": "Mac16,12",
+    "memory": "17179869184",
+    "os": "ProductName:\t\tmacOS\nProductVersion:\t\t27.0.1\nBuildVersion:\t\t26A434",
+    "compiler": "Apple clang version 21.0.0 (clang-2100.3.34.2)\nTarget: arm64-apple-darwin27.0.0\nThread model: posix\nInstalledDir: /Library/Developer/CommandLineTools/usr/bin"
+  },
+  "test_parallel": 1,
+  "stages": [
+    {
+      "name": "configure",
+      "command": [
+        "/opt/homebrew/bin/cmake",
+        "-S",
+        "/Users/kiro/hyle-scratch/compute-unified/source-c8874688",
+        "-B",
+        "/Users/kiro/hyle-scratch/compute-unified/a-cpu-vulkan/selected-graph/static-sdk-build",
+        "-G",
+        "Ninja",
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DCMAKE_CXX_COMPILER=/usr/bin/clang++",
+        "-DHYLE_COMPONENTS:STRING=graph",
+        "-DHYLE_COMPUTE_ROUTES:STRING=cpu;vulkan",
+        "-DHYLE_BUILD_TESTS:BOOL=OFF",
+        "-DHYLE_BUILD_BENCH:BOOL=OFF",
+        "-DHYLE_INSTALL:BOOL=ON",
+        "-DHYLE_STATIC:BOOL=ON"
+      ],
+      "pid": 54276,
+      "state": "terminal",
+      "available_bytes": 7303774208,
+      "log": "configure.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "elapsed": 14.932670083,
+      "sha256": "2a67d5b989bd26878a47c155a8f836229151a9a2d3d1dda4aa248df10247c293"
+    },
+    {
+      "name": "producer",
+      "command": [
+        "/opt/homebrew/bin/cmake",
+        "--build",
+        "/Users/kiro/hyle-scratch/compute-unified/a-cpu-vulkan/selected-graph/static-sdk-build",
+        "--target",
+        "hyle_graph_route_cpu_vulkan",
+        "--parallel",
+        "1"
+      ],
+      "pid": 54370,
+      "state": "terminal",
+      "available_bytes": 7174651904,
+      "log": "producer.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "elapsed": 49.014468666,
+      "sha256": "536ede69fa7d2ffce611b89e2479d70a5c1cfbe1480c243bc5b6b55956b8bec2"
+    },
+    {
+      "name": "install",
+      "command": [
+        "/opt/homebrew/bin/cmake",
+        "--install",
+        "/Users/kiro/hyle-scratch/compute-unified/a-cpu-vulkan/selected-graph/static-sdk-build",
+        "--prefix",
+        "/Users/kiro/hyle-scratch/compute-unified/foundation-a-sdk-cpu-vulkan-static-546b0d246/staging"
+      ],
+      "pid": 54621,
+      "state": "terminal",
+      "available_bytes": 7380434944,
+      "log": "install.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "elapsed": 0.487916417000001,
+      "sha256": "57220b72c9dd794ea93a85a5d4e5722cdf088cee59fc5114797196ef543b3a26"
+    },
+    {
+      "name": "consumer-configure",
+      "command": [
+        "/opt/homebrew/bin/cmake",
+        "-S",
+        "/Users/kiro/hyle-scratch/compute-unified/foundation-a-sdk-cpu-vulkan-static-546b0d246/consumer-source",
+        "-B",
+        "/Users/kiro/hyle-scratch/compute-unified/foundation-a-sdk-cpu-vulkan-static-546b0d246/consumer",
+        "-G",
+        "Ninja",
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DCMAKE_CXX_COMPILER=/usr/bin/clang++",
+        "-DCMAKE_PREFIX_PATH=/Users/kiro/hyle-scratch/compute-unified/foundation-a-sdk-cpu-vulkan-static-546b0d246/relocated",
+        "-DHYLE_COMPUTE_ROUTES=cpu;vulkan"
+      ],
+      "pid": 54668,
+      "state": "terminal",
+      "available_bytes": 7333560320,
+      "log": "consumer-configure.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "elapsed": 2.2835573329999903,
+      "sha256": "1f95ebc00620a1c900cc73f9023ec35a37c861391c18a9ee484b773c43edb3d1"
+    },
+    {
+      "name": "consumer-build",
+      "command": [
+        "/opt/homebrew/bin/cmake",
+        "--build",
+        "/Users/kiro/hyle-scratch/compute-unified/foundation-a-sdk-cpu-vulkan-static-546b0d246/consumer",
+        "--parallel",
+        "1"
+      ],
+      "pid": 54763,
+      "state": "terminal",
+      "available_bytes": 7290404864,
+      "log": "consumer-build.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "elapsed": 3.72992112499999,
+      "sha256": "ce25e7acff67f9e11c74924a35b50db80a449cddb09b93aedf61f1147ae69d41"
+    },
+    {
+      "name": "dependencies-finite",
+      "command": [
+        "/usr/bin/otool",
+        "-L",
+        "/Users/kiro/hyle-scratch/compute-unified/foundation-a-sdk-cpu-vulkan-static-546b0d246/consumer/finite"
+      ],
+      "pid": 54786,
+      "state": "terminal",
+      "available_bytes": 7292256256,
+      "log": "dependencies-finite.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "elapsed": 0.01198374999999885,
+      "sha256": "037180f360b08e664cfd9748748ee65a016ea808915058ca495ca2caabe807f6"
+    },
+    {
+      "name": "run-finite",
+      "command": [
+        "/Users/kiro/hyle-scratch/compute-unified/foundation-a-sdk-cpu-vulkan-static-546b0d246/consumer/finite"
+      ],
+      "pid": 54790,
+      "state": "terminal",
+      "available_bytes": 7292223488,
+      "log": "run-finite.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "elapsed": 1.3404699170000072,
+      "sha256": "0fd26c2f2353a54bcf2d8cb9335c4d696325520021f9403d8667a43d84ef04e4"
+    },
+    {
+      "name": "dependencies-effects",
+      "command": [
+        "/usr/bin/otool",
+        "-L",
+        "/Users/kiro/hyle-scratch/compute-unified/foundation-a-sdk-cpu-vulkan-static-546b0d246/consumer/effects"
+      ],
+      "pid": 54794,
+      "state": "terminal",
+      "available_bytes": 7289438208,
+      "log": "dependencies-effects.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "elapsed": 0.011949083999994059,
+      "sha256": "8edf267220f5f76c0ca85075e2376f9e459f5aaea78e100913a1a7c667ab8ff2"
+    },
+    {
+      "name": "run-effects",
+      "command": [
+        "/Users/kiro/hyle-scratch/compute-unified/foundation-a-sdk-cpu-vulkan-static-546b0d246/consumer/effects"
+      ],
+      "pid": 54798,
+      "state": "terminal",
+      "available_bytes": 7288963072,
+      "log": "run-effects.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "elapsed": 0.720784375000008,
+      "sha256": "61957acafe99258698b845a8f7a5f46ca15c33f1e500845505eb2f74c8bae151"
+    },
+    {
+      "name": "absence-cuda",
+      "command": [
+        "/opt/homebrew/bin/cmake",
+        "-S",
+        "/Users/kiro/hyle-scratch/compute-unified/foundation-a-sdk-cpu-vulkan-static-546b0d246/absence-cuda",
+        "-B",
+        "/Users/kiro/hyle-scratch/compute-unified/foundation-a-sdk-cpu-vulkan-static-546b0d246/absence-build-cuda",
+        "-G",
+        "Ninja",
+        "-DCMAKE_PREFIX_PATH=/Users/kiro/hyle-scratch/compute-unified/foundation-a-sdk-cpu-vulkan-static-546b0d246/relocated"
+      ],
+      "pid": 54801,
+      "state": "terminal",
+      "available_bytes": 7288356864,
+      "log": "absence-cuda.log",
+      "exit_code": 1,
+      "verdict": "PASS_EXPECTED_ABSENT",
+      "elapsed": 0.20384558300000322,
+      "sha256": "580fa7fea0f0abfbc760be56d948c86c91410d51915ddd165eda48f4d3fd4287"
+    },
+    {
+      "name": "absence-apple",
+      "command": [
+        "/opt/homebrew/bin/cmake",
+        "-S",
+        "/Users/kiro/hyle-scratch/compute-unified/foundation-a-sdk-cpu-vulkan-static-546b0d246/absence-apple",
+        "-B",
+        "/Users/kiro/hyle-scratch/compute-unified/foundation-a-sdk-cpu-vulkan-static-546b0d246/absence-build-apple",
+        "-G",
+        "Ninja",
+        "-DCMAKE_PREFIX_PATH=/Users/kiro/hyle-scratch/compute-unified/foundation-a-sdk-cpu-vulkan-static-546b0d246/relocated"
+      ],
+      "pid": 54860,
+      "state": "terminal",
+      "available_bytes": 7288012800,
+      "log": "absence-apple.log",
+      "exit_code": 1,
+      "verdict": "PASS_EXPECTED_ABSENT",
+      "elapsed": 0.20263479100000836,
+      "sha256": "aa8a0e1aa0e0605e8c9148be75beebc518092544e5d528f94adbb51fdc09dc48"
+    }
+  ],
+  "scope": "Foundation A immutable installed/relocated finite/control/effect public consumers, changed headers, missing routes and actual runtime only",
+  "relocation": {
+    "staging_absent": true,
+    "relocated": "/Users/kiro/hyle-scratch/compute-unified/foundation-a-sdk-cpu-vulkan-static-546b0d246/relocated",
+    "Hyle_metadata_no_source_build_staging_paths": true
+  },
+  "verdict": "PASS_FOUNDATION_A_AIR_CPU_VULKAN_STATIC_RELOCATED_SDK"
+}

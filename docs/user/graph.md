@@ -13,7 +13,7 @@
 三交付与有限性能验收。两条路线各有冷编译、Program 与运行槽；本文后续 shared Queue、
 target/storage/lane 和 replay 细节主要描述 CPU/CUDA 路径，不是四条路线共用执行器的要求。
 
-Foundation A 当前在 [AUDITED 实施](../implementation/tasks/graph/foundation-a-route-symmetry.md)：
+Foundation A 已完成[有限范围收口](../implementation/tasks/graph/foundation-a-final-closure.md)：
 Apple/Vulkan 及其 CPU 混合路线增加冷 `CompileOptions::shape` 与 `compile_variants`。
 `ExactNativeVariants` 只覆盖 caller 明确列出的精确点；例如 bounds 为 1..4、表只有 1 和 4，
 选择 2 会返回 Unimplemented。先选择 artifact，再调用原 create_invocation；reset/submit
@@ -46,7 +46,8 @@ GPU native admission 明确拒绝未资格 carrier。CPU+Apple/Vulkan 可将 eff
 [public_effect_consumer.cc](../../tests/graph/public_effect_consumer.cc)。
 CPU+CUDA 的既有 effect 能力保持原规则；其新增 `compile_variants` 返回原 Executable，
 显式有限表使用共享 ResourceBudget，不能将原 family-wide compiler 配额偷偷按点重置。
-上述 API 已接线，完整四路线与三交付资格尚未完成；不要把实施中的说明当作 CLOSED。
+上述有限shape/control/qualified CPU effects范围已完成适用source/static/shared资格。
+general/capture、任意GPU mutation和整引擎性能仍按实际路线能力裁决。
 
 当前已支持 exact specialization 与显式声明域的 general 路线（目前动态 Native RMSNorm、固定 hidden
 width），以及有限派生维度/guards、具名资源副作用域、有限 region 发现/重选、完整计划可行性规划、

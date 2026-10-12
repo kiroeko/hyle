@@ -6,6 +6,8 @@
 > 用户新要求的F4/F5及CPU+CUDA与Apple/Vulkan不对称见
 > [定向源码研究](foundation-f45-reference-research-2026-10.md)和
 > [拟议设计](../../../architecture/compute-state-paged-design.md)；当前产品状态仍只看registry。
+> 用户随后选择实用本地引擎作为完善度评估目标；原M1–M7逐项消化、goal后的对称边界与
+> 条件代码量估计见[引擎工作量评估](foundation-post-goal-engine-effort-2026-10.md)。原baseline事实不改写。
 
 ## 本轮合同
 

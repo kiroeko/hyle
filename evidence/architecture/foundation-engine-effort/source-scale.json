@@ -1,0 +1,154 @@
+{
+  "method": "Physical nonblank lines for selected pinned source files; diagnostic scale only, not HYLE LOC or an engine implementation estimate. Header/public/vendor/test totals are not accumulated into peer engine totals.",
+  "peers": [
+    {
+      "repo": "llama.cpp",
+      "revision": "f2cc7282ce0042641df55e0e563b75e824e2b647",
+      "path": "src/llama-context.cpp",
+      "sha256": "b7c253afc3265aaa7a84bb3eb95fabb3842d4c3979a0e3d724d5adc9ec49ce81",
+      "physical_lines": 4682,
+      "nonblank_lines": 3771
+    },
+    {
+      "repo": "llama.cpp",
+      "revision": "f2cc7282ce0042641df55e0e563b75e824e2b647",
+      "path": "src/llama-model-loader.cpp",
+      "sha256": "301f8250eef5b34d14617c7c9bf5c14bb60519d199751f4d829502a5107f0593",
+      "physical_lines": 1810,
+      "nonblank_lines": 1547
+    },
+    {
+      "repo": "llama.cpp",
+      "revision": "f2cc7282ce0042641df55e0e563b75e824e2b647",
+      "path": "src/llama-vocab.cpp",
+      "sha256": "e772949cb8ad204f87845cb5e18f11e8a419fdb872e5f645012e5b6a9f84588f",
+      "physical_lines": 4680,
+      "nonblank_lines": 4048
+    },
+    {
+      "repo": "llama.cpp",
+      "revision": "f2cc7282ce0042641df55e0e563b75e824e2b647",
+      "path": "src/llama-sampler.cpp",
+      "sha256": "d0c147129ded606691b0b3e78562bec36f53459446aa7a5bac23bb93a01c86f6",
+      "physical_lines": 4391,
+      "nonblank_lines": 3547
+    },
+    {
+      "repo": "llama.cpp",
+      "revision": "f2cc7282ce0042641df55e0e563b75e824e2b647",
+      "path": "src/llama-kv-cache.cpp",
+      "sha256": "4ac534956aa0b384a9a707c778527a4e7cd4ebfbea9c895e531b0935485de3c8",
+      "physical_lines": 2956,
+      "nonblank_lines": 2267
+    },
+    {
+      "repo": "llama.cpp",
+      "revision": "f2cc7282ce0042641df55e0e563b75e824e2b647",
+      "path": "src/llama-memory-recurrent.cpp",
+      "sha256": "51172be188d0eece2267c9105dc5a8d2c3ef7ebd58e88a6f562ac6ee36326f98",
+      "physical_lines": 1386,
+      "nonblank_lines": 1143
+    },
+    {
+      "repo": "llama.cpp",
+      "revision": "f2cc7282ce0042641df55e0e563b75e824e2b647",
+      "path": "src/models/qwen3.cpp",
+      "sha256": "06f400665980d30fd357886a5d14b541adda06d159a5b7f0ce929ca36788778c",
+      "physical_lines": 159,
+      "nonblank_lines": 120
+    },
+    {
+      "repo": "vllm",
+      "revision": "cc9b0f097d49abfa6fc94d1d773dca1cc2b9619c",
+      "path": "vllm/v1/core/sched/scheduler.py",
+      "sha256": "d546a324891860fbaeb2d82a85b2a7970825972cac7c8f7327d84632fa53d04d",
+      "physical_lines": 3446,
+      "nonblank_lines": 3108
+    },
+    {
+      "repo": "vllm",
+      "revision": "cc9b0f097d49abfa6fc94d1d773dca1cc2b9619c",
+      "path": "vllm/v1/core/block_pool.py",
+      "sha256": "6d1e0d89b43e3b2ae396906b9c2f0551dbe192b60d05f8c1ca2d93a91bbbeea3",
+      "physical_lines": 901,
+      "nonblank_lines": 789
+    },
+    {
+      "repo": "vllm",
+      "revision": "cc9b0f097d49abfa6fc94d1d773dca1cc2b9619c",
+      "path": "vllm/v1/core/single_type_kv_cache_manager.py",
+      "sha256": "3fc3d6cb7c332438e554e1e3388addce00a843c4d529ab497abdb535e830fa74",
+      "physical_lines": 2759,
+      "nonblank_lines": 2500
+    },
+    {
+      "repo": "vllm",
+      "revision": "cc9b0f097d49abfa6fc94d1d773dca1cc2b9619c",
+      "path": "vllm/v1/attention/backends/flashinfer.py",
+      "sha256": "6cddac75c203ae2c8a257b275d42777d83466eb76c36f64d8e73630e79ace760",
+      "physical_lines": 2908,
+      "nonblank_lines": 2664
+    },
+    {
+      "repo": "sglang",
+      "revision": "e6072935bfa1036d4e20e8ed042ce1ff09872f57",
+      "path": "python/sglang/srt/model_executor/model_runner.py",
+      "sha256": "26a7e6539cc85e80db7bd55e04f0b77ff9ed4dd0a49b1f1430a91f4765b239db",
+      "physical_lines": 2485,
+      "nonblank_lines": 2215
+    },
+    {
+      "repo": "sglang",
+      "revision": "e6072935bfa1036d4e20e8ed042ce1ff09872f57",
+      "path": "python/sglang/srt/mem_cache/memory_pool.py",
+      "sha256": "049dc7f6f1f4c4fef32f0721b54808246e5f5842c1914849125d2f92cb4a20f7",
+      "physical_lines": 6170,
+      "nonblank_lines": 5583
+    },
+    {
+      "repo": "sglang",
+      "revision": "e6072935bfa1036d4e20e8ed042ce1ff09872f57",
+      "path": "python/sglang/srt/layers/attention/flashinfer_backend.py",
+      "sha256": "a5649f67038153c35864b3f50d5c368071a56cbef75f266bec804dbf7e64363f",
+      "physical_lines": 2582,
+      "nonblank_lines": 2364
+    }
+  ],
+  "hyle_examples": [
+    {
+      "path": "samples/08_inference_service/main.cc",
+      "sha256": "f3a08e544d30bc030aab04279f8702ce66993cd198b04ed53b000ab53ec03210",
+      "physical_lines": 674,
+      "nonblank_lines": 623,
+      "whole_engine": false
+    },
+    {
+      "path": "samples/package/graph/cpu_cuda/inference.h",
+      "sha256": "6193f6fe864d5f9c2e99c3b649b9a74ae7753fa4fe0203dc8b7e4757fb62e9f6",
+      "physical_lines": 101,
+      "nonblank_lines": 100,
+      "whole_engine": false
+    },
+    {
+      "path": "samples/package/graph/file_streaming/qwen_main.cc",
+      "sha256": "eda056ba8e2d18268639b39c608f99ddb2123ab38797620517054c1b9bc9992d",
+      "physical_lines": 345,
+      "nonblank_lines": 340,
+      "whole_engine": false
+    },
+    {
+      "path": "samples/package/graph/file_streaming/qwen_input.h",
+      "sha256": "ea920ad98de7f51e4a57cd891529e92cdb8149028c67660dd7495a27b14eb63d",
+      "physical_lines": 57,
+      "nonblank_lines": 54,
+      "whole_engine": false
+    },
+    {
+      "path": "tests/graph/public_effect_consumer.cc",
+      "sha256": "3f83cc96b8425d7f890a18c973758fd076f1f0207fd7511ce9a8f007d82a4ee6",
+      "physical_lines": 184,
+      "nonblank_lines": 180,
+      "whole_engine": false
+    }
+  ]
+}

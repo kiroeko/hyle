@@ -281,10 +281,14 @@
     },
     {
       "module": "graph",
-      "state": "CANDIDATE",
-      "record": "docs/implementation/tasks/graph/foundation-a-route-symmetry.md",
-      "summary": "Foundation A CANDIDATE：有限 exact/control/qualified CPU effects 实现与自然消费者固定；已有定向 source 事实，剩余适用 sanitizer/交付/红队尚待裁决，原失败预算保留。",
-      "candidate": "546b0d2468e5de29031c34668f4afa4bc31b9a17"
+      "state": "CLOSED",
+      "record": "docs/implementation/tasks/graph/foundation-a-final-closure.md",
+      "summary": "Foundation A CLOSED：有限exact/control/qualified CPU effects与原身份/alias/OOM/失败前缀/取消/旧结果完成；18 installed格、原生缺CPU、实际Win/WSL/Air适用source及sanitizer、P0/LOC和终审通过。general/capture/GPU mutable/paged与整引擎性能不外推，F4/F5继续独立goal。",
+      "candidate": "546b0d2468e5de29031c34668f4afa4bc31b9a17",
+      "performance": {
+        "tier": "P0",
+        "evidence": "evidence/architecture/foundation-a-p0/README.md"
+      }
     },
     {
       "module": "container_concurrent",
@@ -524,24 +528,36 @@
     },
     {
       "module": "graph_route_apple",
-      "state": "CANDIDATE",
-      "record": "docs/implementation/tasks/graph/foundation-a-route-symmetry.md",
-      "summary": "Foundation A CANDIDATE：有限 exact/control/qualified CPU effects 实现与自然消费者固定；已有定向 source 事实，剩余适用 sanitizer/交付/红队尚待裁决，原失败预算保留。",
-      "candidate": "546b0d2468e5de29031c34668f4afa4bc31b9a17"
+      "state": "CLOSED",
+      "record": "docs/implementation/tasks/graph/foundation-a-final-closure.md",
+      "summary": "Foundation A CLOSED：有限exact/control/qualified CPU effects与原身份/alias/OOM/失败前缀/取消/旧结果完成；18 installed格、原生缺CPU、实际Win/WSL/Air适用source及sanitizer、P0/LOC和终审通过。general/capture/GPU mutable/paged与整引擎性能不外推，F4/F5继续独立goal。",
+      "candidate": "546b0d2468e5de29031c34668f4afa4bc31b9a17",
+      "performance": {
+        "tier": "P0",
+        "evidence": "evidence/architecture/foundation-a-p0/README.md"
+      }
     },
     {
       "module": "compute_route_vulkan",
-      "state": "CANDIDATE",
-      "record": "docs/implementation/tasks/compute/foundation-a-vulkan-control-seam.md",
-      "summary": "Foundation A CANDIDATE：有限 exact/control/qualified CPU effects 实现与自然消费者固定；已有定向 source 事实，剩余适用 sanitizer/交付/红队尚待裁决，原失败预算保留。",
-      "candidate": "546b0d2468e5de29031c34668f4afa4bc31b9a17"
+      "state": "CLOSED",
+      "record": "docs/implementation/tasks/graph/foundation-a-final-closure.md",
+      "summary": "Foundation A CLOSED：有限exact/control/qualified CPU effects与原身份/alias/OOM/失败前缀/取消/旧结果完成；18 installed格、原生缺CPU、实际Win/WSL/Air适用source及sanitizer、P0/LOC和终审通过。general/capture/GPU mutable/paged与整引擎性能不外推，F4/F5继续独立goal。",
+      "candidate": "546b0d2468e5de29031c34668f4afa4bc31b9a17",
+      "performance": {
+        "tier": "P0",
+        "evidence": "evidence/architecture/foundation-a-p0/README.md"
+      }
     },
     {
       "module": "graph_route_vulkan",
-      "state": "CANDIDATE",
-      "record": "docs/implementation/tasks/graph/foundation-a-route-symmetry.md",
-      "summary": "Foundation A CANDIDATE：有限 exact/control/qualified CPU effects 实现与自然消费者固定；已有定向 source 事实，剩余适用 sanitizer/交付/红队尚待裁决，原失败预算保留。",
-      "candidate": "546b0d2468e5de29031c34668f4afa4bc31b9a17"
+      "state": "CLOSED",
+      "record": "docs/implementation/tasks/graph/foundation-a-final-closure.md",
+      "summary": "Foundation A CLOSED：有限exact/control/qualified CPU effects与原身份/alias/OOM/失败前缀/取消/旧结果完成；18 installed格、原生缺CPU、实际Win/WSL/Air适用source及sanitizer、P0/LOC和终审通过。general/capture/GPU mutable/paged与整引擎性能不外推，F4/F5继续独立goal。",
+      "candidate": "546b0d2468e5de29031c34668f4afa4bc31b9a17",
+      "performance": {
+        "tier": "P0",
+        "evidence": "evidence/architecture/foundation-a-p0/README.md"
+      }
     },
     {
       "module": "compute_provider_ggml_vulkan",
@@ -634,24 +650,36 @@
     },
     {
       "module": "graph_route_cpu_cuda",
-      "state": "CANDIDATE",
-      "record": "docs/implementation/tasks/graph/foundation-a-cpu-cuda-variants.md",
-      "summary": "Foundation A CANDIDATE：有限 exact/control/qualified CPU effects 实现与自然消费者固定；已有定向 source 事实，剩余适用 sanitizer/交付/红队尚待裁决，原失败预算保留。",
-      "candidate": "546b0d2468e5de29031c34668f4afa4bc31b9a17"
+      "state": "CLOSED",
+      "record": "docs/implementation/tasks/graph/foundation-a-final-closure.md",
+      "summary": "Foundation A CLOSED：有限exact/control/qualified CPU effects与原身份/alias/OOM/失败前缀/取消/旧结果完成；18 installed格、原生缺CPU、实际Win/WSL/Air适用source及sanitizer、P0/LOC和终审通过。general/capture/GPU mutable/paged与整引擎性能不外推，F4/F5继续独立goal。",
+      "candidate": "546b0d2468e5de29031c34668f4afa4bc31b9a17",
+      "performance": {
+        "tier": "P0",
+        "evidence": "evidence/architecture/foundation-a-p0/README.md"
+      }
     },
     {
       "module": "graph_route_cpu_apple",
-      "state": "CANDIDATE",
-      "record": "docs/implementation/tasks/graph/foundation-a-route-symmetry.md",
-      "summary": "Foundation A CANDIDATE：有限 exact/control/qualified CPU effects 实现与自然消费者固定；已有定向 source 事实，剩余适用 sanitizer/交付/红队尚待裁决，原失败预算保留。",
-      "candidate": "546b0d2468e5de29031c34668f4afa4bc31b9a17"
+      "state": "CLOSED",
+      "record": "docs/implementation/tasks/graph/foundation-a-final-closure.md",
+      "summary": "Foundation A CLOSED：有限exact/control/qualified CPU effects与原身份/alias/OOM/失败前缀/取消/旧结果完成；18 installed格、原生缺CPU、实际Win/WSL/Air适用source及sanitizer、P0/LOC和终审通过。general/capture/GPU mutable/paged与整引擎性能不外推，F4/F5继续独立goal。",
+      "candidate": "546b0d2468e5de29031c34668f4afa4bc31b9a17",
+      "performance": {
+        "tier": "P0",
+        "evidence": "evidence/architecture/foundation-a-p0/README.md"
+      }
     },
     {
       "module": "graph_route_cpu_vulkan",
-      "state": "CANDIDATE",
-      "record": "docs/implementation/tasks/graph/foundation-a-route-symmetry.md",
-      "summary": "Foundation A CANDIDATE：有限 exact/control/qualified CPU effects 实现与自然消费者固定；已有定向 source 事实，剩余适用 sanitizer/交付/红队尚待裁决，原失败预算保留。",
-      "candidate": "546b0d2468e5de29031c34668f4afa4bc31b9a17"
+      "state": "CLOSED",
+      "record": "docs/implementation/tasks/graph/foundation-a-final-closure.md",
+      "summary": "Foundation A CLOSED：有限exact/control/qualified CPU effects与原身份/alias/OOM/失败前缀/取消/旧结果完成；18 installed格、原生缺CPU、实际Win/WSL/Air适用source及sanitizer、P0/LOC和终审通过。general/capture/GPU mutable/paged与整引擎性能不外推，F4/F5继续独立goal。",
+      "candidate": "546b0d2468e5de29031c34668f4afa4bc31b9a17",
+      "performance": {
+        "tier": "P0",
+        "evidence": "evidence/architecture/foundation-a-p0/README.md"
+      }
     },
     {
       "module": "compute_stream",

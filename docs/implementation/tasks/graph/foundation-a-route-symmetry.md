@@ -1,5 +1,8 @@
 # Foundation A：四路线 Graph 语义对称性
 
+本轮已由[最终收口](foundation-a-final-closure.md)关闭A-01..04。下文保留阶段施工事实；
+当前裁决以terminal record与registry为准，不由历史“待验”段恢复本轮。
+
 ## Closure card
 
 - component / owner：`graph`、`graph_route_apple`、`graph_route_vulkan`、
@@ -190,3 +193,19 @@ CUDA实际source/package格、P0/LOC和终局红队尚待完成，状态仍CANDI
 [结构证据](../../../../evidence/architecture/foundation-a-p0/README.md)：统一self-check通过，
 七owner去重27,286行/83files，self不含tests170,581行/695files；无P1/timing胜负声明。
 剩余Air Vulkan与WSL CUDA当前candidate适用格，以及最终矩阵/终审仍待裁决。
+
+Air CPU+Vulkan static/shared SDK已完成同候选：finite/control-only error/mixed与public CPU
+effect/failure/cancel/close消费者、四头独立TU、真实迁址/loader与缺路线诊断 PASS；相应record为
+[static](../../../../evidence/correctness/foundation-a-sdk-air-vulkan-static/README.md)、
+[shared](../../../../evidence/correctness/foundation-a-sdk-air-vulkan-shared/README.md)。
+当前candidate WSL CPU+CUDA source finite旅程也PASS，原13/12版第三方loader warnings保留，
+没有升级锁；WSL两installed格正在同候选执行，未完成前不能CLOSED。
+
+WSL CPU+CUDA [source](../../../../evidence/correctness/foundation-a-wsl-cuda-source/README.md)、
+[static](../../../../evidence/correctness/foundation-a-sdk-wsl-cuda-static/README.md)与
+[shared](../../../../evidence/correctness/foundation-a-sdk-wsl-cuda-shared/README.md)现已全部PASS。
+混合路线矩阵到此完成；native-only SKU/缺CPU诊断仍按原预声明交付范围补证，不把包含CPU的
+SDK自动当作该格PASS。候选后仅扩展Apple测试fixture：checked Gather作为无数据consumer的
+control前驱，坏index接受后OutOfRange、好index完成独立后继；测试不改变产品candidate。
+Air Apple native-only static首次该完整反例与finite/两槽/旧结果、公头、真实迁址/runtime和
+缺CPU/CUDA/Vulkan诊断均PASS。其余native-only与WSL软件Vulkan包格尚未完成，状态仍CANDIDATE。

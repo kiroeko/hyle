@@ -1,0 +1,9 @@
+[1/5] Building CXX object CMakeFiles/headers.dir/header-0.cc.o
+[2/5] Building CXX object CMakeFiles/headers.dir/header-2.cc.o
+[3/5] Building CXX object CMakeFiles/headers.dir/header-1.cc.o
+[4/5] Building CXX object CMakeFiles/finite.dir/root/hyle-scratch/compute-unified/source-7a7b4c3b/tests/graph/route_symmetry_vulkan.cc.o
+/root/hyle-scratch/compute-unified/source-7a7b4c3b/tests/graph/route_symmetry_vulkan.cc: In function ‘int main()’:
+/root/hyle-scratch/compute-unified/source-7a7b4c3b/tests/graph/route_symmetry_vulkan.cc:205:65: warning: ‘%.*s’ directive argument is null [-Wformat-overflow=]
+  205 |   if (!status.ok()) { std::fprintf(stderr,"foundation A Vulkan: %.*s\n",int(status.message().size()),status.message().data()); return 1; }
+      |                                                                 ^~~~
+[5/5] Linking CXX executable finite

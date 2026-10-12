@@ -1,0 +1,5 @@
+[1/5] cd /Users/kiro/hyle-scratch/compute-unified/foundation-a-native-sdk-apple-static-546b0d246/consumer && /opt/homebrew/bin/cmake -P /Users/kiro/hyle-scratch/compute-unified/foundation-a-native-sdk-apple-static-546b0d246/consumer/hyle-apple-runtime/finite-Release.cmake
+[2/5] Building CXX object CMakeFiles/finite.dir/Users/kiro/hyle-scratch/compute-unified/source-c8874688/tests/graph/route_symmetry_apple.cc.o
+[3/5] Linking CXX executable finite
+[4/5] Building CXX object CMakeFiles/headers.dir/header-0.cc.o
+[5/5] Building CXX object CMakeFiles/headers.dir/header-1.cc.o

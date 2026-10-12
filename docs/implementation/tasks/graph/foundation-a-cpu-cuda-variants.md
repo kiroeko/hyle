@@ -1,5 +1,7 @@
 # Foundation A：CPU+CUDA 有限精确表接缝
 
+本轮有限接缝已在[最终收口](foundation-a-final-closure.md)CLOSED；以下为阶段事实。
+
 ## Closure card
 
 - component / owner：`graph_route_cpu_cuda`，仅冷 typed factory；Graph 共用精确表与原 compiler。
@@ -46,3 +48,10 @@ Candidate：546b0d2468e5de29031c34668f4afa4bc31b9a17；finite typed factory/自�
 
 [Win static SDK](../../../../evidence/correctness/foundation-a-sdk-cpu-cuda-static/README.md) 已通过
 普通 public consumer、新头、真正迁址、runtime和缺 Apple/Vulkan 诊断；shared/WSL/终局仍待验。
+
+候选定向验证追加：Windows static/shared和WSL source/static/shared已全部完成真实RTX4070
+finite/hole/CPU→CUDA→host/old-result/quota拒绝；WSL记录见
+[source](../../../../evidence/correctness/foundation-a-wsl-cuda-source/README.md)、
+[static](../../../../evidence/correctness/foundation-a-sdk-wsl-cuda-static/README.md)、
+[shared](../../../../evidence/correctness/foundation-a-sdk-wsl-cuda-shared/README.md)。
+共同ASan/UBSan42项、P0/LOC已签，原锁/失败预算保留；仅终局对证/红队与父卡一起裁决。

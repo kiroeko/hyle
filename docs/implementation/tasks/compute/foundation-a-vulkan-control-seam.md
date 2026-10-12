@@ -1,5 +1,7 @@
 # Foundation A：Vulkan 冷控制边接缝
 
+本轮有限接缝已在[最终收口](../graph/foundation-a-final-closure.md)CLOSED；以下为阶段事实。
+
 ## Closure card
 
 - component / owner：`compute_route_vulkan`，仅冷 PlanStep/prepare_plan 的受控分片。

@@ -1,0 +1,5 @@
+[1/5] Building CXX object CMakeFiles/finite.dir/Users/kiro/hyle-scratch/compute-unified/source-c8874688/tests/graph/route_symmetry_vulkan.cc.o
+[2/5] Linking CXX executable finite
+[3/5] Building CXX object CMakeFiles/headers.dir/header-0.cc.o
+[4/5] Building CXX object CMakeFiles/headers.dir/header-1.cc.o
+[5/5] Building CXX object CMakeFiles/headers.dir/header-2.cc.o

@@ -1,0 +1,60 @@
+[0/2] Re-checking globbed directories...
+[1/59] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/random/random_dispatch.cc.o
+[2/59] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/ops/dispatch_ops.cc.o
+[3/59] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/search/search_dispatch.cc.o
+[4/59] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/runtime.cc.o
+[5/59] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/scan/scan_dispatch.cc.o
+[6/59] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/narrow/narrow_dispatch.cc.o
+[7/59] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/dtype/dtype_dispatch.cc.o
+[8/59] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/math/math_dispatch.cc.o
+[9/59] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/bitpack/bitpack_dispatch.cc.o
+[10/59] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/sort/sort_dispatch.cc.o
+[11/59] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/generated/simd-dispatch/ops/ops_scalar.cc.o
+[12/59] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/generated/simd-dispatch/ops/ops_sse4.cc.o
+[13/59] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/generated/simd-dispatch/dtype_convert/dtype_convert_scalar.cc.o
+[14/59] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/generated/simd-dispatch/ops/ops_avx2.cc.o
+[15/59] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/generated/simd-dispatch/ops/ops_avx512.cc.o
+[16/59] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/generated/simd-dispatch/dtype_convert/dtype_convert_sse4.cc.o
+[17/59] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/generated/simd-dispatch/dtype_convert/dtype_convert_avx2.cc.o
+[18/59] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/generated/simd-dispatch/scan/scan_scalar.cc.o
+[19/59] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/generated/simd-dispatch/scan/scan_sse4.cc.o
+[20/59] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/generated/simd-dispatch/dtype_convert/dtype_convert_avx512.cc.o
+[21/59] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/generated/simd-dispatch/random/random_scalar.cc.o
+[22/59] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/generated/simd-dispatch/scan/scan_avx2.cc.o
+[23/59] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/generated/simd-dispatch/scan/scan_avx512.cc.o
+[24/59] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/generated/simd-dispatch/random/random_sse4.cc.o
+[25/59] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/generated/simd-dispatch/random/random_avx2.cc.o
+[26/59] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/generated/simd-dispatch/random/random_avx512.cc.o
+[27/59] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/generated/simd-dispatch/search/search_scalar.cc.o
+[28/59] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/generated/simd-dispatch/search/search_sse4.cc.o
+[29/59] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/generated/simd-dispatch/narrow/narrow_scalar.cc.o
+[30/59] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/generated/simd-dispatch/narrow/narrow_sse4.cc.o
+[31/59] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/generated/simd-dispatch/search/search_avx512.cc.o
+[32/59] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/generated/simd-dispatch/narrow/narrow_avx2.cc.o
+[33/59] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/generated/simd-dispatch/search/search_avx2.cc.o
+[34/59] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/generated/simd-dispatch/bitpack/bitpack_scalar.cc.o
+[35/59] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/generated/simd-dispatch/narrow/narrow_avx512.cc.o
+[36/59] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/generated/simd-dispatch/bitpack/bitpack_sse4.cc.o
+[37/59] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/generated/simd-dispatch/bitpack/bitpack_avx2.cc.o
+[38/59] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/generated/simd-dispatch/bitpack/bitpack_avx512.cc.o
+[39/59] Linking CXX shared library bin/libhyle_simd.so.0.1.0
+[40/59] Building CXX object src/graph_route_cpu_cuda/CMakeFiles/hyle_graph_route_cpu_cuda.dir/compile.cc.o
+[41/59] Creating library symlink bin/libhyle_simd.so
+[42/59] Linking CXX shared library bin/libhyle_compute_provider_native.so.0.1.0
+[43/59] Creating library symlink bin/libhyle_compute_provider_native.so
+[44/59] Linking CXX shared library bin/libhyle_compute_route_cpu.so.0.1.0
+[45/59] Creating library symlink bin/libhyle_compute_route_cpu.so
+[46/59] Building CXX object src/graph_route_cpu_cuda/CMakeFiles/hyle_graph_route_cpu_cuda.dir/invocation.cc.o
+[47/59] Building CXX object src/graph/CMakeFiles/hyle_graph.dir/executable.cc.o
+[48/59] Linking CXX shared library bin/libhyle_graph.so.0.1.0
+[49/59] Creating library symlink bin/libhyle_graph.so
+[50/59] Linking CXX shared library bin/libhyle_graph_provider_ggml_cuda.so.0.1.0
+[51/59] Linking CXX shared library bin/libhyle_graph_provider_onednn.so.0.1.0
+[52/59] Creating library symlink bin/libhyle_graph_provider_ggml_cuda.so
+[53/59] Creating library symlink bin/libhyle_graph_provider_onednn.so
+[54/59] Linking CXX shared library bin/libhyle_graph_route_cuda.so.0.1.0
+[55/59] Linking CXX shared library bin/libhyle_graph_route_cpu.so.0.1.0
+[56/59] Creating library symlink bin/libhyle_graph_route_cuda.so
+[57/59] Creating library symlink bin/libhyle_graph_route_cpu.so
+[58/59] Linking CXX shared library bin/libhyle_graph_route_cpu_cuda.so.0.1.0
+[59/59] Creating library symlink bin/libhyle_graph_route_cpu_cuda.so

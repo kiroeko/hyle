@@ -1,0 +1,67 @@
+{
+  "candidate": "546b0d2468e5de29031c34668f4afa4bc31b9a17",
+  "source": "/root/hyle-scratch/compute-unified/source-7a7b4c3b",
+  "build": "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/source-build",
+  "identity": {
+    "os": "Linux kiro-workstation 6.18.40.1-microsoft-standard-WSL2 #1 SMP PREEMPT_DYNAMIC Fri Jul 31 22:12:15 UTC 2026 x86_64 x86_64 x86_64 GNU/Linux",
+    "compiler": "g++-14 (Ubuntu 14.2.0-4ubuntu2~24.04.1) 14.2.0\nCopyright (C) 2024 Free Software Foundation, Inc.\nThis is free software; see the source for copying conditions.  There is NO\nwarranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.",
+    "cuda": "nvcc: NVIDIA (R) Cuda compiler driver\nCopyright (c) 2005-2026 NVIDIA Corporation\nBuilt on Tue_Jun_09_02:43:40_PM_PDT_2026\nCuda compilation tools, release 13.3, V13.3.73\nBuild cuda_13.3.r13.3/compiler.38244171_0",
+    "gpu": "NVIDIA GeForce RTX 4070, GPU-e7376560-6f5d-ec19-6ee4-3dd3a2c81ef8, 617.14"
+  },
+  "scope": "Foundation A ordinary CPU+CUDA finite shapes/control/old result public source consumer only",
+  "stages": [
+    {
+      "name": "configure",
+      "command": [
+        "/usr/bin/cmake",
+        "-S",
+        "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/source-parent",
+        "-B",
+        "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/source-build"
+      ],
+      "pid": 628,
+      "state": "terminal",
+      "available_bytes": 32476061696,
+      "log": "configure.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "elapsed": 15.942411515000003,
+      "sha256": "dbfdd6a256b681f2753f1255eb92381bb5fd5ccf2aab2592872bfb457ad05bb2"
+    },
+    {
+      "name": "build",
+      "command": [
+        "/usr/bin/cmake",
+        "--build",
+        "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/source-build",
+        "--target",
+        "hyle_foundation_a_cuda",
+        "--parallel",
+        "4"
+      ],
+      "pid": 670,
+      "state": "terminal",
+      "available_bytes": 32496644096,
+      "log": "build.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "elapsed": 19.8973431,
+      "sha256": "f4b4d7cefd968b6e7964bd58129e2721705d3ee6b6075b6d6ed3fe485f959c09"
+    },
+    {
+      "name": "journey",
+      "command": [
+        "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/source-build/hyle_foundation_a_cuda"
+      ],
+      "pid": 862,
+      "state": "terminal",
+      "available_bytes": 32026214400,
+      "log": "journey.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "elapsed": 0.718078656000003,
+      "sha256": "8e1b0a9a2162a4008af93df3cc6cee23034311aa9ab692d7d99de4dacad90700"
+    }
+  ],
+  "test_parallel": 1
+}

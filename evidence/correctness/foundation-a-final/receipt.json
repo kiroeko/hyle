@@ -1,0 +1,211 @@
+{
+  "candidate": "546b0d2468e5de29031c34668f4afa4bc31b9a17",
+  "tree": "103356d6136c16ad97e5c054ce73958e7bd2c25f",
+  "audit_head": "41d8f60784b358822a4b1a7abe5482d2a53d593f",
+  "product_diff_from_candidate": [],
+  "scope": "A finite exact/control/qualified CPU effects; not F4/F5 or whole inference performance",
+  "installed_cells": [
+    {
+      "record": "evidence/correctness/foundation-a-sdk-cpu-cuda-static/job.json",
+      "sha256": "0407790961e87130dfde7f01f8857a9219cd4c290da2ade4be79b4f489162bd5",
+      "verdict": "PASS_FOUNDATION_A_CPU_CUDA_STATIC_RELOCATED_SDK",
+      "profile": "cpu-cuda",
+      "host": "windows",
+      "mode": "static",
+      "preserved_failures": [],
+      "stages": 10
+    },
+    {
+      "record": "evidence/correctness/foundation-a-sdk-cpu-cuda-shared/job.json",
+      "sha256": "76d6fdf7721e7d5fdc608b7d931a1a701878ff74a540a843838be895854483da",
+      "verdict": "PASS_FOUNDATION_A_CPU_CUDA_SHARED_RELOCATED_SDK",
+      "profile": "cpu-cuda",
+      "host": "windows",
+      "mode": "shared",
+      "preserved_failures": [],
+      "stages": 10
+    },
+    {
+      "record": "evidence/correctness/foundation-a-sdk-vulkan-static/job.json",
+      "sha256": "392a7a1e85411fe60c0c92193f317127ec82f795524ee6c11cd741186d1547e2",
+      "verdict": "PASS_FOUNDATION_A_CPU_VULKAN_STATIC_RELOCATED_SDK",
+      "profile": "cpu-vulkan",
+      "host": "windows",
+      "mode": "static",
+      "preserved_failures": [],
+      "stages": 12
+    },
+    {
+      "record": "evidence/correctness/foundation-a-sdk-vulkan-shared/job.json",
+      "sha256": "5b38404af1753e08c5b6a7adea0d0fd8694e1490dbbe2b16ce9bf472265a56cf",
+      "verdict": "PASS_FOUNDATION_A_CPU_VULKAN_SHARED_RELOCATED_SDK",
+      "profile": "cpu-vulkan",
+      "host": "windows",
+      "mode": "shared",
+      "preserved_failures": [],
+      "stages": 12
+    },
+    {
+      "record": "evidence/correctness/foundation-a-sdk-apple-static/job.json",
+      "sha256": "82015f9ba5b2b568edc4d687db1e15db4cd1f90817d4a3cf5e25239f90ce88e1",
+      "verdict": "PASS_FOUNDATION_A_AIR_CPU_APPLE_STATIC_RELOCATED_SDK",
+      "profile": "cpu-apple",
+      "host": "air",
+      "mode": "static",
+      "preserved_failures": [
+        {
+          "name": "configure",
+          "verdict": "FAIL_IDENTITY",
+          "elapsed": 9.443356167
+        },
+        {
+          "name": "producer",
+          "verdict": "FAIL",
+          "elapsed": 0.047847374999999914
+        }
+      ],
+      "stages": 13
+    },
+    {
+      "record": "evidence/correctness/foundation-a-sdk-apple-shared/job.json",
+      "sha256": "2f663375f0b5391563a2f36979d2558582fe6bb18c7114b1145f5bd06ecc1563",
+      "verdict": "PASS_FOUNDATION_A_AIR_CPU_APPLE_SHARED_RELOCATED_SDK",
+      "profile": "cpu-apple",
+      "host": "air",
+      "mode": "shared",
+      "preserved_failures": [
+        {
+          "name": "configure",
+          "verdict": "FAIL_IDENTITY",
+          "elapsed": 9.39439375
+        }
+      ],
+      "stages": 12
+    },
+    {
+      "record": "evidence/correctness/foundation-a-sdk-air-vulkan-static/job.json",
+      "sha256": "45ab11fdf21e6bfed5ebdf87532f5d5fa1073beacd62811e0c7b0c1754067d3f",
+      "verdict": "PASS_FOUNDATION_A_AIR_CPU_VULKAN_STATIC_RELOCATED_SDK",
+      "profile": "cpu-vulkan",
+      "host": "air",
+      "mode": "static",
+      "preserved_failures": [],
+      "stages": 11
+    },
+    {
+      "record": "evidence/correctness/foundation-a-sdk-air-vulkan-shared/job.json",
+      "sha256": "9339a062eb1032816dfb60f540c0882b6cf3e5a826d3391f2216706e96a96042",
+      "verdict": "PASS_FOUNDATION_A_AIR_CPU_VULKAN_SHARED_RELOCATED_SDK",
+      "profile": "cpu-vulkan",
+      "host": "air",
+      "mode": "shared",
+      "preserved_failures": [],
+      "stages": 11
+    },
+    {
+      "record": "evidence/correctness/foundation-a-sdk-wsl-cuda-static/job.json",
+      "sha256": "fe2eefe46ebd47ecbce9ca2e379d0b7a142e05b0790195b28c757400931dca1d",
+      "verdict": "PASS_FOUNDATION_A_WSL_CPU_CUDA_STATIC_RELOCATED_SDK",
+      "profile": "cpu-cuda",
+      "host": "wsl",
+      "mode": "static",
+      "preserved_failures": [],
+      "stages": 9
+    },
+    {
+      "record": "evidence/correctness/foundation-a-sdk-wsl-cuda-shared/job.json",
+      "sha256": "14184481e6eb635bfa93d0433b21c6aaf154ed22e3a82ef19a3d98089fe4c96c",
+      "verdict": "PASS_FOUNDATION_A_WSL_CPU_CUDA_SHARED_RELOCATED_SDK",
+      "profile": "cpu-cuda",
+      "host": "wsl",
+      "mode": "shared",
+      "preserved_failures": [],
+      "stages": 9
+    },
+    {
+      "record": "evidence/correctness/foundation-a-native-sdk-windows-vulkan-static/job.json",
+      "sha256": "5bd13d9289fa9a1d383bec491fa98fd3ff9213985a1d865df2c041013dbb6252",
+      "verdict": "PASS_FOUNDATION_A_NATIVE_ONLY_VULKAN_STATIC_RELOCATED_SDK",
+      "profile": "vulkan",
+      "host": "windows",
+      "mode": "static",
+      "preserved_failures": [],
+      "stages": 11
+    },
+    {
+      "record": "evidence/correctness/foundation-a-native-sdk-windows-vulkan-shared/job.json",
+      "sha256": "e259eb552d427915468b8798bc97d315415a475ade65934e377bfa2e77cafdbf",
+      "verdict": "PASS_FOUNDATION_A_NATIVE_ONLY_VULKAN_SHARED_RELOCATED_SDK",
+      "profile": "vulkan",
+      "host": "windows",
+      "mode": "shared",
+      "preserved_failures": [],
+      "stages": 11
+    },
+    {
+      "record": "evidence/correctness/foundation-a-native-sdk-air-apple-static/job.json",
+      "sha256": "a9531d82fce3ee5c059d7b5884909b95b0182da73079340c06b0d8e1750f29a9",
+      "verdict": "PASS_FOUNDATION_A_NATIVE_ONLY_AIR_APPLE_STATIC_RELOCATED_SDK",
+      "profile": "apple",
+      "host": "air",
+      "mode": "static",
+      "preserved_failures": [],
+      "stages": 10
+    },
+    {
+      "record": "evidence/correctness/foundation-a-native-sdk-air-apple-shared/job.json",
+      "sha256": "99d85c31ebf1afee5c0c385934fa6576e33823ad0e196e13d543ba6f3566bf0e",
+      "verdict": "PASS_FOUNDATION_A_NATIVE_ONLY_AIR_APPLE_SHARED_RELOCATED_SDK",
+      "profile": "apple",
+      "host": "air",
+      "mode": "shared",
+      "preserved_failures": [],
+      "stages": 10
+    },
+    {
+      "record": "evidence/correctness/foundation-a-native-sdk-air-vulkan-static/job.json",
+      "sha256": "1be803cdebbda065bd08772d9588c11d3b098ba1f1bc8ef007c50252defdd79b",
+      "verdict": "PASS_FOUNDATION_A_NATIVE_ONLY_AIR_VULKAN_STATIC_RELOCATED_SDK",
+      "profile": "vulkan",
+      "host": "air",
+      "mode": "static",
+      "preserved_failures": [],
+      "stages": 10
+    },
+    {
+      "record": "evidence/correctness/foundation-a-native-sdk-air-vulkan-shared/job.json",
+      "sha256": "6857eed8f2014002e6cc646715ec9b6fe3d970109a47663273a5ef7f081de4da",
+      "verdict": "PASS_FOUNDATION_A_NATIVE_ONLY_AIR_VULKAN_SHARED_RELOCATED_SDK",
+      "profile": "vulkan",
+      "host": "air",
+      "mode": "shared",
+      "preserved_failures": [],
+      "stages": 10
+    },
+    {
+      "record": "evidence/correctness/foundation-a-native-sdk-wsl-vulkan-static/job.json",
+      "sha256": "5c6b016320d906c34c7cebe4c142321bdcc9a379a5b64adf320cf562f7b65b3e",
+      "verdict": "PASS_FOUNDATION_A_NATIVE_ONLY_WSL_VULKAN_STATIC_RELOCATED_SDK",
+      "profile": "vulkan",
+      "host": "wsl",
+      "mode": "static",
+      "preserved_failures": [],
+      "stages": 9
+    },
+    {
+      "record": "evidence/correctness/foundation-a-native-sdk-wsl-vulkan-shared/job.json",
+      "sha256": "f1388803c09fe3bf1bb13749e6f91d7cf62a1d8bae0f4f3d56e581d64d4814bc",
+      "verdict": "PASS_FOUNDATION_A_NATIVE_ONLY_WSL_VULKAN_SHARED_RELOCATED_SDK",
+      "profile": "vulkan",
+      "host": "wsl",
+      "mode": "shared",
+      "preserved_failures": [],
+      "stages": 9
+    }
+  ],
+  "sanitizers": "ASan/UBSan42 each; original failures retained; TSan NOT_APPLICABLE because no new shared mutable/runtime concurrency mechanism",
+  "wsl_vulkan": "Current original loader device enumeration software llvmpipe only: GPU math NOT_APPLICABLE; build/header/link/package/relocation/absence apply and pass",
+  "perf_tier": "P0",
+  "p1": "NOT_RUN: not admitted by card",
+  "all_installed_logs_match_declared_hashes": true
+}

@@ -1,0 +1,8 @@
+[1/4] Building CXX object CMakeFiles/headers.dir/header-0.cc.o
+[2/4] Building CXX object CMakeFiles/headers.dir/header-1.cc.o
+[3/4] Building CXX object CMakeFiles/finite.dir/root/hyle-scratch/compute-unified/source-7a7b4c3b/tests/graph/route_symmetry_cuda.cc.o
+/root/hyle-scratch/compute-unified/source-7a7b4c3b/tests/graph/route_symmetry_cuda.cc: In function ‘int main()’:
+/root/hyle-scratch/compute-unified/source-7a7b4c3b/tests/graph/route_symmetry_cuda.cc:81:97: warning: ‘%.*s’ directive argument is null [-Wformat-overflow=]
+   81 | int main(){const auto status=run();if(!status.ok()){std::fprintf(stderr,"Foundation A CPU+CUDA: %.*s\n",int(status.message().size()),status.message().data());return 1;}std::puts("Foundation A CPU+CUDA finite family PASS");}
+      |                                                                                                 ^~~~
+[4/4] Linking CXX executable finite

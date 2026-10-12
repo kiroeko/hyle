@@ -1,0 +1,26 @@
+[0/2] Re-checking globbed directories...
+[1/24] Performing build step for 'vulkan-shaders-gen'
+ninja: no work to do.
+[2/24] Performing install step for 'vulkan-shaders-gen'
+-- Up-to-date: C:/h7/w-vulkan/selected-graph/static-sdk-build/Release/vulkan-shaders-gen.exe
+[3/24] Completed 'vulkan-shaders-gen'
+[4/24] Building CXX object src\compute_route_vulkan\CMakeFiles\hyle_compute_route_vulkan.dir\vulkan_operations.cc.obj
+[5/24] Building CXX object src\compute_route_vulkan\CMakeFiles\hyle_compute_route_vulkan.dir\vulkan_run.cc.obj
+[6/24] Building CXX object src\compute_route_vulkan\CMakeFiles\hyle_compute_route_vulkan.dir\vulkan_pipeline.cc.obj
+[7/24] Building CXX object src\compute_route_vulkan\CMakeFiles\hyle_compute_route_vulkan.dir\vulkan_tensor.cc.obj
+[8/24] Building CXX object src\compute_route_vulkan\CMakeFiles\hyle_compute_route_vulkan.dir\vulkan_recorder.cc.obj
+[9/24] Building CXX object src\graph\CMakeFiles\hyle_graph.dir\executable.cc.obj
+[10/24] Building CXX object src\compute_route_vulkan\CMakeFiles\hyle_compute_route_vulkan.dir\vulkan_program.cc.obj
+[11/24] Building CXX object src\compute_route_vulkan\CMakeFiles\hyle_compute_route_vulkan.dir\vulkan_scatter.cc.obj
+[12/24] Building CXX object src\compute_route_vulkan\CMakeFiles\hyle_compute_route_vulkan.dir\vulkan_normalization.cc.obj
+[13/24] Building CXX object src\compute_route_vulkan\CMakeFiles\hyle_compute_route_vulkan.dir\vulkan_region.cc.obj
+[14/24] Building CXX object src\compute_route_vulkan\CMakeFiles\hyle_compute_route_vulkan.dir\vulkan_reduction.cc.obj
+[15/24] Building CXX object src\compute_route_vulkan\CMakeFiles\hyle_compute_route_vulkan.dir\vulkan_elementwise.cc.obj
+[16/24] Building CXX object src\compute_route_vulkan\CMakeFiles\hyle_compute_route_vulkan.dir\vulkan_iree.cc.obj
+[17/24] Linking CXX static library bin\hyle_graph.lib
+[18/24] Building CXX object src\compute_route_vulkan\CMakeFiles\hyle_compute_route_vulkan.dir\vulkan_mlx.cc.obj
+[19/24] Building CXX object src\compute_route_vulkan\CMakeFiles\hyle_compute_route_vulkan.dir\vulkan_official.cc.obj
+[20/24] Building CXX object src\compute_route_vulkan\CMakeFiles\hyle_compute_route_vulkan.dir\vulkan_iq1.cc.obj
+[21/24] Linking CXX static library bin\hyle_compute_route_vulkan.lib
+[22/24] Building CXX object src\graph_route_vulkan\CMakeFiles\hyle_graph_route_vulkan.dir\vulkan_lowering.cc.obj
+[23/24] Linking CXX static library bin\hyle_graph_route_vulkan.lib

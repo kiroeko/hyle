@@ -1,0 +1,28 @@
+{
+  "plan_sha256": "eac9014ec0fe00fb71948457a74bbcbb91f547e7fb63a1ab962c2e7e0c49aae3",
+  "selected": [
+    "docs",
+    "closure",
+    "configure",
+    "factor:graph"
+  ],
+  "actual_scope": "Only changed route_symmetry_apple.cc consumer test body, evidence/docs/registry; no product src/include/cmake change from immutable candidate.",
+  "checks": [
+    {
+      "command": "python scripts/check-module-closure.py --previous-ref 41d8f60784b358822a4b1a7abe5482d2a53d593f",
+      "verdict": "PASS:61 components/schema4"
+    },
+    {
+      "command": "python scripts/check-docs.py",
+      "verdict": "PASS:976 Markdown/4900 relative links"
+    },
+    {
+      "command": "git diff --check",
+      "verdict": "PASS"
+    }
+  ],
+  "factor_test_scope": "Graph owner selected by tests/graph path. The only changed body is an Apple native consumer not registered in hyle_graph_tests. Actual compiled/executed via Air native-only installed static/shared consumer targets; both include new checked-control failure/success and old finite/slots journey. See corresponding jobs; no claim generic hyle_graph_tests rerun.",
+  "card_application": "Current A card directs representative actual owners/consumers, not unrelated full operator catalogue. Native-only changed fixture configure/build/run and prior frozen common/sanitizer evidence are recorded separately. No public selector or build tooling changed.",
+  "performance": "P0 card: automatic P1 skipped, no benchmark added",
+  "skipped_reasons": "Full unchanged selector plan retained in validation-plan.json"
+}

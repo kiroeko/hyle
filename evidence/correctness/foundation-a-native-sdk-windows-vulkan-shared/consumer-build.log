@@ -1,0 +1,6 @@
+[1/6] C:\WINDOWS\system32\cmd.exe /C "cd /D C:\h7\foundation-a-sdk\native-vulkan-shared-546b0d246\consumer && "C:\Program Files\CMake\bin\cmake.exe" -P C:/h7/foundation-a-sdk/native-vulkan-shared-546b0d246/consumer/hyle-runtime/finite-Release.cmake"
+[2/6] Building CXX object CMakeFiles\headers.dir\header-0.cc.obj
+[3/6] Building CXX object CMakeFiles\headers.dir\header-2.cc.obj
+[4/6] Building CXX object CMakeFiles\headers.dir\header-1.cc.obj
+[5/6] Building CXX object CMakeFiles\finite.dir\C_\public\project-hyle\hyle\tests\graph\route_symmetry_vulkan.cc.obj
+[6/6] Linking CXX executable finite.exe

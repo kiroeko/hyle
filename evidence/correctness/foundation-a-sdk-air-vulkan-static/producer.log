@@ -1,0 +1,100 @@
+[0/2] Re-checking globbed directories...
+[1/92] Performing build step for 'vulkan-shaders-gen'
+ninja: no work to do.
+[2/92] Performing install step for 'vulkan-shaders-gen'
+-- Up-to-date: /Users/kiro/hyle-scratch/compute-unified/a-cpu-vulkan/selected-graph/static-sdk-build/Release/./vulkan-shaders-gen
+[3/92] Completed 'vulkan-shaders-gen'
+[4/92] Building CXX object src/compute/CMakeFiles/hyle_compute.dir/batch_transfer.cc.o
+[5/92] Building CXX object src/compute/CMakeFiles/hyle_compute.dir/copy_control.cc.o
+[6/92] Building CXX object src/compute/CMakeFiles/hyle_compute.dir/copy_ranges.cc.o
+[7/92] Building CXX object src/compute/CMakeFiles/hyle_compute.dir/operation.cc.o
+[8/92] Building CXX object src/compute/CMakeFiles/hyle_compute.dir/resource_leases.cc.o
+/Users/kiro/hyle-scratch/compute-unified/source-c8874688/src/compute/resource_leases.cc:517:79: warning: result of comparison of constant 1152921504606846970 with expression of type 'std::uint32_t' (aka 'unsigned int') is always false [-Wtautological-constant-out-of-range-compare]
+  517 |       options.max_resources_per_batch == 0 || options.max_resources_per_batch >
+      |                                               ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ^
+  518 |           (SIZE_MAX - detail::kEntryOffset) / sizeof(detail::LeaseUseEntry))
+      |           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+1 warning generated.
+[9/92] Building CXX object src/io_core/CMakeFiles/hyle_io_core.dir/proactor.cc.o
+[10/92] Building CXX object src/io_core/CMakeFiles/hyle_io_core.dir/endpoint.cc.o
+[11/92] Building CXX object src/io_core/CMakeFiles/hyle_io_core.dir/operation.cc.o
+[12/92] Building CXX object src/io_core/CMakeFiles/hyle_io_core.dir/io_uring.cc.o
+[13/92] Building CXX object src/io_core/CMakeFiles/hyle_io_core.dir/io_context.cc.o
+[14/92] Building CXX object src/io_core/CMakeFiles/hyle_io_core.dir/tcp.cc.o
+[15/92] Building CXX object src/io_core/CMakeFiles/hyle_io_core.dir/udp.cc.o
+[16/92] Building CXX object src/io_core/CMakeFiles/hyle_io_core.dir/file.cc.o
+[17/92] Building CXX object src/io_core/CMakeFiles/hyle_io_core.dir/file_region.cc.o
+[18/92] Building CXX object src/io_core/CMakeFiles/hyle_io_core.dir/local.cc.o
+[19/92] Building CXX object src/io_core/CMakeFiles/hyle_io_core.dir/signal.cc.o
+[20/92] Building CXX object src/io_core/CMakeFiles/hyle_io_core.dir/dns.cc.o
+[21/92] Linking CXX static library bin/libhyle_compute.a
+[22/92] Linking CXX static library bin/libhyle_io_core.a
+[23/92] Building CXX object src/compute_stream/CMakeFiles/hyle_compute_stream.dir/file_stream.cc.o
+[24/92] Building CXX object src/compute_stream/CMakeFiles/hyle_compute_stream.dir/stream_sources.cc.o
+[25/92] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/runtime.cc.o
+[26/92] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/ops/dispatch_ops.cc.o
+[27/92] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/random/random_dispatch.cc.o
+[28/92] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/search/search_dispatch.cc.o
+[29/92] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/narrow/narrow_dispatch.cc.o
+[30/92] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/scan/scan_dispatch.cc.o
+[31/92] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/dtype/dtype_dispatch.cc.o
+[32/92] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/math/math_dispatch.cc.o
+[33/92] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/sort/sort_dispatch.cc.o
+[34/92] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/bitpack/bitpack_dispatch.cc.o
+[35/92] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/generated/simd-dispatch/ops/ops_scalar.cc.o
+[36/92] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/generated/simd-dispatch/ops/ops_neon.cc.o
+[37/92] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/generated/simd-dispatch/dtype_convert/dtype_convert_scalar.cc.o
+[38/92] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/generated/simd-dispatch/dtype_convert/dtype_convert_neon.cc.o
+[39/92] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/generated/simd-dispatch/scan/scan_scalar.cc.o
+[40/92] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/generated/simd-dispatch/scan/scan_neon.cc.o
+[41/92] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/generated/simd-dispatch/random/random_scalar.cc.o
+[42/92] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/generated/simd-dispatch/random/random_neon.cc.o
+[43/92] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/generated/simd-dispatch/search/search_scalar.cc.o
+[44/92] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/generated/simd-dispatch/search/search_neon.cc.o
+[45/92] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/generated/simd-dispatch/narrow/narrow_scalar.cc.o
+[46/92] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/generated/simd-dispatch/narrow/narrow_neon.cc.o
+[47/92] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/generated/simd-dispatch/bitpack/bitpack_scalar.cc.o
+[48/92] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/generated/simd-dispatch/bitpack/bitpack_neon.cc.o
+[49/92] Linking CXX static library bin/libhyle_compute_stream.a
+[50/92] Linking CXX static library bin/libhyle_simd.a
+[51/92] Building CXX object src/graph/CMakeFiles/hyle_graph.dir/executable.cc.o
+[52/92] Building CXX object src/graph/CMakeFiles/hyle_graph.dir/lease_submission.cc.o
+[53/92] Building CXX object src/compute_route_cpu/CMakeFiles/hyle_compute_route_cpu.dir/cpu_context.cc.o
+[54/92] Building CXX object src/compute_route_cpu/CMakeFiles/hyle_compute_route_cpu.dir/default_policy.cc.o
+[55/92] Building CXX object src/compute_route_cpu/CMakeFiles/hyle_compute_route_cpu.dir/file_stream.cc.o
+[56/92] Building CXX object src/compute_route_vulkan/CMakeFiles/hyle_compute_route_vulkan.dir/vulkan_device.cc.o
+[57/92] Building CXX object src/compute_route_vulkan/CMakeFiles/hyle_compute_route_vulkan.dir/vulkan_memory.cc.o
+[58/92] Building CXX object src/compute_route_vulkan/CMakeFiles/hyle_compute_route_vulkan.dir/vulkan_copy_recording.cc.o
+[59/92] Building CXX object src/compute_route_vulkan/CMakeFiles/hyle_compute_route_vulkan.dir/vulkan_copy_program.cc.o
+[60/92] Building CXX object src/compute_route_vulkan/CMakeFiles/hyle_compute_route_vulkan.dir/file_stream.cc.o
+[61/92] Building CXX object src/compute_route_vulkan/CMakeFiles/hyle_compute_route_vulkan.dir/vulkan_leased_invocation.cc.o
+[62/92] Building CXX object src/compute_route_vulkan/CMakeFiles/hyle_compute_route_vulkan.dir/vulkan_run.cc.o
+[63/92] Building CXX object src/compute_route_vulkan/CMakeFiles/hyle_compute_route_vulkan.dir/vulkan_transfer.cc.o
+[64/92] Building CXX object src/compute_route_vulkan/CMakeFiles/hyle_compute_route_vulkan.dir/vulkan_transfer_slot.cc.o
+[65/92] Building CXX object src/compute_route_vulkan/CMakeFiles/hyle_compute_route_vulkan.dir/vulkan_weights.cc.o
+[66/92] Building CXX object src/compute_route_vulkan/CMakeFiles/hyle_compute_route_vulkan.dir/vulkan_pipeline.cc.o
+[67/92] Building CXX object src/compute_route_vulkan/CMakeFiles/hyle_compute_route_vulkan.dir/vulkan_operations.cc.o
+[68/92] Building CXX object src/compute_route_vulkan/CMakeFiles/hyle_compute_route_vulkan.dir/vulkan_tensor.cc.o
+[69/92] Building CXX object src/compute_route_vulkan/CMakeFiles/hyle_compute_route_vulkan.dir/vulkan_program.cc.o
+[70/92] Building CXX object src/compute_route_vulkan/CMakeFiles/hyle_compute_route_vulkan.dir/vulkan_recorder.cc.o
+[71/92] Building CXX object src/compute_route_vulkan/CMakeFiles/hyle_compute_route_vulkan.dir/vulkan_region.cc.o
+[72/92] Building CXX object src/compute_route_vulkan/CMakeFiles/hyle_compute_route_vulkan.dir/vulkan_scatter.cc.o
+[73/92] Building CXX object src/compute_route_vulkan/CMakeFiles/hyle_compute_route_vulkan.dir/vulkan_normalization.cc.o
+[74/92] Building CXX object src/compute_route_vulkan/CMakeFiles/hyle_compute_route_vulkan.dir/vulkan_reduction.cc.o
+[75/92] Building CXX object src/compute_route_vulkan/CMakeFiles/hyle_compute_route_vulkan.dir/vulkan_elementwise.cc.o
+[76/92] Building CXX object src/compute_route_vulkan/CMakeFiles/hyle_compute_route_vulkan.dir/vulkan_iree.cc.o
+[77/92] Building CXX object src/compute_route_vulkan/CMakeFiles/hyle_compute_route_vulkan.dir/vulkan_mlx.cc.o
+[78/92] Building CXX object src/compute_route_vulkan/CMakeFiles/hyle_compute_route_vulkan.dir/vulkan_official.cc.o
+[79/92] Building CXX object src/compute_route_vulkan/CMakeFiles/hyle_compute_route_vulkan.dir/vulkan_iq1.cc.o
+[80/92] Building CXX object src/compute_route_vulkan/CMakeFiles/hyle_compute_route_vulkan.dir/shaders/vulkan_shaders.cc.o
+[81/92] Linking CXX static library bin/libhyle_graph.a
+[82/92] Linking CXX static library bin/libhyle_compute_route_cpu.a
+[83/92] Building CXX object src/graph_route_cpu/CMakeFiles/hyle_graph_route_cpu.dir/cpu_context.cc.o
+[84/92] Building CXX object src/graph_route_cpu/CMakeFiles/hyle_graph_route_cpu.dir/ggml_region.cc.o
+[85/92] Linking CXX static library bin/libhyle_compute_route_vulkan.a
+[86/92] Building CXX object src/graph_route_vulkan/CMakeFiles/hyle_graph_route_vulkan.dir/vulkan_lowering.cc.o
+[87/92] Linking CXX static library bin/libhyle_graph_route_cpu.a
+[88/92] Linking CXX static library bin/libhyle_graph_route_vulkan.a
+[89/92] Building CXX object src/graph_route_cpu_vulkan/CMakeFiles/hyle_graph_route_cpu_vulkan.dir/compile.cc.o
+[90/92] Building CXX object src/graph_route_cpu_vulkan/CMakeFiles/hyle_graph_route_cpu_vulkan.dir/invocation.cc.o
+[91/92] Linking CXX static library bin/libhyle_graph_route_cpu_vulkan.a
