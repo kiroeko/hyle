@@ -41,7 +41,13 @@
 [有限结论](../../../../evidence/correctness/foundation-f5-separated-redteam/README.md)。没有新产品
 缺陷，两个文档阶段/失效恢复遗漏已补；该审查不替代尚未运行的Tsan/组件聚合或最终评估。
 
-明确未完成：native UBSan/TSan适用facet；整进程CUDA LSan仍NVIDIA库报告且无抑制，
+Linux native UBSan与TSan宿主数据竞争三消费者现已实际通过：
+[UBSan](../../../../evidence/correctness/foundation-f5-native-cuda-host-ubsan/README.md)、
+[TSan数据竞争](../../../../evidence/correctness/foundation-f5-native-cuda-host-tsan/README.md)。
+TSan原退出66为NVIDIA诊断线程finished/not joined，无HYLE生命周期对照精确复现；原FAIL
+保留，线程生命周期facet仍INCONCLUSIVE。数据竞争门没有suppression或改exitcode。
+
+明确未完成：全平台sanitizer facet最终适用性/范围裁决；整进程CUDA LSan仍NVIDIA库报告且无抑制，
 HYLE-owned地址/权限与quota证据不冒充GPU/driver总量；公共component all聚合因为环境/
 原剩27.860秒预算未PASS，追加300秒问题待用户答复。相同阻因没有导致当前impasse，
 因为san和终审仍有可推进动作，goal保持active。

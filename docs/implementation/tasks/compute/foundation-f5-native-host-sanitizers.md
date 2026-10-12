@@ -68,3 +68,12 @@ Linux native UBSan现已三consumer实际PASS：
 11.498/300、build859.339/1800、运行2.145/180。first parent option FAIL与top-level bin/
 launcher未启动测试的ENOENT记录保留，按实际路径运行，不重建或重取预算。TSan单独
 配置已启动，同product/source/直接consumer和原budget；尚未运行项不计PASS。
+
+Linux native TSan宿主数据竞争门现已三consumer实际PASS：
+[证据](../../../../evidence/correctness/foundation-f5-native-cuda-host-tsan/README.md)，configure
+8.486/300、build803.101/1800、consumer累计10.536/180。首次公开消费者实际数学通过，
+退出66为libnvdiagclt.so.1诊断线程finished/not joined；完全不链接HYLE的CUDA生命周期
+对照精确复现同报告。原FAIL/源码/runtime help保留，仅report_thread_leaks=0分离数据竞争
+门，report_bugs仍true、halt_on_error=1，无suppression/改exitcode/产品改动。三个真实消费者
+数据竞争门PASS不代签外库线程生命周期：后者INCONCLUSIVE_FOREIGN_NVIDIA_DIAGNOSTIC_THREAD。
+全平台适用facet和整进程LSan边界仍须最终逐项裁决，不能称整套sanitizer全部通过。

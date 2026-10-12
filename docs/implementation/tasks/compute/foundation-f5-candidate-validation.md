@@ -114,8 +114,11 @@ alignment warning合同遗漏的编译FAIL保留。installed只按实际供应�
 不隐藏cuRAND差异或写成零泄漏。剩余native UBSan/TSan与整体risk audit继续。
 
 [CUDA宿主UBSan](../../../../evidence/correctness/foundation-f5-native-cuda-host-ubsan/README.md)
-也已实际三consumer PASS，原配置/launcher错误与原预算保留；TSan独立树仍在构建，
-没有借ASan或UBSan签跨线程退休检查。
+也已实际三consumer PASS，原配置/launcher错误与原预算保留。
+[CUDA宿主TSan数据竞争](../../../../evidence/correctness/foundation-f5-native-cuda-host-tsan/README.md)
+现也三consumer PASS，包含实际native callback/退休边界。原NVIDIA诊断线程退出66由
+无HYLE对照精确复现，保原FAIL后仅关闭退出线程泄漏报告、保数据竞争报告与halt_on_error；
+外库线程生命周期仍INCONCLUSIVE，未写整套TSan PASS。其他平台facet及最终聚合另核。
 
 [固定产品LOC](../../../../evidence/architecture/foundation-f5-loc-inventory/README.md)已统计：
 compute_batch1437、graph_batch400（含public头），F5对F4净增2610；全部自有native174338，

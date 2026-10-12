@@ -413,7 +413,17 @@ LSan独立detect_leaks=1三诊断仍退出1：2320/8、1000/5、8920/35，分配
 NVIDIA库；无HYLE CUDA/NVML对照精确复现前两者和Graph driver/NVML部分，Graph多出的
 cuRAND ELF-init栈与不同加载次序对照保持差异。地址门PASS不等于LSan总体PASS，native
 private UNKNOWN和外库仪器限制进入最终审计，不用quota0/生命周期数学代签整进程扫描。
-UBSan/TSan native callback facet尚未完成，易用性映射已核但不代签分离红队或完整goal。
+此阶段的UBSan/TSan native callback facet随后已补实际证据，见下文；易用性映射不代签完整goal。
+
+## Linux native UBSan与TSan数据竞争补验
+
+[UBSan](../../../../evidence/correctness/foundation-f5-native-cuda-host-ubsan/README.md)与
+[TSan数据竞争](../../../../evidence/correctness/foundation-f5-native-cuda-host-tsan/README.md)
+各三个真实公开/Direct/Graph消费者已PASS，compile flags覆盖新controller/coordinator与原
+leased/native宿主路径。所有原失败及配置/构建/consumer累计预算保留，没有产品改动。
+TSan首退出66为NVIDIA libnvdiagclt诊断线程未join，无HYLE原生对照精确复现；仅关闭
+退出线程泄漏检查后分离数据竞争门，保report_bugs/首错退出，无suppression。外库线程
+生命周期仍INCONCLUSIVE，LSan整进程报告也未PASS；最终平台facet/组件合同/评估仍需裁决。
 
 [公开native源码收据](../../../../evidence/correctness/foundation-f5-public-native-source/README.md)：
 Win Vulkan/Air Apple/Vulkan各四域Direct/Graph独立oracle共24、原F2/public页权限/同镜像/
