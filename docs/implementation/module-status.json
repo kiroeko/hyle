@@ -270,9 +270,9 @@
     },
     {
       "module": "compute",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/foundation-f5-owner-bridges.md",
-      "summary": "F5 SCOPED：同原Provider instance的冷BatchPlanning extension、Graph原region同slot opt-in桥与原FlashInfer paged/ragged承载；保留原已签dense/F1–F4/A范围，无产品修改。"
+      "summary": "F5 AUDITED：冷同instance BatchPlanning extension与原FlashInfer native paged/ragged prepare/plan/run接缝及有限Direct生命周期FIX冻结；旧dense/F1–F4范围保留，Graph桥仍SCOPED。"
     },
     {
       "module": "graph",
@@ -595,9 +595,9 @@
     },
     {
       "module": "compute_provider_flashinfer",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/foundation-f5-owner-bridges.md",
-      "summary": "F5 SCOPED：同原Provider instance的冷BatchPlanning extension、Graph原region同slot opt-in桥与原FlashInfer paged/ragged承载；保留原已签dense/F1–F4/A范围，无产品修改。"
+      "summary": "F5 AUDITED：冷同instance BatchPlanning extension与原FlashInfer native paged/ragged prepare/plan/run接缝及有限Direct生命周期FIX冻结；旧dense/F1–F4范围保留，Graph桥仍SCOPED。"
     },
     {
       "module": "compute_provider_ggml_metal",

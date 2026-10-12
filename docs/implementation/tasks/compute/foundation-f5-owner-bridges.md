@@ -48,3 +48,37 @@
 compute原F4 package-only与F1–F3机制、graph原A-01..04、FlashInfer原dense/head256/Linux资格
 保留在[原状态快照](../../../../evidence/architecture/foundation-f5-owner-scope/old-scope.json)。
 当前只SCOPED，未写这三owner产品，也未修改19版vtable或普通Invocation layout。
+
+## AUDITED Direct batch与原Provider冻结
+
+compute与compute_provider_flashinfer进入AUDITED；graph仍SCOPED，未授权改Graph产品。
+compute_batch沿已AUDITED合同增加以下opt-in执行shell，数学和native slot仍由原Provider拥有。
+
+- BatchProgram::prepare(Context,schema,options)只在冷路径按原Provider binding查精确版本的
+  BatchPlanning extension；原instance owner由ProviderExtensionRef保活。同实例冷query的
+  overload不改普通submit/Provider vtable，Compute不含Graph/batch数学。
+- BatchProgramOptions冷固定device/host workspace资源、float/int工作区硬上限、最大独立
+  invocation数、scale/causal、allocator/ResourceBudget。每invocation有自己的原native plan、
+  F1镜像/输出/工作区和F2上传槽；不共享可变FlashInfer plan，不建自动bucket/global cache。
+- BatchInvocation::create(program,borrowedQueue)创建实际原native slot。prepare_batch(layout)
+  要same-schema、没有旧ticket/结果/native-use；版本预检后才失效旧epoch，沿原F2上传整个
+  owned snapshot到本slot镜像，再经原Queue提交原native planning及int H2D并显式等实际退休。
+  返回move-only PreparedBatch，持本slot/epoch/layout；错误已接受prefix不复用旧token。
+- PreparedBatch::run只用既有plan、本slot/mirror generation与readonly Q/K/V，沿原named
+  extension/QueueSequence提交原kernel，无submit隐式plan/JIT/Provider搜索。原Completion、
+  LeaseUseBatch保活payload/mirror/所有workspaces，取消只停发布，不假称GPU抢占/rollback。
+  输出成功实际退休后经原WriteLease.publish接成ReadLease；旧结果使同slot写许可不可重获。
+- Native planning report给实际float/int使用、layout generation、split-KV/CTA/native拓扑和
+  copy/host等待事实；原scheduler临时vectors/occupancy/private bytes仍UNKNOWN，capture=false。
+  未证明capture不因此卡变成NA/PASS；只有本F5第一档managed preparation资格。
+- 原FlashInfer native domain先F16/BF16、NHD、head64/128/256、checked GQA/right-aligned causal；
+  原12场景包括乱页/尾与split-KV合并对oracle。其他domain明确decline，不升级锁/新kernel。
+  native callback只在原Context/Queue admission下运行，C++17边界保存原PlanInfo/模板kernel，
+  C++23 owning adapter转换Status/预算并保持原dense路径不变。
+- 同一typed BatchInvocation供后续Graph原region create_invocation拥有；Graph规划必须操作
+  该同一对象，不能规划Direct A后提交Graph B。新Graph协调器仍需其AUDITED再实现。
+
+三项有限FIX：C-01冷同instance query；FI-01原native prepare/plan/run+report；COMMON-EXEC-01
+opt-in原F1/F2/Completion shell、epochs/old outputs/close/cancel。它们是F5-02/03/04的实现分解，
+F5全部六FIX与四路线明确reference/append闭环/三交付未缩减。native Direct不是Graph/全F5证书。
+两纵切仅输入/布局不同；owner/alias/metadata版本/硬容量/生命周期相同，无默认Tensor字段税。
