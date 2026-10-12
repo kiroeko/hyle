@@ -111,3 +111,31 @@ update lambda编译FAIL/原输入历史与累计预算；原typed host/source合
 没有放宽旧CUDA validate/copy算法。只此新shell/原FI/真实直接消费者，不回放算子全集。
 产品仍AUDITED；Graph同slot、四路线显式reference/append闭环、完整故障/SDK/san/P0/终审
 尚未完成，不能CANDIDATE/CLOSED，也不能据四个Direct域代签整个F5或单机吞吐。
+
+## AUDITED Graph opt-in同slot冻结
+
+graph与graph_batch进入AUDITED。Graph只增加cold private region访问桥：Executable访问实际
+编译region identity，Invocation/LeasedInvocation访问同一实际opaque slot，保留原busy/failed/
+old-result/closed裁决；不改v19 table、普通对象layout或submit路径。
+
+graph_batch提供具名batch region Provider wrapper，借原Provider的native BatchPlanning
+extension和原backend session，不起第二Context/Queue/runtime。cold region只承载已定义的
+paged/ragged pure node，输入/输出原IR身份与control ordering不删；原native资格不满足就拒绝。
+原region invocation持BatchInvocation及PreparedBatch。opt-in协调器冷create按实际provider
+instance初始化它，prepare/update前通过原Graph控制门检查，再给该同一slot上传/规划及绑定
+其真实metadata mirror；原Graph执行器shared_submit直接把原native kernel写入Graph已分配
+output，没有shadow result copy或另造executor。原Graph Completion保整个region及私有资源
+到真实退休，lease-aware外部输入/输出沿原LeasedInvocation跟踪权限/别名。
+
+冷immutable capacity/kernel与每slot可变plan分立。GraphBatch的compiled region可在显式cold
+invocation初始化时建立一次共享native BatchProgram，受本region冷monitor保护；不在run做
+JIT/规划/动态bucket或全图扫描。显式opt-in元数据/初始化状态只在新batch factor，普通Graph
+节点/Invocation无新增字段。private workspace/原plannerUNKNOWN如实报告，capture=false。
+同schema、layout generation、原region/slot、mirror身份和队列均检查；错误原instance与旧
+结果挡住prepare/update，原Graph失败prefix退休后不能假恢复，必须重新创建原invocation。
+
+graph_batch依赖graph/compute_batch/compute/error/mem及private core/util，不让Compute
+依赖Graph；原Provider wrapper的C++配置有独立owner与allocator，底层base Provider可拷贝
+但不借caller局部指针。Native Apple/Vulkan后续explicit reference仍走其原typed Program与
+既有math，不能借此CUDA shared接口代签它们。当前有限G-01访问桥/G-02原region Provider与
+coordinator是F5-04分解，六FIX/四路线/append闭环及全部交付风险未缩减。

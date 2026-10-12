@@ -276,9 +276,9 @@
     },
     {
       "module": "graph",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/foundation-f5-owner-bridges.md",
-      "summary": "F5 SCOPED：同原Provider instance的冷BatchPlanning extension、Graph原region同slot opt-in桥与原FlashInfer paged/ragged承载；保留原已签dense/F1–F4/A范围，无产品修改。"
+      "summary": "F5 Graph AUDITED：cold原region/同slot访问、具名batch Provider wrapper与opt-in协调器/API/owner/生命周期固定；普通v19/layout/submit不改，原native kernel直接写Graph output，尚未验收。"
     },
     {
       "module": "container_concurrent",
@@ -696,9 +696,9 @@
     },
     {
       "module": "graph_batch",
-      "state": "SCOPED",
-      "summary": "F5 SCOPED：六FIX/主与正交consumer、typed容量/metadata版本、原native显式prepare/update/run与Graph同slot opt-in边界及有限原型/验证预算已绑定；无产品实现，API/owner审计未完成。",
-      "record": "docs/implementation/tasks/compute/foundation-f5-paged-ragged-batch.md"
+      "state": "AUDITED",
+      "summary": "F5 Graph AUDITED：cold原region/同slot访问、具名batch Provider wrapper与opt-in协调器/API/owner/生命周期固定；普通v19/layout/submit不改，原native kernel直接写Graph output，尚未验收。",
+      "record": "docs/implementation/tasks/compute/foundation-f5-owner-bridges.md"
     }
   ]
 }
