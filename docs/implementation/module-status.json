@@ -270,14 +270,9 @@
     },
     {
       "module": "compute",
-      "state": "CLOSED",
-      "record": "docs/implementation/tasks/compute/foundation-f3-final-closure.md",
-      "summary": "F3 CLOSED：原八FIX的有界双向文件/资源管线、四自然路线/逐组ready、实际Qwen BF16/F32与原编码Direct+Graph往返、当前native寿命/错误/取消/direct IO和三sanitizer风险、适用source/迁址static/shared/新头/缺席/运行库、P0与红队通过；原suffix FAIL/有限纠正保留，未测硬件/软件GPU及driver私有成本不外推。",
-      "candidate": "97858fbc88a6b5a87f109290b956eeaeee632dd2",
-      "performance": {
-        "tier": "P0",
-        "evidence": "docs/implementation/tasks/compute/foundation-f3-p0-cost-review.md"
-      }
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/compute/foundation-f4-package-seam.md",
+      "summary": "F4 package SCOPED：仅Compute façade新增state root/交付闭包；原F1–F3及native数学/执行/退休源码不改、已签范围保留；F4实际source/SDK与新头/缺路线/迁址按窄卡验证，不跑算子全集。"
     },
     {
       "module": "graph",
@@ -362,14 +357,9 @@
     },
     {
       "module": "compute_provider_onednn",
-      "state": "CLOSED",
-      "record": "docs/implementation/tasks/build/compute-c3-hardware-boundary-decision.md",
-      "summary": "C1/C2/R1/C3按用户接受边界CLOSED：统一入口/SDK/资产/配置/安装头与已验平台完成，78数学PASS；WSL Vulkan十二项实GPU运行UNQUALIFIED不阻塞，H1–H3未实现。",
-      "candidate": "2614676ee64bceddadcf791c218d6eea1f051c64",
-      "performance": {
-        "tier": "P0",
-        "evidence": "docs/implementation/tasks/build/compute-c3-hardware-boundary-decision.md"
-      }
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/compute/foundation-f4-package-seam.md",
+      "summary": "F4 package SCOPED：仅Compute façade新增state root/交付闭包；原F1–F3及native数学/执行/退休源码不改、已签范围保留；F4实际source/SDK与新头/缺路线/迁址按窄卡验证，不跑算子全集。"
     },
     {
       "module": "compute_provider_ggml",
@@ -406,47 +396,27 @@
     },
     {
       "module": "compute_backend_cpu",
-      "state": "CLOSED",
-      "record": "docs/implementation/tasks/compute/compute-h1-cpu-cuda-composition.md",
-      "summary": "H1 CLOSED：CPU+CUDA混合执行、双槽迁移、普通CPU主存/有界staging、共享预算及准备诊断完成；Windows/WSL三交付、安装头/搬迁、错误/寿命与当前native重叠通过。引擎策略、多GPU、Apple/Vulkan混合不在本包。",
-      "candidate": "7eaf67b8a496ee19b609533980cd69e7efb5aa49",
-      "performance": {
-        "tier": "P0",
-        "evidence": "docs/implementation/tasks/compute/compute-h1-cpu-cuda-composition.md"
-      }
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/compute/foundation-f4-package-seam.md",
+      "summary": "F4 package SCOPED：仅Compute façade新增state root/交付闭包；原F1–F3及native数学/执行/退休源码不改、已签范围保留；F4实际source/SDK与新头/缺路线/迁址按窄卡验证，不跑算子全集。"
     },
     {
       "module": "compute_backend_cuda",
-      "state": "CLOSED",
-      "candidate": "5b3efe2cce3fcab2bc55cf749af2d862a786ef25",
-      "record": "docs/implementation/tasks/compute/foundation-f2-final-closure.md",
-      "summary": "F2 CLOSED：原七FIX四路线prepared batch/phase/ready/native依赖/replay、真实数学与适用三交付/生命周期/P0终审通过；cold错误与CUDA终态反例依法修复，原失败/未知成本/WSL软件GPU限制保留，未受影响全局门不回放。",
-      "performance": {
-        "tier": "P0",
-        "evidence": "evidence/correctness/foundation-f2-final/receipt.json"
-      }
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/compute/foundation-f4-package-seam.md",
+      "summary": "F4 package SCOPED：仅Compute façade新增state root/交付闭包；原F1–F3及native数学/执行/退休源码不改、已签范围保留；F4实际source/SDK与新头/缺路线/迁址按窄卡验证，不跑算子全集。"
     },
     {
       "module": "compute_provider_native",
-      "state": "CLOSED",
-      "record": "docs/implementation/tasks/build/compute-c3-hardware-boundary-decision.md",
-      "summary": "C1/C2/R1/C3按用户接受边界CLOSED：统一入口/SDK/资产/配置/安装头与已验平台完成，78数学PASS；WSL Vulkan十二项实GPU运行UNQUALIFIED不阻塞，H1–H3未实现。",
-      "candidate": "2614676ee64bceddadcf791c218d6eea1f051c64",
-      "performance": {
-        "tier": "P0",
-        "evidence": "docs/implementation/tasks/build/compute-c3-hardware-boundary-decision.md"
-      }
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/compute/foundation-f4-package-seam.md",
+      "summary": "F4 package SCOPED：仅Compute façade新增state root/交付闭包；原F1–F3及native数学/执行/退休源码不改、已签范围保留；F4实际source/SDK与新头/缺路线/迁址按窄卡验证，不跑算子全集。"
     },
     {
       "module": "compute_route_cpu",
-      "state": "CLOSED",
-      "record": "docs/implementation/tasks/compute/foundation-f3-final-closure.md",
-      "summary": "F3 CLOSED：原八FIX的有界双向文件/资源管线、四自然路线/逐组ready、实际Qwen BF16/F32与原编码Direct+Graph往返、当前native寿命/错误/取消/direct IO和三sanitizer风险、适用source/迁址static/shared/新头/缺席/运行库、P0与红队通过；原suffix FAIL/有限纠正保留，未测硬件/软件GPU及driver私有成本不外推。",
-      "candidate": "97858fbc88a6b5a87f109290b956eeaeee632dd2",
-      "performance": {
-        "tier": "P0",
-        "evidence": "docs/implementation/tasks/compute/foundation-f3-p0-cost-review.md"
-      }
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/compute/foundation-f4-package-seam.md",
+      "summary": "F4 package SCOPED：仅Compute façade新增state root/交付闭包；原F1–F3及native数学/执行/退休源码不改、已签范围保留；F4实际source/SDK与新头/缺路线/迁址按窄卡验证，不跑算子全集。"
     },
     {
       "module": "graph_route_cpu",
@@ -495,14 +465,9 @@
     },
     {
       "module": "compute_route_cuda",
-      "state": "CLOSED",
-      "record": "docs/implementation/tasks/compute/foundation-f3-final-closure.md",
-      "summary": "F3 CLOSED：原八FIX的有界双向文件/资源管线、四自然路线/逐组ready、实际Qwen BF16/F32与原编码Direct+Graph往返、当前native寿命/错误/取消/direct IO和三sanitizer风险、适用source/迁址static/shared/新头/缺席/运行库、P0与红队通过；原suffix FAIL/有限纠正保留，未测硬件/软件GPU及driver私有成本不外推。",
-      "candidate": "97858fbc88a6b5a87f109290b956eeaeee632dd2",
-      "performance": {
-        "tier": "P0",
-        "evidence": "docs/implementation/tasks/compute/foundation-f3-p0-cost-review.md"
-      }
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/compute/foundation-f4-package-seam.md",
+      "summary": "F4 package SCOPED：仅Compute façade新增state root/交付闭包；原F1–F3及native数学/执行/退休源码不改、已签范围保留；F4实际source/SDK与新头/缺路线/迁址按窄卡验证，不跑算子全集。"
     },
     {
       "module": "graph_route_cuda",
@@ -517,14 +482,9 @@
     },
     {
       "module": "compute_route_apple",
-      "state": "CLOSED",
-      "record": "docs/implementation/tasks/compute/foundation-f3-final-closure.md",
-      "summary": "F3 CLOSED：原八FIX的有界双向文件/资源管线、四自然路线/逐组ready、实际Qwen BF16/F32与原编码Direct+Graph往返、当前native寿命/错误/取消/direct IO和三sanitizer风险、适用source/迁址static/shared/新头/缺席/运行库、P0与红队通过；原suffix FAIL/有限纠正保留，未测硬件/软件GPU及driver私有成本不外推。",
-      "candidate": "97858fbc88a6b5a87f109290b956eeaeee632dd2",
-      "performance": {
-        "tier": "P0",
-        "evidence": "docs/implementation/tasks/compute/foundation-f3-p0-cost-review.md"
-      }
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/compute/foundation-f4-package-seam.md",
+      "summary": "F4 package SCOPED：仅Compute façade新增state root/交付闭包；原F1–F3及native数学/执行/退休源码不改、已签范围保留；F4实际source/SDK与新头/缺路线/迁址按窄卡验证，不跑算子全集。"
     },
     {
       "module": "graph_route_apple",
@@ -539,14 +499,9 @@
     },
     {
       "module": "compute_route_vulkan",
-      "state": "CLOSED",
-      "record": "docs/implementation/tasks/graph/foundation-a-final-closure.md",
-      "summary": "Foundation A CLOSED：有限exact/control/qualified CPU effects与原身份/alias/OOM/失败前缀/取消/旧结果完成；18 installed格、原生缺CPU、实际Win/WSL/Air适用source及sanitizer、P0/LOC和终审通过。general/capture/GPU mutable/paged与整引擎性能不外推，F4/F5继续独立goal。",
-      "candidate": "546b0d2468e5de29031c34668f4afa4bc31b9a17",
-      "performance": {
-        "tier": "P0",
-        "evidence": "evidence/architecture/foundation-a-p0/README.md"
-      }
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/compute/foundation-f4-package-seam.md",
+      "summary": "F4 package SCOPED：仅Compute façade新增state root/交付闭包；原F1–F3及native数学/执行/退休源码不改、已签范围保留；F4实际source/SDK与新头/缺路线/迁址按窄卡验证，不跑算子全集。"
     },
     {
       "module": "graph_route_vulkan",
