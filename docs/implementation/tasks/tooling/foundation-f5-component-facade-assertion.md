@@ -39,3 +39,12 @@ private runner环境补充已准备：实际既有C:/public/tools/hyle-vulkan/1.
 vulkan-1.lib均存在，PATH与VULKAN_SDK沿已过SDK身份。还未重跑。全合同一次cold configure
 曾用107.750秒，原剩27.860不足；恢复全聚合门需用户追加一次300秒，保全部原FAIL/time，
 不改工具核心/产品或换root重取预算。等待期间继续其余F5独立门，不把整个goal标blocked。
+
+2026-10-13入口复核：脚本首行“Configure-only”及原private runner同名scope不完整。
+实际脚本还build/run Core消费者、build container_intrusive与io_transfer测试，后半段验证
+Time/Container/IO/缓存/许可等共享工具合同。第三次在第626行all配置失败，不能推定后半段
+已运行；脚本第32行清理整个component-contract子树，没有resume/skip/start入口。
+这些源码事实保留在原public脚本，本复核不改工具、不删除历史失败或把未运行项写PASS。
+本轮改过中央组件声明/PUBLIC链接边，原活动卡已预声明selector component门；不能仅因
+此前误以为只配置或当前成本较重，自行缩成更小的通过条件。预算问题仍是同一原300秒
+合同，剩27.860秒；此前一次追加300秒问题仍待答复，尚未启动新的复跑。
