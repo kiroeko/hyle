@@ -77,3 +77,21 @@ Linux native TSan宿主数据竞争门现已三consumer实际PASS：
 门，report_bugs仍true、halt_on_error=1，无suppression/改exitcode/产品改动。三个真实消费者
 数据竞争门PASS不代签外库线程生命周期：后者INCONCLUSIVE_FOREIGN_NVIDIA_DIAGNOSTIC_THREAD。
 全平台适用facet和整进程LSan边界仍须最终逐项裁决，不能称整套sanitizer全部通过。
+
+## 剩余平台facet的有限补验
+
+固定25e只读核对：MaterializedNativeState的版本/bank/control字段由外部串行控制，worker不
+直接写这些字段；但Apple原Invocation接受新F5 exact-page uses后在实际worker退休并释放，
+common/CPU/CUDA TSan不能代签该组合。实际Air Clang支持UBSan/TSan，补两个独立binary
+配置，每个首次configure300/build1800/两consumer累计180，沿原public_native与native
+消费者及同source manifest运行。实际flags须覆盖apple_context、paged import、native模板、
+Graph factory和消费者；不跑旧catalog、全库/P1，不改产品/公共工具，不重复已过ASan。
+各root首次后保全部FAIL/time、不换root取预算，任一工具/外库报告逐栈对照再裁决。
+
+Windows MSVC合同明确UBSan/TSan不可用，缺仪器不是语义NOT_APPLICABLE。Vulkan新增
+paged import/reuse gate/control wrapper无新独立worker，但读取原runtime mutex保护的
+pending/retiring/observer状态且接受新F5页权限；因此Air Vulkan Clang也补UBSan/TSan，
+同固定source与原public_native/native消费者，每个独立配置首次configure300/build1800/
+两consumer累计180。实际flags核对Vulkan program/memory/原退休/模板与Graph factory。
+四配置跨机器串行，原同名mode root累计不重置；Apple不代签Vulkan，Air不代签Windows
+MSVC或NVIDIA/MoltenVK私有代码instrument。此有限补验只补原适用风险，不新增产品范围。

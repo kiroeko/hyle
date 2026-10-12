@@ -222,3 +222,42 @@ candidate/actual consumer证据，按单机高性能单/多请求目标逐项分
 尚缺通用机制、未验证消费接缝/平台Provider、合理的引擎策略。汇总实际适配代码/额外copy与
 wait/planning成本、明确剩余基础库owner/工作包和代码量估计的可信边界；不给未经prototype
 校准的精确代码量下降百分比。不为统计本身启动全库构建或扩完整推理引擎。
+
+## 2026-10-13固定实现后的核算
+
+输入为product25e与18格SDK、实际四路线append/read/F4和P0账；A/F4已CLOSED，F5仍
+CANDIDATE。本节以已实现事实校正原条件预测，最终goal后结论仍需引用terminal；没有
+完整真实模型或高性能P1/P2，不能把候选消费证明写成整模型/高性能证书。
+
+原F1–F5机制缺口在各自有限域已有实现：外部最后使用、范围搬运、文件管线、集合版本、
+typed batch端口与显式prepare/run。对单机高性能目标，剩余基础库工作主要在以下三个
+可定位的消费接缝；它们不是本goal新增FIX或当前施工授权。
+
+| 剩余项 | 已实现事实与缺口 | 涉及owner | 初估自有基础库产品行 / 人周 |
+|---|---|---|---|
+| 驻留KV的原生成熟消费 | Linux CUDA原FI消费页/变长端口；CPU/Apple/Vulkan为显式Gather等参考recipe，有额外全KV展开。单请求可选原dense/native视图，但完整模型增长有效长度与reuse尚未证实；多请求变长不能以参考copy签高性能 | compute_route_cpu/apple/vulkan、对应graph routes及成熟Provider；Windows CUDA另核原Provider资格 | 只缺窄view/layout桥时500–1,500 / 2–4；若须新增两个平台成熟native attention adapter，总2,000–6,000 / 6–12，互为情景而不相加 |
+| 小范围KV更新和模型编码闭环 | F2可实际范围copy，PagedArena给精确页writer/F4成功发布；消费fixture由现有copy/Scatter更新，尚未证明所选真实模型的量化KV、RoPE位置、跨页和多会话布局。格式/位置规则归engine，重复通用bridge才归库 | compute_batch、原路线import/copy与既有ops/Provider | 若真实consumer暴露窄通用接缝0–1,500 / 0–4；若缺新的数学/编码，须重新研究，不能给可靠上界 |
+| 稳定slot/plan及设备输出消费 | 原artifact/独立Invocation可复用，FI同完整indptr key复用plan；增长/重排会显式prepare，capture当前false。logits到sampling/流输出的实际端到端往返未验证 | 对应compute/graph routes；实际新增采样数学须独立owner准入 | 可能不需新增库代码；窄输出/prepare接缝0–1,500 / 0–4，capture不是必做条件 |
+
+估计是对成熟实现做适配与验收的设计尺度，不包含自研kernel/整引擎，也不是统一LOC实测。
+若现有native dense消费已满足单请求且无需新编码，基础库残留可能约500–3,000行、2–8人周；
+若四路线多请求都要求高效native/equivalent attention且需两个新成熟adapter，规划约
+3,000–8,000行、8–16人周。测试、依赖集成与真实机器数值/故障/性能验收另计约同量级测试行；
+无法从当前证据证明选定哪一情景，先做模型纵切才可收窄。私有driver成本UNKNOWN属于
+部署准入边界，不能靠新增预算API消除；未资格化的Windows FI不自动进入适配完成量。
+
+据此原高性能engine **14,000–30,000自有产品行、10,000–20,000测试行、12–24人周**暂保留。
+这是基础机制及目标数学/layout已具备时的engine范围；上述基础库工作单列，不能重复塞入
+engine平台适配行。如果适配桥落在库中，engine只剩普通接线；是否减少总行数取决于实际
+重复glue被移除多少，当前没有相同目标engine前后基线，无法给净减少百分比。
+
+残留行分为三类：模型/权重/tokenizer/位置/采样/请求调度/prefix淘汰是合理领域代码；
+调用HYLE与处理具名资格/错误是普通接线；重写last-use/页权限/metadata版本或每路线一套
+batch生命周期则是应审计的重复机制。目标应缩小第三类与昂贵workaround，而非把全部
+14–30k压入基础库。已测基础库新增2610行不能机械从engine估计减去。
+
+下一轮消费者验收可固定两条有限旅程：一模型长上下文单请求逐步decode；同模型两种
+长度请求交错prefill/decode、结束与取消。按路线记新增/dirty KV bytes、额外整历史copy、
+host/device往返、plan/compile/allocation次数和等待，独立logits参照通过后才做定向P1/P2。
+先验证Linux CUDA成熟native，再验证Apple/Vulkan的驻留native等价消费是否满足同目标；
+失败应回到表中具体owner，不能由本研究自动扩本goal或启动完整engine。
