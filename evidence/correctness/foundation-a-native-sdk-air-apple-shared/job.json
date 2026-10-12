@@ -244,5 +244,62 @@
       "dyld[56755]: <3E6646F9-73DB-3FE8-9A54-A3F92883E11E> /Users/kiro/hyle-scratch/compute-unified/foundation-a-native-sdk-apple-shared-546b0d246/relocated/lib/libhyle_compute_ggml_runtime.0.1.0.dylib"
     ]
   },
-  "verdict": "PASS_FOUNDATION_A_NATIVE_ONLY_AIR_APPLE_SHARED_RELOCATED_SDK"
+  "verdict": "PASS_FOUNDATION_A_NATIVE_ONLY_AIR_APPLE_SHARED_RELOCATED_SDK",
+  "raw_logs": {
+    "archive": "raw-logs.zip",
+    "sha256": "6f148fa7bdb8a8a7d2eef17400366d9473a9a6875b45a9e5192e8963409b04b7",
+    "stage_hashes_refer_to": "archive entries with original names"
+  },
+  "readable_logs": {
+    "absence-cpu.log": {
+      "raw_sha256": "c246e64649c4de9b328e42bc6553656ed412c643dba2e3c9438638aca9bc1c82",
+      "readable_sha256": "c246e64649c4de9b328e42bc6553656ed412c643dba2e3c9438638aca9bc1c82",
+      "transform": "Remove line-ending spaces/tabs; original bytes in raw-logs.zip"
+    },
+    "absence-cuda.log": {
+      "raw_sha256": "1dcf3c73c194a8a00ce7f8c0e69b70962789fcce414f7226dfc945d87d451afe",
+      "readable_sha256": "1dcf3c73c194a8a00ce7f8c0e69b70962789fcce414f7226dfc945d87d451afe",
+      "transform": "Remove line-ending spaces/tabs; original bytes in raw-logs.zip"
+    },
+    "absence-vulkan.log": {
+      "raw_sha256": "f99e2f15e94336766f0173274db89f850cd34a9f6803761ede07bb57294320ef",
+      "readable_sha256": "f99e2f15e94336766f0173274db89f850cd34a9f6803761ede07bb57294320ef",
+      "transform": "Remove line-ending spaces/tabs; original bytes in raw-logs.zip"
+    },
+    "configure.log": {
+      "raw_sha256": "96cafbde3c5263d5c336850bb564aa7a0ada45f344da03098dceb40e873c30b3",
+      "readable_sha256": "96cafbde3c5263d5c336850bb564aa7a0ada45f344da03098dceb40e873c30b3",
+      "transform": "Remove line-ending spaces/tabs; original bytes in raw-logs.zip"
+    },
+    "consumer-build.log": {
+      "raw_sha256": "bd52d422e1e99bad08f8715014dd527d93b3995e1c6d8f42676684f90cd9318b",
+      "readable_sha256": "bd52d422e1e99bad08f8715014dd527d93b3995e1c6d8f42676684f90cd9318b",
+      "transform": "Remove line-ending spaces/tabs; original bytes in raw-logs.zip"
+    },
+    "consumer-configure.log": {
+      "raw_sha256": "6f756e91c523d9353ae9d1190633ef14e71a5eccd3736669d9706bd2681b90e2",
+      "readable_sha256": "6f756e91c523d9353ae9d1190633ef14e71a5eccd3736669d9706bd2681b90e2",
+      "transform": "Remove line-ending spaces/tabs; original bytes in raw-logs.zip"
+    },
+    "dependencies-finite.log": {
+      "raw_sha256": "f507d86ea859bbc42dba9194e96c6144846c38c239fa79fe387e3b0ce5ddd9f0",
+      "readable_sha256": "f507d86ea859bbc42dba9194e96c6144846c38c239fa79fe387e3b0ce5ddd9f0",
+      "transform": "Remove line-ending spaces/tabs; original bytes in raw-logs.zip"
+    },
+    "install.log": {
+      "raw_sha256": "d4c3cc18b06a7cbeaed258399dd3f01ea68cbe133521b87a03c19dfc4d75ece5",
+      "readable_sha256": "d4c3cc18b06a7cbeaed258399dd3f01ea68cbe133521b87a03c19dfc4d75ece5",
+      "transform": "Remove line-ending spaces/tabs; original bytes in raw-logs.zip"
+    },
+    "producer.log": {
+      "raw_sha256": "2380f8095885c5543a8ae662aadaeef5ed4980ddaddfe863b5a7096e16101fc5",
+      "readable_sha256": "2380f8095885c5543a8ae662aadaeef5ed4980ddaddfe863b5a7096e16101fc5",
+      "transform": "Remove line-ending spaces/tabs; original bytes in raw-logs.zip"
+    },
+    "run-finite.log": {
+      "raw_sha256": "624ed7a6a2b69263dab5027c8731dc85389be632a60436d1b3116bf3e9bf4fd9",
+      "readable_sha256": "624ed7a6a2b69263dab5027c8731dc85389be632a60436d1b3116bf3e9bf4fd9",
+      "transform": "Remove line-ending spaces/tabs; original bytes in raw-logs.zip"
+    }
+  }
 }

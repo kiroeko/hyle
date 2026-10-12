@@ -6,7 +6,7 @@
 -- Detecting CXX compile features - done
 -- Performing Test CMAKE_HAVE_LIBC_PTHREAD
 -- Performing Test CMAKE_HAVE_LIBC_PTHREAD - Success
--- Found Threads: TRUE  
+-- Found Threads: TRUE
 -- Configuring done (0.1s)
 -- Generating done (0.0s)
 -- Build files have been written to: /root/hyle-scratch/compute-unified/foundation-a-native-sdk-vulkan-static-546b0d246/consumer

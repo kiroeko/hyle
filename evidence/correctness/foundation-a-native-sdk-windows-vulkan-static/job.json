@@ -236,5 +236,67 @@
     "Hyle_metadata_no_source_build_staging_paths": true
   },
   "runtime_dlls": {},
-  "verdict": "PASS_FOUNDATION_A_NATIVE_ONLY_VULKAN_STATIC_RELOCATED_SDK"
+  "verdict": "PASS_FOUNDATION_A_NATIVE_ONLY_VULKAN_STATIC_RELOCATED_SDK",
+  "raw_logs": {
+    "archive": "raw-logs.zip",
+    "sha256": "667888bb4ca846d41f18767dbf82038d62f58f078b9918fe9a4649c1536c36f6",
+    "stage_hashes_refer_to": "archive entries with original names"
+  },
+  "readable_logs": {
+    "absence-apple.log": {
+      "raw_sha256": "09e3b5548685196e9b4676865b2d8f01c82eab9deed6954bd54bc74669bce8a8",
+      "readable_sha256": "09e3b5548685196e9b4676865b2d8f01c82eab9deed6954bd54bc74669bce8a8",
+      "transform": "Remove line-ending spaces/tabs; original bytes in raw-logs.zip"
+    },
+    "absence-cpu.log": {
+      "raw_sha256": "0bf2bef4aac3c141d2bd32a22abb6554a1a25937f2b0c74e1adc253143d1d5bd",
+      "readable_sha256": "0bf2bef4aac3c141d2bd32a22abb6554a1a25937f2b0c74e1adc253143d1d5bd",
+      "transform": "Remove line-ending spaces/tabs; original bytes in raw-logs.zip"
+    },
+    "absence-cuda.log": {
+      "raw_sha256": "5fd550a6ac0e2c81c882d48fe4b619cd306a75a18f48a1682e00abef1d58d888",
+      "readable_sha256": "5fd550a6ac0e2c81c882d48fe4b619cd306a75a18f48a1682e00abef1d58d888",
+      "transform": "Remove line-ending spaces/tabs; original bytes in raw-logs.zip"
+    },
+    "configure.log": {
+      "raw_sha256": "dba01b30e1f988d71f54a8b76f98920255de7a1f7a4ac89640a4e805b9ae9b6c",
+      "readable_sha256": "5c92f22f297a6d5f1d524f098c09f3a89f4e54e35bfd14b2cee2cf6be6d9729a",
+      "transform": "Remove line-ending spaces/tabs; original bytes in raw-logs.zip"
+    },
+    "consumer-build.log": {
+      "raw_sha256": "e578fcbcc3889ac09ec499ce8009fe55f2d741e4082503f1d2d5cb2ed93dd8f1",
+      "readable_sha256": "15595e5b8bc944f612e23a394c100f56a2198eee0e21160fb03657d08738a484",
+      "transform": "Remove line-ending spaces/tabs; original bytes in raw-logs.zip"
+    },
+    "consumer-configure.log": {
+      "raw_sha256": "6f9244c06ad03621e1893c207714de623ad74671e428c528e30aac1deeda5cde",
+      "readable_sha256": "6f9244c06ad03621e1893c207714de623ad74671e428c528e30aac1deeda5cde",
+      "transform": "Remove line-ending spaces/tabs; original bytes in raw-logs.zip"
+    },
+    "identity.log": {
+      "raw_sha256": "fc0da0dd7e8d2c9d1419aa11e4801acb7158a0e185c28122c0fd6292a65f4044",
+      "readable_sha256": "26931578aa4bac80bb780de7c905247b2ea81af03af0a9f2e77654d7278a1461",
+      "transform": "Remove line-ending spaces/tabs; original bytes in raw-logs.zip"
+    },
+    "imports-finite.log": {
+      "raw_sha256": "47c9a000c5e07939a62159fb1f2b47c84e340d086bd4ce59d3797700b732cb45",
+      "readable_sha256": "7ad44de452d414461aa70cc32d15a576c324f04ac43fd6158be28dee65d65476",
+      "transform": "Remove line-ending spaces/tabs; original bytes in raw-logs.zip"
+    },
+    "install.log": {
+      "raw_sha256": "141a46834f66dcb9d4fdf86cba29420f98a2662f7bcef61537869f743e8cfd66",
+      "readable_sha256": "141a46834f66dcb9d4fdf86cba29420f98a2662f7bcef61537869f743e8cfd66",
+      "transform": "Remove line-ending spaces/tabs; original bytes in raw-logs.zip"
+    },
+    "producer.log": {
+      "raw_sha256": "43003494222dfd5328f1d51a146da21b8c692ac1f5fcc10e05cdbcf12b755a69",
+      "readable_sha256": "e8ff4f276ea50d890d4e228b0073c030d69acf968cb8e7cbc221aaa457560cf9",
+      "transform": "Remove line-ending spaces/tabs; original bytes in raw-logs.zip"
+    },
+    "run-finite.log": {
+      "raw_sha256": "c9a5b1a0e133e4341c612c1f24082d9e0bb844a3d4922973d2269f98109fa135",
+      "readable_sha256": "0fd26c2f2353a54bcf2d8cb9335c4d696325520021f9403d8667a43d84ef04e4",
+      "transform": "Remove line-ending spaces/tabs; original bytes in raw-logs.zip"
+    }
+  }
 }

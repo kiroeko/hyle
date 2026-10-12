@@ -6,3 +6,6 @@ native/hybrid finite/control/error/slot与public CPU effect正常/failed accepte
 zero-output/close old-result两个ordinarySDK消费者、四独立公开头、缺CUDA/Apple请求均 PASS。
 otool和实际DYLD_PRINT_LIBRARIES证明所有libhyle从relocated/lib加载；metadata没有旧source/
 build/staging路径。没有全库算子回放、CPU fallback或锁升级；具体机器/依赖/过程由job/logs记录。
+
+原始日志逐byte保存在raw-logs.zip；job stage SHA指archive原条目。旁列.log仅移除行尾空白，
+其mirror SHA另记readable_logs；不修改原失败、命令或结果。

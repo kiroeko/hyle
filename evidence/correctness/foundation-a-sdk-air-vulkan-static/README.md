@@ -9,3 +9,6 @@ public qualified CPU effect/write-GPU-read/accepted failure/cancel/effect-only/c
 全部 PASS。四受影响公开头独立TU、otool/runtime、CMake无source/build/staging路径和缺CUDA/
 Apple请求预期诊断 PASS。只依prefix，不添source include，不把Windows/软件Vulkan代签Air。
 实际命令/耗时/身份/日志hash在job.json。
+
+原始日志逐byte保存在raw-logs.zip；job stage SHA指archive原条目。旁列.log仅移除行尾空白，
+其mirror SHA另记readable_logs；不修改原失败、命令或结果。

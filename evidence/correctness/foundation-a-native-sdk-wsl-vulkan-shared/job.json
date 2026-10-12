@@ -284,5 +284,57 @@
     }
   },
   "gpu_math": "NOT_APPLICABLE: only llvmpipe/software Vulkan exposed; current card requires package build, not GPU verdict",
-  "verdict": "PASS_FOUNDATION_A_NATIVE_ONLY_WSL_VULKAN_SHARED_RELOCATED_SDK"
+  "verdict": "PASS_FOUNDATION_A_NATIVE_ONLY_WSL_VULKAN_SHARED_RELOCATED_SDK",
+  "raw_logs": {
+    "archive": "raw-logs.zip",
+    "sha256": "a8c19d2c072b1ac31443467f43497bfa4fefcb4868617edc6ba66e5b5520367a",
+    "stage_hashes_refer_to": "archive entries with original names"
+  },
+  "readable_logs": {
+    "absence-apple.log": {
+      "raw_sha256": "14c1e632fea3950072d99e417dcef94a887978011d1603fcf877ac563fe79292",
+      "readable_sha256": "14c1e632fea3950072d99e417dcef94a887978011d1603fcf877ac563fe79292",
+      "transform": "Remove line-ending spaces/tabs; original bytes in raw-logs.zip"
+    },
+    "absence-cpu.log": {
+      "raw_sha256": "e3e8702661e412c6ebedaca42f6637068e9be18860bb2ce52c897f2db843a5cc",
+      "readable_sha256": "e3e8702661e412c6ebedaca42f6637068e9be18860bb2ce52c897f2db843a5cc",
+      "transform": "Remove line-ending spaces/tabs; original bytes in raw-logs.zip"
+    },
+    "absence-cuda.log": {
+      "raw_sha256": "fe4bb313822c5446d06f9156653084059972146a819a525533ea3344fe0542db",
+      "readable_sha256": "fe4bb313822c5446d06f9156653084059972146a819a525533ea3344fe0542db",
+      "transform": "Remove line-ending spaces/tabs; original bytes in raw-logs.zip"
+    },
+    "configure.log": {
+      "raw_sha256": "07617741ac2606245606d1750d07b01976bced16f4016874dbf13b04dffe4242",
+      "readable_sha256": "07617741ac2606245606d1750d07b01976bced16f4016874dbf13b04dffe4242",
+      "transform": "Remove line-ending spaces/tabs; original bytes in raw-logs.zip"
+    },
+    "consumer-build.log": {
+      "raw_sha256": "226a61f59a6ba6700888c359efc41ced0c6420225dc5483f9861f4ad6842e561",
+      "readable_sha256": "226a61f59a6ba6700888c359efc41ced0c6420225dc5483f9861f4ad6842e561",
+      "transform": "Remove line-ending spaces/tabs; original bytes in raw-logs.zip"
+    },
+    "consumer-configure.log": {
+      "raw_sha256": "5e00f943181956c79f9447868f29d0d661c3642b55a834cf62144226891260f5",
+      "readable_sha256": "5e00f943181956c79f9447868f29d0d661c3642b55a834cf62144226891260f5",
+      "transform": "Remove line-ending spaces/tabs; original bytes in raw-logs.zip"
+    },
+    "dependencies-finite.log": {
+      "raw_sha256": "a770dbd420a8eb1607416ddca5463c602a7f2320258fe27c9955a8b30e3b6179",
+      "readable_sha256": "a770dbd420a8eb1607416ddca5463c602a7f2320258fe27c9955a8b30e3b6179",
+      "transform": "Remove line-ending spaces/tabs; original bytes in raw-logs.zip"
+    },
+    "install.log": {
+      "raw_sha256": "dccce0fb8cd3673aa266195fe8edba95a43f4a3916877b0f979f038d58b33454",
+      "readable_sha256": "dccce0fb8cd3673aa266195fe8edba95a43f4a3916877b0f979f038d58b33454",
+      "transform": "Remove line-ending spaces/tabs; original bytes in raw-logs.zip"
+    },
+    "producer.log": {
+      "raw_sha256": "bbf0014bb3e00bea0fd8fc14c7d4504bef6d25b75c7c35d0d49767265cd50bd8",
+      "readable_sha256": "bbf0014bb3e00bea0fd8fc14c7d4504bef6d25b75c7c35d0d49767265cd50bd8",
+      "transform": "Remove line-ending spaces/tabs; original bytes in raw-logs.zip"
+    }
+  }
 }

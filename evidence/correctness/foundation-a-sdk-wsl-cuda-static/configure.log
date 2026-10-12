@@ -33,8 +33,8 @@
 -- GGML_SYSTEM_ARCH: x86
 -- Including CPU backend
 -- x86 detected
--- Adding CPU backend variant ggml-cpu:  
--- Found CUDAToolkit: /usr/local/cuda-13.3/targets/x86_64-linux/include (found version "13.3.73") 
+-- Adding CPU backend variant ggml-cpu:
+-- Found CUDAToolkit: /usr/local/cuda-13.3/targets/x86_64-linux/include (found version "13.3.73")
 -- CUDA Toolkit found
 -- Using CMAKE_CUDA_ARCHITECTURES=80;89-real CMAKE_CUDA_ARCHITECTURES_NATIVE=89-real
 -- FlashAttention K-V type combinations: f16-f16;q4_0-q4_0;q8_0-q8_0;bf16-bf16
@@ -42,7 +42,7 @@
 -- Including CUDA backend
 -- ggml version: 0.24.0
 -- ggml commit:  456172ec733a135778adcd32d00e576a58232e45-hyle
--- Found CUDAToolkit: /usr/local/cuda-13.3/targets/x86_64-linux/include (found suitable version "13.3.73", minimum required is "13.3") 
+-- Found CUDAToolkit: /usr/local/cuda-13.3/targets/x86_64-linux/include (found suitable version "13.3.73", minimum required is "13.3")
 -- HYLE: reusing locked CPU SDK at /root/.cache/hyle/dependencies/v1/sdks/torch-cpu/Linux-8dea5bcfed4b53ca0f6852517bea4b4d1f3ff1cc0c21da662e834d34af1ec824/libtorch
 -- HYLE: original TorchAO/ATen CPU low precision -- locked LibTorch 2.8.0
 -- HYLE: reusing locked CPU SDK at /root/.cache/hyle/dependencies/v1/sdks/torch-cpu/Linux-8dea5bcfed4b53ca0f6852517bea4b4d1f3ff1cc0c21da662e834d34af1ec824/libtorch

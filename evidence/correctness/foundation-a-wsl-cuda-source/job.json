@@ -63,5 +63,27 @@
       "sha256": "8e1b0a9a2162a4008af93df3cc6cee23034311aa9ab692d7d99de4dacad90700"
     }
   ],
-  "test_parallel": 1
+  "test_parallel": 1,
+  "raw_logs": {
+    "archive": "raw-logs.zip",
+    "sha256": "a8060d9ee3e57faaaee1cc6907f469cd0cc3962e6758b73486fb316cee89ad78",
+    "stage_hashes_refer_to": "archive entries with original names"
+  },
+  "readable_logs": {
+    "build.log": {
+      "raw_sha256": "f4b4d7cefd968b6e7964bd58129e2721705d3ee6b6075b6d6ed3fe485f959c09",
+      "readable_sha256": "f4b4d7cefd968b6e7964bd58129e2721705d3ee6b6075b6d6ed3fe485f959c09",
+      "transform": "Remove line-ending spaces/tabs; original bytes in raw-logs.zip"
+    },
+    "configure.log": {
+      "raw_sha256": "dbfdd6a256b681f2753f1255eb92381bb5fd5ccf2aab2592872bfb457ad05bb2",
+      "readable_sha256": "30e6e18c02d10d977d24908f918346ccad366dc40b6271845118623b51046bec",
+      "transform": "Remove line-ending spaces/tabs; original bytes in raw-logs.zip"
+    },
+    "journey.log": {
+      "raw_sha256": "8e1b0a9a2162a4008af93df3cc6cee23034311aa9ab692d7d99de4dacad90700",
+      "readable_sha256": "8e1b0a9a2162a4008af93df3cc6cee23034311aa9ab692d7d99de4dacad90700",
+      "transform": "Remove line-ending spaces/tabs; original bytes in raw-logs.zip"
+    }
+  }
 }

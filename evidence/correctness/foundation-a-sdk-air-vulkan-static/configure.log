@@ -9,7 +9,7 @@
 -- Including CPU backend
 -- ARM detected
 -- Checking for ARM features using flags:
--- Adding CPU backend variant ggml-cpu:  
+-- Adding CPU backend variant ggml-cpu:
 -- Vulkan found
 -- GL_KHR_cooperative_matrix supported by glslc
 -- GL_NV_cooperative_matrix2 supported by glslc

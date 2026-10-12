@@ -6,3 +6,6 @@ Ubuntu24.04/GCC14.2/CUDA13.3/真实RTX4070，原配置树按可用内存并行�
 实际install→rename迁址、两个公开头独立TU、ldd/runtime与缺Apple/Vulkan诊断 PASS。
 原锁定LibTorch CUDA12与nativeCUDA13的第三方loader warnings保留，不升级依赖。
 实际命令、耗时、身份及日志hash见job.json。
+
+原始日志逐byte保存在raw-logs.zip；job stage SHA指archive原条目。旁列.log仅移除行尾空白，
+其mirror SHA另记readable_logs；不修改原失败、命令或结果。

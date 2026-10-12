@@ -1,7 +1,7 @@
 {
   "candidate": "546b0d2468e5de29031c34668f4afa4bc31b9a17",
   "tree": "103356d6136c16ad97e5c054ce73958e7bd2c25f",
-  "audit_head": "41d8f60784b358822a4b1a7abe5482d2a53d593f",
+  "audit_head": "53a3841c8f035d26d39758ee4f84d8e428611375",
   "product_diff_from_candidate": [],
   "scope": "A finite exact/control/qualified CPU effects; not F4/F5 or whole inference performance",
   "installed_cells": [
@@ -84,7 +84,7 @@
     },
     {
       "record": "evidence/correctness/foundation-a-sdk-air-vulkan-static/job.json",
-      "sha256": "45ab11fdf21e6bfed5ebdf87532f5d5fa1073beacd62811e0c7b0c1754067d3f",
+      "sha256": "802b6a34470f808f3e7a29aa10639a9aa3a0235919e01a9e9b1db0e7e920e4aa",
       "verdict": "PASS_FOUNDATION_A_AIR_CPU_VULKAN_STATIC_RELOCATED_SDK",
       "profile": "cpu-vulkan",
       "host": "air",
@@ -94,7 +94,7 @@
     },
     {
       "record": "evidence/correctness/foundation-a-sdk-air-vulkan-shared/job.json",
-      "sha256": "9339a062eb1032816dfb60f540c0882b6cf3e5a826d3391f2216706e96a96042",
+      "sha256": "7dcd847296987e95ab57805f5cd1eb41718d02dbd420fc09e1960fe112444d65",
       "verdict": "PASS_FOUNDATION_A_AIR_CPU_VULKAN_SHARED_RELOCATED_SDK",
       "profile": "cpu-vulkan",
       "host": "air",
@@ -104,7 +104,7 @@
     },
     {
       "record": "evidence/correctness/foundation-a-sdk-wsl-cuda-static/job.json",
-      "sha256": "fe2eefe46ebd47ecbce9ca2e379d0b7a142e05b0790195b28c757400931dca1d",
+      "sha256": "b9648394740ba4c3465f830b7e4d30723d644a9f955d8e17e655399156642477",
       "verdict": "PASS_FOUNDATION_A_WSL_CPU_CUDA_STATIC_RELOCATED_SDK",
       "profile": "cpu-cuda",
       "host": "wsl",
@@ -114,7 +114,7 @@
     },
     {
       "record": "evidence/correctness/foundation-a-sdk-wsl-cuda-shared/job.json",
-      "sha256": "14184481e6eb635bfa93d0433b21c6aaf154ed22e3a82ef19a3d98089fe4c96c",
+      "sha256": "2b33027c762ae4c97d13b28c1741e2f430389a5a0273e2688d3279d908508614",
       "verdict": "PASS_FOUNDATION_A_WSL_CPU_CUDA_SHARED_RELOCATED_SDK",
       "profile": "cpu-cuda",
       "host": "wsl",
@@ -124,7 +124,7 @@
     },
     {
       "record": "evidence/correctness/foundation-a-native-sdk-windows-vulkan-static/job.json",
-      "sha256": "5bd13d9289fa9a1d383bec491fa98fd3ff9213985a1d865df2c041013dbb6252",
+      "sha256": "f13e07e899adde70c3fc6268d9b7e39a0f04cce0cf291191fefc0a07b6b838b5",
       "verdict": "PASS_FOUNDATION_A_NATIVE_ONLY_VULKAN_STATIC_RELOCATED_SDK",
       "profile": "vulkan",
       "host": "windows",
@@ -134,7 +134,7 @@
     },
     {
       "record": "evidence/correctness/foundation-a-native-sdk-windows-vulkan-shared/job.json",
-      "sha256": "e259eb552d427915468b8798bc97d315415a475ade65934e377bfa2e77cafdbf",
+      "sha256": "0995bef8491ae3970831686e1ac57cc839c702b79b1c921effd462d7e9e12179",
       "verdict": "PASS_FOUNDATION_A_NATIVE_ONLY_VULKAN_SHARED_RELOCATED_SDK",
       "profile": "vulkan",
       "host": "windows",
@@ -144,7 +144,7 @@
     },
     {
       "record": "evidence/correctness/foundation-a-native-sdk-air-apple-static/job.json",
-      "sha256": "a9531d82fce3ee5c059d7b5884909b95b0182da73079340c06b0d8e1750f29a9",
+      "sha256": "e6187202de67a298ad4f6034a6df244e5cb400d6dd6ba5235e8610ac4b86f884",
       "verdict": "PASS_FOUNDATION_A_NATIVE_ONLY_AIR_APPLE_STATIC_RELOCATED_SDK",
       "profile": "apple",
       "host": "air",
@@ -154,7 +154,7 @@
     },
     {
       "record": "evidence/correctness/foundation-a-native-sdk-air-apple-shared/job.json",
-      "sha256": "99d85c31ebf1afee5c0c385934fa6576e33823ad0e196e13d543ba6f3566bf0e",
+      "sha256": "d289ab65bb5c8c3a2db6bf1c33df36db39c5c8168d022c8f848bef3ebcbfee9b",
       "verdict": "PASS_FOUNDATION_A_NATIVE_ONLY_AIR_APPLE_SHARED_RELOCATED_SDK",
       "profile": "apple",
       "host": "air",
@@ -164,7 +164,7 @@
     },
     {
       "record": "evidence/correctness/foundation-a-native-sdk-air-vulkan-static/job.json",
-      "sha256": "1be803cdebbda065bd08772d9588c11d3b098ba1f1bc8ef007c50252defdd79b",
+      "sha256": "9f4d3a8615649154d154ca01ad76208c1148adb6c07521548553fbf727d9d715",
       "verdict": "PASS_FOUNDATION_A_NATIVE_ONLY_AIR_VULKAN_STATIC_RELOCATED_SDK",
       "profile": "vulkan",
       "host": "air",
@@ -174,7 +174,7 @@
     },
     {
       "record": "evidence/correctness/foundation-a-native-sdk-air-vulkan-shared/job.json",
-      "sha256": "6857eed8f2014002e6cc646715ec9b6fe3d970109a47663273a5ef7f081de4da",
+      "sha256": "45d9793108504638caca09467d0655eb073f854349251e57992ac2d91589389c",
       "verdict": "PASS_FOUNDATION_A_NATIVE_ONLY_AIR_VULKAN_SHARED_RELOCATED_SDK",
       "profile": "vulkan",
       "host": "air",
@@ -184,7 +184,7 @@
     },
     {
       "record": "evidence/correctness/foundation-a-native-sdk-wsl-vulkan-static/job.json",
-      "sha256": "5c6b016320d906c34c7cebe4c142321bdcc9a379a5b64adf320cf562f7b65b3e",
+      "sha256": "81731f1973b1022ba28c12dc959fb09419cac094f7d2e213e8156b252b71471c",
       "verdict": "PASS_FOUNDATION_A_NATIVE_ONLY_WSL_VULKAN_STATIC_RELOCATED_SDK",
       "profile": "vulkan",
       "host": "wsl",
@@ -194,7 +194,7 @@
     },
     {
       "record": "evidence/correctness/foundation-a-native-sdk-wsl-vulkan-shared/job.json",
-      "sha256": "f1388803c09fe3bf1bb13749e6f91d7cf62a1d8bae0f4f3d56e581d64d4814bc",
+      "sha256": "032f944499d1c2453187b872c12e6d1636b67df5aca3ab17a17fe867508256e9",
       "verdict": "PASS_FOUNDATION_A_NATIVE_ONLY_WSL_VULKAN_SHARED_RELOCATED_SDK",
       "profile": "vulkan",
       "host": "wsl",
