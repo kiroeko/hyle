@@ -368,10 +368,15 @@
     },
     {
       "module": "compute_provider_ggml",
-      "state": "CANDIDATE",
-      "record": "docs/implementation/tasks/compute/inference-g01-cpu-paged-resident.md",
-      "summary": "CPU准确页candidate1e9：Windows五tests与连续页演化PASS，GCC比较警告有限修正；原3cf ASan14tests保留，最终风险/SDK/P1进行，整个G01未完。",
-      "candidate": "1e9cdfd45307ea4a15b92374377ad2b268203193"
+      "state": "CLOSED",
+      "record": "docs/implementation/tasks/compute/inference-g01-cpu-paged-terminal.md",
+      "summary": "G01 CPU page16 finite read CLOSED: exact owned page table and native roots, two original CPU cores; source/three san/relocated static+shared/Air mixed CPU PASS, qualified P1 all5pct noninferiority+controls PASS verify0. D256 small LOSS retained; GPU pages/G02-G10 incomplete.",
+      "candidate": "1e9cdfd45307ea4a15b92374377ad2b268203193",
+      "performance": {
+        "tier": "P1",
+        "material_margin_pct": 5,
+        "evidence": "evidence/performance/inference-g01-cpu-page16-w1-p1/receipt.json"
+      }
     },
     {
       "module": "graph_provider_onednn",
@@ -564,10 +569,15 @@
     },
     {
       "module": "compute_ggml_runtime",
-      "state": "CANDIDATE",
-      "record": "docs/implementation/tasks/compute/inference-g01-cpu-paged-resident.md",
-      "summary": "CP-A01 runtime42f：page16等价shift/mask，无新增fields/API或数学公式；两锁输出/tree认证，Windows源五tests PASS。原1695s DIAGNOSTIC与FAIL保留，纠正消费hash，适用风险/交付/原P1复验进行。",
-      "candidate": "42f98b94f33bdbb252b9259ece33533cf763fa41"
+      "state": "CLOSED",
+      "record": "docs/implementation/tasks/compute/inference-g01-cpu-paged-terminal.md",
+      "summary": "G01 CPU page16 finite read CLOSED: exact owned page table and native roots, two original CPU cores; source/three san/relocated static+shared/Air mixed CPU PASS, qualified P1 all5pct noninferiority+controls PASS verify0. D256 small LOSS retained; GPU pages/G02-G10 incomplete.",
+      "candidate": "42f98b94f33bdbb252b9259ece33533cf763fa41",
+      "performance": {
+        "tier": "P1",
+        "material_margin_pct": 5,
+        "evidence": "evidence/performance/inference-g01-cpu-page16-w1-p1/receipt.json"
+      }
     },
     {
       "module": "compute_provider_ggml_cuda",

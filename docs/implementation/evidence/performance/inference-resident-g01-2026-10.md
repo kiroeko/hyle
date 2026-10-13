@@ -82,3 +82,13 @@ fixed_attention_graph拒第二个flash与Concat，导致整合graph每步走mana
 band PARITY，短D64 1.0014–1.0084方向INCONCLUSIVE/band PARITY；所有非劣门PASS。
 机制为原record-safe多tagged flash/Concat固定记录，不再每步managed编码。三次Vulkan
 multi正式累计2789.077s，原两次LOSS/FAIL保留；不是一般capture、Windows GPU或整模型证书。
+
+
+CPU exact-page/page16的[最终资格与性能](../../../../evidence/performance/inference-g01-cpu-page16-w1-p1/README.md)
+已PASS：provider1e9/runtime42f、cleanf9a、contract3d05ed56、实际W1-WIN/MSVC19.50/CPU2/
+单native线程。16AA、n15产品120/controls30、1657.156s，QUALIFIED/全部controls/三个
+consumer-evidence/5%非劣PASS，原verify0。混合D256比0.9867–0.9912、长prefillD256
+0.9882–0.9932，均方向LOSS、band PARITY；短D64 0.9869–1.0084方向INCONCLUSIVE/
+band PARITY。private池UNKNOWN，peer immutable-ready冷cache额外存储/复制单列收费。
+原1695.110s诊断因旧provenance hash为DIAGNOSTIC，原D64症状和raw不重标资格；两个
+正式活动累计3352.266s。只关闭CPU已验page16读取域，不签producer/growth性能、GPU或联合。

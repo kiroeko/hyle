@@ -136,3 +136,12 @@ Windows `C:\public\project-hyle\hyle` 是产品真相；WSL/Air仅一次性验�
 最终owner、支持域/负空间、三部署路线、正确性/寿命/错误/关闭、结构成本及适用资格。
 所有当期适用风险未完成不得通过，所有产品owner应有terminal，真实产品输入固定且
 工作树可交接。goal只在这些条件完成时标complete；启动文档或第一次模型输出不算完成。
+
+
+2026-10-14 CPU精确page16读取[有限轮终审](../compute/inference-g01-cpu-paged-terminal.md)已
+CLOSED：provider1e9/runtime42f，source/三san/relocated static3+shared3/实际Air mixed CPU
+全部PASS；正式3d05合同1657.156s QUALIFIED/三个5%非劣/全部controls/verify0，D256
+小幅LOSS如实保留。G02共同exact-read group接缝MQ-LP-01已实现5ce；首fixture默认
+256字节对齐下两块backing不足的FAIL保留，修fixture后Windows八source tests PASS。
+graph仍AUDITED，风险/交付与native分页输入数学/权限桥仍须完成。全项计数继续0/10，
+GPU高性能页/G02native/G03–G10不由这两个有限进展代签。
