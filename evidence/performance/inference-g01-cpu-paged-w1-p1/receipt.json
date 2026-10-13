@@ -1,0 +1,59 @@
+{
+  "cpu_product_candidate": "1e9cdfd45307ea4a15b92374377ad2b268203193",
+  "performance_source": "4484e3f43ced16781cf04b4d7567e2820e9352e6",
+  "contract_sha256": "8d033b8207a8afce7b662841e0dd2a4ce85b24b64d8a1d7ae6dab26f80ddc0b7",
+  "qualification": "DIAGNOSTIC",
+  "performance": "UNPROVEN",
+  "verify_exit": 0,
+  "job_exit": 2,
+  "elapsed_seconds": 1695.1100000000151,
+  "machine": "actual W1-WIN i9-13900K, MSVC19.50, registered logicalCPU2, single native thread",
+  "aa_processes": 16,
+  "product_processes": 120,
+  "control_processes": 30,
+  "sample_stages": [
+    15
+  ],
+  "paired_rounds": 16,
+  "minimum_epoch_iterations": 1,
+  "rows": [
+    {
+      "id": "cpu-paged-mixed-d256",
+      "ratio_range": [
+        0.9796784956020624,
+        0.9867631214406649
+      ],
+      "noninferiority": "PASS",
+      "exact": "PARITY",
+      "direction": "LOSS"
+    },
+    {
+      "id": "cpu-paged-prefill-d256",
+      "ratio_range": [
+        0.9815126050420168,
+        0.9864636209813875
+      ],
+      "noninferiority": "PASS",
+      "exact": "PARITY",
+      "direction": "LOSS"
+    },
+    {
+      "id": "cpu-paged-holdout-d64",
+      "ratio_range": [
+        0.8093811284729211,
+        0.8169500818020361
+      ],
+      "noninferiority": "FAIL",
+      "exact": "LOSE",
+      "direction": "LOSS"
+    }
+  ],
+  "private_pool_upper": "UNKNOWN both arms",
+  "peer_cold_extra_cache_bytes": {
+    "D256": 3670016,
+    "D64": 39936
+  },
+  "original_core": "pristine ffa CPU AVX2 DLL compute image/ABI actually verified",
+  "scope": "warm immutable ready history; not producer/growth/GPU/G02",
+  "raw_zip_sha256": "a4a937dea7dedc93e382f512953e38fd259a01480197e17a2946136871d66b0a"
+}

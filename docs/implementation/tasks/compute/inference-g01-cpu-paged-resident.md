@@ -154,3 +154,19 @@ F1 exact pages/CPU Queue/Completion/输出lease返回、两slots/单native线程
 原stats/controls/16AA/order/allocation/placement/n15/31/5%全部保，合同及实际DLL/source/
 SDK/header identities在正式前固定。[消费合同](../../../../bench/inference_resident_sdpa/cpu_paged_p1/consumer-provenance.md)。
 selector共享bench unknown_paths条件仍保原BLOCKED计划，不改工具、不跑全库。
+
+2026-10-14原P1已terminal1695.110s，AA16/产品120/controls30、control与原verify0。
+消费provenance JSON哈希仍旧，正式资格DIAGNOSTIC，不能签合格性能；原summary显示
+D256两点非劣PASS但相对1 LOSS约1.3-2.1%，D64约0.8094-0.8170非劣FAIL，只作为
+诊断如实保留。[原证据](../../../../evidence/performance/inference-g01-cpu-paged-w1-p1/README.md)
+封存未改原manifest。合同所有三workload与实际JSON/markdown byte hashes、真实immutable
+alternate cache ownership描述已校正，直接调用原product-evidence evaluator三点PASS；
+所有统计/样本/controls/16rounds/5%不变，未借此重标旧数据QUALIFIED。
+
+runtime CP-A01退AUDITED，provider1e9保持CANDIDATE：P0源码证明当前四K/V地址点在
+显式page_size16每次做动态64-bit除/余；真实CPU主域page16可用完全等价shift4/mask15。
+有限FIX只原私有地址helper，normal非paged早return与generic正页原映射保；不新增
+字段/metadata或改dot/softmax/SIMD/reduction，不改公共API/layout/数学或由诊断点选路。
+这是原CP-02地址承载成本审计修正，旧诊断不作为公共合同变动授权。两原CPU锁同改
+并认证原manifest/许可，复用source/两个core数学、三san/SDK直接消费者；不可变后
+用已纠正完整合同重新P1，保1695s与旧FAIL，不以file/log目录重置预算。无需全库验证。

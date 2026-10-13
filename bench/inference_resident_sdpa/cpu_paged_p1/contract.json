@@ -159,12 +159,12 @@
       "consumer_key": "inference-cpu-paged/cpu-paged-mixed-d256",
       "provenance": {
         "path": "consumer-provenance.json",
-        "sha256": "67261fd6456d0d920cf84cc55665203f03b64c67d54e0150ba6bdc9e877a9ddd"
+        "sha256": "80393e38fd41650de55a7d7818959bc2983e945be670c55e076c85ea95432d37"
       },
       "ownership_topology": {
-        "candidate": "ordinary CPU BatchProgram/native ragged flash, two slots and original F1/Queue/Completion/output lease",
-        "peer": "same BatchProgram with private same-build extension carrying independent original ggml flash graphs; original provider leaf storage lifecycle unchanged",
-        "equivalence": "same packed ready bytes/layout generation/two slots/update metadata/F1 guards/Queue/Completion/output return/native_threads1"
+        "candidate": "ordinary CPU BatchProgram, original exact ready pages/native paged math, two slots/F1/Queue/Completion/output lease",
+        "peer": "same outer BatchProgram/exact original page permissions, independently prepared original CPU graphs reading a separately owned cold contiguous cache; exact immutable histories retained",
+        "equivalence": "same mathematical ready snapshot/layout/two slots/update/F1 permissions/Queue/Completion/output return/native_threads1; different native storage, cold conversion/extra bytes explicit"
       },
       "material_contribution": {
         "frequency": 1,
@@ -174,7 +174,7 @@
         "denominator": "one two-request attention episode including explicit same-topology metadata update and owner return",
         "derivation": "named provisional single-machine attention fragment, not model frequency or end-to-end token/s"
       },
-      "semantic_contract": "BF16 packed NHD requests2 GQA8/2 Q[1, 17] KV[1024, 768] D256 causal=True; capacity tail13; original F32 query/accumulation BF16 output and F16 causal mask; same ready bind, explicit same-topology metadata update, two slots, checked completion and output owner release",
+      "semantic_contract": "BF16 physical NHD pages requests2 GQA8/2 Q[1, 17] KV[1024, 768] D256 causal=True; page_size16, reverse page ordering, one shared page, unused page/tail sentinel; original F32 query/accumulation BF16 output and F16 causal mask; same ready bind, explicit same-topology metadata update, two slots, checked completion and output owner release",
       "comparability": "COMPARABLE",
       "peer_id": "original-ggml-cpu-flash",
       "metric": {
@@ -199,7 +199,7 @@
           "requests": 2
         }
       },
-      "setup": "cold metadata/native graph and F16 causal mask, resident ready buffers, query/output payloads and cplan workspace; independent double oracle/readonly checks, four warm episodes per arm before timing; native private pool upper UNKNOWN",
+      "setup": "cold independently prepared native graph/mask/query/workspace, product original physical ready pages, peer cold valid-row alternate contiguous cache with extra copy/storage explicitly billed; immutable original page owners throughout; double oracle/readonly and four warm episodes per arm; private upper UNKNOWN",
       "charged_phases": [
         "explicit same-topology BatchInvocation.update_batch with original metadata staging/upload and host wait",
         "original BatchProgram/F1 lease use admission and coherent buffer mapping",
@@ -242,12 +242,12 @@
       "consumer_key": "inference-cpu-paged/cpu-paged-prefill-d256",
       "provenance": {
         "path": "consumer-provenance.json",
-        "sha256": "67261fd6456d0d920cf84cc55665203f03b64c67d54e0150ba6bdc9e877a9ddd"
+        "sha256": "80393e38fd41650de55a7d7818959bc2983e945be670c55e076c85ea95432d37"
       },
       "ownership_topology": {
-        "candidate": "ordinary CPU BatchProgram/native ragged flash, two slots and original F1/Queue/Completion/output lease",
-        "peer": "same BatchProgram with private same-build extension carrying independent original ggml flash graphs; original provider leaf storage lifecycle unchanged",
-        "equivalence": "same packed ready bytes/layout generation/two slots/update metadata/F1 guards/Queue/Completion/output return/native_threads1"
+        "candidate": "ordinary CPU BatchProgram, original exact ready pages/native paged math, two slots/F1/Queue/Completion/output lease",
+        "peer": "same outer BatchProgram/exact original page permissions, independently prepared original CPU graphs reading a separately owned cold contiguous cache; exact immutable histories retained",
+        "equivalence": "same mathematical ready snapshot/layout/two slots/update/F1 permissions/Queue/Completion/output return/native_threads1; different native storage, cold conversion/extra bytes explicit"
       },
       "material_contribution": {
         "frequency": 1,
@@ -257,7 +257,7 @@
         "denominator": "one two-request attention episode including explicit same-topology metadata update and owner return",
         "derivation": "named provisional single-machine attention fragment, not model frequency or end-to-end token/s"
       },
-      "semantic_contract": "BF16 packed NHD requests2 GQA8/2 Q[64, 128] KV[1024, 768] D256 causal=True; capacity tail13; original F32 query/accumulation BF16 output and F16 causal mask; same ready bind, explicit same-topology metadata update, two slots, checked completion and output owner release",
+      "semantic_contract": "BF16 physical NHD pages requests2 GQA8/2 Q[64, 128] KV[1024, 768] D256 causal=True; page_size16, reverse page ordering, one shared page, unused page/tail sentinel; original F32 query/accumulation BF16 output and F16 causal mask; same ready bind, explicit same-topology metadata update, two slots, checked completion and output owner release",
       "comparability": "COMPARABLE",
       "peer_id": "original-ggml-cpu-flash",
       "metric": {
@@ -282,7 +282,7 @@
           "requests": 2
         }
       },
-      "setup": "cold metadata/native graph and F16 causal mask, resident ready buffers, query/output payloads and cplan workspace; independent double oracle/readonly checks, four warm episodes per arm before timing; native private pool upper UNKNOWN",
+      "setup": "cold independently prepared native graph/mask/query/workspace, product original physical ready pages, peer cold valid-row alternate contiguous cache with extra copy/storage explicitly billed; immutable original page owners throughout; double oracle/readonly and four warm episodes per arm; private upper UNKNOWN",
       "charged_phases": [
         "explicit same-topology BatchInvocation.update_batch with original metadata staging/upload and host wait",
         "original BatchProgram/F1 lease use admission and coherent buffer mapping",
@@ -325,12 +325,12 @@
       "consumer_key": "inference-cpu-paged/cpu-paged-holdout-d64",
       "provenance": {
         "path": "consumer-provenance.json",
-        "sha256": "67261fd6456d0d920cf84cc55665203f03b64c67d54e0150ba6bdc9e877a9ddd"
+        "sha256": "80393e38fd41650de55a7d7818959bc2983e945be670c55e076c85ea95432d37"
       },
       "ownership_topology": {
-        "candidate": "ordinary CPU BatchProgram/native ragged flash, two slots and original F1/Queue/Completion/output lease",
-        "peer": "same BatchProgram with private same-build extension carrying independent original ggml flash graphs; original provider leaf storage lifecycle unchanged",
-        "equivalence": "same packed ready bytes/layout generation/two slots/update metadata/F1 guards/Queue/Completion/output return/native_threads1"
+        "candidate": "ordinary CPU BatchProgram, original exact ready pages/native paged math, two slots/F1/Queue/Completion/output lease",
+        "peer": "same outer BatchProgram/exact original page permissions, independently prepared original CPU graphs reading a separately owned cold contiguous cache; exact immutable histories retained",
+        "equivalence": "same mathematical ready snapshot/layout/two slots/update/F1 permissions/Queue/Completion/output return/native_threads1; different native storage, cold conversion/extra bytes explicit"
       },
       "material_contribution": {
         "frequency": 1,
@@ -340,7 +340,7 @@
         "denominator": "one two-request attention episode including explicit same-topology metadata update and owner return",
         "derivation": "named provisional single-machine attention fragment, not model frequency or end-to-end token/s"
       },
-      "semantic_contract": "BF16 packed NHD requests2 GQA8/2 Q[1, 17] KV[31, 47] D64 causal=False; capacity tail13; original F32 query/accumulation BF16 output and F16 causal mask; same ready bind, explicit same-topology metadata update, two slots, checked completion and output owner release",
+      "semantic_contract": "BF16 physical NHD pages requests2 GQA8/2 Q[1, 17] KV[31, 47] D64 causal=False; page_size16, reverse page ordering, one shared page, unused page/tail sentinel; original F32 query/accumulation BF16 output and F16 causal mask; same ready bind, explicit same-topology metadata update, two slots, checked completion and output owner release",
       "comparability": "COMPARABLE",
       "peer_id": "original-ggml-cpu-flash",
       "metric": {
@@ -365,7 +365,7 @@
           "requests": 2
         }
       },
-      "setup": "cold metadata/native graph and F16 causal mask, resident ready buffers, query/output payloads and cplan workspace; independent double oracle/readonly checks, four warm episodes per arm before timing; native private pool upper UNKNOWN",
+      "setup": "cold independently prepared native graph/mask/query/workspace, product original physical ready pages, peer cold valid-row alternate contiguous cache with extra copy/storage explicitly billed; immutable original page owners throughout; double oracle/readonly and four warm episodes per arm; private upper UNKNOWN",
       "charged_phases": [
         "explicit same-topology BatchInvocation.update_batch with original metadata staging/upload and host wait",
         "original BatchProgram/F1 lease use admission and coherent buffer mapping",

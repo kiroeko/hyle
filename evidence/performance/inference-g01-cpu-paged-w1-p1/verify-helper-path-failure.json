@@ -1,0 +1,14 @@
+{
+  "command": [
+    "python",
+    "C:\\h7\\g01-ragged-p1-source\\scripts\\hyle-perf.py",
+    "verify",
+    "--contract",
+    "C:\\h7\\g01-ragged-p1-source\\bench\\inference_resident_sdpa\\cpu_paged_p1\\contract.json",
+    "--manifest",
+    "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g01\\cpu-paged-p1-qualification-1\\manifest.json"
+  ],
+  "exit_code": 1,
+  "stdout": "",
+  "stderr": "hyle-perf: cannot load performance contract C:\\h7\\g01-ragged-p1-source\\bench\\inference_resident_sdpa\\cpu_paged_p1\\contract.json: [Errno 2] No such file or directory: 'C:\\\\h7\\\\g01-ragged-p1-source\\\\bench\\\\inference_resident_sdpa\\\\cpu_paged_p1\\\\contract.json'\n"
+}

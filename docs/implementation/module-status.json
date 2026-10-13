@@ -565,10 +565,9 @@
     },
     {
       "module": "compute_ggml_runtime",
-      "state": "CANDIDATE",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/inference-g01-cpu-paged-resident.md",
-      "summary": "G01 CPU准确页 CANDIDATE：原Batch/exact frame＋原flash地址映射，无KV历史复制；两dtype三D/nonzero double、64步owned topology与另64步增长/跨页/重排/请求成员/旧结果、原四ragged风险测试PASS。三交付/风险/P1待验，原终审和所有FAIL保留。",
-      "candidate": "3cf78c88b5e306bd4e3a8e6d59d14b716a822578"
+      "summary": "CP-A01地址层P0有限修正：已资格page_size16每K/V读点做动态64-bit除/余，改等价位移/掩码，generic页保原映射；无数学/API/layout/普通metadata变化。原1695s DIAGNOSTIC及全部失败保留，合同provenance漏更新已纠正；不把诊断数据签QUALIFIED。"
     },
     {
       "module": "compute_provider_ggml_cuda",
