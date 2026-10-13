@@ -170,3 +170,10 @@ runtime CP-A01退AUDITED，provider1e9保持CANDIDATE：P0源码证明当前四K
 这是原CP-02地址承载成本审计修正，旧诊断不作为公共合同变动授权。两原CPU锁同改
 并认证原manifest/许可，复用source/两个core数学、三san/SDK直接消费者；不可变后
 用已纠正完整合同重新P1，保1695s与旧FAIL，不以file/log目录重置预算。无需全库验证。
+
+CP-A01 runtime不可变candidate 42f98b94f33bdbb252b9259ece33533cf763fa41，provider1e9未变。
+两个原核patch输出/tree身份认证PASS，Windows当前shared源树同五tests PASS
+（20.203s配置/30.125s原Runtime定向增量/40.813s run）；原after_sha忘更新的配置
+FAIL6.953s保留，按原pin重放11上下文并认证实际after hash，不改prepare_source/checker。
+接下来适用三san、更新static/shared安装consumer和Air实际mixed CPU，P1合同hash修正
+先调用原product-evidence evaluator三点PASS；原DIAGNOSTIC不改标，不签CLOSED。

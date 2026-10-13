@@ -565,9 +565,10 @@
     },
     {
       "module": "compute_ggml_runtime",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/inference-g01-cpu-paged-resident.md",
-      "summary": "CP-A01地址层P0有限修正：已资格page_size16每K/V读点做动态64-bit除/余，改等价位移/掩码，generic页保原映射；无数学/API/layout/普通metadata变化。原1695s DIAGNOSTIC及全部失败保留，合同provenance漏更新已纠正；不把诊断数据签QUALIFIED。"
+      "summary": "CP-A01 runtime42f：page16等价shift/mask，无新增fields/API或数学公式；两锁输出/tree认证，Windows源五tests PASS。原1695s DIAGNOSTIC与FAIL保留，纠正消费hash，适用风险/交付/原P1复验进行。",
+      "candidate": "42f98b94f33bdbb252b9259ece33533cf763fa41"
     },
     {
       "module": "compute_provider_ggml_cuda",
