@@ -5,6 +5,9 @@
 CPU不可变candidate：`d91a523df9bce21eb81c13d9bf2a8f3f7d3ea80f`。
 Vulkan RR不可变candidate：`a40003f7edb54a3da3113d0cd401b46211e0b0f0`；原Vulkan精度
 candidate `d91a523df9bce21eb81c13d9bf2a8f3f7d3ea80f`和全部原证据保留。
+当前Vulkan Provider/Route端口修正candidate为
+`3d92eee97a70f7788dfb9bbcda73f6e0f801959f`，按[端口卡](inference-g01-vulkan-resident-ports.md)
+验收；runtime的a400数学/shader/Work不改。本卡继续拥有CPU原candidate及resident总合同。
 授权与完整目标见[缺口执行总卡](../project/inference-gaps-goal-execution-2026-10.md)。
 本卡先修 G01 中已有 SDPA 的实际消费和成本缺陷，不签整个 G01，也不替代多请求分页及
 Apple/Vulkan 联合分页的后续 owner 卡。

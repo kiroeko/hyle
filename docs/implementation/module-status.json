@@ -531,9 +531,10 @@
     },
     {
       "module": "compute_route_vulkan",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/inference-g01-vulkan-resident-ports.md",
-      "summary": "G01 VP-01/02/03 AUDITED：实跑capacity输入3个warm Copy，冻结有限原SDPA vec4 pitch直接端口与Provider冷origin准入；保原F5及a400全部证据/FAIL，公共工具和数学不改。"
+      "summary": "G01 VP固定candidate：合格resident SDPA direct ports保native strides，Copy3→0，Provider冷vec4/origin检查；Air9公开tests和Windows增量编译PASS，SDK/san/P1待验，原FAIL保留。",
+      "candidate": "3d92eee97a70f7788dfb9bbcda73f6e0f801959f"
     },
     {
       "module": "graph_route_vulkan",
@@ -548,9 +549,10 @@
     },
     {
       "module": "compute_provider_ggml_vulkan",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/inference-g01-vulkan-resident-ports.md",
-      "summary": "G01 VP-01/02/03 AUDITED：实跑capacity输入3个warm Copy，冻结有限原SDPA vec4 pitch直接端口与Provider冷origin准入；保原F5及a400全部证据/FAIL，公共工具和数学不改。"
+      "summary": "G01 VP固定candidate：合格resident SDPA direct ports保native strides，Copy3→0，Provider冷vec4/origin检查；Air9公开tests和Windows增量编译PASS，SDK/san/P1待验，原FAIL保留。",
+      "candidate": "3d92eee97a70f7788dfb9bbcda73f6e0f801959f"
     },
     {
       "module": "compute_ggml_runtime",

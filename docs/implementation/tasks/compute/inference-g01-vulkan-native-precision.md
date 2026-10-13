@@ -1,8 +1,9 @@
 # G01 原生 Vulkan attention 精度资格
 
 状态：CANDIDATE，2026-10-13。新增owner：`compute_ggml_runtime`；baseline：
-`d97126cfdfa3b73ebf385fb95be27d989ef5f683`。原Provider owner仍按
-[resident SDPA卡](inference-g01-resident-sdpa.md)同一candidate验证。完整授权来自
+`d97126cfdfa3b73ebf385fb95be27d989ef5f683`。Provider/Route端口形状现按
+[端口卡](inference-g01-vulkan-resident-ports.md)的3d92 candidate验证，runtime仍保持a400。
+完整授权来自
 [缺口goal](../project/inference-gaps-goal-execution-2026-10.md)；不是重新检查CLOSED来找问题。
 RR不可变candidate：`a40003f7edb54a3da3113d0cd401b46211e0b0f0`；原精度candidate
 `d91a523df9bce21eb81c13d9bf2a8f3f7d3ea80f`及原证据/FAIL保留。
