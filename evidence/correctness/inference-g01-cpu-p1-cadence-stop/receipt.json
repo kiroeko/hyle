@@ -1,0 +1,32 @@
+{
+  "pid": 56424,
+  "command": [
+    "python",
+    "C:\\public\\project-hyle\\hyle\\scripts\\hyle-perf.py",
+    "qualify-platform",
+    "--contract",
+    "C:\\public\\project-hyle\\hyle\\bench\\inference_resident_sdpa\\cpu_p1\\contract.json",
+    "--source",
+    "C:\\public\\project-hyle\\hyle\\bench\\inference_resident_sdpa\\cpu_p1",
+    "--machine",
+    "W1-WIN",
+    "--peer",
+    "original-ggml-cpu-flash=C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g01\\original-ggml-cpu-peer",
+    "--build",
+    "C:\\h7\\g01-cpu-p1-fresh-1",
+    "--output",
+    "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g01\\cpu-p1-qualification-1"
+  ],
+  "state": "TERMINAL",
+  "cpu_product_candidate": "d91a523df9bce21eb81c13d9bf2a8f3f7d3ea80f",
+  "source_commit": "e546dafd930ff45a72712f0c5a3675760971046f",
+  "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g01\\cpu-p1-qualification-1.log",
+  "exit_code": 4294967295,
+  "elapsed_seconds": 851.5,
+  "verdict": "STOPPED_BEFORE_PRODUCT_SAMPLES",
+  "reason": "CPUprefill133.5ms/op;104pairedrounds/min2 iterations approximately55s/prefillpair perprocess and>2hours fulln15. Originalv1 cadence too expensive; no qualifiedperformanceclaim. v2 fixes16pairedrounds beforeproductsampling; samepeer/math/processcounts/margins/controls.",
+  "completed_aa_logs": 5,
+  "old_contract_sha256": "e270eea61921a1eacd3b12c5cb0c7cfd7d6f8964262781a59f30fd508cfdd686",
+  "new_contract_sha256": "d766ab8f24fbc7f0ea8ad0fffa66949e2f04dba675188a8f014a75b7e62606f2",
+  "raw_zip_sha256": "6502b607e64a47bf3c18954c0ec1b81f2087836f2d49b4595407a2213f7b15c0"
+}

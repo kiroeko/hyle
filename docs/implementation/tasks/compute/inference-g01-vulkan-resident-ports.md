@@ -1,6 +1,7 @@
 # G01 Vulkan 驻留端口的真实零拷贝消费
 
-状态：CANDIDATE，2026-10-13；owner `compute_route_vulkan`、`compute_provider_ggml_vulkan`。
+状态：CLOSED，2026-10-13；owner `compute_route_vulkan`、`compute_provider_ggml_vulkan`。
+终局见[有限终审](inference-g01-vulkan-resident-terminal.md)，下面保原施工事实。
 不可变candidate `3d92eee97a70f7788dfb9bbcda73f6e0f801959f`；runtime仍为原a400。
 baseline `702b6fed97ba1fe7dd2c4d80e992aeb7423f92d3`；原CLOSED F5 candidate与证据保留。
 完整授权来自[十项goal](../project/inference-gaps-goal-execution-2026-10.md)。

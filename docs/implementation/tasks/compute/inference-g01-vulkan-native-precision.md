@@ -1,6 +1,7 @@
 # G01 原生 Vulkan attention 精度资格
 
-状态：CANDIDATE，2026-10-13。新增owner：`compute_ggml_runtime`；baseline：
+状态：CLOSED，2026-10-13。终局见[有限终审](inference-g01-vulkan-resident-terminal.md)。
+新增owner：`compute_ggml_runtime`；baseline：
 `d97126cfdfa3b73ebf385fb95be27d989ef5f683`。Provider/Route端口形状现按
 [端口卡](inference-g01-vulkan-resident-ports.md)的3d92 candidate验证，runtime仍保持a400。
 完整授权来自

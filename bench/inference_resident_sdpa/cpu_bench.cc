@@ -230,7 +230,7 @@ void measure(int rows, int keys, int depth, bool causal, bool verify_only) {
                " KV=" + std::to_string(keys) + " D=" + std::to_string(depth) +
                " causal=" + std::to_string(causal))
       .batch(1)
-      .epochs(104)
+      .epochs(16)
       .minEpochIterations(2)
       .minEpochTime(std::chrono::milliseconds(4))
       .performanceCounters(false);
@@ -276,7 +276,7 @@ int main(int, char **argv) {
       "# HYLE_CPU_RESIDENT_RUN run_nonce=%s apple_qos=%s qos_ok=%s "
       "affinity_topology=%s caller_cpu=%s affinity_ok=%s verify_only=%d "
       "parent_mask=%s priority=%s placement=%d execution_order=%s "
-      "allocation_order=%s aa_route=%s paired_mode=nanobench-compare\n",
+      "allocation_order=%s aa_route=%s paired_mode=nanobench-compare paired_rounds=16\n",
       hyle::bench::perf::run_nonce(), qos.name, qos.ok, affinity.topology,
       affinity.cpu, affinity.ok, verify_only, parent_mask.c_str(),
       priority.c_str(), HYLE_RESIDENT_PLACEMENT,

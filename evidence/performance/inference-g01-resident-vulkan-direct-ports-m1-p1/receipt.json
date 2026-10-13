@@ -1,0 +1,49 @@
+{
+  "candidate": "3d92eee97a70f7788dfb9bbcda73f6e0f801959f",
+  "contract_sha256": "4ae724d684be30814e2f28d7d933f771b7e03dda56b86cb51464cef706031720",
+  "qualification": "PASS",
+  "performance": "PASS",
+  "verify_exit": 0,
+  "elapsed_seconds": 3669.3865417919997,
+  "rows": [
+    {
+      "id": "resident-decode-d256",
+      "ratio_range": [
+        0.994128829062647,
+        1.0016521051671363
+      ],
+      "exact": "PARITY",
+      "noninferiority": "PASS",
+      "direction": "INCONCLUSIVE"
+    },
+    {
+      "id": "resident-prefill-d256",
+      "ratio_range": [
+        1.0010203585831592,
+        1.0031619399717857
+      ],
+      "exact": "PARITY",
+      "noninferiority": "PASS",
+      "direction": "WIN"
+    },
+    {
+      "id": "resident-holdout-d64",
+      "ratio_range": [
+        1.0034516095526491,
+        1.00917517236944
+      ],
+      "exact": "PARITY",
+      "noninferiority": "PASS",
+      "direction": "WIN"
+    }
+  ],
+  "sample_stages": [
+    15,
+    31
+  ],
+  "aa_processes": 16,
+  "product_processes": 368,
+  "control_processes": 92,
+  "raw_zip_sha256": "615dd7beca847d412659a4ad0b7df4daf190e8585c3204fabfa303067227eff3",
+  "previous_failures_preserved": true
+}

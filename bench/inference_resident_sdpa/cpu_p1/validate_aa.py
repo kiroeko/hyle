@@ -99,6 +99,7 @@ def main():
                             'parent_mask': policy['affinity_mask'], 'priority': str(subprocess.ABOVE_NORMAL_PRIORITY_CLASS),
                             'affinity_ok': '1', 'verify_only': '0', 'aa_route': route,
                             'affinity_topology': 'single-logical-cpu', 'paired_mode': 'nanobench-compare',
+                            'paired_rounds': '16',
                             'execution_order': 'peer-first' if peer_first else 'candidate-first',
                             'allocation_order': 'peer-first' if allocation_first else 'candidate-first',
                             'placement': '1' if variant == 'placement' else '0'}

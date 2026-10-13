@@ -3,7 +3,8 @@
 产品仍为CPU candidate `d91a523df9bce21eb81c13d9bf2a8f3f7d3ea80f`，比较适配器固定于
 `901d926f4f9b14037d4586d0f3f170a199746516`，CPU原核pin为FFa4e8b80930。
 [合同](contract.json)的canonical SHA为
-`e270eea61921a1eacd3b12c5cb0c7cfd7d6f8964262781a59f30fd508cfdd686`。
+`d766ab8f24fbc7f0ea8ad0fffa66949e2f04dba675188a8f014a75b7e62606f2`（v2）。
+原v1/e270及原fresh1停止记录保留。
 
 三行均是BF16 BHSD、B1/GQA8/2、容量尾13：Q1/128、KV1024/D256 causal，和
 Q17/KV257/D64 noncausal。同ready输入、readonly cache、两个invocation、一个native
@@ -23,7 +24,9 @@ causal mask为O(Q×KV)，workspace依原cplan。native/private pool上界两侧�
 双执行顺序/双allocation顺序实跑，共16个A/A process；沿原5%偏置/10%gross instability
 规则，不用增加样本寻找PASS。A/A通过后才按八strata×n15和30个原公共controls裁决。
 字段、源码和产物身份由原hyle-perf runner记录，公共工具不改。5%非劣与实际方向分开
-报告；卡内原10%预算不抹除。
+报告；卡内原10%预算不抹除。CPU长prefill冷诊断约133ms/op，v1沿用104paired rounds
+使每process约55s；尚未取正式product samples时停止v1。v2固定16paired rounds并
+核对实际遥测，原min2 iterations/4ms、双顺序、进程数、controls和阈值不变。
 
 当前新三形状的两个placement/control已实际编译，独立double oracle、finite、readonly与
 双slots预检通过。正式A/A和P1尚未运行；正在运行的Air Vulkan P1结束后才允许下一个

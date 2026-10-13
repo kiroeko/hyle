@@ -1,6 +1,6 @@
 {
   "schema": "hyle.perf.contract/v1",
-  "id": "inference-resident-cpu-w1-p1-v1",
+  "id": "inference-resident-cpu-w1-p1-v2",
   "module": "compute_provider_ggml",
   "claim": "Finite ordinary CPU resident BF16 BHSD GQA8/2 decode/prefill and noncausal D64 holdout versus pinned original flash graph carried through identical public PreparedOperation/CPUQueue/Completion/caller-output lifecycle. Single native thread; private pool upper bounds remain UNKNOWN. Not whole-engine throughput or all G01 domains.",
   "candidate": {
@@ -534,6 +534,12 @@
         }
       ],
       "measurement_adapter": "nanobench-paired-rows-v1"
+    },
+    "cpu_measurement": {
+      "paired_rounds": 16,
+      "minimum_epoch_iterations": 2,
+      "minimum_epoch_time_ms": 4,
+      "reason": "cold preflight measured133ms perlongprefill, original104roundscost55s perprocess;16pairedrounds fixedbeforeformalproduct samples, same math/processn15/31 andmargins;controlsunchanged"
     }
   }
 }

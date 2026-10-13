@@ -3,6 +3,9 @@
 > 历史快照：记录2026-09-17基础架构终审的候选与范围，不是当前模块清单或未完成队列。
 > 最新状态以[当前登记](../../module-status.json)为准；旧名称及排除项仅描述当轮事实。
 
+2026-10的G01 resident有限增量见[新分账](inference-resident-g01-2026-10.md)，包括两次
+原LOSS和最终同合同结果；不修改本历史快照的98个合同组计数。
+
 本页是 [`full-library-scorecard.json`](full-library-scorecard.json) 的人读结论。机器账本绑定
 当轮 48 个 `CLOSED` factor，覆盖 R2 共同语义、
 Mem 定向尾项、R3–R6 四路线及 [R7 终局](../../tasks/compute/four-route-foundation-final-review.md)。

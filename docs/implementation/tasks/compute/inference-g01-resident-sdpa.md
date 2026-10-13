@@ -1,6 +1,6 @@
 # G01 驻留 SDPA：视图消费与原生 fused 路径
 
-状态：CPU/Vulkan owner CANDIDATE，2026-10-13。owner：`compute_provider_ggml`、
+状态：CPU owner CANDIDATE，Vulkan有限子批CLOSED，2026-10-13。owner：`compute_provider_ggml`、
 `compute_provider_ggml_vulkan`；baseline：`070609442806ebfe6a0dc8d6594b7388c494f20b`。
 CPU不可变candidate：`d91a523df9bce21eb81c13d9bf2a8f3f7d3ea80f`。
 Vulkan RR不可变candidate：`a40003f7edb54a3da3113d0cd401b46211e0b0f0`；原Vulkan精度
@@ -215,3 +215,10 @@ RR[正式P1](../../../../evidence/performance/inference-g01-resident-vulkan-repl
 PASS但方向LOSS，D64留出非劣UNRESOLVED且方向LOSS。新源码事实是外层canonical
 adapter仍会复制全KV，已按真实owner登记[驻留端口卡](inference-g01-vulkan-resident-ports.md)
 SCOPED；原本次数值、交付和san PASS仍只签其有限数学/生命周期，不签零拷贝成本。
+
+CPU正式v1在冷诊断/A-A途中主动停止，原构建/日志/851.5s保留于
+[排期停止记录](../../../../evidence/correctness/inference-g01-cpu-p1-cadence-stop/README.md)。
+长prefill约133ms/op，104paired rounds会给每个process约55s数学，正式八strata×n15
+需约两小时；这不是产品性能FAIL。v2在正式product samples前固定16paired rounds与
+实际遥测校验，5%/原10%预算、数学/peer、n15/31、原controls不改。CPU产品d91a不改，
+新benchmark需独立clean source身份重新资格；公共仪器不改，不把v1未完成项签PASS。

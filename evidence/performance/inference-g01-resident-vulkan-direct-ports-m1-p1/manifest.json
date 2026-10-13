@@ -1,0 +1,2446 @@
+{
+  "artifacts": [
+    {
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-fresh-build-4/CMakeCache.txt",
+        "sha256": "e4e442c2a0e75fa1e66bf90c86ed49099231783e5e08f4654bf6db7ab6652f8c"
+      },
+      "id": "cmake-cache"
+    },
+    {
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-fresh-build-4/g01_perf_control",
+        "sha256": "76db2574d7db70fe7159aac49cdf2a4f357012e68222c0c403d1a33fbc030c51"
+      },
+      "id": "common-control"
+    },
+    {
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-fresh-build-4/g01_resident_bench_placement",
+        "sha256": "e6e646156169cf5925d1fe1f708849ee907589e1386df0b80a8dcb0e21456bc3"
+      },
+      "id": "resident-placement"
+    },
+    {
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-fresh-build-4/g01_resident_bench",
+        "sha256": "c1b3ed6409c50d97c4e9ccd7de795e93c2312152a0b4c67d2e89bb54dc6f2bd0"
+      },
+      "id": "resident-primary"
+    },
+    {
+      "file": {
+        "path": "/usr/bin/c++",
+        "sha256": "34129c71a01a74f7f3b2443521519b2e5447553fa187f5fcafaaf8c42cc192e2"
+      },
+      "id": "toolchain-compiler"
+    },
+    {
+      "file": {
+        "path": "/Library/Developer/CommandLineTools/usr/bin/ld",
+        "sha256": "374d9f0713bce2c8a9e1e82bde51615d5433516a10d99b63107eb6ee70542e4c"
+      },
+      "id": "toolchain-linker"
+    }
+  ],
+  "artifacts_stable": true,
+  "build": {
+    "configuration": "Release",
+    "details": {
+      "architecture": "default",
+      "build_stdout_sha256": "ea41b67dffb8a05b6a157c1b929ac9174298a638e1b8917b7d02a9571a6123ea",
+      "cmake_cache": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "CMAKE_GENERATOR": "Ninja",
+        "CMAKE_GENERATOR_PLATFORM": "",
+        "CMAKE_GENERATOR_TOOLSET": "",
+        "CMAKE_INTERPROCEDURAL_OPTIMIZATION": "OFF",
+        "HYLE_SIMD_EXACT_TARGET": "",
+        "HYLE_STATIC": "ON"
+      },
+      "cmake_cache_sha256": "e4e442c2a0e75fa1e66bf90c86ed49099231783e5e08f4654bf6db7ab6652f8c",
+      "compiler": {
+        "compiler_id": "AppleClang",
+        "compiler_version": "21.0.0.21000334"
+      },
+      "configuration_observation": {
+        "available": [
+          "Release"
+        ],
+        "mechanism": "CMAKE_BUILD_TYPE",
+        "proven": true,
+        "value": "Release"
+      },
+      "configure_stdout_sha256": "aa6f86e639752d1a9d446fbe8647d1e0b123cfc6bb52c81644b22d62cab93c67",
+      "generator": "Ninja",
+      "machine_profile": "M1-MAC",
+      "requested_cache": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "CMAKE_CXX_FLAGS": "-Wno-error=tautological-constant-out-of-range-compare",
+        "CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
+        "CMAKE_INTERPROCEDURAL_OPTIMIZATION": "OFF",
+        "CMAKE_OSX_DEPLOYMENT_TARGET": "14.4",
+        "HYLE_BUILD_BENCH": "OFF",
+        "HYLE_BUILD_TESTS": "OFF",
+        "HYLE_COMPONENTS": "compute;graph",
+        "HYLE_COMPUTE_ROUTES": "vulkan",
+        "HYLE_DEP_SOURCE_CACHE": "/Users/kiro/Library/Caches/hyle/dependencies/v1",
+        "HYLE_INSTALL": "OFF",
+        "HYLE_RESIDENT_GLSLANG": "/opt/homebrew/bin/glslangValidator",
+        "HYLE_RESIDENT_REFERENCE_SOURCE": "/Users/kiro/hyle-scratch/compute-unified/g01-original-ggml-peer",
+        "HYLE_SANITIZER": "off",
+        "HYLE_SIMD_EXACT_TARGET": "",
+        "HYLE_STATIC": "ON",
+        "HYLE_TRACE": "OFF",
+        "HYLE_WERROR": "ON"
+      },
+      "requested_configuration": "Release",
+      "targets": [
+        "g01_perf_control",
+        "g01_resident_bench",
+        "g01_resident_bench_placement"
+      ],
+      "toolchain": {
+        "cmake_compiler_record_sha256": "661f85d416ef9d157c2a329d41a10e25f60ea66d1e04d34002f6a01343285ae9",
+        "compiler_frontend_variant": "GNU",
+        "compiler_id": "AppleClang",
+        "compiler_path": "/usr/bin/c++",
+        "compiler_sha256": "34129c71a01a74f7f3b2443521519b2e5447553fa187f5fcafaaf8c42cc192e2",
+        "compiler_target": "unknown",
+        "compiler_version": "21.0.0.21000334",
+        "formal_identity_complete": false,
+        "linker_id": "AppleClang",
+        "linker_path": "/Library/Developer/CommandLineTools/usr/bin/ld",
+        "linker_sha256": "374d9f0713bce2c8a9e1e82bde51615d5433516a10d99b63107eb6ee70542e4c",
+        "linker_version": "ld: unknown options: --version",
+        "schema": "hyle.perf.toolchain-record/v1",
+        "sdk": "apple-sdk:MacOSX.sdk",
+        "stdlib": "unknown",
+        "system_name": "Darwin",
+        "system_processor": "arm64",
+        "system_version": "27.0.0"
+      }
+    },
+    "fresh": true
+  },
+  "contract_lock": {
+    "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/contract-lock.json",
+    "sha256": "0272edd0f487bc785f8765c6fc6743fe4a63cf9a11949d9e57cf6e407d46df70"
+  },
+  "contract_sha256": "4ae724d684be30814e2f28d7d933f771b7e03dda56b86cb51464cef706031720",
+  "controls": [
+    {
+      "details": {
+        "kind": "aa",
+        "maximum_bias_percent": 5.0,
+        "orders": {
+          "candidate-first": {
+            "equivalence_band": [
+              0.9523809523809523,
+              1.05
+            ],
+            "estimate": {
+              "confidence_interval": [
+                0.9999215490887805,
+                1.0001074881641918
+              ],
+              "confidence_level": 0.9893261594697833,
+              "estimator": "process-median",
+              "independent_clusters": 31,
+              "median_advantage_ratio": 1.0000183541214962,
+              "sample_count": 31
+            },
+            "reason": "median-ci-inside-equivalence-band",
+            "verdict": "PARITY"
+          },
+          "peer-first": {
+            "equivalence_band": [
+              0.9523809523809523,
+              1.05
+            ],
+            "estimate": {
+              "confidence_interval": [
+                0.9999442874684934,
+                1.0001106149480619
+              ],
+              "confidence_level": 0.9893261594697833,
+              "estimator": "process-median",
+              "independent_clusters": 31,
+              "median_advantage_ratio": 1.000003550382656,
+              "sample_count": 31
+            },
+            "reason": "median-ci-inside-equivalence-band",
+            "verdict": "PARITY"
+          }
+        }
+      },
+      "gate": "PASS",
+      "id": "aa"
+    },
+    {
+      "details": {
+        "accepted_median_band": [
+          1.025,
+          1.075
+        ],
+        "kind": "known-delta",
+        "monotonic_5_to_10": true,
+        "nominal_percent": 5.0,
+        "orders": {
+          "candidate-first": {
+            "confidence_interval": [
+              1.0500017961630113,
+              1.0501915354761746
+            ],
+            "confidence_level": 0.9893261594697833,
+            "estimator": "process-median",
+            "independent_clusters": 31,
+            "median_advantage_ratio": 1.0500819405165087,
+            "sample_count": 31
+          },
+          "peer-first": {
+            "confidence_interval": [
+              1.050017733184555,
+              1.0501538138369129
+            ],
+            "confidence_level": 0.9893261594697833,
+            "estimator": "process-median",
+            "independent_clusters": 31,
+            "median_advantage_ratio": 1.0500842524557596,
+            "sample_count": 31
+          }
+        },
+        "relative_tolerance_percent": 50.0
+      },
+      "gate": "PASS",
+      "id": "delta5"
+    },
+    {
+      "details": {
+        "accepted_median_band": [
+          1.05,
+          1.15
+        ],
+        "kind": "known-delta",
+        "monotonic_5_to_10": true,
+        "nominal_percent": 10.0,
+        "orders": {
+          "candidate-first": {
+            "confidence_interval": [
+              1.1000088745076733,
+              1.1001318873633266
+            ],
+            "confidence_level": 0.9893261594697833,
+            "estimator": "process-median",
+            "independent_clusters": 31,
+            "median_advantage_ratio": 1.1000560261065453,
+            "sample_count": 31
+          },
+          "peer-first": {
+            "confidence_interval": [
+              1.0999888974715726,
+              1.1002152145824742
+            ],
+            "confidence_level": 0.9893261594697833,
+            "estimator": "process-median",
+            "independent_clusters": 31,
+            "median_advantage_ratio": 1.1001250577707393,
+            "sample_count": 31
+          }
+        },
+        "relative_tolerance_percent": 50.0
+      },
+      "gate": "PASS",
+      "id": "delta10"
+    },
+    {
+      "details": {
+        "kind": "timer-floor",
+        "minimum_workload_floor_multiple": 20.0,
+        "workloads": [
+          {
+            "candidate_median_ns_per_op": 750348.3432003255,
+            "conservative_floor_ns_per_op": 0.23946899280707062,
+            "gate": "PASS",
+            "id": "resident-decode-d256",
+            "measurement_batch": 1,
+            "observed_multiple": 3098037.308766612,
+            "orders": {
+              "candidate-first": {
+                "candidate_median_ns_per_op": 0.23843692184267254,
+                "peer_median_ns_per_op": 0.23946899280707062
+              },
+              "peer-first": {
+                "candidate_median_ns_per_op": 0.2391861383826193,
+                "peer_median_ns_per_op": 0.2377722437350679
+              }
+            },
+            "peer_median_ns_per_op": 741883.8740090682
+          },
+          {
+            "candidate_median_ns_per_op": 4845665.55216359,
+            "conservative_floor_ns_per_op": 0.23946899280707062,
+            "gate": "PASS",
+            "id": "resident-prefill-d256",
+            "measurement_batch": 1,
+            "observed_multiple": 20235043.774821922,
+            "orders": {
+              "candidate-first": {
+                "candidate_median_ns_per_op": 0.23843692184267254,
+                "peer_median_ns_per_op": 0.23946899280707062
+              },
+              "peer-first": {
+                "candidate_median_ns_per_op": 0.2391861383826193,
+                "peer_median_ns_per_op": 0.2377722437350679
+              }
+            },
+            "peer_median_ns_per_op": 4855193.846475482
+          },
+          {
+            "candidate_median_ns_per_op": 265530.5499540665,
+            "conservative_floor_ns_per_op": 0.23946899280707062,
+            "gate": "PASS",
+            "id": "resident-holdout-d64",
+            "measurement_batch": 1,
+            "observed_multiple": 1108830.6124375465,
+            "orders": {
+              "candidate-first": {
+                "candidate_median_ns_per_op": 0.23843692184267254,
+                "peer_median_ns_per_op": 0.23946899280707062
+              },
+              "peer-first": {
+                "candidate_median_ns_per_op": 0.2391861383826193,
+                "peer_median_ns_per_op": 0.2377722437350679
+              }
+            },
+            "peer_median_ns_per_op": 267029.1144585011
+          }
+        ]
+      },
+      "gate": "PASS",
+      "id": "timer-floor"
+    },
+    {
+      "details": {
+        "kind": "placement",
+        "target_variants": [
+          "placement",
+          "primary"
+        ]
+      },
+      "gate": "PASS",
+      "id": "placement"
+    }
+  ],
+  "extensions": {
+    "control_observations_file": {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/control-observations.json",
+      "sha256": "1218bad4d9730a6ff6fa294d9074b0ed7708caabd4235592ec3cf7a222635f25"
+    },
+    "controls_file": {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/controls.json",
+      "sha256": "6c98ecf1d07c71a1b7a4ea5f3c07f96cde87a744f4b048fa8ef338afdc9c341e"
+    },
+    "created_at_utc": "2026-10-13T09:57:33.188250+00:00",
+    "formal": false,
+    "host_probe_file": {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/host-probe.json",
+      "sha256": "8b0f7f915ca153516a1a9502a9654b2146482152e246020d1564523eac267c81"
+    },
+    "mode": "qualify-platform",
+    "pre_sampling_validator_gates": [
+      {
+        "gate": "PASS",
+        "id": "artifact-identity"
+      },
+      {
+        "gate": "PASS",
+        "id": "build-contract"
+      },
+      {
+        "gate": "PASS",
+        "id": "resident-aa"
+      }
+    ],
+    "product_evidence": [
+      {
+        "errors": [],
+        "gate": "PASS",
+        "id": "resident-decode-d256",
+        "provenance_file": {
+          "path": "/Users/kiro/hyle-scratch/compute-unified/g01-vp-git-checkout/bench/inference_resident_sdpa/consumer-provenance.json",
+          "sha256": "b48e6f00bfe0b5696a771422b982c8fc2effd6f75d240a578618a8f9f6f150ff"
+        },
+        "provenance_path": "consumer-provenance.json",
+        "tier": "consumer"
+      },
+      {
+        "errors": [],
+        "gate": "PASS",
+        "id": "resident-prefill-d256",
+        "provenance_file": {
+          "path": "/Users/kiro/hyle-scratch/compute-unified/g01-vp-git-checkout/bench/inference_resident_sdpa/consumer-provenance.json",
+          "sha256": "b48e6f00bfe0b5696a771422b982c8fc2effd6f75d240a578618a8f9f6f150ff"
+        },
+        "provenance_path": "consumer-provenance.json",
+        "tier": "consumer"
+      },
+      {
+        "errors": [],
+        "gate": "PASS",
+        "id": "resident-holdout-d64",
+        "provenance_file": {
+          "path": "/Users/kiro/hyle-scratch/compute-unified/g01-vp-git-checkout/bench/inference_resident_sdpa/consumer-provenance.json",
+          "sha256": "b48e6f00bfe0b5696a771422b982c8fc2effd6f75d240a578618a8f9f6f150ff"
+        },
+        "provenance_path": "consumer-provenance.json",
+        "tier": "consumer"
+      }
+    ],
+    "product_gate_policy": "consumer-evidence-v1",
+    "product_gate_workloads": {
+      "eligible": [
+        "resident-decode-d256",
+        "resident-prefill-d256",
+        "resident-holdout-d64"
+      ],
+      "excluded": []
+    },
+    "raw_log_index_file": {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw-log-index.json",
+      "sha256": "cdeaef579871b3f34db7e63646144e1540f2b0bf36494ffbb4c05b25fbdf913f"
+    },
+    "runs": 31,
+    "sample_stages": [
+      15,
+      31
+    ]
+  },
+  "host": {
+    "child_environment_policy": {
+      "cleared_names": [
+        "ASAN_OPTIONS",
+        "CPUPROFILE",
+        "DYLD_INSERT_LIBRARIES",
+        "DYLD_LIBRARY_PATH",
+        "GLIBC_TUNABLES",
+        "GOMP_CPU_AFFINITY",
+        "KMP_AFFINITY",
+        "LD_LIBRARY_PATH",
+        "LD_PRELOAD",
+        "LSAN_OPTIONS",
+        "MALLOC_CONF",
+        "MIMALLOC_OPTIONS",
+        "TRACY_ONLY_LOCALHOST",
+        "TSAN_OPTIONS",
+        "UBSAN_OPTIONS"
+      ],
+      "cleared_prefixes": [
+        "HYLE_BENCH_",
+        "HYLE_PERF_"
+      ],
+      "fixed_values": {
+        "MKL_NUM_THREADS": "1",
+        "NUMEXPR_NUM_THREADS": "1",
+        "OMP_NUM_THREADS": "1",
+        "OPENBLAS_NUM_THREADS": "1",
+        "VECLIB_MAXIMUM_THREADS": "1"
+      },
+      "path_sha256": "ef597f72b8ad5306f877dcc0008beaca2ad560927aca12a0bf0cd97398b10fce",
+      "raw_environment_recorded": false,
+      "schema": "hyle.perf.child-environment-policy/v2"
+    },
+    "child_policy": {
+      "applied_by": "benchmark-child",
+      "child_canary": {
+        "environment": "macos",
+        "gate": "PASS",
+        "mechanism": "benchmark-child-telemetry"
+      },
+      "environment": "macos",
+      "hard_affinity_supported": false,
+      "launcher_applied": true,
+      "qos": "interactive"
+    },
+    "evidence_role": "engineering",
+    "formal_claim": null,
+    "machine_profile": "M1-MAC",
+    "physical_host_identity": {
+      "environment": "macos",
+      "independent_hardware": true,
+      "mismatched_host_facts": [],
+      "physical_host_id": "M1",
+      "physical_host_key_sha256": "467e328f5683bcc965253a3a28d112ef7e6b1abb351f0bf68d23be190e0b3f1e",
+      "profile_id": "M1-MAC",
+      "profile_provisioned": true,
+      "raw_identifier_recorded": false,
+      "registered_profile_contract_sha256": "460aae1525938a72ac5d64b20af70787fc8fdfc6f89d5f3ca0915a83f16faa14",
+      "registration_state": "UNREGISTERED",
+      "required_host_facts_match": false,
+      "schema": "hyle-perf-physical-host-identity-v1",
+      "stable_machine_id_matches_registered": false,
+      "stable_machine_id_sha256": "31e581d2399383332f2c47909fb4828f6c5f5ba6acbb29cf7ff82c7fce872c30",
+      "stable_machine_id_source": "macos-platform-uuid-sha256"
+    },
+    "platform": "macos",
+    "probe_sha256": "8b0f7f915ca153516a1a9502a9654b2146482152e246020d1564523eac267c81",
+    "sampling_mutex": {
+      "acquired_at_utc": "2026-10-13T08:56:24.136874+00:00",
+      "environment": "macos",
+      "mutex_key": "M1",
+      "owner_token_sha256": "e65afe04f5a197e4b77f678edd40a0fb4fb41d0a33ae4794eba5a8b87b62d391",
+      "path": "/Users/Shared/HYLE/perf-locks/M1.sampling.lock",
+      "physical_host_id": "M1",
+      "pid": 43836,
+      "profile_id": "M1-MAC",
+      "raw_owner_token_recorded": false,
+      "release_policy": "owner-token-match-only",
+      "schema": "hyle-perf-sampling-mutex-v1"
+    }
+  },
+  "host_stable": true,
+  "inputs_stable": true,
+  "observations": {
+    "count": 744,
+    "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/observations.jsonl",
+    "sha256": "fd7bd87308cda6fc32bcb51cc00a4e87749594ad7644a5bb5d46ec449d8b3418"
+  },
+  "peers": [
+    {
+      "clean": true,
+      "id": "original-ggml-flash",
+      "remote": "/Users/kiro/hyle-scratch/compute-unified/p1-ggml-reference.bundle",
+      "revision": "456172ec733a135778adcd32d00e576a58232e45",
+      "tree": "5cedba53daf44127495f9df9ac07bf0e56844868"
+    }
+  ],
+  "qualification": "QUALIFIED",
+  "raw_logs": [
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-15/product-primary-candidate-first-candidate-allocation-first-resident-primary-run-01.log",
+      "sha256": "85fed791ad3184de541a0b0f8349d58be19b0a7128840d9cb2ade3fbfa37ad5d"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-15/product-primary-candidate-first-candidate-allocation-first-resident-primary-run-02.log",
+      "sha256": "257cdaffbeaa1fa635aa55aca0b59b7bae7a2e8b86283e641d629ec41fec4baa"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-15/product-primary-candidate-first-candidate-allocation-first-resident-primary-run-03.log",
+      "sha256": "94687357176c86f69cabb9b3d964feae10f22d08a09263d6750e0a511b48d14e"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-15/product-primary-candidate-first-candidate-allocation-first-resident-primary-run-04.log",
+      "sha256": "454137e1d139643944c07c4b618bffb2292d39f0f7c9144ea8e5436ba964c0a7"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-15/product-primary-candidate-first-candidate-allocation-first-resident-primary-run-05.log",
+      "sha256": "69e267168c44292f6e64a0a349930365631652c756ec81bba8dbdbd50685f6cd"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-15/product-primary-candidate-first-candidate-allocation-first-resident-primary-run-06.log",
+      "sha256": "57a291b3c17377f888d3da1eaaffa8ef40c05dab0bad502704f1b02681deeb62"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-15/product-primary-candidate-first-candidate-allocation-first-resident-primary-run-07.log",
+      "sha256": "cb8946bde4d9efcec1ef3af39697ccd93195b74ff5822719229b4686636ec438"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-15/product-primary-candidate-first-candidate-allocation-first-resident-primary-run-08.log",
+      "sha256": "23055e49a7908058433bbc7641522ef9b98c872d723695452405d41d99d760e3"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-15/product-primary-candidate-first-candidate-allocation-first-resident-primary-run-09.log",
+      "sha256": "268361749cf5ecc2f4b66928ebcba0573c7ef9a3c99a6a337ef45b07734a828b"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-15/product-primary-candidate-first-candidate-allocation-first-resident-primary-run-10.log",
+      "sha256": "d683dde70fd3c0fed6df2c51c6f8c7063f7a6a45689f7ee9ce4b2a3f8f067af6"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-15/product-primary-candidate-first-candidate-allocation-first-resident-primary-run-11.log",
+      "sha256": "ad80a0d44c462f6cb29d8b1c7ba75da3e65a0b5346626cf6f4cec1fba40e4904"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-15/product-primary-candidate-first-candidate-allocation-first-resident-primary-run-12.log",
+      "sha256": "feb36903a7e71bed3c22577b499d567235842b949e8637f0498af1ac8a2f8b20"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-15/product-primary-candidate-first-candidate-allocation-first-resident-primary-run-13.log",
+      "sha256": "86ee6d58ff213863be99dbcf6f8454a4af830a40ec7951b49f28cd7a68c8ba6f"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-15/product-primary-candidate-first-candidate-allocation-first-resident-primary-run-14.log",
+      "sha256": "1554ff7783dd10c22dda26fadc53428a10480b09aadd7ca00792418ff5ae8f17"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-15/product-primary-candidate-first-candidate-allocation-first-resident-primary-run-15.log",
+      "sha256": "42abbd2d3b636e198a5e5dad24dc37816a3da5b8925805e210a9515bb945ff30"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-15/product-primary-candidate-first-peer-allocation-first-resident-primary-run-01.log",
+      "sha256": "76e88c98ed141a88484e97dfd17f8f482bbbc8112cb3160fb4f17a4e732278bf"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-15/product-primary-candidate-first-peer-allocation-first-resident-primary-run-02.log",
+      "sha256": "4080459da54ff56b623b6850e1864d7d5283c74e7a74419fe423c96e405f7893"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-15/product-primary-candidate-first-peer-allocation-first-resident-primary-run-03.log",
+      "sha256": "4ce422ccfda2f9b61ecdbeb7043162431e6dc238c35756551248ef202a4201cb"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-15/product-primary-candidate-first-peer-allocation-first-resident-primary-run-04.log",
+      "sha256": "f9faa9fc8b8b9dea23c9e32de04e3dfbed2d658b8e22defeaa16e8c32f6d1a80"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-15/product-primary-candidate-first-peer-allocation-first-resident-primary-run-05.log",
+      "sha256": "24659b849a03c61b89d92b27c86e20a62375994ab3ceb289bc0bccf2580bf377"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-15/product-primary-candidate-first-peer-allocation-first-resident-primary-run-06.log",
+      "sha256": "afd0d38be4f5daeb5727557f54c9912bbbe04b87226605df4bdf4d2097a58f31"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-15/product-primary-candidate-first-peer-allocation-first-resident-primary-run-07.log",
+      "sha256": "6dbd713cf0a8c618e5c492b68f69bf067098220980d81c6f857edad47bcea69a"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-15/product-primary-candidate-first-peer-allocation-first-resident-primary-run-08.log",
+      "sha256": "276ab5daa77cbcda3043dd5ce162c2a1ee07c5072422fb2edd27d64a9d7f0e42"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-15/product-primary-candidate-first-peer-allocation-first-resident-primary-run-09.log",
+      "sha256": "b3d12b35ff71cff9aa05d95a671746acae60821251921553623fecd3c3c13c09"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-15/product-primary-candidate-first-peer-allocation-first-resident-primary-run-10.log",
+      "sha256": "e796a81f11c046be08e6d29594e2cce7d0e508be93d0c9ecc54c4d2558321848"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-15/product-primary-candidate-first-peer-allocation-first-resident-primary-run-11.log",
+      "sha256": "be0e5f77616504d4c1ac8d5230722caf70f8cc21ad407517018a0230bf6fbc28"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-15/product-primary-candidate-first-peer-allocation-first-resident-primary-run-12.log",
+      "sha256": "ad5e6bfc85649d6ce533b0d5d9f9d260d11452eb75983d5d03da49eeb45646b4"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-15/product-primary-candidate-first-peer-allocation-first-resident-primary-run-13.log",
+      "sha256": "ca80675e212ba867433baae9b47db884774663d585441865227dbd2d2f0c53da"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-15/product-primary-candidate-first-peer-allocation-first-resident-primary-run-14.log",
+      "sha256": "55a34e718a22841537c17d3899cf777b85b125de60060aabbf37a75fd622524f"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-15/product-primary-candidate-first-peer-allocation-first-resident-primary-run-15.log",
+      "sha256": "71671cf33954ad04f96e3b57e6d8f974f1a7d89883659863ce0c79caddccc04e"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-15/product-primary-peer-first-candidate-allocation-first-resident-primary-run-01.log",
+      "sha256": "2ace6afad60ecf3c5f0d250e266e65a312251c041d8e3385003fbb3bb7757400"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-15/product-primary-peer-first-candidate-allocation-first-resident-primary-run-02.log",
+      "sha256": "20f4ad3a47fa162675f236940ba3bb4ce1f5b7b33088920a150285a1e3d28fa8"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-15/product-primary-peer-first-candidate-allocation-first-resident-primary-run-03.log",
+      "sha256": "914f367242617b64b02f07c1624c8816e9b51f876aa2f5c2e4530433f0706e94"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-15/product-primary-peer-first-candidate-allocation-first-resident-primary-run-04.log",
+      "sha256": "9f96b4999b483bd631e5e9b139a5f97a01b646bf36bdd00d8f0089ccaf8c1381"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-15/product-primary-peer-first-candidate-allocation-first-resident-primary-run-05.log",
+      "sha256": "1e3657a303f37a70ec5cf7b03682159f096cb3c8d2aa9b174c12946177230bb6"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-15/product-primary-peer-first-candidate-allocation-first-resident-primary-run-06.log",
+      "sha256": "770cb0afe8ce0a11cb7834276fbbf18349ea6e01fd7148e01102c17cb764867c"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-15/product-primary-peer-first-candidate-allocation-first-resident-primary-run-07.log",
+      "sha256": "5ec5c838558c6cd4d53a72253df3348b3e2c493b6e12a3cd4eda7f526d9484c0"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-15/product-primary-peer-first-candidate-allocation-first-resident-primary-run-08.log",
+      "sha256": "51d034a7b9eb4830b189520ddadfcf30665865110449bda0c9ccade97cdcb558"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-15/product-primary-peer-first-candidate-allocation-first-resident-primary-run-09.log",
+      "sha256": "8fec1ab213009c5bd1ba8c62098c5e77a65ba976d255c4a5e73002004fbc51af"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-15/product-primary-peer-first-candidate-allocation-first-resident-primary-run-10.log",
+      "sha256": "4ea34127051da2a61f4fbb4649725773edec719492601e77a34e2e1f7c107553"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-15/product-primary-peer-first-candidate-allocation-first-resident-primary-run-11.log",
+      "sha256": "34fd946cc043a844103511539292189ecf49a7c43933dc9a1109c2bc6e7d6b52"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-15/product-primary-peer-first-candidate-allocation-first-resident-primary-run-12.log",
+      "sha256": "365ca50ec70d62272269a0fb3a8df567dc084e24734672055a5c8d5d4414170e"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-15/product-primary-peer-first-candidate-allocation-first-resident-primary-run-13.log",
+      "sha256": "f0d03e73199824c2537396227c4b62b1e4b2992e0e8bf9a6ed89b4d0d8585b70"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-15/product-primary-peer-first-candidate-allocation-first-resident-primary-run-14.log",
+      "sha256": "fc6b58febfbed50de6be0ad65c76074df3ede4d317cf09cdcdf2a29accd7753d"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-15/product-primary-peer-first-candidate-allocation-first-resident-primary-run-15.log",
+      "sha256": "0af749da158f463f9aaf308b66f7450a0ea1daddd9c86fae668db5760da9fd54"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-15/product-primary-peer-first-peer-allocation-first-resident-primary-run-01.log",
+      "sha256": "2ec4b73568af7673198fd8fcd79447b509a8a12ed06b847a667b515c37e16f94"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-15/product-primary-peer-first-peer-allocation-first-resident-primary-run-02.log",
+      "sha256": "57b04de2e022ec0dad9c3f94f2c6a1ba12b642466cd710f802ae743c4624272a"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-15/product-primary-peer-first-peer-allocation-first-resident-primary-run-03.log",
+      "sha256": "b5cad6c3cc2b96ae3fb53ed9f4729996ffe29b0478486edf4cf739283e168c89"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-15/product-primary-peer-first-peer-allocation-first-resident-primary-run-04.log",
+      "sha256": "4b3ef0258fbe60f4c04b9ebbdb67324079ef2b8fe1a70d191620b576825ad327"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-15/product-primary-peer-first-peer-allocation-first-resident-primary-run-05.log",
+      "sha256": "4108e7dbbc949c5f2a8266ab5df1d893877d81a4b04b27b5809068e8d7d91387"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-15/product-primary-peer-first-peer-allocation-first-resident-primary-run-06.log",
+      "sha256": "e6ed4f12b626edc316ea846ce0d81d59391475ee34929164cc080ac1f582636f"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-15/product-primary-peer-first-peer-allocation-first-resident-primary-run-07.log",
+      "sha256": "face920ba65b47f0354013744bbaea6c529fd38de21e7eebf1dcf3b046cd564f"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-15/product-primary-peer-first-peer-allocation-first-resident-primary-run-08.log",
+      "sha256": "957dffbcabe2f1d0658f11d4385ab9d7601e32198a0ef8366a17f06c87ec676e"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-15/product-primary-peer-first-peer-allocation-first-resident-primary-run-09.log",
+      "sha256": "5db36b7e67d5657945ec12ecdf2b817d3f17a346270550905376644a4e2bf09c"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-15/product-primary-peer-first-peer-allocation-first-resident-primary-run-10.log",
+      "sha256": "d83c3161ec364d8cc427901ed8e2a82c190cae74fdc436db52e70efde6e779f4"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-15/product-primary-peer-first-peer-allocation-first-resident-primary-run-11.log",
+      "sha256": "703871d5d806d654b4853562219c615de666f8e71c1a0b3b7255fd4b5034fb08"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-15/product-primary-peer-first-peer-allocation-first-resident-primary-run-12.log",
+      "sha256": "0370a7770c586fe65ac05ee287f1f0ac601f7d6ce0c9dbeac70b8679f4cb01d1"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-15/product-primary-peer-first-peer-allocation-first-resident-primary-run-13.log",
+      "sha256": "80c09e29cde5747166f530ed458e1f002cafa7b7b6bb17c8ad20083b71bae692"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-15/product-primary-peer-first-peer-allocation-first-resident-primary-run-14.log",
+      "sha256": "2f83374623988cfa7cf5353bf0fbbbca0b29510411fdffc685866cf9c21f8638"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-15/product-primary-peer-first-peer-allocation-first-resident-primary-run-15.log",
+      "sha256": "fab0c1456bba8d35c3d9cca30087cda24b833b4f076251398efaf52e0dacdbc3"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-15/product-placement-candidate-first-candidate-allocation-first-resident-placement-run-01.log",
+      "sha256": "d14caeb560592d1124a3e5d7158842c45058d95bde5aac56ca79870194cf636a"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-15/product-placement-candidate-first-candidate-allocation-first-resident-placement-run-02.log",
+      "sha256": "03b068367b8ea5860a8335d1133e613fcccd82f608b5d8d8d3454d4608dd4f36"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-15/product-placement-candidate-first-candidate-allocation-first-resident-placement-run-03.log",
+      "sha256": "5e20b080da6e23d0bef2ef4392f2d35d9994135b09b650c37cc95f7fb482f61a"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-15/product-placement-candidate-first-candidate-allocation-first-resident-placement-run-04.log",
+      "sha256": "4a51bd2b944654f5ab716f9c3f1ec05895f320d274df3aedc59b4a4a6bf2ab8a"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-15/product-placement-candidate-first-candidate-allocation-first-resident-placement-run-05.log",
+      "sha256": "0a4c527d0210267874a4592133d52b0a5e6dca12f37c9201c3f72ea81b5da9bc"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-15/product-placement-candidate-first-candidate-allocation-first-resident-placement-run-06.log",
+      "sha256": "3cac5f3641d13fdeb3a3d4aa5658e5a251732b3d6d0ad08a2d8cde84bbfd86dc"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-15/product-placement-candidate-first-candidate-allocation-first-resident-placement-run-07.log",
+      "sha256": "de97dc2a6072ca9451f4ef5334e6ab65a42a617a4717a26601e9bda8a3e5b551"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-15/product-placement-candidate-first-candidate-allocation-first-resident-placement-run-08.log",
+      "sha256": "0afc28b5bb0a6dea799382c0984f4d32add9126b762ba567f2ff92e5c908a9a8"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-15/product-placement-candidate-first-candidate-allocation-first-resident-placement-run-09.log",
+      "sha256": "c4ec9b2134618a877c3c9ced032ab0df60256ab84672129633d910a80b308433"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-15/product-placement-candidate-first-candidate-allocation-first-resident-placement-run-10.log",
+      "sha256": "5d740d7d7741879c01903e920414ac0e9d9958998523a32b3ca1d4dbc7731d6e"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-15/product-placement-candidate-first-candidate-allocation-first-resident-placement-run-11.log",
+      "sha256": "9bb691cba0c19c37ecd310b7d8314ee3723d8bde19a534b93420c5bf32070a12"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-15/product-placement-candidate-first-candidate-allocation-first-resident-placement-run-12.log",
+      "sha256": "207ece447490c5ab7d562c8c465ba128843067cd201dc5d3d4db0b2a0e6e918a"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-15/product-placement-candidate-first-candidate-allocation-first-resident-placement-run-13.log",
+      "sha256": "c9bee667954c37822e972d49f1883274a14df793c1d11ff7a2fd24774eae9b3c"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-15/product-placement-candidate-first-candidate-allocation-first-resident-placement-run-14.log",
+      "sha256": "ef2e7489bc672951b6a87b906b38e00b672d4576e2d3eabc403632771c7064a0"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-15/product-placement-candidate-first-candidate-allocation-first-resident-placement-run-15.log",
+      "sha256": "6bb6ce75c2db5d6e08d8972b33f6716fcf22af95becc81764331a6abccb112a2"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-15/product-placement-candidate-first-peer-allocation-first-resident-placement-run-01.log",
+      "sha256": "ad4af005712cf6e1dbf828d8ee1ab534dc9bff9073dea28f81aaf28d0d25451e"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-15/product-placement-candidate-first-peer-allocation-first-resident-placement-run-02.log",
+      "sha256": "b9b77bea648bfd55d5ae10cfc55d83bbc8ef3f234bccc3211dfe56744136f817"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-15/product-placement-candidate-first-peer-allocation-first-resident-placement-run-03.log",
+      "sha256": "97191487a545f86ef7e85b84eb1702db99183d86feabbadedf989439f0359f81"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-15/product-placement-candidate-first-peer-allocation-first-resident-placement-run-04.log",
+      "sha256": "3b83bd87af2492422ab7e806abc4e0e76f29ee5c441f83f066d10fd3b857a7ae"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-15/product-placement-candidate-first-peer-allocation-first-resident-placement-run-05.log",
+      "sha256": "3fb1d6f889475b945d3fba5499002b1deb2f78ada966055df88ec1ca2cb63e94"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-15/product-placement-candidate-first-peer-allocation-first-resident-placement-run-06.log",
+      "sha256": "3fdeb71f93565bd803cfabc6c01139e98ddc36ad3c9ace1f87b0e8e49bed0728"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-15/product-placement-candidate-first-peer-allocation-first-resident-placement-run-07.log",
+      "sha256": "3d97082282e351d5a7b4bc21b5e40ae3f3c016f2cfb903ee17212d0be302d28d"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-15/product-placement-candidate-first-peer-allocation-first-resident-placement-run-08.log",
+      "sha256": "1f302edbdf6779d44b890b50a506c411c34a24ccdf701a456f8c73e1c46e5624"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-15/product-placement-candidate-first-peer-allocation-first-resident-placement-run-09.log",
+      "sha256": "dbb482dfe31266889bd5dc3d11462b21c7a44fe94e981ed00f2f405887c0747e"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-15/product-placement-candidate-first-peer-allocation-first-resident-placement-run-10.log",
+      "sha256": "6fe141f4ca1414dcdb9bf22588a741a36506d6c3d1610c9fb6ea1506d2c24230"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-15/product-placement-candidate-first-peer-allocation-first-resident-placement-run-11.log",
+      "sha256": "9ca3a5eaf67a99b6de126e6aad90b7439c8d25772f9dc68e73856f49f5ea5862"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-15/product-placement-candidate-first-peer-allocation-first-resident-placement-run-12.log",
+      "sha256": "f28d3523411c99f8dcd5d2c71cfc97a7650960c86d8940f05b107603b236aece"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-15/product-placement-candidate-first-peer-allocation-first-resident-placement-run-13.log",
+      "sha256": "8381aab1e74219c61cfc0e4b3b857daf23a068010967c1ae0c1799a739cc2b40"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-15/product-placement-candidate-first-peer-allocation-first-resident-placement-run-14.log",
+      "sha256": "c6cac37366d550d42d6cd0b813721eff3307e5189c95aaaf1c19f2bf911bd941"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-15/product-placement-candidate-first-peer-allocation-first-resident-placement-run-15.log",
+      "sha256": "aa261cd8ff671800cf8791b040a825a8fa771fa7c4a5604617e28f3096b50171"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-15/product-placement-peer-first-candidate-allocation-first-resident-placement-run-01.log",
+      "sha256": "c11b74565cf1a2a8ab76f898a2fdff0dc323534f64150021f94fa56c571ac6d3"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-15/product-placement-peer-first-candidate-allocation-first-resident-placement-run-02.log",
+      "sha256": "7cee0bdc165ff55dd3ac7210cf8d5eaea05999540d08aacd97bebafe97d05ff3"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-15/product-placement-peer-first-candidate-allocation-first-resident-placement-run-03.log",
+      "sha256": "886af1e268ce98def7826d5daec1f50003f2268f167a2872ec9595d3f795d8d7"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-15/product-placement-peer-first-candidate-allocation-first-resident-placement-run-04.log",
+      "sha256": "9429777fd60b78e0962462a9641f7dfb6695f0d03b671cc1eab1031bae0a8247"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-15/product-placement-peer-first-candidate-allocation-first-resident-placement-run-05.log",
+      "sha256": "e928cf5d701d4b19890c4e50225d6de5d03d4942e2761727dd0211b36d85905f"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-15/product-placement-peer-first-candidate-allocation-first-resident-placement-run-06.log",
+      "sha256": "a9e500324d026de38f4d4d59adf5284e753184f8d5bcf33d27fb9a8fd7079b9f"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-15/product-placement-peer-first-candidate-allocation-first-resident-placement-run-07.log",
+      "sha256": "7fa49661951637942439949b519de046822c68994665ebdc495e7c9cb9d14c89"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-15/product-placement-peer-first-candidate-allocation-first-resident-placement-run-08.log",
+      "sha256": "5a00a33d82901a9af1cfea9f7809cfce3e77e8109b20bc1f8db395c8ab278dd5"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-15/product-placement-peer-first-candidate-allocation-first-resident-placement-run-09.log",
+      "sha256": "598884543eeb82b724da8702590d1a369dc3a92d0aab76161a3bfd8c2700ce48"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-15/product-placement-peer-first-candidate-allocation-first-resident-placement-run-10.log",
+      "sha256": "d95d57e3b0803aa8439bd43e74b6740d43e84309dd3fa5335cddf5d0fd740b84"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-15/product-placement-peer-first-candidate-allocation-first-resident-placement-run-11.log",
+      "sha256": "01699ef2beab6ac37100110c8c1a1db2ee8475648879b2821e78cf50b60bfab9"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-15/product-placement-peer-first-candidate-allocation-first-resident-placement-run-12.log",
+      "sha256": "edd414f0546fe1479153471249c25883ca03d07edaadf70de687e0905bfcdb4c"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-15/product-placement-peer-first-candidate-allocation-first-resident-placement-run-13.log",
+      "sha256": "564c831f6b477a6d919abfecdb3662f1d16bb40138f58a59429c563c0d3c9a93"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-15/product-placement-peer-first-candidate-allocation-first-resident-placement-run-14.log",
+      "sha256": "1e07c7f741df2d74918f3d18927a8d819b50e3be24db72ffe2ed0b7928b30e72"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-15/product-placement-peer-first-candidate-allocation-first-resident-placement-run-15.log",
+      "sha256": "2e4980c64e3ad93a87e7cf4cbee44e5beb8896cc43e62d779eec667d30fb89f2"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-15/product-placement-peer-first-peer-allocation-first-resident-placement-run-01.log",
+      "sha256": "5d1fdfb0757957edc534131796a147959af9d2e03578ea21b05728d6921f3996"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-15/product-placement-peer-first-peer-allocation-first-resident-placement-run-02.log",
+      "sha256": "3caee98f16bae39e9639b56dd13e368ac60399c0528230ce8eaf3d4db836e8fa"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-15/product-placement-peer-first-peer-allocation-first-resident-placement-run-03.log",
+      "sha256": "05f33c72707a6a5fc2b8226ed72f7c79f522128eb6f5c7d2fa192dabd07113be"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-15/product-placement-peer-first-peer-allocation-first-resident-placement-run-04.log",
+      "sha256": "7a3b02a1252109580cb3ddac9f93dde370d4df2659cedf8bb3eb4022e4915b04"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-15/product-placement-peer-first-peer-allocation-first-resident-placement-run-05.log",
+      "sha256": "9a82656c8f232743063d408b06093ad52704b0b6e3647edcd65519edd8e6a5ca"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-15/product-placement-peer-first-peer-allocation-first-resident-placement-run-06.log",
+      "sha256": "2494cca405ae6d6df4167eaed314ed0ac19e3388734f055c76f37763ceea56aa"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-15/product-placement-peer-first-peer-allocation-first-resident-placement-run-07.log",
+      "sha256": "91e1437f9a0d7393d87301b0de6d11ac49030bbcaa33542098e4b7e227a72345"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-15/product-placement-peer-first-peer-allocation-first-resident-placement-run-08.log",
+      "sha256": "59c8579b66262af8be83ab2c573c0978f1abf86b3c122266befd0aa93aba9c1a"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-15/product-placement-peer-first-peer-allocation-first-resident-placement-run-09.log",
+      "sha256": "df4127dc88a79459747f3831b15c71d401331a0057d58a184d2e74616b2a3357"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-15/product-placement-peer-first-peer-allocation-first-resident-placement-run-10.log",
+      "sha256": "c0f00605783cef50f57501d62286ebcb4fb8824058861b04803587f0f84d13ed"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-15/product-placement-peer-first-peer-allocation-first-resident-placement-run-11.log",
+      "sha256": "fa7db769db20205b3927929d835c4679ab184e59f6b94ff6d65707f369b098cc"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-15/product-placement-peer-first-peer-allocation-first-resident-placement-run-12.log",
+      "sha256": "8754812864530a6ef58aff26edcb52956cab335d801b6ff5aa991a57cf4255c2"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-15/product-placement-peer-first-peer-allocation-first-resident-placement-run-13.log",
+      "sha256": "846942db224e829fa486476be418536dbfa95bb9556ae48a94732fd5d1fd1b42"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-15/product-placement-peer-first-peer-allocation-first-resident-placement-run-14.log",
+      "sha256": "db615c6670eec6597385199a67795b89b7f4a3726765c068b048310e444ee839"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-15/product-placement-peer-first-peer-allocation-first-resident-placement-run-15.log",
+      "sha256": "2aeacf4156128bc84725bac82e9116c9af2e7ca7837e7b1b7551928ebe17dd10"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/product-primary-candidate-first-candidate-allocation-first-resident-primary-run-01.log",
+      "sha256": "0623b5d60bf1938245ee258a8427f94138124e45be2f27fa47855c6b8b378566"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/product-primary-candidate-first-candidate-allocation-first-resident-primary-run-02.log",
+      "sha256": "edcc7e7841caf7b3ac7efdb8d553def94c3f6016603f8325929af9b5d756f33d"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/product-primary-candidate-first-candidate-allocation-first-resident-primary-run-03.log",
+      "sha256": "8ca0aa540daca4f8d5b8ae86125c47dc0969d9c5d9cf8e75c1f928f233c2da6f"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/product-primary-candidate-first-candidate-allocation-first-resident-primary-run-04.log",
+      "sha256": "bdac6f89f712aff8d1f05d536051d483e63f23e4d044fce22391bf1e58a7c921"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/product-primary-candidate-first-candidate-allocation-first-resident-primary-run-05.log",
+      "sha256": "79df81a291a2b4b43e27095795279173468ac6f46773658877c1c72f2b60bb83"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/product-primary-candidate-first-candidate-allocation-first-resident-primary-run-06.log",
+      "sha256": "cd8e3fe66869eaafaa739f734500ed1a12c1ead68de14a60b66db292c5f97664"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/product-primary-candidate-first-candidate-allocation-first-resident-primary-run-07.log",
+      "sha256": "5a3fbf4392394e7a1e449df72c4e98299e9dc6a7020ad39462d9bfb86452b515"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/product-primary-candidate-first-candidate-allocation-first-resident-primary-run-08.log",
+      "sha256": "986490fd48c9ffb9505bd3af8d15e357bb4becefec88261423eae01c85db1f64"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/product-primary-candidate-first-candidate-allocation-first-resident-primary-run-09.log",
+      "sha256": "229be886aa30cf095c93a33f628eef8ef649bdbfbe148ff1553dee49db678b1e"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/product-primary-candidate-first-candidate-allocation-first-resident-primary-run-10.log",
+      "sha256": "3ee4a8a48c5ce92e49ed1e7990dc7b68632b58c12a4b2544c2ae8533deb1e26f"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/product-primary-candidate-first-candidate-allocation-first-resident-primary-run-11.log",
+      "sha256": "1df9232b9c25376d212db65f80a38908b84ac6bd7d0387c07c2ff86efd037579"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/product-primary-candidate-first-candidate-allocation-first-resident-primary-run-12.log",
+      "sha256": "c4d52769b929e402de05a206b3dfafb202ea26d451a85eba7058323a22b4161d"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/product-primary-candidate-first-candidate-allocation-first-resident-primary-run-13.log",
+      "sha256": "d935ea29da31952f324d4f5defad58d22879d85deed402a87c69fc4e39fc97df"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/product-primary-candidate-first-candidate-allocation-first-resident-primary-run-14.log",
+      "sha256": "d4e261aab19f75336857244e95ee06d2992e570782ce919632092a724deb41ab"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/product-primary-candidate-first-candidate-allocation-first-resident-primary-run-15.log",
+      "sha256": "4b9d9ccc2afee1a511b530bd10be18cd4e53e68f06204053e808edcaf15d924d"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/product-primary-candidate-first-candidate-allocation-first-resident-primary-run-16.log",
+      "sha256": "cbbf3abfccf9378c6cb51ff432e72aed97755b45e5e344c538b63a2bfb1764c2"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/product-primary-candidate-first-candidate-allocation-first-resident-primary-run-17.log",
+      "sha256": "a6ac7455b5a8e610669b8b0942ebdc9ee665f9c41d030c43fdb65b81e2fbd45b"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/product-primary-candidate-first-candidate-allocation-first-resident-primary-run-18.log",
+      "sha256": "f71b7a34833f4643fc329fb6650fbf2cabcd18b6f5d1f56660ba76f7f0520e3b"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/product-primary-candidate-first-candidate-allocation-first-resident-primary-run-19.log",
+      "sha256": "8e255c4fcb7dfcd313b1803b9498db373b3eeb55984ff463996dbac8c91fc06e"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/product-primary-candidate-first-candidate-allocation-first-resident-primary-run-20.log",
+      "sha256": "9f641db9de832a8657bd7f208163f8400e2b7ed7b683ff1c46fe61d37043492d"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/product-primary-candidate-first-candidate-allocation-first-resident-primary-run-21.log",
+      "sha256": "9fd4e37cc2ad1eaae301003e1f3d865c9c6cd188975abee9e61fb1ff5f281e11"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/product-primary-candidate-first-candidate-allocation-first-resident-primary-run-22.log",
+      "sha256": "22fa966f6625c368d39ad447b41906b86b7922c02cfdecb23ac1075bb3b4aa86"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/product-primary-candidate-first-candidate-allocation-first-resident-primary-run-23.log",
+      "sha256": "f0fa36f4a6d0678f591eb588dbae06a239e664222e0c4bff1100b885fd618f75"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/product-primary-candidate-first-candidate-allocation-first-resident-primary-run-24.log",
+      "sha256": "dc10e433e5283346f8bf4f72de3f9c3b2eda0dc0c41ff531c319bd79887878ce"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/product-primary-candidate-first-candidate-allocation-first-resident-primary-run-25.log",
+      "sha256": "cc750970ca27f36085854d0f5de805901b7ad9590f332f7394f620d4d4911164"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/product-primary-candidate-first-candidate-allocation-first-resident-primary-run-26.log",
+      "sha256": "560ff5adc6618e459b5cb5bbce1e1ec175327106b15a966cab02891ef9faa885"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/product-primary-candidate-first-candidate-allocation-first-resident-primary-run-27.log",
+      "sha256": "907723d66b8262a8eb2a4d4ecac26689af0f6f67e71ea43496e84cad84cec297"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/product-primary-candidate-first-candidate-allocation-first-resident-primary-run-28.log",
+      "sha256": "e3492c49e1effaa8cda41005566f4befdff954f2ee0a5fcf7132d0abc0580c5b"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/product-primary-candidate-first-candidate-allocation-first-resident-primary-run-29.log",
+      "sha256": "80e33eaecdab72bbb87bc8aa4469fb480c19efbc0896b0067e3c6628b3abd052"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/product-primary-candidate-first-candidate-allocation-first-resident-primary-run-30.log",
+      "sha256": "82cc4f43c3432375b7f4b33f5079127f0dc7de894d41825eff38a926bd86afe7"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/product-primary-candidate-first-candidate-allocation-first-resident-primary-run-31.log",
+      "sha256": "fb788902b077ea4bde53f70943a766b2b83c9b70918a882f65746022b5638852"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/product-primary-candidate-first-peer-allocation-first-resident-primary-run-01.log",
+      "sha256": "08afb83c0cdab1712af716f927d41d3f4b0bd8f3196e4dcbae6d10930c528f3a"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/product-primary-candidate-first-peer-allocation-first-resident-primary-run-02.log",
+      "sha256": "cb8c046c2fe2027f0e549a7ab7672931a06c517a89090352ba58adb40970a144"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/product-primary-candidate-first-peer-allocation-first-resident-primary-run-03.log",
+      "sha256": "d8a0db5700e9b55735dcd27d5c8520859091de21d67dc924126357480731d981"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/product-primary-candidate-first-peer-allocation-first-resident-primary-run-04.log",
+      "sha256": "f01f28972e864b5c8d15e6b8242381058213b88e931b5f712aeb2ef69945f92e"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/product-primary-candidate-first-peer-allocation-first-resident-primary-run-05.log",
+      "sha256": "a583af55aa088c42fd16081c2aa152993408c1afc8b506f33d4abc85595030e5"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/product-primary-candidate-first-peer-allocation-first-resident-primary-run-06.log",
+      "sha256": "3095dba1798f6f35496a792deb65e0b82ec3cf82dcec69c93d661781fe566449"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/product-primary-candidate-first-peer-allocation-first-resident-primary-run-07.log",
+      "sha256": "e72ea901ab7a42288541e81007483df81a51fdd67ece806732a8c7d8c34eb529"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/product-primary-candidate-first-peer-allocation-first-resident-primary-run-08.log",
+      "sha256": "1dbaa67bd433cbbb663cfb67107959541603d9fdbc62d0379f7cfd83d2927d9e"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/product-primary-candidate-first-peer-allocation-first-resident-primary-run-09.log",
+      "sha256": "5c1afaf93c96cf7ac730bcb331244d5e0970d25fa77c343258f802cae9ec16fe"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/product-primary-candidate-first-peer-allocation-first-resident-primary-run-10.log",
+      "sha256": "0c9da77078ccfc975e1cc0d8f68b7ebb46cef01c96dfb02d0688007583646a4c"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/product-primary-candidate-first-peer-allocation-first-resident-primary-run-11.log",
+      "sha256": "9163e4c148c25007b7f6944f0d506d66090b1e9e03f28c4225b9ce04de4bccfb"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/product-primary-candidate-first-peer-allocation-first-resident-primary-run-12.log",
+      "sha256": "6daf175ed1e3750ee7f0bcadd6118523a4382f9a673fe8464c70f8d81bcdd5b1"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/product-primary-candidate-first-peer-allocation-first-resident-primary-run-13.log",
+      "sha256": "960fe032f15a49829d69fe5815adeb8bf8ffb571c2a97c7ba95d5e1424ef07f4"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/product-primary-candidate-first-peer-allocation-first-resident-primary-run-14.log",
+      "sha256": "1b16a5ebce3e529ca01a1c0f41be9578329d05528c774df9c2b6ee6bb93548db"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/product-primary-candidate-first-peer-allocation-first-resident-primary-run-15.log",
+      "sha256": "2380757ec24cc706a2ecd822784204654b2048647014dcb9a5e21945f00405ef"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/product-primary-candidate-first-peer-allocation-first-resident-primary-run-16.log",
+      "sha256": "c2ad3fe892e3fed4f78b1cf73650df7c79723098e85d08c0252cbad4f5682185"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/product-primary-candidate-first-peer-allocation-first-resident-primary-run-17.log",
+      "sha256": "dd6afccb4d1db0ac7c7ea7a064a726ecd14ebb7b09f51b3a3e20ab831a783a6b"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/product-primary-candidate-first-peer-allocation-first-resident-primary-run-18.log",
+      "sha256": "fdea749b7f1575df9ed4bd0dffe867df4fda428e69472116dbde77a5f9c11d50"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/product-primary-candidate-first-peer-allocation-first-resident-primary-run-19.log",
+      "sha256": "82dce69c80dd57ee6607ca717c04ddedfccce6caa1f9f78e2a0ccf0a69ffeaca"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/product-primary-candidate-first-peer-allocation-first-resident-primary-run-20.log",
+      "sha256": "f3e2196be888ce97e18c135ba2dc6ca04e59770106a1e1c0e7a47c1d89cff43c"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/product-primary-candidate-first-peer-allocation-first-resident-primary-run-21.log",
+      "sha256": "0a2fabe1a201bdae7b5a9285c2f69c40050376d2b70dfdbb2451342694db2a12"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/product-primary-candidate-first-peer-allocation-first-resident-primary-run-22.log",
+      "sha256": "a539bc354df98002d6718c25014eaef6b71418d362dd679c643979099e9b0e26"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/product-primary-candidate-first-peer-allocation-first-resident-primary-run-23.log",
+      "sha256": "36cfab7acc1de0a3c3f5413c159ed0cb024092fcf7f2979e74067302847e76f9"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/product-primary-candidate-first-peer-allocation-first-resident-primary-run-24.log",
+      "sha256": "ed3a40b94234d11691a79373198787a261637aafd210cb0f519cc7f0ddcc1bca"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/product-primary-candidate-first-peer-allocation-first-resident-primary-run-25.log",
+      "sha256": "8d98cc4d36e6ef5951702c4adf9c0ebea5a6cc0077d020465445f8182ea35581"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/product-primary-candidate-first-peer-allocation-first-resident-primary-run-26.log",
+      "sha256": "a5e63da952256ea84dcdcbb98ebb5a6b71b6932bdded42134a05303b247b133d"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/product-primary-candidate-first-peer-allocation-first-resident-primary-run-27.log",
+      "sha256": "5bd09fb52201b6ddf78a9646c78cc029f79a9e4a693aabf3e0bd780a48f23b7a"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/product-primary-candidate-first-peer-allocation-first-resident-primary-run-28.log",
+      "sha256": "15daf475a96e79f094a4a613bdba8eec06f3e6e4fc4bffd034e7266f78640be6"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/product-primary-candidate-first-peer-allocation-first-resident-primary-run-29.log",
+      "sha256": "6e7749971f31518a24e35f60d8f5017e78bc581ad007fec55c5d1c36b663f8fa"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/product-primary-candidate-first-peer-allocation-first-resident-primary-run-30.log",
+      "sha256": "d14344c5761930c85b8b23aa9b8e68040d853f62a6dabe6b89bc03b8fb867e9a"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/product-primary-candidate-first-peer-allocation-first-resident-primary-run-31.log",
+      "sha256": "a015dd12084604c36106a06d023bb4b2794da8c1a7b77922685de5aa0ec398a2"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/product-primary-peer-first-candidate-allocation-first-resident-primary-run-01.log",
+      "sha256": "33b43c4f43675e16c4193a396a33ef9694831719c71e763531245f9bc96a72b4"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/product-primary-peer-first-candidate-allocation-first-resident-primary-run-02.log",
+      "sha256": "63d7cb3c459b7c0e6f0d9d1cffe67a31f28b13dca3885f5247aa18a9f528a827"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/product-primary-peer-first-candidate-allocation-first-resident-primary-run-03.log",
+      "sha256": "bc207d8331a8a530660e641d89451d5303b1bce3579c741b9d83c45cbda4120f"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/product-primary-peer-first-candidate-allocation-first-resident-primary-run-04.log",
+      "sha256": "6d7b2cd4dafb9f0b245b31bdb316864bb8eeffee3e8029ba0ba330bdb40ee20b"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/product-primary-peer-first-candidate-allocation-first-resident-primary-run-05.log",
+      "sha256": "604c24e5c4766c1bc4df5d14f9d166b9b87e437940bfa91ccb8aa98e7a264bb2"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/product-primary-peer-first-candidate-allocation-first-resident-primary-run-06.log",
+      "sha256": "e4cc3834e56d8e9dbba880aad6314d4ec3cdf226299dc543fd31b82da52bac9b"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/product-primary-peer-first-candidate-allocation-first-resident-primary-run-07.log",
+      "sha256": "57976235f0d879dfeef7ec676830bddfce350f003af195b4e6adfb9cbee2625e"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/product-primary-peer-first-candidate-allocation-first-resident-primary-run-08.log",
+      "sha256": "9879aef6b2337518023891f99d3cc1ddb3b258cf6a39db7a4b8c39647c5d98aa"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/product-primary-peer-first-candidate-allocation-first-resident-primary-run-09.log",
+      "sha256": "ec4fb28df96f3b081d3cae901e1052dbd481e3447ec663fd7b205ef86bb1c441"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/product-primary-peer-first-candidate-allocation-first-resident-primary-run-10.log",
+      "sha256": "8bac0556a6aa76eecf3531bef2aecb1120bb51619aa43958e3bb89c1e3fbcaa4"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/product-primary-peer-first-candidate-allocation-first-resident-primary-run-11.log",
+      "sha256": "fb5e768b4a5f88e7925ca37d071070869439afa45e9de48f4e6d91128aaa08da"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/product-primary-peer-first-candidate-allocation-first-resident-primary-run-12.log",
+      "sha256": "a4f3cd18c16dd615cb83855b5a76071a51c6609c5a3d1b303101973ed92cc314"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/product-primary-peer-first-candidate-allocation-first-resident-primary-run-13.log",
+      "sha256": "13187974907c1c31d1a2cae663e17d86cb542c5cf2fd06e375b92854b8688daf"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/product-primary-peer-first-candidate-allocation-first-resident-primary-run-14.log",
+      "sha256": "bc4af5af7739dc1d55c376aee546f644e85d9dc8cf11f01b52f7952d7c4c8651"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/product-primary-peer-first-candidate-allocation-first-resident-primary-run-15.log",
+      "sha256": "20017161a1be4331894694674d9450a44fc073a02c4ffc40d82a9987445940d3"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/product-primary-peer-first-candidate-allocation-first-resident-primary-run-16.log",
+      "sha256": "fd0a7ff12aae4b912f4435229cddba9f13e822f96860a6cbd37501fbb1ef5be9"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/product-primary-peer-first-candidate-allocation-first-resident-primary-run-17.log",
+      "sha256": "296eedaf44292a85d364d9f0d182203e2eb9dcb84589bfc762eff5c48c0e1a86"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/product-primary-peer-first-candidate-allocation-first-resident-primary-run-18.log",
+      "sha256": "1aaf049974069c560cd355a7641463788930d08e67bffa08a31119ecb68a6cec"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/product-primary-peer-first-candidate-allocation-first-resident-primary-run-19.log",
+      "sha256": "4a7634fc36ab30158efbb87c3ff769e4d2f9a12ac58873b4cd3856093c51bf57"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/product-primary-peer-first-candidate-allocation-first-resident-primary-run-20.log",
+      "sha256": "7abec67123a586d4488b414f49c1162477f89eb44cc1d6d7e9f9aaabe5ece619"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/product-primary-peer-first-candidate-allocation-first-resident-primary-run-21.log",
+      "sha256": "77ce52bfa482b53a36d9324c897fa8644554bfa21e5a8d6da78613d0fc63a4d6"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/product-primary-peer-first-candidate-allocation-first-resident-primary-run-22.log",
+      "sha256": "5afcd932c4614cfb6b3e5c3ba3e60d22143c3f80195e136607f0d5f1c04f5798"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/product-primary-peer-first-candidate-allocation-first-resident-primary-run-23.log",
+      "sha256": "8c221f18cdd36014b4102a021631adf4935818956e7a29b2a811079ea327d3e5"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/product-primary-peer-first-candidate-allocation-first-resident-primary-run-24.log",
+      "sha256": "d052d49e36b734a9d67a7371dc2300714be93490f1c3e3a5fd0d9f3d1a7cc2e4"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/product-primary-peer-first-candidate-allocation-first-resident-primary-run-25.log",
+      "sha256": "a211c04898afe9050c88e1917f9e1b14cebb34deec090cf78a543d859b717e18"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/product-primary-peer-first-candidate-allocation-first-resident-primary-run-26.log",
+      "sha256": "ac76da88d4b82f9e942303a6fbf324af0cbc758088857288e9d71d784ec1abab"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/product-primary-peer-first-candidate-allocation-first-resident-primary-run-27.log",
+      "sha256": "dfb6ebc065a31c2b1cef773a45f1549f6e50dd54aa7655d7afc71caa1a27962a"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/product-primary-peer-first-candidate-allocation-first-resident-primary-run-28.log",
+      "sha256": "83201ba730d7f5623191fa2d3c7d3799b8dc43f3a611cf2b8bbb7033d4e496f5"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/product-primary-peer-first-candidate-allocation-first-resident-primary-run-29.log",
+      "sha256": "fbc1e34443e2fdece393bc7202c8b76bfcf70d9838a303285a779ca85589725b"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/product-primary-peer-first-candidate-allocation-first-resident-primary-run-30.log",
+      "sha256": "bd20562a592e88355d50bfbf8bf303089bcb1db830189919f42ad82efa2a0d4d"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/product-primary-peer-first-candidate-allocation-first-resident-primary-run-31.log",
+      "sha256": "6343a28a69dde94440dc9ea4be65840e24835cb6c853045ea0143e5306eaeb24"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/product-primary-peer-first-peer-allocation-first-resident-primary-run-01.log",
+      "sha256": "e266e33e3fbd4af9bb4d0b990273c370207c0b540dc5ce48caf657ae2bcf9bf1"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/product-primary-peer-first-peer-allocation-first-resident-primary-run-02.log",
+      "sha256": "52a48ed8621cb5962e7974c81bb05dc4151444d53bd089fd03b31f2f9dae92df"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/product-primary-peer-first-peer-allocation-first-resident-primary-run-03.log",
+      "sha256": "1c7c24bb8667f9c97144a9a39b824ef3dec58a2f17b4c19b2d35369f72e0e8b0"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/product-primary-peer-first-peer-allocation-first-resident-primary-run-04.log",
+      "sha256": "0c1ac3f8b18dee07e5fe89811660aa46ab819610644ee76471fe7c0812ea74eb"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/product-primary-peer-first-peer-allocation-first-resident-primary-run-05.log",
+      "sha256": "10a706abd7adb1c2b9ba50ff4f8941c27ffb6a2bb7ec7ce69b7142bba60a1526"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/product-primary-peer-first-peer-allocation-first-resident-primary-run-06.log",
+      "sha256": "f7bac86aca52d4f5652030c3a33e7c68cbd0f0fa917764ee7ebfbba89ccd0cef"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/product-primary-peer-first-peer-allocation-first-resident-primary-run-07.log",
+      "sha256": "9642c945e949e9bf6fdd12463c1e08cebcf2e9420035b21c3236951c4d7492a7"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/product-primary-peer-first-peer-allocation-first-resident-primary-run-08.log",
+      "sha256": "0ead74e5475a76c6f79dab0792489b7c15eb8113c74b068018158c86b6cfd60c"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/product-primary-peer-first-peer-allocation-first-resident-primary-run-09.log",
+      "sha256": "1dd4aa6095480f4bef25f1fbb55d7e889af293fca7c1094bba49c045961d847e"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/product-primary-peer-first-peer-allocation-first-resident-primary-run-10.log",
+      "sha256": "38d0d9a7edfd99ff7aacfefd3bc1748080bd411282e26f744f681059f99cc78d"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/product-primary-peer-first-peer-allocation-first-resident-primary-run-11.log",
+      "sha256": "79271ba250afc37ddfb0abbeb53500a474288a2e80cc2f3000bd819a848a36da"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/product-primary-peer-first-peer-allocation-first-resident-primary-run-12.log",
+      "sha256": "7c275de40408194bff4d19ce99fb032d80d3e6f47083bd479cc2124294063ae6"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/product-primary-peer-first-peer-allocation-first-resident-primary-run-13.log",
+      "sha256": "f1c9c02c958bc2dade7ca2ebbe8d8d2da0fc47d46b22d5075a4132c678da4377"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/product-primary-peer-first-peer-allocation-first-resident-primary-run-14.log",
+      "sha256": "20755657fef6f5246a98c2281b89a0cd04701853c35ec817afd4f9a694c93ae9"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/product-primary-peer-first-peer-allocation-first-resident-primary-run-15.log",
+      "sha256": "0d7e8539c0e1001a71e2b87a84429a9e769db3c79381a098f7f3d96de9482712"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/product-primary-peer-first-peer-allocation-first-resident-primary-run-16.log",
+      "sha256": "07cb7dd684b125f60ea072abdfa6977fdf137131bd555154095bcadaf83dabdd"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/product-primary-peer-first-peer-allocation-first-resident-primary-run-17.log",
+      "sha256": "343e75ab1fcf133242cc1ad4164d2cbbe95f1ced99049a034c39c1169922955a"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/product-primary-peer-first-peer-allocation-first-resident-primary-run-18.log",
+      "sha256": "634e79e97fed3515a51f2eef89acb09576ff71a80a42e94b520664a43c218dfc"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/product-primary-peer-first-peer-allocation-first-resident-primary-run-19.log",
+      "sha256": "14842f4e26d100803e0cb27b23e4102d0cd8549ad7ace0df62397d7ced884bf2"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/product-primary-peer-first-peer-allocation-first-resident-primary-run-20.log",
+      "sha256": "3073d993d7ea8d6abb92e1c2e052d22ebb2e913dd21c6ad377ab3766860528af"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/product-primary-peer-first-peer-allocation-first-resident-primary-run-21.log",
+      "sha256": "3bbb3ef971a2d4cfadb9aa7ff1ed99f434621263bc8793ace84676b24e6c9841"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/product-primary-peer-first-peer-allocation-first-resident-primary-run-22.log",
+      "sha256": "180e02e12d8f6ff7a9de6cf9867d83601cf068b6b70c5b8cf8a1b1f7330e4621"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/product-primary-peer-first-peer-allocation-first-resident-primary-run-23.log",
+      "sha256": "dc0e7c01d94bb07d82c350252b5cfd89c93c788e1a67bfba97c711d5e87fa7dd"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/product-primary-peer-first-peer-allocation-first-resident-primary-run-24.log",
+      "sha256": "3bff6465e30db0f69401abfc15b1edbb8668331abaa0ee0274e6f9b8f7605dac"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/product-primary-peer-first-peer-allocation-first-resident-primary-run-25.log",
+      "sha256": "27b986e8780cbef9a29993965dbd5a0f356bada07cee613ddb88697264acb015"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/product-primary-peer-first-peer-allocation-first-resident-primary-run-26.log",
+      "sha256": "4fc96ead24cd6970b5b96650a4a7f35fb806b9f65568d99995fa5b361cf4ed87"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/product-primary-peer-first-peer-allocation-first-resident-primary-run-27.log",
+      "sha256": "02ffc27248d2c0c65a6ad9ee1c6acdd40825892136b64bda3b61d6151ee60d15"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/product-primary-peer-first-peer-allocation-first-resident-primary-run-28.log",
+      "sha256": "c74e5f83eeb2c2e1a68c8dc75841b002fb0cce2abe35a1b54a5b5a86bdbb3d7c"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/product-primary-peer-first-peer-allocation-first-resident-primary-run-29.log",
+      "sha256": "da0e86e9553f8073e74edb1f8a1c8252d61ddae3f8c15fed4f97c7ab6b4610db"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/product-primary-peer-first-peer-allocation-first-resident-primary-run-30.log",
+      "sha256": "578c795d189cb32b97860bb51f1eb66ed5e5fbe8c15ebdff3db68f56ff19c438"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/product-primary-peer-first-peer-allocation-first-resident-primary-run-31.log",
+      "sha256": "f6d8ad4c699d469d53d410aefb80282aee2ccf75c39f93841187cdf7b3451cec"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/product-placement-candidate-first-candidate-allocation-first-resident-placement-run-01.log",
+      "sha256": "3d9f12801b439ddbd66bc8245355b6d72187163ed14dfda5dc6a6f45f5683eff"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/product-placement-candidate-first-candidate-allocation-first-resident-placement-run-02.log",
+      "sha256": "1efbbb6a6c43f43dd3b7684e7202d340b329a5d816b9a569fbc1e2aa903343f8"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/product-placement-candidate-first-candidate-allocation-first-resident-placement-run-03.log",
+      "sha256": "c08fd6ac7878fc10ad0652c0cc50747829338de887895dece76f7daa63c3d73f"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/product-placement-candidate-first-candidate-allocation-first-resident-placement-run-04.log",
+      "sha256": "33eacccad8e3c7dadddb7a31b3410782d03149b7cba3884e7bc5e7ac3be47eb0"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/product-placement-candidate-first-candidate-allocation-first-resident-placement-run-05.log",
+      "sha256": "d3e08613eb108c04d7b63276bc47f38661776cbe55f7c2ef3c6c4315a76730d3"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/product-placement-candidate-first-candidate-allocation-first-resident-placement-run-06.log",
+      "sha256": "f7a100a0a2f18111b58ab6e58d3fb39bbfbe96145c815522d1031a09dc6e9663"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/product-placement-candidate-first-candidate-allocation-first-resident-placement-run-07.log",
+      "sha256": "670ca2ea17aae38535047be485088a36bd91b4aa1a532a2b530ee6c4e79b2086"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/product-placement-candidate-first-candidate-allocation-first-resident-placement-run-08.log",
+      "sha256": "4a556978d46c77ffaf0d3c78fad79f2413ba3b884faf824a9dabdc9d9be937ba"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/product-placement-candidate-first-candidate-allocation-first-resident-placement-run-09.log",
+      "sha256": "552dd6936fa74807b37cac7adf08a58286e6cbddec06d04fc23c766297915433"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/product-placement-candidate-first-candidate-allocation-first-resident-placement-run-10.log",
+      "sha256": "5f85665f775b37f31c4dd27a5a1ffea4adb6a4788fd67cb18fe0ce0fc0237a0e"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/product-placement-candidate-first-candidate-allocation-first-resident-placement-run-11.log",
+      "sha256": "5196692d618287dd00d54395d44456943b42f24fa5c6cde0ebef88f46238447b"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/product-placement-candidate-first-candidate-allocation-first-resident-placement-run-12.log",
+      "sha256": "6d04e59207483eae0b18afe20db7faca73d1c4387903929e43999377126d797a"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/product-placement-candidate-first-candidate-allocation-first-resident-placement-run-13.log",
+      "sha256": "c75067f144428aa627e8e17f987725bf5bef4bb11fa15cbb38940cb87a778600"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/product-placement-candidate-first-candidate-allocation-first-resident-placement-run-14.log",
+      "sha256": "a6f5f9fee65ed63e3faf7832868a756373f15ec0146726714a1a7d2d6c78a0e8"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/product-placement-candidate-first-candidate-allocation-first-resident-placement-run-15.log",
+      "sha256": "fcee5c9a72396581db4beb81ec1e46b7f56db190ffe721ec271810e5c24a5b78"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/product-placement-candidate-first-candidate-allocation-first-resident-placement-run-16.log",
+      "sha256": "aee175dd4069c036ed463f015cacb045394502b44a9bcc8d6381e55bd36caa44"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/product-placement-candidate-first-candidate-allocation-first-resident-placement-run-17.log",
+      "sha256": "bfa60f14425e341049d465471e41934a5a09ebfbb3c2da50a3e279ca4854faa1"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/product-placement-candidate-first-candidate-allocation-first-resident-placement-run-18.log",
+      "sha256": "e8c30de8f9e60c9a429fc0604c182e1e823db0122974fcdf144c5cbcb49f7761"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/product-placement-candidate-first-candidate-allocation-first-resident-placement-run-19.log",
+      "sha256": "f35ea3c1e65c0da9a09d62efde0c72f4db125e088511d8cbf62b810cfeee947a"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/product-placement-candidate-first-candidate-allocation-first-resident-placement-run-20.log",
+      "sha256": "07cf58cc318378b988b5cdf45bf8d787e0e169c6f44d8d886f7305f2f4d93564"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/product-placement-candidate-first-candidate-allocation-first-resident-placement-run-21.log",
+      "sha256": "c2142d863bb431746589f1524f1e5c8e105b50d4316c1a17e8230a5d42690a4a"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/product-placement-candidate-first-candidate-allocation-first-resident-placement-run-22.log",
+      "sha256": "b51f38ef9c1211fad705e3543e5bc02d1ac5e9d250d0223b4c7038c135a5fcb1"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/product-placement-candidate-first-candidate-allocation-first-resident-placement-run-23.log",
+      "sha256": "2b05588329a8a3beb8675d65db24f0ae4fb2181d4e53402537807dfb17306cf4"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/product-placement-candidate-first-candidate-allocation-first-resident-placement-run-24.log",
+      "sha256": "b4c2906d55d1275deb650acdad79241ad56f778a581271942fc5709049d2385d"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/product-placement-candidate-first-candidate-allocation-first-resident-placement-run-25.log",
+      "sha256": "17238086c80090235480c5295bb24fc52208e185bde05f3fc5c35e40bf2606d5"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/product-placement-candidate-first-candidate-allocation-first-resident-placement-run-26.log",
+      "sha256": "0ec63fb554963101cfc0cf8ea7a9ce75bfed11c0f2316071e84a5c40a8cf8ba4"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/product-placement-candidate-first-candidate-allocation-first-resident-placement-run-27.log",
+      "sha256": "af10fb9efce9ab3185e206034f98b682207279f3b70d6dd2952acb48c7e34e73"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/product-placement-candidate-first-candidate-allocation-first-resident-placement-run-28.log",
+      "sha256": "e894f9d357b7fcd4c8149e652f99e460bd56316f82297822fc28b49462b7946c"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/product-placement-candidate-first-candidate-allocation-first-resident-placement-run-29.log",
+      "sha256": "6befa3936f7cb73e82e0a3c8a4fc427824b9fd7e2413e118c1db2309b15b49c1"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/product-placement-candidate-first-candidate-allocation-first-resident-placement-run-30.log",
+      "sha256": "b2f6cf09cbb6dc8ea7144dce8d1e856f60d393d8f6b321ef9226650d68cc895d"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/product-placement-candidate-first-candidate-allocation-first-resident-placement-run-31.log",
+      "sha256": "aaba62b4d7f84636fe475b2e6d584f4a39738798c7191ba308237cd3573b9482"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/product-placement-candidate-first-peer-allocation-first-resident-placement-run-01.log",
+      "sha256": "b2b6fa8e1f392306441abc98de3a0fbc464037504d3a528e9eb0b88ca0c8a425"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/product-placement-candidate-first-peer-allocation-first-resident-placement-run-02.log",
+      "sha256": "0b21c5dd5908556562a4bbf43ecfbc210ec0bb8e40175903851860abba353e59"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/product-placement-candidate-first-peer-allocation-first-resident-placement-run-03.log",
+      "sha256": "40b421f5ef1d76a7844f8e88fab9415764bb90dc6f6da98047b261c8dd897a64"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/product-placement-candidate-first-peer-allocation-first-resident-placement-run-04.log",
+      "sha256": "9cd6c60c1716c66ddf9e349ce9e29ada72597c1e91d60ca797949268ae0a5bfe"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/product-placement-candidate-first-peer-allocation-first-resident-placement-run-05.log",
+      "sha256": "90264964d394838a10483d0508c80dcfc75bb1e78555df9ebbd24e75354a1b86"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/product-placement-candidate-first-peer-allocation-first-resident-placement-run-06.log",
+      "sha256": "cb0894ff51be54ba5071405a1df9e824021577a2fd1531856894c3a41e95ec27"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/product-placement-candidate-first-peer-allocation-first-resident-placement-run-07.log",
+      "sha256": "8bb2466c87e9d0d7d56483419ebe2415c5227514335f423d195ace90fb8b439f"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/product-placement-candidate-first-peer-allocation-first-resident-placement-run-08.log",
+      "sha256": "b6ec5e90c8f2bf75546e3e3853416f0903bf79140b19bc3b2545ec8cdc9eb9a2"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/product-placement-candidate-first-peer-allocation-first-resident-placement-run-09.log",
+      "sha256": "b6ac38a35d6dbd63434ce311d85d4efe377437b2a9755a671a8bc52a66136e84"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/product-placement-candidate-first-peer-allocation-first-resident-placement-run-10.log",
+      "sha256": "8c62c34b224c79c544bb46641e039098a495a48b106b928d74c8015d9b25b405"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/product-placement-candidate-first-peer-allocation-first-resident-placement-run-11.log",
+      "sha256": "e12baf81443d342fa7fa53c0f737494c2f7f9f9d48e9a8ce5e9141fd3661075f"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/product-placement-candidate-first-peer-allocation-first-resident-placement-run-12.log",
+      "sha256": "6fd8ec9d02cbea70a024828f91dd3d0f69305e3dc622a973f1f4085e317ba803"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/product-placement-candidate-first-peer-allocation-first-resident-placement-run-13.log",
+      "sha256": "b83313c5e2a87a3f10024c4c94760e8259bb4dc19af895e82a0ba90dbddcac60"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/product-placement-candidate-first-peer-allocation-first-resident-placement-run-14.log",
+      "sha256": "b0b5e6af1cda58eeb2fac777358c3c03629898d22942120194dbb26976d86f0e"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/product-placement-candidate-first-peer-allocation-first-resident-placement-run-15.log",
+      "sha256": "38da2c0163e826ccbbb72eaf1058f03c0751a7a88023c305112f7d0d569e11bc"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/product-placement-candidate-first-peer-allocation-first-resident-placement-run-16.log",
+      "sha256": "c4c90e8425181a734c8e1e07f07504bf0a8c1bba11867966a193e8c976e64321"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/product-placement-candidate-first-peer-allocation-first-resident-placement-run-17.log",
+      "sha256": "04b2b4364cf1880f8c1b17145a848e8edf4781e60d85907796903d4c7751b647"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/product-placement-candidate-first-peer-allocation-first-resident-placement-run-18.log",
+      "sha256": "4d551ff829b1d11e6c72f0b079eeed2e12e983fc0fb8d3c8c150a2eb5a923853"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/product-placement-candidate-first-peer-allocation-first-resident-placement-run-19.log",
+      "sha256": "8be8cb2db9793e1c11d660accfc0a668c7d3461d2c34a956cff4626a865ede09"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/product-placement-candidate-first-peer-allocation-first-resident-placement-run-20.log",
+      "sha256": "88d702825912044bda049717cba8ce5b66638aa0b39b7e0dd315d32a055e410f"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/product-placement-candidate-first-peer-allocation-first-resident-placement-run-21.log",
+      "sha256": "6d26cd8f48a93ba2adef28a5867a80c2ad0064ad81c8fe4e057e41b6bda19da4"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/product-placement-candidate-first-peer-allocation-first-resident-placement-run-22.log",
+      "sha256": "a7a1b3aa28cb76eafb34a456f85b6d670ab4939eb81a6795a2e8d846b4b1f740"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/product-placement-candidate-first-peer-allocation-first-resident-placement-run-23.log",
+      "sha256": "d415bf457a5b9a7725a77e0832f27d029c4a1042c2af9044083d53a3a97f9ef5"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/product-placement-candidate-first-peer-allocation-first-resident-placement-run-24.log",
+      "sha256": "3b495359cb2700265a66b8194d4e6442b18a1828091403a5a86c48e274087894"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/product-placement-candidate-first-peer-allocation-first-resident-placement-run-25.log",
+      "sha256": "65474e18dfa4906d1b9f2abb6b50afac53ff0e9141200cb924fcc434dc49e25c"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/product-placement-candidate-first-peer-allocation-first-resident-placement-run-26.log",
+      "sha256": "bb631be18fd77e460c4a4b93a8a51f814f2dddee59fdb56eff45e28b276209e9"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/product-placement-candidate-first-peer-allocation-first-resident-placement-run-27.log",
+      "sha256": "45a6fb5146c305d70106f1bba482b5df9a20a9918626f7505140de8865ba05b1"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/product-placement-candidate-first-peer-allocation-first-resident-placement-run-28.log",
+      "sha256": "bf73fc0731753c758cb35641f588683438f0a40963446b6f5d94d9928f23b58e"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/product-placement-candidate-first-peer-allocation-first-resident-placement-run-29.log",
+      "sha256": "967f704fd66a93b3f2f18d999538eca18e793bfd0e69e63ef2530089411ff07d"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/product-placement-candidate-first-peer-allocation-first-resident-placement-run-30.log",
+      "sha256": "fb97a4c35718ea58a31272a9e8e52719a23bfc504ae7fcba8389b51fd2475a1e"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/product-placement-candidate-first-peer-allocation-first-resident-placement-run-31.log",
+      "sha256": "b1876e583514ab895293adbb5d9a33bd4dff7c9c80e15c82d20a8f553d2dadb1"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/product-placement-peer-first-candidate-allocation-first-resident-placement-run-01.log",
+      "sha256": "fc50a9ee67dd6768c323dd9ba93d7c1923f83dfbe4574e841b08e9c78cf98930"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/product-placement-peer-first-candidate-allocation-first-resident-placement-run-02.log",
+      "sha256": "3488b9f09442ef91c85e44934307c9ddffc6327c6825cb5b2b5fe5e3695822d3"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/product-placement-peer-first-candidate-allocation-first-resident-placement-run-03.log",
+      "sha256": "58d1063d207d422b8865ef28bd359da6dbf7e89c176fa8460509c2876e4fb898"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/product-placement-peer-first-candidate-allocation-first-resident-placement-run-04.log",
+      "sha256": "5caea95c2ee73cda934749ab3d2d05335287b94369a0e15ad3087316822beb03"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/product-placement-peer-first-candidate-allocation-first-resident-placement-run-05.log",
+      "sha256": "79696c71186d2a4e6af7ef4d6dd49f670ec61fbe44901df17331158c1f378224"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/product-placement-peer-first-candidate-allocation-first-resident-placement-run-06.log",
+      "sha256": "3f9b987983be585778b8f99490b04f6023853735f5b2f642f6b19c7629df938d"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/product-placement-peer-first-candidate-allocation-first-resident-placement-run-07.log",
+      "sha256": "65aeef7262e50bba1783c7d81b037854cfa4f3a546483ea5f9fe1d97cea3481b"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/product-placement-peer-first-candidate-allocation-first-resident-placement-run-08.log",
+      "sha256": "fd8cd6c7ec91e2ac9bae27b553336adf5a3ab9a425ef85d69bc41342a77993a7"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/product-placement-peer-first-candidate-allocation-first-resident-placement-run-09.log",
+      "sha256": "edeb1693408c7b780b1c303c5c5755e7d22965f48032fb8a0eb04b5c00e0f0bc"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/product-placement-peer-first-candidate-allocation-first-resident-placement-run-10.log",
+      "sha256": "99293fa4519a864d752735368a085a7a7959e479db3e0f7f463fceef42cf7d1d"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/product-placement-peer-first-candidate-allocation-first-resident-placement-run-11.log",
+      "sha256": "d0d217d242606b12c402ff140549671b8430a31e21b8e517e2fd741fc4bd09f1"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/product-placement-peer-first-candidate-allocation-first-resident-placement-run-12.log",
+      "sha256": "027a0da0e851ab2e40df0d47aacdacfab798304a60b477ee3f4e121746ac126a"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/product-placement-peer-first-candidate-allocation-first-resident-placement-run-13.log",
+      "sha256": "e2059c822ef44482b64dfc967f8020712c36f7f5b45a7045f61a9892a88d12e4"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/product-placement-peer-first-candidate-allocation-first-resident-placement-run-14.log",
+      "sha256": "ec188e2a13246f241dbe11ad5aa35612139d0838fd3f61d2fc9b0039bf6c5c67"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/product-placement-peer-first-candidate-allocation-first-resident-placement-run-15.log",
+      "sha256": "0b642002201b1e8df3118d09e20ead2ff953b945bce40eeb34bf1daaaf3eac11"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/product-placement-peer-first-candidate-allocation-first-resident-placement-run-16.log",
+      "sha256": "e50da0145915b4fa5eeff3ca1722d70d7ee6ad3f94a99a63080b73cd8b9d4845"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/product-placement-peer-first-candidate-allocation-first-resident-placement-run-17.log",
+      "sha256": "79054a465ba997ae4ee9add53d90587caf70e243015df50b38aec359f578ebcc"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/product-placement-peer-first-candidate-allocation-first-resident-placement-run-18.log",
+      "sha256": "04669d1e0b68aa569435f13d3e6b11edd80b9cf5741f798e7c6f440ee86c6c19"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/product-placement-peer-first-candidate-allocation-first-resident-placement-run-19.log",
+      "sha256": "9ef6fea33ce469d367aaaabdb3bf6707a088326f1388337bbecf327cb438f2b3"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/product-placement-peer-first-candidate-allocation-first-resident-placement-run-20.log",
+      "sha256": "bfa42a2b620ad43c7f0669f39ca2a25bdcab7b9b57d82834b31735a2da2520d3"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/product-placement-peer-first-candidate-allocation-first-resident-placement-run-21.log",
+      "sha256": "93da44f5bdae73b60b47473756425a4bf7bb41bb95909b8d5f262c1479ca03a4"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/product-placement-peer-first-candidate-allocation-first-resident-placement-run-22.log",
+      "sha256": "ee7f6b4018dda20ba5d9e86a2229884023b5cb63ad7acb1dfe7498b53180e52a"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/product-placement-peer-first-candidate-allocation-first-resident-placement-run-23.log",
+      "sha256": "1514381563f7d9c48180608c64bbfc88399106a9e144bad3478b2f69c5241406"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/product-placement-peer-first-candidate-allocation-first-resident-placement-run-24.log",
+      "sha256": "99bbff2f5b05a5587cdfa830ed78579320f93c1e2fd1fc5b642473222d353fb4"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/product-placement-peer-first-candidate-allocation-first-resident-placement-run-25.log",
+      "sha256": "6eeacaf97d6e41455735401226198cbd20e5910c46af96ab7941f26405719e77"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/product-placement-peer-first-candidate-allocation-first-resident-placement-run-26.log",
+      "sha256": "2cb0818de7d8943e164c85b882d1e4128caa2f65925678fd4496eb8b905669a4"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/product-placement-peer-first-candidate-allocation-first-resident-placement-run-27.log",
+      "sha256": "151b0bd8a595574d38204c3c6df487eed9d525e7ea73443460e84ace1845f652"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/product-placement-peer-first-candidate-allocation-first-resident-placement-run-28.log",
+      "sha256": "9c971c41bb16efd352b28bddcd2ca611c5b43fe9bc61995c1acfff0a4ca738e3"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/product-placement-peer-first-candidate-allocation-first-resident-placement-run-29.log",
+      "sha256": "ab293bb986717fcada1e94cb7a0fda1b4bab2873e949d2116717708ca0f8080a"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/product-placement-peer-first-candidate-allocation-first-resident-placement-run-30.log",
+      "sha256": "39b2d2c1e0dea3c96a6d74f68ece29f19a3e1eac3c195cdfc3d4bfcd9c2c7344"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/product-placement-peer-first-candidate-allocation-first-resident-placement-run-31.log",
+      "sha256": "addc08f5c742a4279e49f9e4a08f1fd27cdfad65a0aa3f36b4960b0a3c89fc89"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/product-placement-peer-first-peer-allocation-first-resident-placement-run-01.log",
+      "sha256": "72f181a00ec517249d55de3ae534427ba203a3bb3e2172e41dac6e02c0641b98"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/product-placement-peer-first-peer-allocation-first-resident-placement-run-02.log",
+      "sha256": "b2604b22dfcd564cbc7bfdd73c6c543569872944bc5605a70098c562fc6c5199"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/product-placement-peer-first-peer-allocation-first-resident-placement-run-03.log",
+      "sha256": "d98ddf4c0df8bd27ad3ed8257a91553016d302a00ec0ddecec68f4001d1613b9"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/product-placement-peer-first-peer-allocation-first-resident-placement-run-04.log",
+      "sha256": "657fb9514d82e1d7abab8369cd76deaaf3b64c763c9aeeaf46f4d488a19ee4dd"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/product-placement-peer-first-peer-allocation-first-resident-placement-run-05.log",
+      "sha256": "f8d453e70ad240a161857b5303c00fea172afcdcc9a5b980e4eac7027157026d"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/product-placement-peer-first-peer-allocation-first-resident-placement-run-06.log",
+      "sha256": "52309093f3c0bcfe941d688e74ca34e19df254056a6b9d3bcfdcb825808bc932"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/product-placement-peer-first-peer-allocation-first-resident-placement-run-07.log",
+      "sha256": "e7f910cdb2fa3b676d6cb2b9b997fb7cdc96a31b8c8ecfb270429f189923a524"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/product-placement-peer-first-peer-allocation-first-resident-placement-run-08.log",
+      "sha256": "417ec45c72fa94a882167e6480587bf2c7d5e85640ed8da41687328897f4b41e"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/product-placement-peer-first-peer-allocation-first-resident-placement-run-09.log",
+      "sha256": "d1b498e48b9f12ed36235da3e48a6d7276c51d5194cc6fc213ed7b5f63493a69"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/product-placement-peer-first-peer-allocation-first-resident-placement-run-10.log",
+      "sha256": "c9164b3d4c147cd22a8a08124491dfb763ca4446bd46d932a4399f58de27d438"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/product-placement-peer-first-peer-allocation-first-resident-placement-run-11.log",
+      "sha256": "b94414c0185e62145ba9c063878e2df6daa96d354560823f1f3632edc3ec4feb"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/product-placement-peer-first-peer-allocation-first-resident-placement-run-12.log",
+      "sha256": "4f62732ecde3246e329d1a21f87e729718a755c29e432e8b95bcd4aafbe82453"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/product-placement-peer-first-peer-allocation-first-resident-placement-run-13.log",
+      "sha256": "0e38150b00f030119227eb24834db273525cd70ac7100b7fe88d4e48e0f69bb9"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/product-placement-peer-first-peer-allocation-first-resident-placement-run-14.log",
+      "sha256": "50183f47a7721b601e23b151379b4cdd5ff1af09448c10fb7105cde9bcd20a0f"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/product-placement-peer-first-peer-allocation-first-resident-placement-run-15.log",
+      "sha256": "242dfbc98bc47fc3d1d36edd195d7f4ae50ee6e322f8e7b3d559c50a2ad8f300"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/product-placement-peer-first-peer-allocation-first-resident-placement-run-16.log",
+      "sha256": "e1ca75cb3ec76f33516d3b86bcda05ebb1b4db9de7511945717e5b163e826855"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/product-placement-peer-first-peer-allocation-first-resident-placement-run-17.log",
+      "sha256": "9127f2068d063f321047e87041b848d51dc90e8a2f7d4b047b2be1c2f7b16467"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/product-placement-peer-first-peer-allocation-first-resident-placement-run-18.log",
+      "sha256": "f52e789c83295a5dd4289e0cc02f7a4c1c9f372b0659bb16d5f0773ff3f8386c"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/product-placement-peer-first-peer-allocation-first-resident-placement-run-19.log",
+      "sha256": "47dc9e606deb9c21ec65e50a8e07260ffdb809c2aec82f74a5fd4496c08f0337"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/product-placement-peer-first-peer-allocation-first-resident-placement-run-20.log",
+      "sha256": "568a0a6df06500d9af801414590c651b0d062e030adb09376abfb23c3578864c"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/product-placement-peer-first-peer-allocation-first-resident-placement-run-21.log",
+      "sha256": "f85a36c99531412e18b22947169c3d6a3d29a9080a9f66916f9d379a5adf2ced"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/product-placement-peer-first-peer-allocation-first-resident-placement-run-22.log",
+      "sha256": "ab4fd2f7e1316e0d27106e0d007946733162486707b22c2657c13bde2b777265"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/product-placement-peer-first-peer-allocation-first-resident-placement-run-23.log",
+      "sha256": "d2c66d84aae310f49ff406d54593b7ad25c61add92cfbbe41f3e3fd8bc1653ad"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/product-placement-peer-first-peer-allocation-first-resident-placement-run-24.log",
+      "sha256": "40c0f20ecc1e5504d6b3fa68108d3b076e98a61f32034f78d483d865b5ab7570"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/product-placement-peer-first-peer-allocation-first-resident-placement-run-25.log",
+      "sha256": "fba9eb037ea31d672a050753abbf4f93cd7a3883ffad1b4de1c39e6dabf57a0c"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/product-placement-peer-first-peer-allocation-first-resident-placement-run-26.log",
+      "sha256": "3f0db3f710b96790fcd482115897de328d2dc8a176dee39d29f0c24de94f68fd"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/product-placement-peer-first-peer-allocation-first-resident-placement-run-27.log",
+      "sha256": "5242907ed0353ab6e45355b24ad929d8bdcdf982aec7e9745bb42a9a0da1ebfc"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/product-placement-peer-first-peer-allocation-first-resident-placement-run-28.log",
+      "sha256": "40861af12a5e55780a51e4437c7d5c335a6742abf6dce535d3dd800fd402f0fa"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/product-placement-peer-first-peer-allocation-first-resident-placement-run-29.log",
+      "sha256": "a54124ce8d36d591f1ae8b3e54190e0dee199c432c35974b7398fe4471702bef"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/product-placement-peer-first-peer-allocation-first-resident-placement-run-30.log",
+      "sha256": "a24e18b353454c6a74a37b4a64431cf19cd20caaad9f76946c42ede47367a98a"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/product-placement-peer-first-peer-allocation-first-resident-placement-run-31.log",
+      "sha256": "717021a6b322d612e2bf20e71afbf46510c4e712cb0a4842db82e084bbf35906"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-15/control-candidate-first-run-01.log",
+      "sha256": "ffc92125b3a19b278d562332f2be87971ce79755da1d4d0f372fd3c4f8511c36"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-15/control-candidate-first-run-02.log",
+      "sha256": "c0f640bd3fe0bf01547618b8e83870e42f6c220e658bffed37cea4445534b203"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-15/control-candidate-first-run-03.log",
+      "sha256": "a0b82a08bf5aac6a5242bc3eb6fe5bd28abacbeb27e5a370b92fde3a4061792c"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-15/control-candidate-first-run-04.log",
+      "sha256": "0483c8562f221e1b7c48fad85855c2bc0b0f61f552f0a50c04639b6d75c8100e"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-15/control-candidate-first-run-05.log",
+      "sha256": "572d8dca61052750e71b675049ca05ebf42e2776e66312af744f64d3e53567e0"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-15/control-candidate-first-run-06.log",
+      "sha256": "e02962e25671d9e57ad97fdb70f82480c5e64281ec44a15f19121913f8e5a681"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-15/control-candidate-first-run-07.log",
+      "sha256": "34ff9469834bdaa152381d22a77100d1adb7b45a017070f84e7aefc2b85b8ad6"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-15/control-candidate-first-run-08.log",
+      "sha256": "f6eee02e1ba0c43dfac49eccb1195b7b9dc958b710b03611e57ce97b9c5176d6"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-15/control-candidate-first-run-09.log",
+      "sha256": "6acf74677c11542e7bf78534387703f0c92b10476553c2e5c8a677fe9925e10c"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-15/control-candidate-first-run-10.log",
+      "sha256": "7a4a2bb1148d00761f71b565270db633f3bd2607c02c0730ca498b4b2d6eed28"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-15/control-candidate-first-run-11.log",
+      "sha256": "606900c328600151608a7e3e550aea085e5db367b7f812209985e13aa74d80b2"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-15/control-candidate-first-run-12.log",
+      "sha256": "f3e6d4a7cd0c9f032116d023f1edba730d594caed3a095c2a249a67441023535"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-15/control-candidate-first-run-13.log",
+      "sha256": "93dab2e66c5ac9b4f5019de0c19a4bacca1b1cc63d281b7cb49696094ff78f54"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-15/control-candidate-first-run-14.log",
+      "sha256": "fb0e67c74a2aba929f6472bd4c8d49dcccb85b46b331aa5206d2461087bb29d0"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-15/control-candidate-first-run-15.log",
+      "sha256": "bc461bfe3995b980fe89d25cdf2944b0b3d7068c4208018c944ee071aed39e83"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-15/control-peer-first-run-01.log",
+      "sha256": "8fb5d80d7691b95eb3061a4bbf55cfec6bb93566593dc20f6cbaca310e13fac5"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-15/control-peer-first-run-02.log",
+      "sha256": "a0b16e9d282eeba3e113dcaeb99ca07439557c42a299df70805d3716f3fc5e97"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-15/control-peer-first-run-03.log",
+      "sha256": "85859f2b3dc2ac84ef5e911fc25d97a0640cdc41cbae5456600c416aa4ab13cb"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-15/control-peer-first-run-04.log",
+      "sha256": "6dac744a5d89d2bf7f1690f2379fdc44972d135e484a0575f8d80e628e11149e"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-15/control-peer-first-run-05.log",
+      "sha256": "066a7dbf599628268f0074b02d12b642b13ef630abe344e6e5eab9100e26854e"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-15/control-peer-first-run-06.log",
+      "sha256": "a3a10243103ea0b0ef1e19a08d7a1e87d03b7224cc98f41c39261d9d0dd9a511"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-15/control-peer-first-run-07.log",
+      "sha256": "2a93af819ae2270cdeda7fb857140705c67badf8440053165654debbbc394c30"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-15/control-peer-first-run-08.log",
+      "sha256": "e44577b9efd88ae9eb618535d6d78976dcc56a6be0b451da0846a2d3a4bc2028"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-15/control-peer-first-run-09.log",
+      "sha256": "9242a92dcac5ed2ffe3b45751b0a0c9439aca52569e0e33ea67f19bcdd614027"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-15/control-peer-first-run-10.log",
+      "sha256": "7881128f191a2e424df1599885635220f50ed8e25e58537c52c3dddbffa7f048"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-15/control-peer-first-run-11.log",
+      "sha256": "8b2548734c6ff2212d7c635957dc2a6a56967b12ca486d814a13b2ecd8f5ed96"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-15/control-peer-first-run-12.log",
+      "sha256": "0905c3c35292eadd57ac3756a6dba9e0e3d7c6f8b29cd70792da1af696843360"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-15/control-peer-first-run-13.log",
+      "sha256": "44046a46d1b0a1c5bafb8aa4c781bc69e268ee18a38dd3448885d255607fd2d5"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-15/control-peer-first-run-14.log",
+      "sha256": "27a7287054622ad844762d3bcee974c5c073a756f4faf025babe0bbb184bdec5"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-15/control-peer-first-run-15.log",
+      "sha256": "4ffb798948437fd30d1e0e97275009bf56b17910c12524d7af5c28ca6a97d025"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/control-candidate-first-run-01.log",
+      "sha256": "feb74633c62055a28f58a908665197d5ee0561651183042cfb4af9c365b8e88c"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/control-candidate-first-run-02.log",
+      "sha256": "e17e5d1a7f9370a45d83a1d10bc39ee50ff21a4c40a7cad56c85e53bfc296de8"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/control-candidate-first-run-03.log",
+      "sha256": "e48bef3a308fc6380360b40d2e8b17c9f314d9578935bd64b18a8d79d2f9c0a3"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/control-candidate-first-run-04.log",
+      "sha256": "93346f22e19e0311591c14b688ae957589bff8a9cfec2efb769c9f9a03d6bf68"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/control-candidate-first-run-05.log",
+      "sha256": "12f58451cbc70a13308c9cd505432734081be2b4cb1d3755a5198e2dee36db1d"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/control-candidate-first-run-06.log",
+      "sha256": "5fe97ab546d957d78fe716bf8bc210c55c7e49c77fe3ff252cdca5efcf5eed13"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/control-candidate-first-run-07.log",
+      "sha256": "b941613e942afb1c79321c4968569f149ce94b3d7e34671b0c4d8e8e5ff3cfe7"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/control-candidate-first-run-08.log",
+      "sha256": "ed32bc64ff1a220c97de978e928fbe98eeaa2ae990bb274493b70094be0640f9"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/control-candidate-first-run-09.log",
+      "sha256": "753228d9875804cc0ad256229874df67f35a836289c5bc9d730e169232c1a095"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/control-candidate-first-run-10.log",
+      "sha256": "08a65e14f54ab0503ee237b71751fd0878d7656b4428fd406d57abe479030a6d"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/control-candidate-first-run-11.log",
+      "sha256": "083838909d9e5f0e7d9a36a89751061cd3ef0dd11897e0cb4aacabbaa5dbd1a2"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/control-candidate-first-run-12.log",
+      "sha256": "451a26c8bb54a536e3b859e56f8a7266c80c83a91febcf518501757538b75334"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/control-candidate-first-run-13.log",
+      "sha256": "550293ca2b37f5afb91ebf0ef73e158608b5d99f1334aa3f80cdcba1fdcdee1a"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/control-candidate-first-run-14.log",
+      "sha256": "37087aef6ecc32f1b3c2798d469e78c9dc014b9dcdb4f7b8e0530e317edb9ace"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/control-candidate-first-run-15.log",
+      "sha256": "6467ce8f3e5c90df0d9beb24e5ff6446e6274931d4341984d678098bf4f2dea9"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/control-candidate-first-run-16.log",
+      "sha256": "4c2b25413625eeaf1d42029d7b98802bcee8c4e6d878110e9156caf8a54c32c0"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/control-candidate-first-run-17.log",
+      "sha256": "d402d4fb38c9ed79694da2d58535c9aa93987967c4b5a4dce9e26169139a354f"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/control-candidate-first-run-18.log",
+      "sha256": "29409e50afe7c370d29a4a97fe3ecb84fda89f410cdedf95973066635e2b458c"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/control-candidate-first-run-19.log",
+      "sha256": "23ee0a98bf61124a9918b18d9929919e84ddac1792bf033b54d2f01828cdc864"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/control-candidate-first-run-20.log",
+      "sha256": "e47d2b4505f96cef17a30f88fd37c43caeb4b0087af30770f4ae7c038e6ce977"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/control-candidate-first-run-21.log",
+      "sha256": "ef34fd73c0d699549999f852a94521b6ac3e21b67a45a269abf630de25477c24"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/control-candidate-first-run-22.log",
+      "sha256": "23db3e09399308f2568f0d3f71d2bb6e77377a3ed2c1f61fd05f4a2f59697529"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/control-candidate-first-run-23.log",
+      "sha256": "34de0837a83668addbf2b2187f934041996faf5f373144d187aae239a651e23a"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/control-candidate-first-run-24.log",
+      "sha256": "e863fd48de27cd24c20f59ca1e30c2831e1a6bd0e070c1731371118caaa93d87"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/control-candidate-first-run-25.log",
+      "sha256": "6d041f690c1f9b637c0fd75c9406ad738919a2e3a66e2e6d779cfbd2abedb887"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/control-candidate-first-run-26.log",
+      "sha256": "5584efa2fe75501a7e44c552fcdff81cbbda15e6ca9702d51ed7a3d16dc050c3"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/control-candidate-first-run-27.log",
+      "sha256": "72e3dcada2b723121cbb10efdd56eb47bc19896406bfdeb47e90db38d84d71cb"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/control-candidate-first-run-28.log",
+      "sha256": "4ada77415250ea12bf3d5335380a3af7f9e6c9246db48a1473177ccff227f876"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/control-candidate-first-run-29.log",
+      "sha256": "946720efab37c66d7790eb3dbc8af3b15c2d269ef8d31a512e00a115e27d37b6"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/control-candidate-first-run-30.log",
+      "sha256": "ffccab2909f189dbec2796218061fac7559680eda59259dd8459bac9ec89377b"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/control-candidate-first-run-31.log",
+      "sha256": "dc09ac770a0a9b20406b36828f463ef28477e7129393b68b49a665024f46b4da"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/control-peer-first-run-01.log",
+      "sha256": "1d96241ff0a644a8b3cc5ab6fd0774b1c422401638307cb8c8a36a61ad6b7aa1"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/control-peer-first-run-02.log",
+      "sha256": "15212aac4cc83ad07001b77885f4ee6e1a99bd983d17186a36c73381bb0c3014"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/control-peer-first-run-03.log",
+      "sha256": "3e0d87bcaa8f386800176c2530fea46c405589b96fbcbc9e6d3a1a27d954457a"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/control-peer-first-run-04.log",
+      "sha256": "cd9a31fb9f8018a88e62051d00defef83c6da6ae54eb3427925bd39180f8c1ab"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/control-peer-first-run-05.log",
+      "sha256": "3025ec334284185fcc2128df3d16a911c80a2dd5d9dbea6e6d00f39ce34acbef"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/control-peer-first-run-06.log",
+      "sha256": "a81622a84be3f5c9a05b5ecbbc780e6eb5ab38223c96e5db88b789ccf4c3481e"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/control-peer-first-run-07.log",
+      "sha256": "60d39e6f97d1f3a6dc75f3aa810d852c036990e540e16fe256e8253c2dde2cfe"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/control-peer-first-run-08.log",
+      "sha256": "7fdee71b24fff6ebb0fe35ae883fa39dc2d7a3f226752a6d100dfb8bb6d5f210"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/control-peer-first-run-09.log",
+      "sha256": "34d400b9cd1255de86d404d3ff56eb8b3c49b7a61e354c6bcb3f19aefee60d21"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/control-peer-first-run-10.log",
+      "sha256": "9a0319882f2bf59eca2890b286155a2c96de7cad20ea6b6f01b80550351f7765"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/control-peer-first-run-11.log",
+      "sha256": "0336c22b14c4310a6c9d04249b6b225c064f274fe39a0713190b973c432fdd4d"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/control-peer-first-run-12.log",
+      "sha256": "38da9ed17bbb705b220fa6b55b47ae87368fda004b820fe68d463dfbeaed69d8"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/control-peer-first-run-13.log",
+      "sha256": "ff3a454fef60ac8739b765146317d8bf8359c2f80a63dcb7d7290ff74324d326"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/control-peer-first-run-14.log",
+      "sha256": "821c76cf1a6af88d4b1e42cfa9ee2211e0646667ff261a364d3183aef3cffd46"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/control-peer-first-run-15.log",
+      "sha256": "2b0f8d7e888f681c027df286056a04613e656a07b938ece2ae42400df0430dcd"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/control-peer-first-run-16.log",
+      "sha256": "183b4e6044a2c50ebe4ab6fad4de61add5f9bed99a6616eb5c46534001188337"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/control-peer-first-run-17.log",
+      "sha256": "64519b29ae45c0814bcb70a8ff26fd2ac26d5584c94ae72ed35c6fd13a351ec1"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/control-peer-first-run-18.log",
+      "sha256": "09dbde2b367271861faebe0c59bf1a32b85ab992325ae35030a749f702258542"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/control-peer-first-run-19.log",
+      "sha256": "a222946232e19130ceff4bcaaa97baa3b1055aeb698855f52e32e7c3690a05f5"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/control-peer-first-run-20.log",
+      "sha256": "f0af4ad63c5db4558239a6c4f073da31337e234d6f26921aa3deb999c440c9ee"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/control-peer-first-run-21.log",
+      "sha256": "beaa98dc2455ddee5d050bf2e4ee9fcae46b1c2f15199d9fdf35692d2a1d48b4"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/control-peer-first-run-22.log",
+      "sha256": "d68f1cc4e86cb8f526e318ee7f895a63bfe8a7bd98a4a654928a55f7251390bc"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/control-peer-first-run-23.log",
+      "sha256": "fd07e4fc61b39ff60c3ab86cb42992e55891d14f2256c39cd557ec8c809b7341"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/control-peer-first-run-24.log",
+      "sha256": "fbad14520fbea0bd1b58f800b36f973626f93c00fbd20c4c96c7f5dca263bda8"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/control-peer-first-run-25.log",
+      "sha256": "562dcc4c94fe8eeb0de792f9718aa07764b1c805ed5933b220830746be5d6cc0"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/control-peer-first-run-26.log",
+      "sha256": "0d56e2a429892664d7e0d590efe49b5e7e5df5ceaf39818f632f296d5d924583"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/control-peer-first-run-27.log",
+      "sha256": "1d46a7a84b8f53fe9dc4fd04af8be779fc868a188ae0277b59c7a2ee9b68cc2f"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/control-peer-first-run-28.log",
+      "sha256": "5a384eac013d66bae438d90c1260bedb68eb124ddb1f2d081de0c41ee4b26772"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/control-peer-first-run-29.log",
+      "sha256": "503efff628c225e8308826850edec243ddb554c0e810f05261e458164c2f08a3"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/control-peer-first-run-30.log",
+      "sha256": "493aa40df6eb471ebbdf8a2fd5a122cd000c639bf25ea1e79933cf4c00b7d56f"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/raw/n-31/control-peer-first-run-31.log",
+      "sha256": "d6dc2125d9451e719aae958075ffdde9323cc03763e837496bff9def5cfe227f"
+    }
+  ],
+  "record": "hyle_perf_evidence_manifest",
+  "schema": "hyle.perf.evidence-manifest/v1",
+  "source": {
+    "clean": true,
+    "remote": "/Users/kiro/hyle-scratch/compute-unified/g01-rr-git-checkout",
+    "revision": "3d92eee97a70f7788dfb9bbcda73f6e0f801959f",
+    "tree": "2f7c92488f8df3527507e2a761fc048fb52a5a50"
+  },
+  "summary": {
+    "path": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/summary.json",
+    "sha256": "93a0b88d0581535b43f0338e87563998aa46eb18ae7a2fdcdaf0209b3f26e1cd"
+  },
+  "validator_results": [
+    {
+      "details": {
+        "artifact_count": 6,
+        "kind": "artifact-identity"
+      },
+      "gate": "PASS",
+      "id": "artifact-identity"
+    },
+    {
+      "details": {
+        "architecture_matches_profile": true,
+        "compiler_id": "AppleClang",
+        "compiler_matches_profile": true,
+        "compiler_version": "21.0.0.21000334",
+        "configuration": "Release",
+        "configuration_observation": {
+          "available": [
+            "Release"
+          ],
+          "mechanism": "CMAKE_BUILD_TYPE",
+          "proven": true,
+          "value": "Release"
+        },
+        "expected_compiler_id": "AppleClang",
+        "expected_compiler_version_prefix": "21.0",
+        "formal_toolchain": {
+          "mismatches": {},
+          "proven": false,
+          "reason": "machine runner profile has no pinned formal_toolchain",
+          "required": false
+        },
+        "fresh": true,
+        "generator_matches_profile": true,
+        "isa": "portable",
+        "kind": "build-contract",
+        "linkage": "static",
+        "lto": "off",
+        "toolchain": {
+          "cmake_compiler_record_sha256": "661f85d416ef9d157c2a329d41a10e25f60ea66d1e04d34002f6a01343285ae9",
+          "compiler_frontend_variant": "GNU",
+          "compiler_id": "AppleClang",
+          "compiler_path": "/usr/bin/c++",
+          "compiler_sha256": "34129c71a01a74f7f3b2443521519b2e5447553fa187f5fcafaaf8c42cc192e2",
+          "compiler_target": "unknown",
+          "compiler_version": "21.0.0.21000334",
+          "formal_identity_complete": false,
+          "linker_id": "AppleClang",
+          "linker_path": "/Library/Developer/CommandLineTools/usr/bin/ld",
+          "linker_sha256": "374d9f0713bce2c8a9e1e82bde51615d5433516a10d99b63107eb6ee70542e4c",
+          "linker_version": "ld: unknown options: --version",
+          "schema": "hyle.perf.toolchain-record/v1",
+          "sdk": "apple-sdk:MacOSX.sdk",
+          "stdlib": "unknown",
+          "system_name": "Darwin",
+          "system_processor": "arm64",
+          "system_version": "27.0.0"
+        },
+        "toolchain_attested": true
+      },
+      "gate": "PASS",
+      "id": "build-contract"
+    },
+    {
+      "details": {
+        "exit_code": 0,
+        "kind": "command",
+        "log": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-4/validators/resident-aa.log",
+        "log_sha256": "5547488fd321cc518c085e015938c22040eccb6daefd7202d6bab984c9661ea8"
+      },
+      "gate": "PASS",
+      "id": "resident-aa"
+    }
+  ]
+}

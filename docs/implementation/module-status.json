@@ -531,10 +531,11 @@
     },
     {
       "module": "compute_route_vulkan",
-      "state": "CANDIDATE",
-      "record": "docs/implementation/tasks/compute/inference-g01-vulkan-resident-ports.md",
-      "summary": "G01 VP固定candidate：合格resident SDPA direct ports保native strides，Copy3→0，Provider冷vec4/origin检查；Air9公开tests和Windows增量编译PASS，SDK/san/P1待验，原FAIL保留。",
-      "candidate": "3d92eee97a70f7788dfb9bbcda73f6e0f801959f"
+      "state": "CLOSED",
+      "record": "docs/implementation/tasks/compute/inference-g01-vulkan-resident-terminal.md",
+      "summary": "G01 Vulkan单请求有限RS/NP/RR/VP轮CLOSED：合格port Copy3→0，原数值/寿命/退休、Air三交付/宿主san及原合同P1 PASS；Win仅更新编译，旧FAIL/其他数学/未知成本保留。多请求和整个G01未结案。",
+      "candidate": "3d92eee97a70f7788dfb9bbcda73f6e0f801959f",
+      "performance": {"tier": "P1", "material_margin_pct": 5, "evidence": "evidence/performance/inference-g01-resident-vulkan-direct-ports-m1-p1/receipt.json"}
     },
     {
       "module": "graph_route_vulkan",
@@ -549,17 +550,19 @@
     },
     {
       "module": "compute_provider_ggml_vulkan",
-      "state": "CANDIDATE",
-      "record": "docs/implementation/tasks/compute/inference-g01-vulkan-resident-ports.md",
-      "summary": "G01 VP固定candidate：合格resident SDPA direct ports保native strides，Copy3→0，Provider冷vec4/origin检查；Air9公开tests和Windows增量编译PASS，SDK/san/P1待验，原FAIL保留。",
-      "candidate": "3d92eee97a70f7788dfb9bbcda73f6e0f801959f"
+      "state": "CLOSED",
+      "record": "docs/implementation/tasks/compute/inference-g01-vulkan-resident-terminal.md",
+      "summary": "G01 Vulkan单请求有限RS/NP/RR/VP轮CLOSED：合格port Copy3→0，原数值/寿命/退休、Air三交付/宿主san及原合同P1 PASS；Win仅更新编译，旧FAIL/其他数学/未知成本保留。多请求和整个G01未结案。",
+      "candidate": "3d92eee97a70f7788dfb9bbcda73f6e0f801959f",
+      "performance": {"tier": "P1", "material_margin_pct": 5, "evidence": "evidence/performance/inference-g01-resident-vulkan-direct-ports-m1-p1/receipt.json"}
     },
     {
       "module": "compute_ggml_runtime",
-      "state": "CANDIDATE",
-      "record": "docs/implementation/tasks/compute/inference-g01-vulkan-native-precision.md",
-      "summary": "G01 RR-01/02/03固定candidate：原native固定attention记录、port/owner失效和实际退休实现；Air有限数学/生命周期与Windows编译PASS，RR三交付/风险/P1待验，保原FAIL及其他支持域。",
-      "candidate": "a40003f7edb54a3da3113d0cd401b46211e0b0f0"
+      "state": "CLOSED",
+      "record": "docs/implementation/tasks/compute/inference-g01-vulkan-resident-terminal.md",
+      "summary": "G01 Vulkan有限NP/RR native轮CLOSED：原shader精度/cache隔离和Work退休后record/失效实现，最终3d92完整consumer三交付/宿主san/P1通过；a400源码不改，旧FAIL/其他runtime域保留。",
+      "candidate": "a40003f7edb54a3da3113d0cd401b46211e0b0f0",
+      "performance": {"tier": "P1", "material_margin_pct": 5, "evidence": "evidence/performance/inference-g01-resident-vulkan-direct-ports-m1-p1/receipt.json"}
     },
     {
       "module": "compute_provider_ggml_cuda",
