@@ -18,12 +18,20 @@ struct LeasePrefix final {
   LeaseSubmissionState *owner = nullptr;
   compute::detail::CompletionRetention retention;
 };
+struct LeasePageRange final {
+  std::size_t offset = 0, count = 0;
+};
 struct LeaseSubmissionState final {
   explicit LeaseSubmissionState(mem::AllocatorRef selected)
       : allocator(selected), reads(mem::StdAllocator<compute::ReadLease>(selected)),
+        pages(mem::StdAllocator<compute::ReadLease>(selected)),
+        page_ranges(mem::StdAllocator<LeasePageRange>(selected)),
         prefixes(mem::StdAllocator<LeasePrefix>(selected)) {}
   mem::AllocatorRef allocator;
   std::vector<compute::ReadLease, mem::StdAllocator<compute::ReadLease>> reads;
+  std::vector<compute::ReadLease, mem::StdAllocator<compute::ReadLease>> pages;
+  std::vector<LeasePageRange, mem::StdAllocator<LeasePageRange>> page_ranges;
+  std::size_t page_count = 0;
   std::vector<LeasePrefix, mem::StdAllocator<LeasePrefix>> prefixes;
   compute::LeaseUsePool uses;
   compute::LeaseUseBatch batch;
@@ -37,6 +45,26 @@ struct LeaseSubmissionState final {
   bool accepted = false;
 };
 namespace {
+void replace_pages(LeaseSubmissionState &state, std::size_t input,
+    std::span<const compute::ReadLease> source) noexcept {
+  if (state.page_ranges.empty()) return;
+  auto &range = state.page_ranges[input];
+  const auto old_count = range.count;
+  const auto tail = state.pages.begin() + range.offset + old_count;
+  const auto end = state.pages.begin() + state.page_count;
+  const auto next_count = state.page_count - old_count + source.size();
+  if (source.size() > old_count) {
+    std::move_backward(tail, end, state.pages.begin() + next_count);
+  } else if (source.size() < old_count) {
+    std::move(tail, end, state.pages.begin() + range.offset + source.size());
+    for (auto i = next_count; i < state.page_count; ++i) state.pages[i].reset();
+  }
+  std::copy(source.begin(), source.end(), state.pages.begin() + range.offset);
+  for (auto i = input + 1; i < state.page_ranges.size(); ++i)
+    state.page_ranges[i].offset = state.page_ranges[i].offset - old_count + source.size();
+  range.count = source.size();
+  state.page_count = next_count;
+}
 void destroy(LeaseSubmissionState *state) noexcept {
   if (!state) return;
   const auto allocator = state->allocator;
@@ -76,15 +104,17 @@ LeaseSubmission &LeaseSubmission::operator=(LeaseSubmission &&other) noexcept {
 }
 LeaseSubmission::~LeaseSubmission() { destroy(state_); }
 Result<LeaseSubmission> LeaseSubmission::create(std::size_t inputs, std::size_t prefixes,
-    compute::LeaseImportOptions options) noexcept {
-  if (!options.allocator.valid() || inputs >= UINT32_MAX || prefixes == 0)
+    LeaseSubmissionOptions options) noexcept {
+  if (!options.allocator.valid() || inputs >= UINT32_MAX || prefixes == 0 ||
+      options.max_page_reads > UINT32_MAX - inputs)
     return std::unexpected(Status::InvalidArgument("invalid composition lease capacity/allocator"));
   auto allocator = options.allocator;
   if (options.resource_budget.valid()) {
     HYLE_ASSIGN_OR_RETURN(allocator, options.resource_budget.metadata_allocator());
   }
   HYLE_ASSIGN_OR_RETURN(auto uses, compute::LeaseUsePool::create({.max_batches = 1,
-      .max_resources_per_batch = static_cast<std::uint32_t>((std::max)(inputs, std::size_t{1})),
+      .max_resources_per_batch = static_cast<std::uint32_t>(
+          (std::max)(inputs + options.max_page_reads, std::size_t{1})),
       .allocator = options.allocator, .resource_budget = options.resource_budget}));
   auto *storage = allocator.allocate(sizeof(LeaseSubmissionState), alignof(LeaseSubmissionState));
   if (!storage) return std::unexpected(Status::ResourceExhausted("composition lease metadata"));
@@ -92,6 +122,10 @@ Result<LeaseSubmission> LeaseSubmission::create(std::size_t inputs, std::size_t 
   LeaseSubmission result(state);
   try {
     state->reads.resize(inputs); state->prefixes.resize(prefixes);
+    if (options.max_page_reads != 0) {
+      state->pages.resize(options.max_page_reads);
+      state->page_ranges.resize(inputs);
+    }
     for (auto &prefix : state->prefixes) prefix.owner = state;
   } catch (...) { return std::unexpected(Status::ResourceExhausted("composition lease tables")); }
   state->uses = std::move(uses);
@@ -99,16 +133,44 @@ Result<LeaseSubmission> LeaseSubmission::create(std::size_t inputs, std::size_t 
 }
 void LeaseSubmission::bind(std::size_t input, compute::ReadLease source) noexcept {
   HYLE_FATAL_ASSERT(state_ && input < state_->reads.size());
+  replace_pages(*state_, input, {});
   state_->reads[input] = std::move(source);
 }
-void LeaseSubmission::clear(std::size_t input) noexcept {
-  if (state_) { HYLE_FATAL_ASSERT(input < state_->reads.size()); state_->reads[input].reset(); }
+Status LeaseSubmission::bind_pages(std::size_t input,
+    std::span<const compute::ReadLease> source) noexcept {
+  if (!state_ || input >= state_->reads.size())
+    return Status::InvalidArgument("composition page input is out of range");
+  if (state_->remaining.load(std::memory_order_acquire) != 0)
+    return Status::Unavailable("composition native prefixes have not retired");
+  const auto old_count = state_->page_ranges.empty() ? 0 : state_->page_ranges[input].count;
+  if (source.size() > state_->pages.size() - (state_->page_count - old_count))
+    return Status::ResourceExhausted("composition exact-page capacity exhausted");
+  for (const auto &read : source)
+    if (!read.valid()) return Status::InvalidArgument("composition exact-page guard is empty");
+  replace_pages(*state_, input, source);
+  state_->reads[input].reset();
+  return Status::Ok();
 }
-void LeaseSubmission::reset() noexcept { if (state_) for (auto &read : state_->reads) read.reset(); }
+void LeaseSubmission::clear(std::size_t input) noexcept {
+  if (state_) {
+    HYLE_FATAL_ASSERT(input < state_->reads.size());
+    replace_pages(*state_, input, {});
+    state_->reads[input].reset();
+  }
+}
+void LeaseSubmission::reset() noexcept {
+  if (!state_) return;
+  for (auto &read : state_->reads) read.reset();
+  for (auto &read : state_->pages) read.reset();
+  for (auto &range : state_->page_ranges) range = {};
+  state_->page_count = 0;
+}
 Status LeaseSubmission::begin(void *owner, ReferenceFn retain, ReferenceFn release, TerminalFn terminal) noexcept {
   HYLE_FATAL_ASSERT(state_ && owner && retain && release && terminal);
   HYLE_ASSIGN_OR_RETURN(auto batch, state_->uses.begin());
   for (const auto &read : state_->reads) if (read.valid()) HYLE_RETURN_IF_ERROR(batch.read(read));
+  for (std::size_t i = 0; i < state_->page_count; ++i)
+    HYLE_RETURN_IF_ERROR(batch.read(state_->pages[i]));
   state_->parent = owner; state_->retain = retain; state_->release = release; state_->terminal = terminal;
   state_->batch = std::move(batch); state_->next_prefix = 0; state_->accepted = false;
   { std::lock_guard guard(state_->lock); state_->first_error = Status::Ok(); }

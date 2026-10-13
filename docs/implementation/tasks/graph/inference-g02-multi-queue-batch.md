@@ -127,7 +127,8 @@ LeaseSubmissionOptions（allocator/resource_budget与显式max_page_reads，默�
 clear、reset同时释放该input旧page group。control外部串行，native未退休期间不能重绑。
 
 创建时预分配普通input、分页guard上界与input ranges；同一LeaseUsePool上界为inputs+
-max_page_reads（重复blocks沿原pool去重）。bind_pages冷O(已绑定page guards)整理有限
+max_page_reads（重复blocks沿原pool去重；其原线性查重使begin最坏O(guards²)，如实保留，
+本helper不签G06低成本消费）。bind_pages冷O(已绑定page guards)整理有限
 flat表，warm begin只沿当前有效ordinary/page guards；无warm allocation/whole arena读/
 metadata上传、没有每input最大页容量的平方存储。page功能未选择时不分配page表。
 原protect/finish/未知Completion/父owner/first error回调与actual retirement保持原算法。
