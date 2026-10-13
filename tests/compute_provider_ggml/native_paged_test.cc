@@ -84,6 +84,17 @@ template<class T>void paged_case(unsigned depth,bool causal){
       for(unsigned d=0;d<depth;++d)EXPECT_NEAR(half_test::decode(current[((qp[request]+row)*8+head)*depth+d]),expected/sum,.004);
     }
   }
+  // A second original slot owns a different page topology while the first
+  // keeps its result and borrowed native page table alive.
+  auto independent=c::BatchInvocation::create(*program,queue).value();
+  auto independent_plan=independent.prepare_batch(layout);ASSERT_TRUE(independent_plan)<<independent_plan.error().message();
+  auto independent_work=independent_plan->run(q,kr,vr);ASSERT_TRUE(independent_work)<<independent_work.error().message();
+  ASSERT_TRUE(independent_work->wait().ok());auto independent_output=independent.output().value();
+  std::vector<T> other(zero.size()),retained(zero.size());
+  ASSERT_TRUE(independent_output.view()->read(std::as_writable_bytes(std::span(other))).ok());
+  ASSERT_TRUE(changed_output.view()->read(std::as_writable_bytes(std::span(retained))).ok());
+  for(unsigned i=0;i<18*8*depth;++i){EXPECT_EQ(other[i].bits,actual[i].bits);EXPECT_EQ(retained[i].bits,current[i].bits);}
+  independent_output.reset();*independent_work={};*independent_plan={};ASSERT_TRUE(independent.close().ok());
   changed_output.reset();*final={};*rebuilt={};ASSERT_TRUE(context.drain().ok());
   for(unsigned step=0;step<64;++step){
     const unsigned first_count=15+step%17,second_count=step%8?17+step%31:0;
