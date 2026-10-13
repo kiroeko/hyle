@@ -1,0 +1,276 @@
+{
+  "kind": "native G01 immutable candidate source correctness, not closure",
+  "candidate": "d91a523df9bce21eb81c13d9bf2a8f3f7d3ea80f",
+  "native_patch_after_sha256": "a3bbea1ee85cdcdbcac247799a44850413b853460bdcf4107a420e9c2162f8cd",
+  "inputs": [
+    {
+      "path": "cmake/HyleDependencyLock.json",
+      "sha256": "482f81e0f46f1442c1dc27a9e3b0fd030c2ae80acc2416b0a63367479b9690ba"
+    },
+    {
+      "path": "src/compute_provider_ggml_vulkan/native_bridge.h",
+      "sha256": "5e781dc10c4bb9c4158958c4b7137fd152719303ae9d6982b46fa1fbe0936696"
+    },
+    {
+      "path": "src/compute_provider_ggml_vulkan/region.cc",
+      "sha256": "a91f3ff3c9147a2629ccd92a872130ed300f017eddfb42ab29fd2b2dbb8202a3"
+    },
+    {
+      "path": "third_party/ggml_vulkan_runtime/patches.json",
+      "sha256": "d1aa088eed1be64759b5da4b3fd377cc7e4a6bb40e96f7445c695cd64fc35243"
+    },
+    {
+      "path": "third_party/ggml_vulkan_runtime/NOTICE.md",
+      "sha256": "061c8959bea0630382232a9ac8e289e784dfcab9af5490fc748b054cf158d81a"
+    },
+    {
+      "path": "tests/compute_provider_ggml_vulkan/attention_cache_test.cc",
+      "sha256": "80796bead0e07eb57453dfea3bda863f00dd9a6c0b6e3ac6bec8805a0999715f"
+    },
+    {
+      "path": "tests/graph_route_vulkan/mature_tensor_test.cc",
+      "sha256": "41b231ec57055cb52272245df98364b43640afda29e60d98923ed5b964b87566"
+    }
+  ],
+  "native_pipeline": "original full-F32 scalar SPIR-V, exact host patch, no new shader; private tag and precision cache key",
+  "stages": [
+    {
+      "stage": "configure",
+      "command": [
+        "cmake",
+        "-S",
+        "C:\\h7\\inference-g01-native-vulkan\\parent",
+        "-B",
+        "C:\\h7\\inference-g01-native-vulkan\\build",
+        "-G",
+        "Ninja",
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DCMAKE_CXX_COMPILER=C:/Program Files/Microsoft Visual Studio/18/Enterprise/VC/Tools/MSVC/14.50.35717/bin/Hostx64/x64/cl.exe",
+        "-DCMAKE_CXX_FLAGS=/DWIN32 /D_WINDOWS /GR /EHsc",
+        "-DCMAKE_CXX_FLAGS_RELEASE=/O2 /Ob2 /DNDEBUG",
+        "-DHYLE_STATIC=OFF",
+        "-DHYLE_DEP_SOURCE_CACHE=C:/public/tools/hyle-dependencies/v1",
+        "-DVulkan_INCLUDE_DIR=C:/public/tools/hyle-vulkan/1.4.357.0/include",
+        "-DVulkan_LIBRARY=C:/public/tools/hyle-vulkan/1.4.357.0/Lib/vulkan-1.lib",
+        "-DVulkan_GLSLC_EXECUTABLE=C:/public/tools/hyle-vulkan/1.4.357.0/Bin/glslc.exe",
+        "-DSPIRV-Headers_DIR=C:/public/tools/hyle-vulkan/1.4.357.0/Lib/cmake/SPIRV-Headers"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 82.71900000001187,
+      "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g01\\configure-native-vulkan-1.log"
+    },
+    {
+      "stage": "build",
+      "command": [
+        "cmake",
+        "--build",
+        "C:\\h7\\inference-g01-native-vulkan\\build",
+        "--target",
+        "resident",
+        "--parallel",
+        "4"
+      ],
+      "exit_code": 2,
+      "elapsed_seconds": 110.29699999999139,
+      "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g01\\build-native-vulkan-1.log"
+    },
+    {
+      "stage": "build",
+      "command": [
+        "cmake",
+        "--build",
+        "C:\\h7\\inference-g01-native-vulkan\\build",
+        "--target",
+        "resident",
+        "--parallel",
+        "4"
+      ],
+      "exit_code": 2,
+      "elapsed_seconds": 124.18700000000536,
+      "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g01\\build-native-vulkan-2.log"
+    },
+    {
+      "stage": "build",
+      "command": [
+        "cmake",
+        "--build",
+        "C:\\h7\\inference-g01-native-vulkan\\build",
+        "--target",
+        "resident",
+        "--parallel",
+        "4"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 42.51600000000326,
+      "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g01\\build-native-vulkan-3.log"
+    },
+    {
+      "stage": "run",
+      "command": [
+        "C:\\h7\\inference-g01-native-vulkan\\build\\resident.exe",
+        "--gtest_filter=VulkanGraph.ResidentAttentionViewsPreserveEffectiveLengthsAndOldResults"
+      ],
+      "exit_code": 1,
+      "elapsed_seconds": 5.577999999994063,
+      "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g01\\run-native-vulkan-1.log"
+    },
+    {
+      "stage": "build",
+      "command": [
+        "cmake",
+        "--build",
+        "C:\\h7\\inference-g01-native-vulkan\\build",
+        "--target",
+        "resident",
+        "--parallel",
+        "4"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 40.14099999998871,
+      "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g01\\build-native-vulkan-4.log"
+    },
+    {
+      "stage": "run",
+      "command": [
+        "C:\\h7\\inference-g01-native-vulkan\\build\\resident.exe",
+        "--gtest_filter=VulkanGraph.ResidentAttentionViewsPreserveEffectiveLengthsAndOldResults"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 1.5310000000026776,
+      "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g01\\run-native-vulkan-2.log"
+    },
+    {
+      "stage": "build",
+      "command": [
+        "cmake",
+        "--build",
+        "C:\\h7\\inference-g01-native-vulkan\\build",
+        "--target",
+        "resident",
+        "--parallel",
+        "4"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 73.53100000000268,
+      "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g01\\build-native-vulkan-5.log"
+    },
+    {
+      "stage": "run",
+      "command": [
+        "C:\\h7\\inference-g01-native-vulkan\\build\\resident.exe",
+        "--gtest_filter=VulkanGraph.ResidentAttentionViewsPreserveEffectiveLengthsAndOldResults"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 1.4219999999913853,
+      "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g01\\run-native-vulkan-3.log"
+    },
+    {
+      "stage": "cache-build",
+      "command": [
+        "cmake",
+        "--build",
+        "C:\\h7\\inference-g01-native-vulkan\\build",
+        "--target",
+        "attention_cache",
+        "--parallel",
+        "4"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 1.9840000000112923,
+      "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g01\\cache-build-native-vulkan-1.log"
+    },
+    {
+      "stage": "cache-run",
+      "command": [
+        "C:\\h7\\inference-g01-native-vulkan\\build\\attention_cache.exe"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 0.5469999999913853,
+      "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g01\\cache-run-native-vulkan-1.log"
+    }
+  ],
+  "public_consumer": "F32/F16, D64/128/256, B2 GQA8/2, Q1/Q17, causal/noncausal, KV31 within capacity37 and offset1, two seeds + repeat, source read-only/old results/independent slots; 72 actual math episodes",
+  "cache_counterexample": "N1 MHA scalar in both modes, same Context with strict/normal interleaving in both orders; large F32 value131072 retained finite in strict and normal results unchanged",
+  "native_plan_limits": "no throughput/capture/all-domain claim; float shader shared memory charged; driver/private memory remains additional; static/shared SDK/risk/P1 still pending",
+  "lock_delta": {
+    "base": "486317b28",
+    "changed_dependency_records": [
+      "ggml_vulkan_runtime_patches"
+    ],
+    "changed_fields": [
+      "vendored.tree_sha256",
+      "license.NOTICE.sha256"
+    ],
+    "unchanged_records": 53,
+    "product_native_change": "only locked src/ggml-vulkan/ggml-vulkan.cpp and Vulkan bridge/region; shaders unchanged",
+    "selector": "conservative global plan preserved in native-implementation-plan.json; no global builds/tests authorized or launched",
+    "validation_scope": "actual native Vulkan producer + direct consumers + needed SDK/package/risk checks; preserve unaffected closed math and metadata/version caveats"
+  },
+  "raw": [
+    {
+      "path": "add_full_f32_patch.py",
+      "sha256": "67674537d10d55b6f21079b7efb6ec2f668d0630705f59e01631fd0f26793275"
+    },
+    {
+      "path": "build-native-vulkan-1.log",
+      "sha256": "15efe379adbdc92000a1d42c62336a9c7f9f157ca2b675f8e5643183e8dd23f3"
+    },
+    {
+      "path": "build-native-vulkan-2.log",
+      "sha256": "7c06e3e7a50228e7814306f56beb96670e2086d9ba96a41621436665ea6dc08b"
+    },
+    {
+      "path": "build-native-vulkan-3.log",
+      "sha256": "968c5a0f4e04e7317679cf9cdd70b9d93dbeb1462f6f3725838932b88b42e784"
+    },
+    {
+      "path": "build-native-vulkan-4.log",
+      "sha256": "233c685c6ada67fdbf1ce2e6e66bdf0103bec27606527435a14f0e4e674a3adc"
+    },
+    {
+      "path": "build-native-vulkan-5.log",
+      "sha256": "4242bc20ba4957514d6c7a0ff6b19e90eb0c2fbd70b9f147171fc38a96cd4e35"
+    },
+    {
+      "path": "cache-build-native-vulkan-1.log",
+      "sha256": "ace6750154d8445cbd0fdf242493e611a4e357af81d8086f0be9df83f59f8a61"
+    },
+    {
+      "path": "cache-run-native-vulkan-1.log",
+      "sha256": "d1b8b4b21a98b748e11f3d8cc8de76a6bf710d1158599943f7f7d7e4f57ef7b4"
+    },
+    {
+      "path": "configure-native-vulkan-1.log",
+      "sha256": "3ac8a55f887c2c1451b356ab27f4f3006c3c56004f2406e8be6af4e36ff3d94b"
+    },
+    {
+      "path": "lock-delta-scope.json",
+      "sha256": "0789a95f8dcda6b7db414543138efa697ffbc0bde606a8f7e323d93a4876ead9"
+    },
+    {
+      "path": "native-implementation-plan.json",
+      "sha256": "1769f725ff81feacaa4c7a577925df964df7925afe208121171bd9602747ebb2"
+    },
+    {
+      "path": "native-vulkan-CMakeLists.txt",
+      "sha256": "bd7e53ecc413df6f71eac8a94d78d08a825d57782edfe3eb55021c1a2fc3e406"
+    },
+    {
+      "path": "native-vulkan-result.json",
+      "sha256": "1709e54d42ea974727cd1c7ed0de740566e3b7d495b44180b0c53595d400c0e3"
+    },
+    {
+      "path": "run-native-vulkan-1.log",
+      "sha256": "2384f0347b6a81306affaabfee6faa06a8c77436057f59f20ea9670d7812b6bf"
+    },
+    {
+      "path": "run-native-vulkan-2.log",
+      "sha256": "5443d8c964608f6e081980d91309c97582f92654c8b6a1f2af331d84a73d50f0"
+    },
+    {
+      "path": "run-native-vulkan-3.log",
+      "sha256": "9b3e63e6eb5a37309ad77f4047b70e5ee883162fedfa20211da964d78390cd2c"
+    }
+  ],
+  "raw_zip_sha256": "17286845c3ca4d2581413426763c9ac234ccbaa1fdcc50631f0f474b940e0a94"
+}

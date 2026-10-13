@@ -369,9 +369,10 @@
     },
     {
       "module": "compute_provider_ggml",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/inference-g01-resident-sdpa.md",
-      "summary": "G01 resident SDPA AUDITED: four finite FIX entries bind native-compatible padded views and original fused CPU/Vulkan kernels; no new runtime or whole G01 closure."
+      "summary": "G01 resident SDPA CANDIDATE: native-compatible cache views, original fused CPU/full-F32 Vulkan math; public finite consumers passed, delivery/risk/P1 remaining; no whole G01 closure.",
+      "candidate": "d91a523df9bce21eb81c13d9bf2a8f3f7d3ea80f"
     },
     {
       "module": "graph_provider_onednn",
@@ -552,15 +553,17 @@
     },
     {
       "module": "compute_provider_ggml_vulkan",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/inference-g01-resident-sdpa.md",
-      "summary": "G01 resident SDPA AUDITED: four finite FIX entries bind native-compatible padded views and original fused CPU/Vulkan kernels; no new runtime or whole G01 closure."
+      "summary": "G01 resident SDPA CANDIDATE: native-compatible cache views, original fused CPU/full-F32 Vulkan math; public finite consumers passed, delivery/risk/P1 remaining; no whole G01 closure.",
+      "candidate": "d91a523df9bce21eb81c13d9bf2a8f3f7d3ea80f"
     },
     {
       "module": "compute_ggml_runtime",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/inference-g01-vulkan-native-precision.md",
-      "summary": "G01 Vulkan native precision AUDITED: private tagged full-F32 scalar shader, cache identity and actual float shared-memory admission; three finite FIX, no new math or runtime."
+      "summary": "G01 resident SDPA CANDIDATE: native-compatible cache views, original fused CPU/full-F32 Vulkan math; public finite consumers passed, delivery/risk/P1 remaining; no whole G01 closure.",
+      "candidate": "d91a523df9bce21eb81c13d9bf2a8f3f7d3ea80f"
     },
     {
       "module": "compute_provider_ggml_cuda",

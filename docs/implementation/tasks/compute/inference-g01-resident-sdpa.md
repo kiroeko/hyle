@@ -1,7 +1,8 @@
 # G01 驻留 SDPA：视图消费与原生 fused 路径
 
-状态：AUDITED，2026-10-13。owner：`compute_provider_ggml`、
+状态：CANDIDATE，2026-10-13。owner：`compute_provider_ggml`、
 `compute_provider_ggml_vulkan`；baseline：`070609442806ebfe6a0dc8d6594b7388c494f20b`。
+不可变candidate：`d91a523df9bce21eb81c13d9bf2a8f3f7d3ea80f`。
 授权与完整目标见[缺口执行总卡](../project/inference-gaps-goal-execution-2026-10.md)。
 本卡先修 G01 中已有 SDPA 的实际消费和成本缺陷，不签整个 G01，也不替代多请求分页及
 Apple/Vulkan 联合分页的后续 owner 卡。

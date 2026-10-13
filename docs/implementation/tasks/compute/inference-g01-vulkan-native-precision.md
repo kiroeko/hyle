@@ -1,9 +1,10 @@
 # G01 原生 Vulkan attention 精度资格
 
-状态：AUDITED，2026-10-13。新增owner：`compute_ggml_runtime`；baseline：
+状态：CANDIDATE，2026-10-13。新增owner：`compute_ggml_runtime`；baseline：
 `d97126cfdfa3b73ebf385fb95be27d989ef5f683`。原Provider owner仍按
-[resident SDPA卡](inference-g01-resident-sdpa.md)AUDITED执行。完整授权来自
+[resident SDPA卡](inference-g01-resident-sdpa.md)同一candidate验证。完整授权来自
 [缺口goal](../project/inference-gaps-goal-execution-2026-10.md)；不是重新检查CLOSED来找问题。
+不可变candidate：`d91a523df9bce21eb81c13d9bf2a8f3f7d3ea80f`。
 
 新事实：[实际定向失败](../../../../evidence/correctness/inference-g01-resident-stage/README.md)
 证明锁定Vulkan原FLASH_ATTN_EXT的F32 accumulator仍可能half缩窄Q/K/V/概率。
@@ -64,4 +65,5 @@ selector因两个lock内容hash变化给全局保守计划，原plan与逐depend
 遵循用户既有模块影响验证要求，只执行该native owner与实际Vulkan消费者/交付/风险门；
 不因此重测无源码变化的CPU/CUDA/Metal数学或全库。原版本/opaque限制仍保留，不能将
 未运行global rows写PASS。公共selector/构建/性能工具未改；四路本机编译，无大模型run。
-source正确性已实跑；candidate三交付/san/P1与最终review仍待完成。
+source正确性已实跑；[候选证据](../../../../evidence/correctness/inference-g01-native-precision/README.md)
+集中记录。candidate三交付/san/P1与最终review仍待完成，不签CLOSED。
