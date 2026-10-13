@@ -1,0 +1,98 @@
+# 单机推理基础缺口补齐执行总卡
+
+状态：**执行中，首批定界**，2026-10-13。用户明确要求先补前次统计的缺口，并在清除旧 goal
+后要求创建新 goal；本轮覆盖 G01–G10 的修正、成熟承载接入或已有完整公开路线的反证验收。
+不能以延后、引擎自己写胶水或一个小模型出字代替完成。
+
+baseline：`5d46db5fd99322e2f75d3fe07553c61fadff8eb9`。创建时工作树干净，64 个 registry owner
+为 CLOSED；原有限验收与失败/未知费用保留。总卡是调度入口，**不代替 owner 的活动收口卡**，
+也不授权在 CLOSED 状态写产品代码。模块真实状态仍只看
+[module-status.json](../../module-status.json)。
+
+## 输入与完成目标
+
+- [十项源码审计](inference-single-machine-foundation-audit-2026-10.md)：固定三 peer、七实际路线、
+  十项发现与反证；[输入证据](../../../../evidence/architecture/inference-single-machine-foundation-audit/README.md)。
+- [一期收口与引擎启动方案](inference-consumer-adaptation-plan-2026-10.md)：消费形状、有限包、
+  原子/组合/政策边界及局部/端到端性能分界。
+- [Qwen3.5-2B 实物与消费者范围](qwen35-2b-command-consumer-scope-2026-10.md)：dense FFN＋
+  hybrid attention，已有片段与本轮外部参考；完整 HYLE 模型执行尚未签发。
+- 三 peer 固定身份仍为 SGLang7224fce1b5e488c9916f20ec0556d696e595d512、
+  vLLM98f721116227f0f48690deb05c815c057bac0668、
+  llama.cpp cbe28bb3cb0758f0c566a9a3561766821aeb0748。
+
+目标覆盖单机单 GPU、一个 CPU＋一个 GPU 真数学联合、单 CPU，单/多请求及 CPU/CUDA/
+Apple/Vulkan 的实际 OS/native 资格。共同验收位置、有效区、shape/encoding、权限、producer、
+错误、取消、旧结果与 actual retirement；保不同 native 对象、plan、capture 和成本事实。
+
+不纳入完整引擎/server、tokenizer/模型格式产品、请求/cache/采样政策、多 GPU/多机二期。
+整引擎 prefill/decode token/s 在完整引擎后验收，不作为本 goal 的循环前置门；结构 P0 与
+已冻结同合同片段的定向 P1/P2 仍适用。具名模型片段/命令消费者可作为验收入口，不把
+外部 Transformers 执行当 HYLE PASS。
+
+## 十项跟踪
+
+下表是当前 goal 工作项，不是第二份模块 registry。当前完成数 **0/10**；上一轮只完成
+源码调查与模型/reference 预检，未完成本轮产品修正或新旅程资格。
+
+| 项 | 当前状态 | 有限目标 | 预计涉及的机制 owner，需在活动卡精确定界 |
+|---|---|---|---|
+| G01 高效驻留读取 | 待 owner 定界 | 单请求先核 dense/view；多请求接 native/等价直接驻留消费，避免按每 Q/head 重复物化全 KV | compute_batch、原 route/Provider、graph_batch 必要桥 |
+| G02 联合分页 | 首批源码定界 | 原 multi-queue bindings 接 batch coordinator；native hybrid 接准确 page/layout 与原 region/slot，公开 CPU→GPU→CPU | graph_batch、三个 graph hybrid、原 compute/native 权限桥 |
+| G03 增量 producer 组合 | 待 owner 定界 | 原 exclusive/F2/native waits到更新与读取；精确 dirty 域、成功 ready、idle input 生命周期 | compute_batch、compute/F2、原 native route与graph桥 |
+| G04 量化 KV | 待有限编码选择 | 按成熟实际 cache 编码冻结 payload/scales/layout、quantize append与直接读取，不每步解码完整历史 | compute_ops/batch、实际 Provider/native route |
+| G05 attention 语义域 | 待有限数学选择 | 固定真实消费者所需 window/mask/维度等域及失败边界，成熟承载；未准入未来特例不无限扩张 | compute_ops/batch、实际 Provider/native route |
+| G06 metadata/decode | 待 owner 定界 | host-known/device-produced分界，active/delta上传、完整 topology复用与decode档，实际capture资格 | compute_batch、FI/native Provider、graph_batch |
+| G07 packed 权重 | 待有限编码选择 | 锁定 artifact→resident→selected math，借原生packed/冷repack；checked IDs保错误，排除warm完整展开/多余host检查 | 实际低精度 Provider/native route及资源桥 |
+| G08 数值输出选择 | 待有限数值域选择 | row-wise greedy/selection与选定随机数值域，counter/state、质量/分布和少量结果返回 | compute_ops、实际 Provider/native route；模型采样政策不下沉 |
+| G09 联合流水 | 待最小consumer | 原有限slots/依赖推进，真实无依赖CPU/GPU支路及microbatch trace；不重复scheduler | 三个graph hybrid及必要原native执行桥 |
+| G10 CPU预算 | 待最小consumer | executor/native private pools明确报告和约束边界，阶段与并发invocation组合 | compute_route_cpu及实际CPU Provider |
+
+编码、数学与数值域由固定 peer/native 实际支持、当前模型和留出消费者共同裁决。总卡不
+预先宣称 FP8/Q8/window/MLA/random 的任意组合全部准入，也不以 BF16 单请求不需要为由
+删除上述 G 项。确需调整已冻结域时按 owner 协议回退，不在实现途中扩成所有 peer API。
+
+## 推进顺序
+
+1. **首批 G02/G01**：先核 single/multi-queue coordinator、native hybrid bind 与原权限边界，
+   固定最小 owner 卡；将可独立签发的 common 接缝与 native 数学承载分开。
+2. **G03/G06**：沿选定驻留数学加入真实 producer/dirty 更新、metadata/topology与warm成本。
+3. **G04/G05/G07**：每项先冻结一个或有限个真实编码/数学消费档，再接成熟承载；必要 native
+   适配属于本轮工作，不用未选/拒绝假装跨路线对称。
+4. **G08/G09/G10**：数值选择/随机、联合依赖推进与CPU pools，以具体消费者及同合同费用裁决。
+5. **终局**：十项对照输入审计，三部署/七实际路线的已准入格、源码/头 LOC 与剩余引擎
+   接线账；所有未支持/未知/capture限制明确，不签全模型吞吐或二期完成。
+
+实现顺序可按真实依赖调整，但不能省略工作项。可复核完整 ROUTED 路线必须给具名 owner/
+成熟依赖、自然 public 调用、生命周期、费用/资格和验收；写 convenience wrapper 或“上层
+处理”不足以结束。没有真实需要的应用政策剥离后，还须证明其通用机制覆盖。
+
+## 状态、预算与验证
+
+每个实际产品 owner 由本轮新事实创建小卡，合法 CLOSED→SCOPED→AUDITED，再写实现。
+SCOPED冻结baseline、触发、主/正交消费者、预算和预声明门；AUDITED固定有限FIX、API/
+owner/依赖、identity、失败/完成/并发、冷热成本和negative space。稳定不可变candidate
+以后做适用正确性/风险/三交付与定向性能，全部适用门真实裁决后CLOSED。
+
+总卡不是全局 token/时间预算，也不擅自给新 goal 设置用户未要求的 token budget。有限
+执行预算在各活动卡固定。用户已有常设授权：类似构建/验证超时按同配置/树/合同有限追加
+时间，无需再问；保原 FAIL/TIMEOUT、elapsed与累计上限，不以新日志目录重置。
+发生工具/环境问题先查实际根因和替代合法验证；未运行不得写PASS，模块与goal的blocked
+裁决分别遵守原协议，不将缓慢或一次失败当成自动停止理由。
+
+验证按[selector](../../../developer/review/change-impact-validation.md)取 owner 与真实直接
+消费者。公共头/API/package seam才扩对应门，不每个op全局构建。库依赖按机器可用内存
+选合理并行并复用tree/cache；heavy gates串行、consumer低并行。公共工具、构建系统或
+性能统计核心不在模块内无限扩建。
+
+Windows `C:\public\project-hyle\hyle` 是产品真相；WSL/Air仅一次性验证副本，不能反向
+覆盖源文件。Apple只用MacBook Air，执行前读取实际hardware/OS/toolchain；Mini不可用。
+所有普通轮至少docs/closure及适用验证；registry改变带改前明确Git revision，状态摘要
+由原checker生成，保无关既有修改。
+
+## 完成条件
+
+十项有限机制均有实际纠正/成熟承载和验收，或已有完整公开路线的可核反证；每项给出
+最终owner、支持域/负空间、三部署路线、正确性/寿命/错误/关闭、结构成本及适用资格。
+所有当期适用风险未完成不得通过，所有产品owner应有terminal，真实产品输入固定且
+工作树可交接。goal只在这些条件完成时标complete；启动文档或第一次模型输出不算完成。
