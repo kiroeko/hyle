@@ -53,3 +53,16 @@ candidate前固定此实现；交付/风险与原合同新P1待验，不由sourc
 实际短结构诊断也确认candidate managed dispatch3→1、外部temporary blocks3→1，
 原SDPA＋原reshape＋一次Concat，peer原七dispatch仍一个native command。这里是
 结构事实，不是已资格的吞吐PASS；不修改原schema/math/精度或原短D64 workload。
+
+候选实际门已通过：Air source四tests、实际relocated static/shared各两public tests，
+原ASan/UBSan/TSan树各四tests且region.cc/vulkan_program.cc/vulkan_batch.cc及tests
+compile flags核验；原CPU+Vulkan exact/control/state consumer增量build6.558s、
+run3.188s PASS。Windows同parent/build只重编三TU/链接，四jobs5.125s，不跑本机GPU。
+原同三shape/F16独立double/readonly/tail comparator oracle2.819s PASS。全部已验门
+见[RF证据](../../../../evidence/correctness/inference-g01-vulkan-ragged-region-fusion/README.md)；
+旧private编译getter猜错失败保留，只修诊断消费既有ProgramState，不改公共API。
+
+同合同d9a54a85 formal fresh3/source0006944b7已启动，product0e9e011b8，原peer/shape/
+oracle/5%/16paired rounds/min1/4ms/n15/31/A/A/controls全部不变。只因为产品结构已改
+进行新候选验证；原fresh2 FAIL928.101s、全部之前成本保留，不因新tree重置预算。
+新performance gate尚未终态，不提前签PASS；Apple/CPU原P1不重跑。
