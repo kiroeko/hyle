@@ -20,8 +20,8 @@ packed NHD 容量 Q/K/V，输出只有该布局的实际 packed Q rows；F16/BF1
 沿原 MLX View/fast SDPA/Program 执行，原运行槽和结果 owner 合同不变。Q0 request 跳过，
 非空 Q 需有 KV，causal 还需 KV≥Q；全空 Q 返回空输出。新拓扑显式冷准备，run 不读
 host metadata 或重新建图；规划增长复用、paged 和 capture 仍有独立限制。
-该候选 source/static/shared 与宿主风险已验，性能门尚未完成，见
-[native ragged 卡](../implementation/tasks/compute/inference-g01-native-ragged-layout.md)。
+该有限域 source/static/shared、宿主风险与实际Air F16同合同性能非劣门均已通过；
+长prefill小幅落后仍如实保留，见[有限终审](../implementation/tasks/compute/inference-g01-apple-ragged-terminal.md)。
 
 ```cpp
 auto program = hyle::compute::apple::prepare_ragged_batch(

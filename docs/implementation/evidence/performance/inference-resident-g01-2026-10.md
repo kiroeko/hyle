@@ -74,3 +74,11 @@ INCONCLUSIVE/非劣PASS，长prefill0.9884–0.9965方向INCONCLUSIVE/非劣PASS
 0.8018–0.8260方向LOSS/非劣FAIL。3managed段→1改善不了这条warm资格缺口：原
 fixed_attention_graph拒第二个flash与Concat，导致整合graph每步走managed编码。
 必须复用原record-safe/actual retirement机制并实证多flash记录，否则不结案。
+
+最终bc0的[RR资格与性能](../../../../evidence/performance/inference-g01-native-ragged-vulkan-rr-m1-p1/README.md)
+已PASS：同contractd9a54a85/source4f224878a/实际Air M1-MAC工程身份，16 A/A、n15
+产品120/controls30、931.800s，QUALIFIED、verify0、整体5%非劣PASS。混合D256比
+1.0545–1.0642方向WIN/band INCONCLUSIVE，长prefill0.9993–1.0162方向INCONCLUSIVE/
+band PARITY，短D64 1.0014–1.0084方向INCONCLUSIVE/band PARITY；所有非劣门PASS。
+机制为原record-safe多tagged flash/Concat固定记录，不再每步managed编码。三次Vulkan
+multi正式累计2789.077s，原两次LOSS/FAIL保留；不是一般capture、Windows GPU或整模型证书。

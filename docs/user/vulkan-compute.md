@@ -35,7 +35,7 @@ causal `Q×K` mask与float shared scratch仍是真成本，没有capture或全dt
 
 `hyle/compute/vulkan_batch.h` 的 `prepare_ragged_batch(context, layout, operation)` 冷消费
 owned host `BatchLayoutVersion` 和相同容量的 `RaggedAttention`。三个输入是 packed NHD
-容量 Q/K/V，单输出是实际 active packed Q rows。当前候选 F16 D64/128/256借原View/
+容量 Q/K/V，单输出是实际 active packed Q rows。有限 F16 D64/128/256域借原View/
 SDPA/Concat/Program；qualified request slices保原KV root和对齐origin，不按每Q/head
 展开历史。原query转换、mask、输出拼接与native私有费用仍存在。
 
@@ -50,8 +50,10 @@ auto result = done.wait().value();
 
 Q0 request跳过，全空输出为空；非空Q需KV，causal需KV≥Q。拓扑变动显式重新准备，
 现有Program/slots/旧结果/实际退休按原native规则保留；不声称native paged、增长规划
-或capture。实际Air source/static/shared、宿主风险与Windows定向编译已通过，性能仍待
-[native ragged 卡](../implementation/tasks/compute/inference-g01-native-ragged-layout.md)裁决。
+或一般capture。实际Air source/static/shared、宿主风险、Windows定向编译和同合同
+多请求性能非劣門均已通过，见[有限终审](../implementation/tasks/compute/inference-g01-vulkan-ragged-terminal.md)。
+原tagged多flash/Concat图仅在实际record-safe成立时复用固定记录；绑定origin/owner变化
+仍会失效，不将其他graph自动标为固定重放。
 
 源码构建需要 C++23、Python 3、glslangValidator/glslang，以及 Vulkan SDK 提供的 glslc、
 开发链接库和 SPIRV-Headers CMake package；可通过 `VULKAN_SDK` 指定 SDK 根目录。

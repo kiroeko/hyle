@@ -44,13 +44,13 @@ Apple/Vulkan 的实际 OS/native 资格。共同验收位置、有效区、shape
 G01 CPU resident/native ragged有限轮、Vulkan单请求有限轮与G02 common实现，不能由
 子批替代全部路线。Apple native ragged有限轮已CLOSED；Vulkan原280短D64合格性能
 FAIL保留；原region分段修正候选0e9e011b8随后同合同P1也失败。
-后续0e9合格P1也FAIL：原固定记录只接单flash，合并图反而每次managed编码。RF-04
-已复现/修正，最终bc0候选实际64步记录/失效、三交付/三san/原消费者全部PASS，
-同合同fresh4正式验证中；不因三段变一段就结案。
+0e9失败原因为固定记录只接单flash，合并图反而每次managed编码。RF-04已复现/修正，
+最终bc0的64步记录/失效、三交付/三san/原消费者及同合同fresh4 P1全部PASS、verify0；
+Vulkan有限NR/RF轮已CLOSED，原两次FAIL仍保留。整个G01分页等范围仍未完成。
 
 | 项 | 当前状态 | 有限目标 | 预计涉及的机制 owner，需在活动卡精确定界 |
 |---|---|---|---|
-| G01 高效驻留读取 | CPU有限輪973、Apple280 CLOSED。Vulkan280与0e9两次合格非劣FAIL保留，分别短D64 LOSS11–13%与17–20%。最终bc0原1region＋多tagged flash/Concat安全记录已实跑64步/失效及十source tests、两SDK、三san、原CPU联合回归和Win定向编译PASS；同合同fresh4性能验证中。整个G01仍待其它准入域与分页 | 单请求先核 dense/view；多请求接 native/等价直接驻留消费，避免按每 Q/head 重复物化全 KV | compute_batch、原 route/Provider、graph_batch 必要桥 |
+| G01 高效驻留读取 | CPU973、Apple280与Vulkanbc0有限轮均CLOSED。Vulkan最终原1region＋安全记录通过十source tests/两SDK/三san/原联合回归及Win定向编译，multi P1 QUALIFIED/5%非劣PASS、verify0；mixedD256 WIN，prefill/D64方向INCONCLUSIVE。原两次qualified FAIL与全部限制保留，整个G01其它准入域与分页未完成 | 单请求先核 dense/view；多请求接 native/等价直接驻留消费，避免按每 Q/head 重复物化全 KV | compute_batch、原 route/Provider、graph_batch 必要桥 |
 | G02 联合分页 | common与CPU+CUDA实跑、三交付/宿主风险通过；Windows余门及Apple/Vulkan联合分页待验 | 原 multi-queue bindings 接 batch coordinator；native hybrid 接准确 page/layout 与原 region/slot，公开 CPU→GPU→CPU | graph_batch、三个 graph hybrid、原 compute/native 权限桥 |
 | G03 增量 producer 组合 | 待 owner 定界 | 原 exclusive/F2/native waits到更新与读取；精确 dirty 域、成功 ready、idle input 生命周期 | compute_batch、compute/F2、原 native route与graph桥 |
 | G04 量化 KV | 待有限编码选择 | 按成熟实际 cache 编码冻结 payload/scales/layout、quantize append与直接读取，不每步解码完整历史 | compute_ops/batch、实际 Provider/native route |
@@ -80,6 +80,8 @@ source/relocated static/shared Direct＋两个dependent Graph regions全部PASS�
 Program消费而不另建controller；Apple280有限轮已CLOSED，直接联合回归两平台通过。
 Vulkan原qualified FAIL已封存并按[有限RF卡](../compute/inference-g01-vulkan-ragged-region-fusion.md)
 修冷region分段；新candidate交付/宿主风险与原消费者通过，原同合同P1串行运行。
+最终bc0已按[有限terminal](../compute/inference-g01-vulkan-ragged-terminal.md)关闭，原同合同
+P1资格/非劣/verify通过；停止重复这一已签域，保两次FAIL和全部原后续范围。
 分页/G03–G10和全部已准入域
 继续保留，不以本批冷入口签growth/capture完成。
 

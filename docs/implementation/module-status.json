@@ -537,10 +537,15 @@
     },
     {
       "module": "compute_route_vulkan",
-      "state": "CANDIDATE",
-      "record": "docs/implementation/tasks/compute/inference-g01-vulkan-ragged-region-fusion.md",
-      "summary": "G01 RF CANDIDATE：原单region＋相邻内部reshape，RF-04复用record-safe多tagged flash/Concat记录；实跑两flash64步记录/失效及原四native＋五route共十tests PASS。原280与0e9 qualified性能FAIL保留，新交付/风险/P1待验，不签整个G01。",
-      "candidate": "bc0ba41f714f6529cb1c583bee59d482946e7589"
+      "state": "CLOSED",
+      "record": "docs/implementation/tasks/compute/inference-g01-vulkan-ragged-terminal.md",
+      "summary": "G01 Vulkan native ragged/RF有限轮CLOSED：原1region＋多tagged flash/Concat安全记录，十source tests/两SDK/三san/原CPU联合回归及Win定向编译PASS；实际Air multi P1 QUALIFIED/5%非劣PASS、verify0，mixedD256 WIN、prefill/D64方向INCONCLUSIVE。原两次qualifiedFAIL与单请求证据、privateUNKNOWN保留；paged/G02-G10及整个G01不代签。",
+      "candidate": "bc0ba41f714f6529cb1c583bee59d482946e7589",
+      "performance": {
+        "tier": "P1",
+        "material_margin_pct": 5,
+        "evidence": "evidence/performance/inference-g01-native-ragged-vulkan-rr-m1-p1/receipt.json"
+      }
     },
     {
       "module": "graph_route_vulkan",
@@ -555,17 +560,27 @@
     },
     {
       "module": "compute_provider_ggml_vulkan",
-      "state": "CANDIDATE",
-      "record": "docs/implementation/tasks/compute/inference-g01-vulkan-ragged-region-fusion.md",
-      "summary": "G01 RF CANDIDATE：原单region＋相邻内部reshape，RF-04复用record-safe多tagged flash/Concat记录；实跑两flash64步记录/失效及原四native＋五route共十tests PASS。原280与0e9 qualified性能FAIL保留，新交付/风险/P1待验，不签整个G01。",
-      "candidate": "bc0ba41f714f6529cb1c583bee59d482946e7589"
+      "state": "CLOSED",
+      "record": "docs/implementation/tasks/compute/inference-g01-vulkan-ragged-terminal.md",
+      "summary": "G01 Vulkan native ragged/RF有限轮CLOSED：原1region＋多tagged flash/Concat安全记录，十source tests/两SDK/三san/原CPU联合回归及Win定向编译PASS；实际Air multi P1 QUALIFIED/5%非劣PASS、verify0，mixedD256 WIN、prefill/D64方向INCONCLUSIVE。原两次qualifiedFAIL与单请求证据、privateUNKNOWN保留；paged/G02-G10及整个G01不代签。",
+      "candidate": "bc0ba41f714f6529cb1c583bee59d482946e7589",
+      "performance": {
+        "tier": "P1",
+        "material_margin_pct": 5,
+        "evidence": "evidence/performance/inference-g01-native-ragged-vulkan-rr-m1-p1/receipt.json"
+      }
     },
     {
       "module": "compute_ggml_runtime",
-      "state": "CANDIDATE",
-      "record": "docs/implementation/tasks/compute/inference-g01-vulkan-ragged-region-fusion.md",
-      "summary": "G01 RF CANDIDATE：原单region＋相邻内部reshape，RF-04复用record-safe多tagged flash/Concat记录；实跑两flash64步记录/失效及原四native＋五route共十tests PASS。原280与0e9 qualified性能FAIL保留，新交付/风险/P1待验，不签整个G01。",
-      "candidate": "bc0ba41f714f6529cb1c583bee59d482946e7589"
+      "state": "CLOSED",
+      "record": "docs/implementation/tasks/compute/inference-g01-vulkan-ragged-terminal.md",
+      "summary": "G01 Vulkan native ragged/RF有限轮CLOSED：原1region＋多tagged flash/Concat安全记录，十source tests/两SDK/三san/原CPU联合回归及Win定向编译PASS；实际Air multi P1 QUALIFIED/5%非劣PASS、verify0，mixedD256 WIN、prefill/D64方向INCONCLUSIVE。原两次qualifiedFAIL与单请求证据、privateUNKNOWN保留；paged/G02-G10及整个G01不代签。",
+      "candidate": "bc0ba41f714f6529cb1c583bee59d482946e7589",
+      "performance": {
+        "tier": "P1",
+        "material_margin_pct": 5,
+        "evidence": "evidence/performance/inference-g01-native-ragged-vulkan-rr-m1-p1/receipt.json"
+      }
     },
     {
       "module": "compute_provider_ggml_cuda",

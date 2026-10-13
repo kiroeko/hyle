@@ -1,9 +1,11 @@
 # G01 Vulkan ragged 原region分段纠正
 
-状态：route/Provider/runtime均CANDIDATE，2026-10-13；owner
+状态：route/Provider/runtime有限轮均CLOSED，2026-10-13；owner
 `compute_route_vulkan`、`compute_provider_ggml_vulkan`、`compute_ggml_runtime`。已验不可变candidate
 `0e9e011b8c8ff4a37e2bebc5ca8e4408be5e9368`的FAIL保留；最终不可变candidate
 `bc0ba41f714f6529cb1c583bee59d482946e7589`含cold admission修正与RF-04记录资格。
+当前权威record为[有限terminal](inference-g01-vulkan-ragged-terminal.md)，本卡保施工/失败
+历史，不授权重新施工；整个G01未完成。
 baseline `dbcba4b15`，原产品280，原Provider单请求3d92有限CLOSED保留。真实trigger是
 已准入两request F16短D64 noncausal [合格P1](../../../../evidence/performance/inference-g01-native-ragged-vulkan-m1-p1/README.md)
 0.8656–0.8885、非劣FAIL；[原NR轮](inference-g01-native-ragged-layout.md)不签完成。
@@ -134,3 +136,8 @@ run3.805s PASS。短三shape oracle/readonly/tail+16轮诊断3.212s PASS；D64�
 2,883,171，自实现不含测试175,077，route/Provider/runtime联合实现11,857（不把这个
 联合数冒充某一个factor独立实现LOC）。只统计不可变candidate，不为状态/证据提交
 重复全库统计；剩余适用性能门仍等待实际终态。
+
+最终正式P1 actualTERMINAL：931.800s、n15产品120/controls30、A/A16，QUALIFIED、
+5%非劣PASS、原verify0。[最终证据](../../../../evidence/performance/inference-g01-native-ragged-vulkan-rr-m1-p1/README.md)
+保方向mixedD256 WIN、长prefill/D64 INCONCLUSIVE、原schema/margin和所有旧FAIL；三个
+owner按上述terminal有限CLOSED，停止本域重复采样。总goal仍继续原分页与其余G项。
