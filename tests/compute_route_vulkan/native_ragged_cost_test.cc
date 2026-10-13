@@ -15,7 +15,9 @@ TEST(VulkanRaggedStructure, FlashPortsStillNameOriginalPackedKvRoots){
   auto layout=schema.version({qp,kp,{},{}}).value();auto program=v::prepare_ragged_batch(context,layout,{capacity,.0625F,true});
   ASSERT_TRUE(program)<<program.error().message();const auto &state=*v::detail::Access::program(*program);
   unsigned attention_count=0;
+  unsigned region_count=0;
   for(const auto &dispatch:state.dispatches){if(!dispatch.region)continue;const auto &recipe=*dispatch.region;
+    ++region_count;
     for(const auto &node:recipe.nodes){if(!node.operation.get_if<c::ScaledDotProductAttention>())continue;++attention_count;
       for(unsigned port=1;port<3;++port){const auto found=std::find(recipe.inputs.begin(),recipe.inputs.end(),node.inputs[port]);
         ASSERT_NE(found,recipe.inputs.end());const auto binding=static_cast<std::size_t>(found-recipe.inputs.begin());
@@ -25,7 +27,8 @@ TEST(VulkanRaggedStructure, FlashPortsStillNameOriginalPackedKvRoots){
       }
     }
   }
-  EXPECT_EQ(attention_count,2U);ASSERT_TRUE(context.close().ok());
+  EXPECT_EQ(attention_count,2U);EXPECT_EQ(region_count,1U);
+  ASSERT_TRUE(context.close().ok());
 }
 TEST(VulkanRaggedStructure, RejectedNativeSuffixRetiresItsAcceptedPrefix){
   auto context=v::Context::create().value();const c::BatchCapacity cap{.storage=c::BatchStorage::kRagged,.max_requests=8,.max_query_rows=8,.max_kv_rows=8,

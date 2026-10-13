@@ -272,12 +272,27 @@ Result<Program> prepare_plan(const Context &context, const Plan &plan,
         continue;
       }
       if (matches_mature_default(*program, step, DefaultCarrier::kGgml) &&
+          !step.operation.get_if<View>() &&
           managed_operation(*program, step)) {
         auto end = index + 1;
+        const auto internal_reshape = [&](const PlanStep &next) {
+          const auto *view = next.operation.get_if<View>();
+          if (!view || view->kind() != ViewKind::kReshape ||
+              next.inputs.size() != 1 || next.outputs.size() != 1)
+            return false;
+          // Only reshape an output already produced inside this region.
+          // External capacity aliases retain the ordinary Plan view path.
+          for (auto producer = index; producer < end; ++producer)
+            if (std::ranges::find(plan.steps[producer].outputs, next.inputs[0]) !=
+                plan.steps[producer].outputs.end())
+              return managed_operation(*program, next);
+          return false;
+        };
         while (!step.control_boundary && end < plan.steps.size() &&
                !plan.steps[end].control_boundary &&
-               matches_mature_default(*program, plan.steps[end], DefaultCarrier::kGgml) &&
-               managed_operation(*program, plan.steps[end]))
+               ((matches_mature_default(*program, plan.steps[end], DefaultCarrier::kGgml) &&
+                 managed_operation(*program, plan.steps[end])) ||
+                internal_reshape(plan.steps[end])))
           ++end;
         HYLE_RETURN_IF_ERROR(
             lower_region(*program, plan, index, end, last_uses));

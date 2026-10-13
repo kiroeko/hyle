@@ -366,6 +366,14 @@ bool region_supports(const Operation &operation,
         return output.is_plain();
       })))
     return false;
+  if (const auto *view = operation.get_if<View>())
+    return view->kind() == ViewKind::kReshape && inputs.size() == 1 &&
+           outputs.size() == 1 && inputs[0].is_plain() && outputs[0].is_plain() &&
+           inputs[0].rank() <= GGML_MAX_DIMS && outputs[0].rank() <= GGML_MAX_DIMS &&
+           inputs[0].data_type() == outputs[0].data_type() &&
+           (inputs[0].data_type() == DataType::kFloat32 ||
+            inputs[0].data_type() == DataType::kFloat16) &&
+           inputs[0].element_count() == outputs[0].element_count();
   if (operation.get_if<Copy>())
     return inputs.size() == 1 && outputs.size() == 1 &&
            outputs[0].data_type() == inputs[0].data_type();
@@ -760,7 +768,11 @@ Result<Region> Region::create(NativeDevice device,
       }
       auto *left = arguments[0];
       ggml_tensor *output = nullptr;
-      if (node.operation.get_if<Copy>()) {
+      if (node.operation.get_if<View>()) {
+        // A qualified dense reshape stays inside the original graph; the
+        // common shape restoration below creates only the native view.
+        output = left;
+      } else if (node.operation.get_if<Copy>()) {
         output = ggml_dup(context, left);
       } else if (const auto *cast = node.operation.get_if<Cast>()) {
         const auto target = native_type(cast->output_type);

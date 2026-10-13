@@ -33,6 +33,8 @@ Result<Program> prepare_ragged_batch(const Context&context,BatchLayoutVersion la
       HYLE_ASSIGN_OR_RETURN(auto reshape,View::reshape(shape));return add(Operation(reshape),{sliced});
     };
     const auto host=layout.host();std::vector<std::uint32_t> parts;
+    struct Request { std::uint32_t q,k,v;std::int32_t rows; };
+    std::vector<Request> requests;
     for(std::size_t request=0;request<layout.facts().requests;++request){
       const auto nq=host.query_indptr[request+1]-host.query_indptr[request];
       const auto nk=host.kv_indptr[request+1]-host.kv_indptr[request];if(!nq)continue;
@@ -40,8 +42,13 @@ Result<Program> prepare_ragged_batch(const Context&context,BatchLayoutVersion la
       HYLE_ASSIGN_OR_RETURN(auto qv,view(0,host.query_indptr[request],nq,c.query_heads));
       HYLE_ASSIGN_OR_RETURN(auto kv,view(1,host.kv_indptr[request],nk,c.kv_heads));
       HYLE_ASSIGN_OR_RETURN(auto vv,view(2,host.kv_indptr[request],nk,c.kv_heads));
-      HYLE_ASSIGN_OR_RETURN(auto output,add(Operation(ScaledDotProductAttention{.layout=AttentionLayout::kBatchSequenceHeadDepth,.scale=attention.scale,.causal=attention.causal}),{qv,kv,vv}));
-      HYLE_ASSIGN_OR_RETURN(auto shape,TensorShape::create(std::array<std::int64_t,3>{nq,c.query_heads,c.head_dim}));
+      requests.push_back({qv,kv,vv,nq});
+    }
+    // External aliases precede the arithmetic region. Zero-cost output
+    // reshapes can then remain inside one original managed submission.
+    for(const auto &request:requests){
+      HYLE_ASSIGN_OR_RETURN(auto output,add(Operation(ScaledDotProductAttention{.layout=AttentionLayout::kBatchSequenceHeadDepth,.scale=attention.scale,.causal=attention.causal}),{request.q,request.k,request.v}));
+      HYLE_ASSIGN_OR_RETURN(auto shape,TensorShape::create(std::array<std::int64_t,3>{request.rows,c.query_heads,c.head_dim}));
       HYLE_ASSIGN_OR_RETURN(auto reshape,View::reshape(shape));HYLE_ASSIGN_OR_RETURN(auto packed,add(Operation(reshape),{output}));
       parts.push_back(packed);
     }
