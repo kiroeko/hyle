@@ -87,7 +87,11 @@ baseline `b6e879ef287aaf626787aeb586b8f515f2d4caac`。真实SDK Graph消费者in
 可构建owner决定；未交付provider时该头不安装，不需重复声明门。
 
 有限FIX CR-01-H：已交付公开头无条件声明原provider工厂，保持原符号/Options/layout，
-不改build核心、组件边、provider算法或热成本，不加wrapper/旧接口兼容。同一普通
+不改build核心算法、provider算法或热成本，不加wrapper/旧接口兼容。实际manifest另外
+把native/oneDNN factories列为compute/graph公开产品roots，却漏登ggml factory；shared
+SDK不传PRIVATE库的import symbol。CR-01-H同步登记同一个已构建ggml owner为两产品
+的CPU工厂root，CPU未选时与其它CPU工厂一起移除；不是新增factor或工具算法改写。
+同一普通
 source/static/shared consumer实际运行Direct和Graph两dependent region；安装工程仅
 public targets、不手写存在性宏。逐头/适用compile检查与缺头负空间；算法/risk命令及
 相同产品TU可按identity复用，不重跑旧单请求P1。batch P1仍须独立冻结与实跑。

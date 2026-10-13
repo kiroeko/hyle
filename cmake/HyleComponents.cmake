@@ -634,10 +634,10 @@ _hyle_declare_product(io FACTORS
 _hyle_declare_product(process FACTORS process)
 _hyle_declare_product(compute FACTORS
   compute compute_state compute_batch compute_route_cpu compute_route_cuda compute_route_apple compute_route_vulkan compute_backend_cpu compute_backend_cuda compute_provider_native
-  compute_provider_onednn)
+  compute_provider_onednn compute_provider_ggml)
 _hyle_declare_product(graph FACTORS
   graph graph_batch graph_route_cpu graph_route_cuda graph_route_apple graph_route_vulkan compute_backend_cpu compute_backend_cuda compute_provider_native
-  compute_provider_onednn graph_provider_onednn)
+  compute_provider_onednn compute_provider_ggml graph_provider_onednn)
 
 # Resolve requested product or developer factor roots before inspecting source
 # text. The two selectors are intentionally mutually exclusive. Downstream
@@ -777,7 +777,7 @@ if(NOT CMAKE_SCRIPT_MODE_FILE AND _hyle_selection_mode STREQUAL "product")
     if(NOT "cpu" IN_LIST HYLE_COMPUTE_ROUTE_LIST)
       list(REMOVE_ITEM _HYLE_PRODUCT_FACTORS_${_product}
         compute_backend_cpu compute_provider_native
-        compute_provider_onednn graph_provider_onednn)
+        compute_provider_onednn compute_provider_ggml graph_provider_onednn)
     endif()
     if(NOT "cuda" IN_LIST HYLE_COMPUTE_ROUTE_LIST)
       list(REMOVE_ITEM _HYLE_PRODUCT_FACTORS_${_product} compute_backend_cuda)
