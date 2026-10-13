@@ -1,0 +1,487 @@
+{
+  "candidate": "5ce0bed8acb54d67cb70423134b73a6afea421dd",
+  "snapshot": "9856c7c6e4f8e7f3729efbc89e43352db49b4c4e",
+  "installed": [
+    {
+      "mode": "shared",
+      "verdict": "PASS source and relocated header/real CPU math 32completion episode",
+      "stages": [
+        {
+          "stage": "configure",
+          "command": [
+            "cmake",
+            "-S",
+            "C:\\public\\project-hyle\\hyle",
+            "-B",
+            "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev",
+            "-DCMAKE_PROJECT_INCLUDE=C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g02\\owned-group-sdk-project.cmake",
+            "-UCMAKE_PROJECT_TOP_LEVEL_INCLUDES",
+            "-DHYLE_COMPONENTS=compute;graph",
+            "-DHYLE_COMPUTE_ROUTES=cpu",
+            "-DHYLE_BUILD_TESTS=OFF",
+            "-DHYLE_BUILD_BENCH=OFF",
+            "-DHYLE_INSTALL=ON",
+            "-DHYLE_STATIC=OFF"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 20.01600000000326,
+          "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g02\\owned-groups-shared-sdk-configure-1.log"
+        },
+        {
+          "stage": "producer-build",
+          "command": [
+            "cmake",
+            "--build",
+            "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev",
+            "--target",
+            "g02_owned_group_producer",
+            "--parallel",
+            "4"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 24.25,
+          "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g02\\owned-groups-shared-sdk-producer-build-1.log"
+        },
+        {
+          "stage": "source-run",
+          "command": [
+            "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\g02_owned_group_producer.exe"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 0.2340000000258442,
+          "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g02\\owned-groups-shared-sdk-source-run-1.log"
+        },
+        {
+          "stage": "install",
+          "command": [
+            "cmake",
+            "--install",
+            "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev",
+            "--prefix",
+            "C:\\h7\\g02-owned-groups-shared-sdk\\staging"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 0.7810000000172295,
+          "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g02\\owned-groups-shared-sdk-install-1.log"
+        },
+        {
+          "stage": "consumer-configure",
+          "command": [
+            "cmake",
+            "-S",
+            "C:\\h7\\g02-owned-groups-shared-sdk\\consumer-source",
+            "-B",
+            "C:\\h7\\g02-owned-groups-shared-sdk\\consumer-build",
+            "-G",
+            "Ninja",
+            "-DCMAKE_BUILD_TYPE=Release",
+            "-DCMAKE_PREFIX_PATH=C:\\h7\\g02-owned-groups-shared-sdk\\relocated"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 11.985000000015134,
+          "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g02\\owned-groups-shared-sdk-consumer-configure-1.log"
+        },
+        {
+          "stage": "consumer-build",
+          "command": [
+            "cmake",
+            "--build",
+            "C:\\h7\\g02-owned-groups-shared-sdk\\consumer-build",
+            "--parallel",
+            "4"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 3.0310000000172295,
+          "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g02\\owned-groups-shared-sdk-consumer-build-1.log"
+        },
+        {
+          "stage": "run-consumer",
+          "command": [
+            "C:\\h7\\g02-owned-groups-shared-sdk\\consumer-build\\consumer.exe"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 0.28100000001722947,
+          "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g02\\owned-groups-shared-sdk-run-consumer-1.log"
+        },
+        {
+          "stage": "run-header",
+          "command": [
+            "C:\\h7\\g02-owned-groups-shared-sdk\\consumer-build\\header.exe"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 0.030999999988125637,
+          "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g02\\owned-groups-shared-sdk-run-header-1.log"
+        }
+      ],
+      "identities": {
+        "candidate": "5ce0bed8acb54d67cb70423134b73a6afea421dd",
+        "prefix": "C:\\h7\\g02-owned-groups-shared-sdk\\relocated",
+        "staging_absent": true,
+        "hashes": {
+          "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g02\\owned_group_consumer.cc": "7420b4d1a73022a2c339f2e9e39ab0e9f97ed23937f4aa01272ffcdda310931b",
+          "C:\\h7\\g02-owned-groups-shared-sdk\\consumer-source\\consumer.cc": "7420b4d1a73022a2c339f2e9e39ab0e9f97ed23937f4aa01272ffcdda310931b",
+          "C:\\h7\\g02-owned-groups-shared-sdk\\consumer-source\\header.cc": "e195199102d9fe030819ebb7040e01a5fce67122435be4277eb879b00e3995d6",
+          "C:\\h7\\g02-owned-groups-shared-sdk\\consumer-source\\CMakeLists.txt": "6715e7e00ac24a08435f103198287ef9a0ffb5c75d0950750b918ca181434587",
+          "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g02\\owned-group-sdk-project.cmake": "7d33c78cd879a1885c9107be63e689c5971e79d11ea78448471d81c8c3293bd3",
+          "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\CMakeCache.txt": "01f54824d3727fbd6f30c4aae161184c14aa7d2ffc8dab267760c9ec4679ed8c",
+          "C:\\h7\\g02-owned-groups-shared-sdk\\relocated\\include\\hyle\\graph\\detail\\lease_submission.h": "8efde18219e777f49026fabe884956500377ffb4f9d6034d8631433d55550684",
+          "C:\\h7\\g02-owned-groups-shared-sdk\\consumer-build\\consumer.exe": "28548c6a696a7c2b4d6839415faa9e6a0aee8dd2cd58f7868083220555a21ebd",
+          "C:\\h7\\g02-owned-groups-shared-sdk\\consumer-build\\header.exe": "c0e5f22c06cc749c50326f514ade92d79af92009af30e14763e81c137302d6c3",
+          "C:\\h7\\g02-owned-groups-shared-sdk\\consumer-build\\asmjit.dll": "eb8f9c478bfc4b671f83b630c97424c60b4c948c0a8645fe588aed4f6bab5df5",
+          "C:\\h7\\g02-owned-groups-shared-sdk\\consumer-build\\c10.dll": "93bff2548e330df0f94ce3c71c531887d049ae645d1e38e3c08689e2d86a7888",
+          "C:\\h7\\g02-owned-groups-shared-sdk\\consumer-build\\fbgemm.dll": "250dc6f79b26e022ca3088e9b71a023598c7e997c96b62ef350a74fa1b501d81",
+          "C:\\h7\\g02-owned-groups-shared-sdk\\consumer-build\\hyle_compute.dll": "2378397cb3ee83fb3e9b6af379302333d43aee869bd27431e6c2cc70dfa6a132",
+          "C:\\h7\\g02-owned-groups-shared-sdk\\consumer-build\\hyle_compute_backend_cpu.dll": "ea4c51a0c70668d97e2ba722a4fe3af975d595f0213de8dc820e4d61916a3e2f",
+          "C:\\h7\\g02-owned-groups-shared-sdk\\consumer-build\\hyle_compute_batch.dll": "a406d37703c1d014d01c52ed2d17edfc6a156d7be7d24efa537b8e5c513bc71c",
+          "C:\\h7\\g02-owned-groups-shared-sdk\\consumer-build\\hyle_compute_ggml_runtime.dll": "3ff37050d79ddb1b640a43943568709328d46f29ac54ebfefae566a53bce8d3d",
+          "C:\\h7\\g02-owned-groups-shared-sdk\\consumer-build\\hyle_compute_ops.dll": "07b5fbf93cbc929b0aa34a4f3881bdbd11fb028a2ccc18a52545ec538f35a50b",
+          "C:\\h7\\g02-owned-groups-shared-sdk\\consumer-build\\hyle_compute_provider_ggml.dll": "9b3115c5067ee211775bf2fd093af236ebbb0d861c73fc50fcd4c796f94c8fb9",
+          "C:\\h7\\g02-owned-groups-shared-sdk\\consumer-build\\hyle_compute_provider_native.dll": "7753f013148f9eba605acec98554b4061ef6e05f614fdebd53bb898700ef1c93",
+          "C:\\h7\\g02-owned-groups-shared-sdk\\consumer-build\\hyle_compute_provider_onednn.dll": "a925a826fb1e13509a29781169ad9570ab436b8b49aa68c7a2b3b653c687e67e",
+          "C:\\h7\\g02-owned-groups-shared-sdk\\consumer-build\\hyle_compute_route_cpu.dll": "7a68134b94264aba984cf8d7d3bb9d78a914dc5d650c0b4bf2d397c14a969603",
+          "C:\\h7\\g02-owned-groups-shared-sdk\\consumer-build\\hyle_compute_state.dll": "790390dd0faeb6a1e7c947dd0d19bc7f89ad6bec5a8f79dec2a77dc802b4a8ed",
+          "C:\\h7\\g02-owned-groups-shared-sdk\\consumer-build\\hyle_compute_stream.dll": "7c74b675d1ab17bcb6feaffaf2a77d4187abc3147e5341bae381f9e084f05257",
+          "C:\\h7\\g02-owned-groups-shared-sdk\\consumer-build\\hyle_container.dll": "866b7ea27fa98128f33dea6db29f466e5c7c067236069369f99302c8248a174d",
+          "C:\\h7\\g02-owned-groups-shared-sdk\\consumer-build\\hyle_error.dll": "a435352c0c25b665760d0456f724c135217ae41229a69347fc9fd71fcb56e70c",
+          "C:\\h7\\g02-owned-groups-shared-sdk\\consumer-build\\hyle_ggml_cpu_avx2_ffa4e8b8_731d28a88398ef06.dll": "f696603dc3d3d826290ed118688031825c3abda2e52ed9c6906e742ed49aa932",
+          "C:\\h7\\g02-owned-groups-shared-sdk\\consumer-build\\hyle_graph.dll": "d33a125f4207b4e5ba22f40f45b55a6a53595775723576dae6c6d15d4f3299d6",
+          "C:\\h7\\g02-owned-groups-shared-sdk\\consumer-build\\hyle_graph_batch.dll": "9bcc862ea7c810674e0d0623c9e99d5b608c8be2c103e7b81ec041da58a99eee",
+          "C:\\h7\\g02-owned-groups-shared-sdk\\consumer-build\\hyle_graph_provider_onednn.dll": "4ba4db0252e6db9745a3458e50f4a65ae5ceb041cad462aaa8f0c8c7b9bbf996",
+          "C:\\h7\\g02-owned-groups-shared-sdk\\consumer-build\\hyle_graph_route_cpu.dll": "210ac58ccd2e12724238490a43e116666065167dff8708e7dd1a6a2363e8f876",
+          "C:\\h7\\g02-owned-groups-shared-sdk\\consumer-build\\hyle_io_core.dll": "2b8224796d270c5036412fe699f11088c56ae5bb2db79dc3746fbacd4cd02ac3",
+          "C:\\h7\\g02-owned-groups-shared-sdk\\consumer-build\\hyle_mem.dll": "6fe6dec80d18d44bea555cca95ddfa5d6705d98703fad1c797e621fa8f10efa2",
+          "C:\\h7\\g02-owned-groups-shared-sdk\\consumer-build\\hyle_mem_vm.dll": "275878c11e699139ee1bcaa972f813787ed86f96282e64528af999a9c68aa11d",
+          "C:\\h7\\g02-owned-groups-shared-sdk\\consumer-build\\hyle_platform.dll": "ec0f06dc7a7f269c12f2d804b16d4677ebfa886093b49f950be4b2fe50f69e89",
+          "C:\\h7\\g02-owned-groups-shared-sdk\\consumer-build\\hyle_platform_fs.dll": "cddf029ec132c95cf060459ffc68935963d4a2f735df73308a184fd37eefdf3e",
+          "C:\\h7\\g02-owned-groups-shared-sdk\\consumer-build\\hyle_platform_thread.dll": "6b870799a34bc30339af88c4f54c966c02e57786c1de500b158d45c9549f5907",
+          "C:\\h7\\g02-owned-groups-shared-sdk\\consumer-build\\hyle_sched.dll": "c699162f21c3b18e2bda4deea872e8114fe3b421d18873ff0a3aebc0202a9837",
+          "C:\\h7\\g02-owned-groups-shared-sdk\\consumer-build\\hyle_simd.dll": "72be5b321fe60d0f4d5972ea86153521a275da0c471e6b834df455177cddad5d",
+          "C:\\h7\\g02-owned-groups-shared-sdk\\consumer-build\\hyle_time.dll": "eb2ef3a795c6fc695738718ad16acab18a8210fa0ff0add38fda17b3000d044e",
+          "C:\\h7\\g02-owned-groups-shared-sdk\\consumer-build\\libiomp5md.dll": "d9d66ed25f1a0ea725fa3a41b22cfd5d182c19dbe4771d9c90ca02ad7466f6a1",
+          "C:\\h7\\g02-owned-groups-shared-sdk\\consumer-build\\torch.dll": "16a220e55b35fbfd946c26663eb3eefc76782872280cdc47ab0caea1babf0613",
+          "C:\\h7\\g02-owned-groups-shared-sdk\\consumer-build\\torch_cpu.dll": "2cb91cf2ba957fad5a17eab5bb7af6b3d73bbc98d94e2deeadc9fb9294eea809",
+          "C:\\h7\\g02-owned-groups-shared-sdk\\consumer-build\\uv.dll": "fa569e682fc5fb7a8eb94c6829af9f30a569748dbbc6bce39735d48bc960bcf8",
+          "C:\\h7\\g02-owned-groups-shared-sdk\\relocated\\lib\\hyle_compute.lib": "39487857ddacf8c65bd50b4f6365d9fe672e037939e834bccc6b864c9ed56973",
+          "C:\\h7\\g02-owned-groups-shared-sdk\\relocated\\lib\\hyle_compute_backend_cpu.lib": "34ff0302fe3dead8383ec705e50e58223b528a0a32ae4134f02ee2f43a0fb7a1",
+          "C:\\h7\\g02-owned-groups-shared-sdk\\relocated\\lib\\hyle_compute_batch.lib": "05e3b472b87370947fc7eb280fdae4d2b673904577ca16a312a2a80fb0007d9b",
+          "C:\\h7\\g02-owned-groups-shared-sdk\\relocated\\lib\\hyle_compute_ggml_runtime.lib": "f4310ca1643389676c1bd80da7c2ef96abf26dd26e0ed19698847ad605c38cff",
+          "C:\\h7\\g02-owned-groups-shared-sdk\\relocated\\lib\\hyle_compute_ops.lib": "3a1b93d8c67d0cd65e68c3fe3af07cfa7d68a5c55662f6ab175d4d77aee60525",
+          "C:\\h7\\g02-owned-groups-shared-sdk\\relocated\\lib\\hyle_compute_provider_ggml.lib": "3dc732e7d44f379d2226222fe73bc5e082c44ef81eef5eb9d38a383cf294aa04",
+          "C:\\h7\\g02-owned-groups-shared-sdk\\relocated\\lib\\hyle_compute_provider_native.lib": "05521e30fe9c0420968d4a491987f3f24eab0a33a6d9cae95aac4386a3097ff3",
+          "C:\\h7\\g02-owned-groups-shared-sdk\\relocated\\lib\\hyle_compute_provider_onednn.lib": "673a986ac255c5b5c2a3c94a51333e04d6a11c93d8b2554397f58cab826f016f",
+          "C:\\h7\\g02-owned-groups-shared-sdk\\relocated\\lib\\hyle_compute_route_cpu.lib": "1b9c124ed72e725e082791830203849a78b0a9472c5afb2064d41c3daa6abaa2",
+          "C:\\h7\\g02-owned-groups-shared-sdk\\relocated\\lib\\hyle_compute_state.lib": "4de658b965ef5af7c98162a6ced88b0420997ffc52c29c006199bb6ebe4db1e9",
+          "C:\\h7\\g02-owned-groups-shared-sdk\\relocated\\lib\\hyle_compute_stream.lib": "a7afb4f60d85b7f024c88d52ab364af6d637e3124f65e1b631b60b2f524190f9",
+          "C:\\h7\\g02-owned-groups-shared-sdk\\relocated\\lib\\hyle_container.lib": "c4c132cdc4905495cba26311cff1fc274adb5aa83ae3fa6c50ec959e137a55f1",
+          "C:\\h7\\g02-owned-groups-shared-sdk\\relocated\\lib\\hyle_error.lib": "172dbc572a1ef3c6242b11378a4077de7873d8f73a687668e56b30698a51f0c1",
+          "C:\\h7\\g02-owned-groups-shared-sdk\\relocated\\lib\\hyle_graph.lib": "ef744ef258a115e98b7a9a30ee57beddda50a93df7b8aaffc74e5a3b22ac2142",
+          "C:\\h7\\g02-owned-groups-shared-sdk\\relocated\\lib\\hyle_graph_batch.lib": "d9212e931de3ae65d1babf87f762c5715fcf0731341c4f7e19b996c4ce551645",
+          "C:\\h7\\g02-owned-groups-shared-sdk\\relocated\\lib\\hyle_graph_provider_onednn.lib": "ae139231d8d069d8141b13e4498329f82ef1cb0326d5fde4ccc0d1862ed69163",
+          "C:\\h7\\g02-owned-groups-shared-sdk\\relocated\\lib\\hyle_graph_route_cpu.lib": "c18cb054943db9b26bf17e5118aa551a771077dea1c02ae443a2f5ccee3d2d41",
+          "C:\\h7\\g02-owned-groups-shared-sdk\\relocated\\lib\\hyle_io_core.lib": "26c0d4286e6987306491da981ef02498c63d093d708420304c3067764aa73986",
+          "C:\\h7\\g02-owned-groups-shared-sdk\\relocated\\lib\\hyle_mem.lib": "fa68219ce04de6f88ec449dd662969da88ab6ea8653fd753af9bdb6820fc25ea",
+          "C:\\h7\\g02-owned-groups-shared-sdk\\relocated\\lib\\hyle_mem_vm.lib": "98d3a4b1aefcdf218bb2a2034eb3c6437714cd2ad4db9eaf81e6cf9490bd04e8",
+          "C:\\h7\\g02-owned-groups-shared-sdk\\relocated\\lib\\hyle_platform.lib": "d179b28e2655ce220c55210a0d11e62fd934605bd16f2b22dd4388ff30a23e52",
+          "C:\\h7\\g02-owned-groups-shared-sdk\\relocated\\lib\\hyle_platform_fs.lib": "6106ef7068d1697b6e4acea870f392ec889d646bb867e18ddc09db48de390d15",
+          "C:\\h7\\g02-owned-groups-shared-sdk\\relocated\\lib\\hyle_platform_thread.lib": "aae49e3a3cc70dc336313e38f427e4908dc6dadb4853b343c2b4ec330e41d15d",
+          "C:\\h7\\g02-owned-groups-shared-sdk\\relocated\\lib\\hyle_sched.lib": "6b625084a6e7e259f02713e20b24f0a48ea9a3a010372831ad4d388332222b47",
+          "C:\\h7\\g02-owned-groups-shared-sdk\\relocated\\lib\\hyle_simd.lib": "93c0ea5503e4c0b26289eb1854b9df31e0466c52af4f6b1a645de8c3125aec2b",
+          "C:\\h7\\g02-owned-groups-shared-sdk\\relocated\\lib\\hyle_time.lib": "b39a8d40c88a2af5967787478c4243738d5a1699e4136e9fedb9469685be7607",
+          "C:\\h7\\g02-owned-groups-shared-sdk\\relocated\\bin\\hyle_compute.dll": "2378397cb3ee83fb3e9b6af379302333d43aee869bd27431e6c2cc70dfa6a132",
+          "C:\\h7\\g02-owned-groups-shared-sdk\\relocated\\bin\\hyle_compute_backend_cpu.dll": "ea4c51a0c70668d97e2ba722a4fe3af975d595f0213de8dc820e4d61916a3e2f",
+          "C:\\h7\\g02-owned-groups-shared-sdk\\relocated\\bin\\hyle_compute_batch.dll": "a406d37703c1d014d01c52ed2d17edfc6a156d7be7d24efa537b8e5c513bc71c",
+          "C:\\h7\\g02-owned-groups-shared-sdk\\relocated\\bin\\hyle_compute_ggml_runtime.dll": "3ff37050d79ddb1b640a43943568709328d46f29ac54ebfefae566a53bce8d3d",
+          "C:\\h7\\g02-owned-groups-shared-sdk\\relocated\\bin\\hyle_compute_ops.dll": "07b5fbf93cbc929b0aa34a4f3881bdbd11fb028a2ccc18a52545ec538f35a50b",
+          "C:\\h7\\g02-owned-groups-shared-sdk\\relocated\\bin\\hyle_compute_provider_ggml.dll": "9b3115c5067ee211775bf2fd093af236ebbb0d861c73fc50fcd4c796f94c8fb9",
+          "C:\\h7\\g02-owned-groups-shared-sdk\\relocated\\bin\\hyle_compute_provider_native.dll": "7753f013148f9eba605acec98554b4061ef6e05f614fdebd53bb898700ef1c93",
+          "C:\\h7\\g02-owned-groups-shared-sdk\\relocated\\bin\\hyle_compute_provider_onednn.dll": "a925a826fb1e13509a29781169ad9570ab436b8b49aa68c7a2b3b653c687e67e",
+          "C:\\h7\\g02-owned-groups-shared-sdk\\relocated\\bin\\hyle_compute_route_cpu.dll": "7a68134b94264aba984cf8d7d3bb9d78a914dc5d650c0b4bf2d397c14a969603",
+          "C:\\h7\\g02-owned-groups-shared-sdk\\relocated\\bin\\hyle_compute_state.dll": "790390dd0faeb6a1e7c947dd0d19bc7f89ad6bec5a8f79dec2a77dc802b4a8ed",
+          "C:\\h7\\g02-owned-groups-shared-sdk\\relocated\\bin\\hyle_compute_stream.dll": "7c74b675d1ab17bcb6feaffaf2a77d4187abc3147e5341bae381f9e084f05257",
+          "C:\\h7\\g02-owned-groups-shared-sdk\\relocated\\bin\\hyle_container.dll": "866b7ea27fa98128f33dea6db29f466e5c7c067236069369f99302c8248a174d",
+          "C:\\h7\\g02-owned-groups-shared-sdk\\relocated\\bin\\hyle_error.dll": "a435352c0c25b665760d0456f724c135217ae41229a69347fc9fd71fcb56e70c",
+          "C:\\h7\\g02-owned-groups-shared-sdk\\relocated\\bin\\hyle_graph.dll": "d33a125f4207b4e5ba22f40f45b55a6a53595775723576dae6c6d15d4f3299d6",
+          "C:\\h7\\g02-owned-groups-shared-sdk\\relocated\\bin\\hyle_graph_batch.dll": "9bcc862ea7c810674e0d0623c9e99d5b608c8be2c103e7b81ec041da58a99eee",
+          "C:\\h7\\g02-owned-groups-shared-sdk\\relocated\\bin\\hyle_graph_provider_onednn.dll": "4ba4db0252e6db9745a3458e50f4a65ae5ceb041cad462aaa8f0c8c7b9bbf996",
+          "C:\\h7\\g02-owned-groups-shared-sdk\\relocated\\bin\\hyle_graph_route_cpu.dll": "210ac58ccd2e12724238490a43e116666065167dff8708e7dd1a6a2363e8f876",
+          "C:\\h7\\g02-owned-groups-shared-sdk\\relocated\\bin\\hyle_io_core.dll": "2b8224796d270c5036412fe699f11088c56ae5bb2db79dc3746fbacd4cd02ac3",
+          "C:\\h7\\g02-owned-groups-shared-sdk\\relocated\\bin\\hyle_mem.dll": "6fe6dec80d18d44bea555cca95ddfa5d6705d98703fad1c797e621fa8f10efa2",
+          "C:\\h7\\g02-owned-groups-shared-sdk\\relocated\\bin\\hyle_mem_vm.dll": "275878c11e699139ee1bcaa972f813787ed86f96282e64528af999a9c68aa11d",
+          "C:\\h7\\g02-owned-groups-shared-sdk\\relocated\\bin\\hyle_platform.dll": "ec0f06dc7a7f269c12f2d804b16d4677ebfa886093b49f950be4b2fe50f69e89",
+          "C:\\h7\\g02-owned-groups-shared-sdk\\relocated\\bin\\hyle_platform_fs.dll": "cddf029ec132c95cf060459ffc68935963d4a2f735df73308a184fd37eefdf3e",
+          "C:\\h7\\g02-owned-groups-shared-sdk\\relocated\\bin\\hyle_platform_thread.dll": "6b870799a34bc30339af88c4f54c966c02e57786c1de500b158d45c9549f5907",
+          "C:\\h7\\g02-owned-groups-shared-sdk\\relocated\\bin\\hyle_sched.dll": "c699162f21c3b18e2bda4deea872e8114fe3b421d18873ff0a3aebc0202a9837",
+          "C:\\h7\\g02-owned-groups-shared-sdk\\relocated\\bin\\hyle_simd.dll": "72be5b321fe60d0f4d5972ea86153521a275da0c471e6b834df455177cddad5d",
+          "C:\\h7\\g02-owned-groups-shared-sdk\\relocated\\bin\\hyle_time.dll": "eb2ef3a795c6fc695738718ad16acab18a8210fa0ff0add38fda17b3000d044e"
+        }
+      }
+    },
+    {
+      "mode": "static",
+      "verdict": "PASS source and relocated header/real CPU math 32completion episode",
+      "stages": [
+        {
+          "stage": "configure",
+          "command": [
+            "cmake",
+            "-S",
+            "C:\\public\\project-hyle\\hyle",
+            "-B",
+            "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev",
+            "-DCMAKE_PROJECT_INCLUDE=C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g02\\owned-group-sdk-project.cmake",
+            "-UCMAKE_PROJECT_TOP_LEVEL_INCLUDES",
+            "-DHYLE_COMPONENTS=compute;graph",
+            "-DHYLE_COMPUTE_ROUTES=cpu",
+            "-DHYLE_BUILD_TESTS=OFF",
+            "-DHYLE_BUILD_BENCH=OFF",
+            "-DHYLE_INSTALL=ON",
+            "-DHYLE_STATIC=ON"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 19.421999999991385,
+          "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g02\\owned-groups-static-sdk-configure-1.log"
+        },
+        {
+          "stage": "producer-build",
+          "command": [
+            "cmake",
+            "--build",
+            "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev",
+            "--target",
+            "g02_owned_group_producer",
+            "--parallel",
+            "4"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 137.23499999998603,
+          "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g02\\owned-groups-static-sdk-producer-build-1.log"
+        },
+        {
+          "stage": "source-run",
+          "command": [
+            "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\g02_owned_group_producer.exe"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 0.23499999998603016,
+          "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g02\\owned-groups-static-sdk-source-run-1.log"
+        },
+        {
+          "stage": "install",
+          "command": [
+            "cmake",
+            "--install",
+            "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev",
+            "--prefix",
+            "C:\\h7\\g02-owned-groups-static-sdk\\staging"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 1.8599999999860302,
+          "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g02\\owned-groups-static-sdk-install-1.log"
+        },
+        {
+          "stage": "consumer-configure",
+          "command": [
+            "cmake",
+            "-S",
+            "C:\\h7\\g02-owned-groups-static-sdk\\consumer-source",
+            "-B",
+            "C:\\h7\\g02-owned-groups-static-sdk\\consumer-build",
+            "-G",
+            "Ninja",
+            "-DCMAKE_BUILD_TYPE=Release",
+            "-DCMAKE_PREFIX_PATH=C:\\h7\\g02-owned-groups-static-sdk\\relocated"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 12.109000000025844,
+          "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g02\\owned-groups-static-sdk-consumer-configure-1.log"
+        },
+        {
+          "stage": "consumer-build",
+          "command": [
+            "cmake",
+            "--build",
+            "C:\\h7\\g02-owned-groups-static-sdk\\consumer-build",
+            "--parallel",
+            "4"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 3.5310000000172295,
+          "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g02\\owned-groups-static-sdk-consumer-build-1.log"
+        },
+        {
+          "stage": "run-consumer",
+          "command": [
+            "C:\\h7\\g02-owned-groups-static-sdk\\consumer-build\\consumer.exe"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 0.29699999999138527,
+          "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g02\\owned-groups-static-sdk-run-consumer-1.log"
+        },
+        {
+          "stage": "run-header",
+          "command": [
+            "C:\\h7\\g02-owned-groups-static-sdk\\consumer-build\\header.exe"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 0.030999999988125637,
+          "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g02\\owned-groups-static-sdk-run-header-1.log"
+        }
+      ],
+      "identities": {
+        "candidate": "5ce0bed8acb54d67cb70423134b73a6afea421dd",
+        "prefix": "C:\\h7\\g02-owned-groups-static-sdk\\relocated",
+        "staging_absent": true,
+        "hashes": {
+          "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g02\\owned_group_consumer.cc": "7420b4d1a73022a2c339f2e9e39ab0e9f97ed23937f4aa01272ffcdda310931b",
+          "C:\\h7\\g02-owned-groups-static-sdk\\consumer-source\\consumer.cc": "7420b4d1a73022a2c339f2e9e39ab0e9f97ed23937f4aa01272ffcdda310931b",
+          "C:\\h7\\g02-owned-groups-static-sdk\\consumer-source\\header.cc": "e195199102d9fe030819ebb7040e01a5fce67122435be4277eb879b00e3995d6",
+          "C:\\h7\\g02-owned-groups-static-sdk\\consumer-source\\CMakeLists.txt": "6715e7e00ac24a08435f103198287ef9a0ffb5c75d0950750b918ca181434587",
+          "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g02\\owned-group-sdk-project.cmake": "7d33c78cd879a1885c9107be63e689c5971e79d11ea78448471d81c8c3293bd3",
+          "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\CMakeCache.txt": "18579d3a681725681e8e77917e95c0178d68728dcf076432f8972d31fc74ef65",
+          "C:\\h7\\g02-owned-groups-static-sdk\\relocated\\include\\hyle\\graph\\detail\\lease_submission.h": "8efde18219e777f49026fabe884956500377ffb4f9d6034d8631433d55550684",
+          "C:\\h7\\g02-owned-groups-static-sdk\\consumer-build\\consumer.exe": "c94e1ec95f14595fa806be6a57ed495e8107c64e5a6c81bf41442033c6113e4d",
+          "C:\\h7\\g02-owned-groups-static-sdk\\consumer-build\\header.exe": "058982520f4314bc5f76b9f24e20201a596f322089f60251b81ad3426135b252",
+          "C:\\h7\\g02-owned-groups-static-sdk\\consumer-build\\asmjit.dll": "eb8f9c478bfc4b671f83b630c97424c60b4c948c0a8645fe588aed4f6bab5df5",
+          "C:\\h7\\g02-owned-groups-static-sdk\\consumer-build\\c10.dll": "93bff2548e330df0f94ce3c71c531887d049ae645d1e38e3c08689e2d86a7888",
+          "C:\\h7\\g02-owned-groups-static-sdk\\consumer-build\\fbgemm.dll": "250dc6f79b26e022ca3088e9b71a023598c7e997c96b62ef350a74fa1b501d81",
+          "C:\\h7\\g02-owned-groups-static-sdk\\consumer-build\\hyle_ggml_cpu_avx2_ffa4e8b8_731d28a88398ef06.dll": "f696603dc3d3d826290ed118688031825c3abda2e52ed9c6906e742ed49aa932",
+          "C:\\h7\\g02-owned-groups-static-sdk\\consumer-build\\libiomp5md.dll": "d9d66ed25f1a0ea725fa3a41b22cfd5d182c19dbe4771d9c90ca02ad7466f6a1",
+          "C:\\h7\\g02-owned-groups-static-sdk\\consumer-build\\torch.dll": "16a220e55b35fbfd946c26663eb3eefc76782872280cdc47ab0caea1babf0613",
+          "C:\\h7\\g02-owned-groups-static-sdk\\consumer-build\\torch_cpu.dll": "2cb91cf2ba957fad5a17eab5bb7af6b3d73bbc98d94e2deeadc9fb9294eea809",
+          "C:\\h7\\g02-owned-groups-static-sdk\\consumer-build\\uv.dll": "fa569e682fc5fb7a8eb94c6829af9f30a569748dbbc6bce39735d48bc960bcf8",
+          "C:\\h7\\g02-owned-groups-static-sdk\\relocated\\lib\\hyle_compute.lib": "cb1322cdce2fb5cd767f3e9e8e81ae19549b7eae784a1c08de3eba6b66a5ce20",
+          "C:\\h7\\g02-owned-groups-static-sdk\\relocated\\lib\\hyle_compute_backend_cpu.lib": "622d72d96380532e86485bb87c07dc054fe34cfaf0c670246711693819bb6f42",
+          "C:\\h7\\g02-owned-groups-static-sdk\\relocated\\lib\\hyle_compute_batch.lib": "266a35b5230db16c46a4723a0b7e4cf4c4c9d29fafab3613c6b36c7aaa8462b7",
+          "C:\\h7\\g02-owned-groups-static-sdk\\relocated\\lib\\hyle_compute_ggml_runtime.lib": "41c1894dec8b52f6b0da27b0de0cb36e857b7590a8932d5c2377730bd9626ff8",
+          "C:\\h7\\g02-owned-groups-static-sdk\\relocated\\lib\\hyle_compute_ops.lib": "ef5663438c444296c5423502d2a0be25356a47776987ae5e72cf537cc540eabb",
+          "C:\\h7\\g02-owned-groups-static-sdk\\relocated\\lib\\hyle_compute_provider_ggml.lib": "8990b3797b6b2cdbd3e2f3c5b3f5b972e5f162246bafe183071f5097662edeee",
+          "C:\\h7\\g02-owned-groups-static-sdk\\relocated\\lib\\hyle_compute_provider_native.lib": "3c256fabe428577933e8e64d212f400d5d9808a5608855c75e21faaed597c9c5",
+          "C:\\h7\\g02-owned-groups-static-sdk\\relocated\\lib\\hyle_compute_provider_onednn.lib": "85db5e1e89e6bd9dadb6228295f557e06e06a04b398ac6b1f07095954a358798",
+          "C:\\h7\\g02-owned-groups-static-sdk\\relocated\\lib\\hyle_compute_route_cpu.lib": "0625f867c2f6f70366e2d0809949e76696e797c28ae12730d2074ebf5dda19c6",
+          "C:\\h7\\g02-owned-groups-static-sdk\\relocated\\lib\\hyle_compute_state.lib": "a63e82b092ef0dfb2c64ae12f97b62b8111cddb917bf8bf9792cfbee9d916468",
+          "C:\\h7\\g02-owned-groups-static-sdk\\relocated\\lib\\hyle_compute_stream.lib": "3b59e36148029a81e969467ba0187d90310374444f9301362ff3c8dbbf1730d2",
+          "C:\\h7\\g02-owned-groups-static-sdk\\relocated\\lib\\hyle_container.lib": "4fae7a5ccaebe0f3083ce1e56ae534e4fe6ae2e09454d3c2fa8a46f93325dc07",
+          "C:\\h7\\g02-owned-groups-static-sdk\\relocated\\lib\\hyle_error.lib": "d15bde90ff20f097ffff87435a47f722543d41e961a4b009ce26a5a6192c4de0",
+          "C:\\h7\\g02-owned-groups-static-sdk\\relocated\\lib\\hyle_graph.lib": "c6638554d3b76f7eb682b22386029f969b4d5e7312b6fb7aa3fa28e2c95099d8",
+          "C:\\h7\\g02-owned-groups-static-sdk\\relocated\\lib\\hyle_graph_batch.lib": "45790f064e1a8c2f17663c5b5b86153d3bfa0c3ee6c041d8ce87992f9a45d183",
+          "C:\\h7\\g02-owned-groups-static-sdk\\relocated\\lib\\hyle_graph_provider_onednn.lib": "84e53f574291505fba8177db97a203e164d713be9f0bb77ad151689842457274",
+          "C:\\h7\\g02-owned-groups-static-sdk\\relocated\\lib\\hyle_graph_route_cpu.lib": "f447b1b3d02c1b9dfa98fcd57ee0ab1ffd142490fabbeada1e96f6a1253f0728",
+          "C:\\h7\\g02-owned-groups-static-sdk\\relocated\\lib\\hyle_io_core.lib": "9882aa150f60d9da75f1bd71081475bfd5b699aee24d4f7c2265ef170142ab57",
+          "C:\\h7\\g02-owned-groups-static-sdk\\relocated\\lib\\hyle_mem.lib": "3585598b504e2395b5add6ef5bddbad8106b831be9fef77a65eed3c0b54eed4d",
+          "C:\\h7\\g02-owned-groups-static-sdk\\relocated\\lib\\hyle_mem_vm.lib": "7c263c740bd71728eb01733e10045945a98757d051c557ab26a10919b2440e2c",
+          "C:\\h7\\g02-owned-groups-static-sdk\\relocated\\lib\\hyle_platform.lib": "892f34993925e99c7ed3d1a946d56dc8f065c5af976e63112a97bc427b48f8b0",
+          "C:\\h7\\g02-owned-groups-static-sdk\\relocated\\lib\\hyle_platform_fs.lib": "47632ba49f583c0b5553e0ff62ca1e9b6ae69096074b58a1893863a374580e09",
+          "C:\\h7\\g02-owned-groups-static-sdk\\relocated\\lib\\hyle_platform_thread.lib": "0a59f1f95e1f03d8bb4c99bd3978f3d4542e02b3e316abbc43cfabfee92f8a28",
+          "C:\\h7\\g02-owned-groups-static-sdk\\relocated\\lib\\hyle_sched.lib": "c9c558d4b3b13a5c522d5b550d3d4efa53a831907627856f450ba6c2fb46d0ed",
+          "C:\\h7\\g02-owned-groups-static-sdk\\relocated\\lib\\hyle_simd.lib": "f02bf0d851bf996f130cb36d9682c03f42329ec6631b7677addede1545ae4b5e",
+          "C:\\h7\\g02-owned-groups-static-sdk\\relocated\\lib\\hyle_time.lib": "f9205f53c0173fd09622168dd3991e8f0d0d2ac49756fa6ff7e2f11155a8f8cd"
+        }
+      }
+    }
+  ],
+  "native_source": {
+    "candidate": "5ce0bed8acb54d67cb70423134b73a6afea421dd",
+    "identity": {
+      "model": "Mac16,12",
+      "arch": "arm64",
+      "os": "ProductName:\t\tmacOS\nProductVersion:\t\t27.0.1\nBuildVersion:\t\t26A434",
+      "compiler": "Apple clang version 21.0.0 (clang-2100.3.34.2)\nTarget: arm64-apple-darwin27.0.0\nThread model: posix\nInstalledDir: /Library/Developer/CommandLineTools/usr/bin",
+      "cpu": "10",
+      "memory": "17179869184"
+    },
+    "scope": "original real CPU+Apple/Vulkan ordinary leased consumers; no new paged math claim",
+    "stages": [
+      {
+        "route": "apple",
+        "stage": "build",
+        "command": [
+          "/opt/homebrew/bin/cmake",
+          "--build",
+          "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-build",
+          "--target",
+          "hyle_h2_contracts",
+          "--parallel",
+          "4"
+        ],
+        "exit_code": 0,
+        "elapsed_seconds": 2.335543875,
+        "log": "/Users/kiro/hyle-scratch/compute-unified/g02-owned-groups-native-consumers/apple-build-1.log"
+      },
+      {
+        "route": "apple",
+        "stage": "run",
+        "command": [
+          "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-build/hyle_h2_contracts"
+        ],
+        "exit_code": 0,
+        "elapsed_seconds": 1.9668694999999996,
+        "log": "/Users/kiro/hyle-scratch/compute-unified/g02-owned-groups-native-consumers/apple-run-1.log"
+      },
+      {
+        "route": "vulkan",
+        "stage": "build",
+        "command": [
+          "/opt/homebrew/bin/cmake",
+          "--build",
+          "/Users/kiro/hyle-scratch/compute-unified/a-cpu-vulkan/selected-graph/source-build",
+          "--target",
+          "hyle_h3_cpu_vulkan_contracts",
+          "--parallel",
+          "4"
+        ],
+        "exit_code": 0,
+        "elapsed_seconds": 80.751051459,
+        "log": "/Users/kiro/hyle-scratch/compute-unified/g02-owned-groups-native-consumers/vulkan-build-1.log"
+      },
+      {
+        "route": "vulkan",
+        "stage": "run",
+        "command": [
+          "/Users/kiro/hyle-scratch/compute-unified/a-cpu-vulkan/selected-graph/source-build/hyle_h3_cpu_vulkan_contracts"
+        ],
+        "exit_code": 0,
+        "elapsed_seconds": 4.512768291,
+        "log": "/Users/kiro/hyle-scratch/compute-unified/g02-owned-groups-native-consumers/vulkan-run-1.log"
+      }
+    ]
+  },
+  "one_way_sync": {
+    "candidate": "5ce0bed8acb54d67cb70423134b73a6afea421dd",
+    "one_way": true,
+    "source": "/Users/kiro/hyle-scratch/compute-unified/source-c8874688",
+    "inputs": [
+      {
+        "path": "include/hyle/graph/detail/lease_submission.h",
+        "sha256": "8efde18219e777f49026fabe884956500377ffb4f9d6034d8631433d55550684"
+      },
+      {
+        "path": "src/graph/lease_submission.cc",
+        "sha256": "d8c4931cb08567c9aedbad3ade284bc1ddb8dbe05f79015600bd7626248b3cfc"
+      },
+      {
+        "path": "tests/graph/cpu_apple_contracts.cc",
+        "sha256": "d4ee1d0cea8c590d3651afd58be35c3575d6186259a5d737ad59ab18434f10ba"
+      },
+      {
+        "path": "tests/graph/cpu_vulkan_contracts.cc",
+        "sha256": "56798b950720f4119d3c1a1fa171b2cd1ca01639f3b3428850db1aeab8e4ec6b"
+      },
+      {
+        "path": "samples/package/graph/cpu_apple/main.cc",
+        "sha256": "ef0af402867b90217e7935116411329491bf2d88298a42bc00cab6ef3d11c89e"
+      },
+      {
+        "path": "samples/package/graph/cpu_vulkan/main.cc",
+        "sha256": "21a8b10a221cf5b0c14c5bacffeb12cf3a044537f802a3c0b7d56c2c55de8fc6"
+      }
+    ],
+    "copied": [
+      "include/hyle/graph/detail/lease_submission.h",
+      "src/graph/lease_submission.cc"
+    ]
+  },
+  "verdict": "PASS finite new detail seam/source-static-shared and existing actual native hybrid leases",
+  "original_G02_windows_gate": "UNPROVEN previous stop retained, no new CUDA or heavy W1GPU run",
+  "remaining_G02": "New public native page/layout binding and actual direct GPU page-reading math not implemented. This does not close whole G02 or graph original26d scope.",
+  "raw_sha256": "34a4ba8c92e7dc7c8792d697ca3c5ac7db1b4878accf566ccf120559e86f389b"
+}

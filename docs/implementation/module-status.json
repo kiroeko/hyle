@@ -514,14 +514,9 @@
     },
     {
       "module": "compute_route_apple",
-      "state": "CLOSED",
-      "record": "docs/implementation/tasks/compute/inference-native-memory-default-construction.md",
-      "summary": "G10/交付MC-01/02有限轮CLOSED：公开opaque资源默认构造移到原完整State TU并导出，真实source/四搬迁SDK/六宿主san与Windows普通consumer编译链接通过；原noexcept/空状态/布局/工厂/数学不改，原NR/P1 terminal保留；G01/G02-G10其他范围不代签。",
-      "candidate": "a3fa6be8cf22780491e8b383ef1aafb678db1e23",
-      "performance": {
-        "tier": "P0",
-        "evidence": "evidence/correctness/inference-native-memory-default-construction/receipt.json"
-      }
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/compute/inference-g01-native-paged-read.md",
+      "summary": "G01 native exact-page read SCOPED: original MLX/ggml Vulkan address+logical-length gap under real paged GQA consumer. Prior finite ragged/CPU page/ctor closures retained; owned table/frame, math qualification, finite FIX and API must be audited before product edits."
     },
     {
       "module": "graph_route_apple",
@@ -536,14 +531,9 @@
     },
     {
       "module": "compute_route_vulkan",
-      "state": "CLOSED",
-      "record": "docs/implementation/tasks/compute/inference-native-memory-default-construction.md",
-      "summary": "G10/交付MC-01/02有限轮CLOSED：公开opaque资源默认构造移到原完整State TU并导出，真实source/四搬迁SDK/六宿主san与Windows普通consumer编译链接通过；原noexcept/空状态/布局/工厂/数学不改，原NR/P1 terminal保留；G01/G02-G10其他范围不代签。",
-      "candidate": "a3fa6be8cf22780491e8b383ef1aafb678db1e23",
-      "performance": {
-        "tier": "P0",
-        "evidence": "evidence/correctness/inference-native-memory-default-construction/receipt.json"
-      }
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/compute/inference-g01-native-paged-read.md",
+      "summary": "G01 native exact-page read SCOPED: original MLX/ggml Vulkan address+logical-length gap under real paged GQA consumer. Prior finite ragged/CPU page/ctor closures retained; owned table/frame, math qualification, finite FIX and API must be audited before product edits."
     },
     {
       "module": "graph_route_vulkan",
@@ -558,27 +548,15 @@
     },
     {
       "module": "compute_provider_ggml_vulkan",
-      "state": "CLOSED",
-      "record": "docs/implementation/tasks/compute/inference-g01-vulkan-ragged-terminal.md",
-      "summary": "G01 Vulkan native ragged/RF有限轮CLOSED：原1region＋多tagged flash/Concat安全记录，十source tests/两SDK/三san/原CPU联合回归及Win定向编译PASS；实际Air multi P1 QUALIFIED/5%非劣PASS、verify0，mixedD256 WIN、prefill/D64方向INCONCLUSIVE。原两次qualifiedFAIL与单请求证据、privateUNKNOWN保留；paged/G02-G10及整个G01不代签。",
-      "candidate": "bc0ba41f714f6529cb1c583bee59d482946e7589",
-      "performance": {
-        "tier": "P1",
-        "material_margin_pct": 5,
-        "evidence": "evidence/performance/inference-g01-native-ragged-vulkan-rr-m1-p1/receipt.json"
-      }
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/compute/inference-g01-native-paged-read.md",
+      "summary": "G01 native exact-page read SCOPED: original MLX/ggml Vulkan address+logical-length gap under real paged GQA consumer. Prior finite ragged/CPU page/ctor closures retained; owned table/frame, math qualification, finite FIX and API must be audited before product edits."
     },
     {
       "module": "compute_ggml_runtime",
-      "state": "CLOSED",
-      "record": "docs/implementation/tasks/compute/inference-g01-cpu-paged-terminal.md",
-      "summary": "G01 CPU page16 finite read CLOSED: exact owned page table and native roots, two original CPU cores; source/three san/relocated static+shared/Air mixed CPU PASS, qualified P1 all5pct noninferiority+controls PASS verify0. D256 small LOSS retained; GPU pages/G02-G10 incomplete.",
-      "candidate": "42f98b94f33bdbb252b9259ece33533cf763fa41",
-      "performance": {
-        "tier": "P1",
-        "material_margin_pct": 5,
-        "evidence": "evidence/performance/inference-g01-cpu-page16-w1-p1/receipt.json"
-      }
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/compute/inference-g01-native-paged-read.md",
+      "summary": "G01 native exact-page read SCOPED: original MLX/ggml Vulkan address+logical-length gap under real paged GQA consumer. Prior finite ragged/CPU page/ctor closures retained; owned table/frame, math qualification, finite FIX and API must be audited before product edits."
     },
     {
       "module": "compute_provider_ggml_cuda",

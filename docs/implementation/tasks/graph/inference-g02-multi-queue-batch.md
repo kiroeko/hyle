@@ -165,3 +165,14 @@ compute resource_leases/test TU flags已核，0.446/0.144/0.329s run。见
 5ce0bed8acb54d67cb70423134b73a6afea421dd，原26d7全部证据和未决Windows门保留。
 新detail三交付/逐头与现有native联合消费者仍待；共同页守卫不能代签native数学/公开分页
 输入、G06低成本或整个G02。本轮不运行P1，原CPU分页已独立CLOSED。
+
+
+MQ-LP-01三交付/现有直接consumer已PASS：Windows source及relocated static/shared同一
+具名detail seam+普通CPU Add执行32次实际Completion退休，未引用block仍可写，单独头
+编译/链接；shared24.250s/static137.235s producer build，只有所选CPU public闭包，没有
+Windows全GPU构建。实际Air Mac16,12/M4/arm64/macOS27.0.1/AppleClang21原CPU+Apple
+和CPU+Vulkan leased contracts分别2.336s/80.751s build、1.967s/4.513s run PASS，含
+cancel/abandon/accepted prefix拒绝/旧source alias/八次无热allocator复用。见
+[交付与native消费者](../../../../evidence/correctness/inference-g02-exact-read-groups-delivery/README.md)。
+仅本helper新增有限门全部裁决，不改原26d Windows未跑门或签graph/整个G02 CLOSED；
+公共native page/layout binding与GPU直接页数学仍必须实际完成，G06原去重成本仍保留。
