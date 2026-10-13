@@ -369,10 +369,11 @@
     },
     {
       "module": "compute_provider_ggml",
-      "state": "CANDIDATE",
-      "record": "docs/implementation/tasks/compute/inference-g01-cpu-native-ragged.md",
-      "summary": "G01 CPU native ragged CR-01-H CANDIDATE：公开工厂声明/root登记补齐，ordinary Direct和双Graph原region relocated static/shared PASS；原642算法与三san证据保留，独立多请求P1待验。",
-      "candidate": "973d3ffbf642aff06f6316fcec4b3cc99eba2e4d"
+      "state": "CLOSED",
+      "record": "docs/implementation/tasks/compute/inference-g01-cpu-resident-ragged-terminal.md",
+      "summary": "G01 CPU resident/native ragged有限轮CLOSED：原flash直接KV、packed输出与公开工厂三交付/风险PASS；独立W1 multi P1 QUALIFIED/5%非劣PASS、verify0，全部方向INCONCLUSIVE。paged/增长/private预算与其它路线仍保goal。",
+      "candidate": "973d3ffbf642aff06f6316fcec4b3cc99eba2e4d",
+      "performance": {"tier": "P1", "material_margin_pct": 5, "evidence": "evidence/performance/inference-g01-cpu-ragged-w1-p1/receipt.json"}
     },
     {
       "module": "graph_provider_onednn",

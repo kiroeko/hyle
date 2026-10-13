@@ -1,0 +1,53 @@
+{
+  "cpu_product_candidate": "973d3ffbf642aff06f6316fcec4b3cc99eba2e4d",
+  "performance_source": "9cfa7b50db652010da5d4d544da9ee01c10644bc",
+  "contract_sha256": "8751dfe583f516b1559256a23d14db91d832972884260d744a6da854adf91633",
+  "qualification": "QUALIFIED",
+  "performance": "PASS",
+  "verify_exit": 0,
+  "job_exit": 0,
+  "elapsed_seconds": 2188.172000000006,
+  "machine": "actual W1-WIN i9-13900K, MSVC19.50, registered logicalCPU2, single native thread",
+  "aa_processes": 16,
+  "product_processes": 120,
+  "control_processes": 30,
+  "sample_stages": [
+    15
+  ],
+  "paired_rounds": 16,
+  "minimum_epoch_iterations": 1,
+  "rows": [
+    {
+      "id": "cpu-ragged-mixed-d256",
+      "ratio_range": [
+        0.9980288097043213,
+        1.003046458492003
+      ],
+      "noninferiority": "PASS",
+      "exact": "PARITY",
+      "direction": "INCONCLUSIVE"
+    },
+    {
+      "id": "cpu-ragged-prefill-d256",
+      "ratio_range": [
+        0.9983079526226735,
+        1.00169779286927
+      ],
+      "noninferiority": "PASS",
+      "exact": "PARITY",
+      "direction": "INCONCLUSIVE"
+    },
+    {
+      "id": "cpu-ragged-holdout-d64",
+      "ratio_range": [
+        0.9991545762730719,
+        1.0045748386664584
+      ],
+      "noninferiority": "PASS",
+      "exact": "PARITY",
+      "direction": "INCONCLUSIVE"
+    }
+  ],
+  "private_pool_upper": "UNKNOWN both arms",
+  "raw_zip_sha256": "cb529218f4836e3db1633b7ebfdb08aaf7efe1594922762512862aeb54e902dd"
+}

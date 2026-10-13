@@ -1,6 +1,6 @@
 # G01 CPU 多请求 ragged 原生读取
 
-状态：CANDIDATE，2026-10-13；owner `compute_provider_ggml`。
+状态：CLOSED，2026-10-13；owner `compute_provider_ggml`，见[有限终审](inference-g01-cpu-resident-ragged-terminal.md)。
 最终工厂消费candidate `973d3ffbf642aff06f6316fcec4b3cc99eba2e4d`，原642算法与ABI不改。
 原不可变candidate `642cc1e67566994a85a65adbe0db8956c1d0350a`及证据保留。
 baseline `af9dc884448249ef0ad87d28525e5303ec087401`，单请求产品candidate d91a与全部
@@ -118,3 +118,8 @@ test-adapter compile FAIL（CRT deprecation/shadow）修正后WERROR PASS，原�
 保16 paired rounds/4ms floor、原双顺序/placement/A/A、n15/31及5% margin。min1实跑
 9.422s。诊断helper覆盖了min2 raw，仅实际工具耗时记录可保留；未用于qualification，
 helper已改为追加attempt。新合同与consumer provenance SHA固定，待统一仪器资格。
+
+正式终态：clean9cfa/source、contract8751dfe5，实际2188.172s，A/A16、n15产品120、
+controls30，QUALIFIED/5%非劣PASS、verify退出0；三个点band PARITY，方向全部
+INCONCLUSIVE。source/static/shared与宿主risk完整后CPU有限轮CLOSED，原单请求与
+FAIL/STOP/未知成本不改；其余G01/G02及G03–G10按总goal继续。
