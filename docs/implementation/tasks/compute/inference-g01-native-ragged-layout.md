@@ -1,6 +1,6 @@
 # G01 Apple/Vulkan ragged 布局直接消费
 
-状态：SCOPED，2026-10-13；owner `compute_route_apple`、`compute_route_vulkan`。
+状态：AUDITED，2026-10-13；owner `compute_route_apple`、`compute_route_vulkan`。
 baseline `9cfa7b50db652010da5d4d544da9ee01c10644bc`。授权来自当前十项goal；真实
 reopen trigger为两request Q1/17、KV31/47、GQA8/2 D256的packed NHD消费，已有native
 MaterializedBatchProgram按Q/head索引并物化历史，不能满足已准入G01结构目标。
@@ -13,7 +13,7 @@ G04量化、G05额外语义或G06增长/decode规划复用；这些保留原总�
 dtype/路线格仍待后续验收，不以本有限子批声称各模式对称或整个G01完成。
 
 拟最终消费形状：`apple/vulkan::prepare_ragged_batch(Context, BatchLayoutVersion,
-BatchAttentionOptions, WorkloadContext)`冷返回原native Program；三inputs是schema固定
+RaggedAttention, WorkloadContext)`冷返回原native Program；三inputs是schema固定
 packed容量Q/K/V，单output是本layout实际packed Q rows。options只有scale/causal，不含
 模型policy；布局版本/checked indptr只在冷阶段消费。Program/Invocation/native inputs/
 Results沿原owner与actual retirement，run不扫描metadata、不建图或新Queue/controller。
@@ -35,3 +35,16 @@ GPU仅MacBook Air先查硬件/toolchain身份；Windows只定向编译。宿主A
 candidate后冻结，不能借CPU或旧single P1代签multi。普通selector只对应factor/真实消费者。
 调查/实现/验证各2h检查点，按用户常设授权追加保累计日志，Windows≤4jobs、重型串行。
 当前CPU正式P1独立运行时不启动Air/Windows另一重型run，只允许定界/写canonical源码。
+
+审计固定：参数直接复用已有RaggedAttention，capacity必须等于layout.schema.capacity，
+scale有限；不新增common类型或改compute_batch。每request Q/K/V Slice axis0，再reshape
+到BSHD{1,rows,heads,D}，原SDPA后reshape回NHD；原Concat axis0拼实际活跃rows。
+所有Q空时原View slice0输出空packed张量，不做数学；foreign capacity/storage无效先拒。
+Vulkan原prepare_plan已把View转为root+byte_offset别名，SDPA recipe只读取这些rank4
+aliases；原resident input资格与实际origin检查仍在，没有推进未资格普通节点。Apple原
+lower已有slice/reshape、BSHD transpose和MLX fast SDPA，没有新math/copy/gather公式。
+两路线原Program都保调用方runtime/输入/旧Results实际寿命，layout只需冷成功消费，不
+由待执行payload读出host metadata。engine重排/增长选择何时冷准备属G06后续组合成本。
+两份短route组合只使用现有原子操作；平台分别降低到原Plan与MLX retained callable，
+不为消除这段冷装配再新增公共recipe/controller类型。数学与ownership没有重复实现。
+AUDITED后固定NR-01/02/03，实际数学/搬运/失败证据之前不签性能或CLOSED。

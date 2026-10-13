@@ -509,9 +509,9 @@
     },
     {
       "module": "compute_route_apple",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/inference-g01-native-ragged-layout.md",
-      "summary": "G01 native ragged NR-01/02/03 SCOPED：packed两request布局沿原MLX View/SDPA/Program直接消费，消除旧Q/head历史物化；已有数学/原F5证据保留，尚未实现。"
+      "summary": "G01 native ragged NR-01/02/03 AUDITED：已有layout/RaggedAttention冷组合Slice/Reshape/原MLX SDPA/packed输出，原Program/slot/退休；有限API与失败/empty域固定，尚未实现。"
     },
     {
       "module": "graph_route_apple",
@@ -526,9 +526,9 @@
     },
     {
       "module": "compute_route_vulkan",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/inference-g01-native-ragged-layout.md",
-      "summary": "G01 native ragged NR-01/02/03 SCOPED：packed两request原Plan/View/SDPA和输出组合，实际origin/零KV物化待验；原3d92单请求CLOSED证据保留，尚未实现。"
+      "summary": "G01 native ragged NR-01/02/03 AUDITED：已有layout/RaggedAttention冷组合原Plan/View/SDPA/packed输出，原native资格/实际origin/slot退休；有限API固定，尚未实现。"
     },
     {
       "module": "graph_route_vulkan",
