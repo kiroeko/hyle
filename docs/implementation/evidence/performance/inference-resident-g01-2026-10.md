@@ -66,3 +66,11 @@ Vulkan native ragged的[合格失败](../../../../evidence/performance/inference
 
 短D64固定loss约11–13%，不是仪器未资格或几次诊断点值，阻断本有限Vulkan NR轮关闭。
 先核提交/输出结构再裁决真实owner，不能改容差/shape/阈值或无限重采样寻找PASS。
+
+原region融合0e9的[第二次合格失败](../../../../evidence/performance/inference-g01-native-ragged-vulkan-rf-m1-p1/README.md)
+也保留：同contractd9a54a85/source0006944b7，16 A/A、n15产品120/controls30、
+929.176s，QUALIFIED、verify0、整体5%非劣FAIL。混合D256比1.0258–1.0439方向
+INCONCLUSIVE/非劣PASS，长prefill0.9884–0.9965方向INCONCLUSIVE/非劣PASS，短D64
+0.8018–0.8260方向LOSS/非劣FAIL。3managed段→1改善不了这条warm资格缺口：原
+fixed_attention_graph拒第二个flash与Concat，导致整合graph每步走managed编码。
+必须复用原record-safe/actual retirement机制并实证多flash记录，否则不结案。

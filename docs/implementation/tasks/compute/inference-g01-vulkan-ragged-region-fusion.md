@@ -80,3 +80,12 @@ oracle/5%/16paired rounds/min1/4ms/n15/31/A/A/controls全部不变。只因为�
 普通selector已选route及原Graph/native hybrid直接消费者，但净diff引入commit归因
 失败，虽当前owner为AUDITED且父提交15dff已先登记；按独立[工具记录](../build/validation-selector-shared-bench-paths.md)
 保存原BLOCKED plan，不修改公共checker。实际门按本卡精确执行；不会扩大成全库重开。
+
+RF0e9 formal实际终态：929.176s、A/A16/n15产品120/controls30，QUALIFIED、verify0，
+性能仍FAIL。D64比0.8018–0.8260稳定LOSS约17–20%，比原280更差；原[第二次合格失败](../../../../evidence/performance/inference-g01-native-ragged-vulkan-rf-m1-p1/README.md)
+全部保存，3段→1不等于费用目标完成。cold边界最终source五tests已PASS，后续不借
+这两次门重复采样。根因源码已定位：原native_work_impl::fixed_attention_graph拒第二个
+tagged flash和GGML_OP_CONCAT，因此合并图反而每次managed编码，不能原固定记录重用。
+这形成原runtime单请求a400有限CLOSED之外的真实multi consumer trigger；需runtime
+依法SCOPED/AUDITED后修有限whitelist，原hyle_record_safe/实际GC无event/退休与bind
+origin变更失效仍是权威，不推广一般capture或去掉实际安全资格。
