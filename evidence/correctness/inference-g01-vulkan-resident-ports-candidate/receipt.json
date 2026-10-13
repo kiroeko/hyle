@@ -1,0 +1,414 @@
+{
+  "candidate": "3d92eee97a70f7788dfb9bbcda73f6e0f801959f",
+  "native_runtime_candidate": "a40003f7edb54a3da3113d0cd401b46211e0b0f0",
+  "actual_machine": "MacBook Air Mac16,12 M4 macOS27.0.1 AppleClang21.0.0",
+  "results": {
+    "asan": {
+      "candidate": "3d92eee97a70f7788dfb9bbcda73f6e0f801959f",
+      "mode": "asan",
+      "scope": "actual MacBook Air host HYLE/native Vulkan objects and tiny GPU math; no shader/driver instrumentation",
+      "stages": [
+        {
+          "stage": "configure",
+          "command": [
+            "/opt/homebrew/bin/cmake",
+            "-S",
+            "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-vulkan-asan/parent",
+            "-B",
+            "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-vulkan-asan/build",
+            "-G",
+            "Ninja",
+            "-DCMAKE_BUILD_TYPE=Release",
+            "-DHYLE_STATIC=ON",
+            "-DHYLE_COMPONENTS=compute;graph",
+            "-DHYLE_COMPUTE_ROUTES=vulkan",
+            "-DHYLE_BUILD_TESTS=OFF",
+            "-DHYLE_BUILD_BENCH=OFF",
+            "-DHYLE_INSTALL=OFF",
+            "-DHYLE_WERROR=OFF",
+            "-DHYLE_SANITIZER=asan",
+            "-DHYLE_DEP_SOURCE_CACHE=/Users/kiro/Library/Caches/hyle/dependencies/v1"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 13.195682249999999,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g01-vp-asan/configure-1.log"
+        },
+        {
+          "stage": "build",
+          "command": [
+            "/opt/homebrew/bin/cmake",
+            "--build",
+            "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-vulkan-asan/build",
+            "--target",
+            "g01_resident",
+            "g01_cache",
+            "--parallel",
+            "4"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 4.202665000000001,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g01-vp-asan/build-1.log"
+        },
+        {
+          "stage": "resident",
+          "command": [
+            "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-vulkan-asan/build/g01_resident",
+            "--gtest_filter=VulkanGraph.*"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 2.981215458000001,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g01-vp-asan/resident-1.log"
+        },
+        {
+          "stage": "cache",
+          "command": [
+            "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-vulkan-asan/build/g01_cache"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 1.6352030000000006,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g01-vp-asan/cache-1.log"
+        }
+      ]
+    },
+    "ubsan": {
+      "candidate": "3d92eee97a70f7788dfb9bbcda73f6e0f801959f",
+      "mode": "ubsan",
+      "scope": "actual MacBook Air host HYLE/native Vulkan objects and tiny GPU math; no shader/driver instrumentation",
+      "stages": [
+        {
+          "stage": "build",
+          "command": [
+            "/opt/homebrew/bin/cmake",
+            "--build",
+            "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-vulkan-ubsan/build",
+            "--target",
+            "g01_resident",
+            "g01_cache",
+            "--parallel",
+            "4"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 4.179753667,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g01-vp-ubsan/build-1.log"
+        },
+        {
+          "stage": "resident",
+          "command": [
+            "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-vulkan-ubsan/build/g01_resident",
+            "--gtest_filter=VulkanGraph.*"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 1.7398595420000005,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g01-vp-ubsan/resident-1.log"
+        },
+        {
+          "stage": "cache",
+          "command": [
+            "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-vulkan-ubsan/build/g01_cache"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 0.702943125,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g01-vp-ubsan/cache-1.log"
+        }
+      ]
+    },
+    "tsan": {
+      "candidate": "3d92eee97a70f7788dfb9bbcda73f6e0f801959f",
+      "mode": "tsan",
+      "scope": "actual MacBook Air host HYLE/native Vulkan objects and tiny GPU math; no shader/driver instrumentation",
+      "stages": [
+        {
+          "stage": "build",
+          "command": [
+            "/opt/homebrew/bin/cmake",
+            "--build",
+            "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-vulkan-tsan/build",
+            "--target",
+            "g01_resident",
+            "g01_cache",
+            "--parallel",
+            "4"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 3.227447041,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g01-vp-tsan/build-1.log"
+        },
+        {
+          "stage": "resident",
+          "command": [
+            "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-vulkan-tsan/build/g01_resident",
+            "--gtest_filter=VulkanGraph.*"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 6.953863333,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g01-vp-tsan/resident-1.log"
+        },
+        {
+          "stage": "cache",
+          "command": [
+            "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-vulkan-tsan/build/g01_cache"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 3.6107977499999997,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g01-vp-tsan/cache-1.log"
+        }
+      ]
+    },
+    "static-sdk": {
+      "candidate": "3d92eee97a70f7788dfb9bbcda73f6e0f801959f",
+      "mode": "static",
+      "scope": "actual Air relocated public SDK; nine finite public managed/resident/rebind/padding/origin tests; no private HYLE API",
+      "stages": [
+        {
+          "stage": "producer-build",
+          "command": [
+            "/opt/homebrew/bin/cmake",
+            "--build",
+            "/Users/kiro/hyle-scratch/compute-unified/a-vulkan/selected-graph/static-sdk-build",
+            "--target",
+            "hyle_graph_route_vulkan",
+            "hyle_graph_batch",
+            "hyle_compute_state",
+            "--parallel",
+            "4"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 0.07997950000000001,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g01-vp-static-sdk/producer-build-1.log"
+        },
+        {
+          "stage": "install",
+          "command": [
+            "/opt/homebrew/bin/cmake",
+            "--install",
+            "/Users/kiro/hyle-scratch/compute-unified/a-vulkan/selected-graph/static-sdk-build",
+            "--prefix",
+            "/Users/kiro/hyle-scratch/compute-unified/g01-vp-static-sdk/staging"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 0.36764420800000003,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g01-vp-static-sdk/install-1.log"
+        },
+        {
+          "stage": "consumer-configure",
+          "command": [
+            "/opt/homebrew/bin/cmake",
+            "-S",
+            "/Users/kiro/hyle-scratch/compute-unified/g01-vp-static-sdk/consumer-source",
+            "-B",
+            "/Users/kiro/hyle-scratch/compute-unified/g01-vp-static-sdk/consumer-build",
+            "-G",
+            "Ninja",
+            "-DCMAKE_BUILD_TYPE=Release",
+            "-DCMAKE_OSX_DEPLOYMENT_TARGET=14.4",
+            "-DCMAKE_PREFIX_PATH=/Users/kiro/hyle-scratch/compute-unified/g01-vp-static-sdk/relocated"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 0.410734917,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g01-vp-static-sdk/consumer-configure-1.log"
+        },
+        {
+          "stage": "consumer-build",
+          "command": [
+            "/opt/homebrew/bin/cmake",
+            "--build",
+            "/Users/kiro/hyle-scratch/compute-unified/g01-vp-static-sdk/consumer-build",
+            "--target",
+            "resident",
+            "--parallel",
+            "4"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 2.416558958,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g01-vp-static-sdk/consumer-build-1.log"
+        },
+        {
+          "stage": "run",
+          "command": [
+            "/Users/kiro/hyle-scratch/compute-unified/g01-vp-static-sdk/consumer-build/resident",
+            "--gtest_filter=VulkanGraph.*"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 1.8997582090000003,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g01-vp-static-sdk/run-1.log"
+        }
+      ]
+    },
+    "shared-sdk": {
+      "candidate": "3d92eee97a70f7788dfb9bbcda73f6e0f801959f",
+      "mode": "shared",
+      "scope": "actual Air relocated public SDK; nine finite public managed/resident/rebind/padding/origin tests; no private HYLE API",
+      "stages": [
+        {
+          "stage": "producer-build",
+          "command": [
+            "/opt/homebrew/bin/cmake",
+            "--build",
+            "/Users/kiro/hyle-scratch/compute-unified/a-vulkan/selected-graph/shared-sdk-build",
+            "--target",
+            "hyle_graph_route_vulkan",
+            "hyle_graph_batch",
+            "hyle_compute_state",
+            "--parallel",
+            "4"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 2.4024136670000003,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g01-vp-shared-sdk/producer-build-1.log"
+        },
+        {
+          "stage": "install",
+          "command": [
+            "/opt/homebrew/bin/cmake",
+            "--install",
+            "/Users/kiro/hyle-scratch/compute-unified/a-vulkan/selected-graph/shared-sdk-build",
+            "--prefix",
+            "/Users/kiro/hyle-scratch/compute-unified/g01-vp-shared-sdk/staging"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 0.2926140000000004,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g01-vp-shared-sdk/install-1.log"
+        },
+        {
+          "stage": "consumer-configure",
+          "command": [
+            "/opt/homebrew/bin/cmake",
+            "-S",
+            "/Users/kiro/hyle-scratch/compute-unified/g01-vp-shared-sdk/consumer-source",
+            "-B",
+            "/Users/kiro/hyle-scratch/compute-unified/g01-vp-shared-sdk/consumer-build",
+            "-G",
+            "Ninja",
+            "-DCMAKE_BUILD_TYPE=Release",
+            "-DCMAKE_OSX_DEPLOYMENT_TARGET=14.4",
+            "-DCMAKE_PREFIX_PATH=/Users/kiro/hyle-scratch/compute-unified/g01-vp-shared-sdk/relocated"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 0.40874362500000005,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g01-vp-shared-sdk/consumer-configure-1.log"
+        },
+        {
+          "stage": "consumer-build",
+          "command": [
+            "/opt/homebrew/bin/cmake",
+            "--build",
+            "/Users/kiro/hyle-scratch/compute-unified/g01-vp-shared-sdk/consumer-build",
+            "--target",
+            "resident",
+            "--parallel",
+            "4"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 2.3937299169999995,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g01-vp-shared-sdk/consumer-build-1.log"
+        },
+        {
+          "stage": "run",
+          "command": [
+            "/Users/kiro/hyle-scratch/compute-unified/g01-vp-shared-sdk/consumer-build/resident",
+            "--gtest_filter=VulkanGraph.*"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 7.183214583000001,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g01-vp-shared-sdk/run-1.log"
+        }
+      ]
+    }
+  },
+  "instrumentation": {
+    "asan": [
+      {
+        "file": "/Users/kiro/hyle-scratch/compute-unified/source-c8874688/src/compute_route_vulkan/vulkan_region.cc",
+        "flag": "-fsanitize=address"
+      },
+      {
+        "file": "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-vulkan-asan/build/hyle/src/compute_ggml_runtime/source-ccd5034f3d3406bb/src/ggml-vulkan/ggml-vulkan.cpp",
+        "flag": "-fsanitize=address"
+      },
+      {
+        "file": "/Users/kiro/hyle-scratch/compute-unified/source-c8874688/src/compute_provider_ggml_vulkan/native_device.cc",
+        "flag": "-fsanitize=address"
+      },
+      {
+        "file": "/Users/kiro/hyle-scratch/compute-unified/source-c8874688/src/compute_provider_ggml_vulkan/region.cc",
+        "flag": "-fsanitize=address"
+      },
+      {
+        "file": "/Users/kiro/hyle-scratch/compute-unified/source-c8874688/tests/graph_route_vulkan/mature_tensor_test.cc",
+        "flag": "-fsanitize=address"
+      },
+      {
+        "file": "/Users/kiro/hyle-scratch/compute-unified/source-c8874688/tests/compute_provider_ggml_vulkan/attention_cache_test.cc",
+        "flag": "-fsanitize=address"
+      }
+    ],
+    "ubsan": [
+      {
+        "file": "/Users/kiro/hyle-scratch/compute-unified/source-c8874688/src/compute_route_vulkan/vulkan_region.cc",
+        "flag": "-fsanitize=undefined"
+      },
+      {
+        "file": "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-vulkan-ubsan/build/hyle/src/compute_ggml_runtime/source-ccd5034f3d3406bb/src/ggml-vulkan/ggml-vulkan.cpp",
+        "flag": "-fsanitize=undefined"
+      },
+      {
+        "file": "/Users/kiro/hyle-scratch/compute-unified/source-c8874688/src/compute_provider_ggml_vulkan/native_device.cc",
+        "flag": "-fsanitize=undefined"
+      },
+      {
+        "file": "/Users/kiro/hyle-scratch/compute-unified/source-c8874688/src/compute_provider_ggml_vulkan/region.cc",
+        "flag": "-fsanitize=undefined"
+      },
+      {
+        "file": "/Users/kiro/hyle-scratch/compute-unified/source-c8874688/tests/graph_route_vulkan/mature_tensor_test.cc",
+        "flag": "-fsanitize=undefined"
+      },
+      {
+        "file": "/Users/kiro/hyle-scratch/compute-unified/source-c8874688/tests/compute_provider_ggml_vulkan/attention_cache_test.cc",
+        "flag": "-fsanitize=undefined"
+      }
+    ],
+    "tsan": [
+      {
+        "file": "/Users/kiro/hyle-scratch/compute-unified/source-c8874688/src/compute_route_vulkan/vulkan_region.cc",
+        "flag": "-fsanitize=thread"
+      },
+      {
+        "file": "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-vulkan-tsan/build/hyle/src/compute_ggml_runtime/source-ccd5034f3d3406bb/src/ggml-vulkan/ggml-vulkan.cpp",
+        "flag": "-fsanitize=thread"
+      },
+      {
+        "file": "/Users/kiro/hyle-scratch/compute-unified/source-c8874688/src/compute_provider_ggml_vulkan/native_device.cc",
+        "flag": "-fsanitize=thread"
+      },
+      {
+        "file": "/Users/kiro/hyle-scratch/compute-unified/source-c8874688/src/compute_provider_ggml_vulkan/region.cc",
+        "flag": "-fsanitize=thread"
+      },
+      {
+        "file": "/Users/kiro/hyle-scratch/compute-unified/source-c8874688/tests/graph_route_vulkan/mature_tensor_test.cc",
+        "flag": "-fsanitize=thread"
+      },
+      {
+        "file": "/Users/kiro/hyle-scratch/compute-unified/source-c8874688/tests/compute_provider_ggml_vulkan/attention_cache_test.cc",
+        "flag": "-fsanitize=thread"
+      }
+    ]
+  },
+  "changed_product_sha256": {
+    "src/compute_provider_ggml_vulkan/region.cc": "3b6bcb9c71261b7d5486bb12040a67d2785663e54a6530022ca2c96e773a1253",
+    "src/compute_route_vulkan/vulkan_region.cc": "8d5d62804351798413941324cdd38497148c22b8b5345acf84dd09406c2b9792"
+  },
+  "canonical_manifest_in_raw": "g01-input-manifest.json",
+  "source_and_cost_evidence": "evidence/correctness/inference-g01-vulkan-resident-ports-stage/receipt.json",
+  "raw_zip_sha256": "2e9928bc73c90e506d8d5d206cbc137e2b90a628f948296f693e0cab850af33c",
+  "pending": [
+    "fixed-contract VP P1",
+    "whole G01 other domains"
+  ],
+  "limits": [
+    "host sanitizers only, no shader/driver instrumentation",
+    "ASan detect_leaks=0; no LSan claim",
+    "Windows compile only, prior Windows risk records retain original candidate"
+  ]
+}

@@ -68,3 +68,10 @@ runtime byte origin绑定失败后可重新正确绑定执行。原72个数学ep
 port重绑通过，旧output寿命不减弱。Windows仅相关TU/消费者4路增量编译通过。
 证据见[实现阶段](../../../../evidence/correctness/inference-g01-vulkan-resident-ports-stage/README.md)，
 三交付/san/P1尚待不可变candidate；不从copy0推导吞吐PASS。
+
+候选验收补充：[3d92交付与风险](../../../../evidence/correctness/inference-g01-vulkan-resident-ports-candidate/README.md)
+实际Air source与搬迁static/shared均通过9项公开tests，ASan/UBSan/TSan各通过公开9项
+和native4项，两个变更产品TU在六项compdb中核对真实插桩，输入逐SHA绑定candidate。
+Windows仍仅增量编译，宿主san不外推GPU/driver或LSan。固定同原canonical合同4ae、
+原peer/精度/输入的fresh4 P1已启动，旧fresh2/fresh3全部原产物与FAIL保持不变。
+当前性能待裁决，整个G01仍0结案，不用source copy0猜测非劣通过。
