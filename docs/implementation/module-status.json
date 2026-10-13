@@ -664,14 +664,14 @@
       "module": "graph_route_cpu_apple",
       "state": "CANDIDATE",
       "record": "docs/implementation/tasks/graph/inference-g02-native-paged-composition.md",
-      "summary": "G02 native exact-page joint candidate frozen: Apple144/Vulkan72 actual CPU/native/CPU oracle, two-node readers/layout/frame/empty/refusal recovery, compile/create/prepare/bind OOM, CPU/native errors/unknown/cancel/abandon/close and actual guards retirement source PASS; all FAIL/286.946s retained. Original native controller/query qualification and Vulkan output checks reused. Joint SDK/headers/sanitizers/Win and original G02 preserved gates unproven; whole goal0/10.",
+      "summary": "G02 joint page candidate1cd frozen: actual Apple/Vulkan normal oracle and dedicated two-node/foreign/layout/empty/OOM/CPU/native failures/unknown/cancel/abandon/close risk PASS. Six host sanitizer finals (precise Metal callback/final-counter fence models, original raw FAIL retained) and four relocated public hyle::graph SDKs/twelve headers complete. Windows directed compile/link live, no exe/GPU run. Original G02 common/CUDA/graph preserved gates and whole goal0/10 remain incomplete.",
       "candidate": "1cd0893979e1672a0f6fac98b783a6a3bfcabbca"
     },
     {
       "module": "graph_route_cpu_vulkan",
       "state": "CANDIDATE",
       "record": "docs/implementation/tasks/graph/inference-g02-native-paged-composition.md",
-      "summary": "G02 native exact-page joint candidate frozen: Apple144/Vulkan72 actual CPU/native/CPU oracle, two-node readers/layout/frame/empty/refusal recovery, compile/create/prepare/bind OOM, CPU/native errors/unknown/cancel/abandon/close and actual guards retirement source PASS; all FAIL/286.946s retained. Original native controller/query qualification and Vulkan output checks reused. Joint SDK/headers/sanitizers/Win and original G02 preserved gates unproven; whole goal0/10.",
+      "summary": "G02 joint page candidate1cd frozen: actual Apple/Vulkan normal oracle and dedicated two-node/foreign/layout/empty/OOM/CPU/native failures/unknown/cancel/abandon/close risk PASS. Six host sanitizer finals (precise Metal callback/final-counter fence models, original raw FAIL retained) and four relocated public hyle::graph SDKs/twelve headers complete. Windows directed compile/link live, no exe/GPU run. Original G02 common/CUDA/graph preserved gates and whole goal0/10 remain incomplete.",
       "candidate": "1cd0893979e1672a0f6fac98b783a6a3bfcabbca"
     },
     {
@@ -700,14 +700,14 @@
       "module": "compute_batch",
       "state": "CANDIDATE",
       "record": "docs/implementation/tasks/graph/inference-g02-native-paged-composition.md",
-      "summary": "G02 native exact-page joint candidate frozen: Apple144/Vulkan72 actual CPU/native/CPU oracle, two-node readers/layout/frame/empty/refusal recovery, compile/create/prepare/bind OOM, CPU/native errors/unknown/cancel/abandon/close and actual guards retirement source PASS; all FAIL/286.946s retained. Original native controller/query qualification and Vulkan output checks reused. Joint SDK/headers/sanitizers/Win and original G02 preserved gates unproven; whole goal0/10.",
+      "summary": "G02 joint page candidate1cd frozen: actual Apple/Vulkan normal oracle and dedicated two-node/foreign/layout/empty/OOM/CPU/native failures/unknown/cancel/abandon/close risk PASS. Six host sanitizer finals (precise Metal callback/final-counter fence models, original raw FAIL retained) and four relocated public hyle::graph SDKs/twelve headers complete. Windows directed compile/link live, no exe/GPU run. Original G02 common/CUDA/graph preserved gates and whole goal0/10 remain incomplete.",
       "candidate": "1cd0893979e1672a0f6fac98b783a6a3bfcabbca"
     },
     {
       "module": "graph_batch",
       "state": "CANDIDATE",
       "record": "docs/implementation/tasks/graph/inference-g02-native-paged-composition.md",
-      "summary": "G02 native exact-page joint candidate frozen: Apple144/Vulkan72 actual CPU/native/CPU oracle, two-node readers/layout/frame/empty/refusal recovery, compile/create/prepare/bind OOM, CPU/native errors/unknown/cancel/abandon/close and actual guards retirement source PASS; all FAIL/286.946s retained. Original native controller/query qualification and Vulkan output checks reused. Joint SDK/headers/sanitizers/Win and original G02 preserved gates unproven; whole goal0/10.",
+      "summary": "G02 joint page candidate1cd frozen: actual Apple/Vulkan normal oracle and dedicated two-node/foreign/layout/empty/OOM/CPU/native failures/unknown/cancel/abandon/close risk PASS. Six host sanitizer finals (precise Metal callback/final-counter fence models, original raw FAIL retained) and four relocated public hyle::graph SDKs/twelve headers complete. Windows directed compile/link live, no exe/GPU run. Original G02 common/CUDA/graph preserved gates and whole goal0/10 remain incomplete.",
       "candidate": "1cd0893979e1672a0f6fac98b783a6a3bfcabbca"
     }
   ]

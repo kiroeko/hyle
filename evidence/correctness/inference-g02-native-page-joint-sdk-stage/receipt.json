@@ -1,0 +1,405 @@
+{
+  "candidate": "1cd0893979e1672a0f6fac98b783a6a3bfcabbca",
+  "scope": "four actual relocated public hyle::graph SDKs, realjoint math216episodes total each static/shared acrossroutes; exact public domains/empty/two-node/OOM/budgets plus three standalone headers each",
+  "results": {
+    "apple-static": {
+      "candidate": "1cd0893979e1672a0f6fac98b783a6a3bfcabbca",
+      "route": "apple",
+      "mode": "static",
+      "identity": {
+        "model": "Mac16,12",
+        "arch": "arm64",
+        "os": "ProductName:\t\tmacOS\nProductVersion:\t\t27.0.1\nBuildVersion:\t\t26A434",
+        "compiler": "Apple clang version 21.0.0 (clang-2100.3.34.2)\nTarget: arm64-apple-darwin27.0.0\nThread model: posix\nInstalledDir: /Library/Developer/CommandLineTools/usr/bin"
+      },
+      "scope": "relocated public hyle::graph only, actual CPU/native page/CPU mathematics, two-node/exact refusal/empty/cold budget+OOM and standalone headers; no internal products/hooks",
+      "stages": [
+        {
+          "stage": "producer-build",
+          "command": [
+            "/opt/homebrew/bin/cmake",
+            "--build",
+            "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-build",
+            "--target",
+            "hyle_graph_route_cpu_apple",
+            "hyle_graph_batch",
+            "hyle_compute_batch",
+            "hyle_compute_route_apple",
+            "--parallel",
+            "4"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 46.366190917,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g02-native-page-joint-apple-static-sdk/producer-build-1.log"
+        },
+        {
+          "stage": "install",
+          "command": [
+            "/opt/homebrew/bin/cmake",
+            "--install",
+            "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-build",
+            "--prefix",
+            "/Users/kiro/hyle-scratch/compute-unified/g02-native-page-joint-apple-static-sdk/staging"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 0.5145550410000013,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g02-native-page-joint-apple-static-sdk/install-1.log"
+        },
+        {
+          "stage": "consumer-configure",
+          "command": [
+            "/opt/homebrew/bin/cmake",
+            "-S",
+            "/Users/kiro/hyle-scratch/compute-unified/g02-native-page-joint-apple-static-sdk/consumer-source",
+            "-B",
+            "/Users/kiro/hyle-scratch/compute-unified/g02-native-page-joint-apple-static-sdk/consumer-build",
+            "-G",
+            "Ninja",
+            "-DCMAKE_PREFIX_PATH=/Users/kiro/hyle-scratch/compute-unified/g02-native-page-joint-apple-static-sdk/relocated",
+            "-DCMAKE_BUILD_TYPE=Release",
+            "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 1.3433406660000031,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g02-native-page-joint-apple-static-sdk/consumer-configure-1.log"
+        },
+        {
+          "stage": "consumer-build",
+          "command": [
+            "/opt/homebrew/bin/cmake",
+            "--build",
+            "/Users/kiro/hyle-scratch/compute-unified/g02-native-page-joint-apple-static-sdk/consumer-build",
+            "--target",
+            "joint",
+            "domains",
+            "headers",
+            "--parallel",
+            "4"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 2.1916568339999998,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g02-native-page-joint-apple-static-sdk/consumer-build-1.log"
+        },
+        {
+          "stage": "joint",
+          "command": [
+            "/Users/kiro/hyle-scratch/compute-unified/g02-native-page-joint-apple-static-sdk/consumer-build/joint"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 1.992772459000001,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g02-native-page-joint-apple-static-sdk/joint-1.log"
+        },
+        {
+          "stage": "domains",
+          "command": [
+            "/Users/kiro/hyle-scratch/compute-unified/g02-native-page-joint-apple-static-sdk/consumer-build/domains"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 0.5334881670000016,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g02-native-page-joint-apple-static-sdk/domains-1.log"
+        }
+      ],
+      "cumulative_seconds": 52.942004084000004
+    },
+    "apple-shared": {
+      "candidate": "1cd0893979e1672a0f6fac98b783a6a3bfcabbca",
+      "route": "apple",
+      "mode": "shared",
+      "identity": {
+        "model": "Mac16,12",
+        "arch": "arm64",
+        "os": "ProductName:\t\tmacOS\nProductVersion:\t\t27.0.1\nBuildVersion:\t\t26A434",
+        "compiler": "Apple clang version 21.0.0 (clang-2100.3.34.2)\nTarget: arm64-apple-darwin27.0.0\nThread model: posix\nInstalledDir: /Library/Developer/CommandLineTools/usr/bin"
+      },
+      "scope": "relocated public hyle::graph only, actual CPU/native page/CPU mathematics, two-node/exact refusal/empty/cold budget+OOM and standalone headers; no internal products/hooks",
+      "stages": [
+        {
+          "stage": "producer-build",
+          "command": [
+            "/opt/homebrew/bin/cmake",
+            "--build",
+            "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-build",
+            "--target",
+            "hyle_graph_route_cpu_apple",
+            "hyle_graph_batch",
+            "hyle_compute_batch",
+            "hyle_compute_route_apple",
+            "--parallel",
+            "4"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 47.206050749999996,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g02-native-page-joint-apple-shared-sdk/producer-build-1.log"
+        },
+        {
+          "stage": "install",
+          "command": [
+            "/opt/homebrew/bin/cmake",
+            "--install",
+            "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-build",
+            "--prefix",
+            "/Users/kiro/hyle-scratch/compute-unified/g02-native-page-joint-apple-shared-sdk/staging"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 0.3641125000000045,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g02-native-page-joint-apple-shared-sdk/install-1.log"
+        },
+        {
+          "stage": "consumer-configure",
+          "command": [
+            "/opt/homebrew/bin/cmake",
+            "-S",
+            "/Users/kiro/hyle-scratch/compute-unified/g02-native-page-joint-apple-shared-sdk/consumer-source",
+            "-B",
+            "/Users/kiro/hyle-scratch/compute-unified/g02-native-page-joint-apple-shared-sdk/consumer-build",
+            "-G",
+            "Ninja",
+            "-DCMAKE_PREFIX_PATH=/Users/kiro/hyle-scratch/compute-unified/g02-native-page-joint-apple-shared-sdk/relocated",
+            "-DCMAKE_BUILD_TYPE=Release",
+            "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 1.2814890410000004,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g02-native-page-joint-apple-shared-sdk/consumer-configure-1.log"
+        },
+        {
+          "stage": "consumer-build",
+          "command": [
+            "/opt/homebrew/bin/cmake",
+            "--build",
+            "/Users/kiro/hyle-scratch/compute-unified/g02-native-page-joint-apple-shared-sdk/consumer-build",
+            "--target",
+            "joint",
+            "domains",
+            "headers",
+            "--parallel",
+            "4"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 2.166344209000002,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g02-native-page-joint-apple-shared-sdk/consumer-build-1.log"
+        },
+        {
+          "stage": "joint",
+          "command": [
+            "/Users/kiro/hyle-scratch/compute-unified/g02-native-page-joint-apple-shared-sdk/consumer-build/joint"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 8.8310235,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g02-native-page-joint-apple-shared-sdk/joint-1.log"
+        },
+        {
+          "stage": "domains",
+          "command": [
+            "/Users/kiro/hyle-scratch/compute-unified/g02-native-page-joint-apple-shared-sdk/consumer-build/domains"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 0.45999687500000164,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g02-native-page-joint-apple-shared-sdk/domains-1.log"
+        }
+      ],
+      "cumulative_seconds": 60.309016875000005
+    },
+    "vulkan-static": {
+      "candidate": "1cd0893979e1672a0f6fac98b783a6a3bfcabbca",
+      "route": "vulkan",
+      "mode": "static",
+      "identity": {
+        "model": "Mac16,12",
+        "arch": "arm64",
+        "os": "ProductName:\t\tmacOS\nProductVersion:\t\t27.0.1\nBuildVersion:\t\t26A434",
+        "compiler": "Apple clang version 21.0.0 (clang-2100.3.34.2)\nTarget: arm64-apple-darwin27.0.0\nThread model: posix\nInstalledDir: /Library/Developer/CommandLineTools/usr/bin"
+      },
+      "scope": "relocated public hyle::graph only, actual CPU/native page/CPU mathematics, two-node/exact refusal/empty/cold budget+OOM and standalone headers; no internal products/hooks",
+      "stages": [
+        {
+          "stage": "producer-build",
+          "command": [
+            "/opt/homebrew/bin/cmake",
+            "--build",
+            "/Users/kiro/hyle-scratch/compute-unified/a-cpu-vulkan/selected-graph/static-sdk-build",
+            "--target",
+            "hyle_graph_route_cpu_vulkan",
+            "hyle_graph_batch",
+            "hyle_compute_batch",
+            "hyle_compute_route_vulkan",
+            "--parallel",
+            "4"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 84.517987084,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g02-native-page-joint-vulkan-static-sdk/producer-build-1.log"
+        },
+        {
+          "stage": "install",
+          "command": [
+            "/opt/homebrew/bin/cmake",
+            "--install",
+            "/Users/kiro/hyle-scratch/compute-unified/a-cpu-vulkan/selected-graph/static-sdk-build",
+            "--prefix",
+            "/Users/kiro/hyle-scratch/compute-unified/g02-native-page-joint-vulkan-static-sdk/staging"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 0.5258191250000124,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g02-native-page-joint-vulkan-static-sdk/install-1.log"
+        },
+        {
+          "stage": "consumer-configure",
+          "command": [
+            "/opt/homebrew/bin/cmake",
+            "-S",
+            "/Users/kiro/hyle-scratch/compute-unified/g02-native-page-joint-vulkan-static-sdk/consumer-source",
+            "-B",
+            "/Users/kiro/hyle-scratch/compute-unified/g02-native-page-joint-vulkan-static-sdk/consumer-build",
+            "-G",
+            "Ninja",
+            "-DCMAKE_PREFIX_PATH=/Users/kiro/hyle-scratch/compute-unified/g02-native-page-joint-vulkan-static-sdk/relocated",
+            "-DCMAKE_BUILD_TYPE=Release",
+            "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 1.337305624999999,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g02-native-page-joint-vulkan-static-sdk/consumer-configure-1.log"
+        },
+        {
+          "stage": "consumer-build",
+          "command": [
+            "/opt/homebrew/bin/cmake",
+            "--build",
+            "/Users/kiro/hyle-scratch/compute-unified/g02-native-page-joint-vulkan-static-sdk/consumer-build",
+            "--target",
+            "joint",
+            "domains",
+            "headers",
+            "--parallel",
+            "4"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 1.273810791999992,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g02-native-page-joint-vulkan-static-sdk/consumer-build-1.log"
+        },
+        {
+          "stage": "joint",
+          "command": [
+            "/Users/kiro/hyle-scratch/compute-unified/g02-native-page-joint-vulkan-static-sdk/consumer-build/joint"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 2.2950046250000042,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g02-native-page-joint-vulkan-static-sdk/joint-1.log"
+        },
+        {
+          "stage": "domains",
+          "command": [
+            "/Users/kiro/hyle-scratch/compute-unified/g02-native-page-joint-vulkan-static-sdk/consumer-build/domains"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 0.9952882089999946,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g02-native-page-joint-vulkan-static-sdk/domains-1.log"
+        }
+      ],
+      "cumulative_seconds": 90.94521546
+    },
+    "vulkan-shared": {
+      "candidate": "1cd0893979e1672a0f6fac98b783a6a3bfcabbca",
+      "route": "vulkan",
+      "mode": "shared",
+      "identity": {
+        "model": "Mac16,12",
+        "arch": "arm64",
+        "os": "ProductName:\t\tmacOS\nProductVersion:\t\t27.0.1\nBuildVersion:\t\t26A434",
+        "compiler": "Apple clang version 21.0.0 (clang-2100.3.34.2)\nTarget: arm64-apple-darwin27.0.0\nThread model: posix\nInstalledDir: /Library/Developer/CommandLineTools/usr/bin"
+      },
+      "scope": "relocated public hyle::graph only, actual CPU/native page/CPU mathematics, two-node/exact refusal/empty/cold budget+OOM and standalone headers; no internal products/hooks",
+      "stages": [
+        {
+          "stage": "producer-build",
+          "command": [
+            "/opt/homebrew/bin/cmake",
+            "--build",
+            "/Users/kiro/hyle-scratch/compute-unified/a-cpu-vulkan/selected-graph/shared-sdk-build",
+            "--target",
+            "hyle_graph_route_cpu_vulkan",
+            "hyle_graph_batch",
+            "hyle_compute_batch",
+            "hyle_compute_route_vulkan",
+            "--parallel",
+            "4"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 85.696366541,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g02-native-page-joint-vulkan-shared-sdk/producer-build-1.log"
+        },
+        {
+          "stage": "install",
+          "command": [
+            "/opt/homebrew/bin/cmake",
+            "--install",
+            "/Users/kiro/hyle-scratch/compute-unified/a-cpu-vulkan/selected-graph/shared-sdk-build",
+            "--prefix",
+            "/Users/kiro/hyle-scratch/compute-unified/g02-native-page-joint-vulkan-shared-sdk/staging"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 0.4363048750000047,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g02-native-page-joint-vulkan-shared-sdk/install-1.log"
+        },
+        {
+          "stage": "consumer-configure",
+          "command": [
+            "/opt/homebrew/bin/cmake",
+            "-S",
+            "/Users/kiro/hyle-scratch/compute-unified/g02-native-page-joint-vulkan-shared-sdk/consumer-source",
+            "-B",
+            "/Users/kiro/hyle-scratch/compute-unified/g02-native-page-joint-vulkan-shared-sdk/consumer-build",
+            "-G",
+            "Ninja",
+            "-DCMAKE_PREFIX_PATH=/Users/kiro/hyle-scratch/compute-unified/g02-native-page-joint-vulkan-shared-sdk/relocated",
+            "-DCMAKE_BUILD_TYPE=Release",
+            "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 1.279709582999999,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g02-native-page-joint-vulkan-shared-sdk/consumer-configure-1.log"
+        },
+        {
+          "stage": "consumer-build",
+          "command": [
+            "/opt/homebrew/bin/cmake",
+            "--build",
+            "/Users/kiro/hyle-scratch/compute-unified/g02-native-page-joint-vulkan-shared-sdk/consumer-build",
+            "--target",
+            "joint",
+            "domains",
+            "headers",
+            "--parallel",
+            "4"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 1.2477372080000038,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g02-native-page-joint-vulkan-shared-sdk/consumer-build-1.log"
+        },
+        {
+          "stage": "joint",
+          "command": [
+            "/Users/kiro/hyle-scratch/compute-unified/g02-native-page-joint-vulkan-shared-sdk/consumer-build/joint"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 8.925147790999986,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g02-native-page-joint-vulkan-shared-sdk/joint-1.log"
+        },
+        {
+          "stage": "domains",
+          "command": [
+            "/Users/kiro/hyle-scratch/compute-unified/g02-native-page-joint-vulkan-shared-sdk/consumer-build/domains"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 0.6370897500000012,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g02-native-page-joint-vulkan-shared-sdk/domains-1.log"
+        }
+      ],
+      "cumulative_seconds": 98.222355748
+    }
+  },
+  "cumulative_seconds": 302.418592167,
+  "raw_zip_sha256": "45dd03479a551d0eb47df7d7858998bfb68686489553a343b2cd5c473a41f5e1",
+  "limitations": "source native fault/internal runtime fixtures not SDK; optional SIMD conversion only testscalar carrier substitute in public domain fixture, all canonical/consumer SHA retained; no token/s/native private bound claim"
+}

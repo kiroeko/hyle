@@ -294,3 +294,14 @@ counter的acquire-fence模型仅验证头副本，无产品/常态成本/cache�
 Vulkan插桩清单脚本FAIL全保。原G01产品候选/性能不重测。当前SDK队列Apple static
 实际public math/domain/逐头PASS，shared与Vulkan两份仍在串行；Windows门未启动。
 四owner保持candidate1cd，整个G02/goal仍未收口。
+
+
+四份actual Air relocated joint public graph static/shared SDK全部PASS，累计302.419s，见
+[SDK阶段](../../../../evidence/correctness/inference-g02-native-page-joint-sdk-stage/README.md)。
+只链hyle::graph、relocated headers，实际CPU/native page/CPU完整独立oracle矩阵与公开
+two-node/foreign/refusal/empty/逐cold OOM/预算通过；十二standalone header TU严格编译。
+原source-private native/FIFO/driver故障fixture没有混进SDK。公开domain helper的optional
+SIMD converter仅test scalar替代，原前后SHA保；普通math consumer保持原bit encoder。
+Windows public main与三头compile/link已按同candidate、onlyhyle::graph在原H7树fourjobs
+启动，首次CPU+Vulkan配置补编尚未缓存CPU依赖，不run executable/GPU。尚无终态，
+不写该门PASS/CLOSED；原G02其它common/CUDA/graph保留门与完整goal0/10继续保留。
