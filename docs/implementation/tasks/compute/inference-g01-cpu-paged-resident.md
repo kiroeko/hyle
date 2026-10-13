@@ -139,3 +139,18 @@ pagedrun40.593s；Mac最终mixed456 CPU14tests25.157s总（1.145s增量/23.320s 
 [三交付及mixed core](../../../../evidence/correctness/inference-g01-cpu-paged-delivery/README.md)。
 所有普通门终态、无活动重型job。CPU准确页仍CANDIDATE：定向P1未运行，不能
 继承原ragged P1或签整个G01；原G01 GPU页/G02联合/G03等继续原十项goal。
+
+P1消费冻结于2026-10-14：只改benchmark adapter/合同，产品1e9/runtime3cf不变。
+原独立CPU数学用干净ffa4原AVX2 DLL，实际compute函数所属image核pristine ggml-cpu，
+tensor336/cplan56/src offset/BF16 enum同锁ABI核验。metadata沿独立原ggml graph recipe，
+不调用candidate compile/lower；pool创建/plan/compute/free全从原DLL，workspace原caller。
+对照domain为同ready历史不可变快照的warm attention：保原确切页owners全程不变，
+冷按valid logical rows建立单独contiguous cache，额外copy/存储D256 3670016bytes、
+D64 39936bytes显式记账；其它backing/topology拒绝。两arm都原Batch/metadata update/
+F1 exact pages/CPU Queue/Completion/输出lease返回、两slots/单native线程。此P1不能
+代签producer/growth/reorder生产或G03/G06；结构目标无warm KV历史copy沿实际产品证据。
+三point nonzero double及readonly预检PASS，max_abs <=6.11e-5，原8e-3不变；原DLL加载
+缺dependency/非native Windows路径FAIL均保为private adapter预检，修loader/依赖而非数学。
+原stats/controls/16AA/order/allocation/placement/n15/31/5%全部保，合同及实际DLL/source/
+SDK/header identities在正式前固定。[消费合同](../../../../bench/inference_resident_sdpa/cpu_paged_p1/consumer-provenance.md)。
+selector共享bench unknown_paths条件仍保原BLOCKED计划，不改工具、不跑全库。

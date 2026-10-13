@@ -1,0 +1,35 @@
+cmake_minimum_required(VERSION 3.25)
+project(g01_cpu_paged_original LANGUAGES C CXX)
+if(NOT WIN32)
+  message(FATAL_ERROR "This isolated original comparator is the finite W1-WIN artifact")
+endif()
+set(HYLE_CPU_ORIGINAL_REFERENCE_SOURCE "" CACHE PATH "Pristine authenticated ffa4e8b8 source")
+get_filename_component(HYLE_SOURCE_DIR "${CMAKE_CURRENT_LIST_DIR}/../../../.." ABSOLUTE)
+set(CMAKE_PROJECT_ggml_INCLUDE_BEFORE "${HYLE_SOURCE_DIR}/cmake/HyleGgmlProjectPolicy.cmake")
+set(BUILD_SHARED_LIBS ON CACHE BOOL "" FORCE)
+set(GGML_BUILD_TESTS OFF CACHE BOOL "" FORCE)
+set(GGML_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
+set(GGML_BACKEND_DL OFF CACHE BOOL "" FORCE)
+set(GGML_NATIVE OFF CACHE BOOL "" FORCE)
+set(GGML_OPENMP OFF CACHE BOOL "" FORCE)
+set(GGML_AVX ON CACHE BOOL "" FORCE)
+set(GGML_AVX2 ON CACHE BOOL "" FORCE)
+set(GGML_FMA ON CACHE BOOL "" FORCE)
+set(GGML_F16C ON CACHE BOOL "" FORCE)
+set(GGML_AVX512 OFF CACHE BOOL "" FORCE)
+set(GGML_AVX_VNNI OFF CACHE BOOL "" FORCE)
+set(GGML_BMI2 ON CACHE BOOL "" FORCE)
+set(GGML_LTO OFF CACHE BOOL "" FORCE)
+add_subdirectory("${HYLE_CPU_ORIGINAL_REFERENCE_SOURCE}" original)
+add_library(g01_cpu_paged_original SHARED bridge.cc)
+target_compile_features(g01_cpu_paged_original PRIVATE cxx_std_23)
+target_include_directories(g01_cpu_paged_original BEFORE PRIVATE
+  "${HYLE_CPU_ORIGINAL_REFERENCE_SOURCE}/include"
+  "${HYLE_SOURCE_DIR}/src/compute_ggml_runtime")
+target_link_libraries(g01_cpu_paged_original PRIVATE ggml-cpu ggml-base)
+set_target_properties(g01_cpu_paged_original PROPERTIES
+  RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
+add_custom_command(TARGET g01_cpu_paged_original POST_BUILD
+  COMMAND "${CMAKE_COMMAND}" -E copy_if_different
+    "$<TARGET_FILE:ggml-cpu>" "$<TARGET_FILE:ggml-base>"
+    "$<TARGET_FILE_DIR:g01_cpu_paged_original>")
