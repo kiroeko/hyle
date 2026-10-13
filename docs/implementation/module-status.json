@@ -369,9 +369,9 @@
     },
     {
       "module": "compute_provider_ggml",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/inference-g01-cpu-paged-resident.md",
-      "summary": "G01 CPU准确页 SCOPED：原native batch仅ragged，准确PagedArenaRead仍参考物化；拟复用原CPU flash并只扩私有页取址/原Batch API，固定两请求F16/BF16与精确权限/无历史复制。原CPU973/Vulkanbc0终审与全部失败保留，未实施。"
+      "summary": "G01 CPU准确页 AUDITED：原Batch API/准确frame，借原ggml flash四读点地址映射、逻辑有效长度/原mask/scratch、owned cold页table与完整topologyreuse，固定CP-01/02/03；原normal/ragged算法与对象无页字段，未PASS。"
     },
     {
       "module": "graph_provider_onednn",
@@ -564,9 +564,9 @@
     },
     {
       "module": "compute_ggml_runtime",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/inference-g01-cpu-paged-resident.md",
-      "summary": "G01 CPU准确页 SCOPED：原native batch仅ragged，准确PagedArenaRead仍参考物化；拟复用原CPU flash并只扩私有页取址/原Batch API，固定两请求F16/BF16与精确权限/无历史复制。原CPU973/Vulkanbc0终审与全部失败保留，未实施。"
+      "summary": "G01 CPU准确页 AUDITED：原Batch API/准确frame，借原ggml flash四读点地址映射、逻辑有效长度/原mask/scratch、owned cold页table与完整topologyreuse，固定CP-01/02/03；原normal/ragged算法与对象无页字段，未PASS。"
     },
     {
       "module": "compute_provider_ggml_cuda",

@@ -1,6 +1,6 @@
 # G01 CPU准确页直接驻留读取
 
-状态：SCOPED，2026-10-13；owners `compute_provider_ggml`、`compute_ggml_runtime`，baseline
+状态：AUDITED，2026-10-13；owners `compute_provider_ggml`、`compute_ggml_runtime`，baseline
 `118a8947518f02e0c02aa51918f9d7d15c421ed6`。原CPU resident/ragged973与Vulkanbc0有限
 CLOSED均保留；本轮不是重新研究全库，也不把CPU页资格代签Apple/Vulkan/联合G02。
 
@@ -44,3 +44,27 @@ selector只真实owner/直接consumer。P1在不可变candidate后用原公开�
 预算：调查/实现/验证各2h检查点，按常设授权延长保旧FAIL/累计，不因短超时block。
 Windows≤4jobs、重型串行，原CPU/Vulkan/Apple closed域不重复性能；本卡只先SCOPED，
 AUDITED还需冻结私有地址参数、完整原核读点与metadata/生命周期后才可改产品。
+
+## 私有承载冻结
+
+CP-02只扩原ggml456 CPU flash的地址读取：私有src[5]为冷owned I32页表，原op_params
+有效长度/新增private page_size参数给逻辑行数；四个K/V地址点（one_chunk与原tiled）
+映射physical page，原dot/online softmax/SIMD/reduction公式不改。循环与split/reduction
+统一使用有效逻辑长度，原CPU workspace预估始终取prefill/decode最大，不按physical
+rows缩水，重复页造成logical>physical也须安全。原physical K/V tensor与其真实span/
+容量保留，不伪造超出ggml view的地址描述；mask只按logical长度冷构造，数学沿原mask。
+普通无页表原路径保持原语义与算法；vendor patch只进原已登记runtime资产并更新锁
+身份，原组合工具不改。原单请求/ragged回归与原片段原生ISA仍需要影响验证。
+
+CPU原private Recipe增加具名内联PagedRead描述，限Batch cold owner生成，三输入为
+BSHD Q及flatten physical NHD容量K/V，输出仍Q shape。描述只保存页表borrowed span/
+logical_length/page_size/scale/causal，既有Slot.layout在cold plan前保owned version，
+clear先销毁Requests/Program再drop layout。paged完整topology复用必须比较Q/KV indptr、
+page IDs、tail；复用时保旧owned topology供原native graph借用，report显式写当前新
+generation，outer PreparedBatch仍核当前layout frame/资源/schema身份。不会把span借
+到caller栈，也不让普通ragged Request/Program增加页字段；页table通过既有owned
+layout保活，额外ggml tensor只有显式paged节点，private费用如实记录。
+
+本卡API继续原公共Batch入口；CP-01/02/03固定。supports/infer拒未资格dtype/D、空Q
+以外无KV、非finite scale、overflow与无效schema/capacity。原Ragged math/Factory不换
+Provider，不修改compute_batch/Graph公共形状。G02准确joint页权限仍独立，不代签。
