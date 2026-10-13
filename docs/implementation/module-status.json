@@ -706,14 +706,9 @@
     },
     {
       "module": "compute_batch",
-      "state": "CLOSED",
-      "record": "docs/implementation/tasks/graph/inference-g02-native-paged-terminal.md",
-      "summary": "G02 native exact-page joint finite scope CLOSED at1cd: source independent oracle/1152 final64-step episodes, two-node/exact reader-layout-frame/empty/refusal/OOM/budget and actual CPU/native failure/unknown/cancel/abandon/close/retirement PASS; six modeled hostsan, four relocated publicgraph SDKs/twelve headers and Windows compile/link only PASS. Original FAIL/private UNKNOWN/cold planning limits retained. Shared graph_batch/graph original common Windows gates and entire G02/G03-10 remain incomplete.",
-      "candidate": "1cd0893979e1672a0f6fac98b783a6a3bfcabbca",
-      "performance": {
-        "tier": "P0",
-        "evidence": "docs/implementation/tasks/graph/inference-g02-native-paged-terminal.md"
-      }
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/compute/inference-g03-producer-paged-consumption.md",
+      "summary": "G03 producer-to-exact-page consumption SCOPED after native G01/G02 finite closure: audit existing exclusive/F2/native waits/ready frame and idle input release with fixed peers and genuine QKV/dirty page update/attention consumer. Preserve closed math, original common Windows gates and G04-G10 boundaries. No product edit before finite API/owner/FIX AUDITED; no fake ready/whole arena/new controller."
     },
     {
       "module": "graph_batch",
