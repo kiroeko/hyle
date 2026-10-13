@@ -101,3 +101,16 @@ ASan记录保留，后续增量与最终candidate身份单独记录，不把警�
 最终provider candidate `1e9cdfd45307ea4a15b92374377ad2b268203193`，runtime3cf产品未变。显式冷
 转换后Windows同五tests再次PASS（增量2.750s、run40.860s），不改变语义/数学/
 费用；后续风险与交付以该最终产品身份记录。原3cf门与警告原日志保留。
+
+2026-10-14扩已有风险fixture到真实paged域：两request反向页表逐分配点失败
+均无live allocation，极小cold预算拒绝；已接纳数学错误不发布output，释放实际
+页reader后两物理页均可重新acquire，保原Queue错误/drain语义。Windows定向四风险
+tests PASS（编译4.157s、run0.328s）；产品candidate1e9未变。初fixture把8192 payload
+误作含sentinel总额度导致Bad expected access，Windows与ASan原FAIL保留，修为
+8193并显式检查Result，不改数学/错误退休期待；最终风险/交付继续。
+
+ASan增量第4次run仍FAIL的原因已定位为验证副本mtime：canonical修fixture发生
+在前一个远程编译期间，copy2保旧时间导致Ninja未重编该test（build4明确no work）。
+第4次记录保留为STALE_BUILD，不能代表已修输入；私有同步改为只有changed bytes
+用验证机当前mtime，不碰未变文件/公共工具。补Result检查触发实际重编后，ASan
+定向accepted分页错误退休PASS（20.261s编译、0.418s运行）；全14tests复验进行。
