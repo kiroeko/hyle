@@ -1,0 +1,51 @@
+{
+  "product_candidate": "280f6f92ea97bf3b424113346f0264fb7b20df16",
+  "performance_source": "c6d10f66e37cebafd134eee88e82aea603319cbc",
+  "contract_sha256": "1f8e811f4765c4aa50a0a0194e601151d6d5ffdba04b3ecd0f40f93e1218a24a",
+  "qualification": "QUALIFIED",
+  "performance": "PASS",
+  "verify_exit": 0,
+  "job_exit": 0,
+  "elapsed_seconds": 845.5427223329999,
+  "sample_stages": [
+    15
+  ],
+  "product_processes": 120,
+  "control_processes": 30,
+  "aa_processes": 16,
+  "rows": [
+    {
+      "id": "ragged-mixed-d256",
+      "ratio_range": [
+        0.999747255043963,
+        1.0070711634028011
+      ],
+      "noninferiority": "PASS",
+      "exact": "PARITY",
+      "direction": "INCONCLUSIVE"
+    },
+    {
+      "id": "ragged-prefill-d256",
+      "ratio_range": [
+        0.9826605393149243,
+        0.9894148898562728
+      ],
+      "noninferiority": "PASS",
+      "exact": "PARITY",
+      "direction": "LOSS"
+    },
+    {
+      "id": "ragged-holdout-d64",
+      "ratio_range": [
+        0.9961414701803052,
+        1.0038033812288243
+      ],
+      "noninferiority": "PASS",
+      "exact": "PARITY",
+      "direction": "INCONCLUSIVE"
+    }
+  ],
+  "native_private_upper": "UNKNOWN both arms",
+  "machine": "actual Mac16,12 M4 macOS27.0.1 AppleClang21, M1-MAC engineering QoS interactive, not Formal independent hardware",
+  "raw_zip_sha256": "1bdf00f1b624386a6c9e4300558fc33f51d1de147f5603b22f315253a89c4214"
+}

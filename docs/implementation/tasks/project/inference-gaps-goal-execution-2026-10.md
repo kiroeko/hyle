@@ -41,11 +41,12 @@ Apple/Vulkan 的实际 OS/native 资格。共同验收位置、有效区、shape
 ## 十项跟踪
 
 下表是当前 goal 工作项，不是第二份模块 registry。完整项完成数 **0/10**；已完成
-G01单请求CPU/Vulkan有限子批与G02 common实现，不能由子批替代全部路线。
+G01 CPU resident/native ragged有限轮、Vulkan单请求有限轮与G02 common实现，不能由
+子批替代全部路线。Apple native ragged实际P1已通过，Vulkan native ragged P1运行中。
 
 | 项 | 当前状态 | 有限目标 | 预计涉及的机制 owner，需在活动卡精确定界 |
 |---|---|---|---|
-| G01 高效驻留读取 | CPU resident/native ragged有限轮973已CLOSED：三交付/风险/独立multi P1 QUALIFIED/5%非劣PASS、verify0。原Vulkan单请求CLOSED证据保留；Apple/Vulkan原route AUDITED，native ragged原数学组合69df草稿已提交，Air实机Vulkan定向构建中；整个G01仍待其它路线与分页 | 单请求先核 dense/view；多请求接 native/等价直接驻留消费，避免按每 Q/head 重复物化全 KV | compute_batch、原 route/Provider、graph_batch 必要桥 |
+| G01 高效驻留读取 | CPU resident/native ragged有限轮973 CLOSED。Apple/Vulkan native ragged产品280 CANDIDATE：source、四SDK、六san、公开头及Windows定向编译通过；Apple multi P1 QUALIFIED/5%非劣PASS、verify0，长prefill仍记录1–1.7% LOSS；Vulkan multi P1运行中，原直接消费者回归待验。整个G01仍待其它准入域与分页 | 单请求先核 dense/view；多请求接 native/等价直接驻留消费，避免按每 Q/head 重复物化全 KV | compute_batch、原 route/Provider、graph_batch 必要桥 |
 | G02 联合分页 | common与CPU+CUDA实跑、三交付/宿主风险通过；Windows余门及Apple/Vulkan联合分页待验 | 原 multi-queue bindings 接 batch coordinator；native hybrid 接准确 page/layout 与原 region/slot，公开 CPU→GPU→CPU | graph_batch、三个 graph hybrid、原 compute/native 权限桥 |
 | G03 增量 producer 组合 | 待 owner 定界 | 原 exclusive/F2/native waits到更新与读取；精确 dirty 域、成功 ready、idle input 生命周期 | compute_batch、compute/F2、原 native route与graph桥 |
 | G04 量化 KV | 待有限编码选择 | 按成熟实际 cache 编码冻结 payload/scales/layout、quantize append与直接读取，不每步解码完整历史 | compute_ops/batch、实际 Provider/native route |
@@ -62,17 +63,19 @@ G01单请求CPU/Vulkan有限子批与G02 common实现，不能由子批替代全
 
 G01 [驻留SDPA子批](../compute/inference-g01-resident-sdpa.md)的单请求验证已完成：CPU P1
 2598.985s、Vulkan P1 3669.387s，均合格且5%非劣PASS；失败/STOP及原合同原样保留。
-Vulkan实际port Copy3→0与原生精度/固定record资格见有限terminal；CPU当前owner由
-[ragged多请求卡](../compute/inference-g01-cpu-native-ragged.md)拥有，已提交原flash复用
-与packed输出实现，不复制KV；四项Windows测试及WSL ASan/LSan通过，剩余资格继续。
+Vulkan实际port Copy3→0与原生精度/固定record资格见有限terminal；CPU当前owner按
+[有限terminal](../compute/inference-g01-cpu-resident-ragged-terminal.md)CLOSED，原flash复用
+与packed输出不复制KV；三交付/宿主风险/独立multi P1通过，原失败记录保留。
 多请求其它路线与联合分页仍属原G01/G02有限清单，不新增全局调研轮。
 CPU公开工厂声明与产品root交付已补齐，普通consumer无需内部target或fake宏，实际
 source/relocated static/shared Direct＋两个dependent Graph regions全部PASS；CPU未选
-时header/library仍不进入安装。正式CPU multi合同8751dfe5在clean9cfa副本启动，固定
-三真实长/短形状、原16 paired rounds与n15/31，A/A16实际PASS。下一批按
+时header/library仍不进入安装。正式CPU multi合同8751dfe5在clean9cfa副本完成，固定
+三真实长/短形状、原16 paired rounds与n15/31，A/A16、QUALIFIED/5%非劣与verify0。
+当前native批按
 [原native ragged卡](../compute/inference-g01-native-ragged-layout.md)固定原View/SDPA/
-Program消费而不另建controller；当前AUDITED草稿未验证，待CPU重型任务结束后串行
-验证。分页/G03–G10和全部已准入域继续保留，不以本批冷入口签growth/capture完成。
+Program消费而不另建controller；candidate280交付/宿主风险与Apple P1通过，Vulkan
+P1串行运行，后续仅实际直接消费者回归与一次终审。分页/G03–G10和全部已准入域
+继续保留，不以本批冷入口签growth/capture完成。
 
 ## 推进顺序
 

@@ -109,5 +109,17 @@ identity，F16/GQA8/2 Q1/17 KV1024/768、Q64/128长prefill、Q1/17 KV31/47 D64�
 
 Apple正式已启动：fresh1在原MLX源码身份脚本错误路径配置FAIL（4.868s），原树/日志
 保留；按真实git列表修私有脚本，fresh2 clean source c6d10f66同合同/产品280继续。
-配置核对原SDPA和Metal kernel族均PASS，A/A16实际PASS，n15产品120已完成，controls
-仍运行；正式整体/性能verifier未到终态，不先写PASS。Vulkan尚未启动，按重型串行。
+配置核对原SDPA和Metal kernel族均PASS，A/A16实际PASS。Apple fresh2现已TERMINAL：
+845.543s、n15产品120/controls30，QUALIFIED、5%非劣PASS、原verify退出0；
+[实际证据](../../../../evidence/performance/inference-g01-native-ragged-apple-m1-p1/README.md)
+保三点方向。混合D256及D64方向INCONCLUSIVE；长prefill比0.9827–0.9894，稳定LOSS
+约1–1.7%，在5%范围内但不改名为方向parity。原fresh1配置FAIL另保累计。
+Vulkan同产品280、clean source c6d10f66、原合同d9a54a85已启动；fresh2后缀复用修正
+后的共享adapter源，不制造一次不存在的Vulkan前置FAIL。实际PID58732、原同一任务
+续跑，不因观察超时重启。只有这一重型任务；原selected native/hybrid直接消费者回归
+在其终态后串行复用各source-parent工程，不能换源码home或触发全局构建。
+
+2026-10-13进度检查：G01约12h，整个G01仍未完成。该有限NR轮现在仅剩Vulkan同合同
+性能裁决、原直接消费者回归与一次候选终审；不再追加全局调研/重复CPU或Apple P1。
+原已准入分页/联合权限在G02，持续metadata/growth在G06，producer与private预算分别
+在G03/G10继续，不能把这些门伪签成此NR轮已通过，也不能在此轮顺手扩大FIX。
