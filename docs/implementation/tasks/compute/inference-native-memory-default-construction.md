@@ -1,6 +1,6 @@
 # 已准入native资源公开默认构造修正
 
-状态：SCOPED，2026-10-13；owners `compute_route_apple`、`compute_route_vulkan`，baseline
+状态：AUDITED，2026-10-13；owners `compute_route_apple`、`compute_route_vulkan`，baseline
 `1ff3bffba`。归原G10/交付接口缺口，不新增G项；CPU/Apple/Vulkan已签NR数学/性能不重跑。
 真实trigger为[原比较器编译失败](../../../../evidence/correctness/inference-g01-native-ragged-p1-preflight/README.md)：
 Apple MemoryResource inline default ctor包含unique_ptr<incomplete MemoryState>，消费TU
@@ -21,3 +21,11 @@ MC-02：source与实际relocated static/shared public-only consumer，单独incl
 重型串行。san只空owner/move/destroy的适用宿主风险，复用原树；driver不作虚假声明。
 public头/API seam由selector选真实owner/消费者，工具归因缺口独立保留，不改checker。
 各owner必须SCOPED→AUDITED提交后才改四产品文件。
+
+两路线实际public-only独立消费TU已复现同一incomplete-type compile FAIL，报错均从
+默认空owner构造进入unique_ptr删除器；不是只从相似源码猜Vulkan缺陷。审计固定
+MC-01/02，原private MemoryState完整定义在对应已有实现TU，无需新include/依赖。
+原delete copy/move/noexcept/ref/invalid empty合同全部保；默认构造无allocation，只有
+空unique_ptr初始化，外部调用需正确导出symbol。公开头只声明，私有类型不泄露。
+source与SDKconsumer只include各自public memory头并resize owning vector；没有新增
+模型策略、copy数学或执行器。旧NR terminal继续证明原性能，不把本构造修正当新P1。

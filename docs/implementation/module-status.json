@@ -514,7 +514,7 @@
     },
     {
       "module": "compute_route_apple",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/inference-native-memory-default-construction.md",
       "summary": "G10/交付 MC-01/02 SCOPED：已复现公开opaque MemoryResource inline默认构造incomplete unique_ptr编译失败，仅两owner out-of-line默认构造与实际public consumer；原NR数学/性能/ABI布局不改。"
     },
@@ -531,7 +531,7 @@
     },
     {
       "module": "compute_route_vulkan",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/inference-native-memory-default-construction.md",
       "summary": "G10/交付 MC-01/02 SCOPED：已复现公开opaque MemoryResource inline默认构造incomplete unique_ptr编译失败，仅两owner out-of-line默认构造与实际public consumer；原NR数学/性能/ABI布局不改。"
     },
