@@ -98,8 +98,7 @@ bool fixed_attention_graph(const ggml_cgraph *graph) {
     const auto *node = graph->nodes[i];
     switch (node->op) {
     case GGML_OP_FLASH_ATTN_EXT:
-      if (attention ||
-          node->op_params[kFlashAttentionMathSlot] != kFlashAttentionFullF32)
+      if (node->op_params[kFlashAttentionMathSlot] != kFlashAttentionFullF32)
         return false;
       attention = true;
       break;
@@ -110,6 +109,7 @@ bool fixed_attention_graph(const ggml_cgraph *graph) {
     case GGML_OP_TRANSPOSE:
     case GGML_OP_CONT:
     case GGML_OP_CPY:
+    case GGML_OP_CONCAT:
     case GGML_OP_FILL:
     case GGML_OP_DIAG_MASK_INF:
       break;
