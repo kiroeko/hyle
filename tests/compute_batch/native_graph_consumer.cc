@@ -61,7 +61,7 @@ template<class T>Status graph_case(bool paged,unsigned depth,bool large,unsigned
       using hyle_f5_graph_fault_fixture::Decorator;using hyle_f5_graph_fault_fixture::Gate;
       std::printf("F5 Graph fault episode=%u preparation\n",fault);
       if(fault<=4){
-        Decorator decoration(context,fault);
+        Decorator decoration(context,fault,nullptr,&second_context);
         const auto rejected=invocation.prepare_batch(first_layouts,false);
         HYLE_RETURN_IF_ERROR(require(rejected.IsUnavailable() && decoration.count==fault,"Graph accepted preparation prefix failure did not stop/propagate"));
         HYLE_RETURN_IF_ERROR(require(!invocation.submit() && !invocation.output(output_id),"Graph partial preparation published/submitted mixed metadata"));
@@ -72,7 +72,7 @@ template<class T>Status graph_case(bool paged,unsigned depth,bool large,unsigned
         if(fault==6){auto warm=invocation.submit();if(!warm)return warm.error();HYLE_RETURN_IF_ERROR(warm->wait());*warm={};HYLE_RETURN_IF_ERROR(invocation.prepare_batch(first_layouts));HYLE_RETURN_IF_ERROR(bind(invocation));}
         Gate gate;HYLE_ASSIGN_OR_RETURN(gate.stream,cu::stream(queue));
         region_runs.count=0;region_runs.fail_at=fault==5?1:0;
-        Decorator decoration(context,fault==5?0:1,fault==6?&gate:nullptr);
+        Decorator decoration(context,fault==5?0:1,fault==6?&gate:nullptr,&second_context);
         auto submitted=invocation.submit();
         if(fault==5){
           Status terminal;if(submitted)terminal=submitted->wait();else terminal=submitted.error();
@@ -83,7 +83,7 @@ template<class T>Status graph_case(bool paged,unsigned depth,bool large,unsigned
           invocation.drain().IgnoreError();
         }else{
           HYLE_RETURN_IF_ERROR(require(submitted.has_value(),"Graph unknown fixture failed before accepted prefix"));
-          HYLE_RETURN_IF_ERROR(require(!submitted->poll() && decoration.count==1 && region_runs.count==2,"Graph unknown complete-segment observation differs"));*submitted={};invocation.close().IgnoreError();
+          HYLE_RETURN_IF_ERROR(require(!submitted->poll() && decoration.count==1 && region_runs.count==1,"Graph unknown cross-Queue prefix did not block its dependent suffix"));*submitted={};invocation.close().IgnoreError();
           std::promise<void> started;auto entered=started.get_future();auto drained=std::async(std::launch::async,[&]{started.set_value();return invocation.drain();});entered.get();
           const bool waited=drained.wait_for(std::chrono::milliseconds(80))==std::future_status::timeout;
           const bool held=pool.stats().active_uses>0;std::printf("F5 Graph unknown drain waited=%d guards held=%d\n",waited,held);gate.release();const auto terminal=drained.get();

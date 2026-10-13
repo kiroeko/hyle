@@ -47,9 +47,9 @@ inline const cd::CompletionVTable unknown{
   .wait=[](void*)noexcept{return Status::Unavailable("F5 Graph unknown accepted prefix");}
 };
 struct Decorator final {
-  cd::ContextState*context;const cd::BackendVTable*original;cd::BackendVTable table;
+  cd::ContextState*context;cd::ContextState*second=nullptr;const cd::BackendVTable*original;cd::BackendVTable table;
   unsigned target,count=0;Gate*gate=nullptr;static inline Decorator*active=nullptr;
-  Decorator(c::Context&owner,unsigned position,Gate*blocked=nullptr):context(cd::ContextAccess::state(owner)),original(context->backend_vtable),table(*original),target(position),gate(blocked){
+  Decorator(c::Context&owner,unsigned position,Gate*blocked=nullptr,c::Context*other=nullptr):context(cd::ContextAccess::state(owner)),original(context->backend_vtable),table(*original),target(position),gate(blocked){
     table.finish_sequence=[](void*q,void*sequence,bool accepted,Status terminal)noexcept{
       auto&s=*active;const bool selected=++s.count==s.target;
       if(selected){HYLE_FATAL_ASSERT(accepted);std::printf("F5 Graph fault accepted sequence=%u gate=%d\n",s.count,s.gate!=nullptr);
@@ -60,7 +60,8 @@ struct Decorator final {
       if(!selected || !s.gate)return completion;
       return cd::CompletionAccess::make(&unknown,new Unknown{std::move(completion)});
     };active=this;context->backend_vtable=&table;
+    if(other){second=cd::ContextAccess::state(*other);HYLE_FATAL_ASSERT(second->backend_vtable==original);second->backend_vtable=&table;}
   }
-  ~Decorator(){context->backend_vtable=original;active=nullptr;}
+  ~Decorator(){context->backend_vtable=original;if(second)second->backend_vtable=original;active=nullptr;}
 };
 } // namespace hyle_f5_graph_fault_fixture
