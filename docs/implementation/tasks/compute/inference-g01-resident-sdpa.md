@@ -129,3 +129,10 @@ placement与正式controls仍未完成，不能据此签P1或CLOSED。
 本模块重写仪器。原卡10%非劣预算保留，先按更严格的5%合同验收；5% FAIL不会被模块
 改名PASS，真实方向/区间和原FAIL保持。正式样本按原n=15停止/追加规则，A/A先验检查
 使用现有5%偏置/10%gross instability界线；不能由原oracle预检推导性能资格。
+
+首次正式fresh构建在原compute `LeaseUsePool::create` 的uint32容量与64位SIZE_MAX上界
+比较触发Clang21 `-Wtautological-constant-out-of-range-compare`，样本尚未开始。此前Air
+correctness树WERROR=OFF；本轮保WERROR=ON，只在明确M1编译profile登记
+`-Wno-error=tautological-constant-out-of-range-compare`，诊断仍输出。该上界在64位恒不可达，
+32位仍有意义；不为此改无关CLOSED产品或重开通用工具。原构建FAIL/100.28s保留，
+产品candidate与三种数学形状不变；性能合同尚未取样就更新profile/hash，再做fresh资格。

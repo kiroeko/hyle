@@ -447,7 +447,9 @@
           "generator": "Ninja",
           "compiler_id": "AppleClang",
           "compiler_version_prefix": "21.0",
-          "cache": {}
+          "cache": {
+            "CMAKE_CXX_FLAGS": "-Wno-error=tautological-constant-out-of-range-compare"
+          }
         }
       },
       "executables": [
