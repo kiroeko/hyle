@@ -148,7 +148,9 @@ auto output = slot.output().value();
 转换与每请求 metadata/workspace 仍计费。CPU `float_workspace_bytes` 暂为已知冷 plan
 占用的保守合计，与外部预留 pool 分开，不能当作总 RSS；private pool 上界未知。
 本档不接原生 paged/capture。普通 Direct 的 source/static/shared 与宿主风险已验证，
-batch 性能、安装 Graph factory 适配及其它路线多请求资格仍见[活动卡](../implementation/tasks/compute/inference-g01-cpu-native-ragged.md)。
+安装的 `ggml_cpu::provider()` 已能通过普通compute/graph target交付给原Graph batch桥，
+source/static/shared的双region消费已验证；batch 性能及其它路线多请求资格仍见
+[活动卡](../implementation/tasks/compute/inference-g01-cpu-native-ragged.md)。
 
 > 本页描述当前 Compute runtime foundation、CPU operation surface 与 CUDA runtime；施工资格只以
 > [`module-status.json`](../implementation/module-status.json) 为准。普通 CPU 入口自动组装已构建的 oneDNN/ggml/ATen/Native 实现；
