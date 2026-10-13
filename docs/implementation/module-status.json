@@ -558,14 +558,9 @@
     },
     {
       "module": "compute_ggml_runtime",
-      "state": "CLOSED",
-      "record": "docs/implementation/tasks/compute/compute-h1-cpu-cuda-composition.md",
-      "summary": "H1 CLOSED：CPU+CUDA混合执行、双槽迁移、普通CPU主存/有界staging、共享预算及准备诊断完成；Windows/WSL三交付、安装头/搬迁、错误/寿命与当前native重叠通过。引擎策略、多GPU、Apple/Vulkan混合不在本包。",
-      "candidate": "7eaf67b8a496ee19b609533980cd69e7efb5aa49",
-      "performance": {
-        "tier": "P0",
-        "evidence": "docs/implementation/tasks/compute/compute-h1-cpu-cuda-composition.md"
-      }
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/compute/inference-g01-vulkan-native-precision.md",
+      "summary": "G01 native precision SCOPED: actual Vulkan flash internal narrowing violates finite SDPA oracle; audit original full-F32 shader dispatch/cache identity, no new math runtime."
     },
     {
       "module": "compute_provider_ggml_cuda",

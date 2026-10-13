@@ -91,3 +91,5 @@ MSVC旧测试夹具的unused observer、显式double→float及vendored private 
 仅为test-only，不改其他CLOSED产品；全部原FAIL保留。后续三交付/san/P1仍待candidate。
 当前[实现阶段证据](../../../../evidence/correctness/inference-g01-resident-stage/README.md)
 保留CPU实际PASS和Vulkan实际FAIL，更新后的Vulkan测试尚未重跑，不由源码推导PASS。
+原锁定承载的精度选择归属已在[原生精度卡](inference-g01-vulkan-native-precision.md)
+进入SCOPED，原Provider有限FIX继续AUDITED；不会放宽容差或将未资格native域签PASS。
