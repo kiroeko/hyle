@@ -42,7 +42,7 @@ Apple/Vulkan 的实际 OS/native 资格。共同验收位置、有效区、shape
 
 | 项 | 当前状态 | 有限目标 | 预计涉及的机制 owner，需在活动卡精确定界 |
 |---|---|---|---|
-| G01 高效驻留读取 | CPU/Vulkan resident有限子批CANDIDATE；Vulkan三交付与宿主风险、CPU三种宿主san已过，CPU SDK/P1与多请求待验 | 单请求先核 dense/view；多请求接 native/等价直接驻留消费，避免按每 Q/head 重复物化全 KV | compute_batch、原 route/Provider、graph_batch 必要桥 |
+| G01 高效驻留读取 | CPU/Vulkan resident有限子批CANDIDATE；两侧三交付与宿主san已过，独立P1适配器数学预检已过；正式P1与多请求待验 | 单请求先核 dense/view；多请求接 native/等价直接驻留消费，避免按每 Q/head 重复物化全 KV | compute_batch、原 route/Provider、graph_batch 必要桥 |
 | G02 联合分页 | common与CPU+CUDA实跑、三交付/宿主风险通过；Windows余门及Apple/Vulkan联合分页待验 | 原 multi-queue bindings 接 batch coordinator；native hybrid 接准确 page/layout 与原 region/slot，公开 CPU→GPU→CPU | graph_batch、三个 graph hybrid、原 compute/native 权限桥 |
 | G03 增量 producer 组合 | 待 owner 定界 | 原 exclusive/F2/native waits到更新与读取；精确 dirty 域、成功 ready、idle input 生命周期 | compute_batch、compute/F2、原 native route与graph桥 |
 | G04 量化 KV | 待有限编码选择 | 按成熟实际 cache 编码冻结 payload/scales/layout、quantize append与直接读取，不每步解码完整历史 | compute_ops/batch、实际 Provider/native route |
