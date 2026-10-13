@@ -71,3 +71,15 @@ zero metadata allocation及8request；Vk实际原KV roots/byte origins，真实m
 语义。产品两TU/公开头与2020canonical输入SHA核对；正式P1源git树不改。
 进入不可变candidate后source/static/shared、适用宿主san与有限同合同P1继续，未跑项
 不写PASS。保全部其它G01与G02/G03–G10，不能代签paged/growth/capture。
+
+候选交付：Air原selected-graph static/shared trees复用，Apple与Vulkan各source＋实际
+relocated static/shared的两public tests均PASS。安装工程只链接公开hyle::compute，
+私有KV-root/失败结构tests只签source，未冒充SDK入口；测试scalar bit carriers随consumer
+本地复制，不从SDK借未安装SIMD/private头。四prefix均staging实际改名为relocated，
+原已安装single SDK和正式P1树不覆盖。宿主san和有限P1仍待，不提前CLOSED。
+
+候选宿主风险：Air复用原F5 native-host六棵树，Apple ASan/UBSan/TSan各两tests、
+Vulkan各四tests全部实际PASS；两新增产品batch TU、对应public测试以及Vk私有风险
+测试真实compile commands的fsanitize flags核对。ASan detect_leaks=0按原平台限制，
+不签LSan/shader/driver或vendor私有GPU内存；原native shader/runtime源码不改。
+P1仍待，未继承single或CPU结果；Windows仅定向4jobs编译原Vulkan库，不运行本机GPU。
