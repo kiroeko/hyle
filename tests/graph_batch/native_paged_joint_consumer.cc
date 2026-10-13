@@ -90,7 +90,7 @@ Status exercise(c::Context& cpu,n::Context& native,n::MemoryResource& device,
   hyle::sched::Scheduler scheduler(1,hyle::mem::system_allocator(),32);Drain drain{scheduler};HYLE_ASSIGN_OR_RETURN(auto queue,cpu.create_queue());
   std::array<joint::Invocation,2> slots;
   for(auto& slot:slots){HYLE_ASSIGN_OR_RETURN(slot,program.create_invocation(scheduler,queue));}
-  for(unsigned episode=0;episode<12;++episode){
+  for(unsigned episode=0;episode<64;++episode){
     const auto& selected=episode%3==2?single:episode%2?next:layout;auto& slot=slots[episode%2];
     HYLE_ASSIGN_OR_RETURN(auto key_frame,keys.read(selected,key_reads));HYLE_ASSIGN_OR_RETURN(auto value_frame,values.read(selected,value_reads));
     const std::array versions{g::batch::NodeLayout{page_node,selected}};HYLE_RETURN_IF_ERROR(slot.prepare_batch(versions));
@@ -116,7 +116,7 @@ Status exercise(c::Context& cpu,n::Context& native,n::MemoryResource& device,
     HYLE_RETURN_IF_ERROR(check(!slot.reset().ok(),"old joint result did not guard reset"));
   }
   for(auto& slot:slots)HYLE_RETURN_IF_ERROR(slot.close());
-  std::fprintf(stderr,"joint page actual CPU/native/CPU PASS D=%u bf16=%d causal=%d episodes=12\n",depth,bf,causal);return Status::Ok();
+  std::fprintf(stderr,"joint page actual CPU/native/CPU PASS D=%u bf16=%d causal=%d episodes=64\n",depth,bf,causal);return Status::Ok();
 }
 Status run(){
   HYLE_ASSIGN_OR_RETURN(auto cpu,g::cpu::create_context());HYLE_ASSIGN_OR_RETURN(auto native,n::Context::create());

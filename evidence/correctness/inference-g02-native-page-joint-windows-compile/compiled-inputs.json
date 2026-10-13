@@ -1,0 +1,56 @@
+[
+  {
+    "directory": "C:\\h7\\inference-g01-native-vulkan\\build",
+    "command": "\"C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\bin\\Hostx64\\x64\\cl.exe\"  /nologo /TP -DHYLE_COMPUTE_CPU=1 -DHYLE_COMPUTE_GGML_CPU=1 -DHYLE_COMPUTE_ONEDNN=1 -DHYLE_COMPUTE_VULKAN=1 -DHYLE_GRAPH_ONEDNN=1 -DHYLE_IO_HAS_COROUTINE_TRANSPORT=1 -IC:\\public\\project-hyle\\hyle\\include -external:IC:\\public\\tools\\hyle-dependencies\\v1\\sources\\vulkan_headers-e3b1eec08173-69d6adc9001f\\include -external:W0 /DWIN32 /D_WINDOWS /GR /EHsc /O2 /Ob2 /DNDEBUG -std:c++latest -MD /W4 /WX /wd4324 /utf-8 /Zc:__cplusplus /Zc:preprocessor /showIncludes /FoCMakeFiles\\g02_joint_public_compile.dir\\C_\\public\\project-hyle\\hyle\\tests\\graph_batch\\native_paged_joint_consumer.cc.obj /FdCMakeFiles\\g02_joint_public_compile.dir\\ /FS -c C:\\public\\project-hyle\\hyle\\tests\\graph_batch\\native_paged_joint_consumer.cc",
+    "file": "C:/public/project-hyle/hyle/tests/graph_batch/native_paged_joint_consumer.cc",
+    "output": "CMakeFiles/g02_joint_public_compile.dir/C_/public/project-hyle/hyle/tests/graph_batch/native_paged_joint_consumer.cc.obj"
+  },
+  {
+    "directory": "C:\\h7\\inference-g01-native-vulkan\\build",
+    "command": "\"C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\bin\\Hostx64\\x64\\cl.exe\"  /nologo /TP -DHYLE_COMPUTE_CPU=1 -DHYLE_COMPUTE_GGML_CPU=1 -DHYLE_COMPUTE_ONEDNN=1 -DHYLE_COMPUTE_VULKAN=1 -DHYLE_IO_HAS_COROUTINE_TRANSPORT=1 -IC:\\public\\project-hyle\\hyle\\include -external:IC:\\public\\tools\\hyle-dependencies\\v1\\sources\\vulkan_headers-e3b1eec08173-69d6adc9001f\\include -external:W0 /DWIN32 /D_WINDOWS /GR /EHsc /O2 /Ob2 /DNDEBUG -std:c++latest -MD /W4 /WX /wd4324 /utf-8 /Zc:__cplusplus /Zc:preprocessor /showIncludes /FoCMakeFiles\\native_page_public_compile.dir\\C_\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g01\\native-paged\\windows-compile\\header-0.cc.obj /FdCMakeFiles\\native_page_public_compile.dir\\ /FS -c C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g01\\native-paged\\windows-compile\\header-0.cc",
+    "file": "C:/public/project-hyle/hyle/.scratch/inference-gaps/g01/native-paged/windows-compile/header-0.cc",
+    "output": "CMakeFiles/native_page_public_compile.dir/C_/public/project-hyle/hyle/.scratch/inference-gaps/g01/native-paged/windows-compile/header-0.cc.obj"
+  },
+  {
+    "directory": "C:\\h7\\inference-g01-native-vulkan\\build",
+    "command": "\"C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\bin\\Hostx64\\x64\\cl.exe\"  /nologo /TP -DHYLE_COMPUTE_CPU=1 -DHYLE_COMPUTE_GGML_CPU=1 -DHYLE_COMPUTE_ONEDNN=1 -DHYLE_COMPUTE_VULKAN=1 -DHYLE_GRAPH_ONEDNN=1 -DHYLE_IO_HAS_COROUTINE_TRANSPORT=1 -IC:\\public\\project-hyle\\hyle\\include -external:IC:\\public\\tools\\hyle-dependencies\\v1\\sources\\vulkan_headers-e3b1eec08173-69d6adc9001f\\include -external:W0 /DWIN32 /D_WINDOWS /GR /EHsc /O2 /Ob2 /DNDEBUG -std:c++latest -MD /W4 /WX /wd4324 /utf-8 /Zc:__cplusplus /Zc:preprocessor /showIncludes /FoCMakeFiles\\g02_joint_public_compile.dir\\C_\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g02\\windows-native-joint-compile\\header-0.cc.obj /FdCMakeFiles\\g02_joint_public_compile.dir\\ /FS -c C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g02\\windows-native-joint-compile\\header-0.cc",
+    "file": "C:/public/project-hyle/hyle/.scratch/inference-gaps/g02/windows-native-joint-compile/header-0.cc",
+    "output": "CMakeFiles/g02_joint_public_compile.dir/C_/public/project-hyle/hyle/.scratch/inference-gaps/g02/windows-native-joint-compile/header-0.cc.obj"
+  },
+  {
+    "directory": "C:\\h7\\inference-g01-native-vulkan\\build",
+    "command": "\"C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\bin\\Hostx64\\x64\\cl.exe\"  /nologo /TP -DHYLE_COMPUTE_CPU=1 -DHYLE_COMPUTE_GGML_CPU=1 -DHYLE_COMPUTE_ONEDNN=1 -DHYLE_COMPUTE_VULKAN=1 -DHYLE_IO_HAS_COROUTINE_TRANSPORT=1 -IC:\\public\\project-hyle\\hyle\\include -external:IC:\\public\\tools\\hyle-dependencies\\v1\\sources\\vulkan_headers-e3b1eec08173-69d6adc9001f\\include -external:W0 /DWIN32 /D_WINDOWS /GR /EHsc /O2 /Ob2 /DNDEBUG -std:c++latest -MD /W4 /WX /wd4324 /utf-8 /Zc:__cplusplus /Zc:preprocessor /showIncludes /FoCMakeFiles\\native_page_public_compile.dir\\C_\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g01\\native-paged\\windows-compile\\header-1.cc.obj /FdCMakeFiles\\native_page_public_compile.dir\\ /FS -c C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g01\\native-paged\\windows-compile\\header-1.cc",
+    "file": "C:/public/project-hyle/hyle/.scratch/inference-gaps/g01/native-paged/windows-compile/header-1.cc",
+    "output": "CMakeFiles/native_page_public_compile.dir/C_/public/project-hyle/hyle/.scratch/inference-gaps/g01/native-paged/windows-compile/header-1.cc.obj"
+  },
+  {
+    "directory": "C:\\h7\\inference-g01-native-vulkan\\build",
+    "command": "\"C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\bin\\Hostx64\\x64\\cl.exe\"  /nologo /TP -DHYLE_COMPUTE_CPU=1 -DHYLE_COMPUTE_GGML_CPU=1 -DHYLE_COMPUTE_ONEDNN=1 -DHYLE_COMPUTE_VULKAN=1 -DHYLE_GRAPH_ONEDNN=1 -DHYLE_IO_HAS_COROUTINE_TRANSPORT=1 -IC:\\public\\project-hyle\\hyle\\include -external:IC:\\public\\tools\\hyle-dependencies\\v1\\sources\\vulkan_headers-e3b1eec08173-69d6adc9001f\\include -external:W0 /DWIN32 /D_WINDOWS /GR /EHsc /O2 /Ob2 /DNDEBUG -std:c++latest -MD /W4 /WX /wd4324 /utf-8 /Zc:__cplusplus /Zc:preprocessor /showIncludes /FoCMakeFiles\\g02_joint_public_compile.dir\\C_\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g02\\windows-native-joint-compile\\header-1.cc.obj /FdCMakeFiles\\g02_joint_public_compile.dir\\ /FS -c C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g02\\windows-native-joint-compile\\header-1.cc",
+    "file": "C:/public/project-hyle/hyle/.scratch/inference-gaps/g02/windows-native-joint-compile/header-1.cc",
+    "output": "CMakeFiles/g02_joint_public_compile.dir/C_/public/project-hyle/hyle/.scratch/inference-gaps/g02/windows-native-joint-compile/header-1.cc.obj"
+  },
+  {
+    "directory": "C:\\h7\\inference-g01-native-vulkan\\build",
+    "command": "\"C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\bin\\Hostx64\\x64\\cl.exe\"  /nologo /TP -DHYLE_COMPUTE_CPU=1 -DHYLE_COMPUTE_GGML_CPU=1 -DHYLE_COMPUTE_ONEDNN=1 -DHYLE_COMPUTE_VULKAN=1 -DHYLE_IO_HAS_COROUTINE_TRANSPORT=1 -IC:\\public\\project-hyle\\hyle\\include -external:IC:\\public\\tools\\hyle-dependencies\\v1\\sources\\vulkan_headers-e3b1eec08173-69d6adc9001f\\include -external:W0 /DWIN32 /D_WINDOWS /GR /EHsc /O2 /Ob2 /DNDEBUG -std:c++latest -MD /W4 /WX /wd4324 /utf-8 /Zc:__cplusplus /Zc:preprocessor /showIncludes /FoCMakeFiles\\native_page_public_compile.dir\\C_\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g01\\native-paged\\windows-compile\\header-2.cc.obj /FdCMakeFiles\\native_page_public_compile.dir\\ /FS -c C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g01\\native-paged\\windows-compile\\header-2.cc",
+    "file": "C:/public/project-hyle/hyle/.scratch/inference-gaps/g01/native-paged/windows-compile/header-2.cc",
+    "output": "CMakeFiles/native_page_public_compile.dir/C_/public/project-hyle/hyle/.scratch/inference-gaps/g01/native-paged/windows-compile/header-2.cc.obj"
+  },
+  {
+    "directory": "C:\\h7\\inference-g01-native-vulkan\\build",
+    "command": "\"C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\bin\\Hostx64\\x64\\cl.exe\"  /nologo /TP -DHYLE_COMPUTE_CPU=1 -DHYLE_COMPUTE_GGML_CPU=1 -DHYLE_COMPUTE_ONEDNN=1 -DHYLE_COMPUTE_VULKAN=1 -DHYLE_GRAPH_ONEDNN=1 -DHYLE_IO_HAS_COROUTINE_TRANSPORT=1 -IC:\\public\\project-hyle\\hyle\\include -external:IC:\\public\\tools\\hyle-dependencies\\v1\\sources\\vulkan_headers-e3b1eec08173-69d6adc9001f\\include -external:W0 /DWIN32 /D_WINDOWS /GR /EHsc /O2 /Ob2 /DNDEBUG -std:c++latest -MD /W4 /WX /wd4324 /utf-8 /Zc:__cplusplus /Zc:preprocessor /showIncludes /FoCMakeFiles\\g02_joint_public_compile.dir\\C_\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g02\\windows-native-joint-compile\\header-2.cc.obj /FdCMakeFiles\\g02_joint_public_compile.dir\\ /FS -c C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g02\\windows-native-joint-compile\\header-2.cc",
+    "file": "C:/public/project-hyle/hyle/.scratch/inference-gaps/g02/windows-native-joint-compile/header-2.cc",
+    "output": "CMakeFiles/g02_joint_public_compile.dir/C_/public/project-hyle/hyle/.scratch/inference-gaps/g02/windows-native-joint-compile/header-2.cc.obj"
+  },
+  {
+    "directory": "C:\\h7\\inference-g01-native-vulkan\\build",
+    "command": "\"C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\bin\\Hostx64\\x64\\cl.exe\"  /nologo /TP -DHYLE_COMPUTE_CPU=1 -DHYLE_COMPUTE_VULKAN=1 -DHYLE_GRAPH_ROUTE_CPU_VULKAN_BUILD -DHYLE_IO_HAS_COROUTINE_TRANSPORT=1 -Dhyle_graph_route_cpu_vulkan_EXPORTS -IC:\\public\\project-hyle\\hyle\\include -IC:\\public\\project-hyle\\hyle\\src\\graph_route_cpu_vulkan -external:IC:\\public\\tools\\hyle-dependencies\\v1\\sources\\vulkan_headers-e3b1eec08173-69d6adc9001f\\include -external:W0 /DWIN32 /D_WINDOWS /GR /EHsc /O2 /Ob2 /DNDEBUG -std:c++latest -MD /W4 /permissive- /wd4324 /Zc:__cplusplus /utf-8 /Zc:preprocessor /showIncludes /Fohyle\\src\\graph_route_cpu_vulkan\\CMakeFiles\\hyle_graph_route_cpu_vulkan.dir\\compile.cc.obj /Fdhyle\\src\\graph_route_cpu_vulkan\\CMakeFiles\\hyle_graph_route_cpu_vulkan.dir\\ /FS -c C:\\public\\project-hyle\\hyle\\src\\graph_route_cpu_vulkan\\compile.cc",
+    "file": "C:/public/project-hyle/hyle/src/graph_route_cpu_vulkan/compile.cc",
+    "output": "hyle/src/graph_route_cpu_vulkan/CMakeFiles/hyle_graph_route_cpu_vulkan.dir/compile.cc.obj"
+  },
+  {
+    "directory": "C:\\h7\\inference-g01-native-vulkan\\build",
+    "command": "\"C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\bin\\Hostx64\\x64\\cl.exe\"  /nologo /TP -DHYLE_COMPUTE_CPU=1 -DHYLE_COMPUTE_VULKAN=1 -DHYLE_GRAPH_ROUTE_CPU_VULKAN_BUILD -DHYLE_IO_HAS_COROUTINE_TRANSPORT=1 -Dhyle_graph_route_cpu_vulkan_EXPORTS -IC:\\public\\project-hyle\\hyle\\include -IC:\\public\\project-hyle\\hyle\\src\\graph_route_cpu_vulkan -external:IC:\\public\\tools\\hyle-dependencies\\v1\\sources\\vulkan_headers-e3b1eec08173-69d6adc9001f\\include -external:W0 /DWIN32 /D_WINDOWS /GR /EHsc /O2 /Ob2 /DNDEBUG -std:c++latest -MD /W4 /permissive- /wd4324 /Zc:__cplusplus /utf-8 /Zc:preprocessor /showIncludes /Fohyle\\src\\graph_route_cpu_vulkan\\CMakeFiles\\hyle_graph_route_cpu_vulkan.dir\\invocation.cc.obj /Fdhyle\\src\\graph_route_cpu_vulkan\\CMakeFiles\\hyle_graph_route_cpu_vulkan.dir\\ /FS -c C:\\public\\project-hyle\\hyle\\src\\graph_route_cpu_vulkan\\invocation.cc",
+    "file": "C:/public/project-hyle/hyle/src/graph_route_cpu_vulkan/invocation.cc",
+    "output": "hyle/src/graph_route_cpu_vulkan/CMakeFiles/hyle_graph_route_cpu_vulkan.dir/invocation.cc.obj"
+  }
+]

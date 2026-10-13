@@ -1,0 +1,6 @@
+joint page actual CPU/native/CPU PASS D=64 bf16=0 causal=0 episodes=64
+joint page actual CPU/native/CPU PASS D=64 bf16=0 causal=1 episodes=64
+joint page actual CPU/native/CPU PASS D=128 bf16=0 causal=0 episodes=64
+joint page actual CPU/native/CPU PASS D=128 bf16=0 causal=1 episodes=64
+joint page actual CPU/native/CPU PASS D=256 bf16=0 causal=0 episodes=64
+joint page actual CPU/native/CPU PASS D=256 bf16=0 causal=1 episodes=64

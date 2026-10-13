@@ -662,17 +662,25 @@
     },
     {
       "module": "graph_route_cpu_apple",
-      "state": "CANDIDATE",
-      "record": "docs/implementation/tasks/graph/inference-g02-native-paged-composition.md",
-      "summary": "G02 joint page candidate1cd frozen: actual Apple/Vulkan normal oracle and dedicated two-node/foreign/layout/empty/OOM/CPU/native failures/unknown/cancel/abandon/close risk PASS. Six host sanitizer finals (precise Metal callback/final-counter fence models, original raw FAIL retained) and four relocated public hyle::graph SDKs/twelve headers complete. Windows directed compile/link live, no exe/GPU run. Original G02 common/CUDA/graph preserved gates and whole goal0/10 remain incomplete.",
-      "candidate": "1cd0893979e1672a0f6fac98b783a6a3bfcabbca"
+      "state": "CLOSED",
+      "record": "docs/implementation/tasks/graph/inference-g02-native-paged-terminal.md",
+      "summary": "G02 native exact-page joint finite scope CLOSED at1cd: source independent oracle/1152 final64-step episodes, two-node/exact reader-layout-frame/empty/refusal/OOM/budget and actual CPU/native failure/unknown/cancel/abandon/close/retirement PASS; six modeled hostsan, four relocated publicgraph SDKs/twelve headers and Windows compile/link only PASS. Original FAIL/private UNKNOWN/cold planning limits retained. Shared graph_batch/graph original common Windows gates and entire G02/G03-10 remain incomplete.",
+      "candidate": "1cd0893979e1672a0f6fac98b783a6a3bfcabbca",
+      "performance": {
+        "tier": "P0",
+        "evidence": "docs/implementation/tasks/graph/inference-g02-native-paged-terminal.md"
+      }
     },
     {
       "module": "graph_route_cpu_vulkan",
-      "state": "CANDIDATE",
-      "record": "docs/implementation/tasks/graph/inference-g02-native-paged-composition.md",
-      "summary": "G02 joint page candidate1cd frozen: actual Apple/Vulkan normal oracle and dedicated two-node/foreign/layout/empty/OOM/CPU/native failures/unknown/cancel/abandon/close risk PASS. Six host sanitizer finals (precise Metal callback/final-counter fence models, original raw FAIL retained) and four relocated public hyle::graph SDKs/twelve headers complete. Windows directed compile/link live, no exe/GPU run. Original G02 common/CUDA/graph preserved gates and whole goal0/10 remain incomplete.",
-      "candidate": "1cd0893979e1672a0f6fac98b783a6a3bfcabbca"
+      "state": "CLOSED",
+      "record": "docs/implementation/tasks/graph/inference-g02-native-paged-terminal.md",
+      "summary": "G02 native exact-page joint finite scope CLOSED at1cd: source independent oracle/1152 final64-step episodes, two-node/exact reader-layout-frame/empty/refusal/OOM/budget and actual CPU/native failure/unknown/cancel/abandon/close/retirement PASS; six modeled hostsan, four relocated publicgraph SDKs/twelve headers and Windows compile/link only PASS. Original FAIL/private UNKNOWN/cold planning limits retained. Shared graph_batch/graph original common Windows gates and entire G02/G03-10 remain incomplete.",
+      "candidate": "1cd0893979e1672a0f6fac98b783a6a3bfcabbca",
+      "performance": {
+        "tier": "P0",
+        "evidence": "docs/implementation/tasks/graph/inference-g02-native-paged-terminal.md"
+      }
     },
     {
       "module": "compute_stream",
@@ -698,16 +706,20 @@
     },
     {
       "module": "compute_batch",
-      "state": "CANDIDATE",
-      "record": "docs/implementation/tasks/graph/inference-g02-native-paged-composition.md",
-      "summary": "G02 joint page candidate1cd frozen: actual Apple/Vulkan normal oracle and dedicated two-node/foreign/layout/empty/OOM/CPU/native failures/unknown/cancel/abandon/close risk PASS. Six host sanitizer finals (precise Metal callback/final-counter fence models, original raw FAIL retained) and four relocated public hyle::graph SDKs/twelve headers complete. Windows directed compile/link live, no exe/GPU run. Original G02 common/CUDA/graph preserved gates and whole goal0/10 remain incomplete.",
-      "candidate": "1cd0893979e1672a0f6fac98b783a6a3bfcabbca"
+      "state": "CLOSED",
+      "record": "docs/implementation/tasks/graph/inference-g02-native-paged-terminal.md",
+      "summary": "G02 native exact-page joint finite scope CLOSED at1cd: source independent oracle/1152 final64-step episodes, two-node/exact reader-layout-frame/empty/refusal/OOM/budget and actual CPU/native failure/unknown/cancel/abandon/close/retirement PASS; six modeled hostsan, four relocated publicgraph SDKs/twelve headers and Windows compile/link only PASS. Original FAIL/private UNKNOWN/cold planning limits retained. Shared graph_batch/graph original common Windows gates and entire G02/G03-10 remain incomplete.",
+      "candidate": "1cd0893979e1672a0f6fac98b783a6a3bfcabbca",
+      "performance": {
+        "tier": "P0",
+        "evidence": "docs/implementation/tasks/graph/inference-g02-native-paged-terminal.md"
+      }
     },
     {
       "module": "graph_batch",
       "state": "CANDIDATE",
       "record": "docs/implementation/tasks/graph/inference-g02-native-paged-composition.md",
-      "summary": "G02 joint page candidate1cd frozen: actual Apple/Vulkan normal oracle and dedicated two-node/foreign/layout/empty/OOM/CPU/native failures/unknown/cancel/abandon/close risk PASS. Six host sanitizer finals (precise Metal callback/final-counter fence models, original raw FAIL retained) and four relocated public hyle::graph SDKs/twelve headers complete. Windows directed compile/link live, no exe/GPU run. Original G02 common/CUDA/graph preserved gates and whole goal0/10 remain incomplete.",
+      "summary": "G02 native node/cold owned binding finite domain DELIVERED at1cd: actual joint64-step math/risks, six modeled hostsan, four graph SDKs/headers and Windows link PASS. Module remains CANDIDATE because original common MQ/CPU round preserves unproven Windows CUDA/Vulkan native correctness gates; do not sign aggregate CLOSED or whole G02.",
       "candidate": "1cd0893979e1672a0f6fac98b783a6a3bfcabbca"
     }
   ]

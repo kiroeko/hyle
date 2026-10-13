@@ -1,6 +1,6 @@
 # G02 CPU 与 Apple/Vulkan 精确页联合消费
 
-状态：CANDIDATE，2026-10-14。当前 owner 为 graph_route_cpu_apple、
+状态：本native有限域DELIVERED；两个hybrid与compute_batch本轮CLOSED，graph_batch保原共同门CANDIDATE，2026-10-14。当前 owner 为 graph_route_cpu_apple、
 graph_route_cpu_vulkan、graph_batch；baseline `66af56852d0602ce14cdfde9aba3de373a7472c6`。
 授权来自[十项 goal](../project/inference-gaps-goal-execution-2026-10.md)。原
 [Foundation A](foundation-a-final-closure.md)有限域与失败证据保留；本卡不重开旧数学、
@@ -305,3 +305,11 @@ SIMD converter仅test scalar替代，原前后SHA保；普通math consumer保持
 Windows public main与三头compile/link已按同candidate、onlyhyle::graph在原H7树fourjobs
 启动，首次CPU+Vulkan配置补编尚未缓存CPU依赖，不run executable/GPU。尚无终态，
 不写该门PASS/CLOSED；原G02其它common/CUDA/graph保留门与完整goal0/10继续保留。
+
+
+Windowsactual公开main/三standalone headers compile/link419.171s PASS，只有新目标的
+真实CPU+Vulkan依赖闭包，未run exe/GPU。另test-only补64步每组实际source复用，
+Apple768/Vulkan384共1152final episodes independent oracle/旧result/布局与费用PASS，
+48.188s，固定1cd产品不变。所有本native有限门现按
+[有限终审](inference-g02-native-paged-terminal.md)DELIVERED，三个owner CLOSED；graph_batch
+保原common未证门CANDIDATE，graph5ce与整个G02/goal仍未完成。
