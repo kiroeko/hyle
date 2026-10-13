@@ -15,6 +15,11 @@
 [固定输入证据](../../../../evidence/architecture/inference-single-machine-foundation-audit/README.md)。
 本页不是活动 closure card，不改变 module-status、不表示以下能力已实现或取得性能资格。
 
+2026-10-13 后续用户指定本地 Qwen3.5-2B 作为首个命令消费者，并要求已发现缺口全部处理。
+[具体模型范围与工作量](qwen35-2b-command-consumer-scope-2026-10.md)记录实物、短文本参考执行、
+HYLE 整链接线及十项回映。该模型是 dense FFN＋hybrid attention，不是纯 attention dense；
+下面的可选包/延后规则仍用于准入裁决，不能据此将用户已纳入的通用缺口从总任务删去。
+
 ## 1 目标与完成标准
 
 目标是单机高性能推理，覆盖单请求与多请求，以及三种部署形态：
