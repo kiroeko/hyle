@@ -1,6 +1,6 @@
 # G02 CPU 与 Apple/Vulkan 精确页联合消费
 
-状态：AUDITED，2026-10-14。当前 owner 为 graph_route_cpu_apple、
+状态：CANDIDATE，2026-10-14。当前 owner 为 graph_route_cpu_apple、
 graph_route_cpu_vulkan、graph_batch；baseline `66af56852d0602ce14cdfde9aba3de373a7472c6`。
 授权来自[十项 goal](../project/inference-gaps-goal-execution-2026-10.md)。原
 [Foundation A](foundation-a-final-closure.md)有限域与失败证据保留；本卡不重开旧数学、
@@ -260,3 +260,8 @@ prepare集、真实CPU query、exact frames、原controller/输出/退休的NJ01
 算法现停止变化。下一步提交不可变candidate，再串行新联合宿主san、static/shared SDK/
 逐头与Windowscompile/link；这些门仍UNPROVEN，原G02其它未决门/整个goal不代签。
 本组合轮P0，不启动新P1或重跑已收口native数学P1。四jobs，自动有限延长保原失败。
+
+
+四owner现按固定产品candidate `1cd0893979e1672a0f6fac98b783a6a3bfcabbca`进入CANDIDATE。
+所有NJ源码/接口/普通成本停止变化，只执行本卡已有未证交付/宿主风险/Windows门；
+发现产品新缺陷先依法回AUDITED，不在candidate上修改API/layout/算法。

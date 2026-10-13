@@ -662,15 +662,17 @@
     },
     {
       "module": "graph_route_cpu_apple",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/graph/inference-g02-native-paged-composition.md",
-      "summary": "G02 native page joint AUDITED draft: actual Air Apple144/Vulkan72 CPU ABS/Cast -> original native page attention -> CPU Cast/Neg oracle episodes PASS, two slots/topology/old outputs/exact frame/table costs; original ordinary/reference/native negatives PASS. Finite readonly Q trait and Vulkan cold original transfer replacement corrected, all FAIL/input/132.492s retained. New joint risk/OOM/SDK/headers/sanitizers/Windows gates unproven; whole G02/goal not closed."
+      "summary": "G02 native exact-page joint candidate frozen: Apple144/Vulkan72 actual CPU/native/CPU oracle, two-node readers/layout/frame/empty/refusal recovery, compile/create/prepare/bind OOM, CPU/native errors/unknown/cancel/abandon/close and actual guards retirement source PASS; all FAIL/286.946s retained. Original native controller/query qualification and Vulkan output checks reused. Joint SDK/headers/sanitizers/Win and original G02 preserved gates unproven; whole goal0/10.",
+      "candidate": "1cd0893979e1672a0f6fac98b783a6a3bfcabbca"
     },
     {
       "module": "graph_route_cpu_vulkan",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/graph/inference-g02-native-paged-composition.md",
-      "summary": "G02 native page joint AUDITED draft: actual Air Apple144/Vulkan72 CPU ABS/Cast -> original native page attention -> CPU Cast/Neg oracle episodes PASS, two slots/topology/old outputs/exact frame/table costs; original ordinary/reference/native negatives PASS. Finite readonly Q trait and Vulkan cold original transfer replacement corrected, all FAIL/input/132.492s retained. New joint risk/OOM/SDK/headers/sanitizers/Windows gates unproven; whole G02/goal not closed."
+      "summary": "G02 native exact-page joint candidate frozen: Apple144/Vulkan72 actual CPU/native/CPU oracle, two-node readers/layout/frame/empty/refusal recovery, compile/create/prepare/bind OOM, CPU/native errors/unknown/cancel/abandon/close and actual guards retirement source PASS; all FAIL/286.946s retained. Original native controller/query qualification and Vulkan output checks reused. Joint SDK/headers/sanitizers/Win and original G02 preserved gates unproven; whole goal0/10.",
+      "candidate": "1cd0893979e1672a0f6fac98b783a6a3bfcabbca"
     },
     {
       "module": "compute_stream",
@@ -696,15 +698,17 @@
     },
     {
       "module": "compute_batch",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/graph/inference-g02-native-paged-composition.md",
-      "summary": "G02 native page joint AUDITED draft: actual Air Apple144/Vulkan72 CPU ABS/Cast -> original native page attention -> CPU Cast/Neg oracle episodes PASS, two slots/topology/old outputs/exact frame/table costs; original ordinary/reference/native negatives PASS. Finite readonly Q trait and Vulkan cold original transfer replacement corrected, all FAIL/input/132.492s retained. New joint risk/OOM/SDK/headers/sanitizers/Windows gates unproven; whole G02/goal not closed."
+      "summary": "G02 native exact-page joint candidate frozen: Apple144/Vulkan72 actual CPU/native/CPU oracle, two-node readers/layout/frame/empty/refusal recovery, compile/create/prepare/bind OOM, CPU/native errors/unknown/cancel/abandon/close and actual guards retirement source PASS; all FAIL/286.946s retained. Original native controller/query qualification and Vulkan output checks reused. Joint SDK/headers/sanitizers/Win and original G02 preserved gates unproven; whole goal0/10.",
+      "candidate": "1cd0893979e1672a0f6fac98b783a6a3bfcabbca"
     },
     {
       "module": "graph_batch",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/graph/inference-g02-native-paged-composition.md",
-      "summary": "G02 native page joint AUDITED draft: actual Air Apple144/Vulkan72 CPU ABS/Cast -> original native page attention -> CPU Cast/Neg oracle episodes PASS, two slots/topology/old outputs/exact frame/table costs; original ordinary/reference/native negatives PASS. Finite readonly Q trait and Vulkan cold original transfer replacement corrected, all FAIL/input/132.492s retained. New joint risk/OOM/SDK/headers/sanitizers/Windows gates unproven; whole G02/goal not closed."
+      "summary": "G02 native exact-page joint candidate frozen: Apple144/Vulkan72 actual CPU/native/CPU oracle, two-node readers/layout/frame/empty/refusal recovery, compile/create/prepare/bind OOM, CPU/native errors/unknown/cancel/abandon/close and actual guards retirement source PASS; all FAIL/286.946s retained. Original native controller/query qualification and Vulkan output checks reused. Joint SDK/headers/sanitizers/Win and original G02 preserved gates unproven; whole goal0/10.",
+      "candidate": "1cd0893979e1672a0f6fac98b783a6a3bfcabbca"
     }
   ]
 }
