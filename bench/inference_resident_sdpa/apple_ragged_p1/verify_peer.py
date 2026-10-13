@@ -5,7 +5,9 @@ parser=argparse.ArgumentParser();parser.add_argument('--peer',type=Path,required
 pin='1f8e74e3f12f31365464a6867c6579f0e9b29d85'
 assert subprocess.check_output(['git','-C',str(args.peer),'rev-parse','HEAD'],text=True).strip()==pin
 assert not subprocess.check_output(['git','-C',str(args.peer),'status','--porcelain'],text=True).strip()
-names=['mlx/fast.cpp','mlx/fast.h','mlx/backend/metal/fast.cpp']
+names=['mlx/fast.cpp','mlx/fast.h','mlx/fast_primitives.h',
+       'mlx/backend/metal/scaled_dot_product_attention.cpp',
+       'mlx/backend/metal/kernels/scaled_dot_product_attention.metal']
 names += [str(p.relative_to(args.peer)) for p in (args.peer/'mlx/backend/metal/kernels').glob('*sdpa*') if p.is_file()]
 names += [str(p.relative_to(args.peer)) for p in (args.peer/'mlx/backend/metal/kernels/steel/attn').rglob('*') if p.is_file()]
 names += [str(p.relative_to(args.peer)) for p in (args.peer/'mlx/backend/metal').glob('*sdpa*') if p.is_file()]
