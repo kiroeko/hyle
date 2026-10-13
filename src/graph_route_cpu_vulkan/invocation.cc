@@ -1,4 +1,5 @@
 #include "plan.h"
+#include "paged.h"
 
 #include <algorithm>
 #include <atomic>
@@ -44,12 +45,14 @@ struct RunState final : util::RefCounted<RunState> {
   explicit RunState(std::shared_ptr<const Plan> source)
       : plan(std::move(source)), allocator(plan->allocator),
         values(mem::StdAllocator<ValueRun>(allocator)),
-        fragments(mem::StdAllocator<FragmentRun>(allocator)) {}
+        fragments(mem::StdAllocator<FragmentRun>(allocator)),
+        pages(nullptr,PageSlotsDelete{allocator}) {}
   std::shared_ptr<const Plan> plan;
   mem::AllocatorRef allocator;
   graph::detail::LeaseSubmission leases;
   Vector<ValueRun> values;
   Vector<FragmentRun> fragments;
+  std::unique_ptr<PageSlots,PageSlotsDelete> pages;
   sched::Scheduler *scheduler = nullptr;
   compute::Queue *cpu_queue = nullptr;
   sched::Event progress, finished;
@@ -158,6 +161,29 @@ Status allocate_transfer(RunState &run, std::size_t id) noexcept {
   run.staging_bytes += capacity;
   return Status::Ok();
 }
+Status ensure_leases(RunState& run) noexcept {
+  if (run.leases.valid())return Status::Ok();
+  {
+    const auto inputs = run.plan->inputs.size(), fragments = run.plan->fragments.size();
+    if (inputs > (SIZE_MAX - fragments) / 2) return Status::ResourceExhausted("CPU+Vulkan lease prefix capacity");
+    auto prefixes = 2 * inputs + fragments;
+    for (const auto &fragment : run.plan->fragments) {
+      if (fragment.outputs.size() > SIZE_MAX - prefixes)
+        return Status::ResourceExhausted("CPU+Vulkan lease prefix capacity");
+      prefixes += fragment.outputs.size();
+    }
+    std::size_t pages=0;
+    for(const auto& fragment:run.plan->paged){
+      const auto refs=fragment.binding.program.schema().capacity().max_page_refs;
+      if(refs>(SIZE_MAX-pages)/2)return Status::ResourceExhausted("native page guard capacity overflow");
+      pages+=2*std::size_t(refs);
+    }
+    HYLE_ASSIGN_OR_RETURN(run.leases, graph::detail::LeaseSubmission::create(inputs, prefixes,
+        {.allocator = run.allocator, .resource_budget = run.plan->budget, .max_page_reads = pages}));
+  }
+  return Status::Ok();
+}
+
 Status add_copy(ReplayReport &report, std::size_t bytes) noexcept {
   if (bytes > SIZE_MAX - report.host_copy_bytes)
     return Status::ResourceExhausted("CPU+Vulkan copy report overflows");
@@ -256,6 +282,7 @@ Status drive_graph(RunState &run, bool &accepted) noexcept {
       return Status::Cancelled("CPU+Vulkan cancelled before boundary preparation");
     auto &value = run.values[id];
     const auto &spec = run.plan->values[id];
+    if(run.pages && run.pages->page_input(id) && !value.native_input)continue;
     if (value.native_input) {
       value.native_value = value.native_input;
       if (spec.cpu_use) {
@@ -311,7 +338,19 @@ Status drive_graph(RunState &run, bool &accepted) noexcept {
       }
     } else {
       slot.lease = {};
-      HYLE_ASSIGN_OR_RETURN(auto submitted, slot.vulkan.submit());
+      auto submitted_result=[&]()->Result<compute::OwnedResult<ca::Results>>{
+        if(auto* page=run.pages?run.pages->fragment(index):nullptr){
+          const auto qid=fragment.inputs[0];
+          if(!run.values[qid].native_value)return std::unexpected(Status::Internal("page query producer did not complete"));
+          HYLE_ASSIGN_OR_RETURN(auto query,run.plan->environment.device->import_readonly(
+              *run.values[qid].native_value,{.allocator=run.allocator,.resource_budget=run.plan->budget}));
+          HYLE_RETURN_IF_ERROR(page->controller.bind(std::move(query),page->frames[0],page->frames[1]));
+          HYLE_RETURN_IF_ERROR(ca::detail::CompositionAccess::seal(page->controller.native));
+          return page->controller.submit();
+        }
+        return slot.vulkan.submit();
+      }();
+      HYLE_ASSIGN_OR_RETURN(auto submitted,std::move(submitted_result));
       accepted = true;
       // Cancellation stops successors, while the original Vulkan owner drains
       // the already-accepted prefix before publishing its terminal result.
@@ -436,8 +475,11 @@ Result<Invocation> Executable::create_invocation(sched::Scheduler &scheduler, co
         HYLE_RETURN_IF_ERROR(allocate_host(run, id));
       if (spec.producer == kCpuTarget && spec.vulkan_use && spec.fragment_output)
         HYLE_RETURN_IF_ERROR(allocate_boundary(run, id));
+      const bool page_output=std::any_of(state_->paged.begin(),state_->paged.end(),[&](const auto& page){
+        return state_->fragments[page.fragment].outputs[0]==id;
+      });
       if (spec.fragment_output && ((spec.producer == kCpuTarget && spec.vulkan_use) ||
-                                  (spec.producer == kVulkanTarget && spec.cpu_use))) {
+                                  (spec.producer == kVulkanTarget && spec.cpu_use && !page_output))) {
         HYLE_RETURN_IF_ERROR(allocate_transfer(run, id));
       }
       if (spec.repack.valid()) {
@@ -445,11 +487,27 @@ Result<Invocation> Executable::create_invocation(sched::Scheduler &scheduler, co
       }
       if (spec.id.kind() == ValueKind::kConstant) run.values[id].host_value = spec.constant;
     }
+    if(!state_->paged.empty()){
+      auto* pointer=allocator.construct<detail::PageSlots>(allocator);
+      if(!pointer)return std::unexpected(Status::ResourceExhausted("joint page slot owner"));
+      run.pages.reset(pointer);
+      for(const auto& page:state_->paged){
+        const auto& fragment=state_->fragments[page.fragment];
+        HYLE_RETURN_IF_ERROR(run.pages->add({state_->environment.vulkan,&page.initial_program,page.binding.layout},
+            page.binding,page.fragment,fragment.inputs,*state_->environment.device,
+            *state_->environment.staging,state_->workload));
+        const auto query=fragment.inputs[0];
+        if(state_->values[query].id.kind()==ValueKind::kConstant)
+          run.values[query].native_value=state_->values[query].native_constant;
+      }
+      HYLE_RETURN_IF_ERROR(ensure_leases(run));
+    }
     for (std::size_t i = 0; i < run.fragments.size(); ++i) {
       const auto &fragment = state_->fragments[i];
       if (fragment.target == kCpuTarget) {
         HYLE_ASSIGN_OR_RETURN(run.fragments[i].cpu, fragment.cpu.create_invocation());
       } else {
+        if(run.pages && run.pages->fragment(i))continue;
         HYLE_ASSIGN_OR_RETURN(run.fragments[i].vulkan, fragment.vulkan.create_invocation(allocator,
             {.resource_budget = state_->budget, .device = state_->environment.device, .staging = state_->environment.staging}));
         run.fragments[i].arguments.reserve(fragment.inputs.size());
@@ -506,6 +564,8 @@ Status Invocation::bind(ValueId id, compute::ConstTensorView tensor) noexcept {
   HYLE_RETURN_IF_ERROR(admit(state_));
   auto &run = *state_->run;
   HYLE_ASSIGN_OR_RETURN(auto index, input_index(run, id));
+  if(run.pages && run.pages->page_input(index))
+    return Status::InvalidArgument("native page input requires an exact prepared frame");
   if (!tensor.valid() || tensor.description() != run.plan->values[index].description ||
       !tensor.storage().resource().properties().has(mem::MemoryProperty::kHostAccessible))
     return Status::InvalidArgument("CPU+Vulkan host input description/storage differs");
@@ -523,6 +583,8 @@ Status Invocation::bind(ValueId id, const cv::Tensor &array) noexcept {
   HYLE_RETURN_IF_ERROR(admit(state_));
   auto &run = *state_->run;
   HYLE_ASSIGN_OR_RETURN(auto index, input_index(run, id));
+  if(run.pages && run.pages->page_input(index))
+    return Status::InvalidArgument("native page input requires an exact prepared frame");
   if (!run.plan->effect_bindings.empty())
     return Status::Unimplemented("effect composition requires a checked host footprint for native input alias admission");
   HYLE_RETURN_IF_ERROR(native_input(run.plan->values[index], array));
@@ -540,6 +602,8 @@ Status Invocation::bind(ValueId id, const ca::WeightBatch &batch, std::uint64_t 
   HYLE_RETURN_IF_ERROR(admit(state_));
   auto &run = *state_->run;
   HYLE_ASSIGN_OR_RETURN(auto index, input_index(run, id));
+  if(run.pages && run.pages->page_input(index))
+    return Status::InvalidArgument("native page input requires an exact prepared frame");
   if (!run.plan->effect_bindings.empty())
     return Status::Unimplemented("effect composition requires a checked host footprint for native weight alias admission");
   HYLE_ASSIGN_OR_RETURN(auto description, batch.description(weight_id));
@@ -558,24 +622,15 @@ Status Invocation::bind(ValueId id, compute::TensorDesc description, compute::Re
   HYLE_RETURN_IF_ERROR(admit(state_));
   auto &run = *state_->run;
   HYLE_ASSIGN_OR_RETURN(auto index, input_index(run, id));
+  if(run.pages && run.pages->page_input(index))
+    return Status::InvalidArgument("native page input requires an exact prepared frame");
   HYLE_ASSIGN_OR_RETURN(auto checked, source.view());
   HYLE_RETURN_IF_ERROR(graph::detail::validate_effect_tensor_alias(
       run.plan->effect_bindings, checked));
   if (!run.plan->effect_bindings.empty() &&
       !checked.resource().properties().has(mem::MemoryProperty::kHostAccessible))
     return Status::Unimplemented("effect composition requires checked host lease footprint");
-  if (!run.leases.valid()) {
-    const auto inputs = run.plan->inputs.size(), fragments = run.plan->fragments.size();
-    if (inputs > (SIZE_MAX - fragments) / 2) return Status::ResourceExhausted("CPU+Vulkan lease prefix capacity");
-    auto prefixes = 2 * inputs + fragments;
-    for (const auto &fragment : run.plan->fragments) {
-      if (fragment.outputs.size() > SIZE_MAX - prefixes)
-        return Status::ResourceExhausted("CPU+Vulkan lease prefix capacity");
-      prefixes += fragment.outputs.size();
-    }
-    HYLE_ASSIGN_OR_RETURN(run.leases, graph::detail::LeaseSubmission::create(inputs, prefixes,
-        {.allocator = run.allocator, .resource_budget = run.plan->budget}));
-  }
+  HYLE_RETURN_IF_ERROR(ensure_leases(run));
   HYLE_ASSIGN_OR_RETURN(auto storage, source.view());
   if (storage.resource() == run.plan->environment.device->ref()) {
     HYLE_ASSIGN_OR_RETURN(auto native, run.plan->environment.device->binding(source, description,
@@ -589,6 +644,26 @@ Status Invocation::bind(ValueId id, compute::TensorDesc description, compute::Re
   run.leases.bind(static_cast<std::size_t>(slot), std::move(source));
   return Status::Ok();
 }
+Status Invocation::bind(ValueId id,compute::PagedArenaRead frame) noexcept {
+  HYLE_RETURN_IF_ERROR(admit(state_));auto& run=*state_->run;
+  HYLE_ASSIGN_OR_RETURN(auto index,input_index(run,id));
+  if(!run.pages)return Status::InvalidArgument("graph has no native page inputs");
+  HYLE_RETURN_IF_ERROR(run.pages->validate_frame(index,frame));
+  if(!run.plan->effect_bindings.empty())
+    return Status::Unimplemented("page capacity has no whole-arena effect footprint");
+  std::optional<cv::Tensor> native;
+  if(frame.valid()){
+    HYLE_ASSIGN_OR_RETURN(native,ca::detail::PagedBatchAccess::binding(
+        *run.plan->environment.device,frame,{.allocator=run.allocator,.resource_budget=run.plan->budget}));
+    HYLE_RETURN_IF_ERROR(native_input(run.plan->values[index],*native));
+  }
+  HYLE_RETURN_IF_ERROR(ensure_leases(run));
+  const auto slot=std::find(run.plan->inputs.begin(),run.plan->inputs.end(),index)-run.plan->inputs.begin();
+  HYLE_RETURN_IF_ERROR(run.leases.bind_pages(std::size_t(slot),cd::PagedArenaAccess::pages(frame)));
+  auto& value=run.values[index];value.native_input=std::move(native);value.host_input={};value.weight.reset();
+  run.pages->commit_frame(index,std::move(frame));run.prepared=false;return Status::Ok();
+}
+
 Status Invocation::reset() noexcept {
   HYLE_RETURN_IF_ERROR(admit(state_));
   auto &run = *state_->run;
@@ -600,13 +675,58 @@ Status Invocation::reset() noexcept {
   }
   run.prepared = false;
   run.leases.reset();
+  if(run.pages)run.pages->reset();
   return Status::Ok();
 }
+Status Invocation::prepare_batch(std::span<const batch::NodeLayout> layouts) noexcept {
+  HYLE_RETURN_IF_ERROR(admit(state_));auto& run=*state_->run;
+  if(!run.pages)return Status::InvalidArgument("graph has no native page nodes");
+  run.prepared=false;run.pages->prepared=false;
+  HYLE_RETURN_IF_ERROR(run.pages->validate_layouts(layouts));
+  HYLE_RETURN_IF_ERROR(reset());
+  for(const auto& page:run.pages->slots)run.fragments[page->fragment].lease={};
+  HYLE_RETURN_IF_ERROR(run.pages->prepare(layouts));
+  run.pages->prepared=false; // All cold output bridges must qualify before admission.
+  for(const auto& page:run.pages->slots){
+    HYLE_ASSIGN_OR_RETURN(auto output,ca::detail::CompositionAccess::output(page->controller.native,0));
+    const auto id=run.plan->fragments[page->fragment].outputs[0];
+    auto& value=run.values[id];
+    if(run.plan->values[id].cpu_use){
+      // Original transfers freeze their retained native backing after first
+      // submission. Cold page replacement has a new output owner; the outer
+      // result/actual prefix gate permits replacing just this bridge.
+      if(value.transfer.valid()){
+        HYLE_ASSIGN_OR_RETURN(auto bytes,run.plan->values[id].carrier.required_bytes());
+        value.transfer={};run.staging_bytes-=std::max<std::size_t>(1,bytes);
+      }
+      HYLE_RETURN_IF_ERROR(allocate_transfer(run,id));
+      HYLE_RETURN_IF_ERROR(ca::detail::TransferAccess::retain(value.transfer,output));
+    }
+    value.native_value=std::move(output);
+  }
+  run.pages->prepared=true;
+  return Status::Ok();
+}
+
 Status Invocation::prepare_replay(ReplayOptions options) noexcept {
   HYLE_RETURN_IF_ERROR(admit(state_));
   auto &run = *state_->run;
   run.prepared = false;
   ReplayReport report;
+  if(run.pages){
+    if(!run.pages->prepared)return Status::FailedPrecondition("joint page nodes need explicit prepare_batch");
+    for(const auto& page:run.pages->slots){
+      const auto& cost=page->controller.report;
+      ++report.paged_fragments;
+      if(cost.uploaded_bytes>SIZE_MAX-report.paged_metadata_uploaded_bytes ||
+         cost.backing_bytes>SIZE_MAX-report.paged_metadata_backing_bytes ||
+         cost.upload_host_waits>SIZE_MAX-report.paged_metadata_host_waits)
+        return Status::ResourceExhausted("native page cost report overflow");
+      report.paged_metadata_uploaded_bytes+=cost.uploaded_bytes;
+      report.paged_metadata_backing_bytes+=cost.backing_bytes;
+      report.paged_metadata_host_waits+=cost.upload_host_waits;
+    }
+  }
   if (options.mode == ReplayMode::kRequireCapture)
     return Status::Unimplemented("CPU+Vulkan coarse composition uses managed native replay");
   for (const auto &fragment : run.plan->fragments) {
@@ -636,6 +756,11 @@ Status Invocation::prepare_replay(ReplayOptions options) noexcept {
         if (const auto storage = run.plan->environment.device->storage_info(array); !storage)
           return storage.error();
         value.native_input = std::move(array);
+      }
+      if(run.pages && run.pages->page_input(id)){
+        HYLE_RETURN_IF_ERROR(run.pages->validate_frame(id,{}).ok() || value.native_input
+            ? Status::Ok():Status::FailedPrecondition("native page input frame is not bound"));
+        value.native_value=value.native_input;continue;
       }
       if (!value.native_input && !value.host_input.valid())
         return Status::FailedPrecondition("CPU+Vulkan input is not bound");
@@ -705,6 +830,7 @@ Status Invocation::prepare_replay(ReplayOptions options) noexcept {
   for (std::size_t i = 0; i < run.fragments.size(); ++i) {
     const auto &fragment = run.plan->fragments[i];
     if (fragment.target != kVulkanTarget) continue;
+    if(run.pages && run.pages->fragment(i))continue;
     auto &slot = run.fragments[i];
     slot.lease = {};
     slot.arguments.clear();
@@ -738,6 +864,10 @@ Result<compute::OwnedResult<Results>> Invocation::submit() noexcept {
   HYLE_RETURN_IF_ERROR(admit(state_));
   auto &run = *state_->run;
   if (!run.prepared) return std::unexpected(Status::FailedPrecondition("CPU+Vulkan replay is not prepared"));
+  if(run.pages){
+    if(!run.pages->prepared)return std::unexpected(Status::FailedPrecondition("page episode already consumed"));
+    run.pages->prepared=false;
+  }
   if (run.leases.valid()) {
     HYLE_RETURN_IF_ERROR(run.leases.begin(&run,
         [](void *owner) noexcept { static_cast<RunState *>(owner)->incref(); },
@@ -789,6 +919,10 @@ Status Invocation::close() noexcept {
   while (run.running.load(std::memory_order_acquire))
     run.finished.wait_for(std::chrono::milliseconds(1));
   state_->write = {};
+  if(run.pages)for(const auto& page:run.pages->slots){
+    page->controller.close().IgnoreError();
+    HYLE_RETURN_IF_ERROR(page->controller.drain());
+  }
   std::lock_guard lock(run.retirement_mutex);
   return run.terminal;
 }

@@ -37,12 +37,18 @@ struct Fragment final {
   compute::apple::Program apple;
   compute::ResourceBudget::Reservation private_storage;
 };
+struct PagedFragment final {
+  std::size_t fragment = 0;
+  batch::NativePagedNodeBinding binding;
+  compute::apple::Program initial_program;
+};
 
 struct Plan final {
   explicit Plan(mem::AllocatorRef owner)
       : allocator(owner), values(mem::StdAllocator<Value>(owner)),
         inputs(mem::StdAllocator<std::size_t>(owner)),
-        fragments(mem::StdAllocator<Fragment>(owner)), effect_bindings(owner) {}
+        fragments(mem::StdAllocator<Fragment>(owner)),
+        paged(mem::StdAllocator<PagedFragment>(owner)), effect_bindings(owner) {}
   mem::AllocatorRef allocator;
   compute::ResourceBudget budget;
   compute::WorkloadContext workload;
@@ -51,6 +57,7 @@ struct Plan final {
   Vector<Value> values;
   Vector<std::size_t> inputs;
   Vector<Fragment> fragments;
+  Vector<PagedFragment> paged; // Empty ordinary path; no per-value page table.
   graph::detail::EffectBindings effect_bindings;
   std::size_t host_workspace_bytes = 0;
 };

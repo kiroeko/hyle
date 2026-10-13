@@ -1,0 +1,91 @@
+{
+  "one_way": true,
+  "source": "/Users/kiro/hyle-scratch/compute-unified/source-c8874688",
+  "base": "0283b0901",
+  "candidate": "AUDITED WORKTREE draft",
+  "inputs": [
+    {
+      "path": "cmake/HyleComponents.cmake",
+      "sha256": "b642342cca9e1068b69dee2e961ea7cd3515b5e29f8f4a5dbfb2ed36b9c0d399"
+    },
+    {
+      "path": "include/hyle/compute/detail/materialized_native_controller.h",
+      "sha256": "74085821d4b85e860ead3cd980855f0ff1385593c225d9228b375222696954dd"
+    },
+    {
+      "path": "include/hyle/graph/batch.h",
+      "sha256": "0db40b8c74dbaab965a9c1ccf629f43555053b56748908103202795513651231"
+    },
+    {
+      "path": "include/hyle/graph/cpu_apple.h",
+      "sha256": "0f977030c93d98303bb1e52c5500bedd5420fdb39c9ed1a676cb4485d6d9e9cc"
+    },
+    {
+      "path": "include/hyle/graph/cpu_vulkan.h",
+      "sha256": "f2583da386a75bfab90f0ead5c1962f29d57d6cfde55cb83a8b02c24341fe31f"
+    },
+    {
+      "path": "src/graph_batch/CMakeLists.txt",
+      "sha256": "60abda27d21dbb3c3dd16322367c674956057d27ef5efc5c3fdc8b55122101dc"
+    },
+    {
+      "path": "src/graph_batch/native_paged_node.cc",
+      "sha256": "c03ec70b6d7f2c9fe0c8c9ebc05bc943a45117ee700e17d3fd8923558856326f"
+    },
+    {
+      "path": "src/graph_batch/native_paged_nodes.h",
+      "sha256": "b21d82f81b38f6d7828185ea09ae36860683fdf627c49103878cdd9f76119394"
+    },
+    {
+      "path": "src/graph_batch/native_paged_slots.h",
+      "sha256": "3047622b44799f98d4074ba37aa9bf2666e025bd8f79ff9357047b6e0b069be8"
+    },
+    {
+      "path": "src/graph_route_cpu_apple/compile.cc",
+      "sha256": "1197508f62804c6093d0acd4f535f8447a2303e8f93f27bc01ace9f433b2c567"
+    },
+    {
+      "path": "src/graph_route_cpu_apple/invocation.cc",
+      "sha256": "4a08f9a6be0bf13c852548edf641abbd8cbdd9abcb3717a6d6bbf24d108bb151"
+    },
+    {
+      "path": "src/graph_route_cpu_apple/paged.h",
+      "sha256": "c8c11a8332c7efbb145881decfdf8ef1f4854e4e8cf21b51baf4b934e177543d"
+    },
+    {
+      "path": "src/graph_route_cpu_apple/plan.h",
+      "sha256": "2b9f13e858d4bfc46ea3bb5addf76e8f4bb8d3aa5e2b87d8750dac590d50d2a4"
+    },
+    {
+      "path": "src/graph_route_cpu_vulkan/compile.cc",
+      "sha256": "b41e3a4d0c3645e249c68019a9088f63462c30f1e9dc83e9107a5dced1c7c66e"
+    },
+    {
+      "path": "src/graph_route_cpu_vulkan/invocation.cc",
+      "sha256": "618fdd4a5cdcad4f88df37ad98a30f7b66f0ef99e1c1fade500f4f5178146b12"
+    },
+    {
+      "path": "src/graph_route_cpu_vulkan/paged.h",
+      "sha256": "8ebad5bc55f0b80d63164ab441c4019bdfc8a2af587e5ae047758ac5d7722750"
+    },
+    {
+      "path": "src/graph_route_cpu_vulkan/plan.h",
+      "sha256": "c771f5639987bf6cec4415f5f080403547fa1890a05fbfb9c71760610a2e0d6e"
+    },
+    {
+      "path": "tests/graph/cpu_apple_contracts.cc",
+      "sha256": "d4ee1d0cea8c590d3651afd58be35c3575d6186259a5d737ad59ab18434f10ba"
+    },
+    {
+      "path": "tests/graph/cpu_vulkan_contracts.cc",
+      "sha256": "56798b950720f4119d3c1a1fa171b2cd1ca01639f3b3428850db1aeab8e4ec6b"
+    },
+    {
+      "path": "tests/graph_batch/native_paged_joint_consumer.cc",
+      "sha256": "27fe2bcd2e2de7772d47f8c9555b1f7e32e18e73d4360f1892526bb2d10616c4"
+    }
+  ],
+  "changed": [
+    "src/graph_route_cpu_vulkan/invocation.cc"
+  ]
+}

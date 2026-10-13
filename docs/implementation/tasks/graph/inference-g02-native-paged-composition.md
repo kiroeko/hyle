@@ -185,7 +185,7 @@ contracts，fourjobs、重型串行，等原Vulkan P1真正终态后执行；原
 
 ## NJ-Q01 真实 ready Q 只读资源接缝
 
-原三owner仍AUDITED；compute_batch新接缝SCOPED，baseline `8cf6be8d3`，原native五owner
+原三owner仍AUDITED；compute_batch新接缝的SCOPED登记如下，baseline `8cf6be8d3`，原native五owner
 finite terminal与candidate520不撤销。首次actual Apple public联合consumer配置6.162s/
 编译6.390s PASS，数学2.469s FAIL：native batch Q resource differs。原19 SHA输入/原日志
 保留于本轮scratch固定stage；失败未启动page数学。Vulkan本新联合尚未编译/运行。
@@ -209,7 +209,7 @@ traits的原G01 direct/reference与Vulkan保持原exact resource校验，API/lay
 
 NJ-Q01有限审计完成，compute_batch进入AUDITED。KEEP原same-resource默认规则、原
 F2/permission/native controller和退役；BORROW原readonly importer/native binding；FIX
-仅把controller已有三处query-resource判断收为一个private函数：有明确traits资格方法
+仅把controller已有两处paged query-resource判断收为一个private函数：有明确traits资格方法
 时调用它，否则仍exact ref。SELF的Apple hybrid traits只认可原Metal资源authority，
 并沿后续原binding实际dynamic type/handle/bounds检查，不能只凭domain或raw pointer
 直接交给native。Vulkan不定义此traits，仍exact original ref。不新增字段、public API、
@@ -218,3 +218,22 @@ payload copy、mask/公式、controller/queue；显式冷Q wrapper费用沿本�
 predeclared FAIL原19输入与第一次source/actualmath日志不覆盖，重跑仅此修正、同树/
 fourjobs/两真实joint和原ordinary/direct-reference消费者。通过source不代签宿主风险/
 SDK/负空间或candidate。该有界接缝属于G02原readyQ FIX，不扩成G11或重新调研库完整性。
+
+
+两actual Air public联合路线SOURCE阶段最终PASS，见
+[阶段证据](../../../../evidence/correctness/inference-g02-native-page-joint-source-stage/README.md)：
+Apple12组×12episodes144，Vulkan6×12为72，真实CPU ABS/Cast→原页attention→CPU
+Cast/Neg、三D/dtype/causal、同形状topology演化/两slots/old result/精确页/32byte费用
+independent double全通过。两route原ordinary/reference/native风险负空间全部PASS。
+全部20 canonical SHA、compiled inputs、首readonly Q math FAIL、中间错误类型compile
+FAIL、原Vulkan frozen transfer FAIL与一次未改bytes的误重复资格运行累计132.492s保留。
+
+Vulkan修正只在outer idle/old result/actual prefix gate后为冷替换page Program的新输出
+创建原transfer，再调用原retain/seal并保backing检查；普通fragment不变，不删除原
+transfer冻结合同。全部冷输出桥完成前page prepared保持false；部分准备失败不许submit。
+这一显式cold桥更新/staging owner费用计入本G02 P0，不签G06低成本增量规划。
+
+四owner仍AUDITED可变草稿。联合专属foreign/layout/readers/empty、guard/预算/逐OOM、
+CPU/native prefix错误/unknown/cancel/abandon、三交付/逐头/宿主san及Windows定向链接
+均未完成；不能由原negative consumer或这些216正常episodes代签candidate/CLOSED。
+不重跑已收口G01 P1，不追加G11或无界research；下一步按固定NJ04–06风险矩阵验证。

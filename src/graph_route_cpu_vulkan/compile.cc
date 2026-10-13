@@ -1,5 +1,7 @@
 #include "plan.h"
 #include "../graph/native_analysis.h"
+#include "../graph_batch/native_paged_nodes.h"
+#include "hyle/compute/detail/vulkan_batch_access.h"
 
 #include <algorithm>
 #include <array>
@@ -147,6 +149,9 @@ Result<std::shared_ptr<const Plan>> compile_plan(const Graph &graph, Environment
     cpu_nodes.resize(graph.node_count());
     for (std::size_t i = 0; i < targets.size(); ++i) cpu_nodes[i] = targets[i] == kCpuTarget;
     HYLE_ASSIGN_OR_RETURN(auto analysis, graph::detail::analyze_native_pure(graph, allocator, cpu_nodes));
+    HYLE_RETURN_IF_ERROR(batch::detail::audit_native_paged_nodes(graph,options.paged_nodes,
+        analysis.needed,targets,kVulkanTarget));
+    for(const auto& binding:options.paged_nodes)analysis.boundary[binding.node.ordinal()]=1;
     HYLE_RETURN_IF_ERROR(graph::detail::collect_effect_bindings(
         graph, options.effect_bindings, options.constants, allocator, plan->effect_bindings));
     for (std::size_t i = 0; i < graph.output_count(); ++i) {
@@ -188,6 +193,24 @@ Result<std::shared_ptr<const Plan>> compile_plan(const Graph &graph, Environment
       auto end = begin + 1;
       while (!analysis.boundary[begin] && end < graph.node_count() &&
              !analysis.boundary[end] && (!needed[end] || targets[end] == target)) ++end;
+      const auto page_binding=std::find_if(options.paged_nodes.begin(),options.paged_nodes.end(),
+          [&](const auto& b){return b.node.ordinal()==begin;});
+      if(page_binding!=options.paged_nodes.end()){
+        detail::Fragment fragment(allocator);fragment.target=kVulkanTarget;
+        for(std::size_t port=0;port<3;++port){
+          HYLE_ASSIGN_OR_RETURN(auto input,graph.node_input(page_binding->node,port));
+          fragment.inputs.push_back(input.ordinal());
+          if(input.kind()==ValueKind::kConstant)HYLE_RETURN_IF_ERROR(copy_constant(*plan,plan->values[input.ordinal()]));
+        }
+        HYLE_ASSIGN_OR_RETURN(auto output,graph.result(page_binding->node));
+        fragment.outputs.push_back(output.ordinal());plan->values[output.ordinal()].fragment_output=true;
+        if(plan->budget){HYLE_ASSIGN_OR_RETURN(fragment.private_storage,plan->budget.reserve_unattributed(std::nullopt));}
+        HYLE_ASSIGN_OR_RETURN(auto native,compute::vulkan::detail::PagedBatchAccess::prepare_program(
+            *environment.vulkan,page_binding->program,page_binding->layout,plan->workload));
+        plan->paged.push_back({plan->fragments.size(),*page_binding,std::move(native)});
+        if(report!=nullptr)report->fragments.push_back({.target=kVulkanTarget,.node_count=1});
+        plan->fragments.push_back(std::move(fragment));begin=end;continue;
+      }
       HYLE_ASSIGN_OR_RETURN(auto builder, GraphBuilder::create({allocator}));
       Vector<ValueId> mapped{mem::StdAllocator<ValueId>(allocator)};
       mapped.resize(graph.value_count());

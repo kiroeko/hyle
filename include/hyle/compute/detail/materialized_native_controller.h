@@ -121,13 +121,22 @@ template<class T,class Policy=MaterializedMetadataPolicy>struct MaterializedNati
     const auto status=transfer();if(!status.ok()){failed=true;return status;}
     for(std::size_t i=0;i<metadata_count;++i)reads[3+i]=mirror_ready[prepared_bank][i];version=std::move(next);prepared=true;return Status::Ok();
   }
+  // Native producers may export a permanently readonly resource owner.
+  // Only an explicit route trait can qualify it; all original consumers keep
+  // exact identity and still bind through their original native adapter.
+  Status query_resource(mem::ConstBufferView storage)const noexcept{
+    if constexpr(requires{T::validate_query_resource(*device,storage);})
+      return T::validate_query_resource(*device,storage);
+    else return storage.resource()==device->ref()?Status::Ok():
+        Status::InvalidArgument("native batch Q resource differs");
+  }
   Status bind(ReadLease query,PagedArenaRead k,PagedArenaRead v)noexcept{
     HYLE_RETURN_IF_ERROR(open());if(!prepared || bound)return Status::FailedPrecondition("native batch needs an unbound prepared episode");
     if constexpr(Policy::prepare_native){
       if(version.layout().facts().query_rows==0 && version.layout().facts().page_refs==0){
         if(k.valid() || v.valid())return Status::InvalidArgument("empty native page episode needs no KV frames");
         const auto description=recipe.descriptions()[0];HYLE_ASSIGN_OR_RETURN(auto qt,query.tensor(description));
-        if(qt.storage().resource()!=device->ref())return Status::InvalidArgument("native batch Q resource differs");
+        HYLE_RETURN_IF_ERROR(query_resource(qt.storage()));
         HYLE_ASSIGN_OR_RETURN(auto q,T::binding(*device,query,description,import));
         const std::array inputs{std::move(q)};const auto status=native.bind(inputs);
         if(!status.ok()){failed=true;return status;}
@@ -135,7 +144,7 @@ template<class T,class Policy=MaterializedMetadataPolicy>struct MaterializedNati
       }
     }
     if(recipe.schema().capacity().storage!=BatchStorage::kPaged || k.layout()!=version.layout() || v.layout()!=version.layout())return Status::InvalidArgument("native page frames differ from prepared generation");
-    const auto descriptions=recipe.descriptions();HYLE_ASSIGN_OR_RETURN(auto qt,query.tensor(descriptions[0]));if(qt.storage().resource()!=device->ref())return Status::InvalidArgument("native batch Q resource differs");
+    const auto descriptions=recipe.descriptions();HYLE_ASSIGN_OR_RETURN(auto qt,query.tensor(descriptions[0]));HYLE_RETURN_IF_ERROR(query_resource(qt.storage()));
     HYLE_ASSIGN_OR_RETURN(auto q,T::binding(*device,query,descriptions[0],import));HYLE_ASSIGN_OR_RETURN(auto kn,T::paged_binding(*device,k,import));HYLE_ASSIGN_OR_RETURN(auto vn,T::paged_binding(*device,v,import));
     std::array<std::optional<typename T::View>,input_count> views;
     views[0]=std::move(q);views[1]=std::move(kn);views[2]=std::move(vn);

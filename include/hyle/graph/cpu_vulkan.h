@@ -3,6 +3,7 @@
 #include "hyle/compute/vulkan_weights.h"
 #include "hyle/compute/resource_leases.h"
 #include "hyle/graph/vulkan.h"
+#include "hyle/graph/batch.h"
 #include "hyle/graph/executable.h"
 #include "hyle/visibility.h"
 
@@ -48,6 +49,9 @@ struct CompileOptions final {
   // Fixed borrowed footprints for effects placed explicitly on the CPU.
   // GPU effects require an actual qualified native carrier and are rejected.
   std::span<const EffectResourceBinding> effect_bindings{};
+  // Cold owned page recipes/layouts for the corresponding native-only nodes.
+  // The span is borrowed only through compile; ordinary graphs keep it empty.
+  std::span<const batch::NativePagedNodeBinding> paged_nodes{};
 };
 
 struct FragmentReport final {
@@ -70,6 +74,8 @@ struct ReplayReport final {
   std::size_t native_completion_wait_count = 0;
   std::size_t weight_preparation_wait_count = 0;
   std::size_t independent_upload_count = 0, compute_queue_upload_count = 0;
+  std::size_t paged_fragments = 0, paged_metadata_uploaded_bytes = 0;
+  std::size_t paged_metadata_backing_bytes = 0, paged_metadata_host_waits = 0;
 };
 struct ResourceReport final {
   // Requested managed bytes in the same scope, including other invocations,
@@ -172,10 +178,17 @@ public:
   // retain the lease through Results/source aliases. Other borrowed bindings
   // keep their original lifetime contract. Bind/replay control is serialized.
   HYLE_GRAPH_ROUTE_CPU_VULKAN_API Status bind(ValueId, compute::TensorDesc, compute::ReadLease) noexcept;
+  // Only exact page inputs of qualified native page fragments. All actual
+  // readers use the same owned layout; no ordinary capacity permission.
+  HYLE_GRAPH_ROUTE_CPU_VULKAN_API Status bind(ValueId, compute::PagedArenaRead) noexcept;
   HYLE_GRAPH_ROUTE_CPU_VULKAN_API Status bind(ValueId, const compute::vulkan::Tensor &) noexcept;
   HYLE_GRAPH_ROUTE_CPU_VULKAN_API Status
   bind(ValueId, const compute::vulkan::WeightBatch &, std::uint64_t id) noexcept;
   HYLE_GRAPH_ROUTE_CPU_VULKAN_API Status reset() noexcept;
+  // Complete live page-node set. Active packed output shape stays fixed;
+  // other topology changes are explicit cold native/table preparation.
+  // Call before binding this episode; old work/results prevent reuse.
+  HYLE_GRAPH_ROUTE_CPU_VULKAN_API Status prepare_batch(std::span<const batch::NodeLayout>) noexcept;
   HYLE_GRAPH_ROUTE_CPU_VULKAN_API Status prepare_replay(ReplayOptions options = {}) noexcept;
   HYLE_GRAPH_ROUTE_CPU_VULKAN_API Result<ReplayReport> replay_report() const noexcept;
   HYLE_GRAPH_ROUTE_CPU_VULKAN_API Result<ResourceReport> resource_report() const noexcept;
