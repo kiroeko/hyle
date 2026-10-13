@@ -1,0 +1,49 @@
+{
+  "product_candidate": "d91a523df9bce21eb81c13d9bf2a8f3f7d3ea80f",
+  "scope": "CPU adapter v2 three cases and placement/control compile/oracle only; not qualified P1",
+  "source_inputs": {
+    "bench\\inference_resident_sdpa\\cpu-CMakeLists.txt": "597e9ee0eb958380bcbe32cfdc935abcb095a08ed5b9474f83d67fbb30d02b09",
+    "bench\\inference_resident_sdpa\\cpu_bench.cc": "d02c49dbde4a53177b664cb45b468c9313f6b042dc1b11afb2f5949eb5772f27",
+    "bench\\inference_resident_sdpa\\cpu_placement.cc": "2c2f6bd527014df6a0b87a11ba8b8ea060bd4066d341a624d61110adfb2513b6",
+    "bench\\inference_resident_sdpa\\cpu_reference.cc": "dedfef272cc48d8b5039a6d7bbbafedf94a032741a70e52b38cca8e567d1a177",
+    "bench\\inference_resident_sdpa\\cpu_reference.h": "99d65ee86768eb6ecee1eca90284e98b6fb8a8389f4244434f6d953af60e5f18",
+    "bench\\inference_resident_sdpa\\cpu_p1\\CMakeLists.txt": "51fd4d4cdb0615960bac50d359c8c04cf70c7c2bdc6aef155a71f909eea0d5a1",
+    "bench\\inference_resident_sdpa\\cpu_p1\\consumer-provenance.json": "2efa263de3757d81299434600b1501a9ab48c995e8bc0ea72ff13f2f79307772",
+    "bench\\inference_resident_sdpa\\cpu_p1\\contract.json": "9a71effca2a45ea080d0fd45e35e093a3b262a07528a04e058058437c533ab54",
+    "bench\\inference_resident_sdpa\\cpu_p1\\validate_aa.py": "7163dd7b611b4945c5d6042255009ff9f0676da4d6533c0db4c2a2282b2afec1"
+  },
+  "stages": [
+    {
+      "stage": "build",
+      "command": [
+        "cmake",
+        "--build",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev",
+        "--target",
+        "g01_cpu_resident_bench",
+        "g01_cpu_resident_bench_placement",
+        "g01_cpu_perf_control",
+        "--parallel",
+        "2"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 160.38999999999942,
+      "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g01\\cpu-adapter-v2-build-1.log"
+    },
+    {
+      "stage": "oracle",
+      "command": [
+        "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\g01_cpu_resident_bench.exe"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 3.422000000005937,
+      "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g01\\cpu-adapter-v2-oracle-1.log"
+    }
+  ],
+  "adapter_commit": "901d926f4f9b14037d4586d0f3f170a199746516",
+  "original_peer_pin": "ffa4e8b80930029a35991f94e7c8a93cd67730ab",
+  "qualification": "PRECHECK_ONLY",
+  "formal_aa": "NOT_RUN",
+  "formal_p1": "NOT_RUN",
+  "raw_zip_sha256": "9b47bd9c65712901092f145fc006acc8873a245b24b623da739136b3c98fa11b"
+}
