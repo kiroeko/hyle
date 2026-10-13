@@ -22,3 +22,13 @@ CPU未选择过滤集，未改其它factor源码/API/组件依赖。selector对�
 在组件图实际变化与逐头/真实source/static/shared消费上给出有限归属。
 本轮CPU工厂实际先复现shared link FAIL，再验证公开facade链接PASS；未运行的其它
 路线不标PASS。该metadata/tool归属待裁决，与真实CPU模块施工/验收证据分开保存。
+
+Vulkan RF cold admission补充反例：baseline15dff0644已提交route CANDIDATE→AUDITED，
+ddbf598b7仅在managed段尾普通分支增加!View，再以8ec986c38加source-only外部alias
+负空间test。selector当前owner确为AUDITED、路径归属明确，仍报`net product change
+could not be attributed to an introducing commit`；原计划
+`.scratch/validation/g01-vulkan-rf-cold-admission-plan.json`保BLOCKED。Git父子记录和
+当前registry明确证明实现前授权，没有其它产品owner改动；工具轮应定位净diff到新增/
+替换行的introducing commit边界。模块不改公共checker、不重开无改动owner；本卡仅
+保存工具事实，原RF精确source/SDK/宿主风险/真实直接消费者门仍按活动卡执行并保
+实际结果，未把工具BLOCKED改名PASS。

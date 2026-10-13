@@ -77,3 +77,6 @@ oracle/5%/16paired rounds/min1/4ms/n15/31/A/A/controls全部不变。只因为�
 新增source-only冷负空间反证：独立第二input的dense reshape位于两Copy region之间，
 必须仍是第二input根的原alias与两独立region，不被前一managed段吞成新增producer。
 它只验证本RF-02边界，待同formal任务終态后串行执行，不扩全局算子/性能形状。
+普通selector已选route及原Graph/native hybrid直接消费者，但净diff引入commit归因
+失败，虽当前owner为AUDITED且父提交15dff已先登记；按独立[工具记录](../build/validation-selector-shared-bench-paths.md)
+保存原BLOCKED plan，不修改公共checker。实际门按本卡精确执行；不会扩大成全库重开。
