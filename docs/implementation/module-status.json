@@ -682,14 +682,9 @@
     },
     {
       "module": "compute_batch",
-      "state": "CLOSED",
-      "record": "docs/implementation/tasks/compute/foundation-f5-final-closure.md",
-      "summary": "F5 finite typed paged/ragged and state/Graph seams CLOSED; actual native/reference qualifications, host risks, SDK18 and component contract verified. IREE owner only TSAN configuration fix; original scopes and vendor/capture/performance limits retained.",
-      "candidate": "11c348e404df2c3fc404056ff3a9e885d4d990bc",
-      "performance": {
-        "tier": "P0",
-        "evidence": "evidence/correctness/foundation-f5-final/receipt.json"
-      }
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/compute/inference-g01-native-paged-read.md",
+      "summary": "G01 native page SCOPED: original common MaterializedNativeState metadata/frame/admission/retirement must be reused for two native page routes. Original F5 closure retained; exact typed shape and finite common FIX must be AUDITED before edits."
     },
     {
       "module": "graph_batch",

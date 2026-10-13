@@ -1,0 +1,62 @@
+{
+  "kind": "bounded source audit, not math/consumer PASS",
+  "mlx_revision": "1f8e74e3f12f31365464a6867c6579f0e9b29d85",
+  "ggml_revision": "456172ec733a135778adcd32d00e576a58232e45",
+  "source": "actual locked pristine dependency cache on Air; product HYLE patch manifest inspected separately",
+  "files": [
+    {
+      "path": "mlx-1f8e74e3f12f\\mlx\\backend\\metal\\scaled_dot_product_attention.cpp",
+      "sha256": "4ce84eddebf415a2bef4c6178278e741169369efd1a599dcdf79ed9c27874813"
+    },
+    {
+      "path": "mlx-1f8e74e3f12f\\mlx\\backend\\metal\\kernels\\sdpa_vector.h",
+      "sha256": "109396e69372e665db9d885c2b24214b68d863ab956fba1d23d862aaf9f08f0a"
+    },
+    {
+      "path": "mlx-1f8e74e3f12f\\mlx\\backend\\metal\\kernels\\steel\\attn\\kernels\\steel_attention.h",
+      "sha256": "d4a8c1d523620d1460eb43c73984e8481444ee99fba412fd6001b8e6713ec04f"
+    },
+    {
+      "path": "mlx-1f8e74e3f12f\\mlx\\backend\\metal\\kernels\\steel\\attn\\kernels\\steel_attention_nax.h",
+      "sha256": "96139f459bbfe91d56d2a2f252ae81420c29698eb2d791c2ffcad0c9ea94be15"
+    },
+    {
+      "path": "ggml-456172ec733a\\host-11180-11490.txt",
+      "sha256": "b7f82992e3534c259883ed0eb7ab6bc61dd2783e24137e40b44b04d2b4273351"
+    },
+    {
+      "path": "ggml-456172ec733a\\host-1433-1480.txt",
+      "sha256": "f49570f0e263da3079bf2db905cec5d538eb4c1104e4157379b6fdfa4047fc0f"
+    },
+    {
+      "path": "ggml-456172ec733a\\vulkan-shaders\\flash_attn.comp",
+      "sha256": "00736efbd8ad4f7b6f47400477ad21d950466833b23b39c8449ac75809557551"
+    },
+    {
+      "path": "ggml-456172ec733a\\vulkan-shaders\\flash_attn_base.glsl",
+      "sha256": "cc20a9a274ac7563e972091bed3df6ff1e97aa894724b43f2a61b59e59b35d8a"
+    },
+    {
+      "path": "ggml-456172ec733a\\vulkan-shaders\\flash_attn_cm1.comp",
+      "sha256": "15864dba23cc69e900e003aef1057cb92a89041fc96ec76c5ae2ffd4367264ea"
+    },
+    {
+      "path": "ggml-456172ec733a\\vulkan-shaders\\flash_attn_cm2.comp",
+      "sha256": "c1c81e244410fa3cfbbeffe641f41335b7fd8a6418b9c0034fddd843d9dbd467"
+    },
+    {
+      "path": "ggml-456172ec733a\\vulkan-shaders\\flash_attn_mask_opt.comp",
+      "sha256": "fc6313681db167b04c0c0bb4f629ceb6a392aa65e0e58a0497f3540e10d21355"
+    }
+  ],
+  "findings": [
+    "MLX full attention on NAX available hardware and D64/128/256 enters NAX. kU=16 but Ktile<T,2,1> load spans32 rows, so a simple base pointer remap cannot preserve arbitrary page16 order; split per16row fragment loading must retain original MMA/softmax/reduction. Vtile<T,1,2> has16row fragments.",
+    "MLX vector onepass and2pass also need mapped logical K/V rows; old Metal steel BlockLoaderT is a separate actual path. NAX dsplit loops also exist and cannot be silently left under a generic paged eligibility claim.",
+    "ggml host push constants already32*4=128 bytes at guaranteed Vulkan cap. Native page16 mapping must use shader/pipeline identity/constant fields without growing ordinary push constant layout; physical buffer bounds and logicalKV must stay distinct.",
+    "Pristine Vulkan has scalar/coopmat1/coopmat2 loads, including matrix loads spanning pages. However HYLE FULL_F32 tag explicitly selects scalar tuning and f32 shader, suppresses dequant/repack. Therefore the existing qualified HYLE F16 page domain must preserve this scalar math route; existing normal cooperative paths are not to be rewritten or claimed newly qualified.",
+    "Existing MaterializedNativeState is compute_batch owned in centralized component graph. It owns metadata banks, exact frame comparison, admission and native retirement for both typed native routes; new page metadata controller must reuse/refactor this owner rather than clone a second coordinator.",
+    "Current Vulkan carrier maps BF16 but existing public SDPA/full tag eligibility is F16/F32; native BF16 payload support alone is not whole HYLE BF16 attention support. Actual accepted dtype/output conversion domain must be frozen before AUDITED, not inferred from shader comments."
+  ],
+  "next": "Freeze native typed public batch/controller ownership, metadata shape, exact layout generation, failure/retirement and supported dtype before AUDITED; no product implementation under SCOPED.",
+  "raw_sha256": "8bd3970b4f956b8cfcc5e2c2e492e5f1a36cfc794efbe3b3cf262687d8d6a785"
+}

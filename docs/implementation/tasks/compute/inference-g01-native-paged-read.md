@@ -59,3 +59,25 @@ Windows只定向compile/link及已允许的有限风险。P1仅不可变API/算�
 
 下一步只完成本scope内原读点、资源/frame/version/submit形状与有限FIX审计，进入AUDITED
 后实施。整个G01/G02、G03–G10保完整目标，不由这张scope卡或一组source结果代签完成。
+
+
+## 原读点审计结果与共同owner
+
+[有限源审计](../../../../evidence/architecture/inference-native-paged-read-audit/README.md)已
+核实际原锁文件/host dispatch与HYLE现有patch：MLX在当前M4资格中的NAX路径用kU16，
+Ktile<T,2,1>一次加载32逻辑rows；任意page16不能仅替换这个32-row tile的base。必须处理
+每16-row原fragment的地址/边界，保原MMA/softmax/reduction；vector两路径、旧steel loader
+与NAX dsplit也不能由一个decoder路径的结果代签。
+
+Vulkan原push constant已经128bytes，普通layout不能扩张；原HYLE FullF32 tag明确走
+scalar tuning/f32 shader并禁止全KV dequant/repack。因此本轮先保原已资格数学身份，
+不为了pages改无关normal coopmat路径，也不把pristine coopmat存在冒充HYLE当前同数学
+资格。BF16原carrier/decoder存在，但现有SDPA/tag admission及output cast并不完整接受，
+其实际有限dtype与输出档位要在AUDITED明定，不能猜BF16全链已完成或偷偷drop goal。
+
+中央图把共用MaterializedNativeState头归compute_batch；其metadata banks/frame compare/
+page admission/actual retirement是两原native路线共用机制。为复用该controller的元数据/
+版本/原生退休承载，compute_batch以本卡进入SCOPED，原F5 candidate11c348e404df2c3fc404056ff3a9e885d4d990bc
+保留。只允许在AUDITED冻结后做必要共同承载，不扩大producer/政策/第二queue或仪器。
+新native公共batch入口/metadata形状/Context借用与资格负空间尚需冻结，当前五owner均
+SCOPED；不以完成source audit宣称AUDITED、CANDIDATE或数学PASS。
