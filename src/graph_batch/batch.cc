@@ -62,7 +62,10 @@ Status resources(void*opaque,const RegionCompileRequest&r,mem::AllocatorRef,
   if(!r.graph || r.nodes.size()!=1 || inputs.size()!=4 || outputs.size()!=1 || r.has_unknown_effects || !r.effect_accesses.empty())
     return Status::Unimplemented("batch region requires one pure four-port node");
   HYLE_RETURN_IF_ERROR(supports(*r.graph,r.nodes[0],*context.config));
-  const c::ResourceRequirement requirement{.required_properties=mem::MemoryProperty::kDeviceAccessible,.minimum_alignment=16,.exact_resource=context.config->options.resource};
+  // The fixed native domain can use coherent CPU storage as well as device
+  // storage. Its provider qualifies that exact resource when preparing the
+  // batch program; a GPU-only property here would reject valid CPU regions.
+  const c::ResourceRequirement requirement{.minimum_alignment=16,.exact_resource=context.config->options.resource};
   std::fill(inputs.begin(),inputs.end(),requirement);inputs[3].minimum_alignment=8;outputs[0]=requirement;
   *proposal={.runtime=runtime,.workspace_resource=requirement};return Status::Ok();
 }
