@@ -157,7 +157,7 @@ source/static/shared的双region消费已验证；batch 性能及其它路线多
 普通 CPU `BatchProgram` 新增的分页路径沿原 ggml flash 读取物理 K/V 页，使用
 `BatchStorage::kPaged`、`PagedArena` 和同一个 `BatchLayoutVersion`。当前验证域是
 F16/BF16、GQA8/2、D64/128/256、page_size16；页表可重排、跨请求共享物理页，尾长
-只表示最后一页的有效行数。此路径仍为候选，SDK与局部性能裁决见
+只表示最后一页的有效行数。source/static/shared与宿主风险已通过，此路径仍为候选，局部性能裁决见
 [分页活动卡](../implementation/tasks/compute/inference-g01-cpu-paged-resident.md)。
 
 K/V arena 按容量持有连续物理 NHD 页；发布每页 writer 后，用该 layout 所引用的

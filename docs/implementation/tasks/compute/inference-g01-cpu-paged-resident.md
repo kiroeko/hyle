@@ -121,3 +121,21 @@ ASan增量第4次run仍FAIL的原因已定位为验证副本mtime：canonical修
 MacBook Air M4/arm64/AppleClang21/macOS27.0.1在CPU+Apple shared源树实际mixed456
 原CPU数学14PASS（5.299s配置、13.088s构建、25.505s run），不跑GPU/不代签G02。
 新两槽test的三san/SDK/Air最终串行补验继续，四jobs；产品candidate1e9不变。
+
+最终两槽扩展的Linux三san各14tests PASS；Windows relocated static SDK的同一
+非零double分页/64复用/64演化/双topology槽与原Direct/Graph ragged/resident三consumer
+PASS。首shared SDK linker FAIL为私有runner只build底层hyle_compute/hyle_graph因子，
+没有build公开hyle::compute/graph facade全部CPU roots，install沿旧tree残留static库；
+SDK1保失败prefix/导出文件/链接raw，不归为新产品缺陷。私有producer改为只build链接
+公开facade的普通consumer，补真实CPU闭包；复用同tree，SDK2新prefix防覆盖FAIL。
+没有public构建系统/registry修改，没有CUDA/Apple全局构建。原52.407s与后续累计保留。
+
+最终CP-03 correctness/risk/delivery：最终两槽test三san均各14PASS，Windows
+relocated static/shared均三公开consumer PASS。shared2真实facade闭包构建134.344s，
+pagedrun40.593s；Mac最终mixed456 CPU14tests25.157s总（1.145s增量/23.320s run），
+实际ops SHA d7a2b6d1f4dfe9f57cce2f7e41ed2e46247168039715f2081a67254fb4a7d7c4，
+含页地址helper及marker，源/编译/两原锁身份相互核验。见
+[风险](../../../../evidence/correctness/inference-g01-cpu-paged-risk/README.md)与
+[三交付及mixed core](../../../../evidence/correctness/inference-g01-cpu-paged-delivery/README.md)。
+所有普通门终态、无活动重型job。CPU准确页仍CANDIDATE：定向P1未运行，不能
+继承原ragged P1或签整个G01；原G01 GPU页/G02联合/G03等继续原十项goal。

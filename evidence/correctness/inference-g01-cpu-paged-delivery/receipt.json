@@ -1,0 +1,354 @@
+{
+  "candidate": "1e9cdfd45307ea4a15b92374377ad2b268203193",
+  "runtime_product": "3cf78c88b5e306bd4e3a8e6d59d14b716a822578",
+  "source_windows": "PASS final five tests incl independent two-topology slots; see source/risk receipts",
+  "installed": [
+    {
+      "delivery": "static",
+      "verdict": "PASS paged + ordinary Direct/Graph ragged + resident",
+      "relocated_prefix": "C:\\h7\\g01-paged-static-sdk\\relocated",
+      "stages": [
+        {
+          "stage": "configure",
+          "command": [
+            "cmake",
+            "-S",
+            "C:\\public\\project-hyle\\hyle",
+            "-B",
+            "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev",
+            "-UCMAKE_PROJECT_INCLUDE",
+            "-UCMAKE_PROJECT_TOP_LEVEL_INCLUDES",
+            "-DHYLE_COMPONENTS=compute;graph",
+            "-DHYLE_COMPUTE_ROUTES=cpu",
+            "-DHYLE_BUILD_TESTS=OFF",
+            "-DHYLE_BUILD_BENCH=OFF",
+            "-DHYLE_INSTALL=ON",
+            "-DHYLE_STATIC=ON"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 94.35899999999674,
+          "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g01\\cpu-paged-win-static-sdk-configure-1.log"
+        },
+        {
+          "stage": "producer-build",
+          "command": [
+            "cmake",
+            "--build",
+            "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev",
+            "--target",
+            "hyle_compute",
+            "hyle_graph",
+            "--parallel",
+            "4"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 0.125,
+          "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g01\\cpu-paged-win-static-sdk-producer-build-1.log"
+        },
+        {
+          "stage": "install",
+          "command": [
+            "cmake",
+            "--install",
+            "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev",
+            "--prefix",
+            "C:\\h7\\g01-paged-static-sdk\\staging"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 2.0940000000118744,
+          "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g01\\cpu-paged-win-static-sdk-install-1.log"
+        },
+        {
+          "stage": "consumer-configure",
+          "command": [
+            "cmake",
+            "-S",
+            "C:\\h7\\g01-paged-static-sdk\\consumer-source",
+            "-B",
+            "C:\\h7\\g01-paged-static-sdk\\consumer-build",
+            "-G",
+            "Ninja",
+            "-DCMAKE_BUILD_TYPE=Release",
+            "-DCMAKE_PREFIX_PATH=C:\\h7\\g01-paged-static-sdk\\relocated"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 13.312000000005355,
+          "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g01\\cpu-paged-win-static-sdk-consumer-configure-1.log"
+        },
+        {
+          "stage": "consumer-build",
+          "command": [
+            "cmake",
+            "--build",
+            "C:\\h7\\g01-paged-static-sdk\\consumer-build",
+            "--target",
+            "paged",
+            "ragged",
+            "resident",
+            "--parallel",
+            "4"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 5.687999999994645,
+          "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g01\\cpu-paged-win-static-sdk-consumer-build-1.log"
+        },
+        {
+          "stage": "run-paged",
+          "command": [
+            "C:\\h7\\g01-paged-static-sdk\\consumer-build\\paged.exe"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 40.562000000005355,
+          "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g01\\cpu-paged-win-static-sdk-run-paged-1.log"
+        },
+        {
+          "stage": "run-ragged",
+          "command": [
+            "C:\\h7\\g01-paged-static-sdk\\consumer-build\\ragged.exe"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 0.235000000015134,
+          "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g01\\cpu-paged-win-static-sdk-run-ragged-1.log"
+        },
+        {
+          "stage": "run-resident",
+          "command": [
+            "C:\\h7\\g01-paged-static-sdk\\consumer-build\\resident.exe"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 0.23399999999674037,
+          "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g01\\cpu-paged-win-static-sdk-run-resident-1.log"
+        }
+      ]
+    },
+    {
+      "delivery": "shared2",
+      "verdict": "PASS paged + ordinary Direct/Graph ragged + resident",
+      "relocated_prefix": "C:\\h7\\g01-paged-shared2-sdk\\relocated",
+      "stages": [
+        {
+          "stage": "configure",
+          "command": [
+            "cmake",
+            "-S",
+            "C:\\public\\project-hyle\\hyle",
+            "-B",
+            "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev",
+            "-DCMAKE_PROJECT_INCLUDE=C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g01\\cpu-paged-sdk-producer.cmake",
+            "-UCMAKE_PROJECT_TOP_LEVEL_INCLUDES",
+            "-DHYLE_COMPONENTS=compute;graph",
+            "-DHYLE_COMPUTE_ROUTES=cpu",
+            "-DHYLE_BUILD_TESTS=OFF",
+            "-DHYLE_BUILD_BENCH=OFF",
+            "-DHYLE_INSTALL=ON",
+            "-DHYLE_STATIC=OFF"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 19.29700000002049,
+          "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g01\\cpu-paged-win-shared2-sdk-configure-1.log"
+        },
+        {
+          "stage": "producer-build",
+          "command": [
+            "cmake",
+            "--build",
+            "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev",
+            "--target",
+            "g01_cpu_paged_sdk_producer",
+            "--parallel",
+            "4"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 134.34399999998277,
+          "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g01\\cpu-paged-win-shared2-sdk-producer-build-1.log"
+        },
+        {
+          "stage": "install",
+          "command": [
+            "cmake",
+            "--install",
+            "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev",
+            "--prefix",
+            "C:\\h7\\g01-paged-shared2-sdk\\staging"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 0.8589999999967404,
+          "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g01\\cpu-paged-win-shared2-sdk-install-1.log"
+        },
+        {
+          "stage": "consumer-configure",
+          "command": [
+            "cmake",
+            "-S",
+            "C:\\h7\\g01-paged-shared2-sdk\\consumer-source",
+            "-B",
+            "C:\\h7\\g01-paged-shared2-sdk\\consumer-build",
+            "-G",
+            "Ninja",
+            "-DCMAKE_BUILD_TYPE=Release",
+            "-DCMAKE_PREFIX_PATH=C:\\h7\\g01-paged-shared2-sdk\\relocated"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 12.719000000011874,
+          "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g01\\cpu-paged-win-shared2-sdk-consumer-configure-1.log"
+        },
+        {
+          "stage": "consumer-build",
+          "command": [
+            "cmake",
+            "--build",
+            "C:\\h7\\g01-paged-shared2-sdk\\consumer-build",
+            "--target",
+            "paged",
+            "ragged",
+            "resident",
+            "--parallel",
+            "4"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 5.64100000000326,
+          "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g01\\cpu-paged-win-shared2-sdk-consumer-build-1.log"
+        },
+        {
+          "stage": "run-paged",
+          "command": [
+            "C:\\h7\\g01-paged-shared2-sdk\\consumer-build\\paged.exe"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 40.59299999999348,
+          "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g01\\cpu-paged-win-shared2-sdk-run-paged-1.log"
+        },
+        {
+          "stage": "run-ragged",
+          "command": [
+            "C:\\h7\\g01-paged-shared2-sdk\\consumer-build\\ragged.exe"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 0.23499999998603016,
+          "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g01\\cpu-paged-win-shared2-sdk-run-ragged-1.log"
+        },
+        {
+          "stage": "run-resident",
+          "command": [
+            "C:\\h7\\g01-paged-shared2-sdk\\consumer-build\\resident.exe"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 0.21900000001187436,
+          "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g01\\cpu-paged-win-shared2-sdk-run-resident-1.log"
+        }
+      ]
+    }
+  ],
+  "cpu_arm64_mixed_core": {
+    "candidate": "1e9cdfd45307ea4a15b92374377ad2b268203193",
+    "scope": "actual CPU arm64 in mixed CPU+Apple core; no GPU run/hybrid paging claim",
+    "identity": {
+      "model": "Mac16,12",
+      "arch": "arm64",
+      "os": "ProductName:\t\tmacOS\nProductVersion:\t\t27.0.1\nBuildVersion:\t\t26A434",
+      "clang": "Apple clang version 21.0.0 (clang-2100.3.34.2)\nTarget: arm64-apple-darwin27.0.0\nThread model: posix\nInstalledDir: /Library/Developer/CommandLineTools/usr/bin",
+      "cpu": "10",
+      "memory": "17179869184"
+    },
+    "stages": [
+      {
+        "stage": "configure",
+        "command": [
+          "/opt/homebrew/bin/cmake",
+          "-S",
+          "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-parent",
+          "-B",
+          "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-build",
+          "-DCMAKE_PROJECT_INCLUDE=/Users/kiro/hyle-scratch/compute-unified/g01-cpu-paged-portable/project.cmake",
+          "-UCMAKE_PROJECT_TOP_LEVEL_INCLUDES"
+        ],
+        "exit_code": 1,
+        "elapsed_seconds": 5.705062583,
+        "log": "/Users/kiro/hyle-scratch/compute-unified/g01-cpu-paged-portable/configure-1.log"
+      },
+      {
+        "stage": "configure",
+        "command": [
+          "/opt/homebrew/bin/cmake",
+          "-S",
+          "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-parent",
+          "-B",
+          "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-build",
+          "-DCMAKE_PROJECT_INCLUDE=/Users/kiro/hyle-scratch/compute-unified/g01-cpu-paged-portable/project.cmake",
+          "-UCMAKE_PROJECT_TOP_LEVEL_INCLUDES"
+        ],
+        "exit_code": 0,
+        "elapsed_seconds": 5.298584792,
+        "log": "/Users/kiro/hyle-scratch/compute-unified/g01-cpu-paged-portable/configure-2.log"
+      },
+      {
+        "stage": "build",
+        "command": [
+          "/opt/homebrew/bin/cmake",
+          "--build",
+          "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-build",
+          "--target",
+          "g01_cpu_paged_tests",
+          "--parallel",
+          "4"
+        ],
+        "exit_code": 0,
+        "elapsed_seconds": 13.088363249999999,
+        "log": "/Users/kiro/hyle-scratch/compute-unified/g01-cpu-paged-portable/build-1.log"
+      },
+      {
+        "stage": "run",
+        "command": [
+          "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-build/hyle/g01_cpu_paged_tests"
+        ],
+        "exit_code": 0,
+        "elapsed_seconds": 25.505440500000002,
+        "log": "/Users/kiro/hyle-scratch/compute-unified/g01-cpu-paged-portable/run-1.log"
+      },
+      {
+        "stage": "build",
+        "command": [
+          "/opt/homebrew/bin/cmake",
+          "--build",
+          "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-build",
+          "--target",
+          "g01_cpu_paged_tests",
+          "--parallel",
+          "4"
+        ],
+        "exit_code": 0,
+        "elapsed_seconds": 1.1450254169999998,
+        "log": "/Users/kiro/hyle-scratch/compute-unified/g01-cpu-paged-portable/build-2.log"
+      },
+      {
+        "stage": "run",
+        "command": [
+          "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-build/hyle/g01_cpu_paged_tests"
+        ],
+        "exit_code": 0,
+        "elapsed_seconds": 23.320136625,
+        "log": "/Users/kiro/hyle-scratch/compute-unified/g01-cpu-paged-portable/run-2.log"
+      }
+    ]
+  },
+  "actual_air_tu_hashes": [
+    {
+      "file": "/Users/kiro/hyle-scratch/compute-unified/source-c8874688/src/compute_provider_ggml/native_batch.cc",
+      "sha256": "a62a61ca8f4c88963b9dfa3174f209242b189a67ebb4dce296e1f3a7c80efdf2"
+    },
+    {
+      "file": "/Users/kiro/hyle-scratch/compute-unified/source-c8874688/src/compute_provider_ggml/ggml_cpu_provider.cc",
+      "sha256": "85cd82183ac07e57db2f1ae99101230c5854d5d2f3c02925abb69a3dc2017e8b"
+    },
+    {
+      "file": "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-build/hyle/src/compute_ggml_runtime/source-770ecded001e971e/src/ggml-cpu/ops.cpp",
+      "sha256": "d7a2b6d1f4dfe9f57cce2f7e41ed2e46247168039715f2081a67254fb4a7d7c4",
+      "has_native_page_address_helper": true,
+      "has_page_marker": true
+    }
+  ],
+  "failed_shared_sdk1": "Preserved partial producer: built underlying factors, omitted public-facade CPU roots; old static libs installed into shared export. No successful execution claimed. SDK2 builds ordinary public consumer closure, new prefix, same original tree and budget ledger.",
+  "P1": "UNPROVEN not run; no inheritance from closed ragged perf",
+  "limitations": "No native GPU paging or hybrid G02 claim; private CPU pool UNKNOWN; no capture/producer/decode growth qualification.",
+  "raw_sha256": "a80ce1b51142ed158578993cb89ad6a72eab02004c7979e3cf3ea668496732da"
+}
