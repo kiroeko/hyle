@@ -230,3 +230,11 @@ NP03 MLX原读点、NP04 Vulkan原读点、NP05普通入口/consumer/guide实施
 生命周期的P1按预声明串行验证；不以reference F32不同数学、CPU fallback、部分source
 证据代签任何剩余门。先复用已有actual Air static/shared树，仅build真实native owner与
 direct消费者，搬迁SDK只链接公开hyle::compute；保持所有原FAIL/累计，整goal仍0/10。
+
+四份actual Air relocated Apple/Vulkan static/shared SDK均PASS，普通page/zero/cold OOM
+consumer只链hyle::compute、仅relocated includes，十二standalone header TU严格编译
+通过，见[SDK阶段](../../../../evidence/correctness/inference-g01-native-page-sdk-stage/README.md)。
+可选SIMD helpers未成为SDK假依赖，测试独立scalar bit carriers保math oracle。首Apple
+static unused-local Werror FAIL保，删除test dead local，不改520027a57产品候选。三交付
+有限公开消费已有证据；native宿主san与不可变同原native数学/生命周期P1仍未通过，
+不得由SDK结果签CLOSED或全goal。
