@@ -188,12 +188,23 @@ TEST(LeaseSubmission, ExactGroupColdAllocationFaultsLeaveNoMetadataOrWarmAllocat
     }
     EXPECT_EQ(fault.live, 0u) << fail;
   }
-  auto pool = c::LeasePool::create(hyle::mem::system_resource(), 256, {.max_blocks = 2}).value();
-  const std::array reads{pool.allocate(16).value().publish().value(),
-                         pool.allocate(16).value().publish().value()};
+  // The default 256-byte allocation alignment separates both tiny blocks.
+  auto pool_result = c::LeasePool::create(hyle::mem::system_resource(), 512, {.max_blocks = 2});
+  ASSERT_TRUE(pool_result) << pool_result.error().message();
+  auto pool = std::move(*pool_result);
+  std::array<c::ReadLease, 2> reads;
+  for (auto &read : reads) {
+    auto allocated = pool.allocate(16);
+    ASSERT_TRUE(allocated) << allocated.error().message();
+    auto published = allocated->publish();
+    ASSERT_TRUE(published) << published.error().message();
+    read = std::move(*published);
+  }
   hyle_f5_fault_fixture::Allocator cold;
-  auto submission = hyle::graph::detail::LeaseSubmission::create(2, 1,
-      {.allocator = cold.ref(), .max_page_reads = 2}).value();
+  auto created = hyle::graph::detail::LeaseSubmission::create(2, 1,
+      {.allocator = cold.ref(), .max_page_reads = 2});
+  ASSERT_TRUE(created) << created.error().message();
+  auto submission = std::move(*created);
   const auto cold_attempts = cold.attempts;
   cold.fail = cold_attempts;
   Parent parent;

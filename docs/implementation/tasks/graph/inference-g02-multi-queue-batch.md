@@ -146,3 +146,13 @@ TSan、source/static/shared detail header与现有hybrid直接consumer适用门�
 budget和native retirement复用；source/static/shared/逐头与真实consumer见新证据后裁决。
 调查/实现/验证各2h检查点，按用户常设授权有限延长并保原FAIL/累计。当前先AUDITED；
 未跑门UNPROVEN，不能CLOSED。后续发现更改权限或公开形状的新事实回本卡再裁决。
+
+
+MQ-LP-01实际产品5ce0bed8a，Windows八source tests PASS（19.360s配置、23.938s构建、
+0.031s运行），默认未选页组的原三测试仍PASS。冷逐分配点失败无live metadata，64次
+交替page group绑定/提交/清除无allocator调用；两unknown native prefixes必须都实际
+退休才释放全部guards，shared blocks沿原pool去重，未引用block可写、部分admission拒绝
+回滚、空group/替换/容量/invalid guard拒绝保旧binding均PASS。fixture原256-byte backing
+仅容一个默认256对齐tiny块，首run Bad expected access保留；补Result检查定位allocate
+后增至512、运行8PASS，产品算法不改、两FAIL/累计不覆盖。三san/SDK/原native consumer
+继续串行，尚未CLOSED；不把普通guards测试代签PagedArena layout/native数学资格。
