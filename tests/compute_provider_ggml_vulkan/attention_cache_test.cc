@@ -87,6 +87,44 @@ TEST(GgmlVulkanAttention,
 }
 
 TEST(GgmlVulkanAttention,
+     RecordedTwoFlashConcatReadsCurrentPayloadAcross64Steps) {
+  auto device=n::NativeDevice::create();ASSERT_TRUE(device)<<device.error().message();
+  auto active=device->activate();auto work=device->create_work();ASSERT_TRUE(work);
+  auto arena=n::MetadataArena::for_graph(32,64,hyle::mem::system_allocator());ASSERT_TRUE(arena);
+  auto *context=arena->get();
+  std::array<ggml_tensor*,6> inputs{};
+  std::array<ggml_tensor*,2> parts{};
+  for(unsigned request=0;request<2;++request){
+    const auto rows=request?17:1,keys=request?47:31;
+    auto *q=inputs[3*request]=ggml_new_tensor_4d(context,GGML_TYPE_F32,64,rows,8,1);
+    auto *k=inputs[3*request+1]=ggml_new_tensor_4d(context,GGML_TYPE_F32,64,keys,2,1);
+    auto *v=inputs[3*request+2]=ggml_new_tensor_4d(context,GGML_TYPE_F32,64,keys,2,1);
+    auto *attention=ggml_flash_attn_ext(context,q,k,v,nullptr,.125F,0.F,0.F);
+    ASSERT_TRUE(ggml_prec_set_acc(attention,GGML_PREC_F32));
+    attention->op_params[b::kFlashAttentionMathSlot]=b::kFlashAttentionFullF32;
+    parts[request]=ggml_reshape_2d(context,attention,64*8,rows);
+  }
+  auto imports=std::make_shared<std::array<std::shared_ptr<ggml_backend_buffer>,6>>();
+  for(unsigned port=0;port<inputs.size();++port){
+    ggml_set_input(inputs[port]);auto buffer=device->allocate_buffer(ggml_nbytes(inputs[port]));ASSERT_TRUE(buffer);
+    (*imports)[port]=std::shared_ptr<ggml_backend_buffer>(*buffer,[owner=*device](ggml_backend_buffer*p){auto active=owner.activate();ggml_backend_buffer_free(p);});
+    ASSERT_EQ(ggml_backend_tensor_alloc((*imports)[port].get(),inputs[port],ggml_backend_buffer_get_base((*imports)[port].get())),GGML_STATUS_SUCCESS);
+    const std::vector<float> zero(ggml_nelements(inputs[port]),0.F);ggml_backend_tensor_set(inputs[port],zero.data(),0,zero.size()*sizeof(float));
+  }
+  auto *output=ggml_concat(context,parts[0],parts[1],1);ggml_set_output(output);
+  auto *graph=ggml_new_graph_custom(context,64,false);ggml_build_forward_expand(graph,output);
+  auto native=n::NativeGraph::allocate(*device,std::move(*arena),graph,imports);ASSERT_TRUE(native)<<native.error().message();
+  for(unsigned step=0;step<64;++step){
+    for(unsigned request=0;request<2;++request){const std::vector<float> values(ggml_nelements(inputs[3*request+2]),float(step)*.015625F+float(request)*.25F);ggml_backend_tensor_set(inputs[3*request+2],values.data(),0,values.size()*sizeof(float));}
+    if(step==32)ASSERT_TRUE(work->invalidate_recording().ok());
+    auto submitted=work->submit(native->get(),native->lease());ASSERT_TRUE(submitted.status.ok())<<submitted.status.message();
+    ASSERT_TRUE(work->wait().status.ok());ASSERT_TRUE(work->recording_ready())<<"multi flash/Concat still managed on every replay";
+    std::vector<float> actual(18*512);ggml_backend_tensor_get(output,actual.data(),0,actual.size()*sizeof(float));
+    for(std::size_t i=0;i<actual.size();++i)EXPECT_NEAR(actual[i],float(step)*.015625F+(i<512?0.F:.25F),1.e-5F);
+  }
+}
+
+TEST(GgmlVulkanAttention,
      TaggedNativeDomainRejectsUnqualifiedDepthBeforeExecution) {
   auto device = n::NativeDevice::create();
   ASSERT_TRUE(device) << device.error().message();
