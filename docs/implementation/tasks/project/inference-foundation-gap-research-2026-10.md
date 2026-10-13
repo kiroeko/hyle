@@ -1,5 +1,9 @@
 # 推理引擎实际需求与 HYLE 基础机制缺口调研
 
+单机单GPU、CPU与一个GPU联合、CPU-only高性能目标的最新全旅程复核见
+[单机基础能力审计](inference-single-machine-foundation-audit-2026-10.md)。本页保原固定输入
+与当时裁决；A/F4/F5实施后的当前状态不由这些历史缺口句给出。
+
 > 阅读边界（2026-10-12）：本页现状表固定在原baseline00fdc40，不反向改写当时调查事实。
 > F1–F3随后已分别[收口F1](../compute/foundation-f1-resource-leases.md)、
 > [F2](../compute/foundation-f2-final-closure.md)、[F3](../compute/foundation-f3-final-closure.md)。

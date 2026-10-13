@@ -1,0 +1,55 @@
+{
+  "hyle_baseline": "67192441c70e8e07b1cae1b09d221114b738c9ca",
+  "hyle_registry_sha256": "0ad75788cef8469892d09cb902c8d2dcba5a0fd43d3bbe2da2adf2fd377095ca",
+  "peers": [
+    {
+      "name": "sglang",
+      "fixed_sha": "7224fce1b5e488c9916f20ec0556d696e595d512",
+      "checkout_head_unchanged": "234ccba7f625e12639e621044496bcc6197c3758",
+      "checkout_status_before": "",
+      "remote": "https://github.com/sgl-project/sglang.git",
+      "archive_sha256": "21559aac7538426c4d75262a25d041d8c24070785a4d8f550459f68c3398b0e0",
+      "paths": [
+        "python/sglang/srt",
+        "docs"
+      ],
+      "checkout_head_after": "234ccba7f625e12639e621044496bcc6197c3758",
+      "checkout_status_after": "",
+      "archive_sha256_verified": true
+    },
+    {
+      "name": "vllm",
+      "fixed_sha": "98f721116227f0f48690deb05c815c057bac0668",
+      "checkout_head_unchanged": "276fbcff2717bd934cfa37c8a2e4c391f3e7237b",
+      "checkout_status_before": "",
+      "remote": "https://github.com/vllm-project/vllm.git",
+      "archive_sha256": "984cc5cd0ddc5bc93c8f1055f7b2a19da128d372343896510952060bd2b71423",
+      "paths": [
+        "vllm",
+        "docs"
+      ],
+      "checkout_head_after": "276fbcff2717bd934cfa37c8a2e4c391f3e7237b",
+      "checkout_status_after": "",
+      "archive_sha256_verified": true
+    },
+    {
+      "name": "llama.cpp",
+      "fixed_sha": "cbe28bb3cb0758f0c566a9a3561766821aeb0748",
+      "checkout_head_unchanged": "23b0202a189c44a54625aadcb37a946dd1d6278d",
+      "checkout_status_before": "",
+      "remote": "https://github.com/ggml-org/llama.cpp.git",
+      "archive_sha256": "e71cd4a1645b151a45c46a9d4c0bf5de0fa2a94080ce31ca508a6c65ad1a3562",
+      "paths": [
+        "src",
+        "ggml/src",
+        "ggml/include",
+        "tools/server",
+        "examples",
+        "common"
+      ],
+      "checkout_head_after": "23b0202a189c44a54625aadcb37a946dd1d6278d",
+      "checkout_status_after": "",
+      "archive_sha256_verified": true
+    }
+  ]
+}

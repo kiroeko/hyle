@@ -1,0 +1,635 @@
+[
+  {
+    "repo": "hyle",
+    "path": "src/compute_batch/batch_materialize.cc",
+    "sha256": "6313f696f2041ce06cc31f0ceeb8506906689bf3c475368d69232de7a943e967",
+    "anchors": [
+      {
+        "line": 59,
+        "source_text": "  if(l>c.max_kv_rows)return std::unexpected(Status::InvalidArgument(\"materialized per-request KV capacity exceeds schema\"));"
+      }
+    ]
+  },
+  {
+    "repo": "hyle",
+    "path": "src/compute_provider_ggml/ggml_cpu_provider.cc",
+    "sha256": "e3add2fece2e8d6c66b8976d886622ba36ae5d4606598556c064a013a065b6f5",
+    "anchors": [
+      {
+        "line": 834,
+        "source_text": "        (type == GGML_TYPE_F16 && attention->causal)) {"
+      }
+    ]
+  },
+  {
+    "repo": "hyle",
+    "path": "src/compute_route_apple/apple_tensor.cc",
+    "sha256": "3807401bb9da202267d8a873fe3fe9ccc2e0de1b86cd658e8d8ab1cad6147e33",
+    "anchors": [
+      {
+        "line": 317,
+        "source_text": "  auto result = mx::fast::scaled_dot_product_attention("
+      }
+    ]
+  },
+  {
+    "repo": "hyle",
+    "path": "src/compute_provider_ggml_vulkan/region.cc",
+    "sha256": "e45af5a6708333a154a6339e6622361da267640150979a94bec581d17c097855",
+    "anchors": [
+      {
+        "line": 857,
+        "source_text": "                     node.operation.get_if<ScaledDotProductAttention>()) {"
+      },
+      {
+        "line": 911,
+        "source_text": "      } else if (const auto *topk = node.operation.get_if<TopK>()) {"
+      }
+    ]
+  },
+  {
+    "repo": "hyle",
+    "path": "include/hyle/graph/batch.h",
+    "sha256": "834c0e74920647b79dfa6e765c63f95ad9cf0d50f1aab06e42276e95f323705b",
+    "anchors": [
+      {
+        "line": 85,
+        "source_text": "  HYLE_GRAPH_BATCH_API static Result<Invocation> create(const Executable&,"
+      }
+    ]
+  },
+  {
+    "repo": "hyle",
+    "path": "src/graph_batch/batch.cc",
+    "sha256": "0cc4ef55f0a082fb800bdd3a5ab9de1d8786d117e082bce17d9d7773a9bfb54a",
+    "anchors": [
+      {
+        "line": 201,
+        "source_text": "Result<c::Completion> Invocation::submit()noexcept{if(!data_)return std::unexpected(Status::FailedPrecondition(\"Graph batch coordinator is empty\"));return data_->original.submit(*data_->queue);}"
+      }
+    ]
+  },
+  {
+    "repo": "hyle",
+    "path": "src/graph/leased_invocation.cc",
+    "sha256": "7c69275859c78bb99fbd76fa9e420493abab0d26939ddc5f74972da9e304bd7f",
+    "anchors": [
+      {
+        "line": 436,
+        "source_text": "  if (executable.required_queue_count() != 1)"
+      }
+    ]
+  },
+  {
+    "repo": "hyle",
+    "path": "include/hyle/graph/cpu_apple.h",
+    "sha256": "f5dc0e62fc68b0a65e129293f37b4bfad39e1732268d9b26cf130ecdac9fdfbd",
+    "anchors": [
+      {
+        "line": 166,
+        "source_text": "  HYLE_GRAPH_ROUTE_CPU_APPLE_API Status bind(ValueId, compute::ConstTensorView) noexcept;"
+      }
+    ]
+  },
+  {
+    "repo": "hyle",
+    "path": "include/hyle/compute/leased_operation.h",
+    "sha256": "f86ac789b456e8084061f068de2ac947fddbdaf552ed1042585dd5beb1c56185",
+    "anchors": [
+      {
+        "line": 12,
+        "source_text": "// ReadLease inputs share a ready version. Reading through a WriteLease is an"
+      }
+    ]
+  },
+  {
+    "repo": "hyle",
+    "path": "src/compute/batch_transfer.cc",
+    "sha256": "25367562e18d16b6d38b5ea80bf7eb89cff46243d73c7e84a99430470ba82fc1",
+    "anchors": [
+      {
+        "line": 506,
+        "source_text": "Result<ReadLease> CopyBatchSubmission::output(CopyPhaseId phase_id, CopyResourceId resource,"
+      }
+    ]
+  },
+  {
+    "repo": "hyle",
+    "path": "include/hyle/compute/batch_layout.h",
+    "sha256": "654d7d3aedcbb9e50532e137ea3d89bb8aa0c5f5697879d4ff79455843fe5402",
+    "anchors": [
+      {
+        "line": 18,
+        "source_text": "struct BatchCapacity final {"
+      }
+    ]
+  },
+  {
+    "repo": "hyle",
+    "path": "include/hyle/compute/model_ops.h",
+    "sha256": "d3f3b76c2ec0923b0b9ece176dfe7e484c053cb63bee24c27bcff182617ed1b9",
+    "anchors": [
+      {
+        "line": 108,
+        "source_text": "struct BlockQuantizationRoundtrip final {"
+      },
+      {
+        "line": 30,
+        "source_text": "struct ArtifactWeightDecode final {"
+      }
+    ]
+  },
+  {
+    "repo": "hyle",
+    "path": "src/compute_provider_flashinfer/flashinfer_provider.cc",
+    "sha256": "d6f0e55ac6ed4198dd43f94d4f980594c7d971831ba75d15c5508c0021ac9cd3",
+    "anchors": [
+      {
+        "line": 126,
+        "source_text": "Status qualify_batch(void*opaque,BatchCapacity capacity,const BatchProgramOptions&options)noexcept {"
+      }
+    ]
+  },
+  {
+    "repo": "hyle",
+    "path": "src/compute_provider_flashinfer/native_batch.cu",
+    "sha256": "aecdbf870616f08600359e00179e4a054513bdff861be5ebc1136db13e33d136",
+    "anchors": [
+      {
+        "line": 42,
+        "source_text": "template<class T,unsigned D>cudaError_t run_typed(const fi::PrefillPlanInfo&plan,BatchSpec s,const void*q,const void*k,const void*v,const void*metadata,void*o,void*f,void*i,cudaStream_t stream){"
+      }
+    ]
+  },
+  {
+    "repo": "hyle",
+    "path": "src/compute_batch/batch_execution.cc",
+    "sha256": "6af0d9b26e37cde36972e3b0d40674c772cfdc3adbcaff83fb1ca3be967a8bb9",
+    "anchors": [
+      {
+        "line": 181,
+        "source_text": "Result<PreparedBatch> BatchInvocation::prepare(const BatchLayoutVersion&layout,bool update)noexcept{"
+      }
+    ]
+  },
+  {
+    "repo": "hyle",
+    "path": "src/compute_batch/batch_layout.cc",
+    "sha256": "9643f20396e320aac8f2184ddd243f996a70ee46e81487eb397fa3a54ac020f4",
+    "anchors": []
+  },
+  {
+    "repo": "hyle",
+    "path": "src/compute_route_apple/apple_mature_float.cc",
+    "sha256": "c612df03b76fefa18a02604bd792bcd8f702829d753e3e1275f8acbedb3f1a25",
+    "anchors": [
+      {
+        "line": 164,
+        "source_text": "mx::array block_dot(const Quantized &a, const Quantized &b, mx::Stream s) {"
+      }
+    ]
+  },
+  {
+    "repo": "hyle",
+    "path": "src/compute_provider_torch_cuda/artifact_provider.cc",
+    "sha256": "c4f6e71cdd8135b409c0fef020fe77fc2eb4528e06fd5163846b27a631477d49",
+    "anchors": [
+      {
+        "line": 226,
+        "source_text": "        if (at::logical_or(ids < 0, ids >= limit).any().item<bool>())"
+      }
+    ]
+  },
+  {
+    "repo": "hyle",
+    "path": "src/graph_route_cpu_apple/invocation.cc",
+    "sha256": "46033eea00dcfa48ccbdd7edf7003d0377e6f5696cc1858e43edb0d066f73c6d",
+    "anchors": [
+      {
+        "line": 267,
+        "source_text": "      HYLE_ASSIGN_OR_RETURN(auto completion, slot.cpu.submit(*run.cpu_queue));"
+      }
+    ]
+  },
+  {
+    "repo": "hyle",
+    "path": "include/hyle/compute/cpu.h",
+    "sha256": "bccb8e5d310086b41c6f010a84f56219ac33830e92e5da22ce2ff12cd608ccb6",
+    "anchors": [
+      {
+        "line": 20,
+        "source_text": "struct DefaultContextOptions final {"
+      }
+    ]
+  },
+  {
+    "repo": "hyle",
+    "path": "src/compute_provider_native/aten_cpu_provider.cc",
+    "sha256": "8f6e1393b4319971a8c3fa78dd3eba7b55e6cd3dea8aabbecc7887bf79cfc79a",
+    "anchors": [
+      {
+        "line": 31,
+        "source_text": "constexpr ProviderRuntimeProperties kRuntime{"
+      }
+    ]
+  },
+  {
+    "repo": "hyle",
+    "path": "evidence/performance/foundation-f4-p0/README.md",
+    "sha256": "2f68feedb0728f690a7fb9587205798622884dd051cf276e59803af43fd22f68",
+    "anchors": []
+  },
+  {
+    "repo": "llama.cpp",
+    "path": "src/llama-kv-cache.cpp",
+    "sha256": "ef66dd6be13764a1e94cea7083f1f76e3b0bbd2c429e951b43b942e74073012b",
+    "anchors": [
+      {
+        "line": 1294,
+        "source_text": "ggml_tensor * llama_kv_cache::get_k(ggml_context * ctx, int32_t il, uint32_t n_kv, const slot_info & sinfo) const {"
+      }
+    ]
+  },
+  {
+    "repo": "vllm",
+    "path": "vllm/v1/attention/backends/cpu_attn.py",
+    "sha256": "ffcb1e2b03ceb1d913e10457b1a30366bf630138b0e628616d635c55315d8f09",
+    "anchors": [
+      {
+        "line": 419,
+        "source_text": "            ops.cpu_attn_reshape_and_cache("
+      }
+    ]
+  },
+  {
+    "repo": "sglang",
+    "path": "python/sglang/srt/layers/attention/flashinfer_backend.py",
+    "sha256": "a5649f67038153c35864b3f50d5c368071a56cbef75f266bec804dbf7e64363f",
+    "anchors": [
+      {
+        "line": 215,
+        "source_text": "    draft-extend CUDA graph (FlashInfer fa2, cuda-graph mode only)."
+      }
+    ]
+  },
+  {
+    "repo": "vllm",
+    "path": "vllm/v1/attention/backends/flashinfer.py",
+    "sha256": "343b949d62db7fc03f6ca0c682e1ec1cb60125461069b081ac1554b7a05214e9",
+    "anchors": [
+      {
+        "line": 2623,
+        "source_text": "    def do_kv_cache_update("
+      }
+    ]
+  },
+  {
+    "repo": "vllm",
+    "path": "vllm/model_executor/offloader/prefetch.py",
+    "sha256": "d835fa9292f52f283835f724951bae645a84d554c48f30ed639e3297e7eeb776",
+    "anchors": [
+      {
+        "line": 283,
+        "source_text": "            # During capture, skip wait for pre-capture prefetches."
+      }
+    ]
+  },
+  {
+    "repo": "llama.cpp",
+    "path": "ggml/src/ggml-backend.cpp",
+    "sha256": "43dea13b13c2a15afd83f53515f3488c17072fc107a6ba4a5e0370f90b4fe7ff",
+    "anchors": [
+      {
+        "line": 651,
+        "source_text": "void ggml_backend_tensor_copy_async(ggml_backend_t backend_src, ggml_backend_t backend_dst, const struct ggml_tensor * src, struct ggml_tensor * dst) {"
+      }
+    ]
+  },
+  {
+    "repo": "llama.cpp",
+    "path": "src/llama-moe-cache.cpp",
+    "sha256": "9304802f6a3e5824504476fe94440a9e39727889bec40dc89a5bacf437e0429b",
+    "anchors": [
+      {
+        "line": 72,
+        "source_text": "    // give a slot to each expert selected by ids in layer il, the misses evict the least recently used experts"
+      }
+    ]
+  },
+  {
+    "repo": "vllm",
+    "path": "vllm/v1/sample/sampler.py",
+    "sha256": "a67286eb78aac98185b6922ac33d8c754ca5ff9788d893965ba52f2b5a0e18d1",
+    "anchors": [
+      {
+        "line": 242,
+        "source_text": "    def greedy_sample(logits: torch.Tensor) -> torch.Tensor:"
+      }
+    ]
+  },
+  {
+    "repo": "vllm",
+    "path": "vllm/v1/sample/ops/topk_topp_sampler.py",
+    "sha256": "970afd0e8565ddfdcf50dc99892d893b20cb186214cc35e15aeb97d1dba90bd0",
+    "anchors": [
+      {
+        "line": 280,
+        "source_text": "        probs = logits.softmax(dim=-1, dtype=torch.float32)"
+      }
+    ]
+  },
+  {
+    "repo": "sglang",
+    "path": "python/sglang/srt/layers/sampler.py",
+    "sha256": "cc5eb725eeeeb906ba56fdb4e1400d8cf7d94ba8ccbc043841ee3676349b016c",
+    "anchors": [
+      {
+        "line": 187,
+        "source_text": "        if sampling_info.is_all_greedy:"
+      }
+    ]
+  },
+  {
+    "repo": "llama.cpp",
+    "path": "src/llama-memory-recurrent.cpp",
+    "sha256": "51172be188d0eece2267c9105dc5a8d2c3ef7ebd58e88a6f562ac6ee36326f98",
+    "anchors": [
+      {
+        "line": 189,
+        "source_text": "    // models like Mamba or RWKV can't have a state partially erased at the end"
+      },
+      {
+        "line": 189,
+        "source_text": "    // models like Mamba or RWKV can't have a state partially erased at the end",
+        "claim": "past state cannot be partially erased if never preserved"
+      },
+      {
+        "line": 54,
+        "source_text": "                // r and s per layer, plus the separate PLE conv row where the model has one",
+        "claim": "full model state includes separate conv rows"
+      }
+    ]
+  },
+  {
+    "repo": "sglang",
+    "path": "python/sglang/srt/mem_cache/unified_cache/components/mamba.py",
+    "sha256": "0a6c1bc7cdcf0f4ec3d83c94ba292afe75183fdae2e2dc5e605ad8f775a58528",
+    "anchors": [
+      {
+        "line": 576,
+        "source_text": "            # slot's unflushed ring depth (`write_pos`), so on request finish cap"
+      },
+      {
+        "line": 576,
+        "source_text": "            # slot's unflushed ring depth (`write_pos`), so on request finish cap",
+        "claim": "checkpoint must respect flushed temporal state"
+      }
+    ]
+  },
+  {
+    "repo": "llama.cpp",
+    "path": "src/llama-context.cpp",
+    "sha256": "8db8e93a10dcb3ecbc75090a3c6a02c0262f222226e16088fbe4165a34f6a76f",
+    "anchors": [
+      {
+        "line": 574,
+        "source_text": ""
+      },
+      {
+        "line": 198,
+        "source_text": "    cparams.n_threads               = params.n_threads;",
+        "claim": "G10 prefill/decode thread counts"
+      },
+      {
+        "line": 1281,
+        "source_text": "void llama_context::attach_threadpool(",
+        "claim": "G10 separate thread pools"
+      }
+    ]
+  },
+  {
+    "repo": "vllm",
+    "path": "vllm/v1/core/sched/scheduler.py",
+    "sha256": "d9a39870286c424cef2fc0730e24092ee3df67e848608e2278944846bab804ae",
+    "anchors": [
+      {
+        "line": 183,
+        "source_text": "            kv_load_failure_policy = kv_transfer_config.kv_load_failure_policy"
+      },
+      {
+        "line": 185,
+        "source_text": "",
+        "claim": "scoped to multiple-inflight KV connector consumer; not all single-machine scheduling"
+      }
+    ]
+  },
+  {
+    "repo": "hyle",
+    "path": "src/graph_route_cpu_cuda/compile.cc",
+    "sha256": "ac51efee0c84ccf4a06aea54b8a10bbbb6dccc792ffcb781b07598c08f09295b",
+    "anchors": [
+      {
+        "line": 36,
+        "source_text": "      StorageDomain{.resource = environment.staging->ref(),",
+        "claim": "G02 actual two-target/two-lane environment"
+      }
+    ]
+  },
+  {
+    "repo": "hyle",
+    "path": "include/hyle/graph/cpu_cuda.h",
+    "sha256": "b3fe45dc75ce6c999857bca3130816132018eb3c845e0c889d577165d8f1b098",
+    "anchors": [
+      {
+        "line": 130,
+        "source_text": "// segment boundaries and never preempts an accepted native kernel.",
+        "claim": "G02 wrapper binding domain"
+      }
+    ]
+  },
+  {
+    "repo": "hyle",
+    "path": "include/hyle/graph/cpu_vulkan.h",
+    "sha256": "ddd1a867ea7f8ca3a574b70c639ea6e5b60378da1f9ea7038d62f8b3c1f7486b",
+    "anchors": [
+      {
+        "line": 160,
+        "source_text": "// resources/allocator additionally outlive retained result leases.",
+        "claim": "G02 native hybrid binding domain"
+      }
+    ]
+  },
+  {
+    "repo": "hyle",
+    "path": "include/hyle/compute/detail/materialized_native_controller.h",
+    "sha256": "1ce8b83b0ad37f0012d5ea1fcb16331866274b8b5b4c456a78f1fb5ba0bd99ae",
+    "anchors": [
+      {
+        "line": 54,
+        "source_text": "  Status open()const noexcept{return closed || failed?Status::FailedPrecondition(\"native batch controller closed/failed\"):Status::Ok();}",
+        "claim": "G03 clearing controller reads does not clear original native imports"
+      }
+    ]
+  },
+  {
+    "repo": "hyle",
+    "path": "src/compute_route_apple/apple_context.cc",
+    "sha256": "7bb949f53603c381a12734ea2a18806ff161945480cb62f387f99328ec4d0d5a",
+    "anchors": [
+      {
+        "line": 818,
+        "source_text": "Status Invocation::bind(std::span<const mx::array> inputs) noexcept {",
+        "claim": "G03 input views retained by native invocation"
+      }
+    ]
+  },
+  {
+    "repo": "hyle",
+    "path": "src/compute_route_vulkan/vulkan_program.cc",
+    "sha256": "04152b4ce4736ab0d9d7c3d5e81abc41ac3c14393e1315eb771cad761c51a912",
+    "anchors": [
+      {
+        "line": 674,
+        "source_text": "    // Prospective metadata never retains a rejected input. Native imports",
+        "claim": "G03 successful rebind retires retained buffers"
+      }
+    ]
+  },
+  {
+    "repo": "hyle",
+    "path": "src/compute_route_apple/apple_operations.cc",
+    "sha256": "4c90b14e44cc3a438c16c9935ef19e1e14a1642790179261004cb2d8d6065ee2",
+    "anchors": [
+      {
+        "line": 286,
+        "source_text": "        mx::quantized_matmul(inputs[0], inputs[1], inputs[2], inputs[3], true,",
+        "claim": "G07 counterexample native affine quantized matmul"
+      }
+    ]
+  },
+  {
+    "repo": "hyle",
+    "path": "src/compute_route_apple/apple_mature_gguf.cc",
+    "sha256": "8dcb44488a72c2bfc4cef47f4edcc46d9f1bd9b9fa7e66a06308d3e7ead1e400",
+    "anchors": [
+      {
+        "line": 1,
+        "source_text": "#include \"hyle/compute/detail/apple_plan.h\"",
+        "claim": "G07 selected GGUF path source"
+      }
+    ]
+  },
+  {
+    "repo": "hyle",
+    "path": "src/graph_route_cpu_vulkan/invocation.cc",
+    "sha256": "e6b1eb1e3edd1c7539b7d909ba6b9d319091b8aa96b64d5a22fb8bb503fe9605",
+    "anchors": [
+      {
+        "line": 281,
+        "source_text": "        HYLE_RETURN_IF_ERROR(await_completion(run, copy));",
+        "claim": "G09 coarse fragment await before next fragment"
+      }
+    ]
+  },
+  {
+    "repo": "hyle",
+    "path": "docs/user/compute.md",
+    "sha256": "0efcb595aa6e3c02b4a50ac53b17893c5e5fcd611e083b1588e37ea986ddddfb",
+    "anchors": [
+      {
+        "line": 1,
+        "source_text": "# HYLE Compute：何时直接执行一个计算",
+        "claim": "current public mechanism contract"
+      }
+    ]
+  },
+  {
+    "repo": "hyle",
+    "path": "docs/user/graph.md",
+    "sha256": "cc9f2f6b09ff1e5461851b8aa110320a0baf3b79a752f562c25d869337f62b11",
+    "anchors": [
+      {
+        "line": 1,
+        "source_text": "# HYLE Graph：编译并重复执行计算 DAG",
+        "claim": "current public graph/control/shape contract"
+      }
+    ]
+  },
+  {
+    "repo": "hyle",
+    "path": "docs/user/apple-compute.md",
+    "sha256": "403b85dce0394cc9f898d8a4f1885d7eaa74ad5839be8d062dc06d06b85e7bd4",
+    "anchors": [
+      {
+        "line": 1,
+        "source_text": "# Apple MLX/Metal：Direct Compute 与 Graph",
+        "claim": "Apple public qualification"
+      }
+    ]
+  },
+  {
+    "repo": "hyle",
+    "path": "docs/user/vulkan-compute.md",
+    "sha256": "0ea2bfad5a70da2b2f2a5efdab5c62a638cbe18958948a884c2d45508029dce4",
+    "anchors": [
+      {
+        "line": 1,
+        "source_text": "# Vulkan：Direct Compute 与 Graph",
+        "claim": "Vulkan public qualification"
+      }
+    ]
+  },
+  {
+    "repo": "hyle",
+    "path": "docs/implementation/module-status.json",
+    "sha256": "0ad75788cef8469892d09cb902c8d2dcba5a0fd43d3bbe2da2adf2fd377095ca",
+    "anchors": [
+      {
+        "line": 1,
+        "source_text": "{",
+        "claim": "64 CLOSED owners, unchanged"
+      }
+    ]
+  },
+  {
+    "repo": "hyle",
+    "path": "docs/architecture/capability-completeness.md",
+    "sha256": "78438b9b12040a7e4211a137acde38250357f3485120cf2cb18a0435c72c1667",
+    "anchors": [
+      {
+        "line": 1,
+        "source_text": "# 基础库能力完整性决策",
+        "claim": "mechanism vs engine policy admission"
+      }
+    ]
+  },
+  {
+    "repo": "llama.cpp",
+    "path": "src/llama-model-loader.cpp",
+    "sha256": "301f8250eef5b34d14617c7c9bf5c14bb60519d199751f4d829502a5107f0593",
+    "anchors": [
+      {
+        "line": 688,
+        "source_text": "        // mmap places tensors at their file offsets, so an embedded GGUF must be aligned in the file too",
+        "claim": "F3 alignment and mmap domain"
+      },
+      {
+        "line": 1410,
+        "source_text": "void llama_model_loader::init_mappings(bool prefetch, llama_mlocks * mlock_mmaps) {",
+        "claim": "F3 fixed file mapping owner"
+      }
+    ]
+  },
+  {
+    "repo": "vllm",
+    "path": "vllm/model_executor/offloader/uva.py",
+    "sha256": "1064eaff828cda23308654d2186c08f2c336e7fa25e2e7b9f518b051ea89ce0c",
+    "anchors": [
+      {
+        "line": 24,
+        "source_text": "    \"\"\"Offloader using Unified Virtual Addressing (UVA) for zero-copy access.",
+        "claim": "UVA hardware capability and PCIe bandwidth cost"
+      }
+    ]
+  }
+]
