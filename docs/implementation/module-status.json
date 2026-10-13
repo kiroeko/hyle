@@ -514,15 +514,9 @@
     },
     {
       "module": "compute_route_apple",
-      "state": "CLOSED",
-      "record": "docs/implementation/tasks/compute/inference-g01-apple-ragged-terminal.md",
-      "summary": "G01 Apple native ragged有限NR轮CLOSED：原MLX View/SDPA/Program，F16/BF16三D/两与八request/empty/reorder/旧结果/readonly/tail source及三交付/宿主san/直接联合消费者PASS；独立multi P1 QUALIFIED/5%非劣PASS、verify0，长prefill1–1.7%LOSS保留。paged/growth/private与整个G01不代签。",
-      "candidate": "280f6f92ea97bf3b424113346f0264fb7b20df16",
-      "performance": {
-        "tier": "P1",
-        "material_margin_pct": 5,
-        "evidence": "evidence/performance/inference-g01-native-ragged-apple-m1-p1/receipt.json"
-      }
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/compute/inference-native-memory-default-construction.md",
+      "summary": "G10/交付 MC-01/02 SCOPED：已复现公开opaque MemoryResource inline默认构造incomplete unique_ptr编译失败，仅两owner out-of-line默认构造与实际public consumer；原NR数学/性能/ABI布局不改。"
     },
     {
       "module": "graph_route_apple",
@@ -537,15 +531,9 @@
     },
     {
       "module": "compute_route_vulkan",
-      "state": "CLOSED",
-      "record": "docs/implementation/tasks/compute/inference-g01-vulkan-ragged-terminal.md",
-      "summary": "G01 Vulkan native ragged/RF有限轮CLOSED：原1region＋多tagged flash/Concat安全记录，十source tests/两SDK/三san/原CPU联合回归及Win定向编译PASS；实际Air multi P1 QUALIFIED/5%非劣PASS、verify0，mixedD256 WIN、prefill/D64方向INCONCLUSIVE。原两次qualifiedFAIL与单请求证据、privateUNKNOWN保留；paged/G02-G10及整个G01不代签。",
-      "candidate": "bc0ba41f714f6529cb1c583bee59d482946e7589",
-      "performance": {
-        "tier": "P1",
-        "material_margin_pct": 5,
-        "evidence": "evidence/performance/inference-g01-native-ragged-vulkan-rr-m1-p1/receipt.json"
-      }
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/compute/inference-native-memory-default-construction.md",
+      "summary": "G10/交付 MC-01/02 SCOPED：已复现公开opaque MemoryResource inline默认构造incomplete unique_ptr编译失败，仅两owner out-of-line默认构造与实际public consumer；原NR数学/性能/ABI布局不改。"
     },
     {
       "module": "graph_route_vulkan",
