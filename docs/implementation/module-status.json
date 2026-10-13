@@ -281,14 +281,9 @@
     },
     {
       "module": "graph",
-      "state": "CLOSED",
-      "record": "docs/implementation/tasks/compute/foundation-f5-final-closure.md",
-      "summary": "F5 finite typed paged/ragged and state/Graph seams CLOSED; actual native/reference qualifications, host risks, SDK18 and component contract verified. IREE owner only TSAN configuration fix; original scopes and vendor/capture/performance limits retained.",
-      "candidate": "11c348e404df2c3fc404056ff3a9e885d4d990bc",
-      "performance": {
-        "tier": "P0",
-        "evidence": "evidence/correctness/foundation-f5-final/receipt.json"
-      }
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/graph/inference-g02-multi-queue-batch.md",
+      "summary": "G02 multi-queue batch SCOPED: final lane/context/queue bindings, original region and native slot identity; single-queue API migration, no compatibility layer."
     },
     {
       "module": "container_concurrent",
@@ -716,14 +711,9 @@
     },
     {
       "module": "graph_batch",
-      "state": "CLOSED",
-      "record": "docs/implementation/tasks/compute/foundation-f5-final-closure.md",
-      "summary": "F5 finite typed paged/ragged and state/Graph seams CLOSED; actual native/reference qualifications, host risks, SDK18 and component contract verified. IREE owner only TSAN configuration fix; original scopes and vendor/capture/performance limits retained.",
-      "candidate": "11c348e404df2c3fc404056ff3a9e885d4d990bc",
-      "performance": {
-        "tier": "P0",
-        "evidence": "evidence/correctness/foundation-f5-final/receipt.json"
-      }
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/graph/inference-g02-multi-queue-batch.md",
+      "summary": "G02 multi-queue batch SCOPED: final lane/context/queue bindings, original region and native slot identity; single-queue API migration, no compatibility layer."
     }
   ]
 }
