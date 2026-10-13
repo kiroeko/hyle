@@ -133,6 +133,7 @@ Result<CopySpan> MemoryAccess::copy_span(const std::shared_ptr<Runtime> &runtime
 }
 } // namespace detail
 
+MemoryResource::MemoryResource() noexcept = default;
 MemoryResource::MemoryResource(std::unique_ptr<detail::MemoryState> state) noexcept : state_(std::move(state)) {}
 MemoryResource::MemoryResource(MemoryResource &&) noexcept = default;
 MemoryResource &MemoryResource::operator=(MemoryResource &&) noexcept = default;

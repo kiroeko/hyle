@@ -106,7 +106,7 @@ struct NativeStorage final {
 // retain device and budget until their last original native owner disappears.
 class MemoryResource final {
 public:
-  MemoryResource() noexcept = default;
+  HYLE_COMPUTE_ROUTE_VULKAN_API MemoryResource() noexcept;
   MemoryResource(const MemoryResource &) = delete;
   MemoryResource &operator=(const MemoryResource &) = delete;
   HYLE_COMPUTE_ROUTE_VULKAN_API MemoryResource(MemoryResource &&) noexcept;

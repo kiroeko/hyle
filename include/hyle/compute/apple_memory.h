@@ -93,7 +93,7 @@ struct NativeStorage final {
 // This resource and its native device outlive all Buffer/array views and quotas.
 class MemoryResource final {
 public:
-  MemoryResource() noexcept = default;
+  HYLE_COMPUTE_ROUTE_APPLE_API MemoryResource() noexcept;
   MemoryResource(const MemoryResource &) = delete;
   MemoryResource &operator=(const MemoryResource &) = delete;
   HYLE_COMPUTE_ROUTE_APPLE_API MemoryResource(MemoryResource &&) noexcept;
