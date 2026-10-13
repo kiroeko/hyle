@@ -48,3 +48,8 @@ lower已有slice/reshape、BSHD transpose和MLX fast SDPA，没有新math/copy/g
 两份短route组合只使用现有原子操作；平台分别降低到原Plan与MLX retained callable，
 不为消除这段冷装配再新增公共recipe/controller类型。数学与ownership没有重复实现。
 AUDITED后固定NR-01/02/03，实际数学/搬运/失败证据之前不签性能或CLOSED。
+
+实现草稿已写：两原route冷组合入口，无新math/Queue/controller；Vulkan原Plan保View
+alias/origin，Apple捕获owned layout给原tracing。新增共用实际native consumer测试三D/
+两request+empty、重排、独立slots/旧结果、readonly/tail与foreign capacity拒绝；公开
+batch头加入逐头集合。当前未编译、未运行、未签candidate，CPU独立P1仍占重型资源。

@@ -5,6 +5,13 @@
 #include "hyle/compute/batch_materialize.h"
 #include "hyle/compute/vulkan_memory.h"
 namespace hyle::compute::vulkan {
+// Cold immutable host-known ragged layout. Three packed-capacity Q/K/V ports;
+// output contains this layout's active packed Q rows. Reuse the original
+// Program/Invocation and owners; another topology needs explicit preparation.
+// Qualified F16 D64/128/256 reads original resident K/V request slices. Query,
+// mask and packed output costs remain; no native paged/capture claim.
+HYLE_COMPUTE_ROUTE_VULKAN_API Result<Program> prepare_ragged_batch(
+    const Context&,BatchLayoutVersion,RaggedAttention,const WorkloadContext& = {}) noexcept;
 // Explicit GPU materialization reference over the original fixed native Plan.
 // Cold preparation qualifies each typed step; run uses the original Program
 // and independent native slots, with no new Queue/runtime or warm planning.

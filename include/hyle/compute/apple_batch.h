@@ -5,6 +5,12 @@
 #include "hyle/compute/batch_materialize.h"
 #include "hyle/compute/apple_memory.h"
 namespace hyle::compute::apple {
+// Cold immutable host-known ragged layout, F16/BF16 D64/128/256. Three original
+// packed-capacity Q/K/V ports and one active packed Q output. Original MLX
+// views/SDPA/Program own execution; another topology needs explicit prepare.
+// Native metadata/private storage remain unknown; no paged/capture claim.
+HYLE_COMPUTE_ROUTE_APPLE_API Result<Program> prepare_ragged_batch(
+    const Context&,BatchLayoutVersion,RaggedAttention,const WorkloadContext& = {}) noexcept;
 // Explicit GPU materialization reference. Cold traces the fixed original
 // typed recipe into one original MLX Program; run performs no recipe traversal
 // or planning. Bind Q/K/V and same-version uploaded indices/mask in that order.
