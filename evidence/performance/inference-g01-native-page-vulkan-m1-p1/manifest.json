@@ -1,0 +1,1205 @@
+{
+  "artifacts": [
+    {
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-vulkan-p1-fresh-1/CMakeCache.txt",
+        "sha256": "c94447feb7367e3f6a2eeff00a59815288f5a6dbc439a628c52b953f7e9c10e3"
+      },
+      "id": "cmake-cache"
+    },
+    {
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-vulkan-p1-fresh-1/g01_native_page_control",
+        "sha256": "6b2db03e58e716c8daefaf56fa56f540c1a3377e1116ad20a0aaa8866e925287"
+      },
+      "id": "common-control"
+    },
+    {
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-vulkan-p1-fresh-1/g01_native_page_bench_placement",
+        "sha256": "ccfde9f95b62fc2312a26fe18f43e0f6d087aa716ded87d01f2f7fa5cd759a8d"
+      },
+      "id": "page-placement"
+    },
+    {
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-vulkan-p1-fresh-1/g01_native_page_bench",
+        "sha256": "b93b0d76f7dd5eb493e854b120b148e48aaff9d0bc5fedeec9c50a865812d1e7"
+      },
+      "id": "page-primary"
+    },
+    {
+      "file": {
+        "path": "/usr/bin/c++",
+        "sha256": "34129c71a01a74f7f3b2443521519b2e5447553fa187f5fcafaaf8c42cc192e2"
+      },
+      "id": "toolchain-compiler"
+    },
+    {
+      "file": {
+        "path": "/Library/Developer/CommandLineTools/usr/bin/ld",
+        "sha256": "374d9f0713bce2c8a9e1e82bde51615d5433516a10d99b63107eb6ee70542e4c"
+      },
+      "id": "toolchain-linker"
+    }
+  ],
+  "artifacts_stable": true,
+  "build": {
+    "configuration": "Release",
+    "details": {
+      "architecture": "default",
+      "build_stdout_sha256": "faf962067f62e3ccaa72494d6ba0ae0bde6734a63561d19ba83203390bd254d9",
+      "cmake_cache": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "CMAKE_GENERATOR": "Ninja",
+        "CMAKE_GENERATOR_PLATFORM": "",
+        "CMAKE_GENERATOR_TOOLSET": "",
+        "CMAKE_INTERPROCEDURAL_OPTIMIZATION": "OFF",
+        "HYLE_SIMD_EXACT_TARGET": "",
+        "HYLE_STATIC": "ON"
+      },
+      "cmake_cache_sha256": "c94447feb7367e3f6a2eeff00a59815288f5a6dbc439a628c52b953f7e9c10e3",
+      "compiler": {
+        "compiler_id": "AppleClang",
+        "compiler_version": "21.0.0.21000334"
+      },
+      "configuration_observation": {
+        "available": [
+          "Release"
+        ],
+        "mechanism": "CMAKE_BUILD_TYPE",
+        "proven": true,
+        "value": "Release"
+      },
+      "configure_stdout_sha256": "cca3a0c86954204dba5b32006371a4a505019b94f4a9f777ade3569c4e133da9",
+      "generator": "Ninja",
+      "machine_profile": "M1-MAC",
+      "requested_cache": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "CMAKE_CXX_FLAGS": "-Wno-error=tautological-constant-out-of-range-compare",
+        "CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
+        "CMAKE_INTERPROCEDURAL_OPTIMIZATION": "OFF",
+        "CMAKE_OSX_DEPLOYMENT_TARGET": "14.4",
+        "HYLE_BUILD_BENCH": "OFF",
+        "HYLE_BUILD_TESTS": "OFF",
+        "HYLE_COMPONENTS": "compute;graph",
+        "HYLE_COMPUTE_ROUTES": "vulkan",
+        "HYLE_DEP_SOURCE_CACHE": "/Users/kiro/Library/Caches/hyle/dependencies/v1",
+        "HYLE_INSTALL": "OFF",
+        "HYLE_RESIDENT_GLSLANG": "/opt/homebrew/bin/glslangValidator",
+        "HYLE_RESIDENT_REFERENCE_SOURCE": "/Users/kiro/hyle-scratch/compute-unified/g01-original-ggml-peer",
+        "HYLE_SANITIZER": "off",
+        "HYLE_SIMD_EXACT_TARGET": "",
+        "HYLE_STATIC": "ON",
+        "HYLE_TRACE": "OFF",
+        "HYLE_WERROR": "ON"
+      },
+      "requested_configuration": "Release",
+      "targets": [
+        "g01_native_page_bench",
+        "g01_native_page_bench_placement",
+        "g01_native_page_control"
+      ],
+      "toolchain": {
+        "cmake_compiler_record_sha256": "661f85d416ef9d157c2a329d41a10e25f60ea66d1e04d34002f6a01343285ae9",
+        "compiler_frontend_variant": "GNU",
+        "compiler_id": "AppleClang",
+        "compiler_path": "/usr/bin/c++",
+        "compiler_sha256": "34129c71a01a74f7f3b2443521519b2e5447553fa187f5fcafaaf8c42cc192e2",
+        "compiler_target": "unknown",
+        "compiler_version": "21.0.0.21000334",
+        "formal_identity_complete": false,
+        "linker_id": "AppleClang",
+        "linker_path": "/Library/Developer/CommandLineTools/usr/bin/ld",
+        "linker_sha256": "374d9f0713bce2c8a9e1e82bde51615d5433516a10d99b63107eb6ee70542e4c",
+        "linker_version": "ld: unknown options: --version",
+        "schema": "hyle.perf.toolchain-record/v1",
+        "sdk": "apple-sdk:MacOSX.sdk",
+        "stdlib": "unknown",
+        "system_name": "Darwin",
+        "system_processor": "arm64",
+        "system_version": "27.0.0"
+      }
+    },
+    "fresh": true
+  },
+  "contract_lock": {
+    "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-vulkan-p1-output-1/contract-lock.json",
+    "sha256": "be25a25c5541122409ae68b4327d0b3ae1d7fe9ed9bf1e306bb1075c9b3f3210"
+  },
+  "contract_sha256": "5bd7e044430c33d00eb4e85238df7357805751f2a36d9361fe547c5e7d485777",
+  "controls": [
+    {
+      "details": {
+        "kind": "aa",
+        "maximum_bias_percent": 5.0,
+        "orders": {
+          "candidate-first": {
+            "equivalence_band": [
+              0.9523809523809523,
+              1.05
+            ],
+            "estimate": {
+              "confidence_interval": [
+                0.9982946863980933,
+                1.0004507780222223
+              ],
+              "confidence_level": 0.99261474609375,
+              "estimator": "process-median",
+              "independent_clusters": 15,
+              "median_advantage_ratio": 0.9993655950962452,
+              "sample_count": 15
+            },
+            "reason": "median-ci-inside-equivalence-band",
+            "verdict": "PARITY"
+          },
+          "peer-first": {
+            "equivalence_band": [
+              0.9523809523809523,
+              1.05
+            ],
+            "estimate": {
+              "confidence_interval": [
+                0.9987299066181887,
+                1.0030650538556622
+              ],
+              "confidence_level": 0.99261474609375,
+              "estimator": "process-median",
+              "independent_clusters": 15,
+              "median_advantage_ratio": 1.0006189843823436,
+              "sample_count": 15
+            },
+            "reason": "median-ci-inside-equivalence-band",
+            "verdict": "PARITY"
+          }
+        }
+      },
+      "gate": "PASS",
+      "id": "aa"
+    },
+    {
+      "details": {
+        "accepted_median_band": [
+          1.025,
+          1.075
+        ],
+        "kind": "known-delta",
+        "monotonic_5_to_10": true,
+        "nominal_percent": 5.0,
+        "orders": {
+          "candidate-first": {
+            "confidence_interval": [
+              1.0483859142508485,
+              1.051660399518838
+            ],
+            "confidence_level": 0.99261474609375,
+            "estimator": "process-median",
+            "independent_clusters": 15,
+            "median_advantage_ratio": 1.049876834608505,
+            "sample_count": 15
+          },
+          "peer-first": {
+            "confidence_interval": [
+              1.0475503614384274,
+              1.0520125408395422
+            ],
+            "confidence_level": 0.99261474609375,
+            "estimator": "process-median",
+            "independent_clusters": 15,
+            "median_advantage_ratio": 1.0493245439330718,
+            "sample_count": 15
+          }
+        },
+        "relative_tolerance_percent": 50.0
+      },
+      "gate": "PASS",
+      "id": "delta5"
+    },
+    {
+      "details": {
+        "accepted_median_band": [
+          1.05,
+          1.15
+        ],
+        "kind": "known-delta",
+        "monotonic_5_to_10": true,
+        "nominal_percent": 10.0,
+        "orders": {
+          "candidate-first": {
+            "confidence_interval": [
+              1.097509141664478,
+              1.1005248515545791
+            ],
+            "confidence_level": 0.99261474609375,
+            "estimator": "process-median",
+            "independent_clusters": 15,
+            "median_advantage_ratio": 1.0995348145384378,
+            "sample_count": 15
+          },
+          "peer-first": {
+            "confidence_interval": [
+              1.097869817392415,
+              1.1033863970033961
+            ],
+            "confidence_level": 0.99261474609375,
+            "estimator": "process-median",
+            "independent_clusters": 15,
+            "median_advantage_ratio": 1.0994515227911814,
+            "sample_count": 15
+          }
+        },
+        "relative_tolerance_percent": 50.0
+      },
+      "gate": "PASS",
+      "id": "delta10"
+    },
+    {
+      "details": {
+        "kind": "timer-floor",
+        "minimum_workload_floor_multiple": 20.0,
+        "workloads": [
+          {
+            "candidate_median_ns_per_op": 10202002.246501295,
+            "conservative_floor_ns_per_op": 0.22812936852024743,
+            "gate": "PASS",
+            "id": "page-mixed-d256",
+            "measurement_batch": 1,
+            "observed_multiple": 44720249.35972163,
+            "orders": {
+              "candidate-first": {
+                "candidate_median_ns_per_op": 0.22715852474054088,
+                "peer_median_ns_per_op": 0.22812936852024743
+              },
+              "peer-first": {
+                "candidate_median_ns_per_op": 0.22461072576146013,
+                "peer_median_ns_per_op": 0.22424883037792473
+              }
+            },
+            "peer_median_ns_per_op": 66800267.2010688
+          },
+          {
+            "candidate_median_ns_per_op": 12841916.013869269,
+            "conservative_floor_ns_per_op": 0.22812936852024743,
+            "gate": "PASS",
+            "id": "page-prefill-d256",
+            "measurement_batch": 1,
+            "observed_multiple": 56292252.49325799,
+            "orders": {
+              "candidate-first": {
+                "candidate_median_ns_per_op": 0.22715852474054088,
+                "peer_median_ns_per_op": 0.22812936852024743
+              },
+              "peer-first": {
+                "candidate_median_ns_per_op": 0.22461072576146013,
+                "peer_median_ns_per_op": 0.22424883037792473
+              }
+            },
+            "peer_median_ns_per_op": 75414781.29713424
+          },
+          {
+            "candidate_median_ns_per_op": 7957032.140407646,
+            "conservative_floor_ns_per_op": 0.22812936852024743,
+            "gate": "PASS",
+            "id": "page-holdout-d64",
+            "measurement_batch": 1,
+            "observed_multiple": 34879472.95878929,
+            "orders": {
+              "candidate-first": {
+                "candidate_median_ns_per_op": 0.22715852474054088,
+                "peer_median_ns_per_op": 0.22812936852024743
+              },
+              "peer-first": {
+                "candidate_median_ns_per_op": 0.22461072576146013,
+                "peer_median_ns_per_op": 0.22424883037792473
+              }
+            },
+            "peer_median_ns_per_op": 16207455.429497568
+          }
+        ]
+      },
+      "gate": "PASS",
+      "id": "timer-floor"
+    },
+    {
+      "details": {
+        "kind": "placement",
+        "target_variants": [
+          "placement",
+          "primary"
+        ]
+      },
+      "gate": "PASS",
+      "id": "placement"
+    }
+  ],
+  "extensions": {
+    "control_observations_file": {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-vulkan-p1-output-1/control-observations.json",
+      "sha256": "23981795e4b4fc04bdf67af23765d0c697bd18ff68dd07df78cbeedd344e3c8d"
+    },
+    "controls_file": {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-vulkan-p1-output-1/controls.json",
+      "sha256": "77945a21404192b332d74eb2153c0fad7aeb4aae64366f6372d1cdcb4ee1e2b1"
+    },
+    "created_at_utc": "2026-10-13T22:45:26.371423+00:00",
+    "formal": false,
+    "host_probe_file": {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-vulkan-p1-output-1/host-probe.json",
+      "sha256": "498b3178311e98f4a4ff3f5a167778e7c5947bc9e9a6fdd797b0306257c1c1d7"
+    },
+    "mode": "qualify-platform",
+    "pre_sampling_validator_gates": [
+      {
+        "gate": "PASS",
+        "id": "artifact-identity"
+      },
+      {
+        "gate": "PASS",
+        "id": "build-contract"
+      },
+      {
+        "gate": "PASS",
+        "id": "native-page-aa"
+      }
+    ],
+    "product_evidence": [
+      {
+        "errors": [],
+        "gate": "PASS",
+        "id": "page-mixed-d256",
+        "provenance_file": {
+          "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-p1-source/bench/inference_resident_sdpa/vulkan_page_p1/consumer-provenance.json",
+          "sha256": "6e14074d19aca93eeaed6efa08f597de54aa0389961a9b42a6b0157f3e62e17c"
+        },
+        "provenance_path": "consumer-provenance.json",
+        "tier": "consumer"
+      },
+      {
+        "errors": [],
+        "gate": "PASS",
+        "id": "page-prefill-d256",
+        "provenance_file": {
+          "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-p1-source/bench/inference_resident_sdpa/vulkan_page_p1/consumer-provenance.json",
+          "sha256": "6e14074d19aca93eeaed6efa08f597de54aa0389961a9b42a6b0157f3e62e17c"
+        },
+        "provenance_path": "consumer-provenance.json",
+        "tier": "consumer"
+      },
+      {
+        "errors": [],
+        "gate": "PASS",
+        "id": "page-holdout-d64",
+        "provenance_file": {
+          "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-p1-source/bench/inference_resident_sdpa/vulkan_page_p1/consumer-provenance.json",
+          "sha256": "6e14074d19aca93eeaed6efa08f597de54aa0389961a9b42a6b0157f3e62e17c"
+        },
+        "provenance_path": "consumer-provenance.json",
+        "tier": "consumer"
+      }
+    ],
+    "product_gate_policy": "consumer-evidence-v1",
+    "product_gate_workloads": {
+      "eligible": [
+        "page-mixed-d256",
+        "page-prefill-d256",
+        "page-holdout-d64"
+      ],
+      "excluded": []
+    },
+    "raw_log_index_file": {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-vulkan-p1-output-1/raw-log-index.json",
+      "sha256": "75775296490408a50d55bb8b662231d4305d033e200dbaf06a84da932e46231b"
+    },
+    "runs": 15,
+    "sample_stages": [
+      15
+    ]
+  },
+  "host": {
+    "child_environment_policy": {
+      "cleared_names": [
+        "ASAN_OPTIONS",
+        "CPUPROFILE",
+        "DYLD_INSERT_LIBRARIES",
+        "DYLD_LIBRARY_PATH",
+        "GLIBC_TUNABLES",
+        "GOMP_CPU_AFFINITY",
+        "KMP_AFFINITY",
+        "LD_LIBRARY_PATH",
+        "LD_PRELOAD",
+        "LSAN_OPTIONS",
+        "MALLOC_CONF",
+        "MIMALLOC_OPTIONS",
+        "TRACY_ONLY_LOCALHOST",
+        "TSAN_OPTIONS",
+        "UBSAN_OPTIONS"
+      ],
+      "cleared_prefixes": [
+        "HYLE_BENCH_",
+        "HYLE_PERF_"
+      ],
+      "fixed_values": {
+        "MKL_NUM_THREADS": "1",
+        "NUMEXPR_NUM_THREADS": "1",
+        "OMP_NUM_THREADS": "1",
+        "OPENBLAS_NUM_THREADS": "1",
+        "VECLIB_MAXIMUM_THREADS": "1"
+      },
+      "path_sha256": "ef597f72b8ad5306f877dcc0008beaca2ad560927aca12a0bf0cd97398b10fce",
+      "raw_environment_recorded": false,
+      "schema": "hyle.perf.child-environment-policy/v2"
+    },
+    "child_policy": {
+      "applied_by": "benchmark-child",
+      "child_canary": {
+        "environment": "macos",
+        "gate": "PASS",
+        "mechanism": "benchmark-child-telemetry"
+      },
+      "environment": "macos",
+      "hard_affinity_supported": false,
+      "launcher_applied": true,
+      "qos": "interactive"
+    },
+    "evidence_role": "engineering",
+    "formal_claim": null,
+    "machine_profile": "M1-MAC",
+    "physical_host_identity": {
+      "environment": "macos",
+      "independent_hardware": true,
+      "mismatched_host_facts": [],
+      "physical_host_id": "M1",
+      "physical_host_key_sha256": "467e328f5683bcc965253a3a28d112ef7e6b1abb351f0bf68d23be190e0b3f1e",
+      "profile_id": "M1-MAC",
+      "profile_provisioned": true,
+      "raw_identifier_recorded": false,
+      "registered_profile_contract_sha256": "460aae1525938a72ac5d64b20af70787fc8fdfc6f89d5f3ca0915a83f16faa14",
+      "registration_state": "UNREGISTERED",
+      "required_host_facts_match": false,
+      "schema": "hyle-perf-physical-host-identity-v1",
+      "stable_machine_id_matches_registered": false,
+      "stable_machine_id_sha256": "31e581d2399383332f2c47909fb4828f6c5f5ba6acbb29cf7ff82c7fce872c30",
+      "stable_machine_id_source": "macos-platform-uuid-sha256"
+    },
+    "platform": "macos",
+    "probe_sha256": "498b3178311e98f4a4ff3f5a167778e7c5947bc9e9a6fdd797b0306257c1c1d7",
+    "sampling_mutex": {
+      "acquired_at_utc": "2026-10-13T22:20:33.169777+00:00",
+      "environment": "macos",
+      "mutex_key": "M1",
+      "owner_token_sha256": "8f48429e3e4984b08262962dea56d563fc8cb58ac6575a4bb398611975c09c8e",
+      "path": "/Users/Shared/HYLE/perf-locks/M1.sampling.lock",
+      "physical_host_id": "M1",
+      "pid": 21406,
+      "profile_id": "M1-MAC",
+      "raw_owner_token_recorded": false,
+      "release_policy": "owner-token-match-only",
+      "schema": "hyle-perf-sampling-mutex-v1"
+    }
+  },
+  "host_stable": true,
+  "inputs_stable": true,
+  "observations": {
+    "count": 360,
+    "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-vulkan-p1-output-1/observations.jsonl",
+    "sha256": "b50aa1228573818e12fa798e36ddcf8b649fd3d7670ede6975cda3cda05cc062"
+  },
+  "peers": [
+    {
+      "clean": true,
+      "id": "original-ggml-flash",
+      "remote": "/Users/kiro/hyle-scratch/compute-unified/p1-ggml-reference.bundle",
+      "revision": "456172ec733a135778adcd32d00e576a58232e45",
+      "tree": "5cedba53daf44127495f9df9ac07bf0e56844868"
+    }
+  ],
+  "qualification": "QUALIFIED",
+  "raw_logs": [
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-vulkan-p1-output-1/raw/n-15/product-primary-candidate-first-candidate-allocation-first-page-primary-run-01.log",
+      "sha256": "280e65f4de25065311e76fe9a51085c953e17cb35b025eea2835bc004b569685"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-vulkan-p1-output-1/raw/n-15/product-primary-candidate-first-candidate-allocation-first-page-primary-run-02.log",
+      "sha256": "4d32032498535c29511b17407bbfcfa4f2d661a6d224df6b6a6869c78dab9df6"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-vulkan-p1-output-1/raw/n-15/product-primary-candidate-first-candidate-allocation-first-page-primary-run-03.log",
+      "sha256": "abcbf24d143f1d9a5a634a4e6d88388f06575db72302a69641f331f5f3ae2d32"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-vulkan-p1-output-1/raw/n-15/product-primary-candidate-first-candidate-allocation-first-page-primary-run-04.log",
+      "sha256": "1993b8efb5363d71edcbd63b0af257e49b361c73c81098c0238203a572bcf95b"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-vulkan-p1-output-1/raw/n-15/product-primary-candidate-first-candidate-allocation-first-page-primary-run-05.log",
+      "sha256": "8accf640517a715e02bb4ed65f8058fc163386a71351cf49d502befcdcfe1ddc"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-vulkan-p1-output-1/raw/n-15/product-primary-candidate-first-candidate-allocation-first-page-primary-run-06.log",
+      "sha256": "1e41fcb3da1d62166b34478f2e67fc7ec1102ea5d6990e1ceef8a0e0facf2207"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-vulkan-p1-output-1/raw/n-15/product-primary-candidate-first-candidate-allocation-first-page-primary-run-07.log",
+      "sha256": "4b7332f2e2f12329e423270a26abf432562972a910582e59022f6bc0b04eb75e"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-vulkan-p1-output-1/raw/n-15/product-primary-candidate-first-candidate-allocation-first-page-primary-run-08.log",
+      "sha256": "fe28a66d68315b25ba4d8eff0abffb063178a54a0814e654d79d1f31139267b5"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-vulkan-p1-output-1/raw/n-15/product-primary-candidate-first-candidate-allocation-first-page-primary-run-09.log",
+      "sha256": "2763b6d9f0e1e4964d95c98c38eb897035dcbdc1f8676032bd5211684c0a7754"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-vulkan-p1-output-1/raw/n-15/product-primary-candidate-first-candidate-allocation-first-page-primary-run-10.log",
+      "sha256": "49154eb6ebdcf4579d54abb87f7abe80e7830e97592dacc15b7939b8766f37d4"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-vulkan-p1-output-1/raw/n-15/product-primary-candidate-first-candidate-allocation-first-page-primary-run-11.log",
+      "sha256": "3453e454c77a9f8a3c1292c9b4fae65fc4831d1679eafe91e6e956817f8a38bc"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-vulkan-p1-output-1/raw/n-15/product-primary-candidate-first-candidate-allocation-first-page-primary-run-12.log",
+      "sha256": "2c1df49c61f6f48315b13619eb1d45148cd29f32389899a77dc267fb67623141"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-vulkan-p1-output-1/raw/n-15/product-primary-candidate-first-candidate-allocation-first-page-primary-run-13.log",
+      "sha256": "bca2b2ad28e789724456d0cc37e30a28117bc3d8d91188a557b605250d62f5da"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-vulkan-p1-output-1/raw/n-15/product-primary-candidate-first-candidate-allocation-first-page-primary-run-14.log",
+      "sha256": "5e50a26240685a8d837176afb679d618fdb71e40dbe9e1d718b81e95b93bccfa"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-vulkan-p1-output-1/raw/n-15/product-primary-candidate-first-candidate-allocation-first-page-primary-run-15.log",
+      "sha256": "332ab054070c204e82e96f4da3db312890f901775214847faecc217da56cbc0d"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-vulkan-p1-output-1/raw/n-15/product-primary-candidate-first-peer-allocation-first-page-primary-run-01.log",
+      "sha256": "9b999d1db2114a6dea582cd728a7dc7af9bdd1b7a75c769d08b98c40f92563c5"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-vulkan-p1-output-1/raw/n-15/product-primary-candidate-first-peer-allocation-first-page-primary-run-02.log",
+      "sha256": "ab44fe87c361a97f97a0c83febcdc26d6faa744ca91563f2fb412a985253ee21"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-vulkan-p1-output-1/raw/n-15/product-primary-candidate-first-peer-allocation-first-page-primary-run-03.log",
+      "sha256": "622931f8328d0a0d575332a874d48c350761b3aff1e822c79f9ca713feda5450"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-vulkan-p1-output-1/raw/n-15/product-primary-candidate-first-peer-allocation-first-page-primary-run-04.log",
+      "sha256": "fd8c44e03c0356ba2e368c44c345374ea8298ce143ca622063234658047f4167"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-vulkan-p1-output-1/raw/n-15/product-primary-candidate-first-peer-allocation-first-page-primary-run-05.log",
+      "sha256": "b005c68cc0a828cc25c2144044c1f057f96d14412f145b825c815a5a69445b09"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-vulkan-p1-output-1/raw/n-15/product-primary-candidate-first-peer-allocation-first-page-primary-run-06.log",
+      "sha256": "cc9d8017bc8090284050cc476bf788fc9a28f751baa6706996b11fc93100e19f"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-vulkan-p1-output-1/raw/n-15/product-primary-candidate-first-peer-allocation-first-page-primary-run-07.log",
+      "sha256": "0be36f2e7f4800cc5ad38bfc986ef2def4ef82747745872d4d10b8e04b91f0db"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-vulkan-p1-output-1/raw/n-15/product-primary-candidate-first-peer-allocation-first-page-primary-run-08.log",
+      "sha256": "8da15b735eb26bccd43fa5e0df671baf1b66272fac945b33bd638e47db5f38ae"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-vulkan-p1-output-1/raw/n-15/product-primary-candidate-first-peer-allocation-first-page-primary-run-09.log",
+      "sha256": "007bd6b8732f9bdae513b01bac5a4456e09816c0cc2a1520c551470d55e914d1"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-vulkan-p1-output-1/raw/n-15/product-primary-candidate-first-peer-allocation-first-page-primary-run-10.log",
+      "sha256": "41e15451a29bdddb812a78907a47f78496c4ce03f3498bc45505fccf662645ea"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-vulkan-p1-output-1/raw/n-15/product-primary-candidate-first-peer-allocation-first-page-primary-run-11.log",
+      "sha256": "25699ad378ac62fc60f6c2d37d690d69510dfdcc822f9c88199f776fd9b7ab26"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-vulkan-p1-output-1/raw/n-15/product-primary-candidate-first-peer-allocation-first-page-primary-run-12.log",
+      "sha256": "236a96ad1cbf9e196854cf8ea3b313607cb6bedd7b3bb4e9bd6e5d4ac3eaf8eb"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-vulkan-p1-output-1/raw/n-15/product-primary-candidate-first-peer-allocation-first-page-primary-run-13.log",
+      "sha256": "cc70b86ee215b217668ccc14e1ddfbe9b34b7785ec2a4a52cfab289645c205fa"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-vulkan-p1-output-1/raw/n-15/product-primary-candidate-first-peer-allocation-first-page-primary-run-14.log",
+      "sha256": "cbc450151dcc6d01372fd39a4cc09591ce9587673cc2563201c4b08355332d25"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-vulkan-p1-output-1/raw/n-15/product-primary-candidate-first-peer-allocation-first-page-primary-run-15.log",
+      "sha256": "0bcb6abacdfe4c77889257f93872c65ad7dc64d42cb307c8799cb5420529e9d4"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-vulkan-p1-output-1/raw/n-15/product-primary-peer-first-candidate-allocation-first-page-primary-run-01.log",
+      "sha256": "9867d19953797e0c0bb700c44356d88b9c00768b357b1d2aa705e2de9c9d4c91"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-vulkan-p1-output-1/raw/n-15/product-primary-peer-first-candidate-allocation-first-page-primary-run-02.log",
+      "sha256": "22cd144522428db13ee93555b44c5f73b04c1d37d4910f9cfb14438072c406e9"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-vulkan-p1-output-1/raw/n-15/product-primary-peer-first-candidate-allocation-first-page-primary-run-03.log",
+      "sha256": "4ce1db78d8b3c9b452d9f4af8b12611c66f820c140a5599ffb1ff3cda40275bb"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-vulkan-p1-output-1/raw/n-15/product-primary-peer-first-candidate-allocation-first-page-primary-run-04.log",
+      "sha256": "7bab44eb00feff3c132b7db65ddc791bf4cddce0254ea3391022502d1ac457cc"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-vulkan-p1-output-1/raw/n-15/product-primary-peer-first-candidate-allocation-first-page-primary-run-05.log",
+      "sha256": "0ec90ec5ddf3d99ffe3ebf529b5123edf7e8cd26a1f906fde9924b9c608b9378"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-vulkan-p1-output-1/raw/n-15/product-primary-peer-first-candidate-allocation-first-page-primary-run-06.log",
+      "sha256": "c864395e03c50fc5ae40198f8609891c8c46cdc02b9235bdc34247b9fb8d2fce"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-vulkan-p1-output-1/raw/n-15/product-primary-peer-first-candidate-allocation-first-page-primary-run-07.log",
+      "sha256": "9c9a937fb3af3d8feee6b859bdd05424b74204e60a271160ef90012e187b27f9"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-vulkan-p1-output-1/raw/n-15/product-primary-peer-first-candidate-allocation-first-page-primary-run-08.log",
+      "sha256": "32d69d4dfbaf808e182de0f38cff63a713956783656f07906587f33bb920a19f"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-vulkan-p1-output-1/raw/n-15/product-primary-peer-first-candidate-allocation-first-page-primary-run-09.log",
+      "sha256": "092bbabcc97aa7f6d6dda6ca15c15e74846ea9726a6b14403d54be4c2985dc0e"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-vulkan-p1-output-1/raw/n-15/product-primary-peer-first-candidate-allocation-first-page-primary-run-10.log",
+      "sha256": "0a9d487de9f15259c23edbedd1a097076cd835f718ad2d2af16ec6b6826fe228"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-vulkan-p1-output-1/raw/n-15/product-primary-peer-first-candidate-allocation-first-page-primary-run-11.log",
+      "sha256": "e21185422e6cbc14021790d3927984c0cbf69b7979876e7f80ebd03958c727a1"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-vulkan-p1-output-1/raw/n-15/product-primary-peer-first-candidate-allocation-first-page-primary-run-12.log",
+      "sha256": "3fd2644fc151d16e086f52dd22065dabbf1f71bfac146bdb75fb2a76128fa896"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-vulkan-p1-output-1/raw/n-15/product-primary-peer-first-candidate-allocation-first-page-primary-run-13.log",
+      "sha256": "7b03e7a402690b2196772db3b897fc3c73ef7461eba5afb940170e9ba0f931bb"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-vulkan-p1-output-1/raw/n-15/product-primary-peer-first-candidate-allocation-first-page-primary-run-14.log",
+      "sha256": "79495df4af430f336c54a8f1ca7ee03965f29d82ff195454cf7cbf1dcac8ebb5"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-vulkan-p1-output-1/raw/n-15/product-primary-peer-first-candidate-allocation-first-page-primary-run-15.log",
+      "sha256": "4cb153f868ca56e7889315e43e1b80b42286f6c54fa5a6888edec56a8527d582"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-vulkan-p1-output-1/raw/n-15/product-primary-peer-first-peer-allocation-first-page-primary-run-01.log",
+      "sha256": "4a22c8d8b9a1948e2c935792ad10dc03a463104d0cb9f3b5040783634f656c08"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-vulkan-p1-output-1/raw/n-15/product-primary-peer-first-peer-allocation-first-page-primary-run-02.log",
+      "sha256": "fc52061a64da7465ea2592b76df358979af75584cd9be90a9f0599256e2c3e54"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-vulkan-p1-output-1/raw/n-15/product-primary-peer-first-peer-allocation-first-page-primary-run-03.log",
+      "sha256": "3a553f296619f6ab8edacf75ab51292bd01f64314216202d3d12a7e22ec6f1b2"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-vulkan-p1-output-1/raw/n-15/product-primary-peer-first-peer-allocation-first-page-primary-run-04.log",
+      "sha256": "75801e88c1667682b6d4170c87a1cc5dc5783f4ae957053f6e3d322d5ac42a9c"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-vulkan-p1-output-1/raw/n-15/product-primary-peer-first-peer-allocation-first-page-primary-run-05.log",
+      "sha256": "3fb1fb0e3ad1e7e05386b5e61421be79bd146a51a50420c3e6c217acf4ad3d8d"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-vulkan-p1-output-1/raw/n-15/product-primary-peer-first-peer-allocation-first-page-primary-run-06.log",
+      "sha256": "02ddf851a91336706b7402b9be9645acc88ce2699e54067a4dc604ba665be2f2"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-vulkan-p1-output-1/raw/n-15/product-primary-peer-first-peer-allocation-first-page-primary-run-07.log",
+      "sha256": "51896d3c251ffadb3c25cfc0c9f74c863874a034d5c18f5e82441fec276f662f"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-vulkan-p1-output-1/raw/n-15/product-primary-peer-first-peer-allocation-first-page-primary-run-08.log",
+      "sha256": "e2e663393a2246912021a0a297788a86c4f14ad68fed4afe5c89c8ebaf35483a"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-vulkan-p1-output-1/raw/n-15/product-primary-peer-first-peer-allocation-first-page-primary-run-09.log",
+      "sha256": "3eba13ebfe250bfd6214c8d58da23b3307d49bd7ef1acd709d6c5609facf7e74"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-vulkan-p1-output-1/raw/n-15/product-primary-peer-first-peer-allocation-first-page-primary-run-10.log",
+      "sha256": "6afde2b5f4789b62e8c3f1819eaa471918bb15e2b4b8495cb81bd9bea18afedf"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-vulkan-p1-output-1/raw/n-15/product-primary-peer-first-peer-allocation-first-page-primary-run-11.log",
+      "sha256": "b2668c269f238e1b8fc27426ecd90d62b5e760d9054991235704ef9ce8d77a1f"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-vulkan-p1-output-1/raw/n-15/product-primary-peer-first-peer-allocation-first-page-primary-run-12.log",
+      "sha256": "4eb4704b8ef5c1f2bd138b03ebe2cbc707cd1632ba5774ce898a8238d8b4c481"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-vulkan-p1-output-1/raw/n-15/product-primary-peer-first-peer-allocation-first-page-primary-run-13.log",
+      "sha256": "d15b04664bd32807f342013a09e4757651327b7af95cbdedffccb29c851d1b99"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-vulkan-p1-output-1/raw/n-15/product-primary-peer-first-peer-allocation-first-page-primary-run-14.log",
+      "sha256": "034bdb0415a3b987edefd15ac99bbbb997641dd83077c4c1e616402b214e1d99"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-vulkan-p1-output-1/raw/n-15/product-primary-peer-first-peer-allocation-first-page-primary-run-15.log",
+      "sha256": "3d8ef5c17fa2d56685b3dde03470713ce3e652d8d1908a644424eca95c103c37"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-vulkan-p1-output-1/raw/n-15/product-placement-candidate-first-candidate-allocation-first-page-placement-run-01.log",
+      "sha256": "19e3741ecd9be2f39d75e5115dbac0602d69f23d7e975bd710c4e29e251b5feb"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-vulkan-p1-output-1/raw/n-15/product-placement-candidate-first-candidate-allocation-first-page-placement-run-02.log",
+      "sha256": "4320095a6c578e99f6a0b17d879c3b64fbe519910ee526ad0a30b884279622f0"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-vulkan-p1-output-1/raw/n-15/product-placement-candidate-first-candidate-allocation-first-page-placement-run-03.log",
+      "sha256": "5a71ecc7696c17930bc49cc262336ec02a1f8f708fb3ae2ed3d61fe45a4db9e2"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-vulkan-p1-output-1/raw/n-15/product-placement-candidate-first-candidate-allocation-first-page-placement-run-04.log",
+      "sha256": "b4f7798bbf8ed32ef227d4b6ff8964c6a1f0f44849216eb97d5185d85bd3eb78"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-vulkan-p1-output-1/raw/n-15/product-placement-candidate-first-candidate-allocation-first-page-placement-run-05.log",
+      "sha256": "7aa4f25ed1152e0f9d9cad7da041e1db5fda7d7de6de61a8b811bb8908773cef"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-vulkan-p1-output-1/raw/n-15/product-placement-candidate-first-candidate-allocation-first-page-placement-run-06.log",
+      "sha256": "fd1236624618578d617f94be720175875da9d36d5f2014c31a7811b42714d05d"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-vulkan-p1-output-1/raw/n-15/product-placement-candidate-first-candidate-allocation-first-page-placement-run-07.log",
+      "sha256": "e770ddadb381171328aac6d40abbedf4b6b3784330828dbc0d11d84d2a96f5d2"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-vulkan-p1-output-1/raw/n-15/product-placement-candidate-first-candidate-allocation-first-page-placement-run-08.log",
+      "sha256": "a56c3d94e0e3a9d4d0798bc58ef4d2bb0e86d742b68dec7b0cb7fb747fdadec6"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-vulkan-p1-output-1/raw/n-15/product-placement-candidate-first-candidate-allocation-first-page-placement-run-09.log",
+      "sha256": "4f1c8dabfa74709fa0edac57fcc47070c6cce16f24b65a5d867671213d75ee17"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-vulkan-p1-output-1/raw/n-15/product-placement-candidate-first-candidate-allocation-first-page-placement-run-10.log",
+      "sha256": "114a0491e421979536eeb6040cdc8dd02f85b53c00f0fa8a3fef79ed59401fd2"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-vulkan-p1-output-1/raw/n-15/product-placement-candidate-first-candidate-allocation-first-page-placement-run-11.log",
+      "sha256": "5c779004c324149a6e9ff734aac6c2a1b039eb7fd96cfb6824ea6347bce7f911"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-vulkan-p1-output-1/raw/n-15/product-placement-candidate-first-candidate-allocation-first-page-placement-run-12.log",
+      "sha256": "439f6b4cff716b915cb0b3b3662b6fbdbb804864c048d94fa51cea82cfd6e253"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-vulkan-p1-output-1/raw/n-15/product-placement-candidate-first-candidate-allocation-first-page-placement-run-13.log",
+      "sha256": "347d3279377d22bd307ac7f884027dbdb0d30dc5dafa9d92578b1bd675404b87"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-vulkan-p1-output-1/raw/n-15/product-placement-candidate-first-candidate-allocation-first-page-placement-run-14.log",
+      "sha256": "6a5acccef6b58b71df97d0747e9e0eb3f4d7abd53eebef10b8d72367dc1dc011"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-vulkan-p1-output-1/raw/n-15/product-placement-candidate-first-candidate-allocation-first-page-placement-run-15.log",
+      "sha256": "cdedca9f7d7d95f3cbc4eb942b0468ea8a2baeb64e21dfb45e2192132c868a97"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-vulkan-p1-output-1/raw/n-15/product-placement-candidate-first-peer-allocation-first-page-placement-run-01.log",
+      "sha256": "50190817a8ca6c5b22654bf3583285d74148748c370aaae97172cd3a1b2be2a3"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-vulkan-p1-output-1/raw/n-15/product-placement-candidate-first-peer-allocation-first-page-placement-run-02.log",
+      "sha256": "99a9806553f9214bcc5cde3686e1284e9c34eaf53a17012efe45f27372387f66"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-vulkan-p1-output-1/raw/n-15/product-placement-candidate-first-peer-allocation-first-page-placement-run-03.log",
+      "sha256": "c1de1b87aa900aaba5476470ca9ed1ce65f358b7db78d1d3e441596a29ee2919"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-vulkan-p1-output-1/raw/n-15/product-placement-candidate-first-peer-allocation-first-page-placement-run-04.log",
+      "sha256": "1e4e20a83f79e4c9aa33a54adfbf820316e14f8bcb86be9b0124419891f60b4d"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-vulkan-p1-output-1/raw/n-15/product-placement-candidate-first-peer-allocation-first-page-placement-run-05.log",
+      "sha256": "c5a0824e30d3524a5e12bce600f8d9e4c8d079596bd1187b5c14533716cc5eb8"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-vulkan-p1-output-1/raw/n-15/product-placement-candidate-first-peer-allocation-first-page-placement-run-06.log",
+      "sha256": "8d274d9f554917fa051d052e7298ffe8cccb1cadddac1025da440a4f6ce5b5a7"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-vulkan-p1-output-1/raw/n-15/product-placement-candidate-first-peer-allocation-first-page-placement-run-07.log",
+      "sha256": "0e12b05f142f986632e3951b98e1336443fc757fca9a3b3b7651658a4287e226"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-vulkan-p1-output-1/raw/n-15/product-placement-candidate-first-peer-allocation-first-page-placement-run-08.log",
+      "sha256": "23fd5ed08d5cd44940da95abf6b864799668c4b301888372dccee2b13b4b2846"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-vulkan-p1-output-1/raw/n-15/product-placement-candidate-first-peer-allocation-first-page-placement-run-09.log",
+      "sha256": "03f22648082d41c7edd083aa43b5ba4331b0c3a4dd20428380ebd89dc787903c"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-vulkan-p1-output-1/raw/n-15/product-placement-candidate-first-peer-allocation-first-page-placement-run-10.log",
+      "sha256": "cb95d847bcead5e8a295d2626c8e5d5cc7cc1e99d59763f3ccd9910eaade1a02"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-vulkan-p1-output-1/raw/n-15/product-placement-candidate-first-peer-allocation-first-page-placement-run-11.log",
+      "sha256": "122ba14ac0699826214c8fd9015e2f3013454cc690b18d16ce277db4d0b83595"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-vulkan-p1-output-1/raw/n-15/product-placement-candidate-first-peer-allocation-first-page-placement-run-12.log",
+      "sha256": "fd73de6184330642b5e8d9a2000c968906535111a648dfc9de30bc72e5c9e6b5"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-vulkan-p1-output-1/raw/n-15/product-placement-candidate-first-peer-allocation-first-page-placement-run-13.log",
+      "sha256": "9cc0539f54370e1f2f98ddd89ef11411438e47f053a561e6e6b5e86f84c28645"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-vulkan-p1-output-1/raw/n-15/product-placement-candidate-first-peer-allocation-first-page-placement-run-14.log",
+      "sha256": "afa02eff5201e91402b8961e180e23147c85e4bea5fe5073b338f2b19b343695"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-vulkan-p1-output-1/raw/n-15/product-placement-candidate-first-peer-allocation-first-page-placement-run-15.log",
+      "sha256": "89fd22fbbdd4de15c9d61974ce6b2e59b58bd337e7b82bf0fa6016b99aac9c2a"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-vulkan-p1-output-1/raw/n-15/product-placement-peer-first-candidate-allocation-first-page-placement-run-01.log",
+      "sha256": "d68a1c6c1282ce92c08d6a620fca6b0c7ed1aa8a663a5c81793c7b90b27625fd"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-vulkan-p1-output-1/raw/n-15/product-placement-peer-first-candidate-allocation-first-page-placement-run-02.log",
+      "sha256": "dc238933877e98ea52075982dba0c0c6999d12302e31ccfa1a5a0f29305e788b"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-vulkan-p1-output-1/raw/n-15/product-placement-peer-first-candidate-allocation-first-page-placement-run-03.log",
+      "sha256": "9530cea5610c855af27c69dc0d296e3e807e0aa4533ec90d4385a41de66502d8"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-vulkan-p1-output-1/raw/n-15/product-placement-peer-first-candidate-allocation-first-page-placement-run-04.log",
+      "sha256": "2e193533d64dc7a86dce274cc909d1f11e02220159793845aae6a51d827af9d7"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-vulkan-p1-output-1/raw/n-15/product-placement-peer-first-candidate-allocation-first-page-placement-run-05.log",
+      "sha256": "5eaa2be4439b5ed52e0b1fbd99df0a25eca8afad7c6741476937b95dc056ca54"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-vulkan-p1-output-1/raw/n-15/product-placement-peer-first-candidate-allocation-first-page-placement-run-06.log",
+      "sha256": "b626ffbdc0b059da63b7ad436b6d40f8b65961df6b7e371b316e3b09db31fba3"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-vulkan-p1-output-1/raw/n-15/product-placement-peer-first-candidate-allocation-first-page-placement-run-07.log",
+      "sha256": "ecce19e478dd5b5b529272d889080c30dd7f8576592f454fe595fa7ac6b4f60a"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-vulkan-p1-output-1/raw/n-15/product-placement-peer-first-candidate-allocation-first-page-placement-run-08.log",
+      "sha256": "65f0255ac8dce9f9d8011484a4efd5d8ed061dfc2c148e8f0dd31e9f160f04eb"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-vulkan-p1-output-1/raw/n-15/product-placement-peer-first-candidate-allocation-first-page-placement-run-09.log",
+      "sha256": "269ac52122ee720b9465a5172419884cf42e398e3385c8f8fcb8eae9a55c370e"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-vulkan-p1-output-1/raw/n-15/product-placement-peer-first-candidate-allocation-first-page-placement-run-10.log",
+      "sha256": "f227a07cab0886f20dfb42bc6aa778febdcb487e89dab7623fd593ca0d6154a1"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-vulkan-p1-output-1/raw/n-15/product-placement-peer-first-candidate-allocation-first-page-placement-run-11.log",
+      "sha256": "5630e4f8e28773a483820514470cb1bd8a8d7b3040e0403e7732a3980ed2bf89"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-vulkan-p1-output-1/raw/n-15/product-placement-peer-first-candidate-allocation-first-page-placement-run-12.log",
+      "sha256": "422361e5ae76c32f82d69eed79f188609e1e261f9b9b421244a0c60285604423"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-vulkan-p1-output-1/raw/n-15/product-placement-peer-first-candidate-allocation-first-page-placement-run-13.log",
+      "sha256": "f1f9945de34be2bef4bee759e875d97c46b8ffe3f3ea4a761a16e6ca113cf543"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-vulkan-p1-output-1/raw/n-15/product-placement-peer-first-candidate-allocation-first-page-placement-run-14.log",
+      "sha256": "27fe70990fbe8b0d2b0a13f11b3c78042841b6bd0725e8652a9e5e705e1b552f"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-vulkan-p1-output-1/raw/n-15/product-placement-peer-first-candidate-allocation-first-page-placement-run-15.log",
+      "sha256": "d9dba1445741e3bc69f38e620d9be9cb088b53bea1b7ec3d4fa42d458753b071"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-vulkan-p1-output-1/raw/n-15/product-placement-peer-first-peer-allocation-first-page-placement-run-01.log",
+      "sha256": "a52162c2513f7e232e8312bedaf2bb8430c51f5a4962d4f765fc5e00cc476603"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-vulkan-p1-output-1/raw/n-15/product-placement-peer-first-peer-allocation-first-page-placement-run-02.log",
+      "sha256": "5fe574f237df8074a0bf0a9b8234c500fd17dc6d2081ee3a7584054ae18e8a87"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-vulkan-p1-output-1/raw/n-15/product-placement-peer-first-peer-allocation-first-page-placement-run-03.log",
+      "sha256": "63d79d6dc94acd1b68a97064061e3ef2f1f44bbd13f9344002fc8a40c8ea047e"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-vulkan-p1-output-1/raw/n-15/product-placement-peer-first-peer-allocation-first-page-placement-run-04.log",
+      "sha256": "7d02624b1c56993ea026ee58e756b3d35c8cebb71405759bf9c24212f730d5e2"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-vulkan-p1-output-1/raw/n-15/product-placement-peer-first-peer-allocation-first-page-placement-run-05.log",
+      "sha256": "eb0821622d13f0cd30647e369646013eb9e8403a76e22e122e7951a5200309c6"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-vulkan-p1-output-1/raw/n-15/product-placement-peer-first-peer-allocation-first-page-placement-run-06.log",
+      "sha256": "e8e339ee86b7f5e7b48eb17b7feb96cca15fece83cb337523ecf2e7ee3e61752"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-vulkan-p1-output-1/raw/n-15/product-placement-peer-first-peer-allocation-first-page-placement-run-07.log",
+      "sha256": "81691545df592148a34370007bdb96b5885f5b02331fd695a91f7e1d1270dab8"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-vulkan-p1-output-1/raw/n-15/product-placement-peer-first-peer-allocation-first-page-placement-run-08.log",
+      "sha256": "dc3ed6dd54c33bd0206de9f0db931b4d8d6b762f89ee0fad6bb43feadc6b7e1c"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-vulkan-p1-output-1/raw/n-15/product-placement-peer-first-peer-allocation-first-page-placement-run-09.log",
+      "sha256": "5dc39b5435983f712a284278826a4a19d75825db1ac874d2d4ca1f81deb29715"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-vulkan-p1-output-1/raw/n-15/product-placement-peer-first-peer-allocation-first-page-placement-run-10.log",
+      "sha256": "fadc26572ddedacbbaafa5451c18879d3b42e4e0d21a8491e6063df58340fe23"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-vulkan-p1-output-1/raw/n-15/product-placement-peer-first-peer-allocation-first-page-placement-run-11.log",
+      "sha256": "de908f03cb5b72a32c211c2de462cb845cb2b5e01be9dd0dadfb400a1722066f"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-vulkan-p1-output-1/raw/n-15/product-placement-peer-first-peer-allocation-first-page-placement-run-12.log",
+      "sha256": "38d83ddc1d2d13209bf5de49d5b83a9bbf6fe117dba1735bca82d4929aca3168"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-vulkan-p1-output-1/raw/n-15/product-placement-peer-first-peer-allocation-first-page-placement-run-13.log",
+      "sha256": "b41c7424462b45906c71208c2b8e150b2ca25d45a07155803227b96c139516cc"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-vulkan-p1-output-1/raw/n-15/product-placement-peer-first-peer-allocation-first-page-placement-run-14.log",
+      "sha256": "af8bd40be5dda9099dba456639a7c502fddacf45ce324a670ae372583ad1c251"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-vulkan-p1-output-1/raw/n-15/product-placement-peer-first-peer-allocation-first-page-placement-run-15.log",
+      "sha256": "f518ec84dce9a23e58ab20d054ff2b86baed2ea977b5f7352f64d1ab7c835b2a"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-vulkan-p1-output-1/raw/n-15/control-candidate-first-run-01.log",
+      "sha256": "d82a55f3dbdf600a72634254ddb80725962af5122a39e7ebc4299ee58d6b6a2f"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-vulkan-p1-output-1/raw/n-15/control-candidate-first-run-02.log",
+      "sha256": "6d44a6198ca2134ffe4422058d911bbf3c4045ab4b8efcb2fa018ed201ea4416"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-vulkan-p1-output-1/raw/n-15/control-candidate-first-run-03.log",
+      "sha256": "9e75bd6892b3abbf4a4400db4677b8aa936df2dacd22fa97ee7457a3e0895fcf"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-vulkan-p1-output-1/raw/n-15/control-candidate-first-run-04.log",
+      "sha256": "2fd3287f47a5c64b53136ba582878f32a629b0c675a6ab34b46b3d9ddd34e876"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-vulkan-p1-output-1/raw/n-15/control-candidate-first-run-05.log",
+      "sha256": "c67bf0fa630b3ef2ff03116502f9aac18059628a0b4746e7904788945459b8cf"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-vulkan-p1-output-1/raw/n-15/control-candidate-first-run-06.log",
+      "sha256": "a4d22fa3d9e778964ce02b3cdd98bfed975964784e0e243ebf7f08ed9068561a"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-vulkan-p1-output-1/raw/n-15/control-candidate-first-run-07.log",
+      "sha256": "af4f1430bbf5e09b1103121067e35f21a9ef668d31be684549a945b0aa184d70"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-vulkan-p1-output-1/raw/n-15/control-candidate-first-run-08.log",
+      "sha256": "c1b258181224c8bd9b7054fd8a60293a483be2f0766097e637f5ed73ca2c446c"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-vulkan-p1-output-1/raw/n-15/control-candidate-first-run-09.log",
+      "sha256": "c6e613bde03224a583c39ff41b86010355ec44c8fea030e6808b383130778f1f"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-vulkan-p1-output-1/raw/n-15/control-candidate-first-run-10.log",
+      "sha256": "3500f2d52233c13272d2ad246f370d4eb9329201db5b53b7324a5e725e306225"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-vulkan-p1-output-1/raw/n-15/control-candidate-first-run-11.log",
+      "sha256": "eaa404f8390082464bad384dddd3c40c5b63b1e791fe09835315d59064238f56"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-vulkan-p1-output-1/raw/n-15/control-candidate-first-run-12.log",
+      "sha256": "32e8ec25026df2805a0603e56d48c115f4f460fad27c1434fd27988e0abbd6ea"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-vulkan-p1-output-1/raw/n-15/control-candidate-first-run-13.log",
+      "sha256": "ba4175a5b2777315982111f921f5531f649de952f09e508ab072af7252800f82"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-vulkan-p1-output-1/raw/n-15/control-candidate-first-run-14.log",
+      "sha256": "8aebf3e32315ec0b96eccc7313820a1ded7b163320a9ba8acf279217b4226920"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-vulkan-p1-output-1/raw/n-15/control-candidate-first-run-15.log",
+      "sha256": "29a04d953668e92f2e8b0cccde282dc75776f6667d417f856484fde410aa5e07"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-vulkan-p1-output-1/raw/n-15/control-peer-first-run-01.log",
+      "sha256": "86bcdd7f04b2b9257250b7d6650658145345dbbfbb94c8f53944a086765cc8d6"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-vulkan-p1-output-1/raw/n-15/control-peer-first-run-02.log",
+      "sha256": "8476336049d812b9cc447ae56ce22e5236aea701c06fb0ebbf82c6289734c5ba"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-vulkan-p1-output-1/raw/n-15/control-peer-first-run-03.log",
+      "sha256": "179935b8d64c417c0da010e628b3ea18db5f2febb6995a8b8a430cc490f3a60f"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-vulkan-p1-output-1/raw/n-15/control-peer-first-run-04.log",
+      "sha256": "224a4a2077b21bcd669e92adb814bbfc61b4e9b63bd452705014f1e97935e8f8"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-vulkan-p1-output-1/raw/n-15/control-peer-first-run-05.log",
+      "sha256": "a1f41857496ea07c1c1e9d89a35f749650181700770f079661a097d6914157a4"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-vulkan-p1-output-1/raw/n-15/control-peer-first-run-06.log",
+      "sha256": "0a68132b174306a25529e3d5452e506283566713756c63bacb9140f6afdb2acd"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-vulkan-p1-output-1/raw/n-15/control-peer-first-run-07.log",
+      "sha256": "c7e5b753c0acdffbc826a59d3b8436b499d8cad0b317f88cfadf55e818c573aa"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-vulkan-p1-output-1/raw/n-15/control-peer-first-run-08.log",
+      "sha256": "1cd192d9df073d1a05ab53b1b1dfd4d0537322bb3e3e30f2e6d440e6b25d68eb"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-vulkan-p1-output-1/raw/n-15/control-peer-first-run-09.log",
+      "sha256": "93c8171c73258f6eb42b6dac37287bc994c208c88d8b54133a78a6079de2806e"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-vulkan-p1-output-1/raw/n-15/control-peer-first-run-10.log",
+      "sha256": "1d5d10bf461d05ea2db96dbf5264f7ec3dd2b9e726bbbbfcc029bb9642f2c1dd"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-vulkan-p1-output-1/raw/n-15/control-peer-first-run-11.log",
+      "sha256": "4f2a8564a646d3445592549bf4f46ad72f566791c82d152215ba7d6f54aa9880"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-vulkan-p1-output-1/raw/n-15/control-peer-first-run-12.log",
+      "sha256": "e0a9516c723543b438d99461d78f40ff241b8caac7ffda805b2ef9500a80e483"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-vulkan-p1-output-1/raw/n-15/control-peer-first-run-13.log",
+      "sha256": "2cd127234dabf6250ddabf74e80c947998e35f323e9ee95f77131b3efa8c09d0"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-vulkan-p1-output-1/raw/n-15/control-peer-first-run-14.log",
+      "sha256": "f41705c3b7af2eb298fb85939b7678424426fc199ab63e56cae62caf73102287"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-vulkan-p1-output-1/raw/n-15/control-peer-first-run-15.log",
+      "sha256": "95f9255584c6b4d51561ea3353c327aa5704dbf11e39fbd79a9cf6a633ac4429"
+    }
+  ],
+  "record": "hyle_perf_evidence_manifest",
+  "schema": "hyle.perf.evidence-manifest/v1",
+  "source": {
+    "clean": true,
+    "remote": "/Users/kiro/hyle-scratch/compute-unified/g01-native-ragged-p1-source-v2",
+    "revision": "66af56852d0602ce14cdfde9aba3de373a7472c6",
+    "tree": "1bb8013d5ae67dccf7ae8d17bc9d4c371b09e7e6"
+  },
+  "summary": {
+    "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-vulkan-p1-output-1/summary.json",
+    "sha256": "d27900e48f7e8fdfe1f23488a2029cc0b85ecf128c7aeed68ce4a784f2f41d64"
+  },
+  "validator_results": [
+    {
+      "details": {
+        "artifact_count": 6,
+        "kind": "artifact-identity"
+      },
+      "gate": "PASS",
+      "id": "artifact-identity"
+    },
+    {
+      "details": {
+        "architecture_matches_profile": true,
+        "compiler_id": "AppleClang",
+        "compiler_matches_profile": true,
+        "compiler_version": "21.0.0.21000334",
+        "configuration": "Release",
+        "configuration_observation": {
+          "available": [
+            "Release"
+          ],
+          "mechanism": "CMAKE_BUILD_TYPE",
+          "proven": true,
+          "value": "Release"
+        },
+        "expected_compiler_id": "AppleClang",
+        "expected_compiler_version_prefix": "21.0",
+        "formal_toolchain": {
+          "mismatches": {},
+          "proven": false,
+          "reason": "machine runner profile has no pinned formal_toolchain",
+          "required": false
+        },
+        "fresh": true,
+        "generator_matches_profile": true,
+        "isa": "portable",
+        "kind": "build-contract",
+        "linkage": "static",
+        "lto": "off",
+        "toolchain": {
+          "cmake_compiler_record_sha256": "661f85d416ef9d157c2a329d41a10e25f60ea66d1e04d34002f6a01343285ae9",
+          "compiler_frontend_variant": "GNU",
+          "compiler_id": "AppleClang",
+          "compiler_path": "/usr/bin/c++",
+          "compiler_sha256": "34129c71a01a74f7f3b2443521519b2e5447553fa187f5fcafaaf8c42cc192e2",
+          "compiler_target": "unknown",
+          "compiler_version": "21.0.0.21000334",
+          "formal_identity_complete": false,
+          "linker_id": "AppleClang",
+          "linker_path": "/Library/Developer/CommandLineTools/usr/bin/ld",
+          "linker_sha256": "374d9f0713bce2c8a9e1e82bde51615d5433516a10d99b63107eb6ee70542e4c",
+          "linker_version": "ld: unknown options: --version",
+          "schema": "hyle.perf.toolchain-record/v1",
+          "sdk": "apple-sdk:MacOSX.sdk",
+          "stdlib": "unknown",
+          "system_name": "Darwin",
+          "system_processor": "arm64",
+          "system_version": "27.0.0"
+        },
+        "toolchain_attested": true
+      },
+      "gate": "PASS",
+      "id": "build-contract"
+    },
+    {
+      "details": {
+        "exit_code": 0,
+        "kind": "command",
+        "log": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-vulkan-p1-output-1/validators/native-page-aa.log",
+        "log_sha256": "c8d74c66225fbfb3650ad91ed837e3dcaf31ce3184500bb94b80506bc43fa53a"
+      },
+      "gate": "PASS",
+      "id": "native-page-aa"
+    }
+  ]
+}

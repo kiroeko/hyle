@@ -1,6 +1,6 @@
 # G01 Apple/Vulkan 原生精确页读取
 
-状态：CANDIDATE，2026-10-14。不可变产品candidate `520027a57`；baseline
+状态：CLOSED，2026-10-14。不可变产品candidate `520027a57`；baseline
 `9856c7c6e4f8e7f3729efbc89e43352db49b4c4e`；授权来自
 [十项执行总卡](../project/inference-gaps-goal-execution-2026-10.md)。本卡先定问题和验证，
 未AUDITED前不改产品；原finite resident/ragged/CPU page/default construction关闭证据保留。
@@ -283,3 +283,10 @@ PASS，原source/shared树fourjobs累计215.016s，见
 原依赖source authentication/shader generation与库内重编成本计入；未run executable/GPU，
 不冒称Windows实际数学/性能。当前本native有限轮只剩Vulkan不可变同合同P1及终审裁决；
 整个G01其它已准入域/联合G02与G03–10未完成，不能签全goal。
+
+
+Vulkan正式同合同P1完成，1493.406s，QUALIFIED/三个5%非劣PASS/verify0；各16AA、
+120产品/30controls、n15，混合D2566.4314–6.6996、长prefill5.8188–5.9560、D64
+2.0305–2.0691均WIN。冻结520产品与原失败不变；五owner按
+[有限终审](inference-g01-native-paged-terminal.md)CLOSED。仅签本native页域，整个G01/
+联合G02与G03–10仍未完成，不重复本轮P1。

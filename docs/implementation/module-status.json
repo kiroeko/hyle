@@ -514,10 +514,15 @@
     },
     {
       "module": "compute_route_apple",
-      "state": "CANDIDATE",
-      "record": "docs/implementation/tasks/compute/inference-g01-native-paged-read.md",
-      "summary": "G01 native page candidate520 frozen: actual Air original MLX/Vulkan page math, exact-page native failure/retirement/OOM/zero-domain risks, four relocated SDKs/headers, six native host sanitizer finals (explicit Metal TSan boundary model) and Windows public link/three headers complete. Apple immutable same-lifecycle P1 QUALIFIED/noninferiority PASS/verify0; Vulkan P1 pending. Whole G01/G02/goal not closed.",
-      "candidate": "520027a57ff41da96ac908ad0d35896e2dda9734"
+      "state": "CLOSED",
+      "record": "docs/implementation/tasks/compute/inference-g01-native-paged-terminal.md",
+      "summary": "G01 native page16 finite domain CLOSED at520: actual Air Apple F16/BF16 and Vulkan F16 original page math, exact guards/version/zero-domain/native failure/retirement/OOM, four relocated SDKs/headers, six host sanitizer finals with explicit Metal TSan model, Windows compile/link only. Both immutable P1 QUALIFIED/noninferiority PASS/verify0, original FAIL/UNKNOWN retained. Whole G01/G02/goal remain incomplete.",
+      "candidate": "520027a57ff41da96ac908ad0d35896e2dda9734",
+      "performance": {
+        "tier": "P1",
+        "evidence": "docs/implementation/tasks/compute/inference-g01-native-paged-terminal.md",
+        "material_margin_pct": 5
+      }
     },
     {
       "module": "graph_route_apple",
@@ -532,10 +537,15 @@
     },
     {
       "module": "compute_route_vulkan",
-      "state": "CANDIDATE",
-      "record": "docs/implementation/tasks/compute/inference-g01-native-paged-read.md",
-      "summary": "G01 native page candidate520 frozen: actual Air original MLX/Vulkan page math, exact-page native failure/retirement/OOM/zero-domain risks, four relocated SDKs/headers, six native host sanitizer finals (explicit Metal TSan boundary model) and Windows public link/three headers complete. Apple immutable same-lifecycle P1 QUALIFIED/noninferiority PASS/verify0; Vulkan P1 pending. Whole G01/G02/goal not closed.",
-      "candidate": "520027a57ff41da96ac908ad0d35896e2dda9734"
+      "state": "CLOSED",
+      "record": "docs/implementation/tasks/compute/inference-g01-native-paged-terminal.md",
+      "summary": "G01 native page16 finite domain CLOSED at520: actual Air Apple F16/BF16 and Vulkan F16 original page math, exact guards/version/zero-domain/native failure/retirement/OOM, four relocated SDKs/headers, six host sanitizer finals with explicit Metal TSan model, Windows compile/link only. Both immutable P1 QUALIFIED/noninferiority PASS/verify0, original FAIL/UNKNOWN retained. Whole G01/G02/goal remain incomplete.",
+      "candidate": "520027a57ff41da96ac908ad0d35896e2dda9734",
+      "performance": {
+        "tier": "P1",
+        "evidence": "docs/implementation/tasks/compute/inference-g01-native-paged-terminal.md",
+        "material_margin_pct": 5
+      }
     },
     {
       "module": "graph_route_vulkan",
@@ -550,17 +560,27 @@
     },
     {
       "module": "compute_provider_ggml_vulkan",
-      "state": "CANDIDATE",
-      "record": "docs/implementation/tasks/compute/inference-g01-native-paged-read.md",
-      "summary": "G01 native page candidate520 frozen: actual Air original MLX/Vulkan page math, exact-page native failure/retirement/OOM/zero-domain risks, four relocated SDKs/headers, six native host sanitizer finals (explicit Metal TSan boundary model) and Windows public link/three headers complete. Apple immutable same-lifecycle P1 QUALIFIED/noninferiority PASS/verify0; Vulkan P1 pending. Whole G01/G02/goal not closed.",
-      "candidate": "520027a57ff41da96ac908ad0d35896e2dda9734"
+      "state": "CLOSED",
+      "record": "docs/implementation/tasks/compute/inference-g01-native-paged-terminal.md",
+      "summary": "G01 native page16 finite domain CLOSED at520: actual Air Apple F16/BF16 and Vulkan F16 original page math, exact guards/version/zero-domain/native failure/retirement/OOM, four relocated SDKs/headers, six host sanitizer finals with explicit Metal TSan model, Windows compile/link only. Both immutable P1 QUALIFIED/noninferiority PASS/verify0, original FAIL/UNKNOWN retained. Whole G01/G02/goal remain incomplete.",
+      "candidate": "520027a57ff41da96ac908ad0d35896e2dda9734",
+      "performance": {
+        "tier": "P1",
+        "evidence": "docs/implementation/tasks/compute/inference-g01-native-paged-terminal.md",
+        "material_margin_pct": 5
+      }
     },
     {
       "module": "compute_ggml_runtime",
-      "state": "CANDIDATE",
-      "record": "docs/implementation/tasks/compute/inference-g01-native-paged-read.md",
-      "summary": "G01 native page candidate520 frozen: actual Air original MLX/Vulkan page math, exact-page native failure/retirement/OOM/zero-domain risks, four relocated SDKs/headers, six native host sanitizer finals (explicit Metal TSan boundary model) and Windows public link/three headers complete. Apple immutable same-lifecycle P1 QUALIFIED/noninferiority PASS/verify0; Vulkan P1 pending. Whole G01/G02/goal not closed.",
-      "candidate": "520027a57ff41da96ac908ad0d35896e2dda9734"
+      "state": "CLOSED",
+      "record": "docs/implementation/tasks/compute/inference-g01-native-paged-terminal.md",
+      "summary": "G01 native page16 finite domain CLOSED at520: actual Air Apple F16/BF16 and Vulkan F16 original page math, exact guards/version/zero-domain/native failure/retirement/OOM, four relocated SDKs/headers, six host sanitizer finals with explicit Metal TSan model, Windows compile/link only. Both immutable P1 QUALIFIED/noninferiority PASS/verify0, original FAIL/UNKNOWN retained. Whole G01/G02/goal remain incomplete.",
+      "candidate": "520027a57ff41da96ac908ad0d35896e2dda9734",
+      "performance": {
+        "tier": "P1",
+        "evidence": "docs/implementation/tasks/compute/inference-g01-native-paged-terminal.md",
+        "material_margin_pct": 5
+      }
     },
     {
       "module": "compute_provider_ggml_cuda",
@@ -676,10 +696,15 @@
     },
     {
       "module": "compute_batch",
-      "state": "CANDIDATE",
-      "record": "docs/implementation/tasks/compute/inference-g01-native-paged-read.md",
-      "summary": "G01 native page candidate520 frozen: actual Air original MLX/Vulkan page math, exact-page native failure/retirement/OOM/zero-domain risks, four relocated SDKs/headers, six native host sanitizer finals (explicit Metal TSan boundary model) and Windows public link/three headers complete. Apple immutable same-lifecycle P1 QUALIFIED/noninferiority PASS/verify0; Vulkan P1 pending. Whole G01/G02/goal not closed.",
-      "candidate": "520027a57ff41da96ac908ad0d35896e2dda9734"
+      "state": "CLOSED",
+      "record": "docs/implementation/tasks/compute/inference-g01-native-paged-terminal.md",
+      "summary": "G01 native page16 finite domain CLOSED at520: actual Air Apple F16/BF16 and Vulkan F16 original page math, exact guards/version/zero-domain/native failure/retirement/OOM, four relocated SDKs/headers, six host sanitizer finals with explicit Metal TSan model, Windows compile/link only. Both immutable P1 QUALIFIED/noninferiority PASS/verify0, original FAIL/UNKNOWN retained. Whole G01/G02/goal remain incomplete.",
+      "candidate": "520027a57ff41da96ac908ad0d35896e2dda9734",
+      "performance": {
+        "tier": "P1",
+        "evidence": "docs/implementation/tasks/compute/inference-g01-native-paged-terminal.md",
+        "material_margin_pct": 5
+      }
     },
     {
       "module": "graph_batch",

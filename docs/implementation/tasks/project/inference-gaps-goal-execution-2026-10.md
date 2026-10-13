@@ -145,3 +145,12 @@ CLOSED：provider1e9/runtime42f，source/三san/relocated static3+shared3/实际
 256字节对齐下两块backing不足的FAIL保留，修fixture后Windows八source tests PASS。
 graph仍AUDITED，风险/交付与native分页输入数学/权限桥仍须完成。全项计数继续0/10，
 GPU高性能页/G02native/G03–G10不由这两个有限进展代签。
+
+
+2026-10-14 Apple/Vulkan原生page16 [有限域终审](../compute/inference-g01-native-paged-terminal.md)
+已CLOSED，candidate520；两route真实数学/风险/SDK/宿主san/定向Win链接及固定同合同
+P1全部完成。Apple938.810s、Vulkan1493.406s，两者QUALIFIED/三个5%非劣PASS/verify0；
+原FAIL及Metal宿主TSan显式模型、private UNKNOWN、Win未run限制保。全项仍0/10。
+G02新hybrid三owner仍AUDITED：公开联合草稿Apple编译已过，首次actual CPU/native/CPU
+运行FAIL，readonly Q导入资源身份与原controller strict query resource校验不一致；
+须在合法owner审计后修正该真实接缝，不能删除资源校验或复制controller来取得PASS。

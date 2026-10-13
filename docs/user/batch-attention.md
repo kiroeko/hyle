@@ -10,11 +10,12 @@
 | 路线 | 数学与公开入口 | 准备与成本 |
 |---|---|---|
 | Linux CUDA | 原FlashInfer C++ native paged/ragged；BatchProgram、BatchInvocation、PreparedBatch；graph::batch::provider/Invocation | 每layout显式H2D及原plan；不同topology不能靠shape/address猜复用；native private bytes未知 |
-| CPU | MaterializedBatchProgram；MaterializedBatchInvocation / graph::batch::MaterializedInvocation | 固定原CPU数学参考，显式gather、GQA展开、F32矩阵、mask与Copy；Direct逐stage同步wait |
+| CPU 参考 | MaterializedBatchProgram；MaterializedBatchInvocation / graph::batch::MaterializedInvocation | 显式gather、GQA展开、F32矩阵、mask与Copy；Direct逐stage同步wait |
+| CPU page16 | 原CPU BatchProgram / BatchInvocation；详见[CPU批次入口](compute.md) | 原ggml flash直接读取确切物理页，有限F16/BF16资格已收口；Materialized路径另为显式参考算法 |
 | Apple | apple::MaterializedBatchInvocation；graph::apple::prepare_materialized_batch | 原MLX Program/worker，固定两device metadata banks、原F2上传；managed replay/私有storage未知 |
 | Vulkan | vulkan::MaterializedBatchInvocation；graph::vulkan::prepare_materialized_batch | 原native Plan/command/fence与ggml承载；固定两metadata banks，opaque scratch/driver仍未知 |
-| Apple page16，当前 G01 草稿 | NativePagedBatchProgram；apple::PagedBatchInvocation | 原MLX vector/2pass/NAX直接页读取；单I32表、两个mirror banks；实际Air F16/BF16数学通过，风险/交付/性能未收口 |
-| Vulkan page16，当前 G01 草稿 | NativePagedBatchProgram；vulkan::PagedBatchInvocation | 原FullF32 scalar flash直接页读取；实际Air F16数学通过，风险/交付/性能未收口；BF16未签资格 |
+| Apple page16，有限域已收口 | NativePagedBatchProgram；apple::PagedBatchInvocation | 原MLX vector/2pass/NAX直接页读取；单I32表、两个mirror banks；actual Air F16/BF16数学、风险、三交付与同合同P1与终审通过 |
+| Vulkan page16，有限域已收口 | NativePagedBatchProgram；vulkan::PagedBatchInvocation | 原FullF32 scalar flash直接页读取；actual Air F16数学、风险与三交付与同合同P1/终审通过；BF16未签资格 |
 | Windows CUDA native batch | 当前未准入 | 必须给具名unsupported，不能把WSL结果或CPU参考说成Windows native paged |
 
 Apple/Vulkan参考档真的在原GPU上执行，但它们把页/packed KV显式gather/materialize后做
@@ -73,8 +74,9 @@ metadata、shader scratch 与 driver 存储仍是额外费用，private bytes �
 Context/device/staging/injected allocator 保持地址稳定，活过所有 native work 和结果；
 控制调用外部串行，多个 slot 独立。旧 result 阻止同 slot prepare；close 停止新工作，
 drain 沿原实际退休观察，已接纳错误或未知完成不许可提前释放页 guard。结果按本 route
-原 Results/readonly import 使用。新的 accepted-prefix/未知退休、三交付及性能验收仍
-待活动卡完成，source 数值通过不能代签这些门，也不能代签新的 CPU+GPU 联合分页。
+原 Results/readonly import 使用。新native accepted-prefix/未知退休与三交付已验；宿主san有活动卡记录的插桩边界，
+不签shader/driver。两route同合同P1与有限终审通过；Windows仅定向
+compile/link通过。这些native入口证据不能代签新的CPU+GPU联合分页。
 
 ## Graph 的执行 lane 绑定
 
