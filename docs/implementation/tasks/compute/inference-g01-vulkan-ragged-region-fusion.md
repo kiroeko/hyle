@@ -1,7 +1,7 @@
 # G01 Vulkan ragged 原region分段纠正
 
-状态：两owner AUDITED，2026-10-13；owner `compute_route_vulkan`、
-`compute_provider_ggml_vulkan`。RF-01/02/03固定后开始产品实现。
+状态：两owner CANDIDATE，2026-10-13；owner `compute_route_vulkan`、
+`compute_provider_ggml_vulkan`。不可变candidate `0e9e011b8c8ff4a37e2bebc5ca8e4408be5e9368`。
 baseline `dbcba4b15`，原产品280，原Provider单请求3d92有限CLOSED保留。真实trigger是
 已准入两request F16短D64 noncausal [合格P1](../../../../evidence/performance/inference-g01-native-ragged-vulkan-m1-p1/README.md)
 0.8656–0.8885、非劣FAIL；[原NR轮](inference-g01-native-ragged-layout.md)不签完成。
@@ -43,3 +43,13 @@ reshape，控制边界仍阻断。recipe先外部views后math保证原SDPA直接
 Queue/资源/退休复用；冷线性重排、warm减少提交段；无FFI/ABI新面；源码/static/shared
 实际交付及宿主风险定向；公开guide不需要新API，补实际cost事实。真正零region-copy与
 数学/生命周期、非劣必须实跑，审计不签PASS。
+
+实现已提交0e9e011b8：全部外部Q/K/V slice/reshape先生成，SDPA之后的相邻dense
+reshape仅留在已开始的原managed段。Provider同dtype/rank<=4/extent域借原shape
+restoration，不添加math或shader；普通独立View起点仍原alias路径，不修改成熟默认
+政策。实际Air四source tests两次PASS，新结构反证两request仅一个region且KV根/
+byte offset仍指capacity inputs；原八requestnative suffix真实失败退休仍PASS。
+candidate前固定此实现；交付/风险与原合同新P1待验，不由source PASS代签性能。
+实际短结构诊断也确认candidate managed dispatch3→1、外部temporary blocks3→1，
+原SDPA＋原reshape＋一次Concat，peer原七dispatch仍一个native command。这里是
+结构事实，不是已资格的吞吐PASS；不修改原schema/math/精度或原短D64 workload。
