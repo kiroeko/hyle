@@ -1,7 +1,7 @@
 # G01 CPU 多请求 ragged 原生读取
 
-状态：CANDIDATE，2026-10-13；owner `compute_provider_ggml`。
-不可变candidate `642cc1e67566994a85a65adbe0db8956c1d0350a`。
+状态：AUDITED，2026-10-13；owner `compute_provider_ggml`。
+原不可变candidate `642cc1e67566994a85a65adbe0db8956c1d0350a`及证据保留。
 baseline `af9dc884448249ef0ad87d28525e5303ec087401`，单请求产品candidate d91a与全部
 三交付/san/独立性能证据保留，CPU单请求独立P1已资格且5%非劣PASS，不能代签本轮batch。
 授权来自[十项goal](../project/inference-gaps-goal-execution-2026-10.md)。
@@ -77,3 +77,17 @@ candidate642本身不改。安装Graph factory资格与batch性能尚未完成�
 到既有compute_batch一条私有无环边；selector保守选全局计划，计划原样保留，实际本轮
 只构建CPUprovider及直接batch/Graph消费者，不跑无影响全库/数学目录。性能独立副本
 已封存，heavy验证按常设资源约束串行，不能先记源码猜测PASS。
+
+### CR-01 安装消费形状修正
+
+baseline `b6e879ef287aaf626787aeb586b8f515f2d4caac`。真实SDK Graph消费者include
+已交付ggml_cpu.h、只链接hyle::compute/graph时，provider声明被私有实现宏隐藏。factor
+是CPU路线PRIVATE依赖，macro不会穿过LINK_ONLY传播；不能要求普通consumer链接
+内部_factor或伪造feature宏。既有SDK的header选集已由SPLIT_PUBLIC_HEADERS和实际
+可构建owner决定；未交付provider时该头不安装，不需重复声明门。
+
+有限FIX CR-01-H：已交付公开头无条件声明原provider工厂，保持原符号/Options/layout，
+不改build核心、组件边、provider算法或热成本，不加wrapper/旧接口兼容。同一普通
+source/static/shared consumer实际运行Direct和Graph两dependent region；安装工程仅
+public targets、不手写存在性宏。逐头/适用compile检查与缺头负空间；算法/risk命令及
+相同产品TU可按identity复用，不重跑旧单请求P1。batch P1仍须独立冻结与实跑。

@@ -369,10 +369,9 @@
     },
     {
       "module": "compute_provider_ggml",
-      "state": "CANDIDATE",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/inference-g01-cpu-native-ragged.md",
-      "summary": "G01 CPU native ragged CR-01/02/03 CANDIDATE：原ggml flash直接读KV和packed输出，Windows默认入口/四风险tests、WSL三san各13tests PASS；三交付与batch性能待验，原单请求P1已PASS。",
-      "candidate": "642cc1e67566994a85a65adbe0db8956c1d0350a"
+      "summary": "G01 CPU CR-01-H AUDITED：真实安装Graph消费者的provider声明被私有macro隐藏；公开头按交付owner选集直接声明原工厂，不改算法/ABI/build核心。原642多请求/三san/Direct SDK证据保留。"
     },
     {
       "module": "graph_provider_onednn",
