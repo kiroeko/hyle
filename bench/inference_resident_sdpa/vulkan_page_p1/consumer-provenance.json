@@ -1,0 +1,65 @@
+{
+  "kind": "PROVISIONAL_ARCHETYPE",
+  "consumer": "Qwen3.5-2B GQA8/2 D256 attention fragment plus noncausal D64 two-request holdout; physical reversed page16 roots, true unused capacity and tail",
+  "product_candidate": "520027a57ff41da96ac908ad0d35896e2dda9734",
+  "backend": "vulkan",
+  "actual_dtype": "F16 storage, original backend math",
+  "cases": [
+    {
+      "q": [
+        1,
+        17
+      ],
+      "kv": [
+        1024,
+        768
+      ],
+      "d": 256,
+      "causal": true,
+      "hq": 8,
+      "hkv": 2,
+      "requests": 2,
+      "capacity_tail": 13
+    },
+    {
+      "q": [
+        64,
+        128
+      ],
+      "kv": [
+        1024,
+        768
+      ],
+      "d": 256,
+      "causal": true,
+      "hq": 8,
+      "hkv": 2,
+      "requests": 2,
+      "capacity_tail": 13
+    },
+    {
+      "q": [
+        1,
+        17
+      ],
+      "kv": [
+        31,
+        47
+      ],
+      "d": 64,
+      "causal": false,
+      "hq": 8,
+      "hkv": 2,
+      "requests": 2,
+      "capacity_tail": 13
+    }
+  ],
+  "model_scope_path": "docs/implementation/tasks/project/qwen35-2b-command-consumer-scope-2026-10.md",
+  "model_scope_sha256": "72125de2bd4d9c363ee44399b7705fa0a6784fa28743f6fbcc80febff4481048",
+  "whole_model_claim": false,
+  "page_size": 16,
+  "physical_page_order": "reverse",
+  "max_pages": "sum ceil(KV/16)+4",
+  "max_page_refs": "sum ceil(KV/16)+3",
+  "charged_prepare": true
+}

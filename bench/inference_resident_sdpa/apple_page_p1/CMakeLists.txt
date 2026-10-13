@@ -1,0 +1,5 @@
+cmake_minimum_required(VERSION 3.25)
+project(g01_apple_page_p1 LANGUAGES C CXX)
+set(HYLE_PAGE_ROUTE apple)
+set(HYLE_MLX_ORIGINAL_REFERENCE_SOURCE "" CACHE PATH "Authenticated original MLX peer checkout")
+include("../native_page_p1/common.cmake")

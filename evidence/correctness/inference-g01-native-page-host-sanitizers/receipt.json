@@ -1,0 +1,472 @@
+{
+  "candidate": "520027a57ff41da96ac908ad0d35896e2dda9734",
+  "verdict": "PASS_WITH_EXPLICIT_METAL_TSAN_MODEL",
+  "scope": "Apple/Vulkan actual native host ASan/UBSan/TSan; no LSan, shader, driver or native private-pool instrumentation qualification",
+  "apple_tsan": "Raw runs fail at opaque upstream Metal completed-handler handoff, reproduced by independent no-HYLE/no-MLX probe. Final pass instruments MLX host and models release(commit)/acquire(completion) on the same actual command buffer in a validation-only copied header; no suppressions; original dependency cache unchanged.",
+  "metal_boundary": {
+    "scope": "validation-only per-command-buffer happens-before edge; no race suppression or product/header/cache change",
+    "original": "/Users/kiro/Library/Caches/hyle/dependencies/v1/sources/metal_cpp-f567ed836e4c-3874e9e28e8e/Metal/MTLCommandBuffer.hpp",
+    "copy": "/Users/kiro/hyle-scratch/compute-unified/g01-metal-callback-tsan-probe/tsan-metal-cpp/Metal/MTLCommandBuffer.hpp",
+    "before_sha256": "d019ae3947b57f64e59aeaa312f776d80c8a028a8f08997f463e6bc90ba9dd38",
+    "after_sha256": "4a58c6e564e3a7efcdf5c7709eeee99ec7b7c40594e2ada5ec5c91012171d504",
+    "edge": "release on commandBuffer.commit before native submission, acquire on the same callback argument before accessing the copied handler; only this native completion relationship is modeled"
+  },
+  "runs": [
+    {
+      "candidate": "520027a57ff41da96ac908ad0d35896e2dda9734",
+      "route": "apple",
+      "mode": "asan",
+      "identity": {
+        "model": "Mac16,12",
+        "arch": "arm64",
+        "os": "ProductName:\t\tmacOS\nProductVersion:\t\t27.0.1\nBuildVersion:\t\t26A434",
+        "compiler": "Apple clang version 21.0.0 (clang-2100.3.34.2)\nTarget: arm64-apple-darwin27.0.0\nThread model: posix\nInstalledDir: /Library/Developer/CommandLineTools/usr/bin"
+      },
+      "scope": "actual native host objects, owned metadata/shared controller/ready-page guards/native failures and tiny GPU oracle; no LSan/shader/driver/private native instrumentation qualification",
+      "stages": [
+        {
+          "stage": "build",
+          "command": [
+            "/opt/homebrew/bin/cmake",
+            "--build",
+            "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-apple-asan/build",
+            "--target",
+            "g01_page_public",
+            "g01_page_risks",
+            "--parallel",
+            "4"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 37.498578916999996,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-apple-asan/build-1.log"
+        },
+        {
+          "stage": "g01_page_public",
+          "command": [
+            "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-apple-asan/build/g01_page_public"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 2.7424751659999984,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-apple-asan/g01_page_public-1.log"
+        },
+        {
+          "stage": "g01_page_risks",
+          "command": [
+            "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-apple-asan/build/g01_page_risks"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 0.9515755830000003,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-apple-asan/g01_page_risks-1.log"
+        }
+      ]
+    },
+    {
+      "candidate": "520027a57ff41da96ac908ad0d35896e2dda9734",
+      "route": "apple",
+      "mode": "ubsan",
+      "identity": {
+        "model": "Mac16,12",
+        "arch": "arm64",
+        "os": "ProductName:\t\tmacOS\nProductVersion:\t\t27.0.1\nBuildVersion:\t\t26A434",
+        "compiler": "Apple clang version 21.0.0 (clang-2100.3.34.2)\nTarget: arm64-apple-darwin27.0.0\nThread model: posix\nInstalledDir: /Library/Developer/CommandLineTools/usr/bin"
+      },
+      "scope": "actual native host objects, owned metadata/shared controller/ready-page guards/native failures and tiny GPU oracle; no LSan/shader/driver/private native instrumentation qualification",
+      "stages": [
+        {
+          "stage": "build",
+          "command": [
+            "/opt/homebrew/bin/cmake",
+            "--build",
+            "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-apple-ubsan/build",
+            "--target",
+            "g01_page_public",
+            "g01_page_risks",
+            "--parallel",
+            "4"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 38.411237916999994,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-apple-ubsan/build-1.log"
+        },
+        {
+          "stage": "g01_page_public",
+          "command": [
+            "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-apple-ubsan/build/g01_page_public"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 2.2115174999999994,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-apple-ubsan/g01_page_public-1.log"
+        },
+        {
+          "stage": "g01_page_risks",
+          "command": [
+            "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-apple-ubsan/build/g01_page_risks"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 0.6156810419999985,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-apple-ubsan/g01_page_risks-1.log"
+        }
+      ]
+    },
+    {
+      "candidate": "520027a57ff41da96ac908ad0d35896e2dda9734",
+      "route": "apple",
+      "mode": "tsan",
+      "identity": {
+        "model": "Mac16,12",
+        "arch": "arm64",
+        "os": "ProductName:\t\tmacOS\nProductVersion:\t\t27.0.1\nBuildVersion:\t\t26A434",
+        "compiler": "Apple clang version 21.0.0 (clang-2100.3.34.2)\nTarget: arm64-apple-darwin27.0.0\nThread model: posix\nInstalledDir: /Library/Developer/CommandLineTools/usr/bin"
+      },
+      "scope": "actual native host objects, owned metadata/shared controller/ready-page guards/native failures and tiny GPU oracle; no LSan/shader/driver/private native instrumentation qualification",
+      "mlx_host_tsan": true,
+      "stages": [
+        {
+          "stage": "build",
+          "command": [
+            "/opt/homebrew/bin/cmake",
+            "--build",
+            "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-apple-tsan/build",
+            "--target",
+            "g01_page_public",
+            "g01_page_risks",
+            "--parallel",
+            "4"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 36.595862083,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-apple-tsan/build-1.log"
+        },
+        {
+          "stage": "g01_page_public",
+          "command": [
+            "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-apple-tsan/build/g01_page_public"
+          ],
+          "exit_code": -6,
+          "elapsed_seconds": 1.1709606249999993,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-apple-tsan/g01_page_public-1.log"
+        },
+        {
+          "stage": "build",
+          "command": [
+            "/opt/homebrew/bin/cmake",
+            "--build",
+            "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-apple-tsan/build",
+            "--target",
+            "g01_page_public",
+            "g01_page_risks",
+            "--parallel",
+            "4"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 25.752774917,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-apple-tsan/build-2.log"
+        },
+        {
+          "stage": "g01_page_public",
+          "command": [
+            "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-apple-tsan/build/g01_page_public"
+          ],
+          "exit_code": -6,
+          "elapsed_seconds": 0.8183685420000018,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-apple-tsan/g01_page_public-2.log"
+        },
+        {
+          "stage": "build",
+          "command": [
+            "/opt/homebrew/bin/cmake",
+            "--build",
+            "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-apple-tsan/build",
+            "--target",
+            "g01_page_public",
+            "g01_page_risks",
+            "--parallel",
+            "4"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 29.689535583,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-apple-tsan/build-3.log"
+        },
+        {
+          "stage": "g01_page_public",
+          "command": [
+            "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-apple-tsan/build/g01_page_public"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 7.568365416999999,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-apple-tsan/g01_page_public-3.log"
+        },
+        {
+          "stage": "g01_page_risks",
+          "command": [
+            "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-apple-tsan/build/g01_page_risks"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 3.138471416999998,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-apple-tsan/g01_page_risks-1.log"
+        }
+      ]
+    },
+    {
+      "candidate": "520027a57ff41da96ac908ad0d35896e2dda9734",
+      "route": "vulkan",
+      "mode": "asan",
+      "identity": {
+        "model": "Mac16,12",
+        "arch": "arm64",
+        "os": "ProductName:\t\tmacOS\nProductVersion:\t\t27.0.1\nBuildVersion:\t\t26A434",
+        "compiler": "Apple clang version 21.0.0 (clang-2100.3.34.2)\nTarget: arm64-apple-darwin27.0.0\nThread model: posix\nInstalledDir: /Library/Developer/CommandLineTools/usr/bin"
+      },
+      "scope": "actual native host objects, owned metadata/shared controller/ready-page guards/native failures and tiny GPU oracle; no LSan/shader/driver/private native instrumentation qualification",
+      "mlx_host_tsan": false,
+      "stages": [
+        {
+          "stage": "build",
+          "command": [
+            "/opt/homebrew/bin/cmake",
+            "--build",
+            "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-vulkan-asan/build",
+            "--target",
+            "g01_page_public",
+            "g01_page_risks",
+            "--parallel",
+            "4"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 84.074531917,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-vulkan-asan/build-1.log"
+        },
+        {
+          "stage": "g01_page_public",
+          "command": [
+            "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-vulkan-asan/build/g01_page_public"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 10.359459042000012,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-vulkan-asan/g01_page_public-1.log"
+        },
+        {
+          "stage": "g01_page_risks",
+          "command": [
+            "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-vulkan-asan/build/g01_page_risks"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 1.3799563339999992,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-vulkan-asan/g01_page_risks-1.log"
+        }
+      ]
+    },
+    {
+      "candidate": "520027a57ff41da96ac908ad0d35896e2dda9734",
+      "route": "vulkan",
+      "mode": "ubsan",
+      "identity": {
+        "model": "Mac16,12",
+        "arch": "arm64",
+        "os": "ProductName:\t\tmacOS\nProductVersion:\t\t27.0.1\nBuildVersion:\t\t26A434",
+        "compiler": "Apple clang version 21.0.0 (clang-2100.3.34.2)\nTarget: arm64-apple-darwin27.0.0\nThread model: posix\nInstalledDir: /Library/Developer/CommandLineTools/usr/bin"
+      },
+      "scope": "actual native host objects, owned metadata/shared controller/ready-page guards/native failures and tiny GPU oracle; no LSan/shader/driver/private native instrumentation qualification",
+      "mlx_host_tsan": false,
+      "stages": [
+        {
+          "stage": "build",
+          "command": [
+            "/opt/homebrew/bin/cmake",
+            "--build",
+            "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-vulkan-ubsan/build",
+            "--target",
+            "g01_page_public",
+            "g01_page_risks",
+            "--parallel",
+            "4"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 94.59806854099999,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-vulkan-ubsan/build-1.log"
+        },
+        {
+          "stage": "g01_page_public",
+          "command": [
+            "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-vulkan-ubsan/build/g01_page_public"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 4.559301042000001,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-vulkan-ubsan/g01_page_public-1.log"
+        },
+        {
+          "stage": "g01_page_risks",
+          "command": [
+            "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-vulkan-ubsan/build/g01_page_risks"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 0.7673074169999978,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-vulkan-ubsan/g01_page_risks-1.log"
+        }
+      ]
+    },
+    {
+      "candidate": "520027a57ff41da96ac908ad0d35896e2dda9734",
+      "route": "vulkan",
+      "mode": "tsan",
+      "identity": {
+        "model": "Mac16,12",
+        "arch": "arm64",
+        "os": "ProductName:\t\tmacOS\nProductVersion:\t\t27.0.1\nBuildVersion:\t\t26A434",
+        "compiler": "Apple clang version 21.0.0 (clang-2100.3.34.2)\nTarget: arm64-apple-darwin27.0.0\nThread model: posix\nInstalledDir: /Library/Developer/CommandLineTools/usr/bin"
+      },
+      "scope": "actual native host objects, owned metadata/shared controller/ready-page guards/native failures and tiny GPU oracle; no LSan/shader/driver/private native instrumentation qualification",
+      "mlx_host_tsan": false,
+      "stages": [
+        {
+          "stage": "build",
+          "command": [
+            "/opt/homebrew/bin/cmake",
+            "--build",
+            "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-vulkan-tsan/build",
+            "--target",
+            "g01_page_public",
+            "g01_page_risks",
+            "--parallel",
+            "4"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 81.391501209,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-vulkan-tsan/build-1.log"
+        },
+        {
+          "stage": "g01_page_public",
+          "command": [
+            "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-vulkan-tsan/build/g01_page_public"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 12.342293416000004,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-vulkan-tsan/g01_page_public-1.log"
+        },
+        {
+          "stage": "g01_page_risks",
+          "command": [
+            "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-vulkan-tsan/build/g01_page_risks"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 3.9201441250000073,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-vulkan-tsan/g01_page_risks-1.log"
+        }
+      ]
+    }
+  ],
+  "retained_failures": [
+    {
+      "route": "apple",
+      "mode": "tsan",
+      "stage": "g01_page_public",
+      "command": [
+        "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-apple-tsan/build/g01_page_public"
+      ],
+      "exit_code": -6,
+      "elapsed_seconds": 1.1709606249999993,
+      "log": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-apple-tsan/g01_page_public-1.log"
+    },
+    {
+      "route": "apple",
+      "mode": "tsan",
+      "stage": "g01_page_public",
+      "command": [
+        "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-apple-tsan/build/g01_page_public"
+      ],
+      "exit_code": -6,
+      "elapsed_seconds": 0.8183685420000018,
+      "log": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-apple-tsan/g01_page_public-2.log"
+    }
+  ],
+  "inputs": [
+    {
+      "path": "cmake/HyleDependencyLock.json",
+      "sha256": "91d9b18502742971b68e9ce921e86f36c15601a56ed04edde15feab47d715189"
+    },
+    {
+      "path": "include/hyle/compute/batch_paged_native.h",
+      "sha256": "4a6ddd0d500e139857923d730c28b894f3b6330d5209ccb29c9236448eb38005"
+    },
+    {
+      "path": "include/hyle/compute/detail/materialized_native_controller.h",
+      "sha256": "99ae67a0b20b89d44e7a5b8304d987a5d852859bbf5fbde960413c8b68c8e3d4"
+    },
+    {
+      "path": "src/compute_batch/batch_paged_native.cc",
+      "sha256": "f07fe31741570dc3d54de486131c3bf0ab330445e143cfde543825ece4def3b2"
+    },
+    {
+      "path": "third_party/mlx_cast/patches.json",
+      "sha256": "05abd1de748be70a80ab17c92382e7ab2956c5d26911879ecfac8c8b332fd1ac"
+    },
+    {
+      "path": "third_party/ggml_vulkan_runtime/patches.json",
+      "sha256": "73adf604717f328b2fdfc3cc6bcecdb308af20355d4c34ad1c3706853300149b"
+    },
+    {
+      "path": "include/hyle/compute/apple_batch.h",
+      "sha256": "0d23792e823363918343bf966396b59839d7b98f8f93b7104a8a66d4145173c7"
+    },
+    {
+      "path": "include/hyle/compute/detail/apple_batch_access.h",
+      "sha256": "79d49ab50ba766d84e8edf706c93d7cac85072216765442a1bbb685b31d3a475"
+    },
+    {
+      "path": "src/compute_route_apple/apple_batch.cc",
+      "sha256": "e81c5bd762189cb3db3dad4ad92e49d9d01a42cda0967ce946d548684830bdad"
+    },
+    {
+      "path": "src/compute_route_apple/apple_materialized_invocation.cc",
+      "sha256": "b7aa6c1c84a18368df0706805b142f18dcfe743380884d653cfb51eb699ae98c"
+    },
+    {
+      "path": "tests/compute_batch/native_paged_apple_consumer.cc",
+      "sha256": "a3bbeeaa30387005a8970d4412e189f47d306706d1920f51caac552d602829f3"
+    },
+    {
+      "path": "tests/compute_batch/native_paged_apple_risks.cc",
+      "sha256": "0e8cc045fe64e15b642917a6ddba1a1af6c632c60fdc859b5c7c6e3ead0116a1"
+    },
+    {
+      "path": "include/hyle/compute/vulkan_batch.h",
+      "sha256": "10c8fc75104b91da9a57b31d39f164400e8922b10a0e442cff17bd0bfd5808c4"
+    },
+    {
+      "path": "include/hyle/compute/detail/vulkan_batch_access.h",
+      "sha256": "64cdb670843f701b68264f7c6063b32cc03c311b441d211aacd8d4ce2732ae6f"
+    },
+    {
+      "path": "src/compute_route_vulkan/vulkan_batch.cc",
+      "sha256": "fcb1ae8bf4e867799bb6f7de5404b6fcbc0a6d22fa18ac849868f9f6f416ff7f"
+    },
+    {
+      "path": "src/compute_route_vulkan/vulkan_materialized_invocation.cc",
+      "sha256": "46aedd3dba56f61e493032eca92bc4736d90a5ca0d9e265c95978f639e4e68dd"
+    },
+    {
+      "path": "tests/compute_batch/native_paged_vulkan_consumer.cc",
+      "sha256": "0e87de122b033926e5dfaefa2572c0455d83a8fe7bb70257314dd9481682ad84"
+    },
+    {
+      "path": "tests/compute_batch/native_paged_vulkan_risks.cc",
+      "sha256": "1a755a7322e7b3b1ff49137dc364103f8a178ba6aa11a5687efc0c83d361307d"
+    },
+    {
+      "path": "tests/compute_batch/native_paged_risk_fixture.h",
+      "sha256": "9f848c20343386ac76d57d4f035c127b7669272ba85fce1250ecbffcf2d6c49c"
+    },
+    {
+      "path": "src/compute_provider_ggml_vulkan/region.cc",
+      "sha256": "54a58f4d5f2e26ad8171898319d6afd5d7b8f31be92566dcb08bdb593610badd"
+    },
+    {
+      "path": "src/compute_provider_ggml_vulkan/region.h",
+      "sha256": "faa25cdaddf3ef48d263729c47784c68ee465d84845553b742714a39a4fc94b5"
+    }
+  ],
+  "test_input_revision": "951cc8ffa843047ebced49bd0aae9bfa7028c312",
+  "test_input_note": "Product hashes bind candidate520; later test-only dead local removal a4ffd retained in SDK stage; no product/candidate change.",
+  "cumulative_run_seconds": 480.5579677520001,
+  "raw_sha256": "2123d678124928693a545e23fd71b09963d89fd2b5ed368a0fb12d52955d08d4"
+}

@@ -1,0 +1,176 @@
+{
+  "candidate": "520027a57ff41da96ac908ad0d35896e2dda9734",
+  "verdict": "PASS_ORACLE_PREFLIGHT_ONLY",
+  "scope": "No timed sampling or P1 conclusion. Exact original fused native math and matching prepare/table upload/exact guards/slot/wait/packed result lifecycle; independent double tolerance2e-3 and per-page readonly checks.",
+  "runs": [
+    {
+      "route": "apple",
+      "candidate": "520027a57ff41da96ac908ad0d35896e2dda9734",
+      "scope": "bench comparator oracle/lifecycle preflight only; no sampling or qualified P1 verdict",
+      "stages": [
+        {
+          "stage": "configure",
+          "command": [
+            "/opt/homebrew/bin/cmake",
+            "-S",
+            "/Users/kiro/hyle-scratch/compute-unified/source-c8874688",
+            "-B",
+            "/Users/kiro/hyle-scratch/compute-unified/a-apple/selected-graph/static-sdk-build",
+            "-DCMAKE_PROJECT_INCLUDE=/Users/kiro/hyle-scratch/compute-unified/g01-native-page-apple-preflight/project.cmake"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 3.3466675,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-apple-preflight/configure-1.log"
+        },
+        {
+          "stage": "build",
+          "command": [
+            "/opt/homebrew/bin/cmake",
+            "--build",
+            "/Users/kiro/hyle-scratch/compute-unified/a-apple/selected-graph/static-sdk-build",
+            "--target",
+            "g01_native_page_bench",
+            "--parallel",
+            "4"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 1.5155337920000003,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-apple-preflight/build-1.log"
+        },
+        {
+          "stage": "oracle",
+          "command": [
+            "/Users/kiro/hyle-scratch/compute-unified/a-apple/selected-graph/static-sdk-build/bin/g01_native_page_bench"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 3.7502612080000004,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-apple-preflight/oracle-1.log"
+        }
+      ]
+    },
+    {
+      "route": "vulkan",
+      "candidate": "520027a57ff41da96ac908ad0d35896e2dda9734",
+      "scope": "bench comparator oracle/lifecycle preflight only; no sampling or qualified P1 verdict",
+      "stages": [
+        {
+          "stage": "configure",
+          "command": [
+            "/opt/homebrew/bin/cmake",
+            "-S",
+            "/Users/kiro/hyle-scratch/compute-unified/source-c8874688",
+            "-B",
+            "/Users/kiro/hyle-scratch/compute-unified/a-vulkan/selected-graph/static-sdk-build",
+            "-DCMAKE_PROJECT_INCLUDE=/Users/kiro/hyle-scratch/compute-unified/g01-native-page-vulkan-preflight/project.cmake"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 13.606280166,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-vulkan-preflight/configure-1.log"
+        },
+        {
+          "stage": "build",
+          "command": [
+            "/opt/homebrew/bin/cmake",
+            "--build",
+            "/Users/kiro/hyle-scratch/compute-unified/a-vulkan/selected-graph/static-sdk-build",
+            "--target",
+            "g01_native_page_bench",
+            "--parallel",
+            "4"
+          ],
+          "exit_code": 1,
+          "elapsed_seconds": 1.4021171250000002,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-vulkan-preflight/build-1.log"
+        },
+        {
+          "stage": "configure",
+          "command": [
+            "/opt/homebrew/bin/cmake",
+            "-S",
+            "/Users/kiro/hyle-scratch/compute-unified/source-c8874688",
+            "-B",
+            "/Users/kiro/hyle-scratch/compute-unified/a-vulkan/selected-graph/static-sdk-build",
+            "-DCMAKE_PROJECT_INCLUDE=/Users/kiro/hyle-scratch/compute-unified/g01-native-page-vulkan-preflight/project.cmake"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 12.311669708,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-vulkan-preflight/configure-2.log"
+        },
+        {
+          "stage": "build",
+          "command": [
+            "/opt/homebrew/bin/cmake",
+            "--build",
+            "/Users/kiro/hyle-scratch/compute-unified/a-vulkan/selected-graph/static-sdk-build",
+            "--target",
+            "g01_native_page_bench",
+            "--parallel",
+            "4"
+          ],
+          "exit_code": 1,
+          "elapsed_seconds": 0.24854712499999998,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-vulkan-preflight/build-2.log"
+        },
+        {
+          "stage": "configure",
+          "command": [
+            "/opt/homebrew/bin/cmake",
+            "-S",
+            "/Users/kiro/hyle-scratch/compute-unified/source-c8874688",
+            "-B",
+            "/Users/kiro/hyle-scratch/compute-unified/a-vulkan/selected-graph/static-sdk-build",
+            "-DCMAKE_PROJECT_INCLUDE=/Users/kiro/hyle-scratch/compute-unified/g01-native-page-vulkan-preflight/project.cmake"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 12.374728959,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-vulkan-preflight/configure-3.log"
+        },
+        {
+          "stage": "build",
+          "command": [
+            "/opt/homebrew/bin/cmake",
+            "--build",
+            "/Users/kiro/hyle-scratch/compute-unified/a-vulkan/selected-graph/static-sdk-build",
+            "--target",
+            "g01_native_page_bench",
+            "--parallel",
+            "4"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 1.853496667,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-vulkan-preflight/build-3.log"
+        },
+        {
+          "stage": "oracle",
+          "command": [
+            "/Users/kiro/hyle-scratch/compute-unified/a-vulkan/selected-graph/static-sdk-build/bin/g01_native_page_bench"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 5.120387041000001,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-vulkan-preflight/oracle-1.log"
+        }
+      ]
+    }
+  ],
+  "inputs": [
+    {
+      "path": "bench/inference_resident_sdpa/native_page_bench.cc",
+      "sha256": "356f014cb07aa6aa5570573c93f383c7e49c9338d495fe81dc64e4b7f9ef5e14"
+    },
+    {
+      "path": "bench/inference_resident_sdpa/native_page_reference.h",
+      "sha256": "eb13af3600e09f6aca8a08de6b37691e0bb744abada1999f3aec44b5a02b5d95"
+    },
+    {
+      "path": "bench/inference_resident_sdpa/apple_page_reference.cc",
+      "sha256": "4adb6e100e880efd69d2bd92627703f1d625808268387c186123fd4333fac9b6"
+    },
+    {
+      "path": "bench/inference_resident_sdpa/vulkan_page_reference.cc",
+      "sha256": "854e98ea7b6ab3bf9bf0c4e17d194b8eb39456d7e02fe8cb5b31537e8b07c1a4"
+    }
+  ],
+  "cumulative_seconds": 55.529689291000004,
+  "raw_sha256": "5807e3f45fdbad9c60913f0c4358bcc00aefe0a3ee29af229f17cca3fe9edd95",
+  "selector": "BLOCKED unknown shared benchmark ownership paths, product_authorization has no issues; original selected/skipped reasons archived, independent tool task retains issue; only finite predeclared native adapter gates apply."
+}

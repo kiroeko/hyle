@@ -238,3 +238,29 @@ consumer只链hyle::compute、仅relocated includes，十二standalone header TU
 static unused-local Werror FAIL保，删除test dead local，不改520027a57产品候选。三交付
 有限公开消费已有证据；native宿主san与不可变同原native数学/生命周期P1仍未通过，
 不得由SDK结果签CLOSED或全goal。
+
+
+两route宿主ASan/UBSan/TSan六组取得最终exit0，累计480.558s，见
+[宿主风险阶段](../../../../evidence/correctness/inference-g01-native-page-host-sanitizers/README.md)。
+Apple TSan原两次FAIL保留；独立无HYLE/MLX的Metal回调程序复现原metal-cpp交接报告。
+最终仅在验证头副本对同一actual command buffer的commit/completed callback标注
+release/acquire并instrument MLX host，通过独立探针和实际消费者；不以suppression、
+产品改动或原cache改写取得PASS，不冒称未经标注的原始TSan通过。ASan无LSan，全部
+宿主结果不签shader/driver/private native pool。产品520027a57保持冻结，五owner仍
+CANDIDATE；下一步是同原数学、相同准备/上传/精确guards/slot/wait/result生命周期的
+有限bench预校验，再固定不可变源码/16AA/controls/5%合同P1；G02联合和完整goal未决。
+
+
+正式page性能合同现固定在bench/inference_resident_sdpa/apple_page_p1与vulkan_page_p1，
+原16AA/controls/n15/31/5%门不变；产品仍520027a57。三有限形状为Q1/17、KV1024/768、
+D256 causal；Q64/128同KV/D；Q1/17、KV31/47、D64 noncausal。均page16、H8/2、物理
+页反序、unused capacity/tail、两独立contexts与两slots。每被测episode都计prepare/
+原native replacement、owned I32 F2上传、精确guard/bind、submit/wait/packed result release；
+不藏G06未完成的冷计划成本。peer只每request gather一次完整K/V，再原相同数学。
+Apple force_fused原SDPA，Vulkan pristine pin生成独立FullF32 scalar；原公式/reduction/
+输出数学沿原资格。两边独立double/逐exact-page readonly预校验PASS，见
+[预校验](../../../../evidence/correctness/inference-g01-native-page-bench-preflight/README.md)。
+这不是P1；55.530s内两脚本配置FAIL保。Apple peer source verification逐项重放冻结patch
+及before/after SHA，不把有显式page地址适配的linked source写成所有文件pristine。
+P1只在commit/tree/contract/toolchain/machine绑定的clean不可变验证源运行。新Windows
+定向compile/link仍需取证；不能以Air验证代签。G02与goal0/10继续保留。
