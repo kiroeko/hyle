@@ -222,3 +222,7 @@ CPU正式v1在冷诊断/A-A途中主动停止，原构建/日志/851.5s保留于
 需约两小时；这不是产品性能FAIL。v2在正式product samples前固定16paired rounds与
 实际遥测校验，5%/原10%预算、数学/peer、n15/31、原controls不改。CPU产品d91a不改，
 新benchmark需独立clean source身份重新资格；公共仪器不改，不把v1未完成项签PASS。
+
+CPU后续真实多请求缺口另起[ragged原生卡](inference-g01-cpu-native-ragged.md)；原单请求
+candidate和P1独立checkout保留，只有完成该卡AUDITED后才改变Provider。单请求与新batch
+职责/证据分开，不借新增入口重测无影响全库或删除尚待paged/native GPU域。
