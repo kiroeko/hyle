@@ -1,6 +1,6 @@
 # G01 驻留 SDPA：视图消费与原生 fused 路径
 
-状态：CANDIDATE，2026-10-13。owner：`compute_provider_ggml`、
+状态：CPU owner CANDIDATE，Vulkan owner AUDITED，2026-10-13。owner：`compute_provider_ggml`、
 `compute_provider_ggml_vulkan`；baseline：`070609442806ebfe6a0dc8d6594b7388c494f20b`。
 不可变candidate：`d91a523df9bce21eb81c13d9bf2a8f3f7d3ea80f`。
 授权与完整目标见[缺口执行总卡](../project/inference-gaps-goal-execution-2026-10.md)。
@@ -144,3 +144,25 @@ correctness树WERROR=OFF；本轮保WERROR=ON，只在明确M1编译profile登�
 原native graph_compute每次遍历/编码并retire cleanup，对照可冷record固定recipe；需要核
 原command-buffer/descriptor/byte-origin可复用条件后固定有限纠正，不能只凭点值改公共API
 或把managed费用漏计。产品改动前须退回AUDITED并重新冻结FIX；目前只读定位，candidate未改。
+
+## 有限 native record 费用纠正（AUDITED）
+
+触发为上述合格decode LOSS及原native源码每次重编码/cleanup事实；baseline
+`49af6056b`（完整revision由Git解析），旧不可变candidate和全部PASS/FAIL/elapsed保留。
+CPU产品不改，仍保持原candidate；Vulkan Provider与原native runtime回AUDITED。
+不新增公共API/layout、Provider数学、shader、capture承诺或第二runtime。
+
+原native已有`ggml_vk_begin_submission(..., one_time=false)`，每backend拥有自己的
+command pool、descriptor pools/sets。以下有限FIX只复用这套owner与原shader记录，不能
+把global pipeline对象当可随意共享的mutable recording。
+
+| FIX | 固定合同与实现边界 | 验收 |
+|---|---|---|
+| RR-01 | 原NativeWork对同full-F32 tag的单SDPA及其Fill/DiagMask/Cast/Cont/Permute/View固定graph可保原compute记录；只在无host staging、native event/semaphore依赖且实际退休后启用重放。其他graph/模式沿原managed执行 | 首用完整数学、first-use费用、连续重放、三D/两dtype；未资格域不伪造prepared/capture |
+| RR-02 | 原Region.bind在改port前按VkBuffer、byte origin、capacity与strong owner身份检查记录失效；变化后沿原native重新编码，不保旧输入到额外业务周期。固定graph/math metadata不由warm payload决定 | 两独立slots、不同backing/非零offset/别名与同buffer内容更新；旧output拒绝submit不变，readonly与writer寿命不减弱 |
+| RR-03 | 保原Queue提交锁/一个真实fence/accepted-prefix保活与异常drain；cached command pool/descriptor只属该Work，退休前不reset，失败/device-loss不复用，销毁仍按原native退休 | repeated/rebind/close、partial/OOM与原风险反例；不额外每kernel marker，不假设异常代表已退休 |
+
+冷record与失效后再record的费用明确；warm固定port只O(ports)资格检查、原native submit/
+wait和output归还。常态private字段/记录buffer归原Work，真实bytes或UNKNOWN保原报告，
+不让普通其他operation付新规划/数学。再冻结candidate后复用原三交付/风险的适用入口，
+追加record/rebind反例及一次同合同P1；原比较门/失败预算不重置，不重跑无影响全库。

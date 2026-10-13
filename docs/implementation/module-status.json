@@ -553,17 +553,15 @@
     },
     {
       "module": "compute_provider_ggml_vulkan",
-      "state": "CANDIDATE",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/inference-g01-resident-sdpa.md",
-      "summary": "G01 resident SDPA CANDIDATE: native-compatible cache views, original fused CPU/full-F32 Vulkan math; public finite consumers passed, delivery/risk/P1 remaining; no whole G01 closure.",
-      "candidate": "d91a523df9bce21eb81c13d9bf2a8f3f7d3ea80f"
+      "summary": "G01 RR-01/02/03 AUDITED：合格decode P1 LOSS后冻结有限原native record/rebind/退休纠正；保旧精度candidate与全部PASS/FAIL/elapsed，产品未改，其他域和公共capture合同不扩张。"
     },
     {
       "module": "compute_ggml_runtime",
-      "state": "CANDIDATE",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/inference-g01-vulkan-native-precision.md",
-      "summary": "G01 resident SDPA CANDIDATE: native-compatible cache views, original fused CPU/full-F32 Vulkan math; public finite consumers passed, delivery/risk/P1 remaining; no whole G01 closure.",
-      "candidate": "d91a523df9bce21eb81c13d9bf2a8f3f7d3ea80f"
+      "summary": "G01 RR-01/02/03 AUDITED：合格decode P1 LOSS后冻结有限原native record/rebind/退休纠正；保旧精度candidate与全部PASS/FAIL/elapsed，产品未改，其他域和公共capture合同不扩张。"
     },
     {
       "module": "compute_provider_ggml_cuda",

@@ -1,6 +1,6 @@
 # G01 原生 Vulkan attention 精度资格
 
-状态：CANDIDATE，2026-10-13。新增owner：`compute_ggml_runtime`；baseline：
+状态：AUDITED，2026-10-13。新增owner：`compute_ggml_runtime`；baseline：
 `d97126cfdfa3b73ebf385fb95be27d989ef5f683`。原Provider owner仍按
 [resident SDPA卡](inference-g01-resident-sdpa.md)同一candidate验证。完整授权来自
 [缺口goal](../project/inference-gaps-goal-execution-2026-10.md)；不是重新检查CLOSED来找问题。
@@ -84,3 +84,10 @@ CPU风险与三交付现已分别通过，见resident卡。Air正式P1的
 通过仪器资格和verify，但decode与留出性能门失败；长prefill非劣通过且仍记录方向LOSS。
 原native warm graph编码/retire费用是下一有限源码定位输入，不因正确性通过就签CLOSED。
 改变本承载正常replay成本前回AUDITED、固定record复用/失效/错误/寿命合同，不改公共仪器。
+
+现按resident卡RR-01/02/03回AUDITED，性能纠正baseline为`49af6056b`；旧candidate与
+全部证据保留。原begin_submission支持non-one-time记录，descriptor/command pool确属
+每backend；有限单SDPA fixedgraph复用由原NativeWork承担，原Region负责port变化失效。
+无host staging/event/semaphore且真实退休才可重放；失败/设备丢失/未资格模式沿原规则。
+私有host patch、native bridge与owner内实现是本FIX，不改shader、global capabilities、
+公共capture/schema或其他CPU/CUDA/Metal数学。产品改动须在这个AUDITED状态之后。
