@@ -133,3 +133,7 @@ metadata；warm仍是原Program，不引入第二个Queue/完成权威。全部r
 反证已PASS。source-only失败注入只签source，SDK只签public consumer；没有用单请求
 或CPU性能代签native多请求。复检未定位此有限候选的新产品错误；Vulkan性能与直接
 消费者回归仍待实际终态，不先签七门CLOSED。
+
+原统一LOC工具绑定candidate280、两owner各自self-check PASS：全库code2,871,923，
+自实现不含测试175,049；Apple模块实现4,262，Vulkan模块实现8,825。该统计描述候选
+规模，不按行数折算goal完成百分比，不为文档证据提交重新统计或重跑产品性能。
