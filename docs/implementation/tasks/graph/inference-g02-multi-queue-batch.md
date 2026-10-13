@@ -1,7 +1,7 @@
 # G02 多 Queue batch 协调
 
-状态：CANDIDATE，2026-10-13；owner：`graph`、`graph_batch`。
-不可变candidate：`26d7c2cb7212f5abdd3866baaf886b8fdbca02e5`。
+状态：graph原CANDIDATE保留，graph_batch退回AUDITED，2026-10-13。
+原不可变candidate：`26d7c2cb7212f5abdd3866baaf886b8fdbca02e5`，证据全部保留。
 baseline：`743783f7b0759d77978c0d208dc5ba0898313e69`。
 授权来自当前[缺口 goal](../project/inference-gaps-goal-execution-2026-10.md)；
 reopen trigger 是新增真实 CPU＋GPU/多 lane 分页消费者，原 F5 coordinator 只保存单 Queue，
@@ -31,6 +31,22 @@ create接完整active bindings span、原lease options与ReplayOptions。输入�
 SELF只拥有组合与身份，BORROW全部原数学、F2上传/规划、Graph replay、权限与actual retirement。
 不修改batch数学/metadata encoding/页权限，不重写Queue、compiler、allocator、构建/公共工具。
 直接依赖与消费者只从中央图和selector生成，不另维护依赖表。
+
+### 已准入CPU batch消费者的资源接缝修正
+
+2026-10-13，baseline `27babb0389844a92ade15cf262477322a430b8e8`。CPU原生ragged
+候选642cc1e67的Direct/source/static/shared与三san通过，但原Graph双ragged串联在
+resource query拒绝：`no graph storage satisfies provider resource constraints`。真实根因
+是batch region强制kDeviceAccessible，与固定options.resource的CPU coherent host属性
+矛盾。它是既有G01/G02域内的真实消费形状，不扩张模型域、公开API或清单。
+
+有限FIX MQ-CPU-01：资源约束仍固定原exact_resource、端口16/metadata8字节对齐；
+去掉错误的GPU专用属性要求。原BatchProgram provider qualify仍验证实际storage与math，
+不凭host指针模拟GPU，不允许其它resource替代exact identity。cold资源查询之外normal
+submit/layout/权限/失败/退休不改。仅graph_batch owner退回AUDITED，graph产品不改。
+复用原两dependent region公开消费者，CPU两请求、源只读/旧output，source与安装Graph
+factory分开裁决；原native CUDA 26d7证据保留不冒充新CPU资格。适用san与三交付定向
+验收，没有数学/算法/热成本变化，不重跑CPU单请求P1或全库；所有缺门仍待。
 
 ## 验证与停止
 

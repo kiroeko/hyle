@@ -699,10 +699,9 @@
     },
     {
       "module": "graph_batch",
-      "state": "CANDIDATE",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/graph/inference-g02-multi-queue-batch.md",
-      "summary": "G02 multi-queue batch CANDIDATE: final lane/context/queue bindings, original region and native slot identity; single-queue API migration, no compatibility layer.",
-      "candidate": "26d7c2cb7212f5abdd3866baaf886b8fdbca02e5"
+      "summary": "G01/G02 graph_batch MQ-CPU-01 AUDITED：实际CPU batch原桥被GPU专用resource属性拒绝；保exact resource/原端口对齐与native qualify，有限修正错误约束。原26d7多Queue候选证据保留，graph不改。"
     }
   ]
 }
