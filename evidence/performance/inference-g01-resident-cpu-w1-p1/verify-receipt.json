@@ -1,0 +1,14 @@
+{
+  "command": [
+    "python",
+    "C:\\h7\\g01-cpu-p1-source-2\\scripts\\hyle-perf.py",
+    "verify",
+    "--contract",
+    "C:\\h7\\g01-cpu-p1-source-2\\bench\\inference_resident_sdpa\\cpu_p1\\contract.json",
+    "--manifest",
+    "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g01\\cpu-p1-qualification-3\\manifest.json"
+  ],
+  "exit_code": 0,
+  "stdout": "{\n  \"contract_sha256\": \"d766ab8f24fbc7f0ea8ad0fffa66949e2f04dba675188a8f014a75b7e62606f2\",\n  \"current_certification_policy_eligible\": true,\n  \"environment_policy_compatibility\": \"CURRENT\",\n  \"manifest\": \"C:\\\\public\\\\project-hyle\\\\hyle\\\\.scratch\\\\inference-gaps\\\\g01\\\\cpu-p1-qualification-3\\\\manifest.json\",\n  \"paths_verified\": true,\n  \"product_gate_policy\": \"consumer-evidence-v1\",\n  \"product_interpretation\": \"CURRENT_POLICY_EVIDENCE_REQUIRES_GATE_REPLAY\",\n  \"provenance_compatibility\": \"EXACT\",\n  \"provenance_renewal_ledger_sha256\": null,\n  \"provenance_renewals_applied\": [],\n  \"qualification\": \"QUALIFIED\"\n}\n",
+  "stderr": ""
+}

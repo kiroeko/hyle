@@ -226,3 +226,9 @@ CPU正式v1在冷诊断/A-A途中主动停止，原构建/日志/851.5s保留于
 CPU后续真实多请求缺口另起[ragged原生卡](inference-g01-cpu-native-ragged.md)；原单请求
 candidate和P1独立checkout保留，只有完成该卡AUDITED后才改变Provider。单请求与新batch
 职责/证据分开，不借新增入口重测无影响全库或删除尚待paged/native GPU域。
+
+CPU单请求[实际W1 P1](../../../../evidence/performance/inference-g01-resident-cpu-w1-p1/README.md)
+已完成：独立source af9、原CPU产品d91a、v2固定16rounds，16个A/A、n15的120产品/
+30 controls，资格与三点5%非劣均PASS、原verify退出0，实际2598.99s。decode吞吐比
+0.9977–1.0021、prefill0.9987–1.0040、留出0.9977–1.0011，方向均INCONCLUSIVE。
+原STOP/锁失败/未知private成本保留。不代签新ragged多请求；其实现仍按独立活动卡验收。

@@ -20,3 +20,10 @@
 [15,31]自动追加，16个A/A、368产品process、92 controls与3669.39s完整保留。真实费用
 反证为外层3个warm Copy，原native记录修正不足；最终合格port Copy3→0，未放宽oracle。
 CPU正式比较另有v1冷诊断STOP/v2固定排期，尚未获资格，不混入此账。
+
+CPU v2现已[实跑资格/性能PASS](../../../../evidence/performance/inference-g01-resident-cpu-w1-p1/README.md)：
+W1-WIN原registered CPU2、BF16 BHSD GQA8/2、完整PreparedOperation/Queue/Completion，
+source af9、CPU产品d91a、contract d766；16 A/A、120产品process与30 controls，
+2598.99s、原verify退出0，未进入n31。decode比0.9977–1.0021、prefill0.9987–1.0040、
+D64留出0.9977–1.0011，三点5%非劣PASS/band PARITY，相对1方向均INCONCLUSIVE。
+不继承到新ragged入口；v1 STOP与v2 stale-marker FAIL保留，原限额/peer/math没有改写。

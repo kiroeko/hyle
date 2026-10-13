@@ -1,0 +1,52 @@
+{
+  "cpu_product_candidate": "d91a523df9bce21eb81c13d9bf2a8f3f7d3ea80f",
+  "performance_source": "af9dc884448249ef0ad87d28525e5303ec087401",
+  "contract_sha256": "d766ab8f24fbc7f0ea8ad0fffa66949e2f04dba675188a8f014a75b7e62606f2",
+  "qualification": "PASS",
+  "performance": "PASS",
+  "verify_exit": 0,
+  "machine": "actual W1-WIN i9-13900K, native MSVC19.50, single registered logicalCPU2",
+  "elapsed_seconds": 2598.9850000000006,
+  "aa_processes": 16,
+  "product_processes": 120,
+  "control_processes": 30,
+  "sample_stages": [
+    15
+  ],
+  "paired_rounds": 16,
+  "rows": [
+    {
+      "id": "cpu-resident-decode-d256",
+      "ratio_range": [
+        0.9977142857142857,
+        1.0020580164641317
+      ],
+      "noninferiority": "PASS",
+      "exact": "PARITY",
+      "direction": "INCONCLUSIVE"
+    },
+    {
+      "id": "cpu-resident-prefill-d256",
+      "ratio_range": [
+        0.9986807387862797,
+        1.003957783641161
+      ],
+      "noninferiority": "PASS",
+      "exact": "PARITY",
+      "direction": "INCONCLUSIVE"
+    },
+    {
+      "id": "cpu-resident-holdout-d64",
+      "ratio_range": [
+        0.9976762096988367,
+        1.0011385751923
+      ],
+      "noninferiority": "PASS",
+      "exact": "PARITY",
+      "direction": "INCONCLUSIVE"
+    }
+  ],
+  "native_private_upper": "UNKNOWN botharms",
+  "prior_attempts": "v1STOP851.5s archived; v2attempt2stale ownmarkerFAIL0.297s retained; markerexactowner archived afternoactiveWin/WSLproof",
+  "raw_zip_sha256": "5c85de67784abbd26e928650f0e057044afd419ae98113d5e07ecec5d16a1f6f"
+}
