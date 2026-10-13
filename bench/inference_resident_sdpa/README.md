@@ -26,3 +26,8 @@ VK memory quota 不覆盖 driver/pipeline 的私有内存，两侧总成本不�
 以更严格门验证活动卡原10%非劣预算；[A/A检查](validate_aa.py)复用原机器/解析器与
 5%factor median、10%gross instability界线。正式A/A与统一仪器timing尚未完成，
 这里不能手跑点值代签P1。CPU resident P1另验，不由本Vulkan合同代签。
+
+CPU独立对照的[源码入口](cpu-CMakeLists.txt)沿原typed custom kernel/PreparedOperation与
+MetadataArena/CpuExecution承载原ggml BF16 flash；BHSD GQA8/2 D256、Q1/128、KV1024
+容量1037、源只读/两个slots重放已过[数学预检](../../evidence/correctness/inference-g01-cpu-p1-adapter/README.md)。
+私有pool上界仍UNKNOWN，CPU正式P1未跑；不将这个对照Provider变成产品SPI。

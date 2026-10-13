@@ -136,3 +136,11 @@ correctness树WERROR=OFF；本轮保WERROR=ON，只在明确M1编译profile登�
 `-Wno-error=tautological-constant-out-of-range-compare`，诊断仍输出。该上界在64位恒不可达，
 32位仍有意义；不为此改无关CLOSED产品或重开通用工具。原构建FAIL/100.28s保留，
 产品candidate与三种数学形状不变；性能合同尚未取样就更新profile/hash，再做fresh资格。
+
+正式Air[resident Vulkan P1](../../../../evidence/performance/inference-g01-resident-vulkan-m1-p1/README.md)
+已完成原verify回放：资格PASS、performance FAIL。decode吞吐比0.687–0.710，明确超原10%
+预算；长prefill通过5%非劣但仍有小幅方向LOSS，D64留出一个placement/order格未过5%。
+16个A/A、120个产品process和30个controls及原FAIL/耗时完整保留，不签CLOSED。
+原native graph_compute每次遍历/编码并retire cleanup，对照可冷record固定recipe；需要核
+原command-buffer/descriptor/byte-origin可复用条件后固定有限纠正，不能只凭点值改公共API
+或把managed费用漏计。产品改动前须退回AUDITED并重新冻结FIX；目前只读定位，candidate未改。

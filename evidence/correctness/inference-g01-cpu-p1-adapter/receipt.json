@@ -1,0 +1,85 @@
+{
+  "product_candidate": "d91a523df9bce21eb81c13d9bf2a8f3f7d3ea80f",
+  "scope": "CPU independent original native flash via same public typed-kernel/PreparedOperation lifecycle; oracle-only, not qualified P1",
+  "source_inputs": {
+    "cpu_reference.h": "99d65ee86768eb6ecee1eca90284e98b6fb8a8389f4244434f6d953af60e5f18",
+    "cpu_reference.cc": "442035641dc80558c486b9641a58a14f65c5efa1b0fd0e824f26b0bb45b35294",
+    "cpu_bench.cc": "951d6f50db763c0529d2d335a002c8c8b3271ceda1277bfd1ab23c7b9c6148cf",
+    "cpu-CMakeLists.txt": "3d88d66758ca4074b63ff00f11855058d3f68c20562cb0ef04b3b6d6f240783e"
+  },
+  "stages": [
+    {
+      "stage": "configure",
+      "command": [
+        "cmake",
+        "-S",
+        "C:\\public\\project-hyle\\hyle",
+        "-B",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev",
+        "-DCMAKE_PROJECT_INCLUDE=C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g01\\cpu-source-project.cmake"
+      ],
+      "extra_environment": null,
+      "exit_code": 0,
+      "elapsed_seconds": 113.76599999998871,
+      "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g01\\cpu-adapter-configure-1.log"
+    },
+    {
+      "stage": "build",
+      "command": [
+        "cmake",
+        "--build",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev",
+        "--target",
+        "g01_cpu_resident_bench",
+        "--parallel",
+        "2"
+      ],
+      "extra_environment": null,
+      "exit_code": 0,
+      "elapsed_seconds": 41.10900000001129,
+      "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g01\\cpu-adapter-build-1.log"
+    },
+    {
+      "stage": "oracle",
+      "command": [
+        "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\g01_cpu_resident_bench.exe"
+      ],
+      "extra_environment": {
+        "HYLE_BENCH_VERIFY_ONLY": "1"
+      },
+      "exit_code": 0,
+      "elapsed_seconds": 3.327999999994063,
+      "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g01\\cpu-adapter-oracle-1.log"
+    }
+  ],
+  "binary_sha256": "9e45ca6f28237b70b796d9981da5de15cebd53eef7e43b42b40f26971047a8cc",
+  "cold_private_pool": "UNKNOWN, neither comparator claims a complete private memory upper bound",
+  "timing_qualification": "NOT_RUN",
+  "raw_zip_sha256": "3fea919209689b94a7f89200347794285bb8d4b8b4013bdff6304a7fd018eeb0",
+  "raw": [
+    {
+      "path": "cpu-adapter-build-1.log",
+      "sha256": "4ac8090909b24cfc01bc63470606ffedaed70f883ce8a2fd99ddfa992c2010e3"
+    },
+    {
+      "path": "cpu-adapter-configure-1.log",
+      "sha256": "73f5aeaf96c8654fffc2c8d698cc2144e86d3fedd7e80dd9fba1fb3a9d911551"
+    },
+    {
+      "path": "cpu-adapter-oracle-1.log",
+      "sha256": "34a8d9882d1e2022b09a61ef6c375a66ab08b7529a9b7993f90ccc504741ddec"
+    },
+    {
+      "path": "cpu-adapter-result.json",
+      "sha256": "f2be1b315ba5e025fece2756b8977d3611f31c2d406b670f86e950ccc91aaf39"
+    },
+    {
+      "path": "cpu-source-project.cmake",
+      "sha256": "05dfbb4ddadcf78484d4942ca41ed7c4ed66eb41eeef69e01ab2495c0e5c4e8e"
+    },
+    {
+      "path": "cpu_adapter_checks.py",
+      "sha256": "36f35eb232c4892a83068a93749407cd00287f38a051702d0adb504bb713de52"
+    }
+  ]
+}

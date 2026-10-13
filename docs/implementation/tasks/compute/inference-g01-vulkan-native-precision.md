@@ -78,3 +78,9 @@ Air[宿主UBSan](../../../../evidence/correctness/inference-g01-air-host-ubsan/R
 source public数学/生命周期与三个风险反例通过，三变更TU插桩核对；TSan仍在同Air验证。
 同Air[宿主TSan](../../../../evidence/correctness/inference-g01-air-host-tsan/README.md)也实跑
 通过原public旅程与三个反例；没有shader/driver覆盖推断。CPU风险/交付、P1及终审仍待。
+
+CPU风险与三交付现已分别通过，见resident卡。Air正式P1的
+[完整证据](../../../../evidence/performance/inference-g01-resident-vulkan-m1-p1/README.md)
+通过仪器资格和verify，但decode与留出性能门失败；长prefill非劣通过且仍记录方向LOSS。
+原native warm graph编码/retire费用是下一有限源码定位输入，不因正确性通过就签CLOSED。
+改变本承载正常replay成本前回AUDITED、固定record复用/失效/错误/寿命合同，不改公共仪器。

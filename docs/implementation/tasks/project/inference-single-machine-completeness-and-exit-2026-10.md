@@ -119,6 +119,113 @@ terminal/evidence、明确负空间或待核反例；共有机制可复用证据
 token/s 对比；新增真实库缺陷以候选/owner/trace/最小复现定向回流。这个反馈环属于正常
 产品维护，不撤销“上一固定合同已收口”，也不意味着必须在写引擎前预先证明所有未来模型。
 
+## 接口与实际消费的距离
+
+当前距离不是均匀的：**普通加载、冷准备、数学及显式关闭较小；持续更新、多请求和原生
+联合分页仍较大。** 不能用“有 Graph/lease/attention API”证明这些链自然，也不能将所有
+模型代码都当接口缺口。下面评估自然公开组合与附加机制成本，不能替 native 验收签 PASS。
+
+分级为小（已有直接路线或少量 ordinary connection）、中（可用但需显式多个对象/阶段与
+成本管理）、大（公开组合或目标数学/存储域尚缺，不能用上层薄 wrapper 补齐）。
+`Q` 表示还需要实际资格；数学/存储域不足与易用性不足分别记录。
+
+| 消费旅程 | CPU | CUDA | Apple | Vulkan | CPU+CUDA | CPU+Apple | CPU+Vulkan | 主要距离 |
+|---|---|---|---|---|---|---|---|---|
+| 文件→有界stage→ready权重/资源 | 小 | 小 | 小 | 小 | 中 | 中 | 中 | F3已有完整ticket/ready group；联合只是选择资源/放置，不应重复读/拷贝/退休状态机 |
+| 冷prepare/compile→基础prefill | 小/中 | 小/中Q | 中Q | 中Q | 中Q | 中Q | 中Q | shape/encoding、native资源与各lane需声明；模型图和权重角色由engine写。新数学域不足另归G05/G07 |
+| 单请求驻留attention | 小Q | 小/中Q | 中Q | 小/中Q | 中Q | 大Q | 大Q | CPU/Vk G01有限stride驻留已有candidate；CUDA需分OS资格；Apple原dense/native存在，长期有效长度及warm组合仍待证；typed hybrid分页接缝未补 |
+| KV producer→增量更新→读取 | 中/大 | 中/大 | 大 | 大 | 大 | 大 | 大 | 原F1/F2 writer/producer已有，F5只接ready页；长期更新、input imports释放和少host边界尚属G03/G06 |
+| 两请求变长/重排→多步decode | 大 | 中/大Q | 大 | 大 | 中/大Q | 大 | 大 | CUDA native paged/ragged存在；CPU/Apple/Vk参考物化可算，但不满足G01结构目标。共通协调已修不代表native数学/metadata全域完成 |
+| recurrent状态→成功发布/分支 | 中Q | 中Q | 中Q | 中Q | 中Q | 中Q | 中Q | F4已有version/draft/head；哪些conv/recurrent成员组成完整checkpoint是模型代码，原目录O(E)不能当每token默认路径 |
+| logits→必要小结果 | 小/中 | 中/大 | 中/大 | 中/大 | 中/大 | 中/大 | 中/大 | greedy/TopK现有路线与随机完整域分开；G08设备数值选择和少D2H尚待补。EOS/temperature/penalty/grammar是engine政策 |
+| 错误→取消→旧输出/退休→关闭 | 小/中 | 小/中Q | 中Q | 中Q | 中Q | 中Q | 中Q | 每个原owner已有错误/取消/retirement合同；跨多个owner仍需有界scope和明确关闭顺序，不能在失败时destroy资源冒充drain成功 |
+
+表中“大”主要回映当前 G01–G10，并非本次新增项。CPU+CUDA 的 G02 common 已将
+[graph batch](../../../../include/hyle/graph/batch.h)改为完整 `LaneBinding`，各native batch slot
+使用自己的 Queue/host workspace；原适配文档中的“仅单Queue”是修改前事实。
+[公开联合消费者](../../../../tests/compute_batch/public_hybrid_batch_consumer.cc)现在直接采用
+`prepare_batch→bind Q/精确页/输出→submit→wait→output`，无需自写页guard/native退休。
+但 [CPU+Apple](../../../../include/hyle/graph/cpu_apple.h) 与
+[CPU+Vulkan](../../../../include/hyle/graph/cpu_vulkan.h)的typed hybrid `bind`仍只有native
+tensor、ready lease与weights，没有 `PagedArenaRead`；不能拿common修正代签这两条组合。
+
+### 公共对象序列与成本
+
+普通消费可先分成四个长期owner：运行资源（Context/Queue/allocator/IoContext）、不可变
+program/executable、有限invocation slots、每次提交的ticket/completion/result。运行资源
+必须包住所有accepted work与结果，这是必须兑现的borrow合同，不是应隐藏的细节。
+
+| 阶段 | 已有自然公开序列 | 消费者必要工作与当前危险接缝 |
+|---|---|---|
+| 加载/放置 | [StreamSource/StreamFile→FileResourcePipeline→StreamTicket→StreamReadyGroup](../../../../include/hyle/compute/file_stream.h)；ready output再bind数学 | engine解析权重文件/tensor角色，列实际范围和放置；pipeline已管stage/backpressure/取消/accepted prefix。不要为每个模型重写read/copy retirement，也不要每组等待全部文件完成 |
+| 冷数学 | `TensorDesc→prepare/compile→workspace与Invocation→bind`；[LeasedOperationInvocation](../../../../include/hyle/compute/leased_operation.h)自动保accepted lease | engine列shape/算子与模型位置；资源、artifact与slots应复用。跨native迁移改typed资源/compile/binding，保数学schema；不假装所有backend一种对象 |
+| 页更新与读取 | [PagedArena.acquire→writer→F2 bind_mutable/bind_producer→成功output→writer.complete→arena.read(layout)→batch](../../../../include/hyle/compute/paged_arena.h) | 当前ready-only组合要求host观察；engine不得自行把pending改ready。共享页/旧result防写保护必须保持，必要clone只针对dirty范围。受控pending组合归G03 |
+| 每批规划 | [BatchInvocation.update_batch→PreparedBatch.run→Completion→output](../../../../include/hyle/compute/batch_execution.h) | [prepare实现](../../../../src/compute_batch/batch_execution.cc)每批copy完整metadata→upload.wait，再规划wait；reuse通常仍一个host wait，未复用两个。`update`名字不承诺delta或零等待，G06负责费用纠正 |
+| 结果和关闭 | `OwnedResult.wait/ResultLease→必要读取→释放旧reader→close/drain`；随后再销毁runtime资源 | `Completion`成功/失败和actual retirement不同；可持结果跨下一业务步骤，但slot复用会拒绝。不同owner的close语义按头文档，不能一律当非阻塞cancel；非阻塞析构也不等于可释放borrowed资源 |
+
+[F2 report](../../../../include/hyle/compute/batch_transfer.h)已区分logical/physical/staging bytes、
+native wait与host wait；batch report提供generation、metadata bytes、native-plan reuse与
+host waits。这些足以构成现有成本账入口，不需先扩建公共仪器。
+原 Apple hybrid [fragment推进](../../../../src/graph_route_cpu_apple/invocation.cc)逐段await并
+在CPU/GPU边界搬运，必要依赖正确，但独立支路是否多付wait归G09。复制schema/owned
+metadata、K/V capacity展开、F16/BF16转换、权重冷repack、native private scratch必须分别
+计费；一层 wrapper 若仍隐藏这些费用，不算体验改善完成。
+
+### 消费者代码量的源推估
+
+以下是**接口连接量的设计估计，未由同目标引擎前后LOC实测校准**；置信度低到中。只计
+consumer自有产品代码，排除测试、oracle、准备工具、成熟tokenizer/格式库与HYLE源码。
+范围受选域和native资格影响，不能把基础库新增行数直接从引擎估计相减。
+
+依据是上面实际公开对象/调用序列，以及
+[普通F3消费](../../../../samples/package/graph/file_streaming/main.cc)、
+[F2与leased数学消费](../../../../samples/package/graph/batched_transfers/main.cc)、
+[G02公开联合分页](../../../../tests/compute_batch/public_hybrid_batch_consumer.cc)。这些fixture
+含oracle、多route分支和负例，格式有压缩，原文件总行数不能直接当引擎glue实测。
+
+| 自有代码类别 | 当前源推估 | 依据与预期取舍 |
+|---|---|---|
+| 单route普通连接：resource/context、冷prepare、绑定、错误返回与scope关闭 | 约150–400行/一个复用runtime适配域，中置信度 | 通常10余个冷对象/配置动作和每step数次bind/submit/结果动作；没有理由每层复制完整适配器。属于合理连接，不应全下沉 |
+| 多请求更新/页权限/metadata与slot复用的重复通用协调 | 约300–900行/一套有界协调，低置信度 | writer→producer→ready、layout generation、旧reader阻止reuse、failure suffix与close的数个状态分支；目标是G03/G06把通用机制收进owner，engine留下页选择/请求策略 |
+| CPU+GPU跨typed原生路线的适配与失败/退休组合 | 约300–800行/一个native联合适配域，低置信度 | complete bindings/资源/placement、各片段结果、copy dependency、取消与runtime borrow。G02common已降低CUDA组合负担；Apple/Vk未补的数学/权限不能以这点LOC冒充可实现 |
+| 明知无public目标数学/存储域而另写kernel/backend的workaround | 不给“glue上界” | G04/G05/G07/G08域不足是基础承载工作，不是几百行consumer连接能解决；必须在已授权G项内真正补齐或证明完整ROUTED |
+
+前三行存在重叠，**不能逐route相加当总引擎报价**。以三部署、有限模型和七路线的一套
+复用实现规划，当前通用平台/生命周期glue可先按约1500–4500产品行作低置信度风险账；
+十项完成后的合理目标是让剩余部分主要为约600–1800行的资源/route适配和声明式接线。
+这只是待prototype校准的设计目标，不是承诺减少了某个百分比，也不证明其他所有机制已具备。
+如果补齐后仍要自写native retirement、页permission或每route一套batch错误状态机，应判为
+接口消费验收未过，而不是合理模型代码。
+
+模型结构/权重映射、位置与完整状态集合、自回归/request循环、prefix/LRU/admission、采样
+政策、tokenizer/文本协议是引擎应写或借成熟库的部分。首个限定CLI与实用多请求引擎仍沿
+[原条件估计](qwen35-2b-command-consumer-scope-2026-10.md#5-工作量粗估)：2500–6000与
+14000–30000产品行，尚无整链校准；这些总数含普通连接，不能再叠加上表。易用性目标是
+减少错误易发的重复机制和昂贵workaround，不是让整个引擎只剩main函数。
+
+### 通用性与实际体验的平衡
+
+1. **先保持原子自然组合**：已有F3 ticket/ready、F2 producer/native wait、F1权限、F4版本与
+   原Graph/route的完整生命周期直接用，普通资源声明和少量bind不另造wrapper。recipe应
+   呈现cold一次、warm复用、失败/关闭与成本，不仅给成功的十行demo。
+2. **重复机制才补窄复合接口**：当推理主纵切和资源流送/批处理数值正交consumer都重写
+   同一owner/producer/精确范围/失败退休协调时，在原owner补有界组合；暴露范围、依赖、
+   ready与retirement事实，不能暗含token/page淘汰政策。两个consumer是反偏置设计证据，
+   一个真实可复现缺陷仍可准入，不机械等两个完整产品出现才修。
+3. **保原生能力与共同合同**：共同数学、有效区、权限、错误/取消/结果可统一验收；MLX
+   array、VkTensor、CUDA Queue/stream及capture差异保typed入口。不能为统一调用降到
+   最慢参考档、隐藏CPUfallback，或建立第二套scheduler/allocator。
+4. **体验有具体判据**：普通用户从指南能发现route与已准入shape/编码；冷prepare能给
+   selected Provider与成本/未知；同layout的绑定/producer状态和错误阶段可诊断；scope
+   的borrowed资源关闭顺序明确；warm复用费用可查；迁移route保模型图，改有限资源/绑定。
+   暂无证据的资格需明确失败或未签，不让用户通过大量bench或private源码猜支持域。
+5. **避免“一神接口”**：不添加兼容转发、多轨旧API或万能Engine/Sampler；用户本轮已
+   不要求兼容。若recipe解决发现问题就只补recipe，若公开机制真实缺失就修G owner；
+   不能把重复依赖/退休glue归“上层自己组合”，也不能把tokenizer/模型政策下沉来刷LOC。
+
+接口消费章节的退出依据仍是十项及已准入旅程完成。source估计与设计目标不产生新的产品
+授权；剩余glue的真实量在一个同目标prototype上计数并标职责，届时有反例才定向回owner。
+
 ## 本次边界
 
 本次只读复核已核对上述公开合同、实现导航与固定 peer 调用，未修改产品/registry、未启动

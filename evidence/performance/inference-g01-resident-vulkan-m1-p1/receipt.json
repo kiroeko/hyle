@@ -1,0 +1,48 @@
+{
+  "product_candidate": "d91a523df9bce21eb81c13d9bf2a8f3f7d3ea80f",
+  "performance_source_commit": "9087db46c5ce13038d53680c1d1ce23cb2453be5",
+  "contract_sha256": "4ae724d684be30814e2f28d7d933f771b7e03dda56b86cb51464cef706031720",
+  "machine": "actual MacBook Air Mac16,12, Apple M4, macOS27.0.1, AppleClang21.0.0; explicitly unbound engineering, not Formal",
+  "qualification_gate": "PASS",
+  "performance_gate": "FAIL",
+  "verify_exit": 0,
+  "aa_processes": 16,
+  "product_processes": 120,
+  "control_processes": 30,
+  "elapsed_seconds": 1221.567415792,
+  "original_compile_failure_seconds": 100.280105042,
+  "original_failures_preserved": true,
+  "rows": [
+    {
+      "id": "resident-decode-d256",
+      "ratio_range": [
+        0.6873535878678283,
+        0.7097959206582625
+      ],
+      "exact": "LOSE",
+      "noninferiority": "FAIL",
+      "direction": "LOSS"
+    },
+    {
+      "id": "resident-prefill-d256",
+      "ratio_range": [
+        0.962371610767658,
+        0.968522054144025
+      ],
+      "exact": "PARITY",
+      "noninferiority": "PASS",
+      "direction": "LOSS"
+    },
+    {
+      "id": "resident-holdout-d64",
+      "ratio_range": [
+        0.9214372965640863,
+        0.9766580870888806
+      ],
+      "exact": "INCONCLUSIVE",
+      "noninferiority": "FAIL",
+      "direction": "LOSS"
+    }
+  ],
+  "raw_zip_sha256": "911bd8cf5ee058c7516dff43d0f6ccae9c48e63aaf3f28047d2cbe853dee79f5"
+}
