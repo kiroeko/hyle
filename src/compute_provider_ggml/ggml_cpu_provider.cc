@@ -1335,6 +1335,22 @@ std::size_t native_invocation_bytes(void *prepared, void *slot) noexcept {
     add(mask.size() * sizeof(ggml_fp16_t));
   return bytes;
 }
+bool native_invocation_reads_pages(void *slot,std::span<const std::int32_t> pages,
+    std::uint32_t size,std::uint32_t rows) noexcept {
+  if(!native_invocation_reads_kv(slot))return false;
+  const auto &invocation=*static_cast<Invocation*>(slot);
+  for(int i=0;i<ggml_graph_n_nodes(invocation.graph);++i){
+    const auto *node=ggml_graph_node(invocation.graph,i);
+    if(node->op!=GGML_OP_FLASH_ATTN_EXT)continue;
+    return node->src[5] && node->src[5]->type==GGML_TYPE_I32 &&
+        node->src[5]->data==pages.data() &&
+        node->src[5]->ne[0]==static_cast<std::int64_t>(pages.size()) &&
+        node->op_params[5]==0x48595047 &&
+        node->op_params[6]==static_cast<std::int32_t>(size) &&
+        node->op_params[4]==static_cast<std::int32_t>(rows);
+  }
+  return false;
+}
 ProviderRuntimeProperties runtime(void *value) noexcept {
   return {.mode = ProviderRuntimeMode::kSharedQueue,
           .workspace_owner = ProviderWorkspaceOwner::kProvider,

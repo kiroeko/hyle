@@ -200,6 +200,12 @@ detail::EnqueueResult plan(void *value, Queue &, const BatchLayoutVersion &layou
         slot.clear();
         return detail::EnqueueResult::rejected(Status::Unimplemented("ggml CPU ragged requires original flash direct KV roots"));
       }
+      if(paged && !native_invocation_reads_pages(request->invocation,
+          host.page_indices.subspan(static_cast<std::size_t>(host.kv_indptr[index]),static_cast<std::size_t>(refs)),
+          slot.capacity.page_size,static_cast<std::uint32_t>(keys))){
+        slot.clear();
+        return detail::EnqueueResult::rejected(Status::Unimplemented("ggml CPU paged flash actual page/root contract differs"));
+      }
       const auto bytes = native_invocation_bytes(request->prepared.state, request->invocation);
       if (bytes > slot.options.max_float_workspace_bytes - slot.known_bytes) {
         slot.clear();

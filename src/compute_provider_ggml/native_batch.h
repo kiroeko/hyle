@@ -29,4 +29,6 @@ static_assert(detail::InlineCustomOperationDescriptor<PagedRead>);
 const detail::BatchProviderVTable *native_batch_table() noexcept;
 std::size_t native_invocation_bytes(void *, void *) noexcept;
 bool native_invocation_reads_kv(void *) noexcept;
+bool native_invocation_reads_pages(void *,std::span<const std::int32_t>,
+    std::uint32_t,std::uint32_t) noexcept;
 }
