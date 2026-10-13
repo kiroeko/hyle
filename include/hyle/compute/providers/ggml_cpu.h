@@ -31,8 +31,6 @@ struct Options final {
 // Preparation owns each program's resources; replay updates bindings and
 // synchronously completes the fixed program.
 // Invocations are independent; one invocation cannot run or close concurrently.
-#if defined(HYLE_COMPUTE_GGML_CPU)
 HYLE_COMPUTE_PROVIDER_GGML_API Provider provider(Options options = {}) noexcept;
-#endif
 
 } // namespace hyle::compute::ggml_cpu
