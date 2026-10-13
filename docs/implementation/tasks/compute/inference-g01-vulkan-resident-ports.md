@@ -1,6 +1,6 @@
 # G01 Vulkan 驻留端口的真实零拷贝消费
 
-状态：SCOPED，2026-10-13；owner `compute_route_vulkan`。
+状态：AUDITED，2026-10-13；owner `compute_route_vulkan`、`compute_provider_ggml_vulkan`。
 baseline `702b6fed97ba1fe7dd2c4d80e992aeb7423f92d3`；原CLOSED F5 candidate与证据保留。
 完整授权来自[十项goal](../project/inference-gaps-goal-execution-2026-10.md)。
 
@@ -41,3 +41,22 @@ SCOPED实跑反证：原公开CompileReport在batch1和batch2均报告3个native
 `.scratch/inference-gaps/g01/resident-port-probe-run-1.log`，不是源码推导性能PASS。
 精确origin准入需要原Provider的私有Region绑定检查配合；该owner仍为CANDIDATE，
 在实际修改前按同一有限合同退回AUDITED，runtime的原native shader/Work candidate不改。
+
+## 有限FIX冻结
+
+VP-01：只对同F32/F16 BSHD、同D64/128/256的SDPA输入且没有其他native operation读取
+该端口，depth连续、正rank4 row-major padding、有效外层pitch为16-byte倍数时，外层
+adapter保原descriptor并直接接原region。其他input保持原canonical/origin Copy路线。
+一般TensorDesc合法性与此高效档明确分开，不宣称65-element padding零拷贝。
+
+VP-02：Provider在cold native graph中对实际tagged FA的Q/K/V验证原vec4 pitch，从
+view_src找到真正外部port，记录该port实际device descriptor alignment。bind/validate
+在接受前拒绝不对齐byte origin；不等待原assert。Q cast内部新buffer不制造外部KV
+约束。alignment记录只在有tagged FA时分配，cold O(nodes×ports)，warm O(ports)；
+State增加一个私有vector对象，额外元素按ports计费，native private pool上界仍UNKNOWN。
+不新增公开API或为所有其他operation启用特殊stride资格。
+
+VP-03：原公开数学/readonly/独立slots/旧output/64步origin与owner切换；合格capacity
+views与该数学矩阵native_dispatch_count=0；65-element padding明确保原Copy；错origin
+提前拒绝。三交付/san/P1沿上节固定入口。两个owner均AUDITED后才实施，runtime原
+candidate保留，不改shader/math、公共构建/仪器或扩大F5/其他Provider。
