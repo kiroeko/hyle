@@ -129,3 +129,8 @@ run3.805s PASS。短三shape oracle/readonly/tail+16轮诊断3.212s PASS；D64�
 9.734s PASS。正式fresh4/clean source4f224878a、productbc0、原contractd9a54a85已
 串行启动，结果必须按实际终态裁决。此前冷规则source8ec已验证，但0e9性能FAIL，
 不需要再做其“PASS复用”论证；旧源码identity检查只保诊断，最终性能绑定bc0。
+
+统一LOC绑定最终bc0、explicit三owner实现目录联合边界，self-check PASS：全库code
+2,883,171，自实现不含测试175,077，route/Provider/runtime联合实现11,857（不把这个
+联合数冒充某一个factor独立实现LOC）。只统计不可变candidate，不为状态/证据提交
+重复全库统计；剩余适用性能门仍等待实际终态。
