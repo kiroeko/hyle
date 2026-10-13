@@ -9,10 +9,10 @@
 namespace {
 namespace hybrid = g::cpu_cuda;
 
-Status hybrid_paged() {
+Status hybrid_paged(bool bf16) {
   constexpr unsigned depth=256, heads=8, kv_heads=2, page=16;
   const c::BatchCapacity cap{
-      .storage=c::BatchStorage::kPaged,.data_type=c::DataType::kFloat16,
+      .storage=c::BatchStorage::kPaged,.data_type=bf16?c::DataType::kBFloat16:c::DataType::kFloat16,
       .max_requests=2,.max_query_rows=3,.max_kv_rows=48,
       .max_pages=4,.max_page_refs=3,.query_heads=heads,.kv_heads=kv_heads,
       .head_dim=depth,.page_size=page};
@@ -47,7 +47,7 @@ Status hybrid_paged() {
   HYLE_ASSIGN_OR_RETURN(auto value,builder.input(kvdesc));
   HYLE_ASSIGN_OR_RETURN(auto metadata,builder.input(metadata_desc));
   HYLE_ASSIGN_OR_RETURN(auto normalized,builder.add(c::RmsNorm{.epsilon=1.e-6f},x,scale));
-  HYLE_ASSIGN_OR_RETURN(auto query,builder.add(c::Cast{c::DataType::kFloat16},normalized));
+  HYLE_ASSIGN_OR_RETURN(auto query,builder.add(c::Cast{cap.data_type},normalized));
   const std::array ports{query,key,value,metadata};
   HYLE_ASSIGN_OR_RETURN(auto attention,builder.add_node(c::Operation::custom(c::PagedAttention{cap,options.scale}),ports));
   HYLE_ASSIGN_OR_RETURN(auto attended,builder.result(attention));
@@ -79,8 +79,8 @@ Status hybrid_paged() {
   std::vector<std::uint16_t> k(4*page*kv_heads*depth),v(k.size());
   for(unsigned p=0;p<3;++p)for(unsigned row=0;row<page;++row)for(unsigned head=0;head<kv_heads;++head){
     const auto at=((p*page+row)*kv_heads+head)*depth;
-    k[at]=encode(float(int(row)-8)*.5f,false);
-    for(unsigned col=0;col<depth;++col)v[at+col]=encode(float(p)*.5f+float(row+1)*.0625f,false);
+    k[at]=encode(float(int(row)-8)*.5f,bf16);
+    for(unsigned col=0;col<depth;++col)v[at+col]=encode(float(p)*.5f+float(row+1)*.0625f,bf16);
   }
   std::array<c::ReadLease,3> ready_k,ready_v;
   const auto elements=page*kv_heads*depth;
@@ -103,7 +103,7 @@ Status hybrid_paged() {
   const std::vector<float> xs(3*heads*depth,2.f),scales(depth,1.f);
   HYLE_ASSIGN_OR_RETURN(auto rx,load_float(xs));
   HYLE_ASSIGN_OR_RETURN(auto rs,load_float(scales));
-  const std::vector<std::uint16_t> expected_q(3*heads*depth,encode(1.f,false));
+  const std::vector<std::uint16_t> expected_q(3*heads*depth,encode(1.f,bf16));
   HYLE_ASSIGN_OR_RETURN(auto old_keys,keys.read(initial,ready_k));
   for(unsigned episode=0;episode<2;++episode){
     const auto layout=episode?next:initial;
@@ -122,17 +122,17 @@ Status hybrid_paged() {
     std::vector<float> actual(xs.size());HYLE_ASSIGN_OR_RETURN(auto bytes,lease.view());
     HYLE_RETURN_IF_ERROR(bytes.read(std::as_writable_bytes(std::span(actual))));
     std::vector<std::uint16_t> attended_values(actual.size());
-    for(std::size_t i=0;i<actual.size();++i){HYLE_RETURN_IF_ERROR(check(std::isfinite(actual[i]) && actual[i]<0.f,"CPU post-math did not negate native attention"));attended_values[i]=encode(-actual[i],false);}
+    for(std::size_t i=0;i<actual.size();++i){HYLE_RETURN_IF_ERROR(check(std::isfinite(actual[i]) && actual[i]<0.f,"CPU post-math did not negate native attention"));attended_values[i]=encode(-actual[i],bf16);}
     HYLE_ASSIGN_OR_RETURN(auto converted,load(host_pool,attended_values));
-    HYLE_RETURN_IF_ERROR(oracle(cap,layout,expected_q,k,v,converted,false));
+    HYLE_RETURN_IF_ERROR(oracle(cap,layout,expected_q,k,v,converted,bf16));
     HYLE_RETURN_IF_ERROR(check(!invocation.prepare_batch(std::array{gb::NodeLayout{attention,layout}}).ok(),"hybrid overwritten retained old output"));
     HYLE_ASSIGN_OR_RETURN(auto report,invocation.report(attention));
     HYLE_RETURN_IF_ERROR(check(report.layout_generation==layout.generation() && (!episode || report.reused_native_plan),"hybrid metadata generation/topology differs"));
-    std::printf("G02 CPU RMS/Cast -> CUDA paged GQA8/2 D256 -> CPU Cast/Neg, episode=%u precise-pages/old-output/oracle PASS\n",episode);
+    std::printf("G02 CPU RMS/Cast -> CUDA paged GQA8/2 D256 -> CPU Cast/Neg, %s episode=%u precise-pages/old-output/oracle PASS\n",bf16?"BF16":"F16",episode);
   }
   HYLE_RETURN_IF_ERROR(invocation.close());HYLE_RETURN_IF_ERROR(invocation.drain());
   return Status::Ok();
 }
 } // namespace
 
-int main(){std::setvbuf(stdout,nullptr,_IONBF,0);const auto status=hybrid_paged();if(status.ok())return 0;char text[768]{};status.ToString(text,sizeof(text));std::fprintf(stderr,"G02 hybrid: %s\n",text);return 1;}
+int main(){std::setvbuf(stdout,nullptr,_IONBF,0);auto status=hybrid_paged(false);if(status.ok())status=hybrid_paged(true);if(status.ok())return 0;char text[768]{};status.ToString(text,sizeof(text));std::fprintf(stderr,"G02 hybrid: %s\n",text);return 1;}
