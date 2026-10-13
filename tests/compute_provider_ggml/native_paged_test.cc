@@ -51,7 +51,7 @@ template<class T>void paged_case(unsigned depth,bool causal){
     }
   }
   EXPECT_FALSE(slot.update_batch(layout));auto free_page=keys.acquire(5);ASSERT_TRUE(free_page)<<free_page.error().message();
-  EXPECT_FALSE(keys.acquire(1));output.reset();*done={};ASSERT_TRUE(context.drain().ok());
+  EXPECT_FALSE(keys.acquire(1));output.reset();*done={};*token={};ASSERT_TRUE(context.drain().ok());
   // New immutable metadata owners with identical content must not leave
   // borrowed page spans dangling in the reused original native graph.
   for(unsigned step=0;step<64;++step){
