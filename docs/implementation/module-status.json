@@ -537,10 +537,9 @@
     },
     {
       "module": "compute_route_vulkan",
-      "state": "CANDIDATE",
-      "record": "docs/implementation/tasks/compute/inference-g01-native-ragged-layout.md",
-      "summary": "G01 Vulkan native ragged产品280 CANDIDATE：source/三交付/宿主san/原直接联合消费者PASS；独立multi P1 QUALIFIED、verify0，但短D64非劣FAIL/11–13%LOSS，待有限结构诊断裁决，未CLOSED；旧单请求PASS与所有失败保留。",
-      "candidate": "280f6f92ea97bf3b424113346f0264fb7b20df16"
+      "state": "AUDITED",
+      "record": "docs/implementation/tasks/compute/inference-g01-vulkan-ragged-region-fusion.md",
+      "summary": "G01 Vulkan RF有限轮：qualified短D64 LOSS/非劣FAIL，实际三managed段与View隔断已定位；拟原dense reshape融合＋冷recipe排序，不改flash数学/API。原280失败/3d92单请求PASS保留。"
     },
     {
       "module": "graph_route_vulkan",
@@ -555,15 +554,9 @@
     },
     {
       "module": "compute_provider_ggml_vulkan",
-      "state": "CLOSED",
-      "record": "docs/implementation/tasks/compute/inference-g01-vulkan-resident-terminal.md",
-      "summary": "G01 Vulkan单请求有限RS/NP/RR/VP轮CLOSED：合格port Copy3→0，原数值/寿命/退休、Air三交付/宿主san及原合同P1 PASS；Win仅更新编译，旧FAIL/其他数学/未知成本保留。多请求和整个G01未结案。",
-      "candidate": "3d92eee97a70f7788dfb9bbcda73f6e0f801959f",
-      "performance": {
-        "tier": "P1",
-        "material_margin_pct": 5,
-        "evidence": "evidence/performance/inference-g01-resident-vulkan-direct-ports-m1-p1/receipt.json"
-      }
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/compute/inference-g01-vulkan-ragged-region-fusion.md",
+      "summary": "G01 Vulkan RF有限轮：qualified短D64 LOSS/非劣FAIL，实际三managed段与View隔断已定位；拟原dense reshape融合＋冷recipe排序，不改flash数学/API。原280失败/3d92单请求PASS保留。"
     },
     {
       "module": "compute_ggml_runtime",
