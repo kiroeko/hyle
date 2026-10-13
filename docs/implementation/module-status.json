@@ -560,7 +560,7 @@
     },
     {
       "module": "compute_ggml_runtime",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/inference-g01-vulkan-ragged-region-fusion.md",
       "summary": "G01 RF-04 SCOPED：原a400单flash记录之外的实际两flash/Concat缺口，原fixed_attention_graph拒绝导致warm managed重编码；仅有限record资格/原安全门，旧单请求PASS与所有失败保留。"
     },

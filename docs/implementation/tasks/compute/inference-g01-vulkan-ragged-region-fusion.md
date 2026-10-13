@@ -1,6 +1,6 @@
 # G01 Vulkan ragged 原region分段纠正
 
-状态：route/Provider AUDITED、原runtime SCOPED，2026-10-13；owner
+状态：route/Provider/runtime均AUDITED，2026-10-13；owner
 `compute_route_vulkan`、`compute_provider_ggml_vulkan`、`compute_ggml_runtime`。已验不可变candidate
 `0e9e011b8c8ff4a37e2bebc5ca8e4408be5e9368`；route末尾规则纠正ddbf598b7待定向验证。
 baseline `dbcba4b15`，原产品280，原Provider单请求3d92有限CLOSED保留。真实trigger是
@@ -100,3 +100,12 @@ fence、record-safe/无event/semaphore和实际pending/retire/失效流程均不
 source/static/shared与三hostsan，只补真实插桩TU/必要私有test；不改变数学/shader/
 强peer/合同/阈值。public头未改，逐头证据按输入相同复用；Windows四jobs只定向编译。
 正常验证按原2h检查点/常设追加，保两次原P1 FAIL928.101+929.176s，不重置成本。
+
+RF-04审计与实际反例：原native test编译PASS，实际81ms即在首次wait之后确认
+recording_ready=false；只使用现有NativeDevice/MetadataArena/NativeGraph/NativeWork，
+没有新增诊断面。fixed graph完全owned、host输入固定resident范围，Concat仅原GPU
+storage math；所有flash必须同FullF32 tag。接受多个tagged flash仍不能绕过实际无
+memcpy/memset、无wait/signal semaphore、无GC event/timeline的record_safe门；bindings
+changed仍invalidate，failed/native lost仍只在退休后cleanup。运行时不新增字段/资源/
+线程/分派；只是冷assessment一次从单flash计数限制改成至少一flash资格，并允许
+原Concat opcode。源only红反例保rr-red日志；runtime审计提交后才改产品。
