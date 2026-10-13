@@ -32,3 +32,12 @@ could not be attributed to an introducing commit`；原计划
 替换行的introducing commit边界。模块不改公共checker、不重开无改动owner；本卡仅
 保存工具事实，原RF精确source/SDK/宿主风险/真实直接消费者门仍按活动卡执行并保
 实际结果，未把工具BLOCKED改名PASS。
+
+2026-10-14 CPU准确页轮补充：baseline8fe62399f已将compute_provider_ggml与
+compute_ggml_runtime合法AUDITED，产品3cf78c88b仅原CPU batch/flash私有页地址适配及
+两CPU锁的已登记patch身份。原计划`.scratch/validation/g01-cpu-paged-implementation-plan.json`
+没有unknown path，仍报同一introducing-commit归属失败；共同dependency lock摘要变化
+另使所有facade保守入选。该锁未改其它依赖版本、API、组件图或GPU数学；不能由此
+启动全库构建或重开无改动模块。活动卡的CPU source、原ragged/resident直接消费者、
+真实relocated static/shared、页读原TU三san与候选定向P1继续；mixed456原资产组合身份
+及实际CPU运行须分别保存，未运行域不代签。独立工具条件与产品验收分账。
