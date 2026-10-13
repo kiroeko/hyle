@@ -554,7 +554,7 @@
     },
     {
       "module": "compute_provider_ggml_vulkan",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/inference-g01-vulkan-ragged-region-fusion.md",
       "summary": "G01 Vulkan RF有限轮：qualified短D64 LOSS/非劣FAIL，实际三managed段与View隔断已定位；拟原dense reshape融合＋冷recipe排序，不改flash数学/API。原280失败/3d92单请求PASS保留。"
     },

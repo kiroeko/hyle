@@ -1,7 +1,7 @@
 # G01 Vulkan ragged 原region分段纠正
 
-状态：Provider SCOPED、原route退回AUDITED，2026-10-13；owner `compute_route_vulkan`、
-`compute_provider_ggml_vulkan`。产品实现尚未开始，须两owner均AUDITED才写产品。
+状态：两owner AUDITED，2026-10-13；owner `compute_route_vulkan`、
+`compute_provider_ggml_vulkan`。RF-01/02/03固定后开始产品实现。
 baseline `dbcba4b15`，原产品280，原Provider单请求3d92有限CLOSED保留。真实trigger是
 已准入两request F16短D64 noncausal [合格P1](../../../../evidence/performance/inference-g01-native-ragged-vulkan-m1-p1/README.md)
 0.8656–0.8885、非劣FAIL；[原NR轮](inference-g01-native-ragged-layout.md)不签完成。
@@ -30,3 +30,16 @@ RF-03：确认两request只有一个region、KV roots/offset不变、无wholeKV 
 原source/relocated static/shared、适用三hostsan真实TU、直接hybrid原消费者；API不改
 不重复头集合，复用已有同产品public header证据；原同合同d9a54a85、5%/A/A/controls/
 n15/31不变。原产品280失败永久保留，不复跑CPU/Apple P1或全库算子。
+
+审计决定：RF-02仅原region内部dense F16/F32 reshape，输入已由该region生产；外部
+capacity Slice/Reshape仍走原Plan alias，不把独立普通View或任意slice/stride提升为
+Provider数学。Provider所有正常dtype/rank/extent与实际device checks保留；reshape借
+ggml_reshape_4d和原restore_shape，无新copy/数学。原route已开始managed段后才跨此
+reshape，控制边界仍阻断。recipe先外部views后math保证原SDPA直接外部KV分类不被
+中间View假作other reader，避免破坏原3d92的zeroKV-copy合同。一次Concat仍在原arity
+内融合，八request仍原native suffix；旧failed-prefix test继续适用。
+
+七问：依赖仍原ggml/MLX/loader锁与许可；有限消费者与原长/短holdouts保；既有数学/
+Queue/资源/退休复用；冷线性重排、warm减少提交段；无FFI/ABI新面；源码/static/shared
+实际交付及宿主风险定向；公开guide不需要新API，补实际cost事实。真正零region-copy与
+数学/生命周期、非劣必须实跑，审计不签PASS。
