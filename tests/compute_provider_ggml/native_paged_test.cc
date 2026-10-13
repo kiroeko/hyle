@@ -52,6 +52,19 @@ template<class T>void paged_case(unsigned depth,bool causal){
   }
   EXPECT_FALSE(slot.update_batch(layout));auto free_page=keys.acquire(5);ASSERT_TRUE(free_page)<<free_page.error().message();
   EXPECT_FALSE(keys.acquire(1));output.reset();*done={};ASSERT_TRUE(context.drain().ok());
+  // New immutable metadata owners with identical content must not leave
+  // borrowed page spans dangling in the reused original native graph.
+  for(unsigned step=0;step<64;++step){
+    auto next=schema.version({qp,kp,ids,tails}).value();
+    auto next_keys=keys.read(next,k).value(),next_values=values.read(next,v).value();
+    auto reused=slot.update_batch(next);ASSERT_TRUE(reused)<<reused.error().message();
+    EXPECT_TRUE(slot.report().reused_native_plan);EXPECT_EQ(slot.report().layout_generation,next.generation());
+    auto replay=reused->run(q,next_keys,next_values);ASSERT_TRUE(replay)<<replay.error().message();ASSERT_TRUE(replay->wait().ok());
+    auto ready=slot.output().value();std::vector<T> current(zero.size());ASSERT_TRUE(ready.view()->read(std::as_writable_bytes(std::span(current))).ok());
+    for(unsigned i=0;i<18*8*depth;++i)EXPECT_EQ(current[i].bits,actual[i].bits);
+    ready.reset();*replay={};
+  }
+  ASSERT_TRUE(context.drain().ok());
 }
 TEST(GgmlCpuPaged, OriginalFlashReadsExactPhysicalPagesAndTail){
   for(unsigned d:{64U,128U,256U})for(bool causal:{false,true}){
