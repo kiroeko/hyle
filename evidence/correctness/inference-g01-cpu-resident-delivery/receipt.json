@@ -1,0 +1,822 @@
+{
+  "candidate": "d91a523df9bce21eb81c13d9bf2a8f3f7d3ea80f",
+  "delivery_results": {
+    "source": {
+      "candidate": "d91a523df9bce21eb81c13d9bf2a8f3f7d3ea80f",
+      "scope": "same public CPU resident consumer linked directly to canonical source HYLE compute facade; private test target only",
+      "consumer_sha256": "96f7b8a6c9a14dc0fa65ab8f3f7f8638ec37c7d3bfafb5a9c76c08d8c6c1feb4",
+      "stages": [
+        {
+          "stage": "configure",
+          "command": [
+            "cmake",
+            "-S",
+            "C:\\public\\project-hyle\\hyle",
+            "-B",
+            "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev",
+            "-DCMAKE_PROJECT_INCLUDE=C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g01\\cpu-source-project.cmake"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 20.702999999994063,
+          "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g01\\cpu-win-source-configure-1.log"
+        },
+        {
+          "stage": "build",
+          "command": [
+            "cmake",
+            "--build",
+            "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev",
+            "--target",
+            "g01_cpu_public_source",
+            "--parallel",
+            "2"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 42.13999999999942,
+          "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g01\\cpu-win-source-build-1.log"
+        },
+        {
+          "stage": "run",
+          "command": [
+            "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\g01_cpu_public_source.exe"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 0.25,
+          "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g01\\cpu-win-source-run-1.log"
+        }
+      ]
+    },
+    "static": {
+      "candidate": "d91a523df9bce21eb81c13d9bf2a8f3f7d3ea80f",
+      "mode": "static",
+      "producer": "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev",
+      "scope": "ordinary CPU-only SDK, same mature resident GQA consumer; old legacy public build options removed, cache/tree/failed attempts retained",
+      "stages": [
+        {
+          "stage": "configure",
+          "command": [
+            "cmake",
+            "-S",
+            "C:\\public\\project-hyle\\hyle",
+            "-B",
+            "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev",
+            "-UCMAKE_PROJECT_INCLUDE",
+            "-UCMAKE_PROJECT_TOP_LEVEL_INCLUDES",
+            "-UHYLE_COMPUTE_CPU",
+            "-UHYLE_COMPUTE_CUDA",
+            "-UHYLE_COMPUTE_APPLE",
+            "-UHYLE_COMPUTE_VULKAN",
+            "-UHYLE_COMPUTE_ONEDNN",
+            "-UHYLE_COMPUTE_TORCH_CPU",
+            "-UFETCHCONTENT_SOURCE_DIR_GGML",
+            "-UFETCHCONTENT_SOURCE_DIR_GGML_CPU",
+            "-UFETCHCONTENT_SOURCE_DIR_ONEDNN",
+            "-DHYLE_COMPONENTS=compute;graph",
+            "-DHYLE_COMPUTE_ROUTES=cpu",
+            "-DHYLE_BUILD_TESTS=OFF",
+            "-DHYLE_BUILD_BENCH=OFF",
+            "-DHYLE_INSTALL=ON",
+            "-DHYLE_STATIC=ON",
+            "-DFETCHCONTENT_FULLY_DISCONNECTED=OFF",
+            "-DHYLE_DEP_SOURCE_CACHE=C:/public/tools/hyle-dependencies/v1"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 27.156000000002678,
+          "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g01\\cpu-win-static-sdk-configure-1.log"
+        },
+        {
+          "stage": "producer-build",
+          "command": [
+            "cmake",
+            "--build",
+            "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev",
+            "--parallel",
+            "4"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 157.76600000000326,
+          "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g01\\cpu-win-static-sdk-producer-build-1.log"
+        },
+        {
+          "stage": "install",
+          "command": [
+            "cmake",
+            "--install",
+            "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev",
+            "--prefix",
+            "C:\\h7\\inference-g01-cpu-static-sdk\\staging"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 2.0310000000026776,
+          "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g01\\cpu-win-static-sdk-install-1.log"
+        },
+        {
+          "stage": "consumer-configure",
+          "command": [
+            "cmake",
+            "-S",
+            "C:\\h7\\inference-g01-cpu-static-sdk\\consumer-source",
+            "-B",
+            "C:\\h7\\inference-g01-cpu-static-sdk\\consumer-build",
+            "-G",
+            "Ninja",
+            "-DCMAKE_BUILD_TYPE=Release",
+            "-DCMAKE_CXX_COMPILER=C:/Program Files/Microsoft Visual Studio/18/Enterprise/VC/Tools/MSVC/14.50.35717/bin/Hostx64/x64/cl.exe",
+            "-DCMAKE_PREFIX_PATH=C:\\h7\\inference-g01-cpu-static-sdk\\relocated",
+            "-DCMAKE_CXX_FLAGS=/DWIN32 /D_WINDOWS /GR /EHsc",
+            "-DCMAKE_CXX_FLAGS_RELEASE=/O2 /Ob2 /DNDEBUG"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 12.452999999994063,
+          "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g01\\cpu-win-static-sdk-consumer-configure-1.log"
+        },
+        {
+          "stage": "consumer-build",
+          "command": [
+            "cmake",
+            "--build",
+            "C:\\h7\\inference-g01-cpu-static-sdk\\consumer-build",
+            "--target",
+            "resident",
+            "--parallel",
+            "2"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 3.625,
+          "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g01\\cpu-win-static-sdk-consumer-build-1.log"
+        },
+        {
+          "stage": "run",
+          "command": [
+            "C:\\h7\\inference-g01-cpu-static-sdk\\consumer-build\\resident.exe"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 1.0,
+          "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g01\\cpu-win-static-sdk-run-1.log"
+        }
+      ]
+    },
+    "shared": {
+      "candidate": "d91a523df9bce21eb81c13d9bf2a8f3f7d3ea80f",
+      "mode": "shared",
+      "producer": "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev",
+      "scope": "ordinary CPU-only SDK, same mature resident GQA consumer; old legacy public build options removed, cache/tree/failed attempts retained",
+      "stages": [
+        {
+          "stage": "configure",
+          "command": [
+            "cmake",
+            "-S",
+            "C:\\public\\project-hyle\\hyle",
+            "-B",
+            "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev",
+            "-UHYLE_COMPUTE_CPU",
+            "-UHYLE_COMPUTE_CUDA",
+            "-UHYLE_COMPUTE_APPLE",
+            "-UHYLE_COMPUTE_VULKAN",
+            "-UHYLE_COMPUTE_ONEDNN",
+            "-UHYLE_COMPUTE_TORCH_CPU",
+            "-UFETCHCONTENT_SOURCE_DIR_GGML",
+            "-UFETCHCONTENT_SOURCE_DIR_ONEDNN",
+            "-DHYLE_COMPONENTS=compute;graph",
+            "-DHYLE_COMPUTE_ROUTES=cpu",
+            "-DHYLE_BUILD_TESTS=OFF",
+            "-DHYLE_BUILD_BENCH=OFF",
+            "-DHYLE_INSTALL=ON",
+            "-DHYLE_STATIC=OFF",
+            "-DFETCHCONTENT_FULLY_DISCONNECTED=OFF",
+            "-DHYLE_DEP_SOURCE_CACHE=C:/public/tools/hyle-dependencies/v1"
+          ],
+          "exit_code": 1,
+          "elapsed_seconds": 97.86000000000058,
+          "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g01\\cpu-win-shared-sdk-configure-1.log"
+        },
+        {
+          "stage": "configure",
+          "command": [
+            "cmake",
+            "-S",
+            "C:\\public\\project-hyle\\hyle",
+            "-B",
+            "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev",
+            "-UCMAKE_PROJECT_INCLUDE",
+            "-UCMAKE_PROJECT_TOP_LEVEL_INCLUDES",
+            "-UHYLE_COMPUTE_CPU",
+            "-UHYLE_COMPUTE_CUDA",
+            "-UHYLE_COMPUTE_APPLE",
+            "-UHYLE_COMPUTE_VULKAN",
+            "-UHYLE_COMPUTE_ONEDNN",
+            "-UHYLE_COMPUTE_TORCH_CPU",
+            "-UFETCHCONTENT_SOURCE_DIR_GGML",
+            "-UFETCHCONTENT_SOURCE_DIR_GGML_CPU",
+            "-UFETCHCONTENT_SOURCE_DIR_ONEDNN",
+            "-DHYLE_COMPONENTS=compute;graph",
+            "-DHYLE_COMPUTE_ROUTES=cpu",
+            "-DHYLE_BUILD_TESTS=OFF",
+            "-DHYLE_BUILD_BENCH=OFF",
+            "-DHYLE_INSTALL=ON",
+            "-DHYLE_STATIC=OFF",
+            "-DFETCHCONTENT_FULLY_DISCONNECTED=OFF",
+            "-DHYLE_DEP_SOURCE_CACHE=C:/public/tools/hyle-dependencies/v1"
+          ],
+          "exit_code": 1,
+          "elapsed_seconds": 14.75,
+          "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g01\\cpu-win-shared-sdk-configure-2.log"
+        },
+        {
+          "stage": "configure",
+          "command": [
+            "cmake",
+            "-S",
+            "C:\\public\\project-hyle\\hyle",
+            "-B",
+            "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev",
+            "-UCMAKE_PROJECT_INCLUDE",
+            "-UCMAKE_PROJECT_TOP_LEVEL_INCLUDES",
+            "-UHYLE_COMPUTE_CPU",
+            "-UHYLE_COMPUTE_CUDA",
+            "-UHYLE_COMPUTE_APPLE",
+            "-UHYLE_COMPUTE_VULKAN",
+            "-UHYLE_COMPUTE_ONEDNN",
+            "-UHYLE_COMPUTE_TORCH_CPU",
+            "-UFETCHCONTENT_SOURCE_DIR_GGML",
+            "-UFETCHCONTENT_SOURCE_DIR_GGML_CPU",
+            "-UFETCHCONTENT_SOURCE_DIR_ONEDNN",
+            "-DHYLE_COMPONENTS=compute;graph",
+            "-DHYLE_COMPUTE_ROUTES=cpu",
+            "-DHYLE_BUILD_TESTS=OFF",
+            "-DHYLE_BUILD_BENCH=OFF",
+            "-DHYLE_INSTALL=ON",
+            "-DHYLE_STATIC=OFF",
+            "-DFETCHCONTENT_FULLY_DISCONNECTED=OFF",
+            "-DHYLE_DEP_SOURCE_CACHE=C:/public/tools/hyle-dependencies/v1"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 21.26600000000326,
+          "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g01\\cpu-win-shared-sdk-configure-3.log"
+        },
+        {
+          "stage": "producer-build",
+          "command": [
+            "cmake",
+            "--build",
+            "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev",
+            "--parallel",
+            "4"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 240.34399999999732,
+          "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g01\\cpu-win-shared-sdk-producer-build-1.log"
+        },
+        {
+          "stage": "install",
+          "command": [
+            "cmake",
+            "--install",
+            "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev",
+            "--prefix",
+            "C:\\h7\\inference-g01-cpu-shared-sdk\\staging"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 1.2810000000026776,
+          "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g01\\cpu-win-shared-sdk-install-1.log"
+        },
+        {
+          "stage": "consumer-configure",
+          "command": [
+            "cmake",
+            "-S",
+            "C:\\h7\\inference-g01-cpu-shared-sdk\\consumer-source",
+            "-B",
+            "C:\\h7\\inference-g01-cpu-shared-sdk\\consumer-build",
+            "-G",
+            "Ninja",
+            "-DCMAKE_BUILD_TYPE=Release",
+            "-DCMAKE_CXX_COMPILER=C:/Program Files/Microsoft Visual Studio/18/Enterprise/VC/Tools/MSVC/14.50.35717/bin/Hostx64/x64/cl.exe",
+            "-DCMAKE_PREFIX_PATH=C:\\h7\\inference-g01-cpu-shared-sdk\\relocated",
+            "-DCMAKE_CXX_FLAGS=/DWIN32 /D_WINDOWS /GR /EHsc",
+            "-DCMAKE_CXX_FLAGS_RELEASE=/O2 /Ob2 /DNDEBUG"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 12.10899999999674,
+          "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g01\\cpu-win-shared-sdk-consumer-configure-1.log"
+        },
+        {
+          "stage": "consumer-build",
+          "command": [
+            "cmake",
+            "--build",
+            "C:\\h7\\inference-g01-cpu-shared-sdk\\consumer-build",
+            "--target",
+            "resident",
+            "--parallel",
+            "2"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 3.063000000009197,
+          "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g01\\cpu-win-shared-sdk-consumer-build-1.log"
+        },
+        {
+          "stage": "run",
+          "command": [
+            "C:\\h7\\inference-g01-cpu-shared-sdk\\consumer-build\\resident.exe"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 0.875,
+          "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g01\\cpu-win-shared-sdk-run-1.log"
+        }
+      ]
+    }
+  },
+  "installed_input_identity": {
+    "static": {
+      "candidate": "d91a523df9bce21eb81c13d9bf2a8f3f7d3ea80f",
+      "mode": "static",
+      "public_consumer_inputs": {
+        "main.cc": "96f7b8a6c9a14dc0fa65ab8f3f7f8638ec37c7d3bfafb5a9c76c08d8c6c1feb4",
+        "CMakeLists.txt": "6574979758074c3da87c623fa8f5b3da34546065b3f5f88fb682bf25d9128bc2"
+      },
+      "canonical_product_inputs": {
+        "src/compute_provider_ggml/ggml_cpu_provider.cc": "8bb2acd535782cc1a571d8804b70362475e59aac9a11bd6326b5c9a02d3566c7",
+        "cmake/HyleDependencyLock.json": "482f81e0f46f1442c1dc27a9e3b0fd030c2ae80acc2416b0a63367479b9690ba"
+      },
+      "machine": "Windows-11-10.0.26200-SP0",
+      "node": "kiro-workstation",
+      "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+      "producer_cache_sha256": "b2c4010a8451cfcfb84ef26d6d7a6f042d912f1a7a19dcf2d82271d552e4946d",
+      "relocated_prefix": "C:\\h7\\inference-g01-cpu-static-sdk\\relocated",
+      "staging_absent": true,
+      "consumer_source_scope": "only installed public HYLE headers; raw BF16 uint16 storage, no SIMD/private source dependencies",
+      "artifacts": [
+        {
+          "path": "C:\\h7\\inference-g01-cpu-static-sdk\\consumer-build\\resident.exe",
+          "sha256": "96f33723855f73628be1943f2fa905776b445381e9523bf798052a9a675f9cc0"
+        },
+        {
+          "path": "C:\\h7\\inference-g01-cpu-static-sdk\\relocated\\lib\\hyle_compute.lib",
+          "sha256": "bc87d5f8df6ad735d5fac7e11b2fb7c9ad2583cefdb3b94465dd7b4cc6233161"
+        },
+        {
+          "path": "C:\\h7\\inference-g01-cpu-static-sdk\\relocated\\lib\\hyle_compute_backend_cpu.lib",
+          "sha256": "a333d17b25b7ff087eb2a6b53f8692c82ddfa35b6986f6015b80cb17d8401276"
+        },
+        {
+          "path": "C:\\h7\\inference-g01-cpu-static-sdk\\relocated\\lib\\hyle_compute_batch.lib",
+          "sha256": "e8fa0dc10ef64bae639d9f4cd12461d8c4e4417d85426189beb61038b2a58d4d"
+        },
+        {
+          "path": "C:\\h7\\inference-g01-cpu-static-sdk\\relocated\\lib\\hyle_compute_ggml_runtime.lib",
+          "sha256": "39716ce55cf844698a1d3f05a61f1d706a04fbb36703e65ec1962879dfffaeda"
+        },
+        {
+          "path": "C:\\h7\\inference-g01-cpu-static-sdk\\relocated\\lib\\hyle_compute_ops.lib",
+          "sha256": "1ddd8eed7cea685f11d2359c42add2bec5f03258d23169959cb6e1b6942b45bb"
+        },
+        {
+          "path": "C:\\h7\\inference-g01-cpu-static-sdk\\relocated\\lib\\hyle_compute_provider_ggml.lib",
+          "sha256": "42e099f5c554732d183f2db35c5c16ee51c9aa338b0b9f8d5f83d1f54410b796"
+        },
+        {
+          "path": "C:\\h7\\inference-g01-cpu-static-sdk\\relocated\\lib\\hyle_compute_provider_native.lib",
+          "sha256": "b25d46cc5ea1d7d324f7d9fe95e8c201bc5df6ed8f927c58c346380fa315d652"
+        },
+        {
+          "path": "C:\\h7\\inference-g01-cpu-static-sdk\\relocated\\lib\\hyle_compute_provider_onednn.lib",
+          "sha256": "3ca17dbe1f2da5f6a5b6664f0817dc145e33d05ecfa6eee7d56c3f55985a292e"
+        },
+        {
+          "path": "C:\\h7\\inference-g01-cpu-static-sdk\\relocated\\lib\\hyle_compute_route_cpu.lib",
+          "sha256": "dec1e072628952aaf30fdfa6aab4c4e4c4cc1899e9f6e42dd9fcc180cbaa4c30"
+        },
+        {
+          "path": "C:\\h7\\inference-g01-cpu-static-sdk\\relocated\\lib\\hyle_compute_state.lib",
+          "sha256": "45e4f6caeeb84b6ab0efbf4249090e351b301f5a733f12d380dbf87435bfe93f"
+        },
+        {
+          "path": "C:\\h7\\inference-g01-cpu-static-sdk\\relocated\\lib\\hyle_compute_stream.lib",
+          "sha256": "976d336edb084f080b0edd3a1ec21ea4ef2e507f9254e163213f1f6e3f48e705"
+        },
+        {
+          "path": "C:\\h7\\inference-g01-cpu-static-sdk\\relocated\\lib\\hyle_container.lib",
+          "sha256": "cd60800e59f83bb7fb921491897492d878a6f039b61e16d56b1862a64cf13658"
+        },
+        {
+          "path": "C:\\h7\\inference-g01-cpu-static-sdk\\relocated\\lib\\hyle_error.lib",
+          "sha256": "5712a921ce65b4a943eb8f3ab6c399ffa9954d0288f3eac2235f639619076305"
+        },
+        {
+          "path": "C:\\h7\\inference-g01-cpu-static-sdk\\relocated\\lib\\hyle_graph.lib",
+          "sha256": "db01f622a84736527c256dd9c09c0b3102d8f4a9efd268e7fa3b0ced121a3499"
+        },
+        {
+          "path": "C:\\h7\\inference-g01-cpu-static-sdk\\relocated\\lib\\hyle_graph_batch.lib",
+          "sha256": "cb6a5a0c0c9e0948941c29c0030fc39a56cbb3edfac86a4a312f86c28b049585"
+        },
+        {
+          "path": "C:\\h7\\inference-g01-cpu-static-sdk\\relocated\\lib\\hyle_graph_provider_onednn.lib",
+          "sha256": "37c690ff353864808de106ebc1037006e709a8c1d14b3a9bcda1a9f76b41e2a5"
+        },
+        {
+          "path": "C:\\h7\\inference-g01-cpu-static-sdk\\relocated\\lib\\hyle_graph_route_cpu.lib",
+          "sha256": "bc02d7fbd908398d4d0dab3e9c1b39713bbfd7576e258dc3c64bf5517c991545"
+        },
+        {
+          "path": "C:\\h7\\inference-g01-cpu-static-sdk\\relocated\\lib\\hyle_io_core.lib",
+          "sha256": "67933733dc939759a7e1ff36c95b6f5dee666b72a765718f683c3321372ab8da"
+        },
+        {
+          "path": "C:\\h7\\inference-g01-cpu-static-sdk\\relocated\\lib\\hyle_mem.lib",
+          "sha256": "2269f23751652fd847bfc002f5c11176f0a21fe99886f61de13b77e3973c37d7"
+        },
+        {
+          "path": "C:\\h7\\inference-g01-cpu-static-sdk\\relocated\\lib\\hyle_mem_vm.lib",
+          "sha256": "2d95204f0a0e31b67bc68c96debabc7a21ffecb128976299397ebe1467460a60"
+        },
+        {
+          "path": "C:\\h7\\inference-g01-cpu-static-sdk\\relocated\\lib\\hyle_platform.lib",
+          "sha256": "000dcd56711535063afb1879759aa7b77e7f9ab563b25ed0b4286f325441c87d"
+        },
+        {
+          "path": "C:\\h7\\inference-g01-cpu-static-sdk\\relocated\\lib\\hyle_platform_fs.lib",
+          "sha256": "9cb602d248d5463f73007c3b4b0bac6881946c378ffe6c7227e6ce4be3af543b"
+        },
+        {
+          "path": "C:\\h7\\inference-g01-cpu-static-sdk\\relocated\\lib\\hyle_platform_thread.lib",
+          "sha256": "e8e57b102ce66627172de99db224eddc23e16b839643f73f000d53036696a1dd"
+        },
+        {
+          "path": "C:\\h7\\inference-g01-cpu-static-sdk\\relocated\\lib\\hyle_sched.lib",
+          "sha256": "21596a85d778f98dcf5cee43641003c0efa316a7fe188f795b82dbec90407eb2"
+        },
+        {
+          "path": "C:\\h7\\inference-g01-cpu-static-sdk\\relocated\\lib\\hyle_simd.lib",
+          "sha256": "ceb80fb1be166758908ce5ba702e18d812823130405e262ab3e8ebea9c2467d7"
+        },
+        {
+          "path": "C:\\h7\\inference-g01-cpu-static-sdk\\relocated\\lib\\hyle_time.lib",
+          "sha256": "89459cfd2d15feba834290a02f30bb3049ba32404b1688c04941df61f387241d"
+        }
+      ]
+    },
+    "shared": {
+      "candidate": "d91a523df9bce21eb81c13d9bf2a8f3f7d3ea80f",
+      "mode": "shared",
+      "public_consumer_inputs": {
+        "main.cc": "96f7b8a6c9a14dc0fa65ab8f3f7f8638ec37c7d3bfafb5a9c76c08d8c6c1feb4",
+        "CMakeLists.txt": "6574979758074c3da87c623fa8f5b3da34546065b3f5f88fb682bf25d9128bc2"
+      },
+      "canonical_product_inputs": {
+        "src/compute_provider_ggml/ggml_cpu_provider.cc": "8bb2acd535782cc1a571d8804b70362475e59aac9a11bd6326b5c9a02d3566c7",
+        "cmake/HyleDependencyLock.json": "482f81e0f46f1442c1dc27a9e3b0fd030c2ae80acc2416b0a63367479b9690ba"
+      },
+      "machine": "Windows-11-10.0.26200-SP0",
+      "node": "kiro-workstation",
+      "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+      "producer_cache_sha256": "da26718df24df92002e58f67d7b84df90f3467209fd0a9b87e141f6e2948514f",
+      "relocated_prefix": "C:\\h7\\inference-g01-cpu-shared-sdk\\relocated",
+      "staging_absent": true,
+      "consumer_source_scope": "only installed public HYLE headers; raw BF16 uint16 storage, no SIMD/private source dependencies",
+      "artifacts": [
+        {
+          "path": "C:\\h7\\inference-g01-cpu-shared-sdk\\consumer-build\\asmjit.dll",
+          "sha256": "eb8f9c478bfc4b671f83b630c97424c60b4c948c0a8645fe588aed4f6bab5df5"
+        },
+        {
+          "path": "C:\\h7\\inference-g01-cpu-shared-sdk\\consumer-build\\c10.dll",
+          "sha256": "93bff2548e330df0f94ce3c71c531887d049ae645d1e38e3c08689e2d86a7888"
+        },
+        {
+          "path": "C:\\h7\\inference-g01-cpu-shared-sdk\\consumer-build\\fbgemm.dll",
+          "sha256": "250dc6f79b26e022ca3088e9b71a023598c7e997c96b62ef350a74fa1b501d81"
+        },
+        {
+          "path": "C:\\h7\\inference-g01-cpu-shared-sdk\\consumer-build\\hyle_compute.dll",
+          "sha256": "80ab205dd46d0497ae7bed7d274da53925e5440f1a26b0dda4258f9dc5c79aa7"
+        },
+        {
+          "path": "C:\\h7\\inference-g01-cpu-shared-sdk\\consumer-build\\hyle_compute_backend_cpu.dll",
+          "sha256": "9f30897c3efcaca43dffc50f7ed1ad7daf4276d3628c5aae4ec596c69c1c172d"
+        },
+        {
+          "path": "C:\\h7\\inference-g01-cpu-shared-sdk\\consumer-build\\hyle_compute_batch.dll",
+          "sha256": "46ff84ec2dcd62c35f05d9a28ecbe78acc1fea039b862a92e745b6340e198213"
+        },
+        {
+          "path": "C:\\h7\\inference-g01-cpu-shared-sdk\\consumer-build\\hyle_compute_ggml_runtime.dll",
+          "sha256": "54abc2abaec50fc1d987b9dc880d86f847428b31f70b59c0d296736d89662fbb"
+        },
+        {
+          "path": "C:\\h7\\inference-g01-cpu-shared-sdk\\consumer-build\\hyle_compute_ops.dll",
+          "sha256": "c04fd549cdea378ff76ee3ba9189a21e3ec6cc8ae76f163c0c72ce553cb5684d"
+        },
+        {
+          "path": "C:\\h7\\inference-g01-cpu-shared-sdk\\consumer-build\\hyle_compute_provider_ggml.dll",
+          "sha256": "3669db3318dce9b895b3a36f5d8927b2b404bf1a31293ea9c05342a600d641bc"
+        },
+        {
+          "path": "C:\\h7\\inference-g01-cpu-shared-sdk\\consumer-build\\hyle_compute_provider_native.dll",
+          "sha256": "724a4911b2fcc1ec54a44a44247150aec259e17c139280242852ae3d33c80f74"
+        },
+        {
+          "path": "C:\\h7\\inference-g01-cpu-shared-sdk\\consumer-build\\hyle_compute_provider_onednn.dll",
+          "sha256": "7c508c5bce0fc53c86b7e45477822bb42f7f1e37c1d390f681269066a3a280fb"
+        },
+        {
+          "path": "C:\\h7\\inference-g01-cpu-shared-sdk\\consumer-build\\hyle_compute_route_cpu.dll",
+          "sha256": "27d111d3d17a01f3390e1232e3f586c75c3644fd879c5b78feda6403ea4629c1"
+        },
+        {
+          "path": "C:\\h7\\inference-g01-cpu-shared-sdk\\consumer-build\\hyle_compute_state.dll",
+          "sha256": "d57fe92225bd35ee8ffe1ffad00d93a9f4d3d0eb0d209420a386fc296e1d288d"
+        },
+        {
+          "path": "C:\\h7\\inference-g01-cpu-shared-sdk\\consumer-build\\hyle_compute_stream.dll",
+          "sha256": "633aa48e770049492d55c032dba3169dd3d927522980d8dec6ae7bcca21a8ece"
+        },
+        {
+          "path": "C:\\h7\\inference-g01-cpu-shared-sdk\\consumer-build\\hyle_container.dll",
+          "sha256": "8ad1460d33bfdc6de6a157767759c7325b78b21f81140dfa151d5475db1ba52e"
+        },
+        {
+          "path": "C:\\h7\\inference-g01-cpu-shared-sdk\\consumer-build\\hyle_error.dll",
+          "sha256": "48f2a491f925b5de88ae2a5b467fb6b592fa69a0c750cca745afda726a158f5a"
+        },
+        {
+          "path": "C:\\h7\\inference-g01-cpu-shared-sdk\\consumer-build\\hyle_ggml_cpu_avx2_ffa4e8b8_bdae1e43311ee486.dll",
+          "sha256": "22075122e06cb30b77c563de5197b6def549ec80e90229cce16512c327f44b1f"
+        },
+        {
+          "path": "C:\\h7\\inference-g01-cpu-shared-sdk\\consumer-build\\hyle_io_core.dll",
+          "sha256": "1758e6049c7602015c2b8c387713323ca6446b8efbf5be12a3bb4653d474d839"
+        },
+        {
+          "path": "C:\\h7\\inference-g01-cpu-shared-sdk\\consumer-build\\hyle_mem.dll",
+          "sha256": "b15f72b38dda622bc1e422ff9f6799010e2d0cc5a2f330dc9805419bdf1c08d5"
+        },
+        {
+          "path": "C:\\h7\\inference-g01-cpu-shared-sdk\\consumer-build\\hyle_mem_vm.dll",
+          "sha256": "d703914d03d9e1a684f222fad726bf55def43d13c20a9bd129d85c8863361768"
+        },
+        {
+          "path": "C:\\h7\\inference-g01-cpu-shared-sdk\\consumer-build\\hyle_platform.dll",
+          "sha256": "b1bd47565aa5ab844bcb2ec71b82940f7ad0fa0166a9c03d40217fafaa9337f5"
+        },
+        {
+          "path": "C:\\h7\\inference-g01-cpu-shared-sdk\\consumer-build\\hyle_platform_fs.dll",
+          "sha256": "04b2b7b07c2aa15e5a2b4e4510a4b90931a1a008cd1854ce6b08cd7176167e7f"
+        },
+        {
+          "path": "C:\\h7\\inference-g01-cpu-shared-sdk\\consumer-build\\hyle_platform_thread.dll",
+          "sha256": "5f1de26f4fdf8885ab0c4c9d582f34a5885fefa68455ea986a360ee7e4404ae2"
+        },
+        {
+          "path": "C:\\h7\\inference-g01-cpu-shared-sdk\\consumer-build\\hyle_sched.dll",
+          "sha256": "a0e55fdbc524901a5f4ba4d55a6f254e5fd962fe259392a2bf299f356e718388"
+        },
+        {
+          "path": "C:\\h7\\inference-g01-cpu-shared-sdk\\consumer-build\\hyle_simd.dll",
+          "sha256": "fec2a6debacd81e65872a53388ef1a4ac5f8cddd007b5daa6f6892bc697afb0a"
+        },
+        {
+          "path": "C:\\h7\\inference-g01-cpu-shared-sdk\\consumer-build\\hyle_time.dll",
+          "sha256": "060208bf05bf750e2b1194db5747fe643de98064fc42228d3f0505181c17e7f4"
+        },
+        {
+          "path": "C:\\h7\\inference-g01-cpu-shared-sdk\\consumer-build\\libiomp5md.dll",
+          "sha256": "d9d66ed25f1a0ea725fa3a41b22cfd5d182c19dbe4771d9c90ca02ad7466f6a1"
+        },
+        {
+          "path": "C:\\h7\\inference-g01-cpu-shared-sdk\\consumer-build\\resident.exe",
+          "sha256": "0405401a6304a6f159ae6e0a4e20ccbab91e6245e0681b2e9d8ae9d9a0068dd5"
+        },
+        {
+          "path": "C:\\h7\\inference-g01-cpu-shared-sdk\\consumer-build\\torch.dll",
+          "sha256": "16a220e55b35fbfd946c26663eb3eefc76782872280cdc47ab0caea1babf0613"
+        },
+        {
+          "path": "C:\\h7\\inference-g01-cpu-shared-sdk\\consumer-build\\torch_cpu.dll",
+          "sha256": "2cb91cf2ba957fad5a17eab5bb7af6b3d73bbc98d94e2deeadc9fb9294eea809"
+        },
+        {
+          "path": "C:\\h7\\inference-g01-cpu-shared-sdk\\consumer-build\\uv.dll",
+          "sha256": "fa569e682fc5fb7a8eb94c6829af9f30a569748dbbc6bce39735d48bc960bcf8"
+        },
+        {
+          "path": "C:\\h7\\inference-g01-cpu-shared-sdk\\relocated\\lib\\hyle_compute.lib",
+          "sha256": "39487857ddacf8c65bd50b4f6365d9fe672e037939e834bccc6b864c9ed56973"
+        },
+        {
+          "path": "C:\\h7\\inference-g01-cpu-shared-sdk\\relocated\\lib\\hyle_compute_backend_cpu.lib",
+          "sha256": "34ff0302fe3dead8383ec705e50e58223b528a0a32ae4134f02ee2f43a0fb7a1"
+        },
+        {
+          "path": "C:\\h7\\inference-g01-cpu-shared-sdk\\relocated\\lib\\hyle_compute_batch.lib",
+          "sha256": "05e3b472b87370947fc7eb280fdae4d2b673904577ca16a312a2a80fb0007d9b"
+        },
+        {
+          "path": "C:\\h7\\inference-g01-cpu-shared-sdk\\relocated\\lib\\hyle_compute_ggml_runtime.lib",
+          "sha256": "f4310ca1643389676c1bd80da7c2ef96abf26dd26e0ed19698847ad605c38cff"
+        },
+        {
+          "path": "C:\\h7\\inference-g01-cpu-shared-sdk\\relocated\\lib\\hyle_compute_ops.lib",
+          "sha256": "3a1b93d8c67d0cd65e68c3fe3af07cfa7d68a5c55662f6ab175d4d77aee60525"
+        },
+        {
+          "path": "C:\\h7\\inference-g01-cpu-shared-sdk\\relocated\\lib\\hyle_compute_provider_ggml.lib",
+          "sha256": "3dc732e7d44f379d2226222fe73bc5e082c44ef81eef5eb9d38a383cf294aa04"
+        },
+        {
+          "path": "C:\\h7\\inference-g01-cpu-shared-sdk\\relocated\\lib\\hyle_compute_provider_native.lib",
+          "sha256": "05521e30fe9c0420968d4a491987f3f24eab0a33a6d9cae95aac4386a3097ff3"
+        },
+        {
+          "path": "C:\\h7\\inference-g01-cpu-shared-sdk\\relocated\\lib\\hyle_compute_provider_onednn.lib",
+          "sha256": "673a986ac255c5b5c2a3c94a51333e04d6a11c93d8b2554397f58cab826f016f"
+        },
+        {
+          "path": "C:\\h7\\inference-g01-cpu-shared-sdk\\relocated\\lib\\hyle_compute_route_cpu.lib",
+          "sha256": "1b9c124ed72e725e082791830203849a78b0a9472c5afb2064d41c3daa6abaa2"
+        },
+        {
+          "path": "C:\\h7\\inference-g01-cpu-shared-sdk\\relocated\\lib\\hyle_compute_state.lib",
+          "sha256": "4de658b965ef5af7c98162a6ced88b0420997ffc52c29c006199bb6ebe4db1e9"
+        },
+        {
+          "path": "C:\\h7\\inference-g01-cpu-shared-sdk\\relocated\\lib\\hyle_compute_stream.lib",
+          "sha256": "a7afb4f60d85b7f024c88d52ab364af6d637e3124f65e1b631b60b2f524190f9"
+        },
+        {
+          "path": "C:\\h7\\inference-g01-cpu-shared-sdk\\relocated\\lib\\hyle_container.lib",
+          "sha256": "c4c132cdc4905495cba26311cff1fc274adb5aa83ae3fa6c50ec959e137a55f1"
+        },
+        {
+          "path": "C:\\h7\\inference-g01-cpu-shared-sdk\\relocated\\lib\\hyle_error.lib",
+          "sha256": "172dbc572a1ef3c6242b11378a4077de7873d8f73a687668e56b30698a51f0c1"
+        },
+        {
+          "path": "C:\\h7\\inference-g01-cpu-shared-sdk\\relocated\\lib\\hyle_graph.lib",
+          "sha256": "f141f048d96aa4670c40e3eaf6b01d5d698a7ac58dd6f008b45824216f52d0cf"
+        },
+        {
+          "path": "C:\\h7\\inference-g01-cpu-shared-sdk\\relocated\\lib\\hyle_graph_batch.lib",
+          "sha256": "d9212e931de3ae65d1babf87f762c5715fcf0731341c4f7e19b996c4ce551645"
+        },
+        {
+          "path": "C:\\h7\\inference-g01-cpu-shared-sdk\\relocated\\lib\\hyle_graph_provider_onednn.lib",
+          "sha256": "ae139231d8d069d8141b13e4498329f82ef1cb0326d5fde4ccc0d1862ed69163"
+        },
+        {
+          "path": "C:\\h7\\inference-g01-cpu-shared-sdk\\relocated\\lib\\hyle_graph_route_cpu.lib",
+          "sha256": "c18cb054943db9b26bf17e5118aa551a771077dea1c02ae443a2f5ccee3d2d41"
+        },
+        {
+          "path": "C:\\h7\\inference-g01-cpu-shared-sdk\\relocated\\lib\\hyle_io_core.lib",
+          "sha256": "26c0d4286e6987306491da981ef02498c63d093d708420304c3067764aa73986"
+        },
+        {
+          "path": "C:\\h7\\inference-g01-cpu-shared-sdk\\relocated\\lib\\hyle_mem.lib",
+          "sha256": "fa68219ce04de6f88ec449dd662969da88ab6ea8653fd753af9bdb6820fc25ea"
+        },
+        {
+          "path": "C:\\h7\\inference-g01-cpu-shared-sdk\\relocated\\lib\\hyle_mem_vm.lib",
+          "sha256": "98d3a4b1aefcdf218bb2a2034eb3c6437714cd2ad4db9eaf81e6cf9490bd04e8"
+        },
+        {
+          "path": "C:\\h7\\inference-g01-cpu-shared-sdk\\relocated\\lib\\hyle_platform.lib",
+          "sha256": "d179b28e2655ce220c55210a0d11e62fd934605bd16f2b22dd4388ff30a23e52"
+        },
+        {
+          "path": "C:\\h7\\inference-g01-cpu-shared-sdk\\relocated\\lib\\hyle_platform_fs.lib",
+          "sha256": "6106ef7068d1697b6e4acea870f392ec889d646bb867e18ddc09db48de390d15"
+        },
+        {
+          "path": "C:\\h7\\inference-g01-cpu-shared-sdk\\relocated\\lib\\hyle_platform_thread.lib",
+          "sha256": "aae49e3a3cc70dc336313e38f427e4908dc6dadb4853b343c2b4ec330e41d15d"
+        },
+        {
+          "path": "C:\\h7\\inference-g01-cpu-shared-sdk\\relocated\\lib\\hyle_sched.lib",
+          "sha256": "6b625084a6e7e259f02713e20b24f0a48ea9a3a010372831ad4d388332222b47"
+        },
+        {
+          "path": "C:\\h7\\inference-g01-cpu-shared-sdk\\relocated\\lib\\hyle_simd.lib",
+          "sha256": "93c0ea5503e4c0b26289eb1854b9df31e0466c52af4f6b1a645de8c3125aec2b"
+        },
+        {
+          "path": "C:\\h7\\inference-g01-cpu-shared-sdk\\relocated\\lib\\hyle_time.lib",
+          "sha256": "b39a8d40c88a2af5967787478c4243738d5a1699e4136e9fedb9469685be7607"
+        }
+      ]
+    }
+  },
+  "raw": [
+    {
+      "path": "cpu-sdk-old-source-preserved.json",
+      "sha256": "2b8aca608c6368fd04c71c057d495a5a642259edd5ce6c60a0dcb1ab87b89a81"
+    },
+    {
+      "path": "cpu-source-project.cmake",
+      "sha256": "70d6d8c1adcf13fdd20d6c251d9d1c47f9b4bd3e5b18171c89c9126f07fc13dc"
+    },
+    {
+      "path": "cpu-win-shared-sdk-configure-1.log",
+      "sha256": "fb49adf9b4d5e41d2a77f13527c8b039bfc1016fa164e038001f1e0ea042d203"
+    },
+    {
+      "path": "cpu-win-shared-sdk-configure-2.log",
+      "sha256": "ba8842c0ecece3c9a745b50be48ce6e2884fc2f6792110e56eaedfc847fd856c"
+    },
+    {
+      "path": "cpu-win-shared-sdk-configure-3.log",
+      "sha256": "61d751ae0b2a9af31bca6bb79c94b87bf90d744b86fc2bcd7f9ac86721c5059d"
+    },
+    {
+      "path": "cpu-win-shared-sdk-consumer-build-1.log",
+      "sha256": "8d428a05a62c731ab9b03ed8e6fcc2e576f48db36412e1af87257092e7fad3b7"
+    },
+    {
+      "path": "cpu-win-shared-sdk-consumer-configure-1.log",
+      "sha256": "a3b3cd8ba64aa46140ca9d9fb88705ce0d34a08c5eaa044aa84394dfe53db24c"
+    },
+    {
+      "path": "cpu-win-shared-sdk-inputs.json",
+      "sha256": "a5513bf472dfcbc46dc78b4d6b40d00570012365b2306be8248bad7a9b4251e8"
+    },
+    {
+      "path": "cpu-win-shared-sdk-install-1.log",
+      "sha256": "3c6007bda2ea1fa43f0e1c98cef931ef66bb5a02afe2767969e17c4cb6c40944"
+    },
+    {
+      "path": "cpu-win-shared-sdk-producer-build-1.log",
+      "sha256": "33126e810a7e289176b4714fe93afc0ed12c62b9e36843d55665a9d16993180e"
+    },
+    {
+      "path": "cpu-win-shared-sdk-result.json",
+      "sha256": "1b342fa59c3bba7118919705c0013bf49e3cd056a12c6874460c70070969e60a"
+    },
+    {
+      "path": "cpu-win-shared-sdk-run-1.log",
+      "sha256": "2f8dfe6b40a588db28b278d593efa4d61162f04a52a17f2a03389a9b513920ff"
+    },
+    {
+      "path": "cpu-win-source-build-1.log",
+      "sha256": "cd745b0d3f611f28e08872200a91927642b449a3fd12700b7ee28e4736bf8735"
+    },
+    {
+      "path": "cpu-win-source-configure-1.log",
+      "sha256": "321b8e8a47899ad489c96e684c07d3157d6659e0b75a80f60f43c682cb40950e"
+    },
+    {
+      "path": "cpu-win-source-result.json",
+      "sha256": "cef735e0fe1af094cad2773c31c8e80dd1c06410f332a21843160dc9b45b3c59"
+    },
+    {
+      "path": "cpu-win-source-run-1.log",
+      "sha256": "2f8dfe6b40a588db28b278d593efa4d61162f04a52a17f2a03389a9b513920ff"
+    },
+    {
+      "path": "cpu-win-static-sdk-configure-1.log",
+      "sha256": "99af6acb524bd69cc63d51416b63dbbadf471bc2f1b6be3d41e98402c99a5a4a"
+    },
+    {
+      "path": "cpu-win-static-sdk-consumer-build-1.log",
+      "sha256": "4d02035b6d943becb0dca9229662dd051cd738265b54bea24c1d9d1538cc7a42"
+    },
+    {
+      "path": "cpu-win-static-sdk-consumer-configure-1.log",
+      "sha256": "8e1ce642613246a818dccd60169e6d0b063b01821ec3d3f55d6cc1af7b20ea25"
+    },
+    {
+      "path": "cpu-win-static-sdk-inputs.json",
+      "sha256": "24ec4d31d47b22a39bb2a2d8ab44bbfc641778261e2d43fe1a8a296a74fa4ec9"
+    },
+    {
+      "path": "cpu-win-static-sdk-install-1.log",
+      "sha256": "ed24b401bb74a0631a98af326adcfdc63c51c340fddad97c8717e6bb57c25109"
+    },
+    {
+      "path": "cpu-win-static-sdk-producer-build-1.log",
+      "sha256": "b93fd65c6034e13ffc8343b4309e23289338e3d571bfe36beb3781ada5d08f1a"
+    },
+    {
+      "path": "cpu-win-static-sdk-result.json",
+      "sha256": "6d1c6a4fb8d42d5a57b49095be128a74d487dd1b98f557594144c71ecd607df0"
+    },
+    {
+      "path": "cpu-win-static-sdk-run-1.log",
+      "sha256": "2f8dfe6b40a588db28b278d593efa4d61162f04a52a17f2a03389a9b513920ff"
+    },
+    {
+      "path": "cpu_sdk_windows.py",
+      "sha256": "b35f3cfdea6629b0c20ee402e809cacdfcc0a62b26e9936c14f357857a3055bb"
+    },
+    {
+      "path": "cpu_source_windows.py",
+      "sha256": "195d3c8364bb84bacbc755525a0f4f229f2cfbd48dcdfec7c12fc20b2cbeab2a"
+    },
+    {
+      "path": "public_cpu_resident.cc",
+      "sha256": "96f7b8a6c9a14dc0fa65ab8f3f7f8638ec37c7d3bfafb5a9c76c08d8c6c1feb4"
+    }
+  ],
+  "raw_zip_sha256": "d422f99266517f471d9bbea4ad7a2488760a768dc792a6258a8771e398240bd2"
+}
