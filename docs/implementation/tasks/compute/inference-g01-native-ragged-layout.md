@@ -106,3 +106,8 @@ identity，F16/GQA8/2 Q1/17 KV1024/768、Q64/128长prefill、Q1/17 KV31/47 D64�
 约13%差距，保留为待正式确认成本事实，不由未资格点值改API或签PASS。Apple原MLX
 1f8e74e3真git peer已fetch且clean；正式配置核对所链接原fast SDPA/Metal shader源码
 与该pin，原BFloat copy/compiler补丁身份另保。未开始正式采样，未签这两个性能门。
+
+Apple正式已启动：fresh1在原MLX源码身份脚本错误路径配置FAIL（4.868s），原树/日志
+保留；按真实git列表修私有脚本，fresh2 clean source c6d10f66同合同/产品280继续。
+配置核对原SDPA和Metal kernel族均PASS，A/A16实际PASS，n15产品120已完成，controls
+仍运行；正式整体/性能verifier未到终态，不先写PASS。Vulkan尚未启动，按重型串行。
