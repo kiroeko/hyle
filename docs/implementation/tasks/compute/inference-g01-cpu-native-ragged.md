@@ -1,6 +1,7 @@
 # G01 CPU 多请求 ragged 原生读取
 
-状态：AUDITED，2026-10-13；owner `compute_provider_ggml`。
+状态：CANDIDATE，2026-10-13；owner `compute_provider_ggml`。
+不可变candidate `642cc1e67566994a85a65adbe0db8956c1d0350a`。
 baseline `af9dc884448249ef0ad87d28525e5303ec087401`，单请求产品candidate d91a与全部
 三交付/san/独立性能证据保留，CPU单请求独立P1已资格且5%非劣PASS，不能代签本轮batch。
 授权来自[十项goal](../project/inference-gaps-goal-execution-2026-10.md)。
@@ -60,11 +61,17 @@ prepared均同allocator销毁；冷mask/query下界与实际arena/payload/cplan�
 report.float_workspace_bytes在此CPU档是已知冷plan占用的保守合计，原同名外部预留pool
 依旧独立存在，不冒充总RSS或private pool上界；G10再统一实际资源预算形状。
 
-source仍AUDITED，已编译；两请求/两dtype三depth、重排、empty Q、readonly/tail、旧output/
+实现已提交且固定；两请求/两dtype三depth、重排、empty Q、readonly/tail、旧output/
 两slots、same-topology复用、小预算/paged具名拒绝、foreign schema、逐cold allocation失败
 回滚及accepted math failure不发布输出/真实uses退休四tests在Windows实跑PASS。
 主数学测试使用普通cpu::create_context而非单provider特设入口。此前compile/schema失败
-全部保留；source/static/shared、适用san与batch性能尚未完成。中央图仅新增CPUprovider
+全部保留。WSL实际GCC14 source副本，ASan+LSan、UBSan、TSan各13tests PASS，四项新
+batch风险与九项既有layout/storage回归均实际运行；两产品TU/batch core/test的instrumented
+compile commands保留。Windows relocated static/shared SDK同普通Direct consumer与原
+single resident回归均PASS：F16/BF16三D、两slots/旧output/reuse/readonly/tail。安装consumer
+仅public头与compute/graph targets；其Graph expert factory未由facade传播的真实适配
+差异单列未资格，source显式provider target的Graph两region串联实跑中，不能偷加存在性
+宏或由Direct代签Graph交付。source Graph与batch性能尚未完成。中央图仅新增CPUprovider
 到既有compute_batch一条私有无环边；selector保守选全局计划，计划原样保留，实际本轮
 只构建CPUprovider及直接batch/Graph消费者，不跑无影响全库/数学目录。性能独立副本
 已封存，heavy验证按常设资源约束串行，不能先记源码猜测PASS。

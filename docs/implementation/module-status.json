@@ -369,9 +369,10 @@
     },
     {
       "module": "compute_provider_ggml",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/inference-g01-cpu-native-ragged.md",
-      "summary": "G01 CPU CR-01/02/03 AUDITED：原BatchPlanning生命周期接直接ragged多请求，用原ggml flash/slot和packed输出，零KV物化；原d91a单请求证据/P1独立取样保留，paged和其它路线仍待。"
+      "summary": "G01 CPU native ragged CR-01/02/03 CANDIDATE：原ggml flash直接读KV和packed输出，Windows默认入口/四风险tests、WSL三san各13tests PASS；三交付与batch性能待验，原单请求P1已PASS。",
+      "candidate": "642cc1e67566994a85a65adbe0db8956c1d0350a"
     },
     {
       "module": "graph_provider_onednn",

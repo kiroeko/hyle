@@ -40,12 +40,12 @@ Apple/Vulkan 的实际 OS/native 资格。共同验收位置、有效区、shape
 
 ## 十项跟踪
 
-下表是当前 goal 工作项，不是第二份模块 registry。当前完成数 **0/10**；上一轮只完成
-源码调查与模型/reference 预检，未完成本轮产品修正或新旅程资格。
+下表是当前 goal 工作项，不是第二份模块 registry。完整项完成数 **0/10**；已完成
+G01单请求CPU/Vulkan有限子批与G02 common实现，不能由子批替代全部路线。
 
 | 项 | 当前状态 | 有限目标 | 预计涉及的机制 owner，需在活动卡精确定界 |
 |---|---|---|---|
-| G01 高效驻留读取 | CPU原candidate保留，三形状独立比较器数学PASS、正式P1待验；Vulkan两轮合格P1 FAIL后修正真实port Copy3→0，3d92候选Air三交付/san已过，原合同fresh4复测中；多请求待验 | 单请求先核 dense/view；多请求接 native/等价直接驻留消费，避免按每 Q/head 重复物化全 KV | compute_batch、原 route/Provider、graph_batch 必要桥 |
+| G01 高效驻留读取 | CPU/Vulkan单请求三交付、宿主风险与合格P1非劣PASS；Vulkan有限子批CLOSED。CPU ragged多请求642cc1e67候选，Windows四tests、WSL三san各13tests与static SDK PASS，其余资格及其它路线多请求待验 | 单请求先核 dense/view；多请求接 native/等价直接驻留消费，避免按每 Q/head 重复物化全 KV | compute_batch、原 route/Provider、graph_batch 必要桥 |
 | G02 联合分页 | common与CPU+CUDA实跑、三交付/宿主风险通过；Windows余门及Apple/Vulkan联合分页待验 | 原 multi-queue bindings 接 batch coordinator；native hybrid 接准确 page/layout 与原 region/slot，公开 CPU→GPU→CPU | graph_batch、三个 graph hybrid、原 compute/native 权限桥 |
 | G03 增量 producer 组合 | 待 owner 定界 | 原 exclusive/F2/native waits到更新与读取；精确 dirty 域、成功 ready、idle input 生命周期 | compute_batch、compute/F2、原 native route与graph桥 |
 | G04 量化 KV | 待有限编码选择 | 按成熟实际 cache 编码冻结 payload/scales/layout、quantize append与直接读取，不每步解码完整历史 | compute_ops/batch、实际 Provider/native route |
@@ -60,12 +60,12 @@ Apple/Vulkan 的实际 OS/native 资格。共同验收位置、有效区、shape
 预先宣称 FP8/Q8/window/MLA/random 的任意组合全部准入，也不以 BF16 单请求不需要为由
 删除上述 G 项。确需调整已冻结域时按 owner 协议回退，不在实现途中扩成所有 peer API。
 
-G01 已登记[驻留 SDPA 子批](../compute/inference-g01-resident-sdpa.md)：CPU 现有原生 stride
-导入与 dense-only attention qualifier 的差距，Vulkan 原生 fused 核与当前 full-scores lower
-的差距。两 owner 已依次 SCOPED→AUDITED，四项有限 FIX 固定并进入实现；未签 G01 完成。
-实现阶段CPU已过provider模块/头与普通入口GQA8/2 D256驻留测试；Vulkan实跑发现原核
-内部half缩窄，按[原生精度卡](../compute/inference-g01-vulkan-native-precision.md)登记真实
-runtime owner SCOPED，原oracle不放宽。三交付/risk/P1及多请求消费未完成，G01仍未结案。
+G01 [驻留SDPA子批](../compute/inference-g01-resident-sdpa.md)的单请求验证已完成：CPU P1
+2598.985s、Vulkan P1 3669.387s，均合格且5%非劣PASS；失败/STOP及原合同原样保留。
+Vulkan实际port Copy3→0与原生精度/固定record资格见有限terminal；CPU当前owner由
+[ragged多请求卡](../compute/inference-g01-cpu-native-ragged.md)拥有，已提交原flash复用
+与packed输出实现，不复制KV；四项Windows测试及WSL ASan/LSan通过，剩余资格继续。
+多请求其它路线与联合分页仍属原G01/G02有限清单，不新增全局调研轮。
 
 ## 推进顺序
 
