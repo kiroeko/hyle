@@ -34,7 +34,6 @@ template<class T>void ragged_native_case(unsigned depth,bool causal){
   auto program=std::move(*prepared);auto first=program.create_invocation().value(),second=program.create_invocation().value();
   auto qd=c::TensorDesc::dense(cap.data_type,std::array<std::int64_t,3>{20,8,depth}).value();
   auto kd=c::TensorDesc::dense(cap.data_type,std::array<std::int64_t,3>{84,2,depth}).value();
-  auto od=c::TensorDesc::dense(cap.data_type,std::array<std::int64_t,3>{18,8,depth}).value();
   std::vector<T> q(*qd.element_count()),k(*kd.element_count()),v(k.size());
   for(std::size_t i=0;i<q.size();++i)q[i]=half_test::encode<T>(float(int(i%13)-6)*.03125F);
   for(std::size_t i=0;i<k.size();++i){k[i]=half_test::encode<T>(float(int(i%17)-8)*.015625F);v[i]=half_test::encode<T>(float(int(i%29)-14)*.03125F);}
@@ -58,6 +57,7 @@ template<class T>void ragged_native_case(unsigned depth,bool causal){
       }}return result;};
   const auto read=[&](const n::Results &result){std::vector<T> actual(18*8*depth);
 #if defined(HYLE_G01_APPLE_RAGGED)
+    auto od=c::TensorDesc::dense(cap.data_type,std::array<std::int64_t,3>{18,8,depth}).value();
     auto lease=memory.import_readonly(result.arrays()[0],od).value();EXPECT_TRUE(lease.view()->read(std::as_writable_bytes(std::span(actual))).ok());
 #else
     EXPECT_TRUE(context.download(result.tensors()[0],std::as_writable_bytes(std::span(actual))).ok());
