@@ -152,6 +152,33 @@ auto output = slot.output().value();
 source/static/shared的双region消费已验证；batch 性能及其它路线多请求资格仍见
 [活动卡](../implementation/tasks/compute/inference-g01-cpu-native-ragged.md)。
 
+## CPU 准确页直接读取
+
+普通 CPU `BatchProgram` 新增的分页路径沿原 ggml flash 读取物理 K/V 页，使用
+`BatchStorage::kPaged`、`PagedArena` 和同一个 `BatchLayoutVersion`。当前验证域是
+F16/BF16、GQA8/2、D64/128/256、page_size16；页表可重排、跨请求共享物理页，尾长
+只表示最后一页的有效行数。此路径仍为候选，SDK与局部性能裁决见
+[分页活动卡](../implementation/tasks/compute/inference-g01-cpu-paged-resident.md)。
+
+K/V arena 按容量持有连续物理 NHD 页；发布每页 writer 后，用该 layout 所引用的
+准确 ready page 集合构造 frame，不能传多余页或把 arena 当作一个普通 ReadLease：
+
+```cpp
+auto key_frame = keys.read(layout, ready_key_pages).value();
+auto value_frame = values.read(layout, ready_value_pages).value();
+auto prepared = slot.prepare_batch(layout).value();
+auto done = prepared.run(query_read, key_frame, value_frame).value();
+HYLE_RETURN_IF_ERROR(done.wait());
+auto output = slot.output().value();
+```
+
+更新前释放旧 output、prepared token 和 Completion。query/KV indptr、页索引和尾长
+完全相同才能复用 native plan；改变 topology 时显式 `update_batch()` 重建。frame
+必须属于当前 schema/layout，所有 reader 和实际 native uses 退休后才能复用物理页。
+热数学不按 query/head 复制整个 KV 历史；query 转换、冷 causal mask、页表节点与原
+metadata/workspace 仍计费，private pool 上界未知。CPU capture、增量 producer、低成本
+增长规划及 GPU/联合分页的资格各有独立范围，不由此 CPU 路径推导。
+
 > 本页描述当前 Compute runtime foundation、CPU operation surface 与 CUDA runtime；施工资格只以
 > [`module-status.json`](../implementation/module-status.json) 为准。普通 CPU 入口自动组装已构建的 oneDNN/ggml/ATen/Native 实现；
 > 标准 CPU 构建使用 `HYLE_COMPUTE_ROUTES=cpu`，自动接入该平台所需的合格 Provider。

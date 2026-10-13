@@ -114,3 +114,10 @@ ASan增量第4次run仍FAIL的原因已定位为验证副本mtime：canonical修
 第4次记录保留为STALE_BUILD，不能代表已修输入；私有同步改为只有changed bytes
 用验证机当前mtime，不碰未变文件/公共工具。补Result检查触发实际重编后，ASan
 定向accepted分页错误退休PASS（20.261s编译、0.418s运行）；全14tests复验进行。
+
+两槽有限补验：主slot保重排/短tail结果与其native页表，另slot同时用原topology
+运行并逐bit核两份各自结果，之后独立close；Windows最终同五tests PASS（5.875s
+增量、40.421s run）。两原core数学已实际运行：CPU-only ffa在WSL三san各14PASS，
+MacBook Air M4/arm64/AppleClang21/macOS27.0.1在CPU+Apple shared源树实际mixed456
+原CPU数学14PASS（5.299s配置、13.088s构建、25.505s run），不跑GPU/不代签G02。
+新两槽test的三san/SDK/Air最终串行补验继续，四jobs；产品candidate1e9不变。
