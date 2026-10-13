@@ -14,6 +14,28 @@ Graph 的 typed lowering 收到同一份冷信息。无注解继续使用合法 
 
 ## 构建与三种 C++ 交付
 
+`hyle/compute/apple_batch.h` 的 `prepare_ragged_batch(context, layout, operation)` 冷准备
+host-owned `BatchLayoutVersion`，`operation` 为相同容量的 `RaggedAttention`。输入是三个
+packed NHD 容量 Q/K/V，输出只有该布局的实际 packed Q rows；F16/BF16、D64/128/256
+沿原 MLX View/fast SDPA/Program 执行，原运行槽和结果 owner 合同不变。Q0 request 跳过，
+非空 Q 需有 KV，causal 还需 KV≥Q；全空 Q 返回空输出。新拓扑显式冷准备，run 不读
+host metadata 或重新建图；规划增长复用、paged 和 capture 仍有独立限制。
+该候选 source/static/shared 与宿主风险已验，性能门尚未完成，见
+[native ragged 卡](../implementation/tasks/compute/inference-g01-native-ragged-layout.md)。
+
+```cpp
+auto program = hyle::compute::apple::prepare_ragged_batch(
+    context, layout, hyle::compute::RaggedAttention{capacity, scale, causal}).value();
+auto slot = program.create_invocation().value();
+HYLE_RETURN_IF_ERROR(slot.bind(std::array{query_array, key_array, value_array}));
+auto done = slot.submit().value();
+auto result = done.wait().value();
+```
+
+原生输入必须成功 ready；由 `MemoryResource::binding` 导入的数组保留原 readonly lease，
+资源/allocator 必须晚于派生槽与输入 owner 销毁。输出数组与 ResultLease 保持原保活规则，
+不能因原数学完成就提前改写仍有读者的数据。private native 内存上界仍未知。
+
 只支持 macOS Apple Silicon。源码构建需要可用的 Apple C++/Objective-C/Objective-C++ 和 Metal 编译工具；
 `xcrun -sdk macosx metal --version`、`xcrun -sdk macosx metallib --version` 必须成功。CLT 本身未必
 包含 Metal CLI。HYLE 不代装系统 SDK；ON 缺条件失败，AUTO 不可用时关闭，OFF 不探测或下载 MLX。

@@ -33,6 +33,26 @@ causal `Q×K` mask与float shared scratch仍是真成本，没有capture或全dt
 
 ## 构建与运行条件
 
+`hyle/compute/vulkan_batch.h` 的 `prepare_ragged_batch(context, layout, operation)` 冷消费
+owned host `BatchLayoutVersion` 和相同容量的 `RaggedAttention`。三个输入是 packed NHD
+容量 Q/K/V，单输出是实际 active packed Q rows。当前候选 F16 D64/128/256借原View/
+SDPA/Concat/Program；qualified request slices保原KV root和对齐origin，不按每Q/head
+展开历史。原query转换、mask、输出拼接与native私有费用仍存在。
+
+```cpp
+auto program = hyle::compute::vulkan::prepare_ragged_batch(
+    context, layout, hyle::compute::RaggedAttention{capacity, scale, causal}).value();
+auto slot = program.create_invocation().value();
+HYLE_RETURN_IF_ERROR(slot.bind(std::array{query_tensor, key_tensor, value_tensor}));
+auto done = slot.submit().value();
+auto result = done.wait().value();
+```
+
+Q0 request跳过，全空输出为空；非空Q需KV，causal需KV≥Q。拓扑变动显式重新准备，
+现有Program/slots/旧结果/实际退休按原native规则保留；不声称native paged、增长规划
+或capture。实际Air source/static/shared、宿主风险与Windows定向编译已通过，性能仍待
+[native ragged 卡](../implementation/tasks/compute/inference-g01-native-ragged-layout.md)裁决。
+
 源码构建需要 C++23、Python 3、glslangValidator/glslang，以及 Vulkan SDK 提供的 glslc、
 开发链接库和 SPIRV-Headers CMake package；可通过 `VULKAN_SDK` 指定 SDK 根目录。
 Vulkan-Headers 与完整 ggml Vulkan 源码从中央锁取得；窄接入补丁只应用到构建目录中的副本。
