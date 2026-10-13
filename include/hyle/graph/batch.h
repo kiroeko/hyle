@@ -78,6 +78,9 @@ struct LaneBinding final {
   ExecutionLaneId lane{};
   const compute::Context* context=nullptr;
   compute::Queue* queue=nullptr;
+  // Required for a native batch lane. It must be a host carrier admitted by
+  // this Context's original transfer/planner, rather than another lane's pool.
+  mem::MemoryResourceRef host_workspace{};
 };
 class Invocation final {
 public:
@@ -92,7 +95,7 @@ public:
   // copied, and each batch slot plans and runs on its own lane's Queue.
   // Contexts/Queues/resources retain the original native lifetime contract.
   HYLE_GRAPH_BATCH_API static Result<Invocation> create(const Executable&,
-      std::span<const LaneBinding>,mem::MemoryResourceRef host_workspace,
+      std::span<const LaneBinding>,
       LeasedInvocationOptions = {},ReplayOptions = {}) noexcept;
   bool valid() const noexcept{return data_!=nullptr;}
   // Complete layout set for selected batch nodes. Resets old bindings only

@@ -157,7 +157,7 @@ Status exercise(bool paged, bool bf16) {
   const std::array storage{g::StorageDomain{device.ref()}};
   const std::array targets{g::ExecutionTarget{&context, g::StorageDomainId{0}}};
   HYLE_ASSIGN_OR_RETURN(auto compiled, g::compile(graph, {storage, targets, {}}, {.operation_fallback = g::OperationFallbackPolicy::kReject}));
-  HYLE_ASSIGN_OR_RETURN(auto invocation, gb::Invocation::create(compiled.executable, std::array{gb::LaneBinding{g::ExecutionLaneId{0}, &context, &queue}}, host.ref()));
+  HYLE_ASSIGN_OR_RETURN(auto invocation, gb::Invocation::create(compiled.executable, std::array{gb::LaneBinding{g::ExecutionLaneId{0}, &context, &queue, host.ref()}}));
   const std::array layouts{gb::NodeLayout{node, layout}};
   HYLE_RETURN_IF_ERROR(invocation.prepare_batch(layouts));
   for (unsigned i = 0; i < leases.size(); ++i) HYLE_RETURN_IF_ERROR(invocation.bind(inputs[i], descriptions[i], leases[i]));

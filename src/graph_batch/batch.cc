@@ -148,9 +148,9 @@ Result<c::Provider> provider(c::Provider base,c::BatchSchema schema,c::BatchProg
 Invocation::Invocation(Invocation&&v)noexcept:data_(std::exchange(v.data_,nullptr)){}
 Invocation&Invocation::operator=(Invocation&&v)noexcept{if(this!=&v){detail::destroy(data_);data_=std::exchange(v.data_,nullptr);}return *this;}
 Invocation::~Invocation(){detail::destroy(data_);}
-Result<Invocation> Invocation::create(const Executable&executable,std::span<const LaneBinding>lanes,mem::MemoryResourceRef host_workspace,LeasedInvocationOptions options,ReplayOptions replay)noexcept{
-  if(!executable.valid() || !host_workspace.valid() || !options.allocator.valid() || lanes.size()!=executable.required_queue_count())
-    return std::unexpected(Status::InvalidArgument("Graph batch requires its complete active lanes and valid host workspace"));
+Result<Invocation> Invocation::create(const Executable&executable,std::span<const LaneBinding>lanes,LeasedInvocationOptions options,ReplayOptions replay)noexcept{
+  if(!executable.valid() || !options.allocator.valid() || lanes.size()!=executable.required_queue_count())
+    return std::unexpected(Status::InvalidArgument("Graph batch requires its complete active lanes"));
   auto*p=options.allocator.construct<detail::InvocationData>(options.allocator);if(!p)return std::unexpected(Status::ResourceExhausted("Graph batch coordinator metadata"));Invocation result(p);
   std::vector<const LaneBinding*,mem::StdAllocator<const LaneBinding*>>by_lane{mem::StdAllocator<const LaneBinding*>(options.allocator)};
   try{by_lane.resize(executable.lane_count(),nullptr);p->queues.reserve(lanes.size());
@@ -168,12 +168,13 @@ Result<Invocation> Invocation::create(const Executable&executable,std::span<cons
   }catch(...){return std::unexpected(Status::ResourceExhausted("Graph batch lane binding metadata"));}
   HYLE_ASSIGN_OR_RETURN(p->original,LeasedInvocation::create(executable,options));
   p->replay=replay;
-  struct Call{detail::InvocationData*data;std::span<const LaneBinding*const>lanes;mem::MemoryResourceRef host_workspace;}call{p,by_lane,host_workspace};
+  struct Call{detail::InvocationData*data;std::span<const LaneBinding*const>lanes;}call{p,by_lane};
   HYLE_RETURN_IF_ERROR(gd::RegionAccess::visit(p->original,[](void*opaque,const gd::RegionAccessView&view)noexcept->Status{
     if(view.owner->provider().id!=kProviderId)return Status::Ok();auto&call=*static_cast<Call*>(opaque);auto&r=*static_cast<Region*>(view.prepared);auto&s=*static_cast<Slot*>(view.invocation);
     if(!view.lane.valid() || view.lane.ordinal()>=call.lanes.size() || !call.lanes[view.lane.ordinal()])return Status::InvalidArgument("Graph batch region has no active lane binding");
     const auto&binding=*call.lanes[view.lane.ordinal()];
-    {std::lock_guard guard(r.cold_lock);if(!r.program.valid()){r.options.host_workspace=call.host_workspace;HYLE_ASSIGN_OR_RETURN(r.program,cd::BatchGraphAccess::prepare(*binding.context,r.config->schema,r.options,view.owner->provider_instance_id()));}else if(r.options.host_workspace!=call.host_workspace)return Status::InvalidArgument("Graph batch host resource differs from its cold program");}
+    if(!binding.host_workspace.valid())return Status::InvalidArgument("Graph native batch lane has no admitted host workspace");
+    {std::lock_guard guard(r.cold_lock);if(!r.program.valid()){r.options.host_workspace=binding.host_workspace;HYLE_ASSIGN_OR_RETURN(r.program,cd::BatchGraphAccess::prepare(*binding.context,r.config->schema,r.options,view.owner->provider_instance_id()));}else if(r.options.host_workspace!=binding.host_workspace)return Status::InvalidArgument("Graph batch host resource differs from its cold program");}
     HYLE_ASSIGN_OR_RETURN(s.native,cd::BatchGraphAccess::create(r.program,*binding.queue));
     try{call.data->bindings.push_back({r.node,r.metadata,&r,&s,view.step});}catch(...){return Status::ResourceExhausted("Graph batch node binding metadata");}return Status::Ok();
   },&call));

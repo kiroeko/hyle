@@ -14,8 +14,8 @@ reopen trigger 是新增真实 CPU＋GPU/多 lane 分页消费者，原 F5 coord
 
 ## 最终形状与有限 FIX
 
-冻结公开 `graph::batch::LaneBinding` 保存 lane、Context指针、Queue指针；create接完整
-active bindings span、host workspace、原lease options与ReplayOptions。输入只借冷创建调用，coordinator
+冻结公开 `graph::batch::LaneBinding` 保存 lane、Context指针、Queue指针与本lane host workspace；
+create接完整active bindings span、原lease options与ReplayOptions。输入只借冷创建调用，coordinator
 保存原 QueueBinding 集；Context/Queue/资源沿原借用合同活到native uses与结果退休。
 不保旧单Queue签名、不加兼容转发。原普通Graph layout/submit成本不增加；visitor增加lane
 身份只用于显式冷/idle桥。其Context/Queue与Graph原targets身份必须一致。
@@ -47,6 +47,10 @@ coordinator与两Queue数学/权限/生命周期consumer，在支持FI的Linux�
 RegionAccess冷target/Queue身份检查；原prepare_replay在输入绑定后首次submit验证完整
 topology，不能在create提前准备尚未绑定的输入。输入span不借到热路径。错误/OOM在接纳native
 工作前回滚。不同region能用不同Context/Queue，metadata只有原共享资格成立时才共享。
+原生两Context反例在第二slot的prepare返回CUDA copy binding context mismatch：全局host
+workspace和device backing仍属于第一Context。API据此改为per-lane staging；原F2精确Context
+权限保持，不放松其检查。不同资源域的region需要各自device residency与metadata input，
+不能用同一IR metadata端口跨资源域分享mirror。真实数据/权限旅程继续验证，G02尚未完成。
 正确性/三交付与适用风险未取得不得CLOSED。
 时间为检查点，正常构建/定位自动延长且保原日志/elapsed/FAIL，不以1800秒机械退出。
 真实外部阻断按协议裁决；发现改变此API/ownership的事实回AUDITED，不扩大成新runtime。
