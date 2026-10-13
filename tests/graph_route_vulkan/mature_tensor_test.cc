@@ -363,6 +363,7 @@ TEST(VulkanGraph, ResidentAttentionViewsPreserveEffectiveLengthsAndOldResults) {
           auto program = gv::compile(context, graph, {}, {.report = &report});
           ASSERT_TRUE(program) << program.error().message();
           EXPECT_EQ(report.managed_region_count, 1U);
+          EXPECT_EQ(report.native_dispatch_count, 0U);
           auto first = program->create_invocation().value(),
                second = program->create_invocation().value();
           v::Tensor retained;
@@ -556,6 +557,7 @@ TEST(VulkanGraph, ResidentAttentionDepthPaddedRowsUseExactStrides) {
   EXPECT_EQ(report.managed_region_count, 1U);
   auto query = make(context, qd, std::vector<double>(*qd.element_count(), 0.));
   auto keys = make(context, kd, std::vector<double>(*kd.element_count(), 0.));
+  EXPECT_EQ(report.native_dispatch_count, 2U); // Non-vec4 K/V remain explicit Copy.
   std::vector<double> values_host(*kd.element_count());
   for (int row = 0; row < 31; ++row)
     for (int head = 0; head < 2; ++head)
@@ -596,6 +598,35 @@ TEST(VulkanGraph, ResidentAttentionCapacityViewsHaveNoWarmCanonicalCopies) {
     ASSERT_TRUE(program) << program.error().message();
     EXPECT_EQ(report.managed_region_count, 1U);
     EXPECT_EQ(report.native_dispatch_count, 0U) << "batch=" << batch;
+  }
+  ASSERT_TRUE(context.close().ok());
+}
+TEST(VulkanGraph, ResidentAttentionRejectsUnalignedImportedOriginBeforeSubmit) {
+  auto context = vulkan_test::context().value();
+  const auto qd = dense(c::DataType::kFloat32, {1, 1, 8, 256});
+  const auto physical = dense(c::DataType::kFloat32, {1, 31, 2, 260});
+  const auto cache = make(context, physical, std::vector<double>(*physical.element_count(), 0.));
+  const auto good = cache.view(c::View::slice(3, 0, 256).value()).value();
+  const auto bad = cache.view(c::View::slice(3, 1, 256).value()).value();
+  EXPECT_EQ(good.description(), bad.description());
+  auto builder = g::GraphBuilder::create().value();
+  const auto q = builder.input(qd).value(), k = builder.input(good.description()).value(), v_id = builder.input(good.description()).value();
+  const auto output = builder.add(c::ScaledDotProductAttention{
+      .layout = c::AttentionLayout::kBatchSequenceHeadDepth, .scale = .0625F}, q, k, v_id).value();
+  ASSERT_TRUE(builder.publish(output).ok());
+  auto graph = std::move(builder).finish().value();
+  auto program = gv::compile(context, graph).value();
+  auto slot = program.create_invocation().value();
+  const auto query = make(context, qd, std::vector<double>(*qd.element_count(), 0.));
+  EXPECT_FALSE(slot.bind(std::array{query, bad, good}).ok());
+  ASSERT_TRUE(slot.bind(std::array{query, good, good}).ok());
+  auto work = slot.submit();
+  ASSERT_TRUE(work);
+  auto result = work->wait();
+  ASSERT_TRUE(result);
+  for (const auto actual : values(context, result->get()->tensors()[0])) {
+    EXPECT_TRUE(std::isfinite(actual));
+    EXPECT_EQ(actual, 0.);
   }
   ASSERT_TRUE(context.close().ok());
 }

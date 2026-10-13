@@ -630,6 +630,7 @@ struct Region::State final {
   NativeDevice device;
   std::shared_ptr<Imports> imports;
   std::vector<ggml_tensor *> ports;
+  std::vector<std::size_t> port_alignments;
   std::vector<ggml_tensor *> views;
   NativeGraph graph;
   NativeWork work; // Retires before graph/imports/device.
@@ -1236,6 +1237,33 @@ Result<Region> Region::create(NativeDevice device,
       auto *node = ggml_graph_node(graph, i);
       if (node->view_src)
         state.views.push_back(node);
+      if (node->op != GGML_OP_FLASH_ATTN_EXT ||
+          node->op_params[bridge::kFlashAttentionMathSlot] !=
+              bridge::kFlashAttentionFullF32)
+        continue;
+      const auto alignment = (std::max)(
+          std::size_t{16}, static_cast<std::size_t>(
+                              state.device.native().storage_buffer_alignment));
+      for (std::size_t source = 0; source < 3; ++source) {
+        auto *tensor = node->src[source];
+        for (std::size_t axis = 1; axis < 4; ++axis)
+          if (tensor->ne[axis] > 1 && tensor->nb[axis] % 16 != 0)
+            return std::unexpected(
+                Status::Unimplemented("ggml Vulkan flash vec4 pitch"));
+        if (tensor->view_offs % alignment != 0)
+          return std::unexpected(Status::Unimplemented(
+              "ggml Vulkan flash view origin alignment"));
+        while (tensor->view_src)
+          tensor = tensor->view_src;
+        const auto port = std::ranges::find(state.ports, tensor);
+        if (port == state.ports.end())
+          continue;
+        if (state.port_alignments.empty())
+          state.port_alignments.resize(state.ports.size(), sizeof(float));
+        state.port_alignments[static_cast<std::size_t>(port -
+                                                     state.ports.begin())] =
+            alignment;
+      }
     }
     for (auto *tensor : state.ports) {
       HYLE_ASSIGN_OR_RETURN(auto buffer,
@@ -1271,6 +1299,8 @@ Region::validate(std::span<const RegionBinding> bindings) const noexcept {
         ggml_backend_buffer_get_base(state_->imports->buffers[i]));
     if (port.handle == VK_NULL_HANDLE || !port.owner ||
         port.offset % sizeof(float) ||
+        (!state_->port_alignments.empty() &&
+         port.offset % state_->port_alignments[i]) ||
         (ggml_is_quantized(state_->ports[i]->type) &&
          port.offset % state_->device.native().storage_buffer_alignment) ||
         port.capacity < ggml_nbytes(state_->ports[i]) ||

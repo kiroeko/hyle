@@ -1,0 +1,77 @@
+{
+  "phase": "AUDITED VP-01/02/03 stage; candidate pending",
+  "baseline": "e11fa9ee1dbda1d01f84bdc4b2d782d94b74973e",
+  "product_inputs": {
+    "src/compute_route_vulkan/vulkan_region.cc": "8d5d62804351798413941324cdd38497148c22b8b5345acf84dd09406c2b9792",
+    "src/compute_provider_ggml_vulkan/region.cc": "3b6bcb9c71261b7d5486bb12040a67d2785663e54a6530022ca2c96e773a1253",
+    "tests/graph_route_vulkan/mature_tensor_test.cc": "4499e3ba42567d5026d96bf81c01ce35e3ce5ef95e20f3aa1daf77b71bc746d2"
+  },
+  "results": {
+    "resident-port-probe-run-1": {
+      "command": [
+        "ssh",
+        "-o",
+        "BatchMode=yes",
+        "kiro@172.22.10.198",
+        "/Users/kiro/hyle-scratch/compute-unified/a-vulkan/selected-graph/static-sdk-build/bin/g01_replay_resident",
+        "--gtest_filter=VulkanGraph.ResidentAttentionCapacityViewsHaveNoWarmCanonicalCopies"
+      ],
+      "exit_code": 1,
+      "elapsed_seconds": 0.8899999999994179,
+      "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g01\\resident-port-probe-run-1.log"
+    },
+    "resident-port-final-build-5": {
+      "command": [
+        "ssh",
+        "-o",
+        "BatchMode=yes",
+        "kiro@172.22.10.198",
+        "/opt/homebrew/bin/cmake",
+        "--build",
+        "/Users/kiro/hyle-scratch/compute-unified/a-vulkan/selected-graph/static-sdk-build",
+        "--target",
+        "g01_replay_resident",
+        "--parallel",
+        "4"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 2.452999999994063,
+      "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g01\\resident-port-final-build-5.log"
+    },
+    "resident-port-final-nine-tests-4": {
+      "command": [
+        "ssh",
+        "-o",
+        "BatchMode=yes",
+        "kiro@172.22.10.198",
+        "/Users/kiro/hyle-scratch/compute-unified/a-vulkan/selected-graph/static-sdk-build/bin/g01_replay_resident"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 1.875,
+      "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g01\\resident-port-final-nine-tests-4.log"
+    },
+    "resident-port-windows-build-2": {
+      "command": [
+        "cmake",
+        "--build",
+        "C:/h7/inference-g01-native-vulkan/build",
+        "--target",
+        "resident",
+        "attention_cache",
+        "--parallel",
+        "4"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 6.437000000005355,
+      "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g01\\resident-port-windows-build-2.log",
+      "scope": "Windows compile only; no local GPU execution"
+    }
+  },
+  "actual_machine": "MacBook Air Mac16,12 M4; Windows bounded compiler only",
+  "source_math_and_cost": "PASS finite9tests: original warm native Copy3 -> qualified0, nonvec4 KV explicitCopy2, raw unaligned origin rejected before submit",
+  "pending": [
+    "immutable VP candidate SDK/san/P1",
+    "full G01 multi-request and other routes"
+  ],
+  "raw_zip_sha256": "a5e884384e1c62ad855c08e76917b219048311b8862ad7771015c17d358a67d0"
+}

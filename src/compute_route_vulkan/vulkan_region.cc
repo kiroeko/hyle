@@ -614,6 +614,8 @@ Status lower_region(ProgramState &program, const Plan &plan, std::size_t first,
     struct ValueUses final {
       bool produced = false;
       bool descriptor_aligned = false;
+      bool resident_attention = false;
+      bool other_reader = false;
     };
     std::vector<ValueUses> uses(ids.size());
     for (auto i = first; i < end; ++i) {
@@ -622,6 +624,21 @@ Status lower_region(ProgramState &program, const Plan &plan, std::size_t first,
       for (const auto input : step.inputs)
         if (has_payload(step, input))
           node.inputs.push_back(local(input));
+      const auto *attention = step.operation.get_if<ScaledDotProductAttention>();
+      const auto depth =
+          attention
+              ? program.values[step.inputs[0]].description.dimensions().back()
+              : 0;
+      const bool resident =
+          attention &&
+          attention->layout == AttentionLayout::kBatchSequenceHeadDepth &&
+          (depth == 64 || depth == 128 || depth == 256) &&
+          program.values[step.inputs[1]].description.dimensions().back() == depth &&
+          program.values[step.inputs[2]].description.dimensions().back() == depth;
+      for (const auto input : node.inputs) {
+        uses[input].resident_attention |= resident;
+        uses[input].other_reader |= !resident;
+      }
       // Argsort, indexed rows, GroupNorm, Softmax and multi-pass Scan need
       // aligned descriptors. Other admitted operations retain their
       // offset-aware input contract.
@@ -669,6 +686,23 @@ Status lower_region(ProgramState &program, const Plan &plan, std::size_t first,
         // Preserve compressed bytes. Borrowed compressed ports require native
         // descriptor alignment, checked before binding; no scalar Copy can
         // interpret a block encoding as its logical F16 elements.
+        dispatch.values.push_back(value);
+        continue;
+      }
+      const auto &description = program.values[value].description;
+      bool resident =
+          uses[input].resident_attention && !uses[input].other_reader &&
+          description.rank() == 4 &&
+          (description.data_type() == DataType::kFloat32 ||
+           description.data_type() == DataType::kFloat16) &&
+          description.byte_strides()[3] == static_cast<std::int64_t>(
+              data_type_size(description.data_type()));
+      for (std::size_t axis = 0; resident && axis < 3; ++axis)
+        resident = description.dimensions()[axis] <= 1 ||
+                   description.byte_strides()[axis] % 16 == 0;
+      if (resident) {
+        // The Provider validates the actual bound origin before admission.
+        // Keep native nb and the resident owner; no warm canonical KV copy.
         dispatch.values.push_back(value);
         continue;
       }

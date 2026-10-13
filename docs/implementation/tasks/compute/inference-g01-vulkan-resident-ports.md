@@ -60,3 +60,10 @@ VP-03：原公开数学/readonly/独立slots/旧output/64步origin与owner切换
 views与该数学矩阵native_dispatch_count=0；65-element padding明确保原Copy；错origin
 提前拒绝。三交付/san/P1沿上节固定入口。两个owner均AUDITED后才实施，runtime原
 candidate保留，不改shader/math、公共构建/仪器或扩大F5/其他Provider。
+
+实现阶段：原copy3反证后，Air公开9 tests实际通过，原其他managed/mixed-provider行为
+不变；合格容量与原数值矩阵copy0，65-element非vec4域明确保两个KV Copy，错误
+runtime byte origin绑定失败后可重新正确绑定执行。原72个数学episode和64步真正
+port重绑通过，旧output寿命不减弱。Windows仅相关TU/消费者4路增量编译通过。
+证据见[实现阶段](../../../../evidence/correctness/inference-g01-vulkan-resident-ports-stage/README.md)，
+三交付/san/P1尚待不可变candidate；不从copy0推导吞吐PASS。
