@@ -1,0 +1,61 @@
+{
+  "candidate": "42f98b94f33bdbb252b9259ece33533cf763fa41",
+  "test_revision": "98101efa56f3639c0ac256c943c412ba890ba076",
+  "cpu_only_core": "ffa4e8b80930029a35991f94e7c8a93cd67730ab + authenticated CPU IQ1/page address patches",
+  "gates": [
+    {
+      "mode": "asan",
+      "gate": "PASS 14 tests",
+      "final_run": {
+        "candidate": "42f98b94f33bdbb252b9259ece33533cf763fa41",
+        "stage": "run",
+        "command": [
+          "/home/kiro/hyle-f1/sanitizers/asan-03242e7723cb/bin/g01_cpu_paged_tests"
+        ],
+        "exit_code": 0,
+        "elapsed_seconds": 23.51872045600001,
+        "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g01/cpu-paged-asan-run-7.log"
+      },
+      "instrumented_tus": 7,
+      "cumulative_seconds": 525.026457661
+    },
+    {
+      "mode": "ubsan",
+      "gate": "PASS 14 tests",
+      "final_run": {
+        "candidate": "42f98b94f33bdbb252b9259ece33533cf763fa41",
+        "stage": "run",
+        "command": [
+          "/home/kiro/hyle-f1/sanitizers/ubsan-03242e7723cb/bin/g01_cpu_paged_tests"
+        ],
+        "exit_code": 0,
+        "elapsed_seconds": 21.192182031999977,
+        "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g01/cpu-paged-ubsan-run-3.log"
+      },
+      "instrumented_tus": 7,
+      "cumulative_seconds": 219.65129832699992
+    },
+    {
+      "mode": "tsan",
+      "gate": "PASS 14 tests",
+      "final_run": {
+        "candidate": "42f98b94f33bdbb252b9259ece33533cf763fa41",
+        "stage": "run",
+        "command": [
+          "setarch",
+          "x86_64",
+          "-R",
+          "/home/kiro/hyle-f1/sanitizers/tsan-03242e7723cb/bin/g01_cpu_paged_tests"
+        ],
+        "exit_code": 0,
+        "elapsed_seconds": 35.78688705899998,
+        "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g01/cpu-paged-tsan-run-3.log"
+      },
+      "instrumented_tus": 7,
+      "cumulative_seconds": 234.14524947400002
+    }
+  ],
+  "stale_build": "ASan run4 copied repaired test bytes with older timestamp than previous object, ninja no work; FAIL preserved, invalid repaired-input evidence. copyfile only for changed bytes; later actual compile and final14 PASS.",
+  "limitations": "No mixed456 runtime, relocated SDK or P1 claim in this receipt; no native GPU or G02 qualification.",
+  "raw_sha256": "1c296803f7467ceae842ec40c9463f4045dc15cabbe792718b04e56216aa8339"
+}

@@ -177,3 +177,11 @@ CP-A01 runtime不可变candidate 42f98b94f33bdbb252b9259ece33533cf763fa41，prov
 FAIL6.953s保留，按原pin重放11上下文并认证实际after hash，不改prepare_source/checker。
 接下来适用三san、更新static/shared安装consumer和Air实际mixed CPU，P1合同hash修正
 先调用原product-evidence evaluator三点PASS；原DIAGNOSTIC不改标，不签CLOSED。
+
+CP-A01 runtime42f宿主风险：ASan+LSan/UBSan/TSan各14tests实际PASS，分别23.519/
+21.192/35.787s run，包含三D/两dtype/64复用+64演化/两topology槽/原normal resident
+及paged错误退休与allocation fault。实际原provider/nativeBatch/vendor CPU ops flags
+和所有原FAIL/累计集中[新风险](../../../../evidence/correctness/inference-g01-cpu-page16-risk/README.md)，
+没有覆盖旧1e9证据。static3/shared3/Air actual mixed CPU继续串行；P1第二轮等待
+更新SDK后按原仪器启动，JSON/Markdown实际bytehash与原consumer-evidence evaluator
+三点PASS已纳入启动前检查，防止重复消耗采样才发现错误。
