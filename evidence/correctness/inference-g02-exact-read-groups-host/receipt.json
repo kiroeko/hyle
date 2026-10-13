@@ -1,0 +1,207 @@
+{
+  "candidate": "5ce0bed8acb54d67cb70423134b73a6afea421dd",
+  "test_revision": "8991b066a447812dd8da6e0d13dd43c1c6813ff9",
+  "source_windows_final": {
+    "stage": "run",
+    "command": [
+      "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\g02_exact_read_group_tests.exe"
+    ],
+    "exit_code": 0,
+    "elapsed_seconds": 0.030999999988125637,
+    "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g02\\exact-read-source-run-3.log"
+  },
+  "source_all_attempts": [
+    {
+      "stage": "configure",
+      "command": [
+        "cmake",
+        "-S",
+        "C:\\public\\project-hyle\\hyle",
+        "-B",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev",
+        "-DCMAKE_PROJECT_INCLUDE=C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g02\\exact-read-project.cmake"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 19.875,
+      "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g02\\exact-read-source-configure-1.log"
+    },
+    {
+      "stage": "build",
+      "command": [
+        "cmake",
+        "--build",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev",
+        "--target",
+        "g02_exact_read_group_tests",
+        "--parallel",
+        "4"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 24.687000000005355,
+      "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g02\\exact-read-source-build-1.log"
+    },
+    {
+      "stage": "run",
+      "command": [
+        "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\g02_exact_read_group_tests.exe"
+      ],
+      "exit_code": 1,
+      "elapsed_seconds": 0.030999999988125637,
+      "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g02\\exact-read-source-run-1.log"
+    },
+    {
+      "stage": "configure",
+      "command": [
+        "cmake",
+        "-S",
+        "C:\\public\\project-hyle\\hyle",
+        "-B",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev",
+        "-DCMAKE_PROJECT_INCLUDE=C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g02\\exact-read-project.cmake"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 19.23399999999674,
+      "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g02\\exact-read-source-configure-2.log"
+    },
+    {
+      "stage": "build",
+      "command": [
+        "cmake",
+        "--build",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev",
+        "--target",
+        "g02_exact_read_group_tests",
+        "--parallel",
+        "4"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 24.405999999988126,
+      "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g02\\exact-read-source-build-2.log"
+    },
+    {
+      "stage": "run",
+      "command": [
+        "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\g02_exact_read_group_tests.exe"
+      ],
+      "exit_code": 1,
+      "elapsed_seconds": 0.030999999988125637,
+      "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g02\\exact-read-source-run-2.log"
+    },
+    {
+      "stage": "configure",
+      "command": [
+        "cmake",
+        "-S",
+        "C:\\public\\project-hyle\\hyle",
+        "-B",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev",
+        "-DCMAKE_PROJECT_INCLUDE=C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g02\\exact-read-project.cmake"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 19.35999999998603,
+      "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g02\\exact-read-source-configure-3.log"
+    },
+    {
+      "stage": "build",
+      "command": [
+        "cmake",
+        "--build",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev",
+        "--target",
+        "g02_exact_read_group_tests",
+        "--parallel",
+        "4"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 23.937999999994645,
+      "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g02\\exact-read-source-build-3.log"
+    },
+    {
+      "stage": "run",
+      "command": [
+        "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\g02_exact_read_group_tests.exe"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 0.030999999988125637,
+      "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g02\\exact-read-source-run-3.log"
+    }
+  ],
+  "sanitizers": [
+    {
+      "mode": "asan",
+      "verdict": "PASS 8 tests",
+      "run": {
+        "candidate": "5ce0bed8a: AUDITED exact-read draft; source SHA bound separately",
+        "stage": "run",
+        "command": [
+          "/home/kiro/hyle-f1/sanitizers/asan-03242e7723cb/bin/g02_exact_read_group_tests"
+        ],
+        "exit_code": 0,
+        "elapsed_seconds": 0.4461785389999875,
+        "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g02/exact-read-asan-run-1.log"
+      },
+      "instrumented_tus": 3,
+      "cumulative_seconds": 67.29690211099998
+    },
+    {
+      "mode": "ubsan",
+      "verdict": "PASS 8 tests",
+      "run": {
+        "candidate": "5ce0bed8a: AUDITED exact-read draft; source SHA bound separately",
+        "stage": "run",
+        "command": [
+          "/home/kiro/hyle-f1/sanitizers/ubsan-03242e7723cb/bin/g02_exact_read_group_tests"
+        ],
+        "exit_code": 0,
+        "elapsed_seconds": 0.14377174899999545,
+        "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g02/exact-read-ubsan-run-1.log"
+      },
+      "instrumented_tus": 3,
+      "cumulative_seconds": 49.25581339
+    },
+    {
+      "mode": "tsan",
+      "verdict": "PASS 8 tests",
+      "run": {
+        "candidate": "5ce0bed8a: AUDITED exact-read draft; source SHA bound separately",
+        "stage": "run",
+        "command": [
+          "setarch",
+          "x86_64",
+          "-R",
+          "/home/kiro/hyle-f1/sanitizers/tsan-03242e7723cb/bin/g02_exact_read_group_tests"
+        ],
+        "exit_code": 0,
+        "elapsed_seconds": 0.3293850169999928,
+        "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g02/exact-read-tsan-run-1.log"
+      },
+      "instrumented_tus": 3,
+      "cumulative_seconds": 38.844955467000005
+    }
+  ],
+  "source_and_san": "PASS finite host facet",
+  "inputs": [
+    {
+      "path": "include/hyle/graph/detail/lease_submission.h",
+      "sha256": "8efde18219e777f49026fabe884956500377ffb4f9d6034d8631433d55550684"
+    },
+    {
+      "path": "src/graph/lease_submission.cc",
+      "sha256": "d8c4931cb08567c9aedbad3ade284bc1ddb8dbe05f79015600bd7626248b3cfc"
+    },
+    {
+      "path": "tests/graph/lease_submission_test.cc",
+      "sha256": "d3914dfa9058c119ce23014d740e6cf8bf60e00cef0f14e811e5842a710b8de8"
+    },
+    {
+      "path": "tests/compute_batch/allocation_fault_fixture.h",
+      "sha256": "7fc5d108ebfbe46853a14fb74b4c504721442757cd4aeab10f1314a9f03943dc"
+    }
+  ],
+  "coverage": "owned guard groups, shared blocks, capacity/invalid binding preserves old, unreferenced writable, two unknown native prefixes actual simulated retirement, partial admission rollback, per cold allocation faults, 64 zero allocator calls",
+  "fixture_failures": "source1 Bad expected access; source2 checked allocate rejects second 16byte block at default256alignment in256capacity. Correct512fixture source3PASS, product unchanged. All raw/elapsed retained.",
+  "delivery": "UNPROVEN source/static/shared seam and original actual native hybrid consumers still required",
+  "native_page_math": "NOT IMPLEMENTED/NOT CLAIMED; no whole-arena permission from guards",
+  "warm_cost": "original LeaseUsePool dedup worstO(guards\u00b2); notG06 completion",
+  "raw_sha256": "409a9a5e9d673e32fe7ed57f21c6173073519c5b7714d2620c62d324fd34e257"
+}

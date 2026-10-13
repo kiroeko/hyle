@@ -1,6 +1,6 @@
 # G02 多 Queue batch 协调
 
-状态：graph在2026-10-14为MQ-LP-01退回AUDITED，graph_batch原CANDIDATE保留。
+状态：graph MQ-LP-01 CANDIDATE5ce（2026-10-14），graph_batch原CANDIDATE保留。
 graph_batch MQ-CPU-01 candidate `a0c047ea45cb46884da7f578684ff416ccfdefa5`。
 原不可变candidate：`26d7c2cb7212f5abdd3866baaf886b8fdbca02e5`，证据全部保留。
 baseline：`743783f7b0759d77978c0d208dc5ba0898313e69`。
@@ -156,3 +156,12 @@ MQ-LP-01实际产品5ce0bed8a，Windows八source tests PASS（19.360s配置、23
 仅容一个默认256对齐tiny块，首run Bad expected access保留；补Result检查定位allocate
 后增至512、运行8PASS，产品算法不改、两FAIL/累计不覆盖。三san/SDK/原native consumer
 继续串行，尚未CLOSED；不把普通guards测试代签PagedArena layout/native数学资格。
+
+
+MQ-LP-01最终WSL ASan+LSan/UBSan/TSan各八tests实际PASS，实际graph lease_submission/
+compute resource_leases/test TU flags已核，0.446/0.144/0.329s run。见
+[宿主资格](../../../../evidence/correctness/inference-g02-exact-read-groups-host/README.md)。
+原Windows两fixtureFAIL与累计全部保留，产品5ce API/算法停止变化；graph进入新CANDIDATE
+5ce0bed8acb54d67cb70423134b73a6afea421dd，原26d7全部证据和未决Windows门保留。
+新detail三交付/逐头与现有native联合消费者仍待；共同页守卫不能代签native数学/公开分页
+输入、G06低成本或整个G02。本轮不运行P1，原CPU分页已独立CLOSED。
