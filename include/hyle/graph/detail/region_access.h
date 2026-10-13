@@ -9,11 +9,16 @@ struct RegionAccessView final {
   const compute::detail::ProviderExtensionRef*owner=nullptr;
   void*prepared=nullptr;
   void*invocation=nullptr;
+  ExecutionLaneId lane{};
 };
 using RegionAccessFn=Status(*)(void*,const RegionAccessView&) noexcept;
 // Explicit cold/idle opt-in only. Views borrow the callback scope, never a
 // different execution slot. Ordinary compile/submit do not call this visitor.
 struct RegionAccess final {
+  // Cold adapter check against the retained target Context, independent of
+  // tensor bindings. Replay preparation still owns the complete topology.
+  HYLE_GRAPH_API static Status validate_queue(const Executable&,ExecutionLaneId,
+      const compute::Queue&) noexcept;
   HYLE_GRAPH_API static Status visit(const Executable&,RegionAccessFn,void*) noexcept;
   HYLE_GRAPH_API static Status visit(Invocation&,RegionAccessFn,void*) noexcept;
   HYLE_GRAPH_API static Status visit(LeasedInvocation&,RegionAccessFn,void*) noexcept;

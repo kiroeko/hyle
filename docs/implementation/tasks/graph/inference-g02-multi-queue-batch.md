@@ -43,8 +43,9 @@ coordinator与两Queue数学/权限/生命周期consumer，在支持FI的Linux�
 其余provider数学/旧目录不重测；复用对应tree/cache，普通编译从12 jobs按内存调整。
 
 短API/owner审计已固定上述FIX进入AUDITED。原enqueue严格检查slot.queue==实际Queue，
-因此按RegionAccessView.lane选择native slot；不是仅提交时换span。ContextRef::owns加原
-prepare_replay验证完整target/Queue身份，输入span不被借到热路径。错误/OOM在接纳native
+因此按RegionAccessView.lane选择native slot；不是仅提交时换span。ContextRef::owns加
+RegionAccess冷target/Queue身份检查；原prepare_replay在输入绑定后首次submit验证完整
+topology，不能在create提前准备尚未绑定的输入。输入span不借到热路径。错误/OOM在接纳native
 工作前回滚。不同region能用不同Context/Queue，metadata只有原共享资格成立时才共享。
 正确性/三交付与适用风险未取得不得CLOSED。
 时间为检查点，正常构建/定位自动延长且保原日志/elapsed/FAIL，不以1800秒机械退出。

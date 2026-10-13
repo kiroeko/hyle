@@ -17,8 +17,9 @@ template<class T>Status graph_case(bool paged,unsigned depth,bool large,unsigned
     hyle_f5_graph_fault_fixture::RunDecorator region_runs(c::flashinfer::provider());
     HYLE_ASSIGN_OR_RETURN(auto wrapped,gb::provider(region_runs.provider(),schema,{.max_float_workspace_bytes=8u*1024u*1024u,.max_int_workspace_bytes=64u*1024u,.scale=1.f/std::sqrt(float(depth)),.allocator=metadata.get()}));
     HYLE_ASSIGN_OR_RETURN(auto device_id,cu::device(0));HYLE_ASSIGN_OR_RETURN(auto context,c::Context::create(device_id,wrapped));HYLE_ASSIGN_OR_RETURN(auto queue,context.create_queue());
+    HYLE_ASSIGN_OR_RETURN(auto second_context,c::Context::create(device_id,wrapped));HYLE_ASSIGN_OR_RETURN(auto second_queue,second_context.create_queue());
     HYLE_ASSIGN_OR_RETURN(auto device,cu::MemoryResource::create(context,cu::MemoryKind::kDevice));HYLE_ASSIGN_OR_RETURN(auto host,cu::MemoryResource::create(context,cu::MemoryKind::kPinnedHost));
-    struct DrainBeforeResources{c::Context&context;~DrainBeforeResources(){context.drain().IgnoreError();}}drain_before_resources{context};
+    struct DrainBeforeResources{c::Context&context;c::Context&second;~DrainBeforeResources(){context.drain().IgnoreError();second.drain().IgnoreError();}}drain_before_resources{context,second_context};
     const std::array<std::int32_t,3> query{0,1,3};const std::array<std::int32_t,3> kv{0,std::int32_t(paged?refs1:n1),std::int32_t(paged?refs1+refs2:n1+n2)};
     const std::array<std::int32_t,2> tails{std::int32_t((n1-1)%16+1),std::int32_t((n2-1)%16+1)};
     std::vector<std::int32_t> ids(paged?refs1+refs2:0);for(unsigned i=0;i<ids.size();++i)ids[i]=std::int32_t((i+7)%ids.size());
@@ -33,11 +34,20 @@ template<class T>Status graph_case(bool paged,unsigned depth,bool large,unsigned
     HYLE_ASSIGN_OR_RETURN(auto node,builder.add_node(operation,inputs));HYLE_ASSIGN_OR_RETURN(auto output_id,builder.result(node));HYLE_RETURN_IF_ERROR(builder.publish(output_id));
     const std::array second_inputs{output_id,inputs[1],inputs[2],inputs[3]};
     HYLE_ASSIGN_OR_RETURN(auto second_node,builder.add_node(operation,second_inputs));HYLE_ASSIGN_OR_RETURN(auto second_output,builder.result(second_node));HYLE_RETURN_IF_ERROR(builder.publish(second_output));HYLE_ASSIGN_OR_RETURN(auto graph,std::move(builder).finish());
-    const std::array storage{g::StorageDomain{device.ref()}};const std::array targets{g::ExecutionTarget{&context,g::StorageDomainId{0}}};
-    HYLE_ASSIGN_OR_RETURN(auto compiled,g::compile(graph,{storage,targets,{}},{.operation_fallback=g::OperationFallbackPolicy::kReject}));
-    HYLE_ASSIGN_OR_RETURN(auto invocation,gb::Invocation::create(compiled.executable,context,queue,host.ref(),{.allocator=metadata.get()}));
-    HYLE_ASSIGN_OR_RETURN(auto independent,gb::Invocation::create(compiled.executable,context,queue,host.ref(),{.allocator=metadata.get()}));
-    HYLE_RETURN_IF_ERROR(require(gb::Invocation::create(compiled.executable,context,queue,host.ref(),{.allocator=metadata.get()}).error().IsUnavailable(),"Graph batch exceeded fixed native slots"));
+    const std::array storage{g::StorageDomain{device.ref()}};const std::array targets{g::ExecutionTarget{&context,g::StorageDomainId{0}},g::ExecutionTarget{&second_context,g::StorageDomainId{0}}};
+    const std::array placements{g::NodePlacement{node,g::ExecutionTargetId{0},g::PlacementStrength::kRequired},g::NodePlacement{second_node,g::ExecutionTargetId{1},g::PlacementStrength::kRequired}};
+    HYLE_ASSIGN_OR_RETURN(auto compiled,g::compile(graph,{storage,targets,{}},{.node_placements=placements,.operation_fallback=g::OperationFallbackPolicy::kReject}));
+    HYLE_RETURN_IF_ERROR(require(compiled.executable.required_queue_count()==2,"Graph batch did not retain two active Context/Queue lanes"));
+    const std::array lanes{gb::LaneBinding{g::ExecutionLaneId{1},&second_context,&second_queue},gb::LaneBinding{g::ExecutionLaneId{0},&context,&queue}};
+    const auto reject=[&](std::span<const gb::LaneBinding> bindings)noexcept->Status{auto rejected=gb::Invocation::create(compiled.executable,bindings,host.ref(),{.allocator=metadata.get()});return require(!rejected && rejected.error().IsInvalidArgument(),"Graph batch accepted incomplete/foreign/duplicate lanes");};
+    HYLE_RETURN_IF_ERROR(reject(std::span(lanes).first(1)));
+    auto invalid=lanes;invalid[0].lane=invalid[1].lane;HYLE_RETURN_IF_ERROR(reject(invalid));
+    invalid=lanes;invalid[0].context=&context;HYLE_RETURN_IF_ERROR(reject(invalid));
+    invalid=lanes;invalid[0].context=&context;invalid[0].queue=&queue;HYLE_RETURN_IF_ERROR(reject(invalid));
+    invalid=lanes;invalid[0].lane=g::ExecutionLaneId{2};HYLE_RETURN_IF_ERROR(reject(invalid));
+    HYLE_ASSIGN_OR_RETURN(auto invocation,gb::Invocation::create(compiled.executable,lanes,host.ref(),{.allocator=metadata.get()}));
+    HYLE_ASSIGN_OR_RETURN(auto independent,gb::Invocation::create(compiled.executable,lanes,host.ref(),{.allocator=metadata.get()}));
+    HYLE_RETURN_IF_ERROR(require(gb::Invocation::create(compiled.executable,lanes,host.ref(),{.allocator=metadata.get()}).error().IsUnavailable(),"Graph batch exceeded fixed native slots"));
     std::vector<T> q(3*4*depth),k((paged?cap.max_pages*16:cap.max_kv_rows)*2*depth),v(k.size());
     for(unsigned i=0;i<q.size();++i)q[i]=encode<T>(0.2f*std::sin(float(i)*0.017f));for(unsigned i=0;i<k.size();++i){k[i]=encode<T>(0.3f*std::cos(float(i)*0.019f));v[i]=encode<T>(std::sin(float(i)*0.013f));}
     HYLE_ASSIGN_OR_RETURN(auto pool,c::LeasePool::create(device.ref(),(q.size()*8+k.size()+v.size())*sizeof(T)+10u*256u));

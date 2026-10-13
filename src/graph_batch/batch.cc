@@ -3,6 +3,7 @@
 #include "hyle/graph/region_provider.h"
 #include "hyle/compute/detail/batch_graph_access.h"
 #include "hyle/compute/detail/paged_arena_access.h"
+#include "hyle/compute/detail/context_ref.h"
 #include "hyle/mem/std_allocator.h"
 #include "hyle/util/ref_counted.h"
 #include "../compute/provider_internal.h"
@@ -119,8 +120,10 @@ const cd::ProviderVTable provider_table{.identity={kProviderId,"graph-batch","1"
 namespace detail {
 struct InvocationData final {
   struct Binding{NodeId node;ValueId metadata;Region*region=nullptr;Slot*slot=nullptr;std::uint32_t step=0;};
-  explicit InvocationData(mem::AllocatorRef a):allocator(a),bindings(mem::StdAllocator<Binding>(a)){}
-  mem::AllocatorRef allocator;LeasedInvocation original;c::Queue*queue=nullptr;
+  explicit InvocationData(mem::AllocatorRef a):allocator(a),queues(mem::StdAllocator<QueueBinding>(a)),bindings(mem::StdAllocator<Binding>(a)){}
+  mem::AllocatorRef allocator;LeasedInvocation original;
+  ReplayOptions replay{};
+  std::vector<QueueBinding,mem::StdAllocator<QueueBinding>>queues;
   std::vector<Binding,mem::StdAllocator<Binding>>bindings;
 };
 void destroy(InvocationData*p)noexcept{if(p){const auto allocator=p->allocator;allocator.destroy(p);}}
@@ -145,15 +148,33 @@ Result<c::Provider> provider(c::Provider base,c::BatchSchema schema,c::BatchProg
 Invocation::Invocation(Invocation&&v)noexcept:data_(std::exchange(v.data_,nullptr)){}
 Invocation&Invocation::operator=(Invocation&&v)noexcept{if(this!=&v){detail::destroy(data_);data_=std::exchange(v.data_,nullptr);}return *this;}
 Invocation::~Invocation(){detail::destroy(data_);}
-Result<Invocation> Invocation::create(const Executable&executable,const c::Context&context,c::Queue&queue,mem::MemoryResourceRef host_workspace,LeasedInvocationOptions options)noexcept{
-  if(!host_workspace.valid())return std::unexpected(Status::InvalidArgument("Graph batch host workspace is invalid"));
-  auto*p=options.allocator.construct<detail::InvocationData>(options.allocator);if(!p)return std::unexpected(Status::ResourceExhausted("Graph batch coordinator metadata"));Invocation result(p);p->queue=&queue;
+Result<Invocation> Invocation::create(const Executable&executable,std::span<const LaneBinding>lanes,mem::MemoryResourceRef host_workspace,LeasedInvocationOptions options,ReplayOptions replay)noexcept{
+  if(!executable.valid() || !host_workspace.valid() || !options.allocator.valid() || lanes.size()!=executable.required_queue_count())
+    return std::unexpected(Status::InvalidArgument("Graph batch requires its complete active lanes and valid host workspace"));
+  auto*p=options.allocator.construct<detail::InvocationData>(options.allocator);if(!p)return std::unexpected(Status::ResourceExhausted("Graph batch coordinator metadata"));Invocation result(p);
+  std::vector<const LaneBinding*,mem::StdAllocator<const LaneBinding*>>by_lane{mem::StdAllocator<const LaneBinding*>(options.allocator)};
+  try{by_lane.resize(executable.lane_count(),nullptr);p->queues.reserve(lanes.size());
+    for(const auto&binding:lanes){
+      if(!binding.lane.valid() || binding.lane.ordinal()>=by_lane.size() || by_lane[binding.lane.ordinal()] ||
+         !binding.context || !binding.context->valid() || !binding.context->is_open() || !binding.queue || !binding.queue->is_open())
+        return std::unexpected(Status::InvalidArgument("Graph batch lane/context/queue is invalid, closed or duplicated"));
+      HYLE_ASSIGN_OR_RETURN(auto required,executable.requires_queue(binding.lane));
+      if(!required)return std::unexpected(Status::InvalidArgument("Graph batch binding names an inactive lane"));
+      HYLE_RETURN_IF_ERROR(gd::RegionAccess::validate_queue(executable,binding.lane,*binding.queue));
+      HYLE_ASSIGN_OR_RETURN(auto context,cd::ContextRef::acquire(*binding.context));
+      if(!context.owns(*binding.queue))return std::unexpected(Status::InvalidArgument("Graph batch Queue does not belong to its Context"));
+      by_lane[binding.lane.ordinal()]=&binding;p->queues.push_back({binding.lane,binding.queue});
+    }
+  }catch(...){return std::unexpected(Status::ResourceExhausted("Graph batch lane binding metadata"));}
   HYLE_ASSIGN_OR_RETURN(p->original,LeasedInvocation::create(executable,options));
-  struct Call{detail::InvocationData*data;const c::Context*context;c::Queue*queue;mem::MemoryResourceRef host_workspace;}call{p,&context,&queue,host_workspace};
+  p->replay=replay;
+  struct Call{detail::InvocationData*data;std::span<const LaneBinding*const>lanes;mem::MemoryResourceRef host_workspace;}call{p,by_lane,host_workspace};
   HYLE_RETURN_IF_ERROR(gd::RegionAccess::visit(p->original,[](void*opaque,const gd::RegionAccessView&view)noexcept->Status{
     if(view.owner->provider().id!=kProviderId)return Status::Ok();auto&call=*static_cast<Call*>(opaque);auto&r=*static_cast<Region*>(view.prepared);auto&s=*static_cast<Slot*>(view.invocation);
-    {std::lock_guard guard(r.cold_lock);if(!r.program.valid()){r.options.host_workspace=call.host_workspace;HYLE_ASSIGN_OR_RETURN(r.program,cd::BatchGraphAccess::prepare(*call.context,r.config->schema,r.options,view.owner->provider_instance_id()));}else if(r.options.host_workspace!=call.host_workspace)return Status::InvalidArgument("Graph batch host resource differs from its cold program");}
-    HYLE_ASSIGN_OR_RETURN(s.native,cd::BatchGraphAccess::create(r.program,*call.queue));
+    if(!view.lane.valid() || view.lane.ordinal()>=call.lanes.size() || !call.lanes[view.lane.ordinal()])return Status::InvalidArgument("Graph batch region has no active lane binding");
+    const auto&binding=*call.lanes[view.lane.ordinal()];
+    {std::lock_guard guard(r.cold_lock);if(!r.program.valid()){r.options.host_workspace=call.host_workspace;HYLE_ASSIGN_OR_RETURN(r.program,cd::BatchGraphAccess::prepare(*binding.context,r.config->schema,r.options,view.owner->provider_instance_id()));}else if(r.options.host_workspace!=call.host_workspace)return Status::InvalidArgument("Graph batch host resource differs from its cold program");}
+    HYLE_ASSIGN_OR_RETURN(s.native,cd::BatchGraphAccess::create(r.program,*binding.queue));
     try{call.data->bindings.push_back({r.node,r.metadata,&r,&s,view.step});}catch(...){return Status::ResourceExhausted("Graph batch node binding metadata");}return Status::Ok();
   },&call));
   if(p->bindings.empty())return std::unexpected(Status::Unimplemented("executable has no selected native batch region"));
@@ -198,7 +219,11 @@ Status Invocation::bind(ValueId value,c::PagedArenaRead frame)noexcept{
   for(auto&b:data_->bindings){if(b.region->values[1]==value)b.slot->keys=frame;if(b.region->values[2]==value)b.slot->values=frame;}
   return Status::Ok();
 }
-Result<c::Completion> Invocation::submit()noexcept{if(!data_)return std::unexpected(Status::FailedPrecondition("Graph batch coordinator is empty"));return data_->original.submit(*data_->queue);}
+Result<c::Completion> Invocation::submit()noexcept{
+  if(!data_)return std::unexpected(Status::FailedPrecondition("Graph batch coordinator is empty"));
+  if(data_->original.replay_route()==ReplayRoute::kUnprepared)HYLE_RETURN_IF_ERROR(data_->original.prepare_replay(data_->queues,data_->replay));
+  return data_->original.submit(data_->queues);
+}
 Result<LeasedGraphOutput> Invocation::output(ValueId value)noexcept{if(!data_)return std::unexpected(Status::FailedPrecondition("Graph batch coordinator is empty"));return data_->original.output(value);}
 Result<c::BatchPlanReport> Invocation::report(NodeId node)const noexcept{if(!data_)return std::unexpected(Status::FailedPrecondition("Graph batch coordinator is empty"));for(const auto&b:data_->bindings)if(b.node==node)return b.slot->native.report();return std::unexpected(Status::InvalidArgument("Graph batch report node is foreign"));}
 Status Invocation::close()noexcept{return data_?data_->original.close():Status::Ok();}

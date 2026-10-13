@@ -24,6 +24,27 @@ cuda.h在实际HYLE_COMPUTE_FLASHINFER资格下供应原factory头，未准入�
 完整公开D256 Direct/Graph用法见[可编译消费者](../../tests/compute_batch/public_batch_cuda_consumer.cc)，
 其输入与结果通过原lease接口读写，数学仍由锁定FlashInfer执行。
 
+## Graph 的执行 lane 绑定
+
+原生 batch coordinator 的 `Invocation::create` 接完整活跃 lane 集合；每项是
+`graph::batch::LaneBinding{lane, &context, &queue}`。单 lane 也传一个元素的 span；不再接
+旧单 Context/Queue 签名。只列 `executable.requires_queue(lane)` 为真的 lane，每个一次。
+Context 必须拥有该 Queue，且 Queue 对应 Graph 编译时同一 target；同 device 不是同 Context。
+
+```cpp
+const std::array lanes{
+    hyle::graph::batch::LaneBinding{gpu_lane, &gpu_context, &gpu_queue},
+    hyle::graph::batch::LaneBinding{cpu_lane, &cpu_context, &cpu_queue}};
+auto invocation = hyle::graph::batch::Invocation::create(
+    executable, lanes, host_workspace).value();
+```
+
+数组与 Context 指针只借用冷创建调用，原 Queue bindings 被复制；各 batch region 按原
+Graph lane 选择自己的原生计划/metadata/执行 Queue。资源与 Context/Queue 沿原 lifetime
+合同存活，不能在 native work 或旧结果仍被保留时销毁。prepare_batch 后 bind 输入/输出，
+首次 submit 才沿原 Graph prepare_replay 处理完整已绑定 topology；仍无 submit 隐式 batch plan。
+此接口正在 G02 验证，不代签 Apple/Vulkan hybrid native 分页或新吞吐/capture资格。
+
 ## 容量、有效区与版本
 
 先创建独立的BatchSchema。BatchCapacity固定storage、dtype、request/Q/KV/page/ref容量、

@@ -25,6 +25,7 @@
 #include "hyle/compute/providers/native.h"
 #include "hyle/compute/route_policy.h"
 #include "hyle/graph/region_provider.h"
+#include "hyle/graph/detail/region_access.h"
 #include "hyle/mem/buffer.h"
 #include "hyle/mem/stats.h"
 #include "provider_internal.h"
@@ -2636,6 +2637,49 @@ TEST(GraphRegions, RequiredTargetFiltersCandidatesBeforeResourceQuery) {
   EXPECT_EQ(first.compile_count, 1u);
   EXPECT_EQ(second.compile_count, 0u);
   EXPECT_EQ(compiled->report.step(0)->target, environment.target(0));
+}
+
+TEST(GraphRegions, ColdRegionAccessUsesActualLaneAndExactContextQueue) {
+  const auto logical = make_negations(4);
+  RegionProbe first, second;
+  auto first_context = make_context(first), second_context = make_context(second);
+  auto first_queue = first_context.create_queue().value();
+  auto second_queue = second_context.create_queue().value();
+  const auto host = hyle::mem::system_resource();
+  const Environment environment{{&first_context, host}, {&second_context, host}};
+  const std::array placements{
+      hyle::graph::NodePlacement{logical.graph.node_id(0).value(), environment.target(0), hyle::graph::PlacementStrength::kRequired},
+      hyle::graph::NodePlacement{logical.graph.node_id(1).value(), environment.target(0), hyle::graph::PlacementStrength::kRequired},
+      hyle::graph::NodePlacement{logical.graph.node_id(2).value(), environment.target(1), hyle::graph::PlacementStrength::kRequired},
+      hyle::graph::NodePlacement{logical.graph.node_id(3).value(), environment.target(1), hyle::graph::PlacementStrength::kRequired}};
+  auto compiled = hyle::graph::compile(logical.graph, environment.environment(),
+      {.node_placements = placements, .operation_fallback = OperationFallbackPolicy::kReject});
+  ASSERT_TRUE(compiled) << compiled.error().message();
+  ASSERT_EQ(compiled->executable.required_queue_count(), 2u);
+  using Access = hyle::graph::detail::RegionAccess;
+  EXPECT_TRUE(Access::validate_queue(compiled->executable, environment.lane(0), first_queue).ok());
+  EXPECT_TRUE(Access::validate_queue(compiled->executable, environment.lane(1), second_queue).ok());
+  EXPECT_TRUE(Access::validate_queue(compiled->executable, environment.lane(0), second_queue).IsInvalidArgument());
+  EXPECT_TRUE(Access::validate_queue(compiled->executable, hyle::graph::ExecutionLaneId{2}, first_queue).IsInvalidArgument());
+  struct Probe { const CompileReport* report; std::array<bool, 2> lanes{}; std::size_t count=0; } probe{&compiled->report};
+  const auto visit = +[](void* opaque, const hyle::graph::detail::RegionAccessView& view) noexcept -> Status {
+    auto& probe = *static_cast<Probe*>(opaque);
+    HYLE_ASSIGN_OR_RETURN(auto step, probe.report->step(view.step));
+    if (view.lane != step.lane || !view.lane.valid() || view.lane.ordinal() >= probe.lanes.size())
+      return Status::Internal("region visitor lost its original execution lane");
+    probe.lanes[view.lane.ordinal()] = true;
+    ++probe.count;
+    return Status::Ok();
+  };
+  ASSERT_TRUE(Access::visit(compiled->executable, visit, &probe).ok());
+  EXPECT_EQ(probe.count, 2u);
+  EXPECT_TRUE(probe.lanes[0] && probe.lanes[1]);
+  auto invocation = compiled->executable.create_invocation().value();
+  probe.count = 0;
+  probe.lanes = {};
+  ASSERT_TRUE(Access::visit(invocation, visit, &probe).ok());
+  EXPECT_EQ(probe.count, 2u);
+  EXPECT_TRUE(probe.lanes[0] && probe.lanes[1]);
 }
 
 TEST(GraphRegions, UnsupportedResourceQueryRejectsOnlyThatCandidate) {

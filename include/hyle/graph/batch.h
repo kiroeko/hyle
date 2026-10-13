@@ -74,6 +74,11 @@ private:
 // Thread-compatible control over the original leased Graph invocation.
 // Borrowed Context/resources/Queue/allocator outlive native work and results.
 // Independent invocations have separate plans/workspaces and may run separately.
+struct LaneBinding final {
+  ExecutionLaneId lane{};
+  const compute::Context* context=nullptr;
+  compute::Queue* queue=nullptr;
+};
 class Invocation final {
 public:
   Invocation() noexcept=default;
@@ -82,8 +87,13 @@ public:
   HYLE_GRAPH_BATCH_API Invocation(Invocation&&) noexcept;
   HYLE_GRAPH_BATCH_API Invocation&operator=(Invocation&&) noexcept;
   HYLE_GRAPH_BATCH_API ~Invocation();
+  // Exactly the active shared lanes of the compiled plan. The array and
+  // Context pointers are borrowed only during create(); Queue bindings are
+  // copied, and each batch slot plans and runs on its own lane's Queue.
+  // Contexts/Queues/resources retain the original native lifetime contract.
   HYLE_GRAPH_BATCH_API static Result<Invocation> create(const Executable&,
-      const compute::Context&,compute::Queue&,mem::MemoryResourceRef host_workspace,LeasedInvocationOptions = {}) noexcept;
+      std::span<const LaneBinding>,mem::MemoryResourceRef host_workspace,
+      LeasedInvocationOptions = {},ReplayOptions = {}) noexcept;
   bool valid() const noexcept{return data_!=nullptr;}
   // Complete layout set for selected batch nodes. Resets old bindings only
   // after original Graph's idle/result/completion checks. Bind Q/K/V and output
