@@ -514,9 +514,10 @@
     },
     {
       "module": "compute_route_apple",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/inference-g01-native-paged-read.md",
-      "summary": "G01 native pages AUDITED NP-01..05: owned four-port/table recipe, original common banks/frame/admission/retirement, MLX fragment address mapping and existing Vulkan fullF32 scalar math. Native typed API/domain/failure/cost frozen; no new queue/math or whole-arena permission; all FIX/gates unproven."
+      "summary": "G01 native page candidate: owned compact table/shared native slots, original MLX vector/2pass/GQA/NAX/steel and Vulkan fullF32 scalar page addresses; actual Air math and exact-page failure/retirement/OOM/zero-domain source risks pass. API/algorithm frozen; relocated SDK/headers/native host sanitizers/immutable same-math P1 remain unproven; whole goal not closed.",
+      "candidate": "520027a57ff41da96ac908ad0d35896e2dda9734"
     },
     {
       "module": "graph_route_apple",
@@ -531,9 +532,10 @@
     },
     {
       "module": "compute_route_vulkan",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/inference-g01-native-paged-read.md",
-      "summary": "G01 native pages AUDITED NP-01..05: owned four-port/table recipe, original common banks/frame/admission/retirement, MLX fragment address mapping and existing Vulkan fullF32 scalar math. Native typed API/domain/failure/cost frozen; no new queue/math or whole-arena permission; all FIX/gates unproven."
+      "summary": "G01 native page candidate: owned compact table/shared native slots, original MLX vector/2pass/GQA/NAX/steel and Vulkan fullF32 scalar page addresses; actual Air math and exact-page failure/retirement/OOM/zero-domain source risks pass. API/algorithm frozen; relocated SDK/headers/native host sanitizers/immutable same-math P1 remain unproven; whole goal not closed.",
+      "candidate": "520027a57ff41da96ac908ad0d35896e2dda9734"
     },
     {
       "module": "graph_route_vulkan",
@@ -548,15 +550,17 @@
     },
     {
       "module": "compute_provider_ggml_vulkan",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/inference-g01-native-paged-read.md",
-      "summary": "G01 native pages AUDITED NP-01..05: owned four-port/table recipe, original common banks/frame/admission/retirement, MLX fragment address mapping and existing Vulkan fullF32 scalar math. Native typed API/domain/failure/cost frozen; no new queue/math or whole-arena permission; all FIX/gates unproven."
+      "summary": "G01 native page candidate: owned compact table/shared native slots, original MLX vector/2pass/GQA/NAX/steel and Vulkan fullF32 scalar page addresses; actual Air math and exact-page failure/retirement/OOM/zero-domain source risks pass. API/algorithm frozen; relocated SDK/headers/native host sanitizers/immutable same-math P1 remain unproven; whole goal not closed.",
+      "candidate": "520027a57ff41da96ac908ad0d35896e2dda9734"
     },
     {
       "module": "compute_ggml_runtime",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/inference-g01-native-paged-read.md",
-      "summary": "G01 native pages AUDITED NP-01..05: owned four-port/table recipe, original common banks/frame/admission/retirement, MLX fragment address mapping and existing Vulkan fullF32 scalar math. Native typed API/domain/failure/cost frozen; no new queue/math or whole-arena permission; all FIX/gates unproven."
+      "summary": "G01 native page candidate: owned compact table/shared native slots, original MLX vector/2pass/GQA/NAX/steel and Vulkan fullF32 scalar page addresses; actual Air math and exact-page failure/retirement/OOM/zero-domain source risks pass. API/algorithm frozen; relocated SDK/headers/native host sanitizers/immutable same-math P1 remain unproven; whole goal not closed.",
+      "candidate": "520027a57ff41da96ac908ad0d35896e2dda9734"
     },
     {
       "module": "compute_provider_ggml_cuda",
@@ -682,9 +686,10 @@
     },
     {
       "module": "compute_batch",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/inference-g01-native-paged-read.md",
-      "summary": "G01 native pages AUDITED NP-01..05: owned four-port/table recipe, original common banks/frame/admission/retirement, MLX fragment address mapping and existing Vulkan fullF32 scalar math. Native typed API/domain/failure/cost frozen; no new queue/math or whole-arena permission; all FIX/gates unproven."
+      "summary": "G01 native page candidate: owned compact table/shared native slots, original MLX vector/2pass/GQA/NAX/steel and Vulkan fullF32 scalar page addresses; actual Air math and exact-page failure/retirement/OOM/zero-domain source risks pass. API/algorithm frozen; relocated SDK/headers/native host sanitizers/immutable same-math P1 remain unproven; whole goal not closed.",
+      "candidate": "520027a57ff41da96ac908ad0d35896e2dda9734"
     },
     {
       "module": "graph_batch",

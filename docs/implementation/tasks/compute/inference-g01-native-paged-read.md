@@ -1,6 +1,6 @@
 # G01 Apple/Vulkan 原生精确页读取
 
-状态：AUDITED，2026-10-14。baseline
+状态：CANDIDATE，2026-10-14。不可变产品candidate `520027a57`；baseline
 `9856c7c6e4f8e7f3729efbc89e43352db49b4c4e`；授权来自
 [十项执行总卡](../project/inference-gaps-goal-execution-2026-10.md)。本卡先定问题和验证，
 未AUDITED前不改产品；原finite resident/ragged/CPU page/default construction关闭证据保留。
@@ -213,3 +213,20 @@ frame；私有native Program只接真Q容量port并输出原空view，不制造�
 大tensor。common recipe四description/单table/banks报告不变。非空域仍要求完整同代
 exact frames；原PagedArena非空合同、reference/Graph/CPU消费者不改，不扩大其它owner。
 这是有限FIX的空消费与权限边界修正，必须由实际source/原负空间验证，不能跳过本失败。
+
+520027a57零域修正及actual新page风险已验证，见
+[risk阶段](../../../../evidence/correctness/inference-g01-native-page-risk-stage/README.md)：Apple
+metadata queued error/cancel/abandon/native-prefix、52逐cold OOM；Vulkan metadata/native
+reject、accepted wait OOM、unknown poll/actual wait、55逐cold OOM全部PASS，错误无发布/
+不复用，query use与所有引用页经actual retirement释放，未引用页独立可写。两route全空
+output/旧空result、foreign resource及fixed backing精确budget通过；原fixture计数/compile
+及实际empty域FAIL保，未重置累计。新空域后普通page/ref消费者回归PASS。API/原数学/
+非空普通产品形状停止变化；三交付/逐头、适用native宿主san与同合同不可变P1仍未运行。
+
+五owner现以520027a57进入CANDIDATE：NP01 owned metadata、NP02共同slot/错误/零域、
+NP03 MLX原读点、NP04 Vulkan原读点、NP05普通入口/consumer/guide实施完毕，source/P0与
+有限native风险已取证。候选后不以SDK/san/benchmark行修改API/算法/常态metadata；
+若发现产品缺陷先合法退回AUDITED。尚未完成的三交付/逐头、宿主san和同原native数学/
+生命周期的P1按预声明串行验证；不以reference F32不同数学、CPU fallback、部分source
+证据代签任何剩余门。先复用已有actual Air static/shared树，仅build真实native owner与
+direct消费者，搬迁SDK只链接公开hyle::compute；保持所有原FAIL/累计，整goal仍0/10。

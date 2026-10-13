@@ -69,7 +69,6 @@ template<class T> Status exercise(n::Context& context, n::MemoryResource& device
   for(unsigned row=32;row<48;++row)for(unsigned z=0;z<2*depth;++z){
     k[row*2*depth+z]=encode_value<T>(64.0F);v[row*2*depth+z]=encode_value<T>(128.0F);
   }
-  const auto descriptions=recipe.descriptions();
   HYLE_ASSIGN_OR_RETURN(auto query_pool,c::LeasePool::create(device.ref(),q.size()*sizeof(T)+512));
   HYLE_ASSIGN_OR_RETURN(auto query_writer,query_pool.allocate(q.size()*sizeof(T),64));
   HYLE_RETURN_IF_ERROR(query_writer.view()->write(std::as_bytes(std::span(q))));
