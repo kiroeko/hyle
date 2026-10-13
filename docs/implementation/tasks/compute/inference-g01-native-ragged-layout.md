@@ -1,6 +1,7 @@
 # G01 Apple/Vulkan ragged 布局直接消费
 
-状态：AUDITED，2026-10-13；owner `compute_route_apple`、`compute_route_vulkan`。
+状态：CANDIDATE，2026-10-13；owner `compute_route_apple`、`compute_route_vulkan`。
+不可变candidate `280f6f92ea97bf3b424113346f0264fb7b20df16`。
 baseline `9cfa7b50db652010da5d4d544da9ee01c10644bc`。授权来自当前十项goal；真实
 reopen trigger为两request Q1/17、KV31/47、GQA8/2 D256的packed NHD消费，已有native
 MaterializedBatchProgram按Q/head索引并物化历史，不能满足已准入G01结构目标。
@@ -60,3 +61,13 @@ batch头加入逐头集合。当前未编译、未运行、未签candidate，CPU
 每个SDPA的真实external KV根与byte origin，必须仍指原capacity inputs 1/2，不能指
 物化值。它不修改public诊断面，不等于warm/driver私有费用已过；需与实际math/retirement
 和搬运门一起验收。所有新增test仍未编译/运行。
+
+实际source阶段已[实跑并封存](../../../../evidence/correctness/inference-g01-native-ragged-stage/README.md)：
+Air Mac16,12/10core16GiB/macOS27.0.1/AppleClang21.0.0，Apple两tests、Vulkan四tests
+PASS。主数学F16与Apple BF16三D、noncausal/tail/readonly/empty/reorder/旧outputs，
+zero metadata allocation及8request；Vk实际原KV roots/byte origins，真实managed math
+前缀后拒绝原native Concat suffix，原pending/wait/无ready/error保留均PASS。
+所有compile/runtime测试错误保原记录，修正测试错误没有改变原native数学/容差/失败
+语义。产品两TU/公开头与2020canonical输入SHA核对；正式P1源git树不改。
+进入不可变candidate后source/static/shared、适用宿主san与有限同合同P1继续，未跑项
+不写PASS。保全部其它G01与G02/G03–G10，不能代签paged/growth/capture。

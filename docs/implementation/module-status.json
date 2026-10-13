@@ -510,9 +510,10 @@
     },
     {
       "module": "compute_route_apple",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/inference-g01-native-ragged-layout.md",
-      "summary": "G01 native ragged NR-01/02/03 AUDITED：已有layout/RaggedAttention冷组合Slice/Reshape/原MLX SDPA/packed输出，原Program/slot/退休；有限API与失败/empty域固定，尚未实现。"
+      "summary": "G01 native ragged NR-01/02/03 CANDIDATE：原MLX View/SDPA/Program，Air F16/BF16三D/两与八requests/empty/reorder/旧结果/readonly/tail/zeroquota source PASS；SDK/san/P1待验。",
+      "candidate": "280f6f92ea97bf3b424113346f0264fb7b20df16"
     },
     {
       "module": "graph_route_apple",
@@ -527,9 +528,10 @@
     },
     {
       "module": "compute_route_vulkan",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/inference-g01-native-ragged-layout.md",
-      "summary": "G01 native ragged NR-01/02/03 AUDITED：已有layout/RaggedAttention冷组合原Plan/View/SDPA/packed输出，原native资格/实际origin/slot退休；有限API固定，尚未实现。"
+      "summary": "G01 native ragged NR-01/02/03 CANDIDATE：原Plan/View/SDPA/Program，Air F16三D/两与八requests/empty/reorder/旧结果/readonly/tail/zeroquota、原KV roots与实际suffix失败退休 source PASS；SDK/san/P1待验。",
+      "candidate": "280f6f92ea97bf3b424113346f0264fb7b20df16"
     },
     {
       "module": "graph_route_vulkan",

@@ -27,3 +27,12 @@ source af9、CPU产品d91a、contract d766；16 A/A、120产品process与30 cont
 2598.99s、原verify退出0，未进入n31。decode比0.9977–1.0021、prefill0.9987–1.0040、
 D64留出0.9977–1.0011，三点5%非劣PASS/band PARITY，相对1方向均INCONCLUSIVE。
 不继承到新ragged入口；v1 STOP与v2 stale-marker FAIL保留，原限额/peer/math没有改写。
+
+CPU native ragged也已[独立资格/性能PASS](../../../../evidence/performance/inference-g01-cpu-ragged-w1-p1/README.md)：
+产品973/source9cfa、contract8751dfe5，同原BatchProgram/F1/metadata update/两slots/Queue/
+Completion/output owner return，对照独立原flash图；实际W1-WIN原CPU2/priority/affinity。
+16 A/A、120产品process与30 controls，n15停止，2188.172s、verify0。两request mixed
+Q1/17 KV1024/768 D256 causal比0.9980–1.0030，Q64/128同KV prefill0.9983–1.0017，
+Q1/17 KV31/47 D64 noncausal0.9992–1.0046；全部5%非劣PASS/band PARITY，方向全部
+INCONCLUSIVE。cold/native private费用仍分别已知/UNKNOWN，不签全模型或全部G01。
+min1在正式前按169ms长prefill与4ms floor固定；原16轮/n15/31/controls/阈值未改。

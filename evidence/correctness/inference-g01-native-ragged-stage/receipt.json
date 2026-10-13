@@ -1,0 +1,330 @@
+{
+  "phase": "AUDITED native ragged stage, no SDK/san/P1 verdict yet",
+  "source_commit": "280f6f92ea97bf3b424113346f0264fb7b20df16",
+  "records": {
+    "apple": {
+      "phase": "AUDITED native ragged not candidate",
+      "canonical_commit": "280f6f92ea97bf3b424113346f0264fb7b20df16",
+      "route": "apple",
+      "hardware": "actual Mac16,12",
+      "stages": [
+        {
+          "stage": "configure",
+          "command": [
+            "/opt/homebrew/bin/cmake",
+            "-S",
+            "/Users/kiro/hyle-scratch/compute-unified/source-c8874688",
+            "-B",
+            "/Users/kiro/hyle-scratch/compute-unified/a-apple/selected-graph/static-sdk-build",
+            "-DCMAKE_PROJECT_INCLUDE=/Users/kiro/hyle-scratch/compute-unified/g01-native-ragged-apple/project.cmake",
+            "-UCMAKE_PROJECT_TOP_LEVEL_INCLUDES"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 3.1960833330000002,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g01-native-ragged-apple/configure-1.log"
+        },
+        {
+          "stage": "build",
+          "command": [
+            "/opt/homebrew/bin/cmake",
+            "--build",
+            "/Users/kiro/hyle-scratch/compute-unified/a-apple/selected-graph/static-sdk-build",
+            "--target",
+            "g01_native_ragged",
+            "--parallel",
+            "4"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 2.878106125,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g01-native-ragged-apple/build-1.log"
+        },
+        {
+          "stage": "run",
+          "command": [
+            "/Users/kiro/hyle-scratch/compute-unified/a-apple/selected-graph/static-sdk-build/bin/g01_native_ragged"
+          ],
+          "exit_code": 1,
+          "elapsed_seconds": 2.484262833,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g01-native-ragged-apple/run-1.log"
+        },
+        {
+          "stage": "build",
+          "command": [
+            "/opt/homebrew/bin/cmake",
+            "--build",
+            "/Users/kiro/hyle-scratch/compute-unified/a-apple/selected-graph/static-sdk-build",
+            "--target",
+            "g01_native_ragged",
+            "--parallel",
+            "4"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 1.20086675,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g01-native-ragged-apple/build-2.log"
+        },
+        {
+          "stage": "run",
+          "command": [
+            "/Users/kiro/hyle-scratch/compute-unified/a-apple/selected-graph/static-sdk-build/bin/g01_native_ragged"
+          ],
+          "exit_code": 1,
+          "elapsed_seconds": 0.629349084,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g01-native-ragged-apple/run-2.log"
+        },
+        {
+          "stage": "build",
+          "command": [
+            "/opt/homebrew/bin/cmake",
+            "--build",
+            "/Users/kiro/hyle-scratch/compute-unified/a-apple/selected-graph/static-sdk-build",
+            "--target",
+            "g01_native_ragged",
+            "--parallel",
+            "4"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 1.115687208,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g01-native-ragged-apple/build-3.log"
+        },
+        {
+          "stage": "run",
+          "command": [
+            "/Users/kiro/hyle-scratch/compute-unified/a-apple/selected-graph/static-sdk-build/bin/g01_native_ragged"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 0.5717264579999999,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g01-native-ragged-apple/run-3.log"
+        },
+        {
+          "stage": "build",
+          "command": [
+            "/opt/homebrew/bin/cmake",
+            "--build",
+            "/Users/kiro/hyle-scratch/compute-unified/a-apple/selected-graph/static-sdk-build",
+            "--target",
+            "g01_native_ragged",
+            "--parallel",
+            "4"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 1.129002959,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g01-native-ragged-apple/build-4.log"
+        },
+        {
+          "stage": "run",
+          "command": [
+            "/Users/kiro/hyle-scratch/compute-unified/a-apple/selected-graph/static-sdk-build/bin/g01_native_ragged"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 0.5764905419999999,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g01-native-ragged-apple/run-4.log"
+        }
+      ]
+    },
+    "vulkan": {
+      "phase": "AUDITED native ragged not candidate",
+      "canonical_commit": "280f6f92ea97bf3b424113346f0264fb7b20df16",
+      "route": "vulkan",
+      "hardware": "actual Mac16,12",
+      "stages": [
+        {
+          "stage": "configure",
+          "command": [
+            "/opt/homebrew/bin/cmake",
+            "-S",
+            "/Users/kiro/hyle-scratch/compute-unified/source-c8874688",
+            "-B",
+            "/Users/kiro/hyle-scratch/compute-unified/a-vulkan/selected-graph/static-sdk-build",
+            "-DCMAKE_PROJECT_INCLUDE=/Users/kiro/hyle-scratch/compute-unified/g01-native-ragged-vulkan/project.cmake",
+            "-UCMAKE_PROJECT_TOP_LEVEL_INCLUDES"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 14.015481667,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g01-native-ragged-vulkan/configure-1.log"
+        },
+        {
+          "stage": "build",
+          "command": [
+            "/opt/homebrew/bin/cmake",
+            "--build",
+            "/Users/kiro/hyle-scratch/compute-unified/a-vulkan/selected-graph/static-sdk-build",
+            "--target",
+            "g01_native_ragged",
+            "--parallel",
+            "4"
+          ],
+          "exit_code": 1,
+          "elapsed_seconds": 2.5919512079999993,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g01-native-ragged-vulkan/build-1.log"
+        },
+        {
+          "stage": "configure",
+          "command": [
+            "/opt/homebrew/bin/cmake",
+            "-S",
+            "/Users/kiro/hyle-scratch/compute-unified/source-c8874688",
+            "-B",
+            "/Users/kiro/hyle-scratch/compute-unified/a-vulkan/selected-graph/static-sdk-build",
+            "-DCMAKE_PROJECT_INCLUDE=/Users/kiro/hyle-scratch/compute-unified/g01-native-ragged-vulkan/project.cmake",
+            "-UCMAKE_PROJECT_TOP_LEVEL_INCLUDES"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 12.235389207999999,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g01-native-ragged-vulkan/configure-2.log"
+        },
+        {
+          "stage": "build",
+          "command": [
+            "/opt/homebrew/bin/cmake",
+            "--build",
+            "/Users/kiro/hyle-scratch/compute-unified/a-vulkan/selected-graph/static-sdk-build",
+            "--target",
+            "g01_native_ragged",
+            "--parallel",
+            "4"
+          ],
+          "exit_code": 1,
+          "elapsed_seconds": 0.7469940830000006,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g01-native-ragged-vulkan/build-2.log"
+        },
+        {
+          "stage": "configure",
+          "command": [
+            "/opt/homebrew/bin/cmake",
+            "-S",
+            "/Users/kiro/hyle-scratch/compute-unified/source-c8874688",
+            "-B",
+            "/Users/kiro/hyle-scratch/compute-unified/a-vulkan/selected-graph/static-sdk-build",
+            "-DCMAKE_PROJECT_INCLUDE=/Users/kiro/hyle-scratch/compute-unified/g01-native-ragged-vulkan/project.cmake",
+            "-UCMAKE_PROJECT_TOP_LEVEL_INCLUDES"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 12.001338458000001,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g01-native-ragged-vulkan/configure-3.log"
+        },
+        {
+          "stage": "build",
+          "command": [
+            "/opt/homebrew/bin/cmake",
+            "--build",
+            "/Users/kiro/hyle-scratch/compute-unified/a-vulkan/selected-graph/static-sdk-build",
+            "--target",
+            "g01_native_ragged",
+            "--parallel",
+            "4"
+          ],
+          "exit_code": 1,
+          "elapsed_seconds": 0.7582794999999987,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g01-native-ragged-vulkan/build-3.log"
+        },
+        {
+          "stage": "build",
+          "command": [
+            "/opt/homebrew/bin/cmake",
+            "--build",
+            "/Users/kiro/hyle-scratch/compute-unified/a-vulkan/selected-graph/static-sdk-build",
+            "--target",
+            "g01_native_ragged",
+            "--parallel",
+            "4"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 1.056205542,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g01-native-ragged-vulkan/build-4.log"
+        },
+        {
+          "stage": "run",
+          "command": [
+            "/Users/kiro/hyle-scratch/compute-unified/a-vulkan/selected-graph/static-sdk-build/bin/g01_native_ragged"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 0.9301426249999998,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g01-native-ragged-vulkan/run-1.log"
+        },
+        {
+          "stage": "build",
+          "command": [
+            "/opt/homebrew/bin/cmake",
+            "--build",
+            "/Users/kiro/hyle-scratch/compute-unified/a-vulkan/selected-graph/static-sdk-build",
+            "--target",
+            "g01_native_ragged",
+            "--parallel",
+            "4"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 0.993794958,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g01-native-ragged-vulkan/build-5.log"
+        },
+        {
+          "stage": "run",
+          "command": [
+            "/Users/kiro/hyle-scratch/compute-unified/a-vulkan/selected-graph/static-sdk-build/bin/g01_native_ragged"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 0.762470875,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g01-native-ragged-vulkan/run-2.log"
+        },
+        {
+          "stage": "build",
+          "command": [
+            "/opt/homebrew/bin/cmake",
+            "--build",
+            "/Users/kiro/hyle-scratch/compute-unified/a-vulkan/selected-graph/static-sdk-build",
+            "--target",
+            "g01_native_ragged",
+            "--parallel",
+            "4"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 1.061673125,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g01-native-ragged-vulkan/build-6.log"
+        },
+        {
+          "stage": "run",
+          "command": [
+            "/Users/kiro/hyle-scratch/compute-unified/a-vulkan/selected-graph/static-sdk-build/bin/g01_native_ragged"
+          ],
+          "exit_code": 1,
+          "elapsed_seconds": 0.8377460830000001,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g01-native-ragged-vulkan/run-3.log"
+        },
+        {
+          "stage": "build",
+          "command": [
+            "/opt/homebrew/bin/cmake",
+            "--build",
+            "/Users/kiro/hyle-scratch/compute-unified/a-vulkan/selected-graph/static-sdk-build",
+            "--target",
+            "g01_native_ragged",
+            "--parallel",
+            "4"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 1.0041511669999998,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g01-native-ragged-vulkan/build-7.log"
+        },
+        {
+          "stage": "run",
+          "command": [
+            "/Users/kiro/hyle-scratch/compute-unified/a-vulkan/selected-graph/static-sdk-build/bin/g01_native_ragged"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 0.830790959,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g01-native-ragged-vulkan/run-4.log"
+        }
+      ]
+    }
+  },
+  "product_inputs": {
+    "include/hyle/compute/apple_batch.h": "661c8e179d05f356bc9d5c619eb1d2130a686b1f4a4deb450378a9d67183fd70",
+    "include/hyle/compute/vulkan_batch.h": "367e680c6415b1c40fcb4423259a1775478d04245a1b35072b6c1e07de926a4b",
+    "src/compute_route_apple/apple_batch.cc": "551c250cbb4ef84b2aca039dc2a57554d94ffb476efd3d4d8f3ca608ec1fe4e0",
+    "src/compute_route_vulkan/vulkan_batch.cc": "cf942a9808acb40ef4197eb58683dbfa646942e3941c4541a6d63928d7b15f7f",
+    "tests/compute_batch/native_ragged_layout_test.h": "cbff18c6679c6fa3a7e57159f935b2e995a3cfedbfb67000510bd88898d74340",
+    "tests/compute_route_vulkan/native_ragged_cost_test.cc": "1e623cd7b8066e03ea23bc12df783b3748582df55735f7df9234812f8ebabbde"
+  },
+  "actual_gpu": "Mac16,12 arm64 macOS27.0.1 26A434 AppleClang21.0.0 10core16GiB",
+  "scope": "Apple F16/BF16 and Vulkan F16 D64/128/256, two requests/empty/reorder/old outputs/readonly/tail/zero cold metadata; eight requests; Vulkan original KV roots and actual managed-prefix/native-suffix failure retirement",
+  "raw_zip_sha256": "9cfaa1896950fd17d919ead75a91ea92cbcae5e072022aee966692d52e45ea9d"
+}
