@@ -83,7 +83,7 @@ template<class T>void ragged_native_case(unsigned depth,bool causal){
   const std::array<std::int32_t,4> empty_q{0,0,0,0};auto empty=schema.version({empty_q,kp,{},{}}).value();
   auto empty_program=n::prepare_ragged_batch(context,empty,operation);ASSERT_TRUE(empty_program)<<empty_program.error().message();
   auto empty_slot=empty_program->create_invocation().value();ASSERT_TRUE(empty_slot.bind(inputs).ok());auto empty_run=empty_slot.submit().value();auto empty_result=empty_run.wait();ASSERT_TRUE(empty_result)<<empty_result.error().message();
-  auto empty_ready=std::move(*empty_result);empty_ready.reset();empty_run={};
+  auto empty_ready=std::move(*empty_result);empty_ready={};empty_run={};
   current={};submitted={};independent={};b={};old={};a={};ASSERT_TRUE(context.close().ok());
 }
 TEST(NativeRaggedLayout, PackedTwoRequestsUseOriginalMathAndPreserveOldOutputs){
