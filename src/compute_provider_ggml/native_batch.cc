@@ -137,7 +137,7 @@ detail::EnqueueResult plan(void *value, Queue &, const BatchLayoutVersion &layou
           std::uint32_t(host.last_page_lengths[index]):0):std::uint64_t(refs);
       if (!queries)
         continue;
-      if (!keys || (slot.options.causal && keys < queries)) {
+      if (!keys || (slot.options.causal && keys < static_cast<std::uint64_t>(queries))) {
         slot.clear();
         return detail::EnqueueResult::rejected(Status::Unimplemented("ggml CPU ragged flash requires nonempty sufficient KV"));
       }
