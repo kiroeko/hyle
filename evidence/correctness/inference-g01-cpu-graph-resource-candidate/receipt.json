@@ -1,0 +1,1166 @@
+{
+  "candidate": "a0c047ea45cb46884da7f578684ff416ccfdefa5",
+  "cpu_provider_candidate": "642cc1e67566994a85a65adbe0db8956c1d0350a",
+  "scope": "finite CPU Graph exact resource MQ-CPU-01 candidate; only actually completed gates recorded, P1 and all G01 remain unproven",
+  "records": {
+    "cpu-ragged-checks.json": {
+      "phase": "AUDITED CPU ragged, not candidate/P1",
+      "stages": [
+        {
+          "stage": "configure",
+          "command": [
+            "cmake",
+            "-S",
+            "C:\\public\\project-hyle\\hyle",
+            "-B",
+            "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev",
+            "-DCMAKE_PROJECT_INCLUDE=C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g01\\cpu-ragged-project.cmake"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 101.79699999999139,
+          "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g01\\cpu-ragged-configure-1.log"
+        },
+        {
+          "stage": "build",
+          "command": [
+            "cmake",
+            "--build",
+            "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev",
+            "--target",
+            "g01_cpu_ragged_test",
+            "--parallel",
+            "4"
+          ],
+          "exit_code": 2,
+          "elapsed_seconds": 22.389999999999418,
+          "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g01\\cpu-ragged-build-1.log"
+        },
+        {
+          "stage": "build",
+          "command": [
+            "cmake",
+            "--build",
+            "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev",
+            "--target",
+            "g01_cpu_ragged_test",
+            "--parallel",
+            "4"
+          ],
+          "exit_code": 2,
+          "elapsed_seconds": 41.34399999999732,
+          "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g01\\cpu-ragged-build-2.log"
+        },
+        {
+          "stage": "build",
+          "command": [
+            "cmake",
+            "--build",
+            "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev",
+            "--target",
+            "g01_cpu_ragged_test",
+            "--parallel",
+            "4"
+          ],
+          "exit_code": 2,
+          "elapsed_seconds": 42.10899999999674,
+          "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g01\\cpu-ragged-build-3.log"
+        },
+        {
+          "stage": "build",
+          "command": [
+            "cmake",
+            "--build",
+            "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev",
+            "--target",
+            "g01_cpu_ragged_test",
+            "--parallel",
+            "4"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 2.6410000000032596,
+          "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g01\\cpu-ragged-build-4.log"
+        },
+        {
+          "stage": "run",
+          "command": [
+            "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\g01_cpu_ragged_test.exe"
+          ],
+          "exit_code": 1,
+          "elapsed_seconds": 0.1409999999887077,
+          "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g01\\cpu-ragged-run-1.log"
+        },
+        {
+          "stage": "build",
+          "command": [
+            "cmake",
+            "--build",
+            "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev",
+            "--target",
+            "g01_cpu_ragged_test",
+            "--parallel",
+            "4"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 2.7189999999973224,
+          "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g01\\cpu-ragged-build-5.log"
+        },
+        {
+          "stage": "run",
+          "command": [
+            "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\g01_cpu_ragged_test.exe"
+          ],
+          "exit_code": 1,
+          "elapsed_seconds": 0.125,
+          "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g01\\cpu-ragged-run-2.log"
+        },
+        {
+          "stage": "build",
+          "command": [
+            "cmake",
+            "--build",
+            "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev",
+            "--target",
+            "g01_cpu_ragged_test",
+            "--parallel",
+            "4"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 2.827999999994063,
+          "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g01\\cpu-ragged-build-6.log"
+        },
+        {
+          "stage": "run",
+          "command": [
+            "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\g01_cpu_ragged_test.exe"
+          ],
+          "exit_code": 1,
+          "elapsed_seconds": 0.125,
+          "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g01\\cpu-ragged-run-3.log"
+        },
+        {
+          "stage": "build",
+          "command": [
+            "cmake",
+            "--build",
+            "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev",
+            "--target",
+            "g01_cpu_ragged_test",
+            "--parallel",
+            "4"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 2.7189999999973224,
+          "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g01\\cpu-ragged-build-7.log"
+        },
+        {
+          "stage": "run",
+          "command": [
+            "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\g01_cpu_ragged_test.exe"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 0.13999999999941792,
+          "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g01\\cpu-ragged-run-4.log"
+        },
+        {
+          "stage": "build",
+          "command": [
+            "cmake",
+            "--build",
+            "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev",
+            "--target",
+            "g01_cpu_ragged_test",
+            "--parallel",
+            "4"
+          ],
+          "exit_code": 2,
+          "elapsed_seconds": 1.4060000000026776,
+          "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g01\\cpu-ragged-build-8.log"
+        },
+        {
+          "stage": "build",
+          "command": [
+            "cmake",
+            "--build",
+            "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev",
+            "--target",
+            "g01_cpu_ragged_test",
+            "--parallel",
+            "4"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 2.7660000000032596,
+          "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g01\\cpu-ragged-build-9.log"
+        },
+        {
+          "stage": "run",
+          "command": [
+            "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\g01_cpu_ragged_test.exe"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 0.15600000000267755,
+          "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g01\\cpu-ragged-run-5.log"
+        },
+        {
+          "stage": "build",
+          "command": [
+            "cmake",
+            "--build",
+            "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev",
+            "--target",
+            "g01_cpu_ragged_test",
+            "--parallel",
+            "4"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 4.125,
+          "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g01\\cpu-ragged-build-10.log"
+        },
+        {
+          "stage": "run",
+          "command": [
+            "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\g01_cpu_ragged_test.exe"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 0.34299999999348074,
+          "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g01\\cpu-ragged-run-6.log"
+        }
+      ]
+    },
+    "cpu-ragged-asan-result.json": {
+      "candidate": "a0c047ea45cb46884da7f578684ff416ccfdefa5",
+      "mode": "asan",
+      "stages": [
+        {
+          "stage": "configure",
+          "command": [
+            "cmake",
+            "-S",
+            "/home/kiro/hyle-f1/sanitizers/source-03242e7723cb",
+            "-B",
+            "/home/kiro/hyle-f1/sanitizers/asan-03242e7723cb",
+            "-DCMAKE_PROJECT_INCLUDE=/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g01/cpu-ragged-asan-project.cmake",
+            "-UCMAKE_PROJECT_TOP_LEVEL_INCLUDES"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 25.208907041000003,
+          "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g01/cpu-ragged-asan-configure-1.log"
+        },
+        {
+          "stage": "build",
+          "command": [
+            "cmake",
+            "--build",
+            "/home/kiro/hyle-f1/sanitizers/asan-03242e7723cb",
+            "--target",
+            "g01_cpu_ragged_test",
+            "--parallel",
+            "4"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 44.96839289500001,
+          "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g01/cpu-ragged-asan-build-1.log"
+        },
+        {
+          "stage": "run",
+          "command": [
+            "/home/kiro/hyle-f1/sanitizers/asan-03242e7723cb/bin/g01_cpu_ragged_test"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 1.0703273009999918,
+          "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g01/cpu-ragged-asan-run-1.log"
+        },
+        {
+          "stage": "configure",
+          "command": [
+            "cmake",
+            "-S",
+            "/home/kiro/hyle-f1/sanitizers/source-03242e7723cb",
+            "-B",
+            "/home/kiro/hyle-f1/sanitizers/asan-03242e7723cb",
+            "-DCMAKE_PROJECT_INCLUDE=/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g01/cpu-ragged-asan-project.cmake",
+            "-UCMAKE_PROJECT_TOP_LEVEL_INCLUDES"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 21.815111090000002,
+          "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g01/cpu-ragged-asan-configure-2.log"
+        },
+        {
+          "stage": "build",
+          "command": [
+            "cmake",
+            "--build",
+            "/home/kiro/hyle-f1/sanitizers/asan-03242e7723cb",
+            "--target",
+            "g01_cpu_ragged_test",
+            "g01_cpu_ragged_public",
+            "--parallel",
+            "4"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 41.126101825000006,
+          "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g01/cpu-ragged-asan-build-2.log"
+        },
+        {
+          "stage": "run",
+          "command": [
+            "/home/kiro/hyle-f1/sanitizers/asan-03242e7723cb/bin/g01_cpu_ragged_test"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 1.0933965440000009,
+          "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g01/cpu-ragged-asan-run-2.log"
+        },
+        {
+          "stage": "run-public-graph",
+          "command": [
+            "/home/kiro/hyle-f1/sanitizers/asan-03242e7723cb/bin/g01_cpu_ragged_public"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 0.45675280599999724,
+          "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g01/cpu-ragged-asan-run-public-graph-1.log"
+        }
+      ]
+    },
+    "cpu-ragged-ubsan-result.json": {
+      "candidate": "a0c047ea45cb46884da7f578684ff416ccfdefa5",
+      "mode": "ubsan",
+      "stages": [
+        {
+          "stage": "configure",
+          "command": [
+            "cmake",
+            "-S",
+            "/home/kiro/hyle-f1/sanitizers/source-03242e7723cb",
+            "-B",
+            "/home/kiro/hyle-f1/sanitizers/ubsan-03242e7723cb",
+            "-DCMAKE_PROJECT_INCLUDE=/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g01/cpu-ragged-ubsan-project.cmake",
+            "-UCMAKE_PROJECT_TOP_LEVEL_INCLUDES"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 20.600122798,
+          "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g01/cpu-ragged-ubsan-configure-1.log"
+        },
+        {
+          "stage": "build",
+          "command": [
+            "cmake",
+            "--build",
+            "/home/kiro/hyle-f1/sanitizers/ubsan-03242e7723cb",
+            "--target",
+            "g01_cpu_ragged_test",
+            "--parallel",
+            "4"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 28.26020337500003,
+          "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g01/cpu-ragged-ubsan-build-1.log"
+        },
+        {
+          "stage": "run",
+          "command": [
+            "/home/kiro/hyle-f1/sanitizers/ubsan-03242e7723cb/bin/g01_cpu_ragged_test"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 0.6420569,
+          "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g01/cpu-ragged-ubsan-run-1.log"
+        },
+        {
+          "stage": "configure",
+          "command": [
+            "cmake",
+            "-S",
+            "/home/kiro/hyle-f1/sanitizers/source-03242e7723cb",
+            "-B",
+            "/home/kiro/hyle-f1/sanitizers/ubsan-03242e7723cb",
+            "-DCMAKE_PROJECT_INCLUDE=/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g01/cpu-ragged-ubsan-project.cmake",
+            "-UCMAKE_PROJECT_TOP_LEVEL_INCLUDES"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 20.209556243999998,
+          "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g01/cpu-ragged-ubsan-configure-2.log"
+        },
+        {
+          "stage": "build",
+          "command": [
+            "cmake",
+            "--build",
+            "/home/kiro/hyle-f1/sanitizers/ubsan-03242e7723cb",
+            "--target",
+            "g01_cpu_ragged_test",
+            "g01_cpu_ragged_public",
+            "--parallel",
+            "4"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 24.59996298300001,
+          "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g01/cpu-ragged-ubsan-build-2.log"
+        },
+        {
+          "stage": "run",
+          "command": [
+            "/home/kiro/hyle-f1/sanitizers/ubsan-03242e7723cb/bin/g01_cpu_ragged_test"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 0.6843022159999919,
+          "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g01/cpu-ragged-ubsan-run-2.log"
+        },
+        {
+          "stage": "run-public-graph",
+          "command": [
+            "/home/kiro/hyle-f1/sanitizers/ubsan-03242e7723cb/bin/g01_cpu_ragged_public"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 0.15597084300000574,
+          "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g01/cpu-ragged-ubsan-run-public-graph-1.log"
+        }
+      ]
+    },
+    "cpu-ragged-tsan-result.json": {
+      "candidate": "6fcb98956c2f8dc9bf8915f669366b4f0c337f73",
+      "mode": "tsan",
+      "stages": [
+        {
+          "stage": "configure",
+          "command": [
+            "cmake",
+            "-S",
+            "/home/kiro/hyle-f1/sanitizers/source-03242e7723cb",
+            "-B",
+            "/home/kiro/hyle-f1/sanitizers/tsan-03242e7723cb",
+            "-DCMAKE_PROJECT_INCLUDE=/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g01/cpu-ragged-tsan-project.cmake",
+            "-UCMAKE_PROJECT_TOP_LEVEL_INCLUDES"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 19.570065869000018,
+          "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g01/cpu-ragged-tsan-configure-1.log"
+        },
+        {
+          "stage": "build",
+          "command": [
+            "cmake",
+            "--build",
+            "/home/kiro/hyle-f1/sanitizers/tsan-03242e7723cb",
+            "--target",
+            "g01_cpu_ragged_test",
+            "--parallel",
+            "4"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 21.887015570000017,
+          "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g01/cpu-ragged-tsan-build-1.log"
+        },
+        {
+          "stage": "run",
+          "command": [
+            "setarch",
+            "x86_64",
+            "-R",
+            "/home/kiro/hyle-f1/sanitizers/tsan-03242e7723cb/bin/g01_cpu_ragged_test"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 3.1305075230000057,
+          "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g01/cpu-ragged-tsan-run-1.log"
+        },
+        {
+          "stage": "configure",
+          "command": [
+            "cmake",
+            "-S",
+            "/home/kiro/hyle-f1/sanitizers/source-03242e7723cb",
+            "-B",
+            "/home/kiro/hyle-f1/sanitizers/tsan-03242e7723cb",
+            "-DCMAKE_PROJECT_INCLUDE=/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g01/cpu-ragged-tsan-project.cmake",
+            "-UCMAKE_PROJECT_TOP_LEVEL_INCLUDES"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 19.478366920000013,
+          "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g01/cpu-ragged-tsan-configure-2.log"
+        },
+        {
+          "stage": "build",
+          "command": [
+            "cmake",
+            "--build",
+            "/home/kiro/hyle-f1/sanitizers/tsan-03242e7723cb",
+            "--target",
+            "g01_cpu_ragged_test",
+            "g01_cpu_ragged_public",
+            "--parallel",
+            "4"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 19.507699473999992,
+          "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g01/cpu-ragged-tsan-build-2.log"
+        },
+        {
+          "stage": "run",
+          "command": [
+            "setarch",
+            "x86_64",
+            "-R",
+            "/home/kiro/hyle-f1/sanitizers/tsan-03242e7723cb/bin/g01_cpu_ragged_test"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 3.127835599000008,
+          "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g01/cpu-ragged-tsan-run-2.log"
+        },
+        {
+          "stage": "run-public-graph",
+          "command": [
+            "setarch",
+            "x86_64",
+            "-R",
+            "/home/kiro/hyle-f1/sanitizers/tsan-03242e7723cb/bin/g01_cpu_ragged_public"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 0.4826966659999812,
+          "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g01/cpu-ragged-tsan-run-public-graph-1.log"
+        }
+      ]
+    },
+    "cpu-ragged-win-static-sdk-result.json": {
+      "candidate": "642cc1e67566994a85a65adbe0db8956c1d0350a",
+      "mode": "static",
+      "producer": "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev",
+      "stages": [
+        {
+          "stage": "configure",
+          "command": [
+            "cmake",
+            "-S",
+            "C:\\public\\project-hyle\\hyle",
+            "-B",
+            "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev",
+            "-UCMAKE_PROJECT_INCLUDE",
+            "-UCMAKE_PROJECT_TOP_LEVEL_INCLUDES",
+            "-DHYLE_COMPONENTS=compute;graph",
+            "-DHYLE_COMPUTE_ROUTES=cpu",
+            "-DHYLE_BUILD_TESTS=OFF",
+            "-DHYLE_BUILD_BENCH=OFF",
+            "-DHYLE_INSTALL=ON",
+            "-DHYLE_STATIC=ON"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 19.921999999991385,
+          "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g01\\cpu-ragged-win-static-sdk-configure-1.log"
+        },
+        {
+          "stage": "producer-build",
+          "command": [
+            "cmake",
+            "--build",
+            "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev",
+            "--parallel",
+            "4"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 22.359000000011292,
+          "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g01\\cpu-ragged-win-static-sdk-producer-build-1.log"
+        },
+        {
+          "stage": "install",
+          "command": [
+            "cmake",
+            "--install",
+            "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev",
+            "--prefix",
+            "C:\\h7\\g01-ragged-static-sdk\\staging"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 2.0310000000026776,
+          "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g01\\cpu-ragged-win-static-sdk-install-1.log"
+        },
+        {
+          "stage": "consumer-configure",
+          "command": [
+            "cmake",
+            "-S",
+            "C:\\h7\\g01-ragged-static-sdk\\consumer-source",
+            "-B",
+            "C:\\h7\\g01-ragged-static-sdk\\consumer-build",
+            "-G",
+            "Ninja",
+            "-DCMAKE_BUILD_TYPE=Release",
+            "-DCMAKE_PREFIX_PATH=C:\\h7\\g01-ragged-static-sdk\\relocated"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 12.89100000000326,
+          "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g01\\cpu-ragged-win-static-sdk-consumer-configure-1.log"
+        },
+        {
+          "stage": "consumer-build",
+          "command": [
+            "cmake",
+            "--build",
+            "C:\\h7\\g01-ragged-static-sdk\\consumer-build",
+            "--target",
+            "ragged",
+            "resident",
+            "--parallel",
+            "4"
+          ],
+          "exit_code": 2,
+          "elapsed_seconds": 1.9210000000020955,
+          "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g01\\cpu-ragged-win-static-sdk-consumer-build-1.log"
+        },
+        {
+          "stage": "consumer-build",
+          "command": [
+            "cmake",
+            "--build",
+            "C:\\h7\\g01-ragged-static-sdk\\consumer-build",
+            "--target",
+            "ragged",
+            "resident",
+            "--parallel",
+            "4"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 4.437999999994645,
+          "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g01\\cpu-ragged-win-static-sdk-consumer-build-2.log"
+        },
+        {
+          "stage": "run-ragged",
+          "command": [
+            "C:\\h7\\g01-ragged-static-sdk\\consumer-build\\ragged.exe"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 0.2340000000112923,
+          "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g01\\cpu-ragged-win-static-sdk-run-ragged-1.log"
+        },
+        {
+          "stage": "run-resident",
+          "command": [
+            "C:\\h7\\g01-ragged-static-sdk\\consumer-build\\resident.exe"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 0.23399999999674037,
+          "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g01\\cpu-ragged-win-static-sdk-run-resident-1.log"
+        }
+      ]
+    },
+    "cpu-ragged-win-shared-sdk-result.json": {
+      "candidate": "642cc1e67566994a85a65adbe0db8956c1d0350a",
+      "mode": "shared",
+      "producer": "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev",
+      "stages": [
+        {
+          "stage": "configure",
+          "command": [
+            "cmake",
+            "-S",
+            "C:\\public\\project-hyle\\hyle",
+            "-B",
+            "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev",
+            "-UCMAKE_PROJECT_INCLUDE",
+            "-UCMAKE_PROJECT_TOP_LEVEL_INCLUDES",
+            "-DHYLE_COMPONENTS=compute;graph",
+            "-DHYLE_COMPUTE_ROUTES=cpu",
+            "-DHYLE_BUILD_TESTS=OFF",
+            "-DHYLE_BUILD_BENCH=OFF",
+            "-DHYLE_INSTALL=ON",
+            "-DHYLE_STATIC=OFF"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 19.562000000005355,
+          "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g01\\cpu-ragged-win-shared-sdk-configure-1.log"
+        },
+        {
+          "stage": "producer-build",
+          "command": [
+            "cmake",
+            "--build",
+            "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev",
+            "--parallel",
+            "4"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 139.96899999999732,
+          "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g01\\cpu-ragged-win-shared-sdk-producer-build-1.log"
+        },
+        {
+          "stage": "install",
+          "command": [
+            "cmake",
+            "--install",
+            "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev",
+            "--prefix",
+            "C:\\h7\\g01-ragged-shared-sdk\\staging"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 1.0470000000059372,
+          "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g01\\cpu-ragged-win-shared-sdk-install-1.log"
+        },
+        {
+          "stage": "consumer-configure",
+          "command": [
+            "cmake",
+            "-S",
+            "C:\\h7\\g01-ragged-shared-sdk\\consumer-source",
+            "-B",
+            "C:\\h7\\g01-ragged-shared-sdk\\consumer-build",
+            "-G",
+            "Ninja",
+            "-DCMAKE_BUILD_TYPE=Release",
+            "-DCMAKE_PREFIX_PATH=C:\\h7\\g01-ragged-shared-sdk\\relocated"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 11.702999999994063,
+          "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g01\\cpu-ragged-win-shared-sdk-consumer-configure-1.log"
+        },
+        {
+          "stage": "consumer-build",
+          "command": [
+            "cmake",
+            "--build",
+            "C:\\h7\\g01-ragged-shared-sdk\\consumer-build",
+            "--target",
+            "ragged",
+            "resident",
+            "--parallel",
+            "4"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 4.5,
+          "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g01\\cpu-ragged-win-shared-sdk-consumer-build-1.log"
+        },
+        {
+          "stage": "run-ragged",
+          "command": [
+            "C:\\h7\\g01-ragged-shared-sdk\\consumer-build\\ragged.exe"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 0.2970000000059372,
+          "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g01\\cpu-ragged-win-shared-sdk-run-ragged-1.log"
+        },
+        {
+          "stage": "run-resident",
+          "command": [
+            "C:\\h7\\g01-ragged-shared-sdk\\consumer-build\\resident.exe"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 0.21899999999732245,
+          "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g01\\cpu-ragged-win-shared-sdk-run-resident-1.log"
+        }
+      ]
+    },
+    "cpu-ragged-public-source-result.json": {
+      "candidate": "642cc1e67566994a85a65adbe0db8956c1d0350a",
+      "consumer_sha256": "455c44b70c8aaa88fc390939198473d7f2e8872ea7aa5b8127e003b223900575",
+      "scope": "default Direct plus source expert original Graph batch two dependent regions, source-only factory target explicit",
+      "stages": [
+        {
+          "stage": "configure",
+          "command": [
+            "cmake",
+            "-S",
+            "C:\\public\\project-hyle\\hyle",
+            "-B",
+            "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev",
+            "-DCMAKE_PROJECT_INCLUDE=C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g01\\cpu-ragged-public-project.cmake"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 19.764999999999418,
+          "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g01\\cpu-ragged-public-source-configure-1.log"
+        },
+        {
+          "stage": "build",
+          "command": [
+            "cmake",
+            "--build",
+            "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev",
+            "--target",
+            "g01_cpu_ragged_public",
+            "--parallel",
+            "4"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 25.313000000009197,
+          "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g01\\cpu-ragged-public-source-build-1.log"
+        },
+        {
+          "stage": "run",
+          "command": [
+            "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\g01_cpu_ragged_public.exe"
+          ],
+          "exit_code": 1,
+          "elapsed_seconds": 0.25,
+          "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g01\\cpu-ragged-public-source-run-1.log"
+        },
+        {
+          "stage": "build",
+          "command": [
+            "cmake",
+            "--build",
+            "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev",
+            "--target",
+            "g01_cpu_ragged_public",
+            "--parallel",
+            "4"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 1.9680000000080327,
+          "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g01\\cpu-ragged-public-source-build-2.log"
+        },
+        {
+          "stage": "run",
+          "command": [
+            "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\g01_cpu_ragged_public.exe"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 0.23500000000058208,
+          "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g01\\cpu-ragged-public-source-run-2.log"
+        }
+      ]
+    }
+  },
+  "inputs": {
+    "src\\graph_batch\\batch.cc": "e7124c74afb522472810ab3bb5c88595f5abdc3ec2b5241fb78fcd7da7b8c78b",
+    "src\\compute_provider_ggml\\native_batch.cc": "b238cd017ff020124fdbc54329d745881225351da01403575b234080d982b9b3",
+    "src\\compute_provider_ggml\\native_batch.h": "d17a1c180ca3c6f97b22b1202893cd03e7dc80d74a246522967c130bc9eb72f9",
+    "src\\compute_provider_ggml\\ggml_cpu_provider.cc": "39c92624fb34625d05f1a7c6c456afcede98177fccdd7a8698200e375e26bcfd",
+    "tests\\compute_provider_ggml\\native_ragged_test.cc": "bfde2242732d0d72f0c479ff55401ea320dad325eda2b4f4715d28630c5ffdb9"
+  },
+  "raw_manifest": [
+    {
+      "path": "cpu-graph-resource-impact-plan.json",
+      "sha256": "6df06c877b87f7891651ddc3848d70a3e3f39c2508b61c5cd22d9ffd53de7703"
+    },
+    {
+      "path": "cpu-ragged-asan-build-1.log",
+      "sha256": "41e2b4cce174f8e3362b385da5efb823dfad05fd125a58edb000640c61fc37df"
+    },
+    {
+      "path": "cpu-ragged-asan-build-2.log",
+      "sha256": "81f0f38b13ec89574f59836110d3c1fd692c2a23690842310d1d127cc4598bf2"
+    },
+    {
+      "path": "cpu-ragged-asan-configure-1.log",
+      "sha256": "c613b267f3e07f3924220d306a1c88eecd3304ae8467fa9945a90b0f0d5f95ef"
+    },
+    {
+      "path": "cpu-ragged-asan-configure-2.log",
+      "sha256": "1dbfd6c7bc39516154d8e1e7b1e33a46f6c0ad789ea27c40b5a86b8c7e273acc"
+    },
+    {
+      "path": "cpu-ragged-asan-instrumented-inputs.json",
+      "sha256": "921b052660dac2eefdb00bbaa9c0b0c93e6d49adc7ddc050bb1b1950a14f480d"
+    },
+    {
+      "path": "cpu-ragged-asan-project.cmake",
+      "sha256": "e8797abefac57a87c97945395d2eb5114860702f9a9d168581d3bf21aa978be1"
+    },
+    {
+      "path": "cpu-ragged-asan-result.json",
+      "sha256": "e8c3499839cf48c25da3413003b7d644d2d533b96df56f5567e91d7a7023384d"
+    },
+    {
+      "path": "cpu-ragged-asan-run-1.log",
+      "sha256": "de51b0cec0d018dee67c87023ed8ab689316037bfb289b2f89bd0e0b04b77c1e"
+    },
+    {
+      "path": "cpu-ragged-asan-run-2.log",
+      "sha256": "b53f72cd7169078dec149262dfbcb33023afcf766f94fee1fd22238751e3b490"
+    },
+    {
+      "path": "cpu-ragged-asan-run-public-graph-1.log",
+      "sha256": "bdd496646816384a40f7ee8435c1d9da31f43a629e56a2d4f2b6af418adb4680"
+    },
+    {
+      "path": "cpu-ragged-build-1.log",
+      "sha256": "4547be3dbff8cf8fd62e2f21dee808249235091fb28f53030397065ca9bc004a"
+    },
+    {
+      "path": "cpu-ragged-build-10.log",
+      "sha256": "6b8ff26951077b17fc7e265e3763a17e41299a64c34d6e4236fc950d21da9bc4"
+    },
+    {
+      "path": "cpu-ragged-build-2.log",
+      "sha256": "92bb242740ba9cf0850e004e0e242a89ffba775087237ea8136554260864ec6f"
+    },
+    {
+      "path": "cpu-ragged-build-3.log",
+      "sha256": "d1cde506d179aa2a254cda3c840e3a2a81334e5bbfd99c2828b449561d8ee34c"
+    },
+    {
+      "path": "cpu-ragged-build-4.log",
+      "sha256": "bffa93ff48e14c040a6480d87b0f5ab6cb5c644259d2310b5b6e64c387d87eac"
+    },
+    {
+      "path": "cpu-ragged-build-5.log",
+      "sha256": "6b8ff26951077b17fc7e265e3763a17e41299a64c34d6e4236fc950d21da9bc4"
+    },
+    {
+      "path": "cpu-ragged-build-6.log",
+      "sha256": "6b8ff26951077b17fc7e265e3763a17e41299a64c34d6e4236fc950d21da9bc4"
+    },
+    {
+      "path": "cpu-ragged-build-7.log",
+      "sha256": "5848881f887ecc81c5e19342eaf9246ae20f586be0415e6817c963c206de670d"
+    },
+    {
+      "path": "cpu-ragged-build-8.log",
+      "sha256": "03605d825ad676d04323845af64ce96345062f23fd996fff03ccafde5f2fa828"
+    },
+    {
+      "path": "cpu-ragged-build-9.log",
+      "sha256": "6b8ff26951077b17fc7e265e3763a17e41299a64c34d6e4236fc950d21da9bc4"
+    },
+    {
+      "path": "cpu-ragged-checks.json",
+      "sha256": "c870e1ebff937a8dd7b5f77b05312eb6526895af4d41ba3665597c459aed0263"
+    },
+    {
+      "path": "cpu-ragged-configure-1.log",
+      "sha256": "6234b37e66a46de68f5b7bc313925b89a53cc8c13cc5761b7bd79f0e28c8fafc"
+    },
+    {
+      "path": "cpu-ragged-impact-plan-candidate.json",
+      "sha256": "1844b3fbcfac0bab02b009c5d97369e01ed49ae79901865cf9177ee478ef3e47"
+    },
+    {
+      "path": "cpu-ragged-impact-plan-fixed.json",
+      "sha256": "dda4e0fafa507f7d65b4718979fb556625b384a5945a9faac92e644a975e0ac1"
+    },
+    {
+      "path": "cpu-ragged-impact-plan.json",
+      "sha256": "17b0917925bf70a1bb47163ce5c9ec7d7d6c8555e377fd7cf87a368cea0cf2c2"
+    },
+    {
+      "path": "cpu-ragged-project.cmake",
+      "sha256": "1c21ca2a4fc4351207ac19a4ff9cadb9fc57d79fd5a720363923cfc0435a17c6"
+    },
+    {
+      "path": "cpu-ragged-public-project.cmake",
+      "sha256": "1fc89a82435c1a22d995a088b70205adff75fb9dd5dd215f9ac54768479d3125"
+    },
+    {
+      "path": "cpu-ragged-public-source-build-1.log",
+      "sha256": "1eaa5a5d1b2e7e1f801dafcb548f9342a24a4dce3ddc87c09fa1d91b15ab3a8d"
+    },
+    {
+      "path": "cpu-ragged-public-source-build-2.log",
+      "sha256": "1b206f56275096ca9d54a2355c5d0008e3dab6f049bc53547b777dcd60d7d7ea"
+    },
+    {
+      "path": "cpu-ragged-public-source-configure-1.log",
+      "sha256": "6a4a0f5425924030f2a14d2e3b7262348cce150c947977f865a82ae87f4b0c37"
+    },
+    {
+      "path": "cpu-ragged-public-source-result.json",
+      "sha256": "a09aeddfd5ed9cebacf41dc411e8efbe529938aeb503395dc8ef3cbf063ff434"
+    },
+    {
+      "path": "cpu-ragged-public-source-run-1.log",
+      "sha256": "a57ff9375f03aed2930f741a37db77f78f7b7829bc77fef1e90ea85a0f3dbc60"
+    },
+    {
+      "path": "cpu-ragged-public-source-run-2.log",
+      "sha256": "9990f654ae108f18a4a2d12a5dc98195d876f22c8738af41402a8b7f3330036b"
+    },
+    {
+      "path": "cpu-ragged-run-1.log",
+      "sha256": "52865fe7d806c471c5917984932dcf1219ca8722f00b0f12d2247246e45201a7"
+    },
+    {
+      "path": "cpu-ragged-run-2.log",
+      "sha256": "792b2bc32322e514d7ab06f68ffe795400003b0989538dab73eaa0e305524e21"
+    },
+    {
+      "path": "cpu-ragged-run-3.log",
+      "sha256": "ca5dd66b68a7b488805d3622b08830c67dcc148fa014b6c35be9191c82648faa"
+    },
+    {
+      "path": "cpu-ragged-run-4.log",
+      "sha256": "1b500a10e2ee6764043d4492581f995c50ddabb7d72297b02a113258e3cc591c"
+    },
+    {
+      "path": "cpu-ragged-run-5.log",
+      "sha256": "2e1261db5983976184f5fc1c2401c801f7e580f729caf225fe4e30d4a20f5d00"
+    },
+    {
+      "path": "cpu-ragged-run-6.log",
+      "sha256": "0a76fca5fd9ed64137a4bba9bdff6e51574b39553ec11b011d6d27d317eede76"
+    },
+    {
+      "path": "cpu-ragged-tsan-build-1.log",
+      "sha256": "f0930cd46996c1db9b068023e1f27bbc2189edb46ce264331807e0ccb034cd74"
+    },
+    {
+      "path": "cpu-ragged-tsan-build-2.log",
+      "sha256": "922062705985bf7d237027520c6289aa09545c73f95129e855749fd0e5b65822"
+    },
+    {
+      "path": "cpu-ragged-tsan-configure-1.log",
+      "sha256": "5bc57dc2a5cc54ea5c8503f941f49dbf39cc154d61d4f4af87249df17631d7ef"
+    },
+    {
+      "path": "cpu-ragged-tsan-configure-2.log",
+      "sha256": "e2bdd427f94d4f181f9cd0bddd94045f7b9a35ac81f9802623cc9c3c23669704"
+    },
+    {
+      "path": "cpu-ragged-tsan-instrumented-inputs.json",
+      "sha256": "ae399fec1f8e3285478b80730eeb31eed54665aa94f8c77b6ae7b4aa8be870f4"
+    },
+    {
+      "path": "cpu-ragged-tsan-project.cmake",
+      "sha256": "e8797abefac57a87c97945395d2eb5114860702f9a9d168581d3bf21aa978be1"
+    },
+    {
+      "path": "cpu-ragged-tsan-result.json",
+      "sha256": "602b1167afac870643bf9048cea49191e7f49089fc269965f00c720d93a0e6f4"
+    },
+    {
+      "path": "cpu-ragged-tsan-run-1.log",
+      "sha256": "2d63e19ade82d1ba1685fb030028b696d0e8c6758961e5d4b7a975a2b7e1df79"
+    },
+    {
+      "path": "cpu-ragged-tsan-run-2.log",
+      "sha256": "d91674c9d35a194ac3ddb73435148d1580dac8c7a8fd6acd501c2e08bd15407e"
+    },
+    {
+      "path": "cpu-ragged-tsan-run-public-graph-1.log",
+      "sha256": "bdd496646816384a40f7ee8435c1d9da31f43a629e56a2d4f2b6af418adb4680"
+    },
+    {
+      "path": "cpu-ragged-ubsan-build-1.log",
+      "sha256": "a34eda901dd4a1123505ee0d1013a21499dcc82060522c5231ecd5a0b884880a"
+    },
+    {
+      "path": "cpu-ragged-ubsan-build-2.log",
+      "sha256": "d8affeb044d0b31dec4553c6c53e725347f734b00e89ddac567ac8aff1db0f99"
+    },
+    {
+      "path": "cpu-ragged-ubsan-configure-1.log",
+      "sha256": "19d82e931079d083ed02decfa39647b53d325685ccd8eb56425f04bb7a4352a5"
+    },
+    {
+      "path": "cpu-ragged-ubsan-configure-2.log",
+      "sha256": "7180bce9c5352833fad38260f42e7af2b221f44cd6fb99f1aedfad66200c23c6"
+    },
+    {
+      "path": "cpu-ragged-ubsan-instrumented-inputs.json",
+      "sha256": "ec31495093407ebe7522f0df78842dc955eee92cd62eeb0d87fa3e63113b1772"
+    },
+    {
+      "path": "cpu-ragged-ubsan-project.cmake",
+      "sha256": "e8797abefac57a87c97945395d2eb5114860702f9a9d168581d3bf21aa978be1"
+    },
+    {
+      "path": "cpu-ragged-ubsan-result.json",
+      "sha256": "44affce70262bc5f0ff2f09747ec800b59a73d18bcdab5934a57f7a497882258"
+    },
+    {
+      "path": "cpu-ragged-ubsan-run-1.log",
+      "sha256": "a10ba8c2c1e36120fcbbb7665a559ef7b352b958923d7177e2f407c885dd4686"
+    },
+    {
+      "path": "cpu-ragged-ubsan-run-2.log",
+      "sha256": "75c72496f1ed31dd5c7ccccb07e3444e4e45aad2efb3150695be929298f6e311"
+    },
+    {
+      "path": "cpu-ragged-ubsan-run-public-graph-1.log",
+      "sha256": "bdd496646816384a40f7ee8435c1d9da31f43a629e56a2d4f2b6af418adb4680"
+    },
+    {
+      "path": "cpu-ragged-validation-inputs.json",
+      "sha256": "ba882bd9f3d82e76bbcf262acbe06622f4199579b93a6e05064c49ed5b036f9d"
+    },
+    {
+      "path": "cpu-ragged-win-shared-sdk-configure-1.log",
+      "sha256": "891c5490f18da82aad2ad4ba82174a935d3993dbda5d52ff809775bd3aa45a75"
+    },
+    {
+      "path": "cpu-ragged-win-shared-sdk-consumer-build-1.log",
+      "sha256": "033cc08476f03644c91bc758c823cc245992528ce698f5d95fc95a2422f0540f"
+    },
+    {
+      "path": "cpu-ragged-win-shared-sdk-consumer-configure-1.log",
+      "sha256": "78a48527e809a524bcb28ad26662caeda8d5de36411f7c9d2211976f2d30ef2b"
+    },
+    {
+      "path": "cpu-ragged-win-shared-sdk-inputs.json",
+      "sha256": "8adf9db81e6ccc5304f1e1b4e06acaf1504c2f63292d2ccc3c3f9e264fd31bd3"
+    },
+    {
+      "path": "cpu-ragged-win-shared-sdk-install-1.log",
+      "sha256": "018b20bddab73d20e548bb4f67abc02bfcaba8b9c1260f9cca680bf0e89253b3"
+    },
+    {
+      "path": "cpu-ragged-win-shared-sdk-producer-build-1.log",
+      "sha256": "111c6719c5b680bd37eb2a584702a1bd6275eefde22d128b8e0b88173495d231"
+    },
+    {
+      "path": "cpu-ragged-win-shared-sdk-result.json",
+      "sha256": "545af62a3a6470f151b76464e58852be875d762b51e22328d4d672b3dbe27f4e"
+    },
+    {
+      "path": "cpu-ragged-win-shared-sdk-run-ragged-1.log",
+      "sha256": "9d1a70ae8b3c33370c84b7edd9103fb0324f2aeb590270d24f0c571b37f3fdb3"
+    },
+    {
+      "path": "cpu-ragged-win-shared-sdk-run-resident-1.log",
+      "sha256": "2f8dfe6b40a588db28b278d593efa4d61162f04a52a17f2a03389a9b513920ff"
+    },
+    {
+      "path": "cpu-ragged-win-static-sdk-configure-1.log",
+      "sha256": "741801da8351af1742e1cbb2f99c2ace8edb574b9c72ff46a2041c9565b629ab"
+    },
+    {
+      "path": "cpu-ragged-win-static-sdk-consumer-build-1.log",
+      "sha256": "99da1ecb20c1015b3594c29266c899288411424c7e66a8299f41cc411455db7f"
+    },
+    {
+      "path": "cpu-ragged-win-static-sdk-consumer-build-2.log",
+      "sha256": "21b29b76ad2e0bf99b3492259800fdcce3e6f0cd17175e625212924a7e489546"
+    },
+    {
+      "path": "cpu-ragged-win-static-sdk-consumer-configure-1.log",
+      "sha256": "72124cc3e8cb7f1eb99d97220cbf213dcd9c9404591a7b0adf5fcc143a4a3c83"
+    },
+    {
+      "path": "cpu-ragged-win-static-sdk-inputs.json",
+      "sha256": "6877f2035da05f3ed47d0337d95d6c861d2ff618e86c65de2a08063d6f0cc234"
+    },
+    {
+      "path": "cpu-ragged-win-static-sdk-install-1.log",
+      "sha256": "81ef019696857aebf9a54d943b3786f6d37ed92aff6b877772a53f1d5777ab5e"
+    },
+    {
+      "path": "cpu-ragged-win-static-sdk-producer-build-1.log",
+      "sha256": "7af4fcbdfb0e2815de9021daa1522363859dd8f2d66c2c9ac5e65fa47993c7ab"
+    },
+    {
+      "path": "cpu-ragged-win-static-sdk-result.json",
+      "sha256": "140729b160fc790c6ce8583846a788ed43ee7258a97a3f39e7186b6409e775b3"
+    },
+    {
+      "path": "cpu-ragged-win-static-sdk-run-ragged-1.log",
+      "sha256": "3f8bf6f02bfd93c0c2bb82f01e3c0ea82b739f186bbd726ee96f3e1e923ace22"
+    },
+    {
+      "path": "cpu-ragged-win-static-sdk-run-resident-1.log",
+      "sha256": "2f8dfe6b40a588db28b278d593efa4d61162f04a52a17f2a03389a9b513920ff"
+    },
+    {
+      "path": "cpu_ragged_checks.py",
+      "sha256": "b13ca2cd82ecb3c45a37cfdcbf042418191e808bc1166049d064822267e77bbb"
+    },
+    {
+      "path": "cpu_ragged_sdk_windows.py",
+      "sha256": "7febe1cc94c4d15c5a56c5e3a0950da72027ad525dfdf2e76223d41460acf1c6"
+    },
+    {
+      "path": "cpu_ragged_source.py",
+      "sha256": "28de9d799dcb6c32d9d2d30d6172d1be9efca96344bc73344958b89893943b0d"
+    },
+    {
+      "path": "cpu_ragged_verify.py",
+      "sha256": "126d0a5532a0f558462157d534196dd45d4d0206cc3289771ff226bbfe3bbc94"
+    },
+    {
+      "path": "public_cpu_ragged.cc",
+      "sha256": "455c44b70c8aaa88fc390939198473d7f2e8872ea7aa5b8127e003b223900575"
+    }
+  ],
+  "raw_zip_sha256": "1a01d7413852147d3e04d6d91a13d28ed466cf761a46d67ffe6c574dd82eeff4"
+}

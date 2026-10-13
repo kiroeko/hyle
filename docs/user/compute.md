@@ -122,6 +122,34 @@ Apple 沿原 MLX owner 同步实际 command buffer，每 native phase 的 worker
 两组/两槽及原编码数学组合见[批量搬运样例](../../samples/package/graph/batched_transfers/)。
 F2 有限范围已收口，实际平台/交付与未知成本限制见[最终记录](../implementation/tasks/compute/foundation-f2-final-closure.md)。
 
+## CPU 多请求 ragged attention
+
+`hyle/compute/batch_execution.h` 的 `BatchProgram` 在普通 `cpu::create_context()` 中冷选择
+原 ggml flash。当前候选域为 F16/BF16、GQA、D64/128/256，packed NHD Q/K/V；
+`BatchSchema::version()` 拥有 query/KV indptr，空 Q request 可跳过，非空 Q 必须有足够
+的 KV。容量描述实际存储，indptr 描述这一次的有效请求区；未用尾部不参与数学。
+
+```cpp
+auto program = c::BatchProgram::prepare(context, schema,
+    {.resource = hyle::mem::system_resource(),
+     .max_float_workspace_bytes = 8u << 20,
+     .max_int_workspace_bytes = 4096,
+     .scale = scale, .causal = true}).value();
+auto slot = c::BatchInvocation::create(program, queue).value();
+auto prepared = slot.prepare_batch(layout).value();
+auto done = prepared.run(std::array{query_read, key_read, value_read}).value();
+HYLE_RETURN_IF_ERROR(done.wait());
+auto output = slot.output().value();
+```
+
+先释放旧 output、prepared token 和 Completion，再调用 `update_batch(next_layout)`。
+完整 query/KV topology 相同可复用原 native plan；改变则在这次显式更新中重建，run 不建图。
+原 kernel 直接读取每个 request 的 K/V slice，没有按每 Q/head 物化历史；冷 mask、query
+转换与每请求 metadata/workspace 仍计费。CPU `float_workspace_bytes` 暂为已知冷 plan
+占用的保守合计，与外部预留 pool 分开，不能当作总 RSS；private pool 上界未知。
+本档不接原生 paged/capture。普通 Direct 的 source/static/shared 与宿主风险已验证，
+batch 性能、安装 Graph factory 适配及其它路线多请求资格仍见[活动卡](../implementation/tasks/compute/inference-g01-cpu-native-ragged.md)。
+
 > 本页描述当前 Compute runtime foundation、CPU operation surface 与 CUDA runtime；施工资格只以
 > [`module-status.json`](../implementation/module-status.json) 为准。普通 CPU 入口自动组装已构建的 oneDNN/ggml/ATen/Native 实现；
 > 标准 CPU 构建使用 `HYLE_COMPUTE_ROUTES=cpu`，自动接入该平台所需的合格 Provider。

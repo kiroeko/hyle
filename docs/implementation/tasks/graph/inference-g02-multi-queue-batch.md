@@ -52,6 +52,10 @@ factory分开裁决；原native CUDA 26d7证据保留不冒充新CPU资格。适
 实际修正已提交。Windows普通Direct同consumer与source显式expert provider工厂的
 两个dependent Graph ragged region均PASS，原资源拒绝FAIL保留；只重编graph_batch
 一个TU/链接，2s完成。原exact_resource/端口对齐未放宽，宿主san/安装交付定向验证中。
+该source消费者实际WSL ASan+LSan、UBSan、TSan全部PASS，三配置同时复跑13项CPU
+batch/layout/storage测试均PASS，实际instrumented graph_batch TU/public consumer与原
+CPU provider/batch core命令保留。新[候选证据](../../../../evidence/correctness/inference-g01-cpu-graph-resource-candidate/README.md)
+不代签安装Graph工厂或原Vulkan直接消费者尚未跑项，source资源FAIL与全部旧记录保留。
 
 ## 验证与停止
 
