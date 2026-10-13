@@ -1,6 +1,7 @@
 # G02 多 Queue batch 协调
 
-状态：AUDITED，2026-10-13；owner：`graph`、`graph_batch`。
+状态：CANDIDATE，2026-10-13；owner：`graph`、`graph_batch`。
+不可变candidate：`26d7c2cb7212f5abdd3866baaf886b8fdbca02e5`。
 baseline：`743783f7b0759d77978c0d208dc5ba0898313e69`。
 授权来自当前[缺口 goal](../project/inference-gaps-goal-execution-2026-10.md)；
 reopen trigger 是新增真实 CPU＋GPU/多 lane 分页消费者，原 F5 coordinator 只保存单 Queue，
@@ -62,4 +63,9 @@ SCOPED提交084dc9a50、AUDITED提交212950ba1保存授权顺序；产品API到4
 精确页/F4和ragged重排已实跑通过；宿主Graph机制/Executable、batch及15公开Graph头通过。
 原CPU因子头扫描缺CUDA include、global staging跨Context拒绝和独立topology断言失败保留。
 阶段[证据与剩余门](../../../../evidence/correctness/inference-g02-common/README.md)集中记录，
-三交付/san/P0终审尚未完成，不进入CLOSED，也不结案全部G02。
+公开CPU＋CUDA消费者现已运行F16/BF16 GQA8/2 D256、两request跨页/尾长：CPU RMS/Cast→
+原native paged→CPU Cast/Neg，两Queue、准确page frame、重排、旧output与oracle均通过。
+其输入/输出全部public API，不通过raw arena/private类型；源码消费者文件为
+[public_hybrid_batch_consumer.cc](../../../../tests/compute_batch/public_hybrid_batch_consumer.cc)。
+API/算法/直接消费者固定，进入CANDIDATE；三交付/san/P0终审尚未完成，不进入CLOSED，
+也不结案Apple/Vulkan等全部G02。后续若改变产品合同依法退回AUDITED。

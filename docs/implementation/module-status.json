@@ -281,9 +281,10 @@
     },
     {
       "module": "graph",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/graph/inference-g02-multi-queue-batch.md",
-      "summary": "G02 multi-queue batch AUDITED: final lane/context/queue bindings, original region and native slot identity; single-queue API migration, no compatibility layer."
+      "summary": "G02 multi-queue batch CANDIDATE: final lane/context/queue bindings, original region and native slot identity; single-queue API migration, no compatibility layer.",
+      "candidate": "26d7c2cb7212f5abdd3866baaf886b8fdbca02e5"
     },
     {
       "module": "container_concurrent",
@@ -711,9 +712,10 @@
     },
     {
       "module": "graph_batch",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/graph/inference-g02-multi-queue-batch.md",
-      "summary": "G02 multi-queue batch AUDITED: final lane/context/queue bindings, original region and native slot identity; single-queue API migration, no compatibility layer."
+      "summary": "G02 multi-queue batch CANDIDATE: final lane/context/queue bindings, original region and native slot identity; single-queue API migration, no compatibility layer.",
+      "candidate": "26d7c2cb7212f5abdd3866baaf886b8fdbca02e5"
     }
   ]
 }
