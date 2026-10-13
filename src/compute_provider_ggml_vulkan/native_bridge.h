@@ -14,6 +14,11 @@ struct ggml_context;
 struct ggml_cgraph;
 
 namespace hyle::compute::ggml_vulkan::bridge {
+// Fixed-source private FA extension. Accumulation precision alone does not
+// prevent native half operands/probabilities. The tagged math mode has its own
+// pipeline identity and never changes the device's capability flags.
+inline constexpr int kFlashAttentionMathSlot = 4;
+inline constexpr std::int32_t kFlashAttentionFullF32 = 0x48594632;
 struct Runtime;
 struct Work;
 struct Storage;

@@ -32,6 +32,14 @@ the original half-internal shader could narrow an F32 FFN activation before
 the down projection. Other storage and quantized pipeline maps are unchanged.
 No new multiplication shader or algorithm is introduced.
 
+HYLE's tagged full-F32 attention mode reuses the original scalar FP32 flash
+shader. The private slot tag is distinct from accumulation precision, because
+the normal native FP32 accumulator may still narrow Q/K/V or probabilities.
+Only the tagged F16/F32, same-D64/128/256 domain selects scalar tuning and the
+original FP32 SPIR-V, accounts for float shared storage, and has a separate
+pipeline-cache key. Other ggml calls and device capability flags are unchanged.
+No attention shader, kernel or replacement queue/runtime is introduced.
+
 The two Argsort shaders retain the upstream bitonic sorting networks, barriers,
 dispatch and scratch management. Their comparison uses original F32 storage
 keys and source indices to provide stable ties, equal signed zeros, NaN-last in

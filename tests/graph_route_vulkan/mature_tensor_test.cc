@@ -330,7 +330,7 @@ TEST(VulkanGraph, ResidentAttentionViewsPreserveEffectiveLengthsAndOldResults) {
   auto context = vulkan_test::context(&quota).value();
   for (auto type : {c::DataType::kFloat32, c::DataType::kFloat16})
     for (const auto rows : {1, 17})
-      for (const auto depth : {64, 256})
+      for (const auto depth : {64, 128, 256})
         for (bool causal : {false, true}) {
           SCOPED_TRACE(::testing::Message() << int(type) << '/' << rows << '/'
                                             << depth << '/' << causal);
@@ -450,7 +450,16 @@ TEST(VulkanGraph, ResidentAttentionViewsPreserveEffectiveLengthsAndOldResults) {
             } else
               expect(context, retained, saved, true);
           }
-          EXPECT_FALSE(first.bind(original_inputs).ok());
+          ASSERT_TRUE(first.bind(original_inputs).ok());
+          EXPECT_FALSE(first.submit());
+          retained_lease = {};
+          EXPECT_FALSE(first.submit()); // Independent tensor still retains output.
+          retained = {};
+          auto repeated = first.submit();
+          ASSERT_TRUE(repeated) << repeated.error().message();
+          auto repeated_result = repeated->wait();
+          ASSERT_TRUE(repeated_result) << repeated_result.error().message();
+          expect(context, repeated_result->get()->tensors()[0], saved, true);
         }
   ASSERT_TRUE(context.close().ok());
 }

@@ -48,5 +48,20 @@ Vulkan SDPA域和直接消费者按实际影响。source及relocated static/shar
 
 调查检查点2小时、实现/验证检查点各4小时，正常推进自动延长并保原FAIL/TIMEOUT/elapsed；
 本机编译4 jobs按内存下调，重型GPU测试继续避开桌面资源压力，Air实查身份后可远端跑。
-有限问题真实裁决后才CLOSED；真实外部阻断按协议记录精确条件。当前尚未修改原生源码，
-不因阶段性CPU成功把G01/G02或全部goal结束。
+有限问题真实裁决后才CLOSED；真实外部阻断按协议记录精确条件，不因阶段性CPU成功把
+G01/G02或全部goal结束。
+
+实现结果：NP-01/02/03已落地。16个唯一context的原native host edits沿原before/after hash
+应用，shader代码未变；Vulkan patch tree与NOTICE hash在原锁更新，其他dependency记录
+逐项确认不变。Windows实际GPU-only公开consumer已过F32/F16、D64/128/256、两batch、
+GQA8/2、decode/prefill、causal/noncausal、非零offset/padding、source只读、独立slots、
+旧ResultLease/Tensor及释放后重放。原数值oracle/容差不放宽。N=1/MHA使normal和strict
+走同scalar tiles的交错/双顺序反例也通过，strict大指数F32值保有限，原模式结果不受污染。
+原数学FAIL、绑定时机错误断言、原native设置helper不可见与私有consumer compile flags
+失败保留；绑定允许但submit拒绝保留输出才是原合同，未为此改产品生命周期。
+
+selector因两个lock内容hash变化给全局保守计划，原plan与逐dependency delta证据保留。
+遵循用户既有模块影响验证要求，只执行该native owner与实际Vulkan消费者/交付/风险门；
+不因此重测无源码变化的CPU/CUDA/Metal数学或全库。原版本/opaque限制仍保留，不能将
+未运行global rows写PASS。公共selector/构建/性能工具未改；四路本机编译，无大模型run。
+source正确性已实跑；candidate三交付/san/P1与最终review仍待完成。

@@ -897,7 +897,8 @@ Result<Region> Region::create(NativeDevice device,
             0, 2, 1, 3);
         auto *key = ggml_permute(context, arguments[1], 0, 2, 1, 3);
         auto *value = ggml_permute(context, arguments[2], 0, 2, 1, 3);
-        if (key->ne[0] % 8 == 0 && value->ne[0] % 8 == 0) {
+        if (key->ne[0] == value->ne[0] &&
+            (key->ne[0] == 64 || key->ne[0] == 128 || key->ne[0] == 256)) {
           ggml_tensor *mask = nullptr;
           if (attention->causal) {
             auto *seed = ggml_new_tensor_2d(context, GGML_TYPE_F32,
@@ -910,6 +911,8 @@ Result<Region> Region::create(NativeDevice device,
           }
           output = ggml_flash_attn_ext(context, query, key, value, mask,
                                        attention->scale, 0.0F, 0.0F);
+          output->op_params[bridge::kFlashAttentionMathSlot] =
+              bridge::kFlashAttentionFullF32;
           if (!ggml_prec_set_acc(output, GGML_PREC_F32))
             return std::unexpected(Status::Unimplemented(
                 "ggml Vulkan fused attention accumulation"));

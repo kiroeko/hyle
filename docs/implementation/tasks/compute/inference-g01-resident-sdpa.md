@@ -94,3 +94,9 @@ MSVC旧测试夹具的unused observer、显式double→float及vendored private 
 原锁定承载的精度选择归属已在[原生精度卡](inference-g01-vulkan-native-precision.md)
 已依次SCOPED→AUDITED，原Provider有限FIX按精度反例冻结为三个D和同D；不会放宽容差
 或将未资格native域签PASS。其余已准入域需要的高效消费仍保总goal，不因本子批删除。
+
+原生修正后Vulkan同F32/F16 D64/128/256的定向public consumer全部通过原容差；准确长度/
+offset/padding、source只读、旧输出与独立slots/重放均实跑。生命周期拒绝位置按原native
+实现从bind修正为submit，未改产品合同；原错误断言保留。normal/strict scalar cache交错
+与双顺序反例也通过。这个有限resident子批进入候选准备，三交付/san/P1未完成，不签
+整个G01。CPU原模块/逐头与默认入口的已过证据仍有效，不额外重跑旧大模型矩阵。

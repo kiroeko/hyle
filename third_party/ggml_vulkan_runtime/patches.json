@@ -322,9 +322,73 @@
         {
           "before": "    const uint32_t y_staged_row_stride = ctx->device->coopmat2 && !quantize_y ? ggml_vk_align_size(ne10, 64) : ne10;",
           "after": "    const uint32_t y_staged_row_stride = !hyle_f32_operands && ctx->device->coopmat2 && !quantize_y ? ggml_vk_align_size(ne10, 64) : ne10;"
+        },
+        {
+          "before": "    ggml_type v_type;\n\n    bool operator<(const vk_fa_pipeline_state &b)",
+          "after": "    ggml_type v_type;\n    bool hyle_full_f32 = false;\n\n    bool operator<(const vk_fa_pipeline_state &b)"
+        },
+        {
+          "before": "aligned, f32acc, flags, limit_occupancy_shmem, k_type, v_type) <\n               std::tie(b.HSK, b.HSV, b.Br, b.Bc, b.D_split, b.row_split, b.shmem_staging, b.path, b.workgroup_size, b.subgroup_size, b.aligned, b.f32acc, b.flags, b.limit_occupancy_shmem, b.k_type, b.v_type);",
+          "after": "aligned, f32acc, flags, limit_occupancy_shmem, k_type, v_type, hyle_full_f32) <\n               std::tie(b.HSK, b.HSV, b.Br, b.Bc, b.D_split, b.row_split, b.shmem_staging, b.path, b.workgroup_size, b.subgroup_size, b.aligned, b.f32acc, b.flags, b.limit_occupancy_shmem, b.k_type, b.v_type, b.hyle_full_f32);"
+        },
+        {
+          "before": "static bool ggml_vk_flash_attn_scalar_shmem_support(const vk_device& device, const vk_fa_tuning_params& params, uint32_t hsk, uint32_t hsv, bool f32acc, ggml_type k_type, ggml_type v_type);",
+          "after": "static bool ggml_vk_flash_attn_scalar_shmem_support(const vk_device& device, const vk_fa_tuning_params& params, uint32_t hsk, uint32_t hsv, bool f32acc, ggml_type k_type, ggml_type v_type, bool hyle_full_f32 = false);"
+        },
+        {
+          "before": "static bool ggml_vk_flash_attn_scalar_shmem_support(const vk_device& device, const vk_fa_tuning_params& params, uint32_t hsk, uint32_t hsv, bool f32acc, ggml_type k_type, ggml_type v_type) {",
+          "after": "static bool ggml_vk_flash_attn_scalar_shmem_support(const vk_device& device, const vk_fa_tuning_params& params, uint32_t hsk, uint32_t hsv, bool f32acc, ggml_type k_type, ggml_type v_type, bool hyle_full_f32) {"
+        },
+        {
+          "before": "static vk_fa_tuning_params get_fa_tuning_params_scalar(const vk_device& device, uint32_t hsk, uint32_t hsv, uint32_t n_rows, uint32_t n_kv, ggml_type k_type, ggml_type v_type, bool f32acc) {",
+          "after": "static vk_fa_tuning_params get_fa_tuning_params_scalar(const vk_device& device, uint32_t hsk, uint32_t hsv, uint32_t n_rows, uint32_t n_kv, ggml_type k_type, ggml_type v_type, bool f32acc, bool hyle_full_f32 = false) {"
+        },
+        {
+          "before": "!ggml_vk_flash_attn_scalar_shmem_support(device, result, hsk, hsv, f32acc, k_type, v_type))",
+          "after": "!ggml_vk_flash_attn_scalar_shmem_support(device, result, hsk, hsv, f32acc, k_type, v_type, hyle_full_f32))"
+        },
+        {
+          "before": "    const uint32_t float_type_size = (device->fp16 && k_type != GGML_TYPE_BF16) ? sizeof(ggml_fp16_t) : sizeof(float);",
+          "after": "    const uint32_t float_type_size = (!hyle_full_f32 && device->fp16 && k_type != GGML_TYPE_BF16) ? sizeof(ggml_fp16_t) : sizeof(float);"
+        },
+        {
+          "before": "    const bool mmq = ggml_vk_fa_scalar_uses_mmq(device, k_type, v_type);",
+          "after": "    const bool mmq = !hyle_full_f32 && ggml_vk_fa_scalar_uses_mmq(device, k_type, v_type);"
+        },
+        {
+          "before": "        if (bf16_kv) {\n            spv_data = flash_attn_f32_f16_fp32_data;",
+          "after": "        if (fa.first.hyle_full_f32 || bf16_kv) {\n            spv_data = flash_attn_f32_f16_fp32_data;"
+        },
+        {
+          "before": "            name = aligned ? \"flash_attn_f32_bf16_aligned\" : \"flash_attn_f32_bf16\";",
+          "after": "            name = fa.first.hyle_full_f32 ? \"hyle_flash_attn_full_f32\" :\n                   (aligned ? \"flash_attn_f32_bf16_aligned\" : \"flash_attn_f32_bf16\");"
+        },
+        {
+          "before": "    const bool f32acc = !ctx->device->fp16 || dst->op_params[3] == GGML_PREC_F32 || k->type == GGML_TYPE_BF16;",
+          "after": "    const bool hyle_full_f32 = dst->op_params[hyle::compute::ggml_vulkan::bridge::kFlashAttentionMathSlot] ==\n                               hyle::compute::ggml_vulkan::bridge::kFlashAttentionFullF32;\n    const bool f32acc = hyle_full_f32 || !ctx->device->fp16 || dst->op_params[3] == GGML_PREC_F32 || k->type == GGML_TYPE_BF16;"
+        },
+        {
+          "before": "    const bool use_dequant_kv = k_quant && v_quant && neq1 >= 64 &&",
+          "after": "    const bool use_dequant_kv = !hyle_full_f32 && k_quant && v_quant && neq1 >= 64 &&"
+        },
+        {
+          "before": "    vk_fa_tuning_params tuning_params = get_fa_tuning_params(ctx->device, HSK, HSV, 512, KV, k_type_eff, v_type_eff, f32acc);",
+          "after": "    vk_fa_tuning_params tuning_params = hyle_full_f32\n        ? get_fa_tuning_params_scalar(ctx->device, HSK, HSV, 512, KV, k_type_eff, v_type_eff, true, true)\n        : get_fa_tuning_params(ctx->device, HSK, HSV, 512, KV, k_type_eff, v_type_eff, f32acc);"
+        },
+        {
+          "before": "    tuning_params = get_fa_tuning_params(ctx->device, HSK, HSV, N, KV, k_type_eff, v_type_eff, f32acc);",
+          "after": "    tuning_params = hyle_full_f32\n        ? get_fa_tuning_params_scalar(ctx->device, HSK, HSV, N, KV, k_type_eff, v_type_eff, true, true)\n        : get_fa_tuning_params(ctx->device, HSK, HSV, N, KV, k_type_eff, v_type_eff, f32acc);"
+        },
+        {
+          "before": "                                                                   mask != nullptr, use_mask_opt, logit_softcap != 0, k_type_eff, v_type_eff);",
+          "after": "                                                                   mask != nullptr, use_mask_opt, logit_softcap != 0, k_type_eff, v_type_eff);\n    fa_pipeline_state.hyle_full_f32 = hyle_full_f32;"
+        },
+        {
+          "before": "                uint32_t HSV = op->src[2]->ne[0];\n                if ((HSK % 8)",
+          "after": "                uint32_t HSV = op->src[2]->ne[0];\n                const bool hyle_full_f32 = op->op_params[hyle::compute::ggml_vulkan::bridge::kFlashAttentionMathSlot] ==\n                                           hyle::compute::ggml_vulkan::bridge::kFlashAttentionFullF32;\n                if (hyle_full_f32) {\n                    if (HSK != HSV || (HSK != 64 && HSK != 128 && HSK != 256) ||\n                        (op->src[1]->type != GGML_TYPE_F16 && op->src[1]->type != GGML_TYPE_F32) ||\n                        (op->src[2]->type != GGML_TYPE_F16 && op->src[2]->type != GGML_TYPE_F32)) {\n                        return false;\n                    }\n                    const auto params = get_fa_tuning_params_scalar(device, HSK, HSV, 512u,\n                        uint32_t(op->src[1]->ne[1]), op->src[1]->type, op->src[2]->type, true, true);\n                    if (!ggml_vk_flash_attn_scalar_shmem_support(device, params, HSK, HSV, true,\n                            op->src[1]->type, op->src[2]->type, true)) {\n                        return false;\n                    }\n                }\n                if ((HSK % 8)"
         }
       ],
-      "after_sha256": "9cb86bf51208debdf96e67eecc1783f3b75e76169b5c9f17ea6646f391a3ad70"
+      "after_sha256": "a3bbea1ee85cdcdbcac247799a44850413b853460bdcf4107a420e9c2162f8cd"
     },
     {
       "path": "src/ggml.cpp",
