@@ -282,11 +282,10 @@ Result<Program> prepare_plan(const Context &context, const Plan &plan,
             return false;
           // Only reshape an output already produced inside this region.
           // External capacity aliases retain the ordinary Plan view path.
-          for (auto producer = index; producer < end; ++producer)
-            if (std::ranges::find(plan.steps[producer].outputs, next.inputs[0]) !=
-                plan.steps[producer].outputs.end())
-              return managed_operation(*program, next);
-          return false;
+          const auto &producer = plan.steps[end - 1];
+          return std::ranges::find(producer.outputs, next.inputs[0]) !=
+                     producer.outputs.end() &&
+                 managed_operation(*program, next);
         };
         while (!step.control_boundary && end < plan.steps.size() &&
                !plan.steps[end].control_boundary &&
