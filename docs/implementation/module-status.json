@@ -369,9 +369,9 @@
     },
     {
       "module": "compute_provider_ggml",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/inference-g01-resident-sdpa.md",
-      "summary": "G01 resident SDPA SCOPED: native-compatible rank4 cache views and mature fused attention path, finite consumer/cost qualification; no whole G01 closure."
+      "summary": "G01 resident SDPA AUDITED: four finite FIX entries bind native-compatible padded views and original fused CPU/Vulkan kernels; no new runtime or whole G01 closure."
     },
     {
       "module": "graph_provider_onednn",
@@ -552,9 +552,9 @@
     },
     {
       "module": "compute_provider_ggml_vulkan",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/inference-g01-resident-sdpa.md",
-      "summary": "G01 resident SDPA SCOPED: native-compatible rank4 cache views and mature fused attention path, finite consumer/cost qualification; no whole G01 closure."
+      "summary": "G01 resident SDPA AUDITED: four finite FIX entries bind native-compatible padded views and original fused CPU/Vulkan kernels; no new runtime or whole G01 closure."
     },
     {
       "module": "compute_ggml_runtime",

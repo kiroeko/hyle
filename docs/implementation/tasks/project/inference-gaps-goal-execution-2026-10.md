@@ -42,7 +42,7 @@ Apple/Vulkan 的实际 OS/native 资格。共同验收位置、有效区、shape
 
 | 项 | 当前状态 | 有限目标 | 预计涉及的机制 owner，需在活动卡精确定界 |
 |---|---|---|---|
-| G01 高效驻留读取 | CPU/Vulkan SDPA 子批已 SCOPED；多请求驻留消费待定界 | 单请求先核 dense/view；多请求接 native/等价直接驻留消费，避免按每 Q/head 重复物化全 KV | compute_batch、原 route/Provider、graph_batch 必要桥 |
+| G01 高效驻留读取 | CPU/Vulkan SDPA 子批已 AUDITED；多请求驻留消费待定界 | 单请求先核 dense/view；多请求接 native/等价直接驻留消费，避免按每 Q/head 重复物化全 KV | compute_batch、原 route/Provider、graph_batch 必要桥 |
 | G02 联合分页 | common接口已实现并有定向原生证据；交付/风险及全部hybrid待验 | 原 multi-queue bindings 接 batch coordinator；native hybrid 接准确 page/layout 与原 region/slot，公开 CPU→GPU→CPU | graph_batch、三个 graph hybrid、原 compute/native 权限桥 |
 | G03 增量 producer 组合 | 待 owner 定界 | 原 exclusive/F2/native waits到更新与读取；精确 dirty 域、成功 ready、idle input 生命周期 | compute_batch、compute/F2、原 native route与graph桥 |
 | G04 量化 KV | 待有限编码选择 | 按成熟实际 cache 编码冻结 payload/scales/layout、quantize append与直接读取，不每步解码完整历史 | compute_ops/batch、实际 Provider/native route |
@@ -59,7 +59,7 @@ Apple/Vulkan 的实际 OS/native 资格。共同验收位置、有效区、shape
 
 G01 已登记[驻留 SDPA 子批](../compute/inference-g01-resident-sdpa.md)：CPU 现有原生 stride
 导入与 dense-only attention qualifier 的差距，Vulkan 原生 fused 核与当前 full-scores lower
-的差距。两 owner 进入 SCOPED；先核 native 支持域再 AUDITED，尚未修改产品或签 G01 完成。
+的差距。两 owner 已依次 SCOPED→AUDITED，四项有限 FIX 固定；尚未修改产品或签 G01 完成。
 
 ## 推进顺序
 

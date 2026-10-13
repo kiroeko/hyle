@@ -1,6 +1,6 @@
 # G01 驻留 SDPA：视图消费与原生 fused 路径
 
-状态：SCOPED，2026-10-13。owner：`compute_provider_ggml`、
+状态：AUDITED，2026-10-13。owner：`compute_provider_ggml`、
 `compute_provider_ggml_vulkan`；baseline：`070609442806ebfe6a0dc8d6594b7388c494f20b`。
 授权与完整目标见[缺口执行总卡](../project/inference-gaps-goal-execution-2026-10.md)。
 本卡先修 G01 中已有 SDPA 的实际消费和成本缺陷，不签整个 G01，也不替代多请求分页及
@@ -30,13 +30,31 @@ SDPA，均保其已有实现和限制；本卡不新增第三方库或自写 att
 
 职责不变：原 Provider 拥有 native 支持域、lower、workspace/ports、错误与 actual retirement；
 Graph/Compute 原 executor、lease 和 Queue 不改。公开 ScaledDotProductAttention/布局不新增
-模型参数或兼容签名。API/算法尚未 AUDITED，产品代码不得写。
+模型参数或兼容签名。SCOPED提交`f65616d2b`保留；下表固定后才允许产品改动。
 
 有限审计：CPU contiguous-depth、非重叠正 strides 的 rank4 view 能否沿 native 导入和 fused
 分支消费；BF16 是否原核直接支持、原 causal mask 与 query cast 的费用；Vulkan fused
 替换时 mask 常量/上传、GQA、输出顺序、dtype 和设备 capability 的全链资格。若需改变
 公开 shape、资源身份或依赖方向，先回本卡定界，不在 qualifier 中偷偷接受未证输入。
-有限 FIX 在 AUDITED 后固定：符合原核的 view admission、原 fused lowering 与对应 consumer。
+有限 FIX 已按实际源码固定如下；其他能力不得顺手扩张。
+
+| FIX | 最终形状与承载 | 验收与负空间 |
+|---|---|---|
+| RS-01 | CPU原SDPA接受rank4 plain、depth连续、外层正的row-major padding strides；原native输入已设置nb，不再强制全dense。原同dtype F32/F16/BF16、两layout、GQA和有效长度语义不变 | 容量cache截短，padding哨兵不参与数学；拒绝depth跳跃/负或重叠strides，不公开whole paged arena |
+| RS-02 | 借锁定CPU ggml flash原核直接读K/V，F16/BF16域覆盖causal/noncausal，F32保现有锁资格。query转换允许O(QHD)，不转换/展开完整KV；causal F16 mask按Q×K显式计费 | 原核depth连续、BF16原vec-dot/to-float资格已在实际锁源码核对；两layout、不同Dqk/Dv和保留原小shape域用oracle反证；不得仅靠if条件称 fused 成功 |
+| RS-03 | Vulkan仅对同F32/F16、BSHD且Dqk/Dv均8倍数的SDPA接原FLASH_ATTN_EXT；Q转F32、K/V保原编码，返回原output顺序/类型。causal mask以原native Fill→DiagMask→Cast F16生成，非causal无mask；实际device supports_op仍冷拒绝无原生资格设备 | Qwen GQA8/2 D256与留出D64/128；保原非8倍数的显式传统lower域，不能CPUfallback或将不同dtype性能相加。mask和query cast计费，避免Hq×Q×K的scores及按Q/H展开KV |
+| RS-04 | Vulkan原typed region在SDPA有实际需求的rank4正row-major padding域接native nb；imports/端口范围仍按ggml_nbytes校验并保原owner。其他operation原qualifier不放宽，非dense输入若被未资格节点读取必须拒绝 | TensorDesc required_bytes/原VkBuffer范围、非零offset、padding、源只读与旧输出寿命；native graph库支持检查不绕过 |
+
+source/static/shared仍原compute/graph产品选择，没有新factor/第三方/FFI/public类型。普通调用
+仍`ScaledDotProductAttention`加TensorDesc；新view支持只为原合法数学提供自然消费，descriptor
+本身不授权页capacity。冷graph/slot身份不改，只有原Provider定向资格和lower；warm native
+submit仍原Queue和lease use，OOM/未支持/失败由原Result/Status路径回滚，借用和关闭合同不变。
+
+具体审计锚点：CPU `create_tensor_input`原nb导入、`supports`1494、lower821、cold mask1646；
+实际锁CPU `ggml-cpu/ops.cpp` flash的depth连续断言及K vec-dot/V to-float、BF16 traits；
+Vulkan `tensor_domain`/`native_tensor`目前dense-only且未设置nb、SDPA lower857、
+`native_storage_impl.h`原device supports_op/owner/range拒绝；锁Vulkan flash19420实际dtype/
+D/device检查。Vulkan新增native stride导入属于RS-04，不能误称已有端到端能力。
 
 不纳入任意负/重叠 strides、任意 attention 特例、quant KV、新 scheduler、量化格式扩展、
 原生分页或全引擎吞吐。这些当期 G 项仍保总卡工作，不因本卡有限收口删除。
