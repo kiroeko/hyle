@@ -10,6 +10,7 @@
 #include <cmath>
 #include <cstring>
 #include <vector>
+#include "hyle/mem/quota_allocator.h"
 namespace {
 namespace c=hyle::compute;
 #if defined(HYLE_G01_APPLE_RAGGED)
@@ -31,7 +32,9 @@ template<class T>void ragged_native_case(unsigned depth,bool causal){
   auto schema=c::BatchSchema::create(cap).value();const std::array<std::int32_t,4> qp{0,1,18,18},kp{0,31,78,78};
   auto layout=schema.version({qp,kp,{},{}}).value();const c::RaggedAttention operation{cap,1.F/std::sqrt(float(depth)),causal};
   auto prepared=n::prepare_ragged_batch(context,layout,operation);ASSERT_TRUE(prepared)<<prepared.error().message();
-  auto program=std::move(*prepared);auto first=program.create_invocation().value(),second=program.create_invocation().value();
+  auto program=std::move(*prepared);
+  hyle::mem::QuotaAllocator denied_metadata(hyle::mem::system_allocator(),0);auto denied=program.create_invocation(denied_metadata.get());ASSERT_FALSE(denied);EXPECT_TRUE(denied.error().IsResourceExhausted());
+  auto first=program.create_invocation().value(),second=program.create_invocation().value();
   auto qd=c::TensorDesc::dense(cap.data_type,std::array<std::int64_t,3>{20,8,depth}).value();
   auto kd=c::TensorDesc::dense(cap.data_type,std::array<std::int64_t,3>{84,2,depth}).value();
   std::vector<T> q(*qd.element_count()),k(*kd.element_count()),v(k.size());

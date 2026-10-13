@@ -1,6 +1,7 @@
 #include <gtest/gtest.h>
 #include "hyle/compute/vulkan_batch.h"
 #include "../../src/compute_route_vulkan/vulkan_program_internal.h"
+#include "../compute_batch/native_vulkan_failure_fixture.h"
 #include <algorithm>
 #include <array>
 
@@ -25,5 +26,18 @@ TEST(VulkanRaggedStructure, FlashPortsStillNameOriginalPackedKvRoots){
     }
   }
   EXPECT_EQ(attention_count,2U);ASSERT_TRUE(context.close().ok());
+}
+TEST(VulkanRaggedStructure, RejectedNativeSuffixRetiresItsAcceptedPrefix){
+  auto context=v::Context::create().value();const c::BatchCapacity cap{.storage=c::BatchStorage::kRagged,.max_requests=2,.max_query_rows=2,.max_kv_rows=4,
+    .max_pages=0,.max_page_refs=0,.query_heads=8,.kv_heads=2,.head_dim=64,.page_size=1};
+  auto schema=c::BatchSchema::create(cap).value();const std::array<std::int32_t,3> qp{0,1,2},kp{0,2,4};auto layout=schema.version({qp,kp,{},{}}).value();
+  auto prepared=v::prepare_ragged_batch(context,layout,{cap,.125F,true});ASSERT_TRUE(prepared)<<prepared.error().message();auto slot=prepared->create_invocation().value();
+  const auto qd=c::TensorDesc::dense(cap.data_type,std::array<std::int64_t,3>{2,8,64}).value();
+  const auto kd=c::TensorDesc::dense(cap.data_type,std::array<std::int64_t,3>{4,2,64}).value();
+  std::vector<std::byte> q(*qd.required_bytes()),k(*kd.required_bytes());const std::array inputs{context.upload(qd,q).value(),context.upload(kd,k).value(),context.upload(kd,k).value()};
+  ASSERT_TRUE(slot.bind(inputs).ok());hyle_f5_vk_failure_fixture::Boundary boundary(context);boundary.fail_at=2;
+  auto submitted=slot.submit();hyle::Status terminal;if(submitted){auto waited=submitted->wait();if(!waited)terminal=waited.error();}else terminal=submitted.error();
+  EXPECT_TRUE(terminal.IsResourceExhausted())<<terminal.message();EXPECT_GE(boundary.accepted,1U);EXPECT_EQ(boundary.submits,2U);
+  if(submitted)*submitted={};EXPECT_TRUE(context.close().ok());
 }
 } // namespace
