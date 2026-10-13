@@ -226,6 +226,18 @@ consumer自有产品代码，排除测试、oracle、准备工具、成熟tokeni
 接口消费章节的退出依据仍是十项及已准入旅程完成。source估计与设计目标不产生新的产品
 授权；剩余glue的真实量在一个同目标prototype上计数并标职责，届时有反例才定向回owner。
 
+### 已识别的接口形状调整是否在当前goal内
+
+**是：目前已识别、一期必需的形状调整均由当前G01–G10承接。** “没有定位到十项外新
+独立机制”不表示现有接口形状都不用改，也不允许只补测试、recipe或薄wrapper代签完成。
+G02已将单Queue入口改成完整LaneBinding；G03仍需producer/精确写域/原生依赖/成功readable
+的受控组合；G06仍需host-known/device-produced、active/delta更新、完整topology/plan复用
+形状；Apple/Vulkan联合分页的准确页权限与generation属于G02/G01 native桥。G04/G05/G07/
+G08按准入编码/数学的有限payload、scale、layout或输出端口定界，G09/G10按实际流水/预算
+consumer定界。该goal的完成条件包含这些真实FIX/BORROW或完整公开ROUTED反证，不只是
+“能算出结果”。实现前仍按真实owner固定有限API/寿命/成本，直接迁移当前consumer，不保
+用户已明确不需要的旧接口兼容。未来具体反例若证实清单漏项，按上面的有限准入门处理。
+
 ## 本次边界
 
 本次只读复核已核对上述公开合同、实现导航与固定 peer 调用，未修改产品/registry、未启动
