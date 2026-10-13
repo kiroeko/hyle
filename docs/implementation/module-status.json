@@ -369,14 +369,9 @@
     },
     {
       "module": "compute_provider_ggml",
-      "state": "CLOSED",
-      "record": "docs/implementation/tasks/compute/compute-graph-macro-normalization.md",
-      "summary": "宏规范 CLOSED：目标facts/显式include/export/直接Core声明、三平台实际编译与三交付完成；原CPU数学、清退与43规则保持；不新签性能赢家。",
-      "candidate": "026d40bcfdde389c9f69b2458b55d8157774ebda",
-      "performance": {
-        "tier": "P0",
-        "evidence": "evidence/correctness/compute-graph-macro-normalization/README.md"
-      }
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/compute/inference-g01-resident-sdpa.md",
+      "summary": "G01 resident SDPA SCOPED: native-compatible rank4 cache views and mature fused attention path, finite consumer/cost qualification; no whole G01 closure."
     },
     {
       "module": "graph_provider_onednn",
@@ -557,14 +552,9 @@
     },
     {
       "module": "compute_provider_ggml_vulkan",
-      "state": "CLOSED",
-      "record": "docs/implementation/tasks/compute/foundation-f5-final-closure.md",
-      "summary": "F5 finite typed paged/ragged and state/Graph seams CLOSED; actual native/reference qualifications, host risks, SDK18 and component contract verified. IREE owner only TSAN configuration fix; original scopes and vendor/capture/performance limits retained.",
-      "candidate": "11c348e404df2c3fc404056ff3a9e885d4d990bc",
-      "performance": {
-        "tier": "P0",
-        "evidence": "evidence/correctness/foundation-f5-final/receipt.json"
-      }
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/compute/inference-g01-resident-sdpa.md",
+      "summary": "G01 resident SDPA SCOPED: native-compatible rank4 cache views and mature fused attention path, finite consumer/cost qualification; no whole G01 closure."
     },
     {
       "module": "compute_ggml_runtime",
