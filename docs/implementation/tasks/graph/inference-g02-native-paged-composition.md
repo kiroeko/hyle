@@ -265,3 +265,32 @@ prepare集、真实CPU query、exact frames、原controller/输出/退休的NJ01
 四owner现按固定产品candidate `1cd0893979e1672a0f6fac98b783a6a3bfcabbca`进入CANDIDATE。
 所有NJ源码/接口/普通成本停止变化，只执行本卡已有未证交付/宿主风险/Windows门；
 发现产品新缺陷先依法回AUDITED，不在candidate上修改API/layout/算法。
+
+
+固定candidate1cd089397的联合宿主san已开始，复用原six native-host树并只追加真实cpu
+route/本两个target，四jobs串行。Apple ASan/UBSan实际public+联合风险通过；Apple
+原TSan FAIL在ResultStorage释放与worker atomic decrement。独立无HYLE/Metal/Sched的
+标准C++ refcount release-RMW+final acquire fence分别两refs与三refs/两producer复现；
+同真实compiler的acq_rel对照和只补final acquire模型均PASS。LLVM21.1.3 compiler-rt
+OpFence模型未实现，原源URL/SHA及独立probe保待封证据。
+
+最终只在验证头副本对真正的atomic counter、仅final drop的原acquire fence做__tsan_acquire；
+原release RMW已合并release clocks，不改intermediate drops。两/三refs独立对照及actual
+Apple public/联合风险TSan均PASS；产品/canonical/cache util头未修改，无suppression。
+保原Metal同command-buffer同步模型与新final-fence模型的准确边界，不冒称未建模TSan
+通过，也不改原util的release-only正常成本来取得san通过。Vulkan ASan/UBSan已PASS，
+TSan仍在原树；首次Vulkan脚本误用不存在的vulkan_context.cc作插桩清单FAIL保，实际
+vulkan_device.cc修正后续跑原build，不把脚本assert当产品错误或重置累计。
+
+四份relocated CPU+Apple/Vulkan static/shared公开graph SDK已排队，须等当前宿主san
+实际终态后才启动；Windows定向compile/link未启动。本轮当前尚未全部资格/CLOSED。
+
+
+新联合six host finals已完成，累计455.074s，见
+[宿主风险](../../../../evidence/correctness/inference-g02-native-page-joint-host-sanitizers/README.md)。
+actual两route public与完整joint risks逐ASan/UBSan/TSan均exit0；Metal回调与真正final
+counter的acquire-fence模型仅验证头副本，无产品/常态成本/cache改写或suppression。
+原无模型AppleTSan FAIL、pureC++两/三refs复现FAIL、acqrel与final-only对照PASS及
+Vulkan插桩清单脚本FAIL全保。原G01产品候选/性能不重测。当前SDK队列Apple static
+实际public math/domain/逐头PASS，shared与Vulkan两份仍在串行；Windows门未启动。
+四owner保持candidate1cd，整个G02/goal仍未收口。
