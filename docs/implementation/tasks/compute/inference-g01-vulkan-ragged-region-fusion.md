@@ -1,7 +1,8 @@
 # G01 Vulkan ragged 原region分段纠正
 
-状态：两owner CANDIDATE，2026-10-13；owner `compute_route_vulkan`、
-`compute_provider_ggml_vulkan`。不可变candidate `0e9e011b8c8ff4a37e2bebc5ca8e4408be5e9368`。
+状态：route AUDITED（收紧cold admission）、Provider CANDIDATE，2026-10-13；owner
+`compute_route_vulkan`、`compute_provider_ggml_vulkan`。已验不可变candidate
+`0e9e011b8c8ff4a37e2bebc5ca8e4408be5e9368`；route末尾规则纠正ddbf598b7待定向验证。
 baseline `dbcba4b15`，原产品280，原Provider单请求3d92有限CLOSED保留。真实trigger是
 已准入两request F16短D64 noncausal [合格P1](../../../../evidence/performance/inference-g01-native-ragged-vulkan-m1-p1/README.md)
 0.8656–0.8885、非劣FAIL；[原NR轮](inference-g01-native-ragged-layout.md)不签完成。
