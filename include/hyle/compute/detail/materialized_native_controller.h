@@ -95,9 +95,13 @@ template<class T,class Policy=MaterializedMetadataPolicy>struct MaterializedNati
     if constexpr(Policy::prepare_native){
       HYLE_ASSIGN_OR_RETURN(auto program,T::prepare_program(*preparation.context,recipe,next.layout(),preparation.workload));
       HYLE_ASSIGN_OR_RETURN(auto prepared_native,T::invocation(program,allocator));
+      // A rejected upload reset must leave the old prepared generation and
+      // its native recipe together. Commit the cold replacement only after
+      // this admission gate succeeds; later accepted failures poison the slot.
+      HYLE_RETURN_IF_ERROR(upload.reset());
       native=std::move(prepared_native);
-    }
-    HYLE_RETURN_IF_ERROR(upload.reset());prepared=false;bound=false;reads={};keys={};values={};version={};
+    }else{HYLE_RETURN_IF_ERROR(upload.reset());}
+    prepared=false;bound=false;reads={};keys={};values={};version={};
     prepared_bank=native_bank==0?1:0;
     const auto transfer=[&]()noexcept->Status{
       const auto lengths=Policy::lengths(recipe);
