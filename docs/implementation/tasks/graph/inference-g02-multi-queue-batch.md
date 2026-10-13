@@ -69,3 +69,7 @@ SCOPED提交084dc9a50、AUDITED提交212950ba1保存授权顺序；产品API到4
 [public_hybrid_batch_consumer.cc](../../../../tests/compute_batch/public_hybrid_batch_consumer.cc)。
 API/算法/直接消费者固定，进入CANDIDATE；三交付/san/P0终审尚未完成，不进入CLOSED，
 也不结案Apple/Vulkan等全部G02。后续若改变产品合同依法退回AUDITED。
+
+Windows selector配置发现hybrid测试owner片段缺失，按独立
+[test-only归属修正](../project/inference-g02-hybrid-test-ownership.md)恢复现有消费者注册；
+不改产品candidate、公共checker或构建核心，原配置失败保留。
