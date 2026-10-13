@@ -1,0 +1,9 @@
+{
+  "product_candidate": "1e9cdfd45307ea4a15b92374377ad2b268203193",
+  "adapter_commit": "4484e3f43ced16781cf04b4d7567e2820e9352e6",
+  "pristine_pin": "ffa4e8b80930029a35991f94e7c8a93cd67730ab",
+  "numerical": "PASS three finite BF16 GQA8/2 shapes max_abs6.11e-5 under unchanged8e-3 bound; readonly pages and actual CPU DLL function address checked",
+  "failures": "Initial original DLL dependency staging + forward-slash DLL_LOAD_DIR loading failures preserved; fixed private loader to preferred native Windows path, no math/tolerance change.",
+  "formal_qualification": "RUNNING elsewhere; this receipt is preflight only, no verdict",
+  "raw_sha256": "e1c0a1eb648a922f27f9fb71c7f4c4f6cc31468a024fa6f41b629283223b0fa6"
+}
