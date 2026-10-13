@@ -509,14 +509,9 @@
     },
     {
       "module": "compute_route_apple",
-      "state": "CLOSED",
-      "record": "docs/implementation/tasks/compute/foundation-f5-final-closure.md",
-      "summary": "F5 finite typed paged/ragged and state/Graph seams CLOSED; actual native/reference qualifications, host risks, SDK18 and component contract verified. IREE owner only TSAN configuration fix; original scopes and vendor/capture/performance limits retained.",
-      "candidate": "11c348e404df2c3fc404056ff3a9e885d4d990bc",
-      "performance": {
-        "tier": "P0",
-        "evidence": "evidence/correctness/foundation-f5-final/receipt.json"
-      }
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/compute/inference-g01-native-ragged-layout.md",
+      "summary": "G01 native ragged NR-01/02/03 SCOPED：packed两request布局沿原MLX View/SDPA/Program直接消费，消除旧Q/head历史物化；已有数学/原F5证据保留，尚未实现。"
     },
     {
       "module": "graph_route_apple",
@@ -531,11 +526,9 @@
     },
     {
       "module": "compute_route_vulkan",
-      "state": "CLOSED",
-      "record": "docs/implementation/tasks/compute/inference-g01-vulkan-resident-terminal.md",
-      "summary": "G01 Vulkan单请求有限RS/NP/RR/VP轮CLOSED：合格port Copy3→0，原数值/寿命/退休、Air三交付/宿主san及原合同P1 PASS；Win仅更新编译，旧FAIL/其他数学/未知成本保留。多请求和整个G01未结案。",
-      "candidate": "3d92eee97a70f7788dfb9bbcda73f6e0f801959f",
-      "performance": {"tier": "P1", "material_margin_pct": 5, "evidence": "evidence/performance/inference-g01-resident-vulkan-direct-ports-m1-p1/receipt.json"}
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/compute/inference-g01-native-ragged-layout.md",
+      "summary": "G01 native ragged NR-01/02/03 SCOPED：packed两request原Plan/View/SDPA和输出组合，实际origin/零KV物化待验；原3d92单请求CLOSED证据保留，尚未实现。"
     },
     {
       "module": "graph_route_vulkan",

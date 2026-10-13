@@ -1,0 +1,37 @@
+# G01 Apple/Vulkan ragged 布局直接消费
+
+状态：SCOPED，2026-10-13；owner `compute_route_apple`、`compute_route_vulkan`。
+baseline `9cfa7b50db652010da5d4d544da9ee01c10644bc`。授权来自当前十项goal；真实
+reopen trigger为两request Q1/17、KV31/47、GQA8/2 D256的packed NHD消费，已有native
+MaterializedBatchProgram按Q/head索引并物化历史，不能满足已准入G01结构目标。
+原Apple F5与Vulkan 3d92有限CLOSED证据不变，原数学/shader/native Work不重开。
+
+本轮只做已有host-owned ragged layout的直接消费，不代替G02精确页、G03 producer、
+G04量化、G05额外语义或G06增长/decode规划复用；这些保留原总目标。主纵切为两变长
+请求native SDPA和packed输出，反偏置为D64 noncausal、empty request与独立slots/旧输出。
+第一资格域沿已有成熟承载：Apple F16/BF16、Vulkan F16，D64/128/256。其他原已准入
+dtype/路线格仍待后续验收，不以本有限子批声称各模式对称或整个G01完成。
+
+拟最终消费形状：`apple/vulkan::prepare_ragged_batch(Context, BatchLayoutVersion,
+BatchAttentionOptions, WorkloadContext)`冷返回原native Program；三inputs是schema固定
+packed容量Q/K/V，单output是本layout实际packed Q rows。options只有scale/causal，不含
+模型policy；布局版本/checked indptr只在冷阶段消费。Program/Invocation/native inputs/
+Results沿原owner与actual retirement，run不扫描metadata、不建图或新Queue/controller。
+布局变化调用显式冷准备；已有Program复用不受同内容新generation影响，G06另验规划费用。
+
+拟有限FIX NR-01：共用已有BatchSchema/完整host layout校验，在各原route内按request
+Slice→Reshape→原SDPA→packed输出Concat生成原Plan/MLX tracing callable。Q0跳过；
+Q>0必须KV>0且causal KV>=Q。原View保持字节origin/strides；不生成Gather、GQA repeat、
+全KV cont/Copy或scores。Concat和query转换只计O(QHD)，原mask仍O(Q×KV)。
+NR-02：原native lowering/actual bound origin对齐冷资格与容量/tail、readonly及views反证，
+不能因API名叫view就签KV零物化。NR-03：原三交付、OOM/unsupported/old result/close/
+actual retirement与公开文档；无兼容wrapper、没有新factor/第三方/构建核心修改。
+
+预声明：两请求独立double oracle、两dtype实际适用域、三depth、causal/noncausal、tail、
+empty/reorder/foreign-invalid layout与资源、两slots/旧输出/原fail retirement；实际native
+graph/dispatch搬运账证明KV不重复物化。source/relocated static/shared，Apple/Vulkan实际
+GPU仅MacBook Air先查硬件/toolchain身份；Windows只定向编译。宿主ASan/UBSan/TSan
+适用范围按原路线限制，GPU driver/private memory UNKNOWN不签0。有限同合同P1在稳定
+candidate后冻结，不能借CPU或旧single P1代签multi。普通selector只对应factor/真实消费者。
+调查/实现/验证各2h检查点，按用户常设授权追加保累计日志，Windows≤4jobs、重型串行。
+当前CPU正式P1独立运行时不启动Air/Windows另一重型run，只允许定界/写canonical源码。
