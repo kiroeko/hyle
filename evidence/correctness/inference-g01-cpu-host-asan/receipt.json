@@ -1,0 +1,132 @@
+{
+  "candidate": "d91a523df9bce21eb81c13d9bf2a8f3f7d3ea80f",
+  "scope": "WSL2 CPU original ggml finite attention/strided cache, ASan address and LSan with halt_on_error=1:detect_leaks=1; four actual layout TU tests, not all CPU ops",
+  "stages": [
+    {
+      "stage": "configure",
+      "command": [
+        "cmake",
+        "-S",
+        "/home/kiro/hyle-f1/sanitizers/source-03242e7723cb",
+        "-B",
+        "/home/kiro/hyle-f1/sanitizers/asan-03242e7723cb"
+      ],
+      "exit_code": 1,
+      "elapsed_seconds": 23.597756935999996,
+      "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g01/cpu-asan-configure-1.log"
+    },
+    {
+      "stage": "configure",
+      "command": [
+        "cmake",
+        "-S",
+        "/home/kiro/hyle-f1/sanitizers/source-03242e7723cb",
+        "-B",
+        "/home/kiro/hyle-f1/sanitizers/asan-03242e7723cb"
+      ],
+      "exit_code": 1,
+      "elapsed_seconds": 0.03412383099998806,
+      "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g01/cpu-asan-configure-2.log"
+    },
+    {
+      "stage": "configure",
+      "command": [
+        "cmake",
+        "-S",
+        "/home/kiro/hyle-f1/sanitizers/source-03242e7723cb",
+        "-B",
+        "/home/kiro/hyle-f1/sanitizers/asan-03242e7723cb",
+        "-DCMAKE_PROJECT_INCLUDE=/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g01/cpu-asan-project.cmake"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 24.621459175000012,
+      "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g01/cpu-asan-configure-3.log"
+    },
+    {
+      "stage": "build",
+      "command": [
+        "cmake",
+        "--build",
+        "/home/kiro/hyle-f1/sanitizers/asan-03242e7723cb",
+        "--target",
+        "g01_cpu_attention",
+        "--parallel",
+        "4"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 48.12670401899999,
+      "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g01/cpu-asan-build-1.log"
+    },
+    {
+      "stage": "run",
+      "command": [
+        "/home/kiro/hyle-f1/sanitizers/asan-03242e7723cb/bin/g01_cpu_attention",
+        "--gtest_filter=GgmlCpuProvider.*Attention*:GgmlCpuProvider.ResidentCache*"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 0.9206054969999968,
+      "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g01/cpu-asan-run-1.log"
+    }
+  ],
+  "instrumented_inputs": [
+    {
+      "directory": "/home/kiro/hyle-f1/sanitizers/asan-03242e7723cb",
+      "command": "/usr/bin/g++-14 -DGGML_USE_CPU -DHYLE_COMPUTE_CPU=1 -DHYLE_COMPUTE_GGML_CPU=1 -DHYLE_COMPUTE_PROVIDER_GGML_BUILD -DHYLE_DETAIL_SANITIZER_ADDRESS=1 -DHYLE_GGML_CPU_F32_FLASH=1 -DHYLE_GGML_CPU_IQ1_EXTENSIONS=1 -DHYLE_GGML_CPU_PROVIDER_VERSION=\\\"ffa4e8b80930029a35991f94e7c8a93cd67730ab+hyle-resource-iq1-bdae1e43311ee486\\\" -DHYLE_STATIC -I/home/kiro/hyle-f1/sanitizers/source-03242e7723cb/include -I/home/kiro/hyle-f1/sanitizers/source-03242e7723cb/src/compute_provider_ggml -I/home/kiro/hyle-f1/sanitizers/source-03242e7723cb/src/compute -I/home/kiro/hyle-f1/sanitizers/source-03242e7723cb/src/compute_ggml_runtime -I/home/kiro/hyle-f1/sanitizers/asan-03242e7723cb/src/compute_ggml_runtime/source-bdae1e43311ee486/src/../include -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Wno-error=mismatched-new-delete -fsanitize=address -fno-omit-frame-pointer -MD -MT src/compute_provider_ggml/CMakeFiles/hyle_compute_provider_ggml.dir/ggml_cpu_provider.cc.o -MF src/compute_provider_ggml/CMakeFiles/hyle_compute_provider_ggml.dir/ggml_cpu_provider.cc.o.d -o src/compute_provider_ggml/CMakeFiles/hyle_compute_provider_ggml.dir/ggml_cpu_provider.cc.o -c /home/kiro/hyle-f1/sanitizers/source-03242e7723cb/src/compute_provider_ggml/ggml_cpu_provider.cc",
+      "file": "/home/kiro/hyle-f1/sanitizers/source-03242e7723cb/src/compute_provider_ggml/ggml_cpu_provider.cc",
+      "output": "src/compute_provider_ggml/CMakeFiles/hyle_compute_provider_ggml.dir/ggml_cpu_provider.cc.o"
+    },
+    {
+      "directory": "/home/kiro/hyle-f1/sanitizers/asan-03242e7723cb",
+      "command": "/usr/bin/g++-14 -DHYLE_COMPUTE_CPU=1 -DHYLE_COMPUTE_GGML_CPU=1 -DHYLE_COMPUTE_ONEDNN=1 -DHYLE_DETAIL_SANITIZER_ADDRESS=1 -DHYLE_IO_HAS_COROUTINE_TRANSPORT=1 -DHYLE_STATIC -I/home/kiro/hyle-f1/sanitizers/source-03242e7723cb/include -isystem /mnt/c/public/tools/hyle-dependencies/v1/sources/googletest-063de7e9578f-162765170ae6/googletest/include -isystem /mnt/c/public/tools/hyle-dependencies/v1/sources/googletest-063de7e9578f-162765170ae6/googletest -O3 -DNDEBUG -std=c++23 -Wno-error=mismatched-new-delete -fsanitize=address -fno-omit-frame-pointer -MD -MT CMakeFiles/g01_cpu_attention.dir/tests/compute_provider_ggml/layout_broadcast_test.cc.o -MF CMakeFiles/g01_cpu_attention.dir/tests/compute_provider_ggml/layout_broadcast_test.cc.o.d -o CMakeFiles/g01_cpu_attention.dir/tests/compute_provider_ggml/layout_broadcast_test.cc.o -c /home/kiro/hyle-f1/sanitizers/source-03242e7723cb/tests/compute_provider_ggml/layout_broadcast_test.cc",
+      "file": "/home/kiro/hyle-f1/sanitizers/source-03242e7723cb/tests/compute_provider_ggml/layout_broadcast_test.cc",
+      "output": "CMakeFiles/g01_cpu_attention.dir/tests/compute_provider_ggml/layout_broadcast_test.cc.o"
+    }
+  ],
+  "raw": [
+    {
+      "path": "cpu-asan-build-1.log",
+      "sha256": "ecf4b796557d4bc6a2a42e40cc55cad58773027c631318a9dc4679608f55de7d"
+    },
+    {
+      "path": "cpu-asan-configure-1.log",
+      "sha256": "3db0689f510ffa9d89b0072c6f9ca2e7ac8f3f305780b4f99ca02403efddf0c9"
+    },
+    {
+      "path": "cpu-asan-configure-2.log",
+      "sha256": "713bd8bcc9e7ce49f24bda41d1caf3f809840ae78a038049ff6ebc35547711d0"
+    },
+    {
+      "path": "cpu-asan-configure-3.log",
+      "sha256": "9626f18fcff38e384309a92e92bad6c3b3db4c33c83a2acaefd3fe8a64e88628"
+    },
+    {
+      "path": "cpu-asan-instrumented-inputs.json",
+      "sha256": "36e8b7aaa26ccfa1cd650a0361d1aeed750f13f310bda072237c25d7071bbde2"
+    },
+    {
+      "path": "cpu-asan-project.cmake",
+      "sha256": "d31e27b9bb9c9a082d7dc2967f8066d2a72a04c2d8c48524124b186a3f1ed991"
+    },
+    {
+      "path": "cpu-asan-result.json",
+      "sha256": "84c648ef0f6f955c067a2e324f69b287498cd868a864679bfdc93b1734a52208"
+    },
+    {
+      "path": "cpu-asan-run-1.log",
+      "sha256": "98765dce5fbc39c9b824ba0013f29aecaeec76c6dbc2dec2849277d6866b793e"
+    },
+    {
+      "path": "cpu-sanitizer-sync.json",
+      "sha256": "dddd7dc4f0661b9176742be5fd5bb1062c79173020a06394fef06bc82fb2d6b3"
+    },
+    {
+      "path": "cpu_san_checks.py",
+      "sha256": "176848586203ab4dd57f105cc43b39cbc633fa79fd94b34470e20bccf324208c"
+    },
+    {
+      "path": "separated-source-review.json",
+      "sha256": "d9025ffd4be17c88057f917f5261bb3089ba8fdc172dab8fc8930b56715ec9ef"
+    }
+  ],
+  "raw_zip_sha256": "bac747229abbac7675f455bcd709f0327b135d02693d2613fd7f456cd227088e"
+}

@@ -101,3 +101,8 @@ offset/padding、source只读、旧输出与独立slots/重放均实跑。生命
 实现从bind修正为submit，未改产品合同；原错误断言保留。normal/strict scalar cache交错
 与双顺序反例也通过。这个有限resident子批进入候选准备，三交付/san/P1未完成，不签
 整个G01。CPU原模块/逐头与默认入口的已过证据仍有效，不额外重跑旧大模型矩阵。
+
+候选验收新增：Vulkan source/static/shared与Win地址ASan/Air UBSan/TSan已经分别实跑
+通过，详细收据见原生精度卡；CPU[WSL ASan/LSan](../../../../evidence/correctness/inference-g01-cpu-host-asan/README.md)
+四个实际attention风险tests通过。CPU UBSan/TSan、普通installed SDK、P1和最终review
+仍待；本卡保持CANDIDATE，完成数仍0/10，不把阶段证据算整个G01完成。
