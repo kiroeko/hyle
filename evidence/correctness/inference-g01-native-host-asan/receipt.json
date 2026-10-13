@@ -1,0 +1,113 @@
+{
+  "candidate": "d91a523df9bce21eb81c13d9bf2a8f3f7d3ea80f",
+  "scope": "MSVC ASan host HYLE objects/consumers; native GPU shader/driver and LSan not instrumented",
+  "stages": [
+    {
+      "stage": "build",
+      "command": [
+        "cmake",
+        "--build",
+        "C:\\h7\\foundation-f5-native-san-vulkan-asan\\build",
+        "--target",
+        "g01_resident",
+        "g01_cache",
+        "--parallel",
+        "4"
+      ],
+      "exit_code": 4294967295,
+      "elapsed_seconds": 184.98399999999674,
+      "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g01\\asan-build-1.log"
+    },
+    {
+      "stage": "build",
+      "command": [
+        "cmake",
+        "--build",
+        "C:\\h7\\foundation-f5-native-san-vulkan-asan\\build",
+        "--target",
+        "g01_resident",
+        "g01_cache",
+        "--parallel",
+        "4"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 73.70299999999406,
+      "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g01\\asan-build-2.log"
+    },
+    {
+      "stage": "resident",
+      "command": [
+        "C:\\h7\\foundation-f5-native-san-vulkan-asan\\build\\g01_resident.exe",
+        "--gtest_filter=VulkanGraph.ResidentAttentionViewsPreserveEffectiveLengthsAndOldResults"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 9.171999999991385,
+      "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g01\\asan-resident-1.log"
+    },
+    {
+      "stage": "cache",
+      "command": [
+        "C:\\h7\\foundation-f5-native-san-vulkan-asan\\build\\g01_cache.exe"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 1.4380000000091968,
+      "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g01\\asan-cache-1.log"
+    }
+  ],
+  "instrumented_inputs": [
+    {
+      "directory": "C:\\h7\\foundation-f5-native-san-vulkan-asan\\build",
+      "command": "\"C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\bin\\Hostx64\\x64\\cl.exe\"  /nologo /TP -DGGML_USE_VULKAN -DHYLE_COMPUTE_PROVIDER_GGML_VULKAN_BUILD -DHYLE_DETAIL_SANITIZER_ADDRESS=1 -DHYLE_STATIC -IC:\\public\\project-hyle\\hyle\\include -IC:\\public\\project-hyle\\hyle\\src\\compute_provider_ggml_vulkan -IC:\\public\\project-hyle\\hyle\\src\\compute_ggml_runtime -IC:\\h7\\foundation-f5-native-san-vulkan-asan\\build\\hyle\\src\\compute_ggml_runtime\\source-3fce1c918f31f38a\\src\\..\\include -external:IC:\\public\\tools\\hyle-dependencies\\v1\\sources\\vulkan_headers-e3b1eec08173-69d6adc9001f\\include -external:W0 /DWIN32 /D_WINDOWS /EHsc /O2 /Ob2 /DNDEBUG -std:c++latest -MD /W4 /permissive- /wd4324 /fsanitize=address /Zi /Zc:__cplusplus /utf-8 /Zc:preprocessor /showIncludes /Fohyle\\src\\compute_provider_ggml_vulkan\\CMakeFiles\\hyle_compute_provider_ggml_vulkan.dir\\region.cc.obj /Fdhyle\\src\\compute_provider_ggml_vulkan\\CMakeFiles\\hyle_compute_provider_ggml_vulkan.dir\\hyle_compute_provider_ggml_vulkan.pdb /FS -c C:\\public\\project-hyle\\hyle\\src\\compute_provider_ggml_vulkan\\region.cc",
+      "file": "C:/public/project-hyle/hyle/src/compute_provider_ggml_vulkan/region.cc",
+      "output": "hyle/src/compute_provider_ggml_vulkan/CMakeFiles/hyle_compute_provider_ggml_vulkan.dir/region.cc.obj"
+    },
+    {
+      "directory": "C:\\h7\\foundation-f5-native-san-vulkan-asan\\build",
+      "command": "\"C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\bin\\Hostx64\\x64\\cl.exe\"  /nologo /TP -DHYLE_COMPUTE_VULKAN=1 -DHYLE_DETAIL_SANITIZER_ADDRESS=1 -DHYLE_IO_HAS_COROUTINE_TRANSPORT=1 -DHYLE_STATIC -IC:\\public\\project-hyle\\hyle\\include -external:IC:\\public\\tools\\hyle-dependencies\\v1\\sources\\vulkan_headers-e3b1eec08173-69d6adc9001f\\include -external:IC:\\public\\tools\\hyle-dependencies\\v1\\sources\\googletest-063de7e9578f-162765170ae6\\googletest\\include -external:IC:\\public\\tools\\hyle-dependencies\\v1\\sources\\googletest-063de7e9578f-162765170ae6\\googletest -external:W0 /DWIN32 /D_WINDOWS /EHsc /O2 /Ob2 /DNDEBUG -std:c++latest -MD /W4 /WX /wd4324 /utf-8 /fsanitize=address /Zi /Zc:__cplusplus /Zc:preprocessor /showIncludes /FoCMakeFiles\\g01_resident.dir\\C_\\public\\project-hyle\\hyle\\tests\\graph_route_vulkan\\mature_tensor_test.cc.obj /FdCMakeFiles\\g01_resident.dir\\ /FS -c C:\\public\\project-hyle\\hyle\\tests\\graph_route_vulkan\\mature_tensor_test.cc",
+      "file": "C:/public/project-hyle/hyle/tests/graph_route_vulkan/mature_tensor_test.cc",
+      "output": "CMakeFiles/g01_resident.dir/C_/public/project-hyle/hyle/tests/graph_route_vulkan/mature_tensor_test.cc.obj"
+    },
+    {
+      "directory": "C:\\h7\\foundation-f5-native-san-vulkan-asan\\build",
+      "command": "\"C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\bin\\Hostx64\\x64\\cl.exe\"  /nologo /TP -DGGML_USE_VULKAN -DHYLE_COMPUTE_VULKAN=1 -DHYLE_DETAIL_SANITIZER_ADDRESS=1 -DHYLE_IO_HAS_COROUTINE_TRANSPORT=1 -DHYLE_STATIC -IC:\\public\\project-hyle\\hyle\\src\\compute_provider_ggml_vulkan -IC:\\public\\project-hyle\\hyle\\include -IC:\\h7\\foundation-f5-native-san-vulkan-asan\\build\\hyle\\src\\compute_ggml_runtime\\source-3fce1c918f31f38a\\src\\..\\include -external:IC:\\public\\tools\\hyle-dependencies\\v1\\sources\\vulkan_headers-e3b1eec08173-69d6adc9001f\\include -external:IC:\\public\\tools\\hyle-dependencies\\v1\\sources\\googletest-063de7e9578f-162765170ae6\\googletest\\include -external:IC:\\public\\tools\\hyle-dependencies\\v1\\sources\\googletest-063de7e9578f-162765170ae6\\googletest -external:W0 /DWIN32 /D_WINDOWS /EHsc /O2 /Ob2 /DNDEBUG -std:c++latest -MD /W4 /WX /wd4324 /utf-8 /fsanitize=address /Zi /Zc:__cplusplus /Zc:preprocessor /showIncludes /FoCMakeFiles\\g01_cache.dir\\C_\\public\\project-hyle\\hyle\\tests\\compute_provider_ggml_vulkan\\attention_cache_test.cc.obj /FdCMakeFiles\\g01_cache.dir\\ /FS -c C:\\public\\project-hyle\\hyle\\tests\\compute_provider_ggml_vulkan\\attention_cache_test.cc",
+      "file": "C:/public/project-hyle/hyle/tests/compute_provider_ggml_vulkan/attention_cache_test.cc",
+      "output": "CMakeFiles/g01_cache.dir/C_/public/project-hyle/hyle/tests/compute_provider_ggml_vulkan/attention_cache_test.cc.obj"
+    }
+  ],
+  "test_maintenance": {
+    "file": "tests/compute_provider_ggml_vulkan/attention_cache_test.cc",
+    "sha256": "54cb49a32a17bd971f97043f5ed2024b063e364e761c0eacbf134c1cb4b0893f",
+    "reason": "two additional test-only domain/OOM cases; immutable product unchanged"
+  },
+  "raw": [
+    {
+      "path": "asan-build-1.log",
+      "sha256": "87f7b24d3ecbd07be46013629e800f951bf1c030f35763517728110015b3c0f1"
+    },
+    {
+      "path": "asan-build-2.log",
+      "sha256": "1195546767f282850fe1a9d51b55d5c9d9e9c77153f32f63f335f697baba56e5"
+    },
+    {
+      "path": "asan-cache-1.log",
+      "sha256": "e0a8a1354284a324b506c429e4098bcdd2fd7325bce947db819231e6b5ff981f"
+    },
+    {
+      "path": "asan-instrumented-inputs.json",
+      "sha256": "70eedeb294eaa9e0526685a1f2f9ab2de7864e3b98c43f431830e1ea5424209a"
+    },
+    {
+      "path": "asan-resident-1.log",
+      "sha256": "8ff08b29061e60fd57f901abd68d0c3e235d9f917c01b39d05cf288d1b971952"
+    },
+    {
+      "path": "asan-result.json",
+      "sha256": "2873fd94c30053bddeaef42c6762b86f820fc508450ee8b9b3b55b85573a4a74"
+    },
+    {
+      "path": "asan_checks.py",
+      "sha256": "9f80f55f62c6f63bb99556b7f1e3c4b77af25d261533f972f110772744e7d775"
+    }
+  ],
+  "raw_zip_sha256": "ab767f59cd703e487ffff003ca826fb54d4d008f35f476bed8448980bbfc54e9"
+}

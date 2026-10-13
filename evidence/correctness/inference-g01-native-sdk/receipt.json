@@ -1,0 +1,318 @@
+{
+  "candidate": "d91a523df9bce21eb81c13d9bf2a8f3f7d3ea80f",
+  "scope": "Vulkan-only actual relocated installed static/shared public resident source consumer, no HYLE private APIs; not all G01/G02 closure",
+  "results": {
+    "static": {
+      "candidate": "d91a523df9bce21eb81c13d9bf2a8f3f7d3ea80f",
+      "mode": "static",
+      "producer": "C:\\h7\\w-vulkan\\selected-graph\\static-sdk-build",
+      "prefix": "C:\\h7\\inference-g01-static-sdk\\relocated",
+      "consumer": "copied public Graph Vulkan resident test, no private HYLE APIs",
+      "stages": [
+        {
+          "stage": "configure",
+          "command": [
+            "cmake",
+            "-S",
+            "C:\\public\\project-hyle\\hyle",
+            "-B",
+            "C:\\h7\\w-vulkan\\selected-graph\\static-sdk-build",
+            "-DHYLE_STATIC=ON",
+            "-DHYLE_COMPONENTS=compute;graph",
+            "-DHYLE_COMPUTE_ROUTES=vulkan",
+            "-DHYLE_BUILD_TESTS=OFF",
+            "-DHYLE_INSTALL=ON",
+            "-DHYLE_DEP_SOURCE_CACHE=C:/public/tools/hyle-dependencies/v1",
+            "-DVulkan_INCLUDE_DIR=C:/public/tools/hyle-vulkan/1.4.357.0/include",
+            "-DVulkan_LIBRARY=C:/public/tools/hyle-vulkan/1.4.357.0/Lib/vulkan-1.lib",
+            "-DVulkan_GLSLC_EXECUTABLE=C:/public/tools/hyle-vulkan/1.4.357.0/Bin/glslc.exe",
+            "-DSPIRV-Headers_DIR=C:/public/tools/hyle-vulkan/1.4.357.0/Lib/cmake/SPIRV-Headers"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 74.375,
+          "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g01\\static-sdk-configure-1.log"
+        },
+        {
+          "stage": "producer-build",
+          "command": [
+            "cmake",
+            "--build",
+            "C:\\h7\\w-vulkan\\selected-graph\\static-sdk-build",
+            "--target",
+            "hyle_graph_route_vulkan",
+            "hyle_graph_batch",
+            "--parallel",
+            "4"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 106.79700000000594,
+          "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g01\\static-sdk-producer-build-1.log"
+        },
+        {
+          "stage": "install",
+          "command": [
+            "cmake",
+            "--install",
+            "C:\\h7\\w-vulkan\\selected-graph\\static-sdk-build",
+            "--prefix",
+            "C:\\h7\\inference-g01-static-sdk\\staging"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 0.7649999999994179,
+          "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g01\\static-sdk-install-1.log"
+        },
+        {
+          "stage": "consumer-configure",
+          "command": [
+            "cmake",
+            "-S",
+            "C:\\h7\\inference-g01-static-sdk\\consumer-source",
+            "-B",
+            "C:\\h7\\inference-g01-static-sdk\\consumer-build",
+            "-G",
+            "Ninja",
+            "-DCMAKE_BUILD_TYPE=Release",
+            "-DCMAKE_PREFIX_PATH=C:\\h7\\inference-g01-static-sdk\\relocated",
+            "-DCMAKE_CXX_COMPILER=C:/Program Files/Microsoft Visual Studio/18/Enterprise/VC/Tools/MSVC/14.50.35717/bin/Hostx64/x64/cl.exe",
+            "-DCMAKE_CXX_FLAGS=/DWIN32 /D_WINDOWS /GR /EHsc",
+            "-DCMAKE_CXX_FLAGS_RELEASE=/O2 /Ob2 /DNDEBUG"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 1.875,
+          "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g01\\static-sdk-consumer-configure-1.log"
+        },
+        {
+          "stage": "consumer-build",
+          "command": [
+            "cmake",
+            "--build",
+            "C:\\h7\\inference-g01-static-sdk\\consumer-build",
+            "--target",
+            "resident",
+            "--parallel",
+            "4"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 4.281999999991967,
+          "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g01\\static-sdk-consumer-build-1.log"
+        },
+        {
+          "stage": "run",
+          "command": [
+            "C:\\h7\\inference-g01-static-sdk\\consumer-build\\resident.exe",
+            "--gtest_filter=VulkanGraph.ResidentAttentionViewsPreserveEffectiveLengthsAndOldResults"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 1.7180000000080327,
+          "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g01\\static-sdk-run-1.log"
+        }
+      ]
+    },
+    "shared": {
+      "candidate": "d91a523df9bce21eb81c13d9bf2a8f3f7d3ea80f",
+      "mode": "shared",
+      "producer": "C:\\h7\\inference-g01-native-vulkan\\build",
+      "prefix": "C:\\h7\\inference-g01-shared-sdk\\relocated",
+      "consumer": "copied public Graph Vulkan resident test, no private HYLE APIs",
+      "stages": [
+        {
+          "stage": "producer-build",
+          "command": [
+            "cmake",
+            "--build",
+            "C:\\h7\\inference-g01-native-vulkan\\build",
+            "--target",
+            "hyle_graph_route_vulkan",
+            "hyle_graph_batch",
+            "--parallel",
+            "4"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 0.28100000000267755,
+          "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g01\\shared-sdk-producer-build-1.log"
+        },
+        {
+          "stage": "install",
+          "command": [
+            "cmake",
+            "--install",
+            "C:\\h7\\inference-g01-native-vulkan\\build",
+            "--prefix",
+            "C:\\h7\\inference-g01-shared-sdk\\staging"
+          ],
+          "exit_code": 1,
+          "elapsed_seconds": 0.3120000000053551,
+          "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g01\\shared-sdk-install-1.log"
+        },
+        {
+          "stage": "remaining-export-build",
+          "command": [
+            "cmake",
+            "--build",
+            "C:\\h7\\inference-g01-native-vulkan\\build",
+            "--target",
+            "hyle_compute_state",
+            "--parallel",
+            "4"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 1.235000000000582,
+          "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g01\\shared-sdk-remaining-export-build-1.log"
+        },
+        {
+          "stage": "install",
+          "command": [
+            "cmake",
+            "--install",
+            "C:\\h7\\inference-g01-native-vulkan\\build",
+            "--prefix",
+            "C:\\h7\\inference-g01-shared-sdk\\staging"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 0.6719999999913853,
+          "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g01\\shared-sdk-install-2.log"
+        },
+        {
+          "stage": "consumer-configure",
+          "command": [
+            "cmake",
+            "-S",
+            "C:\\h7\\inference-g01-shared-sdk\\consumer-source",
+            "-B",
+            "C:\\h7\\inference-g01-shared-sdk\\consumer-build",
+            "-G",
+            "Ninja",
+            "-DCMAKE_BUILD_TYPE=Release",
+            "-DCMAKE_PREFIX_PATH=C:\\h7\\inference-g01-shared-sdk\\relocated",
+            "-DCMAKE_CXX_COMPILER=C:/Program Files/Microsoft Visual Studio/18/Enterprise/VC/Tools/MSVC/14.50.35717/bin/Hostx64/x64/cl.exe",
+            "-DCMAKE_CXX_FLAGS=/DWIN32 /D_WINDOWS /GR /EHsc",
+            "-DCMAKE_CXX_FLAGS_RELEASE=/O2 /Ob2 /DNDEBUG"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 2.0939999999973224,
+          "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g01\\shared-sdk-consumer-configure-1.log"
+        },
+        {
+          "stage": "consumer-build",
+          "command": [
+            "cmake",
+            "--build",
+            "C:\\h7\\inference-g01-shared-sdk\\consumer-build",
+            "--target",
+            "resident",
+            "--parallel",
+            "4"
+          ],
+          "exit_code": 2,
+          "elapsed_seconds": 1.9530000000086147,
+          "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g01\\shared-sdk-consumer-build-1.log"
+        },
+        {
+          "stage": "consumer-build",
+          "command": [
+            "cmake",
+            "--build",
+            "C:\\h7\\inference-g01-shared-sdk\\consumer-build",
+            "--target",
+            "resident",
+            "--parallel",
+            "4"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 4.264999999999418,
+          "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g01\\shared-sdk-consumer-build-2.log"
+        },
+        {
+          "stage": "run",
+          "command": [
+            "C:\\h7\\inference-g01-shared-sdk\\consumer-build\\resident.exe",
+            "--gtest_filter=VulkanGraph.ResidentAttentionViewsPreserveEffectiveLengthsAndOldResults"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 2.437999999994645,
+          "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g01\\shared-sdk-run-1.log"
+        }
+      ]
+    }
+  },
+  "test_oracle_adaptation": "copied candidate SIMD types.h only as private test bit-carrier header; independent encoder/decoder and numerical bounds unchanged; public product include/link paths exclusively installed SDK",
+  "raw": [
+    {
+      "path": "sdk_checks.py",
+      "sha256": "2e424d3d6f57eb3eaf5e1c0cafce0d21176186487d17ddb9905810b7c4f42ba8"
+    },
+    {
+      "path": "shared-sdk-consumer-build-1.log",
+      "sha256": "547a6dbf2065ffdd64569abf358cb2b45ab2de5fe7257ed12e1900d6442abc10"
+    },
+    {
+      "path": "shared-sdk-consumer-build-2.log",
+      "sha256": "198facaa3b1cd3d392ba04185e3f65c233cf095f7110a300a46660977026ffeb"
+    },
+    {
+      "path": "shared-sdk-consumer-configure-1.log",
+      "sha256": "5d19bd54c5caaee06822c6c42addf193100700ca40a8a5e5fc8aaae664ea36c7"
+    },
+    {
+      "path": "shared-sdk-consumer-inputs.json",
+      "sha256": "a8828553b1b48c98124fff7ef636e639971eda2535769dd1903caaa11511ddc8"
+    },
+    {
+      "path": "shared-sdk-install-1.log",
+      "sha256": "da04cb32bc6e5ce04a75e9971a3b4a6390a96c03b8612a0fae3db1ac775beb4e"
+    },
+    {
+      "path": "shared-sdk-install-2.log",
+      "sha256": "b0d468e51f8cc3bc5a8524667f677b5685d5db109a19ce50cde3c1cbad184822"
+    },
+    {
+      "path": "shared-sdk-producer-build-1.log",
+      "sha256": "87d2ae90082512934b3e683caf0d4d0bffecd57024a4ae7d9694449e00207d33"
+    },
+    {
+      "path": "shared-sdk-remaining-export-build-1.log",
+      "sha256": "883906a1bbd5a38517d2150a56056f78ef445efaa747807931f9de111df0d7f6"
+    },
+    {
+      "path": "shared-sdk-result.json",
+      "sha256": "0ea0db15028f87247d05767470fcf506e7eae9f3a57d2a03f9833be80e5e4a12"
+    },
+    {
+      "path": "shared-sdk-run-1.log",
+      "sha256": "f7f1c5b4bd23ac76cd11acb73e619d2d99bed1539b5e32a209c103748da91e1d"
+    },
+    {
+      "path": "static-sdk-configure-1.log",
+      "sha256": "f784172589a420db4367bfad4e0d6fa46d766bede49acfb1a9b62665fe654bf3"
+    },
+    {
+      "path": "static-sdk-consumer-build-1.log",
+      "sha256": "edf28f8fe4c6c7ebdafba2b889b98d0c8ab4e0f11d1ac47c1975a7e626b4d064"
+    },
+    {
+      "path": "static-sdk-consumer-configure-1.log",
+      "sha256": "9e2ffa8f072169435f3b284764906eba738c9f684339fe5241c3d566217018fe"
+    },
+    {
+      "path": "static-sdk-consumer-inputs.json",
+      "sha256": "a8828553b1b48c98124fff7ef636e639971eda2535769dd1903caaa11511ddc8"
+    },
+    {
+      "path": "static-sdk-install-1.log",
+      "sha256": "cc0c1a7dfbaed83c12f8508f2bcc69a4c2f4127da6ee2c219b8289bcdadc54e7"
+    },
+    {
+      "path": "static-sdk-producer-build-1.log",
+      "sha256": "5a53ae66545abea0240fdfa7692a230d43abb03ab8c9b442a83e0ebba00680e7"
+    },
+    {
+      "path": "static-sdk-result.json",
+      "sha256": "d90bfd779de932bd791aff5d0d7b97d8c134c75a0134a3036fb12acbda1c82cb"
+    },
+    {
+      "path": "static-sdk-run-1.log",
+      "sha256": "325106a9c566311eab60a37601f2e0516f5e35e94297b9e3ac6c09b1b28b3b68"
+    }
+  ],
+  "raw_zip_sha256": "859a070a2e4876734b512278562a0b01873aea64bfaf6418779bfcb3c2a6a825"
+}

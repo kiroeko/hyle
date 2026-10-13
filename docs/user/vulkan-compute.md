@@ -18,6 +18,15 @@ Windows和Air M4/MoltenVK的source/static/shared已验证普通Direct/Graph代�
 
 固定模型画像的当前片段支持、拒绝与数值限制统一见[四路线覆盖表](model-fragment-coverage.md)。
 
+当前驻留SDPA有限高效档为同F32/F16、BSHD、同D64/128/256，GQA/MQA头关系沿公共
+描述检查。外层正row-major padding、连续depth可用有效长度的tensor view直接读取，
+不会按每个Q/head重复物化全部KV。该档借原全F32 scalar flash shader，保持F32输入和
+概率的精度；F32 accumulator本身不足以防止原native half内部缩窄。必要query转换、
+causal `Q×K` mask与float shared scratch仍是真成本，没有capture或全dtype/shape吞吐
+宣称。其他既有SDPA档保其原承载/费用，不因此签arbitrary page-table或整G01完成。
+当前交付资格与后续风险/性能门见
+[驻留SDPA活动卡](../implementation/tasks/compute/inference-g01-resident-sdpa.md)。
+
 ## 构建与运行条件
 
 源码构建需要 C++23、Python 3、glslangValidator/glslang，以及 Vulkan SDK 提供的 glslc、

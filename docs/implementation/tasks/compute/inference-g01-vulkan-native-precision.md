@@ -67,3 +67,10 @@ selector因两个lock内容hash变化给全局保守计划，原plan与逐depend
 未运行global rows写PASS。公共selector/构建/性能工具未改；四路本机编译，无大模型run。
 source正确性已实跑；[候选证据](../../../../evidence/correctness/inference-g01-native-precision/README.md)
 集中记录。candidate三交付/san/P1与最终review仍待完成，不签CLOSED。
+
+candidate的Vulkan source与[relocated static/shared SDK](../../../../evidence/correctness/inference-g01-native-sdk/README.md)
+公开旅程已通过；安装/测试helper依赖的原FAIL保留，非产品依赖没有被强行下沉。适用
+san/OOM、CPU其余交付、P1与终审仍未完成。后续追加test-only非法native域反例不改candidate。
+Windows[宿主地址ASan](../../../../evidence/correctness/inference-g01-native-host-asan/README.md)
+和新增非法D/零quota回滚反例已通过；GTest插桩不匹配的原FAIL保留，未关闭annotations。
+GPU/driver与MSVC LSan限制不改；Air UBSan/TSan及CPU风险/交付、P1和终审继续待验。

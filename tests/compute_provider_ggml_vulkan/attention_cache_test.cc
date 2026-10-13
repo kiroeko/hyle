@@ -14,6 +14,65 @@ namespace n = hyle::compute::ggml_vulkan::detail;
 namespace b = hyle::compute::ggml_vulkan::bridge;
 
 TEST(GgmlVulkanAttention,
+     TaggedNativeDomainRejectsUnqualifiedDepthBeforeExecution) {
+  auto device = n::NativeDevice::create();
+  ASSERT_TRUE(device) << device.error().message();
+  auto active = device->activate();
+  for (const auto depth : {8, 72, 512}) {
+    auto arena =
+        n::MetadataArena::for_graph(8, 16, hyle::mem::system_allocator());
+    ASSERT_TRUE(arena) << arena.error().message();
+    auto *context = arena->get();
+    auto *q = ggml_new_tensor_4d(context, GGML_TYPE_F32, depth, 1, 2, 1);
+    auto *k = ggml_new_tensor_4d(context, GGML_TYPE_F32, depth, 31, 2, 1);
+    auto *v = ggml_new_tensor_4d(context, GGML_TYPE_F32, depth, 31, 2, 1);
+    auto *output =
+        ggml_flash_attn_ext(context, q, k, v, nullptr, 0.125F, 0.F, 0.F);
+    ASSERT_TRUE(ggml_prec_set_acc(output, GGML_PREC_F32));
+    output->op_params[b::kFlashAttentionMathSlot] = b::kFlashAttentionFullF32;
+    for (auto *input : {q, k, v})
+      ggml_set_input(input);
+    ggml_set_output(output);
+    auto *graph = ggml_new_graph_custom(context, 16, false);
+    ggml_build_forward_expand(graph, output);
+    auto rejected = n::NativeGraph::allocate(*device, std::move(*arena), graph);
+    EXPECT_FALSE(rejected) << "native full-F32 tag admitted depth " << depth;
+    if (!rejected)
+      EXPECT_EQ(rejected.error().code(), hyle::StatusCode::Unimplemented);
+  }
+}
+
+TEST(GgmlVulkanAttention,
+     TaggedColdResourceExhaustionRollsBackOwnedGraphStorage) {
+  hyle::mem::QuotaAllocator quota(hyle::mem::system_allocator(), 0);
+  n::NativeOptions options;
+  options.quota = &quota;
+  auto device = n::NativeDevice::create(options);
+  ASSERT_TRUE(device) << device.error().message();
+  auto active = device->activate();
+  auto arena =
+      n::MetadataArena::for_graph(8, 16, hyle::mem::system_allocator());
+  ASSERT_TRUE(arena) << arena.error().message();
+  auto *context = arena->get();
+  auto *q = ggml_new_tensor_4d(context, GGML_TYPE_F32, 64, 1, 2, 1);
+  auto *k = ggml_new_tensor_4d(context, GGML_TYPE_F32, 64, 31, 2, 1);
+  auto *v = ggml_new_tensor_4d(context, GGML_TYPE_F32, 64, 31, 2, 1);
+  auto *output =
+      ggml_flash_attn_ext(context, q, k, v, nullptr, 0.125F, 0.F, 0.F);
+  ASSERT_TRUE(ggml_prec_set_acc(output, GGML_PREC_F32));
+  output->op_params[b::kFlashAttentionMathSlot] = b::kFlashAttentionFullF32;
+  for (auto *input : {q, k, v})
+    ggml_set_input(input);
+  ggml_set_output(output);
+  auto *graph = ggml_new_graph_custom(context, 16, false);
+  ggml_build_forward_expand(graph, output);
+  auto rejected = n::NativeGraph::allocate(*device, std::move(*arena), graph);
+  ASSERT_FALSE(rejected);
+  EXPECT_EQ(rejected.error().code(), hyle::StatusCode::ResourceExhausted);
+  EXPECT_EQ(quota.used(), 0U);
+}
+
+TEST(GgmlVulkanAttention,
      FullF32AndOriginalScalarPipelinesStayDistinctInBothOrders) {
   // N=1/MHA makes both modes select the same scalar tiles. Only the precision
   // key can distinguish the original half-internal shader from full F32.
