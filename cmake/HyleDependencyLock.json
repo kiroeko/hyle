@@ -927,7 +927,7 @@
           {
             "root": "hyle",
             "path": "third_party/ggml_runtime/NOTICE.md",
-            "sha256": "260c3882f6833eda067f34825cb926c117ed7da4c323cb3a7e56537002e712af"
+            "sha256": "6c160b84778a060f337764c71c92a9fd542cf3012c409940ecbe663827f5c6bd"
           }
         ]
       }
@@ -1053,7 +1053,7 @@
       },
       "vendored": {
         "path": "third_party/ggml_cpu_runtime",
-        "tree_sha256": "69b178630dcd8024fe00f9823946754d6a39ed82544ca1f5a2e58ec39e0a7517"
+        "tree_sha256": "61846e7aa3af99c4749da233ed6552b38304ffe02f07650f8ea7d962a4daa810"
       },
       "license": {
         "expression": "MIT",
@@ -1066,7 +1066,7 @@
           {
             "root": "hyle",
             "path": "third_party/ggml_cpu_runtime/NOTICE.md",
-            "sha256": "c36ce564f4d5ee5dff9d198674f3a23c7918fd2380c0e2c0b3231b2471cd806a"
+            "sha256": "7d3f0960be54cdd1f31d0bf00aadf99548d1c58e555087926490664c4cc3eda5"
           }
         ]
       }

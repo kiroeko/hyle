@@ -22,3 +22,11 @@ Original sources:
 
 - https://github.com/ggml-org/ggml/tree/ffa4e8b80930029a35991f94e7c8a93cd67730ab
 - https://github.com/unslothai/llama.cpp/tree/46cbf0e95786fe8f5b7c0e86d57aaf8f8eceea7f/ggml
+# CPU paged-address integration
+
+Private tagged batch graphs also borrow the original flash attention math with
+an owned I32 physical page table. Only effective K/V row counts and four native
+K/V read addresses change; vector dot products, tiled GEMM, online softmax and
+split reduction remain upstream. Ordinary untagged attention has no page table.
+The same address contexts are authenticated on the mixed 456172 core so the
+existing CPU IQ1 manifest composition deduplicates these shared edits.
