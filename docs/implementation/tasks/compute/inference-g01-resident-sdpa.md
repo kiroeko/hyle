@@ -124,3 +124,8 @@ static编译与Air原oracle/稳定重放，覆盖decode、长prefill和留出。
 相同F32精度和Program输出寿命；首用scratch增长单列。对照stride/alias及私有配置的原FAIL
 保留，产品candidate不变。这里只是采样前的数学/形状预检；统一仪器合同、A/A、双顺序/
 placement与正式controls仍未完成，不能据此签P1或CLOSED。
+
+采样前合同细化：现有nanobench runner v1实际只准5%的practical/non-inferiority门；不为
+本模块重写仪器。原卡10%非劣预算保留，先按更严格的5%合同验收；5% FAIL不会被模块
+改名PASS，真实方向/区间和原FAIL保持。正式样本按原n=15停止/追加规则，A/A先验检查
+使用现有5%偏置/10%gross instability界线；不能由原oracle预检推导性能资格。

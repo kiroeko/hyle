@@ -7,11 +7,17 @@
 #include <cmath>
 #include <cstdio>
 #include <cstdlib>
+#include <filesystem>
+#include <fstream>
 #include <memory>
 #include <nanobench.h>
 #include <span>
 #include <string>
 #include <vector>
+
+#if HYLE_RESIDENT_PLACEMENT
+extern "C" int g01_resident_placement_prefix(int);
+#endif
 
 namespace {
 namespace c = hyle::compute;
@@ -118,6 +124,14 @@ struct Harness {
     options.loader_path = HYLE_RESIDENT_VULKAN_LOADER;
 #endif
     context = take(v::Context::create(options));
+    const auto &facts = context.environment();
+    std::fprintf(stderr,
+                 "# RESIDENT_ENV vendor=%u device=%s driver=%s "
+                 "driver_version=%u api=%u subgroup=%u shared=%u ggml=%s\n",
+                 facts.vendor_id, facts.device_name.c_str(),
+                 facts.driver_name.c_str(), facts.driver_version,
+                 facts.api_version, facts.subgroup_size,
+                 facts.shared_memory_bytes, facts.ggml_revision.c_str());
     inputs[0] = take(
         context.upload(data.query, std::as_bytes(std::span(data.input[0]))));
     for (int port : {1, 2}) {
@@ -254,7 +268,11 @@ void measure(int rows, int keys, int depth, bool causal, bool verify_only) {
                         run_candidate);
 }
 } // namespace
-int main() {
+int main(int argc, char **argv) {
+  (void)argc;
+#if HYLE_RESIDENT_PLACEMENT
+  nb::doNotOptimizeAway(g01_resident_placement_prefix(11));
+#endif
   const auto qos = hyle::bench::perf::configure_thread_qos();
   const auto affinity =
       hyle::bench::perf::configure_thread_affinity("HYLE_PERF_CALLER_CPU");
@@ -273,13 +291,29 @@ int main() {
   priority = std::to_string(actual_priority);
 #endif
   const bool verify_only = !env("HYLE_BENCH_VERIFY_ONLY").empty();
-  std::fprintf(stderr,
-               "# HYLE_RESIDENT_RUN run_nonce=%s apple_qos=%s qos_ok=%s "
-               "affinity_topology=%s caller_cpu=%s affinity_ok=%s "
-               "parent_mask=%s priority=%s verify_only=%d\n",
-               hyle::bench::perf::run_nonce(), qos.name, qos.ok,
-               affinity.topology, affinity.cpu, affinity.ok,
-               parent_mask.c_str(), priority.c_str(), verify_only);
+  if (!verify_only && env("HYLE_BENCH_AA_ROUTE").empty() &&
+      !env("HYLE_PERF_RUN_NONCE").empty()) {
+    std::string ready;
+    std::ifstream(std::filesystem::absolute(argv[0]).parent_path() /
+                  "g01_resident_aa.ready") >>
+        ready;
+    if (ready != "PASS")
+      fail("finite workload A/A has not passed for this build");
+  }
+  std::fprintf(
+      stderr,
+      "# HYLE_RESIDENT_RUN run_nonce=%s apple_qos=%s qos_ok=%s "
+      "affinity_topology=%s caller_cpu=%s affinity_ok=%s "
+      "parent_mask=%s priority=%s verify_only=%d placement=%d "
+      "execution_order=%s allocation_order=%s aa_route=%s\n",
+      hyle::bench::perf::run_nonce(), qos.name, qos.ok, affinity.topology,
+      affinity.cpu, affinity.ok, parent_mask.c_str(), priority.c_str(),
+      verify_only, HYLE_RESIDENT_PLACEMENT,
+      env("HYLE_BENCH_RIVAL_FIRST").empty() ? "candidate-first" : "peer-first",
+      env("HYLE_BENCH_PEER_ALLOCATION_FIRST").empty() ? "candidate-first"
+                                                      : "peer-first",
+      env("HYLE_BENCH_AA_ROUTE").empty() ? "none"
+                                         : env("HYLE_BENCH_AA_ROUTE").c_str());
   measure(1, 1024, 256, true, verify_only);
   measure(128, 1024, 256, true, verify_only);
   measure(17, 257, 64, false, verify_only);

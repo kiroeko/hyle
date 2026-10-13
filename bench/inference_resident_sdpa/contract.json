@@ -1,0 +1,539 @@
+{
+  "schema": "hyle.perf.contract/v1",
+  "id": "inference-resident-vulkan-m1-p1-v1",
+  "module": "compute_provider_ggml_vulkan",
+  "claim": "Finite strict F32 resident SDPA decode/prefill/holdout through ordinary Graph versus pinned independent original full-F32 flash with same ownership/completion, original split-K and mask-opt. M1 Air engineering only; not whole-engine throughput or all G01 domains.",
+  "candidate": {
+    "target": "g01_resident_bench",
+    "delivery_shape": "static",
+    "revision": "runtime-bound",
+    "component": "compute_provider_ggml_vulkan",
+    "entrypoint": "route_bench.cc"
+  },
+  "peers": [
+    {
+      "id": "original-ggml-flash",
+      "revision": "456172ec733a135778adcd32d00e576a58232e45",
+      "configuration": {
+        "delivery_shape": "source",
+        "role": "independent unchanged original full-F32 flash shader recipe and same public Program ownership/completion",
+        "precision": "F32 Q/K/V/math/output; original F16 causal mask; no half-internal math",
+        "scope": "positive-strided capacity cache, original scalar tuning/split-K/mask-opt; cold and first-use bytes reported separately"
+      }
+    }
+  ],
+  "strata": [
+    {
+      "id": "primary-candidate-first-candidate-allocation-first",
+      "dimensions": {
+        "placement": "primary",
+        "execution_order": "candidate-first",
+        "allocation_order": "candidate-first"
+      },
+      "target_variant": "primary"
+    },
+    {
+      "id": "primary-candidate-first-peer-allocation-first",
+      "dimensions": {
+        "placement": "primary",
+        "execution_order": "candidate-first",
+        "allocation_order": "peer-first"
+      },
+      "environment": {
+        "HYLE_BENCH_PEER_ALLOCATION_FIRST": "1"
+      },
+      "target_variant": "primary"
+    },
+    {
+      "id": "primary-peer-first-candidate-allocation-first",
+      "dimensions": {
+        "placement": "primary",
+        "execution_order": "peer-first",
+        "allocation_order": "candidate-first"
+      },
+      "environment": {
+        "HYLE_BENCH_RIVAL_FIRST": "1"
+      },
+      "target_variant": "primary"
+    },
+    {
+      "id": "primary-peer-first-peer-allocation-first",
+      "dimensions": {
+        "placement": "primary",
+        "execution_order": "peer-first",
+        "allocation_order": "peer-first"
+      },
+      "environment": {
+        "HYLE_BENCH_RIVAL_FIRST": "1",
+        "HYLE_BENCH_PEER_ALLOCATION_FIRST": "1"
+      },
+      "target_variant": "primary"
+    },
+    {
+      "id": "placement-candidate-first-candidate-allocation-first",
+      "dimensions": {
+        "placement": "perturbed",
+        "execution_order": "candidate-first",
+        "allocation_order": "candidate-first"
+      },
+      "target_variant": "placement"
+    },
+    {
+      "id": "placement-candidate-first-peer-allocation-first",
+      "dimensions": {
+        "placement": "perturbed",
+        "execution_order": "candidate-first",
+        "allocation_order": "peer-first"
+      },
+      "environment": {
+        "HYLE_BENCH_PEER_ALLOCATION_FIRST": "1"
+      },
+      "target_variant": "placement"
+    },
+    {
+      "id": "placement-peer-first-candidate-allocation-first",
+      "dimensions": {
+        "placement": "perturbed",
+        "execution_order": "peer-first",
+        "allocation_order": "candidate-first"
+      },
+      "environment": {
+        "HYLE_BENCH_RIVAL_FIRST": "1"
+      },
+      "target_variant": "placement"
+    },
+    {
+      "id": "placement-peer-first-peer-allocation-first",
+      "dimensions": {
+        "placement": "perturbed",
+        "execution_order": "peer-first",
+        "allocation_order": "peer-first"
+      },
+      "environment": {
+        "HYLE_BENCH_RIVAL_FIRST": "1",
+        "HYLE_BENCH_PEER_ALLOCATION_FIRST": "1"
+      },
+      "target_variant": "placement"
+    }
+  ],
+  "controls": [
+    {
+      "id": "aa",
+      "kind": "aa",
+      "parameters": {
+        "maximum_bias_percent": 5
+      }
+    },
+    {
+      "id": "delta5",
+      "kind": "known-delta",
+      "parameters": {
+        "nominal_percent": 5
+      }
+    },
+    {
+      "id": "delta10",
+      "kind": "known-delta",
+      "parameters": {
+        "nominal_percent": 10
+      }
+    },
+    {
+      "id": "timer-floor",
+      "kind": "timer-floor",
+      "parameters": {
+        "minimum_workload_floor_multiple": 20
+      }
+    },
+    {
+      "id": "placement",
+      "kind": "placement",
+      "parameters": {}
+    }
+  ],
+  "workloads": [
+    {
+      "id": "resident-decode-d256",
+      "tier": "consumer",
+      "gate_role": "product",
+      "consumer_key": "inference-resident/resident-decode-d256",
+      "provenance": {
+        "path": "consumer-provenance.json",
+        "sha256": "b48e6f00bfe0b5696a771422b982c8fc2effd6f75d240a578618a8f9f6f150ff"
+      },
+      "ownership_topology": {
+        "candidate": "ordinary immutable Graph, two independent native slots, input owners and output ResultLease/Tensor",
+        "peer": "independent original shader recipe carried by existing Program/Invocation, two slots, same input/output ownership",
+        "equivalence": "both bind ready resident inputs, checked completion and result owner release; independent contexts, equal precision/content and effective lengths"
+      },
+      "material_contribution": {
+        "frequency": 1,
+        "value": 1,
+        "unit": "complete-resident-attention",
+        "budget": 5,
+        "denominator": "one attention step through checked completion and owner return",
+        "derivation": "named provisional single-machine attention fragment, not model frequency or end-to-end token/s"
+      },
+      "semantic_contract": "F32 BSHD B1 GQA8/2 Q1 KV1024 D256 causal=True; capacity tail13; full-F32 math/output and original F16 mask; ready bind to checked completion and owner release",
+      "comparability": "COMPARABLE",
+      "peer_id": "original-ggml-flash",
+      "metric": {
+        "name": "operations-per-second",
+        "unit": "op/s",
+        "direction": "higher-is-better"
+      },
+      "input": {
+        "distribution": "full-index deterministic mixed finite F32, unused capacity sentinel128; independent double oracle with original bounds",
+        "scale": {
+          "rows": 1,
+          "keys": 1024,
+          "depth": 256,
+          "heads": 8,
+          "kv_heads": 2
+        }
+      },
+      "setup": "cold pipeline/slot/upload and original first-use scratch, before/after/peak telemetry; oracle and twelve complete warm calls before timing",
+      "charged_phases": [
+        "bind and output admission",
+        "all warm native mask/conversion/split-K/mask-opt and runtime scratch work",
+        "actual submit/check/wait and output ResultLease/Tensor owner return"
+      ],
+      "pair": {
+        "candidate": "HYLE resident",
+        "peer": "Original flash lifecycle"
+      },
+      "practical_margin_percent": 5,
+      "noninferiority_margin_percent": 5,
+      "estimator": {
+        "kind": "process-median",
+        "minimum_independent_samples": 15,
+        "tail_alpha": 0.01
+      },
+      "required_strata": [
+        "primary-candidate-first-candidate-allocation-first",
+        "primary-candidate-first-peer-allocation-first",
+        "primary-peer-first-candidate-allocation-first",
+        "primary-peer-first-peer-allocation-first",
+        "placement-candidate-first-candidate-allocation-first",
+        "placement-candidate-first-peer-allocation-first",
+        "placement-peer-first-candidate-allocation-first",
+        "placement-peer-first-peer-allocation-first"
+      ],
+      "required_controls": [
+        "aa",
+        "delta5",
+        "delta10",
+        "timer-floor",
+        "placement"
+      ]
+    },
+    {
+      "id": "resident-prefill-d256",
+      "tier": "consumer",
+      "gate_role": "product",
+      "consumer_key": "inference-resident/resident-prefill-d256",
+      "provenance": {
+        "path": "consumer-provenance.json",
+        "sha256": "b48e6f00bfe0b5696a771422b982c8fc2effd6f75d240a578618a8f9f6f150ff"
+      },
+      "ownership_topology": {
+        "candidate": "ordinary immutable Graph, two independent native slots, input owners and output ResultLease/Tensor",
+        "peer": "independent original shader recipe carried by existing Program/Invocation, two slots, same input/output ownership",
+        "equivalence": "both bind ready resident inputs, checked completion and result owner release; independent contexts, equal precision/content and effective lengths"
+      },
+      "material_contribution": {
+        "frequency": 1,
+        "value": 1,
+        "unit": "complete-resident-attention",
+        "budget": 5,
+        "denominator": "one attention step through checked completion and owner return",
+        "derivation": "named provisional single-machine attention fragment, not model frequency or end-to-end token/s"
+      },
+      "semantic_contract": "F32 BSHD B1 GQA8/2 Q128 KV1024 D256 causal=True; capacity tail13; full-F32 math/output and original F16 mask; ready bind to checked completion and owner release",
+      "comparability": "COMPARABLE",
+      "peer_id": "original-ggml-flash",
+      "metric": {
+        "name": "operations-per-second",
+        "unit": "op/s",
+        "direction": "higher-is-better"
+      },
+      "input": {
+        "distribution": "full-index deterministic mixed finite F32, unused capacity sentinel128; independent double oracle with original bounds",
+        "scale": {
+          "rows": 128,
+          "keys": 1024,
+          "depth": 256,
+          "heads": 8,
+          "kv_heads": 2
+        }
+      },
+      "setup": "cold pipeline/slot/upload and original first-use scratch, before/after/peak telemetry; oracle and twelve complete warm calls before timing",
+      "charged_phases": [
+        "bind and output admission",
+        "all warm native mask/conversion/split-K/mask-opt and runtime scratch work",
+        "actual submit/check/wait and output ResultLease/Tensor owner return"
+      ],
+      "pair": {
+        "candidate": "HYLE resident",
+        "peer": "Original flash lifecycle"
+      },
+      "practical_margin_percent": 5,
+      "noninferiority_margin_percent": 5,
+      "estimator": {
+        "kind": "process-median",
+        "minimum_independent_samples": 15,
+        "tail_alpha": 0.01
+      },
+      "required_strata": [
+        "primary-candidate-first-candidate-allocation-first",
+        "primary-candidate-first-peer-allocation-first",
+        "primary-peer-first-candidate-allocation-first",
+        "primary-peer-first-peer-allocation-first",
+        "placement-candidate-first-candidate-allocation-first",
+        "placement-candidate-first-peer-allocation-first",
+        "placement-peer-first-candidate-allocation-first",
+        "placement-peer-first-peer-allocation-first"
+      ],
+      "required_controls": [
+        "aa",
+        "delta5",
+        "delta10",
+        "timer-floor",
+        "placement"
+      ]
+    },
+    {
+      "id": "resident-holdout-d64",
+      "tier": "consumer",
+      "gate_role": "product",
+      "consumer_key": "inference-resident/resident-holdout-d64",
+      "provenance": {
+        "path": "consumer-provenance.json",
+        "sha256": "b48e6f00bfe0b5696a771422b982c8fc2effd6f75d240a578618a8f9f6f150ff"
+      },
+      "ownership_topology": {
+        "candidate": "ordinary immutable Graph, two independent native slots, input owners and output ResultLease/Tensor",
+        "peer": "independent original shader recipe carried by existing Program/Invocation, two slots, same input/output ownership",
+        "equivalence": "both bind ready resident inputs, checked completion and result owner release; independent contexts, equal precision/content and effective lengths"
+      },
+      "material_contribution": {
+        "frequency": 1,
+        "value": 1,
+        "unit": "complete-resident-attention",
+        "budget": 5,
+        "denominator": "one attention step through checked completion and owner return",
+        "derivation": "named provisional single-machine attention fragment, not model frequency or end-to-end token/s"
+      },
+      "semantic_contract": "F32 BSHD B1 GQA8/2 Q17 KV257 D64 causal=False; capacity tail13; full-F32 math/output and original F16 mask; ready bind to checked completion and owner release",
+      "comparability": "COMPARABLE",
+      "peer_id": "original-ggml-flash",
+      "metric": {
+        "name": "operations-per-second",
+        "unit": "op/s",
+        "direction": "higher-is-better"
+      },
+      "input": {
+        "distribution": "full-index deterministic mixed finite F32, unused capacity sentinel128; independent double oracle with original bounds",
+        "scale": {
+          "rows": 17,
+          "keys": 257,
+          "depth": 64,
+          "heads": 8,
+          "kv_heads": 2
+        }
+      },
+      "setup": "cold pipeline/slot/upload and original first-use scratch, before/after/peak telemetry; oracle and twelve complete warm calls before timing",
+      "charged_phases": [
+        "bind and output admission",
+        "all warm native mask/conversion/split-K/mask-opt and runtime scratch work",
+        "actual submit/check/wait and output ResultLease/Tensor owner return"
+      ],
+      "pair": {
+        "candidate": "HYLE resident",
+        "peer": "Original flash lifecycle"
+      },
+      "practical_margin_percent": 5,
+      "noninferiority_margin_percent": 5,
+      "estimator": {
+        "kind": "process-median",
+        "minimum_independent_samples": 15,
+        "tail_alpha": 0.01
+      },
+      "required_strata": [
+        "primary-candidate-first-candidate-allocation-first",
+        "primary-candidate-first-peer-allocation-first",
+        "primary-peer-first-candidate-allocation-first",
+        "primary-peer-first-peer-allocation-first",
+        "placement-candidate-first-candidate-allocation-first",
+        "placement-candidate-first-peer-allocation-first",
+        "placement-peer-first-candidate-allocation-first",
+        "placement-peer-first-peer-allocation-first"
+      ],
+      "required_controls": [
+        "aa",
+        "delta5",
+        "delta10",
+        "timer-floor",
+        "placement"
+      ]
+    }
+  ],
+  "experiment": {
+    "sample_schedule": [
+      15,
+      31
+    ],
+    "order_policy": "fixed-dual",
+    "holdout": false
+  },
+  "build": {
+    "configuration": "Release",
+    "fresh": true,
+    "linkage": "static",
+    "lto": "off",
+    "isa": "portable",
+    "toolchain": "machine-profile-bound"
+  },
+  "artifacts": {
+    "validators": [
+      "artifact-identity",
+      "build-contract",
+      "resident-aa"
+    ]
+  },
+  "hosts": {
+    "allowed_platforms": [
+      "macos"
+    ],
+    "certification_platforms": [
+      "macos"
+    ],
+    "requirements": {
+      "machine_profiles": [
+        "M1-MAC"
+      ],
+      "qualified_role": "engineering",
+      "formal_independent_hardware": true
+    }
+  },
+  "extensions": {
+    "runner": {
+      "schema": "hyle.perf.nanobench-runner/v1",
+      "sampling_topology": "single-logical-cpu",
+      "cmake": {
+        "cache": {
+          "HYLE_STATIC": "ON",
+          "HYLE_BUILD_TESTS": "OFF",
+          "HYLE_BUILD_BENCH": "OFF",
+          "HYLE_COMPUTE_ROUTES": "vulkan",
+          "HYLE_COMPONENTS": "compute;graph",
+          "HYLE_INSTALL": "OFF",
+          "HYLE_SANITIZER": "off",
+          "HYLE_TRACE": "OFF",
+          "HYLE_WERROR": "ON",
+          "CMAKE_INTERPROCEDURAL_OPTIMIZATION": "OFF",
+          "HYLE_SIMD_EXACT_TARGET": "",
+          "CMAKE_OSX_DEPLOYMENT_TARGET": "14.4",
+          "CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
+          "HYLE_DEP_SOURCE_CACHE": "/Users/kiro/Library/Caches/hyle/dependencies/v1",
+          "HYLE_RESIDENT_GLSLANG": "/opt/homebrew/bin/glslangValidator"
+        },
+        "peer_cache": {
+          "original-ggml-flash": "HYLE_RESIDENT_REFERENCE_SOURCE"
+        }
+      },
+      "profiles": {
+        "M1-MAC": {
+          "generator": "Ninja",
+          "compiler_id": "AppleClang",
+          "compiler_version_prefix": "21.0",
+          "cache": {}
+        }
+      },
+      "executables": [
+        {
+          "id": "resident-primary",
+          "target": "g01_resident_bench",
+          "stem": "g01_resident_bench",
+          "target_variant": "primary",
+          "measurement_batch": 1,
+          "telemetry_prefixes": [
+            "# HYLE_RESIDENT_RUN "
+          ],
+          "workloads": [
+            {
+              "id": "resident-decode-d256",
+              "title": "Resident SDPA Q=1 KV=1024 D=256 causal=1"
+            },
+            {
+              "id": "resident-prefill-d256",
+              "title": "Resident SDPA Q=128 KV=1024 D=256 causal=1"
+            },
+            {
+              "id": "resident-holdout-d64",
+              "title": "Resident SDPA Q=17 KV=257 D=64 causal=0"
+            }
+          ]
+        },
+        {
+          "id": "resident-placement",
+          "target": "g01_resident_bench_placement",
+          "stem": "g01_resident_bench_placement",
+          "target_variant": "placement",
+          "measurement_batch": 1,
+          "telemetry_prefixes": [
+            "# HYLE_RESIDENT_RUN "
+          ],
+          "workloads": [
+            {
+              "id": "resident-decode-d256",
+              "title": "Resident SDPA Q=1 KV=1024 D=256 causal=1"
+            },
+            {
+              "id": "resident-prefill-d256",
+              "title": "Resident SDPA Q=128 KV=1024 D=256 causal=1"
+            },
+            {
+              "id": "resident-holdout-d64",
+              "title": "Resident SDPA Q=17 KV=257 D=64 causal=0"
+            }
+          ]
+        }
+      ],
+      "control_executable": {
+        "target": "g01_perf_control",
+        "stem": "g01_perf_control"
+      },
+      "controlled_environment": [
+        "HYLE_BENCH_RIVAL_FIRST",
+        "HYLE_BENCH_PEER_ALLOCATION_FIRST",
+        "HYLE_PERF_APPLE_QOS",
+        "HYLE_BENCH_AA_ROUTE",
+        "HYLE_BENCH_VERIFY_ONLY"
+      ],
+      "validators": [
+        {
+          "id": "artifact-identity",
+          "kind": "artifact-identity"
+        },
+        {
+          "id": "build-contract",
+          "kind": "build-contract"
+        },
+        {
+          "id": "resident-aa",
+          "kind": "command",
+          "command": [
+            "{python}",
+            "validate_aa.py",
+            "--build",
+            "{build}",
+            "--output",
+            "{output}"
+          ]
+        }
+      ],
+      "measurement_adapter": "nanobench-paired-rows-v1"
+    }
+  }
+}

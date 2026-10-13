@@ -22,4 +22,7 @@ VK memory quota 不覆盖 driver/pipeline 的私有内存，两侧总成本不�
 `HYLE_BENCH_VERIFY_ONLY=1` 只跑数学和稳定重放；`HYLE_BENCH_AA_ROUTE=native|selected`
 使两侧同路，保留 execution/allocation-order 参数。当前原始工程预检见
 [证据](../../evidence/correctness/inference-g01-p1-adapter/README.md)。
-尚无已冻结 contract、A/A 或统一仪器的合格 timing verdict；这里不能手跑点值代签 P1。
+[正式合同](contract.json)绑定三种F32形状、八个显式strata、n=15和现有v1的5%门，
+以更严格门验证活动卡原10%非劣预算；[A/A检查](validate_aa.py)复用原机器/解析器与
+5%factor median、10%gross instability界线。正式A/A与统一仪器timing尚未完成，
+这里不能手跑点值代签P1。CPU resident P1另验，不由本Vulkan合同代签。
