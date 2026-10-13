@@ -107,11 +107,10 @@ TEST(NativeRaggedLayout, EightRequestsJoinOnlyTheirActiveRows){
   const auto kd=c::TensorDesc::dense(cap.data_type,std::array<std::int64_t,3>{11,2,64}).value();
   std::vector<F16> q(*qd.element_count()),k(*kd.element_count()),v(k.size(),half_test::encode<F16>(128.F));
   for(unsigned r=0;r<8;++r)for(unsigned i=0;i<128;++i)v[r*128+i]=half_test::encode<F16>(float(r)*.125F);
-  auto pool=c::LeasePool::create(memory.ref(),8192).value();
+  auto pool=c::LeasePool::create(memory.ref(),(q.size()+k.size()+v.size())*2+2048).value();
   const auto upload=[&](const c::TensorDesc &description,const auto &values){
 #if defined(HYLE_G01_APPLE_RAGGED)
-    auto allocated=pool.allocate(values.size()*2);if(!allocated){ADD_FAILURE()<<allocated.error().message();return mlx::core::array(0.F);}
-    auto writer=std::move(*allocated);EXPECT_TRUE(writer.view()->write(std::as_bytes(std::span(values))).ok());return memory.binding(writer.publish().value(),description).value();
+    auto writer=pool.allocate(values.size()*2).value();EXPECT_TRUE(writer.view()->write(std::as_bytes(std::span(values))).ok());return memory.binding(writer.publish().value(),description).value();
 #else
     return context.upload(description,std::as_bytes(std::span(values))).value();
 #endif
