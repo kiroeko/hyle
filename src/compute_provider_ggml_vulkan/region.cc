@@ -115,12 +115,32 @@ bool native_embedding_table(const TensorDesc &description) noexcept {
   const auto natural = stored->transposed();
   return natural && *natural == description;
 }
+bool resident_attention_view(const TensorDesc &description) noexcept {
+  if (!description.is_plain() || description.rank() != 4 ||
+      !floating(description.data_type()))
+    return false;
+  const auto dimensions = description.dimensions();
+  if (!std::ranges::all_of(dimensions, [](auto extent) { return extent > 0; }))
+    return false;
+  const auto strides = description.byte_strides();
+  const auto bytes = static_cast<std::int64_t>(
+      data_type_size(description.data_type()));
+  if (bytes == 0 || strides[3] != bytes)
+    return false;
+  for (std::size_t axis = 0; axis < 4; ++axis)
+    if (strides[axis] <= 0 ||
+        strides[axis] % bytes != 0 ||
+        (axis < 3 && strides[axis] / dimensions[axis + 1] < strides[axis + 1]))
+      return false;
+  return true;
+}
 bool tensor_domain(const TensorDesc &description) noexcept {
   return description.valid() &&
          (native_embedding_table(description) ||
           quantized_weight_domain(description) ||
           quantized_grouped_weight_domain(description) ||
-          (description.is_plain() && description.is_dense() &&
+          (description.is_plain() &&
+           (description.is_dense() || resident_attention_view(description)) &&
            (floating(description.data_type()) ||
             description.data_type() == DataType::kInt32))) &&
          description.element_count() && *description.element_count() > 0 &&
@@ -162,8 +182,13 @@ ggml_tensor *native_tensor(ggml_context *context,
     return ggml_new_tensor(context, native_quantized_type(description),
                            static_cast<int>(description.rank()), shape.data());
   }
-  return ggml_new_tensor(context, native_type(description.data_type()),
-                         GGML_MAX_DIMS, shape.data());
+  auto *tensor = ggml_new_tensor(context, native_type(description.data_type()),
+                                 GGML_MAX_DIMS, shape.data());
+  if (!description.is_dense())
+    for (std::size_t axis = 0; axis < description.rank(); ++axis)
+      tensor->nb[axis] = static_cast<std::size_t>(
+          description.byte_strides()[description.rank() - axis - 1]);
+  return tensor;
 }
 ggml_tensor *restore_shape(ggml_context *context, ggml_tensor *value,
                            const TensorDesc &description) {
@@ -321,6 +346,15 @@ bool region_supports(const Operation &operation,
       !std::ranges::all_of(outputs, tensor_domain) ||
       !std::ranges::all_of(inputs, tensor_domain))
     return false;
+  // The padded resident admission belongs only to SDPA. Other operations keep
+  // their original dense/encoded domain, including native weight descriptors.
+  if (!operation.get_if<ScaledDotProductAttention>() &&
+      (!std::ranges::all_of(inputs, [](const auto &input) {
+        return !input.is_plain() || input.is_dense();
+      }) || !std::ranges::all_of(outputs, [](const auto &output) {
+        return !output.is_plain() || output.is_dense();
+      })))
+    return false;
   const bool grouped =
       operation.custom_as<model_ops::GroupedMatMul>().has_value();
   const bool embedding =
@@ -470,7 +504,7 @@ bool region_supports(const Operation &operation,
     if (type != DataType::kFloat32 && type != DataType::kFloat16)
       return false;
     for (const auto &input : inputs)
-      if (!input.is_dense() || input.rank() != 4 || input.data_type() != type)
+      if (!resident_attention_view(input) || input.data_type() != type)
         return false;
     const auto query = inputs[0].dimensions();
     const auto key = inputs[1].dimensions();
@@ -484,7 +518,9 @@ bool region_supports(const Operation &operation,
     return query[0] == key[0] && query[1] > 0 && key[1] >= query[1] &&
            query[2] > 0 && key[2] > 0 && query[2] % key[2] == 0 &&
            query[3] == key[3] &&
-           ((inputs[1] == inputs[2] && outputs[0] == inputs[0]) || absorbed_mla);
+           outputs[0].is_dense() && outputs[0].data_type() == type &&
+           ((same_shape(inputs[1], inputs[2]) &&
+             same_shape(outputs[0], inputs[0])) || absorbed_mla);
   }
   const bool recurrent =
       operation.custom_as<model_ops::RecurrentGatedDeltaNet>().has_value();
@@ -856,28 +892,46 @@ Result<Region> Region::create(NativeDevice device,
       } else if (const auto *attention =
                      node.operation.get_if<ScaledDotProductAttention>()) {
         auto *query = ggml_permute(
-            context, ggml_cast(context, left, GGML_TYPE_F32), 0, 2, 1, 3);
-        auto *key = ggml_permute(
-            context, ggml_cast(context, arguments[1], GGML_TYPE_F32), 0, 2, 1,
-            3);
-        auto *value = ggml_permute(
-            context, ggml_cast(context, arguments[2], GGML_TYPE_F32), 0, 2, 1,
-            3);
-        auto *scores = ggml_mul_mat(context, key, query);
-        if (!ggml_prec_set_acc(scores, GGML_PREC_F32))
-          return std::unexpected(Status::Unimplemented(
-              "ggml Vulkan attention score accumulation"));
-        scores = ggml_scale(context, scores, attention->scale);
-        if (attention->causal)
-          scores = ggml_diag_mask_inf(
-              context, scores, static_cast<int>(key->ne[1] - query->ne[1]));
-        auto *probabilities = ggml_soft_max(context, scores);
-        value = ggml_cont(context, ggml_transpose(context, value));
-        output = ggml_mul_mat(context, value, probabilities);
-        if (!ggml_prec_set_acc(output, GGML_PREC_F32))
-          return std::unexpected(Status::Unimplemented(
-              "ggml Vulkan attention value accumulation"));
-        output = ggml_cont(context, ggml_permute(context, output, 0, 2, 1, 3));
+            context, left->type == GGML_TYPE_F32
+                         ? left : ggml_cast(context, left, GGML_TYPE_F32),
+            0, 2, 1, 3);
+        auto *key = ggml_permute(context, arguments[1], 0, 2, 1, 3);
+        auto *value = ggml_permute(context, arguments[2], 0, 2, 1, 3);
+        if (key->ne[0] % 8 == 0 && value->ne[0] % 8 == 0) {
+          ggml_tensor *mask = nullptr;
+          if (attention->causal) {
+            auto *seed = ggml_new_tensor_2d(context, GGML_TYPE_F32,
+                                            key->ne[1], query->ne[1]);
+            mask = ggml_cast(context,
+                ggml_diag_mask_inf_inplace(context,
+                    ggml_fill_inplace(context, seed, 0.0F),
+                    static_cast<int>(key->ne[1] - query->ne[1])),
+                GGML_TYPE_F16);
+          }
+          output = ggml_flash_attn_ext(context, query, key, value, mask,
+                                       attention->scale, 0.0F, 0.0F);
+          if (!ggml_prec_set_acc(output, GGML_PREC_F32))
+            return std::unexpected(Status::Unimplemented(
+                "ggml Vulkan fused attention accumulation"));
+        } else {
+          key = ggml_cast(context, key, GGML_TYPE_F32);
+          value = ggml_cast(context, value, GGML_TYPE_F32);
+          auto *scores = ggml_mul_mat(context, key, query);
+          if (!ggml_prec_set_acc(scores, GGML_PREC_F32))
+            return std::unexpected(Status::Unimplemented(
+                "ggml Vulkan attention score accumulation"));
+          scores = ggml_scale(context, scores, attention->scale);
+          if (attention->causal)
+            scores = ggml_diag_mask_inf(
+                context, scores, static_cast<int>(key->ne[1] - query->ne[1]));
+          auto *probabilities = ggml_soft_max(context, scores);
+          value = ggml_cont(context, ggml_transpose(context, value));
+          output = ggml_mul_mat(context, value, probabilities);
+          if (!ggml_prec_set_acc(output, GGML_PREC_F32))
+            return std::unexpected(Status::Unimplemented(
+                "ggml Vulkan attention value accumulation"));
+          output = ggml_cont(context, ggml_permute(context, output, 0, 2, 1, 3));
+        }
         if (recipe.values[node.outputs[0]].data_type() == DataType::kFloat16)
           output = ggml_cast(context, output, GGML_TYPE_F16);
       } else if (node.operation.get_if<GatedDeltaNet>() ||

@@ -325,4 +325,133 @@ TEST(VulkanGraph,
   context = {};
   EXPECT_EQ(quota.used(), 0U);
 }
+TEST(VulkanGraph, ResidentAttentionViewsPreserveEffectiveLengthsAndOldResults) {
+  hyle::mem::QuotaAllocator quota(hyle::mem::system_allocator(), 128u << 20);
+  auto context = vulkan_test::context(&quota).value();
+  for (auto type : {c::DataType::kFloat32, c::DataType::kFloat16})
+    for (const auto rows : {1, 17})
+      for (const auto depth : {64, 256})
+        for (bool causal : {false, true}) {
+          SCOPED_TRACE(::testing::Message() << int(type) << '/' << rows << '/'
+                                            << depth << '/' << causal);
+          constexpr std::int64_t batch = 2, heads = 8, kv_heads = 2, keys = 31,
+                                 capacity = 37, start = 1;
+          const auto qd = dense(type, {batch, rows, heads, depth});
+          const auto physical = dense(type, {batch, capacity, kv_heads, depth});
+          const auto slice = c::View::slice(1, start, keys).value();
+          const std::array<std::int64_t, 4> cache_shape{batch, keys, kv_heads,
+                                                        depth};
+          const auto kd = c::TensorDesc::strided_bytes(type, cache_shape,
+                                                       physical.byte_strides())
+                              .value();
+          auto builder = g::GraphBuilder::create().value();
+          const auto q = builder.input(qd).value();
+          const auto k = builder.input(kd).value(),
+                     value_id = builder.input(kd).value();
+          const auto output =
+              builder
+                  .add(
+                      c::ScaledDotProductAttention{
+                          .layout = c::AttentionLayout::kBatchSequenceHeadDepth,
+                          .scale = 0.0625F,
+                          .causal = causal},
+                      q, k, value_id)
+                  .value();
+          ASSERT_TRUE(builder.publish(output).ok());
+          auto graph = std::move(builder).finish().value();
+          gv::CompileReport report;
+          auto program = gv::compile(context, graph, {}, {.report = &report});
+          ASSERT_TRUE(program) << program.error().message();
+          EXPECT_EQ(report.managed_region_count, 1U);
+          auto first = program->create_invocation().value(),
+               second = program->create_invocation().value();
+          v::Tensor retained;
+          c::ResultLease<v::Results> retained_lease;
+          std::array<v::Tensor, 3> original_inputs;
+          std::vector<double> saved;
+          for (int seed : {1, 3}) {
+            auto query = pattern(*qd.element_count(), seed);
+            auto key = pattern(*physical.element_count(), seed + 1);
+            auto value = pattern(*physical.element_count(), seed + 2);
+            for (auto &x : query)
+              x = rounded(x * 0.25, type);
+            for (auto &x : key)
+              x = rounded(x * 0.125, type);
+            for (auto &x : value)
+              x = rounded(x * 0.5, type);
+            for (std::int64_t b = 0; b < batch; ++b)
+              for (std::int64_t row = 0; row < capacity; ++row)
+                if (row < start || row >= start + keys)
+                  for (std::int64_t h = 0; h < kv_heads; ++h)
+                    for (std::int64_t d = 0; d < depth; ++d) {
+                      const auto at =
+                          ((b * capacity + row) * kv_heads + h) * depth + d;
+                      key[at] = 64.;
+                      value[at] = 128.;
+                    }
+            const auto qt = make(context, qd, query);
+            const auto kp = make(context, physical, key),
+                       vp = make(context, physical, value);
+            const auto kt = kp.view(slice).value(), vt = vp.view(slice).value();
+            const auto key_before = bytes(context, kp),
+                       value_before = bytes(context, vp);
+            auto &slot = seed == 1 ? first : second;
+            ASSERT_TRUE(slot.bind(std::array{qt, kt, vt}).ok());
+            auto work = slot.submit();
+            ASSERT_TRUE(work) << work.error().message();
+            auto result = work->wait();
+            ASSERT_TRUE(result) << result.error().message();
+            const auto tensor = result->get()->tensors()[0];
+            std::vector<double> expected(*qd.element_count());
+            for (std::int64_t b = 0; b < batch; ++b)
+              for (std::int64_t row = 0; row < rows; ++row)
+                for (std::int64_t h = 0; h < heads; ++h) {
+                  std::array<double, keys> probabilities{};
+                  double sum = 0.;
+                  for (std::int64_t t = 0; t < keys; ++t) {
+                    if (causal && t > keys - rows + row)
+                      continue;
+                    double dot = 0.;
+                    for (std::int64_t d = 0; d < depth; ++d)
+                      dot +=
+                          query[((b * rows + row) * heads + h) * depth + d] *
+                          key[((b * capacity + t + start) * kv_heads + h / 4) *
+                                  depth +
+                              d];
+                    probabilities[t] = std::exp(dot * 0.0625);
+                    sum += probabilities[t];
+                  }
+                  for (std::int64_t d = 0; d < depth; ++d)
+                    for (std::int64_t t = 0; t < keys; ++t)
+                      expected[((b * rows + row) * heads + h) * depth + d] +=
+                          probabilities[t] / sum *
+                          value[((b * capacity + t + start) * kv_heads +
+                                 h / 4) *
+                                    depth +
+                                d];
+                }
+            const auto observed = values(context, tensor);
+            double maximum_ratio = 0.;
+            for (std::size_t i = 0; i < expected.size(); ++i) {
+              const auto wanted = rounded(expected[i], type);
+              const auto bound = (type == c::DataType::kFloat32 ? 6e-6 : 0.001) *
+                                     std::abs(wanted) +
+                                 (type == c::DataType::kFloat32 ? 2e-6 : 2e-7);
+              maximum_ratio = std::max(maximum_ratio, std::abs(observed[i] - wanted) / bound);
+            }
+            EXPECT_LE(maximum_ratio, 1.) << "original attention oracle tolerance exceeded";
+            EXPECT_EQ(bytes(context, kp), key_before);
+            EXPECT_EQ(bytes(context, vp), value_before);
+            if (seed == 1) {
+              retained = tensor;
+              saved = observed;
+              original_inputs = {qt, kt, vt};
+              retained_lease = std::move(*result);
+            } else
+              expect(context, retained, saved, true);
+          }
+          EXPECT_FALSE(first.bind(original_inputs).ok());
+        }
+  ASSERT_TRUE(context.close().ok());
+}
 } // namespace

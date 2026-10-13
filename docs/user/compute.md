@@ -1313,6 +1313,14 @@ half 计算显式经过原版 F32 cast/计算/输出舍入；转换属于真实�
 非连续输入限 ggml 四轴且 stride 满足元素对齐；无 alias 资格。完整特殊值激活等仍等待成熟
 承载，不能由名称相同推导已支持。
 
+CPU ggml 的 SDPA 接受同F32/F16/BF16、rank4、两种公开attention布局及GQA/MQA。驻留
+cache 可以保容量backing，以 `TensorDesc::strided_bytes` 截出有效长度；depth须连续，外层
+stride须是元素对齐、正值且保row-major不重叠padding。K/V沿原fused kernel直接读取，
+不会因每个query/head复制全部历史。query必要F32转换与causal F16 `Q×K` mask仍计入
+成本；mask在冷准备，默认不代表paged/page-table资格。任意stride或未资格组合仍由其他
+明确支持的Provider处理或拒绝。当前验收范围见
+[驻留SDPA活动卡](../implementation/tasks/compute/inference-g01-resident-sdpa.md)，整个G01未完成。
+
 同一 Provider 也接受上文十种精确 GGUF/ggml block storage 作为 MatMul RHS，或 `[E,N,K]`
 GroupedMatMul weight；直接把 caller-owned packed bytes 交给原版 `MUL_MAT`/`MUL_MAT_ID`，不经过
 HYLE decoder、全量重排或常驻浮点副本。CPU/CUDA/Apple 共用公开格式身份，但各自保留原生

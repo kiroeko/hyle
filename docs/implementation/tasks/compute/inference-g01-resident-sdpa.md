@@ -76,6 +76,18 @@ P0 先核 input copy、Q/KV cast、mask、scores、scratch、native private UNKN
 同合同的格如实 INCONCLUSIVE，不借不同 dtype/位置结果签性能。原参考档不无故重测。
 
 调查检查点2小时、实现检查点4小时、候选验证检查点2小时；按用户常设授权正常推进时
-自动延长并保原日志、FAIL/TIMEOUT和累计 elapsed，普通编译12 jobs按内存调整，Air10。
+自动延长并保原日志、FAIL/TIMEOUT和累计 elapsed。原本机12 jobs起；用户反馈桌面卡顿后
+本机改4 jobs，Air10，重型本机GPU run暂不恢复。
 有限缺陷已裁决且全部适用门通过才 CLOSED；真实外部阻断按协议记录精确条件，不靠换
 日志目录重置，不把“继续调研”当终局。七问/固定 FIX/最终资格集中追加本卡与一份证据。
+
+实现阶段记录：CPU resident view/native F16/BF16 fused改动已实现；宿主模块全部unit与逐头
+通过，普通CPU入口的BF16 GQA8/2 D256 resident cache实跑选择ggml且数学通过；旧installed
+SDK同调用会选择ATen。Vulkan source已接view与原flash，但定向oracle失败，尚未candidate：
+锁定原核的F32 accumulation不防止Q/K/V/概率内部half缩窄。原数值容差不放宽，需原native
+dispatch资格补齐；此新事实按实际承载owner定界。测试另纠正独立Tensor与ResultLease的
+寿命假设，聚合数值错误只减少重复输出，数学oracle/容差未改；该更新测试尚未重跑。
+MSVC旧测试夹具的unused observer、显式double→float及vendored private include归属修正
+仅为test-only，不改其他CLOSED产品；全部原FAIL保留。后续三交付/san/P1仍待candidate。
+当前[实现阶段证据](../../../../evidence/correctness/inference-g01-resident-stage/README.md)
+保留CPU实际PASS和Vulkan实际FAIL，更新后的Vulkan测试尚未重跑，不由源码推导PASS。

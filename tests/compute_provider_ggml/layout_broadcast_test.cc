@@ -234,7 +234,7 @@ TEST(GgmlCpuProvider, SoftmaxRestoresArbitraryAxesMasksAndUndefinedRows) {
 template <class T>
 void attention_layouts(std::int64_t nq = 3, std::int64_t dk = 7,
                         std::int64_t dv = 5, std::int64_t keys = 0,
-                        std::int64_t nb = 2) {
+                        std::int64_t nb = 2, bool resident = false) {
   constexpr std::int64_t hq = 4, hk = 2;
   const auto type = half_test::data_type<T>();
   auto context =
@@ -250,12 +250,19 @@ void attention_layouts(std::int64_t nq = 3, std::int64_t dk = 7,
                     : std::array{nb, heads, length, depth};
       };
       const auto qd = TensorDesc::dense(type, shape(nq, hq, dk)).value();
-      const auto kd = TensorDesc::dense(type, shape(nk, hk, dk)).value();
-      const auto vd = TensorDesc::dense(type, shape(nk, hk, dv)).value();
+      const auto capacity = nk + (resident ? 5 : 0);
+      const auto kp = TensorDesc::dense(type, shape(capacity, hk, dk)).value();
+      const auto vp = TensorDesc::dense(type, shape(capacity, hk, dv)).value();
+      const auto kd = TensorDesc::strided_bytes(
+          type, shape(nk, hk, dk), kp.byte_strides()).value();
+      const auto vd = TensorDesc::strided_bytes(
+          type, shape(nk, hk, dv), vp.byte_strides()).value();
       const auto od = TensorDesc::dense(type, shape(nq, hq, dv)).value();
       const auto index = [=](std::int64_t b, std::int64_t t, std::int64_t h,
                              std::int64_t d, std::int64_t length,
                              std::int64_t heads, std::int64_t depth) {
+        if (heads == hk)
+          length = capacity;
         return (bshd ? (b * length + t) * heads + h
                      : (b * heads + h) * length + t) *
                    depth +
@@ -271,7 +278,7 @@ void attention_layouts(std::int64_t nq = 3, std::int64_t dk = 7,
       auto invocation = prepared->create_invocation();
       ASSERT_TRUE(invocation) << invocation.error().message();
       std::vector<T> q(qd.element_count().value()),
-          k(kd.element_count().value()), v(vd.element_count().value());
+          k(kp.element_count().value()), v(vp.element_count().value());
       auto qb = half_test::buffer<T>(q), kb = half_test::buffer<T>(k),
            vb = half_test::buffer<T>(v),
            out =
@@ -289,6 +296,15 @@ void attention_layouts(std::int64_t nq = 3, std::int64_t dk = 7,
         for (std::size_t i = 0; i < v.size(); ++i)
           v[i] =
               half_test::encode<T>(double((int(i) * 7 + seed) % 13 - 6) / 4.);
+        if (resident)
+          for (std::int64_t b = 0; b < nb; ++b)
+            for (std::int64_t h = 0; h < hk; ++h)
+              for (std::int64_t row = nk; row < capacity; ++row) {
+                for (std::int64_t d = 0; d < dk; ++d)
+                  k[index(b, row, h, d, nk, hk, dk)] = half_test::encode<T>(64.);
+                for (std::int64_t d = 0; d < dv; ++d)
+                  v[index(b, row, h, d, nk, hk, dv)] = half_test::encode<T>(128.);
+              }
         ASSERT_TRUE(qb.view().write(std::as_bytes(std::span(q))).ok());
         ASSERT_TRUE(kb.view().write(std::as_bytes(std::span(k))).ok());
         ASSERT_TRUE(vb.view().write(std::as_bytes(std::span(v))).ok());
@@ -296,6 +312,10 @@ void attention_layouts(std::int64_t nq = 3, std::int64_t dk = 7,
             invocation->submit(queue, sources, std::span(&destination, 1));
         ASSERT_TRUE(done);
         ASSERT_TRUE(done->wait().ok());
+        const auto keys_after = half_test::read<T>(kb);
+        const auto values_after = half_test::read<T>(vb);
+        EXPECT_EQ(std::memcmp(keys_after.data(), k.data(), k.size() * sizeof(T)), 0);
+        EXPECT_EQ(std::memcmp(values_after.data(), v.data(), v.size() * sizeof(T)), 0);
         const auto actual = half_test::read<T>(out);
         for (std::int64_t b = 0; b < nb; ++b)
           for (std::int64_t row = 0; row < nq; ++row)
@@ -339,6 +359,43 @@ TEST(GgmlCpuProvider, F32AttentionActualWidthsReplayAndLongKv) {
     attention_layouts<float>(rows, 256, 256, 128);
   }
   attention_layouts<float>(1, 256, 256, 1024, 1);
+}
+TEST(GgmlCpuProvider,
+     ResidentCacheViewsIgnoreCapacityPaddingAndPreserveSources) {
+  for (const auto rows : {1, 17}) {
+    attention_layouts<float>(rows, 64, 32, 31, 2, true);
+    attention_layouts<hyle::simd::float16_t>(rows, 64, 32, 31, 2, true);
+    attention_layouts<hyle::simd::bfloat16_t>(rows, 64, 32, 31, 2, true);
+  }
+  attention_layouts<hyle::simd::bfloat16_t>(1, 256, 256, 257, 1, true);
+}
+TEST(GgmlCpuProvider,
+     ResidentAttentionRejectsNoncontiguousDepthAndOverlappingRows) {
+  auto context = Context::create(cpu::device(), ggml_cpu::provider()).value();
+  const std::array<std::int64_t, 4> query_shape{1, 1, 4, 64};
+  const auto q = TensorDesc::dense(DataType::kFloat32, query_shape).value();
+  const std::array<std::int64_t, 4> shape{1, 3, 2, 64};
+  for (const auto strides :
+       {std::array<std::int64_t, 4>{3072, 1024, 512, 8}, {512, 128, 256, 4}}) {
+    auto cache = TensorDesc::strided_bytes(DataType::kFloat32, shape, strides);
+    if (!cache)
+      continue; // Descriptor validation may already reject overlap.
+    auto prepared =
+        prepare(context,
+                ScaledDotProductAttention{
+                    .layout = AttentionLayout::kBatchSequenceHeadDepth,
+                    .scale = 0.125F},
+                q, *cache, *cache);
+    EXPECT_FALSE(prepared);
+  }
+  const std::array<std::int64_t, 4> empty_shape{1, 0, 2, 64};
+  const auto empty = TensorDesc::dense(DataType::kFloat32, empty_shape).value();
+  EXPECT_FALSE(prepare(
+      context,
+      ScaledDotProductAttention{
+          .layout = AttentionLayout::kBatchSequenceHeadDepth, .scale = 0.125F},
+      q, empty, empty));
+  ASSERT_TRUE(context.close().ok());
 }
 
 TEST(GgmlCpuProvider, PlainStorageCopyConcatPreservesAllScalarBitsAndStrides) {

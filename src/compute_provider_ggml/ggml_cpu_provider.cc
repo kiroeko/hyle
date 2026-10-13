@@ -183,6 +183,28 @@ bool f32_flash(DataType type) noexcept {
   return false;
 #endif
 }
+bool native_flash(DataType type) noexcept {
+  return f32_flash(type) || type == DataType::kFloat16 ||
+         type == DataType::kBFloat16;
+}
+bool resident_attention_view(const TensorDesc &description) noexcept {
+  if (!description.is_plain() || description.rank() != 4)
+    return false;
+  const auto dimensions = description.dimensions();
+  if (!std::ranges::all_of(dimensions, [](auto extent) { return extent > 0; }))
+    return false;
+  const auto strides = description.byte_strides();
+  const auto bytes = static_cast<std::int64_t>(
+      data_type_size(description.data_type()));
+  if (bytes == 0 || strides[3] != bytes)
+    return false;
+  for (std::size_t axis = 0; axis < 4; ++axis)
+    if (strides[axis] <= 0 ||
+        strides[axis] % bytes != 0 ||
+        (axis < 3 && strides[axis] / dimensions[axis + 1] < strides[axis + 1]))
+      return false;
+  return true;
+}
 std::size_t elements(const TensorDesc &description) noexcept {
   return description.element_count().value();
 }
@@ -821,7 +843,6 @@ std::vector<ggml_tensor *> lower(Program &program, Invocation &invocation,
     auto *query = invocation.values[node.inputs[0]];
     auto *key = invocation.values[node.inputs[1]];
     auto *value = invocation.values[node.inputs[2]];
-    const auto type = query->type;
     const bool bshd =
         attention->layout == AttentionLayout::kBatchSequenceHeadDepth;
     query = as_float(context, query);
@@ -830,8 +851,7 @@ std::vector<ggml_tensor *> lower(Program &program, Invocation &invocation,
       key = ggml_permute(context, key, 0, 2, 1, 3);
       value = ggml_permute(context, value, 0, 2, 1, 3);
     }
-    if (f32_flash(recipe.values[node.inputs[0]].data_type()) ||
-        (type == GGML_TYPE_F16 && attention->causal)) {
+    if (native_flash(recipe.values[node.inputs[0]].data_type())) {
       ggml_tensor *mask = nullptr;
       if (attention->causal) {
         const auto &mask_values = program.attention_masks[node_index];
@@ -1502,7 +1522,7 @@ bool supports(void *context, Operation operation,
         type != DataType::kFloat32)
       return false;
     for (const auto &description : inputs)
-      if (description.rank() != 4 || !description.is_dense() ||
+      if (!resident_attention_view(description) ||
           description.data_type() != type)
         return false;
     const auto q = inputs[0].dimensions();
@@ -1644,8 +1664,7 @@ ProviderPrepareOutcome compile(void *context, Recipe recipe,
       }
       if (const auto *attention = node.operation.get_if<ScaledDotProductAttention>();
           attention && attention->causal &&
-          (recipe.values[node.inputs[0]].data_type() == DataType::kFloat16 ||
-           f32_flash(recipe.values[node.inputs[0]].data_type()))) {
+          native_flash(recipe.values[node.inputs[0]].data_type())) {
         const auto sequence =
             attention->layout == AttentionLayout::kBatchSequenceHeadDepth ? 1U
                                                                           : 2U;

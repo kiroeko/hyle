@@ -68,6 +68,53 @@ TEST(CpuDefaultContext, MatureDefaultsHavePolicyWithoutModelOrHardwareProfile) {
             explicit_program->runtime_properties().replay_class);
 }
 
+TEST(CpuDefaultContext,
+     ResidentBfloatGqaCacheUsesMatureGgmlWithoutHistoryRepack) {
+  using T = hyle::simd::bfloat16_t;
+  auto context = create_context().value();
+  auto queue = context.create_queue().value();
+  const std::array<std::int64_t, 4> query_shape{1, 8, 1, 256};
+  const std::array<std::int64_t, 4> cache_shape{1, 2, 7, 256};
+  const std::array<std::int64_t, 4> capacity_shape{1, 2, 16, 256};
+  const auto qd = TensorDesc::dense(DataType::kBFloat16, query_shape).value();
+  const auto physical =
+      TensorDesc::dense(DataType::kBFloat16, capacity_shape).value();
+  const auto cache = TensorDesc::strided_bytes(DataType::kBFloat16, cache_shape,
+                                               physical.byte_strides())
+                         .value();
+  auto prepared = prepare(
+      context,
+      ScaledDotProductAttention{
+          .layout = AttentionLayout::kBatchHeadSequenceDepth, .scale = 0.0625F},
+      qd, cache, cache);
+  ASSERT_TRUE(prepared) << prepared.error().message();
+  EXPECT_EQ(prepared->provider().id, ggml_cpu::kProviderId);
+  std::vector<T> query(*qd.element_count(), half_test::encode<T>(0.));
+  std::vector<T> keys(*physical.element_count(), half_test::encode<T>(1.));
+  std::vector<T> values(*physical.element_count(), half_test::encode<T>(128.));
+  for (int h = 0; h < 2; ++h)
+    for (int row = 0; row < 7; ++row)
+      for (int d = 0; d < 256; ++d)
+        values[(h * 16 + row) * 256 + d] =
+            half_test::encode<T>(h * 0.25 + row * 0.03125);
+  auto qb = half_test::buffer<T>(query), kb = half_test::buffer<T>(keys),
+       vb = half_test::buffer<T>(values);
+  auto out = half_test::buffer<T>(std::vector<T>(*qd.element_count()));
+  const std::array inputs{ConstTensorView::create(qd, qb.view()).value(),
+                          ConstTensorView::create(cache, kb.view()).value(),
+                          ConstTensorView::create(cache, vb.view()).value()};
+  const auto output = TensorView::create(qd, out.view()).value();
+  auto slot = prepared->create_invocation().value();
+  auto done = slot.submit(queue, inputs, std::span(&output, 1));
+  ASSERT_TRUE(done) << done.error().message();
+  ASSERT_TRUE(done->wait().ok());
+  const auto result = half_test::read<T>(out);
+  for (int h = 0; h < 8; ++h)
+    for (int d = 0; d < 256; ++d)
+      EXPECT_NEAR(half_test::decode(result[h * 256 + d]),
+                  (h / 4) * 0.25 + 3 * 0.03125, 0.008);
+}
+
 TEST(CpuDefaultContext, LeasedMatMulKeepsPermissionsAndHasNoHotLeaseAllocation) {
   auto context = create_context().value();
   auto queue = context.create_queue().value();

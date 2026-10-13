@@ -30,7 +30,7 @@ inline std::vector<float> floats(const v::Context &context, const v::Tensor &ten
 
 inline void execute(const v::Context &context, sem::Fragment fixture,
                     std::vector<v::Tensor> *capture = nullptr,
-                    const std::function<void(const c::Operation &,
+                    [[maybe_unused]] const std::function<void(const c::Operation &,
                         std::span<const v::Tensor>,std::span<const v::Tensor>)> &observe_node = {}) {
   SCOPED_TRACE("region=" + std::to_string(fixture.region));
   std::vector<v::Tensor> prepared, values(fixture.descriptions.size());

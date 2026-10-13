@@ -13,4 +13,6 @@ if(HYLE_COMPUTE_VULKAN_ENABLED)
     HYLE_VULKAN_TEST_SHADER="${CMAKE_CURRENT_BINARY_DIR}/affine.spv")
   target_link_libraries(hyle_graph_route_vulkan_test PRIVATE
     hyle_compute_provider_ggml_vulkan hyle_compute_ggml_runtime ggml)
+  target_include_directories(hyle_graph_route_vulkan_test SYSTEM PRIVATE
+    "${HYLE_GGML_SOURCE_DIR}/src")
 endif()

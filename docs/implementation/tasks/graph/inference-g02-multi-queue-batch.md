@@ -73,3 +73,9 @@ API/算法/直接消费者固定，进入CANDIDATE；三交付/san/P0终审尚�
 Windows selector配置发现hybrid测试owner片段缺失，按独立
 [test-only归属修正](../project/inference-g02-hybrid-test-ownership.md)恢复现有消费者注册；
 不改产品candidate、公共checker或构建核心，原配置失败保留。
+
+候选新增证据已集中归档：公开CPU＋CUDA的F16/BF16 GQA8/2 D256在source与relocated
+static/shared实跑，三宿主san适用facet及36个caller OOM失败点通过；Air原共同接口消费者与
+九个适用公开头通过。P0/独立源码复检未发现本批新产品缺陷。Windows单CUDA大测试因
+用户反馈桌面资源压力被终止，原正确性门与后续Vulkan门仍UNPROVEN，不代签CLOSED；
+后续本机编译4 jobs，重型GPU run暂不恢复。原失败/elapsed/构建树均保留。

@@ -1,8 +1,9 @@
 {
-  "kind": "G02 common slice partial evidence, not module closure",
+  "kind": "G02 common slice partial candidate validation; Windows interrupted gates unproven, not module closure",
   "baseline": "743783f7b0759d77978c0d208dc5ba0898313e69",
-  "validated_commit": "c7e7218109effd3049b44fc4a4d3dc2060cdd5d8",
+  "candidate": "26d7c2cb7212f5abdd3866baaf886b8fdbca02e5",
   "product_api_commit": "43adbc9b70d4cd97e332d52d59059fea639692b3",
+  "maintenance_commit": "eb75b76aafbf4794f0176600e52fd37888eaa12d",
   "inputs": [
     {
       "path": "include/hyle/graph/batch.h",
@@ -25,6 +26,14 @@
       "sha256": "e387c29099eaf725e062c2c2ad6f4cb783633a78ce363e7ae592c44c4ee47ab0"
     },
     {
+      "path": "tests/compute_batch/public_batch_cuda_consumer.cc",
+      "sha256": "e2aad3dfffa9995a8325364e0e3b16b570a6620363b232a372cf355daa71c947"
+    },
+    {
+      "path": "tests/compute_batch/public_hybrid_batch_consumer.cc",
+      "sha256": "823c0489489f18dbfb053d860c678e2e351d914eeb54458ee76173c030e4b025"
+    },
+    {
       "path": "tests/compute_batch/native_graph_consumer.cc",
       "sha256": "fd5977ff6bdcca7c91a3745afd537dc67d294a3002239395b4d42543fcffddc5"
     },
@@ -39,120 +48,1432 @@
     {
       "path": "tests/compute_batch/native_ragged_graph_append_consumer.h",
       "sha256": "2c6ef393eee18e477b4c0ee5cf154306d430f1dceeda03afad1e9ec9a352d8a5"
+    },
+    {
+      "path": "tests/graph_route_cpu_cuda/CMakeLists.txt",
+      "sha256": "25fd753aa0ca04bd2db91c03ad418e672b7129a41f74c53c591db203c9a1a5ce"
+    },
+    {
+      "path": "tests/graph_route_cpu_apple/CMakeLists.txt",
+      "sha256": "15104896dcbcf8132e9315aec67ad47a104609204d12097853a6b912b8f2418a"
+    },
+    {
+      "path": "tests/graph_route_cpu_vulkan/CMakeLists.txt",
+      "sha256": "125dba9fa27029498f12ae0a8183fe1efc3254bc52cb98a90597acb6b488f2e7"
     }
   ],
+  "source_hybrid": {
+    "command": [
+      "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/source-build/hyle_g02_hybrid"
+    ],
+    "exit_code": 0,
+    "elapsed_seconds": 0.5293902579999994,
+    "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g02/run-native-hybrid-both-dtypes.log"
+  },
+  "delivery": {
+    "static": {
+      "mode": "static",
+      "stages": [
+        {
+          "stage": "producer-build",
+          "command": [
+            "cmake",
+            "--build",
+            "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/static-sdk-build",
+            "--parallel",
+            "12"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 2.6114446399999998,
+          "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g02/static-sdk-producer-build.log"
+        },
+        {
+          "stage": "install",
+          "command": [
+            "cmake",
+            "--install",
+            "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/static-sdk-build",
+            "--prefix",
+            "/root/hyle-scratch/compute-unified/g02-sdk-static-prefix"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 0.6886628740000003,
+          "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g02/static-sdk-install.log"
+        },
+        {
+          "stage": "consumer-configure",
+          "command": [
+            "cmake",
+            "-S",
+            "/root/hyle-scratch/compute-unified/g02-sdk-static-consumer",
+            "-B",
+            "/root/hyle-scratch/compute-unified/g02-sdk-static-consumer/build",
+            "-G",
+            "Ninja",
+            "-DCMAKE_BUILD_TYPE=Release",
+            "-DCMAKE_CXX_COMPILER=/usr/bin/g++-14",
+            "-DCMAKE_PREFIX_PATH=/root/hyle-scratch/compute-unified/g02-sdk-static-relocated"
+          ],
+          "exit_code": 1,
+          "elapsed_seconds": 7.544228269,
+          "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g02/static-sdk-consumer-configure.log"
+        },
+        {
+          "stage": "consumer-configure",
+          "command": [
+            "cmake",
+            "-S",
+            "/root/hyle-scratch/compute-unified/g02-sdk-static-consumer",
+            "-B",
+            "/root/hyle-scratch/compute-unified/g02-sdk-static-consumer/build",
+            "-G",
+            "Ninja",
+            "-DCMAKE_BUILD_TYPE=Release",
+            "-DCMAKE_CXX_COMPILER=/usr/bin/g++-14",
+            "-DCMAKE_PREFIX_PATH=/root/hyle-scratch/compute-unified/g02-sdk-static-relocated",
+            "-DCUDAToolkit_ROOT=/usr/local/cuda-13.3",
+            "-DCUDA_cudart_LIBRARY=/usr/local/cuda-13.3/targets/x86_64-linux/lib/libcudart.so"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 32.265791338999996,
+          "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g02/static-sdk-consumer-configure-2.log"
+        },
+        {
+          "stage": "consumer-build",
+          "command": [
+            "cmake",
+            "--build",
+            "/root/hyle-scratch/compute-unified/g02-sdk-static-consumer/build",
+            "--parallel",
+            "4"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 8.445627856000002,
+          "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g02/static-sdk-consumer-build.log"
+        },
+        {
+          "stage": "run-hybrid",
+          "command": [
+            "/root/hyle-scratch/compute-unified/g02-sdk-static-consumer/build/hybrid"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 0.44981118299999423,
+          "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g02/static-sdk-run-hybrid.log"
+        },
+        {
+          "stage": "run-native",
+          "command": [
+            "/root/hyle-scratch/compute-unified/g02-sdk-static-consumer/build/native"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 1.018102571,
+          "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g02/static-sdk-run-native.log"
+        },
+        {
+          "stage": "run-public_cuda",
+          "command": [
+            "/root/hyle-scratch/compute-unified/g02-sdk-static-consumer/build/public_cuda"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 0.36306407200000024,
+          "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g02/static-sdk-run-public_cuda.log"
+        }
+      ]
+    },
+    "shared": {
+      "mode": "shared",
+      "stages": [
+        {
+          "stage": "producer-build",
+          "command": [
+            "cmake",
+            "--build",
+            "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/shared-sdk-build",
+            "--parallel",
+            "12"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 3.862677388,
+          "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g02/shared-sdk-producer-build.log"
+        },
+        {
+          "stage": "install",
+          "command": [
+            "cmake",
+            "--install",
+            "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/shared-sdk-build",
+            "--prefix",
+            "/root/hyle-scratch/compute-unified/g02-sdk-shared-prefix"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 0.8207299580000003,
+          "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g02/shared-sdk-install.log"
+        },
+        {
+          "stage": "consumer-configure",
+          "command": [
+            "cmake",
+            "-S",
+            "/root/hyle-scratch/compute-unified/g02-sdk-shared-consumer",
+            "-B",
+            "/root/hyle-scratch/compute-unified/g02-sdk-shared-consumer/build",
+            "-G",
+            "Ninja",
+            "-DCMAKE_BUILD_TYPE=Release",
+            "-DCMAKE_CXX_COMPILER=/usr/bin/g++-14",
+            "-DCMAKE_PREFIX_PATH=/root/hyle-scratch/compute-unified/g02-sdk-shared-relocated",
+            "-DCUDAToolkit_ROOT=/usr/local/cuda-13.3",
+            "-DCUDA_cudart_LIBRARY=/usr/local/cuda-13.3/targets/x86_64-linux/lib/libcudart.so"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 39.164424698,
+          "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g02/shared-sdk-consumer-configure.log"
+        },
+        {
+          "stage": "consumer-build",
+          "command": [
+            "cmake",
+            "--build",
+            "/root/hyle-scratch/compute-unified/g02-sdk-shared-consumer/build",
+            "--parallel",
+            "4"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 6.627412815999996,
+          "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g02/shared-sdk-consumer-build.log"
+        },
+        {
+          "stage": "run-hybrid",
+          "command": [
+            "/root/hyle-scratch/compute-unified/g02-sdk-shared-consumer/build/hybrid"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 0.7750509689999987,
+          "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g02/shared-sdk-run-hybrid.log"
+        },
+        {
+          "stage": "run-native",
+          "command": [
+            "/root/hyle-scratch/compute-unified/g02-sdk-shared-consumer/build/native"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 0.9395280439999993,
+          "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g02/shared-sdk-run-native.log"
+        },
+        {
+          "stage": "run-public_cuda",
+          "command": [
+            "/root/hyle-scratch/compute-unified/g02-sdk-shared-consumer/build/public_cuda"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 0.2690898500000003,
+          "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g02/shared-sdk-run-public_cuda.log"
+        }
+      ]
+    }
+  },
+  "risk": {
+    "sanitizers": {
+      "asan": {
+        "sanitizer": "asan",
+        "stages": [
+          {
+            "stage": "configure",
+            "command": [
+              "cmake",
+              "-S",
+              "/root/hyle-scratch/compute-unified/foundation-f5-native-host-cuda-asan/parent",
+              "-B",
+              "/root/hyle-scratch/compute-unified/foundation-f5-native-host-cuda-asan/build",
+              "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON"
+            ],
+            "exit_code": 0,
+            "elapsed_seconds": 61.449790891999996,
+            "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g02/asan-configure-1.log"
+          },
+          {
+            "stage": "build",
+            "command": [
+              "cmake",
+              "--build",
+              "/root/hyle-scratch/compute-unified/foundation-f5-native-host-cuda-asan/build",
+              "--target",
+              "graph",
+              "hybrid",
+              "public_cuda",
+              "--parallel",
+              "12"
+            ],
+            "exit_code": 0,
+            "elapsed_seconds": 31.18679147499998,
+            "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g02/asan-build-1.log"
+          },
+          {
+            "stage": "run-graph",
+            "command": [
+              "/root/hyle-scratch/compute-unified/foundation-f5-native-host-cuda-asan/build/graph"
+            ],
+            "exit_code": 0,
+            "elapsed_seconds": 2.27713319099999,
+            "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g02/asan-run-graph-1.log",
+            "san_options": {
+              "ASAN_OPTIONS": "halt_on_error=1:protect_shadow_gap=0:detect_leaks=0"
+            }
+          },
+          {
+            "stage": "run-hybrid",
+            "command": [
+              "/root/hyle-scratch/compute-unified/foundation-f5-native-host-cuda-asan/build/hybrid"
+            ],
+            "exit_code": 0,
+            "elapsed_seconds": 0.8142607469999916,
+            "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g02/asan-run-hybrid-1.log",
+            "san_options": {
+              "ASAN_OPTIONS": "halt_on_error=1:protect_shadow_gap=0:detect_leaks=0"
+            }
+          },
+          {
+            "stage": "run-public_cuda",
+            "command": [
+              "/root/hyle-scratch/compute-unified/foundation-f5-native-host-cuda-asan/build/public_cuda"
+            ],
+            "exit_code": 0,
+            "elapsed_seconds": 0.7015272779999862,
+            "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g02/asan-run-public_cuda-1.log",
+            "san_options": {
+              "ASAN_OPTIONS": "halt_on_error=1:protect_shadow_gap=0:detect_leaks=0"
+            }
+          }
+        ]
+      },
+      "ubsan": {
+        "sanitizer": "ubsan",
+        "stages": [
+          {
+            "stage": "configure",
+            "command": [
+              "cmake",
+              "-S",
+              "/root/hyle-scratch/compute-unified/source-7a7b4c3b",
+              "-B",
+              "/root/hyle-scratch/compute-unified/foundation-f5-native-host-cuda-ubsan/build",
+              "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON",
+              "-DHYLE_DEV_FACTORS=graph_batch;compute_provider_flashinfer;compute_backend_cuda;compute_state;graph_route_cpu;graph_route_cpu_cuda",
+              "-DCMAKE_PROJECT_TOP_LEVEL_INCLUDES=/root/hyle-scratch/compute-unified/foundation-f5-native-host-cuda-ubsan/factor-consumers.cmake"
+            ],
+            "exit_code": 0,
+            "elapsed_seconds": 68.01299093499999,
+            "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g02/ubsan-configure-1.log"
+          },
+          {
+            "stage": "build",
+            "command": [
+              "cmake",
+              "--build",
+              "/root/hyle-scratch/compute-unified/foundation-f5-native-host-cuda-ubsan/build",
+              "--target",
+              "graph",
+              "hybrid",
+              "public_cuda",
+              "--parallel",
+              "12"
+            ],
+            "exit_code": 0,
+            "elapsed_seconds": 38.446014323,
+            "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g02/ubsan-build-1.log"
+          },
+          {
+            "stage": "run-graph",
+            "command": [
+              "/root/hyle-scratch/compute-unified/foundation-f5-native-host-cuda-ubsan/build/bin/graph"
+            ],
+            "exit_code": 0,
+            "elapsed_seconds": 1.1791312340000104,
+            "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g02/ubsan-run-graph-1.log",
+            "san_options": {
+              "UBSAN_OPTIONS": "halt_on_error=1:print_stacktrace=1"
+            }
+          },
+          {
+            "stage": "run-hybrid",
+            "command": [
+              "/root/hyle-scratch/compute-unified/foundation-f5-native-host-cuda-ubsan/build/bin/hybrid"
+            ],
+            "exit_code": 0,
+            "elapsed_seconds": 0.48623650899997983,
+            "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g02/ubsan-run-hybrid-1.log",
+            "san_options": {
+              "UBSAN_OPTIONS": "halt_on_error=1:print_stacktrace=1"
+            }
+          },
+          {
+            "stage": "run-public_cuda",
+            "command": [
+              "/root/hyle-scratch/compute-unified/foundation-f5-native-host-cuda-ubsan/build/bin/public_cuda"
+            ],
+            "exit_code": 0,
+            "elapsed_seconds": 0.4609680039999944,
+            "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g02/ubsan-run-public_cuda-1.log",
+            "san_options": {
+              "UBSAN_OPTIONS": "halt_on_error=1:print_stacktrace=1"
+            }
+          }
+        ]
+      },
+      "tsan": {
+        "sanitizer": "tsan",
+        "stages": [
+          {
+            "stage": "configure",
+            "command": [
+              "cmake",
+              "-S",
+              "/root/hyle-scratch/compute-unified/source-7a7b4c3b",
+              "-B",
+              "/root/hyle-scratch/compute-unified/foundation-f5-native-host-cuda-tsan/build",
+              "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON",
+              "-DHYLE_DEV_FACTORS=graph_batch;compute_provider_flashinfer;compute_backend_cuda;compute_state;graph_route_cpu;graph_route_cpu_cuda",
+              "-DCMAKE_PROJECT_TOP_LEVEL_INCLUDES=/root/hyle-scratch/compute-unified/foundation-f5-native-host-cuda-tsan/factor-consumers.cmake"
+            ],
+            "exit_code": 0,
+            "elapsed_seconds": 63.55211856300002,
+            "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g02/tsan-configure-1.log"
+          },
+          {
+            "stage": "build",
+            "command": [
+              "cmake",
+              "--build",
+              "/root/hyle-scratch/compute-unified/foundation-f5-native-host-cuda-tsan/build",
+              "--target",
+              "graph",
+              "hybrid",
+              "public_cuda",
+              "--parallel",
+              "12"
+            ],
+            "exit_code": 0,
+            "elapsed_seconds": 35.11646631799999,
+            "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g02/tsan-build-1.log"
+          },
+          {
+            "stage": "run-graph",
+            "command": [
+              "setarch",
+              "x86_64",
+              "-R",
+              "/root/hyle-scratch/compute-unified/foundation-f5-native-host-cuda-tsan/build/bin/graph"
+            ],
+            "exit_code": 0,
+            "elapsed_seconds": 3.940297257999987,
+            "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g02/tsan-run-graph-1.log",
+            "san_options": {
+              "TSAN_OPTIONS": "halt_on_error=1:report_thread_leaks=0"
+            }
+          },
+          {
+            "stage": "run-hybrid",
+            "command": [
+              "setarch",
+              "x86_64",
+              "-R",
+              "/root/hyle-scratch/compute-unified/foundation-f5-native-host-cuda-tsan/build/bin/hybrid"
+            ],
+            "exit_code": 0,
+            "elapsed_seconds": 1.8209857539999916,
+            "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g02/tsan-run-hybrid-1.log",
+            "san_options": {
+              "TSAN_OPTIONS": "halt_on_error=1:report_thread_leaks=0"
+            }
+          },
+          {
+            "stage": "run-public_cuda",
+            "command": [
+              "setarch",
+              "x86_64",
+              "-R",
+              "/root/hyle-scratch/compute-unified/foundation-f5-native-host-cuda-tsan/build/bin/public_cuda"
+            ],
+            "exit_code": 0,
+            "elapsed_seconds": 1.859706139000025,
+            "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g02/tsan-run-public_cuda-1.log",
+            "san_options": {
+              "TSAN_OPTIONS": "halt_on_error=1:report_thread_leaks=0"
+            }
+          }
+        ]
+      }
+    },
+    "oom": {
+      "stages": [
+        {
+          "stage": "configure",
+          "command": [
+            "cmake",
+            "-S",
+            "/root/hyle-scratch/compute-unified/g02-oom-consumer",
+            "-B",
+            "/root/hyle-scratch/compute-unified/g02-oom-consumer/build",
+            "-G",
+            "Ninja",
+            "-DCMAKE_BUILD_TYPE=Release",
+            "-DCMAKE_CXX_COMPILER=/usr/bin/g++-14",
+            "-DCMAKE_PREFIX_PATH=/root/hyle-scratch/compute-unified/g02-sdk-static-relocated",
+            "-DCUDAToolkit_ROOT=/usr/local/cuda-13.3",
+            "-DCUDA_cudart_LIBRARY=/usr/local/cuda-13.3/targets/x86_64-linux/lib/libcudart.so"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 37.335301548000004,
+          "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g02/oom-configure.log"
+        },
+        {
+          "stage": "build",
+          "command": [
+            "cmake",
+            "--build",
+            "/root/hyle-scratch/compute-unified/g02-oom-consumer/build",
+            "--parallel",
+            "1"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 3.829136652999999,
+          "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g02/oom-build.log"
+        },
+        {
+          "stage": "run",
+          "command": [
+            "/root/hyle-scratch/compute-unified/g02-oom-consumer/build/oom"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 0.4294961100000023,
+          "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g02/oom-run.log"
+        }
+      ],
+      "scope": "18 caller allocation points each F16/BF16; rolled back and then normal hybrid successful",
+      "consumer_sha256": "058b06b646b03ddfeba35ddedaeec748993fc79ca8839ca819aa89d58742f11d"
+    },
+    "limits": [
+      "native-private risk consumer is not public SDK proof",
+      "ASan address facet only; vendor LSan limits retained",
+      "TSan data-race facet only; vendor diagnostic thread lifecycle inconclusive",
+      "not whole engine token/s or full G01-G10 completion"
+    ],
+    "driver_controls": [
+      "evidence/correctness/foundation-f5-native-cuda-host-asan/README.md",
+      "evidence/correctness/foundation-f5-native-cuda-host-tsan/README.md"
+    ]
+  },
+  "windows_selected": {
+    "receipt": "raw.zip:candidate/windows-selected-result.json",
+    "plan": "raw.zip:candidate/windows-selected-plan.json",
+    "applicable_gates": [
+      "configure",
+      "factor:compute_batch",
+      "factor:graph",
+      "headers:graph",
+      "factor:graph_batch",
+      "headers:graph_batch",
+      "factor:graph_provider_ggml_cuda",
+      "factor:graph_provider_onednn",
+      "factor:graph_route_cpu",
+      "factor:graph_route_cpu_cuda",
+      "factor:graph_route_cpu_vulkan",
+      "factor:graph_route_cuda",
+      "factor:graph_route_vulkan"
+    ],
+    "local_not_applicable": [
+      {
+        "gate": "factor:graph_route_cpu_apple",
+        "verdict": "NOT_APPLICABLE",
+        "reason": "Apple requires Darwin/aarch64 in cmake/HyleComputeRoutes.cmake; tests/graph_route_cpu_apple/CMakeLists.txt registers no tests without the Apple route. Windows empty aggregate is not native Apple validation. Original empty-CTest FAIL retained; Apple proof remains required on MacBook Air."
+      }
+    ],
+    "failed_attempts_preserved": true,
+    "unproven": [
+      {
+        "gate": "factor:graph_route_cuda",
+        "command_index": 1,
+        "verdict": "UNPROVEN",
+        "reason": "interrupted for desktop resource pressure or not yet executed; not PASS"
+      },
+      {
+        "gate": "factor:graph_route_vulkan",
+        "command_index": 0,
+        "verdict": "UNPROVEN",
+        "reason": "interrupted for desktop resource pressure or not yet executed; not PASS"
+      },
+      {
+        "gate": "factor:graph_route_vulkan",
+        "command_index": 1,
+        "verdict": "UNPROVEN",
+        "reason": "interrupted for desktop resource pressure or not yet executed; not PASS"
+      }
+    ]
+  },
+  "apple_affected_interface": {
+    "candidate": "26d7c2cb7212f5abdd3866baaf886b8fdbca02e5",
+    "machine": "MacBook Air Mac16,12 / 10 cores / 16 GiB / macOS 27.0.1 / AppleClang21.0.0 / CMake4.3.4",
+    "scope": "affected graph/common interface and original native Apple/CPU+Apple consumers, not new hybrid paging",
+    "stages": [
+      {
+        "stage": "configure",
+        "command": [
+          "/opt/homebrew/bin/cmake",
+          "-S",
+          "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-parent",
+          "-B",
+          "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-build"
+        ],
+        "exit_code": 1,
+        "elapsed_seconds": 0.767285875,
+        "log": "/Users/kiro/hyle-scratch/compute-unified/g02-checks/configure-1.log"
+      },
+      {
+        "stage": "configure",
+        "command": [
+          "/opt/homebrew/bin/cmake",
+          "-S",
+          "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-parent",
+          "-B",
+          "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-build"
+        ],
+        "exit_code": 0,
+        "elapsed_seconds": 5.783870375,
+        "log": "/Users/kiro/hyle-scratch/compute-unified/g02-checks/configure-2.log"
+      },
+      {
+        "stage": "build",
+        "command": [
+          "/opt/homebrew/bin/cmake",
+          "--build",
+          "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-build",
+          "--target",
+          "hyle_h2_cpu_apple",
+          "hyle_h2_contracts",
+          "hyle_foundation_a_apple",
+          "hyle_f5_public_batch_native",
+          "--parallel",
+          "10"
+        ],
+        "exit_code": 0,
+        "elapsed_seconds": 6.084963667,
+        "log": "/Users/kiro/hyle-scratch/compute-unified/g02-checks/build-1.log"
+      },
+      {
+        "stage": "run-hyle_h2_cpu_apple",
+        "command": [
+          "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-build/hyle_h2_cpu_apple"
+        ],
+        "exit_code": 0,
+        "elapsed_seconds": 3.0361811250000006,
+        "log": "/Users/kiro/hyle-scratch/compute-unified/g02-checks/run-hyle_h2_cpu_apple-1.log"
+      },
+      {
+        "stage": "run-hyle_h2_contracts",
+        "command": [
+          "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-build/hyle_h2_contracts"
+        ],
+        "exit_code": 0,
+        "elapsed_seconds": 0.4671809170000003,
+        "log": "/Users/kiro/hyle-scratch/compute-unified/g02-checks/run-hyle_h2_contracts-1.log"
+      },
+      {
+        "stage": "run-hyle_foundation_a_apple",
+        "command": [
+          "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-build/hyle_foundation_a_apple"
+        ],
+        "exit_code": 0,
+        "elapsed_seconds": 0.6387975839999989,
+        "log": "/Users/kiro/hyle-scratch/compute-unified/g02-checks/run-hyle_foundation_a_apple-1.log"
+      },
+      {
+        "stage": "run-hyle_f5_public_batch_native",
+        "command": [
+          "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-build/hyle_f5_public_batch_native"
+        ],
+        "exit_code": 0,
+        "elapsed_seconds": 0.4886196250000019,
+        "log": "/Users/kiro/hyle-scratch/compute-unified/g02-checks/run-hyle_f5_public_batch_native-1.log"
+      },
+      {
+        "stage": "graph-headers",
+        "command": [
+          "/usr/bin/python3",
+          "/Users/kiro/hyle-scratch/compute-unified/source-c8874688/scripts/header-self-contained.py",
+          "--module",
+          "graph",
+          "--include-dir",
+          "/Users/kiro/hyle-scratch/compute-unified/source-c8874688/include",
+          "--cxx",
+          "/usr/bin/clang++",
+          "--cxx-compiler-id",
+          "AppleClang",
+          "--cxx-frontend",
+          "GNU"
+        ],
+        "exit_code": 1,
+        "elapsed_seconds": 1.668095958000002,
+        "log": "/Users/kiro/hyle-scratch/compute-unified/g02-checks/graph-headers-1.log"
+      },
+      {
+        "stage": "graph-headers",
+        "command": [
+          "/usr/bin/python3",
+          "/Users/kiro/hyle-scratch/compute-unified/source-c8874688/scripts/header-self-contained.py",
+          "--module",
+          "graph",
+          "--header-dir",
+          "graph",
+          "--header",
+          "graph.h",
+          "--header",
+          "compile_report.h",
+          "--header",
+          "executable.h",
+          "--header",
+          "native_variants.h",
+          "--header",
+          "leased_invocation.h",
+          "--header",
+          "region_provider.h",
+          "--header",
+          "visibility.h",
+          "--header",
+          "batch.h",
+          "--header",
+          "cpu.h",
+          "--include-dir",
+          "/Users/kiro/hyle-scratch/compute-unified/source-c8874688/include",
+          "--cxx",
+          "/usr/bin/clang++",
+          "--cxx-compiler-id",
+          "AppleClang",
+          "--cxx-frontend",
+          "GNU"
+        ],
+        "exit_code": 0,
+        "elapsed_seconds": 1.9133132910000001,
+        "log": "/Users/kiro/hyle-scratch/compute-unified/g02-checks/graph-headers-2.log"
+      }
+    ]
+  },
+  "p0": {
+    "cold": "O(lane capacity + active bindings + regions) bounded metadata, retained original native slots",
+    "warm": "original full QueueBindings prepare_replay once and submit; no second queue/runtime/plan per step",
+    "product_physical_diff": "+63/-12 = +51",
+    "self_written_native_net": 43,
+    "loc_snapshot": "26d7c2cb7",
+    "repository_code": 2835108,
+    "self_written_native_code": 174381,
+    "graph_conventional_directory_code": 14875,
+    "graph_batch_src_only_code": 345,
+    "boundary_warning": "graph directory includes split route headers; graph_batch count excludes public graph/batch.h; exact reports in raw.zip"
+  },
   "raw": [
     {
-      "path": "host-build.log",
-      "sha256": "bd5ce55c6e3b7388e8c11d7c59e924d3999ea0283e68075a5f5eaa151dcb5cf9"
+      "path": "candidate/air-input-manifest.json",
+      "sha256": "1fd7832639488a87171123c2f9e698e32829e13fdb9ae3e93d6e6bb6d5263801"
     },
     {
-      "path": "host-graph-build.log",
-      "sha256": "8bf34be7e04e54ba1d8c66fbbd344cfeeae5710ca5e6f9388992177e3220c22b"
+      "path": "candidate/air-raw/build-1.log",
+      "sha256": "054269e8fddbde48c54152d393495b81abcc4aada27437f6758b7581885cd69d"
     },
     {
-      "path": "host-tests.log",
-      "sha256": "f9a194f07d0437acdac955f6cf8d49514f03cee6cc20a205f2dfcc70e5ed4625"
+      "path": "candidate/air-raw/configure-1.log",
+      "sha256": "616c8961c7597c4840dfafc4105a17492871a057e51c44aaedbddff9feaa509f"
     },
     {
-      "path": "graph-headers-with-sdk.log",
-      "sha256": "41e582de6b1f805f54032696751e0e88dd432b99b9bf986bde5aab596a10a1de"
+      "path": "candidate/air-raw/configure-2.log",
+      "sha256": "786804dfb92b636b14fe49f59d22f2333a155777ea1f5930b811eeeae470623d"
     },
     {
-      "path": "host-final-api-build.log",
-      "sha256": "e197f954011cd9791a5463c23e67b229314d1678647efec83e6000c35d75f2fb"
+      "path": "candidate/air-raw/graph-headers-1.log",
+      "sha256": "bfe62471c61367c274589e90e24fabb769aaae95ace2963c267bd3450aa1143a"
     },
     {
-      "path": "host-final-api-tests.log",
-      "sha256": "453539a2a0d435ce1daf87e4517788d207d938ba086dc5315f177a346fa14272"
+      "path": "candidate/air-raw/graph-headers-2.log",
+      "sha256": "f789e4df3b30b0d9b3d23dbecf96ef884b836990701ecfa16d1292efbbaf9774"
     },
     {
-      "path": "wsl-build.log",
-      "sha256": "5aeac8bd735cf2d32eeab242f533dbeee7029f5cab1613201bb0955d67f1cb0d"
+      "path": "candidate/air-raw/result.json",
+      "sha256": "a8fee5676a53020e3b6cd146b694403fc840f5d45c6d0516c3841d586d3f76d1"
     },
     {
-      "path": "wsl-native-graph.log",
-      "sha256": "eba574503d5b0885c1f4dae1797c889611b58043f84267998805e33006a99a1c"
+      "path": "candidate/air-raw/run-hyle_f5_public_batch_native-1.log",
+      "sha256": "b8725b08e1578cb03b8eb99a2f1c18fc06b6c9b6f469ad6796fde1edb4d8ee02"
     },
     {
-      "path": "wsl-native-graph-fault-correction.log",
-      "sha256": "eba574503d5b0885c1f4dae1797c889611b58043f84267998805e33006a99a1c"
+      "path": "candidate/air-raw/run-hyle_foundation_a_apple-1.log",
+      "sha256": "bf9beadd2b58acd936cea7132012c98e486c6093857a173d3a559c9643ecb6cf"
     },
     {
-      "path": "run-native-debug.log",
-      "sha256": "4bd15da059dbedbc5999782d64a82dc2cb5be04d9ce5b9b3b265179c4e994f20"
+      "path": "candidate/air-raw/run-hyle_h2_contracts-1.log",
+      "sha256": "4cd63a75aecc8a1837af896c4ae22dc624ec5266801b995eaa69ec4ddc8ad56d"
     },
     {
-      "path": "run-native-debug.json",
-      "sha256": "449ec09742450a748c05fb957c9a2788efdeaa31ae3dbc8c422a787e0305b5fc"
+      "path": "candidate/air-raw/run-hyle_h2_cpu_apple-1.log",
+      "sha256": "19ac743b5ea66ae111889bd5a8dc32ecda66e138d87443ef1ac5cfd38333dd91"
     },
     {
-      "path": "run-native-per-lane-staging.log",
-      "sha256": "a2f3701407f58d43035d31f6ca6cccf3b845219d85b7cbc6c37410e1916196e5"
+      "path": "candidate/air-result.json",
+      "sha256": "a8fee5676a53020e3b6cd146b694403fc840f5d45c6d0516c3841d586d3f76d1"
     },
     {
-      "path": "run-native-per-lane-staging.json",
-      "sha256": "45f9ab9bcd42fa59fff1c20c95e8d9f7379fc1e21b6fad68b43bb3a88691c396"
+      "path": "candidate/air-sync.json",
+      "sha256": "0f7448b3894c56abd319de199af7805960a73cc7263d39c664f734ed26fb13e9"
     },
     {
-      "path": "build-native-per-lane-staging.log",
-      "sha256": "247a81b2e81255ae30dea78512bef6879b2bb4d4d51faaf68778062777682ff3"
+      "path": "candidate/air_checks.py",
+      "sha256": "860104b70e2cdeb5fb8bb924916fd5c089bbf4441a36a8b00490e25e1b435608"
     },
     {
-      "path": "build-native-per-lane-staging.json",
-      "sha256": "b2d1a849684699c08e721640107a94386a85d78f937510161f30b1c0494e3841"
+      "path": "candidate/air_sync.py",
+      "sha256": "ce9ee514a3a4044e7cac943fc609fe897ffc1a963721e4312f1a32dd91540ebf"
     },
     {
-      "path": "run-native-independent-topology.log",
-      "sha256": "6bb7b938ab2bad47807bbad2958d64d25afbb2ad89efef227e8ae38ac9c22e24"
+      "path": "candidate/asan-build-1.log",
+      "sha256": "22cdad20ac0546ea4321238c42257c5b7ee47ae462e161dc35423436c383cf91"
     },
     {
-      "path": "run-native-independent-topology.json",
-      "sha256": "95a538aa20b946a3b56535a05786741fb29f99b0273b1673562bdb58fa03b7bf"
+      "path": "candidate/asan-configure-1.log",
+      "sha256": "2cef89ade641d5e3ddddf60bea996714423e7fa186e8587cb90b5a217aee1f50"
     },
     {
-      "path": "run-native-shared-and-independent.log",
+      "path": "candidate/asan-instrumented-inputs.json",
+      "sha256": "479d40101664db39edac4626ac9137d0bd970ef3be247eb1fbf3bce759b77381"
+    },
+    {
+      "path": "candidate/asan-result.json",
+      "sha256": "e17da9874fa98ea6dd1f3f8dda67c97fa9aeeb33857ee91286c53d680a5ffb0e"
+    },
+    {
+      "path": "candidate/asan-run-graph-1.log",
       "sha256": "8aaad04d01c7160affd422c74f4a371744906588b7a7ae82cb56be59dd66e81e"
     },
     {
-      "path": "run-native-shared-and-independent.json",
-      "sha256": "2a5f6ab83f9b0b223c572e8aeb921f9a2990c1cb5d726847f74d85696bf72b3e"
+      "path": "candidate/asan-run-hybrid-1.log",
+      "sha256": "c8fa0afce1ba39cc744d210998be12d33468494c562dbf7f1ecbf7a0030039c2"
     },
     {
-      "path": "build-native-shared-and-independent.log",
+      "path": "candidate/asan-run-public_cuda-1.log",
+      "sha256": "5f5775c28f5f191be75e68e6b6c1ff42300f71c122407883bbfff333a4ce0d1b"
+    },
+    {
+      "path": "candidate/build-native-debug.json",
+      "sha256": "7c7fa07263884bc7550ebe0c5131da4048aa73af6c6de160166807e3047423cf"
+    },
+    {
+      "path": "candidate/build-native-debug.log",
       "sha256": "e289c14a395edc125d6fbce8ea5b7c5b5b694777052b497e8d6948db821452ab"
     },
     {
-      "path": "build-native-shared-and-independent.json",
+      "path": "candidate/build-native-hybrid-both-dtypes.json",
+      "sha256": "d550e5416ceb874eb6c5f5b5a47c14aa60e47e4af8ed3a5736a51be2cf6acf36"
+    },
+    {
+      "path": "candidate/build-native-hybrid-both-dtypes.log",
+      "sha256": "3ae98d324d21ccb290171abf2bf2907921208ac2475ebacd00c38d15d68db29f"
+    },
+    {
+      "path": "candidate/build-native-hybrid.json",
+      "sha256": "cd3e97b2a256874707ea4f375bea23042f0f4bfaee7cbe7e7860dd34ba3cfa17"
+    },
+    {
+      "path": "candidate/build-native-hybrid.log",
+      "sha256": "146d25176de67fe51a6dbf94cd9d5d007b841f6ec051c91058b3a0bbee78353b"
+    },
+    {
+      "path": "candidate/build-native-independent-topology.json",
+      "sha256": "8f95f5323f4a3b93966409be2f5b2e0d6bb767734e15eb5969acf382d6bd2415"
+    },
+    {
+      "path": "candidate/build-native-independent-topology.log",
+      "sha256": "e289c14a395edc125d6fbce8ea5b7c5b5b694777052b497e8d6948db821452ab"
+    },
+    {
+      "path": "candidate/build-native-per-lane-staging.json",
+      "sha256": "b2d1a849684699c08e721640107a94386a85d78f937510161f30b1c0494e3841"
+    },
+    {
+      "path": "candidate/build-native-per-lane-staging.log",
+      "sha256": "247a81b2e81255ae30dea78512bef6879b2bb4d4d51faaf68778062777682ff3"
+    },
+    {
+      "path": "candidate/build-native-shared-and-independent.json",
       "sha256": "cdacfe2e3b72c269197fdd1f0f7f945bf0b2aeb3b22849ecbc0f6b4fef55e500"
     },
     {
-      "path": "wsl-sync.json",
+      "path": "candidate/build-native-shared-and-independent.log",
+      "sha256": "e289c14a395edc125d6fbce8ea5b7c5b5b694777052b497e8d6948db821452ab"
+    },
+    {
+      "path": "candidate/candidate-validation-checkpoint.json",
+      "sha256": "98ac2a07318718493252cc3f968704ae02090568f874507abcc95349dfc13e77"
+    },
+    {
+      "path": "candidate/closure-maintenance.log",
+      "sha256": "4360c505c9ee8e52712679590911dbc10bfac68570b53bd7b6a960d474f49d32"
+    },
+    {
+      "path": "candidate/configure-native-hybrid.json",
+      "sha256": "9c2d6bceb15ff16ca27d46f438e07bffe4f77fb276b8364738c37f36116ca64c"
+    },
+    {
+      "path": "candidate/configure-native-hybrid.log",
+      "sha256": "61bb8d7b4f135d107689183df32bca64e73d7205a0ea1d9694437038b5f58942"
+    },
+    {
+      "path": "candidate/configure-selected-0-1.log",
+      "sha256": "f348a87fc54a0d6f81cf3b82b945d8c6882ba8cbc2ffccb29e7341a1028e5566"
+    },
+    {
+      "path": "candidate/configure-selected-0-2.log",
+      "sha256": "f3c9559f79487397b2d68a7e2fec00e984ff74f9c9e5a0c8340f1e1887536d36"
+    },
+    {
+      "path": "candidate/configure-selected-0-3.log",
+      "sha256": "659f973a987651bc21478be25b10d1eca838b17c6f989644db5c043aa65b51c5"
+    },
+    {
+      "path": "candidate/configure-selected-0-4.log",
+      "sha256": "fb161834fb31a9e637623b395ce475ec2dbe440578be7c2f3e55850dcc1e7445"
+    },
+    {
+      "path": "candidate/configure-selected-0-5.log",
+      "sha256": "b97ef1361995cbd54578c66db606de4b799480a5ee7ca22dd3a5c055db24e00b"
+    },
+    {
+      "path": "candidate/docs-maintenance.log",
+      "sha256": "cccac433cc46854160cb3e3373863df4dd3a5a98b63b40871d571e9af861a9ae"
+    },
+    {
+      "path": "candidate/environment-init-2.log",
+      "sha256": "7716162f3cd3b99cf3b8a8dd6decf324e08c7e941aae7e730baba5e4fc8c075b"
+    },
+    {
+      "path": "candidate/environment-init-3.log",
+      "sha256": "7716162f3cd3b99cf3b8a8dd6decf324e08c7e941aae7e730baba5e4fc8c075b"
+    },
+    {
+      "path": "candidate/environment-init-4.log",
+      "sha256": "7716162f3cd3b99cf3b8a8dd6decf324e08c7e941aae7e730baba5e4fc8c075b"
+    },
+    {
+      "path": "candidate/environment-init-5.log",
+      "sha256": "7716162f3cd3b99cf3b8a8dd6decf324e08c7e941aae7e730baba5e4fc8c075b"
+    },
+    {
+      "path": "candidate/environment-init-6.log",
+      "sha256": "7716162f3cd3b99cf3b8a8dd6decf324e08c7e941aae7e730baba5e4fc8c075b"
+    },
+    {
+      "path": "candidate/environment-init.log",
+      "sha256": "7716162f3cd3b99cf3b8a8dd6decf324e08c7e941aae7e730baba5e4fc8c075b"
+    },
+    {
+      "path": "candidate/factor-compute_batch-selected-0-1.log",
+      "sha256": "023ac192a169a645406f2ecbf570cbbb1db271942d81fb69c28eb4e6a6832b2e"
+    },
+    {
+      "path": "candidate/factor-compute_batch-selected-1-1.log",
+      "sha256": "f81f3feab87283cf5d9e24cd846afc4c796ea6d929dffb66e993a6cf179a93e5"
+    },
+    {
+      "path": "candidate/factor-graph-selected-0-1.log",
+      "sha256": "2803b703be9d2fe23ef0653ec3198f27dddffefb1b9320d1431692e4c4444316"
+    },
+    {
+      "path": "candidate/factor-graph-selected-1-1.log",
+      "sha256": "66aef8c326e9d6539112d2e7d9cd53dbe8728143e6491074bb822ae414daa15f"
+    },
+    {
+      "path": "candidate/factor-graph_batch-selected-0-1.log",
+      "sha256": "6910c1d96accb4de48a43ec16ced63b1f6b8daca4cdf3e6e31c5f4fb1da11334"
+    },
+    {
+      "path": "candidate/factor-graph_batch-selected-1-1.log",
+      "sha256": "2820b5ad684a0c3b1e59ee736fbd84158db197157fbd3eef70bd79515c9f6da7"
+    },
+    {
+      "path": "candidate/factor-graph_provider_ggml_cuda-selected-0-1.log",
+      "sha256": "911d28e5ae3e5b49be39c0dcee8f97f18e7115302ebafc0fbc6ef3dafafe7b1a"
+    },
+    {
+      "path": "candidate/factor-graph_provider_ggml_cuda-selected-1-1.log",
+      "sha256": "4563988bc33bf3c7663effcc496c90662f44af455da50dcd77d559c6f4bd3abf"
+    },
+    {
+      "path": "candidate/factor-graph_provider_onednn-selected-0-1.log",
+      "sha256": "3e783ca7825be4974253e384c2a5847122eadbdaaf2fd7035253b1fb515d27c4"
+    },
+    {
+      "path": "candidate/factor-graph_provider_onednn-selected-1-1.log",
+      "sha256": "cacf638378334f01d427226d08b0a38a21db18652590f0c109755326a067e32e"
+    },
+    {
+      "path": "candidate/factor-graph_route_cpu-selected-0-1.log",
+      "sha256": "4eddcc964a598854d1c1a39472c218b67bd7bca956f260021415bb4a20db1702"
+    },
+    {
+      "path": "candidate/factor-graph_route_cpu-selected-1-1.log",
+      "sha256": "1e8c8e8fd857f494f78466708405ecab89396a0c95d552df377721a65215efae"
+    },
+    {
+      "path": "candidate/factor-graph_route_cpu_apple-selected-0-1.log",
+      "sha256": "7716162f3cd3b99cf3b8a8dd6decf324e08c7e941aae7e730baba5e4fc8c075b"
+    },
+    {
+      "path": "candidate/factor-graph_route_cpu_apple-selected-1-1.log",
+      "sha256": "4a6f020771dff5cd14429f936307af9b282557d2f05890450a4c98ca06af2a89"
+    },
+    {
+      "path": "candidate/factor-graph_route_cpu_cuda-selected-0-1.log",
+      "sha256": "0eac98ccf77b2693182d62338946fa7c16fbad08abaee52272487d6cb0c2d625"
+    },
+    {
+      "path": "candidate/factor-graph_route_cpu_cuda-selected-1-1.log",
+      "sha256": "8dc8f957b62c1cbed6aff3ea9edbeadde8b59b6ee8cccddca1d7d20addee3781"
+    },
+    {
+      "path": "candidate/factor-graph_route_cpu_vulkan-selected-0-1.log",
+      "sha256": "b2fd9be83ef432abc61dccfd1de84637f84f68deeaa3a6dddec8fe887aa69195"
+    },
+    {
+      "path": "candidate/factor-graph_route_cpu_vulkan-selected-1-1.log",
+      "sha256": "aab75fef27aa0358a5d5aa350270cad6eded665f8498c7e707e8eaa23dc34817"
+    },
+    {
+      "path": "candidate/factor-graph_route_cuda-selected-0-1.log",
+      "sha256": "e190b5ba66164d40fa352e9d198dc2d2f0271926eefab2597debcb1841913b05"
+    },
+    {
+      "path": "candidate/factor-graph_route_cuda-selected-1-1.log",
+      "sha256": "ec398da25eaee370425b80edc4a919cfd06d3511f1e9b6727481f523489bc542"
+    },
+    {
+      "path": "candidate/graph-batch-loc-candidate.json",
+      "sha256": "f0b0e11d9db4dbb45a61a52601fd5f68ef3399c444a444e39ab0c87f349973bd"
+    },
+    {
+      "path": "candidate/graph-headers-with-sdk.log",
+      "sha256": "41e582de6b1f805f54032696751e0e88dd432b99b9bf986bde5aab596a10a1de"
+    },
+    {
+      "path": "candidate/graph-loc-candidate.json",
+      "sha256": "e0d9e255756f50caa794a2b6b008b48ef9fdf87f68b25651d306e2b258f2a1dd"
+    },
+    {
+      "path": "candidate/headers-graph-selected-0-1.log",
+      "sha256": "3d7ba9925db54e8dd2dc835ca35043f5f9c90a2118614277689ded4dcbdb3fb7"
+    },
+    {
+      "path": "candidate/headers-graph-selected-0-2.log",
+      "sha256": "41e582de6b1f805f54032696751e0e88dd432b99b9bf986bde5aab596a10a1de"
+    },
+    {
+      "path": "candidate/headers-graph_batch-selected-0-1.log",
+      "sha256": "b1347e59374ffe93c81f3a8316d2cdef94c044bbe5c3f8e794e973190a6d250d"
+    },
+    {
+      "path": "candidate/host-build.log",
+      "sha256": "bd5ce55c6e3b7388e8c11d7c59e924d3999ea0283e68075a5f5eaa151dcb5cf9"
+    },
+    {
+      "path": "candidate/host-final-api-build.log",
+      "sha256": "e197f954011cd9791a5463c23e67b229314d1678647efec83e6000c35d75f2fb"
+    },
+    {
+      "path": "candidate/host-final-api-tests.log",
+      "sha256": "453539a2a0d435ce1daf87e4517788d207d938ba086dc5315f177a346fa14272"
+    },
+    {
+      "path": "candidate/host-graph-build.log",
+      "sha256": "8bf34be7e04e54ba1d8c66fbbd344cfeeae5710ca5e6f9388992177e3220c22b"
+    },
+    {
+      "path": "candidate/host-per-lane-staging-build.log",
+      "sha256": "fca1843bbfd56cb8fa06b6ffa4d3fd1d36a4d484f345b5f67392b1351c94f86a"
+    },
+    {
+      "path": "candidate/host-tests.log",
+      "sha256": "f9a194f07d0437acdac955f6cf8d49514f03cee6cc20a205f2dfcc70e5ed4625"
+    },
+    {
+      "path": "candidate/maintenance-result.json",
+      "sha256": "a9ae4653dac6b37c9d00bcbb3a8598d8f1b061590c24a8ef784c06a44afc93f5"
+    },
+    {
+      "path": "candidate/oom-build.log",
+      "sha256": "27bafd423e63f022062a35ecf1cf0caabc440fb7dbd4805ba1ec1b9e595de185"
+    },
+    {
+      "path": "candidate/oom-configure.log",
+      "sha256": "c97072e5e1672ce9db7228bb4f5cc16f1e1a8c69997dd1e2b5b69dd210256282"
+    },
+    {
+      "path": "candidate/oom-result.json",
+      "sha256": "84899505fa492f332127b19db16676735f4b0a73763ed2bff10c2621bfdca22c"
+    },
+    {
+      "path": "candidate/oom-run.log",
+      "sha256": "f81b702894e21a964ea6138dcb0a0be8f7b1c4fdf0dc9b00ba871229c4e33bc5"
+    },
+    {
+      "path": "candidate/oom_checks.py",
+      "sha256": "3b8b4837bad0fc42f389ad952a4bfc12c34aebc15f925562fc7d9c0d89c97e57"
+    },
+    {
+      "path": "candidate/public_hybrid_oom_consumer.cc",
+      "sha256": "058b06b646b03ddfeba35ddedaeec748993fc79ca8839ca819aa89d58742f11d"
+    },
+    {
+      "path": "candidate/run-native-debug.json",
+      "sha256": "449ec09742450a748c05fb957c9a2788efdeaa31ae3dbc8c422a787e0305b5fc"
+    },
+    {
+      "path": "candidate/run-native-debug.log",
+      "sha256": "4bd15da059dbedbc5999782d64a82dc2cb5be04d9ce5b9b3b265179c4e994f20"
+    },
+    {
+      "path": "candidate/run-native-hybrid-both-dtypes.json",
+      "sha256": "6f5c88acad45eb3c297f173aa482201016ac516250718e05ad79bce849508d90"
+    },
+    {
+      "path": "candidate/run-native-hybrid-both-dtypes.log",
+      "sha256": "c8fa0afce1ba39cc744d210998be12d33468494c562dbf7f1ecbf7a0030039c2"
+    },
+    {
+      "path": "candidate/run-native-hybrid.json",
+      "sha256": "09e40d64260ddb0ff29c3d373bff207e59e84c3679cda7983673fe8ee5d95b34"
+    },
+    {
+      "path": "candidate/run-native-hybrid.log",
+      "sha256": "9015e76440c958d24533500e146f4641e724462db985fa7bb33db34da36271f1"
+    },
+    {
+      "path": "candidate/run-native-independent-topology.json",
+      "sha256": "95a538aa20b946a3b56535a05786741fb29f99b0273b1673562bdb58fa03b7bf"
+    },
+    {
+      "path": "candidate/run-native-independent-topology.log",
+      "sha256": "6bb7b938ab2bad47807bbad2958d64d25afbb2ad89efef227e8ae38ac9c22e24"
+    },
+    {
+      "path": "candidate/run-native-per-lane-staging.json",
+      "sha256": "45f9ab9bcd42fa59fff1c20c95e8d9f7379fc1e21b6fad68b43bb3a88691c396"
+    },
+    {
+      "path": "candidate/run-native-per-lane-staging.log",
+      "sha256": "a2f3701407f58d43035d31f6ca6cccf3b845219d85b7cbc6c37410e1916196e5"
+    },
+    {
+      "path": "candidate/run-native-shared-and-independent.json",
+      "sha256": "2a5f6ab83f9b0b223c572e8aeb921f9a2990c1cb5d726847f74d85696bf72b3e"
+    },
+    {
+      "path": "candidate/run-native-shared-and-independent.log",
+      "sha256": "8aaad04d01c7160affd422c74f4a371744906588b7a7ae82cb56be59dd66e81e"
+    },
+    {
+      "path": "candidate/run_wsl_native.py",
+      "sha256": "526ba2386c32a81f4b3dfe7b35239f30d1c558c39673652546fc7b9b1a64a274"
+    },
+    {
+      "path": "candidate/san_checks.py",
+      "sha256": "01cf19af6cffd40a4185a9fc03eb4f0f0b850eb47cb2e3fb4417dc294b640386"
+    },
+    {
+      "path": "candidate/sdk_checks.py",
+      "sha256": "fce03c4f84a856fc31a4f8a9190360823b8a880e9af9a24d8f0801f84d671bf9"
+    },
+    {
+      "path": "candidate/seal_common.py",
+      "sha256": "c88fb594fa96059a4d0b079b6ff210f279b37857ed353c865cc67b6394fd78ef"
+    },
+    {
+      "path": "candidate/selected_checks.py",
+      "sha256": "af4f8d14bb731058c46fafcae46bae78aea13e8eadd1fe43467f9bd29470a2e5"
+    },
+    {
+      "path": "candidate/shared-sdk-consumer-build.log",
+      "sha256": "4c80901130d620ebad76a0723b8ac797034944cb85fdb277e184c4a9a68131a7"
+    },
+    {
+      "path": "candidate/shared-sdk-consumer-configure.log",
+      "sha256": "f14bf699b2da0d7c84f4557b29e89f6b67906861307fc798b7f885a040ff126e"
+    },
+    {
+      "path": "candidate/shared-sdk-install.log",
+      "sha256": "024ec52b9250e72e248130e33b7a8f4a7c4454db30462fde3709e8b63b37a044"
+    },
+    {
+      "path": "candidate/shared-sdk-producer-build.log",
+      "sha256": "4c02ea37fa5ee9bbdd80381e0c7536189228caac01ad8794217acd1418fb7c15"
+    },
+    {
+      "path": "candidate/shared-sdk-result.json",
+      "sha256": "4097a57566b6d21decf51a060f6a4ba98e54b6e870718b55876206d9cc429978"
+    },
+    {
+      "path": "candidate/shared-sdk-run-hybrid.log",
+      "sha256": "c8fa0afce1ba39cc744d210998be12d33468494c562dbf7f1ecbf7a0030039c2"
+    },
+    {
+      "path": "candidate/shared-sdk-run-native.log",
+      "sha256": "8aaad04d01c7160affd422c74f4a371744906588b7a7ae82cb56be59dd66e81e"
+    },
+    {
+      "path": "candidate/shared-sdk-run-public_cuda.log",
+      "sha256": "5f5775c28f5f191be75e68e6b6c1ff42300f71c122407883bbfff333a4ce0d1b"
+    },
+    {
+      "path": "candidate/static-sdk-consumer-build.log",
+      "sha256": "bd6d65ec8d9926ea627fcdf5c5f1b9f9b6ba3253eaea466a9ca4e06fea668756"
+    },
+    {
+      "path": "candidate/static-sdk-consumer-configure-2.log",
+      "sha256": "4636ef124bf5034bc1e8d33fb687cce0a55b54e642e27bde7a86c58edb71774d"
+    },
+    {
+      "path": "candidate/static-sdk-consumer-configure.log",
+      "sha256": "e208ea96c9c86c53a5d63e01a72f31992eb4d2452e5fb14632379e0749f6fced"
+    },
+    {
+      "path": "candidate/static-sdk-install.log",
+      "sha256": "f1dffc50cc9d921603099818baacc0ff7a574228a9d1a5501f20703519e76cfc"
+    },
+    {
+      "path": "candidate/static-sdk-producer-build.log",
+      "sha256": "240b07b2152a8766baf62223925a73514a9819ed3e856e52a60ddb8a1521bd98"
+    },
+    {
+      "path": "candidate/static-sdk-result.json",
+      "sha256": "82f94128772683b86610e664d9be90435f881ac3d381cef1dfd71992504b9e5d"
+    },
+    {
+      "path": "candidate/static-sdk-run-hybrid.log",
+      "sha256": "c8fa0afce1ba39cc744d210998be12d33468494c562dbf7f1ecbf7a0030039c2"
+    },
+    {
+      "path": "candidate/static-sdk-run-native.log",
+      "sha256": "8aaad04d01c7160affd422c74f4a371744906588b7a7ae82cb56be59dd66e81e"
+    },
+    {
+      "path": "candidate/static-sdk-run-public_cuda.log",
+      "sha256": "5f5775c28f5f191be75e68e6b6c1ff42300f71c122407883bbfff333a4ce0d1b"
+    },
+    {
+      "path": "candidate/sync_validation.py",
+      "sha256": "c3ced03702e5d5aabc09b1c38b31221c18f1ae038234d281e2d6d0767a94fee3"
+    },
+    {
+      "path": "candidate/tsan-build-1.log",
+      "sha256": "84bb118e7eb2616bdeb7e6eb42c1126e6b14bf8a55f1555ed9f814fe61dfddbf"
+    },
+    {
+      "path": "candidate/tsan-configure-1.log",
+      "sha256": "cd6038de023e421f436e7097aab0b39158dfdec274ac9c9869e9483226a8cc9d"
+    },
+    {
+      "path": "candidate/tsan-instrumented-inputs.json",
+      "sha256": "16e830e1310acb0836f8f06d9b5b418368f59733842499851f69a1c142bb9c7a"
+    },
+    {
+      "path": "candidate/tsan-result.json",
+      "sha256": "64f422f9a5ddd13e9740193279cdcd388df494b53d4ad0caf00961706357eeb0"
+    },
+    {
+      "path": "candidate/tsan-run-graph-1.log",
+      "sha256": "8aaad04d01c7160affd422c74f4a371744906588b7a7ae82cb56be59dd66e81e"
+    },
+    {
+      "path": "candidate/tsan-run-hybrid-1.log",
+      "sha256": "c8fa0afce1ba39cc744d210998be12d33468494c562dbf7f1ecbf7a0030039c2"
+    },
+    {
+      "path": "candidate/tsan-run-public_cuda-1.log",
+      "sha256": "5f5775c28f5f191be75e68e6b6c1ff42300f71c122407883bbfff333a4ce0d1b"
+    },
+    {
+      "path": "candidate/ubsan-build-1.log",
+      "sha256": "93233bf899cc28f16a820678051e7d92c5695690546baeee0f872807e87767ae"
+    },
+    {
+      "path": "candidate/ubsan-configure-1.log",
+      "sha256": "cd0b7cc9ab5c567f7644eeee80d490755a10b9aab6483e64a105b340f7607470"
+    },
+    {
+      "path": "candidate/ubsan-instrumented-inputs.json",
+      "sha256": "feac063481f6d91614f64837a80d177d80c6ca027e2390746d928aa6a70d7536"
+    },
+    {
+      "path": "candidate/ubsan-result.json",
+      "sha256": "e92c15a0a2c1567118b0097e88c4754c03f2cfe3ff3398791342ad7fc859f0c7"
+    },
+    {
+      "path": "candidate/ubsan-run-graph-1.log",
+      "sha256": "8aaad04d01c7160affd422c74f4a371744906588b7a7ae82cb56be59dd66e81e"
+    },
+    {
+      "path": "candidate/ubsan-run-hybrid-1.log",
+      "sha256": "c8fa0afce1ba39cc744d210998be12d33468494c562dbf7f1ecbf7a0030039c2"
+    },
+    {
+      "path": "candidate/ubsan-run-public_cuda-1.log",
+      "sha256": "5f5775c28f5f191be75e68e6b6c1ff42300f71c122407883bbfff333a4ce0d1b"
+    },
+    {
+      "path": "candidate/windows-resource-interruption.json",
+      "sha256": "8bd4f3951254258aa8ea53c2eead1051b38145cfc6fe216565c89420eda2f225"
+    },
+    {
+      "path": "candidate/windows-selected-before-header-path.json",
+      "sha256": "1da965d0a174bce1159677caecf266d5e57b33ad6ea5c7d9f5a65d880d74b22d"
+    },
+    {
+      "path": "candidate/windows-selected-before-test-ownership.json",
+      "sha256": "9854d5507d3cef042e89bc7160cbdf6b172d025026e59bff5b747cd84ea03704"
+    },
+    {
+      "path": "candidate/windows-selected-plan.json",
+      "sha256": "8b153af99d94393538f8a35a8c410b5b0761e2fdeddb552e2a41c83d68a3f365"
+    },
+    {
+      "path": "candidate/windows-selected-result.json",
+      "sha256": "e22e4c211c1c6b58eb2deaf681dfaa2ec91c067d18c42c36526c49e7401f45e2"
+    },
+    {
+      "path": "candidate/wsl-build-fault-correction.log",
+      "sha256": "e289c14a395edc125d6fbce8ea5b7c5b5b694777052b497e8d6948db821452ab"
+    },
+    {
+      "path": "candidate/wsl-build.log",
+      "sha256": "5aeac8bd735cf2d32eeab242f533dbeee7029f5cab1613201bb0955d67f1cb0d"
+    },
+    {
+      "path": "candidate/wsl-native-graph-fault-correction.log",
+      "sha256": "eba574503d5b0885c1f4dae1797c889611b58043f84267998805e33006a99a1c"
+    },
+    {
+      "path": "candidate/wsl-native-graph.log",
+      "sha256": "eba574503d5b0885c1f4dae1797c889611b58043f84267998805e33006a99a1c"
+    },
+    {
+      "path": "candidate/wsl-sync.json",
+      "sha256": "7abf805d76bb7bf6a88c2d9e312ad99352994045c7b25703eb376cd8a5438fa9"
+    },
+    {
+      "path": "historical-stage/build-native-per-lane-staging.json",
+      "sha256": "b2d1a849684699c08e721640107a94386a85d78f937510161f30b1c0494e3841"
+    },
+    {
+      "path": "historical-stage/build-native-per-lane-staging.log",
+      "sha256": "247a81b2e81255ae30dea78512bef6879b2bb4d4d51faaf68778062777682ff3"
+    },
+    {
+      "path": "historical-stage/build-native-shared-and-independent.json",
+      "sha256": "cdacfe2e3b72c269197fdd1f0f7f945bf0b2aeb3b22849ecbc0f6b4fef55e500"
+    },
+    {
+      "path": "historical-stage/build-native-shared-and-independent.log",
+      "sha256": "e289c14a395edc125d6fbce8ea5b7c5b5b694777052b497e8d6948db821452ab"
+    },
+    {
+      "path": "historical-stage/graph-headers-with-sdk.log",
+      "sha256": "41e582de6b1f805f54032696751e0e88dd432b99b9bf986bde5aab596a10a1de"
+    },
+    {
+      "path": "historical-stage/host-build.log",
+      "sha256": "bd5ce55c6e3b7388e8c11d7c59e924d3999ea0283e68075a5f5eaa151dcb5cf9"
+    },
+    {
+      "path": "historical-stage/host-final-api-build.log",
+      "sha256": "e197f954011cd9791a5463c23e67b229314d1678647efec83e6000c35d75f2fb"
+    },
+    {
+      "path": "historical-stage/host-final-api-tests.log",
+      "sha256": "453539a2a0d435ce1daf87e4517788d207d938ba086dc5315f177a346fa14272"
+    },
+    {
+      "path": "historical-stage/host-graph-build.log",
+      "sha256": "8bf34be7e04e54ba1d8c66fbbd344cfeeae5710ca5e6f9388992177e3220c22b"
+    },
+    {
+      "path": "historical-stage/host-tests.log",
+      "sha256": "f9a194f07d0437acdac955f6cf8d49514f03cee6cc20a205f2dfcc70e5ed4625"
+    },
+    {
+      "path": "historical-stage/receipt.json",
+      "sha256": "d93dbeb2bbdf610e4bab3ad5b5d45926850d3ee242acd7ffbe886185f5b387dd"
+    },
+    {
+      "path": "historical-stage/run-native-debug.json",
+      "sha256": "449ec09742450a748c05fb957c9a2788efdeaa31ae3dbc8c422a787e0305b5fc"
+    },
+    {
+      "path": "historical-stage/run-native-debug.log",
+      "sha256": "4bd15da059dbedbc5999782d64a82dc2cb5be04d9ce5b9b3b265179c4e994f20"
+    },
+    {
+      "path": "historical-stage/run-native-independent-topology.json",
+      "sha256": "95a538aa20b946a3b56535a05786741fb29f99b0273b1673562bdb58fa03b7bf"
+    },
+    {
+      "path": "historical-stage/run-native-independent-topology.log",
+      "sha256": "6bb7b938ab2bad47807bbad2958d64d25afbb2ad89efef227e8ae38ac9c22e24"
+    },
+    {
+      "path": "historical-stage/run-native-per-lane-staging.json",
+      "sha256": "45f9ab9bcd42fa59fff1c20c95e8d9f7379fc1e21b6fad68b43bb3a88691c396"
+    },
+    {
+      "path": "historical-stage/run-native-per-lane-staging.log",
+      "sha256": "a2f3701407f58d43035d31f6ca6cccf3b845219d85b7cbc6c37410e1916196e5"
+    },
+    {
+      "path": "historical-stage/run-native-shared-and-independent.json",
+      "sha256": "2a5f6ab83f9b0b223c572e8aeb921f9a2990c1cb5d726847f74d85696bf72b3e"
+    },
+    {
+      "path": "historical-stage/run-native-shared-and-independent.log",
+      "sha256": "8aaad04d01c7160affd422c74f4a371744906588b7a7ae82cb56be59dd66e81e"
+    },
+    {
+      "path": "historical-stage/wsl-build.log",
+      "sha256": "5aeac8bd735cf2d32eeab242f533dbeee7029f5cab1613201bb0955d67f1cb0d"
+    },
+    {
+      "path": "historical-stage/wsl-native-graph-fault-correction.log",
+      "sha256": "eba574503d5b0885c1f4dae1797c889611b58043f84267998805e33006a99a1c"
+    },
+    {
+      "path": "historical-stage/wsl-native-graph.log",
+      "sha256": "eba574503d5b0885c1f4dae1797c889611b58043f84267998805e33006a99a1c"
+    },
+    {
+      "path": "historical-stage/wsl-sync.json",
       "sha256": "e46a59382f62c9fc9b843ff6fa40c1d28e70db8c4d7e22d8d3fa5258f014ffdf"
     }
   ],
-  "native": {
-    "command": [
-      "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/source-build/hyle_f5_native_graph"
+  "raw_zip_sha256": "084704bf9a6d747249016023cd1cb00f08f7e60d8bacef75c03ad837be79ca8f",
+  "separated_source_review": {
+    "review": "fresh pass over immutable final API and implementation plus public/source/SDK/fault/OOM receipts, separate from original implementation reasoning",
+    "checked": [
+      "LaneBindings count equals required active queues; no duplicate/closed/null/foreign Context or Queue admitted; retained Graph target owns exact Queue independent of Device ID",
+      "cold by_lane pointers used only within create; owned full QueueBindings copied; retained native ContextRef/program/slot keep original resource lifetime",
+      "RegionAccess visitor exports actual PlanStep.lane for both executable and invocation; original step ordinal/provider/slot preserved",
+      "each region program locks cold construction and rejects later foreign host workspace; independent native invocations reserve existing fixed slots",
+      "all allocation exits use coordinator RAII and native slot release; all 18 caller cold allocation points per dtype actually injected and live counts recovered",
+      "prepare validates full node/layout set and shared metadata same layout, clears old token/frame only after original idle/output guards; failed prefix clears all tokens and retains native uses",
+      "paged bind still validates allowed reader steps + schema layout + exact storage, normal dense binding cannot publish capacity view",
+      "submit reuses original prepare_replay only when unprepared after input bind; original full-queue submission handles accepted errors, dependent suffix stopping and retirement",
+      "public source and relocated static/shared final signature compile/run without internal API; migrated all real current callers; no legacy signature",
+      "P0 adds only bounded cold lane table and copied queue list; warm ordinary Graph/default path untouched; existing native planner waits/private UNKNOWN preserved"
     ],
-    "exit_code": 0,
-    "elapsed_seconds": 1.6121991189999996,
-    "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g02/run-native-shared-and-independent.log"
+    "finding": "no new product defect found in common slice; existing native Apple/Vulkan hybrid paged gap remains next scope"
   },
-  "native_cases": {
-    "two_cuda_contexts_two_queues": 6,
-    "same_context_shared_metadata": 1,
-    "fault_stages": 6,
-    "paged_arena_f4_dtype_cases": 2,
-    "ragged_append_reorder_dtype_cases": 2
-  },
-  "host": "MSVC 19.50.35728.0, CPU factor mechanism build plus real CUDA SDK header include",
-  "native_scope": "WSL Linux g++-14 RTX4070 locked FI; two CUDA Contexts, not CPU+GPU math",
-  "native_build_jobs": 12,
   "remaining": [
-    "source/static/shared changed API journeys",
-    "applicable sanitizers",
-    "final P0 and independent review",
-    "G02 actual CPU+GPU and Apple/Vulkan hybrid paged seams"
+    "native Apple/Vulkan joint paged G02 scope",
+    "G01 and G03-G10; full inference engine outside this goal"
   ]
 }

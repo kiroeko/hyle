@@ -1,0 +1,255 @@
+{
+  "kind": "G01 implementation-stage evidence; AUDITED, not candidate or closure",
+  "baseline": "070609442806ebfe6a0dc8d6594b7388c494f20b",
+  "source_snapshot": "current uncommitted source hashes; latest Vulkan test modified after failed binary and not rerun",
+  "inputs": [
+    {
+      "path": "src/compute_provider_ggml/ggml_cpu_provider.cc",
+      "sha256": "8bb2acd535782cc1a571d8804b70362475e59aac9a11bd6326b5c9a02d3566c7"
+    },
+    {
+      "path": "src/compute_provider_ggml_vulkan/region.cc",
+      "sha256": "35ebce579aad22ddc1e51300e403480232ef8645097eb403a199cb1a55da6e0c"
+    },
+    {
+      "path": "tests/compute_provider_ggml/layout_broadcast_test.cc",
+      "sha256": "8b9ca999e5552c5db94d97254640634b47a20bf2c19819b6d4d104611dceaf8a"
+    },
+    {
+      "path": "tests/compute_route_cpu/context_test.cc",
+      "sha256": "94f717f3ed314de9ada8b619782fc41a1d13d6e9f5790d158ad037a883a128f5"
+    },
+    {
+      "path": "tests/graph_route_vulkan/mature_tensor_test.cc",
+      "sha256": "266d29da5f6e8a87f41daba9a480327768a37dffea6273faafa067f236749635"
+    },
+    {
+      "path": "tests/compute_route_vulkan/catalogue_test_support.h",
+      "sha256": "526c39af4f9d7c1232873093c9e49ccc3d23acd7c91ae2aaed9b018d92fc8f2e"
+    },
+    {
+      "path": "tests/compute_route_vulkan/gguf_test_support.h",
+      "sha256": "15e0c87c22c484045011e937ee8875374990e5bb868301135f65e211b51d4c07"
+    },
+    {
+      "path": "tests/graph_route_vulkan/CMakeLists.txt",
+      "sha256": "76f888e8435bf6e0dc3aa62d7de3185579c682df013597ffd5ebc95847c50d71"
+    }
+  ],
+  "binaries": [
+    {
+      "path": "C:/h7/inference-g02-host-current/bin/hyle_compute_provider_ggml_test.exe",
+      "sha256": "ddf1ebc080a5e6c5ba7783f38226eadf31c57c1b9b16cec6329f11577c488a75"
+    },
+    {
+      "path": "C:/h7/inference-g02-impacted/bin/hyle_graph_route_cpu_test.exe",
+      "sha256": "d083907ee8fc063fa962d2bdd19920686b37b54060e6fa903041753753e39a79"
+    },
+    {
+      "path": "C:/h7/inference-g02-impacted/bin/hyle_graph_route_vulkan_test.exe",
+      "sha256": "393058a0506cf0a4c17fcb03221de123e09b3736b3319e849cd07a973c9d93e2"
+    },
+    {
+      "path": "C:/h7/inference-g02-impacted/bin/hyle_compute_provider_ggml_vulkan.dll",
+      "sha256": "2ac0e5243f01dc9b5e824f1fc45f786beac68c5d1cd9f74e8b978fb2801a9d15"
+    }
+  ],
+  "baseline_public_sdk": {
+    "candidate": "26d7c2cb7212f5abdd3866baaf886b8fdbca02e5",
+    "scope": "original installed SDK before G01 changes, tiny CPU-only rejection consumer",
+    "stages": [
+      {
+        "command": [
+          "cmake",
+          "-S",
+          "/root/hyle-scratch/compute-unified/g01-baseline-view",
+          "-B",
+          "/root/hyle-scratch/compute-unified/g01-baseline-view/build",
+          "-G",
+          "Ninja",
+          "-DCMAKE_BUILD_TYPE=Release",
+          "-DCMAKE_CXX_COMPILER=/usr/bin/g++-14",
+          "-DCMAKE_PREFIX_PATH=/root/hyle-scratch/compute-unified/g02-sdk-static-relocated",
+          "-DCUDAToolkit_ROOT=/usr/local/cuda-13.3",
+          "-DCUDA_cudart_LIBRARY=/usr/local/cuda-13.3/targets/x86_64-linux/lib/libcudart.so"
+        ],
+        "exit_code": 0,
+        "elapsed": 19.179065449000007,
+        "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g01/baseline-view-0.log"
+      },
+      {
+        "command": [
+          "cmake",
+          "--build",
+          "/root/hyle-scratch/compute-unified/g01-baseline-view/build",
+          "--parallel",
+          "2"
+        ],
+        "exit_code": 0,
+        "elapsed": 2.3973050719999947,
+        "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g01/baseline-view-1.log"
+      },
+      {
+        "command": [
+          "/root/hyle-scratch/compute-unified/g01-baseline-view/build/baseline"
+        ],
+        "exit_code": 0,
+        "elapsed": 0.22248012800000083,
+        "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g01/baseline-view-2.log"
+      }
+    ]
+  },
+  "windows_cpu_module": {
+    "verdict": "PASS",
+    "command": [
+      "ctest",
+      "--test-dir",
+      "C:/h7/inference-g02-host-current",
+      "-C",
+      "Release",
+      "--output-on-failure",
+      "--no-tests=error",
+      "-L",
+      "^compute_provider_ggml$"
+    ],
+    "log": "windows-cpu-module-2.log",
+    "scope": "all unit tests + public header; latest padded/empty-view helper"
+  },
+  "windows_public_cpu_default": {
+    "command": [
+      "C:/h7/inference-g02-impacted/bin/hyle_graph_route_cpu_test.exe",
+      "--gtest_filter=CpuDefaultContext.ResidentBfloatGqaCacheUsesMatureGgmlWithoutHistoryRepack"
+    ],
+    "exit_code": 0,
+    "elapsed_seconds": 0.25,
+    "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g01\\windows-cpu-default-resident-1.log"
+  },
+  "windows_vulkan": {
+    "verdict": "FAIL",
+    "binary": "C:/h7/inference-g02-impacted/bin/hyle_graph_route_vulkan_test.exe",
+    "log": "windows-vulkan-resident-1.log",
+    "test": "VulkanGraph.ResidentAttentionViewsPreserveEffectiveLengthsAndOldResults",
+    "observed": "F32/half native FA exceeds unchanged numerical bounds; source confirms internal half narrowing; original Tensor-vs-ResultLease guard assumption also corrected in current test, not yet rerun"
+  },
+  "raw": [
+    {
+      "path": "baseline-view-0-initial.log",
+      "sha256": "58467e507aa4d1090fd607fd8826d89ee1c4e5a4e67f660dcf88eef47ffc76ae"
+    },
+    {
+      "path": "baseline-view-0.log",
+      "sha256": "25af7bf0b81e0a35bbeb21c9e32e00e2358289f05c0b081f8daaf8abe0106309"
+    },
+    {
+      "path": "baseline-view-1-initial.log",
+      "sha256": "86a33adb2d6ea33f2cc8521091799d293c7e16e09c64f1c1661827055684c4b8"
+    },
+    {
+      "path": "baseline-view-1.log",
+      "sha256": "0965a94e0c9357a4efb34f792582822d2357c458fa067347c96deddee3093419"
+    },
+    {
+      "path": "baseline-view-2.log",
+      "sha256": "3939370329b1bf3fc580e2fdec00ce51c2c0c2a99125a21d08186ade9ca8f822"
+    },
+    {
+      "path": "baseline-view-result-initial.json",
+      "sha256": "6fbcca285ce142f441cb11824bbde3aaa4ddad9964c6acef125d165d016a782e"
+    },
+    {
+      "path": "baseline-view-result.json",
+      "sha256": "af7677900938b5108dc19aefc7733daece828b3dc1a7e3d584845d98032fdc37"
+    },
+    {
+      "path": "baseline-view.cc",
+      "sha256": "5dccaf93ac0d57866ebfe6a11627f1ca34a18e04603b0a9fa786292f27eb7159"
+    },
+    {
+      "path": "baseline-view.CMakeLists.txt",
+      "sha256": "cc0abf8aa4fc928fb28abc117388e9694d2856ab0c241bef8541dc746c9efbf7"
+    },
+    {
+      "path": "baseline-view.py",
+      "sha256": "e3d12a7b7ca29fcafbf24516f035699cb39094f479e96fd684dfd6702c7cd1de"
+    },
+    {
+      "path": "implementation-plan.json",
+      "sha256": "cb58fdbf59bae2ee5426f8f81f56717adf3d0739f0b20ef1502cefdb79b981a2"
+    },
+    {
+      "path": "resident-attention-counterexamples.json",
+      "sha256": "0373a8dc623802dc17d13642398389eb56ca8f2176d200c0801344a79b049053"
+    },
+    {
+      "path": "run_small_native.py",
+      "sha256": "c40f82ee563c6d40cab6a909070a18c8fa7bd746a114e7a8e49fe41008986270"
+    },
+    {
+      "path": "windows-cpu-attention-1.log",
+      "sha256": "973948519e3e46348a7319b727568a6932d83b13204d537077d297659100eadb"
+    },
+    {
+      "path": "windows-cpu-build-1.log",
+      "sha256": "c72c9c524f8b18f2667e4c4dc10a24d12dadda44ac147776af64ce2a66e2b9c7"
+    },
+    {
+      "path": "windows-cpu-build-2.log",
+      "sha256": "e2cf86f83ccc7c9e52f49b97394e984b1eb39a500ce652b7262a9c72ee937c74"
+    },
+    {
+      "path": "windows-cpu-build-3.log",
+      "sha256": "3233f9d20cfea5b1be88ebc5ed090abd690a550612bce1d41f29536c44a91196"
+    },
+    {
+      "path": "windows-cpu-default-build-1.log",
+      "sha256": "a9d2651862dfa7c487da3da93764f26fec7c662744eeea56608e68e704b1241b"
+    },
+    {
+      "path": "windows-cpu-default-resident-1-result.json",
+      "sha256": "a857b7e972bb4bab15aaa87417ca228050012a44efaa23c6f4a3a910628434b9"
+    },
+    {
+      "path": "windows-cpu-default-resident-1.log",
+      "sha256": "4e8777090e7114f6d3f2d00b9ce6b148ede519a947ad5eab6c54589097dd8baf"
+    },
+    {
+      "path": "windows-cpu-module-1.log",
+      "sha256": "7e042c3a625d4388df2f6dcd0f7c165fb20c9e918022ce321de5301661c73342"
+    },
+    {
+      "path": "windows-cpu-module-2.log",
+      "sha256": "3a8af4fb18580fd8f97de3282d82c79018a83e8fa9f22ea1a70f77dc898713f8"
+    },
+    {
+      "path": "windows-vulkan-build-1.log",
+      "sha256": "509fa255f87349a47aa62009c7bf2e50bd54616c95f013b7b9a2a63ed7dd9c37"
+    },
+    {
+      "path": "windows-vulkan-build-2.log",
+      "sha256": "1469f62016a32275654da2bb244281ce4ab440cb4594704107bfe764c05a5800"
+    },
+    {
+      "path": "windows-vulkan-build-3.log",
+      "sha256": "71ced5fa2036d09ac7dd1714a0f26028148d803d8300dcc877f9aec6f38b27d9"
+    },
+    {
+      "path": "windows-vulkan-build-4.log",
+      "sha256": "0d39b394b56f154e00835343dea551d57cb8aecbdab199f540c405f16426a0b6"
+    },
+    {
+      "path": "windows-vulkan-build-5.log",
+      "sha256": "951f24f656d610b66f0466bb094a0bf68a5f909e3aa63dd4f4b85793b8fae72d"
+    },
+    {
+      "path": "windows-vulkan-resident-1.log",
+      "sha256": "aaf10108349e6506202eb63263f395b599290e89c97715dc6036766461143748"
+    }
+  ],
+  "raw_zip_sha256": "add6e91af3bd897846b7db82d71171564fd2d1d8005e0fe1625bd166713f6a1c",
+  "remaining": [
+    "native strict precision dispatch/qualification",
+    "updated Vulkan test rerun",
+    "candidate source/static/shared + appropriate risk/P1",
+    "all multi-request G01/native G02 and G03-G10"
+  ]
+}

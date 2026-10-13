@@ -207,7 +207,10 @@ inline bool iq1s_mmvq_reference(const v::Context &context) {
 inline std::vector<double> iq1s_q8_program(std::span<const double> activation,
     const Packed &packed, int rows, int columns, int width,
     std::span<const std::int32_t> experts = {}) {
-  std::vector<float> input(activation.begin(), activation.end());
+  std::vector<float> input;
+  input.reserve(activation.size());
+  for (const auto value : activation)
+    input.push_back(static_cast<float>(value));
   std::vector<std::byte> encoded(rows * (width / 32) * 36);
   ggml_get_type_traits(GGML_TYPE_Q8_1)->from_float_ref(input.data(), encoded.data(), rows * width);
   auto half = [](const std::byte *p) {
