@@ -696,9 +696,9 @@
     },
     {
       "module": "compute_batch",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/graph/inference-g02-native-paged-composition.md",
-      "summary": "G02 readonly native Q bridge SCOPED on actual Apple joint FAIL: original MemoryResource::import_readonly owns a distinct real readonly resource; strict controller query equality rejects it. Preserve closed G01 native domains/candidate520, original resource qualification/retirement and ordinary paths; finite query acceptance trait seam only, no second controller or identity spoof."
+      "summary": "G02 NJ-Q01 AUDITED: finite private query-resource traits hook in original shared controller. Default G01/reference/Vulkan exact-ref rule retained; Apple hybrid permits original readonly Metal authority then original binding qualifies actual resource/type/handle/shape. No public API/layout, new controller, payload copy or retirement change; actual original joint FAIL retained, new source gates unproven."
     },
     {
       "module": "graph_batch",

@@ -205,3 +205,16 @@ traits的原G01 direct/reference与Vulkan保持原exact resource校验，API/lay
 权限池/submit/retirement不变化。三个原G02 owner沿NJ02–06，不扩大owner或数学域。
 必须以失败原consumer通过与原direct/reference负空间、foreign真实资源/伪resource
 拒绝反证该桥；source/static/shared/头/宿主风险沿本卡，P0无额外payload copy/队列。
+
+
+NJ-Q01有限审计完成，compute_batch进入AUDITED。KEEP原same-resource默认规则、原
+F2/permission/native controller和退役；BORROW原readonly importer/native binding；FIX
+仅把controller已有三处query-resource判断收为一个private函数：有明确traits资格方法
+时调用它，否则仍exact ref。SELF的Apple hybrid traits只认可原Metal资源authority，
+并沿后续原binding实际dynamic type/handle/bounds检查，不能只凭domain或raw pointer
+直接交给native。Vulkan不定义此traits，仍exact original ref。不新增字段、public API、
+payload copy、mask/公式、controller/queue；显式冷Q wrapper费用沿本卡原P0。
+
+predeclared FAIL原19输入与第一次source/actualmath日志不覆盖，重跑仅此修正、同树/
+fourjobs/两真实joint和原ordinary/direct-reference消费者。通过source不代签宿主风险/
+SDK/负空间或candidate。该有界接缝属于G02原readyQ FIX，不扩成G11或重新调研库完整性。
