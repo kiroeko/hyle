@@ -47,4 +47,26 @@ TEST(VulkanRaggedStructure, RejectedNativeSuffixRetiresItsAcceptedPrefix){
   EXPECT_TRUE(terminal.IsResourceExhausted())<<terminal.message();EXPECT_FALSE(submitted->result());
   if(submitted)*submitted={};EXPECT_TRUE(context.close().ok());
 }
+TEST(VulkanRaggedStructure, ExternalReshapeKeepsItsOriginalCapacityAlias){
+  auto context=v::Context::create().value();
+  auto flat=c::TensorDesc::dense(c::DataType::kFloat16,
+      std::array<std::int64_t,2>{4,8}).value();
+  auto shape=c::TensorShape::create(std::array<std::int64_t,2>{2,16}).value();
+  auto view=c::View::reshape(shape).value();
+  auto reshaped=c::TensorDesc::dense(c::DataType::kFloat16,
+      std::array<std::int64_t,2>{2,16}).value();
+  v::detail::Plan plan;plan.inputs={0,1};plan.outputs={2,4};
+  plan.values={{flat,{}},{flat,{}},{flat,{}},{reshaped,{}},{reshaped,{}}};
+  plan.steps={
+      {c::Operation(c::Copy{}),{0},{2},{},{1,1,1},{}},
+      {c::Operation(view),{1},{3},{},{1,1,1},{}},
+      {c::Operation(c::Copy{}),{3},{4},{},{1,1,1},{}}};
+  auto prepared=v::detail::prepare_plan(context,plan);ASSERT_TRUE(prepared)<<prepared.error().message();
+  const auto &state=*v::detail::Access::program(*prepared);
+  EXPECT_EQ(state.aliases[3].root,1U);
+  EXPECT_EQ(state.aliases[3].byte_offset,0U);
+  EXPECT_EQ(std::count_if(state.dispatches.begin(),state.dispatches.end(),
+      [](const auto &dispatch){return bool(dispatch.region);}),2);
+  ASSERT_TRUE(context.close().ok());
+}
 } // namespace

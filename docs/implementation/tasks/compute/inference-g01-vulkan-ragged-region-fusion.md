@@ -74,3 +74,6 @@ oracle/5%/16paired rounds/min1/4ms/n15/31/A/A/controls全部不变。只因为�
 正式source0006944b7/产品0e9e011b8独立不被修改，正在运行的任务保原预算并取得实际
 终态；不能把此观察当成停止/重新采样许可。最终cold admission范围由新candidate
 明确绑定，并反证没有引入input KV Copy；性能复用需给实际相同NR lowering身份。
+新增source-only冷负空间反证：独立第二input的dense reshape位于两Copy region之间，
+必须仍是第二input根的原alias与两独立region，不被前一managed段吞成新增producer。
+它只验证本RF-02边界，待同formal任务終态后串行执行，不扩全局算子/性能形状。
