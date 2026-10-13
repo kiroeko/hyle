@@ -162,3 +162,46 @@ foreign同capacity schema、empty/伪root拒绝及原三materialized负空间，
 产品不因fixture失败改形状。累计84.031s，原FAIL/log与标明重建的首test输入保留。
 只是common GraphBuilder/schema源资格，不代签native math/frame guard/SDK/san。
 NJ02–06未实现，三owner继续AUDITED，不能candidate或签整个G02/goal。
+
+
+NJ02–05联合草稿已写入两个AUDITED hybrid与共同graph_batch：冷编译校验全部页读者、
+隔离原native fragment并保owned recipe/layout；opt-in slots借同一page controller；
+公开prepare_batch与exact-frame bind接原MQ-LP guards；实际CPU完成后的Q沿原资源桥进入
+page math，Vulkan仍预接原输出owner并保seal/backing检查。中央只增加两个真实public
+依赖边，普通native Graph/G01固定520产品与不可变P1源码没有修改。
+
+公开联合消费者已登记实际CPU ABS/Cast→原page attention→CPU Cast/Neg，page16三D、
+Apple两dtype/Vulkan F16、causal/noncausal、双slots与12次同输出形状topology演化，
+用独立double核全输出；未引用sentinel页仍独立可写。当前尚未编译或运行，所有新的
+联合资格均UNPROVEN。Air原cached两route树只编公开hyle::graph消费者与原ordinary
+contracts，fourjobs、重型串行，等原Vulkan P1真正终态后执行；原FAIL与累计保留。
+
+本草稿P0包括每plan一冷paged vector、每Invocation一个可空owner与仅opt-in页slots；
+每页slot复用原table/banks/native准备，额外query readonly wrapper如实收费。没有每
+普通value最大页表或逐值frame，但不能声称普通owner成本绝对为零。selector当前READY，
+中央依赖文件触发保守全factor选择；原plan及独立selector工具卡保留，仅执行本活动卡
+实际owner与直接消费门，不重开无变化模块。closure64/docs1195检查PASS不代签产品。
+
+
+## NJ-Q01 真实 ready Q 只读资源接缝
+
+原三owner仍AUDITED；compute_batch新接缝SCOPED，baseline `8cf6be8d3`，原native五owner
+finite terminal与candidate520不撤销。首次actual Apple public联合consumer配置6.162s/
+编译6.390s PASS，数学2.469s FAIL：native batch Q resource differs。原19 SHA输入/原日志
+保留于本轮scratch固定stage；失败未启动page数学。Vulkan本新联合尚未编译/运行。
+
+源码事实：Apple MemoryResource::import_readonly 保活真实ready MLX array，以派生于原
+MemoryState的ImportedArrayStorage导出永久readonly lease，资源identity有意不同于
+分配资源。原MemoryResource::binding已经资格化这类真实Metal carrier及dense形状、
+origin/size，但MaterializedNativeState在调用原binding前先要求query.resource==device.ref。
+Vulkan原readonly import仍采用exact device.ref与真实AllocationToken，没有这个差异。
+这是真实引擎ready producer结果消费的适配缺口，不能伪造资源identity、删除所有resource
+校验、增加整Q冗余copy或复制共同controller来规避。
+
+scope只允许compute_batch共同controller一个private query-resource资格traits接缝，
+供本轮hybrid Apple traits明确准入原readonly native authority；随后仍必须调用原
+MemoryResource::binding核真实MemoryState/native handle/description/origin。未声明该
+traits的原G01 direct/reference与Vulkan保持原exact resource校验，API/layout/metadata/
+权限池/submit/retirement不变化。三个原G02 owner沿NJ02–06，不扩大owner或数学域。
+必须以失败原consumer通过与原direct/reference负空间、foreign真实资源/伪resource
+拒绝反证该桥；source/static/shared/头/宿主风险沿本卡，P0无额外payload copy/队列。

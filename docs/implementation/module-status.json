@@ -696,15 +696,9 @@
     },
     {
       "module": "compute_batch",
-      "state": "CLOSED",
-      "record": "docs/implementation/tasks/compute/inference-g01-native-paged-terminal.md",
-      "summary": "G01 native page16 finite domain CLOSED at520: actual Air Apple F16/BF16 and Vulkan F16 original page math, exact guards/version/zero-domain/native failure/retirement/OOM, four relocated SDKs/headers, six host sanitizer finals with explicit Metal TSan model, Windows compile/link only. Both immutable P1 QUALIFIED/noninferiority PASS/verify0, original FAIL/UNKNOWN retained. Whole G01/G02/goal remain incomplete.",
-      "candidate": "520027a57ff41da96ac908ad0d35896e2dda9734",
-      "performance": {
-        "tier": "P1",
-        "evidence": "docs/implementation/tasks/compute/inference-g01-native-paged-terminal.md",
-        "material_margin_pct": 5
-      }
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/graph/inference-g02-native-paged-composition.md",
+      "summary": "G02 readonly native Q bridge SCOPED on actual Apple joint FAIL: original MemoryResource::import_readonly owns a distinct real readonly resource; strict controller query equality rejects it. Preserve closed G01 native domains/candidate520, original resource qualification/retirement and ordinary paths; finite query acceptance trait seam only, no second controller or identity spoof."
     },
     {
       "module": "graph_batch",
