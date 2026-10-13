@@ -1,8 +1,10 @@
 # G01 驻留 SDPA：视图消费与原生 fused 路径
 
-状态：CPU owner CANDIDATE，Vulkan owner AUDITED，2026-10-13。owner：`compute_provider_ggml`、
+状态：CPU/Vulkan owner CANDIDATE，2026-10-13。owner：`compute_provider_ggml`、
 `compute_provider_ggml_vulkan`；baseline：`070609442806ebfe6a0dc8d6594b7388c494f20b`。
-不可变candidate：`d91a523df9bce21eb81c13d9bf2a8f3f7d3ea80f`。
+CPU不可变candidate：`d91a523df9bce21eb81c13d9bf2a8f3f7d3ea80f`。
+Vulkan RR不可变candidate：`a40003f7edb54a3da3113d0cd401b46211e0b0f0`；原Vulkan精度
+candidate `d91a523df9bce21eb81c13d9bf2a8f3f7d3ea80f`和全部原证据保留。
 授权与完整目标见[缺口执行总卡](../project/inference-gaps-goal-execution-2026-10.md)。
 本卡先修 G01 中已有 SDPA 的实际消费和成本缺陷，不签整个 G01，也不替代多请求分页及
 Apple/Vulkan 联合分页的后续 owner 卡。
@@ -173,4 +175,10 @@ staging资格。仅在上述固定graph已经证明没有Add/RmsNorm consumer时
 期间将该clear的size置零，返回或异常时恢复原值；其他graph仍走原处理。数学和shader
 未改，也没有忽略真实host update。第一次记录失败、持久输入导入后的失败及诊断记录
 全部保留，临时诊断字段/API已经移除。128次native内容更新/owner切换与公开64步
-offset/backing切换已在Air实跑通过；本批尚未冻结candidate，三交付/sanitizer/P1待补。
+offset/backing切换已在Air实跑通过；上述文字记录实现阶段事实。
+
+RR候选固定为 `a40003f7edb54a3da3113d0cd401b46211e0b0f0`，两个承载owner由AUDITED
+进入CANDIDATE。[实现阶段收据](../../../../evidence/correctness/inference-g01-vulkan-replay-stage/README.md)
+保留所有失败和最终Air通过、Windows4路编译通过。原public API/math/shader不变，private
+Work常态增加固定记录与弱graph身份；其他operation冷评估一次、warm不重扫。RR适用
+三交付/sanitizer与原合同P1待补，整个G01仍未完成；CPU保持原candidate而不无故重测。
