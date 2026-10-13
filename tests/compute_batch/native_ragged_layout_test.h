@@ -102,7 +102,7 @@ TEST(NativeRaggedLayout, EightRequestsJoinOnlyTheirActiveRows){
   const c::BatchCapacity cap{.storage=c::BatchStorage::kRagged,.max_requests=8,.max_query_rows=10,.max_kv_rows=11,
     .max_pages=0,.max_page_refs=0,.query_heads=8,.kv_heads=2,.head_dim=64,.page_size=1};
   auto schema=c::BatchSchema::create(cap).value();const std::array<std::int32_t,9> ptr{0,1,2,3,4,5,6,7,8};auto layout=schema.version({ptr,ptr,{},{}}).value();
-  auto program=n::prepare_ragged_batch(context,layout,{cap,.125F,true});ASSERT_TRUE(program)<<program.error().message();auto slot=program->create_invocation().value();
+  auto program=n::prepare_ragged_batch(context,layout,{cap,.125F,true});ASSERT_TRUE(program)<<program.error().message();auto made_slot=program->create_invocation();ASSERT_TRUE(made_slot)<<made_slot.error().message();auto slot=std::move(*made_slot);
   const auto qd=c::TensorDesc::dense(cap.data_type,std::array<std::int64_t,3>{10,8,64}).value();
   const auto kd=c::TensorDesc::dense(cap.data_type,std::array<std::int64_t,3>{11,2,64}).value();
   std::vector<F16> q(*qd.element_count()),k(*kd.element_count()),v(k.size(),half_test::encode<F16>(128.F));
@@ -110,12 +110,13 @@ TEST(NativeRaggedLayout, EightRequestsJoinOnlyTheirActiveRows){
   auto pool=c::LeasePool::create(memory.ref(),8192).value();
   const auto upload=[&](const c::TensorDesc &description,const auto &values){
 #if defined(HYLE_G01_APPLE_RAGGED)
-    auto writer=pool.allocate(values.size()*2).value();EXPECT_TRUE(writer.view()->write(std::as_bytes(std::span(values))).ok());return memory.binding(writer.publish().value(),description).value();
+    auto allocated=pool.allocate(values.size()*2);if(!allocated){ADD_FAILURE()<<allocated.error().message();return mlx::core::array(0.F);}
+    auto writer=std::move(*allocated);EXPECT_TRUE(writer.view()->write(std::as_bytes(std::span(values))).ok());return memory.binding(writer.publish().value(),description).value();
 #else
     return context.upload(description,std::as_bytes(std::span(values))).value();
 #endif
   };
-  const std::array inputs{upload(qd,q),upload(kd,k),upload(kd,v)};ASSERT_TRUE(slot.bind(inputs).ok());auto done=slot.submit().value();auto result=done.wait().value();std::vector<F16> actual(8*8*64);
+  const std::array inputs{upload(qd,q),upload(kd,k),upload(kd,v)};ASSERT_TRUE(slot.bind(inputs).ok());auto submitted=slot.submit();ASSERT_TRUE(submitted)<<submitted.error().message();auto done=std::move(*submitted);auto waited=done.wait();ASSERT_TRUE(waited)<<waited.error().message();auto result=std::move(*waited);std::vector<F16> actual(8*8*64);
 #if defined(HYLE_G01_APPLE_RAGGED)
   auto od=c::TensorDesc::dense(cap.data_type,std::array<std::int64_t,3>{8,8,64}).value();auto output=memory.import_readonly(result->arrays()[0],od).value();ASSERT_TRUE(output.view()->read(std::as_writable_bytes(std::span(actual))).ok());output.reset();
 #else
