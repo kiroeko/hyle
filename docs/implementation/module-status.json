@@ -642,15 +642,15 @@
     },
     {
       "module": "graph_route_cpu_apple",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/graph/inference-g02-native-paged-composition.md",
-      "summary": "G02 native exact-page CPU/GPU composition scoped: actual page16 math from frozen G01 needs owned layout/frame guards through original hybrid fragments and native retirement. Original Foundation A finite domains retained; no product edits before finite API/owner/FIX audit."
+      "summary": "G02 NJ01-06 audited: three-port owned page node/binding and real CPU/native fragments, same shared page controller/F2/exact guards, original completion/results/Vulkan cold seal. Finite API/owner/FIX frozen; old Foundation A and graph_batch MQ-CPU evidence retained; no new qualification signed."
     },
     {
       "module": "graph_route_cpu_vulkan",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/graph/inference-g02-native-paged-composition.md",
-      "summary": "G02 native exact-page CPU/GPU composition scoped: actual page16 math from frozen G01 needs owned layout/frame guards through original hybrid fragments and native retirement. Original Foundation A finite domains retained; no product edits before finite API/owner/FIX audit."
+      "summary": "G02 NJ01-06 audited: three-port owned page node/binding and real CPU/native fragments, same shared page controller/F2/exact guards, original completion/results/Vulkan cold seal. Finite API/owner/FIX frozen; old Foundation A and graph_batch MQ-CPU evidence retained; no new qualification signed."
     },
     {
       "module": "compute_stream",
@@ -683,10 +683,9 @@
     },
     {
       "module": "graph_batch",
-      "state": "CANDIDATE",
-      "record": "docs/implementation/tasks/graph/inference-g02-multi-queue-batch.md",
-      "summary": "G01/G02 graph_batch MQ-CPU-01 CANDIDATE：原exact resource/端口对齐与native qualify保留，去掉错误GPU专用属性；Windows CPU两dependent原native batch region PASS，风险/交付待验。原26d7证据保留，graph不改。",
-      "candidate": "a0c047ea45cb46884da7f578684ff416ccfdefa5"
+      "state": "AUDITED",
+      "record": "docs/implementation/tasks/graph/inference-g02-native-paged-composition.md",
+      "summary": "G02 NJ01-06 audited: three-port owned page node/binding and real CPU/native fragments, same shared page controller/F2/exact guards, original completion/results/Vulkan cold seal. Finite API/owner/FIX frozen; old Foundation A and graph_batch MQ-CPU evidence retained; no new qualification signed."
     }
   ]
 }

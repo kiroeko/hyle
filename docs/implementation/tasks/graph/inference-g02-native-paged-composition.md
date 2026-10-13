@@ -1,7 +1,7 @@
 # G02 CPU 与 Apple/Vulkan 精确页联合消费
 
-状态：SCOPED，2026-10-14。当前 owner 为 graph_route_cpu_apple、
-graph_route_cpu_vulkan；baseline `66af56852d0602ce14cdfde9aba3de373a7472c6`。
+状态：AUDITED，2026-10-14。当前 owner 为 graph_route_cpu_apple、
+graph_route_cpu_vulkan、graph_batch；baseline `66af56852d0602ce14cdfde9aba3de373a7472c6`。
 授权来自[十项 goal](../project/inference-gaps-goal-execution-2026-10.md)。原
 [Foundation A](foundation-a-final-closure.md)有限域与失败证据保留；本卡不重开旧数学、
 effects、普通 native Graph、scheduler 或资源桥。
@@ -75,3 +75,71 @@ driver 资格。Windows Vulkan 定向编译/链接；本机重型 GPU run 仍不
 重型串行、四 jobs 上限、不运行本机全模型。停止按固定 FIX 与适用门终态，或真实
 外部阻断/协议回退；不因短观察超时重启工作。docs/closure 每轮适用检查，无产品修改
 的本 SCOPED 登记不构建、不跑性能。
+
+## 有限接缝审计与 API 冻结
+
+SCOPED 两 hybrid 登记提交 `2e9444109`。本节完成三 owner 的有限审计；graph_batch 原
+MQ-CPU candidate `a0c047ea`及全部原 common/CPU+CUDA证据与未决 Windows 门保留。
+该 owner 仅为新图节点/冷 recipe-layout 映射依法回到 AUDITED；原 graph candidate5ce、
+五个 G01 candidate520 与两个普通 native Graph owners 均不改产品。
+
+三 owner 归属：graph_batch 拥有可被 GraphBuilder 描述的三 port native page 节点及冷
+node binding；两个 hybrid 拥有原 CPU/native fragments 中的页消费和 public invocation
+接纳。这里只给两个 hybrid 增加对 graph_batch 的真实 public 边，不增 component 或
+重排图；Compute 不反向依赖 Graph。固定三 engine 的准确 block-table/valid-region
+消费需求沿原审计，不再扩成 peer API 并集。
+
+固定 API：graph::batch::NativePagedAttention 是原 custom Operation 的小型 trivially-copyable
+descriptor，三 ports 为原 recipe 的 Q、真实物理 K、真实物理 V；输出是 active packed Q。
+factory `native_paged_attention(recipe, layout)` 验同 schema 并只保存 capacity/active rows/
+scale/causal；冷 `NativePagedNodeBinding` 保存 NodeId、owned recipe、初始 owned layout
+和显式 NativePagedInvocationOptions。hybrid CompileOptions 增加 paged_nodes span，仅借
+compile 调用；plan 拥有这些配置。普通调用沿 builder.add_node、compile(paged_nodes)、
+create_invocation、prepare_batch(span<NodeLayout>)、bind(Q/source)、bind(K/V,frame)、
+prepare_replay、submit/wait。所有 raw metadata 仍由原共同 controller 持有和 F2 上传。
+
+每次 prepare_batch 必须给出完整 live 页节点集合。新 layout 同 schema且 active Q
+总行数保持该固定图输出形状；request 拆分、page order/共享/tail/logical长度可以在
+已资格域中变化，冷准备原 G01 native Program 并上传 owned I32 table。active Q 总形状
+变化沿原 compile/有限 exact variants，不能冒称一般动态形状。caller spans 不保留；
+拒绝不允许混用新旧 prepared tokens，旧结果/实际 uses 阻止 prepare、bind、reset。
+
+每个页节点保独立 native fragment 边界，前后 ordinary fragments 沿原编译器和 runtime。
+BORROW 同一个 MaterializedNativeState/PagedMetadataPolicy 与原 native Program、Invocation、
+F2 banks、exact frames、native retirement；只提供薄 traits，不能复制 controller。
+初始 native Program 在 compile 经原 private page factory 资格；相同初始 layout 可借
+这一 immutable Program，其它同形状 topology 在显式 cold prepare 调原 factory。
+页专用 plan/slot/input 映射 opt-in，普通 value 不增每值最大页表或 frame；记录新增冷
+plan/slot metadata，普通数学/提交循环/queue不替换。
+
+K/V 只能是 Graph inputs且所有读者都是本轮 qualified 页节点的 K/V ports，同一输入
+关联的各 layout 必须完全同代；禁止 publisher、CPU/dense/View/query/未资格 reader
+消费整 capacity。bind(frame) 验 node/schema/layout/generation、真实 native resource与
+capacity，再用 MQ-LP bind_pages 复制 exact guards；所有拒绝保旧 input。普通 tensor/
+ReadLease/weight bind 不得绕过这些页 input 限制。全 Q0/page_refs0 只需真 Q，K/V 无
+frame或假 root；原 G01 empty native Program保持。共同 guards 从 CPU prefix admission
+开始保护到全部 accepted native prefixes实际退休，不依赖 tensor 的地址可见性授权。
+
+CPU query prefix 成功并完成原 upload后才把 ready Q 交给页 controller；错误不得启动
+页 math 或后继。Apple 页结果沿原 checked completion与owning result传给后继。Vulkan
+页输出在显式 cold prepare 接入原 CompositionAccess::output/seal 的确切 reference
+baseline，必要 seal 在 bind完成且任何 native admission 前；保 ordinary fragment 的
+backing不变检查。原 transfer retain 与 CPU后继仍用真实 native buffer。旧 native result
+只在 outer idle/result gate通过后释放；取消/放弃仍由原 coarse drive和实际 prefix退休。
+
+| FIX | 允许改动 | 验收 |
+|---|---|---|
+| NJ-01 | graph_batch 三port descriptor/factory/owned cold binding，共同 recipe与active输出资格 | schema/shape/empty/foreign/非法node与common public source/SDK/header |
+| NJ-02 | 两hybrid 编译器冷owned映射、页节点独立原fragment、初始original Program与两真实public依赖边 | 真实CPU前后段、原node/control/ordinary negative space、无CPU fallback |
+| NJ-03 | opt-in slots借原共同page controller，完整prepare_batch/layout version与原F2单table/两banks | 同形状topology演化/完整集合/双slot/old results、显式cap与冷成本 |
+| NJ-04 | public exact-frame bind与MQ-LP guard组；限制所有page input readers/publishers | foreign resource/generation、shared/unreferenced pages、拒绝保旧绑定/权限不扩大 |
+| NJ-05 | 原drive中的ready Q/page math/原Vulkan output seal与后继数据/真实retirement接缝 | CPU/native prefix错误、unknown/cancel/abandon、实际page guards与结果生命周期 |
+| NJ-06 | 公开指南与同一个主/正交消费者，三交付/逐头、适用宿主风险与原consumer回归 | 实际两平台/math/oracle/逐cold OOM/预算、原所有FAIL与限制保留 |
+
+P0 收费包括 graph node/plan/slot 冷 metadata、实际 table upload/host waits、Q/输出边界
+copy与native private UNKNOWN。共同 LeaseUsePool 仍可能 O(guards²)去重，G06不代签。
+native query readonly wrapper需要的metadata按真实生命周期收费；不声明零warm allocation。
+这是组合资格轮，没有新的吞吐优势宣称，不启动新 P1或重跑G01数学P1。适用门仍全部
+UNPROVEN；发现改变上述shape、owner、permissions或成本级别的新事实先回本卡裁决，
+不能删除原 Vulkan seal/guard来得到PASS。七问沿上述已锁依赖/owner/BORROW/无FFI、
+P0、三交付与自然公开journey裁决，candidate以后只补实际结果。
