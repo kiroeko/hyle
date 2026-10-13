@@ -1,6 +1,6 @@
 # G02 多 Queue batch 协调
 
-状态：SCOPED，2026-10-13；owner：`graph`、`graph_batch`。
+状态：AUDITED，2026-10-13；owner：`graph`、`graph_batch`。
 baseline：`743783f7b0759d77978c0d208dc5ba0898313e69`。
 授权来自当前[缺口 goal](../project/inference-gaps-goal-execution-2026-10.md)；
 reopen trigger 是新增真实 CPU＋GPU/多 lane 分页消费者，原 F5 coordinator 只保存单 Queue，
@@ -14,8 +14,8 @@ reopen trigger 是新增真实 CPU＋GPU/多 lane 分页消费者，原 F5 coord
 
 ## 最终形状与有限 FIX
 
-拟议公开 `graph::batch::LaneBinding` 保存 lane、Context指针、Queue指针；create接完整
-active bindings span、host workspace、原lease options。输入只借冷创建调用，coordinator
+冻结公开 `graph::batch::LaneBinding` 保存 lane、Context指针、Queue指针；create接完整
+active bindings span、host workspace、原lease options与ReplayOptions。输入只借冷创建调用，coordinator
 保存原 QueueBinding 集；Context/Queue/资源沿原借用合同活到native uses与结果退休。
 不保旧单Queue签名、不加兼容转发。原普通Graph layout/submit成本不增加；visitor增加lane
 身份只用于显式冷/idle桥。其Context/Queue与Graph原targets身份必须一致。
@@ -33,7 +33,7 @@ SELF只拥有组合与身份，BORROW全部原数学、F2上传/规划、Graph r
 
 ## 验证与停止
 
-结构P0：冷O(L＋regions)有限metadata，warm沿原Graph queue验证/提交，不逐步复制全bindings
+结构P0：冷O(lane capacity＋active bindings＋regions)有限metadata，warm沿原Graph queue验证/提交，不逐步复制全bindings
 或新plan。保原FI plan/host waits/private UNKNOWN；本批无新吞吐宣称，不启动P1。
 
 预声明：graph与graph_batch适用unit/逐头及selector实际直接消费者；具名native CUDA
@@ -42,10 +42,14 @@ coordinator与两Queue数学/权限/生命周期consumer，在支持FI的Linux�
 失败/关闭用实际consumer与适用ASan/UBSan/TSan；GPU/driver整体风险不伪报宿主san覆盖。
 其余provider数学/旧目录不重测；复用对应tree/cache，普通编译从12 jobs按内存调整。
 
-一次短API/owner审计后固定有限FIX进入AUDITED；正确性/三交付与适用风险未取得不得CLOSED。
+短API/owner审计已固定上述FIX进入AUDITED。原enqueue严格检查slot.queue==实际Queue，
+因此按RegionAccessView.lane选择native slot；不是仅提交时换span。ContextRef::owns加原
+prepare_replay验证完整target/Queue身份，输入span不被借到热路径。错误/OOM在接纳native
+工作前回滚。不同region能用不同Context/Queue，metadata只有原共享资格成立时才共享。
+正确性/三交付与适用风险未取得不得CLOSED。
 时间为检查点，正常构建/定位自动延长且保原日志/elapsed/FAIL，不以1800秒机械退出。
 真实外部阻断按协议裁决；发现改变此API/ownership的事实回AUDITED，不扩大成新runtime。
 
 七问与结果集中留本卡：第三方仍原锁、数学仍原承载、无FFI/新组件图；权限/并发与三交付
 按上述consumer验证；复杂度P0、guide与终局源码反证在candidate完成后追加实际记录。
-当前产品代码未修改，所有新验证仍未运行，不写PASS。
+当前产品代码未修改，所有新验证仍未运行，不写PASS。SCOPED提交084dc9a50保存授权顺序。
