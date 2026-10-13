@@ -57,4 +57,9 @@ workspace和device backing仍属于第一Context。API据此改为per-lane stagi
 
 七问与结果集中留本卡：第三方仍原锁、数学仍原承载、无FFI/新组件图；权限/并发与三交付
 按上述consumer验证；复杂度P0、guide与终局源码反证在candidate完成后追加实际记录。
-当前产品代码未修改，所有新验证仍未运行，不写PASS。SCOPED提交084dc9a50保存授权顺序。
+SCOPED提交084dc9a50、AUDITED提交212950ba1保存授权顺序；产品API到43adbc9b7，
+消费者纠正c7e721810。当前原生两Context/两Queue六组数学、共享metadata留出、六故障阶段、
+精确页/F4和ragged重排已实跑通过；宿主Graph机制/Executable、batch及15公开Graph头通过。
+原CPU因子头扫描缺CUDA include、global staging跨Context拒绝和独立topology断言失败保留。
+阶段[证据与剩余门](../../../../evidence/correctness/inference-g02-common/README.md)集中记录，
+三交付/san/P0终审尚未完成，不进入CLOSED，也不结案全部G02。
