@@ -20,6 +20,17 @@ struct NativePagedBatchCosts final {
   std::size_t index_bytes = 0;
   bool native_private_bytes_unknown = true;
 };
+struct NativePagedInvocationOptions final {
+  std::size_t max_metadata_backing_bytes = 0;
+  mem::AllocatorRef allocator = mem::system_allocator();
+  ResourceBudget resource_budget{};
+};
+struct NativePagedBatchReport final {
+  std::uint64_t layout_generation = 0;
+  std::size_t staging_bytes = 0, device_mirror_bytes = 0, backing_bytes = 0, uploaded_bytes = 0;
+  std::uint64_t upload_host_waits = 0;
+  std::uint32_t device_banks = 2;
+};
 namespace detail {
 struct NativePagedBatchProgramData;
 struct NativePagedBatchVersionOwner;
