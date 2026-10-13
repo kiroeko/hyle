@@ -131,7 +131,7 @@ TEST(GgmlCpuRagged, ColdBudgetAndPagedQualificationAreExplicit) {
   ASSERT_TRUE(invocation.close().ok());
   cap.storage=c::BatchStorage::kPaged;cap.max_pages=2;cap.max_page_refs=2;cap.page_size=16;cap.max_kv_rows=32;
   auto paged=c::BatchSchema::create(cap).value();auto absent=c::BatchProgram::prepare(context,paged,{.resource=hyle::mem::system_resource()});
-  ASSERT_FALSE(absent);EXPECT_TRUE(absent.error().IsUnimplemented());ASSERT_TRUE(context.close().ok());
+  ASSERT_TRUE(absent)<<absent.error().message();ASSERT_TRUE(context.close().ok());
 }
 TEST(GgmlCpuRagged, EveryColdAllocationFailureReleasesThePartialNativePlan) {
   auto context=c::Context::create(c::cpu::device(),c::ggml_cpu::provider({.native_threads=1})).value();

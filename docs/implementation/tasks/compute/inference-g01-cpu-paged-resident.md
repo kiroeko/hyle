@@ -14,9 +14,11 @@ CPU真实数学，无每步整历史copy/gather，无Q/head复制KV，不新增M
 固定来源：vLLM98f72111 CPUAttentionInput/block_table在原kernel内选physical block并
 保ISA各自cache layout；llama.cpp cbe28bb3 get_k/get_v只给有效n_kv/strides，不伪造任意
 physical pages可用一个stride；SGLang7224fce1原FlashInfer消费owned页表和tail。当前HYLE
-原锁CPU core实际来自ggml456172+已有CPU IQ1组合，不能把引擎参考快照当成所链源码。
+CPU-only锁ffa4e8b8，mixed core锁456172+CPU IQ1组合，不能把参考快照当成所链源码。
 本机vLLM原CPU kernel依赖Torch/自己的调度、ISA特定packed layout，不能直接把HYLE
-NHD页当其承载，另建一套调度或完整repack不作为本有限FIX。
+NHD页当其承载，另建一套调度或完整repack不作为本有限FIX。配置身份再核：CPU-only
+实际用ffa4e8b8，混合GPU闭包用456172+CPU IQ1；两原锁都须认证同一地址适配，不能
+只改456便签CPU-only能力。
 
 拟有限FIX CP-01：原CPU batch qualify/plan/run扩同F16/BF16 D64/128/256的paged域；
 冷Owned layout固定每请求页表/tail/validKV，三输入仍原Q与完整K/V地址容量，输出仍
@@ -47,7 +49,7 @@ AUDITED还需冻结私有地址参数、完整原核读点与metadata/生命周�
 
 ## 私有承载冻结
 
-CP-02只扩原ggml456 CPU flash的地址读取：私有src[5]为冷owned I32页表，原op_params
+CP-02只扩原ggml CPU flash的地址读取：私有src[5]为冷owned I32页表，原op_params
 有效长度/新增private page_size参数给逻辑行数；四个K/V地址点（one_chunk与原tiled）
 映射physical page，原dot/online softmax/SIMD/reduction公式不改。循环与split/reduction
 统一使用有效逻辑长度，原CPU workspace预估始终取prefill/decode最大，不按physical
