@@ -65,6 +65,25 @@ template<class T>void paged_case(unsigned depth,bool causal){
     ready.reset();*replay={};
   }
   ASSERT_TRUE(context.drain().ok());
+  const std::array<std::int32_t,5> reordered{1,4,0,3,1};
+  const std::array<std::int32_t,2> shorter{14,14};
+  auto changed=schema.version({qp,kp,reordered,shorter}).value();
+  auto changed_keys=keys.read(changed,k).value(),changed_values=values.read(changed,v).value();
+  auto rebuilt=slot.update_batch(changed);ASSERT_TRUE(rebuilt)<<rebuilt.error().message();
+  EXPECT_FALSE(slot.report().reused_native_plan);
+  EXPECT_FALSE(rebuilt->run(q,kr,vr));
+  auto final=rebuilt->run(q,changed_keys,changed_values);ASSERT_TRUE(final)<<final.error().message();ASSERT_TRUE(final->wait().ok());
+  auto changed_output=slot.output().value();std::vector<T> current(zero.size());ASSERT_TRUE(changed_output.view()->read(std::as_writable_bytes(std::span(current))).ok());
+  for(unsigned request=0;request<2;++request){const unsigned count=request?46:30,queries=request?17:1;
+    for(unsigned row=0;row<queries;++row)for(unsigned head=0;head<8;++head){const unsigned valid=causal?count-queries+row+1:count;double sum=0,expected=0;
+      for(unsigned index=0;index<valid;++index){const unsigned physical=reordered[kp[request]+index/16],offset=index%16;double dot=0;
+        for(unsigned d=0;d<depth;++d)dot+=half_test::decode(zero[((qp[request]+row)*8+head)*depth+d])*half_test::decode(half_test::encode<T>(double(int((physical*7+offset*3+(head/4)*5+d)%17)-8)*.03125));
+        const double weight=std::exp(dot/double(std::sqrt(float(depth))));sum+=weight;expected+=weight*(double(physical)*.0625+double(offset)*.00390625+double(head/4)*.03125);
+      }
+      for(unsigned d=0;d<depth;++d)EXPECT_NEAR(half_test::decode(current[((qp[request]+row)*8+head)*depth+d]),expected/sum,.004);
+    }
+  }
+  changed_output.reset();*final={};*rebuilt={};ASSERT_TRUE(context.drain().ok());
 }
 TEST(GgmlCpuPaged, OriginalFlashReadsExactPhysicalPagesAndTail){
   for(unsigned d:{64U,128U,256U})for(bool causal:{false,true}){
