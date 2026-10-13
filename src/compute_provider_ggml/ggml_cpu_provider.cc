@@ -1363,6 +1363,12 @@ bool supports(void *context, Operation operation,
     if(k.rank()!=4 || k.dimensions()[1]%paged->page_size ||
        inputs[0].dimensions()[0]!=1 || paged->logical_rows>INT32_MAX)
       return false;
+    const auto physical_pages=k.dimensions()[1]/paged->page_size;
+    if(paged->pages.empty() || paged->pages.size()>UINT32_MAX ||
+       std::uint64_t(paged->pages.size())*paged->page_size<paged->logical_rows ||
+       std::uint64_t(paged->pages.size()-1)*paged->page_size>=paged->logical_rows)
+      return false;
+    for(const auto page:paged->pages)if(page<0 || page>=physical_pages)return false;
     TensorDesc inferred;
     return paged->infer_output_descriptions(inputs,std::span(&inferred,1)).ok() &&
         inferred==outputs[0] && supports(context,Operation(ScaledDotProductAttention{
