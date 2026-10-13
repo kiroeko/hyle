@@ -2,6 +2,7 @@
 #include "hyle/compute/backends/cpu.h"
 #include "hyle/compute/cpu.h"
 #include "hyle/compute/batch_execution.h"
+#include "hyle/compute/paged_arena.h"
 #include "hyle/compute/providers/ggml_cpu.h"
 #include "../compute_provider_native/half_test_support.h"
 #include "../compute_batch/allocation_fault_fixture.h"
@@ -131,15 +132,28 @@ TEST(GgmlCpuRagged, ColdBudgetAndPagedQualificationAreExplicit) {
   ASSERT_TRUE(invocation.close().ok());
   cap.storage=c::BatchStorage::kPaged;cap.max_pages=2;cap.max_page_refs=2;cap.page_size=16;cap.max_kv_rows=32;
   auto paged=c::BatchSchema::create(cap).value();auto absent=c::BatchProgram::prepare(context,paged,{.resource=hyle::mem::system_resource()});
-  ASSERT_TRUE(absent)<<absent.error().message();ASSERT_TRUE(context.close().ok());
+  ASSERT_TRUE(absent)<<absent.error().message();
+  const std::array<std::int32_t,2> page_ptr{0,1};
+  const std::array<std::int32_t,1> page_id{1},tail{3};
+  auto page_layout=paged.version({q,page_ptr,page_id,tail}).value();
+  auto small=c::BatchProgram::prepare(context,paged,{.resource=hyle::mem::system_resource(),.max_float_workspace_bytes=1,.max_int_workspace_bytes=1024}).value();
+  auto page_slot=c::BatchInvocation::create(small,queue).value();
+  auto refused=page_slot.prepare_batch(page_layout);ASSERT_FALSE(refused);EXPECT_TRUE(refused.error().IsResourceExhausted());
+  EXPECT_FALSE(page_slot.in_flight());ASSERT_TRUE(page_slot.close().ok());
+  ASSERT_TRUE(context.close().ok());
 }
 TEST(GgmlCpuRagged, EveryColdAllocationFailureReleasesThePartialNativePlan) {
   auto context=c::Context::create(c::cpu::device(),c::ggml_cpu::provider({.native_threads=1})).value();
   auto queue=context.create_queue().value();
+  for(auto storage:{c::BatchStorage::kRagged,c::BatchStorage::kPaged}){
+  SCOPED_TRACE(static_cast<unsigned>(storage));
   c::BatchCapacity cap{.storage=c::BatchStorage::kRagged,.max_requests=2,.max_query_rows=2,.max_kv_rows=6,
       .max_pages=0,.max_page_refs=0,.query_heads=4,.kv_heads=2,.head_dim=64,.page_size=1};
-  auto schema=c::BatchSchema::create(cap).value();const std::array<std::int32_t,3> q{0,1,2},k{0,3,6};
-  auto layout=schema.version({q,k,{},{}}).value();
+  const bool paged=storage==c::BatchStorage::kPaged;
+  if(paged){cap.storage=storage;cap.max_pages=2;cap.max_page_refs=2;cap.page_size=16;cap.max_kv_rows=32;}
+  auto schema=c::BatchSchema::create(cap).value();const std::array<std::int32_t,3> q{0,1,2},k{0,paged?1:3,paged?2:6};
+  const std::array<std::int32_t,2> ids{1,0},tails{3,3};
+  auto layout=schema.version({q,k,paged?std::span<const std::int32_t>{ids}:std::span<const std::int32_t>{},paged?std::span<const std::int32_t>{tails}:std::span<const std::int32_t>{}}).value();
   const auto episode=[&](hyle_f5_fault_fixture::Allocator &allocator)->hyle::Status {
     auto program=c::BatchProgram::prepare(context,schema,{.resource=hyle::mem::system_resource(),
         .max_float_workspace_bytes=1u<<20,.max_int_workspace_bytes=2048,.allocator=allocator.ref()});
@@ -158,26 +172,53 @@ TEST(GgmlCpuRagged, EveryColdAllocationFailureReleasesThePartialNativePlan) {
     const auto status=episode(fault);EXPECT_TRUE(status.IsResourceExhausted())<<status.message();
     EXPECT_EQ(fault.live,0U);
   }
+  }
   ASSERT_TRUE(context.close().ok());
 }
-TEST(GgmlCpuRagged, AcceptedMathFailureRetiresUsesWithoutPublishingOutput) {
+void accepted_failure(bool paged) {
   auto context=c::Context::create(c::cpu::device(),c::ggml_cpu::provider({.native_threads=1})).value();
   auto queue=context.create_queue().value();
   c::BatchCapacity cap{.storage=c::BatchStorage::kRagged,.max_requests=2,.max_query_rows=2,.max_kv_rows=6,
       .max_pages=0,.max_page_refs=0,.query_heads=4,.kv_heads=2,.head_dim=64,.page_size=1};
-  auto schema=c::BatchSchema::create(cap).value();const std::array<std::int32_t,3> q{0,1,2},k{0,3,6};
-  auto layout=schema.version({q,k,{},{}}).value();
+  if(paged){cap.storage=c::BatchStorage::kPaged;cap.max_pages=2;cap.max_page_refs=2;cap.page_size=16;cap.max_kv_rows=32;}
+  auto schema=c::BatchSchema::create(cap).value();const std::array<std::int32_t,3> q{0,1,2},k{0,paged?1:3,paged?2:6};
+  const std::array<std::int32_t,2> ids{1,0},tails{3,3};
+  auto layout=schema.version({q,k,paged?std::span<const std::int32_t>{ids}:std::span<const std::int32_t>{},paged?std::span<const std::int32_t>{tails}:std::span<const std::int32_t>{}}).value();
   auto program=c::BatchProgram::prepare(context,schema,{.resource=hyle::mem::system_resource(),
       .max_float_workspace_bytes=1u<<20,.max_int_workspace_bytes=2048}).value();
   auto invocation=c::BatchInvocation::create(program,queue).value();auto prepared=invocation.prepare_batch(layout).value();
   auto pool=c::LeasePool::create(hyle::mem::system_resource(),8192).value();
   const std::array inputs{load(pool,std::vector<F16>(2*4*64)),load(pool,std::vector<F16>(6*2*64)),load(pool,std::vector<F16>(6*2*64))};
+  c::PagedArena keys,values;c::PagedArenaRead key_frame,value_frame;
+  std::array<c::ReadLease,2> key_guards,value_guards;
+  if(paged){
+    auto key_arena=c::PagedArena::create(schema,hyle::mem::system_resource(),{.max_backing_bytes=8193});
+    auto value_arena=c::PagedArena::create(schema,hyle::mem::system_resource(),{.max_backing_bytes=8193});
+    ASSERT_TRUE(key_arena)<<key_arena.error().message();ASSERT_TRUE(value_arena)<<value_arena.error().message();
+    keys=std::move(*key_arena);values=std::move(*value_arena);
+    const std::vector<F16> zero(16*2*64);
+    for(unsigned page=0;page<2;++page){
+      auto kw=keys.acquire(page).value(),vw=values.acquire(page).value();
+      ASSERT_TRUE(kw.lease().view()->write(std::as_bytes(std::span(zero))).ok());
+      ASSERT_TRUE(vw.lease().view()->write(std::as_bytes(std::span(zero))).ok());
+      key_guards[page]=kw.publish().value();value_guards[page]=vw.publish().value();
+    }
+    key_frame=keys.read(layout,key_guards).value();value_frame=values.read(layout,value_guards).value();
+  }
   hyle::Result<c::Completion> completion;
-  {AcceptedFailure failure(context);completion=prepared.run(inputs);}
+  {AcceptedFailure failure(context);completion=paged?prepared.run(inputs[0],key_frame,value_frame):prepared.run(inputs);}
   const hyle::Status terminal=completion?completion->wait():hyle::Status(completion.error());EXPECT_TRUE(terminal.IsResourceExhausted());
   EXPECT_FALSE(invocation.output());EXPECT_FALSE(invocation.in_flight());EXPECT_EQ(pool.stats().active_uses,0U);
   if(completion)*completion={};prepared={};
   EXPECT_FALSE(invocation.update_batch(layout));EXPECT_TRUE(invocation.drain().IsResourceExhausted());
+  if(paged){
+    key_frame={};value_frame={};for(auto &lease:key_guards)lease.reset();for(auto &lease:value_guards)lease.reset();
+    for(unsigned page=0;page<2;++page){auto kw=keys.acquire(page),vw=values.acquire(page);EXPECT_TRUE(kw);EXPECT_TRUE(vw);}
+    ASSERT_TRUE(keys.close().ok());ASSERT_TRUE(values.close().ok());
+  }
   ASSERT_TRUE(context.close().ok());
+}
+TEST(GgmlCpuRagged, AcceptedMathFailureRetiresUsesWithoutPublishingOutput) {
+  accepted_failure(false);accepted_failure(true);
 }
 } // namespace
