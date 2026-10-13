@@ -11,12 +11,17 @@
 #include <cmath>
 #include <cstdio>
 #include <cstdlib>
+#include <filesystem>
+#include <fstream>
 #include <memory>
 #include <nanobench.h>
 #include <string>
 #include <vector>
 
 namespace {
+#ifndef HYLE_RESIDENT_PLACEMENT
+#define HYLE_RESIDENT_PLACEMENT 0
+#endif
 namespace c = hyle::compute;
 namespace m = hyle::mem;
 namespace nb = ankerl::nanobench;
@@ -54,12 +59,15 @@ std::uint32_t mix(std::uint32_t value) {
   return value ^ (value >> 16);
 }
 struct Data {
-  static constexpr int keys = 1024, capacity = 1037, depth = 256, heads = 8,
-                       kv_heads = 2;
-  int rows;
+  static constexpr int heads = 8, kv_heads = 2;
+  int rows, keys, capacity, depth;
+  bool causal;
+  float scale;
   c::TensorDesc query, physical, cache;
   std::array<std::vector<std::uint16_t>, 3> input;
-  explicit Data(int q) : rows(q) {
+  explicit Data(int q, int k = 1024, int d = 256, bool masked = true)
+      : rows(q), keys(k), capacity(k + 13), depth(d), causal(masked),
+        scale(1.F / std::sqrt(float(d))) {
     query = take(c::TensorDesc::dense(
         c::DataType::kBFloat16,
         std::array<std::int64_t, 4>{1, heads, rows, depth}));
@@ -96,7 +104,8 @@ struct Data {
           for (int z = 0; z < depth; ++z)
             dot += double(decode(input[0][(head * rows + row) * depth + z])) *
                    decode(input[1][((head / 4) * capacity + key) * depth + z]);
-          weights[key] = key > keys - rows + row ? 0. : std::exp(dot * .0625);
+          weights[key] = causal && key > keys - rows + row
+                             ? 0. : std::exp(dot * scale);
           sum += weights[key];
         }
         for (int z = 0; z < depth; ++z)
@@ -129,8 +138,8 @@ struct Harness {
         c::prepare(context,
                    c::ScaledDotProductAttention{
                        .layout = c::AttentionLayout::kBatchHeadSequenceDepth,
-                       .scale = .0625F,
-                       .causal = true},
+                       .scale = data.scale,
+                       .causal = data.causal},
                    data.query, data.cache, data.cache));
     if (!native && prepared.provider().id != c::ggml_cpu::kProviderId)
       fail("ordinary CPU did not select mature ggml");
@@ -188,8 +197,8 @@ struct Harness {
                  worst, actual.size());
   }
 };
-void measure(int rows, bool verify_only) {
-  Data data(rows);
+void measure(int rows, int keys, int depth, bool causal, bool verify_only) {
+  Data data(rows, keys, depth, causal);
   const auto aa = env("HYLE_BENCH_AA_ROUTE");
   if (!aa.empty() && aa != "native" && aa != "selected")
     fail("unknown CPU A/A route");
@@ -217,7 +226,9 @@ void measure(int rows, bool verify_only) {
   if (verify_only)
     return;
   nb::Bench bench;
-  bench.title("CPU resident BF16 Q=" + std::to_string(rows) + " KV=1024 D=256")
+  bench.title("CPU resident BF16 Q=" + std::to_string(rows) +
+               " KV=" + std::to_string(keys) + " D=" + std::to_string(depth) +
+               " causal=" + std::to_string(causal))
       .batch(1)
       .epochs(104)
       .minEpochIterations(2)
@@ -233,17 +244,46 @@ void measure(int rows, bool verify_only) {
                         "HYLE CPU resident", run_candidate);
 }
 } // namespace
-int main() {
+int main(int, char **argv) {
   const auto qos = hyle::bench::perf::configure_thread_qos();
   const auto affinity =
       hyle::bench::perf::configure_thread_affinity("HYLE_PERF_CALLER_CPU");
   const bool verify_only = !env("HYLE_BENCH_VERIFY_ONLY").empty();
+  if (!verify_only && env("HYLE_BENCH_AA_ROUTE").empty() &&
+      !env("HYLE_PERF_RUN_NONCE").empty()) {
+    std::string ready;
+    std::ifstream(std::filesystem::absolute(argv[0]).parent_path() /
+                  "g01_cpu_resident_aa.ready") >> ready;
+    if (ready != "PASS")
+      fail("finite CPU workload A/A has not passed for this build");
+  }
+  std::string parent_mask = "not-applicable", priority = "not-applicable";
+#if defined(_WIN32)
+  DWORD_PTR mask = 0, system_mask = 0;
+  if (!GetProcessAffinityMask(GetCurrentProcess(), &mask, &system_mask))
+    fail("process affinity observation failed");
+  char mask_text[40]{};
+  std::snprintf(mask_text, sizeof(mask_text), "0x%llx",
+                static_cast<unsigned long long>(mask));
+  parent_mask = mask_text;
+  const auto actual_priority = GetPriorityClass(GetCurrentProcess());
+  if (actual_priority == 0)
+    fail("process priority observation failed");
+  priority = std::to_string(actual_priority);
+#endif
   std::fprintf(
       stderr,
       "# HYLE_CPU_RESIDENT_RUN run_nonce=%s apple_qos=%s qos_ok=%s "
-      "affinity_topology=%s caller_cpu=%s affinity_ok=%s verify_only=%d\n",
+      "affinity_topology=%s caller_cpu=%s affinity_ok=%s verify_only=%d "
+      "parent_mask=%s priority=%s placement=%d execution_order=%s "
+      "allocation_order=%s aa_route=%s paired_mode=nanobench-compare\n",
       hyle::bench::perf::run_nonce(), qos.name, qos.ok, affinity.topology,
-      affinity.cpu, affinity.ok, verify_only);
-  measure(1, verify_only);
-  measure(128, verify_only);
+      affinity.cpu, affinity.ok, verify_only, parent_mask.c_str(),
+      priority.c_str(), HYLE_RESIDENT_PLACEMENT,
+      env("HYLE_BENCH_RIVAL_FIRST").empty() ? "candidate-first" : "peer-first",
+      env("HYLE_BENCH_PEER_ALLOCATION_FIRST").empty() ? "candidate-first" : "peer-first",
+      env("HYLE_BENCH_AA_ROUTE").empty() ? "none" : env("HYLE_BENCH_AA_ROUTE").c_str());
+  measure(1, 1024, 256, true, verify_only);
+  measure(128, 1024, 256, true, verify_only);
+  measure(17, 257, 64, false, verify_only);
 }

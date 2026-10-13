@@ -60,10 +60,13 @@ struct Kernel {
         ggml_set_input(tensor);
       }
       auto *query = ggml_cast(context, state->input[0], GGML_TYPE_F32);
-      auto *mask_tensor = ggml_new_tensor_2d(context, GGML_TYPE_F16,
+      ggml_tensor *mask_tensor = nullptr;
+      if (operation.causal) {
+        mask_tensor = ggml_new_tensor_2d(context, GGML_TYPE_F16,
                                              descriptions[1].dimensions()[2],
                                              descriptions[0].dimensions()[2]);
-      mask_tensor->data = const_cast<ggml_fp16_t *>(mask.data());
+        mask_tensor->data = const_cast<ggml_fp16_t *>(mask.data());
+      }
       auto *attention =
           ggml_flash_attn_ext(context, query, state->input[1], state->input[2],
                               mask_tensor, operation.scale, 0.F, 0.F);
@@ -163,7 +166,7 @@ struct Factory {
     if (!operation || request.inputs.size() != 3 ||
         request.outputs.size() != 1 ||
         operation->layout != c::AttentionLayout::kBatchHeadSequenceDepth ||
-        !operation->causal || operation->mask != c::MaskKind::kNone ||
+        operation->mask != c::MaskKind::kNone ||
         operation->accumulation_type != c::DataType::kFloat32 ||
         !std::isfinite(operation->scale))
       return std::unexpected(
@@ -172,14 +175,18 @@ struct Factory {
       if (!description.is_plain() || description.rank() != 4 ||
           description.data_type() != c::DataType::kBFloat16 ||
           description.dimensions()[0] != 1 ||
-          description.dimensions()[3] != 256 ||
+          (description.dimensions()[3] != 256 && description.dimensions()[3] != 64) ||
           description.byte_strides()[3] != 2)
         return std::unexpected(
             Status::Unimplemented("finite BF16 reference view"));
     const auto q = request.inputs[0].dimensions();
     const auto k = request.inputs[1].dimensions();
-    if (!request.inputs[0].is_dense() || (q[2] != 1 && q[2] != 128) ||
-        q[1] != 8 || k[1] != 2 || k[2] != 1024 ||
+    const bool primary = (q[2] == 1 || q[2] == 128) && q[3] == 256 &&
+                         k[2] == 1024 && operation->causal;
+    const bool holdout = q[2] == 17 && q[3] == 64 && k[2] == 257 &&
+                         !operation->causal;
+    if (!request.inputs[0].is_dense() || (!primary && !holdout) ||
+        q[1] != 8 || k[1] != 2 || q[3] != k[3] ||
         request.inputs[1] != request.inputs[2] ||
         request.outputs[0] != request.inputs[0])
       return std::unexpected(
@@ -214,9 +221,10 @@ struct Factory {
       Kernel kernel{{request.inputs[0], request.inputs[1], request.inputs[2]},
                     operation,
                     {}};
-      kernel.mask.resize(static_cast<std::size_t>(rows * keys));
+      if (operation.causal)
+        kernel.mask.resize(static_cast<std::size_t>(rows * keys));
       for (std::int64_t row = 0; row < rows; ++row)
-        for (std::int64_t key = 0; key < keys; ++key)
+        for (std::int64_t key = 0; operation.causal && key < keys; ++key)
           kernel.mask[static_cast<std::size_t>(row * keys + key)] =
               ggml_fp32_to_fp16(key <= keys - rows + row ? 0.F : -INFINITY);
       auto result = c::make_custom_kernel(std::move(kernel),

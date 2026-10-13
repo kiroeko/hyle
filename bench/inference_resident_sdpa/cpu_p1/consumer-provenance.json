@@ -1,0 +1,41 @@
+{
+  "kind": "PROVISIONAL_ARCHETYPE",
+  "consumer": "single-machine CPU resident attention fragment Qwen3.5-2B GQA8/2 D256 plus noncausal D64 holdout",
+  "product_candidate": "d91a523df9bce21eb81c13d9bf2a8f3f7d3ea80f",
+  "actual_dtype": "BF16 BHSD consumer; F32 query cast and original F16 causal mask; not full model",
+  "cases": [
+    {
+      "q": 1,
+      "kv": 1024,
+      "d": 256,
+      "causal": true,
+      "hq": 8,
+      "hkv": 2,
+      "batch": 1,
+      "capacity_tail": 13
+    },
+    {
+      "q": 128,
+      "kv": 1024,
+      "d": 256,
+      "causal": true,
+      "hq": 8,
+      "hkv": 2,
+      "batch": 1,
+      "capacity_tail": 13
+    },
+    {
+      "q": 17,
+      "kv": 257,
+      "d": 64,
+      "causal": false,
+      "hq": 8,
+      "hkv": 2,
+      "batch": 1,
+      "capacity_tail": 13
+    }
+  ],
+  "model_scope_path": "docs/implementation/tasks/project/qwen35-2b-command-consumer-scope-2026-10.md",
+  "model_scope_sha256": "72125de2bd4d9c363ee44399b7705fa0a6784fa28743f6fbcc80febff4481048",
+  "whole_model_claim": false
+}

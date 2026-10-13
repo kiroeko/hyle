@@ -578,4 +578,25 @@ TEST(VulkanGraph, ResidentAttentionDepthPaddedRowsUseExactStrides) {
   EXPECT_LE(maximum, 2.e-6);
   ASSERT_TRUE(context.close().ok());
 }
+TEST(VulkanGraph, ResidentAttentionCapacityViewsHaveNoWarmCanonicalCopies) {
+  auto context = vulkan_test::context().value();
+  for (const auto batch : {1, 2}) {
+    const auto qd = dense(c::DataType::kFloat32, {batch, 1, 8, 256});
+    const auto physical = dense(c::DataType::kFloat32, {batch, 37, 2, 256});
+    const auto kd = c::TensorDesc::strided_bytes(c::DataType::kFloat32,
+        std::array<std::int64_t, 4>{batch, 31, 2, 256}, physical.byte_strides()).value();
+    auto builder = g::GraphBuilder::create().value();
+    const auto q = builder.input(qd).value(), k = builder.input(kd).value(), v_id = builder.input(kd).value();
+    auto output = builder.add(c::ScaledDotProductAttention{
+        .layout = c::AttentionLayout::kBatchSequenceHeadDepth, .scale = .0625F}, q, k, v_id).value();
+    ASSERT_TRUE(builder.publish(output).ok());
+    auto graph = std::move(builder).finish().value();
+    gv::CompileReport report;
+    auto program = gv::compile(context, graph, {}, {.report = &report});
+    ASSERT_TRUE(program) << program.error().message();
+    EXPECT_EQ(report.managed_region_count, 1U);
+    EXPECT_EQ(report.native_dispatch_count, 0U) << "batch=" << batch;
+  }
+  ASSERT_TRUE(context.close().ok());
+}
 } // namespace

@@ -1,0 +1,42 @@
+{
+  "candidate": "a40003f7edb54a3da3113d0cd401b46211e0b0f0",
+  "contract_sha256": "4ae724d684be30814e2f28d7d933f771b7e03dda56b86cb51464cef706031720",
+  "qualification": "PASS",
+  "performance": "FAIL",
+  "verify_exit": 0,
+  "elapsed_seconds": 1224.3655684999999,
+  "rows": [
+    {
+      "id": "resident-decode-d256",
+      "ratio_range": [
+        0.7193822488573333,
+        0.7266605619332649
+      ],
+      "exact": "LOSE",
+      "noninferiority": "FAIL",
+      "direction": "LOSS"
+    },
+    {
+      "id": "resident-prefill-d256",
+      "ratio_range": [
+        0.9623036139890072,
+        0.9678773677016207
+      ],
+      "exact": "PARITY",
+      "noninferiority": "PASS",
+      "direction": "LOSS"
+    },
+    {
+      "id": "resident-holdout-d64",
+      "ratio_range": [
+        0.9469713562580614,
+        0.961488934806696
+      ],
+      "exact": "INCONCLUSIVE",
+      "noninferiority": "UNRESOLVED",
+      "direction": "LOSS"
+    }
+  ],
+  "raw_zip_sha256": "b7486e95e1b7c841d3e86b75964e205c3faa84cb8bb4b4385c6a620bdd1cc93c",
+  "previous_failures_preserved": true
+}

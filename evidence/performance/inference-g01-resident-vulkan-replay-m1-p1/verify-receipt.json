@@ -1,0 +1,14 @@
+{
+  "command": [
+    "/usr/bin/python3",
+    "/Users/kiro/hyle-scratch/compute-unified/g01-rr-git-checkout/scripts/hyle-perf.py",
+    "verify",
+    "--contract",
+    "/Users/kiro/hyle-scratch/compute-unified/g01-rr-git-checkout/bench/inference_resident_sdpa/contract.json",
+    "--manifest",
+    "/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-3/manifest.json"
+  ],
+  "exit_code": 0,
+  "stdout": "{\n  \"contract_sha256\": \"4ae724d684be30814e2f28d7d933f771b7e03dda56b86cb51464cef706031720\",\n  \"current_certification_policy_eligible\": true,\n  \"environment_policy_compatibility\": \"CURRENT\",\n  \"manifest\": \"/Users/kiro/hyle-scratch/compute-unified/g01-p1-qualification-3/manifest.json\",\n  \"paths_verified\": true,\n  \"product_gate_policy\": \"consumer-evidence-v1\",\n  \"product_interpretation\": \"CURRENT_POLICY_EVIDENCE_REQUIRES_GATE_REPLAY\",\n  \"provenance_compatibility\": \"EXACT\",\n  \"provenance_renewal_ledger_sha256\": null,\n  \"provenance_renewals_applied\": [],\n  \"qualification\": \"QUALIFIED\"\n}\n",
+  "stderr": ""
+}

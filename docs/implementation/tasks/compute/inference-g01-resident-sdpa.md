@@ -191,3 +191,20 @@ checkout、新fresh tree启动，原peer与合同canonical hash
 `4ae724d684be30814e2f28d7d933f771b7e03dda56b86cb51464cef706031720`不变；
 原provisional archetype来自旧candidate，其数学/输入身份继续复用，新产品身份由此次
 manifest绑定。前一轮完整性能FAIL/构建tree保持原字节。尚无RR性能结论，不签CLOSED。
+
+CPU采样前合同已按本卡主/留出形状冻结草稿：BF16 BHSD GQA8/2，Q1/128、KV1024、
+D256 causal，另Q17/KV257/D64 noncausal。仍是独立原flash graph与相同公开
+PreparedOperation/CPUQueue/Completion/caller output；两个slots、coherent映射、
+单native thread、原8e-3 oracle、readonly；query/output与mask/cplan计费，private pool
+上界仍UNKNOWN。新bench只增加上述留出、实际affinity/order/placement遥测与公共controls，
+CPU产品candidate不变。16个workload A/A预检后才按八strata×n15原仪器取样，5%更严门
+和本卡10%预算保留。新版三形状/placement/control现以2 jobs实际编译通过，54个依赖/
+benchmark步骤160.39s，三个独立oracle/readonly/双slots预检3.42s通过；正式A/A/P1未跑。
+共享bench目录的selector归属缺口已另记[独立工具任务](../build/validation-selector-shared-bench-paths.md)，
+原BLOCKED计划保留；本模块不修改公共工具，适用入口按上述有限合同直接取证。
+
+RR[正式P1](../../../../evidence/performance/inference-g01-resident-vulkan-replay-m1-p1/README.md)
+资格PASS/verify通过而性能仍FAIL，decode吞吐比0.719–0.727，prefill5%非劣
+PASS但方向LOSS，D64留出非劣UNRESOLVED且方向LOSS。新源码事实是外层canonical
+adapter仍会复制全KV，已按真实owner登记[驻留端口卡](inference-g01-vulkan-resident-ports.md)
+SCOPED；原本次数值、交付和san PASS仍只签其有限数学/生命周期，不签零拷贝成本。

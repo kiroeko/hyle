@@ -531,14 +531,9 @@
     },
     {
       "module": "compute_route_vulkan",
-      "state": "CLOSED",
-      "record": "docs/implementation/tasks/compute/foundation-f5-final-closure.md",
-      "summary": "F5 finite typed paged/ragged and state/Graph seams CLOSED; actual native/reference qualifications, host risks, SDK18 and component contract verified. IREE owner only TSAN configuration fix; original scopes and vendor/capture/performance limits retained.",
-      "candidate": "11c348e404df2c3fc404056ff3a9e885d4d990bc",
-      "performance": {
-        "tier": "P0",
-        "evidence": "evidence/correctness/foundation-f5-final/receipt.json"
-      }
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/compute/inference-g01-vulkan-resident-ports.md",
+      "summary": "G01真实端口费用反证SCOPED：原managed adapter canonicalize会为合法resident strides加入warm全KV Copy；原F5范围/证据保留，仅冻结SDPA vec4合格port直读及原对齐/寿命验收。"
     },
     {
       "module": "graph_route_vulkan",
