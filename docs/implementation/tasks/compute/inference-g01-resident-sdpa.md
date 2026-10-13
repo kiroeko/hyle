@@ -203,6 +203,8 @@ PreparedOperation/CPUQueue/Completion/caller output；两个slots、coherent映�
 CPU产品candidate不变。16个workload A/A预检后才按八strata×n15原仪器取样，5%更严门
 和本卡10%预算保留。新版三形状/placement/control现以2 jobs实际编译通过，54个依赖/
 benchmark步骤160.39s，三个独立oracle/readonly/双slots预检3.42s通过；正式A/A/P1未跑。
+[CPU时序/成本/资格账](../../../../bench/inference_resident_sdpa/cpu_p1/README.md)固定双方
+完整完成边界、warm费用和UNKNOWN；它不替代实际A/A或全样本裁决。
 共享bench目录的selector归属缺口已另记[独立工具任务](../build/validation-selector-shared-bench-paths.md)，
 原BLOCKED计划保留；本模块不修改公共工具，适用入口按上述有限合同直接取证。
 
