@@ -266,6 +266,10 @@ bytes，private UNKNOWN/系统争用如实保留；admission/offload安全余量
 
 ## 如何处理适配差异
 
+逐项处理、一期放行条件、三条具体消费旅程、二期边界及代码量/成本验收见
+[一期收口与引擎启动方案](inference-consumer-adaptation-plan-2026-10.md)。该页是设计提案，
+不是当前实现或活动 closure card。
+
 每一项先形成一条自然C++旅程，再做反证，不能从接口名字下结论：
 
 | 差异类型 | 处理 | 消费方与库的边界 |
