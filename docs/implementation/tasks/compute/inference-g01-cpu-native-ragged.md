@@ -1,6 +1,6 @@
 # G01 CPU 多请求 ragged 原生读取
 
-状态：SCOPED，2026-10-13；owner `compute_provider_ggml`。
+状态：AUDITED，2026-10-13；owner `compute_provider_ggml`。
 baseline `af9dc884448249ef0ad87d28525e5303ec087401`，单请求产品candidate d91a与全部
 三交付/san/独立性能证据保留，CPU P1正从独立clean副本取样，不受本轮产品施工影响。
 授权来自[十项goal](../project/inference-gaps-goal-execution-2026-10.md)。
@@ -30,3 +30,22 @@ ASan/UBSan/TSan与已冻结真实同合同性能，only selected factors/direct 
 CPU单请求路径相同输入投影保原证据，new batch入口必须独立实跑。调查/实现/验收各2h
 检查点，按用户常设授权延长保日志，Windows≤4jobs、heavy串行，公共工具不改。
 实现前AUDITED固定域/ABI/有限FIX；适用门全过才关闭本批，多请求其它路线仍保总卡。
+
+## 审计冻结
+
+CR-01内置kBatchPlanningExtensionId，原Graph扩展照常转发；中央图增加既有
+compute_batch私有依赖（其仅依赖compute/ops/mem，不回指CPUprovider，没有环）。不改
+公共BatchProgram签名或BatchProviderVTable，公共build核心不改，只登记真实组件边。
+
+CR-02只准ragged、F16/BF16及原已资格F32、D64/128/256，Hq/Hkv整数GQA和非空KV。
+原packed NHD为每request创建BSHD rank4 descriptor，subview只移byte origin，原CPU
+compile/PreparedVTable保depth连续/正strides并直接flash读KV，输出写packed Q对应slice。
+同一原Queue admitted callback顺序调用已构造slots，原同步runtime完成后才归还；没有
+另建Completion、queue、数学、KV gather/cont/copy或warm metadata遍历。
+
+CR-03cold plan从owned host layout固定query/KV ranges、数学图与私有slot，cold O(requests)
+metadata、原causal O(Q×KV) mask及O(QHD) query/output允许；KV staging=0。拓扑key
+覆盖全部query_indptr/kv_indptr和原immutable容量/scale/causal，相同key只换generation，
+改变则cold重建，旧output/票据/真实uses沿原BatchInvocation拒覆盖。empty Q request跳过；
+Q>0且KV=0冷拒绝（原flash无该数学档）。allocator失败清理partial prepared/slot，按options
+float workspace上限检查已知冷payload/plan bytes，未知private线程池仍明示，不签capture。

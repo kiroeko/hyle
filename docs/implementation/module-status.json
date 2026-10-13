@@ -369,10 +369,9 @@
     },
     {
       "module": "compute_provider_ggml",
-      "state": "CANDIDATE",
-      "record": "docs/implementation/tasks/compute/inference-g01-resident-sdpa.md",
-      "summary": "G01 resident SDPA CANDIDATE: native-compatible cache views, original fused CPU/full-F32 Vulkan math; public finite consumers passed, delivery/risk/P1 remaining; no whole G01 closure.",
-      "candidate": "d91a523df9bce21eb81c13d9bf2a8f3f7d3ea80f"
+      "state": "AUDITED",
+      "record": "docs/implementation/tasks/compute/inference-g01-cpu-native-ragged.md",
+      "summary": "G01 CPU CR-01/02/03 AUDITED：原BatchPlanning生命周期接直接ragged多请求，用原ggml flash/slot和packed输出，零KV物化；原d91a单请求证据/P1独立取样保留，paged和其它路线仍待。"
     },
     {
       "module": "graph_provider_onednn",
