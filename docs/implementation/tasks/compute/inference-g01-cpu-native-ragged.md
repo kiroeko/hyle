@@ -71,7 +71,9 @@ compile commands保留。Windows relocated static/shared SDK同普通Direct cons
 single resident回归均PASS：F16/BF16三D、两slots/旧output/reuse/readonly/tail。安装consumer
 仅public头与compute/graph targets；其Graph expert factory未由facade传播的真实适配
 差异单列未资格，source显式provider target的Graph两region串联实跑中，不能偷加存在性
-宏或由Direct代签Graph交付。source Graph与batch性能尚未完成。中央图仅新增CPUprovider
+宏或由Direct代签Graph交付。source Graph实跑暴露原batch桥错误强制DeviceAccessible，
+由原G02卡MQ-CPU-01接缝修正a0c047ea4后两dependent region实跑PASS；CPU provider
+candidate642本身不改。安装Graph factory资格与batch性能尚未完成。中央图仅新增CPUprovider
 到既有compute_batch一条私有无环边；selector保守选全局计划，计划原样保留，实际本轮
 只构建CPUprovider及直接batch/Graph消费者，不跑无影响全库/数学目录。性能独立副本
 已封存，heavy验证按常设资源约束串行，不能先记源码猜测PASS。

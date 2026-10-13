@@ -699,9 +699,10 @@
     },
     {
       "module": "graph_batch",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/graph/inference-g02-multi-queue-batch.md",
-      "summary": "G01/G02 graph_batch MQ-CPU-01 AUDITED：实际CPU batch原桥被GPU专用resource属性拒绝；保exact resource/原端口对齐与native qualify，有限修正错误约束。原26d7多Queue候选证据保留，graph不改。"
+      "summary": "G01/G02 graph_batch MQ-CPU-01 CANDIDATE：原exact resource/端口对齐与native qualify保留，去掉错误GPU专用属性；Windows CPU两dependent原native batch region PASS，风险/交付待验。原26d7证据保留，graph不改。",
+      "candidate": "a0c047ea45cb46884da7f578684ff416ccfdefa5"
     }
   ]
 }

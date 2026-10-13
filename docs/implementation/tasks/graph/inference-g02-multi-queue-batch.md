@@ -1,6 +1,7 @@
 # G02 多 Queue batch 协调
 
-状态：graph原CANDIDATE保留，graph_batch退回AUDITED，2026-10-13。
+状态：graph原CANDIDATE保留，graph_batch新CANDIDATE，2026-10-13。
+graph_batch MQ-CPU-01 candidate `a0c047ea45cb46884da7f578684ff416ccfdefa5`。
 原不可变candidate：`26d7c2cb7212f5abdd3866baaf886b8fdbca02e5`，证据全部保留。
 baseline：`743783f7b0759d77978c0d208dc5ba0898313e69`。
 授权来自当前[缺口 goal](../project/inference-gaps-goal-execution-2026-10.md)；
@@ -47,6 +48,10 @@ submit/layout/权限/失败/退休不改。仅graph_batch owner退回AUDITED，g
 复用原两dependent region公开消费者，CPU两请求、源只读/旧output，source与安装Graph
 factory分开裁决；原native CUDA 26d7证据保留不冒充新CPU资格。适用san与三交付定向
 验收，没有数学/算法/热成本变化，不重跑CPU单请求P1或全库；所有缺门仍待。
+
+实际修正已提交。Windows普通Direct同consumer与source显式expert provider工厂的
+两个dependent Graph ragged region均PASS，原资源拒绝FAIL保留；只重编graph_batch
+一个TU/链接，2s完成。原exact_resource/端口对齐未放宽，宿主san/安装交付定向验证中。
 
 ## 验证与停止
 

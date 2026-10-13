@@ -75,7 +75,7 @@
 | compute_stream | CLOSED | P0 / [PASS](tasks/compute/foundation-f3-p0-cost-review.md) | [record](tasks/compute/foundation-f3-final-closure.md) | F3 CLOSED：原八FIX的有界双向文件/资源管线、四自然路线/逐组ready、实际Qwen BF16/F32与原编码Direct+Graph往返、当前native寿命/错误/取消/direct IO和三sanitizer风险、适用source/迁址static/shared/新头/缺席/运行库、P0与红队通过；原suffix FAIL/有限纠正保留，未测硬件/软件GPU及driver私有成本不外推。 |
 | compute_state | CLOSED | P0 / [PASS](../../evidence/correctness/foundation-f5-final/receipt.json) | [record](tasks/compute/foundation-f5-final-closure.md) | F5 finite typed paged/ragged and state/Graph seams CLOSED; actual native/reference qualifications, host risks, SDK18 and component contract verified. IREE owner only TSAN configuration fix; original scopes and vendor/capture/performance limits retained. |
 | compute_batch | CLOSED | P0 / [PASS](../../evidence/correctness/foundation-f5-final/receipt.json) | [record](tasks/compute/foundation-f5-final-closure.md) | F5 finite typed paged/ragged and state/Graph seams CLOSED; actual native/reference qualifications, host risks, SDK18 and component contract verified. IREE owner only TSAN configuration fix; original scopes and vendor/capture/performance limits retained. |
-| graph_batch | AUDITED | — | [record](tasks/graph/inference-g02-multi-queue-batch.md) | G01/G02 graph_batch MQ-CPU-01 AUDITED：实际CPU batch原桥被GPU专用resource属性拒绝；保exact resource/原端口对齐与native qualify，有限修正错误约束。原26d7多Queue候选证据保留，graph不改。 |
+| graph_batch | CANDIDATE | — | [record](tasks/graph/inference-g02-multi-queue-batch.md) | G01/G02 graph_batch MQ-CPU-01 CANDIDATE：原exact resource/端口对齐与native qualify保留，去掉错误GPU专用属性；Windows CPU两dependent原native batch region PASS，风险/交付待验。原26d7证据保留，graph不改。 |
 
 <!-- END GENERATED MODULE STATUS -->
 
