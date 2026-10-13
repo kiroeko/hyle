@@ -4,6 +4,7 @@
 #include <hyle/compute/paged_arena.h>
 #include "../compute_provider_native/half_test_support.h"
 #include <array>
+#include <algorithm>
 #include <cmath>
 #include <vector>
 
@@ -98,14 +99,14 @@ template<class T>void paged_case(unsigned depth,bool causal){
     auto frame_k=keys.read(evolving,active_keys).value(),frame_v=values.read(evolving,active_values).value();
     auto planned=slot.update_batch(evolving);ASSERT_TRUE(planned)<<planned.error().message();
     auto work=planned->run(q,frame_k,frame_v);ASSERT_TRUE(work)<<work.error().message();ASSERT_TRUE(work->wait().ok());
-    auto result=slot.output().value();std::vector<T> current(zero.size());ASSERT_TRUE(result.view()->read(std::as_writable_bytes(std::span(current))).ok());
+    auto result=slot.output().value();std::vector<T> evolving_output(zero.size());ASSERT_TRUE(result.view()->read(std::as_writable_bytes(std::span(evolving_output))).ok());
     for(unsigned request=0;request<2;++request){const unsigned count=request?second_count:first_count,queries=request?(second_count?17:0):1;
       for(unsigned row=0;row<queries;++row)for(unsigned head=0;head<8;++head){const unsigned valid=causal?count-queries+row+1:count;double sum=0,expected=0;
         for(unsigned index=0;index<valid;++index){const unsigned physical=order[active_k[request]+index/16],offset=index%16;double dot=0;
           for(unsigned d=0;d<depth;++d)dot+=half_test::decode(zero[((active_q[request]+row)*8+head)*depth+d])*half_test::decode(half_test::encode<T>(double(int((physical*7+offset*3+(head/4)*5+d)%17)-8)*.03125));
           const double weight=std::exp(dot/double(std::sqrt(float(depth))));sum+=weight;expected+=weight*(double(physical)*.0625+double(offset)*.00390625+double(head/4)*.03125);
         }
-        for(unsigned d=0;d<depth;++d)EXPECT_NEAR(half_test::decode(current[((active_q[request]+row)*8+head)*depth+d]),expected/sum,.004);
+        for(unsigned d=0;d<depth;++d)EXPECT_NEAR(half_test::decode(evolving_output[((active_q[request]+row)*8+head)*depth+d]),expected/sum,.004);
       }
     }
     result.reset();*work={};*planned={};
