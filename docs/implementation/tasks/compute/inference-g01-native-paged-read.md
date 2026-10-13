@@ -148,3 +148,15 @@ source内，违反原dependency cache规则；不是新页表产品故障。保�
 （产品仓库外）、仍原SDK/工具/fourjobs，验证子目录删除边界先核。当前实际进程运行，
 未获terminal不写PASS；宿主三san入口已按最终七个canonical SHA输入准备，待重型任务
 串行门完成后执行，NP02–05与全部native数学资格仍未实现/未证。
+
+
+NP-01宿主风险ASan+LSan/UBSan/TSan各37tests PASS，新metadata＋原layout/materialize/
+arena回归，实际flags核验；0.433/0.171/0.337s run。NP02共享controller草稿3747a1a52
+已提交，metadata policy固定count1/2，复用原bank/CopyBatch/frame/permission/retirement，
+未复制controller或新增queue；page policy借stable Context按layout冷准备，原reference无
+该额外字段。实际Air Apple/Vulkan旧materialized consumer分别12.110s/23.145s build、
+4.184s/7.339s run PASS；只签原negative space，不签新page policy/native数学。见
+[风险与原controller](../../../../evidence/correctness/inference-g01-native-page-metadata-risk/README.md)。
+原组件合同第三次255.328s PASS，原两FAIL与累计692.016s保留；未改公共工具/构建核心。
+五owner仍AUDITED：新的typed paged invocation/实际page compiler/NP03–04数学未实现，
+新头static/shared等仍未证，不由37tests或reference输出代签CANDIDATE/整个G01。

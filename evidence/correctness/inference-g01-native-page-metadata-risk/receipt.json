@@ -1,0 +1,403 @@
+{
+  "metadata_draft": "197d39684d01faac8a5f3ac1eba9dc4f066d3172",
+  "controller_draft": "3747a1a5273ffa5dfdabc137e767277e8015b79e",
+  "state": "AUDITED partial NP01/02; no native page math candidate",
+  "sanitizers": [
+    {
+      "mode": "asan",
+      "gate": "PASS37 host tests",
+      "stages": [
+        {
+          "candidate": "197d39684: AUDITED NP01 draft, not native math candidate",
+          "stage": "configure",
+          "command": [
+            "cmake",
+            "-S",
+            "/home/kiro/hyle-f1/sanitizers/source-03242e7723cb",
+            "-B",
+            "/home/kiro/hyle-f1/sanitizers/asan-03242e7723cb",
+            "-DCMAKE_PROJECT_INCLUDE=/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g01/native-paged/native-metadata-asan-project.cmake"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 22.165218397,
+          "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g01/native-paged/native-metadata-asan-configure-1.log"
+        },
+        {
+          "candidate": "197d39684: AUDITED NP01 draft, not native math candidate",
+          "stage": "build",
+          "command": [
+            "cmake",
+            "--build",
+            "/home/kiro/hyle-f1/sanitizers/asan-03242e7723cb",
+            "--target",
+            "g01_native_metadata_tests",
+            "--parallel",
+            "4"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 43.907585033,
+          "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g01/native-paged/native-metadata-asan-build-1.log"
+        },
+        {
+          "candidate": "197d39684: AUDITED NP01 draft, not native math candidate",
+          "stage": "run",
+          "command": [
+            "/home/kiro/hyle-f1/sanitizers/asan-03242e7723cb/bin/g01_native_metadata_tests"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 0.4334085689999938,
+          "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g01/native-paged/native-metadata-asan-run-1.log"
+        }
+      ],
+      "sync": {
+        "candidate": "197d39684: AUDITED NP01 draft, not native math candidate",
+        "destination": "/home/kiro/hyle-f1/sanitizers/source-03242e7723cb",
+        "one_way": true,
+        "checked": 8,
+        "copied": [
+          "include/hyle/compute/batch_paged_native.h",
+          "src/compute_batch/batch_paged_native.cc",
+          "src/compute_batch/CMakeLists.txt",
+          "tests/compute_batch/native_paged_metadata_test.cc",
+          "tests/compute_batch/CMakeLists.txt",
+          "cmake/HyleComponents.cmake",
+          "include/hyle/compute/detail/materialized_native_controller.h"
+        ],
+        "inputs": [
+          {
+            "path": "include/hyle/compute/batch_paged_native.h",
+            "sha256": "4a6ddd0d500e139857923d730c28b894f3b6330d5209ccb29c9236448eb38005"
+          },
+          {
+            "path": "src/compute_batch/batch_paged_native.cc",
+            "sha256": "f07fe31741570dc3d54de486131c3bf0ab330445e143cfde543825ece4def3b2"
+          },
+          {
+            "path": "src/compute_batch/CMakeLists.txt",
+            "sha256": "ea7314ffe7ef7cb42224c5e2c033d2a65f25ab16592331fe1e10b46faf3b822f"
+          },
+          {
+            "path": "tests/compute_batch/native_paged_metadata_test.cc",
+            "sha256": "7be57a67d046b72f3157c277b140f84d7b57503b63c7abcc21543d10f2545fe6"
+          },
+          {
+            "path": "tests/compute_batch/CMakeLists.txt",
+            "sha256": "deceb707eb5b1320dd5c9e419f6cb136f288f07623e917f71dbac668500f46a0"
+          },
+          {
+            "path": "tests/compute_batch/allocation_fault_fixture.h",
+            "sha256": "7fc5d108ebfbe46853a14fb74b4c504721442757cd4aeab10f1314a9f03943dc"
+          },
+          {
+            "path": "cmake/HyleComponents.cmake",
+            "sha256": "423496d8381e1975ade40170a2f00f8752e2f5ceb5c4a0307530edfc64259bb4"
+          },
+          {
+            "path": "include/hyle/compute/detail/materialized_native_controller.h",
+            "sha256": "b9d87011312b02cf148582fe342c22275c215b255442d61d26aab021d8bee45c"
+          }
+        ]
+      },
+      "instrumented_tus": 3
+    },
+    {
+      "mode": "ubsan",
+      "gate": "PASS37 host tests",
+      "stages": [
+        {
+          "candidate": "197d39684: AUDITED NP01 draft, not native math candidate",
+          "stage": "configure",
+          "command": [
+            "cmake",
+            "-S",
+            "/home/kiro/hyle-f1/sanitizers/source-03242e7723cb",
+            "-B",
+            "/home/kiro/hyle-f1/sanitizers/ubsan-03242e7723cb",
+            "-DCMAKE_PROJECT_INCLUDE=/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g01/native-paged/native-metadata-ubsan-project.cmake"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 22.892291081,
+          "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g01/native-paged/native-metadata-ubsan-configure-1.log"
+        },
+        {
+          "candidate": "197d39684: AUDITED NP01 draft, not native math candidate",
+          "stage": "build",
+          "command": [
+            "cmake",
+            "--build",
+            "/home/kiro/hyle-f1/sanitizers/ubsan-03242e7723cb",
+            "--target",
+            "g01_native_metadata_tests",
+            "--parallel",
+            "4"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 29.184560282000003,
+          "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g01/native-paged/native-metadata-ubsan-build-1.log"
+        },
+        {
+          "candidate": "197d39684: AUDITED NP01 draft, not native math candidate",
+          "stage": "run",
+          "command": [
+            "/home/kiro/hyle-f1/sanitizers/ubsan-03242e7723cb/bin/g01_native_metadata_tests"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 0.1706414169999988,
+          "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g01/native-paged/native-metadata-ubsan-run-1.log"
+        }
+      ],
+      "sync": {
+        "candidate": "197d39684: AUDITED NP01 draft, not native math candidate",
+        "destination": "/home/kiro/hyle-f1/sanitizers/source-03242e7723cb",
+        "one_way": true,
+        "checked": 8,
+        "copied": [
+          "include/hyle/compute/detail/materialized_native_controller.h"
+        ],
+        "inputs": [
+          {
+            "path": "include/hyle/compute/batch_paged_native.h",
+            "sha256": "4a6ddd0d500e139857923d730c28b894f3b6330d5209ccb29c9236448eb38005"
+          },
+          {
+            "path": "src/compute_batch/batch_paged_native.cc",
+            "sha256": "f07fe31741570dc3d54de486131c3bf0ab330445e143cfde543825ece4def3b2"
+          },
+          {
+            "path": "src/compute_batch/CMakeLists.txt",
+            "sha256": "ea7314ffe7ef7cb42224c5e2c033d2a65f25ab16592331fe1e10b46faf3b822f"
+          },
+          {
+            "path": "tests/compute_batch/native_paged_metadata_test.cc",
+            "sha256": "7be57a67d046b72f3157c277b140f84d7b57503b63c7abcc21543d10f2545fe6"
+          },
+          {
+            "path": "tests/compute_batch/CMakeLists.txt",
+            "sha256": "deceb707eb5b1320dd5c9e419f6cb136f288f07623e917f71dbac668500f46a0"
+          },
+          {
+            "path": "tests/compute_batch/allocation_fault_fixture.h",
+            "sha256": "7fc5d108ebfbe46853a14fb74b4c504721442757cd4aeab10f1314a9f03943dc"
+          },
+          {
+            "path": "cmake/HyleComponents.cmake",
+            "sha256": "423496d8381e1975ade40170a2f00f8752e2f5ceb5c4a0307530edfc64259bb4"
+          },
+          {
+            "path": "include/hyle/compute/detail/materialized_native_controller.h",
+            "sha256": "d6cb46035939bfd37dd609993f99ad6c3eebe06a98e2895b36db311e079a5fad"
+          }
+        ]
+      },
+      "instrumented_tus": 3
+    },
+    {
+      "mode": "tsan",
+      "gate": "PASS37 host tests",
+      "stages": [
+        {
+          "candidate": "197d39684: AUDITED NP01 draft, not native math candidate",
+          "stage": "configure",
+          "command": [
+            "cmake",
+            "-S",
+            "/home/kiro/hyle-f1/sanitizers/source-03242e7723cb",
+            "-B",
+            "/home/kiro/hyle-f1/sanitizers/tsan-03242e7723cb",
+            "-DCMAKE_PROJECT_INCLUDE=/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g01/native-paged/native-metadata-tsan-project.cmake"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 19.432194636000006,
+          "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g01/native-paged/native-metadata-tsan-configure-1.log"
+        },
+        {
+          "candidate": "197d39684: AUDITED NP01 draft, not native math candidate",
+          "stage": "build",
+          "command": [
+            "cmake",
+            "--build",
+            "/home/kiro/hyle-f1/sanitizers/tsan-03242e7723cb",
+            "--target",
+            "g01_native_metadata_tests",
+            "--parallel",
+            "4"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 23.04502378299999,
+          "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g01/native-paged/native-metadata-tsan-build-1.log"
+        },
+        {
+          "candidate": "197d39684: AUDITED NP01 draft, not native math candidate",
+          "stage": "run",
+          "command": [
+            "setarch",
+            "x86_64",
+            "-R",
+            "/home/kiro/hyle-f1/sanitizers/tsan-03242e7723cb/bin/g01_native_metadata_tests"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 0.3366470879999781,
+          "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g01/native-paged/native-metadata-tsan-run-1.log"
+        }
+      ],
+      "sync": {
+        "candidate": "197d39684: AUDITED NP01 draft, not native math candidate",
+        "destination": "/home/kiro/hyle-f1/sanitizers/source-03242e7723cb",
+        "one_way": true,
+        "checked": 8,
+        "copied": [],
+        "inputs": [
+          {
+            "path": "include/hyle/compute/batch_paged_native.h",
+            "sha256": "4a6ddd0d500e139857923d730c28b894f3b6330d5209ccb29c9236448eb38005"
+          },
+          {
+            "path": "src/compute_batch/batch_paged_native.cc",
+            "sha256": "f07fe31741570dc3d54de486131c3bf0ab330445e143cfde543825ece4def3b2"
+          },
+          {
+            "path": "src/compute_batch/CMakeLists.txt",
+            "sha256": "ea7314ffe7ef7cb42224c5e2c033d2a65f25ab16592331fe1e10b46faf3b822f"
+          },
+          {
+            "path": "tests/compute_batch/native_paged_metadata_test.cc",
+            "sha256": "7be57a67d046b72f3157c277b140f84d7b57503b63c7abcc21543d10f2545fe6"
+          },
+          {
+            "path": "tests/compute_batch/CMakeLists.txt",
+            "sha256": "deceb707eb5b1320dd5c9e419f6cb136f288f07623e917f71dbac668500f46a0"
+          },
+          {
+            "path": "tests/compute_batch/allocation_fault_fixture.h",
+            "sha256": "7fc5d108ebfbe46853a14fb74b4c504721442757cd4aeab10f1314a9f03943dc"
+          },
+          {
+            "path": "cmake/HyleComponents.cmake",
+            "sha256": "423496d8381e1975ade40170a2f00f8752e2f5ceb5c4a0307530edfc64259bb4"
+          },
+          {
+            "path": "include/hyle/compute/detail/materialized_native_controller.h",
+            "sha256": "d6cb46035939bfd37dd609993f99ad6c3eebe06a98e2895b36db311e079a5fad"
+          }
+        ]
+      },
+      "instrumented_tus": 3
+    }
+  ],
+  "actual_reference_consumers": {
+    "candidate": "AUDITED NP02 shared metadata policy draft; SHA inputs bound",
+    "identity": {
+      "model": "Mac16,12",
+      "arch": "arm64",
+      "os": "ProductName:\t\tmacOS\nProductVersion:\t\t27.0.1\nBuildVersion:\t\t26A434",
+      "compiler": "Apple clang version 21.0.0 (clang-2100.3.34.2)\nTarget: arm64-apple-darwin27.0.0\nThread model: posix\nInstalledDir: /Library/Developer/CommandLineTools/usr/bin",
+      "cpu": "10",
+      "memory": "17179869184"
+    },
+    "scope": "actual original Apple/Vulkan materialized native controllers, negative regression of shared policy; no new page math claimed",
+    "stages": [
+      {
+        "route": "apple",
+        "stage": "build",
+        "command": [
+          "/opt/homebrew/bin/cmake",
+          "--build",
+          "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-build",
+          "--target",
+          "hyle_f5_materialized_native",
+          "--parallel",
+          "4"
+        ],
+        "exit_code": 0,
+        "elapsed_seconds": 12.110013291,
+        "log": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-controller-reference/apple-build-1.log"
+      },
+      {
+        "route": "apple",
+        "stage": "run",
+        "command": [
+          "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-build/hyle_f5_materialized_native"
+        ],
+        "exit_code": 0,
+        "elapsed_seconds": 4.1843777499999995,
+        "log": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-controller-reference/apple-run-1.log"
+      },
+      {
+        "route": "vulkan",
+        "stage": "build",
+        "command": [
+          "/opt/homebrew/bin/cmake",
+          "--build",
+          "/Users/kiro/hyle-scratch/compute-unified/a-cpu-vulkan/selected-graph/source-build",
+          "--target",
+          "hyle_f5_materialized_native",
+          "--parallel",
+          "4"
+        ],
+        "exit_code": 0,
+        "elapsed_seconds": 23.144919833,
+        "log": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-controller-reference/vulkan-build-1.log"
+      },
+      {
+        "route": "vulkan",
+        "stage": "run",
+        "command": [
+          "/Users/kiro/hyle-scratch/compute-unified/a-cpu-vulkan/selected-graph/source-build/hyle_f5_materialized_native"
+        ],
+        "exit_code": 0,
+        "elapsed_seconds": 7.339238707999996,
+        "log": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-controller-reference/vulkan-run-1.log"
+      }
+    ]
+  },
+  "component_contract": [
+    {
+      "command": [
+        "cmake",
+        "-DHYLE_SOURCE_DIR=C:\\public\\project-hyle\\hyle",
+        "-DHYLE_SMOKE_ROOT=C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g01\\native-paged\\component-gate-1",
+        "-DHYLE_SMOKE_GENERATOR=Ninja",
+        "-P",
+        "cmake/HyleCiComponentContract.cmake"
+      ],
+      "exit_code": 1,
+      "elapsed_seconds": 137.15700000000652,
+      "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g01\\native-paged\\component-gate-1\\run.log",
+      "scope": "original component contract for one new split-header owner mapping; fourjobsmax, no normal fullmodule rebuild"
+    },
+    {
+      "command": [
+        "cmake",
+        "-DHYLE_SOURCE_DIR=C:\\public\\project-hyle\\hyle",
+        "-DHYLE_SMOKE_ROOT=C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g01\\native-paged\\component-gate-2",
+        "-DHYLE_SMOKE_GENERATOR=Ninja",
+        "-P",
+        "cmake/HyleCiComponentContract.cmake"
+      ],
+      "exit_code": 1,
+      "elapsed_seconds": 299.5309999999881,
+      "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g01\\native-paged\\component-gate-2\\run.log",
+      "sdk": "C:\\public\\tools\\hyle-vulkan\\1.4.357.0",
+      "scope": "original component contract; same tool/input, inherited installedVulkanSDK, originalFAIL/root1 preserved, fourjobsmax"
+    },
+    {
+      "command": [
+        "cmake",
+        "-DHYLE_SOURCE_DIR=C:\\public\\project-hyle\\hyle",
+        "-DHYLE_SMOKE_ROOT=C:\\h7\\g01-native-page-component-gate-3",
+        "-DHYLE_SMOKE_GENERATOR=Ninja",
+        "-P",
+        "cmake/HyleCiComponentContract.cmake"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 255.32800000000861,
+      "log": "C:\\h7\\g01-native-page-component-gate-3\\run.log",
+      "sdk": "C:\\public\\tools\\hyle-vulkan\\1.4.357.0",
+      "scope": "original component contract; same tool/input, inherited installedVulkanSDK, originalFAIL/root1 preserved, fourjobsmax"
+    }
+  ],
+  "component_cumulative_seconds": 692.0160000000033,
+  "coverage": "new compact metadata plus original layout/materialize/arena host risks; shared controller instantiated by original Apple/Vulkan reference consumers; no generic newpaged kernel admission proved",
+  "limits": "NP02 paged native preparation/newtyped wrappers andNP03/04 maths not implemented. Newheader static/shared and actualnative page math remain unproven. All oldFAIL/elapsed retained; no fullmath/globaltool rewrite.",
+  "raw_sha256": "f2a6290a2537fc579e84db126929fa99a3613e85c1c175c1040e5ce921a79675"
+}
