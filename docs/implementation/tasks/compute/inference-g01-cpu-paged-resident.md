@@ -1,6 +1,6 @@
 # G01 CPU准确页直接驻留读取
 
-状态：AUDITED，2026-10-13；owners `compute_provider_ggml`、`compute_ggml_runtime`，baseline
+状态：CANDIDATE，2026-10-13；owners `compute_provider_ggml`、`compute_ggml_runtime`，baseline
 `118a8947518f02e0c02aa51918f9d7d15c421ed6`。原CPU resident/ragged973与Vulkanbc0有限
 CLOSED均保留；本轮不是重新研究全库，也不把CPU页资格代签Apple/Vulkan/联合G02。
 
@@ -70,3 +70,24 @@ layout保活，额外ggml tensor只有显式paged节点，private费用如实记
 本卡API继续原公共Batch入口；CP-01/02/03固定。supports/infer拒未资格dtype/D、空Q
 以外无KV、非finite scale、overflow与无效schema/capacity。原Ragged math/Factory不换
 Provider，不修改compute_batch/Graph公共形状。G02准确joint页权限仍独立，不代签。
+
+实现草稿已提交：原private PagedRead与原Batch扩域，两个原CPU core的11处小上下文
+页地址/有效长度适配和NOTICE/锁身份均认证；原CPU-only ffa与mixed456组合工具运行
+成功，19项IQ1组合预算不改。普通Program/Request未加页字段，冷layout owned借用与
+完整topology比较；新normal页条件的实际性能不能由源码冒称零成本，需候选门裁决。
+Windows复用CPU树四jobs定向compile/source数学，非零Q/K的独立double oracle三D/
+两dtype/causal及noncausal、任意顺序/共享页/tail实际PASS；原ragged三数学/风险与
+预算回归PASS。旧测试仍要求paged不支持的FAIL保留并迁移；new hook缺GTest配置
+FAIL与首次新64步fixture未释放PreparedBatch ticket的FAIL也保留，不改原生命周期。
+64步/后续交付/风险/性能尚未裁决，当前仍AUDITED，不签CANDIDATE或整个G01。
+
+不可变candidate `3cf78c88b`（完整身份见registry）。Windows最终五tests PASS：原四
+ragged plus新paged consumer，三D/两dtype/causal/noncausal非零Q/K independent double，
+64步同topology新generation复用且位相payload与输出一致；另64步真实增长/跨页/请求
+结束重入/重排/尾长独立oracle全部PASS。计划私有资格实际核原KV roots、src[5]页表
+origin/count与有效长度/page_size，不由API名或正确结果猜没有KV物化。未引用页可写、
+共享页仍不可写、旧output/ticket/native work阻止复用；原正交budget/OOM/accepted
+error退休回归保。最终源run40.843s，编译增量4.359s，<=4jobs，无GPU运行。
+所有此前配置/旧unsupported断言/ticket生命周期/fixture shadow警告FAIL保留，修测试
+不改原容差/数值/退休日志。CP-01/02实现和scope内普通consumer固定，进入CANDIDATE；
+CP-03的三交付/适用风险/定向性能继续，尚未CLOSED，原全G01/G02其它路线不代签。

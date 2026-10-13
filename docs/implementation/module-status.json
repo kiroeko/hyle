@@ -369,9 +369,10 @@
     },
     {
       "module": "compute_provider_ggml",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/inference-g01-cpu-paged-resident.md",
-      "summary": "G01 CPU准确页 AUDITED：原Batch API/准确frame，借原ggml flash四读点地址映射、逻辑有效长度/原mask/scratch、owned cold页table与完整topologyreuse，固定CP-01/02/03；原normal/ragged算法与对象无页字段，未PASS。"
+      "summary": "G01 CPU准确页 CANDIDATE：原Batch/exact frame＋原flash地址映射，无KV历史复制；两dtype三D/nonzero double、64步owned topology与另64步增长/跨页/重排/请求成员/旧结果、原四ragged风险测试PASS。三交付/风险/P1待验，原终审和所有FAIL保留。",
+      "candidate": "3cf78c88b5e306bd4e3a8e6d59d14b716a822578"
     },
     {
       "module": "graph_provider_onednn",
@@ -564,9 +565,10 @@
     },
     {
       "module": "compute_ggml_runtime",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/inference-g01-cpu-paged-resident.md",
-      "summary": "G01 CPU准确页 AUDITED：原Batch API/准确frame，借原ggml flash四读点地址映射、逻辑有效长度/原mask/scratch、owned cold页table与完整topologyreuse，固定CP-01/02/03；原normal/ragged算法与对象无页字段，未PASS。"
+      "summary": "G01 CPU准确页 CANDIDATE：原Batch/exact frame＋原flash地址映射，无KV历史复制；两dtype三D/nonzero double、64步owned topology与另64步增长/跨页/重排/请求成员/旧结果、原四ragged风险测试PASS。三交付/风险/P1待验，原终审和所有FAIL保留。",
+      "candidate": "3cf78c88b5e306bd4e3a8e6d59d14b716a822578"
     },
     {
       "module": "compute_provider_ggml_cuda",
