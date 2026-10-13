@@ -41,3 +41,12 @@ compute_ggml_runtime合法AUDITED，产品3cf78c88b仅原CPU batch/flash私有�
 启动全库构建或重开无改动模块。活动卡的CPU source、原ragged/resident直接消费者、
 真实relocated static/shared、页读原TU三san与候选定向P1继续；mixed456原资产组合身份
 及实际CPU运行须分别保存，未运行域不代签。独立工具条件与产品验收分账。
+
+
+2026-10-14 NP-01紧凑native页表实际产品owner只有AUDITED compute_batch；中央图只追加
+同一owner的batch_paged_native.h split-header映射，未增删component/product root或依赖边。
+原计划`.scratch/validation/g01-native-paged-metadata-plan.json`为READY、product_authorization
+只compute_batch且无issues，但中央文件任何变化使selector保守选择全库factor/header/delivery。
+保原selected/skipped reasons；不由此重开无改动owners或构建全CPU/CUDA/Apple/Vulkan。
+本轮执行真实compute_batch/新头/其native直接消费者及原component-contract gate，未运行
+无影响域不代签PASS；模块不改公共selector、统计或build core。

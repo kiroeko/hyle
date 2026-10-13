@@ -1,0 +1,146 @@
+{
+  "product_draft": "197d39684d01faac8a5f3ac1eba9dc4f066d3172",
+  "state": "AUDITED partial NP01 implementation; native math not implemented",
+  "source": "PASS4 Windows MSVC19.50 atfourjobs",
+  "stages": [
+    {
+      "stage": "configure",
+      "command": [
+        "cmake",
+        "-S",
+        "C:\\public\\project-hyle\\hyle",
+        "-B",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev",
+        "-DCMAKE_PROJECT_INCLUDE=C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g01\\native-paged\\metadata-project.cmake"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 19.828000000008615,
+      "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g01\\native-paged\\metadata-source-configure-1.log"
+    },
+    {
+      "stage": "build",
+      "command": [
+        "cmake",
+        "--build",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev",
+        "--target",
+        "g01_native_metadata_tests",
+        "--parallel",
+        "4"
+      ],
+      "exit_code": 2,
+      "elapsed_seconds": 22.015999999974156,
+      "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g01\\native-paged\\metadata-source-build-1.log"
+    },
+    {
+      "stage": "configure",
+      "command": [
+        "cmake",
+        "-S",
+        "C:\\public\\project-hyle\\hyle",
+        "-B",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev",
+        "-DCMAKE_PROJECT_INCLUDE=C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g01\\native-paged\\metadata-project.cmake"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 19.23399999999674,
+      "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g01\\native-paged\\metadata-source-configure-2.log"
+    },
+    {
+      "stage": "build",
+      "command": [
+        "cmake",
+        "--build",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev",
+        "--target",
+        "g01_native_metadata_tests",
+        "--parallel",
+        "4"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 22.312000000005355,
+      "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g01\\native-paged\\metadata-source-build-2.log"
+    },
+    {
+      "stage": "run",
+      "command": [
+        "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\g01_native_metadata_tests.exe"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 0.03200000000651926,
+      "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g01\\native-paged\\metadata-source-run-1.log"
+    },
+    {
+      "stage": "configure",
+      "command": [
+        "cmake",
+        "-S",
+        "C:\\public\\project-hyle\\hyle",
+        "-B",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev",
+        "-DCMAKE_PROJECT_INCLUDE=C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g01\\native-paged\\metadata-project.cmake"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 19.421999999991385,
+      "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g01\\native-paged\\metadata-source-configure-3.log"
+    },
+    {
+      "stage": "build",
+      "command": [
+        "cmake",
+        "--build",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev",
+        "--target",
+        "g01_native_metadata_tests",
+        "--parallel",
+        "4"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 21.953999999997905,
+      "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g01\\native-paged\\metadata-source-build-3.log"
+    },
+    {
+      "stage": "run",
+      "command": [
+        "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\g01_native_metadata_tests.exe"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 0.030999999988125637,
+      "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g01\\native-paged\\metadata-source-run-2.log"
+    }
+  ],
+  "inputs": [
+    {
+      "path": "include/hyle/compute/batch_paged_native.h",
+      "sha256": "bb274e3790589657334909ca5f1ea1b6dcc3d141b0d16c6f7d12b4c1d94d4ef1"
+    },
+    {
+      "path": "src/compute_batch/batch_paged_native.cc",
+      "sha256": "f07fe31741570dc3d54de486131c3bf0ab330445e143cfde543825ece4def3b2"
+    },
+    {
+      "path": "src/compute_batch/CMakeLists.txt",
+      "sha256": "ea7314ffe7ef7cb42224c5e2c033d2a65f25ab16592331fe1e10b46faf3b822f"
+    },
+    {
+      "path": "tests/compute_batch/native_paged_metadata_test.cc",
+      "sha256": "7be57a67d046b72f3157c277b140f84d7b57503b63c7abcc21543d10f2545fe6"
+    },
+    {
+      "path": "tests/compute_batch/CMakeLists.txt",
+      "sha256": "deceb707eb5b1320dd5c9e419f6cb136f288f07623e917f71dbac668500f46a0"
+    },
+    {
+      "path": "tests/compute_batch/allocation_fault_fixture.h",
+      "sha256": "7fc5d108ebfbe46853a14fb74b4c504721442757cd4aeab10f1314a9f03943dc"
+    },
+    {
+      "path": "cmake/HyleComponents.cmake",
+      "sha256": "423496d8381e1975ade40170a2f00f8752e2f5ceb5c4a0307530edfc64259bb4"
+    }
+  ],
+  "coverage": "compact4*maxrefs bytes independent query/head dimensions, repeatedlogical95rows>physical64, exactownedlayout/generation, F16/BF16metadata, no caller-span borrow, exportedleases retainrecipe/layout, empty zero-filledtable, foreignschema/budget/nonfinite rejection, perallocationfaultsno live metadata",
+  "failures": "firstcompile used absentBatchSchemaoperator!=; corrected originalschema.owns method, source2PASS then addedrealrepeatedpage/widerheadcapacity case source3PASS. Originalfailure/log/elapsedretained.",
+  "gates_remaining": "three san/static+shared/newheader/native controllers andactualGPU math unproven; originalcomponentcontract firstFAILenvironmentVulkanSDK, run2 currentexistingSDK islive (not PASS)",
+  "raw_sha256": "f79df1a1bfdf4a27b5d186776a0fc6c0f163d5443f357216bc68347adfbcc5e6"
+}

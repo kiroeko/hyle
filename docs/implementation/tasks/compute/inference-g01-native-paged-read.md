@@ -129,3 +129,22 @@ layout及常态Request/Program不加page fields；原native graph record/cancel�
 私有shader/packet细节可在上述原math身份下有界细化；改变public形状、owner、权限或成本
 等级即退回AUDITED。所有FIX均未验收，不能CANDIDATE或签整个G01；G02新joint binding
 待原page-reading数学资格后由其真实owner另行SCOPED/AUDITED，原goal域保留。
+
+
+NP-01实际产品草稿197d39684已提交：owned四input/单I32表，version输出lease独立保
+recipe/layout owner、无self cycle。Windows四source tests PASS，含query8192/head16
+表仍32byte、logical95>physical64真实重复页、empty/foreign/budget/nonfinite/逐cold OOM。
+见[阶段](../../../../evidence/correctness/inference-g01-native-page-metadata-stage/README.md)。
+首Schema比较compile FAIL保，改用原owns身份函数后source2/扩case的source3 PASS；最终
+19.422s配置/21.954s构建/0.031s run，四jobs。NP02–05尚未实现，五owner仍AUDITED。
+原component contract首次137.157s FAIL缺验证进程SDK环境，已定位实际已装SDK并同原
+工具第二次跑，保失败不改工具。中央仅增加新头的owner mapping，selector仍保守选
+全库；按独立工具卡留原计划，不重开无变化owners或运行全库数学。
+
+
+组件合同第二次299.531s FAIL进一步定位为工具生成shared-source-cache位于canonical
+source内，违反原dependency cache规则；不是新页表产品故障。保前两次137.157/299.531s
+与全部生成目录，未改公共脚本。第三次把明确验证根置于C:/h7/g01-native-page-component-gate-3
+（产品仓库外）、仍原SDK/工具/fourjobs，验证子目录删除边界先核。当前实际进程运行，
+未获terminal不写PASS；宿主三san入口已按最终七个canonical SHA输入准备，待重型任务
+串行门完成后执行，NP02–05与全部native数学资格仍未实现/未证。
