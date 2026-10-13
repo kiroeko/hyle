@@ -642,25 +642,15 @@
     },
     {
       "module": "graph_route_cpu_apple",
-      "state": "CLOSED",
-      "record": "docs/implementation/tasks/graph/foundation-a-final-closure.md",
-      "summary": "Foundation A CLOSED：有限exact/control/qualified CPU effects与原身份/alias/OOM/失败前缀/取消/旧结果完成；18 installed格、原生缺CPU、实际Win/WSL/Air适用source及sanitizer、P0/LOC和终审通过。general/capture/GPU mutable/paged与整引擎性能不外推，F4/F5继续独立goal。",
-      "candidate": "546b0d2468e5de29031c34668f4afa4bc31b9a17",
-      "performance": {
-        "tier": "P0",
-        "evidence": "evidence/architecture/foundation-a-p0/README.md"
-      }
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/graph/inference-g02-native-paged-composition.md",
+      "summary": "G02 native exact-page CPU/GPU composition scoped: actual page16 math from frozen G01 needs owned layout/frame guards through original hybrid fragments and native retirement. Original Foundation A finite domains retained; no product edits before finite API/owner/FIX audit."
     },
     {
       "module": "graph_route_cpu_vulkan",
-      "state": "CLOSED",
-      "record": "docs/implementation/tasks/graph/foundation-a-final-closure.md",
-      "summary": "Foundation A CLOSED：有限exact/control/qualified CPU effects与原身份/alias/OOM/失败前缀/取消/旧结果完成；18 installed格、原生缺CPU、实际Win/WSL/Air适用source及sanitizer、P0/LOC和终审通过。general/capture/GPU mutable/paged与整引擎性能不外推，F4/F5继续独立goal。",
-      "candidate": "546b0d2468e5de29031c34668f4afa4bc31b9a17",
-      "performance": {
-        "tier": "P0",
-        "evidence": "evidence/architecture/foundation-a-p0/README.md"
-      }
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/graph/inference-g02-native-paged-composition.md",
+      "summary": "G02 native exact-page CPU/GPU composition scoped: actual page16 math from frozen G01 needs owned layout/frame guards through original hybrid fragments and native retirement. Original Foundation A finite domains retained; no product edits before finite API/owner/FIX audit."
     },
     {
       "module": "compute_stream",
