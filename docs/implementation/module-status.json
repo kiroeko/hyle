@@ -514,9 +514,10 @@
     },
     {
       "module": "compute_route_apple",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/inference-native-memory-default-construction.md",
-      "summary": "G10/交付 MC-01/02 SCOPED：已复现公开opaque MemoryResource inline默认构造incomplete unique_ptr编译失败，仅两owner out-of-line默认构造与实际public consumer；原NR数学/性能/ABI布局不改。"
+      "summary": "G10/交付MC CANDIDATE：两公开MemoryResource默认构造移到原TU并导出，原noexcept/空状态/布局/工厂/数学不改；两路线实际source public-only默认owner/vector/move/close通过，四SDK/宿主风险待验。原NR终审保留。",
+      "candidate": "a3fa6be8cf22780491e8b383ef1aafb678db1e23"
     },
     {
       "module": "graph_route_apple",
@@ -531,9 +532,10 @@
     },
     {
       "module": "compute_route_vulkan",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/inference-native-memory-default-construction.md",
-      "summary": "G10/交付 MC-01/02 SCOPED：已复现公开opaque MemoryResource inline默认构造incomplete unique_ptr编译失败，仅两owner out-of-line默认构造与实际public consumer；原NR数学/性能/ABI布局不改。"
+      "summary": "G10/交付MC CANDIDATE：两公开MemoryResource默认构造移到原TU并导出，原noexcept/空状态/布局/工厂/数学不改；两路线实际source public-only默认owner/vector/move/close通过，四SDK/宿主风险待验。原NR终审保留。",
+      "candidate": "a3fa6be8cf22780491e8b383ef1aafb678db1e23"
     },
     {
       "module": "graph_route_vulkan",

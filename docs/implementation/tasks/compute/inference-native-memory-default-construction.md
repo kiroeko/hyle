@@ -1,6 +1,6 @@
 # 已准入native资源公开默认构造修正
 
-状态：AUDITED，2026-10-13；owners `compute_route_apple`、`compute_route_vulkan`，baseline
+状态：CANDIDATE，2026-10-13；owners `compute_route_apple`、`compute_route_vulkan`，baseline
 `1ff3bffba`。归原G10/交付接口缺口，不新增G项；CPU/Apple/Vulkan已签NR数学/性能不重跑。
 真实trigger为[原比较器编译失败](../../../../evidence/correctness/inference-g01-native-ragged-p1-preflight/README.md)：
 Apple MemoryResource inline default ctor包含unique_ptr<incomplete MemoryState>，消费TU
@@ -29,3 +29,7 @@ MC-01/02，原private MemoryState完整定义在对应已有实现TU，无需新
 空unique_ptr初始化，外部调用需正确导出symbol。公开头只声明，私有类型不泄露。
 source与SDKconsumer只include各自public memory头并resize owning vector；没有新增
 模型策略、copy数学或执行器。旧NR terminal继续证明原性能，不把本构造修正当新P1。
+
+不可变candidate `a3fa6be8cf22780491e8b383ef1aafb678db1e23`：仅两公开声明+两原TU
+定义；API/算法/consumer固定，source两个实际小consumer通过后验四SDK/宿主风险。
+P0无新增allocation或常态字段，原normal math/提交/资源方法未改，不重新P1。
