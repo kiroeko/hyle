@@ -1,0 +1,85 @@
+{
+  "candidate": "d91a523df9bce21eb81c13d9bf2a8f3f7d3ea80f",
+  "machine": "MacBook Air Mac16,12 / macOS27.0.1 / 10 cores / 16GiB",
+  "scope": "actual MacBook Air host HYLE/native Vulkan objects and tiny GPU math; no shader/driver instrumentation",
+  "stages": [
+    {
+      "stage": "build",
+      "command": [
+        "/opt/homebrew/bin/cmake",
+        "--build",
+        "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-vulkan-tsan/build",
+        "--target",
+        "g01_resident",
+        "g01_cache",
+        "--parallel",
+        "8"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 76.36236712499999,
+      "log": "/Users/kiro/hyle-scratch/compute-unified/g01-tsan/build-1.log"
+    },
+    {
+      "stage": "resident",
+      "command": [
+        "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-vulkan-tsan/build/g01_resident",
+        "--gtest_filter=VulkanGraph.ResidentAttentionViewsPreserveEffectiveLengthsAndOldResults"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 6.42779045799999,
+      "log": "/Users/kiro/hyle-scratch/compute-unified/g01-tsan/resident-1.log"
+    },
+    {
+      "stage": "cache",
+      "command": [
+        "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-vulkan-tsan/build/g01_cache"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 3.7079965419999894,
+      "log": "/Users/kiro/hyle-scratch/compute-unified/g01-tsan/cache-1.log"
+    }
+  ],
+  "instrumented_inputs": [
+    {
+      "directory": "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-vulkan-tsan/build",
+      "command": "/usr/bin/clang++ -DGGML_USE_VULKAN -DHYLE_COMPUTE_PROVIDER_GGML_VULKAN_BUILD -DHYLE_DETAIL_SANITIZER_THREAD=1 -DHYLE_STATIC -I/Users/kiro/hyle-scratch/compute-unified/source-c8874688/include -I/Users/kiro/hyle-scratch/compute-unified/source-c8874688/src/compute_provider_ggml_vulkan -I/Users/kiro/hyle-scratch/compute-unified/source-c8874688/src/compute_ggml_runtime -I/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-vulkan-tsan/build/hyle/src/compute_ggml_runtime/source-3fce1c918f31f38a/src/../include -isystem /Users/kiro/Library/Caches/hyle/dependencies/v1/sources/vulkan_headers-e3b1eec08173-69d6adc9001f/include -O3 -DNDEBUG -std=c++23 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk -mmacosx-version-min=14.4 -Wall -Wextra -Wpedantic -fsanitize=thread -MD -MT hyle/src/compute_provider_ggml_vulkan/CMakeFiles/hyle_compute_provider_ggml_vulkan.dir/region.cc.o -MF hyle/src/compute_provider_ggml_vulkan/CMakeFiles/hyle_compute_provider_ggml_vulkan.dir/region.cc.o.d -o hyle/src/compute_provider_ggml_vulkan/CMakeFiles/hyle_compute_provider_ggml_vulkan.dir/region.cc.o -c /Users/kiro/hyle-scratch/compute-unified/source-c8874688/src/compute_provider_ggml_vulkan/region.cc",
+      "file": "/Users/kiro/hyle-scratch/compute-unified/source-c8874688/src/compute_provider_ggml_vulkan/region.cc",
+      "output": "hyle/src/compute_provider_ggml_vulkan/CMakeFiles/hyle_compute_provider_ggml_vulkan.dir/region.cc.o"
+    },
+    {
+      "directory": "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-vulkan-tsan/build",
+      "command": "/usr/bin/clang++ -DHYLE_COMPUTE_VULKAN=1 -DHYLE_DETAIL_SANITIZER_THREAD=1 -DHYLE_IO_HAS_COROUTINE_TRANSPORT=1 -DHYLE_STATIC -I/Users/kiro/hyle-scratch/compute-unified/source-c8874688/include -isystem /Users/kiro/Library/Caches/hyle/dependencies/v1/sources/vulkan_headers-e3b1eec08173-69d6adc9001f/include -isystem /Users/kiro/Library/Caches/hyle/dependencies/v1/sources/googletest-063de7e9578f-162765170ae6/googletest/include -isystem /Users/kiro/Library/Caches/hyle/dependencies/v1/sources/googletest-063de7e9578f-162765170ae6/googletest -O3 -DNDEBUG -std=gnu++23 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk -mmacosx-version-min=14.4 -fsanitize=thread -MD -MT CMakeFiles/g01_resident.dir/Users/kiro/hyle-scratch/compute-unified/source-c8874688/tests/graph_route_vulkan/mature_tensor_test.cc.o -MF CMakeFiles/g01_resident.dir/Users/kiro/hyle-scratch/compute-unified/source-c8874688/tests/graph_route_vulkan/mature_tensor_test.cc.o.d -o CMakeFiles/g01_resident.dir/Users/kiro/hyle-scratch/compute-unified/source-c8874688/tests/graph_route_vulkan/mature_tensor_test.cc.o -c /Users/kiro/hyle-scratch/compute-unified/source-c8874688/tests/graph_route_vulkan/mature_tensor_test.cc",
+      "file": "/Users/kiro/hyle-scratch/compute-unified/source-c8874688/tests/graph_route_vulkan/mature_tensor_test.cc",
+      "output": "CMakeFiles/g01_resident.dir/Users/kiro/hyle-scratch/compute-unified/source-c8874688/tests/graph_route_vulkan/mature_tensor_test.cc.o"
+    },
+    {
+      "directory": "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-vulkan-tsan/build",
+      "command": "/usr/bin/clang++ -DGGML_USE_VULKAN -DHYLE_COMPUTE_VULKAN=1 -DHYLE_DETAIL_SANITIZER_THREAD=1 -DHYLE_IO_HAS_COROUTINE_TRANSPORT=1 -DHYLE_STATIC -I/Users/kiro/hyle-scratch/compute-unified/source-c8874688/src/compute_provider_ggml_vulkan -I/Users/kiro/hyle-scratch/compute-unified/source-c8874688/include -I/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-vulkan-tsan/build/hyle/src/compute_ggml_runtime/source-3fce1c918f31f38a/src/../include -isystem /Users/kiro/Library/Caches/hyle/dependencies/v1/sources/vulkan_headers-e3b1eec08173-69d6adc9001f/include -isystem /Users/kiro/Library/Caches/hyle/dependencies/v1/sources/googletest-063de7e9578f-162765170ae6/googletest/include -isystem /Users/kiro/Library/Caches/hyle/dependencies/v1/sources/googletest-063de7e9578f-162765170ae6/googletest -O3 -DNDEBUG -std=gnu++23 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk -mmacosx-version-min=14.4 -fsanitize=thread -MD -MT CMakeFiles/g01_cache.dir/Users/kiro/hyle-scratch/compute-unified/source-c8874688/tests/compute_provider_ggml_vulkan/attention_cache_test.cc.o -MF CMakeFiles/g01_cache.dir/Users/kiro/hyle-scratch/compute-unified/source-c8874688/tests/compute_provider_ggml_vulkan/attention_cache_test.cc.o.d -o CMakeFiles/g01_cache.dir/Users/kiro/hyle-scratch/compute-unified/source-c8874688/tests/compute_provider_ggml_vulkan/attention_cache_test.cc.o -c /Users/kiro/hyle-scratch/compute-unified/source-c8874688/tests/compute_provider_ggml_vulkan/attention_cache_test.cc",
+      "file": "/Users/kiro/hyle-scratch/compute-unified/source-c8874688/tests/compute_provider_ggml_vulkan/attention_cache_test.cc",
+      "output": "CMakeFiles/g01_cache.dir/Users/kiro/hyle-scratch/compute-unified/source-c8874688/tests/compute_provider_ggml_vulkan/attention_cache_test.cc.o"
+    }
+  ],
+  "raw": [
+    {
+      "path": "build-1.log",
+      "sha256": "63f9e65b7363671547b3f84ecbef80b9837d88e5a50cd9168ff9d03705fdbdf6"
+    },
+    {
+      "path": "cache-1.log",
+      "sha256": "ca7c53207121e8822b5f951b6dbc374bf4f0e067f595c173c75efb9b010e7c2a"
+    },
+    {
+      "path": "instrumented-inputs.json",
+      "sha256": "e810cd0121cc55d1c1a51126a4f2b98890969be5cc96a476992d529dacf4b0d0"
+    },
+    {
+      "path": "resident-1.log",
+      "sha256": "14ce442e288b296763f1720549b47178db1bbd38392f15653d9dbc1f38d0e87c"
+    },
+    {
+      "path": "result.json",
+      "sha256": "5148302ec373bd5f70e656c229813a052ec1416bbdae40e5e7ba3ae1863c421c"
+    }
+  ],
+  "raw_zip_sha256": "dd26aaec742e04099ec9859e0b2651207756f5c4970c24f868f895d820a33f7e"
+}

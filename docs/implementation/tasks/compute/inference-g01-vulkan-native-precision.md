@@ -74,3 +74,7 @@ san/OOM、CPU其余交付、P1与终审仍未完成。后续追加test-only非�
 Windows[宿主地址ASan](../../../../evidence/correctness/inference-g01-native-host-asan/README.md)
 和新增非法D/零quota回滚反例已通过；GTest插桩不匹配的原FAIL保留，未关闭annotations。
 GPU/driver与MSVC LSan限制不改；Air UBSan/TSan及CPU风险/交付、P1和终审继续待验。
+Air[宿主UBSan](../../../../evidence/correctness/inference-g01-air-host-ubsan/README.md)实际
+source public数学/生命周期与三个风险反例通过，三变更TU插桩核对；TSan仍在同Air验证。
+同Air[宿主TSan](../../../../evidence/correctness/inference-g01-air-host-tsan/README.md)也实跑
+通过原public旅程与三个反例；没有shader/driver覆盖推断。CPU风险/交付、P1及终审仍待。
