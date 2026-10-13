@@ -369,15 +369,9 @@
     },
     {
       "module": "compute_provider_ggml",
-      "state": "CLOSED",
-      "record": "docs/implementation/tasks/compute/inference-g01-cpu-resident-ragged-terminal.md",
-      "summary": "G01 CPU resident/native ragged有限轮CLOSED：原flash直接KV、packed输出与公开工厂三交付/风险PASS；独立W1 multi P1 QUALIFIED/5%非劣PASS、verify0，全部方向INCONCLUSIVE。paged/增长/private预算与其它路线仍保goal。",
-      "candidate": "973d3ffbf642aff06f6316fcec4b3cc99eba2e4d",
-      "performance": {
-        "tier": "P1",
-        "material_margin_pct": 5,
-        "evidence": "evidence/performance/inference-g01-cpu-ragged-w1-p1/receipt.json"
-      }
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/compute/inference-g01-cpu-paged-resident.md",
+      "summary": "G01 CPU准确页 SCOPED：原native batch仅ragged，准确PagedArenaRead仍参考物化；拟复用原CPU flash并只扩私有页取址/原Batch API，固定两请求F16/BF16与精确权限/无历史复制。原CPU973/Vulkanbc0终审与全部失败保留，未实施。"
     },
     {
       "module": "graph_provider_onednn",
@@ -570,15 +564,9 @@
     },
     {
       "module": "compute_ggml_runtime",
-      "state": "CLOSED",
-      "record": "docs/implementation/tasks/compute/inference-g01-vulkan-ragged-terminal.md",
-      "summary": "G01 Vulkan native ragged/RF有限轮CLOSED：原1region＋多tagged flash/Concat安全记录，十source tests/两SDK/三san/原CPU联合回归及Win定向编译PASS；实际Air multi P1 QUALIFIED/5%非劣PASS、verify0，mixedD256 WIN、prefill/D64方向INCONCLUSIVE。原两次qualifiedFAIL与单请求证据、privateUNKNOWN保留；paged/G02-G10及整个G01不代签。",
-      "candidate": "bc0ba41f714f6529cb1c583bee59d482946e7589",
-      "performance": {
-        "tier": "P1",
-        "material_margin_pct": 5,
-        "evidence": "evidence/performance/inference-g01-native-ragged-vulkan-rr-m1-p1/receipt.json"
-      }
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/compute/inference-g01-cpu-paged-resident.md",
+      "summary": "G01 CPU准确页 SCOPED：原native batch仅ragged，准确PagedArenaRead仍参考物化；拟复用原CPU flash并只扩私有页取址/原Batch API，固定两请求F16/BF16与精确权限/无历史复制。原CPU973/Vulkanbc0终审与全部失败保留，未实施。"
     },
     {
       "module": "compute_provider_ggml_cuda",
