@@ -159,7 +159,7 @@
       "consumer_key": "inference-cpu-paged/cpu-paged-mixed-d256",
       "provenance": {
         "path": "consumer-provenance.json",
-        "sha256": "80393e38fd41650de55a7d7818959bc2983e945be670c55e076c85ea95432d37"
+        "sha256": "e220451f368719a8e6602e67309c6020bfa069246f5e32330b37c74726a003c8"
       },
       "ownership_topology": {
         "candidate": "ordinary CPU BatchProgram, original exact ready pages/native paged math, two slots/F1/Queue/Completion/output lease",
@@ -242,7 +242,7 @@
       "consumer_key": "inference-cpu-paged/cpu-paged-prefill-d256",
       "provenance": {
         "path": "consumer-provenance.json",
-        "sha256": "80393e38fd41650de55a7d7818959bc2983e945be670c55e076c85ea95432d37"
+        "sha256": "e220451f368719a8e6602e67309c6020bfa069246f5e32330b37c74726a003c8"
       },
       "ownership_topology": {
         "candidate": "ordinary CPU BatchProgram, original exact ready pages/native paged math, two slots/F1/Queue/Completion/output lease",
@@ -325,7 +325,7 @@
       "consumer_key": "inference-cpu-paged/cpu-paged-holdout-d64",
       "provenance": {
         "path": "consumer-provenance.json",
-        "sha256": "80393e38fd41650de55a7d7818959bc2983e945be670c55e076c85ea95432d37"
+        "sha256": "e220451f368719a8e6602e67309c6020bfa069246f5e32330b37c74726a003c8"
       },
       "ownership_topology": {
         "candidate": "ordinary CPU BatchProgram, original exact ready pages/native paged math, two slots/F1/Queue/Completion/output lease",
@@ -459,8 +459,8 @@
           "HYLE_SIMD_EXACT_TARGET": "",
           "CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
           "HYLE_DEP_SOURCE_CACHE": "C:/public/tools/hyle-dependencies/v1",
-          "CMAKE_PREFIX_PATH": "C:/h7/g01-paged-static-sdk/relocated",
-          "HYLE_CPU_PAGED_NATIVE_INCLUDE": "C:/public/project-hyle/hyle/.scratch/build-compute-v2-dev/src/compute_ggml_runtime/source-8dd0d23581da1b0b/include",
+          "CMAKE_PREFIX_PATH": "C:/h7/g01-paged-static3-sdk/relocated",
+          "HYLE_CPU_PAGED_NATIVE_INCLUDE": "C:/public/project-hyle/hyle/.scratch/build-compute-v2-dev/src/compute_ggml_runtime/source-731d28a88398ef06/include",
           "HYLE_CPU_PAGED_ORIGINAL_DLL": "C:/h7/g01-cpu-paged-original-build/bin/g01_cpu_paged_original.dll"
         },
         "peer_cache": {

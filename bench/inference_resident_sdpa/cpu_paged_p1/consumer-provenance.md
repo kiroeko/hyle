@@ -28,7 +28,7 @@ and one normal-priority native thread match candidate's dispatched program.
 Windows paths are made native before DLL_LOAD_DIR; original dependent DLLs
 stage together. Initial loader failures stay preflight, not product results.
 
-The static candidate SDK already tested at provider1e9/runtime3cf is linked,
+The static candidate SDK already tested at provider1e9/runtime42f is linked,
 avoiding a product rebuild. Its libraries/header/CPU program identities are
 pinned. A/A uses16 processes across both implementations, execution/allocation
 orders and code placement via original machine/environment/statistics helpers.
