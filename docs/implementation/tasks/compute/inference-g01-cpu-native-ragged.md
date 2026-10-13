@@ -1,6 +1,7 @@
 # G01 CPU 多请求 ragged 原生读取
 
-状态：AUDITED，2026-10-13；owner `compute_provider_ggml`。
+状态：CANDIDATE，2026-10-13；owner `compute_provider_ggml`。
+最终工厂消费candidate `973d3ffbf642aff06f6316fcec4b3cc99eba2e4d`，原642算法与ABI不改。
 原不可变candidate `642cc1e67566994a85a65adbe0db8956c1d0350a`及证据保留。
 baseline `af9dc884448249ef0ad87d28525e5303ec087401`，单请求产品candidate d91a与全部
 三交付/san/独立性能证据保留，CPU单请求独立P1已资格且5%非劣PASS，不能代签本轮batch。
@@ -95,3 +96,25 @@ SDK不传PRIVATE库的import symbol。CR-01-H同步登记同一个已构建ggml 
 source/static/shared consumer实际运行Direct和Graph两dependent region；安装工程仅
 public targets、不手写存在性宏。逐头/适用compile检查与缺头负空间；算法/risk命令及
 相同产品TU可按identity复用，不重跑旧单请求P1。batch P1仍须独立冻结与实跑。
+
+CR-01-H实际完成：只删公开声明的私有macro门与manifest中ggml factory三处root登记。
+shared header修正后先复现LNK2019，root登记后relocated shared和static均PASS，实际
+同一ordinary Direct＋两个dependent Graph regions，仅链接hyle::compute/graph，没有
+内部target/宏；原single resident回归也PASS。失败安装副本与新两个prefix分开保留。
+selector把纯公开root增加归给全部原roots、要求未改owner重开的问题按独立工具记录
+保存BLOCKED原计划；不重开无改动模块、不改工具或由此启动全库验证。
+
+多请求P1预检固定BF16/GQA8/2三形状：Q1/17 KV1024/768 D256 causal，Q64/128同KV
+长prefill，以及Q1/17 KV31/47 D64 noncausal。两边同原BatchProgram/两slots、ready
+Q/K/V、update完整topology复用、原metadata上传/Queue/Completion与output owner return；
+peer用固定原版ggml FLASH_ATTN_EXT独立构图，原F32 query/accumulation和BF16输出，
+绝不调用candidate compile/lower数学。每一边定向double oracle bound8e-3与readonly/tail
+先验；cold/private UNKNOWN均计录。比较器预检未资格，不作为PASS/P1收益；preflight后
+冻结实际recipe/A/A/5% margin/process数，再用原统一仪器，不改公共统计核心。
+
+比较器三形状预检实际PASS，两边最大abs error均约6e-5，readonly/tail通过。MSVC两次
+test-adapter compile FAIL（CRT deprecation/shadow）修正后WERROR PASS，原日志保留。
+成本预检min2为15.641s，长prefill约169ms，远高于4ms epoch floor；正式前冻结min1，
+保16 paired rounds/4ms floor、原双顺序/placement/A/A、n15/31及5% margin。min1实跑
+9.422s。诊断helper覆盖了min2 raw，仅实际工具耗时记录可保留；未用于qualification，
+helper已改为追加attempt。新合同与consumer provenance SHA固定，待统一仪器资格。

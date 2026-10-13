@@ -1,0 +1,7 @@
+{
+  "source": "consumer-provenance.md",
+  "sha256": "5397975cfa15177601cd44c61c0c60a9d8a9bc97a0e0417438fd499903a94b6b",
+  "consumer": "finite two-request BF16 packed NHD GQA8/2 CPU mixed and prefill with exact same original BatchProgram/F1/Queue/Completion ownership topology",
+  "scope": "selected three shapes; not token/s or all G01",
+  "peer_revision": "ffa4e8b80930029a35991f94e7c8a93cd67730ab"
+}

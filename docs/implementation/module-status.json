@@ -369,9 +369,10 @@
     },
     {
       "module": "compute_provider_ggml",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/inference-g01-cpu-native-ragged.md",
-      "summary": "G01 CPU CR-01-H AUDITED：真实安装Graph消费者的provider声明被私有macro隐藏；公开头按交付owner选集直接声明原工厂，不改算法/ABI/build核心。原642多请求/三san/Direct SDK证据保留。"
+      "summary": "G01 CPU native ragged CR-01-H CANDIDATE：公开工厂声明/root登记补齐，ordinary Direct和双Graph原region relocated static/shared PASS；原642算法与三san证据保留，独立多请求P1待验。",
+      "candidate": "973d3ffbf642aff06f6316fcec4b3cc99eba2e4d"
     },
     {
       "module": "graph_provider_onednn",

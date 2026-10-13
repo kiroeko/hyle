@@ -1,0 +1,569 @@
+{
+  "schema": "hyle.perf.contract/v1",
+  "id": "inference-cpu-ragged-w1-p1-v1",
+  "module": "compute_provider_ggml",
+  "claim": "Finite ordinary CPU BF16 packed NHD ragged two-request mixed decode/prefill, long prefill and noncausal holdout versus independent pinned original ggml flash graphs under the same original BatchProgram/Queue/F1 leases/metadata update/Completion/output owner return. Single native thread, two slots; private pool bounds UNKNOWN; not all G01 or whole-engine throughput.",
+  "candidate": {
+    "target": "g01_cpu_ragged_bench",
+    "delivery_shape": "static",
+    "revision": "runtime-bound",
+    "component": "compute_provider_ggml",
+    "entrypoint": "../cpu_ragged_bench.cc"
+  },
+  "peers": [
+    {
+      "id": "original-ggml-cpu-flash",
+      "revision": "ffa4e8b80930029a35991f94e7c8a93cd67730ab",
+      "configuration": {
+        "delivery_shape": "source",
+        "role": "independent original CPU flash graph through the same original BatchProgram extension lifecycle; no candidate compile/lower math",
+        "precision": "BF16 Q/K/V/output, original F32 query cast/accumulation and F16 causal mask",
+        "scope": "BF16 packed NHD ragged two requests; native_threads1; cold metadata/mask/query/workspace billed, native private upper UNKNOWN"
+      }
+    }
+  ],
+  "strata": [
+    {
+      "id": "primary-candidate-first-candidate-allocation-first",
+      "dimensions": {
+        "placement": "primary",
+        "execution_order": "candidate-first",
+        "allocation_order": "candidate-first"
+      },
+      "target_variant": "primary"
+    },
+    {
+      "id": "primary-candidate-first-peer-allocation-first",
+      "dimensions": {
+        "placement": "primary",
+        "execution_order": "candidate-first",
+        "allocation_order": "peer-first"
+      },
+      "environment": {
+        "HYLE_BENCH_PEER_ALLOCATION_FIRST": "1"
+      },
+      "target_variant": "primary"
+    },
+    {
+      "id": "primary-peer-first-candidate-allocation-first",
+      "dimensions": {
+        "placement": "primary",
+        "execution_order": "peer-first",
+        "allocation_order": "candidate-first"
+      },
+      "environment": {
+        "HYLE_BENCH_RIVAL_FIRST": "1"
+      },
+      "target_variant": "primary"
+    },
+    {
+      "id": "primary-peer-first-peer-allocation-first",
+      "dimensions": {
+        "placement": "primary",
+        "execution_order": "peer-first",
+        "allocation_order": "peer-first"
+      },
+      "environment": {
+        "HYLE_BENCH_RIVAL_FIRST": "1",
+        "HYLE_BENCH_PEER_ALLOCATION_FIRST": "1"
+      },
+      "target_variant": "primary"
+    },
+    {
+      "id": "placement-candidate-first-candidate-allocation-first",
+      "dimensions": {
+        "placement": "perturbed",
+        "execution_order": "candidate-first",
+        "allocation_order": "candidate-first"
+      },
+      "target_variant": "placement"
+    },
+    {
+      "id": "placement-candidate-first-peer-allocation-first",
+      "dimensions": {
+        "placement": "perturbed",
+        "execution_order": "candidate-first",
+        "allocation_order": "peer-first"
+      },
+      "environment": {
+        "HYLE_BENCH_PEER_ALLOCATION_FIRST": "1"
+      },
+      "target_variant": "placement"
+    },
+    {
+      "id": "placement-peer-first-candidate-allocation-first",
+      "dimensions": {
+        "placement": "perturbed",
+        "execution_order": "peer-first",
+        "allocation_order": "candidate-first"
+      },
+      "environment": {
+        "HYLE_BENCH_RIVAL_FIRST": "1"
+      },
+      "target_variant": "placement"
+    },
+    {
+      "id": "placement-peer-first-peer-allocation-first",
+      "dimensions": {
+        "placement": "perturbed",
+        "execution_order": "peer-first",
+        "allocation_order": "peer-first"
+      },
+      "environment": {
+        "HYLE_BENCH_RIVAL_FIRST": "1",
+        "HYLE_BENCH_PEER_ALLOCATION_FIRST": "1"
+      },
+      "target_variant": "placement"
+    }
+  ],
+  "controls": [
+    {
+      "id": "aa",
+      "kind": "aa",
+      "parameters": {
+        "maximum_bias_percent": 5
+      }
+    },
+    {
+      "id": "delta5",
+      "kind": "known-delta",
+      "parameters": {
+        "nominal_percent": 5
+      }
+    },
+    {
+      "id": "delta10",
+      "kind": "known-delta",
+      "parameters": {
+        "nominal_percent": 10
+      }
+    },
+    {
+      "id": "timer-floor",
+      "kind": "timer-floor",
+      "parameters": {
+        "minimum_workload_floor_multiple": 20
+      }
+    },
+    {
+      "id": "placement",
+      "kind": "placement",
+      "parameters": {}
+    }
+  ],
+  "workloads": [
+    {
+      "id": "cpu-ragged-mixed-d256",
+      "tier": "consumer",
+      "gate_role": "product",
+      "consumer_key": "inference-cpu-ragged/cpu-ragged-mixed-d256",
+      "provenance": {
+        "path": "consumer-provenance.json",
+        "sha256": "67261fd6456d0d920cf84cc55665203f03b64c67d54e0150ba6bdc9e877a9ddd"
+      },
+      "ownership_topology": {
+        "candidate": "ordinary CPU BatchProgram/native ragged flash, two slots and original F1/Queue/Completion/output lease",
+        "peer": "same BatchProgram with private same-build extension carrying independent original ggml flash graphs; original provider leaf storage lifecycle unchanged",
+        "equivalence": "same packed ready bytes/layout generation/two slots/update metadata/F1 guards/Queue/Completion/output return/native_threads1"
+      },
+      "material_contribution": {
+        "frequency": 1,
+        "value": 1,
+        "unit": "complete-two-request-attention",
+        "budget": 5,
+        "denominator": "one two-request attention episode including explicit same-topology metadata update and owner return",
+        "derivation": "named provisional single-machine attention fragment, not model frequency or end-to-end token/s"
+      },
+      "semantic_contract": "BF16 packed NHD requests2 GQA8/2 Q[1, 17] KV[1024, 768] D256 causal=True; capacity tail13; original F32 query/accumulation BF16 output and F16 causal mask; same ready bind, explicit same-topology metadata update, two slots, checked completion and output owner release",
+      "comparability": "COMPARABLE",
+      "peer_id": "original-ggml-cpu-flash",
+      "metric": {
+        "name": "operations-per-second",
+        "unit": "op/s",
+        "direction": "higher-is-better"
+      },
+      "input": {
+        "distribution": "full-index deterministic powers-of-two BF16 mixed finite values, tail capacity sentinel128; independent double oracle abs bound8e-3 and finite check",
+        "scale": {
+          "query_rows": [
+            1,
+            17
+          ],
+          "key_rows": [
+            1024,
+            768
+          ],
+          "depth": 256,
+          "heads": 8,
+          "kv_heads": 2,
+          "requests": 2
+        }
+      },
+      "setup": "cold metadata/native graph and F16 causal mask, resident ready buffers, query/output payloads and cplan workspace; independent double oracle/readonly checks, four warm episodes per arm before timing; native private pool upper UNKNOWN",
+      "charged_phases": [
+        "explicit same-topology BatchInvocation.update_batch with original metadata staging/upload and host wait",
+        "original BatchProgram/F1 lease use admission and coherent buffer mapping",
+        "original native query cast/flash/output conversion and synchronous one-thread runtime work",
+        "CPUQueue submit, checked Completion.wait and output owner return/release"
+      ],
+      "pair": {
+        "candidate": "HYLE CPU ragged",
+        "peer": "Original CPU ragged lifecycle"
+      },
+      "practical_margin_percent": 5,
+      "noninferiority_margin_percent": 5,
+      "estimator": {
+        "kind": "process-median",
+        "minimum_independent_samples": 15,
+        "tail_alpha": 0.01
+      },
+      "required_strata": [
+        "primary-candidate-first-candidate-allocation-first",
+        "primary-candidate-first-peer-allocation-first",
+        "primary-peer-first-candidate-allocation-first",
+        "primary-peer-first-peer-allocation-first",
+        "placement-candidate-first-candidate-allocation-first",
+        "placement-candidate-first-peer-allocation-first",
+        "placement-peer-first-candidate-allocation-first",
+        "placement-peer-first-peer-allocation-first"
+      ],
+      "required_controls": [
+        "aa",
+        "delta5",
+        "delta10",
+        "timer-floor",
+        "placement"
+      ]
+    },
+    {
+      "id": "cpu-ragged-prefill-d256",
+      "tier": "consumer",
+      "gate_role": "product",
+      "consumer_key": "inference-cpu-ragged/cpu-ragged-prefill-d256",
+      "provenance": {
+        "path": "consumer-provenance.json",
+        "sha256": "67261fd6456d0d920cf84cc55665203f03b64c67d54e0150ba6bdc9e877a9ddd"
+      },
+      "ownership_topology": {
+        "candidate": "ordinary CPU BatchProgram/native ragged flash, two slots and original F1/Queue/Completion/output lease",
+        "peer": "same BatchProgram with private same-build extension carrying independent original ggml flash graphs; original provider leaf storage lifecycle unchanged",
+        "equivalence": "same packed ready bytes/layout generation/two slots/update metadata/F1 guards/Queue/Completion/output return/native_threads1"
+      },
+      "material_contribution": {
+        "frequency": 1,
+        "value": 1,
+        "unit": "complete-two-request-attention",
+        "budget": 5,
+        "denominator": "one two-request attention episode including explicit same-topology metadata update and owner return",
+        "derivation": "named provisional single-machine attention fragment, not model frequency or end-to-end token/s"
+      },
+      "semantic_contract": "BF16 packed NHD requests2 GQA8/2 Q[64, 128] KV[1024, 768] D256 causal=True; capacity tail13; original F32 query/accumulation BF16 output and F16 causal mask; same ready bind, explicit same-topology metadata update, two slots, checked completion and output owner release",
+      "comparability": "COMPARABLE",
+      "peer_id": "original-ggml-cpu-flash",
+      "metric": {
+        "name": "operations-per-second",
+        "unit": "op/s",
+        "direction": "higher-is-better"
+      },
+      "input": {
+        "distribution": "full-index deterministic powers-of-two BF16 mixed finite values, tail capacity sentinel128; independent double oracle abs bound8e-3 and finite check",
+        "scale": {
+          "query_rows": [
+            64,
+            128
+          ],
+          "key_rows": [
+            1024,
+            768
+          ],
+          "depth": 256,
+          "heads": 8,
+          "kv_heads": 2,
+          "requests": 2
+        }
+      },
+      "setup": "cold metadata/native graph and F16 causal mask, resident ready buffers, query/output payloads and cplan workspace; independent double oracle/readonly checks, four warm episodes per arm before timing; native private pool upper UNKNOWN",
+      "charged_phases": [
+        "explicit same-topology BatchInvocation.update_batch with original metadata staging/upload and host wait",
+        "original BatchProgram/F1 lease use admission and coherent buffer mapping",
+        "original native query cast/flash/output conversion and synchronous one-thread runtime work",
+        "CPUQueue submit, checked Completion.wait and output owner return/release"
+      ],
+      "pair": {
+        "candidate": "HYLE CPU ragged",
+        "peer": "Original CPU ragged lifecycle"
+      },
+      "practical_margin_percent": 5,
+      "noninferiority_margin_percent": 5,
+      "estimator": {
+        "kind": "process-median",
+        "minimum_independent_samples": 15,
+        "tail_alpha": 0.01
+      },
+      "required_strata": [
+        "primary-candidate-first-candidate-allocation-first",
+        "primary-candidate-first-peer-allocation-first",
+        "primary-peer-first-candidate-allocation-first",
+        "primary-peer-first-peer-allocation-first",
+        "placement-candidate-first-candidate-allocation-first",
+        "placement-candidate-first-peer-allocation-first",
+        "placement-peer-first-candidate-allocation-first",
+        "placement-peer-first-peer-allocation-first"
+      ],
+      "required_controls": [
+        "aa",
+        "delta5",
+        "delta10",
+        "timer-floor",
+        "placement"
+      ]
+    },
+    {
+      "id": "cpu-ragged-holdout-d64",
+      "tier": "consumer",
+      "gate_role": "product",
+      "consumer_key": "inference-cpu-ragged/cpu-ragged-holdout-d64",
+      "provenance": {
+        "path": "consumer-provenance.json",
+        "sha256": "67261fd6456d0d920cf84cc55665203f03b64c67d54e0150ba6bdc9e877a9ddd"
+      },
+      "ownership_topology": {
+        "candidate": "ordinary CPU BatchProgram/native ragged flash, two slots and original F1/Queue/Completion/output lease",
+        "peer": "same BatchProgram with private same-build extension carrying independent original ggml flash graphs; original provider leaf storage lifecycle unchanged",
+        "equivalence": "same packed ready bytes/layout generation/two slots/update metadata/F1 guards/Queue/Completion/output return/native_threads1"
+      },
+      "material_contribution": {
+        "frequency": 1,
+        "value": 1,
+        "unit": "complete-two-request-attention",
+        "budget": 5,
+        "denominator": "one two-request attention episode including explicit same-topology metadata update and owner return",
+        "derivation": "named provisional single-machine attention fragment, not model frequency or end-to-end token/s"
+      },
+      "semantic_contract": "BF16 packed NHD requests2 GQA8/2 Q[1, 17] KV[31, 47] D64 causal=False; capacity tail13; original F32 query/accumulation BF16 output and F16 causal mask; same ready bind, explicit same-topology metadata update, two slots, checked completion and output owner release",
+      "comparability": "COMPARABLE",
+      "peer_id": "original-ggml-cpu-flash",
+      "metric": {
+        "name": "operations-per-second",
+        "unit": "op/s",
+        "direction": "higher-is-better"
+      },
+      "input": {
+        "distribution": "full-index deterministic powers-of-two BF16 mixed finite values, tail capacity sentinel128; independent double oracle abs bound8e-3 and finite check",
+        "scale": {
+          "query_rows": [
+            1,
+            17
+          ],
+          "key_rows": [
+            31,
+            47
+          ],
+          "depth": 64,
+          "heads": 8,
+          "kv_heads": 2,
+          "requests": 2
+        }
+      },
+      "setup": "cold metadata/native graph and F16 causal mask, resident ready buffers, query/output payloads and cplan workspace; independent double oracle/readonly checks, four warm episodes per arm before timing; native private pool upper UNKNOWN",
+      "charged_phases": [
+        "explicit same-topology BatchInvocation.update_batch with original metadata staging/upload and host wait",
+        "original BatchProgram/F1 lease use admission and coherent buffer mapping",
+        "original native query cast/flash/output conversion and synchronous one-thread runtime work",
+        "CPUQueue submit, checked Completion.wait and output owner return/release"
+      ],
+      "pair": {
+        "candidate": "HYLE CPU ragged",
+        "peer": "Original CPU ragged lifecycle"
+      },
+      "practical_margin_percent": 5,
+      "noninferiority_margin_percent": 5,
+      "estimator": {
+        "kind": "process-median",
+        "minimum_independent_samples": 15,
+        "tail_alpha": 0.01
+      },
+      "required_strata": [
+        "primary-candidate-first-candidate-allocation-first",
+        "primary-candidate-first-peer-allocation-first",
+        "primary-peer-first-candidate-allocation-first",
+        "primary-peer-first-peer-allocation-first",
+        "placement-candidate-first-candidate-allocation-first",
+        "placement-candidate-first-peer-allocation-first",
+        "placement-peer-first-candidate-allocation-first",
+        "placement-peer-first-peer-allocation-first"
+      ],
+      "required_controls": [
+        "aa",
+        "delta5",
+        "delta10",
+        "timer-floor",
+        "placement"
+      ]
+    }
+  ],
+  "experiment": {
+    "sample_schedule": [
+      15,
+      31
+    ],
+    "order_policy": "fixed-dual",
+    "holdout": false
+  },
+  "build": {
+    "configuration": "Release",
+    "fresh": true,
+    "linkage": "static",
+    "lto": "off",
+    "isa": "portable",
+    "toolchain": "machine-profile-bound"
+  },
+  "artifacts": {
+    "validators": [
+      "artifact-identity",
+      "build-contract",
+      "cpu-ragged-aa"
+    ]
+  },
+  "hosts": {
+    "allowed_platforms": [
+      "windows"
+    ],
+    "certification_platforms": [
+      "windows"
+    ],
+    "requirements": {
+      "machine_profiles": [
+        "W1-WIN"
+      ],
+      "qualified_role": "engineering",
+      "formal_independent_hardware": true
+    }
+  },
+  "extensions": {
+    "runner": {
+      "schema": "hyle.perf.nanobench-runner/v1",
+      "sampling_topology": "single-logical-cpu",
+      "cmake": {
+        "cache": {
+          "HYLE_STATIC": "ON",
+          "HYLE_BUILD_TESTS": "OFF",
+          "HYLE_BUILD_BENCH": "OFF",
+          "HYLE_COMPUTE_ROUTES": "cpu",
+          "HYLE_COMPONENTS": "compute;graph",
+          "HYLE_INSTALL": "OFF",
+          "HYLE_SANITIZER": "off",
+          "HYLE_TRACE": "OFF",
+          "HYLE_WERROR": "ON",
+          "CMAKE_INTERPROCEDURAL_OPTIMIZATION": "OFF",
+          "HYLE_SIMD_EXACT_TARGET": "",
+          "CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
+          "HYLE_DEP_SOURCE_CACHE": "C:/public/tools/hyle-dependencies/v1"
+        },
+        "peer_cache": {
+          "original-ggml-cpu-flash": "HYLE_CPU_ORIGINAL_REFERENCE_SOURCE"
+        }
+      },
+      "profiles": {
+        "W1-WIN": {
+          "generator": "Ninja",
+          "compiler_id": "MSVC",
+          "compiler_version_prefix": "19.50",
+          "cache": {
+            "CMAKE_C_COMPILER": "C:/Program Files/Microsoft Visual Studio/18/Enterprise/VC/Tools/MSVC/14.50.35717/bin/Hostx64/x64/cl.exe",
+            "CMAKE_CXX_COMPILER": "C:/Program Files/Microsoft Visual Studio/18/Enterprise/VC/Tools/MSVC/14.50.35717/bin/Hostx64/x64/cl.exe"
+          }
+        }
+      },
+      "executables": [
+        {
+          "id": "cpu-ragged-primary",
+          "target": "g01_cpu_ragged_bench",
+          "stem": "g01_cpu_ragged_bench",
+          "target_variant": "primary",
+          "measurement_batch": 1,
+          "telemetry_prefixes": [
+            "# HYLE_CPU_RAGGED_RUN "
+          ],
+          "workloads": [
+            {
+              "id": "cpu-ragged-mixed-d256",
+              "title": "CPU ragged BF16 Q=1,17 KV=1024,768 D=256 causal=1"
+            },
+            {
+              "id": "cpu-ragged-prefill-d256",
+              "title": "CPU ragged BF16 Q=64,128 KV=1024,768 D=256 causal=1"
+            },
+            {
+              "id": "cpu-ragged-holdout-d64",
+              "title": "CPU ragged BF16 Q=1,17 KV=31,47 D=64 causal=0"
+            }
+          ]
+        },
+        {
+          "id": "cpu-ragged-placement",
+          "target": "g01_cpu_ragged_bench_placement",
+          "stem": "g01_cpu_ragged_bench_placement",
+          "target_variant": "placement",
+          "measurement_batch": 1,
+          "telemetry_prefixes": [
+            "# HYLE_CPU_RAGGED_RUN "
+          ],
+          "workloads": [
+            {
+              "id": "cpu-ragged-mixed-d256",
+              "title": "CPU ragged BF16 Q=1,17 KV=1024,768 D=256 causal=1"
+            },
+            {
+              "id": "cpu-ragged-prefill-d256",
+              "title": "CPU ragged BF16 Q=64,128 KV=1024,768 D=256 causal=1"
+            },
+            {
+              "id": "cpu-ragged-holdout-d64",
+              "title": "CPU ragged BF16 Q=1,17 KV=31,47 D=64 causal=0"
+            }
+          ]
+        }
+      ],
+      "control_executable": {
+        "target": "g01_cpu_ragged_perf_control",
+        "stem": "g01_cpu_ragged_perf_control"
+      },
+      "controlled_environment": [
+        "HYLE_BENCH_RIVAL_FIRST",
+        "HYLE_BENCH_PEER_ALLOCATION_FIRST",
+        "HYLE_BENCH_AA_ROUTE",
+        "HYLE_BENCH_VERIFY_ONLY"
+      ],
+      "validators": [
+        {
+          "id": "artifact-identity",
+          "kind": "artifact-identity"
+        },
+        {
+          "id": "build-contract",
+          "kind": "build-contract"
+        },
+        {
+          "id": "cpu-ragged-aa",
+          "kind": "command",
+          "command": [
+            "{python}",
+            "validate_aa.py",
+            "--build",
+            "{build}",
+            "--output",
+            "{output}"
+          ]
+        }
+      ],
+      "measurement_adapter": "nanobench-paired-rows-v1"
+    },
+    "cpu_measurement": {
+      "paired_rounds": 16,
+      "minimum_epoch_iterations": 1,
+      "minimum_epoch_time_ms": 4,
+      "reason": "preflight measured169ms/long prefill versus4ms epoch floor; min2 cost15.641s recorded but raw accidentally overwritten by diagnostic helper, latest min1 raw9.422s retained; min1 frozen before formal sampling,16 paired rounds/process n15/31/5% margin unchanged; compile FAIL logs retained"
+    }
+  }
+}
