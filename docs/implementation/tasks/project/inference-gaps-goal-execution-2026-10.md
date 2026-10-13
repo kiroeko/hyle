@@ -22,6 +22,9 @@ baseline：`5d46db5fd99322e2f75d3fe07553c61fadff8eb9`。创建时工作树干净
   原子/组合/政策边界及局部/端到端性能分界。
 - [Qwen3.5-2B 实物与消费者范围](qwen35-2b-command-consumer-scope-2026-10.md)：dense FFN＋
   hybrid attention，已有片段与本轮外部参考；完整 HYLE 模型执行尚未签发。
+- [完整性补充审计与收口终点](inference-single-machine-completeness-and-exit-2026-10.md)：
+  复核原18旅程族的横切风险，区分G子任务、组合/资格、真实新机制与引擎/二期；补扫一次、
+  疑点复核一次后冻结有限清单，保留完整G01–G10与全部已准入域，不以继续研究替代验收。
 - 三 peer 固定身份仍为 SGLang7224fce1b5e488c9916f20ec0556d696e595d512、
   vLLM98f721116227f0f48690deb05c815c057bac0668、
   llama.cpp cbe28bb3cb0758f0c566a9a3561766821aeb0748。
