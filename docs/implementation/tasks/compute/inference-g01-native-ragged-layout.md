@@ -123,3 +123,13 @@ Vulkan同产品280、clean source c6d10f66、原合同d9a54a85已启动；fresh2
 性能裁决、原直接消费者回归与一次候选终审；不再追加全局调研/重复CPU或Apple P1。
 原已准入分页/联合权限在G02，持续metadata/growth在G06，producer与private预算分别
 在G03/G10继续，不能把这些门伪签成此NR轮已通过，也不能在此轮顺手扩大FIX。
+
+候选独立只读复检固定为新增两个公开入口和四产品文件，不重扫已关闭原math/runtime：
+BatchSchema::version已检查容量/非负单调indptr/GQA/右对齐有效KV并拥有metadata；入口
+再拒绝invalid Context/layout、capacity不等、非ragged、非finite scale与未资格dtype/D。
+Apple retained callable捕获owned version而非caller spans，Vulkan只在冷plan消费host
+metadata；warm仍是原Program，不引入第二个Queue/完成权威。全部request输出一次Concat，
+全空Q用原空slice，O(QHD)转换/packed输出和原causal mask如实收费；实际KV root/offset
+反证已PASS。source-only失败注入只签source，SDK只签public consumer；没有用单请求
+或CPU性能代签native多请求。复检未定位此有限候选的新产品错误；Vulkan性能与直接
+消费者回归仍待实际终态，不先签七门CLOSED。

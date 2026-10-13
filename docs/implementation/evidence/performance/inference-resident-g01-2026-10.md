@@ -36,3 +36,20 @@ Q1/17 KV1024/768 D256 causal比0.9980–1.0030，Q64/128同KV prefill0.9983–1.
 Q1/17 KV31/47 D64 noncausal0.9992–1.0046；全部5%非劣PASS/band PARITY，方向全部
 INCONCLUSIVE。cold/native private费用仍分别已知/UNKNOWN，不签全模型或全部G01。
 min1在正式前按169ms长prefill与4ms floor固定；原16轮/n15/31/controls/阈值未改。
+
+Apple native ragged也已[独立资格/性能PASS](../../../../evidence/performance/inference-g01-native-ragged-apple-m1-p1/README.md)：
+产品280/source c6d10f66、contract1f8e811f，实际Air Mac16,12/M4、M1-MAC engineering
+interactive QoS；原MLX fast SDPA pin1f8e74e3与所链接SDPA/Metal源码核验。两边同原
+Program/Invocation/两slots、F16 packed ready sources、checked completion与单packed
+owning output，16 A/A、n15产品120/controls30，845.543s、原verify0，5%非劣全部PASS。
+
+| 点 | candidate/peer吞吐比范围 | 5%非劣 / practical band | 相对1方向 |
+|---|---|---|---|
+| Q1/17 KV1024/768 D256 causal | 0.9997–1.0071 | PASS / PARITY | INCONCLUSIVE |
+| Q64/128同KV长prefill | 0.9827–0.9894 | PASS / PARITY | LOSS |
+| Q1/17 KV31/47 D64 noncausal | 0.9961–1.0038 | PASS / PARITY | INCONCLUSIVE |
+
+长prefill稳定落后约1–1.7%，保留LOSS，不由5%门或band改写成方向parity，也不据此
+扩大产品FIX。native/private内存两侧UNKNOWN；只签有限F16多请求工程域，不签独立
+硬件Formal、BF16性能、paged/growth/capture或完整引擎token/s。首次配置脚本错误路径
+FAIL4.868s保raw jobs，修私有身份脚本后的原同产品/合同新fresh2继续，未抹掉失败。
