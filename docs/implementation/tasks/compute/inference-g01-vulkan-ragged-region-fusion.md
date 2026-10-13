@@ -1,8 +1,9 @@
 # G01 Vulkan ragged 原region分段纠正
 
-状态：route/Provider/runtime均AUDITED，2026-10-13；owner
+状态：route/Provider/runtime均CANDIDATE，2026-10-13；owner
 `compute_route_vulkan`、`compute_provider_ggml_vulkan`、`compute_ggml_runtime`。已验不可变candidate
-`0e9e011b8c8ff4a37e2bebc5ca8e4408be5e9368`；route末尾规则纠正ddbf598b7待定向验证。
+`0e9e011b8c8ff4a37e2bebc5ca8e4408be5e9368`的FAIL保留；最终不可变candidate
+`bc0ba41f714f6529cb1c583bee59d482946e7589`含cold admission修正与RF-04记录资格。
 baseline `dbcba4b15`，原产品280，原Provider单请求3d92有限CLOSED保留。真实trigger是
 已准入两request F16短D64 noncausal [合格P1](../../../../evidence/performance/inference-g01-native-ragged-vulkan-m1-p1/README.md)
 0.8656–0.8885、非劣FAIL；[原NR轮](inference-g01-native-ragged-layout.md)不签完成。
@@ -109,3 +110,8 @@ memcpy/memset、无wait/signal semaphore、无GC event/timeline的record_safe门
 changed仍invalidate，failed/native lost仍只在退休后cleanup。运行时不新增字段/资源/
 线程/分派；只是冷assessment一次从单flash计数限制改成至少一flash资格，并允许
 原Concat opcode。源only红反例保rr-red日志；runtime审计提交后才改产品。
+
+RF-04实现只有fixed_attention_graph两行变更；Actual Air新增64步两flash/Concat原生
+记录test、原四native风险tests与五route tests共十项PASS，冷外部View alias/单region/
+KV roots与实际八requestsuffix错误退休均保。phase/source输入SHA核验，产品数学/原
+shader/公共API不改；API/算法稳定后冻结bc0，三交付/三san/原消费者及同合同性能待验。

@@ -537,9 +537,10 @@
     },
     {
       "module": "compute_route_vulkan",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/inference-g01-vulkan-ragged-region-fusion.md",
-      "summary": "G01 Vulkan RF CANDIDATE：冷recipe全外部views先行、原managed SDPA后相邻dense reshape融合，实际四source tests/单region与KV根offset、八request错误退休PASS；结构3region→1，交付/风险/同合同性能待验。原280qualifiedFAIL与单请求3d92PASS保留。"
+      "summary": "G01 RF CANDIDATE：原单region＋相邻内部reshape，RF-04复用record-safe多tagged flash/Concat记录；实跑两flash64步记录/失效及原四native＋五route共十tests PASS。原280与0e9 qualified性能FAIL保留，新交付/风险/P1待验，不签整个G01。",
+      "candidate": "bc0ba41f714f6529cb1c583bee59d482946e7589"
     },
     {
       "module": "graph_route_vulkan",
@@ -554,15 +555,17 @@
     },
     {
       "module": "compute_provider_ggml_vulkan",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/inference-g01-vulkan-ragged-region-fusion.md",
-      "summary": "G01 Vulkan RF CANDIDATE：冷recipe全外部views先行、原managed SDPA后相邻dense reshape融合，实际四source tests/单region与KV根offset、八request错误退休PASS；结构3region→1，交付/风险/同合同性能待验。原280qualifiedFAIL与单请求3d92PASS保留。"
+      "summary": "G01 RF CANDIDATE：原单region＋相邻内部reshape，RF-04复用record-safe多tagged flash/Concat记录；实跑两flash64步记录/失效及原四native＋五route共十tests PASS。原280与0e9 qualified性能FAIL保留，新交付/风险/P1待验，不签整个G01。",
+      "candidate": "bc0ba41f714f6529cb1c583bee59d482946e7589"
     },
     {
       "module": "compute_ggml_runtime",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/inference-g01-vulkan-ragged-region-fusion.md",
-      "summary": "G01 RF-04 SCOPED：原a400单flash记录之外的实际两flash/Concat缺口，原fixed_attention_graph拒绝导致warm managed重编码；仅有限record资格/原安全门，旧单请求PASS与所有失败保留。"
+      "summary": "G01 RF CANDIDATE：原单region＋相邻内部reshape，RF-04复用record-safe多tagged flash/Concat记录；实跑两flash64步记录/失效及原四native＋五route共十tests PASS。原280与0e9 qualified性能FAIL保留，新交付/风险/P1待验，不签整个G01。",
+      "candidate": "bc0ba41f714f6529cb1c583bee59d482946e7589"
     },
     {
       "module": "compute_provider_ggml_cuda",
