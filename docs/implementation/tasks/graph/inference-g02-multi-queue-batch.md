@@ -1,6 +1,6 @@
 # G02 多 Queue batch 协调
 
-状态：graph原CANDIDATE保留，graph_batch新CANDIDATE，2026-10-13。
+状态：graph在2026-10-14为MQ-LP-01退回AUDITED，graph_batch原CANDIDATE保留。
 graph_batch MQ-CPU-01 candidate `a0c047ea45cb46884da7f578684ff416ccfdefa5`。
 原不可变candidate：`26d7c2cb7212f5abdd3866baaf886b8fdbca02e5`，证据全部保留。
 baseline：`743783f7b0759d77978c0d208dc5ba0898313e69`。
@@ -104,3 +104,44 @@ static/shared实跑，三宿主san适用facet及36个caller OOM失败点通过�
 九个适用公开头通过。P0/独立源码复检未发现本批新产品缺陷。Windows单CUDA大测试因
 用户反馈桌面资源压力被终止，原正确性门与后续Vulkan门仍UNPROVEN，不代签CLOSED；
 后续本机编译4 jobs，重型GPU run暂不恢复。原失败/elapsed/构建树均保留。
+
+## MQ-LP-01：精确页守卫的共同退休承载
+
+baseline `f9a689be320a9330b507a274918090ce44a17813`。真实触发是已准入G02
+CPU+Apple/Vulkan分页输入：原[LeaseSubmission](../../../../include/hyle/graph/detail/lease_submission.h)
+每input只有一份ReadLease，而F1 PagedArenaRead只授予确切pages集合，不授予whole arena。
+原native绑定保原frame/backing，但仅持有tensor无法把全部guards纳入accepted prefix退休。
+这是原G02的共同权限接缝；graph原26d7的验证与未决Windows门全部保留，不签整个G02。
+
+有限FIX只graph共同承载，原hybrid调用无需改签名；native公开分页绑定/数学资格仍由
+后续native owner完成，不能由此helper的测试代签。主消费者为上述两native joint的exact
+page group，正交为流送数值片段的一个逻辑输入分布于几个独立readonly blocks。SELF仅
+保存冷guard集合，BORROW原LeaseUsePool/CompletionRetention的admission与retirement。
+不引入compute_batch反向边、新executor/queue、原生tensor转换或raw whole-arena入口。
+
+冻结形状：detail LeaseSubmission::create保inputs/prefixes，options改为具名
+LeaseSubmissionOptions（allocator/resource_budget与显式max_page_reads，默认0）。现有
+普通ReadLease绑定仍单份；新增bind_pages(input, span<const ReadLease>)返回Status，
+只供真实已资格数学的trusted composition owner。span仅借调用，cold复制guard owners；
+空集合为合法空读取。源无效、input越界或超过总page容量拒绝且不改变旧绑定。普通bind、
+clear、reset同时释放该input旧page group。control外部串行，native未退休期间不能重绑。
+
+创建时预分配普通input、分页guard上界与input ranges；同一LeaseUsePool上界为inputs+
+max_page_reads（重复blocks沿原pool去重）。bind_pages冷O(已绑定page guards)整理有限
+flat表，warm begin只沿当前有效ordinary/page guards；无warm allocation/whole arena读/
+metadata上传、没有每input最大页容量的平方存储。page功能未选择时不分配page表。
+原protect/finish/未知Completion/父owner/first error回调与actual retirement保持原算法。
+
+有限验收：原3个LeaseSubmission测试与新增多个blocks/共享guard/重绑/空group/容量及
+部分admission失败回滚/accepted两prefix未知观察/逐冷分配OOM，检查每个实际active use，
+未引用block仍可写、最后原生prefix退休才释放。Windows source、WSL ASan+LSan/UBSan/
+TSan、source/static/shared detail header与现有hybrid直接consumer适用门按selector；跨库
+导出须实链接。普通Graph依赖及native GPU全数学不扩测。P0：只查上述有界metadata、
+冷热复杂度和原pool，不运行P1、不干扰正在跑的immutableCPU分页P1。
+
+新增普通binding不改变公开Invocation；max_page_reads=0可维持原两hybrid的现有旅程，
+新增group不是whole-arena授权。调用者必须验证layout/generation与实际page-reading数学，
+本helper不懂page IDs或模型政策。七问沿本卡原结论：依赖锁/许可/FFI未变，原cold allocator/
+budget和native retirement复用；source/static/shared/逐头与真实consumer见新证据后裁决。
+调查/实现/验证各2h检查点，按用户常设授权有限延长并保原FAIL/累计。当前先AUDITED；
+未跑门UNPROVEN，不能CLOSED。后续发现更改权限或公开形状的新事实回本卡再裁决。

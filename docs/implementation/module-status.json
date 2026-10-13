@@ -281,10 +281,9 @@
     },
     {
       "module": "graph",
-      "state": "CANDIDATE",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/graph/inference-g02-multi-queue-batch.md",
-      "summary": "G02 multi-queue batch CANDIDATE: final lane/context/queue bindings, original region and native slot identity; single-queue API migration, no compatibility layer.",
-      "candidate": "26d7c2cb7212f5abdd3866baaf886b8fdbca02e5"
+      "summary": "G02 MQ-LP-01 AUDITED: bounded owned exact-read groups under original LeaseSubmission/LeaseUsePool/native prefix retirement. Prior 26d7 evidence and unresolved G02 gates retained; native page math and hybrid binding remain required."
     },
     {
       "module": "container_concurrent",
