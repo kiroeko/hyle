@@ -19,6 +19,11 @@ namespace hyle::compute::ggml_vulkan::bridge {
 // pipeline identity and never changes the device's capability flags.
 inline constexpr int kFlashAttentionMathSlot = 4;
 inline constexpr std::int32_t kFlashAttentionFullF32 = 0x48594632;
+inline constexpr int kFlashAttentionPagedSlot = 5;
+inline constexpr std::int32_t kFlashAttentionPaged = 0x48595047;
+inline constexpr int kFlashAttentionLogicalRowsSlot = 6;
+inline constexpr int kFlashAttentionTableOffsetSlot = 7;
+inline constexpr int kFlashAttentionCausalSlot = 8;
 struct Runtime;
 struct Work;
 struct Storage;

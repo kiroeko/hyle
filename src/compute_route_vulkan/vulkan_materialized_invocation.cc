@@ -14,9 +14,13 @@ struct BatchTraits final {
   static auto submit(Invocation&i,LeaseUseBatch u){return PagedBatchAccess::submit(i,std::move(u));}
   static Status wait_native(Invocation&i){return PagedBatchAccess::wait_native(i);}
   static Status reuse_gate(Invocation&i){return PagedBatchAccess::reuse_gate(i);}
+  static auto prepare_program(const Context&c,const NativePagedBatchProgram&p,
+      BatchLayoutVersion l,const WorkloadContext&w){return PagedBatchAccess::prepare_program(c,p,std::move(l),w);}
 };
 struct MaterializedInvocationData final:compute::detail::MaterializedNativeState<BatchTraits>{using MaterializedNativeState::MaterializedNativeState;};
+struct PagedInvocationData final:compute::detail::MaterializedNativeState<BatchTraits,compute::detail::PagedMetadataPolicy>{using MaterializedNativeState::MaterializedNativeState;};
 void destroy(MaterializedInvocationData*p)noexcept{if(p){const auto a=p->allocator;a.destroy(p);}}
+void destroy(PagedInvocationData*p)noexcept{if(p){const auto a=p->allocator;a.destroy(p);}}
 Result<MaterializedBatchInvocation> PagedBatchAccess::create(const Context&context,Program native,
     compute::MaterializedBatchProgram recipe,const MemoryResource&device,const MemoryResource&staging,
     MaterializedNativeBatchOptions options)noexcept{
@@ -41,4 +45,33 @@ Result<OwnedResult<Results>> MaterializedBatchInvocation::submit()noexcept{if(!d
 MaterializedNativeBatchReport MaterializedBatchInvocation::report()const noexcept{return data_?data_->report:MaterializedNativeBatchReport{};}
 Status MaterializedBatchInvocation::close()noexcept{return data_?data_->close():Status::Ok();}
 Status MaterializedBatchInvocation::drain()noexcept{return data_?data_->drain():Status::Ok();}
+PagedBatchInvocation::PagedBatchInvocation(PagedBatchInvocation&& v) noexcept
+    : data_(std::exchange(v.data_,nullptr)) {}
+PagedBatchInvocation& PagedBatchInvocation::operator=(PagedBatchInvocation&& v) noexcept {
+  if(this!=&v){detail::destroy(data_);data_=std::exchange(v.data_,nullptr);}return *this;
+}
+PagedBatchInvocation::~PagedBatchInvocation(){detail::destroy(data_);}
+Result<PagedBatchInvocation> PagedBatchInvocation::create(const Context& context,
+    NativePagedBatchProgram recipe,const MemoryResource& device,const MemoryResource& staging,
+    NativePagedInvocationOptions options,const WorkloadContext& workload) noexcept {
+  if(!context.valid() || !recipe.valid() || !workload.valid())
+    return std::unexpected(Status::InvalidArgument("Vulkan paged context/recipe/workload invalid"));
+  const auto c=recipe.schema().capacity();
+  if(c.data_type!=DataType::kFloat16 || (c.head_dim!=64 && c.head_dim!=128 && c.head_dim!=256))
+    return std::unexpected(Status::Unimplemented("Vulkan paged qualified F16 flash depth"));
+  auto allocator=options.allocator;
+  if(!allocator.valid())return std::unexpected(Status::InvalidArgument("Vulkan paged allocator invalid"));
+  if(options.resource_budget.valid()){HYLE_ASSIGN_OR_RETURN(allocator,options.resource_budget.metadata_allocator());}
+  auto* p=allocator.construct<detail::PagedInvocationData>(allocator);
+  if(!p)return std::unexpected(Status::ResourceExhausted("Vulkan paged controller metadata"));
+  PagedBatchInvocation result(p);
+  HYLE_RETURN_IF_ERROR(p->initialize(context,Program{},std::move(recipe),device,staging,options,workload));
+  return result;
+}
+Status PagedBatchInvocation::prepare_batch(BatchLayoutVersion v) noexcept {return data_?data_->prepare(std::move(v)):Status::FailedPrecondition("empty Vulkan paged controller");}
+Status PagedBatchInvocation::bind(ReadLease q,PagedArenaRead k,PagedArenaRead v) noexcept {return data_?data_->bind(std::move(q),std::move(k),std::move(v)):Status::FailedPrecondition("empty Vulkan paged controller");}
+Result<OwnedResult<Results>> PagedBatchInvocation::submit() noexcept {if(!data_)return std::unexpected(Status::FailedPrecondition("empty Vulkan paged controller"));return data_->submit();}
+NativePagedBatchReport PagedBatchInvocation::report() const noexcept {return data_?data_->report:NativePagedBatchReport{};}
+Status PagedBatchInvocation::close() noexcept {return data_?data_->close():Status::Ok();}
+Status PagedBatchInvocation::drain() noexcept {return data_?data_->drain():Status::Ok();}
 } // namespace hyle::compute::vulkan

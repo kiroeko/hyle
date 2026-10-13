@@ -10,6 +10,26 @@
 
 namespace hyle::compute::ggml_vulkan::detail {
 
+// Private four-port recipe: Q, physical K/V roots, and the owned I32 table.
+// Only the exact-frame batch controller constructs this operation. Physical
+// descriptors stay truthful even when repeated pages make logical KV longer.
+struct PagedAttentionRead final {
+  std::uint32_t logical_rows = 0;
+  std::uint32_t table_offset = 0;
+  float scale = 1.0F;
+  bool causal = true;
+  static constexpr OperationId operation_id{0x48594c45564b4641ULL,
+                                           0x5041474544524401ULL};
+  static constexpr std::string_view operation_name = "ggml-vulkan-paged-read";
+  constexpr OperationTraits operation_traits() const noexcept {
+    return {{4, 4}, 1, AliasPolicy::kNone, EffectKind::kPure,
+            PrecisionPolicy::kExact, DataType::kFloat32};
+  }
+  HYLE_GGML_VULKAN_INTERNAL_API Status infer_output_descriptions(
+      std::span<const TensorDesc>, std::span<TensorDesc>) const noexcept;
+};
+static_assert(compute::detail::InlineCustomOperationDescriptor<PagedAttentionRead>);
+
 struct RegionNode final {
   Operation operation;
   std::vector<std::uint32_t> inputs;

@@ -398,9 +398,29 @@
         {
           "before": "    ctx->p->q->handle->submit(submit_infos, fence);\n\n    ctx->seqs.clear();",
           "after": "    if (ctx->p->hyle_record_commands) {\n        if (!ctx->in_memcpys.empty() || !ctx->out_memcpys.empty() || !ctx->memsets.empty()) {\n            ctx->p->hyle_record_safe = false;\n        }\n        for (const auto &sequence : ctx->seqs) {\n            for (const auto &submission : sequence) {\n                if (!submission.wait_semaphores.empty() || !submission.signal_semaphores.empty()) {\n                    ctx->p->hyle_record_safe = false;\n                }\n                ctx->p->hyle_record_commands->push_back(submission.buffer->buf);\n            }\n        }\n    }\n    ctx->p->q->handle->submit(submit_infos, fence);\n\n    ctx->seqs.clear();"
+        },
+        {
+          "before": "    const uint32_t KV = nek1;",
+          "after": "    const bool hyle_paged = dst->src[5] != nullptr &&\n        dst->op_params[hyle::compute::ggml_vulkan::bridge::kFlashAttentionPagedSlot] ==\n        hyle::compute::ggml_vulkan::bridge::kFlashAttentionPaged;\n    const uint32_t KV = hyle_paged ? uint32_t(dst->op_params[\n        hyle::compute::ggml_vulkan::bridge::kFlashAttentionLogicalRowsSlot]) : uint32_t(nek1);"
+        },
+        {
+          "before": "    fa_pipeline_state.hyle_full_f32 = hyle_full_f32;",
+          "after": "    fa_pipeline_state.hyle_full_f32 = hyle_full_f32;\n    if (hyle_paged) {\n        GGML_ASSERT(hyle_full_f32 && !mask && !sinks && !use_mask_opt);\n        fa_pipeline_state.flags |= 16u;\n        if (dst->op_params[hyle::compute::ggml_vulkan::bridge::kFlashAttentionCausalSlot]) {\n            fa_pipeline_state.flags |= 32u;\n        }\n    }"
+        },
+        {
+          "before": "    vk_subbuffer mask_opt_buf = use_mask_opt ? ggml_vk_subbuffer(ctx, ctx->prealloc_y, 0) : q_buf;",
+          "after": "    // Paged-only identity reuses the unused mask-opt binding. Keep all normal\n    // descriptors, push size and coopmat pipelines unchanged.\n    vk_subbuffer mask_opt_buf = hyle_paged ? ggml_vk_tensor_subbuffer(ctx, dst->src[5]) :\n        (use_mask_opt ? ggml_vk_subbuffer(ctx, ctx->prealloc_y, 0) : q_buf);"
+        },
+        {
+          "before": "                                              nem1, nem2, nem3,",
+          "after": "                                              hyle_paged ? uint32_t(neq1) : nem1,\n                                              hyle_paged ? uint32_t(dst->op_params[hyle::compute::ggml_vulkan::bridge::kFlashAttentionTableOffsetSlot]) : nem2,\n                                              hyle_paged ? 1u : nem3,"
+        },
+        {
+          "before": "                if (hyle_full_f32) {\n                    if (HSK != HSV",
+          "after": "                const bool hyle_paged = op->src[5] != nullptr &&\n                    op->op_params[hyle::compute::ggml_vulkan::bridge::kFlashAttentionPagedSlot] ==\n                    hyle::compute::ggml_vulkan::bridge::kFlashAttentionPaged;\n                if (hyle_paged) {\n                    const auto * table = op->src[5];\n                    const int32_t rows = op->op_params[hyle::compute::ggml_vulkan::bridge::kFlashAttentionLogicalRowsSlot];\n                    const int32_t offset = op->op_params[hyle::compute::ggml_vulkan::bridge::kFlashAttentionTableOffsetSlot];\n                    if (!hyle_full_f32 || op->src[3] || op->src[4] || rows <= 0 || offset < 0 ||\n                        table->type != GGML_TYPE_I32 || !ggml_is_contiguous(table) ||\n                        int64_t(offset) + (int64_t(rows) + 15) / 16 > ggml_nelements(table) ||\n                        op->src[1]->type != GGML_TYPE_F16 || op->src[2]->type != GGML_TYPE_F16 ||\n                        op->src[1]->ne[1] % 16 != 0 ||\n                        (op->op_params[hyle::compute::ggml_vulkan::bridge::kFlashAttentionCausalSlot] && rows < op->src[0]->ne[1])) {\n                        return false;\n                    }\n                }\n                if (hyle_full_f32) {\n                    if (HSK != HSV"
         }
       ],
-      "after_sha256": "c36da43fb28407f7bce4cd57edf5a2631b681af286a27eadff5663aea8988a79"
+      "after_sha256": "a3ac8de7a4ad26251f79ab2777edf61fe5f85391af2334b41784f6c7241866bc"
     },
     {
       "path": "src/ggml.cpp",
@@ -660,6 +680,73 @@
         }
       ],
       "after_sha256": "5acc3d885f97d4fc0385d12615f2bd50466310c49ad15f6a60f03b1640676016"
+    },
+    {
+      "path": "src/ggml-vulkan/vulkan-shaders/flash_attn.comp",
+      "before_sha256": "0af01a6d390f451b224db53c2d1873588fc28ad01fad5b87fe85acef75bbf9d2",
+      "edits": [
+        {
+          "before": "layout (binding = 3) readonly buffer M {float16_t data_m[];};",
+          "after": "layout (binding = 3) readonly buffer M {float16_t data_m[];};\n\n// Private HYLE page16 mode preserves the original scalar flash arithmetic.\n// The unused mask-opt port is the owned whole table; nem2 is its row offset,\n// nem1 is the original query count. These fields are unused without a mask.\nconst bool HYLE_PAGED = (Flags & 16u) != 0;\nconst bool HYLE_CAUSAL = (Flags & 32u) != 0;\nuint32_t hyle_kv_row(uint32_t logical_row) {\n    if (!HYLE_PAGED) return logical_row;\n    return (data_mask_opt[p.nem2 + (logical_row >> 4)] << 4) + (logical_row & 15u);\n}"
+        },
+        {
+          "before": "    if (p.nem2 != 1 || p.nem3 != 1) {",
+          "after": "    if (MASK_ENABLE && (p.nem2 != 1 || p.nem3 != 1)) {"
+        },
+        {
+          "before": "                            uint coord = (j * Bc + c) * k_stride * BLOCK_SIZE_K + 4 * d;\n",
+          "after": "                            uint coord = hyle_kv_row(j * Bc + c) * k_stride * BLOCK_SIZE_K + 4 * d;\n"
+        },
+        {
+          "before": "                            K_Tf = FLOAT_TYPEV4(data_kv4[k_offset / 4 + (j * Bc + c) * k_stride / 4 + d]);\n",
+          "after": "                            K_Tf = FLOAT_TYPEV4(data_kv4[k_offset / 4 + hyle_kv_row(j * Bc + c) * k_stride / 4 + d]);\n"
+        },
+        {
+          "before": "                        const uint global_ib = (j * Bc + c) * k_stride + block;\n",
+          "after": "                        const uint global_ib = hyle_kv_row(j * Bc + c) * k_stride + block;\n"
+        },
+        {
+          "before": "                        uint coord = (j * Bc + c * cols_per_iter + col_tid) * k_stride * BLOCK_SIZE_K + 4 * (d * D_split + d_tid);\n                        uint ib = coord / BLOCK_SIZE_K;\n                        uint iqs = (coord % BLOCK_SIZE_K);\n                        K_Tf = dequantize4(ib, iqs, k_offset, BINDING_IDX_K);\n                    } else {\n                        K_Tf = FLOAT_TYPEV4(data_kv4[k_offset / 4 + (j * Bc + c * cols_per_iter + col_tid) * k_stride / 4 + d * D_split + d_tid]);\n                    }\n                    [[unroll]] for (uint32_t r = 0; r < rows_per_thread; ++r) {\n                        Sf[r][c] = dot_product(Q_cache[r], K_Tf, Sf[r][c]);\n",
+          "after": "                        uint coord = hyle_kv_row(j * Bc + c * cols_per_iter + col_tid) * k_stride * BLOCK_SIZE_K + 4 * (d * D_split + d_tid);\n                        uint ib = coord / BLOCK_SIZE_K;\n                        uint iqs = (coord % BLOCK_SIZE_K);\n                        K_Tf = dequantize4(ib, iqs, k_offset, BINDING_IDX_K);\n                    } else {\n                        K_Tf = FLOAT_TYPEV4(data_kv4[k_offset / 4 + (j * Bc + c * cols_per_iter + col_tid) * k_stride / 4 + d * D_split + d_tid]);\n                    }\n                    [[unroll]] for (uint32_t r = 0; r < rows_per_thread; ++r) {\n                        Sf[r][c] = dot_product(Q_cache[r], K_Tf, Sf[r][c]);\n"
+        },
+        {
+          "before": "                        uint coord = (j * Bc + c * cols_per_iter + col_tid) * k_stride * BLOCK_SIZE_K + 4 * (d * D_split + d_tid);\n",
+          "after": "                        uint coord = hyle_kv_row(j * Bc + c * cols_per_iter + col_tid) * k_stride * BLOCK_SIZE_K + 4 * (d * D_split + d_tid);\n"
+        },
+        {
+          "before": "                        K_Tf = FLOAT_TYPEV4(data_kv4[k_offset / 4 + (j * Bc + c * cols_per_iter + col_tid) * k_stride / 4 + d * D_split + d_tid]);\n                    }\n                    [[unroll]] for (uint32_t r = 0; r < rows_per_thread; ++r) {\n                        Sf[r][c] = dot_product(Q_cache[r], K_Tf, Sf[r][c]);\n",
+          "after": "                        K_Tf = FLOAT_TYPEV4(data_kv4[k_offset / 4 + hyle_kv_row(j * Bc + c * cols_per_iter + col_tid) * k_stride / 4 + d * D_split + d_tid]);\n                    }\n                    [[unroll]] for (uint32_t r = 0; r < rows_per_thread; ++r) {\n                        Sf[r][c] = dot_product(Q_cache[r], K_Tf, Sf[r][c]);\n"
+        },
+        {
+          "before": "                        K_Tf = FLOAT_TYPEV4(data_kv4[k_offset / 4 + (j * Bc + c * cols_per_iter + col_tid) * k_stride / 4 + d * D_split + d_tid]);\n",
+          "after": "                        K_Tf = FLOAT_TYPEV4(data_kv4[k_offset / 4 + hyle_kv_row(j * Bc + c * cols_per_iter + col_tid) * k_stride / 4 + d * D_split + d_tid]);\n"
+        },
+        {
+          "before": "                    const uint coord = (j * Bc + c * cols_per_iter + col_tid) * k_stride * BLOCK_SIZE_K + 4 * (d_tid * (HSK_per_thread / 4) + d_block);\n",
+          "after": "                    const uint coord = hyle_kv_row(j * Bc + c * cols_per_iter + col_tid) * k_stride * BLOCK_SIZE_K + 4 * (d_tid * (HSK_per_thread / 4) + d_block);\n"
+        },
+        {
+          "before": "                            uint coord = (j * Bc + c) * v_stride * BLOCK_SIZE_V + 4 * d;\n",
+          "after": "                            uint coord = hyle_kv_row(j * Bc + c) * v_stride * BLOCK_SIZE_V + 4 * d;\n"
+        },
+        {
+          "before": "                            V_Tf = FLOAT_TYPEV4(data_vv4[v_offset / 4 + (j * Bc + c) * v_stride / 4 + d]);\n",
+          "after": "                            V_Tf = FLOAT_TYPEV4(data_vv4[v_offset / 4 + hyle_kv_row(j * Bc + c) * v_stride / 4 + d]);\n"
+        },
+        {
+          "before": "                    uint coord = (j * Bc + c * cols_per_iter + col_tid) * v_stride * BLOCK_SIZE_V + 4 * (d * D_split + d_tid);\n",
+          "after": "                    uint coord = hyle_kv_row(j * Bc + c * cols_per_iter + col_tid) * v_stride * BLOCK_SIZE_V + 4 * (d * D_split + d_tid);\n"
+        },
+        {
+          "before": "                    Vf = FLOAT_TYPEV4(data_vv4[v_offset / 4 + (j * Bc + c * cols_per_iter + col_tid) * v_stride / 4 + d * D_split + d_tid]);\n",
+          "after": "                    Vf = FLOAT_TYPEV4(data_vv4[v_offset / 4 + hyle_kv_row(j * Bc + c * cols_per_iter + col_tid) * v_stride / 4 + d * D_split + d_tid]);\n"
+        },
+        {
+          "before": "        float eMf[rows_per_thread];",
+          "after": "        if (HYLE_CAUSAL) {\n            [[unroll]] for (uint32_t r = 0; r < rows_per_thread; ++r) {\n                uint32_t query_row = p.gqa_ratio > 1 ? gqa_iq1 : i * Br + tile_row(r);\n                [[unroll]] for (uint32_t c = 0; c < cols_per_thread; ++c) {\n                    if (j * Bc + c * cols_per_iter + col_tid > KV - p.nem1 + query_row) {\n                        Sf[r][c] = ACC_TYPE(-1.0 / 0.0);\n                    }\n                }\n            }\n        }\n\n        float eMf[rows_per_thread];"
+        }
+      ],
+      "after_sha256": "81fb89f3486518625a11e4e7e3d72f71e13066c3496564f2b756b5073b63b73d"
     }
   ]
 }

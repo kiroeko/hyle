@@ -3,6 +3,7 @@
 
 #if defined(HYLE_COMPUTE_VULKAN)
 #include "hyle/compute/batch_materialize.h"
+#include "hyle/compute/batch_paged_native.h"
 #include "hyle/compute/vulkan_memory.h"
 namespace hyle::compute::vulkan {
 // Cold immutable host-known ragged layout. Three packed-capacity Q/K/V ports;
@@ -20,7 +21,7 @@ HYLE_COMPUTE_ROUTE_VULKAN_API Result<Program> prepare_ragged_batch(
 // and driver storage remain additional. Not a native-paged/capture claim.
 HYLE_COMPUTE_ROUTE_VULKAN_API Result<Program> prepare_materialized_batch(
     const Context&,const MaterializedBatchProgram&,const WorkloadContext& = {}) noexcept;
-namespace detail {struct MaterializedInvocationData;struct PagedBatchAccess;}
+namespace detail {struct MaterializedInvocationData;struct PagedInvocationData;struct PagedBatchAccess;}
 // Cold fixed native Program/slot and two metadata banks. Explicit prepare uses
 // original F2 to upload owned same-generation indices/mask; run never plans.
 // Control is externally serialized; Context/resources/allocator outlive native
@@ -49,6 +50,35 @@ private:
   friend struct detail::PagedBatchAccess;
   explicit MaterializedBatchInvocation(detail::MaterializedInvocationData*p)noexcept:data_(p){}
   detail::MaterializedInvocationData*data_=nullptr;
+};
+
+// Exact-frame native page16 attention. Preparation uploads one owned I32
+// table and cold-prepares the original flash recipe for the owned topology.
+// Context, resources and allocator keep stable addresses and outlive all work
+// and results. Control is externally serialized; old results prevent reuse.
+// Native scratch/driver storage remains additional and may be unknown.
+class PagedBatchInvocation final {
+public:
+  PagedBatchInvocation() noexcept = default;
+  PagedBatchInvocation(const PagedBatchInvocation&) = delete;
+  PagedBatchInvocation& operator=(const PagedBatchInvocation&) = delete;
+  HYLE_COMPUTE_ROUTE_VULKAN_API PagedBatchInvocation(PagedBatchInvocation&&) noexcept;
+  HYLE_COMPUTE_ROUTE_VULKAN_API PagedBatchInvocation& operator=(PagedBatchInvocation&&) noexcept;
+  HYLE_COMPUTE_ROUTE_VULKAN_API ~PagedBatchInvocation();
+  HYLE_COMPUTE_ROUTE_VULKAN_API static Result<PagedBatchInvocation> create(
+      const Context&, NativePagedBatchProgram, const MemoryResource& device,
+      const MemoryResource& staging, NativePagedInvocationOptions,
+      const WorkloadContext& = {}) noexcept;
+  bool valid() const noexcept { return data_ != nullptr; }
+  HYLE_COMPUTE_ROUTE_VULKAN_API Status prepare_batch(BatchLayoutVersion) noexcept;
+  HYLE_COMPUTE_ROUTE_VULKAN_API Status bind(ReadLease, PagedArenaRead, PagedArenaRead) noexcept;
+  HYLE_COMPUTE_ROUTE_VULKAN_API Result<OwnedResult<Results>> submit() noexcept;
+  HYLE_COMPUTE_ROUTE_VULKAN_API NativePagedBatchReport report() const noexcept;
+  HYLE_COMPUTE_ROUTE_VULKAN_API Status close() noexcept;
+  HYLE_COMPUTE_ROUTE_VULKAN_API Status drain() noexcept;
+private:
+  explicit PagedBatchInvocation(detail::PagedInvocationData* p) noexcept : data_(p) {}
+  detail::PagedInvocationData* data_ = nullptr;
 };
 } // namespace hyle::compute::vulkan
 #endif

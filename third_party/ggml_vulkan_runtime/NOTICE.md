@@ -8,6 +8,14 @@ result hashes and the complete, context-matched changes applied only to a
 build-local copy of authenticated upstream source. The immutable source cache
 and upstream checkout are never modified.
 
+The private page16 attention tag retains physical K/V root descriptors and
+carries logical KV length separately. Its scalar shader maps every original
+K/V row load through an owned I32 page table. The unused mask-opt binding and
+mask-only push fields carry that table and its offset without extending the
+128-byte push packet. Paged causal masking uses logical positions. Only the
+private full-F32/F16 paged identity admits these fields; normal flash and
+coopmat identities keep their original addressing and arithmetic.
+
 These backend edits disable nested shader/compiler parallelism. Common context
 failure handling and the pinned build identity are maintained separately in
 `third_party/ggml_runtime`; this manifest contains only backend-specific edits.

@@ -339,6 +339,32 @@ struct Imports final {
 };
 } // namespace
 
+Status PagedAttentionRead::infer_output_descriptions(
+    std::span<const TensorDesc> inputs,
+    std::span<TensorDesc> outputs) const noexcept {
+  if (inputs.size() != 4 || outputs.size() != 1 || !logical_rows ||
+      logical_rows > INT32_MAX || !std::isfinite(scale) ||
+      inputs[0].rank() != 4 || inputs[1].rank() != 4 ||
+      inputs[2] != inputs[1] || !inputs[3].is_dense() ||
+      inputs[3].rank() != 1 || inputs[3].data_type() != DataType::kInt32)
+    return Status::InvalidArgument("Vulkan paged read domain");
+  const auto q = inputs[0].dimensions(), k = inputs[1].dimensions();
+  const auto refs = (std::uint64_t(logical_rows) + 15) / 16;
+  if (q[0] != 1 || k[0] != 1 || k[1] <= 0 || k[1] % 16 ||
+      q[1] <= 0 || (causal && std::uint64_t(q[1]) > logical_rows) ||
+      std::uint64_t(table_offset) + refs >
+          std::uint64_t(inputs[3].dimensions()[0]))
+    return Status::InvalidArgument("Vulkan paged logical/table bounds");
+  if (inputs[0].data_type() != DataType::kFloat16 ||
+      inputs[1].data_type() != DataType::kFloat16 ||
+      (q[3] != 64 && q[3] != 128 && q[3] != 256))
+    return Status::Unimplemented("Vulkan paged qualified F16 flash depth");
+  return compute::infer_output_descriptions(
+      Operation(ScaledDotProductAttention{
+          .layout = AttentionLayout::kBatchSequenceHeadDepth,
+          .scale = scale, .causal = false}), inputs.first(3), outputs);
+}
+
 bool region_supports(const Operation &operation,
                      std::span<const TensorDesc> inputs,
                      std::span<const TensorDesc> outputs) noexcept {
@@ -349,6 +375,7 @@ bool region_supports(const Operation &operation,
   // The padded resident admission belongs only to SDPA. Other operations keep
   // their original dense/encoded domain, including native weight descriptors.
   if (!operation.get_if<ScaledDotProductAttention>() &&
+      !operation.custom_as<PagedAttentionRead>() &&
       (!std::ranges::all_of(inputs, [](const auto &input) {
         return !input.is_plain() || input.is_dense();
       }) || !std::ranges::all_of(outputs, [](const auto &output) {
@@ -366,6 +393,11 @@ bool region_supports(const Operation &operation,
         return output.is_plain();
       })))
     return false;
+  if (const auto paged = operation.custom_as<PagedAttentionRead>()) {
+    std::array<TensorDesc, 1> inferred;
+    return outputs.size() == 1 && paged->infer_output_descriptions(inputs, inferred).ok() &&
+           inferred[0] == outputs[0];
+  }
   if (const auto *view = operation.get_if<View>())
     return view->kind() == ViewKind::kReshape && inputs.size() == 1 &&
            outputs.size() == 1 && inputs[0].is_plain() && outputs[0].is_plain() &&
@@ -902,6 +934,22 @@ Result<Region> Region::create(NativeDevice device,
         if (!ggml_prec_set_acc(output, GGML_PREC_F32))
           return std::unexpected(Status::Unimplemented("ggml Vulkan sink attention value accumulation"));
         output = ggml_cont(context, ggml_permute(context, output, 0, 2, 1, 3));
+      } else if (const auto paged = node.operation.custom_as<PagedAttentionRead>()) {
+        auto *query = ggml_permute(context,
+            ggml_cast(context, arguments[0], GGML_TYPE_F32), 0, 2, 1, 3);
+        auto *key = ggml_permute(context, arguments[1], 0, 2, 1, 3);
+        auto *value = ggml_permute(context, arguments[2], 0, 2, 1, 3);
+        output = ggml_flash_attn_ext(context, query, key, value, nullptr,
+                                    paged->scale, 0.0F, 0.0F);
+        output->src[5] = arguments[3];
+        output->op_params[bridge::kFlashAttentionMathSlot] = bridge::kFlashAttentionFullF32;
+        output->op_params[bridge::kFlashAttentionPagedSlot] = bridge::kFlashAttentionPaged;
+        output->op_params[bridge::kFlashAttentionLogicalRowsSlot] = static_cast<std::int32_t>(paged->logical_rows);
+        output->op_params[bridge::kFlashAttentionTableOffsetSlot] = static_cast<std::int32_t>(paged->table_offset);
+        output->op_params[bridge::kFlashAttentionCausalSlot] = paged->causal;
+        if (!ggml_prec_set_acc(output, GGML_PREC_F32))
+          return std::unexpected(Status::Unimplemented("Vulkan paged flash accumulation"));
+        output = ggml_cast(context, output, GGML_TYPE_F16);
       } else if (const auto *attention =
                      node.operation.get_if<ScaledDotProductAttention>()) {
         auto *query = ggml_permute(
