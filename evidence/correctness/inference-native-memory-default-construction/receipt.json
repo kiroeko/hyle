@@ -1,0 +1,841 @@
+{
+  "candidate": "a3fa6be8cf22780491e8b383ef1aafb678db1e23",
+  "gate": "PASS",
+  "results": {
+    "g01-native-memory-apple-source/result.json": {
+      "route": "apple",
+      "candidate": "a3fa6be8cf22780491e8b383ef1aafb678db1e23",
+      "stages": [
+        {
+          "stage": "configure",
+          "command": [
+            "/opt/homebrew/bin/cmake",
+            "-S",
+            "/Users/kiro/hyle-scratch/compute-unified/source-c8874688",
+            "-B",
+            "/Users/kiro/hyle-scratch/compute-unified/a-apple/selected-graph/static-sdk-build",
+            "-DCMAKE_PROJECT_INCLUDE=/Users/kiro/hyle-scratch/compute-unified/g01-native-memory-apple-source/project.cmake"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 3.3633980830000003,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g01-native-memory-apple-source/configure.log"
+        },
+        {
+          "stage": "build",
+          "command": [
+            "/opt/homebrew/bin/cmake",
+            "--build",
+            "/Users/kiro/hyle-scratch/compute-unified/a-apple/selected-graph/static-sdk-build",
+            "--target",
+            "g01_native_memory",
+            "--parallel",
+            "4"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 2.6724877080000002,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g01-native-memory-apple-source/build.log"
+        },
+        {
+          "stage": "run",
+          "command": [
+            "/Users/kiro/hyle-scratch/compute-unified/a-apple/selected-graph/static-sdk-build/bin/g01_native_memory"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 0.44192816700000037,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g01-native-memory-apple-source/run.log"
+        }
+      ]
+    },
+    "g01-native-memory-apple-static-sdk/result.json": {
+      "candidate": "a3fa6be8cf22780491e8b383ef1aafb678db1e23",
+      "route": "apple",
+      "mode": "static",
+      "stages": [
+        {
+          "stage": "producer-build",
+          "command": [
+            "/opt/homebrew/bin/cmake",
+            "--build",
+            "/Users/kiro/hyle-scratch/compute-unified/a-apple/selected-graph/static-sdk-build",
+            "--target",
+            "hyle_compute_route_apple",
+            "--parallel",
+            "4"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 0.034805417,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g01-native-memory-apple-static-sdk/producer-build.log"
+        },
+        {
+          "stage": "install",
+          "command": [
+            "/opt/homebrew/bin/cmake",
+            "--install",
+            "/Users/kiro/hyle-scratch/compute-unified/a-apple/selected-graph/static-sdk-build",
+            "--prefix",
+            "/Users/kiro/hyle-scratch/compute-unified/g01-native-memory-apple-static-sdk/staging"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 0.355140291,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g01-native-memory-apple-static-sdk/install.log"
+        },
+        {
+          "stage": "consumer-configure",
+          "command": [
+            "/opt/homebrew/bin/cmake",
+            "-S",
+            "/Users/kiro/hyle-scratch/compute-unified/g01-native-memory-apple-static-sdk/consumer-source",
+            "-B",
+            "/Users/kiro/hyle-scratch/compute-unified/g01-native-memory-apple-static-sdk/consumer-build",
+            "-G",
+            "Ninja",
+            "-DCMAKE_BUILD_TYPE=Release",
+            "-DCMAKE_OSX_DEPLOYMENT_TARGET=14.4",
+            "-DCMAKE_PREFIX_PATH=/Users/kiro/hyle-scratch/compute-unified/g01-native-memory-apple-static-sdk/relocated"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 0.263930334,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g01-native-memory-apple-static-sdk/consumer-configure.log"
+        },
+        {
+          "stage": "consumer-build",
+          "command": [
+            "/opt/homebrew/bin/cmake",
+            "--build",
+            "/Users/kiro/hyle-scratch/compute-unified/g01-native-memory-apple-static-sdk/consumer-build",
+            "--target",
+            "owner",
+            "--parallel",
+            "4"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 0.5908847090000001,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g01-native-memory-apple-static-sdk/consumer-build.log"
+        },
+        {
+          "stage": "run",
+          "command": [
+            "/Users/kiro/hyle-scratch/compute-unified/g01-native-memory-apple-static-sdk/consumer-build/owner"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 0.47710062500000006,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g01-native-memory-apple-static-sdk/run.log"
+        }
+      ]
+    },
+    "g01-native-memory-apple-shared-sdk/result.json": {
+      "candidate": "a3fa6be8cf22780491e8b383ef1aafb678db1e23",
+      "route": "apple",
+      "mode": "shared",
+      "stages": [
+        {
+          "stage": "producer-build",
+          "command": [
+            "/opt/homebrew/bin/cmake",
+            "--build",
+            "/Users/kiro/hyle-scratch/compute-unified/a-apple/selected-graph/shared-sdk-build",
+            "--target",
+            "hyle_compute_route_apple",
+            "--parallel",
+            "4"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 2.592787209,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g01-native-memory-apple-shared-sdk/producer-build.log"
+        },
+        {
+          "stage": "install",
+          "command": [
+            "/opt/homebrew/bin/cmake",
+            "--install",
+            "/Users/kiro/hyle-scratch/compute-unified/a-apple/selected-graph/shared-sdk-build",
+            "--prefix",
+            "/Users/kiro/hyle-scratch/compute-unified/g01-native-memory-apple-shared-sdk/staging"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 0.2652468749999999,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g01-native-memory-apple-shared-sdk/install.log"
+        },
+        {
+          "stage": "consumer-configure",
+          "command": [
+            "/opt/homebrew/bin/cmake",
+            "-S",
+            "/Users/kiro/hyle-scratch/compute-unified/g01-native-memory-apple-shared-sdk/consumer-source",
+            "-B",
+            "/Users/kiro/hyle-scratch/compute-unified/g01-native-memory-apple-shared-sdk/consumer-build",
+            "-G",
+            "Ninja",
+            "-DCMAKE_BUILD_TYPE=Release",
+            "-DCMAKE_OSX_DEPLOYMENT_TARGET=14.4",
+            "-DCMAKE_PREFIX_PATH=/Users/kiro/hyle-scratch/compute-unified/g01-native-memory-apple-shared-sdk/relocated"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 0.18463366699999995,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g01-native-memory-apple-shared-sdk/consumer-configure.log"
+        },
+        {
+          "stage": "consumer-build",
+          "command": [
+            "/opt/homebrew/bin/cmake",
+            "--build",
+            "/Users/kiro/hyle-scratch/compute-unified/g01-native-memory-apple-shared-sdk/consumer-build",
+            "--target",
+            "owner",
+            "--parallel",
+            "4"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 0.5945245410000002,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g01-native-memory-apple-shared-sdk/consumer-build.log"
+        },
+        {
+          "stage": "run",
+          "command": [
+            "/Users/kiro/hyle-scratch/compute-unified/g01-native-memory-apple-shared-sdk/consumer-build/owner"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 5.470229,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g01-native-memory-apple-shared-sdk/run.log"
+        }
+      ]
+    },
+    "g01-native-memory-apple-asan/result.json": {
+      "candidate": "a3fa6be8cf22780491e8b383ef1aafb678db1e23",
+      "route": "apple",
+      "mode": "asan",
+      "stages": [
+        {
+          "stage": "configure",
+          "command": [
+            "/opt/homebrew/bin/cmake",
+            "-S",
+            "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-apple-asan/parent",
+            "-B",
+            "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-apple-asan/build"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 2.791025166,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g01-native-memory-apple-asan/configure.log"
+        },
+        {
+          "stage": "build",
+          "command": [
+            "/opt/homebrew/bin/cmake",
+            "--build",
+            "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-apple-asan/build",
+            "--target",
+            "g01_native_memory",
+            "--parallel",
+            "4"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 2.8327999999999998,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g01-native-memory-apple-asan/build.log"
+        },
+        {
+          "stage": "run",
+          "command": [
+            "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-apple-asan/build/g01_native_memory"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 0.49822412500000013,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g01-native-memory-apple-asan/run.log"
+        }
+      ]
+    },
+    "g01-native-memory-apple-ubsan/result.json": {
+      "candidate": "a3fa6be8cf22780491e8b383ef1aafb678db1e23",
+      "route": "apple",
+      "mode": "ubsan",
+      "stages": [
+        {
+          "stage": "configure",
+          "command": [
+            "/opt/homebrew/bin/cmake",
+            "-S",
+            "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-apple-ubsan/parent",
+            "-B",
+            "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-apple-ubsan/build"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 2.830416417,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g01-native-memory-apple-ubsan/configure.log"
+        },
+        {
+          "stage": "build",
+          "command": [
+            "/opt/homebrew/bin/cmake",
+            "--build",
+            "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-apple-ubsan/build",
+            "--target",
+            "g01_native_memory",
+            "--parallel",
+            "4"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 3.2160477079999996,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g01-native-memory-apple-ubsan/build.log"
+        },
+        {
+          "stage": "run",
+          "command": [
+            "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-apple-ubsan/build/g01_native_memory"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 0.5061367079999997,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g01-native-memory-apple-ubsan/run.log"
+        }
+      ]
+    },
+    "g01-native-memory-apple-tsan/result.json": {
+      "candidate": "a3fa6be8cf22780491e8b383ef1aafb678db1e23",
+      "route": "apple",
+      "mode": "tsan",
+      "stages": [
+        {
+          "stage": "configure",
+          "command": [
+            "/opt/homebrew/bin/cmake",
+            "-S",
+            "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-apple-tsan/parent",
+            "-B",
+            "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-apple-tsan/build"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 2.9107890419999998,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g01-native-memory-apple-tsan/configure.log"
+        },
+        {
+          "stage": "build",
+          "command": [
+            "/opt/homebrew/bin/cmake",
+            "--build",
+            "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-apple-tsan/build",
+            "--target",
+            "g01_native_memory",
+            "--parallel",
+            "4"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 2.6104313329999997,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g01-native-memory-apple-tsan/build.log"
+        },
+        {
+          "stage": "run",
+          "command": [
+            "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-apple-tsan/build/g01_native_memory"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 2.5154148340000004,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g01-native-memory-apple-tsan/run.log"
+        }
+      ]
+    },
+    "g01-native-memory-vulkan-source/result.json": {
+      "route": "vulkan",
+      "candidate": "a3fa6be8cf22780491e8b383ef1aafb678db1e23",
+      "stages": [
+        {
+          "stage": "configure",
+          "command": [
+            "/opt/homebrew/bin/cmake",
+            "-S",
+            "/Users/kiro/hyle-scratch/compute-unified/source-c8874688",
+            "-B",
+            "/Users/kiro/hyle-scratch/compute-unified/a-vulkan/selected-graph/static-sdk-build",
+            "-DCMAKE_PROJECT_INCLUDE=/Users/kiro/hyle-scratch/compute-unified/g01-native-memory-vulkan-source/project.cmake"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 13.777675833,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g01-native-memory-vulkan-source/configure.log"
+        },
+        {
+          "stage": "build",
+          "command": [
+            "/opt/homebrew/bin/cmake",
+            "--build",
+            "/Users/kiro/hyle-scratch/compute-unified/a-vulkan/selected-graph/static-sdk-build",
+            "--target",
+            "g01_native_memory",
+            "--parallel",
+            "4"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 2.8883112089999976,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g01-native-memory-vulkan-source/build.log"
+        },
+        {
+          "stage": "run",
+          "command": [
+            "/Users/kiro/hyle-scratch/compute-unified/a-vulkan/selected-graph/static-sdk-build/bin/g01_native_memory"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 0.6736376670000013,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g01-native-memory-vulkan-source/run.log"
+        }
+      ]
+    },
+    "g01-native-memory-vulkan-static-sdk/result.json": {
+      "candidate": "a3fa6be8cf22780491e8b383ef1aafb678db1e23",
+      "route": "vulkan",
+      "mode": "static",
+      "stages": [
+        {
+          "stage": "producer-build",
+          "command": [
+            "/opt/homebrew/bin/cmake",
+            "--build",
+            "/Users/kiro/hyle-scratch/compute-unified/a-vulkan/selected-graph/static-sdk-build",
+            "--target",
+            "hyle_compute_route_vulkan",
+            "--parallel",
+            "4"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 0.079906833,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g01-native-memory-vulkan-static-sdk/producer-build.log"
+        },
+        {
+          "stage": "install",
+          "command": [
+            "/opt/homebrew/bin/cmake",
+            "--install",
+            "/Users/kiro/hyle-scratch/compute-unified/a-vulkan/selected-graph/static-sdk-build",
+            "--prefix",
+            "/Users/kiro/hyle-scratch/compute-unified/g01-native-memory-vulkan-static-sdk/staging"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 0.35583875,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g01-native-memory-vulkan-static-sdk/install.log"
+        },
+        {
+          "stage": "consumer-configure",
+          "command": [
+            "/opt/homebrew/bin/cmake",
+            "-S",
+            "/Users/kiro/hyle-scratch/compute-unified/g01-native-memory-vulkan-static-sdk/consumer-source",
+            "-B",
+            "/Users/kiro/hyle-scratch/compute-unified/g01-native-memory-vulkan-static-sdk/consumer-build",
+            "-G",
+            "Ninja",
+            "-DCMAKE_BUILD_TYPE=Release",
+            "-DCMAKE_OSX_DEPLOYMENT_TARGET=14.4",
+            "-DCMAKE_PREFIX_PATH=/Users/kiro/hyle-scratch/compute-unified/g01-native-memory-vulkan-static-sdk/relocated"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 0.259554,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g01-native-memory-vulkan-static-sdk/consumer-configure.log"
+        },
+        {
+          "stage": "consumer-build",
+          "command": [
+            "/opt/homebrew/bin/cmake",
+            "--build",
+            "/Users/kiro/hyle-scratch/compute-unified/g01-native-memory-vulkan-static-sdk/consumer-build",
+            "--target",
+            "owner",
+            "--parallel",
+            "4"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 0.5707873330000001,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g01-native-memory-vulkan-static-sdk/consumer-build.log"
+        },
+        {
+          "stage": "run",
+          "command": [
+            "/Users/kiro/hyle-scratch/compute-unified/g01-native-memory-vulkan-static-sdk/consumer-build/owner"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 0.605070625,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g01-native-memory-vulkan-static-sdk/run.log"
+        }
+      ]
+    },
+    "g01-native-memory-vulkan-shared-sdk/result.json": {
+      "candidate": "a3fa6be8cf22780491e8b383ef1aafb678db1e23",
+      "route": "vulkan",
+      "mode": "shared",
+      "stages": [
+        {
+          "stage": "producer-build",
+          "command": [
+            "/opt/homebrew/bin/cmake",
+            "--build",
+            "/Users/kiro/hyle-scratch/compute-unified/a-vulkan/selected-graph/shared-sdk-build",
+            "--target",
+            "hyle_compute_route_vulkan",
+            "--parallel",
+            "4"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 2.74340525,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g01-native-memory-vulkan-shared-sdk/producer-build.log"
+        },
+        {
+          "stage": "install",
+          "command": [
+            "/opt/homebrew/bin/cmake",
+            "--install",
+            "/Users/kiro/hyle-scratch/compute-unified/a-vulkan/selected-graph/shared-sdk-build",
+            "--prefix",
+            "/Users/kiro/hyle-scratch/compute-unified/g01-native-memory-vulkan-shared-sdk/staging"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 0.3286980829999999,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g01-native-memory-vulkan-shared-sdk/install.log"
+        },
+        {
+          "stage": "consumer-configure",
+          "command": [
+            "/opt/homebrew/bin/cmake",
+            "-S",
+            "/Users/kiro/hyle-scratch/compute-unified/g01-native-memory-vulkan-shared-sdk/consumer-source",
+            "-B",
+            "/Users/kiro/hyle-scratch/compute-unified/g01-native-memory-vulkan-shared-sdk/consumer-build",
+            "-G",
+            "Ninja",
+            "-DCMAKE_BUILD_TYPE=Release",
+            "-DCMAKE_OSX_DEPLOYMENT_TARGET=14.4",
+            "-DCMAKE_PREFIX_PATH=/Users/kiro/hyle-scratch/compute-unified/g01-native-memory-vulkan-shared-sdk/relocated"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 0.18518524999999997,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g01-native-memory-vulkan-shared-sdk/consumer-configure.log"
+        },
+        {
+          "stage": "consumer-build",
+          "command": [
+            "/opt/homebrew/bin/cmake",
+            "--build",
+            "/Users/kiro/hyle-scratch/compute-unified/g01-native-memory-vulkan-shared-sdk/consumer-build",
+            "--target",
+            "owner",
+            "--parallel",
+            "4"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 0.554508416,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g01-native-memory-vulkan-shared-sdk/consumer-build.log"
+        },
+        {
+          "stage": "run",
+          "command": [
+            "/Users/kiro/hyle-scratch/compute-unified/g01-native-memory-vulkan-shared-sdk/consumer-build/owner"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 5.352491582999999,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g01-native-memory-vulkan-shared-sdk/run.log"
+        }
+      ]
+    },
+    "g01-native-memory-vulkan-asan/result.json": {
+      "candidate": "a3fa6be8cf22780491e8b383ef1aafb678db1e23",
+      "route": "vulkan",
+      "mode": "asan",
+      "stages": [
+        {
+          "stage": "configure",
+          "command": [
+            "/opt/homebrew/bin/cmake",
+            "-S",
+            "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-vulkan-asan/parent",
+            "-B",
+            "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-vulkan-asan/build"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 14.089727875,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g01-native-memory-vulkan-asan/configure.log"
+        },
+        {
+          "stage": "build",
+          "command": [
+            "/opt/homebrew/bin/cmake",
+            "--build",
+            "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-vulkan-asan/build",
+            "--target",
+            "g01_native_memory",
+            "--parallel",
+            "4"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 3.27702075,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g01-native-memory-vulkan-asan/build.log"
+        },
+        {
+          "stage": "run",
+          "command": [
+            "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-vulkan-asan/build/g01_native_memory"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 0.8866003330000005,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g01-native-memory-vulkan-asan/run.log"
+        }
+      ]
+    },
+    "g01-native-memory-vulkan-ubsan/result.json": {
+      "candidate": "a3fa6be8cf22780491e8b383ef1aafb678db1e23",
+      "route": "vulkan",
+      "mode": "ubsan",
+      "stages": [
+        {
+          "stage": "configure",
+          "command": [
+            "/opt/homebrew/bin/cmake",
+            "-S",
+            "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-vulkan-ubsan/parent",
+            "-B",
+            "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-vulkan-ubsan/build"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 14.299646083,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g01-native-memory-vulkan-ubsan/configure.log"
+        },
+        {
+          "stage": "build",
+          "command": [
+            "/opt/homebrew/bin/cmake",
+            "--build",
+            "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-vulkan-ubsan/build",
+            "--target",
+            "g01_native_memory",
+            "--parallel",
+            "4"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 4.182820082999999,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g01-native-memory-vulkan-ubsan/build.log"
+        },
+        {
+          "stage": "run",
+          "command": [
+            "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-vulkan-ubsan/build/g01_native_memory"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 0.6514682080000007,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g01-native-memory-vulkan-ubsan/run.log"
+        }
+      ]
+    },
+    "g01-native-memory-vulkan-tsan/result.json": {
+      "candidate": "a3fa6be8cf22780491e8b383ef1aafb678db1e23",
+      "route": "vulkan",
+      "mode": "tsan",
+      "stages": [
+        {
+          "stage": "configure",
+          "command": [
+            "/opt/homebrew/bin/cmake",
+            "-S",
+            "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-vulkan-tsan/parent",
+            "-B",
+            "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-vulkan-tsan/build"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 14.320697333,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g01-native-memory-vulkan-tsan/configure.log"
+        },
+        {
+          "stage": "build",
+          "command": [
+            "/opt/homebrew/bin/cmake",
+            "--build",
+            "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-vulkan-tsan/build",
+            "--target",
+            "g01_native_memory",
+            "--parallel",
+            "4"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 2.9229233339999983,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g01-native-memory-vulkan-tsan/build.log"
+        },
+        {
+          "stage": "run",
+          "command": [
+            "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-vulkan-tsan/build/g01_native_memory"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 3.027239250000001,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g01-native-memory-vulkan-tsan/run.log"
+        }
+      ]
+    }
+  },
+  "instrumented": {
+    "g01-native-memory-apple-asan/instrumented-inputs.json": [
+      {
+        "directory": "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-apple-asan/build",
+        "command": "/usr/bin/clang++ -DHYLE_COMPUTE_APPLE=1 -DHYLE_COMPUTE_ROUTE_APPLE_BUILD -DHYLE_DETAIL_SANITIZER_ADDRESS=1 -DHYLE_IO_HAS_COROUTINE_TRANSPORT=1 -DHYLE_STATIC -DMLX_STATIC -I/Users/kiro/hyle-scratch/compute-unified/source-c8874688/include -I/Users/kiro/hyle-scratch/compute-unified/source-c8874688/src/compute_route_apple -I/Users/kiro/hyle-scratch/compute-unified/source-c8874688/src/compute_route_apple/../compute -I/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-apple-asan/build/hyle/src/compute_route_apple -I/Users/kiro/hyle-scratch/compute-unified/source-c8874688/third_party/bitsandbytes_apple -I/Users/kiro/hyle-scratch/compute-unified/source-c8874688/third_party/awq_apple -I/Users/kiro/hyle-scratch/compute-unified/source-c8874688/third_party/ggml_q4k_apple -I/Users/kiro/hyle-scratch/compute-unified/source-c8874688/third_party/compressed_tensors_apple -isystem /Users/kiro/Library/Caches/hyle/dependencies/v1/sources/metal_cpp-f567ed836e4c-3874e9e28e8e -isystem /Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-apple-asan/build/hyle/_deps/mlx-338da189e54c0743/source -x objective-c++ -O3 -DNDEBUG -std=c++23 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk -mmacosx-version-min=14.4 -fsanitize=address -fno-omit-frame-pointer -MD -MT hyle/src/compute_route_apple/CMakeFiles/hyle_compute_route_apple.dir/apple_memory.mm.o -MF hyle/src/compute_route_apple/CMakeFiles/hyle_compute_route_apple.dir/apple_memory.mm.o.d -o hyle/src/compute_route_apple/CMakeFiles/hyle_compute_route_apple.dir/apple_memory.mm.o -c /Users/kiro/hyle-scratch/compute-unified/source-c8874688/src/compute_route_apple/apple_memory.mm",
+        "file": "/Users/kiro/hyle-scratch/compute-unified/source-c8874688/src/compute_route_apple/apple_memory.mm",
+        "output": "hyle/src/compute_route_apple/CMakeFiles/hyle_compute_route_apple.dir/apple_memory.mm.o"
+      },
+      {
+        "directory": "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-apple-asan/build",
+        "command": "/usr/bin/clang++ -DHYLE_COMPUTE_APPLE=1 -DHYLE_DETAIL_SANITIZER_ADDRESS=1 -DHYLE_IO_HAS_COROUTINE_TRANSPORT=1 -DHYLE_NATIVE_MEMORY_APPLE=1 -DHYLE_STATIC -DMLX_STATIC -I/Users/kiro/hyle-scratch/compute-unified/source-c8874688/include -isystem /Users/kiro/Library/Caches/hyle/dependencies/v1/sources/metal_cpp-f567ed836e4c-3874e9e28e8e -isystem /Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-apple-asan/build/hyle/_deps/mlx-338da189e54c0743/source -O3 -DNDEBUG -std=gnu++23 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk -mmacosx-version-min=14.4 -fsanitize=address -fno-omit-frame-pointer -MD -MT CMakeFiles/g01_native_memory.dir/Users/kiro/hyle-scratch/compute-unified/source-c8874688/tests/compute_batch/native_memory_owner_consumer.cc.o -MF CMakeFiles/g01_native_memory.dir/Users/kiro/hyle-scratch/compute-unified/source-c8874688/tests/compute_batch/native_memory_owner_consumer.cc.o.d -o CMakeFiles/g01_native_memory.dir/Users/kiro/hyle-scratch/compute-unified/source-c8874688/tests/compute_batch/native_memory_owner_consumer.cc.o -c /Users/kiro/hyle-scratch/compute-unified/source-c8874688/tests/compute_batch/native_memory_owner_consumer.cc",
+        "file": "/Users/kiro/hyle-scratch/compute-unified/source-c8874688/tests/compute_batch/native_memory_owner_consumer.cc",
+        "output": "CMakeFiles/g01_native_memory.dir/Users/kiro/hyle-scratch/compute-unified/source-c8874688/tests/compute_batch/native_memory_owner_consumer.cc.o"
+      }
+    ],
+    "g01-native-memory-apple-ubsan/instrumented-inputs.json": [
+      {
+        "directory": "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-apple-ubsan/build",
+        "command": "/usr/bin/clang++ -DHYLE_COMPUTE_APPLE=1 -DHYLE_COMPUTE_ROUTE_APPLE_BUILD -DHYLE_DETAIL_SANITIZER_UNDEFINED=1 -DHYLE_IO_HAS_COROUTINE_TRANSPORT=1 -DHYLE_STATIC -DMLX_STATIC -I/Users/kiro/hyle-scratch/compute-unified/source-c8874688/include -I/Users/kiro/hyle-scratch/compute-unified/source-c8874688/src/compute_route_apple -I/Users/kiro/hyle-scratch/compute-unified/source-c8874688/src/compute_route_apple/../compute -I/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-apple-ubsan/build/hyle/src/compute_route_apple -I/Users/kiro/hyle-scratch/compute-unified/source-c8874688/third_party/bitsandbytes_apple -I/Users/kiro/hyle-scratch/compute-unified/source-c8874688/third_party/awq_apple -I/Users/kiro/hyle-scratch/compute-unified/source-c8874688/third_party/ggml_q4k_apple -I/Users/kiro/hyle-scratch/compute-unified/source-c8874688/third_party/compressed_tensors_apple -isystem /Users/kiro/Library/Caches/hyle/dependencies/v1/sources/metal_cpp-f567ed836e4c-3874e9e28e8e -isystem /Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-apple-ubsan/build/hyle/_deps/mlx-338da189e54c0743/source -x objective-c++ -O3 -DNDEBUG -std=c++23 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk -mmacosx-version-min=14.4 -fsanitize=undefined -fno-sanitize-recover=all -MD -MT hyle/src/compute_route_apple/CMakeFiles/hyle_compute_route_apple.dir/apple_memory.mm.o -MF hyle/src/compute_route_apple/CMakeFiles/hyle_compute_route_apple.dir/apple_memory.mm.o.d -o hyle/src/compute_route_apple/CMakeFiles/hyle_compute_route_apple.dir/apple_memory.mm.o -c /Users/kiro/hyle-scratch/compute-unified/source-c8874688/src/compute_route_apple/apple_memory.mm",
+        "file": "/Users/kiro/hyle-scratch/compute-unified/source-c8874688/src/compute_route_apple/apple_memory.mm",
+        "output": "hyle/src/compute_route_apple/CMakeFiles/hyle_compute_route_apple.dir/apple_memory.mm.o"
+      },
+      {
+        "directory": "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-apple-ubsan/build",
+        "command": "/usr/bin/clang++ -DHYLE_COMPUTE_APPLE=1 -DHYLE_DETAIL_SANITIZER_UNDEFINED=1 -DHYLE_IO_HAS_COROUTINE_TRANSPORT=1 -DHYLE_NATIVE_MEMORY_APPLE=1 -DHYLE_STATIC -DMLX_STATIC -I/Users/kiro/hyle-scratch/compute-unified/source-c8874688/include -isystem /Users/kiro/Library/Caches/hyle/dependencies/v1/sources/metal_cpp-f567ed836e4c-3874e9e28e8e -isystem /Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-apple-ubsan/build/hyle/_deps/mlx-338da189e54c0743/source -O3 -DNDEBUG -std=gnu++23 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk -mmacosx-version-min=14.4 -fsanitize=undefined -fno-sanitize-recover=all -MD -MT CMakeFiles/g01_native_memory.dir/Users/kiro/hyle-scratch/compute-unified/source-c8874688/tests/compute_batch/native_memory_owner_consumer.cc.o -MF CMakeFiles/g01_native_memory.dir/Users/kiro/hyle-scratch/compute-unified/source-c8874688/tests/compute_batch/native_memory_owner_consumer.cc.o.d -o CMakeFiles/g01_native_memory.dir/Users/kiro/hyle-scratch/compute-unified/source-c8874688/tests/compute_batch/native_memory_owner_consumer.cc.o -c /Users/kiro/hyle-scratch/compute-unified/source-c8874688/tests/compute_batch/native_memory_owner_consumer.cc",
+        "file": "/Users/kiro/hyle-scratch/compute-unified/source-c8874688/tests/compute_batch/native_memory_owner_consumer.cc",
+        "output": "CMakeFiles/g01_native_memory.dir/Users/kiro/hyle-scratch/compute-unified/source-c8874688/tests/compute_batch/native_memory_owner_consumer.cc.o"
+      }
+    ],
+    "g01-native-memory-apple-tsan/instrumented-inputs.json": [
+      {
+        "directory": "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-apple-tsan/build",
+        "command": "/usr/bin/clang++ -DHYLE_COMPUTE_APPLE=1 -DHYLE_COMPUTE_ROUTE_APPLE_BUILD -DHYLE_DETAIL_SANITIZER_THREAD=1 -DHYLE_IO_HAS_COROUTINE_TRANSPORT=1 -DHYLE_STATIC -DMLX_STATIC -I/Users/kiro/hyle-scratch/compute-unified/source-c8874688/include -I/Users/kiro/hyle-scratch/compute-unified/source-c8874688/src/compute_route_apple -I/Users/kiro/hyle-scratch/compute-unified/source-c8874688/src/compute_route_apple/../compute -I/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-apple-tsan/build/hyle/src/compute_route_apple -I/Users/kiro/hyle-scratch/compute-unified/source-c8874688/third_party/bitsandbytes_apple -I/Users/kiro/hyle-scratch/compute-unified/source-c8874688/third_party/awq_apple -I/Users/kiro/hyle-scratch/compute-unified/source-c8874688/third_party/ggml_q4k_apple -I/Users/kiro/hyle-scratch/compute-unified/source-c8874688/third_party/compressed_tensors_apple -isystem /Users/kiro/Library/Caches/hyle/dependencies/v1/sources/metal_cpp-f567ed836e4c-3874e9e28e8e -isystem /Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-apple-tsan/build/hyle/_deps/mlx-338da189e54c0743/source -x objective-c++ -O3 -DNDEBUG -std=c++23 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk -mmacosx-version-min=14.4 -fsanitize=thread -MD -MT hyle/src/compute_route_apple/CMakeFiles/hyle_compute_route_apple.dir/apple_memory.mm.o -MF hyle/src/compute_route_apple/CMakeFiles/hyle_compute_route_apple.dir/apple_memory.mm.o.d -o hyle/src/compute_route_apple/CMakeFiles/hyle_compute_route_apple.dir/apple_memory.mm.o -c /Users/kiro/hyle-scratch/compute-unified/source-c8874688/src/compute_route_apple/apple_memory.mm",
+        "file": "/Users/kiro/hyle-scratch/compute-unified/source-c8874688/src/compute_route_apple/apple_memory.mm",
+        "output": "hyle/src/compute_route_apple/CMakeFiles/hyle_compute_route_apple.dir/apple_memory.mm.o"
+      },
+      {
+        "directory": "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-apple-tsan/build",
+        "command": "/usr/bin/clang++ -DHYLE_COMPUTE_APPLE=1 -DHYLE_DETAIL_SANITIZER_THREAD=1 -DHYLE_IO_HAS_COROUTINE_TRANSPORT=1 -DHYLE_NATIVE_MEMORY_APPLE=1 -DHYLE_STATIC -DMLX_STATIC -I/Users/kiro/hyle-scratch/compute-unified/source-c8874688/include -isystem /Users/kiro/Library/Caches/hyle/dependencies/v1/sources/metal_cpp-f567ed836e4c-3874e9e28e8e -isystem /Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-apple-tsan/build/hyle/_deps/mlx-338da189e54c0743/source -O3 -DNDEBUG -std=gnu++23 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk -mmacosx-version-min=14.4 -fsanitize=thread -MD -MT CMakeFiles/g01_native_memory.dir/Users/kiro/hyle-scratch/compute-unified/source-c8874688/tests/compute_batch/native_memory_owner_consumer.cc.o -MF CMakeFiles/g01_native_memory.dir/Users/kiro/hyle-scratch/compute-unified/source-c8874688/tests/compute_batch/native_memory_owner_consumer.cc.o.d -o CMakeFiles/g01_native_memory.dir/Users/kiro/hyle-scratch/compute-unified/source-c8874688/tests/compute_batch/native_memory_owner_consumer.cc.o -c /Users/kiro/hyle-scratch/compute-unified/source-c8874688/tests/compute_batch/native_memory_owner_consumer.cc",
+        "file": "/Users/kiro/hyle-scratch/compute-unified/source-c8874688/tests/compute_batch/native_memory_owner_consumer.cc",
+        "output": "CMakeFiles/g01_native_memory.dir/Users/kiro/hyle-scratch/compute-unified/source-c8874688/tests/compute_batch/native_memory_owner_consumer.cc.o"
+      }
+    ],
+    "g01-native-memory-vulkan-asan/instrumented-inputs.json": [
+      {
+        "directory": "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-vulkan-asan/build",
+        "command": "/usr/bin/c++ -DHYLE_COMPUTE_ROUTE_VULKAN_BUILD -DHYLE_COMPUTE_VULKAN=1 -DHYLE_DETAIL_SANITIZER_ADDRESS=1 -DHYLE_IO_HAS_COROUTINE_TRANSPORT=1 -DHYLE_STATIC -I/Users/kiro/hyle-scratch/compute-unified/source-c8874688/include -I/Users/kiro/hyle-scratch/compute-unified/source-c8874688/src/compute_route_vulkan -I/Users/kiro/hyle-scratch/compute-unified/source-c8874688/src/compute_route_vulkan/../compute -I/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-vulkan-asan/build/hyle/src/compute_route_vulkan -I/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-vulkan-asan/build/hyle/src/compute_route_vulkan/shaders -isystem /Users/kiro/Library/Caches/hyle/dependencies/v1/sources/vulkan_headers-e3b1eec08173-69d6adc9001f/include -O3 -DNDEBUG -std=c++23 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk -mmacosx-version-min=14.4 -Wall -Wextra -Wpedantic -fsanitize=address -fno-omit-frame-pointer -MD -MT hyle/src/compute_route_vulkan/CMakeFiles/hyle_compute_route_vulkan.dir/vulkan_memory.cc.o -MF hyle/src/compute_route_vulkan/CMakeFiles/hyle_compute_route_vulkan.dir/vulkan_memory.cc.o.d -o hyle/src/compute_route_vulkan/CMakeFiles/hyle_compute_route_vulkan.dir/vulkan_memory.cc.o -c /Users/kiro/hyle-scratch/compute-unified/source-c8874688/src/compute_route_vulkan/vulkan_memory.cc",
+        "file": "/Users/kiro/hyle-scratch/compute-unified/source-c8874688/src/compute_route_vulkan/vulkan_memory.cc",
+        "output": "hyle/src/compute_route_vulkan/CMakeFiles/hyle_compute_route_vulkan.dir/vulkan_memory.cc.o"
+      },
+      {
+        "directory": "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-vulkan-asan/build",
+        "command": "/usr/bin/c++ -DHYLE_COMPUTE_VULKAN=1 -DHYLE_DETAIL_SANITIZER_ADDRESS=1 -DHYLE_IO_HAS_COROUTINE_TRANSPORT=1 -DHYLE_STATIC -I/Users/kiro/hyle-scratch/compute-unified/source-c8874688/include -isystem /Users/kiro/Library/Caches/hyle/dependencies/v1/sources/vulkan_headers-e3b1eec08173-69d6adc9001f/include -O3 -DNDEBUG -std=gnu++23 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk -mmacosx-version-min=14.4 -fsanitize=address -fno-omit-frame-pointer -MD -MT CMakeFiles/g01_native_memory.dir/Users/kiro/hyle-scratch/compute-unified/source-c8874688/tests/compute_batch/native_memory_owner_consumer.cc.o -MF CMakeFiles/g01_native_memory.dir/Users/kiro/hyle-scratch/compute-unified/source-c8874688/tests/compute_batch/native_memory_owner_consumer.cc.o.d -o CMakeFiles/g01_native_memory.dir/Users/kiro/hyle-scratch/compute-unified/source-c8874688/tests/compute_batch/native_memory_owner_consumer.cc.o -c /Users/kiro/hyle-scratch/compute-unified/source-c8874688/tests/compute_batch/native_memory_owner_consumer.cc",
+        "file": "/Users/kiro/hyle-scratch/compute-unified/source-c8874688/tests/compute_batch/native_memory_owner_consumer.cc",
+        "output": "CMakeFiles/g01_native_memory.dir/Users/kiro/hyle-scratch/compute-unified/source-c8874688/tests/compute_batch/native_memory_owner_consumer.cc.o"
+      }
+    ],
+    "g01-native-memory-vulkan-ubsan/instrumented-inputs.json": [
+      {
+        "directory": "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-vulkan-ubsan/build",
+        "command": "/usr/bin/clang++ -DHYLE_COMPUTE_ROUTE_VULKAN_BUILD -DHYLE_COMPUTE_VULKAN=1 -DHYLE_DETAIL_SANITIZER_UNDEFINED=1 -DHYLE_IO_HAS_COROUTINE_TRANSPORT=1 -DHYLE_STATIC -I/Users/kiro/hyle-scratch/compute-unified/source-c8874688/include -I/Users/kiro/hyle-scratch/compute-unified/source-c8874688/src/compute_route_vulkan -I/Users/kiro/hyle-scratch/compute-unified/source-c8874688/src/compute_route_vulkan/../compute -I/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-vulkan-ubsan/build/hyle/src/compute_route_vulkan -I/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-vulkan-ubsan/build/hyle/src/compute_route_vulkan/shaders -isystem /Users/kiro/Library/Caches/hyle/dependencies/v1/sources/vulkan_headers-e3b1eec08173-69d6adc9001f/include -O3 -DNDEBUG -std=c++23 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk -mmacosx-version-min=14.4 -Wall -Wextra -Wpedantic -fsanitize=undefined -fno-sanitize-recover=all -MD -MT hyle/src/compute_route_vulkan/CMakeFiles/hyle_compute_route_vulkan.dir/vulkan_memory.cc.o -MF hyle/src/compute_route_vulkan/CMakeFiles/hyle_compute_route_vulkan.dir/vulkan_memory.cc.o.d -o hyle/src/compute_route_vulkan/CMakeFiles/hyle_compute_route_vulkan.dir/vulkan_memory.cc.o -c /Users/kiro/hyle-scratch/compute-unified/source-c8874688/src/compute_route_vulkan/vulkan_memory.cc",
+        "file": "/Users/kiro/hyle-scratch/compute-unified/source-c8874688/src/compute_route_vulkan/vulkan_memory.cc",
+        "output": "hyle/src/compute_route_vulkan/CMakeFiles/hyle_compute_route_vulkan.dir/vulkan_memory.cc.o"
+      },
+      {
+        "directory": "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-vulkan-ubsan/build",
+        "command": "/usr/bin/clang++ -DHYLE_COMPUTE_VULKAN=1 -DHYLE_DETAIL_SANITIZER_UNDEFINED=1 -DHYLE_IO_HAS_COROUTINE_TRANSPORT=1 -DHYLE_STATIC -I/Users/kiro/hyle-scratch/compute-unified/source-c8874688/include -isystem /Users/kiro/Library/Caches/hyle/dependencies/v1/sources/vulkan_headers-e3b1eec08173-69d6adc9001f/include -O3 -DNDEBUG -std=gnu++23 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk -mmacosx-version-min=14.4 -fsanitize=undefined -fno-sanitize-recover=all -MD -MT CMakeFiles/g01_native_memory.dir/Users/kiro/hyle-scratch/compute-unified/source-c8874688/tests/compute_batch/native_memory_owner_consumer.cc.o -MF CMakeFiles/g01_native_memory.dir/Users/kiro/hyle-scratch/compute-unified/source-c8874688/tests/compute_batch/native_memory_owner_consumer.cc.o.d -o CMakeFiles/g01_native_memory.dir/Users/kiro/hyle-scratch/compute-unified/source-c8874688/tests/compute_batch/native_memory_owner_consumer.cc.o -c /Users/kiro/hyle-scratch/compute-unified/source-c8874688/tests/compute_batch/native_memory_owner_consumer.cc",
+        "file": "/Users/kiro/hyle-scratch/compute-unified/source-c8874688/tests/compute_batch/native_memory_owner_consumer.cc",
+        "output": "CMakeFiles/g01_native_memory.dir/Users/kiro/hyle-scratch/compute-unified/source-c8874688/tests/compute_batch/native_memory_owner_consumer.cc.o"
+      }
+    ],
+    "g01-native-memory-vulkan-tsan/instrumented-inputs.json": [
+      {
+        "directory": "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-vulkan-tsan/build",
+        "command": "/usr/bin/clang++ -DHYLE_COMPUTE_ROUTE_VULKAN_BUILD -DHYLE_COMPUTE_VULKAN=1 -DHYLE_DETAIL_SANITIZER_THREAD=1 -DHYLE_IO_HAS_COROUTINE_TRANSPORT=1 -DHYLE_STATIC -I/Users/kiro/hyle-scratch/compute-unified/source-c8874688/include -I/Users/kiro/hyle-scratch/compute-unified/source-c8874688/src/compute_route_vulkan -I/Users/kiro/hyle-scratch/compute-unified/source-c8874688/src/compute_route_vulkan/../compute -I/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-vulkan-tsan/build/hyle/src/compute_route_vulkan -I/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-vulkan-tsan/build/hyle/src/compute_route_vulkan/shaders -isystem /Users/kiro/Library/Caches/hyle/dependencies/v1/sources/vulkan_headers-e3b1eec08173-69d6adc9001f/include -O3 -DNDEBUG -std=c++23 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk -mmacosx-version-min=14.4 -Wall -Wextra -Wpedantic -fsanitize=thread -MD -MT hyle/src/compute_route_vulkan/CMakeFiles/hyle_compute_route_vulkan.dir/vulkan_memory.cc.o -MF hyle/src/compute_route_vulkan/CMakeFiles/hyle_compute_route_vulkan.dir/vulkan_memory.cc.o.d -o hyle/src/compute_route_vulkan/CMakeFiles/hyle_compute_route_vulkan.dir/vulkan_memory.cc.o -c /Users/kiro/hyle-scratch/compute-unified/source-c8874688/src/compute_route_vulkan/vulkan_memory.cc",
+        "file": "/Users/kiro/hyle-scratch/compute-unified/source-c8874688/src/compute_route_vulkan/vulkan_memory.cc",
+        "output": "hyle/src/compute_route_vulkan/CMakeFiles/hyle_compute_route_vulkan.dir/vulkan_memory.cc.o"
+      },
+      {
+        "directory": "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-vulkan-tsan/build",
+        "command": "/usr/bin/clang++ -DHYLE_COMPUTE_VULKAN=1 -DHYLE_DETAIL_SANITIZER_THREAD=1 -DHYLE_IO_HAS_COROUTINE_TRANSPORT=1 -DHYLE_STATIC -I/Users/kiro/hyle-scratch/compute-unified/source-c8874688/include -isystem /Users/kiro/Library/Caches/hyle/dependencies/v1/sources/vulkan_headers-e3b1eec08173-69d6adc9001f/include -O3 -DNDEBUG -std=gnu++23 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk -mmacosx-version-min=14.4 -fsanitize=thread -MD -MT CMakeFiles/g01_native_memory.dir/Users/kiro/hyle-scratch/compute-unified/source-c8874688/tests/compute_batch/native_memory_owner_consumer.cc.o -MF CMakeFiles/g01_native_memory.dir/Users/kiro/hyle-scratch/compute-unified/source-c8874688/tests/compute_batch/native_memory_owner_consumer.cc.o.d -o CMakeFiles/g01_native_memory.dir/Users/kiro/hyle-scratch/compute-unified/source-c8874688/tests/compute_batch/native_memory_owner_consumer.cc.o -c /Users/kiro/hyle-scratch/compute-unified/source-c8874688/tests/compute_batch/native_memory_owner_consumer.cc",
+        "file": "/Users/kiro/hyle-scratch/compute-unified/source-c8874688/tests/compute_batch/native_memory_owner_consumer.cc",
+        "output": "CMakeFiles/g01_native_memory.dir/Users/kiro/hyle-scratch/compute-unified/source-c8874688/tests/compute_batch/native_memory_owner_consumer.cc.o"
+      }
+    ]
+  },
+  "red": {
+    "apple": {
+      "route": "apple",
+      "command": [
+        "/usr/bin/clang++",
+        "-DHYLE_COMPUTE_APPLE=1",
+        "-DHYLE_COMPUTE_ROUTE_APPLE_BUILD",
+        "-DHYLE_IO_HAS_COROUTINE_TRANSPORT=1",
+        "-DHYLE_STATIC",
+        "-DMLX_STATIC",
+        "-I/Users/kiro/hyle-scratch/compute-unified/source-c8874688/include",
+        "-I/Users/kiro/hyle-scratch/compute-unified/source-c8874688/src/compute_route_apple",
+        "-I/Users/kiro/hyle-scratch/compute-unified/source-c8874688/src/compute_route_apple/../compute",
+        "-I/Users/kiro/hyle-scratch/compute-unified/a-apple/selected-graph/static-sdk-build/src/compute_route_apple",
+        "-I/Users/kiro/hyle-scratch/compute-unified/source-c8874688/third_party/bitsandbytes_apple",
+        "-I/Users/kiro/hyle-scratch/compute-unified/source-c8874688/third_party/awq_apple",
+        "-I/Users/kiro/hyle-scratch/compute-unified/source-c8874688/third_party/ggml_q4k_apple",
+        "-I/Users/kiro/hyle-scratch/compute-unified/source-c8874688/third_party/compressed_tensors_apple",
+        "-isystem",
+        "/Users/kiro/Library/Caches/hyle/dependencies/v1/sources/metal_cpp-f567ed836e4c-3874e9e28e8e",
+        "-isystem",
+        "/Users/kiro/hyle-scratch/compute-unified/a-apple/selected-graph/static-sdk-build/_deps/mlx-338da189e54c0743/source",
+        "-O3",
+        "-DNDEBUG",
+        "-std=c++23",
+        "-arch",
+        "arm64",
+        "-mmacosx-version-min=14.4",
+        "-Wall",
+        "-Wextra",
+        "-Wpedantic",
+        "-MD",
+        "-MT",
+        "src/compute_route_apple/CMakeFiles/hyle_compute_route_apple.dir/apple_batch.cc.o",
+        "-MF",
+        "src/compute_route_apple/CMakeFiles/hyle_compute_route_apple.dir/apple_batch.cc.o.d",
+        "-c",
+        "/Users/kiro/hyle-scratch/compute-unified/native-memory-owner-consumer.cc",
+        "-o",
+        "/Users/kiro/hyle-scratch/compute-unified/native-memory-apple-red.o",
+        "-DHYLE_NATIVE_MEMORY_APPLE=1"
+      ],
+      "exit_code": 1,
+      "stderr": "In file included from /Users/kiro/hyle-scratch/compute-unified/native-memory-owner-consumer.cc:2:\nIn file included from /Users/kiro/hyle-scratch/compute-unified/source-c8874688/include/hyle/compute/apple_memory.h:3:\nIn file included from /Users/kiro/hyle-scratch/compute-unified/source-c8874688/include/hyle/compute/apple.h:16:\nIn file included from /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/c++/v1/functional:557:\nIn file included from /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/c++/v1/__functional/boyer_moore_searcher.h:21:\nIn file included from /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/c++/v1/__memory/shared_ptr.h:36:\n/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/c++/v1/__memory/unique_ptr.h:73:19: error: invalid application of 'sizeof' to an incomplete type 'hyle::compute::apple::detail::MemoryState'\n   73 |     static_assert(sizeof(_Tp) >= 0, \"cannot delete an incomplete type\");\n      |                   ^~~~~~~~~~~\n/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/c++/v1/__memory/unique_ptr.h:291:7: note: in instantiation of member function 'std::default_delete<hyle::compute::apple::detail::MemoryState>::operator()' requested here\n  291 |       __deleter_(__tmp);\n      |       ^\n/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/c++/v1/__memory/unique_ptr.h:257:71: note: in instantiation of member function 'std::unique_ptr<hyle::compute::apple::detail::MemoryState>::reset' requested here\n  257 |   _LIBCPP_HIDE_FROM_ABI _LIBCPP_CONSTEXPR_SINCE_CXX23 ~unique_ptr() { reset(); }\n      |                                                                       ^\n/Users/kiro/hyle-scratch/compute-unified/source-c8874688/include/hyle/compute/apple_memory.h:96:3: note: in instantiation of member function 'std::unique_ptr<hyle::compute::apple::detail::MemoryState>::~unique_ptr' requested here\n   96 |   MemoryResource() noexcept = default;\n      |   ^\n/Users/kiro/hyle-scratch/compute-unified/native-memory-owner-consumer.cc:15:26: note: in defaulted default constructor for 'hyle::compute::apple::MemoryResource' first required here\n   15 |   native::MemoryResource empty;\n      |                          ^\n/Users/kiro/hyle-scratch/compute-unified/source-c8874688/include/hyle/compute/apple_memory.h:13:27: note: forward declaration of 'hyle::compute::apple::detail::MemoryState'\n   13 | namespace detail { struct MemoryState; struct LeasedInvocationState; }\n      |                           ^\n1 error generated.\n",
+      "stdout": ""
+    },
+    "vulkan": {
+      "route": "vulkan",
+      "command": [
+        "/usr/bin/clang++",
+        "-DHYLE_COMPUTE_ROUTE_VULKAN_BUILD",
+        "-DHYLE_COMPUTE_VULKAN=1",
+        "-DHYLE_IO_HAS_COROUTINE_TRANSPORT=1",
+        "-DHYLE_STATIC",
+        "-I/Users/kiro/hyle-scratch/compute-unified/source-c8874688/include",
+        "-I/Users/kiro/hyle-scratch/compute-unified/source-c8874688/src/compute_route_vulkan",
+        "-I/Users/kiro/hyle-scratch/compute-unified/source-c8874688/src/compute_route_vulkan/../compute",
+        "-I/Users/kiro/hyle-scratch/compute-unified/a-vulkan/selected-graph/static-sdk-build/src/compute_route_vulkan",
+        "-I/Users/kiro/hyle-scratch/compute-unified/a-vulkan/selected-graph/static-sdk-build/src/compute_route_vulkan/shaders",
+        "-isystem",
+        "/Users/kiro/Library/Caches/hyle/dependencies/v1/sources/vulkan_headers-e3b1eec08173-69d6adc9001f/include",
+        "-O3",
+        "-DNDEBUG",
+        "-std=c++23",
+        "-arch",
+        "arm64",
+        "-mmacosx-version-min=14.4",
+        "-Wall",
+        "-Wextra",
+        "-Wpedantic",
+        "-MD",
+        "-MT",
+        "src/compute_route_vulkan/CMakeFiles/hyle_compute_route_vulkan.dir/vulkan_batch.cc.o",
+        "-MF",
+        "src/compute_route_vulkan/CMakeFiles/hyle_compute_route_vulkan.dir/vulkan_batch.cc.o.d",
+        "-c",
+        "/Users/kiro/hyle-scratch/compute-unified/native-memory-owner-consumer.cc",
+        "-o",
+        "/Users/kiro/hyle-scratch/compute-unified/native-memory-vulkan-red.o"
+      ],
+      "exit_code": 1,
+      "stderr": "In file included from /Users/kiro/hyle-scratch/compute-unified/native-memory-owner-consumer.cc:5:\nIn file included from /Users/kiro/hyle-scratch/compute-unified/source-c8874688/include/hyle/compute/vulkan_memory.h:3:\nIn file included from /Users/kiro/hyle-scratch/compute-unified/source-c8874688/include/hyle/compute/vulkan.h:18:\nIn file included from /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/c++/v1/functional:557:\nIn file included from /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/c++/v1/__functional/boyer_moore_searcher.h:21:\nIn file included from /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/c++/v1/__memory/shared_ptr.h:36:\n/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/c++/v1/__memory/unique_ptr.h:73:19: error: invalid application of 'sizeof' to an incomplete type 'hyle::compute::vulkan::detail::MemoryState'\n   73 |     static_assert(sizeof(_Tp) >= 0, \"cannot delete an incomplete type\");\n      |                   ^~~~~~~~~~~\n/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/c++/v1/__memory/unique_ptr.h:291:7: note: in instantiation of member function 'std::default_delete<hyle::compute::vulkan::detail::MemoryState>::operator()' requested here\n  291 |       __deleter_(__tmp);\n      |       ^\n/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/c++/v1/__memory/unique_ptr.h:257:71: note: in instantiation of member function 'std::unique_ptr<hyle::compute::vulkan::detail::MemoryState>::reset' requested here\n  257 |   _LIBCPP_HIDE_FROM_ABI _LIBCPP_CONSTEXPR_SINCE_CXX23 ~unique_ptr() { reset(); }\n      |                                                                       ^\n/Users/kiro/hyle-scratch/compute-unified/source-c8874688/include/hyle/compute/vulkan_memory.h:109:3: note: in instantiation of member function 'std::unique_ptr<hyle::compute::vulkan::detail::MemoryState>::~unique_ptr' requested here\n  109 |   MemoryResource() noexcept = default;\n      |   ^\n/Users/kiro/hyle-scratch/compute-unified/native-memory-owner-consumer.cc:15:26: note: in defaulted default constructor for 'hyle::compute::vulkan::MemoryResource' first required here\n   15 |   native::MemoryResource empty;\n      |                          ^\n/Users/kiro/hyle-scratch/compute-unified/source-c8874688/include/hyle/compute/vulkan_memory.h:15:27: note: forward declaration of 'hyle::compute::vulkan::detail::MemoryState'\n   15 | namespace detail { struct MemoryState; struct LeasedInvocationState; struct MemoryAccess; struct TransferState; struct TransferAccess; }\n      |                           ^\n1 error generated.\n",
+      "stdout": ""
+    }
+  },
+  "scope": "public-only source/relocated static/shared owners plus six host sanitizer empty/vector/factory move/destroy/close consumer",
+  "P0": "only out-of-line null unique_ptr default initialization; no added fields/allocation/math/queue",
+  "P1": "NOT_APPLICABLE compile/empty construction correction; old NR certificates retained",
+  "raw_sha256": "2c731fc4c53ccb9a238b48ceeabf1f2588be824f111ed00757070eadb939e92f"
+}

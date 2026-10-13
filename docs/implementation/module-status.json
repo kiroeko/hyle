@@ -514,10 +514,14 @@
     },
     {
       "module": "compute_route_apple",
-      "state": "CANDIDATE",
+      "state": "CLOSED",
       "record": "docs/implementation/tasks/compute/inference-native-memory-default-construction.md",
-      "summary": "G10/交付MC CANDIDATE：两公开MemoryResource默认构造移到原TU并导出，原noexcept/空状态/布局/工厂/数学不改；两路线实际source public-only默认owner/vector/move/close通过，四SDK/宿主风险待验。原NR终审保留。",
-      "candidate": "a3fa6be8cf22780491e8b383ef1aafb678db1e23"
+      "summary": "G10/交付MC-01/02有限轮CLOSED：公开opaque资源默认构造移到原完整State TU并导出，真实source/四搬迁SDK/六宿主san与Windows普通consumer编译链接通过；原noexcept/空状态/布局/工厂/数学不改，原NR/P1 terminal保留；G01/G02-G10其他范围不代签。",
+      "candidate": "a3fa6be8cf22780491e8b383ef1aafb678db1e23",
+      "performance": {
+        "tier": "P0",
+        "evidence": "evidence/correctness/inference-native-memory-default-construction/receipt.json"
+      }
     },
     {
       "module": "graph_route_apple",
@@ -532,10 +536,14 @@
     },
     {
       "module": "compute_route_vulkan",
-      "state": "CANDIDATE",
+      "state": "CLOSED",
       "record": "docs/implementation/tasks/compute/inference-native-memory-default-construction.md",
-      "summary": "G10/交付MC CANDIDATE：两公开MemoryResource默认构造移到原TU并导出，原noexcept/空状态/布局/工厂/数学不改；两路线实际source public-only默认owner/vector/move/close通过，四SDK/宿主风险待验。原NR终审保留。",
-      "candidate": "a3fa6be8cf22780491e8b383ef1aafb678db1e23"
+      "summary": "G10/交付MC-01/02有限轮CLOSED：公开opaque资源默认构造移到原完整State TU并导出，真实source/四搬迁SDK/六宿主san与Windows普通consumer编译链接通过；原noexcept/空状态/布局/工厂/数学不改，原NR/P1 terminal保留；G01/G02-G10其他范围不代签。",
+      "candidate": "a3fa6be8cf22780491e8b383ef1aafb678db1e23",
+      "performance": {
+        "tier": "P0",
+        "evidence": "evidence/correctness/inference-native-memory-default-construction/receipt.json"
+      }
     },
     {
       "module": "graph_route_vulkan",
