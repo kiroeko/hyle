@@ -369,9 +369,10 @@
     },
     {
       "module": "compute_provider_ggml",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/inference-g01-cpu-paged-resident.md",
-      "summary": "CPU准确页验证发现GCC14有signed/unsigned比较警告；限定CP-01冷计划长度显式转换修正，原API/数学/成本不变，3cf源与ASan14tests证据保留。"
+      "summary": "CPU准确页candidate1e9：Windows五tests与连续页演化PASS，GCC比较警告有限修正；原3cf ASan14tests保留，最终风险/SDK/P1进行，整个G01未完。",
+      "candidate": "1e9cdfd45307ea4a15b92374377ad2b268203193"
     },
     {
       "module": "graph_provider_onednn",

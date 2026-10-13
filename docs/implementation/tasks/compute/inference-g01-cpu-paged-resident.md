@@ -1,6 +1,6 @@
 # G01 CPU准确页直接驻留读取
 
-状态：AUDITED，2026-10-14；owners `compute_provider_ggml`、`compute_ggml_runtime`，baseline
+状态：CANDIDATE，2026-10-14；owners `compute_provider_ggml`、`compute_ggml_runtime`，baseline
 `118a8947518f02e0c02aa51918f9d7d15c421ed6`。原CPU resident/ragged973与Vulkanbc0有限
 CLOSED均保留；本轮不是重新研究全库，也不把CPU页资格代签Apple/Vulkan/联合G02。
 
@@ -97,3 +97,7 @@ resident/ragged负空间；实际provider/native_batch与原vendor ops均有addr
 该次编译出现冷计划keys uint64与queries int32比较警告，CP-01仅补已验证非负query
 长度的显式uint64转换；provider退回AUDITED，runtime candidate不变。原3cf源码/
 ASan记录保留，后续增量与最终candidate身份单独记录，不把警告或未跑门省略。
+
+最终provider candidate `1e9cdfd45307ea4a15b92374377ad2b268203193`，runtime3cf产品未变。显式冷
+转换后Windows同五tests再次PASS（增量2.750s、run40.860s），不改变语义/数学/
+费用；后续风险与交付以该最终产品身份记录。原3cf门与警告原日志保留。
