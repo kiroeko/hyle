@@ -1,6 +1,6 @@
 # G01 Apple/Vulkan 原生精确页读取
 
-状态：SCOPED，2026-10-14。baseline
+状态：AUDITED，2026-10-14。baseline
 `9856c7c6e4f8e7f3729efbc89e43352db49b4c4e`；授权来自
 [十项执行总卡](../project/inference-gaps-goal-execution-2026-10.md)。本卡先定问题和验证，
 未AUDITED前不改产品；原finite resident/ragged/CPU page/default construction关闭证据保留。
@@ -81,3 +81,51 @@ page admission/actual retirement是两原native路线共用机制。为复用该
 保留。只允许在AUDITED冻结后做必要共同承载，不扩大producer/政策/第二queue或仪器。
 新native公共batch入口/metadata形状/Context借用与资格负空间尚需冻结，当前五owner均
 SCOPED；不以完成source audit宣称AUDITED、CANDIDATE或数学PASS。
+
+## API、承载和有限FIX冻结
+
+当前五owner进入AUDITED；原SCOPED5/source audit为输入。通用机制SELF只owned metadata/
+version、原固定bank与权限协调，BORROW全部原native数学、CopyBatch/Invocation/实际退休。
+metadata与math admission分开：common recipe可描述F16/BF16，Apple承载F16/BF16，Vulkan
+先沿已验F16/fullF32原数学域。Vulkan BF16全链不在此处冒称接受；原goal G05/G07实际
+dtype/语义选择与未证资格保留，不由carrier存在取消或代签这些项。
+
+普通调用冻结：先`NativePagedBatchProgram::prepare(schema, options)`，两route各自
+`PagedBatchInvocation::create(context, recipe, device, staging, options)`；
+`prepare_batch(layout)`→`bind(query_read, key_frame, value_frame)`→`submit()`返回原
+OwnedResult<route::Results>，report/close/drain沿原native规则。普通用户不传第四个raw
+metadata tensor，不得自行扩大arena permission。Reference MaterializedBatchInvocation
+仍表达不同的显式reference算法，不新增旧签名转发或兼容层。
+
+Common recipe只持schema/scale/causal及四个输入desc：packed Q、真实page capacity K/V、
+I32 max_page_refs的owned页表。version保同schema完整owned layout/generation，冷生成
+仅O(max_page_refs) I32表，unused slots零初始化；没有Q/head/KV展开、mask或payload拷贝。
+version只借caller layout的创建调用；导出ReadLease保recipe/layout/allocator/budget owner。
+所有大小/费用有溢出检查与显式host metadata budget；host table与metadata wrapper分账。
+
+Native slots复用compute_batch原controller的banks、CopyBatch upload、frame compare、
+原LeaseUsePool和native retirement：引用与page-native只由policy决定metadata count/recipe。
+page-native一个table/staging与两mirror bank，不复制原controller。prepare先验schema/
+原reuse gate/旧output/permission use，再cold准备原native Program与table；本轮topology
+变化cold prepare如实收费，不声称G06增量planning/capture完成。Context/device/staging/
+allocator借用且保持地址稳定，活过所有work与结果；控制外部串行，独立slots无共享mutable
+bindings。接纳前失败不得发布新generation；已接纳upload/math错误或未知完成沿原failed/
+close/drain，只有actual retirement释放guard；metadata/scratch/native private UNKNOWN保。
+
+Native math每request只取active Q与其owned页表区间；物理K/V root shape/bounds保持真值，
+logical KV独立由refs/tail得出，允许逻辑重复页大于physical容量，不伪造大view。只运行
+实际页地址qualified原kernel，query/output/原mask或causal表示费用单列。页表origin、
+dtype/count与实际root/resource身份都核；空request不读KV。普通nonpaged/ragged数学、
+layout及常态Request/Program不加page fields；原native graph record/cancel退休合同保。
+
+| FIX | 真实owner与允许改动 | 验收 |
+|---|---|---|
+| NP-01 | compute_batch owned NativePagedBatchProgram/Version、四input/单I32 table、预算/identity/负空间 | 非模型metadata消费、foreign schema/overflow/empty/share/tail/逐分配失败、源/SDK/逐头 |
+| NP-02 | compute_batch 原MaterializedNativeState泛化metadata policy；两native route薄typed PagedBatchInvocation | exact frames/generation、两banks/slots、旧result、partial failure/actual retirement、原reference负空间 |
+| NP-03 | compute_route_apple 原MLX private paged primitive与原vector/2pass/steel/NAX（含dsplit）页读地址 | F16/BF16三D/causal/两request/任意page16、独立double、无warm全KV copy与头展开 |
+| NP-04 | compute_provider_ggml_vulkan 原recipe私有页op/root/table资格；compute_ggml_runtime原fullF32 scalar shader/host地址+logical KV | 不增长128byte普通push layout、不改normal coopmat、全读点/tail/重复页、原record与数值 |
+| NP-05 | 两route public native批次入口与guide/直接consumer，selector真实native/Graph负空间 | 原预声明正确性/宿主风险/三交付/逐头/同合同P1，未跑门保UNPROVEN |
+
+私有shader/packet细节可在上述原math身份下有界细化；改变public形状、owner、权限或成本
+等级即退回AUDITED。所有FIX均未验收，不能CANDIDATE或签整个G01；G02新joint binding
+待原page-reading数学资格后由其真实owner另行SCOPED/AUDITED，原goal域保留。
