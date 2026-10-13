@@ -49,12 +49,12 @@ struct Slot final {
 Status qualify(void *, BatchCapacity capacity,
                const BatchProgramOptions &options) noexcept {
   HYLE_RETURN_IF_ERROR(validate_batch_capacity(capacity));
-  if (capacity.storage != BatchStorage::kRagged ||
+  if ((capacity.storage != BatchStorage::kRagged && capacity.storage != BatchStorage::kPaged) ||
       (capacity.data_type != DataType::kFloat16 &&
        capacity.data_type != DataType::kBFloat16) ||
       (capacity.head_dim != 64 && capacity.head_dim != 128 &&
        capacity.head_dim != 256) || !std::isfinite(options.scale))
-    return Status::Unimplemented("ggml CPU native batch requires qualified ragged flash");
+    return Status::Unimplemented("ggml CPU native batch requires qualified resident flash");
   const auto properties = options.resource.properties();
   if (!properties.has(mem::MemoryProperty::kHostAccessible) ||
       !properties.has(mem::MemoryProperty::kHostDeviceCoherent))
@@ -96,10 +96,15 @@ Result<bool> update(void *value, const BatchLayoutVersion &layout,
     return a.size() == b.size() && std::equal(a.begin(), a.end(), b.begin());
   };
   if (!equal(old.query_indptr, next.query_indptr) ||
-      !equal(old.kv_indptr, next.kv_indptr))
+      !equal(old.kv_indptr, next.kv_indptr) ||
+      !equal(old.page_indices,next.page_indices) ||
+      !equal(old.last_page_lengths,next.last_page_lengths))
     return false;
-  slot.layout = layout;
+  // Paged recipes borrow this immutable topology, not the caller's arrays.
+  // Equal content permits reuse while its original owner remains retained.
+  if(slot.capacity.storage==BatchStorage::kRagged)slot.layout = layout;
   *output = report(slot, true);
+  output->layout_generation=layout.generation();
   return true;
 }
 detail::EnqueueResult plan(void *value, Queue &, const BatchLayoutVersion &layout,
@@ -110,6 +115,7 @@ detail::EnqueueResult plan(void *value, Queue &, const BatchLayoutVersion &layou
   if (!layout.valid() || layout.schema().capacity() != slot.capacity)
     return detail::EnqueueResult::rejected(Status::InvalidArgument("ggml CPU ragged layout capacity"));
   try {
+    slot.layout=layout;
     const auto host = layout.host();
     const auto width = data_type_size(slot.capacity.data_type);
     if (layout.facts().requests > slot.options.max_float_workspace_bytes /
@@ -125,7 +131,10 @@ detail::EnqueueResult plan(void *value, Queue &, const BatchLayoutVersion &layou
     slot.known_bytes = metadata_bytes;
     for (std::size_t index = 0; index < layout.facts().requests; ++index) {
       const auto queries = host.query_indptr[index + 1] - host.query_indptr[index];
-      const auto keys = host.kv_indptr[index + 1] - host.kv_indptr[index];
+      const auto refs = host.kv_indptr[index + 1] - host.kv_indptr[index];
+      const bool paged=slot.capacity.storage==BatchStorage::kPaged;
+      const auto keys = paged?(refs?std::uint64_t(refs-1)*slot.capacity.page_size+
+          std::uint32_t(host.last_page_lengths[index]):0):std::uint64_t(refs);
       if (!queries)
         continue;
       if (!keys || (slot.options.causal && keys < queries)) {
@@ -152,7 +161,8 @@ detail::EnqueueResult plan(void *value, Queue &, const BatchLayoutVersion &layou
       auto q = TensorDesc::dense(slot.capacity.data_type,
           std::array<std::int64_t, 4>{1, queries, slot.capacity.query_heads, slot.capacity.head_dim});
       auto k = TensorDesc::dense(slot.capacity.data_type,
-          std::array<std::int64_t, 4>{1, keys, slot.capacity.kv_heads, slot.capacity.head_dim});
+          std::array<std::int64_t, 4>{1, paged?std::int64_t(slot.capacity.max_pages)*slot.capacity.page_size:
+              static_cast<std::int64_t>(keys), slot.capacity.kv_heads, slot.capacity.head_dim});
       if (!q || !k) {
         const auto error = !q ? q.error() : k.error();
         slot.clear();
@@ -162,15 +172,19 @@ detail::EnqueueResult plan(void *value, Queue &, const BatchLayoutVersion &layou
       request->output = *q;
       request->query_offset = static_cast<std::size_t>(host.query_indptr[index]) *
           slot.capacity.query_heads * slot.capacity.head_dim * width;
-      request->kv_offset = static_cast<std::size_t>(host.kv_indptr[index]) *
+      request->kv_offset = paged?0:static_cast<std::size_t>(host.kv_indptr[index]) *
           slot.capacity.kv_heads * slot.capacity.head_dim * width;
       Recipe recipe;
       recipe.values = {*q, *k, *k, *q};
       recipe.inputs = {0, 1, 2};
       recipe.outputs = {3};
-      recipe.nodes.push_back({Operation(ScaledDotProductAttention{
+      const auto operation=paged?Operation::custom(PagedRead{
+          .pages=host.page_indices.subspan(static_cast<std::size_t>(host.kv_indptr[index]),static_cast<std::size_t>(refs)),
+          .logical_rows=static_cast<std::uint32_t>(keys),.page_size=slot.capacity.page_size,
+          .scale=slot.options.scale,.causal=slot.options.causal}):Operation(ScaledDotProductAttention{
           .layout = AttentionLayout::kBatchSequenceHeadDepth,
-          .scale = slot.options.scale, .causal = slot.options.causal}), {0, 1, 2}, {3}});
+          .scale = slot.options.scale, .causal = slot.options.causal});
+      recipe.nodes.push_back({operation, {0, 1, 2}, {3}});
       const auto compiled = compile(slot.context, std::move(recipe), slot.allocator, &request->prepared);
       if (compiled.kind != ProviderPrepareOutcomeKind::kPrepared) {
         slot.clear();

@@ -73,6 +73,57 @@
         }
       ],
       "after_sha256": "7331342629eb447d08bfc5cb5d2e69cb26086b7a5413a126c76a99b9e66ddf6a"
+    },
+    {
+      "path": "src/ggml-cpu/ops.cpp",
+      "before_sha256": "dbffc3df9816cc3f7e5428f9fb9afa13db4ac2979899605a057121bb031ba136",
+      "after_sha256": "585b9fc8bb3346f72b2060b3d2a732bd5d200e9746cd595ab841f2618c7bc58a",
+      "edits": [
+        {
+          "before": "static void ggml_compute_forward_flash_attn_ext_f16_one_chunk(",
+          "after": "// Private CPU page-address adapter. The cold HYLE batch owner validates and\n// retains this I32 table; all attention arithmetic remains the original kernel.\nstatic inline bool hyle_flash_paged(const ggml_tensor * dst) {\n    return dst->src[5] != nullptr && dst->op_params[5] == 0x48595047;\n}\nstatic inline int64_t hyle_flash_rows(const ggml_tensor * dst, int64_t rows) {\n    return hyle_flash_paged(dst) ? dst->op_params[4] : rows;\n}\nstatic inline size_t hyle_flash_row_offset(const ggml_tensor * dst, int64_t row, size_t stride) {\n    if (!hyle_flash_paged(dst)) return size_t(row)*stride;\n    const auto size = uint32_t(dst->op_params[6]);\n    const auto * pages = static_cast<const int32_t *>(dst->src[5]->data);\n    return (uint64_t(uint32_t(pages[row/size]))*size + uint64_t(row)%size)*stride;\n}\n\nstatic void ggml_compute_forward_flash_attn_ext_f16_one_chunk("
+        },
+        {
+          "before": "\n            const char * k_data = (const char *) k->data + ( ic*nbk1 + ik2*nbk2 + ik3*nbk3);\n            kq_vec_dot(DK, &s, 0, k_data, 0, Q_q, 0, 1);\n",
+          "after": "\n            const char * k_data = (const char *) k->data + ( hyle_flash_row_offset(dst,ic,nbk1) + ik2*nbk2 + ik3*nbk3);\n            kq_vec_dot(DK, &s, 0, k_data, 0, Q_q, 0, 1);\n"
+        },
+        {
+          "before": "\n            const char * v_data = ((const char *) v->data + (ic*nbv1 + iv2*nbv2 + iv3*nbv3));\n\n",
+          "after": "\n            const char * v_data = ((const char *) v->data + (hyle_flash_row_offset(dst,ic,nbv1) + iv2*nbv2 + iv3*nbv3));\n\n"
+        },
+        {
+          "before": "\n        for (int64_t ic = 0; ic < nek1; ic += KV_TILE_SZ) {\n            const int kv_tile = (int)std::min((int64_t)KV_TILE_SZ, nek1 - ic);\n\n",
+          "after": "\n        for (int64_t ic = 0; ic < hyle_flash_rows(dst,nek1); ic += KV_TILE_SZ) {\n            const int kv_tile = (int)std::min((int64_t)KV_TILE_SZ, hyle_flash_rows(dst,nek1) - ic);\n\n"
+        },
+        {
+          "before": "            for (int tk = 0; tk < kv_tile; tk++) {\n                const char * k_data = (const char *)k->data + (ic + tk)*nbk1 + ik2*nbk2 + ik3*nbk3;\n                if (kv_type == GGML_TYPE_F16) {\n",
+          "after": "            for (int tk = 0; tk < kv_tile; tk++) {\n                const char * k_data = (const char *)k->data + hyle_flash_row_offset(dst,ic+tk,nbk1) + ik2*nbk2 + ik3*nbk3;\n                if (kv_type == GGML_TYPE_F16) {\n"
+        },
+        {
+          "before": "            for (int tk = 0; tk < kv_tile; tk++) {\n                const char * v_data = (const char *)v->data + (ic + tk)*nbv1 + iv2*nbv2 + iv3*nbv3;\n                if (kv_type == GGML_TYPE_F16) {\n",
+          "after": "            for (int tk = 0; tk < kv_tile; tk++) {\n                const char * v_data = (const char *)v->data + hyle_flash_row_offset(dst,ic+tk,nbv1) + iv2*nbv2 + iv3*nbv3;\n                if (kv_type == GGML_TYPE_F16) {\n"
+        },
+        {
+          "before": "    const int64_t DV        = v->ne[0];\n    const int64_t nek1      = k->ne[1];\n    const int64_t n_q_heads = q->ne[2];\n",
+          "after": "    const int64_t DV        = v->ne[0];\n    const int64_t nek1      = hyle_flash_rows(dst,k->ne[1]);\n    const int64_t n_q_heads = q->ne[2];\n"
+        },
+        {
+          "before": "    const bool kv_is_f32_or_f16 = (k->type == GGML_TYPE_F32 || k->type == GGML_TYPE_F16);\n    const bool use_split_kv_path = !use_ref && (neq1 == 1 && neq3 == 1) && kv_is_f32_or_f16 && (k->type == v->type) && q->type == GGML_TYPE_F32 && nek1 >= 512;\n\n    if (use_split_kv_path) {\n        const int64_t chunk_size = (nek1 + nth - 1) / nth;\n\n",
+          "after": "    const bool kv_is_f32_or_f16 = (k->type == GGML_TYPE_F32 || k->type == GGML_TYPE_F16);\n    const bool use_split_kv_path = !use_ref && (neq1 == 1 && neq3 == 1) && kv_is_f32_or_f16 && (k->type == v->type) && q->type == GGML_TYPE_F32 && hyle_flash_rows(dst,nek1) >= 512;\n\n    if (use_split_kv_path) {\n        const int64_t chunk_size = (hyle_flash_rows(dst,nek1) + nth - 1) / nth;\n\n"
+        },
+        {
+          "before": "        const int64_t ic_start = ith * chunk_size;\n        const int64_t ic_end   = std::min(ic_start + chunk_size, nek1);\n\n",
+          "after": "        const int64_t ic_start = ith * chunk_size;\n        const int64_t ic_end   = std::min(ic_start + chunk_size, hyle_flash_rows(dst,nek1));\n\n"
+        },
+        {
+          "before": "\n        if (ic_start < nek1) {\n            for (int64_t q_head = 0; q_head < neq2; q_head++) {\n",
+          "after": "\n        if (ic_start < hyle_flash_rows(dst,nek1)) {\n            for (int64_t q_head = 0; q_head < neq2; q_head++) {\n"
+        },
+        {
+          "before": "            } else {\n                ggml_compute_forward_flash_attn_ext_f16_one_chunk(params, dst, ir0, ir1, 0, nek1, nullptr, 0);\n            }\n",
+          "after": "            } else {\n                ggml_compute_forward_flash_attn_ext_f16_one_chunk(params, dst, ir0, ir1, 0, hyle_flash_rows(dst,nek1), nullptr, 0);\n            }\n"
+        }
+      ]
     }
   ]
 }

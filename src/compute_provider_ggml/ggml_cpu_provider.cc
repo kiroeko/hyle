@@ -839,8 +839,13 @@ std::vector<ggml_tensor *> lower(Program &program, Invocation &invocation,
     result = ggml_mul_mat(context, value, probabilities);
     if (!ggml_prec_set_acc(result, GGML_PREC_F32)) return {};
     result = ggml_permute(context, result, 0, 2, 1, 3);
-  } else if (const auto *attention =
-                 node.operation.get_if<ScaledDotProductAttention>()) {
+  } else if (const auto paged=node.operation.custom_as<internal::PagedRead>();
+             paged || node.operation.get_if<ScaledDotProductAttention>()) {
+    const auto ordinary=node.operation.get_if<ScaledDotProductAttention>();
+    const ScaledDotProductAttention paged_attention{
+        .layout=AttentionLayout::kBatchSequenceHeadDepth,
+        .scale=paged?paged->scale:1.F,.causal=paged?paged->causal:false};
+    const auto *attention=ordinary?ordinary:&paged_attention;
     auto *query = invocation.values[node.inputs[0]];
     auto *key = invocation.values[node.inputs[1]];
     auto *value = invocation.values[node.inputs[2]];
@@ -858,7 +863,8 @@ std::vector<ggml_tensor *> lower(Program &program, Invocation &invocation,
         const auto &mask_values = program.attention_masks[node_index];
         if (mask_values.empty())
           return {};
-        mask = ggml_new_tensor_2d(context, GGML_TYPE_F16, key->ne[1],
+        mask = ggml_new_tensor_2d(context, GGML_TYPE_F16,
+                                  paged?paged->logical_rows:key->ne[1],
                                   query->ne[1]);
         mask->data = const_cast<ggml_fp16_t *>(mask_values.data());
       }
@@ -866,6 +872,14 @@ std::vector<ggml_tensor *> lower(Program &program, Invocation &invocation,
                                    attention->scale, 0.0F, 0.0F);
       if (!ggml_prec_set_acc(result, GGML_PREC_F32))
         return {};
+      if(paged){
+        auto *pages=ggml_new_tensor_1d(context,GGML_TYPE_I32,paged->pages.size());
+        pages->data=const_cast<std::int32_t*>(paged->pages.data());
+        result->src[5]=pages;
+        result->op_params[5]=0x48595047;
+        result->op_params[6]=static_cast<std::int32_t>(paged->page_size);
+        ggml_flash_attn_ext_set_n_kv_max(result,static_cast<std::int32_t>(paged->logical_rows));
+      }
       if (!bshd)
         result = ggml_permute(context, result, 0, 2, 1, 3);
     } else {
@@ -1339,6 +1353,21 @@ bool supports(void *context, Operation operation,
         return description.is_dense() && representable(description);
       }))
     return false;
+  if(const auto paged=operation.custom_as<PagedRead>()){
+    if(inputs.size()!=3 || outputs.size()!=1 || !paged->page_size ||
+       !paged->logical_rows || inputs[0].rank()!=4 ||
+       (inputs[0].data_type()!=DataType::kFloat16 && inputs[0].data_type()!=DataType::kBFloat16) ||
+       (inputs[0].dimensions().back()!=64 && inputs[0].dimensions().back()!=128 && inputs[0].dimensions().back()!=256))
+      return false;
+    const auto &k=inputs[1];
+    if(k.rank()!=4 || k.dimensions()[1]%paged->page_size ||
+       inputs[0].dimensions()[0]!=1 || paged->logical_rows>INT32_MAX)
+      return false;
+    TensorDesc inferred;
+    return paged->infer_output_descriptions(inputs,std::span(&inferred,1)).ok() &&
+        inferred==outputs[0] && supports(context,Operation(ScaledDotProductAttention{
+            .layout=AttentionLayout::kBatchSequenceHeadDepth,.scale=paged->scale,.causal=false}),inputs,outputs);
+  }
   bool large_encoded_gather = false;
 #if defined(HYLE_GGML_CPU_IQ1_EXTENSIONS)
   // The fixed CPU-only core addresses GET_ROWS source bytes with int64 row
@@ -1697,7 +1726,11 @@ ProviderPrepareOutcome compile(void *context, Recipe recipe,
             matrix[row * width + column] =
                 std::popcount(row & column) % 2 == 0 ? scale : -scale;
       }
-      if (const auto *attention = node.operation.get_if<ScaledDotProductAttention>();
+      const auto paged=node.operation.custom_as<PagedRead>();
+      const ScaledDotProductAttention paged_attention{
+          .layout=AttentionLayout::kBatchSequenceHeadDepth,
+          .scale=paged?paged->scale:1.F,.causal=paged?paged->causal:false};
+      if (const auto *attention = paged?&paged_attention:node.operation.get_if<ScaledDotProductAttention>();
           attention && attention->causal &&
           native_flash(recipe.values[node.inputs[0]].data_type())) {
         const auto sequence =
@@ -1705,7 +1738,7 @@ ProviderPrepareOutcome compile(void *context, Recipe recipe,
                                                                           : 2U;
         const auto query_length = static_cast<std::size_t>(
             recipe.values[node.inputs[0]].dimensions()[sequence]);
-        const auto key_length = static_cast<std::size_t>(
+        const auto key_length = paged?static_cast<std::size_t>(paged->logical_rows):static_cast<std::size_t>(
             recipe.values[node.inputs[1]].dimensions()[sequence]);
         if (query_length > SIZE_MAX / key_length)
           return ProviderPrepareOutcome::error(

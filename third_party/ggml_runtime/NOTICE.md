@@ -34,3 +34,10 @@ The imported array remains owned and allocated by MLX, never freed by ggml.
 Native workspace buffer creation also checks metadata allocation and releases
 partially initialized Metal/host resources, including a failed C++ backend
 buffer wrapper. These changes affect cold allocation and failure paths only.
+
+The CPU paged-address integration maps logical K/V rows through a cold owned
+I32 physical page table for private tagged batch graphs. It retains the original
+CPU flash vec-dot, tiled GEMM, online softmax, split reduction and workspace;
+only effective row counts and four K/V address reads are adapted. Ordinary
+untagged CPU attention keeps its original data access. This is not a new math
+kernel or a public ggml ABI promise; Vulkan/Metal algorithms are unchanged.
