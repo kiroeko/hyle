@@ -83,3 +83,10 @@ Vulkan各四tests全部实际PASS；两新增产品batch TU、对应public测试
 测试真实compile commands的fsanitize flags核对。ASan detect_leaks=0按原平台限制，
 不签LSan/shader/driver或vendor私有GPU内存；原native shader/runtime源码不改。
 P1仍待，未继承single或CPU结果；Windows仅定向4jobs编译原Vulkan库，不运行本机GPU。
+该候选[交付/宿主风险证据](../../../../evidence/correctness/inference-g01-native-ragged-candidate/README.md)
+已封存四SDK、六san、四public installed header object compile与Windows affected library
+compile PASS；原stage失败记录独立保留。native Vulkan私有比较器已实现并在Air预检
+编译/oracle PASS：按request独立原full-F32 flash shader recipe映射到同一个原Program，
+原F16 query/output适配、mask/优化/split-K承载保留，输出借原storage Concat，三实际
+shape与原F16 bound2e-3/readonly/tail。它不调用candidate attention lower/math，尚未
+正式资格/采样，不由诊断结果签performance PASS。Apple比较器及正式两平台门待续。
