@@ -289,7 +289,8 @@ Result<Program> prepare_plan(const Context &context, const Plan &plan,
         };
         while (!step.control_boundary && end < plan.steps.size() &&
                !plan.steps[end].control_boundary &&
-               ((matches_mature_default(*program, plan.steps[end], DefaultCarrier::kGgml) &&
+               ((!plan.steps[end].operation.get_if<View>() &&
+                 matches_mature_default(*program, plan.steps[end], DefaultCarrier::kGgml) &&
                  managed_operation(*program, plan.steps[end])) ||
                 internal_reshape(plan.steps[end])))
           ++end;
