@@ -1,0 +1,98 @@
+{
+  "candidate": "d91a523df9bce21eb81c13d9bf2a8f3f7d3ea80f",
+  "mode": "tsan",
+  "scope": "WSL2 CPU original ggml finite attention and positive-strided resident cache; four actual layout TU tests under TSan, not all CPU ops or graph lifecycle tests",
+  "stages": [
+    {
+      "stage": "configure",
+      "command": [
+        "cmake",
+        "-S",
+        "/home/kiro/hyle-f1/sanitizers/source-03242e7723cb",
+        "-B",
+        "/home/kiro/hyle-f1/sanitizers/tsan-03242e7723cb",
+        "-DCMAKE_PROJECT_INCLUDE=/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g01/cpu-tsan-project.cmake"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 25.281557984000017,
+      "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g01/cpu-tsan-configure-1.log"
+    },
+    {
+      "stage": "build",
+      "command": [
+        "cmake",
+        "--build",
+        "/home/kiro/hyle-f1/sanitizers/tsan-03242e7723cb",
+        "--target",
+        "g01_cpu_attention",
+        "--parallel",
+        "4"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 22.007680725,
+      "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g01/cpu-tsan-build-1.log"
+    },
+    {
+      "stage": "run",
+      "command": [
+        "setarch",
+        "x86_64",
+        "-R",
+        "/home/kiro/hyle-f1/sanitizers/tsan-03242e7723cb/bin/g01_cpu_attention",
+        "--gtest_filter=GgmlCpuProvider.*Attention*:GgmlCpuProvider.ResidentCache*"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 2.5303958220000027,
+      "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g01/cpu-tsan-run-1.log"
+    }
+  ],
+  "instrumented_inputs": [
+    {
+      "directory": "/home/kiro/hyle-f1/sanitizers/tsan-03242e7723cb",
+      "command": "/usr/bin/g++-14 -DGGML_USE_CPU -DHYLE_COMPUTE_CPU=1 -DHYLE_COMPUTE_GGML_CPU=1 -DHYLE_COMPUTE_PROVIDER_GGML_BUILD -DHYLE_DETAIL_SANITIZER_THREAD=1 -DHYLE_GGML_CPU_F32_FLASH=1 -DHYLE_GGML_CPU_IQ1_EXTENSIONS=1 -DHYLE_GGML_CPU_PROVIDER_VERSION=\\\"ffa4e8b80930029a35991f94e7c8a93cd67730ab+hyle-resource-iq1-bdae1e43311ee486\\\" -DHYLE_STATIC -I/home/kiro/hyle-f1/sanitizers/source-03242e7723cb/include -I/home/kiro/hyle-f1/sanitizers/source-03242e7723cb/src/compute_provider_ggml -I/home/kiro/hyle-f1/sanitizers/source-03242e7723cb/src/compute -I/home/kiro/hyle-f1/sanitizers/source-03242e7723cb/src/compute_ggml_runtime -I/home/kiro/hyle-f1/sanitizers/tsan-03242e7723cb/src/compute_ggml_runtime/source-bdae1e43311ee486/src/../include -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Wno-error=mismatched-new-delete -fsanitize=thread -Wno-tsan -MD -MT src/compute_provider_ggml/CMakeFiles/hyle_compute_provider_ggml.dir/ggml_cpu_provider.cc.o -MF src/compute_provider_ggml/CMakeFiles/hyle_compute_provider_ggml.dir/ggml_cpu_provider.cc.o.d -o src/compute_provider_ggml/CMakeFiles/hyle_compute_provider_ggml.dir/ggml_cpu_provider.cc.o -c /home/kiro/hyle-f1/sanitizers/source-03242e7723cb/src/compute_provider_ggml/ggml_cpu_provider.cc",
+      "file": "/home/kiro/hyle-f1/sanitizers/source-03242e7723cb/src/compute_provider_ggml/ggml_cpu_provider.cc",
+      "output": "src/compute_provider_ggml/CMakeFiles/hyle_compute_provider_ggml.dir/ggml_cpu_provider.cc.o"
+    },
+    {
+      "directory": "/home/kiro/hyle-f1/sanitizers/tsan-03242e7723cb",
+      "command": "/usr/bin/g++-14 -DHYLE_COMPUTE_CPU=1 -DHYLE_COMPUTE_GGML_CPU=1 -DHYLE_COMPUTE_ONEDNN=1 -DHYLE_DETAIL_SANITIZER_THREAD=1 -DHYLE_IO_HAS_COROUTINE_TRANSPORT=1 -DHYLE_STATIC -I/home/kiro/hyle-f1/sanitizers/source-03242e7723cb/include -isystem /mnt/c/public/tools/hyle-dependencies/v1/sources/googletest-063de7e9578f-162765170ae6/googletest/include -isystem /mnt/c/public/tools/hyle-dependencies/v1/sources/googletest-063de7e9578f-162765170ae6/googletest -O3 -DNDEBUG -std=c++23 -Wno-error=mismatched-new-delete -fsanitize=thread -Wno-tsan -MD -MT CMakeFiles/g01_cpu_attention.dir/tests/compute_provider_ggml/layout_broadcast_test.cc.o -MF CMakeFiles/g01_cpu_attention.dir/tests/compute_provider_ggml/layout_broadcast_test.cc.o.d -o CMakeFiles/g01_cpu_attention.dir/tests/compute_provider_ggml/layout_broadcast_test.cc.o -c /home/kiro/hyle-f1/sanitizers/source-03242e7723cb/tests/compute_provider_ggml/layout_broadcast_test.cc",
+      "file": "/home/kiro/hyle-f1/sanitizers/source-03242e7723cb/tests/compute_provider_ggml/layout_broadcast_test.cc",
+      "output": "CMakeFiles/g01_cpu_attention.dir/tests/compute_provider_ggml/layout_broadcast_test.cc.o"
+    }
+  ],
+  "raw": [
+    {
+      "path": "cpu-sanitizer-sync.json",
+      "sha256": "dddd7dc4f0661b9176742be5fd5bb1062c79173020a06394fef06bc82fb2d6b3"
+    },
+    {
+      "path": "cpu-tsan-build-1.log",
+      "sha256": "34b13208c9e0bf718105058632404a9c23795cc4175048c4b936bd6598227a2d"
+    },
+    {
+      "path": "cpu-tsan-configure-1.log",
+      "sha256": "91e64acb08b9279b9f8a850fc9c7833164ec0453e3cbb9013cd19deb161c4704"
+    },
+    {
+      "path": "cpu-tsan-instrumented-inputs.json",
+      "sha256": "344b1575a5682594f127102e72fe7697b33bef18416fb68334633b45ab7fc19e"
+    },
+    {
+      "path": "cpu-tsan-project.cmake",
+      "sha256": "d31e27b9bb9c9a082d7dc2967f8066d2a72a04c2d8c48524124b186a3f1ed991"
+    },
+    {
+      "path": "cpu-tsan-result.json",
+      "sha256": "db601590ff626b18360075668b4ee44b62527ae4feed70b039d3cd0369163632"
+    },
+    {
+      "path": "cpu-tsan-run-1.log",
+      "sha256": "55c8e42d46f2cead9d49db08927c0d68e09d85a30034813c3219894ed94508be"
+    },
+    {
+      "path": "cpu_san_checks.py",
+      "sha256": "176848586203ab4dd57f105cc43b39cbc633fa79fd94b34470e20bccf324208c"
+    }
+  ],
+  "raw_zip_sha256": "d69c3f4e81c73ea09c525d533883699f2021ec20908edfd92c5e65e26bcfdd99"
+}

@@ -104,5 +104,8 @@ offset/padding、source只读、旧输出与独立slots/重放均实跑。生命
 
 候选验收新增：Vulkan source/static/shared与Win地址ASan/Air UBSan/TSan已经分别实跑
 通过，详细收据见原生精度卡；CPU[WSL ASan/LSan](../../../../evidence/correctness/inference-g01-cpu-host-asan/README.md)
-四个实际attention风险tests通过。CPU UBSan/TSan、普通installed SDK、P1和最终review
-仍待；本卡保持CANDIDATE，完成数仍0/10，不把阶段证据算整个G01完成。
+四个实际attention风险tests通过。同一CPU-only GCC14.2验证树的
+[UBSan](../../../../evidence/correctness/inference-g01-cpu-host-ubsan/README.md)与
+[TSan](../../../../evidence/correctness/inference-g01-cpu-host-tsan/README.md)也已实跑通过这四个
+tests，两个变更TU实际插桩核对；不代签全CPU算子或Graph生命周期。普通installed SDK、
+P1和最终review仍待；本卡保持CANDIDATE，完成数仍0/10，不把阶段证据算整个G01完成。
