@@ -118,3 +118,9 @@ CANDIDATE，完成数仍0/10，不把阶段证据算整个G01完成。
 联合为4907行（不是本次净新增行数，也不是推理引擎预计行数）。
 [原始报告](../../../../evidence/correctness/inference-g01-cpu-resident-delivery/resident-owner-loc.json)
 绑定candidate及显式边界，self-check通过；测试/bench/third_party patch不混入产品实现数。
+
+[性能适配器预检](../../../../evidence/correctness/inference-g01-p1-adapter/README.md)已过Windows
+static编译与Air原oracle/稳定重放，覆盖decode、长prefill和留出。原生recipe保split-K、mask-opt、
+相同F32精度和Program输出寿命；首用scratch增长单列。对照stride/alias及私有配置的原FAIL
+保留，产品candidate不变。这里只是采样前的数学/形状预检；统一仪器合同、A/A、双顺序/
+placement与正式controls仍未完成，不能据此签P1或CLOSED。

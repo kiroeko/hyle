@@ -1,0 +1,587 @@
+{
+  "product_candidate": "d91a523df9bce21eb81c13d9bf2a8f3f7d3ea80f",
+  "scope": "Windows static adapter compile and MacBook Air independent original shader oracle/stable replay, NOT a P1 verdict",
+  "air_result": {
+    "product_candidate": "d91a523df9bce21eb81c13d9bf2a8f3f7d3ea80f",
+    "scope": "adapter compile and oracle verification only; not P1 qualified timing",
+    "source_inputs": {
+      "bench/inference_resident_sdpa/CMakeLists.txt": "02990e955fe4139886a8d15730ca64ba4c9e7336b4ae16d2ad21b3aecc3cd78f",
+      "bench/inference_resident_sdpa/reference.cc": "aa57f08cf76eb9c499b823be28eb86a240de51b16b10967ac39fe5d0dad5a976",
+      "bench/inference_resident_sdpa/route_bench.cc": "9cab808e0d8c3bb2e4c484a59c1b7b9a9b287f8e45f34cc585ad7330cef5dca9",
+      "bench/inference_resident_sdpa/reference.h": "9b12a6b2abcce6a592fd3afe1dcd97ae0f825621b511cf9c50ccef5234f7ba03",
+      "bench/inference_resident_sdpa/reference_shaders.py": "914a98dd127fc5302b206b76c6bb25b8380ba8ddbba789b446b0a63094e550e1"
+    },
+    "stages": [
+      {
+        "stage": "configure",
+        "command": [
+          "/opt/homebrew/bin/cmake",
+          "-S",
+          "/Users/kiro/hyle-scratch/compute-unified/source-c8874688",
+          "-B",
+          "/Users/kiro/hyle-scratch/compute-unified/a-vulkan/selected-graph/static-sdk-build",
+          "-DCMAKE_PROJECT_INCLUDE=/Users/kiro/hyle-scratch/compute-unified/g01-p1-project.cmake"
+        ],
+        "extra_env": null,
+        "exit_code": 0,
+        "elapsed_seconds": 14.599300167,
+        "log": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-adapter/configure-1.log"
+      },
+      {
+        "stage": "build",
+        "command": [
+          "/opt/homebrew/bin/cmake",
+          "--build",
+          "/Users/kiro/hyle-scratch/compute-unified/a-vulkan/selected-graph/static-sdk-build",
+          "--target",
+          "g01_resident_bench",
+          "--parallel",
+          "4"
+        ],
+        "extra_env": null,
+        "exit_code": 0,
+        "elapsed_seconds": 63.47851158300001,
+        "log": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-adapter/build-1.log"
+      },
+      {
+        "stage": "oracle",
+        "command": [
+          "/Users/kiro/hyle-scratch/compute-unified/a-vulkan/selected-graph/static-sdk-build/bin/g01_resident_bench"
+        ],
+        "extra_env": {
+          "HYLE_BENCH_VERIFY_ONLY": "1",
+          "HYLE_PERF_APPLE_QOS": "interactive"
+        },
+        "exit_code": -11,
+        "elapsed_seconds": 0.9595893750000073,
+        "log": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-adapter/oracle-1.log"
+      },
+      {
+        "stage": "build",
+        "command": [
+          "/opt/homebrew/bin/cmake",
+          "--build",
+          "/Users/kiro/hyle-scratch/compute-unified/a-vulkan/selected-graph/static-sdk-build",
+          "--target",
+          "g01_resident_bench",
+          "--parallel",
+          "4"
+        ],
+        "extra_env": null,
+        "exit_code": 0,
+        "elapsed_seconds": 0.847048834,
+        "log": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-adapter/build-2.log"
+      },
+      {
+        "stage": "oracle",
+        "command": [
+          "/Users/kiro/hyle-scratch/compute-unified/a-vulkan/selected-graph/static-sdk-build/bin/g01_resident_bench"
+        ],
+        "extra_env": {
+          "HYLE_BENCH_VERIFY_ONLY": "1",
+          "HYLE_PERF_APPLE_QOS": "interactive"
+        },
+        "exit_code": 2,
+        "elapsed_seconds": 0.8009996250000001,
+        "log": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-adapter/oracle-2.log"
+      },
+      {
+        "stage": "build",
+        "command": [
+          "/opt/homebrew/bin/cmake",
+          "--build",
+          "/Users/kiro/hyle-scratch/compute-unified/a-vulkan/selected-graph/static-sdk-build",
+          "--target",
+          "g01_resident_bench",
+          "--parallel",
+          "4"
+        ],
+        "extra_env": null,
+        "exit_code": 0,
+        "elapsed_seconds": 0.925428792,
+        "log": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-adapter/build-3.log"
+      },
+      {
+        "stage": "oracle",
+        "command": [
+          "/Users/kiro/hyle-scratch/compute-unified/a-vulkan/selected-graph/static-sdk-build/bin/g01_resident_bench"
+        ],
+        "extra_env": {
+          "HYLE_BENCH_VERIFY_ONLY": "1",
+          "HYLE_PERF_APPLE_QOS": "interactive"
+        },
+        "exit_code": 2,
+        "elapsed_seconds": 0.6624453339999999,
+        "log": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-adapter/oracle-3.log"
+      },
+      {
+        "stage": "build",
+        "command": [
+          "/opt/homebrew/bin/cmake",
+          "--build",
+          "/Users/kiro/hyle-scratch/compute-unified/a-vulkan/selected-graph/static-sdk-build",
+          "--target",
+          "g01_resident_bench",
+          "--parallel",
+          "4"
+        ],
+        "extra_env": null,
+        "exit_code": 0,
+        "elapsed_seconds": 0.83955975,
+        "log": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-adapter/build-4.log"
+      },
+      {
+        "stage": "oracle",
+        "command": [
+          "/Users/kiro/hyle-scratch/compute-unified/a-vulkan/selected-graph/static-sdk-build/bin/g01_resident_bench"
+        ],
+        "extra_env": {
+          "HYLE_BENCH_VERIFY_ONLY": "1",
+          "HYLE_PERF_APPLE_QOS": "interactive"
+        },
+        "exit_code": 2,
+        "elapsed_seconds": 0.735887875,
+        "log": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-adapter/oracle-4.log"
+      },
+      {
+        "stage": "build",
+        "command": [
+          "/opt/homebrew/bin/cmake",
+          "--build",
+          "/Users/kiro/hyle-scratch/compute-unified/a-vulkan/selected-graph/static-sdk-build",
+          "--target",
+          "g01_resident_bench",
+          "--parallel",
+          "4"
+        ],
+        "extra_env": null,
+        "exit_code": 0,
+        "elapsed_seconds": 0.9127968750000001,
+        "log": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-adapter/build-5.log"
+      },
+      {
+        "stage": "oracle",
+        "command": [
+          "/Users/kiro/hyle-scratch/compute-unified/a-vulkan/selected-graph/static-sdk-build/bin/g01_resident_bench"
+        ],
+        "extra_env": {
+          "HYLE_BENCH_VERIFY_ONLY": "1",
+          "HYLE_PERF_APPLE_QOS": "interactive"
+        },
+        "exit_code": 0,
+        "elapsed_seconds": 1.9945009160000002,
+        "log": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-adapter/oracle-5.log"
+      },
+      {
+        "stage": "build",
+        "command": [
+          "/opt/homebrew/bin/cmake",
+          "--build",
+          "/Users/kiro/hyle-scratch/compute-unified/a-vulkan/selected-graph/static-sdk-build",
+          "--target",
+          "g01_resident_bench",
+          "--parallel",
+          "4"
+        ],
+        "extra_env": null,
+        "exit_code": 0,
+        "elapsed_seconds": 0.967274417,
+        "log": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-adapter/build-6.log"
+      },
+      {
+        "stage": "oracle",
+        "command": [
+          "/Users/kiro/hyle-scratch/compute-unified/a-vulkan/selected-graph/static-sdk-build/bin/g01_resident_bench"
+        ],
+        "extra_env": {
+          "HYLE_BENCH_VERIFY_ONLY": "1",
+          "HYLE_PERF_APPLE_QOS": "interactive"
+        },
+        "exit_code": 0,
+        "elapsed_seconds": 1.357084,
+        "log": "/Users/kiro/hyle-scratch/compute-unified/g01-p1-adapter/oracle-6.log"
+      }
+    ]
+  },
+  "air_artifacts": {
+    "artifacts": [
+      {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/a-vulkan/selected-graph/static-sdk-build/bin/g01_resident_bench",
+        "sha256": "973f18c5f71602d4f374b2c643f024f2546cae3ae1682f39b98f4274317b3174"
+      },
+      {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/a-vulkan/selected-graph/static-sdk-build/CMakeCache.txt",
+        "sha256": "e53298c96a8595704be79f3a02f43ae57daee3efce2b6f3fdcd32202c712ef3a"
+      },
+      {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/a-vulkan/selected-graph/static-sdk-build/reference-shaders/reference_spirv.h",
+        "sha256": "56c25de82b3ff6a121fd5e37fb319c839791371e57cbc3f0aea4e222f4dc5531"
+      },
+      {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/a-vulkan/selected-graph/static-sdk-build/reference-shaders/identity.json",
+        "sha256": "4622f6608c9a2879dcbac69494b2722ee8b5403b1b2e1b0f705d7583be164312"
+      }
+    ],
+    "shader_identity": {
+      "revision": "456172ec733a135778adcd32d00e576a58232e45",
+      "source_blobs_sha256": {
+        "flash_attn.comp": "0af01a6d390f451b224db53c2d1873588fc28ad01fad5b87fe85acef75bbf9d2",
+        "mul_mmq_shmem_types.glsl": "06df962db1904a994d303f12481f84fab5fe699ad02f12efcf3102335a743e07",
+        "types.glsl": "66531aa893ca65100a2dc898d753441392b84d15f7b63a1728896f3e9628ea50",
+        "dot_product_funcs.glsl": "79678679e01db7932fb81a15e5a7cbe45d66acc532681291206f9cb108002ce4",
+        "flash_attn_base.glsl": "24bfbae399b0afc2b2309cb99a75387c2c629856938f5326eb335a9dc9990e64",
+        "fa_types.glsl": "502fd952dd8609a4657e90ad97366a482839a8724f40b01f11c1b1695d18e51e",
+        "ggml_type_ids.glsl": "1044c8dc42da7f4f245e3ab97887a940ddfdb133e53116a287f22093f20d364c",
+        "flash_attn_dequant.glsl": "45ea455c04e7bd0a71d47cbc6c49283bc00a14a4f0010a60bb3ca425b4e759b3",
+        "flash_attn_mmq_funcs.glsl": "e897fcd510b93ee291234e80154c58ac7f928aef33ee791bd45cc3def5dca144",
+        "flash_attn_mask_opt.comp": "ea8e055b4b7d09a7f3c2cb68ecec2caeb85231031305387e28856650ccd956d2",
+        "flash_attn_split_k_reduce.comp": "d2cadeb70d4f412ed4be102f81ba6056969469c5defcbeeba376e2ff98e8c731",
+        "fill.comp": "01e17ca8980197dc5510174245f271471357ff5e850b79fe925d9be9592b3558",
+        "generic_head.glsl": "3be1bb94f2c3952a9354df281120b1aeeef308075a6c9ad90b7a18bfc1cbeab8",
+        "diag_mask_inf.comp": "6af85325e3dca095b851398f08d16d168b31dd78f0ff0b5adf6f4b9b3ddbc2d1",
+        "copy.comp": "5c81290b4d3656816b2398e22a1f8ab8a097ca45e468ced5a870ef31ef89f712",
+        "generic_unary_head.glsl": "7d275914c03500ba7783457f0a95b5cd0fc9154459f05e6258f9e38533d471d5",
+        "utils.glsl": "01905c09f8e295556dd569a7074f482d34d0af7ee349ee248fcdd4db4c8584fc"
+      },
+      "outputs": [
+        {
+          "name": "flash",
+          "command": [
+            "/opt/homebrew/bin/glslangValidator",
+            "-V",
+            "--target-env",
+            "vulkan1.2",
+            "--preamble-text",
+            "#extension GL_GOOGLE_include_directive : require\n",
+            "-I/Users/kiro/hyle-scratch/compute-unified/g01-original-ggml-peer/src/ggml-vulkan/vulkan-shaders",
+            "-S",
+            "comp",
+            "-DFLOAT_TYPE=float",
+            "-DFLOAT_TYPEV2=vec2",
+            "-DFLOAT_TYPEV4=vec4",
+            "-DACC_TYPE=float",
+            "-DACC_TYPEV2=vec2",
+            "-DACC_TYPEV4=vec4",
+            "-DDATA_A_IQ4_NL=1",
+            "-DQ_TYPE=float",
+            "-DD_TYPE=float",
+            "-DD_TYPEV4=vec4",
+            "-o",
+            "/Users/kiro/hyle-scratch/compute-unified/a-vulkan/selected-graph/static-sdk-build/reference-shaders/flash.spv",
+            "/Users/kiro/hyle-scratch/compute-unified/g01-original-ggml-peer/src/ggml-vulkan/vulkan-shaders/flash_attn.comp"
+          ],
+          "sha256": "45757788232812bb14ae55590632f7a1e3fee8ab982c6c8b794e55aece1cba4e"
+        },
+        {
+          "name": "mask_opt",
+          "command": [
+            "/opt/homebrew/bin/glslangValidator",
+            "-V",
+            "--target-env",
+            "vulkan1.2",
+            "--preamble-text",
+            "#extension GL_GOOGLE_include_directive : require\n",
+            "-I/Users/kiro/hyle-scratch/compute-unified/g01-original-ggml-peer/src/ggml-vulkan/vulkan-shaders",
+            "-S",
+            "comp",
+            "-o",
+            "/Users/kiro/hyle-scratch/compute-unified/a-vulkan/selected-graph/static-sdk-build/reference-shaders/mask_opt.spv",
+            "/Users/kiro/hyle-scratch/compute-unified/g01-original-ggml-peer/src/ggml-vulkan/vulkan-shaders/flash_attn_mask_opt.comp"
+          ],
+          "sha256": "9b1bca6e54bc162244123b88e0b461c961925bea4fd9726f9423a6d00b4b0acc"
+        },
+        {
+          "name": "split_reduce",
+          "command": [
+            "/opt/homebrew/bin/glslangValidator",
+            "-V",
+            "--target-env",
+            "vulkan1.2",
+            "--preamble-text",
+            "#extension GL_GOOGLE_include_directive : require\n",
+            "-I/Users/kiro/hyle-scratch/compute-unified/g01-original-ggml-peer/src/ggml-vulkan/vulkan-shaders",
+            "-S",
+            "comp",
+            "-o",
+            "/Users/kiro/hyle-scratch/compute-unified/a-vulkan/selected-graph/static-sdk-build/reference-shaders/split_reduce.spv",
+            "/Users/kiro/hyle-scratch/compute-unified/g01-original-ggml-peer/src/ggml-vulkan/vulkan-shaders/flash_attn_split_k_reduce.comp"
+          ],
+          "sha256": "890838bb4e8a133389b280ad169eb14ed547c22955d36687a5b9f281033d016e"
+        },
+        {
+          "name": "fill",
+          "command": [
+            "/opt/homebrew/bin/glslangValidator",
+            "-V",
+            "--target-env",
+            "vulkan1.2",
+            "--preamble-text",
+            "#extension GL_GOOGLE_include_directive : require\n",
+            "-I/Users/kiro/hyle-scratch/compute-unified/g01-original-ggml-peer/src/ggml-vulkan/vulkan-shaders",
+            "-S",
+            "comp",
+            "-DD_TYPE=float",
+            "-o",
+            "/Users/kiro/hyle-scratch/compute-unified/a-vulkan/selected-graph/static-sdk-build/reference-shaders/fill.spv",
+            "/Users/kiro/hyle-scratch/compute-unified/g01-original-ggml-peer/src/ggml-vulkan/vulkan-shaders/fill.comp"
+          ],
+          "sha256": "99c8cdb81a4d0ed2c0facf1b6581e1cfe479fa96c904d34fb4e842ec3e03852e"
+        },
+        {
+          "name": "mask",
+          "command": [
+            "/opt/homebrew/bin/glslangValidator",
+            "-V",
+            "--target-env",
+            "vulkan1.2",
+            "--preamble-text",
+            "#extension GL_GOOGLE_include_directive : require\n",
+            "-I/Users/kiro/hyle-scratch/compute-unified/g01-original-ggml-peer/src/ggml-vulkan/vulkan-shaders",
+            "-S",
+            "comp",
+            "-DA_TYPE=float",
+            "-DD_TYPE=float",
+            "-o",
+            "/Users/kiro/hyle-scratch/compute-unified/a-vulkan/selected-graph/static-sdk-build/reference-shaders/mask.spv",
+            "/Users/kiro/hyle-scratch/compute-unified/g01-original-ggml-peer/src/ggml-vulkan/vulkan-shaders/diag_mask_inf.comp"
+          ],
+          "sha256": "97eaef58ad4d51eeebf888d2e9ee9c364b6ae6c4eff7b2ce0a83c661db1a0022"
+        },
+        {
+          "name": "half",
+          "command": [
+            "/opt/homebrew/bin/glslangValidator",
+            "-V",
+            "--target-env",
+            "vulkan1.2",
+            "--preamble-text",
+            "#extension GL_GOOGLE_include_directive : require\n",
+            "-I/Users/kiro/hyle-scratch/compute-unified/g01-original-ggml-peer/src/ggml-vulkan/vulkan-shaders",
+            "-S",
+            "comp",
+            "-DA_TYPE=float",
+            "-DD_TYPE=float16_t",
+            "-o",
+            "/Users/kiro/hyle-scratch/compute-unified/a-vulkan/selected-graph/static-sdk-build/reference-shaders/half.spv",
+            "/Users/kiro/hyle-scratch/compute-unified/g01-original-ggml-peer/src/ggml-vulkan/vulkan-shaders/copy.comp"
+          ],
+          "sha256": "efdf8e9ae082850ef0bdd63571ec3c1fed4d0fe89e363b40be2d890c644b161f"
+        },
+        {
+          "name": "query_float",
+          "command": [
+            "/opt/homebrew/bin/glslangValidator",
+            "-V",
+            "--target-env",
+            "vulkan1.2",
+            "--preamble-text",
+            "#extension GL_GOOGLE_include_directive : require\n",
+            "-I/Users/kiro/hyle-scratch/compute-unified/g01-original-ggml-peer/src/ggml-vulkan/vulkan-shaders",
+            "-S",
+            "comp",
+            "-DA_TYPE=float16_t",
+            "-DD_TYPE=float",
+            "-o",
+            "/Users/kiro/hyle-scratch/compute-unified/a-vulkan/selected-graph/static-sdk-build/reference-shaders/query_float.spv",
+            "/Users/kiro/hyle-scratch/compute-unified/g01-original-ggml-peer/src/ggml-vulkan/vulkan-shaders/copy.comp"
+          ],
+          "sha256": "ff2717fcda06736f991be6472ee82d931a294d2ec8fac29778add9567ce465e8"
+        }
+      ]
+    },
+    "binary_kind": "static source adapter, ordinary Graph vs independent original flash recipe",
+    "oracle_only": true,
+    "qualification": "NOT_RUN"
+  },
+  "machine": {
+    "hardware": {
+      "exit": 0,
+      "output": "Mac16,12\n10\n17179869184"
+    },
+    "os": {
+      "exit": 0,
+      "output": "ProductName:\t\tmacOS\nProductVersion:\t\t27.0.1\nBuildVersion:\t\t26A434"
+    },
+    "compiler": {
+      "exit": 0,
+      "output": "Apple clang version 21.0.0 (clang-2100.3.34.2)\nTarget: arm64-apple-darwin27.0.0\nThread model: posix\nInstalledDir: /Library/Developer/CommandLineTools/usr/bin"
+    },
+    "cmake": {
+      "exit": 0,
+      "output": "cmake version 4.3.4\n\nCMake suite maintained and supported by Kitware (kitware.com/cmake)."
+    },
+    "peer": {
+      "path": "/Users/kiro/hyle-peer/ggml",
+      "exists": false
+    }
+  },
+  "windows_compile": {
+    "command": [
+      "cmake",
+      "--build",
+      "C:/h7/w-vulkan/selected-graph/static-sdk-build",
+      "--target",
+      "g01_resident_bench",
+      "--parallel",
+      "2"
+    ],
+    "exit_code": 0,
+    "elapsed_seconds": 2.7339999999967404,
+    "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g01\\p1-static-build-5.log"
+  },
+  "raw": [
+    {
+      "path": "p1-adapter-configure-result.json",
+      "sha256": "f3804605107c50c9cbe583d64211254bb5567dfebdf2780780451294e4c3a96c"
+    },
+    {
+      "path": "p1-adapter-configure.log",
+      "sha256": "82ad44b7c2f2ba89a3c0bff3300e3e897ba2c2596d0956fcaead60dbd348f0ce"
+    },
+    {
+      "path": "p1-air-adapter/artifact-inputs.json",
+      "sha256": "0536fabaae33290ddc425b90201be45f6144e13df1f9d4607cf0ea050f94f2c9"
+    },
+    {
+      "path": "p1-air-adapter/build-1.log",
+      "sha256": "57a3cc8ca6b7bb0ffa98e1735db2c07baf4d0e38e01a9b94c7f951e005a6734b"
+    },
+    {
+      "path": "p1-air-adapter/build-2.log",
+      "sha256": "64bb154dafdb2a6d579303658a6c5c2c3a321ae6020634e37e545b752e8155bf"
+    },
+    {
+      "path": "p1-air-adapter/build-3.log",
+      "sha256": "5e48ab53324d15369e6cdc1b007fe4360b2a66a366dd42c3b2693fe1fed69423"
+    },
+    {
+      "path": "p1-air-adapter/build-4.log",
+      "sha256": "64bb154dafdb2a6d579303658a6c5c2c3a321ae6020634e37e545b752e8155bf"
+    },
+    {
+      "path": "p1-air-adapter/build-5.log",
+      "sha256": "5e48ab53324d15369e6cdc1b007fe4360b2a66a366dd42c3b2693fe1fed69423"
+    },
+    {
+      "path": "p1-air-adapter/build-6.log",
+      "sha256": "8eef8dc7d32057bc6e29e5c9d41f51b7099b35a8953c407ea8366aec36a71e4a"
+    },
+    {
+      "path": "p1-air-adapter/configure-1.log",
+      "sha256": "94012a16762f0df623dffaa32cb71853b03afadc314cd780d4697e11022d6f25"
+    },
+    {
+      "path": "p1-air-adapter/debug-1.log",
+      "sha256": "ddf1fb5ce7c05c35d145cfd6353d1fc22514aa2950202575a3136ad54e8ca4ec"
+    },
+    {
+      "path": "p1-air-adapter/oracle-1.log",
+      "sha256": "e4c23053d98a312969a07e9bfe478deff6351d5c6b041b8615b09d4df61c920e"
+    },
+    {
+      "path": "p1-air-adapter/oracle-2.log",
+      "sha256": "5fc526c253a86891ed41941ba5d56db493dbe8d018b82530ef0d503b8a75143a"
+    },
+    {
+      "path": "p1-air-adapter/oracle-3.log",
+      "sha256": "5c7656c24db9328facd09c449da274878763a178420f856dc2e024d819d3711c"
+    },
+    {
+      "path": "p1-air-adapter/oracle-4.log",
+      "sha256": "b23804549b224219b5631757f7179f1c4ea34ab988b502f738987d1de35474ac"
+    },
+    {
+      "path": "p1-air-adapter/oracle-5.log",
+      "sha256": "3ba9a0bd11cb58d191c3af5ffada0f7b7a991bf14d11d0eac664bd8633177c25"
+    },
+    {
+      "path": "p1-air-adapter/oracle-6.log",
+      "sha256": "3ba9a0bd11cb58d191c3af5ffada0f7b7a991bf14d11d0eac664bd8633177c25"
+    },
+    {
+      "path": "p1-air-adapter/result.json",
+      "sha256": "b12e1de79f8f8c2847ab108a9d1c317316ad0b7c9a5f828b9b2dd80eaea1bc39"
+    },
+    {
+      "path": "p1-air-debug.log",
+      "sha256": "093ced7b93af07aaca05e92f8dc47ffb7bddabc6d7f2e1b94c99ab8b7870244c"
+    },
+    {
+      "path": "p1-air-preflight.json",
+      "sha256": "3f83deddc4cc148835abdf0209b483f74def9bef6405fa03193c61b8bd7f19dd"
+    },
+    {
+      "path": "p1-air-prepare.json",
+      "sha256": "306e9568b6246244fb8148129e4443994ddba6f7531b7fc7b6cb80eb47e9e11a"
+    },
+    {
+      "path": "p1-reference-shader-check-2-result.json",
+      "sha256": "d03591d1cd8085772f62be386a0e7ba473c595b8b9f458f7419678f4614d60ee"
+    },
+    {
+      "path": "p1-reference-shader-check-2.log",
+      "sha256": "c666848f4acde072af3204ed9c62534ed06b6ca80625a57b455ec19064446b85"
+    },
+    {
+      "path": "p1-reference-shader-check-result.json",
+      "sha256": "ed1be2c9a9b07f37d878f62226bc2d8bc41fa114a0271adfa9ffee41b9e3d868"
+    },
+    {
+      "path": "p1-reference-shader-check.log",
+      "sha256": "1f769809445492b18a4eea032434a8f53296b78d1f2b144d141b7e6a591637c9"
+    },
+    {
+      "path": "p1-static-build-2-result.json",
+      "sha256": "7e6a184385f07608c41e76d897bc63838b5d4a965596c82ed1cc7b0d3ae64332"
+    },
+    {
+      "path": "p1-static-build-2.log",
+      "sha256": "212405519e8178db25935c065152db0bc633e7027bf3e50ad28e6ad210b88d57"
+    },
+    {
+      "path": "p1-static-build-3-result.json",
+      "sha256": "e4efd7c02b65028016061b1f4872fcb8d88e3bdfb189c024c701bdeb962afa97"
+    },
+    {
+      "path": "p1-static-build-3.log",
+      "sha256": "70cbdabca62514aba332d308761e4d682209d1a2168f079e7396a11f5c1d66cc"
+    },
+    {
+      "path": "p1-static-build-4-result.json",
+      "sha256": "91e21638510078b6d6e251ceeac5f27919467dae22156393d4a624af7d79b12e"
+    },
+    {
+      "path": "p1-static-build-4.log",
+      "sha256": "f3f95ae25c1fe42c35d52a16a4d78480d9c890274f25b44ae5fb83cb1128e6a7"
+    },
+    {
+      "path": "p1-static-build-5-result.json",
+      "sha256": "14e76087a0bc7f6b2f26acb4594b5105693fcca10e26155268baab691489cc68"
+    },
+    {
+      "path": "p1-static-build-5.log",
+      "sha256": "3520dafe9773a625e93837ea0551a18db89ba2c9f7ab17c246c451f98c677d5d"
+    },
+    {
+      "path": "p1-static-configure-2-result.json",
+      "sha256": "258b3e964253d972601b22d1aa9a1c007949c61ba5e45dc73daa32759af440df"
+    },
+    {
+      "path": "p1-static-configure-2.log",
+      "sha256": "1c716e2612e3ddffc06f827c22a6fffe70a425ff44d2f179e944c89ce4136aaf"
+    },
+    {
+      "path": "p1-static-configure-result.json",
+      "sha256": "04728e85bec2621a7064ae02a574456f06c2c2205bfd590e3fe1827082cad162"
+    },
+    {
+      "path": "p1-static-configure.log",
+      "sha256": "ed34162d572b143a18d3ba334801bc74c853132668ddbecb9293791d931339e0"
+    },
+    {
+      "path": "p1_air_checks.py",
+      "sha256": "30a3967f4be0bb7ccd3a1db7dc0f55521e3e2ac4744ae6d60257fda20930a394"
+    }
+  ],
+  "raw_zip_sha256": "6267183408027f655e0d6a2e3b429917f737ea78604eb07f73d70a79232fb32f"
+}
