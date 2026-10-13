@@ -1,6 +1,6 @@
 # G01 CPU准确页直接驻留读取
 
-状态：CANDIDATE，2026-10-13；owners `compute_provider_ggml`、`compute_ggml_runtime`，baseline
+状态：AUDITED，2026-10-14；owners `compute_provider_ggml`、`compute_ggml_runtime`，baseline
 `118a8947518f02e0c02aa51918f9d7d15c421ed6`。原CPU resident/ragged973与Vulkanbc0有限
 CLOSED均保留；本轮不是重新研究全库，也不把CPU页资格代签Apple/Vulkan/联合G02。
 
@@ -91,3 +91,9 @@ error退休回归保。最终源run40.843s，编译增量4.359s，<=4jobs，无G
 所有此前配置/旧unsupported断言/ticket生命周期/fixture shadow警告FAIL保留，修测试
 不改原容差/数值/退休日志。CP-01/02实现和scope内普通consumer固定，进入CANDIDATE；
 CP-03的三交付/适用风险/定向性能继续，尚未CLOSED，原全G01/G02其它路线不代签。
+
+WSL GCC14 ASan+LSan实际14tests PASS（编译64.638s、运行24.347s），包括原
+resident/ragged负空间；实际provider/native_batch与原vendor ops均有address flags。
+该次编译出现冷计划keys uint64与queries int32比较警告，CP-01仅补已验证非负query
+长度的显式uint64转换；provider退回AUDITED，runtime candidate不变。原3cf源码/
+ASan记录保留，后续增量与最终candidate身份单独记录，不把警告或未跑门省略。
