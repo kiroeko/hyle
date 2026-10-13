@@ -1,0 +1,1204 @@
+{
+  "artifacts": [
+    {
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-apple-p1-fresh-1/CMakeCache.txt",
+        "sha256": "84aa418475c2b97471e8204048ad9944444c9f9e2a575b9f101f83f676a1b208"
+      },
+      "id": "cmake-cache"
+    },
+    {
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-apple-p1-fresh-1/g01_native_page_control",
+        "sha256": "addab734d55c132ab6567a1fc8c629971c45abb6331e95deb622993964f64f01"
+      },
+      "id": "common-control"
+    },
+    {
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-apple-p1-fresh-1/g01_native_page_bench_placement",
+        "sha256": "0dbc05a62acf74b79c7b18e8cb880e309508401b8a08f64f05b7091e767bc16b"
+      },
+      "id": "page-placement"
+    },
+    {
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-apple-p1-fresh-1/g01_native_page_bench",
+        "sha256": "41a534058247943e1aac7e5d945c5813eb2bf800918409a8e3cd23350718cdb5"
+      },
+      "id": "page-primary"
+    },
+    {
+      "file": {
+        "path": "/usr/bin/c++",
+        "sha256": "34129c71a01a74f7f3b2443521519b2e5447553fa187f5fcafaaf8c42cc192e2"
+      },
+      "id": "toolchain-compiler"
+    },
+    {
+      "file": {
+        "path": "/Library/Developer/CommandLineTools/usr/bin/ld",
+        "sha256": "374d9f0713bce2c8a9e1e82bde51615d5433516a10d99b63107eb6ee70542e4c"
+      },
+      "id": "toolchain-linker"
+    }
+  ],
+  "artifacts_stable": true,
+  "build": {
+    "configuration": "Release",
+    "details": {
+      "architecture": "default",
+      "build_stdout_sha256": "5908241abc23eb0e67cedb8cd476f27420152091a45f83ddcd4c647e7041880b",
+      "cmake_cache": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "CMAKE_GENERATOR": "Ninja",
+        "CMAKE_GENERATOR_PLATFORM": "",
+        "CMAKE_GENERATOR_TOOLSET": "",
+        "CMAKE_INTERPROCEDURAL_OPTIMIZATION": "OFF",
+        "HYLE_SIMD_EXACT_TARGET": "",
+        "HYLE_STATIC": "ON"
+      },
+      "cmake_cache_sha256": "84aa418475c2b97471e8204048ad9944444c9f9e2a575b9f101f83f676a1b208",
+      "compiler": {
+        "compiler_id": "AppleClang",
+        "compiler_version": "21.0.0.21000334"
+      },
+      "configuration_observation": {
+        "available": [
+          "Release"
+        ],
+        "mechanism": "CMAKE_BUILD_TYPE",
+        "proven": true,
+        "value": "Release"
+      },
+      "configure_stdout_sha256": "e9c8cf9af5e6f3f59fe9ff18931c7086d756ffc1f90158e61ffde9ccea902a21",
+      "generator": "Ninja",
+      "machine_profile": "M1-MAC",
+      "requested_cache": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "CMAKE_CXX_FLAGS": "-Wno-error=tautological-constant-out-of-range-compare",
+        "CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
+        "CMAKE_INTERPROCEDURAL_OPTIMIZATION": "OFF",
+        "CMAKE_OSX_DEPLOYMENT_TARGET": "14.4",
+        "HYLE_BUILD_BENCH": "OFF",
+        "HYLE_BUILD_TESTS": "OFF",
+        "HYLE_COMPONENTS": "compute;graph",
+        "HYLE_COMPUTE_ROUTES": "apple",
+        "HYLE_DEP_SOURCE_CACHE": "/Users/kiro/Library/Caches/hyle/dependencies/v1",
+        "HYLE_INSTALL": "OFF",
+        "HYLE_MLX_ORIGINAL_REFERENCE_SOURCE": "/Users/kiro/hyle-scratch/compute-unified/g01-original-mlx-peer",
+        "HYLE_SANITIZER": "off",
+        "HYLE_SIMD_EXACT_TARGET": "",
+        "HYLE_STATIC": "ON",
+        "HYLE_TRACE": "OFF",
+        "HYLE_WERROR": "ON"
+      },
+      "requested_configuration": "Release",
+      "targets": [
+        "g01_native_page_bench",
+        "g01_native_page_bench_placement",
+        "g01_native_page_control"
+      ],
+      "toolchain": {
+        "cmake_compiler_record_sha256": "661f85d416ef9d157c2a329d41a10e25f60ea66d1e04d34002f6a01343285ae9",
+        "compiler_frontend_variant": "GNU",
+        "compiler_id": "AppleClang",
+        "compiler_path": "/usr/bin/c++",
+        "compiler_sha256": "34129c71a01a74f7f3b2443521519b2e5447553fa187f5fcafaaf8c42cc192e2",
+        "compiler_target": "unknown",
+        "compiler_version": "21.0.0.21000334",
+        "formal_identity_complete": false,
+        "linker_id": "AppleClang",
+        "linker_path": "/Library/Developer/CommandLineTools/usr/bin/ld",
+        "linker_sha256": "374d9f0713bce2c8a9e1e82bde51615d5433516a10d99b63107eb6ee70542e4c",
+        "linker_version": "ld: unknown options: --version",
+        "schema": "hyle.perf.toolchain-record/v1",
+        "sdk": "apple-sdk:MacOSX.sdk",
+        "stdlib": "unknown",
+        "system_name": "Darwin",
+        "system_processor": "arm64",
+        "system_version": "27.0.0"
+      }
+    },
+    "fresh": true
+  },
+  "contract_lock": {
+    "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-apple-p1-output-1/contract-lock.json",
+    "sha256": "3ab53795b3c16c528ebdd29e9fd940a4c0218d6f9c1907b2e83ab0a71503f8f5"
+  },
+  "contract_sha256": "938628def9382ea59920780656ba1b3ec535d9146a9073ec8f258bc78d4e7649",
+  "controls": [
+    {
+      "details": {
+        "kind": "aa",
+        "maximum_bias_percent": 5.0,
+        "orders": {
+          "candidate-first": {
+            "equivalence_band": [
+              0.9523809523809523,
+              1.05
+            ],
+            "estimate": {
+              "confidence_interval": [
+                0.9983675781849781,
+                1.002454709675108
+              ],
+              "confidence_level": 0.99261474609375,
+              "estimator": "process-median",
+              "independent_clusters": 15,
+              "median_advantage_ratio": 1.00009484594426,
+              "sample_count": 15
+            },
+            "reason": "median-ci-inside-equivalence-band",
+            "verdict": "PARITY"
+          },
+          "peer-first": {
+            "equivalence_band": [
+              0.9523809523809523,
+              1.05
+            ],
+            "estimate": {
+              "confidence_interval": [
+                0.9969525152497241,
+                1.0019691384718754
+              ],
+              "confidence_level": 0.99261474609375,
+              "estimator": "process-median",
+              "independent_clusters": 15,
+              "median_advantage_ratio": 1.0006826316373776,
+              "sample_count": 15
+            },
+            "reason": "median-ci-inside-equivalence-band",
+            "verdict": "PARITY"
+          }
+        }
+      },
+      "gate": "PASS",
+      "id": "aa"
+    },
+    {
+      "details": {
+        "accepted_median_band": [
+          1.025,
+          1.075
+        ],
+        "kind": "known-delta",
+        "monotonic_5_to_10": true,
+        "nominal_percent": 5.0,
+        "orders": {
+          "candidate-first": {
+            "confidence_interval": [
+              1.0467475833225148,
+              1.052509992301956
+            ],
+            "confidence_level": 0.99261474609375,
+            "estimator": "process-median",
+            "independent_clusters": 15,
+            "median_advantage_ratio": 1.049199614851733,
+            "sample_count": 15
+          },
+          "peer-first": {
+            "confidence_interval": [
+              1.047764255830806,
+              1.0515423805160804
+            ],
+            "confidence_level": 0.99261474609375,
+            "estimator": "process-median",
+            "independent_clusters": 15,
+            "median_advantage_ratio": 1.0497628826042982,
+            "sample_count": 15
+          }
+        },
+        "relative_tolerance_percent": 50.0
+      },
+      "gate": "PASS",
+      "id": "delta5"
+    },
+    {
+      "details": {
+        "accepted_median_band": [
+          1.05,
+          1.15
+        ],
+        "kind": "known-delta",
+        "monotonic_5_to_10": true,
+        "nominal_percent": 10.0,
+        "orders": {
+          "candidate-first": {
+            "confidence_interval": [
+              1.0944324588105443,
+              1.103204785039864
+            ],
+            "confidence_level": 0.99261474609375,
+            "estimator": "process-median",
+            "independent_clusters": 15,
+            "median_advantage_ratio": 1.0986901545007335,
+            "sample_count": 15
+          },
+          "peer-first": {
+            "confidence_interval": [
+              1.0956784483862765,
+              1.1016920828107288
+            ],
+            "confidence_level": 0.99261474609375,
+            "estimator": "process-median",
+            "independent_clusters": 15,
+            "median_advantage_ratio": 1.0994680260673504,
+            "sample_count": 15
+          }
+        },
+        "relative_tolerance_percent": 50.0
+      },
+      "gate": "PASS",
+      "id": "delta10"
+    },
+    {
+      "details": {
+        "kind": "timer-floor",
+        "minimum_workload_floor_multiple": 20.0,
+        "workloads": [
+          {
+            "candidate_median_ns_per_op": 1611993.271516438,
+            "conservative_floor_ns_per_op": 0.2253297624563391,
+            "gate": "PASS",
+            "id": "page-mixed-d256",
+            "measurement_batch": 1,
+            "observed_multiple": 7153929.662659566,
+            "orders": {
+              "candidate-first": {
+                "candidate_median_ns_per_op": 0.2242337303624313,
+                "peer_median_ns_per_op": 0.2253297624563391
+              },
+              "peer-first": {
+                "candidate_median_ns_per_op": 0.22527699047767952,
+                "peer_median_ns_per_op": 0.2242502391504112
+              }
+            },
+            "peer_median_ns_per_op": 2418613.6506554442
+          },
+          {
+            "candidate_median_ns_per_op": 3444415.7420015503,
+            "conservative_floor_ns_per_op": 0.2253297624563391,
+            "gate": "PASS",
+            "id": "page-prefill-d256",
+            "measurement_batch": 1,
+            "observed_multiple": 15286110.91785514,
+            "orders": {
+              "candidate-first": {
+                "candidate_median_ns_per_op": 0.2242337303624313,
+                "peer_median_ns_per_op": 0.2253297624563391
+              },
+              "peer-first": {
+                "candidate_median_ns_per_op": 0.22527699047767952,
+                "peer_median_ns_per_op": 0.2242502391504112
+              }
+            },
+            "peer_median_ns_per_op": 3815337.6629365897
+          },
+          {
+            "candidate_median_ns_per_op": 982646.4635502618,
+            "conservative_floor_ns_per_op": 0.2253297624563391,
+            "gate": "PASS",
+            "id": "page-holdout-d64",
+            "measurement_batch": 1,
+            "observed_multiple": 4360926.1947394265,
+            "orders": {
+              "candidate-first": {
+                "candidate_median_ns_per_op": 0.2242337303624313,
+                "peer_median_ns_per_op": 0.2253297624563391
+              },
+              "peer-first": {
+                "candidate_median_ns_per_op": 0.22527699047767952,
+                "peer_median_ns_per_op": 0.2242502391504112
+              }
+            },
+            "peer_median_ns_per_op": 1033378.1131619168
+          }
+        ]
+      },
+      "gate": "PASS",
+      "id": "timer-floor"
+    },
+    {
+      "details": {
+        "kind": "placement",
+        "target_variants": [
+          "placement",
+          "primary"
+        ]
+      },
+      "gate": "PASS",
+      "id": "placement"
+    }
+  ],
+  "extensions": {
+    "control_observations_file": {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-apple-p1-output-1/control-observations.json",
+      "sha256": "e35c2abd359bd5fa8144466a94a6c5195ef5b3f83e132ce99a86932a45245f0d"
+    },
+    "controls_file": {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-apple-p1-output-1/controls.json",
+      "sha256": "44fa745cfc8cc91640598a2e68ab3c093d87b4b091cfbed43c5183785c543147"
+    },
+    "created_at_utc": "2026-10-13T22:14:13.575162+00:00",
+    "formal": false,
+    "host_probe_file": {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-apple-p1-output-1/host-probe.json",
+      "sha256": "bcfd56e3d1552fa5b24496aebe8d5b94b1ddc7e3bda18a6bce6af4fb6b253717"
+    },
+    "mode": "qualify-platform",
+    "pre_sampling_validator_gates": [
+      {
+        "gate": "PASS",
+        "id": "artifact-identity"
+      },
+      {
+        "gate": "PASS",
+        "id": "build-contract"
+      },
+      {
+        "gate": "PASS",
+        "id": "native-page-aa"
+      }
+    ],
+    "product_evidence": [
+      {
+        "errors": [],
+        "gate": "PASS",
+        "id": "page-mixed-d256",
+        "provenance_file": {
+          "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-p1-source/bench/inference_resident_sdpa/apple_page_p1/consumer-provenance.json",
+          "sha256": "62018c127f58b8769053f40b6f7a980a69b717d3de6e090e70f38798e5cc6ead"
+        },
+        "provenance_path": "consumer-provenance.json",
+        "tier": "consumer"
+      },
+      {
+        "errors": [],
+        "gate": "PASS",
+        "id": "page-prefill-d256",
+        "provenance_file": {
+          "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-p1-source/bench/inference_resident_sdpa/apple_page_p1/consumer-provenance.json",
+          "sha256": "62018c127f58b8769053f40b6f7a980a69b717d3de6e090e70f38798e5cc6ead"
+        },
+        "provenance_path": "consumer-provenance.json",
+        "tier": "consumer"
+      },
+      {
+        "errors": [],
+        "gate": "PASS",
+        "id": "page-holdout-d64",
+        "provenance_file": {
+          "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-p1-source/bench/inference_resident_sdpa/apple_page_p1/consumer-provenance.json",
+          "sha256": "62018c127f58b8769053f40b6f7a980a69b717d3de6e090e70f38798e5cc6ead"
+        },
+        "provenance_path": "consumer-provenance.json",
+        "tier": "consumer"
+      }
+    ],
+    "product_gate_policy": "consumer-evidence-v1",
+    "product_gate_workloads": {
+      "eligible": [
+        "page-mixed-d256",
+        "page-prefill-d256",
+        "page-holdout-d64"
+      ],
+      "excluded": []
+    },
+    "raw_log_index_file": {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-apple-p1-output-1/raw-log-index.json",
+      "sha256": "1c2677f2bb1597c02903cac27b66a0bf21dbacfa93c326f33c23cab30572506c"
+    },
+    "runs": 15,
+    "sample_stages": [
+      15
+    ]
+  },
+  "host": {
+    "child_environment_policy": {
+      "cleared_names": [
+        "ASAN_OPTIONS",
+        "CPUPROFILE",
+        "DYLD_INSERT_LIBRARIES",
+        "DYLD_LIBRARY_PATH",
+        "GLIBC_TUNABLES",
+        "GOMP_CPU_AFFINITY",
+        "KMP_AFFINITY",
+        "LD_LIBRARY_PATH",
+        "LD_PRELOAD",
+        "LSAN_OPTIONS",
+        "MALLOC_CONF",
+        "MIMALLOC_OPTIONS",
+        "TRACY_ONLY_LOCALHOST",
+        "TSAN_OPTIONS",
+        "UBSAN_OPTIONS"
+      ],
+      "cleared_prefixes": [
+        "HYLE_BENCH_",
+        "HYLE_PERF_"
+      ],
+      "fixed_values": {
+        "MKL_NUM_THREADS": "1",
+        "NUMEXPR_NUM_THREADS": "1",
+        "OMP_NUM_THREADS": "1",
+        "OPENBLAS_NUM_THREADS": "1",
+        "VECLIB_MAXIMUM_THREADS": "1"
+      },
+      "path_sha256": "ef597f72b8ad5306f877dcc0008beaca2ad560927aca12a0bf0cd97398b10fce",
+      "raw_environment_recorded": false,
+      "schema": "hyle.perf.child-environment-policy/v2"
+    },
+    "child_policy": {
+      "applied_by": "benchmark-child",
+      "child_canary": {
+        "environment": "macos",
+        "gate": "PASS",
+        "mechanism": "benchmark-child-telemetry"
+      },
+      "environment": "macos",
+      "hard_affinity_supported": false,
+      "launcher_applied": true,
+      "qos": "interactive"
+    },
+    "evidence_role": "engineering",
+    "formal_claim": null,
+    "machine_profile": "M1-MAC",
+    "physical_host_identity": {
+      "environment": "macos",
+      "independent_hardware": true,
+      "mismatched_host_facts": [],
+      "physical_host_id": "M1",
+      "physical_host_key_sha256": "467e328f5683bcc965253a3a28d112ef7e6b1abb351f0bf68d23be190e0b3f1e",
+      "profile_id": "M1-MAC",
+      "profile_provisioned": true,
+      "raw_identifier_recorded": false,
+      "registered_profile_contract_sha256": "460aae1525938a72ac5d64b20af70787fc8fdfc6f89d5f3ca0915a83f16faa14",
+      "registration_state": "UNREGISTERED",
+      "required_host_facts_match": false,
+      "schema": "hyle-perf-physical-host-identity-v1",
+      "stable_machine_id_matches_registered": false,
+      "stable_machine_id_sha256": "31e581d2399383332f2c47909fb4828f6c5f5ba6acbb29cf7ff82c7fce872c30",
+      "stable_machine_id_source": "macos-platform-uuid-sha256"
+    },
+    "platform": "macos",
+    "probe_sha256": "bcfd56e3d1552fa5b24496aebe8d5b94b1ddc7e3bda18a6bce6af4fb6b253717",
+    "sampling_mutex": {
+      "acquired_at_utc": "2026-10-13T21:58:34.983763+00:00",
+      "environment": "macos",
+      "mutex_key": "M1",
+      "owner_token_sha256": "e5a9a9a115e9ac327c2f3c225b8aa7b9ff38946c0baff2147f9a9ec220ef3100",
+      "path": "/Users/Shared/HYLE/perf-locks/M1.sampling.lock",
+      "physical_host_id": "M1",
+      "pid": 18618,
+      "profile_id": "M1-MAC",
+      "raw_owner_token_recorded": false,
+      "release_policy": "owner-token-match-only",
+      "schema": "hyle-perf-sampling-mutex-v1"
+    }
+  },
+  "host_stable": true,
+  "inputs_stable": true,
+  "observations": {
+    "count": 360,
+    "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-apple-p1-output-1/observations.jsonl",
+    "sha256": "9edfe66549adacb7ec41401fdfe862253742a08684f309c87d4e77c646a27b81"
+  },
+  "peers": [
+    {
+      "clean": true,
+      "id": "original-mlx-fast-sdpa",
+      "remote": "https://github.com/ml-explore/mlx.git",
+      "revision": "1f8e74e3f12f31365464a6867c6579f0e9b29d85",
+      "tree": "05433bcb7241af2b3531e7ee94f1eed07d4bf15c"
+    }
+  ],
+  "qualification": "QUALIFIED",
+  "raw_logs": [
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-apple-p1-output-1/raw/n-15/product-primary-candidate-first-candidate-allocation-first-page-primary-run-01.log",
+      "sha256": "70d30f439f64945f3ed118b76f9569c3851688fa8dbbb7e1ddafe08793863f65"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-apple-p1-output-1/raw/n-15/product-primary-candidate-first-candidate-allocation-first-page-primary-run-02.log",
+      "sha256": "245397d6e4d8a9472ac7a4bb1527325e52fb1aa3349bbb1b7a245e972e82fa6c"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-apple-p1-output-1/raw/n-15/product-primary-candidate-first-candidate-allocation-first-page-primary-run-03.log",
+      "sha256": "742ae166f38c619945c77fc40a217eadeee07eb920f5be4f524b980745301a0d"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-apple-p1-output-1/raw/n-15/product-primary-candidate-first-candidate-allocation-first-page-primary-run-04.log",
+      "sha256": "369ea1319278d90ffccf8a1eb63cc81569fa99a36bf3031c8c03fef0ff8358ea"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-apple-p1-output-1/raw/n-15/product-primary-candidate-first-candidate-allocation-first-page-primary-run-05.log",
+      "sha256": "5dec2739e779c262c8b8f5acabd2a2b935bb273a48d4ce4fb6c3c2fca817640a"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-apple-p1-output-1/raw/n-15/product-primary-candidate-first-candidate-allocation-first-page-primary-run-06.log",
+      "sha256": "0b481ec4475c0a919a9d099a5b3d30089ea53851d72937e4be0e55b4d80b994e"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-apple-p1-output-1/raw/n-15/product-primary-candidate-first-candidate-allocation-first-page-primary-run-07.log",
+      "sha256": "9572734fd1360995075399154628dc699a1cd27d953e96a7fbda5be08dabed94"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-apple-p1-output-1/raw/n-15/product-primary-candidate-first-candidate-allocation-first-page-primary-run-08.log",
+      "sha256": "f9b0fec2b034b146e710d636f98f5d76c17bbae2b4277fa6b0f908e636b16c87"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-apple-p1-output-1/raw/n-15/product-primary-candidate-first-candidate-allocation-first-page-primary-run-09.log",
+      "sha256": "644538570228196469f432664fbc52f6fd142383b477b2d3e5670535aa3172a8"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-apple-p1-output-1/raw/n-15/product-primary-candidate-first-candidate-allocation-first-page-primary-run-10.log",
+      "sha256": "af3fa22986e229eaed38749d51695fcdd797b42bd9ce074d909278be6420f41b"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-apple-p1-output-1/raw/n-15/product-primary-candidate-first-candidate-allocation-first-page-primary-run-11.log",
+      "sha256": "d1a981f3ff32703b6e9fa56a36005cfcc42609774519b429ccdd9b9e237e367c"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-apple-p1-output-1/raw/n-15/product-primary-candidate-first-candidate-allocation-first-page-primary-run-12.log",
+      "sha256": "65c3cc8d8c1485f8d96eb21e5a19ef471def6df941e58e58f87c51ca2b71b97b"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-apple-p1-output-1/raw/n-15/product-primary-candidate-first-candidate-allocation-first-page-primary-run-13.log",
+      "sha256": "dce87454fb595a5cce8c4dbbd414b169ae7e4519da4b69ebfcd1ac7c2876615c"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-apple-p1-output-1/raw/n-15/product-primary-candidate-first-candidate-allocation-first-page-primary-run-14.log",
+      "sha256": "ee1376753758e5958fd16381ed5a239c54a5d5a54c41f361855378c6afbf4149"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-apple-p1-output-1/raw/n-15/product-primary-candidate-first-candidate-allocation-first-page-primary-run-15.log",
+      "sha256": "823296ef8ea9c301c6e7c843b7409a985e52a9fbbcadd49b9b1181ff3ca4f126"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-apple-p1-output-1/raw/n-15/product-primary-candidate-first-peer-allocation-first-page-primary-run-01.log",
+      "sha256": "e4a11be98c9d2e9ea8680ab62c0e4ce18f689993356fb2d1cc3ead1b581b4d55"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-apple-p1-output-1/raw/n-15/product-primary-candidate-first-peer-allocation-first-page-primary-run-02.log",
+      "sha256": "2b29363124b9ee7a994d522e3d107e169af6f4f806aa2c0668aa5752ec2d39ae"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-apple-p1-output-1/raw/n-15/product-primary-candidate-first-peer-allocation-first-page-primary-run-03.log",
+      "sha256": "ea6dfd260d2bd39d599d6dcb1e29afbf748edb598ee973e588f71d4f0639cc14"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-apple-p1-output-1/raw/n-15/product-primary-candidate-first-peer-allocation-first-page-primary-run-04.log",
+      "sha256": "131805bc5ba59d252028994d9e047f70897f3c928831a455fa9552512169c56e"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-apple-p1-output-1/raw/n-15/product-primary-candidate-first-peer-allocation-first-page-primary-run-05.log",
+      "sha256": "24f01036dd9022560a76dab16ae23e2b6dabb1f5e87aaa0b0916f0a6ae7009b5"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-apple-p1-output-1/raw/n-15/product-primary-candidate-first-peer-allocation-first-page-primary-run-06.log",
+      "sha256": "12f3ecd0019d3a7a53d07f80cadf5c5284ded6afd6a32e6cfe67d06d31be27c3"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-apple-p1-output-1/raw/n-15/product-primary-candidate-first-peer-allocation-first-page-primary-run-07.log",
+      "sha256": "e39b77e74a61b925cf5bd756c94ca39710a21a053d22676db6308270fdc5b118"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-apple-p1-output-1/raw/n-15/product-primary-candidate-first-peer-allocation-first-page-primary-run-08.log",
+      "sha256": "686a232f57a2bde949c6f5a6c61f8b47bc1724b56bc9cb92246a2f2597cdc973"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-apple-p1-output-1/raw/n-15/product-primary-candidate-first-peer-allocation-first-page-primary-run-09.log",
+      "sha256": "33057f585a85ecce5b4f9502a79556b22136edb9996d17a61339e4705cf8f0cf"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-apple-p1-output-1/raw/n-15/product-primary-candidate-first-peer-allocation-first-page-primary-run-10.log",
+      "sha256": "044bab82dc9e9e8d263b560bceda1ad767d30cab85b4bb6e32726b0e26950d77"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-apple-p1-output-1/raw/n-15/product-primary-candidate-first-peer-allocation-first-page-primary-run-11.log",
+      "sha256": "fb149c1151cc5ef7bdc07a3fd1346c57353c68a3a4974916f99e25c629e7d034"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-apple-p1-output-1/raw/n-15/product-primary-candidate-first-peer-allocation-first-page-primary-run-12.log",
+      "sha256": "41d5d9351bc1dae1f1fcdd5dd986ad122782740ccaac2f80df46af817d7ad5f0"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-apple-p1-output-1/raw/n-15/product-primary-candidate-first-peer-allocation-first-page-primary-run-13.log",
+      "sha256": "7b4541d39963353788a2c8641e294f93dc61f6023ce02a24dc78c7ad5a6c84b9"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-apple-p1-output-1/raw/n-15/product-primary-candidate-first-peer-allocation-first-page-primary-run-14.log",
+      "sha256": "f9cb169883ac17edc9c29b4726d22a7fe634b3e2049b675aab7432b2e265efb8"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-apple-p1-output-1/raw/n-15/product-primary-candidate-first-peer-allocation-first-page-primary-run-15.log",
+      "sha256": "9f2834da027637c61910e5b43c5b616dc54e076fe4da28097a2915f52b53ec3e"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-apple-p1-output-1/raw/n-15/product-primary-peer-first-candidate-allocation-first-page-primary-run-01.log",
+      "sha256": "7101793f4faa58dc8993481c106bccc3d4da74720fdf5246c55f8a0c7b3f1e11"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-apple-p1-output-1/raw/n-15/product-primary-peer-first-candidate-allocation-first-page-primary-run-02.log",
+      "sha256": "b84f4987f80c082949af8c1d9afa2da55422e6c7a1ef823f09b0a94ec6f0490f"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-apple-p1-output-1/raw/n-15/product-primary-peer-first-candidate-allocation-first-page-primary-run-03.log",
+      "sha256": "f292f7ea2253b8c6d3d5bac82045a8407dc88cfc1215797e9478e9c803539629"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-apple-p1-output-1/raw/n-15/product-primary-peer-first-candidate-allocation-first-page-primary-run-04.log",
+      "sha256": "1934b56cdd46160873acb57bae79f1cfdade20e67b5d84ea9683c57ee01aad82"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-apple-p1-output-1/raw/n-15/product-primary-peer-first-candidate-allocation-first-page-primary-run-05.log",
+      "sha256": "dec5a2d66a0f17496d79767ba4375eb09c276f9d44dd1ccd53746f21e4372f46"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-apple-p1-output-1/raw/n-15/product-primary-peer-first-candidate-allocation-first-page-primary-run-06.log",
+      "sha256": "04309a1ff339e8d4f0fe4d2e12f2b7c4159f87d66cbb0ccebd631aa712afb9ac"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-apple-p1-output-1/raw/n-15/product-primary-peer-first-candidate-allocation-first-page-primary-run-07.log",
+      "sha256": "673a912f29b987b97661176c08baa9de970fc2c16ddada680b367f3731179c18"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-apple-p1-output-1/raw/n-15/product-primary-peer-first-candidate-allocation-first-page-primary-run-08.log",
+      "sha256": "a3595eb246730316993397476be44236d4f6f1006b2d8c0d92965b0a6dc5f7e2"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-apple-p1-output-1/raw/n-15/product-primary-peer-first-candidate-allocation-first-page-primary-run-09.log",
+      "sha256": "2a777eca45298962cbd6ffc02d7c0060d6766039661d0862e93027b11023d115"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-apple-p1-output-1/raw/n-15/product-primary-peer-first-candidate-allocation-first-page-primary-run-10.log",
+      "sha256": "1aae43241314909e0c1369aae85fdc74b0acaae2900bcaa64a32679c132ff2ee"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-apple-p1-output-1/raw/n-15/product-primary-peer-first-candidate-allocation-first-page-primary-run-11.log",
+      "sha256": "85c8c677a8961094056e094acd96c53fc4b3f0199af076cc22798ac1838e670b"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-apple-p1-output-1/raw/n-15/product-primary-peer-first-candidate-allocation-first-page-primary-run-12.log",
+      "sha256": "5aafc2498001a83011e51ad484f0398779b304b20ee1d70c91d8abf738311f68"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-apple-p1-output-1/raw/n-15/product-primary-peer-first-candidate-allocation-first-page-primary-run-13.log",
+      "sha256": "04bc7912a33597914050ac0800f12f0c0d7b2bbe949d2779581cd09d5cf7dd16"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-apple-p1-output-1/raw/n-15/product-primary-peer-first-candidate-allocation-first-page-primary-run-14.log",
+      "sha256": "04c98bc0c858e91db6ce2d5a69d0e33ccf72ba4f1ee8e1183125ec500746efbe"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-apple-p1-output-1/raw/n-15/product-primary-peer-first-candidate-allocation-first-page-primary-run-15.log",
+      "sha256": "a731ec0897b3c24ccefd84b7db84b323db3511578c51ef732372ab56a63612d3"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-apple-p1-output-1/raw/n-15/product-primary-peer-first-peer-allocation-first-page-primary-run-01.log",
+      "sha256": "3b181d2691e0bdf100155aeff4d074c03101dc959104dc121427f8655e99e6ba"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-apple-p1-output-1/raw/n-15/product-primary-peer-first-peer-allocation-first-page-primary-run-02.log",
+      "sha256": "1e09347742d9f0e4a8a206134147475513a775f55594a05a48fda0f2d81ce185"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-apple-p1-output-1/raw/n-15/product-primary-peer-first-peer-allocation-first-page-primary-run-03.log",
+      "sha256": "e172d314e3043e266346bcf21edc4cc52af36a4a931f7a7aadfb3e763f80637c"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-apple-p1-output-1/raw/n-15/product-primary-peer-first-peer-allocation-first-page-primary-run-04.log",
+      "sha256": "8783101da6b1f785769ab5222310936afbcd76fb6b69788ca0738a47b61d31c8"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-apple-p1-output-1/raw/n-15/product-primary-peer-first-peer-allocation-first-page-primary-run-05.log",
+      "sha256": "547f094b438e6b050afdcacda1777dccbbf5bf2c52629e8daa8858262414ee91"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-apple-p1-output-1/raw/n-15/product-primary-peer-first-peer-allocation-first-page-primary-run-06.log",
+      "sha256": "91acf5f648492437bdb3dec4d39268ee86289b478518246f44683762c5214281"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-apple-p1-output-1/raw/n-15/product-primary-peer-first-peer-allocation-first-page-primary-run-07.log",
+      "sha256": "39cb368e7f1b0115d17db9a1e756a40dfc497b62b4dc0fe600c613b81ee96023"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-apple-p1-output-1/raw/n-15/product-primary-peer-first-peer-allocation-first-page-primary-run-08.log",
+      "sha256": "de30674782f8dbbccdb4d70b07fbe6e4201a09a8ac1cd4429ac3cc2b16fcc400"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-apple-p1-output-1/raw/n-15/product-primary-peer-first-peer-allocation-first-page-primary-run-09.log",
+      "sha256": "3b679339467ff4b9014cca768ef30391fc92b1ecd8b5bf2574e690447a174384"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-apple-p1-output-1/raw/n-15/product-primary-peer-first-peer-allocation-first-page-primary-run-10.log",
+      "sha256": "8bfdf612952cddd099df2b89d1a75d046234490e78783b90b11e584ae036b26b"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-apple-p1-output-1/raw/n-15/product-primary-peer-first-peer-allocation-first-page-primary-run-11.log",
+      "sha256": "60de1504fa86352b73f009c767c0341759278852a4f7b6e450a2fb55ad66268e"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-apple-p1-output-1/raw/n-15/product-primary-peer-first-peer-allocation-first-page-primary-run-12.log",
+      "sha256": "ca8c0998a3ee80bd5247dbbee1412f639af9f1106779e63f08e740cd71c55a42"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-apple-p1-output-1/raw/n-15/product-primary-peer-first-peer-allocation-first-page-primary-run-13.log",
+      "sha256": "c34a3554b39f4463a2392cf48b9c2fc77008a5ec08e5b2d8152e34b937816e2c"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-apple-p1-output-1/raw/n-15/product-primary-peer-first-peer-allocation-first-page-primary-run-14.log",
+      "sha256": "665273372180d333fda202aa27c1cb5d8ff016efab74e7156156c50239e2acdf"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-apple-p1-output-1/raw/n-15/product-primary-peer-first-peer-allocation-first-page-primary-run-15.log",
+      "sha256": "e5c955983c97caf427fc882a8cb24805ed08a5d768a14e497b8f3211fd70d1d1"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-apple-p1-output-1/raw/n-15/product-placement-candidate-first-candidate-allocation-first-page-placement-run-01.log",
+      "sha256": "fe16a2e36257c72e7ede8007c70444e2c284a2b82752df4734a3e183de2ec49f"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-apple-p1-output-1/raw/n-15/product-placement-candidate-first-candidate-allocation-first-page-placement-run-02.log",
+      "sha256": "623f02b8cb74205209d58151f78f23bf33153706619ffdd47bec750d89b348e7"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-apple-p1-output-1/raw/n-15/product-placement-candidate-first-candidate-allocation-first-page-placement-run-03.log",
+      "sha256": "895373783e443fb564aa92fccbf9e2c898c7690517617bc575749003146f0aec"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-apple-p1-output-1/raw/n-15/product-placement-candidate-first-candidate-allocation-first-page-placement-run-04.log",
+      "sha256": "5901619a07310022c6d716834a863ed9ff665c5e5efda58d6e2b055b1176d06a"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-apple-p1-output-1/raw/n-15/product-placement-candidate-first-candidate-allocation-first-page-placement-run-05.log",
+      "sha256": "9accf38e2d4cea6fca14a852b6e1df3281754464511b0825802ce01e96bb4e88"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-apple-p1-output-1/raw/n-15/product-placement-candidate-first-candidate-allocation-first-page-placement-run-06.log",
+      "sha256": "4224eef8cb593c5cc5914c681d556f0ca08f37ce63ed19975a9b72683758cb46"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-apple-p1-output-1/raw/n-15/product-placement-candidate-first-candidate-allocation-first-page-placement-run-07.log",
+      "sha256": "fa2d7669623af4f8d8cc728df116dd93b528d838f021249648791a5d4311eb5e"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-apple-p1-output-1/raw/n-15/product-placement-candidate-first-candidate-allocation-first-page-placement-run-08.log",
+      "sha256": "72ae4a30fbc734cc3bd001bc9f917d1c96692a6d0882567b2f280321eecf2404"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-apple-p1-output-1/raw/n-15/product-placement-candidate-first-candidate-allocation-first-page-placement-run-09.log",
+      "sha256": "6a9d0d4865d878176ebe7e0e4851c4653fb9bf5c0461132703400c55a92a1fa3"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-apple-p1-output-1/raw/n-15/product-placement-candidate-first-candidate-allocation-first-page-placement-run-10.log",
+      "sha256": "f38d4a8faa8bbef0003d9ea129a5880c1c31a232b7946cb2934b71af8bb403a4"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-apple-p1-output-1/raw/n-15/product-placement-candidate-first-candidate-allocation-first-page-placement-run-11.log",
+      "sha256": "eaeddeacad8544cc348a72bd4deb48b43d4d720fd084b738ccbe70f3ac8b1dd8"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-apple-p1-output-1/raw/n-15/product-placement-candidate-first-candidate-allocation-first-page-placement-run-12.log",
+      "sha256": "b1c7a3d4e18f7dadd7bc9db62f75cd144b077366ccbdedd1a25f27b8371772bb"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-apple-p1-output-1/raw/n-15/product-placement-candidate-first-candidate-allocation-first-page-placement-run-13.log",
+      "sha256": "8366cc1dcf1008d4a07f77f5fe938767f21ea12caca8ebf50a6294e62ada87f3"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-apple-p1-output-1/raw/n-15/product-placement-candidate-first-candidate-allocation-first-page-placement-run-14.log",
+      "sha256": "22f4ce21982c9a46a8fea842ea420690a32b5ce2feb16373738ba855a352b059"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-apple-p1-output-1/raw/n-15/product-placement-candidate-first-candidate-allocation-first-page-placement-run-15.log",
+      "sha256": "a23446941b7999e9b0016adfc9818ae9886180013297d704af9caa15c333f0bc"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-apple-p1-output-1/raw/n-15/product-placement-candidate-first-peer-allocation-first-page-placement-run-01.log",
+      "sha256": "5bffc90cb9003f580793126a0e8a72027e1e5002c5f708d95d9041ba6233f951"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-apple-p1-output-1/raw/n-15/product-placement-candidate-first-peer-allocation-first-page-placement-run-02.log",
+      "sha256": "8465e88d8afc65388848b0782a5bda5592aed5a7d3c3efaaa7b26ee1214768ba"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-apple-p1-output-1/raw/n-15/product-placement-candidate-first-peer-allocation-first-page-placement-run-03.log",
+      "sha256": "fb2542c67da3354113c00e0fee7e2862ed46c24e4019dbe4a1f3b03581c927d3"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-apple-p1-output-1/raw/n-15/product-placement-candidate-first-peer-allocation-first-page-placement-run-04.log",
+      "sha256": "bc99934bc9f956e20e34d2878eaa5f30d6eb202fbee8bb86e6c6e8d30fe29a15"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-apple-p1-output-1/raw/n-15/product-placement-candidate-first-peer-allocation-first-page-placement-run-05.log",
+      "sha256": "1a0fdf1141b761233b888d543a93308660554998b3d5f09fc3915ad920d5ce9c"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-apple-p1-output-1/raw/n-15/product-placement-candidate-first-peer-allocation-first-page-placement-run-06.log",
+      "sha256": "6d41cab989b961f1bbe918d254e0a05f5a4f2f6b65b34e41b4ce60036d56520a"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-apple-p1-output-1/raw/n-15/product-placement-candidate-first-peer-allocation-first-page-placement-run-07.log",
+      "sha256": "8ddfe190a18870afac47b1fc22bf9dba72bbd3b28c2af85e07e48273b8ef5c83"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-apple-p1-output-1/raw/n-15/product-placement-candidate-first-peer-allocation-first-page-placement-run-08.log",
+      "sha256": "c153fb217268609773db727dfbed76c0e3a0be7232fb4b42cadd93615a7fe80c"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-apple-p1-output-1/raw/n-15/product-placement-candidate-first-peer-allocation-first-page-placement-run-09.log",
+      "sha256": "90cf3b6c5370a0d049610672b0039a8be15a937bdd08cd45857099059e2eae31"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-apple-p1-output-1/raw/n-15/product-placement-candidate-first-peer-allocation-first-page-placement-run-10.log",
+      "sha256": "3c74e2b97482ecf2517681473783159ddbb98165dde5d385eb4daa9cdc16fa5c"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-apple-p1-output-1/raw/n-15/product-placement-candidate-first-peer-allocation-first-page-placement-run-11.log",
+      "sha256": "6574cb887b60861f810e86a968b237ba72c9fd03c40faaf06f619e3382db90ba"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-apple-p1-output-1/raw/n-15/product-placement-candidate-first-peer-allocation-first-page-placement-run-12.log",
+      "sha256": "78324177ce053435629220bf5a0fdbd6a5026499935ea53d397625c766fcd097"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-apple-p1-output-1/raw/n-15/product-placement-candidate-first-peer-allocation-first-page-placement-run-13.log",
+      "sha256": "92a2c6ba1b7b4755eb511ec0418e827cfc84493a4c449adb9f8324c8febd7a0c"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-apple-p1-output-1/raw/n-15/product-placement-candidate-first-peer-allocation-first-page-placement-run-14.log",
+      "sha256": "d2c9de999358215fcbaaeb5cbe8de7905d797e5b73788442874ad10a02e005c2"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-apple-p1-output-1/raw/n-15/product-placement-candidate-first-peer-allocation-first-page-placement-run-15.log",
+      "sha256": "d5c696b9fa742b379e06c33937ba563b4d7c1e6f8a09631413692ec17295d58e"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-apple-p1-output-1/raw/n-15/product-placement-peer-first-candidate-allocation-first-page-placement-run-01.log",
+      "sha256": "27113b82d0405a44427e2f8b2934a55f91c41ed54bda77e21f16ece484d96e84"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-apple-p1-output-1/raw/n-15/product-placement-peer-first-candidate-allocation-first-page-placement-run-02.log",
+      "sha256": "cb9a3b4144f5db46cfed7bc10953d43c67f4b769b672d893fabe271d37bf131a"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-apple-p1-output-1/raw/n-15/product-placement-peer-first-candidate-allocation-first-page-placement-run-03.log",
+      "sha256": "e7a0997263878e46998100e2f6d7ea5ee0adb82e9b6c5644807bfe16683ce152"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-apple-p1-output-1/raw/n-15/product-placement-peer-first-candidate-allocation-first-page-placement-run-04.log",
+      "sha256": "588820e7e93e0d07abaafc0dfeacfe2ff37b14a012dff4e4c57137d118686b49"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-apple-p1-output-1/raw/n-15/product-placement-peer-first-candidate-allocation-first-page-placement-run-05.log",
+      "sha256": "5965cf8151262dde35ec3d79a7752186458fdf810d42f5f0ae4af9da9efa3d34"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-apple-p1-output-1/raw/n-15/product-placement-peer-first-candidate-allocation-first-page-placement-run-06.log",
+      "sha256": "3ef721ce3c9aae4c0f4762af5827f4fc658bfe7fd8be2069a863e8b15cdae33d"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-apple-p1-output-1/raw/n-15/product-placement-peer-first-candidate-allocation-first-page-placement-run-07.log",
+      "sha256": "f28efb4b8ebc51079e33e663dc6153fd9c56d08fe6b861383b61c78558496234"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-apple-p1-output-1/raw/n-15/product-placement-peer-first-candidate-allocation-first-page-placement-run-08.log",
+      "sha256": "04add4e408260c837a125a678ed1274117be0f138420badf8fcbbbf3f9adb995"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-apple-p1-output-1/raw/n-15/product-placement-peer-first-candidate-allocation-first-page-placement-run-09.log",
+      "sha256": "a4f7bb00f3bb9e29014ea2ed50cabcb1469c636fc5a553124a0a74ae6f963089"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-apple-p1-output-1/raw/n-15/product-placement-peer-first-candidate-allocation-first-page-placement-run-10.log",
+      "sha256": "3e764f1bd774aa3dee17ab70b5efe85b2408c50b38669de33375c82a13f3bae9"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-apple-p1-output-1/raw/n-15/product-placement-peer-first-candidate-allocation-first-page-placement-run-11.log",
+      "sha256": "cf52aae2f2319c7e3f3792c7cfe9f8c98ec16dc97dabd7899649804d0fbdab8f"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-apple-p1-output-1/raw/n-15/product-placement-peer-first-candidate-allocation-first-page-placement-run-12.log",
+      "sha256": "a38f528eb01d858161331edb168beec4a93c2173600b07724b3225e27158cf48"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-apple-p1-output-1/raw/n-15/product-placement-peer-first-candidate-allocation-first-page-placement-run-13.log",
+      "sha256": "65e387e2355c9d4567e713a6e6fedce53c3f8a63a29f6302eaaca4ef2faf97f6"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-apple-p1-output-1/raw/n-15/product-placement-peer-first-candidate-allocation-first-page-placement-run-14.log",
+      "sha256": "eba17c962bdfe0908e01c0bffc67a2bb40cd930bdb66ee88de298b9f5754fd8e"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-apple-p1-output-1/raw/n-15/product-placement-peer-first-candidate-allocation-first-page-placement-run-15.log",
+      "sha256": "71c56ca2ec9da6a5c15d8f23dcfcbd2f5c5fb292f4656146f1ea48e1236c5a75"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-apple-p1-output-1/raw/n-15/product-placement-peer-first-peer-allocation-first-page-placement-run-01.log",
+      "sha256": "8cb17511679e48e32a47d4628a78f7fd4894686b5981f614f280cc9f86f32362"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-apple-p1-output-1/raw/n-15/product-placement-peer-first-peer-allocation-first-page-placement-run-02.log",
+      "sha256": "53a494c261a8f15caee7974db2d4479b1ff8b921a3235076022c92f5f5df1654"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-apple-p1-output-1/raw/n-15/product-placement-peer-first-peer-allocation-first-page-placement-run-03.log",
+      "sha256": "dc1cb7ac54abf13fe0c6de93789c74a839dfb76c9c6df6afc0bcca4c43ec423c"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-apple-p1-output-1/raw/n-15/product-placement-peer-first-peer-allocation-first-page-placement-run-04.log",
+      "sha256": "55697e2e059c17902ddda6b215801319928d04499a0ba421131fb4cdec1f49c2"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-apple-p1-output-1/raw/n-15/product-placement-peer-first-peer-allocation-first-page-placement-run-05.log",
+      "sha256": "31b705f1a92f82d8311f85d2aea500075083d81bed3728f0c45cd3f43e630f74"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-apple-p1-output-1/raw/n-15/product-placement-peer-first-peer-allocation-first-page-placement-run-06.log",
+      "sha256": "a29d527b3bdda7355a6da1a9c63bf7c913adc7ee54ac74bde98626f165bbbf76"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-apple-p1-output-1/raw/n-15/product-placement-peer-first-peer-allocation-first-page-placement-run-07.log",
+      "sha256": "1bc82c6cf81eb9bfbb6ce47d374750e0c56d3949e686bc09bc0eb7a02fad175d"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-apple-p1-output-1/raw/n-15/product-placement-peer-first-peer-allocation-first-page-placement-run-08.log",
+      "sha256": "55b97823d32995ebccc1b26bf6348da6986eaedb8f67307bb63472e3e32a4a18"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-apple-p1-output-1/raw/n-15/product-placement-peer-first-peer-allocation-first-page-placement-run-09.log",
+      "sha256": "a3cb0644939ff994aafb424b170b688ccd21f1fa7b1e08e2136e97a76d1813f6"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-apple-p1-output-1/raw/n-15/product-placement-peer-first-peer-allocation-first-page-placement-run-10.log",
+      "sha256": "3f77d7c5ae48c3553848e5c1cd3a745b194949c785f4883fd46d84e01dffa417"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-apple-p1-output-1/raw/n-15/product-placement-peer-first-peer-allocation-first-page-placement-run-11.log",
+      "sha256": "c5477fc8a9109afe5a8f778dcc5b471fcbbcab3e985dcc42ae52f24c6b189258"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-apple-p1-output-1/raw/n-15/product-placement-peer-first-peer-allocation-first-page-placement-run-12.log",
+      "sha256": "938d65af42bf6100995649dd7fd8e290dcae27568706b5dec1db43f404471d23"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-apple-p1-output-1/raw/n-15/product-placement-peer-first-peer-allocation-first-page-placement-run-13.log",
+      "sha256": "fb72e090bd342d11f74fb496bb51663905d7582f682090980371f5d9bc037c96"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-apple-p1-output-1/raw/n-15/product-placement-peer-first-peer-allocation-first-page-placement-run-14.log",
+      "sha256": "fd3cdc915d9fa362371ce64913199bc4812522e7aa4768822dc32ab5ed572fe4"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-apple-p1-output-1/raw/n-15/product-placement-peer-first-peer-allocation-first-page-placement-run-15.log",
+      "sha256": "df52ef06bc2c0e49d616dd3bbd337e5339aef3907baae8b093ad7cfa3a046c36"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-apple-p1-output-1/raw/n-15/control-candidate-first-run-01.log",
+      "sha256": "36fe312c6f4e120b70e95df3c86cef856dda8400b9875e9a880002947ee005c1"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-apple-p1-output-1/raw/n-15/control-candidate-first-run-02.log",
+      "sha256": "f00afd9fd51efc2b15f791e73c02751226975203a9d6ccbe88c75b158dba76e2"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-apple-p1-output-1/raw/n-15/control-candidate-first-run-03.log",
+      "sha256": "ef080c8f35450128fd71b03986a772a38fa240ef8288500b44d18133bad61368"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-apple-p1-output-1/raw/n-15/control-candidate-first-run-04.log",
+      "sha256": "a20fbc0d7d0e5ab6fa4be9ee44160cdd10db4028e661f233e948ff1e3d6a8182"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-apple-p1-output-1/raw/n-15/control-candidate-first-run-05.log",
+      "sha256": "474e3f9b9d2c8b96b8f5cd9c1ee6e92f973ebb53ab2f1990707dc11cee54df70"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-apple-p1-output-1/raw/n-15/control-candidate-first-run-06.log",
+      "sha256": "e4ce88392c65c257b708823bfca771080cee61feade75e142cfd115da7008907"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-apple-p1-output-1/raw/n-15/control-candidate-first-run-07.log",
+      "sha256": "a4f11d781ed804b70bd58e7495bb2d85a4812b13f4f270de9473dbc7155b642d"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-apple-p1-output-1/raw/n-15/control-candidate-first-run-08.log",
+      "sha256": "d02f82f5ae2b8fbd013069fef7308a5a6eab4efbaccd776cf23cf43a3fe5b580"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-apple-p1-output-1/raw/n-15/control-candidate-first-run-09.log",
+      "sha256": "5f8a4e7ca70460a4c2e70a437ee9bc641796e8eefc3e3c34e8451efc8d355ede"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-apple-p1-output-1/raw/n-15/control-candidate-first-run-10.log",
+      "sha256": "b60a093df145cb5cf2dcefe59824346741a427eea8a9a1a992236566c4e94a65"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-apple-p1-output-1/raw/n-15/control-candidate-first-run-11.log",
+      "sha256": "a241d2348845da9a5bbf9db471a51d502ee4c964e1ea749bd35bb788692a438a"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-apple-p1-output-1/raw/n-15/control-candidate-first-run-12.log",
+      "sha256": "21bcc34bb98eae647cb06781712234629b4c89c4ef9b691c178dd3491e817ca5"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-apple-p1-output-1/raw/n-15/control-candidate-first-run-13.log",
+      "sha256": "6ca9f938df463821db83c4d684517bc174aea9fb7d49ca0a5b326a9bd09703be"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-apple-p1-output-1/raw/n-15/control-candidate-first-run-14.log",
+      "sha256": "f725a338a5a4454c440ff6ef7a7682596603a57cea8df4e7a2674829b45e968e"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-apple-p1-output-1/raw/n-15/control-candidate-first-run-15.log",
+      "sha256": "7c919e63bec7967ce110dd87beb5e74e4fdd168fd5268754632a4ec6c1ca6a04"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-apple-p1-output-1/raw/n-15/control-peer-first-run-01.log",
+      "sha256": "bb459e082bafb8a34711719c67668e9e9d243a4ea832ffc054f3715b0f2b49cb"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-apple-p1-output-1/raw/n-15/control-peer-first-run-02.log",
+      "sha256": "19b3a23e84c17d4dbf5d66b4e5cc976cb300d495808bcb6a82c8cc9e868cf0c1"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-apple-p1-output-1/raw/n-15/control-peer-first-run-03.log",
+      "sha256": "647c8218f251a322fc980aa9a292824ffaf89443de44007994321802954c65aa"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-apple-p1-output-1/raw/n-15/control-peer-first-run-04.log",
+      "sha256": "f281aec0c8acd2c0d4cba7c1df7847db0c25672aeb0e5e965b977c9cf1cdf269"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-apple-p1-output-1/raw/n-15/control-peer-first-run-05.log",
+      "sha256": "bea28822b53311a36fa84f1b72423ed6f67628e6a82ef29d2aacdf2ec6326c54"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-apple-p1-output-1/raw/n-15/control-peer-first-run-06.log",
+      "sha256": "f28acc9c91c58ba10cf19fac5e5e51deb2f141e993cfa89b9bbefd17ad982aaf"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-apple-p1-output-1/raw/n-15/control-peer-first-run-07.log",
+      "sha256": "9b54cbbd7019faf147969ce3b5df5707875028485721a901be11f56e4ad69fd5"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-apple-p1-output-1/raw/n-15/control-peer-first-run-08.log",
+      "sha256": "1891940dca5242d344b959ed7dce33489c41732d9bcc4f1f9a80f8dd7587c660"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-apple-p1-output-1/raw/n-15/control-peer-first-run-09.log",
+      "sha256": "a3ebb5441afbe80d35947325f85468e9ea49f6004924b9f98d8ebe948e779cd9"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-apple-p1-output-1/raw/n-15/control-peer-first-run-10.log",
+      "sha256": "99181ab272db725dee8f7bbbe1add610dfedd6223514bdc3bc1b6eddb06c30a8"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-apple-p1-output-1/raw/n-15/control-peer-first-run-11.log",
+      "sha256": "9d5682a13ee84c6902f5ca6be666ab92c0c762c5f52820e57ec4a1558f86d9e9"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-apple-p1-output-1/raw/n-15/control-peer-first-run-12.log",
+      "sha256": "260fccf837ccdffb9e6990c9259fbdba509849cc5a2d62d1e9d66f5c265cf6a1"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-apple-p1-output-1/raw/n-15/control-peer-first-run-13.log",
+      "sha256": "f2e0b39d7a26b2213f394a6d7f1e8b9402679b8c3205b82f00fa52dbf51db5bf"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-apple-p1-output-1/raw/n-15/control-peer-first-run-14.log",
+      "sha256": "2652f442085c034a43e5df5085d9458a6750b963b836b20da781233149c72824"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-apple-p1-output-1/raw/n-15/control-peer-first-run-15.log",
+      "sha256": "51c8f496d6ea85e636ba3051d755735b7c74b7fd831f92edda539768f7f89ae7"
+    }
+  ],
+  "record": "hyle_perf_evidence_manifest",
+  "schema": "hyle.perf.evidence-manifest/v1",
+  "source": {
+    "clean": true,
+    "remote": "/Users/kiro/hyle-scratch/compute-unified/g01-native-ragged-p1-source-v2",
+    "revision": "66af56852d0602ce14cdfde9aba3de373a7472c6",
+    "tree": "1bb8013d5ae67dccf7ae8d17bc9d4c371b09e7e6"
+  },
+  "summary": {
+    "path": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-apple-p1-output-1/summary.json",
+    "sha256": "e624484ea51398aa3d4f24b6e86a7f9ffa0cf06c8c71f48235b9057520d0dfe9"
+  },
+  "validator_results": [
+    {
+      "details": {
+        "artifact_count": 6,
+        "kind": "artifact-identity"
+      },
+      "gate": "PASS",
+      "id": "artifact-identity"
+    },
+    {
+      "details": {
+        "architecture_matches_profile": true,
+        "compiler_id": "AppleClang",
+        "compiler_matches_profile": true,
+        "compiler_version": "21.0.0.21000334",
+        "configuration": "Release",
+        "configuration_observation": {
+          "available": [
+            "Release"
+          ],
+          "mechanism": "CMAKE_BUILD_TYPE",
+          "proven": true,
+          "value": "Release"
+        },
+        "expected_compiler_id": "AppleClang",
+        "expected_compiler_version_prefix": "21.0",
+        "formal_toolchain": {
+          "mismatches": {},
+          "proven": false,
+          "reason": "machine runner profile has no pinned formal_toolchain",
+          "required": false
+        },
+        "fresh": true,
+        "generator_matches_profile": true,
+        "isa": "portable",
+        "kind": "build-contract",
+        "linkage": "static",
+        "lto": "off",
+        "toolchain": {
+          "cmake_compiler_record_sha256": "661f85d416ef9d157c2a329d41a10e25f60ea66d1e04d34002f6a01343285ae9",
+          "compiler_frontend_variant": "GNU",
+          "compiler_id": "AppleClang",
+          "compiler_path": "/usr/bin/c++",
+          "compiler_sha256": "34129c71a01a74f7f3b2443521519b2e5447553fa187f5fcafaaf8c42cc192e2",
+          "compiler_target": "unknown",
+          "compiler_version": "21.0.0.21000334",
+          "formal_identity_complete": false,
+          "linker_id": "AppleClang",
+          "linker_path": "/Library/Developer/CommandLineTools/usr/bin/ld",
+          "linker_sha256": "374d9f0713bce2c8a9e1e82bde51615d5433516a10d99b63107eb6ee70542e4c",
+          "linker_version": "ld: unknown options: --version",
+          "schema": "hyle.perf.toolchain-record/v1",
+          "sdk": "apple-sdk:MacOSX.sdk",
+          "stdlib": "unknown",
+          "system_name": "Darwin",
+          "system_processor": "arm64",
+          "system_version": "27.0.0"
+        },
+        "toolchain_attested": true
+      },
+      "gate": "PASS",
+      "id": "build-contract"
+    },
+    {
+      "details": {
+        "exit_code": 0,
+        "kind": "command",
+        "log": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-apple-p1-output-1/validators/native-page-aa.log",
+        "log_sha256": "dfac711addb53b1a3a6d78cf1a1b0f8f25453ae2753d05c73e4d4a55e23c779f"
+      },
+      "gate": "PASS",
+      "id": "native-page-aa"
+    }
+  ]
+}

@@ -143,3 +143,22 @@ native query readonly wrapper需要的metadata按真实生命周期收费；不�
 UNPROVEN；发现改变上述shape、owner、permissions或成本级别的新事实先回本卡裁决，
 不能删除原 Vulkan seal/guard来得到PASS。七问沿上述已锁依赖/owner/BORROW/无FFI、
 P0、三交付与自然公开journey裁决，candidate以后只补实际结果。
+
+
+NJ-01草稿已写common三port descriptor/factory与owned NodeBinding声明；同一graph_batch
+目标新增native_paged_node.cc，不改产品root/全局构建或G01候选。独立fixture描述active5
+而capacity11、logical95而physical64的重复/乱序页，并由真实GraphBuilder核三inputs/
+active output；foreign同capacity schema、空输出与伪造physical root反例已登记。当前
+尚未compile/run，不能写PASS或candidate。三owner保持AUDITED，NJ02–06未实施。
+selector NJ01原plan为READY，只选择实际graph_batch与其真实direct消费者/逐头/Graph交付；
+按活动卡先编单CPU common consumer及原materialized负空间，待当前Apple正式P1实际
+terminal后串行运行，未扩大成全部算子或重跑closed数学。
+
+
+NJ01 source阶段五项PASS：active5/capacity11、logical95/physical64、三真实Graph inputs、
+foreign同capacity schema、empty/伪root拒绝及原三materialized负空间，见
+[阶段](../../../../evidence/correctness/inference-g02-native-page-node-stage/README.md)。
+首次fixture误用Operation(descriptor) compile FAIL，修为原Operation::custom后通过；
+产品不因fixture失败改形状。累计84.031s，原FAIL/log与标明重建的首test输入保留。
+只是common GraphBuilder/schema源资格，不代签native math/frame guard/SDK/san。
+NJ02–06未实现，三owner继续AUDITED，不能candidate或签整个G02/goal。

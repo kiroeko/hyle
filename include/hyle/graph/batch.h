@@ -2,7 +2,11 @@
 #include "hyle/graph/leased_invocation.h"
 #include "hyle/compute/batch_execution.h"
 #include "hyle/compute/batch_materialize.h"
+#include "hyle/compute/batch_paged_native.h"
 #include "hyle/compute/paged_arena.h"
+#include <array>
+#include <cstdint>
+#include <string_view>
 
 #if defined(HYLE_STATIC)
 #define HYLE_GRAPH_BATCH_API
@@ -19,6 +23,38 @@ inline constexpr compute::ProviderId kProviderId{0x48594c4547524241ULL,0x5443485
 HYLE_GRAPH_BATCH_API Result<compute::Provider> provider(compute::Provider base,
     compute::BatchSchema,compute::BatchProgramOptions) noexcept;
 struct NodeLayout final {NodeId node;compute::BatchLayoutVersion layout;};
+// Native page math schema for a coarse joint graph. The three inputs are the
+// truthful packed-Q/physical-K/physical-V descriptions of the common recipe;
+// the output has exactly active_query_rows. Owned recipe/layout and page-table
+// uploads belong to the explicit cold NativePagedNodeBinding, not raw ports.
+// This schema alone does not qualify a native route or authorize arena reads.
+struct NativePagedAttention final {
+  compute::BatchCapacity capacity{};
+  std::uint32_t active_query_rows = 0;
+  float scale = 1.0F;
+  bool causal = true;
+  static constexpr compute::OperationId operation_id{
+      0x48594c4547524241ULL, 0x4e41544956455001ULL};
+  static constexpr std::string_view operation_name = "native-paged-graph-attention";
+  constexpr compute::OperationTraits operation_traits() const noexcept {
+    return {{3,3},1,compute::AliasPolicy::kNone,compute::EffectKind::kPure,
+            compute::PrecisionPolicy::kExact,compute::DataType::kFloat32};
+  }
+  HYLE_GRAPH_BATCH_API Status infer_output_descriptions(
+      std::span<const compute::TensorDesc>,std::span<compute::TensorDesc>) const noexcept;
+};
+static_assert(compute::detail::InlineCustomOperationDescriptor<NativePagedAttention>);
+HYLE_GRAPH_BATCH_API Result<NativePagedAttention> native_paged_attention(
+    const compute::NativePagedBatchProgram&,compute::BatchLayoutVersion) noexcept;
+// Borrowed only by compile; the immutable joint plan copies these owners.
+// Allocator/budget and native resources retain their original lifetime rules.
+// Another active-Q output shape requires the original exact variant/compile.
+struct NativePagedNodeBinding final {
+  NodeId node;
+  compute::NativePagedBatchProgram program;
+  compute::BatchLayoutVersion layout;
+  compute::NativePagedInvocationOptions options;
+};
 struct MaterializedGraph final {
   Graph graph;
   std::array<ValueId,5> inputs{};

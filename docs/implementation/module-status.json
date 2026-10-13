@@ -516,7 +516,7 @@
       "module": "compute_route_apple",
       "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/inference-g01-native-paged-read.md",
-      "summary": "G01 native page candidate: owned compact table/shared native slots, original MLX vector/2pass/GQA/NAX/steel and Vulkan fullF32 scalar page addresses; actual Air math and exact-page failure/retirement/OOM/zero-domain source risks pass. API/algorithm frozen; relocated SDK/headers/native host sanitizers/immutable same-math P1 remain unproven; whole goal not closed.",
+      "summary": "G01 native page candidate520 frozen: actual Air original MLX/Vulkan page math, exact-page native failure/retirement/OOM/zero-domain risks, four relocated SDKs/headers, six native host sanitizer finals (explicit Metal TSan boundary model) and Windows public link/three headers complete. Apple immutable same-lifecycle P1 QUALIFIED/noninferiority PASS/verify0; Vulkan P1 pending. Whole G01/G02/goal not closed.",
       "candidate": "520027a57ff41da96ac908ad0d35896e2dda9734"
     },
     {
@@ -534,7 +534,7 @@
       "module": "compute_route_vulkan",
       "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/inference-g01-native-paged-read.md",
-      "summary": "G01 native page candidate: owned compact table/shared native slots, original MLX vector/2pass/GQA/NAX/steel and Vulkan fullF32 scalar page addresses; actual Air math and exact-page failure/retirement/OOM/zero-domain source risks pass. API/algorithm frozen; relocated SDK/headers/native host sanitizers/immutable same-math P1 remain unproven; whole goal not closed.",
+      "summary": "G01 native page candidate520 frozen: actual Air original MLX/Vulkan page math, exact-page native failure/retirement/OOM/zero-domain risks, four relocated SDKs/headers, six native host sanitizer finals (explicit Metal TSan boundary model) and Windows public link/three headers complete. Apple immutable same-lifecycle P1 QUALIFIED/noninferiority PASS/verify0; Vulkan P1 pending. Whole G01/G02/goal not closed.",
       "candidate": "520027a57ff41da96ac908ad0d35896e2dda9734"
     },
     {
@@ -552,14 +552,14 @@
       "module": "compute_provider_ggml_vulkan",
       "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/inference-g01-native-paged-read.md",
-      "summary": "G01 native page candidate: owned compact table/shared native slots, original MLX vector/2pass/GQA/NAX/steel and Vulkan fullF32 scalar page addresses; actual Air math and exact-page failure/retirement/OOM/zero-domain source risks pass. API/algorithm frozen; relocated SDK/headers/native host sanitizers/immutable same-math P1 remain unproven; whole goal not closed.",
+      "summary": "G01 native page candidate520 frozen: actual Air original MLX/Vulkan page math, exact-page native failure/retirement/OOM/zero-domain risks, four relocated SDKs/headers, six native host sanitizer finals (explicit Metal TSan boundary model) and Windows public link/three headers complete. Apple immutable same-lifecycle P1 QUALIFIED/noninferiority PASS/verify0; Vulkan P1 pending. Whole G01/G02/goal not closed.",
       "candidate": "520027a57ff41da96ac908ad0d35896e2dda9734"
     },
     {
       "module": "compute_ggml_runtime",
       "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/inference-g01-native-paged-read.md",
-      "summary": "G01 native page candidate: owned compact table/shared native slots, original MLX vector/2pass/GQA/NAX/steel and Vulkan fullF32 scalar page addresses; actual Air math and exact-page failure/retirement/OOM/zero-domain source risks pass. API/algorithm frozen; relocated SDK/headers/native host sanitizers/immutable same-math P1 remain unproven; whole goal not closed.",
+      "summary": "G01 native page candidate520 frozen: actual Air original MLX/Vulkan page math, exact-page native failure/retirement/OOM/zero-domain risks, four relocated SDKs/headers, six native host sanitizer finals (explicit Metal TSan boundary model) and Windows public link/three headers complete. Apple immutable same-lifecycle P1 QUALIFIED/noninferiority PASS/verify0; Vulkan P1 pending. Whole G01/G02/goal not closed.",
       "candidate": "520027a57ff41da96ac908ad0d35896e2dda9734"
     },
     {
@@ -678,7 +678,7 @@
       "module": "compute_batch",
       "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/inference-g01-native-paged-read.md",
-      "summary": "G01 native page candidate: owned compact table/shared native slots, original MLX vector/2pass/GQA/NAX/steel and Vulkan fullF32 scalar page addresses; actual Air math and exact-page failure/retirement/OOM/zero-domain source risks pass. API/algorithm frozen; relocated SDK/headers/native host sanitizers/immutable same-math P1 remain unproven; whole goal not closed.",
+      "summary": "G01 native page candidate520 frozen: actual Air original MLX/Vulkan page math, exact-page native failure/retirement/OOM/zero-domain risks, four relocated SDKs/headers, six native host sanitizer finals (explicit Metal TSan boundary model) and Windows public link/three headers complete. Apple immutable same-lifecycle P1 QUALIFIED/noninferiority PASS/verify0; Vulkan P1 pending. Whole G01/G02/goal not closed.",
       "candidate": "520027a57ff41da96ac908ad0d35896e2dda9734"
     },
     {

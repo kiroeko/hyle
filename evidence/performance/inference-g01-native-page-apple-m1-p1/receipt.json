@@ -1,0 +1,51 @@
+{
+  "product_candidate": "520027a57ff41da96ac908ad0d35896e2dda9734",
+  "performance_source": "66af56852d0602ce14cdfde9aba3de373a7472c6",
+  "contract_sha256": "938628def9382ea59920780656ba1b3ec535d9146a9073ec8f258bc78d4e7649",
+  "qualification": "QUALIFIED",
+  "performance": "PASS",
+  "verify_exit": 0,
+  "job_exit": 0,
+  "elapsed_seconds": 938.810121,
+  "sample_stages": [
+    15
+  ],
+  "product_processes": 120,
+  "control_processes": 30,
+  "aa_processes": 16,
+  "rows": [
+    {
+      "id": "page-mixed-d256",
+      "ratio_range": [
+        1.497821983447074,
+        1.5051845000486808
+      ],
+      "noninferiority": "PASS",
+      "exact": "WIN",
+      "direction": "WIN"
+    },
+    {
+      "id": "page-prefill-d256",
+      "ratio_range": [
+        1.1053492619083853,
+        1.1097341747944158
+      ],
+      "noninferiority": "PASS",
+      "exact": "WIN",
+      "direction": "WIN"
+    },
+    {
+      "id": "page-holdout-d64",
+      "ratio_range": [
+        1.048090290292352,
+        1.0555153145695364
+      ],
+      "noninferiority": "PASS",
+      "exact": "INCONCLUSIVE",
+      "direction": "WIN"
+    }
+  ],
+  "native_private_upper": "UNKNOWN both arms",
+  "machine": "actual Mac16,12 M4 macOS27.0.1 AppleClang21, M1-MAC engineering QoS interactive, not Formal independent hardware",
+  "raw_zip_sha256": "67fccbc14bae7adab1442b237f673340d09d4518d11d9acd11eb32e838e14e72"
+}

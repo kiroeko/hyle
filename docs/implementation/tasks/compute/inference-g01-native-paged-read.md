@@ -264,3 +264,22 @@ Apple force_fused原SDPA，Vulkan pristine pin生成独立FullF32 scalar；原�
 及before/after SHA，不把有显式page地址适配的linked source写成所有文件pristine。
 P1只在commit/tree/contract/toolchain/machine绑定的clean不可变验证源运行。新Windows
 定向compile/link仍需取证；不能以Air验证代签。G02与goal0/10继续保留。
+
+
+Apple不可变page同合同P1完成：source66af56852/product520027a57，原16AA与n15产品120/
+controls30、QUALIFIED/5%非劣PASS、verify0，938.810s。见
+[Apple P1](../../../../evidence/performance/inference-g01-native-page-apple-m1-p1/README.md)。
+D256 mixed吞吐比1.4978–1.5052、prefill1.1053–1.1097，均实用WIN/相对1方向WIN；D64
+1.0481–1.0555、实用band INCONCLUSIVE而方向WIN，不将边缘方向改名为实用5%优势。
+所有prepare/原native replacement/table上传/确切guards/submit/wait/owning result费用均计。
+仅actual Air有限page域，不签全模型token/s、growth/capture、Windows实际math或联合。
+Vulkan正式P1仍待；Windows新公共链接/三头定向build正在原树fourjobs执行，无binary/
+GPU run。五G01owner仍CANDIDATE；新G02有限scope/audit独立登记，不改520产品候选。
+
+
+Windows actual MSVC19.50.35728.0新公开native page consumer链接与三standalone headers
+PASS，原source/shared树fourjobs累计215.016s，见
+[定向编译](../../../../evidence/correctness/inference-g01-native-page-windows-compile/README.md)。
+原依赖source authentication/shader generation与库内重编成本计入；未run executable/GPU，
+不冒称Windows实际数学/性能。当前本native有限轮只剩Vulkan不可变同合同P1及终审裁决；
+整个G01其它已准入域/联合G02与G03–10未完成，不能签全goal。

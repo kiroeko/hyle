@@ -1,0 +1,14 @@
+{
+  "command": [
+    "/usr/bin/python3",
+    "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-p1-source/scripts/hyle-perf.py",
+    "verify",
+    "--contract",
+    "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-p1-source/bench/inference_resident_sdpa/apple_page_p1/contract.json",
+    "--manifest",
+    "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-apple-p1-output-1/manifest.json"
+  ],
+  "exit_code": 0,
+  "stdout": "{\n  \"contract_sha256\": \"938628def9382ea59920780656ba1b3ec535d9146a9073ec8f258bc78d4e7649\",\n  \"current_certification_policy_eligible\": true,\n  \"environment_policy_compatibility\": \"CURRENT\",\n  \"manifest\": \"/Users/kiro/hyle-scratch/compute-unified/g01-native-page-apple-p1-output-1/manifest.json\",\n  \"paths_verified\": true,\n  \"product_gate_policy\": \"consumer-evidence-v1\",\n  \"product_interpretation\": \"CURRENT_POLICY_EVIDENCE_REQUIRES_GATE_REPLAY\",\n  \"provenance_compatibility\": \"EXACT\",\n  \"provenance_renewal_ledger_sha256\": null,\n  \"provenance_renewals_applied\": [],\n  \"qualification\": \"QUALIFIED\"\n}\n",
+  "stderr": ""
+}

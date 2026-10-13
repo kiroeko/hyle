@@ -1,0 +1,99 @@
+{
+  "scope": "AUDITED G02 NJ01 draft Graph node schema/source negative space only; no hybrid/native qualification",
+  "inputs": [
+    {
+      "path": "include/hyle/graph/batch.h",
+      "sha256": "0db40b8c74dbaab965a9c1ccf629f43555053b56748908103202795513651231"
+    },
+    {
+      "path": "src/graph_batch/native_paged_node.cc",
+      "sha256": "c03ec70b6d7f2c9fe0c8c9ebc05bc943a45117ee700e17d3fd8923558856326f"
+    },
+    {
+      "path": "src/graph_batch/CMakeLists.txt",
+      "sha256": "60abda27d21dbb3c3dd16322367c674956057d27ef5efc5c3fdc8b55122101dc"
+    },
+    {
+      "path": "tests/graph_batch/native_paged_node_test.cc",
+      "sha256": "80add3ea7a64f58c653447ce47a7a72296155829769937021de654d68dca65f9"
+    },
+    {
+      "path": "tests/graph_batch/CMakeLists.txt",
+      "sha256": "e4ecb31d3b741135416ced84748d7f1623edb42d6812a4adc4eeaaaa883284a5"
+    }
+  ],
+  "stages": [
+    {
+      "stage": "configure",
+      "command": [
+        "cmake",
+        "-S",
+        "C:\\public\\project-hyle\\hyle",
+        "-B",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev",
+        "-DCMAKE_PROJECT_INCLUDE=C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g02\\native-page-node\\project.cmake"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 20.375,
+      "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g02\\native-page-node\\configure-1.log"
+    },
+    {
+      "stage": "build",
+      "command": [
+        "cmake",
+        "--build",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev",
+        "--target",
+        "g02_native_page_node_tests",
+        "--parallel",
+        "4"
+      ],
+      "exit_code": 2,
+      "elapsed_seconds": 22.203000000008615,
+      "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g02\\native-page-node\\build-1.log"
+    },
+    {
+      "stage": "configure",
+      "command": [
+        "cmake",
+        "-S",
+        "C:\\public\\project-hyle\\hyle",
+        "-B",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev",
+        "-DCMAKE_PROJECT_INCLUDE=C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g02\\native-page-node\\project.cmake"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 19.187000000005355,
+      "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g02\\native-page-node\\configure-2.log"
+    },
+    {
+      "stage": "build",
+      "command": [
+        "cmake",
+        "--build",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev",
+        "--target",
+        "g02_native_page_node_tests",
+        "--parallel",
+        "4"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 22.219000000011874,
+      "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g02\\native-page-node\\build-2.log"
+    },
+    {
+      "stage": "run",
+      "command": [
+        "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\g02_native_page_node_tests.exe"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 0.046999999991385266,
+      "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g02\\native-page-node\\run-1.log"
+    }
+  ],
+  "verdict": "PASS_NJ01_SOURCE_ONLY",
+  "tests": 5,
+  "cumulative_seconds": 84.03100000001723,
+  "retained_failure_note": "First test fixture used nonexistent custom-descriptor Operation constructor; changed to original Operation::custom. Product unchanged by correction. Original failed log retained; first test bytes reconstructed by reversing the single recorded edit, explicitly labeled as reconstruction.",
+  "raw_sha256": "b4163557392533c64d888be6ddca07185ae35db99111da38dc4e71d6b1ac171c"
+}

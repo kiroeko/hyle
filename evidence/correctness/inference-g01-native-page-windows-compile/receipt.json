@@ -1,0 +1,69 @@
+{
+  "candidate": "520027a57ff41da96ac908ad0d35896e2dda9734",
+  "scope": "Windows actual affected native page library/public linkage and three standalone headers, no executable/GPU/math run; original cached source tree and fourjobs",
+  "inputs": [
+    {
+      "path": "cmake/HyleDependencyLock.json",
+      "sha256": "91d9b18502742971b68e9ce921e86f36c15601a56ed04edde15feab47d715189"
+    },
+    {
+      "path": "third_party/ggml_vulkan_runtime/patches.json",
+      "sha256": "73adf604717f328b2fdfc3cc6bcecdb308af20355d4c34ad1c3706853300149b"
+    },
+    {
+      "path": "include/hyle/compute/batch_paged_native.h",
+      "sha256": "4a6ddd0d500e139857923d730c28b894f3b6330d5209ccb29c9236448eb38005"
+    },
+    {
+      "path": "include/hyle/compute/vulkan_batch.h",
+      "sha256": "10c8fc75104b91da9a57b31d39f164400e8922b10a0e442cff17bd0bfd5808c4"
+    },
+    {
+      "path": "include/hyle/compute/detail/materialized_native_controller.h",
+      "sha256": "99ae67a0b20b89d44e7a5b8304d987a5d852859bbf5fbde960413c8b68c8e3d4"
+    },
+    {
+      "path": "src/compute_batch/batch_paged_native.cc",
+      "sha256": "f07fe31741570dc3d54de486131c3bf0ab330445e143cfde543825ece4def3b2"
+    },
+    {
+      "path": "src/compute_route_vulkan/vulkan_batch.cc",
+      "sha256": "fcb1ae8bf4e867799bb6f7de5404b6fcbc0a6d22fa18ac849868f9f6f416ff7f"
+    },
+    {
+      "path": "src/compute_route_vulkan/vulkan_materialized_invocation.cc",
+      "sha256": "46aedd3dba56f61e493032eca92bc4736d90a5ca0d9e265c95978f639e4e68dd"
+    },
+    {
+      "path": "src/compute_provider_ggml_vulkan/region.cc",
+      "sha256": "54a58f4d5f2e26ad8171898319d6afd5d7b8f31be92566dcb08bdb593610badd"
+    }
+  ],
+  "stages": [
+    {
+      "stage": "build-public-link-headers",
+      "command": [
+        "cmake",
+        "--build",
+        "C:\\h7\\inference-g01-native-vulkan\\build",
+        "--target",
+        "native_page_public_compile",
+        "--parallel",
+        "4"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 215.01599999997416,
+      "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g01\\native-paged\\windows-compile\\build-1.log"
+    }
+  ],
+  "cumulative_seconds": 215.01599999997416,
+  "verdict": "PASS_COMPILE_LINK_ONLY",
+  "raw_sha256": "72768a279eaba38bf1ff7fb3886b571ad98f5385b8096fd3dca82ff306badc7b",
+  "public_tus": 4,
+  "compiler_identity": {
+    "CMAKE_CXX_COMPILER": "C:/Program Files/Microsoft Visual Studio/18/Enterprise/VC/Tools/MSVC/14.50.35717/bin/Hostx64/x64/cl.exe",
+    "CMAKE_CXX_COMPILER_ID": "MSVC",
+    "CMAKE_CXX_COMPILER_VERSION": "19.50.35728.0"
+  },
+  "artifact_sha256": "52667c79e8505a463641769f662d63f0b53619b390d0d7d7b2f08dd104967165"
+}

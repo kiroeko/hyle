@@ -1,2 +1,2 @@
 hyle_add_header_self_contained_test(graph_batch HEADER_DIR graph HEADERS batch.h)
-hyle_add_test(graph_batch SOURCES materialized_graph_test.cc)
+hyle_add_test(graph_batch SOURCES materialized_graph_test.cc native_paged_node_test.cc)
