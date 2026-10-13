@@ -1,0 +1,89 @@
+{
+  "product_commit": "75885aaa5481866d1d80905a4540ed6f3b8143da",
+  "state": "AUDITED, admission ordering fix only",
+  "identity": {
+    "model": "Mac16,12",
+    "arch": "arm64",
+    "os": "ProductName:\t\tmacOS\nProductVersion:\t\t27.0.1\nBuildVersion:\t\t26A434",
+    "compiler": "Apple clang version 21.0.0 (clang-2100.3.34.2)\nTarget: arm64-apple-darwin27.0.0\nThread model: posix\nInstalledDir: /Library/Developer/CommandLineTools/usr/bin",
+    "cpu": "10",
+    "memory": "17179869184"
+  },
+  "header": {
+    "path": "include/hyle/compute/detail/materialized_native_controller.h",
+    "sha256": "71b10aa3e89c624cb2bfc10b15e1d265f31d5c09ab5ca9fee10648b621bd69a5"
+  },
+  "stages": [
+    {
+      "stage": "apple-build",
+      "command": [
+        "/opt/homebrew/bin/cmake",
+        "--build",
+        "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-build",
+        "--target",
+        "hyle_g01_native_page_apple",
+        "hyle_f5_materialized_native",
+        "--parallel",
+        "4"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 1.13212375,
+      "log": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-admission-order/apple-build-1.log"
+    },
+    {
+      "stage": "apple-paged",
+      "command": [
+        "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-build/hyle_g01_native_page_apple"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 2.201938208,
+      "log": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-admission-order/apple-paged-1.log"
+    },
+    {
+      "stage": "apple-reference",
+      "command": [
+        "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-build/hyle_f5_materialized_native"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 1.781330542,
+      "log": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-admission-order/apple-reference-1.log"
+    },
+    {
+      "stage": "vulkan-build",
+      "command": [
+        "/opt/homebrew/bin/cmake",
+        "--build",
+        "/Users/kiro/hyle-scratch/compute-unified/a-cpu-vulkan/selected-graph/source-build",
+        "--target",
+        "hyle_g01_native_page_vulkan",
+        "hyle_f5_materialized_native",
+        "--parallel",
+        "4"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 0.9295442080000003,
+      "log": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-admission-order/vulkan-build-1.log"
+    },
+    {
+      "stage": "vulkan-paged",
+      "command": [
+        "/Users/kiro/hyle-scratch/compute-unified/a-cpu-vulkan/selected-graph/source-build/hyle_g01_native_page_vulkan"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 3.846272666999999,
+      "log": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-admission-order/vulkan-paged-1.log"
+    },
+    {
+      "stage": "vulkan-reference",
+      "command": [
+        "/Users/kiro/hyle-scratch/compute-unified/a-cpu-vulkan/selected-graph/source-build/hyle_f5_materialized_native"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 4.986921041,
+      "log": "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-admission-order/vulkan-reference-1.log"
+    }
+  ],
+  "cumulative_seconds": 14.878130416,
+  "scope": "actual original reference and new short paged consumers on both native routes after common admission-order change; no injected reset refusal proof or new risk/P1/delivery verdict",
+  "raw_sha256": "d0d1d22525cf569951e21aed2e1216153b6fa86d45f710ee4127a2c9f52dab55"
+}

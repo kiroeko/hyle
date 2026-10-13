@@ -1,0 +1,106 @@
+{
+  "product_commit": "afd2d8df78e28924a712ce3fddab6c7ba134c98d",
+  "state": "AUDITED stage only; no CANDIDATE/CLOSED",
+  "identity": {
+    "model": "Mac16,12",
+    "arch": "arm64",
+    "os": "ProductName:\t\tmacOS\nProductVersion:\t\t27.0.1\nBuildVersion:\t\t26A434",
+    "compiler": "Apple clang version 21.0.0 (clang-2100.3.34.2)\nTarget: arm64-apple-darwin27.0.0\nThread model: posix\nInstalledDir: /Library/Developer/CommandLineTools/usr/bin",
+    "cpu": "10",
+    "memory": "17179869184"
+  },
+  "route": "actual Apple M4 / original MLX Metal; private primitive CPU/fallback/AD paths reject",
+  "source_math": "PASS final12 short F16/BF16 D64/128/256 x causal/noncausal plus16 long4111/GQA8207 groups, 64 topology episodes each (1792 final episodes), independent double oracle",
+  "negative_space": "PASS original materialized native direct/Graph/fault/append consumer",
+  "retained_failure": {
+    "status": "FAIL",
+    "seconds": 33.481041875,
+    "cause": "Apple route did not directly include mlx/ops.h for original reshape/transpose declarations; explicit include added, native runtime already compiled; original failure preserved"
+  },
+  "final_stages": [
+    {
+      "stage": "build",
+      "exit_code": 0,
+      "seconds": 2.009572542
+    },
+    {
+      "stage": "paged-math-final",
+      "exit_code": 0,
+      "seconds": 1.9229966250000001
+    },
+    {
+      "stage": "paged-long-math",
+      "exit_code": 0,
+      "seconds": 9.515364542
+    },
+    {
+      "stage": "reference-regression",
+      "exit_code": 0,
+      "seconds": 0.9278280419999998
+    }
+  ],
+  "cumulative_seconds": 59.438041959,
+  "source_inputs": [
+    {
+      "path": "cmake/HyleComponents.cmake",
+      "sha256": "423496d8381e1975ade40170a2f00f8752e2f5ceb5c4a0307530edfc64259bb4"
+    },
+    {
+      "path": "cmake/HyleDependencyLock.json",
+      "sha256": "91d9b18502742971b68e9ce921e86f36c15601a56ed04edde15feab47d715189"
+    },
+    {
+      "path": "include/hyle/compute/apple_batch.h",
+      "sha256": "deebc717a928c306baab08882b85224acb836212f371ad41ff9ac7b39aeb6f32"
+    },
+    {
+      "path": "include/hyle/compute/batch_paged_native.h",
+      "sha256": "4a6ddd0d500e139857923d730c28b894f3b6330d5209ccb29c9236448eb38005"
+    },
+    {
+      "path": "include/hyle/compute/detail/apple_batch_access.h",
+      "sha256": "79d49ab50ba766d84e8edf706c93d7cac85072216765442a1bbb685b31d3a475"
+    },
+    {
+      "path": "include/hyle/compute/detail/materialized_native_controller.h",
+      "sha256": "d6cb46035939bfd37dd609993f99ad6c3eebe06a98e2895b36db311e079a5fad"
+    },
+    {
+      "path": "src/compute_batch/CMakeLists.txt",
+      "sha256": "ea7314ffe7ef7cb42224c5e2c033d2a65f25ab16592331fe1e10b46faf3b822f"
+    },
+    {
+      "path": "src/compute_batch/batch_paged_native.cc",
+      "sha256": "f07fe31741570dc3d54de486131c3bf0ab330445e143cfde543825ece4def3b2"
+    },
+    {
+      "path": "src/compute_route_apple/apple_batch.cc",
+      "sha256": "b2108311fa20556ed403d28b2a1cb6b8e187b9268818b5325e10293e7081c548"
+    },
+    {
+      "path": "src/compute_route_apple/apple_materialized_invocation.cc",
+      "sha256": "b7aa6c1c84a18368df0706805b142f18dcfe743380884d653cfb51eb699ae98c"
+    },
+    {
+      "path": "tests/compute_batch/native_paged_apple_consumer.cc",
+      "sha256": "2914a6d860fbdcbb9e1d2e33516b9f9ba2661bb6f109a42823450a5ba77e3bcb"
+    },
+    {
+      "path": "third_party/mlx_cast/NOTICE.md",
+      "sha256": "5264b20865193428209580c05d29f0750e8260d81c49913e3c2d5aa3e7600d12"
+    },
+    {
+      "path": "third_party/mlx_cast/patches.json",
+      "sha256": "05abd1de748be70a80ab17c92382e7ab2956c5d26911879ecfac8c8b332fd1ac"
+    }
+  ],
+  "unproven": [
+    "older steel actual numeric path on another hardware identity",
+    "new page accepted-prefix/error/unknown retirement risks",
+    "three delivery and public standalone headers",
+    "new page host risk facets",
+    "same-contract immutable P1",
+    "whole G01/G02/G03-G10"
+  ],
+  "raw_sha256": "11f269066dcdc22ee7cd89c2272b959c78f1425a5d690029e60b69959c6673b2"
+}

@@ -183,3 +183,25 @@ fault/append负空间也PASS。见[阶段证据](../../../../evidence/correctnes
 build0.876s/math7.144s/reference5.345s PASS，原FAIL/input/log与累计97.149s保留。
 实际编译host/scalar after SHA分别核验。尚未完成新page accepted-prefix/unknown风险、
 宿主风险、三交付/逐头/P1及Apple页数学，五owner仍AUDITED，整个goal仍0/10。
+
+Apple NP02/NP03与NP05接入草稿afd2d8df7已实现：薄typed slot复用单table共同policy；
+private MLX inference-only primitive借同一个原eval/dispatch，不改普通SDPA或AttnParams
+layout。vector/2pass/GQA、older steel loader、NAX32-row K tile的两原16-row fragment与
+D256 split读点映射page16，保原MMA/softmax/reduction。实际Air最终short12组＋long16组，
+各64演化（共1792final episodes），F16/BF16三D、causal/noncausal、logical79/4111/8207>
+physical64、双slot/旧result/确切guard/generation/成本/metadata零用量 independent double
+全PASS。所有实际MLX patch after SHA与compiled inputs分别核验，见
+[Apple阶段](../../../../evidence/correctness/inference-g01-native-page-apple-stage/README.md)。
+首33.481s FAIL缺直接mlx/ops.h，修include后通过；保所有初版和final输入/日志与累计
+59.438s。原reference direct/Graph/fault/append负空间PASS，不代签新page风险。两路线
+普通public消费和限制已写[使用页](../../../user/batch-attention.md)。Older steel源码读点
+已映射，M4实际数值只签原选中的NAX/向量路径，不外推其它硬件。五owner仍AUDITED，
+新的错误/unknown/accepted-prefix风险、三交付/逐头、宿主风险和不可变同合同P1未验，
+不能由source数学代签CANDIDATE/CLOSED或全goal；整个G01–G10仍0/10。
+
+共同controller后续75885aaa5修正page准备接纳顺序：新冷Program/Invocation保临时，
+upload.reset成功后才替换旧native，拒绝reset不留下旧prepared layout/table配新recipe。
+不改reference顺序/API/layout。actual Air两route新短页consumer和原reference各build/run
+全PASS，累计14.878s，见[接纳顺序阶段](../../../../evidence/correctness/inference-g01-native-page-admission-order-stage/README.md)。
+原长域math patch不变，未重复已通过的长域。此回归未注入reset拒绝，也不代签全部新
+page错误/未知/accepted-prefix风险、三交付/逐头/P1；五owner保持AUDITED，完整goal继续。
