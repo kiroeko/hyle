@@ -57,6 +57,8 @@ private:
 // Context/resources/allocator keep stable addresses and outlive all work and
 // results. Control is externally serialized; old results prevent reuse.
 // Native/private storage remains additional and may be unknown.
+// A layout with zero Q rows and zero page refs binds Q and two default empty
+// frames; its original empty-view program reads no K/V storage.
 class PagedBatchInvocation final {
 public:
   PagedBatchInvocation() noexcept = default;

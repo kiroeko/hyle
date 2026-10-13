@@ -29,6 +29,11 @@ Result<Program> detail::PagedBatchAccess::prepare_program(const Context& context
       const auto id=static_cast<std::uint32_t>(plan.values.size());plan.values.push_back({output,{}});
       plan.steps.push_back({std::move(op),std::move(inputs),{id},{},{1,1,1},{}});return id;
     };
+    if(layout.facts().query_rows==0 && layout.facts().page_refs==0){
+      plan.inputs={0};plan.values.resize(1);HYLE_ASSIGN_OR_RETURN(auto empty,View::slice(0,0,0));
+      HYLE_ASSIGN_OR_RETURN(auto output,add(Operation(empty),{0}));
+      plan.outputs={output};return detail::prepare_plan(context,plan);
+    }
     HYLE_ASSIGN_OR_RETURN(auto root_shape,TensorShape::create(std::array<std::int64_t,4>{
         1,std::int64_t(c.max_pages)*16,c.kv_heads,c.head_dim}));
     HYLE_ASSIGN_OR_RETURN(auto root_view,View::reshape(root_shape));

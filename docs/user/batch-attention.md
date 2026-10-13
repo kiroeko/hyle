@@ -58,6 +58,11 @@ Apple F16/BF16，Vulkan F16。非空 Q 需有 KV，causal 需 logical KV≥Q。�
 须由对应 PagedArena.read 与本次同一 owned layout/generation 创建；bind 拒绝混代或
 foreign schema，不扩大未引用页权限。已 ready 页可共享，未引用页仍可独立更新。
 
+当整个布局的 Q rows 与 page refs 都为零时，调用 `slot.bind(query_read, {}, {})`。
+私有原生程序只绑定真实 Q 容量并返回空 view；不读取或伪造 K/V storage。这个零域不接受
+其它代际的 live frames，旧空结果同样阻止 slot 更新。PagedArena.read 的原非空页权限
+合同保持不变；reference 或 Graph 的空域须按各自资格判断。
+
 每次 prepare 显式冷建原生 topology，并通过原 F2 完成单 I32 表的上传。当前上传与
 staging 容量均为 `4 * max_page_refs`，device mirrors 为其两倍，固定 backing cap 还需
 三组64byte对齐的最坏 padding；report 分别提供 uploaded/staging/device/backing bytes。

@@ -205,3 +205,11 @@ upload.reset成功后才替换旧native，拒绝reset不留下旧prepared layout
 全PASS，累计14.878s，见[接纳顺序阶段](../../../../evidence/correctness/inference-g01-native-page-admission-order-stage/README.md)。
 原长域math patch不变，未重复已通过的长域。此回归未注入reset拒绝，也不代签全部新
 page错误/未知/accepted-prefix风险、三交付/逐头/P1；五owner保持AUDITED，完整goal继续。
+
+本轮risk的真实新事实：all-Q0/page-refs0 layout的schema/metadata有效，但PagedArena.read
+按原非空page permission合同拒绝空集合，新native空输出分支无可达公开调用。NP02/05在
+仍AUDITED时冻结零域接纳：仅Q rows与page refs均零时，typed page bind接受两个默认空
+frame；私有native Program只接真Q容量port并输出原空view，不制造虚假K/V root或dummy
+大tensor。common recipe四description/单table/banks报告不变。非空域仍要求完整同代
+exact frames；原PagedArena非空合同、reference/Graph/CPU消费者不改，不扩大其它owner。
+这是有限FIX的空消费与权限边界修正，必须由实际source/原负空间验证，不能跳过本失败。
