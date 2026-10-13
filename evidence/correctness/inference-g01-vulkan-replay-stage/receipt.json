@@ -1,0 +1,372 @@
+{
+  "phase": "AUDITED stage; immutable candidate not yet assigned",
+  "baseline": "49af6056b",
+  "canonical_head": "7a539d6f32713d10e2eeea8ba75957186ca2810f",
+  "correctness": "PASS finite Air native/public scope",
+  "windows": {
+    "command": [
+      "cmake",
+      "--build",
+      "C:/h7/inference-g01-native-vulkan/build",
+      "--target",
+      "resident",
+      "attention_cache",
+      "--parallel",
+      "4"
+    ],
+    "exit_code": 0,
+    "elapsed_seconds": 72.26600000000326,
+    "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g01\\replay-native-build-3.log",
+    "scope": "Windows compile only; no local GPU execution"
+  },
+  "air": {
+    "scope": "AUDITED RR native record/current-payload/rebind/owner/lifecycle correctness, not candidate closure or P1",
+    "input_sha256": {
+      "src/compute_provider_ggml_vulkan/native_work_impl.h": "25c22c6c3457b743cba0cee8490ec014bd86c2fe498cf624c540a3908957f80b",
+      "src/compute_provider_ggml_vulkan/region.cc": "65f9052eec70168f8db3c0e05227cb33c31b52bd23d0f96abea778f27804ac49",
+      "tests/compute_provider_ggml_vulkan/attention_cache_test.cc": "e339a0687cfe6fe0579458b11c30b087b32e71a3fe083eb29170fec773b1ed62",
+      "tests/graph_route_vulkan/mature_tensor_test.cc": "19d00947fa679c3479840eb69cfc9194a1f6d110dd014dbc70b3a849352dbb51",
+      "third_party/ggml_vulkan_runtime/patches.json": "8c1f2df930b7bb04954532cc718d6518a59adb8cc9d7e700973f98b8df90cdd1",
+      "cmake/HyleDependencyLock.json": "9d5d2531076b276cd9f89042ee8a6715e75444cbd497e3fb224222b53b1eb52e"
+    },
+    "stages": [
+      {
+        "stage": "configure",
+        "command": [
+          "/opt/homebrew/bin/cmake",
+          "-S",
+          "/Users/kiro/hyle-scratch/compute-unified/source-c8874688",
+          "-B",
+          "/Users/kiro/hyle-scratch/compute-unified/a-vulkan/selected-graph/static-sdk-build",
+          "-DCMAKE_PROJECT_INCLUDE=/Users/kiro/hyle-scratch/compute-unified/g01-replay-project.cmake"
+        ],
+        "exit_code": 0,
+        "elapsed_seconds": 13.853853792,
+        "log": "/Users/kiro/hyle-scratch/compute-unified/g01-replay-checks/configure-1.log"
+      },
+      {
+        "stage": "build",
+        "command": [
+          "/opt/homebrew/bin/cmake",
+          "--build",
+          "/Users/kiro/hyle-scratch/compute-unified/a-vulkan/selected-graph/static-sdk-build",
+          "--target",
+          "g01_replay_resident",
+          "g01_replay_native",
+          "--parallel",
+          "4"
+        ],
+        "exit_code": 0,
+        "elapsed_seconds": 63.10623833299999,
+        "log": "/Users/kiro/hyle-scratch/compute-unified/g01-replay-checks/build-1.log"
+      },
+      {
+        "stage": "native",
+        "command": [
+          "/Users/kiro/hyle-scratch/compute-unified/a-vulkan/selected-graph/static-sdk-build/bin/g01_replay_native"
+        ],
+        "exit_code": 1,
+        "elapsed_seconds": 0.7360032919999924,
+        "log": "/Users/kiro/hyle-scratch/compute-unified/g01-replay-checks/native-1.log"
+      },
+      {
+        "stage": "build",
+        "command": [
+          "/opt/homebrew/bin/cmake",
+          "--build",
+          "/Users/kiro/hyle-scratch/compute-unified/a-vulkan/selected-graph/static-sdk-build",
+          "--target",
+          "g01_replay_resident",
+          "g01_replay_native",
+          "--parallel",
+          "4"
+        ],
+        "exit_code": 0,
+        "elapsed_seconds": 27.036028125,
+        "log": "/Users/kiro/hyle-scratch/compute-unified/g01-replay-checks/build-2.log"
+      },
+      {
+        "stage": "native",
+        "command": [
+          "/Users/kiro/hyle-scratch/compute-unified/a-vulkan/selected-graph/static-sdk-build/bin/g01_replay_native"
+        ],
+        "exit_code": 1,
+        "elapsed_seconds": 0.7491230830000006,
+        "log": "/Users/kiro/hyle-scratch/compute-unified/g01-replay-checks/native-2.log"
+      },
+      {
+        "stage": "build",
+        "command": [
+          "/opt/homebrew/bin/cmake",
+          "--build",
+          "/Users/kiro/hyle-scratch/compute-unified/a-vulkan/selected-graph/static-sdk-build",
+          "--target",
+          "g01_replay_resident",
+          "g01_replay_native",
+          "--parallel",
+          "4"
+        ],
+        "exit_code": 0,
+        "elapsed_seconds": 69.512311833,
+        "log": "/Users/kiro/hyle-scratch/compute-unified/g01-replay-checks/build-3.log"
+      },
+      {
+        "stage": "native",
+        "command": [
+          "/Users/kiro/hyle-scratch/compute-unified/a-vulkan/selected-graph/static-sdk-build/bin/g01_replay_native"
+        ],
+        "exit_code": 1,
+        "elapsed_seconds": 0.7594745829999994,
+        "log": "/Users/kiro/hyle-scratch/compute-unified/g01-replay-checks/native-3.log"
+      },
+      {
+        "stage": "build",
+        "command": [
+          "/opt/homebrew/bin/cmake",
+          "--build",
+          "/Users/kiro/hyle-scratch/compute-unified/a-vulkan/selected-graph/static-sdk-build",
+          "--target",
+          "g01_replay_resident",
+          "g01_replay_native",
+          "--parallel",
+          "4"
+        ],
+        "exit_code": 0,
+        "elapsed_seconds": 14.671657416,
+        "log": "/Users/kiro/hyle-scratch/compute-unified/g01-replay-checks/build-4.log"
+      },
+      {
+        "stage": "native",
+        "command": [
+          "/Users/kiro/hyle-scratch/compute-unified/a-vulkan/selected-graph/static-sdk-build/bin/g01_replay_native"
+        ],
+        "exit_code": 1,
+        "elapsed_seconds": 0.7185277919999997,
+        "log": "/Users/kiro/hyle-scratch/compute-unified/g01-replay-checks/native-4.log"
+      },
+      {
+        "stage": "build",
+        "command": [
+          "/opt/homebrew/bin/cmake",
+          "--build",
+          "/Users/kiro/hyle-scratch/compute-unified/a-vulkan/selected-graph/static-sdk-build",
+          "--target",
+          "g01_replay_resident",
+          "g01_replay_native",
+          "--parallel",
+          "4"
+        ],
+        "exit_code": 0,
+        "elapsed_seconds": 69.71070654100001,
+        "log": "/Users/kiro/hyle-scratch/compute-unified/g01-replay-checks/build-5.log"
+      },
+      {
+        "stage": "native",
+        "command": [
+          "/Users/kiro/hyle-scratch/compute-unified/a-vulkan/selected-graph/static-sdk-build/bin/g01_replay_native"
+        ],
+        "exit_code": 1,
+        "elapsed_seconds": 0.7294195830000092,
+        "log": "/Users/kiro/hyle-scratch/compute-unified/g01-replay-checks/native-5.log"
+      },
+      {
+        "stage": "build",
+        "command": [
+          "/opt/homebrew/bin/cmake",
+          "--build",
+          "/Users/kiro/hyle-scratch/compute-unified/a-vulkan/selected-graph/static-sdk-build",
+          "--target",
+          "g01_replay_resident",
+          "g01_replay_native",
+          "--parallel",
+          "4"
+        ],
+        "exit_code": 0,
+        "elapsed_seconds": 21.951001791,
+        "log": "/Users/kiro/hyle-scratch/compute-unified/g01-replay-checks/build-6.log"
+      },
+      {
+        "stage": "native",
+        "command": [
+          "/Users/kiro/hyle-scratch/compute-unified/a-vulkan/selected-graph/static-sdk-build/bin/g01_replay_native"
+        ],
+        "exit_code": 0,
+        "elapsed_seconds": 0.7606582499999988,
+        "log": "/Users/kiro/hyle-scratch/compute-unified/g01-replay-checks/native-6.log"
+      },
+      {
+        "stage": "public",
+        "command": [
+          "/Users/kiro/hyle-scratch/compute-unified/a-vulkan/selected-graph/static-sdk-build/bin/g01_replay_resident",
+          "--gtest_filter=VulkanGraph.ResidentAttentionViewsPreserveEffectiveLengthsAndOldResults:VulkanGraph.RecordedResidentAttentionRebindsOriginsAndOwnersWithoutStaleCommands"
+        ],
+        "exit_code": 0,
+        "elapsed_seconds": 1.498339999999999,
+        "log": "/Users/kiro/hyle-scratch/compute-unified/g01-replay-checks/public-1.log"
+      },
+      {
+        "stage": "build",
+        "command": [
+          "/opt/homebrew/bin/cmake",
+          "--build",
+          "/Users/kiro/hyle-scratch/compute-unified/a-vulkan/selected-graph/static-sdk-build",
+          "--target",
+          "g01_replay_resident",
+          "g01_replay_native",
+          "--parallel",
+          "4"
+        ],
+        "exit_code": 0,
+        "elapsed_seconds": 73.899830625,
+        "log": "/Users/kiro/hyle-scratch/compute-unified/g01-replay-checks/build-7.log"
+      },
+      {
+        "stage": "native",
+        "command": [
+          "/Users/kiro/hyle-scratch/compute-unified/a-vulkan/selected-graph/static-sdk-build/bin/g01_replay_native"
+        ],
+        "exit_code": 0,
+        "elapsed_seconds": 0.7744173330000024,
+        "log": "/Users/kiro/hyle-scratch/compute-unified/g01-replay-checks/native-7.log"
+      },
+      {
+        "stage": "public",
+        "command": [
+          "/Users/kiro/hyle-scratch/compute-unified/a-vulkan/selected-graph/static-sdk-build/bin/g01_replay_resident",
+          "--gtest_filter=VulkanGraph.ResidentAttentionViewsPreserveEffectiveLengthsAndOldResults:VulkanGraph.RecordedResidentAttentionRebindsOriginsAndOwnersWithoutStaleCommands"
+        ],
+        "exit_code": 0,
+        "elapsed_seconds": 1.5412046670000024,
+        "log": "/Users/kiro/hyle-scratch/compute-unified/g01-replay-checks/public-2.log"
+      },
+      {
+        "stage": "build",
+        "command": [
+          "/opt/homebrew/bin/cmake",
+          "--build",
+          "/Users/kiro/hyle-scratch/compute-unified/a-vulkan/selected-graph/static-sdk-build",
+          "--target",
+          "g01_replay_resident",
+          "g01_replay_native",
+          "--parallel",
+          "4"
+        ],
+        "exit_code": 0,
+        "elapsed_seconds": 14.686619041999998,
+        "log": "/Users/kiro/hyle-scratch/compute-unified/g01-replay-checks/build-8.log"
+      },
+      {
+        "stage": "native",
+        "command": [
+          "/Users/kiro/hyle-scratch/compute-unified/a-vulkan/selected-graph/static-sdk-build/bin/g01_replay_native"
+        ],
+        "exit_code": 0,
+        "elapsed_seconds": 0.12560995800000008,
+        "log": "/Users/kiro/hyle-scratch/compute-unified/g01-replay-checks/native-8.log"
+      },
+      {
+        "stage": "public",
+        "command": [
+          "/Users/kiro/hyle-scratch/compute-unified/a-vulkan/selected-graph/static-sdk-build/bin/g01_replay_resident",
+          "--gtest_filter=VulkanGraph.ResidentAttentionViewsPreserveEffectiveLengthsAndOldResults:VulkanGraph.RecordedResidentAttentionRebindsOriginsAndOwnersWithoutStaleCommands:VulkanGraph.ResidentAttentionDepthPaddedRowsUseExactStrides"
+        ],
+        "exit_code": 0,
+        "elapsed_seconds": 1.6182799169999988,
+        "log": "/Users/kiro/hyle-scratch/compute-unified/g01-replay-checks/public-3.log"
+      },
+      {
+        "stage": "build",
+        "command": [
+          "/opt/homebrew/bin/cmake",
+          "--build",
+          "/Users/kiro/hyle-scratch/compute-unified/a-vulkan/selected-graph/static-sdk-build",
+          "--target",
+          "g01_replay_resident",
+          "g01_replay_native",
+          "--parallel",
+          "4"
+        ],
+        "exit_code": 0,
+        "elapsed_seconds": 14.594119542,
+        "log": "/Users/kiro/hyle-scratch/compute-unified/g01-replay-checks/build-9.log"
+      },
+      {
+        "stage": "native",
+        "command": [
+          "/Users/kiro/hyle-scratch/compute-unified/a-vulkan/selected-graph/static-sdk-build/bin/g01_replay_native"
+        ],
+        "exit_code": 0,
+        "elapsed_seconds": 0.12724712500000024,
+        "log": "/Users/kiro/hyle-scratch/compute-unified/g01-replay-checks/native-9.log"
+      },
+      {
+        "stage": "public",
+        "command": [
+          "/Users/kiro/hyle-scratch/compute-unified/a-vulkan/selected-graph/static-sdk-build/bin/g01_replay_resident",
+          "--gtest_filter=VulkanGraph.ResidentAttentionViewsPreserveEffectiveLengthsAndOldResults:VulkanGraph.RecordedResidentAttentionRebindsOriginsAndOwnersWithoutStaleCommands:VulkanGraph.ResidentAttentionDepthPaddedRowsUseExactStrides"
+        ],
+        "exit_code": 0,
+        "elapsed_seconds": 1.5540076669999987,
+        "log": "/Users/kiro/hyle-scratch/compute-unified/g01-replay-checks/public-4.log"
+      },
+      {
+        "stage": "build",
+        "command": [
+          "/opt/homebrew/bin/cmake",
+          "--build",
+          "/Users/kiro/hyle-scratch/compute-unified/a-vulkan/selected-graph/static-sdk-build",
+          "--target",
+          "g01_replay_resident",
+          "g01_replay_native",
+          "--parallel",
+          "4"
+        ],
+        "exit_code": 1,
+        "elapsed_seconds": 13.15604375,
+        "log": "/Users/kiro/hyle-scratch/compute-unified/g01-replay-checks/build-10.log"
+      },
+      {
+        "stage": "build",
+        "command": [
+          "/opt/homebrew/bin/cmake",
+          "--build",
+          "/Users/kiro/hyle-scratch/compute-unified/a-vulkan/selected-graph/static-sdk-build",
+          "--target",
+          "g01_replay_resident",
+          "g01_replay_native",
+          "--parallel",
+          "4"
+        ],
+        "exit_code": 0,
+        "elapsed_seconds": 14.422651625,
+        "log": "/Users/kiro/hyle-scratch/compute-unified/g01-replay-checks/build-11.log"
+      },
+      {
+        "stage": "native",
+        "command": [
+          "/Users/kiro/hyle-scratch/compute-unified/a-vulkan/selected-graph/static-sdk-build/bin/g01_replay_native"
+        ],
+        "exit_code": 0,
+        "elapsed_seconds": 0.1258632500000001,
+        "log": "/Users/kiro/hyle-scratch/compute-unified/g01-replay-checks/native-10.log"
+      },
+      {
+        "stage": "public",
+        "command": [
+          "/Users/kiro/hyle-scratch/compute-unified/a-vulkan/selected-graph/static-sdk-build/bin/g01_replay_resident",
+          "--gtest_filter=VulkanGraph.ResidentAttentionViewsPreserveEffectiveLengthsAndOldResults:VulkanGraph.RecordedResidentAttentionRebindsOriginsAndOwnersWithoutStaleCommands:VulkanGraph.ResidentAttentionDepthPaddedRowsUseExactStrides"
+        ],
+        "exit_code": 0,
+        "elapsed_seconds": 1.542156833,
+        "log": "/Users/kiro/hyle-scratch/compute-unified/g01-replay-checks/public-5.log"
+      }
+    ]
+  },
+  "source_authentication": "2263 original files / 15 exact patch files; final ggml-vulkan.cpp sha c36da43fb28407f7bce4cd57edf5a2631b681af286a27eadff5663aea8988a79",
+  "raw_zip_sha256": "cd4f926cb16ce274dd0f3c7b2f62ce0907becb4ab092e71abf43d169a1f8bf21",
+  "unrun": [
+    "RR source/static/shared relocated SDK",
+    "RR ASan/UBSan/TSan",
+    "same-contract immutable RR P1"
+  ]
+}

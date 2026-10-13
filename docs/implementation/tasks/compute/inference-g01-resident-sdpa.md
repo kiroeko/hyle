@@ -166,3 +166,11 @@ command pool、descriptor pools/sets。以下有限FIX只复用这套owner与原
 wait和output归还。常态private字段/记录buffer归原Work，真实bytes或UNKNOWN保原报告，
 不让普通其他operation付新规划/数学。再冻结candidate后复用原三交付/风险的适用入口，
 追加record/rebind反例及一次同合同P1；原比较门/失败预算不重置，不重跑无影响全库。
+
+RR实现事实：原backend默认保留1024-byte Add/RmsNorm partials，并在每次graph执行时
+无条件清零；Air UMA把这一步变成host memset，导致纯attention记录也不满足无host
+staging资格。仅在上述固定graph已经证明没有Add/RmsNorm consumer时，执行原graph
+期间将该clear的size置零，返回或异常时恢复原值；其他graph仍走原处理。数学和shader
+未改，也没有忽略真实host update。第一次记录失败、持久输入导入后的失败及诊断记录
+全部保留，临时诊断字段/API已经移除。128次native内容更新/owner切换与公开64步
+offset/backing切换已在Air实跑通过；本批尚未冻结candidate，三交付/sanitizer/P1待补。

@@ -123,11 +123,13 @@ void note_device_lost(Runtime *runtime) noexcept {
 
 namespace {
 Failure with_native_queue(Runtime *runtime, bool transfer,
-                          VkResult (*function)(void *, VkQueue), void *state) noexcept {
+                          VkResult (*function)(void *, VkQueue),
+                          void *state) noexcept {
   try {
     Active active(runtime);
     const auto &device = runtime->instance.devices[0];
-    auto handle = transfer ? device->transfer_queue->handle : device->compute_queue->handle;
+    auto handle = transfer ? device->transfer_queue->handle
+                           : device->compute_queue->handle;
     // This is also the upstream submit lock order, including its NVIDIA
     // cross-queue workaround. Do not call back into this owner in the body.
     std::unique_lock<std::mutex> device_guard;
@@ -143,10 +145,13 @@ Failure with_native_queue(Runtime *runtime, bool transfer,
   }
 }
 } // namespace
-Failure with_queue(Runtime *runtime, VkResult (*function)(void *, VkQueue), void *state) noexcept {
+Failure with_queue(Runtime *runtime, VkResult (*function)(void *, VkQueue),
+                   void *state) noexcept {
   return with_native_queue(runtime, false, function, state);
 }
-Failure with_transfer_queue(Runtime *runtime, VkResult (*function)(void *, VkQueue), void *state) noexcept {
+Failure with_transfer_queue(Runtime *runtime,
+                            VkResult (*function)(void *, VkQueue),
+                            void *state) noexcept {
   return with_native_queue(runtime, true, function, state);
 }
 
@@ -204,6 +209,16 @@ VkBuffer buffer_handle(ggml_backend_buffer *buffer) noexcept {
     return VK_NULL_HANDLE;
   return static_cast<ggml_backend_vk_buffer_context *>(buffer->context)
       ->dev_buffer->buffer;
+}
+bool binding_matches(ggml_backend_buffer *buffer, VkBuffer handle,
+                     std::size_t bytes,
+                     const std::shared_ptr<const void> &owner) noexcept {
+  const auto &native =
+      static_cast<ggml_backend_vk_buffer_context *>(buffer->context)
+          ->dev_buffer;
+  return native->buffer == handle && native->size == bytes &&
+         !native->external_owner.owner_before(owner) &&
+         !owner.owner_before(native->external_owner);
 }
 
 Failure create_backend(Runtime *runtime, ggml_backend **result) noexcept {

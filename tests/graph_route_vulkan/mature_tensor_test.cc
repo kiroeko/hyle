@@ -463,4 +463,119 @@ TEST(VulkanGraph, ResidentAttentionViewsPreserveEffectiveLengthsAndOldResults) {
         }
   ASSERT_TRUE(context.close().ok());
 }
+TEST(VulkanGraph,
+     RecordedResidentAttentionRebindsOriginsAndOwnersWithoutStaleCommands) {
+  hyle::mem::QuotaAllocator quota(hyle::mem::system_allocator(), 64u << 20);
+  auto context = vulkan_test::context(&quota).value();
+  const auto qd = dense(c::DataType::kFloat32, {1, 1, 8, 64});
+  const auto physical = dense(c::DataType::kFloat32, {1, 37, 2, 64});
+  const auto kd =
+      c::TensorDesc::strided_bytes(c::DataType::kFloat32,
+                                   std::array<std::int64_t, 4>{1, 31, 2, 64},
+                                   physical.byte_strides())
+          .value();
+  auto builder = g::GraphBuilder::create().value();
+  const auto q = builder.input(qd).value();
+  const auto k = builder.input(kd).value(), value = builder.input(kd).value();
+  const auto output =
+      builder
+          .add(
+              c::ScaledDotProductAttention{
+                  .layout = c::AttentionLayout::kBatchSequenceHeadDepth,
+                  .scale = .125F},
+              q, k, value)
+          .value();
+  ASSERT_TRUE(builder.publish(output).ok());
+  auto graph = std::move(builder).finish().value();
+  auto program = gv::compile(context, graph).value();
+  auto slot = program.create_invocation().value();
+  auto query = make(context, qd, std::vector<double>(*qd.element_count(), 0.));
+  auto keys = make(context, physical,
+                   std::vector<double>(*physical.element_count(), 0.));
+  auto host_values = std::vector<double>(*physical.element_count());
+  for (int row = 0; row < 37; ++row)
+    for (int head = 0; head < 2; ++head)
+      for (int d = 0; d < 64; ++d)
+        host_values[(row * 2 + head) * 64 + d] = head * .25 + row * .03125;
+  auto first_backing = make(context, physical, host_values);
+  v::Tensor old_output;
+  c::ResultLease<v::Results> old_result;
+  for (int step = 0; step < 64; ++step) {
+    const int origin = step % 2 + 1;
+    auto backing = first_backing;
+    const double bias = step >= 32 ? .5 : 0.;
+    if (step >= 32) {
+      auto updated = host_values;
+      for (auto &number : updated)
+        number += bias;
+      backing = make(context, physical, updated);
+    }
+    const auto slice = c::View::slice(1, origin, 31).value();
+    const auto key = keys.view(slice).value(),
+               value_view = backing.view(slice).value();
+    ASSERT_TRUE(slot.bind(std::array{query, key, value_view}).ok());
+    if (step == 1) {
+      EXPECT_FALSE(slot.submit());
+      const auto saved = values(context, old_output);
+      old_result = {};
+      EXPECT_FALSE(slot.submit());
+      expect(context, old_output, saved, true);
+      old_output = {};
+    }
+    auto submitted = slot.submit();
+    ASSERT_TRUE(submitted) << submitted.error().message();
+    auto result = submitted->wait();
+    ASSERT_TRUE(result) << result.error().message();
+    const auto actual = values(context, result->get()->tensors()[0]);
+    for (int head = 0; head < 8; ++head)
+      for (int d = 0; d < 64; ++d)
+        EXPECT_NEAR(actual[head * 64 + d],
+                    (head / 4) * .25 + (origin + 15) * .03125 + bias, 2.e-6);
+    if (step == 0) {
+      old_output = result->get()->tensors()[0];
+      old_result = std::move(*result);
+    }
+  }
+  ASSERT_TRUE(context.close().ok());
+}
+TEST(VulkanGraph, ResidentAttentionDepthPaddedRowsUseExactStrides) {
+  auto context = vulkan_test::context().value();
+  const auto qd = dense(c::DataType::kFloat32, {1, 1, 8, 64});
+  const auto physical = dense(c::DataType::kFloat32, {1, 31, 2, 65});
+  const auto kd = c::TensorDesc::strided_bytes(c::DataType::kFloat32,
+      std::array<std::int64_t, 4>{1, 31, 2, 64}, physical.byte_strides()).value();
+  auto builder = g::GraphBuilder::create().value();
+  const auto q = builder.input(qd).value(), k = builder.input(kd).value(), v_id = builder.input(kd).value();
+  auto output = builder.add(c::ScaledDotProductAttention{
+      .layout = c::AttentionLayout::kBatchSequenceHeadDepth, .scale = .125F}, q, k, v_id).value();
+  ASSERT_TRUE(builder.publish(output).ok());
+  auto graph = std::move(builder).finish().value();
+  gv::CompileReport report;
+  auto program = gv::compile(context, graph, {}, {.report = &report});
+  ASSERT_TRUE(program) << program.error().message();
+  EXPECT_EQ(report.managed_region_count, 1U);
+  auto query = make(context, qd, std::vector<double>(*qd.element_count(), 0.));
+  auto keys = make(context, kd, std::vector<double>(*kd.element_count(), 0.));
+  std::vector<double> values_host(*kd.element_count());
+  for (int row = 0; row < 31; ++row)
+    for (int head = 0; head < 2; ++head)
+      for (int d = 0; d < 64; ++d) values_host[(row * 2 + head) * 64 + d] = head * .25 + row * .03125;
+  auto value = make(context, kd, values_host);
+  EXPECT_EQ(value.description(), kd);
+  auto slot = program->create_invocation().value();
+  ASSERT_TRUE(slot.bind(std::array{query, keys, value}).ok());
+  auto work = slot.submit();
+  ASSERT_TRUE(work) << work.error().message();
+  auto result = work->wait();
+  ASSERT_TRUE(result) << result.error().message();
+  const auto actual = values(context, result->get()->tensors()[0]);
+  double maximum = 0;
+  for (int head = 0; head < 8; ++head)
+    for (int d = 0; d < 64; ++d) {
+      ASSERT_TRUE(std::isfinite(actual[head * 64 + d]));
+      maximum = std::max(maximum, std::abs(actual[head * 64 + d] - (head / 4) * .25 - 15 * .03125));
+    }
+  EXPECT_LE(maximum, 2.e-6);
+  ASSERT_TRUE(context.close().ok());
+}
 } // namespace

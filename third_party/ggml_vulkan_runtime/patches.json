@@ -386,9 +386,21 @@
         {
           "before": "                uint32_t HSV = op->src[2]->ne[0];\n                if ((HSK % 8)",
           "after": "                uint32_t HSV = op->src[2]->ne[0];\n                const bool hyle_full_f32 = op->op_params[hyle::compute::ggml_vulkan::bridge::kFlashAttentionMathSlot] ==\n                                           hyle::compute::ggml_vulkan::bridge::kFlashAttentionFullF32;\n                if (hyle_full_f32) {\n                    if (HSK != HSV || (HSK != 64 && HSK != 128 && HSK != 256) ||\n                        (op->src[1]->type != GGML_TYPE_F16 && op->src[1]->type != GGML_TYPE_F32) ||\n                        (op->src[2]->type != GGML_TYPE_F16 && op->src[2]->type != GGML_TYPE_F32)) {\n                        return false;\n                    }\n                    const auto params = get_fa_tuning_params_scalar(device, HSK, HSV, 512u,\n                        uint32_t(op->src[1]->ne[1]), op->src[1]->type, op->src[2]->type, true, true);\n                    if (!ggml_vk_flash_attn_scalar_shmem_support(device, params, HSK, HSV, true,\n                            op->src[1]->type, op->src[2]->type, true)) {\n                        return false;\n                    }\n                }\n                if ((HSK % 8)"
+        },
+        {
+          "before": "    vk_queue *q;\n\n    size_t buffers_in_use() const {",
+          "after": "    vk_queue *q;\n    std::vector<vk::CommandBuffer> *hyle_record_commands = nullptr;\n    bool hyle_record_safe = false;\n\n    size_t buffers_in_use() const {"
+        },
+        {
+          "before": "subctx->seqs.push_back({ ggml_vk_begin_submission(device, *subctx->p) });",
+          "after": "subctx->seqs.push_back({ ggml_vk_begin_submission(device, *subctx->p, subctx->p->hyle_record_commands == nullptr) });"
+        },
+        {
+          "before": "    ctx->p->q->handle->submit(submit_infos, fence);\n\n    ctx->seqs.clear();",
+          "after": "    if (ctx->p->hyle_record_commands) {\n        if (!ctx->in_memcpys.empty() || !ctx->out_memcpys.empty() || !ctx->memsets.empty()) {\n            ctx->p->hyle_record_safe = false;\n        }\n        for (const auto &sequence : ctx->seqs) {\n            for (const auto &submission : sequence) {\n                if (!submission.wait_semaphores.empty() || !submission.signal_semaphores.empty()) {\n                    ctx->p->hyle_record_safe = false;\n                }\n                ctx->p->hyle_record_commands->push_back(submission.buffer->buf);\n            }\n        }\n    }\n    ctx->p->q->handle->submit(submit_infos, fence);\n\n    ctx->seqs.clear();"
         }
       ],
-      "after_sha256": "a3bbea1ee85cdcdbcac247799a44850413b853460bdcf4107a420e9c2162f8cd"
+      "after_sha256": "c36da43fb28407f7bce4cd57edf5a2631b681af286a27eadff5663aea8988a79"
     },
     {
       "path": "src/ggml.cpp",

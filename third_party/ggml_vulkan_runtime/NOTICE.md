@@ -80,3 +80,11 @@ device and instance API both support Vulkan 1.3. It publishes only features
 actually enabled at device creation for IREE's external-device contract;
 1.2-only devices retain their existing path without advertising synchronization2.
 No shader or numerical behavior is changed by this resource integration.
+
+The private full-F32 resident SDPA Work may retain the original non-one-time
+compute commands in its own backend command/descriptor pools after actual
+retirement. Recording is limited to the fixed attention/mask/view/cast graph
+without staging or semaphore/event dependencies. Rebinding a byte origin,
+buffer/capacity or strong input owner invalidates the record before releasing
+old imports. Other graphs retain original managed execution; this is not a
+public capture promise or a change to any shader or mathematical domain.

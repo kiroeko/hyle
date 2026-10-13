@@ -104,7 +104,8 @@ void *enter(Runtime *) noexcept;
 void leave(void *) noexcept;
 void note_device_lost(Runtime *) noexcept;
 Failure with_queue(Runtime *, VkResult (*)(void *, VkQueue), void *) noexcept;
-Failure with_transfer_queue(Runtime *, VkResult (*)(void *, VkQueue), void *) noexcept;
+Failure with_transfer_queue(Runtime *, VkResult (*)(void *, VkQueue),
+                            void *) noexcept;
 Failure create_backend(Runtime *, ggml_backend **) noexcept;
 Failure allocate_buffer(Runtime *, std::size_t,
                         ggml_backend_buffer **) noexcept;
@@ -118,11 +119,15 @@ Failure binding_buffer(Runtime *, std::size_t, std::shared_ptr<const void>,
                        ggml_backend_buffer **) noexcept;
 void bind_buffer(ggml_backend_buffer *, VkBuffer, std::size_t,
                  std::shared_ptr<const void>) noexcept;
+bool binding_matches(ggml_backend_buffer *, VkBuffer, std::size_t,
+                     const std::shared_ptr<const void> &) noexcept;
 Failure create_work(Runtime *, Work **) noexcept;
 // Last-resort blocking retirement. Ordinary route abandonment retains Work in
 // its existing pending owner instead of reaching this destructor while busy.
 void destroy_work(Work *) noexcept;
 WorkReport submit_work(Work *, ggml_cgraph *) noexcept;
+Failure invalidate_work_recording(Work *) noexcept;
+bool work_recording_ready(const Work *) noexcept;
 WorkReport observe_work(Work *, bool wait) noexcept;
 VkFence work_fence(const Work *) noexcept;
 Failure create_storage(Runtime *, ggml_cgraph *, bool owns_imports, Storage **,

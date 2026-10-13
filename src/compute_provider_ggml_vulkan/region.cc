@@ -1284,6 +1284,22 @@ Region::validate(std::span<const RegionBinding> bindings) const noexcept {
 Status Region::bind(std::span<const RegionBinding> bindings) noexcept {
   HYLE_RETURN_IF_ERROR(validate(bindings));
   auto active = state_->device.activate();
+  bool changed = false;
+  for (std::size_t i = 0; i < bindings.size(); ++i) {
+    const auto &port = bindings[i];
+    auto *buffer = state_->imports->buffers[i];
+    const auto size = port.handle ? port.offset + port.capacity
+                                  : ggml_nbytes(state_->ports[i]);
+    const auto origin =
+        reinterpret_cast<std::uintptr_t>(ggml_backend_buffer_get_base(buffer)) +
+        port.offset;
+    changed =
+        changed ||
+        !bridge::binding_matches(buffer, port.handle, size, port.owner) ||
+        reinterpret_cast<std::uintptr_t>(state_->ports[i]->data) != origin;
+  }
+  if (changed)
+    HYLE_RETURN_IF_ERROR(state_->work.invalidate_recording());
   for (std::size_t i = 0; i < bindings.size(); ++i) {
     const auto &port = bindings[i];
     auto *buffer = state_->imports->buffers[i];

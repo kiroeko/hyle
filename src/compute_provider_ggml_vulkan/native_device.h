@@ -108,6 +108,10 @@ public:
   submit(ggml_cgraph *, std::shared_ptr<const void> resource_lease) noexcept;
   HYLE_GGML_VULKAN_INTERNAL_API WorkState poll() noexcept;
   HYLE_GGML_VULKAN_INTERNAL_API WorkState wait() noexcept;
+  // Idle binding changes invalidate original native commands before dropping
+  // their input owners. Pending/failing work retains its original boundary.
+  HYLE_GGML_VULKAN_INTERNAL_API Status invalidate_recording() noexcept;
+  HYLE_GGML_VULKAN_INTERNAL_API bool recording_ready() const noexcept;
   // Borrowed through the Work lifetime. A parent route may wait without its
   // admission lock, then call poll/retire under that lock. Never reset/free it.
   HYLE_GGML_VULKAN_INTERNAL_API VkFence fence() const noexcept;
@@ -119,6 +123,7 @@ private:
   NativeDevice device_;
   bridge::Work *work_ = nullptr;
   std::shared_ptr<const void> lease_;
+  std::weak_ptr<const void> graph_identity_;
   bool pending_ = false;
 };
 

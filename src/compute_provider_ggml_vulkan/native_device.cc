@@ -81,15 +81,15 @@ struct NativeDevice::State final {
 Result<NativeDevice> NativeDevice::create(NativeOptions options) noexcept {
   try {
     auto state = std::make_shared<State>();
-    auto loader = platform::DynLib::open(options.loader_path
-                                            ? options.loader_path
-                                            : default_loader());
+    auto loader = platform::DynLib::open(
+        options.loader_path ? options.loader_path : default_loader());
 #if HYLE_OS_MACOS
     // Homebrew's native Vulkan runtime is provisioned outside dyld's bare-name
-    // search. Discover it once in the route owner; explicit overrides stay final.
+    // search. Discover it once in the route owner; explicit overrides stay
+    // final.
     if (!loader && !options.loader_path) {
       for (const auto *path : {"/opt/homebrew/lib/libvulkan.1.dylib",
-                              "/usr/local/lib/libvulkan.1.dylib"}) {
+                               "/usr/local/lib/libvulkan.1.dylib"}) {
         loader = platform::DynLib::open(path);
         if (loader)
           break;
@@ -212,7 +212,8 @@ Status NativeDevice::with_queue(VkResult (*function)(void *, VkQueue),
 Status NativeDevice::with_transfer_queue(VkResult (*function)(void *, VkQueue),
                                          void *state) const noexcept {
   if (!state_ || !function)
-    return Status::InvalidArgument("ggml Vulkan native transfer queue callback");
+    return Status::InvalidArgument(
+        "ggml Vulkan native transfer queue callback");
   return failure(bridge::with_transfer_queue(state_->runtime, function, state));
 }
 Status NativeDevice::with_queue(
@@ -248,6 +249,7 @@ NativeWork::NativeWork(NativeWork &&other) noexcept
     : device_(std::move(other.device_)),
       work_(std::exchange(other.work_, nullptr)),
       lease_(std::move(other.lease_)),
+      graph_identity_(std::move(other.graph_identity_)),
       pending_(std::exchange(other.pending_, false)) {}
 NativeWork &NativeWork::operator=(NativeWork &&other) noexcept {
   if (this != &other) {
@@ -255,6 +257,7 @@ NativeWork &NativeWork::operator=(NativeWork &&other) noexcept {
     device_ = std::move(other.device_);
     work_ = std::exchange(other.work_, nullptr);
     lease_ = std::move(other.lease_);
+    graph_identity_ = std::move(other.graph_identity_);
     pending_ = std::exchange(other.pending_, false);
   }
   return *this;
@@ -265,6 +268,7 @@ void NativeWork::reset() noexcept {
   // and loader remain alive through its exceptional blocking drain.
   bridge::destroy_work(std::exchange(work_, nullptr));
   lease_.reset();
+  graph_identity_.reset();
   pending_ = false;
   device_ = {};
 }
@@ -276,6 +280,13 @@ NativeWork::submit(ggml_cgraph *graph,
             pending_};
   if (pending_)
     return {Status::FailedPrecondition("ggml Vulkan region is pending"), true};
+  if (graph_identity_.owner_before(resource_lease) ||
+      resource_lease.owner_before(graph_identity_)) {
+    const auto invalidated = invalidate_recording();
+    if (!invalidated.ok())
+      return {invalidated};
+    graph_identity_ = resource_lease;
+  }
   lease_ = std::move(resource_lease);
   const auto result = bridge::submit_work(work_, graph);
   pending_ = result.pending;
@@ -294,5 +305,14 @@ WorkState NativeWork::observe(bool wait) noexcept {
 }
 WorkState NativeWork::poll() noexcept { return observe(false); }
 WorkState NativeWork::wait() noexcept { return observe(true); }
+Status NativeWork::invalidate_recording() noexcept {
+  if (!work_ || pending_)
+    return Status::FailedPrecondition(
+        "ggml Vulkan recording invalidation state");
+  return failure(bridge::invalidate_work_recording(work_));
+}
+bool NativeWork::recording_ready() const noexcept {
+  return bridge::work_recording_ready(work_);
+}
 VkFence NativeWork::fence() const noexcept { return bridge::work_fence(work_); }
 } // namespace hyle::compute::ggml_vulkan::detail

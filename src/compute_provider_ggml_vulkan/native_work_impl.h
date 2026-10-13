@@ -11,10 +11,18 @@ struct Work {
   Failure failure;
   bool pending = false;
   bool needs_drain = false;
+  ggml_cgraph *recorded_graph = nullptr;
+  std::vector<vk::CommandBuffer> recorded_commands;
+  bool recorded = false;
+  ggml_cgraph *assessed_graph = nullptr;
+  bool fixed_attention = false;
 };
 
 VkFence work_fence(const Work *work) noexcept {
   return work ? static_cast<VkFence>(work->fence) : VK_NULL_HANDLE;
+}
+bool work_recording_ready(const Work *work) noexcept {
+  return work && work->recorded && !work->pending;
 }
 
 namespace {
@@ -73,14 +81,67 @@ void retire(Work &work) noexcept {
     if (!ctx->hyle_retired_failure && ctx->almost_ready_fence_pending)
       ctx->device->device.resetFences({ctx->almost_ready_fence});
     ctx->almost_ready_fence_pending = false;
-    ggml_vk_graph_cleanup(ctx, !ctx->hyle_retired_failure);
+    if (!work.recorded || ctx->hyle_retired_failure) {
+      work.recorded = false;
+      work.recorded_commands.clear();
+      ggml_vk_graph_cleanup(ctx, !ctx->hyle_retired_failure);
+    }
   } catch (...) {
     remember(work, current_failure());
     ctx->hyle_retired_failure = true;
   }
   ctx->device->diag_cgraph = nullptr;
 }
+bool fixed_attention_graph(const ggml_cgraph *graph) {
+  bool attention = false;
+  for (int i = 0; i < graph->n_nodes; ++i) {
+    const auto *node = graph->nodes[i];
+    switch (node->op) {
+    case GGML_OP_FLASH_ATTN_EXT:
+      if (attention ||
+          node->op_params[kFlashAttentionMathSlot] != kFlashAttentionFullF32)
+        return false;
+      attention = true;
+      break;
+    case GGML_OP_NONE:
+    case GGML_OP_VIEW:
+    case GGML_OP_RESHAPE:
+    case GGML_OP_PERMUTE:
+    case GGML_OP_TRANSPOSE:
+    case GGML_OP_CONT:
+    case GGML_OP_CPY:
+    case GGML_OP_FILL:
+    case GGML_OP_DIAG_MASK_INF:
+      break;
+    default:
+      return false;
+    }
+  }
+  return attention;
+}
 } // namespace
+
+Failure invalidate_work_recording(Work *work) noexcept {
+  if (!work || work->pending)
+    return {Error::InvalidState};
+  work->assessed_graph = nullptr;
+  work->fixed_attention = false;
+  if (!work->recorded && work->recorded_commands.empty())
+    return {};
+  Active active(work->runtime);
+  auto *ctx = static_cast<ggml_backend_vk_context *>(work->backend->context);
+  work->recorded = false;
+  work->recorded_graph = nullptr;
+  work->recorded_commands.clear();
+  try {
+    ggml_vk_graph_cleanup(ctx, !work->runtime->device_lost.load());
+    return {};
+  } catch (...) {
+    const auto failure = current_failure();
+    remember(*work, failure);
+    return failure;
+  }
+}
 
 Failure create_work(Runtime *runtime, Work **result) noexcept {
   *result = nullptr;
@@ -113,6 +174,12 @@ WorkReport submit_work(Work *work, ggml_cgraph *graph) noexcept {
   }
   Active active(work->runtime);
   auto *ctx = static_cast<ggml_backend_vk_context *>(work->backend->context);
+  if (work->recorded && work->recorded_graph != graph) {
+    const auto invalidated = invalidate_work_recording(work);
+    if (invalidated.error != Error::None)
+      return report(*work);
+  }
+  const auto original_rms_partials = ctx->prealloc_size_add_rms_partials;
   try {
     ctx->device->device.resetFences({work->fence});
     // The caller binds resident tensors; no unfinished host upload/download
@@ -125,6 +192,34 @@ WorkReport submit_work(Work *work, ggml_cgraph *graph) noexcept {
     ctx->hyle_completion_fence = attach_to_last ? work->fence : vk::Fence{};
     ctx->hyle_completion_submitted = false;
     work->pending = true; // Conservatively retained before any fallible submit.
+    if (work->recorded) {
+      ctx->device->diag_cgraph = graph;
+      const vk::SubmitInfo submitted{
+          0,
+          nullptr,
+          nullptr,
+          static_cast<uint32_t>(work->recorded_commands.size()),
+          work->recorded_commands.data(),
+          0,
+          nullptr};
+      ctx->device->compute_queue->handle->submit(submitted, work->fence);
+      ctx->submit_pending = true;
+      ctx->hyle_completion_submitted = true;
+      ctx->hyle_completion_fence = nullptr;
+      return report(*work);
+    }
+    if (work->assessed_graph != graph) {
+      work->fixed_attention = fixed_attention_graph(graph);
+      work->assessed_graph = graph;
+    }
+    const bool eligible = attach_to_last && work->fixed_attention;
+    // This finite graph has no Add/RmsNorm consumer. The original backend's
+    // default 1024-byte partials clear would create a needless UMA host memset.
+    if (eligible)
+      ctx->prealloc_size_add_rms_partials = 0;
+    ctx->compute_cmd_pool.hyle_record_commands =
+        eligible ? &work->recorded_commands : nullptr;
+    ctx->compute_cmd_pool.hyle_record_safe = eligible;
     if (ggml_backend_vk_graph_compute(work->backend, graph) !=
         GGML_STATUS_SUCCESS) {
       remember(*work, {Error::Internal});
@@ -134,8 +229,19 @@ WorkReport submit_work(Work *work, ggml_cgraph *graph) noexcept {
       // emitted final batch. One region marker, never a per-kernel wrapper.
       ctx->device->compute_queue->handle->submit({}, work->fence);
     }
+    work->recorded = eligible && work->failure.error == Error::None &&
+                     ctx->compute_cmd_pool.hyle_record_safe &&
+                     !work->recorded_commands.empty() &&
+                     ctx->gc.semaphores.empty() &&
+                     ctx->gc.tl_semaphores.empty() && ctx->gc.events.empty();
+    work->recorded_graph = work->recorded ? graph : nullptr;
+    ctx->prealloc_size_add_rms_partials = original_rms_partials;
+    ctx->compute_cmd_pool.hyle_record_commands = nullptr;
     ctx->hyle_completion_fence = nullptr;
   } catch (...) {
+    ctx->prealloc_size_add_rms_partials = original_rms_partials;
+    ctx->compute_cmd_pool.hyle_record_commands = nullptr;
+    work->recorded = false;
     ctx->hyle_completion_fence = nullptr;
     remember(*work, current_failure());
     work->needs_drain = work->pending;
