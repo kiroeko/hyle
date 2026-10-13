@@ -182,3 +182,12 @@ RR候选固定为 `a40003f7edb54a3da3113d0cd401b46211e0b0f0`，两个承载owner
 保留所有失败和最终Air通过、Windows4路编译通过。原public API/math/shader不变，private
 Work常态增加固定记录与弱graph身份；其他operation冷评估一次、warm不重扫。RR适用
 三交付/sanitizer与原合同P1待补，整个G01仍未完成；CPU保持原candidate而不无故重测。
+
+RR candidate的[实际交付与风险收据](../../../../evidence/correctness/inference-g01-vulkan-replay-candidate/README.md)
+现已补齐Air source、改名搬迁static/shared SDK及宿主ASan/UBSan/TSan有限公开/native
+测试，原始输入逐SHA核对candidate；Windows仅签RR4路编译，原Windows ASan仍绑定旧
+candidate。Air风险不外推shader/driver，ASan不签LSan。正式RR P1已在独立clean Git
+checkout、新fresh tree启动，原peer与合同canonical hash
+`4ae724d684be30814e2f28d7d933f771b7e03dda56b86cb51464cef706031720`不变；
+原provisional archetype来自旧candidate，其数学/输入身份继续复用，新产品身份由此次
+manifest绑定。前一轮完整性能FAIL/构建tree保持原字节。尚无RR性能结论，不签CLOSED。

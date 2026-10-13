@@ -92,3 +92,8 @@ CPU风险与三交付现已分别通过，见resident卡。Air正式P1的
 无host staging/event/semaphore且真实退休才可重放；失败/设备丢失/未资格模式沿原规则。
 私有host patch、native bridge与owner内实现是本FIX，不改shader、global capabilities、
 公共capture/schema或其他CPU/CUDA/Metal数学。产品改动须在这个AUDITED状态之后。
+
+上述回退/定界记录保留。当前RR已固定candidate `a40003f7edb54a3da3113d0cd401b46211e0b0f0`，
+[有限交付/风险](../../../../evidence/correctness/inference-g01-vulkan-replay-candidate/README.md)
+通过Air source/static/shared和宿主ASan/UBSan/TSan，Windows仅更新编译证据；RR正式
+P1正在原合同的新fresh tree取证。当前状态为CANDIDATE，仍不签整个G01或其他支持域。
