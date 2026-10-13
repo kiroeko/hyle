@@ -1,0 +1,117 @@
+{
+  "product_commit": "2500128edf8e2e6c63587354d7d2ed01c959f581",
+  "state": "AUDITED stage only; no CANDIDATE/CLOSED",
+  "identity": {
+    "model": "Mac16,12",
+    "arch": "arm64",
+    "os": "ProductName:\t\tmacOS\nProductVersion:\t\t27.0.1\nBuildVersion:\t\t26A434",
+    "compiler": "Apple clang version 21.0.0 (clang-2100.3.34.2)\nTarget: arm64-apple-darwin27.0.0\nThread model: posix\nInstalledDir: /Library/Developer/CommandLineTools/usr/bin",
+    "cpu": "10",
+    "memory": "17179869184"
+  },
+  "route": "actual Apple M4 / MoltenVK 1.4.1; public Context rejects software",
+  "source_math": "PASS six F16 D64/128/256 x causal/noncausal, 64 topology episodes each, independent double oracle",
+  "negative_space": "PASS original materialized native direct/Graph/fault/append consumer",
+  "retained_failure": {
+    "status": "FAIL",
+    "seconds": 83.78321245800001,
+    "cause": "test fixture attempted conversion of half bit carrier to float; corrected to explicit encoder and independent mathematical decoder; logical KV cap corrected before first execution"
+  },
+  "final_stages": [
+    {
+      "stage": "build",
+      "exit_code": 0,
+      "seconds": 0.876352084
+    },
+    {
+      "stage": "paged-math",
+      "exit_code": 0,
+      "seconds": 7.144446667
+    },
+    {
+      "stage": "reference-regression",
+      "exit_code": 0,
+      "seconds": 5.345054040999999
+    }
+  ],
+  "cumulative_seconds": 97.14906525,
+  "source_inputs": [
+    {
+      "path": "cmake/HyleComponents.cmake",
+      "sha256": "423496d8381e1975ade40170a2f00f8752e2f5ceb5c4a0307530edfc64259bb4"
+    },
+    {
+      "path": "cmake/HyleDependencyLock.json",
+      "sha256": "0e5ced8263ff7d4479b6e5ed24a97521f59d099139d2992f4e07ed328431806c"
+    },
+    {
+      "path": "docs/implementation/tasks/compute/inference-g01-native-paged-read.md",
+      "sha256": "bcdfb6fcc5b280c5a1cf5e3846a32ff49b95656658a9dd99772f953eb57d9b13"
+    },
+    {
+      "path": "include/hyle/compute/batch_paged_native.h",
+      "sha256": "4a6ddd0d500e139857923d730c28b894f3b6330d5209ccb29c9236448eb38005"
+    },
+    {
+      "path": "include/hyle/compute/detail/materialized_native_controller.h",
+      "sha256": "d6cb46035939bfd37dd609993f99ad6c3eebe06a98e2895b36db311e079a5fad"
+    },
+    {
+      "path": "include/hyle/compute/detail/vulkan_batch_access.h",
+      "sha256": "64cdb670843f701b68264f7c6063b32cc03c311b441d211aacd8d4ce2732ae6f"
+    },
+    {
+      "path": "include/hyle/compute/vulkan_batch.h",
+      "sha256": "26fe26080d654ee2a996be2c1aa0749c12f4801e245779602bc41cc61a3c8832"
+    },
+    {
+      "path": "src/compute_batch/CMakeLists.txt",
+      "sha256": "ea7314ffe7ef7cb42224c5e2c033d2a65f25ab16592331fe1e10b46faf3b822f"
+    },
+    {
+      "path": "src/compute_batch/batch_paged_native.cc",
+      "sha256": "f07fe31741570dc3d54de486131c3bf0ab330445e143cfde543825ece4def3b2"
+    },
+    {
+      "path": "src/compute_provider_ggml_vulkan/native_bridge.h",
+      "sha256": "cf7d36517247c5471803a735a174ce1f8649fb6523219740a59c0616453e7124"
+    },
+    {
+      "path": "src/compute_provider_ggml_vulkan/region.cc",
+      "sha256": "54a58f4d5f2e26ad8171898319d6afd5d7b8f31be92566dcb08bdb593610badd"
+    },
+    {
+      "path": "src/compute_provider_ggml_vulkan/region.h",
+      "sha256": "faa25cdaddf3ef48d263729c47784c68ee465d84845553b742714a39a4fc94b5"
+    },
+    {
+      "path": "src/compute_route_vulkan/vulkan_batch.cc",
+      "sha256": "13be641a365cdadedbf68e1550d3ee41fac293f7d1706dfb74315e0221a217d5"
+    },
+    {
+      "path": "src/compute_route_vulkan/vulkan_materialized_invocation.cc",
+      "sha256": "46aedd3dba56f61e493032eca92bc4736d90a5ca0d9e265c95978f639e4e68dd"
+    },
+    {
+      "path": "tests/compute_batch/native_paged_vulkan_consumer.cc",
+      "sha256": "0e87de122b033926e5dfaefa2572c0455d83a8fe7bb70257314dd9481682ad84"
+    },
+    {
+      "path": "third_party/ggml_vulkan_runtime/NOTICE.md",
+      "sha256": "922541d16aa227a119569d21671b8508d8eb615cbcbb7135e16cdcf6b20d11c5"
+    },
+    {
+      "path": "third_party/ggml_vulkan_runtime/patches.json",
+      "sha256": "73adf604717f328b2fdfc3cc6bcecdb308af20355d4c34ad1c3706853300149b"
+    }
+  ],
+  "unproven": [
+    "Apple page math",
+    "new page accepted-prefix/error/unknown retirement risks",
+    "three delivery and public standalone headers",
+    "new page host risk facets",
+    "same-contract immutable P1",
+    "whole G01/G02/G03-G10"
+  ],
+  "raw_sha256": "33dd278ca4b9c85de0dd63be0ab99f87991649ba9a6acea2b74ceed7c5d333fb"
+}

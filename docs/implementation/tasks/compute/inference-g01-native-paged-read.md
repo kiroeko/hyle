@@ -160,3 +160,26 @@ arena回归，实际flags核验；0.433/0.171/0.337s run。NP02共享controller�
 原组件合同第三次255.328s PASS，原两FAIL与累计692.016s保留；未改公共工具/构建核心。
 五owner仍AUDITED：新的typed paged invocation/实际page compiler/NP03–04数学未实现，
 新头static/shared等仍未证，不由37tests或reference输出代签CANDIDATE/整个G01。
+
+NP02/NP04 Vulkan实际草稿接入：公开PagedBatchInvocation只接受确切K/V frames，复用
+共享单table policy；私有四port op把真实physical roots、logical rows和table offset交给
+原FullF32 scalar flash。私有tag使用op params5–8；原binding6（不用mask-opt）承载完整
+I32表，原mask-only push字段承载offset/原Q数，普通128byte packet和coopmat身份不改。
+全部scalar K/V staging/direct/decode读地址映射page16，causal限制按logical位置；不新增
+attention公式、不物化KV或每Q/head mask。exact patch contexts/source/result SHA已逐项
+重放核验，source cache未改。新实际GPU消费者包含三D、causal/noncausal、重复/乱序/
+tail/空request、logical79>physical64、64次topology演化、双slot/旧output、foreign schema/
+mixed frame拒绝与32byte上传费用。2026-10-14 actual Air Mac16,12/arm64/macOS27.0.1/
+AppleClang21已复核；只启动该消费者和原reference target的fourjobs复用树构建。
+这是AUDITED可变草稿，编译/数学结果未获得前不写PASS；Apple原生paged仍未实现，
+本批三交付/适用风险/P1亦未完成。selector因patch中央lock变动保守全选的原plan保留，
+沿工具卡限制实际验证为变动owner/真正消费者，不重开全库或启动全局数学验证。
+
+Vulkan草稿2500128ed获得actual GPU source六组PASS：F16 D64/128/256×causal/noncausal，
+每组64次topology演化，independent double oracle与logical79>physical64/确切guards/旧
+output/foreign schema/mixed generation/32byte费用全部通过。原materialized direct/Graph/
+fault/append负空间也PASS。见[阶段证据](../../../../evidence/correctness/inference-g01-native-page-vulkan-stage/README.md)。
+首83.783s compile FAIL为fixture误用half bit carrier转换，修显式encoder/独立decoder后
+build0.876s/math7.144s/reference5.345s PASS，原FAIL/input/log与累计97.149s保留。
+实际编译host/scalar after SHA分别核验。尚未完成新page accepted-prefix/unknown风险、
+宿主风险、三交付/逐头/P1及Apple页数学，五owner仍AUDITED，整个goal仍0/10。
