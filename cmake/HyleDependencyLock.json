@@ -914,7 +914,7 @@
       },
       "vendored": {
         "path": "third_party/ggml_runtime",
-        "tree_sha256": "3b728a810883864215a92c495a5f2ce0013eefca402bd544c1f2e8ed23ba9e10"
+        "tree_sha256": "55c828e88ae5010ed0a8a18355aa19b9ec28b395995f5a8d4d61fc5378a8069c"
       },
       "license": {
         "expression": "MIT",
@@ -1053,7 +1053,7 @@
       },
       "vendored": {
         "path": "third_party/ggml_cpu_runtime",
-        "tree_sha256": "a172241da98dc132ab5bea6fa834ce4c830a79865a5951efbb2f26868d23bacf"
+        "tree_sha256": "53e74fd2bcf563753af78a7d243523e87543631df1d8a7e75058df430747fe44"
       },
       "license": {
         "expression": "MIT",
