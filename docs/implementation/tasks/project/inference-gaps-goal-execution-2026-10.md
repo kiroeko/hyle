@@ -42,11 +42,12 @@ Apple/Vulkan 的实际 OS/native 资格。共同验收位置、有效区、shape
 
 下表是当前 goal 工作项，不是第二份模块 registry。完整项完成数 **0/10**；已完成
 G01 CPU resident/native ragged有限轮、Vulkan单请求有限轮与G02 common实现，不能由
-子批替代全部路线。Apple native ragged实际P1已通过，Vulkan native ragged P1运行中。
+子批替代全部路线。Apple native ragged有限轮已CLOSED；Vulkan原280短D64合格性能
+FAIL保留，已修原region分段并验证交付/风险，candidate0e9e011b8同合同P1运行中。
 
 | 项 | 当前状态 | 有限目标 | 预计涉及的机制 owner，需在活动卡精确定界 |
 |---|---|---|---|
-| G01 高效驻留读取 | CPU resident/native ragged有限轮973 CLOSED。Apple/Vulkan native ragged产品280 CANDIDATE：source、四SDK、六san、公开头及Windows定向编译通过；Apple multi P1 QUALIFIED/5%非劣PASS、verify0，长prefill仍记录1–1.7% LOSS；Vulkan multi P1运行中，原直接消费者回归待验。整个G01仍待其它准入域与分页 | 单请求先核 dense/view；多请求接 native/等价直接驻留消费，避免按每 Q/head 重复物化全 KV | compute_batch、原 route/Provider、graph_batch 必要桥 |
+| G01 高效驻留读取 | CPU有限轮973、Apple native ragged280 CLOSED；Apple长prefill1–1.7% LOSS保留。Vulkan280短D64合格非劣FAIL/11–13% LOSS，实查3managed段；已改为原1region，candidate0e9e011b8 source/两SDK/三san/原直接联合回归与Win定向编译PASS，同合同新P1运行中。整个G01仍待其它准入域与分页 | 单请求先核 dense/view；多请求接 native/等价直接驻留消费，避免按每 Q/head 重复物化全 KV | compute_batch、原 route/Provider、graph_batch 必要桥 |
 | G02 联合分页 | common与CPU+CUDA实跑、三交付/宿主风险通过；Windows余门及Apple/Vulkan联合分页待验 | 原 multi-queue bindings 接 batch coordinator；native hybrid 接准确 page/layout 与原 region/slot，公开 CPU→GPU→CPU | graph_batch、三个 graph hybrid、原 compute/native 权限桥 |
 | G03 增量 producer 组合 | 待 owner 定界 | 原 exclusive/F2/native waits到更新与读取；精确 dirty 域、成功 ready、idle input 生命周期 | compute_batch、compute/F2、原 native route与graph桥 |
 | G04 量化 KV | 待有限编码选择 | 按成熟实际 cache 编码冻结 payload/scales/layout、quantize append与直接读取，不每步解码完整历史 | compute_ops/batch、实际 Provider/native route |
@@ -73,8 +74,10 @@ source/relocated static/shared Direct＋两个dependent Graph regions全部PASS�
 三真实长/短形状、原16 paired rounds与n15/31，A/A16、QUALIFIED/5%非劣与verify0。
 当前native批按
 [原native ragged卡](../compute/inference-g01-native-ragged-layout.md)固定原View/SDPA/
-Program消费而不另建controller；candidate280交付/宿主风险与Apple P1通过，Vulkan
-P1串行运行，后续仅实际直接消费者回归与一次终审。分页/G03–G10和全部已准入域
+Program消费而不另建controller；Apple280有限轮已CLOSED，直接联合回归两平台通过。
+Vulkan原qualified FAIL已封存并按[有限RF卡](../compute/inference-g01-vulkan-ragged-region-fusion.md)
+修冷region分段；新candidate交付/宿主风险与原消费者通过，原同合同P1串行运行。
+分页/G03–G10和全部已准入域
 继续保留，不以本批冷入口签growth/capture完成。
 
 ## 推进顺序

@@ -66,3 +66,10 @@ run3.188s PASS。Windows同parent/build只重编三TU/链接，四jobs5.125s，�
 oracle/5%/16paired rounds/min1/4ms/n15/31/A/A/controls全部不变。只因为产品结构已改
 进行新候选验证；原fresh2 FAIL928.101s、全部之前成本保留，不因新tree重置预算。
 新performance gate尚未终态，不提前签PASS；Apple/CPU原P1不重跑。
+
+候选复检定位段尾规则漏了外部View排除：主分支虽拒独立View作为managed起点，段尾
+普通matches_mature_default也可能允许它并入，与本卡只跨相邻内部reshape的负空间
+不一致。route单独退AUDITED补同样的!View条件；Provider数学与原NR实际输入不改。
+正式source0006944b7/产品0e9e011b8独立不被修改，正在运行的任务保原预算并取得实际
+终态；不能把此观察当成停止/重新采样许可。最终cold admission范围由新candidate
+明确绑定，并反证没有引入input KV Copy；性能复用需给实际相同NR lowering身份。
