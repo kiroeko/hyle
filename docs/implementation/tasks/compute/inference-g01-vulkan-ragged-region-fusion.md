@@ -115,3 +115,17 @@ RF-04实现只有fixed_attention_graph两行变更；Actual Air新增64步两fla
 记录test、原四native风险tests与五route tests共十项PASS，冷外部View alias/单region/
 KV roots与实际八requestsuffix错误退休均保。phase/source输入SHA核验，产品数学/原
 shader/公共API不改；API/算法稳定后冻结bc0，三交付/三san/原消费者及同合同性能待验。
+
+bc0候选实际source、搬迁static/shared两public tests各PASS；三san各十tests PASS，
+包括实际ggml-vulkan.cpp编译插桩（其中包含变更的native_work_impl）、provider/route
+TU和两组tests，不借旧san代签新Work资格。原CPU+Vulkan consumer增量build10.093s、
+run3.805s PASS。短三shape oracle/readonly/tail+16轮诊断3.212s PASS；D64参考比
+1.00x、CI[0.99,1.02]仅diagnostic，不写正式performance PASS。实际证据封存后，同
+原contractd9a54a85/peer/5%/n15/31/controls再次验证这一已修normal-cost候选；不是
+对相同candidate追加姿势。两次原合格FAIL永久保留，原CPU/Apple性能不重复。
+
+最终[RR门证据](../../../../evidence/correctness/inference-g01-vulkan-ragged-recording/README.md)
+已封存11组source/红绿/交付/风险/原消费者记录与三实际插桩清单，Windows定向编译
+9.734s PASS。正式fresh4/clean source4f224878a、productbc0、原contractd9a54a85已
+串行启动，结果必须按实际终态裁决。此前冷规则source8ec已验证，但0e9性能FAIL，
+不需要再做其“PASS复用”论证；旧源码identity检查只保诊断，最终性能绑定bc0。

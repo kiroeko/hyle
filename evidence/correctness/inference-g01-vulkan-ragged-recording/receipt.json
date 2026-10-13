@@ -1,0 +1,707 @@
+{
+  "candidate": "bc0ba41f714f6529cb1c583bee59d482946e7589",
+  "results": {
+    "g01-native-ragged-vulkan-rr-green/result.json": {
+      "phase": "AUDITED native ragged not candidate",
+      "canonical_commit": "bc0ba41f714f6529cb1c583bee59d482946e7589",
+      "route": "vulkan",
+      "hardware": "actual Mac16,12",
+      "stages": [
+        {
+          "stage": "configure",
+          "command": [
+            "/opt/homebrew/bin/cmake",
+            "-S",
+            "/Users/kiro/hyle-scratch/compute-unified/source-c8874688",
+            "-B",
+            "/Users/kiro/hyle-scratch/compute-unified/a-vulkan/selected-graph/static-sdk-build",
+            "-DCMAKE_PROJECT_INCLUDE=/Users/kiro/hyle-scratch/compute-unified/g01-native-ragged-vulkan-rr-green/project.cmake",
+            "-UCMAKE_PROJECT_TOP_LEVEL_INCLUDES"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 12.192344584,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g01-native-ragged-vulkan-rr-green/configure-1.log"
+        },
+        {
+          "stage": "build",
+          "command": [
+            "/opt/homebrew/bin/cmake",
+            "--build",
+            "/Users/kiro/hyle-scratch/compute-unified/a-vulkan/selected-graph/static-sdk-build",
+            "--target",
+            "g01_native_ragged",
+            "--parallel",
+            "4"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 7.997534292000001,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g01-native-ragged-vulkan-rr-green/build-1.log"
+        },
+        {
+          "stage": "run",
+          "command": [
+            "/Users/kiro/hyle-scratch/compute-unified/a-vulkan/selected-graph/static-sdk-build/bin/g01_native_ragged"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 0.9898236659999995,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g01-native-ragged-vulkan-rr-green/run-1.log"
+        }
+      ]
+    },
+    "g01-native-ragged-vulkan-rr-red/result.json": {
+      "phase": "AUDITED native ragged not candidate",
+      "canonical_commit": "79d0dc78cc864de581845010da5b117938d03b7f",
+      "route": "vulkan",
+      "hardware": "actual Mac16,12",
+      "stages": [
+        {
+          "stage": "configure",
+          "command": [
+            "/opt/homebrew/bin/cmake",
+            "-S",
+            "/Users/kiro/hyle-scratch/compute-unified/source-c8874688",
+            "-B",
+            "/Users/kiro/hyle-scratch/compute-unified/a-vulkan/selected-graph/static-sdk-build",
+            "-DCMAKE_PROJECT_INCLUDE=/Users/kiro/hyle-scratch/compute-unified/g01-native-ragged-vulkan-rr-red/project.cmake",
+            "-UCMAKE_PROJECT_TOP_LEVEL_INCLUDES"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 12.174446084,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g01-native-ragged-vulkan-rr-red/configure-1.log"
+        },
+        {
+          "stage": "build",
+          "command": [
+            "/opt/homebrew/bin/cmake",
+            "--build",
+            "/Users/kiro/hyle-scratch/compute-unified/a-vulkan/selected-graph/static-sdk-build",
+            "--target",
+            "g01_native_ragged",
+            "--parallel",
+            "4"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 1.2932235409999997,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g01-native-ragged-vulkan-rr-red/build-1.log"
+        },
+        {
+          "stage": "run",
+          "command": [
+            "/Users/kiro/hyle-scratch/compute-unified/a-vulkan/selected-graph/static-sdk-build/bin/g01_native_ragged",
+            "--gtest_filter=GgmlVulkanAttention.RecordedTwoFlashConcatReadsCurrentPayloadAcross64Steps"
+          ],
+          "exit_code": 1,
+          "elapsed_seconds": 0.6858987499999998,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g01-native-ragged-vulkan-rr-red/run-1.log"
+        }
+      ]
+    },
+    "g01-native-ragged-vulkan-rf-final/result.json": {
+      "phase": "AUDITED Vulkan RF source",
+      "canonical_commit": "3e375f6e199269b8ce24b64036233304c4f4606b",
+      "route": "vulkan",
+      "hardware": "actual Mac16,12",
+      "stages": [
+        {
+          "stage": "configure",
+          "command": [
+            "/opt/homebrew/bin/cmake",
+            "-S",
+            "/Users/kiro/hyle-scratch/compute-unified/source-c8874688",
+            "-B",
+            "/Users/kiro/hyle-scratch/compute-unified/a-vulkan/selected-graph/static-sdk-build",
+            "-DCMAKE_PROJECT_INCLUDE=/Users/kiro/hyle-scratch/compute-unified/g01-native-ragged-vulkan-rf-final/project.cmake",
+            "-UCMAKE_PROJECT_TOP_LEVEL_INCLUDES"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 14.007923958,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g01-native-ragged-vulkan-rf-final/configure-1.log"
+        },
+        {
+          "stage": "build",
+          "command": [
+            "/opt/homebrew/bin/cmake",
+            "--build",
+            "/Users/kiro/hyle-scratch/compute-unified/a-vulkan/selected-graph/static-sdk-build",
+            "--target",
+            "g01_native_ragged",
+            "--parallel",
+            "4"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 1.5724478339999983,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g01-native-ragged-vulkan-rf-final/build-1.log"
+        },
+        {
+          "stage": "run",
+          "command": [
+            "/Users/kiro/hyle-scratch/compute-unified/a-vulkan/selected-graph/static-sdk-build/bin/g01_native_ragged"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 0.918606166,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g01-native-ragged-vulkan-rf-final/run-1.log"
+        }
+      ]
+    },
+    "g01-native-ragged-vulkan-static-rr-sdk/result.json": {
+      "candidate": "bc0ba41f714f6529cb1c583bee59d482946e7589",
+      "route": "vulkan",
+      "mode": "static",
+      "scope": "actual relocated public SDK, native math/lease allocation/two-eight requests/empty/reorder/old outputs/tail/readonly; source-only structure/failure tests excluded",
+      "stages": [
+        {
+          "stage": "producer-build",
+          "command": [
+            "/opt/homebrew/bin/cmake",
+            "--build",
+            "/Users/kiro/hyle-scratch/compute-unified/a-vulkan/selected-graph/static-sdk-build",
+            "--target",
+            "hyle_compute_route_vulkan",
+            "hyle_graph_batch",
+            "hyle_compute_state",
+            "--parallel",
+            "4"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 0.08075125000000001,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g01-native-ragged-vulkan-static-rr-sdk/producer-build-1.log"
+        },
+        {
+          "stage": "install",
+          "command": [
+            "/opt/homebrew/bin/cmake",
+            "--install",
+            "/Users/kiro/hyle-scratch/compute-unified/a-vulkan/selected-graph/static-sdk-build",
+            "--prefix",
+            "/Users/kiro/hyle-scratch/compute-unified/g01-native-ragged-vulkan-static-rr-sdk/staging"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 0.34086695899999997,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g01-native-ragged-vulkan-static-rr-sdk/install-1.log"
+        },
+        {
+          "stage": "consumer-configure",
+          "command": [
+            "/opt/homebrew/bin/cmake",
+            "-S",
+            "/Users/kiro/hyle-scratch/compute-unified/g01-native-ragged-vulkan-static-rr-sdk/consumer-source",
+            "-B",
+            "/Users/kiro/hyle-scratch/compute-unified/g01-native-ragged-vulkan-static-rr-sdk/consumer-build",
+            "-G",
+            "Ninja",
+            "-DCMAKE_BUILD_TYPE=Release",
+            "-DCMAKE_OSX_DEPLOYMENT_TARGET=14.4",
+            "-DCMAKE_PREFIX_PATH=/Users/kiro/hyle-scratch/compute-unified/g01-native-ragged-vulkan-static-rr-sdk/relocated"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 0.421128125,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g01-native-ragged-vulkan-static-rr-sdk/consumer-configure-1.log"
+        },
+        {
+          "stage": "consumer-build",
+          "command": [
+            "/opt/homebrew/bin/cmake",
+            "--build",
+            "/Users/kiro/hyle-scratch/compute-unified/g01-native-ragged-vulkan-static-rr-sdk/consumer-build",
+            "--target",
+            "ragged",
+            "--parallel",
+            "4"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 2.364589209,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g01-native-ragged-vulkan-static-rr-sdk/consumer-build-1.log"
+        },
+        {
+          "stage": "run",
+          "command": [
+            "/Users/kiro/hyle-scratch/compute-unified/g01-native-ragged-vulkan-static-rr-sdk/consumer-build/ragged"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 0.8128377919999994,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g01-native-ragged-vulkan-static-rr-sdk/run-1.log"
+        }
+      ]
+    },
+    "g01-native-ragged-vulkan-shared-rr-sdk/result.json": {
+      "candidate": "bc0ba41f714f6529cb1c583bee59d482946e7589",
+      "route": "vulkan",
+      "mode": "shared",
+      "scope": "actual relocated public SDK, native math/lease allocation/two-eight requests/empty/reorder/old outputs/tail/readonly; source-only structure/failure tests excluded",
+      "stages": [
+        {
+          "stage": "producer-build",
+          "command": [
+            "/opt/homebrew/bin/cmake",
+            "--build",
+            "/Users/kiro/hyle-scratch/compute-unified/a-vulkan/selected-graph/shared-sdk-build",
+            "--target",
+            "hyle_compute_route_vulkan",
+            "hyle_graph_batch",
+            "hyle_compute_state",
+            "--parallel",
+            "4"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 9.177123625,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g01-native-ragged-vulkan-shared-rr-sdk/producer-build-1.log"
+        },
+        {
+          "stage": "install",
+          "command": [
+            "/opt/homebrew/bin/cmake",
+            "--install",
+            "/Users/kiro/hyle-scratch/compute-unified/a-vulkan/selected-graph/shared-sdk-build",
+            "--prefix",
+            "/Users/kiro/hyle-scratch/compute-unified/g01-native-ragged-vulkan-shared-rr-sdk/staging"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 0.3114119999999989,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g01-native-ragged-vulkan-shared-rr-sdk/install-1.log"
+        },
+        {
+          "stage": "consumer-configure",
+          "command": [
+            "/opt/homebrew/bin/cmake",
+            "-S",
+            "/Users/kiro/hyle-scratch/compute-unified/g01-native-ragged-vulkan-shared-rr-sdk/consumer-source",
+            "-B",
+            "/Users/kiro/hyle-scratch/compute-unified/g01-native-ragged-vulkan-shared-rr-sdk/consumer-build",
+            "-G",
+            "Ninja",
+            "-DCMAKE_BUILD_TYPE=Release",
+            "-DCMAKE_OSX_DEPLOYMENT_TARGET=14.4",
+            "-DCMAKE_PREFIX_PATH=/Users/kiro/hyle-scratch/compute-unified/g01-native-ragged-vulkan-shared-rr-sdk/relocated"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 0.4108607500000012,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g01-native-ragged-vulkan-shared-rr-sdk/consumer-configure-1.log"
+        },
+        {
+          "stage": "consumer-build",
+          "command": [
+            "/opt/homebrew/bin/cmake",
+            "--build",
+            "/Users/kiro/hyle-scratch/compute-unified/g01-native-ragged-vulkan-shared-rr-sdk/consumer-build",
+            "--target",
+            "ragged",
+            "--parallel",
+            "4"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 2.372048083000001,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g01-native-ragged-vulkan-shared-rr-sdk/consumer-build-1.log"
+        },
+        {
+          "stage": "run",
+          "command": [
+            "/Users/kiro/hyle-scratch/compute-unified/g01-native-ragged-vulkan-shared-rr-sdk/consumer-build/ragged"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 5.970943582999999,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g01-native-ragged-vulkan-shared-rr-sdk/run-1.log"
+        }
+      ]
+    },
+    "g01-native-ragged-vulkan-asan-rr/result.json": {
+      "candidate": "bc0ba41f714f6529cb1c583bee59d482946e7589",
+      "route": "vulkan",
+      "mode": "asan",
+      "scope": "actual Air host instrumented native objects with selected tiny actual GPU math; no driver/shader/LSan claim",
+      "stages": [
+        {
+          "stage": "configure",
+          "command": [
+            "/opt/homebrew/bin/cmake",
+            "-S",
+            "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-vulkan-asan/parent",
+            "-B",
+            "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-vulkan-asan/build"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 13.794678334,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g01-native-ragged-vulkan-asan-rr/configure-1.log"
+        },
+        {
+          "stage": "build",
+          "command": [
+            "/opt/homebrew/bin/cmake",
+            "--build",
+            "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-vulkan-asan/build",
+            "--target",
+            "g01_native_ragged",
+            "--parallel",
+            "4"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 15.440213458,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g01-native-ragged-vulkan-asan-rr/build-1.log"
+        },
+        {
+          "stage": "run",
+          "command": [
+            "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-vulkan-asan/build/g01_native_ragged"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 1.4678010000000015,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g01-native-ragged-vulkan-asan-rr/run-1.log"
+        }
+      ]
+    },
+    "g01-native-ragged-vulkan-ubsan-rr/result.json": {
+      "candidate": "bc0ba41f714f6529cb1c583bee59d482946e7589",
+      "route": "vulkan",
+      "mode": "ubsan",
+      "scope": "actual Air host instrumented native objects with selected tiny actual GPU math; no driver/shader/LSan claim",
+      "stages": [
+        {
+          "stage": "configure",
+          "command": [
+            "/opt/homebrew/bin/cmake",
+            "-S",
+            "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-vulkan-ubsan/parent",
+            "-B",
+            "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-vulkan-ubsan/build"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 14.085208917,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g01-native-ragged-vulkan-ubsan-rr/configure-1.log"
+        },
+        {
+          "stage": "build",
+          "command": [
+            "/opt/homebrew/bin/cmake",
+            "--build",
+            "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-vulkan-ubsan/build",
+            "--target",
+            "g01_native_ragged",
+            "--parallel",
+            "4"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 22.50414875,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g01-native-ragged-vulkan-ubsan-rr/build-1.log"
+        },
+        {
+          "stage": "run",
+          "command": [
+            "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-vulkan-ubsan/build/g01_native_ragged"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 0.8853932920000034,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g01-native-ragged-vulkan-ubsan-rr/run-1.log"
+        }
+      ]
+    },
+    "g01-native-ragged-vulkan-tsan-rr/result.json": {
+      "candidate": "bc0ba41f714f6529cb1c583bee59d482946e7589",
+      "route": "vulkan",
+      "mode": "tsan",
+      "scope": "actual Air host instrumented native objects with selected tiny actual GPU math; no driver/shader/LSan claim",
+      "stages": [
+        {
+          "stage": "configure",
+          "command": [
+            "/opt/homebrew/bin/cmake",
+            "-S",
+            "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-vulkan-tsan/parent",
+            "-B",
+            "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-vulkan-tsan/build"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 14.118739708,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g01-native-ragged-vulkan-tsan-rr/configure-1.log"
+        },
+        {
+          "stage": "build",
+          "command": [
+            "/opt/homebrew/bin/cmake",
+            "--build",
+            "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-vulkan-tsan/build",
+            "--target",
+            "g01_native_ragged",
+            "--parallel",
+            "4"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 10.210483625,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g01-native-ragged-vulkan-tsan-rr/build-1.log"
+        },
+        {
+          "stage": "run",
+          "command": [
+            "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-vulkan-tsan/build/g01_native_ragged"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 4.178857125,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g01-native-ragged-vulkan-tsan-rr/run-1.log"
+        }
+      ]
+    },
+    "g01-ragged-direct-consumers-vulkan-rr/result.json": {
+      "candidate": "bc0ba41f714f6529cb1c583bee59d482946e7589",
+      "scope": "selected original CPU/native hybrid finite/control/state and native graph consumers only; no globalmatrix",
+      "stages": [
+        {
+          "stage": "configure",
+          "command": [
+            "/opt/homebrew/bin/cmake",
+            "-S",
+            "/Users/kiro/hyle-scratch/compute-unified/a-cpu-vulkan/selected-graph/source-parent",
+            "-B",
+            "/Users/kiro/hyle-scratch/compute-unified/a-cpu-vulkan/selected-graph/source-build",
+            "-DCMAKE_PROJECT_INCLUDE=/Users/kiro/hyle-scratch/compute-unified/g01-ragged-direct-consumers-vulkan-rr/project.cmake",
+            "-UCMAKE_PROJECT_TOP_LEVEL_INCLUDES"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 17.808971665999998,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g01-ragged-direct-consumers-vulkan-rr/configure-1.log"
+        },
+        {
+          "stage": "build",
+          "command": [
+            "/opt/homebrew/bin/cmake",
+            "--build",
+            "/Users/kiro/hyle-scratch/compute-unified/a-cpu-vulkan/selected-graph/source-build",
+            "--target",
+            "g01_ragged_direct_consumer",
+            "--parallel",
+            "4"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 10.093093458999999,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g01-ragged-direct-consumers-vulkan-rr/build-1.log"
+        },
+        {
+          "stage": "run",
+          "command": [
+            "/Users/kiro/hyle-scratch/compute-unified/a-cpu-vulkan/selected-graph/source-build/hyle/g01_ragged_direct_consumer"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 3.8052717089999994,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g01-ragged-direct-consumers-vulkan-rr/run-1.log"
+        }
+      ]
+    },
+    "g01-native-ragged-cost-diagnostic/result.json": [
+      {
+        "stage": "configure",
+        "exit_code": 0,
+        "elapsed_seconds": 12.388374708,
+        "command": [
+          "/opt/homebrew/bin/cmake",
+          "-S",
+          "/Users/kiro/hyle-scratch/compute-unified/source-c8874688",
+          "-B",
+          "/Users/kiro/hyle-scratch/compute-unified/a-vulkan/selected-graph/static-sdk-build",
+          "-DCMAKE_PROJECT_INCLUDE=/Users/kiro/hyle-scratch/compute-unified/g01-native-ragged-cost-diagnostic/project.cmake"
+        ],
+        "log": "/Users/kiro/hyle-scratch/compute-unified/g01-native-ragged-cost-diagnostic/configure.log"
+      },
+      {
+        "stage": "build",
+        "exit_code": 0,
+        "elapsed_seconds": 0.7071978749999985,
+        "command": [
+          "/opt/homebrew/bin/cmake",
+          "--build",
+          "/Users/kiro/hyle-scratch/compute-unified/a-vulkan/selected-graph/static-sdk-build",
+          "--target",
+          "g01_ragged_cost",
+          "--parallel",
+          "4"
+        ],
+        "log": "/Users/kiro/hyle-scratch/compute-unified/g01-native-ragged-cost-diagnostic/build.log"
+      },
+      {
+        "stage": "run",
+        "exit_code": 0,
+        "elapsed_seconds": 0.6913746249999999,
+        "command": [
+          "/Users/kiro/hyle-scratch/compute-unified/a-vulkan/selected-graph/static-sdk-build/bin/g01_ragged_cost"
+        ],
+        "log": "/Users/kiro/hyle-scratch/compute-unified/g01-native-ragged-cost-diagnostic/run.log"
+      }
+    ],
+    "g01-native-ragged-rr-bench/result.json": {
+      "scope": "native ragged independent shader comparator preflight, not qualified P1",
+      "stages": [
+        {
+          "stage": "configure",
+          "command": [
+            "/opt/homebrew/bin/cmake",
+            "-S",
+            "/Users/kiro/hyle-scratch/compute-unified/source-c8874688",
+            "-B",
+            "/Users/kiro/hyle-scratch/compute-unified/a-vulkan/selected-graph/static-sdk-build",
+            "-DCMAKE_PROJECT_INCLUDE=/Users/kiro/hyle-scratch/compute-unified/g01-native-ragged-rr-bench/project.cmake"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 12.190305208,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g01-native-ragged-rr-bench/configure-1.log"
+        },
+        {
+          "stage": "build",
+          "command": [
+            "/opt/homebrew/bin/cmake",
+            "--build",
+            "/Users/kiro/hyle-scratch/compute-unified/a-vulkan/selected-graph/static-sdk-build",
+            "--target",
+            "g01_native_ragged_bench",
+            "--parallel",
+            "4"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 1.5578632089999989,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g01-native-ragged-rr-bench/build-1.log"
+        },
+        {
+          "stage": "oracle-and-short-diagnostic",
+          "command": [
+            "/Users/kiro/hyle-scratch/compute-unified/a-vulkan/selected-graph/static-sdk-build/bin/g01_native_ragged_bench"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 3.2119666250000005,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g01-native-ragged-rr-bench/oracle-and-short-diagnostic-1.log"
+        }
+      ]
+    }
+  },
+  "instrumented": {
+    "g01-native-ragged-vulkan-asan-rr/instrumented-inputs.json": [
+      {
+        "directory": "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-vulkan-asan/build",
+        "command": "/usr/bin/c++ -DHYLE_COMPUTE_ROUTE_VULKAN_BUILD -DHYLE_COMPUTE_VULKAN=1 -DHYLE_DETAIL_SANITIZER_ADDRESS=1 -DHYLE_IO_HAS_COROUTINE_TRANSPORT=1 -DHYLE_STATIC -I/Users/kiro/hyle-scratch/compute-unified/source-c8874688/include -I/Users/kiro/hyle-scratch/compute-unified/source-c8874688/src/compute_route_vulkan -I/Users/kiro/hyle-scratch/compute-unified/source-c8874688/src/compute_route_vulkan/../compute -I/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-vulkan-asan/build/hyle/src/compute_route_vulkan -I/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-vulkan-asan/build/hyle/src/compute_route_vulkan/shaders -isystem /Users/kiro/Library/Caches/hyle/dependencies/v1/sources/vulkan_headers-e3b1eec08173-69d6adc9001f/include -O3 -DNDEBUG -std=c++23 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk -mmacosx-version-min=14.4 -Wall -Wextra -Wpedantic -fsanitize=address -fno-omit-frame-pointer -MD -MT hyle/src/compute_route_vulkan/CMakeFiles/hyle_compute_route_vulkan.dir/vulkan_batch.cc.o -MF hyle/src/compute_route_vulkan/CMakeFiles/hyle_compute_route_vulkan.dir/vulkan_batch.cc.o.d -o hyle/src/compute_route_vulkan/CMakeFiles/hyle_compute_route_vulkan.dir/vulkan_batch.cc.o -c /Users/kiro/hyle-scratch/compute-unified/source-c8874688/src/compute_route_vulkan/vulkan_batch.cc",
+        "file": "/Users/kiro/hyle-scratch/compute-unified/source-c8874688/src/compute_route_vulkan/vulkan_batch.cc",
+        "output": "hyle/src/compute_route_vulkan/CMakeFiles/hyle_compute_route_vulkan.dir/vulkan_batch.cc.o"
+      },
+      {
+        "directory": "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-vulkan-asan/build",
+        "command": "/usr/bin/c++ -DHYLE_COMPUTE_VULKAN=1 -DHYLE_DETAIL_SANITIZER_ADDRESS=1 -DHYLE_IO_HAS_COROUTINE_TRANSPORT=1 -DHYLE_STATIC -I/Users/kiro/hyle-scratch/compute-unified/source-c8874688/include -isystem /Users/kiro/Library/Caches/hyle/dependencies/v1/sources/vulkan_headers-e3b1eec08173-69d6adc9001f/include -isystem /Users/kiro/Library/Caches/hyle/dependencies/v1/sources/googletest-063de7e9578f-162765170ae6/googletest/include -isystem /Users/kiro/Library/Caches/hyle/dependencies/v1/sources/googletest-063de7e9578f-162765170ae6/googletest -O3 -DNDEBUG -std=gnu++23 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk -mmacosx-version-min=14.4 -fsanitize=address -fno-omit-frame-pointer -MD -MT CMakeFiles/g01_native_ragged.dir/Users/kiro/hyle-scratch/compute-unified/source-c8874688/tests/compute_route_vulkan/native_ragged_test.cc.o -MF CMakeFiles/g01_native_ragged.dir/Users/kiro/hyle-scratch/compute-unified/source-c8874688/tests/compute_route_vulkan/native_ragged_test.cc.o.d -o CMakeFiles/g01_native_ragged.dir/Users/kiro/hyle-scratch/compute-unified/source-c8874688/tests/compute_route_vulkan/native_ragged_test.cc.o -c /Users/kiro/hyle-scratch/compute-unified/source-c8874688/tests/compute_route_vulkan/native_ragged_test.cc",
+        "file": "/Users/kiro/hyle-scratch/compute-unified/source-c8874688/tests/compute_route_vulkan/native_ragged_test.cc",
+        "output": "CMakeFiles/g01_native_ragged.dir/Users/kiro/hyle-scratch/compute-unified/source-c8874688/tests/compute_route_vulkan/native_ragged_test.cc.o"
+      },
+      {
+        "directory": "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-vulkan-asan/build",
+        "command": "/usr/bin/c++ -DHYLE_COMPUTE_VULKAN=1 -DHYLE_DETAIL_SANITIZER_ADDRESS=1 -DHYLE_IO_HAS_COROUTINE_TRANSPORT=1 -DHYLE_STATIC -I/Users/kiro/hyle-scratch/compute-unified/source-c8874688/include -isystem /Users/kiro/Library/Caches/hyle/dependencies/v1/sources/vulkan_headers-e3b1eec08173-69d6adc9001f/include -isystem /Users/kiro/Library/Caches/hyle/dependencies/v1/sources/googletest-063de7e9578f-162765170ae6/googletest/include -isystem /Users/kiro/Library/Caches/hyle/dependencies/v1/sources/googletest-063de7e9578f-162765170ae6/googletest -O3 -DNDEBUG -std=gnu++23 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk -mmacosx-version-min=14.4 -fsanitize=address -fno-omit-frame-pointer -MD -MT CMakeFiles/g01_native_ragged.dir/Users/kiro/hyle-scratch/compute-unified/source-c8874688/tests/compute_route_vulkan/native_ragged_cost_test.cc.o -MF CMakeFiles/g01_native_ragged.dir/Users/kiro/hyle-scratch/compute-unified/source-c8874688/tests/compute_route_vulkan/native_ragged_cost_test.cc.o.d -o CMakeFiles/g01_native_ragged.dir/Users/kiro/hyle-scratch/compute-unified/source-c8874688/tests/compute_route_vulkan/native_ragged_cost_test.cc.o -c /Users/kiro/hyle-scratch/compute-unified/source-c8874688/tests/compute_route_vulkan/native_ragged_cost_test.cc",
+        "file": "/Users/kiro/hyle-scratch/compute-unified/source-c8874688/tests/compute_route_vulkan/native_ragged_cost_test.cc",
+        "output": "CMakeFiles/g01_native_ragged.dir/Users/kiro/hyle-scratch/compute-unified/source-c8874688/tests/compute_route_vulkan/native_ragged_cost_test.cc.o"
+      },
+      {
+        "directory": "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-vulkan-asan/build",
+        "command": "/usr/bin/c++ -DGGML_USE_VULKAN -DHYLE_COMPUTE_PROVIDER_GGML_VULKAN_BUILD -DHYLE_DETAIL_SANITIZER_ADDRESS=1 -DHYLE_STATIC -I/Users/kiro/hyle-scratch/compute-unified/source-c8874688/include -I/Users/kiro/hyle-scratch/compute-unified/source-c8874688/src/compute_provider_ggml_vulkan -I/Users/kiro/hyle-scratch/compute-unified/source-c8874688/src/compute_ggml_runtime -I/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-vulkan-asan/build/hyle/src/compute_ggml_runtime/source-ccd5034f3d3406bb/src/../include -isystem /Users/kiro/Library/Caches/hyle/dependencies/v1/sources/vulkan_headers-e3b1eec08173-69d6adc9001f/include -O3 -DNDEBUG -std=c++23 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk -mmacosx-version-min=14.4 -Wall -Wextra -Wpedantic -fsanitize=address -fno-omit-frame-pointer -MD -MT hyle/src/compute_provider_ggml_vulkan/CMakeFiles/hyle_compute_provider_ggml_vulkan.dir/region.cc.o -MF hyle/src/compute_provider_ggml_vulkan/CMakeFiles/hyle_compute_provider_ggml_vulkan.dir/region.cc.o.d -o hyle/src/compute_provider_ggml_vulkan/CMakeFiles/hyle_compute_provider_ggml_vulkan.dir/region.cc.o -c /Users/kiro/hyle-scratch/compute-unified/source-c8874688/src/compute_provider_ggml_vulkan/region.cc",
+        "file": "/Users/kiro/hyle-scratch/compute-unified/source-c8874688/src/compute_provider_ggml_vulkan/region.cc",
+        "output": "hyle/src/compute_provider_ggml_vulkan/CMakeFiles/hyle_compute_provider_ggml_vulkan.dir/region.cc.o"
+      },
+      {
+        "directory": "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-vulkan-asan/build",
+        "command": "/usr/bin/c++ -DHYLE_COMPUTE_ROUTE_VULKAN_BUILD -DHYLE_COMPUTE_VULKAN=1 -DHYLE_DETAIL_SANITIZER_ADDRESS=1 -DHYLE_IO_HAS_COROUTINE_TRANSPORT=1 -DHYLE_STATIC -I/Users/kiro/hyle-scratch/compute-unified/source-c8874688/include -I/Users/kiro/hyle-scratch/compute-unified/source-c8874688/src/compute_route_vulkan -I/Users/kiro/hyle-scratch/compute-unified/source-c8874688/src/compute_route_vulkan/../compute -I/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-vulkan-asan/build/hyle/src/compute_route_vulkan -I/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-vulkan-asan/build/hyle/src/compute_route_vulkan/shaders -isystem /Users/kiro/Library/Caches/hyle/dependencies/v1/sources/vulkan_headers-e3b1eec08173-69d6adc9001f/include -O3 -DNDEBUG -std=c++23 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk -mmacosx-version-min=14.4 -Wall -Wextra -Wpedantic -fsanitize=address -fno-omit-frame-pointer -MD -MT hyle/src/compute_route_vulkan/CMakeFiles/hyle_compute_route_vulkan.dir/vulkan_program.cc.o -MF hyle/src/compute_route_vulkan/CMakeFiles/hyle_compute_route_vulkan.dir/vulkan_program.cc.o.d -o hyle/src/compute_route_vulkan/CMakeFiles/hyle_compute_route_vulkan.dir/vulkan_program.cc.o -c /Users/kiro/hyle-scratch/compute-unified/source-c8874688/src/compute_route_vulkan/vulkan_program.cc",
+        "file": "/Users/kiro/hyle-scratch/compute-unified/source-c8874688/src/compute_route_vulkan/vulkan_program.cc",
+        "output": "hyle/src/compute_route_vulkan/CMakeFiles/hyle_compute_route_vulkan.dir/vulkan_program.cc.o"
+      },
+      {
+        "directory": "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-vulkan-asan/build",
+        "command": "/usr/bin/c++ -DGGML_USE_VULKAN -DHYLE_COMPUTE_VULKAN=1 -DHYLE_DETAIL_SANITIZER_ADDRESS=1 -DHYLE_IO_HAS_COROUTINE_TRANSPORT=1 -DHYLE_STATIC -I/Users/kiro/hyle-scratch/compute-unified/source-c8874688/src/compute_provider_ggml_vulkan -I/Users/kiro/hyle-scratch/compute-unified/source-c8874688/include -I/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-vulkan-asan/build/hyle/src/compute_ggml_runtime/source-ccd5034f3d3406bb/src/../include -isystem /Users/kiro/Library/Caches/hyle/dependencies/v1/sources/vulkan_headers-e3b1eec08173-69d6adc9001f/include -isystem /Users/kiro/Library/Caches/hyle/dependencies/v1/sources/googletest-063de7e9578f-162765170ae6/googletest/include -isystem /Users/kiro/Library/Caches/hyle/dependencies/v1/sources/googletest-063de7e9578f-162765170ae6/googletest -O3 -DNDEBUG -std=gnu++23 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk -mmacosx-version-min=14.4 -fsanitize=address -fno-omit-frame-pointer -MD -MT CMakeFiles/g01_cache.dir/Users/kiro/hyle-scratch/compute-unified/source-c8874688/tests/compute_provider_ggml_vulkan/attention_cache_test.cc.o -MF CMakeFiles/g01_cache.dir/Users/kiro/hyle-scratch/compute-unified/source-c8874688/tests/compute_provider_ggml_vulkan/attention_cache_test.cc.o.d -o CMakeFiles/g01_cache.dir/Users/kiro/hyle-scratch/compute-unified/source-c8874688/tests/compute_provider_ggml_vulkan/attention_cache_test.cc.o -c /Users/kiro/hyle-scratch/compute-unified/source-c8874688/tests/compute_provider_ggml_vulkan/attention_cache_test.cc",
+        "file": "/Users/kiro/hyle-scratch/compute-unified/source-c8874688/tests/compute_provider_ggml_vulkan/attention_cache_test.cc",
+        "output": "CMakeFiles/g01_cache.dir/Users/kiro/hyle-scratch/compute-unified/source-c8874688/tests/compute_provider_ggml_vulkan/attention_cache_test.cc.o"
+      },
+      {
+        "directory": "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-vulkan-asan/build",
+        "command": "/usr/bin/c++ -DGGML_SCHED_MAX_COPIES=4 -DGGML_VULKAN_BFLOAT16_GLSLC_SUPPORT -DGGML_VULKAN_COOPMAT2_DECODE_VECTOR_GLSLC_SUPPORT -DGGML_VULKAN_COOPMAT2_GLSLC_SUPPORT -DGGML_VULKAN_COOPMAT_GLSLC_SUPPORT -DGGML_VULKAN_FLOAT_E2M1_GLSLC_SUPPORT -DGGML_VULKAN_FLOAT_E4M3_GLSLC_SUPPORT -DGGML_VULKAN_INTEGER_DOT_GLSLC_SUPPORT -DHYLE_DETAIL_SANITIZER_ADDRESS=1 -D_DARWIN_C_SOURCE -D_XOPEN_SOURCE=600 -I/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-vulkan-asan/build/hyle/src/compute_ggml_runtime/source-ccd5034f3d3406bb/src/ggml-vulkan/.. -I/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-vulkan-asan/build/hyle/src/compute_ggml_runtime/vendor/src/ggml-vulkan -I/Users/kiro/hyle-scratch/compute-unified/source-c8874688/src/compute_provider_ggml_vulkan -I/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-vulkan-asan/build/hyle/src/compute_ggml_runtime/source-ccd5034f3d3406bb/src/../include -isystem /Users/kiro/Library/Caches/hyle/dependencies/v1/sources/vulkan_headers-e3b1eec08173-69d6adc9001f/include -isystem /opt/homebrew/include -O3 -DNDEBUG -std=c++17 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk -mmacosx-version-min=14.4 -fPIC -fvisibility=hidden -fvisibility-inlines-hidden -Wmissing-declarations -Wmissing-noreturn -Wall -Wextra -Wpedantic -Wcast-qual -Wno-unused-function -Wunreachable-code-break -Wunreachable-code-return -Wmissing-prototypes -Wextra-semi -fsanitize=address -fno-omit-frame-pointer -MD -MT hyle/src/compute_ggml_runtime/vendor/src/ggml-vulkan/CMakeFiles/ggml-vulkan.dir/ggml-vulkan.cpp.o -MF hyle/src/compute_ggml_runtime/vendor/src/ggml-vulkan/CMakeFiles/ggml-vulkan.dir/ggml-vulkan.cpp.o.d -o hyle/src/compute_ggml_runtime/vendor/src/ggml-vulkan/CMakeFiles/ggml-vulkan.dir/ggml-vulkan.cpp.o -c /Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-vulkan-asan/build/hyle/src/compute_ggml_runtime/source-ccd5034f3d3406bb/src/ggml-vulkan/ggml-vulkan.cpp",
+        "file": "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-vulkan-asan/build/hyle/src/compute_ggml_runtime/source-ccd5034f3d3406bb/src/ggml-vulkan/ggml-vulkan.cpp",
+        "output": "hyle/src/compute_ggml_runtime/vendor/src/ggml-vulkan/CMakeFiles/ggml-vulkan.dir/ggml-vulkan.cpp.o"
+      }
+    ],
+    "g01-native-ragged-vulkan-ubsan-rr/instrumented-inputs.json": [
+      {
+        "directory": "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-vulkan-ubsan/build",
+        "command": "/usr/bin/clang++ -DHYLE_COMPUTE_ROUTE_VULKAN_BUILD -DHYLE_COMPUTE_VULKAN=1 -DHYLE_DETAIL_SANITIZER_UNDEFINED=1 -DHYLE_IO_HAS_COROUTINE_TRANSPORT=1 -DHYLE_STATIC -I/Users/kiro/hyle-scratch/compute-unified/source-c8874688/include -I/Users/kiro/hyle-scratch/compute-unified/source-c8874688/src/compute_route_vulkan -I/Users/kiro/hyle-scratch/compute-unified/source-c8874688/src/compute_route_vulkan/../compute -I/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-vulkan-ubsan/build/hyle/src/compute_route_vulkan -I/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-vulkan-ubsan/build/hyle/src/compute_route_vulkan/shaders -isystem /Users/kiro/Library/Caches/hyle/dependencies/v1/sources/vulkan_headers-e3b1eec08173-69d6adc9001f/include -O3 -DNDEBUG -std=c++23 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk -mmacosx-version-min=14.4 -Wall -Wextra -Wpedantic -fsanitize=undefined -fno-sanitize-recover=all -MD -MT hyle/src/compute_route_vulkan/CMakeFiles/hyle_compute_route_vulkan.dir/vulkan_batch.cc.o -MF hyle/src/compute_route_vulkan/CMakeFiles/hyle_compute_route_vulkan.dir/vulkan_batch.cc.o.d -o hyle/src/compute_route_vulkan/CMakeFiles/hyle_compute_route_vulkan.dir/vulkan_batch.cc.o -c /Users/kiro/hyle-scratch/compute-unified/source-c8874688/src/compute_route_vulkan/vulkan_batch.cc",
+        "file": "/Users/kiro/hyle-scratch/compute-unified/source-c8874688/src/compute_route_vulkan/vulkan_batch.cc",
+        "output": "hyle/src/compute_route_vulkan/CMakeFiles/hyle_compute_route_vulkan.dir/vulkan_batch.cc.o"
+      },
+      {
+        "directory": "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-vulkan-ubsan/build",
+        "command": "/usr/bin/clang++ -DHYLE_COMPUTE_VULKAN=1 -DHYLE_DETAIL_SANITIZER_UNDEFINED=1 -DHYLE_IO_HAS_COROUTINE_TRANSPORT=1 -DHYLE_STATIC -I/Users/kiro/hyle-scratch/compute-unified/source-c8874688/include -isystem /Users/kiro/Library/Caches/hyle/dependencies/v1/sources/vulkan_headers-e3b1eec08173-69d6adc9001f/include -isystem /Users/kiro/Library/Caches/hyle/dependencies/v1/sources/googletest-063de7e9578f-162765170ae6/googletest/include -isystem /Users/kiro/Library/Caches/hyle/dependencies/v1/sources/googletest-063de7e9578f-162765170ae6/googletest -O3 -DNDEBUG -std=gnu++23 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk -mmacosx-version-min=14.4 -fsanitize=undefined -fno-sanitize-recover=all -MD -MT CMakeFiles/g01_native_ragged.dir/Users/kiro/hyle-scratch/compute-unified/source-c8874688/tests/compute_route_vulkan/native_ragged_test.cc.o -MF CMakeFiles/g01_native_ragged.dir/Users/kiro/hyle-scratch/compute-unified/source-c8874688/tests/compute_route_vulkan/native_ragged_test.cc.o.d -o CMakeFiles/g01_native_ragged.dir/Users/kiro/hyle-scratch/compute-unified/source-c8874688/tests/compute_route_vulkan/native_ragged_test.cc.o -c /Users/kiro/hyle-scratch/compute-unified/source-c8874688/tests/compute_route_vulkan/native_ragged_test.cc",
+        "file": "/Users/kiro/hyle-scratch/compute-unified/source-c8874688/tests/compute_route_vulkan/native_ragged_test.cc",
+        "output": "CMakeFiles/g01_native_ragged.dir/Users/kiro/hyle-scratch/compute-unified/source-c8874688/tests/compute_route_vulkan/native_ragged_test.cc.o"
+      },
+      {
+        "directory": "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-vulkan-ubsan/build",
+        "command": "/usr/bin/clang++ -DHYLE_COMPUTE_VULKAN=1 -DHYLE_DETAIL_SANITIZER_UNDEFINED=1 -DHYLE_IO_HAS_COROUTINE_TRANSPORT=1 -DHYLE_STATIC -I/Users/kiro/hyle-scratch/compute-unified/source-c8874688/include -isystem /Users/kiro/Library/Caches/hyle/dependencies/v1/sources/vulkan_headers-e3b1eec08173-69d6adc9001f/include -isystem /Users/kiro/Library/Caches/hyle/dependencies/v1/sources/googletest-063de7e9578f-162765170ae6/googletest/include -isystem /Users/kiro/Library/Caches/hyle/dependencies/v1/sources/googletest-063de7e9578f-162765170ae6/googletest -O3 -DNDEBUG -std=gnu++23 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk -mmacosx-version-min=14.4 -fsanitize=undefined -fno-sanitize-recover=all -MD -MT CMakeFiles/g01_native_ragged.dir/Users/kiro/hyle-scratch/compute-unified/source-c8874688/tests/compute_route_vulkan/native_ragged_cost_test.cc.o -MF CMakeFiles/g01_native_ragged.dir/Users/kiro/hyle-scratch/compute-unified/source-c8874688/tests/compute_route_vulkan/native_ragged_cost_test.cc.o.d -o CMakeFiles/g01_native_ragged.dir/Users/kiro/hyle-scratch/compute-unified/source-c8874688/tests/compute_route_vulkan/native_ragged_cost_test.cc.o -c /Users/kiro/hyle-scratch/compute-unified/source-c8874688/tests/compute_route_vulkan/native_ragged_cost_test.cc",
+        "file": "/Users/kiro/hyle-scratch/compute-unified/source-c8874688/tests/compute_route_vulkan/native_ragged_cost_test.cc",
+        "output": "CMakeFiles/g01_native_ragged.dir/Users/kiro/hyle-scratch/compute-unified/source-c8874688/tests/compute_route_vulkan/native_ragged_cost_test.cc.o"
+      },
+      {
+        "directory": "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-vulkan-ubsan/build",
+        "command": "/usr/bin/clang++ -DGGML_USE_VULKAN -DHYLE_COMPUTE_PROVIDER_GGML_VULKAN_BUILD -DHYLE_DETAIL_SANITIZER_UNDEFINED=1 -DHYLE_STATIC -I/Users/kiro/hyle-scratch/compute-unified/source-c8874688/include -I/Users/kiro/hyle-scratch/compute-unified/source-c8874688/src/compute_provider_ggml_vulkan -I/Users/kiro/hyle-scratch/compute-unified/source-c8874688/src/compute_ggml_runtime -I/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-vulkan-ubsan/build/hyle/src/compute_ggml_runtime/source-ccd5034f3d3406bb/src/../include -isystem /Users/kiro/Library/Caches/hyle/dependencies/v1/sources/vulkan_headers-e3b1eec08173-69d6adc9001f/include -O3 -DNDEBUG -std=c++23 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk -mmacosx-version-min=14.4 -Wall -Wextra -Wpedantic -fsanitize=undefined -fno-sanitize-recover=all -MD -MT hyle/src/compute_provider_ggml_vulkan/CMakeFiles/hyle_compute_provider_ggml_vulkan.dir/region.cc.o -MF hyle/src/compute_provider_ggml_vulkan/CMakeFiles/hyle_compute_provider_ggml_vulkan.dir/region.cc.o.d -o hyle/src/compute_provider_ggml_vulkan/CMakeFiles/hyle_compute_provider_ggml_vulkan.dir/region.cc.o -c /Users/kiro/hyle-scratch/compute-unified/source-c8874688/src/compute_provider_ggml_vulkan/region.cc",
+        "file": "/Users/kiro/hyle-scratch/compute-unified/source-c8874688/src/compute_provider_ggml_vulkan/region.cc",
+        "output": "hyle/src/compute_provider_ggml_vulkan/CMakeFiles/hyle_compute_provider_ggml_vulkan.dir/region.cc.o"
+      },
+      {
+        "directory": "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-vulkan-ubsan/build",
+        "command": "/usr/bin/clang++ -DHYLE_COMPUTE_ROUTE_VULKAN_BUILD -DHYLE_COMPUTE_VULKAN=1 -DHYLE_DETAIL_SANITIZER_UNDEFINED=1 -DHYLE_IO_HAS_COROUTINE_TRANSPORT=1 -DHYLE_STATIC -I/Users/kiro/hyle-scratch/compute-unified/source-c8874688/include -I/Users/kiro/hyle-scratch/compute-unified/source-c8874688/src/compute_route_vulkan -I/Users/kiro/hyle-scratch/compute-unified/source-c8874688/src/compute_route_vulkan/../compute -I/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-vulkan-ubsan/build/hyle/src/compute_route_vulkan -I/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-vulkan-ubsan/build/hyle/src/compute_route_vulkan/shaders -isystem /Users/kiro/Library/Caches/hyle/dependencies/v1/sources/vulkan_headers-e3b1eec08173-69d6adc9001f/include -O3 -DNDEBUG -std=c++23 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk -mmacosx-version-min=14.4 -Wall -Wextra -Wpedantic -fsanitize=undefined -fno-sanitize-recover=all -MD -MT hyle/src/compute_route_vulkan/CMakeFiles/hyle_compute_route_vulkan.dir/vulkan_program.cc.o -MF hyle/src/compute_route_vulkan/CMakeFiles/hyle_compute_route_vulkan.dir/vulkan_program.cc.o.d -o hyle/src/compute_route_vulkan/CMakeFiles/hyle_compute_route_vulkan.dir/vulkan_program.cc.o -c /Users/kiro/hyle-scratch/compute-unified/source-c8874688/src/compute_route_vulkan/vulkan_program.cc",
+        "file": "/Users/kiro/hyle-scratch/compute-unified/source-c8874688/src/compute_route_vulkan/vulkan_program.cc",
+        "output": "hyle/src/compute_route_vulkan/CMakeFiles/hyle_compute_route_vulkan.dir/vulkan_program.cc.o"
+      },
+      {
+        "directory": "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-vulkan-ubsan/build",
+        "command": "/usr/bin/clang++ -DGGML_USE_VULKAN -DHYLE_COMPUTE_VULKAN=1 -DHYLE_DETAIL_SANITIZER_UNDEFINED=1 -DHYLE_IO_HAS_COROUTINE_TRANSPORT=1 -DHYLE_STATIC -I/Users/kiro/hyle-scratch/compute-unified/source-c8874688/src/compute_provider_ggml_vulkan -I/Users/kiro/hyle-scratch/compute-unified/source-c8874688/include -I/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-vulkan-ubsan/build/hyle/src/compute_ggml_runtime/source-ccd5034f3d3406bb/src/../include -isystem /Users/kiro/Library/Caches/hyle/dependencies/v1/sources/vulkan_headers-e3b1eec08173-69d6adc9001f/include -isystem /Users/kiro/Library/Caches/hyle/dependencies/v1/sources/googletest-063de7e9578f-162765170ae6/googletest/include -isystem /Users/kiro/Library/Caches/hyle/dependencies/v1/sources/googletest-063de7e9578f-162765170ae6/googletest -O3 -DNDEBUG -std=gnu++23 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk -mmacosx-version-min=14.4 -fsanitize=undefined -fno-sanitize-recover=all -MD -MT CMakeFiles/g01_cache.dir/Users/kiro/hyle-scratch/compute-unified/source-c8874688/tests/compute_provider_ggml_vulkan/attention_cache_test.cc.o -MF CMakeFiles/g01_cache.dir/Users/kiro/hyle-scratch/compute-unified/source-c8874688/tests/compute_provider_ggml_vulkan/attention_cache_test.cc.o.d -o CMakeFiles/g01_cache.dir/Users/kiro/hyle-scratch/compute-unified/source-c8874688/tests/compute_provider_ggml_vulkan/attention_cache_test.cc.o -c /Users/kiro/hyle-scratch/compute-unified/source-c8874688/tests/compute_provider_ggml_vulkan/attention_cache_test.cc",
+        "file": "/Users/kiro/hyle-scratch/compute-unified/source-c8874688/tests/compute_provider_ggml_vulkan/attention_cache_test.cc",
+        "output": "CMakeFiles/g01_cache.dir/Users/kiro/hyle-scratch/compute-unified/source-c8874688/tests/compute_provider_ggml_vulkan/attention_cache_test.cc.o"
+      },
+      {
+        "directory": "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-vulkan-ubsan/build",
+        "command": "/usr/bin/clang++ -DGGML_SCHED_MAX_COPIES=4 -DGGML_VULKAN_BFLOAT16_GLSLC_SUPPORT -DGGML_VULKAN_COOPMAT2_DECODE_VECTOR_GLSLC_SUPPORT -DGGML_VULKAN_COOPMAT2_GLSLC_SUPPORT -DGGML_VULKAN_COOPMAT_GLSLC_SUPPORT -DGGML_VULKAN_FLOAT_E2M1_GLSLC_SUPPORT -DGGML_VULKAN_FLOAT_E4M3_GLSLC_SUPPORT -DGGML_VULKAN_INTEGER_DOT_GLSLC_SUPPORT -DHYLE_DETAIL_SANITIZER_UNDEFINED=1 -D_DARWIN_C_SOURCE -D_XOPEN_SOURCE=600 -I/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-vulkan-ubsan/build/hyle/src/compute_ggml_runtime/source-ccd5034f3d3406bb/src/ggml-vulkan/.. -I/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-vulkan-ubsan/build/hyle/src/compute_ggml_runtime/vendor/src/ggml-vulkan -I/Users/kiro/hyle-scratch/compute-unified/source-c8874688/src/compute_provider_ggml_vulkan -I/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-vulkan-ubsan/build/hyle/src/compute_ggml_runtime/source-ccd5034f3d3406bb/src/../include -isystem /Users/kiro/Library/Caches/hyle/dependencies/v1/sources/vulkan_headers-e3b1eec08173-69d6adc9001f/include -isystem /opt/homebrew/include -O3 -DNDEBUG -std=c++17 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk -mmacosx-version-min=14.4 -fPIC -fvisibility=hidden -fvisibility-inlines-hidden -Wmissing-declarations -Wmissing-noreturn -Wall -Wextra -Wpedantic -Wcast-qual -Wno-unused-function -Wunreachable-code-break -Wunreachable-code-return -Wmissing-prototypes -Wextra-semi -fsanitize=undefined -fno-sanitize-recover=all -MD -MT hyle/src/compute_ggml_runtime/vendor/src/ggml-vulkan/CMakeFiles/ggml-vulkan.dir/ggml-vulkan.cpp.o -MF hyle/src/compute_ggml_runtime/vendor/src/ggml-vulkan/CMakeFiles/ggml-vulkan.dir/ggml-vulkan.cpp.o.d -o hyle/src/compute_ggml_runtime/vendor/src/ggml-vulkan/CMakeFiles/ggml-vulkan.dir/ggml-vulkan.cpp.o -c /Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-vulkan-ubsan/build/hyle/src/compute_ggml_runtime/source-ccd5034f3d3406bb/src/ggml-vulkan/ggml-vulkan.cpp",
+        "file": "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-vulkan-ubsan/build/hyle/src/compute_ggml_runtime/source-ccd5034f3d3406bb/src/ggml-vulkan/ggml-vulkan.cpp",
+        "output": "hyle/src/compute_ggml_runtime/vendor/src/ggml-vulkan/CMakeFiles/ggml-vulkan.dir/ggml-vulkan.cpp.o"
+      }
+    ],
+    "g01-native-ragged-vulkan-tsan-rr/instrumented-inputs.json": [
+      {
+        "directory": "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-vulkan-tsan/build",
+        "command": "/usr/bin/clang++ -DHYLE_COMPUTE_ROUTE_VULKAN_BUILD -DHYLE_COMPUTE_VULKAN=1 -DHYLE_DETAIL_SANITIZER_THREAD=1 -DHYLE_IO_HAS_COROUTINE_TRANSPORT=1 -DHYLE_STATIC -I/Users/kiro/hyle-scratch/compute-unified/source-c8874688/include -I/Users/kiro/hyle-scratch/compute-unified/source-c8874688/src/compute_route_vulkan -I/Users/kiro/hyle-scratch/compute-unified/source-c8874688/src/compute_route_vulkan/../compute -I/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-vulkan-tsan/build/hyle/src/compute_route_vulkan -I/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-vulkan-tsan/build/hyle/src/compute_route_vulkan/shaders -isystem /Users/kiro/Library/Caches/hyle/dependencies/v1/sources/vulkan_headers-e3b1eec08173-69d6adc9001f/include -O3 -DNDEBUG -std=c++23 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk -mmacosx-version-min=14.4 -Wall -Wextra -Wpedantic -fsanitize=thread -MD -MT hyle/src/compute_route_vulkan/CMakeFiles/hyle_compute_route_vulkan.dir/vulkan_batch.cc.o -MF hyle/src/compute_route_vulkan/CMakeFiles/hyle_compute_route_vulkan.dir/vulkan_batch.cc.o.d -o hyle/src/compute_route_vulkan/CMakeFiles/hyle_compute_route_vulkan.dir/vulkan_batch.cc.o -c /Users/kiro/hyle-scratch/compute-unified/source-c8874688/src/compute_route_vulkan/vulkan_batch.cc",
+        "file": "/Users/kiro/hyle-scratch/compute-unified/source-c8874688/src/compute_route_vulkan/vulkan_batch.cc",
+        "output": "hyle/src/compute_route_vulkan/CMakeFiles/hyle_compute_route_vulkan.dir/vulkan_batch.cc.o"
+      },
+      {
+        "directory": "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-vulkan-tsan/build",
+        "command": "/usr/bin/clang++ -DHYLE_COMPUTE_VULKAN=1 -DHYLE_DETAIL_SANITIZER_THREAD=1 -DHYLE_IO_HAS_COROUTINE_TRANSPORT=1 -DHYLE_STATIC -I/Users/kiro/hyle-scratch/compute-unified/source-c8874688/include -isystem /Users/kiro/Library/Caches/hyle/dependencies/v1/sources/vulkan_headers-e3b1eec08173-69d6adc9001f/include -isystem /Users/kiro/Library/Caches/hyle/dependencies/v1/sources/googletest-063de7e9578f-162765170ae6/googletest/include -isystem /Users/kiro/Library/Caches/hyle/dependencies/v1/sources/googletest-063de7e9578f-162765170ae6/googletest -O3 -DNDEBUG -std=gnu++23 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk -mmacosx-version-min=14.4 -fsanitize=thread -MD -MT CMakeFiles/g01_native_ragged.dir/Users/kiro/hyle-scratch/compute-unified/source-c8874688/tests/compute_route_vulkan/native_ragged_test.cc.o -MF CMakeFiles/g01_native_ragged.dir/Users/kiro/hyle-scratch/compute-unified/source-c8874688/tests/compute_route_vulkan/native_ragged_test.cc.o.d -o CMakeFiles/g01_native_ragged.dir/Users/kiro/hyle-scratch/compute-unified/source-c8874688/tests/compute_route_vulkan/native_ragged_test.cc.o -c /Users/kiro/hyle-scratch/compute-unified/source-c8874688/tests/compute_route_vulkan/native_ragged_test.cc",
+        "file": "/Users/kiro/hyle-scratch/compute-unified/source-c8874688/tests/compute_route_vulkan/native_ragged_test.cc",
+        "output": "CMakeFiles/g01_native_ragged.dir/Users/kiro/hyle-scratch/compute-unified/source-c8874688/tests/compute_route_vulkan/native_ragged_test.cc.o"
+      },
+      {
+        "directory": "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-vulkan-tsan/build",
+        "command": "/usr/bin/clang++ -DHYLE_COMPUTE_VULKAN=1 -DHYLE_DETAIL_SANITIZER_THREAD=1 -DHYLE_IO_HAS_COROUTINE_TRANSPORT=1 -DHYLE_STATIC -I/Users/kiro/hyle-scratch/compute-unified/source-c8874688/include -isystem /Users/kiro/Library/Caches/hyle/dependencies/v1/sources/vulkan_headers-e3b1eec08173-69d6adc9001f/include -isystem /Users/kiro/Library/Caches/hyle/dependencies/v1/sources/googletest-063de7e9578f-162765170ae6/googletest/include -isystem /Users/kiro/Library/Caches/hyle/dependencies/v1/sources/googletest-063de7e9578f-162765170ae6/googletest -O3 -DNDEBUG -std=gnu++23 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk -mmacosx-version-min=14.4 -fsanitize=thread -MD -MT CMakeFiles/g01_native_ragged.dir/Users/kiro/hyle-scratch/compute-unified/source-c8874688/tests/compute_route_vulkan/native_ragged_cost_test.cc.o -MF CMakeFiles/g01_native_ragged.dir/Users/kiro/hyle-scratch/compute-unified/source-c8874688/tests/compute_route_vulkan/native_ragged_cost_test.cc.o.d -o CMakeFiles/g01_native_ragged.dir/Users/kiro/hyle-scratch/compute-unified/source-c8874688/tests/compute_route_vulkan/native_ragged_cost_test.cc.o -c /Users/kiro/hyle-scratch/compute-unified/source-c8874688/tests/compute_route_vulkan/native_ragged_cost_test.cc",
+        "file": "/Users/kiro/hyle-scratch/compute-unified/source-c8874688/tests/compute_route_vulkan/native_ragged_cost_test.cc",
+        "output": "CMakeFiles/g01_native_ragged.dir/Users/kiro/hyle-scratch/compute-unified/source-c8874688/tests/compute_route_vulkan/native_ragged_cost_test.cc.o"
+      },
+      {
+        "directory": "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-vulkan-tsan/build",
+        "command": "/usr/bin/clang++ -DGGML_USE_VULKAN -DHYLE_COMPUTE_PROVIDER_GGML_VULKAN_BUILD -DHYLE_DETAIL_SANITIZER_THREAD=1 -DHYLE_STATIC -I/Users/kiro/hyle-scratch/compute-unified/source-c8874688/include -I/Users/kiro/hyle-scratch/compute-unified/source-c8874688/src/compute_provider_ggml_vulkan -I/Users/kiro/hyle-scratch/compute-unified/source-c8874688/src/compute_ggml_runtime -I/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-vulkan-tsan/build/hyle/src/compute_ggml_runtime/source-ccd5034f3d3406bb/src/../include -isystem /Users/kiro/Library/Caches/hyle/dependencies/v1/sources/vulkan_headers-e3b1eec08173-69d6adc9001f/include -O3 -DNDEBUG -std=c++23 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk -mmacosx-version-min=14.4 -Wall -Wextra -Wpedantic -fsanitize=thread -MD -MT hyle/src/compute_provider_ggml_vulkan/CMakeFiles/hyle_compute_provider_ggml_vulkan.dir/region.cc.o -MF hyle/src/compute_provider_ggml_vulkan/CMakeFiles/hyle_compute_provider_ggml_vulkan.dir/region.cc.o.d -o hyle/src/compute_provider_ggml_vulkan/CMakeFiles/hyle_compute_provider_ggml_vulkan.dir/region.cc.o -c /Users/kiro/hyle-scratch/compute-unified/source-c8874688/src/compute_provider_ggml_vulkan/region.cc",
+        "file": "/Users/kiro/hyle-scratch/compute-unified/source-c8874688/src/compute_provider_ggml_vulkan/region.cc",
+        "output": "hyle/src/compute_provider_ggml_vulkan/CMakeFiles/hyle_compute_provider_ggml_vulkan.dir/region.cc.o"
+      },
+      {
+        "directory": "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-vulkan-tsan/build",
+        "command": "/usr/bin/clang++ -DHYLE_COMPUTE_ROUTE_VULKAN_BUILD -DHYLE_COMPUTE_VULKAN=1 -DHYLE_DETAIL_SANITIZER_THREAD=1 -DHYLE_IO_HAS_COROUTINE_TRANSPORT=1 -DHYLE_STATIC -I/Users/kiro/hyle-scratch/compute-unified/source-c8874688/include -I/Users/kiro/hyle-scratch/compute-unified/source-c8874688/src/compute_route_vulkan -I/Users/kiro/hyle-scratch/compute-unified/source-c8874688/src/compute_route_vulkan/../compute -I/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-vulkan-tsan/build/hyle/src/compute_route_vulkan -I/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-vulkan-tsan/build/hyle/src/compute_route_vulkan/shaders -isystem /Users/kiro/Library/Caches/hyle/dependencies/v1/sources/vulkan_headers-e3b1eec08173-69d6adc9001f/include -O3 -DNDEBUG -std=c++23 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk -mmacosx-version-min=14.4 -Wall -Wextra -Wpedantic -fsanitize=thread -MD -MT hyle/src/compute_route_vulkan/CMakeFiles/hyle_compute_route_vulkan.dir/vulkan_program.cc.o -MF hyle/src/compute_route_vulkan/CMakeFiles/hyle_compute_route_vulkan.dir/vulkan_program.cc.o.d -o hyle/src/compute_route_vulkan/CMakeFiles/hyle_compute_route_vulkan.dir/vulkan_program.cc.o -c /Users/kiro/hyle-scratch/compute-unified/source-c8874688/src/compute_route_vulkan/vulkan_program.cc",
+        "file": "/Users/kiro/hyle-scratch/compute-unified/source-c8874688/src/compute_route_vulkan/vulkan_program.cc",
+        "output": "hyle/src/compute_route_vulkan/CMakeFiles/hyle_compute_route_vulkan.dir/vulkan_program.cc.o"
+      },
+      {
+        "directory": "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-vulkan-tsan/build",
+        "command": "/usr/bin/clang++ -DGGML_USE_VULKAN -DHYLE_COMPUTE_VULKAN=1 -DHYLE_DETAIL_SANITIZER_THREAD=1 -DHYLE_IO_HAS_COROUTINE_TRANSPORT=1 -DHYLE_STATIC -I/Users/kiro/hyle-scratch/compute-unified/source-c8874688/src/compute_provider_ggml_vulkan -I/Users/kiro/hyle-scratch/compute-unified/source-c8874688/include -I/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-vulkan-tsan/build/hyle/src/compute_ggml_runtime/source-ccd5034f3d3406bb/src/../include -isystem /Users/kiro/Library/Caches/hyle/dependencies/v1/sources/vulkan_headers-e3b1eec08173-69d6adc9001f/include -isystem /Users/kiro/Library/Caches/hyle/dependencies/v1/sources/googletest-063de7e9578f-162765170ae6/googletest/include -isystem /Users/kiro/Library/Caches/hyle/dependencies/v1/sources/googletest-063de7e9578f-162765170ae6/googletest -O3 -DNDEBUG -std=gnu++23 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk -mmacosx-version-min=14.4 -fsanitize=thread -MD -MT CMakeFiles/g01_cache.dir/Users/kiro/hyle-scratch/compute-unified/source-c8874688/tests/compute_provider_ggml_vulkan/attention_cache_test.cc.o -MF CMakeFiles/g01_cache.dir/Users/kiro/hyle-scratch/compute-unified/source-c8874688/tests/compute_provider_ggml_vulkan/attention_cache_test.cc.o.d -o CMakeFiles/g01_cache.dir/Users/kiro/hyle-scratch/compute-unified/source-c8874688/tests/compute_provider_ggml_vulkan/attention_cache_test.cc.o -c /Users/kiro/hyle-scratch/compute-unified/source-c8874688/tests/compute_provider_ggml_vulkan/attention_cache_test.cc",
+        "file": "/Users/kiro/hyle-scratch/compute-unified/source-c8874688/tests/compute_provider_ggml_vulkan/attention_cache_test.cc",
+        "output": "CMakeFiles/g01_cache.dir/Users/kiro/hyle-scratch/compute-unified/source-c8874688/tests/compute_provider_ggml_vulkan/attention_cache_test.cc.o"
+      },
+      {
+        "directory": "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-vulkan-tsan/build",
+        "command": "/usr/bin/clang++ -DGGML_SCHED_MAX_COPIES=4 -DGGML_VULKAN_BFLOAT16_GLSLC_SUPPORT -DGGML_VULKAN_COOPMAT2_DECODE_VECTOR_GLSLC_SUPPORT -DGGML_VULKAN_COOPMAT2_GLSLC_SUPPORT -DGGML_VULKAN_COOPMAT_GLSLC_SUPPORT -DGGML_VULKAN_FLOAT_E2M1_GLSLC_SUPPORT -DGGML_VULKAN_FLOAT_E4M3_GLSLC_SUPPORT -DGGML_VULKAN_INTEGER_DOT_GLSLC_SUPPORT -DHYLE_DETAIL_SANITIZER_THREAD=1 -D_DARWIN_C_SOURCE -D_XOPEN_SOURCE=600 -I/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-vulkan-tsan/build/hyle/src/compute_ggml_runtime/source-ccd5034f3d3406bb/src/ggml-vulkan/.. -I/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-vulkan-tsan/build/hyle/src/compute_ggml_runtime/vendor/src/ggml-vulkan -I/Users/kiro/hyle-scratch/compute-unified/source-c8874688/src/compute_provider_ggml_vulkan -I/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-vulkan-tsan/build/hyle/src/compute_ggml_runtime/source-ccd5034f3d3406bb/src/../include -isystem /Users/kiro/Library/Caches/hyle/dependencies/v1/sources/vulkan_headers-e3b1eec08173-69d6adc9001f/include -isystem /opt/homebrew/include -O3 -DNDEBUG -std=c++17 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk -mmacosx-version-min=14.4 -fPIC -fvisibility=hidden -fvisibility-inlines-hidden -Wmissing-declarations -Wmissing-noreturn -Wall -Wextra -Wpedantic -Wcast-qual -Wno-unused-function -Wunreachable-code-break -Wunreachable-code-return -Wmissing-prototypes -Wextra-semi -fsanitize=thread -MD -MT hyle/src/compute_ggml_runtime/vendor/src/ggml-vulkan/CMakeFiles/ggml-vulkan.dir/ggml-vulkan.cpp.o -MF hyle/src/compute_ggml_runtime/vendor/src/ggml-vulkan/CMakeFiles/ggml-vulkan.dir/ggml-vulkan.cpp.o.d -o hyle/src/compute_ggml_runtime/vendor/src/ggml-vulkan/CMakeFiles/ggml-vulkan.dir/ggml-vulkan.cpp.o -c /Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-vulkan-tsan/build/hyle/src/compute_ggml_runtime/source-ccd5034f3d3406bb/src/ggml-vulkan/ggml-vulkan.cpp",
+        "file": "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-vulkan-tsan/build/hyle/src/compute_ggml_runtime/source-ccd5034f3d3406bb/src/ggml-vulkan/ggml-vulkan.cpp",
+        "output": "hyle/src/compute_ggml_runtime/vendor/src/ggml-vulkan/CMakeFiles/ggml-vulkan.dir/ggml-vulkan.cpp.o"
+      }
+    ]
+  },
+  "old_qualified_loss": "evidence/performance/inference-g01-native-ragged-vulkan-m1-p1/receipt.json",
+  "P1": "NOT_YET_PROVEN",
+  "raw_sha256": "7d6e66eea984f97ca675efe61a25bfe1875d46d01b9d0e591f2e673f8851cade"
+}
