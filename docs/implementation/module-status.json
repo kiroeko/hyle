@@ -558,9 +558,9 @@
     },
     {
       "module": "compute_ggml_runtime",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/inference-g01-vulkan-native-precision.md",
-      "summary": "G01 native precision SCOPED: actual Vulkan flash internal narrowing violates finite SDPA oracle; audit original full-F32 shader dispatch/cache identity, no new math runtime."
+      "summary": "G01 Vulkan native precision AUDITED: private tagged full-F32 scalar shader, cache identity and actual float shared-memory admission; three finite FIX, no new math or runtime."
     },
     {
       "module": "compute_provider_ggml_cuda",

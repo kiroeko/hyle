@@ -42,7 +42,7 @@ Graph/Compute 原 executor、lease 和 Queue 不改。公开 ScaledDotProductAtt
 |---|---|---|
 | RS-01 | CPU原SDPA接受rank4 plain、depth连续、外层正的row-major padding strides；原native输入已设置nb，不再强制全dense。原同dtype F32/F16/BF16、两layout、GQA和有效长度语义不变 | 容量cache截短，padding哨兵不参与数学；拒绝depth跳跃/负或重叠strides，不公开whole paged arena |
 | RS-02 | 借锁定CPU ggml flash原核直接读K/V，F16/BF16域覆盖causal/noncausal，F32保现有锁资格。query转换允许O(QHD)，不转换/展开完整KV；causal F16 mask按Q×K显式计费 | 原核depth连续、BF16原vec-dot/to-float资格已在实际锁源码核对；两layout、不同Dqk/Dv和保留原小shape域用oracle反证；不得仅靠if条件称 fused 成功 |
-| RS-03 | Vulkan仅对同F32/F16、BSHD且Dqk/Dv均8倍数的SDPA接原FLASH_ATTN_EXT；Q转F32、K/V保原编码，返回原output顺序/类型。causal mask以原native Fill→DiagMask→Cast F16生成，非causal无mask；实际device supports_op仍冷拒绝无原生资格设备 | Qwen GQA8/2 D256与留出D64/128；保原非8倍数的显式传统lower域，不能CPUfallback或将不同dtype性能相加。mask和query cast计费，避免Hq×Q×K的scores及按Q/H展开KV |
+| RS-03 | Vulkan仅对同F32/F16、BSHD且同D64/128/256的SDPA接原FLASH_ATTN_EXT和显式full-F32 private tag；Q转F32、K/V保原编码，返回原output顺序/类型。causal mask以原native Fill→DiagMask→Cast F16生成，非causal无mask；实际device supports_op仍冷拒绝无原生资格设备 | 原核half缩窄的实际失败后按native精度卡收紧高效资格，原oracle不放宽；Qwen GQA8/2 D256与留出D64/128；其余既有传统lower域保留并明示成本，不能代签G01全部域。mask和query cast计费，避免Hq×Q×K的scores及按Q/H展开KV |
 | RS-04 | Vulkan原typed region在SDPA有实际需求的rank4正row-major padding域接native nb；imports/端口范围仍按ggml_nbytes校验并保原owner。其他operation原qualifier不放宽，非dense输入若被未资格节点读取必须拒绝 | TensorDesc required_bytes/原VkBuffer范围、非零offset、padding、源只读与旧输出寿命；native graph库支持检查不绕过 |
 
 source/static/shared仍原compute/graph产品选择，没有新factor/第三方/FFI/public类型。普通调用
@@ -92,4 +92,5 @@ MSVC旧测试夹具的unused observer、显式double→float及vendored private 
 当前[实现阶段证据](../../../../evidence/correctness/inference-g01-resident-stage/README.md)
 保留CPU实际PASS和Vulkan实际FAIL，更新后的Vulkan测试尚未重跑，不由源码推导PASS。
 原锁定承载的精度选择归属已在[原生精度卡](inference-g01-vulkan-native-precision.md)
-进入SCOPED，原Provider有限FIX继续AUDITED；不会放宽容差或将未资格native域签PASS。
+已依次SCOPED→AUDITED，原Provider有限FIX按精度反例冻结为三个D和同D；不会放宽容差
+或将未资格native域签PASS。其余已准入域需要的高效消费仍保总goal，不因本子批删除。
