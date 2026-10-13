@@ -1,0 +1,5 @@
+cmake_minimum_required(VERSION 3.25)
+project(g01_apple_ragged_p1 LANGUAGES C CXX)
+set(HYLE_RAGGED_ROUTE apple)
+set(HYLE_MLX_ORIGINAL_REFERENCE_SOURCE "" CACHE PATH "Authenticated original MLX peer checkout")
+include("../native_ragged_p1/common.cmake")

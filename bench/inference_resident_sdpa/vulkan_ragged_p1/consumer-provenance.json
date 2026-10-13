@@ -1,0 +1,60 @@
+{
+  "kind": "PROVISIONAL_ARCHETYPE",
+  "consumer": "single-machine two-request full attention, Qwen3.5-2B GQA8/2 D256 plus noncausal D64 holdout",
+  "product_candidate": "280f6f92ea97bf3b424113346f0264fb7b20df16",
+  "backend": "vulkan",
+  "actual_dtype": "F16 storage, original backend math",
+  "cases": [
+    {
+      "q": [
+        1,
+        17
+      ],
+      "kv": [
+        1024,
+        768
+      ],
+      "d": 256,
+      "causal": true,
+      "hq": 8,
+      "hkv": 2,
+      "requests": 2,
+      "capacity_tail": 13
+    },
+    {
+      "q": [
+        64,
+        128
+      ],
+      "kv": [
+        1024,
+        768
+      ],
+      "d": 256,
+      "causal": true,
+      "hq": 8,
+      "hkv": 2,
+      "requests": 2,
+      "capacity_tail": 13
+    },
+    {
+      "q": [
+        1,
+        17
+      ],
+      "kv": [
+        31,
+        47
+      ],
+      "d": 64,
+      "causal": false,
+      "hq": 8,
+      "hkv": 2,
+      "requests": 2,
+      "capacity_tail": 13
+    }
+  ],
+  "model_scope_path": "docs/implementation/tasks/project/qwen35-2b-command-consumer-scope-2026-10.md",
+  "model_scope_sha256": "72125de2bd4d9c363ee44399b7705fa0a6784fa28743f6fbcc80febff4481048",
+  "whole_model_claim": false
+}

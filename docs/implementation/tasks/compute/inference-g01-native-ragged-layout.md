@@ -90,3 +90,19 @@ compile PASS；原stage失败记录独立保留。native Vulkan私有比较器�
 原F16 query/output适配、mask/优化/split-K承载保留，输出借原storage Concat，三实际
 shape与原F16 bound2e-3/readonly/tail。它不调用candidate attention lower/math，尚未
 正式资格/采样，不由诊断结果签performance PASS。Apple比较器及正式两平台门待续。
+
+Apple比较器已实现：原MLX fast SDPA直接构图，不调用candidate lower；两边同原
+Context.compile/Program/Invocation/两slots/F16 packed ready sources/checked completion/
+单packed owning output。公用三shape/double oracle/readonly/tail预检已PASS；首次
+编译opaque default构造与array默认构造失败、随后比较器borrow池早于slots销毁的
+teardown崩溃均保留，改为原工厂直接构造/optional与显式先释放borrow者，不改产品。
+当前公开MemoryResource inline default ctor暴露incomplete unique_ptr的实用接口反例
+归原G10/交付接口复核，候选内不顺手重写其ABI；initializer消费现已正常。
+
+正式前固定两合同：Apple1f8e811f、Vulkand9a54a85；实际Mac16,12/M1-MAC engineering
+identity，F16/GQA8/2 Q1/17 KV1024/768、Q64/128长prefill、Q1/17 KV31/47 D64留出。
+16 paired rounds/min1/4ms、双execution/allocation与placement、原A/A/controls/n15/31/
+5%阈值不变。实际诊断process成本Apple2.361s、Vulkan2.454s；Vulkan短留出诊断出现
+约13%差距，保留为待正式确认成本事实，不由未资格点值改API或签PASS。Apple原MLX
+1f8e74e3真git peer已fetch且clean；正式配置核对所链接原fast SDPA/Metal shader源码
+与该pin，原BFloat copy/compiler补丁身份另保。未开始正式采样，未签这两个性能门。

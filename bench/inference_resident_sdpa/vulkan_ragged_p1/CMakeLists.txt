@@ -1,0 +1,5 @@
+cmake_minimum_required(VERSION 3.25)
+project(g01_vulkan_ragged_p1 LANGUAGES C CXX)
+set(HYLE_RAGGED_ROUTE vulkan)
+set(HYLE_RESIDENT_REFERENCE_SOURCE "" CACHE PATH "Authenticated original ggml peer checkout")
+include("../native_ragged_p1/common.cmake")
