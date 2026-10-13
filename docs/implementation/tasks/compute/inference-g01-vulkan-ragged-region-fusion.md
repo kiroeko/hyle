@@ -1,7 +1,7 @@
 # G01 Vulkan ragged 原region分段纠正
 
-状态：route AUDITED（收紧cold admission）、Provider CANDIDATE，2026-10-13；owner
-`compute_route_vulkan`、`compute_provider_ggml_vulkan`。已验不可变candidate
+状态：route/Provider AUDITED、原runtime SCOPED，2026-10-13；owner
+`compute_route_vulkan`、`compute_provider_ggml_vulkan`、`compute_ggml_runtime`。已验不可变candidate
 `0e9e011b8c8ff4a37e2bebc5ca8e4408be5e9368`；route末尾规则纠正ddbf598b7待定向验证。
 baseline `dbcba4b15`，原产品280，原Provider单请求3d92有限CLOSED保留。真实trigger是
 已准入两request F16短D64 noncausal [合格P1](../../../../evidence/performance/inference-g01-native-ragged-vulkan-m1-p1/README.md)
@@ -89,3 +89,14 @@ tagged flash和GGML_OP_CONCAT，因此合并图反而每次managed编码，不�
 这形成原runtime单请求a400有限CLOSED之外的真实multi consumer trigger；需runtime
 依法SCOPED/AUDITED后修有限whitelist，原hyle_record_safe/实际GC无event/退休与bind
 origin变更失效仍是权威，不推广一般capture或去掉实际安全资格。
+
+RF-04 scope baseline6a6ae3cdc：runtime a400原单请求CLOSED保留，真实trigger为两flash/
+Concat已准入消费者的固定记录缺口。唯一允许产品改动是private fixed_attention_graph
+接受多个原FullF32 tagged flash和原GGML_OP_CONCAT；原node白名单其它项、最后批次
+fence、record-safe/无event/semaphore和实际pending/retire/失效流程均不改。Provider
+依文件归属退AUDITED，runtime先SCOPED再AUDITED；测试不授权直接改CLOSED产品。
+新增原native 64步两flash＋reshape＋Concat、当前payload变更与step32明确invalidate
+反证，先复现recording_ready false，再验原四native tests与新五route tests。复用原
+source/static/shared与三hostsan，只补真实插桩TU/必要私有test；不改变数学/shader/
+强peer/合同/阈值。public头未改，逐头证据按输入相同复用；Windows四jobs只定向编译。
+正常验证按原2h检查点/常设追加，保两次原P1 FAIL928.101+929.176s，不重置成本。

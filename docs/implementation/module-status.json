@@ -554,22 +554,15 @@
     },
     {
       "module": "compute_provider_ggml_vulkan",
-      "state": "CANDIDATE",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/inference-g01-vulkan-ragged-region-fusion.md",
-      "summary": "G01 Vulkan RF CANDIDATE：冷recipe全外部views先行、原managed SDPA后相邻dense reshape融合，实际四source tests/单region与KV根offset、八request错误退休PASS；结构3region→1，交付/风险/同合同性能待验。原280qualifiedFAIL与单请求3d92PASS保留。",
-      "candidate": "0e9e011b8c8ff4a37e2bebc5ca8e4408be5e9368"
+      "summary": "G01 Vulkan RF CANDIDATE：冷recipe全外部views先行、原managed SDPA后相邻dense reshape融合，实际四source tests/单region与KV根offset、八request错误退休PASS；结构3region→1，交付/风险/同合同性能待验。原280qualifiedFAIL与单请求3d92PASS保留。"
     },
     {
       "module": "compute_ggml_runtime",
-      "state": "CLOSED",
-      "record": "docs/implementation/tasks/compute/inference-g01-vulkan-resident-terminal.md",
-      "summary": "G01 Vulkan有限NP/RR native轮CLOSED：原shader精度/cache隔离和Work退休后record/失效实现，最终3d92完整consumer三交付/宿主san/P1通过；a400源码不改，旧FAIL/其他runtime域保留。",
-      "candidate": "a40003f7edb54a3da3113d0cd401b46211e0b0f0",
-      "performance": {
-        "tier": "P1",
-        "material_margin_pct": 5,
-        "evidence": "evidence/performance/inference-g01-resident-vulkan-direct-ports-m1-p1/receipt.json"
-      }
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/compute/inference-g01-vulkan-ragged-region-fusion.md",
+      "summary": "G01 RF-04 SCOPED：原a400单flash记录之外的实际两flash/Concat缺口，原fixed_attention_graph拒绝导致warm managed重编码；仅有限record资格/原安全门，旧单请求PASS与所有失败保留。"
     },
     {
       "module": "compute_provider_ggml_cuda",
