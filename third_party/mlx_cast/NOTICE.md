@@ -1,5 +1,16 @@
 # MLX BF16 conversion integration
 
+This locked integration also carries HYLE's private exact page16 attention
+adapter. A distinct inference-only primitive supplies an owned I32 table and
+logical KV length to the original Metal SDPA dispatch helpers. The original
+one-pass/two-pass/grouped-query vector reads, older steel tile loader and NAX
+16-row fragment loads map logical rows to physical pages. A 32-row NAX K tile
+loads its two original fragments from their respective pages. Original MMA,
+softmax, split-depth and reduction arithmetic remain unchanged. Normal SDPA
+primitive/AttnParams layouts receive no page fields; an optional function
+constant and gated buffer arguments isolate the page shader identity. There
+is no CPU fallback, full-history gather, new attention formula or executor.
+
 Upstream MLX (MIT; see LICENSE):
 https://github.com/ml-explore/mlx at
 `1f8e74e3f12f31365464a6867c6579f0e9b29d85` (0.32.2).

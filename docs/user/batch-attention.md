@@ -13,6 +13,8 @@
 | CPU | MaterializedBatchProgram；MaterializedBatchInvocation / graph::batch::MaterializedInvocation | 固定原CPU数学参考，显式gather、GQA展开、F32矩阵、mask与Copy；Direct逐stage同步wait |
 | Apple | apple::MaterializedBatchInvocation；graph::apple::prepare_materialized_batch | 原MLX Program/worker，固定两device metadata banks、原F2上传；managed replay/私有storage未知 |
 | Vulkan | vulkan::MaterializedBatchInvocation；graph::vulkan::prepare_materialized_batch | 原native Plan/command/fence与ggml承载；固定两metadata banks，opaque scratch/driver仍未知 |
+| Apple page16，当前 G01 草稿 | NativePagedBatchProgram；apple::PagedBatchInvocation | 原MLX vector/2pass/NAX直接页读取；单I32表、两个mirror banks；实际Air F16/BF16数学通过，风险/交付/性能未收口 |
+| Vulkan page16，当前 G01 草稿 | NativePagedBatchProgram；vulkan::PagedBatchInvocation | 原FullF32 scalar flash直接页读取；实际Air F16数学通过，风险/交付/性能未收口；BF16未签资格 |
 | Windows CUDA native batch | 当前未准入 | 必须给具名unsupported，不能把WSL结果或CPU参考说成Windows native paged |
 
 Apple/Vulkan参考档真的在原GPU上执行，但它们把页/packed KV显式gather/materialize后做
@@ -23,6 +25,51 @@ Linux CUDA的公开factory随普通产品传递，消费者只链接hyle::comput
 cuda.h在实际HYLE_COMPUTE_FLASHINFER资格下供应原factory头，未准入平台不供应该API。
 完整公开D256 Direct/Graph用法见[可编译消费者](../../tests/compute_batch/public_batch_cuda_consumer.cc)，
 其输入与结果通过原lease接口读写，数学仍由锁定FlashInfer执行。
+
+## Apple / Vulkan 原生 page16 接入
+
+当前实现与未决资格按[G01 活动卡](../implementation/tasks/compute/inference-g01-native-paged-read.md)
+和模块状态核验。两路线使用相同 owned schema/layout/table 与确切 frame 合同，保留各自
+原生 Context/MemoryResource/Results。完整可编译入口见
+[Apple 消费者](../../tests/compute_batch/native_paged_apple_consumer.cc)与
+[Vulkan 消费者](../../tests/compute_batch/native_paged_vulkan_consumer.cc)。普通 consumer
+仅链接 `hyle::compute`；不传第四个 raw tensor，也不把整 arena 变成 readonly lease。
+
+```cpp
+namespace native = hyle::compute::apple; // Vulkan 改为 hyle::compute::vulkan
+auto recipe = hyle::compute::NativePagedBatchProgram::prepare(schema, {
+    .max_host_metadata_bytes = 1u << 20,
+    .scale = scale,
+    .causal = causal,
+}).value();
+auto slot = native::PagedBatchInvocation::create(
+    context, recipe, device, staging, {
+        .max_metadata_backing_bytes = 4u << 20,
+    }).value();
+HYLE_RETURN_IF_ERROR(slot.prepare_batch(layout));
+HYLE_RETURN_IF_ERROR(slot.bind(query_read, key_frame, value_frame));
+auto submitted = slot.submit().value();
+auto result = submitted.wait().value();
+```
+
+`schema` 固定 paged/page16、packed Q 容量与真实 physical page 容量；D64/128/256，
+Apple F16/BF16，Vulkan F16。非空 Q 需有 KV，causal 需 logical KV≥Q。空 request 跳过。
+逻辑重复页可以使 KV 长度超过 physical 容量；root shape 不随逻辑长度扩大。K/V frames
+须由对应 PagedArena.read 与本次同一 owned layout/generation 创建；bind 拒绝混代或
+foreign schema，不扩大未引用页权限。已 ready 页可共享，未引用页仍可独立更新。
+
+每次 prepare 显式冷建原生 topology，并通过原 F2 完成单 I32 表的上传。当前上传与
+staging 容量均为 `4 * max_page_refs`，device mirrors 为其两倍，固定 backing cap 还需
+三组64byte对齐的最坏 padding；report 分别提供 uploaded/staging/device/backing bytes。
+无需全历史 KV gather、按 Q/head 展开或上传 additive mask。原 query/output/MLX compiled
+metadata、shader scratch 与 driver 存储仍是额外费用，private bytes 可以 UNKNOWN；
+不由这个入口签 delta planning、capture 或吞吐完全对称。
+
+Context/device/staging/injected allocator 保持地址稳定，活过所有 native work 和结果；
+控制调用外部串行，多个 slot 独立。旧 result 阻止同 slot prepare；close 停止新工作，
+drain 沿原实际退休观察，已接纳错误或未知完成不许可提前释放页 guard。结果按本 route
+原 Results/readonly import 使用。新的 accepted-prefix/未知退休、三交付及性能验收仍
+待活动卡完成，source 数值通过不能代签这些门，也不能代签新的 CPU+GPU 联合分页。
 
 ## Graph 的执行 lane 绑定
 

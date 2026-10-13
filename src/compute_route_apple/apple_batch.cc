@@ -1,4 +1,7 @@
 #include "hyle/compute/apple_batch.h"
+#include "hyle/compute/detail/apple_batch_access.h"
+#include "mlx/fast.h"
+#include "mlx/ops.h"
 
 #include <array>
 #include <algorithm>
@@ -7,6 +10,55 @@
 #include <cmath>
 
 namespace hyle::compute::apple {
+Result<Program> detail::PagedBatchAccess::prepare_program(const Context& context,
+    const NativePagedBatchProgram& recipe, BatchLayoutVersion layout,
+    const WorkloadContext& workload) noexcept {
+  if(!context.valid() || !recipe.valid() || !recipe.schema().owns(layout))
+    return std::unexpected(Status::InvalidArgument("Apple paged context/layout/schema differs"));
+  const auto c=recipe.schema().capacity();
+  if((c.data_type!=DataType::kFloat16 && c.data_type!=DataType::kBFloat16) ||
+      c.page_size!=16 || c.max_pages>std::uint32_t(INT32_MAX/16) ||
+      (c.head_dim!=64 && c.head_dim!=128 && c.head_dim!=256))
+    return std::unexpected(Status::Unimplemented("Apple paged qualified page16 flash dtype/depth"));
+  const auto host=layout.host();
+  for(std::size_t r=0;r<layout.facts().requests;++r){
+    const auto nq=host.query_indptr[r+1]-host.query_indptr[r];
+    const auto refs=host.kv_indptr[r+1]-host.kv_indptr[r];
+    const auto nk=refs?std::uint64_t(refs-1)*16+std::uint32_t(host.last_page_lengths[r]):0;
+    if(nq && (!nk || nk>INT32_MAX || (recipe.causal() && nk<std::uint64_t(nq))))
+      return std::unexpected(Status::Unimplemented("Apple paged nonempty Q needs sufficient bounded logical KV"));
+  }
+  try {
+    std::array<InputSpec,4> specs;
+    for(std::size_t i=0;i<4;++i){HYLE_ASSIGN_OR_RETURN(specs[i],input_spec(recipe.descriptions()[i]));}
+    return context.compile([recipe,layout=std::move(layout)](
+        const std::vector<mlx::core::array>& inputs,mlx::core::Stream stream)->Result<std::vector<mlx::core::array>>{
+      if(inputs.size()!=4)return std::unexpected(Status::InvalidArgument("Apple paged needs four native ports"));
+      const auto c=recipe.schema().capacity();const auto host=layout.host();
+      // Reshape and transpose are aliases of the truthful physical arena;
+      // the private primitive owns the page table and logical row count.
+      const mlx::core::Shape root{1,int(std::int64_t(c.max_pages)*16),int(c.kv_heads),int(c.head_dim)};
+      const auto k=mlx::core::transpose(mlx::core::reshape(inputs[1],root,stream),{0,2,1,3},stream);
+      const auto v=mlx::core::transpose(mlx::core::reshape(inputs[2],root,stream),{0,2,1,3},stream);
+      std::vector<mlx::core::array> parts;
+      for(std::size_t r=0;r<layout.facts().requests;++r){
+        const auto nq=host.query_indptr[r+1]-host.query_indptr[r];if(!nq)continue;
+        const auto refs=host.kv_indptr[r+1]-host.kv_indptr[r];
+        const auto nk=std::uint64_t(refs-1)*16+std::uint32_t(host.last_page_lengths[r]);
+        HYLE_ASSIGN_OR_RETURN(auto slice,View::slice(0,host.query_indptr[r],nq));
+        HYLE_ASSIGN_OR_RETURN(auto sliced,lower(Operation(slice),std::span(&inputs[0],1),stream));
+        auto q=mlx::core::transpose(mlx::core::reshape(sliced[0],{1,nq,int(c.query_heads),int(c.head_dim)},stream),{0,2,1,3},stream);
+        auto result=mlx::core::fast::hyle_paged_attention(q,k,v,inputs[3],int(nk),host.kv_indptr[r],recipe.scale(),recipe.causal(),stream);
+        parts.push_back(mlx::core::reshape(mlx::core::transpose(result,{0,2,1,3},stream),{nq,int(c.query_heads),int(c.head_dim)},stream));
+      }
+      if(parts.empty()){HYLE_ASSIGN_OR_RETURN(auto empty,View::slice(0,0,0));return lower(Operation(empty),std::span(&inputs[0],1),stream);}
+      if(parts.size()==1)return parts;
+      return lower(Operation(Concat{.axis=0}),parts,stream);
+    },specs,workload);
+  } catch(const std::bad_alloc&) {
+    return std::unexpected(Status::ResourceExhausted("Apple paged cold tracing metadata"));
+  }
+}
 Result<Program> prepare_ragged_batch(const Context&context,BatchLayoutVersion layout,
     RaggedAttention attention,const WorkloadContext&workload)noexcept{
   if(!context.valid()||!layout.valid()||layout.schema().capacity()!=attention.capacity||

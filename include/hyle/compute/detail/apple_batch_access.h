@@ -7,6 +7,9 @@ namespace hyle::compute::apple::detail {
 // Trusted fixed-batch adapters only. Capacity is an address view; the frame
 // retains exact page permissions. Submit must admit every actual page guard.
 struct PagedBatchAccess final {
+  HYLE_COMPUTE_ROUTE_APPLE_API static Result<Program> prepare_program(
+      const Context&, const NativePagedBatchProgram&, BatchLayoutVersion,
+      const WorkloadContext&) noexcept;
   HYLE_COMPUTE_ROUTE_APPLE_API static Result<mlx::core::array> binding(
       const MemoryResource&,PagedArenaRead,LeaseImportOptions = {}) noexcept;
   HYLE_COMPUTE_ROUTE_APPLE_API static Result<OwnedResult<Results>> submit(

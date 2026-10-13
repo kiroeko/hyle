@@ -37,6 +37,373 @@
           "after": "          a.primitive().stream() != s || !is_fusable(a.primitive()) ||\n          (typeid(a.primitive()) == typeid(AsType) &&\n           a.dtype() == bfloat16 && a.inputs()[0].dtype() == float32) ||\n"
         }
       ]
+    },
+    {
+      "path": "mlx/fast.h",
+      "before_sha256": "f3ed6a3a4e47e1061beda2594cb4dc916cf364d5021bf5e16b80ce60da8ff380",
+      "edits": [
+        {
+          "before": "/** Computes: O = softmax(Q @ K.T) @ V **/\nMLX_API array scaled_dot_product_attention(\n",
+          "after": "/** Computes: O = softmax(Q @ K.T) @ V **/\n// Private HYLE exact-page adapter. Native physical K/V shapes stay truthful;\n// ordinary callers use HYLE's typed frame controller, never this raw seam.\nMLX_API array hyle_paged_attention(\n    const array& q, const array& k, const array& v, const array& pages,\n    int logical_rows, int table_offset, float scale, bool causal, Stream stream);\n\nMLX_API array scaled_dot_product_attention(\n"
+        }
+      ],
+      "after_sha256": "f0a043a4db86c48333dcd45d6e48833eed64dd645d078ba6fb6759fe07098200"
+    },
+    {
+      "path": "mlx/fast_primitives.h",
+      "before_sha256": "297e29e71f5eec513045662b7d0180769e6f2cd338039a03237f22e3b59001f7",
+      "edits": [
+        {
+          "before": "\nclass ScaledDotProductAttention : public Custom {\n",
+          "after": "\nclass HylePagedAttention final : public Custom {\n public:\n  HylePagedAttention(Stream stream, int rows, int offset, float scale, bool causal)\n      : Custom(stream, [](std::vector<array>) -> std::vector<array> {\n          throw std::runtime_error(\"HYLE paged attention has no fallback/AD transform\");\n        }), rows_(rows), offset_(offset), scale_(scale), causal_(causal) {}\n  void eval_cpu(const std::vector<array>&, std::vector<array>&) override {\n    throw std::runtime_error(\"HYLE paged attention requires original Metal math\");\n  }\n  void eval_gpu(const std::vector<array>&, std::vector<array>&) override;\n  bool is_equivalent(const Primitive& other) const override {\n    const auto& p = static_cast<const HylePagedAttention&>(other);\n    return rows_ == p.rows_ && offset_ == p.offset_ &&\n           scale_ == p.scale_ && causal_ == p.causal_;\n  }\n  DEFINE_NAME(HylePagedAttention);\n  DEFINE_INPUT_OUTPUT_SHAPE()\n  auto state() const { return std::make_tuple(nullptr, rows_, offset_, scale_, causal_); }\n private:\n  int rows_, offset_;\n  float scale_;\n  bool causal_;\n};\n\nclass ScaledDotProductAttention : public Custom {\n"
+        }
+      ],
+      "after_sha256": "7454508bed25a9af4bd051cbb0775fdfc38501980abf4a6ef356d2c1f5990d93"
+    },
+    {
+      "path": "mlx/fast.cpp",
+      "before_sha256": "29b31f96bdb02afdadbde3f2bcf42cf458fc69385a908bbde9fc3a14d23de077",
+      "edits": [
+        {
+          "before": "/** Computes: O = softmax(Q @ K.T) @ V **/\narray scaled_dot_product_attention(\n",
+          "after": "/** Computes: O = softmax(Q @ K.T) @ V **/\narray hyle_paged_attention(\n    const array& q, const array& k, const array& v, const array& pages,\n    int rows, int offset, float scale, bool causal, Stream stream) {\n  if (q.ndim() != 4 || k.ndim() != 4 || v.shape() != k.shape() ||\n      q.shape(0) != 1 || k.shape(0) != 1 || k.shape(2) <= 0 || k.shape(2) % 16 ||\n      q.shape(2) <= 0 || q.shape(1) <= 0 || k.shape(1) <= 0 ||\n      q.shape(1) % k.shape(1) || q.shape(3) != k.shape(3) ||\n      (q.shape(3) != 64 && q.shape(3) != 128 && q.shape(3) != 256) ||\n      q.dtype() != k.dtype() || q.dtype() != v.dtype() ||\n      (q.dtype() != float16 && q.dtype() != bfloat16) ||\n      pages.ndim() != 1 || pages.dtype() != int32 || pages.strides(0) != 1 ||\n      rows <= 0 || offset < 0 || int64_t(offset) + (int64_t(rows) + 15) / 16 > pages.size() ||\n      (causal && rows < q.shape(2)) || !std::isfinite(scale)) {\n    throw std::invalid_argument(\"HYLE paged attention physical/logical/table domain\");\n  }\n  return array(q.shape(), q.dtype(),\n      std::make_shared<HylePagedAttention>(stream, rows, offset, scale, causal),\n      {q, k, v, pages});\n}\n\narray scaled_dot_product_attention(\n"
+        },
+        {
+          "before": "#include <numeric>",
+          "after": "#include <numeric>\n#include <cmath>"
+        }
+      ],
+      "after_sha256": "079fbb69b553fb7e0fd6e4f061102975d70674e69b942b5cf978882da5c6093c"
+    },
+    {
+      "path": "mlx/backend/metal/scaled_dot_product_attention.cpp",
+      "before_sha256": "215ebac6495706cf01a2635c4dcec29802e130165ed8704f212d789679d2e673",
+      "edits": [
+        {
+          "before": "  metal::get_command_encoder(s).add_temporaries(std::move(copies));\n}\n",
+          "after": "  metal::get_command_encoder(s).add_temporaries(std::move(copies));\n}\n\nvoid ScaledDotProductAttention::eval_gpu(\n    const std::vector<array>& inputs, std::vector<array>& outputs) {\n  eval_sdpa_native(inputs, outputs, stream(), scale_, do_causal_, has_sinks_, std::nullopt);\n}\nvoid HylePagedAttention::eval_gpu(\n    const std::vector<array>& inputs, std::vector<array>& outputs) {\n  if (inputs.size() != 4) throw std::invalid_argument(\"HYLE paged attention needs four inputs\");\n  eval_sdpa_native(inputs, outputs, stream(), scale_, causal_, false,\n                   HylePageInfo{inputs[3], rows_, offset_});\n}\n"
+        },
+        {
+          "before": "    sdpa_full_self_attention_metal(\n        s, d, q, k, v, scale_, o, do_causal_, mask, sinks);\n  }\n",
+          "after": "    sdpa_full_self_attention_metal(\n        s, d, q, k, v, scale_, o, do_causal_, mask, sinks, page);\n  }\n"
+        },
+        {
+          "before": "    } else {\n      sdpa_vector(s, d, q, k, v, o, scale_, do_causal, mask, sinks);\n    }\n",
+          "after": "    } else {\n      sdpa_vector(s, d, q, k, v, o, scale_, do_causal, mask, sinks, page);\n    }\n"
+        },
+        {
+          "before": "    char devc = d.get_architecture().back();\n    if (((devc == 'd' || devc == 's') && k.shape(2) >= 1024) ||\n        (k.shape(1) < q.shape(1) && k.shape(2) >= 4096)) {\n      sdpa_vector_2pass(s, d, q, k, v, o, scale_, do_causal, mask, sinks);\n    } else {\n",
+          "after": "    char devc = d.get_architecture().back();\n    if (((devc == 'd' || devc == 's') && (page ? page->rows : k.shape(2)) >= 1024) ||\n        (k.shape(1) < q.shape(1) && (page ? page->rows : k.shape(2)) >= 4096)) {\n      sdpa_vector_2pass(s, d, q, k, v, o, scale_, do_causal, mask, sinks, page);\n    } else {\n"
+        },
+        {
+          "before": "  }\n  bool has_arr_mask = inputs.size() > (3 + has_sinks_);\n\n",
+          "after": "  }\n  bool has_arr_mask = !page && inputs.size() > (3 + has_sinks_);\n\n"
+        },
+        {
+          "before": "\nvoid ScaledDotProductAttention::eval_gpu(\n    const std::vector<array>& inputs,\n    std::vector<array>& outputs) {\n  auto& s = stream();\n  auto& d = metal::device(s.device);\n",
+          "after": "\nstatic void eval_sdpa_native(\n    const std::vector<array>& inputs, std::vector<array>& outputs,\n    const Stream& s, float scale_, bool do_causal_, bool has_sinks_,\n    const std::optional<HylePageInfo>& page) {\n  auto& d = metal::device(s.device);\n"
+        },
+        {
+          "before": "  compute_encoder.set_input_array(v, 2);\n  compute_encoder.set_output_array(intermediate, 3);\n",
+          "after": "  compute_encoder.set_input_array(v, 2);\n  if (page) {\n    compute_encoder.set_input_array(page->table, 19);\n    compute_encoder.set_bytes(page->offset, 20);\n  }\n  compute_encoder.set_output_array(intermediate, 3);\n"
+        },
+        {
+          "before": "      {&has_sinks, MTL::DataType::DataTypeBool, 25},\n      {&blocks, MTL::DataType::DataTypeInt, 26},\n",
+          "after": "      {&has_sinks, MTL::DataType::DataTypeBool, 25},\n      {&hyle_paged, MTL::DataType::DataTypeBool, 27},\n      {&blocks, MTL::DataType::DataTypeInt, 26},\n"
+        },
+        {
+          "before": "  compute_encoder.add_temporary(maxs);\n\n  bool has_mask = mask.has_value();\n  bool bool_mask = has_mask && (*mask).dtype() == bool_;\n  bool float_mask = has_mask && !bool_mask;\n  bool query_transposed = !q.flags().row_contiguous;\n  bool has_sinks = sinks.has_value();\n  metal::MTLFCList func_consts = {\n",
+          "after": "  compute_encoder.add_temporary(maxs);\n\n  bool has_mask = mask.has_value();\n  bool bool_mask = has_mask && (*mask).dtype() == bool_;\n  bool float_mask = has_mask && !bool_mask;\n  bool query_transposed = !q.flags().row_contiguous;\n  bool has_sinks = sinks.has_value();\n  bool hyle_paged = page.has_value();\n  metal::MTLFCList func_consts = {\n"
+        },
+        {
+          "before": "  char devc = d.get_architecture().back();\n  int N = k.shape(2);\n  int blocks;\n",
+          "after": "  char devc = d.get_architecture().back();\n  int N = page ? page->rows : k.shape(2);\n  int blocks;\n"
+        },
+        {
+          "before": "      q.shape(-1) == v.shape(-1) && (q.shape(-1) == 64 || q.shape(-1) == 128) &&\n      k.shape(2) >= 8192) {\n    kname += \"_gqa\";\n",
+          "after": "      q.shape(-1) == v.shape(-1) && (q.shape(-1) == 64 || q.shape(-1) == 128) &&\n      (page ? page->rows : k.shape(2)) >= 8192) {\n    kname += \"_gqa\";\n"
+        },
+        {
+          "before": "void sdpa_vector_2pass(\n    const Stream& s,\n    metal::Device& d,\n    const array& q,\n    const array& k,\n    const array& v,\n    array& out,\n    float scale,\n    bool do_causal,\n    const std::optional<array>& mask,\n    const std::optional<array>& sinks) {\n  // Set the kernel name\n",
+          "after": "void sdpa_vector_2pass(\n    const Stream& s,\n    metal::Device& d,\n    const array& q,\n    const array& k,\n    const array& v,\n    array& out,\n    float scale,\n    bool do_causal,\n    const std::optional<array>& mask,\n    const std::optional<array>& sinks,\n    const std::optional<HylePageInfo>& page = std::nullopt) {\n  // Set the kernel name\n"
+        },
+        {
+          "before": "  compute_encoder.set_input_array(v, 2);\n  compute_encoder.set_output_array(out, 3);\n",
+          "after": "  compute_encoder.set_input_array(v, 2);\n  if (page) {\n    compute_encoder.set_input_array(page->table, 19);\n    compute_encoder.set_bytes(page->offset, 20);\n  }\n  compute_encoder.set_output_array(out, 3);\n"
+        },
+        {
+          "before": "  hash_name += has_sinks ? \"_sinks\" : \"_nosinks\";\n\n",
+          "after": "  hash_name += has_sinks ? \"_sinks\" : \"_nosinks\";\n  if (page) hash_name += \"_hyle_page16\";\n\n"
+        },
+        {
+          "before": "      {&has_sinks, MTL::DataType::DataTypeBool, 25},\n  };\n",
+          "after": "      {&has_sinks, MTL::DataType::DataTypeBool, 25},\n      {&hyle_paged, MTL::DataType::DataTypeBool, 27},\n  };\n"
+        },
+        {
+          "before": "  bool has_sinks = sinks.has_value();\n  metal::MTLFCList func_consts = {\n",
+          "after": "  bool has_sinks = sinks.has_value();\n  bool hyle_paged = page.has_value();\n  metal::MTLFCList func_consts = {\n"
+        },
+        {
+          "before": "  int gqa_factor = q.shape(1) / k.shape(1);\n  int N = k.shape(2);\n  size_t k_head_stride = k.shape(1) == 1 ? k.strides(0) : k.strides(1);\n",
+          "after": "  int gqa_factor = q.shape(1) / k.shape(1);\n  int N = page ? page->rows : k.shape(2);\n  size_t k_head_stride = k.shape(1) == 1 ? k.strides(0) : k.strides(1);\n"
+        },
+        {
+          "before": "    const std::optional<array>& mask,\n    const std::optional<array>& sinks) {\n  // Set the kernel name\n",
+          "after": "    const std::optional<array>& mask,\n    const std::optional<array>& sinks,\n    const std::optional<HylePageInfo>& page = std::nullopt) {\n  // Set the kernel name\n"
+        },
+        {
+          "before": "      /* int qL_off = */ (kL - qL),\n\n      /* int64_t Q_strides[3] = */ {q.strides(0), q.strides(1), q.strides(2)},\n      /* int64_t K_strides[3] = */ {k.strides(0), k.strides(1), k.strides(2)},\n      /* int64_t V_strides[3] = */ {v.strides(0), v.strides(1), v.strides(2)},\n      /* int64_t O_strides[3] = */ {o.strides(0), o.strides(1), o.strides(2)}};\n\n  compute_encoder.set_input_array(q, 0);\n  compute_encoder.set_input_array(k, 1);\n  compute_encoder.set_input_array(v, 2);\n  compute_encoder.set_output_array(o, 3);\n  compute_encoder.set_bytes(params, 4);\n\n",
+          "after": "      /* int qL_off = */ (kL - qL),\n\n      /* int64_t Q_strides[3] = */ {q.strides(0), q.strides(1), q.strides(2)},\n      /* int64_t K_strides[3] = */ {k.strides(0), k.strides(1), k.strides(2)},\n      /* int64_t V_strides[3] = */ {v.strides(0), v.strides(1), v.strides(2)},\n      /* int64_t O_strides[3] = */ {o.strides(0), o.strides(1), o.strides(2)}};\n\n  compute_encoder.set_input_array(q, 0);\n  compute_encoder.set_input_array(k, 1);\n  compute_encoder.set_input_array(v, 2);\n  compute_encoder.set_output_array(o, 3);\n  compute_encoder.set_bytes(params, 4);\n  if (page) {\n    compute_encoder.set_input_array(page->table, 8);\n    compute_encoder.set_bytes(page->offset, 9);\n  }\n\n"
+        },
+        {
+          "before": "      \"steel_attention_\",\n      type_to_name(q),\n      \"_bq\",\n      bq,\n      \"_bk\",\n      bk,\n      \"_bd\",\n      bd,\n      \"_wm\",\n      wm,\n      \"_wn\",\n      wn,\n      \"_mask\",\n      type_to_name(has_mask ? *mask : q));\n\n  std::string hash_name;\n  concatenate(\n      hash_name,\n      base_name,\n      \"_align_Q_\",\n      (align_Q ? 't' : 'n'),\n      \"_align_K_\",\n      (align_K ? 't' : 'n'),\n      \"_has_mask_\",\n      (has_mask ? 't' : 'n'),\n      \"_do_causal_\",\n      (do_causal ? 't' : 'n'),\n      \"_has_sinks_\",\n      (has_sinks ? 't' : 'n'));\n\n",
+          "after": "      \"steel_attention_\",\n      type_to_name(q),\n      \"_bq\",\n      bq,\n      \"_bk\",\n      bk,\n      \"_bd\",\n      bd,\n      \"_wm\",\n      wm,\n      \"_wn\",\n      wn,\n      \"_mask\",\n      type_to_name(has_mask ? *mask : q));\n\n  std::string hash_name;\n  concatenate(\n      hash_name,\n      base_name,\n      \"_align_Q_\",\n      (align_Q ? 't' : 'n'),\n      \"_align_K_\",\n      (align_K ? 't' : 'n'),\n      \"_has_mask_\",\n      (has_mask ? 't' : 'n'),\n      \"_do_causal_\",\n      (do_causal ? 't' : 'n'),\n      \"_has_sinks_\",\n      (has_sinks ? 't' : 'n'));\n\n  if (page) hash_name += \"_hyle_page16\";\n\n"
+        },
+        {
+          "before": "  int bk = bd < 128 ? 32 : 16;\n\n  const bool align_Q = (qL % bq) == 0;\n  const bool align_K = (kL % bk) == 0;\n  const bool has_mask = mask.has_value();\n  const bool do_causal = do_causal_;\n  const bool has_sinks = sinks.has_value();\n\n  metal::MTLFCList func_consts = {\n      {&align_Q, MTL::DataType::DataTypeBool, 200},\n      {&align_K, MTL::DataType::DataTypeBool, 201},\n      {&has_mask, MTL::DataType::DataTypeBool, 300},\n      {&do_causal, MTL::DataType::DataTypeBool, 301},\n      {&has_sinks, MTL::DataType::DataTypeBool, 302}};\n\n",
+          "after": "  int bk = bd < 128 ? 32 : 16;\n\n  const bool align_Q = (qL % bq) == 0;\n  const bool align_K = (kL % bk) == 0;\n  const bool has_mask = mask.has_value();\n  const bool do_causal = do_causal_;\n  const bool has_sinks = sinks.has_value();\n\n  metal::MTLFCList func_consts = {\n      {&align_Q, MTL::DataType::DataTypeBool, 200},\n      {&align_K, MTL::DataType::DataTypeBool, 201},\n      {&has_mask, MTL::DataType::DataTypeBool, 300},\n      {&do_causal, MTL::DataType::DataTypeBool, 301},\n      {&has_sinks, MTL::DataType::DataTypeBool, 302},\n      {&hyle_paged, MTL::DataType::DataTypeBool, 303}};\n\n"
+        },
+        {
+          "before": "  int bk = bd < 128 ? 32 : 16;\n\n  const bool align_Q = (qL % bq) == 0;\n  const bool align_K = (kL % bk) == 0;\n  const bool has_mask = mask.has_value();\n  const bool do_causal = do_causal_;\n  const bool has_sinks = sinks.has_value();\n\n",
+          "after": "  int bk = bd < 128 ? 32 : 16;\n\n  const bool align_Q = (qL % bq) == 0;\n  const bool align_K = (kL % bk) == 0;\n  const bool has_mask = mask.has_value();\n  const bool do_causal = do_causal_;\n  const bool has_sinks = sinks.has_value();\n  const bool hyle_paged = page.has_value();\n\n"
+        },
+        {
+          "before": "        /* const std::optional<array>& mask = */ mask,\n        /* const std::optional<array>& sinks = */ sinks);\n  }\n",
+          "after": "        /* const std::optional<array>& mask = */ mask,\n        /* const std::optional<array>& sinks = */ sinks, page);\n  }\n"
+        },
+        {
+          "before": "    const std::optional<array>& sinks) {\n  int B = q.shape(0);\n  int H = q.shape(1);\n  int D = q.shape(3);\n  int gqa_factor = q.shape(1) / k.shape(1);\n\n  int qL = q.shape(2);\n  int kL = k.shape(2);\n\n",
+          "after": "    const std::optional<array>& sinks) {\n  int B = q.shape(0);\n  int H = q.shape(1);\n  int D = q.shape(3);\n  int gqa_factor = q.shape(1) / k.shape(1);\n\n  int qL = q.shape(2);\n  int kL = page ? page->rows : k.shape(2);\n\n"
+        },
+        {
+          "before": "    const std::optional<array>& mask,\n    const std::optional<array>& sinks) {\n  int B = q.shape(0);\n",
+          "after": "    const std::optional<array>& mask,\n    const std::optional<array>& sinks,\n    const std::optional<HylePageInfo>& page = std::nullopt) {\n  int B = q.shape(0);\n"
+        },
+        {
+          "before": "  compute_encoder.set_bytes(params, 4);\n\n",
+          "after": "  compute_encoder.set_bytes(params, 4);\n  if (page) {\n    compute_encoder.set_input_array(page->table, 8);\n    compute_encoder.set_bytes(page->offset, 9);\n  }\n\n"
+        },
+        {
+          "before": "      split_d ? \"steel_attention_dsplit_\" : \"steel_attention_\",\n      type_to_name(q),\n      \"_bq\",\n      bq,\n      \"_bk\",\n      bk,\n      \"_bd\",\n      bd,\n      \"_wm\",\n      wm,\n      \"_wn\",\n      wn,\n      \"_mask\",\n      type_to_name(has_mask ? *mask : q));\n\n  std::string hash_name;\n  concatenate(\n      hash_name,\n      base_name,\n      \"_align_Q_\",\n      (align_Q ? 't' : 'n'),\n      \"_align_K_\",\n      (align_K ? 't' : 'n'),\n      \"_has_mask_\",\n      (has_mask ? 't' : 'n'),\n      \"_do_causal_\",\n      (do_causal ? 't' : 'n'),\n      \"_has_sinks_\",\n      (has_sinks ? 't' : 'n'));\n\n",
+          "after": "      split_d ? \"steel_attention_dsplit_\" : \"steel_attention_\",\n      type_to_name(q),\n      \"_bq\",\n      bq,\n      \"_bk\",\n      bk,\n      \"_bd\",\n      bd,\n      \"_wm\",\n      wm,\n      \"_wn\",\n      wn,\n      \"_mask\",\n      type_to_name(has_mask ? *mask : q));\n\n  std::string hash_name;\n  concatenate(\n      hash_name,\n      base_name,\n      \"_align_Q_\",\n      (align_Q ? 't' : 'n'),\n      \"_align_K_\",\n      (align_K ? 't' : 'n'),\n      \"_has_mask_\",\n      (has_mask ? 't' : 'n'),\n      \"_do_causal_\",\n      (do_causal ? 't' : 'n'),\n      \"_has_sinks_\",\n      (has_sinks ? 't' : 'n'));\n\n  if (page) hash_name += \"_hyle_page16\";\n\n"
+        },
+        {
+          "before": "      {&do_causal, MTL::DataType::DataTypeBool, 301},\n      {&has_sinks, MTL::DataType::DataTypeBool, 302}};\n\n",
+          "after": "      {&do_causal, MTL::DataType::DataTypeBool, 301},\n      {&has_sinks, MTL::DataType::DataTypeBool, 302},\n      {&hyle_paged, MTL::DataType::DataTypeBool, 303}};\n\n"
+        },
+        {
+          "before": "  const bool has_sinks = sinks.has_value();\n\n",
+          "after": "  const bool has_sinks = sinks.has_value();\n  const bool hyle_paged = page.has_value();\n\n"
+        },
+        {
+          "before": "  };\n  if (split_d && do_causal_ && !mask.has_value() && (kL % bk)) {\n    int kLp = bk * ((kL + bk - 1) / bk);\n",
+          "after": "  };\n  if (!page && split_d && do_causal_ && !mask.has_value() && (kL % bk)) {\n    int kLp = bk * ((kL + bk - 1) / bk);\n"
+        },
+        {
+          "before": "  int qL = q.shape(2);\n  int kL = k.shape(2);\n\n",
+          "after": "  int qL = q.shape(2);\n  int kL = page ? page->rows : k.shape(2);\n\n"
+        },
+        {
+          "before": "    const std::optional<array>& mask,\n    const std::optional<array>& sinks) {\n  using namespace mlx::steel;\n",
+          "after": "    const std::optional<array>& mask,\n    const std::optional<array>& sinks,\n    const std::optional<HylePageInfo>& page = std::nullopt) {\n  using namespace mlx::steel;\n"
+        },
+        {
+          "before": "namespace {\n\n",
+          "after": "namespace {\nstruct HylePageInfo {\n  array table;\n  int rows, offset;\n};\n\n"
+        }
+      ],
+      "after_sha256": "22a7b6526f1b2f8a6111af8b95315d3abc34dabf1c3d15a8c658702a79c37ab1"
+    },
+    {
+      "path": "mlx/backend/metal/kernels/sdpa_vector.h",
+      "before_sha256": "de098d50a67a865e2e64fb1700fc4819307861f009a65642679777a9a9cec7cd",
+      "edits": [
+        {
+          "before": "    }\n    kp += k_seq_stride;\n    vp += v_seq_stride;\n    for (int j = 0; j < HPT; j++) {\n",
+          "after": "    }\n    if (!hyle_paged) { kp += k_seq_stride; vp += v_seq_stride; }\n    for (int j = 0; j < HPT; j++) {\n"
+        },
+        {
+          "before": "    for (int i = 0; i < v_per_thread; i++) {\n      vr[i] = vp[i];\n    }\n",
+          "after": "    for (int i = 0; i < v_per_thread; i++) {\n      vr[i] = value_row[i];\n    }\n"
+        },
+        {
+          "before": "    for (int i = 0; i < qk_per_thread; i++) {\n      kr[i] = kp[i];\n    }\n",
+          "after": "    for (int i = 0; i < qk_per_thread; i++) {\n      kr[i] = key_row[i];\n    }\n"
+        },
+        {
+          "before": "  for (int t = s0; t < s1; t++) {\n    U kr[qk_per_thread];\n",
+          "after": "  for (int t = s0; t < s1; t++) {\n    const int physical = hyle_paged ? ((hyle_pages[hyle_offset + (t >> 4)] << 4) + (t & 15)) : 0;\n    const device T* key_row = kp + (hyle_paged ? physical * k_seq_stride : 0);\n    const device T* value_row = vp + (hyle_paged ? physical * v_seq_stride : 0);\n    U kr[qk_per_thread];\n"
+        },
+        {
+          "before": "  const device T* vp = values + kv_head_idx * v_head_stride +\n      s0 * v_seq_stride + simd_lid * v_per_thread;\n\n",
+          "after": "  const device T* vp = values + kv_head_idx * v_head_stride +\n      (hyle_paged ? 0 : s0 * v_seq_stride) + simd_lid * v_per_thread;\n\n"
+        },
+        {
+          "before": "\n  const device T* kp = keys + kv_head_idx * k_head_stride + s0 * k_seq_stride +\n      simd_lid * qk_per_thread;\n",
+          "after": "\n  const device T* kp = keys + kv_head_idx * k_head_stride + (hyle_paged ? 0 : s0 * k_seq_stride) +\n      simd_lid * qk_per_thread;\n"
+        },
+        {
+          "before": "    const constant float& scale [[buffer(12)]],\n    uint3 tid [[threadgroup_position_in_grid]],\n",
+          "after": "    const constant float& scale [[buffer(12)]],\n    const device int* hyle_pages [[buffer(19), function_constant(hyle_paged)]],\n    const constant int& hyle_offset [[buffer(20), function_constant(hyle_paged)]],\n    uint3 tid [[threadgroup_position_in_grid]],\n"
+        },
+        {
+          "before": "    // Move the pointers to the next kv\n    keys += blocks * int(k_seq_stride);\n    values += blocks * int(v_seq_stride);\n    if (bool_mask) {\n",
+          "after": "    // Move the pointers to the next kv\n    if (!hyle_paged) { keys += blocks * int(k_seq_stride); values += blocks * int(v_seq_stride); }\n    if (bool_mask) {\n"
+        },
+        {
+          "before": "      for (int i = 0; i < v_per_thread; i++) {\n        o[i] = o[i] * factor + exp_score * values[i];\n      }\n",
+          "after": "      for (int i = 0; i < v_per_thread; i++) {\n        o[i] = o[i] * factor + exp_score * value_row[i];\n      }\n"
+        },
+        {
+          "before": "      for (int i = 0; i < qk_per_thread; i++) {\n        score += q[i] * keys[i];\n      }\n",
+          "after": "      for (int i = 0; i < qk_per_thread; i++) {\n        score += q[i] * key_row[i];\n      }\n"
+        },
+        {
+          "before": "  for (int i = block_idx; i < N; i += blocks) {\n    bool use_key = true;\n",
+          "after": "  for (int i = block_idx; i < N; i += blocks) {\n    const int physical = hyle_paged ? ((hyle_pages[hyle_offset + (i >> 4)] << 4) + (i & 15)) : 0;\n    const device T* key_row = keys + (hyle_paged ? physical * k_seq_stride : 0);\n    const device T* value_row = values + (hyle_paged ? physical * v_seq_stride : 0);\n    bool use_key = true;\n"
+        },
+        {
+          "before": "      simd_lid * qk_per_thread;\n  values += kv_batch_head_idx * v_head_stride + block_idx * v_seq_stride +\n      simd_lid * v_per_thread;\n",
+          "after": "      simd_lid * qk_per_thread;\n  values += kv_batch_head_idx * v_head_stride + (hyle_paged ? 0 : block_idx * v_seq_stride) +\n      simd_lid * v_per_thread;\n"
+        },
+        {
+          "before": "  const int kv_batch_head_idx = batch_idx * num_kv_heads + kv_head_idx;\n  keys += kv_batch_head_idx * k_head_stride + block_idx * k_seq_stride +\n      simd_lid * qk_per_thread;\n",
+          "after": "  const int kv_batch_head_idx = batch_idx * num_kv_heads + kv_head_idx;\n  keys += kv_batch_head_idx * k_head_stride + (hyle_paged ? 0 : block_idx * k_seq_stride) +\n      simd_lid * qk_per_thread;\n"
+        },
+        {
+          "before": "    uint3 tidtg [[thread_position_in_threadgroup]],\n    uint3 tid [[threadgroup_position_in_grid]],\n",
+          "after": "    uint3 tidtg [[thread_position_in_threadgroup]],\n    const device int* hyle_pages [[buffer(19), function_constant(hyle_paged)]],\n    const constant int& hyle_offset [[buffer(20), function_constant(hyle_paged)]],\n    uint3 tid [[threadgroup_position_in_grid]],\n"
+        },
+        {
+          "before": "    // Move the pointers to the next kv\n    keys += inner_k_stride;\n    values += inner_v_stride;\n    if (bool_mask) {\n",
+          "after": "    // Move the pointers to the next kv\n    if (!hyle_paged) { keys += inner_k_stride; values += inner_v_stride; }\n    if (bool_mask) {\n"
+        },
+        {
+          "before": "      for (int j = 0; j < v_per_thread; j++) {\n        o[j] = o[j] * factor + exp_score * values[j];\n      }\n",
+          "after": "      for (int j = 0; j < v_per_thread; j++) {\n        o[j] = o[j] * factor + exp_score * value_row[j];\n      }\n"
+        },
+        {
+          "before": "      for (int j = 0; j < qk_per_thread; j++) {\n        k[j] = keys[j];\n      }\n",
+          "after": "      for (int j = 0; j < qk_per_thread; j++) {\n        k[j] = key_row[j];\n      }\n"
+        },
+        {
+          "before": "  for (int i = simd_gid; i < N; i += BN) {\n    bool use_key = true;\n",
+          "after": "  for (int i = simd_gid; i < N; i += BN) {\n    const int physical = hyle_paged ? ((hyle_pages[hyle_offset + (i >> 4)] << 4) + (i & 15)) : 0;\n    const device T* key_row = keys + (hyle_paged ? physical * k_seq_stride : 0);\n    const device T* value_row = values + (hyle_paged ? physical * v_seq_stride : 0);\n    bool use_key = true;\n"
+        },
+        {
+          "before": "      simd_lid * qk_per_thread;\n  values += kv_head_idx * v_head_stride + simd_gid * v_seq_stride +\n      simd_lid * v_per_thread;\n",
+          "after": "      simd_lid * qk_per_thread;\n  values += kv_head_idx * v_head_stride + (hyle_paged ? 0 : simd_gid * v_seq_stride) +\n      simd_lid * v_per_thread;\n"
+        },
+        {
+          "before": "  queries += q_offset * D + simd_lid * qk_per_thread;\n  keys += kv_head_idx * k_head_stride + simd_gid * k_seq_stride +\n      simd_lid * qk_per_thread;\n",
+          "after": "  queries += q_offset * D + simd_lid * qk_per_thread;\n  keys += kv_head_idx * k_head_stride + (hyle_paged ? 0 : simd_gid * k_seq_stride) +\n      simd_lid * qk_per_thread;\n"
+        },
+        {
+          "before": "    [[buffer(17), function_constant(has_sinks)]],\n    uint3 tid [[threadgroup_position_in_grid]],\n",
+          "after": "    [[buffer(17), function_constant(has_sinks)]],\n    const device int* hyle_pages [[buffer(19), function_constant(hyle_paged)]],\n    const constant int& hyle_offset [[buffer(20), function_constant(hyle_paged)]],\n    uint3 tid [[threadgroup_position_in_grid]],\n"
+        },
+        {
+          "before": "constant int blocks [[function_constant(26)]];\n\n",
+          "after": "constant int blocks [[function_constant(26)]];\nconstant bool hyle_paged [[function_constant(27)]];\n\n"
+        }
+      ],
+      "after_sha256": "39256a63cedc52603d013e8b59a043e7b560e79672f5d5a54e1bbcadce8ca646"
+    },
+    {
+      "path": "mlx/backend/metal/kernels/steel/attn/nax.h",
+      "before_sha256": "fb10bcae44095e9fed5c81213d03527dd5fe5ac11be11ec7784bd357c6f317ec",
+      "edits": [
+        {
+          "before": "  template <typename U>\n  METAL_FUNC void store(device U* dst, const int ld) const thread {\n",
+          "after": "  template <typename U>\n  METAL_FUNC void load_paged(const device U* src, const int ld,\n      const device int* pages, const int offset, const int first, const int n_rows) thread {\n    static_assert(kFragRows == 16, \"HYLE page16 requires original 16-row fragments\");\n    const_for_loop<0, kTileRows, 1>([&](auto idx_row) {\n      const int logical = first + idx_row.value * kFragRows;\n      const short remaining = short(metal::max(0, metal::min(kFragRows, n_rows - idx_row.value * kFragRows)));\n      const int physical = remaining > 0 ? ((pages[offset + (logical >> 4)] << 4) + (logical & 15)) : 0;\n      const_for_loop<0, kTileCols, 1>([&](auto idx_col) {\n        NAXFrag_t::load_rows(frag_at<idx_row.value, idx_col.value>(),\n            src + physical * ld, ld, Int<1>{}, remaining,\n            Int<0>{}, idx_col * Int<kFragCols>{});\n      });\n    });\n  }\n\n  template <typename U>\n  METAL_FUNC void store(device U* dst, const int ld) const thread {\n"
+        },
+        {
+          "before": "metal::min(kFragRows, n_rows - idx_row.value * kFragRows)",
+          "after": "metal::min(int(kFragRows), n_rows - idx_row.value * kFragRows)"
+        }
+      ],
+      "after_sha256": "3e80d74e70137e59381e9d15bf8d88232d0ea1fad75dfc04223623e240b3882f"
+    },
+    {
+      "path": "mlx/backend/metal/kernels/steel/attn/kernels/steel_attention_nax.h",
+      "before_sha256": "dba29e9167611d30a13fda3f336c30a5db70bc2a6e8bea78dd639f4b9547c793",
+      "edits": [
+        {
+          "before": "    // Next block\n    K += BK * int(params->K_strides[2]);\n    V += BK * int(params->V_strides[2]);\n  }\n",
+          "after": "    // Next block\n    if (!hyle_paged) {\n      K += BK * int(params->K_strides[2]);\n      V += BK * int(params->V_strides[2]);\n    }\n  }\n"
+        },
+        {
+          "before": "        const int V_load_off = ik * kU * int(params->V_strides[2]) + id * kU;\n\n        if (!align_K && is_last_k) {\n          Vtile.load_rows(\n",
+          "after": "        const int V_load_off = ik * kU * int(params->V_strides[2]) + id * kU;\n        if (hyle_paged) {\n          Vtile.load_paged(V + id * kU, int(params->V_strides[2]),\n              hyle_pages, hyle_offset, kb * BK + ik * kU,\n              params->kL - kb * BK - ik * kU);\n        } else if (!align_K && is_last_k) {\n          Vtile.load_rows(\n"
+        },
+        {
+          "before": "        const int K_load_off = ik * kU * int(params->K_strides[2]) + id * kU;\n\n        if (!align_K && is_last_k) {\n          Ktile.load_rows(\n",
+          "after": "        const int K_load_off = ik * kU * int(params->K_strides[2]) + id * kU;\n        if (hyle_paged) {\n          Ktile.load_paged(K + id * kU, int(params->K_strides[2]),\n              hyle_pages, hyle_offset, kb * BK + ik * kU,\n              params->kL - kb * BK - ik * kU);\n        } else if (!align_K && is_last_k) {\n          Ktile.load_rows(\n"
+        },
+        {
+          "before": "[[kernel, max_total_threads_per_threadgroup(WM * WN * 32)]] void attention_nax_dsplit(\n    const device T* Q [[buffer(0)]],\n    const device T* K [[buffer(1)]],\n    const device T* V [[buffer(2)]],\n    device T* O [[buffer(3)]],\n    const constant AttnParams* params [[buffer(4)]],\n    const constant AttnMaskParams* mask_params [[buffer(5), function_constant(has_mask)]],\n    const device MaskType* mask [[buffer(6), function_constant(has_mask)]],\n    const device T* sinks [[buffer(7), function_constant(has_sinks)]],\n    uint simd_lane_id [[thread_index_in_simdgroup]],\n",
+          "after": "[[kernel, max_total_threads_per_threadgroup(WM * WN * 32)]] void attention_nax_dsplit(\n    const device T* Q [[buffer(0)]],\n    const device T* K [[buffer(1)]],\n    const device T* V [[buffer(2)]],\n    device T* O [[buffer(3)]],\n    const constant AttnParams* params [[buffer(4)]],\n    const constant AttnMaskParams* mask_params [[buffer(5), function_constant(has_mask)]],\n    const device MaskType* mask [[buffer(6), function_constant(has_mask)]],\n    const device T* sinks [[buffer(7), function_constant(has_sinks)]],\n    const device int* hyle_pages [[buffer(8), function_constant(hyle_paged)]],\n    const constant int& hyle_offset [[buffer(9), function_constant(hyle_paged)]],\n    uint simd_lane_id [[thread_index_in_simdgroup]],\n"
+        },
+        {
+          "before": "    // Prepare for next iteration\n    K += BK * int(params->K_strides[2]);\n    V += BK * int(params->V_strides[2]);\n  }\n",
+          "after": "    // Prepare for next iteration\n    if (!hyle_paged) {\n      K += BK * int(params->K_strides[2]);\n      V += BK * int(params->V_strides[2]);\n    }\n  }\n"
+        },
+        {
+          "before": "          const int V_load_off = ik * kU * int(params->V_strides[2]) + id * kU;\n\n          if (!align_K && is_last_k) {\n            Vtile.load_rows(\n",
+          "after": "          const int V_load_off = ik * kU * int(params->V_strides[2]) + id * kU;\n          if (hyle_paged) {\n            Vtile.load_paged(V + id * kU, int(params->V_strides[2]),\n                hyle_pages, hyle_offset, kb * BK + ik * kU,\n                params->kL - kb * BK - ik * kU);\n          } else if (!align_K && is_last_k) {\n            Vtile.load_rows(\n"
+        },
+        {
+          "before": "          }\n\n          if (!align_K && is_last_k) {\n            Ktile.load_rows(\n",
+          "after": "          }\n          if (hyle_paged) {\n            Ktile.load_paged(K + id * kU, int(params->K_strides[2]),\n                hyle_pages, hyle_offset, kb * BK + ik * kU,\n                params->kL - kb * BK - ik * kU);\n          } else if (!align_K && is_last_k) {\n            Ktile.load_rows(\n"
+        },
+        {
+          "before": "    const device T* sinks [[buffer(7), function_constant(has_sinks)]],\n    uint simd_lane_id [[thread_index_in_simdgroup]],\n",
+          "after": "    const device T* sinks [[buffer(7), function_constant(has_sinks)]],\n    const device int* hyle_pages [[buffer(8), function_constant(hyle_paged)]],\n    const constant int& hyle_offset [[buffer(9), function_constant(hyle_paged)]],\n    uint simd_lane_id [[thread_index_in_simdgroup]],\n"
+        },
+        {
+          "before": "constant bool has_sinks [[function_constant(302)]];\n\n",
+          "after": "constant bool has_sinks [[function_constant(302)]];\nconstant bool hyle_paged [[function_constant(303)]];\n\n"
+        }
+      ],
+      "after_sha256": "7b9492a3afb4078e51229305690a595133eb72fcab2291593820156107de0020"
+    },
+    {
+      "path": "mlx/backend/metal/kernels/steel/attn/loader.h",
+      "before_sha256": "e435f413d71d44ca4ad72a59d192046be77388f63936179c58882286f4cc5dab",
+      "edits": [
+        {
+          "before": "        dst[i * kDstStrRow + j * kDstStrCol] = tmp_val[j];\n      }\n    }\n  }\n\n  /* Iteration helper */\n",
+          "after": "        dst[i * kDstStrRow + j * kDstStrCol] = tmp_val[j];\n      }\n    }\n  }\n\n  METAL_FUNC void load_paged(const device T* root, const device int* pages,\n      const int offset, const int first, const int valid_rows) const thread {\n    STEEL_PRAGMA_UNROLL\n    for (short i = 0; i < BROWS; i += TROWS) {\n      const int logical = first + bi + i;\n      const bool valid = bi + i < valid_rows;\n      const int physical = valid ? ((pages[offset + (logical >> 4)] << 4) + (logical & 15)) : 0;\n      STEEL_PRAGMA_UNROLL\n      for (short j = 0; j < vec_size; j++) {\n        dst[i * kDstStrRow + j * kDstStrCol] = valid ? root[physical * src_ld + bj + j] : T(0);\n      }\n    }\n  }\n\n  /* Iteration helper */\n"
+        }
+      ],
+      "after_sha256": "b7ee79a15ed84fa789eb9e0e48f4b515169cbe7c8fdc368ffe24eaf5c3b08e41"
+    },
+    {
+      "path": "mlx/backend/metal/kernels/steel/attn/kernels/steel_attention.h",
+      "before_sha256": "3e9334c9ec3298fc7fb21a9468816d1b7c6e3c11da8494df7ae4fc7a4c04f570",
+      "edits": [
+        {
+          "before": "    // Prepare for next iteration\n    loader_k.next();\n    loader_v.next();\n  }\n",
+          "after": "    // Prepare for next iteration\n    if (!hyle_paged) loader_k.next();\n    if (!hyle_paged) loader_v.next();\n  }\n"
+        },
+        {
+          "before": "    // Load V blocks\n    if (!align_K && kb == (params->NK_aligned)) {\n      loader_v.load_safe(short2(BD, params->kL_rem));\n",
+          "after": "    // Load V blocks\n    if (hyle_paged) {\n      loader_v.load_paged(V, hyle_pages, hyle_offset, kb * BK, params->kL - kb * BK);\n    } else if (!align_K && kb == (params->NK_aligned)) {\n      loader_v.load_safe(short2(BD, params->kL_rem));\n"
+        },
+        {
+          "before": "    threadgroup_barrier(mem_flags::mem_threadgroup);\n    if (!align_K && kb == (params->NK_aligned)) {\n      loader_k.load_safe(short2(BD, params->kL_rem));\n",
+          "after": "    threadgroup_barrier(mem_flags::mem_threadgroup);\n    if (hyle_paged) {\n      loader_k.load_paged(K, hyle_pages, hyle_offset, kb * BK, params->kL - kb * BK);\n    } else if (!align_K && kb == (params->NK_aligned)) {\n      loader_k.load_safe(short2(BD, params->kL_rem));\n"
+        },
+        {
+          "before": "    const device T* sinks [[buffer(7), function_constant(has_sinks)]],\n    uint simd_lane_id [[thread_index_in_simdgroup]],\n",
+          "after": "    const device T* sinks [[buffer(7), function_constant(has_sinks)]],\n    const device int* hyle_pages [[buffer(8), function_constant(hyle_paged)]],\n    const constant int& hyle_offset [[buffer(9), function_constant(hyle_paged)]],\n    uint simd_lane_id [[thread_index_in_simdgroup]],\n"
+        },
+        {
+          "before": "constant bool has_sinks [[function_constant(302)]];\n\n",
+          "after": "constant bool has_sinks [[function_constant(302)]];\nconstant bool hyle_paged [[function_constant(303)]];\n\n"
+        }
+      ],
+      "after_sha256": "e417b75b2d78e47af0c5a86c733e33ae95063d9024af306a403a4bd0ff0a6ba6"
     }
   ]
 }
