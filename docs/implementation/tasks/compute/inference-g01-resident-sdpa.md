@@ -113,3 +113,8 @@ tests，两个变更TU实际插桩核对；不代签全CPU算子或Graph生命�
 与实际改名relocated static/shared均退出0，公开默认入口选择成熟ggml。旧树hook/symlink的
 原FAIL及产物身份保留，编译最多4路且无GPU运行。P1与最终review仍待；本卡保持
 CANDIDATE，完成数仍0/10，不把阶段证据算整个G01完成。
+
+候选LOC按原统一脚本一次计量：三个resident承载owner的实现文件和CPU provider公开头
+联合为4907行（不是本次净新增行数，也不是推理引擎预计行数）。
+[原始报告](../../../../evidence/correctness/inference-g01-cpu-resident-delivery/resident-owner-loc.json)
+绑定candidate及显式边界，self-check通过；测试/bench/third_party patch不混入产品实现数。
