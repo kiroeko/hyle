@@ -1,0 +1,183 @@
+#include <gtest/gtest.h>
+#include "hyle/compute/backends/cpu.h"
+#include "hyle/compute/cpu.h"
+#include "hyle/compute/batch_execution.h"
+#include "hyle/compute/providers/ggml_cpu.h"
+#include "../compute_provider_native/half_test_support.h"
+#include "../compute_batch/allocation_fault_fixture.h"
+#include "../../src/compute/context_state.h"
+
+#include <array>
+#include <algorithm>
+#include <cmath>
+#include <cstdint>
+#include <cstring>
+#include <span>
+#include <type_traits>
+#include <vector>
+
+namespace {
+namespace c = hyle::compute;
+using F16 = hyle::simd::float16_t;
+using BF16 = hyle::simd::bfloat16_t;
+struct AcceptedFailure final {
+  c::detail::ContextState *state;
+  const c::detail::BackendVTable *original;
+  c::detail::BackendVTable table;
+  static inline AcceptedFailure *active=nullptr;
+  explicit AcceptedFailure(c::Context &context):state(c::detail::ContextAccess::state(context)),
+      original(state->backend_vtable),table(*original) {
+    table.finish_sequence=[](void *queue,void *sequence,bool accepted,hyle::Status terminal)noexcept {
+      EXPECT_TRUE(accepted);terminal.Update(hyle::Status::ResourceExhausted("CPU ragged accepted math prefix"));
+      return active->original->finish_sequence(queue,sequence,accepted,std::move(terminal));
+    };
+    active=this;state->backend_vtable=&table;
+  }
+  ~AcceptedFailure(){state->backend_vtable=original;active=nullptr;}
+};
+template<class T> T encode(float x) { return half_test::encode<T>(x); }
+template<class T> double decode(T x) { return half_test::decode(x); }
+template<class T> c::ReadLease load(c::LeasePool &pool, const std::vector<T> &values) {
+  auto writer = pool.allocate(values.size()*sizeof(T)).value();
+  EXPECT_TRUE(writer.view()->write(std::as_bytes(std::span(values))).ok());
+  return writer.publish().value();
+}
+template<class T> void exercise(int depth, bool causal) {
+  constexpr int heads=8, kv_heads=2, queries=18, keys=78;
+  auto context=c::cpu::create_context({.native_threads=1}).value();
+  auto queue=context.create_queue().value();
+  const c::BatchCapacity capacity{.storage=c::BatchStorage::kRagged,
+      .data_type=half_test::data_type<T>(),
+      .max_requests=3,.max_query_rows=20,.max_kv_rows=84,.max_pages=0,.max_page_refs=0,
+      .query_heads=heads,.kv_heads=kv_heads,.head_dim=static_cast<std::uint32_t>(depth),.page_size=1};
+  auto schema_result=c::BatchSchema::create(capacity);ASSERT_TRUE(schema_result)<<schema_result.error().message();
+  auto schema=std::move(*schema_result);
+  const std::array<std::int32_t,4> qp{0,1,18,18},kp{0,31,78,78};
+  auto layout_result=schema.version({qp,kp,{},{}});ASSERT_TRUE(layout_result)<<layout_result.error().message();
+  auto layout=std::move(*layout_result);
+  auto program_result=c::BatchProgram::prepare(context,schema,{.resource=hyle::mem::system_resource(),
+      .max_float_workspace_bytes=8u<<20,.max_int_workspace_bytes=4096,.max_invocations=2,
+      .scale=1.F/std::sqrt(float(depth)),.causal=causal});ASSERT_TRUE(program_result)<<program_result.error().message();
+  auto program=std::move(*program_result);
+  auto first_result=c::BatchInvocation::create(program,queue);ASSERT_TRUE(first_result)<<first_result.error().message();
+  auto first=std::move(*first_result);
+  auto second_result=c::BatchInvocation::create(program,queue);ASSERT_TRUE(second_result)<<second_result.error().message();
+  auto second=std::move(*second_result);
+  auto foreign=c::BatchSchema::create(capacity).value();
+  auto foreign_layout=foreign.version({qp,kp,{},{}}).value();
+  auto rejected=first.prepare_batch(foreign_layout);
+  ASSERT_FALSE(rejected);EXPECT_TRUE(rejected.error().IsInvalidArgument());
+  std::vector<T> q(20*heads*depth),k(84*kv_heads*depth),v(k.size());
+  for(std::size_t i=0;i<q.size();++i)q[i]=encode<T>(float(int(i%13)-6)*.03125F);
+  for(std::size_t i=0;i<k.size();++i){k[i]=encode<T>(float(int(i%17)-8)*.015625F);v[i]=encode<T>(float(int(i%29)-14)*.03125F);}
+  for(int row=keys;row<84;++row)for(int z=0;z<kv_heads*depth;++z)v[row*kv_heads*depth+z]=encode<T>(128.F);
+  auto pool=c::LeasePool::create(hyle::mem::system_resource(),(q.size()+k.size()+v.size())*sizeof(T)+2048).value();
+  const std::array inputs{load(pool,q),load(pool,k),load(pool,v)};
+  const auto expected=[&](auto query,auto kv) {
+    std::vector<double> result(queries*heads*depth),weights;
+    for(int r=0;r<2;++r){const auto nq=query[r+1]-query[r],nk=kv[r+1]-kv[r];weights.resize(nk);
+      for(int row=0;row<nq;++row)for(int head=0;head<heads;++head){double sum=0;
+        for(int j=0;j<nk;++j){double dot=0;for(int d=0;d<depth;++d)
+          dot+=decode(q[((query[r]+row)*heads+head)*depth+d])*decode(k[((kv[r]+j)*kv_heads+head/4)*depth+d]);
+          weights[j]=causal&&j>nk-nq+row?0.:std::exp(dot/double(std::sqrt(float(depth))));sum+=weights[j];}
+        for(int d=0;d<depth;++d)for(int j=0;j<nk;++j)result[((query[r]+row)*heads+head)*depth+d]+=
+          weights[j]/sum*decode(v[((kv[r]+j)*kv_heads+head/4)*depth+d]);}}
+    return result;
+  };
+  const auto verify=[&](const c::ReadLease &lease, const auto &oracle) {
+    std::vector<T> actual(20*heads*depth);ASSERT_TRUE(lease.view()->read(std::as_writable_bytes(std::span(actual))).ok());
+    double maximum=0;for(std::size_t i=0;i<oracle.size();++i){ASSERT_TRUE(std::isfinite(decode(actual[i])));maximum=std::max(maximum,std::abs(decode(actual[i])-oracle[i]));}
+    const auto tolerance=std::is_same_v<T,float>?6e-6:(std::is_same_v<T,F16>?2e-3:8e-3);
+    EXPECT_LE(maximum,tolerance);
+  };
+  const auto original=expected(qp,kp);
+  auto prepared_result=first.prepare_batch(layout);ASSERT_TRUE(prepared_result)<<prepared_result.error().message();
+  auto prepared=std::move(*prepared_result);auto done_result=prepared.run(inputs);ASSERT_TRUE(done_result)<<done_result.error().message();
+  auto done=std::move(*done_result);ASSERT_TRUE(done.wait().ok());
+  auto output=first.output().value();verify(output,original);
+  EXPECT_GT(first.report().float_workspace_bytes,0U);EXPECT_TRUE(first.report().native_metadata_unknown);
+  auto independent_result=second.prepare_batch(layout);ASSERT_TRUE(independent_result)<<independent_result.error().message();
+  auto independent=std::move(*independent_result);auto completed_result=independent.run(inputs);ASSERT_TRUE(completed_result)<<completed_result.error().message();
+  auto completed=std::move(*completed_result);ASSERT_TRUE(completed.wait().ok());
+  auto other=second.output().value();verify(other,original);
+  prepared={};done={};EXPECT_TRUE(first.update_batch(layout).error().IsUnavailable());output.reset();
+  auto same=schema.version({qp,kp,{},{}}).value();auto reused_result=first.update_batch(same);ASSERT_TRUE(reused_result)<<reused_result.error().message();
+  auto reused=std::move(*reused_result);
+  EXPECT_TRUE(first.report().reused_native_plan);auto repeated=reused.run(inputs).value();ASSERT_TRUE(repeated.wait().ok());
+  auto replay=first.output().value();verify(replay,original);reused={};repeated={};replay.reset();
+  const std::array<std::int32_t,4> next_q{0,17,18,18};auto changed=schema.version({next_q,kp,{},{}}).value();
+  auto rebuilt_result=first.update_batch(changed);ASSERT_TRUE(rebuilt_result)<<rebuilt_result.error().message();
+  auto rebuilt=std::move(*rebuilt_result);EXPECT_FALSE(first.report().reused_native_plan);
+  auto final=rebuilt.run(inputs).value();ASSERT_TRUE(final.wait().ok());auto reordered=first.output().value();verify(reordered,expected(next_q,kp));
+  for(int port=1;port<3;++port){std::vector<T> after(port==1?k.size():v.size());ASSERT_TRUE(inputs[port].view()->read(std::as_writable_bytes(std::span(after))).ok());
+    const auto &before=port==1?k:v;EXPECT_EQ(std::memcmp(after.data(),before.data(),after.size()*sizeof(T)),0);}
+  rebuilt={};final={};reordered.reset();independent={};completed={};other.reset();
+  ASSERT_TRUE(first.close().ok());ASSERT_TRUE(second.close().ok());ASSERT_TRUE(context.close().ok());
+}
+TEST(GgmlCpuRagged, NativeFlashReadsTwoRequestsWithoutKvMaterialization) {
+  exercise<F16>(256,true);exercise<BF16>(256,true);exercise<F16>(64,false);exercise<BF16>(64,false);
+  exercise<F16>(128,true);exercise<BF16>(128,true);
+}
+TEST(GgmlCpuRagged, ColdBudgetAndPagedQualificationAreExplicit) {
+  auto context=c::Context::create(c::cpu::device(),c::ggml_cpu::provider({.native_threads=1})).value();
+  auto queue=context.create_queue().value();
+  c::BatchCapacity cap{.storage=c::BatchStorage::kRagged,.max_query_rows=1,.max_kv_rows=3,
+      .max_pages=0,.max_page_refs=0,.query_heads=4,.kv_heads=2,.head_dim=64,.page_size=1};
+  auto schema=c::BatchSchema::create(cap).value();const std::array<std::int32_t,2> q{0,1},k{0,3};
+  auto layout=schema.version({q,k,{},{}}).value();
+  auto program=c::BatchProgram::prepare(context,schema,{.resource=hyle::mem::system_resource(),.max_float_workspace_bytes=1,.max_int_workspace_bytes=1024}).value();
+  auto invocation=c::BatchInvocation::create(program,queue).value();auto prepared=invocation.prepare_batch(layout);
+  ASSERT_FALSE(prepared);EXPECT_TRUE(prepared.error().IsResourceExhausted());EXPECT_FALSE(invocation.in_flight());
+  ASSERT_TRUE(invocation.close().ok());
+  cap.storage=c::BatchStorage::kPaged;cap.max_pages=2;cap.max_page_refs=2;cap.page_size=16;cap.max_kv_rows=32;
+  auto paged=c::BatchSchema::create(cap).value();auto absent=c::BatchProgram::prepare(context,paged,{.resource=hyle::mem::system_resource()});
+  ASSERT_FALSE(absent);EXPECT_TRUE(absent.error().IsUnimplemented());ASSERT_TRUE(context.close().ok());
+}
+TEST(GgmlCpuRagged, EveryColdAllocationFailureReleasesThePartialNativePlan) {
+  auto context=c::Context::create(c::cpu::device(),c::ggml_cpu::provider({.native_threads=1})).value();
+  auto queue=context.create_queue().value();
+  c::BatchCapacity cap{.storage=c::BatchStorage::kRagged,.max_requests=2,.max_query_rows=2,.max_kv_rows=6,
+      .max_pages=0,.max_page_refs=0,.query_heads=4,.kv_heads=2,.head_dim=64,.page_size=1};
+  auto schema=c::BatchSchema::create(cap).value();const std::array<std::int32_t,3> q{0,1,2},k{0,3,6};
+  auto layout=schema.version({q,k,{},{}}).value();
+  const auto episode=[&](hyle_f5_fault_fixture::Allocator &allocator)->hyle::Status {
+    auto program=c::BatchProgram::prepare(context,schema,{.resource=hyle::mem::system_resource(),
+        .max_float_workspace_bytes=1u<<20,.max_int_workspace_bytes=2048,.allocator=allocator.ref()});
+    if(!program)return program.error();
+    auto invocation=c::BatchInvocation::create(*program,queue);if(!invocation)return invocation.error();
+    auto prepared=invocation->prepare_batch(layout);
+    const hyle::Status status=prepared?hyle::Status::Ok():hyle::Status(prepared.error());
+    if(prepared)*prepared={};
+    const auto closed=invocation->close();if(!closed.ok())return closed;
+    return status;
+  };
+  hyle_f5_fault_fixture::Allocator census;ASSERT_TRUE(episode(census).ok());EXPECT_EQ(census.live,0U);
+  ASSERT_GT(census.attempts,0U);
+  for(std::size_t point=0;point<census.attempts;++point){SCOPED_TRACE(point);
+    hyle_f5_fault_fixture::Allocator fault;fault.fail=point;
+    const auto status=episode(fault);EXPECT_TRUE(status.IsResourceExhausted())<<status.message();
+    EXPECT_EQ(fault.live,0U);
+  }
+  ASSERT_TRUE(context.close().ok());
+}
+TEST(GgmlCpuRagged, AcceptedMathFailureRetiresUsesWithoutPublishingOutput) {
+  auto context=c::Context::create(c::cpu::device(),c::ggml_cpu::provider({.native_threads=1})).value();
+  auto queue=context.create_queue().value();
+  c::BatchCapacity cap{.storage=c::BatchStorage::kRagged,.max_requests=2,.max_query_rows=2,.max_kv_rows=6,
+      .max_pages=0,.max_page_refs=0,.query_heads=4,.kv_heads=2,.head_dim=64,.page_size=1};
+  auto schema=c::BatchSchema::create(cap).value();const std::array<std::int32_t,3> q{0,1,2},k{0,3,6};
+  auto layout=schema.version({q,k,{},{}}).value();
+  auto program=c::BatchProgram::prepare(context,schema,{.resource=hyle::mem::system_resource(),
+      .max_float_workspace_bytes=1u<<20,.max_int_workspace_bytes=2048}).value();
+  auto invocation=c::BatchInvocation::create(program,queue).value();auto prepared=invocation.prepare_batch(layout).value();
+  auto pool=c::LeasePool::create(hyle::mem::system_resource(),8192).value();
+  const std::array inputs{load(pool,std::vector<F16>(2*4*64)),load(pool,std::vector<F16>(6*2*64)),load(pool,std::vector<F16>(6*2*64))};
+  hyle::Result<c::Completion> completion;
+  {AcceptedFailure failure(context);completion=prepared.run(inputs);}
+  const hyle::Status terminal=completion?completion->wait():hyle::Status(completion.error());EXPECT_TRUE(terminal.IsResourceExhausted());
+  EXPECT_FALSE(invocation.output());EXPECT_FALSE(invocation.in_flight());EXPECT_EQ(pool.stats().active_uses,0U);
+  if(completion)*completion={};prepared={};
+  EXPECT_FALSE(invocation.update_batch(layout));EXPECT_TRUE(invocation.drain().IsResourceExhausted());
+  ASSERT_TRUE(context.close().ok());
+}
+} // namespace

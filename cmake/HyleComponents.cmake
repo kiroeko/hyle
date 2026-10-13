@@ -360,7 +360,7 @@ _hyle_declare_component(compute_provider_onednn
 # Original CPU programs use the separately audited fallible native runtime.
 # Graph translation stays in its CPU route, never in this Compute factor.
 _hyle_declare_component(compute_provider_ggml
-  PRIVATE_DEPS compute_backend_cpu compute_ops compute_ggml_runtime error mem
+  PRIVATE_DEPS compute_backend_cpu compute_batch compute_ops compute_ggml_runtime error mem
   PUBLIC_DEPS core compute
   TEST_DEPS simd
   SPLIT_PUBLIC_HEADERS hyle/compute/providers/ggml_cpu.h)

@@ -1,6 +1,7 @@
 #include "program.h"
 #include "hyle/core/environment.h"
 #include "standard_index.h"
+#include "native_batch.h"
 
 #include <algorithm>
 #include <array>
@@ -1270,6 +1271,8 @@ ProviderPrepareOutcome prepare(void *context,
 }
 Status drain(void *) noexcept { return Status::Ok(); }
 const void *extension(void *value, ProviderExtensionId id) noexcept {
+  if (id == detail::kBatchPlanningExtensionId)
+    return internal::native_batch_table();
   const auto *extension = static_cast<Configuration *>(value)->extension;
   return extension && extension->id == id ? extension->table : nullptr;
 }
@@ -1286,6 +1289,38 @@ const detail::ProviderVTable kProvider{
 } // namespace
 
 namespace internal {
+bool native_invocation_reads_kv(void *slot) noexcept {
+  const auto &invocation = *static_cast<Invocation *>(slot);
+  if (invocation.input_roots.size() != 3)
+    return false;
+  for (int i = 0; i < ggml_graph_n_nodes(invocation.graph); ++i) {
+    const auto *node = ggml_graph_node(invocation.graph, i);
+    if (node->op != GGML_OP_FLASH_ATTN_EXT)
+      continue;
+    for (std::size_t source = 1; source < 3; ++source) {
+      auto *root = node->src[source];
+      while (root->view_src)
+        root = root->view_src;
+      if (root != invocation.input_roots[source])
+        return false;
+    }
+    return true;
+  }
+  return false;
+}
+std::size_t native_invocation_bytes(void *prepared, void *slot) noexcept {
+  const auto &program = *static_cast<Program *>(prepared);
+  const auto &invocation = *static_cast<Invocation *>(slot);
+  auto bytes = invocation.storage_bytes;
+  const auto add = [&](std::size_t amount) {
+    bytes = amount > SIZE_MAX - bytes ? SIZE_MAX : bytes + amount;
+  };
+  add(invocation.execution.workspace_bytes());
+  add(invocation.arena.capacity());
+  for (const auto &mask : program.attention_masks)
+    add(mask.size() * sizeof(ggml_fp16_t));
+  return bytes;
+}
 ProviderRuntimeProperties runtime(void *value) noexcept {
   return {.mode = ProviderRuntimeMode::kSharedQueue,
           .workspace_owner = ProviderWorkspaceOwner::kProvider,
