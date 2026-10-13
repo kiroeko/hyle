@@ -9,6 +9,11 @@ baseline：`5d46db5fd99322e2f75d3fe07553c61fadff8eb9`。创建时工作树干净
 也不授权在 CLOSED 状态写产品代码。模块真实状态仍只看
 [module-status.json](../../module-status.json)。
 
+用户本轮补充执行偏好：**不保旧接口兼容、增加合理编译并行、时间不要限制过死、治理轻量**。
+直接设计最终 API 并迁移仓库现有消费者，不添加旧签名转发/双轨实现/兼容层；必要旧入口
+可以删除，权限、数值、失败与退休合同仍需兑现。批次共用一张短 owner 卡与实际验证记录，
+不为每个函数/测试另建文档或审批；原状态机与选择器用作最小授权/影响核验，不扩建治理工具。
+
 ## 输入与完成目标
 
 - [十项源码审计](inference-single-machine-foundation-audit-2026-10.md)：固定三 peer、七实际路线、
@@ -74,15 +79,20 @@ SCOPED冻结baseline、触发、主/正交消费者、预算和预声明门；AU
 owner/依赖、identity、失败/完成/并发、冷热成本和negative space。稳定不可变candidate
 以后做适用正确性/风险/三交付与定向性能，全部适用门真实裁决后CLOSED。
 
-总卡不是全局 token/时间预算，也不擅自给新 goal 设置用户未要求的 token budget。有限
-执行预算在各活动卡固定。用户已有常设授权：类似构建/验证超时按同配置/树/合同有限追加
-时间，无需再问；保原 FAIL/TIMEOUT、elapsed与累计上限，不以新日志目录重置。
+总卡不是全局 token/时间预算，也不给新 goal 设置用户未要求的 token budget。活动卡的
+估计时间作为检查点；预计仍有有效进展的实现/构建/验证自动继续并记录实际耗时，不因
+机械超时结束正确工作或反复请求追加。类似超时在同配置/树/合同下自动延长，保原
+FAIL/TIMEOUT、elapsed与累计投入，不以新日志目录重置。停止依据是有限问题已裁决、
+同一方法确无进展、资源实际耗尽或真实外部阻断，而不是短时间上限。
 发生工具/环境问题先查实际根因和替代合法验证；未运行不得写PASS，模块与goal的blocked
 裁决分别遵守原协议，不将缓慢或一次失败当成自动停止理由。
 
 验证按[selector](../../../developer/review/change-impact-validation.md)取 owner 与真实直接
-消费者。公共头/API/package seam才扩对应门，不每个op全局构建。库依赖按机器可用内存
-选合理并行并复用tree/cache；heavy gates串行、consumer低并行。公共工具、构建系统或
+消费者。公共头/API/package seam才扩对应门，不每个op全局构建。库依赖按实际CPU和可用
+内存提高并行并复用tree/cache；当前Win为24核/32线程、约42GiB可用，普通编译先用12 jobs，
+按观测峰值可提高到16或更多；大型CUDA/LibTorch编译按内存实际调节，不套旧j1/j2/j4限制。
+链接和heavy运行避免彼此争用，consumer构建也按自身规模选并行；测试/性能合同的运行
+并发与编译jobs分开。公共工具、构建系统或
 性能统计核心不在模块内无限扩建。
 
 Windows `C:\public\project-hyle\hyle` 是产品真相；WSL/Air仅一次性验证副本，不能反向
