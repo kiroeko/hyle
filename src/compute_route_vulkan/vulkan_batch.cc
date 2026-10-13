@@ -32,7 +32,7 @@ Result<Program> prepare_ragged_batch(const Context&context,BatchLayoutVersion la
       HYLE_ASSIGN_OR_RETURN(auto shape,TensorShape::create(std::array<std::int64_t,4>{1,rows,heads,c.head_dim}));
       HYLE_ASSIGN_OR_RETURN(auto reshape,View::reshape(shape));return add(Operation(reshape),{sliced});
     };
-    const auto host=layout.host();std::optional<std::uint32_t> combined;
+    const auto host=layout.host();std::vector<std::uint32_t> parts;
     for(std::size_t request=0;request<layout.facts().requests;++request){
       const auto nq=host.query_indptr[request+1]-host.query_indptr[request];
       const auto nk=host.kv_indptr[request+1]-host.kv_indptr[request];if(!nq)continue;
@@ -43,10 +43,13 @@ Result<Program> prepare_ragged_batch(const Context&context,BatchLayoutVersion la
       HYLE_ASSIGN_OR_RETURN(auto output,add(Operation(ScaledDotProductAttention{.layout=AttentionLayout::kBatchSequenceHeadDepth,.scale=attention.scale,.causal=attention.causal}),{qv,kv,vv}));
       HYLE_ASSIGN_OR_RETURN(auto shape,TensorShape::create(std::array<std::int64_t,3>{nq,c.query_heads,c.head_dim}));
       HYLE_ASSIGN_OR_RETURN(auto reshape,View::reshape(shape));HYLE_ASSIGN_OR_RETURN(auto packed,add(Operation(reshape),{output}));
-      if(combined){HYLE_ASSIGN_OR_RETURN(combined,add(Operation(Concat{.axis=0}),{*combined,packed}));}else combined=packed;
+      parts.push_back(packed);
     }
-    if(!combined){HYLE_ASSIGN_OR_RETURN(auto empty,View::slice(0,0,0));HYLE_ASSIGN_OR_RETURN(combined,add(Operation(empty),{0}));}
-    plan.outputs={*combined};return detail::prepare_plan(context,plan);
+    std::uint32_t output;
+    if(parts.empty()){HYLE_ASSIGN_OR_RETURN(auto empty,View::slice(0,0,0));HYLE_ASSIGN_OR_RETURN(output,add(Operation(empty),{0}));}
+    else if(parts.size()==1)output=parts[0];
+    else{HYLE_ASSIGN_OR_RETURN(output,add(Operation(Concat{.axis=0}),std::move(parts)));}
+    plan.outputs={output};return detail::prepare_plan(context,plan);
   }catch(const std::bad_alloc&){return std::unexpected(Status::ResourceExhausted("Vulkan ragged cold recipe metadata"));}
 }
 Result<Program> prepare_materialized_batch(const Context&context,

@@ -53,3 +53,10 @@ AUDITED后固定NR-01/02/03，实际数学/搬运/失败证据之前不签性能
 alias/origin，Apple捕获owned layout给原tracing。新增共用实际native consumer测试三D/
 两request+empty、重排、独立slots/旧结果、readonly/tail与foreign capacity拒绝；公开
 batch头加入逐头集合。当前未编译、未运行、未签candidate，CPU独立P1仍占重型资源。
+源码审阅修正输出拼接：收集全部active request后发出一次原多输入Concat，避免逐request
+拼前缀的O(requests²×QHD)费用；原Vulkan大arity资格/直接分片Copy与MLX concatenate
+成本仍须实跑，不新增拼接数学或shader。两请求主域算法与原SDPA不变。
+新增8request输出/tail反偏置，source-only结构test通过既有private ProgramState读取
+每个SDPA的真实external KV根与byte origin，必须仍指原capacity inputs 1/2，不能指
+物化值。它不修改public诊断面，不等于warm/driver私有费用已过；需与实际math/retirement
+和搬运门一起验收。所有新增test仍未编译/运行。

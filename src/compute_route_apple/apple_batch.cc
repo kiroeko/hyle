@@ -27,7 +27,7 @@ Result<Program> prepare_ragged_batch(const Context&context,BatchLayoutVersion la
     // owned version, never spans from the caller's metadata arrays.
     return context.compile([layout=std::move(layout),attention](const std::vector<mlx::core::array>&inputs,mlx::core::Stream stream)->Result<std::vector<mlx::core::array>>{
       if(inputs.size()!=3)return std::unexpected(Status::InvalidArgument("Apple ragged needs Q/K/V"));
-      const auto c=attention.capacity;const auto host=layout.host();std::optional<mlx::core::array> combined;
+      const auto c=attention.capacity;const auto host=layout.host();std::vector<mlx::core::array> parts;
       const auto view=[&](const mlx::core::array &input,std::int32_t start,std::int32_t rows,std::uint32_t heads)->Result<mlx::core::array>{
         HYLE_ASSIGN_OR_RETURN(auto slice,View::slice(0,start,rows));HYLE_ASSIGN_OR_RETURN(auto sliced,lower(Operation(slice),std::span(&input,1),stream));
         HYLE_ASSIGN_OR_RETURN(auto shape,TensorShape::create(std::array<std::int64_t,4>{1,rows,heads,c.head_dim}));
@@ -40,10 +40,11 @@ Result<Program> prepare_ragged_batch(const Context&context,BatchLayoutVersion la
         HYLE_ASSIGN_OR_RETURN(auto output,lower(Operation(ScaledDotProductAttention{.layout=AttentionLayout::kBatchSequenceHeadDepth,.scale=attention.scale,.causal=attention.causal}),ports,stream));
         HYLE_ASSIGN_OR_RETURN(auto shape,TensorShape::create(std::array<std::int64_t,3>{nq,c.query_heads,c.head_dim}));
         HYLE_ASSIGN_OR_RETURN(auto reshape,View::reshape(shape));HYLE_ASSIGN_OR_RETURN(auto packed,lower(Operation(reshape),output,stream));
-        if(combined){const std::array parts{*combined,packed[0]};HYLE_ASSIGN_OR_RETURN(auto joined,lower(Operation(Concat{.axis=0}),parts,stream));combined=joined[0];}else combined=packed[0];
+        parts.push_back(packed[0]);
       }
-      if(!combined){HYLE_ASSIGN_OR_RETURN(auto empty,View::slice(0,0,0));return lower(Operation(empty),std::span(&inputs[0],1),stream);}
-      return std::vector<mlx::core::array>{*combined};
+      if(parts.empty()){HYLE_ASSIGN_OR_RETURN(auto empty,View::slice(0,0,0));return lower(Operation(empty),std::span(&inputs[0],1),stream);}
+      if(parts.size()==1)return parts;
+      return lower(Operation(Concat{.axis=0}),parts,stream);
     },inputs,workload);
   }catch(const std::bad_alloc&){return std::unexpected(Status::ResourceExhausted("Apple ragged cold tracing metadata"));}
 }
