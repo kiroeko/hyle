@@ -185,3 +185,14 @@ CP-A01 runtime42f宿主风险：ASan+LSan/UBSan/TSan各14tests实际PASS，分�
 没有覆盖旧1e9证据。static3/shared3/Air actual mixed CPU继续串行；P1第二轮等待
 更新SDK后按原仪器启动，JSON/Markdown实际bytehash与原consumer-evidence evaluator
 三点PASS已纳入启动前检查，防止重复消耗采样才发现错误。
+
+CP-A01 runtime42f三交付与mixed CPU门terminal：Windows static3/shared3安装后
+三个公开consumer PASS（pagedrun40.906/40.625s），两份prefix/库/DLL身份固定；
+Air M4/arm64/AppleClang21同CPU+Apple shared源树14tests PASS（5.782s配置、
+11.362s构建、25.244s run），actual mixed ops含page16 shift，SHA
+c56ae59cb06085711d703d466b5886dd92b43f2881483306b593e585f695a795。
+[新交付](../../../../evidence/correctness/inference-g01-cpu-page16-delivery/README.md)保原命令/
+失败/旧源码和新runtime身份，未覆盖旧1e9；没有GPU run或全库build。P1第二轮用
+已测静态prefix static3/source731d28a8、原独立pristine AVX2 DLL，消费JSON及markdown
+实际bytehash与原evaluator三点PASS；合同3d05ed56，原stats/16AA/120/30/n15/31/5%
+保，全产品候选冻结，原1695.110s DIAGNOSTIC单列保留，不代签QUALIFIED。
