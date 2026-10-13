@@ -1,0 +1,9 @@
+Apple joint two page nodes and exact refusal recovery PASS; starting empty output
+Apple joint exact readers/node/layout/resource/refusal/2-page-nodes/empty PASS
+Apple joint cold compile 50 / create 68 / prepare 1 / bind 1 injected OOM + backing/host/shared budget PASS
+Apple joint lifecycle mode=0 actual native checkpoint, query and all exact guards retired PASS
+Apple joint lifecycle mode=1 actual native checkpoint, query and all exact guards retired PASS
+Apple joint lifecycle mode=2 actual native checkpoint, query and all exact guards retired PASS
+Apple joint lifecycle mode=3 actual native checkpoint, query and all exact guards retired PASS
+Apple joint lifecycle mode=5 actual native checkpoint, query and all exact guards retired PASS
+Apple joint queued metadata preparation waited, original prefix error, no page admission PASS

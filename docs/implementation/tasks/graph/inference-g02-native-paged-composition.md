@@ -237,3 +237,26 @@ transfer冻结合同。全部冷输出桥完成前page prepared保持false；部
 CPU/native prefix错误/unknown/cancel/abandon、三交付/逐头/宿主san及Windows定向链接
 均未完成；不能由原negative consumer或这些216正常episodes代签candidate/CLOSED。
 不重跑已收口G01 P1，不追加G11或无界research；下一步按固定NJ04–06风险矩阵验证。
+
+
+NJ04–06联合专属SOURCE风险最终PASS，见
+[风险阶段](../../../../evidence/correctness/inference-g02-native-page-joint-risk-stage/README.md)。
+actual Air两route、two page nodes/shared inputs、所有reader/publisher/foreign node/schema/
+resource/generation、缺/重复/mixed layouts、fixed output shape变化、拒绝保旧binding、
+empty真实Q/native/CPU后段通过。逐注入compile/create/prepare/bind：Apple50/68/1/1，
+Vulkan50/71/4/2；全部无泄漏/错误admission，binding OOM后原结果仍可实际运行。
+backing/host/shared预算拒绝通过；CPU失败、native accepted-prefix错误/unknown/cancel/
+abandon、在途close与Apple queued metadata失败全部经actual retirement归零并回收页。
+
+原预算fixture未留control额度、typed-zero Wsign compile、Vulkan空输出不应retain/
+download非空transfer、Apple close fixture未确认joint已入原FIFO等FAIL保十一份原始
+输入与累计286.946s。产品仅修AUDITED Vulkan页零域桥，保原native output/backing与
+ordinary/nonempty合同；报告不计未发生的空page copy。Apple现在在原Runtime.queue_mutex
+下确认actual joint FIFO Job，再判pending close/cancel/abandon/error，不以无关blocker
+或仅outer submission冒称native accepted证明。Vulkanunknown保原error和后续real fence。
+
+公开joint调用/限制已写batch-attention使用页；三port node、cold owned binding、完整
+prepare集、真实CPU query、exact frames、原controller/输出/退休的NJ01–06产品形状与
+算法现停止变化。下一步提交不可变candidate，再串行新联合宿主san、static/shared SDK/
+逐头与Windowscompile/link；这些门仍UNPROVEN，原G02其它未决门/整个goal不代签。
+本组合轮P0，不启动新P1或重跑已收口native数学P1。四jobs，自动有限延长保原失败。

@@ -78,6 +78,54 @@ drain 沿原实际退休观察，已接纳错误或未知完成不许可提前�
 不签shader/driver。两route同合同P1与有限终审通过；Windows仅定向
 compile/link通过。这些native入口证据不能代签新的CPU+GPU联合分页。
 
+## CPU 与 Apple/Vulkan 联合分页
+
+当前接缝按[G02活动卡](../implementation/tasks/graph/inference-g02-native-paged-composition.md)
+验收。源数学和联合风险已取得实际Air证据；新联合SDK/宿主san资格仍在完成中。
+完整普通调用见[公开联合消费者](../../tests/graph_batch/native_paged_joint_consumer.cc)，只链
+`hyle::graph`，需要配置 `cpu;apple` 或 `cpu;vulkan`。沿原GraphBuilder描述CPU前后段：
+
+```cpp
+namespace gb = hyle::graph::batch;
+auto descriptor = gb::native_paged_attention(recipe, initial_layout).value();
+const std::array ports{ready_query, physical_key_input, physical_value_input};
+auto page_node = builder.add_node(
+    hyle::compute::Operation::custom(descriptor), ports).value();
+// finish graph；原 node_placements 显式要求 CPU 前后段。
+const std::array bindings{gb::NativePagedNodeBinding{
+    page_node, recipe, initial_layout, {.max_metadata_backing_bytes = 4096}}};
+auto program = joint::compile(graph, environment, {
+    .node_placements = cpu_nodes, .paged_nodes = bindings}).value();
+auto slot = program.create_invocation(scheduler, cpu_queue).value();
+const std::array layouts{gb::NodeLayout{page_node, layout}};
+HYLE_RETURN_IF_ERROR(slot.prepare_batch(layouts));
+HYLE_RETURN_IF_ERROR(slot.bind(source_query, query_description, ready_host_query));
+HYLE_RETURN_IF_ERROR(slot.bind(physical_key_input, key_frame));
+HYLE_RETURN_IF_ERROR(slot.bind(physical_value_input, value_frame));
+HYLE_RETURN_IF_ERROR(slot.prepare_replay());
+auto result = slot.run().value();
+```
+
+`joint`选cpu_apple或cpu_vulkan；Environment、Graph ID、Context/Queue、资源和scheduler的
+自然借用规则沿原联合入口。冷binding与layout由plan拥有，compile的spans只借本调用。
+prepare_batch需要全部live页节点各一次，同一K/V输入的所有节点须使用相同owned版本。
+固定active packed输出shape；请求分配、页顺序/共享/tail变化显式cold prepare，active Q
+总量改变需编译另一固定shape。程序当前沿原managed native replay/真实边界等待，不承诺
+capture、低成本delta planning或吞吐完全对称。
+
+K/V必须是Graph外部inputs，且所有live读者只能是qualified页节点的K/V ports；不能发布
+整capacity或交给CPU/dense/query节点。普通tensor/ReadLease/weight绑定不能绕过exact
+frame。错误node/schema/resource/generation、重复/漏layout、变化输出shape在接纳前拒绝。
+拒绝frame替换保旧正确绑定；拒绝prepare后必须重新完整prepare，不混用新旧tokens。
+页输入与本轮尚未资格的CPU effects组合返回unsupported；普通nonpaged effects仍沿原入口。
+
+CPU query完成及原upload之后才接入原page数学；每episode消耗一次页准备。全Q0/ref0
+的固定图只需要真实Q，KV不用frame或假root，native空结果可继续到CPU空后段。旧结果阻止
+prepare/reset；cancel/close/放弃只有已接纳prefix实际退休后才释放所有引用页权限。
+未引用页可独立更新。`replay_report`给页fragment数、table uploaded/backing bytes和
+metadata host waits；Q/结果copy、冷native/transfer更新、wrapper metadata及native private
+UNKNOWN分别按原报告/活动卡计，不声明零warm allocation或总GPU内存硬上界。
+
 ## Graph 的执行 lane 绑定
 
 原生 batch coordinator 的 `Invocation::create` 接完整活跃 lane 集合；每项是

@@ -367,9 +367,12 @@ Status drive_graph(RunState &run, bool &accepted) noexcept {
           return Status::Internal("Vulkan original output backing changed during replay");
         if (run.plan->values[id].cpu_use) {
           HYLE_ASSIGN_OR_RETURN(auto destination, host_tensor(run, id));
-          HYLE_ASSIGN_OR_RETURN(auto copy, run.values[id].transfer.download(arrays[port]));
-          HYLE_RETURN_IF_ERROR(await_completion(run, copy));
-          HYLE_RETURN_IF_ERROR(run.values[id].transfer.read(destination));
+          HYLE_ASSIGN_OR_RETURN(auto bytes,run.plan->values[id].carrier.required_bytes());
+          if(bytes || !(run.pages && run.pages->fragment(index))){
+            HYLE_ASSIGN_OR_RETURN(auto copy, run.values[id].transfer.download(arrays[port]));
+            HYLE_RETURN_IF_ERROR(await_completion(run, copy));
+            HYLE_RETURN_IF_ERROR(run.values[id].transfer.read(destination));
+          }
           run.values[id].host_value = destination.as_const();
         }
       }
@@ -695,12 +698,14 @@ Status Invocation::prepare_batch(std::span<const batch::NodeLayout> layouts) noe
       // Original transfers freeze their retained native backing after first
       // submission. Cold page replacement has a new output owner; the outer
       // result/actual prefix gate permits replacing just this bridge.
+      HYLE_ASSIGN_OR_RETURN(auto bytes,run.plan->values[id].carrier.required_bytes());
       if(value.transfer.valid()){
-        HYLE_ASSIGN_OR_RETURN(auto bytes,run.plan->values[id].carrier.required_bytes());
         value.transfer={};run.staging_bytes-=std::max<std::size_t>(1,bytes);
       }
-      HYLE_RETURN_IF_ERROR(allocate_transfer(run,id));
-      HYLE_RETURN_IF_ERROR(ca::detail::TransferAccess::retain(value.transfer,output));
+      if(bytes){
+        HYLE_RETURN_IF_ERROR(allocate_transfer(run,id));
+        HYLE_RETURN_IF_ERROR(ca::detail::TransferAccess::retain(value.transfer,output));
+      }
     }
     value.native_value=std::move(output);
   }
@@ -796,8 +801,12 @@ Status Invocation::prepare_replay(ReplayOptions options) noexcept {
         HYLE_RETURN_IF_ERROR(add_copy(report, bytes));
         HYLE_RETURN_IF_ERROR(add_upload(run, id, report));
       }
-      if (spec.producer == kVulkanTarget && spec.cpu_use)
-        HYLE_RETURN_IF_ERROR(add_copy(report, bytes));
+      if (spec.producer == kVulkanTarget && spec.cpu_use){
+        const bool empty_page=!bytes && std::any_of(run.plan->paged.begin(),run.plan->paged.end(),[&](const auto& page){
+          return run.plan->fragments[page.fragment].outputs[0]==id;
+        });
+        if(!empty_page)HYLE_RETURN_IF_ERROR(add_copy(report, bytes));
+      }
     }
   }
   for (std::size_t i = 0; i < run.fragments.size(); ++i) {

@@ -1,0 +1,9 @@
+Vulkan joint two page nodes and exact refusal recovery PASS; starting empty output
+Vulkan joint exact readers/node/layout/resource/refusal/2-page-nodes/empty PASS
+Vulkan joint cold compile 50 / create 71 / prepare 4 / bind 2 injected OOM + backing/host/shared budget PASS
+Vulkan joint lifecycle mode=0 submits=0 accepted=0 unknowns=0 mathpolls=0 actual guards retired PASS
+Vulkan joint lifecycle mode=1 submits=2 accepted=2 unknowns=0 mathpolls=0 actual guards retired PASS
+Vulkan joint lifecycle mode=2 submits=4 accepted=4 unknowns=0 mathpolls=0 actual guards retired PASS
+Vulkan joint lifecycle mode=3 submits=2 accepted=1 unknowns=0 mathpolls=0 actual guards retired PASS
+Vulkan joint lifecycle mode=4 submits=2 accepted=2 unknowns=1 mathpolls=2 actual guards retired PASS
+Vulkan joint lifecycle mode=5 submits=2 accepted=2 unknowns=0 mathpolls=0 actual guards retired PASS

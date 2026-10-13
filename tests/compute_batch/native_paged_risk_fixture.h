@@ -129,7 +129,7 @@ inline Status domain_checks(n::Context& context,n::MemoryResource& device,n::Mem
 #if defined(HYLE_G01_PAGE_RISK_APPLE)
     HYLE_RETURN_IF_ERROR(require(result->arrays().size()==1 && result->arrays()[0].size()==0,"empty page output is not empty"));
 #else
-    HYLE_RETURN_IF_ERROR(require(result->tensors().size()==1 && result->tensors()[0].description().element_count()==0,"empty page output is not empty"));
+    HYLE_RETURN_IF_ERROR(require(result->tensors().size()==1 && result->tensors()[0].description().element_count()==std::size_t{0},"empty page output is not empty"));
 #endif
     HYLE_RETURN_IF_ERROR(require(!slot.prepare_batch(data.layout).ok(),"empty old result allowed slot reuse"));
   }
