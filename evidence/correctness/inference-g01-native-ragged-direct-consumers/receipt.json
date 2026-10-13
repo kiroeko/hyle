@@ -1,0 +1,53 @@
+{
+  "candidate": "280f6f92ea97bf3b424113346f0264fb7b20df16",
+  "scope": "original selected CPU+Apple/CPU+Vulkan exact/control/state direct consumers only",
+  "gate": "PASS",
+  "results": [
+    {
+      "route": "apple",
+      "stages": [
+        {
+          "stage": "configure",
+          "exit_code": 0,
+          "elapsed_seconds": 6.052456416
+        },
+        {
+          "stage": "build",
+          "exit_code": 0,
+          "elapsed_seconds": 7.706616167
+        },
+        {
+          "stage": "build",
+          "exit_code": 0,
+          "elapsed_seconds": 0.0624855
+        },
+        {
+          "stage": "run",
+          "exit_code": 0,
+          "elapsed_seconds": 3.6962826250000003
+        }
+      ]
+    },
+    {
+      "route": "vulkan",
+      "stages": [
+        {
+          "stage": "configure",
+          "exit_code": 0,
+          "elapsed_seconds": 17.380006875
+        },
+        {
+          "stage": "build",
+          "exit_code": 0,
+          "elapsed_seconds": 67.8231335
+        },
+        {
+          "stage": "run",
+          "exit_code": 0,
+          "elapsed_seconds": 4.932536541999994
+        }
+      ]
+    }
+  ],
+  "raw_sha256": "aa4350a26e270ddd738644c0ee43a2995c654971b12be451ef08e5d42e8655a3"
+}

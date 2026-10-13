@@ -1,6 +1,8 @@
 # G01 Apple/Vulkan ragged 布局直接消费
 
-状态：CANDIDATE，2026-10-13；owner `compute_route_apple`、`compute_route_vulkan`。
+状态：Apple有限NR轮CLOSED，Vulkan CANDIDATE/性能FAIL待结构裁决，2026-10-13；
+owner `compute_route_apple`、`compute_route_vulkan`。Apple当前record见
+[有限terminal](inference-g01-apple-ragged-terminal.md)。
 不可变candidate `280f6f92ea97bf3b424113346f0264fb7b20df16`。
 baseline `9cfa7b50db652010da5d4d544da9ee01c10644bc`。授权来自当前十项goal；真实
 reopen trigger为两request Q1/17、KV31/47、GQA8/2 D256的packed NHD消费，已有native
@@ -137,3 +139,14 @@ metadata；warm仍是原Program，不引入第二个Queue/完成权威。全部r
 原统一LOC工具绑定candidate280、两owner各自self-check PASS：全库code2,871,923，
 自实现不含测试175,049；Apple模块实现4,262，Vulkan模块实现8,825。该统计描述候选
 规模，不按行数折算goal完成百分比，不为文档证据提交重新统计或重跑产品性能。
+
+Vulkan fresh2实际TERMINAL：928.101s，n15产品120/controls30、A/A16，QUALIFIED、
+原verify0，但整体performance FAIL。混合D256比1.0189–1.0408方向WIN/非劣PASS，
+长prefill0.9913–1.0042方向INCONCLUSIVE/非劣PASS；D64 noncausal0.8656–0.8885
+方向LOSS/非劣FAIL。[原证据](../../../../evidence/performance/inference-g01-native-ragged-vulkan-m1-p1/README.md)
+封存全部失败与原同合同，不重复采样寻找PASS、不签Vulkan CLOSED。有限诊断仅核原
+managed region/输出Concat实际提交结构，真实机制确认后依法退AUDITED修对应owner。
+原[直接消费者回归](../../../../evidence/correctness/inference-g01-native-ragged-direct-consumers/README.md)
+Apple及Vulkan native/CPU联合finite/control/state全部PASS；原source-parent树复用，
+Apple build7.707s/增量0.062s、run3.696s，Vulkan build67.823s/run4.933s。helper首次
+bin路径错误保本地失败日志，同树查实际唯一产物后通过，没有改变产品或公共工具。

@@ -53,3 +53,16 @@ owning output，16 A/A、n15产品120/controls30，845.543s、原verify0，5%非
 扩大产品FIX。native/private内存两侧UNKNOWN；只签有限F16多请求工程域，不签独立
 硬件Formal、BF16性能、paged/growth/capture或完整引擎token/s。首次配置脚本错误路径
 FAIL4.868s保raw jobs，修私有身份脚本后的原同产品/合同新fresh2继续，未抹掉失败。
+
+Vulkan native ragged的[合格失败](../../../../evidence/performance/inference-g01-native-ragged-vulkan-m1-p1/README.md)
+也保留：产品280/source c6d10f66、contractd9a54a85，实际Air同M1-MAC工程身份，
+16 A/A、n15产品120/controls30、928.101s，QUALIFIED、verify0、整体5%非劣FAIL。
+
+| 点 | candidate/peer吞吐比范围 | 5%非劣 / practical band | 相对1方向 |
+|---|---|---|---|
+| Q1/17 KV1024/768 D256 causal | 1.0189–1.0408 | PASS / INCONCLUSIVE | WIN |
+| Q64/128同KV长prefill | 0.9913–1.0042 | PASS / PARITY | INCONCLUSIVE |
+| Q1/17 KV31/47 D64 noncausal | 0.8656–0.8885 | FAIL / LOSE | LOSS |
+
+短D64固定loss约11–13%，不是仪器未资格或几次诊断点值，阻断本有限Vulkan NR轮关闭。
+先核提交/输出结构再裁决真实owner，不能改容差/shape/阈值或无限重采样寻找PASS。

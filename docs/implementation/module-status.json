@@ -373,7 +373,11 @@
       "record": "docs/implementation/tasks/compute/inference-g01-cpu-resident-ragged-terminal.md",
       "summary": "G01 CPU resident/native ragged有限轮CLOSED：原flash直接KV、packed输出与公开工厂三交付/风险PASS；独立W1 multi P1 QUALIFIED/5%非劣PASS、verify0，全部方向INCONCLUSIVE。paged/增长/private预算与其它路线仍保goal。",
       "candidate": "973d3ffbf642aff06f6316fcec4b3cc99eba2e4d",
-      "performance": {"tier": "P1", "material_margin_pct": 5, "evidence": "evidence/performance/inference-g01-cpu-ragged-w1-p1/receipt.json"}
+      "performance": {
+        "tier": "P1",
+        "material_margin_pct": 5,
+        "evidence": "evidence/performance/inference-g01-cpu-ragged-w1-p1/receipt.json"
+      }
     },
     {
       "module": "graph_provider_onednn",
@@ -510,10 +514,15 @@
     },
     {
       "module": "compute_route_apple",
-      "state": "CANDIDATE",
-      "record": "docs/implementation/tasks/compute/inference-g01-native-ragged-layout.md",
-      "summary": "G01 native ragged NR-01/02/03 CANDIDATE：原MLX View/SDPA/Program，Air F16/BF16三D/两与八requests/empty/reorder/旧结果/readonly/tail/zeroquota source PASS；SDK/san/P1待验。",
-      "candidate": "280f6f92ea97bf3b424113346f0264fb7b20df16"
+      "state": "CLOSED",
+      "record": "docs/implementation/tasks/compute/inference-g01-apple-ragged-terminal.md",
+      "summary": "G01 Apple native ragged有限NR轮CLOSED：原MLX View/SDPA/Program，F16/BF16三D/两与八request/empty/reorder/旧结果/readonly/tail source及三交付/宿主san/直接联合消费者PASS；独立multi P1 QUALIFIED/5%非劣PASS、verify0，长prefill1–1.7%LOSS保留。paged/growth/private与整个G01不代签。",
+      "candidate": "280f6f92ea97bf3b424113346f0264fb7b20df16",
+      "performance": {
+        "tier": "P1",
+        "material_margin_pct": 5,
+        "evidence": "evidence/performance/inference-g01-native-ragged-apple-m1-p1/receipt.json"
+      }
     },
     {
       "module": "graph_route_apple",
@@ -530,7 +539,7 @@
       "module": "compute_route_vulkan",
       "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/inference-g01-native-ragged-layout.md",
-      "summary": "G01 native ragged NR-01/02/03 CANDIDATE：原Plan/View/SDPA/Program，Air F16三D/两与八requests/empty/reorder/旧结果/readonly/tail/zeroquota、原KV roots与实际suffix失败退休 source PASS；SDK/san/P1待验。",
+      "summary": "G01 Vulkan native ragged产品280 CANDIDATE：source/三交付/宿主san/原直接联合消费者PASS；独立multi P1 QUALIFIED、verify0，但短D64非劣FAIL/11–13%LOSS，待有限结构诊断裁决，未CLOSED；旧单请求PASS与所有失败保留。",
       "candidate": "280f6f92ea97bf3b424113346f0264fb7b20df16"
     },
     {
@@ -550,7 +559,11 @@
       "record": "docs/implementation/tasks/compute/inference-g01-vulkan-resident-terminal.md",
       "summary": "G01 Vulkan单请求有限RS/NP/RR/VP轮CLOSED：合格port Copy3→0，原数值/寿命/退休、Air三交付/宿主san及原合同P1 PASS；Win仅更新编译，旧FAIL/其他数学/未知成本保留。多请求和整个G01未结案。",
       "candidate": "3d92eee97a70f7788dfb9bbcda73f6e0f801959f",
-      "performance": {"tier": "P1", "material_margin_pct": 5, "evidence": "evidence/performance/inference-g01-resident-vulkan-direct-ports-m1-p1/receipt.json"}
+      "performance": {
+        "tier": "P1",
+        "material_margin_pct": 5,
+        "evidence": "evidence/performance/inference-g01-resident-vulkan-direct-ports-m1-p1/receipt.json"
+      }
     },
     {
       "module": "compute_ggml_runtime",
@@ -558,7 +571,11 @@
       "record": "docs/implementation/tasks/compute/inference-g01-vulkan-resident-terminal.md",
       "summary": "G01 Vulkan有限NP/RR native轮CLOSED：原shader精度/cache隔离和Work退休后record/失效实现，最终3d92完整consumer三交付/宿主san/P1通过；a400源码不改，旧FAIL/其他runtime域保留。",
       "candidate": "a40003f7edb54a3da3113d0cd401b46211e0b0f0",
-      "performance": {"tier": "P1", "material_margin_pct": 5, "evidence": "evidence/performance/inference-g01-resident-vulkan-direct-ports-m1-p1/receipt.json"}
+      "performance": {
+        "tier": "P1",
+        "material_margin_pct": 5,
+        "evidence": "evidence/performance/inference-g01-resident-vulkan-direct-ports-m1-p1/receipt.json"
+      }
     },
     {
       "module": "compute_provider_ggml_cuda",
