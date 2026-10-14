@@ -12,6 +12,28 @@
 
 namespace hyle::compute::model_ops {
 
+// Encode only the supplied new rows, never mutate or decode an existing cache.
+// Q8_0: block32 absmax/127, F16 scale, roundf codes in [-127,127], all-zero
+// blocks stay zero. Inputs are finite with absmax/127 <= 65504.
+// FP8: input/scale, finite-saturating nearest-even E4M3FN. The same immutable
+// CacheStorage must describe subsequent cache consumption. Output is its real
+// plain copy carrier; page ownership/publication is handled by original F2.
+struct CacheEncode final {
+  CacheStorage storage{};
+  static constexpr OperationId operation_id{0x48594c4543414348ULL,
+                                             0x45454e434f444501ULL};
+  static constexpr std::string_view operation_name = "cache-encode";
+  constexpr OperationTraits operation_traits() const noexcept {
+    return {{1, 1}, 1, AliasPolicy::kNone, EffectKind::kPure,
+            PrecisionPolicy::kAccumulateInDeclaredType, DataType::kFloat32, true};
+  }
+  Status infer_output_descriptions(std::span<const TensorDesc> inputs,
+                                  std::span<TensorDesc> outputs) const noexcept {
+    return infer_cache_encode(storage, inputs, outputs);
+  }
+};
+static_assert(detail::InlineCustomOperationDescriptor<CacheEncode>);
+
 enum class WeightArtifactFormat : std::uint32_t {
   kNf4,
   kNf4DoubleQuant,

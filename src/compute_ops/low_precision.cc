@@ -1,6 +1,7 @@
 #include "hyle/compute/low_precision.h"
 
 #include <array>
+#include <cmath>
 #include <utility>
 
 #include "hyle/math/scalar.h"
@@ -105,6 +106,80 @@ Result<TensorDesc> float8_description(std::int64_t rows, std::int64_t k,
 }
 
 } // namespace
+
+Result<CacheStorage> CacheStorage::q8_0() noexcept {
+  const auto block = gguf_block(GgufQuantizedType::kQ8_0);
+  HYLE_ASSIGN_OR_RETURN(auto format,
+                       StorageFormat::blocked(block->id, block->elements,
+                                              block->bytes));
+  return CacheStorage{DataType::kFloat32, format, 1.0F};
+}
+
+Result<CacheStorage> CacheStorage::float8(float scale) noexcept {
+  const CacheStorage storage{DataType::kFloat8E4M3FN, {}, scale};
+  HYLE_RETURN_IF_ERROR(validate_cache_storage(storage));
+  return storage;
+}
+
+Status validate_cache_storage(const CacheStorage &storage) noexcept {
+  if (!std::isfinite(storage.scale) || storage.scale <= 0.0F)
+    return Status::InvalidArgument("cache scale must be positive and finite");
+  if (storage.format.is_plain()) {
+    if (storage.data_type == DataType::kFloat8E4M3FN)
+      return Status::Ok();
+    if ((storage.data_type == DataType::kFloat16 ||
+         storage.data_type == DataType::kBFloat16) && storage.scale == 1.0F)
+      return Status::Ok();
+  } else if (storage.data_type == DataType::kFloat32 && storage.scale == 1.0F &&
+             gguf_quantized_type(storage.format) == GgufQuantizedType::kQ8_0) {
+    return Status::Ok();
+  }
+  return Status::InvalidArgument("cache requires plain F16/BF16, Q8_0 or scaled E4M3FN");
+}
+
+Result<TensorDesc>
+cache_tensor_description(const CacheStorage &storage,
+                         std::span<const std::int64_t> dimensions) noexcept {
+  HYLE_RETURN_IF_ERROR(validate_cache_storage(storage));
+  if (dimensions.size() < 2 || dimensions.back() <= 0)
+    return std::unexpected(Status::InvalidArgument("cache requires rows and positive depth"));
+  if (storage.format.is_plain())
+    return TensorDesc::dense(storage.data_type, dimensions);
+  return TensorDesc::blocked_dense(storage.data_type, dimensions, storage.format);
+}
+
+Result<TensorDesc>
+cache_carrier_description(const CacheStorage &storage,
+                          std::span<const std::int64_t> dimensions) noexcept {
+  HYLE_ASSIGN_OR_RETURN(auto logical, cache_tensor_description(storage, dimensions));
+  if (storage.format.is_plain())
+    return logical;
+  HYLE_ASSIGN_OR_RETURN(auto elements, logical.element_count());
+  const auto depth = static_cast<std::size_t>(dimensions.back());
+  const auto rows = math::try_integer_cast<std::int64_t>(elements / depth);
+  const auto row_bytes = math::try_multiply(depth / storage.format.elements_per_block(),
+                                          storage.format.bytes_per_block());
+  const auto width = row_bytes ? math::try_integer_cast<std::int64_t>(*row_bytes)
+                               : std::nullopt;
+  if (!rows || !width)
+    return std::unexpected(Status::OutOfRange("cache carrier row extent overflow"));
+  return TensorDesc::dense(DataType::kUInt8, std::array{*rows, *width});
+}
+
+Status infer_cache_encode(const CacheStorage &storage,
+                          std::span<const TensorDesc> inputs,
+                          std::span<TensorDesc> outputs) noexcept {
+  HYLE_RETURN_IF_ERROR(validate_cache_storage(storage));
+  if (inputs.size() != 1 || outputs.size() != 1 ||
+      (storage.format.is_plain() && storage.data_type != DataType::kFloat8E4M3FN))
+    return Status::InvalidArgument("cache encoder requires one input/output and an 8-bit encoding");
+  const auto &input = inputs[0];
+  if (!input.valid() || !input.is_plain() || !input.is_dense() ||
+      input.rank() < 2 || !gguf_logical_type(input.data_type()))
+    return Status::InvalidArgument("cache encoder requires dense F16/BF16/F32 depth rows");
+  HYLE_ASSIGN_OR_RETURN(outputs[0], cache_carrier_description(storage, input.dimensions()));
+  return Status::Ok();
+}
 
 Result<TensorDesc> float8_grouped_weight_description(std::int64_t experts,
                                                     std::int64_t n,

@@ -6,10 +6,111 @@
 #include <limits>
 
 #include "hyle/compute/low_precision.h"
+#include "hyle/compute/model_ops.h"
 #include "hyle/compute/operation.h"
 
 namespace {
 using namespace hyle::compute;
+
+TEST(ComputeOpsCacheStorage, CacheDepthBlocksAndRealCopyCarrier) {
+  const auto storage = CacheStorage::q8_0();
+  ASSERT_TRUE(storage);
+  constexpr std::array<std::int64_t, 4> shape{2, 16, 2, 256};
+  const auto logical = cache_tensor_description(*storage, shape);
+  const auto carrier = cache_carrier_description(*storage, shape);
+  ASSERT_TRUE(logical);
+  ASSERT_TRUE(carrier);
+  EXPECT_EQ(logical->storage_format().id(), kGgufQ8_0);
+  EXPECT_EQ(logical->block_axis(), 3u);
+  EXPECT_TRUE(std::ranges::equal(logical->byte_strides(),
+                               std::array<std::int64_t, 4>{8704, 544, 272, 34}));
+  EXPECT_EQ(*logical->required_bytes(), 17408u);
+  EXPECT_EQ(*carrier->required_bytes(), 17408u);
+  EXPECT_TRUE(carrier->is_plain());
+  EXPECT_TRUE(carrier->is_dense());
+  EXPECT_EQ(carrier->data_type(), DataType::kUInt8);
+  EXPECT_TRUE(std::ranges::equal(carrier->dimensions(),
+                               std::array<std::int64_t, 2>{64, 272}));
+  const auto value = cache_tensor_description(*storage,
+      std::array<std::int64_t, 4>{2, 16, 2, 128});
+  ASSERT_TRUE(value);
+  EXPECT_EQ(*value->required_bytes(), 8704u);
+}
+
+TEST(ComputeOpsCacheStorage, Float8ScaleIsSeparateFromCodeBytes) {
+  const auto k = CacheStorage::float8(0.25F);
+  const auto v = CacheStorage::float8(2.0F);
+  ASSERT_TRUE(k);
+  ASSERT_TRUE(v);
+  EXPECT_NE(*k, *v);
+  constexpr std::array<std::int64_t, 3> shape{17, 2, 256};
+  const auto logical = cache_tensor_description(*k, shape);
+  const auto carrier = cache_carrier_description(*k, shape);
+  ASSERT_TRUE(logical);
+  ASSERT_TRUE(carrier);
+  EXPECT_EQ(*logical, *carrier);
+  EXPECT_EQ(logical->data_type(), DataType::kFloat8E4M3FN);
+  EXPECT_EQ(*logical->required_bytes(), 17u * 2 * 256);
+  EXPECT_EQ(*logical, *cache_tensor_description(*v, shape));
+  EXPECT_NE(logical->storage_format().id(), kFloat8ActivationFloat32Block128);
+}
+
+TEST(ComputeOpsCacheStorage, RefusesInvalidInterpretationAndOverflow) {
+  for (float scale : {0.0F, -1.0F, std::numeric_limits<float>::infinity(),
+                     std::numeric_limits<float>::quiet_NaN()})
+    EXPECT_FALSE(CacheStorage::float8(scale));
+  const auto q8 = CacheStorage::q8_0();
+  ASSERT_TRUE(q8);
+  auto changed = *q8;
+  changed.scale = 2.0F;
+  EXPECT_FALSE(validate_cache_storage(changed).ok());
+  changed = *q8;
+  changed.data_type = DataType::kFloat16;
+  EXPECT_FALSE(validate_cache_storage(changed).ok());
+  const auto forged = StorageFormat::blocked(kGgufQ8_0, 32, 35);
+  ASSERT_TRUE(forged);
+  changed = *q8;
+  changed.format = *forged;
+  EXPECT_FALSE(validate_cache_storage(changed).ok());
+  EXPECT_FALSE(cache_tensor_description(*q8, std::array<std::int64_t, 2>{1, 33}));
+  EXPECT_FALSE(cache_tensor_description(*q8, std::array<std::int64_t, 2>{-1, 32}));
+  EXPECT_FALSE(cache_tensor_description(*q8,
+      std::array<std::int64_t, 3>{INT64_MAX, 2, 256}));
+  EXPECT_FALSE(cache_tensor_description(*q8, std::array<std::int64_t, 1>{32}));
+}
+
+TEST(ComputeOpsCacheStorage, DirtyEncoderOutputIsExactPhysicalCarrier) {
+  const auto q8 = CacheStorage::q8_0();
+  ASSERT_TRUE(q8);
+  const auto fp8 = CacheStorage::float8(0.5F);
+  ASSERT_TRUE(fp8);
+  for (auto type : {DataType::kFloat16, DataType::kBFloat16, DataType::kFloat32}) {
+    const auto input = TensorDesc::dense(type,
+        std::array<std::int64_t, 3>{3, 2, 256});
+    ASSERT_TRUE(input);
+    const auto encoded = infer_single_output(Operation::custom(model_ops::CacheEncode{*q8}),
+                                            std::array{*input});
+    ASSERT_TRUE(encoded);
+    EXPECT_EQ(*encoded->required_bytes(), 3u * 2 * 272);
+    EXPECT_EQ(encoded->data_type(), DataType::kUInt8);
+    EXPECT_EQ(*encoded, *cache_carrier_description(*q8, input->dimensions()));
+    const auto float8 = infer_single_output(Operation::custom(model_ops::CacheEncode{*fp8}),
+                                           std::array{*input});
+    ASSERT_TRUE(float8);
+    EXPECT_EQ(*float8->required_bytes(), 3u * 2 * 256);
+  }
+  const auto empty = TensorDesc::dense(DataType::kFloat16,
+      std::array<std::int64_t, 3>{0, 2, 256});
+  ASSERT_TRUE(empty);
+  const auto output = infer_single_output(Operation::custom(model_ops::CacheEncode{*q8}),
+                                         std::array{*empty});
+  ASSERT_TRUE(output);
+  EXPECT_EQ(*output->required_bytes(), 0u);
+  const auto scalar = TensorDesc::dense(DataType::kFloat16, {});
+  ASSERT_TRUE(scalar);
+  EXPECT_FALSE(infer_single_output(Operation::custom(model_ops::CacheEncode{*q8}),
+                                  std::array{*scalar}));
+}
 
 TEST(ComputeOpsLowPrecision, Float8PhysicalSizesAndLogicalOrientation) {
   const auto block = Float8ScaleMode::kFloat32Block128;

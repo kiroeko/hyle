@@ -1,0 +1,24 @@
+{
+  "kind": "COMMON_STORAGE_IMPLEMENTATION_CHECKPOINT",
+  "closure": {
+    "exit_code": 0,
+    "modules": 64,
+    "schema_version": 4
+  },
+  "docs": {
+    "exit_code": 0,
+    "markdown": 1241,
+    "relative_links": 6056
+  },
+  "diff_check": {
+    "exit_code": 0
+  },
+  "tests": {
+    "exit_code": 0,
+    "passed": 12
+  },
+  "state": "AUDITED",
+  "native_encoder_math_attention": "UNPROVEN",
+  "remaining_selector_gates": "Pending fixed shared batch; not PASS",
+  "live_jobs": []
+}

@@ -1,0 +1,84 @@
+{
+  "kind": "G04_G05_COMMON_STORAGE_STAGE",
+  "state": "TERMINAL_PASS",
+  "audit_revision": "532fd6731",
+  "native_math_qualification": "UNPROVEN",
+  "pid": 47408,
+  "build_tree": "C:\\h7\\inference-g01-native-vulkan\\build",
+  "max_jobs": 4,
+  "scope": "compute_ops actual shared factor and original low_precision tests; no GPU execution/native build/full model",
+  "inputs": {
+    "include/hyle/compute/low_precision.h": "8352f6885d922a6059950878a02994f3480895d3813f22ab916d8e8732638cd8",
+    "include/hyle/compute/model_ops.h": "b628c00fa5f9094da744f24431649261bf18a5c964229ac3c159ea2fa6034329",
+    "src/compute_ops/low_precision.cc": "93c7ba59307086abad0a7fab951f53870ac7fdb8722c2f1239a7330b94e8e6f8",
+    "tests/compute_ops/low_precision_test.cc": "a8db6a7457dc908bc9345bdec458ac22f9a4851d20d495cbee924b6094c23202"
+  },
+  "stages": [
+    {
+      "stage": "configure",
+      "command": [
+        "cmake",
+        "-S",
+        "C:\\h7\\inference-g01-native-vulkan\\parent",
+        "-B",
+        "C:\\h7\\inference-g01-native-vulkan\\build"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 224.15599999998813,
+      "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\common-storage\\configure-1.log"
+    },
+    {
+      "stage": "compile",
+      "command": [
+        "cmake",
+        "--build",
+        "C:\\h7\\inference-g01-native-vulkan\\build",
+        "--target",
+        "g04_g05_cache_storage_tests",
+        "--parallel",
+        "4"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 2.8910000000032596,
+      "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\common-storage\\compile-1.log"
+    },
+    {
+      "stage": "tests",
+      "command": [
+        "C:\\h7\\inference-g01-native-vulkan\\build\\g04_g05_cache_storage_tests.exe",
+        "--gtest_output=xml:C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\common-storage\\tests.xml"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 0.062000000005355105,
+      "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\common-storage\\tests-1.log"
+    }
+  ],
+  "cumulative_seconds": 227.10899999999674,
+  "test_count": 12,
+  "coverage": [
+    "Q8_0 last depth block axis and NHD physical row/page strides",
+    "exact Q8 U8 carrier and independent depth64/128/256 description sizes",
+    "FP8 code bytes independent of positive immutable scale value",
+    "invalid scale/forged block/logical type/extent/overflow refusal",
+    "dirty encoder operation output descriptions for F16/BF16/F32 and empty input",
+    "eight original low precision descriptor tests unchanged"
+  ],
+  "limits": [
+    "Only common CacheStorage/descriptions/CacheEncode inference implemented in this stage.",
+    "No native encoding, attention math, F2 append journey, new BatchCapacity, SDK or P1 qualified.",
+    "All nine owners remain AUDITED; CE01 only partial, CE02-CE07 remain UNPROVEN.",
+    "Broad public-header selector consumers will be validated once the shared implementation batch is fixed, not claimed passed by these tests."
+  ],
+  "artifacts": [
+    {
+      "path": "C:/h7/inference-g01-native-vulkan/build/hyle/src/compute_ops/hyle_compute_ops.dll",
+      "sha256": "0372eadf51d988e6815b56a99a83228a71c8b708de79cc7185861cc723ff1d1f"
+    },
+    {
+      "path": "C:/h7/inference-g01-native-vulkan/build/g04_g05_cache_storage_tests.exe",
+      "sha256": "10d95d401e8cb683debb6ca7c66be33a34d2c5239a1080ebd17b66587adf7be8"
+    }
+  ],
+  "live_jobs": [],
+  "raw_sha256": "2d673abe992a55490e33122e3d59578e19e1ccf9260e1a9560e86b61438d3c4e"
+}

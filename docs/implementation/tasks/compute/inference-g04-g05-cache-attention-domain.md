@@ -214,3 +214,12 @@ heavy串行/4jobs；不借此重建全库或恢复本机heavy GPU/完整模型�
 
 2026-10-15：九owner的SCOPED登记与mandatory checks已提交；同卡进入AUDITED，
 CE01–07开始同一实现批。新能力/运行资格仍UNPROVEN，原G03与G01/G02历史状态不回填。
+
+2026-10-15共同层首批：CacheStorage、cache logical/carrier描述与CacheEncode schema已实现；
+实际MSVC/shared compute_ops及12项低精度测试PASS（4新增、8原有），
+[阶段证据](../../../../evidence/correctness/inference-g04-g05-common-storage-stage/result.json)
+保存输入/产物SHA、原始日志/XML与runner。configure224.156秒、compile2.891秒、run0.062秒，
+累计227.109秒；编译仅compute_ops两个TU和test，没有native/GPU/模型运行。
+九owner保持AUDITED。CE01仅共同schema部分完成；实际encoder、独立BatchCapacity/page role、
+native数学、F2增量消费、三交付与性能均UNPROVEN，不计G04/G05完成。selector公共头对应的
+其余factor/direct consumer/SDK门将在同一实现批固定后执行，不由这12项测试冒充通过。

@@ -2,6 +2,7 @@
 
 #include <cstdint>
 #include <optional>
+#include <span>
 
 #include "hyle/compute/tensor_desc.h"
 
@@ -76,6 +77,37 @@ inline constexpr StorageFormatId kGgufIq1M{0x48594c4547475546ULL, 17};
 inline constexpr StorageFormatId kGgufIq1Xxxs{0x48594c4547475546ULL, 18};
 inline constexpr StorageFormatId kGgufIq1Xxs{0x48594c4547475546ULL, 19};
 inline constexpr StorageFormatId kGgufIq1Xs{0x48594c4547475546ULL, 20};
+
+// A cold cache interpretation, copied into its schema and encoder recipe.
+// Q8_0 scales are inside each block; FP8 uses one positive finite scale for
+// this cache's entire lifetime. Changing that scale requires new cache storage.
+// Plain F16/BF16 and Q8_0 require scale == 1. Native qualification is separate.
+struct CacheStorage final {
+  DataType data_type = DataType::kFloat16;
+  StorageFormat format{};
+  float scale = 1.0F;
+
+  HYLE_COMPUTE_OPS_API static Result<CacheStorage> q8_0() noexcept;
+  HYLE_COMPUTE_OPS_API static Result<CacheStorage> float8(float scale) noexcept;
+  friend constexpr bool operator==(const CacheStorage &,
+                                   const CacheStorage &) noexcept = default;
+};
+
+HYLE_COMPUTE_OPS_API Status validate_cache_storage(const CacheStorage &) noexcept;
+// Rows/heads/pages remain outside the final depth axis. Unlike GGUF weight
+// descriptors, a cache never transposes that axis or changes its row order.
+HYLE_COMPUTE_OPS_API Result<TensorDesc>
+cache_tensor_description(const CacheStorage &,
+                         std::span<const std::int64_t> dimensions) noexcept;
+// The actual readonly producer/copy carrier. Q8_0 is U8[depth_rows,row_bytes]
+// with inline scales; FP8 and plain storage retain their scalar description.
+// Equal bytes do not grant logical interpretation or page permission.
+HYLE_COMPUTE_OPS_API Result<TensorDesc>
+cache_carrier_description(const CacheStorage &,
+                          std::span<const std::int64_t> dimensions) noexcept;
+HYLE_COMPUTE_OPS_API Status infer_cache_encode(
+    const CacheStorage &, std::span<const TensorDesc> inputs,
+    std::span<TensorDesc> outputs) noexcept;
 
 HYLE_COMPUTE_OPS_API std::optional<GgufQuantizedType>
 gguf_quantized_type(StorageFormatId id) noexcept;
