@@ -690,8 +690,8 @@
     {
       "module": "compute_batch",
       "state": "SCOPED",
-      "record": "docs/implementation/tasks/compute/inference-g03-pending-page-consumption.md",
-      "summary": "G03 pending page update-to-attention SCOPED after GP01/GP02 finite closure. Actual public CUDA writer producer->original F2 ordered source works without producer host wait; no duplicate F2 mechanism. Audit ready frame/native attention dependency and complete lifecycle/cost across original routes, no fake ready/whole arena/new controller. No product edit before finite owner/API/FIX AUDITED."
+      "record": "docs/implementation/tasks/compute/inference-g03-page-initialization-prefix.md",
+      "summary": "G03 IP01-IP03 initialization-prefix SCOPED at cdb8: original page identity/generation and committed valid rows; exact immutable layout read domain; no source/native/math/default locks changed. Main pending receiver/late output/7route64 remain unsatisfied."
     },
     {
       "module": "graph_batch",

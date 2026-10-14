@@ -142,3 +142,9 @@ pending 页权限/late output 与完整七路线旅程仍未实现，本主卡�
 completion()，因此只改 façade 的 wait/result 不足。实际 move-owner 原型已通过
 Apple 三/Vulkan 五场景，包含接纳后取消、abandon、Vulkan unknown/final fence wait；
 完整公开形状/Source CPP retirement/四 source families仍须本新轮冻结并实现。
+
+来源聚合与生产cold nodes已在 f307/cdb8 检查点实现、逐分配OOM、实际四 source/lifecycle/
+SDK/宿主风险通过，原控制可回接。当前 compute_batch 有限施工入口转到
+[原page初始化前缀](inference-g03-page-initialization-prefix.md)：它固定本主卡需要的初始化
+事实，不把ready frame当pending资格。主卡的完整receiver、late output、Graph与七路线
+验收继续保留；后继采用这些实际初始化事实与原来源协议，不再另造来源owner。
