@@ -1,0 +1,408 @@
+{
+  "kind": "G04_G05_WINDOWS_CPU_ONLY_FFA_RELOCATED_STATIC_SHARED_SDK",
+  "verdict": "PASS_TWO_CONFIGURATIONS",
+  "product_commit": "f772fcad2f2a6a67aa605bbaee10b68f1d540708",
+  "matrix": [
+    {
+      "mode": "shared",
+      "tag": "cpu-shared-2",
+      "math_tests": 13,
+      "public_encoder_consumers": 3,
+      "independent_headers": 12,
+      "consumer_tus": 14,
+      "verdict": "PASS"
+    },
+    {
+      "mode": "static",
+      "tag": "cpu-static-1",
+      "math_tests": 13,
+      "public_encoder_consumers": 3,
+      "independent_headers": 12,
+      "consumer_tus": 14,
+      "verdict": "PASS"
+    }
+  ],
+  "qualified": [
+    "Actual Windows/MSVC CPU-only original ffa ggml profile, shipping HYLE_TESTING OFF; same existing producer tree switched static/shared explicitly, separate new installed and relocated prefixes",
+    "Each installed configuration twelve changed HYLE public headers independently compile; actual thirteen new CPU encoder/finite attention tests and three independent Direct/Graph Q8 incremental F2 consumer tests PASS",
+    "F16/BF16 query/output, independent D64/128 and main D256/256; byte/scale oracles, window/noncausal, direct compressed pages, single/multi, six delta updates, two actual Graph producer shapes, accepted failure/no publication, original reader/shared/history permissions",
+    "External consumer compile commands use installed HYLE headers only; all selected shipping product compile commands have no HYLE_TESTING. Actual installed library hashes retained"
+  ],
+  "limits": [
+    "No two-independent-producer-trees claim",
+    "No new P1, native private-pool upper bound or whole G04/G05/G01-G10 acceptance"
+  ],
+  "runs": [
+    {
+      "tag": "cpu-shared-1",
+      "state": "TERMINAL_FAIL",
+      "mode": "shared",
+      "attempt": "1",
+      "max_jobs": 4,
+      "product_commit": "f772fcad2f2a6a67aa605bbaee10b68f1d540708",
+      "identity": {
+        "host": "KIRO-WORKSTATIO",
+        "compiler": "14.50.35717",
+        "routes": "cpu",
+        "ggml_source": "C:/public/tools/hyle-dependencies/v1/sources/ggml_cpu-ffa4e8b80930-ac5706fbc134"
+      },
+      "producer": "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev",
+      "prefix": "C:\\h7\\g04-sdk-cpu-shared-1\\relocated",
+      "scope": "Actual Windows CPU-only ffa native encode/math, public Direct/Graph incremental Q8 F2 consumers, relocated installed static/shared and twelve independent headers; same producer tree switched modes explicitly, not two independent trees.",
+      "stages": [
+        {
+          "stage": "producer-configure",
+          "command": [
+            "cmake",
+            "-S",
+            "C:\\public\\project-hyle\\hyle",
+            "-B",
+            "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev",
+            "-UCMAKE_PROJECT_INCLUDE",
+            "-DHYLE_COMPONENTS=compute;graph",
+            "-DHYLE_COMPUTE_ROUTES=cpu",
+            "-DHYLE_BUILD_TESTS=OFF",
+            "-DHYLE_BUILD_BENCH=OFF",
+            "-DHYLE_INSTALL=ON",
+            "-DHYLE_STATIC=OFF"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 19.671999999991385,
+          "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\cpu-sdk\\producer-configure-cpu-shared-1.log"
+        },
+        {
+          "stage": "producer-build",
+          "command": [
+            "cmake",
+            "--build",
+            "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev",
+            "--target",
+            "hyle_compute",
+            "hyle_compute_batch",
+            "hyle_compute_stream",
+            "hyle_compute_state",
+            "hyle_graph",
+            "hyle_graph_batch",
+            "--parallel",
+            "4"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 22.984000000025844,
+          "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\cpu-sdk\\producer-build-cpu-shared-1.log"
+        },
+        {
+          "stage": "install",
+          "command": [
+            "cmake",
+            "--install",
+            "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev",
+            "--prefix",
+            "C:\\h7\\g04-sdk-cpu-shared-1\\staging"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 1.1099999999860302,
+          "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\cpu-sdk\\install-cpu-shared-1.log"
+        },
+        {
+          "stage": "consumer-configure",
+          "command": [
+            "cmake",
+            "-S",
+            "C:\\h7\\g04-sdk-cpu-shared-1\\consumer",
+            "-B",
+            "C:\\h7\\g04-sdk-cpu-shared-1\\build",
+            "-G",
+            "Ninja",
+            "-DCMAKE_BUILD_TYPE=Release",
+            "-DCMAKE_PREFIX_PATH=C:\\h7\\g04-sdk-cpu-shared-1\\relocated",
+            "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 12.828999999997905,
+          "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\cpu-sdk\\consumer-configure-cpu-shared-1.log"
+        },
+        {
+          "stage": "consumer-build",
+          "command": [
+            "cmake",
+            "--build",
+            "C:\\h7\\g04-sdk-cpu-shared-1\\build",
+            "--target",
+            "cpu",
+            "cpu_math",
+            "headers",
+            "--parallel",
+            "4"
+          ],
+          "exit_code": 4294967295,
+          "elapsed_seconds": 5.5,
+          "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\cpu-sdk\\consumer-build-cpu-shared-1.log"
+        }
+      ],
+      "cumulative_seconds": 62.095000000001164
+    },
+    {
+      "tag": "cpu-shared-2",
+      "state": "TERMINAL_PASS",
+      "mode": "shared",
+      "attempt": "2",
+      "max_jobs": 4,
+      "product_commit": "f772fcad2f2a6a67aa605bbaee10b68f1d540708",
+      "identity": {
+        "host": "KIRO-WORKSTATIO",
+        "compiler": "14.50.35717",
+        "routes": "cpu",
+        "ggml_source": "C:/public/tools/hyle-dependencies/v1/sources/ggml_cpu-ffa4e8b80930-ac5706fbc134"
+      },
+      "producer": "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev",
+      "prefix": "C:\\h7\\g04-sdk-cpu-shared-2\\relocated",
+      "scope": "Actual Windows CPU-only ffa native encode/math, public Direct/Graph incremental Q8 F2 consumers, relocated installed static/shared and twelve independent headers; same producer tree switched modes explicitly, not two independent trees.",
+      "stages": [
+        {
+          "stage": "producer-configure",
+          "command": [
+            "cmake",
+            "-S",
+            "C:\\public\\project-hyle\\hyle",
+            "-B",
+            "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev",
+            "-UCMAKE_PROJECT_INCLUDE",
+            "-DHYLE_COMPONENTS=compute;graph",
+            "-DHYLE_COMPUTE_ROUTES=cpu",
+            "-DHYLE_BUILD_TESTS=OFF",
+            "-DHYLE_BUILD_BENCH=OFF",
+            "-DHYLE_INSTALL=ON",
+            "-DHYLE_STATIC=OFF"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 19.54700000002049,
+          "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\cpu-sdk\\producer-configure-cpu-shared-2.log"
+        },
+        {
+          "stage": "producer-build",
+          "command": [
+            "cmake",
+            "--build",
+            "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev",
+            "--target",
+            "hyle_compute",
+            "hyle_compute_batch",
+            "hyle_compute_stream",
+            "hyle_compute_state",
+            "hyle_compute_backend_cpu",
+            "hyle_compute_provider_ggml",
+            "hyle_compute_route_cpu",
+            "hyle_graph",
+            "hyle_graph_batch",
+            "--parallel",
+            "4"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 117.53099999998813,
+          "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\cpu-sdk\\producer-build-cpu-shared-2.log"
+        },
+        {
+          "stage": "install",
+          "command": [
+            "cmake",
+            "--install",
+            "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev",
+            "--prefix",
+            "C:\\h7\\g04-sdk-cpu-shared-2\\staging"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 0.75,
+          "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\cpu-sdk\\install-cpu-shared-2.log"
+        },
+        {
+          "stage": "consumer-configure",
+          "command": [
+            "cmake",
+            "-S",
+            "C:\\h7\\g04-sdk-cpu-shared-2\\consumer",
+            "-B",
+            "C:\\h7\\g04-sdk-cpu-shared-2\\build",
+            "-G",
+            "Ninja",
+            "-DCMAKE_BUILD_TYPE=Release",
+            "-DCMAKE_PREFIX_PATH=C:\\h7\\g04-sdk-cpu-shared-2\\relocated",
+            "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 12.796999999991385,
+          "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\cpu-sdk\\consumer-configure-cpu-shared-2.log"
+        },
+        {
+          "stage": "consumer-build",
+          "command": [
+            "cmake",
+            "--build",
+            "C:\\h7\\g04-sdk-cpu-shared-2\\build",
+            "--target",
+            "cpu",
+            "cpu_math",
+            "headers",
+            "--parallel",
+            "4"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 6.390999999974156,
+          "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\cpu-sdk\\consumer-build-cpu-shared-2.log"
+        },
+        {
+          "stage": "cpu_math",
+          "command": [
+            "C:\\h7\\g04-sdk-cpu-shared-2\\build\\cpu_math.exe",
+            "--gtest_output=xml:C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\cpu-sdk\\cpu_math-cpu-shared-2.xml",
+            "--gtest_filter=GgmlCpuCacheEncode.*:GgmlCpuBoxed.*"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 1.812999999994645,
+          "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\cpu-sdk\\cpu_math-cpu-shared-2.log"
+        },
+        {
+          "stage": "cpu",
+          "command": [
+            "C:\\h7\\g04-sdk-cpu-shared-2\\build\\cpu.exe",
+            "--gtest_output=xml:C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\cpu-sdk\\cpu-cpu-shared-2.xml"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 0.2659999999741558,
+          "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\cpu-sdk\\cpu-cpu-shared-2.log"
+        }
+      ],
+      "cumulative_seconds": 159.09499999994296
+    },
+    {
+      "tag": "cpu-static-1",
+      "state": "TERMINAL_PASS",
+      "mode": "static",
+      "attempt": "1",
+      "max_jobs": 4,
+      "product_commit": "f772fcad2f2a6a67aa605bbaee10b68f1d540708",
+      "identity": {
+        "host": "KIRO-WORKSTATIO",
+        "compiler": "14.50.35717",
+        "routes": "cpu",
+        "ggml_source": "C:/public/tools/hyle-dependencies/v1/sources/ggml_cpu-ffa4e8b80930-ac5706fbc134"
+      },
+      "producer": "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev",
+      "prefix": "C:\\h7\\g04-sdk-cpu-static-1\\relocated",
+      "scope": "Actual Windows CPU-only ffa native encode/math, public Direct/Graph incremental Q8 F2 consumers, relocated installed static/shared and twelve independent headers; same producer tree switched modes explicitly, not two independent trees.",
+      "stages": [
+        {
+          "stage": "producer-configure",
+          "command": [
+            "cmake",
+            "-S",
+            "C:\\public\\project-hyle\\hyle",
+            "-B",
+            "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev",
+            "-UCMAKE_PROJECT_INCLUDE",
+            "-DHYLE_COMPONENTS=compute;graph",
+            "-DHYLE_COMPUTE_ROUTES=cpu",
+            "-DHYLE_BUILD_TESTS=OFF",
+            "-DHYLE_BUILD_BENCH=OFF",
+            "-DHYLE_INSTALL=ON",
+            "-DHYLE_STATIC=ON"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 20.187000000005355,
+          "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\cpu-sdk\\producer-configure-cpu-static-1.log"
+        },
+        {
+          "stage": "producer-build",
+          "command": [
+            "cmake",
+            "--build",
+            "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev",
+            "--target",
+            "hyle_compute",
+            "hyle_compute_batch",
+            "hyle_compute_stream",
+            "hyle_compute_state",
+            "hyle_graph",
+            "hyle_graph_batch",
+            "--parallel",
+            "4"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 0.09400000001187436,
+          "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\cpu-sdk\\producer-build-cpu-static-1.log"
+        },
+        {
+          "stage": "install",
+          "command": [
+            "cmake",
+            "--install",
+            "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev",
+            "--prefix",
+            "C:\\h7\\g04-sdk-cpu-static-1\\staging"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 2.187999999994645,
+          "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\cpu-sdk\\install-cpu-static-1.log"
+        },
+        {
+          "stage": "consumer-configure",
+          "command": [
+            "cmake",
+            "-S",
+            "C:\\h7\\g04-sdk-cpu-static-1\\consumer",
+            "-B",
+            "C:\\h7\\g04-sdk-cpu-static-1\\build",
+            "-G",
+            "Ninja",
+            "-DCMAKE_BUILD_TYPE=Release",
+            "-DCMAKE_PREFIX_PATH=C:\\h7\\g04-sdk-cpu-static-1\\relocated",
+            "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 13.405999999988126,
+          "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\cpu-sdk\\consumer-configure-cpu-static-1.log"
+        },
+        {
+          "stage": "consumer-build",
+          "command": [
+            "cmake",
+            "--build",
+            "C:\\h7\\g04-sdk-cpu-static-1\\build",
+            "--target",
+            "cpu",
+            "cpu_math",
+            "headers",
+            "--parallel",
+            "4"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 6.2810000000172295,
+          "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\cpu-sdk\\consumer-build-cpu-static-1.log"
+        },
+        {
+          "stage": "cpu_math",
+          "command": [
+            "C:\\h7\\g04-sdk-cpu-static-1\\build\\cpu_math.exe",
+            "--gtest_output=xml:C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\cpu-sdk\\cpu_math-cpu-static-1.xml",
+            "--gtest_filter=GgmlCpuCacheEncode.*:GgmlCpuBoxed.*"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 1.812000000005355,
+          "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\cpu-sdk\\cpu_math-cpu-static-1.log"
+        },
+        {
+          "stage": "cpu",
+          "command": [
+            "C:\\h7\\g04-sdk-cpu-static-1\\build\\cpu.exe",
+            "--gtest_output=xml:C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\cpu-sdk\\cpu-cpu-static-1.xml"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 0.26500000001396984,
+          "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\cpu-sdk\\cpu-cpu-static-1.log"
+        }
+      ],
+      "cumulative_seconds": 44.233000000036554
+    }
+  ],
+  "input_manifest_sha256": "2d1074d2a1d07e35e31365ab8b3e5a18e1874dddf8f273ab89aa877d73d22d24",
+  "cumulative_seconds": 265.4229999999807
+}

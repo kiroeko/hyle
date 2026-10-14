@@ -1,0 +1,1250 @@
+{
+  "kind": "G04_G05_RELOCATED_SHIPPING_STATIC_SHARED_SDK",
+  "verdict": "PASS_SIX_CONFIGURATIONS",
+  "product_commit": "f772fcad2f2a6a67aa605bbaee10b68f1d540708",
+  "matrix": [
+    {
+      "route": "apple",
+      "mode": "shared",
+      "tag": "apple-shared-1",
+      "public_header_tus": 12,
+      "consumer_tus": 16,
+      "tests": {
+        "cpu_math": 14,
+        "native_math": 11,
+        "cpu": 3,
+        "native": 4
+      },
+      "verdict": "PASS"
+    },
+    {
+      "route": "apple",
+      "mode": "static",
+      "tag": "apple-static-1",
+      "public_header_tus": 12,
+      "consumer_tus": 16,
+      "tests": {
+        "cpu_math": 13,
+        "native_math": 11,
+        "cpu": 3,
+        "native": 4
+      },
+      "verdict": "PASS"
+    },
+    {
+      "route": "cuda",
+      "mode": "shared",
+      "tag": "cuda-shared-4",
+      "public_header_tus": 12,
+      "consumer_tus": 16,
+      "tests": {
+        "cpu_math": 13,
+        "native_math": 10,
+        "cpu": 3,
+        "native": 3
+      },
+      "verdict": "PASS"
+    },
+    {
+      "route": "cuda",
+      "mode": "static",
+      "tag": "cuda-static-1",
+      "public_header_tus": 12,
+      "consumer_tus": 16,
+      "tests": {
+        "cpu_math": 13,
+        "native_math": 10,
+        "cpu": 3,
+        "native": 3
+      },
+      "verdict": "PASS"
+    },
+    {
+      "route": "vulkan",
+      "mode": "shared",
+      "tag": "vulkan-shared-1",
+      "public_header_tus": 12,
+      "consumer_tus": 16,
+      "tests": {
+        "cpu_math": 13,
+        "native_math": 11,
+        "cpu": 3,
+        "native": 3
+      },
+      "verdict": "PASS"
+    },
+    {
+      "route": "vulkan",
+      "mode": "static",
+      "tag": "vulkan-static-1",
+      "public_header_tus": 12,
+      "consumer_tus": 16,
+      "tests": {
+        "cpu_math": 13,
+        "native_math": 11,
+        "cpu": 3,
+        "native": 3
+      },
+      "verdict": "PASS"
+    }
+  ],
+  "air_shipping_profile_cache": {
+    "verdict": "PASS_AIR_FOUR_SHIPPING_PROFILES",
+    "profiles": [
+      {
+        "route": "apple",
+        "mode": "static",
+        "cache": "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-build/CMakeCache.txt",
+        "values": [
+          "HYLE_BUILD_TESTS:BOOL=OFF",
+          "HYLE_INSTALL:BOOL=ON",
+          "HYLE_SANITIZER:STRING=off",
+          "HYLE_STATIC:BOOL=ON"
+        ]
+      },
+      {
+        "route": "apple",
+        "mode": "shared",
+        "cache": "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-build/CMakeCache.txt",
+        "values": [
+          "HYLE_BUILD_TESTS:BOOL=OFF",
+          "HYLE_INSTALL:BOOL=ON",
+          "HYLE_SANITIZER:STRING=off",
+          "HYLE_STATIC:BOOL=OFF"
+        ]
+      },
+      {
+        "route": "vulkan",
+        "mode": "static",
+        "cache": "/Users/kiro/hyle-scratch/compute-unified/a-cpu-vulkan/selected-graph/static-sdk-build/CMakeCache.txt",
+        "values": [
+          "HYLE_BUILD_TESTS:BOOL=OFF",
+          "HYLE_INSTALL:BOOL=ON",
+          "HYLE_SANITIZER:STRING=off",
+          "HYLE_STATIC:BOOL=ON"
+        ]
+      },
+      {
+        "route": "vulkan",
+        "mode": "shared",
+        "cache": "/Users/kiro/hyle-scratch/compute-unified/a-cpu-vulkan/selected-graph/shared-sdk-build/CMakeCache.txt",
+        "values": [
+          "HYLE_BUILD_TESTS:BOOL=OFF",
+          "HYLE_INSTALL:BOOL=ON",
+          "HYLE_SANITIZER:STRING=off",
+          "HYLE_STATIC:BOOL=OFF"
+        ]
+      }
+    ]
+  },
+  "qualified": [
+    "CPU+Apple, CPU+Vulkan and CPU+CUDA cached production static/shared trees incrementally built and installed to new staging directories, then relocated before consumer configure/build/run",
+    "Twelve changed public headers compiled as twelve separate object translation units in every configuration",
+    "Independent external consumers use installed HYLE headers/libraries only, no producer/canonical HYLE source includes; fixed original GoogleTest is only an external test dependency",
+    "Each configuration actual new CPU encode and finite attention mathematical domain, direct/Graph incremental Q8 CPU pages and failures, native encoded cache/attention domain plus original native/joint incremental producers and accepted failures",
+    "F16 and BF16 CPU/Apple/CUDA domains and F16 Vulkan finite domain; single/multi, D64/128 and main D256/256, six updates and original frame/page/history lifetime",
+    "Apple installed product-derived SharedPtr header and allocator header SHA match current exact manifests; installed license/notice match canonical. Independent installed-header Clang21/O3/UBSan lifetime passes for static/shared",
+    "All selected shipping HYLE compile commands have no HYLE_TESTING and no sanitizer; CUDA explicitly clears the old private source-risk CMAKE_PROJECT_INCLUDE before configuring and recompiles affected host TU normally"
+  ],
+  "limits": [
+    "No Vulkan BF16 claim",
+    "Mixed-route SDK CPU consumption is actual CPU execution, not an additional CPU-only packaging profile certificate",
+    "No P1, shader/driver sanitizer, private-pool byte upper bound or whole G04/G05/G01-G10 completion"
+  ],
+  "input_manifest_sha256": "2d1074d2a1d07e35e31365ab8b3e5a18e1874dddf8f273ab89aa877d73d22d24",
+  "runs": [
+    {
+      "tag": "apple-shared-1",
+      "state": "TERMINAL_PASS",
+      "route": "apple",
+      "mode": "shared",
+      "attempt": "1",
+      "identity": {
+        "model": "Mac16,12",
+        "arch": "arm64",
+        "os": "ProductName:\t\tmacOS\nProductVersion:\t\t27.0.1\nBuildVersion:\t\t26A434",
+        "compiler": "Apple clang version 21.0.0 (clang-2100.3.34.2)\nTarget: arm64-apple-darwin27.0.0\nThread model: posix\nInstalledDir: /Library/Developer/CommandLineTools/usr/bin"
+      },
+      "max_jobs": 4,
+      "stages": [
+        {
+          "stage": "producer-configure",
+          "command": [
+            "/opt/homebrew/bin/cmake",
+            "-S",
+            "/Users/kiro/hyle-scratch/compute-unified/source-c8874688",
+            "-B",
+            "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-build"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 3.954309708,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-sdk/producer-configure-apple-shared-1.log"
+        },
+        {
+          "stage": "producer-build",
+          "command": [
+            "/opt/homebrew/bin/cmake",
+            "--build",
+            "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-build",
+            "--target",
+            "hyle_compute",
+            "hyle_compute_batch",
+            "hyle_graph",
+            "hyle_graph_batch",
+            "hyle_graph_route_cpu_apple",
+            "hyle_compute_route_apple",
+            "hyle_graph_route_apple",
+            "--parallel",
+            "4"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 46.955505125,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-sdk/producer-build-apple-shared-1.log"
+        },
+        {
+          "stage": "install",
+          "command": [
+            "/opt/homebrew/bin/cmake",
+            "--install",
+            "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-build",
+            "--prefix",
+            "/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-sdk/apple-shared-1/staging"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 0.3624359590000026,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-sdk/install-apple-shared-1.log"
+        },
+        {
+          "stage": "consumer-configure",
+          "command": [
+            "/opt/homebrew/bin/cmake",
+            "-S",
+            "/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-sdk/apple-shared-1/consumer",
+            "-B",
+            "/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-sdk/apple-shared-1/build",
+            "-G",
+            "Ninja",
+            "-DCMAKE_BUILD_TYPE=Release",
+            "-DCMAKE_PREFIX_PATH=/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-sdk/apple-shared-1/relocated",
+            "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 1.5582620830000025,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-sdk/consumer-configure-apple-shared-1.log"
+        },
+        {
+          "stage": "consumer-build",
+          "command": [
+            "/opt/homebrew/bin/cmake",
+            "--build",
+            "/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-sdk/apple-shared-1/build",
+            "--target",
+            "cpu",
+            "cpu_math",
+            "native",
+            "native_math",
+            "headers",
+            "--parallel",
+            "4"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 4.344871957999999,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-sdk/consumer-build-apple-shared-1.log"
+        },
+        {
+          "stage": "cpu_math",
+          "command": [
+            "/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-sdk/apple-shared-1/build/cpu_math",
+            "--gtest_output=xml:/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-sdk/cpu_math-apple-shared-1.xml"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 32.922620083,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-sdk/cpu_math-apple-shared-1.log"
+        },
+        {
+          "stage": "native_math",
+          "command": [
+            "/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-sdk/apple-shared-1/build/native_math",
+            "--gtest_output=xml:/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-sdk/native_math-apple-shared-1.xml"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 12.069572792000002,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-sdk/native_math-apple-shared-1.log"
+        },
+        {
+          "stage": "cpu",
+          "command": [
+            "/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-sdk/apple-shared-1/build/cpu",
+            "--gtest_output=xml:/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-sdk/cpu-apple-shared-1.xml"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 0.46178558299999395,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-sdk/cpu-apple-shared-1.log"
+        },
+        {
+          "stage": "native",
+          "command": [
+            "/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-sdk/apple-shared-1/build/native",
+            "--gtest_output=xml:/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-sdk/native-apple-shared-1.xml"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 1.0990647910000035,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-sdk/native-apple-shared-1.log"
+        },
+        {
+          "stage": "installed-metal-lifetime-compile",
+          "command": [
+            "xcrun",
+            "clang++",
+            "-std=c++20",
+            "-O3",
+            "-g",
+            "-Wall",
+            "-Wextra",
+            "-Wpedantic",
+            "-Werror",
+            "-fsanitize=undefined",
+            "-fno-sanitize-recover=all",
+            "-isystem",
+            "/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-sdk/apple-shared-1/relocated/include/metal_cpp",
+            "/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-sdk/apple-shared-1/consumer/metal_shared_ptr_lifetime.cc",
+            "-framework",
+            "Foundation",
+            "-framework",
+            "Metal",
+            "-o",
+            "/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-sdk/apple-shared-1/build/metal_lifetime"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 0.6554954579999901,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-sdk/installed-metal-lifetime-compile-apple-shared-1.log"
+        },
+        {
+          "stage": "installed-metal-lifetime",
+          "command": [
+            "/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-sdk/apple-shared-1/build/metal_lifetime"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 0.32367416699999296,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-sdk/installed-metal-lifetime-apple-shared-1.log"
+        }
+      ],
+      "cumulative_seconds": 104.70759770699999,
+      "scope": "G04/G05 actual relocated shipping static/shared public consumers, new mathematical domain and twelve independent public headers; no repository HYLE headers, HYLE_TESTING, P1 or full model.",
+      "producer": "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-build",
+      "prefix": "/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-sdk/apple-shared-1/relocated",
+      "prior_project_include": []
+    },
+    {
+      "tag": "apple-static-1",
+      "state": "TERMINAL_PASS",
+      "route": "apple",
+      "mode": "static",
+      "attempt": "1",
+      "identity": {
+        "model": "Mac16,12",
+        "arch": "arm64",
+        "os": "ProductName:\t\tmacOS\nProductVersion:\t\t27.0.1\nBuildVersion:\t\t26A434",
+        "compiler": "Apple clang version 21.0.0 (clang-2100.3.34.2)\nTarget: arm64-apple-darwin27.0.0\nThread model: posix\nInstalledDir: /Library/Developer/CommandLineTools/usr/bin"
+      },
+      "max_jobs": 4,
+      "stages": [
+        {
+          "stage": "producer-configure",
+          "command": [
+            "/opt/homebrew/bin/cmake",
+            "-S",
+            "/Users/kiro/hyle-scratch/compute-unified/source-c8874688",
+            "-B",
+            "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-build"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 4.0503715,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-sdk/producer-configure-apple-static-1.log"
+        },
+        {
+          "stage": "producer-build",
+          "command": [
+            "/opt/homebrew/bin/cmake",
+            "--build",
+            "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-build",
+            "--target",
+            "hyle_compute",
+            "hyle_compute_batch",
+            "hyle_graph",
+            "hyle_graph_batch",
+            "hyle_graph_route_cpu_apple",
+            "hyle_compute_route_apple",
+            "hyle_graph_route_apple",
+            "--parallel",
+            "4"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 47.198194416999996,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-sdk/producer-build-apple-static-1.log"
+        },
+        {
+          "stage": "install",
+          "command": [
+            "/opt/homebrew/bin/cmake",
+            "--install",
+            "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-build",
+            "--prefix",
+            "/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-sdk/apple-static-1/staging"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 0.518940833000002,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-sdk/install-apple-static-1.log"
+        },
+        {
+          "stage": "consumer-configure",
+          "command": [
+            "/opt/homebrew/bin/cmake",
+            "-S",
+            "/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-sdk/apple-static-1/consumer",
+            "-B",
+            "/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-sdk/apple-static-1/build",
+            "-G",
+            "Ninja",
+            "-DCMAKE_BUILD_TYPE=Release",
+            "-DCMAKE_PREFIX_PATH=/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-sdk/apple-static-1/relocated",
+            "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 1.5050281249999955,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-sdk/consumer-configure-apple-static-1.log"
+        },
+        {
+          "stage": "consumer-build",
+          "command": [
+            "/opt/homebrew/bin/cmake",
+            "--build",
+            "/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-sdk/apple-static-1/build",
+            "--target",
+            "cpu",
+            "cpu_math",
+            "native",
+            "native_math",
+            "headers",
+            "--parallel",
+            "4"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 4.275408875000004,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-sdk/consumer-build-apple-static-1.log"
+        },
+        {
+          "stage": "cpu_math",
+          "command": [
+            "/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-sdk/apple-static-1/build/cpu_math",
+            "--gtest_output=xml:/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-sdk/cpu_math-apple-static-1.xml",
+            "--gtest_filter=GgmlCpuCacheEncode.*:GgmlCpuBoxed.*"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 1.3243522080000005,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-sdk/cpu_math-apple-static-1.log"
+        },
+        {
+          "stage": "native_math",
+          "command": [
+            "/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-sdk/apple-static-1/build/native_math",
+            "--gtest_output=xml:/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-sdk/native_math-apple-static-1.xml"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 9.298141540999993,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-sdk/native_math-apple-static-1.log"
+        },
+        {
+          "stage": "cpu",
+          "command": [
+            "/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-sdk/apple-static-1/build/cpu",
+            "--gtest_output=xml:/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-sdk/cpu-apple-static-1.xml"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 0.4798929999999899,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-sdk/cpu-apple-static-1.log"
+        },
+        {
+          "stage": "native",
+          "command": [
+            "/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-sdk/apple-static-1/build/native",
+            "--gtest_output=xml:/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-sdk/native-apple-static-1.xml"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 1.241846124999995,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-sdk/native-apple-static-1.log"
+        },
+        {
+          "stage": "installed-metal-lifetime-compile",
+          "command": [
+            "xcrun",
+            "clang++",
+            "-std=c++20",
+            "-O3",
+            "-g",
+            "-Wall",
+            "-Wextra",
+            "-Wpedantic",
+            "-Werror",
+            "-fsanitize=undefined",
+            "-fno-sanitize-recover=all",
+            "-isystem",
+            "/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-sdk/apple-static-1/relocated/include/metal_cpp",
+            "/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-sdk/apple-static-1/consumer/metal_shared_ptr_lifetime.cc",
+            "-framework",
+            "Foundation",
+            "-framework",
+            "Metal",
+            "-o",
+            "/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-sdk/apple-static-1/build/metal_lifetime"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 0.6663698750000009,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-sdk/installed-metal-lifetime-compile-apple-static-1.log"
+        },
+        {
+          "stage": "installed-metal-lifetime",
+          "command": [
+            "/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-sdk/apple-static-1/build/metal_lifetime"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 0.3234714580000002,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-sdk/installed-metal-lifetime-apple-static-1.log"
+        }
+      ],
+      "cumulative_seconds": 70.88201795699997,
+      "scope": "G04/G05 actual relocated shipping static/shared public consumers, new mathematical domain and twelve independent public headers; no repository HYLE headers, HYLE_TESTING, P1 or full model.",
+      "producer": "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-build",
+      "prefix": "/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-sdk/apple-static-1/relocated",
+      "prior_project_include": []
+    },
+    {
+      "tag": "cuda-shared-1",
+      "state": "TERMINAL_FAIL",
+      "route": "cuda",
+      "mode": "shared",
+      "attempt": "1",
+      "identity": {
+        "host": "Linux kiro-workstation 6.18.54.1-microsoft-standard-WSL2 #1 SMP PREEMPT_DYNAMIC Tue Oct  6 19:13:07 UTC 2026 x86_64 x86_64 x86_64 GNU/Linux",
+        "compiler": "g++-14 (Ubuntu 14.2.0-4ubuntu2~24.04.1) 14.2.0\nCopyright (C) 2024 Free Software Foundation, Inc.\nThis is free software; see the source for copying conditions.  There is NO\nwarranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.",
+        "cuda": "nvcc: NVIDIA (R) Cuda compiler driver\nCopyright (c) 2005-2026 NVIDIA Corporation\nBuilt on Tue_Jun_09_02:43:40_PM_PDT_2026\nCuda compilation tools, release 13.3, V13.3.73\nBuild cuda_13.3.r13.3/compiler.38244171_0",
+        "gpu": "NVIDIA GeForce RTX 4070, 617.14, 12282 MiB"
+      },
+      "max_jobs": 4,
+      "stages": [
+        {
+          "stage": "producer-configure",
+          "command": [
+            "cmake",
+            "-S",
+            "/root/hyle-scratch/compute-unified/source-7a7b4c3b",
+            "-B",
+            "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/shared-sdk-build",
+            "-DCMAKE_PROJECT_INCLUDE="
+          ],
+          "exit_code": 1,
+          "elapsed_seconds": 54.718926955,
+          "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/sdk/producer-configure-cuda-shared-1.log"
+        }
+      ],
+      "cumulative_seconds": 54.718926955,
+      "scope": "G04/G05 actual relocated shipping static/shared public consumers, new mathematical domain and twelve independent public headers; no repository HYLE headers, HYLE_TESTING, P1 or full model.",
+      "producer": "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/shared-sdk-build",
+      "prefix": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/sdk/cuda-shared-1/relocated",
+      "prior_project_include": [
+        "CMAKE_PROJECT_INCLUDE:UNINITIALIZED=/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/risk/cuda-risk-project.cmake"
+      ]
+    },
+    {
+      "tag": "cuda-shared-2",
+      "state": "TERMINAL_FAIL",
+      "route": "cuda",
+      "mode": "shared",
+      "attempt": "2",
+      "identity": {
+        "host": "Linux kiro-workstation 6.18.54.1-microsoft-standard-WSL2 #1 SMP PREEMPT_DYNAMIC Tue Oct  6 19:13:07 UTC 2026 x86_64 x86_64 x86_64 GNU/Linux",
+        "compiler": "g++-14 (Ubuntu 14.2.0-4ubuntu2~24.04.1) 14.2.0\nCopyright (C) 2024 Free Software Foundation, Inc.\nThis is free software; see the source for copying conditions.  There is NO\nwarranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.",
+        "cuda": "nvcc: NVIDIA (R) Cuda compiler driver\nCopyright (c) 2005-2026 NVIDIA Corporation\nBuilt on Tue_Jun_09_02:43:40_PM_PDT_2026\nCuda compilation tools, release 13.3, V13.3.73\nBuild cuda_13.3.r13.3/compiler.38244171_0",
+        "gpu": "NVIDIA GeForce RTX 4070, 617.14, 12282 MiB"
+      },
+      "max_jobs": 4,
+      "stages": [
+        {
+          "stage": "producer-configure",
+          "command": [
+            "cmake",
+            "-S",
+            "/root/hyle-scratch/compute-unified/source-7a7b4c3b",
+            "-B",
+            "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/shared-sdk-build",
+            "-UCMAKE_PROJECT_INCLUDE"
+          ],
+          "exit_code": -15,
+          "elapsed_seconds": 48.304956652,
+          "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/sdk/producer-configure-cuda-shared-2.log"
+        }
+      ],
+      "cumulative_seconds": 48.304956652,
+      "scope": "G04/G05 actual relocated shipping static/shared public consumers, new mathematical domain and twelve independent public headers; no repository HYLE headers, HYLE_TESTING, P1 or full model.",
+      "producer": "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/shared-sdk-build",
+      "prefix": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/sdk/cuda-shared-2/relocated",
+      "prior_project_include": [
+        "CMAKE_PROJECT_INCLUDE:UNINITIALIZED="
+      ]
+    },
+    {
+      "tag": "cuda-shared-3",
+      "state": "TERMINAL_FAIL",
+      "route": "cuda",
+      "mode": "shared",
+      "attempt": "3",
+      "identity": {
+        "host": "Linux kiro-workstation 6.18.54.1-microsoft-standard-WSL2 #1 SMP PREEMPT_DYNAMIC Tue Oct  6 19:13:07 UTC 2026 x86_64 x86_64 x86_64 GNU/Linux",
+        "compiler": "g++-14 (Ubuntu 14.2.0-4ubuntu2~24.04.1) 14.2.0\nCopyright (C) 2024 Free Software Foundation, Inc.\nThis is free software; see the source for copying conditions.  There is NO\nwarranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.",
+        "cuda": "nvcc: NVIDIA (R) Cuda compiler driver\nCopyright (c) 2005-2026 NVIDIA Corporation\nBuilt on Tue_Jun_09_02:43:40_PM_PDT_2026\nCuda compilation tools, release 13.3, V13.3.73\nBuild cuda_13.3.r13.3/compiler.38244171_0",
+        "gpu": "NVIDIA GeForce RTX 4070, 617.14, 12282 MiB"
+      },
+      "max_jobs": 4,
+      "stages": [
+        {
+          "stage": "producer-configure",
+          "command": [
+            "cmake",
+            "-S",
+            "/root/hyle-scratch/compute-unified/source-7a7b4c3b",
+            "-B",
+            "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/shared-sdk-build",
+            "-UCMAKE_PROJECT_INCLUDE",
+            "-DHYLE_BUILD_TESTS=OFF",
+            "-DHYLE_BUILD_BENCH=OFF",
+            "-DHYLE_INSTALL=ON",
+            "-DHYLE_TESTING=OFF"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 41.77308186399998,
+          "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/sdk/producer-configure-cuda-shared-3.log"
+        },
+        {
+          "stage": "producer-build",
+          "command": [
+            "cmake",
+            "--build",
+            "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/shared-sdk-build",
+            "--target",
+            "hyle_compute",
+            "hyle_compute_batch",
+            "hyle_graph",
+            "hyle_graph_batch",
+            "hyle_graph_route_cpu_cuda",
+            "hyle_compute_provider_flashinfer",
+            "--parallel",
+            "4"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 27.43180056700001,
+          "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/sdk/producer-build-cuda-shared-3.log"
+        },
+        {
+          "stage": "install",
+          "command": [
+            "cmake",
+            "--install",
+            "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/shared-sdk-build",
+            "--prefix",
+            "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/sdk/cuda-shared-3/staging"
+          ],
+          "exit_code": 1,
+          "elapsed_seconds": 7.378338702999997,
+          "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/sdk/install-cuda-shared-3.log"
+        }
+      ],
+      "cumulative_seconds": 76.58322113399998,
+      "scope": "G04/G05 actual relocated shipping static/shared public consumers, new mathematical domain and twelve independent public headers; no repository HYLE headers, HYLE_TESTING, P1 or full model.",
+      "producer": "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/shared-sdk-build",
+      "prefix": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/sdk/cuda-shared-3/relocated",
+      "prior_project_include": []
+    },
+    {
+      "tag": "cuda-shared-4",
+      "state": "TERMINAL_PASS",
+      "route": "cuda",
+      "mode": "shared",
+      "attempt": "4",
+      "identity": {
+        "host": "Linux kiro-workstation 6.18.54.1-microsoft-standard-WSL2 #1 SMP PREEMPT_DYNAMIC Tue Oct  6 19:13:07 UTC 2026 x86_64 x86_64 x86_64 GNU/Linux",
+        "compiler": "g++-14 (Ubuntu 14.2.0-4ubuntu2~24.04.1) 14.2.0\nCopyright (C) 2024 Free Software Foundation, Inc.\nThis is free software; see the source for copying conditions.  There is NO\nwarranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.",
+        "cuda": "nvcc: NVIDIA (R) Cuda compiler driver\nCopyright (c) 2005-2026 NVIDIA Corporation\nBuilt on Tue_Jun_09_02:43:40_PM_PDT_2026\nCuda compilation tools, release 13.3, V13.3.73\nBuild cuda_13.3.r13.3/compiler.38244171_0",
+        "gpu": "NVIDIA GeForce RTX 4070, 617.14, 12282 MiB"
+      },
+      "max_jobs": 4,
+      "stages": [
+        {
+          "stage": "producer-build",
+          "command": [
+            "cmake",
+            "--build",
+            "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/shared-sdk-build",
+            "--target",
+            "hyle_compute",
+            "hyle_compute_batch",
+            "hyle_graph",
+            "hyle_graph_batch",
+            "hyle_graph_route_cpu_cuda",
+            "hyle_compute_provider_flashinfer",
+            "hyle_compute_state",
+            "--parallel",
+            "4"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 0.2798109550000163,
+          "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/sdk/producer-build-cuda-shared-4.log"
+        },
+        {
+          "stage": "install",
+          "command": [
+            "cmake",
+            "--install",
+            "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/shared-sdk-build",
+            "--prefix",
+            "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/sdk/cuda-shared-4/staging"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 41.852786433999995,
+          "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/sdk/install-cuda-shared-4.log"
+        },
+        {
+          "stage": "consumer-configure",
+          "command": [
+            "cmake",
+            "-S",
+            "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/sdk/cuda-shared-4/consumer",
+            "-B",
+            "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/sdk/cuda-shared-4/build",
+            "-G",
+            "Ninja",
+            "-DCMAKE_BUILD_TYPE=Release",
+            "-DCMAKE_PREFIX_PATH=/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/sdk/cuda-shared-4/relocated",
+            "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON",
+            "-DCMAKE_CXX_COMPILER=/usr/bin/g++-14",
+            "-DCUDAToolkit_ROOT=/usr/local/cuda-13.3"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 30.60774665300005,
+          "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/sdk/consumer-configure-cuda-shared-4.log"
+        },
+        {
+          "stage": "consumer-build",
+          "command": [
+            "cmake",
+            "--build",
+            "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/sdk/cuda-shared-4/build",
+            "--target",
+            "cpu",
+            "cpu_math",
+            "native",
+            "native_math",
+            "headers",
+            "--parallel",
+            "4"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 13.84018648,
+          "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/sdk/consumer-build-cuda-shared-4.log"
+        },
+        {
+          "stage": "cpu_math",
+          "command": [
+            "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/sdk/cuda-shared-4/build/cpu_math",
+            "--gtest_output=xml:/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/sdk/cpu_math-cuda-shared-4.xml",
+            "--gtest_filter=GgmlCpuCacheEncode.*:GgmlCpuBoxed.*"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 1.48407069000001,
+          "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/sdk/cpu_math-cuda-shared-4.log"
+        },
+        {
+          "stage": "native_math",
+          "command": [
+            "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/sdk/cuda-shared-4/build/native_math",
+            "--gtest_output=xml:/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/sdk/native_math-cuda-shared-4.xml"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 2.7262345990000085,
+          "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/sdk/native_math-cuda-shared-4.log"
+        },
+        {
+          "stage": "cpu",
+          "command": [
+            "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/sdk/cuda-shared-4/build/cpu",
+            "--gtest_output=xml:/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/sdk/cpu-cuda-shared-4.xml"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 0.4422199199999568,
+          "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/sdk/cpu-cuda-shared-4.log"
+        },
+        {
+          "stage": "native",
+          "command": [
+            "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/sdk/cuda-shared-4/build/native",
+            "--gtest_output=xml:/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/sdk/native-cuda-shared-4.xml"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 1.187341468999989,
+          "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/sdk/native-cuda-shared-4.log"
+        }
+      ],
+      "cumulative_seconds": 92.42039720000002,
+      "scope": "G04/G05 actual relocated shipping static/shared public consumers, new mathematical domain and twelve independent public headers; no repository HYLE headers, HYLE_TESTING, P1 or full model.",
+      "producer": "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/shared-sdk-build",
+      "prefix": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/sdk/cuda-shared-4/relocated",
+      "prior_project_include": [],
+      "configuration_reused_from": "cuda-shared-3"
+    },
+    {
+      "tag": "cuda-static-1",
+      "state": "TERMINAL_PASS",
+      "route": "cuda",
+      "mode": "static",
+      "attempt": "1",
+      "identity": {
+        "host": "Linux kiro-workstation 6.18.54.1-microsoft-standard-WSL2 #1 SMP PREEMPT_DYNAMIC Tue Oct  6 19:13:07 UTC 2026 x86_64 x86_64 x86_64 GNU/Linux",
+        "compiler": "g++-14 (Ubuntu 14.2.0-4ubuntu2~24.04.1) 14.2.0\nCopyright (C) 2024 Free Software Foundation, Inc.\nThis is free software; see the source for copying conditions.  There is NO\nwarranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.",
+        "cuda": "nvcc: NVIDIA (R) Cuda compiler driver\nCopyright (c) 2005-2026 NVIDIA Corporation\nBuilt on Tue_Jun_09_02:43:40_PM_PDT_2026\nCuda compilation tools, release 13.3, V13.3.73\nBuild cuda_13.3.r13.3/compiler.38244171_0",
+        "gpu": "NVIDIA GeForce RTX 4070, 617.14, 12282 MiB"
+      },
+      "max_jobs": 4,
+      "stages": [
+        {
+          "stage": "producer-configure",
+          "command": [
+            "cmake",
+            "-S",
+            "/root/hyle-scratch/compute-unified/source-7a7b4c3b",
+            "-B",
+            "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/static-sdk-build",
+            "-UCMAKE_PROJECT_INCLUDE",
+            "-DHYLE_BUILD_TESTS=OFF",
+            "-DHYLE_BUILD_BENCH=OFF",
+            "-DHYLE_INSTALL=ON",
+            "-DHYLE_TESTING=OFF"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 41.78986245799996,
+          "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/sdk/producer-configure-cuda-static-1.log"
+        },
+        {
+          "stage": "producer-build",
+          "command": [
+            "cmake",
+            "--build",
+            "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/static-sdk-build",
+            "--target",
+            "hyle_compute",
+            "hyle_compute_batch",
+            "hyle_graph",
+            "hyle_graph_batch",
+            "hyle_graph_route_cpu_cuda",
+            "hyle_compute_provider_flashinfer",
+            "hyle_compute_state",
+            "--parallel",
+            "4"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 1122.3185711330002,
+          "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/sdk/producer-build-cuda-static-1.log"
+        },
+        {
+          "stage": "install",
+          "command": [
+            "cmake",
+            "--install",
+            "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/static-sdk-build",
+            "--prefix",
+            "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/sdk/cuda-static-1/staging"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 45.75946836799994,
+          "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/sdk/install-cuda-static-1.log"
+        },
+        {
+          "stage": "consumer-configure",
+          "command": [
+            "cmake",
+            "-S",
+            "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/sdk/cuda-static-1/consumer",
+            "-B",
+            "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/sdk/cuda-static-1/build",
+            "-G",
+            "Ninja",
+            "-DCMAKE_BUILD_TYPE=Release",
+            "-DCMAKE_PREFIX_PATH=/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/sdk/cuda-static-1/relocated",
+            "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON",
+            "-DCMAKE_CXX_COMPILER=/usr/bin/g++-14",
+            "-DCUDAToolkit_ROOT=/usr/local/cuda-13.3"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 29.36033572700012,
+          "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/sdk/consumer-configure-cuda-static-1.log"
+        },
+        {
+          "stage": "consumer-build",
+          "command": [
+            "cmake",
+            "--build",
+            "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/sdk/cuda-static-1/build",
+            "--target",
+            "cpu",
+            "cpu_math",
+            "native",
+            "native_math",
+            "headers",
+            "--parallel",
+            "4"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 37.59634429100015,
+          "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/sdk/consumer-build-cuda-static-1.log"
+        },
+        {
+          "stage": "cpu_math",
+          "command": [
+            "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/sdk/cuda-static-1/build/cpu_math",
+            "--gtest_output=xml:/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/sdk/cpu_math-cuda-static-1.xml",
+            "--gtest_filter=GgmlCpuCacheEncode.*:GgmlCpuBoxed.*"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 1.4080013269999654,
+          "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/sdk/cpu_math-cuda-static-1.log"
+        },
+        {
+          "stage": "native_math",
+          "command": [
+            "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/sdk/cuda-static-1/build/native_math",
+            "--gtest_output=xml:/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/sdk/native_math-cuda-static-1.xml"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 2.9594570389999717,
+          "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/sdk/native_math-cuda-static-1.log"
+        },
+        {
+          "stage": "cpu",
+          "command": [
+            "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/sdk/cuda-static-1/build/cpu",
+            "--gtest_output=xml:/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/sdk/cpu-cuda-static-1.xml"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 0.29645195099988086,
+          "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/sdk/cpu-cuda-static-1.log"
+        },
+        {
+          "stage": "native",
+          "command": [
+            "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/sdk/cuda-static-1/build/native",
+            "--gtest_output=xml:/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/sdk/native-cuda-static-1.xml"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 0.828616387000011,
+          "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/sdk/native-cuda-static-1.log"
+        }
+      ],
+      "cumulative_seconds": 1282.3171086810003,
+      "scope": "G04/G05 actual relocated shipping static/shared public consumers, new mathematical domain and twelve independent public headers; no repository HYLE headers, HYLE_TESTING, P1 or full model.",
+      "producer": "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/static-sdk-build",
+      "prefix": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/sdk/cuda-static-1/relocated",
+      "prior_project_include": []
+    },
+    {
+      "tag": "vulkan-shared-1",
+      "state": "TERMINAL_PASS",
+      "route": "vulkan",
+      "mode": "shared",
+      "attempt": "1",
+      "identity": {
+        "model": "Mac16,12",
+        "arch": "arm64",
+        "os": "ProductName:\t\tmacOS\nProductVersion:\t\t27.0.1\nBuildVersion:\t\t26A434",
+        "compiler": "Apple clang version 21.0.0 (clang-2100.3.34.2)\nTarget: arm64-apple-darwin27.0.0\nThread model: posix\nInstalledDir: /Library/Developer/CommandLineTools/usr/bin"
+      },
+      "max_jobs": 4,
+      "stages": [
+        {
+          "stage": "producer-configure",
+          "command": [
+            "/opt/homebrew/bin/cmake",
+            "-S",
+            "/Users/kiro/hyle-scratch/compute-unified/source-c8874688",
+            "-B",
+            "/Users/kiro/hyle-scratch/compute-unified/a-cpu-vulkan/selected-graph/shared-sdk-build"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 14.829521791,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-sdk/producer-configure-vulkan-shared-1.log"
+        },
+        {
+          "stage": "producer-build",
+          "command": [
+            "/opt/homebrew/bin/cmake",
+            "--build",
+            "/Users/kiro/hyle-scratch/compute-unified/a-cpu-vulkan/selected-graph/shared-sdk-build",
+            "--target",
+            "hyle_compute",
+            "hyle_compute_batch",
+            "hyle_graph",
+            "hyle_graph_batch",
+            "hyle_graph_route_cpu_vulkan",
+            "hyle_compute_route_vulkan",
+            "hyle_graph_route_vulkan",
+            "--parallel",
+            "4"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 72.464646167,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-sdk/producer-build-vulkan-shared-1.log"
+        },
+        {
+          "stage": "install",
+          "command": [
+            "/opt/homebrew/bin/cmake",
+            "--install",
+            "/Users/kiro/hyle-scratch/compute-unified/a-cpu-vulkan/selected-graph/shared-sdk-build",
+            "--prefix",
+            "/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-sdk/vulkan-shared-1/staging"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 0.4323316669999997,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-sdk/install-vulkan-shared-1.log"
+        },
+        {
+          "stage": "consumer-configure",
+          "command": [
+            "/opt/homebrew/bin/cmake",
+            "-S",
+            "/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-sdk/vulkan-shared-1/consumer",
+            "-B",
+            "/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-sdk/vulkan-shared-1/build",
+            "-G",
+            "Ninja",
+            "-DCMAKE_BUILD_TYPE=Release",
+            "-DCMAKE_PREFIX_PATH=/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-sdk/vulkan-shared-1/relocated",
+            "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 1.5562832909999997,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-sdk/consumer-configure-vulkan-shared-1.log"
+        },
+        {
+          "stage": "consumer-build",
+          "command": [
+            "/opt/homebrew/bin/cmake",
+            "--build",
+            "/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-sdk/vulkan-shared-1/build",
+            "--target",
+            "cpu",
+            "cpu_math",
+            "native",
+            "native_math",
+            "headers",
+            "--parallel",
+            "4"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 3.559419332999994,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-sdk/consumer-build-vulkan-shared-1.log"
+        },
+        {
+          "stage": "cpu_math",
+          "command": [
+            "/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-sdk/vulkan-shared-1/build/cpu_math",
+            "--gtest_output=xml:/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-sdk/cpu_math-vulkan-shared-1.xml",
+            "--gtest_filter=GgmlCpuCacheEncode.*:GgmlCpuBoxed.*"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 8.530989915999996,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-sdk/cpu_math-vulkan-shared-1.log"
+        },
+        {
+          "stage": "native_math",
+          "command": [
+            "/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-sdk/vulkan-shared-1/build/native_math",
+            "--gtest_output=xml:/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-sdk/native_math-vulkan-shared-1.xml"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 9.149848792,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-sdk/native_math-vulkan-shared-1.log"
+        },
+        {
+          "stage": "cpu",
+          "command": [
+            "/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-sdk/vulkan-shared-1/build/cpu",
+            "--gtest_output=xml:/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-sdk/cpu-vulkan-shared-1.xml"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 0.4441240829999913,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-sdk/cpu-vulkan-shared-1.log"
+        },
+        {
+          "stage": "native",
+          "command": [
+            "/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-sdk/vulkan-shared-1/build/native",
+            "--gtest_output=xml:/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-sdk/native-vulkan-shared-1.xml"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 1.2290019579999978,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-sdk/native-vulkan-shared-1.log"
+        }
+      ],
+      "cumulative_seconds": 112.19616699799998,
+      "scope": "G04/G05 actual relocated shipping static/shared public consumers, new mathematical domain and twelve independent public headers; no repository HYLE headers, HYLE_TESTING, P1 or full model.",
+      "producer": "/Users/kiro/hyle-scratch/compute-unified/a-cpu-vulkan/selected-graph/shared-sdk-build",
+      "prefix": "/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-sdk/vulkan-shared-1/relocated",
+      "prior_project_include": []
+    },
+    {
+      "tag": "vulkan-static-1",
+      "state": "TERMINAL_PASS",
+      "route": "vulkan",
+      "mode": "static",
+      "attempt": "1",
+      "identity": {
+        "model": "Mac16,12",
+        "arch": "arm64",
+        "os": "ProductName:\t\tmacOS\nProductVersion:\t\t27.0.1\nBuildVersion:\t\t26A434",
+        "compiler": "Apple clang version 21.0.0 (clang-2100.3.34.2)\nTarget: arm64-apple-darwin27.0.0\nThread model: posix\nInstalledDir: /Library/Developer/CommandLineTools/usr/bin"
+      },
+      "max_jobs": 4,
+      "stages": [
+        {
+          "stage": "producer-configure",
+          "command": [
+            "/opt/homebrew/bin/cmake",
+            "-S",
+            "/Users/kiro/hyle-scratch/compute-unified/source-c8874688",
+            "-B",
+            "/Users/kiro/hyle-scratch/compute-unified/a-cpu-vulkan/selected-graph/static-sdk-build"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 14.948328375000001,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-sdk/producer-configure-vulkan-static-1.log"
+        },
+        {
+          "stage": "producer-build",
+          "command": [
+            "/opt/homebrew/bin/cmake",
+            "--build",
+            "/Users/kiro/hyle-scratch/compute-unified/a-cpu-vulkan/selected-graph/static-sdk-build",
+            "--target",
+            "hyle_compute",
+            "hyle_compute_batch",
+            "hyle_graph",
+            "hyle_graph_batch",
+            "hyle_graph_route_cpu_vulkan",
+            "hyle_compute_route_vulkan",
+            "hyle_graph_route_vulkan",
+            "--parallel",
+            "4"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 72.847023375,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-sdk/producer-build-vulkan-static-1.log"
+        },
+        {
+          "stage": "install",
+          "command": [
+            "/opt/homebrew/bin/cmake",
+            "--install",
+            "/Users/kiro/hyle-scratch/compute-unified/a-cpu-vulkan/selected-graph/static-sdk-build",
+            "--prefix",
+            "/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-sdk/vulkan-static-1/staging"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 0.5814875829999977,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-sdk/install-vulkan-static-1.log"
+        },
+        {
+          "stage": "consumer-configure",
+          "command": [
+            "/opt/homebrew/bin/cmake",
+            "-S",
+            "/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-sdk/vulkan-static-1/consumer",
+            "-B",
+            "/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-sdk/vulkan-static-1/build",
+            "-G",
+            "Ninja",
+            "-DCMAKE_BUILD_TYPE=Release",
+            "-DCMAKE_PREFIX_PATH=/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-sdk/vulkan-static-1/relocated",
+            "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 1.4994767909999922,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-sdk/consumer-configure-vulkan-static-1.log"
+        },
+        {
+          "stage": "consumer-build",
+          "command": [
+            "/opt/homebrew/bin/cmake",
+            "--build",
+            "/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-sdk/vulkan-static-1/build",
+            "--target",
+            "cpu",
+            "cpu_math",
+            "native",
+            "native_math",
+            "headers",
+            "--parallel",
+            "4"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 3.6309205839999947,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-sdk/consumer-build-vulkan-static-1.log"
+        },
+        {
+          "stage": "cpu_math",
+          "command": [
+            "/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-sdk/vulkan-static-1/build/cpu_math",
+            "--gtest_output=xml:/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-sdk/cpu_math-vulkan-static-1.xml",
+            "--gtest_filter=GgmlCpuCacheEncode.*:GgmlCpuBoxed.*"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 1.3094853329999978,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-sdk/cpu_math-vulkan-static-1.log"
+        },
+        {
+          "stage": "native_math",
+          "command": [
+            "/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-sdk/vulkan-static-1/build/native_math",
+            "--gtest_output=xml:/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-sdk/native_math-vulkan-static-1.xml"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 8.059611624999988,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-sdk/native_math-vulkan-static-1.log"
+        },
+        {
+          "stage": "cpu",
+          "command": [
+            "/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-sdk/vulkan-static-1/build/cpu",
+            "--gtest_output=xml:/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-sdk/cpu-vulkan-static-1.xml"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 0.4686777499999977,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-sdk/cpu-vulkan-static-1.log"
+        },
+        {
+          "stage": "native",
+          "command": [
+            "/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-sdk/vulkan-static-1/build/native",
+            "--gtest_output=xml:/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-sdk/native-vulkan-static-1.xml"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 1.507016207999996,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-sdk/native-vulkan-static-1.log"
+        }
+      ],
+      "cumulative_seconds": 104.85202762399997,
+      "scope": "G04/G05 actual relocated shipping static/shared public consumers, new mathematical domain and twelve independent public headers; no repository HYLE headers, HYLE_TESTING, P1 or full model.",
+      "producer": "/Users/kiro/hyle-scratch/compute-unified/a-cpu-vulkan/selected-graph/static-sdk-build",
+      "prefix": "/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-sdk/vulkan-static-1/relocated",
+      "prior_project_include": []
+    }
+  ],
+  "cumulative_seconds": 1946.9824209080002
+}

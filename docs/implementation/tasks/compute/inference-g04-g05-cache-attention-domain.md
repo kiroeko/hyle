@@ -762,3 +762,33 @@ PASS时已核对route输入与全部非Apple lock条目一致，不因Apple patc
 SDK/逐头/P1或G04/G05全批PASS。十一owner仍AUDITED。下一批按既定门复用六棵shipping
 SDK树，使用新安装并搬迁的prefix运行12独立头、新数学、CPU/native/joint编码消费者；
 CUDA显式清除上一风险阶段私有CMAKE_PROJECT_INCLUDE，实际编译命令必须无HYLE_TESTING。
+
+### 新增域静态/动态 SDK 与独立头交付结果
+
+[六组混合路线 SDK](../../../../evidence/correctness/inference-g04-g05-encoded-sdk/result.json)
+覆盖实际 Air CPU+Apple、CPU+Vulkan 和 WSL CPU+CUDA 的静态/动态配置；
+[Windows CPU-only SDK](../../../../evidence/correctness/inference-g04-g05-cpu-only-encoded-sdk/result.json)
+另覆盖原 ffa CPU-only 两配置。全部绑定同一产品 f772fcad2，无新产品改动。
+各配置使用复用的 shipping 构建树、新安装并搬迁的 prefix，外部 consumer 仅使用安装头，
+十二个改变的公开头分别独立编译；混合配置十六个 consumer TU，CPU-only 十四个。
+实际 shipping 编译命令无 HYLE_TESTING，不借上一风险树的 hook 代签交付。
+
+每组十三项新增 CPU 编码/有限数学测试和三个公开 Direct/Graph 增量 F2 consumer PASS；
+首次 Apple shared 另包含一项原 plain control。Apple/Vulkan 各十一项、CUDA 十项 native
+数学 PASS；Apple 四项、Vulkan/CUDA 各三项原生/联合编码消费者 PASS。
+原有限 F16/BF16、D64/128 与 D256、window/noncausal、六次 dirty 更新、同 Graph/两 Graph
+的 K/V producer、历史/共享页和失败不发布合同继续检查。Vulkan BF16 未因此准入。
+Apple 安装派生 SharedPtr/allocator 头及许可证 SHA 匹配；安装头独立 Clang21/O3/UBSan
+生命周期测试在静态/动态配置均 PASS。
+
+六组混合配置保留九次原尝试，累计1946.982秒。原 CUDA configure 空 include 参数失败、
+风险缓存 tests/install 配置不符后的定向终止，以及遗漏 compute_state 目标导致旧库安装
+失败均保留；仅修改验证脚本参数/目标列表，没有重写产品构建系统或重置失败预算。
+CPU-only 三次尝试累计265.423秒；原 shared attempt1 漏编 backend_cpu/provider_ggml/route_cpu 三个工厂目标，
+安装混入旧静态 lib，外部消费者出现三项 dllimport 未解析；补齐 shipping 目标后使用
+新 prefix 复验，保留原 FAIL。CPU-only 使用同一原树显式切换 static/shared，不宣称两棵
+独立 producer 树。原始 runner、命令、输入、XML、安装 artifact SHA 与完整失败日志均归档。
+
+本阶段只签三交付与逐头/公开消费者门，不签新增域 P1、native private-pool 上界或整个
+G04/G05/G01–G10 完成。十一 owner 仍 AUDITED；下一步收敛成本账、冻结 candidate，沿本卡
+5% material margin 和同编码/有效区/完成/费用合同执行有限性能验收，不重跑原 G03 P1。

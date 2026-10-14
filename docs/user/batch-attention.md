@@ -10,7 +10,9 @@
 G04/G05 正在实施；CPU新域已完成Windows source数学检查，CUDA新域已完成Linux/SM89
 source数学检查，Apple/Vulkan新域已完成Air source数学检查。四后端与三联合路线的
 F16增量分页/Graph消费已有有限source证据；CPU/CUDA/Apple的BF16增量组合也已实测。
-新域三交付与完整风险/性能资格尚未签发。进度见
+新域实际源码、适用宿主风险、静态/动态 SDK 与独立头交付已通过；性能资格仍待验。
+SDK 结果见[六组混合路线](../../evidence/correctness/inference-g04-g05-encoded-sdk/result.json)与
+[CPU-only 两配置](../../evidence/correctness/inference-g04-g05-cpu-only-encoded-sdk/result.json)。进度见
 [活动卡](../implementation/tasks/compute/inference-g04-g05-cache-attention-domain.md)。
 普通旧 plain 旅程使用显式的新字段，库不保旧签名转发。schema/descriptor接受一种形状，
 不代表所选native核已支持；当前未接通的组合在准备时返回Unimplemented。
@@ -71,7 +73,7 @@ CPU-only实际ggml核心及F16增量F2/Graph组合另有
 [有限source证据](../../evidence/correctness/inference-g04-g05-cpu-only-encoded-page-source/result.json)；
 [BF16补充](../../evidence/correctness/inference-g04-g05-cpu-bf16-encoded-page-source/result.json)
 覆盖同一Direct/Graph增量旅程。
-SDK、sanitizer和P1仍不能从源码阶段测试推导。
+CPU 新域适用 sanitizer 与 SDK 已有独立证据，P1 仍待验，不能从源码阶段测试推导。
 
 Linux CUDA的FlashInfer入口现可用同一CacheEncode操作编码E4M3FN新行。准备时显式传入
 CUDA device resource，BatchProgram的host_workspace使用同设备原pinned-host resource。
@@ -87,7 +89,7 @@ F16增量F2/Direct/CUDA Graph/CPU+CUDA组合另有
 global cache与QK数学保持64维；额外shared为CTA_TILE_KV*64 bytes。原始依赖cache不变。
 BF16增量组合与强权重paged/ragged、CTA16/repack反例及修复前库负对照见
 [source补充](../../evidence/correctness/inference-g04-g05-cuda-bf16-strong-weight-source/result.json)。
-这些阶段尚不签发Windows CUDA、SDK、宿主完整风险或P1资格。
+Linux CUDA 的 source 风险与 SDK 已有独立证据；Windows CUDA、GPU sanitizer 和 P1 未因此获准。
 
 Apple原MLX入口现可编码Q8_0新行，并在paged/ragged attention中直接读取U8压缩carrier。
 Q/output为F16或BF16，支持上述有限几何、窗口与full noncausal；空输出仍按Dv给出形状。
@@ -101,14 +103,14 @@ F16原生及CPU+Apple增量F2/Graph已有
 [有限source证据](../../evidence/correctness/inference-g04-g05-encoded-native-page-source/result.json)；
 BF16原生及CPU+Apple增量组合也已完成
 [有限source补充](../../evidence/correctness/inference-g04-g05-apple-bf16-encoded-page-source/result.json)；
-完整风险、SDK和P1尚未签发。
+实际 Air 宿主 ASan/UBSan/TSan、风险和 SDK 已通过，P1 仍待验；宿主 sanitizer 不签 GPU shader/driver。
 
 Vulkan原Plan可以编码同一Q8_0 carrier，F16 paged/ragged路径在原FullF32 scalar核中
 直接按页解码，独立Dv与窗口无需整历史KV展开。NaN/Inf和编码scale溢出由原Results报错；
 普通Copy/SetRows保持原规则。实际Air的编码字节、长prefill与大值抵消见
 [Vulkan有限source证据](../../evidence/correctness/inference-g04-g05-vulkan-encoding-math-stage/result.json)，
-F16原生及CPU+Vulkan增量组合见上述共同source证据。极小scale/subnormal/FTZ边界、
-完整风险、SDK和P1仍未签发，BF16 attention没有因此获准。
+F16原生及CPU+Vulkan增量组合见上述共同source证据。极小 scale/subnormal/FTZ 边界、
+实际 Air 宿主 ASan/UBSan/TSan、风险和 SDK 已通过，P1 仍待验，BF16 attention 没有因此获准。
 
 ## 编码新行并接入原分页更新
 
