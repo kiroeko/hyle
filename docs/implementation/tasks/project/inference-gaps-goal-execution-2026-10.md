@@ -53,9 +53,9 @@ Vulkan有限NR/RF轮已CLOSED，原两次FAIL仍保留。整个G01分页等范�
 | G01 高效驻留读取 | CPU973、Apple280与Vulkanbc0有限轮均CLOSED。Vulkan最终原1region＋安全记录通过十source tests/两SDK/三san/原联合回归及Win定向编译，multi P1 QUALIFIED/5%非劣PASS、verify0；mixedD256 WIN，prefill/D64方向INCONCLUSIVE。原两次qualified FAIL与全部限制保留，整个G01其它准入域与分页未完成 | 单请求先核 dense/view；多请求接 native/等价直接驻留消费，避免按每 Q/head 重复物化全 KV | compute_batch、原 route/Provider、graph_batch 必要桥 |
 | G02 联合分页 | common与CPU+CUDA实跑、三交付/宿主风险通过；Windows余门及Apple/Vulkan联合分页待验 | 原 multi-queue bindings 接 batch coordinator；native hybrid 接准确 page/layout 与原 region/slot，公开 CPU→GPU→CPU | graph_batch、三个 graph hybrid、原 compute/native 权限桥 |
 | G03 增量 producer 组合 | [CLOSED](../compute/inference-g03-final-closure.md)，candidate11b2403e7：四原路线/三联合、Direct/Graph、多独立native来源、完整CPU+CUDA源码/两SDK、生命周期与P0通过；原失败/checked waits/费用保留 | 原 exclusive/F2/native waits到更新与读取；精确 dirty 域、成功 ready、idle input 生命周期 | compute_batch、compute/F2、原 native route与graph桥 |
-| G04 量化 KV | [共同域SCOPED](../compute/inference-g04-g05-cache-attention-domain.md)；当前公开编码页不接纳已实测，核Q8_0/FI FP8直接读取与scale/prefill成本，未冻结native FIX | 按成熟实际 cache 编码冻结 payload/scales/layout、quantize append与直接读取，不每步解码完整历史 | compute_ops/batch、实际 Provider/native route |
-| G05 attention 语义域 | 同卡SCOPED：causal-window/full noncausal/有限Dqk≠Dv；公开Q>KV非因果layout拒绝已实测，尚未写产品 | 固定真实消费者所需 window/mask/维度等域及失败边界，成熟承载；未准入未来特例不无限扩张 | compute_ops/batch、实际 Provider/native route |
-| G06 metadata/decode | 待 owner 定界 | host-known/device-produced分界，active/delta上传、完整 topology复用与decode档，实际capture资格 | compute_batch、FI/native Provider、graph_batch |
+| G04 量化 KV | [共同域 CANDIDATE；CPU CE12 AUDITED](../compute/inference-g04-g05-cache-attention-domain.md)。四原路线/三联合编码页、数学、八 SDK 已验证；CUDA 新域 ASan 通过，UBSan/TSan 待验；CPU 合格 P1 保留 material FAIL，正在验证有限修正 | 按成熟实际 cache 编码冻结 payload/scales/layout、quantize append与直接读取，不每步解码完整历史 | compute_ops/batch、实际 Provider/native route |
+| G05 attention 语义域 | 同卡已实现 causal-window/full noncausal/有限 Dqk≠Dv，与 G04 共用数学、数值/生命周期和交付证据；适用性能及剩余风险未全部签发 | 固定真实消费者所需 window/mask/维度等域及失败边界，成熟承载；未准入未来特例不无限扩张 | compute_ops/batch、实际 Provider/native route |
+| G06 metadata/decode | 有限只读预审已定位 metadata、上传/等待、权限准入和原生规划四组成本；待活动 owner 定界，不授权实现 | host-known/device-produced分界，active/delta上传、完整 topology复用与decode档，实际capture资格 | compute_batch、FI/native Provider、graph_batch |
 | G07 packed 权重 | 待有限编码选择 | 锁定 artifact→resident→selected math，借原生packed/冷repack；checked IDs保错误，排除warm完整展开/多余host检查 | 实际低精度 Provider/native route及资源桥 |
 | G08 数值输出选择 | 待有限数值域选择 | row-wise greedy/selection与选定随机数值域，counter/state、质量/分布和少量结果返回 | compute_ops、实际 Provider/native route；模型采样政策不下沉 |
 | G09 联合流水 | 待最小consumer | 原有限slots/依赖推进，真实无依赖CPU/GPU支路及microbatch trace；不重复scheduler | 三个graph hybrid及必要原native执行桥 |
@@ -64,6 +64,17 @@ Vulkan有限NR/RF轮已CLOSED，原两次FAIL仍保留。整个G01分页等范�
 编码、数学与数值域由固定 peer/native 实际支持、当前模型和留出消费者共同裁决。总卡不
 预先宣称 FP8/Q8/window/MLA/random 的任意组合全部准入，也不以 BF16 单请求不需要为由
 删除上述 G 项。确需调整已冻结域时按 owner 协议回退，不在实现途中扩成所有 peer API。
+
+2026-10-15 G06 有限只读预审仅核已有旅程成本：`batch_layout.cc` 每版完整容量分配/清零；
+`batch_execution.cc` 每步整 metadata staging/upload 及一或两次 host wait；`graph_batch/batch.cc`
+逐节点准备后才共享 mirror；逐页普通 lease read 重复线性查重，最坏 O(G²)。CPU 更新比较
+全部 metadata，Apple/Vulkan controller 重建原生 Program/Invocation；CUDA 原 plan 只依赖
+Q/KV indptr，页 IDs/tails 不参与该计划是正确的。原生编译期长度/切片不能只靠放松 reuse key。
+G06 后续有限 FIX 应覆盖 active/delta 与 immutable generation、Graph 一次上传与原依赖、
+实际 lease identity 去重后复用内部 read_unique，以及四路线 topology/runtime 边界与 decode
+成本资格。验收沿稳定 tail、跨页、加入/结束、重排、同 shape 不同 layout 记上传字节、
+plan/replan、host wait、分配与权限账；复用未变 G03 生命周期/G04–G05 数学，不扩大能力域。
+本段是只读预审结论；原活动 owner 仍按 registry，G06 未进入 SCOPED/AUDITED 或取得 PASS。
 
 G01 [驻留SDPA子批](../compute/inference-g01-resident-sdpa.md)的单请求验证已完成：CPU P1
 2598.985s、Vulkan P1 3669.387s，均合格且5%非劣PASS；失败/STOP及原合同原样保留。
