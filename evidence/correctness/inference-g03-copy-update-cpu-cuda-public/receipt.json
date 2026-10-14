@@ -1,0 +1,85 @@
+{
+  "candidate": "AUDITED WORKTREE",
+  "identity": {
+    "uname": "Linux kiro-workstation 6.18.54.1-microsoft-standard-WSL2 #1 SMP PREEMPT_DYNAMIC Tue Oct  6 19:13:07 UTC 2026 x86_64 x86_64 x86_64 GNU/Linux",
+    "gpu": "NVIDIA GeForce RTX 4070, 617.14, 2132 MiB, 7 %",
+    "compiler": "g++-14 (Ubuntu 14.2.0-4ubuntu2~24.04.1) 14.2.0"
+  },
+  "inputs": [
+    {
+      "path": "include/hyle/compute/batch_transfer.h",
+      "sha256": "3319446ddbfb9b58b3ee5ddef6b4ca63dfc6d34c9e4423fe6edf865d98fedb60"
+    },
+    {
+      "path": "include/hyle/compute/detail/copy_stream_access.h",
+      "sha256": "bf3e1abb1d1b2a711b1464080d013307ab9e147d6b7f75e58d6381ba94e9475c"
+    },
+    {
+      "path": "src/compute/batch_transfer.cc",
+      "sha256": "9956069af542795f34d00f036c409178fa77246a96b1dab5c8f9ac3e0f58adeb"
+    },
+    {
+      "path": "tests/compute_batch/copy_update_public_consumer.cc",
+      "sha256": "8ca7486acdff8f4ae8ed6436270bb38570e070a77aaac99a22515010a0c678dd"
+    }
+  ],
+  "stages": [
+    {
+      "stage": "build",
+      "route": "cpu",
+      "command": [
+        "cmake",
+        "--build",
+        "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/source-build",
+        "--target",
+        "g03_copy_update_public_cpu",
+        "--parallel",
+        "4"
+      ],
+      "input_manifest_sha256": "f1561ec6ab2412c584d36c4e70b65c245445cb8211a408cf4f81e1476c7c57ef",
+      "exit_code": 0,
+      "elapsed_seconds": 71.963398313,
+      "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g03/copy-update-public-wsl/cpu-build-1.log"
+    },
+    {
+      "stage": "public-source",
+      "route": "cpu",
+      "command": [
+        "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/source-build/g03_copy_update_public_cpu"
+      ],
+      "input_manifest_sha256": "f1561ec6ab2412c584d36c4e70b65c245445cb8211a408cf4f81e1476c7c57ef",
+      "exit_code": 0,
+      "elapsed_seconds": 0.009602029999996375,
+      "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g03/copy-update-public-wsl/cpu-public-source-1.log"
+    },
+    {
+      "stage": "build",
+      "route": "cuda",
+      "command": [
+        "cmake",
+        "--build",
+        "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/source-build",
+        "--target",
+        "g03_copy_update_public_cuda",
+        "--parallel",
+        "4"
+      ],
+      "input_manifest_sha256": "f1561ec6ab2412c584d36c4e70b65c245445cb8211a408cf4f81e1476c7c57ef",
+      "exit_code": 0,
+      "elapsed_seconds": 2.275749661000006,
+      "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g03/copy-update-public-wsl/cuda-build-1.log"
+    },
+    {
+      "stage": "public-source",
+      "route": "cuda",
+      "command": [
+        "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/source-build/g03_copy_update_public_cuda"
+      ],
+      "input_manifest_sha256": "f1561ec6ab2412c584d36c4e70b65c245445cb8211a408cf4f81e1476c7c57ef",
+      "exit_code": 0,
+      "elapsed_seconds": 0.21511995100000547,
+      "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g03/copy-update-public-wsl/cuda-public-source-1.log"
+    }
+  ],
+  "cumulative_seconds": 74.463869955
+}

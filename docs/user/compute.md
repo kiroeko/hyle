@@ -122,6 +122,27 @@ Apple 沿原 MLX owner 同步实际 command buffer，每 native phase 的 worker
 两组/两槽及原编码数学组合见[批量搬运样例](../../samples/package/graph/batched_transfers/)。
 F2 有限范围已收口，实际平台/交付与未知成本限制见[最终记录](../implementation/tasks/compute/foundation-f2-final-closure.md)。
 
+## 已接纳 copy 的单一观察所有权
+
+需要把一组已接纳更新交给后继持有时，用 `CopyBatchUpdate::take(std::move(slot),
+std::move(submission))` 合并两个原控制。CPU/CUDA 使用 `compute::CopyBatchUpdate`；
+Apple/Vulkan 使用各自 namespace 的同名类型。两个控制必须来自同一实际运行槽；
+失败不消费它们，成功同时移空 caller。该对象只保存两个原 handles，不创建队列、
+Completion 或执行线程。Context、Queue、资源与 allocator 须活到所有实际工作退休。
+
+同一个 update 只有一个串行观察者。`observe()` 非阻塞并返回原 Status；Unavailable
+不等于成功，也不能只按错误码断言 native 工作仍在途。`wait()` 是显式 host 等待，
+`request_cancel()` 沿原提交请求取消；析构仍沿原控制放弃观察，原 native owner 保活。
+成功退休后 `take_mutable(id)` 返回原 caller-owned writer，保留未改写内容和 generation，
+不扩大 F2 `output()` 的成功 logical coverage。`release_invocation()` 只在实际原 copy
+退休后回收原 cold slot；失败/closed 状态保留，回收控制不意味着数据可以发布。
+
+普通用户不能由 update 得到 pending ReadLease 或 host 可读 view。内部 receiver 借用的
+原 native prefix 与 mutable geometry 必须先核实际 endpoint/ordering，并保持原 update
+到后继实际退休；借用期间不能另观察、回收或销毁 source。完整 pending 页到 attention
+仍按[活动组合卡](../implementation/tasks/compute/inference-g03-pending-page-consumption.md)
+施工；本接口的验收进展见[source卡](../implementation/tasks/compute/inference-g03-copy-update-owner.md)。
+
 ## CPU 多请求 ragged attention
 
 `hyle/compute/batch_execution.h` 的 `BatchProgram` 在普通 `cpu::create_context()` 中冷选择

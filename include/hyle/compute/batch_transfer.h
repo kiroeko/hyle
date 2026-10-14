@@ -4,6 +4,7 @@
 #include <cstdint>
 #include <limits>
 #include <span>
+#include <utility>
 
 #include "hyle/compute/resource_budget.h"
 #include "hyle/compute/resource_leases.h"
@@ -72,7 +73,7 @@ class Context;
 class Queue;
 class CopyBatchInvocation;
 class CopyBatchSubmission;
-namespace detail { struct CopyProgramState; struct CopyInvocationState; struct CopyStreamAccess; }
+namespace detail { struct CopyProgramState; struct CopyInvocationState; struct CopyStreamAccess; struct CopyUpdateAccess; }
 
 // Immutable prepared CPU/CUDA copy contract. Resources and allocator remain
 // borrowed; invocation/native retirement retain this program's cold metadata.
@@ -129,6 +130,7 @@ public:
   HYLE_COMPUTE_API CopyBatchReport report() const noexcept;
 private:
   friend struct detail::CopyStreamAccess;
+  friend struct detail::CopyUpdateAccess;
   explicit CopyBatchInvocation(detail::CopyInvocationState *state) noexcept : state_(state) {}
   detail::CopyInvocationState *state_ = nullptr;
 };
@@ -154,8 +156,80 @@ public:
   HYLE_COMPUTE_API CopyBatchReport report() const noexcept;
 private:
   friend class CopyBatchInvocation;
+  friend struct detail::CopyUpdateAccess;
   explicit CopyBatchSubmission(detail::CopyInvocationState *state) noexcept : state_(state) {}
   detail::CopyInvocationState *state_ = nullptr;
 };
+
+namespace detail {
+// Ownership/metadata shell only. Native observation and identity stay compiled
+// in the original factor. No completion, execution or allocation lives here.
+template<class Invocation, class Submission, class Access>
+class CopyUpdateOwner final {
+public:
+  CopyUpdateOwner() noexcept = default;
+  CopyUpdateOwner(const CopyUpdateOwner &) = delete;
+  CopyUpdateOwner &operator=(const CopyUpdateOwner &) = delete;
+  CopyUpdateOwner(CopyUpdateOwner &&) noexcept = default;
+  CopyUpdateOwner &operator=(CopyUpdateOwner &&) noexcept = default;
+  ~CopyUpdateOwner() = default;
+  // Qualification fails without consuming either original control. Success
+  // moves both: the caller must not retain another observer of their episode.
+  static Result<CopyUpdateOwner> take(Invocation &&invocation,
+                                     Submission &&submission) noexcept {
+    HYLE_RETURN_IF_ERROR(Access::qualify(invocation, submission));
+    return CopyUpdateOwner(std::move(invocation), std::move(submission));
+  }
+  bool valid() const noexcept { return invocation_.valid(); }
+  bool in_flight() const noexcept { return invocation_.in_flight(); }
+  CopyBatchReport report() const noexcept { return invocation_.report(); }
+  // Nonblocking original status, never reinterpret an unavailable/error code
+  // as success or infer retirement from an observed error.
+  Status observe() noexcept { return Access::observe(invocation_); }
+  Status wait() noexcept {
+    return submission_.valid() ? submission_.wait() : observe();
+  }
+  Status request_cancel() noexcept {
+    return submission_.valid() ? submission_.request_cancel() : invocation_.close();
+  }
+  // Return caller-owned mutable content after real success. Untouched bytes
+  // are still that caller's responsibility; this does not expand F2 output.
+  Result<WriteLease> take_mutable(CopyResourceId resource) noexcept {
+    HYLE_RETURN_IF_ERROR(observe());
+    submission_ = {};
+    return invocation_.unbind_mutable(resource);
+  }
+  // Control recovery is not data publication. A failed/closed control retains
+  // those states. Borrowed native prefixes must retire at their receiver first.
+  Result<Invocation> release_invocation() noexcept {
+    if (!valid()) return std::unexpected(Status::FailedPrecondition("copy update is empty"));
+    observe().IgnoreError();
+    if (in_flight()) return std::unexpected(Status::Unavailable("copy update native work still retires"));
+    submission_ = {};
+    return std::move(invocation_);
+  }
+private:
+  friend Access;
+  CopyUpdateOwner(Invocation invocation, Submission submission) noexcept
+      : invocation_(std::move(invocation)), submission_(std::move(submission)) {}
+  Invocation invocation_;
+  Submission submission_;
+};
+} // namespace detail
+
+namespace detail {
+struct CopyUpdateAccess final {
+  static HYLE_COMPUTE_API Status qualify(const CopyBatchInvocation &,
+                              const CopyBatchSubmission &) noexcept;
+  static HYLE_COMPUTE_API Status observe(CopyBatchInvocation &) noexcept;
+  // Trusted receiver/copy seams only; no ordinary public pending byte view.
+  template<class Update> static auto &invocation(Update &owner) noexcept { return owner.invocation_; }
+  template<class Update> static auto &submission(Update &owner) noexcept { return owner.submission_; }
+};
+} // namespace detail
+// Thread-compatible single observation owner for an accepted original copy
+// episode. Borrowed Context/Queue/resources/allocator outlive all late work.
+using CopyBatchUpdate = compute::detail::CopyUpdateOwner<
+    CopyBatchInvocation, CopyBatchSubmission, detail::CopyUpdateAccess>;
 
 } // namespace hyle::compute

@@ -556,4 +556,73 @@ Status CopyBatchSubmission::request_cancel() noexcept {
 }
 bool CopyBatchSubmission::in_flight() const noexcept { return state_ && state_->busy(); }
 CopyBatchReport CopyBatchSubmission::report() const noexcept { return detail::current_report(state_); }
+Status detail::CopyUpdateAccess::qualify(const CopyBatchInvocation &invocation,
+                                         const CopyBatchSubmission &submission) noexcept {
+  auto *state = invocation.state_;
+  if (!state || state != submission.state_)
+    return Status::InvalidArgument("copy update controls do not own the same accepted slot");
+  if (state->users != 2 || state->submitted == 0)
+    return Status::FailedPrecondition("copy update needs its sole original accepted submission");
+  return Status::Ok();
+}
+Status detail::CopyUpdateAccess::observe(CopyBatchInvocation &invocation) noexcept {
+  return detail::CopyStreamAccess::observe(invocation);
+}
+
+Result<compute::detail::CopyUpdateInput> detail::CopyStreamAccess::input(
+    const CopyBatchUpdate &owner, CopyResourceId id) noexcept {
+  const auto &invocation = detail::CopyUpdateAccess::invocation(owner);
+  const auto &submission = detail::CopyUpdateAccess::submission(owner);
+  HYLE_RETURN_IF_ERROR(detail::CopyUpdateAccess::qualify(invocation, submission));
+  auto *state = invocation.state_;
+  if (!state->tail.ok()) return std::unexpected(state->tail);
+  if (state->failed) return std::unexpected(Status::FailedPrecondition("copy update source failed"));
+  if (id.value >= state->bindings.size())
+    return std::unexpected(Status::InvalidArgument("copy update resource ID is invalid"));
+  const auto &binding = state->bindings[id.value];
+  if (!binding.write.valid())
+    return std::unexpected(Status::FailedPrecondition("copy update has no original mutable destination"));
+  bool written = false;
+  for (const auto &span : std::span(state->written).first(state->report.active_copies))
+    written |= span.binding == id.value;
+  if (!written || state->root_leader[id.value] >= state->last_write.size())
+    return std::unexpected(Status::FailedPrecondition("copy update destination has no recorded write"));
+  const auto last = state->last_write[state->root_leader[id.value]];
+  if (last >= state->submitted)
+    return std::unexpected(Status::FailedPrecondition("copy update destination has no accepted write"));
+  for (std::uint32_t phase = 0; phase < state->submitted; ++phase)
+    if (state->phases[phase]->retired.load(std::memory_order_acquire) &&
+        !state->phases[phase]->terminal.ok())
+      return std::unexpected(state->phases[phase]->terminal);
+  HYLE_ASSIGN_OR_RETURN(auto view, compute::detail::LeaseAccess::ordered_view(binding.write));
+  return compute::detail::CopyUpdateInput{&binding.write, view, state->physical[id.value],
+      binding.root, {last}};
+}
+Result<compute::detail::CompletionDependency> detail::CopyStreamAccess::dependency(
+    const CopyBatchUpdate &owner) noexcept {
+  const auto &invocation = detail::CopyUpdateAccess::invocation(owner);
+  const auto &submission = detail::CopyUpdateAccess::submission(owner);
+  HYLE_RETURN_IF_ERROR(detail::CopyUpdateAccess::qualify(invocation, submission));
+  auto *state = invocation.state_;
+  if (!state->tail.ok()) return std::unexpected(state->tail);
+  if (state->failed) return std::unexpected(Status::FailedPrecondition("copy update source failed"));
+  compute::detail::CompletionDependency latest{};
+  for (std::uint32_t phase = 0; phase < state->submitted; ++phase) {
+    HYLE_ASSIGN_OR_RETURN(auto native,
+        compute::detail::RetainedCompletion::native_dependency(state->phases[phase]->completion));
+    if (native.terminal_hint && !native.terminal_hint->ok())
+      return std::unexpected(*native.terminal_hint);
+    if (state->phases[phase]->retired.load(std::memory_order_acquire) &&
+        !state->phases[phase]->terminal.ok())
+      return std::unexpected(state->phases[phase]->terminal);
+    if (native.pending()) latest = native;
+  }
+  return latest;
+}
+Status detail::CopyStreamAccess::admit_read(LeaseUseBatch &uses,
+    const CopyBatchUpdate &owner, CopyResourceId id) noexcept {
+  HYLE_ASSIGN_OR_RETURN(auto original, input(owner, id));
+  return compute::detail::LeaseAccess::ordered_read_unique(uses, *original.writer);
+}
+
 } // namespace hyle::compute

@@ -1,0 +1,57 @@
+{
+  "candidate": "AUDITED WORKTREE",
+  "identity": {
+    "uname": "Linux kiro-workstation 6.18.54.1-microsoft-standard-WSL2 #1 SMP PREEMPT_DYNAMIC Tue Oct  6 19:13:07 UTC 2026 x86_64 x86_64 x86_64 GNU/Linux",
+    "gpu": "NVIDIA GeForce RTX 4070, 617.14, 2132 MiB, 7 %",
+    "compiler": "g++-14 (Ubuntu 14.2.0-4ubuntu2~24.04.1) 14.2.0"
+  },
+  "inputs": [
+    {
+      "path": "include/hyle/compute/batch_transfer.h",
+      "sha256": "3319446ddbfb9b58b3ee5ddef6b4ca63dfc6d34c9e4423fe6edf865d98fedb60"
+    },
+    {
+      "path": "include/hyle/compute/detail/copy_stream_access.h",
+      "sha256": "bf3e1abb1d1b2a711b1464080d013307ab9e147d6b7f75e58d6381ba94e9475c"
+    },
+    {
+      "path": "src/compute/batch_transfer.cc",
+      "sha256": "9956069af542795f34d00f036c409178fa77246a96b1dab5c8f9ac3e0f58adeb"
+    },
+    {
+      "path": "tests/compute_batch/copy_update_cuda_pending_consumer.cc",
+      "sha256": "7383476d5759ed0ef5f33acf4b7e54dd03cb808532fa060d25920f7adbb1d389"
+    }
+  ],
+  "stages": [
+    {
+      "stage": "build",
+      "route": "cuda",
+      "command": [
+        "cmake",
+        "--build",
+        "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/source-build",
+        "--target",
+        "g03_copy_update_pending_cuda",
+        "--parallel",
+        "4"
+      ],
+      "input_manifest_sha256": "4a5fe39c92d650dbb0d9d6a0ef04810ea9770ed3326352660162be893b2e8cfc",
+      "exit_code": 0,
+      "elapsed_seconds": 61.85353098900001,
+      "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g03/copy-update-cuda-pending/cuda-build-1.log"
+    },
+    {
+      "stage": "public-source",
+      "route": "cuda",
+      "command": [
+        "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/source-build/g03_copy_update_pending_cuda"
+      ],
+      "input_manifest_sha256": "4a5fe39c92d650dbb0d9d6a0ef04810ea9770ed3326352660162be893b2e8cfc",
+      "exit_code": 0,
+      "elapsed_seconds": 0.19278139800000815,
+      "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g03/copy-update-cuda-pending/cuda-public-source-1.log"
+    }
+  ],
+  "cumulative_seconds": 62.046312387000015
+}

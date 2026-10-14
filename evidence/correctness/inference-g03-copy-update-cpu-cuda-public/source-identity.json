@@ -1,0 +1,11 @@
+{
+  "scope_head": "5eda0cc0f",
+  "product": "AUDITED WORKTREE",
+  "canonical_equals_validation": true,
+  "files": {
+    "include/hyle/compute/batch_transfer.h": "3319446ddbfb9b58b3ee5ddef6b4ca63dfc6d34c9e4423fe6edf865d98fedb60",
+    "include/hyle/compute/detail/copy_stream_access.h": "bf3e1abb1d1b2a711b1464080d013307ab9e147d6b7f75e58d6381ba94e9475c",
+    "src/compute/batch_transfer.cc": "9956069af542795f34d00f036c409178fa77246a96b1dab5c8f9ac3e0f58adeb",
+    "tests/compute_batch/copy_update_public_consumer.cc": "8ca7486acdff8f4ae8ed6436270bb38570e070a77aaac99a22515010a0c678dd"
+  }
+}

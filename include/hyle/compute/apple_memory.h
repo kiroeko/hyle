@@ -10,6 +10,7 @@
 #include "hyle/mem/buffer.h"
 
 namespace hyle::compute::apple {
+namespace detail { struct CopyUpdateAccess; }
 namespace detail { struct MemoryState; struct LeasedInvocationState; }
 namespace detail { struct CopyProgramState; struct CopyInvocationState; struct CopyStreamAccess; }
 
@@ -66,6 +67,7 @@ public:
   HYLE_COMPUTE_ROUTE_APPLE_API CopyBatchReport report() const noexcept;
 private:
   friend struct detail::CopyStreamAccess;
+  friend struct detail::CopyUpdateAccess;
   explicit CopyBatchInvocation(detail::CopyInvocationState *state) noexcept : state_(state) {}
   detail::CopyInvocationState *state_ = nullptr;
 };
@@ -86,10 +88,26 @@ public:
   HYLE_COMPUTE_ROUTE_APPLE_API CopyBatchReport report() const noexcept;
 private:
   friend class CopyBatchInvocation;
+  friend struct detail::CopyUpdateAccess;
   explicit CopyBatchSubmission(detail::CopyInvocationState *state) noexcept : state_(state) {}
   detail::CopyInvocationState *state_ = nullptr;
 };
 
+
+namespace detail {
+struct CopyUpdateAccess final {
+  static HYLE_COMPUTE_ROUTE_APPLE_API Status qualify(const CopyBatchInvocation &,
+                              const CopyBatchSubmission &) noexcept;
+  static HYLE_COMPUTE_ROUTE_APPLE_API Status observe(CopyBatchInvocation &) noexcept;
+  // Trusted receiver/copy seams only; no ordinary public pending byte view.
+  template<class Update> static auto &invocation(Update &owner) noexcept { return owner.invocation_; }
+  template<class Update> static auto &submission(Update &owner) noexcept { return owner.submission_; }
+};
+} // namespace detail
+// Thread-compatible single observation owner for an accepted original copy
+// episode. Borrowed Context/Queue/resources/allocator outlive all late work.
+using CopyBatchUpdate = compute::detail::CopyUpdateOwner<
+    CopyBatchInvocation, CopyBatchSubmission, detail::CopyUpdateAccess>;
 
 struct NativeStorage final {
   const void *buffer = nullptr; // Original opaque MTLBuffer identity.

@@ -2,13 +2,36 @@
 
 #include "hyle/compute/batch_transfer.h"
 #include "hyle/compute/detail/copy_ranges.h"
+#include "hyle/compute/detail/completion_access.h"
 
 namespace hyle::compute::detail {
 
 // File-stream adapters keep a group mutable across bounded staging chunks.
 // This transfers permission, never publishes bytes or broadens F2 output
 // coverage. The adapter separately proves the entire group's initialized range.
+// Addressable original mutable content, not a ready lease. Its writer/view
+// stay borrowed from the move-owned source until every dependent native use
+// retires. The receiver qualifies ordering before admitting any read.
+struct CopyUpdateInput final {
+  const WriteLease *writer = nullptr;
+  mem::ConstBufferView view;
+  PhysicalCopyResource physical;
+  const void *root = nullptr;
+  CopyPhaseId last_write;
+};
 struct CopyStreamAccess final {
+  // Trusted update receivers only: no host reads or public ready conversion.
+  static HYLE_COMPUTE_API Result<compute::detail::CopyUpdateInput> input(
+      const CopyBatchUpdate &, CopyResourceId) noexcept;
+  // Borrow the latest real async prefix; empty final logical phases must not
+  // erase preceding native work. Known failures always reject. Do not observe
+  // or return the owner between resolving and recording this exact dependency.
+  static HYLE_COMPUTE_API Result<compute::detail::CompletionDependency> dependency(
+      const CopyBatchUpdate &) noexcept;
+  // Caller has qualified the receiver endpoint and original native ordering.
+  static HYLE_COMPUTE_API Status admit_read(LeaseUseBatch &, const CopyBatchUpdate &,
+                                CopyResourceId) noexcept;
+
   // Requires no retained submission or actual native use and successful
   // retirement of every accepted phase. Rejection leaves the binding intact.
   // An unsubmitted binding can also be withdrawn. Success invalidates that

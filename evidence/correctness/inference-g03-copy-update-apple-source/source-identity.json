@@ -1,0 +1,23 @@
+{
+  "scope_head": "5eda0cc0f",
+  "product": "AUDITED WORKTREE",
+  "canonical_equals_validation": true,
+  "files": {
+    "include/hyle/compute/batch_transfer.h": "3319446ddbfb9b58b3ee5ddef6b4ca63dfc6d34c9e4423fe6edf865d98fedb60",
+    "include/hyle/compute/apple_memory.h": "51650256cd2247d3bfe83f74ed4838f05452c3e652ecaf17d467cfa7d1b186b5",
+    "include/hyle/compute/vulkan_memory.h": "7f4c1667bbe73b1271e531f8f3a616d7f5aaa96109ccfb690b9146ca63845860",
+    "include/hyle/compute/detail/copy_stream_access.h": "bf3e1abb1d1b2a711b1464080d013307ab9e147d6b7f75e58d6381ba94e9475c",
+    "src/compute_route_apple/apple_file_stream_access.h": "df583413828e52d68de3e9081d10dc10b0da37d96d02f7a523b8893f06a58289",
+    "src/compute_route_vulkan/vulkan_file_stream_access.h": "64437d30d4bd2dc5e7c39956fa164f4e32ce1fa1b32982b42109864e840a7e94",
+    "src/compute/batch_transfer.cc": "9956069af542795f34d00f036c409178fa77246a96b1dab5c8f9ac3e0f58adeb",
+    "src/compute_route_apple/apple_copy_program.cc": "dac37eae1674b0cdac8bf46d368de809f60c795dfe2c04ce72487a512a979d94",
+    "src/compute_route_vulkan/vulkan_copy_program.cc": "73440bb1ee4fcb997f406648ddb1c6aa3783e4e40939439da3b5ab69ddfd34d8",
+    "tests/compute_batch/pending_copy_owner_probe.cc": "cfc30c39190ccbe2fb8a83c6deda523d891affaf871aba405dfdb40d79da0746",
+    "tests/compute_batch/dirty_page_native_risk_fixture.h": "bf267ff39c7b16fc8ad1f9d1dac177218531588302535b3b8b92b5109c998483",
+    "tests/compute_batch/native_paged_risk_fixture.h": "79a9d4e7c8b4243fce6af02a948fd4dd0a91db060818b148e2c6cb8904105bee",
+    "tests/compute_batch/native_apple_failure_fixture.h": "fdb33f4f810aa078793a464450808da43e3d386721725a506e2c3697d4be2208",
+    "src/compute_route_apple/apple_copy_recording.mm": "109f892f872dba2d1d586f8a9e36cb70ec3bb4d12a77d83bffd942b5e186a1a8",
+    "include/hyle/compute/detail/apple_plan.h": "486c08435888b705ba90459c0e81f9c5804411b22322a05110cc6b94f8f5435d",
+    "src/compute_route_apple/apple_copy_internal.h": "54a5c9611604446002b6b4cbf1f67107b7612ee8d4f86910c9e0fdc75c3f19ab"
+  }
+}

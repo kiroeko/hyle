@@ -1,0 +1,14 @@
+{
+  "scope_head": "5eda0cc0f",
+  "product": "AUDITED WORKTREE",
+  "canonical_equals_validation": true,
+  "files": {
+    "include/hyle/compute/batch_transfer.h": "3319446ddbfb9b58b3ee5ddef6b4ca63dfc6d34c9e4423fe6edf865d98fedb60",
+    "include/hyle/compute/detail/copy_stream_access.h": "bf3e1abb1d1b2a711b1464080d013307ab9e147d6b7f75e58d6381ba94e9475c",
+    "src/compute/batch_transfer.cc": "9956069af542795f34d00f036c409178fa77246a96b1dab5c8f9ac3e0f58adeb",
+    "tests/compute_batch/copy_update_cuda_pending_consumer.cc": "7383476d5759ed0ef5f33acf4b7e54dd03cb808532fa060d25920f7adbb1d389",
+    "src/compute_backend_cuda/cuda_batch_transfer.cc": "8bff62fcf237cedb424b4916e283f36d438c3c9fe9876363f7efc9bdb8b4ec8a",
+    "src/compute_backend_cuda/cuda_backend.cc": "10c52cc53f313ee850d71f24b06277fb02f483c82a84c9d143c0f908b31712f5",
+    "src/compute/resource_leases.cc": "6d6caa01b517ae13cd04044ebc8eb481d9b3338f45623dc5d341038f37729801"
+  }
+}

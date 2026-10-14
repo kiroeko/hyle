@@ -1,0 +1,5 @@
+producer probe: source/use/copy prepared
+producer probe: native prefix accepted
+producer probe: original F1 guard attached uses=1
+producer probe: pending binding ok=1 writer=0 uses=1 status=
+actual pending CUDA producer -> original F2 CopyBatchUpdate PASS: typed input, source-only/invalidID rejection, final inline phase keeps real prefix, no intermediate producer host wait; explicit final update wait, not attention qualification

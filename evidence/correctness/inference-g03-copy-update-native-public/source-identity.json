@@ -1,0 +1,17 @@
+{
+  "scope_head": "5eda0cc0f",
+  "product": "AUDITED WORKTREE",
+  "canonical_equals_validation": true,
+  "files": {
+    "include/hyle/compute/batch_transfer.h": "3319446ddbfb9b58b3ee5ddef6b4ca63dfc6d34c9e4423fe6edf865d98fedb60",
+    "include/hyle/compute/apple_memory.h": "51650256cd2247d3bfe83f74ed4838f05452c3e652ecaf17d467cfa7d1b186b5",
+    "include/hyle/compute/vulkan_memory.h": "7f4c1667bbe73b1271e531f8f3a616d7f5aaa96109ccfb690b9146ca63845860",
+    "include/hyle/compute/detail/copy_stream_access.h": "bf3e1abb1d1b2a711b1464080d013307ab9e147d6b7f75e58d6381ba94e9475c",
+    "src/compute_route_apple/apple_file_stream_access.h": "df583413828e52d68de3e9081d10dc10b0da37d96d02f7a523b8893f06a58289",
+    "src/compute_route_vulkan/vulkan_file_stream_access.h": "64437d30d4bd2dc5e7c39956fa164f4e32ce1fa1b32982b42109864e840a7e94",
+    "src/compute/batch_transfer.cc": "9956069af542795f34d00f036c409178fa77246a96b1dab5c8f9ac3e0f58adeb",
+    "src/compute_route_apple/apple_copy_program.cc": "dac37eae1674b0cdac8bf46d368de809f60c795dfe2c04ce72487a512a979d94",
+    "src/compute_route_vulkan/vulkan_copy_program.cc": "73440bb1ee4fcb997f406648ddb1c6aa3783e4e40939439da3b5ab69ddfd34d8",
+    "tests/compute_batch/copy_update_public_consumer.cc": "8ca7486acdff8f4ae8ed6436270bb38570e070a77aaac99a22515010a0c678dd"
+  }
+}

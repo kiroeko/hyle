@@ -89,3 +89,32 @@ compute_batch产品仍不得改。private原Result/Memory Native输出backing未
 无默认额外机制，真实source费用单列；无FFI；三交付/头直接consumer；guide解释移动、
 借用、错误与回收。原peer固定归档的copy/event/resident写模式沿主卡，仅借其owner
 边界，不引入模型政策。工程门仍待实跑，AUDITED不写PASS，不重跑已闭数学P1。
+
+## 当前 source 实跑进展
+
+[Apple source 证据](../../../../evidence/correctness/inference-g03-copy-update-apple-source/README.md)
+已对 AUDITED WORKTREE 实跑 CU01 的五场景、CU02 的 typed input/坏ID/源-only/最后空
+logical phase与真实native prefix。另用原CopyRecording作直接receiver，先核同Runtime，
+foreign Runtime拒绝，原ordered read guard接原preflight；成功/取消/前缀失败三场景均
+通过，成功256bytes全部31，失败native_calls=0且不发布页。中间无producer/copy host
+wait，仅suffix.wait；没有新worker/queue/Completion。三次source输入全部日志保留，
+累计46.699秒。测试fixture显式控制观察handoff，不代表完整pending attention或native
+late-output方案；CU03四路线风险/三交付/Windows与其余owner资格仍待完成，不写CLOSED。
+
+[Apple/Vulkan公共source旅程](../../../../evidence/correctness/inference-g03-copy-update-native-public/README.md)
+现已通过同一公共源码的初始化+64 dirty steps、original slot/generation与全历史独立回读。
+Vulkan必须沿原staging路线读取，fixture漏MemoryKind编译失败及直接device读被拒绝两
+原FAIL均保留；累计111.774秒。CPU/CUDA同源码验证继续，仍不代签其风险/SDK门。
+
+[CPU/CUDA公共source旅程](../../../../evidence/correctness/inference-g03-copy-update-cpu-cuda-public/README.md)
+亦已通过相同65步、1024/16384 bytes、原generation/cold slot/control回收与完整历史比较。
+实际RTX4070 tiny transfer，原cached4jobs串行；只编原compute transfer及4个CUDA host
+backend文件，无nvcc数学kernel或全模型。累计74.464秒（含约69.4秒原parent configure）。
+当前测试文件仅将CRLF恢复为原仓库LF，语义/产品SHA不变；各证据保实际当时输入字节，
+不伪造同一编译输入。source证据不代签风险、SDK、完整pending attention或G03完成。
+
+[CUDA pending source](../../../../evidence/correctness/inference-g03-copy-update-cuda-pending/README.md)
+已实跑original gated1024bytes producer→F2→CopyBatchUpdate：typed input、源-only/坏ID
+拒绝、最后inline phase保真native prefix，原writer无ready；只final update.wait，bytes49
+与原guards退休通过。累计62.046秒（含约60.2秒原parent configure）；
+该case不代签CUDA完整receiver与失败/unknown风险。测试/source证据已保存，CU03仍施工。
