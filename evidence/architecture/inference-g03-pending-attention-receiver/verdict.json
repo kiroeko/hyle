@@ -1,0 +1,35 @@
+{
+  "apple": {
+    "cumulative_seconds": 39.473881626,
+    "final_log": "apple-final.log",
+    "product_modified": false,
+    "result": "REPRODUCED_SOURCE_CANCELLED_ATTENTION_SUCCESS",
+    "excluded_attempts": {
+      "1": "NOT_APPLICABLE_OLD_FIXTURE: target compiled old copy owner fixture",
+      "2": "FAILED_SOURCE_TARGET_AUDIT: new source absent from actual compile commands"
+    }
+  },
+  "vulkan": {
+    "cumulative_seconds": 52.75179416499999,
+    "final_log": "vulkan-final.log",
+    "product_modified": false,
+    "result": "REPRODUCED_SOURCE_CANCELLED_ATTENTION_SUCCESS",
+    "failed_attempts": {
+      "1": "FAIL_FIXTURE_COMPILE: ResultLease dereference",
+      "2": "FAIL_FIXTURE_LINK: private qualify_copy_dependency not exported by shared route"
+    },
+    "qualification": "private source fixture + existing bca static artifact; not public SDK"
+  },
+  "product_candidate": "bcaec010b528e372671f737f40b4aa53eb076aaf",
+  "product_terminal": "944734ec1917fbbbd20d59684d1baecced4d7079",
+  "claims_excluded": [
+    "safe public pending receiver",
+    "independent numerical oracle",
+    "native producer late output",
+    "64 steps",
+    "all seven routes",
+    "GPU preemption",
+    "driver/shader sanitizer",
+    "complete G03"
+  ]
+}

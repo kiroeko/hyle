@@ -1,0 +1,88 @@
+{
+  "candidate": "bcaec010b528e372671f737f40b4aa53eb076aaf",
+  "route": "vulkan",
+  "mode": "static",
+  "identity": {
+    "model": "Mac16,12",
+    "arch": "arm64",
+    "os": "ProductName:\t\tmacOS\nProductVersion:\t\t27.0.1\nBuildVersion:\t\t26A434",
+    "compiler": "Apple clang version 21.0.0 (clang-2100.3.34.2)\nTarget: arm64-apple-darwin27.0.0\nThread model: posix\nInstalledDir: /Library/Developer/CommandLineTools/usr/bin"
+  },
+  "scope": "relocated public hyle::compute only, unchanged CopyBatchUpdate public65 native loop, three standalone public headers; no internal products/hooks or attention math rerun",
+  "stages": [
+    {
+      "stage": "producer-build",
+      "command": [
+        "/opt/homebrew/bin/cmake",
+        "--build",
+        "/Users/kiro/hyle-scratch/compute-unified/a-cpu-vulkan/selected-graph/static-sdk-build",
+        "--target",
+        "hyle_compute",
+        "hyle_compute_batch",
+        "hyle_compute_route_vulkan",
+        "--parallel",
+        "4"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 7.322408166,
+      "log": "/Users/kiro/hyle-scratch/compute-unified/g03-copy-update-vulkan-static-sdk/producer-build-1.log"
+    },
+    {
+      "stage": "install",
+      "command": [
+        "/opt/homebrew/bin/cmake",
+        "--install",
+        "/Users/kiro/hyle-scratch/compute-unified/a-cpu-vulkan/selected-graph/static-sdk-build",
+        "--prefix",
+        "/Users/kiro/hyle-scratch/compute-unified/g03-copy-update-vulkan-static-sdk/staging"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 0.5051640830000004,
+      "log": "/Users/kiro/hyle-scratch/compute-unified/g03-copy-update-vulkan-static-sdk/install-1.log"
+    },
+    {
+      "stage": "consumer-configure",
+      "command": [
+        "/opt/homebrew/bin/cmake",
+        "-S",
+        "/Users/kiro/hyle-scratch/compute-unified/g03-copy-update-vulkan-static-sdk/consumer-source",
+        "-B",
+        "/Users/kiro/hyle-scratch/compute-unified/g03-copy-update-vulkan-static-sdk/consumer-build",
+        "-G",
+        "Ninja",
+        "-DCMAKE_PREFIX_PATH=/Users/kiro/hyle-scratch/compute-unified/g03-copy-update-vulkan-static-sdk/relocated",
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 1.333760332999999,
+      "log": "/Users/kiro/hyle-scratch/compute-unified/g03-copy-update-vulkan-static-sdk/consumer-configure-1.log"
+    },
+    {
+      "stage": "consumer-build",
+      "command": [
+        "/opt/homebrew/bin/cmake",
+        "--build",
+        "/Users/kiro/hyle-scratch/compute-unified/g03-copy-update-vulkan-static-sdk/consumer-build",
+        "--target",
+        "native",
+        "headers",
+        "--parallel",
+        "4"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 0.708512583000001,
+      "log": "/Users/kiro/hyle-scratch/compute-unified/g03-copy-update-vulkan-static-sdk/consumer-build-1.log"
+    },
+    {
+      "stage": "native",
+      "command": [
+        "/Users/kiro/hyle-scratch/compute-unified/g03-copy-update-vulkan-static-sdk/consumer-build/native"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 0.7286029169999999,
+      "log": "/Users/kiro/hyle-scratch/compute-unified/g03-copy-update-vulkan-static-sdk/native-1.log"
+    }
+  ],
+  "cumulative_seconds": 10.598448082
+}

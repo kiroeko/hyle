@@ -1,0 +1,192 @@
+{
+  "identity": {
+    "model": "Mac16,12",
+    "arch": "arm64",
+    "os": "ProductName:\t\tmacOS\nProductVersion:\t\t27.0.1\nBuildVersion:\t\t26A434",
+    "compiler": "Apple clang version 21.0.0 (clang-2100.3.34.2)\nTarget: arm64-apple-darwin27.0.0\nThread model: posix\nInstalledDir: /Library/Developer/CommandLineTools/usr/bin",
+    "cpu": "10",
+    "memory": "17179869184"
+  },
+  "candidate": "SCOPED compute_batch receiver counterexample; immutable productbca/sourceterminal944",
+  "scope": "actual Vulkan pending copy->raw paged attention success/cancelled-source mismatched statuses; no safe public receiver qualification",
+  "inputs": [
+    {
+      "path": "include/hyle/compute/batch_transfer.h",
+      "sha256": "3319446ddbfb9b58b3ee5ddef6b4ca63dfc6d34c9e4423fe6edf865d98fedb60"
+    },
+    {
+      "path": "include/hyle/compute/apple_memory.h",
+      "sha256": "51650256cd2247d3bfe83f74ed4838f05452c3e652ecaf17d467cfa7d1b186b5"
+    },
+    {
+      "path": "include/hyle/compute/vulkan_memory.h",
+      "sha256": "7f4c1667bbe73b1271e531f8f3a616d7f5aaa96109ccfb690b9146ca63845860"
+    },
+    {
+      "path": "include/hyle/compute/detail/copy_stream_access.h",
+      "sha256": "bf3e1abb1d1b2a711b1464080d013307ab9e147d6b7f75e58d6381ba94e9475c"
+    },
+    {
+      "path": "src/compute_route_apple/apple_file_stream_access.h",
+      "sha256": "df583413828e52d68de3e9081d10dc10b0da37d96d02f7a523b8893f06a58289"
+    },
+    {
+      "path": "src/compute_route_vulkan/vulkan_file_stream_access.h",
+      "sha256": "64437d30d4bd2dc5e7c39956fa164f4e32ce1fa1b32982b42109864e840a7e94"
+    },
+    {
+      "path": "src/compute/batch_transfer.cc",
+      "sha256": "9956069af542795f34d00f036c409178fa77246a96b1dab5c8f9ac3e0f58adeb"
+    },
+    {
+      "path": "src/compute_route_apple/apple_copy_program.cc",
+      "sha256": "dac37eae1674b0cdac8bf46d368de809f60c795dfe2c04ce72487a512a979d94"
+    },
+    {
+      "path": "src/compute_route_vulkan/vulkan_copy_program.cc",
+      "sha256": "73440bb1ee4fcb997f406648ddb1c6aa3783e4e40939439da3b5ab69ddfd34d8"
+    },
+    {
+      "path": "tests/compute_batch/pending_attention_receiver_vulkan_probe.cc",
+      "sha256": "676c236fbaaf5699c03c501555955972f4dfc7d923f38c70d0ebc2b2b47a1c0e"
+    },
+    {
+      "path": "tests/compute_batch/dirty_page_native_risk_fixture.h",
+      "sha256": "bf267ff39c7b16fc8ad1f9d1dac177218531588302535b3b8b92b5109c998483"
+    },
+    {
+      "path": "tests/compute_batch/native_paged_risk_fixture.h",
+      "sha256": "79a9d4e7c8b4243fce6af02a948fd4dd0a91db060818b148e2c6cb8904105bee"
+    },
+    {
+      "path": "tests/compute_batch/native_vulkan_failure_fixture.h",
+      "sha256": "955af6a8f8ea20160f36f760866676997b99a12848dbd456108a72c20b030b90"
+    },
+    {
+      "path": "tests/compute_batch/allocation_fault_fixture.h",
+      "sha256": "7fc5d108ebfbe46853a14fb74b4c504721442757cd4aeab10f1314a9f03943dc"
+    }
+  ],
+  "stages": [
+    {
+      "route": "vulkan",
+      "stage": "configure",
+      "attempt": 1,
+      "command": [
+        "/opt/homebrew/bin/cmake",
+        "-S",
+        "/Users/kiro/hyle-scratch/compute-unified/a-cpu-vulkan/selected-graph/source-parent",
+        "-B",
+        "/Users/kiro/hyle-scratch/compute-unified/a-cpu-vulkan/selected-graph/source-build"
+      ],
+      "exit_code": 0,
+      "input_manifest_sha256": "6db05081dbf0a798beb5f3489d512064d3fb97455c765b8d3daa57de1ea37755",
+      "elapsed_seconds": 18.359451291000003,
+      "log": "/Users/kiro/hyle-scratch/compute-unified/g03-pending-attention-vulkan-probe/vulkan-configure-1.log"
+    },
+    {
+      "route": "vulkan",
+      "stage": "build",
+      "attempt": 1,
+      "command": [
+        "/opt/homebrew/bin/cmake",
+        "--build",
+        "/Users/kiro/hyle-scratch/compute-unified/a-cpu-vulkan/selected-graph/source-build",
+        "--target",
+        "g03_pending_attention_vulkan",
+        "--parallel",
+        "4"
+      ],
+      "exit_code": 1,
+      "input_manifest_sha256": "6db05081dbf0a798beb5f3489d512064d3fb97455c765b8d3daa57de1ea37755",
+      "elapsed_seconds": 5.932262290999997,
+      "log": "/Users/kiro/hyle-scratch/compute-unified/g03-pending-attention-vulkan-probe/vulkan-build-1.log"
+    },
+    {
+      "route": "vulkan",
+      "stage": "configure",
+      "attempt": 2,
+      "command": [
+        "/opt/homebrew/bin/cmake",
+        "-S",
+        "/Users/kiro/hyle-scratch/compute-unified/a-cpu-vulkan/selected-graph/source-parent",
+        "-B",
+        "/Users/kiro/hyle-scratch/compute-unified/a-cpu-vulkan/selected-graph/source-build"
+      ],
+      "exit_code": 0,
+      "input_manifest_sha256": "f991cf1d322e6a6127b042b5a278de9c3a45d83944497b1093ddab68d2b29ce6",
+      "elapsed_seconds": 17.989309,
+      "log": "/Users/kiro/hyle-scratch/compute-unified/g03-pending-attention-vulkan-probe/vulkan-configure-2.log"
+    },
+    {
+      "route": "vulkan",
+      "stage": "build",
+      "attempt": 2,
+      "command": [
+        "/opt/homebrew/bin/cmake",
+        "--build",
+        "/Users/kiro/hyle-scratch/compute-unified/a-cpu-vulkan/selected-graph/source-build",
+        "--target",
+        "g03_pending_attention_vulkan",
+        "--parallel",
+        "4"
+      ],
+      "exit_code": 1,
+      "input_manifest_sha256": "f991cf1d322e6a6127b042b5a278de9c3a45d83944497b1093ddab68d2b29ce6",
+      "elapsed_seconds": 6.056465833000001,
+      "log": "/Users/kiro/hyle-scratch/compute-unified/g03-pending-attention-vulkan-probe/vulkan-build-2.log"
+    },
+    {
+      "route": "vulkan",
+      "stage": "configure",
+      "attempt": 3,
+      "command": [
+        "/opt/homebrew/bin/cmake",
+        "-S",
+        "/Users/kiro/hyle-scratch/compute-unified/g03-pending-attention-vulkan-probe/static-source-fixture-parent",
+        "-B",
+        "/Users/kiro/hyle-scratch/compute-unified/g03-pending-attention-vulkan-probe/static-source-fixture-build",
+        "-G",
+        "Ninja",
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON",
+        "-DCMAKE_PREFIX_PATH=/Users/kiro/hyle-scratch/compute-unified/g03-copy-update-vulkan-static-sdk/relocated"
+      ],
+      "exit_code": 0,
+      "input_manifest_sha256": "f991cf1d322e6a6127b042b5a278de9c3a45d83944497b1093ddab68d2b29ce6",
+      "elapsed_seconds": 2.221866834,
+      "log": "/Users/kiro/hyle-scratch/compute-unified/g03-pending-attention-vulkan-probe/vulkan-configure-3.log"
+    },
+    {
+      "route": "vulkan",
+      "stage": "build",
+      "attempt": 3,
+      "command": [
+        "/opt/homebrew/bin/cmake",
+        "--build",
+        "/Users/kiro/hyle-scratch/compute-unified/g03-pending-attention-vulkan-probe/static-source-fixture-build",
+        "--target",
+        "g03_pending_attention_vulkan",
+        "--parallel",
+        "4"
+      ],
+      "exit_code": 0,
+      "input_manifest_sha256": "f991cf1d322e6a6127b042b5a278de9c3a45d83944497b1093ddab68d2b29ce6",
+      "elapsed_seconds": 0.9232255409999999,
+      "log": "/Users/kiro/hyle-scratch/compute-unified/g03-pending-attention-vulkan-probe/vulkan-build-3.log"
+    },
+    {
+      "route": "vulkan",
+      "stage": "joint",
+      "attempt": 1,
+      "command": [
+        "/Users/kiro/hyle-scratch/compute-unified/g03-pending-attention-vulkan-probe/static-source-fixture-build/g03_pending_attention_vulkan"
+      ],
+      "exit_code": 0,
+      "input_manifest_sha256": "f991cf1d322e6a6127b042b5a278de9c3a45d83944497b1093ddab68d2b29ce6",
+      "elapsed_seconds": 1.269213375,
+      "log": "/Users/kiro/hyle-scratch/compute-unified/g03-pending-attention-vulkan-probe/vulkan-joint-1.log"
+    }
+  ],
+  "cumulative_seconds": 52.75179416499999
+}

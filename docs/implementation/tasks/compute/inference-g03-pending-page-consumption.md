@@ -95,3 +95,35 @@ trusted mutable geometry/root/last-write、保原native prefix、原ordered read
 仍须四路线/三CPU+GPU联合、主attention与正交数值reduction、64步两request/两slot/
 旧结果、actual数值oracle及完整风险/交付。当前仅SCOPED，未固定receiver公开形状，
 不允许compute_batch产品实现。原G01/G02未决门及G04–G10目标全部保留。
+
+## receiver 纵切审计的已实测事实
+
+2026-10-14，[原 pending copy→attention 反证](../../../../evidence/architecture/inference-g03-pending-attention-receiver/README.md)
+已在同一 Apple/Vulkan 原 Runtime/queue 实测：source update 已请求取消，而原后继
+attention 仍返回 SUCCESS。原 guards 保持到 actual retirement，最终只 wait attention；
+这证明 native 排序不能独自承担来源错误合并。原型为 trusted 组合，不是公开 receiver
+验收，未给独立数值 oracle/64步/late producer/全七路线签 PASS。Apple 错误 target、
+Vulkan fixture compile/shared private symbol link FAIL 与累计时间完整保留。
+
+本轮据此固定接纳与退休边界：接纳前已知来源失败或取消必须拒绝 suffix；接纳后才
+确定的失败不承诺 native work 抢占，必须退休所有已接纳 work、保 guards/source owner
+并拒绝发布成功结果。unknown retirement 不能当成功、不能提前返还 writer/reuse。
+
+| 路线 | 原对象与实际调用 | 已有接缝 | 尚须本轮裁决 |
+|---|---|---|---|
+| CPU | caller writer→原 producer completion→F2 bind_mutable/bind_producer→CopyBatchUpdate | 原 queue sequence / F1 ordered permission，可复用，无需第二执行器 | Batch controller 的精确 pending 页接纳、suffix 与来源最终状态合并 |
+| CUDA | 同一 F1 writer/原 CUDA producer→原 F2→CopyBatchUpdate | 1024-byte 实际 gated producer 已证明自然路线；原 event/queue ordering | receiver 原 endpoint import、所有页 guards、实际退休与来源错误 |
+| Apple | 原 CopyBatchUpdate→typed input/prefix→原 PagedBatchAccess.submit | 实际 FIFO＋guard 原型可以执行；取消来源不传播，已复现 | 原 worker 接纳/执行前检查与最终结果合并；原 native output 在 eval 后才有 backing |
+| Vulkan | 原 CopyBatchUpdate→typed input/prefix→原 PagedBatchAccess.submit | 实际 queue/fence＋guard 原型可以执行；取消来源不传播，已复现 | 接纳前拒绝与已接纳 suffix 结果合并；冷 output buffer 不提供 ready permission |
+| CPU+CUDA | 原 graph multi-queue region/slot→上述 source/receiver | 原公共 region/completion bridge 保留 | 同样的 pending permission/错误合同如何由原 bridge 承接，不能用 CPU fallback |
+| CPU+Apple | 原 hybrid bindings/region→原 Apple receiver | 已关闭的 ready 联合分页输入/资源桥保留 | late output、pending receiver与跨域最终状态，不能复制 hybrid scheduler |
+| CPU+Vulkan | 原 hybrid bindings/region→原 Vulkan receiver | 已关闭的 ready 联合分页输入/资源桥保留 | 原 endpoint/unknown fence、pending receiver及跨域错误传播 |
+
+冷成本：原 layout version/native program/invocation、metadata upload、F1 use pool/页
+frame 的 cold 分配逐项归原 owner；metadata cold host wait 明确计入。warm 接缝要求
+保原 update 两控制和原 worker/queue、精确引用页，不复制完整 KV、不新增默认对象
+锁/原子/队列；尚未有实现，不把这些目标写成已证明 zero-cost。G06 的 topology/
+metadata/capture 优化仍留 G06，不在 G03 重开已关闭的数学与性能轮。
+
+下一步仅固定上述 receiver 与 late output 的有限 API/ownership/FIX；实际必要的下层
+改动先按本反证登记新 scope。主 owner 仍 SCOPED，不由此自动进入 AUDITED。
