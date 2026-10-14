@@ -373,9 +373,10 @@
     },
     {
       "module": "compute_provider_ggml",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/inference-g04-g05-cache-attention-domain.md",
-      "summary": "G04/G05 AUDITED: finite Q8_0 CPU/Apple/Vulkan and FP8 E4M3 CUDA cache, independent K/V geometry, immutable scales, dirty encoding via original F2/G03; causal window/full noncausal/unequal Dv. Native source anchors and finite FIX on shared card; runtime/math/risk/delivery/P1 remain UNPROVEN. Original closed scopes and failures retained."
+      "summary": "G04/G05 CANDIDATE: CE01-11 finite encoded KV/independent geometry/window/noncausal/unequal Dv frozen. Four-native/three-joint source, finite source risks, CPU+Apple/Vulkan host sanitizers and eight SDK configurations PASS. Cost review/CPU peer oracle PASS; CUDA new-domain host risk and qualified P1 remain pending. Original closed scopes/failures/unknown native private costs retained.",
+      "candidate": "982676cb05a6e6244e66e0a596347aa96043617b"
     },
     {
       "module": "graph_provider_onednn",
@@ -390,9 +391,10 @@
     },
     {
       "module": "compute_ops",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/inference-g04-g05-cache-attention-domain.md",
-      "summary": "G04/G05 AUDITED: finite Q8_0 CPU/Apple/Vulkan and FP8 E4M3 CUDA cache, independent K/V geometry, immutable scales, dirty encoding via original F2/G03; causal window/full noncausal/unequal Dv. Native source anchors and finite FIX on shared card; runtime/math/risk/delivery/P1 remain UNPROVEN. Original closed scopes and failures retained."
+      "summary": "G04/G05 CANDIDATE: CE01-11 finite encoded KV/independent geometry/window/noncausal/unequal Dv frozen. Four-native/three-joint source, finite source risks, CPU+Apple/Vulkan host sanitizers and eight SDK configurations PASS. Cost review/CPU peer oracle PASS; CUDA new-domain host risk and qualified P1 remain pending. Original closed scopes/failures/unknown native private costs retained.",
+      "candidate": "982676cb05a6e6244e66e0a596347aa96043617b"
     },
     {
       "module": "compute_backend_cpu",
@@ -407,9 +409,10 @@
     },
     {
       "module": "compute_backend_cuda",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/inference-g04-g05-cache-attention-domain.md",
-      "summary": "G04/G05 CE08 AUDITED: private numeric-input status for real CUDA FP8 CacheEncode; reuse original acquire_device_status/reset/first-error/D2H/merge Completion. No queue/callback/wait/slot/layout changes. Original F5/G03 scopes retained; new source/risk/delivery runtime gates UNPROVEN."
+      "summary": "G04/G05 CANDIDATE: CE01-11 finite encoded KV/independent geometry/window/noncausal/unequal Dv frozen. Four-native/three-joint source, finite source risks, CPU+Apple/Vulkan host sanitizers and eight SDK configurations PASS. Cost review/CPU peer oracle PASS; CUDA new-domain host risk and qualified P1 remain pending. Original closed scopes/failures/unknown native private costs retained.",
+      "candidate": "982676cb05a6e6244e66e0a596347aa96043617b"
     },
     {
       "module": "compute_provider_native",
@@ -502,9 +505,10 @@
     },
     {
       "module": "compute_route_apple",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/inference-g04-g05-cache-attention-domain.md",
-      "summary": "G04/G05 AUDITED: finite Q8_0 CPU/Apple/Vulkan and FP8 E4M3 CUDA cache, independent K/V geometry, immutable scales, dirty encoding via original F2/G03; causal window/full noncausal/unequal Dv. Native source anchors and finite FIX on shared card; runtime/math/risk/delivery/P1 remain UNPROVEN. Original closed scopes and failures retained."
+      "summary": "G04/G05 CANDIDATE: CE01-11 finite encoded KV/independent geometry/window/noncausal/unequal Dv frozen. Four-native/three-joint source, finite source risks, CPU+Apple/Vulkan host sanitizers and eight SDK configurations PASS. Cost review/CPU peer oracle PASS; CUDA new-domain host risk and qualified P1 remain pending. Original closed scopes/failures/unknown native private costs retained.",
+      "candidate": "982676cb05a6e6244e66e0a596347aa96043617b"
     },
     {
       "module": "graph_route_apple",
@@ -519,27 +523,31 @@
     },
     {
       "module": "compute_route_vulkan",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/inference-g04-g05-cache-attention-domain.md",
-      "summary": "G04/G05 AUDITED: finite Q8_0 CPU/Apple/Vulkan and FP8 E4M3 CUDA cache, independent K/V geometry, immutable scales, dirty encoding via original F2/G03; causal window/full noncausal/unequal Dv. Native source anchors and finite FIX on shared card; runtime/math/risk/delivery/P1 remain UNPROVEN. Original closed scopes and failures retained."
+      "summary": "G04/G05 CANDIDATE: CE01-11 finite encoded KV/independent geometry/window/noncausal/unequal Dv frozen. Four-native/three-joint source, finite source risks, CPU+Apple/Vulkan host sanitizers and eight SDK configurations PASS. Cost review/CPU peer oracle PASS; CUDA new-domain host risk and qualified P1 remain pending. Original closed scopes/failures/unknown native private costs retained.",
+      "candidate": "982676cb05a6e6244e66e0a596347aa96043617b"
     },
     {
       "module": "graph_route_vulkan",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/inference-g04-g05-cache-attention-domain.md",
-      "summary": "G04/G05 CE09 AUDITED: actual encoded Graph producer is rejected by custom allowlist although original Compute CacheEncode works. Finite default routing into the existing Plan; no new API/runtime/metadata. Original F5 scope retained; new-domain source/risk/delivery UNPROVEN."
+      "summary": "G04/G05 CANDIDATE: CE01-11 finite encoded KV/independent geometry/window/noncausal/unequal Dv frozen. Four-native/three-joint source, finite source risks, CPU+Apple/Vulkan host sanitizers and eight SDK configurations PASS. Cost review/CPU peer oracle PASS; CUDA new-domain host risk and qualified P1 remain pending. Original closed scopes/failures/unknown native private costs retained.",
+      "candidate": "982676cb05a6e6244e66e0a596347aa96043617b"
     },
     {
       "module": "compute_provider_ggml_vulkan",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/inference-g04-g05-cache-attention-domain.md",
-      "summary": "G04/G05 AUDITED: finite Q8_0 CPU/Apple/Vulkan and FP8 E4M3 CUDA cache, independent K/V geometry, immutable scales, dirty encoding via original F2/G03; causal window/full noncausal/unequal Dv. Native source anchors and finite FIX on shared card; runtime/math/risk/delivery/P1 remain UNPROVEN. Original closed scopes and failures retained."
+      "summary": "G04/G05 CANDIDATE: CE01-11 finite encoded KV/independent geometry/window/noncausal/unequal Dv frozen. Four-native/three-joint source, finite source risks, CPU+Apple/Vulkan host sanitizers and eight SDK configurations PASS. Cost review/CPU peer oracle PASS; CUDA new-domain host risk and qualified P1 remain pending. Original closed scopes/failures/unknown native private costs retained.",
+      "candidate": "982676cb05a6e6244e66e0a596347aa96043617b"
     },
     {
       "module": "compute_ggml_runtime",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/inference-g04-g05-cache-attention-domain.md",
-      "summary": "G04/G05 AUDITED: finite Q8_0 CPU/Apple/Vulkan and FP8 E4M3 CUDA cache, independent K/V geometry, immutable scales, dirty encoding via original F2/G03; causal window/full noncausal/unequal Dv. Native source anchors and finite FIX on shared card; runtime/math/risk/delivery/P1 remain UNPROVEN. Original closed scopes and failures retained."
+      "summary": "G04/G05 CANDIDATE: CE01-11 finite encoded KV/independent geometry/window/noncausal/unequal Dv frozen. Four-native/three-joint source, finite source risks, CPU+Apple/Vulkan host sanitizers and eight SDK configurations PASS. Cost review/CPU peer oracle PASS; CUDA new-domain host risk and qualified P1 remain pending. Original closed scopes/failures/unknown native private costs retained.",
+      "candidate": "982676cb05a6e6244e66e0a596347aa96043617b"
     },
     {
       "module": "compute_provider_ggml_cuda",
@@ -565,9 +573,10 @@
     },
     {
       "module": "compute_provider_flashinfer",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/inference-g04-g05-cache-attention-domain.md",
-      "summary": "G04/G05 AUDITED: finite Q8_0 CPU/Apple/Vulkan and FP8 E4M3 CUDA cache, independent K/V geometry, immutable scales, dirty encoding via original F2/G03; causal window/full noncausal/unequal Dv. Native source anchors and finite FIX on shared card; runtime/math/risk/delivery/P1 remain UNPROVEN. Original closed scopes and failures retained."
+      "summary": "G04/G05 CANDIDATE: CE01-11 finite encoded KV/independent geometry/window/noncausal/unequal Dv frozen. Four-native/three-joint source, finite source risks, CPU+Apple/Vulkan host sanitizers and eight SDK configurations PASS. Cost review/CPU peer oracle PASS; CUDA new-domain host risk and qualified P1 remain pending. Original closed scopes/failures/unknown native private costs retained.",
+      "candidate": "982676cb05a6e6244e66e0a596347aa96043617b"
     },
     {
       "module": "compute_provider_ggml_metal",
@@ -660,15 +669,17 @@
     },
     {
       "module": "compute_batch",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/inference-g04-g05-cache-attention-domain.md",
-      "summary": "G04/G05 AUDITED: finite Q8_0 CPU/Apple/Vulkan and FP8 E4M3 CUDA cache, independent K/V geometry, immutable scales, dirty encoding via original F2/G03; causal window/full noncausal/unequal Dv. Native source anchors and finite FIX on shared card; runtime/math/risk/delivery/P1 remain UNPROVEN. Original closed scopes and failures retained."
+      "summary": "G04/G05 CANDIDATE: CE01-11 finite encoded KV/independent geometry/window/noncausal/unequal Dv frozen. Four-native/three-joint source, finite source risks, CPU+Apple/Vulkan host sanitizers and eight SDK configurations PASS. Cost review/CPU peer oracle PASS; CUDA new-domain host risk and qualified P1 remain pending. Original closed scopes/failures/unknown native private costs retained.",
+      "candidate": "982676cb05a6e6244e66e0a596347aa96043617b"
     },
     {
       "module": "graph_batch",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/inference-g04-g05-cache-attention-domain.md",
-      "summary": "G04/G05 AUDITED: finite Q8_0 CPU/Apple/Vulkan and FP8 E4M3 CUDA cache, independent K/V geometry, immutable scales, dirty encoding via original F2/G03; causal window/full noncausal/unequal Dv. Native source anchors and finite FIX on shared card; runtime/math/risk/delivery/P1 remain UNPROVEN. Original closed scopes and failures retained."
+      "summary": "G04/G05 CANDIDATE: CE01-11 finite encoded KV/independent geometry/window/noncausal/unequal Dv frozen. Four-native/three-joint source, finite source risks, CPU+Apple/Vulkan host sanitizers and eight SDK configurations PASS. Cost review/CPU peer oracle PASS; CUDA new-domain host risk and qualified P1 remain pending. Original closed scopes/failures/unknown native private costs retained.",
+      "candidate": "982676cb05a6e6244e66e0a596347aa96043617b"
     }
   ]
 }

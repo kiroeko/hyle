@@ -1,0 +1,176 @@
+{
+  "status": "REVIEWED_SOURCE_COST_LEDGER_NOT_P1_OR_PRIVATE_POOL_QUALIFICATION",
+  "product_commit": "f772fcad2f2a6a67aa605bbaee10b68f1d540708",
+  "anchors": {
+    "geometry": {
+      "path": "src/compute_batch/batch_layout.cc",
+      "line": 108,
+      "sha256": "7579869decc1e88fc6e21a75b017bc7a92ab5f3d0ac0f5a05172c42263df9fd7"
+    },
+    "arena": {
+      "path": "src/compute_batch/paged_arena.cc",
+      "line": 73,
+      "sha256": "ed18a28662a8c7424351f83227341d29944ded1c035095718c441496d7bd63e3"
+    },
+    "cpu_encoder": {
+      "path": "src/compute_provider_ggml/ggml_cpu_provider.cc",
+      "line": 302,
+      "sha256": "b7b876400147d02e71635e0b1c3f972f8381e034b218d2863e22cfb0e70f1997"
+    },
+    "cpu_plan": {
+      "path": "src/compute_provider_ggml/native_batch.cc",
+      "line": 124,
+      "sha256": "b75b950b8cbb4c50655938c807fcf2235ab20e5b647572b8c3d77166b44bffb5"
+    },
+    "cuda_encoder": {
+      "path": "src/compute_provider_flashinfer/native_cache_encoder.cu",
+      "line": 11,
+      "sha256": "d5cd11c34b51751d215bdfa294f972d6393d5eb0d67dd076482119975bb6bacf"
+    },
+    "cuda_plan": {
+      "path": "src/compute_provider_flashinfer/native_batch.cu",
+      "line": 16,
+      "sha256": "f9f29d694c1c2681de6640f0bef910801a20fd8cb6b3d9778a375ba1324cb0d4"
+    },
+    "cuda_output": {
+      "path": "src/compute_provider_flashinfer/native_cache.cu",
+      "line": 57,
+      "sha256": "577be742049165e21cb426ac83f8aeec58988f44045e0ce149c198848774ed4e"
+    },
+    "cuda_adapter": {
+      "path": "src/compute_provider_flashinfer/flashinfer_provider.cc",
+      "line": 170,
+      "sha256": "ca6d5b837e1e8e03703768ffb12b1b899193817c41acfaccfed73f3dd8aabe1a"
+    },
+    "apple_encoder": {
+      "path": "src/compute_route_apple/apple_mature_float.cc",
+      "line": 20,
+      "sha256": "20ffaec7840532a910596268546b5679e228a07e1a1a8613fcd8ce27aeebb962"
+    },
+    "apple_page": {
+      "path": "src/compute_route_apple/apple_batch.cc",
+      "line": 63,
+      "sha256": "1ba19bbb95773b5e15e4830eac7107be71072e3db454c71ac8d1086708657672"
+    },
+    "vulkan_page": {
+      "path": "src/compute_route_vulkan/vulkan_batch.cc",
+      "line": 51,
+      "sha256": "40cceb2370284ba6ab4fafea5295d840b8097714f3658188d3a0f6090645bbd7"
+    },
+    "vulkan_encoder": {
+      "path": "src/compute_provider_ggml_vulkan/region.cc",
+      "line": 826,
+      "sha256": "fbcdb56e40a2a63efe93d7aa76d2853e04f6934b007c024bacab7e5fe8ae51e7"
+    },
+    "native_report": {
+      "path": "include/hyle/compute/batch_paged_native.h",
+      "line": 20,
+      "sha256": "af5dca3b00bdf561ce87dde510bb8220420bf07d8ba383ff1feafccc3784aa6e"
+    },
+    "apple_lifetime_and_stats": {
+      "path": "third_party/mlx_cast/patches.json",
+      "line": 1,
+      "sha256": "5309383b067b3bd1d05ea08f81a1dd96c459a92c3da290762d7f6cdd0979ebcf"
+    },
+    "cuda_short_k": {
+      "path": "third_party/flashinfer_cache/patches.json",
+      "line": 1,
+      "sha256": "e63c00787a4e087db68084757d9403407f37bbb7a8c13942eb9dfd9419caf625"
+    },
+    "cpu_query_validation": {
+      "path": "src/compute_provider_ggml/ggml_cpu_provider.cc",
+      "line": 1187,
+      "sha256": "b7b876400147d02e71635e0b1c3f972f8381e034b218d2863e22cfb0e70f1997"
+    },
+    "cuda_status_reset": {
+      "path": "src/compute_backend_cuda/cuda_device_status.cc",
+      "line": 94,
+      "sha256": "25920ddf25f1dc045f600f450113a48fd3cd10a70757c580b5dbff568e3ed29d"
+    },
+    "cuda_status_completion": {
+      "path": "src/compute_backend_cuda/cuda_backend.cc",
+      "line": 978,
+      "sha256": "10c52cc53f313ee850d71f24b06277fb02f483c82a84c9d143c0f908b31712f5"
+    },
+    "vulkan_checked_encoder": {
+      "path": "src/compute_route_vulkan/vulkan_tensor.cc",
+      "line": 291,
+      "sha256": "cd983bcaa8716f78f96946fcf202442ad7d4127513b9e59b0551472467b5fa69"
+    },
+    "vulkan_status_completion": {
+      "path": "src/compute_route_vulkan/vulkan_run.cc",
+      "line": 124,
+      "sha256": "f750e64f7bb12738db147e1b2a5b6ba4f5c833aea3d04417820c0f3750bfd6e5"
+    },
+    "apple_completion": {
+      "path": "src/compute_route_apple/apple_context.cc",
+      "line": 291,
+      "sha256": "a523b64baa5ed67c68e381fc74d77bcd2e7035576c1c1bb109a13589faa9bc11"
+    },
+    "controller_waits": {
+      "path": "include/hyle/compute/detail/materialized_native_controller.h",
+      "line": 119,
+      "sha256": "9c92224885493ccfea20e872ae631b0c70142da31068f36b4a239fce0e4719f4"
+    }
+  },
+  "geometry": {
+    "q8_row_bytes": "D/32*34",
+    "fp8_row_bytes": "D",
+    "page_bytes": "page_size*kv_heads*row_bytes",
+    "role": "Independent K/Dqk and V/Dv, fixed original arena backing/permission slots; no second arena/controller.",
+    "example_D64_128_page16_Hkv2": {
+      "q8_key_row": 68,
+      "q8_value_row": 136,
+      "q8_key_page": 2176,
+      "q8_value_page": 4352
+    },
+    "row_unit": "one KV head of one token; per-token bytes multiply kv_heads"
+  },
+  "cpu": {
+    "encoder": "O(new supplied elements), original workers; Q8 F32[32] stack128 bytes/worker, finite+amax pass then original from_float_ref for nonzero stored scales; FP8 original scalar SIMD conversion. No full-history cast/encode.",
+    "metadata": "One nullable encoding-state pointer per ordinary invocation; only encoder/Q8 programs cold allocate original-allocator state and O(encoder calls + Q8 readers) vectors. Error flag belongs to invocation and retires after original workers.",
+    "attention": "Original generic quantized Q conversion and per-V-row decode are real arithmetic/scratch costs; no full-history KV materialization. Boxed new quant/window/Dv domain does not allocate Q*KV mask. Original plain coupled unbounded mask path remains borrowed.",
+    "plan": "Per-request native plan/metadata/workspace accounting preserved; generation changes may prepare again, not claimed zero-cost decode planning.",
+    "query_validation": "Each Q8 attention first scans all query values for finite/range in O(Q*Hq*Dqk), before F32 cast and original Q8 vec-dot conversion. Original DLL peer has no this safety scan; cost remains charged, no equal-instruction claim."
+  },
+  "cuda": {
+    "encoder": "One dirty-only FP8 elementwise kernel plus original invocation numeric-status mechanism; no CPU math fallback.",
+    "fp8_output_staging": "align16(4*query_rows*query_heads*Dv) bytes before original plan scratch. One scale_cast kernel reads F32 and writes chosen output dtype; Vscale applied after F32 split merge. This extra dispatch and staging are part of performance contract.",
+    "short_k_64_128": "Only finite FP8 short-K tile padded in shared memory: +64*CTA_TILE_KV bytes of K shared allocation, zero-fill and adapted repack/smem accounting. Global K row stays64, logical dot stays64.",
+    "planning": "Original PrefillPlanWorkspaceSize and PrefillPlan, integer staging/H2D and accepted prefix failure are charged; no claim of allocation-free changing-layout planning.",
+    "status_completion": "Shared sequence status: first use resets4B, finish_sequence_impl copies4B back and records native event; multiple encoders share once-per-sequence status, not multiplied per encoder. Provider copy_bytes=0 is not whole-pipeline zero-copy/sync."
+  },
+  "apple": {
+    "encoder": "MLX graph of cast/reduction/rounding/packing/status operations on new rows only. F32 temporaries O(new supplied elements); actual fusion/kernel count and native pool peak remain unmeasured, never asserted to be one fused kernel or zero allocation.",
+    "attention": "Truthful Q8 U8 root; reshape/transpose aliases; selected rows decoded in original-derived private native attention tiles. Per-request results and final concat cost O(query_rows*query_heads*Dv), no full-history K/V decode.",
+    "lifetime": "CE10 adds nullable retain/release branches; CE11 adds existing allocator mutex acquisition for each external statistics getter. Internal allocation/free already-locked reads direct fields; no new lock object/state or whole-execution lock.",
+    "planning": "Tracing/native program preparation may occur for each changed layout generation; explicitly not a G06 low-cost planning certificate.",
+    "completion": "Warm evaluate synchronizes original stream, waits outputs and reads status; cold prepare separately performs isolated warmup synchronizations. These remain charged at their actual warm/cold boundaries."
+  },
+  "vulkan": {
+    "encoder": "Checked dirty input uses4*Ndirty safe F32 scratch plus checked dispatch, then original Q8 Copy; retirement/status read plus non-coherent flush/invalidate belong to real completion. O(newrows), not a single-dispatch/zero-scratch claim.",
+    "attention": "Original-derived Q8 direct shader decodes at use, excludes original full-history F16 expansion in admitted direct path. Actual dispatch/reduction scratch and native descriptor/pool costs still belong to native implementation.",
+    "metadata": "Existing per-request Plan/Program/controller path; views/reshape and output concatenation are charged, no duplicate runtime."
+  },
+  "cross_route": [
+    "Original F1/F2 tickets, typed ready/pending pages, original Graph encoders and native controller reused.",
+    "Dirty caller storage and returned completion are real; no blanket free-memory/capture/performance symmetry claim.",
+    "NativePagedBatchCosts.native_private_bytes_unknown remains explicit true. Host sanitizer does not bound native private pools; G10 remains pending.",
+    "P0 source structure is not qualified P1 or end-to-end token/s. Peer adapters and finite benchmark contract/oracles still required."
+  ],
+  "reviewed_at_commit": "982676cb05a6e6244e66e0a596347aa96043617b",
+  "layout_probe": {
+    "evidence": "evidence/correctness/inference-g04-g05-shared-geometry-stage/result.json",
+    "cache_storage_bytes": 8,
+    "note": "Source layout and existing descriptor-layout probe; no new timing or ABI-stability claim."
+  },
+  "remaining": [
+    "Apple fused dispatch count and native-private peak unknown; explicit G10 responsibility",
+    "P1 requires immutable candidate and same-contract preflight; no qualified timing yet"
+  ],
+  "independent_review": {
+    "reviewer": "existing user-authorized single_machine_completeness_audit",
+    "verdict": "NO_NEW_PRODUCT_MUST; cost corrections included",
+    "scope": "CE01-11 finite source costs/lifetime and pristine CPU Q8 peer natural API; no runtime/P1/private pool peak claim"
+  }
+}

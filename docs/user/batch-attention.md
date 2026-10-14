@@ -10,7 +10,8 @@
 G04/G05 正在实施；CPU新域已完成Windows source数学检查，CUDA新域已完成Linux/SM89
 source数学检查，Apple/Vulkan新域已完成Air source数学检查。四后端与三联合路线的
 F16增量分页/Graph消费已有有限source证据；CPU/CUDA/Apple的BF16增量组合也已实测。
-新域实际源码、适用宿主风险、静态/动态 SDK 与独立头交付已通过；性能资格仍待验。
+新域实际源码、有限 source 风险、CPU/Apple/Vulkan 宿主 sanitizer、静态/动态 SDK 与
+独立头交付已通过；CUDA 新域宿主 sanitizer 与性能资格仍待验。
 SDK 结果见[六组混合路线](../../evidence/correctness/inference-g04-g05-encoded-sdk/result.json)与
 [CPU-only 两配置](../../evidence/correctness/inference-g04-g05-cpu-only-encoded-sdk/result.json)。进度见
 [活动卡](../implementation/tasks/compute/inference-g04-g05-cache-attention-domain.md)。

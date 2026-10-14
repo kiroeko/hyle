@@ -1,0 +1,469 @@
+{
+  "kind": "G04_G05_CPU_Q8_PRISTINE_PEER_ADAPTER_NUMERICAL_PREFLIGHT",
+  "verdict": "PASS_ORACLES_NO_TIMING",
+  "product_commit": "f772fcad2f2a6a67aa605bbaee10b68f1d540708",
+  "matrix": [
+    {
+      "executable": "g04_cpu_encoded_bench",
+      "cases": 3,
+      "arms_per_case": 2,
+      "worst_oracle_abs": 0.000244301088,
+      "worst_arm_difference": 0.0,
+      "verdict": "PASS"
+    },
+    {
+      "executable": "g04_cpu_encoded_bench_placement",
+      "cases": 3,
+      "arms_per_case": 2,
+      "worst_oracle_abs": 0.000244301088,
+      "worst_arm_difference": 0.0,
+      "verdict": "PASS"
+    }
+  ],
+  "runs": [
+    {
+      "state": "TERMINAL_FAIL",
+      "attempt": "1",
+      "source_commit": "982676cb05a6e6244e66e0a596347aa96043617b",
+      "product_commit": "f772fcad2f2a6a67aa605bbaee10b68f1d540708",
+      "build": "C:\\h7\\g04-cpu-encoded-check-1",
+      "max_jobs": 4,
+      "claim": "Only adapter configure/build and independent oracle; no timing/P1",
+      "stages": [
+        {
+          "stage": "configure",
+          "command": [
+            "cmake",
+            "-S",
+            "C:\\public\\project-hyle\\hyle\\bench\\inference_resident_sdpa\\cpu_encoded_p1",
+            "-B",
+            "C:\\h7\\g04-cpu-encoded-check-1",
+            "-G",
+            "Ninja",
+            "-DCMAKE_BUILD_TYPE=Release",
+            "-DCMAKE_PREFIX_PATH=C:\\h7\\g04-sdk-cpu-static-1\\relocated",
+            "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON",
+            "-DHYLE_CPU_PAGED_NATIVE_INCLUDE=C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\src\\compute_ggml_runtime\\source-8570887ac0d71134\\include",
+            "-DHYLE_CPU_ORIGINAL_REFERENCE_SOURCE=C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g01\\original-ggml-cpu-peer",
+            "-DHYLE_CPU_PAGED_ORIGINAL_DLL=C:/h7/g01-cpu-paged-original-build/bin/g01_cpu_paged_original.dll"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 12.515999999974156,
+          "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\cpu-encoded-preflight\\configure-1.log"
+        },
+        {
+          "stage": "build",
+          "command": [
+            "cmake",
+            "--build",
+            "C:\\h7\\g04-cpu-encoded-check-1",
+            "--target",
+            "g04_cpu_encoded_bench",
+            "g04_cpu_encoded_bench_placement",
+            "g04_cpu_encoded_perf_control",
+            "--parallel",
+            "4"
+          ],
+          "exit_code": 2,
+          "elapsed_seconds": 2.812000000005355,
+          "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\cpu-encoded-preflight\\build-1.log"
+        }
+      ],
+      "cumulative_seconds": 15.327999999979511,
+      "original_dlls": {
+        "C:\\h7\\g01-cpu-paged-original-build\\bin\\g01_cpu_paged_original.dll": "2bad38c985207f929f1c7f1ad2b2b05c6aa82a8eea237eacda9ff6bd7304dca6",
+        "C:\\h7\\g01-cpu-paged-original-build\\bin\\ggml-base.dll": "577f75c6cc060b37eb712d1981495f8bda7d37278e12ab52d51733d107817c9f",
+        "C:\\h7\\g01-cpu-paged-original-build\\bin\\ggml-cpu.dll": "bd446ace64d0d8f00782fbf8f2dd51ac0871da8d4675e3c195776f54645f685e"
+      },
+      "candidate_sdk_artifacts": [
+        {
+          "path": "C:\\h7\\g04-sdk-cpu-static-1\\relocated\\lib\\hyle_compute.lib",
+          "bytes": 4633518,
+          "sha256": "062677183ea50eef6e8ecbc79fa622af7f893010663be8747cc9ed1d45a1b78c"
+        },
+        {
+          "path": "C:\\h7\\g04-sdk-cpu-static-1\\relocated\\lib\\hyle_compute_backend_cpu.lib",
+          "bytes": 82916,
+          "sha256": "622d72d96380532e86485bb87c07dc054fe34cfaf0c670246711693819bb6f42"
+        },
+        {
+          "path": "C:\\h7\\g04-sdk-cpu-static-1\\relocated\\lib\\hyle_compute_batch.lib",
+          "bytes": 2489878,
+          "sha256": "4bce0698eb6fb44df63535c82554d0370f6e9c379c70f7042ab26fa8dd026ccb"
+        },
+        {
+          "path": "C:\\h7\\g04-sdk-cpu-static-1\\relocated\\lib\\hyle_compute_ggml_runtime.lib",
+          "bytes": 158568,
+          "sha256": "eb685c4a676e5d1a1e092e86e8e8dc653a08adefc57a251a95d1490718de0ecb"
+        },
+        {
+          "path": "C:\\h7\\g04-sdk-cpu-static-1\\relocated\\lib\\hyle_compute_ops.lib",
+          "bytes": 803240,
+          "sha256": "f98ae2784b78d575e2fe60696ccb44cb3efb4377ba8d2c27d71aa15488728250"
+        },
+        {
+          "path": "C:\\h7\\g04-sdk-cpu-static-1\\relocated\\lib\\hyle_compute_provider_ggml.lib",
+          "bytes": 2012564,
+          "sha256": "7eb9860034fbd3c5c0c7beb30136faf73eb84cdc4a125fbb3cd08fb1a9497037"
+        },
+        {
+          "path": "C:\\h7\\g04-sdk-cpu-static-1\\relocated\\lib\\hyle_compute_provider_native.lib",
+          "bytes": 4832420,
+          "sha256": "84fffb968bfc7efccc5be31d9e106a16dda463f14e6fcaeead0e7b4af2e94d63"
+        },
+        {
+          "path": "C:\\h7\\g04-sdk-cpu-static-1\\relocated\\lib\\hyle_compute_provider_onednn.lib",
+          "bytes": 548220,
+          "sha256": "72a4ad6ac4c32a85ed2a60bf6ae487001f6272bf66fc2696c0a12429d6641ff5"
+        },
+        {
+          "path": "C:\\h7\\g04-sdk-cpu-static-1\\relocated\\lib\\hyle_compute_route_cpu.lib",
+          "bytes": 650400,
+          "sha256": "7efd13d7eaa1301c23c5044e531ac4027d5671aa4b07cac4684e16fa1a70faf7"
+        },
+        {
+          "path": "C:\\h7\\g04-sdk-cpu-static-1\\relocated\\lib\\hyle_compute_state.lib",
+          "bytes": 811546,
+          "sha256": "3a2a6df33797f887a9c5050fd50c72b34b2c8b910806ea7b258e7975f60ce71a"
+        },
+        {
+          "path": "C:\\h7\\g04-sdk-cpu-static-1\\relocated\\lib\\hyle_compute_stream.lib",
+          "bytes": 1188328,
+          "sha256": "e6f438ebdfeff9198f20c58b50684490b1f66d31996ac3dd7d206c6f2e33422d"
+        },
+        {
+          "path": "C:\\h7\\g04-sdk-cpu-static-1\\relocated\\lib\\hyle_container.lib",
+          "bytes": 300918,
+          "sha256": "4fae7a5ccaebe0f3083ce1e56ae534e4fe6ae2e09454d3c2fa8a46f93325dc07"
+        },
+        {
+          "path": "C:\\h7\\g04-sdk-cpu-static-1\\relocated\\lib\\hyle_error.lib",
+          "bytes": 136936,
+          "sha256": "d15bde90ff20f097ffff87435a47f722543d41e961a4b009ce26a5a6192c4de0"
+        },
+        {
+          "path": "C:\\h7\\g04-sdk-cpu-static-1\\relocated\\lib\\hyle_ggml_cpu_avx2_ffa4e8b8_8570887ac0d71134.dll",
+          "bytes": 1358336,
+          "sha256": "143054661c3cd8a8ddc8e5863cf9f8ee49a45002bf4a01e11592e84d4bbcd681"
+        },
+        {
+          "path": "C:\\h7\\g04-sdk-cpu-static-1\\relocated\\lib\\hyle_graph.lib",
+          "bytes": 5816156,
+          "sha256": "4f1689321666b90208de3448f107d33c0ae865c3d58ae1db8a32f64f3a96fb63"
+        },
+        {
+          "path": "C:\\h7\\g04-sdk-cpu-static-1\\relocated\\lib\\hyle_graph_batch.lib",
+          "bytes": 1417528,
+          "sha256": "39eade2ccb1d30063748afb95714b09347455da9894d95f765e6ab75361d5c18"
+        },
+        {
+          "path": "C:\\h7\\g04-sdk-cpu-static-1\\relocated\\lib\\hyle_graph_provider_onednn.lib",
+          "bytes": 286150,
+          "sha256": "5a4a418eccd04daaf7adad7f17565ab0ab04c5f084cb77b0ba6accefad49c07c"
+        },
+        {
+          "path": "C:\\h7\\g04-sdk-cpu-static-1\\relocated\\lib\\hyle_graph_route_cpu.lib",
+          "bytes": 516204,
+          "sha256": "eada3a05c1c01e7fd91a2c35bd695b2c4b4e1516c6964f98a63dca931fc75d38"
+        },
+        {
+          "path": "C:\\h7\\g04-sdk-cpu-static-1\\relocated\\lib\\hyle_io_core.lib",
+          "bytes": 2239924,
+          "sha256": "9882aa150f60d9da75f1bd71081475bfd5b699aee24d4f7c2265ef170142ab57"
+        },
+        {
+          "path": "C:\\h7\\g04-sdk-cpu-static-1\\relocated\\lib\\hyle_mem.lib",
+          "bytes": 1280704,
+          "sha256": "3585598b504e2395b5add6ef5bddbad8106b831be9fef77a65eed3c0b54eed4d"
+        },
+        {
+          "path": "C:\\h7\\g04-sdk-cpu-static-1\\relocated\\lib\\hyle_mem_vm.lib",
+          "bytes": 332730,
+          "sha256": "7c263c740bd71728eb01733e10045945a98757d051c557ab26a10919b2440e2c"
+        },
+        {
+          "path": "C:\\h7\\g04-sdk-cpu-static-1\\relocated\\lib\\hyle_platform.lib",
+          "bytes": 764086,
+          "sha256": "892f34993925e99c7ed3d1a946d56dc8f065c5af976e63112a97bc427b48f8b0"
+        },
+        {
+          "path": "C:\\h7\\g04-sdk-cpu-static-1\\relocated\\lib\\hyle_platform_fs.lib",
+          "bytes": 286796,
+          "sha256": "47632ba49f583c0b5553e0ff62ca1e9b6ae69096074b58a1893863a374580e09"
+        },
+        {
+          "path": "C:\\h7\\g04-sdk-cpu-static-1\\relocated\\lib\\hyle_platform_thread.lib",
+          "bytes": 119700,
+          "sha256": "0a59f1f95e1f03d8bb4c99bd3978f3d4542e02b3e316abbc43cfabfee92f8a28"
+        },
+        {
+          "path": "C:\\h7\\g04-sdk-cpu-static-1\\relocated\\lib\\hyle_sched.lib",
+          "bytes": 1643842,
+          "sha256": "c9c558d4b3b13a5c522d5b550d3d4efa53a831907627856f450ba6c2fb46d0ed"
+        },
+        {
+          "path": "C:\\h7\\g04-sdk-cpu-static-1\\relocated\\lib\\hyle_simd.lib",
+          "bytes": 27179832,
+          "sha256": "a1fb023bd34307bfbc8497b25eb16043b3e07ff36151e4172f9440eb1f6f1bef"
+        },
+        {
+          "path": "C:\\h7\\g04-sdk-cpu-static-1\\relocated\\lib\\hyle_time.lib",
+          "bytes": 113586,
+          "sha256": "f9205f53c0173fd09622168dd3991e8f0d0d2ac49756fa6ff7e2f11155a8f8cd"
+        }
+      ],
+      "inputs": [
+        {
+          "path": "bench/inference_resident_sdpa/cpu_encoded_bench.cc",
+          "sha256": "665a1d517a8adacc28fa8d82f3e431a79c28cbac149b2249b8dc2be870a0f22f"
+        },
+        {
+          "path": "bench/inference_resident_sdpa/cpu_paged_reference.cc",
+          "sha256": "51796712a72b3fbe5183659a5a73fd25d3d5e3937f54b16b5fc27d1cf3e8294e"
+        },
+        {
+          "path": "bench/inference_resident_sdpa/cpu_paged_original_execution.h",
+          "sha256": "f19ef5af3580dbaa95259efc972a17abf43e0b838f0dbfb8e33c12ade486ebfd"
+        },
+        {
+          "path": "bench/inference_resident_sdpa/cpu_encoded_p1/CMakeLists.txt",
+          "sha256": "62c7834b0736deb50dd6a52f0a9bc0bfb2ffaa779d1df6a30cf690ce785a66f2"
+        }
+      ]
+    },
+    {
+      "state": "TERMINAL_PASS",
+      "attempt": "2",
+      "source_commit": "982676cb05a6e6244e66e0a596347aa96043617b",
+      "product_commit": "f772fcad2f2a6a67aa605bbaee10b68f1d540708",
+      "build": "C:\\h7\\g04-cpu-encoded-check-2",
+      "max_jobs": 4,
+      "claim": "Only adapter configure/build and independent oracle; no timing/P1",
+      "stages": [
+        {
+          "stage": "configure",
+          "command": [
+            "cmake",
+            "-S",
+            "C:\\public\\project-hyle\\hyle\\bench\\inference_resident_sdpa\\cpu_encoded_p1",
+            "-B",
+            "C:\\h7\\g04-cpu-encoded-check-2",
+            "-G",
+            "Ninja",
+            "-DCMAKE_BUILD_TYPE=Release",
+            "-DCMAKE_PREFIX_PATH=C:\\h7\\g04-sdk-cpu-static-1\\relocated",
+            "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON",
+            "-DHYLE_CPU_PAGED_NATIVE_INCLUDE=C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\src\\compute_ggml_runtime\\source-8570887ac0d71134\\include",
+            "-DHYLE_CPU_ORIGINAL_REFERENCE_SOURCE=C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g01\\original-ggml-cpu-peer",
+            "-DHYLE_CPU_PAGED_ORIGINAL_DLL=C:/h7/g01-cpu-paged-original-build/bin/g01_cpu_paged_original.dll"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 12.485000000015134,
+          "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\cpu-encoded-preflight\\configure-2.log"
+        },
+        {
+          "stage": "build",
+          "command": [
+            "cmake",
+            "--build",
+            "C:\\h7\\g04-cpu-encoded-check-2",
+            "--target",
+            "g04_cpu_encoded_bench",
+            "g04_cpu_encoded_bench_placement",
+            "g04_cpu_encoded_perf_control",
+            "--parallel",
+            "4"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 5.921999999991385,
+          "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\cpu-encoded-preflight\\build-2.log"
+        },
+        {
+          "stage": "g04_cpu_encoded_bench",
+          "command": [
+            "C:\\h7\\g04-cpu-encoded-check-2\\g04_cpu_encoded_bench.exe"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 2.14000000001397,
+          "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\cpu-encoded-preflight\\g04_cpu_encoded_bench-2.log"
+        },
+        {
+          "stage": "g04_cpu_encoded_bench_placement",
+          "command": [
+            "C:\\h7\\g04-cpu-encoded-check-2\\g04_cpu_encoded_bench_placement.exe"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 2.0939999999827705,
+          "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\cpu-encoded-preflight\\g04_cpu_encoded_bench_placement-2.log"
+        }
+      ],
+      "cumulative_seconds": 22.64100000000326,
+      "original_dlls": {
+        "C:\\h7\\g01-cpu-paged-original-build\\bin\\g01_cpu_paged_original.dll": "2bad38c985207f929f1c7f1ad2b2b05c6aa82a8eea237eacda9ff6bd7304dca6",
+        "C:\\h7\\g01-cpu-paged-original-build\\bin\\ggml-base.dll": "577f75c6cc060b37eb712d1981495f8bda7d37278e12ab52d51733d107817c9f",
+        "C:\\h7\\g01-cpu-paged-original-build\\bin\\ggml-cpu.dll": "bd446ace64d0d8f00782fbf8f2dd51ac0871da8d4675e3c195776f54645f685e"
+      },
+      "candidate_sdk_artifacts": [
+        {
+          "path": "C:\\h7\\g04-sdk-cpu-static-1\\relocated\\lib\\hyle_compute.lib",
+          "bytes": 4633518,
+          "sha256": "062677183ea50eef6e8ecbc79fa622af7f893010663be8747cc9ed1d45a1b78c"
+        },
+        {
+          "path": "C:\\h7\\g04-sdk-cpu-static-1\\relocated\\lib\\hyle_compute_backend_cpu.lib",
+          "bytes": 82916,
+          "sha256": "622d72d96380532e86485bb87c07dc054fe34cfaf0c670246711693819bb6f42"
+        },
+        {
+          "path": "C:\\h7\\g04-sdk-cpu-static-1\\relocated\\lib\\hyle_compute_batch.lib",
+          "bytes": 2489878,
+          "sha256": "4bce0698eb6fb44df63535c82554d0370f6e9c379c70f7042ab26fa8dd026ccb"
+        },
+        {
+          "path": "C:\\h7\\g04-sdk-cpu-static-1\\relocated\\lib\\hyle_compute_ggml_runtime.lib",
+          "bytes": 158568,
+          "sha256": "eb685c4a676e5d1a1e092e86e8e8dc653a08adefc57a251a95d1490718de0ecb"
+        },
+        {
+          "path": "C:\\h7\\g04-sdk-cpu-static-1\\relocated\\lib\\hyle_compute_ops.lib",
+          "bytes": 803240,
+          "sha256": "f98ae2784b78d575e2fe60696ccb44cb3efb4377ba8d2c27d71aa15488728250"
+        },
+        {
+          "path": "C:\\h7\\g04-sdk-cpu-static-1\\relocated\\lib\\hyle_compute_provider_ggml.lib",
+          "bytes": 2012564,
+          "sha256": "7eb9860034fbd3c5c0c7beb30136faf73eb84cdc4a125fbb3cd08fb1a9497037"
+        },
+        {
+          "path": "C:\\h7\\g04-sdk-cpu-static-1\\relocated\\lib\\hyle_compute_provider_native.lib",
+          "bytes": 4832420,
+          "sha256": "84fffb968bfc7efccc5be31d9e106a16dda463f14e6fcaeead0e7b4af2e94d63"
+        },
+        {
+          "path": "C:\\h7\\g04-sdk-cpu-static-1\\relocated\\lib\\hyle_compute_provider_onednn.lib",
+          "bytes": 548220,
+          "sha256": "72a4ad6ac4c32a85ed2a60bf6ae487001f6272bf66fc2696c0a12429d6641ff5"
+        },
+        {
+          "path": "C:\\h7\\g04-sdk-cpu-static-1\\relocated\\lib\\hyle_compute_route_cpu.lib",
+          "bytes": 650400,
+          "sha256": "7efd13d7eaa1301c23c5044e531ac4027d5671aa4b07cac4684e16fa1a70faf7"
+        },
+        {
+          "path": "C:\\h7\\g04-sdk-cpu-static-1\\relocated\\lib\\hyle_compute_state.lib",
+          "bytes": 811546,
+          "sha256": "3a2a6df33797f887a9c5050fd50c72b34b2c8b910806ea7b258e7975f60ce71a"
+        },
+        {
+          "path": "C:\\h7\\g04-sdk-cpu-static-1\\relocated\\lib\\hyle_compute_stream.lib",
+          "bytes": 1188328,
+          "sha256": "e6f438ebdfeff9198f20c58b50684490b1f66d31996ac3dd7d206c6f2e33422d"
+        },
+        {
+          "path": "C:\\h7\\g04-sdk-cpu-static-1\\relocated\\lib\\hyle_container.lib",
+          "bytes": 300918,
+          "sha256": "4fae7a5ccaebe0f3083ce1e56ae534e4fe6ae2e09454d3c2fa8a46f93325dc07"
+        },
+        {
+          "path": "C:\\h7\\g04-sdk-cpu-static-1\\relocated\\lib\\hyle_error.lib",
+          "bytes": 136936,
+          "sha256": "d15bde90ff20f097ffff87435a47f722543d41e961a4b009ce26a5a6192c4de0"
+        },
+        {
+          "path": "C:\\h7\\g04-sdk-cpu-static-1\\relocated\\lib\\hyle_ggml_cpu_avx2_ffa4e8b8_8570887ac0d71134.dll",
+          "bytes": 1358336,
+          "sha256": "143054661c3cd8a8ddc8e5863cf9f8ee49a45002bf4a01e11592e84d4bbcd681"
+        },
+        {
+          "path": "C:\\h7\\g04-sdk-cpu-static-1\\relocated\\lib\\hyle_graph.lib",
+          "bytes": 5816156,
+          "sha256": "4f1689321666b90208de3448f107d33c0ae865c3d58ae1db8a32f64f3a96fb63"
+        },
+        {
+          "path": "C:\\h7\\g04-sdk-cpu-static-1\\relocated\\lib\\hyle_graph_batch.lib",
+          "bytes": 1417528,
+          "sha256": "39eade2ccb1d30063748afb95714b09347455da9894d95f765e6ab75361d5c18"
+        },
+        {
+          "path": "C:\\h7\\g04-sdk-cpu-static-1\\relocated\\lib\\hyle_graph_provider_onednn.lib",
+          "bytes": 286150,
+          "sha256": "5a4a418eccd04daaf7adad7f17565ab0ab04c5f084cb77b0ba6accefad49c07c"
+        },
+        {
+          "path": "C:\\h7\\g04-sdk-cpu-static-1\\relocated\\lib\\hyle_graph_route_cpu.lib",
+          "bytes": 516204,
+          "sha256": "eada3a05c1c01e7fd91a2c35bd695b2c4b4e1516c6964f98a63dca931fc75d38"
+        },
+        {
+          "path": "C:\\h7\\g04-sdk-cpu-static-1\\relocated\\lib\\hyle_io_core.lib",
+          "bytes": 2239924,
+          "sha256": "9882aa150f60d9da75f1bd71081475bfd5b699aee24d4f7c2265ef170142ab57"
+        },
+        {
+          "path": "C:\\h7\\g04-sdk-cpu-static-1\\relocated\\lib\\hyle_mem.lib",
+          "bytes": 1280704,
+          "sha256": "3585598b504e2395b5add6ef5bddbad8106b831be9fef77a65eed3c0b54eed4d"
+        },
+        {
+          "path": "C:\\h7\\g04-sdk-cpu-static-1\\relocated\\lib\\hyle_mem_vm.lib",
+          "bytes": 332730,
+          "sha256": "7c263c740bd71728eb01733e10045945a98757d051c557ab26a10919b2440e2c"
+        },
+        {
+          "path": "C:\\h7\\g04-sdk-cpu-static-1\\relocated\\lib\\hyle_platform.lib",
+          "bytes": 764086,
+          "sha256": "892f34993925e99c7ed3d1a946d56dc8f065c5af976e63112a97bc427b48f8b0"
+        },
+        {
+          "path": "C:\\h7\\g04-sdk-cpu-static-1\\relocated\\lib\\hyle_platform_fs.lib",
+          "bytes": 286796,
+          "sha256": "47632ba49f583c0b5553e0ff62ca1e9b6ae69096074b58a1893863a374580e09"
+        },
+        {
+          "path": "C:\\h7\\g04-sdk-cpu-static-1\\relocated\\lib\\hyle_platform_thread.lib",
+          "bytes": 119700,
+          "sha256": "0a59f1f95e1f03d8bb4c99bd3978f3d4542e02b3e316abbc43cfabfee92f8a28"
+        },
+        {
+          "path": "C:\\h7\\g04-sdk-cpu-static-1\\relocated\\lib\\hyle_sched.lib",
+          "bytes": 1643842,
+          "sha256": "c9c558d4b3b13a5c522d5b550d3d4efa53a831907627856f450ba6c2fb46d0ed"
+        },
+        {
+          "path": "C:\\h7\\g04-sdk-cpu-static-1\\relocated\\lib\\hyle_simd.lib",
+          "bytes": 27179832,
+          "sha256": "a1fb023bd34307bfbc8497b25eb16043b3e07ff36151e4172f9440eb1f6f1bef"
+        },
+        {
+          "path": "C:\\h7\\g04-sdk-cpu-static-1\\relocated\\lib\\hyle_time.lib",
+          "bytes": 113586,
+          "sha256": "f9205f53c0173fd09622168dd3991e8f0d0d2ac49756fa6ff7e2f11155a8f8cd"
+        }
+      ],
+      "inputs": [
+        {
+          "path": "bench/inference_resident_sdpa/cpu_encoded_bench.cc",
+          "sha256": "21fa2b3303d0a57d4bb80c6ff8b3cb4605ceb5abc3582e099e2ea578d215c193"
+        },
+        {
+          "path": "bench/inference_resident_sdpa/cpu_paged_reference.cc",
+          "sha256": "51796712a72b3fbe5183659a5a73fd25d3d5e3937f54b16b5fc27d1cf3e8294e"
+        },
+        {
+          "path": "bench/inference_resident_sdpa/cpu_paged_original_execution.h",
+          "sha256": "f19ef5af3580dbaa95259efc972a17abf43e0b838f0dbfb8e33c12ade486ebfd"
+        },
+        {
+          "path": "bench/inference_resident_sdpa/cpu_encoded_p1/CMakeLists.txt",
+          "sha256": "62c7834b0736deb50dd6a52f0a9bc0bfb2ffaa779d1df6a30cf690ce785a66f2"
+        }
+      ]
+    }
+  ],
+  "cumulative_seconds": 37.96899999998277,
+  "limits": [
+    "No A/A or qualified P1 sampling",
+    "Immutable ready-history only; no dirty producer/growth/G06/private-pool or wholeG04G05 claim"
+  ],
+  "original_failure": "attempt1 compile rejected old zero-argument PagedPageWriter.publish and shadowed locals. Adapter uses explicit full initialized16-row publication and distinct variable names; product unchanged."
+}

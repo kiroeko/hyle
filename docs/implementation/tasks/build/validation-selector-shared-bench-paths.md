@@ -65,3 +65,11 @@ CANDIDATE。按活动卡已预声明的同数学/lifecycle oracle、原AA/contro
 `.scratch/inference-gaps/g04-g05/geometry-plan.json`保原BLOCKED，七个实际产品修改owner
 均AUDITED且product_authorization issues为空。共同批仅按其活动卡执行所声明的factor/
 public consumer/头门，不改工具core、不启动旧benchmark采样，未运行格不写PASS。
+
+
+2026-10-15 G04/G05 candidate 成本/CPU Q8 peer 预检：六个新/改 benchmark、CMake、合同与
+A/A adapter 输入仍属同一 unknown 路径族，product_authorization 无 issues；原计划
+`.scratch/inference-gaps/g04-g05/candidate-cost-plan.json` 保留 BLOCKED、selected docs/closure
+与146 skipped reasons。十一产品 owner 在982676 immutable 产品输入上进入 CANDIDATE；
+本轮无产品源码修改，仅独立原 DLL Q8 数学/交付片段预检通过。按活动卡继续有限原仪器
+合同，不以此修改 selector/性能核心、重建全库或将未运行风险/P1记PASS。

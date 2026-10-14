@@ -1,0 +1,162 @@
+{
+  "status": "SOURCE_AUDITED_PEER_ADAPTER_PLAN_NOT_NUMERIC_OR_P1_QUALIFICATION",
+  "source": "Existing explicitly user-authorized readonly audit agent; no heavy build/run performed",
+  "anchors": {
+    "cpu_generic": {
+      "path": "C:\\public\\tools\\hyle-dependencies\\v1\\sources\\ggml_cpu-ffa4e8b80930-ac5706fbc134\\src\\ggml-cpu\\ops.cpp",
+      "sha256": "215d16e7ebbb4066920e2d7a5f7ea6c46636d298aedd553e00f0b3ebb0d59305",
+      "line_anchors": [
+        8865,
+        8916,
+        8949,
+        8975,
+        9022
+      ]
+    },
+    "metal_host": {
+      "path": "C:\\public\\tools\\hyle-dependencies\\v1\\sources\\ggml-456172ec733a-41b7e10fd424\\src\\ggml-metal\\ggml-metal-ops.cpp",
+      "sha256": "0e2ac569b4c443d6e94fc342d78a85204b933d82e45d4c19d3be795fc65ca2d3",
+      "line_anchors": [
+        2874,
+        2894,
+        3243,
+        3327
+      ]
+    },
+    "metal_templates": {
+      "path": "C:\\public\\tools\\hyle-dependencies\\v1\\sources\\ggml-456172ec733a-41b7e10fd424\\src\\ggml-metal\\kernels\\fa.metal",
+      "sha256": "88939f93ec5a38bb6a860dffee60d01885de65ca4464d87c14c31bbc511fda64",
+      "line_anchors": [
+        224,
+        225,
+        266,
+        281,
+        487,
+        577,
+        625,
+        766,
+        1040,
+        1054
+      ]
+    },
+    "metal_device": {
+      "path": "C:\\public\\tools\\hyle-dependencies\\v1\\sources\\ggml-456172ec733a-41b7e10fd424\\src\\ggml-metal\\ggml-metal-device.cpp",
+      "sha256": "20df24211057951de7657e5d4dfbc42b6fdd5016d471e64631dbef7f175a43c5",
+      "line_anchors": [
+        1622,
+        1634
+      ]
+    },
+    "vulkan_host": {
+      "path": "C:\\public\\tools\\hyle-dependencies\\v1\\sources\\ggml-456172ec733a-41b7e10fd424\\src\\ggml-vulkan\\ggml-vulkan.cpp",
+      "sha256": "c84f67465dfa0a24e034663f510d8b92310e3be7a7fbca231760be234b7c9f9d",
+      "line_anchors": [
+        4368,
+        4375,
+        11248,
+        11260
+      ]
+    },
+    "vulkan_base": {
+      "path": "C:\\public\\tools\\hyle-dependencies\\v1\\sources\\ggml-456172ec733a-41b7e10fd424\\src\\ggml-vulkan\\vulkan-shaders\\flash_attn_base.glsl",
+      "sha256": "24bfbae399b0afc2b2309cb99a75387c2c629856938f5326eb335a9dc9990e64",
+      "line_anchors": [
+        7,
+        21
+      ]
+    },
+    "vulkan_dequant": {
+      "path": "C:\\public\\tools\\hyle-dependencies\\v1\\sources\\ggml-456172ec733a-41b7e10fd424\\src\\ggml-vulkan\\vulkan-shaders\\flash_attn_dequant.glsl",
+      "sha256": "45ea455c04e7bd0a71d47cbc6c49283bc00a14a4f0010a60bb3ca425b4e759b3",
+      "line_anchors": [
+        30,
+        31,
+        100,
+        104
+      ]
+    }
+  },
+  "cpu": {
+    "route": "Original independent generic Q8 flash",
+    "adapter": "Keep isolated original DLL/ABI comparator. K/V independent Q8 row bytes, gather history as declared, output Dv, original F16 bottom-right inclusive window mask or no mask for full noncausal; original Q vec-dot conversion and V row dequant charged."
+  },
+  "cuda": {
+    "route": "Independent raw FlashInfer Params/PrefillPlan and original mixed FP8 dispatch",
+    "adapter": "Actual FP8 bytes/paged/ragged and independent K/V strides; sK in sm_scale, F32 output/split merge and final sV conversion must be included. No candidate provider entry as independent peer.",
+    "limitation": "Original pinned 69ff 64/128 short-K kernel is known incorrect and cannot qualify. Shared repaired kernel would only qualify wrapper overhead, not independent algorithm performance for that shape."
+  },
+  "apple": {
+    "route": "Original independent GGML Metal Q8 pipeline, not original MLX fast SDPA (has no Q8 ports)",
+    "adapter": "Account required Q conversion to F32, same compressed bytes/gather, original F16 mask for finite windows, output conversion and native completion. Q>=32 original host may expand complete KV to F16: valid same-Q8-input pipeline comparator only when ALL expansion dispatch/scratch/sync are counted, never a direct-compressed kernel claim.",
+    "direct_compressed_peer": "Existing original general Q8 kernels64/64,128/128,256/256 can be explicitly selected in benchmark without changing shader arithmetic; host dispatch adaptation must be disclosed.",
+    "rectangular_64_128": "Original general template separates DK/DV and has no observed DK>=DV constraint; original exports lack Q8 64/128. Bypassing vec selection alone does not create pipeline. Benchmark-only explicit instantiation may be feasible, but requires real compiler/oracle/cost qualification and is not an already-qualified peer."
+  },
+  "vulkan": {
+    "route": "Original independent non-MMQ scalar Q8 shader supports HSK/HSV and direct block34 decode",
+    "adapter": "Existing non-MMQ F32 shader supports Q8 specialization. Extend reference.cc K/V descriptions and strides independently, output Dv, Q8_0 type/blockbytes34 plus original F16 mask. Use matching non-MMQ tuning and split/reduce, not MMQ dispatch parameters.",
+    "limitation": "Original host may choose MMQ or full-history F16 expansion at Q>=64; disclose and fully count if benchmarking original whole pipeline."
+  },
+  "preflight_requirements": [
+    "Same encoded bytes, query/effective KV, scales, finite window, output type and accepted precision must first pass independent oracle.",
+    "Plan/gather/mask/convert/scratch/wait/retirement costs declared; pre-gathered immutable history is not an incremental-producer performance certificate.",
+    "5% margin, A/A and both execution/allocation orders use existing instruments after immutable candidate; no new P1 PASS from source reading."
+  ],
+  "cpu_preconstruction": {
+    "candidate": "BatchProgram/BatchInvocation -> original CPU queue -> changed paged Q8 native math, one thread, two slots, ready exact page owners.",
+    "peer": "Same outer admission/result lifecycle; benchmark-only provider builds contiguous Q8 original ggml graph, independent pristine DLL compute/plan/pool, no candidate supports/lower/math.",
+    "arithmetic": "BF16 Q -> F32 -> original Q8 vector-dot conversion on both; Q8 K/V same encoded bytes, Dqk/Dv independent, F32 accumulator and BF16 output; bottom-right inclusive finite window or full noncausal.",
+    "history": "Original ready snapshot immutable throughout. Peer cold gathers referenced valid Q8 bytes into owned contiguous cache; bytes/storage reported, no warm history copies. This does not qualify incremental producers or G06 changing-layout planning.",
+    "completion": [
+      {
+        "phase": "same-topology update/admission",
+        "candidate": "CHARGED",
+        "peer": "CHARGED"
+      },
+      {
+        "phase": "input mappings and exact frame permissions",
+        "candidate": "CHARGED",
+        "peer": "CHARGED"
+      },
+      {
+        "phase": "Q conversion/quantized attention/output conversion",
+        "candidate": "CHARGED",
+        "peer": "CHARGED"
+      },
+      {
+        "phase": "CPU queue completion wait",
+        "candidate": "CHARGED",
+        "peer": "CHARGED"
+      },
+      {
+        "phase": "output owner return/release",
+        "candidate": "CHARGED",
+        "peer": "CHARGED"
+      }
+    ],
+    "cold": "Separately reported create/prepare/page/cache/mask/workspace/thread-pool setup and destruction; resident-warm claim only. No timing excludes material work belonging to one warm operation.",
+    "cancel_error": "Ready immutable successful numerical comparison, no per-op cancellation or asynchronous peer work. Existing finite error/retirement qualification remains separate; adapter propagates original runtime status.",
+    "known_static_difference": "Candidate boxed Q8 path computes bounds and has no Q*KV mask; original peer requires cold F16 mask for causal/window, skips masked values before dot/decode. Mask capacity and preparation cost explicit; no same-contract claim of equal storage.",
+    "normal_and_holdout": [
+      "Q1/17 KV1024/768 D256/256 causal window16",
+      "Q64/128 KV1024/768 D256/256 causal unbounded",
+      "Q17/1 KV7/47 D64/128 full noncausal Q>KV"
+    ],
+    "bound": "Independent double oracle abs8e-3 plus direct arm disagreement <=8e-3; exact readonly encoded bytes after execution. Canonical zero scale inputs never rely on original undefined reciprocal encoding.",
+    "verdict": "ADAPTER_CONSTRUCTION_ALLOWED; actual compilation/oracle pending; no performance sampling allowed before candidate."
+  },
+  "cpu_adapter_review": {
+    "verdict": "NO_NEW_MUST_FOR_AA_AND_FINITE_P1",
+    "reviewer": "existing user-authorized readonly single_machine_completeness_audit",
+    "evidence": "evidence/correctness/inference-g04-g05-cpu-encoded-peer-preflight/result.json",
+    "checked": [
+      "original DLL math/plan/pool and actual image ABI",
+      "independent K/V Q8 strides, offsets and Dv output",
+      "inclusive bottom-right window and full noncausal Q>KV",
+      "actual encoded-byte double oracle and readonly checks",
+      "charged update/run/wait/output lease return and release",
+      "reported cold gather/cache/mask bytes; no dirty producer claim",
+      "original controls/margin/eight-strata/n15-31 policy unchanged"
+    ],
+    "limits": "No sampling or P1 verdict from readonly review"
+  }
+}

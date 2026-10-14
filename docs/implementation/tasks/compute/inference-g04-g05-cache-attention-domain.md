@@ -1,6 +1,6 @@
 # G04/G05 编码 KV 与有限 attention 语义实施批
 
-状态：**AUDITED，2026-10-15**。baseline `694a3d1a4b02540cb56b6ceae35b73dd1dd93440`；
+状态：**CANDIDATE，2026-10-15**。baseline `694a3d1a4b02540cb56b6ceae35b73dd1dd93440`；
 共同批owner见下表：九个原实际组件及下文新增CUDA数值状态owner；有限CE01–07/API/成本合同已冻结。原 G03 已 CLOSED，不由本卡重开其权限/
 退休实现。九owner已合法SCOPED后进入AUDITED；仅下列有限FIX授权产品实现。
 本批沿[十项总卡](../project/inference-gaps-goal-execution-2026-10.md)，
@@ -792,3 +792,54 @@ CPU-only 三次尝试累计265.423秒；原 shared attempt1 漏编 backend_cpu/p
 本阶段只签三交付与逐头/公开消费者门，不签新增域 P1、native private-pool 上界或整个
 G04/G05/G01–G10 完成。十一 owner 仍 AUDITED；下一步收敛成本账、冻结 candidate，沿本卡
 5% material margin 和同编码/有效区/完成/费用合同执行有限性能验收，不重跑原 G03 P1。
+
+### 固定产品 candidate、成本预审与 CPU peer 数值预检
+
+产品 candidate 为 `982676cb05a6e6244e66e0a596347aa96043617b`，全部产品输入与 SDK 已验
+`f772fcad2f2a6a67aa605bbaee10b68f1d540708` 相同；中间提交只增加交付证据/文档。
+CE01–11 有限产品 FIX、直接消费者迁移、新域数学/有限 source 风险、CPU 与 Apple/Vulkan
+宿主 sanitizer、三交付与独立头均已有上述实际证据。CUDA 新域宿主 sanitizer 矩阵尚无
+完整记录，仍须按适用性取证，不能由 source-risk 或其他后端代签。十一 owner 合法 AUDITED→CANDIDATE，公开合同/算法/常态布局冻结。
+本节以后只增加独立 benchmark adapter、合同、审查和证据；若新事实必须改产品则退回 AUDITED，
+不得在 candidate 上改代码后继续引用旧 SDK。
+
+[结构成本账](../../../../evidence/architecture/inference-g04-g05-cost-preflight/cost-ledger.json)
+核对22个产品文件 SHA；独立只读复核未发现新的生命周期/产品 MUST。明确计入 CPU 每次 Q8
+attention 对全部 Q 的 O(Q*Hq*Dqk) 有限/范围扫描，随后原 cast/Q8 dot 转换与逐 V 行 decode；
+CUDA 一个 sequence 共享的4B reset/回读/event，以及 FP8 F32 输出暂存和最终 scale/cast；
+Vulkan dirty encoder 的4*Ndirty安全 F32 scratch、checked dispatch、Q8 Copy、状态退休和
+必要 flush/invalidate；Apple 编译 warmup 与正常 evaluate 的真实 stream/output/status 同步。
+只更新 dirty rows 不等于单核/零同步；MLX 实际 fusion 数与 native pool 峰值保持未知，
+不由 host sanitizer 或接口 cost report 代签 G10。当前 P0 为源码结构账，完整工程性能仍待 P1。
+
+[peer 构造前合同](../../../../evidence/architecture/inference-g04-g05-cost-preflight/peer-preflight.json)
+保留原 CPU/Metal/Vulkan/FI 源码锚点和各自限制；原 FI 64/128 错误核不能当独立合格 peer，
+原 Metal 未导出 Q8 64/128 不能冒充已有 pipeline。有限 CPU adapter 首先接通独立原 ffa DLL
+的 Q8 描述、K/V 独立 stride、Dv 输出与原 F16 bottom-right window mask；没有新数学核。
+原 G01 plain 证据不因本轮 benchmark adapter 扩展被改写，不重跑其既有 P1。
+
+[CPU 数值预检](../../../../evidence/correctness/inference-g04-g05-cpu-encoded-peer-preflight/result.json)
+保留两次实际尝试、原 adapter 编译失败，总计37.969秒，无产品重建或计时。已验 primary/
+placement 各三个形状：Q1/17 KV1024/768 D256 window16、Q64/128 同 KV/D256 causal无界、
+Q17/1 KV7/47 D64/Dv128 full noncausal（含 Q>KV）。两 arm 对独立 double oracle 最大
+绝对误差0.000244301088，arm 差为零，压缩页 readonly 字节核对通过；原 DLL/SDK artifact
+SHA 与实际 compute 函数 image、tensor336/plan56 ABI 同时核定。
+
+该 adapter 只比较固定 ready 历史的 resident warm attention：同原 BatchProgram/两个slots/
+update/F1/Queue/Completion/output owner 返回。peer cold gather 的额外压缩缓存每个 D256
+形状1949696 bytes，留出形状22032 bytes，另有原 causal/window mask；都显式报告，warm
+不复制历史。不得用它代签 dirty producer、changing-layout planning 或全 G04/G05。
+[有限合同](../../../../bench/inference_resident_sdpa/cpu_encoded_p1/contract.json)已通过原统一
+schema/provenance evaluator，5% margin、n15/31、双执行/分配顺序、placement、同 workload
+A/A 与原 controls 不变。候选后先做短 A/A preflight，不合格即停完整采样；无新增 P1 PASS。
+
+有限 CPU adapter 的独立只读复核无新增 MUST；实际源码、原 DLL 独立性、三形状、成本/
+完成边界与 retained 数值日志均匹配。下一步只允许原合同 A/A→controls→有限 P1；其余
+GPU peer 的编译/oracle/性能、dirty producer 性能与 CUDA 新域 host 风险仍需实际证据，
+本 candidate 不因 CPU warm 对照通过就缩小全批范围。
+
+本轮 selector 因六个 shared benchmark/合同输入没有 owner 映射仍为 BLOCKED，原计划
+`.scratch/inference-gaps/g04-g05/candidate-cost-plan.json` 保留；product_authorization 无
+issues，selected docs/closure 和146 skipped reasons保留。沿既有
+[工具归属记录](../build/validation-selector-shared-bench-paths.md)追加实际反例；本轮只做
+上述 adapter 数值/合同与必要维护检查，不重写 selector、公共仪器或产品构建系统。

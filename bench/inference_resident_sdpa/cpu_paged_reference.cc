@@ -29,7 +29,8 @@ struct Request {
   std::vector<mem::HostMapping> mappings;
   std::vector<ggml_fp16_t> mask;
   CpuPagedOriginalExecution execution;
-  std::size_t qoffset=0,koffset=0,qbytes=0,kbytes=0,known=0;
+  std::size_t qoffset=0,koffset=0,voffset=0,ooffset=0;
+  std::size_t qbytes=0,kbytes=0,vbytes=0,obytes=0,known=0;
 };
 struct Slot {
   c::BatchCapacity capacity; c::BatchProgramOptions options;mem::AllocatorRef allocator;
@@ -39,8 +40,16 @@ Status qualify(void *context,c::BatchCapacity cap,const c::BatchProgramOptions &
   const auto *data=static_cast<const CpuPagedReferenceData *>(context);
   if(!data || cap!=data->layout.schema().capacity())
     return Status::InvalidArgument("original immutable cache capacity");
+  const bool plain=cap.key_storage==c::CacheStorage::plain(c::DataType::kBFloat16).value()&&
+      cap.value_storage==cap.key_storage&&cap.qk_head_dim==cap.value_head_dim;
+  const bool encoded=cap.key_storage==c::CacheStorage::q8_0().value()&&
+      cap.value_storage==cap.key_storage;
   if(cap.storage!=c::BatchStorage::kPaged||cap.query_type!=c::DataType::kBFloat16||
-     cap.query_heads!=8||cap.kv_heads!=2||(cap.qk_head_dim!=64&&cap.qk_head_dim!=256)||
+     cap.output_type!=c::DataType::kBFloat16||(!plain&&!encoded)||
+     cap.query_heads!=8||cap.kv_heads!=2||
+     !((cap.qk_head_dim==64&&(cap.value_head_dim==64||cap.value_head_dim==128))||
+       (cap.qk_head_dim==128&&cap.value_head_dim==128)||
+       (cap.qk_head_dim==256&&cap.value_head_dim==256))||
      !options.resource.properties().has(mem::MemoryProperty::kHostAccessible))
     return Status::Unimplemented("finite original immutable BF16 contiguous-cache comparator");
   return Status::Ok();
@@ -60,11 +69,18 @@ Result<bool> update(void *p,const c::BatchLayoutVersion &next,c::BatchPlanReport
 Status make_request(Slot &slot,std::int32_t nq,std::int32_t nk,std::int32_t qstart,std::int32_t kstart) {
   auto request=std::make_unique<Request>();auto &s=*request;const auto cap=slot.capacity;
   HYLE_ASSIGN_OR_RETURN(s.arena,n::MetadataArena::for_graph(32,32,slot.allocator));auto *ctx=s.arena.get();
-  for(unsigned port=0;port<3;++port){s.inputs[port]=ggml_new_tensor_4d(ctx,GGML_TYPE_BF16,cap.qk_head_dim,port?cap.kv_heads:cap.query_heads,port?nk:nq,1);ggml_set_input(s.inputs[port]);}
+  const bool encoded=!cap.key_storage.format().is_plain();
+  for(unsigned port=0;port<3;++port){
+    const auto type=port&&encoded?GGML_TYPE_Q8_0:GGML_TYPE_BF16;
+    s.inputs[port]=ggml_new_tensor_4d(ctx,type,port==2?cap.value_head_dim:cap.qk_head_dim,
+        port?cap.kv_heads:cap.query_heads,port?nk:nq,1);ggml_set_input(s.inputs[port]);}
   auto *q=ggml_cast(ctx,ggml_permute(ctx,s.inputs[0],0,2,1,3),GGML_TYPE_F32);
   auto *k=ggml_permute(ctx,s.inputs[1],0,2,1,3),*v=ggml_permute(ctx,s.inputs[2],0,2,1,3);
   ggml_tensor *mask=nullptr;
-  if(slot.options.causal){s.mask.resize(std::size_t(nq)*nk);for(int row=0;row<nq;++row)for(int j=0;j<nk;++j)s.mask[std::size_t(row)*nk+j]=ggml_fp32_to_fp16(j>nk-nq+row?-INFINITY:0.F);
+  if(slot.options.causal){s.mask.resize(std::size_t(nq)*nk);for(int row=0;row<nq;++row)for(int j=0;j<nk;++j){
+      const auto position=nk-nq+row;
+      const bool outside=j>position||(slot.options.window_left>=0&&j<std::max(0,position-slot.options.window_left));
+      s.mask[std::size_t(row)*nk+j]=ggml_fp32_to_fp16(outside?-INFINITY:0.F);}
     mask=ggml_new_tensor_2d(ctx,GGML_TYPE_F16,nk,nq);mask->data=s.mask.data();}
   auto *attention=ggml_flash_attn_ext(ctx,q,k,v,mask,slot.options.scale,0.F,0.F);
   if(!ggml_prec_set_acc(attention,GGML_PREC_F32))return Status::Unimplemented("original flash F32 accumulation");
@@ -80,8 +96,12 @@ Status make_request(Slot &slot,std::int32_t nq,std::int32_t nk,std::int32_t qsta
   }
   HYLE_RETURN_IF_ERROR(s.execution.prepare(s.graph,slot.allocator));
   s.known+=s.arena.capacity()+s.execution.plan.work_size+s.mask.size()*2;
-  s.qoffset=std::size_t(qstart)*cap.query_heads*cap.qk_head_dim*2;s.koffset=std::size_t(kstart)*cap.kv_heads*cap.qk_head_dim*2;
-  s.qbytes=std::size_t(nq)*cap.query_heads*cap.qk_head_dim*2;s.kbytes=std::size_t(nk)*cap.kv_heads*cap.qk_head_dim*2;
+  const auto key_row=std::size_t(cap.kv_heads)*ggml_row_size(encoded?GGML_TYPE_Q8_0:GGML_TYPE_BF16,cap.qk_head_dim);
+  const auto value_row=std::size_t(cap.kv_heads)*ggml_row_size(encoded?GGML_TYPE_Q8_0:GGML_TYPE_BF16,cap.value_head_dim);
+  s.qoffset=std::size_t(qstart)*cap.query_heads*cap.qk_head_dim*2;s.koffset=std::size_t(kstart)*key_row;
+  s.voffset=std::size_t(kstart)*value_row;s.ooffset=std::size_t(qstart)*cap.query_heads*cap.value_head_dim*2;
+  s.qbytes=std::size_t(nq)*cap.query_heads*cap.qk_head_dim*2;s.kbytes=std::size_t(nk)*key_row;
+  s.vbytes=std::size_t(nk)*value_row;s.obytes=std::size_t(nq)*cap.query_heads*cap.value_head_dim*2;
   slot.known+=s.known;slot.requests.push_back(std::move(request));return Status::Ok();
 }
 d::EnqueueResult plan(void *p,c::Queue &,const c::BatchLayoutVersion &layout,d::BatchWorkspaceViews,c::BatchPlanReport *r)noexcept{
@@ -103,8 +123,8 @@ d::EnqueueResult run(void *p,c::Queue &,std::span<const c::ConstTensorView> inpu
       return d::EnqueueResult::rejected(Status::InvalidArgument("original peer requires its immutable pinned history"));
   }
   for(auto &owned:slot.requests){auto &s=*owned;std::array<mem::HostMapping,3> maps;
-    for(unsigned port=0;port<3;++port){auto sub=(port?(port==1?slot.data->key_cache.view():slot.data->value_cache.view()):inputs[0].storage()).subview(port?s.koffset:s.qoffset,port?s.kbytes:s.qbytes);if(!sub)return {accepted,sub.error()};auto mapped=sub->map_host();if(!mapped)return {accepted,mapped.error()};maps[port]=std::move(*mapped);s.inputs[port]->data=const_cast<std::byte *>(maps[port].bytes().data());}
-    auto sub=workspace.output.subview(s.qoffset,s.qbytes);if(!sub)return {accepted,sub.error()};auto mapped=sub->map_host(mem::HostAccess::kWrite);if(!mapped)return {accepted,mapped.error()};auto bytes=mapped->writable_bytes();if(!bytes)return {accepted,bytes.error()};s.output->data=bytes->data();
+    for(unsigned port=0;port<3;++port){auto sub=(port?(port==1?slot.data->key_cache.view():slot.data->value_cache.view()):inputs[0].storage()).subview(port==0?s.qoffset:port==1?s.koffset:s.voffset,port==0?s.qbytes:port==1?s.kbytes:s.vbytes);if(!sub)return {accepted,sub.error()};auto mapped=sub->map_host();if(!mapped)return {accepted,mapped.error()};maps[port]=std::move(*mapped);s.inputs[port]->data=const_cast<std::byte *>(maps[port].bytes().data());}
+    auto sub=workspace.output.subview(s.ooffset,s.obytes);if(!sub)return {accepted,sub.error()};auto mapped=sub->map_host(mem::HostAccess::kWrite);if(!mapped)return {accepted,mapped.error()};auto bytes=mapped->writable_bytes();if(!bytes)return {accepted,bytes.error()};s.output->data=bytes->data();
     for(auto *view:s.views)view->data=static_cast<std::byte *>(view->view_src->data)+view->view_offs;
     auto status=s.execution.run();accepted=true;status.Update(mapped->close());for(auto &map:maps)status.Update(map.close());if(!status.ok())return {accepted,status};
   }return d::EnqueueResult::accepted_command();
@@ -132,9 +152,11 @@ Result<std::shared_ptr<const CpuPagedReferenceData>> cpu_paged_reference_data(
   try{
     auto data=std::make_shared<CpuPagedReferenceData>();data->layout=std::move(layout);data->keys=std::move(keys);data->values=std::move(values);
     const auto cap=data->layout.schema().capacity();const auto h=data->layout.host();
-    const auto row_bytes=std::size_t(cap.kv_heads)*cap.qk_head_dim*2;
-    HYLE_ASSIGN_OR_RETURN(data->key_cache,mem::Buffer::create(mem::system_resource(),std::size_t(data->layout.facts().kv_rows)*row_bytes,GGML_MEM_ALIGN));
-    HYLE_ASSIGN_OR_RETURN(data->value_cache,mem::Buffer::create(mem::system_resource(),data->key_cache.size(),GGML_MEM_ALIGN));
+    const auto row_bytes=[&](unsigned port){return std::size_t(cap.kv_heads)*ggml_row_size(
+        (port==1?cap.key_storage:cap.value_storage).format().is_plain()?GGML_TYPE_BF16:GGML_TYPE_Q8_0,
+        port==1?cap.qk_head_dim:cap.value_head_dim);};
+    HYLE_ASSIGN_OR_RETURN(data->key_cache,mem::Buffer::create(mem::system_resource(),std::size_t(data->layout.facts().kv_rows)*row_bytes(1),GGML_MEM_ALIGN));
+    HYLE_ASSIGN_OR_RETURN(data->value_cache,mem::Buffer::create(mem::system_resource(),std::size_t(data->layout.facts().kv_rows)*row_bytes(2),GGML_MEM_ALIGN));
     for(unsigned port=1;port<3;++port){
       HYLE_ASSIGN_OR_RETURN(auto tensor,d::PagedArenaAccess::tensor(port==1?data->keys:data->values));
       HYLE_ASSIGN_OR_RETURN(auto source,tensor.storage().map_host());
@@ -142,7 +164,7 @@ Result<std::shared_ptr<const CpuPagedReferenceData>> cpu_paged_reference_data(
       HYLE_ASSIGN_OR_RETURN(auto bytes,dest.writable_bytes());std::size_t offset=0;
       for(unsigned request=0;request<data->layout.facts().requests;++request){const auto first=h.kv_indptr[request],last=h.kv_indptr[request+1];
         for(auto ref=first;ref<last;++ref){const auto count=ref+1==last?static_cast<unsigned>(h.last_page_lengths[request]):cap.page_size;
-          std::memcpy(bytes.data()+offset,source.bytes().data()+std::size_t(h.page_indices[ref])*cap.page_size*row_bytes,count*row_bytes);offset+=count*row_bytes;
+          std::memcpy(bytes.data()+offset,source.bytes().data()+std::size_t(h.page_indices[ref])*cap.page_size*row_bytes(port),count*row_bytes(port));offset+=count*row_bytes(port);
         }
       }
       if(offset!=bytes.size())return std::unexpected(Status::Internal("original cold immutable cache extent"));
