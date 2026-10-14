@@ -854,3 +854,11 @@ setarch；原 NVIDIA LSan/诊断线程 INCONCLUSIVE 不改名 PASS，不抑制 d
 只构建实际 factor/consumer 闭包，先保存 dry-run；如引入无关 ggml CUDA 全目录重编则先
 定位接线，不借模块任务改公共 build/core。重型任务串行，最多4 jobs，FI 模板编译单独限1。
 CPU 当前 A/A16路 PASS，正式采样尚在运行；CUDA worker 仅准备，未因此签任何运行结果。
+
+原三棵 sanitizer 树的 ggml CUDA archive 已做有限独立复核并以同一只读脚本再核：各146个
+对象/成员、242个派生源码/头逐 SHA 相同；外部依赖1479/1479/1481无缺失或晚于相关对象
+的更新，五个 HYLE 私有依赖与原 F5/current canonical 同 SHA。全部对象有相应 sanitizer
+与 SM89 参数。历史系统头未保存哈希，借用依据明确限于原工具身份与 Ninja 依赖 freshness，
+不制造历史哈希证明。验证 hook 仅把 ggml 的旧未改 native archive 链接到独立 imported
+archive；CPU/base、FI 与全部改动宿主照常编，保原三类公开 consumer，不改产品构建图。
+同一脚本/完整命令及聚合 SHA 将随本阶段 raw 封存；此处仍不是 CUDA 新域运行 PASS。
