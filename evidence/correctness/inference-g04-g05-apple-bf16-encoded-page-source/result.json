@@ -1,0 +1,67 @@
+{
+  "kind": "G04_G05_APPLE_BF16_ENCODER_F2_NATIVE_JOINT_SOURCE_SUPPLEMENT",
+  "verdict": "PASS_FINITE_ACTUAL_AIR_APPLE_BF16_SOURCE",
+  "owners_remain": "AUDITED; whole G04/G05 not accepted",
+  "identity": {
+    "model": "Mac16,12",
+    "arch": "arm64",
+    "os": "ProductName:\t\tmacOS\nProductVersion:\t\t27.0.1\nBuildVersion:\t\t26A434",
+    "compiler": "Apple clang version 21.0.0 (clang-2100.3.34.2)\nTarget: arm64-apple-darwin27.0.0\nThread model: posix\nInstalledDir: /Library/Developer/CommandLineTools/usr/bin",
+    "memory": "17179869184"
+  },
+  "fixture_sha256": "65116244bed6590178ec9005c0da6e9a6c65296804f69cdd89bcd597b691c984",
+  "qualified": [
+    "BF16 Q/output with Q8 KV, native and required CPU+Apple Graph receivers",
+    "Single activeQ1 and multi activeQ18, D64/128 and D256/256, eight successful episodes x6updates",
+    "Same paired/independent original Graph result owners to one original F2 Update, exact dirty K/V bytes, old reader and shared page guard/math",
+    "Four accepted NaN failures retain InvalidArgument through final Results/Completion and every writer refuses publication"
+  ],
+  "cumulative_seconds": 2.404740417,
+  "previous_stage": "inference-g04-g05-encoded-native-page-source retains all six prior Apple/Vulkan attempts and109.711s; not overwritten or reset",
+  "run": {
+    "state": "TERMINAL_PASS",
+    "identity": {
+      "model": "Mac16,12",
+      "arch": "arm64",
+      "os": "ProductName:\t\tmacOS\nProductVersion:\t\t27.0.1\nBuildVersion:\t\t26A434",
+      "compiler": "Apple clang version 21.0.0 (clang-2100.3.34.2)\nTarget: arm64-apple-darwin27.0.0\nThread model: posix\nInstalledDir: /Library/Developer/CommandLineTools/usr/bin",
+      "memory": "17179869184"
+    },
+    "max_jobs": 4,
+    "stages": [
+      {
+        "stage": "compile",
+        "command": [
+          "/opt/homebrew/bin/cmake",
+          "--build",
+          "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-build",
+          "--target",
+          "g04_g05_encoded_pages",
+          "--parallel",
+          "4"
+        ],
+        "exit_code": 0,
+        "elapsed_seconds": 1.436312334,
+        "log": "/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-pages/compile-apple-5.log"
+      },
+      {
+        "stage": "tests",
+        "command": [
+          "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-build/g04_g05_encoded_pages",
+          "--gtest_output=xml:/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-pages/tests-apple-5.xml",
+          "--gtest_filter=EncodedNativePages.BFloat16IncrementalAndFailureConsumers"
+        ],
+        "exit_code": 0,
+        "elapsed_seconds": 0.968428083,
+        "log": "/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-pages/tests-apple-5.log"
+      }
+    ],
+    "scope": "CE07 actual paired/separate Graph encoders to native/joint page receiver; no whole model/SDK/sanitizer/P1 verdict",
+    "cumulative_seconds": 2.404740417
+  },
+  "not_proven": [
+    "CPU/CUDA BF16 F2/Graph",
+    "new-domain complete risk/SDK/P1",
+    "whole G04/G05"
+  ]
+}

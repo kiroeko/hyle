@@ -84,7 +84,9 @@ tile中解码和累加，最后转输出类型。活跃Q/output转换费用为O(
 [Apple有限source证据](../../evidence/correctness/inference-g04-g05-apple-encoding-math-stage/result.json)；
 F16原生及CPU+Apple增量F2/Graph已有
 [有限source证据](../../evidence/correctness/inference-g04-g05-encoded-native-page-source/result.json)；
-BF16增量组合、完整风险、SDK和P1尚未签发。
+BF16原生及CPU+Apple增量组合也已完成
+[有限source补充](../../evidence/correctness/inference-g04-g05-apple-bf16-encoded-page-source/result.json)；
+完整风险、SDK和P1尚未签发。
 
 Vulkan原Plan可以编码同一Q8_0 carrier，F16 paged/ragged路径在原FullF32 scalar核中
 直接按页解码，独立Dv与窗口无需整历史KV展开。NaN/Inf和编码scale溢出由原Results报错；

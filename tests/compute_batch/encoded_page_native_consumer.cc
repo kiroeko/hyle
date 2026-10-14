@@ -111,7 +111,7 @@ Result<g::Graph> encoder(std::span<const c::TensorDesc> inputs) {
   return std::move(builder).finish();
 }
 
-Status episode(unsigned dk, unsigned dv, bool combined, bool invalid=false, bool paired_failure=false, bool single=false) {
+Status episode(unsigned dk, unsigned dv, bool combined, bool invalid=false, bool paired_failure=false, bool single=false, bool bf16=false) {
   HYLE_ASSIGN_OR_RETURN(auto context, n::Context::create());
 #if defined(HYLE_ENCODED_APPLE)
   HYLE_ASSIGN_OR_RETURN(auto device, n::MemoryResource::create(context));
@@ -122,8 +122,14 @@ Status episode(unsigned dk, unsigned dv, bool combined, bool invalid=false, bool
 #endif
   struct Close final { n::Context &context; ~Close() { context.close().IgnoreError(); } } close{context};
   const unsigned requests=single?1u:2u,query_rows=single?1u:18u;
+  const auto qtype=bf16?c::DataType::kBFloat16:c::DataType::kFloat16;
+  const auto decode_word=[bf16](std::uint16_t word)->double {
+    return bf16?half_test::decode(hyle::simd::bfloat16_t::from_bits(word)):
+                half_test::decode(F16::from_bits(word));
+  };
+  const double tolerance=bf16?.008:.002;
   const auto q8 = c::CacheStorage::q8_0().value();
-  const c::BatchCapacity capacity{.query_type=c::DataType::kFloat16, .output_type=c::DataType::kFloat16,
+  const c::BatchCapacity capacity{.query_type=qtype, .output_type=qtype,
       .key_storage=q8, .value_storage=q8, .max_requests=requests, .max_query_rows=query_rows, .max_kv_rows=36,
       .max_pages=5, .max_page_refs=4, .query_heads=8, .kv_heads=2, .qk_head_dim=dk, .value_head_dim=dv};
   HYLE_ASSIGN_OR_RETURN(auto schema, c::BatchSchema::create(capacity));
@@ -169,7 +175,7 @@ Status episode(unsigned dk, unsigned dv, bool combined, bool invalid=false, bool
   HYLE_ASSIGN_OR_RETURN(auto old_value,values.read(old_layout,std::span(old_vr).first(1+requests)));
   HYLE_RETURN_IF_ERROR(require(!keys.acquire(kr[1]) && kr[1].valid(),"old reader allowed mutable acquisition"));
   HYLE_ASSIGN_OR_RETURN(auto query_desc,c::batch_query_description(capacity));
-  std::vector<std::uint16_t> query_words(*query_desc.element_count(),0x3000);
+  std::vector<std::uint16_t> query_words(*query_desc.element_count(),bf16?0x3e00:0x3000);
 #if defined(HYLE_ENCODED_APPLE)
   HYLE_ASSIGN_OR_RETURN(auto query_pool,c::LeasePool::create(device.ref(),query_words.size()*2+64));
   HYLE_ASSIGN_OR_RETURN(auto query_writer,query_pool.allocate(query_words.size()*2,64));
@@ -227,7 +233,7 @@ Status episode(unsigned dk, unsigned dv, bool combined, bool invalid=false, bool
     placements.push_back({node,joint::kCpuTarget,g::PlacementStrength::kRequired});return builder.result(node);
   };
   HYLE_ASSIGN_OR_RETURN(auto qabs,cpu_node(c::Operation(c::Unary{c::UnaryKind::kAbs}),qi));
-  HYLE_ASSIGN_OR_RETURN(auto qhalf,cpu_node(c::Operation(c::Cast{c::DataType::kFloat16}),qabs));
+  HYLE_ASSIGN_OR_RETURN(auto qhalf,cpu_node(c::Operation(c::Cast{qtype}),qabs));
   HYLE_ASSIGN_OR_RETURN(auto descriptor,g::batch::native_paged_attention(recipe,layout));
   HYLE_ASSIGN_OR_RETURN(auto node,builder.add_node(c::Operation::custom(descriptor),std::array{qhalf,ki,vi}));
   HYLE_ASSIGN_OR_RETURN(auto attention,builder.result(node));
@@ -318,7 +324,7 @@ Status episode(unsigned dk, unsigned dv, bool combined, bool invalid=false, bool
           }
           const double expected=(combined?-1:1)*sum/denominator;
           for(unsigned i=0;i<8*dv;++i){const auto x=actual[(qp[request]+row)*8*dv+i];
-            if(!std::isfinite(x)||std::abs(x-expected)>.002)return Status::Internal("encoded delta attention independent oracle differs");}
+            if(!std::isfinite(x)||std::abs(x-expected)>tolerance)return Status::Internal("encoded delta attention independent oracle differs");}
         }
       }return Status::Ok();
     };
@@ -340,12 +346,12 @@ Status episode(unsigned dk, unsigned dv, bool combined, bool invalid=false, bool
         std::fprintf(stderr,"%s native failed %s encoder source retains InvalidArgument/no result/no page publication PASS\n",route,paired_failure?"paired":"independent second");return Status::Ok();}
       {HYLE_ASSIGN_OR_RETURN(auto result,done.wait());std::vector<std::uint16_t> words(actual.size());
 #if defined(HYLE_ENCODED_APPLE)
-        HYLE_ASSIGN_OR_RETURN(auto desc,c::TensorDesc::dense(c::DataType::kFloat16,std::array<std::int64_t,3>{query_rows,8,dv}));
+        HYLE_ASSIGN_OR_RETURN(auto desc,c::TensorDesc::dense(qtype,std::array<std::int64_t,3>{query_rows,8,dv}));
         HYLE_ASSIGN_OR_RETURN(auto read,device.import_readonly(result->arrays()[0],desc));HYLE_RETURN_IF_ERROR(read.view()->read(std::as_writable_bytes(std::span(words))));
 #else
         HYLE_RETURN_IF_ERROR(context.download(result->tensors()[0],std::as_writable_bytes(std::span(words))));
 #endif
-        for(std::size_t i=0;i<words.size();++i)actual[i]=float(half_test::decode(F16::from_bits(words[i])));
+        for(std::size_t i=0;i<words.size();++i)actual[i]=float(decode_word(words[i]));
         HYLE_RETURN_IF_ERROR(check(actual));HYLE_RETURN_IF_ERROR(require(!receiver.take_update(),"retained native result released original update"));}
       HYLE_RETURN_IF_ERROR(done.completion().wait());done={};HYLE_ASSIGN_OR_RETURN(update,receiver.take_update());
     }
@@ -369,7 +375,7 @@ Status episode(unsigned dk, unsigned dv, bool combined, bool invalid=false, bool
   HYLE_ASSIGN_OR_RETURN(auto old_done,old_slot.submit());
   {HYLE_ASSIGN_OR_RETURN(auto result,old_done.wait());std::vector<std::uint16_t> words(query_rows*8*dv);
 #if defined(HYLE_ENCODED_APPLE)
-    HYLE_ASSIGN_OR_RETURN(auto desc,c::TensorDesc::dense(c::DataType::kFloat16,std::array<std::int64_t,3>{query_rows,8,dv}));
+    HYLE_ASSIGN_OR_RETURN(auto desc,c::TensorDesc::dense(qtype,std::array<std::int64_t,3>{query_rows,8,dv}));
     HYLE_ASSIGN_OR_RETURN(auto read,device.import_readonly(result->arrays()[0],desc));HYLE_RETURN_IF_ERROR(read.view()->read(std::as_writable_bytes(std::span(words))));
 #else
     HYLE_RETURN_IF_ERROR(context.download(result->tensors()[0],std::as_writable_bytes(std::span(words))));
@@ -378,7 +384,7 @@ Status episode(unsigned dk, unsigned dv, bool combined, bool invalid=false, bool
       for(unsigned row=0;row<nq;++row){const unsigned position=17-nq+row;
         const double expected=(position*decoded_constant(.0625F)+decoded_constant(request?.25F:.125F))/(position+1);
         const double visible=position==16?expected:decoded_constant(.0625F);
-        for(unsigned i=0;i<8*dv;++i)HYLE_RETURN_IF_ERROR(require(std::abs(half_test::decode(F16::from_bits(words[(qp[request]+row)*8*dv+i]))-visible)<.002,"old reader math changed across new version"));
+        for(unsigned i=0;i<8*dv;++i)HYLE_RETURN_IF_ERROR(require(std::abs(decode_word(words[(qp[request]+row)*8*dv+i])-visible)<tolerance,"old reader math changed across new version"));
       }
     }
   }
@@ -414,3 +420,20 @@ TEST(EncodedNativePages, SingleRequestIncrementalConsumer) {
     const auto status=episode(dimensions[0],dimensions[1],combined,false,false,true);ASSERT_TRUE(status.ok())<<status.message();
   }
 }
+
+#if defined(HYLE_ENCODED_APPLE)
+TEST(EncodedNativePages, BFloat16IncrementalAndFailureConsumers) {
+  for(bool combined:{false,true})for(bool single:{false,true})
+    for(auto dimensions:{std::array{64u,128u},std::array{256u,256u}}){
+      SCOPED_TRACE(::testing::Message()<<"BF16 combined="<<combined<<" single="<<single
+                    <<" dk="<<dimensions[0]<<" dv="<<dimensions[1]);
+      const auto status=episode(dimensions[0],dimensions[1],combined,false,false,single,true);
+      ASSERT_TRUE(status.ok())<<status.message();
+    }
+  for(bool combined:{false,true})for(bool paired:{false,true}){
+    SCOPED_TRACE(::testing::Message()<<"BF16 combined="<<combined<<" paired="<<paired);
+    const auto status=episode(64,128,combined,true,paired,false,true);
+    ASSERT_TRUE(status.ok())<<status.message();
+  }
+}
+#endif

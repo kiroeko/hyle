@@ -507,3 +507,36 @@ completion/use guard、所有目的 writer 撤回及旧页面不变，不冒充�
 没有修改已验产品或错误/权限边界。只读有限复核未发现新增 MUST。
 本证据只签该 CPU-only 源码阶段；CUDA/CPU+CUDA、新域完整风险、SDK、其余准入 dtype 与
 P1 继续待验，G04/G05 和十一 owner 的 AUDITED 状态不变。
+
+### CE07 Apple BF16 增量消费补充
+
+[补充证据](../../../../evidence/correctness/inference-g04-g05-apple-bf16-encoded-page-source/result.json)
+签实际 Air Mac16,12/macOS27.0.1/AppleClang21 的 BF16 Q/output、Q8 KV。沿原共享夹具
+将 query bits、schema、CPU Cast、原生结果描述和解码一起切到 BF16；独立 oracle 沿原
+CE05 的 .008 数值容差。原生与 required CPU+Apple、single Q1/multi Q18、(64,128)/
+(256,256) 共八组成功 episode 各六次更新，以及四组 paired/independent source NaN
+失败均通过。原 dirty bytes、旧 reader/共享页、最终 Results/Completion 与全部 writer
+失败检查保留。只读差分复核无新增 MUST；Vulkan 不启用 BF16 新测试。
+本次仅夹具编译 1.436 秒、运行 .968 秒，累计 2.405 秒；原阶段所有 FAIL/109.711 秒
+保留，未重跑未变产品数学/P1。CPU/CUDA BF16 增量组合与全批风险/SDK/P1仍待验。
+
+### CE04 实际组合反例：FP8 Dqk64/Dv128 的 K tile
+
+WSL common encoded source attempt1 编译通过后，Direct 非零 K 消费失败；attempt3/4
+诊断重现 actual .0772094727、独立 weighted oracle .0800453784，完整 K/V 页面 bytes
+与 Q bits 0x3000 均正确。锁定 FI prefill.cuh 的 paged/ragged K producer 因 Dv128
+选择 128B swizzle，但 Dqk64 的 NUM_MMA_D=4，FP8 加载循环为 4/8=0，实际漏载 K。
+这属于本卡既定 CE04 数学有限 FIX 的真实反例，owner compute_provider_flashinfer 仍 AUDITED。
+
+有限修复裁决：只在 FP8 QK64/VO128 的原 native tile 内补足 K 的128-byte承载，并同步
+shared extent/stride、padding zero-fill、producer回退、repack源stride与两dispatcher的
+shared-memory账；公开D、global缓存stride、QK数学迭代保持64。原FlashInfer kernel/
+planner/slots不替换，无全历史KV padding/解码。使用具名锁定patch和build-local派生源码，
+不修改immutable dependency cache或公共构建工具。该方案已有独立只读核证，仍须实跑。
+原 source12 数学阶段的较弱K分布不能代签这个新反例；原所有 FAIL/时间继续累计。
+
+同批 Graph failure 检查的原要求过严：实际 aggregate wait 保留 InvalidArgument，原
+Invocation::output 固定以 FailedPrecondition 拒绝失败结果；公开合同没有重复同错误码的
+承诺。按原合同保留最终 wait 的严格错误断言及 wait 后 output 拒绝检查，attempt4六组
+失败 episode 全部通过，没有改产品。attempt2诊断printf误用string_view::c_str导致的
+编译失败也保留；不因修正夹具把 original attempt1/2/3/4 的整体 FAIL 改写为 PASS。
