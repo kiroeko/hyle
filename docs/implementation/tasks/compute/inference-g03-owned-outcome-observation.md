@@ -1,6 +1,6 @@
 # G03 原结果槽的来源聚合观察接缝
 
-状态：SCOPED，2026-10-14；owner compute、compute_route_apple、compute_route_vulkan；
+状态：AUDITED，2026-10-14；owner compute、compute_route_apple、compute_route_vulkan；
 baseline `16d677b38db855482ada49ed260a3611f5c17147`。这是[主卡](inference-g03-pending-page-consumption.md)
 的实际来源/后继结果合同，不修改已闭数学、原取消资格检查、公共构建或工具。
 
@@ -40,3 +40,43 @@ P0 先记已有 native 生命周期、冷槽、retention fan-out 与 phase scan 
 常设授权有限追加，原 FAIL/TIMEOUT/累计不重置；heavy 串行/最多四 jobs。所有门
 按实际影响裁决，未运行不写 PASS。本接缝完成也不代签主卡 pending page/late native
 output 或整个 G03/G01–G10。
+
+## 冻结接口与有限 FIX
+
+| ID | 固定改动 | 验收 |
+|---|---|---|
+| OO01 | detail::ResultAccess 提供原 OwnedResult 的 mutable completion 与 move replacement，仅 trusted adapters 可用；不动 storage/payload/layout | 同一 result identity/旧结果阻止原 slot reuse，completion()/wait()/result() 同 verdict，无 const_cast |
+| OO02 | 三 CopyStreamAccess::retirement_sources(Update&, span<Completion*>)：空 span 查数量，非空填原已接纳 phase 与实际被这些 phase 使用的 producer completions，去重；不观察、不等待、不替换原对象 | 四 source families；未使用 producer 不加入；inline/partial-prefix/invalid capacity/原 identity 与借用寿命 |
+| OO03 | 一个 opt-in DependentCompletion 冷槽，合并原 suffix completion 与唯一来源 owner 的 poll/wait/cancel/actual-retirement 协议，输出仍是原 Completion | unknown 不提前裁决/释放；source与suffix第一错误、后继接纳后取消、abandon、重复观察、冷槽复用及 OOM |
+| OO04 | 原 OwnedResult completion 接入该冷槽，原结果 payload/slot保留；原 Graph await_completion 消费同一聚合状态 | Native Direct/原 Graph 形状、四 source/交付/宿主风险，不能把原型 façade 当产品 |
+
+OO02 签名为 `Result<std::size_t> retirement_sources(CopyBatchUpdate&,
+std::span<Completion*>) noexcept`；只借用原对象，调用方保原 update控制，不能另作观察。
+数量是实际 accepted phases＋这些 phases 使用的不同 producer bindings，不用 report
+中的 prepared phase 数代替 accepted 数，不收无关 bound producers。节点存储在冷
+source owner，容量不足在填表之前拒绝；源 known error/unknown 必须原样保留。
+
+OO03 的 private `DependentCompletion::create(AllocatorRef)`、`available()`、
+`publish(Completion&&, OutcomeSources)`、`reset()` 固定。OutcomeSources 是同构建
+trusted C++协议：state 与 poll/wait/request_cancel/abandon/subscribe_retirement/release
+函数；成功 publish 消费一个源 owner reference。来源负责原 controls与有限节点，
+subscribe_retirement 在全部已接纳原 source work实际退休后交回一个 CompletionLifetime。
+poll/wait 必须推进原 source观察，错误不等于退休；source观察只能在 suffix实际退休
+后进行。abandon 不等待、仅移交原 native owner保活，释放/订阅均由原 actual callback
+完成。不能在 native callback 中 blocking wait 另一个 callback。
+
+冷槽及来源节点先由注入 allocator/ResourceBudget 建立并逐分配 OOM；publish/admission
+不分配。普通 Completion/OwnedResult/F2/native controller layout不变。只增加 opt-in
+槽的 refcount/retention/actual flags，复用原 CompletionRetention 与原后端进展，不
+创建 executor/queue/计时器、shadow输出或默认 native callback 字段。native借用与
+状态观察外部串行，actual callbacks只发布对应退休事实并释放所有权。
+
+允许 result.h/generated_result.h、retained_completion.cc 与新增 detail观察头、三原
+CopyStreamAccess/copy实现、直接tests/guide/evidence；不改公共构建/closure工具/数学。
+现有 source 元数据、原取消资格检查和 original ready binding保持。pending page/
+late producer/public receiver 仍主卡；本有限FIX处理它们需要的真实观察合同，非另增
+全库研究项。源／suffix已接纳之后的新能力不顺手扩入。
+
+七问裁决：无需新依赖/FFI；两个具名纵切和真实 Graph completion消费；借原 native/
+F1/F2/结果槽；P0 有界 phase/producer扫描与冷固定元数据；三交付原签名/头成立；
+guide须说明Actual retirement与唯一观察。验证门未完成，不把 AUDITED 写成 PASS。

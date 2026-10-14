@@ -270,9 +270,9 @@
     },
     {
       "module": "compute",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/inference-g03-owned-outcome-observation.md",
-      "summary": "G03 owned outcome observation SCOPED at16d677: actual original slot/source owner success, accepted-source cancel, abandon and Vulkan unknown proofs. Original Graph consumes completion() as well as wait(); freeze opt-in completion status/actual phase retirement seam before product code. Pending frame/late output and full G03 still maincompute_batch SCOPED; closed cancellation/math/source proofs preserved."
+      "summary": "G03 owned outcome OO01–OO04 AUDITED: fixed trusted original Result completion access, original accepted-phase/used-producer borrow, opt-in cold completion source aggregation/actual retirement protocol. Preserve original slot/payload/queues/normal native layout; actual primitive/Graph shape proofs retained. Full pending page/late producer and overall G03 not signed."
     },
     {
       "module": "graph",
@@ -509,9 +509,9 @@
     },
     {
       "module": "compute_route_apple",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/inference-g03-owned-outcome-observation.md",
-      "summary": "G03 owned outcome observation SCOPED at16d677: actual original slot/source owner success, accepted-source cancel, abandon and Vulkan unknown proofs. Original Graph consumes completion() as well as wait(); freeze opt-in completion status/actual phase retirement seam before product code. Pending frame/late output and full G03 still maincompute_batch SCOPED; closed cancellation/math/source proofs preserved."
+      "summary": "G03 owned outcome OO01–OO04 AUDITED: fixed trusted original Result completion access, original accepted-phase/used-producer borrow, opt-in cold completion source aggregation/actual retirement protocol. Preserve original slot/payload/queues/normal native layout; actual primitive/Graph shape proofs retained. Full pending page/late producer and overall G03 not signed."
     },
     {
       "module": "graph_route_apple",
@@ -526,9 +526,9 @@
     },
     {
       "module": "compute_route_vulkan",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/inference-g03-owned-outcome-observation.md",
-      "summary": "G03 owned outcome observation SCOPED at16d677: actual original slot/source owner success, accepted-source cancel, abandon and Vulkan unknown proofs. Original Graph consumes completion() as well as wait(); freeze opt-in completion status/actual phase retirement seam before product code. Pending frame/late output and full G03 still maincompute_batch SCOPED; closed cancellation/math/source proofs preserved."
+      "summary": "G03 owned outcome OO01–OO04 AUDITED: fixed trusted original Result completion access, original accepted-phase/used-producer borrow, opt-in cold completion source aggregation/actual retirement protocol. Preserve original slot/payload/queues/normal native layout; actual primitive/Graph shape proofs retained. Full pending page/late producer and overall G03 not signed."
     },
     {
       "module": "graph_route_vulkan",
