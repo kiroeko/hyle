@@ -689,14 +689,9 @@
     },
     {
       "module": "compute_batch",
-      "state": "CLOSED",
-      "record": "docs/implementation/tasks/compute/inference-g03-page-initialization-prefix.md",
-      "summary": "G03 IP01-IP03 finite CLOSED: explicit initialized-row publish/complete, exact layout prefix bounds before allocation, original generation/recovery and 23 migrated consumers. Windows14/public64/nativeCPU2; Air3hosts14+64 and relocated static/shared public/native/4headers; 15Apple/Vulkan+4CUDA call units compile. Padding sizes48/40 unchanged, no new warm metadata allocation. Whole pending/Graph/late output/7routes remain separate.",
-      "candidate": "15c1a5a3616fb91693b833b09ae8333e0c121f26",
-      "performance": {
-        "tier": "P0",
-        "evidence": "docs/implementation/tasks/compute/inference-g03-page-initialization-prefix.md"
-      }
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/compute/inference-g03-pending-page-consumption.md",
+      "summary": "Main G03 pending receiver SCOPED after finite initialization-prefix CLOSED1dcc: actual original arena ready frames now enforce committed row domains; original Batch/native controllers remain ready-only and cannot admit accepted F2 updates. Continue existing goal receiver/root/layout/coverage/guards, late native output and Graph/7route contract. Do not reopen or rerun completed IP/source/math evidence; product edits wait for fixed AUDITED receiver FIX."
     },
     {
       "module": "graph_batch",

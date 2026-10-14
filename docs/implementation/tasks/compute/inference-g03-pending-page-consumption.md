@@ -1,6 +1,6 @@
 # G03 已接纳页更新到原 attention 的组合范围
 
-状态：SCOPED，2026-10-14；初始owner compute_batch；baseline `c8ea4cc31`。
+状态：SCOPED，2026-10-14；当前owner compute_batch；续接baseline `1dcc26cc0af4c6c68a4c9ab330fbd8088dc6aaa9`（初始baseline `c8ea4cc31`保留）。
 授权与全项范围仍为[十项goal](../project/inference-gaps-goal-execution-2026-10.md)。
 GP01/GP02已按[有限terminal](inference-g03-dirty-page-terminal.md)关闭，原数学/性能/失败
 和private UNKNOWN保留；只因原goal尚未完成的真实producer→attention旅程启动新轮。
@@ -148,3 +148,11 @@ SDK/宿主风险通过，原控制可回接。当前 compute_batch 有限施工�
 [原page初始化前缀](inference-g03-page-initialization-prefix.md)：它固定本主卡需要的初始化
 事实，不把ready frame当pending资格。主卡的完整receiver、late output、Graph与七路线
 验收继续保留；后继采用这些实际初始化事实与原来源协议，不再另造来源owner。
+
+2026-10-14续接：初始化前缀有限轮已以`15c1a5a36`候选、`1dcc26cc0`terminal CLOSED。
+原PagedPageWriter现在必须显式publish(rows)/complete(ready,rows)，新页/回收代际为0，
+原unique ready页保committed prefix，read在分配之前验证每个引用。14项/64步、3hostsan、
+三交付、原CPU/Vulkan数学消费及专用调用迁移已验，不重复这些门。当前新事实是原controller
+仍只接成功ready frame，不能消费已接纳F2 update并证明prefix与actual write coverage合并。
+继续既有goal中未交付的组合范围，不重开有限IP轮；尚须固定receiver公开形状/有限FIX，
+不得从本段直接开始产品实现。来源聚合和cold source节点仍沿f307/cdb8原实体。
