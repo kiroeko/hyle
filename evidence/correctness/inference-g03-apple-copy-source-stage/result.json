@@ -1,0 +1,193 @@
+{
+  "identity": {
+    "model": "Mac16,12",
+    "arch": "arm64",
+    "os": "ProductName:\t\tmacOS\nProductVersion:\t\t27.0.1\nBuildVersion:\t\t26A434",
+    "compiler": "Apple clang version 21.0.0 (clang-2100.3.34.2)\nTarget: arm64-apple-darwin27.0.0\nThread model: posix\nInstalledDir: /Library/Developer/CommandLineTools/usr/bin",
+    "cpu": "10",
+    "memory": "17179869184"
+  },
+  "candidate": "AUDITED WORKTREE Apple source qualification",
+  "scope": "actual 64 ready Apple ABS outputs -> fixed original F2 program/two slots; readonly source qualification; not pending page attention",
+  "inputs": [
+    {
+      "path": "src/compute_route_apple/apple_copy_internal.h",
+      "sha256": "54a5c9611604446002b6b4cbf1f67107b7612ee8d4f86910c9e0fdc75c3f19ab"
+    },
+    {
+      "path": "src/compute_route_apple/apple_memory.mm",
+      "sha256": "1c2b721dad129c42037a7fc72e4674eb9b109e5cebf8ee6cc9e888fb8400ec83"
+    },
+    {
+      "path": "src/compute_route_apple/apple_copy_program.cc",
+      "sha256": "7fe3eae1fd2cc354ba175e8add3be1a595e2b2302ba751249a7988ca844da519"
+    },
+    {
+      "path": "include/hyle/compute/apple_memory.h",
+      "sha256": "eb9cc9c6ab7fa61f33c8ae550573902a210730ef7a760d2c076fd6ec19fa6348"
+    },
+    {
+      "path": "tests/compute_batch/native_producer_copy_shape_probe.cc",
+      "sha256": "f756a531b14cb2185a7b802760570e52f5a08ba7b93b59ff1beae39d29d7ac29"
+    },
+    {
+      "path": "tests/compute_batch/dirty_page_native_consumer.cc",
+      "sha256": "701fde4b40999a966a0bac42dcba20857bc9dc56a0dbb0623e66fefd57dc0abb"
+    },
+    {
+      "path": "tests/compute_route_apple/copy_program_test.cc",
+      "sha256": "61049855474044f0a919e76cc4559a570b388df20f779c4e3052d603c00012ca"
+    },
+    {
+      "path": "tests/compute_route_apple/copy_recording_test.cc",
+      "sha256": "5fc29ec832aa6f99b7a5bff754c880eacad150790ad9a01f39ce35c50cdc51e2"
+    }
+  ],
+  "stages": [
+    {
+      "route": "apple",
+      "stage": "configure",
+      "attempt": 1,
+      "command": [
+        "/opt/homebrew/bin/cmake",
+        "-S",
+        "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-parent",
+        "-B",
+        "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-build"
+      ],
+      "exit_code": 0,
+      "input_manifest_sha256": "49037a9fef0a4a9765ae24888028c395502fef15b32bfe9d5707bc8040e6dc9a",
+      "elapsed_seconds": 3.844423792,
+      "log": "/Users/kiro/hyle-scratch/compute-unified/g03-apple-source-stage/apple-configure-1.log"
+    },
+    {
+      "route": "apple",
+      "stage": "build",
+      "attempt": 1,
+      "command": [
+        "/opt/homebrew/bin/cmake",
+        "--build",
+        "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-build",
+        "--target",
+        "g03_native_producer_shape",
+        "--parallel",
+        "4"
+      ],
+      "exit_code": 0,
+      "input_manifest_sha256": "49037a9fef0a4a9765ae24888028c395502fef15b32bfe9d5707bc8040e6dc9a",
+      "elapsed_seconds": 6.244862833000001,
+      "log": "/Users/kiro/hyle-scratch/compute-unified/g03-apple-source-stage/apple-build-1.log"
+    },
+    {
+      "route": "apple",
+      "stage": "joint",
+      "attempt": 1,
+      "command": [
+        "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-build/g03_native_producer_shape"
+      ],
+      "exit_code": 0,
+      "input_manifest_sha256": "49037a9fef0a4a9765ae24888028c395502fef15b32bfe9d5707bc8040e6dc9a",
+      "elapsed_seconds": 1.6297837919999996,
+      "log": "/Users/kiro/hyle-scratch/compute-unified/g03-apple-source-stage/apple-joint-1.log"
+    },
+    {
+      "route": "apple",
+      "stage": "configure",
+      "attempt": 2,
+      "command": [
+        "/opt/homebrew/bin/cmake",
+        "-S",
+        "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-parent",
+        "-B",
+        "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-build"
+      ],
+      "exit_code": 0,
+      "input_manifest_sha256": "0694f47ac1925266e82f85f28121fc2d1234d4bfd4131feb1273356b7427a260",
+      "elapsed_seconds": 3.877308875,
+      "log": "/Users/kiro/hyle-scratch/compute-unified/g03-apple-source-stage/apple-configure-2.log"
+    },
+    {
+      "route": "apple",
+      "stage": "build",
+      "attempt": 2,
+      "command": [
+        "/opt/homebrew/bin/cmake",
+        "--build",
+        "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-build",
+        "--target",
+        "g03_native_producer_shape",
+        "g03_apple_producer_page",
+        "g03_apple_copy_tests",
+        "g03_native_dirty_risks",
+        "g02_native_page_joint",
+        "--parallel",
+        "4"
+      ],
+      "exit_code": 0,
+      "input_manifest_sha256": "0694f47ac1925266e82f85f28121fc2d1234d4bfd4131feb1273356b7427a260",
+      "elapsed_seconds": 6.490637249999999,
+      "log": "/Users/kiro/hyle-scratch/compute-unified/g03-apple-source-stage/apple-build-2.log"
+    },
+    {
+      "route": "apple",
+      "stage": "joint",
+      "attempt": 2,
+      "command": [
+        "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-build/g03_native_producer_shape"
+      ],
+      "exit_code": 0,
+      "input_manifest_sha256": "0694f47ac1925266e82f85f28121fc2d1234d4bfd4131feb1273356b7427a260",
+      "elapsed_seconds": 0.5616332079999999,
+      "log": "/Users/kiro/hyle-scratch/compute-unified/g03-apple-source-stage/apple-joint-2.log"
+    },
+    {
+      "route": "apple",
+      "stage": "native-producer-page",
+      "attempt": 1,
+      "command": [
+        "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-build/g03_apple_producer_page"
+      ],
+      "exit_code": 0,
+      "input_manifest_sha256": "0694f47ac1925266e82f85f28121fc2d1234d4bfd4131feb1273356b7427a260",
+      "elapsed_seconds": 0.9401040829999996,
+      "log": "/Users/kiro/hyle-scratch/compute-unified/g03-apple-source-stage/apple-native-producer-page-1.log"
+    },
+    {
+      "route": "apple",
+      "stage": "copy-unit",
+      "attempt": 1,
+      "command": [
+        "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-build/g03_apple_copy_tests"
+      ],
+      "exit_code": 0,
+      "input_manifest_sha256": "0694f47ac1925266e82f85f28121fc2d1234d4bfd4131feb1273356b7427a260",
+      "elapsed_seconds": 0.4642049580000016,
+      "log": "/Users/kiro/hyle-scratch/compute-unified/g03-apple-source-stage/apple-copy-unit-1.log"
+    },
+    {
+      "route": "apple",
+      "stage": "copy-risks",
+      "attempt": 1,
+      "command": [
+        "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-build/g03_native_dirty_risks"
+      ],
+      "exit_code": 0,
+      "input_manifest_sha256": "0694f47ac1925266e82f85f28121fc2d1234d4bfd4131feb1273356b7427a260",
+      "elapsed_seconds": 1.7350776660000005,
+      "log": "/Users/kiro/hyle-scratch/compute-unified/g03-apple-source-stage/apple-copy-risks-1.log"
+    },
+    {
+      "route": "apple",
+      "stage": "graph-direct",
+      "attempt": 1,
+      "command": [
+        "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-build/g02_native_page_joint"
+      ],
+      "exit_code": 0,
+      "input_manifest_sha256": "0694f47ac1925266e82f85f28121fc2d1234d4bfd4131feb1273356b7427a260",
+      "elapsed_seconds": 5.656386707999998,
+      "log": "/Users/kiro/hyle-scratch/compute-unified/g03-apple-source-stage/apple-graph-direct-1.log"
+    }
+  ],
+  "cumulative_seconds": 31.444423165000003
+}

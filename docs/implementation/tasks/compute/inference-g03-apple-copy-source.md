@@ -1,6 +1,6 @@
 # G03 Apple 原生只读来源到固定 F2 slot
 
-状态：AUDITED，2026-10-14；owner `compute_route_apple`；baseline
+状态：CANDIDATE，2026-10-14；owner `compute_route_apple`；baseline
 `66b433cef`。完整目标和 pending 页组合仍由[总卡](../project/inference-gaps-goal-execution-2026-10.md)
 与[compute_batch 活动卡](inference-g03-pending-page-consumption.md)保留。
 
@@ -72,3 +72,13 @@ set_kv_buffer 校验写位置、原 resident cache 与本步 K/V。不抄其请�
 MLX/recording；P0 有界额外检查换去 warm program/slot 分配并显式保 import unknown；无
 FFI；source/static/shared 原 hyle::compute 与独立头实验；public 声明及 Apple guide 同步。
 普通门未执行前都为待验，不由 AUDITED 代写 PASS。没有新增算法，因此无需重跑数学 P1。
+
+## Candidate 与已执行门
+
+固定 candidate `dab23ba92256cad21f2e83af6141eb8ad51264c5`，AS01/AS02 已实现，普通
+source 费用/权限及数值检查通过，API/算法停止变化。
+[source 原始证据](../../../../evidence/correctness/inference-g03-apple-copy-source-stage/README.md)
+逐字节匹配 canonical：公开64来源/two slots、F16/BF16两组64 ready完整页attention旅程、
+原 copy8 tests、五实际copy风险、原联合图直接回归全部 terminal0，累计31.444秒。
+原 probe fixture FAIL 与42.421秒另保；没有producer-ready等待消除或全G03完成声明。
+宿主3san、两relocated SDK/独立头尚待实际结果；适用门未完成不签CLOSED。

@@ -1,0 +1,4 @@
+actual native Abs producer -> readonly -> fixed F2 -> original dirty page -> attention PASS; producer program/slot reused64, no host K/V result download, explicit producer-ready waits remain
+native dirty page PASS:64 steps GQA8/2 D256, two requests growth17..80/17..48, mixed Q1/17 prefill/decode, crosspage, exact frame, untouched history, same generation, BF16=0 dirty total=196608 bytes, original prepare releases imports; explicit host waits retained
+actual native Abs producer -> readonly -> fixed F2 -> original dirty page -> attention PASS; producer program/slot reused64, no host K/V result download, explicit producer-ready waits remain
+native dirty page PASS:64 steps GQA8/2 D256, two requests growth17..80/17..48, mixed Q1/17 prefill/decode, crosspage, exact frame, untouched history, same generation, BF16=1 dirty total=196608 bytes, original prepare releases imports; explicit host waits retained

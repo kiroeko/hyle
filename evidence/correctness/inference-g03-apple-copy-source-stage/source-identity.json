@@ -1,0 +1,16 @@
+{
+  "candidate": "dab23ba92256cad21f2e83af6141eb8ad51264c5",
+  "canonical_equals_validation": true,
+  "files": {
+    "src/compute_route_apple/apple_copy_internal.h": "54a5c9611604446002b6b4cbf1f67107b7612ee8d4f86910c9e0fdc75c3f19ab",
+    "src/compute_route_apple/apple_memory.mm": "1c2b721dad129c42037a7fc72e4674eb9b109e5cebf8ee6cc9e888fb8400ec83",
+    "src/compute_route_apple/apple_copy_program.cc": "7fe3eae1fd2cc354ba175e8add3be1a595e2b2302ba751249a7988ca844da519",
+    "include/hyle/compute/apple_memory.h": "eb9cc9c6ab7fa61f33c8ae550573902a210730ef7a760d2c076fd6ec19fa6348",
+    "tests/compute_batch/native_producer_copy_shape_probe.cc": "f756a531b14cb2185a7b802760570e52f5a08ba7b93b59ff1beae39d29d7ac29",
+    "tests/compute_batch/dirty_page_native_consumer.cc": "701fde4b40999a966a0bac42dcba20857bc9dc56a0dbb0623e66fefd57dc0abb",
+    "tests/compute_route_apple/copy_program_test.cc": "61049855474044f0a919e76cc4559a570b388df20f779c4e3052d603c00012ca",
+    "tests/compute_route_apple/copy_recording_test.cc": "5fc29ec832aa6f99b7a5bff754c880eacad150790ad9a01f39ce35c50cdc51e2",
+    "src/compute_route_apple/apple_context.cc": "7bb949f53603c381a12734ea2a18806ff161945480cb62f387f99328ec4d0d5a",
+    "src/compute_route_apple/apple_copy_recording.mm": "109f892f872dba2d1d586f8a9e36cb70ec3bb4d12a77d83bffd942b5e186a1a8"
+  }
+}

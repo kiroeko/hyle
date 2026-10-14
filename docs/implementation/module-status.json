@@ -514,9 +514,10 @@
     },
     {
       "module": "compute_route_apple",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/inference-g03-apple-copy-source.md",
-      "summary": "G03 Apple readonly native output -> fixed F2 source AUDITED; actual two-export identity seam at66b433. Finite typed import-source qualification only; original writers, leases, device/alias checks, FIFO retirement reused. Full pending page-to-attention/wholeG03 and old CLOSED limits remain."
+      "summary": "G03 Apple trusted readonly native output -> fixed F2 source CANDIDATE dab23ba92; public64/two slots/old owners/subviews/no binding allocation, native F16/BF16 ready producer->dirty page->attention128, copy8/risk5/direct graph source PASS. Original mutable/device/alias/retirement preserved; 3hostsan/2SDK still pending; full pending-page journey and wholeG03 remain required.",
+      "candidate": "dab23ba92256cad21f2e83af6141eb8ad51264c5"
     },
     {
       "module": "graph_route_apple",

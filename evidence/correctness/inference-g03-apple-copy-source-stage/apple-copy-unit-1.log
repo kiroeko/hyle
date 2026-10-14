@@ -1,0 +1,28 @@
+Running main() from /Users/kiro/Library/Caches/hyle/dependencies/v1/sources/googletest-063de7e9578f-162765170ae6/googletest/src/gtest_main.cc
+[==========] Running 8 tests from 2 test suites.
+[----------] Global test environment set-up.
+[----------] 5 tests from AppleCopyProgram
+[ RUN      ] AppleCopyProgram.TwoSlotsPhaseOutputsAndThreeReplaysKeepActualMetadataFixed
+[       OK ] AppleCopyProgram.TwoSlotsPhaseOutputsAndThreeReplaysKeepActualMetadataFixed (14 ms)
+[ RUN      ] AppleCopyProgram.RetainedOriginalBlitProducerOrdersMutableSourceAndRetiresWriteGuard
+[       OK ] AppleCopyProgram.RetainedOriginalBlitProducerOrdersMutableSourceAndRetiresWriteGuard (2 ms)
+[ RUN      ] AppleCopyProgram.EarlyIndependentGroupStaysReadyDuringQueuedCancellationAndAbandonment
+[       OK ] AppleCopyProgram.EarlyIndependentGroupStaysReadyDuringQueuedCancellationAndAbandonment (15 ms)
+[ RUN      ] AppleCopyProgram.EmptyDependencyNoConsumeAndAbandonedMetadataFollowActualJobs
+[       OK ] AppleCopyProgram.EmptyDependencyNoConsumeAndAbandonedMetadataFollowActualJobs (2 ms)
+[ RUN      ] AppleCopyProgram.LateOriginalNativeFailureBlocksQueuedCopiesAndPreservesOldReady
+[       OK ] AppleCopyProgram.LateOriginalNativeFailureBlocksQueuedCopiesAndPreservesOldReady (3 ms)
+[----------] 5 tests from AppleCopyProgram (38 ms total)
+
+[----------] 3 tests from AppleCopyRecording
+[ RUN      ] AppleCopyRecording.OriginalGpuStreamBlitThreeStagesAndTwoColdSlotsPreserveBytes
+[       OK ] AppleCopyRecording.OriginalGpuStreamBlitThreeStagesAndTwoColdSlotsPreserveBytes (2 ms)
+[ RUN      ] AppleCopyRecording.RepeatedSourceAliasAndNativeTailConstraintsRejectBeforeJobAdmission
+[       OK ] AppleCopyRecording.RepeatedSourceAliasAndNativeTailConstraintsRejectBeforeJobAdmission (1 ms)
+[ RUN      ] AppleCopyRecording.ReadonlyImportedNativeViewKeepsOriginalPhysicalIdentity
+[       OK ] AppleCopyRecording.ReadonlyImportedNativeViewKeepsOriginalPhysicalIdentity (1 ms)
+[----------] 3 tests from AppleCopyRecording (6 ms total)
+
+[----------] Global test environment tear-down
+[==========] 8 tests from 2 test suites ran. (45 ms total)
+[  PASSED  ] 8 tests.
