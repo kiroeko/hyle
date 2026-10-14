@@ -1,0 +1,634 @@
+{
+  "identity": {
+    "uname": "Linux kiro-workstation 6.18.54.1-microsoft-standard-WSL2 #1 SMP PREEMPT_DYNAMIC Tue Oct  6 19:13:07 UTC 2026 x86_64 x86_64 x86_64 GNU/Linux",
+    "gpu": "NVIDIA GeForce RTX 4070, 617.14, 2678 MiB, 7 %"
+  },
+  "stages": [
+    {
+      "stage": "configure",
+      "command": [
+        "cmake",
+        "-S",
+        "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/source-parent",
+        "-B",
+        "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/source-build"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 53.31795571,
+      "inputs": [
+        {
+          "path": "include/hyle/compute/batch_execution.h",
+          "sha256": "cc61080e8ebeee41563e5e061f3735baa09831acaa9ab0f221c7f121e1b561f8"
+        },
+        {
+          "path": "src/compute_batch/batch_execution.cc",
+          "sha256": "ab3b2e14a57da13fc4b6e60f4035a657bdb4ffb7ed0becf2ef3c375dbfa665ee"
+        },
+        {
+          "path": "tests/compute_batch/pending_paged_receiver_cuda_consumer.cc",
+          "sha256": "e8dba38d539728d2a5f5b6844a74ecbee55302846f6fa5a66feee2f190567330"
+        }
+      ],
+      "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g03/common-receiver-cuda/configure-1.log"
+    },
+    {
+      "stage": "no-kernel-build-preflight",
+      "command": [
+        "ninja",
+        "-C",
+        "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/source-build",
+        "-f",
+        "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/source-build/g03-common-receiver-preflight.ninja",
+        "-n",
+        "g03_common_receiver_cuda"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 0.10360766599998783,
+      "inputs": [
+        {
+          "path": "include/hyle/compute/batch_execution.h",
+          "sha256": "cc61080e8ebeee41563e5e061f3735baa09831acaa9ab0f221c7f121e1b561f8"
+        },
+        {
+          "path": "src/compute_batch/batch_execution.cc",
+          "sha256": "ab3b2e14a57da13fc4b6e60f4035a657bdb4ffb7ed0becf2ef3c375dbfa665ee"
+        },
+        {
+          "path": "tests/compute_batch/pending_paged_receiver_cuda_consumer.cc",
+          "sha256": "e8dba38d539728d2a5f5b6844a74ecbee55302846f6fa5a66feee2f190567330"
+        }
+      ],
+      "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g03/common-receiver-cuda/dry-run.log"
+    },
+    {
+      "stage": "build",
+      "command": [
+        "cmake",
+        "--build",
+        "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/source-build",
+        "--target",
+        "g03_common_receiver_cuda",
+        "--parallel",
+        "4"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 2.7218026310000027,
+      "inputs": [
+        {
+          "path": "include/hyle/compute/batch_execution.h",
+          "sha256": "cc61080e8ebeee41563e5e061f3735baa09831acaa9ab0f221c7f121e1b561f8"
+        },
+        {
+          "path": "src/compute_batch/batch_execution.cc",
+          "sha256": "ab3b2e14a57da13fc4b6e60f4035a657bdb4ffb7ed0becf2ef3c375dbfa665ee"
+        },
+        {
+          "path": "tests/compute_batch/pending_paged_receiver_cuda_consumer.cc",
+          "sha256": "e8dba38d539728d2a5f5b6844a74ecbee55302846f6fa5a66feee2f190567330"
+        }
+      ],
+      "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g03/common-receiver-cuda/build-1.log"
+    },
+    {
+      "stage": "actual-512-byte-native",
+      "command": [
+        "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/source-build/g03_common_receiver_cuda"
+      ],
+      "exit_code": -15,
+      "elapsed_seconds": 111.257163281,
+      "inputs": [
+        {
+          "path": "include/hyle/compute/batch_execution.h",
+          "sha256": "cc61080e8ebeee41563e5e061f3735baa09831acaa9ab0f221c7f121e1b561f8"
+        },
+        {
+          "path": "src/compute_batch/batch_execution.cc",
+          "sha256": "ab3b2e14a57da13fc4b6e60f4035a657bdb4ffb7ed0becf2ef3c375dbfa665ee"
+        },
+        {
+          "path": "tests/compute_batch/pending_paged_receiver_cuda_consumer.cc",
+          "sha256": "e8dba38d539728d2a5f5b6844a74ecbee55302846f6fa5a66feee2f190567330"
+        }
+      ],
+      "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g03/common-receiver-cuda/actual-512-byte-native-1.log"
+    },
+    {
+      "stage": "configure",
+      "command": [
+        "cmake",
+        "-S",
+        "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/source-parent",
+        "-B",
+        "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/source-build"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 49.814959551000015,
+      "inputs": [
+        {
+          "path": "include/hyle/compute/batch_execution.h",
+          "sha256": "cc61080e8ebeee41563e5e061f3735baa09831acaa9ab0f221c7f121e1b561f8"
+        },
+        {
+          "path": "src/compute_batch/batch_execution.cc",
+          "sha256": "ab3b2e14a57da13fc4b6e60f4035a657bdb4ffb7ed0becf2ef3c375dbfa665ee"
+        },
+        {
+          "path": "tests/compute_batch/pending_paged_receiver_cuda_consumer.cc",
+          "sha256": "2a375943134fb046b8d53bfbf6c093e67ac935273b2d6abe7719b37874230677"
+        }
+      ],
+      "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g03/common-receiver-cuda/configure-2.log"
+    },
+    {
+      "stage": "no-kernel-build-preflight",
+      "command": [
+        "ninja",
+        "-C",
+        "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/source-build",
+        "-f",
+        "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/source-build/g03-common-receiver-preflight.ninja",
+        "-n",
+        "g03_common_receiver_cuda"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 0.08436392400000159,
+      "inputs": [
+        {
+          "path": "include/hyle/compute/batch_execution.h",
+          "sha256": "cc61080e8ebeee41563e5e061f3735baa09831acaa9ab0f221c7f121e1b561f8"
+        },
+        {
+          "path": "src/compute_batch/batch_execution.cc",
+          "sha256": "ab3b2e14a57da13fc4b6e60f4035a657bdb4ffb7ed0becf2ef3c375dbfa665ee"
+        },
+        {
+          "path": "tests/compute_batch/pending_paged_receiver_cuda_consumer.cc",
+          "sha256": "2a375943134fb046b8d53bfbf6c093e67ac935273b2d6abe7719b37874230677"
+        }
+      ],
+      "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g03/common-receiver-cuda/dry-run.log"
+    },
+    {
+      "stage": "build",
+      "command": [
+        "cmake",
+        "--build",
+        "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/source-build",
+        "--target",
+        "g03_common_receiver_cuda",
+        "--parallel",
+        "4"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 1.7741381600000068,
+      "inputs": [
+        {
+          "path": "include/hyle/compute/batch_execution.h",
+          "sha256": "cc61080e8ebeee41563e5e061f3735baa09831acaa9ab0f221c7f121e1b561f8"
+        },
+        {
+          "path": "src/compute_batch/batch_execution.cc",
+          "sha256": "ab3b2e14a57da13fc4b6e60f4035a657bdb4ffb7ed0becf2ef3c375dbfa665ee"
+        },
+        {
+          "path": "tests/compute_batch/pending_paged_receiver_cuda_consumer.cc",
+          "sha256": "2a375943134fb046b8d53bfbf6c093e67ac935273b2d6abe7719b37874230677"
+        }
+      ],
+      "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g03/common-receiver-cuda/build-2.log"
+    },
+    {
+      "stage": "actual-512-byte-native",
+      "command": [
+        "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/source-build/g03_common_receiver_cuda"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 0.20076175899998816,
+      "inputs": [
+        {
+          "path": "include/hyle/compute/batch_execution.h",
+          "sha256": "cc61080e8ebeee41563e5e061f3735baa09831acaa9ab0f221c7f121e1b561f8"
+        },
+        {
+          "path": "src/compute_batch/batch_execution.cc",
+          "sha256": "ab3b2e14a57da13fc4b6e60f4035a657bdb4ffb7ed0becf2ef3c375dbfa665ee"
+        },
+        {
+          "path": "tests/compute_batch/pending_paged_receiver_cuda_consumer.cc",
+          "sha256": "2a375943134fb046b8d53bfbf6c093e67ac935273b2d6abe7719b37874230677"
+        }
+      ],
+      "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g03/common-receiver-cuda/actual-512-byte-native-2.log"
+    },
+    {
+      "stage": "configure",
+      "command": [
+        "cmake",
+        "-S",
+        "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/source-parent",
+        "-B",
+        "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/source-build"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 42.35465886000003,
+      "inputs": [
+        {
+          "path": "include/hyle/compute/batch_execution.h",
+          "sha256": "cc61080e8ebeee41563e5e061f3735baa09831acaa9ab0f221c7f121e1b561f8"
+        },
+        {
+          "path": "src/compute_batch/batch_execution.cc",
+          "sha256": "ab3b2e14a57da13fc4b6e60f4035a657bdb4ffb7ed0becf2ef3c375dbfa665ee"
+        },
+        {
+          "path": "tests/compute_batch/pending_paged_receiver_cuda_consumer.cc",
+          "sha256": "de52caafa987b7714d615cf2618d5482b7499bf5faa89dc0def7827f0ff6c649"
+        }
+      ],
+      "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g03/common-receiver-cuda/configure-3.log"
+    },
+    {
+      "stage": "no-kernel-build-preflight",
+      "command": [
+        "ninja",
+        "-C",
+        "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/source-build",
+        "-f",
+        "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/source-build/g03-common-receiver-preflight.ninja",
+        "-n",
+        "g03_common_receiver_cuda"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 0.09059675599996808,
+      "inputs": [
+        {
+          "path": "include/hyle/compute/batch_execution.h",
+          "sha256": "cc61080e8ebeee41563e5e061f3735baa09831acaa9ab0f221c7f121e1b561f8"
+        },
+        {
+          "path": "src/compute_batch/batch_execution.cc",
+          "sha256": "ab3b2e14a57da13fc4b6e60f4035a657bdb4ffb7ed0becf2ef3c375dbfa665ee"
+        },
+        {
+          "path": "tests/compute_batch/pending_paged_receiver_cuda_consumer.cc",
+          "sha256": "de52caafa987b7714d615cf2618d5482b7499bf5faa89dc0def7827f0ff6c649"
+        }
+      ],
+      "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g03/common-receiver-cuda/dry-run.log"
+    },
+    {
+      "stage": "build",
+      "command": [
+        "cmake",
+        "--build",
+        "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/source-build",
+        "--target",
+        "g03_common_receiver_cuda",
+        "--parallel",
+        "4"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 15.857967880000047,
+      "inputs": [
+        {
+          "path": "include/hyle/compute/batch_execution.h",
+          "sha256": "cc61080e8ebeee41563e5e061f3735baa09831acaa9ab0f221c7f121e1b561f8"
+        },
+        {
+          "path": "src/compute_batch/batch_execution.cc",
+          "sha256": "ab3b2e14a57da13fc4b6e60f4035a657bdb4ffb7ed0becf2ef3c375dbfa665ee"
+        },
+        {
+          "path": "tests/compute_batch/pending_paged_receiver_cuda_consumer.cc",
+          "sha256": "de52caafa987b7714d615cf2618d5482b7499bf5faa89dc0def7827f0ff6c649"
+        }
+      ],
+      "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g03/common-receiver-cuda/build-3.log"
+    },
+    {
+      "stage": "actual-512-byte-native",
+      "command": [
+        "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/source-build/g03_common_receiver_cuda"
+      ],
+      "exit_code": 1,
+      "elapsed_seconds": 0.38791276200004177,
+      "inputs": [
+        {
+          "path": "include/hyle/compute/batch_execution.h",
+          "sha256": "cc61080e8ebeee41563e5e061f3735baa09831acaa9ab0f221c7f121e1b561f8"
+        },
+        {
+          "path": "src/compute_batch/batch_execution.cc",
+          "sha256": "ab3b2e14a57da13fc4b6e60f4035a657bdb4ffb7ed0becf2ef3c375dbfa665ee"
+        },
+        {
+          "path": "tests/compute_batch/pending_paged_receiver_cuda_consumer.cc",
+          "sha256": "de52caafa987b7714d615cf2618d5482b7499bf5faa89dc0def7827f0ff6c649"
+        }
+      ],
+      "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g03/common-receiver-cuda/actual-512-byte-native-3.log"
+    },
+    {
+      "stage": "configure",
+      "command": [
+        "cmake",
+        "-S",
+        "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/source-parent",
+        "-B",
+        "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/source-build"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 51.707381165000015,
+      "inputs": [
+        {
+          "path": "include/hyle/compute/batch_execution.h",
+          "sha256": "cc61080e8ebeee41563e5e061f3735baa09831acaa9ab0f221c7f121e1b561f8"
+        },
+        {
+          "path": "src/compute_batch/batch_execution.cc",
+          "sha256": "ab3b2e14a57da13fc4b6e60f4035a657bdb4ffb7ed0becf2ef3c375dbfa665ee"
+        },
+        {
+          "path": "tests/compute_batch/pending_paged_receiver_cuda_consumer.cc",
+          "sha256": "de52caafa987b7714d615cf2618d5482b7499bf5faa89dc0def7827f0ff6c649"
+        },
+        {
+          "path": "src/compute_provider_ggml/CMakeLists.txt",
+          "sha256": "4a1e5e6b64d3e684c6f9454fb4b1d42909d5ee72f8b4efed7fad1c88941d5551"
+        },
+        {
+          "path": "src/compute_provider_ggml/ggml_cpu_provider.cc",
+          "sha256": "85cd82183ac07e57db2f1ae99101230c5854d5d2f3c02925abb69a3dc2017e8b"
+        },
+        {
+          "path": "src/compute_provider_ggml/native_batch.cc",
+          "sha256": "a62a61ca8f4c88963b9dfa3174f209242b189a67ebb4dce296e1f3a7c80efdf2"
+        },
+        {
+          "path": "src/compute_provider_ggml/native_batch.h",
+          "sha256": "dac15e6f7e54955ec4e2f1291c46da0139dfd14ec4dda03d2687d400d6ada8f4"
+        }
+      ],
+      "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g03/common-receiver-cuda/configure-4.log"
+    },
+    {
+      "stage": "no-kernel-build-preflight",
+      "command": [
+        "ninja",
+        "-C",
+        "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/source-build",
+        "-f",
+        "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/source-build/g03-common-receiver-preflight.ninja",
+        "-n",
+        "g03_common_receiver_cuda"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 0.10030891999997493,
+      "inputs": [
+        {
+          "path": "include/hyle/compute/batch_execution.h",
+          "sha256": "cc61080e8ebeee41563e5e061f3735baa09831acaa9ab0f221c7f121e1b561f8"
+        },
+        {
+          "path": "src/compute_batch/batch_execution.cc",
+          "sha256": "ab3b2e14a57da13fc4b6e60f4035a657bdb4ffb7ed0becf2ef3c375dbfa665ee"
+        },
+        {
+          "path": "tests/compute_batch/pending_paged_receiver_cuda_consumer.cc",
+          "sha256": "de52caafa987b7714d615cf2618d5482b7499bf5faa89dc0def7827f0ff6c649"
+        },
+        {
+          "path": "src/compute_provider_ggml/CMakeLists.txt",
+          "sha256": "4a1e5e6b64d3e684c6f9454fb4b1d42909d5ee72f8b4efed7fad1c88941d5551"
+        },
+        {
+          "path": "src/compute_provider_ggml/ggml_cpu_provider.cc",
+          "sha256": "85cd82183ac07e57db2f1ae99101230c5854d5d2f3c02925abb69a3dc2017e8b"
+        },
+        {
+          "path": "src/compute_provider_ggml/native_batch.cc",
+          "sha256": "a62a61ca8f4c88963b9dfa3174f209242b189a67ebb4dce296e1f3a7c80efdf2"
+        },
+        {
+          "path": "src/compute_provider_ggml/native_batch.h",
+          "sha256": "dac15e6f7e54955ec4e2f1291c46da0139dfd14ec4dda03d2687d400d6ada8f4"
+        }
+      ],
+      "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g03/common-receiver-cuda/dry-run-4.log"
+    },
+    {
+      "stage": "build",
+      "command": [
+        "cmake",
+        "--build",
+        "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/source-build",
+        "--target",
+        "g03_common_receiver_cuda",
+        "--parallel",
+        "4"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 14.098312015999909,
+      "inputs": [
+        {
+          "path": "include/hyle/compute/batch_execution.h",
+          "sha256": "cc61080e8ebeee41563e5e061f3735baa09831acaa9ab0f221c7f121e1b561f8"
+        },
+        {
+          "path": "src/compute_batch/batch_execution.cc",
+          "sha256": "ab3b2e14a57da13fc4b6e60f4035a657bdb4ffb7ed0becf2ef3c375dbfa665ee"
+        },
+        {
+          "path": "tests/compute_batch/pending_paged_receiver_cuda_consumer.cc",
+          "sha256": "de52caafa987b7714d615cf2618d5482b7499bf5faa89dc0def7827f0ff6c649"
+        },
+        {
+          "path": "src/compute_provider_ggml/CMakeLists.txt",
+          "sha256": "4a1e5e6b64d3e684c6f9454fb4b1d42909d5ee72f8b4efed7fad1c88941d5551"
+        },
+        {
+          "path": "src/compute_provider_ggml/ggml_cpu_provider.cc",
+          "sha256": "85cd82183ac07e57db2f1ae99101230c5854d5d2f3c02925abb69a3dc2017e8b"
+        },
+        {
+          "path": "src/compute_provider_ggml/native_batch.cc",
+          "sha256": "a62a61ca8f4c88963b9dfa3174f209242b189a67ebb4dce296e1f3a7c80efdf2"
+        },
+        {
+          "path": "src/compute_provider_ggml/native_batch.h",
+          "sha256": "dac15e6f7e54955ec4e2f1291c46da0139dfd14ec4dda03d2687d400d6ada8f4"
+        }
+      ],
+      "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g03/common-receiver-cuda/build-4.log"
+    },
+    {
+      "stage": "actual-512-byte-native",
+      "command": [
+        "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/source-build/g03_common_receiver_cuda"
+      ],
+      "exit_code": 1,
+      "elapsed_seconds": 0.5235144579999087,
+      "inputs": [
+        {
+          "path": "include/hyle/compute/batch_execution.h",
+          "sha256": "cc61080e8ebeee41563e5e061f3735baa09831acaa9ab0f221c7f121e1b561f8"
+        },
+        {
+          "path": "src/compute_batch/batch_execution.cc",
+          "sha256": "ab3b2e14a57da13fc4b6e60f4035a657bdb4ffb7ed0becf2ef3c375dbfa665ee"
+        },
+        {
+          "path": "tests/compute_batch/pending_paged_receiver_cuda_consumer.cc",
+          "sha256": "de52caafa987b7714d615cf2618d5482b7499bf5faa89dc0def7827f0ff6c649"
+        },
+        {
+          "path": "src/compute_provider_ggml/CMakeLists.txt",
+          "sha256": "4a1e5e6b64d3e684c6f9454fb4b1d42909d5ee72f8b4efed7fad1c88941d5551"
+        },
+        {
+          "path": "src/compute_provider_ggml/ggml_cpu_provider.cc",
+          "sha256": "85cd82183ac07e57db2f1ae99101230c5854d5d2f3c02925abb69a3dc2017e8b"
+        },
+        {
+          "path": "src/compute_provider_ggml/native_batch.cc",
+          "sha256": "a62a61ca8f4c88963b9dfa3174f209242b189a67ebb4dce296e1f3a7c80efdf2"
+        },
+        {
+          "path": "src/compute_provider_ggml/native_batch.h",
+          "sha256": "dac15e6f7e54955ec4e2f1291c46da0139dfd14ec4dda03d2687d400d6ada8f4"
+        }
+      ],
+      "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g03/common-receiver-cuda/actual-512-byte-native-4.log"
+    },
+    {
+      "stage": "no-kernel-build-preflight",
+      "command": [
+        "ninja",
+        "-C",
+        "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/source-build",
+        "-f",
+        "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/source-build/g03-common-receiver-preflight.ninja",
+        "-n",
+        "g03_common_receiver_cuda"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 0.19053591200000008,
+      "inputs": [
+        {
+          "path": "include/hyle/compute/batch_execution.h",
+          "sha256": "cc61080e8ebeee41563e5e061f3735baa09831acaa9ab0f221c7f121e1b561f8"
+        },
+        {
+          "path": "src/compute_batch/batch_execution.cc",
+          "sha256": "ab3b2e14a57da13fc4b6e60f4035a657bdb4ffb7ed0becf2ef3c375dbfa665ee"
+        },
+        {
+          "path": "tests/compute_batch/pending_paged_receiver_cuda_consumer.cc",
+          "sha256": "025960a558b26d13ca711005e388c07eeaf5a909df63f44725a03856d144b64f"
+        },
+        {
+          "path": "src/compute_provider_ggml/CMakeLists.txt",
+          "sha256": "4a1e5e6b64d3e684c6f9454fb4b1d42909d5ee72f8b4efed7fad1c88941d5551"
+        },
+        {
+          "path": "src/compute_provider_ggml/ggml_cpu_provider.cc",
+          "sha256": "85cd82183ac07e57db2f1ae99101230c5854d5d2f3c02925abb69a3dc2017e8b"
+        },
+        {
+          "path": "src/compute_provider_ggml/native_batch.cc",
+          "sha256": "a62a61ca8f4c88963b9dfa3174f209242b189a67ebb4dce296e1f3a7c80efdf2"
+        },
+        {
+          "path": "src/compute_provider_ggml/native_batch.h",
+          "sha256": "dac15e6f7e54955ec4e2f1291c46da0139dfd14ec4dda03d2687d400d6ada8f4"
+        }
+      ],
+      "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g03/common-receiver-cuda/dry-run-5.log"
+    },
+    {
+      "stage": "build",
+      "command": [
+        "cmake",
+        "--build",
+        "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/source-build",
+        "--target",
+        "g03_common_receiver_cuda",
+        "--parallel",
+        "4"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 3.1171844999999996,
+      "inputs": [
+        {
+          "path": "include/hyle/compute/batch_execution.h",
+          "sha256": "cc61080e8ebeee41563e5e061f3735baa09831acaa9ab0f221c7f121e1b561f8"
+        },
+        {
+          "path": "src/compute_batch/batch_execution.cc",
+          "sha256": "ab3b2e14a57da13fc4b6e60f4035a657bdb4ffb7ed0becf2ef3c375dbfa665ee"
+        },
+        {
+          "path": "tests/compute_batch/pending_paged_receiver_cuda_consumer.cc",
+          "sha256": "025960a558b26d13ca711005e388c07eeaf5a909df63f44725a03856d144b64f"
+        },
+        {
+          "path": "src/compute_provider_ggml/CMakeLists.txt",
+          "sha256": "4a1e5e6b64d3e684c6f9454fb4b1d42909d5ee72f8b4efed7fad1c88941d5551"
+        },
+        {
+          "path": "src/compute_provider_ggml/ggml_cpu_provider.cc",
+          "sha256": "85cd82183ac07e57db2f1ae99101230c5854d5d2f3c02925abb69a3dc2017e8b"
+        },
+        {
+          "path": "src/compute_provider_ggml/native_batch.cc",
+          "sha256": "a62a61ca8f4c88963b9dfa3174f209242b189a67ebb4dce296e1f3a7c80efdf2"
+        },
+        {
+          "path": "src/compute_provider_ggml/native_batch.h",
+          "sha256": "dac15e6f7e54955ec4e2f1291c46da0139dfd14ec4dda03d2687d400d6ada8f4"
+        }
+      ],
+      "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g03/common-receiver-cuda/build-5.log"
+    },
+    {
+      "stage": "actual-512-byte-native",
+      "command": [
+        "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/source-build/g03_common_receiver_cuda"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 0.4418969600000002,
+      "inputs": [
+        {
+          "path": "include/hyle/compute/batch_execution.h",
+          "sha256": "cc61080e8ebeee41563e5e061f3735baa09831acaa9ab0f221c7f121e1b561f8"
+        },
+        {
+          "path": "src/compute_batch/batch_execution.cc",
+          "sha256": "ab3b2e14a57da13fc4b6e60f4035a657bdb4ffb7ed0becf2ef3c375dbfa665ee"
+        },
+        {
+          "path": "tests/compute_batch/pending_paged_receiver_cuda_consumer.cc",
+          "sha256": "025960a558b26d13ca711005e388c07eeaf5a909df63f44725a03856d144b64f"
+        },
+        {
+          "path": "src/compute_provider_ggml/CMakeLists.txt",
+          "sha256": "4a1e5e6b64d3e684c6f9454fb4b1d42909d5ee72f8b4efed7fad1c88941d5551"
+        },
+        {
+          "path": "src/compute_provider_ggml/ggml_cpu_provider.cc",
+          "sha256": "85cd82183ac07e57db2f1ae99101230c5854d5d2f3c02925abb69a3dc2017e8b"
+        },
+        {
+          "path": "src/compute_provider_ggml/native_batch.cc",
+          "sha256": "a62a61ca8f4c88963b9dfa3174f209242b189a67ebb4dce296e1f3a7c80efdf2"
+        },
+        {
+          "path": "src/compute_provider_ggml/native_batch.h",
+          "sha256": "dac15e6f7e54955ec4e2f1291c46da0139dfd14ec4dda03d2687d400d6ada8f4"
+        }
+      ],
+      "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g03/common-receiver-cuda/actual-512-byte-native-5.log"
+    }
+  ],
+  "cumulative_seconds": 348.1450228709999
+}

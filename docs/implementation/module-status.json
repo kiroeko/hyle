@@ -691,7 +691,7 @@
       "module": "compute_batch",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/inference-g03-pending-page-consumption.md",
-      "summary": "G03 native pending receiver implemented verified checkpoint, still AUDITED. Original Apple F16/BF16 and Vulkan F16: two requests/two original slots/64 steps, actual source8/10 risks, six host sanitizer configurations, four relocated SDKs/eight heads and Windows directed compile/common20 PASS. Original result storage/source withdrawal and rejected suffix rollback fixed; failures retained. CPU/CUDA receiver, Graph, late output and full seven-route acceptance remain."
+      "summary": "G03 common and native receivers implemented checkpoints, still AUDITED. Native Apple/Vulkan prior64/risk/san/SDK preserved; common CPU F16/BF16 two-request/two-slot64 +seven boundaries +three hostsan +static/shared public SDKs and Windows ready5 PASS. CUDA actual512-byte paged native probe and original CPU coherent-resource refusal PASS, no new kernels. Full common async/failure/budget/CUDA, Graph, late output and seven-route acceptance remain."
     },
     {
       "module": "graph_batch",

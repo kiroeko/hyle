@@ -4,6 +4,7 @@
 #include "hyle/compute/detail/paged_arena_access.h"
 #include "hyle/compute/detail/lease_access.h"
 #include "hyle/compute/detail/retained_completion.h"
+#include "hyle/compute/detail/copy_outcome_source.h"
 #include "hyle/core/assert.h"
 #include "hyle/util/ref_counted.h"
 #include <array>
@@ -49,6 +50,18 @@ struct BatchInvocationData final:util::RefCounted<BatchInvocationData>{
   Status terminal;std::uint64_t epoch=0;std::uint32_t users=1,tickets=0;
   bool closed=false,failed=false,prepared=false,ran=false,external_output=false;
 };
+struct PagedReceiverData final:util::RefCounted<PagedReceiverData>{
+  explicit PagedReceiverData(mem::AllocatorRef a):allocator(a){}
+  void destroy()noexcept{const auto a=allocator;this->~PagedReceiverData();a.deallocate(this,sizeof(*this),alignof(PagedReceiverData));}
+  mem::AllocatorRef allocator;BatchInvocation original;PreparedBatch token;
+  CopyOutcomeSource<CopyBatchUpdate,CopyStreamAccess> source;DependentCompletion dependent;
+  CompletionRetention retention;std::atomic<bool> pending{false};
+  Status terminal;bool submitted=false;
+  Status reusable()noexcept{
+    return !pending.load(std::memory_order_acquire) && dependent.available() && source.available() && !source.update().valid()?
+        Status::Ok():Status::Unavailable("common pending receiver outcome/source retained");
+  }
+};
 } // namespace detail
 namespace {
 Result<std::size_t> output_bytes(BatchCapacity c)noexcept{
@@ -75,6 +88,23 @@ Result<d::BatchWorkspaceViews> workspace_views(d::BatchInvocationData&s)noexcept
   HYLE_ASSIGN_OR_RETURN(views.host_workspace,s.host_workspace.view());
   if(s.output.valid()){HYLE_ASSIGN_OR_RETURN(views.output,s.output.view());}return views;
 }
+Result<Completion> finish_native(d::BatchInvocationData&s,bool planning,
+    std::span<const ConstTensorView> inputs,d::BatchWorkspaceViews views,
+    LeaseUseBatch&&use,d::QueueSequence&sequence)noexcept{
+  struct Call{d::BatchInvocationData*state;bool planning;std::span<const ConstTensorView> inputs;d::BatchWorkspaceViews views;}call{&s,planning,inputs,views};
+  if(sequence.terminal().ok())sequence.record(d::ProviderExtensionAccess::enqueue_admitted(s.program->extension,sequence,inputs,{},
+    [](void*,const void*interface_value,void*opaque,Queue&queue)noexcept{
+      const auto&call=*static_cast<Call*>(opaque);auto&state=*call.state;const auto*table=static_cast<const d::BatchProviderVTable*>(interface_value);
+      return call.planning?table->plan(state.native,queue,state.layout,call.views,&state.report):table->run(state.native,queue,call.inputs,call.views);
+    },&call));
+  auto completion=sequence.finish();
+  if(!completion)return std::unexpected(completion.error());
+  HYLE_FATAL_ASSERT(use.attach(*completion).ok());
+  s.incref();s.pending.fetch_add(1,std::memory_order_relaxed);
+  s.native_retention.own={&s,&native_terminal,&native_release};
+  HYLE_FATAL_ASSERT(d::CompletionAccess::attach_retention(*completion,s.native_retention).ok());
+  return std::move(*completion);
+}
 Result<Completion> submit_native(d::BatchInvocationData&s,bool planning,
     std::span<const ReadLease> leases,std::span<const ConstTensorView> inputs,d::BatchWorkspaceViews views,
     std::span<const ReadLease> key_pages={},std::span<const ReadLease> value_pages={})noexcept{
@@ -86,20 +116,10 @@ Result<Completion> submit_native(d::BatchInvocationData&s,bool planning,
   for(const auto&lease:value_pages)HYLE_RETURN_IF_ERROR(use.read(lease));
   HYLE_RETURN_IF_ERROR(use.read(s.mirror_ready));
   HYLE_RETURN_IF_ERROR(use.write(s.float_workspace));HYLE_RETURN_IF_ERROR(use.write(s.int_workspace));
-  if(planning)HYLE_RETURN_IF_ERROR(use.write(s.host_workspace));
-  else HYLE_RETURN_IF_ERROR(use.write(s.output));
-  struct Call{d::BatchInvocationData*state;bool planning;std::span<const ConstTensorView> inputs;d::BatchWorkspaceViews views;}call{&s,planning,inputs,views};
-  auto completion=d::ProviderExtensionAccess::submit(s.program->extension,*s.queue,inputs,{},
-    [](void*,const void*interface_value,void*opaque,Queue&queue)noexcept{
-      const auto&call=*static_cast<Call*>(opaque);auto&state=*call.state;const auto*table=static_cast<const d::BatchProviderVTable*>(interface_value);
-      return call.planning?table->plan(state.native,queue,state.layout,call.views,&state.report):table->run(state.native,queue,call.inputs,call.views);
-    },&call);
-  if(!completion)return std::unexpected(completion.error());
-  HYLE_FATAL_ASSERT(use.attach(*completion).ok());
-  s.incref();s.pending.fetch_add(1,std::memory_order_relaxed);
-  s.native_retention.own={&s,&native_terminal,&native_release};
-  HYLE_FATAL_ASSERT(d::CompletionAccess::attach_retention(*completion,s.native_retention).ok());
-  return s.completion.publish(std::move(*completion));
+  if(planning)HYLE_RETURN_IF_ERROR(use.write(s.host_workspace));else HYLE_RETURN_IF_ERROR(use.write(s.output));
+  HYLE_ASSIGN_OR_RETURN(auto sequence,d::QueueSequence::begin(*s.queue));
+  HYLE_ASSIGN_OR_RETURN(auto completion,finish_native(s,planning,inputs,views,std::move(use),sequence));
+  return s.completion.publish(std::move(completion));
 }
 } // namespace
 BatchProgram::BatchProgram(const BatchProgram&p)noexcept:data_(p.data_){if(data_)data_->incref();}
@@ -276,6 +296,99 @@ Result<Completion> PreparedBatch::run(const ReadLease&query,const PagedArenaRead
   auto submitted=submit_native(s,false,ordinary,inputs,views,d::PagedArenaAccess::pages(keys),d::PagedArenaAccess::pages(values));
   if(!submitted){s.failed=true;s.prepared=false;return std::unexpected(submitted.error());}s.ran=true;s.prepared=false;return std::move(*submitted);
 }
+PagedBatchReceiver::PagedBatchReceiver(PagedBatchReceiver&&v)noexcept:data_(std::exchange(v.data_,nullptr)){}
+PagedBatchReceiver&PagedBatchReceiver::operator=(PagedBatchReceiver&&v)noexcept{
+  if(this!=&v){if(data_)data_->decref();data_=std::exchange(v.data_,nullptr);}return *this;
+}
+PagedBatchReceiver::~PagedBatchReceiver(){if(data_)data_->decref();}
+Result<PagedBatchReceiver> PagedBatchReceiver::create(BatchInvocation&&owner,std::size_t capacity)noexcept{
+  auto*s=owner.data_;
+  if(!s || !capacity || s->closed || s->failed || s->external_output ||
+      s->program->schema.capacity().storage!=BatchStorage::kPaged)
+    return std::unexpected(Status::InvalidArgument("pending receiver needs an open paged Direct controller/capacity"));
+  if(s->users!=1 || s->tickets || owner.in_flight() || !s->completion.available())
+    return std::unexpected(Status::Unavailable("pending receiver controller has an external ticket/native outcome"));
+  const auto allocator=s->program->allocator;
+  auto*p=allocator.construct<d::PagedReceiverData>(allocator);
+  if(!p)return std::unexpected(Status::ResourceExhausted("common pending receiver metadata"));
+  PagedBatchReceiver result(p);
+  HYLE_ASSIGN_OR_RETURN(p->source,(d::CopyOutcomeSource<CopyBatchUpdate,d::CopyStreamAccess>::create(
+      capacity,{.allocator=allocator,.resource_budget=s->program->options.resource_budget})));
+  HYLE_ASSIGN_OR_RETURN(p->dependent,d::DependentCompletion::create(allocator));
+  p->original=std::move(owner);return result;
+}
+Status PagedBatchReceiver::prepare_batch(const BatchLayoutVersion&layout,bool update)noexcept{
+  if(!data_)return Status::FailedPrecondition("empty common pending receiver");
+  auto&p=*data_;HYLE_RETURN_IF_ERROR(p.reusable());
+  if(p.submitted && !p.terminal.ok())return Status::FailedPrecondition("common pending receiver episode failed");
+  p.token={};
+  auto prepared=update?p.original.update_batch(layout):p.original.prepare_batch(layout);
+  if(!prepared)return prepared.error();
+  p.token=std::move(*prepared);p.submitted=false;p.terminal=Status::Ok();return Status::Ok();
+}
+Result<Completion> PagedBatchReceiver::submit(const ReadLease&query,
+    const PagedArenaPendingRead&keys,const PagedArenaPendingRead&values,CopyBatchUpdate&&update)noexcept{
+  if(!data_)return std::unexpected(Status::FailedPrecondition("empty common pending receiver"));
+  auto&p=*data_;HYLE_RETURN_IF_ERROR(p.reusable());auto*s=p.token.data_;
+  if(!s || s!=p.original.data_ || s->closed || s->failed || !s->prepared || s->ran || p.token.epoch_!=s->epoch)
+    return std::unexpected(Status::FailedPrecondition("common pending receiver prepared token is stale/consumed"));
+  if(keys.layout()!=s->layout || values.layout()!=s->layout)
+    return std::unexpected(Status::InvalidArgument("common pending frames differ from the prepared layout"));
+  HYLE_RETURN_IF_ERROR((d::PagedArenaAccess::validate<CopyBatchUpdate,d::CopyStreamAccess>(keys,update)));
+  HYLE_RETURN_IF_ERROR((d::PagedArenaAccess::validate<CopyBatchUpdate,d::CopyStreamAccess>(values,update)));
+  HYLE_ASSIGN_OR_RETURN(auto descriptions,input_descriptions(s->program->schema.capacity()));
+  std::array<ConstTensorView,3> inputs;
+  HYLE_ASSIGN_OR_RETURN(inputs[0],query.tensor(descriptions[0]));
+  HYLE_ASSIGN_OR_RETURN(inputs[1],d::PagedArenaAccess::tensor(keys));
+  HYLE_ASSIGN_OR_RETURN(inputs[2],d::PagedArenaAccess::tensor(values));
+  for(std::size_t i=1;i<3;++i)if(inputs[i].description()!=descriptions[i] || inputs[i].storage().resource()!=s->program->options.resource)
+    return std::unexpected(Status::InvalidArgument("common pending arena capacity/resource differs"));
+  if(!s->completion.available() || s->pending.load(std::memory_order_acquire) || s->uses.active_batches())
+    return std::unexpected(Status::Unavailable("common pending native slot is still retained"));
+  HYLE_ASSIGN_OR_RETURN(auto views,workspace_views(*s));HYLE_ASSIGN_OR_RETURN(auto use,s->uses.begin());
+  HYLE_RETURN_IF_ERROR(use.read(query));HYLE_RETURN_IF_ERROR(use.read(s->mirror_ready));
+  HYLE_RETURN_IF_ERROR(use.write(s->float_workspace));HYLE_RETURN_IF_ERROR(use.write(s->int_workspace));
+  HYLE_RETURN_IF_ERROR(use.write(s->output));
+  auto sources=p.source.take(std::move(update));if(!sources)return std::unexpected(sources.error());
+  const auto restore=[&]()noexcept{update=std::move(p.source.update());sources->release(sources->state);};
+  auto sequence=d::QueueSequence::begin(*s->queue);
+  if(!sequence){restore();return std::unexpected(sequence.error());}
+  auto prefix=d::CopyStreamAccess::dependency(p.source.update());
+  if(!prefix)sequence->record(d::EnqueueResult::rejected(prefix.error()));
+  else if(prefix->pending())sequence->record(sequence->enqueue_resolved_wait(*prefix));
+  if(sequence->terminal().ok()){
+    auto admitted=d::PagedArenaAccess::admit_read<CopyBatchUpdate,d::CopyStreamAccess>(use,keys,p.source.update());
+    if(admitted.ok())admitted=d::PagedArenaAccess::admit_read<CopyBatchUpdate,d::CopyStreamAccess>(use,values,p.source.update());
+    if(!admitted.ok())sequence->record(d::EnqueueResult::rejected(admitted));
+  }
+  auto suffix=finish_native(*s,false,inputs,views,std::move(use),*sequence);
+  if(!suffix){restore();return std::unexpected(suffix.error());}
+  s->ran=true;s->prepared=false;p.submitted=true;p.pending.store(true,std::memory_order_release);p.incref();
+  p.retention.own={&p,[](void*opaque,const Status&terminal)noexcept{
+      static_cast<d::PagedReceiverData*>(opaque)->terminal=terminal;
+    },[](void*opaque)noexcept{
+      auto*p=static_cast<d::PagedReceiverData*>(opaque);p->pending.store(false,std::memory_order_release);p->decref();
+    }};
+  auto aggregate=p.dependent.publish(std::move(*suffix),*sources);
+  HYLE_FATAL_ASSERT(d::CompletionAccess::attach_retention(aggregate,p.retention).ok());
+  return s->completion.publish(std::move(aggregate));
+}
+Result<ReadLease> PagedBatchReceiver::output()noexcept{
+  if(!data_ || !data_->submitted)return std::unexpected(Status::FailedPrecondition("common pending receiver has no submitted output"));
+  if(data_->pending.load(std::memory_order_acquire))return std::unexpected(Status::Unavailable("common pending aggregate is not observed/retired"));
+  if(!data_->terminal.ok())return std::unexpected(data_->terminal);
+  return data_->original.output();
+}
+Result<CopyBatchUpdate> PagedBatchReceiver::take_update()noexcept{
+  if(!data_ || data_->pending.load(std::memory_order_acquire) || !data_->dependent.available() ||
+      !data_->source.available() || !data_->source.update().valid() || data_->source.update().in_flight() ||
+      !data_->original.data_->completion.available())
+    return std::unexpected(Status::Unavailable("common pending receiver outcome/source is retained"));
+  return std::move(data_->source.update());
+}
+BatchPlanReport PagedBatchReceiver::report()const noexcept{return data_?data_->original.report():BatchPlanReport{};}
+Status PagedBatchReceiver::close()noexcept{return data_?data_->original.close():Status::Ok();}
+Status PagedBatchReceiver::drain()noexcept{return data_?data_->original.drain():Status::Ok();}
 Result<BatchInvocation> d::BatchGraphAccess::create(const BatchProgram&program,Queue&queue)noexcept{return BatchInvocation::create(program,queue,true);}
 Result<ReadLease> d::BatchGraphAccess::metadata(const BatchInvocation&invocation)noexcept{
   if(!invocation.data_ || !invocation.data_->prepared)return std::unexpected(Status::FailedPrecondition("Graph batch slot is not prepared"));

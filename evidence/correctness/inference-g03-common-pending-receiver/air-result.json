@@ -1,0 +1,359 @@
+{
+  "identity": {
+    "model": "Mac16,12",
+    "os": "ProductName:\t\tmacOS\nProductVersion:\t\t27.0.1\nBuildVersion:\t\t26A434",
+    "compiler": "Apple clang version 21.0.0 (clang-2100.3.34.2)\nTarget: arm64-apple-darwin27.0.0\nThread model: posix\nInstalledDir: /Library/Developer/CommandLineTools/usr/bin"
+  },
+  "inputs": [
+    {
+      "path": "include/hyle/compute/batch_execution.h",
+      "sha256": "cc61080e8ebeee41563e5e061f3735baa09831acaa9ab0f221c7f121e1b561f8"
+    },
+    {
+      "path": "src/compute_batch/batch_execution.cc",
+      "sha256": "ab3b2e14a57da13fc4b6e60f4035a657bdb4ffb7ed0becf2ef3c375dbfa665ee"
+    },
+    {
+      "path": "tests/compute_batch/pending_paged_receiver_cpu_consumer.cc",
+      "sha256": "e5734040c79ad659a78c57d27d09b28a69824f8c713b97630d8f53c490fd8ed5"
+    },
+    {
+      "path": "tests/compute_batch/pending_paged_receiver_cpu_risks.cc",
+      "sha256": "360b0004cded201fad2bf8cf0f2a8a80f9333ddb993b6a02f25b329fab642a73"
+    },
+    {
+      "path": "tests/compute_batch/allocation_fault_fixture.h",
+      "sha256": "7fc5d108ebfbe46853a14fb74b4c504721442757cd4aeab10f1314a9f03943dc"
+    }
+  ],
+  "stages": [
+    {
+      "mode": "asan",
+      "stage": "configure",
+      "command": [
+        "/opt/homebrew/bin/cmake",
+        "-S",
+        "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-vulkan-asan/parent",
+        "-B",
+        "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-vulkan-asan/build"
+      ],
+      "input_manifest_sha256": "a456ec554c305537f951feeeb24d9b0ebcbb305d22eb73651140bd53d5904ddb",
+      "exit_code": 0,
+      "elapsed_seconds": 17.892750375,
+      "log": "/Users/kiro/hyle-scratch/compute-unified/g03-common-receiver/asan-configure-1.log"
+    },
+    {
+      "mode": "asan",
+      "stage": "build",
+      "command": [
+        "/opt/homebrew/bin/cmake",
+        "--build",
+        "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-vulkan-asan/build",
+        "--target",
+        "g03_common_receiver64",
+        "g03_common_receiver_risks",
+        "--parallel",
+        "4"
+      ],
+      "input_manifest_sha256": "a456ec554c305537f951feeeb24d9b0ebcbb305d22eb73651140bd53d5904ddb",
+      "exit_code": 0,
+      "elapsed_seconds": 7.645127333000001,
+      "log": "/Users/kiro/hyle-scratch/compute-unified/g03-common-receiver/asan-build-1.log"
+    },
+    {
+      "mode": "asan",
+      "stage": "g03_common_receiver64",
+      "command": [
+        "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-vulkan-asan/build/g03_common_receiver64"
+      ],
+      "input_manifest_sha256": "a456ec554c305537f951feeeb24d9b0ebcbb305d22eb73651140bd53d5904ddb",
+      "exit_code": 0,
+      "elapsed_seconds": 0.8006418750000002,
+      "log": "/Users/kiro/hyle-scratch/compute-unified/g03-common-receiver/asan-g03_common_receiver64-1.log"
+    },
+    {
+      "mode": "asan",
+      "stage": "g03_common_receiver_risks",
+      "command": [
+        "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-vulkan-asan/build/g03_common_receiver_risks"
+      ],
+      "input_manifest_sha256": "a456ec554c305537f951feeeb24d9b0ebcbb305d22eb73651140bd53d5904ddb",
+      "exit_code": 0,
+      "elapsed_seconds": 0.705729625,
+      "log": "/Users/kiro/hyle-scratch/compute-unified/g03-common-receiver/asan-g03_common_receiver_risks-1.log"
+    },
+    {
+      "mode": "ubsan",
+      "stage": "configure",
+      "command": [
+        "/opt/homebrew/bin/cmake",
+        "-S",
+        "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-vulkan-ubsan/parent",
+        "-B",
+        "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-vulkan-ubsan/build"
+      ],
+      "input_manifest_sha256": "a456ec554c305537f951feeeb24d9b0ebcbb305d22eb73651140bd53d5904ddb",
+      "exit_code": 0,
+      "elapsed_seconds": 18.237398416999998,
+      "log": "/Users/kiro/hyle-scratch/compute-unified/g03-common-receiver/ubsan-configure-1.log"
+    },
+    {
+      "mode": "ubsan",
+      "stage": "build",
+      "command": [
+        "/opt/homebrew/bin/cmake",
+        "--build",
+        "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-vulkan-ubsan/build",
+        "--target",
+        "g03_common_receiver64",
+        "g03_common_receiver_risks",
+        "--parallel",
+        "4"
+      ],
+      "input_manifest_sha256": "a456ec554c305537f951feeeb24d9b0ebcbb305d22eb73651140bd53d5904ddb",
+      "exit_code": 0,
+      "elapsed_seconds": 7.460919666999999,
+      "log": "/Users/kiro/hyle-scratch/compute-unified/g03-common-receiver/ubsan-build-1.log"
+    },
+    {
+      "mode": "ubsan",
+      "stage": "g03_common_receiver64",
+      "command": [
+        "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-vulkan-ubsan/build/g03_common_receiver64"
+      ],
+      "input_manifest_sha256": "a456ec554c305537f951feeeb24d9b0ebcbb305d22eb73651140bd53d5904ddb",
+      "exit_code": 0,
+      "elapsed_seconds": 0.5689070829999991,
+      "log": "/Users/kiro/hyle-scratch/compute-unified/g03-common-receiver/ubsan-g03_common_receiver64-1.log"
+    },
+    {
+      "mode": "ubsan",
+      "stage": "g03_common_receiver_risks",
+      "command": [
+        "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-vulkan-ubsan/build/g03_common_receiver_risks"
+      ],
+      "input_manifest_sha256": "a456ec554c305537f951feeeb24d9b0ebcbb305d22eb73651140bd53d5904ddb",
+      "exit_code": 0,
+      "elapsed_seconds": 0.481338583000003,
+      "log": "/Users/kiro/hyle-scratch/compute-unified/g03-common-receiver/ubsan-g03_common_receiver_risks-1.log"
+    },
+    {
+      "mode": "tsan",
+      "stage": "configure",
+      "command": [
+        "/opt/homebrew/bin/cmake",
+        "-S",
+        "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-vulkan-tsan/parent",
+        "-B",
+        "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-vulkan-tsan/build"
+      ],
+      "input_manifest_sha256": "a456ec554c305537f951feeeb24d9b0ebcbb305d22eb73651140bd53d5904ddb",
+      "exit_code": 0,
+      "elapsed_seconds": 18.343845208999994,
+      "log": "/Users/kiro/hyle-scratch/compute-unified/g03-common-receiver/tsan-configure-1.log"
+    },
+    {
+      "mode": "tsan",
+      "stage": "build",
+      "command": [
+        "/opt/homebrew/bin/cmake",
+        "--build",
+        "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-vulkan-tsan/build",
+        "--target",
+        "g03_common_receiver64",
+        "g03_common_receiver_risks",
+        "--parallel",
+        "4"
+      ],
+      "input_manifest_sha256": "a456ec554c305537f951feeeb24d9b0ebcbb305d22eb73651140bd53d5904ddb",
+      "exit_code": 0,
+      "elapsed_seconds": 6.248578500000008,
+      "log": "/Users/kiro/hyle-scratch/compute-unified/g03-common-receiver/tsan-build-1.log"
+    },
+    {
+      "mode": "tsan",
+      "stage": "g03_common_receiver64",
+      "command": [
+        "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-vulkan-tsan/build/g03_common_receiver64"
+      ],
+      "input_manifest_sha256": "a456ec554c305537f951feeeb24d9b0ebcbb305d22eb73651140bd53d5904ddb",
+      "exit_code": 0,
+      "elapsed_seconds": 1.083481667000001,
+      "log": "/Users/kiro/hyle-scratch/compute-unified/g03-common-receiver/tsan-g03_common_receiver64-1.log"
+    },
+    {
+      "mode": "tsan",
+      "stage": "g03_common_receiver_risks",
+      "command": [
+        "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-vulkan-tsan/build/g03_common_receiver_risks"
+      ],
+      "input_manifest_sha256": "a456ec554c305537f951feeeb24d9b0ebcbb305d22eb73651140bd53d5904ddb",
+      "exit_code": 0,
+      "elapsed_seconds": 0.5712105420000029,
+      "log": "/Users/kiro/hyle-scratch/compute-unified/g03-common-receiver/tsan-g03_common_receiver_risks-1.log"
+    },
+    {
+      "mode": "static",
+      "stage": "producer-build",
+      "command": [
+        "/opt/homebrew/bin/cmake",
+        "--build",
+        "/Users/kiro/hyle-scratch/compute-unified/a-cpu-vulkan/selected-graph/static-sdk-build",
+        "--target",
+        "hyle_compute_batch",
+        "--parallel",
+        "4"
+      ],
+      "input_manifest_sha256": "a456ec554c305537f951feeeb24d9b0ebcbb305d22eb73651140bd53d5904ddb",
+      "exit_code": 0,
+      "elapsed_seconds": 0.6406381249999953,
+      "log": "/Users/kiro/hyle-scratch/compute-unified/g03-common-receiver/static-producer-build-1.log"
+    },
+    {
+      "mode": "static",
+      "stage": "install",
+      "command": [
+        "/opt/homebrew/bin/cmake",
+        "--install",
+        "/Users/kiro/hyle-scratch/compute-unified/a-cpu-vulkan/selected-graph/static-sdk-build",
+        "--prefix",
+        "/Users/kiro/hyle-scratch/compute-unified/g03-common-receiver/static/staging"
+      ],
+      "input_manifest_sha256": "a456ec554c305537f951feeeb24d9b0ebcbb305d22eb73651140bd53d5904ddb",
+      "exit_code": 0,
+      "elapsed_seconds": 0.47235979100000236,
+      "log": "/Users/kiro/hyle-scratch/compute-unified/g03-common-receiver/static-install-1.log"
+    },
+    {
+      "mode": "static",
+      "stage": "configure",
+      "command": [
+        "/opt/homebrew/bin/cmake",
+        "-S",
+        "/Users/kiro/hyle-scratch/compute-unified/g03-common-receiver/static/consumer",
+        "-B",
+        "/Users/kiro/hyle-scratch/compute-unified/g03-common-receiver/static/build",
+        "-G",
+        "Ninja",
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DCMAKE_PREFIX_PATH=/Users/kiro/hyle-scratch/compute-unified/g03-common-receiver/static/relocated",
+        "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON"
+      ],
+      "input_manifest_sha256": "a456ec554c305537f951feeeb24d9b0ebcbb305d22eb73651140bd53d5904ddb",
+      "exit_code": 0,
+      "elapsed_seconds": 1.2973376669999936,
+      "log": "/Users/kiro/hyle-scratch/compute-unified/g03-common-receiver/static-configure-1.log"
+    },
+    {
+      "mode": "static",
+      "stage": "consumer-build",
+      "command": [
+        "/opt/homebrew/bin/cmake",
+        "--build",
+        "/Users/kiro/hyle-scratch/compute-unified/g03-common-receiver/static/build",
+        "--target",
+        "receiver",
+        "headers",
+        "--parallel",
+        "4"
+      ],
+      "input_manifest_sha256": "a456ec554c305537f951feeeb24d9b0ebcbb305d22eb73651140bd53d5904ddb",
+      "exit_code": 0,
+      "elapsed_seconds": 0.8457207910000051,
+      "log": "/Users/kiro/hyle-scratch/compute-unified/g03-common-receiver/static-consumer-build-1.log"
+    },
+    {
+      "mode": "static",
+      "stage": "receiver64",
+      "command": [
+        "/Users/kiro/hyle-scratch/compute-unified/g03-common-receiver/static/build/receiver"
+      ],
+      "input_manifest_sha256": "a456ec554c305537f951feeeb24d9b0ebcbb305d22eb73651140bd53d5904ddb",
+      "exit_code": 0,
+      "elapsed_seconds": 0.4935892919999958,
+      "log": "/Users/kiro/hyle-scratch/compute-unified/g03-common-receiver/static-receiver64-1.log"
+    },
+    {
+      "mode": "shared",
+      "stage": "producer-build",
+      "command": [
+        "/opt/homebrew/bin/cmake",
+        "--build",
+        "/Users/kiro/hyle-scratch/compute-unified/a-cpu-vulkan/selected-graph/shared-sdk-build",
+        "--target",
+        "hyle_compute_batch",
+        "--parallel",
+        "4"
+      ],
+      "input_manifest_sha256": "a456ec554c305537f951feeeb24d9b0ebcbb305d22eb73651140bd53d5904ddb",
+      "exit_code": 0,
+      "elapsed_seconds": 0.6409291249999995,
+      "log": "/Users/kiro/hyle-scratch/compute-unified/g03-common-receiver/shared-producer-build-1.log"
+    },
+    {
+      "mode": "shared",
+      "stage": "install",
+      "command": [
+        "/opt/homebrew/bin/cmake",
+        "--install",
+        "/Users/kiro/hyle-scratch/compute-unified/a-cpu-vulkan/selected-graph/shared-sdk-build",
+        "--prefix",
+        "/Users/kiro/hyle-scratch/compute-unified/g03-common-receiver/shared/staging"
+      ],
+      "input_manifest_sha256": "a456ec554c305537f951feeeb24d9b0ebcbb305d22eb73651140bd53d5904ddb",
+      "exit_code": 0,
+      "elapsed_seconds": 0.35114274999999395,
+      "log": "/Users/kiro/hyle-scratch/compute-unified/g03-common-receiver/shared-install-1.log"
+    },
+    {
+      "mode": "shared",
+      "stage": "configure",
+      "command": [
+        "/opt/homebrew/bin/cmake",
+        "-S",
+        "/Users/kiro/hyle-scratch/compute-unified/g03-common-receiver/shared/consumer",
+        "-B",
+        "/Users/kiro/hyle-scratch/compute-unified/g03-common-receiver/shared/build",
+        "-G",
+        "Ninja",
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DCMAKE_PREFIX_PATH=/Users/kiro/hyle-scratch/compute-unified/g03-common-receiver/shared/relocated",
+        "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON"
+      ],
+      "input_manifest_sha256": "a456ec554c305537f951feeeb24d9b0ebcbb305d22eb73651140bd53d5904ddb",
+      "exit_code": 0,
+      "elapsed_seconds": 1.2260790420000092,
+      "log": "/Users/kiro/hyle-scratch/compute-unified/g03-common-receiver/shared-configure-1.log"
+    },
+    {
+      "mode": "shared",
+      "stage": "consumer-build",
+      "command": [
+        "/opt/homebrew/bin/cmake",
+        "--build",
+        "/Users/kiro/hyle-scratch/compute-unified/g03-common-receiver/shared/build",
+        "--target",
+        "receiver",
+        "headers",
+        "--parallel",
+        "4"
+      ],
+      "input_manifest_sha256": "a456ec554c305537f951feeeb24d9b0ebcbb305d22eb73651140bd53d5904ddb",
+      "exit_code": 0,
+      "elapsed_seconds": 0.828549916,
+      "log": "/Users/kiro/hyle-scratch/compute-unified/g03-common-receiver/shared-consumer-build-1.log"
+    },
+    {
+      "mode": "shared",
+      "stage": "receiver64",
+      "command": [
+        "/Users/kiro/hyle-scratch/compute-unified/g03-common-receiver/shared/build/receiver"
+      ],
+      "input_manifest_sha256": "a456ec554c305537f951feeeb24d9b0ebcbb305d22eb73651140bd53d5904ddb",
+      "exit_code": 0,
+      "elapsed_seconds": 7.682359707999993,
+      "log": "/Users/kiro/hyle-scratch/compute-unified/g03-common-receiver/shared-receiver64-1.log"
+    }
+  ],
+  "cumulative_seconds": 94.51863508299999
+}

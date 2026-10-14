@@ -257,6 +257,27 @@ frame 与 native binding 有显式冷 metadata 分配，原 metadata prepare 的
 private unknown 保留。这个入口当前覆盖两 native 路线；CPU/CUDA、Graph 组合与 late
 native producer output 的完整 G03 验收仍在活动轮内。
 
+共同 `hyle::compute::PagedBatchReceiver` 移交原 `BatchInvocation`，沿其原队列、
+PreparedBatch 和输出 buffer 消费同样的 pending frame。CPU 原生路径已有 source、
+static/shared 和宿主风险验证；CUDA 实际资格与 Graph 组合继续看当前 G03 卡。
+CPU 队列只接受已实际完成的 inline 来源，异步来源由原 backend 拒绝，不隐式 host wait。
+
+```cpp
+auto receiver = compute::PagedBatchReceiver::create(std::move(slot), source_capacity).value();
+HYLE_RETURN_IF_ERROR(receiver.prepare_batch(layout));
+auto completion = receiver.submit(query, keys, values, std::move(update)).value();
+HYLE_RETURN_IF_ERROR(completion.wait()); // merges original source and native suffix
+auto output = receiver.output().value();
+// Output retains the original capacity; layout.facts().query_rows gives active rows.
+auto active = output.view()->subview(0, active_output_bytes).value();
+update = receiver.take_update().value();
+```
+
+`output()` 不等待：只有聚合成功并实际退休后才能发布。没有接纳 prefix 的拒绝保留
+或归还原 Update；已接纳 wait/math prefix 的错误通过真实 Completion 返回并保 guards
+至实际退休。旧 output reader 阻止原 buffer 覆盖，尚未回接的 Update 阻止 receiver
+复用；外部 PreparedBatch ticket 与 Graph 外部输出控制器不能移交给这个 Direct 扩展。
+
 原F2已消费page writer时，保留PagedPageWriter，等成功ready输出后调用complete；若放弃
 这个已消费的控制对象，arena不会猜测该页已退休或重新ready。失败/无法完成观察的页按
 已声明合同保持不可再acquire，显式close/recreate arena；不能把它当普通未提交writer归还。

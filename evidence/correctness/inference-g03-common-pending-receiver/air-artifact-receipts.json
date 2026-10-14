@@ -1,0 +1,33 @@
+{
+  "artifacts": [
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g03-common-receiver/static/relocated/include/hyle/compute/batch_execution.h",
+      "sha256": "cc61080e8ebeee41563e5e061f3735baa09831acaa9ab0f221c7f121e1b561f8",
+      "bytes": 8007
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g03-common-receiver/static/relocated/lib/libhyle_compute_batch.a",
+      "sha256": "df54bd642129a11ae310b2671852a217fb0942970f54131c8c088b26cec1b9ad",
+      "bytes": 318432
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g03-common-receiver/shared/relocated/include/hyle/compute/batch_execution.h",
+      "sha256": "cc61080e8ebeee41563e5e061f3735baa09831acaa9ab0f221c7f121e1b561f8",
+      "bytes": 8007
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g03-common-receiver/shared/relocated/lib/libhyle_compute_batch.0.1.0.dylib",
+      "sha256": "9e7403c341bc1d901eba8cf5389acc2e48f81b4eb215aa4b21f104f53e849f84",
+      "bytes": 265472
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g03-common-receiver/shared/relocated/lib/libhyle_compute_batch.dylib",
+      "sha256": "9e7403c341bc1d901eba8cf5389acc2e48f81b4eb215aa4b21f104f53e849f84",
+      "bytes": 265472
+    }
+  ],
+  "model": {
+    "path": "/Users/kiro/hyle-scratch/compute-unified/g02-refcount-fence-probe/tsan-headers/hyle/util/ref_counted.h",
+    "sha256": "2b90ab655a49ec3b9158a964872cd1fc3395ebf64d8ae430a2e19c4805bf5416"
+  }
+}

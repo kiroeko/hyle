@@ -1,0 +1,26 @@
+{
+  "baseline": "5f496b827",
+  "audit": "78ee5edcd",
+  "inputs": [
+    {
+      "path": "include/hyle/compute/batch_execution.h",
+      "sha256": "cc61080e8ebeee41563e5e061f3735baa09831acaa9ab0f221c7f121e1b561f8"
+    },
+    {
+      "path": "src/compute_batch/batch_execution.cc",
+      "sha256": "ab3b2e14a57da13fc4b6e60f4035a657bdb4ffb7ed0becf2ef3c375dbfa665ee"
+    },
+    {
+      "path": "tests/compute_batch/pending_paged_receiver_cpu_consumer.cc",
+      "sha256": "e5734040c79ad659a78c57d27d09b28a69824f8c713b97630d8f53c490fd8ed5"
+    },
+    {
+      "path": "tests/compute_batch/pending_paged_receiver_cpu_risks.cc",
+      "sha256": "360b0004cded201fad2bf8cf0f2a8a80f9333ddb993b6a02f25b329fab642a73"
+    },
+    {
+      "path": "tests/compute_batch/pending_paged_receiver_cuda_consumer.cc",
+      "sha256": "025960a558b26d13ca711005e388c07eeaf5a909df63f44725a03856d144b64f"
+    }
+  ]
+}

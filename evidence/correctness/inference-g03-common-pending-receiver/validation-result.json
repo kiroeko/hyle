@@ -1,0 +1,34 @@
+{
+  "scope": "BC01-BC04 implemented checkpoint. Native CPU common receiver tested; CUDA small source probe, no complete G03 acceptance",
+  "passed": [
+    "Windows and actual Air mixed456 native CPU F16/BF16, GQA8/2 D256, two requests/two original slots/64 steps, growth and Q1/17, independent double oracle",
+    "Seven actual native CPU boundary modes: hole, foreign layout, each cold allocation OOM, original completion capacity, closed context, old external ticket, output/source/ready recovery and reuse",
+    "Actual host ASan/UBSan/TSan each same64 and seven boundaries; original exact ref-count fence TSan model, ASan detect_leaks=0",
+    "Two relocated static/shared CPU public64 consumers plus standalone batch_execution.h; compile command and library/header receipts retained",
+    "Windows original native CPU ready paged/ragged five tests PASS",
+    "Actual CUDA 512-byte original gated producer/F2/FlashInfer paged attention, same original shared queue and final-only aggregate, mean .25 numeric oracle and control/output/ready recovery",
+    "Original native CPU qualification rejects CUDA pinned resource lacking coherent-host property; no asynchronous CPU import or cross-domain numerical journey signed"
+  ],
+  "cost": "Opt-in ref-counted cold receiver plus original CopyOutcomeSource/DependentCompletion/CompletionRetention; original BatchInvocation/PreparedBatch/RetainedCompletion/QueueSequence and provider math. Ready objects unchanged. Warm submit does not allocate source nodes or copy KV. Original prepare metadata waits/native planner and managed CUDA dispatch remain.",
+  "seconds": {
+    "windows": 216.71799999999348,
+    "air": 94.51863508299999,
+    "cuda": 348.1450228709999
+  },
+  "limits": [
+    "AUDITED implementation checkpoint; selected reverse factors/whole BC04/whole G03 are not signed PASS",
+    "Current source/SDK CPU tests use mixed456 qualification; closed CPU-only ffa math evidence retained rather than rerun",
+    "Host sanitizers do not instrument GPU kernel/driver and do not prove all races or leaks",
+    "CUDA source probe uses existing HYLE_TESTING backend tree without new hooks in this public fixture; no CUDA shipping static/shared receiver journey or source64/risk matrix signed",
+    "Asynchronous CPU import rejection, accepted-prefix/source-error/unknown/abandon common paths, explicit resource-budget bounds, Graph consumption, native late backing, independent reduction and full seven routes remain"
+  ],
+  "retained_failures": [
+    "Windows first CPU64: real empty successful inline-prefix incorrectly sent to native dependency wait; fixed receiver glue pending check",
+    "Windows second CPU64: fixture read required capacity-size view; fixed active output subview, original API preserved",
+    "CUDA first runtime terminated after111.257s: actual backtrace shows first cudaFuncSetAttribute module load blocked by fixture host callback. Same original controller explicitly warmed before gated submit, original failure retained",
+    "CUDA CPU import attempt used stale disposable CPU provider without BatchPlanning. Canonical CLOSED provider files copied one-way for validation, no product reopening",
+    "Next CPU crossing fixture assumed CUDA pinned resource has coherent-host property. Actual provider correctly rejected it; final probe explicitly tests only that resource qualification, no async import/retired CPU numerical claim",
+    "Initial plain Ninja dry run stops at hypothetical CONFIGURE_DEPENDS regeneration. Snapshot dry-run manifest byte-identical, actual build uses original unmodified tree. Early dry-run log overwritten across two successful retries; original stage/input/time records retained, no claim of separate historical raw snapshots"
+  ],
+  "remaining": "Complete common failure/retirement and CUDA acceptance; original Graph/late native producer backing, full seven-route and independent reduction; G01/G02 unresolved gates and G04-G10 unchanged"
+}

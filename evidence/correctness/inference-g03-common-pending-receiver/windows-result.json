@@ -1,0 +1,248 @@
+{
+  "scope": "Actual native CPU page16 pending receiver; no GPU/model/P1",
+  "stages": [
+    {
+      "stage": "build",
+      "command": [
+        "cmake",
+        "--build",
+        "C:\\h7\\inference-g01-native-vulkan\\build",
+        "--target",
+        "g03_common_receiver64",
+        "g03_prefix_ggml",
+        "--parallel",
+        "4"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 83.98399999999674,
+      "inputs": [
+        {
+          "path": "include/hyle/compute/batch_execution.h",
+          "sha256": "cc61080e8ebeee41563e5e061f3735baa09831acaa9ab0f221c7f121e1b561f8"
+        },
+        {
+          "path": "src/compute_batch/batch_execution.cc",
+          "sha256": "794acb497d8bcff87a11fe21cb96403ec8ab37cce53f848cc93d8b21de80d217"
+        },
+        {
+          "path": "tests/compute_batch/pending_paged_receiver_cpu_consumer.cc",
+          "sha256": "f97d36616643bba44ba7114b4743e2350b67a9c12da127c80323b28057276c7b"
+        }
+      ],
+      "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g03\\common-receiver-windows\\build-1.log"
+    },
+    {
+      "stage": "receiver64",
+      "command": [
+        "C:\\h7\\inference-g01-native-vulkan\\build\\g03_common_receiver64.exe"
+      ],
+      "exit_code": 1,
+      "elapsed_seconds": 0.23399999999674037,
+      "inputs": [
+        {
+          "path": "include/hyle/compute/batch_execution.h",
+          "sha256": "cc61080e8ebeee41563e5e061f3735baa09831acaa9ab0f221c7f121e1b561f8"
+        },
+        {
+          "path": "src/compute_batch/batch_execution.cc",
+          "sha256": "794acb497d8bcff87a11fe21cb96403ec8ab37cce53f848cc93d8b21de80d217"
+        },
+        {
+          "path": "tests/compute_batch/pending_paged_receiver_cpu_consumer.cc",
+          "sha256": "f97d36616643bba44ba7114b4743e2350b67a9c12da127c80323b28057276c7b"
+        }
+      ],
+      "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g03\\common-receiver-windows\\receiver64-1.log"
+    },
+    {
+      "stage": "build",
+      "command": [
+        "cmake",
+        "--build",
+        "C:\\h7\\inference-g01-native-vulkan\\build",
+        "--target",
+        "g03_common_receiver64",
+        "g03_prefix_ggml",
+        "--parallel",
+        "4"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 3.0460000000020955,
+      "inputs": [
+        {
+          "path": "include/hyle/compute/batch_execution.h",
+          "sha256": "cc61080e8ebeee41563e5e061f3735baa09831acaa9ab0f221c7f121e1b561f8"
+        },
+        {
+          "path": "src/compute_batch/batch_execution.cc",
+          "sha256": "ab3b2e14a57da13fc4b6e60f4035a657bdb4ffb7ed0becf2ef3c375dbfa665ee"
+        },
+        {
+          "path": "tests/compute_batch/pending_paged_receiver_cpu_consumer.cc",
+          "sha256": "f97d36616643bba44ba7114b4743e2350b67a9c12da127c80323b28057276c7b"
+        }
+      ],
+      "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g03\\common-receiver-windows\\build-2.log"
+    },
+    {
+      "stage": "receiver64",
+      "command": [
+        "C:\\h7\\inference-g01-native-vulkan\\build\\g03_common_receiver64.exe"
+      ],
+      "exit_code": 1,
+      "elapsed_seconds": 0.20399999999790452,
+      "inputs": [
+        {
+          "path": "include/hyle/compute/batch_execution.h",
+          "sha256": "cc61080e8ebeee41563e5e061f3735baa09831acaa9ab0f221c7f121e1b561f8"
+        },
+        {
+          "path": "src/compute_batch/batch_execution.cc",
+          "sha256": "ab3b2e14a57da13fc4b6e60f4035a657bdb4ffb7ed0becf2ef3c375dbfa665ee"
+        },
+        {
+          "path": "tests/compute_batch/pending_paged_receiver_cpu_consumer.cc",
+          "sha256": "f97d36616643bba44ba7114b4743e2350b67a9c12da127c80323b28057276c7b"
+        }
+      ],
+      "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g03\\common-receiver-windows\\receiver64-2.log"
+    },
+    {
+      "stage": "build",
+      "command": [
+        "cmake",
+        "--build",
+        "C:\\h7\\inference-g01-native-vulkan\\build",
+        "--target",
+        "g03_common_receiver64",
+        "g03_prefix_ggml",
+        "--parallel",
+        "4"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 4.687000000005355,
+      "inputs": [
+        {
+          "path": "include/hyle/compute/batch_execution.h",
+          "sha256": "cc61080e8ebeee41563e5e061f3735baa09831acaa9ab0f221c7f121e1b561f8"
+        },
+        {
+          "path": "src/compute_batch/batch_execution.cc",
+          "sha256": "ab3b2e14a57da13fc4b6e60f4035a657bdb4ffb7ed0becf2ef3c375dbfa665ee"
+        },
+        {
+          "path": "tests/compute_batch/pending_paged_receiver_cpu_consumer.cc",
+          "sha256": "e5734040c79ad659a78c57d27d09b28a69824f8c713b97630d8f53c490fd8ed5"
+        }
+      ],
+      "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g03\\common-receiver-windows\\build-3.log"
+    },
+    {
+      "stage": "receiver64",
+      "command": [
+        "C:\\h7\\inference-g01-native-vulkan\\build\\g03_common_receiver64.exe"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 0.29699999999138527,
+      "inputs": [
+        {
+          "path": "include/hyle/compute/batch_execution.h",
+          "sha256": "cc61080e8ebeee41563e5e061f3735baa09831acaa9ab0f221c7f121e1b561f8"
+        },
+        {
+          "path": "src/compute_batch/batch_execution.cc",
+          "sha256": "ab3b2e14a57da13fc4b6e60f4035a657bdb4ffb7ed0becf2ef3c375dbfa665ee"
+        },
+        {
+          "path": "tests/compute_batch/pending_paged_receiver_cpu_consumer.cc",
+          "sha256": "e5734040c79ad659a78c57d27d09b28a69824f8c713b97630d8f53c490fd8ed5"
+        }
+      ],
+      "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g03\\common-receiver-windows\\receiver64-3.log"
+    },
+    {
+      "stage": "ready-regression",
+      "command": [
+        "C:\\h7\\inference-g01-native-vulkan\\build\\g03_prefix_ggml.exe"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 40.90700000000652,
+      "inputs": [
+        {
+          "path": "include/hyle/compute/batch_execution.h",
+          "sha256": "cc61080e8ebeee41563e5e061f3735baa09831acaa9ab0f221c7f121e1b561f8"
+        },
+        {
+          "path": "src/compute_batch/batch_execution.cc",
+          "sha256": "ab3b2e14a57da13fc4b6e60f4035a657bdb4ffb7ed0becf2ef3c375dbfa665ee"
+        },
+        {
+          "path": "tests/compute_batch/pending_paged_receiver_cpu_consumer.cc",
+          "sha256": "e5734040c79ad659a78c57d27d09b28a69824f8c713b97630d8f53c490fd8ed5"
+        }
+      ],
+      "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g03\\common-receiver-windows\\ready-regression-1.log"
+    },
+    {
+      "stage": "risk-build",
+      "command": [
+        "cmake",
+        "--build",
+        "C:\\h7\\inference-g01-native-vulkan\\build",
+        "--target",
+        "g03_common_receiver_risks",
+        "--parallel",
+        "4"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 83.09399999998277,
+      "inputs": [
+        {
+          "path": "include/hyle/compute/batch_execution.h",
+          "sha256": "cc61080e8ebeee41563e5e061f3735baa09831acaa9ab0f221c7f121e1b561f8"
+        },
+        {
+          "path": "src/compute_batch/batch_execution.cc",
+          "sha256": "ab3b2e14a57da13fc4b6e60f4035a657bdb4ffb7ed0becf2ef3c375dbfa665ee"
+        },
+        {
+          "path": "tests/compute_batch/pending_paged_receiver_cpu_consumer.cc",
+          "sha256": "e5734040c79ad659a78c57d27d09b28a69824f8c713b97630d8f53c490fd8ed5"
+        },
+        {
+          "path": "tests/compute_batch/pending_paged_receiver_cpu_risks.cc",
+          "sha256": "360b0004cded201fad2bf8cf0f2a8a80f9333ddb993b6a02f25b329fab642a73"
+        }
+      ],
+      "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g03\\common-receiver-windows\\risk-build-1.log"
+    },
+    {
+      "stage": "receiver-risks",
+      "command": [
+        "C:\\h7\\inference-g01-native-vulkan\\build\\g03_common_receiver_risks.exe"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 0.26500000001396984,
+      "inputs": [
+        {
+          "path": "include/hyle/compute/batch_execution.h",
+          "sha256": "cc61080e8ebeee41563e5e061f3735baa09831acaa9ab0f221c7f121e1b561f8"
+        },
+        {
+          "path": "src/compute_batch/batch_execution.cc",
+          "sha256": "ab3b2e14a57da13fc4b6e60f4035a657bdb4ffb7ed0becf2ef3c375dbfa665ee"
+        },
+        {
+          "path": "tests/compute_batch/pending_paged_receiver_cpu_consumer.cc",
+          "sha256": "e5734040c79ad659a78c57d27d09b28a69824f8c713b97630d8f53c490fd8ed5"
+        },
+        {
+          "path": "tests/compute_batch/pending_paged_receiver_cpu_risks.cc",
+          "sha256": "360b0004cded201fad2bf8cf0f2a8a80f9333ddb993b6a02f25b329fab642a73"
+        }
+      ],
+      "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g03\\common-receiver-windows\\receiver-risks-1.log"
+    }
+  ],
+  "cumulative_seconds": 216.71799999999348
+}

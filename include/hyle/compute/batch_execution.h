@@ -26,10 +26,12 @@ struct BatchPlanReport final {
   std::uint32_t host_waits = 0;
   CopyBatchReport metadata_upload{};
 };
-namespace detail { struct BatchProgramData; struct BatchInvocationData; struct BatchGraphAccess; }
+namespace detail { struct BatchProgramData; struct BatchInvocationData; struct PagedReceiverData; struct BatchGraphAccess; }
 class BatchInvocation;
 class PreparedBatch;
 class PagedArenaRead;
+class PagedArenaPendingRead;
+class PagedBatchReceiver;
 // Cold, immutable native domain. Only explicit batch users acquire buffers,
 // slots or planning; ordinary operation and Graph v19 contracts are unchanged.
 class BatchProgram final {
@@ -78,6 +80,7 @@ public:
   HYLE_COMPUTE_BATCH_API Status drain() noexcept;
 private:
   friend class PreparedBatch;
+  friend class PagedBatchReceiver;
   friend struct detail::BatchGraphAccess;
   static Result<BatchInvocation> create(const BatchProgram&,Queue&,bool external_output) noexcept;
   explicit BatchInvocation(detail::BatchInvocationData *p) noexcept:data_(p){}
@@ -103,9 +106,44 @@ public:
       const PagedArenaRead&keys,const PagedArenaRead&values) noexcept;
 private:
   friend class BatchInvocation;
+  friend class PagedBatchReceiver;
   friend struct detail::BatchGraphAccess;
   PreparedBatch(detail::BatchInvocationData *p,std::uint64_t epoch) noexcept:data_(p),epoch_(epoch){}
   detail::BatchInvocationData *data_=nullptr;
   std::uint64_t epoch_=0;
+};
+// Explicit cold extension of one original native BatchInvocation. Uses the
+// original shared Queue, plan, buffers and output permission. Source waits are
+// recorded into that Queue; unsupported asynchronous imports never host-wait.
+// Control is externally serialized and original resource/context/queue/allocator
+// borrows outlive all native work. Drop old output readers before preparing.
+class PagedBatchReceiver final {
+public:
+  PagedBatchReceiver()noexcept=default;
+  PagedBatchReceiver(const PagedBatchReceiver&)=delete;
+  PagedBatchReceiver&operator=(const PagedBatchReceiver&)=delete;
+  HYLE_COMPUTE_BATCH_API PagedBatchReceiver(PagedBatchReceiver&&)noexcept;
+  HYLE_COMPUTE_BATCH_API PagedBatchReceiver&operator=(PagedBatchReceiver&&)noexcept;
+  HYLE_COMPUTE_BATCH_API ~PagedBatchReceiver();
+  // Original controller must have no external ticket or in-flight work.
+  // Capacity includes accepted phases and used producers. Allocate before
+  // source submission; failed creation preserves the original controller.
+  HYLE_COMPUTE_BATCH_API static Result<PagedBatchReceiver> create(
+      BatchInvocation&&,std::size_t max_source_completions)noexcept;
+  bool valid()const noexcept{return data_!=nullptr;}
+  HYLE_COMPUTE_BATCH_API Status prepare_batch(const BatchLayoutVersion&,bool update=true)noexcept;
+  // No accepted prefix: error preserves/returns the original Update. Any
+  // accepted wait/math prefix returns its real aggregate Completion instead.
+  HYLE_COMPUTE_BATCH_API Result<Completion> submit(const ReadLease&query,
+      const PagedArenaPendingRead&keys,const PagedArenaPendingRead&values,CopyBatchUpdate&&)noexcept;
+  // Nonblocking; only successfully observed aggregate work publishes output.
+  HYLE_COMPUTE_BATCH_API Result<ReadLease> output()noexcept;
+  HYLE_COMPUTE_BATCH_API Result<CopyBatchUpdate> take_update()noexcept;
+  HYLE_COMPUTE_BATCH_API BatchPlanReport report()const noexcept;
+  HYLE_COMPUTE_BATCH_API Status close()noexcept;
+  HYLE_COMPUTE_BATCH_API Status drain()noexcept;
+private:
+  explicit PagedBatchReceiver(detail::PagedReceiverData*p)noexcept:data_(p){}
+  detail::PagedReceiverData*data_=nullptr;
 };
 } // namespace hyle::compute

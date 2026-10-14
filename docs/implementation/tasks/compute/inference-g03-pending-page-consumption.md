@@ -352,3 +352,29 @@ payload与现有数学artifact资格，禁止新nvcc/kernel构建；若artifact�
 不复制KV、不新开queue/线程、不另分配source节点，原provider/plan成本保留。原
 controller/queue/context/allocator/source访问外部串行并保至真实退休。完整Graph、
 native late backing与七路线仍是本主卡必需后续，不由本批或API形状代签。
+
+BC02实测增补：Windows首次common CPU64失败为已成功退休的inline来源返回空
+native prefix；原 enqueue_resolved_wait 要求真实native dependency，不能传空。既有
+CopyStreamAccess已逐原phase核成功，只在prefix.pending()时记录原native wait，
+inline成功不制造wait/事件/host barrier。保原失败日志和累计，未改下层等待机制。
+
+## BC01–BC04 公共 receiver 实施检查点（2026-10-14）
+
+共同 receiver 已实现，[定向验证记录](../../../../evidence/correctness/inference-g03-common-pending-receiver/validation-result.json)
+保产品字节、每阶段输入、原失败/累计、宿主模型与 SDK receipts。Windows/Air 原生 CPU
+F16/BF16 两请求/两原 slot/64步和 double oracle、七边界、三宿主 sanitizer、两迁址
+static/shared SDK 与独立公共头通过；Windows 原 ready paged/ragged 五测试通过。
+CUDA 512-byte 真实 gated producer→原 F2→原 FlashInfer paged 原生数学与最终聚合通过；
+原 CPU 数学资格明确拒绝未声明 coherent-host 的 CUDA pinned resource；此负例不签
+CPU 异步来源接纳/拒绝或跨域数值旅程。CUDA 只编译 C++ glue/fixture，原 kernel artifact
+复用，无 nvcc。
+
+CPU 首次真实 inline 空 prefix 实现失败与第二次 capacity-view fixture 失败保留。
+CUDA 首次 native kernel 属性/模块加载与 fixture host gate 互等，原 111.257s 与实际
+backtrace保留；同一原 controller 显式预热后通过。WSL旧CPU provider缺 BatchPlanning
+的验证副本失败保留，只从canonical同步原已关闭provider，不反向覆盖产品或重开owner。
+
+本批继续 AUDITED，不签完整 BC04/G03、CUDA 三交付/64步或所有 reverse-factor 门。
+CPU异步来源拒绝、接纳后来源错误/unknown/abandon、明确资源预算边界、Graph、late native backing与
+七路线/正交 reduction 仍必需。原 G01/G02未决门与 G04–G10、失败和 private UNKNOWN
+全部保留；只复用本批已证明门，整体粗估20%、完整项目0/10。所有本批 heavy 已terminal。
