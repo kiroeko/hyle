@@ -689,9 +689,9 @@
     },
     {
       "module": "compute_batch",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/inference-g03-page-initialization-prefix.md",
-      "summary": "G03 IP01-IP03 initialization-prefix SCOPED at cdb8: original page identity/generation and committed valid rows; exact immutable layout read domain; no source/native/math/default locks changed. Main pending receiver/late output/7route64 remain unsatisfied."
+      "summary": "G03 IP01-IP03 AUDITED: fixed original arena/writer committed initialized-row prefix, acquire/move/recovery semantics, immutable layout read-domain refusal before allocation; reuse64/F2/old readers/3deliveries/host risks declared. Padding storage, no source/native/math/controller expansion; main pending/late output/7routes remain."
     },
     {
       "module": "graph_batch",
