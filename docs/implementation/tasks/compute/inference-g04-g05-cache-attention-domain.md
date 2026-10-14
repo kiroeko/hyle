@@ -310,3 +310,7 @@ GPU本轮FP8新行encoder→原F2/page receiver，正交消费者是公开one-op
 数值/退休/三交付及适用host风险门，先做有限source批，未运行不签PASS。该私有enum与
 switch的P0为无新增布局/分配，CUDA数学性能仍属于冻结candidate后的同卡P1。预算沿本卡
 2h检查点/自动追加/原失败累计，其他CLOSED后端范围不重开。
+
+CE08已核对原 `cuda_device_status.cc::completed_device_status` 和原首错/reset/merge；
+范围、owner、完成/失败/费用形状及有限FIX固定，同卡正式进入AUDITED。十owner的新数学/
+风险/交付/P1仍UNPROVEN，CE08只允许上述码和原switch翻译及其真实encoder消费者。
