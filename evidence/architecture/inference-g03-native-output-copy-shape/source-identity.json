@@ -1,0 +1,15 @@
+{
+  "scope_commit": "cfb883a3bb819cb171325daecc42dfe60f0733bd",
+  "product": "b42832de3ddda21bdc3e98ad4cc87e73622cbba4",
+  "canonical_equals_validation": true,
+  "files": {
+    "src/compute_route_apple/apple_context.cc": "7bb949f53603c381a12734ea2a18806ff161945480cb62f387f99328ec4d0d5a",
+    "src/compute_route_apple/apple_memory.mm": "d4f4bcbf92be87106849a0a3728b5249fe4e57a810f1f2b69e8f6a49484da646",
+    "src/compute_route_apple/apple_copy_program.cc": "e368139b718d5707a48d5ff8c29efc2bf02168809085f85c56f877cfe4bede91",
+    "src/compute_route_apple/apple_copy_recording.mm": "109f892f872dba2d1d586f8a9e36cb70ec3bb4d12a77d83bffd942b5e186a1a8",
+    "src/compute/batch_transfer.cc": "4f961efb51fbf685fd7a3cd0d5720fad15d6ab0c99111542b89849209e857877",
+    "include/hyle/compute/apple_memory.h": "a169b5822966f19ea0a581ff10aab53008687943b30783fa94126f49be8e21b1",
+    "include/hyle/compute/apple.h": "8abdb414b5fce2bf8bfb2a275f3f4f253da2f607c4942f27936c15bfe074154a",
+    "tests/compute_batch/native_producer_copy_shape_probe.cc": "7e02a1d8e5d6fa0539dfe48658f1ec888a3e87b380c16b9c2151aedbd01617a0"
+  }
+}

@@ -1,0 +1,2 @@
+actual Apple ABS producer step=0 native output/read lease/copy PASS; fixed resource binding rejects; per-export copy program+slot required, 1024 bytes device->device
+actual Apple ABS producer step=1 native output/read lease/copy PASS; fixed resource binding rejects; per-export copy program+slot required, 1024 bytes device->device

@@ -34,6 +34,13 @@ P0先做纵切费用账，finite支持域/API/owner/ownership/cold-warm/failure/
 G06 metadata/capture、G09流水和G04/05/07数学/编码仍原项目，不扩出新全局调研项。
 主张无新API必须给完整实跑、寿命与费用，而不是只说F1/F2已有。
 
+2026-10-14 的 [Apple 原生输出公开探针](../../../../evidence/architecture/inference-g03-native-output-copy-shape/README.md)
+已用同一 Abs Program/Invocation 的两个真实 F16 输出证明：readonly 导出 resource
+身份逐次不同，固定设备 ref 的 F2 source binding 拒绝；按每次导出重建原 copy
+program/slot 后 1024 bytes 数值复制正确。固定产品未改，全部 fixture FAIL 与累计
+42.421 秒保留。此结果定位 ready producer 来源绑定的 cold 成本接缝，不代签 pending
+page/attention，不据此提前固定 API；若需改变 F2/native owner，先登记对应 scope/audit。
+
 源审计/实现/验证各2h检查点，沿用户常设授权有限追加，保全部FAIL/累计；Windows
 canonical，Air only实查身份，WSL/Air可丢弃单向副本。所有heavy serial、最多四jobs，
 不跑本地重型GPU/full model、不重启旧Windows大套件、不改公共构建/性能/治理工具。
