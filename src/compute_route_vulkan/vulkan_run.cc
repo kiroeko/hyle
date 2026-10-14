@@ -441,6 +441,8 @@ Status qualify_copy_dependency(const std::shared_ptr<Runtime> &runtime, cd::Comp
   if (!run.submission_failure.ok()) return run.submission_failure;
   if (!run.observation_error.ok()) return run.observation_error;
   if (!run.terminal.ok()) return run.terminal;
+  if (run.pending && run.cancelled)
+    return Status::Cancelled("Vulkan producer cancelled before dependency admission");
   return Status::Ok();
 }
 Result<CompletionPoll> poll_native(const std::shared_ptr<Run> &run) noexcept { return observe(run, false); }

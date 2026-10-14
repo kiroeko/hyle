@@ -83,6 +83,20 @@ Status episode(bool cancelled) {
   for(const auto &page:c::detail::PagedArenaAccess::pages(value_frame)) HYLE_RETURN_IF_ERROR(reading.read(page));
   HYLE_RETURN_IF_ERROR(n::detail::CopyStreamAccess::admit_read(reading,owner,{1}));
   if(cancelled) HYLE_RETURN_IF_ERROR(owner.request_cancel());
+#if defined(HYLE_PENDING_ADMISSION_QUALIFICATION)
+  if(cancelled) {
+    const auto rejected=n::detail::qualify_copy_dependency(n::detail::Access::runtime(context),dependency);
+    HYLE_RETURN_IF_ERROR(r::require(rejected.IsCancelled() && owner.valid() && owner.in_flight() &&
+        boundary.accepted>0,
+        "Vulkan cancelled dependency admission consumed source or accepted suffix"));
+    unknown=false;
+    HYLE_RETURN_IF_ERROR(r::require(owner.wait().IsCancelled() && !owner.take_mutable({1}),
+        "Vulkan cancelled source fabricated mutable success"));
+    std::fprintf(stderr,"Vulkan original Run pending cancel dependency rejected; "
+        "original controls kept, no attention suffix, actual final fence retirement preserved PASS\n");
+    return Status::Ok();
+  }
+#endif
   HYLE_ASSIGN_OR_RETURN(auto attention,n::detail::PagedBatchAccess::submit(invocation,std::move(reading)));
   HYLE_RETURN_IF_ERROR(r::require(!attention.result() && uses.active_batches()==1,
       "original attention published result before its actual native retirement"));

@@ -250,6 +250,9 @@ Status qualify_recording_dependency(const std::shared_ptr<Runtime> &runtime, cd:
   if (state.runtime != runtime) return Status::InvalidArgument("Apple copy producer Runtime differs");
   if (!source.terminal_hint || !source.terminal_hint->ok()) return source.terminal_hint ? *source.terminal_hint : Status::FailedPrecondition("Apple copy producer is empty");
   if (state.done.load(std::memory_order_acquire) != 0 && !state.terminal.ok()) return state.terminal;
+  if (state.done.load(std::memory_order_acquire) == 0 &&
+      state.cancel.load(std::memory_order_acquire))
+    return Status::Cancelled("Apple copy producer cancelled before dependency admission");
   return Status::Ok();
 }
 } // namespace hyle::compute::apple::detail

@@ -92,6 +92,28 @@ Status episode(bool cancelled) {
   for(const auto &page:c::detail::PagedArenaAccess::pages(value_frame)) HYLE_RETURN_IF_ERROR(reading.read(page));
   HYLE_RETURN_IF_ERROR(n::detail::CopyStreamAccess::admit_read(reading,owner,{1}));
   if(cancelled) HYLE_RETURN_IF_ERROR(owner.request_cancel());
+#if defined(HYLE_PENDING_ADMISSION_QUALIFICATION)
+  if(cancelled) {
+    HYLE_RETURN_IF_ERROR(prefix.request_cancel());
+    const auto native_dependency=c::detail::CompletionAccess::dependency(prefix.completion());
+    const auto native_rejected=n::detail::qualify_copy_dependency(
+        n::detail::ContextAccess::runtime(context),native_dependency);
+    const auto copy_rejected=n::detail::qualify_recording_dependency(
+        n::detail::ContextAccess::runtime(context),dependency);
+    HYLE_RETURN_IF_ERROR(r::require(native_rejected.IsCancelled() && copy_rejected.IsCancelled() &&
+        prefix.valid() && owner.valid() && owner.in_flight(),
+        "Apple cancelled source admission consumed source or accepted dependency"));
+    gate->release();
+    const auto source_terminal=owner.wait();
+    const auto native_terminal=prefix.wait();
+    HYLE_RETURN_IF_ERROR(r::require(source_terminal.IsCancelled() &&
+        !native_terminal && native_terminal.error().IsCancelled() && !owner.take_mutable({1}),
+        "Apple cancellation fabricated early retirement or mutable success"));
+    std::fprintf(stderr,"Apple original native/copy pending cancel dependency rejected; "
+        "original controls kept, no attention suffix, actual final retirement preserved PASS\n");
+    return Status::Ok();
+  }
+#endif
   HYLE_ASSIGN_OR_RETURN(auto attention,n::detail::PagedBatchAccess::submit(invocation,std::move(reading)));
   HYLE_RETURN_IF_ERROR(r::require(!attention.result() && uses.active_batches()==1,
       "original attention published result before its actual native retirement"));

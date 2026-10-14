@@ -516,6 +516,9 @@ Status qualify_copy_dependency(const std::shared_ptr<Runtime> &runtime, cd::Comp
   const auto &state = *static_cast<InvocationState *>(source.state);
   if (state.program->runtime != runtime) return Status::InvalidArgument("Apple copy producer Runtime differs");
   if (state.done.load(std::memory_order_acquire) != 0 && !state.terminal.ok()) return state.terminal;
+  if (state.done.load(std::memory_order_acquire) == 0 &&
+      state.cancel.load(std::memory_order_acquire))
+    return Status::Cancelled("Apple native producer cancelled before dependency admission");
   return Status::Ok();
 }
 } // namespace detail
