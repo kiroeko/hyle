@@ -514,10 +514,14 @@
     },
     {
       "module": "compute_route_apple",
-      "state": "CANDIDATE",
-      "record": "docs/implementation/tasks/compute/inference-g03-apple-copy-source.md",
-      "summary": "G03 Apple trusted readonly native output -> fixed F2 source CANDIDATE dab23ba92; public64/two slots/old owners/subviews/no binding allocation, native F16/BF16 ready producer->dirty page->attention128, copy8/risk5/direct graph source PASS. Original mutable/device/alias/retirement preserved; 3hostsan/2SDK still pending; full pending-page journey and wholeG03 remain required.",
-      "candidate": "dab23ba92256cad21f2e83af6141eb8ad51264c5"
+      "state": "CLOSED",
+      "record": "docs/implementation/tasks/compute/inference-g03-apple-copy-source-terminal.md",
+      "summary": "G03 AS01/AS02 finite CLOSED dab23: fixed original F2 program/two slots accept trusted native readonly exports; writable identity/device/range/alias/retirement preserved. Source64, native ready producer->dirty page->attention F16/BF16x64, copy8/risk5/joint768, 3mode modeled hostsan, relocated static/shared compute+graph and8headers PASS; P0 zero new binding/prepare HYLE allocations/fields. Original fixtureFAIL/private costs/ready host waits preserved; full pending page-to-attention and wholeG03/goal remain required.",
+      "candidate": "dab23ba92256cad21f2e83af6141eb8ad51264c5",
+      "performance": {
+        "tier": "P0",
+        "evidence": "docs/implementation/tasks/compute/inference-g03-apple-copy-source-terminal.md"
+      }
     },
     {
       "module": "graph_route_apple",

@@ -1,0 +1,32 @@
+{
+  "candidate": "dab23ba92256cad21f2e83af6141eb8ad51264c5",
+  "date": "2026-10-14",
+  "closure_previous_ref": "7b949b2b0",
+  "gates": [
+    {
+      "command": "python scripts/check-module-closure.py --previous-ref 7b949b2b0",
+      "exit_code": 0,
+      "output": "module closure contract passed: 64 components, schema 4"
+    },
+    {
+      "command": "python scripts/check-docs.py",
+      "exit_code": 0,
+      "output": "documentation contract passed: 1219 Markdown files, 5870 relative links checked"
+    }
+  ],
+  "retained_prior_failure": {
+    "command": "python scripts/check-docs.py",
+    "exit_code": 1,
+    "reason": "New terminal was not yet reachable from docs/README.md",
+    "resolution": "Link terminal from the active card and generated current CLOSED status; final check passes"
+  },
+  "selected_gate_evidence": {
+    "configure": "source and both relocated SDKs actual terminal 0",
+    "headers:compute_route_apple": "four strict headers in each relocated SDK",
+    "factor:graph_route_cpu_apple": "actual source joint768 and each relocated SDK joint768",
+    "delivery:compute": "unchanged canonical source64 and native128 linked only hyle::compute in relocated static/shared",
+    "delivery:graph": "unchanged canonical joint768 linked only hyle::graph in relocated static/shared"
+  },
+  "skipped_reasons": "All 141 retained in validation-plan.json",
+  "limitations": "Finite ready source qualification only; pending page chain and whole G03/goal incomplete"
+}

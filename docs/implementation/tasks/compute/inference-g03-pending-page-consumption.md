@@ -41,6 +41,27 @@ program/slot 后 1024 bytes 数值复制正确。固定产品未改，全部 fix
 42.421 秒保留。此结果定位 ready producer 来源绑定的 cold 成本接缝，不代签 pending
 page/attention，不据此提前固定 API；若需改变 F2/native owner，先登记对应 scope/audit。
 
+该 ready 来源接缝随后按[Apple 有限 terminal](inference-g03-apple-copy-source-terminal.md)
+完成 AS01/AS02：固定原 program/slots 接 trusted readonly exports；实际 F16/BF16
+producer→dirty页→attention、三hostsan、两SDK全部通过。不能重复该已验范围或把其
+显式producer-ready/copy观察当成pending组合。compute_batch仍SCOPED，未固定完整FIX。
+
+下一次有限审计只裁决以下原接缝：
+
+1. 原 CPU/CUDA caller-owned writer 已能pending producer→F2；原 native OwnedResult 的
+   completion为const且输出只在成功结果中可见。Apple真实backing在原worker eval时
+   产生，不能在host预绑定时假定存在；Vulkan冷输出buffer不等于成功读取权限。
+2. 原 F2 submission保原 mutable binding/phase/native use，unbind_mutable须成功实际
+   退休且没有保留submission；read frame接ready原页。若组合需pending页，必须显式
+   保原页身份/初始化范围、被接纳copy的精确写范围、producer/prefix成功与actual
+   retirement；不能伪造ReadLease或只把writer裸span交给attention。
+3. 后继attention须依原queue/Job/Completion实际排序，失败/unknown只阻止suffix，不
+   发布页成功；保旧reader/result和原native input寿命。公共组合优先借原F2及MF/Paged
+   controller，不能再建scheduler或在consumer重复host continuation状态机。
+
+必须先写四原路线/三联合路线具体调用与cold/warm账，再固定owner与有限API/FIX。
+原ready版本可作为数值对照，pending验收要单列中间host waits，不能借上面的PASS代签。
+
 源审计/实现/验证各2h检查点，沿用户常设授权有限追加，保全部FAIL/累计；Windows
 canonical，Air only实查身份，WSL/Air可丢弃单向副本。所有heavy serial、最多四jobs，
 不跑本地重型GPU/full model、不重启旧Windows大套件、不改公共构建/性能/治理工具。

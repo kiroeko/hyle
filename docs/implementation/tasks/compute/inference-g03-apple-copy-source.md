@@ -82,3 +82,6 @@ source 费用/权限及数值检查通过，API/算法停止变化。
 原 copy8 tests、五实际copy风险、原联合图直接回归全部 terminal0，累计31.444秒。
 原 probe fixture FAIL 与42.421秒另保；没有producer-ready等待消除或全G03完成声明。
 宿主3san、两relocated SDK/独立头尚待实际结果；适用门未完成不签CLOSED。
+
+后续全部适用门实际通过，最终裁决见[有限 terminal](inference-g03-apple-copy-source-terminal.md)。
+上述 Candidate 段保留当时事实，不作为新的重跑授权。
