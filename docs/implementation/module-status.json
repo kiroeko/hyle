@@ -270,15 +270,17 @@
     },
     {
       "module": "compute",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/inference-g03-pending-page-consumption.md",
-      "summary": "G03 GL01-04 implemented and finite declared source/host risks/installed delivery passed, remains AUDITED until immutable candidate is recorded. Required CPU+CUDA source8/full public64, final pureCUDA8 and changed MSVC native fixtures pass; independent red-team found no remaining product defect/MUST. Original G01/G02 whole-item unresolved gates and G04-G10 retained; P0 bind allocations/checked waits/private costs explicit."
+      "summary": "G03 GL01-04 immutable candidate11b2403e7. Finite source/host risks/relocated static/shared public64 and headers passed across qualified CPU/CUDA/Apple/Vulkan and three joint routes; independent red-team found no remaining product defect/MUST. No new product changes; only candidate identity/LOC/final scoped verdict remain. Original G01/G02 whole-item unresolved gates and G04-G10 retained.",
+      "candidate": "11b2403e794b6eed2c89418d72b8c89aeaaac746"
     },
     {
       "module": "graph",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/inference-g03-pending-page-consumption.md",
-      "summary": "G03 GL01-04 implemented and finite declared source/host risks/installed delivery passed, remains AUDITED until immutable candidate is recorded. Required CPU+CUDA source8/full public64, final pureCUDA8 and changed MSVC native fixtures pass; independent red-team found no remaining product defect/MUST. Original G01/G02 whole-item unresolved gates and G04-G10 retained; P0 bind allocations/checked waits/private costs explicit."
+      "summary": "G03 GL01-04 immutable candidate11b2403e7. Finite source/host risks/relocated static/shared public64 and headers passed across qualified CPU/CUDA/Apple/Vulkan and three joint routes; independent red-team found no remaining product defect/MUST. No new product changes; only candidate identity/LOC/final scoped verdict remain. Original G01/G02 whole-item unresolved gates and G04-G10 retained.",
+      "candidate": "11b2403e794b6eed2c89418d72b8c89aeaaac746"
     },
     {
       "module": "container_concurrent",
@@ -508,9 +510,10 @@
     },
     {
       "module": "compute_route_apple",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/inference-g03-pending-page-consumption.md",
-      "summary": "G03 GL01-04 implemented and finite declared source/host risks/installed delivery passed, remains AUDITED until immutable candidate is recorded. Required CPU+CUDA source8/full public64, final pureCUDA8 and changed MSVC native fixtures pass; independent red-team found no remaining product defect/MUST. Original G01/G02 whole-item unresolved gates and G04-G10 retained; P0 bind allocations/checked waits/private costs explicit."
+      "summary": "G03 GL01-04 immutable candidate11b2403e7. Finite source/host risks/relocated static/shared public64 and headers passed across qualified CPU/CUDA/Apple/Vulkan and three joint routes; independent red-team found no remaining product defect/MUST. No new product changes; only candidate identity/LOC/final scoped verdict remain. Original G01/G02 whole-item unresolved gates and G04-G10 retained.",
+      "candidate": "11b2403e794b6eed2c89418d72b8c89aeaaac746"
     },
     {
       "module": "graph_route_apple",
@@ -525,9 +528,10 @@
     },
     {
       "module": "compute_route_vulkan",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/inference-g03-pending-page-consumption.md",
-      "summary": "G03 GL01-04 implemented and finite declared source/host risks/installed delivery passed, remains AUDITED until immutable candidate is recorded. Required CPU+CUDA source8/full public64, final pureCUDA8 and changed MSVC native fixtures pass; independent red-team found no remaining product defect/MUST. Original G01/G02 whole-item unresolved gates and G04-G10 retained; P0 bind allocations/checked waits/private costs explicit."
+      "summary": "G03 GL01-04 immutable candidate11b2403e7. Finite source/host risks/relocated static/shared public64 and headers passed across qualified CPU/CUDA/Apple/Vulkan and three joint routes; independent red-team found no remaining product defect/MUST. No new product changes; only candidate identity/LOC/final scoped verdict remain. Original G01/G02 whole-item unresolved gates and G04-G10 retained.",
+      "candidate": "11b2403e794b6eed2c89418d72b8c89aeaaac746"
     },
     {
       "module": "graph_route_vulkan",
@@ -644,15 +648,17 @@
     },
     {
       "module": "graph_route_cpu_apple",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/inference-g03-pending-page-consumption.md",
-      "summary": "G03 GL01-04 implemented and finite declared source/host risks/installed delivery passed, remains AUDITED until immutable candidate is recorded. Required CPU+CUDA source8/full public64, final pureCUDA8 and changed MSVC native fixtures pass; independent red-team found no remaining product defect/MUST. Original G01/G02 whole-item unresolved gates and G04-G10 retained; P0 bind allocations/checked waits/private costs explicit."
+      "summary": "G03 GL01-04 immutable candidate11b2403e7. Finite source/host risks/relocated static/shared public64 and headers passed across qualified CPU/CUDA/Apple/Vulkan and three joint routes; independent red-team found no remaining product defect/MUST. No new product changes; only candidate identity/LOC/final scoped verdict remain. Original G01/G02 whole-item unresolved gates and G04-G10 retained.",
+      "candidate": "11b2403e794b6eed2c89418d72b8c89aeaaac746"
     },
     {
       "module": "graph_route_cpu_vulkan",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/inference-g03-pending-page-consumption.md",
-      "summary": "G03 GL01-04 implemented and finite declared source/host risks/installed delivery passed, remains AUDITED until immutable candidate is recorded. Required CPU+CUDA source8/full public64, final pureCUDA8 and changed MSVC native fixtures pass; independent red-team found no remaining product defect/MUST. Original G01/G02 whole-item unresolved gates and G04-G10 retained; P0 bind allocations/checked waits/private costs explicit."
+      "summary": "G03 GL01-04 immutable candidate11b2403e7. Finite source/host risks/relocated static/shared public64 and headers passed across qualified CPU/CUDA/Apple/Vulkan and three joint routes; independent red-team found no remaining product defect/MUST. No new product changes; only candidate identity/LOC/final scoped verdict remain. Original G01/G02 whole-item unresolved gates and G04-G10 retained.",
+      "candidate": "11b2403e794b6eed2c89418d72b8c89aeaaac746"
     },
     {
       "module": "compute_stream",
@@ -678,15 +684,17 @@
     },
     {
       "module": "compute_batch",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/inference-g03-pending-page-consumption.md",
-      "summary": "G03 GL01-04 implemented and finite declared source/host risks/installed delivery passed, remains AUDITED until immutable candidate is recorded. Required CPU+CUDA source8/full public64, final pureCUDA8 and changed MSVC native fixtures pass; independent red-team found no remaining product defect/MUST. Original G01/G02 whole-item unresolved gates and G04-G10 retained; P0 bind allocations/checked waits/private costs explicit."
+      "summary": "G03 GL01-04 immutable candidate11b2403e7. Finite source/host risks/relocated static/shared public64 and headers passed across qualified CPU/CUDA/Apple/Vulkan and three joint routes; independent red-team found no remaining product defect/MUST. No new product changes; only candidate identity/LOC/final scoped verdict remain. Original G01/G02 whole-item unresolved gates and G04-G10 retained.",
+      "candidate": "11b2403e794b6eed2c89418d72b8c89aeaaac746"
     },
     {
       "module": "graph_batch",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/inference-g03-pending-page-consumption.md",
-      "summary": "G03 GL01-04 implemented and finite declared source/host risks/installed delivery passed, remains AUDITED until immutable candidate is recorded. Required CPU+CUDA source8/full public64, final pureCUDA8 and changed MSVC native fixtures pass; independent red-team found no remaining product defect/MUST. Original G01/G02 whole-item unresolved gates and G04-G10 retained; P0 bind allocations/checked waits/private costs explicit."
+      "summary": "G03 GL01-04 immutable candidate11b2403e7. Finite source/host risks/relocated static/shared public64 and headers passed across qualified CPU/CUDA/Apple/Vulkan and three joint routes; independent red-team found no remaining product defect/MUST. No new product changes; only candidate identity/LOC/final scoped verdict remain. Original G01/G02 whole-item unresolved gates and G04-G10 retained.",
+      "candidate": "11b2403e794b6eed2c89418d72b8c89aeaaac746"
     }
   ]
 }

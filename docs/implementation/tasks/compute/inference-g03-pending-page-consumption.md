@@ -1,6 +1,6 @@
 # G03 已接纳页更新到原 attention 的组合范围
 
-状态：AUDITED，2026-10-14；当前owner compute_batch；续接baseline `1dcc26cc0af4c6c68a4c9ab330fbd8088dc6aaa9`（初始baseline `c8ea4cc31`保留）。
+状态：CANDIDATE，2026-10-14；当前owner compute_batch；续接baseline `1dcc26cc0af4c6c68a4c9ab330fbd8088dc6aaa9`（初始baseline `c8ea4cc31`保留）。
 授权与全项范围仍为[十项goal](../project/inference-gaps-goal-execution-2026-10.md)。
 GP01/GP02已按[有限terminal](inference-g03-dirty-page-terminal.md)关闭，原数学/性能/失败
 和private UNKNOWN保留；只因原goal尚未完成的真实producer→attention旅程启动新轮。
@@ -636,3 +636,8 @@ red-team复核确认该反证合法，未发现新产品缺陷或G03 MUST；有�
 scope/architecture/correctness/delivery/usability_docs/red_team/engineering_performance的
 本批适用门已具实际证据。冻结commit后只补candidate身份/LOC/七门裁决，不再改产品。
 原G01/G02未决整体验收不能被本批销成PASS；G04–G10保留，goal继续active。
+
+## 固定 candidate
+
+`11b2403e794b6eed2c89418d72b8c89aeaaac746`，八当前owner合法AUDITED→CANDIDATE；产品/API/算法/成本已固定，
+上述同字节风险与三交付证据复用，只补身份/LOC/最终裁决。无存活重型任务。
