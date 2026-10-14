@@ -5,6 +5,7 @@
 
 #include <algorithm>
 #include <array>
+#include <atomic>
 #include <climits>
 #include <cmath>
 #include <cstdint>
@@ -19,6 +20,8 @@
 #include "hyle/compute/backends/cpu.h"
 #include "hyle/compute/low_precision.h"
 #include "hyle/compute/model_ops.h"
+#include "hyle/mem/std_allocator.h"
+#include "hyle/simd/dtype.h"
 
 namespace hyle::compute::ggml_cpu {
 namespace {
@@ -296,6 +299,19 @@ std::int32_t axis(std::int32_t value, std::size_t rank) noexcept {
   return value < 0 ? value + static_cast<std::int32_t>(rank) : value;
 }
 
+struct CacheEncodingState;
+struct CacheEncodingCall final {
+  CacheStorage storage;
+  CacheEncodingState *owner=nullptr;
+};
+struct CacheEncodingState final {
+  explicit CacheEncodingState(mem::AllocatorRef allocator)
+      : calls(mem::StdAllocator<CacheEncodingCall>(allocator)),
+        q8_queries(mem::StdAllocator<const ggml_tensor *>(allocator)) {}
+  std::atomic<bool> invalid{false};
+  std::vector<CacheEncodingCall,mem::StdAllocator<CacheEncodingCall>> calls;
+  std::vector<const ggml_tensor *,mem::StdAllocator<const ggml_tensor *>> q8_queries;
+};
 struct Invocation final {
   mem::AllocatorRef allocator;
   ggml_runtime::MetadataArena arena;
@@ -308,6 +324,8 @@ struct Invocation final {
   std::vector<mem::HostMapping> output_maps;
   void *storage = nullptr;
   std::size_t storage_bytes = 0;
+  // Opt-in callback state; the original workers retire before this is freed.
+  CacheEncodingState *encoding=nullptr;
   // Declared last: workers/plan retire before their tensors and payload.
   ggml_runtime::CpuExecution execution;
 
@@ -315,6 +333,8 @@ struct Invocation final {
     execution = {};
     if (storage)
       allocator.deallocate(storage, storage_bytes, GGML_MEM_ALIGN);
+    if (encoding)
+      allocator.destroy(encoding);
   }
   void bind_views() noexcept {
     for (auto *view : views)
@@ -322,6 +342,38 @@ struct Invocation final {
           static_cast<std::byte *>(view->view_src->data) + view->view_offs;
   }
 };
+
+float cache_input_value(const ggml_tensor &input,std::int64_t index) noexcept {
+  if(input.type==GGML_TYPE_F32)return static_cast<const float*>(input.data)[index];
+  if(input.type==GGML_TYPE_F16)return ggml_fp16_to_fp32(static_cast<const ggml_fp16_t*>(input.data)[index]);
+  return ggml_bf16_to_fp32(static_cast<const ggml_bf16_t*>(input.data)[index]);
+}
+void encode_cache_rows(ggml_tensor *output,int ith,int nth,void *opaque) noexcept {
+  const auto &call=*static_cast<const CacheEncodingCall*>(opaque);
+  const auto &input=*output->src[0];const auto count=ggml_nelements(&input);
+  auto *bytes=static_cast<std::uint8_t*>(output->data);
+  if(call.storage.data_type()==DataType::kFloat8E4M3FN){
+    for(auto i=std::int64_t{ith};i<count;i+=nth){
+      const auto value=cache_input_value(input,i);
+      if(!std::isfinite(value)){
+        call.owner->invalid.store(true,std::memory_order_relaxed);bytes[i]=0;
+      }else bytes[i]=simd::f32_to_f8e4m3(value/call.storage.scale()).bits;
+    }
+    return;
+  }
+  const auto convert=ggml_get_type_traits(GGML_TYPE_Q8_0)->from_float_ref;
+  for(auto block=std::int64_t{ith};block<count/32;block+=nth){
+    std::array<float,32> values;bool valid=true;
+    for(std::int64_t j=0;j<32;++j){
+      values[std::size_t(j)]=cache_input_value(input,block*32+j);
+      valid &= std::isfinite(values[std::size_t(j)]) && std::abs(values[std::size_t(j)])<=65504.F*127.F;
+    }
+    if(!valid){
+      call.owner->invalid.store(true,std::memory_order_relaxed);
+      std::fill_n(bytes+block*34,34,std::uint8_t{0});
+    }else convert(values.data(),bytes+block*34,32);
+  }
+}
 
 ggml_tensor *matrix(ggml_context *context, ggml_tensor *value,
                     const TensorDesc &description) {
@@ -775,6 +827,13 @@ std::vector<ggml_tensor *> lower(Program &program, Invocation &invocation,
                                invocation.values[node.inputs[1]],
                                invocation.values[node.inputs[2]],
                                invocation.values[node.inputs[3]]);
+  } else if (const auto encode=node.operation.custom_as<model_ops::CacheEncode>()) {
+    auto *source=invocation.values[node.inputs[0]];
+    auto &calls=invocation.encoding->calls;
+    calls.push_back({encode->storage,invocation.encoding});
+    std::array args{source};
+    result=ggml_custom_4d(context,native_type(output.data_type()),columns(output),rows(output),1,1,
+                          args.data(),1,&encode_cache_rows,GGML_N_TASKS_MAX,&calls.back());
   } else if (node.operation.custom_as<model_ops::LightningIndexer>()) {
     result = ggml_lightning_indexer(context, invocation.values[node.inputs[0]],
                                     invocation.values[node.inputs[1]],
@@ -846,9 +905,14 @@ std::vector<ggml_tensor *> lower(Program &program, Invocation &invocation,
         .layout=AttentionLayout::kBatchSequenceHeadDepth,
         .scale=paged?paged->scale:1.F,.causal=paged?paged->causal:false};
     const auto *attention=ordinary?ordinary:&paged_attention;
+    const bool boxed=paged && (paged->window_left>=0 ||
+        native_quantized(recipe.values[node.inputs[1]]) ||
+        recipe.values[node.inputs[0]].dimensions().back()!=recipe.values[node.inputs[2]].dimensions().back());
     auto *query = invocation.values[node.inputs[0]];
     auto *key = invocation.values[node.inputs[1]];
     auto *value = invocation.values[node.inputs[2]];
+    if(paged && !recipe.values[node.inputs[1]].is_plain())
+      invocation.encoding->q8_queries.push_back(query);
     const bool bshd =
         attention->layout == AttentionLayout::kBatchSequenceHeadDepth;
     query = as_float(context, query);
@@ -859,7 +923,7 @@ std::vector<ggml_tensor *> lower(Program &program, Invocation &invocation,
     }
     if (native_flash(recipe.values[node.inputs[0]].data_type())) {
       ggml_tensor *mask = nullptr;
-      if (attention->causal) {
+      if (attention->causal && !boxed) {
         const auto &mask_values = program.attention_masks[node_index];
         if (mask_values.empty())
           return {};
@@ -872,13 +936,18 @@ std::vector<ggml_tensor *> lower(Program &program, Invocation &invocation,
                                    attention->scale, 0.0F, 0.0F);
       if (!ggml_prec_set_acc(result, GGML_PREC_F32))
         return {};
-      if(paged){
+      if(paged && !paged->pages.empty()){
         auto *pages=ggml_new_tensor_1d(context,GGML_TYPE_I32,paged->pages.size());
         pages->data=const_cast<std::int32_t*>(paged->pages.data());
         result->src[5]=pages;
         result->op_params[5]=0x48595047;
         result->op_params[6]=static_cast<std::int32_t>(paged->page_size);
         ggml_flash_attn_ext_set_n_kv_max(result,static_cast<std::int32_t>(paged->logical_rows));
+      }
+      if(boxed){
+        result->op_params[7]=0x48594258;
+        result->op_params[8]=paged->window_left;
+        result->op_params[9]=paged->causal?1:0;
       }
       if (!bshd)
         result = ggml_permute(context, result, 0, 2, 1, 3);
@@ -962,6 +1031,19 @@ Status create_invocation(void *value, mem::AllocatorRef allocator,
           return elements(recipe.values[id]) == 0;
         }))
       return Status::Ok();
+    const auto encoders=std::ranges::count_if(recipe.nodes,[](const auto &node){
+      return node.operation.template custom_as<model_ops::CacheEncode>().has_value();
+    });
+    const auto q8_readers=std::ranges::count_if(recipe.nodes,[&](const auto &node){
+      return node.operation.template custom_as<internal::PagedRead>().has_value() &&
+             !recipe.values[node.inputs[1]].is_plain();
+    });
+    if(encoders || q8_readers){
+      invocation->encoding=allocator.construct<CacheEncodingState>(allocator);
+      if(!invocation->encoding)return allocation_failure();
+      invocation->encoding->calls.reserve(static_cast<std::size_t>(encoders));
+      invocation->encoding->q8_queries.reserve(static_cast<std::size_t>(q8_readers));
+    }
     if (recipe.nodes.size() > (SIZE_MAX - 8) / 32 ||
         recipe.values.size() > (SIZE_MAX - 8 - recipe.nodes.size() * 32) / 4)
       return allocation_failure();
@@ -1094,6 +1176,17 @@ Status run(Program &program, Invocation &invocation,
     invocation.input_roots[i]->data =
         const_cast<std::byte *>(invocation.input_maps[i].bytes().data());
   }
+  // Q8's original CPU dot converts Q to Q8_0 with a half scale. These private
+  // batch queries are dense leaf bindings; refuse overflow before touching
+  // outputs instead of allowing a finite BF16 value to produce an Inf scale.
+  if(invocation.encoding)for(const auto *query:invocation.encoding->q8_queries){
+    const auto count=ggml_nelements(query);
+    for(std::int64_t i=0;i<count;++i){
+      const auto value=cache_input_value(*query,i);
+      if(!std::isfinite(value) || std::abs(value)>65504.F*127.F)
+        return finish(Status::InvalidArgument("Q8_0 attention requires finite queries and representable query scales"));
+    }
+  }
   // Indexed nodes are leaf boundaries. Validate current payload before the
   // original kernel can assert, and before mapping or modifying any output.
   for (const auto &check : program.index_checks) {
@@ -1132,6 +1225,7 @@ Status run(Program &program, Invocation &invocation,
     invocation.output_roots[i]->data = bytes->data();
   }
   invocation.bind_views();
+  if(invocation.encoding)invocation.encoding->invalid.store(false,std::memory_order_relaxed);
   struct Call final {
     Invocation *invocation;
     Status terminal = Status::Ok();
@@ -1143,6 +1237,8 @@ Status run(Program &program, Invocation &invocation,
         work.terminal = work.invocation->execution.run();
       },
       &call);
+  if(call.terminal.ok() && invocation.encoding && invocation.encoding->invalid.load(std::memory_order_relaxed))
+    call.terminal=Status::InvalidArgument("cache encoder requires finite inputs and representable Q8_0 scales");
   return finish(std::move(call.terminal));
 }
 detail::EnqueueResult submit(void *value, void *slot, Queue &,
@@ -1331,6 +1427,11 @@ std::size_t native_invocation_bytes(void *prepared, void *slot) noexcept {
   };
   add(invocation.execution.workspace_bytes());
   add(invocation.arena.capacity());
+  if(invocation.encoding){
+    add(sizeof(CacheEncodingState));
+    add(invocation.encoding->calls.capacity()*sizeof(CacheEncodingCall));
+    add(invocation.encoding->q8_queries.capacity()*sizeof(const ggml_tensor *));
+  }
   for (const auto &mask : program.attention_masks)
     add(mask.size() * sizeof(ggml_fp16_t));
   return bytes;
@@ -1376,19 +1477,27 @@ bool supports(void *context, Operation operation,
        (inputs[0].dimensions().back()!=64 && inputs[0].dimensions().back()!=128 && inputs[0].dimensions().back()!=256))
       return false;
     const auto &k=inputs[1];
-    if(k.rank()!=4 || k.dimensions()[1]%paged->page_size ||
+    if(k.rank()!=4 || (!paged->pages.empty() && k.dimensions()[1]%paged->page_size) ||
        inputs[0].dimensions()[0]!=1 || paged->logical_rows>INT32_MAX)
       return false;
     const auto physical_pages=k.dimensions()[1]/paged->page_size;
-    if(paged->pages.empty() || paged->pages.size()>UINT32_MAX ||
+    if(!paged->pages.empty() && (paged->pages.size()>UINT32_MAX ||
        std::uint64_t(paged->pages.size())*paged->page_size<paged->logical_rows ||
-       std::uint64_t(paged->pages.size()-1)*paged->page_size>=paged->logical_rows)
+       std::uint64_t(paged->pages.size()-1)*paged->page_size>=paged->logical_rows))
       return false;
     for(const auto page:paged->pages)if(page<0 || page>=physical_pages)return false;
     TensorDesc inferred;
-    return paged->infer_output_descriptions(inputs,std::span(&inferred,1)).ok() &&
-        inferred==outputs[0] && supports(context,Operation(ScaledDotProductAttention{
-            .layout=AttentionLayout::kBatchSequenceHeadDepth,.scale=paged->scale,.causal=false}),inputs,outputs);
+    if(!paged->infer_output_descriptions(inputs,std::span(&inferred,1)).ok() || inferred!=outputs[0])return false;
+    if(!representable(inputs[0]) || !resident_attention_view(inputs[0]))return false;
+    for(std::size_t i=1;i<3;++i){
+      const auto &input=inputs[i];
+      if(!representable(input) || !input.is_dense())return false;
+      if(input.is_plain()){
+        if(input.data_type()!=inputs[0].data_type())return false;
+      }else if(input.data_type()!=DataType::kFloat32 || input.block_axis()!=3 ||
+               native_quantized_type(input)!=GGML_TYPE_Q8_0)return false;
+    }
+    return inputs[1].is_plain()==inputs[2].is_plain();
   }
   bool large_encoded_gather = false;
 #if defined(HYLE_GGML_CPU_IQ1_EXTENSIONS)
@@ -1410,6 +1519,8 @@ bool supports(void *context, Operation operation,
       !std::ranges::equal(inferred, outputs))
     return false;
   const auto &output = outputs[0];
+  if(operation.custom_as<model_ops::CacheEncode>())
+    return inputs.size()==1 && outputs.size()==1 && inputs[0].is_dense();
   if (operation.custom_as<model_ops::SinkAttention>())
     return *inputs[3].element_count() <=
            std::size_t{INT32_MAX} / sizeof(float) / inputs[0].dimensions()[2];
@@ -1639,6 +1750,7 @@ bool region_operation(Operation operation) noexcept {
          operation.custom_as<model_ops::CausalConv1d>().has_value() ||
          operation.custom_as<model_ops::GroupedMatMul>().has_value() ||
          operation.custom_as<model_ops::BFloatLinearF32>().has_value() ||
+         operation.custom_as<model_ops::CacheEncode>().has_value() ||
          operation.custom_as<model_ops::HyperConnectionCombine>().has_value() ||
          operation.custom_as<model_ops::HyperConnectionPre>().has_value() ||
          operation.custom_as<model_ops::HyperConnectionPost>().has_value() ||
@@ -1754,6 +1866,8 @@ ProviderPrepareOutcome compile(void *context, Recipe recipe,
           .scale=paged?paged->scale:1.F,.causal=paged?paged->causal:false};
       if (const auto *attention = paged?&paged_attention:node.operation.get_if<ScaledDotProductAttention>();
           attention && attention->causal &&
+          !(paged && (paged->window_left>=0 || native_quantized(recipe.values[node.inputs[1]]) ||
+              recipe.values[node.inputs[0]].dimensions().back()!=recipe.values[node.inputs[2]].dimensions().back())) &&
           native_flash(recipe.values[node.inputs[0]].data_type())) {
         const auto sequence =
             attention->layout == AttentionLayout::kBatchSequenceHeadDepth ? 1U

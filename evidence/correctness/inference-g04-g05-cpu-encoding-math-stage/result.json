@@ -1,0 +1,532 @@
+{
+  "kind": "G04_G05_CPU_ENCODING_AND_BOXED_MATH_SOURCE_STAGE",
+  "verdict": "PASS_FINITE_WINDOWS_SOURCE_DOMAIN",
+  "baseline": "feca31e543bd63d36c240e622031a428f4abb8dc",
+  "owners_remain": "AUDITED; G04/G05 whole gates UNPROVEN",
+  "delivery": "Windows MSVC19.50.35728.0 shared, shipping HYLE_TESTING OFF, cpu+vulkan configured; CPU execution only",
+  "native_core": "456172ec733a mixed IQ1 composition, baseline+AVX2 CPU; CPU-only ffa core patch derivation verified but runtime UNPROVEN",
+  "input_sha256": {
+    "cmake/HyleComponents.cmake": "b55f3a510e498237202c831e19a1493a9f2edec78b5499190ac339f21fb7ff4b",
+    "cmake/HyleDependencyLock.json": "bf51534a9a076b0bf27af191c15a656d4240666ad0370dac63f90e5ce30423e3",
+    "src/compute_provider_ggml/ggml_cpu_provider.cc": "1ff1d8ecc9167f009620c65766dae35232175dd42065ce8521e065ae63db760f",
+    "src/compute_provider_ggml/native_batch.cc": "b75b950b8cbb4c50655938c807fcf2235ab20e5b647572b8c3d77166b44bffb5",
+    "src/compute_provider_ggml/native_batch.h": "a7095513a63a25edd1c024916c38c59396b0ae1b6824183ac3b3f2251e6cd64b",
+    "tests/compute_provider_ggml/native_paged_test.cc": "f50e0fc9737511dc82232c159c3501f72f487d4488508dc00074c2607f6ffb65",
+    "third_party/ggml_cpu_runtime/patches.json": "2d2269744a13331fc1f7487008b5a7ff6059fc265625a749805e3ec7bb64ab96",
+    "third_party/ggml_runtime/patches.json": "50f15320482a74e532dd4f0e32fbaa2cc0f26f40149c97260ce7d417db5c64a6"
+  },
+  "qualified": [
+    "Real original ggml CacheEncode Q8_0/FP8 bytes; F16/BF16/F32 inputs; independent ties/zero/rounding/saturation oracle and accepted invalid-payload errors",
+    "Direct ragged/paged Q8 K/V with original root audit, GQA8/2, (64,64)/(128,128)/(256,256)/(64,128), F16/BF16 Q/output",
+    "Causal bottom-right inclusive window -1/0/15/16; plain window with independent Dv; full noncausal query33/35 versus KV31/33",
+    "Main D256 long prefill query1/65 versus KV129/145; shared/reordered pages logical274 versus physical256, independent decoded-cache double oracle",
+    "4096-row plain F16 cancellation with one original worker, original F32 V accumulator; no history expansion",
+    "Q8 query finite/half-scale overflow rejection, original failed slot refusal, fresh recovery; separate encoder invocations and failed encoder recreation",
+    "Original coupled plain paged and ragged math/topology reuse/lifetime, budget, partial native allocation failures and accepted math error retirement"
+  ],
+  "tests": {
+    "new_final": 10,
+    "reused_same_product_old": 5,
+    "old_test_names": [
+      "GgmlCpuPaged.OriginalFlashReadsExactPhysicalPagesAndTail",
+      "GgmlCpuRagged.NativeFlashReadsTwoRequestsWithoutKvMaterialization",
+      "GgmlCpuRagged.ColdBudgetAndPagedQualificationAreExplicit",
+      "GgmlCpuRagged.EveryColdAllocationFailureReleasesThePartialNativePlan",
+      "GgmlCpuRagged.AcceptedMathFailureRetiresUsesWithoutPublishingOutput"
+    ],
+    "positive_boxed_fixtures": 45,
+    "note": "CPU Q8 additionally quantizes Q to original vec-dot type; double reference decodes actual encoded K/V and tolerance covers bounded Q conversion plus output rounding"
+  },
+  "P0": {
+    "ordinary_invocation": "one nullable pointer (8 bytes on MSVC), no new execution owner",
+    "opt_in": "original allocator state/callback values/query-root list; known capacities counted; remaining native metadata is explicitly unknown",
+    "warm": "Q8 query range scan O(Q*Hq*Dqk); original query conversion and online softmax; V conversion O(Dv) per row, no full-KV decode or Q*KV mask in boxed path; Q8 encoding per-worker stack128 bytes"
+  },
+  "not_proven": [
+    "CPU-only ffa execution",
+    "CPU encoder two-node Graph and incremental F2/page journey",
+    "CUDA/Apple/Vulkan new native math or encoders",
+    "SDK static/shared installation",
+    "new domain sanitizers/allocator faults/concurrency",
+    "P1 engineering performance",
+    "G04/G05 full acceptance"
+  ],
+  "failures_preserved": [
+    {
+      "run": 1,
+      "state": "TERMINAL_FAIL",
+      "stages": [
+        {
+          "stage": "configure",
+          "command": [
+            "cmake",
+            "-S",
+            "C:\\h7\\inference-g01-native-vulkan\\parent",
+            "-B",
+            "C:\\h7\\inference-g01-native-vulkan\\build"
+          ],
+          "exit_code": 1,
+          "elapsed_seconds": 5.905999999988126,
+          "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\cpu-native\\source-batch-1\\configure.log"
+        }
+      ]
+    },
+    {
+      "run": 2,
+      "state": "TERMINAL_FAIL",
+      "stages": [
+        {
+          "stage": "configure",
+          "command": [
+            "cmake",
+            "-S",
+            "C:\\h7\\inference-g01-native-vulkan\\parent",
+            "-B",
+            "C:\\h7\\inference-g01-native-vulkan\\build"
+          ],
+          "exit_code": 1,
+          "elapsed_seconds": 54.078999999997905,
+          "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\cpu-native\\source-batch-2\\configure.log"
+        }
+      ]
+    },
+    {
+      "run": 3,
+      "state": "TERMINAL_FAIL",
+      "stages": [
+        {
+          "stage": "compile",
+          "command": [
+            "cmake",
+            "--build",
+            "C:\\h7\\inference-g01-native-vulkan\\build",
+            "--target",
+            "g04_g05_cpu_native_tests",
+            "--parallel",
+            "4"
+          ],
+          "exit_code": 4294967295,
+          "elapsed_seconds": 100.125,
+          "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\cpu-native\\source-batch-3\\compile.log"
+        }
+      ]
+    },
+    {
+      "run": 4,
+      "state": "TERMINAL_FAIL",
+      "stages": [
+        {
+          "stage": "tests",
+          "command": [
+            "C:\\h7\\inference-g01-native-vulkan\\build\\g04_g05_cpu_native_tests.exe",
+            "--gtest_output=xml:C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\cpu-native\\source-batch-4\\tests.xml"
+          ],
+          "exit_code": 1,
+          "elapsed_seconds": 41.39100000000326,
+          "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\cpu-native\\source-batch-4\\tests.log"
+        }
+      ]
+    },
+    {
+      "run": 5,
+      "state": "TERMINAL_FAIL",
+      "stages": [
+        {
+          "stage": "tests",
+          "command": [
+            "C:\\h7\\inference-g01-native-vulkan\\build\\g04_g05_cpu_native_tests.exe",
+            "--gtest_output=xml:C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\cpu-native\\source-batch-5\\tests.xml",
+            "--gtest_filter=GgmlCpuCacheEncode.*:GgmlCpuBoxed.*"
+          ],
+          "exit_code": 1,
+          "elapsed_seconds": 0.8280000000086147,
+          "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\cpu-native\\source-batch-5\\tests.log"
+        }
+      ]
+    },
+    {
+      "run": 7,
+      "state": "TERMINAL_FAIL",
+      "stages": [
+        {
+          "stage": "tests",
+          "command": [
+            "C:\\h7\\inference-g01-native-vulkan\\build\\g04_g05_cpu_native_tests.exe",
+            "--gtest_output=xml:C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\cpu-native\\source-batch-7\\tests.xml",
+            "--gtest_filter=GgmlCpuCacheEncode.*:GgmlCpuBoxed.*"
+          ],
+          "exit_code": 1,
+          "elapsed_seconds": 1.375,
+          "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\cpu-native\\source-batch-7\\tests.log"
+        }
+      ]
+    }
+  ],
+  "runs": [
+    {
+      "state": "TERMINAL_FAIL",
+      "pid": 32344,
+      "baseline": "feca31e543bd63d36c240e622031a428f4abb8dc",
+      "scope": "CE03 real Windows CPU encoder/boxed/ragged/paged source stage; no GPU execution, SDK/sanitizer/P1 pass",
+      "max_jobs": 4,
+      "stages": [
+        {
+          "stage": "configure",
+          "command": [
+            "cmake",
+            "-S",
+            "C:\\h7\\inference-g01-native-vulkan\\parent",
+            "-B",
+            "C:\\h7\\inference-g01-native-vulkan\\build"
+          ],
+          "exit_code": 1,
+          "elapsed_seconds": 5.905999999988126,
+          "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\cpu-native\\source-batch-1\\configure.log"
+        }
+      ],
+      "cumulative_seconds": 5.905999999988126,
+      "inputs": {
+        "cmake/HyleComponents.cmake": "b55f3a510e498237202c831e19a1493a9f2edec78b5499190ac339f21fb7ff4b",
+        "cmake/HyleDependencyLock.json": "26ae3028fc49ca0a9832f6158b368cbd23f06b53d859b0d0d815a021f0d1d91c",
+        "docs/implementation/tasks/compute/inference-g04-g05-cache-attention-domain.md": "9acfe5fd45fc3ab0764d2ae41c4282a72f110d0b39b7778ee4c9c1662d26936e",
+        "src/compute_provider_ggml/ggml_cpu_provider.cc": "88e4e334f96e04127652f626a50be1bf09f486e21024eed89d59aaaa433408dc",
+        "src/compute_provider_ggml/native_batch.cc": "b75b950b8cbb4c50655938c807fcf2235ab20e5b647572b8c3d77166b44bffb5",
+        "src/compute_provider_ggml/native_batch.h": "a7095513a63a25edd1c024916c38c59396b0ae1b6824183ac3b3f2251e6cd64b",
+        "tests/compute_provider_ggml/native_paged_test.cc": "de42ea4ea43fda12fb7074a2c48d8bdb9b5a4800f61d87600a162d04d1e56d0e",
+        "third_party/ggml_cpu_runtime/patches.json": "2d2269744a13331fc1f7487008b5a7ff6059fc265625a749805e3ec7bb64ab96",
+        "third_party/ggml_runtime/patches.json": "50f15320482a74e532dd4f0e32fbaa2cc0f26f40149c97260ce7d417db5c64a6"
+      }
+    },
+    {
+      "state": "TERMINAL_FAIL",
+      "pid": 74348,
+      "baseline": "feca31e543bd63d36c240e622031a428f4abb8dc",
+      "scope": "CE03 real Windows CPU encoder/boxed/ragged/paged source stage; no GPU execution, SDK/sanitizer/P1 pass",
+      "max_jobs": 4,
+      "stages": [
+        {
+          "stage": "configure",
+          "command": [
+            "cmake",
+            "-S",
+            "C:\\h7\\inference-g01-native-vulkan\\parent",
+            "-B",
+            "C:\\h7\\inference-g01-native-vulkan\\build"
+          ],
+          "exit_code": 1,
+          "elapsed_seconds": 54.078999999997905,
+          "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\cpu-native\\source-batch-2\\configure.log"
+        }
+      ],
+      "cumulative_seconds": 54.078999999997905,
+      "inputs": {
+        "cmake/HyleComponents.cmake": "b55f3a510e498237202c831e19a1493a9f2edec78b5499190ac339f21fb7ff4b",
+        "cmake/HyleDependencyLock.json": "bf51534a9a076b0bf27af191c15a656d4240666ad0370dac63f90e5ce30423e3",
+        "docs/implementation/tasks/compute/inference-g04-g05-cache-attention-domain.md": "9acfe5fd45fc3ab0764d2ae41c4282a72f110d0b39b7778ee4c9c1662d26936e",
+        "src/compute_provider_ggml/ggml_cpu_provider.cc": "88e4e334f96e04127652f626a50be1bf09f486e21024eed89d59aaaa433408dc",
+        "src/compute_provider_ggml/native_batch.cc": "b75b950b8cbb4c50655938c807fcf2235ab20e5b647572b8c3d77166b44bffb5",
+        "src/compute_provider_ggml/native_batch.h": "a7095513a63a25edd1c024916c38c59396b0ae1b6824183ac3b3f2251e6cd64b",
+        "tests/compute_provider_ggml/native_paged_test.cc": "de42ea4ea43fda12fb7074a2c48d8bdb9b5a4800f61d87600a162d04d1e56d0e",
+        "third_party/ggml_cpu_runtime/patches.json": "2d2269744a13331fc1f7487008b5a7ff6059fc265625a749805e3ec7bb64ab96",
+        "third_party/ggml_runtime/patches.json": "50f15320482a74e532dd4f0e32fbaa2cc0f26f40149c97260ce7d417db5c64a6"
+      }
+    },
+    {
+      "state": "TERMINAL_FAIL",
+      "pid": 64028,
+      "baseline": "feca31e543bd63d36c240e622031a428f4abb8dc",
+      "scope": "CE03 real Windows CPU encoder/boxed/ragged/paged source stage; no GPU execution, SDK/sanitizer/P1 pass",
+      "max_jobs": 4,
+      "stages": [
+        {
+          "stage": "configure",
+          "command": [
+            "cmake",
+            "-S",
+            "C:\\h7\\inference-g01-native-vulkan\\parent",
+            "-B",
+            "C:\\h7\\inference-g01-native-vulkan\\build"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 65.46799999999348,
+          "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\cpu-native\\source-batch-3\\configure.log"
+        },
+        {
+          "stage": "compile",
+          "command": [
+            "cmake",
+            "--build",
+            "C:\\h7\\inference-g01-native-vulkan\\build",
+            "--target",
+            "g04_g05_cpu_native_tests",
+            "--parallel",
+            "4"
+          ],
+          "exit_code": 4294967295,
+          "elapsed_seconds": 100.125,
+          "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\cpu-native\\source-batch-3\\compile.log"
+        }
+      ],
+      "cumulative_seconds": 165.59299999999348,
+      "inputs": {
+        "cmake/HyleComponents.cmake": "b55f3a510e498237202c831e19a1493a9f2edec78b5499190ac339f21fb7ff4b",
+        "cmake/HyleDependencyLock.json": "bf51534a9a076b0bf27af191c15a656d4240666ad0370dac63f90e5ce30423e3",
+        "docs/implementation/tasks/compute/inference-g04-g05-cache-attention-domain.md": "9acfe5fd45fc3ab0764d2ae41c4282a72f110d0b39b7778ee4c9c1662d26936e",
+        "src/compute_provider_ggml/ggml_cpu_provider.cc": "88e4e334f96e04127652f626a50be1bf09f486e21024eed89d59aaaa433408dc",
+        "src/compute_provider_ggml/native_batch.cc": "b75b950b8cbb4c50655938c807fcf2235ab20e5b647572b8c3d77166b44bffb5",
+        "src/compute_provider_ggml/native_batch.h": "a7095513a63a25edd1c024916c38c59396b0ae1b6824183ac3b3f2251e6cd64b",
+        "tests/compute_provider_ggml/native_paged_test.cc": "de42ea4ea43fda12fb7074a2c48d8bdb9b5a4800f61d87600a162d04d1e56d0e",
+        "third_party/ggml_cpu_runtime/patches.json": "2d2269744a13331fc1f7487008b5a7ff6059fc265625a749805e3ec7bb64ab96",
+        "third_party/ggml_runtime/patches.json": "50f15320482a74e532dd4f0e32fbaa2cc0f26f40149c97260ce7d417db5c64a6"
+      }
+    },
+    {
+      "state": "TERMINAL_FAIL",
+      "pid": 73712,
+      "baseline": "feca31e543bd63d36c240e622031a428f4abb8dc",
+      "scope": "CE03 real Windows CPU encoder/boxed/ragged/paged source stage; no GPU execution, SDK/sanitizer/P1 pass",
+      "max_jobs": 4,
+      "stages": [
+        {
+          "stage": "compile",
+          "command": [
+            "cmake",
+            "--build",
+            "C:\\h7\\inference-g01-native-vulkan\\build",
+            "--target",
+            "g04_g05_cpu_native_tests",
+            "--parallel",
+            "4"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 83.53100000001723,
+          "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\cpu-native\\source-batch-4\\compile.log"
+        },
+        {
+          "stage": "tests",
+          "command": [
+            "C:\\h7\\inference-g01-native-vulkan\\build\\g04_g05_cpu_native_tests.exe",
+            "--gtest_output=xml:C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\cpu-native\\source-batch-4\\tests.xml"
+          ],
+          "exit_code": 1,
+          "elapsed_seconds": 41.39100000000326,
+          "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\cpu-native\\source-batch-4\\tests.log"
+        }
+      ],
+      "cumulative_seconds": 124.92200000002049,
+      "inputs": {
+        "cmake/HyleComponents.cmake": "b55f3a510e498237202c831e19a1493a9f2edec78b5499190ac339f21fb7ff4b",
+        "cmake/HyleDependencyLock.json": "bf51534a9a076b0bf27af191c15a656d4240666ad0370dac63f90e5ce30423e3",
+        "docs/implementation/tasks/compute/inference-g04-g05-cache-attention-domain.md": "9acfe5fd45fc3ab0764d2ae41c4282a72f110d0b39b7778ee4c9c1662d26936e",
+        "src/compute_provider_ggml/ggml_cpu_provider.cc": "1ff1d8ecc9167f009620c65766dae35232175dd42065ce8521e065ae63db760f",
+        "src/compute_provider_ggml/native_batch.cc": "b75b950b8cbb4c50655938c807fcf2235ab20e5b647572b8c3d77166b44bffb5",
+        "src/compute_provider_ggml/native_batch.h": "a7095513a63a25edd1c024916c38c59396b0ae1b6824183ac3b3f2251e6cd64b",
+        "tests/compute_provider_ggml/native_paged_test.cc": "addc52d06c8832fe23dc5bc19403981ed0c452be55adba3e6a05b43b0f067342",
+        "third_party/ggml_cpu_runtime/patches.json": "2d2269744a13331fc1f7487008b5a7ff6059fc265625a749805e3ec7bb64ab96",
+        "third_party/ggml_runtime/patches.json": "50f15320482a74e532dd4f0e32fbaa2cc0f26f40149c97260ce7d417db5c64a6"
+      }
+    },
+    {
+      "state": "TERMINAL_FAIL",
+      "pid": 76320,
+      "baseline": "feca31e543bd63d36c240e622031a428f4abb8dc",
+      "scope": "CE03 real Windows CPU encoder/boxed/ragged/paged source stage; no GPU execution, SDK/sanitizer/P1 pass",
+      "max_jobs": 4,
+      "stages": [
+        {
+          "stage": "compile",
+          "command": [
+            "cmake",
+            "--build",
+            "C:\\h7\\inference-g01-native-vulkan\\build",
+            "--target",
+            "g04_g05_cpu_native_tests",
+            "--parallel",
+            "4"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 4.140999999974156,
+          "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\cpu-native\\source-batch-5\\compile.log"
+        },
+        {
+          "stage": "tests",
+          "command": [
+            "C:\\h7\\inference-g01-native-vulkan\\build\\g04_g05_cpu_native_tests.exe",
+            "--gtest_output=xml:C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\cpu-native\\source-batch-5\\tests.xml",
+            "--gtest_filter=GgmlCpuCacheEncode.*:GgmlCpuBoxed.*"
+          ],
+          "exit_code": 1,
+          "elapsed_seconds": 0.8280000000086147,
+          "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\cpu-native\\source-batch-5\\tests.log"
+        }
+      ],
+      "cumulative_seconds": 4.9689999999827705,
+      "inputs": {
+        "cmake/HyleComponents.cmake": "b55f3a510e498237202c831e19a1493a9f2edec78b5499190ac339f21fb7ff4b",
+        "cmake/HyleDependencyLock.json": "bf51534a9a076b0bf27af191c15a656d4240666ad0370dac63f90e5ce30423e3",
+        "docs/implementation/tasks/compute/inference-g04-g05-cache-attention-domain.md": "9acfe5fd45fc3ab0764d2ae41c4282a72f110d0b39b7778ee4c9c1662d26936e",
+        "src/compute_provider_ggml/ggml_cpu_provider.cc": "1ff1d8ecc9167f009620c65766dae35232175dd42065ce8521e065ae63db760f",
+        "src/compute_provider_ggml/native_batch.cc": "b75b950b8cbb4c50655938c807fcf2235ab20e5b647572b8c3d77166b44bffb5",
+        "src/compute_provider_ggml/native_batch.h": "a7095513a63a25edd1c024916c38c59396b0ae1b6824183ac3b3f2251e6cd64b",
+        "tests/compute_provider_ggml/native_paged_test.cc": "44dda6dcc9177efefdcdf44315ec019bd350d4891ff30010781082625c0fc054",
+        "third_party/ggml_cpu_runtime/patches.json": "2d2269744a13331fc1f7487008b5a7ff6059fc265625a749805e3ec7bb64ab96",
+        "third_party/ggml_runtime/patches.json": "50f15320482a74e532dd4f0e32fbaa2cc0f26f40149c97260ce7d417db5c64a6"
+      }
+    },
+    {
+      "state": "TERMINAL_PASS",
+      "pid": 55036,
+      "baseline": "feca31e543bd63d36c240e622031a428f4abb8dc",
+      "scope": "CE03 real Windows CPU encoder/boxed/ragged/paged source stage; no GPU execution, SDK/sanitizer/P1 pass",
+      "max_jobs": 4,
+      "stages": [
+        {
+          "stage": "compile",
+          "command": [
+            "cmake",
+            "--build",
+            "C:\\h7\\inference-g01-native-vulkan\\build",
+            "--target",
+            "g04_g05_cpu_native_tests",
+            "--parallel",
+            "4"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 4.280999999988126,
+          "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\cpu-native\\source-batch-6\\compile.log"
+        },
+        {
+          "stage": "tests",
+          "command": [
+            "C:\\h7\\inference-g01-native-vulkan\\build\\g04_g05_cpu_native_tests.exe",
+            "--gtest_output=xml:C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\cpu-native\\source-batch-6\\tests.xml",
+            "--gtest_filter=GgmlCpuCacheEncode.*:GgmlCpuBoxed.*"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 0.8289999999979045,
+          "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\cpu-native\\source-batch-6\\tests.log"
+        }
+      ],
+      "cumulative_seconds": 5.10999999998603,
+      "inputs": {
+        "cmake/HyleComponents.cmake": "b55f3a510e498237202c831e19a1493a9f2edec78b5499190ac339f21fb7ff4b",
+        "cmake/HyleDependencyLock.json": "bf51534a9a076b0bf27af191c15a656d4240666ad0370dac63f90e5ce30423e3",
+        "docs/implementation/tasks/compute/inference-g04-g05-cache-attention-domain.md": "9acfe5fd45fc3ab0764d2ae41c4282a72f110d0b39b7778ee4c9c1662d26936e",
+        "src/compute_provider_ggml/ggml_cpu_provider.cc": "1ff1d8ecc9167f009620c65766dae35232175dd42065ce8521e065ae63db760f",
+        "src/compute_provider_ggml/native_batch.cc": "b75b950b8cbb4c50655938c807fcf2235ab20e5b647572b8c3d77166b44bffb5",
+        "src/compute_provider_ggml/native_batch.h": "a7095513a63a25edd1c024916c38c59396b0ae1b6824183ac3b3f2251e6cd64b",
+        "tests/compute_provider_ggml/native_paged_test.cc": "7d7ddc9e97b31f3d65cba6b14b49ec56d6c6e3592ce3192535868c2594f329ce",
+        "third_party/ggml_cpu_runtime/patches.json": "2d2269744a13331fc1f7487008b5a7ff6059fc265625a749805e3ec7bb64ab96",
+        "third_party/ggml_runtime/patches.json": "50f15320482a74e532dd4f0e32fbaa2cc0f26f40149c97260ce7d417db5c64a6"
+      }
+    },
+    {
+      "state": "TERMINAL_FAIL",
+      "pid": 74204,
+      "baseline": "feca31e543bd63d36c240e622031a428f4abb8dc",
+      "scope": "CE03 real Windows CPU encoder/boxed/ragged/paged source stage; no GPU execution, SDK/sanitizer/P1 pass",
+      "max_jobs": 4,
+      "stages": [
+        {
+          "stage": "compile",
+          "command": [
+            "cmake",
+            "--build",
+            "C:\\h7\\inference-g01-native-vulkan\\build",
+            "--target",
+            "g04_g05_cpu_native_tests",
+            "--parallel",
+            "4"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 4.187999999994645,
+          "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\cpu-native\\source-batch-7\\compile.log"
+        },
+        {
+          "stage": "tests",
+          "command": [
+            "C:\\h7\\inference-g01-native-vulkan\\build\\g04_g05_cpu_native_tests.exe",
+            "--gtest_output=xml:C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\cpu-native\\source-batch-7\\tests.xml",
+            "--gtest_filter=GgmlCpuCacheEncode.*:GgmlCpuBoxed.*"
+          ],
+          "exit_code": 1,
+          "elapsed_seconds": 1.375,
+          "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\cpu-native\\source-batch-7\\tests.log"
+        }
+      ],
+      "cumulative_seconds": 5.562999999994645,
+      "inputs": {
+        "cmake/HyleComponents.cmake": "b55f3a510e498237202c831e19a1493a9f2edec78b5499190ac339f21fb7ff4b",
+        "cmake/HyleDependencyLock.json": "bf51534a9a076b0bf27af191c15a656d4240666ad0370dac63f90e5ce30423e3",
+        "docs/implementation/tasks/compute/inference-g04-g05-cache-attention-domain.md": "9acfe5fd45fc3ab0764d2ae41c4282a72f110d0b39b7778ee4c9c1662d26936e",
+        "src/compute_provider_ggml/ggml_cpu_provider.cc": "1ff1d8ecc9167f009620c65766dae35232175dd42065ce8521e065ae63db760f",
+        "src/compute_provider_ggml/native_batch.cc": "b75b950b8cbb4c50655938c807fcf2235ab20e5b647572b8c3d77166b44bffb5",
+        "src/compute_provider_ggml/native_batch.h": "a7095513a63a25edd1c024916c38c59396b0ae1b6824183ac3b3f2251e6cd64b",
+        "tests/compute_provider_ggml/native_paged_test.cc": "8d7c398cf861ce5ec56d0f7dccb40ad0c658bf6231fbbb8a9bc55f10bad43981",
+        "third_party/ggml_cpu_runtime/patches.json": "2d2269744a13331fc1f7487008b5a7ff6059fc265625a749805e3ec7bb64ab96",
+        "third_party/ggml_runtime/patches.json": "50f15320482a74e532dd4f0e32fbaa2cc0f26f40149c97260ce7d417db5c64a6"
+      }
+    },
+    {
+      "state": "TERMINAL_PASS",
+      "pid": 65016,
+      "baseline": "feca31e543bd63d36c240e622031a428f4abb8dc",
+      "scope": "CE03 real Windows CPU encoder/boxed/ragged/paged source stage; no GPU execution, SDK/sanitizer/P1 pass",
+      "max_jobs": 4,
+      "stages": [
+        {
+          "stage": "compile",
+          "command": [
+            "cmake",
+            "--build",
+            "C:\\h7\\inference-g01-native-vulkan\\build",
+            "--target",
+            "g04_g05_cpu_native_tests",
+            "--parallel",
+            "4"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 4.25,
+          "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\cpu-native\\source-batch-8\\compile.log"
+        },
+        {
+          "stage": "tests",
+          "command": [
+            "C:\\h7\\inference-g01-native-vulkan\\build\\g04_g05_cpu_native_tests.exe",
+            "--gtest_output=xml:C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\cpu-native\\source-batch-8\\tests.xml",
+            "--gtest_filter=GgmlCpuCacheEncode.*:GgmlCpuBoxed.*"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 1.7339999999967404,
+          "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\cpu-native\\source-batch-8\\tests.log"
+        }
+      ],
+      "cumulative_seconds": 5.98399999999674,
+      "inputs": {
+        "cmake/HyleComponents.cmake": "b55f3a510e498237202c831e19a1493a9f2edec78b5499190ac339f21fb7ff4b",
+        "cmake/HyleDependencyLock.json": "bf51534a9a076b0bf27af191c15a656d4240666ad0370dac63f90e5ce30423e3",
+        "docs/implementation/tasks/compute/inference-g04-g05-cache-attention-domain.md": "9acfe5fd45fc3ab0764d2ae41c4282a72f110d0b39b7778ee4c9c1662d26936e",
+        "src/compute_provider_ggml/ggml_cpu_provider.cc": "1ff1d8ecc9167f009620c65766dae35232175dd42065ce8521e065ae63db760f",
+        "src/compute_provider_ggml/native_batch.cc": "b75b950b8cbb4c50655938c807fcf2235ab20e5b647572b8c3d77166b44bffb5",
+        "src/compute_provider_ggml/native_batch.h": "a7095513a63a25edd1c024916c38c59396b0ae1b6824183ac3b3f2251e6cd64b",
+        "tests/compute_provider_ggml/native_paged_test.cc": "f50e0fc9737511dc82232c159c3501f72f487d4488508dc00074c2607f6ffb65",
+        "third_party/ggml_cpu_runtime/patches.json": "2d2269744a13331fc1f7487008b5a7ff6059fc265625a749805e3ec7bb64ab96",
+        "third_party/ggml_runtime/patches.json": "50f15320482a74e532dd4f0e32fbaa2cc0f26f40149c97260ce7d417db5c64a6"
+      }
+    }
+  ],
+  "cumulative_seconds": 372.1259999999602,
+  "build_scope": "One CPU fixture target. Selected mixed ggml backend aggregate generated/rebuilt Vulkan dependencies after source identity changed; no Vulkan execution/qualification. Subsequent fixes reused generated outputs.",
+  "machine": {
+    "cpu": "Intel i9-13900K,24cores/32logical",
+    "os": "Windows11 Pro for Workstations10.0.26200 x64",
+    "jobs": 4
+  },
+  "artifact_sha256": {
+    "g04_g05_cpu_native_tests.exe": "b9b34384df5064bed69e97c28ffcc4db6ab60f631fa5cec4166096ac401c6fbb",
+    "hyle_compute_provider_ggml.dll": "4e80d182e73bf6a5e4190764ad3c1c97a1972111f5aea79c61b4ff23133789a1",
+    "hyle_compute_ggml_runtime.dll": "9d4b6bbf48ae92d2714ec0f6d076cc6a424c29c96f8a6df1e66e8db13e69da61",
+    "hyle_ggml_cpu_avx2_456172ec_393dae0eafa39756.dll": "79bc02e3631277dae231a9afd9b473e02c55aea69026e7d5c60505849bd6c104"
+  },
+  "selector_note": "READY; central edge/lock change conservatively selects all implemented roots. This stage executes only the current card CPU factor/native dependency closure; outstanding whole-card gates remain unproven."
+}

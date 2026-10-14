@@ -254,3 +254,42 @@ consumer，未重签未变化的G03数学性能。旧plain正常旅程通过，�
 CUDA联合所消费的E4M3FN carrier（单CPU attention首域仍Q8_0），不能把CPU→CUDA路径
 遗漏成只用CPU Q8 bytes。各原核接通后移除其当前明确unsupported边界，再实际资格；
 不能将这些拒绝保留为最终G04/G05收口。九owner仍AUDITED，完整goal继续。
+
+CE03原CPU承载已核：CPU-only使用锁定ffa4e8b，CPU/GPU联合使用456172ec加原IQ1
+composition；两源码的泛型flash已经支持Q8 K/V和独立Dv。有限page patch加私有boxed
+causal/window边界和原generic选择，不重写attention数学，不制造Q×KV新mask。原plain
+同D/unbounded路径保原fast/mask合同。为保持同一窄patch在两core/mixed/Air/SDK输入一致，
+本卡只准许更新两owner已有vendored patch树摘要；upstream revision/archive/SDK pin完全
+固定，不升级依赖、不改source cache/公共build或patch composition工具。
+
+CPU encoder在原ggml custom节点/原workers中借公开Q8 from_float_ref，FP8借已验SIMD
+E4M3 scalar；声明compute_provider_ggml的直接simd依赖。每普通Invocation加一个8-byte
+nullable指针；只有含encoder或Q8 attention的invocation冷分配原allocator的状态/有限calls（每encoder
+一个callback值），不新增queue/thread/execution owner。每worker Q8 stack128 bytes，warm
+无全量input cast或history展开、无每block quantize_init锁。非有限/超Q8 scale实际payload
+只写原atomic error flag，原workers退休后返回InvalidArgument，错误输出不发布ready。
+
+2026-10-15 CE03 Windows source阶段已通过，
+[阶段证据](../../../../evidence/correctness/inference-g04-g05-cpu-encoding-math-stage/result.json)
+保存最终10项新增域测试、同一产品代码的5项原paged/ragged数学与风险测试、输入SHA、全部8次
+运行及原始失败；累计372.126秒。实际456 mixed CPU core/原AVX2模块、MSVC shared shipping
+完成Q8/FP8真实encoder bytes、Q8直接paged/ragged、F16/BF16 Q/output、四组Dqk/Dv、
+window -1/0/15/16、full noncausal Q>KV、GQA8/2和Q65/D256长prefill；paged逻辑274行
+共享/重排物理256行，独立double参考消费真实编码cache，容差包含原Q8查询转换与output舍入。
+
+只读反证修复两项真实数值边界：boxed F16 V逐行转换后用原V32累计，4096-row单worker
+抵消反例通过；Q8查询的有限/half scale范围在原映射之后、output写入之前检查。新增域
+接受后的InvalidArgument沿原Completion返回，旧失败slot拒绝复用，按原合同创建新slot。
+新Invocation仍只有原8-byte可空指针；encoder/Q8消费者才分配同一allocator状态和有限
+callback/query-root表，已知capacity计入原bytes报告。Q8暖查询检查O(Q*Hq*Dqk)，无新增
+thread/queue owner、无整KV展开或boxed Q×KV mask；native未知metadata仍如实报告。
+
+本次复用cpu+vulkan树的ggml aggregate因补丁source identity更新重生成了Vulkan依赖，
+原始411-step闭包及成本保留，没有Vulkan执行或资格。其后定向修复只增量编译，4jobs/重型
+串行；初次摘要排序、重复scratch target、缺factory链接和测试误假定失败slot可复用等
+失败日志全部保留。原已通过plain数学只运行一次，不因测试修复反复重跑。
+
+这只是CE03有限Windows source阶段：CPU-only ffa core仍只有补丁派生检查，实际运行、
+两个encoder同Graph及F2增量页面旅程、新域sanitizer/并发/OOM、SDK和P1尚未签发；
+CUDA/Apple/Vulkan新增encoder与数学也仍UNPROVEN。九owner保持AUDITED，不能据此
+关闭G04/G05或回填其他G项。

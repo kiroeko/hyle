@@ -17,7 +17,7 @@ struct Request final {
   void *invocation = nullptr;
   std::array<TensorDesc, 3> inputs;
   TensorDesc output;
-  std::size_t query_offset = 0, kv_offset = 0;
+  std::size_t query_offset = 0, key_offset = 0, value_offset = 0, output_offset = 0;
   Request() = default;
   Request(const Request &) = delete;
   Request &operator=(const Request &) = delete;
@@ -50,11 +50,15 @@ Status qualify(void *, BatchCapacity capacity,
                const BatchProgramOptions &options) noexcept {
   HYLE_RETURN_IF_ERROR(validate_batch_capacity(capacity));
   HYLE_RETURN_IF_ERROR(validate_batch_attention_options(options.causal,options.window_left));
-  if(options.window_left!=-1 || capacity.value_head_dim!=capacity.qk_head_dim ||
-      capacity.output_type!=capacity.query_type ||
-      !capacity.key_storage.format().is_plain() || !capacity.value_storage.format().is_plain() ||
-      capacity.key_storage.data_type()!=capacity.query_type || capacity.value_storage.data_type()!=capacity.query_type)
-    return Status::Unimplemented("ggml CPU encoded/window/unequal-V batch kernel is not implemented yet");
+  const auto q8=CacheStorage::q8_0().value();
+  const auto plain=CacheStorage::plain(capacity.query_type).value();
+  if(capacity.output_type!=capacity.query_type ||
+      !((capacity.key_storage==plain && capacity.value_storage==plain) ||
+        (capacity.key_storage==q8 && capacity.value_storage==q8)))
+    return Status::Unimplemented("ggml CPU batch requires same-type plain or Q8_0 K/V and query/output dtype");
+  if(!((capacity.qk_head_dim==capacity.value_head_dim) ||
+       (capacity.qk_head_dim==64 && capacity.value_head_dim==128)))
+    return Status::Unimplemented("ggml CPU batch value depth is outside its finite domain");
   if ((capacity.storage != BatchStorage::kRagged && capacity.storage != BatchStorage::kPaged) ||
       (capacity.query_type != DataType::kFloat16 &&
        capacity.query_type != DataType::kBFloat16) ||
@@ -147,7 +151,10 @@ detail::EnqueueResult plan(void *value, Queue &, const BatchLayoutVersion &layou
         slot.clear();
         return detail::EnqueueResult::rejected(Status::Unimplemented("ggml CPU ragged flash requires nonempty sufficient KV"));
       }
-      const auto mask_bytes = slot.options.causal
+      const bool boxed=slot.options.window_left>=0 ||
+          !slot.capacity.key_storage.format().is_plain() ||
+          slot.capacity.qk_head_dim!=slot.capacity.value_head_dim;
+      const auto mask_bytes = slot.options.causal && !boxed
           ? static_cast<std::uint64_t>(queries)*static_cast<std::uint64_t>(keys)*2u : 0u;
       const auto query_row_bytes = std::uint64_t(slot.capacity.query_heads)*slot.capacity.qk_head_dim*8u;
       const auto available = slot.options.max_float_workspace_bytes - slot.known_bytes;
@@ -166,30 +173,39 @@ detail::EnqueueResult plan(void *value, Queue &, const BatchLayoutVersion &layou
       slot.requests.push_back(request);
       auto q = TensorDesc::dense(slot.capacity.query_type,
           std::array<std::int64_t, 4>{1, queries, slot.capacity.query_heads, slot.capacity.qk_head_dim});
-      auto k = TensorDesc::dense(slot.capacity.query_type,
+      auto k = cache_tensor_description(slot.capacity.key_storage,
           std::array<std::int64_t, 4>{1, paged?std::int64_t(slot.capacity.max_pages)*slot.capacity.page_size:
               static_cast<std::int64_t>(keys), slot.capacity.kv_heads, slot.capacity.qk_head_dim});
-      if (!q || !k) {
-        const auto error = !q ? q.error() : k.error();
+      auto v = cache_tensor_description(slot.capacity.value_storage,
+          std::array<std::int64_t, 4>{1, paged?std::int64_t(slot.capacity.max_pages)*slot.capacity.page_size:
+              static_cast<std::int64_t>(keys), slot.capacity.kv_heads, slot.capacity.value_head_dim});
+      auto out = TensorDesc::dense(slot.capacity.output_type,
+          std::array<std::int64_t,4>{1,queries,slot.capacity.query_heads,slot.capacity.value_head_dim});
+      if (!q || !k || !v || !out) {
+        const auto error = !q ? q.error() : !k ? k.error() : !v ? v.error() : out.error();
         slot.clear();
         return detail::EnqueueResult::rejected(error);
       }
-      request->inputs = {*q, *k, *k};
-      request->output = *q;
+      request->inputs = {*q, *k, *v};
+      request->output = *out;
       request->query_offset = static_cast<std::size_t>(host.query_indptr[index]) *
           slot.capacity.query_heads * slot.capacity.qk_head_dim * width;
-      request->kv_offset = paged?0:static_cast<std::size_t>(host.kv_indptr[index]) *
-          slot.capacity.kv_heads * slot.capacity.qk_head_dim * width;
+      const auto key_row=cache_tensor_description(slot.capacity.key_storage,
+          std::array<std::int64_t,2>{slot.capacity.kv_heads,slot.capacity.qk_head_dim}).value();
+      const auto value_row=cache_tensor_description(slot.capacity.value_storage,
+          std::array<std::int64_t,2>{slot.capacity.kv_heads,slot.capacity.value_head_dim}).value();
+      request->key_offset=paged?0:static_cast<std::size_t>(host.kv_indptr[index])*key_row.required_bytes().value();
+      request->value_offset=paged?0:static_cast<std::size_t>(host.kv_indptr[index])*value_row.required_bytes().value();
+      request->output_offset=static_cast<std::size_t>(host.query_indptr[index])*
+          slot.capacity.query_heads*slot.capacity.value_head_dim*data_type_size(slot.capacity.output_type);
       Recipe recipe;
-      recipe.values = {*q, *k, *k, *q};
+      recipe.values = {*q, *k, *v, *out};
       recipe.inputs = {0, 1, 2};
       recipe.outputs = {3};
-      const auto operation=paged?Operation::custom(PagedRead{
-          .pages=host.page_indices.subspan(static_cast<std::size_t>(host.kv_indptr[index]),static_cast<std::size_t>(refs)),
+      const auto operation=Operation::custom(PagedRead{
+          .pages=paged?host.page_indices.subspan(static_cast<std::size_t>(host.kv_indptr[index]),static_cast<std::size_t>(refs)):std::span<const std::int32_t>{},
           .logical_rows=static_cast<std::uint32_t>(keys),.page_size=slot.capacity.page_size,
-          .scale=slot.options.scale,.causal=slot.options.causal}):Operation(ScaledDotProductAttention{
-          .layout = AttentionLayout::kBatchSequenceHeadDepth,
-          .scale = slot.options.scale, .causal = slot.options.causal});
+          .scale=slot.options.scale,.causal=slot.options.causal,.window_left=slot.options.window_left});
       recipe.nodes.push_back({operation, {0, 1, 2}, {3}});
       const auto compiled = compile(slot.context, std::move(recipe), slot.allocator, &request->prepared);
       if (compiled.kind != ProviderPrepareOutcomeKind::kPrepared) {
@@ -237,7 +253,7 @@ detail::EnqueueResult run(void *value, Queue &queue,
   for (auto *request : slot.requests) {
     std::array<ConstTensorView, 3> views;
     for (std::size_t port = 0; port < 3; ++port) {
-      auto buffer = inputs[port].storage().subview(port == 0 ? request->query_offset : request->kv_offset,
+      auto buffer = inputs[port].storage().subview(port == 0 ? request->query_offset : port==1?request->key_offset:request->value_offset,
                                                  *request->inputs[port].required_bytes());
       if (!buffer)
         return {accepted, buffer.error()};
@@ -246,7 +262,7 @@ detail::EnqueueResult run(void *value, Queue &queue,
         return {accepted, view.error()};
       views[port] = *view;
     }
-    auto buffer = workspace.output.subview(request->query_offset, *request->output.required_bytes());
+    auto buffer = workspace.output.subview(request->output_offset, *request->output.required_bytes());
     if (!buffer)
       return {accepted, buffer.error()};
     auto output = TensorView::create(request->output, *buffer);

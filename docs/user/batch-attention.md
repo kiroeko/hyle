@@ -7,7 +7,8 @@
 
 ## 选择执行路线
 
-G04/G05 共同形状正在实施，尚未签发新的编码/窗口/不同 V 维原生资格；进度见
+G04/G05 正在实施；CPU新域已完成一轮Windows source数学检查，其他原生路线、三交付与
+完整风险/性能资格尚未签发；进度见
 [活动卡](../implementation/tasks/compute/inference-g04-g05-cache-attention-domain.md)。
 普通旧 plain 旅程使用显式的新字段，库不保旧签名转发。schema/descriptor接受一种形状，
 不代表所选native核已支持；当前未接通的组合在准备时返回Unimplemented。
@@ -48,6 +49,17 @@ causal Q<=KV在recipe/prepare的数学资格检查。window_left=-1为无界，0
 正值为bottom-right位置之前含左边界的past count；本批仅causal window或full noncausal。
 Materialized参考保显式gather/mask费用，支持plain几何与窗口，明确拒绝编码cache；
 它不替代直接压缩驻留读取。具体native组合以实际资格为准。
+
+当前CPU实现可以用 `model_ops::CacheEncode{storage}` 编码实际新行：输入是dense
+F16/BF16/F32，输出描述通过 `infer_single_output` 得到。Q8输出是U8真实carrier，
+FP8输出是E4M3FN carrier；encoder只写所给的新行，页面的准确range和发布仍由原F2管理。
+CPU attention使用Q8_0，CPU编码FP8供后续CUDA联合消费，当前不因此承诺CPU FP8 attention。
+Q8 K/V同格式、Q/output同F16或BF16；当前有限几何是(64,64)/(128,128)/(256,256)/(64,128)。
+编码输入与Q8 attention查询必须有限，Q8的absmax/127不得超过65504；实际payload违反范围
+由原Completion返回InvalidArgument，失败invocation/slot按原合同重建。原CPU核还会把Q
+转成Q8 dot表示，精度应按这次额外转换评估。新域的字节、窗口、非因果、长prefill和
+F32累加结果见[有限source证据](../../evidence/correctness/inference-g04-g05-cpu-encoding-math-stage/result.json)，
+尚未完成的增量组合、CPU-only核心、SDK、sanitizer和P1不能从这些测试推导。
 
 | 路线 | 数学与公开入口 | 准备与成本 |
 |---|---|---|
