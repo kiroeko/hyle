@@ -30,6 +30,10 @@ public:
   // First acquisition is an uninitialized exclusive page. Reuse requires all
   // external readers and actual native uses to retire. Does not allocate/grow.
   HYLE_COMPUTE_BATCH_API Result<PagedPageWriter> acquire(std::uint32_t page) noexcept;
+  // Reacquire this arena's current original whole ready page, preserving its
+  // bytes and generation. Success consumes ready; rejection leaves it intact.
+  // Every other reader and actual native use must retire first. No allocation.
+  HYLE_COMPUTE_BATCH_API Result<PagedPageWriter> acquire(ReadLease& ready) noexcept;
   // All referenced physical pages must be ready original blocks of this arena.
   // Supersets are rejected; repeated page references share one guard. Source
   // order is arbitrary. Only trusted mathematical adapters see the raw span.

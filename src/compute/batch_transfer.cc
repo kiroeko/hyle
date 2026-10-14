@@ -311,6 +311,9 @@ Status CopyBatchInvocation::bind_source(CopyResourceId id, const ReadLease &sour
   state_->physical[id.value] = physical; state_->prepared = false;
   return Status::Ok();
 }
+Result<WriteLease> CopyBatchInvocation::unbind_mutable(CopyResourceId id) noexcept {
+  return detail::CopyStreamAccess::take_mutable(*this,id);
+}
 Result<WriteLease> detail::CopyStreamAccess::take_mutable(
     CopyBatchInvocation &invocation, CopyResourceId id) noexcept {
   auto *state = invocation.state_;

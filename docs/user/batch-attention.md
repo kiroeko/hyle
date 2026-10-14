@@ -80,8 +80,9 @@ compile/link通过。这些native入口证据不能代签新的CPU+GPU联合分�
 
 ## CPU 与 Apple/Vulkan 联合分页
 
-当前接缝按[G02活动卡](../implementation/tasks/graph/inference-g02-native-paged-composition.md)
-验收。源数学和联合风险已取得实际Air证据；新联合SDK/宿主san资格仍在完成中。
+当前接缝的[原生有限域终审](../implementation/tasks/graph/inference-g02-native-paged-terminal.md)
+已完成实际Air数学/风险、四份relocated SDK、宿主san和Windows定向公开链接；原G02
+共同轮的Windows CUDA/Vulkan未决门仍保留，不能由本native域签整个G02完成。
 完整普通调用见[公开联合消费者](../../tests/graph_batch/native_paged_joint_consumer.cc)，只链
 `hyle::graph`，需要配置 `cpu;apple` 或 `cpu;vulkan`。沿原GraphBuilder描述CPU前后段：
 
@@ -222,6 +223,32 @@ F4 StateStore/StateDraft列出完整K/V/layout及其他需要保留的成员。�
 clone到新writer；只把所有成功ready成员finalize为candidate，再由StateHead.publish用
 expected-base切换。失败copy不产生ready writer/lease，不能送进F5，也不能发布F4 head。
 取消不能回滚已经实际写过的底层字节，不能在失败后伪造整页CoW成功。
+
+G03 正在验收保留原页内容的精确增量路径。`arena.acquire(page_ready)` 只在这个原整页
+没有其它 reader/native use 时消费其 ready lease，返回同 generation 的 writer；拒绝
+保持入参不变。共享页先沿上面的显式 clone 路线处理，不能原地覆盖旧版本。
+
+F2 只写 dirty range 时，`output` 仍不能把未写 bytes 算成成功 copy。保留 page writer，
+在实际成功退休且 submission 已释放后，用 `copy.unbind_mutable(id)` 取回原 WriteLease，
+放回 `page.lease()`，再 `page.publish()`。未写部分是 caller 原来已初始化的内容，成本
+只计本次 dirty bytes；新页仍须初始化所有将被读取的 bytes。示例顺序如下：
+
+```cpp
+auto page = arena.acquire(page_ready).value();
+HYLE_RETURN_IF_ERROR(copy.bind_mutable(destination, std::move(page.lease())));
+// bind source/producer and prepare exact dirty ranges with the original F2.
+{
+  auto submitted = copy.submit().value();
+  HYLE_RETURN_IF_ERROR(submitted.wait());
+}
+page.lease() = copy.unbind_mutable(destination).value();
+page_ready = page.publish().value();
+```
+
+`unbind_mutable` 不等待、不产生 readonly output；retained submission、pending/unknown/
+failure、closed 或已 publish 的 binding 都拒绝。成功使旧 replay preparation 失效。
+这里仍有显式 host observation；G03 的异步 producer→attention、G06 decode planning 与
+G09 流水须分别看各自验收，不能由这段精确更新调用推断已完成。
 
 Ragged多request append可能需要重排后续request的offset。当前真实两request例子显式
 clone有效prefix、append新行并初始化unused capacity；这不是独立物理页CoW，成本账必须

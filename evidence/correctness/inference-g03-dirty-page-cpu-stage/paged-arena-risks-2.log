@@ -1,0 +1,28 @@
+Running main() from C:\public\tools\hyle-dependencies\v1\sources\googletest-063de7e9578f-162765170ae6\googletest\src\gtest_main.cc
+Note: Google Test filter = PagedArena.*
+[==========] Running 9 tests from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 9 tests from PagedArena
+[ RUN      ] PagedArena.UsedPageReadersDoNotStopWritingAnUnreferencedPhysicalPage
+[       OK ] PagedArena.UsedPageReadersDoNotStopWritingAnUnreferencedPhysicalPage (0 ms)
+[ RUN      ] PagedArena.ForeignSchemaPageRangeAndIncompleteOrExcessiveSetsReject
+[       OK ] PagedArena.ForeignSchemaPageRangeAndIncompleteOrExcessiveSetsReject (0 ms)
+[ RUN      ] PagedArena.RepeatedPhysicalReferencesKeepOneActualGuard
+[       OK ] PagedArena.RepeatedPhysicalReferencesKeepOneActualGuard (0 ms)
+[ RUN      ] PagedArena.F4LedgerAndArenaDoNotPinEachOtherAfterLastReaderRetires
+[       OK ] PagedArena.F4LedgerAndArenaDoNotPinEachOtherAfterLastReaderRetires (0 ms)
+[ RUN      ] PagedArena.UnsubmittedWriterRestoresButConsumedAbandonNeverPretendsReady
+[       OK ] PagedArena.UnsubmittedWriterRestoresButConsumedAbandonNeverPretendsReady (0 ms)
+[ RUN      ] PagedArena.ByteCapacityAndMetadataOomAreExplicitAndOldGuardOutlivesControls
+[       OK ] PagedArena.ByteCapacityAndMetadataOomAreExplicitAndOldGuardOutlivesControls (0 ms)
+[ RUN      ] PagedArena.ActualF2PageCloneAppendAndF4PublishKeepOldStateAndShareCleanPage
+[       OK ] PagedArena.ActualF2PageCloneAppendAndF4PublishKeepOldStateAndShareCleanPage (0 ms)
+[ RUN      ] PagedArena.OriginalReadyPageReacquiresWithoutCopyAllocationOrGenerationChange
+[       OK ] PagedArena.OriginalReadyPageReacquiresWithoutCopyAllocationOrGenerationChange (0 ms)
+[ RUN      ] PagedArena.F2MutableWithdrawalPreservesInitializedUntouchedBytesAndRejectsRetainedObservation
+[       OK ] PagedArena.F2MutableWithdrawalPreservesInitializedUntouchedBytesAndRejectsRetainedObservation (0 ms)
+[----------] 9 tests from PagedArena (0 ms total)
+
+[----------] Global test environment tear-down
+[==========] 9 tests from 1 test suite ran. (0 ms total)
+[  PASSED  ] 9 tests.

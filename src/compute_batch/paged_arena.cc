@@ -92,6 +92,13 @@ Result<PagedPageWriter> PagedArena::acquire(std::uint32_t page)noexcept{
   if(!slot.writer.valid())return std::unexpected(Status::Unavailable("paged arena requested page is retained"));
   HYLE_ASSIGN_OR_RETURN(auto view,slot.writer.view());(void)view;slot.acquired=true;return PagedPageWriter(data_,page,std::move(slot.writer));
 }
+Result<PagedPageWriter> PagedArena::acquire(ReadLease& ready)noexcept{
+  if(!data_ || data_->closed)return std::unexpected(Status::FailedPrecondition("paged arena is closed/empty"));
+  HYLE_ASSIGN_OR_RETURN(auto page,page_id(*data_,ready));
+  HYLE_ASSIGN_OR_RETURN(auto writer,ready.try_write());
+  auto&slot=data_->slots[page];slot.ready=false;slot.acquired=true;
+  return PagedPageWriter(data_,page,std::move(writer));
+}
 Result<PagedArenaRead> PagedArena::read(BatchLayoutVersion layout,std::span<const ReadLease> input)const noexcept{
   if(!data_ || data_->closed)return std::unexpected(Status::FailedPrecondition("paged arena is closed/empty"));
   if(!data_->schema.owns(layout))return std::unexpected(Status::InvalidArgument("paged arena layout schema is foreign"));

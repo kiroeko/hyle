@@ -109,3 +109,8 @@ MSVC定向公共链接、轻量CPU执行；原未决重型WindowsGPU门保。col
 math、controller、Graph/scheduler或公共selector/checker。该子批完成后仍逐项核G03
 pending chain与其余七实际路线，不签整个G03/goal。预算沿原2h检查点、自动有限追加
 保全部FAIL/elapsed，不以本scope/audit提交重置原验证成本。
+
+2026-10-14 GP01/GP02 draft已经实现八产品文件35行；[首个CPU源码阶段](../../../../evidence/correctness/inference-g03-dirty-page-cpu-stage/README.md)
+public64与原/新增九arena/F2/F4测试PASS。两次fixture编译/范围错误保原日志/输入与累计。
+产品owner仍AUDITED；native actual、san、三交付/逐头与failure/unknown门尚未签，不宣布
+candidate/子批/整个G03完成。原Windows重型未决门仍不启动。

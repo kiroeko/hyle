@@ -1,0 +1,138 @@
+{
+  "baseline": "e56d7cf87950df0caeb08b7a64312581272494cb",
+  "source_sha256": "a0733a186749e5ce33c6fd1ed28b3a623440f826cf2183be1b4ff4e19e6b6ae4",
+  "scope": "CPU public producer page shape audit, no GPU run",
+  "stages": [
+    {
+      "stage": "build",
+      "command": [
+        "cmake",
+        "--build",
+        "C:\\h7\\inference-g01-native-vulkan\\build",
+        "--target",
+        "g03_dirty_page_public",
+        "g03_paged_arena_risks",
+        "--parallel",
+        "4"
+      ],
+      "exit_code": 2,
+      "elapsed_seconds": 91.61000000001513,
+      "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g03\\dirty-page-cpu\\build-1.log"
+    },
+    {
+      "stage": "build",
+      "command": [
+        "cmake",
+        "--build",
+        "C:\\h7\\inference-g01-native-vulkan\\build",
+        "--target",
+        "g03_dirty_page_public",
+        "g03_paged_arena_risks",
+        "--parallel",
+        "4"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 3.5789999999979045,
+      "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g03\\dirty-page-cpu\\build-2.log"
+    },
+    {
+      "stage": "host-cpu-public-probe",
+      "command": [
+        "C:\\h7\\inference-g01-native-vulkan\\build\\g03_dirty_page_public.exe"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 0.030999999988125637,
+      "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g03\\dirty-page-cpu\\host-cpu-public-probe-1.log"
+    },
+    {
+      "stage": "paged-arena-risks",
+      "command": [
+        "C:\\h7\\inference-g01-native-vulkan\\build\\g03_paged_arena_risks.exe",
+        "--gtest_filter=PagedArena.*"
+      ],
+      "exit_code": 1,
+      "elapsed_seconds": 0.125,
+      "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g03\\dirty-page-cpu\\paged-arena-risks-1.log"
+    },
+    {
+      "stage": "build",
+      "command": [
+        "cmake",
+        "--build",
+        "C:\\h7\\inference-g01-native-vulkan\\build",
+        "--target",
+        "g03_dirty_page_public",
+        "g03_paged_arena_risks",
+        "--parallel",
+        "4"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 3.562000000005355,
+      "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g03\\dirty-page-cpu\\build-3.log"
+    },
+    {
+      "stage": "host-cpu-public-probe",
+      "command": [
+        "C:\\h7\\inference-g01-native-vulkan\\build\\g03_dirty_page_public.exe"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 0.0,
+      "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g03\\dirty-page-cpu\\host-cpu-public-probe-2.log"
+    },
+    {
+      "stage": "paged-arena-risks",
+      "command": [
+        "C:\\h7\\inference-g01-native-vulkan\\build\\g03_paged_arena_risks.exe",
+        "--gtest_filter=PagedArena.*"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 0.01600000000325963,
+      "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g03\\dirty-page-cpu\\paged-arena-risks-2.log"
+    }
+  ],
+  "cumulative_seconds": 98.92300000000978,
+  "inputs": [
+    {
+      "path": "include/hyle/compute/batch_transfer.h",
+      "sha256": "794ed972714abb34709944e1b26b0ef84d173756572b52cbac2dbcb918e9396d"
+    },
+    {
+      "path": "include/hyle/compute/paged_arena.h",
+      "sha256": "42e9b72cb99d7cb8cb48a43dc837ab0647d44f68b71db3789664dd034f11f8c3"
+    },
+    {
+      "path": "include/hyle/compute/apple_memory.h",
+      "sha256": "114858af47cf0bf51990615cb303581dee45b0e17a95cfd9b1f718d51906ca80"
+    },
+    {
+      "path": "include/hyle/compute/vulkan_memory.h",
+      "sha256": "81a1981e717e1e50ac129c3e7f34a6e39cb49d4ce0b4eace7e3ab58df7e1eb72"
+    },
+    {
+      "path": "src/compute/batch_transfer.cc",
+      "sha256": "c0e4126289b640e1c81c2746a1dd53ab4fbebf916fa94f11af8be444fbda60a4"
+    },
+    {
+      "path": "src/compute_batch/paged_arena.cc",
+      "sha256": "83e19e937410380e1cdeec429d839ef7a6cf563c41cb347fa1a897a54c9cca5d"
+    },
+    {
+      "path": "src/compute_route_apple/apple_copy_program.cc",
+      "sha256": "b72b52294110c488e56cba3ec2a27d9a092dcae2bbef831d74dce135123da190"
+    },
+    {
+      "path": "src/compute_route_vulkan/vulkan_copy_program.cc",
+      "sha256": "03284a6ff466103056a58e562c609f444a490a1a387b7a334687ac749b44ed66"
+    },
+    {
+      "path": "tests/compute_batch/dirty_page_public_consumer.cc",
+      "sha256": "a0733a186749e5ce33c6fd1ed28b3a623440f826cf2183be1b4ff4e19e6b6ae4"
+    },
+    {
+      "path": "tests/compute_batch/paged_arena_test.cc",
+      "sha256": "08be8dcb09891ee1b6fc4ecafb3cf2248f96932721fb01340c721cf44b18494b"
+    }
+  ],
+  "candidate": "AUDITED WORKTREE GP01/GP02 draft",
+  "claim": "MSVC source public CPU64 and PagedArena9 PASS; Apple compiled source not run, Vulkan source directed linked but not GPU run. SDK/sanitizer/native actual risk/producer-to-attention remain unqualified."
+}

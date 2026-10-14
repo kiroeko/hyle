@@ -111,6 +111,11 @@ public:
   HYLE_COMPUTE_API Status bind_source(CopyResourceId, const ReadLease &) noexcept;
   HYLE_COMPUTE_API Status bind_mutable(CopyResourceId, WriteLease &&) noexcept;
   HYLE_COMPUTE_API Status bind_producer(CopyResourceId, Completion &&) noexcept;
+  // Return the original mutable binding after all accepted phases actually
+  // succeed and retire, or withdraw it before submission. Retained submissions,
+  // pending/failed/unknown work and published outputs reject without consuming.
+  // No wait or publication; untouched bytes remain caller-owned content.
+  HYLE_COMPUTE_API Result<WriteLease> unbind_mutable(CopyResourceId) noexcept;
   HYLE_COMPUTE_API Status prepare_replay(std::span<const CopyPhase>, std::span<const CopyRange>) noexcept;
   HYLE_COMPUTE_API Result<CopyBatchSubmission> submit() noexcept;
   // Reset is explicit after successful retirement or failure; a retained
