@@ -1,6 +1,6 @@
 # G03 已接纳页更新到原 attention 的组合范围
 
-状态：CANDIDATE，2026-10-14；当前owner compute_batch；续接baseline `1dcc26cc0af4c6c68a4c9ab330fbd8088dc6aaa9`（初始baseline `c8ea4cc31`保留）。
+状态：CLOSED，2026-10-14；终局见[inference-g03-final-closure](inference-g03-final-closure.md)；原owner compute_batch；续接baseline `1dcc26cc0af4c6c68a4c9ab330fbd8088dc6aaa9`（初始baseline `c8ea4cc31`保留）。
 授权与全项范围仍为[十项goal](../project/inference-gaps-goal-execution-2026-10.md)。
 GP01/GP02已按[有限terminal](inference-g03-dirty-page-terminal.md)关闭，原数学/性能/失败
 和private UNKNOWN保留；只因原goal尚未完成的真实producer→attention旅程启动新轮。

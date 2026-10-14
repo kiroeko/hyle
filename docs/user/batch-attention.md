@@ -254,13 +254,13 @@ copy = update.release_invocation().value();
 不发布成功结果，并保全部 source 与页 guards 至实际退休。控制访问外部串行；旧
 OwnedResult/ResultLease、pending 工作或尚未回接的 source 阻止 receiver 复用。
 frame 与 native binding 有显式冷 metadata 分配，原 metadata prepare 的等待和 native
-private unknown 保留。这个 Direct 入口覆盖两 native 路线；Graph 组合与 late native producer
-output 的完整 G03 验收仍在活动轮内。
+private unknown 保留。这个 Direct 入口覆盖两 native 路线；Graph与late native producer组合的已准入G03
+范围现见[最终裁决](../implementation/tasks/compute/inference-g03-final-closure.md)。
 
 共同 `hyle::compute::PagedBatchReceiver` 移交原 `BatchInvocation`，沿其原队列、
 PreparedBatch 和输出 buffer 消费同样的 pending frame。CPU 与已资格的 Linux CUDA
 原生路径已有 source/static/shared 双请求、双槽、64步公共旅程；CPU 宿主风险与 CUDA
-实际来源/退休边界也已定向验证。Graph 与 late native producer 组合继续看当前 G03 卡。
+实际来源/退休边界也已定向验证。Graph与late native producer组合见G03最终裁决。
 CPU 队列只接受已实际完成的 inline 来源，异步来源由原 backend 拒绝，不隐式 host wait。
 
 ```cpp
@@ -279,13 +279,13 @@ update = receiver.take_update().value();
 至实际退休。旧 output reader 阻止原 buffer 覆盖，尚未回接的 Update 阻止 receiver
 复用；外部 PreparedBatch ticket 与 Graph 外部输出控制器不能移交给这个 Direct 扩展。
 
-### Graph pending 与 native producer 输出（G03 活动接口）
+### Graph pending 与 native producer 输出
 
 `graph::batch::PendingInvocation` 移交原 Graph batch coordinator，在其原队列和输出槽内
 组合 Update；pending frame 只绑定已准备的 paged 节点 K/V 输入。Q 用 ready lease，外部
 输出用 writer，metadata 由原 prepare_batch 绑定。CPU/CUDA source 的双请求/双槽/64步 F16/BF16
-已验证；CPU+CUDA 与新接口全部风险/三交付仍看
-[活动 G03 卡](../implementation/tasks/compute/inference-g03-pending-page-consumption.md)。
+与required CPU+CUDA的同形状源码/静态/动态交付、生命周期已验证；全部已准入路线及
+限制见[G03最终裁决](../implementation/tasks/compute/inference-g03-final-closure.md)。
 
 ```cpp
 auto pending = graph::batch::PendingInvocation::create(std::move(original), source_capacity).value();
@@ -308,8 +308,8 @@ completion 合并来源与实际消费结果。来源失败不发布成功输出
 实际 pending uses 或未回接的 Update 阻止复用，不能只释放一个 public handle就覆盖原槽。
 两 native 联合 Graph 在原 Invocation 上冷调用 `reserve_pending_sources(capacity)`，再
 prepare_batch、bind(PagedArenaPendingRead)、submit(Update&&)、take_update。实际两路线的
-双请求/64步、两个页节点共享同一 Update与 CPU 前后段已通过数值 source 消费，新增完整
-生命周期/交付验收仍在进行。一个固定图的 active Q 输出行数保持固定；2行 decode与18行
+双请求/64步、两个页节点共享同一 Update与 CPU 前后段已通过数值消费、生命周期和
+源码/静态/动态交付。一个固定图的 active Q 输出行数保持固定；2行 decode与18行
 混合 prefill可冷准备两个图，每个图各两槽，合计四个冷槽。这些槽/metadata准备/跨CPU边界
 的 checked等待均计成本。它不创建第二个 Graph 或 native 执行器。
 
@@ -345,7 +345,7 @@ Runtime、未资格的动态 queue prefix及不匹配输出拒绝。producer 槽
 旅程已验证，独立 Abs多输出→两阶段范围重排→CPU reduction的64步source也已验证；这个
 正交消费者在最终 F2成功后显式搬运256字节至host，不声明 GPU reduction流水或零copy。
 Apple/Vulkan 新接口的上述 Direct/joint/正交消费者已通过 source 与迁址 static/shared；
-完整 G03 路线资格仍按当前施工卡裁决。
+已准入G03路线资格与不支持域以最终裁决为准。
 
 原F2已消费page writer时，保留PagedPageWriter，等成功ready输出后调用complete；若放弃
 这个已消费的控制对象，arena不会猜测该页已退休或重新ready。失败/无法完成观察的页按

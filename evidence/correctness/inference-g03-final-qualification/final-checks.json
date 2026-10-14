@@ -1,0 +1,9 @@
+{
+  "previous_registry_revision": "c9290d177ba6d4424cb57f9cae54ef5d12bec6e7",
+  "closure": "PASS:64 components/schema4; legal CANDIDATE->CLOSED",
+  "docs": "PASS:1240 Markdown/6060 relative links",
+  "diff": "PASS",
+  "candidate_product_delta": "EMPTY include/src/tests versus11b2403e7",
+  "selector": "READY: docs/closure only,146 skipped/reused reasons retained",
+  "goal": "ACTIVE; only G03 accepted1/10; no whole objective completion claim"
+}
