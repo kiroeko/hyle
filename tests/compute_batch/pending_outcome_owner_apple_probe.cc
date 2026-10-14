@@ -6,7 +6,7 @@
 #include <hyle/compute/detail/apple_batch_access.h>
 #include <hyle/compute/detail/apple_plan.h>
 #include <hyle/compute/detail/paged_arena_access.h>
-#include "owned_outcome_completion_fixture.h"
+#include "cold_outcome_completion_fixture.h"
 #include <optional>
 #include <array>
 #include <cstdio>
@@ -22,6 +22,9 @@ Status episode(bool cancelled,bool abandoned=false,bool observation_failed=false
   HYLE_ASSIGN_OR_RETURN(auto device,n::MemoryResource::create(context));
   HYLE_ASSIGN_OR_RETURN(auto staging,n::MemoryResource::create(context));
   HYLE_ASSIGN_OR_RETURN(auto state,r::prepare(context,device,staging));
+  using Source = c::detail::CopyOutcomeSource<n::CopyBatchUpdate,n::detail::CopyStreamAccess>;
+  HYLE_ASSIGN_OR_RETURN(auto source_slot,Source::create(64));
+  HYLE_ASSIGN_OR_RETURN(auto observer,c::detail::DependentCompletion::create(hyle::mem::system_allocator()));
   // A genuine frame for only unchanged page2 supplies addressable capacity.
   // It does not claim read authority over the independently pending page0.
   const auto host=state.data.layout.host();
@@ -78,8 +81,9 @@ Status episode(bool cancelled,bool abandoned=false,bool observation_failed=false
   HYLE_RETURN_IF_ERROR(r::require(gate->await(),"receiver probe has no real pending GPU prefix"));
   HYLE_ASSIGN_OR_RETURN(auto submitted,state.copy.submit());
   HYLE_ASSIGN_OR_RETURN(auto owner,n::CopyBatchUpdate::take(std::move(state.copy),std::move(submitted)));
-  HYLE_ASSIGN_OR_RETURN(auto pending,n::detail::CopyStreamAccess::input(owner,{1}));
-  HYLE_ASSIGN_OR_RETURN(auto dependency,n::detail::CopyStreamAccess::dependency(owner));
+  HYLE_ASSIGN_OR_RETURN(auto source_protocol,source_slot.take(std::move(owner)));
+  HYLE_ASSIGN_OR_RETURN(auto pending,n::detail::CopyStreamAccess::input(source_slot.update(),{1}));
+  HYLE_ASSIGN_OR_RETURN(auto dependency,n::detail::CopyStreamAccess::dependency(source_slot.update()));
   HYLE_RETURN_IF_ERROR(n::detail::qualify_recording_dependency(n::detail::ContextAccess::runtime(context),dependency));
   HYLE_ASSIGN_OR_RETURN(auto base,c::detail::PagedArenaAccess::tensor(unchanged));
   HYLE_RETURN_IF_ERROR(r::require(pending.view.resource()==base.storage().resource() &&
@@ -92,10 +96,10 @@ Status episode(bool cancelled,bool abandoned=false,bool observation_failed=false
   HYLE_RETURN_IF_ERROR(reading.read(metadata_read));
   for(const auto &page:c::detail::PagedArenaAccess::pages(unchanged)) HYLE_RETURN_IF_ERROR(reading.read(page));
   for(const auto &page:c::detail::PagedArenaAccess::pages(value_frame)) HYLE_RETURN_IF_ERROR(reading.read(page));
-  HYLE_RETURN_IF_ERROR(n::detail::CopyStreamAccess::admit_read(reading,owner,{1}));
+  HYLE_RETURN_IF_ERROR(n::detail::CopyStreamAccess::admit_read(reading,source_slot.update(),{1}));
   HYLE_ASSIGN_OR_RETURN(auto attention,n::detail::PagedBatchAccess::submit(invocation,std::move(reading)));
   using Aggregate=hyle_g03_outcome_probe::Outcome<n::Results,n::CopyBatchUpdate>;
-  HYLE_ASSIGN_OR_RETURN(auto joined,Aggregate::take<n::detail::CopyStreamAccess>(std::move(attention),std::move(owner)));
+  HYLE_ASSIGN_OR_RETURN(auto joined,Aggregate::take(std::move(attention),source_slot,source_protocol,observer));
   std::optional<Aggregate> aggregate(std::move(joined));
   auto watch=aggregate->watch();
   HYLE_RETURN_IF_ERROR(r::require(!aggregate->result() && uses.active_batches()==1 &&

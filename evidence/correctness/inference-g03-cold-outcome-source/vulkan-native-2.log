@@ -1,0 +1,6 @@
+vulkan combined success retains SAME original result payload/slot, old result prevents native reuse, source owner released after retirement PASS
+vulkan cancel AFTER original attention accepted: source CANCELLED, combined result CANCELLED, no publication, actual guards retired PASS
+vulkan original result/completion abandonment: source survives pending, released after actual suffix retirement PASS
+vulkan original suffix unknown observation: source/guards kept, actual final fence wait, first OOM/no result publication PASS
+vulkan original result/completion abandonment: source survives pending, released after actual suffix retirement PASS
+vulkan partial source: prepared3/accepted2 phases, actual native prefix1/tail reject, cold receiver rejects without source observation/consumption, original wait OOM PASS

@@ -1,0 +1,160 @@
+{
+  "scope": "MSVC original compute completion lifetime and same result slot, no GPU/no global build",
+  "stages": [
+    {
+      "stage": "configure",
+      "command": [
+        "cmake",
+        "-S",
+        "C:\\h7\\inference-g01-native-vulkan\\parent",
+        "-B",
+        "C:\\h7\\inference-g01-native-vulkan\\build"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 224.375,
+      "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g03\\owned-outcome-windows\\configure-1.log"
+    },
+    {
+      "stage": "build",
+      "command": [
+        "cmake",
+        "--build",
+        "C:\\h7\\inference-g01-native-vulkan\\build",
+        "--target",
+        "g03_owned_outcome",
+        "hyle_compute_route_vulkan",
+        "--parallel",
+        "4"
+      ],
+      "exit_code": 2,
+      "elapsed_seconds": 3.9060000000172295,
+      "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g03\\owned-outcome-windows\\build-1.log"
+    },
+    {
+      "stage": "build",
+      "command": [
+        "cmake",
+        "--build",
+        "C:\\h7\\inference-g01-native-vulkan\\build",
+        "--target",
+        "g03_owned_outcome",
+        "hyle_compute_route_vulkan",
+        "--parallel",
+        "4"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 13.26600000000326,
+      "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g03\\owned-outcome-windows\\build-2.log"
+    },
+    {
+      "stage": "test",
+      "command": [
+        "C:\\h7\\inference-g01-native-vulkan\\build\\g03_owned_outcome.exe"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 0.046999999991385266,
+      "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g03\\owned-outcome-windows\\test-1.log"
+    },
+    {
+      "stage": "build",
+      "command": [
+        "cmake",
+        "--build",
+        "C:\\h7\\inference-g01-native-vulkan\\build",
+        "--target",
+        "g03_owned_outcome",
+        "hyle_compute_route_vulkan",
+        "--parallel",
+        "4"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 256.25,
+      "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g03\\owned-outcome-windows\\build-3.log"
+    },
+    {
+      "stage": "test",
+      "command": [
+        "C:\\h7\\inference-g01-native-vulkan\\build\\g03_owned_outcome.exe"
+      ],
+      "exit_code": 3,
+      "elapsed_seconds": 0.046999999991385266,
+      "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g03\\owned-outcome-windows\\test-2.log"
+    },
+    {
+      "stage": "build",
+      "command": [
+        "cmake",
+        "--build",
+        "C:\\h7\\inference-g01-native-vulkan\\build",
+        "--target",
+        "g03_owned_outcome",
+        "hyle_compute_route_vulkan",
+        "--parallel",
+        "4"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 3.0789999999979045,
+      "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g03\\owned-outcome-windows\\build-4.log"
+    },
+    {
+      "stage": "test",
+      "command": [
+        "C:\\h7\\inference-g01-native-vulkan\\build\\g03_owned_outcome.exe"
+      ],
+      "exit_code": 1,
+      "elapsed_seconds": 0.062000000005355105,
+      "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g03\\owned-outcome-windows\\test-3.log"
+    },
+    {
+      "stage": "build",
+      "command": [
+        "cmake",
+        "--build",
+        "C:\\h7\\inference-g01-native-vulkan\\build",
+        "--target",
+        "g03_owned_outcome",
+        "hyle_compute_route_vulkan",
+        "--parallel",
+        "4"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 2.437000000005355,
+      "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g03\\owned-outcome-windows\\build-5.log"
+    },
+    {
+      "stage": "test",
+      "command": [
+        "C:\\h7\\inference-g01-native-vulkan\\build\\g03_owned_outcome.exe"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 0.0159999999741558,
+      "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g03\\owned-outcome-windows\\test-4.log"
+    },
+    {
+      "stage": "build",
+      "command": [
+        "cmake",
+        "--build",
+        "C:\\h7\\inference-g01-native-vulkan\\build",
+        "--target",
+        "g03_owned_outcome",
+        "hyle_compute_route_vulkan",
+        "--parallel",
+        "4"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 3.062000000005355,
+      "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g03\\owned-outcome-windows\\build-6.log"
+    },
+    {
+      "stage": "test",
+      "command": [
+        "C:\\h7\\inference-g01-native-vulkan\\build\\g03_owned_outcome.exe"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 0.046999999991385266,
+      "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g03\\owned-outcome-windows\\test-5.log"
+    }
+  ],
+  "cumulative_seconds": 506.59399999998277
+}

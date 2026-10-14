@@ -1532,6 +1532,11 @@ oneDNN 类型不会泄漏到 Tensor、Operation 或 Graph API。
   来源只有一个观察 owner，后继实际退休后才观察或移交原 producer/copy completions；查询错误不能
   充当实际退休。协议订阅须覆盖全部已接纳来源，并由实际退休回调释放其保活，不能在回调里等待
   另一个回调。该内部实现接缝不自动给普通原生 Program 添加分页输入或推理策略。
+  原 F2 的实现侧来源可用 `detail::CopyOutcomeSource<Update, Access>` 预留节点；在 source 接纳前
+  create，在 suffix 接纳前 take 原 Update，失败不消费。未接纳 suffix 时释放返回的协议 reference；
+  已接纳则交给原 DependentCompletion。正常完成后通过冷槽的 `update()` 回接原 writer/invocation，
+  再 reset 原 invocation 继续 replay；无需每步重建原复制槽。pending abandon 才移交原 native owner。
+  注入 allocator 须活过冷槽及全部协议/native references；最后一次释放可能在 native 退休线程执行。
 - RMSNorm 允许 input/output 精确同址；所有 operation 拒绝不安全 partial overlap 和第二输入/output
   overlap。CPU route 要求 host-accessible storage，并如实调用 non-coherent resource 的 invalidate/flush。
 - 不同 Queue 可并发；同一 ordered Queue 是单 producer 提交域，两个线程同时录入会明确失败。Graph 会用

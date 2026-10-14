@@ -5,6 +5,8 @@
 #include "hyle/compute/backends/cpu.h"
 #include "hyle/compute/batch_transfer.h"
 #include "hyle/compute/detail/copy_stream_access.h"
+#include "hyle/compute/detail/copy_outcome_source.h"
+#include "hyle/compute/transfer.h"
 #include "hyle/compute/detail/lease_access.h"
 #include "hyle/mem/quota_allocator.h"
 
@@ -281,5 +283,69 @@ TEST(CpuCopyUpdate, RetirementSourceBorrowCountsAcceptedPhasesAndDistinctUsedPro
   EXPECT_TRUE(update.wait().ok());
   CopyBatchUpdate invalid;
   EXPECT_FALSE(detail::CopyStreamAccess::retirement_sources(invalid, {}));
+}
+TEST(CpuCopyUpdate, ColdSourcePreservesOriginalTwoInvocationsFor64WarmReplays) {
+  auto context = Context::create(cpu::device()).value();
+  auto queue = context.create_queue().value();
+  mem::QuotaAllocator metadata(mem::system_allocator());
+  struct Counted final { mem::QuotaAllocator *metadata; std::size_t allocations = 0; } counts{&metadata};
+  mem::AllocatorRef counted{
+      [](void *p, std::size_t bytes, std::size_t alignment) noexcept -> void * {
+        auto &state = *static_cast<Counted *>(p); ++state.allocations;
+        return state.metadata->get().allocate(bytes, alignment);
+      },
+      [](void *p, void *pointer, std::size_t bytes, std::size_t alignment) noexcept {
+        static_cast<Counted *>(p)->metadata->get().deallocate(pointer, bytes, alignment);
+      },
+      [](void *p, void *pointer, std::size_t before, std::size_t bytes,
+          std::size_t alignment) noexcept -> void * {
+        ++static_cast<Counted *>(p)->allocations;
+        return static_cast<Counted *>(p)->metadata->get().reallocate(pointer, before, bytes, alignment);
+      }, &counts};
+  auto program = CopyBatchProgram::prepare(context, specs(), {.allocator = counted}).value();
+  std::array<CopyBatchInvocation, 2> invocations;
+  using Source = detail::CopyOutcomeSource<CopyBatchUpdate, detail::CopyStreamAccess>;
+  std::array<Source, 2> sources;
+  std::array<detail::DependentCompletion, 2> observers;
+  std::array<LeasePool, 4> pools;
+  for (auto &pool : pools) pool = LeasePool::create(mem::system_resource(), 1024, {.max_blocks = 2}).value();
+  auto output_pool = LeasePool::create(mem::system_resource(), 512).value();
+  auto output = output_pool.allocate(32).value();
+  const auto output_view = output.view().value();
+  auto uses = LeaseUsePool::create().value();
+  for (unsigned slot = 0; slot < 2; ++slot) {
+    invocations[slot] = CopyBatchInvocation::create(program, queue).value();
+    sources[slot] = Source::create(3, {.allocator = counted}).value();
+    observers[slot] = detail::DependentCompletion::create(counted).value();
+  }
+  const auto cold_bytes = metadata.used();
+  const auto cold_allocations = counts.allocations;
+  for (unsigned step = 0; step < 64; ++step) {
+    const auto slot = step % 2;
+    auto &invocation = invocations[slot];
+    ASSERT_TRUE(bind(pools, invocation, std::byte(step + 1)).ok());
+    ASSERT_TRUE(invocation.prepare_replay(kPhases, kRanges).ok());
+    auto submitted = invocation.submit().value();
+    auto update = CopyBatchUpdate::take(std::move(invocation), std::move(submitted)).value();
+    auto protocol = sources[slot].take(std::move(update)).value();
+    auto pending = detail::CopyStreamAccess::input(sources[slot].update(), {3}).value();
+    auto reading = uses.begin().value();
+    ASSERT_TRUE(detail::CopyStreamAccess::admit_read(reading, sources[slot].update(), {3}).ok());
+    ASSERT_TRUE(reading.write(output).ok());
+    auto suffix = copy_async(queue, output_view, pending.view).value();
+    ASSERT_TRUE(reading.attach(suffix).ok());
+    auto completion = observers[slot].publish(std::move(suffix), protocol);
+    ASSERT_TRUE(completion.wait().ok());
+    ASSERT_TRUE(sources[slot].available());
+    EXPECT_TRUE(sources[slot].update().valid()); // Original controls remain recoverable.
+    std::array<std::byte, 32> bytes{};
+    ASSERT_TRUE(output.view()->read(bytes).ok());
+    for (auto byte : bytes) EXPECT_EQ(byte, std::byte(step + 1));
+    invocation = sources[slot].update().release_invocation().value();
+    ASSERT_TRUE(invocation.reset().ok());
+    EXPECT_EQ(metadata.used(), cold_bytes);
+    EXPECT_EQ(counts.allocations, cold_allocations);
+    EXPECT_EQ(uses.active_batches(), 0u);
+  }
 }
 } // namespace

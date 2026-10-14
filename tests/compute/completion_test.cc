@@ -1,6 +1,7 @@
 #include <gtest/gtest.h>
 
 #include <atomic>
+#include <array>
 #include <barrier>
 #include <cstddef>
 #include <cstdint>
@@ -11,6 +12,7 @@
 #include "completion_internal.h"
 #include "hyle/compute/completion.h"
 #include "hyle/compute/detail/dependent_completion.h"
+#include "hyle/compute/detail/copy_outcome_source.h"
 #include "hyle/compute/detail/generated_result.h"
 #include "hyle/compute/detail/retained_completion.h"
 #if !defined(HYLE_STATIC)
@@ -152,6 +154,242 @@ void retire_abandoned(AsyncProbe &native) {
   auto lifetime = std::exchange(native.abandoned, {});
   lifetime.terminal(lifetime.state, native.abandoned_hint);
   lifetime.release(lifetime.state);
+}
+
+struct SourceUpdateProbe final {
+  struct NativeControls final {
+    std::array<hyle::compute::Completion, 4> *storage = nullptr;
+    auto &operator[](std::size_t i) noexcept { return (*storage)[i]; }
+    const auto &operator[](std::size_t i) const noexcept { return (*storage)[i]; }
+    auto begin() noexcept { return storage->begin(); }
+    auto end() noexcept { return storage->end(); }
+  } completions;
+  hyle::Status known_terminal;
+  std::size_t accepted = 0;
+  bool active = false;
+  SourceUpdateProbe() noexcept = default;
+  explicit SourceUpdateProbe(std::array<hyle::compute::Completion, 4> &storage) noexcept
+      : completions{&storage} {}
+  ~SourceUpdateProbe() {
+    if (completions.storage) for (auto &completion : completions) completion = {};
+  }
+  SourceUpdateProbe(SourceUpdateProbe &&other) noexcept { *this = std::move(other); }
+  SourceUpdateProbe &operator=(SourceUpdateProbe &&other) noexcept {
+    if (completions.storage) for (auto &completion : completions) completion = {};
+    completions = std::exchange(other.completions, {});
+    known_terminal = std::move(other.known_terminal);
+    accepted = other.accepted;
+    active = std::exchange(other.active, false);
+    return *this;
+  }
+  bool valid() const noexcept { return active; }
+  hyle::Status observe() noexcept {
+    auto status = known_terminal;
+    for (std::size_t i = 0; i < accepted; ++i) {
+      auto polled = completions[i].poll();
+      if (!polled) status.Update(polled.error());
+    }
+    return status;
+  }
+  hyle::Status wait() noexcept {
+    auto status = known_terminal;
+    for (std::size_t i = 0; i < accepted; ++i) status.Update(completions[i].wait());
+    return status;
+  }
+  hyle::Status request_cancel() noexcept {
+    hyle::Status status;
+    for (std::size_t i = 0; i < accepted; ++i) status.Update(completions[i].request_cancel());
+    return status;
+  }
+};
+struct SourceUpdateAccessProbe final {
+  static hyle::Result<hyle::compute::detail::CompletionDependency> dependency(
+      const SourceUpdateProbe &source) noexcept {
+    if (!source.valid() || !source.accepted)
+      return std::unexpected(hyle::Status::InvalidArgument("source probe"));
+    if (!source.known_terminal.ok()) return std::unexpected(source.known_terminal);
+    return hyle::compute::detail::CompletionAccess::dependency(source.completions[source.accepted - 1]);
+  }
+  static hyle::Result<std::size_t> retirement_sources(SourceUpdateProbe &source,
+      std::span<hyle::compute::Completion *> output) noexcept {
+    if (output.empty()) return source.accepted;
+    if (output.size() < source.accepted)
+      return std::unexpected(hyle::Status::ResourceExhausted("source probe capacity"));
+    for (std::size_t i = 0; i < source.accepted; ++i) output[i] = &source.completions[i];
+    return source.accepted;
+  }
+};
+using ColdSourceProbe = hyle::compute::detail::CopyOutcomeSource<SourceUpdateProbe, SourceUpdateAccessProbe>;
+
+struct SourceAllocations final {
+  unsigned attempts = 0, allocations = 0, frees = 0, fail_at = 0;
+  hyle::mem::AllocatorRef ref() noexcept {
+    return {
+      [](void *opaque, std::size_t bytes, std::size_t alignment) noexcept -> void * {
+        auto &state = *static_cast<SourceAllocations *>(opaque);
+        if (++state.attempts == state.fail_at) return nullptr;
+        auto *pointer = hyle::mem::system_allocator().allocate(bytes, alignment);
+        if (pointer) ++state.allocations;
+        return pointer;
+      },
+      [](void *opaque, void *pointer, std::size_t bytes, std::size_t alignment) noexcept {
+        ++static_cast<SourceAllocations *>(opaque)->frees;
+        hyle::mem::system_allocator().deallocate(pointer, bytes, alignment);
+      },
+      [](void *, void *pointer, std::size_t before, std::size_t bytes,
+          std::size_t alignment) noexcept -> void * {
+        return hyle::mem::system_allocator().reallocate(pointer, before, bytes, alignment);
+      }, this};
+  }
+};
+
+TEST(CopyOutcomeSource, EveryColdAllocationOomRollsBackWithoutAnyNativeWork) {
+  for (unsigned failure = 1; failure <= 4; ++failure) {
+    SourceAllocations counts;
+    counts.fail_at = failure;
+    auto source = ColdSourceProbe::create(4, {.allocator = counts.ref()});
+    ASSERT_FALSE(source.has_value());
+    EXPECT_TRUE(source.error().IsResourceExhausted());
+    EXPECT_EQ(counts.attempts, failure);
+    EXPECT_EQ(counts.allocations, counts.frees);
+  }
+  EXPECT_FALSE(ColdSourceProbe::create(0));
+  EXPECT_FALSE(ColdSourceProbe::create(SIZE_MAX));
+}
+
+TEST(CopyOutcomeSource, ResourceBudgetChargesColdNodesAndReleasesEveryFailedOrSuccessfulBlock) {
+  using namespace hyle::compute;
+  const auto resource = hyle::mem::system_resource();
+  const std::array limits{ResourceBudgetLimit{resource, 1u << 16}};
+  auto budget = ResourceBudget::create({.limits = limits}).value();
+  const auto baseline = budget.usage(resource)->live_bytes;
+  {
+    auto source = ColdSourceProbe::create(4, {.resource_budget = budget}).value();
+    EXPECT_GT(budget.usage(resource)->live_bytes, baseline);
+  }
+  EXPECT_EQ(budget.usage(resource)->live_bytes, baseline);
+  const std::array tiny_limits{ResourceBudgetLimit{resource, baseline + 1}};
+  auto tiny = ResourceBudget::create({.limits = tiny_limits}).value();
+  EXPECT_TRUE(ColdSourceProbe::create(4, {.resource_budget = tiny}).error().IsResourceExhausted());
+  EXPECT_EQ(tiny.usage(resource)->live_bytes, baseline);
+}
+
+TEST(CopyOutcomeSource, CapacityAndKnownPrefixFailureDoNotConsumeOriginalControl) {
+  auto source = ColdSourceProbe::create(1).value();
+  std::array<hyle::compute::Completion, 4> storage;
+  SourceUpdateProbe update(storage);
+  update.active = true; update.accepted = 2;
+  update.completions[0] = hyle::compute::Completion::completed();
+  update.completions[1] = hyle::compute::Completion::completed();
+  EXPECT_TRUE(source.take(std::move(update)).error().IsResourceExhausted());
+  EXPECT_TRUE(update.valid()); EXPECT_TRUE(source.available());
+  update.accepted = 1;
+  update.known_terminal = hyle::Status::Cancelled("accepted prefix then rejected tail");
+  EXPECT_TRUE(source.take(std::move(update)).error().IsCancelled());
+  EXPECT_TRUE(update.valid()); EXPECT_TRUE(source.available());
+  auto two = ColdSourceProbe::create(2).value();
+  update.known_terminal = hyle::Status::Ok(); update.accepted = 2;
+  update.completions[0] = hyle::compute::Completion::completed(hyle::Status::Cancelled("used producer"));
+  EXPECT_TRUE(two.take(std::move(update)).error().IsCancelled());
+  EXPECT_TRUE(update.valid()); EXPECT_TRUE(two.available());
+}
+
+TEST(CopyOutcomeSource, UsedProducerUnknownCannotReleaseSourceOrResultBeforeActualRetirement) {
+  using namespace hyle::compute;
+  auto source = ColdSourceProbe::create(2).value();
+  auto observer = detail::DependentCompletion::create(hyle::mem::system_allocator()).value();
+  AsyncProbe producer;
+  producer.observation_failed = true;
+  std::array<Completion, 4> storage;
+  SourceUpdateProbe update(storage);
+  update.active = true; update.accepted = 2;
+  update.completions[0] = detail::CompletionAccess::make(&kAsyncVTable, &producer);
+  update.completions[1] = Completion::completed();
+  auto protocol = source.take(std::move(update)).value();
+  auto completion = observer.publish(Completion::completed(), protocol);
+  LifetimeProbe result;
+  detail::CompletionLifetime lifetime{&result, &observe_terminal, &release_lifetime};
+  ASSERT_TRUE(detail::CompletionAccess::attach_lifetime(completion, lifetime).ok());
+  EXPECT_EQ(completion.poll().value(), CompletionPoll::kPending);
+  EXPECT_FALSE(source.available()); EXPECT_EQ(result.release_count, 0u);
+  retire_abandoned(producer);
+  EXPECT_TRUE(completion.wait().IsUnavailable());
+  EXPECT_EQ(result.release_count, 1u);
+  EXPECT_TRUE(source.available()); EXPECT_TRUE(source.update().valid());
+  EXPECT_TRUE(source.update().observe().IsUnavailable());
+  source.update() = {};
+}
+
+TEST(CopyOutcomeSource, AbandonWaitsForEveryAcceptedActualCallbackWithoutCallbackBlocking) {
+  using namespace hyle::compute;
+  auto source = ColdSourceProbe::create(2).value();
+  auto observer = detail::DependentCompletion::create(hyle::mem::system_allocator()).value();
+  AsyncProbe one, two, suffix;
+  std::array<Completion, 4> storage;
+  SourceUpdateProbe update(storage);
+  update.active = true; update.accepted = 2;
+  update.completions[0] = detail::CompletionAccess::make(&kAsyncVTable, &one);
+  update.completions[1] = detail::CompletionAccess::make(&kAsyncVTable, &two);
+  auto protocol = source.take(std::move(update)).value();
+  auto completion = observer.publish(detail::CompletionAccess::make(&kAsyncVTable, &suffix), protocol);
+  completion = {};
+  EXPECT_FALSE(one.destroyed); EXPECT_FALSE(two.destroyed);
+  retire_abandoned(suffix);
+  EXPECT_TRUE(one.destroyed); EXPECT_TRUE(two.destroyed);
+  retire_abandoned(two);
+  EXPECT_FALSE(source.available()); EXPECT_FALSE(observer.available());
+  retire_abandoned(one);
+  EXPECT_TRUE(source.available()); EXPECT_TRUE(observer.available());
+}
+
+TEST(CopyOutcomeSource, RejectedSuffixAndDroppedColdHandleRetainExactlyTheirOwnReferences) {
+  using namespace hyle::compute;
+  SourceAllocations counts;
+  auto source = ColdSourceProbe::create(2, {.allocator = counts.ref()}).value();
+  std::array<Completion, 4> rejected_storage, accepted_storage;
+  SourceUpdateProbe rejected(rejected_storage);
+  rejected.active = true; rejected.accepted = 1;
+  rejected.completions[0] = Completion::completed();
+  auto protocol = source.take(std::move(rejected)).value();
+  protocol.release(protocol.state); // No suffix accepted and no subscription.
+  EXPECT_TRUE(source.available()); EXPECT_FALSE(source.update().valid());
+  SourceUpdateProbe accepted(accepted_storage);
+  accepted.active = true; accepted.accepted = 1;
+  accepted.completions[0] = Completion::completed();
+  protocol = source.take(std::move(accepted)).value();
+  source.reset();
+  EXPECT_EQ(counts.frees, 0u);
+  auto observer = detail::DependentCompletion::create(hyle::mem::system_allocator()).value();
+  auto completion = observer.publish(Completion::completed(), protocol);
+  EXPECT_TRUE(completion.wait().ok());
+  EXPECT_EQ(counts.allocations, 4u); EXPECT_EQ(counts.frees, 4u);
+}
+
+TEST(CopyOutcomeSource, TwoSourceSlotsAndObserversReuse64EpisodesWithOnlyColdAllocations) {
+  using namespace hyle::compute;
+  SourceAllocations counts;
+  auto one = ColdSourceProbe::create(4, {.allocator = counts.ref()}).value();
+  auto two = ColdSourceProbe::create(4, {.allocator = counts.ref()}).value();
+  auto left = detail::DependentCompletion::create(counts.ref()).value();
+  auto right = detail::DependentCompletion::create(counts.ref()).value();
+  EXPECT_EQ(counts.allocations, 10u);
+  for (unsigned episode = 0; episode < 64; ++episode) {
+    std::array<Completion, 4> first_storage, second_storage;
+    SourceUpdateProbe first(first_storage), second(second_storage);
+    first.active = true; first.accepted = 4;
+    second.active = true; second.accepted = 4;
+    for (auto &completion : first.completions) completion = Completion::completed();
+    for (auto &completion : second.completions) completion = Completion::completed();
+    auto a = left.publish(Completion::completed(), one.take(std::move(first)).value());
+    auto b = right.publish(Completion::completed(), two.take(std::move(second)).value());
+    EXPECT_FALSE(one.available()); EXPECT_FALSE(two.available());
+    ASSERT_TRUE(b.wait().ok()); ASSERT_TRUE(a.wait().ok());
+    EXPECT_TRUE(one.available()); EXPECT_TRUE(two.available());
+    EXPECT_EQ(counts.allocations, 10u); EXPECT_EQ(counts.frees, 0u);
+    one.update() = {}; two.update() = {};
+  }
+  one.reset(); two.reset(); left.reset(); right.reset();
+  EXPECT_EQ(counts.allocations, counts.frees);
 }
 
 TEST(DependentCompletion, SourcesAreObservedOnlyAfterSuffixActuallyRetires) {

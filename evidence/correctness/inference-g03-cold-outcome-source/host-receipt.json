@@ -1,0 +1,466 @@
+{
+  "scope": "OO03 production cold source/actual native/core lifecycle host instrumentation; existing two explicit TSan boundary models only; no LSan/driver/shader/private-pool qualification",
+  "inputs": [
+    {
+      "path": "include/hyle/compute/detail/copy_outcome_source.h",
+      "sha256": "773ca34f7ef7ef45ad50fe9e42958b22e80e689662c2c88e694bc47123aa0620"
+    },
+    {
+      "path": "src/compute/retained_completion.cc",
+      "sha256": "d39a157663bb018e4afcb8b2c04376160d4d884716e2ee826b83f25092c06dcc"
+    },
+    {
+      "path": "tests/compute/completion_test.cc",
+      "sha256": "4c5352c6e86f2d747b40733b5b70f3b6feff7e0939ee673731e53527b9a11653"
+    },
+    {
+      "path": "tests/compute_backend_cpu/copy_program_test.cc",
+      "sha256": "5cc895d225642337660246c115f7ab8f88046d4715fd3fdc7003b8faebc62d3e"
+    },
+    {
+      "path": "tests/compute_batch/cold_outcome_completion_fixture.h",
+      "sha256": "6b8a1bda9b6120113007fb667682913793013ef8b48a2c54d8302addafb54bea"
+    },
+    {
+      "path": "tests/compute_batch/owned_outcome_completion_fixture.h",
+      "sha256": "ca6035284ed1058cf5add28ec2e2004977ca52b7b62097a40cf89a3097501c3c"
+    },
+    {
+      "path": "tests/compute_batch/owned_outcome_cpu_consumer.cc",
+      "sha256": "cbce5b6c055b0f036a84219bdd9302b251fffd31d320dec6dd7f5ee5b93c6e39"
+    },
+    {
+      "path": "tests/compute_batch/owned_outcome_cuda_consumer.cc",
+      "sha256": "9dfdd0c496725ce37452002bdfd4376bbc40ea3b3caba86ee6389cb166799ea9"
+    },
+    {
+      "path": "tests/compute_batch/pending_outcome_owner_apple_probe.cc",
+      "sha256": "b1d71515e3215a89e2551cf37b25d6785422bf319ebda3c618c46eb1a3415584"
+    },
+    {
+      "path": "tests/compute_batch/pending_outcome_owner_vulkan_probe.cc",
+      "sha256": "5ce0c149f81a32fe12d20905bebd6717be0229936a283810b16809bd267a592f"
+    }
+  ],
+  "models": [
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g02-refcount-fence-probe/tsan-headers/hyle/util/ref_counted.h",
+      "sha256": "2b90ab655a49ec3b9158a964872cd1fc3395ebf64d8ae430a2e19c4805bf5416"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g01-metal-callback-tsan-probe/tsan-metal-cpp/Metal/MTLCommandBuffer.hpp",
+      "sha256": "4a58c6e564e3a7efcdf5c7709eeee99ec7b7c40594e2ada5ec5c91012171d504"
+    }
+  ],
+  "stages": [
+    {
+      "route": "apple",
+      "mode": "asan",
+      "stage": "configure",
+      "command": [
+        "/opt/homebrew/bin/cmake",
+        "-S",
+        "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-apple-asan/parent",
+        "-B",
+        "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-apple-asan/build",
+        "-DHYLE_COMPUTE_ROUTES=cpu;apple"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 6.273101667,
+      "log": "/Users/kiro/hyle-scratch/compute-unified/g03-cold-outcome-host/apple-asan-configure-1.log"
+    },
+    {
+      "route": "apple",
+      "mode": "asan",
+      "stage": "build",
+      "command": [
+        "/opt/homebrew/bin/cmake",
+        "--build",
+        "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-apple-asan/build",
+        "--target",
+        "g03_cold_native",
+        "g03_cold_completion",
+        "g03_cold_copy_cpu",
+        "--parallel",
+        "4"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 7.906832916,
+      "log": "/Users/kiro/hyle-scratch/compute-unified/g03-cold-outcome-host/apple-asan-build-1.log"
+    },
+    {
+      "route": "apple",
+      "mode": "asan",
+      "stage": "g03_cold_native",
+      "command": [
+        "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-apple-asan/build/g03_cold_native"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 1.1721680830000007,
+      "log": "/Users/kiro/hyle-scratch/compute-unified/g03-cold-outcome-host/apple-asan-g03_cold_native-1.log"
+    },
+    {
+      "route": "apple",
+      "mode": "asan",
+      "stage": "g03_cold_completion",
+      "command": [
+        "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-apple-asan/build/g03_cold_completion"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 0.6028655839999999,
+      "log": "/Users/kiro/hyle-scratch/compute-unified/g03-cold-outcome-host/apple-asan-g03_cold_completion-1.log"
+    },
+    {
+      "route": "apple",
+      "mode": "asan",
+      "stage": "g03_cold_copy_cpu",
+      "command": [
+        "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-apple-asan/build/g03_cold_copy_cpu"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 0.6051523339999996,
+      "log": "/Users/kiro/hyle-scratch/compute-unified/g03-cold-outcome-host/apple-asan-g03_cold_copy_cpu-1.log"
+    },
+    {
+      "route": "apple",
+      "mode": "ubsan",
+      "stage": "configure",
+      "command": [
+        "/opt/homebrew/bin/cmake",
+        "-S",
+        "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-apple-ubsan/parent",
+        "-B",
+        "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-apple-ubsan/build",
+        "-DHYLE_COMPUTE_ROUTES=cpu;apple"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 6.497049541999999,
+      "log": "/Users/kiro/hyle-scratch/compute-unified/g03-cold-outcome-host/apple-ubsan-configure-1.log"
+    },
+    {
+      "route": "apple",
+      "mode": "ubsan",
+      "stage": "build",
+      "command": [
+        "/opt/homebrew/bin/cmake",
+        "--build",
+        "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-apple-ubsan/build",
+        "--target",
+        "g03_cold_native",
+        "g03_cold_completion",
+        "g03_cold_copy_cpu",
+        "--parallel",
+        "4"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 7.701757957999998,
+      "log": "/Users/kiro/hyle-scratch/compute-unified/g03-cold-outcome-host/apple-ubsan-build-1.log"
+    },
+    {
+      "route": "apple",
+      "mode": "ubsan",
+      "stage": "g03_cold_native",
+      "command": [
+        "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-apple-ubsan/build/g03_cold_native"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 0.5463361669999998,
+      "log": "/Users/kiro/hyle-scratch/compute-unified/g03-cold-outcome-host/apple-ubsan-g03_cold_native-1.log"
+    },
+    {
+      "route": "apple",
+      "mode": "ubsan",
+      "stage": "g03_cold_completion",
+      "command": [
+        "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-apple-ubsan/build/g03_cold_completion"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 0.4311676250000005,
+      "log": "/Users/kiro/hyle-scratch/compute-unified/g03-cold-outcome-host/apple-ubsan-g03_cold_completion-1.log"
+    },
+    {
+      "route": "apple",
+      "mode": "ubsan",
+      "stage": "g03_cold_copy_cpu",
+      "command": [
+        "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-apple-ubsan/build/g03_cold_copy_cpu"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 0.4252227920000031,
+      "log": "/Users/kiro/hyle-scratch/compute-unified/g03-cold-outcome-host/apple-ubsan-g03_cold_copy_cpu-1.log"
+    },
+    {
+      "route": "apple",
+      "mode": "tsan",
+      "stage": "configure",
+      "command": [
+        "/opt/homebrew/bin/cmake",
+        "-S",
+        "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-apple-tsan/parent",
+        "-B",
+        "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-apple-tsan/build",
+        "-DHYLE_COMPUTE_ROUTES=cpu;apple"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 4.7604185,
+      "log": "/Users/kiro/hyle-scratch/compute-unified/g03-cold-outcome-host/apple-tsan-configure-1.log"
+    },
+    {
+      "route": "apple",
+      "mode": "tsan",
+      "stage": "build",
+      "command": [
+        "/opt/homebrew/bin/cmake",
+        "--build",
+        "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-apple-tsan/build",
+        "--target",
+        "g03_cold_native",
+        "g03_cold_completion",
+        "g03_cold_copy_cpu",
+        "--parallel",
+        "4"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 6.436466291999999,
+      "log": "/Users/kiro/hyle-scratch/compute-unified/g03-cold-outcome-host/apple-tsan-build-1.log"
+    },
+    {
+      "route": "apple",
+      "mode": "tsan",
+      "stage": "g03_cold_native",
+      "command": [
+        "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-apple-tsan/build/g03_cold_native"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 3.220296458,
+      "log": "/Users/kiro/hyle-scratch/compute-unified/g03-cold-outcome-host/apple-tsan-g03_cold_native-1.log"
+    },
+    {
+      "route": "apple",
+      "mode": "tsan",
+      "stage": "g03_cold_completion",
+      "command": [
+        "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-apple-tsan/build/g03_cold_completion"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 0.5336744999999965,
+      "log": "/Users/kiro/hyle-scratch/compute-unified/g03-cold-outcome-host/apple-tsan-g03_cold_completion-1.log"
+    },
+    {
+      "route": "apple",
+      "mode": "tsan",
+      "stage": "g03_cold_copy_cpu",
+      "command": [
+        "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-apple-tsan/build/g03_cold_copy_cpu"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 0.5455482079999996,
+      "log": "/Users/kiro/hyle-scratch/compute-unified/g03-cold-outcome-host/apple-tsan-g03_cold_copy_cpu-1.log"
+    },
+    {
+      "route": "vulkan",
+      "mode": "asan",
+      "stage": "configure",
+      "command": [
+        "/opt/homebrew/bin/cmake",
+        "-S",
+        "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-vulkan-asan/parent",
+        "-B",
+        "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-vulkan-asan/build",
+        "-DHYLE_COMPUTE_ROUTES=cpu;vulkan"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 19.379505500000008,
+      "log": "/Users/kiro/hyle-scratch/compute-unified/g03-cold-outcome-host/vulkan-asan-configure-1.log"
+    },
+    {
+      "route": "vulkan",
+      "mode": "asan",
+      "stage": "build",
+      "command": [
+        "/opt/homebrew/bin/cmake",
+        "--build",
+        "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-vulkan-asan/build",
+        "--target",
+        "g03_cold_native",
+        "g03_cold_completion",
+        "g03_cold_copy_cpu",
+        "--parallel",
+        "4"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 8.06593954200001,
+      "log": "/Users/kiro/hyle-scratch/compute-unified/g03-cold-outcome-host/vulkan-asan-build-1.log"
+    },
+    {
+      "route": "vulkan",
+      "mode": "asan",
+      "stage": "g03_cold_native",
+      "command": [
+        "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-vulkan-asan/build/g03_cold_native"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 1.9178629580000006,
+      "log": "/Users/kiro/hyle-scratch/compute-unified/g03-cold-outcome-host/vulkan-asan-g03_cold_native-1.log"
+    },
+    {
+      "route": "vulkan",
+      "mode": "asan",
+      "stage": "g03_cold_completion",
+      "command": [
+        "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-vulkan-asan/build/g03_cold_completion"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 0.5895841250000018,
+      "log": "/Users/kiro/hyle-scratch/compute-unified/g03-cold-outcome-host/vulkan-asan-g03_cold_completion-1.log"
+    },
+    {
+      "route": "vulkan",
+      "mode": "asan",
+      "stage": "g03_cold_copy_cpu",
+      "command": [
+        "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-vulkan-asan/build/g03_cold_copy_cpu"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 0.592799209000006,
+      "log": "/Users/kiro/hyle-scratch/compute-unified/g03-cold-outcome-host/vulkan-asan-g03_cold_copy_cpu-1.log"
+    },
+    {
+      "route": "vulkan",
+      "mode": "ubsan",
+      "stage": "configure",
+      "command": [
+        "/opt/homebrew/bin/cmake",
+        "-S",
+        "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-vulkan-ubsan/parent",
+        "-B",
+        "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-vulkan-ubsan/build",
+        "-DHYLE_COMPUTE_ROUTES=cpu;vulkan"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 21.346673291000002,
+      "log": "/Users/kiro/hyle-scratch/compute-unified/g03-cold-outcome-host/vulkan-ubsan-configure-1.log"
+    },
+    {
+      "route": "vulkan",
+      "mode": "ubsan",
+      "stage": "build",
+      "command": [
+        "/opt/homebrew/bin/cmake",
+        "--build",
+        "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-vulkan-ubsan/build",
+        "--target",
+        "g03_cold_native",
+        "g03_cold_completion",
+        "g03_cold_copy_cpu",
+        "--parallel",
+        "4"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 8.143420582999994,
+      "log": "/Users/kiro/hyle-scratch/compute-unified/g03-cold-outcome-host/vulkan-ubsan-build-1.log"
+    },
+    {
+      "route": "vulkan",
+      "mode": "ubsan",
+      "stage": "g03_cold_native",
+      "command": [
+        "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-vulkan-ubsan/build/g03_cold_native"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 0.9671374169999893,
+      "log": "/Users/kiro/hyle-scratch/compute-unified/g03-cold-outcome-host/vulkan-ubsan-g03_cold_native-1.log"
+    },
+    {
+      "route": "vulkan",
+      "mode": "ubsan",
+      "stage": "g03_cold_completion",
+      "command": [
+        "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-vulkan-ubsan/build/g03_cold_completion"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 0.423284792000004,
+      "log": "/Users/kiro/hyle-scratch/compute-unified/g03-cold-outcome-host/vulkan-ubsan-g03_cold_completion-1.log"
+    },
+    {
+      "route": "vulkan",
+      "mode": "ubsan",
+      "stage": "g03_cold_copy_cpu",
+      "command": [
+        "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-vulkan-ubsan/build/g03_cold_copy_cpu"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 0.41085633299999813,
+      "log": "/Users/kiro/hyle-scratch/compute-unified/g03-cold-outcome-host/vulkan-ubsan-g03_cold_copy_cpu-1.log"
+    },
+    {
+      "route": "vulkan",
+      "mode": "tsan",
+      "stage": "configure",
+      "command": [
+        "/opt/homebrew/bin/cmake",
+        "-S",
+        "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-vulkan-tsan/parent",
+        "-B",
+        "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-vulkan-tsan/build",
+        "-DHYLE_COMPUTE_ROUTES=cpu;vulkan"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 21.502921125000015,
+      "log": "/Users/kiro/hyle-scratch/compute-unified/g03-cold-outcome-host/vulkan-tsan-configure-1.log"
+    },
+    {
+      "route": "vulkan",
+      "mode": "tsan",
+      "stage": "build",
+      "command": [
+        "/opt/homebrew/bin/cmake",
+        "--build",
+        "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-vulkan-tsan/build",
+        "--target",
+        "g03_cold_native",
+        "g03_cold_completion",
+        "g03_cold_copy_cpu",
+        "--parallel",
+        "4"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 6.705358582999992,
+      "log": "/Users/kiro/hyle-scratch/compute-unified/g03-cold-outcome-host/vulkan-tsan-build-1.log"
+    },
+    {
+      "route": "vulkan",
+      "mode": "tsan",
+      "stage": "g03_cold_native",
+      "command": [
+        "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-vulkan-tsan/build/g03_cold_native"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 4.273892541999999,
+      "log": "/Users/kiro/hyle-scratch/compute-unified/g03-cold-outcome-host/vulkan-tsan-g03_cold_native-1.log"
+    },
+    {
+      "route": "vulkan",
+      "mode": "tsan",
+      "stage": "g03_cold_completion",
+      "command": [
+        "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-vulkan-tsan/build/g03_cold_completion"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 0.5218090409999832,
+      "log": "/Users/kiro/hyle-scratch/compute-unified/g03-cold-outcome-host/vulkan-tsan-g03_cold_completion-1.log"
+    },
+    {
+      "route": "vulkan",
+      "mode": "tsan",
+      "stage": "g03_cold_copy_cpu",
+      "command": [
+        "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-vulkan-tsan/build/g03_cold_copy_cpu"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 0.5372597920000146,
+      "log": "/Users/kiro/hyle-scratch/compute-unified/g03-cold-outcome-host/vulkan-tsan-g03_cold_copy_cpu-1.log"
+    }
+  ],
+  "cumulative_seconds": 143.03636345900003
+}

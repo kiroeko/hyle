@@ -96,3 +96,40 @@ source owner 冷预留/逐节点 OOM及实际 Graph 集成尚未完成；测试 
 make_shared 不代签生产 warm 成本。主卡 pending page/late native backing/七路线64-step
 仍未完成。窗口内 Windows 首编译测试 nodiscard FAIL 保留；各构建累计及原限制见证据。
 下个实现动作只补这些固定验收及主卡准入形状，不重跑旧数学/P1或重开全库研究。
+
+### 来源冷预留的固定内部形状
+
+OO03 的来源节点使用 `detail::CopyOutcomeSource<Update, Access>` 冷槽，四 source family
+仍移动原两 controls。`create(capacity, allocator/ResourceBudget)` 在 native 接纳前建立
+状态、原 Update payload、Completion* 表和 retention 节点；有限四次冷分配逐一 OOM 回滚。
+`take(Update&&)` 在 suffix 接纳前校验原 dependency、原数量与容量；失败不消费 Update，
+成功返回一个 OutcomeSources reference。trusted receiver 通过冷槽中的原 Update 取得
+原 input/prefix/guards；其后用原 DependentCompletion.publish 交接该 reference。
+后继拒绝时 release 未订阅 reference，移交原 source controls；无另一个执行器。
+
+`available()/update()/reset()` 是同构建内部 ownership 接缝；available 只有旧 protocol
+reference 和所有原 actual-retirement 节点都释放后才成立。正常 publish/admission 不分配。
+source 检测 known tail/dependency 失败在接纳前拒绝，未知或接纳后 producer 错误仍由
+原完成与实际退休 fan-out 合并；不增加 F2/native 常态字段。类型 shell 只负责原 Update
+的构造/移动与回调，节点扫描、订阅、观察和回收放入原 retained_completion.cc。
+本形状是 OO03 已固定来源协议的冷 ownership 实现，owner/FIX/产品边界不扩张。
+
+正常完成保原 retired Update 在冷槽，调用方经 update().release_invocation()/take_mutable()
+回接原冷 controller/writers；不能每步销毁原 invocation 再重建来声称 warm 零分配。
+DependentCompletion 只在来源尚未实际退休的 abandon 路径调用原 native handoff；全部
+实际退休后的 completion settle 保留原控制的成功/失败状态，protocol reference 释放
+后可回接。cold source handle 销毁仍按原 native 寿命清理，不额外等待。
+
+## 2026-10-14 来源冷预留检查点
+
+[实际新证据](../../../../evidence/correctness/inference-g03-cold-outcome-source/README.md)已补上
+production source冷预留/四次OOM回滚、ResourceBudget基线、used producer unknown fan-out、
+原CPU两invocation/two source slots64步固定分配次数及byte oracle；Apple3/Vulkan6原
+native lifecycle（含实际partial accepted-prefix/tail拒绝不消费）与CUDA1KiB四案例；
+六host risks、四relocated SDK/20头/每配置source64＋result64、Windows36均通过。
+正常完成保原控制回接，pending abandon才交原native owner，移除当前消费者每episode
+shared source分配。原窗口失败/累计和前后修正完整保留，不重置预算。
+
+仍 AUDITED：实际 Graph 集成和原独立reduction消费者尚未验收；主卡pending frame/
+late output/七路线64-step不由这组冷槽证据代签。下一步推进这两个真实组合入口与
+主卡的有限产品形状，不再重复已通过的冷槽/数学门。

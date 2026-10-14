@@ -1,7 +1,7 @@
 #define HYLE_TESTING 1
 #include "../../src/compute_backend_cuda/cuda_internal.h"
 #include <hyle/compute/detail/copy_stream_access.h>
-#include "owned_outcome_completion_fixture.h"
+#include "cold_outcome_completion_fixture.h"
 
 #include <array>
 #include <chrono>
@@ -61,6 +61,9 @@ Status episode(unsigned mode) {
                          c::CopyResourceSpec{device.ref(), 1024}};
   HYLE_ASSIGN_OR_RETURN(auto program, c::CopyBatchProgram::prepare(context, specs));
   HYLE_ASSIGN_OR_RETURN(auto copy, c::CopyBatchInvocation::create(program, queue));
+  using Source = c::detail::CopyOutcomeSource<c::CopyBatchUpdate,c::detail::CopyStreamAccess>;
+  HYLE_ASSIGN_OR_RETURN(auto source_slot, Source::create(64));
+  HYLE_ASSIGN_OR_RETURN(auto observer, c::detail::DependentCompletion::create(hyle::mem::system_allocator()));
   HYLE_ASSIGN_OR_RETURN(auto result_slot, c::detail::ResultSlot<c::WriteLease>::create(hyle::mem::system_allocator()));
   HYLE_ASSIGN_OR_RETURN(auto result_write, result_slot.begin());
   Gate gate;
@@ -83,10 +86,11 @@ Status episode(unsigned mode) {
   HYLE_RETURN_IF_ERROR(copy.prepare_replay(phases, ranges));
   HYLE_ASSIGN_OR_RETURN(auto submitted, copy.submit());
   HYLE_ASSIGN_OR_RETURN(auto update, c::CopyBatchUpdate::take(std::move(copy), std::move(submitted)));
-  HYLE_ASSIGN_OR_RETURN(auto pending, c::detail::CopyStreamAccess::input(update, {1}));
+  HYLE_ASSIGN_OR_RETURN(auto source_protocol, source_slot.take(std::move(update)));
+  HYLE_ASSIGN_OR_RETURN(auto pending, c::detail::CopyStreamAccess::input(source_slot.update(), {1}));
   HYLE_ASSIGN_OR_RETURN(auto input_pointer, n::pointer<std::byte>(pending.view));
   HYLE_ASSIGN_OR_RETURN(auto reading, uses.begin());
-  HYLE_RETURN_IF_ERROR(c::detail::CopyStreamAccess::admit_read(reading, update, {1}));
+  HYLE_RETURN_IF_ERROR(c::detail::CopyStreamAccess::admit_read(reading, source_slot.update(), {1}));
   HYLE_RETURN_IF_ERROR(reading.write(receiver));
   HYLE_RETURN_IF_ERROR(result_write.emplace(std::move(receiver)));
   // The same original ordered Queue accepts the suffix after F2, with exact
@@ -98,8 +102,8 @@ Status episode(unsigned mode) {
   HYLE_RETURN_IF_ERROR(reading.attach(suffix));
   HYLE_ASSIGN_OR_RETURN(auto result, result_write.publish(std::move(suffix)));
   using Aggregate = hyle_g03_outcome_probe::Outcome<c::WriteLease, c::CopyBatchUpdate>;
-  HYLE_ASSIGN_OR_RETURN(auto joined, Aggregate::take<c::detail::CopyStreamAccess>(
-      std::move(result), std::move(update)));
+  HYLE_ASSIGN_OR_RETURN(auto joined, Aggregate::take(
+      std::move(result), source_slot, source_protocol, observer));
   std::optional<Aggregate> aggregate(std::move(joined));
   auto watch = aggregate->watch();
   HYLE_RETURN_IF_ERROR(require(!aggregate->result() && !watch.expired() &&

@@ -1,0 +1,86 @@
+{
+  "scope": "1024-byte actual CUDA producer/F2/suffix; original completion/WriteLease result and original event-query hook; no new kernel/global build/device poisoning",
+  "identity": {
+    "uname": "Linux kiro-workstation 6.18.54.1-microsoft-standard-WSL2 #1 SMP PREEMPT_DYNAMIC Tue Oct  6 19:13:07 UTC 2026 x86_64 x86_64 x86_64 GNU/Linux",
+    "gpu": "NVIDIA GeForce RTX 4070, 617.14, 2367 MiB, 6 %",
+    "compiler": "g++-14 (Ubuntu 14.2.0-4ubuntu2~24.04.1) 14.2.0"
+  },
+  "inputs": [
+    {
+      "path": "include/hyle/compute/detail/dependent_completion.h",
+      "sha256": "25aecc0c64d1edfad3d71523b04dc222f523ac7cd71f99e63193495a8431cc9b"
+    },
+    {
+      "path": "include/hyle/compute/detail/generated_result.h",
+      "sha256": "a9fa5d3cebc9e300c0fb0e17bec447a18448c126a64846d74eb830df166933f1"
+    },
+    {
+      "path": "include/hyle/compute/detail/copy_stream_access.h",
+      "sha256": "ae27087c250587e3b9b2a76118ea2e3d6b1e619ed1c5c863d9e887a8faf6719c"
+    },
+    {
+      "path": "include/hyle/compute/result.h",
+      "sha256": "07a584147b7de3b3f3c1a238207df4ec548130308295b583fc8c93a4d36a4164"
+    },
+    {
+      "path": "src/compute/retained_completion.cc",
+      "sha256": "d39a157663bb018e4afcb8b2c04376160d4d884716e2ee826b83f25092c06dcc"
+    },
+    {
+      "path": "src/compute/batch_transfer.cc",
+      "sha256": "d4533f07e2126b6fe6754176ba7a450414a1b734469b7874adb8c15dd104a22b"
+    },
+    {
+      "path": "include/hyle/compute/detail/copy_outcome_source.h",
+      "sha256": "773ca34f7ef7ef45ad50fe9e42958b22e80e689662c2c88e694bc47123aa0620"
+    },
+    {
+      "path": "tests/compute_batch/cold_outcome_completion_fixture.h",
+      "sha256": "6b8a1bda9b6120113007fb667682913793013ef8b48a2c54d8302addafb54bea"
+    },
+    {
+      "path": "tests/compute_batch/owned_outcome_cuda_consumer.cc",
+      "sha256": "9dfdd0c496725ce37452002bdfd4376bbc40ea3b3caba86ee6389cb166799ea9"
+    }
+  ],
+  "stages": [
+    {
+      "stage": "configure",
+      "command": [
+        "cmake",
+        "-S",
+        "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/source-parent",
+        "-B",
+        "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/source-build"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 50.461185714,
+      "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g03/cold-outcome-cuda/configure-1.log"
+    },
+    {
+      "stage": "build",
+      "command": [
+        "cmake",
+        "--build",
+        "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/source-build",
+        "--target",
+        "g03_cold_outcome_cuda",
+        "--parallel",
+        "4"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 1.8131064860000023,
+      "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g03/cold-outcome-cuda/build-1.log"
+    },
+    {
+      "stage": "actual-four-cases",
+      "command": [
+        "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/source-build/g03_cold_outcome_cuda"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 0.23937118899999632,
+      "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g03/cold-outcome-cuda/actual-four-cases-1.log"
+    }
+  ],
+  "cumulative_seconds": 52.513663389
+}

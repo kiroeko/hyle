@@ -1,0 +1,45 @@
+{
+  "baseline": "f307dbc5026fdcdffe51b35b64b62dd21545905b",
+  "inputs": [
+    {
+      "path": "include/hyle/compute/detail/copy_outcome_source.h",
+      "sha256": "773ca34f7ef7ef45ad50fe9e42958b22e80e689662c2c88e694bc47123aa0620"
+    },
+    {
+      "path": "src/compute/retained_completion.cc",
+      "sha256": "d39a157663bb018e4afcb8b2c04376160d4d884716e2ee826b83f25092c06dcc"
+    },
+    {
+      "path": "tests/compute/completion_test.cc",
+      "sha256": "4c5352c6e86f2d747b40733b5b70f3b6feff7e0939ee673731e53527b9a11653"
+    },
+    {
+      "path": "tests/compute/owned_outcome_sdk_consumer.cc",
+      "sha256": "bc8337393a503e640c624489f228003ceb4473f316bc9a2d13a3f180b2a8aa2f"
+    },
+    {
+      "path": "tests/compute_backend_cpu/copy_program_test.cc",
+      "sha256": "5cc895d225642337660246c115f7ab8f88046d4715fd3fdc7003b8faebc62d3e"
+    },
+    {
+      "path": "tests/compute_batch/cold_outcome_completion_fixture.h",
+      "sha256": "6b8a1bda9b6120113007fb667682913793013ef8b48a2c54d8302addafb54bea"
+    },
+    {
+      "path": "tests/compute_batch/owned_outcome_cpu_consumer.cc",
+      "sha256": "cbce5b6c055b0f036a84219bdd9302b251fffd31d320dec6dd7f5ee5b93c6e39"
+    },
+    {
+      "path": "tests/compute_batch/owned_outcome_cuda_consumer.cc",
+      "sha256": "9dfdd0c496725ce37452002bdfd4376bbc40ea3b3caba86ee6389cb166799ea9"
+    },
+    {
+      "path": "tests/compute_batch/pending_outcome_owner_apple_probe.cc",
+      "sha256": "b1d71515e3215a89e2551cf37b25d6785422bf319ebda3c618c46eb1a3415584"
+    },
+    {
+      "path": "tests/compute_batch/pending_outcome_owner_vulkan_probe.cc",
+      "sha256": "5ce0c149f81a32fe12d20905bebd6717be0229936a283810b16809bd267a592f"
+    }
+  ]
+}

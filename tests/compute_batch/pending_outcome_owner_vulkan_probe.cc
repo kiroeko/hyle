@@ -4,7 +4,7 @@
 #include "../../src/compute_route_vulkan/vulkan_internal.h"
 #include <hyle/compute/detail/vulkan_batch_access.h>
 #include <hyle/compute/detail/paged_arena_access.h>
-#include "owned_outcome_completion_fixture.h"
+#include "cold_outcome_completion_fixture.h"
 #include <optional>
 #include <array>
 #include <cstdio>
@@ -19,6 +19,9 @@ Status episode(bool cancelled,bool abandoned=false,bool observation_failed=false
   HYLE_ASSIGN_OR_RETURN(auto device,n::MemoryResource::create(context,n::MemoryKind::kDevice));
   HYLE_ASSIGN_OR_RETURN(auto staging,n::MemoryResource::create(context,n::MemoryKind::kStaging));
   HYLE_ASSIGN_OR_RETURN(auto state,r::prepare(context,device,staging));
+  using Source = c::detail::CopyOutcomeSource<n::CopyBatchUpdate,n::detail::CopyStreamAccess>;
+  HYLE_ASSIGN_OR_RETURN(auto source_slot,Source::create(64));
+  HYLE_ASSIGN_OR_RETURN(auto observer,c::detail::DependentCompletion::create(hyle::mem::system_allocator()));
   // A genuine frame for only unchanged page2 supplies addressable capacity.
   // It does not claim read authority over the independently pending page0.
   const auto host=state.data.layout.host();
@@ -70,8 +73,9 @@ Status episode(bool cancelled,bool abandoned=false,bool observation_failed=false
   };
   HYLE_ASSIGN_OR_RETURN(auto submitted,state.copy.submit());
   HYLE_ASSIGN_OR_RETURN(auto owner,n::CopyBatchUpdate::take(std::move(state.copy),std::move(submitted)));
-  HYLE_ASSIGN_OR_RETURN(auto pending,n::detail::CopyStreamAccess::input(owner,{1}));
-  HYLE_ASSIGN_OR_RETURN(auto dependency,n::detail::CopyStreamAccess::dependency(owner));
+  HYLE_ASSIGN_OR_RETURN(auto source_protocol,source_slot.take(std::move(owner)));
+  HYLE_ASSIGN_OR_RETURN(auto pending,n::detail::CopyStreamAccess::input(source_slot.update(),{1}));
+  HYLE_ASSIGN_OR_RETURN(auto dependency,n::detail::CopyStreamAccess::dependency(source_slot.update()));
   HYLE_RETURN_IF_ERROR(n::detail::qualify_copy_dependency(n::detail::Access::runtime(context),dependency));
   HYLE_ASSIGN_OR_RETURN(auto base,c::detail::PagedArenaAccess::tensor(unchanged));
   HYLE_RETURN_IF_ERROR(r::require(pending.view.resource()==base.storage().resource() &&
@@ -84,10 +88,10 @@ Status episode(bool cancelled,bool abandoned=false,bool observation_failed=false
   HYLE_RETURN_IF_ERROR(reading.read(metadata_read));
   for(const auto &page:c::detail::PagedArenaAccess::pages(unchanged)) HYLE_RETURN_IF_ERROR(reading.read(page));
   for(const auto &page:c::detail::PagedArenaAccess::pages(value_frame)) HYLE_RETURN_IF_ERROR(reading.read(page));
-  HYLE_RETURN_IF_ERROR(n::detail::CopyStreamAccess::admit_read(reading,owner,{1}));
+  HYLE_RETURN_IF_ERROR(n::detail::CopyStreamAccess::admit_read(reading,source_slot.update(),{1}));
   HYLE_ASSIGN_OR_RETURN(auto attention,n::detail::PagedBatchAccess::submit(invocation,std::move(reading)));
   using Aggregate=hyle_g03_outcome_probe::Outcome<n::Results,n::CopyBatchUpdate>;
-  HYLE_ASSIGN_OR_RETURN(auto joined,Aggregate::take<n::detail::CopyStreamAccess>(std::move(attention),std::move(owner)));
+  HYLE_ASSIGN_OR_RETURN(auto joined,Aggregate::take(std::move(attention),source_slot,source_protocol,observer));
   std::optional<Aggregate> aggregate(std::move(joined));
   auto watch=aggregate->watch();
   HYLE_RETURN_IF_ERROR(r::require(!aggregate->result() && uses.active_batches()==1 &&
@@ -155,6 +159,35 @@ Status episode(bool cancelled,bool abandoned=false,bool observation_failed=false
   }
   return Status::Ok();
 }
-Status run(){ HYLE_RETURN_IF_ERROR(episode(false));HYLE_RETURN_IF_ERROR(episode(true));HYLE_RETURN_IF_ERROR(episode(false,true));HYLE_RETURN_IF_ERROR(episode(false,false,true));return episode(false,true,true); }
+Status partial_prefix() {
+  HYLE_ASSIGN_OR_RETURN(auto context,n::Context::create());
+  HYLE_ASSIGN_OR_RETURN(auto device,n::MemoryResource::create(context,n::MemoryKind::kDevice));
+  HYLE_ASSIGN_OR_RETURN(auto staging,n::MemoryResource::create(context,n::MemoryKind::kStaging));
+  HYLE_ASSIGN_OR_RETURN(auto state,r::prepare(context,device,staging));
+  using Source = c::detail::CopyOutcomeSource<n::CopyBatchUpdate,n::detail::CopyStreamAccess>;
+  HYLE_ASSIGN_OR_RETURN(auto cold,Source::create(4));
+  const std::array<c::CopyPhase,3> phases{{{}, {.dependency_mask=1}, {.dependency_mask=2}}};
+  const std::array<c::CopyRange,2> ranges{{{{0},{1},{1},0,256,256},{{0},{1},{2},0,512,256}}};
+  HYLE_RETURN_IF_ERROR(state.copy.prepare_replay(phases,ranges));
+  hyle_f5_vk_failure_fixture::Boundary boundary(context);
+  boundary.fail_at=2;
+  HYLE_ASSIGN_OR_RETURN(auto submitted,state.copy.submit());
+  HYLE_ASSIGN_OR_RETURN(auto owner,n::CopyBatchUpdate::take(std::move(state.copy),std::move(submitted)));
+  const auto polls=boundary.polls.load();
+  HYLE_ASSIGN_OR_RETURN(auto count,n::detail::CopyStreamAccess::retirement_sources(owner,{}));
+  const auto rejected=cold.take(std::move(owner));
+  HYLE_RETURN_IF_ERROR(r::require(count==2 && owner.report().phases==3 &&
+      boundary.submits==2 && boundary.accepted==1 && boundary.polls.load()==polls &&
+      !rejected && rejected.error().IsResourceExhausted() && owner.valid() && cold.available(),
+      "partial accepted prefix was observed, consumed or allowed a suffix"));
+  HYLE_RETURN_IF_ERROR(r::require(owner.wait().IsResourceExhausted() &&
+      state.row_pool.stats().active_uses==0 && !owner.take_mutable({1}),
+      "partial prefix lost original OOM/retirement or published a writer"));
+  std::fprintf(stderr,"vulkan partial source: prepared3/accepted2 phases, actual native prefix1/tail reject, "
+      "cold receiver rejects without source observation/consumption, original wait OOM PASS\n");
+  context.close().IgnoreError();
+  return Status::Ok();
+}
+Status run(){ HYLE_RETURN_IF_ERROR(episode(false));HYLE_RETURN_IF_ERROR(episode(true));HYLE_RETURN_IF_ERROR(episode(false,true));HYLE_RETURN_IF_ERROR(episode(false,false,true));HYLE_RETURN_IF_ERROR(episode(false,true,true));return partial_prefix(); }
 } // namespace
 int main(){const auto status=run();if(!status.ok())std::fprintf(stderr,"receiver probe:%.*s\n",int(status.message().size()),status.message().data());return status.ok()?0:1;}

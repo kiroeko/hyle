@@ -1,0 +1,36 @@
+{
+  "state": "AUDITED implementation checkpoint, not terminal",
+  "cumulative_seconds": {
+    "source": 51.898056667999995,
+    "host": 143.03636345900003,
+    "sdk": 42.175104876000006,
+    "windows": 506.59399999998277,
+    "cuda": 52.513663389
+  },
+  "windows_round_seconds": 264.9999999999709,
+  "passed": [
+    "four production cold allocations OOM rollback and ResourceBudget baseline restore",
+    "two cold source+observer slots64/no new metadata allocation",
+    "actual CPU two original F2 invocations reused64, injected metadata allocation count fixed, byte oracle",
+    "actual Apple3/Vulkan6 cold lifecycle; actual Vulkan native prefix accepted/tail reject nonconsume/no-observation",
+    "six host sanitizer configurations: native3/6, core35, CPU8",
+    "four relocated SDK, twenty standalone header units, each actual CPU source64+original outcome64",
+    "actual CUDA1KiB four original source/F2/suffix lifecycle cases, no nvcc"
+  ],
+  "failures_retained": [
+    "Windows cold first source probe stored native completions inside moved handle (not original F2 stable identity); fixed fixture/native control address lifetime",
+    "Windows resource-budget test assumed zero baseline and allowed a limit smaller than budget control itself; corrected baseline, product unchanged",
+    "previous f307 Windows nodiscard build FAIL kept in cumulative receipt"
+  ],
+  "implementation_correction": "normal terminal aggregate retains original retired source controls for recovery/replay; pending abandonment alone performs native handoff",
+  "remaining": [
+    "actual Graph integration and original independent reduction consumer",
+    "full main G03 typed pending pages, initialization/layout/guard domain, late native output and seven-route64-step two requests/two slots",
+    "old Graph Windows gates and G04-G10"
+  ],
+  "limits": [
+    "host only, existing exact two TSan boundary models; no new suppressions/models/LSan/driver/shader/private-pool claim",
+    "source1 pre-correction observations retained; final source2/code/header input hashes match canonical",
+    "cold source update controls retained after normal completion; caller returns original writer/invocation, no shadow controller"
+  ]
+}

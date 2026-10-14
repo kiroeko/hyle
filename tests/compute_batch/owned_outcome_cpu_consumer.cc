@@ -1,7 +1,7 @@
 #include <hyle/compute/backends/cpu.h>
 #include <hyle/compute/detail/copy_stream_access.h>
 #include <hyle/compute/transfer.h>
-#include "owned_outcome_completion_fixture.h"
+#include "cold_outcome_completion_fixture.h"
 
 #include <array>
 #include <cstdio>
@@ -26,6 +26,9 @@ Status run() {
                          c::CopyResourceSpec{hyle::mem::system_resource(), 1024}};
   HYLE_ASSIGN_OR_RETURN(auto program, c::CopyBatchProgram::prepare(context, specs));
   HYLE_ASSIGN_OR_RETURN(auto copy, c::CopyBatchInvocation::create(program, queue));
+  using Source = c::detail::CopyOutcomeSource<c::CopyBatchUpdate,c::detail::CopyStreamAccess>;
+  HYLE_ASSIGN_OR_RETURN(auto source_slot, Source::create(64));
+  HYLE_ASSIGN_OR_RETURN(auto observer, c::detail::DependentCompletion::create(hyle::mem::system_allocator()));
   HYLE_RETURN_IF_ERROR(copy.bind_source({0}, ready_source));
   HYLE_RETURN_IF_ERROR(copy.bind_mutable({1}, std::move(destination)));
   HYLE_RETURN_IF_ERROR(copy.bind_producer({0}, c::Completion::completed()));
@@ -34,10 +37,11 @@ Status run() {
   HYLE_RETURN_IF_ERROR(copy.prepare_replay(phases, ranges));
   HYLE_ASSIGN_OR_RETURN(auto submitted, copy.submit());
   HYLE_ASSIGN_OR_RETURN(auto update, c::CopyBatchUpdate::take(std::move(copy), std::move(submitted)));
-  HYLE_ASSIGN_OR_RETURN(auto pending, c::detail::CopyStreamAccess::input(update, {1}));
+  HYLE_ASSIGN_OR_RETURN(auto source_protocol, source_slot.take(std::move(update)));
+  HYLE_ASSIGN_OR_RETURN(auto pending, c::detail::CopyStreamAccess::input(source_slot.update(), {1}));
   HYLE_ASSIGN_OR_RETURN(auto uses, c::LeaseUsePool::create());
   HYLE_ASSIGN_OR_RETURN(auto reading, uses.begin());
-  HYLE_RETURN_IF_ERROR(c::detail::CopyStreamAccess::admit_read(reading, update, {1}));
+  HYLE_RETURN_IF_ERROR(c::detail::CopyStreamAccess::admit_read(reading, source_slot.update(), {1}));
   HYLE_ASSIGN_OR_RETURN(auto receiver_view, receiver.view());
   HYLE_RETURN_IF_ERROR(reading.write(receiver));
   HYLE_ASSIGN_OR_RETURN(auto slot, c::detail::ResultSlot<c::WriteLease>::create(hyle::mem::system_allocator()));
@@ -47,8 +51,8 @@ Status run() {
   HYLE_RETURN_IF_ERROR(reading.attach(suffix));
   HYLE_ASSIGN_OR_RETURN(auto result, write.publish(std::move(suffix)));
   using Aggregate = hyle_g03_outcome_probe::Outcome<c::WriteLease, c::CopyBatchUpdate>;
-  HYLE_ASSIGN_OR_RETURN(auto aggregate, Aggregate::take<c::detail::CopyStreamAccess>(
-      std::move(result), std::move(update)));
+  HYLE_ASSIGN_OR_RETURN(auto aggregate, Aggregate::take(
+      std::move(result), source_slot, source_protocol, observer));
   HYLE_RETURN_IF_ERROR(aggregate.completion().wait());
   HYLE_ASSIGN_OR_RETURN(auto lease, aggregate.wait());
   HYLE_ASSIGN_OR_RETURN(auto repeated, aggregate.result());
