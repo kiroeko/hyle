@@ -1,0 +1,1 @@
+CUDA public dirty page PASS64 device=NVIDIA GeForce RTX 4070 SM89, payload<128KiB, dirty1024/page16384, preserved history/generation, exact public F2 permission return, actual gated stream producer/guard; download only oracle

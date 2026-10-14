@@ -1,6 +1,6 @@
 # G03 已接纳 producer 到精确分页消费
 
-状态：CANDIDATE，2026-10-14；owner compute_batch、compute、compute_route_apple、
+状态：GP01/GP02有限轮已CLOSED，2026-10-14；owner compute_batch、compute、compute_route_apple、
 compute_route_vulkan，baseline `5e80c4df0`；公共形状反证基于 `3cbbd4e2e`。
 授权来自[十项goal](../project/inference-gaps-goal-execution-2026-10.md)，输入G03来自
 [固定源码审计](../project/inference-single-machine-foundation-audit-2026-10.md)。
@@ -143,3 +143,9 @@ native public compile/link PASS78.109s，没有exe/GPU run。有限GP01/GP02尚�
 CUDA同一公开入口的实际短资格与终审；不得把CPU/Apple/Vulkan反证当作CUDA实跑。
 下一次CUDA只复用已有WSL验证tree、tiny F2/page权限与native fence，不跑重型GPU/模型，
 不重启原停下的Windows大套件；若实际资源无法满足该约束，保未决门并推进独立事项。
+
+[CUDA source/两SDK](../../../../evidence/correctness/inference-g03-dirty-page-cuda-stage/README.md)
+各64步tiny public consumer与6heads全部通过；真实CUDA checkpoint producer保原F1use/
+F2 output与writer拒绝，资源<128KiB，未编model算子/重型GPU run。四owner本子批按
+[有限terminal](inference-g03-dirty-page-terminal.md)CLOSED，整个G03 pending链仍保原未决
+准入域，下一owner轮需新scope/audit；本历史卡不授权继续修改已关闭产品。

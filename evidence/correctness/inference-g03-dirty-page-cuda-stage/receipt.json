@@ -1,0 +1,591 @@
+{
+  "candidate": "b42832de3ddda21bdc3e98ad4cc87e73622cbba4",
+  "source": {
+    "candidate": "b42832de3ddda21bdc3e98ad4cc87e73622cbba4",
+    "identity": {
+      "uname": "Linux kiro-workstation 6.18.54.1-microsoft-standard-WSL2 #1 SMP PREEMPT_DYNAMIC Tue Oct  6 19:13:07 UTC 2026 x86_64 x86_64 x86_64 GNU/Linux",
+      "gpu": "NVIDIA GeForce RTX 4070, 617.14, 1840 MiB, 3 %",
+      "compiler": "g++-14 (Ubuntu 14.2.0-4ubuntu2~24.04.1) 14.2.0"
+    },
+    "stages": [
+      {
+        "stage": "build",
+        "command": [
+          "cmake",
+          "--build",
+          "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/source-build",
+          "--target",
+          "g03_cuda_dirty_public",
+          "--parallel",
+          "4"
+        ],
+        "exit_code": 0,
+        "elapsed_seconds": 51.50767817,
+        "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g03/cuda-public-stage/build-1.log"
+      },
+      {
+        "stage": "tiny-public-cuda",
+        "command": [
+          "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/source-build/g03_cuda_dirty_public"
+        ],
+        "exit_code": 0,
+        "elapsed_seconds": 0.39056547300000233,
+        "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g03/cuda-public-stage/tiny-public-cuda-1.log"
+      }
+    ],
+    "cumulative_seconds": 51.898243643
+  },
+  "SDKs": {
+    "candidate": "b42832de3ddda21bdc3e98ad4cc87e73622cbba4",
+    "stages": [
+      {
+        "mode": "static",
+        "stage": "producer-build",
+        "command": [
+          "cmake",
+          "--build",
+          "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/static-sdk-build",
+          "--target",
+          "hyle_compute",
+          "hyle_compute_batch",
+          "hyle_compute_backend_cuda",
+          "--parallel",
+          "4"
+        ],
+        "exit_code": 0,
+        "elapsed_seconds": 52.100485263,
+        "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g03/cuda-sdk-stage/static-producer-build-1.log"
+      },
+      {
+        "mode": "static",
+        "stage": "install",
+        "command": [
+          "cmake",
+          "--install",
+          "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/static-sdk-build",
+          "--prefix",
+          "/root/hyle-scratch/compute-unified/g03-cuda-dirty-static-sdk/staging"
+        ],
+        "exit_code": 0,
+        "elapsed_seconds": 0.5027148759999989,
+        "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g03/cuda-sdk-stage/static-install-1.log"
+      },
+      {
+        "mode": "static",
+        "stage": "consumer-configure",
+        "command": [
+          "cmake",
+          "-S",
+          "/root/hyle-scratch/compute-unified/g03-cuda-dirty-static-sdk/consumer",
+          "-B",
+          "/root/hyle-scratch/compute-unified/g03-cuda-dirty-static-sdk/consumer-build",
+          "-G",
+          "Ninja",
+          "-DCMAKE_BUILD_TYPE=Release",
+          "-DCMAKE_CXX_COMPILER=/usr/bin/g++-14",
+          "-DCMAKE_PREFIX_PATH=/root/hyle-scratch/compute-unified/g03-cuda-dirty-static-sdk/relocated",
+          "-DCUDAToolkit_ROOT=/usr/local/cuda-13.3",
+          "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON"
+        ],
+        "exit_code": 0,
+        "elapsed_seconds": 23.673502333000002,
+        "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g03/cuda-sdk-stage/static-consumer-configure-1.log"
+      },
+      {
+        "mode": "static",
+        "stage": "consumer-build",
+        "command": [
+          "cmake",
+          "--build",
+          "/root/hyle-scratch/compute-unified/g03-cuda-dirty-static-sdk/consumer-build",
+          "--target",
+          "consumer",
+          "headers",
+          "--parallel",
+          "4"
+        ],
+        "exit_code": 0,
+        "elapsed_seconds": 1.6244523550000025,
+        "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g03/cuda-sdk-stage/static-consumer-build-1.log"
+      },
+      {
+        "mode": "static",
+        "stage": "tiny-public-cuda",
+        "command": [
+          "/root/hyle-scratch/compute-unified/g03-cuda-dirty-static-sdk/consumer-build/consumer"
+        ],
+        "exit_code": 0,
+        "elapsed_seconds": 0.35192605199999605,
+        "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g03/cuda-sdk-stage/static-tiny-public-cuda-1.log"
+      },
+      {
+        "mode": "shared",
+        "stage": "producer-build",
+        "command": [
+          "cmake",
+          "--build",
+          "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/shared-sdk-build",
+          "--target",
+          "hyle_compute",
+          "hyle_compute_batch",
+          "hyle_compute_backend_cuda",
+          "--parallel",
+          "4"
+        ],
+        "exit_code": 0,
+        "elapsed_seconds": 45.37469662299999,
+        "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g03/cuda-sdk-stage/shared-producer-build-1.log"
+      },
+      {
+        "mode": "shared",
+        "stage": "install",
+        "command": [
+          "cmake",
+          "--install",
+          "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/shared-sdk-build",
+          "--prefix",
+          "/root/hyle-scratch/compute-unified/g03-cuda-dirty-shared-sdk/staging"
+        ],
+        "exit_code": 0,
+        "elapsed_seconds": 0.42958512399999904,
+        "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g03/cuda-sdk-stage/shared-install-1.log"
+      },
+      {
+        "mode": "shared",
+        "stage": "consumer-configure",
+        "command": [
+          "cmake",
+          "-S",
+          "/root/hyle-scratch/compute-unified/g03-cuda-dirty-shared-sdk/consumer",
+          "-B",
+          "/root/hyle-scratch/compute-unified/g03-cuda-dirty-shared-sdk/consumer-build",
+          "-G",
+          "Ninja",
+          "-DCMAKE_BUILD_TYPE=Release",
+          "-DCMAKE_CXX_COMPILER=/usr/bin/g++-14",
+          "-DCMAKE_PREFIX_PATH=/root/hyle-scratch/compute-unified/g03-cuda-dirty-shared-sdk/relocated",
+          "-DCUDAToolkit_ROOT=/usr/local/cuda-13.3",
+          "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON"
+        ],
+        "exit_code": 0,
+        "elapsed_seconds": 22.72825191599999,
+        "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g03/cuda-sdk-stage/shared-consumer-configure-1.log"
+      },
+      {
+        "mode": "shared",
+        "stage": "consumer-build",
+        "command": [
+          "cmake",
+          "--build",
+          "/root/hyle-scratch/compute-unified/g03-cuda-dirty-shared-sdk/consumer-build",
+          "--target",
+          "consumer",
+          "headers",
+          "--parallel",
+          "4"
+        ],
+        "exit_code": 0,
+        "elapsed_seconds": 1.5784542970000075,
+        "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g03/cuda-sdk-stage/shared-consumer-build-1.log"
+      },
+      {
+        "mode": "shared",
+        "stage": "tiny-public-cuda",
+        "command": [
+          "/root/hyle-scratch/compute-unified/g03-cuda-dirty-shared-sdk/consumer-build/consumer"
+        ],
+        "exit_code": 0,
+        "elapsed_seconds": 0.23501582200000826,
+        "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g03/cuda-sdk-stage/shared-tiny-public-cuda-1.log"
+      }
+    ],
+    "cumulative_seconds": 148.599084661
+  },
+  "inputs": {
+    "candidate": "b42832de3ddda21bdc3e98ad4cc87e73622cbba4",
+    "one_way": true,
+    "inputs": [
+      {
+        "path": "cmake/HyleComponents.cmake",
+        "sha256": "b642342cca9e1068b69dee2e961ea7cd3515b5e29f8f4a5dbfb2ed36b9c0d399"
+      },
+      {
+        "path": "docs/implementation/module-status.json",
+        "sha256": "a95675a6e41e7488c901d9e7030b380791f559f846d26a0ff333f6bf2ad91856"
+      },
+      {
+        "path": "include/hyle/compute/apple.h",
+        "sha256": "8abdb414b5fce2bf8bfb2a275f3f4f253da2f607c4942f27936c15bfe074154a"
+      },
+      {
+        "path": "include/hyle/compute/apple_batch.h",
+        "sha256": "0d23792e823363918343bf966396b59839d7b98f8f93b7104a8a66d4145173c7"
+      },
+      {
+        "path": "include/hyle/compute/apple_memory.h",
+        "sha256": "a169b5822966f19ea0a581ff10aab53008687943b30783fa94126f49be8e21b1"
+      },
+      {
+        "path": "include/hyle/compute/apple_weights.h",
+        "sha256": "78197354b92152d701f320078f373868152ba8d68268442bfc825742bd10809f"
+      },
+      {
+        "path": "include/hyle/compute/backends/cpu.h",
+        "sha256": "a0b99762a3620c1b44b6856263c172d12fa6e482282fe9c2fcc06aa7d82a1d4d"
+      },
+      {
+        "path": "include/hyle/compute/backends/cuda.h",
+        "sha256": "9b1565cee1a199e46a524da1d244f6f5e1c3d8236bd5e69849583ee5ff27a91f"
+      },
+      {
+        "path": "include/hyle/compute/batch_execution.h",
+        "sha256": "a6ddc0c55fe71bc1715aa9a358aee0d34ffce3f866fc2d4f6ca7ade838306752"
+      },
+      {
+        "path": "include/hyle/compute/batch_layout.h",
+        "sha256": "654d7d3aedcbb9e50532e137ea3d89bb8aa0c5f5697879d4ff79455843fe5402"
+      },
+      {
+        "path": "include/hyle/compute/batch_materialize.h",
+        "sha256": "20b5bf296f10e6f2dd63c08334e1563caa300bb6c44733ad409c76c7ee147bb7"
+      },
+      {
+        "path": "include/hyle/compute/batch_ops.h",
+        "sha256": "fe837a188f82beb01570a817ce5fdaa804ee7abbe24a7aa64d48c31522f0d7c0"
+      },
+      {
+        "path": "include/hyle/compute/batch_paged_native.h",
+        "sha256": "4a6ddd0d500e139857923d730c28b894f3b6330d5209ccb29c9236448eb38005"
+      },
+      {
+        "path": "include/hyle/compute/batch_transfer.h",
+        "sha256": "3cc9ea1f7ac59e60a896d2f0e63318b3c8b47073ebdb390d9a384830e9cfbf61"
+      },
+      {
+        "path": "include/hyle/compute/completion.h",
+        "sha256": "98b34b9ee4665e9aedac719504c029a509f304b0a4f566bf6b7f76d88dc2ef34"
+      },
+      {
+        "path": "include/hyle/compute/cpu.h",
+        "sha256": "bccb8e5d310086b41c6f010a84f56219ac33830e92e5da22ce2ff12cd608ccb6"
+      },
+      {
+        "path": "include/hyle/compute/cuda.h",
+        "sha256": "13757830a7d376d94d9ffc1993dd56b6872d5c7168961eb630c014e1efa57fa6"
+      },
+      {
+        "path": "include/hyle/compute/cuda_weights.h",
+        "sha256": "4fdd66441bdedc22b4352f19a8e8bf89dfefc214fb695750d38fd9636aa13d44"
+      },
+      {
+        "path": "include/hyle/compute/custom_kernel.h",
+        "sha256": "12ea43a8f599d6179d484b11e872ee998bbc47c61f9be66db90ac992e1532cbc"
+      },
+      {
+        "path": "include/hyle/compute/delegated_operation.h",
+        "sha256": "43a8c35359d39cb5db489892a5f9b79cd22a90af3b876992509353ad696ae960"
+      },
+      {
+        "path": "include/hyle/compute/detail/apple_batch_access.h",
+        "sha256": "79d49ab50ba766d84e8edf706c93d7cac85072216765442a1bbb685b31d3a475"
+      },
+      {
+        "path": "include/hyle/compute/detail/apple_plan.h",
+        "sha256": "486c08435888b705ba90459c0e81f9c5804411b22322a05110cc6b94f8f5435d"
+      },
+      {
+        "path": "include/hyle/compute/detail/backend_extension.h",
+        "sha256": "0a67fcfb43e69f7106a2b4628442a74d14e9e18f0efe691109973b701d065cd4"
+      },
+      {
+        "path": "include/hyle/compute/detail/batch_graph_access.h",
+        "sha256": "5fd73efbbe44befba9f4359550eb45a5fc5b24b583750faacbb8398de0c83184"
+      },
+      {
+        "path": "include/hyle/compute/detail/batch_provider.h",
+        "sha256": "1850c8e70ec085f83b6480bcac367c55a83b4a984dcc2cc6baf19e776872c146"
+      },
+      {
+        "path": "include/hyle/compute/detail/command_capture.h",
+        "sha256": "6f40aeb2b44d2b0820e895bfb6667e0308c6dbb12ba4374571dbc076287aa6b0"
+      },
+      {
+        "path": "include/hyle/compute/detail/completion_access.h",
+        "sha256": "8699638e39a1a7d5708cbb6a5e41f191228b3ac571b16b026eadcc1aa6765e34"
+      },
+      {
+        "path": "include/hyle/compute/detail/context_ref.h",
+        "sha256": "0e44878fc04ea7b7378078e81045dcfb4760a27d44a5fc843b874ff612051ab3"
+      },
+      {
+        "path": "include/hyle/compute/detail/copy_backend.h",
+        "sha256": "6a6b2a44a81292297e5f5eb44eefe4e360a6003995a516676932de5e1b55b324"
+      },
+      {
+        "path": "include/hyle/compute/detail/copy_control.h",
+        "sha256": "eeb48196ac0c86b12265783203bfaa06c7745034691dcce8555ad1993c29e6d2"
+      },
+      {
+        "path": "include/hyle/compute/detail/copy_ranges.h",
+        "sha256": "d765955751e07ed7ca01ecc6d792e83317df3affe5dbc6287b031aac07c812a0"
+      },
+      {
+        "path": "include/hyle/compute/detail/copy_stream_access.h",
+        "sha256": "31fef47df5169304feff1b20dbe46be744147ea7363d117d0344755daf84e350"
+      },
+      {
+        "path": "include/hyle/compute/detail/file_stream_access.h",
+        "sha256": "de668186ac0617204ed5473880f811a0268b1b07c842329a979b34b0c0f40d2e"
+      },
+      {
+        "path": "include/hyle/compute/detail/file_stream_copy.h",
+        "sha256": "27b8705a7731d63a953e3bd93118d9420a0b95168abd9b884ec37dea7e166dc0"
+      },
+      {
+        "path": "include/hyle/compute/detail/generated_result.h",
+        "sha256": "a749ef701a6352f2ce5a07b5ee1edd25f3ab226a9abc022b2ee79822ed23b700"
+      },
+      {
+        "path": "include/hyle/compute/detail/lease_access.h",
+        "sha256": "a51b7fd93c33f76820189c18ae37377d49b7aa320399dc32a75c78a2d6c10e18"
+      },
+      {
+        "path": "include/hyle/compute/detail/materialized_native_controller.h",
+        "sha256": "74085821d4b85e860ead3cd980855f0ff1385593c225d9228b375222696954dd"
+      },
+      {
+        "path": "include/hyle/compute/detail/native_lease_inputs.h",
+        "sha256": "57fa15f11a88bb50425e2d728d774240d0bcecf880410eb1636b30d3cf9e8aa7"
+      },
+      {
+        "path": "include/hyle/compute/detail/paged_arena_access.h",
+        "sha256": "a1f07762dab2d3aa6cdca1f04a0a611a57deebd6e2c20cd64488e1009b3b40f7"
+      },
+      {
+        "path": "include/hyle/compute/detail/prepared_callbacks.h",
+        "sha256": "2d00a2e823af0bcdaa9fc0330aa441b18ce6932f090dc903be876f1b08e449a1"
+      },
+      {
+        "path": "include/hyle/compute/detail/provider_extension.h",
+        "sha256": "fd2441737a83d03544fac2b63092c5d4ca880bebeb009fc65bfddbf022b8909d"
+      },
+      {
+        "path": "include/hyle/compute/detail/queue_sequence.h",
+        "sha256": "e2df077fcccf12d4d7f1225df238376e309d18a1a9d386310f6d2156c3062f5c"
+      },
+      {
+        "path": "include/hyle/compute/detail/resource_binding.h",
+        "sha256": "5728b7fc8d0b9e6faf413dd5f8e5ba13e7ddf4d86354a722770f554c1591c6e5"
+      },
+      {
+        "path": "include/hyle/compute/detail/retained_completion.h",
+        "sha256": "fdb06b6ccaebce4fe43eee5f926f4a912c1342deb475e99a9e4d86c933b9df07"
+      },
+      {
+        "path": "include/hyle/compute/detail/state_clone_access.h",
+        "sha256": "b56629d38582f595a9b46eb74d9e6d4b983868bf3a73cf91fb4a965248ee9608"
+      },
+      {
+        "path": "include/hyle/compute/detail/vulkan_batch_access.h",
+        "sha256": "64cdb670843f701b68264f7c6063b32cc03c311b441d211aacd8d4ce2732ae6f"
+      },
+      {
+        "path": "include/hyle/compute/detail/vulkan_plan.h",
+        "sha256": "88d3b62666ce55fba3a8e6b1b52348ec5d0377501b796ed6475b9c66d3cf8f2c"
+      },
+      {
+        "path": "include/hyle/compute/device.h",
+        "sha256": "6fabfe06600cad6f12ec70a0b83246d8dbbf8ea9a8f9fcc002e9dfab7f801c5a"
+      },
+      {
+        "path": "include/hyle/compute/file_stream.h",
+        "sha256": "b668f8b7480df6e0ade7785fe8a6581c6753ac422f1aae419caa33c38dae9cc6"
+      },
+      {
+        "path": "include/hyle/compute/leased_operation.h",
+        "sha256": "f86ac789b456e8084061f068de2ac947fddbdaf552ed1042585dd5beb1c56185"
+      },
+      {
+        "path": "include/hyle/compute/low_precision.h",
+        "sha256": "8f6c0931775a1720335c3c990b30c48203cea4044382be7f10c3028cbd2f9d49"
+      },
+      {
+        "path": "include/hyle/compute/model_ops.h",
+        "sha256": "d3f3b76c2ec0923b0b9ece176dfe7e484c053cb63bee24c27bcff182617ed1b9"
+      },
+      {
+        "path": "include/hyle/compute/operation.h",
+        "sha256": "e4ee275e58618a5e18e4c4cd4e5c749f9dd209102a3bdb854a5fac11acb2e079"
+      },
+      {
+        "path": "include/hyle/compute/ops_visibility.h",
+        "sha256": "ae84b32667858fd2dd679bf2ba68e50d7405e9164ec0fd317173f20086b5fa6d"
+      },
+      {
+        "path": "include/hyle/compute/paged_arena.h",
+        "sha256": "42e9b72cb99d7cb8cb48a43dc837ab0647d44f68b71db3789664dd034f11f8c3"
+      },
+      {
+        "path": "include/hyle/compute/prepared_operation.h",
+        "sha256": "3fe6a6f1ddc31c2181a208658e627be20933bde325ec0b63dba06281d007ed7b"
+      },
+      {
+        "path": "include/hyle/compute/provider.h",
+        "sha256": "1a4650e03cb2a0f6f46d22d914db197fb4bb7a59cd5aced180140feee0a7f337"
+      },
+      {
+        "path": "include/hyle/compute/providers/cublas.h",
+        "sha256": "6dfd5e49a9fcfb15f4624939454062bbc6a029b54f6edc4e3c59fe868a51d474"
+      },
+      {
+        "path": "include/hyle/compute/providers/cuda.h",
+        "sha256": "1b8c91cfd65b52b19503c3a8ddc31af9524093f35c1063071a2c0a56e4603106"
+      },
+      {
+        "path": "include/hyle/compute/providers/flashinfer.h",
+        "sha256": "a430e5cabd6b93bebef5b8c9d89b6f3bce7e6b0a081763b49362ae94f3e72984"
+      },
+      {
+        "path": "include/hyle/compute/providers/ggml_cpu.h",
+        "sha256": "1df53042a6ad5d6e899aca9fc75418d9fa561c85eb769d79ea72b88f3530d6b1"
+      },
+      {
+        "path": "include/hyle/compute/providers/ggml_cuda.h",
+        "sha256": "08b6ca997b48e4b1e4c8811669e62232b943a9364a77b10996341f5fb7e51e61"
+      },
+      {
+        "path": "include/hyle/compute/providers/native.h",
+        "sha256": "3be77c0f4ecda743d7b03d27658120d27867d281c77fd0ed5eaa5ad12ac3ad5d"
+      },
+      {
+        "path": "include/hyle/compute/providers/onednn.h",
+        "sha256": "3e9fbdfa34e309f2695600a043adf15828643feb6aa8d37c23f1358826bc681b"
+      },
+      {
+        "path": "include/hyle/compute/providers/torch_cuda.h",
+        "sha256": "a346ecc9a02d54caf6cf6c5fe0950fcb02aa0390aab45aef09baf605c082b5e8"
+      },
+      {
+        "path": "include/hyle/compute/resource_budget.h",
+        "sha256": "7e04cba9fb6727e883ef89a66a80b1f50b363c0b250bf327711ac430b6f13c5b"
+      },
+      {
+        "path": "include/hyle/compute/resource_leases.h",
+        "sha256": "22d7f2153ef8c0b1f6602b84ab00d96d75afc576f3b093a59749ab4f6891446d"
+      },
+      {
+        "path": "include/hyle/compute/resource_requirement.h",
+        "sha256": "0a1260090ba84ed86cf26b27ec5d187c8ed5d39b1acda641b632a3b84d3acf76"
+      },
+      {
+        "path": "include/hyle/compute/result.h",
+        "sha256": "7e4e55a4dbd1dde6deeca6630f023045ea18740867746ae1827d4f45b806d9ee"
+      },
+      {
+        "path": "include/hyle/compute/route_policy.h",
+        "sha256": "71a4fd38cb6702769cf9879e9c02a631797986f6c1f18417f014b65bb8d70926"
+      },
+      {
+        "path": "include/hyle/compute/state_clone.h",
+        "sha256": "1e20c2363bb1fc6c1aa7b6b72247d5f1a2fde4d4f5ab04e5c2e7791c14d64b3f"
+      },
+      {
+        "path": "include/hyle/compute/state_versions.h",
+        "sha256": "a83193baa10ff4f00fc6eb7289b7f25091038096877ee3dc3aa0053a7b5ca878"
+      },
+      {
+        "path": "include/hyle/compute/tensor.h",
+        "sha256": "ac00f221a66d0f9044a2b49a1123a6b99a6c425568790898129c31d81519c538"
+      },
+      {
+        "path": "include/hyle/compute/tensor_desc.h",
+        "sha256": "e5496e00c643bcce2efbb42666773f4172243d10458b756d6f9881b0e677eb9a"
+      },
+      {
+        "path": "include/hyle/compute/transfer.h",
+        "sha256": "240e618942e9975640dac7ebcd4ce1b0fbbc2d01b1eb19a4576bf1be39e8090c"
+      },
+      {
+        "path": "include/hyle/compute/visibility.h",
+        "sha256": "fb05970d03d232298d57da8921c3a441cd93cd0d9dbb6cbcfcaa5b6a51964aa5"
+      },
+      {
+        "path": "include/hyle/compute/vulkan.h",
+        "sha256": "f9a0db613b0bcdc1670cb5c77109ef040ed71b2dc15e73640e1e401b940b5dff"
+      },
+      {
+        "path": "include/hyle/compute/vulkan_batch.h",
+        "sha256": "10c8fc75104b91da9a57b31d39f164400e8922b10a0e442cff17bd0bfd5808c4"
+      },
+      {
+        "path": "include/hyle/compute/vulkan_memory.h",
+        "sha256": "19f9f87da064399e7f4dd92a22c6d3a095f3e0796fb0f49fca51a5068e1fae74"
+      },
+      {
+        "path": "include/hyle/compute/vulkan_weights.h",
+        "sha256": "7d1edd718226dbec3bc270da7250930d23ba367201b0a3eecaea4a3f45d302ff"
+      },
+      {
+        "path": "include/hyle/compute/workload.h",
+        "sha256": "2e7509d99d986e71b06788e4dd1dcb9595799e2ad972df48449ff0b58f0815ad"
+      },
+      {
+        "path": "src/compute/batch_transfer.cc",
+        "sha256": "4f961efb51fbf685fd7a3cd0d5720fad15d6ab0c99111542b89849209e857877"
+      },
+      {
+        "path": "src/compute_batch/CMakeLists.txt",
+        "sha256": "ea7314ffe7ef7cb42224c5e2c033d2a65f25ab16592331fe1e10b46faf3b822f"
+      },
+      {
+        "path": "src/compute_batch/batch_execution.cc",
+        "sha256": "6af0d9b26e37cde36972e3b0d40674c772cfdc3adbcaff83fb1ca3be967a8bb9"
+      },
+      {
+        "path": "src/compute_batch/batch_layout.cc",
+        "sha256": "9643f20396e320aac8f2184ddd243f996a70ee46e81487eb397fa3a54ac020f4"
+      },
+      {
+        "path": "src/compute_batch/batch_materialize.cc",
+        "sha256": "6313f696f2041ce06cc31f0ceeb8506906689bf3c475368d69232de7a943e967"
+      },
+      {
+        "path": "src/compute_batch/batch_paged_native.cc",
+        "sha256": "f07fe31741570dc3d54de486131c3bf0ab330445e143cfde543825ece4def3b2"
+      },
+      {
+        "path": "src/compute_batch/materialized_invocation.cc",
+        "sha256": "860a21558c660eba7c581507b62e89c5a75c57db7547c13c7d860c454b7b272a"
+      },
+      {
+        "path": "src/compute_batch/paged_arena.cc",
+        "sha256": "83e19e937410380e1cdeec429d839ef7a6cf563c41cb347fa1a897a54c9cca5d"
+      },
+      {
+        "path": "tests/compute_batch/dirty_page_cuda_consumer.cc",
+        "sha256": "3a23b65631d0afda4f797472b3734161227c08f2bf9656ff0afcf94ab86c645a"
+      }
+    ],
+    "changed": [
+      "cmake/HyleComponents.cmake",
+      "docs/implementation/module-status.json",
+      "include/hyle/compute/apple_batch.h",
+      "include/hyle/compute/apple_memory.h",
+      "include/hyle/compute/batch_paged_native.h",
+      "include/hyle/compute/batch_transfer.h",
+      "include/hyle/compute/detail/apple_batch_access.h",
+      "include/hyle/compute/detail/materialized_native_controller.h",
+      "include/hyle/compute/detail/vulkan_batch_access.h",
+      "include/hyle/compute/paged_arena.h",
+      "include/hyle/compute/providers/ggml_cpu.h",
+      "include/hyle/compute/vulkan_batch.h",
+      "include/hyle/compute/vulkan_memory.h",
+      "src/compute/batch_transfer.cc",
+      "src/compute_batch/CMakeLists.txt",
+      "src/compute_batch/batch_paged_native.cc",
+      "src/compute_batch/paged_arena.cc",
+      "tests/compute_batch/dirty_page_cuda_consumer.cc"
+    ]
+  },
+  "consumer_sha256": "3a23b65631d0afda4f797472b3734161227c08f2bf9656ff0afcf94ab86c645a"
+}

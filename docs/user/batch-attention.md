@@ -224,7 +224,7 @@ clone到新writer；只把所有成功ready成员finalize为candidate，再由St
 expected-base切换。失败copy不产生ready writer/lease，不能送进F5，也不能发布F4 head。
 取消不能回滚已经实际写过的底层字节，不能在失败后伪造整页CoW成功。
 
-G03 正在验收保留原页内容的精确增量路径。`arena.acquire(page_ready)` 只在这个原整页
+G03 的[精确增量有限路径](../implementation/tasks/compute/inference-g03-dirty-page-terminal.md)已验收。`arena.acquire(page_ready)` 只在这个原整页
 没有其它 reader/native use 时消费其 ready lease，返回同 generation 的 writer；拒绝
 保持入参不变。共享页先沿上面的显式 clone 路线处理，不能原地覆盖旧版本。
 

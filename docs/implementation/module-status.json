@@ -270,10 +270,14 @@
     },
     {
       "module": "compute",
-      "state": "CANDIDATE",
-      "record": "docs/implementation/tasks/compute/inference-g03-producer-paged-consumption.md",
-      "summary": "G03 GP01/GP02 fixed CANDIDATE b428: original unique ready page content/gen-preserving reacquisition and public F2 nonblocking actual-retirement observation/mutable return. CPU64/arena9, Air native mixed F16/BF16/F16 192steps and nine actual copy lifecycle risks, F3 direct14 PASS; host san/relocated SDK/header pending. Full pending producer-to-attention and whole G03/goal not claimed.",
-      "candidate": "b42832de3ddda21bdc3e98ad4cc87e73622cbba4"
+      "state": "CLOSED",
+      "record": "docs/implementation/tasks/compute/inference-g03-dirty-page-terminal.md",
+      "summary": "G03 GP01/GP02 finite CLOSED atb428: original whole ready page unique content/gen-preserving reacquire; public F2 nonblocking actual-retirement observe and mutable return. CPU64/arena9, native192/copy9, F3direct14, six modeled hostsan, six relocated SDKs22headers, tiny actual CUDA source+SDK64each and W1 compile/link PASS. Original failures/unknown/private/Windows unrun limits retained; full pending producer-to-attention and wholeG03/goal remain required.",
+      "candidate": "b42832de3ddda21bdc3e98ad4cc87e73622cbba4",
+      "performance": {
+        "tier": "P0",
+        "evidence": "docs/implementation/tasks/compute/inference-g03-dirty-page-terminal.md"
+      }
     },
     {
       "module": "graph",
@@ -510,10 +514,14 @@
     },
     {
       "module": "compute_route_apple",
-      "state": "CANDIDATE",
-      "record": "docs/implementation/tasks/compute/inference-g03-producer-paged-consumption.md",
-      "summary": "G03 GP01/GP02 fixed CANDIDATE b428: original unique ready page content/gen-preserving reacquisition and public F2 nonblocking actual-retirement observation/mutable return. CPU64/arena9, Air native mixed F16/BF16/F16 192steps and nine actual copy lifecycle risks, F3 direct14 PASS; host san/relocated SDK/header pending. Full pending producer-to-attention and whole G03/goal not claimed.",
-      "candidate": "b42832de3ddda21bdc3e98ad4cc87e73622cbba4"
+      "state": "CLOSED",
+      "record": "docs/implementation/tasks/compute/inference-g03-dirty-page-terminal.md",
+      "summary": "G03 GP01/GP02 finite CLOSED atb428: original whole ready page unique content/gen-preserving reacquire; public F2 nonblocking actual-retirement observe and mutable return. CPU64/arena9, native192/copy9, F3direct14, six modeled hostsan, six relocated SDKs22headers, tiny actual CUDA source+SDK64each and W1 compile/link PASS. Original failures/unknown/private/Windows unrun limits retained; full pending producer-to-attention and wholeG03/goal remain required.",
+      "candidate": "b42832de3ddda21bdc3e98ad4cc87e73622cbba4",
+      "performance": {
+        "tier": "P0",
+        "evidence": "docs/implementation/tasks/compute/inference-g03-dirty-page-terminal.md"
+      }
     },
     {
       "module": "graph_route_apple",
@@ -528,10 +536,14 @@
     },
     {
       "module": "compute_route_vulkan",
-      "state": "CANDIDATE",
-      "record": "docs/implementation/tasks/compute/inference-g03-producer-paged-consumption.md",
-      "summary": "G03 GP01/GP02 fixed CANDIDATE b428: original unique ready page content/gen-preserving reacquisition and public F2 nonblocking actual-retirement observation/mutable return. CPU64/arena9, Air native mixed F16/BF16/F16 192steps and nine actual copy lifecycle risks, F3 direct14 PASS; host san/relocated SDK/header pending. Full pending producer-to-attention and whole G03/goal not claimed.",
-      "candidate": "b42832de3ddda21bdc3e98ad4cc87e73622cbba4"
+      "state": "CLOSED",
+      "record": "docs/implementation/tasks/compute/inference-g03-dirty-page-terminal.md",
+      "summary": "G03 GP01/GP02 finite CLOSED atb428: original whole ready page unique content/gen-preserving reacquire; public F2 nonblocking actual-retirement observe and mutable return. CPU64/arena9, native192/copy9, F3direct14, six modeled hostsan, six relocated SDKs22headers, tiny actual CUDA source+SDK64each and W1 compile/link PASS. Original failures/unknown/private/Windows unrun limits retained; full pending producer-to-attention and wholeG03/goal remain required.",
+      "candidate": "b42832de3ddda21bdc3e98ad4cc87e73622cbba4",
+      "performance": {
+        "tier": "P0",
+        "evidence": "docs/implementation/tasks/compute/inference-g03-dirty-page-terminal.md"
+      }
     },
     {
       "module": "graph_route_vulkan",
@@ -692,10 +704,14 @@
     },
     {
       "module": "compute_batch",
-      "state": "CANDIDATE",
-      "record": "docs/implementation/tasks/compute/inference-g03-producer-paged-consumption.md",
-      "summary": "G03 GP01/GP02 fixed CANDIDATE b428: original unique ready page content/gen-preserving reacquisition and public F2 nonblocking actual-retirement observation/mutable return. CPU64/arena9, Air native mixed F16/BF16/F16 192steps and nine actual copy lifecycle risks, F3 direct14 PASS; host san/relocated SDK/header pending. Full pending producer-to-attention and whole G03/goal not claimed.",
-      "candidate": "b42832de3ddda21bdc3e98ad4cc87e73622cbba4"
+      "state": "CLOSED",
+      "record": "docs/implementation/tasks/compute/inference-g03-dirty-page-terminal.md",
+      "summary": "G03 GP01/GP02 finite CLOSED atb428: original whole ready page unique content/gen-preserving reacquire; public F2 nonblocking actual-retirement observe and mutable return. CPU64/arena9, native192/copy9, F3direct14, six modeled hostsan, six relocated SDKs22headers, tiny actual CUDA source+SDK64each and W1 compile/link PASS. Original failures/unknown/private/Windows unrun limits retained; full pending producer-to-attention and wholeG03/goal remain required.",
+      "candidate": "b42832de3ddda21bdc3e98ad4cc87e73622cbba4",
+      "performance": {
+        "tier": "P0",
+        "evidence": "docs/implementation/tasks/compute/inference-g03-dirty-page-terminal.md"
+      }
     },
     {
       "module": "graph_batch",
