@@ -1,0 +1,37 @@
+Running main() from /Users/kiro/Library/Caches/hyle/dependencies/v1/sources/googletest-063de7e9578f-162765170ae6/googletest/src/gtest_main.cc
+[==========] Running 14 tests from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 14 tests from FileStream
+[ RUN      ] FileStream.RealPositionalReadWriteReloadAcrossTwoSlotsAndMultipleChunks
+[       OK ] FileStream.RealPositionalReadWriteReloadAcrossTwoSlotsAndMultipleChunks (4 ms)
+[ RUN      ] FileStream.RetainedReadyAndExportedLeaseKeepRequestAndBackingCapacity
+[       OK ] FileStream.RetainedReadyAndExportedLeaseKeepRequestAndBackingCapacity (0 ms)
+[ RUN      ] FileStream.LaterEofPreservesEarlierReadyAndActualPartialProgress
+[       OK ] FileStream.LaterEofPreservesEarlierReadyAndActualPartialProgress (0 ms)
+[ RUN      ] FileStream.InvalidBoundsAndOverlappingSinkRejectBeforeConsumingLeases
+[       OK ] FileStream.InvalidBoundsAndOverlappingSinkRejectBeforeConsumingLeases (0 ms)
+[ RUN      ] FileStream.ImmutableMappingUsesBoundedStageAndCancellationDoesNotPublish
+[       OK ] FileStream.ImmutableMappingUsesBoundedStageAndCancellationDoesNotPublish (1 ms)
+[ RUN      ] FileStream.ColdOomAndOwnedFileFailureAreRecoverableWithoutMovingInputs
+[       OK ] FileStream.ColdOomAndOwnedFileFailureAreRecoverableWithoutMovingInputs (0 ms)
+[ RUN      ] FileStream.DescriptionOffsetAndBackingQuotaRejectBeforeMovingOrDoingIo
+[       OK ] FileStream.DescriptionOffsetAndBackingQuotaRejectBeforeMovingOrDoingIo (0 ms)
+[ RUN      ] FileStream.AcceptedSourceOwnsFileAndDescriptorsAfterCallerDropsThem
+[       OK ] FileStream.AcceptedSourceOwnsFileAndDescriptorsAfterCallerDropsThem (0 ms)
+[ RUN      ] FileStream.OriginalReadonlySinkErrorKeepsZeroFileBytesAndDoesNotPublish
+[       OK ] FileStream.OriginalReadonlySinkErrorKeepsZeroFileBytesAndDoesNotPublish (0 ms)
+[ RUN      ] FileStream.AcceptedHotMetadataOomReportsFailureAndReleasesOriginalOwners
+[       OK ] FileStream.AcceptedHotMetadataOomReportsFailureAndReleasesOriginalOwners (0 ms)
+[ RUN      ] FileStream.ExportedReadyAndLeaseCanRetireOnAnotherThreadWithoutReusingHeldRecord
+[       OK ] FileStream.ExportedReadyAndLeaseCanRetireOnAnotherThreadWithoutReusingHeldRecord (0 ms)
+[ RUN      ] FileStream.ExplicitDirectIoUsesAlignedChunksAndRejectsMisalignedTailBeforeConsumption
+[       OK ] FileStream.ExplicitDirectIoUsesAlignedChunksAndRejectsMisalignedTailBeforeConsumption (0 ms)
+[ RUN      ] FileStream.ExpiredDeadlineAndRepeatedClosePreserveUserResourcesAndRejectNewWork
+[       OK ] FileStream.ExpiredDeadlineAndRepeatedClosePreserveUserResourcesAndRejectNewWork (0 ms)
+[ RUN      ] FileStream.OriginalFileSizeLimitPreservesPositiveShortWritePrefixAndNoGroupReady
+[       OK ] FileStream.OriginalFileSizeLimitPreservesPositiveShortWritePrefixAndNoGroupReady (0 ms)
+[----------] 14 tests from FileStream (9 ms total)
+
+[----------] Global test environment tear-down
+[==========] 14 tests from 1 test suite ran. (9 ms total)
+[  PASSED  ] 14 tests.

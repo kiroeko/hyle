@@ -275,6 +275,7 @@ Result<CopyBatchInvocation> CopyBatchInvocation::create(const CopyBatchProgram &
   state->report.native_metadata_unknown = true; return result;
 }
 Result<WriteLease> CopyBatchInvocation::unbind_mutable(CopyResourceId id) noexcept {
+  HYLE_RETURN_IF_ERROR(detail::CopyStreamAccess::observe(*this));
   return detail::CopyStreamAccess::take_mutable(*this,id);
 }
 Result<WriteLease> detail::CopyStreamAccess::take_mutable(CopyBatchInvocation &invocation, CopyResourceId id) noexcept {

@@ -83,7 +83,7 @@ F2 update→原mutable权限返回已有private实现，GP02 BORROW/FIX其public
 | FIX | owner与产品形状 | 成功/失败与成本 |
 |---|---|---|
 | GP01 | compute_batch：PagedArena::acquire(ReadLease& ready)→PagedPageWriter | 只接受此arena当前ready original整页，复用ReadLease::try_write；成功消费入参、同block/offset/generation、slot变acquired，失败不消费/不改slot。保old frame/read/native use的unique拒绝；无payload copy、allocation或扫描，全页内容由caller原初始化证明 |
-| GP02 | compute/Apple/Vulkan：CopyBatchInvocation::unbind_mutable(CopyResourceId)→WriteLease | 直接借原CopyStreamAccess::take_mutable；无retained submission/actual uses，所有accepted phases成功retired才返原writer，或撤回尚未提交binding。失败/unknown/closed/readonly/output已publish/错误ID拒绝不消费。成功清原binding并使prepared失效；无host wait/new state/allocator/metadata |
+| GP02 | compute/Apple/Vulkan：CopyBatchInvocation::unbind_mutable(CopyResourceId)→WriteLease | 借原CopyStreamAccess::observe进行nonblocking actual retirement观察，再take_mutable；无retained submission/actual uses，所有accepted phases成功retired才返原writer，或撤回尚未提交binding。失败/unknown/closed/readonly/output已publish/错误ID拒绝不消费。成功清原binding并使prepared失效；O(accepted phases)，已知ready不重复native wait，无host wait/new state/allocator/metadata |
 
 自然调用是arena.acquire(page_ready)→F2 bind_mutable(move(page.lease()))→bind_producer/
 prepare/submit→实际wait成功→drop submission→page.lease()=copy.unbind_mutable(id)→
@@ -114,3 +114,14 @@ pending chain与其余七实际路线，不签整个G03/goal。预算沿原2h检
 public64与原/新增九arena/F2/F4测试PASS。两次fixture编译/范围错误保原日志/输入与累计。
 产品owner仍AUDITED；native actual、san、三交付/逐头与failure/unknown门尚未签，不宣布
 candidate/子批/整个G03完成。原Windows重型未决门仍不启动。
+
+实际Air追加反证：GP02只take_mutable时，abandon成功native工作后controller无公开
+retirement观察，writer仍Unavailable。按同FIX补上原nonblocking observe再take，非新
+Completion/state机器；原source proof仍绑定旧draft，不冒充新bytes资格。新验证保原
+abandon FAIL/input，重跑受影响的CPU/actual native入口与必要风险，不重跑原G01 P1。
+
+[追加native source/风险阶段](../../../../evidence/correctness/inference-g03-dirty-page-native-stage/README.md)
+完成：Apple F16/BF16、Vulkan F16共192 final64步mixed prefill/decode/growth与9 actual
+native copy风险PASS；原CPU64/arena9复验与F3直接14tests通过。保abandon真缺口、
+Vulkan fixture的UMA路径/empty accepted prefix与错误teardown FAIL及对应inputs/ips。
+host san、三交付/头仍待候选资格，整个pending producer→attention和G03其它路线保留。

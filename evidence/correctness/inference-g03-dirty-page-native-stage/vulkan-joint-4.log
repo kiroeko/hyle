@@ -1,0 +1,4 @@
+Vulkan dirty copy risk mode=0 actual submits=1 accepted=1 waits=1 confirmed-fences=0 successful/failed/unknown/closed permission return PASS
+Vulkan dirty copy risk mode=1 actual submits=1 accepted=0 waits=0 confirmed-fences=0 successful/failed/unknown/closed permission return PASS
+Vulkan dirty copy risk mode=2 actual submits=1 accepted=1 waits=1 confirmed-fences=0 successful/failed/unknown/closed permission return PASS
+Vulkan dirty copy risk mode=3 actual submits=1 accepted=1 waits=1 confirmed-fences=0 successful/failed/unknown/closed permission return PASS

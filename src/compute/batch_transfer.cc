@@ -312,6 +312,7 @@ Status CopyBatchInvocation::bind_source(CopyResourceId id, const ReadLease &sour
   return Status::Ok();
 }
 Result<WriteLease> CopyBatchInvocation::unbind_mutable(CopyResourceId id) noexcept {
+  HYLE_RETURN_IF_ERROR(detail::CopyStreamAccess::observe(*this));
   return detail::CopyStreamAccess::take_mutable(*this,id);
 }
 Result<WriteLease> detail::CopyStreamAccess::take_mutable(

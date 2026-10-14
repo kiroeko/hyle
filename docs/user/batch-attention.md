@@ -247,6 +247,8 @@ page_ready = page.publish().value();
 
 `unbind_mutable` 不等待、不产生 readonly output；retained submission、pending/unknown/
 failure、closed 或已 publish 的 binding 都拒绝。成功使旧 replay preparation 失效。
+它会沿原 F2 作非阻塞退休观察；仅放弃 submission 时仍保留 PagedPageWriter，后续
+调用可在成功实际退休后取回权限。不能销毁 page writer 后猜测 arena slot 已恢复。
 这里仍有显式 host observation；G03 的异步 producer→attention、G06 decode planning 与
 G09 流水须分别看各自验收，不能由这段精确更新调用推断已完成。
 

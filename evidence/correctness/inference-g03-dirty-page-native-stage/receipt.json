@@ -1,0 +1,1101 @@
+{
+  "scope": "GP01/GP02 current8 product inputs; actual Air F16/BF16 mixed Q1/17 GQA8/2 D25664 growth; successful/queued/failure/cancel/abandon/unknown/closed actual copy permission return; CPU64+arena9 and directF3 source14. No SDK/host sanitizer/full pending producer qualification.",
+  "product_inputs": [
+    {
+      "path": "include/hyle/compute/batch_transfer.h",
+      "sha256": "3cc9ea1f7ac59e60a896d2f0e63318b3c8b47073ebdb390d9a384830e9cfbf61"
+    },
+    {
+      "path": "include/hyle/compute/paged_arena.h",
+      "sha256": "42e9b72cb99d7cb8cb48a43dc837ab0647d44f68b71db3789664dd034f11f8c3"
+    },
+    {
+      "path": "include/hyle/compute/apple_memory.h",
+      "sha256": "a169b5822966f19ea0a581ff10aab53008687943b30783fa94126f49be8e21b1"
+    },
+    {
+      "path": "include/hyle/compute/vulkan_memory.h",
+      "sha256": "19f9f87da064399e7f4dd92a22c6d3a095f3e0796fb0f49fca51a5068e1fae74"
+    },
+    {
+      "path": "src/compute/batch_transfer.cc",
+      "sha256": "4f961efb51fbf685fd7a3cd0d5720fad15d6ab0c99111542b89849209e857877"
+    },
+    {
+      "path": "src/compute_batch/paged_arena.cc",
+      "sha256": "83e19e937410380e1cdeec429d839ef7a6cf563c41cb347fa1a897a54c9cca5d"
+    },
+    {
+      "path": "src/compute_route_apple/apple_copy_program.cc",
+      "sha256": "e368139b718d5707a48d5ff8c29efc2bf02168809085f85c56f877cfe4bede91"
+    },
+    {
+      "path": "src/compute_route_vulkan/vulkan_copy_program.cc",
+      "sha256": "b8b54ed12b461e5afb2d7e2068811a0aac844dd8e000650224a0dc660861e5f0"
+    }
+  ],
+  "native_risks": {
+    "identity": {
+      "model": "Mac16,12",
+      "arch": "arm64",
+      "os": "ProductName:\t\tmacOS\nProductVersion:\t\t27.0.1\nBuildVersion:\t\t26A434",
+      "compiler": "Apple clang version 21.0.0 (clang-2100.3.34.2)\nTarget: arm64-apple-darwin27.0.0\nThread model: posix\nInstalledDir: /Library/Developer/CommandLineTools/usr/bin",
+      "cpu": "10",
+      "memory": "17179869184"
+    },
+    "candidate": "AUDITED WORKTREE draft",
+    "scope": "actual native dirty copy permission-return risks: queued success/cancel/abandon/prefix failure/closed and Vulkan native accepted unknown/actual fence wait; source-only fixtures",
+    "inputs": [
+      {
+        "path": "cmake/HyleComponents.cmake",
+        "sha256": "b642342cca9e1068b69dee2e961ea7cd3515b5e29f8f4a5dbfb2ed36b9c0d399"
+      },
+      {
+        "path": "include/hyle/compute/apple_memory.h",
+        "sha256": "a169b5822966f19ea0a581ff10aab53008687943b30783fa94126f49be8e21b1"
+      },
+      {
+        "path": "include/hyle/compute/batch_transfer.h",
+        "sha256": "3cc9ea1f7ac59e60a896d2f0e63318b3c8b47073ebdb390d9a384830e9cfbf61"
+      },
+      {
+        "path": "include/hyle/compute/detail/materialized_native_controller.h",
+        "sha256": "74085821d4b85e860ead3cd980855f0ff1385593c225d9228b375222696954dd"
+      },
+      {
+        "path": "include/hyle/compute/paged_arena.h",
+        "sha256": "42e9b72cb99d7cb8cb48a43dc837ab0647d44f68b71db3789664dd034f11f8c3"
+      },
+      {
+        "path": "include/hyle/compute/vulkan_memory.h",
+        "sha256": "19f9f87da064399e7f4dd92a22c6d3a095f3e0796fb0f49fca51a5068e1fae74"
+      },
+      {
+        "path": "include/hyle/graph/batch.h",
+        "sha256": "0db40b8c74dbaab965a9c1ccf629f43555053b56748908103202795513651231"
+      },
+      {
+        "path": "include/hyle/graph/cpu_apple.h",
+        "sha256": "0f977030c93d98303bb1e52c5500bedd5420fdb39c9ed1a676cb4485d6d9e9cc"
+      },
+      {
+        "path": "include/hyle/graph/cpu_vulkan.h",
+        "sha256": "f2583da386a75bfab90f0ead5c1962f29d57d6cfde55cb83a8b02c24341fe31f"
+      },
+      {
+        "path": "src/compute/batch_transfer.cc",
+        "sha256": "4f961efb51fbf685fd7a3cd0d5720fad15d6ab0c99111542b89849209e857877"
+      },
+      {
+        "path": "src/compute_batch/paged_arena.cc",
+        "sha256": "83e19e937410380e1cdeec429d839ef7a6cf563c41cb347fa1a897a54c9cca5d"
+      },
+      {
+        "path": "src/compute_route_apple/apple_copy_program.cc",
+        "sha256": "e368139b718d5707a48d5ff8c29efc2bf02168809085f85c56f877cfe4bede91"
+      },
+      {
+        "path": "src/compute_route_apple/apple_runtime_internal.h",
+        "sha256": "d081f2b519f87e6420345c94e92475aaf93b1c9cade591fd46bbe8a01f4a398a"
+      },
+      {
+        "path": "src/compute_route_vulkan/vulkan_copy_program.cc",
+        "sha256": "b8b54ed12b461e5afb2d7e2068811a0aac844dd8e000650224a0dc660861e5f0"
+      },
+      {
+        "path": "src/compute_route_vulkan/vulkan_internal.h",
+        "sha256": "622bdb184191db5f53db44733ba415ecb2b5e1d6cb24c247549bad28b4061165"
+      },
+      {
+        "path": "src/graph_batch/CMakeLists.txt",
+        "sha256": "60abda27d21dbb3c3dd16322367c674956057d27ef5efc5c3fdc8b55122101dc"
+      },
+      {
+        "path": "src/graph_batch/native_paged_node.cc",
+        "sha256": "c03ec70b6d7f2c9fe0c8c9ebc05bc943a45117ee700e17d3fd8923558856326f"
+      },
+      {
+        "path": "src/graph_batch/native_paged_nodes.h",
+        "sha256": "b21d82f81b38f6d7828185ea09ae36860683fdf627c49103878cdd9f76119394"
+      },
+      {
+        "path": "src/graph_batch/native_paged_slots.h",
+        "sha256": "3047622b44799f98d4074ba37aa9bf2666e025bd8f79ff9357047b6e0b069be8"
+      },
+      {
+        "path": "src/graph_route_cpu_apple/compile.cc",
+        "sha256": "1197508f62804c6093d0acd4f535f8447a2303e8f93f27bc01ace9f433b2c567"
+      },
+      {
+        "path": "src/graph_route_cpu_apple/invocation.cc",
+        "sha256": "4a08f9a6be0bf13c852548edf641abbd8cbdd9abcb3717a6d6bbf24d108bb151"
+      },
+      {
+        "path": "src/graph_route_cpu_apple/paged.h",
+        "sha256": "c8c11a8332c7efbb145881decfdf8ef1f4854e4e8cf21b51baf4b934e177543d"
+      },
+      {
+        "path": "src/graph_route_cpu_apple/plan.h",
+        "sha256": "2b9f13e858d4bfc46ea3bb5addf76e8f4bb8d3aa5e2b87d8750dac590d50d2a4"
+      },
+      {
+        "path": "src/graph_route_cpu_vulkan/compile.cc",
+        "sha256": "b41e3a4d0c3645e249c68019a9088f63462c30f1e9dc83e9107a5dced1c7c66e"
+      },
+      {
+        "path": "src/graph_route_cpu_vulkan/invocation.cc",
+        "sha256": "521b39f326c780639de65fe185e9490e7d0dca58f482ce647d6c0a6ab7edf108"
+      },
+      {
+        "path": "src/graph_route_cpu_vulkan/paged.h",
+        "sha256": "8ebad5bc55f0b80d63164ab441c4019bdfc8a2af587e5ae047758ac5d7722750"
+      },
+      {
+        "path": "src/graph_route_cpu_vulkan/plan.h",
+        "sha256": "c771f5639987bf6cec4415f5f080403547fa1890a05fbfb9c71760610a2e0d6e"
+      },
+      {
+        "path": "tests/compute_batch/allocation_fault_fixture.h",
+        "sha256": "7fc5d108ebfbe46853a14fb74b4c504721442757cd4aeab10f1314a9f03943dc"
+      },
+      {
+        "path": "tests/compute_batch/dirty_page_apple_risks.cc",
+        "sha256": "0f16ad9648c2ac1a3f64049570894c5c6ef0a9039cb0172222a13464164ed955"
+      },
+      {
+        "path": "tests/compute_batch/dirty_page_native_consumer.cc",
+        "sha256": "6362615b6d85cc80475173daef2eb83c26bde24457462a29e7c967c87eff8eb6"
+      },
+      {
+        "path": "tests/compute_batch/dirty_page_native_risk_fixture.h",
+        "sha256": "bf267ff39c7b16fc8ad1f9d1dac177218531588302535b3b8b92b5109c998483"
+      },
+      {
+        "path": "tests/compute_batch/dirty_page_vulkan_risks.cc",
+        "sha256": "ce97d0ecd58495bbe493c87fde22c26e28fdc617240f71cd9f796da0b15d7a8c"
+      },
+      {
+        "path": "tests/compute_batch/native_apple_failure_fixture.h",
+        "sha256": "fdb33f4f810aa078793a464450808da43e3d386721725a506e2c3697d4be2208"
+      },
+      {
+        "path": "tests/compute_batch/native_paged_risk_fixture.h",
+        "sha256": "79a9d4e7c8b4243fce6af02a948fd4dd0a91db060818b148e2c6cb8904105bee"
+      },
+      {
+        "path": "tests/compute_batch/native_vulkan_failure_fixture.h",
+        "sha256": "955af6a8f8ea20160f36f760866676997b99a12848dbd456108a72c20b030b90"
+      },
+      {
+        "path": "tests/graph/cpu_apple_contracts.cc",
+        "sha256": "d4ee1d0cea8c590d3651afd58be35c3575d6186259a5d737ad59ab18434f10ba"
+      },
+      {
+        "path": "tests/graph/cpu_vulkan_contracts.cc",
+        "sha256": "56798b950720f4119d3c1a1fa171b2cd1ca01639f3b3428850db1aeab8e4ec6b"
+      },
+      {
+        "path": "tests/graph_batch/native_paged_joint_consumer.cc",
+        "sha256": "8a523dad22f800486216768d0d8c261b8ad33e2e20c04e95baf2db22dde8212f"
+      },
+      {
+        "path": "tests/graph_batch/native_paged_joint_lifecycle.h",
+        "sha256": "1c5953a99ac380ee33b62afec9787a5fad47c3966987b17722631b2cd21a7276"
+      },
+      {
+        "path": "tests/graph_batch/native_paged_joint_risk_fixture.h",
+        "sha256": "1feafee87f7133271d49911d539d2dfe73100728d8655ed1af6ad2a737710a58"
+      },
+      {
+        "path": "tests/graph_batch/native_paged_joint_risks.cc",
+        "sha256": "fdb4fb66afdb42d283100c5d75883068f6152b77ea0f9b185a70f1b5b4a0c247"
+      }
+    ],
+    "stages": [
+      {
+        "route": "apple",
+        "stage": "configure",
+        "attempt": 1,
+        "command": [
+          "/opt/homebrew/bin/cmake",
+          "-S",
+          "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-parent",
+          "-B",
+          "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-build"
+        ],
+        "exit_code": 0,
+        "input_manifest_sha256": "470a76d88131386610be98b3c7270cc382670ff7558fb8c47cd2876b4ce73b4e",
+        "elapsed_seconds": 3.866476041,
+        "log": "/Users/kiro/hyle-scratch/compute-unified/g03-native-dirty-risk-stage/apple-configure-1.log"
+      },
+      {
+        "route": "apple",
+        "stage": "build",
+        "attempt": 1,
+        "command": [
+          "/opt/homebrew/bin/cmake",
+          "--build",
+          "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-build",
+          "--target",
+          "g03_native_dirty_risks",
+          "--parallel",
+          "4"
+        ],
+        "exit_code": 0,
+        "input_manifest_sha256": "470a76d88131386610be98b3c7270cc382670ff7558fb8c47cd2876b4ce73b4e",
+        "elapsed_seconds": 6.280175209,
+        "log": "/Users/kiro/hyle-scratch/compute-unified/g03-native-dirty-risk-stage/apple-build-1.log"
+      },
+      {
+        "route": "apple",
+        "stage": "joint",
+        "attempt": 1,
+        "command": [
+          "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-build/g03_native_dirty_risks"
+        ],
+        "exit_code": 1,
+        "input_manifest_sha256": "470a76d88131386610be98b3c7270cc382670ff7558fb8c47cd2876b4ce73b4e",
+        "elapsed_seconds": 2.205588917,
+        "log": "/Users/kiro/hyle-scratch/compute-unified/g03-native-dirty-risk-stage/apple-joint-1.log"
+      },
+      {
+        "route": "apple",
+        "stage": "configure",
+        "attempt": 2,
+        "command": [
+          "/opt/homebrew/bin/cmake",
+          "-S",
+          "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-parent",
+          "-B",
+          "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-build"
+        ],
+        "exit_code": 0,
+        "input_manifest_sha256": "934e8aab8d8c6a58d9b52a959c5d7fa0f8d8c18cd622533f634c18ca4ba49732",
+        "elapsed_seconds": 3.851780292,
+        "log": "/Users/kiro/hyle-scratch/compute-unified/g03-native-dirty-risk-stage/apple-configure-2.log"
+      },
+      {
+        "route": "apple",
+        "stage": "build",
+        "attempt": 2,
+        "command": [
+          "/opt/homebrew/bin/cmake",
+          "--build",
+          "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-build",
+          "--target",
+          "g03_native_dirty_risks",
+          "g03_native_dirty_public",
+          "--parallel",
+          "4"
+        ],
+        "exit_code": 0,
+        "input_manifest_sha256": "934e8aab8d8c6a58d9b52a959c5d7fa0f8d8c18cd622533f634c18ca4ba49732",
+        "elapsed_seconds": 12.570363458,
+        "log": "/Users/kiro/hyle-scratch/compute-unified/g03-native-dirty-risk-stage/apple-build-2.log"
+      },
+      {
+        "route": "apple",
+        "stage": "joint",
+        "attempt": 2,
+        "command": [
+          "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-build/g03_native_dirty_risks"
+        ],
+        "exit_code": 0,
+        "input_manifest_sha256": "934e8aab8d8c6a58d9b52a959c5d7fa0f8d8c18cd622533f634c18ca4ba49732",
+        "elapsed_seconds": 3.0218549170000024,
+        "log": "/Users/kiro/hyle-scratch/compute-unified/g03-native-dirty-risk-stage/apple-joint-2.log"
+      },
+      {
+        "route": "apple",
+        "stage": "public-math",
+        "attempt": 1,
+        "command": [
+          "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-build/g03_native_dirty_public"
+        ],
+        "exit_code": 0,
+        "input_manifest_sha256": "934e8aab8d8c6a58d9b52a959c5d7fa0f8d8c18cd622533f634c18ca4ba49732",
+        "elapsed_seconds": 0.9774825410000005,
+        "log": "/Users/kiro/hyle-scratch/compute-unified/g03-native-dirty-risk-stage/apple-public-math-1.log"
+      },
+      {
+        "route": "vulkan",
+        "stage": "configure",
+        "attempt": 1,
+        "command": [
+          "/opt/homebrew/bin/cmake",
+          "-S",
+          "/Users/kiro/hyle-scratch/compute-unified/a-cpu-vulkan/selected-graph/source-parent",
+          "-B",
+          "/Users/kiro/hyle-scratch/compute-unified/a-cpu-vulkan/selected-graph/source-build"
+        ],
+        "exit_code": 0,
+        "input_manifest_sha256": "934e8aab8d8c6a58d9b52a959c5d7fa0f8d8c18cd622533f634c18ca4ba49732",
+        "elapsed_seconds": 16.569270792,
+        "log": "/Users/kiro/hyle-scratch/compute-unified/g03-native-dirty-risk-stage/vulkan-configure-1.log"
+      },
+      {
+        "route": "vulkan",
+        "stage": "build",
+        "attempt": 1,
+        "command": [
+          "/opt/homebrew/bin/cmake",
+          "--build",
+          "/Users/kiro/hyle-scratch/compute-unified/a-cpu-vulkan/selected-graph/source-build",
+          "--target",
+          "g03_native_dirty_risks",
+          "g03_native_dirty_public",
+          "--parallel",
+          "4"
+        ],
+        "exit_code": 0,
+        "input_manifest_sha256": "934e8aab8d8c6a58d9b52a959c5d7fa0f8d8c18cd622533f634c18ca4ba49732",
+        "elapsed_seconds": 13.577365791000005,
+        "log": "/Users/kiro/hyle-scratch/compute-unified/g03-native-dirty-risk-stage/vulkan-build-1.log"
+      },
+      {
+        "route": "vulkan",
+        "stage": "joint",
+        "attempt": 1,
+        "command": [
+          "/Users/kiro/hyle-scratch/compute-unified/a-cpu-vulkan/selected-graph/source-build/g03_native_dirty_risks"
+        ],
+        "exit_code": -11,
+        "input_manifest_sha256": "934e8aab8d8c6a58d9b52a959c5d7fa0f8d8c18cd622533f634c18ca4ba49732",
+        "elapsed_seconds": 4.991955417,
+        "log": "/Users/kiro/hyle-scratch/compute-unified/g03-native-dirty-risk-stage/vulkan-joint-1.log"
+      },
+      {
+        "route": "vulkan",
+        "stage": "configure",
+        "attempt": 2,
+        "command": [
+          "/opt/homebrew/bin/cmake",
+          "-S",
+          "/Users/kiro/hyle-scratch/compute-unified/a-cpu-vulkan/selected-graph/source-parent",
+          "-B",
+          "/Users/kiro/hyle-scratch/compute-unified/a-cpu-vulkan/selected-graph/source-build"
+        ],
+        "exit_code": 0,
+        "input_manifest_sha256": "496de623c0ac5c8f1fe2e9edfd06a8ffb3dba5de8f9e7a69dcc8bc6777c5b179",
+        "elapsed_seconds": 15.980955875,
+        "log": "/Users/kiro/hyle-scratch/compute-unified/g03-native-dirty-risk-stage/vulkan-configure-2.log"
+      },
+      {
+        "route": "vulkan",
+        "stage": "build",
+        "attempt": 2,
+        "command": [
+          "/opt/homebrew/bin/cmake",
+          "--build",
+          "/Users/kiro/hyle-scratch/compute-unified/a-cpu-vulkan/selected-graph/source-build",
+          "--target",
+          "g03_native_dirty_risks",
+          "g03_native_dirty_public",
+          "--parallel",
+          "4"
+        ],
+        "exit_code": 0,
+        "input_manifest_sha256": "496de623c0ac5c8f1fe2e9edfd06a8ffb3dba5de8f9e7a69dcc8bc6777c5b179",
+        "elapsed_seconds": 6.040595124999999,
+        "log": "/Users/kiro/hyle-scratch/compute-unified/g03-native-dirty-risk-stage/vulkan-build-2.log"
+      },
+      {
+        "route": "vulkan",
+        "stage": "joint",
+        "attempt": 2,
+        "command": [
+          "/Users/kiro/hyle-scratch/compute-unified/a-cpu-vulkan/selected-graph/source-build/g03_native_dirty_risks"
+        ],
+        "exit_code": 1,
+        "input_manifest_sha256": "496de623c0ac5c8f1fe2e9edfd06a8ffb3dba5de8f9e7a69dcc8bc6777c5b179",
+        "elapsed_seconds": 0.8077425419999997,
+        "log": "/Users/kiro/hyle-scratch/compute-unified/g03-native-dirty-risk-stage/vulkan-joint-2.log"
+      },
+      {
+        "route": "apple",
+        "stage": "configure",
+        "attempt": 3,
+        "command": [
+          "/opt/homebrew/bin/cmake",
+          "-S",
+          "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-parent",
+          "-B",
+          "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-build"
+        ],
+        "exit_code": 0,
+        "input_manifest_sha256": "0004b78011148f8cfc198f64f17dfa614fb7580fa7bc07e22c3aaca444615961",
+        "elapsed_seconds": 3.882238833,
+        "log": "/Users/kiro/hyle-scratch/compute-unified/g03-native-dirty-risk-stage/apple-configure-3.log"
+      },
+      {
+        "route": "apple",
+        "stage": "build",
+        "attempt": 3,
+        "command": [
+          "/opt/homebrew/bin/cmake",
+          "--build",
+          "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-build",
+          "--target",
+          "g03_native_dirty_risks",
+          "g03_native_dirty_public",
+          "--parallel",
+          "4"
+        ],
+        "exit_code": 0,
+        "input_manifest_sha256": "0004b78011148f8cfc198f64f17dfa614fb7580fa7bc07e22c3aaca444615961",
+        "elapsed_seconds": 6.099811917,
+        "log": "/Users/kiro/hyle-scratch/compute-unified/g03-native-dirty-risk-stage/apple-build-3.log"
+      },
+      {
+        "route": "apple",
+        "stage": "joint",
+        "attempt": 3,
+        "command": [
+          "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-build/g03_native_dirty_risks"
+        ],
+        "exit_code": 0,
+        "input_manifest_sha256": "0004b78011148f8cfc198f64f17dfa614fb7580fa7bc07e22c3aaca444615961",
+        "elapsed_seconds": 1.2779169170000007,
+        "log": "/Users/kiro/hyle-scratch/compute-unified/g03-native-dirty-risk-stage/apple-joint-3.log"
+      },
+      {
+        "route": "apple",
+        "stage": "public-math",
+        "attempt": 2,
+        "command": [
+          "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-build/g03_native_dirty_public"
+        ],
+        "exit_code": 0,
+        "input_manifest_sha256": "0004b78011148f8cfc198f64f17dfa614fb7580fa7bc07e22c3aaca444615961",
+        "elapsed_seconds": 0.7161941249999995,
+        "log": "/Users/kiro/hyle-scratch/compute-unified/g03-native-dirty-risk-stage/apple-public-math-2.log"
+      },
+      {
+        "route": "vulkan",
+        "stage": "configure",
+        "attempt": 3,
+        "command": [
+          "/opt/homebrew/bin/cmake",
+          "-S",
+          "/Users/kiro/hyle-scratch/compute-unified/a-cpu-vulkan/selected-graph/source-parent",
+          "-B",
+          "/Users/kiro/hyle-scratch/compute-unified/a-cpu-vulkan/selected-graph/source-build"
+        ],
+        "exit_code": 0,
+        "input_manifest_sha256": "0004b78011148f8cfc198f64f17dfa614fb7580fa7bc07e22c3aaca444615961",
+        "elapsed_seconds": 16.354292416,
+        "log": "/Users/kiro/hyle-scratch/compute-unified/g03-native-dirty-risk-stage/vulkan-configure-3.log"
+      },
+      {
+        "route": "vulkan",
+        "stage": "build",
+        "attempt": 3,
+        "command": [
+          "/opt/homebrew/bin/cmake",
+          "--build",
+          "/Users/kiro/hyle-scratch/compute-unified/a-cpu-vulkan/selected-graph/source-build",
+          "--target",
+          "g03_native_dirty_risks",
+          "g03_native_dirty_public",
+          "--parallel",
+          "4"
+        ],
+        "exit_code": 0,
+        "input_manifest_sha256": "0004b78011148f8cfc198f64f17dfa614fb7580fa7bc07e22c3aaca444615961",
+        "elapsed_seconds": 6.0378044999999965,
+        "log": "/Users/kiro/hyle-scratch/compute-unified/g03-native-dirty-risk-stage/vulkan-build-3.log"
+      },
+      {
+        "route": "vulkan",
+        "stage": "joint",
+        "attempt": 3,
+        "command": [
+          "/Users/kiro/hyle-scratch/compute-unified/a-cpu-vulkan/selected-graph/source-build/g03_native_dirty_risks"
+        ],
+        "exit_code": 1,
+        "input_manifest_sha256": "0004b78011148f8cfc198f64f17dfa614fb7580fa7bc07e22c3aaca444615961",
+        "elapsed_seconds": 0.7508529999999993,
+        "log": "/Users/kiro/hyle-scratch/compute-unified/g03-native-dirty-risk-stage/vulkan-joint-3.log"
+      },
+      {
+        "route": "vulkan",
+        "stage": "configure",
+        "attempt": 4,
+        "command": [
+          "/opt/homebrew/bin/cmake",
+          "-S",
+          "/Users/kiro/hyle-scratch/compute-unified/a-cpu-vulkan/selected-graph/source-parent",
+          "-B",
+          "/Users/kiro/hyle-scratch/compute-unified/a-cpu-vulkan/selected-graph/source-build"
+        ],
+        "exit_code": 0,
+        "input_manifest_sha256": "e11450bc14eb9ca3d6332ec02a8ae8195141ae11d53ae8bc333755c611f94e06",
+        "elapsed_seconds": 16.116730209,
+        "log": "/Users/kiro/hyle-scratch/compute-unified/g03-native-dirty-risk-stage/vulkan-configure-4.log"
+      },
+      {
+        "route": "vulkan",
+        "stage": "build",
+        "attempt": 4,
+        "command": [
+          "/opt/homebrew/bin/cmake",
+          "--build",
+          "/Users/kiro/hyle-scratch/compute-unified/a-cpu-vulkan/selected-graph/source-build",
+          "--target",
+          "g03_native_dirty_risks",
+          "g03_native_dirty_public",
+          "--parallel",
+          "4"
+        ],
+        "exit_code": 0,
+        "input_manifest_sha256": "e11450bc14eb9ca3d6332ec02a8ae8195141ae11d53ae8bc333755c611f94e06",
+        "elapsed_seconds": 6.003021916999998,
+        "log": "/Users/kiro/hyle-scratch/compute-unified/g03-native-dirty-risk-stage/vulkan-build-4.log"
+      },
+      {
+        "route": "vulkan",
+        "stage": "joint",
+        "attempt": 4,
+        "command": [
+          "/Users/kiro/hyle-scratch/compute-unified/a-cpu-vulkan/selected-graph/source-build/g03_native_dirty_risks"
+        ],
+        "exit_code": 0,
+        "input_manifest_sha256": "e11450bc14eb9ca3d6332ec02a8ae8195141ae11d53ae8bc333755c611f94e06",
+        "elapsed_seconds": 1.8863639590000005,
+        "log": "/Users/kiro/hyle-scratch/compute-unified/g03-native-dirty-risk-stage/vulkan-joint-4.log"
+      },
+      {
+        "route": "vulkan",
+        "stage": "public-math",
+        "attempt": 1,
+        "command": [
+          "/Users/kiro/hyle-scratch/compute-unified/a-cpu-vulkan/selected-graph/source-build/g03_native_dirty_public"
+        ],
+        "exit_code": 0,
+        "input_manifest_sha256": "e11450bc14eb9ca3d6332ec02a8ae8195141ae11d53ae8bc333755c611f94e06",
+        "elapsed_seconds": 1.260608542,
+        "log": "/Users/kiro/hyle-scratch/compute-unified/g03-native-dirty-risk-stage/vulkan-public-math-1.log"
+      }
+    ],
+    "cumulative_seconds": 151.12744325199998
+  },
+  "cpu": {
+    "baseline": "4f67bbf44b0713b6fcfdd2d6a5d25459549d9f81",
+    "source_sha256": "a0733a186749e5ce33c6fd1ed28b3a623440f826cf2183be1b4ff4e19e6b6ae4",
+    "scope": "CPU public producer page shape audit, no GPU run",
+    "stages": [
+      {
+        "stage": "build",
+        "command": [
+          "cmake",
+          "--build",
+          "C:\\h7\\inference-g01-native-vulkan\\build",
+          "--target",
+          "g03_dirty_page_public",
+          "g03_paged_arena_risks",
+          "--parallel",
+          "4"
+        ],
+        "exit_code": 2,
+        "elapsed_seconds": 91.61000000001513,
+        "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g03\\dirty-page-cpu\\build-1.log"
+      },
+      {
+        "stage": "build",
+        "command": [
+          "cmake",
+          "--build",
+          "C:\\h7\\inference-g01-native-vulkan\\build",
+          "--target",
+          "g03_dirty_page_public",
+          "g03_paged_arena_risks",
+          "--parallel",
+          "4"
+        ],
+        "exit_code": 0,
+        "elapsed_seconds": 3.5789999999979045,
+        "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g03\\dirty-page-cpu\\build-2.log"
+      },
+      {
+        "stage": "host-cpu-public-probe",
+        "command": [
+          "C:\\h7\\inference-g01-native-vulkan\\build\\g03_dirty_page_public.exe"
+        ],
+        "exit_code": 0,
+        "elapsed_seconds": 0.030999999988125637,
+        "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g03\\dirty-page-cpu\\host-cpu-public-probe-1.log"
+      },
+      {
+        "stage": "paged-arena-risks",
+        "command": [
+          "C:\\h7\\inference-g01-native-vulkan\\build\\g03_paged_arena_risks.exe",
+          "--gtest_filter=PagedArena.*"
+        ],
+        "exit_code": 1,
+        "elapsed_seconds": 0.125,
+        "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g03\\dirty-page-cpu\\paged-arena-risks-1.log"
+      },
+      {
+        "stage": "build",
+        "command": [
+          "cmake",
+          "--build",
+          "C:\\h7\\inference-g01-native-vulkan\\build",
+          "--target",
+          "g03_dirty_page_public",
+          "g03_paged_arena_risks",
+          "--parallel",
+          "4"
+        ],
+        "exit_code": 0,
+        "elapsed_seconds": 3.562000000005355,
+        "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g03\\dirty-page-cpu\\build-3.log"
+      },
+      {
+        "stage": "host-cpu-public-probe",
+        "command": [
+          "C:\\h7\\inference-g01-native-vulkan\\build\\g03_dirty_page_public.exe"
+        ],
+        "exit_code": 0,
+        "elapsed_seconds": 0.0,
+        "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g03\\dirty-page-cpu\\host-cpu-public-probe-2.log"
+      },
+      {
+        "stage": "paged-arena-risks",
+        "command": [
+          "C:\\h7\\inference-g01-native-vulkan\\build\\g03_paged_arena_risks.exe",
+          "--gtest_filter=PagedArena.*"
+        ],
+        "exit_code": 0,
+        "elapsed_seconds": 0.01600000000325963,
+        "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g03\\dirty-page-cpu\\paged-arena-risks-2.log"
+      },
+      {
+        "stage": "build",
+        "command": [
+          "cmake",
+          "--build",
+          "C:\\h7\\inference-g01-native-vulkan\\build",
+          "--target",
+          "g03_dirty_page_public",
+          "g03_paged_arena_risks",
+          "--parallel",
+          "4"
+        ],
+        "exit_code": 0,
+        "elapsed_seconds": 20.85899999999674,
+        "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g03\\dirty-page-cpu\\build-4.log"
+      },
+      {
+        "stage": "host-cpu-public-probe",
+        "command": [
+          "C:\\h7\\inference-g01-native-vulkan\\build\\g03_dirty_page_public.exe"
+        ],
+        "exit_code": 0,
+        "elapsed_seconds": 0.030999999988125637,
+        "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g03\\dirty-page-cpu\\host-cpu-public-probe-3.log"
+      },
+      {
+        "stage": "paged-arena-risks",
+        "command": [
+          "C:\\h7\\inference-g01-native-vulkan\\build\\g03_paged_arena_risks.exe",
+          "--gtest_filter=PagedArena.*"
+        ],
+        "exit_code": 0,
+        "elapsed_seconds": 0.015000000013969839,
+        "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g03\\dirty-page-cpu\\paged-arena-risks-3.log"
+      }
+    ],
+    "cumulative_seconds": 119.82800000000861
+  },
+  "original_native_math": {
+    "identity": {
+      "model": "Mac16,12",
+      "arch": "arm64",
+      "os": "ProductName:\t\tmacOS\nProductVersion:\t\t27.0.1\nBuildVersion:\t\t26A434",
+      "compiler": "Apple clang version 21.0.0 (clang-2100.3.34.2)\nTarget: arm64-apple-darwin27.0.0\nThread model: posix\nInstalledDir: /Library/Developer/CommandLineTools/usr/bin",
+      "cpu": "10",
+      "memory": "17179869184"
+    },
+    "candidate": "AUDITED WORKTREE draft",
+    "scope": "actual native64 two-request dirty update then original page attention; public hyle::compute; no pending/zero-wait claim",
+    "inputs": [
+      {
+        "path": "cmake/HyleComponents.cmake",
+        "sha256": "b642342cca9e1068b69dee2e961ea7cd3515b5e29f8f4a5dbfb2ed36b9c0d399"
+      },
+      {
+        "path": "include/hyle/compute/apple_memory.h",
+        "sha256": "114858af47cf0bf51990615cb303581dee45b0e17a95cfd9b1f718d51906ca80"
+      },
+      {
+        "path": "include/hyle/compute/batch_transfer.h",
+        "sha256": "794ed972714abb34709944e1b26b0ef84d173756572b52cbac2dbcb918e9396d"
+      },
+      {
+        "path": "include/hyle/compute/detail/materialized_native_controller.h",
+        "sha256": "74085821d4b85e860ead3cd980855f0ff1385593c225d9228b375222696954dd"
+      },
+      {
+        "path": "include/hyle/compute/paged_arena.h",
+        "sha256": "42e9b72cb99d7cb8cb48a43dc837ab0647d44f68b71db3789664dd034f11f8c3"
+      },
+      {
+        "path": "include/hyle/compute/vulkan_memory.h",
+        "sha256": "81a1981e717e1e50ac129c3e7f34a6e39cb49d4ce0b4eace7e3ab58df7e1eb72"
+      },
+      {
+        "path": "include/hyle/graph/batch.h",
+        "sha256": "0db40b8c74dbaab965a9c1ccf629f43555053b56748908103202795513651231"
+      },
+      {
+        "path": "include/hyle/graph/cpu_apple.h",
+        "sha256": "0f977030c93d98303bb1e52c5500bedd5420fdb39c9ed1a676cb4485d6d9e9cc"
+      },
+      {
+        "path": "include/hyle/graph/cpu_vulkan.h",
+        "sha256": "f2583da386a75bfab90f0ead5c1962f29d57d6cfde55cb83a8b02c24341fe31f"
+      },
+      {
+        "path": "src/compute/batch_transfer.cc",
+        "sha256": "c0e4126289b640e1c81c2746a1dd53ab4fbebf916fa94f11af8be444fbda60a4"
+      },
+      {
+        "path": "src/compute_batch/paged_arena.cc",
+        "sha256": "83e19e937410380e1cdeec429d839ef7a6cf563c41cb347fa1a897a54c9cca5d"
+      },
+      {
+        "path": "src/compute_route_apple/apple_copy_program.cc",
+        "sha256": "b72b52294110c488e56cba3ec2a27d9a092dcae2bbef831d74dce135123da190"
+      },
+      {
+        "path": "src/compute_route_apple/apple_runtime_internal.h",
+        "sha256": "d081f2b519f87e6420345c94e92475aaf93b1c9cade591fd46bbe8a01f4a398a"
+      },
+      {
+        "path": "src/compute_route_vulkan/vulkan_copy_program.cc",
+        "sha256": "03284a6ff466103056a58e562c609f444a490a1a387b7a334687ac749b44ed66"
+      },
+      {
+        "path": "src/graph_batch/CMakeLists.txt",
+        "sha256": "60abda27d21dbb3c3dd16322367c674956057d27ef5efc5c3fdc8b55122101dc"
+      },
+      {
+        "path": "src/graph_batch/native_paged_node.cc",
+        "sha256": "c03ec70b6d7f2c9fe0c8c9ebc05bc943a45117ee700e17d3fd8923558856326f"
+      },
+      {
+        "path": "src/graph_batch/native_paged_nodes.h",
+        "sha256": "b21d82f81b38f6d7828185ea09ae36860683fdf627c49103878cdd9f76119394"
+      },
+      {
+        "path": "src/graph_batch/native_paged_slots.h",
+        "sha256": "3047622b44799f98d4074ba37aa9bf2666e025bd8f79ff9357047b6e0b069be8"
+      },
+      {
+        "path": "src/graph_route_cpu_apple/compile.cc",
+        "sha256": "1197508f62804c6093d0acd4f535f8447a2303e8f93f27bc01ace9f433b2c567"
+      },
+      {
+        "path": "src/graph_route_cpu_apple/invocation.cc",
+        "sha256": "4a08f9a6be0bf13c852548edf641abbd8cbdd9abcb3717a6d6bbf24d108bb151"
+      },
+      {
+        "path": "src/graph_route_cpu_apple/paged.h",
+        "sha256": "c8c11a8332c7efbb145881decfdf8ef1f4854e4e8cf21b51baf4b934e177543d"
+      },
+      {
+        "path": "src/graph_route_cpu_apple/plan.h",
+        "sha256": "2b9f13e858d4bfc46ea3bb5addf76e8f4bb8d3aa5e2b87d8750dac590d50d2a4"
+      },
+      {
+        "path": "src/graph_route_cpu_vulkan/compile.cc",
+        "sha256": "b41e3a4d0c3645e249c68019a9088f63462c30f1e9dc83e9107a5dced1c7c66e"
+      },
+      {
+        "path": "src/graph_route_cpu_vulkan/invocation.cc",
+        "sha256": "521b39f326c780639de65fe185e9490e7d0dca58f482ce647d6c0a6ab7edf108"
+      },
+      {
+        "path": "src/graph_route_cpu_vulkan/paged.h",
+        "sha256": "8ebad5bc55f0b80d63164ab441c4019bdfc8a2af587e5ae047758ac5d7722750"
+      },
+      {
+        "path": "src/graph_route_cpu_vulkan/plan.h",
+        "sha256": "c771f5639987bf6cec4415f5f080403547fa1890a05fbfb9c71760610a2e0d6e"
+      },
+      {
+        "path": "tests/compute_batch/allocation_fault_fixture.h",
+        "sha256": "7fc5d108ebfbe46853a14fb74b4c504721442757cd4aeab10f1314a9f03943dc"
+      },
+      {
+        "path": "tests/compute_batch/dirty_page_native_consumer.cc",
+        "sha256": "4bac7cd06d9d1740b23b1212731c76b08bfda95e0ff74d54ceca2ba23d8e4911"
+      },
+      {
+        "path": "tests/compute_batch/native_apple_failure_fixture.h",
+        "sha256": "fdb33f4f810aa078793a464450808da43e3d386721725a506e2c3697d4be2208"
+      },
+      {
+        "path": "tests/compute_batch/native_paged_risk_fixture.h",
+        "sha256": "79a9d4e7c8b4243fce6af02a948fd4dd0a91db060818b148e2c6cb8904105bee"
+      },
+      {
+        "path": "tests/compute_batch/native_vulkan_failure_fixture.h",
+        "sha256": "955af6a8f8ea20160f36f760866676997b99a12848dbd456108a72c20b030b90"
+      },
+      {
+        "path": "tests/graph/cpu_apple_contracts.cc",
+        "sha256": "d4ee1d0cea8c590d3651afd58be35c3575d6186259a5d737ad59ab18434f10ba"
+      },
+      {
+        "path": "tests/graph/cpu_vulkan_contracts.cc",
+        "sha256": "56798b950720f4119d3c1a1fa171b2cd1ca01639f3b3428850db1aeab8e4ec6b"
+      },
+      {
+        "path": "tests/graph_batch/native_paged_joint_consumer.cc",
+        "sha256": "8a523dad22f800486216768d0d8c261b8ad33e2e20c04e95baf2db22dde8212f"
+      },
+      {
+        "path": "tests/graph_batch/native_paged_joint_lifecycle.h",
+        "sha256": "1c5953a99ac380ee33b62afec9787a5fad47c3966987b17722631b2cd21a7276"
+      },
+      {
+        "path": "tests/graph_batch/native_paged_joint_risk_fixture.h",
+        "sha256": "1feafee87f7133271d49911d539d2dfe73100728d8655ed1af6ad2a737710a58"
+      },
+      {
+        "path": "tests/graph_batch/native_paged_joint_risks.cc",
+        "sha256": "fdb4fb66afdb42d283100c5d75883068f6152b77ea0f9b185a70f1b5b4a0c247"
+      }
+    ],
+    "stages": [
+      {
+        "route": "apple",
+        "stage": "configure",
+        "attempt": 1,
+        "command": [
+          "/opt/homebrew/bin/cmake",
+          "-S",
+          "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-parent",
+          "-B",
+          "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-build"
+        ],
+        "exit_code": 0,
+        "input_manifest_sha256": "439d5e47954d10e5af1c70d855a1d51e427069db802d237fc382a354a09d61ed",
+        "elapsed_seconds": 3.820550917,
+        "log": "/Users/kiro/hyle-scratch/compute-unified/g03-native-dirty-stage/apple-configure-1.log"
+      },
+      {
+        "route": "apple",
+        "stage": "build",
+        "attempt": 1,
+        "command": [
+          "/opt/homebrew/bin/cmake",
+          "--build",
+          "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-build",
+          "--target",
+          "g03_native_dirty_public",
+          "--parallel",
+          "4"
+        ],
+        "exit_code": 1,
+        "input_manifest_sha256": "439d5e47954d10e5af1c70d855a1d51e427069db802d237fc382a354a09d61ed",
+        "elapsed_seconds": 10.612093333,
+        "log": "/Users/kiro/hyle-scratch/compute-unified/g03-native-dirty-stage/apple-build-1.log"
+      },
+      {
+        "route": "apple",
+        "stage": "configure",
+        "attempt": 2,
+        "command": [
+          "/opt/homebrew/bin/cmake",
+          "-S",
+          "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-parent",
+          "-B",
+          "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-build"
+        ],
+        "exit_code": 0,
+        "input_manifest_sha256": "ecc2c8e54436c2d80a6767becf2ab79da352fac091adc99baa53c7ae4c554e04",
+        "elapsed_seconds": 3.891128583,
+        "log": "/Users/kiro/hyle-scratch/compute-unified/g03-native-dirty-stage/apple-configure-2.log"
+      },
+      {
+        "route": "apple",
+        "stage": "build",
+        "attempt": 2,
+        "command": [
+          "/opt/homebrew/bin/cmake",
+          "--build",
+          "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-build",
+          "--target",
+          "g03_native_dirty_public",
+          "--parallel",
+          "4"
+        ],
+        "exit_code": 0,
+        "input_manifest_sha256": "ecc2c8e54436c2d80a6767becf2ab79da352fac091adc99baa53c7ae4c554e04",
+        "elapsed_seconds": 5.971816791999999,
+        "log": "/Users/kiro/hyle-scratch/compute-unified/g03-native-dirty-stage/apple-build-2.log"
+      },
+      {
+        "route": "apple",
+        "stage": "joint",
+        "attempt": 1,
+        "command": [
+          "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-build/g03_native_dirty_public"
+        ],
+        "exit_code": 0,
+        "input_manifest_sha256": "ecc2c8e54436c2d80a6767becf2ab79da352fac091adc99baa53c7ae4c554e04",
+        "elapsed_seconds": 3.3102694999999986,
+        "log": "/Users/kiro/hyle-scratch/compute-unified/g03-native-dirty-stage/apple-joint-1.log"
+      },
+      {
+        "route": "vulkan",
+        "stage": "configure",
+        "attempt": 1,
+        "command": [
+          "/opt/homebrew/bin/cmake",
+          "-S",
+          "/Users/kiro/hyle-scratch/compute-unified/a-cpu-vulkan/selected-graph/source-parent",
+          "-B",
+          "/Users/kiro/hyle-scratch/compute-unified/a-cpu-vulkan/selected-graph/source-build"
+        ],
+        "exit_code": 0,
+        "input_manifest_sha256": "ecc2c8e54436c2d80a6767becf2ab79da352fac091adc99baa53c7ae4c554e04",
+        "elapsed_seconds": 16.172484834000002,
+        "log": "/Users/kiro/hyle-scratch/compute-unified/g03-native-dirty-stage/vulkan-configure-1.log"
+      },
+      {
+        "route": "vulkan",
+        "stage": "build",
+        "attempt": 1,
+        "command": [
+          "/opt/homebrew/bin/cmake",
+          "--build",
+          "/Users/kiro/hyle-scratch/compute-unified/a-cpu-vulkan/selected-graph/source-build",
+          "--target",
+          "g03_native_dirty_public",
+          "--parallel",
+          "4"
+        ],
+        "exit_code": 0,
+        "input_manifest_sha256": "ecc2c8e54436c2d80a6767becf2ab79da352fac091adc99baa53c7ae4c554e04",
+        "elapsed_seconds": 11.978822208000004,
+        "log": "/Users/kiro/hyle-scratch/compute-unified/g03-native-dirty-stage/vulkan-build-1.log"
+      },
+      {
+        "route": "vulkan",
+        "stage": "joint",
+        "attempt": 1,
+        "command": [
+          "/Users/kiro/hyle-scratch/compute-unified/a-cpu-vulkan/selected-graph/source-build/g03_native_dirty_public"
+        ],
+        "exit_code": 0,
+        "input_manifest_sha256": "ecc2c8e54436c2d80a6767becf2ab79da352fac091adc99baa53c7ae4c554e04",
+        "elapsed_seconds": 4.465299999999999,
+        "log": "/Users/kiro/hyle-scratch/compute-unified/g03-native-dirty-stage/vulkan-joint-1.log"
+      },
+      {
+        "route": "apple",
+        "stage": "configure",
+        "attempt": 3,
+        "command": [
+          "/opt/homebrew/bin/cmake",
+          "-S",
+          "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-parent",
+          "-B",
+          "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-build"
+        ],
+        "exit_code": 0,
+        "input_manifest_sha256": "8edb1faaa7c6291838f96b6e81149e8c5d665899c912eaa62321ee394c5a94fe",
+        "elapsed_seconds": 3.864575042,
+        "log": "/Users/kiro/hyle-scratch/compute-unified/g03-native-dirty-stage/apple-configure-3.log"
+      },
+      {
+        "route": "apple",
+        "stage": "build",
+        "attempt": 3,
+        "command": [
+          "/opt/homebrew/bin/cmake",
+          "--build",
+          "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-build",
+          "--target",
+          "g03_native_dirty_public",
+          "--parallel",
+          "4"
+        ],
+        "exit_code": 0,
+        "input_manifest_sha256": "8edb1faaa7c6291838f96b6e81149e8c5d665899c912eaa62321ee394c5a94fe",
+        "elapsed_seconds": 5.965869458,
+        "log": "/Users/kiro/hyle-scratch/compute-unified/g03-native-dirty-stage/apple-build-3.log"
+      },
+      {
+        "route": "apple",
+        "stage": "joint",
+        "attempt": 2,
+        "command": [
+          "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-build/g03_native_dirty_public"
+        ],
+        "exit_code": 0,
+        "input_manifest_sha256": "8edb1faaa7c6291838f96b6e81149e8c5d665899c912eaa62321ee394c5a94fe",
+        "elapsed_seconds": 1.073784208000001,
+        "log": "/Users/kiro/hyle-scratch/compute-unified/g03-native-dirty-stage/apple-joint-2.log"
+      },
+      {
+        "route": "vulkan",
+        "stage": "configure",
+        "attempt": 2,
+        "command": [
+          "/opt/homebrew/bin/cmake",
+          "-S",
+          "/Users/kiro/hyle-scratch/compute-unified/a-cpu-vulkan/selected-graph/source-parent",
+          "-B",
+          "/Users/kiro/hyle-scratch/compute-unified/a-cpu-vulkan/selected-graph/source-build"
+        ],
+        "exit_code": 0,
+        "input_manifest_sha256": "8edb1faaa7c6291838f96b6e81149e8c5d665899c912eaa62321ee394c5a94fe",
+        "elapsed_seconds": 16.227210542,
+        "log": "/Users/kiro/hyle-scratch/compute-unified/g03-native-dirty-stage/vulkan-configure-2.log"
+      },
+      {
+        "route": "vulkan",
+        "stage": "build",
+        "attempt": 2,
+        "command": [
+          "/opt/homebrew/bin/cmake",
+          "--build",
+          "/Users/kiro/hyle-scratch/compute-unified/a-cpu-vulkan/selected-graph/source-build",
+          "--target",
+          "g03_native_dirty_public",
+          "--parallel",
+          "4"
+        ],
+        "exit_code": 0,
+        "input_manifest_sha256": "8edb1faaa7c6291838f96b6e81149e8c5d665899c912eaa62321ee394c5a94fe",
+        "elapsed_seconds": 5.961672625000002,
+        "log": "/Users/kiro/hyle-scratch/compute-unified/g03-native-dirty-stage/vulkan-build-2.log"
+      },
+      {
+        "route": "vulkan",
+        "stage": "joint",
+        "attempt": 2,
+        "command": [
+          "/Users/kiro/hyle-scratch/compute-unified/a-cpu-vulkan/selected-graph/source-build/g03_native_dirty_public"
+        ],
+        "exit_code": 0,
+        "input_manifest_sha256": "8edb1faaa7c6291838f96b6e81149e8c5d665899c912eaa62321ee394c5a94fe",
+        "elapsed_seconds": 1.2279549170000053,
+        "log": "/Users/kiro/hyle-scratch/compute-unified/g03-native-dirty-stage/vulkan-joint-2.log"
+      }
+    ],
+    "cumulative_seconds": 94.54353295900003
+  },
+  "f3": {
+    "tests": 14,
+    "exit_code": 0,
+    "source_sha256": "65617f7828138c4540dfc602f7900231d963319ed4a37f57ce9abc4caac74fb8",
+    "build_log": "f3-build-1.log",
+    "run_log": "f3-run-1.log"
+  }
+}

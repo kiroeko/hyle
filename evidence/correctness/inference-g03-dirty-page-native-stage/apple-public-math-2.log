@@ -1,0 +1,2 @@
+native dirty page PASS:64 steps GQA8/2 D256, two requests growth17..80/17..48, mixed Q1/17 prefill/decode, crosspage, exact frame, untouched history, same generation, BF16=0 dirty total=196608 bytes, original prepare releases imports; explicit host waits retained
+native dirty page PASS:64 steps GQA8/2 D256, two requests growth17..80/17..48, mixed Q1/17 prefill/decode, crosspage, exact frame, untouched history, same generation, BF16=1 dirty total=196608 bytes, original prepare releases imports; explicit host waits retained
