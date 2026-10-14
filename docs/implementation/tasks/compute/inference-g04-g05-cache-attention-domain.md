@@ -428,7 +428,7 @@ payload Copy后reshape；第二、三次仅byte临界失败。readonly反证修�
 AUDITED，增量encoder/F2/Graph、多producer和三联合consumer、新域风险/SDK/P1与CPU-only
 原ffa执行继续待验；G04/G05完整项目未关闭。当前没有活跃重型任务。
 
-### CE09 Vulkan Graph 默认编码接缝（2026-10-15，SCOPED）
+### CE09 Vulkan Graph 默认编码接缝（2026-10-15，AUDITED）
 
 新增实际owner `graph_route_vulkan`，本轮baseline `4a40ebd0fb04489d39e27736353df6d53698729d`。
 原F5 CLOSED域保留；新公开消费者 `tests/compute_batch/encoded_page_native_consumer.cc`
@@ -442,3 +442,8 @@ lowering”。Compute端同一CacheEncode已有CE06实测，不是新增编码�
 只运行已声明的新域source consumer、适用source/static/shared/风险门及文档/closure检查；
 该转发本身P0，无独立P1。沿本卡预算与用户常设追加授权，不重置原FAIL与累计时间。
 先SCOPED登记，再审计固定上述一项FIX后AUDITED，产品改动只在后者提交。
+
+审计裁决：原 `compile_impl` 已把纯Graph的真实TensorDesc、SSA输入/输出与custom Operation
+复制进原Plan；CacheEncode只缺 `mature_custom` 的默认路由准入。选定表示/精度/失败检查由
+CE06的 `lower_cache_encoder` 负责，Graph不得重复检查或引入另一个encoder。有限一项FIX已
+固定，本owner进入AUDITED；现为十一owner同批，实际组合验证仍UNPROVEN。
