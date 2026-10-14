@@ -689,10 +689,14 @@
     },
     {
       "module": "compute_batch",
-      "state": "CANDIDATE",
+      "state": "CLOSED",
       "record": "docs/implementation/tasks/compute/inference-g03-page-initialization-prefix.md",
-      "summary": "G03 IP01-IP03 CANDIDATE: mandatory initialized-row publish/complete, original page/writer prefix and immutable-layout bounds; 23 consumer files migrated. Windows14 and public64 plus native/joint compile PASS; Air host risks and relocated delivery running. No compatibility branches; no whole G03/7route acceptance.",
-      "candidate": "ef78cd07f3dddd3fd2c8ccae46d1db849f11f752"
+      "summary": "G03 IP01-IP03 finite CLOSED: explicit initialized-row publish/complete, exact layout prefix bounds before allocation, original generation/recovery and 23 migrated consumers. Windows14/public64/nativeCPU2; Air3hosts14+64 and relocated static/shared public/native/4headers; 15Apple/Vulkan+4CUDA call units compile. Padding sizes48/40 unchanged, no new warm metadata allocation. Whole pending/Graph/late output/7routes remain separate.",
+      "candidate": "15c1a5a3616fb91693b833b09ae8333e0c121f26",
+      "performance": {
+        "tier": "P0",
+        "evidence": "docs/implementation/tasks/compute/inference-g03-page-initialization-prefix.md"
+      }
     },
     {
       "module": "graph_batch",

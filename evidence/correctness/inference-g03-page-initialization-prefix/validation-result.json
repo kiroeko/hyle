@@ -1,0 +1,27 @@
+{
+  "scope": "Finite IP01-IP03 initialized page prefixes only",
+  "candidate": "15c1a5a3616fb91693b833b09ae8333e0c121f26",
+  "fixture_correction": "15c1a5a36",
+  "passed": [
+    "Windows14 original/new page tests, public64 row updates, Vulkan and joint call compilation",
+    "Windows actual CPU native paged direct consumers",
+    "Air ASan/UBSan/TSan each14 and public64; common host state only, original TSan boundary model retained",
+    "Air relocated static/shared: public64, actual original Vulkan page attention, two standalone public headers each",
+    "15 current Apple/Vulkan dedicated C++ call units and four CUDA host call units compile"
+  ],
+  "cost": "ArenaPage48B and PagedPageWriter40B on64bit; one O(page_refs) read-domain pass; zero new acquisition/publication allocations under exhausted injected metadata quota",
+  "seconds": {
+    "windows": 159.46800000002258,
+    "air": 114.73133212100001,
+    "migration": 9.056926709,
+    "cuda_compile": 5.589138955999996
+  },
+  "limits": [
+    "Caller explicitly attests successful initialization; untyped ReadLease is not a typed row-domain guarantee",
+    "No new CUDA execution/kernel, Apple native execution, model, global matrix or P1 claim; platform-specific migration is compilation only",
+    "No whole G03 acceptance: pending frame/source aggregation/native late output/Graph/7routes remain"
+  ],
+  "selector": "130 skipped/reused reasons retained in plan; unchanged math and producer kernels are not rerun for signature-only call-site migration",
+  "seven_questions": "The closure card records dependencies, complete finite consumer journeys, original F1/F2 reuse, P0 structure, unchanged FFI/dependency direction, three C++ deliveries and updated guide.",
+  "product_commit": "ef78cd07f"
+}

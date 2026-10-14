@@ -1,6 +1,6 @@
 # G03 原 Arena 页的有效初始化前缀
 
-状态：CANDIDATE，2026-10-14；owner compute_batch；baseline
+状态：CLOSED，2026-10-14；owner compute_batch；baseline
 `cdb8fb9ba251d04f481df02a1e48df5b3a20d890`。这是
 [主 pending 消费卡](inference-g03-pending-page-consumption.md)的初始化合同，G01–G10 全范围保留。
 
@@ -50,3 +50,32 @@ consumer及普通数值prefix追加驱动，不借peer引用外推其产品已�
 
 候选：`ef78cd07f3dddd3fd2c8ccae46d1db849f11f752`；公开合同/算法/常态布局已冻结。Windows14项（原9+新增5）与公开
 64步dirty更新、Vulkan/联合调用编译PASS。Air三host风险及relocated交付正在验收，未运行门不写PASS。
+
+有限轮 terminal：最终候选 `15c1a5a3616fb91693b833b09ae8333e0c121f26`，产品实现始于
+`ef78cd07f`。后续仅修正 CUDA 测试里被机械迁移误改的普通 WriteLease 调用；页 API、
+算法和对象布局没有变化。[完整结果](../../../../evidence/correctness/inference-g03-page-initialization-prefix/validation-result.json)
+与输入、实际命令、日志、交付 artifact hash、失败记录一起归档。
+
+IP01/IP02/IP03均PASS：Windows14项、公开dirty64步及原CPU原生分页2项；Air三host
+san各14项及公开64步；relocated static/shared两交付各公开64步、实际Vulkan页attention
+和两个独立公开头。另有15个Apple/Vulkan与4个CUDA当前调用单元编译通过；这部分只签
+接口迁移，不签新增平台执行资格。普通source交付由Windows直接add_subdirectory及
+Air host树证明。没有执行本地重型GPU、全模型、旧全矩阵或P1。
+
+七门：依赖PASS（不新增依赖/FFI）；有限功能PASS（部分前缀、共享/non-tail需求、代际、
+旧reader、64步普通数值追加、F2回接、明确非法值/OOM）；复用PASS（原F1/F2/Arena，不造
+第二controller）；P0 PASS（64位static_assert原ArenaPage48B/writer40B，一次O(page_refs)，
+耗尽metadata quota时acquire/publish仍成功）；交付边界PASS（原模块导出，无新factor/FFI）；
+source/static/shared与适用host风险PASS；guide/易用性PASS（必须显式声明有效行，不保兼容
+默认值）。docs/closure/selector检查PASS，130项skip/reuse及不重跑原数学的理由保留。
+
+已接受限制：initialized_rows由caller在真实写成功后承诺，底层untyped lease不是行有效域
+证明；ready frame的检查不代签pending聚合。宿主san沿原TSan边界模型，只签本次common
+host状态；无新driver/shader/LSan资格主张。两次验证fixture失败均保留：CUDA raw-source
+签名误改已修正；Air selector曾请求不存在的Apple输入，改为实际Vulkan文件。首个CUDA
+scratch日志被重跑覆盖，保留tool transcript诊断和精确失败源码hash，不伪造完整原日志。
+此前原轮所有FAIL/unknown/累计不重置。
+
+停止/重开：本有限轮停止。仅新的可复现prefix/原身份/生命周期缺陷可重开；G03原pending
+receiver、late native output、Graph与完整七路线在主卡独立继续，不把本轮CLOSED当全G03
+或十项goal结束，不重跑本轮已匹配证据。

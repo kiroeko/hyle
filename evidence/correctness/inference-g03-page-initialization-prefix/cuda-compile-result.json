@@ -1,0 +1,123 @@
+{
+  "scope": "host C++ API migration compilation only; no CUDA execution, kernels or ABI qualification",
+  "inputs": [
+    {
+      "path": "include/hyle/compute/paged_arena.h",
+      "sha256": "52ce5448a6bf53b7a83d26ce7ebab04a6cc363a09e836641d0e6c44bc813e1fa"
+    },
+    {
+      "path": "tests/compute_batch/dirty_page_cuda_consumer.cc",
+      "sha256": "3be13622edd59916cfac6f39cae23c33d8c0369d94f159a04cb76cb3c3dcc601"
+    },
+    {
+      "path": "tests/compute_batch/native_arena_direct_consumer.h",
+      "sha256": "bddabfc5c2c63434e9fc297cd4f86c23dc1d30cf7101f99dbaa0e369954edc36"
+    },
+    {
+      "path": "tests/compute_batch/native_arena_graph_consumer.h",
+      "sha256": "6e4d7b3e5f68fddc795e95f6b11b8ebce9f489cab30ed0c1933b3ebc0d002a1b"
+    },
+    {
+      "path": "tests/compute_batch/public_hybrid_batch_consumer.cc",
+      "sha256": "00617a8e303708a81a7d8ae897e2756230099d4b6da6a5bd3282a89d1fe45b91"
+    }
+  ],
+  "stages": [
+    {
+      "file": "dirty_page_cuda_consumer.cc",
+      "command": [
+        "/usr/bin/g++-14",
+        "-DHYLE_COMPUTE_CUDA=1",
+        "-DHYLE_STATIC",
+        "-I/root/hyle-scratch/compute-unified/source-7a7b4c3b/include",
+        "-isystem",
+        "/usr/local/cuda-13.3/targets/x86_64-linux/include",
+        "-O3",
+        "-DNDEBUG",
+        "-std=gnu++23",
+        "-Wall",
+        "-Wextra",
+        "-Wpedantic",
+        "-Werror",
+        "/root/hyle-scratch/compute-unified/source-7a7b4c3b/tests/compute_batch/dirty_page_cuda_consumer.cc",
+        "-fsyntax-only"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 0.9150604989999991
+    },
+    {
+      "file": "native_direct_consumer.cc",
+      "command": [
+        "/usr/bin/g++-14",
+        "-DHYLE_COMPUTE_CPU=1",
+        "-DHYLE_COMPUTE_CUDA=1",
+        "-DHYLE_COMPUTE_FLASHINFER=1",
+        "-DHYLE_COMPUTE_GGML_CPU=1",
+        "-DHYLE_COMPUTE_ONEDNN=1",
+        "-DHYLE_COMPUTE_TORCH_CUDA=1",
+        "-DHYLE_IO_HAS_COROUTINE_TRANSPORT=1",
+        "-DHYLE_STATIC",
+        "-I/root/hyle-scratch/compute-unified/source-7a7b4c3b/include",
+        "-isystem",
+        "/usr/local/cuda-13.3/targets/x86_64-linux/include",
+        "-O3",
+        "-DNDEBUG",
+        "-std=gnu++23",
+        "/root/hyle-scratch/compute-unified/source-7a7b4c3b/tests/compute_batch/native_direct_consumer.cc",
+        "-fsyntax-only"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 1.3801198349999986
+    },
+    {
+      "file": "native_graph_consumer.cc",
+      "command": [
+        "/usr/bin/g++-14",
+        "-DHYLE_COMPUTE_CPU=1",
+        "-DHYLE_COMPUTE_CUDA=1",
+        "-DHYLE_COMPUTE_FLASHINFER=1",
+        "-DHYLE_COMPUTE_GGML_CPU=1",
+        "-DHYLE_COMPUTE_ONEDNN=1",
+        "-DHYLE_COMPUTE_TORCH_CUDA=1",
+        "-DHYLE_GRAPH_ONEDNN=1",
+        "-DHYLE_IO_HAS_COROUTINE_TRANSPORT=1",
+        "-DHYLE_STATIC",
+        "-I/root/hyle-scratch/compute-unified/source-7a7b4c3b/include",
+        "-isystem",
+        "/usr/local/cuda-13.3/targets/x86_64-linux/include",
+        "-O3",
+        "-DNDEBUG",
+        "-std=gnu++23",
+        "/root/hyle-scratch/compute-unified/source-7a7b4c3b/tests/compute_batch/native_graph_consumer.cc",
+        "-fsyntax-only"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 1.8979341229999989
+    },
+    {
+      "file": "public_hybrid_batch_consumer.cc",
+      "command": [
+        "/usr/bin/g++-14",
+        "-DHYLE_COMPUTE_CPU=1",
+        "-DHYLE_COMPUTE_CUDA=1",
+        "-DHYLE_COMPUTE_FLASHINFER=1",
+        "-DHYLE_COMPUTE_GGML_CPU=1",
+        "-DHYLE_COMPUTE_ONEDNN=1",
+        "-DHYLE_COMPUTE_TORCH_CUDA=1",
+        "-DHYLE_GRAPH_ONEDNN=1",
+        "-DHYLE_IO_HAS_COROUTINE_TRANSPORT=1",
+        "-DHYLE_STATIC",
+        "-I/root/hyle-scratch/compute-unified/source-7a7b4c3b/include",
+        "-isystem",
+        "/usr/local/cuda-13.3/targets/x86_64-linux/include",
+        "-O3",
+        "-DNDEBUG",
+        "-std=gnu++23",
+        "/root/hyle-scratch/compute-unified/source-7a7b4c3b/tests/compute_batch/public_hybrid_batch_consumer.cc",
+        "-fsyntax-only"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 1.3960244989999993
+    }
+  ]
+}

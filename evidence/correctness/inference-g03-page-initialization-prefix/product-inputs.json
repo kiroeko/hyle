@@ -1,0 +1,106 @@
+{
+  "candidate": "ef78cd07f",
+  "fixture_correction": "15c1a5a36",
+  "inputs": [
+    {
+      "path": "include/hyle/compute/paged_arena.h",
+      "sha256": "52ce5448a6bf53b7a83d26ce7ebab04a6cc363a09e836641d0e6c44bc813e1fa"
+    },
+    {
+      "path": "src/compute_batch/paged_arena.cc",
+      "sha256": "0c18165ef88fd56eea899e75f4e17c1615671499a2c6c80307adf49343e39838"
+    },
+    {
+      "path": "tests/compute_batch/copy_update_vulkan_risks.cc",
+      "sha256": "cf56878d2fff0c092719a07e42931950299a3db93599d6216683462db1e22f1d"
+    },
+    {
+      "path": "tests/compute_batch/dirty_page_cuda_consumer.cc",
+      "sha256": "3be13622edd59916cfac6f39cae23c33d8c0369d94f159a04cb76cb3c3dcc601"
+    },
+    {
+      "path": "tests/compute_batch/dirty_page_native_consumer.cc",
+      "sha256": "4803ff29924669ce4478fa520808d0c3b8645f09da2ff232a8235ac472d84a5a"
+    },
+    {
+      "path": "tests/compute_batch/dirty_page_native_risk_fixture.h",
+      "sha256": "d232a492058236c02ac6669d26a89cf3828b8a83e41fc1091ab71dbe0358ef25"
+    },
+    {
+      "path": "tests/compute_batch/dirty_page_public_consumer.cc",
+      "sha256": "1d92ed2b859c8905c2f9b45a90b508571335cc3ad2629b21439350fbde06062f"
+    },
+    {
+      "path": "tests/compute_batch/materialized_cpu_consumer.cc",
+      "sha256": "80902005deb419cc663a6dba67c02cf893d9938b060434c37226d5eba1a73b7b"
+    },
+    {
+      "path": "tests/compute_batch/materialized_host_controller_consumer.h",
+      "sha256": "ac0f6db7c692d4a41373a441a050c81d745517de07bbf7a06a14ea0d3e882580"
+    },
+    {
+      "path": "tests/compute_batch/materialized_native_consumer.cc",
+      "sha256": "863bf69b78fa662910fcb6c1bff6a0f0a08d99e27ff757dd10772ae1962994c6"
+    },
+    {
+      "path": "tests/compute_batch/native_arena_direct_consumer.h",
+      "sha256": "bddabfc5c2c63434e9fc297cd4f86c23dc1d30cf7101f99dbaa0e369954edc36"
+    },
+    {
+      "path": "tests/compute_batch/native_arena_graph_consumer.h",
+      "sha256": "6e4d7b3e5f68fddc795e95f6b11b8ebce9f489cab30ed0c1933b3ebc0d002a1b"
+    },
+    {
+      "path": "tests/compute_batch/native_arena_reference_consumer.h",
+      "sha256": "d5fe353950ab92ffc692919bacc0ac9e8b2c3642222504dd412a18167c1d4351"
+    },
+    {
+      "path": "tests/compute_batch/native_paged_apple_consumer.cc",
+      "sha256": "73df7e97365c9108e25592001bd6b897589754d3ff09b770414f2adfbba064e7"
+    },
+    {
+      "path": "tests/compute_batch/native_paged_risk_fixture.h",
+      "sha256": "5db3106bfa61b246c2e35fc9e9be684d59cf6d613e24610239361f7cd039b1af"
+    },
+    {
+      "path": "tests/compute_batch/native_paged_vulkan_consumer.cc",
+      "sha256": "1ce827cc04f8d82ff656086888ff5fd3ca275b850c7c8031e630d393c79c7f3b"
+    },
+    {
+      "path": "tests/compute_batch/paged_arena_test.cc",
+      "sha256": "3cfb08cc44f06e376517a6bf4980f850f1feb2b61ec59a7c5d4b57b1cb4b15a8"
+    },
+    {
+      "path": "tests/compute_batch/pending_copy_owner_probe.cc",
+      "sha256": "9281dd31e16c3e93788c4f112a9d39c9192f16e40a43218863aeff149ff27f0d"
+    },
+    {
+      "path": "tests/compute_batch/public_batch_cpu_consumer.cc",
+      "sha256": "b4db5491e8d8d64f68d3eecade37df83940627adf49686e44625a76810d948ed"
+    },
+    {
+      "path": "tests/compute_batch/public_batch_native_consumer.cc",
+      "sha256": "1210ebd46e7281fe130f2a0e96797649ae249323613eb78f1d1ebd438aebe30c"
+    },
+    {
+      "path": "tests/compute_batch/public_hybrid_batch_consumer.cc",
+      "sha256": "00617a8e303708a81a7d8ae897e2756230099d4b6da6a5bd3282a89d1fe45b91"
+    },
+    {
+      "path": "tests/compute_provider_ggml/native_paged_test.cc",
+      "sha256": "2dee819d89bb6208f2e9b4f33652fa788b4652423fb13faf983b93d514238c66"
+    },
+    {
+      "path": "tests/compute_provider_ggml/native_ragged_test.cc",
+      "sha256": "30f7a49de5f406742f055f1c77d487d757267919fa97cfb57d9c7e1d5fef09ab"
+    },
+    {
+      "path": "tests/graph_batch/native_paged_joint_consumer.cc",
+      "sha256": "d3d90738a5ccbb8e8571d91c15408e02dc3520c342996029cceba9f6a33650f5"
+    },
+    {
+      "path": "tests/graph_batch/native_paged_joint_risk_fixture.h",
+      "sha256": "f25b4fa75d9d8124915d1aefe391bc235b80b831a49137364bf4c95c7e7f6e76"
+    }
+  ]
+}

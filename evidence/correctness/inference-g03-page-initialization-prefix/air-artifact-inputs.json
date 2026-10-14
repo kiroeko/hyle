@@ -1,0 +1,32 @@
+[
+  {
+    "mode": "static",
+    "path": "include/hyle/compute/paged_arena.h",
+    "sha256": "52ce5448a6bf53b7a83d26ce7ebab04a6cc363a09e836641d0e6c44bc813e1fa",
+    "size": 5251
+  },
+  {
+    "mode": "static",
+    "path": "lib/libhyle_compute_batch.a",
+    "sha256": "0525a05abaa4db24edc204348fa3e4b2063f60f3fa062791ec44953a2f1287e9",
+    "size": 242624
+  },
+  {
+    "mode": "shared",
+    "path": "include/hyle/compute/paged_arena.h",
+    "sha256": "52ce5448a6bf53b7a83d26ce7ebab04a6cc363a09e836641d0e6c44bc813e1fa",
+    "size": 5251
+  },
+  {
+    "mode": "shared",
+    "path": "lib/libhyle_compute_batch.0.1.0.dylib",
+    "sha256": "29d8b5ad0e5dd53da00c9a966ad83735b0b8e5fb4e50f72df0b56d927c3d2022",
+    "size": 206320
+  },
+  {
+    "mode": "shared",
+    "path": "lib/libhyle_compute_batch.dylib",
+    "sha256": "29d8b5ad0e5dd53da00c9a966ad83735b0b8e5fb4e50f72df0b56d927c3d2022",
+    "size": 206320
+  }
+]

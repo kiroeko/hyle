@@ -1,0 +1,66 @@
+{
+  "stages": [
+    {
+      "stage": "build",
+      "command": [
+        "cmake",
+        "--build",
+        "C:\\h7\\inference-g01-native-vulkan\\build",
+        "--target",
+        "g03_paged_arena_risks",
+        "g03_dirty_page_public",
+        "g03_native_public_compile",
+        "g02_joint_public_compile",
+        "--parallel",
+        "4"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 35.71799999999348,
+      "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g03\\init-prefix-windows\\build-1.log"
+    },
+    {
+      "stage": "arena",
+      "command": [
+        "C:\\h7\\inference-g01-native-vulkan\\build\\g03_paged_arena_risks.exe"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 0.14100000000325963,
+      "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g03\\init-prefix-windows\\arena-1.log"
+    },
+    {
+      "stage": "public",
+      "command": [
+        "C:\\h7\\inference-g01-native-vulkan\\build\\g03_dirty_page_public.exe"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 0.031000000017229468,
+      "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g03\\init-prefix-windows\\public-1.log"
+    },
+    {
+      "stage": "ggml-build",
+      "command": [
+        "cmake",
+        "--build",
+        "C:\\h7\\inference-g01-native-vulkan\\build",
+        "--target",
+        "g03_prefix_ggml",
+        "--parallel",
+        "4"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 82.60899999999674,
+      "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g03\\init-prefix-windows\\ggml-build-1.log"
+    },
+    {
+      "stage": "ggml-paged",
+      "command": [
+        "C:\\h7\\inference-g01-native-vulkan\\build\\g03_prefix_ggml.exe",
+        "--gtest_filter=*Paged*"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 40.969000000011874,
+      "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g03\\init-prefix-windows\\ggml-paged-1.log"
+    }
+  ],
+  "cumulative_seconds": 159.46800000002258
+}

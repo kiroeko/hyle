@@ -1,0 +1,23 @@
+{
+  "failures": [
+    {
+      "kind": "CUDA host syntax failure",
+      "failed_input_sha256": "eb0270a9be4010a8d4f993f047049e6ad2ea72894eba2194de9f6ddd8a83bf6f",
+      "diagnostics": [
+        "dirty_page_cuda_consumer.cc:41:58: error: no matching function for call to ‘hyle::compute::WriteLease::publish(const uint32_t&)’",
+        "dirty_page_cuda_consumer.cc:60:55: error: no matching function for call to ‘hyle::compute::WriteLease::publish(const uint32_t&)’"
+      ],
+      "correction": "15c1a5a36 corrects raw source WriteLease; page APIs unchanged",
+      "original_tool_wall_seconds": 4.3073637,
+      "raw_log_retained": false,
+      "raw_log_limitation": "scratch rerun overwrote the first log; these diagnostics and the exact failed input are preserved from the tool transcript"
+    },
+    {
+      "kind": "Air syntax selector fixture failure",
+      "diagnostic": "AssertionError: ('apple', 'copy_update_apple_risks.cc')",
+      "correction": "Apple has no corresponding input in this cached compdb; corrected selector to the actual changed Vulkan file; preceding seven Apple PASS stages retained",
+      "original_tool_wall_seconds": 5.2272106
+    }
+  ],
+  "prior_failures": "All earlier G03 failures/unknowns remain in their original evidence."
+}
