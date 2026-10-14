@@ -467,7 +467,7 @@
           "HYLE_DEP_SOURCE_CACHE": "C:/public/tools/hyle-dependencies/v1",
           "CMAKE_PREFIX_PATH": "C:/h7/g04-sdk-cpu-static-1/relocated",
           "HYLE_CPU_PAGED_NATIVE_INCLUDE": "C:/public/project-hyle/hyle/.scratch/build-compute-v2-dev/src/compute_ggml_runtime/source-8570887ac0d71134/include",
-          "HYLE_CPU_PAGED_ORIGINAL_DLL": "C:/h7/g01-cpu-encoded-original-build/bin/g04_cpu_encoded_original.dll"
+          "HYLE_CPU_PAGED_ORIGINAL_DLL": "C:/h7/g01-cpu-paged-original-build/bin/g01_cpu_paged_original.dll"
         },
         "peer_cache": {
           "original-ggml-cpu-flash": "HYLE_CPU_ORIGINAL_REFERENCE_SOURCE"
