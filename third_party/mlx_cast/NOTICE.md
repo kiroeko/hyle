@@ -52,3 +52,22 @@ respect Metal threadgroup memory limits. Plain coupled/unbounded NAX and GQA
 paths remain original. Window loops restrict the effective row range; cache
 keys include encoding/paging/window function constants. These adapters retain
 the original MLX runtime, queues, MMA/softmax and completion ownership.
+
+The same Apple integration carries `metal-shared-ptr.json` for Apple's
+Apache-2.0 metal-cpp at `f567ed836e4cbb85788c42115a2682bbe68097ee`:
+https://github.com/apple/metal-cpp/tree/f567ed836e4cbb85788c42115a2682bbe68097ee
+See `metal-cpp-LICENSE.txt`. Its original `NS::SharedPtr` accepts empty and
+moved-from values, but nullable retain/release calls enter C++ member functions
+through null pointers. Clang21 UBSan reproduces this without HYLE or MLX.
+The exact single-header edits guard those call sites, preserving nonnull
+reference-count ordering, layout and API; no sanitizer check is disabled.
+The original source and shared cache remain immutable. MLX compilation and
+the HYLE installed Foundation/Metal/QuartzCore headers use the same build-local
+derived source. This adds nullable-pointer branches, no allocation or state.
+
+The MLX Metal allocator's external active/peak/cache/limit readers also take
+its existing mutex, matching the original write-side protection. Internal
+allocation/free paths already holding that mutex read the same fields/cache
+directly, avoiding recursive locking. This fixes the actual host TSan race
+between asynchronous evaluation and destruction of an old array. It adds no
+lock object, allocation, policy change or whole-execution serialization.

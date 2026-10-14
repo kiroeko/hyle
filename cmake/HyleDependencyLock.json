@@ -726,13 +726,13 @@
         "url": "https://codeload.github.com/ml-explore/mlx/tar.gz/1f8e74e3f12f31365464a6867c6579f0e9b29d85",
         "sha256": "cb988a5bdc38c798918d042b9b1c6edda3ccc5f23a2155138d3aa5c1b2acc301"
       },
-      "version": "hyle-mlx-upstream-bf16-conversion-v1",
+      "version": "hyle-apple-native-patches-v2",
       "vendored": {
         "path": "third_party/mlx_cast",
-        "tree_sha256": "f968d40af3c0809f9eb8c1ec5aa5a91815d61d2512801976746c4a8516d8fbed"
+        "tree_sha256": "e54e5e09c331866df349ef5a4a3e75eb1510d7b8d74782d24f211f2229527574"
       },
       "license": {
-        "expression": "MIT",
+        "expression": "MIT AND Apache-2.0",
         "files": [
           {
             "root": "hyle",
@@ -742,7 +742,12 @@
           {
             "root": "hyle",
             "path": "third_party/mlx_cast/NOTICE.md",
-            "sha256": "04578e88a26d08fb6128feb9f60f36d76f2f149845cc816b2b189704af9b2d5b"
+            "sha256": "83f3d580b6fcb3ffd8a538ba7fd20ca34d381f5ec8d67091b6fc1e0b0bb3db76"
+          },
+          {
+            "root": "hyle",
+            "path": "third_party/mlx_cast/metal-cpp-LICENSE.txt",
+            "sha256": "f4e92c7fe2aa066e294c0da9d08683dc9fb741ee6e6debbfad99a0c96e07c1f2"
           }
         ]
       }

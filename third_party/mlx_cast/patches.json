@@ -738,6 +738,63 @@
         }
       ],
       "after_sha256": "48a0a14fd6e791c46d1b0b134cb1017a4307150692c209fbbb4cde888c7ce97a"
+    },
+    {
+      "path": "CMakeLists.txt",
+      "before_sha256": "609cc1c59996fd33c71a2c1630cec738d3b2aed690ab06407ea78d99d56d7fdc",
+      "after_sha256": "9b7b58026aa57e49000b5018323bc5ffd4c38d7394baf1f76eaa4f369091d8d6",
+      "edits": [
+        {
+          "before": "  FetchContent_MakeAvailable(metal_cpp)\n  target_include_directories(\n",
+          "after": "  FetchContent_MakeAvailable(metal_cpp)\n  if(NOT HYLE_APPLE_METAL_CPP_PATCHED_SOURCE_DIR)\n    message(FATAL_ERROR \"HYLE Metal lifetime patch source is required\")\n  endif()\n  set(metal_cpp_SOURCE_DIR \"${HYLE_APPLE_METAL_CPP_PATCHED_SOURCE_DIR}\")\n  target_include_directories(\n"
+        }
+      ]
+    },
+    {
+      "path": "mlx/backend/metal/allocator.h",
+      "before_sha256": "5ca3b085cc210f23c719175960921b51c39aed823a10736f95edd5b9bfbb0fff",
+      "after_sha256": "df4f9a4bd104dc783269d6605558689ee858f2f8106dfabf9e28d1405afc5985",
+      "edits": [
+        {
+          "before": "  size_t get_active_memory() {\n    return ",
+          "after": "  size_t get_active_memory() {\n    std::unique_lock lk(mutex_);\n    return "
+        },
+        {
+          "before": "  size_t get_peak_memory() {\n    return ",
+          "after": "  size_t get_peak_memory() {\n    std::unique_lock lk(mutex_);\n    return "
+        },
+        {
+          "before": "  size_t get_cache_memory() {\n    return ",
+          "after": "  size_t get_cache_memory() {\n    std::unique_lock lk(mutex_);\n    return "
+        }
+      ]
+    },
+    {
+      "path": "mlx/backend/metal/allocator.cpp",
+      "before_sha256": "b317edbeda67afbafe63a4abe685c810b1fb0fd7d94f5f5ee17a7773bf97c65f",
+      "after_sha256": "79fb0c9f817f8f3777630f06265dce212ace3907384e99ccfd5196c04cc47603",
+      "edits": [
+        {
+          "before": "size_t MetalAllocator::get_memory_limit() {\n  return block_limit_;",
+          "after": "size_t MetalAllocator::get_memory_limit() {\n  std::unique_lock lk(mutex_);\n  return block_limit_;"
+        },
+        {
+          "before": "    size_t mem_required = get_active_memory() + get_cache_memory() + size;",
+          "after": "    size_t mem_required = active_memory_ + buffer_cache_.cache_size() + size;"
+        },
+        {
+          "before": "  if (get_cache_memory() > max_pool_size_) {",
+          "after": "  if (buffer_cache_.cache_size() > max_pool_size_) {"
+        },
+        {
+          "before": "        get_cache_memory() - max_pool_size_);",
+          "after": "        buffer_cache_.cache_size() - max_pool_size_);"
+        },
+        {
+          "before": "  if (get_cache_memory() < max_pool_size_) {",
+          "after": "  if (buffer_cache_.cache_size() < max_pool_size_) {"
+        }
+      ]
     }
   ]
 }

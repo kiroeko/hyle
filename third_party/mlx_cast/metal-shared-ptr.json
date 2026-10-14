@@ -1,0 +1,50 @@
+{
+  "schema": 1,
+  "upstream_revision": "f567ed836e4cbb85788c42115a2682bbe68097ee",
+  "scope": "Null-safe original SharedPtr retain/release call sites; original nonnull ownership ordering, layout and API unchanged",
+  "files": [
+    {
+      "path": "Foundation/NSSharedPtr.hpp",
+      "before_sha256": "0dea8b2ec04c9fbabfc4a105a372ec2750789ad83ff4b878b78814a81bc2c6fa",
+      "after_sha256": "d93f38effcc9556aa2cd2dec13db0cdcf37cd36bfd217bcbeedeb7e6c55fd2f4",
+      "edits": [
+        {
+          "before": "_NS_INLINE NS::SharedPtr<_Class> RetainPtr(_Class* pObject)\n{\n    NS::SharedPtr<_Class> ret;\n    ret.m_pObject = pObject->retain();\n    return ret;\n}",
+          "after": "_NS_INLINE NS::SharedPtr<_Class> RetainPtr(_Class* pObject)\n{\n    NS::SharedPtr<_Class> ret;\n    ret.m_pObject = pObject ? pObject->retain() : nullptr;\n    return ret;\n}"
+        },
+        {
+          "before": "_NS_INLINE NS::SharedPtr<_Class>::~SharedPtr<_Class>() __attribute__((no_sanitize(\"undefined\")))\n{\n    m_pObject->release();\n}",
+          "after": "_NS_INLINE NS::SharedPtr<_Class>::~SharedPtr<_Class>() __attribute__((no_sanitize(\"undefined\")))\n{\n    if (m_pObject) m_pObject->release();\n}"
+        },
+        {
+          "before": "_NS_INLINE NS::SharedPtr<_Class>::SharedPtr(const SharedPtr<_Class>& other) noexcept\n    : m_pObject(other.m_pObject->retain())\n{\n}",
+          "after": "_NS_INLINE NS::SharedPtr<_Class>::SharedPtr(const SharedPtr<_Class>& other) noexcept\n    : m_pObject(other.m_pObject ? other.m_pObject->retain() : nullptr)\n{\n}"
+        },
+        {
+          "before": "_NS_INLINE NS::SharedPtr<_Class>::SharedPtr(const SharedPtr<_OtherClass>& other, typename std::enable_if_t<std::is_convertible_v<_OtherClass *, _Class *>> *) noexcept\n    : m_pObject(reinterpret_cast<_Class*>(other.get()->retain()))\n{\n}",
+          "after": "_NS_INLINE NS::SharedPtr<_Class>::SharedPtr(const SharedPtr<_OtherClass>& other, typename std::enable_if_t<std::is_convertible_v<_OtherClass *, _Class *>> *) noexcept\n    : m_pObject(other.get() ? reinterpret_cast<_Class*>(other.get()->retain()) : nullptr)\n{\n}"
+        },
+        {
+          "before": "_NS_INLINE void NS::SharedPtr<_Class>::reset() __attribute__((no_sanitize(\"undefined\")))\n{\n    m_pObject->release();\n    m_pObject = nullptr;\n}",
+          "after": "_NS_INLINE void NS::SharedPtr<_Class>::reset() __attribute__((no_sanitize(\"undefined\")))\n{\n    if (m_pObject) m_pObject->release();\n    m_pObject = nullptr;\n}"
+        },
+        {
+          "before": "_NS_INLINE NS::SharedPtr<_Class>& NS::SharedPtr<_Class>::operator=(const SharedPtr<_Class>& other) __attribute__((no_sanitize(\"undefined\")))\n{\n    _Class* pOldObject = m_pObject;\n\n    m_pObject = other.m_pObject->retain();\n\n    pOldObject->release();\n\n    return *this;\n}",
+          "after": "_NS_INLINE NS::SharedPtr<_Class>& NS::SharedPtr<_Class>::operator=(const SharedPtr<_Class>& other) __attribute__((no_sanitize(\"undefined\")))\n{\n    _Class* pOldObject = m_pObject;\n\n    m_pObject = other.m_pObject ? other.m_pObject->retain() : nullptr;\n\n    if (pOldObject) pOldObject->release();\n\n    return *this;\n}"
+        },
+        {
+          "before": "_NS_INLINE NS::SharedPtr<_Class>::operator=(const SharedPtr<_OtherClass>& other) __attribute__((no_sanitize(\"undefined\")))\n{\n    _Class* pOldObject = m_pObject;\n\n    m_pObject = reinterpret_cast<_Class*>(other.get()->retain());\n\n    pOldObject->release();\n\n    return *this;\n}",
+          "after": "_NS_INLINE NS::SharedPtr<_Class>::operator=(const SharedPtr<_OtherClass>& other) __attribute__((no_sanitize(\"undefined\")))\n{\n    _Class* pOldObject = m_pObject;\n\n    m_pObject = other.get() ? reinterpret_cast<_Class*>(other.get()->retain()) : nullptr;\n\n    if (pOldObject) pOldObject->release();\n\n    return *this;\n}"
+        },
+        {
+          "before": "_NS_INLINE NS::SharedPtr<_Class>& NS::SharedPtr<_Class>::operator=(SharedPtr<_Class>&& other) __attribute__((no_sanitize(\"undefined\")))\n{\n    if (m_pObject != other.m_pObject)\n    {\n        m_pObject->release();\n        m_pObject = other.m_pObject;\n    }\n    else\n    {\n        m_pObject = other.m_pObject;\n        other.m_pObject->release();\n    }\n    other.m_pObject = nullptr;\n    return *this;\n}",
+          "after": "_NS_INLINE NS::SharedPtr<_Class>& NS::SharedPtr<_Class>::operator=(SharedPtr<_Class>&& other) __attribute__((no_sanitize(\"undefined\")))\n{\n    if (m_pObject != other.m_pObject)\n    {\n        if (m_pObject) m_pObject->release();\n        m_pObject = other.m_pObject;\n    }\n    else\n    {\n        m_pObject = other.m_pObject;\n        if (other.m_pObject) other.m_pObject->release();\n    }\n    other.m_pObject = nullptr;\n    return *this;\n}"
+        },
+        {
+          "before": "_NS_INLINE NS::SharedPtr<_Class>::operator=(SharedPtr<_OtherClass>&& other) __attribute__((no_sanitize(\"undefined\")))\n{\n    if (m_pObject != other.get())\n    {\n        m_pObject->release();\n        m_pObject = reinterpret_cast<_Class*>(other.get());\n        other.detach();\n    }\n    else\n    {\n        m_pObject = other.get();\n        other.reset();\n    }\n    return *this;\n}",
+          "after": "_NS_INLINE NS::SharedPtr<_Class>::operator=(SharedPtr<_OtherClass>&& other) __attribute__((no_sanitize(\"undefined\")))\n{\n    if (m_pObject != other.get())\n    {\n        if (m_pObject) m_pObject->release();\n        m_pObject = reinterpret_cast<_Class*>(other.get());\n        other.detach();\n    }\n    else\n    {\n        m_pObject = other.get();\n        other.reset();\n    }\n    return *this;\n}"
+        }
+      ]
+    }
+  ]
+}

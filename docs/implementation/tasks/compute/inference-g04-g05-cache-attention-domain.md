@@ -696,3 +696,69 @@ known/unknown/late source错误、abandon、foreign CPU QueueSequence拒绝。�
 有限只读差分复核无剩余MUST。新域各GPU路线适用host sanitizer、source/static/shared与
 逐头、不可变candidate后的P1仍待验；不签driver/shader sanitizer或private pool已知字节，
 原G03与已验CPU数值负对照不重跑。当前所有重型程序terminal，无残留构建/模型程序。
+
+### CE10：实际 Apple host UBSan 发现的原生空值生命周期
+
+本卡compute_route_apple仍AUDITED。首次对完整MLX host施加UBSan后，Apple新域数学尚未
+执行即在原metal-cpp Foundation/NSObject.hpp:112因空Referencing<ResidencySet>*成员调用
+退出。独立无HYLE/MLX小程序用原NS::SharedPtr<Device>默认构造后TransferPtr赋值同样
+退出-6，而直接真实objc_msgSend(nil,release)退出0。原SharedPtr的no_sanitize属性不把
+C++空对象调用变为已定义；不靠关闭UBSan或新增验证模型结案。
+
+固定CE10有限FIX归原Apple owner：在锁定metal-cpp f567ed的NSSharedPtr.hpp nullable
+retain/release调用处判空，一次覆盖RetainPtr、default/null/copy/move、reset、析构；保持
+原非空引用计数顺序、对象layout/API与nil空操作语义。只增加现有Apple patch bundle的
+具名manifest和原Apache-2.0许可证，复用既有exact source materializer，在Apple私有依赖
+接线中使用build-local派生头，并安装同一派生头。不得修改原dependency cache、公共
+materializer/selector、NSObject成员函数内判断this、扩大Apple功能域或引入全局同步。
+
+验收固定为原头独立反例保留FAIL、派生头同一反例与完整空/非空/copy/move/reset生命周期
+在Clang21/O3/UBSan通过，再续既定Apple11数学、4编码native/joint及6风险；已通过的
+Vulkan与CPU身份匹配证据复用。冷/暖非空retain/release多一次判空，作为本卡P0/P1的
+原生桥接成本；不新增常态metadata/分配/锁。当前尚未签CE10 PASS，所有原FAIL/elapsed保留。
+
+### CE11：实际 Apple 分页消费者的 allocator 统计读写竞争
+
+Apple TSan attempt2的11项数学PASS，随后首个公开encoded native/joint分页消费者在
+get_active_memory与主线程释放旧array的active_memory_写之间报告真实race并退出-6。
+原MLX MetalAllocator写路径已持mutex_，四个统计/limit getter却未持锁；malloc/free在同一
+锁内调用其中getter，因此不能简单给getter加锁而保留内部调用，否则会递归死锁。
+
+本卡Apple owner仍AUDITED，固定CE11有限FIX为原allocator.h/cpp：四个外部getter复用
+既有mutex_；原malloc/free已经持锁的统计读取直接访问相同字段/cache_size，保持原策略、
+统计含义和引用/释放顺序。不增加锁对象、atomic、scheduler或整次执行串行化；不修改
+原source cache，不压制TSan。成本为每次外部统计读取一次既有mutex短临界区，原分配/释放
+路径不新增lock。沿既有Apple manifest接线与静态/动态安装，不改公共HYLE API。
+
+验收为锁定原输入与TSan race负对照保留，修复后同一11数学/4分页/6风险的实际TSan通过，
+再批量复验Apple ASan/UBSan含CE10独立生命周期。Vulkan与CPU不受影响的证据继续借用。
+若出现不同报告先定位实际owner，不把本FIX扩成通用MLX线程安全重构。全批仍未收口。
+
+### 实际 Apple/Vulkan 新域宿主 sanitizer 阶段结果
+
+[本阶段结果与原始记录](../../../../evidence/correctness/inference-g04-g05-native-host-sanitizers/result.json)
+保存13次实际运行、额外一次configure前TSan模型校验失败、原始日志/XML/输入与runner。
+已测累计992.375秒，启动前校验失败未测得耗时单独保留unknown，不记为零或重置预算。
+实际MacBook Air Mac16,12/arm64/macOS27.0.1/AppleClang21，六组Apple/Vulkan各
+ASan/UBSan/TSan均PASS：每组11数学，Apple4/Vulkan3编码native/joint消费者，以及六种
+原Q8独立页几何风险含52/55个cold allocation故障点。原MLX host、ggml Vulkan host、
+HYLE encoder/controller/Graph/协调器及测试TU的实际sanitizer编译命令同时保存。
+
+CE10原无HYLE/MLX空成员调用反例退出-6，真实Objective-C nil消息对照退出0；产品九函数
+十二处nullable调用判空，派生SharedPtr头SHA为d93f38effcc9556aa2cd2dec13db0cdcf37cd36bfd217bcbeedeb7e6c55fd2f4。
+Clang21/O3/UBSan独立完整空/非空/copy/move/reset/引用计数与真实Metal device生命周期PASS。
+CE11原Apple TSan2保留真实统计竞争FAIL；修复后TSan3、ASan3、UBSan5均绑定同一
+CE10+CE11产品并通过上述全部消费者。只读复核无剩余MUST，未增加allocator锁对象/状态，
+外部统计getter新增原mutex短临界区，原分配/释放路径不新增lock。
+
+最终Apple三配置实际SharedPtr和allocator派生文件SHA、compile command均核对；原缓存SHA
+未变。TSan仅使用原已独立复现的final-acquire与Metal commit/completion注解，原模型SHA
+不变；完整逆变换严格匹配当前canonical头。首次校验脚本漏逆变换三处既有method/call
+编辑导致启动FAIL，修正校验后续跑，没有修改产品引用计数或压制报告。Metal模型只替换
+派生树一个MTLCommandBuffer.hpp，Foundation保留实际产品CE10判空。Vulkan借用早先
+PASS时已核对route输入与全部非Apple lock条目一致，不因Apple patch asset改变重跑。
+
+本阶段ASan detect_leaks=0，不签LSan、GPU shader/driver、native private-pool字节上界、
+SDK/逐头/P1或G04/G05全批PASS。十一owner仍AUDITED。下一批按既定门复用六棵shipping
+SDK树，使用新安装并搬迁的prefix运行12独立头、新数学、CPU/native/joint编码消费者；
+CUDA显式清除上一风险阶段私有CMAKE_PROJECT_INCLUDE，实际编译命令必须无HYLE_TESTING。

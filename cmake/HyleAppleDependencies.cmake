@@ -64,12 +64,14 @@ function(hyle_configure_apple_dependencies)
   hyle_audit_in_tree_dependencies(mlx_cast_patches)
   find_package(Python3 REQUIRED COMPONENTS Interpreter)
   set(_patch_manifest "${HYLE_SOURCE_DIR}/third_party/mlx_cast/patches.json")
+  set(_metal_patch_manifest "${HYLE_SOURCE_DIR}/third_party/mlx_cast/metal-shared-ptr.json")
   # Reuse the existing exact-manifest materializer; cache originals stay read-only.
   set(_materializer "${HYLE_SOURCE_DIR}/src/compute_ggml_runtime/prepare_source.py")
   string(SUBSTRING "${HYLE_DEP_MLX_CAST_PATCHES_VENDORED_TREE_SHA256}" 0 16 _patch_id)
   set(_mlx_patched_source "${HYLE_DEP_BUILD_DIR}/mlx-${_patch_id}/source")
+  set(_metal_cpp_patched_source "${HYLE_DEP_BUILD_DIR}/metal-cpp-${_patch_id}/source")
   set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS
-    "${_patch_manifest}" "${_materializer}")
+    "${_patch_manifest}" "${_metal_patch_manifest}" "${_materializer}")
   execute_process(
     COMMAND "${Python3_EXECUTABLE}" "${_materializer}"
       --source "${mlx_SOURCE_DIR}" --output "${_mlx_patched_source}"
@@ -99,6 +101,19 @@ function(hyle_configure_apple_dependencies)
       set(BUILD_SHARED_LIBS ON)
     endif()
     hyle_fetchcontent_make_available_locked(metal_cpp)
+    FetchContent_GetProperties(metal_cpp)
+    execute_process(
+      COMMAND "${Python3_EXECUTABLE}" "${_materializer}"
+        --source "${metal_cpp_SOURCE_DIR}" --output "${_metal_cpp_patched_source}"
+        --manifest "${_metal_patch_manifest}"
+      RESULT_VARIABLE _metal_patch_result
+      OUTPUT_VARIABLE _metal_patch_output ERROR_VARIABLE _metal_patch_error)
+    if(NOT _metal_patch_result EQUAL 0)
+      message(FATAL_ERROR "Metal C++ lifetime source preparation failed: ${_metal_patch_error}")
+    endif()
+    # The derived MLX CMake selects this same source for compile and install;
+    # the authenticated shared dependency cache remains untouched.
+    set(HYLE_APPLE_METAL_CPP_PATCHED_SOURCE_DIR "${_metal_cpp_patched_source}")
     hyle_fetchcontent_make_available_locked(json)
     hyle_fetchcontent_make_available_locked(fmt)
     add_subdirectory("${_mlx_patched_source}" "${mlx_BINARY_DIR}" EXCLUDE_FROM_ALL)
@@ -107,6 +122,8 @@ function(hyle_configure_apple_dependencies)
     FetchContent_GetProperties(${_dependency})
     if(_dependency STREQUAL "mlx")
       set(mlx_SOURCE_DIR "${_mlx_patched_source}")
+    elseif(_dependency STREQUAL "metal_cpp")
+      set(metal_cpp_SOURCE_DIR "${_metal_cpp_patched_source}")
     endif()
     if(EXISTS "${${_dependency}_SOURCE_DIR}/CMakeLists.txt")
       set_property(DIRECTORY "${${_dependency}_SOURCE_DIR}"

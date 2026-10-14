@@ -1,0 +1,1300 @@
+{
+  "kind": "G04_G05_ACTUAL_APPLE_VULKAN_NEW_DOMAIN_HOST_SANITIZERS",
+  "verdict": "PASS_SIX_CONFIGURATIONS_WITH_EXPLICIT_ORIGINAL_TSAN_BOUNDARY_MODELS",
+  "product_baseline": "2983af255 plus exact CE10/CE11 inputs below; eleven owners remain AUDITED; not complete G04/G05",
+  "input_sha256": {
+    "tests/compute_batch/encoded_page_native_consumer.cc": "65116244bed6590178ec9005c0da6e9a6c65296804f69cdd89bcd597b691c984",
+    "tests/compute_batch/native_paged_risk_fixture.h": "16f36791154de98e1d6b07a11f9b72ae748c3dc7290fd3e96a6d16aa0ca0040d",
+    "tests/compute_batch/native_paged_apple_risks.cc": "0e8cc045fe64e15b642917a6ddba1a1af6c632c60fdc859b5c7c6e3ead0116a1",
+    "tests/compute_batch/native_paged_vulkan_risks.cc": "1a755a7322e7b3b1ff49137dc364103f8a178ba6aa11a5687efc0c83d361307d",
+    "tests/compute_batch/native_apple_failure_fixture.h": "843b0495203042a9e03d50b8fe537f52ee3e19c179fef174aa1ceecc80e9c966",
+    "tests/compute_batch/native_vulkan_failure_fixture.h": "735442d02b038ca4d3220839c0eafb8c220f2da19d944d8099c9c6e5b40e986d",
+    "tests/compute_route_apple/native_cache_test.cc": "98f912f2d0e9c5fbce80c2d3ac4df864c2158848a1a75d098712117a7f947d67",
+    "tests/compute_route_vulkan/native_cache_test.cc": "bcc6043b8d9b0db541d3cc782d9d34993571f14d9ee6cefe83d843dc08af8d5f",
+    "src/compute_route_apple/apple_mature_float.cc": "20ffaec7840532a910596268546b5679e228a07e1a1a8613fcd8ce27aeebb962",
+    "src/compute_route_apple/apple_batch.cc": "1ba19bbb95773b5e15e4830eac7107be71072e3db454c71ac8d1086708657672",
+    "src/compute_route_vulkan/vulkan_batch.cc": "40cceb2370284ba6ab4fafea5295d840b8097714f3658188d3a0f6090645bbd7",
+    "src/compute_provider_ggml_vulkan/region.cc": "fbcdb56e40a2a63efe93d7aa76d2853e04f6934b007c024bacab7e5fe8ae51e7",
+    "include/hyle/compute/model_ops.h": "165cfc86281d90e246f137892c0fa1f625421a53f6bdbf9877aef9828773f8c9",
+    "include/hyle/compute/batch_layout.h": "6a47c47481ad9b1a4599b4b9dcb51428912e67e958540b9c971310fb7fe82e73",
+    "include/hyle/compute/detail/materialized_native_controller.h": "9c92224885493ccfea20e872ae631b0c70142da31068f36b4a239fce0e4719f4",
+    "third_party/mlx_cast/patches.json": "5309383b067b3bd1d05ea08f81a1dd96c459a92c3da290762d7f6cdd0979ebcf",
+    "third_party/ggml_vulkan_runtime/patches.json": "041f3c0d6c55adb29c514c53ae9db6b70d9e61f1272410d243b4314156e52242",
+    "cmake/HyleDependencyLock.json": "d703d2788e988f732dde589c555487ea8b5805d5a13400f0b222c9958d30e4f8",
+    "third_party/mlx_cast/metal-shared-ptr.json": "c1b1be840ba38792c82b280d21224a0de2e5dd2abf12a45e892050dc0ec6ad13",
+    "third_party/mlx_cast/metal-cpp-LICENSE.txt": "f4e92c7fe2aa066e294c0da9d08683dc9fb741ee6e6debbfad99a0c96e07c1f2",
+    "third_party/mlx_cast/NOTICE.md": "83f3d580b6fcb3ffd8a538ba7fd20ca34d381f5ec8d67091b6fc1e0b0bb3db76",
+    "cmake/HyleAppleDependencies.cmake": "0545f54c8f24a0da3429306b27c2833a3d90284df5f1dc68918569ad18a0a2c1",
+    "src/compute_route_apple/CMakeLists.txt": "328cfc8fbf425a214c0864c1286bb0ce073f74cceddce970e7e4d54ceb58a2f8",
+    "tests/compute_route_apple/metal_shared_ptr_lifetime.cc": "5e9a5ae77140c48921c62d2b1c2439e847456706e419589cda33963047d9188a"
+  },
+  "qualified": [
+    "Actual MacBook Air Mac16,12 arm64/macOS27.0.1/AppleClang21; Apple and Vulkan each ASan/UBSan/TSan",
+    "Each configuration all11new-domain CacheEncode/attention tests PASS, including finite tiny-scale bytes, window/noncausal/Dv, long-prefill and finite accumulation boundaries",
+    "Each Apple configuration public native/requiredCPU+Apple four tests PASS: F16 and BF16, single/multi, D64/128 andD256/256, paired/independent original Graph encoders -> one original F2 Update -> final-only native/joint consumption, six updates and original accepted numeric failures",
+    "Each Vulkan configuration same finite F16 native/requiredCPU+Vulkan three public tests PASS; no BF16 Vulkan claim",
+    "Each configuration six Q8 D64/128 window16 original native risks PASS; all52Apple/55Vulkan cold allocation failure points, cancellation/abandonment or actual accepted unknown/wait error, native guard/page retirement and empty/foreign/role mismatch refusal",
+    "Actual compile commands verify sanitizer instrumentation on selected HYLE native/Graph/metadata/controller consumers, CPU+GPU coordinator, original MLX host fast/Metal attention or ggml Vulkan host region/backend and all three test TUs",
+    "CE10 actual original locked SharedPtr independent no-HYLE/no-MLX nullptr-member negative control exits -6 under UBSan; actual objc_msgSend nil control exits0. Product-derived nullable guards pass standalone empty/nonempty/copy/move/reset/retain/destruction and actual Metal device lifecycle at Clang21/O3/UBSan; all final Apple configurations use guarded product Foundation header",
+    "CE11 original Apple TSan2 math11 PASS but public encoded pages exit -6 with actual allocator active-memory reader versus old-array free writer race. Exact allocator.h/cpp patch protects four external getters with existing mutex; internal already-locked malloc/free read fields/cache directly, no recursive lock/new state or whole-execution serialization. Final three Apple sanitizer profiles run actual CE10+CE11 derived product and all fixed public consumers."
+  ],
+  "ce10": {
+    "product_header_provenance": {
+      "verdict": "PASS_DERIVED_HEADER_AND_ACTUAL_INCLUDE_COMMANDS",
+      "original_cache_sha256": "0dea8b2ec04c9fbabfc4a105a372ec2750789ad83ff4b878b78814a81bc2c6fa",
+      "bundle_sha256": "e54e5e09c331866df349ef5a4a3e75eb1510d7b8d74782d24f211f2229527574",
+      "configurations": [
+        {
+          "mode": "asan",
+          "attempt": 3,
+          "derived_header": "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-apple-asan/build/hyle/_deps/metal-cpp-e54e5e09c331866d/source/Foundation/NSSharedPtr.hpp",
+          "sha256": "d93f38effcc9556aa2cd2dec13db0cdcf37cd36bfd217bcbeedeb7e6c55fd2f4",
+          "allocator_files": [
+            {
+              "path": "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-apple-asan/build/hyle/_deps/mlx-e54e5e09c331866d/source/mlx/backend/metal/allocator.h",
+              "sha256": "df4f9a4bd104dc783269d6605558689ee858f2f8106dfabf9e28d1405afc5985",
+              "original_cache_sha256": "5ca3b085cc210f23c719175960921b51c39aed823a10736f95edd5b9bfbb0fff"
+            },
+            {
+              "path": "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-apple-asan/build/hyle/_deps/mlx-e54e5e09c331866d/source/mlx/backend/metal/allocator.cpp",
+              "sha256": "79fb0c9f817f8f3777630f06265dce212ace3907384e99ccfd5196c04cc47603",
+              "original_cache_sha256": "b317edbeda67afbafe63a4abe685c810b1fb0fd7d94f5f5ee17a7773bf97c65f"
+            }
+          ],
+          "compile_commands": [
+            {
+              "source": "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-apple-asan/build/hyle/_deps/mlx-e54e5e09c331866d/source/mlx/fast.cpp",
+              "command": "/usr/bin/clang++ -DFMT_HEADER_ONLY=1 -DHYLE_DETAIL_SANITIZER_ADDRESS=1 -DMETAL_PATH=\\\"/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-apple-asan/build/hyle/_deps/mlx-build/mlx/backend/metal/kernels//mlx.metallib\\\" -DMLX_METAL_NO_NAX -DMLX_STATIC -I/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-apple-asan/build/hyle/_deps/metal-cpp-e54e5e09c331866d/source -I/Users/kiro/Library/Caches/hyle/dependencies/v1/sources/json-9cca280a4d0c-6fc345093434/single_include/nlohmann -I/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-apple-asan/build/hyle/_deps/mlx-e54e5e09c331866d/source -I/Users/kiro/Library/Caches/hyle/dependencies/v1/sources/fmt-407c905e45ad-cd0d9446fff4/include -F/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/System/Library/Frameworks -O3 -DNDEBUG -std=c++20 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk -mmacosx-version-min=14.4 -fPIC -fvisibility=hidden -fvisibility-inlines-hidden -fsanitize=address -fno-omit-frame-pointer -MD -MT hyle/_deps/mlx-build/CMakeFiles/mlx.dir/mlx/fast.cpp.o -MF hyle/_deps/mlx-build/CMakeFiles/mlx.dir/mlx/fast.cpp.o.d -o hyle/_deps/mlx-build/CMakeFiles/mlx.dir/mlx/fast.cpp.o -c /Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-apple-asan/build/hyle/_deps/mlx-e54e5e09c331866d/source/mlx/fast.cpp",
+              "effective_foundation_header": "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-apple-asan/build/hyle/_deps/metal-cpp-e54e5e09c331866d/source/Foundation/NSSharedPtr.hpp",
+              "sha256": "d93f38effcc9556aa2cd2dec13db0cdcf37cd36bfd217bcbeedeb7e6c55fd2f4"
+            },
+            {
+              "source": "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-apple-asan/build/hyle/_deps/mlx-e54e5e09c331866d/source/mlx/backend/metal/scaled_dot_product_attention.cpp",
+              "command": "/usr/bin/clang++ -DFMT_HEADER_ONLY=1 -DHYLE_DETAIL_SANITIZER_ADDRESS=1 -DMETAL_PATH=\\\"/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-apple-asan/build/hyle/_deps/mlx-build/mlx/backend/metal/kernels//mlx.metallib\\\" -DMLX_METAL_NO_NAX -DMLX_STATIC -I/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-apple-asan/build/hyle/_deps/metal-cpp-e54e5e09c331866d/source -I/Users/kiro/Library/Caches/hyle/dependencies/v1/sources/json-9cca280a4d0c-6fc345093434/single_include/nlohmann -I/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-apple-asan/build/hyle/_deps/mlx-e54e5e09c331866d/source -I/Users/kiro/Library/Caches/hyle/dependencies/v1/sources/fmt-407c905e45ad-cd0d9446fff4/include -F/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/System/Library/Frameworks -O3 -DNDEBUG -std=c++20 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk -mmacosx-version-min=14.4 -fPIC -fvisibility=hidden -fvisibility-inlines-hidden -fsanitize=address -fno-omit-frame-pointer -MD -MT hyle/_deps/mlx-build/CMakeFiles/mlx.dir/mlx/backend/metal/scaled_dot_product_attention.cpp.o -MF hyle/_deps/mlx-build/CMakeFiles/mlx.dir/mlx/backend/metal/scaled_dot_product_attention.cpp.o.d -o hyle/_deps/mlx-build/CMakeFiles/mlx.dir/mlx/backend/metal/scaled_dot_product_attention.cpp.o -c /Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-apple-asan/build/hyle/_deps/mlx-e54e5e09c331866d/source/mlx/backend/metal/scaled_dot_product_attention.cpp",
+              "effective_foundation_header": "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-apple-asan/build/hyle/_deps/metal-cpp-e54e5e09c331866d/source/Foundation/NSSharedPtr.hpp",
+              "sha256": "d93f38effcc9556aa2cd2dec13db0cdcf37cd36bfd217bcbeedeb7e6c55fd2f4"
+            },
+            {
+              "source": "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-apple-asan/build/hyle/_deps/mlx-e54e5e09c331866d/source/mlx/backend/metal/allocator.cpp",
+              "command": "/usr/bin/clang++ -DFMT_HEADER_ONLY=1 -DHYLE_DETAIL_SANITIZER_ADDRESS=1 -DMETAL_PATH=\\\"/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-apple-asan/build/hyle/_deps/mlx-build/mlx/backend/metal/kernels//mlx.metallib\\\" -DMLX_METAL_NO_NAX -DMLX_STATIC -I/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-apple-asan/build/hyle/_deps/metal-cpp-e54e5e09c331866d/source -I/Users/kiro/Library/Caches/hyle/dependencies/v1/sources/json-9cca280a4d0c-6fc345093434/single_include/nlohmann -I/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-apple-asan/build/hyle/_deps/mlx-e54e5e09c331866d/source -I/Users/kiro/Library/Caches/hyle/dependencies/v1/sources/fmt-407c905e45ad-cd0d9446fff4/include -F/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/System/Library/Frameworks -O3 -DNDEBUG -std=c++20 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk -mmacosx-version-min=14.4 -fPIC -fvisibility=hidden -fvisibility-inlines-hidden -fsanitize=address -fno-omit-frame-pointer -MD -MT hyle/_deps/mlx-build/CMakeFiles/mlx.dir/mlx/backend/metal/allocator.cpp.o -MF hyle/_deps/mlx-build/CMakeFiles/mlx.dir/mlx/backend/metal/allocator.cpp.o.d -o hyle/_deps/mlx-build/CMakeFiles/mlx.dir/mlx/backend/metal/allocator.cpp.o -c /Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-apple-asan/build/hyle/_deps/mlx-e54e5e09c331866d/source/mlx/backend/metal/allocator.cpp",
+              "effective_foundation_header": "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-apple-asan/build/hyle/_deps/metal-cpp-e54e5e09c331866d/source/Foundation/NSSharedPtr.hpp",
+              "sha256": "d93f38effcc9556aa2cd2dec13db0cdcf37cd36bfd217bcbeedeb7e6c55fd2f4"
+            },
+            {
+              "source": "/Users/kiro/hyle-scratch/compute-unified/source-c8874688/src/compute_route_apple/apple_mature_float.cc",
+              "command": "/usr/bin/clang++ -DHYLE_COMPUTE_APPLE=1 -DHYLE_COMPUTE_ROUTE_APPLE_BUILD -DHYLE_DETAIL_SANITIZER_ADDRESS=1 -DHYLE_IO_HAS_COROUTINE_TRANSPORT=1 -DHYLE_STATIC -DMLX_STATIC -I/Users/kiro/hyle-scratch/compute-unified/source-c8874688/include -I/Users/kiro/hyle-scratch/compute-unified/source-c8874688/src/compute_route_apple -I/Users/kiro/hyle-scratch/compute-unified/source-c8874688/src/compute_route_apple/../compute -I/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-apple-asan/build/hyle/src/compute_route_apple -I/Users/kiro/hyle-scratch/compute-unified/source-c8874688/third_party/bitsandbytes_apple -I/Users/kiro/hyle-scratch/compute-unified/source-c8874688/third_party/awq_apple -I/Users/kiro/hyle-scratch/compute-unified/source-c8874688/third_party/ggml_q4k_apple -I/Users/kiro/hyle-scratch/compute-unified/source-c8874688/third_party/compressed_tensors_apple -isystem /Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-apple-asan/build/hyle/_deps/metal-cpp-e54e5e09c331866d/source -isystem /Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-apple-asan/build/hyle/_deps/mlx-e54e5e09c331866d/source -O3 -DNDEBUG -std=c++23 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk -mmacosx-version-min=14.4 -Wall -Wextra -Wpedantic -fsanitize=address -fno-omit-frame-pointer -MD -MT hyle/src/compute_route_apple/CMakeFiles/hyle_compute_route_apple.dir/apple_mature_float.cc.o -MF hyle/src/compute_route_apple/CMakeFiles/hyle_compute_route_apple.dir/apple_mature_float.cc.o.d -o hyle/src/compute_route_apple/CMakeFiles/hyle_compute_route_apple.dir/apple_mature_float.cc.o -c /Users/kiro/hyle-scratch/compute-unified/source-c8874688/src/compute_route_apple/apple_mature_float.cc",
+              "effective_foundation_header": "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-apple-asan/build/hyle/_deps/metal-cpp-e54e5e09c331866d/source/Foundation/NSSharedPtr.hpp",
+              "sha256": "d93f38effcc9556aa2cd2dec13db0cdcf37cd36bfd217bcbeedeb7e6c55fd2f4"
+            }
+          ]
+        },
+        {
+          "mode": "ubsan",
+          "attempt": 5,
+          "derived_header": "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-apple-ubsan/build/hyle/_deps/metal-cpp-e54e5e09c331866d/source/Foundation/NSSharedPtr.hpp",
+          "sha256": "d93f38effcc9556aa2cd2dec13db0cdcf37cd36bfd217bcbeedeb7e6c55fd2f4",
+          "allocator_files": [
+            {
+              "path": "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-apple-ubsan/build/hyle/_deps/mlx-e54e5e09c331866d/source/mlx/backend/metal/allocator.h",
+              "sha256": "df4f9a4bd104dc783269d6605558689ee858f2f8106dfabf9e28d1405afc5985",
+              "original_cache_sha256": "5ca3b085cc210f23c719175960921b51c39aed823a10736f95edd5b9bfbb0fff"
+            },
+            {
+              "path": "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-apple-ubsan/build/hyle/_deps/mlx-e54e5e09c331866d/source/mlx/backend/metal/allocator.cpp",
+              "sha256": "79fb0c9f817f8f3777630f06265dce212ace3907384e99ccfd5196c04cc47603",
+              "original_cache_sha256": "b317edbeda67afbafe63a4abe685c810b1fb0fd7d94f5f5ee17a7773bf97c65f"
+            }
+          ],
+          "compile_commands": [
+            {
+              "source": "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-apple-ubsan/build/hyle/_deps/mlx-e54e5e09c331866d/source/mlx/fast.cpp",
+              "command": "/usr/bin/clang++ -DFMT_HEADER_ONLY=1 -DHYLE_DETAIL_SANITIZER_UNDEFINED=1 -DMETAL_PATH=\\\"/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-apple-ubsan/build/hyle/_deps/mlx-build/mlx/backend/metal/kernels//mlx.metallib\\\" -DMLX_METAL_NO_NAX -DMLX_STATIC -I/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-apple-ubsan/build/hyle/_deps/metal-cpp-e54e5e09c331866d/source -I/Users/kiro/Library/Caches/hyle/dependencies/v1/sources/json-9cca280a4d0c-6fc345093434/single_include/nlohmann -I/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-apple-ubsan/build/hyle/_deps/mlx-e54e5e09c331866d/source -I/Users/kiro/Library/Caches/hyle/dependencies/v1/sources/fmt-407c905e45ad-cd0d9446fff4/include -F/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/System/Library/Frameworks -O3 -DNDEBUG -std=c++20 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk -mmacosx-version-min=14.4 -fPIC -fvisibility=hidden -fvisibility-inlines-hidden -fsanitize=undefined -fno-sanitize-recover=all -MD -MT hyle/_deps/mlx-build/CMakeFiles/mlx.dir/mlx/fast.cpp.o -MF hyle/_deps/mlx-build/CMakeFiles/mlx.dir/mlx/fast.cpp.o.d -o hyle/_deps/mlx-build/CMakeFiles/mlx.dir/mlx/fast.cpp.o -c /Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-apple-ubsan/build/hyle/_deps/mlx-e54e5e09c331866d/source/mlx/fast.cpp",
+              "effective_foundation_header": "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-apple-ubsan/build/hyle/_deps/metal-cpp-e54e5e09c331866d/source/Foundation/NSSharedPtr.hpp",
+              "sha256": "d93f38effcc9556aa2cd2dec13db0cdcf37cd36bfd217bcbeedeb7e6c55fd2f4"
+            },
+            {
+              "source": "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-apple-ubsan/build/hyle/_deps/mlx-e54e5e09c331866d/source/mlx/backend/metal/scaled_dot_product_attention.cpp",
+              "command": "/usr/bin/clang++ -DFMT_HEADER_ONLY=1 -DHYLE_DETAIL_SANITIZER_UNDEFINED=1 -DMETAL_PATH=\\\"/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-apple-ubsan/build/hyle/_deps/mlx-build/mlx/backend/metal/kernels//mlx.metallib\\\" -DMLX_METAL_NO_NAX -DMLX_STATIC -I/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-apple-ubsan/build/hyle/_deps/metal-cpp-e54e5e09c331866d/source -I/Users/kiro/Library/Caches/hyle/dependencies/v1/sources/json-9cca280a4d0c-6fc345093434/single_include/nlohmann -I/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-apple-ubsan/build/hyle/_deps/mlx-e54e5e09c331866d/source -I/Users/kiro/Library/Caches/hyle/dependencies/v1/sources/fmt-407c905e45ad-cd0d9446fff4/include -F/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/System/Library/Frameworks -O3 -DNDEBUG -std=c++20 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk -mmacosx-version-min=14.4 -fPIC -fvisibility=hidden -fvisibility-inlines-hidden -fsanitize=undefined -fno-sanitize-recover=all -MD -MT hyle/_deps/mlx-build/CMakeFiles/mlx.dir/mlx/backend/metal/scaled_dot_product_attention.cpp.o -MF hyle/_deps/mlx-build/CMakeFiles/mlx.dir/mlx/backend/metal/scaled_dot_product_attention.cpp.o.d -o hyle/_deps/mlx-build/CMakeFiles/mlx.dir/mlx/backend/metal/scaled_dot_product_attention.cpp.o -c /Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-apple-ubsan/build/hyle/_deps/mlx-e54e5e09c331866d/source/mlx/backend/metal/scaled_dot_product_attention.cpp",
+              "effective_foundation_header": "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-apple-ubsan/build/hyle/_deps/metal-cpp-e54e5e09c331866d/source/Foundation/NSSharedPtr.hpp",
+              "sha256": "d93f38effcc9556aa2cd2dec13db0cdcf37cd36bfd217bcbeedeb7e6c55fd2f4"
+            },
+            {
+              "source": "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-apple-ubsan/build/hyle/_deps/mlx-e54e5e09c331866d/source/mlx/backend/metal/allocator.cpp",
+              "command": "/usr/bin/clang++ -DFMT_HEADER_ONLY=1 -DHYLE_DETAIL_SANITIZER_UNDEFINED=1 -DMETAL_PATH=\\\"/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-apple-ubsan/build/hyle/_deps/mlx-build/mlx/backend/metal/kernels//mlx.metallib\\\" -DMLX_METAL_NO_NAX -DMLX_STATIC -I/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-apple-ubsan/build/hyle/_deps/metal-cpp-e54e5e09c331866d/source -I/Users/kiro/Library/Caches/hyle/dependencies/v1/sources/json-9cca280a4d0c-6fc345093434/single_include/nlohmann -I/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-apple-ubsan/build/hyle/_deps/mlx-e54e5e09c331866d/source -I/Users/kiro/Library/Caches/hyle/dependencies/v1/sources/fmt-407c905e45ad-cd0d9446fff4/include -F/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/System/Library/Frameworks -O3 -DNDEBUG -std=c++20 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk -mmacosx-version-min=14.4 -fPIC -fvisibility=hidden -fvisibility-inlines-hidden -fsanitize=undefined -fno-sanitize-recover=all -MD -MT hyle/_deps/mlx-build/CMakeFiles/mlx.dir/mlx/backend/metal/allocator.cpp.o -MF hyle/_deps/mlx-build/CMakeFiles/mlx.dir/mlx/backend/metal/allocator.cpp.o.d -o hyle/_deps/mlx-build/CMakeFiles/mlx.dir/mlx/backend/metal/allocator.cpp.o -c /Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-apple-ubsan/build/hyle/_deps/mlx-e54e5e09c331866d/source/mlx/backend/metal/allocator.cpp",
+              "effective_foundation_header": "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-apple-ubsan/build/hyle/_deps/metal-cpp-e54e5e09c331866d/source/Foundation/NSSharedPtr.hpp",
+              "sha256": "d93f38effcc9556aa2cd2dec13db0cdcf37cd36bfd217bcbeedeb7e6c55fd2f4"
+            },
+            {
+              "source": "/Users/kiro/hyle-scratch/compute-unified/source-c8874688/src/compute_route_apple/apple_mature_float.cc",
+              "command": "/usr/bin/clang++ -DHYLE_COMPUTE_APPLE=1 -DHYLE_COMPUTE_ROUTE_APPLE_BUILD -DHYLE_DETAIL_SANITIZER_UNDEFINED=1 -DHYLE_IO_HAS_COROUTINE_TRANSPORT=1 -DHYLE_STATIC -DMLX_STATIC -I/Users/kiro/hyle-scratch/compute-unified/source-c8874688/include -I/Users/kiro/hyle-scratch/compute-unified/source-c8874688/src/compute_route_apple -I/Users/kiro/hyle-scratch/compute-unified/source-c8874688/src/compute_route_apple/../compute -I/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-apple-ubsan/build/hyle/src/compute_route_apple -I/Users/kiro/hyle-scratch/compute-unified/source-c8874688/third_party/bitsandbytes_apple -I/Users/kiro/hyle-scratch/compute-unified/source-c8874688/third_party/awq_apple -I/Users/kiro/hyle-scratch/compute-unified/source-c8874688/third_party/ggml_q4k_apple -I/Users/kiro/hyle-scratch/compute-unified/source-c8874688/third_party/compressed_tensors_apple -isystem /Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-apple-ubsan/build/hyle/_deps/metal-cpp-e54e5e09c331866d/source -isystem /Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-apple-ubsan/build/hyle/_deps/mlx-e54e5e09c331866d/source -O3 -DNDEBUG -std=c++23 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk -mmacosx-version-min=14.4 -Wall -Wextra -Wpedantic -fsanitize=undefined -fno-sanitize-recover=all -MD -MT hyle/src/compute_route_apple/CMakeFiles/hyle_compute_route_apple.dir/apple_mature_float.cc.o -MF hyle/src/compute_route_apple/CMakeFiles/hyle_compute_route_apple.dir/apple_mature_float.cc.o.d -o hyle/src/compute_route_apple/CMakeFiles/hyle_compute_route_apple.dir/apple_mature_float.cc.o -c /Users/kiro/hyle-scratch/compute-unified/source-c8874688/src/compute_route_apple/apple_mature_float.cc",
+              "effective_foundation_header": "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-apple-ubsan/build/hyle/_deps/metal-cpp-e54e5e09c331866d/source/Foundation/NSSharedPtr.hpp",
+              "sha256": "d93f38effcc9556aa2cd2dec13db0cdcf37cd36bfd217bcbeedeb7e6c55fd2f4"
+            }
+          ]
+        },
+        {
+          "mode": "tsan",
+          "attempt": 3,
+          "derived_header": "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-apple-tsan/build/hyle/_deps/metal-cpp-e54e5e09c331866d/source/Foundation/NSSharedPtr.hpp",
+          "sha256": "d93f38effcc9556aa2cd2dec13db0cdcf37cd36bfd217bcbeedeb7e6c55fd2f4",
+          "allocator_files": [
+            {
+              "path": "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-apple-tsan/build/hyle/_deps/mlx-e54e5e09c331866d/source/mlx/backend/metal/allocator.h",
+              "sha256": "df4f9a4bd104dc783269d6605558689ee858f2f8106dfabf9e28d1405afc5985",
+              "original_cache_sha256": "5ca3b085cc210f23c719175960921b51c39aed823a10736f95edd5b9bfbb0fff"
+            },
+            {
+              "path": "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-apple-tsan/build/hyle/_deps/mlx-e54e5e09c331866d/source/mlx/backend/metal/allocator.cpp",
+              "sha256": "79fb0c9f817f8f3777630f06265dce212ace3907384e99ccfd5196c04cc47603",
+              "original_cache_sha256": "b317edbeda67afbafe63a4abe685c810b1fb0fd7d94f5f5ee17a7773bf97c65f"
+            }
+          ],
+          "compile_commands": [
+            {
+              "source": "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-apple-tsan/build/hyle/_deps/mlx-e54e5e09c331866d/source/mlx/fast.cpp",
+              "command": "/usr/bin/clang++ -DFMT_HEADER_ONLY=1 -DHYLE_DETAIL_SANITIZER_THREAD=1 -DMETAL_PATH=\\\"/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-apple-tsan/build/hyle/_deps/mlx-build/mlx/backend/metal/kernels//mlx.metallib\\\" -DMLX_METAL_NO_NAX -DMLX_STATIC -I/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-host-sanitizers/metal-tsan-e54e5e09c331866d -I/Users/kiro/hyle-scratch/compute-unified/g01-metal-callback-tsan-probe/tsan-metal-cpp -I/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-apple-tsan/build/hyle/_deps/metal-cpp-e54e5e09c331866d/source -I/Users/kiro/Library/Caches/hyle/dependencies/v1/sources/json-9cca280a4d0c-6fc345093434/single_include/nlohmann -I/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-apple-tsan/build/hyle/_deps/mlx-e54e5e09c331866d/source -I/Users/kiro/Library/Caches/hyle/dependencies/v1/sources/fmt-407c905e45ad-cd0d9446fff4/include -F/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/System/Library/Frameworks -O3 -DNDEBUG -std=c++20 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk -mmacosx-version-min=14.4 -fPIC -fvisibility=hidden -fvisibility-inlines-hidden -fsanitize=thread -MD -MT hyle/_deps/mlx-build/CMakeFiles/mlx.dir/mlx/fast.cpp.o -MF hyle/_deps/mlx-build/CMakeFiles/mlx.dir/mlx/fast.cpp.o.d -o hyle/_deps/mlx-build/CMakeFiles/mlx.dir/mlx/fast.cpp.o -c /Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-apple-tsan/build/hyle/_deps/mlx-e54e5e09c331866d/source/mlx/fast.cpp",
+              "effective_foundation_header": "/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-host-sanitizers/metal-tsan-e54e5e09c331866d/Foundation/NSSharedPtr.hpp",
+              "sha256": "d93f38effcc9556aa2cd2dec13db0cdcf37cd36bfd217bcbeedeb7e6c55fd2f4"
+            },
+            {
+              "source": "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-apple-tsan/build/hyle/_deps/mlx-e54e5e09c331866d/source/mlx/backend/metal/scaled_dot_product_attention.cpp",
+              "command": "/usr/bin/clang++ -DFMT_HEADER_ONLY=1 -DHYLE_DETAIL_SANITIZER_THREAD=1 -DMETAL_PATH=\\\"/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-apple-tsan/build/hyle/_deps/mlx-build/mlx/backend/metal/kernels//mlx.metallib\\\" -DMLX_METAL_NO_NAX -DMLX_STATIC -I/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-host-sanitizers/metal-tsan-e54e5e09c331866d -I/Users/kiro/hyle-scratch/compute-unified/g01-metal-callback-tsan-probe/tsan-metal-cpp -I/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-apple-tsan/build/hyle/_deps/metal-cpp-e54e5e09c331866d/source -I/Users/kiro/Library/Caches/hyle/dependencies/v1/sources/json-9cca280a4d0c-6fc345093434/single_include/nlohmann -I/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-apple-tsan/build/hyle/_deps/mlx-e54e5e09c331866d/source -I/Users/kiro/Library/Caches/hyle/dependencies/v1/sources/fmt-407c905e45ad-cd0d9446fff4/include -F/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/System/Library/Frameworks -O3 -DNDEBUG -std=c++20 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk -mmacosx-version-min=14.4 -fPIC -fvisibility=hidden -fvisibility-inlines-hidden -fsanitize=thread -MD -MT hyle/_deps/mlx-build/CMakeFiles/mlx.dir/mlx/backend/metal/scaled_dot_product_attention.cpp.o -MF hyle/_deps/mlx-build/CMakeFiles/mlx.dir/mlx/backend/metal/scaled_dot_product_attention.cpp.o.d -o hyle/_deps/mlx-build/CMakeFiles/mlx.dir/mlx/backend/metal/scaled_dot_product_attention.cpp.o -c /Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-apple-tsan/build/hyle/_deps/mlx-e54e5e09c331866d/source/mlx/backend/metal/scaled_dot_product_attention.cpp",
+              "effective_foundation_header": "/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-host-sanitizers/metal-tsan-e54e5e09c331866d/Foundation/NSSharedPtr.hpp",
+              "sha256": "d93f38effcc9556aa2cd2dec13db0cdcf37cd36bfd217bcbeedeb7e6c55fd2f4"
+            },
+            {
+              "source": "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-apple-tsan/build/hyle/_deps/mlx-e54e5e09c331866d/source/mlx/backend/metal/allocator.cpp",
+              "command": "/usr/bin/clang++ -DFMT_HEADER_ONLY=1 -DHYLE_DETAIL_SANITIZER_THREAD=1 -DMETAL_PATH=\\\"/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-apple-tsan/build/hyle/_deps/mlx-build/mlx/backend/metal/kernels//mlx.metallib\\\" -DMLX_METAL_NO_NAX -DMLX_STATIC -I/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-host-sanitizers/metal-tsan-e54e5e09c331866d -I/Users/kiro/hyle-scratch/compute-unified/g01-metal-callback-tsan-probe/tsan-metal-cpp -I/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-apple-tsan/build/hyle/_deps/metal-cpp-e54e5e09c331866d/source -I/Users/kiro/Library/Caches/hyle/dependencies/v1/sources/json-9cca280a4d0c-6fc345093434/single_include/nlohmann -I/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-apple-tsan/build/hyle/_deps/mlx-e54e5e09c331866d/source -I/Users/kiro/Library/Caches/hyle/dependencies/v1/sources/fmt-407c905e45ad-cd0d9446fff4/include -F/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/System/Library/Frameworks -O3 -DNDEBUG -std=c++20 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk -mmacosx-version-min=14.4 -fPIC -fvisibility=hidden -fvisibility-inlines-hidden -fsanitize=thread -MD -MT hyle/_deps/mlx-build/CMakeFiles/mlx.dir/mlx/backend/metal/allocator.cpp.o -MF hyle/_deps/mlx-build/CMakeFiles/mlx.dir/mlx/backend/metal/allocator.cpp.o.d -o hyle/_deps/mlx-build/CMakeFiles/mlx.dir/mlx/backend/metal/allocator.cpp.o -c /Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-apple-tsan/build/hyle/_deps/mlx-e54e5e09c331866d/source/mlx/backend/metal/allocator.cpp",
+              "effective_foundation_header": "/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-host-sanitizers/metal-tsan-e54e5e09c331866d/Foundation/NSSharedPtr.hpp",
+              "sha256": "d93f38effcc9556aa2cd2dec13db0cdcf37cd36bfd217bcbeedeb7e6c55fd2f4"
+            },
+            {
+              "source": "/Users/kiro/hyle-scratch/compute-unified/source-c8874688/src/compute_route_apple/apple_mature_float.cc",
+              "command": "/usr/bin/clang++ -DHYLE_COMPUTE_APPLE=1 -DHYLE_COMPUTE_ROUTE_APPLE_BUILD -DHYLE_DETAIL_SANITIZER_THREAD=1 -DHYLE_IO_HAS_COROUTINE_TRANSPORT=1 -DHYLE_STATIC -DMLX_STATIC -I/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-host-sanitizers/metal-tsan-e54e5e09c331866d -I/Users/kiro/hyle-scratch/compute-unified/g02-refcount-fence-probe/tsan-headers -I/Users/kiro/hyle-scratch/compute-unified/g01-metal-callback-tsan-probe/tsan-metal-cpp -I/Users/kiro/hyle-scratch/compute-unified/source-c8874688/include -I/Users/kiro/hyle-scratch/compute-unified/source-c8874688/src/compute_route_apple -I/Users/kiro/hyle-scratch/compute-unified/source-c8874688/src/compute_route_apple/../compute -I/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-apple-tsan/build/hyle/src/compute_route_apple -I/Users/kiro/hyle-scratch/compute-unified/source-c8874688/third_party/bitsandbytes_apple -I/Users/kiro/hyle-scratch/compute-unified/source-c8874688/third_party/awq_apple -I/Users/kiro/hyle-scratch/compute-unified/source-c8874688/third_party/ggml_q4k_apple -I/Users/kiro/hyle-scratch/compute-unified/source-c8874688/third_party/compressed_tensors_apple -isystem /Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-apple-tsan/build/hyle/_deps/metal-cpp-e54e5e09c331866d/source -isystem /Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-apple-tsan/build/hyle/_deps/mlx-e54e5e09c331866d/source -O3 -DNDEBUG -std=c++23 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk -mmacosx-version-min=14.4 -Wall -Wextra -Wpedantic -fsanitize=thread -MD -MT hyle/src/compute_route_apple/CMakeFiles/hyle_compute_route_apple.dir/apple_mature_float.cc.o -MF hyle/src/compute_route_apple/CMakeFiles/hyle_compute_route_apple.dir/apple_mature_float.cc.o.d -o hyle/src/compute_route_apple/CMakeFiles/hyle_compute_route_apple.dir/apple_mature_float.cc.o -c /Users/kiro/hyle-scratch/compute-unified/source-c8874688/src/compute_route_apple/apple_mature_float.cc",
+              "effective_foundation_header": "/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-host-sanitizers/metal-tsan-e54e5e09c331866d/Foundation/NSSharedPtr.hpp",
+              "sha256": "d93f38effcc9556aa2cd2dec13db0cdcf37cd36bfd217bcbeedeb7e6c55fd2f4"
+            }
+          ]
+        }
+      ]
+    },
+    "independent_negative_control": {
+      "scope": "Independent original metal-cpp nullptr member bridge versus actual Objective-C nil messaging; no HYLE or MLX",
+      "stages": [
+        {
+          "stage": "compile",
+          "command": [
+            "xcrun",
+            "clang++",
+            "-std=c++20",
+            "-O3",
+            "-g",
+            "-fsanitize=undefined",
+            "-fno-sanitize-recover=all",
+            "-I/Users/kiro/Library/Caches/hyle/dependencies/v1/sources/metal_cpp-f567ed836e4c-3874e9e28e8e",
+            "/Users/kiro/hyle-scratch/compute-unified/g04-g05-metal-nil-probe/metal_nil_probe.cc",
+            "-framework",
+            "Foundation",
+            "-framework",
+            "Metal",
+            "-lobjc",
+            "-o",
+            "/Users/kiro/hyle-scratch/compute-unified/g04-g05-metal-nil-probe/probe"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 0.660177042,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g04-g05-metal-nil-probe/compile.log"
+        },
+        {
+          "stage": "original-cpp",
+          "command": [
+            "/Users/kiro/hyle-scratch/compute-unified/g04-g05-metal-nil-probe/probe"
+          ],
+          "exit_code": -6,
+          "elapsed_seconds": 0.46149270899999995,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g04-g05-metal-nil-probe/original-cpp.log"
+        },
+        {
+          "stage": "objc-nil",
+          "command": [
+            "/Users/kiro/hyle-scratch/compute-unified/g04-g05-metal-nil-probe/probe",
+            "objc"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 0.006250958000000084,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g04-g05-metal-nil-probe/objc-nil.log"
+        }
+      ],
+      "inputs": [
+        {
+          "path": "/Users/kiro/hyle-scratch/compute-unified/g04-g05-metal-nil-probe/metal_nil_probe.cc",
+          "sha256": "c11915996330f63e082d0214ebb5d0401a886ac618bcb9df1d14772313ed072b"
+        },
+        {
+          "path": "/Users/kiro/Library/Caches/hyle/dependencies/v1/sources/metal_cpp-f567ed836e4c-3874e9e28e8e/Foundation/NSSharedPtr.hpp",
+          "sha256": "0dea8b2ec04c9fbabfc4a105a372ec2750789ad83ff4b878b78814a81bc2c6fa"
+        },
+        {
+          "path": "/Users/kiro/Library/Caches/hyle/dependencies/v1/sources/metal_cpp-f567ed836e4c-3874e9e28e8e/Foundation/NSObject.hpp",
+          "sha256": "0e517a51d40679f476aec9b63079550138f0711c38f05a9c197ee8880bf538fb"
+        }
+      ],
+      "cumulative_seconds": 1.127920709
+    },
+    "original_startup_failure": {
+      "state": "TERMINAL_FAIL",
+      "route": "apple",
+      "mode": "tsan",
+      "attempt": 1,
+      "stage": "startup-model-validation",
+      "exit_code": 1,
+      "elapsed_seconds": null,
+      "reason": "Runner validation omitted three already-qualified model edits (static-to-const final fence method and two member calls). Original model is byte-identical to the previously qualified SHA. Complete reversal now exactly equals current canonical product. No configure, compile or test started; no suppression or product/model change.",
+      "source_archive": "source-apple-tsan-1.zip"
+    },
+    "reuse": "Vulkan profiles passed with Apple patch asset differing. Relevant route input hashes and all non-Apple dependency lock entries exactly match final CE10+CE11 source; no unchanged run repeated."
+  },
+  "boundary_models": {
+    "refcount": "TSan only, original qualified SHA2b90ab65... unchanged. Mechanical reversal of sanitizer include, final acquire annotation, one static-to-const method and two member call sites exactly equals current canonical header. No product change or race suppression.",
+    "metal": "Apple TSan only, original independently reproduced command-buffer commit/completion annotation SHA4a58c6e5... unchanged. Current product-derived Metal tree retained byte-for-byte except that one exact MTLCommandBuffer.hpp. Foundation SharedPtr uses real CE10 product guards, never an old validation-model Foundation tree. No suppressions.",
+    "prior_evidence": [
+      "evidence/correctness/inference-g01-native-page-host-sanitizers/receipt.json",
+      "evidence/correctness/inference-g03-graph-late-risks/validation-result.json"
+    ]
+  },
+  "limits": [
+    "ASan detect_leaks0: no LSan certificate",
+    "No GPU shader/driver sanitizer",
+    "No native private-pool byte bound or instrumentation certificate",
+    "No new-domain installed static/shared/standalone-header or qualified P1 verdict",
+    "No whole G04/G05 or complete G01-G10 acceptance"
+  ],
+  "runs": [
+    {
+      "tag": "apple-asan-1",
+      "state": "TERMINAL_PASS",
+      "route": "apple",
+      "mode": "asan",
+      "identity": {
+        "model": "Mac16,12",
+        "arch": "arm64",
+        "os": "ProductName:\t\tmacOS\nProductVersion:\t\t27.0.1\nBuildVersion:\t\t26A434",
+        "compiler": "Apple clang version 21.0.0 (clang-2100.3.34.2)\nTarget: arm64-apple-darwin27.0.0\nThread model: posix\nInstalledDir: /Library/Developer/CommandLineTools/usr/bin",
+        "memory": "17179869184"
+      },
+      "max_jobs": 4,
+      "stages": [
+        {
+          "stage": "configure",
+          "command": [
+            "/opt/homebrew/bin/cmake",
+            "-S",
+            "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-apple-asan/parent",
+            "-B",
+            "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-apple-asan/build"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 4.571045333,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-host-sanitizers/configure-apple-asan-1.log"
+        },
+        {
+          "stage": "compile",
+          "command": [
+            "/opt/homebrew/bin/cmake",
+            "--build",
+            "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-apple-asan/build",
+            "--target",
+            "g04_gpu_san_math",
+            "g04_gpu_san_pages",
+            "g04_gpu_san_risks",
+            "--parallel",
+            "4"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 58.136713583,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-host-sanitizers/compile-apple-asan-1.log"
+        },
+        {
+          "stage": "math",
+          "command": [
+            "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-apple-asan/build/g04_gpu_san_math",
+            "--gtest_output=xml:/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-host-sanitizers/math-apple-asan-1.xml"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 13.35796533300001,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-host-sanitizers/math-apple-asan-1.log"
+        },
+        {
+          "stage": "pages",
+          "command": [
+            "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-apple-asan/build/g04_gpu_san_pages",
+            "--gtest_output=xml:/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-host-sanitizers/pages-apple-asan-1.xml"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 1.7707915830000047,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-host-sanitizers/pages-apple-asan-1.log"
+        },
+        {
+          "stage": "risks",
+          "command": [
+            "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-apple-asan/build/g04_gpu_san_risks"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 1.2756153330000046,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-host-sanitizers/risks-apple-asan-1.log"
+        }
+      ],
+      "cumulative_seconds": 79.11213116500002,
+      "scope": "Actual Air new encoded-cache math11, original encoder/F2/native/joint public consumers, six original Q8 native risks; host sanitizer only. No LSan/shader/driver/private native pool or SDK/P1 claim.",
+      "models": []
+    },
+    {
+      "tag": "apple-asan-2",
+      "state": "TERMINAL_PASS",
+      "route": "apple",
+      "mode": "asan",
+      "identity": {
+        "model": "Mac16,12",
+        "arch": "arm64",
+        "os": "ProductName:\t\tmacOS\nProductVersion:\t\t27.0.1\nBuildVersion:\t\t26A434",
+        "compiler": "Apple clang version 21.0.0 (clang-2100.3.34.2)\nTarget: arm64-apple-darwin27.0.0\nThread model: posix\nInstalledDir: /Library/Developer/CommandLineTools/usr/bin",
+        "memory": "17179869184"
+      },
+      "max_jobs": 4,
+      "stages": [
+        {
+          "stage": "configure",
+          "command": [
+            "/opt/homebrew/bin/cmake",
+            "-S",
+            "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-apple-asan/parent",
+            "-B",
+            "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-apple-asan/build"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 4.7032102909999995,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-host-sanitizers/configure-apple-asan-2.log"
+        },
+        {
+          "stage": "compile",
+          "command": [
+            "/opt/homebrew/bin/cmake",
+            "--build",
+            "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-apple-asan/build",
+            "--target",
+            "g04_gpu_san_math",
+            "g04_gpu_san_pages",
+            "g04_gpu_san_risks",
+            "--parallel",
+            "4"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 41.674017708,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-host-sanitizers/compile-apple-asan-2.log"
+        },
+        {
+          "stage": "math",
+          "command": [
+            "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-apple-asan/build/g04_gpu_san_math",
+            "--gtest_output=xml:/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-host-sanitizers/math-apple-asan-2.xml"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 13.107031582999994,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-host-sanitizers/math-apple-asan-2.log"
+        },
+        {
+          "stage": "pages",
+          "command": [
+            "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-apple-asan/build/g04_gpu_san_pages",
+            "--gtest_output=xml:/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-host-sanitizers/pages-apple-asan-2.xml"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 1.7379114589999958,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-host-sanitizers/pages-apple-asan-2.log"
+        },
+        {
+          "stage": "risks",
+          "command": [
+            "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-apple-asan/build/g04_gpu_san_risks"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 1.2217349999999954,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-host-sanitizers/risks-apple-asan-2.log"
+        }
+      ],
+      "cumulative_seconds": 62.443906040999984,
+      "scope": "Actual Air new encoded-cache math11, original encoder/F2/native/joint public consumers, six original Q8 native risks; host sanitizer only. No LSan/shader/driver/private native pool or SDK/P1 claim.",
+      "models": []
+    },
+    {
+      "tag": "apple-asan-3",
+      "state": "TERMINAL_PASS",
+      "route": "apple",
+      "mode": "asan",
+      "identity": {
+        "model": "Mac16,12",
+        "arch": "arm64",
+        "os": "ProductName:\t\tmacOS\nProductVersion:\t\t27.0.1\nBuildVersion:\t\t26A434",
+        "compiler": "Apple clang version 21.0.0 (clang-2100.3.34.2)\nTarget: arm64-apple-darwin27.0.0\nThread model: posix\nInstalledDir: /Library/Developer/CommandLineTools/usr/bin",
+        "memory": "17179869184"
+      },
+      "max_jobs": 4,
+      "stages": [
+        {
+          "stage": "configure",
+          "command": [
+            "/opt/homebrew/bin/cmake",
+            "-S",
+            "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-apple-asan/parent",
+            "-B",
+            "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-apple-asan/build"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 4.720549957999999,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-host-sanitizers/configure-apple-asan-3.log"
+        },
+        {
+          "stage": "compile",
+          "command": [
+            "/opt/homebrew/bin/cmake",
+            "--build",
+            "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-apple-asan/build",
+            "--target",
+            "g04_gpu_san_math",
+            "g04_gpu_san_pages",
+            "g04_gpu_san_risks",
+            "--parallel",
+            "4"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 42.033740208,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-host-sanitizers/compile-apple-asan-3.log"
+        },
+        {
+          "stage": "math",
+          "command": [
+            "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-apple-asan/build/g04_gpu_san_math",
+            "--gtest_output=xml:/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-host-sanitizers/math-apple-asan-3.xml"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 10.560660290999998,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-host-sanitizers/math-apple-asan-3.log"
+        },
+        {
+          "stage": "pages",
+          "command": [
+            "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-apple-asan/build/g04_gpu_san_pages",
+            "--gtest_output=xml:/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-host-sanitizers/pages-apple-asan-3.xml"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 1.841132082999998,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-host-sanitizers/pages-apple-asan-3.log"
+        },
+        {
+          "stage": "risks",
+          "command": [
+            "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-apple-asan/build/g04_gpu_san_risks"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 1.2906652499999964,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-host-sanitizers/risks-apple-asan-3.log"
+        }
+      ],
+      "cumulative_seconds": 60.44674778999999,
+      "scope": "Actual Air new encoded-cache math11, original encoder/F2/native/joint public consumers, six original Q8 native risks; host sanitizer only. No LSan/shader/driver/private native pool or SDK/P1 claim.",
+      "models": []
+    },
+    {
+      "tag": "apple-tsan-2",
+      "state": "TERMINAL_FAIL",
+      "route": "apple",
+      "mode": "tsan",
+      "identity": {
+        "model": "Mac16,12",
+        "arch": "arm64",
+        "os": "ProductName:\t\tmacOS\nProductVersion:\t\t27.0.1\nBuildVersion:\t\t26A434",
+        "compiler": "Apple clang version 21.0.0 (clang-2100.3.34.2)\nTarget: arm64-apple-darwin27.0.0\nThread model: posix\nInstalledDir: /Library/Developer/CommandLineTools/usr/bin",
+        "memory": "17179869184"
+      },
+      "max_jobs": 4,
+      "stages": [
+        {
+          "stage": "configure",
+          "command": [
+            "/opt/homebrew/bin/cmake",
+            "-S",
+            "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-apple-tsan/parent",
+            "-B",
+            "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-apple-tsan/build"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 4.385834208,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-host-sanitizers/configure-apple-tsan-2.log"
+        },
+        {
+          "stage": "compile",
+          "command": [
+            "/opt/homebrew/bin/cmake",
+            "--build",
+            "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-apple-tsan/build",
+            "--target",
+            "g04_gpu_san_math",
+            "g04_gpu_san_pages",
+            "g04_gpu_san_risks",
+            "--parallel",
+            "4"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 48.424264042000004,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-host-sanitizers/compile-apple-tsan-2.log"
+        },
+        {
+          "stage": "math",
+          "command": [
+            "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-apple-tsan/build/g04_gpu_san_math",
+            "--gtest_output=xml:/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-host-sanitizers/math-apple-tsan-2.xml"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 46.906617417,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-host-sanitizers/math-apple-tsan-2.log"
+        },
+        {
+          "stage": "pages",
+          "command": [
+            "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-apple-tsan/build/g04_gpu_san_pages",
+            "--gtest_output=xml:/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-host-sanitizers/pages-apple-tsan-2.xml"
+          ],
+          "exit_code": -6,
+          "elapsed_seconds": 1.4792353750000018,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-host-sanitizers/pages-apple-tsan-2.log"
+        }
+      ],
+      "cumulative_seconds": 101.195951042,
+      "scope": "Actual Air new encoded-cache math11, original encoder/F2/native/joint public consumers, six original Q8 native risks; host sanitizer only. No LSan/shader/driver/private native pool or SDK/P1 claim.",
+      "models": [
+        {
+          "path": "/Users/kiro/hyle-scratch/compute-unified/g02-refcount-fence-probe/tsan-headers/hyle/util/ref_counted.h",
+          "sha256": "2b90ab655a49ec3b9158a964872cd1fc3395ebf64d8ae430a2e19c4805bf5416"
+        },
+        {
+          "path": "/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-host-sanitizers/metal-tsan-95c66e6c952d53b8/Metal/MTLCommandBuffer.hpp",
+          "sha256": "4a58c6e564e3a7efcdf5c7709eeee99ec7b7c40594e2ada5ec5c91012171d504"
+        }
+      ]
+    },
+    {
+      "tag": "apple-tsan-3",
+      "state": "TERMINAL_PASS",
+      "route": "apple",
+      "mode": "tsan",
+      "identity": {
+        "model": "Mac16,12",
+        "arch": "arm64",
+        "os": "ProductName:\t\tmacOS\nProductVersion:\t\t27.0.1\nBuildVersion:\t\t26A434",
+        "compiler": "Apple clang version 21.0.0 (clang-2100.3.34.2)\nTarget: arm64-apple-darwin27.0.0\nThread model: posix\nInstalledDir: /Library/Developer/CommandLineTools/usr/bin",
+        "memory": "17179869184"
+      },
+      "max_jobs": 4,
+      "stages": [
+        {
+          "stage": "configure",
+          "command": [
+            "/opt/homebrew/bin/cmake",
+            "-S",
+            "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-apple-tsan/parent",
+            "-B",
+            "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-apple-tsan/build"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 5.743364541,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-host-sanitizers/configure-apple-tsan-3.log"
+        },
+        {
+          "stage": "compile",
+          "command": [
+            "/opt/homebrew/bin/cmake",
+            "--build",
+            "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-apple-tsan/build",
+            "--target",
+            "g04_gpu_san_math",
+            "g04_gpu_san_pages",
+            "g04_gpu_san_risks",
+            "--parallel",
+            "4"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 35.551087958,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-host-sanitizers/compile-apple-tsan-3.log"
+        },
+        {
+          "stage": "math",
+          "command": [
+            "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-apple-tsan/build/g04_gpu_san_math",
+            "--gtest_output=xml:/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-host-sanitizers/math-apple-tsan-3.xml"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 48.53076054100001,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-host-sanitizers/math-apple-tsan-3.log"
+        },
+        {
+          "stage": "pages",
+          "command": [
+            "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-apple-tsan/build/g04_gpu_san_pages",
+            "--gtest_output=xml:/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-host-sanitizers/pages-apple-tsan-3.xml"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 4.449115040999999,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-host-sanitizers/pages-apple-tsan-3.log"
+        },
+        {
+          "stage": "risks",
+          "command": [
+            "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-apple-tsan/build/g04_gpu_san_risks"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 3.4187338330000046,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-host-sanitizers/risks-apple-tsan-3.log"
+        }
+      ],
+      "cumulative_seconds": 97.693061914,
+      "scope": "Actual Air new encoded-cache math11, original encoder/F2/native/joint public consumers, six original Q8 native risks; host sanitizer only. No LSan/shader/driver/private native pool or SDK/P1 claim.",
+      "models": [
+        {
+          "path": "/Users/kiro/hyle-scratch/compute-unified/g02-refcount-fence-probe/tsan-headers/hyle/util/ref_counted.h",
+          "sha256": "2b90ab655a49ec3b9158a964872cd1fc3395ebf64d8ae430a2e19c4805bf5416"
+        },
+        {
+          "path": "/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-host-sanitizers/metal-tsan-e54e5e09c331866d/Metal/MTLCommandBuffer.hpp",
+          "sha256": "4a58c6e564e3a7efcdf5c7709eeee99ec7b7c40594e2ada5ec5c91012171d504"
+        }
+      ]
+    },
+    {
+      "tag": "apple-ubsan-1",
+      "state": "TERMINAL_FAIL",
+      "route": "apple",
+      "mode": "ubsan",
+      "identity": {
+        "model": "Mac16,12",
+        "arch": "arm64",
+        "os": "ProductName:\t\tmacOS\nProductVersion:\t\t27.0.1\nBuildVersion:\t\t26A434",
+        "compiler": "Apple clang version 21.0.0 (clang-2100.3.34.2)\nTarget: arm64-apple-darwin27.0.0\nThread model: posix\nInstalledDir: /Library/Developer/CommandLineTools/usr/bin",
+        "memory": "17179869184"
+      },
+      "max_jobs": 4,
+      "stages": [
+        {
+          "stage": "configure",
+          "command": [
+            "/opt/homebrew/bin/cmake",
+            "-S",
+            "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-apple-ubsan/parent",
+            "-B",
+            "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-apple-ubsan/build"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 4.487664,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-host-sanitizers/configure-apple-ubsan-1.log"
+        },
+        {
+          "stage": "compile",
+          "command": [
+            "/opt/homebrew/bin/cmake",
+            "--build",
+            "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-apple-ubsan/build",
+            "--target",
+            "g04_gpu_san_math",
+            "g04_gpu_san_pages",
+            "g04_gpu_san_risks",
+            "--parallel",
+            "4"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 64.619182625,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-host-sanitizers/compile-apple-ubsan-1.log"
+        },
+        {
+          "stage": "math",
+          "command": [
+            "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-apple-ubsan/build/g04_gpu_san_math",
+            "--gtest_output=xml:/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-host-sanitizers/math-apple-ubsan-1.xml"
+          ],
+          "exit_code": -6,
+          "elapsed_seconds": 0.6747675409999943,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-host-sanitizers/math-apple-ubsan-1.log"
+        }
+      ],
+      "cumulative_seconds": 69.78161416599998,
+      "scope": "Actual Air new encoded-cache math11, original encoder/F2/native/joint public consumers, six original Q8 native risks; host sanitizer only. No LSan/shader/driver/private native pool or SDK/P1 claim.",
+      "models": []
+    },
+    {
+      "tag": "apple-ubsan-2",
+      "state": "TERMINAL_FAIL",
+      "route": "apple",
+      "mode": "ubsan",
+      "identity": {
+        "model": "Mac16,12",
+        "arch": "arm64",
+        "os": "ProductName:\t\tmacOS\nProductVersion:\t\t27.0.1\nBuildVersion:\t\t26A434",
+        "compiler": "Apple clang version 21.0.0 (clang-2100.3.34.2)\nTarget: arm64-apple-darwin27.0.0\nThread model: posix\nInstalledDir: /Library/Developer/CommandLineTools/usr/bin",
+        "memory": "17179869184"
+      },
+      "max_jobs": 4,
+      "stages": [
+        {
+          "stage": "configure",
+          "command": [
+            "/opt/homebrew/bin/cmake",
+            "-S",
+            "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-apple-ubsan/parent",
+            "-B",
+            "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-apple-ubsan/build"
+          ],
+          "exit_code": 1,
+          "elapsed_seconds": 1.193232959,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-host-sanitizers/configure-apple-ubsan-2.log"
+        }
+      ],
+      "cumulative_seconds": 1.193232959,
+      "scope": "Actual Air new encoded-cache math11, original encoder/F2/native/joint public consumers, six original Q8 native risks; host sanitizer only. No LSan/shader/driver/private native pool or SDK/P1 claim.",
+      "models": []
+    },
+    {
+      "tag": "apple-ubsan-3",
+      "state": "TERMINAL_FAIL",
+      "route": "apple",
+      "mode": "ubsan",
+      "identity": {
+        "model": "Mac16,12",
+        "arch": "arm64",
+        "os": "ProductName:\t\tmacOS\nProductVersion:\t\t27.0.1\nBuildVersion:\t\t26A434",
+        "compiler": "Apple clang version 21.0.0 (clang-2100.3.34.2)\nTarget: arm64-apple-darwin27.0.0\nThread model: posix\nInstalledDir: /Library/Developer/CommandLineTools/usr/bin",
+        "memory": "17179869184"
+      },
+      "max_jobs": 4,
+      "stages": [
+        {
+          "stage": "configure",
+          "command": [
+            "/opt/homebrew/bin/cmake",
+            "-S",
+            "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-apple-ubsan/parent",
+            "-B",
+            "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-apple-ubsan/build"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 5.651792708,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-host-sanitizers/configure-apple-ubsan-3.log"
+        },
+        {
+          "stage": "compile",
+          "command": [
+            "/opt/homebrew/bin/cmake",
+            "--build",
+            "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-apple-ubsan/build",
+            "--target",
+            "g04_gpu_san_math",
+            "g04_gpu_san_pages",
+            "g04_gpu_san_risks",
+            "--parallel",
+            "4"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 41.703593209000005,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-host-sanitizers/compile-apple-ubsan-3.log"
+        },
+        {
+          "stage": "metal-lifetime-compile",
+          "command": [
+            "xcrun",
+            "clang++",
+            "-std=c++20",
+            "-O3",
+            "-g",
+            "-Wall",
+            "-Wextra",
+            "-Wpedantic",
+            "-Werror",
+            "-fsanitize=undefined",
+            "-fno-sanitize-recover=all",
+            "-I/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-apple-ubsan/build/hyle/_deps/metal-cpp-95c66e6c952d53b8/source",
+            "/Users/kiro/hyle-scratch/compute-unified/source-c8874688/tests/compute_route_apple/metal_shared_ptr_lifetime.cc",
+            "-framework",
+            "Foundation",
+            "-framework",
+            "Metal",
+            "-o",
+            "/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-host-sanitizers/metal-lifetime-apple-ubsan-3"
+          ],
+          "exit_code": 1,
+          "elapsed_seconds": 0.40924954199999775,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-host-sanitizers/metal-lifetime-compile-apple-ubsan-3.log"
+        }
+      ],
+      "cumulative_seconds": 47.764635459000004,
+      "scope": "Actual Air new encoded-cache math11, original encoder/F2/native/joint public consumers, six original Q8 native risks; host sanitizer only. No LSan/shader/driver/private native pool or SDK/P1 claim.",
+      "models": []
+    },
+    {
+      "tag": "apple-ubsan-4",
+      "state": "TERMINAL_PASS",
+      "route": "apple",
+      "mode": "ubsan",
+      "identity": {
+        "model": "Mac16,12",
+        "arch": "arm64",
+        "os": "ProductName:\t\tmacOS\nProductVersion:\t\t27.0.1\nBuildVersion:\t\t26A434",
+        "compiler": "Apple clang version 21.0.0 (clang-2100.3.34.2)\nTarget: arm64-apple-darwin27.0.0\nThread model: posix\nInstalledDir: /Library/Developer/CommandLineTools/usr/bin",
+        "memory": "17179869184"
+      },
+      "max_jobs": 4,
+      "stages": [
+        {
+          "stage": "compile",
+          "command": [
+            "/opt/homebrew/bin/cmake",
+            "--build",
+            "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-apple-ubsan/build",
+            "--target",
+            "g04_gpu_san_math",
+            "g04_gpu_san_pages",
+            "g04_gpu_san_risks",
+            "--parallel",
+            "4"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 2.095045208,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-host-sanitizers/compile-apple-ubsan-4.log"
+        },
+        {
+          "stage": "metal-lifetime-compile",
+          "command": [
+            "xcrun",
+            "clang++",
+            "-std=c++20",
+            "-O3",
+            "-g",
+            "-Wall",
+            "-Wextra",
+            "-Wpedantic",
+            "-Werror",
+            "-fsanitize=undefined",
+            "-fno-sanitize-recover=all",
+            "-isystem",
+            "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-apple-ubsan/build/hyle/_deps/metal-cpp-95c66e6c952d53b8/source",
+            "/Users/kiro/hyle-scratch/compute-unified/source-c8874688/tests/compute_route_apple/metal_shared_ptr_lifetime.cc",
+            "-framework",
+            "Foundation",
+            "-framework",
+            "Metal",
+            "-o",
+            "/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-host-sanitizers/metal-lifetime-apple-ubsan-4"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 0.652364875,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-host-sanitizers/metal-lifetime-compile-apple-ubsan-4.log"
+        },
+        {
+          "stage": "metal-lifetime",
+          "command": [
+            "/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-host-sanitizers/metal-lifetime-apple-ubsan-4"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 0.412684708,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-host-sanitizers/metal-lifetime-apple-ubsan-4.log"
+        },
+        {
+          "stage": "math",
+          "command": [
+            "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-apple-ubsan/build/g04_gpu_san_math",
+            "--gtest_output=xml:/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-host-sanitizers/math-apple-ubsan-4.xml"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 14.211047708,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-host-sanitizers/math-apple-ubsan-4.log"
+        },
+        {
+          "stage": "pages",
+          "command": [
+            "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-apple-ubsan/build/g04_gpu_san_pages",
+            "--gtest_output=xml:/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-host-sanitizers/pages-apple-ubsan-4.xml"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 1.2761986250000028,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-host-sanitizers/pages-apple-ubsan-4.log"
+        },
+        {
+          "stage": "risks",
+          "command": [
+            "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-apple-ubsan/build/g04_gpu_san_risks"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 0.7042349999999971,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-host-sanitizers/risks-apple-ubsan-4.log"
+        }
+      ],
+      "cumulative_seconds": 19.351576124,
+      "scope": "Actual Air new encoded-cache math11, original encoder/F2/native/joint public consumers, six original Q8 native risks; host sanitizer only. No LSan/shader/driver/private native pool or SDK/P1 claim.",
+      "models": []
+    },
+    {
+      "tag": "apple-ubsan-5",
+      "state": "TERMINAL_PASS",
+      "route": "apple",
+      "mode": "ubsan",
+      "identity": {
+        "model": "Mac16,12",
+        "arch": "arm64",
+        "os": "ProductName:\t\tmacOS\nProductVersion:\t\t27.0.1\nBuildVersion:\t\t26A434",
+        "compiler": "Apple clang version 21.0.0 (clang-2100.3.34.2)\nTarget: arm64-apple-darwin27.0.0\nThread model: posix\nInstalledDir: /Library/Developer/CommandLineTools/usr/bin",
+        "memory": "17179869184"
+      },
+      "max_jobs": 4,
+      "stages": [
+        {
+          "stage": "configure",
+          "command": [
+            "/opt/homebrew/bin/cmake",
+            "-S",
+            "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-apple-ubsan/parent",
+            "-B",
+            "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-apple-ubsan/build"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 4.663397833,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-host-sanitizers/configure-apple-ubsan-5.log"
+        },
+        {
+          "stage": "compile",
+          "command": [
+            "/opt/homebrew/bin/cmake",
+            "--build",
+            "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-apple-ubsan/build",
+            "--target",
+            "g04_gpu_san_math",
+            "g04_gpu_san_pages",
+            "g04_gpu_san_risks",
+            "--parallel",
+            "4"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 43.81584925,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-host-sanitizers/compile-apple-ubsan-5.log"
+        },
+        {
+          "stage": "metal-lifetime-compile",
+          "command": [
+            "xcrun",
+            "clang++",
+            "-std=c++20",
+            "-O3",
+            "-g",
+            "-Wall",
+            "-Wextra",
+            "-Wpedantic",
+            "-Werror",
+            "-fsanitize=undefined",
+            "-fno-sanitize-recover=all",
+            "-isystem",
+            "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-apple-ubsan/build/hyle/_deps/metal-cpp-e54e5e09c331866d/source",
+            "/Users/kiro/hyle-scratch/compute-unified/source-c8874688/tests/compute_route_apple/metal_shared_ptr_lifetime.cc",
+            "-framework",
+            "Foundation",
+            "-framework",
+            "Metal",
+            "-o",
+            "/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-host-sanitizers/metal-lifetime-apple-ubsan-5"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 0.654938958999999,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-host-sanitizers/metal-lifetime-compile-apple-ubsan-5.log"
+        },
+        {
+          "stage": "metal-lifetime",
+          "command": [
+            "/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-host-sanitizers/metal-lifetime-apple-ubsan-5"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 0.4125546669999949,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-host-sanitizers/metal-lifetime-apple-ubsan-5.log"
+        },
+        {
+          "stage": "math",
+          "command": [
+            "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-apple-ubsan/build/g04_gpu_san_math",
+            "--gtest_output=xml:/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-host-sanitizers/math-apple-ubsan-5.xml"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 14.146010541000003,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-host-sanitizers/math-apple-ubsan-5.log"
+        },
+        {
+          "stage": "pages",
+          "command": [
+            "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-apple-ubsan/build/g04_gpu_san_pages",
+            "--gtest_output=xml:/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-host-sanitizers/pages-apple-ubsan-5.xml"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 1.2298557499999916,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-host-sanitizers/pages-apple-ubsan-5.log"
+        },
+        {
+          "stage": "risks",
+          "command": [
+            "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-apple-ubsan/build/g04_gpu_san_risks"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 0.6953507499999887,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-host-sanitizers/risks-apple-ubsan-5.log"
+        }
+      ],
+      "cumulative_seconds": 65.61795774999997,
+      "scope": "Actual Air new encoded-cache math11, original encoder/F2/native/joint public consumers, six original Q8 native risks; host sanitizer only. No LSan/shader/driver/private native pool or SDK/P1 claim.",
+      "models": []
+    },
+    {
+      "tag": "vulkan-asan-1",
+      "state": "TERMINAL_PASS",
+      "route": "vulkan",
+      "mode": "asan",
+      "identity": {
+        "model": "Mac16,12",
+        "arch": "arm64",
+        "os": "ProductName:\t\tmacOS\nProductVersion:\t\t27.0.1\nBuildVersion:\t\t26A434",
+        "compiler": "Apple clang version 21.0.0 (clang-2100.3.34.2)\nTarget: arm64-apple-darwin27.0.0\nThread model: posix\nInstalledDir: /Library/Developer/CommandLineTools/usr/bin",
+        "memory": "17179869184"
+      },
+      "max_jobs": 4,
+      "stages": [
+        {
+          "stage": "configure",
+          "command": [
+            "/opt/homebrew/bin/cmake",
+            "-S",
+            "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-vulkan-asan/parent",
+            "-B",
+            "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-vulkan-asan/build"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 21.585622084,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-host-sanitizers/configure-vulkan-asan-1.log"
+        },
+        {
+          "stage": "compile",
+          "command": [
+            "/opt/homebrew/bin/cmake",
+            "--build",
+            "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-vulkan-asan/build",
+            "--target",
+            "g04_gpu_san_math",
+            "g04_gpu_san_pages",
+            "g04_gpu_san_risks",
+            "--parallel",
+            "4"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 79.647825,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-host-sanitizers/compile-vulkan-asan-1.log"
+        },
+        {
+          "stage": "math",
+          "command": [
+            "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-vulkan-asan/build/g04_gpu_san_math",
+            "--gtest_output=xml:/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-host-sanitizers/math-vulkan-asan-1.xml"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 12.351869167000004,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-host-sanitizers/math-vulkan-asan-1.log"
+        },
+        {
+          "stage": "pages",
+          "command": [
+            "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-vulkan-asan/build/g04_gpu_san_pages",
+            "--gtest_output=xml:/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-host-sanitizers/pages-vulkan-asan-1.xml"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 3.077869167000003,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-host-sanitizers/pages-vulkan-asan-1.log"
+        },
+        {
+          "stage": "risks",
+          "command": [
+            "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-vulkan-asan/build/g04_gpu_san_risks"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 1.5498773750000083,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-host-sanitizers/risks-vulkan-asan-1.log"
+        }
+      ],
+      "cumulative_seconds": 118.21306279300002,
+      "scope": "Actual Air new encoded-cache math11, original encoder/F2/native/joint public consumers, six original Q8 native risks; host sanitizer only. No LSan/shader/driver/private native pool or SDK/P1 claim.",
+      "models": []
+    },
+    {
+      "tag": "vulkan-tsan-1",
+      "state": "TERMINAL_PASS",
+      "route": "vulkan",
+      "mode": "tsan",
+      "identity": {
+        "model": "Mac16,12",
+        "arch": "arm64",
+        "os": "ProductName:\t\tmacOS\nProductVersion:\t\t27.0.1\nBuildVersion:\t\t26A434",
+        "compiler": "Apple clang version 21.0.0 (clang-2100.3.34.2)\nTarget: arm64-apple-darwin27.0.0\nThread model: posix\nInstalledDir: /Library/Developer/CommandLineTools/usr/bin",
+        "memory": "17179869184"
+      },
+      "max_jobs": 4,
+      "stages": [
+        {
+          "stage": "configure",
+          "command": [
+            "/opt/homebrew/bin/cmake",
+            "-S",
+            "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-vulkan-tsan/parent",
+            "-B",
+            "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-vulkan-tsan/build"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 21.475325041999998,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-host-sanitizers/configure-vulkan-tsan-1.log"
+        },
+        {
+          "stage": "compile",
+          "command": [
+            "/opt/homebrew/bin/cmake",
+            "--build",
+            "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-vulkan-tsan/build",
+            "--target",
+            "g04_gpu_san_math",
+            "g04_gpu_san_pages",
+            "g04_gpu_san_risks",
+            "--parallel",
+            "4"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 71.348177916,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-host-sanitizers/compile-vulkan-tsan-1.log"
+        },
+        {
+          "stage": "math",
+          "command": [
+            "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-vulkan-tsan/build/g04_gpu_san_math",
+            "--gtest_output=xml:/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-host-sanitizers/math-vulkan-tsan-1.xml"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 40.139136957999995,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-host-sanitizers/math-vulkan-tsan-1.log"
+        },
+        {
+          "stage": "pages",
+          "command": [
+            "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-vulkan-tsan/build/g04_gpu_san_pages",
+            "--gtest_output=xml:/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-host-sanitizers/pages-vulkan-tsan-1.xml"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 6.053041417000003,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-host-sanitizers/pages-vulkan-tsan-1.log"
+        },
+        {
+          "stage": "risks",
+          "command": [
+            "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-vulkan-tsan/build/g04_gpu_san_risks"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 4.068181750000008,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-host-sanitizers/risks-vulkan-tsan-1.log"
+        }
+      ],
+      "cumulative_seconds": 143.083863083,
+      "scope": "Actual Air new encoded-cache math11, original encoder/F2/native/joint public consumers, six original Q8 native risks; host sanitizer only. No LSan/shader/driver/private native pool or SDK/P1 claim.",
+      "models": [
+        {
+          "path": "/Users/kiro/hyle-scratch/compute-unified/g02-refcount-fence-probe/tsan-headers/hyle/util/ref_counted.h",
+          "sha256": "2b90ab655a49ec3b9158a964872cd1fc3395ebf64d8ae430a2e19c4805bf5416"
+        }
+      ]
+    },
+    {
+      "tag": "vulkan-ubsan-1",
+      "state": "TERMINAL_PASS",
+      "route": "vulkan",
+      "mode": "ubsan",
+      "identity": {
+        "model": "Mac16,12",
+        "arch": "arm64",
+        "os": "ProductName:\t\tmacOS\nProductVersion:\t\t27.0.1\nBuildVersion:\t\t26A434",
+        "compiler": "Apple clang version 21.0.0 (clang-2100.3.34.2)\nTarget: arm64-apple-darwin27.0.0\nThread model: posix\nInstalledDir: /Library/Developer/CommandLineTools/usr/bin",
+        "memory": "17179869184"
+      },
+      "max_jobs": 4,
+      "stages": [
+        {
+          "stage": "configure",
+          "command": [
+            "/opt/homebrew/bin/cmake",
+            "-S",
+            "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-vulkan-ubsan/parent",
+            "-B",
+            "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-vulkan-ubsan/build"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 22.677445333999998,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-host-sanitizers/configure-vulkan-ubsan-1.log"
+        },
+        {
+          "stage": "compile",
+          "command": [
+            "/opt/homebrew/bin/cmake",
+            "--build",
+            "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-vulkan-ubsan/build",
+            "--target",
+            "g04_gpu_san_math",
+            "g04_gpu_san_pages",
+            "g04_gpu_san_risks",
+            "--parallel",
+            "4"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 89.601652291,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-host-sanitizers/compile-vulkan-ubsan-1.log"
+        },
+        {
+          "stage": "math",
+          "command": [
+            "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-vulkan-ubsan/build/g04_gpu_san_math",
+            "--gtest_output=xml:/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-host-sanitizers/math-vulkan-ubsan-1.xml"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 10.665622041000006,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-host-sanitizers/math-vulkan-ubsan-1.log"
+        },
+        {
+          "stage": "pages",
+          "command": [
+            "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-vulkan-ubsan/build/g04_gpu_san_pages",
+            "--gtest_output=xml:/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-host-sanitizers/pages-vulkan-ubsan-1.xml"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 1.5583501670000004,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-host-sanitizers/pages-vulkan-ubsan-1.log"
+        },
+        {
+          "stage": "risks",
+          "command": [
+            "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-vulkan-ubsan/build/g04_gpu_san_risks"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 0.8459377079999939,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-host-sanitizers/risks-vulkan-ubsan-1.log"
+        }
+      ],
+      "cumulative_seconds": 125.34900754099999,
+      "scope": "Actual Air new encoded-cache math11, original encoder/F2/native/joint public consumers, six original Q8 native risks; host sanitizer only. No LSan/shader/driver/private native pool or SDK/P1 claim.",
+      "models": []
+    }
+  ],
+  "cumulative_seconds": 992.3746685360001,
+  "unmeasured_elapsed": [
+    "Apple TSan attempt1 stopped before configure at runner assertion; exact wall time not measured, never recorded as zero."
+  ]
+}
