@@ -843,3 +843,14 @@ GPU peer 的编译/oracle/性能、dirty producer 性能与 CUDA 新域 host 风
 issues，selected docs/closure 和146 skipped reasons保留。沿既有
 [工具归属记录](../build/validation-selector-shared-bench-paths.md)追加实际反例；本轮只做
 上述 adapter 数值/合同与必要维护检查，不重写 selector、公共仪器或产品构建系统。
+
+
+CUDA 新域 host 风险按原 F5 三棵缓存树续验：ASan 地址 facet、UBSan、TSan 数据竞争，
+各运行十项 native 数学、三个 Direct/Graph/CPU+CUDA 增量 consumer 和原五种 source 风险；
+核对 backend/provider、FI 的 host CUDA TU、batch/arena 与 consumer 的实际 sanitizer 命令。
+仅私有 backend host TU 启用原 observation hook，不签 shipping。沿原独立 no-HYLE 对照，
+ASan 用 protect_shadow_gap=0/detect_leaks=0，TSan 用 report_thread_leaks=0 与进程级
+setarch；原 NVIDIA LSan/诊断线程 INCONCLUSIVE 不改名 PASS，不抑制 data-race 报告。
+只构建实际 factor/consumer 闭包，先保存 dry-run；如引入无关 ggml CUDA 全目录重编则先
+定位接线，不借模块任务改公共 build/core。重型任务串行，最多4 jobs，FI 模板编译单独限1。
+CPU 当前 A/A16路 PASS，正式采样尚在运行；CUDA worker 仅准备，未因此签任何运行结果。
