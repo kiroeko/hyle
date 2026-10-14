@@ -1,0 +1,123 @@
+{
+  "kind": "G04_G05_CPU_Q8_RESIDENT_WARM_FINITE_P1",
+  "product_candidate": "982676cb05a6e6244e66e0a596347aa96043617b",
+  "performance_source": "c81d8056976fa9782857d6bd9f2a6ed12bd4bb34",
+  "contract_sha256": "d42c129fb8468c943df6abad858da54dddafcb226f8b6693bd6a6dfe3b709e16",
+  "qualification": "QUALIFIED",
+  "performance": "FAIL",
+  "verify_exit": 0,
+  "job_exit": 2,
+  "runs": [
+    {
+      "state": "TERMINAL",
+      "pid": 78964,
+      "source_commit": "3b454f9a32fc87a3c9fe1daa2dd89f19310811e5",
+      "product_candidate": "982676cb05a6e6244e66e0a596347aa96043617b",
+      "contract_sha256": "29053b4077217c7b6a75975c428ec1e12527c76ead5edd0454bb44ab22e9bd52",
+      "source": "C:\\h7\\g04-cpu-encoded-p1-source-1",
+      "build": "C:\\h7\\g04-cpu-encoded-p1-build-1",
+      "output": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\cpu-encoded-p1-qualification-1",
+      "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\cpu-encoded-p1-qualification-1.log",
+      "command": [
+        "python",
+        "C:\\h7\\g04-cpu-encoded-p1-source-1\\scripts\\hyle-perf.py",
+        "qualify-platform",
+        "--contract",
+        "C:\\h7\\g04-cpu-encoded-p1-source-1\\bench\\inference_resident_sdpa\\cpu_encoded_p1\\contract.json",
+        "--source",
+        "C:\\h7\\g04-cpu-encoded-p1-source-1\\bench\\inference_resident_sdpa\\cpu_encoded_p1",
+        "--machine",
+        "W1-WIN",
+        "--peer",
+        "original-ggml-cpu-flash=C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g01\\original-ggml-cpu-peer",
+        "--build",
+        "C:\\h7\\g04-cpu-encoded-p1-build-1",
+        "--output",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\cpu-encoded-p1-qualification-1"
+      ],
+      "heavy_serial": true,
+      "max_compile_jobs": 4,
+      "exit_code": 1,
+      "elapsed_seconds": 13.296999999991385
+    },
+    {
+      "state": "TERMINAL",
+      "pid": 47240,
+      "source_commit": "c81d8056976fa9782857d6bd9f2a6ed12bd4bb34",
+      "product_candidate": "982676cb05a6e6244e66e0a596347aa96043617b",
+      "contract_sha256": "13fb0e76f1f0be0c152da659d076a25c78010eaa0ea6754188f8674f89b7517d",
+      "source": "C:\\h7\\g04-cpu-encoded-p1-source-2",
+      "build": "C:\\h7\\g04-cpu-encoded-p1-build-2",
+      "output": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\cpu-encoded-p1-qualification-2",
+      "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\cpu-encoded-p1-qualification-2.log",
+      "command": [
+        "python",
+        "C:\\h7\\g04-cpu-encoded-p1-source-2\\scripts\\hyle-perf.py",
+        "qualify-platform",
+        "--contract",
+        "C:\\h7\\g04-cpu-encoded-p1-source-2\\bench\\inference_resident_sdpa\\cpu_encoded_p1\\contract.json",
+        "--source",
+        "C:\\h7\\g04-cpu-encoded-p1-source-2\\bench\\inference_resident_sdpa\\cpu_encoded_p1",
+        "--machine",
+        "W1-WIN",
+        "--peer",
+        "original-ggml-cpu-flash=C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g01\\original-ggml-cpu-peer",
+        "--build",
+        "C:\\h7\\g04-cpu-encoded-p1-build-2",
+        "--output",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\cpu-encoded-p1-qualification-2"
+      ],
+      "heavy_serial": true,
+      "max_compile_jobs": 4,
+      "exit_code": 2,
+      "elapsed_seconds": 1169.0470000000205
+    }
+  ],
+  "cumulative_seconds": 1182.3440000000119,
+  "aa_processes": 16,
+  "aa_verdict": "PASS",
+  "product_processes": 120,
+  "control_processes": 30,
+  "rows": [
+    {
+      "id": "cpu-encoded-window-d256",
+      "ratio_range": [
+        0.9514441017708992,
+        0.9566050061341872
+      ],
+      "noninferiority": "UNRESOLVED",
+      "exact": "INCONCLUSIVE",
+      "direction": "LOSS"
+    },
+    {
+      "id": "cpu-encoded-prefill-d256",
+      "ratio_range": [
+        0.974974974974975,
+        0.9838383838383838
+      ],
+      "noninferiority": "PASS",
+      "exact": "PARITY",
+      "direction": "LOSS"
+    },
+    {
+      "id": "cpu-encoded-holdout-d64-v128",
+      "ratio_range": [
+        0.8008290348976527,
+        0.804309199661513
+      ],
+      "noninferiority": "FAIL",
+      "exact": "LOSE",
+      "direction": "LOSS"
+    }
+  ],
+  "peer_cold_extra_cache_bytes": {
+    "D256": 1949696,
+    "D64_Dv128": 22032
+  },
+  "scope": "Q8_0/BF16, ready immutable physical-page warm attention; window16 D256, unbounded prefill D256, full noncausal Q>KV D64/Dv128; actual original pristine ffa CPU DLL",
+  "limits": [
+    "No dirty producer/growth/G06/GPU/whole G04-G05/token-s qualification",
+    "Native private pool upper remains UNKNOWN; peer cold cache/mask costs explicit"
+  ],
+  "raw_zip_sha256": "94b575a22309a6a2958af8ae35d874af2f32e3c7b1929cdae3b1862d8d785c1b"
+}

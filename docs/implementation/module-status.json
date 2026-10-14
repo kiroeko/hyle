@@ -373,10 +373,9 @@
     },
     {
       "module": "compute_provider_ggml",
-      "state": "CANDIDATE",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/inference-g04-g05-cache-attention-domain.md",
-      "summary": "G04/G05 CANDIDATE: CE01-11 finite encoded KV/independent geometry/window/noncausal/unequal Dv frozen. Four-native/three-joint source, finite source risks, CPU+Apple/Vulkan host sanitizers and eight SDK configurations PASS. Cost review/CPU peer oracle PASS; CUDA new-domain host risk and qualified P1 remain pending. Original closed scopes/failures/unknown native private costs retained.",
-      "candidate": "982676cb05a6e6244e66e0a596347aa96043617b"
+      "summary": "G04/G05 CE12 AUDITED: qualified CPU Q8 P1 retains window UNRESOLVED and D64/Dv128 material LOSS/FAIL. Finite fix removes per-element external numeric-conversion calls from query safety validation via typed inline range checking, preserving all errors/output/lifetime/math. Other owners remain immutable candidates; original failures/costs retained."
     },
     {
       "module": "graph_provider_onednn",

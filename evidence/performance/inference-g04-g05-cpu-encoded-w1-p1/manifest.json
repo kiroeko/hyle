@@ -1,0 +1,1216 @@
+{
+  "artifacts": [
+    {
+      "file": {
+        "path": "C:\\h7\\g04-cpu-encoded-p1-build-2\\CMakeCache.txt",
+        "sha256": "0fcc18116fc81af3c3d04063408cbd65e14d752ac4ec619325fe690a14f4d0e0"
+      },
+      "id": "cmake-cache"
+    },
+    {
+      "file": {
+        "path": "C:\\h7\\g04-cpu-encoded-p1-build-2\\g04_cpu_encoded_perf_control.exe",
+        "sha256": "191d221815e00b4a8e7b226bd8681c86e1cb97a7be82dc465e04ec7f2b5fa68c"
+      },
+      "id": "common-control"
+    },
+    {
+      "file": {
+        "path": "C:\\h7\\g04-cpu-encoded-p1-build-2\\g04_cpu_encoded_bench_placement.exe",
+        "sha256": "3fde951fd8f8b37eb212c71825a382b999b9585020d29f0daf3e7d772f9c791a"
+      },
+      "id": "cpu-encoded-placement"
+    },
+    {
+      "file": {
+        "path": "C:\\h7\\g04-cpu-encoded-p1-build-2\\g04_cpu_encoded_bench.exe",
+        "sha256": "44570e38b721995959a4daad5a87db7ce92b016f0f8ad3f94464ffd853a04523"
+      },
+      "id": "cpu-encoded-primary"
+    },
+    {
+      "file": {
+        "path": "C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\bin\\Hostx64\\x64\\cl.exe",
+        "sha256": "194ddf4aafcb74452218a982309a97de30e0adb33edf4af02904ee107213e782"
+      },
+      "id": "toolchain-compiler"
+    },
+    {
+      "file": {
+        "path": "C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\bin\\Hostx64\\x64\\link.exe",
+        "sha256": "c988acb4ec7ef964ae4d4e414b693a6a3782dd85f1e200100b3f896db6b1a202"
+      },
+      "id": "toolchain-linker"
+    }
+  ],
+  "artifacts_stable": true,
+  "build": {
+    "configuration": "Release",
+    "details": {
+      "architecture": "default",
+      "build_stdout_sha256": "6e2c861acda8f093e31ea87c9f9cf477304b66daf3a9764755727a8cd11576f4",
+      "cmake_cache": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "CMAKE_GENERATOR": "Ninja",
+        "CMAKE_GENERATOR_PLATFORM": "",
+        "CMAKE_GENERATOR_TOOLSET": "",
+        "CMAKE_INTERPROCEDURAL_OPTIMIZATION": "OFF",
+        "HYLE_SIMD_EXACT_TARGET": "",
+        "HYLE_STATIC": "ON"
+      },
+      "cmake_cache_sha256": "0fcc18116fc81af3c3d04063408cbd65e14d752ac4ec619325fe690a14f4d0e0",
+      "compiler": {
+        "compiler_id": "MSVC",
+        "compiler_version": "19.50.35728.0"
+      },
+      "configuration_observation": {
+        "available": [
+          "Release"
+        ],
+        "mechanism": "CMAKE_BUILD_TYPE",
+        "proven": true,
+        "value": "Release"
+      },
+      "configure_stdout_sha256": "8f5c9b4d8c778119dcadcd577d9470aab687e6f4df277289af933dd48ff5294a",
+      "generator": "Ninja",
+      "machine_profile": "W1-WIN",
+      "requested_cache": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "CMAKE_CXX_COMPILER": "C:/Program Files/Microsoft Visual Studio/18/Enterprise/VC/Tools/MSVC/14.50.35717/bin/Hostx64/x64/cl.exe",
+        "CMAKE_C_COMPILER": "C:/Program Files/Microsoft Visual Studio/18/Enterprise/VC/Tools/MSVC/14.50.35717/bin/Hostx64/x64/cl.exe",
+        "CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
+        "CMAKE_INTERPROCEDURAL_OPTIMIZATION": "OFF",
+        "CMAKE_PREFIX_PATH": "C:/h7/g04-sdk-cpu-static-1/relocated",
+        "HYLE_BUILD_BENCH": "OFF",
+        "HYLE_BUILD_TESTS": "OFF",
+        "HYLE_COMPONENTS": "compute;graph",
+        "HYLE_COMPUTE_ROUTES": "cpu",
+        "HYLE_CPU_ORIGINAL_REFERENCE_SOURCE": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g01\\original-ggml-cpu-peer",
+        "HYLE_CPU_PAGED_NATIVE_INCLUDE": "C:/public/project-hyle/hyle/.scratch/build-compute-v2-dev/src/compute_ggml_runtime/source-8570887ac0d71134/include",
+        "HYLE_CPU_PAGED_ORIGINAL_DLL": "C:/h7/g01-cpu-paged-original-build/bin/g01_cpu_paged_original.dll",
+        "HYLE_DEP_SOURCE_CACHE": "C:/public/tools/hyle-dependencies/v1",
+        "HYLE_INSTALL": "OFF",
+        "HYLE_SANITIZER": "off",
+        "HYLE_SIMD_EXACT_TARGET": "",
+        "HYLE_STATIC": "ON",
+        "HYLE_TRACE": "OFF",
+        "HYLE_WERROR": "ON"
+      },
+      "requested_configuration": "Release",
+      "targets": [
+        "g04_cpu_encoded_bench",
+        "g04_cpu_encoded_bench_placement",
+        "g04_cpu_encoded_perf_control"
+      ],
+      "toolchain": {
+        "cmake_compiler_record_sha256": "77ac47adacace6ad84251374748de674ba141b9b1ab3fc3706596dcd5231b99e",
+        "compiler_frontend_variant": "MSVC",
+        "compiler_id": "MSVC",
+        "compiler_path": "C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\bin\\Hostx64\\x64\\cl.exe",
+        "compiler_sha256": "194ddf4aafcb74452218a982309a97de30e0adb33edf4af02904ee107213e782",
+        "compiler_target": "unknown",
+        "compiler_version": "19.50.35728.0",
+        "formal_identity_complete": false,
+        "linker_id": "MSVC",
+        "linker_path": "C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\bin\\Hostx64\\x64\\link.exe",
+        "linker_sha256": "c988acb4ec7ef964ae4d4e414b693a6a3782dd85f1e200100b3f896db6b1a202",
+        "linker_version": "14.50.35728.0",
+        "schema": "hyle.perf.toolchain-record/v1",
+        "sdk": "unknown",
+        "stdlib": "msvc-stl:14.50.35717",
+        "system_name": "Windows",
+        "system_processor": "AMD64",
+        "system_version": "10.0.26200"
+      }
+    },
+    "fresh": true
+  },
+  "contract_lock": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\cpu-encoded-p1-qualification-2\\contract-lock.json",
+    "sha256": "405fdf36fb472a1d474613419d07311165203b2cb13018aba6833f3ad36791c9"
+  },
+  "contract_sha256": "d42c129fb8468c943df6abad858da54dddafcb226f8b6693bd6a6dfe3b709e16",
+  "controls": [
+    {
+      "details": {
+        "kind": "aa",
+        "maximum_bias_percent": 5.0,
+        "orders": {
+          "candidate-first": {
+            "equivalence_band": [
+              0.9523809523809523,
+              1.05
+            ],
+            "estimate": {
+              "confidence_interval": [
+                0.9917527952132985,
+                1.008046092610325
+              ],
+              "confidence_level": 0.99261474609375,
+              "estimator": "process-median",
+              "independent_clusters": 15,
+              "median_advantage_ratio": 1.0002675818601001,
+              "sample_count": 15
+            },
+            "reason": "median-ci-inside-equivalence-band",
+            "verdict": "PARITY"
+          },
+          "peer-first": {
+            "equivalence_band": [
+              0.9523809523809523,
+              1.05
+            ],
+            "estimate": {
+              "confidence_interval": [
+                0.9895601729281148,
+                1.0053893611223819
+              ],
+              "confidence_level": 0.99261474609375,
+              "estimator": "process-median",
+              "independent_clusters": 15,
+              "median_advantage_ratio": 0.9995861982247275,
+              "sample_count": 15
+            },
+            "reason": "median-ci-inside-equivalence-band",
+            "verdict": "PARITY"
+          }
+        }
+      },
+      "gate": "PASS",
+      "id": "aa"
+    },
+    {
+      "details": {
+        "accepted_median_band": [
+          1.025,
+          1.075
+        ],
+        "kind": "known-delta",
+        "monotonic_5_to_10": true,
+        "nominal_percent": 5.0,
+        "orders": {
+          "candidate-first": {
+            "confidence_interval": [
+              1.0455559882947405,
+              1.0668057821867392
+            ],
+            "confidence_level": 0.99261474609375,
+            "estimator": "process-median",
+            "independent_clusters": 15,
+            "median_advantage_ratio": 1.0531039337712573,
+            "sample_count": 15
+          },
+          "peer-first": {
+            "confidence_interval": [
+              1.0433136858981003,
+              1.0638677918480548
+            ],
+            "confidence_level": 0.99261474609375,
+            "estimator": "process-median",
+            "independent_clusters": 15,
+            "median_advantage_ratio": 1.056774599840906,
+            "sample_count": 15
+          }
+        },
+        "relative_tolerance_percent": 50.0
+      },
+      "gate": "PASS",
+      "id": "delta5"
+    },
+    {
+      "details": {
+        "accepted_median_band": [
+          1.05,
+          1.15
+        ],
+        "kind": "known-delta",
+        "monotonic_5_to_10": true,
+        "nominal_percent": 10.0,
+        "orders": {
+          "candidate-first": {
+            "confidence_interval": [
+              1.0870321381333903,
+              1.1109242104890578
+            ],
+            "confidence_level": 0.99261474609375,
+            "estimator": "process-median",
+            "independent_clusters": 15,
+            "median_advantage_ratio": 1.1026128417220566,
+            "sample_count": 15
+          },
+          "peer-first": {
+            "confidence_interval": [
+              1.0939213625246156,
+              1.107947892265871
+            ],
+            "confidence_level": 0.99261474609375,
+            "estimator": "process-median",
+            "independent_clusters": 15,
+            "median_advantage_ratio": 1.1011627346231443,
+            "sample_count": 15
+          }
+        },
+        "relative_tolerance_percent": 50.0
+      },
+      "gate": "PASS",
+      "id": "delta10"
+    },
+    {
+      "details": {
+        "kind": "timer-floor",
+        "minimum_workload_floor_multiple": 20.0,
+        "workloads": [
+          {
+            "candidate_median_ns_per_op": 330951.5856145993,
+            "conservative_floor_ns_per_op": 0.2032474765951176,
+            "gate": "PASS",
+            "id": "cpu-encoded-window-d256",
+            "measurement_batch": 1,
+            "observed_multiple": 1553351.9605226975,
+            "orders": {
+              "candidate-first": {
+                "candidate_median_ns_per_op": 0.20307791327478053,
+                "peer_median_ns_per_op": 0.2028834298176736
+              },
+              "peer-first": {
+                "candidate_median_ns_per_op": 0.20231132100216082,
+                "peer_median_ns_per_op": 0.2032474765951176
+              }
+            },
+            "peer_median_ns_per_op": 315714.866240317
+          },
+          {
+            "candidate_median_ns_per_op": 102669404.51745379,
+            "conservative_floor_ns_per_op": 0.2032474765951176,
+            "gate": "PASS",
+            "id": "cpu-encoded-prefill-d256",
+            "measurement_batch": 1,
+            "observed_multiple": 494483445.73065335,
+            "orders": {
+              "candidate-first": {
+                "candidate_median_ns_per_op": 0.20307791327478053,
+                "peer_median_ns_per_op": 0.2028834298176736
+              },
+              "peer-first": {
+                "candidate_median_ns_per_op": 0.20231132100216082,
+                "peer_median_ns_per_op": 0.2032474765951176
+              }
+            },
+            "peer_median_ns_per_op": 100502512.56281407
+          },
+          {
+            "candidate_median_ns_per_op": 99657.32840858061,
+            "conservative_floor_ns_per_op": 0.2032474765951176,
+            "gate": "PASS",
+            "id": "cpu-encoded-holdout-d64-v128",
+            "measurement_batch": 1,
+            "observed_multiple": 393311.8130200224,
+            "orders": {
+              "candidate-first": {
+                "candidate_median_ns_per_op": 0.20307791327478053,
+                "peer_median_ns_per_op": 0.2028834298176736
+              },
+              "peer-first": {
+                "candidate_median_ns_per_op": 0.20231132100216082,
+                "peer_median_ns_per_op": 0.2032474765951176
+              }
+            },
+            "peer_median_ns_per_op": 79939.63351137028
+          }
+        ]
+      },
+      "gate": "PASS",
+      "id": "timer-floor"
+    },
+    {
+      "details": {
+        "kind": "placement",
+        "target_variants": [
+          "placement",
+          "primary"
+        ]
+      },
+      "gate": "PASS",
+      "id": "placement"
+    }
+  ],
+  "extensions": {
+    "control_observations_file": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\cpu-encoded-p1-qualification-2\\control-observations.json",
+      "sha256": "8d0245ccc725094f861f163ff8c7581f5d1fcf3fb366f9a92dfdf83591e23e90"
+    },
+    "controls_file": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\cpu-encoded-p1-qualification-2\\controls.json",
+      "sha256": "dfdb4a3d2bdaa3237a743cbf18b1ac170b7f9355e855f5194a23c14cfd3d2ab3"
+    },
+    "created_at_utc": "2026-10-14T23:02:52.516776+00:00",
+    "formal": false,
+    "host_probe_file": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\cpu-encoded-p1-qualification-2\\host-probe.json",
+      "sha256": "99d4261283f2c9905e1469030f5b5e6a2035208d3343ca199c9f65dd0f7c7108"
+    },
+    "mode": "qualify-platform",
+    "pre_sampling_validator_gates": [
+      {
+        "gate": "PASS",
+        "id": "artifact-identity"
+      },
+      {
+        "gate": "PASS",
+        "id": "build-contract"
+      },
+      {
+        "gate": "PASS",
+        "id": "cpu-encoded-aa"
+      }
+    ],
+    "product_evidence": [
+      {
+        "errors": [],
+        "gate": "PASS",
+        "id": "cpu-encoded-window-d256",
+        "provenance_file": {
+          "path": "C:\\h7\\g04-cpu-encoded-p1-source-2\\bench\\inference_resident_sdpa\\cpu_encoded_p1\\consumer-provenance.json",
+          "sha256": "a8b7561cc990252efd2d56ca4085f52c21e3b29bc03f8f7497ebdfc2cb91da45"
+        },
+        "provenance_path": "consumer-provenance.json",
+        "tier": "consumer"
+      },
+      {
+        "errors": [],
+        "gate": "PASS",
+        "id": "cpu-encoded-prefill-d256",
+        "provenance_file": {
+          "path": "C:\\h7\\g04-cpu-encoded-p1-source-2\\bench\\inference_resident_sdpa\\cpu_encoded_p1\\consumer-provenance.json",
+          "sha256": "a8b7561cc990252efd2d56ca4085f52c21e3b29bc03f8f7497ebdfc2cb91da45"
+        },
+        "provenance_path": "consumer-provenance.json",
+        "tier": "consumer"
+      },
+      {
+        "errors": [],
+        "gate": "PASS",
+        "id": "cpu-encoded-holdout-d64-v128",
+        "provenance_file": {
+          "path": "C:\\h7\\g04-cpu-encoded-p1-source-2\\bench\\inference_resident_sdpa\\cpu_encoded_p1\\consumer-provenance.json",
+          "sha256": "a8b7561cc990252efd2d56ca4085f52c21e3b29bc03f8f7497ebdfc2cb91da45"
+        },
+        "provenance_path": "consumer-provenance.json",
+        "tier": "consumer"
+      }
+    ],
+    "product_gate_policy": "consumer-evidence-v1",
+    "product_gate_workloads": {
+      "eligible": [
+        "cpu-encoded-window-d256",
+        "cpu-encoded-prefill-d256",
+        "cpu-encoded-holdout-d64-v128"
+      ],
+      "excluded": []
+    },
+    "raw_log_index_file": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\cpu-encoded-p1-qualification-2\\raw-log-index.json",
+      "sha256": "6717f7fc7eaa4741c41ece93b719146b2410be1678fb35529b8a7dfaa5d58522"
+    },
+    "runs": 15,
+    "sample_stages": [
+      15
+    ]
+  },
+  "host": {
+    "child_environment_policy": {
+      "cleared_names": [
+        "ASAN_OPTIONS",
+        "CPUPROFILE",
+        "DYLD_INSERT_LIBRARIES",
+        "DYLD_LIBRARY_PATH",
+        "GLIBC_TUNABLES",
+        "GOMP_CPU_AFFINITY",
+        "KMP_AFFINITY",
+        "LD_LIBRARY_PATH",
+        "LD_PRELOAD",
+        "LSAN_OPTIONS",
+        "MALLOC_CONF",
+        "MIMALLOC_OPTIONS",
+        "TRACY_ONLY_LOCALHOST",
+        "TSAN_OPTIONS",
+        "UBSAN_OPTIONS"
+      ],
+      "cleared_prefixes": [
+        "HYLE_BENCH_",
+        "HYLE_PERF_"
+      ],
+      "fixed_values": {
+        "MKL_NUM_THREADS": "1",
+        "NUMEXPR_NUM_THREADS": "1",
+        "OMP_NUM_THREADS": "1",
+        "OPENBLAS_NUM_THREADS": "1",
+        "VECLIB_MAXIMUM_THREADS": "1"
+      },
+      "path_sha256": "ccc76257f280c0c78be6eeafc6097c61554746a14a868c0590ef5a4fed41298a",
+      "raw_environment_recorded": false,
+      "schema": "hyle.perf.child-environment-policy/v2"
+    },
+    "child_policy": {
+      "affinity_mask": "0x4",
+      "applied_by": "benchmark-child-launcher",
+      "child_canary": {
+        "affinity_mask": "0x4",
+        "environment": "windows",
+        "gate": "PASS",
+        "mechanism": "inherited-process-policy-canary",
+        "ok": true,
+        "priority_class": "0x8000"
+      },
+      "cpu_set_id": 258,
+      "environment": "windows",
+      "launcher_applied": true,
+      "logical_cpu": 2,
+      "observed_affinity_mask": "0x4",
+      "previous_affinity_mask": "0xffffffff",
+      "priority": "above-normal",
+      "required_efficiency_class": "maximum",
+      "smt_sibling_logical_cpu": 3
+    },
+    "evidence_role": "engineering",
+    "formal_claim": null,
+    "machine_profile": "W1-WIN",
+    "physical_host_identity": {
+      "environment": "windows",
+      "independent_hardware": true,
+      "mismatched_host_facts": [],
+      "physical_host_id": "W1",
+      "physical_host_key_sha256": "0de152cace15dd26a2a64ba86717299b0e300c4c99284683ec04fa9fe0786816",
+      "profile_id": "W1-WIN",
+      "profile_provisioned": true,
+      "raw_identifier_recorded": false,
+      "registered_profile_contract_sha256": "91af2ece88589864690e7ae537da7beb248572a998d7b869eeec9611735cab22",
+      "registration_state": "REGISTERED_MATCH",
+      "required_host_facts_match": true,
+      "schema": "hyle-perf-physical-host-identity-v1",
+      "stable_machine_id_matches_registered": true,
+      "stable_machine_id_sha256": "b4bbf09e3db097cf433da14a4ff16bef366dec28d42b27f8b303524267af5e97",
+      "stable_machine_id_source": "windows-machine-guid-sha256"
+    },
+    "platform": "windows",
+    "probe_sha256": "99d4261283f2c9905e1469030f5b5e6a2035208d3343ca199c9f65dd0f7c7108",
+    "sampling_mutex": {
+      "acquired_at_utc": "2026-10-14T22:43:24.129025+00:00",
+      "environment": "windows",
+      "mutex_key": "W1",
+      "owner_token_sha256": "5f460227ae9208f7c92e7f9aaed28090677d63b179dc696a711d8875e5d7f845",
+      "path": "C:\\hyle-perf-locks\\W1.sampling.lock",
+      "physical_host_id": "W1",
+      "pid": 47240,
+      "profile_id": "W1-WIN",
+      "raw_owner_token_recorded": false,
+      "release_policy": "owner-token-match-only",
+      "schema": "hyle-perf-sampling-mutex-v1"
+    }
+  },
+  "host_stable": true,
+  "inputs_stable": true,
+  "observations": {
+    "count": 360,
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\cpu-encoded-p1-qualification-2\\observations.jsonl",
+    "sha256": "9827619fdbc302ee3715efbb2ed4e4e1b738e6da837368bf3ebc81e5765c6730"
+  },
+  "peers": [
+    {
+      "clean": true,
+      "id": "original-ggml-cpu-flash",
+      "remote": "https://github.com/ggml-org/ggml.git",
+      "revision": "ffa4e8b80930029a35991f94e7c8a93cd67730ab",
+      "tree": "e8e4626f9017d3b2e486a74bfbdb9bd258e7236d"
+    }
+  ],
+  "qualification": "QUALIFIED",
+  "raw_logs": [
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\cpu-encoded-p1-qualification-2\\raw\\n-15\\product-primary-candidate-first-candidate-allocation-first-cpu-encoded-primary-run-01.log",
+      "sha256": "c14394339f05686e08390067746313842a94dd1d212298a21bc250e9c9289019"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\cpu-encoded-p1-qualification-2\\raw\\n-15\\product-primary-candidate-first-candidate-allocation-first-cpu-encoded-primary-run-02.log",
+      "sha256": "ec57d260635486d9c0028203fa8b6025845f215a834889189ea8ea5ce5f75e77"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\cpu-encoded-p1-qualification-2\\raw\\n-15\\product-primary-candidate-first-candidate-allocation-first-cpu-encoded-primary-run-03.log",
+      "sha256": "72ae5e76ab7940414497dbe3fcc7beca464965bdd98f0b8baf41ca16c31c23f7"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\cpu-encoded-p1-qualification-2\\raw\\n-15\\product-primary-candidate-first-candidate-allocation-first-cpu-encoded-primary-run-04.log",
+      "sha256": "4159ed2efa044db972634588ec35b68aea0ccc1273738ba5f34351c918122898"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\cpu-encoded-p1-qualification-2\\raw\\n-15\\product-primary-candidate-first-candidate-allocation-first-cpu-encoded-primary-run-05.log",
+      "sha256": "42f0ef032028ea9d10414688a0bf6fb5585b114935e5839b4e0ea04e865c5e54"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\cpu-encoded-p1-qualification-2\\raw\\n-15\\product-primary-candidate-first-candidate-allocation-first-cpu-encoded-primary-run-06.log",
+      "sha256": "de2dba33a926cc861b80a645ac726a10c34408b86612d871b50b2a37af9d4738"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\cpu-encoded-p1-qualification-2\\raw\\n-15\\product-primary-candidate-first-candidate-allocation-first-cpu-encoded-primary-run-07.log",
+      "sha256": "e93de515e4c1023221b35403a87b5ecc337ca956f0298f7fb7a1def06115d7f9"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\cpu-encoded-p1-qualification-2\\raw\\n-15\\product-primary-candidate-first-candidate-allocation-first-cpu-encoded-primary-run-08.log",
+      "sha256": "23273f384373045001f1a02df145a8dc3dbfd54bab4884c2ae8dc1b89da568b9"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\cpu-encoded-p1-qualification-2\\raw\\n-15\\product-primary-candidate-first-candidate-allocation-first-cpu-encoded-primary-run-09.log",
+      "sha256": "30ab3049b9706936b5dac00d8328785aa658491416cbcb151e8706c4f890a889"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\cpu-encoded-p1-qualification-2\\raw\\n-15\\product-primary-candidate-first-candidate-allocation-first-cpu-encoded-primary-run-10.log",
+      "sha256": "6ad513f6bc8764f7baa04f12dcae910fe3415bd85e2a73fb96e820104aace283"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\cpu-encoded-p1-qualification-2\\raw\\n-15\\product-primary-candidate-first-candidate-allocation-first-cpu-encoded-primary-run-11.log",
+      "sha256": "6c3e2701459a1cfa853004d52151ec39f4a5369210ed83a7d92c83a292b8f7c5"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\cpu-encoded-p1-qualification-2\\raw\\n-15\\product-primary-candidate-first-candidate-allocation-first-cpu-encoded-primary-run-12.log",
+      "sha256": "7be561970584a25a7d3eb4322964c79fe2ac49bb6c35cdb1deb2ee2967593570"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\cpu-encoded-p1-qualification-2\\raw\\n-15\\product-primary-candidate-first-candidate-allocation-first-cpu-encoded-primary-run-13.log",
+      "sha256": "355a42116eeca4c8e32f9cdb6ee419a7bb49af43561129b90bac8fb897042c3a"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\cpu-encoded-p1-qualification-2\\raw\\n-15\\product-primary-candidate-first-candidate-allocation-first-cpu-encoded-primary-run-14.log",
+      "sha256": "80b9d71c6e22aab654fa502421e5a6a7c01d2448cc1ee394476fb62eb4ea9b78"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\cpu-encoded-p1-qualification-2\\raw\\n-15\\product-primary-candidate-first-candidate-allocation-first-cpu-encoded-primary-run-15.log",
+      "sha256": "d0189db57c076209741d33ceca89a3cc23f4a2a1281b1334ce432c01c0649144"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\cpu-encoded-p1-qualification-2\\raw\\n-15\\product-primary-candidate-first-peer-allocation-first-cpu-encoded-primary-run-01.log",
+      "sha256": "ac51450af2c1490768c4c24b1a3cc56cc15094da16313e7c7fc4f6885ec29328"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\cpu-encoded-p1-qualification-2\\raw\\n-15\\product-primary-candidate-first-peer-allocation-first-cpu-encoded-primary-run-02.log",
+      "sha256": "7a129ef5f9b95c29672163ed3d540919e2cd6184e77af6f5a13743efbededa14"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\cpu-encoded-p1-qualification-2\\raw\\n-15\\product-primary-candidate-first-peer-allocation-first-cpu-encoded-primary-run-03.log",
+      "sha256": "35e5838f62806463a0a1cda9bb4498767d116d47f39d9182f63d0001055416e9"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\cpu-encoded-p1-qualification-2\\raw\\n-15\\product-primary-candidate-first-peer-allocation-first-cpu-encoded-primary-run-04.log",
+      "sha256": "96d03eea46e7d86f6b6b82200c54aae0738717a48284aa9910e4d402b1aa2c95"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\cpu-encoded-p1-qualification-2\\raw\\n-15\\product-primary-candidate-first-peer-allocation-first-cpu-encoded-primary-run-05.log",
+      "sha256": "d0ba275e9171e776c0b9b8575281e2a96b3a9492215ceddb3a7d680992d0d3ea"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\cpu-encoded-p1-qualification-2\\raw\\n-15\\product-primary-candidate-first-peer-allocation-first-cpu-encoded-primary-run-06.log",
+      "sha256": "e7f6d75d746d7b9ea3e9ea383f1786343f85975ebaf4b9c8e570f71a23df933e"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\cpu-encoded-p1-qualification-2\\raw\\n-15\\product-primary-candidate-first-peer-allocation-first-cpu-encoded-primary-run-07.log",
+      "sha256": "30aeca23ef5693b59d57626b3bb04f3464f0e2aeda702eb15f3bb53b1f865e9e"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\cpu-encoded-p1-qualification-2\\raw\\n-15\\product-primary-candidate-first-peer-allocation-first-cpu-encoded-primary-run-08.log",
+      "sha256": "fa3052231c292d2b44922ce5de44e6132c72281d6b0478e3047d1ecba14005af"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\cpu-encoded-p1-qualification-2\\raw\\n-15\\product-primary-candidate-first-peer-allocation-first-cpu-encoded-primary-run-09.log",
+      "sha256": "e41eea996449fd3fe3b0a1b1fe28b0776924076fa45f3f93d275681141b2410e"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\cpu-encoded-p1-qualification-2\\raw\\n-15\\product-primary-candidate-first-peer-allocation-first-cpu-encoded-primary-run-10.log",
+      "sha256": "f915475d641048fbe98359b442b621763c9fdd8c6dafabe3e322caeb09c584e1"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\cpu-encoded-p1-qualification-2\\raw\\n-15\\product-primary-candidate-first-peer-allocation-first-cpu-encoded-primary-run-11.log",
+      "sha256": "dd2303169afe42312278097ca8cd39db8fa36085bdfc3bcc715ae12348d11e52"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\cpu-encoded-p1-qualification-2\\raw\\n-15\\product-primary-candidate-first-peer-allocation-first-cpu-encoded-primary-run-12.log",
+      "sha256": "8a29f7a16fe2dcfbead7bbf624995adc9a6d97dc6c05b0d3298a5e44f80556a8"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\cpu-encoded-p1-qualification-2\\raw\\n-15\\product-primary-candidate-first-peer-allocation-first-cpu-encoded-primary-run-13.log",
+      "sha256": "23123ea2a7c8badbdc2f2a477b49b2c8e4da58e3cea138fd19da5a80bd812ef9"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\cpu-encoded-p1-qualification-2\\raw\\n-15\\product-primary-candidate-first-peer-allocation-first-cpu-encoded-primary-run-14.log",
+      "sha256": "7499c7b42f637bb449de3a6022980b60c370fc8fb9617b1a4127a05cee247396"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\cpu-encoded-p1-qualification-2\\raw\\n-15\\product-primary-candidate-first-peer-allocation-first-cpu-encoded-primary-run-15.log",
+      "sha256": "06987d67d294fddb42cb1434f8421d04295522bc578f6d32bd175165594db5f8"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\cpu-encoded-p1-qualification-2\\raw\\n-15\\product-primary-peer-first-candidate-allocation-first-cpu-encoded-primary-run-01.log",
+      "sha256": "cf8400630b67f61ddad44d5010d837f3a6dde7caeb1bfb82ffedb48e822995e9"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\cpu-encoded-p1-qualification-2\\raw\\n-15\\product-primary-peer-first-candidate-allocation-first-cpu-encoded-primary-run-02.log",
+      "sha256": "0ffe33debac680810c5188e744a060f2e1315339bd52b65242410288155da867"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\cpu-encoded-p1-qualification-2\\raw\\n-15\\product-primary-peer-first-candidate-allocation-first-cpu-encoded-primary-run-03.log",
+      "sha256": "26449123774147dea1e2f0fe6048276c31a5329136c0989a7f2d196dead0b4fb"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\cpu-encoded-p1-qualification-2\\raw\\n-15\\product-primary-peer-first-candidate-allocation-first-cpu-encoded-primary-run-04.log",
+      "sha256": "52c70ea8252b7d82d16d5fa3beb2625e8f045d2adebef6e7284813f994907e20"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\cpu-encoded-p1-qualification-2\\raw\\n-15\\product-primary-peer-first-candidate-allocation-first-cpu-encoded-primary-run-05.log",
+      "sha256": "e8dae636d546fc9c1adfea769d478facbaaf21ca10bf1cc532f77fd383b50d7f"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\cpu-encoded-p1-qualification-2\\raw\\n-15\\product-primary-peer-first-candidate-allocation-first-cpu-encoded-primary-run-06.log",
+      "sha256": "86261b45be79d6c4ad5644c630ce70f3d1ea95bbee88e09c3eb0c7ff19ac5adb"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\cpu-encoded-p1-qualification-2\\raw\\n-15\\product-primary-peer-first-candidate-allocation-first-cpu-encoded-primary-run-07.log",
+      "sha256": "06e09dec51dfe2ef14b3fc8c8a500dba435db4a573c0b9ba8064cc90fc8be8db"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\cpu-encoded-p1-qualification-2\\raw\\n-15\\product-primary-peer-first-candidate-allocation-first-cpu-encoded-primary-run-08.log",
+      "sha256": "7207bdec5213eef6be432996f40f1940aeaa7b03d9a2ec59bd279c54411ad14c"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\cpu-encoded-p1-qualification-2\\raw\\n-15\\product-primary-peer-first-candidate-allocation-first-cpu-encoded-primary-run-09.log",
+      "sha256": "fb86d7a40e1bd439a337c9e812ffbd5ea9b60880964bd082f1c36cde22a22c5d"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\cpu-encoded-p1-qualification-2\\raw\\n-15\\product-primary-peer-first-candidate-allocation-first-cpu-encoded-primary-run-10.log",
+      "sha256": "fb32bf96698cb23bf4da64540137eaec7aabd91dc36e3c9ff8f416828d3fc7e8"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\cpu-encoded-p1-qualification-2\\raw\\n-15\\product-primary-peer-first-candidate-allocation-first-cpu-encoded-primary-run-11.log",
+      "sha256": "1938c57d24e0002b3f3b7c6bc3a6e9e32a04716d30703a58f31a27401d69a8e0"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\cpu-encoded-p1-qualification-2\\raw\\n-15\\product-primary-peer-first-candidate-allocation-first-cpu-encoded-primary-run-12.log",
+      "sha256": "0bb3484d861150f30eab6276ab014433da18963eb215a31c4df3c4bc8749a699"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\cpu-encoded-p1-qualification-2\\raw\\n-15\\product-primary-peer-first-candidate-allocation-first-cpu-encoded-primary-run-13.log",
+      "sha256": "99d92448443ea4ab8dee2b93ea1bc991f5068681d8db089181819a3152b7bea3"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\cpu-encoded-p1-qualification-2\\raw\\n-15\\product-primary-peer-first-candidate-allocation-first-cpu-encoded-primary-run-14.log",
+      "sha256": "d00dd73372a507478f3ad51c782089be252115840bc1c3756fe1f2105d29d0f1"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\cpu-encoded-p1-qualification-2\\raw\\n-15\\product-primary-peer-first-candidate-allocation-first-cpu-encoded-primary-run-15.log",
+      "sha256": "da7b0fbb8a1588c0f0329800f744135e6ac46a9ac5c1c2a21086457c9a96005d"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\cpu-encoded-p1-qualification-2\\raw\\n-15\\product-primary-peer-first-peer-allocation-first-cpu-encoded-primary-run-01.log",
+      "sha256": "1c930a9da6482d9ff7ac38ccd1edfee39304b737454a57ca6563496f86256baa"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\cpu-encoded-p1-qualification-2\\raw\\n-15\\product-primary-peer-first-peer-allocation-first-cpu-encoded-primary-run-02.log",
+      "sha256": "f1ab09bc83cec26a2748c05690d2dc5166a00fb4dbf417540baef19ff3c6b311"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\cpu-encoded-p1-qualification-2\\raw\\n-15\\product-primary-peer-first-peer-allocation-first-cpu-encoded-primary-run-03.log",
+      "sha256": "3977e94fe324135f860a0b57e1b9f1d911c5ceac9252ea33c8cb8fe59ec518ac"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\cpu-encoded-p1-qualification-2\\raw\\n-15\\product-primary-peer-first-peer-allocation-first-cpu-encoded-primary-run-04.log",
+      "sha256": "e99c1d5cdae428816e5a30850ffa2c975d38dd58caa60babe1bad027149cf52b"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\cpu-encoded-p1-qualification-2\\raw\\n-15\\product-primary-peer-first-peer-allocation-first-cpu-encoded-primary-run-05.log",
+      "sha256": "b82eecb8a5e79ccba2c8c851ccff08aacfb0b3f6a7219a10959f799fad2a2822"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\cpu-encoded-p1-qualification-2\\raw\\n-15\\product-primary-peer-first-peer-allocation-first-cpu-encoded-primary-run-06.log",
+      "sha256": "fec09860dd6cd28aa3f9769f1f73ee0abfa3aaa9da9e6a3e92938da52db1f873"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\cpu-encoded-p1-qualification-2\\raw\\n-15\\product-primary-peer-first-peer-allocation-first-cpu-encoded-primary-run-07.log",
+      "sha256": "e09dfc9f79fffeec154849a0886b645c4a21bbc1e4dcb777df7d431a861c93f5"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\cpu-encoded-p1-qualification-2\\raw\\n-15\\product-primary-peer-first-peer-allocation-first-cpu-encoded-primary-run-08.log",
+      "sha256": "03a2537bfdc112e5c00ce3e54bbbed817ae711add05f1e94d6f341db0af66cc3"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\cpu-encoded-p1-qualification-2\\raw\\n-15\\product-primary-peer-first-peer-allocation-first-cpu-encoded-primary-run-09.log",
+      "sha256": "92037d1c93ede3d0ad80cc04f0dedde63fea3e6480bce946480f0a992ae4e4a6"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\cpu-encoded-p1-qualification-2\\raw\\n-15\\product-primary-peer-first-peer-allocation-first-cpu-encoded-primary-run-10.log",
+      "sha256": "222a6a5c1021350875dda9b50c271e8b61825f9604167f9fc630a7f93c1a9b86"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\cpu-encoded-p1-qualification-2\\raw\\n-15\\product-primary-peer-first-peer-allocation-first-cpu-encoded-primary-run-11.log",
+      "sha256": "882d896267944eaf2f59c80822450e17da31fa355019835c4533e4979d69d5cd"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\cpu-encoded-p1-qualification-2\\raw\\n-15\\product-primary-peer-first-peer-allocation-first-cpu-encoded-primary-run-12.log",
+      "sha256": "fadfd9424ed1d082be6bef8a7b65286ef6cb85be9abd05633a5f159ceffc009d"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\cpu-encoded-p1-qualification-2\\raw\\n-15\\product-primary-peer-first-peer-allocation-first-cpu-encoded-primary-run-13.log",
+      "sha256": "e3c03897a9855a00d45dcb1bd5e4b89f49c525f9cbcaaf3313208b0fff9b7bc1"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\cpu-encoded-p1-qualification-2\\raw\\n-15\\product-primary-peer-first-peer-allocation-first-cpu-encoded-primary-run-14.log",
+      "sha256": "e5e2b90558785e0fa004e40321742e57fcfb9c174370a682bfd75665ab20d635"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\cpu-encoded-p1-qualification-2\\raw\\n-15\\product-primary-peer-first-peer-allocation-first-cpu-encoded-primary-run-15.log",
+      "sha256": "4d30d94c1fec2fe17480dd1c853fcf329cf8756c17e093821cc442a7aa548bb0"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\cpu-encoded-p1-qualification-2\\raw\\n-15\\product-placement-candidate-first-candidate-allocation-first-cpu-encoded-placement-run-01.log",
+      "sha256": "d6ba5da6b58ba846376ab934bceba2ff6c5962f588bae0ad21b8e8277beedd32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\cpu-encoded-p1-qualification-2\\raw\\n-15\\product-placement-candidate-first-candidate-allocation-first-cpu-encoded-placement-run-02.log",
+      "sha256": "68353b101cd2e4539d4b354cdb7344fb795a5ed8c8f3ed370bb988ccfc514a54"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\cpu-encoded-p1-qualification-2\\raw\\n-15\\product-placement-candidate-first-candidate-allocation-first-cpu-encoded-placement-run-03.log",
+      "sha256": "6d66fdfea6404110164a3bc0f1bf9acb1f71265ff7f8ee270adcd957836d91aa"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\cpu-encoded-p1-qualification-2\\raw\\n-15\\product-placement-candidate-first-candidate-allocation-first-cpu-encoded-placement-run-04.log",
+      "sha256": "c179dde7c06a3e5b55955ad78bef92ebe917c204903191e642f74c65556b8cd1"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\cpu-encoded-p1-qualification-2\\raw\\n-15\\product-placement-candidate-first-candidate-allocation-first-cpu-encoded-placement-run-05.log",
+      "sha256": "13cd34bd97ee09a4dbf019f5ce6585fc15d02be2c7f81b1a5db4031f5cd06e2b"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\cpu-encoded-p1-qualification-2\\raw\\n-15\\product-placement-candidate-first-candidate-allocation-first-cpu-encoded-placement-run-06.log",
+      "sha256": "b7ee178a2dd990f26e492abdb0ef474d836b1075efed377f7561fd404759787d"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\cpu-encoded-p1-qualification-2\\raw\\n-15\\product-placement-candidate-first-candidate-allocation-first-cpu-encoded-placement-run-07.log",
+      "sha256": "aafd12d37049695b5f06de0f4fe2c5b62242a3ed2380b1016c83c79fed9846cb"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\cpu-encoded-p1-qualification-2\\raw\\n-15\\product-placement-candidate-first-candidate-allocation-first-cpu-encoded-placement-run-08.log",
+      "sha256": "ba16bb2f7e20b5d998079ad12b39c02cea98d44526e56eed3586fcb242624ac9"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\cpu-encoded-p1-qualification-2\\raw\\n-15\\product-placement-candidate-first-candidate-allocation-first-cpu-encoded-placement-run-09.log",
+      "sha256": "179161cf2b9ccf7422e877fed1bde6180eff4ed5ee5a2b62da6c59fb8771cba8"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\cpu-encoded-p1-qualification-2\\raw\\n-15\\product-placement-candidate-first-candidate-allocation-first-cpu-encoded-placement-run-10.log",
+      "sha256": "af639a0610f6efdc1636c50686fdc308dc917c7b64b5c719c1ff9c1156a1b70b"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\cpu-encoded-p1-qualification-2\\raw\\n-15\\product-placement-candidate-first-candidate-allocation-first-cpu-encoded-placement-run-11.log",
+      "sha256": "7066377b2094d3ad673bd656e356a09a46a2799fb71caaeae69af77cb47a60da"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\cpu-encoded-p1-qualification-2\\raw\\n-15\\product-placement-candidate-first-candidate-allocation-first-cpu-encoded-placement-run-12.log",
+      "sha256": "4e5fb2e4df93721370c04fcef6a72e3b38755f9252e640103e0d759fdd65bf99"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\cpu-encoded-p1-qualification-2\\raw\\n-15\\product-placement-candidate-first-candidate-allocation-first-cpu-encoded-placement-run-13.log",
+      "sha256": "234480151b893da3edb07d5904175960b8c15d31a9b18ad6052fdbebee7dd49c"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\cpu-encoded-p1-qualification-2\\raw\\n-15\\product-placement-candidate-first-candidate-allocation-first-cpu-encoded-placement-run-14.log",
+      "sha256": "7739bce2c3841b91e6190b03b854fc1a8b2419ac6489e6399d0f2e52e8819b9a"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\cpu-encoded-p1-qualification-2\\raw\\n-15\\product-placement-candidate-first-candidate-allocation-first-cpu-encoded-placement-run-15.log",
+      "sha256": "e651212b026def9ae84bc67d447abd5d3a1ef373321a71eab8627635a635c422"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\cpu-encoded-p1-qualification-2\\raw\\n-15\\product-placement-candidate-first-peer-allocation-first-cpu-encoded-placement-run-01.log",
+      "sha256": "0152705abd951bb0ed49275869daf52031ed5cc5f56d295e01ac3d60ac2b75d8"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\cpu-encoded-p1-qualification-2\\raw\\n-15\\product-placement-candidate-first-peer-allocation-first-cpu-encoded-placement-run-02.log",
+      "sha256": "59e145a8fb44e58a08f7ea7b334a8a85a2d4d0c423827f7ad7a8e7275c7b36cf"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\cpu-encoded-p1-qualification-2\\raw\\n-15\\product-placement-candidate-first-peer-allocation-first-cpu-encoded-placement-run-03.log",
+      "sha256": "4bd9093224b5dbf9c780e6185f479e29c70a5eb6064144568a1cf269a72a8c91"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\cpu-encoded-p1-qualification-2\\raw\\n-15\\product-placement-candidate-first-peer-allocation-first-cpu-encoded-placement-run-04.log",
+      "sha256": "bb1eed8393e046afd539d46970265ac26620672fdf84ba9259bbc7b6b970ee4c"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\cpu-encoded-p1-qualification-2\\raw\\n-15\\product-placement-candidate-first-peer-allocation-first-cpu-encoded-placement-run-05.log",
+      "sha256": "418947066ad7427974b5a1d006f5e7e0fe7b58488ac7a6ab056ae12bc4f10aad"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\cpu-encoded-p1-qualification-2\\raw\\n-15\\product-placement-candidate-first-peer-allocation-first-cpu-encoded-placement-run-06.log",
+      "sha256": "7fc75922efa31ae1cefc58dc554d8081fb307d18085c0426171a4d3dec02eec1"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\cpu-encoded-p1-qualification-2\\raw\\n-15\\product-placement-candidate-first-peer-allocation-first-cpu-encoded-placement-run-07.log",
+      "sha256": "d5dff237124930a1b52772cfb36976f40bf495b9093be0a6e8d79447c1b3f96d"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\cpu-encoded-p1-qualification-2\\raw\\n-15\\product-placement-candidate-first-peer-allocation-first-cpu-encoded-placement-run-08.log",
+      "sha256": "952f9be4d8f74ce4f750e5515be9a92570c64e5b5a4ce76cc55314cb5b6ec6d5"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\cpu-encoded-p1-qualification-2\\raw\\n-15\\product-placement-candidate-first-peer-allocation-first-cpu-encoded-placement-run-09.log",
+      "sha256": "2df5be8056850b1dc576d40403883fb02ce1ddaac4fc6852ee6197bd90fcace6"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\cpu-encoded-p1-qualification-2\\raw\\n-15\\product-placement-candidate-first-peer-allocation-first-cpu-encoded-placement-run-10.log",
+      "sha256": "8f97495fdc4dff028966418deac7da09101d597431df352211d5c563e045fdf7"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\cpu-encoded-p1-qualification-2\\raw\\n-15\\product-placement-candidate-first-peer-allocation-first-cpu-encoded-placement-run-11.log",
+      "sha256": "340da245de95f709d7ad338a1bcbde2c22afa8c82854ab75dc67fd1a6ca27d5b"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\cpu-encoded-p1-qualification-2\\raw\\n-15\\product-placement-candidate-first-peer-allocation-first-cpu-encoded-placement-run-12.log",
+      "sha256": "65590872f22c20db5bf8d19ea50ce00924440aedebfea58faddcd388c46521fc"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\cpu-encoded-p1-qualification-2\\raw\\n-15\\product-placement-candidate-first-peer-allocation-first-cpu-encoded-placement-run-13.log",
+      "sha256": "640765dbf1b6689db2de91936d749558242f3b6024798d9ddb64acbab98be44b"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\cpu-encoded-p1-qualification-2\\raw\\n-15\\product-placement-candidate-first-peer-allocation-first-cpu-encoded-placement-run-14.log",
+      "sha256": "2148619aacac9e84f3519a57a2d0fe4c7be07cdbc1f8011934d7fd455324bf3f"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\cpu-encoded-p1-qualification-2\\raw\\n-15\\product-placement-candidate-first-peer-allocation-first-cpu-encoded-placement-run-15.log",
+      "sha256": "191919314dbb00abbfe521be9521554da1746f23a486226021a94f5375405dd2"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\cpu-encoded-p1-qualification-2\\raw\\n-15\\product-placement-peer-first-candidate-allocation-first-cpu-encoded-placement-run-01.log",
+      "sha256": "0881a7fc4047cf7fdf3da7554d4a85b352fee9e31f0dfc95176bad4fe9bb653b"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\cpu-encoded-p1-qualification-2\\raw\\n-15\\product-placement-peer-first-candidate-allocation-first-cpu-encoded-placement-run-02.log",
+      "sha256": "533410570d1d54d098b47b13cbb510241ed5c4114d56e79dca0f6e483c50118a"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\cpu-encoded-p1-qualification-2\\raw\\n-15\\product-placement-peer-first-candidate-allocation-first-cpu-encoded-placement-run-03.log",
+      "sha256": "262ddb85e8e3b36c1a3ab92bc162c8dbb7f6c641e39303ec18e3b8885cd07ca6"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\cpu-encoded-p1-qualification-2\\raw\\n-15\\product-placement-peer-first-candidate-allocation-first-cpu-encoded-placement-run-04.log",
+      "sha256": "265b7d0e9fbde056c760fac8668ec0be070bec11cfd9494f8b95b872e10b7eb0"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\cpu-encoded-p1-qualification-2\\raw\\n-15\\product-placement-peer-first-candidate-allocation-first-cpu-encoded-placement-run-05.log",
+      "sha256": "861eaecc4dd37fba19a3ded588cada92a3bbf7682e91c9511665ce3435f5058a"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\cpu-encoded-p1-qualification-2\\raw\\n-15\\product-placement-peer-first-candidate-allocation-first-cpu-encoded-placement-run-06.log",
+      "sha256": "462e656576d502a0e26c5b09983175d699dddbed8e92a2f21aa1e9411a078aef"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\cpu-encoded-p1-qualification-2\\raw\\n-15\\product-placement-peer-first-candidate-allocation-first-cpu-encoded-placement-run-07.log",
+      "sha256": "80527c3308bfd2d0ef12f86a1dc9bf7d7e3493bd341e85534b467e99475e396b"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\cpu-encoded-p1-qualification-2\\raw\\n-15\\product-placement-peer-first-candidate-allocation-first-cpu-encoded-placement-run-08.log",
+      "sha256": "e1cded096476386a308794a050125e37171b74bf6a29e83f7fbd6b72bc186d35"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\cpu-encoded-p1-qualification-2\\raw\\n-15\\product-placement-peer-first-candidate-allocation-first-cpu-encoded-placement-run-09.log",
+      "sha256": "83bce170045f32d4536d992c94e66e45de8fb097f39dbabdc7c1f476b6ccf449"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\cpu-encoded-p1-qualification-2\\raw\\n-15\\product-placement-peer-first-candidate-allocation-first-cpu-encoded-placement-run-10.log",
+      "sha256": "a933fcc571e8f01c9a15c08918a53652b274c8c84ef663f5b132bf13c492d35f"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\cpu-encoded-p1-qualification-2\\raw\\n-15\\product-placement-peer-first-candidate-allocation-first-cpu-encoded-placement-run-11.log",
+      "sha256": "0d41a0146c221d88466504702456d0a2611539967e31dd2f0accb0eb76c8b2f5"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\cpu-encoded-p1-qualification-2\\raw\\n-15\\product-placement-peer-first-candidate-allocation-first-cpu-encoded-placement-run-12.log",
+      "sha256": "eae23be70b6e3e0d97cf97764085d94ab7abf438c7cc1a5f32e69454c395da83"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\cpu-encoded-p1-qualification-2\\raw\\n-15\\product-placement-peer-first-candidate-allocation-first-cpu-encoded-placement-run-13.log",
+      "sha256": "dc93020c29b201548d8d189ca1a6e41f3a0a73015d7782b41359c500eb060ca5"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\cpu-encoded-p1-qualification-2\\raw\\n-15\\product-placement-peer-first-candidate-allocation-first-cpu-encoded-placement-run-14.log",
+      "sha256": "1699b28bbef0ff27905f745161a0c98e4596a085e592f93150ae5850c2157e4a"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\cpu-encoded-p1-qualification-2\\raw\\n-15\\product-placement-peer-first-candidate-allocation-first-cpu-encoded-placement-run-15.log",
+      "sha256": "2e590758ebe3d44bc5bea2e5223503a9cdaea9a4d013aebd0a97cbb83779af1d"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\cpu-encoded-p1-qualification-2\\raw\\n-15\\product-placement-peer-first-peer-allocation-first-cpu-encoded-placement-run-01.log",
+      "sha256": "6b9c1b6f56db7ee8bb541d3d3bf4ca807e2c5a9fa724842bf14fab6184b2aba5"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\cpu-encoded-p1-qualification-2\\raw\\n-15\\product-placement-peer-first-peer-allocation-first-cpu-encoded-placement-run-02.log",
+      "sha256": "30e61c607f56162e5963bc31b3ec5c6c894010a49e23b2986661eaca53a15501"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\cpu-encoded-p1-qualification-2\\raw\\n-15\\product-placement-peer-first-peer-allocation-first-cpu-encoded-placement-run-03.log",
+      "sha256": "87bea4a2b8e8ee7ea3533aff16379fcbcbe093d38f268384f0839f13ba900b7a"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\cpu-encoded-p1-qualification-2\\raw\\n-15\\product-placement-peer-first-peer-allocation-first-cpu-encoded-placement-run-04.log",
+      "sha256": "2c631d504a06975ae9f283c9d5d2866003f5897677672ac8f8c5271a496f944d"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\cpu-encoded-p1-qualification-2\\raw\\n-15\\product-placement-peer-first-peer-allocation-first-cpu-encoded-placement-run-05.log",
+      "sha256": "7015bc1f1a6b09c62eb8c374705fbc99b587b3681add7ae88cb042ba048b2e16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\cpu-encoded-p1-qualification-2\\raw\\n-15\\product-placement-peer-first-peer-allocation-first-cpu-encoded-placement-run-06.log",
+      "sha256": "5716689c0c2784f9b7bfc13fd2df3301eb44153b3f2a3492362dce3933807bff"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\cpu-encoded-p1-qualification-2\\raw\\n-15\\product-placement-peer-first-peer-allocation-first-cpu-encoded-placement-run-07.log",
+      "sha256": "9a52ad9d2505beb886a07697e59d9a36b13b2934ec50879b9923a3cbf9ae4883"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\cpu-encoded-p1-qualification-2\\raw\\n-15\\product-placement-peer-first-peer-allocation-first-cpu-encoded-placement-run-08.log",
+      "sha256": "67d98ae4ce2fe52cb5bd195dc5e9cc1555a3136fd6f8e5847a1305d631393c83"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\cpu-encoded-p1-qualification-2\\raw\\n-15\\product-placement-peer-first-peer-allocation-first-cpu-encoded-placement-run-09.log",
+      "sha256": "856685bb5eafc2e7d90de07f370c5188944b86b450404b6658b96a36aae512e4"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\cpu-encoded-p1-qualification-2\\raw\\n-15\\product-placement-peer-first-peer-allocation-first-cpu-encoded-placement-run-10.log",
+      "sha256": "696429deb3f5b7fd617040a361918ab5d478bca71795d37467b56a3b3c416762"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\cpu-encoded-p1-qualification-2\\raw\\n-15\\product-placement-peer-first-peer-allocation-first-cpu-encoded-placement-run-11.log",
+      "sha256": "93c746872b381a6de88a480b3e4e41f0eaeabdb59af3321b40a9dd8e52a7c304"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\cpu-encoded-p1-qualification-2\\raw\\n-15\\product-placement-peer-first-peer-allocation-first-cpu-encoded-placement-run-12.log",
+      "sha256": "11c164479d1c2ca35fb8cc912258798a188d1cd3eaf32474ec703f659a78a613"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\cpu-encoded-p1-qualification-2\\raw\\n-15\\product-placement-peer-first-peer-allocation-first-cpu-encoded-placement-run-13.log",
+      "sha256": "bc8e785eb019f70c5f4e204cfce76a05651008dd16807cd5f044d936aaf501f4"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\cpu-encoded-p1-qualification-2\\raw\\n-15\\product-placement-peer-first-peer-allocation-first-cpu-encoded-placement-run-14.log",
+      "sha256": "ce8f78f01bea59eb3ad7d835d7a40c70a4ebe45d5ea8e1586bdcdc3018c052a7"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\cpu-encoded-p1-qualification-2\\raw\\n-15\\product-placement-peer-first-peer-allocation-first-cpu-encoded-placement-run-15.log",
+      "sha256": "05d2de4f7dfe2e6e5be985afef27be7138554371ec502241fbd6642bbbb75dd4"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\cpu-encoded-p1-qualification-2\\raw\\n-15\\control-candidate-first-run-01.log",
+      "sha256": "8a519cca3b3746d4455af319b8a515f0bc60dbb44f3e4ba607d86cdd5956a9fd"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\cpu-encoded-p1-qualification-2\\raw\\n-15\\control-candidate-first-run-02.log",
+      "sha256": "deb4bf46b2585674a5702305fcbf27c34a2f76ce0771c6c998f9eb935515819e"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\cpu-encoded-p1-qualification-2\\raw\\n-15\\control-candidate-first-run-03.log",
+      "sha256": "8b8d37f2d4366db18391d3e717955240cd4978456ade184e0662fbdab5dcd51d"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\cpu-encoded-p1-qualification-2\\raw\\n-15\\control-candidate-first-run-04.log",
+      "sha256": "0767bcc9512a9269fee51287690197d7714ad528c3e750d68df2a1707f01c354"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\cpu-encoded-p1-qualification-2\\raw\\n-15\\control-candidate-first-run-05.log",
+      "sha256": "c483f934c6c65b1179c2bde95ca05351dc537e841f79a96c9f56f1e8c3ab24dc"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\cpu-encoded-p1-qualification-2\\raw\\n-15\\control-candidate-first-run-06.log",
+      "sha256": "9936e8b4bb90ca8c0c968193e70197b78d523169c31f0acd9fd2b4566fcf14bb"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\cpu-encoded-p1-qualification-2\\raw\\n-15\\control-candidate-first-run-07.log",
+      "sha256": "22009a7b2f1a84fe2a4fbc6f2da224ff7e8207c26396efbd25b44d10a3c06811"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\cpu-encoded-p1-qualification-2\\raw\\n-15\\control-candidate-first-run-08.log",
+      "sha256": "12d9927786b342ff6f5d5c39545cb212778ed2f33534f36a308cb84ac71ff27c"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\cpu-encoded-p1-qualification-2\\raw\\n-15\\control-candidate-first-run-09.log",
+      "sha256": "82344eeb3bb69708aafc6cf5603ef348cadf57c1d4fdda1508f4dc22e8517b25"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\cpu-encoded-p1-qualification-2\\raw\\n-15\\control-candidate-first-run-10.log",
+      "sha256": "e381393db43548809065ed0f6eb5cff06ed63da3e5f33ba5c6086b97b4294329"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\cpu-encoded-p1-qualification-2\\raw\\n-15\\control-candidate-first-run-11.log",
+      "sha256": "098a0aeeb52160a0b66ef0c946b370185d88ec0d4481a5276b23a320222e9bec"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\cpu-encoded-p1-qualification-2\\raw\\n-15\\control-candidate-first-run-12.log",
+      "sha256": "32b47d055dbb07809b23c3b416d0c9a273e18610ef8f1f49a439347f22fb59a2"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\cpu-encoded-p1-qualification-2\\raw\\n-15\\control-candidate-first-run-13.log",
+      "sha256": "ad4c5916b7e7b10eca0009af0e9987858f5a25ac328d27fa0263b780f494096c"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\cpu-encoded-p1-qualification-2\\raw\\n-15\\control-candidate-first-run-14.log",
+      "sha256": "4628fddf718443b1134a566fd00bd85bcf5f3d43a7a31554d090962fbf16827b"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\cpu-encoded-p1-qualification-2\\raw\\n-15\\control-candidate-first-run-15.log",
+      "sha256": "38763054cfcdc73f81d85a2d9c935058dd541a115aabb8c7a47d8b77dabaea5b"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\cpu-encoded-p1-qualification-2\\raw\\n-15\\control-peer-first-run-01.log",
+      "sha256": "85a345149a8aea85e29ae6978a69d653785fe57e2d1d4357a750135a747754c6"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\cpu-encoded-p1-qualification-2\\raw\\n-15\\control-peer-first-run-02.log",
+      "sha256": "5bad85e93b3eef96a0029118ef01722224713ea5999789544e4637b8461f943c"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\cpu-encoded-p1-qualification-2\\raw\\n-15\\control-peer-first-run-03.log",
+      "sha256": "67efd92341aea49a3a817edc1a32e443b951b9ba6fe320830523adacd276cdc1"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\cpu-encoded-p1-qualification-2\\raw\\n-15\\control-peer-first-run-04.log",
+      "sha256": "b3ab9ae06612857f8a8114051dc401449862f30303e7c8542e94e30113d96396"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\cpu-encoded-p1-qualification-2\\raw\\n-15\\control-peer-first-run-05.log",
+      "sha256": "f73fb37e4b5374b6749cff11cfd292448d8ce8e97c6876394c14cc05a58e5b22"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\cpu-encoded-p1-qualification-2\\raw\\n-15\\control-peer-first-run-06.log",
+      "sha256": "f98c542408ca062d2e3cc5c923e7661e6739ea301d841817099f33fb11d20c5c"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\cpu-encoded-p1-qualification-2\\raw\\n-15\\control-peer-first-run-07.log",
+      "sha256": "d8bb2ce236168659bf0a7fb03eb7fc6b7cad0fd9161dfb3fd6507df1eb170e0a"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\cpu-encoded-p1-qualification-2\\raw\\n-15\\control-peer-first-run-08.log",
+      "sha256": "8af770265ebf0e3b90d83bb9679df7c398ad5378d0a2828ef33f6d185daa74d3"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\cpu-encoded-p1-qualification-2\\raw\\n-15\\control-peer-first-run-09.log",
+      "sha256": "a1c719bc8a5e635cc7cfe8bb1be7d377796b728d4962714dc24a5904e7f480ce"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\cpu-encoded-p1-qualification-2\\raw\\n-15\\control-peer-first-run-10.log",
+      "sha256": "5831bf47fda9957a83b705e1b56f2f9260993356edd6841b6b2fa9fb79c72587"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\cpu-encoded-p1-qualification-2\\raw\\n-15\\control-peer-first-run-11.log",
+      "sha256": "7de8ca3ceba873c3c72a4d97b0fab901a25eeb3ad28f17143e906f85837c5ff0"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\cpu-encoded-p1-qualification-2\\raw\\n-15\\control-peer-first-run-12.log",
+      "sha256": "e34ca96d1505b0f9cf91fade4af9040d889e6c14dda339ede52054c149e1d02e"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\cpu-encoded-p1-qualification-2\\raw\\n-15\\control-peer-first-run-13.log",
+      "sha256": "ea9c0ac9853edc9722de346b0db13603207c148b5c1be1176b068a58493aefb0"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\cpu-encoded-p1-qualification-2\\raw\\n-15\\control-peer-first-run-14.log",
+      "sha256": "4e848d72cef653197e5d9360a6e90027377e1a57de7c92c61f417f3859ec473a"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\cpu-encoded-p1-qualification-2\\raw\\n-15\\control-peer-first-run-15.log",
+      "sha256": "2a08d85a627fc6fe1a5323ff1d411d158c0ca115ba4f9229af016aa68b043e63"
+    }
+  ],
+  "record": "hyle_perf_evidence_manifest",
+  "schema": "hyle.perf.evidence-manifest/v1",
+  "source": {
+    "clean": true,
+    "remote": "C:\\public\\project-hyle\\hyle",
+    "revision": "c81d8056976fa9782857d6bd9f2a6ed12bd4bb34",
+    "tree": "52e5d2d4342d5d013db87026d380ee45c085cb90"
+  },
+  "summary": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\cpu-encoded-p1-qualification-2\\summary.json",
+    "sha256": "0ff2d632da9d565763149daba083c4b11b3a02497bb01197daf85009206ced0b"
+  },
+  "validator_results": [
+    {
+      "details": {
+        "artifact_count": 6,
+        "kind": "artifact-identity"
+      },
+      "gate": "PASS",
+      "id": "artifact-identity"
+    },
+    {
+      "details": {
+        "architecture_matches_profile": true,
+        "compiler_id": "MSVC",
+        "compiler_matches_profile": true,
+        "compiler_version": "19.50.35728.0",
+        "configuration": "Release",
+        "configuration_observation": {
+          "available": [
+            "Release"
+          ],
+          "mechanism": "CMAKE_BUILD_TYPE",
+          "proven": true,
+          "value": "Release"
+        },
+        "expected_compiler_id": "MSVC",
+        "expected_compiler_version_prefix": "19.50",
+        "formal_toolchain": {
+          "mismatches": {},
+          "proven": false,
+          "reason": "machine runner profile has no pinned formal_toolchain",
+          "required": false
+        },
+        "fresh": true,
+        "generator_matches_profile": true,
+        "isa": "portable",
+        "kind": "build-contract",
+        "linkage": "static",
+        "lto": "off",
+        "toolchain": {
+          "cmake_compiler_record_sha256": "77ac47adacace6ad84251374748de674ba141b9b1ab3fc3706596dcd5231b99e",
+          "compiler_frontend_variant": "MSVC",
+          "compiler_id": "MSVC",
+          "compiler_path": "C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\bin\\Hostx64\\x64\\cl.exe",
+          "compiler_sha256": "194ddf4aafcb74452218a982309a97de30e0adb33edf4af02904ee107213e782",
+          "compiler_target": "unknown",
+          "compiler_version": "19.50.35728.0",
+          "formal_identity_complete": false,
+          "linker_id": "MSVC",
+          "linker_path": "C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\bin\\Hostx64\\x64\\link.exe",
+          "linker_sha256": "c988acb4ec7ef964ae4d4e414b693a6a3782dd85f1e200100b3f896db6b1a202",
+          "linker_version": "14.50.35728.0",
+          "schema": "hyle.perf.toolchain-record/v1",
+          "sdk": "unknown",
+          "stdlib": "msvc-stl:14.50.35717",
+          "system_name": "Windows",
+          "system_processor": "AMD64",
+          "system_version": "10.0.26200"
+        },
+        "toolchain_attested": true
+      },
+      "gate": "PASS",
+      "id": "build-contract"
+    },
+    {
+      "details": {
+        "exit_code": 0,
+        "kind": "command",
+        "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\cpu-encoded-p1-qualification-2\\validators\\cpu-encoded-aa.log",
+        "log_sha256": "a5f9a94c5d99ea8a3fa393a4149db637c57240fd7fdd0e3efc1cd22143049601"
+      },
+      "gate": "PASS",
+      "id": "cpu-encoded-aa"
+    }
+  ]
+}

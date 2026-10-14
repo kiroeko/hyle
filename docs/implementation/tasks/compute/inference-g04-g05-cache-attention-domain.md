@@ -1,6 +1,6 @@
 # G04/G05 编码 KV 与有限 attention 语义实施批
 
-状态：**CANDIDATE，2026-10-15**。baseline `694a3d1a4b02540cb56b6ceae35b73dd1dd93440`；
+状态：**共同 CANDIDATE；CPU provider 的 CE12 修正 AUDITED，2026-10-15**。baseline `694a3d1a4b02540cb56b6ceae35b73dd1dd93440`；
 共同批owner见下表：九个原实际组件及下文新增CUDA数值状态owner；有限CE01–07/API/成本合同已冻结。原 G03 已 CLOSED，不由本卡重开其权限/
 退休实现。九owner已合法SCOPED后进入AUDITED；仅下列有限FIX授权产品实现。
 本批沿[十项总卡](../project/inference-gaps-goal-execution-2026-10.md)，
@@ -862,3 +862,28 @@ CPU 当前 A/A16路 PASS，正式采样尚在运行；CUDA worker 仅准备，�
 不制造历史哈希证明。验证 hook 仅把 ggml 的旧未改 native archive 链接到独立 imported
 archive；CPU/base、FI 与全部改动宿主照常编，保原三类公开 consumer，不改产品构建图。
 同一脚本/完整命令及聚合 SHA 将随本阶段 raw 封存；此处仍不是 CUDA 新域运行 PASS。
+
+
+### 合格 CPU P1 失败与 CE12 有限性能修正
+
+[原完整结果](../../../../evidence/performance/inference-g04-g05-cpu-encoded-w1-p1/receipt.json)
+保留两次尝试累计1182.344秒、16 A/A、120产品与30 controls；qualification QUALIFIED、
+verify退出0，性能 FAIL。window D256比0.95144–0.95661，5%非劣 UNRESOLVED；长prefill
+D256比0.97497–0.98384，非劣 PASS；D64/Dv128 Q>KV留出比0.80083–0.80431，非劣 FAIL。
+三项相对1稳定方向均 LOSS，不能把 prefill 的非劣 PASS/band PARITY 改称性能持平。
+不增加样本、改数据/阈值或缩去失败留出域，原结果永久保留。
+
+独立只读源审定位 ggml_cpu_provider.cc 的 Q8 query guard：逐元素 cache_input_value 对
+BF16调用外部 GGML_API ggml_bf16_to_fp32，原头本身指出可直接位移16位；IPO OFF 无跨
+TU内联。留出每episode新增9216次、window新增36864次标量调用与检查。跨strata实测
+额外约19.674/15.327us；这是实质机制候选，尚不把全部差异归因给这一项。
+
+只将 compute_provider_ggml 从 CANDIDATE退回AUDITED，baseline仍982676/f772；其它十个
+owner/原CPU kernel与已验三交付不重开。CE12有限FIX：把Q8查询的已准入F16/BF16/F32
+finite/range验证按dtype在循环外派发，使用类型正确的inline位表示比较/转换，保留同一
+65504*127界限与输出映射前拒绝。不得删安全检查、改变错误/恢复、public API、layout、
+新增常态state/分配、私造SIMD调度或改attention数学/页地址/ggml kernel/benchmark数据。
+批量验证原编码/attention/Direct/Graph与数值边界、CPU三宿主风险和两安装配置；未变头/
+GPU/math/原G03证据按输入与实际路径借用。重新冻结后只对同合同、同原仪器/样本/5%门
+做有限P1，若仍有material差异再按实际机制裁决。当前CUDAASan只执行已归档f772输入，
+不得从canonical反向覆盖或在其运行时再启动本机重型验证。
