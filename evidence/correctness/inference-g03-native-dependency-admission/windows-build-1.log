@@ -1,0 +1,8 @@
+[0/2] Re-checking globbed directories...
+[1/6] Performing build step for 'vulkan-shaders-gen'
+ninja: no work to do.
+[2/6] Performing install step for 'vulkan-shaders-gen'
+-- Up-to-date: C:/h7/inference-g01-native-vulkan/build/Release/vulkan-shaders-gen.exe
+[3/6] Completed 'vulkan-shaders-gen'
+[4/6] Building CXX object hyle\src\compute_route_vulkan\CMakeFiles\hyle_compute_route_vulkan.dir\vulkan_run.cc.obj
+[5/6] Linking CXX shared library hyle\src\compute_route_vulkan\hyle_compute_route_vulkan.dll

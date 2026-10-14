@@ -1,0 +1,17 @@
+{
+  "candidate": "9404af694",
+  "command": [
+    "cmake",
+    "--build",
+    "C:\\h7\\inference-g01-native-vulkan\\build",
+    "--target",
+    "hyle_compute_route_vulkan",
+    "--parallel",
+    "4"
+  ],
+  "exit_code": 0,
+  "elapsed_seconds": 2.5160000000032596,
+  "scope": "MSVC actual affected Vulkan Run compile/link only; Apple .mm unavailable on Windows; no executable/GPU/fullmodel/CPU unchanged rerun",
+  "source_sha256": "d38a77e591367a17eb3bc68a0db4dfb08406f46fe2db144aca665da289ea2271",
+  "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g03\\dependency-admission-windows\\build-1.log"
+}

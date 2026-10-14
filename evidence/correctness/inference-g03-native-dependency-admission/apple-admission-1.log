@@ -1,0 +1,2 @@
+actual Apple source cancelled=0, original source status=0, attention SUCCESS shape2x8x64; same original Runtime/FIFO+exact original F1 guards, only final attention wait; cancelled case witnesses missing source preflight/status merge, not a safe public receiver
+Apple original native/copy pending cancel dependency rejected; original controls kept, no attention suffix, actual final retirement preserved PASS

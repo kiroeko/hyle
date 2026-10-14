@@ -131,3 +131,8 @@ metadata/capture 优化仍留 G06，不在 G03 重开已关闭的数学与性能
 已请求取消的原 dependency 接纳检查按
 [两 native owner 有限新轮](inference-g03-native-dependency-admission.md)单独登记；
 不把这一步检查当完整 receiver 聚合或 pending 页形状完成。
+
+该有限轮现以 `9404af694` CLOSED：两 actual route 取消接纳/晚取消成功保持、原
+public65/生命周期、六 host 风险、四 SDK/12 头、定向 Win Vulkan 编译全部完成，
+原 fixture/字段机械 FAIL 保留。后继接纳之后才出现的来源错误仍须由本主卡聚合，
+pending 页权限/late output 与完整七路线旅程仍未实现，本主卡继续 SCOPED。

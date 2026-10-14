@@ -1,0 +1,6 @@
+actual Vulkan CopyBatchUpdate mode=0 PASS: native submits=1 accepted=1 waits=1 confirmed=0; original permissions/terminal/retirement retained
+actual Vulkan CopyBatchUpdate mode=1 PASS: native submits=1 accepted=0 waits=0 confirmed=0; original permissions/terminal/retirement retained
+actual Vulkan CopyBatchUpdate mode=2 PASS: native submits=1 accepted=1 waits=1 confirmed=0; original permissions/terminal/retirement retained
+actual Vulkan CopyBatchUpdate mode=3 PASS: native submits=1 accepted=1 waits=1 confirmed=0; original permissions/terminal/retirement retained
+actual Vulkan CopyBatchUpdate mode=4 PASS: native submits=1 accepted=1 waits=1 confirmed=0; original permissions/terminal/retirement retained
+actual Vulkan CopyBatchUpdate mode=5 PASS: native submits=1 accepted=1 waits=1 confirmed=0; original permissions/terminal/retirement retained

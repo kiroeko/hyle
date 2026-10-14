@@ -1,0 +1,24 @@
+{
+  "candidate": "9404af694",
+  "validation_selected_plan": "validation-plan.json",
+  "gate_evidence": {
+    "docs": "check-docs PASS after 8950153ac; final checker run recorded in terminal",
+    "closure": "CANDIDATE fields corrected after initial rejected performance fields; final transition checker required",
+    "configure": "actual source/static/shared + six sanitizer configurations in receipts",
+    "compute_route_apple": "actual copy/native qualifier admission + public65 + original8 + three host sanitizer modes",
+    "compute_route_vulkan": "actual Run qualifier admission + public65 + original6 + three host sanitizer modes + MSVC affected TU",
+    "compute_batch": "actual original attention success vs rejected cancelled dependency; exact F1 guards; audit fixture only",
+    "graph_one_hop": "original ready bindings/permissions/math untouched; source private qualification and actual native owner lifecycle tested; no new graph algorithm/queue/API; old unproven Graph Windows gates retained"
+  },
+  "failures_preserved": [
+    "source second Vulkan late-cancel assertion failed before logical source observation",
+    "red-team first Vulkan ASan same incorrect observation-order assumption failed; actual tests corrected, no product change",
+    "initial registry CANDIDATE performance fields rejected, corrected in 8950153ac"
+  ],
+  "limits": [
+    "private source fixture is not public SDK",
+    "SDK unchanged public65 and three standalone headers per configuration",
+    "host instrumentation only, existing TSan models, no shader/driver/private-pool or LSan claim",
+    "source acceptance check not final suffix/source result merge or complete G03"
+  ]
+}

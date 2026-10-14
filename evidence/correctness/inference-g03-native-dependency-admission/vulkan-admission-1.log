@@ -1,0 +1,2 @@
+actual Vulkan source cancelled=0, original source status=0, attention SUCCESS shape2x8x64; same original Runtime/queue+exact original F1 guards; only retirement observations masked, only final attention wait; cancelled case witnesses missing source preflight/status merge, not a safe public receiver
+Vulkan original Run pending cancel dependency rejected; original controls kept, no attention suffix, actual final fence retirement preserved PASS

@@ -1,0 +1,20 @@
+[
+  {
+    "directory": "/Users/kiro/hyle-scratch/compute-unified/g03-native-dependency-admission/vulkan-source-build",
+    "command": "/usr/bin/c++ -DHYLE_COMPUTE_CPU=1 -DHYLE_COMPUTE_GGML_CPU=1 -DHYLE_COMPUTE_VULKAN=1 -DHYLE_IO_HAS_COROUTINE_TRANSPORT=1 -DHYLE_PENDING_ADMISSION_QUALIFICATION=1 -DHYLE_STATIC -isystem /opt/homebrew/include -isystem /Users/kiro/hyle-scratch/compute-unified/g03-native-dependency-admission/vulkan-source-static-stage/include -O3 -DNDEBUG -std=gnu++23 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk -Wall -Wextra -Wpedantic -Werror -o CMakeFiles/admission.dir/Users/kiro/hyle-scratch/compute-unified/source-c8874688/tests/compute_batch/pending_attention_receiver_vulkan_probe.cc.o -c /Users/kiro/hyle-scratch/compute-unified/source-c8874688/tests/compute_batch/pending_attention_receiver_vulkan_probe.cc",
+    "file": "/Users/kiro/hyle-scratch/compute-unified/source-c8874688/tests/compute_batch/pending_attention_receiver_vulkan_probe.cc",
+    "output": "/Users/kiro/hyle-scratch/compute-unified/g03-native-dependency-admission/vulkan-source-build/CMakeFiles/admission.dir/Users/kiro/hyle-scratch/compute-unified/source-c8874688/tests/compute_batch/pending_attention_receiver_vulkan_probe.cc.o"
+  },
+  {
+    "directory": "/Users/kiro/hyle-scratch/compute-unified/g03-native-dependency-admission/vulkan-source-build",
+    "command": "/usr/bin/c++ -DHYLE_COMPUTE_CPU=1 -DHYLE_COMPUTE_GGML_CPU=1 -DHYLE_COMPUTE_VULKAN=1 -DHYLE_COPY_UPDATE_VULKAN=1 -DHYLE_IO_HAS_COROUTINE_TRANSPORT=1 -DHYLE_STATIC -isystem /opt/homebrew/include -isystem /Users/kiro/hyle-scratch/compute-unified/g03-native-dependency-admission/vulkan-source-static-stage/include -O3 -DNDEBUG -std=gnu++23 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk -Wall -Wextra -Wpedantic -Werror -o CMakeFiles/public.dir/Users/kiro/hyle-scratch/compute-unified/source-c8874688/tests/compute_batch/copy_update_public_consumer.cc.o -c /Users/kiro/hyle-scratch/compute-unified/source-c8874688/tests/compute_batch/copy_update_public_consumer.cc",
+    "file": "/Users/kiro/hyle-scratch/compute-unified/source-c8874688/tests/compute_batch/copy_update_public_consumer.cc",
+    "output": "/Users/kiro/hyle-scratch/compute-unified/g03-native-dependency-admission/vulkan-source-build/CMakeFiles/public.dir/Users/kiro/hyle-scratch/compute-unified/source-c8874688/tests/compute_batch/copy_update_public_consumer.cc.o"
+  },
+  {
+    "directory": "/Users/kiro/hyle-scratch/compute-unified/g03-native-dependency-admission/vulkan-source-build",
+    "command": "/usr/bin/c++ -DHYLE_COMPUTE_CPU=1 -DHYLE_COMPUTE_GGML_CPU=1 -DHYLE_COMPUTE_VULKAN=1 -DHYLE_IO_HAS_COROUTINE_TRANSPORT=1 -DHYLE_STATIC -isystem /opt/homebrew/include -isystem /Users/kiro/hyle-scratch/compute-unified/g03-native-dependency-admission/vulkan-source-static-stage/include -O3 -DNDEBUG -std=gnu++23 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk -Wall -Wextra -Wpedantic -Werror -o CMakeFiles/risks.dir/Users/kiro/hyle-scratch/compute-unified/source-c8874688/tests/compute_batch/copy_update_vulkan_risks.cc.o -c /Users/kiro/hyle-scratch/compute-unified/source-c8874688/tests/compute_batch/copy_update_vulkan_risks.cc",
+    "file": "/Users/kiro/hyle-scratch/compute-unified/source-c8874688/tests/compute_batch/copy_update_vulkan_risks.cc",
+    "output": "/Users/kiro/hyle-scratch/compute-unified/g03-native-dependency-admission/vulkan-source-build/CMakeFiles/risks.dir/Users/kiro/hyle-scratch/compute-unified/source-c8874688/tests/compute_batch/copy_update_vulkan_risks.cc.o"
+  }
+]

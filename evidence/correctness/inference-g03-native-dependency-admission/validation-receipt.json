@@ -1,0 +1,66 @@
+{
+  "candidate": "9404af694",
+  "stages": [
+    {
+      "route": "apple",
+      "mode": "asan",
+      "exit_code": 0,
+      "elapsed_seconds": 15.849776791
+    },
+    {
+      "route": "apple",
+      "mode": "ubsan",
+      "exit_code": 0,
+      "elapsed_seconds": 13.573636666
+    },
+    {
+      "route": "apple",
+      "mode": "tsan",
+      "exit_code": 0,
+      "elapsed_seconds": 20.020861625000002
+    },
+    {
+      "route": "vulkan",
+      "mode": "asan",
+      "exit_code": 0,
+      "elapsed_seconds": 30.138267541999994
+    },
+    {
+      "route": "vulkan",
+      "mode": "ubsan",
+      "exit_code": 0,
+      "elapsed_seconds": 28.312327333
+    },
+    {
+      "route": "vulkan",
+      "mode": "tsan",
+      "exit_code": 0,
+      "elapsed_seconds": 35.068051459
+    },
+    {
+      "route": "apple",
+      "mode": "static",
+      "exit_code": 0,
+      "elapsed_seconds": 3.2664863749999995
+    },
+    {
+      "route": "apple",
+      "mode": "shared",
+      "exit_code": 0,
+      "elapsed_seconds": 11.851650707999994
+    },
+    {
+      "route": "vulkan",
+      "mode": "static",
+      "exit_code": 0,
+      "elapsed_seconds": 3.3952557080000076
+    },
+    {
+      "route": "vulkan",
+      "mode": "shared",
+      "exit_code": 0,
+      "elapsed_seconds": 10.179600582999996
+    }
+  ],
+  "cumulative_seconds": 171.65591479
+}

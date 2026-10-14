@@ -1,0 +1,118 @@
+[
+  {
+    "archive": "input-1.zip",
+    "sha256": "9dc563ce27eab0fdca217d0ff966ae10984e4939135b1ce435872d2b76922a7c",
+    "inputs": [
+      {
+        "path": "src/compute_route_apple/apple_context.cc",
+        "sha256": "bc6df103e4c543381a496559f32ddb6918f9bc81cc21de62a41373e65769c150"
+      },
+      {
+        "path": "src/compute_route_apple/apple_copy_recording.mm",
+        "sha256": "23f5c64a7ef5987470bf4ece5fb0f7270f1efbe2b54cc63d1fe2b58a20a8838a"
+      },
+      {
+        "path": "src/compute_route_vulkan/vulkan_run.cc",
+        "sha256": "d38a77e591367a17eb3bc68a0db4dfb08406f46fe2db144aca665da289ea2271"
+      },
+      {
+        "path": "tests/compute_batch/pending_attention_receiver_probe.cc",
+        "sha256": "ae820ae8a95860c5e60d92a99246423799c7a14fe189bfd68b674bc0462c9463"
+      },
+      {
+        "path": "tests/compute_batch/pending_attention_receiver_vulkan_probe.cc",
+        "sha256": "3e99ffccfbe226fb6d960bc54b2c6d8d9ba2d0ece43950976fb00cc353498c15"
+      },
+      {
+        "path": "tests/compute_batch/pending_copy_owner_probe.cc",
+        "sha256": "876f2ef2b37359feb37cdadd20395c7cd831868c5ce18dfac8831aced34517cb"
+      },
+      {
+        "path": "tests/compute_batch/copy_update_vulkan_risks.cc",
+        "sha256": "d23dbd56a202c8412925929834a042ac2f6a99c60d8fbf3e948fab33a6d7ec4f"
+      },
+      {
+        "path": "tests/compute_batch/copy_update_public_consumer.cc",
+        "sha256": "b10205e309ec573d0d29557ff7fd8200f31f9d4b4150b406a95275198444f95e"
+      },
+      {
+        "path": "tests/compute_batch/dirty_page_native_risk_fixture.h",
+        "sha256": "bf267ff39c7b16fc8ad1f9d1dac177218531588302535b3b8b92b5109c998483"
+      },
+      {
+        "path": "tests/compute_batch/native_paged_risk_fixture.h",
+        "sha256": "79a9d4e7c8b4243fce6af02a948fd4dd0a91db060818b148e2c6cb8904105bee"
+      },
+      {
+        "path": "tests/compute_batch/native_apple_failure_fixture.h",
+        "sha256": "fdb33f4f810aa078793a464450808da43e3d386721725a506e2c3697d4be2208"
+      },
+      {
+        "path": "tests/compute_batch/native_vulkan_failure_fixture.h",
+        "sha256": "955af6a8f8ea20160f36f760866676997b99a12848dbd456108a72c20b030b90"
+      },
+      {
+        "path": "tests/compute_batch/allocation_fault_fixture.h",
+        "sha256": "7fc5d108ebfbe46853a14fb74b4c504721442757cd4aeab10f1314a9f03943dc"
+      }
+    ]
+  },
+  {
+    "archive": "input-2.zip",
+    "sha256": "bd123a917c4a37f3bfe1e88196946a37c620689a0c83353aaee671de05f2e0a8",
+    "inputs": [
+      {
+        "path": "src/compute_route_apple/apple_context.cc",
+        "sha256": "bc6df103e4c543381a496559f32ddb6918f9bc81cc21de62a41373e65769c150"
+      },
+      {
+        "path": "src/compute_route_apple/apple_copy_recording.mm",
+        "sha256": "23f5c64a7ef5987470bf4ece5fb0f7270f1efbe2b54cc63d1fe2b58a20a8838a"
+      },
+      {
+        "path": "src/compute_route_vulkan/vulkan_run.cc",
+        "sha256": "d38a77e591367a17eb3bc68a0db4dfb08406f46fe2db144aca665da289ea2271"
+      },
+      {
+        "path": "tests/compute_batch/pending_attention_receiver_probe.cc",
+        "sha256": "a79976fcb3cf8424c09ab116fbf8df87dc03f582bd2f9853dc317fa18c2e03d7"
+      },
+      {
+        "path": "tests/compute_batch/pending_attention_receiver_vulkan_probe.cc",
+        "sha256": "51406950f0c7ae791059fc217e021001f2159cff95b4a1bc55c77046653223e9"
+      },
+      {
+        "path": "tests/compute_batch/pending_copy_owner_probe.cc",
+        "sha256": "876f2ef2b37359feb37cdadd20395c7cd831868c5ce18dfac8831aced34517cb"
+      },
+      {
+        "path": "tests/compute_batch/copy_update_vulkan_risks.cc",
+        "sha256": "d23dbd56a202c8412925929834a042ac2f6a99c60d8fbf3e948fab33a6d7ec4f"
+      },
+      {
+        "path": "tests/compute_batch/copy_update_public_consumer.cc",
+        "sha256": "b10205e309ec573d0d29557ff7fd8200f31f9d4b4150b406a95275198444f95e"
+      },
+      {
+        "path": "tests/compute_batch/dirty_page_native_risk_fixture.h",
+        "sha256": "bf267ff39c7b16fc8ad1f9d1dac177218531588302535b3b8b92b5109c998483"
+      },
+      {
+        "path": "tests/compute_batch/native_paged_risk_fixture.h",
+        "sha256": "79a9d4e7c8b4243fce6af02a948fd4dd0a91db060818b148e2c6cb8904105bee"
+      },
+      {
+        "path": "tests/compute_batch/native_apple_failure_fixture.h",
+        "sha256": "fdb33f4f810aa078793a464450808da43e3d386721725a506e2c3697d4be2208"
+      },
+      {
+        "path": "tests/compute_batch/native_vulkan_failure_fixture.h",
+        "sha256": "955af6a8f8ea20160f36f760866676997b99a12848dbd456108a72c20b030b90"
+      },
+      {
+        "path": "tests/compute_batch/allocation_fault_fixture.h",
+        "sha256": "7fc5d108ebfbe46853a14fb74b4c504721442757cd4aeab10f1314a9f03943dc"
+      }
+    ]
+  }
+]

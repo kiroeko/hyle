@@ -1,6 +1,6 @@
 # G03 原 native dependency 的取消接纳边界
 
-状态：CANDIDATE，2026-10-14；owner compute_route_apple、compute_route_vulkan；
+状态：CLOSED，2026-10-14；owner compute_route_apple、compute_route_vulkan；
 baseline `8512c09ebee5c1efd54d133b4a795df059517dca`。原 source
 [terminal](inference-g03-copy-update-terminal.md)保持历史事实；本轮由
 [真实 receiver 反例](../../../../evidence/architecture/inference-g03-pending-attention-receiver/README.md)
@@ -57,7 +57,8 @@ F2 create/bind/prepare/submit/output/close/drain 全部仍回指原 source 能�
 | DA02 | Vulkan qualify_copy_dependency：在原 Runtime mutex 下先保原 failure/terminal，然后拒绝原 pending cancelled Run | 实际 native queue/fence 取消负例、成功对照、原 unknown/closed/abandon 生命周期；不新增锁或 native wait |
 | DA03 | 修正 receiver 验证，把取消发生在资格检查前与接纳后分开；原反例证据不覆盖、不擦除 | 两实际 route，原 source/static/shared 与风险；最终聚合仍待主卡 |
 
-Apple 新增一次已有 cancel 状态 load，只在 trusted dependency 资格检查中；Vulkan
+Apple 在原 done acquire 之外新增一次 done acquire 与原 cancel 状态 acquire，只在
+trusted dependency 资格检查中；Vulkan
 复用已有 mutex、一次原 bool 检查。没有 default layout、热字段、分配、原子写、
 线程、queue、结果 owner、buffer 或 native 同步变化。不以该成本检查代签完整 receiver。
 只允许 apple_context.cc、apple_copy_recording.mm、vulkan_run.cc 与对应直接 tests/
@@ -83,4 +84,40 @@ Vulkan 验证实际 Run/copy fence 的 pending cancel 拒绝。source 控制保�
 亦通过，累计 13.760 秒。这里不宣称 Vulkan managed producer 的原 unsupported
 prefix 已变为支持，不签最终 receiver 错误合并/late native 输出。
 
-三交付/宿主风险与直接 consumer 影响回映仍待验；没有未运行 PASS。
+## 最终证据与裁决
+
+[实际验证](../../../../evidence/correctness/inference-g03-native-dependency-admission/README.md)
+封存 source/input 字节与累计、六宿主风险/四 SDK/12 独立头、边界检查、Windows
+受影响 Vulkan TU 编译和原机械字段失败。产品 candidate 不变。两路线取消依赖被
+拒绝而保原 source，原 source 实际退休与失败/unknown/abandon/foreign 行为保留。
+已确认成功之后请求取消不撤销成功；Vulkan suffix 退休尚不等于原 source 状态已
+被观察，最初误判的 source/ASan fixture FAIL 保留，修的是测试，不是产品。
+
+source 累计 23.552s、宿主/四 SDK 171.656s、边界检查 22.343s、Windows 2.516s；
+四 jobs/heavy 串行，无全模型/nvcc/旧数学 P1。宿主 TSan 原 final-acquire/Metal
+显式模型 SHA 实查与已封存字节相同；没有 LSan/shader/driver/privatepool 内部声明。
+Windows Apple .mm 不适用，Vulkan 只签编译/link，不伪造 Windows native GPU run。
+
+| Gate | 实际依据 | Verdict |
+|---|---|---|
+| scope | 真实取消 source→attention 反例；仅 DA01–DA03 | PASS |
+| architecture | 三原 qualifier，原 Runtime/Completion/F1/F2，无新执行 owner/FFI/依赖 | PASS |
+| correctness | 实际取消拒绝/成功保持、原 public65/Apple8/Vulkan6、六 host 风险、原实际退休 | PASS |
+| delivery | 原 source、relocated static/shared 四 SDK/12 头，受影响 Win TU | PASS |
+| usability_docs | 原 bind_producer 非消费诊断与 compute guide 取消/退休限制 | PASS |
+| red_team | 原 known error/foreign 优先与在途 guard；晚取消先观测成功；fixture FAIL 保留 | PASS |
+| engineering_performance | P0 原常态 layout/锁/原子写/分配/queue/math不变，仅有限资格检查 | PASS |
+
+影响 selector READY，保 skipped reasons；自动一跳 Graph 结构依赖按实际 qualifier
+只由原 F2 调用的语义、原 native 生命周期/Batch 接纳/SDK 链接回映。没有 Graph
+bridge/math/status 修改，不重跑已闭数学或代签旧 Graph Windows 未决门。
+首 candidate registry 多带 performance 字段的 checker FAIL 在 8950153ac 修正；
+最终 closure transition 与 docs/diff 使用当前实际状态运行，未修改公共检查工具。
+
+LOC 固定 940 self-check：全库 2947154，自实现不含测试 176785，两 owner src
+显式并集 13475。停止本有限轮：DA01–DA03完成。只有已验取消接纳/原错误/寿命/
+成本/交付的可复现新缺陷或真实新的 dependency 机制触发新 scope。
+
+完整 receiver 聚合/pending frame/late native output 仍[主卡](inference-g03-pending-page-consumption.md)
+SCOPED；本卡 CLOSED 不授权改已关闭 source 或三 qualifier，不签完整 G03/G01/
+G02 或 G04–G10，goal 继续 active。
