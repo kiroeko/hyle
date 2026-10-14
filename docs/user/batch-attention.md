@@ -8,7 +8,8 @@
 ## 选择执行路线
 
 G04/G05 正在实施；CPU新域已完成Windows source数学检查，CUDA新域已完成Linux/SM89
-source数学检查，Apple新域已完成Air source数学检查，Vulkan新域、三交付与完整风险/性能资格尚未签发；进度见
+source数学检查，Apple/Vulkan新域已完成Air source数学检查。CPU-only与Apple/Vulkan的
+F16增量分页/Graph消费已有有限source证据；新域三交付与完整风险/性能资格尚未签发。进度见
 [活动卡](../implementation/tasks/compute/inference-g04-g05-cache-attention-domain.md)。
 普通旧 plain 旅程使用显式的新字段，库不保旧签名转发。schema/descriptor接受一种形状，
 不代表所选native核已支持；当前未接通的组合在准备时返回Unimplemented。
@@ -59,7 +60,9 @@ Q8 K/V同格式、Q/output同F16或BF16；当前有限几何是(64,64)/(128,128)
 由原Completion返回InvalidArgument，失败invocation/slot按原合同重建。原CPU核还会把Q
 转成Q8 dot表示，精度应按这次额外转换评估。新域的字节、窗口、非因果、长prefill和
 F32累加结果见[有限source证据](../../evidence/correctness/inference-g04-g05-cpu-encoding-math-stage/result.json)，
-尚未完成的增量组合、CPU-only核心、SDK、sanitizer和P1不能从这些测试推导。
+CPU-only实际ggml核心及F16增量F2/Graph组合另有
+[有限source证据](../../evidence/correctness/inference-g04-g05-cpu-only-encoded-page-source/result.json)；
+SDK、sanitizer和P1仍不能从源码阶段测试推导。
 
 Linux CUDA的FlashInfer入口现可用同一CacheEncode操作编码E4M3FN新行。准备时显式传入
 CUDA device resource，BatchProgram的host_workspace使用同设备原pinned-host resource。
@@ -79,7 +82,37 @@ tile中解码和累加，最后转输出类型。活跃Q/output转换费用为O(
 原核。输入NaN/Inf或Q8 scale溢出在接受提交后的原Results返回InvalidArgument。
 实际MacBook Air的10项测试见
 [Apple有限source证据](../../evidence/correctness/inference-g04-g05-apple-encoding-math-stage/result.json)；
-新域增量F2/Graph、风险、SDK和P1尚未签发。
+F16原生及CPU+Apple增量F2/Graph已有
+[有限source证据](../../evidence/correctness/inference-g04-g05-encoded-native-page-source/result.json)；
+BF16增量组合、完整风险、SDK和P1尚未签发。
+
+Vulkan原Plan可以编码同一Q8_0 carrier，F16 paged/ragged路径在原FullF32 scalar核中
+直接按页解码，独立Dv与窗口无需整历史KV展开。NaN/Inf和编码scale溢出由原Results报错；
+普通Copy/SetRows保持原规则。实际Air的编码字节、长prefill与大值抵消见
+[Vulkan有限source证据](../../evidence/correctness/inference-g04-g05-vulkan-encoding-math-stage/result.json)，
+F16原生及CPU+Vulkan增量组合见上述共同source证据。极小scale/subnormal/FTZ边界、
+完整风险、SDK和P1仍未签发，BF16 attention没有因此获准。
+
+## 编码新行并接入原分页更新
+
+完整可编译旅程见
+[CPU/CUDA共同消费者](../../tests/compute_batch/encoded_page_common_consumer.cc)与
+[Apple/Vulkan消费者](../../tests/compute_batch/encoded_page_native_consumer.cc)。先用与schema
+相同的CacheStorage构造K/V编码节点，输入只包含本轮dirty rows；通过
+`infer_single_output(Operation::custom(model_ops::CacheEncode{storage}), inputs)`取得实际
+carrier描述，不能把逻辑blocked cache描述当作字节输出。
+
+公共Graph invocation由调用方绑定输出storage时，同Graph的K/V输出可绑定同一个真实
+WriteLease的两个不重叠子视图。原LeaseUsePool写票附着该Graph的原Completion，再把
+该writer和Completion交给原F2的`bind_mutable`/`bind_producer`。两份独立Graph则保留
+两套真实writer与Completion。CopyRange使用各自K/V row bytes与实际子视图offset，
+随后将同一CopyBatchUpdate和pending frames交给Direct或Graph receiver，观察最终结果。
+原生Apple/Vulkan Graph使用各自owned Results及原result-source入口，完整调用见夹具。
+
+旧reader仍存活时，首次更新须显式克隆对应尾页；其后只有新行需要编码和复制。
+成功完成后才能从原Update取回目的writer并发布有效前缀；结果仍被持有时遵守原slot
+覆写限制。错误可能在source准入时同步拒绝，也可能由接受后的最终Completion返回；
+失败路径均不得发布新页面，原reader保持有效。CPU的同步拒绝不等于GPU异步失败资格。
 
 | 路线 | 数学与公开入口 | 准备与成本 |
 |---|---|---|
