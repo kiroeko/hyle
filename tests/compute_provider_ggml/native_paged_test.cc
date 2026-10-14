@@ -11,6 +11,7 @@
 #include <cmath>
 #include <cstring>
 #include <cstdio>
+#include <future>
 #include <limits>
 #include <vector>
 
@@ -176,6 +177,69 @@ TEST(GgmlCpuCacheEncode, IndependentInvocationsAndFreshRecoveryAfterOriginalWork
     else{ASSERT_TRUE(status.ok())<<status.message();std::array<std::uint8_t,128> actual;
       ASSERT_TRUE(destination.view().read(std::as_writable_bytes(std::span(actual))).ok());
       for(auto value:actual)EXPECT_EQ(value,float8_oracle(double(values[0])/.5));}
+  }
+  ASSERT_TRUE(context.drain().ok());
+}
+
+TEST(GgmlCpuCacheEncode, ConcurrentOriginalLanesKeepNumericFailureAndBytesIndependent) {
+  auto context=c::Context::create(c::cpu::device(),c::ggml_cpu::provider({.native_threads=2})).value();
+  const auto input=c::TensorDesc::dense(c::DataType::kFloat32,std::array<std::int64_t,2>{2,64}).value();
+  for(auto storage:{c::CacheStorage::q8_0().value(),c::CacheStorage::float8(.5F).value()}) {
+    const auto operation=c::Operation::custom(c::model_ops::CacheEncode{storage});
+    const auto output=c::infer_single_output(operation,std::array{input}).value();
+    std::array<hyle::mem::Buffer,2> sources,destinations;
+    for(unsigned lane=0;lane<2;++lane) {
+      sources[lane]=hyle::mem::Buffer::create(hyle::mem::system_resource(),512,64).value();
+      destinations[lane]=hyle::mem::Buffer::create(hyle::mem::system_resource(),output.required_bytes().value(),64).value();
+    }
+    const std::array prototype_inputs{c::ConstTensorView::create(input,sources[0].view()).value()};
+    const std::array prototype_outputs{c::TensorView::create(output,destinations[0].view()).value()};
+    auto prepared=c::prepare(context,operation,prototype_inputs,prototype_outputs).value();
+    ASSERT_TRUE(prepared.runtime_properties().supports_concurrent_invocations);
+    std::array queues{context.create_queue().value(),context.create_queue().value()};
+    std::array invocations{prepared.create_invocation().value(),prepared.create_invocation().value()};
+    std::promise<void> start;
+    const auto ready=start.get_future().share();
+    const auto run=[&](unsigned lane)->hyle::Status {
+      auto &queue=queues[lane];auto &invocation=invocations[lane];
+      const std::array inputs{c::ConstTensorView::create(input,sources[lane].view()).value()};
+      const std::array outputs{c::TensorView::create(output,destinations[lane].view()).value()};
+      ready.wait();
+      for(unsigned step=0;step<8;++step) {
+        const float value=(lane?-1.F:1.F)*float(step+1)*.25F;
+        std::array<float,128> values;values.fill(value);
+        const bool bad=lane==0 && step==0;
+        if(bad)values[17]=std::numeric_limits<float>::quiet_NaN();
+        HYLE_RETURN_IF_ERROR(sources[lane].view().write(std::as_bytes(std::span(values))));
+        HYLE_ASSIGN_OR_RETURN(auto work,invocation.submit(queue,inputs,outputs));
+        const auto terminal=work.wait();
+        if(bad) {
+          if(!terminal.IsInvalidArgument() || invocation.submit(queue,inputs,outputs))
+            return hyle::Status::Internal("concurrent failed encoder lost its original terminal/retirement");
+          work={};HYLE_ASSIGN_OR_RETURN(invocation,prepared.create_invocation());
+          continue;
+        }
+        HYLE_RETURN_IF_ERROR(terminal);
+        std::vector<std::uint8_t> actual(output.required_bytes().value()),expected(actual.size());
+        HYLE_RETURN_IF_ERROR(destinations[lane].view().read(std::as_writable_bytes(std::span(actual))));
+        if(storage==c::CacheStorage::q8_0().value()) {
+          const auto scale=half_test::encode<hyle::simd::float16_t>(std::abs(value)/127.F).bits;
+          for(std::size_t block=0;block<expected.size()/34;++block) {
+            expected[block*34]=std::uint8_t(scale);expected[block*34+1]=std::uint8_t(scale>>8);
+            std::fill_n(expected.begin()+block*34+2,32,std::uint8_t(lane?-127:127));
+          }
+        } else std::fill(expected.begin(),expected.end(),float8_oracle(double(value)/.5));
+        if(actual!=expected)return hyle::Status::Internal("concurrent encoder lanes shared failure flags or payload bytes");
+      }
+      return queue.drain();
+    };
+    auto first=std::async(std::launch::async,run,0);
+    std::future<hyle::Status> second;
+    try {second=std::async(std::launch::async,run,1);}
+    catch(...) {start.set_value();first.wait();throw;}
+    start.set_value();
+    const auto a=first.get(),b=second.get();
+    ASSERT_TRUE(a.ok())<<a.message();ASSERT_TRUE(b.ok())<<b.message();
   }
   ASSERT_TRUE(context.drain().ok());
 }

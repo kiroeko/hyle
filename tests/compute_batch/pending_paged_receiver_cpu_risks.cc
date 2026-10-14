@@ -2,8 +2,11 @@
 #include <hyle/compute/batch_execution.h>
 #include <hyle/compute/paged_arena.h>
 #include "allocation_fault_fixture.h"
+#include <algorithm>
 #include <array>
 #include <cstdio>
+#include <cstring>
+#include <vector>
 
 namespace {
 namespace c=hyle::compute;
@@ -21,15 +24,21 @@ Status episode(Mode mode){
     const std::array limits{c::ResourceBudgetLimit{resource,32u<<20}};
     HYLE_ASSIGN_OR_RETURN(budget,c::ResourceBudget::create({.limits=limits,.allocator=allocator.ref(),.allow_unattributed=true}));
   }
-  const c::BatchCapacity cap{.query_type=c::DataType::kFloat16,.output_type=c::DataType::kFloat16,.key_storage=c::CacheStorage::plain(c::DataType::kFloat16).value(),.value_storage=c::CacheStorage::plain(c::DataType::kFloat16).value(),.max_requests=1,.max_query_rows=1,.max_kv_rows=2,
+  c::BatchCapacity cap{.query_type=c::DataType::kFloat16,.output_type=c::DataType::kFloat16,.key_storage=c::CacheStorage::plain(c::DataType::kFloat16).value(),.value_storage=c::CacheStorage::plain(c::DataType::kFloat16).value(),.max_requests=1,.max_query_rows=1,.max_kv_rows=2,
       .max_pages=2,.max_page_refs=1,.query_heads=2,.kv_heads=1,.qk_head_dim=64,.value_head_dim=64,.page_size=16};
+#if defined(HYLE_ENCODED_PAGE_RISK)
+  cap.key_storage=c::CacheStorage::q8_0().value();cap.value_storage=cap.key_storage;cap.value_head_dim=128;
+  constexpr auto window=16;
+#else
+  constexpr auto window=-1;
+#endif
   HYLE_ASSIGN_OR_RETURN(auto schema,c::BatchSchema::create(cap));
   const std::array<std::int32_t,2> qptr{0,1};const std::array<std::int32_t,1> ids{1},tail{2},other_tail{1};
   HYLE_ASSIGN_OR_RETURN(auto layout,schema.version({qptr,qptr,ids,tail}));
   HYLE_ASSIGN_OR_RETURN(auto other,schema.version({qptr,qptr,ids,other_tail}));
   HYLE_ASSIGN_OR_RETURN(auto program,c::BatchProgram::prepare(context,schema,
       {.resource=resource,.max_float_workspace_bytes=8u<<20,.max_int_workspace_bytes=4096,
-       .max_invocations=1,.scale=.125F,.allocator=allocator.ref(),.resource_budget=budget}));
+       .max_invocations=1,.scale=.125F,.window_left=window,.allocator=allocator.ref(),.resource_budget=budget}));
   HYLE_ASSIGN_OR_RETURN(auto native,c::BatchInvocation::create(program,queue));
   if(mode==Mode::old_ticket){
     HYLE_ASSIGN_OR_RETURN(auto token,native.prepare_batch(layout));
@@ -69,17 +78,27 @@ Status episode(Mode mode){
   HYLE_ASSIGN_OR_RETURN(auto pool,c::LeasePool::create(resource,4096));
   HYLE_ASSIGN_OR_RETURN(auto q,pool.allocate(256));HYLE_RETURN_IF_ERROR(q.view()->fill(std::byte{0}));
   HYLE_ASSIGN_OR_RETURN(auto query,q.publish());
-  HYLE_ASSIGN_OR_RETURN(auto h,pool.allocate(512));
-  std::array<std::uint16_t,256> words{};
-  for(std::size_t i=128;i<256;++i)words[i]=0x3400;
-  HYLE_RETURN_IF_ERROR(h.view()->write(std::as_bytes(std::span(words))));HYLE_ASSIGN_OR_RETURN(auto host,h.publish());
-  const std::array specs{c::CopyResourceSpec{resource,512},c::CopyResourceSpec{resource,keys.page_bytes()},c::CopyResourceSpec{resource,values.page_bytes()}};
+  const auto key_bytes=2*keys.page_bytes()/cap.page_size,value_bytes=2*values.page_bytes()/cap.page_size;
+  std::vector<std::byte> payload(key_bytes+value_bytes);
+#if defined(HYLE_ENCODED_PAGE_RISK)
+  // Independently constructed valid Q8: zero K and V=.25 exactly per element.
+  for(std::size_t block=0;block<value_bytes/34;++block){
+    payload[key_bytes+block*34+1]=std::byte{0x34};
+    std::fill_n(payload.begin()+key_bytes+block*34+2,32,std::byte{1});
+  }
+#else
+  const std::uint16_t quarter=0x3400;
+  for(std::size_t i=key_bytes;i<payload.size();i+=2)std::memcpy(payload.data()+i,&quarter,2);
+#endif
+  HYLE_ASSIGN_OR_RETURN(auto h,pool.allocate(payload.size()));
+  HYLE_RETURN_IF_ERROR(h.view()->write(payload));HYLE_ASSIGN_OR_RETURN(auto host,h.publish());
+  const std::array specs{c::CopyResourceSpec{resource,payload.size()},c::CopyResourceSpec{resource,keys.page_bytes()},c::CopyResourceSpec{resource,values.page_bytes()}};
   HYLE_ASSIGN_OR_RETURN(auto copies,c::CopyBatchProgram::prepare(context,specs));
   HYLE_ASSIGN_OR_RETURN(auto copy,c::CopyBatchInvocation::create(copies,queue));
   HYLE_RETURN_IF_ERROR(copy.bind_source({0},host));HYLE_RETURN_IF_ERROR(copy.bind_mutable({1},std::move(kw.lease())));
   HYLE_RETURN_IF_ERROR(copy.bind_mutable({2},std::move(vw.lease())));
   const std::array<c::CopyPhase,2> phases{{{}, {.dependency_mask=1}}};
-  const std::array<c::CopyRange,2> ranges{{{{0},{1},{1},0,0,mode==Mode::hole?128u:256u},{{0},{2},{1},256,0,256}}};
+  const std::array<c::CopyRange,2> ranges{{{{0},{1},{1},0,0,mode==Mode::hole?key_bytes/2:key_bytes},{{0},{2},{1},key_bytes,0,value_bytes}}};
   HYLE_RETURN_IF_ERROR(copy.prepare_replay(phases,ranges));HYLE_ASSIGN_OR_RETURN(auto copied,copy.submit());
   HYLE_ASSIGN_OR_RETURN(auto update,c::CopyBatchUpdate::take(std::move(copy),std::move(copied)));
   const std::array<c::PagedPageUpdate,1> ku{{{&kw,{1}}}},vu{{{&vw,{2}}}};
@@ -105,7 +124,7 @@ Status episode(Mode mode){
     return Status::Ok();
   }
   HYLE_RETURN_IF_ERROR(submitted->wait());HYLE_ASSIGN_OR_RETURN(auto output,receiver.output());
-  std::array<std::uint16_t,128> actual{};HYLE_RETURN_IF_ERROR(output.view()->read(std::as_writable_bytes(std::span(actual))));
+  std::vector<std::uint16_t> actual(cap.query_heads*cap.value_head_dim);HYLE_RETURN_IF_ERROR(output.view()->read(std::as_writable_bytes(std::span(actual))));
   for(auto word:actual)HYLE_RETURN_IF_ERROR(require(word==0x3400,"common CPU native output mean oracle differs"));
   HYLE_RETURN_IF_ERROR(require(receiver.prepare_batch(layout).IsUnavailable(),"unrecovered original update allowed common receiver reuse"));
   HYLE_ASSIGN_OR_RETURN(update,receiver.take_update());

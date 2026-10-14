@@ -15,6 +15,7 @@
 #include <chrono>
 #include <condition_variable>
 #include <cstdio>
+#include <cstring>
 #include <mutex>
 
 namespace {
@@ -51,24 +52,34 @@ Status run(Mode mode){
   Gate gate;
   hyle::mem::QuotaAllocator metadata(hyle::mem::system_allocator()),source_metadata(hyle::mem::system_allocator());
   const auto status=[&]()->Status {
-  const c::BatchCapacity cap{.query_type=c::DataType::kFloat16,.output_type=c::DataType::kFloat16,.key_storage=c::CacheStorage::plain(c::DataType::kFloat16).value(),.value_storage=c::CacheStorage::plain(c::DataType::kFloat16).value(),.max_requests=1,.max_query_rows=1,.max_kv_rows=2,
+  c::BatchCapacity cap{.query_type=c::DataType::kFloat16,.output_type=c::DataType::kFloat16,.key_storage=c::CacheStorage::plain(c::DataType::kFloat16).value(),.value_storage=c::CacheStorage::plain(c::DataType::kFloat16).value(),.max_requests=1,.max_query_rows=1,.max_kv_rows=2,
       .max_pages=2,.max_page_refs=1,.query_heads=2,.kv_heads=1,.qk_head_dim=64,.value_head_dim=64,.page_size=16};
+#if defined(HYLE_ENCODED_PAGE_RISK)
+  cap.key_storage=c::CacheStorage::float8(.5F).value();cap.value_storage=c::CacheStorage::float8(2.F).value();cap.value_head_dim=128;
+  constexpr auto window=16;
+#else
+  constexpr auto window=-1;
+#endif
   HYLE_ASSIGN_OR_RETURN(auto schema,c::BatchSchema::create(cap));
   const std::array<std::int32_t,2> ptr{0,1};const std::array<std::int32_t,1> pages{1},tail{2};
   HYLE_ASSIGN_OR_RETURN(auto layout,schema.version({ptr,ptr,pages,tail}));
   HYLE_ASSIGN_OR_RETURN(auto program,c::BatchProgram::prepare(context,schema,
       {.resource=resource,.host_workspace=host.ref(),.max_float_workspace_bytes=8u<<20,
-       .max_int_workspace_bytes=64u<<10,.max_invocations=1,.scale=.125F,.allocator=metadata.get()}));
+       .max_int_workspace_bytes=64u<<10,.max_invocations=1,.scale=.125F,.window_left=window,.allocator=metadata.get()}));
   const auto program_metadata=metadata.used();
   HYLE_ASSIGN_OR_RETURN(auto native,c::BatchInvocation::create(program,queue));
   // Explicitly warm this same original math/controller before stopping its
   // stream. CUDA's first cudaFuncSetAttribute can load a module and synchronize
   // the device; holding a host callback then would deadlock the fixture.
   {
-    HYLE_ASSIGN_OR_RETURN(auto warm,c::LeasePool::create(resource,8704));
+    HYLE_ASSIGN_OR_RETURN(auto key_description,c::batch_cache_description(cap,c::BatchCacheRole::kKey));
+    HYLE_ASSIGN_OR_RETURN(auto value_description,c::batch_cache_description(cap,c::BatchCacheRole::kValue));
+    HYLE_ASSIGN_OR_RETURN(auto key_bytes,key_description.required_bytes());
+    HYLE_ASSIGN_OR_RETURN(auto value_bytes,value_description.required_bytes());
+    HYLE_ASSIGN_OR_RETURN(auto warm,c::LeasePool::create(resource,key_bytes+value_bytes+512));
     HYLE_ASSIGN_OR_RETURN(auto wq,warm.allocate(256));
-    HYLE_ASSIGN_OR_RETURN(auto wk,warm.allocate(4096));
-    HYLE_ASSIGN_OR_RETURN(auto wv,warm.allocate(4096));
+    HYLE_ASSIGN_OR_RETURN(auto wk,warm.allocate(key_bytes));
+    HYLE_ASSIGN_OR_RETURN(auto wv,warm.allocate(value_bytes));
     HYLE_RETURN_IF_ERROR(wq.view()->fill(std::byte{0}));
     HYLE_RETURN_IF_ERROR(wk.view()->fill(std::byte{0}));
     HYLE_RETURN_IF_ERROR(wv.view()->fill(std::byte{0}));
@@ -87,28 +98,36 @@ Status run(Mode mode){
   HYLE_ASSIGN_OR_RETURN(auto pool,c::LeasePool::create(resource,1024));
   HYLE_ASSIGN_OR_RETURN(auto q,pool.allocate(256));HYLE_RETURN_IF_ERROR(q.view()->fill(std::byte{0}));
   HYLE_ASSIGN_OR_RETURN(auto query,q.publish());
+  const auto key_bytes=2*keys.page_bytes()/cap.page_size,value_bytes=2*values.page_bytes()/cap.page_size;
+  std::vector<std::byte> payload(key_bytes+value_bytes);
+#if defined(HYLE_ENCODED_PAGE_RISK)
+  // E4M3FN .125 (0x20), decoded with the original V scale2, is exactly .25.
+  std::fill(payload.begin()+key_bytes,payload.end(),std::byte{0x20});
+#else
+  const std::uint16_t quarter=0x3400;
+  for(std::size_t i=key_bytes;i<payload.size();i+=2)std::memcpy(payload.data()+i,&quarter,2);
+#endif
   HYLE_ASSIGN_OR_RETURN(auto source_pool,c::LeasePool::create(device.ref(),1024));
-  HYLE_ASSIGN_OR_RETURN(auto source,source_pool.allocate(512));
-  HYLE_ASSIGN_OR_RETURN(auto hp,c::LeasePool::create(host.ref(),1024));HYLE_ASSIGN_OR_RETURN(auto h,hp.allocate(512));
-  std::array<std::uint16_t,256> words{};for(std::size_t i=128;i<256;++i)words[i]=0x3400;
-  HYLE_RETURN_IF_ERROR(h.view()->write(std::as_bytes(std::span(words))));HYLE_ASSIGN_OR_RETURN(auto packed,h.publish());
+  HYLE_ASSIGN_OR_RETURN(auto source,source_pool.allocate(payload.size()));
+  HYLE_ASSIGN_OR_RETURN(auto hp,c::LeasePool::create(host.ref(),1024));HYLE_ASSIGN_OR_RETURN(auto h,hp.allocate(payload.size()));
+  HYLE_RETURN_IF_ERROR(h.view()->write(payload));HYLE_ASSIGN_OR_RETURN(auto packed,h.publish());
   HYLE_ASSIGN_OR_RETURN(auto src,n::pointer<std::byte>(source.view().value()));
   HYLE_ASSIGN_OR_RETURN(auto staging,n::pointer<std::byte>(packed.view().value()));
   HYLE_ASSIGN_OR_RETURN(auto guards,c::LeaseUsePool::create());HYLE_ASSIGN_OR_RETURN(auto writing,guards.begin());
   HYLE_RETURN_IF_ERROR(writing.write(source));HYLE_RETURN_IF_ERROR(writing.read(packed));
-  const std::array specs{c::CopyResourceSpec{device.ref(),512},c::CopyResourceSpec{resource,keys.page_bytes()},c::CopyResourceSpec{resource,values.page_bytes()}};
+  const std::array specs{c::CopyResourceSpec{device.ref(),payload.size()},c::CopyResourceSpec{resource,keys.page_bytes()},c::CopyResourceSpec{resource,values.page_bytes()}};
   HYLE_ASSIGN_OR_RETURN(auto copies,c::CopyBatchProgram::prepare(context,specs,{.allocator=source_metadata.get()}));
   HYLE_ASSIGN_OR_RETURN(auto copy,c::CopyBatchInvocation::create(copies,queue));
   struct ReleaseGate final {Gate&gate;~ReleaseGate(){gate.release();}}release_gate{gate};
   HYLE_ASSIGN_OR_RETURN(auto producer,n::submit(queue,[&](cudaStream_t stream)noexcept->Status{
     HYLE_RETURN_IF_ERROR(n::status(cudaLaunchHostFunc(stream,[](void*p){static_cast<Gate*>(p)->wait();},&gate)));
-    return n::status(cudaMemcpyAsync(src,staging,512,cudaMemcpyHostToDevice,stream));
+    return n::status(cudaMemcpyAsync(src,staging,payload.size(),cudaMemcpyHostToDevice,stream));
   }));
   HYLE_RETURN_IF_ERROR(writing.attach(producer));HYLE_RETURN_IF_ERROR(require(gate.await(),"actual CUDA producer missed stream checkpoint"));
   HYLE_RETURN_IF_ERROR(copy.bind_mutable({0},std::move(source)));HYLE_RETURN_IF_ERROR(copy.bind_producer({0},std::move(producer)));
   HYLE_RETURN_IF_ERROR(copy.bind_mutable({1},std::move(kw.lease())));HYLE_RETURN_IF_ERROR(copy.bind_mutable({2},std::move(vw.lease())));
   const std::array<c::CopyPhase,2> phases{{{}, {.dependency_mask=1}}};
-  const std::array<c::CopyRange,2> ranges{{{{0},{1},{1},0,0,256},{{0},{2},{1},256,0,256}}};
+  const std::array<c::CopyRange,2> ranges{{{{0},{1},{1},0,0,key_bytes},{{0},{2},{1},key_bytes,0,value_bytes}}};
   HYLE_RETURN_IF_ERROR(copy.prepare_replay(phases,ranges));HYLE_ASSIGN_OR_RETURN(auto copied,copy.submit());
   HYLE_ASSIGN_OR_RETURN(auto update,c::CopyBatchUpdate::take(std::move(copy),std::move(copied)));
   const std::array<c::PagedPageUpdate,1> ku{{{&kw,{1}}}},vu{{{&vw,{2}}}};

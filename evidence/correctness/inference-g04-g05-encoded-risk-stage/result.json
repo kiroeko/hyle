@@ -1,0 +1,657 @@
+{
+  "kind": "G04_G05_ENCODED_PAGE_FINITE_NATIVE_AND_CPU_HOST_RISKS",
+  "verdict": "PASS_FINITE_ACTUAL_NATIVE_RISK_MODES_AND_CPU_HOST_SANITIZERS",
+  "product_base": "304f7a600; this stage changes test fixtures only; eleven product owners remain AUDITED",
+  "input_sha256": {
+    "tests/compute_batch/native_paged_risk_fixture.h": "16f36791154de98e1d6b07a11f9b72ae748c3dc7290fd3e96a6d16aa0ca0040d",
+    "tests/compute_batch/pending_paged_receiver_cpu_risks.cc": "d92c58a3a547d7fd2d79739a9030f1ded8f362b3fea085a00222f5dd1c9398e5",
+    "tests/compute_batch/pending_paged_receiver_cuda_risks.cc": "6aba4796b1a6414be6f03a96dea24d8bea49efda4e537b7a00562f28ee260113",
+    "tests/compute_provider_ggml/native_paged_test.cc": "51e24235632eb9cec975f57631b85166e1d4e8bcecdf0a55b6757432bc02a0a7"
+  },
+  "qualified": [
+    "Actual Windows CPU-only Q8 D64/128 window16: all nine original pending receiver risk modes PASS; original plain fixture nine modes also PASS; seven public encoder tests including real concurrent Q8/FP8 lanes PASS",
+    "Actual Air Apple Q8 D64/128 window16: six original native modes PASS, including queued metadata failure, cancel, abandon and actual page/query retirement; all52cold controller allocation failures and old-generation reuse after rejected cold prepare",
+    "Actual Air Vulkan Q8 D64/128 window16: six original native modes PASS, including preaccept rejection, accepted actual wait error, unknown poll with retained guards and actual fence retirement; all55cold allocation failures",
+    "Actual Air both routes: exact metadata backing limit, empty output and old result exclusion, foreign resource and swapped different-byte K/V rejection; separate original slot after a native bind failure; original plain domain-check control PASS",
+    "Actual WSL CPU-only ASan with detect_leaks1, UBSan with float-cast-overflow, and TSan: each10public encoder/encoded F2/Graph tests plus nine Q8 receiver risk modes PASS",
+    "Two real CPU threads/queues using independent original invocations of one prepared Q8/FP8 artifact: isolated lane0 NaN failure, original failed invocation rejection and fresh recovery; both lanes independently check their complete bytes",
+    "Actual RTX4070 CUDA FP8 Kscale.5/Vscale2 D64/128 window16: five original receiver source/unknown/late failure/abandon/foreign CPU queue modes PASS, retaining actual producer and original native slot through retirement"
+  ],
+  "history": "Original Air Apple attempt1 FAIL retained: fixture wrongly reused a controller after native bind failure. Fix uses a separate original slot. ASan1 normal execution PASS predates test-only exception-safe start gate; final ASan2 and TSan/UBSan bind the repaired gate. TSan1 exits66 before main with unexpected memory mapping; TSan2 uses original validated per-process setarch x86_64 -R, no global kernel changes. Original native hooks and product error contracts unchanged.",
+  "instrumentation": "Actual compile commands bind sanitizer flags to ggml-quants, HYLE CPU encoder, both public positive consumer TUs and pending receiver fixture. CUDA source-only private observation hooks are enabled only in the original backend host TU, not shipping SDK; original numeric UBSan negative control remains separately sealed.",
+  "not_proven": [
+    "New-domain Apple/Vulkan/CUDA full host sanitizer matrix",
+    "GPU shader/driver sanitizer",
+    "Native private pool byte bounds",
+    "New-domain installed static/shared and independent header qualification",
+    "Immutable candidate P1 or complete G04/G05"
+  ],
+  "runs": [
+    {
+      "label": "windows-cpu-1",
+      "state": "TERMINAL_PASS",
+      "max_jobs": 4,
+      "identity": {
+        "host": "KIRO-WORKSTATIO",
+        "compiler": "14.50.35717"
+      },
+      "scope": "Actual CPU Q8 D64/128 window16 pending receiver nine risk modes; same original plain fixture control; no GPU/SDK/P1 claim",
+      "stages": [
+        {
+          "stage": "configure",
+          "command": [
+            "cmake",
+            "-S",
+            "C:\\public\\project-hyle\\hyle",
+            "-B",
+            "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 20.40700000000652,
+          "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\risk\\cpu-1\\configure.log"
+        },
+        {
+          "stage": "compile",
+          "command": [
+            "cmake",
+            "--build",
+            "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev",
+            "--target",
+            "g04_encoded_pending_risks",
+            "g04_plain_pending_control",
+            "--parallel",
+            "4"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 23.5,
+          "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\risk\\cpu-1\\compile.log"
+        },
+        {
+          "stage": "g04_encoded_pending_risks",
+          "command": [
+            "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\g04_encoded_pending_risks.exe"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 0.21799999999348074,
+          "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\risk\\cpu-1\\g04_encoded_pending_risks.log"
+        },
+        {
+          "stage": "g04_plain_pending_control",
+          "command": [
+            "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\g04_plain_pending_control.exe"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 0.25,
+          "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\risk\\cpu-1\\g04_plain_pending_control.log"
+        }
+      ],
+      "cumulative_seconds": 44.375
+    },
+    {
+      "label": "windows-encoder-9",
+      "state": "TERMINAL_PASS",
+      "identity": {
+        "host": "KIRO-WORKSTATIO",
+        "compiler": "14.50.35717",
+        "routes": "cpu",
+        "source_pin": "check actual derived ggml after configure"
+      },
+      "scope": "CPU-only actual encoder/F2/Direct/Graph source plus bounded native CPU numerical tests; no SDK/san/P1 verdict",
+      "max_jobs": 4,
+      "stages": [
+        {
+          "stage": "compile",
+          "command": [
+            "cmake",
+            "--build",
+            "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev",
+            "--target",
+            "g04_g05_encoded_common_pages",
+            "--parallel",
+            "4"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 5.390999999974156,
+          "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\common-encoded\\cpu-9\\compile.log"
+        },
+        {
+          "stage": "tests",
+          "command": [
+            "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\g04_g05_encoded_common_pages.exe",
+            "--gtest_output=xml:C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\common-encoded\\cpu-9\\tests.xml",
+            "--gtest_filter=GgmlCpuCacheEncode.*"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 0.26500000001396984,
+          "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\common-encoded\\cpu-9\\tests.log"
+        }
+      ],
+      "cumulative_seconds": 5.655999999988126
+    },
+    {
+      "label": "air-apple-1",
+      "state": "TERMINAL_FAIL",
+      "max_jobs": 4,
+      "identity": {
+        "model": "Mac16,12",
+        "arch": "arm64",
+        "os": "ProductName:\t\tmacOS\nProductVersion:\t\t27.0.1\nBuildVersion:\t\t26A434",
+        "compiler": "Apple clang version 21.0.0 (clang-2100.3.34.2)\nTarget: arm64-apple-darwin27.0.0\nThread model: posix\nInstalledDir: /Library/Developer/CommandLineTools/usr/bin",
+        "memory": "17179869184"
+      },
+      "stages": [
+        {
+          "stage": "configure",
+          "command": [
+            "/opt/homebrew/bin/cmake",
+            "-S",
+            "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-parent",
+            "-B",
+            "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-build"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 6.170114333,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g04-g05-apple-risks/configure-1.log"
+        },
+        {
+          "stage": "compile",
+          "command": [
+            "/opt/homebrew/bin/cmake",
+            "--build",
+            "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-build",
+            "--target",
+            "g04_encoded_native_risks",
+            "g04_plain_native_control",
+            "--parallel",
+            "4"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 6.215005957999999,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g04-g05-apple-risks/compile-1.log"
+        },
+        {
+          "stage": "encoded-six-modes",
+          "command": [
+            "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-build/g04_encoded_native_risks"
+          ],
+          "exit_code": 1,
+          "elapsed_seconds": 3.0580411660000006,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g04-g05-apple-risks/encoded-six-modes-1.log"
+        }
+      ],
+      "cumulative_seconds": 15.443161457,
+      "scope": "Actual Air Q8 D64/128 window16 native metadata/OOM/cancel/unknown/retirement six modes using original injected native boundary; plain domain-check control; no SDK/san/P1 claim"
+    },
+    {
+      "label": "air-apple-2",
+      "state": "TERMINAL_PASS",
+      "max_jobs": 4,
+      "identity": {
+        "model": "Mac16,12",
+        "arch": "arm64",
+        "os": "ProductName:\t\tmacOS\nProductVersion:\t\t27.0.1\nBuildVersion:\t\t26A434",
+        "compiler": "Apple clang version 21.0.0 (clang-2100.3.34.2)\nTarget: arm64-apple-darwin27.0.0\nThread model: posix\nInstalledDir: /Library/Developer/CommandLineTools/usr/bin",
+        "memory": "17179869184"
+      },
+      "stages": [
+        {
+          "stage": "configure",
+          "command": [
+            "/opt/homebrew/bin/cmake",
+            "-S",
+            "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-parent",
+            "-B",
+            "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-build"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 4.118010166,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g04-g05-apple-risks/configure-2.log"
+        },
+        {
+          "stage": "compile",
+          "command": [
+            "/opt/homebrew/bin/cmake",
+            "--build",
+            "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-build",
+            "--target",
+            "g04_encoded_native_risks",
+            "g04_plain_native_control",
+            "--parallel",
+            "4"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 6.175188625,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g04-g05-apple-risks/compile-2.log"
+        },
+        {
+          "stage": "encoded-six-modes",
+          "command": [
+            "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-build/g04_encoded_native_risks"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 1.034637,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g04-g05-apple-risks/encoded-six-modes-2.log"
+        },
+        {
+          "stage": "plain-domain-control",
+          "command": [
+            "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-build/g04_plain_native_control",
+            "5"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 0.4402987500000002,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g04-g05-apple-risks/plain-domain-control-2.log"
+        }
+      ],
+      "cumulative_seconds": 11.768134541,
+      "scope": "Actual Air Q8 D64/128 window16 native metadata/OOM/cancel/unknown/retirement six modes using original injected native boundary; plain domain-check control; no SDK/san/P1 claim"
+    },
+    {
+      "label": "air-vulkan-1",
+      "state": "TERMINAL_PASS",
+      "max_jobs": 4,
+      "identity": {
+        "model": "Mac16,12",
+        "arch": "arm64",
+        "os": "ProductName:\t\tmacOS\nProductVersion:\t\t27.0.1\nBuildVersion:\t\t26A434",
+        "compiler": "Apple clang version 21.0.0 (clang-2100.3.34.2)\nTarget: arm64-apple-darwin27.0.0\nThread model: posix\nInstalledDir: /Library/Developer/CommandLineTools/usr/bin",
+        "memory": "17179869184"
+      },
+      "stages": [
+        {
+          "stage": "configure",
+          "command": [
+            "/opt/homebrew/bin/cmake",
+            "-S",
+            "/Users/kiro/hyle-scratch/compute-unified/a-cpu-vulkan/selected-graph/source-parent",
+            "-B",
+            "/Users/kiro/hyle-scratch/compute-unified/a-cpu-vulkan/selected-graph/source-build"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 19.802100875,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g04-g05-vulkan-risks/configure-1.log"
+        },
+        {
+          "stage": "compile",
+          "command": [
+            "/opt/homebrew/bin/cmake",
+            "--build",
+            "/Users/kiro/hyle-scratch/compute-unified/a-cpu-vulkan/selected-graph/source-build",
+            "--target",
+            "g04_encoded_native_risks",
+            "g04_plain_native_control",
+            "--parallel",
+            "4"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 6.117037916000001,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g04-g05-vulkan-risks/compile-1.log"
+        },
+        {
+          "stage": "encoded-six-modes",
+          "command": [
+            "/Users/kiro/hyle-scratch/compute-unified/a-cpu-vulkan/selected-graph/source-build/g04_encoded_native_risks"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 3.0510302499999966,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g04-g05-vulkan-risks/encoded-six-modes-1.log"
+        },
+        {
+          "stage": "plain-domain-control",
+          "command": [
+            "/Users/kiro/hyle-scratch/compute-unified/a-cpu-vulkan/selected-graph/source-build/g04_plain_native_control",
+            "5"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 0.4532007500000006,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g04-g05-vulkan-risks/plain-domain-control-1.log"
+        }
+      ],
+      "cumulative_seconds": 29.423369791,
+      "scope": "Actual Air Q8 D64/128 window16 native metadata/OOM/cancel/unknown/retirement six modes using original injected native boundary; plain domain-check control; no SDK/san/P1 claim"
+    },
+    {
+      "label": "host-asan-1",
+      "state": "TERMINAL_PASS",
+      "mode": "asan",
+      "max_jobs": 4,
+      "stages": [
+        {
+          "stage": "configure",
+          "command": [
+            "cmake",
+            "-S",
+            "/home/kiro/hyle-f1/sanitizers/source-03242e7723cb",
+            "-B",
+            "/home/kiro/hyle-f1/sanitizers/asan-03242e7723cb",
+            "-DCMAKE_PROJECT_INCLUDE=/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/risk/host-asan-project.cmake"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 22.411648931000002,
+          "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/risk/host-asan-1/configure.log"
+        },
+        {
+          "stage": "compile",
+          "command": [
+            "cmake",
+            "--build",
+            "/home/kiro/hyle-f1/sanitizers/asan-03242e7723cb",
+            "--target",
+            "g04_encoded_host_tests",
+            "g04_encoded_host_risks",
+            "--parallel",
+            "4"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 92.667513133,
+          "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/risk/host-asan-1/compile.log"
+        },
+        {
+          "stage": "tests",
+          "command": [
+            "/home/kiro/hyle-f1/sanitizers/asan-03242e7723cb/bin/g04_encoded_host_tests",
+            "--gtest_filter=GgmlCpuCacheEncode.*:EncodedCommonPages.*",
+            "--gtest_output=xml:/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/risk/host-asan-1/tests.xml"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 0.7044176189999973,
+          "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/risk/host-asan-1/tests.log"
+        },
+        {
+          "stage": "nine-risk-modes",
+          "command": [
+            "/home/kiro/hyle-f1/sanitizers/asan-03242e7723cb/bin/g04_encoded_host_risks"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 0.4214825300000058,
+          "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/risk/host-asan-1/nine-risk-modes.log"
+        }
+      ],
+      "cumulative_seconds": 116.205062213,
+      "identity": {
+        "host": "Linux kiro-workstation 6.18.54.1-microsoft-standard-WSL2 #1 SMP PREEMPT_DYNAMIC Tue Oct  6 19:13:07 UTC 2026 x86_64 x86_64 x86_64 GNU/Linux",
+        "compiler": "g++-14 (Ubuntu 14.2.0-4ubuntu2~24.04.1) 14.2.0"
+      },
+      "scope": "CPU-only actual Q8/FP8 encoder including two concurrent original lanes and isolated failure; original public encoded F2/Graph; Q8 D64/128 pending receiver nine risk modes. No GPU/SDK/P1 claim."
+    },
+    {
+      "label": "host-asan-2",
+      "state": "TERMINAL_PASS",
+      "mode": "asan",
+      "max_jobs": 4,
+      "stages": [
+        {
+          "stage": "compile",
+          "command": [
+            "cmake",
+            "--build",
+            "/home/kiro/hyle-f1/sanitizers/asan-03242e7723cb",
+            "--target",
+            "g04_encoded_host_tests",
+            "g04_encoded_host_risks",
+            "--parallel",
+            "4"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 22.121700319999974,
+          "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/risk/host-asan-2/compile.log"
+        },
+        {
+          "stage": "tests",
+          "command": [
+            "/home/kiro/hyle-f1/sanitizers/asan-03242e7723cb/bin/g04_encoded_host_tests",
+            "--gtest_filter=GgmlCpuCacheEncode.*:EncodedCommonPages.*",
+            "--gtest_output=xml:/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/risk/host-asan-2/tests.xml"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 0.6141865569999823,
+          "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/risk/host-asan-2/tests.log"
+        },
+        {
+          "stage": "nine-risk-modes",
+          "command": [
+            "/home/kiro/hyle-f1/sanitizers/asan-03242e7723cb/bin/g04_encoded_host_risks"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 0.41375995399999965,
+          "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/risk/host-asan-2/nine-risk-modes.log"
+        }
+      ],
+      "cumulative_seconds": 23.149646830999956,
+      "identity": {
+        "host": "Linux kiro-workstation 6.18.54.1-microsoft-standard-WSL2 #1 SMP PREEMPT_DYNAMIC Tue Oct  6 19:13:07 UTC 2026 x86_64 x86_64 x86_64 GNU/Linux",
+        "compiler": "g++-14 (Ubuntu 14.2.0-4ubuntu2~24.04.1) 14.2.0"
+      },
+      "scope": "CPU-only actual Q8/FP8 encoder including two concurrent original lanes and isolated failure; original public encoded F2/Graph; Q8 D64/128 pending receiver nine risk modes. No GPU/SDK/P1 claim."
+    },
+    {
+      "label": "host-tsan-1",
+      "state": "TERMINAL_FAIL",
+      "mode": "tsan",
+      "max_jobs": 4,
+      "stages": [
+        {
+          "stage": "configure",
+          "command": [
+            "cmake",
+            "-S",
+            "/home/kiro/hyle-f1/sanitizers/source-03242e7723cb",
+            "-B",
+            "/home/kiro/hyle-f1/sanitizers/tsan-03242e7723cb",
+            "-DCMAKE_PROJECT_INCLUDE=/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/risk/host-tsan-project.cmake"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 18.89618027999998,
+          "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/risk/host-tsan-1/configure.log"
+        },
+        {
+          "stage": "compile",
+          "command": [
+            "cmake",
+            "--build",
+            "/home/kiro/hyle-f1/sanitizers/tsan-03242e7723cb",
+            "--target",
+            "g04_encoded_host_tests",
+            "g04_encoded_host_risks",
+            "--parallel",
+            "4"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 54.835046189999986,
+          "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/risk/host-tsan-1/compile.log"
+        },
+        {
+          "stage": "tests",
+          "command": [
+            "/home/kiro/hyle-f1/sanitizers/tsan-03242e7723cb/bin/g04_encoded_host_tests",
+            "--gtest_filter=GgmlCpuCacheEncode.*:EncodedCommonPages.*",
+            "--gtest_output=xml:/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/risk/host-tsan-1/tests.xml"
+          ],
+          "exit_code": 66,
+          "elapsed_seconds": 0.01421993899998597,
+          "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/risk/host-tsan-1/tests.log"
+        }
+      ],
+      "cumulative_seconds": 73.74544640899995,
+      "identity": {
+        "host": "Linux kiro-workstation 6.18.54.1-microsoft-standard-WSL2 #1 SMP PREEMPT_DYNAMIC Tue Oct  6 19:13:07 UTC 2026 x86_64 x86_64 x86_64 GNU/Linux",
+        "compiler": "g++-14 (Ubuntu 14.2.0-4ubuntu2~24.04.1) 14.2.0"
+      },
+      "scope": "CPU-only actual Q8/FP8 encoder including two concurrent original lanes and isolated failure; original public encoded F2/Graph; Q8 D64/128 pending receiver nine risk modes. No GPU/SDK/P1 claim."
+    },
+    {
+      "label": "host-tsan-2",
+      "state": "TERMINAL_PASS",
+      "mode": "tsan",
+      "max_jobs": 4,
+      "stages": [
+        {
+          "stage": "compile",
+          "command": [
+            "cmake",
+            "--build",
+            "/home/kiro/hyle-f1/sanitizers/tsan-03242e7723cb",
+            "--target",
+            "g04_encoded_host_tests",
+            "g04_encoded_host_risks",
+            "--parallel",
+            "4"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 1.3045662830000424,
+          "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/risk/host-tsan-2/compile.log"
+        },
+        {
+          "stage": "tests",
+          "command": [
+            "setarch",
+            "x86_64",
+            "-R",
+            "/home/kiro/hyle-f1/sanitizers/tsan-03242e7723cb/bin/g04_encoded_host_tests",
+            "--gtest_filter=GgmlCpuCacheEncode.*:EncodedCommonPages.*",
+            "--gtest_output=xml:/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/risk/host-tsan-2/tests.xml"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 0.9815337109999973,
+          "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/risk/host-tsan-2/tests.log"
+        },
+        {
+          "stage": "nine-risk-modes",
+          "command": [
+            "setarch",
+            "x86_64",
+            "-R",
+            "/home/kiro/hyle-f1/sanitizers/tsan-03242e7723cb/bin/g04_encoded_host_risks"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 0.3398419960000183,
+          "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/risk/host-tsan-2/nine-risk-modes.log"
+        }
+      ],
+      "cumulative_seconds": 2.625941990000058,
+      "identity": {
+        "host": "Linux kiro-workstation 6.18.54.1-microsoft-standard-WSL2 #1 SMP PREEMPT_DYNAMIC Tue Oct  6 19:13:07 UTC 2026 x86_64 x86_64 x86_64 GNU/Linux",
+        "compiler": "g++-14 (Ubuntu 14.2.0-4ubuntu2~24.04.1) 14.2.0"
+      },
+      "scope": "CPU-only actual Q8/FP8 encoder including two concurrent original lanes and isolated failure; original public encoded F2/Graph; Q8 D64/128 pending receiver nine risk modes. No GPU/SDK/P1 claim."
+    },
+    {
+      "label": "host-ubsan-1",
+      "state": "TERMINAL_PASS",
+      "mode": "ubsan",
+      "max_jobs": 4,
+      "stages": [
+        {
+          "stage": "configure",
+          "command": [
+            "cmake",
+            "-S",
+            "/home/kiro/hyle-f1/sanitizers/source-03242e7723cb",
+            "-B",
+            "/home/kiro/hyle-f1/sanitizers/ubsan-03242e7723cb",
+            "-DCMAKE_PROJECT_INCLUDE=/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/risk/host-ubsan-project.cmake"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 19.039513435999993,
+          "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/risk/host-ubsan-1/configure.log"
+        },
+        {
+          "stage": "compile",
+          "command": [
+            "cmake",
+            "--build",
+            "/home/kiro/hyle-f1/sanitizers/ubsan-03242e7723cb",
+            "--target",
+            "g04_encoded_host_tests",
+            "g04_encoded_host_risks",
+            "--parallel",
+            "4"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 28.115517158999978,
+          "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/risk/host-ubsan-1/compile.log"
+        },
+        {
+          "stage": "tests",
+          "command": [
+            "/home/kiro/hyle-f1/sanitizers/ubsan-03242e7723cb/bin/g04_encoded_host_tests",
+            "--gtest_filter=GgmlCpuCacheEncode.*:EncodedCommonPages.*",
+            "--gtest_output=xml:/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/risk/host-ubsan-1/tests.xml"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 0.2649470419999602,
+          "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/risk/host-ubsan-1/tests.log"
+        },
+        {
+          "stage": "nine-risk-modes",
+          "command": [
+            "/home/kiro/hyle-f1/sanitizers/ubsan-03242e7723cb/bin/g04_encoded_host_risks"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 0.29367745499996545,
+          "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/risk/host-ubsan-1/nine-risk-modes.log"
+        }
+      ],
+      "cumulative_seconds": 47.7136550919999,
+      "identity": {
+        "host": "Linux kiro-workstation 6.18.54.1-microsoft-standard-WSL2 #1 SMP PREEMPT_DYNAMIC Tue Oct  6 19:13:07 UTC 2026 x86_64 x86_64 x86_64 GNU/Linux",
+        "compiler": "g++-14 (Ubuntu 14.2.0-4ubuntu2~24.04.1) 14.2.0"
+      },
+      "scope": "CPU-only actual Q8/FP8 encoder including two concurrent original lanes and isolated failure; original public encoded F2/Graph; Q8 D64/128 pending receiver nine risk modes. No GPU/SDK/P1 claim."
+    },
+    {
+      "label": "cuda-1",
+      "state": "TERMINAL_PASS",
+      "identity": {
+        "host": "Linux kiro-workstation 6.18.54.1-microsoft-standard-WSL2 #1 SMP PREEMPT_DYNAMIC Tue Oct  6 19:13:07 UTC 2026 x86_64 x86_64 x86_64 GNU/Linux",
+        "compiler": "g++-14 (Ubuntu 14.2.0-4ubuntu2~24.04.1) 14.2.0\nCopyright (C) 2024 Free Software Foundation, Inc.\nThis is free software; see the source for copying conditions.  There is NO\nwarranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.",
+        "cuda": "nvcc: NVIDIA (R) Cuda compiler driver\nCopyright (c) 2005-2026 NVIDIA Corporation\nBuilt on Tue_Jun_09_02:43:40_PM_PDT_2026\nCuda compilation tools, release 13.3, V13.3.73\nBuild cuda_13.3.r13.3/compiler.38244171_0",
+        "gpu": "NVIDIA GeForce RTX 4070, 617.14, 12282 MiB, 2187 MiB, 3 %"
+      },
+      "max_jobs": 4,
+      "stages": [
+        {
+          "stage": "configure",
+          "command": [
+            "cmake",
+            "-S",
+            "/root/hyle-scratch/compute-unified/source-7a7b4c3b",
+            "-B",
+            "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/shared-sdk-build",
+            "-DCMAKE_PROJECT_INCLUDE=/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/risk/cuda-risk-project.cmake"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 47.25403819000002,
+          "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/risk/cuda-1/configure.log"
+        },
+        {
+          "stage": "compile",
+          "command": [
+            "cmake",
+            "--build",
+            "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/shared-sdk-build",
+            "--target",
+            "g04_encoded_cuda_risks",
+            "--parallel",
+            "4"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 24.245022465000034,
+          "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/risk/cuda-1/compile.log"
+        },
+        {
+          "stage": "five-risk-modes",
+          "command": [
+            "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/shared-sdk-build/bin/g04_encoded_cuda_risks"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 0.29555064900000616,
+          "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/risk/cuda-1/five-risk-modes.log"
+        }
+      ],
+      "cumulative_seconds": 71.79461130400006,
+      "scope": "Actual RTX4070 FP8 Kscale.5/Vscale2 D64/128 window16 original pending receiver five source/unknown/abandon/foreign-queue risk modes. Existing observation hooks enabled in one backend host TU only; no shipping SDK/GPU sanitizer/P1 claim."
+    }
+  ],
+  "cumulative_seconds": 441.90002962798803
+}

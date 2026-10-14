@@ -642,3 +642,57 @@ PASS：F16/BF16/F32三输入、14组幅值及F32最大合法值，完整34-byte 
 原参考规则与边界。十一owner仍AUDITED；OOM/budget/cancel/unknown/concurrency/retirement
 新增域风险、source/static/shared/逐头与冻结candidate后的P1继续待验。本批所有重型程序
 已经terminal，没有残留构建；全goal粗估40%，仅G03整项CLOSED，其余状态不回填。
+
+### 新增域风险批的固定消费形状
+
+沿原预声明风险门，复用原故障夹具并以测试专用编译选择启用Q8 K/V、Dqk64/Dv128与
+window16；原plain fixture默认不变，不增加产品故障API。CPU原pending receiver九种模式
+检查成功、初始化hole、foreign layout、逐cold allocation OOM、source容量、closed、旧ticket、
+原resource budget与abandon；按照各自真实encoded row/page bytes生成copy范围与output。
+实际Air原native page六种模式覆盖metadata拒绝、cancel/abandon或accepted wait/unknown、
+逐cold allocation、empty/foreign/旧结果。仅换数据域与独立byte几何，原native实际边界hook
+不改。CPU public encoder与编码F2/Graph消费者的ASan/TSan沿现有缓存host树补齐；已通过的
+UBSan/float-cast不重复。shader/driver、LSan及private pool资格不由host instrumentation代签。
+本批不重跑原G03全矩阵/P1；新增域风险仍待实际运行后裁决。
+
+CUDA同批沿原五种receiver source风险模式，换成FP8 Kscale=.5/Vscale=2、D64/128与window16，
+warm/native root、dirty producer与两个copy范围均按各自描述/row bytes。原实际event observation
+hook只在验证树的一个backend host TU启用；不扩写hook，不由该构建代签shipping SDK/GPU
+sanitizer。两原CPU encoder invocation另以两线程/两queue同时运行Q8/FP8，检查一侧NaN失败
+不污染另一侧的flags/bytes，失败原invocation按原合同重建。启动gate保证线程准备或第二次
+async启动失败时不会把另一线程永久留在等待中。
+
+### 新增域有限风险阶段通过
+
+[编码页风险阶段证据](../../../../evidence/correctness/inference-g04-g05-encoded-risk-stage/result.json)
+保留11次实际运行、两个原FAIL、全部输入版本/原日志/实际编译命令，累计441.900秒。
+本阶段仅修改测试夹具，产品仍为304f7a600的实现，十一owner仍AUDITED。
+
+Windows CPU-only新Q8形状的九种pending receiver模式及原plain九模式全部PASS；最终七项
+encoder测试也通过，包含两实际线程/两queue、同prepared artifact下两原invocation的Q8/FP8
+字节与NaN失败隔离、失败invocation重建。原source/dirty范围与output按K/V独立几何计算。
+
+实际Air Mac16,12，Apple和Vulkan各六种native page风险模式PASS；逐个注入cold controller
+52/55个allocator失败点无泄漏，拒绝cold prepare仍保留原generation并可运行旧recipe。
+Apple实际queued prefix/cancel/abandon、Vulkan实际metadata/native拒绝、accepted wait错误和
+unknown poll均检查query/page guards及实际native/fence退役，失败后所有准确页面可重新获取。
+empty输出、旧result排他、foreign resource、不同字节K/V交换拒绝及原plain domain control
+通过。Apple attempt1原FAIL是新断言误要求native bind失败后继续复用该slot；原合同允许
+退役，故改用独立原controller检查交换拒绝，正常slot仍完成。未改产品错误/恢复边界。
+
+实际WSL GCC14 CPU-only，ASan（detect_leaks=1）、UBSan（另含float-cast-overflow）、TSan
+各10项encoder/编码F2/Direct/Graph及九种新域receiver模式全部PASS。实际compile command
+核定ggml-quants、CPU encoder、两public positive TU与receiver夹具的instrumentation。
+ASan1在普通运行通过后，独立只读复核发现测试barrier的准备/第二async启动异常可能死等；
+改为主线程建原对象和有异常回收的单向promise gate，最终ASan2/TSan2/UBSan1均绑定新版本。
+TSan1在main前unexpected memory mapping退出66，原FAIL保留；沿原已验证的进程级
+setarch x86_64 -R重跑通过，不修改全局kernel配置或压制race报告。
+
+实际RTX4070/CUDA13.3.73，FP8 D64/128独立scale与window16的原五种source风险全部PASS：
+known/unknown/late source错误、abandon、foreign CPU QueueSequence拒绝。真实producer guard、
+原native slot、source metadata均在实际完成后退役，不以成功suffix掩盖源错误。原观测hook
+仅验证树backend host TU启用；构建日志无CUDA kernel重编，未据此签shipping SDK资格。
+
+有限只读差分复核无剩余MUST。新域各GPU路线适用host sanitizer、source/static/shared与
+逐头、不可变candidate后的P1仍待验；不签driver/shader sanitizer或private pool已知字节，
+原G03与已验CPU数值负对照不重跑。当前所有重型程序terminal，无残留构建/模型程序。
