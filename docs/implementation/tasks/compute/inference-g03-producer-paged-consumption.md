@@ -130,3 +130,9 @@ GP01/GP02固定产品candidate `b42832de3ddda21bdc3e98ad4cc87e73622cbba4`：API�
 常态形状停止变化；只两机制、原输入生命周期与完整自然调用，原直接F3和source风险
 通过。进入CANDIDATE4完成适用san/relocated static/shared/逐头，不重跑不变数学P1。
 这一候选仍不签整个G03的pending producer链、其它准入域或goal0/10。
+
+[六组host san](../../../../evidence/correctness/inference-g03-dirty-page-host-sanitizers/README.md)
+已全部PASS：两route各ASan/UBSan/TSan，原final-counter/Apple Metal显式验证模型保原
+独立反证；host-only/noLSan/shader/driver/private限制保。首上传遗漏CPU consumer的
+configure FAIL4.016s保原，input9后同树续跑，预算未重置。四relocated SDK/头继续本
+candidate资格，不改产品/原数学或缩小整个G03。
