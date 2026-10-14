@@ -729,7 +729,7 @@
       "version": "hyle-mlx-upstream-bf16-conversion-v1",
       "vendored": {
         "path": "third_party/mlx_cast",
-        "tree_sha256": "41cf9dbec731752232c833f0580958938f53e27e2be2c24c3f58ac8bf44f162e"
+        "tree_sha256": "f968d40af3c0809f9eb8c1ec5aa5a91815d61d2512801976746c4a8516d8fbed"
       },
       "license": {
         "expression": "MIT",
@@ -742,7 +742,7 @@
           {
             "root": "hyle",
             "path": "third_party/mlx_cast/NOTICE.md",
-            "sha256": "5264b20865193428209580c05d29f0750e8260d81c49913e3c2d5aa3e7600d12"
+            "sha256": "04578e88a26d08fb6128feb9f60f36d76f2f149845cc816b2b189704af9b2d5b"
           }
         ]
       }

@@ -17,6 +17,44 @@ namespace mx = mlx::core;
 namespace {
 constexpr auto kMode = Float8ScaleMode::kFloat32Block128;
 
+Result<mx::array> encode_cache(const model_ops::CacheEncode &encode,
+                             const mx::array &input, const TensorDesc &output,
+                             mx::Stream stream) {
+  if (encode.storage != CacheStorage::q8_0().value())
+    return std::unexpected(Status::Unimplemented("Apple cache encoder admits Q8_0 storage"));
+  // Work only on the supplied new rows. Packing uses the same block32
+  // absmax/127, unrounded inverse and ties-away rules as ggml's reference.
+  const auto rows = static_cast<int>(output.dimensions()[0]);
+  const auto row_bytes = static_cast<int>(output.dimensions()[1]);
+  auto values = mx::reshape(mx::astype(input, mx::float32, stream), {-1, 32}, stream);
+  auto finite = mx::less_equal(mx::abs(values, stream),
+      mx::array(std::numeric_limits<float>::max()), stream);
+  auto safe = mx::where(finite, values, mx::array(0.F), stream);
+  auto scale = mx::divide(mx::max(mx::abs(safe, stream), -1, true, stream),
+      mx::array(127.F), stream);
+  auto valid_scale = mx::less_equal(scale, mx::array(65504.F), stream);
+  scale = mx::where(valid_scale, scale, mx::array(0.F), stream);
+  auto inverse = mx::where(mx::equal(scale, mx::array(0.F), stream), mx::array(0.F),
+      mx::divide(mx::array(1.F), scale, stream), stream);
+  auto normalized = mx::multiply(safe, inverse, stream);
+  auto magnitude = mx::abs(normalized, stream);
+  auto base = mx::floor(magnitude, stream);
+  // Adding .5 first can round nextafter(.5,0) to one in F32. Preserve the
+  // fractional comparison required by ggml roundf, including negative ties.
+  auto increment = mx::astype(mx::greater_equal(mx::subtract(magnitude, base, stream),
+      mx::array(.5F), stream), mx::float32, stream);
+  auto rounded = mx::multiply(mx::sign(normalized, stream), mx::add(base, increment, stream), stream);
+  auto codes = mx::astype(mx::clip(rounded, mx::array(-127.F), mx::array(127.F), stream),
+      mx::int8, stream);
+  auto scales = mx::view(mx::astype(scale, mx::float16, stream), mx::uint8, stream);
+  auto packed = mx::reshape(mx::concatenate({scales, mx::view(codes, mx::uint8, stream)},
+      -1, stream), {rows, row_bytes}, stream);
+  auto valid = mx::logical_and(mx::all(finite, false, stream),
+      mx::all(valid_scale, false, stream), stream);
+  auto status = mx::where(valid, mx::array(0), mx::array(kInvalidNumericInput), stream);
+  return with_device_status(std::move(packed), std::move(status), stream);
+}
+
 mx::array fp4_roundtrip(const mx::array &input, mx::Stream s) {
   auto shape = input.shape();
   shape.back() /= 32;
@@ -188,7 +226,8 @@ mx::array block_dot(const Quantized &a, const Quantized &b, mx::Stream s) {
 
 bool is_mlx_float_operation(const Operation &operation,
                             std::span<const TensorDesc> inputs) noexcept {
-  return operation.custom_as<model_ops::Float8BlockLinear>() ||
+  return operation.custom_as<model_ops::CacheEncode>() ||
+         operation.custom_as<model_ops::Float8BlockLinear>() ||
          operation.custom_as<model_ops::Float8WeightDecode>() ||
          operation.custom_as<model_ops::GroupedFloat8Linear>() ||
          operation.custom_as<model_ops::GroupedFloat4Linear>() ||
@@ -238,6 +277,10 @@ Result<std::vector<mx::array>> lower_mlx_float(
       HYLE_ASSIGN_OR_RETURN(auto bytes, descriptions[i].required_bytes());
       if (bytes > static_cast<std::size_t>((std::numeric_limits<int>::max)()))
         return std::unexpected(Status::OutOfRange("Apple FP8 input exceeds native index range"));
+    }
+    if (const auto encode = operation.custom_as<model_ops::CacheEncode>()) {
+      HYLE_ASSIGN_OR_RETURN(auto result, encode_cache(*encode, inputs[0], output, s));
+      return std::vector{std::move(result)};
     }
     const auto type = output.data_type() == DataType::kBFloat16 ? mx::bfloat16 : mx::float32;
     if (const auto roundtrip = operation.custom_as<model_ops::BlockQuantizationRoundtrip>()) {

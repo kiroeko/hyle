@@ -41,3 +41,14 @@ using the existing exact-patch materializer on a build-local copy. Shared cache
 originals are never changed. Edited files carry before/after hashes;
 upgrades require re-audit. Source, static and shared consumers receive the same
 patched runtime, original MIT license and this notice.
+
+The finite HYLE cache adapter additionally supports Q8_0 block32/34-byte
+rows, separate QK/VO depths and causal inclusive left windows. The original
+vector/two-pass/steel loaders decode inline half scales and signed codes in
+F32, without materializing the historical K/V arrays. Encoded queries and
+outputs use bounded active-row F32 conversion; two-pass partials stay F32.
+Steel uses independent BD/BV tiles, with a finite smaller D256 F32 tile to
+respect Metal threadgroup memory limits. Plain coupled/unbounded NAX and GQA
+paths remain original. Window loops restrict the effective row range; cache
+keys include encoding/paging/window function constants. These adapters retain
+the original MLX runtime, queues, MMA/softmax and completion ownership.

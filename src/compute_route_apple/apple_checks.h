@@ -5,6 +5,7 @@
 namespace hyle::compute::apple::detail {
 inline constexpr std::int32_t kIndexOutOfRange = 1;
 inline constexpr std::int32_t kScanOverflow = 2;
+inline constexpr std::int32_t kInvalidNumericInput = 3;
 
 // Registers a lazy GPU status only while a managed native region is traced.
 // The returned native dependency preserves reachability without copying data.

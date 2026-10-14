@@ -8,7 +8,7 @@
 ## 选择执行路线
 
 G04/G05 正在实施；CPU新域已完成Windows source数学检查，CUDA新域已完成Linux/SM89
-source数学检查，Apple/Vulkan新域、三交付与完整风险/性能资格尚未签发；进度见
+source数学检查，Apple新域已完成Air source数学检查，Vulkan新域、三交付与完整风险/性能资格尚未签发；进度见
 [活动卡](../implementation/tasks/compute/inference-g04-g05-cache-attention-domain.md)。
 普通旧 plain 旅程使用显式的新字段，库不保旧签名转发。schema/descriptor接受一种形状，
 不代表所选native核已支持；当前未接通的组合在准备时返回Unimplemented。
@@ -70,6 +70,16 @@ K/V均为FP8，分别固定scale，Q/output同F16或BF16，几何与窗口合同
 dispatch；不展开整套历史KV。实际RTX4070/SM89的12项测试见
 [CUDA有限source证据](../../evidence/correctness/inference-g04-g05-cuda-encoding-math-stage/result.json)。
 它尚不签发Windows CUDA、增量F2/Graph组合、SDK、宿主风险或P1资格。
+
+Apple原MLX入口现可编码Q8_0新行，并在paged/ragged attention中直接读取U8压缩carrier。
+Q/output为F16或BF16，支持上述有限几何、窗口与full noncausal；空输出仍按Dv给出形状。
+为避免合法Q8值先转half溢出，编码缓存路径只将活跃Q转换为F32，在原vector/二pass/steel
+tile中解码和累加，最后转输出类型。活跃Q/output转换费用为O(Q*Hq*(Dqk+Dv))，二pass
+还有原F32 partial；没有整历史KV解码。窗口核限制实际扫描范围，plain同维无界路径仍复用
+原核。输入NaN/Inf或Q8 scale溢出在接受提交后的原Results返回InvalidArgument。
+实际MacBook Air的10项测试见
+[Apple有限source证据](../../evidence/correctness/inference-g04-g05-apple-encoding-math-stage/result.json)；
+新域增量F2/Graph、风险、SDK和P1尚未签发。
 
 | 路线 | 数学与公开入口 | 准备与成本 |
 |---|---|---|

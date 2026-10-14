@@ -358,3 +358,33 @@ describe后按encoder/attention检查route；numeric测试新增接受提交标�
 本阶段只签Linux RTX4070/SM89、原shared shipping源码factor资格；增量F2/Graph、
 新域风险、static/shared SDK、Windows实际CUDA、Apple/Vulkan和P1仍UNPROVEN，
 十owner保持AUDITED，G04/G05整个项目未关闭。
+
+CE05 Apple批内数值承载：Q8合法编码可以从65504解出65532，不能先用half tile暂存；
+原二pass未归一partial也必须F32。因此Q8私有入口只将活跃Q转换为F32，原vector/二pass/
+steel以F32 tile直接解block32，结果最后转换到公开F16/BF16。额外费用为O(Q*Hq*(Dqk+Dv))
+的活跃Q/output转换和原F32partial，native私有metadata照实UNKNOWN；没有全历史KV展开。
+不同Dv在原steel拆开BD/BV，窗口按原effective row predicate；原plain同D/unbounded NAX
+和GQA特化保留。无新executor/queue/controller，没有增加普通Program/array状态。
+新dirty encoder借原MLX F32数组节点、原with_device_status/Results，block34 U8 output走原F2。
+全部属于既定CE05有限数学与成本承载，当前仅draft，实际Air身份已核，尚未签数学PASS。
+
+CE05实际Air source阶段现已通过，
+[阶段证据](../../../../evidence/correctness/inference-g04-g05-apple-encoding-math-stage/result.json)
+保存10项最终测试、九次attempt、全部原FAIL/elapsed和canonical输入SHA；实查Mac16,12、
+arm64、macOS27.0.1、AppleClang21。Q8 encoder三种输入、zero block、signed ties与
+±nextafter(.5)临界、NaN/Inf/有限F32 scale overflow均已实际验证。真实paged/ragged Q8、
+F16/BF16 Q/output、有限四组Dqk/Dv、window -1/0/15/16、full noncausal Q>KV、
+D256 Q1/65长prefill、逻辑274/物理256共享重排页与独立double oracle通过。
+
+数值反例：8192行±65504经Q8真实编码后解码超half范围，Q1二pass和Q65原steel均产生
+正确有限抵消；解码和未归一partial不提前缩到half。D256 F32 tile固定WM2/BQ16/BK8，
+静态threadgroup28928 bytes。不同Dv的paged/ragged零域返回[0,Hq,Dv]。长8192-row
+plain/Q8二pass依次切window -1/0/16/-1通过；pipeline hash含paged/q8/window常量，
+有效循环按窗口和原stride对齐限制，连续plain指针同时移动相应起点。原plain同维无界
+F16/BF16、D64/128/256、paged/ragged直接数学也完成一次同产品回归。
+
+原失败保留：fixture未取CacheStorage Result值、GTest模板逗号；U8 View缺原dtype输出映射；
+paged fixture漏host metadata预算与空tail记录；NOTICE更新后漏同步license digest。
+readonly反证还纠正roundf临界、二pass缓存键与独立Dv空形状。所有修复在既定owner/有限FIX
+内，实际共享库源码目标、原MLX编译/运行，无全局测试/模型/P1；未变原域没有重复性能验证。
+当前无活跃重型任务。十owner仍AUDITED；Vulkan、增量F2/Graph、新域风险/SDK/P1仍未验收。
