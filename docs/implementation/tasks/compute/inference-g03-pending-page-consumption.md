@@ -405,7 +405,7 @@ API/寿命/成本审计，保原 G02 未决门。按用户要求一批实现、�
 不再按单 helper 切施工卡或重复已证明门。原十项 goal、失败/UNKNOWN保留；本批后
 整体粗估约22%，完整 G 项验收仍0/10，不由receiver三交付代签完整G03。
 
-## Graph 与 late output 集中实施批（GL01–GL04，SCOPED）
+## Graph 与 late output 集中实施批（GL01–GL04，AUDITED）
 
 baseline `19413efdd0427cd21f4431dfa7561291e9034bde`。本批只补本主卡尚未完成的
 pending producer → 原 F2 → 原 Graph 页读取 → 原数值结果，不重新验原数学、PF、RC、BC。
@@ -448,3 +448,8 @@ native C++ 编译、WSL CUDA 既有 kernel artifact、Air 实际 Apple/Vulkan �
 验证，失败只定向修复；不逐函数另建施工卡。适用但未完成的 gate 保 UNPROVEN，不写 PASS。
 七问沿本卡既有依赖/FFI/交付边界；新增公开形状须落使用指南，固定原 lifetime/owner，
 工具无缺陷不扩工具。有限 GL01–04 全部实现并验后才候选；新架构事实先改本节审计。
+
+审计裁决：GL01–04 作为一个有限实施批固定；所有既有 source/数学/ready controller 为 BORROW，
+只补实际 pending 组合和 late backing 生命周期。拒绝第二 executor/result slot、whole-arena
+权限和同步 ready 冒充。原 G02 candidate 5ce0bed8/1cd08939 与未决 gate 保历史证据，
+不能用本轮状态回退擦除。source anchors 与上述当前入口逐项回映后，允许本批产品实现。

@@ -276,10 +276,9 @@
     },
     {
       "module": "graph",
-      "state": "CANDIDATE",
-      "record": "docs/implementation/tasks/graph/inference-g02-multi-queue-batch.md",
-      "summary": "G02 MQ-LP-01 CANDIDATE5ce: bounded owned exact-read groups through original native prefix retirement; Windows8 and WSL three san8 PASS. Detail delivery/native consumers and original26d Windows gates remain; native page math/binding and G06 not signed.",
-      "candidate": "5ce0bed8acb54d67cb70423134b73a6afea421dd"
+      "state": "AUDITED",
+      "record": "docs/implementation/tasks/compute/inference-g03-pending-page-consumption.md",
+      "summary": "G03 GL01–GL04 finite batch AUDITED at19413efdd: original Graph ordered-sequence/exact-permission/aggregate seam, cold common pending coordinator, native joint pending and typed late result sources. Borrow original controllers/queues/result slots. Original G02 ready evidence/unresolved Windows gates and all failures/costs retained; no whole G item signed."
     },
     {
       "module": "container_concurrent",
@@ -645,15 +644,15 @@
     },
     {
       "module": "graph_route_cpu_apple",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/inference-g03-pending-page-consumption.md",
-      "summary": "G03 GL01–GL04 batch SCOPED at19413efdd: new pending-page/update consumption and late native output fact; original ready G02 CLOSED scope and all failures/costs retained. No product changes authorized until AUDITED."
+      "summary": "G03 GL01–GL04 finite batch AUDITED at19413efdd: original Graph ordered-sequence/exact-permission/aggregate seam, cold common pending coordinator, native joint pending and typed late result sources. Borrow original controllers/queues/result slots. Original G02 ready evidence/unresolved Windows gates and all failures/costs retained; no whole G item signed."
     },
     {
       "module": "graph_route_cpu_vulkan",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/inference-g03-pending-page-consumption.md",
-      "summary": "G03 GL01–GL04 batch SCOPED at19413efdd: new pending-page/update consumption and late native output fact; original ready G02 CLOSED scope and all failures/costs retained. No product changes authorized until AUDITED."
+      "summary": "G03 GL01–GL04 finite batch AUDITED at19413efdd: original Graph ordered-sequence/exact-permission/aggregate seam, cold common pending coordinator, native joint pending and typed late result sources. Borrow original controllers/queues/result slots. Original G02 ready evidence/unresolved Windows gates and all failures/costs retained; no whole G item signed."
     },
     {
       "module": "compute_stream",
@@ -685,10 +684,9 @@
     },
     {
       "module": "graph_batch",
-      "state": "CANDIDATE",
-      "record": "docs/implementation/tasks/graph/inference-g02-native-paged-composition.md",
-      "summary": "G02 native node/cold owned binding finite domain DELIVERED at1cd: actual joint64-step math/risks, six modeled hostsan, four graph SDKs/headers and Windows link PASS. Module remains CANDIDATE because original common MQ/CPU round preserves unproven Windows CUDA/Vulkan native correctness gates; do not sign aggregate CLOSED or whole G02.",
-      "candidate": "1cd0893979e1672a0f6fac98b783a6a3bfcabbca"
+      "state": "AUDITED",
+      "record": "docs/implementation/tasks/compute/inference-g03-pending-page-consumption.md",
+      "summary": "G03 GL01–GL04 finite batch AUDITED at19413efdd: original Graph ordered-sequence/exact-permission/aggregate seam, cold common pending coordinator, native joint pending and typed late result sources. Borrow original controllers/queues/result slots. Original G02 ready evidence/unresolved Windows gates and all failures/costs retained; no whole G item signed."
     }
   ]
 }
