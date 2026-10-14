@@ -36,9 +36,9 @@ double decode(std::uint16_t bits,bool bf){
 struct Drain final{hyle::sched::Scheduler& scheduler;~Drain(){scheduler.drain();}};
 Status exercise(c::Context& cpu,n::Context& native,n::MemoryResource& device,
     n::MemoryResource& staging,unsigned depth,bool bf,bool causal){
-  const c::BatchCapacity cap{.data_type=bf?c::DataType::kBFloat16:c::DataType::kFloat16,
+  const c::BatchCapacity cap{.query_type=bf?c::DataType::kBFloat16:c::DataType::kFloat16,.output_type=bf?c::DataType::kBFloat16:c::DataType::kFloat16,.key_storage=c::CacheStorage::plain(bf?c::DataType::kBFloat16:c::DataType::kFloat16).value(),.value_storage=c::CacheStorage::plain(bf?c::DataType::kBFloat16:c::DataType::kFloat16).value(),
       .max_requests=3,.max_query_rows=24,.max_kv_rows=128,.max_pages=4,.max_page_refs=8,
-      .query_heads=8,.kv_heads=2,.head_dim=depth};
+      .query_heads=8,.kv_heads=2,.qk_head_dim=depth,.value_head_dim=depth};
   HYLE_ASSIGN_OR_RETURN(auto schema,c::BatchSchema::create(cap));
   const std::array<std::int32_t,4> qp{0,1,18,18},next_qp{0,17,18,18},single_qp{0,18,18,18},kp{0,5,7,7};
   const std::array<std::int32_t,7> ids{3,1,3,1,3,1,0};const std::array<std::int32_t,3> tails{15,7,0};
@@ -46,8 +46,8 @@ Status exercise(c::Context& cpu,n::Context& native,n::MemoryResource& device,
   HYLE_ASSIGN_OR_RETURN(auto next,schema.version({next_qp,kp,ids,tails}));
   HYLE_ASSIGN_OR_RETURN(auto single,schema.version({single_qp,kp,ids,tails}));
   HYLE_ASSIGN_OR_RETURN(auto recipe,c::NativePagedBatchProgram::prepare(schema,{.max_host_metadata_bytes=32,.scale=1.F/std::sqrt(float(depth)),.causal=causal}));
-  HYLE_ASSIGN_OR_RETURN(auto keys,c::PagedArena::create(schema,device.ref(),{.max_backing_bytes=1<<20}));
-  HYLE_ASSIGN_OR_RETURN(auto values,c::PagedArena::create(schema,device.ref(),{.max_backing_bytes=1<<20}));
+  HYLE_ASSIGN_OR_RETURN(auto keys,c::PagedArena::create(schema,c::BatchCacheRole::kKey,device.ref(),{.max_backing_bytes=1<<20}));
+  HYLE_ASSIGN_OR_RETURN(auto values,c::PagedArena::create(schema,c::BatchCacheRole::kValue,device.ref(),{.max_backing_bytes=1<<20}));
   std::vector<float> query(24*8*depth);
   for(std::size_t i=0;i<query.size();++i)query[i]=float(int(i%13)-6)*.03125F;
   std::vector<std::uint16_t> k(64*2*depth),v(k.size());
@@ -73,7 +73,7 @@ Status exercise(c::Context& cpu,n::Context& native,n::MemoryResource& device,
   HYLE_ASSIGN_OR_RETURN(auto qw,pool.allocate(query.size()*4,64));HYLE_RETURN_IF_ERROR(qw.view()->write(std::as_bytes(std::span(query))));HYLE_ASSIGN_OR_RETURN(auto source,qw.publish());
   HYLE_ASSIGN_OR_RETURN(auto builder,g::GraphBuilder::create());HYLE_ASSIGN_OR_RETURN(auto q,builder.input(qdesc));
   HYLE_ASSIGN_OR_RETURN(auto key,builder.input(recipe.descriptions()[1]));HYLE_ASSIGN_OR_RETURN(auto value,builder.input(recipe.descriptions()[2]));
-  HYLE_ASSIGN_OR_RETURN(auto abs,builder.add(c::Unary{c::UnaryKind::kAbs},q));HYLE_ASSIGN_OR_RETURN(auto converted,builder.add(c::Cast{cap.data_type},abs));
+  HYLE_ASSIGN_OR_RETURN(auto abs,builder.add(c::Unary{c::UnaryKind::kAbs},q));HYLE_ASSIGN_OR_RETURN(auto converted,builder.add(c::Cast{cap.query_type},abs));
   HYLE_ASSIGN_OR_RETURN(auto descriptor,g::batch::native_paged_attention(recipe,layout));
   const std::array ports{converted,key,value};HYLE_ASSIGN_OR_RETURN(auto page_node,builder.add_node(c::Operation::custom(descriptor),ports));
   HYLE_ASSIGN_OR_RETURN(auto attended,builder.result(page_node));HYLE_ASSIGN_OR_RETURN(auto widened,builder.add(c::Cast{c::DataType::kFloat32},attended));

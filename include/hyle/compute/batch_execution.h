@@ -13,6 +13,7 @@ struct BatchProgramOptions final {
   std::uint32_t max_invocations = 2;
   float scale = 1.0F;
   bool causal = true;
+  std::int32_t window_left = -1;
   mem::AllocatorRef allocator = mem::system_allocator();
   ResourceBudget resource_budget{};
 };

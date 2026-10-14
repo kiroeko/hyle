@@ -12,7 +12,7 @@
 
 namespace {
 namespace c=hyle::compute;
-c::BatchCapacity capacity(){return {.max_requests=3,.max_query_rows=8,.max_kv_rows=128,.max_pages=8,.max_page_refs=8,.query_heads=4,.kv_heads=2,.head_dim=64,.page_size=16};}
+c::BatchCapacity capacity(){return {.max_requests=3,.max_query_rows=8,.max_kv_rows=128,.max_pages=8,.max_page_refs=8,.query_heads=4,.kv_heads=2,.qk_head_dim=64,.value_head_dim=64,.page_size=16};}
 struct Layout {
   std::array<std::int32_t,3> q{0,1,3},kv{0,2,3},pages{2,0,3};std::array<std::int32_t,2> tails{3,10};
   c::HostBatchLayout host()const{return {q,kv,pages,tails};}
@@ -59,8 +59,8 @@ TEST(BatchLayout, RaggedUsesPackedRowsAndRejectsPagedSideTables){
   EXPECT_FALSE(schema.version({input.q,kv,input.pages,input.tails}));
 }
 TEST(BatchLayout, DtypeGqaIntegerAndPhysicalStrideOverflowAreRejected){
-  auto input=capacity();input.data_type=c::DataType::kFloat32;EXPECT_FALSE(c::BatchSchema::create(input));input=capacity();input.query_heads=3;EXPECT_FALSE(c::BatchSchema::create(input));input=capacity();input.max_query_rows=UINT32_MAX;EXPECT_TRUE(c::BatchSchema::create(input).error().IsOutOfRange());
-  input=capacity();input.kv_heads=input.query_heads=1u<<30;input.head_dim=input.page_size=1u<<30;EXPECT_TRUE(c::BatchSchema::create(input).error().IsOutOfRange());input=capacity();input.max_pages=0;EXPECT_FALSE(c::BatchSchema::create(input));
+  auto input=capacity();input.query_type=c::DataType::kFloat32;EXPECT_FALSE(c::BatchSchema::create(input));input=capacity();input.query_heads=3;EXPECT_FALSE(c::BatchSchema::create(input));input=capacity();input.max_query_rows=UINT32_MAX;EXPECT_TRUE(c::BatchSchema::create(input).error().IsOutOfRange());
+  input=capacity();input.kv_heads=input.query_heads=1u<<30;input.qk_head_dim=input.page_size=1u<<30;EXPECT_TRUE(c::BatchSchema::create(input).error().IsOutOfRange());input=capacity();input.max_pages=0;EXPECT_FALSE(c::BatchSchema::create(input));
 }
 TEST(BatchLayout, QuotaFailureDoesNotConsumeCallerSpansOrExistingVersion){
   hyle::mem::QuotaAllocator quota(hyle::mem::system_allocator(),1024u*1024u);{
@@ -79,7 +79,7 @@ TEST(BatchLayout, ConcurrentColdVersionsHaveDistinctGenerationAndOwnedData){
   for(auto&t:threads)t.join();std::sort(ids.begin(),ids.end());EXPECT_EQ(std::unique(ids.begin(),ids.end()),ids.end());EXPECT_GT(ids[0],0u);
 }
 TEST(BatchLayout, TypedAttentionPortShapesAndOpaqueMetadataEncodingAreChecked){
-  auto cap=capacity();auto schema=c::BatchSchema::create(cap).value();auto q=c::TensorDesc::dense(cap.data_type,std::array<std::int64_t,3>{8,4,64}).value();auto kv=c::TensorDesc::dense(cap.data_type,std::array<std::int64_t,4>{8,16,2,64}).value();
+  auto cap=capacity();auto schema=c::BatchSchema::create(cap).value();auto q=c::TensorDesc::dense(cap.query_type,std::array<std::int64_t,3>{8,4,64}).value();auto kv=c::TensorDesc::dense(cap.query_type,std::array<std::int64_t,4>{8,16,2,64}).value();
   std::array inputs{q,kv,kv,schema.metadata_description().value()};std::array<c::TensorDesc,1> outputs;
   auto op=c::Operation::custom(c::PagedAttention{cap});EXPECT_TRUE(c::PagedAttention{cap}.infer_output_descriptions(inputs,outputs).ok());EXPECT_EQ(outputs[0],q);EXPECT_TRUE(op.custom_as<c::PagedAttention>());EXPECT_FALSE(op.custom_as<c::RaggedAttention>());
   inputs[3]=q;EXPECT_FALSE(c::PagedAttention{cap}.infer_output_descriptions(inputs,outputs).ok());
@@ -118,5 +118,49 @@ TEST(BatchLayout, SeparatePageBlocksKeepReadUseAndFreePageWriteIndependent){
   // the whole contiguous arena demanded by the current mathematical port.
   auto description=c::TensorDesc::dense(c::DataType::kFloat16,std::array<std::int64_t,4>{2,2,2,64}).value();EXPECT_FALSE(used.tensor(description));EXPECT_FALSE(next.tensor(description));
   std::array<std::byte,1> bytes;ASSERT_TRUE(used.view()->subview(0,1)->read(bytes).ok());EXPECT_EQ(bytes[0],std::byte{7});ASSERT_TRUE(next.view()->subview(0,1)->read(bytes).ok());EXPECT_EQ(bytes[0],std::byte{9});
+}
+
+TEST(BatchLayout, EncodedKeysValuesAndOutputHaveIndependentTruthfulGeometry){
+  auto cap=capacity();cap.qk_head_dim=64;cap.value_head_dim=128;
+  cap.output_type=c::DataType::kBFloat16;
+  cap.key_storage=cap.value_storage=c::CacheStorage::q8_0().value();
+  auto schema=c::BatchSchema::create(cap);ASSERT_TRUE(schema);
+  auto query=c::batch_query_description(cap);auto keys=c::batch_cache_description(cap,c::BatchCacheRole::kKey);
+  auto values=c::batch_cache_description(cap,c::BatchCacheRole::kValue);
+  auto output=c::batch_output_description(cap,cap.max_query_rows);
+  ASSERT_TRUE(query);ASSERT_TRUE(keys);ASSERT_TRUE(values);ASSERT_TRUE(output);
+  EXPECT_EQ(keys->block_axis(),3u);EXPECT_EQ(values->block_axis(),3u);
+  EXPECT_EQ(keys->required_bytes().value(),17408u);EXPECT_EQ(values->required_bytes().value(),34816u);
+  EXPECT_EQ(output->data_type(),c::DataType::kBFloat16);EXPECT_EQ(output->required_bytes().value(),8192u);
+  std::array inputs{*query,*keys,*values,schema->metadata_description().value()};
+  std::array<c::TensorDesc,1> actual;
+  EXPECT_TRUE(c::PagedAttention{cap}.infer_output_descriptions(inputs,actual).ok());EXPECT_EQ(actual[0],*output);
+  inputs[2]=*keys;EXPECT_FALSE(c::PagedAttention{cap}.infer_output_descriptions(inputs,actual).ok());
+  EXPECT_TRUE(c::batch_output_description(cap,cap.max_query_rows+1).error().IsOutOfRange());
+}
+
+TEST(BatchLayout, StructuralNoncausalQueryLengthDoesNotMintCausalQualification){
+  auto cap=capacity();cap.max_query_rows=2;cap.max_kv_rows=1;
+  auto schema=c::BatchSchema::create(cap);ASSERT_TRUE(schema);
+  const std::array<std::int32_t,2> q{0,2},k{0,1};const std::array<std::int32_t,1> ids{3},tail{1};
+  auto layout=schema->version({q,k,ids,tail});ASSERT_TRUE(layout);
+  EXPECT_TRUE(c::validate_batch_attention_layout(*layout,false).ok());
+  EXPECT_TRUE(c::validate_batch_attention_layout(*layout,true).IsInvalidArgument());
+  EXPECT_TRUE(c::validate_batch_attention_options(false,0).IsInvalidArgument());
+  EXPECT_TRUE(c::validate_batch_attention_options(true,-2).IsInvalidArgument());
+  EXPECT_TRUE(c::validate_batch_attention_options(true,0).ok());
+  cap.storage=c::BatchStorage::kRagged;cap.max_pages=cap.max_page_refs=0;cap.page_size=1;
+  schema=c::BatchSchema::create(cap);ASSERT_TRUE(schema);
+  layout=schema->version({q,k,{},{}});ASSERT_TRUE(layout);
+  EXPECT_TRUE(c::validate_batch_attention_layout(*layout,false).ok());
+  EXPECT_FALSE(c::validate_batch_attention_layout(*layout,true).ok());
+}
+
+TEST(BatchLayout, CacheBlockAndValueDepthOverflowRefuseBeforeVersionCreation){
+  auto cap=capacity();cap.key_storage=c::CacheStorage::q8_0().value();cap.qk_head_dim=33;
+  EXPECT_TRUE(c::BatchSchema::create(cap).error().IsInvalidArgument());
+  cap=capacity();cap.value_head_dim=UINT32_MAX;
+  EXPECT_TRUE(c::BatchSchema::create(cap).error().IsOutOfRange());
+  cap=capacity();cap.value_head_dim=0;EXPECT_FALSE(c::BatchSchema::create(cap));
 }
 } // namespace

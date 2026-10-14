@@ -21,8 +21,8 @@ Status episode(Mode mode){
     const std::array limits{c::ResourceBudgetLimit{resource,32u<<20}};
     HYLE_ASSIGN_OR_RETURN(budget,c::ResourceBudget::create({.limits=limits,.allocator=allocator.ref(),.allow_unattributed=true}));
   }
-  const c::BatchCapacity cap{.data_type=c::DataType::kFloat16,.max_requests=1,.max_query_rows=1,.max_kv_rows=2,
-      .max_pages=2,.max_page_refs=1,.query_heads=2,.kv_heads=1,.head_dim=64,.page_size=16};
+  const c::BatchCapacity cap{.query_type=c::DataType::kFloat16,.output_type=c::DataType::kFloat16,.key_storage=c::CacheStorage::plain(c::DataType::kFloat16).value(),.value_storage=c::CacheStorage::plain(c::DataType::kFloat16).value(),.max_requests=1,.max_query_rows=1,.max_kv_rows=2,
+      .max_pages=2,.max_page_refs=1,.query_heads=2,.kv_heads=1,.qk_head_dim=64,.value_head_dim=64,.page_size=16};
   HYLE_ASSIGN_OR_RETURN(auto schema,c::BatchSchema::create(cap));
   const std::array<std::int32_t,2> qptr{0,1};const std::array<std::int32_t,1> ids{1},tail{2},other_tail{1};
   HYLE_ASSIGN_OR_RETURN(auto layout,schema.version({qptr,qptr,ids,tail}));
@@ -63,8 +63,8 @@ Status episode(Mode mode){
   }
   HYLE_ASSIGN_OR_RETURN(auto receiver,c::PagedBatchReceiver::create(std::move(native),mode==Mode::capacity?1:2));
   HYLE_RETURN_IF_ERROR(receiver.prepare_batch(layout));
-  HYLE_ASSIGN_OR_RETURN(auto keys,c::PagedArena::create(schema,resource,{.max_backing_bytes=8192}));
-  HYLE_ASSIGN_OR_RETURN(auto values,c::PagedArena::create(schema,resource,{.max_backing_bytes=8192}));
+  HYLE_ASSIGN_OR_RETURN(auto keys,c::PagedArena::create(schema,c::BatchCacheRole::kKey,resource,{.max_backing_bytes=8192}));
+  HYLE_ASSIGN_OR_RETURN(auto values,c::PagedArena::create(schema,c::BatchCacheRole::kValue,resource,{.max_backing_bytes=8192}));
   HYLE_ASSIGN_OR_RETURN(auto kw,keys.acquire(1));HYLE_ASSIGN_OR_RETURN(auto vw,values.acquire(1));
   HYLE_ASSIGN_OR_RETURN(auto pool,c::LeasePool::create(resource,4096));
   HYLE_ASSIGN_OR_RETURN(auto q,pool.allocate(256));HYLE_RETURN_IF_ERROR(q.view()->fill(std::byte{0}));

@@ -29,9 +29,9 @@ Status run(){
   struct Drain{c::Queue& queue;~Drain(){queue.drain().IgnoreError();}}drain{queue};
   HYLE_ASSIGN_OR_RETURN(auto environment,n::environment(context));
   const c::BatchCapacity cap{.max_requests=2,.max_query_rows=2,.max_kv_rows=32,
-      .max_pages=2,.max_page_refs=2,.query_heads=8,.kv_heads=2,.head_dim=256};
+      .max_pages=2,.max_page_refs=2,.query_heads=8,.kv_heads=2,.qk_head_dim=256,.value_head_dim=256};
   HYLE_ASSIGN_OR_RETURN(auto schema,c::BatchSchema::create(cap));
-  HYLE_ASSIGN_OR_RETURN(auto arena,c::PagedArena::create(schema,device.ref(),{.max_backing_bytes=128*1024}));
+  HYLE_ASSIGN_OR_RETURN(auto arena,c::PagedArena::create(schema,c::BatchCacheRole::kKey,device.ref(),{.max_backing_bytes=128*1024}));
   const auto page_bytes=arena.page_bytes();constexpr std::size_t row_bytes=1024;
   HYLE_ASSIGN_OR_RETURN(auto source_pool,c::LeasePool::create(host.ref(),2*page_bytes+4096));
   HYLE_ASSIGN_OR_RETURN(auto destination_pool,c::LeasePool::create(host.ref(),page_bytes+512));

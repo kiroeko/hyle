@@ -36,7 +36,7 @@ inline Status episode(unsigned mode,bool graph){
   {
     HYLE_ASSIGN_OR_RETURN(auto context,a::Context::create());HYLE_ASSIGN_OR_RETURN(auto memory,a::MemoryResource::create(context));HYLE_ASSIGN_OR_RETURN(auto staging,a::MemoryResource::create(context));
     auto gate=std::make_shared<Gate>();struct Release{std::shared_ptr<Gate>gate;a::Context&context;~Release(){gate->release();context.close().IgnoreError();}}release{gate,context};
-    c::BatchCapacity cap{.storage=c::BatchStorage::kRagged,.max_requests=1,.max_query_rows=2,.max_kv_rows=2,.max_pages=0,.max_page_refs=0,.query_heads=2,.kv_heads=2,.head_dim=64,.page_size=1};
+    c::BatchCapacity cap{.storage=c::BatchStorage::kRagged,.max_requests=1,.max_query_rows=2,.max_kv_rows=2,.max_pages=0,.max_page_refs=0,.query_heads=2,.kv_heads=2,.qk_head_dim=64,.value_head_dim=64,.page_size=1};
     HYLE_ASSIGN_OR_RETURN(auto schema,c::BatchSchema::create(cap));const std::array<std::int32_t,2> qptr{0,1},kvptr{0,2};HYLE_ASSIGN_OR_RETURN(auto layout,schema.version({qptr,kvptr,{},{}}));
     HYLE_ASSIGN_OR_RETURN(auto recipe,c::MaterializedBatchProgram::prepare(schema,{.max_kv_per_request=2,.max_host_metadata_bytes=1u<<20,.max_logical_intermediate_bytes=1u<<20,.scale=.125f}));
     HYLE_ASSIGN_OR_RETURN(auto pool,c::LeasePool::create(memory.ref(),4096));std::array<c::ReadLease,3> ready;

@@ -167,7 +167,7 @@ inline Status domain_checks(c::Context& cpu,n::Context& native,n::MemoryResource
   HYLE_RETURN_IF_ERROR(require(slot.bind(two.key,c::PagedArenaRead{}).IsInvalidArgument(),"empty frame accepted for live page episode"));
   HYLE_RETURN_IF_ERROR(require(slot.bind(two.query,data.key_frame).IsFailedPrecondition(),"query port accepted a page frame"));
   HYLE_RETURN_IF_ERROR(require(!slot.bind(two.key,data.recipe.descriptions()[1],data.key_reads[0]).ok(),"raw lease widened arena permission"));
-  HYLE_ASSIGN_OR_RETURN(auto other,c::PagedArena::create(data.schema,hyle::mem::system_resource(),{.max_backing_bytes=1<<20}));
+  HYLE_ASSIGN_OR_RETURN(auto other,c::PagedArena::create(data.schema,c::BatchCacheRole::kKey,hyle::mem::system_resource(),{.max_backing_bytes=1<<20}));
   std::array<c::ReadLease,2> other_reads;
   for(unsigned i=0;i<2;++i){HYLE_ASSIGN_OR_RETURN(auto writer,other.acquire(i?2:0));HYLE_RETURN_IF_ERROR(writer.lease().view()->fill(std::byte{0}));HYLE_ASSIGN_OR_RETURN(other_reads[i],writer.publish(data.schema.capacity().page_size));}
   HYLE_ASSIGN_OR_RETURN(auto wrong_resource,other.read(data.layout,other_reads));

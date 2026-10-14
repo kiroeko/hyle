@@ -13,6 +13,7 @@ struct NativePagedBatchOptions final {
   std::size_t max_host_metadata_bytes = 0;
   float scale = 1.0F;
   bool causal = true;
+  std::int32_t window_left = -1;
   mem::AllocatorRef allocator = mem::system_allocator();
   ResourceBudget resource_budget{};
 };
@@ -54,6 +55,7 @@ public:
   HYLE_COMPUTE_BATCH_API BatchSchema schema() const noexcept;
   HYLE_COMPUTE_BATCH_API float scale() const noexcept;
   HYLE_COMPUTE_BATCH_API bool causal() const noexcept;
+  HYLE_COMPUTE_BATCH_API std::int32_t window_left() const noexcept;
   HYLE_COMPUTE_BATCH_API std::span<const TensorDesc> descriptions() const noexcept;
   HYLE_COMPUTE_BATCH_API NativePagedBatchCosts costs() const noexcept;
   // Exact owned layout identity/generation; caller spans are never retained.

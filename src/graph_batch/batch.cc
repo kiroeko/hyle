@@ -40,12 +40,12 @@ constexpr c::ProviderRuntimeProperties runtime{.mode=c::ProviderRuntimeMode::kSh
 Status supports(const Graph&graph,NodeId node,const Config&config)noexcept{
   HYLE_ASSIGN_OR_RETURN(auto op,graph.operation(node));
   if(const auto value=op.custom_as<c::PagedAttention>()){
-    if(value->capacity!=config.schema.capacity() || value->scale!=config.options.scale || value->causal!=config.options.causal)
+    if(value->capacity!=config.schema.capacity() || value->scale!=config.options.scale || value->causal!=config.options.causal || value->window_left!=config.options.window_left)
       return Status::Unimplemented("paged graph node differs from batch domain");
     return Status::Ok();
   }
   if(const auto value=op.custom_as<c::RaggedAttention>()){
-    if(value->capacity!=config.schema.capacity() || value->scale!=config.options.scale || value->causal!=config.options.causal)
+    if(value->capacity!=config.schema.capacity() || value->scale!=config.options.scale || value->causal!=config.options.causal || value->window_left!=config.options.window_left)
       return Status::Unimplemented("ragged graph node differs from batch domain");
     return Status::Ok();
   }return Status::Unimplemented("graph batch provider does not support this node");
@@ -242,6 +242,9 @@ Status Invocation::bind(ValueId value,c::PagedArenaRead frame)noexcept{
     if(r.values[1]!=value && r.values[2]!=value)continue;
     if(r.config->schema.capacity().storage!=c::BatchStorage::kPaged || !r.config->schema.owns(frame.layout()) ||
        !b.slot->token.valid() || b.slot->layout!=frame.layout())return Status::InvalidArgument("Graph page layout/schema differs from its prepared slot");
+    const auto capacity=r.config->schema.capacity();
+    if(r.values[1]==value)HYLE_RETURN_IF_ERROR(cd::PagedArenaAccess::validate_storage(frame,capacity.key_storage));
+    if(r.values[2]==value)HYLE_RETURN_IF_ERROR(cd::PagedArenaAccess::validate_storage(frame,capacity.value_storage));
     if((r.values[1]==value && b.slot->keys.valid()) || (r.values[2]==value && b.slot->values.valid()))
       return Status::FailedPrecondition("Graph projected input needs explicit prepare before rebinding");
     readers.push_back(b.step);
@@ -321,6 +324,9 @@ Status PendingInvocation::bind(ValueId value,c::PagedArenaPendingRead frame)noex
       if(r.config->schema.capacity().storage!=c::BatchStorage::kPaged || !r.config->schema.owns(input.frame.layout()) ||
           !b.slot->token.valid() || b.slot->layout!=input.frame.layout())
         return Status::InvalidArgument("pending Graph frame differs from its prepared reader/layout");
+      const auto capacity=r.config->schema.capacity();
+      if(r.values[1]==value)HYLE_RETURN_IF_ERROR(cd::PagedArenaAccess::validate_storage(input.frame,capacity.key_storage));
+      if(r.values[2]==value)HYLE_RETURN_IF_ERROR(cd::PagedArenaAccess::validate_storage(input.frame,capacity.value_storage));
       if((r.values[1]==value && b.slot->keys.valid()) || (r.values[2]==value && b.slot->values.valid()))
         return Status::FailedPrecondition("ready Graph input needs prepare before pending binding");
       readers.push_back(b.step);

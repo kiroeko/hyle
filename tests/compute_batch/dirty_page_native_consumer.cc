@@ -34,14 +34,14 @@ double decode(std::uint16_t x,bool bf=false){
 Status exercise(n::Context& context,n::MemoryResource& device,n::MemoryResource& staging,bool bf=false){
   constexpr unsigned depth=256,heads=8,kv_heads=2;
   constexpr std::size_t row_elements=kv_heads*depth,row_bytes=row_elements*2;
-  const c::BatchCapacity cap{.data_type=bf?c::DataType::kBFloat16:c::DataType::kFloat16,
+  const c::BatchCapacity cap{.query_type=bf?c::DataType::kBFloat16:c::DataType::kFloat16,.output_type=bf?c::DataType::kBFloat16:c::DataType::kFloat16,.key_storage=c::CacheStorage::plain(bf?c::DataType::kBFloat16:c::DataType::kFloat16).value(),.value_storage=c::CacheStorage::plain(bf?c::DataType::kBFloat16:c::DataType::kFloat16).value(),
       .max_requests=2,.max_query_rows=18,.max_kv_rows=160,
-      .max_pages=10,.max_page_refs=8,.query_heads=heads,.kv_heads=kv_heads,.head_dim=depth};
+      .max_pages=10,.max_page_refs=8,.query_heads=heads,.kv_heads=kv_heads,.qk_head_dim=depth,.value_head_dim=depth};
   HYLE_ASSIGN_OR_RETURN(auto schema,c::BatchSchema::create(cap));
   HYLE_ASSIGN_OR_RETURN(auto recipe,c::NativePagedBatchProgram::prepare(schema,
       {.max_host_metadata_bytes=32,.scale=1.F/16.F,.causal=true}));
-  HYLE_ASSIGN_OR_RETURN(auto keys,c::PagedArena::create(schema,device.ref(),{.max_backing_bytes=1<<20}));
-  HYLE_ASSIGN_OR_RETURN(auto values,c::PagedArena::create(schema,device.ref(),{.max_backing_bytes=1<<20}));
+  HYLE_ASSIGN_OR_RETURN(auto keys,c::PagedArena::create(schema,c::BatchCacheRole::kKey,device.ref(),{.max_backing_bytes=1<<20}));
+  HYLE_ASSIGN_OR_RETURN(auto values,c::PagedArena::create(schema,c::BatchCacheRole::kValue,device.ref(),{.max_backing_bytes=1<<20}));
   const auto page_bytes=keys.page_bytes();
   constexpr std::size_t query_bytes=18*heads*depth*2;
   const auto init_bytes=std::max(page_bytes,query_bytes);
@@ -77,7 +77,7 @@ Status exercise(n::Context& context,n::MemoryResource& device,n::MemoryResource&
   const std::array producer_specs{n::InputSpec{{4,2,256},native_type}};
   HYLE_ASSIGN_OR_RETURN(auto producer,context.prepare(c::Unary{c::UnaryKind::kAbs},producer_specs));
   HYLE_ASSIGN_OR_RETURN(auto producer_slot,producer.create_invocation());
-  HYLE_ASSIGN_OR_RETURN(auto producer_desc,c::TensorDesc::dense(cap.data_type,
+  HYLE_ASSIGN_OR_RETURN(auto producer_desc,c::TensorDesc::dense(cap.query_type,
       std::array<std::int64_t,3>{4,2,256}));
   const auto source_resource=device.ref();
 #else
@@ -171,7 +171,7 @@ Status exercise(n::Context& context,n::MemoryResource& device,n::MemoryResource&
       const auto active=layout.facts().query_rows;
       std::vector<std::uint16_t> actual(active*heads*depth);
 #if defined(HYLE_DIRTY_PAGE_APPLE)
-      HYLE_ASSIGN_OR_RETURN(auto output_desc,c::TensorDesc::dense(cap.data_type,std::array<std::int64_t,3>{active,heads,depth}));
+      HYLE_ASSIGN_OR_RETURN(auto output_desc,c::TensorDesc::dense(cap.query_type,std::array<std::int64_t,3>{active,heads,depth}));
       HYLE_ASSIGN_OR_RETURN(auto output,device.import_readonly(result->arrays()[0],output_desc));
       HYLE_RETURN_IF_ERROR(output.view()->read(std::as_writable_bytes(std::span(actual))));
 #else

@@ -61,19 +61,19 @@ Status oracle(const c::BatchCapacity &cap, const c::BatchLayoutVersion &layout,
         const int valid = kvlen - qlen + qi + 1;
         std::vector<double> scores(valid);
         double high = -1e100, sum = 0;
-        const auto qbase = ((host.query_indptr[r] + qi) * cap.query_heads + h) * cap.head_dim;
+        const auto qbase = ((host.query_indptr[r] + qi) * cap.query_heads + h) * cap.qk_head_dim;
         const auto kvbase = [&](int i) {
-          return (row(i) * cap.kv_heads + h / (cap.query_heads / cap.kv_heads)) * cap.head_dim;
+          return (row(i) * cap.kv_heads + h / (cap.query_heads / cap.kv_heads)) * cap.qk_head_dim;
         };
         for (int i = 0; i < valid; ++i) {
           double dot = 0;
-          for (unsigned d = 0; d < cap.head_dim; ++d)
+          for (unsigned d = 0; d < cap.qk_head_dim; ++d)
             dot += double(decode(q[qbase + d], bf16)) * decode(k[kvbase(i) + d], bf16);
-          scores[i] = dot / std::sqrt(double(cap.head_dim));
+          scores[i] = dot / std::sqrt(double(cap.qk_head_dim));
           high = std::max(high, scores[i]);
         }
         for (auto &value : scores) { value = std::exp(value - high); sum += value; }
-        for (unsigned d = 0; d < cap.head_dim; ++d) {
+        for (unsigned d = 0; d < cap.qk_head_dim; ++d) {
           double expected = 0;
           for (int i = 0; i < valid; ++i)
             expected += scores[i] / sum * decode(v[kvbase(i) + d], bf16);
@@ -92,10 +92,10 @@ Status exercise(bool paged, bool bf16) {
   constexpr unsigned depth = 256, page = 16;
   const c::BatchCapacity cap{
       .storage = paged ? c::BatchStorage::kPaged : c::BatchStorage::kRagged,
-      .data_type = bf16 ? c::DataType::kBFloat16 : c::DataType::kFloat16,
+      .query_type=bf16 ? c::DataType::kBFloat16 : c::DataType::kFloat16,.output_type=bf16 ? c::DataType::kBFloat16 : c::DataType::kFloat16,.key_storage=c::CacheStorage::plain(bf16 ? c::DataType::kBFloat16 : c::DataType::kFloat16).value(),.value_storage=c::CacheStorage::plain(bf16 ? c::DataType::kBFloat16 : c::DataType::kFloat16).value(),
       .max_requests = 2, .max_query_rows = 4, .max_kv_rows = 32,
       .max_pages = paged ? 4u : 0u, .max_page_refs = paged ? 3u : 0u,
-      .query_heads = 4, .kv_heads = 2, .head_dim = depth,
+      .query_heads = 4, .kv_heads = 2, .qk_head_dim=depth,.value_head_dim=depth,
       .page_size = paged ? page : 1u};
   HYLE_ASSIGN_OR_RETURN(auto schema, c::BatchSchema::create(cap));
   const std::array<std::int32_t, 3> qptr{0, 1, 3}, kvptr{0, paged ? 2 : 19, paged ? 3 : 29};
@@ -139,10 +139,10 @@ Status exercise(bool paged, bool bf16) {
   HYLE_RETURN_IF_ERROR(check(!direct.prepare_batch(layout), "public Direct old output allowed overwrite"));
   HYLE_RETURN_IF_ERROR(check(direct.report().layout_generation == layout.generation(), "public Direct mirror generation differs"));
 
-  HYLE_ASSIGN_OR_RETURN(auto qdesc, c::TensorDesc::dense(cap.data_type, std::array<std::int64_t, 3>{cap.max_query_rows, cap.query_heads, depth}));
+  HYLE_ASSIGN_OR_RETURN(auto qdesc, c::TensorDesc::dense(cap.query_type, std::array<std::int64_t, 3>{cap.max_query_rows, cap.query_heads, depth}));
   c::TensorDesc kvdesc;
-  if (paged) { HYLE_ASSIGN_OR_RETURN(kvdesc, c::TensorDesc::dense(cap.data_type, std::array<std::int64_t, 4>{cap.max_pages, page, cap.kv_heads, depth})); }
-  else { HYLE_ASSIGN_OR_RETURN(kvdesc, c::TensorDesc::dense(cap.data_type, std::array<std::int64_t, 3>{cap.max_kv_rows, cap.kv_heads, depth})); }
+  if (paged) { HYLE_ASSIGN_OR_RETURN(kvdesc, c::TensorDesc::dense(cap.query_type, std::array<std::int64_t, 4>{cap.max_pages, page, cap.kv_heads, depth})); }
+  else { HYLE_ASSIGN_OR_RETURN(kvdesc, c::TensorDesc::dense(cap.query_type, std::array<std::int64_t, 3>{cap.max_kv_rows, cap.kv_heads, depth})); }
   HYLE_ASSIGN_OR_RETURN(auto metadata_desc, schema.metadata_description());
   const std::array descriptions{qdesc, kvdesc, kvdesc, metadata_desc};
   HYLE_ASSIGN_OR_RETURN(auto builder, g::GraphBuilder::create());

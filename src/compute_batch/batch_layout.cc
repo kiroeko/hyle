@@ -16,12 +16,6 @@ struct MetadataHeader final {
   BatchLayoutFacts facts{};
 };
 static_assert(sizeof(MetadataHeader)==32);
-Status checked_extent(std::initializer_list<std::uint64_t> factors) noexcept {
-  std::uint64_t bytes=1;
-  for(const auto factor:factors){if(factor>SIZE_MAX/bytes)return Status::OutOfRange("batch tensor extent overflow");bytes*=factor;}
-  if(bytes>std::uint64_t(INT64_MAX))return Status::OutOfRange("batch tensor signed extent overflow");
-  return Status::Ok();
-}
 Result<BatchLayoutFacts> validate_layout(BatchCapacity c,HostBatchLayout h) noexcept {
   if(h.query_indptr.empty() || h.query_indptr.size()>std::size_t(c.max_requests)+1 || h.kv_indptr.size()!=h.query_indptr.size())
     return std::unexpected(Status::InvalidArgument("batch indptr request extent"));
@@ -49,7 +43,7 @@ Result<BatchLayoutFacts> validate_layout(BatchCapacity c,HostBatchLayout h) noex
         return std::unexpected(Status::InvalidArgument("batch last page length"));
       kv=count?std::uint64_t(count-1)*c.page_size+std::uint32_t(tail):0;
     }
-    if(q>kv)return std::unexpected(Status::InvalidArgument("batch query requires right-aligned valid KV positions"));
+    if(q && !kv)return std::unexpected(Status::InvalidArgument("nonempty batch query requires KV rows"));
     logical_kv+=kv;
     if(logical_kv>c.max_kv_rows)return std::unexpected(Status::OutOfRange("batch logical KV rows exceed capacity"));
   }
@@ -78,24 +72,73 @@ struct BatchLayoutData final:util::RefCounted<BatchLayoutData> {
 
 Status validate_batch_capacity(BatchCapacity c) noexcept {
   if((c.storage!=BatchStorage::kPaged && c.storage!=BatchStorage::kRagged) ||
-     (c.data_type!=DataType::kFloat16 && c.data_type!=DataType::kBFloat16) ||
+     (c.query_type!=DataType::kFloat16 && c.query_type!=DataType::kBFloat16) ||
+     (c.output_type!=DataType::kFloat16 && c.output_type!=DataType::kBFloat16) ||
      !c.max_requests || c.max_requests>=std::uint32_t(INT32_MAX) || !c.max_query_rows || !c.max_kv_rows ||
-     !c.query_heads || !c.kv_heads || !c.head_dim || c.query_heads%c.kv_heads)
+     !c.query_heads || !c.kv_heads || !c.qk_head_dim || !c.value_head_dim || c.query_heads%c.kv_heads)
     return Status::InvalidArgument("batch capacities, dtype or GQA are invalid");
-  for(const auto value:{c.max_query_rows,c.max_kv_rows,c.max_pages,c.max_page_refs,c.query_heads,c.kv_heads,c.head_dim,c.page_size})
+  HYLE_RETURN_IF_ERROR(validate_cache_storage(c.key_storage));
+  HYLE_RETURN_IF_ERROR(validate_cache_storage(c.value_storage));
+  for(const auto value:{c.max_query_rows,c.max_kv_rows,c.max_pages,c.max_page_refs,c.query_heads,c.kv_heads,c.qk_head_dim,c.value_head_dim,c.page_size})
     if(value>std::uint32_t(INT32_MAX))return Status::OutOfRange("batch native integer capacity overflow");
   if(c.storage==BatchStorage::kPaged){
     if(!c.max_pages || !c.max_page_refs || !c.page_size)return Status::InvalidArgument("paged capacity requires arena/ref/page extents");
-    if(c.page_size>UINT32_MAX/c.kv_heads/c.head_dim)
+    if(c.page_size>UINT32_MAX/c.kv_heads/std::max(c.qk_head_dim,c.value_head_dim))
       return Status::OutOfRange("paged native page stride overflow");
-    HYLE_RETURN_IF_ERROR(checked_extent({c.max_pages,c.page_size,c.kv_heads,c.head_dim,2}));
   }else{
     if(c.max_pages || c.max_page_refs || c.page_size!=1)return Status::InvalidArgument("ragged capacity requires packed rows without page extents");
-    HYLE_RETURN_IF_ERROR(checked_extent({c.max_kv_rows,c.kv_heads,c.head_dim,2}));
   }
-  if(std::uint64_t(c.query_heads)*c.head_dim>UINT32_MAX || std::uint64_t(c.kv_heads)*c.head_dim>UINT32_MAX)
+  if(std::uint64_t(c.query_heads)*std::max(c.qk_head_dim,c.value_head_dim)>UINT32_MAX ||
+     std::uint64_t(c.kv_heads)*std::max(c.qk_head_dim,c.value_head_dim)>UINT32_MAX)
     return Status::OutOfRange("batch native row stride overflow");
-  return checked_extent({c.max_query_rows,c.query_heads,c.head_dim,2});
+  HYLE_ASSIGN_OR_RETURN(auto query,batch_query_description(c));
+  HYLE_ASSIGN_OR_RETURN(auto key,batch_cache_description(c,BatchCacheRole::kKey));
+  HYLE_ASSIGN_OR_RETURN(auto value,batch_cache_description(c,BatchCacheRole::kValue));
+  HYLE_ASSIGN_OR_RETURN(auto output,batch_output_description(c,c.max_query_rows));
+  for(const auto *description:{&query,&key,&value,&output}){
+    HYLE_ASSIGN_OR_RETURN(auto bytes,description->required_bytes());
+    if(bytes>std::uint64_t(INT64_MAX))return Status::OutOfRange("batch tensor signed extent overflow");
+  }
+  return Status::Ok();
+}
+
+Result<TensorDesc> batch_query_description(BatchCapacity c) noexcept {
+  return TensorDesc::dense(c.query_type,std::array<std::int64_t,3>{c.max_query_rows,c.query_heads,c.qk_head_dim});
+}
+Result<TensorDesc> batch_cache_description(BatchCapacity c,BatchCacheRole role) noexcept {
+  if(role!=BatchCacheRole::kKey && role!=BatchCacheRole::kValue)
+    return std::unexpected(Status::InvalidArgument("invalid batch cache role"));
+  const auto &storage=role==BatchCacheRole::kKey?c.key_storage:c.value_storage;
+  const auto depth=role==BatchCacheRole::kKey?c.qk_head_dim:c.value_head_dim;
+  if(c.storage==BatchStorage::kPaged)
+    return cache_tensor_description(storage,std::array<std::int64_t,4>{c.max_pages,c.page_size,c.kv_heads,depth});
+  if(c.storage==BatchStorage::kRagged)
+    return cache_tensor_description(storage,std::array<std::int64_t,3>{c.max_kv_rows,c.kv_heads,depth});
+  return std::unexpected(Status::InvalidArgument("invalid batch storage"));
+}
+Result<TensorDesc> batch_output_description(BatchCapacity c,std::uint32_t rows) noexcept {
+  if(rows>c.max_query_rows)return std::unexpected(Status::OutOfRange("batch output rows exceed capacity"));
+  return TensorDesc::dense(c.output_type,std::array<std::int64_t,3>{rows,c.query_heads,c.value_head_dim});
+}
+Status validate_batch_attention_options(bool causal,std::int32_t window_left) noexcept {
+  if(window_left < -1 || (!causal && window_left!=-1))
+    return Status::InvalidArgument("batch supports causal window or full noncausal attention");
+  return Status::Ok();
+}
+Status validate_batch_attention_layout(const BatchLayoutVersion &layout,bool causal,
+                                       std::int32_t window_left) noexcept {
+  HYLE_RETURN_IF_ERROR(validate_batch_attention_options(causal,window_left));
+  if(!layout.valid())return Status::InvalidArgument("attention layout is empty");
+  if(!causal)return Status::Ok();
+  const auto c=layout.schema().capacity();const auto host=layout.host();
+  for(std::size_t r=0;r<layout.facts().requests;++r){
+    const auto q=std::uint32_t(host.query_indptr[r+1]-host.query_indptr[r]);
+    const auto count=std::uint32_t(host.kv_indptr[r+1]-host.kv_indptr[r]);
+    const auto kv=c.storage==BatchStorage::kPaged?
+        (count?std::uint64_t(count-1)*c.page_size+std::uint32_t(host.last_page_lengths[r]):0):count;
+    if(q>kv)return Status::InvalidArgument("causal query requires right-aligned valid KV positions");
+  }
+  return Status::Ok();
 }
 Result<BatchMetadataOffsets> batch_metadata_offsets(BatchCapacity c) noexcept {
   HYLE_RETURN_IF_ERROR(validate_batch_capacity(c));
@@ -177,12 +220,11 @@ bool BatchLayoutVersion::operator==(const BatchLayoutVersion&v)const noexcept{re
 Status infer_batch_attention(BatchCapacity c,BatchStorage storage,std::span<const TensorDesc> inputs,std::span<TensorDesc> outputs)noexcept {
   HYLE_RETURN_IF_ERROR(validate_batch_capacity(c));
   if(c.storage!=storage || inputs.size()!=4 || outputs.size()!=1)return Status::InvalidArgument("batch attention port/storage count");
-  HYLE_ASSIGN_OR_RETURN(auto q,TensorDesc::dense(c.data_type,std::array<std::int64_t,3>{c.max_query_rows,c.query_heads,c.head_dim}));
-  TensorDesc kv;
-  if(storage==BatchStorage::kPaged){HYLE_ASSIGN_OR_RETURN(kv,TensorDesc::dense(c.data_type,std::array<std::int64_t,4>{c.max_pages,c.page_size,c.kv_heads,c.head_dim}));}
-  else{HYLE_ASSIGN_OR_RETURN(kv,TensorDesc::dense(c.data_type,std::array<std::int64_t,3>{c.max_kv_rows,c.kv_heads,c.head_dim}));}
+  HYLE_ASSIGN_OR_RETURN(auto q,batch_query_description(c));
+  HYLE_ASSIGN_OR_RETURN(auto k,batch_cache_description(c,BatchCacheRole::kKey));
+  HYLE_ASSIGN_OR_RETURN(auto v,batch_cache_description(c,BatchCacheRole::kValue));
   HYLE_ASSIGN_OR_RETURN(auto metadata,batch_metadata_description(c));
-  if(inputs[0]!=q || inputs[1]!=kv || inputs[2]!=kv || inputs[3]!=metadata)return Status::InvalidArgument("batch attention capacity descriptions disagree");
-  outputs[0]=q;return Status::Ok();
+  if(inputs[0]!=q || inputs[1]!=k || inputs[2]!=v || inputs[3]!=metadata)return Status::InvalidArgument("batch attention capacity descriptions disagree");
+  HYLE_ASSIGN_OR_RETURN(outputs[0],batch_output_description(c,c.max_query_rows));return Status::Ok();
 }
 } // namespace hyle::compute

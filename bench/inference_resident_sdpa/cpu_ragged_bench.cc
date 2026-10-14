@@ -35,9 +35,9 @@ struct Data {
   std::array<std::vector<std::uint16_t>,3> values;
   float scale;bool causal;
   Data(int q1,int q2,int k1,int k2,int depth,bool masked):
-    capacity{.storage=c::BatchStorage::kRagged,.data_type=c::DataType::kBFloat16,.max_requests=2,
+    capacity{.storage=c::BatchStorage::kRagged,.query_type=c::DataType::kBFloat16,.output_type=c::DataType::kBFloat16,.key_storage=c::CacheStorage::plain(c::DataType::kBFloat16).value(),.value_storage=c::CacheStorage::plain(c::DataType::kBFloat16).value(),.max_requests=2,
       .max_query_rows=unsigned(q1+q2+3),.max_kv_rows=unsigned(k1+k2+13),.max_pages=0,.max_page_refs=0,
-      .query_heads=8,.kv_heads=2,.head_dim=unsigned(depth),.page_size=1},
+      .query_heads=8,.kv_heads=2,.qk_head_dim=unsigned(depth),.value_head_dim=unsigned(depth),.page_size=1},
     qp{0,q1,q1+q2},kp{0,k1,k1+k2},scale(1.F/std::sqrt(float(depth))),causal(masked){
     values[0].resize(std::size_t(capacity.max_query_rows)*8*depth);
     for(int port=1;port<3;++port)values[port].resize(std::size_t(capacity.max_kv_rows)*2*depth);
@@ -46,7 +46,7 @@ struct Data {
     for(int port=1;port<3;++port)std::fill(values[port].begin()+std::size_t(kp[2])*2*depth,values[port].end(),encode(128.F));
   }
   std::vector<double> oracle()const{
-    const int depth=int(capacity.head_dim);std::vector<double> output(std::size_t(qp[2])*8*depth),weights;
+    const int depth=int(capacity.qk_head_dim);std::vector<double> output(std::size_t(qp[2])*8*depth),weights;
     for(unsigned r=0;r<2;++r){const int nq=qp[r+1]-qp[r],nk=kp[r+1]-kp[r];weights.resize(nk);
       for(int row=0;row<nq;++row)for(int h=0;h<8;++h){double sum=0;
         for(int j=0;j<nk;++j){double dot=0;for(int d=0;d<depth;++d)dot+=double(decode(values[0][((qp[r]+row)*8+h)*depth+d]))*decode(values[1][((kp[r]+j)*2+h/4)*depth+d]);

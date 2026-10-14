@@ -59,3 +59,9 @@ selected docs/closure与146 skipped reasons保留。产品520027a57没有改动�
 CANDIDATE。按活动卡已预声明的同数学/lifecycle oracle、原AA/controls/5%合同验证，
 不修改公共selector、不因此重开任何产品或运行全库。新增page合同归同一有限适配器
 范围；正式采样前继续保存对应新plan及unknown路径，工具归属问题仍独立未裁决。
+
+2026-10-15 G04/G05共同geometry迁移：原10个shared bench C++输入仅迁移BatchCapacity
+和PagedArena显式role，原shape/数学/P1合同未改；selector仍unknown同一路径族。
+`.scratch/inference-gaps/g04-g05/geometry-plan.json`保原BLOCKED，七个实际产品修改owner
+均AUDITED且product_authorization issues为空。共同批仅按其活动卡执行所声明的factor/
+public consumer/头门，不改工具core、不启动旧benchmark采样，未运行格不写PASS。

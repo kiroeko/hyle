@@ -49,11 +49,17 @@ struct Slot final {
 Status qualify(void *, BatchCapacity capacity,
                const BatchProgramOptions &options) noexcept {
   HYLE_RETURN_IF_ERROR(validate_batch_capacity(capacity));
+  HYLE_RETURN_IF_ERROR(validate_batch_attention_options(options.causal,options.window_left));
+  if(options.window_left!=-1 || capacity.value_head_dim!=capacity.qk_head_dim ||
+      capacity.output_type!=capacity.query_type ||
+      !capacity.key_storage.format().is_plain() || !capacity.value_storage.format().is_plain() ||
+      capacity.key_storage.data_type()!=capacity.query_type || capacity.value_storage.data_type()!=capacity.query_type)
+    return Status::Unimplemented("ggml CPU encoded/window/unequal-V batch kernel is not implemented yet");
   if ((capacity.storage != BatchStorage::kRagged && capacity.storage != BatchStorage::kPaged) ||
-      (capacity.data_type != DataType::kFloat16 &&
-       capacity.data_type != DataType::kBFloat16) ||
-      (capacity.head_dim != 64 && capacity.head_dim != 128 &&
-       capacity.head_dim != 256) || !std::isfinite(options.scale))
+      (capacity.query_type != DataType::kFloat16 &&
+       capacity.query_type != DataType::kBFloat16) ||
+      (capacity.qk_head_dim != 64 && capacity.qk_head_dim != 128 &&
+       capacity.qk_head_dim != 256) || !std::isfinite(options.scale))
     return Status::Unimplemented("ggml CPU native batch requires qualified resident flash");
   const auto properties = options.resource.properties();
   if (!properties.has(mem::MemoryProperty::kHostAccessible) ||
@@ -117,7 +123,7 @@ detail::EnqueueResult plan(void *value, Queue &, const BatchLayoutVersion &layou
   try {
     slot.layout=layout;
     const auto host = layout.host();
-    const auto width = data_type_size(slot.capacity.data_type);
+    const auto width = data_type_size(slot.capacity.query_type);
     if (layout.facts().requests > slot.options.max_float_workspace_bytes /
         (sizeof(Request *) + sizeof(Request)))
       return detail::EnqueueResult::rejected(Status::ResourceExhausted("ggml CPU ragged request count exceeds budget"));
@@ -143,7 +149,7 @@ detail::EnqueueResult plan(void *value, Queue &, const BatchLayoutVersion &layou
       }
       const auto mask_bytes = slot.options.causal
           ? static_cast<std::uint64_t>(queries)*static_cast<std::uint64_t>(keys)*2u : 0u;
-      const auto query_row_bytes = std::uint64_t(slot.capacity.query_heads)*slot.capacity.head_dim*8u;
+      const auto query_row_bytes = std::uint64_t(slot.capacity.query_heads)*slot.capacity.qk_head_dim*8u;
       const auto available = slot.options.max_float_workspace_bytes - slot.known_bytes;
       if (mask_bytes > available || (query_row_bytes &&
           std::uint64_t(queries) > (available - mask_bytes)/query_row_bytes)) {
@@ -158,11 +164,11 @@ detail::EnqueueResult plan(void *value, Queue &, const BatchLayoutVersion &layou
       request->allocator = slot.allocator;
       // Insert immediately so every partial compile/slot is cleaned on failure.
       slot.requests.push_back(request);
-      auto q = TensorDesc::dense(slot.capacity.data_type,
-          std::array<std::int64_t, 4>{1, queries, slot.capacity.query_heads, slot.capacity.head_dim});
-      auto k = TensorDesc::dense(slot.capacity.data_type,
+      auto q = TensorDesc::dense(slot.capacity.query_type,
+          std::array<std::int64_t, 4>{1, queries, slot.capacity.query_heads, slot.capacity.qk_head_dim});
+      auto k = TensorDesc::dense(slot.capacity.query_type,
           std::array<std::int64_t, 4>{1, paged?std::int64_t(slot.capacity.max_pages)*slot.capacity.page_size:
-              static_cast<std::int64_t>(keys), slot.capacity.kv_heads, slot.capacity.head_dim});
+              static_cast<std::int64_t>(keys), slot.capacity.kv_heads, slot.capacity.qk_head_dim});
       if (!q || !k) {
         const auto error = !q ? q.error() : k.error();
         slot.clear();
@@ -171,9 +177,9 @@ detail::EnqueueResult plan(void *value, Queue &, const BatchLayoutVersion &layou
       request->inputs = {*q, *k, *k};
       request->output = *q;
       request->query_offset = static_cast<std::size_t>(host.query_indptr[index]) *
-          slot.capacity.query_heads * slot.capacity.head_dim * width;
+          slot.capacity.query_heads * slot.capacity.qk_head_dim * width;
       request->kv_offset = paged?0:static_cast<std::size_t>(host.kv_indptr[index]) *
-          slot.capacity.kv_heads * slot.capacity.head_dim * width;
+          slot.capacity.kv_heads * slot.capacity.qk_head_dim * width;
       Recipe recipe;
       recipe.values = {*q, *k, *k, *q};
       recipe.inputs = {0, 1, 2};

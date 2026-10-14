@@ -16,9 +16,13 @@ Result<Program> detail::PagedBatchAccess::prepare_program(const Context& context
   if(!context.valid() || !recipe.valid() || !recipe.schema().owns(layout))
     return std::unexpected(Status::InvalidArgument("Apple paged context/layout/schema differs"));
   const auto c=recipe.schema().capacity();
-  if((c.data_type!=DataType::kFloat16 && c.data_type!=DataType::kBFloat16) ||
+  if(recipe.window_left()!=-1 || c.value_head_dim!=c.qk_head_dim || c.output_type!=c.query_type ||
+      !c.key_storage.format().is_plain() || !c.value_storage.format().is_plain() ||
+      c.key_storage.data_type()!=c.query_type || c.value_storage.data_type()!=c.query_type)
+    return std::unexpected(Status::Unimplemented("Apple encoded/window/unequal-V paged kernel is not implemented yet"));
+  if((c.query_type!=DataType::kFloat16 && c.query_type!=DataType::kBFloat16) ||
       c.page_size!=16 || c.max_pages>std::uint32_t(INT32_MAX/16) ||
-      (c.head_dim!=64 && c.head_dim!=128 && c.head_dim!=256))
+      (c.qk_head_dim!=64 && c.qk_head_dim!=128 && c.qk_head_dim!=256))
     return std::unexpected(Status::Unimplemented("Apple paged qualified page16 flash dtype/depth"));
   const auto host=layout.host();
   for(std::size_t r=0;r<layout.facts().requests;++r){
@@ -45,7 +49,7 @@ Result<Program> detail::PagedBatchAccess::prepare_program(const Context& context
       const auto c=recipe.schema().capacity();const auto host=layout.host();
       // Reshape and transpose are aliases of the truthful physical arena;
       // the private primitive owns the page table and logical row count.
-      const mlx::core::Shape root{1,int(std::int64_t(c.max_pages)*16),int(c.kv_heads),int(c.head_dim)};
+      const mlx::core::Shape root{1,int(std::int64_t(c.max_pages)*16),int(c.kv_heads),int(c.qk_head_dim)};
       const auto k=mlx::core::transpose(mlx::core::reshape(inputs[1],root,stream),{0,2,1,3},stream);
       const auto v=mlx::core::transpose(mlx::core::reshape(inputs[2],root,stream),{0,2,1,3},stream);
       std::vector<mlx::core::array> parts;
@@ -55,9 +59,9 @@ Result<Program> detail::PagedBatchAccess::prepare_program(const Context& context
         const auto nk=std::uint64_t(refs-1)*16+std::uint32_t(host.last_page_lengths[r]);
         HYLE_ASSIGN_OR_RETURN(auto slice,View::slice(0,host.query_indptr[r],nq));
         HYLE_ASSIGN_OR_RETURN(auto sliced,lower(Operation(slice),std::span(&inputs[0],1),stream));
-        auto q=mlx::core::transpose(mlx::core::reshape(sliced[0],{1,nq,int(c.query_heads),int(c.head_dim)},stream),{0,2,1,3},stream);
+        auto q=mlx::core::transpose(mlx::core::reshape(sliced[0],{1,nq,int(c.query_heads),int(c.qk_head_dim)},stream),{0,2,1,3},stream);
         auto result=mlx::core::fast::hyle_paged_attention(q,k,v,inputs[3],int(nk),host.kv_indptr[r],recipe.scale(),recipe.causal(),stream);
-        parts.push_back(mlx::core::reshape(mlx::core::transpose(result,{0,2,1,3},stream),{nq,int(c.query_heads),int(c.head_dim)},stream));
+        parts.push_back(mlx::core::reshape(mlx::core::transpose(result,{0,2,1,3},stream),{nq,int(c.query_heads),int(c.qk_head_dim)},stream));
       }
       if(parts.empty()){HYLE_ASSIGN_OR_RETURN(auto empty,View::slice(0,0,0));return lower(Operation(empty),std::span(&inputs[0],1),stream);}
       if(parts.size()==1)return parts;
@@ -73,12 +77,18 @@ Result<Program> prepare_ragged_batch(const Context&context,BatchLayoutVersion la
      attention.capacity.storage!=BatchStorage::kRagged||!std::isfinite(attention.scale))
     return std::unexpected(Status::InvalidArgument("Apple ragged context/layout/domain differs"));
   const auto c=attention.capacity;
-  if((c.data_type!=DataType::kFloat16&&c.data_type!=DataType::kBFloat16)||
-     (c.head_dim!=64&&c.head_dim!=128&&c.head_dim!=256))
+  HYLE_RETURN_IF_ERROR(validate_batch_attention_options(attention.causal,attention.window_left));
+  HYLE_RETURN_IF_ERROR(validate_batch_attention_layout(layout,attention.causal,attention.window_left));
+  if(attention.window_left!=-1 || c.value_head_dim!=c.qk_head_dim || c.output_type!=c.query_type ||
+      !c.key_storage.format().is_plain() || !c.value_storage.format().is_plain() ||
+      c.key_storage.data_type()!=c.query_type || c.value_storage.data_type()!=c.query_type)
+    return std::unexpected(Status::Unimplemented("Apple encoded/window/unequal-V ragged kernel is not implemented yet"));
+  if((c.query_type!=DataType::kFloat16&&c.query_type!=DataType::kBFloat16)||
+     (c.qk_head_dim!=64&&c.qk_head_dim!=128&&c.qk_head_dim!=256))
     return std::unexpected(Status::Unimplemented("Apple native ragged requires qualified flash dtype/depth"));
   try{
-    HYLE_ASSIGN_OR_RETURN(auto q,TensorDesc::dense(c.data_type,std::array<std::int64_t,3>{c.max_query_rows,c.query_heads,c.head_dim}));
-    HYLE_ASSIGN_OR_RETURN(auto k,TensorDesc::dense(c.data_type,std::array<std::int64_t,3>{c.max_kv_rows,c.kv_heads,c.head_dim}));
+    HYLE_ASSIGN_OR_RETURN(auto q,TensorDesc::dense(c.query_type,std::array<std::int64_t,3>{c.max_query_rows,c.query_heads,c.qk_head_dim}));
+    HYLE_ASSIGN_OR_RETURN(auto k,TensorDesc::dense(c.query_type,std::array<std::int64_t,3>{c.max_kv_rows,c.kv_heads,c.qk_head_dim}));
     std::array<InputSpec,3> inputs;HYLE_ASSIGN_OR_RETURN(inputs[0],input_spec(q));HYLE_ASSIGN_OR_RETURN(inputs[1],input_spec(k));inputs[2]=inputs[1];
     const auto host=layout.host();
     for(std::size_t r=0;r<layout.facts().requests;++r){const auto nq=host.query_indptr[r+1]-host.query_indptr[r],nk=host.kv_indptr[r+1]-host.kv_indptr[r];
@@ -90,7 +100,7 @@ Result<Program> prepare_ragged_batch(const Context&context,BatchLayoutVersion la
       const auto c=attention.capacity;const auto host=layout.host();std::vector<mlx::core::array> parts;
       const auto view=[&](const mlx::core::array &input,std::int32_t start,std::int32_t rows,std::uint32_t heads)->Result<mlx::core::array>{
         HYLE_ASSIGN_OR_RETURN(auto slice,View::slice(0,start,rows));HYLE_ASSIGN_OR_RETURN(auto sliced,lower(Operation(slice),std::span(&input,1),stream));
-        HYLE_ASSIGN_OR_RETURN(auto shape,TensorShape::create(std::array<std::int64_t,4>{1,rows,heads,c.head_dim}));
+        HYLE_ASSIGN_OR_RETURN(auto shape,TensorShape::create(std::array<std::int64_t,4>{1,rows,heads,c.qk_head_dim}));
         HYLE_ASSIGN_OR_RETURN(auto reshape,View::reshape(shape));HYLE_ASSIGN_OR_RETURN(auto reshaped,lower(Operation(reshape),sliced,stream));return reshaped[0];
       };
       for(std::size_t r=0;r<layout.facts().requests;++r){const auto nq=host.query_indptr[r+1]-host.query_indptr[r],nk=host.kv_indptr[r+1]-host.kv_indptr[r];if(!nq)continue;
@@ -98,7 +108,7 @@ Result<Program> prepare_ragged_batch(const Context&context,BatchLayoutVersion la
         HYLE_ASSIGN_OR_RETURN(auto k,view(inputs[1],host.kv_indptr[r],nk,c.kv_heads));
         HYLE_ASSIGN_OR_RETURN(auto v,view(inputs[2],host.kv_indptr[r],nk,c.kv_heads));const std::array ports{q,k,v};
         HYLE_ASSIGN_OR_RETURN(auto output,lower(Operation(ScaledDotProductAttention{.layout=AttentionLayout::kBatchSequenceHeadDepth,.scale=attention.scale,.causal=attention.causal}),ports,stream));
-        HYLE_ASSIGN_OR_RETURN(auto shape,TensorShape::create(std::array<std::int64_t,3>{nq,c.query_heads,c.head_dim}));
+        HYLE_ASSIGN_OR_RETURN(auto shape,TensorShape::create(std::array<std::int64_t,3>{nq,c.query_heads,c.qk_head_dim}));
         HYLE_ASSIGN_OR_RETURN(auto reshape,View::reshape(shape));HYLE_ASSIGN_OR_RETURN(auto packed,lower(Operation(reshape),output,stream));
         parts.push_back(packed[0]);
       }

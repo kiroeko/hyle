@@ -149,6 +149,9 @@ template<class T,class Policy=MaterializedMetadataPolicy>struct MaterializedNati
       }
     }
     if(recipe.schema().capacity().storage!=BatchStorage::kPaged || k.layout()!=version.layout() || v.layout()!=version.layout())return Status::InvalidArgument("native page frames differ from prepared generation");
+    const auto capacity=recipe.schema().capacity();
+    HYLE_RETURN_IF_ERROR(PagedArenaAccess::validate_storage(k,capacity.key_storage));
+    HYLE_RETURN_IF_ERROR(PagedArenaAccess::validate_storage(v,capacity.value_storage));
     const auto descriptions=recipe.descriptions();HYLE_ASSIGN_OR_RETURN(auto qt,query.tensor(descriptions[0]));HYLE_RETURN_IF_ERROR(query_resource(qt.storage()));
     HYLE_ASSIGN_OR_RETURN(auto q,T::binding(*device,query,descriptions[0],import));HYLE_ASSIGN_OR_RETURN(auto kn,T::paged_binding(*device,k,import));HYLE_ASSIGN_OR_RETURN(auto vn,T::paged_binding(*device,v,import));
     std::array<std::optional<typename T::View>,input_count> views;

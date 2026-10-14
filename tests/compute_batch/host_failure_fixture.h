@@ -26,7 +26,7 @@ inline Status episode(bool graph,bool producer){
   hyle::mem::QuotaAllocator metadata(hyle::mem::system_allocator());
   {
     HYLE_ASSIGN_OR_RETURN(auto context,g::cpu::create_context());HYLE_ASSIGN_OR_RETURN(auto queue,context.create_queue());struct Drain{c::Context&context;~Drain(){context.drain().IgnoreError();}}drain{context};
-    c::BatchCapacity cap{.storage=c::BatchStorage::kRagged,.max_requests=1,.max_query_rows=2,.max_kv_rows=4,.max_pages=0,.max_page_refs=0,.query_heads=4,.kv_heads=2,.head_dim=64,.page_size=1};
+    c::BatchCapacity cap{.storage=c::BatchStorage::kRagged,.max_requests=1,.max_query_rows=2,.max_kv_rows=4,.max_pages=0,.max_page_refs=0,.query_heads=4,.kv_heads=2,.qk_head_dim=64,.value_head_dim=64,.page_size=1};
     HYLE_ASSIGN_OR_RETURN(auto schema,c::BatchSchema::create(cap));const std::array<std::int32_t,2> qptr{0,1},kvptr{0,3};HYLE_ASSIGN_OR_RETURN(auto layout,schema.version({qptr,kvptr,{},{}}));
     HYLE_ASSIGN_OR_RETURN(auto recipe,c::MaterializedBatchProgram::prepare(schema,{.max_kv_per_request=4,.max_host_metadata_bytes=1u<<20,.max_logical_intermediate_bytes=1u<<20,.scale=.125f}));
     HYLE_ASSIGN_OR_RETURN(auto pool,c::LeasePool::create(hyle::mem::system_resource(),8192));HYLE_ASSIGN_OR_RETURN(auto q,zero(pool,1024));HYLE_ASSIGN_OR_RETURN(auto k,zero(pool,1024));HYLE_ASSIGN_OR_RETURN(auto v,zero(pool,1024));

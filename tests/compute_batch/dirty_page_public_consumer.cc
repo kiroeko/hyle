@@ -19,10 +19,10 @@ double decode(std::uint16_t x){
 }
 Status run(){
   const c::BatchCapacity cap{.max_requests=2,.max_query_rows=2,.max_kv_rows=128,
-      .max_pages=8,.max_page_refs=8,.query_heads=8,.kv_heads=2,.head_dim=256};
+      .max_pages=8,.max_page_refs=8,.query_heads=8,.kv_heads=2,.qk_head_dim=256,.value_head_dim=256};
   HYLE_ASSIGN_OR_RETURN(auto schema,c::BatchSchema::create(cap));
   m::QuotaAllocator quota(m::system_allocator());
-  HYLE_ASSIGN_OR_RETURN(auto arena,c::PagedArena::create(schema,m::system_resource(),
+  HYLE_ASSIGN_OR_RETURN(auto arena,c::PagedArena::create(schema,c::BatchCacheRole::kKey,m::system_resource(),
       {.max_backing_bytes=256*1024,.allocator=quota.get()}));
   constexpr std::size_t elements=16*2*256,row_elements=2*256,row_bytes=row_elements*2;
   std::vector<std::uint16_t> expected(elements,0x3000),actual(elements);

@@ -12,6 +12,7 @@ struct MaterializedBatchOptions final {
   std::size_t max_logical_intermediate_bytes = 0;
   float scale = 1.0F;
   bool causal = true;
+  std::int32_t window_left = -1;
   mem::AllocatorRef allocator = mem::system_allocator();
   ResourceBudget resource_budget{};
 };

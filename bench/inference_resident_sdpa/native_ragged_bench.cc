@@ -39,12 +39,12 @@ std::uint16_t encode(float x){if(x==0)return 0;const auto bits=std::bit_cast<std
 double decode(std::uint16_t bits){const auto exponent=bits>>10&31u,fraction=bits&1023u;const auto sign=bits&0x8000u?-1.:1.;return sign*(exponent?std::ldexp(1.+double(fraction)/1024.,int(exponent)-15):std::ldexp(double(fraction),-24));}
 struct Data{
   c::BatchCapacity cap;std::array<std::int32_t,3> qp,kp;std::array<std::vector<std::uint16_t>,3> values;float scale;bool causal;
-  Data(int q1,int q2,int k1,int k2,int depth,bool masked):cap{.storage=c::BatchStorage::kRagged,.max_requests=2,.max_query_rows=unsigned(q1+q2+3),.max_kv_rows=unsigned(k1+k2+13),.max_pages=0,.max_page_refs=0,.query_heads=8,.kv_heads=2,.head_dim=unsigned(depth),.page_size=1},qp{0,q1,q1+q2},kp{0,k1,k1+k2},scale(1.F/std::sqrt(float(depth))),causal(masked){
+  Data(int q1,int q2,int k1,int k2,int depth,bool masked):cap{.storage=c::BatchStorage::kRagged,.max_requests=2,.max_query_rows=unsigned(q1+q2+3),.max_kv_rows=unsigned(k1+k2+13),.max_pages=0,.max_page_refs=0,.query_heads=8,.kv_heads=2,.qk_head_dim=unsigned(depth),.value_head_dim=unsigned(depth),.page_size=1},qp{0,q1,q1+q2},kp{0,k1,k1+k2},scale(1.F/std::sqrt(float(depth))),causal(masked){
     values[0].resize(std::size_t(cap.max_query_rows)*8*depth);for(int port=1;port<3;++port)values[port].resize(std::size_t(cap.max_kv_rows)*2*depth);
     for(int port=0;port<3;++port)for(std::size_t i=0;i<values[port].size();++i)values[port][i]=encode(float(int((i*13+std::size_t(port)*17)%31)-15)*.015625F);
     for(int port=1;port<3;++port)std::fill(values[port].begin()+std::size_t(kp[2])*2*depth,values[port].end(),encode(128.F));
   }
-  std::vector<double> oracle()const{std::vector<double> result(std::size_t(qp[2])*8*cap.head_dim),weights;const auto depth=cap.head_dim;
+  std::vector<double> oracle()const{std::vector<double> result(std::size_t(qp[2])*8*cap.qk_head_dim),weights;const auto depth=cap.qk_head_dim;
     for(unsigned r=0;r<2;++r){const auto nq=qp[r+1]-qp[r],nk=kp[r+1]-kp[r];weights.resize(nk);
       for(int row=0;row<nq;++row)for(int head=0;head<8;++head){double sum=0;
         for(int j=0;j<nk;++j){double dot=0;for(unsigned d=0;d<depth;++d)dot+=decode(values[0][((qp[r]+row)*8+head)*depth+d])*decode(values[1][((kp[r]+j)*2+head/4)*depth+d]);weights[j]=causal&&j>nk-nq+row?0.:std::exp(dot*scale);sum+=weights[j];}
@@ -79,8 +79,8 @@ struct Harness{
 #endif
     auto schema=take(c::BatchSchema::create(data.cap));auto layout=take(schema.version({data.qp,data.kp,{},{}}));const c::RaggedAttention attention{data.cap,data.scale,data.causal};
     program=original?hyle::bench::resident::ragged_reference_program(context,layout,attention):take(v::prepare_ragged_batch(context,layout,attention));
-    const auto qd=take(c::TensorDesc::dense(data.cap.data_type,std::array<std::int64_t,3>{data.cap.max_query_rows,8,data.cap.head_dim}));
-    const auto kd=take(c::TensorDesc::dense(data.cap.data_type,std::array<std::int64_t,3>{data.cap.max_kv_rows,2,data.cap.head_dim}));
+    const auto qd=take(c::TensorDesc::dense(data.cap.query_type,std::array<std::int64_t,3>{data.cap.max_query_rows,8,data.cap.qk_head_dim}));
+    const auto kd=take(c::TensorDesc::dense(data.cap.query_type,std::array<std::int64_t,3>{data.cap.max_kv_rows,2,data.cap.qk_head_dim}));
 #if defined(HYLE_RAGGED_APPLE_BENCH)
     std::size_t bytes=2048;for(const auto &value:data.values)bytes+=value.size()*2;pool=take(c::LeasePool::create(memory.ref(),bytes));
     for(unsigned port=0;port<3;++port){auto writer=take(pool.allocate(data.values[port].size()*2));check(writer.view()->write(std::as_bytes(std::span(data.values[port]))));inputs[port]=take(memory.binding(take(writer.publish()),port?kd:qd));}
@@ -115,7 +115,7 @@ struct Harness{
     if(worst>2e-3)check(hyle::Status::Internal("native ragged original F16 oracle bound exceeded"));
     for(unsigned port=1;port<3;++port){std::vector<std::uint16_t> after(data.values[port].size());
 #if defined(HYLE_RAGGED_APPLE_BENCH)
-      const auto desc=take(c::TensorDesc::dense(c::DataType::kFloat16,std::array<std::int64_t,3>{data.cap.max_kv_rows,2,data.cap.head_dim}));auto lease=take(memory.import_readonly(*inputs[port],desc));check(lease.view()->read(std::as_writable_bytes(std::span(after))));
+      const auto desc=take(c::TensorDesc::dense(c::DataType::kFloat16,std::array<std::int64_t,3>{data.cap.max_kv_rows,2,data.cap.qk_head_dim}));auto lease=take(memory.import_readonly(*inputs[port],desc));check(lease.view()->read(std::as_writable_bytes(std::span(after))));
 #else
       check(context.download(inputs[port],std::as_writable_bytes(std::span(after))));
 #endif

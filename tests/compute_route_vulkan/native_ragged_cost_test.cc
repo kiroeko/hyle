@@ -10,7 +10,7 @@ namespace c=hyle::compute;namespace v=c::vulkan;
 TEST(VulkanRaggedStructure, FlashPortsStillNameOriginalPackedKvRoots){
   auto context=v::Context::create().value();ASSERT_FALSE(context.environment().software_device);
   const c::BatchCapacity capacity{.storage=c::BatchStorage::kRagged,.max_requests=3,.max_query_rows=20,.max_kv_rows=84,
-    .max_pages=0,.max_page_refs=0,.query_heads=8,.kv_heads=2,.head_dim=256,.page_size=1};
+    .max_pages=0,.max_page_refs=0,.query_heads=8,.kv_heads=2,.qk_head_dim=256,.value_head_dim=256,.page_size=1};
   auto schema=c::BatchSchema::create(capacity).value();const std::array<std::int32_t,4> qp{0,1,18,18},kp{0,31,78,78};
   auto layout=schema.version({qp,kp,{},{}}).value();auto program=v::prepare_ragged_batch(context,layout,{capacity,.0625F,true});
   ASSERT_TRUE(program)<<program.error().message();const auto &state=*v::detail::Access::program(*program);
@@ -32,11 +32,11 @@ TEST(VulkanRaggedStructure, FlashPortsStillNameOriginalPackedKvRoots){
 }
 TEST(VulkanRaggedStructure, RejectedNativeSuffixRetiresItsAcceptedPrefix){
   auto context=v::Context::create().value();const c::BatchCapacity cap{.storage=c::BatchStorage::kRagged,.max_requests=8,.max_query_rows=8,.max_kv_rows=8,
-    .max_pages=0,.max_page_refs=0,.query_heads=8,.kv_heads=2,.head_dim=64,.page_size=1};
+    .max_pages=0,.max_page_refs=0,.query_heads=8,.kv_heads=2,.qk_head_dim=64,.value_head_dim=64,.page_size=1};
   auto schema=c::BatchSchema::create(cap).value();const std::array<std::int32_t,9> ptr{0,1,2,3,4,5,6,7,8};auto layout=schema.version({ptr,ptr,{},{}}).value();
   auto prepared=v::prepare_ragged_batch(context,layout,{cap,.125F,true});ASSERT_TRUE(prepared)<<prepared.error().message();auto slot=prepared->create_invocation().value();
-  const auto qd=c::TensorDesc::dense(cap.data_type,std::array<std::int64_t,3>{8,8,64}).value();
-  const auto kd=c::TensorDesc::dense(cap.data_type,std::array<std::int64_t,3>{8,2,64}).value();
+  const auto qd=c::TensorDesc::dense(cap.query_type,std::array<std::int64_t,3>{8,8,64}).value();
+  const auto kd=c::TensorDesc::dense(cap.query_type,std::array<std::int64_t,3>{8,2,64}).value();
   std::vector<std::byte> q(*qd.required_bytes()),k(*kd.required_bytes());const std::array inputs{context.upload(qd,q).value(),context.upload(kd,k).value(),context.upload(kd,k).value()};
   ASSERT_TRUE(slot.bind(inputs).ok());hyle_f5_vk_failure_fixture::Boundary boundary(context);boundary.fail_at=1;
   // Managed flash regions retain their original PFNs; the original HYLE

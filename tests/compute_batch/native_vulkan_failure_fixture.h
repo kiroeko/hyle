@@ -45,7 +45,7 @@ inline Status episode(unsigned mode,bool graph){
     HYLE_ASSIGN_OR_RETURN(auto context,v::Context::create());HYLE_RETURN_IF_ERROR(check(!context.environment().software_device,"Vulkan fault requires actual GPU"));
     HYLE_ASSIGN_OR_RETURN(auto memory,v::MemoryResource::create(context,v::MemoryKind::kDevice));HYLE_ASSIGN_OR_RETURN(auto staging,v::MemoryResource::create(context,v::MemoryKind::kStaging));
     struct Close{v::Context&context;~Close(){context.close().IgnoreError();}}close{context};
-    c::BatchCapacity cap{.storage=c::BatchStorage::kRagged,.max_requests=1,.max_query_rows=1,.max_kv_rows=1,.max_pages=0,.max_page_refs=0,.query_heads=2,.kv_heads=2,.head_dim=64,.page_size=1};
+    c::BatchCapacity cap{.storage=c::BatchStorage::kRagged,.max_requests=1,.max_query_rows=1,.max_kv_rows=1,.max_pages=0,.max_page_refs=0,.query_heads=2,.kv_heads=2,.qk_head_dim=64,.value_head_dim=64,.page_size=1};
     HYLE_ASSIGN_OR_RETURN(auto schema,c::BatchSchema::create(cap));const std::array<std::int32_t,2> ptr{0,1};HYLE_ASSIGN_OR_RETURN(auto layout,schema.version({ptr,ptr,{},{}}));
     HYLE_ASSIGN_OR_RETURN(auto recipe,c::MaterializedBatchProgram::prepare(schema,{.max_kv_per_request=1,.max_host_metadata_bytes=1u<<20,.max_logical_intermediate_bytes=1u<<20,.scale=.125f}));
     HYLE_ASSIGN_OR_RETURN(auto pool,c::LeasePool::create(memory.ref(),4096));HYLE_ASSIGN_OR_RETURN(auto host,c::LeasePool::create(staging.ref(),4096));HYLE_ASSIGN_OR_RETURN(auto ready,inputs(context,pool,host,memory.ref(),staging.ref()));

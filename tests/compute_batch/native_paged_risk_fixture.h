@@ -34,9 +34,9 @@ struct Inputs final {
 };
 inline Result<Inputs> inputs(n::Context& context,n::MemoryResource& device,n::MemoryResource& staging){
   Inputs data;
-  const c::BatchCapacity cap{.storage=c::BatchStorage::kPaged,.data_type=c::DataType::kFloat16,
+  const c::BatchCapacity cap{.storage=c::BatchStorage::kPaged,.query_type=c::DataType::kFloat16,.output_type=c::DataType::kFloat16,.key_storage=c::CacheStorage::plain(c::DataType::kFloat16).value(),.value_storage=c::CacheStorage::plain(c::DataType::kFloat16).value(),
       .max_requests=2,.max_query_rows=2,.max_kv_rows=48,.max_pages=4,.max_page_refs=4,
-      .query_heads=8,.kv_heads=2,.head_dim=64,.page_size=16};
+      .query_heads=8,.kv_heads=2,.qk_head_dim=64,.value_head_dim=64,.page_size=16};
   HYLE_ASSIGN_OR_RETURN(data.schema,c::BatchSchema::create(cap));
   const std::array<std::int32_t,3> qp{0,1,2},kp{0,2,3};
   const std::array<std::int32_t,3> pages{2,0,2},next_pages{0,2,0};
@@ -45,8 +45,8 @@ inline Result<Inputs> inputs(n::Context& context,n::MemoryResource& device,n::Me
   HYLE_ASSIGN_OR_RETURN(data.next,data.schema.version({qp,kp,next_pages,tails}));
   HYLE_ASSIGN_OR_RETURN(data.recipe,c::NativePagedBatchProgram::prepare(data.schema,
       {.max_host_metadata_bytes=4096,.scale=.125F}));
-  HYLE_ASSIGN_OR_RETURN(data.keys,c::PagedArena::create(data.schema,device.ref(),{.max_backing_bytes=1<<20}));
-  HYLE_ASSIGN_OR_RETURN(data.values,c::PagedArena::create(data.schema,device.ref(),{.max_backing_bytes=1<<20}));
+  HYLE_ASSIGN_OR_RETURN(data.keys,c::PagedArena::create(data.schema,c::BatchCacheRole::kKey,device.ref(),{.max_backing_bytes=1<<20}));
+  HYLE_ASSIGN_OR_RETURN(data.values,c::PagedArena::create(data.schema,c::BatchCacheRole::kValue,device.ref(),{.max_backing_bytes=1<<20}));
   const auto page_bytes=data.keys.page_bytes();
   HYLE_ASSIGN_OR_RETURN(data.query_pool,c::LeasePool::create(device.ref(),4096));
   HYLE_ASSIGN_OR_RETURN(auto host,c::LeasePool::create(staging.ref(),2*page_bytes+512));

@@ -450,7 +450,9 @@ struct OperationId final {
 
 namespace detail {
 
-inline constexpr std::size_t kCustomOperationInlineBytes = 64;
+// Uses the existing View-sized variant storage; Operation's ordinary size
+// does not grow. The finite batch cache descriptor needs both immutable specs.
+inline constexpr std::size_t kCustomOperationInlineBytes = 88;
 
 struct CustomOperationVTable final {
   std::string_view name{};

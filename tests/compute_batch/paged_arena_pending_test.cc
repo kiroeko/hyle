@@ -12,7 +12,7 @@ namespace m=hyle::mem;
 using Access=c::detail::PagedArenaAccess;
 using CopyAccess=c::detail::CopyStreamAccess;
 c::BatchCapacity capacity(){return {.max_requests=2,.max_query_rows=2,.max_kv_rows=128,
-  .max_pages=4,.max_page_refs=4,.query_heads=2,.kv_heads=2,.head_dim=64,.page_size=2};}
+  .max_pages=4,.max_page_refs=4,.query_heads=2,.kv_heads=2,.qk_head_dim=64,.value_head_dim=64,.page_size=2};}
 c::BatchLayoutVersion one(const c::BatchSchema&schema,std::span<const std::int32_t> ids,int tail){
   const std::array<std::int32_t,2> q{0,1},kv{0,std::int32_t(ids.size())};
   const std::array<std::int32_t,1> tails{tail};return schema.version({q,kv,ids,tails}).value();
@@ -46,7 +46,7 @@ c::CopyBatchUpdate submit(Copy&copy,const c::ReadLease&source,c::PagedPageWriter
 }
 TEST(PagedArenaPending, ConstructionKeepsExactOwnedLayoutAndRejectsUnconsumedForeignOrDuplicatePages){
   auto schema=c::BatchSchema::create(capacity()).value();
-  auto arena=c::PagedArena::create(schema,m::system_resource(),{.max_backing_bytes=4096}).value();
+  auto arena=c::PagedArena::create(schema,c::BatchCacheRole::kKey,m::system_resource(),{.max_backing_bytes=4096}).value();
   auto clean=fill(arena,1,2,std::byte{7});auto writer=arena.acquire(0).value();
   auto layout=one(schema,std::array<std::int32_t,2>{0,1},1);
   const std::array<c::PagedPageUpdate,1> updates{{{&writer,{1}}}};
@@ -60,7 +60,7 @@ TEST(PagedArenaPending, ConstructionKeepsExactOwnedLayoutAndRejectsUnconsumedFor
   EXPECT_FALSE(arena.pending_read(layout,std::array{clean,clean},updates));
   const std::array<c::PagedPageUpdate,2> duplicate{{{&writer,{1}},{&writer,{2}}}};
   EXPECT_FALSE(arena.pending_read(one(schema,std::array<std::int32_t,2>{0,0},1),{},duplicate));
-  auto foreign=c::PagedArena::create(schema,m::system_resource(),{.max_backing_bytes=4096}).value();
+  auto foreign=c::PagedArena::create(schema,c::BatchCacheRole::kKey,m::system_resource(),{.max_backing_bytes=4096}).value();
   auto other=foreign.acquire(0).value();auto other_lease=std::move(other.lease());
   EXPECT_FALSE(arena.pending_read(layout,std::array{clean},std::array<c::PagedPageUpdate,1>{{{&other,{1}}}}));
   EXPECT_FALSE(arena.pending_read(layout,std::array{clean},std::array<c::PagedPageUpdate,1>{{{&writer,{}}}}));
@@ -70,7 +70,7 @@ TEST(PagedArenaPending, ConstructionKeepsExactOwnedLayoutAndRejectsUnconsumedFor
 }
 TEST(PagedArenaPending, AcceptedCoverageRejectsByteHolesAndDoesNotConsumeOriginalControls){
   auto schema=c::BatchSchema::create(capacity()).value();
-  auto arena=c::PagedArena::create(schema,m::system_resource(),{.max_backing_bytes=4096}).value();
+  auto arena=c::PagedArena::create(schema,c::BatchCacheRole::kKey,m::system_resource(),{.max_backing_bytes=4096}).value();
   auto source=fill(arena,1,2,std::byte{23});auto writer=arena.acquire(0).value();Copy copy(arena.page_bytes());
   const std::array<c::CopyPhase,2> phases{{{}, {.dependency_mask=1}}};
   const std::array<c::CopyRange,2> ranges{{{{0},{1},{0},0,0,128},{{0},{1},{1},256,256,256}}};
@@ -89,7 +89,7 @@ TEST(PagedArenaPending, AcceptedCoverageRejectsByteHolesAndDoesNotConsumeOrigina
 }
 TEST(PagedArenaPending, SharedAndNonTailReferencesDemandTheMaximumInitializedDomain){
   auto schema=c::BatchSchema::create(capacity()).value();
-  auto arena=c::PagedArena::create(schema,m::system_resource(),{.max_backing_bytes=4096}).value();
+  auto arena=c::PagedArena::create(schema,c::BatchCacheRole::kKey,m::system_resource(),{.max_backing_bytes=4096}).value();
   auto source=fill(arena,1,2,std::byte{31});auto writer=arena.acquire(0).value();Copy copy(arena.page_bytes());
   const std::array<c::CopyPhase,1> phases{{{}}};const std::array<c::CopyRange,1> ranges{{{{0},{1},{0},0,0,256}}};
   auto update=submit(copy,source,writer,phases,ranges);
@@ -107,7 +107,7 @@ TEST(PagedArenaPending, SharedAndNonTailReferencesDemandTheMaximumInitializedDom
 }
 TEST(PagedArenaPending, OriginalRootFullRangeAndReservationAreRequiredAtAdmission){
   auto schema=c::BatchSchema::create(capacity()).value();
-  auto arena=c::PagedArena::create(schema,m::system_resource(),{.max_backing_bytes=4096}).value();
+  auto arena=c::PagedArena::create(schema,c::BatchCacheRole::kKey,m::system_resource(),{.max_backing_bytes=4096}).value();
   auto source=fill(arena,1,2,std::byte{37});auto old=fill(arena,0,1,std::byte{11});
   auto writer=arena.acquire(old).value();Copy copy(arena.page_bytes());
   const std::array<c::CopyPhase,1> phases{{{}}};const std::array<c::CopyRange,1> ranges{{{{0},{1},{0},0,256,256}}};
@@ -117,7 +117,7 @@ TEST(PagedArenaPending, OriginalRootFullRangeAndReservationAreRequiredAtAdmissio
   EXPECT_TRUE(validate(frame,update).ok());auto original=CopyAccess::input(update,{1}).value();
   auto partial=original;partial.view=original.view.subview(0,256).value();EXPECT_TRUE(Access::validate_page(frame,0,partial).IsInvalidArgument());
   auto wrong=original;wrong.root=nullptr;EXPECT_TRUE(Access::validate_page(frame,0,wrong).IsInvalidArgument());
-  auto foreign=c::PagedArena::create(schema,m::system_resource(),{.max_backing_bytes=4096}).value();
+  auto foreign=c::PagedArena::create(schema,c::BatchCacheRole::kKey,m::system_resource(),{.max_backing_bytes=4096}).value();
   auto other=foreign.acquire(0).value();Copy other_copy(arena.page_bytes());auto other_update=submit(other_copy,source,other,phases,ranges);
   EXPECT_TRUE(validate(frame,other_update).IsInvalidArgument());EXPECT_TRUE(other_update.valid());
   ASSERT_TRUE(update.wait().ok());writer.lease()=update.take_mutable({1}).value();old=writer.publish(2).value();
@@ -127,7 +127,7 @@ TEST(PagedArenaPending, OriginalRootFullRangeAndReservationAreRequiredAtAdmissio
 }
 TEST(PagedArenaPending, EveryColdFrameAllocationFailureRollsBackWithoutConsumingSource){
   auto schema=c::BatchSchema::create(capacity()).value();hyle_f5_fault_fixture::Allocator fault;
-  auto arena=c::PagedArena::create(schema,m::system_resource(),{.max_backing_bytes=4096,.allocator=fault.ref()}).value();
+  auto arena=c::PagedArena::create(schema,c::BatchCacheRole::kKey,m::system_resource(),{.max_backing_bytes=4096,.allocator=fault.ref()}).value();
   auto clean=fill(arena,1,2,std::byte{41});auto writer=arena.acquire(0).value();Copy copy(arena.page_bytes());
   const std::array<c::CopyPhase,1> phases{{{}}};const std::array<c::CopyRange,1> ranges{{{{0},{1},{0},0,0,512}}};
   auto update=submit(copy,clean,writer,phases,ranges);auto layout=one(schema,std::array<std::int32_t,2>{0,1},2);
@@ -141,7 +141,7 @@ TEST(PagedArenaPending, EveryColdFrameAllocationFailureRollsBackWithoutConsuming
 }
 TEST(PagedArenaPending, TwoRequestsAndTwoOriginalCopySlotsAppendSixtyFourRowsWithoutRewritingHistory){
   auto cap=capacity();cap.page_size=32;auto schema=c::BatchSchema::create(cap).value();m::QuotaAllocator quota(m::system_allocator());
-  auto made=c::PagedArena::create(schema,m::system_resource(),{.max_backing_bytes=32769,.allocator=quota.get()});
+  auto made=c::PagedArena::create(schema,c::BatchCacheRole::kKey,m::system_resource(),{.max_backing_bytes=32769,.allocator=quota.get()});
   ASSERT_TRUE(made)<<made.error().message();auto arena=std::move(*made);
   auto shared=fill(arena,2,1,std::byte{5});Copy copy(arena.page_bytes());
   std::array<c::CopyBatchInvocation,2> invocations{std::move(copy.invocation),c::CopyBatchInvocation::create(copy.program,copy.queue).value()};

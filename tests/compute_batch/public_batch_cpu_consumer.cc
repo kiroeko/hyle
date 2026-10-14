@@ -15,14 +15,14 @@ hyle::Result<c::ReadLease> load(c::LeasePool&pool,std::span<const std::uint16_t>
 Status exercise(bool paged,bool bf16){
   HYLE_ASSIGN_OR_RETURN(auto context,g::cpu::create_context());HYLE_ASSIGN_OR_RETURN(auto queue,context.create_queue());
   struct Drain{c::Context&context;~Drain(){context.drain().IgnoreError();}}drain{context};
-  c::BatchCapacity cap{.storage=paged?c::BatchStorage::kPaged:c::BatchStorage::kRagged,.data_type=bf16?c::DataType::kBFloat16:c::DataType::kFloat16,.max_requests=1,.max_query_rows=2,.max_kv_rows=4,.max_pages=paged?3u:0u,.max_page_refs=paged?2u:0u,.query_heads=4,.kv_heads=2,.head_dim=64,.page_size=paged?2u:1u};
+  c::BatchCapacity cap{.storage=paged?c::BatchStorage::kPaged:c::BatchStorage::kRagged,.query_type=bf16?c::DataType::kBFloat16:c::DataType::kFloat16,.output_type=bf16?c::DataType::kBFloat16:c::DataType::kFloat16,.key_storage=c::CacheStorage::plain(bf16?c::DataType::kBFloat16:c::DataType::kFloat16).value(),.value_storage=c::CacheStorage::plain(bf16?c::DataType::kBFloat16:c::DataType::kFloat16).value(),.max_requests=1,.max_query_rows=2,.max_kv_rows=4,.max_pages=paged?3u:0u,.max_page_refs=paged?2u:0u,.query_heads=4,.kv_heads=2,.qk_head_dim=64,.value_head_dim=64,.page_size=paged?2u:1u};
   HYLE_ASSIGN_OR_RETURN(auto schema,c::BatchSchema::create(cap));const std::array<std::int32_t,2> qptr{0,1},kvptr{0,paged?2:3},pages{2,0};const std::array<std::int32_t,1> tail{1};
   HYLE_ASSIGN_OR_RETURN(auto layout,schema.version({qptr,kvptr,paged?std::span(pages):std::span<const std::int32_t>{},paged?std::span(tail):std::span<const std::int32_t>{}}));
   HYLE_ASSIGN_OR_RETURN(auto recipe,c::MaterializedBatchProgram::prepare(schema,{.max_kv_per_request=4,.max_host_metadata_bytes=1u<<20,.max_logical_intermediate_bytes=1u<<20,.scale=.125f}));
   HYLE_ASSIGN_OR_RETURN(auto pool,c::LeasePool::create(hyle::mem::system_resource(),8192));std::vector<std::uint16_t> zero(512,encoded(0,bf16));HYLE_ASSIGN_OR_RETURN(auto query,load(pool,zero));
   c::ReadLease ragged_k,ragged_v;c::PagedArena key_arena,value_arena;c::PagedArenaRead keys,values;
   if(paged){
-    HYLE_ASSIGN_OR_RETURN(key_arena,c::PagedArena::create(schema,hyle::mem::system_resource(),{.max_backing_bytes=4096}));HYLE_ASSIGN_OR_RETURN(value_arena,c::PagedArena::create(schema,hyle::mem::system_resource(),{.max_backing_bytes=4096}));std::array<c::ReadLease,2> k,v;
+    HYLE_ASSIGN_OR_RETURN(key_arena,c::PagedArena::create(schema,c::BatchCacheRole::kKey,hyle::mem::system_resource(),{.max_backing_bytes=4096}));HYLE_ASSIGN_OR_RETURN(value_arena,c::PagedArena::create(schema,c::BatchCacheRole::kValue,hyle::mem::system_resource(),{.max_backing_bytes=4096}));std::array<c::ReadLease,2> k,v;
     for(unsigned i=0;i<2;++i){const unsigned id=i?0:2;HYLE_ASSIGN_OR_RETURN(auto kw,key_arena.acquire(id));HYLE_ASSIGN_OR_RETURN(auto vw,value_arena.acquire(id));std::vector<std::uint16_t> a(256,encoded(0,bf16)),b(256);
       for(unsigned j=0;j<256;++j)b[j]=encoded(i?(j<128?.375f:1.f):(j<128?.125f:.25f),bf16);
       HYLE_RETURN_IF_ERROR(kw.lease().view()->write(std::as_bytes(std::span(a))));HYLE_RETURN_IF_ERROR(vw.lease().view()->write(std::as_bytes(std::span(b))));HYLE_ASSIGN_OR_RETURN(k[i],kw.publish(cap.page_size));HYLE_ASSIGN_OR_RETURN(v[i],vw.publish(cap.page_size));

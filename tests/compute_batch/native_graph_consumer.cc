@@ -11,8 +11,8 @@ template<class T>Status graph_case(bool paged,unsigned depth,bool large,unsigned
   hyle::mem::QuotaAllocator metadata(hyle::mem::system_allocator());
   {
     const unsigned n1=large?8193:19,n2=large?4097:10,refs1=(n1+15)/16,refs2=(n2+15)/16;
-    c::BatchCapacity cap{.storage=paged?c::BatchStorage::kPaged:c::BatchStorage::kRagged,.data_type=std::is_same_v<T,half>?c::DataType::kFloat16:c::DataType::kBFloat16,
-      .max_requests=2,.max_query_rows=3,.max_kv_rows=n1+n2,.max_pages=paged?refs1+refs2+1:0,.max_page_refs=paged?refs1+refs2:0,.query_heads=4,.kv_heads=2,.head_dim=depth,.page_size=paged?16u:1u};
+    c::BatchCapacity cap{.storage=paged?c::BatchStorage::kPaged:c::BatchStorage::kRagged,.query_type=std::is_same_v<T,half>?c::DataType::kFloat16:c::DataType::kBFloat16,.output_type=std::is_same_v<T,half>?c::DataType::kFloat16:c::DataType::kBFloat16,.key_storage=hyle::compute::CacheStorage::plain(std::is_same_v<T,half>?c::DataType::kFloat16:c::DataType::kBFloat16).value(),.value_storage=hyle::compute::CacheStorage::plain(std::is_same_v<T,half>?c::DataType::kFloat16:c::DataType::kBFloat16).value(),
+      .max_requests=2,.max_query_rows=3,.max_kv_rows=n1+n2,.max_pages=paged?refs1+refs2+1:0,.max_page_refs=paged?refs1+refs2:0,.query_heads=4,.kv_heads=2,.qk_head_dim=depth,.value_head_dim=depth,.page_size=paged?16u:1u};
     HYLE_ASSIGN_OR_RETURN(auto schema,c::BatchSchema::create(cap,{.allocator=metadata.get()}));
     hyle_f5_graph_fault_fixture::RunDecorator region_runs(c::flashinfer::provider());
     HYLE_ASSIGN_OR_RETURN(auto wrapped,gb::provider(region_runs.provider(),schema,{.max_float_workspace_bytes=8u*1024u*1024u,.max_int_workspace_bytes=64u*1024u,.scale=1.f/std::sqrt(float(depth)),.allocator=metadata.get()}));
@@ -25,9 +25,9 @@ template<class T>Status graph_case(bool paged,unsigned depth,bool large,unsigned
     const std::array<std::int32_t,2> tails{std::int32_t((n1-1)%16+1),std::int32_t((n2-1)%16+1)};
     std::vector<std::int32_t> ids(paged?refs1+refs2:0);for(unsigned i=0;i<ids.size();++i)ids[i]=std::int32_t((i+7)%ids.size());
     HYLE_ASSIGN_OR_RETURN(auto layout,schema.version({query,kv,ids,paged?std::span<const std::int32_t>(tails):std::span<const std::int32_t>{}}));
-    HYLE_ASSIGN_OR_RETURN(auto qdesc,c::TensorDesc::dense(cap.data_type,std::array<std::int64_t,3>{3,4,depth}));c::TensorDesc kvdesc;
-    if(paged){HYLE_ASSIGN_OR_RETURN(kvdesc,c::TensorDesc::dense(cap.data_type,std::array<std::int64_t,4>{cap.max_pages,16,2,depth}));}
-    else{HYLE_ASSIGN_OR_RETURN(kvdesc,c::TensorDesc::dense(cap.data_type,std::array<std::int64_t,3>{cap.max_kv_rows,2,depth}));}
+    HYLE_ASSIGN_OR_RETURN(auto qdesc,c::TensorDesc::dense(cap.query_type,std::array<std::int64_t,3>{3,4,depth}));c::TensorDesc kvdesc;
+    if(paged){HYLE_ASSIGN_OR_RETURN(kvdesc,c::TensorDesc::dense(cap.query_type,std::array<std::int64_t,4>{cap.max_pages,16,2,depth}));}
+    else{HYLE_ASSIGN_OR_RETURN(kvdesc,c::TensorDesc::dense(cap.query_type,std::array<std::int64_t,3>{cap.max_kv_rows,2,depth}));}
     HYLE_ASSIGN_OR_RETURN(auto builder,g::GraphBuilder::create());std::array<g::ValueId,4> inputs;
     const std::array descriptions{qdesc,kvdesc,kvdesc,schema.metadata_description().value()};
     for(std::size_t i=0;i<4;++i){HYLE_ASSIGN_OR_RETURN(inputs[i],builder.input(descriptions[i]));}

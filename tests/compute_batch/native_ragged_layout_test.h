@@ -26,17 +26,17 @@ template<class T>void ragged_native_case(unsigned depth,bool causal){
 #else
   ASSERT_FALSE(context.environment().software_device);auto memory=n::MemoryResource::create(context,n::MemoryKind::kDevice).value();
 #endif
-  const c::BatchCapacity cap{.storage=c::BatchStorage::kRagged,.data_type=half_test::data_type<T>(),
+  const c::BatchCapacity cap{.storage=c::BatchStorage::kRagged,.query_type=half_test::data_type<T>(),.output_type=half_test::data_type<T>(),.key_storage=c::CacheStorage::plain(half_test::data_type<T>()).value(),.value_storage=c::CacheStorage::plain(half_test::data_type<T>()).value(),
     .max_requests=3,.max_query_rows=20,.max_kv_rows=84,.max_pages=0,.max_page_refs=0,
-    .query_heads=8,.kv_heads=2,.head_dim=depth,.page_size=1};
+    .query_heads=8,.kv_heads=2,.qk_head_dim=depth,.value_head_dim=depth,.page_size=1};
   auto schema=c::BatchSchema::create(cap).value();const std::array<std::int32_t,4> qp{0,1,18,18},kp{0,31,78,78};
   auto layout=schema.version({qp,kp,{},{}}).value();const c::RaggedAttention operation{cap,1.F/std::sqrt(float(depth)),causal};
   auto prepared=n::prepare_ragged_batch(context,layout,operation);ASSERT_TRUE(prepared)<<prepared.error().message();
   auto program=std::move(*prepared);
   hyle::mem::QuotaAllocator denied_metadata(hyle::mem::system_allocator(),0);auto denied=program.create_invocation(denied_metadata.get());ASSERT_FALSE(denied);EXPECT_TRUE(denied.error().IsResourceExhausted());
   auto first=program.create_invocation().value(),second=program.create_invocation().value();
-  auto qd=c::TensorDesc::dense(cap.data_type,std::array<std::int64_t,3>{20,8,depth}).value();
-  auto kd=c::TensorDesc::dense(cap.data_type,std::array<std::int64_t,3>{84,2,depth}).value();
+  auto qd=c::TensorDesc::dense(cap.query_type,std::array<std::int64_t,3>{20,8,depth}).value();
+  auto kd=c::TensorDesc::dense(cap.query_type,std::array<std::int64_t,3>{84,2,depth}).value();
   std::vector<T> q(*qd.element_count()),k(*kd.element_count()),v(k.size());
   for(std::size_t i=0;i<q.size();++i)q[i]=half_test::encode<T>(float(int(i%13)-6)*.03125F);
   for(std::size_t i=0;i<k.size();++i){k[i]=half_test::encode<T>(float(int(i%17)-8)*.015625F);v[i]=half_test::encode<T>(float(int(i%29)-14)*.03125F);}
@@ -60,7 +60,7 @@ template<class T>void ragged_native_case(unsigned depth,bool causal){
       }}return result;};
   const auto read=[&](const n::Results &result){std::vector<T> actual(18*8*depth);
 #if defined(HYLE_G01_APPLE_RAGGED)
-    auto od=c::TensorDesc::dense(cap.data_type,std::array<std::int64_t,3>{18,8,depth}).value();
+    auto od=c::TensorDesc::dense(cap.query_type,std::array<std::int64_t,3>{18,8,depth}).value();
     auto lease=memory.import_readonly(result.arrays()[0],od).value();EXPECT_TRUE(lease.view()->read(std::as_writable_bytes(std::span(actual))).ok());
 #else
     EXPECT_TRUE(context.download(result.tensors()[0],std::as_writable_bytes(std::span(actual))).ok());
@@ -103,11 +103,11 @@ TEST(NativeRaggedLayout, EightRequestsJoinOnlyTheirActiveRows){
   ASSERT_FALSE(context.environment().software_device);auto memory=n::MemoryResource::create(context,n::MemoryKind::kDevice).value();
 #endif
   const c::BatchCapacity cap{.storage=c::BatchStorage::kRagged,.max_requests=8,.max_query_rows=10,.max_kv_rows=11,
-    .max_pages=0,.max_page_refs=0,.query_heads=8,.kv_heads=2,.head_dim=64,.page_size=1};
+    .max_pages=0,.max_page_refs=0,.query_heads=8,.kv_heads=2,.qk_head_dim=64,.value_head_dim=64,.page_size=1};
   auto schema=c::BatchSchema::create(cap).value();const std::array<std::int32_t,9> ptr{0,1,2,3,4,5,6,7,8};auto layout=schema.version({ptr,ptr,{},{}}).value();
   auto program=n::prepare_ragged_batch(context,layout,{cap,.125F,true});ASSERT_TRUE(program)<<program.error().message();auto made_slot=program->create_invocation();ASSERT_TRUE(made_slot)<<made_slot.error().message();auto slot=std::move(*made_slot);
-  const auto qd=c::TensorDesc::dense(cap.data_type,std::array<std::int64_t,3>{10,8,64}).value();
-  const auto kd=c::TensorDesc::dense(cap.data_type,std::array<std::int64_t,3>{11,2,64}).value();
+  const auto qd=c::TensorDesc::dense(cap.query_type,std::array<std::int64_t,3>{10,8,64}).value();
+  const auto kd=c::TensorDesc::dense(cap.query_type,std::array<std::int64_t,3>{11,2,64}).value();
   std::vector<F16> q(*qd.element_count()),k(*kd.element_count()),v(k.size(),half_test::encode<F16>(128.F));
   for(unsigned r=0;r<8;++r)for(unsigned i=0;i<128;++i)v[r*128+i]=half_test::encode<F16>(float(r)*.125F);
   auto pool=c::LeasePool::create(memory.ref(),(q.size()+k.size()+v.size())*2+2048).value();
@@ -120,7 +120,7 @@ TEST(NativeRaggedLayout, EightRequestsJoinOnlyTheirActiveRows){
   };
   const std::array inputs{upload(qd,q),upload(kd,k),upload(kd,v)};ASSERT_TRUE(slot.bind(inputs).ok());auto submitted=slot.submit();ASSERT_TRUE(submitted)<<submitted.error().message();auto done=std::move(*submitted);auto waited=done.wait();ASSERT_TRUE(waited)<<waited.error().message();auto result=std::move(*waited);std::vector<F16> actual(8*8*64);
 #if defined(HYLE_G01_APPLE_RAGGED)
-  auto od=c::TensorDesc::dense(cap.data_type,std::array<std::int64_t,3>{8,8,64}).value();auto output=memory.import_readonly(result->arrays()[0],od).value();ASSERT_TRUE(output.view()->read(std::as_writable_bytes(std::span(actual))).ok());output.reset();
+  auto od=c::TensorDesc::dense(cap.query_type,std::array<std::int64_t,3>{8,8,64}).value();auto output=memory.import_readonly(result->arrays()[0],od).value();ASSERT_TRUE(output.view()->read(std::as_writable_bytes(std::span(actual))).ok());output.reset();
 #else
   ASSERT_TRUE(context.download(result->tensors()[0],std::as_writable_bytes(std::span(actual))).ok());
 #endif

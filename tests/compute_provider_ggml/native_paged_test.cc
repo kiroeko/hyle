@@ -12,15 +12,15 @@ namespace {
 namespace c=hyle::compute;
 template<class T>void paged_case(unsigned depth,bool causal){
   auto context=c::cpu::create_context({.native_threads=2}).value();auto queue=context.create_queue().value();
-  const c::BatchCapacity cap{.storage=c::BatchStorage::kPaged,.data_type=half_test::data_type<T>(),
+  const c::BatchCapacity cap{.storage=c::BatchStorage::kPaged,.query_type=half_test::data_type<T>(),.output_type=half_test::data_type<T>(),.key_storage=c::CacheStorage::plain(half_test::data_type<T>()).value(),.value_storage=c::CacheStorage::plain(half_test::data_type<T>()).value(),
     .max_requests=2,.max_query_rows=21,.max_kv_rows=80,.max_pages=6,.max_page_refs=5,
-    .query_heads=8,.kv_heads=2,.head_dim=depth,.page_size=16};
+    .query_heads=8,.kv_heads=2,.qk_head_dim=depth,.value_head_dim=depth,.page_size=16};
   auto schema=c::BatchSchema::create(cap).value();
   const std::array<std::int32_t,3> qp{0,1,18},kp{0,2,5};
   const std::array<std::int32_t,5> ids{4,1,3,0,1};const std::array<std::int32_t,2> tails{15,15};
   auto layout=schema.version({qp,kp,ids,tails}).value();
-  auto keys=c::PagedArena::create(schema,hyle::mem::system_resource(),{.max_backing_bytes=1u<<20}).value();
-  auto values=c::PagedArena::create(schema,hyle::mem::system_resource(),{.max_backing_bytes=1u<<20}).value();
+  auto keys=c::PagedArena::create(schema,c::BatchCacheRole::kKey,hyle::mem::system_resource(),{.max_backing_bytes=1u<<20}).value();
+  auto values=c::PagedArena::create(schema,c::BatchCacheRole::kValue,hyle::mem::system_resource(),{.max_backing_bytes=1u<<20}).value();
   const std::array<unsigned,4> pages{0,1,3,4};std::array<c::ReadLease,4> k,v;
   for(unsigned index=0;index<pages.size();++index){
     auto kw=keys.acquire(pages[index]).value(),vw=values.acquire(pages[index]).value();

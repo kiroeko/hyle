@@ -25,7 +25,8 @@ inline Status audit_native_paged_nodes(const Graph& graph,
     const auto descriptor=operation.custom_as<NativePagedAttention>();
     if(!descriptor || descriptor->capacity!=binding.program.schema().capacity() ||
        descriptor->active_query_rows!=binding.layout.facts().query_rows ||
-       descriptor->scale!=binding.program.scale() || descriptor->causal!=binding.program.causal())
+       descriptor->scale!=binding.program.scale() || descriptor->causal!=binding.program.causal() ||
+       descriptor->window_left!=binding.program.window_left())
       return Status::InvalidArgument("native page node descriptor differs from its owned recipe/layout");
     for(std::size_t port=0;port<3;++port){
       HYLE_ASSIGN_OR_RETURN(auto input,graph.node_input(node,port));

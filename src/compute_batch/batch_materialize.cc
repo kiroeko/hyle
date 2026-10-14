@@ -55,7 +55,11 @@ MaterializedBatchProgram::~MaterializedBatchProgram(){if(data_)data_->decref();}
 Result<MaterializedBatchProgram> MaterializedBatchProgram::prepare(BatchSchema schema,MaterializedBatchOptions options)noexcept{
   if(!schema.valid() || !options.allocator.valid() || !options.max_kv_per_request || !options.max_host_metadata_bytes || !options.max_logical_intermediate_bytes || !std::isfinite(options.scale))
     return std::unexpected(Status::InvalidArgument("materialized batch needs explicit finite capacities/budgets"));
-  const auto c=schema.capacity();const auto n=c.max_query_rows,h=c.query_heads,d=c.head_dim,l=options.max_kv_per_request;
+  HYLE_RETURN_IF_ERROR(validate_batch_attention_options(options.causal,options.window_left));
+  const auto c=schema.capacity();const auto n=c.max_query_rows,h=c.query_heads,d=c.qk_head_dim,dv=c.value_head_dim,l=options.max_kv_per_request;
+  if(!c.key_storage.format().is_plain() || !c.value_storage.format().is_plain() ||
+     c.key_storage.data_type()==DataType::kFloat8E4M3FN || c.value_storage.data_type()==DataType::kFloat8E4M3FN)
+    return std::unexpected(Status::Unimplemented("materialized reference does not decode encoded caches"));
   if(l>c.max_kv_rows)return std::unexpected(Status::InvalidArgument("materialized per-request KV capacity exceeds schema"));
   HYLE_ASSIGN_OR_RETURN(auto rows,product({c.storage==BatchStorage::kPaged?c.max_pages:c.max_kv_rows,c.storage==BatchStorage::kPaged?c.page_size:1u,c.kv_heads}));
   if(rows>std::size_t(INT32_MAX))return std::unexpected(Status::OutOfRange("materialized gather flattened index exceeds I32"));
@@ -63,17 +67,19 @@ Result<MaterializedBatchProgram> MaterializedBatchProgram::prepare(BatchSchema s
   HYLE_ASSIGN_OR_RETURN(costs.index_bytes,product({n,h,l,sizeof(std::int32_t)}));HYLE_ASSIGN_OR_RETURN(costs.mask_bytes,product({n,l,sizeof(float)}));
   if(costs.index_bytes>SIZE_MAX-costs.mask_bytes || costs.index_bytes+costs.mask_bytes>options.max_host_metadata_bytes)
     return std::unexpected(Status::ResourceExhausted("materialized host metadata byte capacity"));
-  HYLE_ASSIGN_OR_RETURN(costs.gathered_kv_bytes,product({2u,n,h,l,d,2u}));
+  HYLE_ASSIGN_OR_RETURN(auto key_bytes,product({n,h,l,d,data_type_size(c.key_storage.data_type())}));
+  HYLE_ASSIGN_OR_RETURN(auto value_bytes,product({n,h,l,dv,data_type_size(c.value_storage.data_type())}));
+  if(value_bytes>SIZE_MAX-key_bytes)return std::unexpected(Status::OutOfRange("materialized K/V cost overflow"));
+  costs.gathered_kv_bytes=key_bytes+value_bytes;
   auto a=options.allocator;if(options.resource_budget.valid()){HYLE_ASSIGN_OR_RETURN(a,options.resource_budget.metadata_allocator());}
   auto*p=a.construct<detail::MaterializedBatchProgramData>(std::move(schema),std::move(options),a);if(!p)return std::unexpected(Status::ResourceExhausted("materialized batch program metadata"));
   MaterializedBatchProgram result(p);p->costs=costs;
-  HYLE_ASSIGN_OR_RETURN(p->values[0],TensorDesc::dense(c.data_type,std::array<std::int64_t,3>{n,h,d}));
-  if(c.storage==BatchStorage::kPaged){HYLE_ASSIGN_OR_RETURN(p->values[1],TensorDesc::dense(c.data_type,std::array<std::int64_t,4>{c.max_pages,c.page_size,c.kv_heads,d}));}
-  else{HYLE_ASSIGN_OR_RETURN(p->values[1],TensorDesc::dense(c.data_type,std::array<std::int64_t,3>{c.max_kv_rows,c.kv_heads,d}));}
-  p->values[2]=p->values[1];
+  HYLE_ASSIGN_OR_RETURN(p->values[0],batch_query_description(c));
+  HYLE_ASSIGN_OR_RETURN(p->values[1],batch_cache_description(c,BatchCacheRole::kKey));
+  HYLE_ASSIGN_OR_RETURN(p->values[2],batch_cache_description(c,BatchCacheRole::kValue));
   HYLE_ASSIGN_OR_RETURN(p->values[3],TensorDesc::dense(DataType::kInt32,std::array<std::int64_t,3>{n,h,l}));
   HYLE_ASSIGN_OR_RETURN(p->values[4],TensorDesc::dense(DataType::kFloat32,std::array<std::int64_t,4>{n,1,1,l}));
-  HYLE_ASSIGN_OR_RETURN(auto k,reshape(*p,1,{std::int64_t(rows),d}));HYLE_ASSIGN_OR_RETURN(auto v,reshape(*p,2,{std::int64_t(rows),d}));
+  HYLE_ASSIGN_OR_RETURN(auto k,reshape(*p,1,{std::int64_t(rows),d}));HYLE_ASSIGN_OR_RETURN(auto v,reshape(*p,2,{std::int64_t(rows),dv}));
   // Native checked gather also rejects an invalid index if the ordinary
   // recipe is deliberately bound without its owned metadata version.
   const Operation gather(Gather{0,IndexBoundsPolicy::kChecked});
@@ -83,7 +89,7 @@ Result<MaterializedBatchProgram> MaterializedBatchProgram::prepare(BatchSchema s
   HYLE_ASSIGN_OR_RETURN(auto q,add(*p,Operation(Cast{DataType::kFloat32}),{0}));HYLE_ASSIGN_OR_RETURN(q,reshape(*p,q,{n,h,1,d}));
   HYLE_ASSIGN_OR_RETURN(auto scores,add(*p,Operation(MatMul{}),{q,k}));
   HYLE_ASSIGN_OR_RETURN(auto probabilities,add(*p,Operation(Softmax{.axis=-1,.scale=p->options.scale,.mask=MaskKind::kAdditive}),{scores,4}));
-  HYLE_ASSIGN_OR_RETURN(auto output,add(*p,Operation(MatMul{}),{probabilities,v}));HYLE_ASSIGN_OR_RETURN(output,add(*p,Operation(Cast{c.data_type}),{output}));HYLE_ASSIGN_OR_RETURN(output,reshape(*p,output,{n,h,d}));
+  HYLE_ASSIGN_OR_RETURN(auto output,add(*p,Operation(MatMul{}),{probabilities,v}));HYLE_ASSIGN_OR_RETURN(output,add(*p,Operation(Cast{c.output_type}),{output}));HYLE_ASSIGN_OR_RETURN(output,reshape(*p,output,{n,h,dv}));
   // The reference explicitly pays this copy to produce an independent caller
   // output, rather than exporting a reshape alias of private native scratch.
   HYLE_ASSIGN_OR_RETURN(p->output,add(*p,Operation(Copy{}),{output}));
@@ -98,6 +104,7 @@ std::uint16_t MaterializedBatchProgram::output_value()const noexcept{return data
 MaterializedBatchCosts MaterializedBatchProgram::costs()const noexcept{return data_?data_->costs:MaterializedBatchCosts{};}
 Result<MaterializedBatchVersion> MaterializedBatchProgram::version(BatchLayoutVersion layout)const noexcept{
   if(!data_ || !data_->schema.owns(layout))return std::unexpected(Status::InvalidArgument("materialized layout schema is foreign"));
+  HYLE_RETURN_IF_ERROR(validate_batch_attention_layout(layout,data_->options.causal,data_->options.window_left));
   if(!layout.facts().query_rows)return std::unexpected(Status::Unimplemented("materialized empty active batch is not qualified"));
   const auto c=data_->schema.capacity();const auto host=layout.host();const auto l=data_->options.max_kv_per_request;
   for(std::size_t r=0;r<layout.facts().requests;++r)if(kv_length(c,host,r)>l)
@@ -119,7 +126,9 @@ Result<MaterializedBatchVersion> MaterializedBatchProgram::version(BatchLayoutVe
         for(std::uint32_t head=0;head<c.query_heads;++head)std::fill_n(indices+(std::size_t(row)*c.query_heads+head)*l,l,std::int32_t(std::uint64_t(first)*c.kv_heads+head/groups));
         for(std::uint32_t j=0;j<length;++j){const auto physical=c.storage==BatchStorage::kPaged?std::uint32_t(host.page_indices[std::uint32_t(host.kv_indptr[r])+j/c.page_size])*c.page_size+j%c.page_size:std::uint32_t(host.kv_indptr[r])+j;
           for(std::uint32_t head=0;head<c.query_heads;++head)indices[(std::size_t(row)*c.query_heads+head)*l+j]=std::int32_t(std::uint64_t(physical)*c.kv_heads+head/groups);
-          if(j<valid)mask[std::size_t(row)*l+j]=0;
+          const auto first_visible=data_->options.window_left<0?0u:
+              (valid-1>std::uint32_t(data_->options.window_left)?valid-1-std::uint32_t(data_->options.window_left):0u);
+          if(j>=first_visible && j<valid)mask[std::size_t(row)*l+j]=0;
         }
       }
     }

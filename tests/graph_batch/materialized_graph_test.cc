@@ -10,10 +10,10 @@ namespace gb = hyle::graph::batch;
 hyle::Result<c::MaterializedBatchProgram> recipe(bool paged, bool bf16) {
   c::BatchCapacity capacity{
       .storage = paged ? c::BatchStorage::kPaged : c::BatchStorage::kRagged,
-      .data_type = bf16 ? c::DataType::kBFloat16 : c::DataType::kFloat16,
+      .query_type=bf16 ? c::DataType::kBFloat16 : c::DataType::kFloat16,.output_type=bf16 ? c::DataType::kBFloat16 : c::DataType::kFloat16,.key_storage=c::CacheStorage::plain(bf16 ? c::DataType::kBFloat16 : c::DataType::kFloat16).value(),.value_storage=c::CacheStorage::plain(bf16 ? c::DataType::kBFloat16 : c::DataType::kFloat16).value(),
       .max_requests = 2, .max_query_rows = 4, .max_kv_rows = 29,
       .max_pages = paged ? 4u : 0u, .max_page_refs = paged ? 3u : 0u,
-      .query_heads = 4, .kv_heads = 2, .head_dim = 64,
+      .query_heads = 4, .kv_heads = 2, .qk_head_dim=64,.value_head_dim=64,
       .page_size = paged ? 16u : 1u};
   HYLE_ASSIGN_OR_RETURN(auto schema, c::BatchSchema::create(capacity));
   return c::MaterializedBatchProgram::prepare(

@@ -40,9 +40,9 @@ Status exercise([[maybe_unused]] c::Context&context,[[maybe_unused]] c::Queue&qu
     hyle::mem::MemoryResourceRef host_resource=hyle::mem::system_resource()){
   constexpr unsigned depth=256,heads=8,kv_heads=2;
   constexpr std::size_t row_elements=kv_heads*depth,row_bytes=row_elements*2;
-  const c::BatchCapacity cap{.data_type=bf?c::DataType::kBFloat16:c::DataType::kFloat16,
+  const c::BatchCapacity cap{.query_type=bf?c::DataType::kBFloat16:c::DataType::kFloat16,.output_type=bf?c::DataType::kBFloat16:c::DataType::kFloat16,.key_storage=c::CacheStorage::plain(bf?c::DataType::kBFloat16:c::DataType::kFloat16).value(),.value_storage=c::CacheStorage::plain(bf?c::DataType::kBFloat16:c::DataType::kFloat16).value(),
       .max_requests=2,.max_query_rows=18,.max_kv_rows=160,
-      .max_pages=10,.max_page_refs=8,.query_heads=heads,.kv_heads=kv_heads,.head_dim=depth};
+      .max_pages=10,.max_page_refs=8,.query_heads=heads,.kv_heads=kv_heads,.qk_head_dim=depth,.value_head_dim=depth};
   HYLE_ASSIGN_OR_RETURN(auto schema,c::BatchSchema::create(cap));
 #if defined(HYLE_PENDING_GRAPH_RECEIVER)
   namespace g=hyle::graph;namespace gb=g::batch;
@@ -78,8 +78,8 @@ Status exercise([[maybe_unused]] c::Context&context,[[maybe_unused]] c::Queue&qu
 #else
   auto&execution_context=context;auto&execution_queue=queue;
 #endif
-  HYLE_ASSIGN_OR_RETURN(auto keys,c::PagedArena::create(schema,resource,{.max_backing_bytes=1<<20}));
-  HYLE_ASSIGN_OR_RETURN(auto values,c::PagedArena::create(schema,resource,{.max_backing_bytes=1<<20}));
+  HYLE_ASSIGN_OR_RETURN(auto keys,c::PagedArena::create(schema,c::BatchCacheRole::kKey,resource,{.max_backing_bytes=1<<20}));
+  HYLE_ASSIGN_OR_RETURN(auto values,c::PagedArena::create(schema,c::BatchCacheRole::kValue,resource,{.max_backing_bytes=1<<20}));
   const auto page_bytes=keys.page_bytes();
   constexpr std::size_t query_bytes=18*heads*depth*2;
   const auto init_bytes=std::max(page_bytes,query_bytes);
@@ -125,8 +125,8 @@ Status exercise([[maybe_unused]] c::Context&context,[[maybe_unused]] c::Queue&qu
   HYLE_ASSIGN_OR_RETURN(auto update_program,n::CopyBatchProgram::prepare(execution_context,update_specs));
   std::array<n::CopyBatchInvocation,2> copy_slots;
 #if defined(HYLE_PENDING_GRAPH_RECEIVER)
-  HYLE_ASSIGN_OR_RETURN(auto qdesc,c::TensorDesc::dense(cap.data_type,std::array<std::int64_t,3>{cap.max_query_rows,heads,depth}));
-  HYLE_ASSIGN_OR_RETURN(auto kvdesc,c::TensorDesc::dense(cap.data_type,std::array<std::int64_t,4>{cap.max_pages,cap.page_size,kv_heads,depth}));
+  HYLE_ASSIGN_OR_RETURN(auto qdesc,c::TensorDesc::dense(cap.query_type,std::array<std::int64_t,3>{cap.max_query_rows,heads,depth}));
+  HYLE_ASSIGN_OR_RETURN(auto kvdesc,c::TensorDesc::dense(cap.query_type,std::array<std::int64_t,4>{cap.max_pages,cap.page_size,kv_heads,depth}));
   HYLE_ASSIGN_OR_RETURN(auto metadata,schema.metadata_description());
 #if defined(HYLE_PENDING_GRAPH_CPU_CUDA)
   HYLE_ASSIGN_OR_RETURN(auto query_input_desc,c::TensorDesc::dense(c::DataType::kFloat32,qdesc.dimensions()));
@@ -140,7 +140,7 @@ Status exercise([[maybe_unused]] c::Context&context,[[maybe_unused]] c::Queue&qu
   auto ports=inputs;
 #if defined(HYLE_PENDING_GRAPH_CPU_CUDA)
   HYLE_ASSIGN_OR_RETURN(ports[0],builder.add(c::Unary{c::UnaryKind::kNeg},inputs[0]));
-  HYLE_ASSIGN_OR_RETURN(ports[0],builder.add(c::Cast{cap.data_type},ports[0]));
+  HYLE_ASSIGN_OR_RETURN(ports[0],builder.add(c::Cast{cap.query_type},ports[0]));
 #endif
   HYLE_ASSIGN_OR_RETURN(auto node,builder.add_node(c::Operation::custom(c::PagedAttention{cap,options.scale,options.causal}),ports));
   HYLE_ASSIGN_OR_RETURN(auto output_id,builder.result(node));
@@ -155,7 +155,7 @@ Status exercise([[maybe_unused]] c::Context&context,[[maybe_unused]] c::Queue&qu
   // Cold diagnostics distinguish missing CPU math from a cross-domain route
   // defect without replacing either required CPU fragment with GPU work.
   HYLE_ASSIGN_OR_RETURN(auto cpu_query,c::prepare(cpu_context,c::Unary{c::UnaryKind::kNeg},query_input_desc));
-  HYLE_ASSIGN_OR_RETURN(auto cpu_narrow,c::prepare(cpu_context,c::Cast{cap.data_type},query_input_desc));
+  HYLE_ASSIGN_OR_RETURN(auto cpu_narrow,c::prepare(cpu_context,c::Cast{cap.query_type},query_input_desc));
   HYLE_ASSIGN_OR_RETURN(auto cpu_widen,c::prepare(cpu_context,c::Cast{c::DataType::kFloat32},qdesc));
   std::fprintf(stderr,"CPU+CUDA exact CPU F32 Neg and F16/BF16 Cast preparations PASS\n");
   std::vector<g::NodePlacement> placements;

@@ -3,6 +3,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <span>
+#include "hyle/compute/low_precision.h"
 #include "hyle/compute/resource_leases.h"
 
 #if defined(HYLE_STATIC)
@@ -15,12 +16,16 @@
 
 namespace hyle::compute {
 enum class BatchStorage : std::uint8_t { kPaged, kRagged };
+enum class BatchCacheRole : std::uint8_t { kKey, kValue };
 struct BatchCapacity final {
   BatchStorage storage = BatchStorage::kPaged;
-  DataType data_type = DataType::kFloat16;
+  DataType query_type = DataType::kFloat16;
+  DataType output_type = DataType::kFloat16;
+  CacheStorage key_storage{}, value_storage{};
   std::uint32_t max_requests = 1, max_query_rows = 1, max_kv_rows = 1;
   std::uint32_t max_pages = 1, max_page_refs = 1;
-  std::uint32_t query_heads = 1, kv_heads = 1, head_dim = 64, page_size = 16;
+  std::uint32_t query_heads = 1, kv_heads = 1;
+  std::uint32_t qk_head_dim = 64, value_head_dim = 64, page_size = 16;
   friend constexpr bool operator==(BatchCapacity, BatchCapacity) noexcept = default;
 };
 struct HostBatchLayout final {
@@ -95,6 +100,14 @@ private:
 };
 // Shared cold validation/schema functions used by typed operations/providers.
 HYLE_COMPUTE_BATCH_API Status validate_batch_capacity(BatchCapacity) noexcept;
+// Description geometry is separate from native math qualification. Cache
+// scales belong to capacity/schema identity, not the encoded TensorDesc bytes.
+HYLE_COMPUTE_BATCH_API Result<TensorDesc> batch_query_description(BatchCapacity) noexcept;
+HYLE_COMPUTE_BATCH_API Result<TensorDesc> batch_cache_description(BatchCapacity, BatchCacheRole) noexcept;
+HYLE_COMPUTE_BATCH_API Result<TensorDesc> batch_output_description(BatchCapacity, std::uint32_t query_rows) noexcept;
+HYLE_COMPUTE_BATCH_API Status validate_batch_attention_options(bool causal, std::int32_t window_left) noexcept;
+HYLE_COMPUTE_BATCH_API Status validate_batch_attention_layout(
+    const BatchLayoutVersion &, bool causal, std::int32_t window_left = -1) noexcept;
 HYLE_COMPUTE_BATCH_API Result<BatchMetadataOffsets> batch_metadata_offsets(BatchCapacity) noexcept;
 HYLE_COMPUTE_BATCH_API Result<TensorDesc> batch_metadata_description(BatchCapacity) noexcept;
 } // namespace hyle::compute

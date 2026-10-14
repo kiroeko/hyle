@@ -24,12 +24,12 @@ Status exercise(c::Context&context,c::Queue&queue,hyle::mem::MemoryResourceRef r
     hyle::mem::MemoryResourceRef host_resource,bool bf=false){
   constexpr unsigned depth=256,heads=8,kv_heads=2;
   constexpr std::size_t row_elements=kv_heads*depth,row_bytes=row_elements*2;
-  const c::BatchCapacity cap{.data_type=bf?c::DataType::kBFloat16:c::DataType::kFloat16,
+  const c::BatchCapacity cap{.query_type=bf?c::DataType::kBFloat16:c::DataType::kFloat16,.output_type=bf?c::DataType::kBFloat16:c::DataType::kFloat16,.key_storage=c::CacheStorage::plain(bf?c::DataType::kBFloat16:c::DataType::kFloat16).value(),.value_storage=c::CacheStorage::plain(bf?c::DataType::kBFloat16:c::DataType::kFloat16).value(),
       .max_requests=2,.max_query_rows=18,.max_kv_rows=160,
-      .max_pages=10,.max_page_refs=8,.query_heads=heads,.kv_heads=kv_heads,.head_dim=depth};
+      .max_pages=10,.max_page_refs=8,.query_heads=heads,.kv_heads=kv_heads,.qk_head_dim=depth,.value_head_dim=depth};
   HYLE_ASSIGN_OR_RETURN(auto schema,c::BatchSchema::create(cap));
-  HYLE_ASSIGN_OR_RETURN(auto keys,c::PagedArena::create(schema,resource,{.max_backing_bytes=1<<20}));
-  HYLE_ASSIGN_OR_RETURN(auto values,c::PagedArena::create(schema,resource,{.max_backing_bytes=1<<20}));
+  HYLE_ASSIGN_OR_RETURN(auto keys,c::PagedArena::create(schema,c::BatchCacheRole::kKey,resource,{.max_backing_bytes=1<<20}));
+  HYLE_ASSIGN_OR_RETURN(auto values,c::PagedArena::create(schema,c::BatchCacheRole::kValue,resource,{.max_backing_bytes=1<<20}));
   const auto page_bytes=keys.page_bytes();
   constexpr std::size_t query_bytes=18*heads*depth*2;
   const auto init_bytes=std::max(page_bytes,query_bytes);

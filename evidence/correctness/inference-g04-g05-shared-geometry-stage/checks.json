@@ -1,0 +1,43 @@
+{
+  "kind": "G04_G05_SHARED_GEOMETRY_CHECKPOINT",
+  "closure": {
+    "exit_code": 0,
+    "modules": 64,
+    "schema": 4
+  },
+  "docs": {
+    "exit_code": 0,
+    "markdown": 1241,
+    "relative_links": 6059
+  },
+  "diff_check": {
+    "exit_code": 0
+  },
+  "source_host_tests": {
+    "passed": 74,
+    "exit_code": 0
+  },
+  "actual_cpu_consumers": {
+    "programs": 4,
+    "exit_codes": [
+      0,
+      0,
+      0,
+      0
+    ]
+  },
+  "standalone_headers": {
+    "passed": 10,
+    "exit_code": 0
+  },
+  "selector": {
+    "verdict": "BLOCKED",
+    "unknown_shared_bench_paths": 10,
+    "product_authorization_issues": [],
+    "skipped_reused": 111,
+    "applicability": "Current card finite host/CPU stage only; remaining route/SDK/san/perf gates pending shared batch, no false PASS"
+  },
+  "owner_state": "AUDITED",
+  "native_new_encoding_math": "UNPROVEN",
+  "live_jobs": []
+}

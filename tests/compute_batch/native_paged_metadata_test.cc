@@ -10,15 +10,29 @@
 namespace {
 namespace c = hyle::compute;
 c::BatchSchema schema(c::DataType type = c::DataType::kFloat16) {
-  return c::BatchSchema::create({.storage = c::BatchStorage::kPaged, .data_type = type,
+  return c::BatchSchema::create({.storage = c::BatchStorage::kPaged, .query_type=type,.output_type=type,.key_storage=c::CacheStorage::plain(type).value(),.value_storage=c::CacheStorage::plain(type).value(),
       .max_requests = 3, .max_query_rows = 8, .max_kv_rows = 96, .max_pages = 4,
-      .max_page_refs = 8, .query_heads = 8, .kv_heads = 2, .head_dim = 64, .page_size = 16}).value();
+      .max_page_refs = 8, .query_heads = 8, .kv_heads = 2, .qk_head_dim=64,.value_head_dim=64, .page_size = 16}).value();
 }
 c::BatchLayoutVersion layout(const c::BatchSchema &schema) {
   const std::array<std::int32_t, 3> q{0, 1, 4}, k{0, 2, 4};
   const std::array<std::int32_t, 4> pages{3, 1, 1, 0};
   const std::array<std::int32_t, 2> tails{7, 15};
   return schema.version({q, k, pages, tails}).value();
+}
+TEST(NativePagedMetadata, FullNoncausalQGreaterThanKvAndIndependentEncodedRoots){
+  c::BatchCapacity cap{.max_query_rows=2,.max_kv_rows=1,.query_heads=2,.kv_heads=1,
+      .qk_head_dim=64,.value_head_dim=128};
+  cap.key_storage=cap.value_storage=c::CacheStorage::q8_0().value();
+  auto schema=c::BatchSchema::create(cap);ASSERT_TRUE(schema);
+  const std::array<std::int32_t,2> q{0,2},k{0,1};const std::array<std::int32_t,1> ids{0},tail{1};
+  auto selected=schema->version({q,k,ids,tail});ASSERT_TRUE(selected);
+  auto full=c::NativePagedBatchProgram::prepare(*schema,{.max_host_metadata_bytes=4,.causal=false});ASSERT_TRUE(full);
+  EXPECT_TRUE(full->version(*selected));
+  EXPECT_NE(full->descriptions()[1],full->descriptions()[2]);
+  auto causal=c::NativePagedBatchProgram::prepare(*schema,{.max_host_metadata_bytes=4});ASSERT_TRUE(causal);
+  EXPECT_TRUE(causal->version(*selected).error().IsInvalidArgument());
+  EXPECT_FALSE(c::NativePagedBatchProgram::prepare(*schema,{.max_host_metadata_bytes=4,.causal=false,.window_left=0}));
 }
 TEST(NativePagedMetadata, CompactOwnedPageOrderAndTailGenerationAreIndependentOfQueryHeads) {
   for (auto type : {c::DataType::kFloat16, c::DataType::kBFloat16}) {
@@ -52,7 +66,7 @@ TEST(NativePagedMetadata, CompactOwnedPageOrderAndTailGenerationAreIndependentOf
   }
   auto capacity = schema().capacity();
   capacity.max_query_rows = 8192; capacity.query_heads = 16; capacity.kv_heads = 4;
-  capacity.head_dim = 128;
+  capacity.qk_head_dim = 128;
   auto wider = c::BatchSchema::create(capacity).value();
   auto compact = c::NativePagedBatchProgram::prepare(wider, {.max_host_metadata_bytes = 32}).value();
   EXPECT_EQ(compact.costs().index_bytes, 32u); // Query/head capacity does not expand metadata.

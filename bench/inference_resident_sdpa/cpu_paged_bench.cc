@@ -37,9 +37,9 @@ struct Data {
   std::array<std::vector<std::uint16_t>,3> values;
   float scale;bool causal;
   Data(int q1,int q2,int k1,int k2,int depth,bool masked):
-    capacity{.storage=c::BatchStorage::kPaged,.data_type=c::DataType::kBFloat16,.max_requests=2,
+    capacity{.storage=c::BatchStorage::kPaged,.query_type=c::DataType::kBFloat16,.output_type=c::DataType::kBFloat16,.key_storage=c::CacheStorage::plain(c::DataType::kBFloat16).value(),.value_storage=c::CacheStorage::plain(c::DataType::kBFloat16).value(),.max_requests=2,
       .max_query_rows=unsigned(q1+q2+3),.max_kv_rows=unsigned(k1+k2+13),.max_pages=unsigned((k1+15)/16+(k2+15)/16+2),.max_page_refs=unsigned((k1+15)/16+(k2+15)/16),
-      .query_heads=8,.kv_heads=2,.head_dim=unsigned(depth),.page_size=16},
+      .query_heads=8,.kv_heads=2,.qk_head_dim=unsigned(depth),.value_head_dim=unsigned(depth),.page_size=16},
     qp{0,q1,q1+q2},kp{0,(k1+15)/16,(k1+15)/16+(k2+15)/16},scale(1.F/std::sqrt(float(depth))),causal(masked){
     tails={(k1-1)%16+1,(k2-1)%16+1};
     for(unsigned i=0;i<capacity.max_page_refs;++i)ids.push_back(static_cast<std::int32_t>(capacity.max_pages-1-i));
@@ -55,7 +55,7 @@ struct Data {
     }
   }
   std::vector<double> oracle()const{
-    const int depth=int(capacity.head_dim);std::vector<double> output(std::size_t(qp[2])*8*depth),weights;
+    const int depth=int(capacity.qk_head_dim);std::vector<double> output(std::size_t(qp[2])*8*depth),weights;
     for(unsigned r=0;r<2;++r){const int nq=qp[r+1]-qp[r],nk=(kp[r+1]-kp[r]-1)*16+tails[r];weights.resize(nk);
       for(int row=0;row<nq;++row)for(int h=0;h<8;++h){double sum=0;
         for(int j=0;j<nk;++j){double dot=0;for(int d=0;d<depth;++d)dot+=double(decode(values[0][((qp[r]+row)*8+h)*depth+d]))*decode(values[1][((ids[static_cast<unsigned>(kp[r]+j/16)]*16+j%16)*2+h/4)*depth+d]);
@@ -72,9 +72,9 @@ struct Harness {
   std::vector<c::ReadLease> key_pages,value_pages;std::vector<unsigned> physical_ids;c::ReadLease query;std::size_t next=0;
   Harness(const Data &data,bool original){
     schema=take(c::BatchSchema::create(data.capacity));layout=take(schema.version({data.qp,data.kp,data.ids,data.tails}));
-    const auto page_bytes=std::size_t(16)*2*data.capacity.head_dim*2;
-    keys=take(c::PagedArena::create(schema,hyle::mem::system_resource(),{.max_backing_bytes=page_bytes*data.capacity.max_pages+1}));
-    values=take(c::PagedArena::create(schema,hyle::mem::system_resource(),{.max_backing_bytes=page_bytes*data.capacity.max_pages+1}));
+    const auto page_bytes=std::size_t(16)*2*data.capacity.qk_head_dim*2;
+    keys=take(c::PagedArena::create(schema,c::BatchCacheRole::kKey,hyle::mem::system_resource(),{.max_backing_bytes=page_bytes*data.capacity.max_pages+1}));
+    values=take(c::PagedArena::create(schema,c::BatchCacheRole::kValue,hyle::mem::system_resource(),{.max_backing_bytes=page_bytes*data.capacity.max_pages+1}));
     for(unsigned page=0;page<data.capacity.max_pages;++page)if(std::find(data.ids.begin(),data.ids.end(),static_cast<std::int32_t>(page))!=data.ids.end()){
       auto kw=take(keys.acquire(page)),vw=take(values.acquire(page));
       check(kw.lease().view()->write(std::as_bytes(std::span(data.values[1])).subspan(page*page_bytes,page_bytes)));
@@ -99,7 +99,7 @@ struct Harness {
     if(worst>8e-3)fail(hyle::Status::Internal("paged independent double oracle exceeded 8e-3"));
     for(unsigned port=1;port<3;++port)for(unsigned index=0;index<key_pages.size();++index){const auto &lease=port==1?key_pages[index]:value_pages[index];auto view=take(lease.view());
       std::vector<std::uint16_t> after(view.size()/2);check(view.read(std::as_writable_bytes(std::span(after))));
-      const auto first=data.values[port].begin()+std::size_t(physical_ids[index])*16*2*data.capacity.head_dim;
+      const auto first=data.values[port].begin()+std::size_t(physical_ids[index])*16*2*data.capacity.qk_head_dim;
       if(!std::equal(after.begin(),after.end(),first))fail(hyle::Status::Internal("paged readonly KV changed"));
     }
     std::fprintf(stderr,"# CPU_PAGED_CORRECTNESS max_abs_error=%.9g elements=%zu\n",worst,expected.size());

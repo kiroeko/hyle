@@ -24,8 +24,8 @@ template<class T>T encode(float x){if constexpr(std::is_same_v<T,half>)return __
 template<class T>float decode(T x){if constexpr(std::is_same_v<T,half>)return __half2float(x);else return __bfloat162float(x);}
 template<class T>Result<c::ReadLease> load(c::LeasePool&pool,const std::vector<T>&values){HYLE_ASSIGN_OR_RETURN(auto writer,pool.allocate(values.size()*sizeof(T)));HYLE_RETURN_IF_ERROR(writer.view()->write(std::as_bytes(std::span(values))));return writer.publish();}
 template<class T>Status oracle(const std::vector<T>&q,const std::vector<T>&k,const std::vector<T>&v,const c::BatchLayoutVersion&layout,c::BatchCapacity cap,const c::ReadLease&output){
-  std::vector<T> result(cap.max_query_rows*cap.query_heads*cap.head_dim);HYLE_RETURN_IF_ERROR(output.view()->read(std::as_writable_bytes(std::span(result))));
-  const auto host=layout.host();const unsigned D=cap.head_dim,H=cap.query_heads,HK=cap.kv_heads;double maximum=0;
+  std::vector<T> result(cap.max_query_rows*cap.query_heads*cap.qk_head_dim);HYLE_RETURN_IF_ERROR(output.view()->read(std::as_writable_bytes(std::span(result))));
+  const auto host=layout.host();const unsigned D=cap.qk_head_dim,H=cap.query_heads,HK=cap.kv_heads;double maximum=0;
   for(unsigned r=0;r<layout.facts().requests;++r){
     const int qlen=host.query_indptr[r+1]-host.query_indptr[r];const int pages=host.kv_indptr[r+1]-host.kv_indptr[r];
     const int kvlen=cap.storage==c::BatchStorage::kPaged?(pages-1)*int(cap.page_size)+host.last_page_lengths[r]:pages;
@@ -43,8 +43,8 @@ template<class T>Status exercise(c::Context&context,c::Queue&queue,cu::MemoryRes
   std::array<std::int32_t,3> kv{0,std::int32_t(paged?refs1:length1),std::int32_t(paged?refs1+refs2:length1+length2)};
   std::vector<std::int32_t> ids(paged?refs1+refs2:0);for(unsigned i=0;i<ids.size();++i)ids[i]=std::int32_t((i+7)%ids.size());
   const std::array<std::int32_t,2> tails{std::int32_t((length1-1)%page+1),std::int32_t((length2-1)%page+1)};
-  c::BatchCapacity cap{.storage=paged?c::BatchStorage::kPaged:c::BatchStorage::kRagged,.data_type=std::is_same_v<T,half>?c::DataType::kFloat16:c::DataType::kBFloat16,
-    .max_requests=2,.max_query_rows=3,.max_kv_rows=length1+length2,.max_pages=paged?refs1+refs2+1:0,.max_page_refs=paged?refs1+refs2:0,.query_heads=4,.kv_heads=2,.head_dim=depth,.page_size=paged?page:1};
+  c::BatchCapacity cap{.storage=paged?c::BatchStorage::kPaged:c::BatchStorage::kRagged,.query_type=std::is_same_v<T,half>?c::DataType::kFloat16:c::DataType::kBFloat16,.output_type=std::is_same_v<T,half>?c::DataType::kFloat16:c::DataType::kBFloat16,.key_storage=c::CacheStorage::plain(std::is_same_v<T,half>?c::DataType::kFloat16:c::DataType::kBFloat16).value(),.value_storage=c::CacheStorage::plain(std::is_same_v<T,half>?c::DataType::kFloat16:c::DataType::kBFloat16).value(),
+    .max_requests=2,.max_query_rows=3,.max_kv_rows=length1+length2,.max_pages=paged?refs1+refs2+1:0,.max_page_refs=paged?refs1+refs2:0,.query_heads=4,.kv_heads=2,.qk_head_dim=depth,.value_head_dim=depth,.page_size=paged?page:1};
   HYLE_ASSIGN_OR_RETURN(auto schema,c::BatchSchema::create(cap,{.allocator=allocator}));
   const c::HostBatchLayout metadata{query,kv,ids,paged?std::span<const std::int32_t>(tails):std::span<const std::int32_t>{}};
   HYLE_ASSIGN_OR_RETURN(auto layout,schema.version(metadata));

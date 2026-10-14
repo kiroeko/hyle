@@ -24,6 +24,7 @@ struct PagedArenaData final:util::RefCounted<PagedArenaData>{
   BatchSchema schema;PagedArenaOptions options;mem::AllocatorRef allocator;
   std::vector<ArenaPage,mem::StdAllocator<ArenaPage>> slots;
   LeasePool pool;WriteLease sentinel;mem::ConstBufferView span;TensorDesc description;std::size_t page_bytes=0;bool closed=false;
+  BatchCacheRole role=BatchCacheRole::kKey;
 };
 struct PagedArenaReadData final:util::RefCounted<PagedArenaReadData>{
   PagedArenaReadData(PagedArenaData*p,BatchLayoutVersion l):arena(p),layout(std::move(l)),allocator(p->allocator),pages(mem::StdAllocator<ReadLease>(p->allocator)){p->incref();}
@@ -70,14 +71,19 @@ PagedArena&PagedArena::operator=(const PagedArena&p)noexcept{if(this!=&p){PagedA
 PagedArena::PagedArena(PagedArena&&p)noexcept:data_(std::exchange(p.data_,nullptr)){}
 PagedArena&PagedArena::operator=(PagedArena&&p)noexcept{if(this!=&p){PagedArena next(std::move(p));std::swap(data_,next.data_);}return *this;}
 PagedArena::~PagedArena(){if(data_)data_->decref();}
-Result<PagedArena> PagedArena::create(BatchSchema schema,mem::MemoryResourceRef resource,PagedArenaOptions options)noexcept{
+Result<PagedArena> PagedArena::create(BatchSchema schema,BatchCacheRole role,mem::MemoryResourceRef resource,PagedArenaOptions options)noexcept{
   if(!schema.valid() || schema.capacity().storage!=BatchStorage::kPaged || !resource.valid() || !options.allocator.valid() || !options.max_backing_bytes)
     return std::unexpected(Status::InvalidArgument("paged arena schema/resource/byte capacity is invalid"));
-  const auto cap=schema.capacity();HYLE_ASSIGN_OR_RETURN(auto page,TensorDesc::dense(cap.data_type,std::array<std::int64_t,3>{cap.page_size,cap.kv_heads,cap.head_dim}));HYLE_ASSIGN_OR_RETURN(auto page_bytes,page.required_bytes());
-  HYLE_ASSIGN_OR_RETURN(auto description,TensorDesc::dense(cap.data_type,std::array<std::int64_t,4>{cap.max_pages,cap.page_size,cap.kv_heads,cap.head_dim}));HYLE_ASSIGN_OR_RETURN(auto bytes,description.required_bytes());
+  if(role!=BatchCacheRole::kKey && role!=BatchCacheRole::kValue)
+    return std::unexpected(Status::InvalidArgument("paged arena needs key/value role"));
+  const auto cap=schema.capacity();
+  const auto &storage=role==BatchCacheRole::kKey?cap.key_storage:cap.value_storage;
+  const auto depth=role==BatchCacheRole::kKey?cap.qk_head_dim:cap.value_head_dim;
+  HYLE_ASSIGN_OR_RETURN(auto page,cache_tensor_description(storage,std::array<std::int64_t,3>{cap.page_size,cap.kv_heads,depth}));HYLE_ASSIGN_OR_RETURN(auto page_bytes,page.required_bytes());
+  HYLE_ASSIGN_OR_RETURN(auto description,batch_cache_description(cap,role));HYLE_ASSIGN_OR_RETURN(auto bytes,description.required_bytes());
   if(bytes==SIZE_MAX || bytes+1>options.max_backing_bytes)return std::unexpected(Status::ResourceExhausted("paged arena backing byte capacity"));
   auto a=options.allocator;if(options.resource_budget.valid()){HYLE_ASSIGN_OR_RETURN(a,options.resource_budget.metadata_allocator());}
-  auto*p=a.construct<detail::PagedArenaData>(std::move(schema),std::move(options),a);if(!p)return std::unexpected(Status::ResourceExhausted("paged arena metadata"));PagedArena result(p);p->page_bytes=page_bytes;p->description=description;
+  auto*p=a.construct<detail::PagedArenaData>(std::move(schema),std::move(options),a);if(!p)return std::unexpected(Status::ResourceExhausted("paged arena metadata"));PagedArena result(p);p->page_bytes=page_bytes;p->description=description;p->role=role;
   try{p->slots.resize(cap.max_pages);}catch(const std::bad_alloc&){return std::unexpected(Status::ResourceExhausted("paged arena fixed page slots"));}
   const auto alignment=std::max<std::size_t>(64,resource.properties().minimum_alignment);
   HYLE_ASSIGN_OR_RETURN(auto buffer,mem::Buffer::create(resource,bytes+1,alignment));HYLE_ASSIGN_OR_RETURN(p->span,mem::ConstBufferView(buffer.view()).subview(0,bytes));
@@ -235,6 +241,18 @@ PagedArenaRead::~PagedArenaRead(){if(data_)data_->decref();}
 BatchLayoutVersion PagedArenaRead::layout()const noexcept{return data_?data_->layout:BatchLayoutVersion{};}
 std::size_t PagedArenaRead::page_count()const noexcept{return data_?data_->pages.size():0;}
 Result<ConstTensorView> detail::PagedArenaAccess::tensor(const PagedArenaRead&read)noexcept{if(!read.data_)return std::unexpected(Status::FailedPrecondition("paged arena read is empty"));return ConstTensorView::create(read.data_->arena->description,read.data_->arena->span);}
+Status detail::PagedArenaAccess::validate_storage(const PagedArenaRead&read,const CacheStorage&expected)noexcept{
+  if(!read.data_)return Status::InvalidArgument("paged arena read is empty");
+  const auto &arena=*read.data_->arena;const auto cap=arena.schema.capacity();
+  return (arena.role==BatchCacheRole::kKey?cap.key_storage:cap.value_storage)==expected?
+      Status::Ok():Status::InvalidArgument("paged cache encoding/scale differs from mathematical port");
+}
+Status detail::PagedArenaAccess::validate_storage(const PagedArenaPendingRead&read,const CacheStorage&expected)noexcept{
+  if(!read.data_)return Status::InvalidArgument("pending paged arena read is empty");
+  const auto &arena=*read.data_->arena;const auto cap=arena.schema.capacity();
+  return (arena.role==BatchCacheRole::kKey?cap.key_storage:cap.value_storage)==expected?
+      Status::Ok():Status::InvalidArgument("pending cache encoding/scale differs from mathematical port");
+}
 std::span<const ReadLease> detail::PagedArenaAccess::pages(const PagedArenaRead&read)noexcept{return read.data_?std::span<const ReadLease>(read.data_->pages):std::span<const ReadLease>{};}
 PagedArenaPendingRead::PagedArenaPendingRead(const PagedArenaPendingRead&p)noexcept:data_(p.data_){if(data_)data_->incref();}
 PagedArenaPendingRead&PagedArenaPendingRead::operator=(const PagedArenaPendingRead&p)noexcept{if(this!=&p){PagedArenaPendingRead next(p);std::swap(data_,next.data_);}return *this;}

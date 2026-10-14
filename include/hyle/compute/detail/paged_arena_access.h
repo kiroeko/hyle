@@ -14,8 +14,10 @@ struct PendingArenaPage final {
 // run a qualified operation whose actual reads follow this immutable layout.
 struct PagedArenaAccess final {
   HYLE_COMPUTE_BATCH_API static Result<ConstTensorView> tensor(const PagedArenaRead&) noexcept;
+  HYLE_COMPUTE_BATCH_API static Status validate_storage(const PagedArenaRead&,const CacheStorage&) noexcept;
   HYLE_COMPUTE_BATCH_API static std::span<const ReadLease> pages(const PagedArenaRead&) noexcept;
   HYLE_COMPUTE_BATCH_API static Result<ConstTensorView> tensor(const PagedArenaPendingRead&) noexcept;
+  HYLE_COMPUTE_BATCH_API static Status validate_storage(const PagedArenaPendingRead&,const CacheStorage&) noexcept;
   HYLE_COMPUTE_BATCH_API static std::span<const ReadLease> pages(const PagedArenaPendingRead&) noexcept;
   HYLE_COMPUTE_BATCH_API static std::span<const PendingArenaPage> pending(const PagedArenaPendingRead&) noexcept;
   HYLE_COMPUTE_BATCH_API static Status validate_page(const PagedArenaPendingRead&,

@@ -33,6 +33,7 @@ struct NativePagedAttention final {
   std::uint32_t active_query_rows = 0;
   float scale = 1.0F;
   bool causal = true;
+  std::int32_t window_left = -1;
   static constexpr compute::OperationId operation_id{
       0x48594c4547524241ULL, 0x4e41544956455001ULL};
   static constexpr std::string_view operation_name = "native-paged-graph-attention";

@@ -13,6 +13,9 @@ struct PagedAttention final {
   BatchCapacity capacity{};
   float scale = 1.0F;
   bool causal = true;
+  // Inclusive past count at the bottom-right aligned query position. -1 is
+  // unbounded, 0 is self-only. This batch admits a window only with causal.
+  std::int32_t window_left = -1;
   static constexpr OperationId operation_id{0x48594c4542415443ULL,0x5041474544410001ULL};
   static constexpr std::string_view operation_name="paged-attention";
   constexpr OperationTraits operation_traits() const noexcept {
@@ -20,6 +23,7 @@ struct PagedAttention final {
   }
   Status infer_output_descriptions(std::span<const TensorDesc> in,std::span<TensorDesc> out) const noexcept {
     if(!std::isfinite(scale))return Status::InvalidArgument("paged attention scale must be finite");
+    HYLE_RETURN_IF_ERROR(validate_batch_attention_options(causal, window_left));
     return infer_batch_attention(capacity,BatchStorage::kPaged,in,out);
   }
 };
@@ -27,6 +31,7 @@ struct RaggedAttention final {
   BatchCapacity capacity{.storage=BatchStorage::kRagged,.max_pages=0,.max_page_refs=0,.page_size=1};
   float scale = 1.0F;
   bool causal = true;
+  std::int32_t window_left = -1;
   static constexpr OperationId operation_id{0x48594c4542415443ULL,0x5241474745440001ULL};
   static constexpr std::string_view operation_name="ragged-attention";
   constexpr OperationTraits operation_traits() const noexcept {
@@ -34,6 +39,7 @@ struct RaggedAttention final {
   }
   Status infer_output_descriptions(std::span<const TensorDesc> in,std::span<TensorDesc> out) const noexcept {
     if(!std::isfinite(scale))return Status::InvalidArgument("ragged attention scale must be finite");
+    HYLE_RETURN_IF_ERROR(validate_batch_attention_options(causal, window_left));
     return infer_batch_attention(capacity,BatchStorage::kRagged,in,out);
   }
 };

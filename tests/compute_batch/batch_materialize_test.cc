@@ -7,7 +7,7 @@
 
 namespace {
 namespace c=hyle::compute;
-c::BatchCapacity capacity(){return {.max_requests=2,.max_query_rows=4,.max_kv_rows=29,.max_pages=4,.max_page_refs=3,.query_heads=4,.kv_heads=2,.head_dim=64,.page_size=16};}
+c::BatchCapacity capacity(){return {.max_requests=2,.max_query_rows=4,.max_kv_rows=29,.max_pages=4,.max_page_refs=3,.query_heads=4,.kv_heads=2,.qk_head_dim=64,.value_head_dim=64,.page_size=16};}
 c::MaterializedBatchOptions options(){return {.max_kv_per_request=19,.max_host_metadata_bytes=1u<<20,.max_logical_intermediate_bytes=8u<<20,.scale=.125f};}
 struct Host{std::array<std::int32_t,3> q{0,1,3},kv{0,2,3},pages{2,0,3};std::array<std::int32_t,2> tails{3,10};c::HostBatchLayout value(){return {q,kv,pages,tails};}};
 template<class T>std::vector<T> read(const c::ReadLease&lease){std::vector<T> values(lease.size()/sizeof(T));EXPECT_TRUE(lease.view()->read(std::as_writable_bytes(std::span(values))).ok());return values;}
@@ -26,6 +26,44 @@ TEST(BatchMaterialize, PhysicalPagesGqaAndRightAlignedCausalMaskExcludePadding){
 TEST(BatchMaterialize, NoncausalUsesEveryValidKvButNeverTailPadding){
   auto schema=c::BatchSchema::create(capacity()).value();Host h;auto o=options();o.causal=false;auto program=c::MaterializedBatchProgram::prepare(schema,o).value();auto version=program.version(schema.version(h.value()).value()).value();auto mask=read<float>(version.mask().value());
   EXPECT_EQ(mask[19+9],0);EXPECT_TRUE(std::isinf(mask[19+10]));EXPECT_EQ(mask[18],0);
+}
+TEST(BatchMaterialize, CausalWindowUsesInclusivePastCountAtBottomRightPosition){
+  auto schema=c::BatchSchema::create(capacity()).value();Host h;
+  for(std::int32_t window:{0,15,16}){
+    auto o=options();o.window_left=window;
+    auto program=c::MaterializedBatchProgram::prepare(schema,o);ASSERT_TRUE(program);
+    auto version=program->version(schema.version(h.value()).value());ASSERT_TRUE(version);
+    const auto mask=read<float>(version->mask().value());
+    const std::array<unsigned,3> positions{18,8,9};
+    for(unsigned row=0;row<positions.size();++row){
+      const auto first=positions[row]>unsigned(window)?positions[row]-unsigned(window):0;
+      for(unsigned j=0;j<19;++j){
+        if(j>=first && j<=positions[row])EXPECT_EQ(mask[row*19+j],0);
+        else EXPECT_TRUE(std::isinf(mask[row*19+j]) && mask[row*19+j]<0);
+      }
+    }
+  }
+}
+TEST(BatchMaterialize, FullNoncausalCrossAttentionUsesValueDepthAndOutputType){
+  auto cap=capacity();cap.max_query_rows=2;cap.max_kv_rows=1;cap.value_head_dim=128;cap.output_type=c::DataType::kBFloat16;
+  auto schema=c::BatchSchema::create(cap).value();
+  const std::array<std::int32_t,2> q{0,2},k{0,1};const std::array<std::int32_t,1> ids{0},tail{1};
+  auto layout=schema.version({q,k,ids,tail});ASSERT_TRUE(layout);
+  auto o=options();o.max_kv_per_request=1;o.causal=false;
+  auto program=c::MaterializedBatchProgram::prepare(schema,o);ASSERT_TRUE(program);
+  auto version=program->version(*layout);ASSERT_TRUE(version);
+  const auto mask=read<float>(version->mask().value());ASSERT_EQ(mask.size(),2u);EXPECT_EQ(mask[0],0);EXPECT_EQ(mask[1],0);
+  const auto&output=program->descriptions()[program->output_value()];
+  EXPECT_EQ(output.data_type(),c::DataType::kBFloat16);EXPECT_EQ(output.dimensions()[2],128);
+  o.causal=true;auto causal=c::MaterializedBatchProgram::prepare(schema,o);ASSERT_TRUE(causal);
+  EXPECT_TRUE(causal->version(*layout).error().IsInvalidArgument());
+}
+TEST(BatchMaterialize, EncodedCacheRequiresNativeRouteInsteadOfHistoryDecode){
+  for(auto storage:{c::CacheStorage::q8_0().value(),c::CacheStorage::float8(.25F).value()}){
+    auto cap=capacity();cap.key_storage=cap.value_storage=storage;
+    auto schema=c::BatchSchema::create(cap);ASSERT_TRUE(schema);
+    EXPECT_TRUE(c::MaterializedBatchProgram::prepare(*schema,options()).error().IsUnimplemented());
+  }
 }
 TEST(BatchMaterialize, InactiveQueryCapacityReadsOnlyPagesOfTheFirstActiveQuery){
   auto schema=c::BatchSchema::create(capacity()).value();Host h;
@@ -66,7 +104,7 @@ TEST(BatchMaterialize, ExplicitHostAndLogicalByteCapsAreCheckedAtColdPreparation
 }
 TEST(BatchMaterialize, FlattenedI32AndProductOverflowRejectWithoutPayloadAllocation){
   auto cap=capacity();cap.max_pages=INT32_MAX;auto schema=c::BatchSchema::create(cap).value();EXPECT_TRUE(c::MaterializedBatchProgram::prepare(schema,options()).error().IsOutOfRange());
-  cap=capacity();cap.max_query_rows=INT32_MAX;cap.query_heads=INT32_MAX-1;cap.kv_heads=1;cap.head_dim=1;cap.max_kv_rows=INT32_MAX;schema=c::BatchSchema::create(cap).value();auto o=options();o.max_kv_per_request=INT32_MAX;o.max_host_metadata_bytes=SIZE_MAX;o.max_logical_intermediate_bytes=SIZE_MAX;EXPECT_TRUE(c::MaterializedBatchProgram::prepare(schema,o).error().IsOutOfRange());
+  cap=capacity();cap.max_query_rows=INT32_MAX;cap.query_heads=INT32_MAX-1;cap.kv_heads=1;cap.qk_head_dim=cap.value_head_dim=1;cap.max_kv_rows=INT32_MAX;schema=c::BatchSchema::create(cap).value();auto o=options();o.max_kv_per_request=INT32_MAX;o.max_host_metadata_bytes=SIZE_MAX;o.max_logical_intermediate_bytes=SIZE_MAX;EXPECT_TRUE(c::MaterializedBatchProgram::prepare(schema,o).error().IsOutOfRange());
 }
 TEST(BatchMaterialize, AllocatorOomPreservesOldVersionAndExportRetiresAfterControls){
   hyle::mem::QuotaAllocator quota(hyle::mem::system_allocator());c::ReadLease exported;

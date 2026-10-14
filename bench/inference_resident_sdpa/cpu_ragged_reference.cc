@@ -32,8 +32,8 @@ struct Slot {
   c::BatchLayoutVersion layout;std::vector<std::unique_ptr<Request>> requests;std::size_t known=0;
 };
 Status qualify(void *,c::BatchCapacity cap,const c::BatchProgramOptions &options)noexcept{
-  if(cap.storage!=c::BatchStorage::kRagged||cap.data_type!=c::DataType::kBFloat16||
-     cap.query_heads!=8||cap.kv_heads!=2||(cap.head_dim!=64&&cap.head_dim!=256)||
+  if(cap.storage!=c::BatchStorage::kRagged||cap.query_type!=c::DataType::kBFloat16||
+     cap.query_heads!=8||cap.kv_heads!=2||(cap.qk_head_dim!=64&&cap.qk_head_dim!=256)||
      !options.resource.properties().has(mem::MemoryProperty::kHostAccessible))
     return Status::Unimplemented("finite original BF16 ragged flash comparator");
   return Status::Ok();
@@ -53,7 +53,7 @@ Result<bool> update(void *p,const c::BatchLayoutVersion &next,c::BatchPlanReport
 Status make_request(Slot &slot,std::int32_t nq,std::int32_t nk,std::int32_t qstart,std::int32_t kstart) {
   auto request=std::make_unique<Request>();auto &s=*request;const auto cap=slot.capacity;
   HYLE_ASSIGN_OR_RETURN(s.arena,n::MetadataArena::for_graph(32,32,slot.allocator));auto *ctx=s.arena.get();
-  for(unsigned port=0;port<3;++port){s.inputs[port]=ggml_new_tensor_4d(ctx,GGML_TYPE_BF16,cap.head_dim,port?cap.kv_heads:cap.query_heads,port?nk:nq,1);ggml_set_input(s.inputs[port]);}
+  for(unsigned port=0;port<3;++port){s.inputs[port]=ggml_new_tensor_4d(ctx,GGML_TYPE_BF16,cap.qk_head_dim,port?cap.kv_heads:cap.query_heads,port?nk:nq,1);ggml_set_input(s.inputs[port]);}
   auto *q=ggml_cast(ctx,ggml_permute(ctx,s.inputs[0],0,2,1,3),GGML_TYPE_F32);
   auto *k=ggml_permute(ctx,s.inputs[1],0,2,1,3),*v=ggml_permute(ctx,s.inputs[2],0,2,1,3);
   ggml_tensor *mask=nullptr;
@@ -73,8 +73,8 @@ Status make_request(Slot &slot,std::int32_t nq,std::int32_t nk,std::int32_t qsta
   }
   HYLE_ASSIGN_OR_RETURN(s.execution,n::CpuExecution::prepare(s.graph,1,slot.allocator));
   s.known+=s.arena.capacity()+s.execution.workspace_bytes()+s.mask.size()*2;
-  s.qoffset=std::size_t(qstart)*cap.query_heads*cap.head_dim*2;s.koffset=std::size_t(kstart)*cap.kv_heads*cap.head_dim*2;
-  s.qbytes=std::size_t(nq)*cap.query_heads*cap.head_dim*2;s.kbytes=std::size_t(nk)*cap.kv_heads*cap.head_dim*2;
+  s.qoffset=std::size_t(qstart)*cap.query_heads*cap.qk_head_dim*2;s.koffset=std::size_t(kstart)*cap.kv_heads*cap.qk_head_dim*2;
+  s.qbytes=std::size_t(nq)*cap.query_heads*cap.qk_head_dim*2;s.kbytes=std::size_t(nk)*cap.kv_heads*cap.qk_head_dim*2;
   slot.known+=s.known;slot.requests.push_back(std::move(request));return Status::Ok();
 }
 d::EnqueueResult plan(void *p,c::Queue &,const c::BatchLayoutVersion &layout,d::BatchWorkspaceViews,c::BatchPlanReport *r)noexcept{

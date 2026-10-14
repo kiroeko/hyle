@@ -41,9 +41,9 @@ template<class T> Status exercise(n::Context& context, n::MemoryResource& device
                 unsigned first_refs=5,unsigned query_heads=8) {
   const unsigned table_capacity=(first_refs+5)&~3U;
   const c::BatchCapacity cap{.storage=c::BatchStorage::kPaged,
-      .data_type=std::is_same_v<T,Half>?c::DataType::kFloat16:c::DataType::kBFloat16,.max_requests=3,.max_query_rows=24,
+      .query_type=std::is_same_v<T,Half>?c::DataType::kFloat16:c::DataType::kBFloat16,.output_type=std::is_same_v<T,Half>?c::DataType::kFloat16:c::DataType::kBFloat16,.key_storage=c::CacheStorage::plain(std::is_same_v<T,Half>?c::DataType::kFloat16:c::DataType::kBFloat16).value(),.value_storage=c::CacheStorage::plain(std::is_same_v<T,Half>?c::DataType::kFloat16:c::DataType::kBFloat16).value(),.max_requests=3,.max_query_rows=24,
       .max_kv_rows=16*first_refs+32,.max_pages=4,.max_page_refs=table_capacity,.query_heads=query_heads,
-      .kv_heads=2,.head_dim=depth,.page_size=16};
+      .kv_heads=2,.qk_head_dim=depth,.value_head_dim=depth,.page_size=16};
   HYLE_ASSIGN_OR_RETURN(auto schema,c::BatchSchema::create(cap));
   const std::array<std::int32_t,4> qp{0,1,18,18}, next_qp{0,17,18,18},
       kp{0,int(first_refs),int(first_refs+2),int(first_refs+2)};
@@ -56,9 +56,9 @@ template<class T> Status exercise(n::Context& context, n::MemoryResource& device
   const float scale=1.0F/std::sqrt(float(depth));
   HYLE_ASSIGN_OR_RETURN(auto recipe,c::NativePagedBatchProgram::prepare(schema,
       {.max_host_metadata_bytes=8192,.scale=scale,.causal=causal}));
-  HYLE_ASSIGN_OR_RETURN(auto keys,c::PagedArena::create(schema,device.ref(),
+  HYLE_ASSIGN_OR_RETURN(auto keys,c::PagedArena::create(schema,c::BatchCacheRole::kKey,device.ref(),
       {.max_backing_bytes=1<<20}));
-  HYLE_ASSIGN_OR_RETURN(auto values,c::PagedArena::create(schema,device.ref(),
+  HYLE_ASSIGN_OR_RETURN(auto values,c::PagedArena::create(schema,c::BatchCacheRole::kValue,device.ref(),
       {.max_backing_bytes=1<<20}));
   std::vector<T> q(24*query_heads*depth), k(64*2*depth), v(k.size());
   for(std::size_t i=0;i<q.size();++i)q[i]=encode_value<T>(float(int(i%13)-6)*.03125F);
@@ -136,7 +136,7 @@ template<class T> Status exercise(n::Context& context, n::MemoryResource& device
   const auto expected=oracle(qp), next_expected=oracle(next_qp);
   const auto verify=[&](const n::Results& result,const auto& expected)->Status{
     std::vector<T> actual(expected.size());
-    HYLE_ASSIGN_OR_RETURN(auto output_description,c::TensorDesc::dense(cap.data_type,std::array<std::int64_t,3>{18,query_heads,depth}));
+    HYLE_ASSIGN_OR_RETURN(auto output_description,c::TensorDesc::dense(cap.query_type,std::array<std::int64_t,3>{18,query_heads,depth}));
     HYLE_ASSIGN_OR_RETURN(auto output,device.import_readonly(result.arrays()[0],output_description));
     HYLE_RETURN_IF_ERROR(output.view()->read(std::as_writable_bytes(std::span(actual))));
     double worst=0;

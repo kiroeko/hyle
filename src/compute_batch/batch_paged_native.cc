@@ -57,9 +57,10 @@ Result<NativePagedBatchProgram> NativePagedBatchProgram::prepare(
   if (!schema.valid() || !options.allocator.valid() || !options.max_host_metadata_bytes ||
       !std::isfinite(options.scale))
     return std::unexpected(Status::InvalidArgument("native page recipe needs schema/allocator/finite budget/scale"));
+  HYLE_RETURN_IF_ERROR(validate_batch_attention_options(options.causal,options.window_left));
   const auto capacity = schema.capacity();
   if (capacity.storage != BatchStorage::kPaged || capacity.page_size != 16 ||
-      (capacity.data_type != DataType::kFloat16 && capacity.data_type != DataType::kBFloat16))
+      (capacity.query_type != DataType::kFloat16 && capacity.query_type != DataType::kBFloat16))
     return std::unexpected(Status::Unimplemented("native page recipe requires F16/BF16 page16 schema"));
   const std::uint64_t refs = capacity.max_page_refs;
   if (refs > std::uint32_t(INT32_MAX) || refs > SIZE_MAX / sizeof(std::int32_t))
@@ -74,11 +75,9 @@ Result<NativePagedBatchProgram> NativePagedBatchProgram::prepare(
   auto *data = allocator.construct<detail::NativePagedBatchProgramData>(schema, std::move(options), allocator);
   if (!data) return std::unexpected(Status::ResourceExhausted("native page recipe metadata"));
   NativePagedBatchProgram result(data);
-  HYLE_ASSIGN_OR_RETURN(data->descriptions[0], TensorDesc::dense(capacity.data_type,
-      std::array<std::int64_t, 3>{capacity.max_query_rows, capacity.query_heads, capacity.head_dim}));
-  HYLE_ASSIGN_OR_RETURN(data->descriptions[1], TensorDesc::dense(capacity.data_type,
-      std::array<std::int64_t, 4>{capacity.max_pages, capacity.page_size, capacity.kv_heads, capacity.head_dim}));
-  data->descriptions[2] = data->descriptions[1];
+  HYLE_ASSIGN_OR_RETURN(data->descriptions[0],batch_query_description(capacity));
+  HYLE_ASSIGN_OR_RETURN(data->descriptions[1],batch_cache_description(capacity,BatchCacheRole::kKey));
+  HYLE_ASSIGN_OR_RETURN(data->descriptions[2],batch_cache_description(capacity,BatchCacheRole::kValue));
   HYLE_ASSIGN_OR_RETURN(data->descriptions[3], TensorDesc::dense(DataType::kInt32,
       std::array<std::int64_t, 1>{capacity.max_page_refs}));
   data->costs.index_bytes = bytes;
@@ -87,6 +86,7 @@ Result<NativePagedBatchProgram> NativePagedBatchProgram::prepare(
 BatchSchema NativePagedBatchProgram::schema() const noexcept { return data_ ? data_->schema : BatchSchema{}; }
 float NativePagedBatchProgram::scale() const noexcept { return data_ ? data_->options.scale : 1.0F; }
 bool NativePagedBatchProgram::causal() const noexcept { return data_ ? data_->options.causal : true; }
+std::int32_t NativePagedBatchProgram::window_left() const noexcept { return data_ ? data_->options.window_left : -1; }
 std::span<const TensorDesc> NativePagedBatchProgram::descriptions() const noexcept {
   return data_ ? std::span<const TensorDesc>(data_->descriptions) : std::span<const TensorDesc>{};
 }
@@ -95,6 +95,7 @@ Result<NativePagedBatchVersion> NativePagedBatchProgram::version(BatchLayoutVers
   if (!data_) return std::unexpected(Status::FailedPrecondition("native page recipe is empty"));
   if (!data_->schema.owns(layout))
     return std::unexpected(Status::InvalidArgument("native page version schema differs"));
+  HYLE_RETURN_IF_ERROR(validate_batch_attention_layout(layout,causal(),window_left()));
   HYLE_ASSIGN_OR_RETURN(auto buffer, mem::Buffer::create(mem::system_resource(), data_->costs.index_bytes, 64));
   {
     HYLE_ASSIGN_OR_RETURN(auto mapping, buffer.view().map_host());

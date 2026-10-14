@@ -32,7 +32,7 @@ public:
   HYLE_COMPUTE_BATCH_API PagedArena(PagedArena&&) noexcept;
   HYLE_COMPUTE_BATCH_API PagedArena&operator=(PagedArena&&) noexcept;
   HYLE_COMPUTE_BATCH_API ~PagedArena();
-  HYLE_COMPUTE_BATCH_API static Result<PagedArena> create(BatchSchema,
+  HYLE_COMPUTE_BATCH_API static Result<PagedArena> create(BatchSchema, BatchCacheRole,
       mem::MemoryResourceRef,PagedArenaOptions) noexcept;
   bool valid()const noexcept{return data_!=nullptr;}
   HYLE_COMPUTE_BATCH_API std::size_t page_bytes()const noexcept;

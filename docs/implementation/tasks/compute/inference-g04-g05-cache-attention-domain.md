@@ -130,7 +130,7 @@ reference入口保plain参考档，编码页必须明确拒绝或合格native，
 既有plain F16/BF16资格保留；Vulkan原F16数学域不扩成无证据BF16。Q8不冒充FI原生格式，
 FP8不冒充已有block128权重格式。各格式在四路线都有所选真实承载，仍须实际run才能签PASS。
 
-compute_ops增加小值类型CacheStorage：data_type、原StorageFormat、scale；plain scale=1，
+compute_ops增加小值类型CacheStorage：data_type/原StorageFormat/scale的明确访问器；plain scale=1，
 Q8_0 logical F32、原block identity/32/34/末D轴、scale在block且外部scale=1；E4M3FN
 是plain8-bit scalar、正有限F32外部scale。工厂/描述helper复用原TensorDesc，不造format registry。
 K/V的FP8 scale随同一不可变BatchSchema/cache identity固定；改变scale必须新schema/cache，
@@ -223,3 +223,34 @@ CE01–07开始同一实现批。新能力/运行资格仍UNPROVEN，原G03与G0
 九owner保持AUDITED。CE01仅共同schema部分完成；实际encoder、独立BatchCapacity/page role、
 native数学、F2增量消费、三交付与性能均UNPROVEN，不计G04/G05完成。selector公共头对应的
 其余factor/direct consumer/SDK门将在同一实现批固定后执行，不由这12项测试冒充通过。
+
+2026-10-15 CE02实施发现并裁决descriptor空间：原MSVC实查Operation128、View120、
+CustomOperationValue96、StorageFormat40、CacheStorage56、BatchCapacity40、native节点52。
+两个完整format不能放入原inline64。当前AUDITED内将CacheStorage改为8-byte immutable
+具名factory值，format由有限合法data_type派生原identity，不携带第二份40-byte格式状态；
+plain/Q8/FP8语义与scale identity不变，移除可变aggregate字段。inline上限改88，实查
+Operation仍128、Custom120、BatchCapacity60、native节点76；无普通Operation对象空间税，
+custom构造多清零24 bytes属冷成本。非MSVC布局/交付还须实际验证，不预签。
+
+CE02集中迁移schema/K/V/output/page role、layout数学分层、Graph与原consumer。编码/窗口/
+不同Dv尚未接原核时明确Unimplemented；reference明确拒绝编码cache，不以整历史decode
+冒充原生消费。当前所有FIX仍按同卡，未进入candidate，不借共同geometry测试签G04/G05。
+
+本次selector的product_authorization七个实际修改owner均AUDITED、issues为空；仅10个
+既有共享bench API迁移路径为unknown，原BLOCKED plan保留。按
+[独立工具记录](../build/validation-selector-shared-bench-paths.md)续记此既有条件，模块不改
+selector/policy或工具core。执行本卡预声明的共同factor/直接consumer/逐头编译并留真实结果；
+其余公共头对应消费者与交付等门在共同批固定后完成，未运行不签PASS。
+
+2026-10-15 CE02共同geometry批已验证，
+[阶段证据](../../../../evidence/correctness/inference-g04-g05-shared-geometry-stage/result.json)
+保存74项host tests、10逐头编译、原真实CPU Direct/Graph各F16/BF16的64-step double oracle
+consumer、两原pending风险program及完整输入SHA/raw。共同factor build12.953秒，真实
+CPU consumer必要public closure build51.125秒，累计含configure/两批test/逐头128.844秒；
+没有本机GPU执行、nvcc、全模型、sanitizer/SDK或P1。本轮使用实际新公共ABI验证直接
+consumer，未重签未变化的G03数学性能。旧plain正常旅程通过，新编码数学仍未接通。
+
+下一批按CE03–06实现原native encoder/直接压缩消费和窗口/不同Dv；CPU encoder还需产出
+CUDA联合所消费的E4M3FN carrier（单CPU attention首域仍Q8_0），不能把CPU→CUDA路径
+遗漏成只用CPU Q8 bytes。各原核接通后移除其当前明确unsupported边界，再实际资格；
+不能将这些拒绝保留为最终G04/G05收口。九owner仍AUDITED，完整goal继续。

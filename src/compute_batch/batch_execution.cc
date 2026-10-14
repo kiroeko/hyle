@@ -65,14 +65,13 @@ struct PagedReceiverData final:util::RefCounted<PagedReceiverData>{
 } // namespace detail
 namespace {
 Result<std::size_t> output_bytes(BatchCapacity c)noexcept{
-  HYLE_ASSIGN_OR_RETURN(auto desc,TensorDesc::dense(c.data_type,std::array<std::int64_t,3>{c.max_query_rows,c.query_heads,c.head_dim}));return desc.required_bytes();
+  HYLE_ASSIGN_OR_RETURN(auto desc,batch_output_description(c,c.max_query_rows));return desc.required_bytes();
 }
 Result<std::array<TensorDesc,3>> input_descriptions(BatchCapacity c)noexcept{
   std::array<TensorDesc,3> result;
-  HYLE_ASSIGN_OR_RETURN(result[0],TensorDesc::dense(c.data_type,std::array<std::int64_t,3>{c.max_query_rows,c.query_heads,c.head_dim}));
-  if(c.storage==BatchStorage::kPaged){HYLE_ASSIGN_OR_RETURN(result[1],TensorDesc::dense(c.data_type,std::array<std::int64_t,4>{c.max_pages,c.page_size,c.kv_heads,c.head_dim}));}
-  else{HYLE_ASSIGN_OR_RETURN(result[1],TensorDesc::dense(c.data_type,std::array<std::int64_t,3>{c.max_kv_rows,c.kv_heads,c.head_dim}));}
-  result[2]=result[1];return result;
+  HYLE_ASSIGN_OR_RETURN(result[0],batch_query_description(c));
+  HYLE_ASSIGN_OR_RETURN(result[1],batch_cache_description(c,BatchCacheRole::kKey));
+  HYLE_ASSIGN_OR_RETURN(result[2],batch_cache_description(c,BatchCacheRole::kValue));return result;
 }
 void native_terminal(void*opaque,const Status&status)noexcept{
   auto&s=*static_cast<d::BatchInvocationData*>(opaque);s.terminal=status;
@@ -135,6 +134,7 @@ Result<BatchProgram> BatchProgram::prepare(const Context&context,BatchSchema sch
   if(!context.valid() || !schema.valid() || !options.resource.valid() || !options.host_workspace.valid() || !options.allocator.valid() ||
      !options.max_invocations || options.max_invocations==UINT32_MAX || !options.max_float_workspace_bytes || !options.max_int_workspace_bytes || !std::isfinite(options.scale))
     return std::unexpected(Status::InvalidArgument("batch program options are invalid"));
+  HYLE_RETURN_IF_ERROR(validate_batch_attention_options(options.causal,options.window_left));
   if(options.resource_budget.valid() && !options.resource_budget.allows_unattributed())
     return std::unexpected(Status::Unimplemented("native batch planning private bytes are unknown"));
   auto a=options.allocator;if(options.resource_budget.valid()){HYLE_ASSIGN_OR_RETURN(a,options.resource_budget.metadata_allocator());}
@@ -202,6 +202,7 @@ Result<PreparedBatch> BatchInvocation::prepare(const BatchLayoutVersion&layout,b
   if(!data_ || data_->closed || data_->failed)return std::unexpected(Status::FailedPrecondition("batch invocation is closed/failed"));
   auto&s=*data_;
   if(!s.program->schema.owns(layout))return std::unexpected(Status::InvalidArgument("batch layout belongs to another schema"));
+  HYLE_RETURN_IF_ERROR(validate_batch_attention_layout(layout,s.program->options.causal,s.program->options.window_left));
   if(s.tickets || in_flight() || !s.completion.available())return std::unexpected(Status::Unavailable("batch slot has a live ticket/native work/old completion"));
   // Native callbacks publish terminal before releasing pending. Check only
   // after actual retirement; an observation error must never reset the slot.
@@ -288,6 +289,9 @@ Result<Completion> PreparedBatch::run(const ReadLease&query,const PagedArenaRead
     return std::unexpected(Status::FailedPrecondition("paged arena Direct needs its prepared paged native slot"));
   if(keys.layout()!=s.layout || values.layout()!=s.layout)
     return std::unexpected(Status::InvalidArgument("paged arena read layout differs from prepared metadata"));
+  const auto capacity=s.program->schema.capacity();
+  HYLE_RETURN_IF_ERROR(d::PagedArenaAccess::validate_storage(keys,capacity.key_storage));
+  HYLE_RETURN_IF_ERROR(d::PagedArenaAccess::validate_storage(values,capacity.value_storage));
   HYLE_ASSIGN_OR_RETURN(auto descriptions,input_descriptions(s.program->schema.capacity()));std::array<ConstTensorView,3> inputs;
   HYLE_ASSIGN_OR_RETURN(inputs[0],query.tensor(descriptions[0]));HYLE_ASSIGN_OR_RETURN(inputs[1],d::PagedArenaAccess::tensor(keys));HYLE_ASSIGN_OR_RETURN(inputs[2],d::PagedArenaAccess::tensor(values));
   for(std::size_t i=1;i<3;++i)if(inputs[i].description()!=descriptions[i] || inputs[i].storage().resource()!=s.program->options.resource)
@@ -334,6 +338,9 @@ Result<Completion> PagedBatchReceiver::submit(const ReadLease&query,
     return std::unexpected(Status::FailedPrecondition("common pending receiver prepared token is stale/consumed"));
   if(keys.layout()!=s->layout || values.layout()!=s->layout)
     return std::unexpected(Status::InvalidArgument("common pending frames differ from the prepared layout"));
+  const auto capacity=s->program->schema.capacity();
+  HYLE_RETURN_IF_ERROR(d::PagedArenaAccess::validate_storage(keys,capacity.key_storage));
+  HYLE_RETURN_IF_ERROR(d::PagedArenaAccess::validate_storage(values,capacity.value_storage));
   HYLE_RETURN_IF_ERROR((d::PagedArenaAccess::validate<CopyBatchUpdate,d::CopyStreamAccess>(keys,update)));
   HYLE_RETURN_IF_ERROR((d::PagedArenaAccess::validate<CopyBatchUpdate,d::CopyStreamAccess>(values,update)));
   HYLE_ASSIGN_OR_RETURN(auto descriptions,input_descriptions(s->program->schema.capacity()));
@@ -415,7 +422,9 @@ d::EnqueueResult d::BatchGraphAccess::enqueue(PreparedBatch&token,Queue&queue,st
   auto mirror=(s->graph_shared_metadata.valid()?s->graph_shared_metadata:s->mirror_ready).view();if(!mirror)return EnqueueResult::rejected(mirror.error());const auto supplied=inputs[3].storage();
   if(supplied.resource()!=mirror->resource() || supplied.native_handle()!=mirror->native_handle() || supplied.offset()!=mirror->offset() || supplied.size()!=mirror->size())
     return EnqueueResult::rejected(Status::InvalidArgument("Graph batch metadata is not the prepared slot mirror"));
-  if(outputs[0].description()!=(*descriptions)[0])return EnqueueResult::rejected(Status::InvalidArgument("Graph batch output capacity mismatch"));
+  auto output=batch_output_description(s->program->schema.capacity(),s->program->schema.capacity().max_query_rows);
+  if(!output)return EnqueueResult::rejected(output.error());
+  if(outputs[0].description()!=*output)return EnqueueResult::rejected(Status::InvalidArgument("Graph batch output capacity mismatch"));
   auto views=workspace_views(*s);if(!views)return EnqueueResult::rejected(views.error());views->metadata=*mirror;views->output=outputs[0].storage();
   auto enqueued=s->program->table->run(s->native,queue,inputs.first(3),*views);
   s->prepared=false;s->ran=true;return enqueued;

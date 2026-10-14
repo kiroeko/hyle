@@ -15,8 +15,12 @@ Result<Program> detail::PagedBatchAccess::prepare_program(const Context& context
   if(!context.valid() || !recipe.valid() || !recipe.schema().owns(layout))
     return std::unexpected(Status::InvalidArgument("Vulkan paged context/layout/schema differs"));
   const auto c=recipe.schema().capacity();
-  if(c.data_type!=DataType::kFloat16 || c.page_size!=16 ||
-      (c.head_dim!=64 && c.head_dim!=128 && c.head_dim!=256))
+  if(recipe.window_left()!=-1 || c.value_head_dim!=c.qk_head_dim || c.output_type!=c.query_type ||
+      !c.key_storage.format().is_plain() || !c.value_storage.format().is_plain() ||
+      c.key_storage.data_type()!=c.query_type || c.value_storage.data_type()!=c.query_type)
+    return std::unexpected(Status::Unimplemented("Vulkan encoded/window/unequal-V paged kernel is not implemented yet"));
+  if(c.query_type!=DataType::kFloat16 || c.page_size!=16 ||
+      (c.qk_head_dim!=64 && c.qk_head_dim!=128 && c.qk_head_dim!=256))
     return std::unexpected(Status::Unimplemented("Vulkan paged qualified page16/F16 flash depth"));
   try {
     detail::Plan plan;plan.workload=workload;plan.inputs={0,1,2,3};
@@ -35,7 +39,7 @@ Result<Program> detail::PagedBatchAccess::prepare_program(const Context& context
       plan.outputs={output};return detail::prepare_plan(context,plan);
     }
     HYLE_ASSIGN_OR_RETURN(auto root_shape,TensorShape::create(std::array<std::int64_t,4>{
-        1,std::int64_t(c.max_pages)*16,c.kv_heads,c.head_dim}));
+        1,std::int64_t(c.max_pages)*16,c.kv_heads,c.qk_head_dim}));
     HYLE_ASSIGN_OR_RETURN(auto root_view,View::reshape(root_shape));
     HYLE_ASSIGN_OR_RETURN(auto k,add(Operation(root_view),{1}));
     HYLE_ASSIGN_OR_RETURN(auto v,add(Operation(root_view),{2}));
@@ -50,7 +54,7 @@ Result<Program> detail::PagedBatchAccess::prepare_program(const Context& context
         return std::unexpected(Status::Unimplemented("Vulkan paged nonempty Q needs sufficient bounded logical KV"));
       HYLE_ASSIGN_OR_RETURN(auto slice,View::slice(0,host.query_indptr[r],nq));
       HYLE_ASSIGN_OR_RETURN(auto sliced,add(Operation(slice),{0}));
-      HYLE_ASSIGN_OR_RETURN(auto shape,TensorShape::create(std::array<std::int64_t,4>{1,nq,c.query_heads,c.head_dim}));
+      HYLE_ASSIGN_OR_RETURN(auto shape,TensorShape::create(std::array<std::int64_t,4>{1,nq,c.query_heads,c.qk_head_dim}));
       HYLE_ASSIGN_OR_RETURN(auto reshape,View::reshape(shape));
       HYLE_ASSIGN_OR_RETURN(auto q,add(Operation(reshape),{sliced}));
       requests.push_back({q,std::uint32_t(nq),std::uint32_t(nk),std::uint32_t(host.kv_indptr[r])});
@@ -61,7 +65,7 @@ Result<Program> detail::PagedBatchAccess::prepare_program(const Context& context
           .logical_rows=request.kv,.table_offset=request.offset,
           .scale=recipe.scale(),.causal=recipe.causal()});
       HYLE_ASSIGN_OR_RETURN(auto output,add(op,{request.q,k,v,3}));
-      HYLE_ASSIGN_OR_RETURN(auto shape,TensorShape::create(std::array<std::int64_t,3>{request.rows,c.query_heads,c.head_dim}));
+      HYLE_ASSIGN_OR_RETURN(auto shape,TensorShape::create(std::array<std::int64_t,3>{request.rows,c.query_heads,c.qk_head_dim}));
       HYLE_ASSIGN_OR_RETURN(auto reshape,View::reshape(shape));
       HYLE_ASSIGN_OR_RETURN(auto packed,add(Operation(reshape),{output}));parts.push_back(packed);
     }
@@ -80,12 +84,18 @@ Result<Program> prepare_ragged_batch(const Context&context,BatchLayoutVersion la
      attention.capacity.storage!=BatchStorage::kRagged||!std::isfinite(attention.scale))
     return std::unexpected(Status::InvalidArgument("Vulkan ragged context/layout/domain differs"));
   const auto c=attention.capacity;
-  if(c.data_type!=DataType::kFloat16||(c.head_dim!=64&&c.head_dim!=128&&c.head_dim!=256))
+  HYLE_RETURN_IF_ERROR(validate_batch_attention_options(attention.causal,attention.window_left));
+  HYLE_RETURN_IF_ERROR(validate_batch_attention_layout(layout,attention.causal,attention.window_left));
+  if(attention.window_left!=-1 || c.value_head_dim!=c.qk_head_dim || c.output_type!=c.query_type ||
+      !c.key_storage.format().is_plain() || !c.value_storage.format().is_plain() ||
+      c.key_storage.data_type()!=c.query_type || c.value_storage.data_type()!=c.query_type)
+    return std::unexpected(Status::Unimplemented("Vulkan encoded/window/unequal-V ragged kernel is not implemented yet"));
+  if(c.query_type!=DataType::kFloat16||(c.qk_head_dim!=64&&c.qk_head_dim!=128&&c.qk_head_dim!=256))
     return std::unexpected(Status::Unimplemented("Vulkan native ragged requires qualified F16 flash depth"));
   try{
     detail::Plan plan;plan.workload=workload;plan.inputs={0,1,2};
-    HYLE_ASSIGN_OR_RETURN(auto q,TensorDesc::dense(c.data_type,std::array<std::int64_t,3>{c.max_query_rows,c.query_heads,c.head_dim}));
-    HYLE_ASSIGN_OR_RETURN(auto k,TensorDesc::dense(c.data_type,std::array<std::int64_t,3>{c.max_kv_rows,c.kv_heads,c.head_dim}));
+    HYLE_ASSIGN_OR_RETURN(auto q,TensorDesc::dense(c.query_type,std::array<std::int64_t,3>{c.max_query_rows,c.query_heads,c.qk_head_dim}));
+    HYLE_ASSIGN_OR_RETURN(auto k,TensorDesc::dense(c.query_type,std::array<std::int64_t,3>{c.max_kv_rows,c.kv_heads,c.qk_head_dim}));
     plan.values={{q,{}},{k,{}},{k,{}}};
     const auto add=[&](Operation op,std::vector<std::uint32_t> inputs)->Result<std::uint32_t>{
       if(plan.values.size()>=UINT32_MAX)return std::unexpected(Status::ResourceExhausted("Vulkan ragged recipe value count"));
@@ -96,7 +106,7 @@ Result<Program> prepare_ragged_batch(const Context&context,BatchLayoutVersion la
     };
     const auto view=[&](std::uint32_t input,std::int32_t start,std::int32_t rows,std::uint32_t heads)->Result<std::uint32_t>{
       HYLE_ASSIGN_OR_RETURN(auto slice,View::slice(0,start,rows));HYLE_ASSIGN_OR_RETURN(auto sliced,add(Operation(slice),{input}));
-      HYLE_ASSIGN_OR_RETURN(auto shape,TensorShape::create(std::array<std::int64_t,4>{1,rows,heads,c.head_dim}));
+      HYLE_ASSIGN_OR_RETURN(auto shape,TensorShape::create(std::array<std::int64_t,4>{1,rows,heads,c.qk_head_dim}));
       HYLE_ASSIGN_OR_RETURN(auto reshape,View::reshape(shape));return add(Operation(reshape),{sliced});
     };
     const auto host=layout.host();std::vector<std::uint32_t> parts;
@@ -115,7 +125,7 @@ Result<Program> prepare_ragged_batch(const Context&context,BatchLayoutVersion la
     // reshapes can then remain inside one original managed submission.
     for(const auto &request:requests){
       HYLE_ASSIGN_OR_RETURN(auto output,add(Operation(ScaledDotProductAttention{.layout=AttentionLayout::kBatchSequenceHeadDepth,.scale=attention.scale,.causal=attention.causal}),{request.q,request.k,request.v}));
-      HYLE_ASSIGN_OR_RETURN(auto shape,TensorShape::create(std::array<std::int64_t,3>{request.rows,c.query_heads,c.head_dim}));
+      HYLE_ASSIGN_OR_RETURN(auto shape,TensorShape::create(std::array<std::int64_t,3>{request.rows,c.query_heads,c.qk_head_dim}));
       HYLE_ASSIGN_OR_RETURN(auto reshape,View::reshape(shape));HYLE_ASSIGN_OR_RETURN(auto packed,add(Operation(reshape),{output}));
       parts.push_back(packed);
     }

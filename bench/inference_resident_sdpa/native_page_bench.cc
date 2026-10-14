@@ -44,7 +44,7 @@ struct Data final {
   Data(int q1,int q2,int k1,int k2,int depth,bool masked):
       cap{.storage=c::BatchStorage::kPaged,.max_requests=2,.max_query_rows=unsigned(q1+q2+3),
           .max_kv_rows=unsigned(k1+k2+13),.max_pages=unsigned((k1+15)/16+(k2+15)/16+4),
-          .max_page_refs=unsigned((k1+15)/16+(k2+15)/16+3),.query_heads=8,.kv_heads=2,.head_dim=unsigned(depth),.page_size=16},
+          .max_page_refs=unsigned((k1+15)/16+(k2+15)/16+3),.query_heads=8,.kv_heads=2,.qk_head_dim=unsigned(depth),.value_head_dim=unsigned(depth),.page_size=16},
       qp{0,q1,q1+q2},kp{0,(k1+15)/16,(k1+15)/16+(k2+15)/16},
       tails{(k1-1)%16+1,(k2-1)%16+1},scale(1.F/std::sqrt(float(depth))),causal(masked){
     pages.resize(kp[2]);for(unsigned i=0;i<pages.size();++i)pages[i]=int(pages.size()-1-i);
@@ -55,7 +55,7 @@ struct Data final {
     for(unsigned p=1;p<3;++p)std::fill(values[p].begin()+std::size_t(kp[2])*16*2*depth,values[p].end(),encode(128.F));
   }
   std::vector<double> oracle()const{
-    const auto depth=cap.head_dim;std::vector<double> result(std::size_t(qp[2])*8*depth),weights;
+    const auto depth=cap.qk_head_dim;std::vector<double> result(std::size_t(qp[2])*8*depth),weights;
     for(unsigned r=0;r<2;++r){const int nq=qp[r+1]-qp[r],nk=(kp[r+1]-kp[r]-1)*16+tails[r];weights.resize(nk);
       const auto physical=[&](int row){return pages[kp[r]+row/16]*16+row%16;};
       for(int row=0;row<nq;++row)for(int h=0;h<8;++h){double sum=0;
@@ -109,7 +109,7 @@ struct Harness final {
 #endif
     schema=take(c::BatchSchema::create(data.cap));layout=take(schema.version({data.qp,data.kp,data.pages,data.tails}));
     recipe=take(c::NativePagedBatchProgram::prepare(schema,{.max_host_metadata_bytes=1<<20,.scale=data.scale,.causal=data.causal}));
-    keys=take(c::PagedArena::create(schema,device.ref(),{.max_backing_bytes=1<<24}));values=take(c::PagedArena::create(schema,device.ref(),{.max_backing_bytes=1<<24}));
+    keys=take(c::PagedArena::create(schema,c::BatchCacheRole::kKey,device.ref(),{.max_backing_bytes=1<<24}));values=take(c::PagedArena::create(schema,c::BatchCacheRole::kValue,device.ref(),{.max_backing_bytes=1<<24}));
     const auto page_bytes=keys.page_bytes(),query_bytes=data.values[0].size()*2;
     query_pool=take(c::LeasePool::create(device.ref(),query_bytes+512));auto host=take(c::LeasePool::create(staging.ref(),2*std::max(page_bytes,query_bytes)+512));
     const auto upload=[&](c::WriteLease& writer,std::span<const std::uint16_t> words){
@@ -140,7 +140,7 @@ struct Harness final {
     else{check(selected[slot].prepare_batch(layout));check(selected[slot].bind(query,key_frame,value_frame));}
     auto submitted=original?take(peers[slot]->submit()):take(selected[slot].submit());auto result=take(submitted.wait());
 #if defined(HYLE_PAGE_APPLE_BENCH)
-    const auto output=result->arrays()[0];if(host){auto desc=take(c::TensorDesc::dense(c::DataType::kFloat16,std::array<std::int64_t,3>{layout.facts().query_rows,8,schema.capacity().head_dim}));auto read=take(device.import_readonly(output,desc));check(read.view()->read(std::as_writable_bytes(std::span(*host))));}
+    const auto output=result->arrays()[0];if(host){auto desc=take(c::TensorDesc::dense(c::DataType::kFloat16,std::array<std::int64_t,3>{layout.facts().query_rows,8,schema.capacity().qk_head_dim}));auto read=take(device.import_readonly(output,desc));check(read.view()->read(std::as_writable_bytes(std::span(*host))));}
 #else
     const auto output=result->tensors()[0];if(host)check(context.download(output,std::as_writable_bytes(std::span(*host))));
 #endif

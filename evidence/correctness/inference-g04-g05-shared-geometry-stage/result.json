@@ -1,0 +1,267 @@
+{
+  "kind": "G04_G05_SHARED_GEOMETRY_IMPLEMENTATION_BATCH",
+  "state": "TERMINAL_PASS",
+  "pid": 21944,
+  "baseline": "5d3994c728003b3fa0722f85c10f5bc266748f9f",
+  "stage_scope": "Common geometry/layout/arena/Graph descriptions and original host risks; no native math/GPU/model/P1 acceptance",
+  "inputs": {
+    "bench/inference_resident_sdpa/apple_page_reference.cc": "3cd2f2762f076618f02f7e4aad75dbd1acc3a9f0ed5629acf34d94e59380e237",
+    "bench/inference_resident_sdpa/apple_ragged_reference.cc": "83d03b365fe0c6a8bfab0043366ac3f43bf326e19bb249e67b15cc5ee3cc7625",
+    "bench/inference_resident_sdpa/cpu_paged_bench.cc": "5dae079b4daa095b8097a2fdc1618aa52bc1bf35f52957ca160e0bc459828555",
+    "bench/inference_resident_sdpa/cpu_paged_reference.cc": "25a13e3d8c036d95dcb63fc36e8100d8be3b5773420bcf9e4b21e8f7fb002a63",
+    "bench/inference_resident_sdpa/cpu_ragged_bench.cc": "6fec3f16d746cb159dcf83ad0b1f55376362f313dd1f02df076c4af47184a0d1",
+    "bench/inference_resident_sdpa/cpu_ragged_reference.cc": "ee15bb61d1320440c67dabba78229f076c0d2704b4cd2e4026a3a8236d553f55",
+    "bench/inference_resident_sdpa/native_page_bench.cc": "3a73c02ad9fb6f78ea5050d905178ff974567b56a87624940ae682c5c3cc1031",
+    "bench/inference_resident_sdpa/native_ragged_bench.cc": "b3c128ca76e8c06a744bf832cd1cfa6805c1ae38ceed22a1aa158e070f0e475b",
+    "bench/inference_resident_sdpa/native_ragged_reference.cc": "7e4f234161ed5f4750b9236f0c6a4fa79efa7236c54d48659b2429599c1be341",
+    "bench/inference_resident_sdpa/vulkan_page_reference.cc": "42cec4128717ef4d13cf3c7e179e0dc247e33c7d999e439817e9f2e79fc2da2a",
+    "include/hyle/compute/batch_execution.h": "6ee1371fe051124e3db7bf053640d9ab6346d4d952ab47403d01820deb04b45f",
+    "include/hyle/compute/batch_layout.h": "6a47c47481ad9b1a4599b4b9dcb51428912e67e958540b9c971310fb7fe82e73",
+    "include/hyle/compute/batch_materialize.h": "9f57cfe9748faf89faae485b604a4b14d6f222bc3ce475bc40a1a265b405b50b",
+    "include/hyle/compute/batch_ops.h": "8af72d0f6d584ad38f596aa080d5f775aed857337beec6748cda4a8e7377165a",
+    "include/hyle/compute/batch_paged_native.h": "af5dca3b00bdf561ce87dde510bb8220420bf07d8ba383ff1feafccc3784aa6e",
+    "include/hyle/compute/detail/materialized_native_controller.h": "9c92224885493ccfea20e872ae631b0c70142da31068f36b4a239fce0e4719f4",
+    "include/hyle/compute/detail/paged_arena_access.h": "47e4c88a517ee066a45010c974b9207ee2b230e890a04b67081a24e012797d28",
+    "include/hyle/compute/low_precision.h": "6488d615af7bb970472b2ccd84a8081e9b3bad12ea0e599651abc5706ff2db60",
+    "include/hyle/compute/operation.h": "584e57c2a1a10b7c17ee80d4a6f992b73f488f4cdbf1e71e39d908cd89600808",
+    "include/hyle/compute/paged_arena.h": "15218780da6f3d1a8ee8de1e51cb9e6482448998c4ed44f95717809ce31f888c",
+    "include/hyle/graph/batch.h": "ab0eb43aec5dfb4018ec81c55c885d07f5c8783fe1e1f9983f5def7fa92888b8",
+    "src/compute_batch/batch_execution.cc": "09c9fb3b55b716cc7f6a1fb15ce14f6b423eadbcb5e4f1b6051d19f2bc59a577",
+    "src/compute_batch/batch_layout.cc": "7579869decc1e88fc6e21a75b017bc7a92ab5f3d0ac0f5a05172c42263df9fd7",
+    "src/compute_batch/batch_materialize.cc": "ea6ca1a38691dfec72a6e9730a4c97d70a56394092aedb7fc37e62a1479edfda",
+    "src/compute_batch/batch_paged_native.cc": "d0276acb6dc6a0212402c26ecafc356b7799fc0bf39b02930b9e677ce0d97fda",
+    "src/compute_batch/paged_arena.cc": "ed18a28662a8c7424351f83227341d29944ded1c035095718c441496d7bd63e3",
+    "src/compute_ops/low_precision.cc": "4f1921d032a42822af8bf74aed96f7c42289943b032271beb69843a31099b2d1",
+    "src/compute_provider_flashinfer/flashinfer_provider.cc": "841de42542dc68a98f5c4871a681edc344f679ed3fbd5488b57f5b4b2fb18763",
+    "src/compute_provider_ggml/native_batch.cc": "1979503c3abcf0522dc329bc6bc97a4cfcfbea5e578b73533d77b4693a9cf901",
+    "src/compute_route_apple/apple_batch.cc": "9cf46238c42d60a5b50e0de7fb07c9c076db6b0fcc4ec480469a82b25290046d",
+    "src/compute_route_apple/apple_materialized_invocation.cc": "70b2dcfdfd98d6cf24d83947a27d03e738dc14944fef6a17f992d1d7583fd80c",
+    "src/compute_route_vulkan/vulkan_batch.cc": "4b0fe170ecfcd6ec13ab49c881935acc4e918ec0713d9a295ce1b993a213900b",
+    "src/compute_route_vulkan/vulkan_materialized_invocation.cc": "f6a7635118edcc5f9c704ff5622a53f363842bf41b87661610a987726ba971f7",
+    "src/graph_batch/batch.cc": "a44ec69af0ffbcd4329f417e8c16d731b1faa37025f52aa01dca0fddc563cf7f",
+    "src/graph_batch/native_paged_node.cc": "132b13c0bbd27729d9f8eb7027b8bffb5b517debf1fe3752ddbc189ccba761ab",
+    "src/graph_batch/native_paged_nodes.h": "e9c2cfab727088e1c4d75c41ec7aafc8b1526a9b7c1334187274bc4eb3f2f94f",
+    "tests/compute_batch/batch_layout_test.cc": "1962328c88396aa00b2be2551c216ff5506ace331e51ceb57788dafd7750d154",
+    "tests/compute_batch/batch_materialize_test.cc": "2bf10918c029c96c50cf22bc3d6972e1525a690a35e6106a9f16a66b3155fefa",
+    "tests/compute_batch/dirty_page_cuda_consumer.cc": "5a68f7c175bdae8e90f01fef19e77b87b124746a23d027dbb925d41f5d1ee4bf",
+    "tests/compute_batch/dirty_page_native_consumer.cc": "21436d551c3d17c1503515681364265348ca6baccfef3833c88e46de195bfcd4",
+    "tests/compute_batch/dirty_page_public_consumer.cc": "8afe2a9067ed55117526030152b18db520d982dfb29f650d3e01af959b8538f4",
+    "tests/compute_batch/host_failure_fixture.h": "7b8639e7082958bd7498869a27bfba51a0f9e8fd239ddde9adf19a77637e0a28",
+    "tests/compute_batch/materialized_cpu_consumer.cc": "e97eccfcc5ad867bae15ee94caf2084307f606715f9ff24594dfeb12faff34c6",
+    "tests/compute_batch/materialized_host_controller_consumer.h": "c329260dd12a33e86607423d569998dda66cac3f91e64e6c58c6b122865fc62f",
+    "tests/compute_batch/materialized_native_consumer.cc": "716a56dfbb276372562d675fc6e724e9bc95d33efce57fe4de31259935596441",
+    "tests/compute_batch/native_apple_failure_fixture.h": "843b0495203042a9e03d50b8fe537f52ee3e19c179fef174aa1ceecc80e9c966",
+    "tests/compute_batch/native_arena_direct_consumer.h": "cd0afd3cf3ba1f3bf49d0d82bc288e796e743b031d19a11662d040b63f19cc5b",
+    "tests/compute_batch/native_arena_graph_consumer.h": "48cdc87413ea9e6595f718ea705256f4dc8bd440995a6ef526d7196b922a8469",
+    "tests/compute_batch/native_arena_reference_consumer.h": "0e224876bde0a3e31bfac6c5bbe6d6cacc69ed11cc87836d286046e2d0b7ca39",
+    "tests/compute_batch/native_direct_consumer.cc": "651e41ac629bbe653de99a29ea166b842452c00729f8f82bc4127390e6fe3114",
+    "tests/compute_batch/native_fault_consumer.cc": "d0a49c47ff55d278e4e1f0a69565c6b8aa132b14984cd4a5c1bca200c75699d3",
+    "tests/compute_batch/native_graph_consumer.cc": "4300833de6c1057b746e2c0bf8efc5098ceb8045e5a719faa07700a61270d605",
+    "tests/compute_batch/native_paged_apple_consumer.cc": "367265b6f9697b23af57dce4ce21f843600caec75c299c3d8ac8b4360ca89071",
+    "tests/compute_batch/native_paged_metadata_test.cc": "f7a13e2a8c38da580d8fd0e36f569bd6b3497a0487b6b957f39058d9d449cbf7",
+    "tests/compute_batch/native_paged_risk_fixture.h": "b614d781297b04923b598aff7d5df7ee0c2aef6ce435ddde25aa1d1ffa6bc8ef",
+    "tests/compute_batch/native_paged_vulkan_consumer.cc": "f4cd13be4891a1234920ea0ed224f33ceebbe27b55484a0957cf42ab29dc411e",
+    "tests/compute_batch/native_ragged_graph_append_consumer.h": "9f411f5bcb255774c62eff09f941abfdbf8a34f0730a693c7d591e2ed72b9282",
+    "tests/compute_batch/native_ragged_layout_test.h": "06a1346b74b1d839de9f7fc36d601fcd003c987d313ab5eb79649a906fd0fb9f",
+    "tests/compute_batch/native_vulkan_failure_fixture.h": "735442d02b038ca4d3220839c0eafb8c220f2da19d944d8099c9c6e5b40e986d",
+    "tests/compute_batch/paged_arena_pending_cuda_probe.cc": "414d931743c3be8fa30d3f8ece9c4e160f0040853cee5f39ada7dd0bdb7e381d",
+    "tests/compute_batch/paged_arena_pending_test.cc": "bd7cee67e859c84179f1204dc1703b2162e4f2955306188996ef192afa29f9b8",
+    "tests/compute_batch/paged_arena_test.cc": "7b78f3acc30fec1700ee58751c7d7a8c09ffeec24f752cbca05db368615c8018",
+    "tests/compute_batch/pending_paged_receiver_cpu_consumer.cc": "8a8a134976c65f2f1a6954030f78a870fe5c81d8be6b08aebbaa0c87a98e0766",
+    "tests/compute_batch/pending_paged_receiver_cpu_risks.cc": "68bc17846bf38592c026e7babd60ed6ae73b0f908ec74d4f95dd55a461f1a8d5",
+    "tests/compute_batch/pending_paged_receiver_cuda64_consumer.cc": "0ed038b565efaf9f0ca305908841790f9cf2fb283b3f6e91ce92ee0b6cdadd24",
+    "tests/compute_batch/pending_paged_receiver_cuda_consumer.cc": "67746346221f82b7636efc93843099b6179dd68ee7b077173191029abf1701de",
+    "tests/compute_batch/pending_paged_receiver_cuda_risks.cc": "8d00df0b52f87736aaa978df15997041ecb3eca0149588eaf00c4f6d84cd3f5d",
+    "tests/compute_batch/pending_paged_receiver_native_consumer.cc": "f57939dc9acea81b81df4230c0c41dde4da26478b31da100b1c14e9e08ae72dc",
+    "tests/compute_batch/public_batch_cpu_consumer.cc": "ee61122af91e4be0f4b2d6ca605fb9324af13081135ae62dee1bfa517793a1a0",
+    "tests/compute_batch/public_batch_cuda_absence_consumer.cc": "7eb0c95af50702d1fcec7c7f304613fe74ebd7ae25abc3b10e0e2a705e6ba0ef",
+    "tests/compute_batch/public_batch_cuda_consumer.cc": "0159265f92330fa5e076a35af3db4e98db108a42d8853926591b8505ba167a0a",
+    "tests/compute_batch/public_batch_native_consumer.cc": "0ba3c4cfc7db15cb45c649019aa0bd2a9d8425ca8c1e8c3eb31af5a2785cb0b6",
+    "tests/compute_batch/public_hybrid_batch_consumer.cc": "5a15c733021fb0cd9b20d30832254e1a84ffdbe37a8e1e1e738f99035b8140e6",
+    "tests/compute_batch/ragged_append_journey.h": "6d916341b55e9c8de0fcecfdb1f74eecd832f94865ea5ba253b4cd04fb50e368",
+    "tests/compute_ops/low_precision_test.cc": "9f09c1a7fc77810a5bc97ca7c5d97dc734e9c343ceb4b7ceb0988fc326e79a73",
+    "tests/compute_provider_ggml/native_paged_test.cc": "6f92718d859df66d703b4c05c4bf4ef23486ef29e02a15243d5354df4cae696e",
+    "tests/compute_provider_ggml/native_ragged_test.cc": "24258c22f7852a68b744c435ac1a9be3c4f401a5391f5409d9a6f2223e23c60b",
+    "tests/compute_route_vulkan/native_ragged_cost_test.cc": "bff44d662988f5ca0aebdcffbe88fa2a7277056e57b3ddaa451a6beeab291be7",
+    "tests/graph_batch/materialized_graph_test.cc": "96c726d59fb9913d4c036537cce415d86f5c67c43bb55354290799f685dfad30",
+    "tests/graph_batch/native_paged_joint_consumer.cc": "6a806341b761293d17e18e902a146ad3f8ae0828962fedb4c8d017cc6dd1002f",
+    "tests/graph_batch/native_paged_joint_risk_fixture.h": "d90c862adc50062390031bb723ee61a3db5f0e88b358c1a270a97fe4786cf049",
+    "tests/graph_batch/native_paged_node_test.cc": "6ec41d3826e99cf3221846645012e0f1f44eec5dc681ed67d9f9ddb00a3bb752",
+    "tests/graph_batch/pending_cuda_graph_risks.cc": "12b089a22bae6497dc303629b198e0943e4e4fb095bf361813734a56b52b3550",
+    "tests/graph_batch/pending_graph_risks.cc": "c4956b88956d4ecb28a6e5e19244ec7fac696f9542d1c1187414113639d3b7d5"
+  },
+  "stages": [
+    {
+      "stage": "configure",
+      "command": [
+        "cmake",
+        "-S",
+        "C:\\h7\\inference-g01-native-vulkan\\parent",
+        "-B",
+        "C:\\h7\\inference-g01-native-vulkan\\build"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 56.90700000000652,
+      "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\geometry-batch\\configure-1.log"
+    },
+    {
+      "stage": "compile",
+      "command": [
+        "cmake",
+        "--build",
+        "C:\\h7\\inference-g01-native-vulkan\\build",
+        "--target",
+        "g04_g05_geometry_tests",
+        "--parallel",
+        "4"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 12.952999999979511,
+      "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\geometry-batch\\compile-1.log"
+    },
+    {
+      "stage": "tests",
+      "command": [
+        "C:\\h7\\inference-g01-native-vulkan\\build\\g04_g05_geometry_tests.exe",
+        "--gtest_output=xml:C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\geometry-batch\\tests.xml"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 0.09400000001187436,
+      "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\geometry-batch\\tests-1.log"
+    },
+    {
+      "stage": "targeted-mask-compile",
+      "command": [
+        "cmake",
+        "--build",
+        "C:/h7/inference-g01-native-vulkan/build",
+        "--target",
+        "g04_g05_geometry_tests",
+        "--parallel",
+        "4"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 1.9060000000172295,
+      "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\geometry-batch\\targeted-mask-compile.log"
+    },
+    {
+      "stage": "targeted-mask-tests",
+      "command": [
+        "C:/h7/inference-g01-native-vulkan/build/g04_g05_geometry_tests.exe",
+        "--gtest_output=xml:C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\geometry-batch\\tests-2.xml"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 0.046999999991385266,
+      "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\geometry-batch\\targeted-mask-tests.log"
+    },
+    {
+      "stage": "cpu-direct-graph-compile",
+      "command": [
+        "cmake",
+        "--build",
+        "C:/h7/inference-g01-native-vulkan/build",
+        "--target",
+        "g03_common_receiver64",
+        "g03_pending_graph64",
+        "g03_common_receiver_risks",
+        "g03_pending_graph_risks",
+        "--parallel",
+        "4"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 51.125,
+      "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\geometry-batch\\cpu-direct-graph-compile.log"
+    },
+    {
+      "stage": "g03_common_receiver64",
+      "command": [
+        "C:/h7/inference-g01-native-vulkan/build/g03_common_receiver64.exe"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 0.42199999999138527,
+      "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\geometry-batch\\g03_common_receiver64.log"
+    },
+    {
+      "stage": "g03_pending_graph64",
+      "command": [
+        "C:/h7/inference-g01-native-vulkan/build/g03_pending_graph64.exe"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 0.2970000000204891,
+      "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\geometry-batch\\g03_pending_graph64.log"
+    },
+    {
+      "stage": "g03_common_receiver_risks",
+      "command": [
+        "C:/h7/inference-g01-native-vulkan/build/g03_common_receiver_risks.exe"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 0.23399999999674037,
+      "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\geometry-batch\\g03_common_receiver_risks.log"
+    },
+    {
+      "stage": "g03_pending_graph_risks",
+      "command": [
+        "C:/h7/inference-g01-native-vulkan/build/g03_pending_graph_risks.exe"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 0.030999999988125637,
+      "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\geometry-batch\\g03_pending_graph_risks.log"
+    },
+    {
+      "stage": "standalone-headers",
+      "headers": [
+        "hyle/compute/low_precision.h",
+        "hyle/compute/operation.h",
+        "hyle/compute/model_ops.h",
+        "hyle/compute/batch_layout.h",
+        "hyle/compute/batch_ops.h",
+        "hyle/compute/batch_execution.h",
+        "hyle/compute/batch_materialize.h",
+        "hyle/compute/batch_paged_native.h",
+        "hyle/compute/paged_arena.h",
+        "hyle/graph/batch.h"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 4.828000000008615,
+      "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\geometry-batch\\standalone-headers.log"
+    }
+  ],
+  "cumulative_seconds": 128.84400000001187,
+  "max_jobs": 4,
+  "prior_test_count": 71,
+  "input_updates": [
+    {
+      "reason": "Add explicit window/full-noncausal/unequal-V/reference refusal tests",
+      "previous": "8ca9e2cf63362cbb1e81569139f352942aaf23266fdc94da27d7a893831fc054",
+      "current": "2bf10918c029c96c50cf22bc3d6972e1525a690a35e6106a9f16a66b3155fefa"
+    }
+  ],
+  "test_count": 74,
+  "classification": "PROGRESS; common geometry and actual old plain CPU journeys, not new native encoded attention acceptance",
+  "verified": [
+    "Independent Q/K/V/output description and true encoded page bytes",
+    "Structural full noncausal Q>KV; causal qualification remains checked before native admission",
+    "Original F1 page initialization prefix/old reader/dirty pending footprint retained with encoded byte geometry",
+    "Same FP8 TensorDesc cannot substitute the other mathematical ports immutable scale",
+    "Reference window -1/0/15/16, bottom-right inclusive boundary, full noncausal and unequal value depth/output type; encoded history decode explicitly refused",
+    "Native Graph recipe/shape/window/schema identity and output descriptions",
+    "Actual original plain CPU Direct and Graph public GQA8/KV2 D256,64 updates each F16 and BF16 with double oracle/untouched history",
+    "Original actual CPU Direct and Graph pending lifecycle/rejection/rollback consumers",
+    "Ten standalone source public headers MSVC/static declaration compile; not installed SDK",
+    "Actual MSVC ordinary Operation unchanged128 bytes; CacheStorage8, BatchCapacity60, native descriptor76"
+  ],
+  "limits": [
+    "CE01 actual encoders and CE03-CE06 native new math remain UNPROVEN; temporary explicit unsupported admission retained until implemented",
+    "No new GPU execution, shader/driver qualification, installed SDK, sanitizer or P1 in this stage",
+    "Selector BLOCKED only shared bench unknown_paths; actual product owner authorization has no issues. Original tool condition and selected/skipped reasons preserved.",
+    "Non-MSVC ABI layout and Apple/CUDA/native route migration compile/math remain unverified by this stage",
+    "No whole G04/G05 acceptance or original G01/G02 old gate reclassification"
+  ],
+  "live_jobs": [],
+  "raw_sha256": "de4126f15709e6eaf4bdcb666a76ee75eec1ebc59f108b5ed61fce7aeeade958",
+  "probe_launch_failures": [
+    "First direct cl launch used parent PATH; WinError2 before compiler start.",
+    "Second compiler lookup selected stale case-duplicate PATH and asserted before compiler start; normalized inherited VS environment keys then compiled successfully. No product/compiler/test FAIL hidden."
+  ]
+}

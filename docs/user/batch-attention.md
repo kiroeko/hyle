@@ -1,11 +1,53 @@
 # Paged / ragged attention 与显式批次准备
 
-本页描述当前F5 C++ surface。当前资格与限制以[模块状态](../implementation/module-status.json)
+本页描述当前 C++ surface。当前资格与限制以[模块状态](../implementation/module-status.json)
 及[本轮验证计划](../implementation/tasks/compute/foundation-f5-final-validation-plan.md)为准；
 这页不承诺各平台相同吞吐、capture或全部native paged。普通接入只选Compute/Graph产品，
 不依赖内部factor target。
 
 ## 选择执行路线
+
+G04/G05 共同形状正在实施，尚未签发新的编码/窗口/不同 V 维原生资格；进度见
+[活动卡](../implementation/tasks/compute/inference-g04-g05-cache-attention-domain.md)。
+普通旧 plain 旅程使用显式的新字段，库不保旧签名转发。schema/descriptor接受一种形状，
+不代表所选native核已支持；当前未接通的组合在准备时返回Unimplemented。
+
+```cpp
+using namespace hyle::compute;
+const auto plain = CacheStorage::plain(DataType::kBFloat16).value();
+BatchCapacity capacity{
+    .query_type = DataType::kBFloat16,
+    .output_type = DataType::kBFloat16,
+    .key_storage = plain,
+    .value_storage = plain,
+    .max_query_rows = 17,
+    .max_kv_rows = 64,
+    .max_pages = 4,
+    .max_page_refs = 4,
+    .query_heads = 8,
+    .kv_heads = 2,
+    .qk_head_dim = 256,
+    .value_head_dim = 256,
+};
+auto schema = BatchSchema::create(capacity).value();
+auto keys = PagedArena::create(schema, BatchCacheRole::kKey, resource, options).value();
+auto values = PagedArena::create(schema, BatchCacheRole::kValue, resource, options).value();
+auto query_desc = batch_query_description(capacity).value();
+auto output_desc = batch_output_description(capacity, capacity.max_query_rows).value();
+```
+
+Q/output类型、Dqk/Dv和两份cache表示分别固定在schema中。页面字节与有效前缀按对应
+key/value role计算；tensor描述不携带外部FP8 scale，frame绑定还校验其原cache解释。
+CacheStorage的plain/q8_0/float8 factory生成不可变值，format/data_type/scale用访问器读取。
+Q8_0是末depth轴block32，34 bytes/block；copy producer使用真实U8 carrier，不能把
+blocked逻辑描述塞进原plain native result-source端口。FP8 E4M3FN使用固定正有限scale；
+改变scale需要新schema/cache身份，encoder与attention应使用同一spec。
+
+BatchSchema.version只检查结构和有效行：非空Q需要非空KV；full noncausal允许Q>KV。
+causal Q<=KV在recipe/prepare的数学资格检查。window_left=-1为无界，0为self-only，
+正值为bottom-right位置之前含左边界的past count；本批仅causal window或full noncausal。
+Materialized参考保显式gather/mask费用，支持plain几何与窗口，明确拒绝编码cache；
+它不替代直接压缩驻留读取。具体native组合以实际资格为准。
 
 | 路线 | 数学与公开入口 | 准备与成本 |
 |---|---|---|

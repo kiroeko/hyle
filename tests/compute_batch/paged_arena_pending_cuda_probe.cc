@@ -26,9 +26,9 @@ Status run(){
   HYLE_ASSIGN_OR_RETURN(auto queue,context.create_queue());Gate gate;
   struct Drain final {Gate&gate;c::Queue&queue;~Drain(){gate.release();queue.drain().IgnoreError();}}drain{gate,queue};
   const c::BatchCapacity cap{.max_requests=1,.max_query_rows=1,.max_kv_rows=2,.max_pages=2,.max_page_refs=1,
-    .query_heads=2,.kv_heads=2,.head_dim=64,.page_size=2};
+    .query_heads=2,.kv_heads=2,.qk_head_dim=64,.value_head_dim=64,.page_size=2};
   HYLE_ASSIGN_OR_RETURN(auto schema,c::BatchSchema::create(cap));
-  HYLE_ASSIGN_OR_RETURN(auto arena,c::PagedArena::create(schema,device.ref(),{.max_backing_bytes=2048}));
+  HYLE_ASSIGN_OR_RETURN(auto arena,c::PagedArena::create(schema,c::BatchCacheRole::kKey,device.ref(),{.max_backing_bytes=2048}));
   HYLE_ASSIGN_OR_RETURN(auto pool,c::LeasePool::create(host.ref(),1024));
   HYLE_ASSIGN_OR_RETURN(auto incoming,pool.allocate(256));HYLE_RETURN_IF_ERROR(incoming.view()->fill(std::byte{17}));
   HYLE_ASSIGN_OR_RETURN(auto source,incoming.publish());HYLE_ASSIGN_OR_RETURN(auto target,pool.allocate(256));

@@ -74,8 +74,8 @@ cudaError_t synchronize(cudaEvent_t event)noexcept{
 }
 Status run(Mode mode){
   HYLE_ASSIGN_OR_RETURN(auto id,n::device(0));
-  const c::BatchCapacity cap{.data_type=c::DataType::kFloat16,.max_requests=1,.max_query_rows=1,.max_kv_rows=2,
-      .max_pages=2,.max_page_refs=1,.query_heads=2,.kv_heads=1,.head_dim=64,.page_size=16};
+  const c::BatchCapacity cap{.query_type=c::DataType::kFloat16,.output_type=c::DataType::kFloat16,.key_storage=c::CacheStorage::plain(c::DataType::kFloat16).value(),.value_storage=c::CacheStorage::plain(c::DataType::kFloat16).value(),.max_requests=1,.max_query_rows=1,.max_kv_rows=2,
+      .max_pages=2,.max_page_refs=1,.query_heads=2,.kv_heads=1,.qk_head_dim=64,.value_head_dim=64,.page_size=16};
   HYLE_ASSIGN_OR_RETURN(auto schema,c::BatchSchema::create(cap));
   const std::array<std::int32_t,2> ptr{0,1};const std::array<std::int32_t,1> pages{1},tail{2};
   HYLE_ASSIGN_OR_RETURN(auto layout,schema.version({ptr,ptr,pages,tail}));
@@ -118,13 +118,13 @@ Status run(Mode mode){
     HYLE_ASSIGN_OR_RETURN(auto done,prepared.run(inputs));HYLE_RETURN_IF_ERROR(done.wait());
   }
   native={}; // Warmed original native math; Graph has its own original slot.
-  HYLE_ASSIGN_OR_RETURN(auto qdesc,c::TensorDesc::dense(cap.data_type,std::array<std::int64_t,3>{1,2,64}));
+  HYLE_ASSIGN_OR_RETURN(auto qdesc,c::TensorDesc::dense(cap.query_type,std::array<std::int64_t,3>{1,2,64}));
 #if defined(HYLE_PENDING_CPU_CUDA_GRAPH_RISKS)
   HYLE_ASSIGN_OR_RETURN(auto host_desc,c::TensorDesc::dense(c::DataType::kFloat32,qdesc.dimensions()));
 #else
   const auto host_desc=qdesc;
 #endif
-  HYLE_ASSIGN_OR_RETURN(auto kvdesc,c::TensorDesc::dense(cap.data_type,std::array<std::int64_t,4>{2,16,1,64}));
+  HYLE_ASSIGN_OR_RETURN(auto kvdesc,c::TensorDesc::dense(cap.query_type,std::array<std::int64_t,4>{2,16,1,64}));
   HYLE_ASSIGN_OR_RETURN(auto metadata_desc,schema.metadata_description());
   HYLE_ASSIGN_OR_RETURN(auto builder,g::GraphBuilder::create());
   const std::array descriptions{host_desc,kvdesc,kvdesc,metadata_desc};std::array<g::ValueId,4> inputs;
@@ -166,8 +166,8 @@ Status run(Mode mode){
   HYLE_ASSIGN_OR_RETURN(auto receiver,b::PendingInvocation::create(std::move(original),4,options));
   const std::array versions{b::NodeLayout{node,layout}};
   HYLE_RETURN_IF_ERROR(receiver.prepare_batch(versions));
-  HYLE_ASSIGN_OR_RETURN(auto keys,c::PagedArena::create(schema,resource,{.max_backing_bytes=8192}));
-  HYLE_ASSIGN_OR_RETURN(auto values,c::PagedArena::create(schema,resource,{.max_backing_bytes=8192}));
+  HYLE_ASSIGN_OR_RETURN(auto keys,c::PagedArena::create(schema,c::BatchCacheRole::kKey,resource,{.max_backing_bytes=8192}));
+  HYLE_ASSIGN_OR_RETURN(auto values,c::PagedArena::create(schema,c::BatchCacheRole::kValue,resource,{.max_backing_bytes=8192}));
   HYLE_ASSIGN_OR_RETURN(auto kw,keys.acquire(1));HYLE_ASSIGN_OR_RETURN(auto vw,values.acquire(1));
   HYLE_ASSIGN_OR_RETURN(auto pool,c::LeasePool::create(resource,1024));
 #if defined(HYLE_PENDING_CPU_CUDA_GRAPH_RISKS)

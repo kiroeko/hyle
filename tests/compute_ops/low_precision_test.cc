@@ -61,17 +61,11 @@ TEST(ComputeOpsCacheStorage, RefusesInvalidInterpretationAndOverflow) {
     EXPECT_FALSE(CacheStorage::float8(scale));
   const auto q8 = CacheStorage::q8_0();
   ASSERT_TRUE(q8);
-  auto changed = *q8;
-  changed.scale = 2.0F;
-  EXPECT_FALSE(validate_cache_storage(changed).ok());
-  changed = *q8;
-  changed.data_type = DataType::kFloat16;
-  EXPECT_FALSE(validate_cache_storage(changed).ok());
-  const auto forged = StorageFormat::blocked(kGgufQ8_0, 32, 35);
-  ASSERT_TRUE(forged);
-  changed = *q8;
-  changed.format = *forged;
-  EXPECT_FALSE(validate_cache_storage(changed).ok());
+  EXPECT_FALSE(CacheStorage::plain(DataType::kFloat32));
+  EXPECT_FALSE(CacheStorage::plain(DataType::kUnknown));
+  EXPECT_FALSE(CacheStorage::plain(DataType::kInt8));
+  EXPECT_TRUE(validate_cache_storage(*q8).ok());
+  EXPECT_EQ(q8->format().bytes_per_block(), 34u);
   EXPECT_FALSE(cache_tensor_description(*q8, std::array<std::int64_t, 2>{1, 33}));
   EXPECT_FALSE(cache_tensor_description(*q8, std::array<std::int64_t, 2>{-1, 32}));
   EXPECT_FALSE(cache_tensor_description(*q8,

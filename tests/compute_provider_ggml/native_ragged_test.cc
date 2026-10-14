@@ -48,9 +48,9 @@ template<class T> void exercise(int depth, bool causal) {
   auto context=c::cpu::create_context({.native_threads=1}).value();
   auto queue=context.create_queue().value();
   const c::BatchCapacity capacity{.storage=c::BatchStorage::kRagged,
-      .data_type=half_test::data_type<T>(),
+      .query_type=half_test::data_type<T>(),.output_type=half_test::data_type<T>(),.key_storage=c::CacheStorage::plain(half_test::data_type<T>()).value(),.value_storage=c::CacheStorage::plain(half_test::data_type<T>()).value(),
       .max_requests=3,.max_query_rows=20,.max_kv_rows=84,.max_pages=0,.max_page_refs=0,
-      .query_heads=heads,.kv_heads=kv_heads,.head_dim=static_cast<std::uint32_t>(depth),.page_size=1};
+      .query_heads=heads,.kv_heads=kv_heads,.qk_head_dim=static_cast<std::uint32_t>(depth),.value_head_dim=static_cast<std::uint32_t>(depth),.page_size=1};
   auto schema_result=c::BatchSchema::create(capacity);ASSERT_TRUE(schema_result)<<schema_result.error().message();
   auto schema=std::move(*schema_result);
   const std::array<std::int32_t,4> qp{0,1,18,18},kp{0,31,78,78};
@@ -123,7 +123,7 @@ TEST(GgmlCpuRagged, ColdBudgetAndPagedQualificationAreExplicit) {
   auto context=c::Context::create(c::cpu::device(),c::ggml_cpu::provider({.native_threads=1})).value();
   auto queue=context.create_queue().value();
   c::BatchCapacity cap{.storage=c::BatchStorage::kRagged,.max_query_rows=1,.max_kv_rows=3,
-      .max_pages=0,.max_page_refs=0,.query_heads=4,.kv_heads=2,.head_dim=64,.page_size=1};
+      .max_pages=0,.max_page_refs=0,.query_heads=4,.kv_heads=2,.qk_head_dim=64,.value_head_dim=64,.page_size=1};
   auto schema=c::BatchSchema::create(cap).value();const std::array<std::int32_t,2> q{0,1},k{0,3};
   auto layout=schema.version({q,k,{},{}}).value();
   auto program=c::BatchProgram::prepare(context,schema,{.resource=hyle::mem::system_resource(),.max_float_workspace_bytes=1,.max_int_workspace_bytes=1024}).value();
@@ -148,7 +148,7 @@ TEST(GgmlCpuRagged, EveryColdAllocationFailureReleasesThePartialNativePlan) {
   for(auto storage:{c::BatchStorage::kRagged,c::BatchStorage::kPaged}){
   SCOPED_TRACE(static_cast<unsigned>(storage));
   c::BatchCapacity cap{.storage=c::BatchStorage::kRagged,.max_requests=2,.max_query_rows=2,.max_kv_rows=6,
-      .max_pages=0,.max_page_refs=0,.query_heads=4,.kv_heads=2,.head_dim=64,.page_size=1};
+      .max_pages=0,.max_page_refs=0,.query_heads=4,.kv_heads=2,.qk_head_dim=64,.value_head_dim=64,.page_size=1};
   const bool paged=storage==c::BatchStorage::kPaged;
   if(paged){cap.storage=storage;cap.max_pages=2;cap.max_page_refs=2;cap.page_size=16;cap.max_kv_rows=32;}
   auto schema=c::BatchSchema::create(cap).value();const std::array<std::int32_t,3> q{0,1,2},k{0,paged?1:3,paged?2:6};
@@ -179,7 +179,7 @@ void accepted_failure(bool paged) {
   auto context=c::Context::create(c::cpu::device(),c::ggml_cpu::provider({.native_threads=1})).value();
   auto queue=context.create_queue().value();
   c::BatchCapacity cap{.storage=c::BatchStorage::kRagged,.max_requests=2,.max_query_rows=2,.max_kv_rows=6,
-      .max_pages=0,.max_page_refs=0,.query_heads=4,.kv_heads=2,.head_dim=64,.page_size=1};
+      .max_pages=0,.max_page_refs=0,.query_heads=4,.kv_heads=2,.qk_head_dim=64,.value_head_dim=64,.page_size=1};
   if(paged){cap.storage=c::BatchStorage::kPaged;cap.max_pages=2;cap.max_page_refs=2;cap.page_size=16;cap.max_kv_rows=32;}
   auto schema=c::BatchSchema::create(cap).value();const std::array<std::int32_t,3> q{0,1,2},k{0,paged?1:3,paged?2:6};
   const std::array<std::int32_t,2> ids{1,0},tails{3,3};
@@ -192,8 +192,8 @@ void accepted_failure(bool paged) {
   c::PagedArena keys,values;c::PagedArenaRead key_frame,value_frame;
   std::array<c::ReadLease,2> key_guards,value_guards;
   if(paged){
-    auto key_arena=c::PagedArena::create(schema,hyle::mem::system_resource(),{.max_backing_bytes=8193});
-    auto value_arena=c::PagedArena::create(schema,hyle::mem::system_resource(),{.max_backing_bytes=8193});
+    auto key_arena=c::PagedArena::create(schema,c::BatchCacheRole::kKey,hyle::mem::system_resource(),{.max_backing_bytes=8193});
+    auto value_arena=c::PagedArena::create(schema,c::BatchCacheRole::kValue,hyle::mem::system_resource(),{.max_backing_bytes=8193});
     ASSERT_TRUE(key_arena)<<key_arena.error().message();ASSERT_TRUE(value_arena)<<value_arena.error().message();
     keys=std::move(*key_arena);values=std::move(*value_arena);
     const std::vector<F16> zero(16*2*64);

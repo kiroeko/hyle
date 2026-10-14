@@ -126,9 +126,15 @@ struct BatchSlot final {
 Status qualify_batch(void*opaque,BatchCapacity capacity,const BatchProgramOptions&options)noexcept {
   auto&context=*static_cast<ProviderContext*>(opaque);
   HYLE_RETURN_IF_ERROR(validate_batch_capacity(capacity));
+  HYLE_RETURN_IF_ERROR(validate_batch_attention_options(options.causal,options.window_left));
+  if(options.window_left!=-1 || capacity.value_head_dim!=capacity.qk_head_dim ||
+      capacity.output_type!=capacity.query_type ||
+      !capacity.key_storage.format().is_plain() || !capacity.value_storage.format().is_plain() ||
+      capacity.key_storage.data_type()!=capacity.query_type || capacity.value_storage.data_type()!=capacity.query_type)
+    return Status::Unimplemented("FlashInfer encoded/window/unequal-V batch kernel is not implemented yet");
   const auto group=capacity.query_heads/capacity.kv_heads;
   if(!context.maximum_grid || !options.causal ||
-     (capacity.head_dim!=64 && capacity.head_dim!=128 && capacity.head_dim!=256) ||
+     (capacity.qk_head_dim!=64 && capacity.qk_head_dim!=128 && capacity.qk_head_dim!=256) ||
      (group!=1 && group!=2 && group!=4 && group!=8))return Status::Unimplemented("FlashInfer batch domain is not qualified");
   return Status::Ok();
 }
@@ -140,9 +146,9 @@ Status create_batch_slot(void*opaque,BatchCapacity capacity,const BatchProgramOp
   p->primary=context.primary;p->plan_bytes=native::batch_state_bytes();p->plan=allocator.allocate(p->plan_bytes,16);
   if(!p->plan){allocator.destroy(p);return Status::ResourceExhausted("FlashInfer batch plan metadata");}
   native::initialize_batch_state(p->plan);
-  p->spec={.query_heads=capacity.query_heads,.kv_heads=capacity.kv_heads,.head_dim=capacity.head_dim,.page_size=capacity.page_size,
+  p->spec={.query_heads=capacity.query_heads,.kv_heads=capacity.kv_heads,.head_dim=capacity.qk_head_dim,.page_size=capacity.page_size,
     .query_indptr_offset=offsets.query_indptr,.kv_indptr_offset=offsets.kv_indptr,.page_indices_offset=offsets.page_indices,.tail_offset=offsets.last_page_lengths,
-    .scale=options.scale,.paged=capacity.storage==BatchStorage::kPaged,.bfloat16=capacity.data_type==DataType::kBFloat16};
+    .scale=options.scale,.paged=capacity.storage==BatchStorage::kPaged,.bfloat16=capacity.query_type==DataType::kBFloat16};
   *output=p;return Status::Ok();
 }
 void destroy_batch_slot(void*opaque,mem::AllocatorRef allocator)noexcept {

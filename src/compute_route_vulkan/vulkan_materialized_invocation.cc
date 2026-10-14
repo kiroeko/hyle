@@ -69,7 +69,7 @@ Result<PagedBatchInvocation> PagedBatchInvocation::create(const Context& context
   if(!context.valid() || !recipe.valid() || !workload.valid())
     return std::unexpected(Status::InvalidArgument("Vulkan paged context/recipe/workload invalid"));
   const auto c=recipe.schema().capacity();
-  if(c.data_type!=DataType::kFloat16 || (c.head_dim!=64 && c.head_dim!=128 && c.head_dim!=256))
+  if(c.query_type!=DataType::kFloat16 || (c.qk_head_dim!=64 && c.qk_head_dim!=128 && c.qk_head_dim!=256))
     return std::unexpected(Status::Unimplemented("Vulkan paged qualified F16 flash depth"));
   auto allocator=options.allocator;
   if(!allocator.valid())return std::unexpected(Status::InvalidArgument("Vulkan paged allocator invalid"));

@@ -12,10 +12,10 @@ namespace hybrid = g::cpu_cuda;
 Status hybrid_paged(bool bf16) {
   constexpr unsigned depth=256, heads=8, kv_heads=2, page=16;
   const c::BatchCapacity cap{
-      .storage=c::BatchStorage::kPaged,.data_type=bf16?c::DataType::kBFloat16:c::DataType::kFloat16,
+      .storage=c::BatchStorage::kPaged,.query_type=bf16?c::DataType::kBFloat16:c::DataType::kFloat16,.output_type=bf16?c::DataType::kBFloat16:c::DataType::kFloat16,.key_storage=hyle::compute::CacheStorage::plain(bf16?c::DataType::kBFloat16:c::DataType::kFloat16).value(),.value_storage=hyle::compute::CacheStorage::plain(bf16?c::DataType::kBFloat16:c::DataType::kFloat16).value(),
       .max_requests=2,.max_query_rows=3,.max_kv_rows=48,
       .max_pages=4,.max_page_refs=3,.query_heads=heads,.kv_heads=kv_heads,
-      .head_dim=depth,.page_size=page};
+      .qk_head_dim=depth,.value_head_dim=depth,.page_size=page};
   HYLE_ASSIGN_OR_RETURN(auto schema,c::BatchSchema::create(cap));
   HYLE_ASSIGN_OR_RETURN(auto cpu,g::cpu::create_context());
   const c::BatchProgramOptions options{
@@ -35,10 +35,10 @@ Status hybrid_paged(bool bf16) {
   const std::array<std::int32_t,3> ids{0,1,2},reordered{2,1,0};
   HYLE_ASSIGN_OR_RETURN(auto initial,schema.version({qptr,kvptr,ids,tails}));
   HYLE_ASSIGN_OR_RETURN(auto next,schema.version({qptr,kvptr,reordered,tails}));
-  HYLE_ASSIGN_OR_RETURN(auto qdesc,c::TensorDesc::dense(cap.data_type,std::array<std::int64_t,3>{3,heads,depth}));
+  HYLE_ASSIGN_OR_RETURN(auto qdesc,c::TensorDesc::dense(cap.query_type,std::array<std::int64_t,3>{3,heads,depth}));
   HYLE_ASSIGN_OR_RETURN(auto xdesc,c::TensorDesc::dense(c::DataType::kFloat32,std::array<std::int64_t,3>{3,heads,depth}));
   HYLE_ASSIGN_OR_RETURN(auto scale_desc,c::TensorDesc::dense(c::DataType::kFloat32,std::array<std::int64_t,1>{depth}));
-  HYLE_ASSIGN_OR_RETURN(auto kvdesc,c::TensorDesc::dense(cap.data_type,std::array<std::int64_t,4>{4,page,kv_heads,depth}));
+  HYLE_ASSIGN_OR_RETURN(auto kvdesc,c::TensorDesc::dense(cap.query_type,std::array<std::int64_t,4>{4,page,kv_heads,depth}));
   HYLE_ASSIGN_OR_RETURN(auto metadata_desc,schema.metadata_description());
   HYLE_ASSIGN_OR_RETURN(auto builder,g::GraphBuilder::create());
   HYLE_ASSIGN_OR_RETURN(auto x,builder.input(xdesc));
@@ -47,7 +47,7 @@ Status hybrid_paged(bool bf16) {
   HYLE_ASSIGN_OR_RETURN(auto value,builder.input(kvdesc));
   HYLE_ASSIGN_OR_RETURN(auto metadata,builder.input(metadata_desc));
   HYLE_ASSIGN_OR_RETURN(auto normalized,builder.add(c::RmsNorm{.epsilon=1.e-6f},x,scale));
-  HYLE_ASSIGN_OR_RETURN(auto query,builder.add(c::Cast{cap.data_type},normalized));
+  HYLE_ASSIGN_OR_RETURN(auto query,builder.add(c::Cast{cap.query_type},normalized));
   const std::array ports{query,key,value,metadata};
   HYLE_ASSIGN_OR_RETURN(auto attention,builder.add_node(c::Operation::custom(c::PagedAttention{cap,options.scale}),ports));
   HYLE_ASSIGN_OR_RETURN(auto attended,builder.result(attention));
@@ -74,8 +74,8 @@ Status hybrid_paged(bool bf16) {
       gb::LaneBinding{g::ExecutionLaneId{1},&cpu,&cpu_queue},
       gb::LaneBinding{g::ExecutionLaneId{0},&gpu,&gpu_queue,staging.ref()}};
   HYLE_ASSIGN_OR_RETURN(auto invocation,gb::Invocation::create(compiled.executable,lanes));
-  HYLE_ASSIGN_OR_RETURN(auto keys,c::PagedArena::create(schema,device.ref(),{.max_backing_bytes=1u<<20}));
-  HYLE_ASSIGN_OR_RETURN(auto values,c::PagedArena::create(schema,device.ref(),{.max_backing_bytes=1u<<20}));
+  HYLE_ASSIGN_OR_RETURN(auto keys,c::PagedArena::create(schema,c::BatchCacheRole::kKey,device.ref(),{.max_backing_bytes=1u<<20}));
+  HYLE_ASSIGN_OR_RETURN(auto values,c::PagedArena::create(schema,c::BatchCacheRole::kValue,device.ref(),{.max_backing_bytes=1u<<20}));
   std::vector<std::uint16_t> k(4*page*kv_heads*depth),v(k.size());
   for(unsigned p=0;p<3;++p)for(unsigned row=0;row<page;++row)for(unsigned head=0;head<kv_heads;++head){
     const auto at=((p*page+row)*kv_heads+head)*depth;

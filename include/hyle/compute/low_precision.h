@@ -82,16 +82,24 @@ inline constexpr StorageFormatId kGgufIq1Xs{0x48594c4547475546ULL, 20};
 // Q8_0 scales are inside each block; FP8 uses one positive finite scale for
 // this cache's entire lifetime. Changing that scale requires new cache storage.
 // Plain F16/BF16 and Q8_0 require scale == 1. Native qualification is separate.
-struct CacheStorage final {
-  DataType data_type = DataType::kFloat16;
-  StorageFormat format{};
-  float scale = 1.0F;
-
+class CacheStorage final {
+public:
+  constexpr CacheStorage() noexcept = default;
+  HYLE_COMPUTE_OPS_API static Result<CacheStorage> plain(DataType) noexcept;
   HYLE_COMPUTE_OPS_API static Result<CacheStorage> q8_0() noexcept;
   HYLE_COMPUTE_OPS_API static Result<CacheStorage> float8(float scale) noexcept;
+  constexpr DataType data_type() const noexcept { return data_type_; }
+  constexpr float scale() const noexcept { return scale_; }
+  HYLE_COMPUTE_OPS_API StorageFormat format() const noexcept;
   friend constexpr bool operator==(const CacheStorage &,
                                    const CacheStorage &) noexcept = default;
+private:
+  constexpr CacheStorage(DataType type, float scale) noexcept
+      : data_type_(type), scale_(scale) {}
+  DataType data_type_ = DataType::kFloat16;
+  float scale_ = 1.0F;
 };
+static_assert(sizeof(CacheStorage) == 8);
 
 HYLE_COMPUTE_OPS_API Status validate_cache_storage(const CacheStorage &) noexcept;
 // Rows/heads/pages remain outside the final depth axis. Unlike GGUF weight
