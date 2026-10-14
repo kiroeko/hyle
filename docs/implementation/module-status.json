@@ -407,14 +407,9 @@
     },
     {
       "module": "compute_backend_cuda",
-      "state": "CLOSED",
-      "record": "docs/implementation/tasks/compute/foundation-f5-final-closure.md",
-      "summary": "F5 finite typed paged/ragged and state/Graph seams CLOSED; actual native/reference qualifications, host risks, SDK18 and component contract verified. IREE owner only TSAN configuration fix; original scopes and vendor/capture/performance limits retained.",
-      "candidate": "11c348e404df2c3fc404056ff3a9e885d4d990bc",
-      "performance": {
-        "tier": "P0",
-        "evidence": "evidence/correctness/foundation-f5-final/receipt.json"
-      }
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/compute/inference-g04-g05-cache-attention-domain.md",
+      "summary": "G04/G05 CE08 SCOPED: private numeric-input status for real CUDA FP8 CacheEncode; reuse original acquire_device_status/reset/first-error/D2H/merge Completion. No queue/callback/wait/slot/layout changes. Original F5/G03 scopes retained; new source/risk/delivery runtime gates UNPROVEN."
     },
     {
       "module": "compute_provider_native",

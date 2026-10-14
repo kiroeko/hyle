@@ -1,7 +1,7 @@
 # G04/G05 编码 KV 与有限 attention 语义实施批
 
 状态：**AUDITED，2026-10-15**。baseline `694a3d1a4b02540cb56b6ceae35b73dd1dd93440`；
-共同批owner见下表：九个实际组件；有限CE01–07/API/成本合同已冻结。原 G03 已 CLOSED，不由本卡重开其权限/
+共同批owner见下表：九个原实际组件及下文新增CUDA数值状态owner；有限CE01–07/API/成本合同已冻结。原 G03 已 CLOSED，不由本卡重开其权限/
 退休实现。九owner已合法SCOPED后进入AUDITED；仅下列有限FIX授权产品实现。
 本批沿[十项总卡](../project/inference-gaps-goal-execution-2026-10.md)，
 不取消其余 G 项，也不把本地 BF16 模型不需要量化 KV 当作完成 G04。
@@ -293,3 +293,20 @@ thread/queue owner、无整KV展开或boxed Q×KV mask；native未知metadata仍
 两个encoder同Graph及F2增量页面旅程、新域sanitizer/并发/OOM、SDK和P1尚未签发；
 CUDA/Apple/Vulkan新增encoder与数学也仍UNPROVEN。九owner保持AUDITED，不能据此
 关闭G04/G05或回填其他G项。
+
+### CE04 CUDA numeric-status有限补充范围（2026-10-15）
+
+新增owner `compute_backend_cuda`，baseline `b9d8bce8221870dc8fc5af61fccfffa8cfb5f048`。
+该owner先进入SCOPED，原九owner保持AUDITED。具体新事实：CacheEncode要求有限实际payload，
+CUDA原 `acquire_device_status` 已有reset/首错/完成D2H/跨queue合并机制，却只有索引越界和
+整数溢出码；非有限编码输入不能准确映射到InvalidArgument。这是本轮已准入真实producer
+必须增加的语义域，按原F5 terminal的新能力/缺陷trigger重开，不重新验收原G03权限或退休。
+
+有限CE08只添加private数值输入域错误码及原完成status翻译；CacheEncode核在读取NaN/Inf
+时写首错并安全跳过对应payload，真实Completion报告InvalidArgument。不得增加queue/
+callback/host wait/error owner，不改完成槽、reset/merge/capture布局或语义。主消费者是
+GPU本轮FP8新行encoder→原F2/page receiver，正交消费者是公开one-op坏payload后的退休/
+拒绝发布与fresh invocation；原索引/整数错误按原同协议保留。执行同卡预声明的实际CUDA
+数值/退休/三交付及适用host风险门，先做有限source批，未运行不签PASS。该私有enum与
+switch的P0为无新增布局/分配，CUDA数学性能仍属于冻结candidate后的同卡P1。预算沿本卡
+2h检查点/自动追加/原失败累计，其他CLOSED后端范围不重开。
