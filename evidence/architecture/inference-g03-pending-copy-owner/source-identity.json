@@ -1,0 +1,14 @@
+{
+  "scope_head": "f764a1053",
+  "product": "dab23ba92256cad21f2e83af6141eb8ad51264c5",
+  "canonical_equals_validation": true,
+  "files": {
+    "tests/compute_batch/pending_copy_owner_probe.cc": "80060e9ba665483951ca7cb693af904efa7c401e306872612f8d20dd54059e41",
+    "tests/compute_batch/dirty_page_native_risk_fixture.h": "bf267ff39c7b16fc8ad1f9d1dac177218531588302535b3b8b92b5109c998483",
+    "tests/compute_batch/native_paged_risk_fixture.h": "79a9d4e7c8b4243fce6af02a948fd4dd0a91db060818b148e2c6cb8904105bee",
+    "tests/compute_batch/native_apple_failure_fixture.h": "fdb33f4f810aa078793a464450808da43e3d386721725a506e2c3697d4be2208",
+    "src/compute_route_apple/apple_copy_program.cc": "7fe3eae1fd2cc354ba175e8add3be1a595e2b2302ba751249a7988ca844da519",
+    "src/compute_route_apple/apple_copy_recording.mm": "109f892f872dba2d1d586f8a9e36cb70ec3bb4d12a77d83bffd942b5e186a1a8",
+    "src/compute_route_apple/apple_context.cc": "7bb949f53603c381a12734ea2a18806ff161945480cb62f387f99328ec4d0d5a"
+  }
+}

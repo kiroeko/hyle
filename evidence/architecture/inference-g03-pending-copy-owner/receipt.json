@@ -1,0 +1,79 @@
+{
+  "identity": {
+    "model": "Mac16,12",
+    "arch": "arm64",
+    "os": "ProductName:\t\tmacOS\nProductVersion:\t\t27.0.1\nBuildVersion:\t\t26A434",
+    "compiler": "Apple clang version 21.0.0 (clang-2100.3.34.2)\nTarget: arm64-apple-darwin27.0.0\nThread model: posix\nInstalledDir: /Library/Developer/CommandLineTools/usr/bin",
+    "cpu": "10",
+    "memory": "17179869184"
+  },
+  "candidate": "SCOPED prototype; product fixed dab23ba92256cad21f2e83af6141eb8ad51264c5",
+  "scope": "actual pending Apple copy ownership handoff of original invocation/submission; five lifecycle modes; no pending attention claim",
+  "inputs": [
+    {
+      "path": "tests/compute_batch/pending_copy_owner_probe.cc",
+      "sha256": "80060e9ba665483951ca7cb693af904efa7c401e306872612f8d20dd54059e41"
+    },
+    {
+      "path": "tests/compute_batch/dirty_page_native_risk_fixture.h",
+      "sha256": "bf267ff39c7b16fc8ad1f9d1dac177218531588302535b3b8b92b5109c998483"
+    },
+    {
+      "path": "tests/compute_batch/native_paged_risk_fixture.h",
+      "sha256": "79a9d4e7c8b4243fce6af02a948fd4dd0a91db060818b148e2c6cb8904105bee"
+    },
+    {
+      "path": "tests/compute_batch/native_apple_failure_fixture.h",
+      "sha256": "fdb33f4f810aa078793a464450808da43e3d386721725a506e2c3697d4be2208"
+    }
+  ],
+  "stages": [
+    {
+      "route": "apple",
+      "stage": "configure",
+      "attempt": 1,
+      "command": [
+        "/opt/homebrew/bin/cmake",
+        "-S",
+        "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-parent",
+        "-B",
+        "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-build"
+      ],
+      "exit_code": 0,
+      "input_manifest_sha256": "40427c09fb85c9cf4d2bd7ea7af13f9b92be2ca73c5e583211f79552c00ff9c3",
+      "elapsed_seconds": 3.874586916,
+      "log": "/Users/kiro/hyle-scratch/compute-unified/g03-pending-owner-probe/apple-configure-1.log"
+    },
+    {
+      "route": "apple",
+      "stage": "build",
+      "attempt": 1,
+      "command": [
+        "/opt/homebrew/bin/cmake",
+        "--build",
+        "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-build",
+        "--target",
+        "g03_pending_copy_owner",
+        "--parallel",
+        "4"
+      ],
+      "exit_code": 0,
+      "input_manifest_sha256": "40427c09fb85c9cf4d2bd7ea7af13f9b92be2ca73c5e583211f79552c00ff9c3",
+      "elapsed_seconds": 6.072230208,
+      "log": "/Users/kiro/hyle-scratch/compute-unified/g03-pending-owner-probe/apple-build-1.log"
+    },
+    {
+      "route": "apple",
+      "stage": "joint",
+      "attempt": 1,
+      "command": [
+        "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-build/g03_pending_copy_owner"
+      ],
+      "exit_code": 0,
+      "input_manifest_sha256": "40427c09fb85c9cf4d2bd7ea7af13f9b92be2ca73c5e583211f79552c00ff9c3",
+      "elapsed_seconds": 1.9580766250000003,
+      "log": "/Users/kiro/hyle-scratch/compute-unified/g03-pending-owner-probe/apple-joint-1.log"
+    }
+  ],
+  "cumulative_seconds": 11.904893749
+}

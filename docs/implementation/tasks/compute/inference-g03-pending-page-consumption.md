@@ -62,6 +62,12 @@ producer→dirty页→attention、三hostsan、两SDK全部通过。不能重复
 必须先写四原路线/三联合路线具体调用与cold/warm账，再固定owner与有限API/FIX。
 原ready版本可作为数值对照，pending验收要单列中间host waits，不能借上面的PASS代签。
 
+本轮已完成[五场景实际所有权handoff反证](../../../../evidence/architecture/inference-g03-pending-copy-owner/README.md)：
+原invocation与submission一起移动后只留单一观察者，原guards/actual retirement/失败
+与cold slot可回接，16-byte局部组合不修改普通F2字段/锁/原子/queue。后继source seam
+按[三owner新scope](inference-g03-copy-update-owner.md)固定typed身份、原prefix及受控读
+admission；本主卡不因此进入AUDITED，不把fixture线程/wait当产品执行owner或完整路线。
+
 源审计/实现/验证各2h检查点，沿用户常设授权有限追加，保全部FAIL/累计；Windows
 canonical，Air only实查身份，WSL/Air可丢弃单向副本。所有heavy serial、最多四jobs，
 不跑本地重型GPU/full model、不重启旧Windows大套件、不改公共构建/性能/治理工具。

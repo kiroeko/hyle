@@ -270,14 +270,9 @@
     },
     {
       "module": "compute",
-      "state": "CLOSED",
-      "record": "docs/implementation/tasks/compute/inference-g03-dirty-page-terminal.md",
-      "summary": "G03 GP01/GP02 finite CLOSED atb428: original whole ready page unique content/gen-preserving reacquire; public F2 nonblocking actual-retirement observe and mutable return. CPU64/arena9, native192/copy9, F3direct14, six modeled hostsan, six relocated SDKs22headers, tiny actual CUDA source+SDK64each and W1 compile/link PASS. Original failures/unknown/private/Windows unrun limits retained; full pending producer-to-attention and wholeG03/goal remain required.",
-      "candidate": "b42832de3ddda21bdc3e98ad4cc87e73622cbba4",
-      "performance": {
-        "tier": "P0",
-        "evidence": "docs/implementation/tasks/compute/inference-g03-dirty-page-terminal.md"
-      }
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/compute/inference-g03-copy-update-owner.md",
+      "summary": "G03 F2 copy-update owner SCOPED baseline f764: move both original invocation/submission to single typed ownership; admitted resource/native-prefix/ordered-read seam, no fake ready. Actual Apple5 ownership/lifetime probe passes; exact API/FIX audit required before products. Original GP01/GP02/Apple source CLOSED facts retained; full pending receiver/page/native output and whole goal remain required."
     },
     {
       "module": "graph",
@@ -514,14 +509,9 @@
     },
     {
       "module": "compute_route_apple",
-      "state": "CLOSED",
-      "record": "docs/implementation/tasks/compute/inference-g03-apple-copy-source-terminal.md",
-      "summary": "G03 AS01/AS02 finite CLOSED dab23: fixed original F2 program/two slots accept trusted native readonly exports; writable identity/device/range/alias/retirement preserved. Source64, native ready producer->dirty page->attention F16/BF16x64, copy8/risk5/joint768, 3mode modeled hostsan, relocated static/shared compute+graph and8headers PASS; P0 zero new binding/prepare HYLE allocations/fields. Original fixtureFAIL/private costs/ready host waits preserved; full pending page-to-attention and wholeG03/goal remain required.",
-      "candidate": "dab23ba92256cad21f2e83af6141eb8ad51264c5",
-      "performance": {
-        "tier": "P0",
-        "evidence": "docs/implementation/tasks/compute/inference-g03-apple-copy-source-terminal.md"
-      }
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/compute/inference-g03-copy-update-owner.md",
+      "summary": "G03 F2 copy-update owner SCOPED baseline f764: move both original invocation/submission to single typed ownership; admitted resource/native-prefix/ordered-read seam, no fake ready. Actual Apple5 ownership/lifetime probe passes; exact API/FIX audit required before products. Original GP01/GP02/Apple source CLOSED facts retained; full pending receiver/page/native output and whole goal remain required."
     },
     {
       "module": "graph_route_apple",
@@ -536,14 +526,9 @@
     },
     {
       "module": "compute_route_vulkan",
-      "state": "CLOSED",
-      "record": "docs/implementation/tasks/compute/inference-g03-dirty-page-terminal.md",
-      "summary": "G03 GP01/GP02 finite CLOSED atb428: original whole ready page unique content/gen-preserving reacquire; public F2 nonblocking actual-retirement observe and mutable return. CPU64/arena9, native192/copy9, F3direct14, six modeled hostsan, six relocated SDKs22headers, tiny actual CUDA source+SDK64each and W1 compile/link PASS. Original failures/unknown/private/Windows unrun limits retained; full pending producer-to-attention and wholeG03/goal remain required.",
-      "candidate": "b42832de3ddda21bdc3e98ad4cc87e73622cbba4",
-      "performance": {
-        "tier": "P0",
-        "evidence": "docs/implementation/tasks/compute/inference-g03-dirty-page-terminal.md"
-      }
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/compute/inference-g03-copy-update-owner.md",
+      "summary": "G03 F2 copy-update owner SCOPED baseline f764: move both original invocation/submission to single typed ownership; admitted resource/native-prefix/ordered-read seam, no fake ready. Actual Apple5 ownership/lifetime probe passes; exact API/FIX audit required before products. Original GP01/GP02/Apple source CLOSED facts retained; full pending receiver/page/native output and whole goal remain required."
     },
     {
       "module": "graph_route_vulkan",
