@@ -17,9 +17,9 @@ struct LeaseViewOwner final {
   std::shared_ptr<Buffer> backing;
   ReadLease source;
 };
-struct PagedViewOwner final {
+template<class Frame>struct PagedViewOwner final {
   std::shared_ptr<Buffer> backing;
-  PagedArenaRead frame;
+  Frame frame;
 };
 
 struct MemoryState final : mem::MemoryResource {
@@ -202,8 +202,8 @@ Result<Tensor> MemoryResource::binding(ReadLease source, const TensorDesc &descr
   }
 }
 
-Result<Tensor> detail::PagedBatchAccess::binding(const MemoryResource&memory,
-    PagedArenaRead frame,LeaseImportOptions options)noexcept{
+template<class Frame>static Result<Tensor> paged_binding(const MemoryResource&memory,
+    Frame frame,LeaseImportOptions options)noexcept{
   if(!memory.valid() || !options.allocator.valid())
     return std::unexpected(Status::InvalidArgument("Vulkan paged binding requires a resource/allocator"));
   HYLE_ASSIGN_OR_RETURN(auto tensor,compute::detail::PagedArenaAccess::tensor(frame));
@@ -220,13 +220,22 @@ Result<Tensor> detail::PagedBatchAccess::binding(const MemoryResource&memory,
     auto allocator=options.allocator;if(options.resource_budget.valid()){
       HYLE_ASSIGN_OR_RETURN(allocator,options.resource_budget.metadata_allocator());
     }
-    auto retained=std::allocate_shared<detail::PagedViewOwner>(mem::StdAllocator<detail::PagedViewOwner>(allocator));
+    auto retained=std::allocate_shared<detail::PagedViewOwner<Frame>>(mem::StdAllocator<detail::PagedViewOwner<Frame>>(allocator));
     retained->backing=backing;retained->frame=std::move(frame);
     auto view=std::allocate_shared<detail::Buffer>(mem::StdAllocator<detail::Buffer>(allocator));
     view->device=backing->device;detail::bind_view_buffer(*view,backing,storage.offset());
     view->bytes=storage.size();view->external_owner=std::move(retained);
     return detail::Access::tensor(description,std::move(view));
   }catch(const std::bad_alloc&){return std::unexpected(Status::ResourceExhausted("Vulkan paged binding metadata"));}
+}
+
+Result<Tensor> detail::PagedBatchAccess::binding(const MemoryResource&memory,
+    PagedArenaRead frame,LeaseImportOptions options)noexcept{
+  return paged_binding(memory,std::move(frame),options);
+}
+Result<Tensor> detail::PagedBatchAccess::binding(const MemoryResource&memory,
+    PagedArenaPendingRead frame,LeaseImportOptions options)noexcept{
+  return paged_binding(memory,std::move(frame),options);
 }
 
 Result<ReadLease> MemoryResource::import_readonly(const Tensor &source, LeaseImportOptions options) const noexcept {

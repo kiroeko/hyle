@@ -74,9 +74,9 @@ struct LeasedArrayStorage final {
   ResourceBudget::Reservation private_metadata;
   ReadLease source;
 };
-struct PagedArrayStorage final {
+template<class Frame>struct PagedArrayStorage final {
   ResourceBudget::Reservation private_metadata;
-  PagedArenaRead frame;
+  Frame frame;
 };
 struct ImportedArrayStorage final : MemoryState {
   ImportedArrayStorage(mx::array source, mem::AllocatorRef selected) noexcept
@@ -211,8 +211,8 @@ Result<mx::array> MemoryResource::binding(ReadLease source, const TensorDesc &de
   } catch (...) { return std::unexpected(detail::native_exception()); }
 }
 
-Result<mx::array> detail::PagedBatchAccess::binding(const MemoryResource&memory,
-    PagedArenaRead frame,LeaseImportOptions options)noexcept{
+template<class Frame>static Result<mx::array> paged_binding(const MemoryResource&memory,
+    Frame frame,LeaseImportOptions options)noexcept{
   if(!memory.valid() || !options.allocator.valid())
     return std::unexpected(Status::InvalidArgument("Apple paged binding requires a resource/allocator"));
   HYLE_ASSIGN_OR_RETURN(auto tensor,compute::detail::PagedArenaAccess::tensor(frame));
@@ -225,7 +225,7 @@ Result<mx::array> detail::PagedBatchAccess::binding(const MemoryResource&memory,
     auto allocator=options.allocator;if(options.resource_budget.valid()){
       HYLE_ASSIGN_OR_RETURN(allocator,options.resource_budget.metadata_allocator());
     }
-    auto owner=std::allocate_shared<detail::PagedArrayStorage>(mem::StdAllocator<detail::PagedArrayStorage>(allocator));
+    auto owner=std::allocate_shared<detail::PagedArrayStorage<Frame>>(mem::StdAllocator<detail::PagedArrayStorage<Frame>>(allocator));
     if(options.resource_budget.valid()){
       HYLE_ASSIGN_OR_RETURN(owner->private_metadata,options.resource_budget.reserve_unattributed(std::nullopt));
     }
@@ -242,6 +242,15 @@ Result<mx::array> detail::PagedBatchAccess::binding(const MemoryResource&memory,
     result.copy_shared_buffer(base,result.strides(),result.flags(),result.size(),static_cast<std::int64_t>(storage.offset()/result.itemsize()));
     result.set_status(mx::array::available);return result;
   }catch(...){return std::unexpected(detail::native_exception());}
+}
+
+Result<mx::array> detail::PagedBatchAccess::binding(const MemoryResource&memory,
+    PagedArenaRead frame,LeaseImportOptions options)noexcept{
+  return paged_binding(memory,std::move(frame),options);
+}
+Result<mx::array> detail::PagedBatchAccess::binding(const MemoryResource&memory,
+    PagedArenaPendingRead frame,LeaseImportOptions options)noexcept{
+  return paged_binding(memory,std::move(frame),options);
 }
 
 Result<ReadLease> MemoryResource::import_readonly(const mx::array &source, const TensorDesc &description,

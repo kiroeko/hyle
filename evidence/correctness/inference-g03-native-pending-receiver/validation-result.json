@@ -1,0 +1,38 @@
+{
+  "scope": "RC01-RC04 actual native receiver implementation checkpoint; main four owners still AUDITED",
+  "passed": [
+    "Actual Apple F16/BF16 and Vulkan F16, GQA8/2 D256, two requests and two original alternating copy/receiver slots, 64 steps, cross-page growth and Q1/17 mixed prefill/decode, independent double numeric oracle",
+    "Actual source risk Apple8/Vulkan10: fresh512-byte page coverage and hole, source cancellation before/after accepted suffix, abandonment, every cold receiver allocation failure plus binding OOM/retry, insufficient original completion capacity, closed context, Vulkan unknown/actual final wait and real native rejection with original Update restoration",
+    "Six host ASan/UBSan/TSan configurations: same public64, current risk8/10 and original ready-controller regression",
+    "Four relocated native static/shared SDKs: same public64 and two standalone headers each; consumer compile commands contain only relocated product headers",
+    "Windows MSVC native Vulkan receiver compile/link and common20 page tests; no local GPU execution"
+  ],
+  "cost": "Opt-in owner holds original controller, four-allocation original copy source, one original dependent observer and one borrowed original result storage pointer. No new worker/queue/native invocation/result slot/default ready fields. Page validation/admission scans original referenced pages and accepted ranges; native import remains cold. Original metadata upload host waits and native private unknown retained.",
+  "seconds": {
+    "air": 272.659209296,
+    "windows": 262.5789999999979
+  },
+  "limits": [
+    "Native source risk probes use private original boundary instrumentation; four SDK public consumers have no private headers/test hooks",
+    "Host sanitizers do not instrument shader/driver; two original exact TSan models preserved, ASan detect_leaks=0",
+    "Ready graph route templates share the edited glue header; full actual Graph pending journey remains unverified",
+    "No CPU/CUDA receiver, late native backing, independent reduction or full seven-route acceptance signed by this batch",
+    "Selector READY only proves edit ownership; broader selected reverse factors are not reported PASS. This is an AUDITED implementation checkpoint, not aggregate CANDIDATE/CLOSED."
+  ],
+  "remaining": "Actual CPU/CUDA receiver and original Graph integration, late native producer output, seven-route64/two slots/independent reduction and original G01/G02 gates; G04-G10 unchanged",
+  "mechanical_fixture_rename": [
+    {
+      "path": "tests/compute_batch/pending_paged_receiver_native_consumer.cc",
+      "air_sha256": "01fcdb4fdc12f5a0b3dacb0161cb639d6022fb5d09512160c9297169f68f42db",
+      "final_sha256": "8ab63e5a5782b68d62659468df0802a639e202fe5a0c26349d4d754ccba11613",
+      "change": "Only four references to the outer original copy-slot array renamed updates to copy_slots; inner update-count unchanged. MSVC C4456 corrected; no executable behavior changed."
+    }
+  ],
+  "mechanical_checks": {
+    "closure": "--previous-ref9b3cd6217 PASS64/schema4; generated status synchronized",
+    "docs": "PASS1239 Markdown/6029 links",
+    "selector": "WORKTREE READY,111 skipped/reused; conservative reverse-factor selections do not constitute aggregate PASS",
+    "diff": "git diff --check clean"
+  },
+  "windows_input_history": "Windows raw result inputs describe final compile. Failed build1 used identical product inputs and the Air-sealed consumer hash before the documented four-reference local array rename; no product change occurred between Windows attempts."
+}

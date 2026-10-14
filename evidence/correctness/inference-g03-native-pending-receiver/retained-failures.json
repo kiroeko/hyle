@@ -1,0 +1,121 @@
+{
+  "air": [
+    {
+      "route": "apple",
+      "mode": "source",
+      "stage": "risks",
+      "command": [
+        "/Users/kiro/hyle-scratch/compute-unified/g03-paged-receiver/apple-source/build/risks"
+      ],
+      "input_manifest_sha256": "7176faebf79bd9a08f2545d045136d9144fae1cdec9db72265d57aa5d6b0afe3",
+      "exit_code": 1,
+      "elapsed_seconds": 0.7726701249999999,
+      "log": "/Users/kiro/hyle-scratch/compute-unified/g03-paged-receiver/apple-source-risks-1.log"
+    },
+    {
+      "route": "apple",
+      "mode": "source",
+      "stage": "build",
+      "command": [
+        "/opt/homebrew/bin/cmake",
+        "--build",
+        "/Users/kiro/hyle-scratch/compute-unified/g03-paged-receiver/apple-source/build",
+        "--target",
+        "risks",
+        "--parallel",
+        "4"
+      ],
+      "input_manifest_sha256": "fe5fd6c79e24ee8781f022792564b10b290715c2bd354808227eb7a9c8d44499",
+      "exit_code": 1,
+      "elapsed_seconds": 0.7334427090000002,
+      "log": "/Users/kiro/hyle-scratch/compute-unified/g03-paged-receiver/apple-source-build-3.log"
+    },
+    {
+      "route": "vulkan",
+      "mode": "source",
+      "stage": "risks",
+      "command": [
+        "/Users/kiro/hyle-scratch/compute-unified/g03-paged-receiver/vulkan-source/build/risks"
+      ],
+      "input_manifest_sha256": "066acf3839e346a080ad6d88f017a3d05cba0493a2fc3a7574a74e0988115650",
+      "exit_code": 1,
+      "elapsed_seconds": 1.0480227500000012,
+      "log": "/Users/kiro/hyle-scratch/compute-unified/g03-paged-receiver/vulkan-source-risks-1.log"
+    },
+    {
+      "route": "vulkan",
+      "mode": "source",
+      "stage": "risks",
+      "command": [
+        "/Users/kiro/hyle-scratch/compute-unified/g03-paged-receiver/vulkan-source/build/risks"
+      ],
+      "input_manifest_sha256": "e440cdcc7e01258ae0259751221c3d5fb482fe1c1e8918e0f5f573cad1c14061",
+      "exit_code": 1,
+      "elapsed_seconds": 0.887533125,
+      "log": "/Users/kiro/hyle-scratch/compute-unified/g03-paged-receiver/vulkan-source-risks-2.log"
+    },
+    {
+      "route": "vulkan",
+      "mode": "source",
+      "stage": "risks",
+      "command": [
+        "/Users/kiro/hyle-scratch/compute-unified/g03-paged-receiver/vulkan-source/build/risks"
+      ],
+      "input_manifest_sha256": "4bca78f13d7a85365de03f3a224e25a2e04ef8536cc45382fb30f6965568f9f0",
+      "exit_code": 1,
+      "elapsed_seconds": 0.9096666249999998,
+      "log": "/Users/kiro/hyle-scratch/compute-unified/g03-paged-receiver/vulkan-source-risks-3.log"
+    },
+    {
+      "route": "vulkan",
+      "mode": "source",
+      "stage": "risks",
+      "command": [
+        "/Users/kiro/hyle-scratch/compute-unified/g03-paged-receiver/vulkan-source/build/risks"
+      ],
+      "input_manifest_sha256": "a316f838eba25c46ad00060bf33a07b582ed075fa6e9d1c16def400adbbd9587",
+      "exit_code": 1,
+      "elapsed_seconds": 0.9244409999999998,
+      "log": "/Users/kiro/hyle-scratch/compute-unified/g03-paged-receiver/vulkan-source-risks-4.log"
+    },
+    {
+      "route": "vulkan",
+      "mode": "source",
+      "stage": "risks",
+      "command": [
+        "/Users/kiro/hyle-scratch/compute-unified/g03-paged-receiver/vulkan-source/build/risks"
+      ],
+      "input_manifest_sha256": "b101426be6e644830cc2d14f3422c47139e7dd0c7c14fdd53d012da27ffa4380",
+      "exit_code": 1,
+      "elapsed_seconds": 0.9223207500000008,
+      "log": "/Users/kiro/hyle-scratch/compute-unified/g03-paged-receiver/vulkan-source-risks-5.log"
+    }
+  ],
+  "windows": [
+    {
+      "stage": "build",
+      "command": [
+        "cmake",
+        "--build",
+        "C:\\h7\\inference-g01-native-vulkan\\build",
+        "--target",
+        "g03_pending_receiver_compile",
+        "g03_paged_arena_risks",
+        "--parallel",
+        "4"
+      ],
+      "exit_code": 2,
+      "elapsed_seconds": 257.6570000000065,
+      "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g03\\paged-receiver-windows\\build-1.log"
+    }
+  ],
+  "causes": [
+    "Real RC03 error: aggregate proxy settles during wait while old OwnedResult/ResultLease still retains payload; fixed original ResultStorage gate on explicit withdrawal",
+    "Fixture C++ Result assignment to empty braces was ambiguous; now releases the actual ResultLease",
+    "Fixture unknown check incorrectly demanded immediate OOM; original aggregate remains PENDING until actual retirement and then returns first OOM",
+    "Real RC02 rejection error: releasing unsubscribed source protocol abandons its Update; fixed moving caller controls back before release",
+    "A native-rejection probe was temporarily classified as an accepted late failure during diagnosis; actual result=error/update=empty identified the same rollback defect; original logs retained",
+    "MSVC fixture C4456 local shadowing under /WX; four-reference outer-array rename only, cached native build reused"
+  ],
+  "preserved": "All seven original Air failing stages, Windows compile failure and cumulative time retained; earlier G01-G03 failures/unknowns are unchanged"
+}

@@ -22,7 +22,8 @@ HYLE_COMPUTE_ROUTE_APPLE_API Result<Program> prepare_ragged_batch(
 // or native paged. Common logical byte caps include GQA/gather/Copy costs.
 HYLE_COMPUTE_ROUTE_APPLE_API Result<Program> prepare_materialized_batch(
     const Context&,const MaterializedBatchProgram&,const WorkloadContext& = {}) noexcept;
-namespace detail {struct MaterializedInvocationData;struct PagedInvocationData;struct PagedBatchAccess;}
+namespace detail {struct MaterializedInvocationData;struct PagedInvocationData;struct PagedReceiverData;struct PagedBatchAccess;}
+class PagedBatchReceiver;
 // Fixed native slots and two device metadata banks, with explicit backing cap.
 // prepare uploads one owned generation; bind is cold and checks exact page
 // frames. submit only runs the original native Program. Control is externally
@@ -79,8 +80,40 @@ public:
   HYLE_COMPUTE_ROUTE_APPLE_API Status close() noexcept;
   HYLE_COMPUTE_ROUTE_APPLE_API Status drain() noexcept;
 private:
+  friend class PagedBatchReceiver;
   explicit PagedBatchInvocation(detail::PagedInvocationData* p) noexcept : data_(p) {}
   detail::PagedInvocationData* data_ = nullptr;
+};
+// Explicit cold extension of one original paged controller. Update may contain
+// several producers/resources/phases. Submit checks exact page coverage and the
+// original runtime before accepting a suffix; rejection preserves Update. The
+// same original result's completion/wait/result include source failures.
+// Control is externally serialized. Context/resources/allocator outlive all
+// controls and native work. Drop the old OwnedResult before take_update/reuse;
+// take_update returns the original controls only after all actual retirement.
+class PagedBatchReceiver final {
+public:
+  PagedBatchReceiver()noexcept=default;
+  PagedBatchReceiver(const PagedBatchReceiver&)=delete;
+  PagedBatchReceiver&operator=(const PagedBatchReceiver&)=delete;
+  HYLE_COMPUTE_ROUTE_APPLE_API PagedBatchReceiver(PagedBatchReceiver&&)noexcept;
+  HYLE_COMPUTE_ROUTE_APPLE_API PagedBatchReceiver&operator=(PagedBatchReceiver&&)noexcept;
+  HYLE_COMPUTE_ROUTE_APPLE_API ~PagedBatchReceiver();
+  // Capacity counts original accepted-phase and used-producer completions;
+  // allocate this extension before source submission. Failure preserves owner.
+  HYLE_COMPUTE_ROUTE_APPLE_API static Result<PagedBatchReceiver> create(
+      PagedBatchInvocation&&,std::size_t max_source_completions)noexcept;
+  bool valid()const noexcept{return data_!=nullptr;}
+  HYLE_COMPUTE_ROUTE_APPLE_API Status prepare_batch(BatchLayoutVersion)noexcept;
+  HYLE_COMPUTE_ROUTE_APPLE_API Result<OwnedResult<Results>> submit(ReadLease,
+      PagedArenaPendingRead,PagedArenaPendingRead,CopyBatchUpdate&&)noexcept;
+  HYLE_COMPUTE_ROUTE_APPLE_API Result<CopyBatchUpdate> take_update()noexcept;
+  HYLE_COMPUTE_ROUTE_APPLE_API NativePagedBatchReport report()const noexcept;
+  HYLE_COMPUTE_ROUTE_APPLE_API Status close()noexcept;
+  HYLE_COMPUTE_ROUTE_APPLE_API Status drain()noexcept;
+private:
+  explicit PagedBatchReceiver(detail::PagedReceiverData*p)noexcept:data_(p){}
+  detail::PagedReceiverData*data_=nullptr;
 };
 } // namespace hyle::compute::apple
 #endif

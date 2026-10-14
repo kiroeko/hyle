@@ -1,0 +1,20 @@
+[
+  {
+    "directory": "/Users/kiro/hyle-scratch/compute-unified/g03-paged-receiver/apple-shared/build",
+    "command": "/usr/bin/c++ -DHYLE_COMPUTE_APPLE=1 -DHYLE_COMPUTE_CPU=1 -DHYLE_COMPUTE_GGML_CPU=1 -DHYLE_IO_HAS_COROUTINE_TRANSPORT=1 -DHYLE_PENDING_RECEIVER_APPLE=1 -isystem /Users/kiro/hyle-scratch/compute-unified/g03-paged-receiver/apple-shared/relocated/include -isystem /Users/kiro/hyle-scratch/compute-unified/g03-paged-receiver/apple-shared/relocated/include/metal_cpp -O3 -DNDEBUG -std=gnu++23 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk -Wall -Wextra -Wpedantic -Werror -o CMakeFiles/receiver.dir/pending_paged_receiver_native_consumer.cc.o -c /Users/kiro/hyle-scratch/compute-unified/g03-paged-receiver/apple-shared/consumer/pending_paged_receiver_native_consumer.cc",
+    "file": "/Users/kiro/hyle-scratch/compute-unified/g03-paged-receiver/apple-shared/consumer/pending_paged_receiver_native_consumer.cc",
+    "output": "/Users/kiro/hyle-scratch/compute-unified/g03-paged-receiver/apple-shared/build/CMakeFiles/receiver.dir/pending_paged_receiver_native_consumer.cc.o"
+  },
+  {
+    "directory": "/Users/kiro/hyle-scratch/compute-unified/g03-paged-receiver/apple-shared/build",
+    "command": "/usr/bin/c++ -DHYLE_COMPUTE_APPLE=1 -DHYLE_COMPUTE_CPU=1 -DHYLE_COMPUTE_GGML_CPU=1 -DHYLE_IO_HAS_COROUTINE_TRANSPORT=1 -isystem /Users/kiro/hyle-scratch/compute-unified/g03-paged-receiver/apple-shared/relocated/include -isystem /Users/kiro/hyle-scratch/compute-unified/g03-paged-receiver/apple-shared/relocated/include/metal_cpp -O3 -DNDEBUG -std=gnu++23 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk -Wall -Wextra -Wpedantic -Werror -o CMakeFiles/headers.dir/header-0.cc.o -c /Users/kiro/hyle-scratch/compute-unified/g03-paged-receiver/apple-shared/consumer/header-0.cc",
+    "file": "/Users/kiro/hyle-scratch/compute-unified/g03-paged-receiver/apple-shared/consumer/header-0.cc",
+    "output": "/Users/kiro/hyle-scratch/compute-unified/g03-paged-receiver/apple-shared/build/CMakeFiles/headers.dir/header-0.cc.o"
+  },
+  {
+    "directory": "/Users/kiro/hyle-scratch/compute-unified/g03-paged-receiver/apple-shared/build",
+    "command": "/usr/bin/c++ -DHYLE_COMPUTE_APPLE=1 -DHYLE_COMPUTE_CPU=1 -DHYLE_COMPUTE_GGML_CPU=1 -DHYLE_IO_HAS_COROUTINE_TRANSPORT=1 -isystem /Users/kiro/hyle-scratch/compute-unified/g03-paged-receiver/apple-shared/relocated/include -isystem /Users/kiro/hyle-scratch/compute-unified/g03-paged-receiver/apple-shared/relocated/include/metal_cpp -O3 -DNDEBUG -std=gnu++23 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk -Wall -Wextra -Wpedantic -Werror -o CMakeFiles/headers.dir/header-1.cc.o -c /Users/kiro/hyle-scratch/compute-unified/g03-paged-receiver/apple-shared/consumer/header-1.cc",
+    "file": "/Users/kiro/hyle-scratch/compute-unified/g03-paged-receiver/apple-shared/consumer/header-1.cc",
+    "output": "/Users/kiro/hyle-scratch/compute-unified/g03-paged-receiver/apple-shared/build/CMakeFiles/headers.dir/header-1.cc.o"
+  }
+]

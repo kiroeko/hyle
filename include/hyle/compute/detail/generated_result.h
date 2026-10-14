@@ -14,6 +14,10 @@ namespace hyle::compute::detail {
 // stays with OwnedResult; replacing its completion never creates a result slot.
 struct ResultAccess final {
   template<class T>
+  static ResultStorage *storage(const OwnedResult<T> &result) noexcept {
+    return result.storage_;
+  }
+  template<class T>
   static Completion &completion(OwnedResult<T> &result) noexcept {
     return result.completion_;
   }

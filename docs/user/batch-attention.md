@@ -224,8 +224,38 @@ initialized_rows()只返回已提交前缀，写入与copy退休不会自动扩�
 和已提交初始化前缀。`PagedPageUpdate{&page, destination_id}`只在构造调用中借用page；
 原copy控制必须持有该目的页。frame保精确layout与arena，但不产生ready lease或public字节
 读取权限；原ready-only bind/run不接受此类型。receiver须验证本次accepted copy覆盖新增
-要读的bytes、实际native排序与全引用页guard，并合并来源结果；这部分控制器接入仍在G03
-活动轮内，不能把构造pending frame当成attention已可异步消费。
+要读的bytes、实际native排序与全引用页guard，并合并来源结果。
+
+Apple/Vulkan 的 `PagedBatchReceiver` 是显式冷扩展，移交一原 `PagedBatchInvocation`，
+保同一 native invocation、queue 和结果槽。`max_source_completions` 按原更新中已接纳
+phase 与实际使用的 producer completion 数量设定；不足时拒绝，不消费 Update。
+先创建 receiver、准备本次 layout，再提交原 F2，最后将 Update 与精确 pending K/V
+一起移交；两个 frame 可同时包含继承的 ready 页和本次 pending 目的页：
+
+```cpp
+auto receiver = native::PagedBatchReceiver::create(std::move(slot), source_capacity).value();
+HYLE_RETURN_IF_ERROR(receiver.prepare_batch(layout)); // explicit cold metadata upload
+auto copied = copy.submit().value();
+auto update = native::CopyBatchUpdate::take(std::move(copy), std::move(copied)).value();
+auto keys = key_arena.pending_read(layout, ready_keys, key_updates).value();
+auto values = value_arena.pending_read(layout, ready_values, value_updates).value();
+{
+  auto submitted = receiver.submit(query, keys, values, std::move(update)).value();
+  auto result = submitted.wait().value(); // source and actual suffix retire here
+  // result and submitted.completion() use the same original result/aggregate.
+}
+update = receiver.take_update().value();
+page.lease() = update.take_mutable(destination).value();
+page_ready = page.publish(initialized_rows).value();
+copy = update.release_invocation().value();
+```
+
+调用失败且 suffix 未接纳时，传入的 Update 保留或原样归还；接纳后失败/取消/unknown
+不发布成功结果，并保全部 source 与页 guards 至实际退休。控制访问外部串行；旧
+OwnedResult/ResultLease、pending 工作或尚未回接的 source 阻止 receiver 复用。
+frame 与 native binding 有显式冷 metadata 分配，原 metadata prepare 的等待和 native
+private unknown 保留。这个入口当前覆盖两 native 路线；CPU/CUDA、Graph 组合与 late
+native producer output 的完整 G03 验收仍在活动轮内。
 
 原F2已消费page writer时，保留PagedPageWriter，等成功ready输出后调用complete；若放弃
 这个已消费的控制对象，arena不会猜测该页已退休或重新ready。失败/无法完成观察的页按

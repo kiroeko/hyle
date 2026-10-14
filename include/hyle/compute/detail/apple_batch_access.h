@@ -12,6 +12,8 @@ struct PagedBatchAccess final {
       const WorkloadContext&) noexcept;
   HYLE_COMPUTE_ROUTE_APPLE_API static Result<mlx::core::array> binding(
       const MemoryResource&,PagedArenaRead,LeaseImportOptions = {}) noexcept;
+  HYLE_COMPUTE_ROUTE_APPLE_API static Result<mlx::core::array> binding(
+      const MemoryResource&,PagedArenaPendingRead,LeaseImportOptions = {}) noexcept;
   HYLE_COMPUTE_ROUTE_APPLE_API static Result<OwnedResult<Results>> submit(
       Invocation&,LeaseUseBatch) noexcept;
   HYLE_COMPUTE_ROUTE_APPLE_API static Status wait_native(Invocation&) noexcept;

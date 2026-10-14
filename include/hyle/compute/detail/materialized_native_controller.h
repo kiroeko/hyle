@@ -8,6 +8,8 @@
 #include "hyle/compute/batch_transfer.h"
 #include "hyle/compute/detail/lease_access.h"
 #include "hyle/compute/detail/paged_arena_access.h"
+#include "hyle/compute/detail/copy_outcome_source.h"
+#include "hyle/compute/detail/generated_result.h"
 
 namespace hyle::compute::detail {
 // Fixed F5 metadata/permission glue instantiated only by the two native owners.
@@ -131,6 +133,9 @@ template<class T,class Policy=MaterializedMetadataPolicy>struct MaterializedNati
         Status::InvalidArgument("native batch Q resource differs");
   }
   Status bind(ReadLease query,PagedArenaRead k,PagedArenaRead v)noexcept{
+    return bind_pages(std::move(query),std::move(k),std::move(v));
+  }
+  template<class Frame> Status bind_pages(ReadLease query,Frame k,Frame v)noexcept{
     HYLE_RETURN_IF_ERROR(open());if(!prepared || bound)return Status::FailedPrecondition("native batch needs an unbound prepared episode");
     if constexpr(Policy::prepare_native){
       if(version.layout().facts().query_rows==0 && version.layout().facts().page_refs==0){
@@ -151,7 +156,9 @@ template<class T,class Policy=MaterializedMetadataPolicy>struct MaterializedNati
     for(std::size_t i=3;i<input_count;++i){HYLE_ASSIGN_OR_RETURN(views[i],T::binding(*device,reads[i],descriptions[i],import));}
     const auto inputs=native_input_array(views,std::make_index_sequence<input_count>{});
     const auto status=native.bind(inputs);if(!status.ok()){failed=true;return status;}
-    reads[0]=std::move(query);keys=std::move(k);values=std::move(v);native_bank=prepared_bank;bound=true;return Status::Ok();
+    reads[0]=std::move(query);
+    if constexpr(std::is_same_v<Frame,PagedArenaRead>){keys=std::move(k);values=std::move(v);}
+    native_bank=prepared_bank;bound=true;return Status::Ok();
   }
   Status bind(ReadLease query,ReadLease k,ReadLease v)noexcept{
     HYLE_RETURN_IF_ERROR(open());if(!prepared || bound)return Status::FailedPrecondition("native batch needs an unbound prepared episode");
@@ -171,7 +178,76 @@ template<class T,class Policy=MaterializedMetadataPolicy>struct MaterializedNati
     for(const auto&page:PagedArenaAccess::pages(values))HYLE_RETURN_IF_ERROR(batch.read(page));
     auto submitted=T::submit(native,std::move(batch));prepared=false;bound=false;if(!submitted)failed=true;return submitted;
   }
+  template<class Update,class Access>
+  auto submit_pending(const PagedArenaPendingRead&k,const PagedArenaPendingRead&v,
+      const Update&update)noexcept->Result<typename T::Submission>{
+    HYLE_RETURN_IF_ERROR(open());
+    if(!prepared || !bound)return std::unexpected(Status::FailedPrecondition("native pending batch is not prepared/bound"));
+    HYLE_ASSIGN_OR_RETURN(auto batch,uses.begin());
+    for(const auto&lease:reads)if(lease.valid())HYLE_RETURN_IF_ERROR(batch.read(lease));
+    HYLE_RETURN_IF_ERROR((PagedArenaAccess::admit_read<Update,Access>(batch,k,update)));
+    HYLE_RETURN_IF_ERROR((PagedArenaAccess::admit_read<Update,Access>(batch,v,update)));
+    auto submitted=T::submit(native,std::move(batch));
+    prepared=false;bound=false;if(!submitted)failed=true;return submitted;
+  }
   Status close()noexcept{closed=true;upload.close().IgnoreError();return uses.close();}
   Status drain()noexcept{close().IgnoreError();auto status=native.valid()?T::wait_native(native):Status::Ok();status.Update(upload.drain());status.Update(uses.drain());return status;}
+};
+
+// Explicit opt-in extension: owns the one original controller, source controls
+// and mapped completion. Ready-only controller fields and costs stay unchanged.
+template<class T,class Controller>struct NativePagedReceiverState {
+  explicit NativePagedReceiverState(mem::AllocatorRef a):allocator(a){}
+  mem::AllocatorRef allocator;Controller original;
+  CopyOutcomeSource<typename T::CopyUpdate,typename T::CopyAccess> source;
+  DependentCompletion dependent;
+  // Borrowed from the original controller's slot until take_update. Old result
+  // leases still protect that slot after Completion settles its native proxy.
+  ResultStorage*outcome=nullptr;
+  Status initialize(std::size_t capacity,ResourceBudget budget)noexcept{
+    if(!capacity)return Status::InvalidArgument("pending receiver source completion capacity is zero");
+    HYLE_ASSIGN_OR_RETURN(source,(CopyOutcomeSource<typename T::CopyUpdate,typename T::CopyAccess>::create(
+        capacity,{.allocator=allocator,.resource_budget=std::move(budget)})));
+    HYLE_ASSIGN_OR_RETURN(dependent,DependentCompletion::create(allocator));return Status::Ok();
+  }
+  Status reusable()noexcept{
+    return dependent.available() && source.available() && !source.update().valid()?Status::Ok():
+        Status::Unavailable("pending receiver old outcome/source retained");
+  }
+  template<class State>auto submit(State&state,ReadLease query,
+      PagedArenaPendingRead k,PagedArenaPendingRead v,typename T::CopyUpdate&&update)noexcept
+      ->Result<typename T::Submission>{
+    HYLE_RETURN_IF_ERROR(reusable());HYLE_RETURN_IF_ERROR(state.open());
+    if(!state.prepared || state.bound || k.layout()!=state.version.layout() || v.layout()!=state.version.layout())
+      return std::unexpected(Status::InvalidArgument("pending receiver needs the exact unbound prepared layout"));
+    HYLE_RETURN_IF_ERROR((PagedArenaAccess::validate<typename T::CopyUpdate,typename T::CopyAccess>(k,update)));
+    HYLE_RETURN_IF_ERROR((PagedArenaAccess::validate<typename T::CopyUpdate,typename T::CopyAccess>(v,update)));
+    HYLE_ASSIGN_OR_RETURN(auto prefix,T::CopyAccess::dependency(update));
+    HYLE_RETURN_IF_ERROR(T::qualify_source(*state.preparation.context,prefix));
+    HYLE_RETURN_IF_ERROR(state.bind_pages(std::move(query),k,v));
+    auto sources=source.take(std::move(update));
+    if(!sources){state.bound=false;return std::unexpected(sources.error());}
+    auto submitted=state.template submit_pending<typename T::CopyUpdate,typename T::CopyAccess>(k,v,source.update());
+    if(!submitted){
+      update=std::move(source.update());
+      sources->release(sources->state);state.bound=false;
+      return std::unexpected(submitted.error());
+    }
+    auto&completion=ResultAccess::completion(*submitted);
+    completion=dependent.publish(std::move(completion),*sources);
+    outcome=ResultAccess::storage(*submitted);
+    return std::move(*submitted);
+  }
+  Result<typename T::CopyUpdate> take_update()noexcept{
+    if(!dependent.available() || !source.available() || !source.update().valid() || source.update().in_flight())
+      return std::unexpected(Status::Unavailable("pending receiver outcome or original source still retained"));
+    if(outcome){HYLE_RETURN_IF_ERROR(begin_result(outcome));rollback_result(outcome);outcome=nullptr;}
+    return std::move(source.update());
+  }
+  Status drain()noexcept{
+    auto status=original.drain();
+    if(source.update().valid())status.Update(source.update().wait());
+    return status;
+  }
 };
 } // namespace hyle::compute::detail

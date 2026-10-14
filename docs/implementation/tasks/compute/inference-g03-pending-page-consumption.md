@@ -240,7 +240,7 @@ host sanitizer 不签 shader/driver，CUDA 沿原 source HYLE_TESTING 树且无 
 
 ## 当前原 native receiver 接入批（RC01–RC04，AUDITED）
 
-baseline `9b3cd6217`，沿本卡 compute_batch/Apple/Vulkan 的 AUDITED 实施。真实消费入口
+baseline `9b3cd6217`，沿本卡 compute_batch/compute/Apple/Vulkan 的 AUDITED 实施。真实消费入口
 是原 PagedBatchInvocation；原 Graph 接纳原 OwnedResult.completion()，所以最终结果
 必须映射在同一个原 result storage 上。公共 source owner 不新增产品机制。
 
@@ -277,3 +277,37 @@ binding 沿原 native import 冷 metadata；submit 中 source take、资格与�
 不增加 metadata 分配，原 native submit 的已有成本如实保留。原 Update 借用访问
 与 receiver 控制外部串行，资源/allocator/context 延续原寿命合同。验证失败累计
 在本卡保留，沿原2h检查点及用户常设延长，不新增逐函数施工卡。
+
+RC03 实测增补：Apple 风险第1次失败证明 Completion.wait 的 settle 会释放聚合
+proxy，但 OwnedResult 仍保原 storage。因而仅查 DependentCompletion.available
+不足以兑现本批已定的 old-outcome/take_update 合同。修正直接借原 ResultAccess
+读取同一 storage，在显式 take_update 调用原 begin_result/rollback_result gate；
+只在 opt-in receiver 保一个 borrowed storage pointer，原 controller 保其寿命，
+回接之前清空它。原 ready 对象/结果槽/锁/分配不变，失败后原 Update 继续保留。
+保留此 FAIL，不以放宽原验收条件解决。
+
+RC02/RC03 实测增补：Vulkan ggml native operation 接纳拒绝返回普通 error，suffix
+无 actual use；receiver 若先 release 未订阅来源协议，该既有协议会 abandon Update，
+再回接只得到空句柄。固定先移动回原 Update 再 release。reusable 同时核原 source
+payload 已回接，不能只查协议引用已结束。这是既定拒绝回接/旧来源 gate 的实现修正，
+不修改下层 source 协议。Vulkan unknown 首次 test 把既有 aggregate 的 PENDING 当
+即时错误，已按原 actual-retirement 合同改测 final wait 的首个 OOM；原 FAIL 全保留。
+
+## RC01–RC04 已验证实施检查点（2026-10-14）
+
+两条 original PagedBatchInvocation 的 opt-in receiver 已实现并通过
+[native receiver 记录](../../../../evidence/correctness/inference-g03-native-pending-receiver/validation-result.json)。
+Apple F16/BF16 与 Vulkan F16 实际两请求/两原 slot/64步、独立 double 数值 oracle、
+fresh prefix/dirty copy/跨页和混合 Q1/17；source 风险 Apple8/Vulkan10；六 host
+sanitizer 同 journey/风险/原 ready regression；四 relocated static/shared 同 public64
+及八 standalone 头；Windows MSVC 定向 native receiver 编译与 common20 均 PASS。
+原 Runtime/queue/结果槽保留，最终 OwnedResult 的 completion/wait/result 同源状态。
+接纳拒绝归还 Update，旧结果/尚未回接 source 阻止 slot reuse；两真实实现 FAIL 和
+fixture诊断失败在原日志/累计中保留。source 更新期只有最终聚合 wait，metadata
+prepare 等待/冷 view 分配/native private unknown 不隐去。宿主风险只签宿主；
+SDK journey 无私有头，source风险使用既有边界仪器；两原 TSan 模型未扩张。
+
+四 owner 继续 AUDITED；本批不签完整 G03 或所有 selector reverse-factor gate。
+下一步接 common CPU/CUDA 与原 Graph，补 late native producer backing 和七路线/
+独立 reduction 最终旅程；原 G01/G02 未决门、G04–G10 与所有失败/成本继续保留。
+不重复 PF/IP/source/数学和本批已证明门；所有 heavy 工作按实际 terminal 收尾。

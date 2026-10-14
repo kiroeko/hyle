@@ -1,0 +1,604 @@
+{
+  "artifacts": [
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g03-paged-receiver/apple-source/prefix/include/hyle/compute/apple_batch.h",
+      "sha256": "09fca736588dd38c1c189a0fb3b4fdbb4000c5078207e64caebf1cc33bae92f2",
+      "bytes": 7563
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g03-paged-receiver/apple-source/prefix/include/hyle/compute/detail/materialized_native_controller.h",
+      "sha256": "71dd657da49e0d25f29fedb7dba715889eebffaa40768492a9d8cdaf5ca6de61",
+      "bytes": 19174
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g03-paged-receiver/apple-source/prefix/include/hyle/compute/detail/generated_result.h",
+      "sha256": "bc47c925ff3302bd0ffb7df04ed68fa9ae7ad0865d021cc8b471a7547307d4aa",
+      "bytes": 5574
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g03-paged-receiver/apple-source/prefix/lib/libhyle_compute_stream.a",
+      "sha256": "a8167a107c7d049cddf0db7c796ddd1492ed071090ce717a930433a802ed3965",
+      "bytes": 134600
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g03-paged-receiver/apple-source/prefix/lib/libhyle_compute_batch.a",
+      "sha256": "f6e82147ad2aaaf2450c297a9b1f3d0906680fe30b637a04d1b16c7789cc9037",
+      "bytes": 288440
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g03-paged-receiver/apple-source/prefix/lib/libhyle_compute_backend_cpu.a",
+      "sha256": "2823b8ee1260e54fab19fc1962cf5e9e9ae1dd7e2b54d21e6f7b350ebea2e365",
+      "bytes": 13576
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g03-paged-receiver/apple-source/prefix/lib/libhyle_compute_route_apple.a",
+      "sha256": "a324b6d69dc7856a815d14a427be10f7f2d3d9d3aa8c7d6d3b3d1c272aaf30f4",
+      "bytes": 1180000
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g03-paged-receiver/apple-source/prefix/lib/libhyle_compute.a",
+      "sha256": "c06194fd09ef19b3d9103febb9255db8bb8f3a08e0cbb6d36ebc36e32631f064",
+      "bytes": 602288
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g03-paged-receiver/apple-source/prefix/lib/libhyle_compute_provider_ggml.a",
+      "sha256": "198af13615ae51967187f0e3471087008e93d9e4a4bf4ea4bdd966f27f53e804",
+      "bytes": 150960
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g03-paged-receiver/apple-source/prefix/lib/libhyle_compute_ggml_runtime.a",
+      "sha256": "78912373d79c272f818477ba15bf08b7e0b8c6bfea19eb8afebe662b5c8a4ba5",
+      "bytes": 21416
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g03-paged-receiver/apple-source/prefix/lib/libhyle_compute_state.a",
+      "sha256": "cea02f0a90c06a6ab1afb9f8ac4b216cf7ca3ff89fb34c3acddde854cb206ed0",
+      "bytes": 95816
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g03-paged-receiver/apple-source/prefix/lib/libhyle_compute_ops.a",
+      "sha256": "249993eef7e86bb8801a9b52cb93bf65d69ed7c691bd19e9b70ded43a5ed8f46",
+      "bytes": 103464
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g03-paged-receiver/apple-source/prefix/lib/libhyle_compute_route_cpu.a",
+      "sha256": "0e9804ae448acc0d7bb921addc3bb1e7b87924b340868a1b2816d0d3ea4bd25e",
+      "bytes": 65920
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g03-paged-receiver/apple-source/prefix/lib/libhyle_compute_provider_ggml_metal.a",
+      "sha256": "9980ee59c379a1b0bbd85f0f2f37efe4d486029d55d09a40f52829f32d5b4f2c",
+      "bytes": 34184
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g03-paged-receiver/apple-source/prefix/lib/libhyle_compute_provider_native.a",
+      "sha256": "9c772f613bde61ebe0a2c97502f26ece1ae652a14fb5afd9516c2717812c8253",
+      "bytes": 534632
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g03-paged-receiver/apple-static/relocated/include/hyle/compute/apple_batch.h",
+      "sha256": "09fca736588dd38c1c189a0fb3b4fdbb4000c5078207e64caebf1cc33bae92f2",
+      "bytes": 7563
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g03-paged-receiver/apple-static/relocated/include/hyle/compute/detail/materialized_native_controller.h",
+      "sha256": "71dd657da49e0d25f29fedb7dba715889eebffaa40768492a9d8cdaf5ca6de61",
+      "bytes": 19174
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g03-paged-receiver/apple-static/relocated/include/hyle/compute/detail/generated_result.h",
+      "sha256": "bc47c925ff3302bd0ffb7df04ed68fa9ae7ad0865d021cc8b471a7547307d4aa",
+      "bytes": 5574
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g03-paged-receiver/apple-static/relocated/lib/libhyle_compute_stream.a",
+      "sha256": "637a4d80bb2533cb44fd4632ce00f9d9d19c0b1c730f4696ca964a9db91a1355",
+      "bytes": 134600
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g03-paged-receiver/apple-static/relocated/lib/libhyle_compute_batch.a",
+      "sha256": "4cf2ab15c75e67120e88dce0117a2b545178b4bd8a9859f77adf0ea3fe630b72",
+      "bytes": 288440
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g03-paged-receiver/apple-static/relocated/lib/libhyle_compute_backend_cpu.a",
+      "sha256": "27ec18e09acd026bf9e9bc8eea497daf8e65af24b03df66c85eab5b5749c2c15",
+      "bytes": 13576
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g03-paged-receiver/apple-static/relocated/lib/libhyle_compute_route_apple.a",
+      "sha256": "d8c9bdff3b22745fb175260652c0d20315780343927cf44a132159a74929404d",
+      "bytes": 1180000
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g03-paged-receiver/apple-static/relocated/lib/libhyle_compute.a",
+      "sha256": "a7ff5b45446e73b7a2ff3b968868680070a79bda25a05a2418accdba170a69bb",
+      "bytes": 602288
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g03-paged-receiver/apple-static/relocated/lib/libhyle_compute_provider_ggml.a",
+      "sha256": "2ad1a4ca5e5ac99ef5fa82de28d6ba77c3fcbbd587f09ce34503267014d413a9",
+      "bytes": 150960
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g03-paged-receiver/apple-static/relocated/lib/libhyle_compute_ggml_runtime.a",
+      "sha256": "7bee0789708eee042aca62c32344322826da3da77d903e637898ccae9374c0fa",
+      "bytes": 21416
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g03-paged-receiver/apple-static/relocated/lib/libhyle_compute_state.a",
+      "sha256": "591e5b6c521d9a954da22af190a3c171369bc5709dc8b28f4749ce7f485de1bb",
+      "bytes": 95816
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g03-paged-receiver/apple-static/relocated/lib/libhyle_compute_ops.a",
+      "sha256": "5ab00a63e74d82679d7f228b27244e8411e31a6c0469a072a3383d8a62f15dca",
+      "bytes": 103464
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g03-paged-receiver/apple-static/relocated/lib/libhyle_compute_route_cpu.a",
+      "sha256": "292a46643e71f02f6d0a984cc3dc82d65064a78eb960124b5af79c534ecd61a3",
+      "bytes": 65920
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g03-paged-receiver/apple-static/relocated/lib/libhyle_compute_provider_ggml_metal.a",
+      "sha256": "ebee03c9b1a96bc249650dacf82ea3bd881f44c9aa3515aed13dc8a8b2b0b64b",
+      "bytes": 34184
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g03-paged-receiver/apple-static/relocated/lib/libhyle_compute_provider_native.a",
+      "sha256": "c79ad8519365dd61405ca5e735c58ee0ef7f843be70403c1867cafd830662180",
+      "bytes": 534632
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g03-paged-receiver/apple-shared/relocated/include/hyle/compute/apple_batch.h",
+      "sha256": "09fca736588dd38c1c189a0fb3b4fdbb4000c5078207e64caebf1cc33bae92f2",
+      "bytes": 7563
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g03-paged-receiver/apple-shared/relocated/include/hyle/compute/detail/materialized_native_controller.h",
+      "sha256": "71dd657da49e0d25f29fedb7dba715889eebffaa40768492a9d8cdaf5ca6de61",
+      "bytes": 19174
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g03-paged-receiver/apple-shared/relocated/include/hyle/compute/detail/generated_result.h",
+      "sha256": "bc47c925ff3302bd0ffb7df04ed68fa9ae7ad0865d021cc8b471a7547307d4aa",
+      "bytes": 5574
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g03-paged-receiver/apple-shared/relocated/lib/libhyle_compute_ggml_runtime.dylib",
+      "sha256": "bcd2310f0b97169748a3d4f0bf4af8b380a44d5b61df91018e01af30cca0f76b",
+      "bytes": 1506232
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g03-paged-receiver/apple-shared/relocated/lib/libhyle_compute_provider_ggml_metal.dylib",
+      "sha256": "846ac68b120bf225f6f860928fa07d4a946fdcaa70a56c80510d020e7c25102e",
+      "bytes": 3000976
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g03-paged-receiver/apple-shared/relocated/lib/libhyle_compute_stream.dylib",
+      "sha256": "b4e6dd278678e9773d9c33a84c3be2588a1ec93959cd84d77a4c211c717524a1",
+      "bytes": 168720
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g03-paged-receiver/apple-shared/relocated/lib/libhyle_compute_route_apple.0.1.0.dylib",
+      "sha256": "00628658a6eb19ea379591206b95c84be09b76b23f9de9e6b6fe8fd9cbaafb06",
+      "bytes": 744120
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g03-paged-receiver/apple-shared/relocated/lib/libhyle_compute_ops.0.1.0.dylib",
+      "sha256": "0c8f4076d7b511674d9cb6b96b89aa1bec1a1d2e614857704be16efb716c3f13",
+      "bytes": 112080
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g03-paged-receiver/apple-shared/relocated/lib/libhyle_compute_provider_ggml.dylib",
+      "sha256": "135572f5271dabd38c54c72e4c84250e1aeb7a1d7b0f5b15e246d87ea432440c",
+      "bytes": 713496
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g03-paged-receiver/apple-shared/relocated/lib/libhyle_compute_backend_cpu.dylib",
+      "sha256": "5cd509b7b72ae06671fcaedb293b400b2e169d1f6940bdd75745336e6ab4e765",
+      "bytes": 54280
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g03-paged-receiver/apple-shared/relocated/lib/libhyle_compute_route_cpu.0.1.0.dylib",
+      "sha256": "b87ecf00227cfb9c4b682099a687ace5aa218fcf3ab7cdb8a4d20ae54acc2fe2",
+      "bytes": 109896
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g03-paged-receiver/apple-shared/relocated/lib/libhyle_compute_route_cpu.dylib",
+      "sha256": "b87ecf00227cfb9c4b682099a687ace5aa218fcf3ab7cdb8a4d20ae54acc2fe2",
+      "bytes": 109896
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g03-paged-receiver/apple-shared/relocated/lib/libhyle_compute_provider_ggml_metal.0.1.0.dylib",
+      "sha256": "846ac68b120bf225f6f860928fa07d4a946fdcaa70a56c80510d020e7c25102e",
+      "bytes": 3000976
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g03-paged-receiver/apple-shared/relocated/lib/libhyle_compute_ggml_runtime.0.1.0.dylib",
+      "sha256": "bcd2310f0b97169748a3d4f0bf4af8b380a44d5b61df91018e01af30cca0f76b",
+      "bytes": 1506232
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g03-paged-receiver/apple-shared/relocated/lib/libhyle_compute_stream.0.1.0.dylib",
+      "sha256": "b4e6dd278678e9773d9c33a84c3be2588a1ec93959cd84d77a4c211c717524a1",
+      "bytes": 168720
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g03-paged-receiver/apple-shared/relocated/lib/libhyle_compute_state.dylib",
+      "sha256": "71065a407717cd2d1753a6fb124342c1e68ef5e9eae8bc142722bf14387f8ade",
+      "bytes": 128304
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g03-paged-receiver/apple-shared/relocated/lib/libhyle_compute.0.1.0.dylib",
+      "sha256": "e6eb9b00284791983eef00beba1e5182de9bcdfc72e56283492af88ccd0e191c",
+      "bytes": 426792
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g03-paged-receiver/apple-shared/relocated/lib/libhyle_compute_route_apple.dylib",
+      "sha256": "00628658a6eb19ea379591206b95c84be09b76b23f9de9e6b6fe8fd9cbaafb06",
+      "bytes": 744120
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g03-paged-receiver/apple-shared/relocated/lib/libhyle_compute_state.0.1.0.dylib",
+      "sha256": "71065a407717cd2d1753a6fb124342c1e68ef5e9eae8bc142722bf14387f8ade",
+      "bytes": 128304
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g03-paged-receiver/apple-shared/relocated/lib/libhyle_compute_ops.dylib",
+      "sha256": "0c8f4076d7b511674d9cb6b96b89aa1bec1a1d2e614857704be16efb716c3f13",
+      "bytes": 112080
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g03-paged-receiver/apple-shared/relocated/lib/libhyle_compute_provider_native.0.1.0.dylib",
+      "sha256": "f3a9258d85887bb97a7f102332c673b8db99ea7d75e4ffcc162f2b999230bb89",
+      "bytes": 423384
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g03-paged-receiver/apple-shared/relocated/lib/libhyle_compute_batch.0.1.0.dylib",
+      "sha256": "05d6fbb933fa443b7b4e231a2e8ac8c3811f5935a48d92f26bc302a3b723f6a9",
+      "bytes": 235488
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g03-paged-receiver/apple-shared/relocated/lib/libhyle_compute_provider_ggml.0.1.0.dylib",
+      "sha256": "135572f5271dabd38c54c72e4c84250e1aeb7a1d7b0f5b15e246d87ea432440c",
+      "bytes": 713496
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g03-paged-receiver/apple-shared/relocated/lib/libhyle_compute_batch.dylib",
+      "sha256": "05d6fbb933fa443b7b4e231a2e8ac8c3811f5935a48d92f26bc302a3b723f6a9",
+      "bytes": 235488
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g03-paged-receiver/apple-shared/relocated/lib/libhyle_compute_provider_native.dylib",
+      "sha256": "f3a9258d85887bb97a7f102332c673b8db99ea7d75e4ffcc162f2b999230bb89",
+      "bytes": 423384
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g03-paged-receiver/apple-shared/relocated/lib/libhyle_compute_backend_cpu.0.1.0.dylib",
+      "sha256": "5cd509b7b72ae06671fcaedb293b400b2e169d1f6940bdd75745336e6ab4e765",
+      "bytes": 54280
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g03-paged-receiver/apple-shared/relocated/lib/libhyle_compute.dylib",
+      "sha256": "e6eb9b00284791983eef00beba1e5182de9bcdfc72e56283492af88ccd0e191c",
+      "bytes": 426792
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g03-paged-receiver/vulkan-source/prefix/include/hyle/compute/vulkan_batch.h",
+      "sha256": "5f8e29e31e6d3a3177632f5a9055916ef21a4e8733ef90fdfaebc31fbaed6078",
+      "bytes": 7535
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g03-paged-receiver/vulkan-source/prefix/include/hyle/compute/detail/materialized_native_controller.h",
+      "sha256": "71dd657da49e0d25f29fedb7dba715889eebffaa40768492a9d8cdaf5ca6de61",
+      "bytes": 19174
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g03-paged-receiver/vulkan-source/prefix/include/hyle/compute/detail/generated_result.h",
+      "sha256": "bc47c925ff3302bd0ffb7df04ed68fa9ae7ad0865d021cc8b471a7547307d4aa",
+      "bytes": 5574
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g03-paged-receiver/vulkan-source/prefix/lib/libhyle_compute_provider_iree_vulkan.a",
+      "sha256": "027021f8eed01c1af653c541883d402147e4077a76fba869d1c39cdd0784d054",
+      "bytes": 688752
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g03-paged-receiver/vulkan-source/prefix/lib/libhyle_compute_stream.a",
+      "sha256": "bc6f31306fac842ba91634960abd22710acb18b0666638f4cfae0bdcb7d64fd8",
+      "bytes": 134600
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g03-paged-receiver/vulkan-source/prefix/lib/libhyle_compute_batch.a",
+      "sha256": "8933ffaa94ff20d66e9ee72b9e4d4f8c924c64d239c3dee02a2efa3ec74da399",
+      "bytes": 288440
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g03-paged-receiver/vulkan-source/prefix/lib/libhyle_compute_backend_cpu.a",
+      "sha256": "cccf5fd1262822a1c6b85d11f15e335a606f269c61b2fa3aa141bd795e2fdb53",
+      "bytes": 13576
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g03-paged-receiver/vulkan-source/prefix/lib/libhyle_compute_provider_ggml_vulkan.a",
+      "sha256": "ae04997cb048d213d9cc413e067f1360fa3f82006055b5a306994aa1ec39c255",
+      "bytes": 121296
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g03-paged-receiver/vulkan-source/prefix/lib/libhyle_compute.a",
+      "sha256": "f3612f73dd9eacdc75f1da113a839d21f828a9b7d20d018e87d104119af5b3cc",
+      "bytes": 602288
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g03-paged-receiver/vulkan-source/prefix/lib/libhyle_compute_provider_ggml.a",
+      "sha256": "10493f9a1199a0ec949fbb1719f255cb14b43ee076b2566577d77aea2f10a46f",
+      "bytes": 150960
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g03-paged-receiver/vulkan-source/prefix/lib/libhyle_compute_ggml_runtime.a",
+      "sha256": "42554c617dde7d3273dab0de62fa0c1a44d0672e91568c7a4c1cbaa220c10d9c",
+      "bytes": 21416
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g03-paged-receiver/vulkan-source/prefix/lib/libhyle_compute_state.a",
+      "sha256": "009b9e5468680492f7fd4f0c5b9e4d762d3023a99165b28368f80d8b1f5cb9b1",
+      "bytes": 95816
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g03-paged-receiver/vulkan-source/prefix/lib/libhyle_compute_ops.a",
+      "sha256": "d3e378239ace8e2e788e0c49f1b0fec42ebd011bc61088e93ad888e27371154a",
+      "bytes": 103464
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g03-paged-receiver/vulkan-source/prefix/lib/libhyle_compute_route_cpu.a",
+      "sha256": "9faf9508d2e4126a27a1cf567a463b0dae32ac78e04fdbdf7205d62d173ae89e",
+      "bytes": 65920
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g03-paged-receiver/vulkan-source/prefix/lib/libhyle_compute_route_vulkan.a",
+      "sha256": "4268af7d93d7bc11433d35289fc4aa59a4a1f5a0e739d5a9158a589439b048ca",
+      "bytes": 1383872
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g03-paged-receiver/vulkan-source/prefix/lib/libhyle_compute_provider_native.a",
+      "sha256": "5d6b25359db172abe299656d87af020bb1d6c867e5899fdb73c11f89d5870499",
+      "bytes": 534632
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g03-paged-receiver/vulkan-static/relocated/include/hyle/compute/vulkan_batch.h",
+      "sha256": "5f8e29e31e6d3a3177632f5a9055916ef21a4e8733ef90fdfaebc31fbaed6078",
+      "bytes": 7535
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g03-paged-receiver/vulkan-static/relocated/include/hyle/compute/detail/materialized_native_controller.h",
+      "sha256": "71dd657da49e0d25f29fedb7dba715889eebffaa40768492a9d8cdaf5ca6de61",
+      "bytes": 19174
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g03-paged-receiver/vulkan-static/relocated/include/hyle/compute/detail/generated_result.h",
+      "sha256": "bc47c925ff3302bd0ffb7df04ed68fa9ae7ad0865d021cc8b471a7547307d4aa",
+      "bytes": 5574
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g03-paged-receiver/vulkan-static/relocated/lib/libhyle_compute_provider_iree_vulkan.a",
+      "sha256": "6fb8174ccf249e10127544aad67fd58e39b30ef192b4b4c75c41adf1826b0a0f",
+      "bytes": 688752
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g03-paged-receiver/vulkan-static/relocated/lib/libhyle_compute_stream.a",
+      "sha256": "c5387602ee20682929a2c30e75c4e06c9c95be3e359b57791c8c6433ee17c376",
+      "bytes": 134600
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g03-paged-receiver/vulkan-static/relocated/lib/libhyle_compute_batch.a",
+      "sha256": "555d18a0287a7c6a97e2362f770e9874b0cfb3809459fc09ddbc653c03ef5c79",
+      "bytes": 288440
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g03-paged-receiver/vulkan-static/relocated/lib/libhyle_compute_backend_cpu.a",
+      "sha256": "a95edbe6603154c4d2d89cbaf7df052958248b76c8ae393ddee002ac12619705",
+      "bytes": 13576
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g03-paged-receiver/vulkan-static/relocated/lib/libhyle_compute_provider_ggml_vulkan.a",
+      "sha256": "f4c14402100665b64137912289473108b1c767cab6223161559e0015e07d98e9",
+      "bytes": 121296
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g03-paged-receiver/vulkan-static/relocated/lib/libhyle_compute.a",
+      "sha256": "cb9b761e8dbd88d6f5d25c0fb7351cf2b9cf4f2ad843bdc277ea89e3bfb322f4",
+      "bytes": 602288
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g03-paged-receiver/vulkan-static/relocated/lib/libhyle_compute_provider_ggml.a",
+      "sha256": "5620e04e74cd27f74485da309bc30724b21c05a7ba8f5d88c86c440d07f68564",
+      "bytes": 150960
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g03-paged-receiver/vulkan-static/relocated/lib/libhyle_compute_ggml_runtime.a",
+      "sha256": "8a01a9e3bfcbd3d7350c0e250bdcec4a74a5ac7af56d5bbfb15ffe8d1536a035",
+      "bytes": 21416
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g03-paged-receiver/vulkan-static/relocated/lib/libhyle_compute_state.a",
+      "sha256": "d2d44f311cbddef307fc625b1d1a7df485a98172a57198f7c36628ef8b8e69df",
+      "bytes": 95816
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g03-paged-receiver/vulkan-static/relocated/lib/libhyle_compute_ops.a",
+      "sha256": "ab9e9f41f1857cc9b2a8da65751b178e6165450e177f9e2f312f0c4ad30776f1",
+      "bytes": 103464
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g03-paged-receiver/vulkan-static/relocated/lib/libhyle_compute_route_cpu.a",
+      "sha256": "24526c3965615e4b7a9a7cc51a5a57ecd3929480d801e0775a33e99d91db60a3",
+      "bytes": 65920
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g03-paged-receiver/vulkan-static/relocated/lib/libhyle_compute_route_vulkan.a",
+      "sha256": "330e5ff38e7ffe51c6ca9984de12e7a8082e01cf75f718098baaf75ef2cb3aa9",
+      "bytes": 1383872
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g03-paged-receiver/vulkan-static/relocated/lib/libhyle_compute_provider_native.a",
+      "sha256": "8fe5eab5c46aeb48b0e4e2d9d0b1b97ccd6140f50fff330e343cedf80bb4813e",
+      "bytes": 534632
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g03-paged-receiver/vulkan-shared/relocated/include/hyle/compute/vulkan_batch.h",
+      "sha256": "5f8e29e31e6d3a3177632f5a9055916ef21a4e8733ef90fdfaebc31fbaed6078",
+      "bytes": 7535
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g03-paged-receiver/vulkan-shared/relocated/include/hyle/compute/detail/materialized_native_controller.h",
+      "sha256": "71dd657da49e0d25f29fedb7dba715889eebffaa40768492a9d8cdaf5ca6de61",
+      "bytes": 19174
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g03-paged-receiver/vulkan-shared/relocated/include/hyle/compute/detail/generated_result.h",
+      "sha256": "bc47c925ff3302bd0ffb7df04ed68fa9ae7ad0865d021cc8b471a7547307d4aa",
+      "bytes": 5574
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g03-paged-receiver/vulkan-shared/relocated/lib/libhyle_compute_provider_ggml_vulkan.dylib",
+      "sha256": "1e6ada8c1c465c895608fc3b89955dfc811b23002044960cdadf4dcf8972ee8a",
+      "bytes": 44500720
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g03-paged-receiver/vulkan-shared/relocated/lib/libhyle_compute_ggml_runtime.dylib",
+      "sha256": "b3ad88ac7303fbd7d0ed161f26ef3cca5b3abadd99a250c021f0274e6f3692fd",
+      "bytes": 1506232
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g03-paged-receiver/vulkan-shared/relocated/lib/libhyle_compute_stream.dylib",
+      "sha256": "8d9aaa7d8ef4c391c9579848567e58e043df81787be4a0f91968162c4112e4eb",
+      "bytes": 168720
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g03-paged-receiver/vulkan-shared/relocated/lib/libhyle_compute_provider_ggml_vulkan.0.1.0.dylib",
+      "sha256": "1e6ada8c1c465c895608fc3b89955dfc811b23002044960cdadf4dcf8972ee8a",
+      "bytes": 44500720
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g03-paged-receiver/vulkan-shared/relocated/lib/libhyle_compute_ops.0.1.0.dylib",
+      "sha256": "b8e97b4d58a9dcd552fb8f276df13f65609c9daf16c33dacb766eaedadce0787",
+      "bytes": 112080
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g03-paged-receiver/vulkan-shared/relocated/lib/libhyle_compute_provider_ggml.dylib",
+      "sha256": "1997fea04889c93c21a46e5ac7add40658572d20defa49b821bd15bc90091838",
+      "bytes": 713480
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g03-paged-receiver/vulkan-shared/relocated/lib/libhyle_compute_backend_cpu.dylib",
+      "sha256": "b9a6a142ebd6e833912a7a8173989f9627cfc3e0e92122583e4360566dffe46c",
+      "bytes": 54280
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g03-paged-receiver/vulkan-shared/relocated/lib/libhyle_compute_route_cpu.0.1.0.dylib",
+      "sha256": "40092d5564f0622e20b927d88973b209ee8e2824d9ee6304b991472c341920c1",
+      "bytes": 109896
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g03-paged-receiver/vulkan-shared/relocated/lib/libhyle_compute_route_cpu.dylib",
+      "sha256": "40092d5564f0622e20b927d88973b209ee8e2824d9ee6304b991472c341920c1",
+      "bytes": 109896
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g03-paged-receiver/vulkan-shared/relocated/lib/libhyle_compute_ggml_runtime.0.1.0.dylib",
+      "sha256": "b3ad88ac7303fbd7d0ed161f26ef3cca5b3abadd99a250c021f0274e6f3692fd",
+      "bytes": 1506232
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g03-paged-receiver/vulkan-shared/relocated/lib/libhyle_compute_stream.0.1.0.dylib",
+      "sha256": "8d9aaa7d8ef4c391c9579848567e58e043df81787be4a0f91968162c4112e4eb",
+      "bytes": 168720
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g03-paged-receiver/vulkan-shared/relocated/lib/libhyle_compute_state.dylib",
+      "sha256": "fb32e7f9a251dc5cc15d00d79f69a18112939c19db8452f0e5514101f13c7139",
+      "bytes": 128304
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g03-paged-receiver/vulkan-shared/relocated/lib/libhyle_compute.0.1.0.dylib",
+      "sha256": "8852722ffc5ac2a2e0e4060825e832a623e837fbedebbc620557c2e27881ae37",
+      "bytes": 426792
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g03-paged-receiver/vulkan-shared/relocated/lib/libhyle_compute_route_vulkan.dylib",
+      "sha256": "564b49b0a044897cc1fb4f25bb6c3bed21a46714a815f8119e0b7147471d275c",
+      "bytes": 860472
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g03-paged-receiver/vulkan-shared/relocated/lib/libhyle_compute_state.0.1.0.dylib",
+      "sha256": "fb32e7f9a251dc5cc15d00d79f69a18112939c19db8452f0e5514101f13c7139",
+      "bytes": 128304
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g03-paged-receiver/vulkan-shared/relocated/lib/libhyle_compute_ops.dylib",
+      "sha256": "b8e97b4d58a9dcd552fb8f276df13f65609c9daf16c33dacb766eaedadce0787",
+      "bytes": 112080
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g03-paged-receiver/vulkan-shared/relocated/lib/libhyle_compute_provider_iree_vulkan.dylib",
+      "sha256": "631d0e12a94f7e94163fd5dccf3f078d742e1713268d52cde17747e3682dca53",
+      "bytes": 1549424
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g03-paged-receiver/vulkan-shared/relocated/lib/libhyle_compute_provider_native.0.1.0.dylib",
+      "sha256": "6f1d86fc55725389180016d8570427aef62022c252c9214920fbc0df8b1b217c",
+      "bytes": 423384
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g03-paged-receiver/vulkan-shared/relocated/lib/libhyle_compute_batch.0.1.0.dylib",
+      "sha256": "065dda65ad12ca536a064d75df625f98ad88496d935829bbae93f71414cb79c1",
+      "bytes": 235488
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g03-paged-receiver/vulkan-shared/relocated/lib/libhyle_compute_provider_ggml.0.1.0.dylib",
+      "sha256": "1997fea04889c93c21a46e5ac7add40658572d20defa49b821bd15bc90091838",
+      "bytes": 713480
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g03-paged-receiver/vulkan-shared/relocated/lib/libhyle_compute_batch.dylib",
+      "sha256": "065dda65ad12ca536a064d75df625f98ad88496d935829bbae93f71414cb79c1",
+      "bytes": 235488
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g03-paged-receiver/vulkan-shared/relocated/lib/libhyle_compute_route_vulkan.0.1.0.dylib",
+      "sha256": "564b49b0a044897cc1fb4f25bb6c3bed21a46714a815f8119e0b7147471d275c",
+      "bytes": 860472
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g03-paged-receiver/vulkan-shared/relocated/lib/libhyle_compute_provider_native.dylib",
+      "sha256": "6f1d86fc55725389180016d8570427aef62022c252c9214920fbc0df8b1b217c",
+      "bytes": 423384
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g03-paged-receiver/vulkan-shared/relocated/lib/libhyle_compute_backend_cpu.0.1.0.dylib",
+      "sha256": "b9a6a142ebd6e833912a7a8173989f9627cfc3e0e92122583e4360566dffe46c",
+      "bytes": 54280
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g03-paged-receiver/vulkan-shared/relocated/lib/libhyle_compute.dylib",
+      "sha256": "8852722ffc5ac2a2e0e4060825e832a623e837fbedebbc620557c2e27881ae37",
+      "bytes": 426792
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g03-paged-receiver/vulkan-shared/relocated/lib/libhyle_compute_provider_iree_vulkan.0.1.0.dylib",
+      "sha256": "631d0e12a94f7e94163fd5dccf3f078d742e1713268d52cde17747e3682dca53",
+      "bytes": 1549424
+    }
+  ],
+  "models": [
+    {
+      "path": "g02-refcount-fence-probe/tsan-headers/hyle/util/ref_counted.h",
+      "sha256": "2b90ab655a49ec3b9158a964872cd1fc3395ebf64d8ae430a2e19c4805bf5416"
+    },
+    {
+      "path": "g01-metal-callback-tsan-probe/tsan-metal-cpp/Metal/MTLCommandBuffer.hpp",
+      "sha256": "4a58c6e564e3a7efcdf5c7709eeee99ec7b7c40594e2ada5ec5c91012171d504"
+    }
+  ]
+}
