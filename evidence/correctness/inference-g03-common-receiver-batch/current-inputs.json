@@ -1,0 +1,22 @@
+[
+  {
+    "path": "tests/compute_batch/pending_paged_receiver_cpu_risks.cc",
+    "sha256": "e3e4f2cc41782ecc46bd3d154cff15154ebb0878fced21d29726cc357bf91da2"
+  },
+  {
+    "path": "tests/compute_batch/pending_paged_receiver_cuda64_consumer.cc",
+    "sha256": "0b4974e6da870ab457ffea006831240b448f919f38fe496157b84f75679f9883"
+  },
+  {
+    "path": "tests/compute_batch/pending_paged_receiver_cuda_risks.cc",
+    "sha256": "b03f7ea2a1fcef7c1a3d9c38a15f0c9dc06532c01eb605f00c730c2150417f57"
+  },
+  {
+    "path": "src/compute_batch/batch_execution.cc",
+    "sha256": "ab3b2e14a57da13fc4b6e60f4035a657bdb4ffb7ed0becf2ef3c375dbfa665ee"
+  },
+  {
+    "path": "include/hyle/compute/batch_execution.h",
+    "sha256": "cc61080e8ebeee41563e5e061f3735baa09831acaa9ab0f221c7f121e1b561f8"
+  }
+]

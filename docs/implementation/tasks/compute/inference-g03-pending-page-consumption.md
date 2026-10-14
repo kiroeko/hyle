@@ -378,3 +378,29 @@ backtrace保留；同一原 controller 显式预热后通过。WSL旧CPU provide
 CPU异步来源拒绝、接纳后来源错误/unknown/abandon、明确资源预算边界、Graph、late native backing与
 七路线/正交 reduction 仍必需。原 G01/G02未决门与 G04–G10、失败和 private UNKNOWN
 全部保留；只复用本批已证明门，整体粗估20%、完整项目0/10。所有本批 heavy 已terminal。
+
+BC04 续验固定：同一原 CPU64 数值旅程迁入 CUDA 原队列/FlashInfer，保持 GQA8/2
+D256、F16/BF16、两请求/两原 slot、Q1/17 与64步跨页，不缩小最终主形状。常驻 K/V
+与 query 总payload约400KiB，两个原 workspace 各8MiB；仍为有限小消费者，不运行
+模型、P1或新 kernel 编译。 source/迁址static/shared均先核实际匹配缓存；无 nvcc
+前置条件不成立则保未决门并继续其它真实主卡工作，不重置前轮失败与累计。
+
+
+## BC04 CPU/CUDA 批量验证检查点（2026-10-14）
+
+[本批记录](../../../../evidence/correctness/inference-g03-common-receiver-batch/validation-result.json)
+证明 CUDA source/static/shared 的原 GQA8/2 D256、F16/BF16、双请求/双slot/64步完整
+数值旅程；五项 actual CUDA 来源/未知/错误/放弃及原 CPU queue 拒绝边界；CPU 九项
+风险（新增预算拒绝与放弃原槽回收），Windows 与三宿主 sanitizer 均通过。无产品改动，
+无 nvcc/new kernel；原 source4/CPU64/SDK、两 native64 和已证明原数学门继续复用。
+
+原159.825s诊断终止、两个 fixture lifetime fatal、错误的“未知=已知失败”判据及全部
+累计保留。最终按原public Unavailable/actual retirement合同分别验 known 与unknown；
+未知错误最终合并并拒绝成功 output，不改产品或放宽错误合同。CUDA shipping backend
+未编入 HYLE_TESTING；source 风险只借既有观测 hook，不代签 GPU sanitizer。
+
+模块仍 AUDITED，不签整项 G03。下一批集中处理原 Graph pending 消费与 native late
+output 的剩余有限接缝，再批量验证七路线与正交 reduction；对应 owner 先完成范围/
+API/寿命/成本审计，保原 G02 未决门。按用户要求一批实现、批量检查、针对失败修复，
+不再按单 helper 切施工卡或重复已证明门。原十项 goal、失败/UNKNOWN保留；本批后
+整体粗估约22%，完整 G 项验收仍0/10，不由receiver三交付代签完整G03。

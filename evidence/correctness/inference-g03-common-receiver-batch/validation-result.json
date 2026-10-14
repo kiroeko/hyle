@@ -1,0 +1,23 @@
+{
+  "baseline": "b3b8cb48ac6246f88d0020c239ab8f43793d6945",
+  "product_changed": false,
+  "passed": [
+    "CUDA source and relocated static/shared: F16/BF16 GQA8/2 D256, two requests/two original slots,64 growing cross-page steps with Q1/17, independent double oracle, original control and page recovery",
+    "Actual CUDA five risks: known retired source refusal, unknown before acceptance preserved until real final error, error after native suffix acceptance refuses successful output/reuse, pending owner/aggregate abandonment preserves then retires original slots/metadata/guards, actual original CPU queue rejects live CUDA prefix without host wait",
+    "CPU nine boundaries including actual ResourceBudget exhaustion preserving original controller/charges and aggregate/owner abandonment freeing original native slot; Windows and three actual Air host sanitizer configurations"
+  ],
+  "receipts": "CUDA shipping SDK backend command has no HYLE_TESTING; same public64 has only relocated product headers. No new nvcc/kernel compilation. Current host ASan detect_leaks=0; original exact ref-count TSan model retained.",
+  "failure_notes": [
+    "Original CUDA risk termination159.825s, two resource-lifetime fatal exits and initial wrong known-error assertion retained in cumulative logs. Fixture now keeps both original metadata allocators/resources alive through explicit actual retirement and captures native events by observe, not dependency identity lookup.",
+    "An original CUDA event query error while still pending returns public Unavailable with an OK prefix terminal hint. The old assertion treated this as known terminal failure; final tests distinguish unknown-before-acceptance from actually retired known failure. No product contract/API weakened or product fix needed.",
+    "Earlier uncommitted fixture hashes and logs are retained; full historical fixture source bytes were not archived. This limitation is not represented as historical byte reproducibility."
+  ],
+  "seconds": {
+    "cuda_cumulative": 717.0533769339999,
+    "sdk": 209.72775769299994,
+    "air_cumulative": 171.05684074799996,
+    "windows_cumulative": 220.45300000000861
+  },
+  "remaining": "Full original Graph pending composition, native late producer backing, seven-route complete main and independent reduction journeys, original G01/G02 unresolved gates and G04-G10. Whole G03 and modules remain AUDITED.",
+  "execution_preference": "User 2026-10-14: implement a finite batch, validate it together, then fix specific failures; no per-helper construction-card or verification churn."
+}

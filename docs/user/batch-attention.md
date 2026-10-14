@@ -258,8 +258,9 @@ private unknown 保留。这个入口当前覆盖两 native 路线；CPU/CUDA、
 native producer output 的完整 G03 验收仍在活动轮内。
 
 共同 `hyle::compute::PagedBatchReceiver` 移交原 `BatchInvocation`，沿其原队列、
-PreparedBatch 和输出 buffer 消费同样的 pending frame。CPU 原生路径已有 source、
-static/shared 和宿主风险验证；CUDA 实际资格与 Graph 组合继续看当前 G03 卡。
+PreparedBatch 和输出 buffer 消费同样的 pending frame。CPU 与已资格的 Linux CUDA
+原生路径已有 source/static/shared 双请求、双槽、64步公共旅程；CPU 宿主风险与 CUDA
+实际来源/退休边界也已定向验证。Graph 与 late native producer 组合继续看当前 G03 卡。
 CPU 队列只接受已实际完成的 inline 来源，异步来源由原 backend 拒绝，不隐式 host wait。
 
 ```cpp

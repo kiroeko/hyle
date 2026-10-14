@@ -9,13 +9,18 @@ namespace {
 namespace c=hyle::compute;
 using hyle::Status;
 Status require(bool value,const char*message){return value?Status::Ok():Status::Internal(message);}
-enum class Mode { success,hole,foreign_layout,allocation,capacity,closed,old_ticket };
+enum class Mode { success,hole,foreign_layout,allocation,capacity,closed,old_ticket,budget,abandon };
 Status episode(Mode mode){
   hyle_f5_fault_fixture::Allocator allocator;
   HYLE_ASSIGN_OR_RETURN(auto context,c::cpu::create_context({.native_threads=2}));
   HYLE_ASSIGN_OR_RETURN(auto queue,context.create_queue());
   struct Drain final {c::Context&context;~Drain(){context.drain().IgnoreError();}}drain{context};
   const auto resource=hyle::mem::system_resource();
+  c::ResourceBudget budget;
+  if(mode==Mode::budget){
+    const std::array limits{c::ResourceBudgetLimit{resource,32u<<20}};
+    HYLE_ASSIGN_OR_RETURN(budget,c::ResourceBudget::create({.limits=limits,.allocator=allocator.ref(),.allow_unattributed=true}));
+  }
   const c::BatchCapacity cap{.data_type=c::DataType::kFloat16,.max_requests=1,.max_query_rows=1,.max_kv_rows=2,
       .max_pages=2,.max_page_refs=1,.query_heads=2,.kv_heads=1,.head_dim=64,.page_size=16};
   HYLE_ASSIGN_OR_RETURN(auto schema,c::BatchSchema::create(cap));
@@ -24,7 +29,7 @@ Status episode(Mode mode){
   HYLE_ASSIGN_OR_RETURN(auto other,schema.version({qptr,qptr,ids,other_tail}));
   HYLE_ASSIGN_OR_RETURN(auto program,c::BatchProgram::prepare(context,schema,
       {.resource=resource,.max_float_workspace_bytes=8u<<20,.max_int_workspace_bytes=4096,
-       .max_invocations=1,.scale=.125F,.allocator=allocator.ref()}));
+       .max_invocations=1,.scale=.125F,.allocator=allocator.ref(),.resource_budget=budget}));
   HYLE_ASSIGN_OR_RETURN(auto native,c::BatchInvocation::create(program,queue));
   if(mode==Mode::old_ticket){
     HYLE_ASSIGN_OR_RETURN(auto token,native.prepare_batch(layout));
@@ -34,6 +39,16 @@ Status episode(Mode mode){
     return Status::Ok();
   }
   const auto baseline=allocator.live;
+  if(mode==Mode::budget){
+    HYLE_ASSIGN_OR_RETURN(auto before,budget.usage(resource));
+    HYLE_ASSIGN_OR_RETURN(auto reservation,budget.reserve(resource,before.limit_bytes-before.live_bytes));
+    auto rejected=c::PagedBatchReceiver::create(std::move(native),2);
+    HYLE_RETURN_IF_ERROR(require(!rejected && rejected.error().IsResourceExhausted() && native.valid() && allocator.live==baseline,
+        "cold common receiver bypassed original metadata resource budget"));
+    reservation.reset();
+    HYLE_ASSIGN_OR_RETURN(auto after,budget.usage(resource));
+    HYLE_RETURN_IF_ERROR(require(after.live_bytes==before.live_bytes,"common receiver rejected budget leaked admission bytes"));
+  }
   if(mode==Mode::allocation){
     bool complete=false;
     for(std::size_t fail=0;fail<16;++fail){
@@ -82,6 +97,13 @@ Status episode(Mode mode){
   }
   HYLE_RETURN_IF_ERROR(require(submitted.has_value() && !update.valid() && !receiver.output() && !receiver.take_update(),
       "common CPU pending aggregate fabricated early output or returned source"));
+  if(mode==Mode::abandon){
+    *submitted={};receiver={};
+    HYLE_ASSIGN_OR_RETURN(auto next,c::BatchInvocation::create(program,queue));
+    HYLE_RETURN_IF_ERROR(next.drain());
+    std::fprintf(stderr,"common CPU receiver aggregate/owner abandonment releases actual original native slot PASS\n");
+    return Status::Ok();
+  }
   HYLE_RETURN_IF_ERROR(submitted->wait());HYLE_ASSIGN_OR_RETURN(auto output,receiver.output());
   std::array<std::uint16_t,128> actual{};HYLE_RETURN_IF_ERROR(output.view()->read(std::as_writable_bytes(std::span(actual))));
   for(auto word:actual)HYLE_RETURN_IF_ERROR(require(word==0x3400,"common CPU native output mean oracle differs"));
@@ -98,6 +120,6 @@ Status episode(Mode mode){
   return Status::Ok();
 }
 }
-int main(){for(auto mode:{Mode::success,Mode::hole,Mode::foreign_layout,Mode::allocation,Mode::capacity,Mode::closed,Mode::old_ticket}){
+int main(){for(auto mode:{Mode::success,Mode::hole,Mode::foreign_layout,Mode::allocation,Mode::capacity,Mode::closed,Mode::old_ticket,Mode::budget,Mode::abandon}){
   const auto status=episode(mode);if(!status.ok()){std::fprintf(stderr,"common CPU risk mode=%u: %.*s\n",unsigned(mode),int(status.message().size()),status.message().data());return 1;}
 }return 0;}
