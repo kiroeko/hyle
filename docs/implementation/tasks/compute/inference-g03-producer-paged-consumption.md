@@ -136,3 +136,10 @@ GP01/GP02固定产品candidate `b42832de3ddda21bdc3e98ad4cc87e73622cbba4`：API�
 独立反证；host-only/noLSan/shader/driver/private限制保。首上传遗漏CPU consumer的
 configure FAIL4.016s保原，input9后同树续跑，预算未重置。四relocated SDK/头继续本
 candidate资格，不改产品/原数学或缩小整个G03。
+
+[四SDK与16独立头](../../../../evidence/correctness/inference-g03-dirty-page-sdk-stage/README.md)
+全部PASS，58.886s；canonical consumer字节不变，只链relocated hyle::compute。W1新增
+native public compile/link PASS78.109s，没有exe/GPU run。有限GP01/GP02尚需common
+CUDA同一公开入口的实际短资格与终审；不得把CPU/Apple/Vulkan反证当作CUDA实跑。
+下一次CUDA只复用已有WSL验证tree、tiny F2/page权限与native fence，不跑重型GPU/模型，
+不重启原停下的Windows大套件；若实际资源无法满足该约束，保未决门并推进独立事项。

@@ -1,0 +1,671 @@
+{
+  "candidate": "b42832de3ddda21bdc3e98ad4cc87e73622cbba4",
+  "summary": {
+    "candidate": "b42832de3ddda21bdc3e98ad4cc87e73622cbba4",
+    "stages": [
+      {
+        "route": "apple",
+        "mode": "static",
+        "command": [
+          "python3",
+          "/Users/kiro/hyle-scratch/compute-unified/g03-native-dirty-risk-stage/native_dirty_sdk_air.py",
+          "apple",
+          "static"
+        ],
+        "exit_code": 0,
+        "elapsed_seconds": 11.214250166,
+        "log": "/Users/kiro/hyle-scratch/compute-unified/g03-dirty-page-sdk/apple-static-1.log"
+      },
+      {
+        "route": "apple",
+        "mode": "shared",
+        "command": [
+          "python3",
+          "/Users/kiro/hyle-scratch/compute-unified/g03-native-dirty-risk-stage/native_dirty_sdk_air.py",
+          "apple",
+          "shared"
+        ],
+        "exit_code": 0,
+        "elapsed_seconds": 16.963407875,
+        "log": "/Users/kiro/hyle-scratch/compute-unified/g03-dirty-page-sdk/apple-shared-1.log"
+      },
+      {
+        "route": "vulkan",
+        "mode": "static",
+        "command": [
+          "python3",
+          "/Users/kiro/hyle-scratch/compute-unified/g03-native-dirty-risk-stage/native_dirty_sdk_air.py",
+          "vulkan",
+          "static"
+        ],
+        "exit_code": 0,
+        "elapsed_seconds": 12.354921291,
+        "log": "/Users/kiro/hyle-scratch/compute-unified/g03-dirty-page-sdk/vulkan-static-1.log"
+      },
+      {
+        "route": "vulkan",
+        "mode": "shared",
+        "command": [
+          "python3",
+          "/Users/kiro/hyle-scratch/compute-unified/g03-native-dirty-risk-stage/native_dirty_sdk_air.py",
+          "vulkan",
+          "shared"
+        ],
+        "exit_code": 0,
+        "elapsed_seconds": 18.353510207999996,
+        "log": "/Users/kiro/hyle-scratch/compute-unified/g03-dirty-page-sdk/vulkan-shared-1.log"
+      }
+    ],
+    "cumulative_seconds": 58.88608953999999
+  },
+  "SDKs": [
+    {
+      "route": "apple",
+      "mode": "static",
+      "record": {
+        "candidate": "b42832de3ddda21bdc3e98ad4cc87e73622cbba4",
+        "route": "apple",
+        "mode": "static",
+        "identity": {
+          "model": "Mac16,12",
+          "arch": "arm64",
+          "os": "ProductName:\t\tmacOS\nProductVersion:\t\t27.0.1\nBuildVersion:\t\t26A434",
+          "compiler": "Apple clang version 21.0.0 (clang-2100.3.34.2)\nTarget: arm64-apple-darwin27.0.0\nThread model: posix\nInstalledDir: /Library/Developer/CommandLineTools/usr/bin"
+        },
+        "scope": "relocated public hyle::compute only, CPU64 dirty numerical/permission proof and native64 GQA mixed prefill/decode growth F16/BF16/F16, four public headers; no internal products/hooks or oracle substitution",
+        "stages": [
+          {
+            "stage": "producer-build",
+            "command": [
+              "/opt/homebrew/bin/cmake",
+              "--build",
+              "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-build",
+              "--target",
+              "hyle_compute",
+              "hyle_compute_batch",
+              "hyle_compute_route_apple",
+              "--parallel",
+              "4"
+            ],
+            "exit_code": 0,
+            "elapsed_seconds": 6.2087925,
+            "log": "/Users/kiro/hyle-scratch/compute-unified/g03-dirty-page-apple-static-sdk/producer-build-1.log"
+          },
+          {
+            "stage": "install",
+            "command": [
+              "/opt/homebrew/bin/cmake",
+              "--install",
+              "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-build",
+              "--prefix",
+              "/Users/kiro/hyle-scratch/compute-unified/g03-dirty-page-apple-static-sdk/staging"
+            ],
+            "exit_code": 0,
+            "elapsed_seconds": 0.5095881249999996,
+            "log": "/Users/kiro/hyle-scratch/compute-unified/g03-dirty-page-apple-static-sdk/install-1.log"
+          },
+          {
+            "stage": "consumer-configure",
+            "command": [
+              "/opt/homebrew/bin/cmake",
+              "-S",
+              "/Users/kiro/hyle-scratch/compute-unified/g03-dirty-page-apple-static-sdk/consumer-source",
+              "-B",
+              "/Users/kiro/hyle-scratch/compute-unified/g03-dirty-page-apple-static-sdk/consumer-build",
+              "-G",
+              "Ninja",
+              "-DCMAKE_PREFIX_PATH=/Users/kiro/hyle-scratch/compute-unified/g03-dirty-page-apple-static-sdk/relocated",
+              "-DCMAKE_BUILD_TYPE=Release",
+              "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON"
+            ],
+            "exit_code": 0,
+            "elapsed_seconds": 1.333185417000001,
+            "log": "/Users/kiro/hyle-scratch/compute-unified/g03-dirty-page-apple-static-sdk/consumer-configure-1.log"
+          },
+          {
+            "stage": "consumer-build",
+            "command": [
+              "/opt/homebrew/bin/cmake",
+              "--build",
+              "/Users/kiro/hyle-scratch/compute-unified/g03-dirty-page-apple-static-sdk/consumer-build",
+              "--target",
+              "native",
+              "cpu",
+              "headers",
+              "--parallel",
+              "4"
+            ],
+            "exit_code": 0,
+            "elapsed_seconds": 1.5263168339999993,
+            "log": "/Users/kiro/hyle-scratch/compute-unified/g03-dirty-page-apple-static-sdk/consumer-build-1.log"
+          },
+          {
+            "stage": "native",
+            "command": [
+              "/Users/kiro/hyle-scratch/compute-unified/g03-dirty-page-apple-static-sdk/consumer-build/native"
+            ],
+            "exit_code": 0,
+            "elapsed_seconds": 1.1159823329999998,
+            "log": "/Users/kiro/hyle-scratch/compute-unified/g03-dirty-page-apple-static-sdk/native-1.log"
+          },
+          {
+            "stage": "cpu",
+            "command": [
+              "/Users/kiro/hyle-scratch/compute-unified/g03-dirty-page-apple-static-sdk/consumer-build/cpu"
+            ],
+            "exit_code": 0,
+            "elapsed_seconds": 0.47808166599999957,
+            "log": "/Users/kiro/hyle-scratch/compute-unified/g03-dirty-page-apple-static-sdk/cpu-1.log"
+          }
+        ],
+        "cumulative_seconds": 11.171946875
+      },
+      "public_compile_commands": [
+        {
+          "directory": "/Users/kiro/hyle-scratch/compute-unified/g03-dirty-page-apple-static-sdk/consumer-build",
+          "command": "/usr/bin/c++ -DHYLE_COMPUTE_APPLE=1 -DHYLE_COMPUTE_CPU=1 -DHYLE_COMPUTE_GGML_CPU=1 -DHYLE_DIRTY_PAGE_APPLE=1 -DHYLE_IO_HAS_COROUTINE_TRANSPORT=1 -DHYLE_STATIC -DMLX_STATIC -isystem /Users/kiro/hyle-scratch/compute-unified/g03-dirty-page-apple-static-sdk/relocated/include -isystem /Users/kiro/hyle-scratch/compute-unified/g03-dirty-page-apple-static-sdk/relocated/include/metal_cpp -O3 -DNDEBUG -std=gnu++23 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk -Wall -Wextra -Wpedantic -Werror -o CMakeFiles/native.dir/tests/compute_batch/dirty_page_native_consumer.cc.o -c /Users/kiro/hyle-scratch/compute-unified/g03-dirty-page-apple-static-sdk/consumer-source/tests/compute_batch/dirty_page_native_consumer.cc",
+          "file": "/Users/kiro/hyle-scratch/compute-unified/g03-dirty-page-apple-static-sdk/consumer-source/tests/compute_batch/dirty_page_native_consumer.cc",
+          "output": "/Users/kiro/hyle-scratch/compute-unified/g03-dirty-page-apple-static-sdk/consumer-build/CMakeFiles/native.dir/tests/compute_batch/dirty_page_native_consumer.cc.o"
+        },
+        {
+          "directory": "/Users/kiro/hyle-scratch/compute-unified/g03-dirty-page-apple-static-sdk/consumer-build",
+          "command": "/usr/bin/c++ -DHYLE_COMPUTE_APPLE=1 -DHYLE_COMPUTE_CPU=1 -DHYLE_COMPUTE_GGML_CPU=1 -DHYLE_IO_HAS_COROUTINE_TRANSPORT=1 -DHYLE_STATIC -DMLX_STATIC -isystem /Users/kiro/hyle-scratch/compute-unified/g03-dirty-page-apple-static-sdk/relocated/include -isystem /Users/kiro/hyle-scratch/compute-unified/g03-dirty-page-apple-static-sdk/relocated/include/metal_cpp -O3 -DNDEBUG -std=gnu++23 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk -Wall -Wextra -Wpedantic -Werror -o CMakeFiles/cpu.dir/tests/compute_batch/dirty_page_public_consumer.cc.o -c /Users/kiro/hyle-scratch/compute-unified/g03-dirty-page-apple-static-sdk/consumer-source/tests/compute_batch/dirty_page_public_consumer.cc",
+          "file": "/Users/kiro/hyle-scratch/compute-unified/g03-dirty-page-apple-static-sdk/consumer-source/tests/compute_batch/dirty_page_public_consumer.cc",
+          "output": "/Users/kiro/hyle-scratch/compute-unified/g03-dirty-page-apple-static-sdk/consumer-build/CMakeFiles/cpu.dir/tests/compute_batch/dirty_page_public_consumer.cc.o"
+        },
+        {
+          "directory": "/Users/kiro/hyle-scratch/compute-unified/g03-dirty-page-apple-static-sdk/consumer-build",
+          "command": "/usr/bin/c++ -DHYLE_COMPUTE_APPLE=1 -DHYLE_COMPUTE_CPU=1 -DHYLE_COMPUTE_GGML_CPU=1 -DHYLE_IO_HAS_COROUTINE_TRANSPORT=1 -DHYLE_STATIC -DMLX_STATIC -isystem /Users/kiro/hyle-scratch/compute-unified/g03-dirty-page-apple-static-sdk/relocated/include -isystem /Users/kiro/hyle-scratch/compute-unified/g03-dirty-page-apple-static-sdk/relocated/include/metal_cpp -O3 -DNDEBUG -std=gnu++23 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk -Wall -Wextra -Wpedantic -Werror -o CMakeFiles/headers.dir/header-0.cc.o -c /Users/kiro/hyle-scratch/compute-unified/g03-dirty-page-apple-static-sdk/consumer-source/header-0.cc",
+          "file": "/Users/kiro/hyle-scratch/compute-unified/g03-dirty-page-apple-static-sdk/consumer-source/header-0.cc",
+          "output": "/Users/kiro/hyle-scratch/compute-unified/g03-dirty-page-apple-static-sdk/consumer-build/CMakeFiles/headers.dir/header-0.cc.o"
+        },
+        {
+          "directory": "/Users/kiro/hyle-scratch/compute-unified/g03-dirty-page-apple-static-sdk/consumer-build",
+          "command": "/usr/bin/c++ -DHYLE_COMPUTE_APPLE=1 -DHYLE_COMPUTE_CPU=1 -DHYLE_COMPUTE_GGML_CPU=1 -DHYLE_IO_HAS_COROUTINE_TRANSPORT=1 -DHYLE_STATIC -DMLX_STATIC -isystem /Users/kiro/hyle-scratch/compute-unified/g03-dirty-page-apple-static-sdk/relocated/include -isystem /Users/kiro/hyle-scratch/compute-unified/g03-dirty-page-apple-static-sdk/relocated/include/metal_cpp -O3 -DNDEBUG -std=gnu++23 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk -Wall -Wextra -Wpedantic -Werror -o CMakeFiles/headers.dir/header-1.cc.o -c /Users/kiro/hyle-scratch/compute-unified/g03-dirty-page-apple-static-sdk/consumer-source/header-1.cc",
+          "file": "/Users/kiro/hyle-scratch/compute-unified/g03-dirty-page-apple-static-sdk/consumer-source/header-1.cc",
+          "output": "/Users/kiro/hyle-scratch/compute-unified/g03-dirty-page-apple-static-sdk/consumer-build/CMakeFiles/headers.dir/header-1.cc.o"
+        },
+        {
+          "directory": "/Users/kiro/hyle-scratch/compute-unified/g03-dirty-page-apple-static-sdk/consumer-build",
+          "command": "/usr/bin/c++ -DHYLE_COMPUTE_APPLE=1 -DHYLE_COMPUTE_CPU=1 -DHYLE_COMPUTE_GGML_CPU=1 -DHYLE_IO_HAS_COROUTINE_TRANSPORT=1 -DHYLE_STATIC -DMLX_STATIC -isystem /Users/kiro/hyle-scratch/compute-unified/g03-dirty-page-apple-static-sdk/relocated/include -isystem /Users/kiro/hyle-scratch/compute-unified/g03-dirty-page-apple-static-sdk/relocated/include/metal_cpp -O3 -DNDEBUG -std=gnu++23 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk -Wall -Wextra -Wpedantic -Werror -o CMakeFiles/headers.dir/header-2.cc.o -c /Users/kiro/hyle-scratch/compute-unified/g03-dirty-page-apple-static-sdk/consumer-source/header-2.cc",
+          "file": "/Users/kiro/hyle-scratch/compute-unified/g03-dirty-page-apple-static-sdk/consumer-source/header-2.cc",
+          "output": "/Users/kiro/hyle-scratch/compute-unified/g03-dirty-page-apple-static-sdk/consumer-build/CMakeFiles/headers.dir/header-2.cc.o"
+        },
+        {
+          "directory": "/Users/kiro/hyle-scratch/compute-unified/g03-dirty-page-apple-static-sdk/consumer-build",
+          "command": "/usr/bin/c++ -DHYLE_COMPUTE_APPLE=1 -DHYLE_COMPUTE_CPU=1 -DHYLE_COMPUTE_GGML_CPU=1 -DHYLE_IO_HAS_COROUTINE_TRANSPORT=1 -DHYLE_STATIC -DMLX_STATIC -isystem /Users/kiro/hyle-scratch/compute-unified/g03-dirty-page-apple-static-sdk/relocated/include -isystem /Users/kiro/hyle-scratch/compute-unified/g03-dirty-page-apple-static-sdk/relocated/include/metal_cpp -O3 -DNDEBUG -std=gnu++23 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk -Wall -Wextra -Wpedantic -Werror -o CMakeFiles/headers.dir/header-3.cc.o -c /Users/kiro/hyle-scratch/compute-unified/g03-dirty-page-apple-static-sdk/consumer-source/header-3.cc",
+          "file": "/Users/kiro/hyle-scratch/compute-unified/g03-dirty-page-apple-static-sdk/consumer-source/header-3.cc",
+          "output": "/Users/kiro/hyle-scratch/compute-unified/g03-dirty-page-apple-static-sdk/consumer-build/CMakeFiles/headers.dir/header-3.cc.o"
+        }
+      ],
+      "unmodified_inputs": [
+        {
+          "path": "tests/compute_batch/dirty_page_native_consumer.cc",
+          "sha256": "6362615b6d85cc80475173daef2eb83c26bde24457462a29e7c967c87eff8eb6",
+          "unmodified": true
+        },
+        {
+          "path": "tests/compute_batch/dirty_page_public_consumer.cc",
+          "sha256": "a0733a186749e5ce33c6fd1ed28b3a623440f826cf2183be1b4ff4e19e6b6ae4",
+          "unmodified": true
+        }
+      ]
+    },
+    {
+      "route": "apple",
+      "mode": "shared",
+      "record": {
+        "candidate": "b42832de3ddda21bdc3e98ad4cc87e73622cbba4",
+        "route": "apple",
+        "mode": "shared",
+        "identity": {
+          "model": "Mac16,12",
+          "arch": "arm64",
+          "os": "ProductName:\t\tmacOS\nProductVersion:\t\t27.0.1\nBuildVersion:\t\t26A434",
+          "compiler": "Apple clang version 21.0.0 (clang-2100.3.34.2)\nTarget: arm64-apple-darwin27.0.0\nThread model: posix\nInstalledDir: /Library/Developer/CommandLineTools/usr/bin"
+        },
+        "scope": "relocated public hyle::compute only, CPU64 dirty numerical/permission proof and native64 GQA mixed prefill/decode growth F16/BF16/F16, four public headers; no internal products/hooks or oracle substitution",
+        "stages": [
+          {
+            "stage": "producer-build",
+            "command": [
+              "/opt/homebrew/bin/cmake",
+              "--build",
+              "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-build",
+              "--target",
+              "hyle_compute",
+              "hyle_compute_batch",
+              "hyle_compute_route_apple",
+              "--parallel",
+              "4"
+            ],
+            "exit_code": 0,
+            "elapsed_seconds": 6.271366291,
+            "log": "/Users/kiro/hyle-scratch/compute-unified/g03-dirty-page-apple-shared-sdk/producer-build-1.log"
+          },
+          {
+            "stage": "install",
+            "command": [
+              "/opt/homebrew/bin/cmake",
+              "--install",
+              "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-build",
+              "--prefix",
+              "/Users/kiro/hyle-scratch/compute-unified/g03-dirty-page-apple-shared-sdk/staging"
+            ],
+            "exit_code": 0,
+            "elapsed_seconds": 0.378574875,
+            "log": "/Users/kiro/hyle-scratch/compute-unified/g03-dirty-page-apple-shared-sdk/install-1.log"
+          },
+          {
+            "stage": "consumer-configure",
+            "command": [
+              "/opt/homebrew/bin/cmake",
+              "-S",
+              "/Users/kiro/hyle-scratch/compute-unified/g03-dirty-page-apple-shared-sdk/consumer-source",
+              "-B",
+              "/Users/kiro/hyle-scratch/compute-unified/g03-dirty-page-apple-shared-sdk/consumer-build",
+              "-G",
+              "Ninja",
+              "-DCMAKE_PREFIX_PATH=/Users/kiro/hyle-scratch/compute-unified/g03-dirty-page-apple-shared-sdk/relocated",
+              "-DCMAKE_BUILD_TYPE=Release",
+              "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON"
+            ],
+            "exit_code": 0,
+            "elapsed_seconds": 1.2601074159999994,
+            "log": "/Users/kiro/hyle-scratch/compute-unified/g03-dirty-page-apple-shared-sdk/consumer-configure-1.log"
+          },
+          {
+            "stage": "consumer-build",
+            "command": [
+              "/opt/homebrew/bin/cmake",
+              "--build",
+              "/Users/kiro/hyle-scratch/compute-unified/g03-dirty-page-apple-shared-sdk/consumer-build",
+              "--target",
+              "native",
+              "cpu",
+              "headers",
+              "--parallel",
+              "4"
+            ],
+            "exit_code": 0,
+            "elapsed_seconds": 1.5217631669999996,
+            "log": "/Users/kiro/hyle-scratch/compute-unified/g03-dirty-page-apple-shared-sdk/consumer-build-1.log"
+          },
+          {
+            "stage": "native",
+            "command": [
+              "/Users/kiro/hyle-scratch/compute-unified/g03-dirty-page-apple-shared-sdk/consumer-build/native"
+            ],
+            "exit_code": 0,
+            "elapsed_seconds": 7.077585792000001,
+            "log": "/Users/kiro/hyle-scratch/compute-unified/g03-dirty-page-apple-shared-sdk/native-1.log"
+          },
+          {
+            "stage": "cpu",
+            "command": [
+              "/Users/kiro/hyle-scratch/compute-unified/g03-dirty-page-apple-shared-sdk/consumer-build/cpu"
+            ],
+            "exit_code": 0,
+            "elapsed_seconds": 0.4078570829999997,
+            "log": "/Users/kiro/hyle-scratch/compute-unified/g03-dirty-page-apple-shared-sdk/cpu-1.log"
+          }
+        ],
+        "cumulative_seconds": 16.917254623999998
+      },
+      "public_compile_commands": [
+        {
+          "directory": "/Users/kiro/hyle-scratch/compute-unified/g03-dirty-page-apple-shared-sdk/consumer-build",
+          "command": "/usr/bin/c++ -DHYLE_COMPUTE_APPLE=1 -DHYLE_COMPUTE_CPU=1 -DHYLE_COMPUTE_GGML_CPU=1 -DHYLE_DIRTY_PAGE_APPLE=1 -DHYLE_IO_HAS_COROUTINE_TRANSPORT=1 -isystem /Users/kiro/hyle-scratch/compute-unified/g03-dirty-page-apple-shared-sdk/relocated/include -isystem /Users/kiro/hyle-scratch/compute-unified/g03-dirty-page-apple-shared-sdk/relocated/include/metal_cpp -O3 -DNDEBUG -std=gnu++23 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk -Wall -Wextra -Wpedantic -Werror -o CMakeFiles/native.dir/tests/compute_batch/dirty_page_native_consumer.cc.o -c /Users/kiro/hyle-scratch/compute-unified/g03-dirty-page-apple-shared-sdk/consumer-source/tests/compute_batch/dirty_page_native_consumer.cc",
+          "file": "/Users/kiro/hyle-scratch/compute-unified/g03-dirty-page-apple-shared-sdk/consumer-source/tests/compute_batch/dirty_page_native_consumer.cc",
+          "output": "/Users/kiro/hyle-scratch/compute-unified/g03-dirty-page-apple-shared-sdk/consumer-build/CMakeFiles/native.dir/tests/compute_batch/dirty_page_native_consumer.cc.o"
+        },
+        {
+          "directory": "/Users/kiro/hyle-scratch/compute-unified/g03-dirty-page-apple-shared-sdk/consumer-build",
+          "command": "/usr/bin/c++ -DHYLE_COMPUTE_APPLE=1 -DHYLE_COMPUTE_CPU=1 -DHYLE_COMPUTE_GGML_CPU=1 -DHYLE_IO_HAS_COROUTINE_TRANSPORT=1 -isystem /Users/kiro/hyle-scratch/compute-unified/g03-dirty-page-apple-shared-sdk/relocated/include -isystem /Users/kiro/hyle-scratch/compute-unified/g03-dirty-page-apple-shared-sdk/relocated/include/metal_cpp -O3 -DNDEBUG -std=gnu++23 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk -Wall -Wextra -Wpedantic -Werror -o CMakeFiles/cpu.dir/tests/compute_batch/dirty_page_public_consumer.cc.o -c /Users/kiro/hyle-scratch/compute-unified/g03-dirty-page-apple-shared-sdk/consumer-source/tests/compute_batch/dirty_page_public_consumer.cc",
+          "file": "/Users/kiro/hyle-scratch/compute-unified/g03-dirty-page-apple-shared-sdk/consumer-source/tests/compute_batch/dirty_page_public_consumer.cc",
+          "output": "/Users/kiro/hyle-scratch/compute-unified/g03-dirty-page-apple-shared-sdk/consumer-build/CMakeFiles/cpu.dir/tests/compute_batch/dirty_page_public_consumer.cc.o"
+        },
+        {
+          "directory": "/Users/kiro/hyle-scratch/compute-unified/g03-dirty-page-apple-shared-sdk/consumer-build",
+          "command": "/usr/bin/c++ -DHYLE_COMPUTE_APPLE=1 -DHYLE_COMPUTE_CPU=1 -DHYLE_COMPUTE_GGML_CPU=1 -DHYLE_IO_HAS_COROUTINE_TRANSPORT=1 -isystem /Users/kiro/hyle-scratch/compute-unified/g03-dirty-page-apple-shared-sdk/relocated/include -isystem /Users/kiro/hyle-scratch/compute-unified/g03-dirty-page-apple-shared-sdk/relocated/include/metal_cpp -O3 -DNDEBUG -std=gnu++23 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk -Wall -Wextra -Wpedantic -Werror -o CMakeFiles/headers.dir/header-0.cc.o -c /Users/kiro/hyle-scratch/compute-unified/g03-dirty-page-apple-shared-sdk/consumer-source/header-0.cc",
+          "file": "/Users/kiro/hyle-scratch/compute-unified/g03-dirty-page-apple-shared-sdk/consumer-source/header-0.cc",
+          "output": "/Users/kiro/hyle-scratch/compute-unified/g03-dirty-page-apple-shared-sdk/consumer-build/CMakeFiles/headers.dir/header-0.cc.o"
+        },
+        {
+          "directory": "/Users/kiro/hyle-scratch/compute-unified/g03-dirty-page-apple-shared-sdk/consumer-build",
+          "command": "/usr/bin/c++ -DHYLE_COMPUTE_APPLE=1 -DHYLE_COMPUTE_CPU=1 -DHYLE_COMPUTE_GGML_CPU=1 -DHYLE_IO_HAS_COROUTINE_TRANSPORT=1 -isystem /Users/kiro/hyle-scratch/compute-unified/g03-dirty-page-apple-shared-sdk/relocated/include -isystem /Users/kiro/hyle-scratch/compute-unified/g03-dirty-page-apple-shared-sdk/relocated/include/metal_cpp -O3 -DNDEBUG -std=gnu++23 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk -Wall -Wextra -Wpedantic -Werror -o CMakeFiles/headers.dir/header-1.cc.o -c /Users/kiro/hyle-scratch/compute-unified/g03-dirty-page-apple-shared-sdk/consumer-source/header-1.cc",
+          "file": "/Users/kiro/hyle-scratch/compute-unified/g03-dirty-page-apple-shared-sdk/consumer-source/header-1.cc",
+          "output": "/Users/kiro/hyle-scratch/compute-unified/g03-dirty-page-apple-shared-sdk/consumer-build/CMakeFiles/headers.dir/header-1.cc.o"
+        },
+        {
+          "directory": "/Users/kiro/hyle-scratch/compute-unified/g03-dirty-page-apple-shared-sdk/consumer-build",
+          "command": "/usr/bin/c++ -DHYLE_COMPUTE_APPLE=1 -DHYLE_COMPUTE_CPU=1 -DHYLE_COMPUTE_GGML_CPU=1 -DHYLE_IO_HAS_COROUTINE_TRANSPORT=1 -isystem /Users/kiro/hyle-scratch/compute-unified/g03-dirty-page-apple-shared-sdk/relocated/include -isystem /Users/kiro/hyle-scratch/compute-unified/g03-dirty-page-apple-shared-sdk/relocated/include/metal_cpp -O3 -DNDEBUG -std=gnu++23 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk -Wall -Wextra -Wpedantic -Werror -o CMakeFiles/headers.dir/header-2.cc.o -c /Users/kiro/hyle-scratch/compute-unified/g03-dirty-page-apple-shared-sdk/consumer-source/header-2.cc",
+          "file": "/Users/kiro/hyle-scratch/compute-unified/g03-dirty-page-apple-shared-sdk/consumer-source/header-2.cc",
+          "output": "/Users/kiro/hyle-scratch/compute-unified/g03-dirty-page-apple-shared-sdk/consumer-build/CMakeFiles/headers.dir/header-2.cc.o"
+        },
+        {
+          "directory": "/Users/kiro/hyle-scratch/compute-unified/g03-dirty-page-apple-shared-sdk/consumer-build",
+          "command": "/usr/bin/c++ -DHYLE_COMPUTE_APPLE=1 -DHYLE_COMPUTE_CPU=1 -DHYLE_COMPUTE_GGML_CPU=1 -DHYLE_IO_HAS_COROUTINE_TRANSPORT=1 -isystem /Users/kiro/hyle-scratch/compute-unified/g03-dirty-page-apple-shared-sdk/relocated/include -isystem /Users/kiro/hyle-scratch/compute-unified/g03-dirty-page-apple-shared-sdk/relocated/include/metal_cpp -O3 -DNDEBUG -std=gnu++23 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk -Wall -Wextra -Wpedantic -Werror -o CMakeFiles/headers.dir/header-3.cc.o -c /Users/kiro/hyle-scratch/compute-unified/g03-dirty-page-apple-shared-sdk/consumer-source/header-3.cc",
+          "file": "/Users/kiro/hyle-scratch/compute-unified/g03-dirty-page-apple-shared-sdk/consumer-source/header-3.cc",
+          "output": "/Users/kiro/hyle-scratch/compute-unified/g03-dirty-page-apple-shared-sdk/consumer-build/CMakeFiles/headers.dir/header-3.cc.o"
+        }
+      ],
+      "unmodified_inputs": [
+        {
+          "path": "tests/compute_batch/dirty_page_native_consumer.cc",
+          "sha256": "6362615b6d85cc80475173daef2eb83c26bde24457462a29e7c967c87eff8eb6",
+          "unmodified": true
+        },
+        {
+          "path": "tests/compute_batch/dirty_page_public_consumer.cc",
+          "sha256": "a0733a186749e5ce33c6fd1ed28b3a623440f826cf2183be1b4ff4e19e6b6ae4",
+          "unmodified": true
+        }
+      ]
+    },
+    {
+      "route": "vulkan",
+      "mode": "static",
+      "record": {
+        "candidate": "b42832de3ddda21bdc3e98ad4cc87e73622cbba4",
+        "route": "vulkan",
+        "mode": "static",
+        "identity": {
+          "model": "Mac16,12",
+          "arch": "arm64",
+          "os": "ProductName:\t\tmacOS\nProductVersion:\t\t27.0.1\nBuildVersion:\t\t26A434",
+          "compiler": "Apple clang version 21.0.0 (clang-2100.3.34.2)\nTarget: arm64-apple-darwin27.0.0\nThread model: posix\nInstalledDir: /Library/Developer/CommandLineTools/usr/bin"
+        },
+        "scope": "relocated public hyle::compute only, CPU64 dirty numerical/permission proof and native64 GQA mixed prefill/decode growth F16/BF16/F16, four public headers; no internal products/hooks or oracle substitution",
+        "stages": [
+          {
+            "stage": "producer-build",
+            "command": [
+              "/opt/homebrew/bin/cmake",
+              "--build",
+              "/Users/kiro/hyle-scratch/compute-unified/a-cpu-vulkan/selected-graph/static-sdk-build",
+              "--target",
+              "hyle_compute",
+              "hyle_compute_batch",
+              "hyle_compute_route_vulkan",
+              "--parallel",
+              "4"
+            ],
+            "exit_code": 0,
+            "elapsed_seconds": 7.627520167,
+            "log": "/Users/kiro/hyle-scratch/compute-unified/g03-dirty-page-vulkan-static-sdk/producer-build-1.log"
+          },
+          {
+            "stage": "install",
+            "command": [
+              "/opt/homebrew/bin/cmake",
+              "--install",
+              "/Users/kiro/hyle-scratch/compute-unified/a-cpu-vulkan/selected-graph/static-sdk-build",
+              "--prefix",
+              "/Users/kiro/hyle-scratch/compute-unified/g03-dirty-page-vulkan-static-sdk/staging"
+            ],
+            "exit_code": 0,
+            "elapsed_seconds": 0.5113395839999999,
+            "log": "/Users/kiro/hyle-scratch/compute-unified/g03-dirty-page-vulkan-static-sdk/install-1.log"
+          },
+          {
+            "stage": "consumer-configure",
+            "command": [
+              "/opt/homebrew/bin/cmake",
+              "-S",
+              "/Users/kiro/hyle-scratch/compute-unified/g03-dirty-page-vulkan-static-sdk/consumer-source",
+              "-B",
+              "/Users/kiro/hyle-scratch/compute-unified/g03-dirty-page-vulkan-static-sdk/consumer-build",
+              "-G",
+              "Ninja",
+              "-DCMAKE_PREFIX_PATH=/Users/kiro/hyle-scratch/compute-unified/g03-dirty-page-vulkan-static-sdk/relocated",
+              "-DCMAKE_BUILD_TYPE=Release",
+              "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON"
+            ],
+            "exit_code": 0,
+            "elapsed_seconds": 1.328825041,
+            "log": "/Users/kiro/hyle-scratch/compute-unified/g03-dirty-page-vulkan-static-sdk/consumer-configure-1.log"
+          },
+          {
+            "stage": "consumer-build",
+            "command": [
+              "/opt/homebrew/bin/cmake",
+              "--build",
+              "/Users/kiro/hyle-scratch/compute-unified/g03-dirty-page-vulkan-static-sdk/consumer-build",
+              "--target",
+              "native",
+              "cpu",
+              "headers",
+              "--parallel",
+              "4"
+            ],
+            "exit_code": 0,
+            "elapsed_seconds": 0.9324532079999983,
+            "log": "/Users/kiro/hyle-scratch/compute-unified/g03-dirty-page-vulkan-static-sdk/consumer-build-1.log"
+          },
+          {
+            "stage": "native",
+            "command": [
+              "/Users/kiro/hyle-scratch/compute-unified/g03-dirty-page-vulkan-static-sdk/consumer-build/native"
+            ],
+            "exit_code": 0,
+            "elapsed_seconds": 1.499713667,
+            "log": "/Users/kiro/hyle-scratch/compute-unified/g03-dirty-page-vulkan-static-sdk/native-1.log"
+          },
+          {
+            "stage": "cpu",
+            "command": [
+              "/Users/kiro/hyle-scratch/compute-unified/g03-dirty-page-vulkan-static-sdk/consumer-build/cpu"
+            ],
+            "exit_code": 0,
+            "elapsed_seconds": 0.4112129170000003,
+            "log": "/Users/kiro/hyle-scratch/compute-unified/g03-dirty-page-vulkan-static-sdk/cpu-1.log"
+          }
+        ],
+        "cumulative_seconds": 12.311064583999999
+      },
+      "public_compile_commands": [
+        {
+          "directory": "/Users/kiro/hyle-scratch/compute-unified/g03-dirty-page-vulkan-static-sdk/consumer-build",
+          "command": "/usr/bin/c++ -DHYLE_COMPUTE_CPU=1 -DHYLE_COMPUTE_GGML_CPU=1 -DHYLE_COMPUTE_VULKAN=1 -DHYLE_IO_HAS_COROUTINE_TRANSPORT=1 -DHYLE_STATIC -isystem /Users/kiro/hyle-scratch/compute-unified/g03-dirty-page-vulkan-static-sdk/relocated/include -O3 -DNDEBUG -std=gnu++23 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk -Wall -Wextra -Wpedantic -Werror -o CMakeFiles/native.dir/tests/compute_batch/dirty_page_native_consumer.cc.o -c /Users/kiro/hyle-scratch/compute-unified/g03-dirty-page-vulkan-static-sdk/consumer-source/tests/compute_batch/dirty_page_native_consumer.cc",
+          "file": "/Users/kiro/hyle-scratch/compute-unified/g03-dirty-page-vulkan-static-sdk/consumer-source/tests/compute_batch/dirty_page_native_consumer.cc",
+          "output": "/Users/kiro/hyle-scratch/compute-unified/g03-dirty-page-vulkan-static-sdk/consumer-build/CMakeFiles/native.dir/tests/compute_batch/dirty_page_native_consumer.cc.o"
+        },
+        {
+          "directory": "/Users/kiro/hyle-scratch/compute-unified/g03-dirty-page-vulkan-static-sdk/consumer-build",
+          "command": "/usr/bin/c++ -DHYLE_COMPUTE_CPU=1 -DHYLE_COMPUTE_GGML_CPU=1 -DHYLE_COMPUTE_VULKAN=1 -DHYLE_IO_HAS_COROUTINE_TRANSPORT=1 -DHYLE_STATIC -isystem /Users/kiro/hyle-scratch/compute-unified/g03-dirty-page-vulkan-static-sdk/relocated/include -O3 -DNDEBUG -std=gnu++23 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk -Wall -Wextra -Wpedantic -Werror -o CMakeFiles/cpu.dir/tests/compute_batch/dirty_page_public_consumer.cc.o -c /Users/kiro/hyle-scratch/compute-unified/g03-dirty-page-vulkan-static-sdk/consumer-source/tests/compute_batch/dirty_page_public_consumer.cc",
+          "file": "/Users/kiro/hyle-scratch/compute-unified/g03-dirty-page-vulkan-static-sdk/consumer-source/tests/compute_batch/dirty_page_public_consumer.cc",
+          "output": "/Users/kiro/hyle-scratch/compute-unified/g03-dirty-page-vulkan-static-sdk/consumer-build/CMakeFiles/cpu.dir/tests/compute_batch/dirty_page_public_consumer.cc.o"
+        },
+        {
+          "directory": "/Users/kiro/hyle-scratch/compute-unified/g03-dirty-page-vulkan-static-sdk/consumer-build",
+          "command": "/usr/bin/c++ -DHYLE_COMPUTE_CPU=1 -DHYLE_COMPUTE_GGML_CPU=1 -DHYLE_COMPUTE_VULKAN=1 -DHYLE_IO_HAS_COROUTINE_TRANSPORT=1 -DHYLE_STATIC -isystem /Users/kiro/hyle-scratch/compute-unified/g03-dirty-page-vulkan-static-sdk/relocated/include -O3 -DNDEBUG -std=gnu++23 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk -Wall -Wextra -Wpedantic -Werror -o CMakeFiles/headers.dir/header-0.cc.o -c /Users/kiro/hyle-scratch/compute-unified/g03-dirty-page-vulkan-static-sdk/consumer-source/header-0.cc",
+          "file": "/Users/kiro/hyle-scratch/compute-unified/g03-dirty-page-vulkan-static-sdk/consumer-source/header-0.cc",
+          "output": "/Users/kiro/hyle-scratch/compute-unified/g03-dirty-page-vulkan-static-sdk/consumer-build/CMakeFiles/headers.dir/header-0.cc.o"
+        },
+        {
+          "directory": "/Users/kiro/hyle-scratch/compute-unified/g03-dirty-page-vulkan-static-sdk/consumer-build",
+          "command": "/usr/bin/c++ -DHYLE_COMPUTE_CPU=1 -DHYLE_COMPUTE_GGML_CPU=1 -DHYLE_COMPUTE_VULKAN=1 -DHYLE_IO_HAS_COROUTINE_TRANSPORT=1 -DHYLE_STATIC -isystem /Users/kiro/hyle-scratch/compute-unified/g03-dirty-page-vulkan-static-sdk/relocated/include -O3 -DNDEBUG -std=gnu++23 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk -Wall -Wextra -Wpedantic -Werror -o CMakeFiles/headers.dir/header-1.cc.o -c /Users/kiro/hyle-scratch/compute-unified/g03-dirty-page-vulkan-static-sdk/consumer-source/header-1.cc",
+          "file": "/Users/kiro/hyle-scratch/compute-unified/g03-dirty-page-vulkan-static-sdk/consumer-source/header-1.cc",
+          "output": "/Users/kiro/hyle-scratch/compute-unified/g03-dirty-page-vulkan-static-sdk/consumer-build/CMakeFiles/headers.dir/header-1.cc.o"
+        },
+        {
+          "directory": "/Users/kiro/hyle-scratch/compute-unified/g03-dirty-page-vulkan-static-sdk/consumer-build",
+          "command": "/usr/bin/c++ -DHYLE_COMPUTE_CPU=1 -DHYLE_COMPUTE_GGML_CPU=1 -DHYLE_COMPUTE_VULKAN=1 -DHYLE_IO_HAS_COROUTINE_TRANSPORT=1 -DHYLE_STATIC -isystem /Users/kiro/hyle-scratch/compute-unified/g03-dirty-page-vulkan-static-sdk/relocated/include -O3 -DNDEBUG -std=gnu++23 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk -Wall -Wextra -Wpedantic -Werror -o CMakeFiles/headers.dir/header-2.cc.o -c /Users/kiro/hyle-scratch/compute-unified/g03-dirty-page-vulkan-static-sdk/consumer-source/header-2.cc",
+          "file": "/Users/kiro/hyle-scratch/compute-unified/g03-dirty-page-vulkan-static-sdk/consumer-source/header-2.cc",
+          "output": "/Users/kiro/hyle-scratch/compute-unified/g03-dirty-page-vulkan-static-sdk/consumer-build/CMakeFiles/headers.dir/header-2.cc.o"
+        },
+        {
+          "directory": "/Users/kiro/hyle-scratch/compute-unified/g03-dirty-page-vulkan-static-sdk/consumer-build",
+          "command": "/usr/bin/c++ -DHYLE_COMPUTE_CPU=1 -DHYLE_COMPUTE_GGML_CPU=1 -DHYLE_COMPUTE_VULKAN=1 -DHYLE_IO_HAS_COROUTINE_TRANSPORT=1 -DHYLE_STATIC -isystem /Users/kiro/hyle-scratch/compute-unified/g03-dirty-page-vulkan-static-sdk/relocated/include -O3 -DNDEBUG -std=gnu++23 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk -Wall -Wextra -Wpedantic -Werror -o CMakeFiles/headers.dir/header-3.cc.o -c /Users/kiro/hyle-scratch/compute-unified/g03-dirty-page-vulkan-static-sdk/consumer-source/header-3.cc",
+          "file": "/Users/kiro/hyle-scratch/compute-unified/g03-dirty-page-vulkan-static-sdk/consumer-source/header-3.cc",
+          "output": "/Users/kiro/hyle-scratch/compute-unified/g03-dirty-page-vulkan-static-sdk/consumer-build/CMakeFiles/headers.dir/header-3.cc.o"
+        }
+      ],
+      "unmodified_inputs": [
+        {
+          "path": "tests/compute_batch/dirty_page_native_consumer.cc",
+          "sha256": "6362615b6d85cc80475173daef2eb83c26bde24457462a29e7c967c87eff8eb6",
+          "unmodified": true
+        },
+        {
+          "path": "tests/compute_batch/dirty_page_public_consumer.cc",
+          "sha256": "a0733a186749e5ce33c6fd1ed28b3a623440f826cf2183be1b4ff4e19e6b6ae4",
+          "unmodified": true
+        }
+      ]
+    },
+    {
+      "route": "vulkan",
+      "mode": "shared",
+      "record": {
+        "candidate": "b42832de3ddda21bdc3e98ad4cc87e73622cbba4",
+        "route": "vulkan",
+        "mode": "shared",
+        "identity": {
+          "model": "Mac16,12",
+          "arch": "arm64",
+          "os": "ProductName:\t\tmacOS\nProductVersion:\t\t27.0.1\nBuildVersion:\t\t26A434",
+          "compiler": "Apple clang version 21.0.0 (clang-2100.3.34.2)\nTarget: arm64-apple-darwin27.0.0\nThread model: posix\nInstalledDir: /Library/Developer/CommandLineTools/usr/bin"
+        },
+        "scope": "relocated public hyle::compute only, CPU64 dirty numerical/permission proof and native64 GQA mixed prefill/decode growth F16/BF16/F16, four public headers; no internal products/hooks or oracle substitution",
+        "stages": [
+          {
+            "stage": "producer-build",
+            "command": [
+              "/opt/homebrew/bin/cmake",
+              "--build",
+              "/Users/kiro/hyle-scratch/compute-unified/a-cpu-vulkan/selected-graph/shared-sdk-build",
+              "--target",
+              "hyle_compute",
+              "hyle_compute_batch",
+              "hyle_compute_route_vulkan",
+              "--parallel",
+              "4"
+            ],
+            "exit_code": 0,
+            "elapsed_seconds": 7.85920925,
+            "log": "/Users/kiro/hyle-scratch/compute-unified/g03-dirty-page-vulkan-shared-sdk/producer-build-1.log"
+          },
+          {
+            "stage": "install",
+            "command": [
+              "/opt/homebrew/bin/cmake",
+              "--install",
+              "/Users/kiro/hyle-scratch/compute-unified/a-cpu-vulkan/selected-graph/shared-sdk-build",
+              "--prefix",
+              "/Users/kiro/hyle-scratch/compute-unified/g03-dirty-page-vulkan-shared-sdk/staging"
+            ],
+            "exit_code": 0,
+            "elapsed_seconds": 0.48442120799999966,
+            "log": "/Users/kiro/hyle-scratch/compute-unified/g03-dirty-page-vulkan-shared-sdk/install-1.log"
+          },
+          {
+            "stage": "consumer-configure",
+            "command": [
+              "/opt/homebrew/bin/cmake",
+              "-S",
+              "/Users/kiro/hyle-scratch/compute-unified/g03-dirty-page-vulkan-shared-sdk/consumer-source",
+              "-B",
+              "/Users/kiro/hyle-scratch/compute-unified/g03-dirty-page-vulkan-shared-sdk/consumer-build",
+              "-G",
+              "Ninja",
+              "-DCMAKE_PREFIX_PATH=/Users/kiro/hyle-scratch/compute-unified/g03-dirty-page-vulkan-shared-sdk/relocated",
+              "-DCMAKE_BUILD_TYPE=Release",
+              "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON"
+            ],
+            "exit_code": 0,
+            "elapsed_seconds": 1.2635299159999995,
+            "log": "/Users/kiro/hyle-scratch/compute-unified/g03-dirty-page-vulkan-shared-sdk/consumer-configure-1.log"
+          },
+          {
+            "stage": "consumer-build",
+            "command": [
+              "/opt/homebrew/bin/cmake",
+              "--build",
+              "/Users/kiro/hyle-scratch/compute-unified/g03-dirty-page-vulkan-shared-sdk/consumer-build",
+              "--target",
+              "native",
+              "cpu",
+              "headers",
+              "--parallel",
+              "4"
+            ],
+            "exit_code": 0,
+            "elapsed_seconds": 0.8719687500000006,
+            "log": "/Users/kiro/hyle-scratch/compute-unified/g03-dirty-page-vulkan-shared-sdk/consumer-build-1.log"
+          },
+          {
+            "stage": "native",
+            "command": [
+              "/Users/kiro/hyle-scratch/compute-unified/g03-dirty-page-vulkan-shared-sdk/consumer-build/native"
+            ],
+            "exit_code": 0,
+            "elapsed_seconds": 7.420809125000002,
+            "log": "/Users/kiro/hyle-scratch/compute-unified/g03-dirty-page-vulkan-shared-sdk/native-1.log"
+          },
+          {
+            "stage": "cpu",
+            "command": [
+              "/Users/kiro/hyle-scratch/compute-unified/g03-dirty-page-vulkan-shared-sdk/consumer-build/cpu"
+            ],
+            "exit_code": 0,
+            "elapsed_seconds": 0.4069889169999996,
+            "log": "/Users/kiro/hyle-scratch/compute-unified/g03-dirty-page-vulkan-shared-sdk/cpu-1.log"
+          }
+        ],
+        "cumulative_seconds": 18.306927166
+      },
+      "public_compile_commands": [
+        {
+          "directory": "/Users/kiro/hyle-scratch/compute-unified/g03-dirty-page-vulkan-shared-sdk/consumer-build",
+          "command": "/usr/bin/c++ -DHYLE_COMPUTE_CPU=1 -DHYLE_COMPUTE_GGML_CPU=1 -DHYLE_COMPUTE_VULKAN=1 -DHYLE_IO_HAS_COROUTINE_TRANSPORT=1 -isystem /Users/kiro/hyle-scratch/compute-unified/g03-dirty-page-vulkan-shared-sdk/relocated/include -O3 -DNDEBUG -std=gnu++23 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk -Wall -Wextra -Wpedantic -Werror -o CMakeFiles/native.dir/tests/compute_batch/dirty_page_native_consumer.cc.o -c /Users/kiro/hyle-scratch/compute-unified/g03-dirty-page-vulkan-shared-sdk/consumer-source/tests/compute_batch/dirty_page_native_consumer.cc",
+          "file": "/Users/kiro/hyle-scratch/compute-unified/g03-dirty-page-vulkan-shared-sdk/consumer-source/tests/compute_batch/dirty_page_native_consumer.cc",
+          "output": "/Users/kiro/hyle-scratch/compute-unified/g03-dirty-page-vulkan-shared-sdk/consumer-build/CMakeFiles/native.dir/tests/compute_batch/dirty_page_native_consumer.cc.o"
+        },
+        {
+          "directory": "/Users/kiro/hyle-scratch/compute-unified/g03-dirty-page-vulkan-shared-sdk/consumer-build",
+          "command": "/usr/bin/c++ -DHYLE_COMPUTE_CPU=1 -DHYLE_COMPUTE_GGML_CPU=1 -DHYLE_COMPUTE_VULKAN=1 -DHYLE_IO_HAS_COROUTINE_TRANSPORT=1 -isystem /Users/kiro/hyle-scratch/compute-unified/g03-dirty-page-vulkan-shared-sdk/relocated/include -O3 -DNDEBUG -std=gnu++23 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk -Wall -Wextra -Wpedantic -Werror -o CMakeFiles/cpu.dir/tests/compute_batch/dirty_page_public_consumer.cc.o -c /Users/kiro/hyle-scratch/compute-unified/g03-dirty-page-vulkan-shared-sdk/consumer-source/tests/compute_batch/dirty_page_public_consumer.cc",
+          "file": "/Users/kiro/hyle-scratch/compute-unified/g03-dirty-page-vulkan-shared-sdk/consumer-source/tests/compute_batch/dirty_page_public_consumer.cc",
+          "output": "/Users/kiro/hyle-scratch/compute-unified/g03-dirty-page-vulkan-shared-sdk/consumer-build/CMakeFiles/cpu.dir/tests/compute_batch/dirty_page_public_consumer.cc.o"
+        },
+        {
+          "directory": "/Users/kiro/hyle-scratch/compute-unified/g03-dirty-page-vulkan-shared-sdk/consumer-build",
+          "command": "/usr/bin/c++ -DHYLE_COMPUTE_CPU=1 -DHYLE_COMPUTE_GGML_CPU=1 -DHYLE_COMPUTE_VULKAN=1 -DHYLE_IO_HAS_COROUTINE_TRANSPORT=1 -isystem /Users/kiro/hyle-scratch/compute-unified/g03-dirty-page-vulkan-shared-sdk/relocated/include -O3 -DNDEBUG -std=gnu++23 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk -Wall -Wextra -Wpedantic -Werror -o CMakeFiles/headers.dir/header-0.cc.o -c /Users/kiro/hyle-scratch/compute-unified/g03-dirty-page-vulkan-shared-sdk/consumer-source/header-0.cc",
+          "file": "/Users/kiro/hyle-scratch/compute-unified/g03-dirty-page-vulkan-shared-sdk/consumer-source/header-0.cc",
+          "output": "/Users/kiro/hyle-scratch/compute-unified/g03-dirty-page-vulkan-shared-sdk/consumer-build/CMakeFiles/headers.dir/header-0.cc.o"
+        },
+        {
+          "directory": "/Users/kiro/hyle-scratch/compute-unified/g03-dirty-page-vulkan-shared-sdk/consumer-build",
+          "command": "/usr/bin/c++ -DHYLE_COMPUTE_CPU=1 -DHYLE_COMPUTE_GGML_CPU=1 -DHYLE_COMPUTE_VULKAN=1 -DHYLE_IO_HAS_COROUTINE_TRANSPORT=1 -isystem /Users/kiro/hyle-scratch/compute-unified/g03-dirty-page-vulkan-shared-sdk/relocated/include -O3 -DNDEBUG -std=gnu++23 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk -Wall -Wextra -Wpedantic -Werror -o CMakeFiles/headers.dir/header-1.cc.o -c /Users/kiro/hyle-scratch/compute-unified/g03-dirty-page-vulkan-shared-sdk/consumer-source/header-1.cc",
+          "file": "/Users/kiro/hyle-scratch/compute-unified/g03-dirty-page-vulkan-shared-sdk/consumer-source/header-1.cc",
+          "output": "/Users/kiro/hyle-scratch/compute-unified/g03-dirty-page-vulkan-shared-sdk/consumer-build/CMakeFiles/headers.dir/header-1.cc.o"
+        },
+        {
+          "directory": "/Users/kiro/hyle-scratch/compute-unified/g03-dirty-page-vulkan-shared-sdk/consumer-build",
+          "command": "/usr/bin/c++ -DHYLE_COMPUTE_CPU=1 -DHYLE_COMPUTE_GGML_CPU=1 -DHYLE_COMPUTE_VULKAN=1 -DHYLE_IO_HAS_COROUTINE_TRANSPORT=1 -isystem /Users/kiro/hyle-scratch/compute-unified/g03-dirty-page-vulkan-shared-sdk/relocated/include -O3 -DNDEBUG -std=gnu++23 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk -Wall -Wextra -Wpedantic -Werror -o CMakeFiles/headers.dir/header-2.cc.o -c /Users/kiro/hyle-scratch/compute-unified/g03-dirty-page-vulkan-shared-sdk/consumer-source/header-2.cc",
+          "file": "/Users/kiro/hyle-scratch/compute-unified/g03-dirty-page-vulkan-shared-sdk/consumer-source/header-2.cc",
+          "output": "/Users/kiro/hyle-scratch/compute-unified/g03-dirty-page-vulkan-shared-sdk/consumer-build/CMakeFiles/headers.dir/header-2.cc.o"
+        },
+        {
+          "directory": "/Users/kiro/hyle-scratch/compute-unified/g03-dirty-page-vulkan-shared-sdk/consumer-build",
+          "command": "/usr/bin/c++ -DHYLE_COMPUTE_CPU=1 -DHYLE_COMPUTE_GGML_CPU=1 -DHYLE_COMPUTE_VULKAN=1 -DHYLE_IO_HAS_COROUTINE_TRANSPORT=1 -isystem /Users/kiro/hyle-scratch/compute-unified/g03-dirty-page-vulkan-shared-sdk/relocated/include -O3 -DNDEBUG -std=gnu++23 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk -Wall -Wextra -Wpedantic -Werror -o CMakeFiles/headers.dir/header-3.cc.o -c /Users/kiro/hyle-scratch/compute-unified/g03-dirty-page-vulkan-shared-sdk/consumer-source/header-3.cc",
+          "file": "/Users/kiro/hyle-scratch/compute-unified/g03-dirty-page-vulkan-shared-sdk/consumer-source/header-3.cc",
+          "output": "/Users/kiro/hyle-scratch/compute-unified/g03-dirty-page-vulkan-shared-sdk/consumer-build/CMakeFiles/headers.dir/header-3.cc.o"
+        }
+      ],
+      "unmodified_inputs": [
+        {
+          "path": "tests/compute_batch/dirty_page_native_consumer.cc",
+          "sha256": "6362615b6d85cc80475173daef2eb83c26bde24457462a29e7c967c87eff8eb6",
+          "unmodified": true
+        },
+        {
+          "path": "tests/compute_batch/dirty_page_public_consumer.cc",
+          "sha256": "a0733a186749e5ce33c6fd1ed28b3a623440f826cf2183be1b4ff4e19e6b6ae4",
+          "unmodified": true
+        }
+      ]
+    }
+  ]
+}

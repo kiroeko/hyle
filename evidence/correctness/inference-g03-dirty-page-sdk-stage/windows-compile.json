@@ -1,0 +1,23 @@
+{
+  "baseline": "90ce020aac6eb3a46466f41ac5c93ab8043f29d5",
+  "source_sha256": "6362615b6d85cc80475173daef2eb83c26bde24457462a29e7c967c87eff8eb6",
+  "scope": "Windows MSVC public native compile/link only; no executable/GPU run",
+  "stages": [
+    {
+      "stage": "build",
+      "command": [
+        "cmake",
+        "--build",
+        "C:\\h7\\inference-g01-native-vulkan\\build",
+        "--target",
+        "g03_native_public_compile",
+        "--parallel",
+        "4"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 78.10899999999674,
+      "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g03\\windows-native-compile\\build-1.log"
+    }
+  ],
+  "cumulative_seconds": 78.10899999999674
+}
