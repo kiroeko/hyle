@@ -595,3 +595,50 @@ CE07本批source至此具有CPU、CUDA、Apple、Vulkan及三联合真实consume
 Apple签所列F16/BF16，Vulkan仍仅F16。它不签所有模式/capture/成本完全对称；新域完整
 tiny-scale/subnormal/FTZ等数值风险、OOM/cancel/unknown/concurrency/retirement、source/
 static/shared/逐头与不可变candidate P1仍待验，G04/G05和十一owner未关闭。
+
+### CE01/03/05/06 极小 Q8 block 的有限数值修正
+
+2026-10-15，CPU numeric7 与实际Air Apple/Vulkan numeric1探针已运行；原FAIL/时间保留。
+CPU在amax=FLT_MIN或2^-122时产生Inf倒数，锁定ggml参考随后将Inf/NaN直接转int8，普通
+运行得到零码不能证明无UB。amax=2^-120时CPU有有限倒数，Apple/Vulkan却因subnormal/FTZ
+得到零码，违反本轮原字节合同。FP8极端正scale的CPU numeric7/CUDA numeric9已实际通过。
+
+本卡仍AUDITED，在原CE01/03/05/06内冻结一个窄数值修正：计算的F16 block scale若舍入
+为零，该完整34-byte Q8 block规范为全零；非零F16 scale继续原两次F32商及ties-away参考。
+这是显式编码字节合同变化，包括原已定义的2^-24/2^-120零scale块也由非零code变全零；
+解码值不变，不宣称全域仍逐字节等于未修改ggml。用户已不要求兼容；不缩小有限输入域。
+
+CPU只在原CacheEncode调用reference之前分流；Apple在求倒数/归一化前用真实F16 scale
+bits识别零block，并把分母替1、输入替0，避免eager分支的非有限数值进入int8；Vulkan仅
+private exact encoder分支在危险倒数残差之前分流。普通ggml量化器、Copy/SetRows和attention
+核不改。无新API/owner/队列/常态metadata，费用为dirty block已有扫描内的amax/零判别与
+原有归一化节点中的mask；同卡P0/P1照实计入。
+
+有限验收为三输入dtype、零/denorm_min/FLT_MIN/2^-122/2^-120/2^-24、F16零scale舍入门槛
+127*2^-25及nextafter两侧、最小非零half scale附近、最大合法scale的完整34-byte oracle；
+保留正常ties/zero/NaN/Inf/overflow检查，并用小host UBSan/float-cast风险运行反证CPU转换。
+源探针只作原事实，不先签新合同PASS；三路线实机及适用风险门未验仍UNPROVEN。
+
+### CE01/03/05/06 有限数值边界实机通过
+
+[数值阶段证据](../../../../evidence/correctness/inference-g04-g05-numeric-boundaries/result.json)
+保存十次实际运行、原Apple/Vulkan numeric1 FAIL、输入版本、日志/XML、runner和累计233.419秒。
+CPU numeric7普通探针PASS只作诊断，不代签无UB；numeric8正式完整字节oracle两项PASS。
+CPU与实际RTX4070 CUDA均通过FP8正scale为denorm_min/FLT_MIN/FLT_MAX的独立枚举字节检查。
+
+实际Air Mac16,12/arm64/macOS27.0.1/AppleClang21，Apple和Vulkan各numeric2一项边界测试
+PASS：F16/BF16/F32三输入、14组幅值及F32最大合法值，完整34-byte oracle包括零scale舍入
+门槛与最小非零half scale两侧、±0、subnormal/FTZ输入。随后各numeric3的全部11项原/新
+编码与attention测试PASS；编译各.138/.137秒复用缓存，不重编未变原数学。Vulkan numeric2
+因private shader新输入必要重编79.512秒，原普通Copy/SetRows量化规则保持。
+
+实际WSL GCC14 CPU-only shipping UBSan并显式float-cast-overflow，原锁定ggml量化器以
+±2^-122输入在ggml-quants.c:296报Inf转signed char，负对照如期退出1；修复后的公共编码
+及原F2/Direct/Graph消费者9项全部PASS。原ggml-quants、HYLE CPU encoder与两测试TU的
+实际compile command均具备undefined和float-cast-overflow，不以仅测试exe的flag冒充覆盖。
+该风险运行100.422秒；不签GPU shader/driver sanitizer、LSan/TSan或全F32穷举。
+
+有限只读复核无新增MUST；公共注释和用户指南明确零scale字节合同变化、正常非零scale的
+原参考规则与边界。十一owner仍AUDITED；OOM/budget/cancel/unknown/concurrency/retirement
+新增域风险、source/static/shared/逐头与冻结candidate后的P1继续待验。本批所有重型程序
+已经terminal，没有残留构建；全goal粗估40%，仅G03整项CLOSED，其余状态不回填。

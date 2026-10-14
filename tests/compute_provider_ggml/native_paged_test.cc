@@ -10,6 +10,7 @@
 #include <algorithm>
 #include <cmath>
 #include <cstring>
+#include <cstdio>
 #include <limits>
 #include <vector>
 
@@ -88,6 +89,57 @@ TEST(GgmlCpuCacheEncode, Float8CodesMatchIndependentEnumerationIncludingRounding
     ASSERT_TRUE(encode_words(type,c::CacheStorage::float8(scale).value(),values,bytes).ok());
     ASSERT_EQ(bytes.size(),values.size());
     for(std::size_t i=0;i<values.size();++i)EXPECT_EQ(bytes[i],float8_oracle(double(input_value(values[i],type))/scale));
+  }
+}
+TEST(GgmlCpuCacheEncode, FiniteQ8ScaleBoundariesHaveCanonicalZeroBlocks){
+  using Half=hyle::simd::float16_t;using BFloat=hyle::simd::bfloat16_t;
+  const float zero_boundary=127.F*std::ldexp(1.F,-25),minimum_scale=127.F*std::ldexp(1.F,-24);
+  const std::array amplitudes{0.F,std::numeric_limits<float>::denorm_min(),std::numeric_limits<float>::min(),
+      std::ldexp(1.F,-122),std::ldexp(1.F,-120),std::ldexp(1.F,-24),
+      std::nextafter(zero_boundary,0.F),zero_boundary,std::nextafter(zero_boundary,1.F),
+      std::nextafter(minimum_scale,0.F),minimum_scale,std::nextafter(minimum_scale,1.F),
+      std::ldexp(1.F,-14),65504.F};
+  for(auto type:{c::DataType::kFloat16,c::DataType::kBFloat16,c::DataType::kFloat32}){
+    SCOPED_TRACE(::testing::Message()<<"input type="<<int(type));
+    const auto rows=amplitudes.size()+(type==c::DataType::kFloat32?1:0);
+    std::vector<float> values(rows*64);
+    for(std::size_t i=0;i<values.size();++i){const float a=i/64<amplitudes.size()?amplitudes[i/64]:65504.F*127.F;
+      values[i]=i%8==0?a:i%8==1?-a:i%8==2?a*.125F:i%8==3?-a*.125F:i%8==5?-0.F:0.F;}
+    const auto rounded=[&](float value){
+      if(type==c::DataType::kFloat16)return float(half_test::decode(half_test::encode<Half>(value)));
+      if(type==c::DataType::kBFloat16)return float(half_test::decode(half_test::encode<BFloat>(value)));
+      return value;
+    };
+    std::vector<std::uint8_t> bytes;
+    const auto status=encode_words(type,c::CacheStorage::q8_0().value(),values,bytes);
+    ASSERT_TRUE(status.ok())<<status.message();ASSERT_EQ(bytes.size(),rows*68);
+    std::vector<std::uint8_t> expected(bytes.size(),0);
+    unsigned zeros=0,nonzero=0;
+    for(std::size_t block=0;block<values.size()/32;++block){
+      float maximum=0;for(unsigned j=0;j<32;++j)maximum=std::max(maximum,std::abs(rounded(values[block*32+j])));
+      const auto scale=maximum/127.F;const auto stored=half_test::encode<Half>(scale).bits;
+      if(!stored){++zeros;continue;}
+      ++nonzero;expected[block*34]=std::uint8_t(stored);expected[block*34+1]=std::uint8_t(stored>>8);
+      const auto inverse=1.F/scale;ASSERT_TRUE(std::isfinite(inverse));
+      for(unsigned j=0;j<32;++j){
+        const auto code=int(std::round(rounded(values[block*32+j])*inverse));
+        ASSERT_GE(code,-127);ASSERT_LE(code,127);expected[block*34+2+j]=std::uint8_t(code);
+      }
+    }
+    ASSERT_GT(zeros,0u);ASSERT_GT(nonzero,0u);
+    for(std::size_t i=0;i<bytes.size();++i)EXPECT_EQ(bytes[i],expected[i])<<"block="<<i/34<<" byte="<<i%34;
+  }
+}
+
+TEST(GgmlCpuCacheEncode, FiniteFloat8ExtremePositiveScalesSaturateAndPreserveZero){
+  const std::array samples{0.F,-0.F,1.F,-1.F,std::numeric_limits<float>::denorm_min(),
+      -std::numeric_limits<float>::denorm_min(),std::numeric_limits<float>::max(),-std::numeric_limits<float>::max()};
+  std::vector<float> values(64);for(std::size_t i=0;i<values.size();++i)values[i]=samples[i%samples.size()];
+  for(float scale:{std::numeric_limits<float>::denorm_min(),std::numeric_limits<float>::min(),std::numeric_limits<float>::max()}){
+    SCOPED_TRACE(::testing::Message()<<"scale="<<scale);std::vector<std::uint8_t> bytes;
+    const auto status=encode_words(c::DataType::kFloat32,c::CacheStorage::float8(scale).value(),values,bytes);
+    ASSERT_TRUE(status.ok())<<status.message();ASSERT_EQ(bytes.size(),values.size());
+    for(std::size_t i=0;i<values.size();++i)EXPECT_EQ(bytes[i],float8_oracle(double(values[i])/double(scale)))<<"index="<<i;
   }
 }
 TEST(GgmlCpuCacheEncode, InvalidPayloadReturnsOriginalCompletionErrorAfterWorkersRetire){

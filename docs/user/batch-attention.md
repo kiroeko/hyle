@@ -57,7 +57,13 @@ F16/BF16/F32，输出描述通过 `infer_single_output` 得到。Q8输出是U8�
 FP8输出是E4M3FN carrier；encoder只写所给的新行，页面的准确range和发布仍由原F2管理。
 CPU attention使用Q8_0，CPU编码FP8供后续CUDA联合消费，当前不因此承诺CPU FP8 attention。
 Q8 K/V同格式、Q/output同F16或BF16；当前有限几何是(64,64)/(128,128)/(256,256)/(64,128)。
-编码输入与Q8 attention查询必须有限，Q8的absmax/127不得超过65504；实际payload违反范围
+编码输入与Q8 attention查询必须有限，Q8的absmax/127不得超过65504。
+Q8编码先把block scale舍入成F16；若其bits为零，整个34-byte block规范为全零。
+这也覆盖极小的非零输入，避免倒数溢出、FTZ差异和非有限数值转整数。非零F16 scale
+仍使用原F32 scale/inverse及ties-away规则；零scale块的payload字节可能与原ggml参考不同，
+解码值同为零；三路线极小Q8及CPU/CUDA极端FP8 scale见
+[数值边界证据](../../evidence/correctness/inference-g04-g05-numeric-boundaries/result.json)。
+实际payload违反范围
 由原Completion返回InvalidArgument，失败invocation/slot按原合同重建。原CPU核还会把Q
 转成Q8 dot表示，精度应按这次额外转换评估。新域的字节、窗口、非因果、长prefill和
 F32累加结果见[有限source证据](../../evidence/correctness/inference-g04-g05-cpu-encoding-math-stage/result.json)，

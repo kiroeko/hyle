@@ -219,6 +219,17 @@ TEST(FlashinferCacheEncode, IndependentBytesForThreeInputsAndScales){
     for(std::size_t i=0;i<values.size();++i)EXPECT_EQ(bytes[i],float8_oracle(double(input_value(values[i],type))/scale));
   }
 }
+TEST(FlashinferCacheEncode, FiniteFloat8ExtremePositiveScalesSaturateAndPreserveZero){
+  const std::array samples{0.F,-0.F,1.F,-1.F,std::numeric_limits<float>::denorm_min(),
+      -std::numeric_limits<float>::denorm_min(),std::numeric_limits<float>::max(),-std::numeric_limits<float>::max()};
+  std::vector<float> values(64);for(std::size_t i=0;i<values.size();++i)values[i]=samples[i%samples.size()];
+  for(float scale:{std::numeric_limits<float>::denorm_min(),std::numeric_limits<float>::min(),std::numeric_limits<float>::max()}){
+    SCOPED_TRACE(::testing::Message()<<"scale="<<scale);std::vector<std::uint8_t> bytes;
+    const auto status=encode_words(c::DataType::kFloat32,c::CacheStorage::float8(scale).value(),values,bytes);
+    ASSERT_TRUE(status.ok())<<status.message();ASSERT_EQ(bytes.size(),values.size());
+    for(std::size_t i=0;i<values.size();++i)EXPECT_EQ(bytes[i],float8_oracle(double(values[i])/double(scale)))<<"index="<<i;
+  }
+}
 TEST(FlashinferCacheEncode, NumericDomainUsesOriginalCompletionStatus){
   for(auto type:{c::DataType::kFloat16,c::DataType::kBFloat16,c::DataType::kFloat32})
     for(float bad:{std::numeric_limits<float>::quiet_NaN(),std::numeric_limits<float>::infinity()}){

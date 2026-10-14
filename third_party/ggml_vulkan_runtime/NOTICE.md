@@ -106,3 +106,9 @@ without staging or semaphore/event dependencies. Rebinding a byte origin,
 buffer/capacity or strong input owner invalidates the record before releasing
 old imports. Other graphs retain original managed execution; this is not a
 public capture promise or a change to any shader or mathematical domain.
+
+The CacheEncode-only Q8 exact-copy branch canonicalizes every block whose
+rounded F16 scale is zero to 34 zero bytes before computing a reciprocal.
+Nonzero-scale blocks keep the original two rounded F32 quotients and ties-away
+codes. Ordinary Copy and SetRows are unchanged. This explicitly changes only
+zero-scale encoded payload bytes, not their decoded zero value.

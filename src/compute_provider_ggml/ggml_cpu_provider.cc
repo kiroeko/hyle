@@ -363,13 +363,18 @@ void encode_cache_rows(ggml_tensor *output,int ith,int nth,void *opaque) noexcep
   }
   const auto convert=ggml_get_type_traits(GGML_TYPE_Q8_0)->from_float_ref;
   for(auto block=std::int64_t{ith};block<count/32;block+=nth){
-    std::array<float,32> values;bool valid=true;
+    std::array<float,32> values;bool valid=true;float maximum=0.F;
     for(std::int64_t j=0;j<32;++j){
       values[std::size_t(j)]=cache_input_value(input,block*32+j);
       valid &= std::isfinite(values[std::size_t(j)]) && std::abs(values[std::size_t(j)])<=65504.F*127.F;
+      maximum=std::max(maximum,std::abs(values[std::size_t(j)]));
     }
     if(!valid){
       call.owner->invalid.store(true,std::memory_order_relaxed);
+      std::fill_n(bytes+block*34,34,std::uint8_t{0});
+    }else if(simd::f32_to_f16(maximum/127.F).bits==0){
+      // A zero stored scale decodes to zero. Canonicalize before the native
+      // reciprocal can overflow and feed Inf/NaN to its integer conversion.
       std::fill_n(bytes+block*34,34,std::uint8_t{0});
     }else convert(values.data(),bytes+block*34,32);
   }

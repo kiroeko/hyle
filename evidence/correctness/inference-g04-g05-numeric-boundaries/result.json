@@ -1,0 +1,476 @@
+{
+  "kind": "G04_G05_FINITE_Q8_ZERO_SCALE_AND_FP8_EXTREME_SCALE_STAGE",
+  "verdict": "PASS_FINITE_NUMERIC_GRID_AND_CPU_FLOAT_CAST_NEGATIVE_CONTROL",
+  "owners_remain": "Eleven owners AUDITED; not whole G04/G05 acceptance",
+  "input_sha256": {
+    "include/hyle/compute/model_ops.h": "165cfc86281d90e246f137892c0fa1f625421a53f6bdbf9877aef9828773f8c9",
+    "src/compute_provider_ggml/ggml_cpu_provider.cc": "b7b876400147d02e71635e0b1c3f972f8381e034b218d2863e22cfb0e70f1997",
+    "src/compute_route_apple/apple_mature_float.cc": "20ffaec7840532a910596268546b5679e228a07e1a1a8613fcd8ce27aeebb962",
+    "third_party/ggml_vulkan_runtime/patches.json": "041f3c0d6c55adb29c514c53ae9db6b70d9e61f1272410d243b4314156e52242",
+    "third_party/ggml_vulkan_runtime/NOTICE.md": "b12e2b540a6a551106d9a23b2785bd187e8585e5bdad39faf9b615f28f6325fd",
+    "cmake/HyleDependencyLock.json": "9200ad553daa8876b1fc3a11bc1187064567b9c45b538a27c324b7d2934c6dd0",
+    "tests/compute_provider_ggml/native_paged_test.cc": "9e1c939ff4217e21f6a51c8a0d1b12a3cc37a911cd239b3b44048626b46f58ad",
+    "tests/compute_provider_flashinfer/native_cache_test.cc": "903a1a4efb2fe0cf6f8b1b8cde0ec1ab051cfd7cbec2d2fa2bc044433fb68cf2",
+    "tests/compute_route_apple/native_cache_test.cc": "98f912f2d0e9c5fbce80c2d3ac4df864c2158848a1a75d098712117a7f947d67",
+    "tests/compute_route_vulkan/native_cache_test.cc": "bcc6043b8d9b0db541d3cc782d9d34993571f14d9ee6cefe83d843dc08af8d5f",
+    "tests/compute_batch/encoded_page_common_consumer.cc": "9c063827e18523f41bbe5882d2e3d67943b685bdb517522c44392160bf174e05"
+  },
+  "contract": "When the F32 absmax/127 rounds to F16 zero, the entire34-byte Q8 block is canonical zero before reciprocal/integer conversion. Nonzero stored scales keep original F32 reference rounding. This explicitly changes formerly nonzero codes with zero stored scale; decoded values are unchanged.",
+  "qualified": [
+    "Actual Windows CPU-only static shipping: two finite-boundary tests PASS",
+    "Actual Air Mac16,12 Apple and Vulkan: each three source input dtypes, full34-byte oracle at14 amplitudes plus F32 maximum; both F16 zero-scale threshold neighbours, signed zero, tiny/subnormal and maximum inputs",
+    "Actual Air Apple and Vulkan: each all11 existing/new encoder and attention tests PASS after the narrow product fix",
+    "Actual CPU and RTX4070 CUDA FP8 E4M3FN: positive scales denorm_min, FLT_MIN and FLT_MAX with independent enumerated saturation/zero byte oracle",
+    "Actual GCC14 CPU-only UBSan plus explicit float-cast-overflow: locked original ggml quantizer negative control exits1 at ggml-quants.c:296 on Inf-to-int8; repaired public encoder and original F2/Graph consumers9tests PASS",
+    "Actual compile commands verify both undefined and float-cast-overflow instrumentation on original ggml quantizer, HYLE CPU encoder and both positive test TUs"
+  ],
+  "history": "CPU7 ordinary diagnostic PASS is not sanitizer or full canonical-zero qualification. Original Apple/Vulkan numeric1 FAILs and all elapsed times retained; negative-control exit1 is expected proof, not a successful product run.",
+  "P0": "CPU amax is accumulated during the existing dirty-block validation scan. Apple masks operands before normalization; Vulkan only private exact encoder branches before inverse/residual. No new metadata/queues/history decode; normal ggml quantizer and Copy/SetRows are unchanged.",
+  "not_proven": [
+    "Exhaustive all-F32-input enumeration",
+    "GPU shader/driver sanitizer or LSan/TSan",
+    "New-domain full OOM/budget/cancel/unknown/concurrency/retirement risk grid",
+    "Installed static/shared and standalone-header qualification for the new domain",
+    "Immutable-candidate P1 and whole G04/G05"
+  ],
+  "runs": [
+    {
+      "label": "cpu-7",
+      "state": "TERMINAL_PASS",
+      "identity": {
+        "host": "KIRO-WORKSTATIO",
+        "compiler": "14.50.35717",
+        "routes": "cpu",
+        "source_pin": "check actual derived ggml after configure"
+      },
+      "scope": "CPU-only actual encoder/F2/Direct/Graph source plus bounded native CPU numerical tests; no SDK/san/P1 verdict",
+      "max_jobs": 4,
+      "stages": [
+        {
+          "stage": "compile",
+          "command": [
+            "cmake",
+            "--build",
+            "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev",
+            "--target",
+            "g04_g05_encoded_common_pages",
+            "--parallel",
+            "4"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 5.422000000020489,
+          "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\common-encoded\\cpu-7\\compile.log"
+        },
+        {
+          "stage": "tests",
+          "command": [
+            "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\g04_g05_encoded_common_pages.exe",
+            "--gtest_output=xml:C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\common-encoded\\cpu-7\\tests.xml",
+            "--gtest_filter=GgmlCpuCacheEncode.Finite*"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 0.25,
+          "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\common-encoded\\cpu-7\\tests.log"
+        }
+      ],
+      "cumulative_seconds": 5.672000000020489
+    },
+    {
+      "label": "cpu-8",
+      "state": "TERMINAL_PASS",
+      "identity": {
+        "host": "KIRO-WORKSTATIO",
+        "compiler": "14.50.35717",
+        "routes": "cpu",
+        "source_pin": "check actual derived ggml after configure"
+      },
+      "scope": "CPU-only actual encoder/F2/Direct/Graph source plus bounded native CPU numerical tests; no SDK/san/P1 verdict",
+      "max_jobs": 4,
+      "stages": [
+        {
+          "stage": "compile",
+          "command": [
+            "cmake",
+            "--build",
+            "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev",
+            "--target",
+            "g04_g05_encoded_common_pages",
+            "--parallel",
+            "4"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 7.73399999999674,
+          "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\common-encoded\\cpu-8\\compile.log"
+        },
+        {
+          "stage": "tests",
+          "command": [
+            "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\g04_g05_encoded_common_pages.exe",
+            "--gtest_output=xml:C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\common-encoded\\cpu-8\\tests.xml",
+            "--gtest_filter=GgmlCpuCacheEncode.Finite*"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 0.23399999999674037,
+          "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\common-encoded\\cpu-8\\tests.log"
+        }
+      ],
+      "cumulative_seconds": 7.967999999993481
+    },
+    {
+      "label": "cuda-9",
+      "state": "TERMINAL_PASS",
+      "identity": {
+        "host": "Linux kiro-workstation 6.18.54.1-microsoft-standard-WSL2 #1 SMP PREEMPT_DYNAMIC Tue Oct  6 19:13:07 UTC 2026 x86_64 x86_64 x86_64 GNU/Linux",
+        "compiler": "g++-14 (Ubuntu 14.2.0-4ubuntu2~24.04.1) 14.2.0\nCopyright (C) 2024 Free Software Foundation, Inc.\nThis is free software; see the source for copying conditions.  There is NO\nwarranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.",
+        "cuda": "nvcc: NVIDIA (R) Cuda compiler driver\nCopyright (c) 2005-2026 NVIDIA Corporation\nBuilt on Tue_Jun_09_02:43:40_PM_PDT_2026\nCuda compilation tools, release 13.3, V13.3.73\nBuild cuda_13.3.r13.3/compiler.38244171_0",
+        "gpu": "NVIDIA GeForce RTX 4070, 617.14, 12282 MiB, 2506 MiB, 5 %"
+      },
+      "max_jobs": 4,
+      "stages": [
+        {
+          "stage": "compile",
+          "command": [
+            "cmake",
+            "--build",
+            "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/shared-sdk-build",
+            "--target",
+            "g04_g05_encoded_common_cuda",
+            "--parallel",
+            "4"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 4.5402345859999995,
+          "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/common-encoded/cuda-9/compile.log"
+        },
+        {
+          "stage": "tests",
+          "command": [
+            "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/shared-sdk-build/bin/g04_g05_encoded_common_cuda",
+            "--gtest_output=xml:/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/common-encoded/cuda-9/tests.xml",
+            "--gtest_filter=FlashinferCacheEncode.Finite*"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 1.475305329000001,
+          "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/common-encoded/cuda-9/tests.log"
+        }
+      ],
+      "cumulative_seconds": 6.015539915000001,
+      "scope": "Actual CUDA/CPU+CUDA encoded producer/F2/Direct/Graph source; no model/SDK/san/P1 verdict"
+    },
+    {
+      "label": "apple-numeric-1",
+      "state": "TERMINAL_FAIL",
+      "identity": {
+        "model": "Mac16,12",
+        "arch": "arm64",
+        "os": "ProductName:\t\tmacOS\nProductVersion:\t\t27.0.1\nBuildVersion:\t\t26A434",
+        "compiler": "Apple clang version 21.0.0 (clang-2100.3.34.2)\nTarget: arm64-apple-darwin27.0.0\nThread model: posix\nInstalledDir: /Library/Developer/CommandLineTools/usr/bin",
+        "memory": "17179869184"
+      },
+      "max_jobs": 4,
+      "stages": [
+        {
+          "stage": "compile",
+          "command": [
+            "/opt/homebrew/bin/cmake",
+            "--build",
+            "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-build",
+            "--target",
+            "g04_g05_apple_cache",
+            "--parallel",
+            "4"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 1.477731916,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g04-g05-apple-cache/compile-numeric-1.log"
+        },
+        {
+          "stage": "tests",
+          "command": [
+            "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-build/g04_g05_apple_cache",
+            "--gtest_output=xml:/Users/kiro/hyle-scratch/compute-unified/g04-g05-apple-cache/tests-numeric-1.xml",
+            "--gtest_filter=AppleCacheEncode.Finite*"
+          ],
+          "exit_code": 1,
+          "elapsed_seconds": 0.5301916659999999,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g04-g05-apple-cache/tests-numeric-1.log"
+        }
+      ],
+      "scope": "Only real Apple new-cache source fixture; no model/whole-test/SDK/sanitizer/P1 verdict",
+      "cumulative_seconds": 2.007923582
+    },
+    {
+      "label": "apple-numeric-2",
+      "state": "TERMINAL_PASS",
+      "identity": {
+        "model": "Mac16,12",
+        "arch": "arm64",
+        "os": "ProductName:\t\tmacOS\nProductVersion:\t\t27.0.1\nBuildVersion:\t\t26A434",
+        "compiler": "Apple clang version 21.0.0 (clang-2100.3.34.2)\nTarget: arm64-apple-darwin27.0.0\nThread model: posix\nInstalledDir: /Library/Developer/CommandLineTools/usr/bin",
+        "memory": "17179869184"
+      },
+      "max_jobs": 4,
+      "stages": [
+        {
+          "stage": "compile",
+          "command": [
+            "/opt/homebrew/bin/cmake",
+            "--build",
+            "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-build",
+            "--target",
+            "g04_g05_apple_cache",
+            "--parallel",
+            "4"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 3.931876667,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g04-g05-apple-cache/compile-numeric-2.log"
+        },
+        {
+          "stage": "tests",
+          "command": [
+            "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-build/g04_g05_apple_cache",
+            "--gtest_output=xml:/Users/kiro/hyle-scratch/compute-unified/g04-g05-apple-cache/tests-numeric-2.xml",
+            "--gtest_filter=AppleCacheEncode.Finite*"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 3.9856659160000003,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g04-g05-apple-cache/tests-numeric-2.log"
+        }
+      ],
+      "scope": "Only real Apple new-cache source fixture; no model/whole-test/SDK/sanitizer/P1 verdict",
+      "cumulative_seconds": 7.917542583
+    },
+    {
+      "label": "apple-numeric-3",
+      "state": "TERMINAL_PASS",
+      "identity": {
+        "model": "Mac16,12",
+        "arch": "arm64",
+        "os": "ProductName:\t\tmacOS\nProductVersion:\t\t27.0.1\nBuildVersion:\t\t26A434",
+        "compiler": "Apple clang version 21.0.0 (clang-2100.3.34.2)\nTarget: arm64-apple-darwin27.0.0\nThread model: posix\nInstalledDir: /Library/Developer/CommandLineTools/usr/bin",
+        "memory": "17179869184"
+      },
+      "max_jobs": 4,
+      "stages": [
+        {
+          "stage": "compile",
+          "command": [
+            "/opt/homebrew/bin/cmake",
+            "--build",
+            "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-build",
+            "--target",
+            "g04_g05_apple_cache",
+            "--parallel",
+            "4"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 0.13807783299999998,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g04-g05-apple-cache/compile-numeric-3.log"
+        },
+        {
+          "stage": "tests",
+          "command": [
+            "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-build/g04_g05_apple_cache",
+            "--gtest_output=xml:/Users/kiro/hyle-scratch/compute-unified/g04-g05-apple-cache/tests-numeric-3.xml"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 9.138400167,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g04-g05-apple-cache/tests-numeric-3.log"
+        }
+      ],
+      "scope": "Only real Apple new-cache source fixture; no model/whole-test/SDK/sanitizer/P1 verdict",
+      "cumulative_seconds": 9.276478000000001
+    },
+    {
+      "label": "vulkan-numeric-1",
+      "state": "TERMINAL_FAIL",
+      "identity": {
+        "model": "Mac16,12",
+        "arch": "arm64",
+        "os": "ProductName:\t\tmacOS\nProductVersion:\t\t27.0.1\nBuildVersion:\t\t26A434",
+        "compiler": "Apple clang version 21.0.0 (clang-2100.3.34.2)\nTarget: arm64-apple-darwin27.0.0\nThread model: posix\nInstalledDir: /Library/Developer/CommandLineTools/usr/bin",
+        "memory": "17179869184"
+      },
+      "max_jobs": 4,
+      "stages": [
+        {
+          "stage": "compile",
+          "command": [
+            "/opt/homebrew/bin/cmake",
+            "--build",
+            "/Users/kiro/hyle-scratch/compute-unified/a-cpu-vulkan/selected-graph/source-build",
+            "--target",
+            "g04_g05_vulkan_cache",
+            "--parallel",
+            "4"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 1.3497111659999999,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g04-g05-vulkan-cache/compile-numeric-1.log"
+        },
+        {
+          "stage": "tests",
+          "command": [
+            "/Users/kiro/hyle-scratch/compute-unified/a-cpu-vulkan/selected-graph/source-build/g04_g05_vulkan_cache",
+            "--gtest_output=xml:/Users/kiro/hyle-scratch/compute-unified/g04-g05-vulkan-cache/tests-numeric-1.xml",
+            "--gtest_filter=VulkanCacheEncode.Finite*"
+          ],
+          "exit_code": 1,
+          "elapsed_seconds": 0.5724881250000002,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g04-g05-vulkan-cache/tests-numeric-1.log"
+        }
+      ],
+      "scope": "Only real Vulkan new-cache source fixture; no model/whole-test/SDK/sanitizer/P1 verdict",
+      "cumulative_seconds": 1.922199291
+    },
+    {
+      "label": "vulkan-numeric-2",
+      "state": "TERMINAL_PASS",
+      "identity": {
+        "model": "Mac16,12",
+        "arch": "arm64",
+        "os": "ProductName:\t\tmacOS\nProductVersion:\t\t27.0.1\nBuildVersion:\t\t26A434",
+        "compiler": "Apple clang version 21.0.0 (clang-2100.3.34.2)\nTarget: arm64-apple-darwin27.0.0\nThread model: posix\nInstalledDir: /Library/Developer/CommandLineTools/usr/bin",
+        "memory": "17179869184"
+      },
+      "max_jobs": 4,
+      "stages": [
+        {
+          "stage": "compile",
+          "command": [
+            "/opt/homebrew/bin/cmake",
+            "--build",
+            "/Users/kiro/hyle-scratch/compute-unified/a-cpu-vulkan/selected-graph/source-build",
+            "--target",
+            "g04_g05_vulkan_cache",
+            "--parallel",
+            "4"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 79.512338417,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g04-g05-vulkan-cache/compile-numeric-2.log"
+        },
+        {
+          "stage": "tests",
+          "command": [
+            "/Users/kiro/hyle-scratch/compute-unified/a-cpu-vulkan/selected-graph/source-build/g04_g05_vulkan_cache",
+            "--gtest_output=xml:/Users/kiro/hyle-scratch/compute-unified/g04-g05-vulkan-cache/tests-numeric-2.xml",
+            "--gtest_filter=VulkanCacheEncode.Finite*"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 4.799893666999992,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g04-g05-vulkan-cache/tests-numeric-2.log"
+        }
+      ],
+      "scope": "Only real Vulkan new-cache source fixture; no model/whole-test/SDK/sanitizer/P1 verdict",
+      "cumulative_seconds": 84.31223208399999
+    },
+    {
+      "label": "vulkan-numeric-3",
+      "state": "TERMINAL_PASS",
+      "identity": {
+        "model": "Mac16,12",
+        "arch": "arm64",
+        "os": "ProductName:\t\tmacOS\nProductVersion:\t\t27.0.1\nBuildVersion:\t\t26A434",
+        "compiler": "Apple clang version 21.0.0 (clang-2100.3.34.2)\nTarget: arm64-apple-darwin27.0.0\nThread model: posix\nInstalledDir: /Library/Developer/CommandLineTools/usr/bin",
+        "memory": "17179869184"
+      },
+      "max_jobs": 4,
+      "stages": [
+        {
+          "stage": "compile",
+          "command": [
+            "/opt/homebrew/bin/cmake",
+            "--build",
+            "/Users/kiro/hyle-scratch/compute-unified/a-cpu-vulkan/selected-graph/source-build",
+            "--target",
+            "g04_g05_vulkan_cache",
+            "--parallel",
+            "4"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 0.13694449999999997,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g04-g05-vulkan-cache/compile-numeric-3.log"
+        },
+        {
+          "stage": "tests",
+          "command": [
+            "/Users/kiro/hyle-scratch/compute-unified/a-cpu-vulkan/selected-graph/source-build/g04_g05_vulkan_cache",
+            "--gtest_output=xml:/Users/kiro/hyle-scratch/compute-unified/g04-g05-vulkan-cache/tests-numeric-3.xml"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 7.768114875,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g04-g05-vulkan-cache/tests-numeric-3.log"
+        }
+      ],
+      "scope": "Only real Vulkan new-cache source fixture; no model/whole-test/SDK/sanitizer/P1 verdict",
+      "cumulative_seconds": 7.905059375
+    },
+    {
+      "label": "ubsan-1",
+      "state": "TERMINAL_PASS",
+      "max_jobs": 4,
+      "stages": [
+        {
+          "stage": "configure",
+          "command": [
+            "cmake",
+            "-S",
+            "/home/kiro/hyle-f1/sanitizers/source-03242e7723cb",
+            "-B",
+            "/home/kiro/hyle-f1/sanitizers/ubsan-03242e7723cb",
+            "-DCMAKE_PROJECT_INCLUDE=/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/numeric/ubsan-project.cmake"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 23.368715238,
+          "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/numeric/ubsan-1/configure.log"
+        },
+        {
+          "stage": "compile",
+          "command": [
+            "cmake",
+            "--build",
+            "/home/kiro/hyle-f1/sanitizers/ubsan-03242e7723cb",
+            "--target",
+            "g04_q8_numeric_ubsan",
+            "g04_q8_reference_control",
+            "--parallel",
+            "4"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 76.546295557,
+          "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/numeric/ubsan-1/compile.log"
+        },
+        {
+          "stage": "negative-control",
+          "command": [
+            "/home/kiro/hyle-f1/sanitizers/ubsan-03242e7723cb/bin/g04_q8_reference_control"
+          ],
+          "exit_code": 1,
+          "elapsed_seconds": 0.25401692200000525,
+          "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/numeric/ubsan-1/negative-control.log"
+        },
+        {
+          "stage": "tests",
+          "command": [
+            "/home/kiro/hyle-f1/sanitizers/ubsan-03242e7723cb/bin/g04_q8_numeric_ubsan",
+            "--gtest_filter=GgmlCpuCacheEncode.*:EncodedCommonPages.*",
+            "--gtest_output=xml:/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/numeric/ubsan-1/tests.xml"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 0.2528887940000004,
+          "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/numeric/ubsan-1/tests.log"
+        }
+      ],
+      "cumulative_seconds": 100.421916511,
+      "scope": "Actual CPU-only UBSan plus explicit float-cast-overflow, original native reference negative control and public encoded F2/Graph positive consumers; no GPU/LSan/TSan/SDK/P1 claim",
+      "identity": {
+        "host": "Linux kiro-workstation 6.18.54.1-microsoft-standard-WSL2 #1 SMP PREEMPT_DYNAMIC Tue Oct  6 19:13:07 UTC 2026 x86_64 x86_64 x86_64 GNU/Linux",
+        "compiler": "g++-14 (Ubuntu 14.2.0-4ubuntu2~24.04.1) 14.2.0"
+      },
+      "actual_original_reference_float_cast_failure": true
+    }
+  ],
+  "cumulative_seconds": 233.41889134101396
+}

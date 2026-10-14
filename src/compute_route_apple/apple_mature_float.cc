@@ -34,9 +34,14 @@ Result<mx::array> encode_cache(const model_ops::CacheEncode &encode,
       mx::array(127.F), stream);
   auto valid_scale = mx::less_equal(scale, mx::array(65504.F), stream);
   scale = mx::where(valid_scale, scale, mx::array(0.F), stream);
-  auto inverse = mx::where(mx::equal(scale, mx::array(0.F), stream), mx::array(0.F),
-      mx::divide(mx::array(1.F), scale, stream), stream);
-  auto normalized = mx::multiply(safe, inverse, stream);
+  auto stored_scale = mx::astype(scale, mx::float16, stream);
+  // Use bits so a nonzero F16 subnormal is not compared under half FTZ rules.
+  auto nonzero = mx::not_equal(mx::view(stored_scale, mx::uint16, stream),
+      mx::array(std::uint16_t{0}), stream);
+  // Select the operands before division/multiply, including eager graph paths.
+  auto denominator = mx::where(nonzero, scale, mx::array(1.F), stream);
+  auto inverse = mx::divide(mx::array(1.F), denominator, stream);
+  auto normalized = mx::multiply(mx::where(nonzero, safe, mx::array(0.F), stream), inverse, stream);
   auto magnitude = mx::abs(normalized, stream);
   auto base = mx::floor(magnitude, stream);
   // Adding .5 first can round nextafter(.5,0) to one in F32. Preserve the
@@ -46,7 +51,7 @@ Result<mx::array> encode_cache(const model_ops::CacheEncode &encode,
   auto rounded = mx::multiply(mx::sign(normalized, stream), mx::add(base, increment, stream), stream);
   auto codes = mx::astype(mx::clip(rounded, mx::array(-127.F), mx::array(127.F), stream),
       mx::int8, stream);
-  auto scales = mx::view(mx::astype(scale, mx::float16, stream), mx::uint8, stream);
+  auto scales = mx::view(stored_scale, mx::uint8, stream);
   auto packed = mx::reshape(mx::concatenate({scales, mx::view(codes, mx::uint8, stream)},
       -1, stream), {rows, row_bytes}, stream);
   auto valid = mx::logical_and(mx::all(finite, false, stream),

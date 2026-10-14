@@ -823,9 +823,17 @@
         {
           "before": "        precise float exact_d = amax / 127.0f;\n        precise float exact_id = exact_d != 0.0f ? 1.0f / exact_d : 0.0f;",
           "after": "        precise float exact_d = amax / 127.0f;\n        // Native shader division may be approximate. Residual correction\n        // retains the reference's two distinct F32 rounded quotients.\n        precise float d_residual = fma(-exact_d, 127.0f, amax);\n        exact_d = fma(d_residual, 1.0f / 127.0f, exact_d);\n        precise float exact_id = exact_d != 0.0f ? 1.0f / exact_d : 0.0f;\n        if (exact_d != 0.0f) {\n            precise float id_residual = fma(-exact_id, exact_d, 1.0f);\n            exact_id = fma(id_residual, exact_id, exact_id);\n        }"
+        },
+        {
+          "before": "    float id = (d != 0.0) ? 1.0/d : 0.0;",
+          "after": "    float id = 0.0;\n#ifdef SET_ROWS\n    id = (d != 0.0) ? 1.0/d : 0.0;\n#else\n    if (p.param4 != 1.0f) id = (d != 0.0) ? 1.0/d : 0.0;\n#endif"
+        },
+        {
+          "before": "        precise float exact_id = exact_d != 0.0f ? 1.0f / exact_d : 0.0f;",
+          "after": "        // CacheEncode canonicalizes an underflowed F16 scale before any\n        // reciprocal/residual or float-to-integer conversion. Normal Copy and\n        // SetRows retain their original quantizer and byte rules.\n        if ((packHalf2x16(vec2(exact_d, 0.0f)) & 0xffffu) == 0u) {\n            data_q[dst_idx].d = float16_t(0.0f);\n            [[unroll]] for (int j = 0; j < QUANT_K_Q8_0; ++j) {\n                data_q[dst_idx].qs[j] = int8_t(0);\n            }\n            return;\n        }\n        precise float exact_id = 1.0f / exact_d;"
         }
       ],
-      "after_sha256": "1242cf8ff02c31138ee143c599705c04fad6e3c2b92af3a3546a58cdae2908cf"
+      "after_sha256": "ddfcbb587630babc3d06609089b59b46d5df3ed0b905928592e4ff10e3c1b244"
     }
   ]
 }
