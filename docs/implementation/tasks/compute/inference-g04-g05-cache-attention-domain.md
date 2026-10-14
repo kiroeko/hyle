@@ -447,3 +447,32 @@ lowering”。Compute端同一CacheEncode已有CE06实测，不是新增编码�
 复制进原Plan；CacheEncode只缺 `mature_custom` 的默认路由准入。选定表示/精度/失败检查由
 CE06的 `lower_cache_encoder` 负责，Graph不得重复检查或引入另一个encoder。有限一项FIX已
 固定，本owner进入AUDITED；现为十一owner同批，实际组合验证仍UNPROVEN。
+
+### CE07 Apple/Vulkan 编码 producer 到页面消费 source 阶段
+
+[阶段证据](../../../../evidence/correctness/inference-g04-g05-encoded-native-page-source/result.json)
+保存实际Air Apple四次、Vulkan两次attempt，累计109.711秒，所有原FAIL/输入SHA/工具链与
+fixture版本保留。最终两路线各3项测试PASS，均使用同一个公开消费者夹具；每路线8个成功
+episode各6次更新、4个接受后数值失败episode，签F16 Q/output、Q8 KV有限域。
+
+实际覆盖原生receiver与CPU+GPU联合Graph、single activeQ1/multi activeQ18、(64,128)与
+(256,256)、page16/window16。每个成功episode交替使用同Graph两个encoder和两个独立
+Graph原始result，均进入同一个原F2 Update，只观察最终原聚合；move后不能重用producer，
+保留result不能取回Update，实际完成并释放后才能取回原controls。joint前缀为required CPU
+Abs(-.125)/Cast、后缀Cast/Neg；非零dirty K参与独立量化softmax oracle，避免全零K掩盖
+未消费Q/K的问题。两套carrier分别按真实K/V row bytes绑定，不假定同维或同page bytes。
+
+首次显式克隆旧tail页，之后只复制requests*(Krow+Vrow)字节，报告逐次断言；完整K/V页
+byte oracle核dirty codes与未触碰历史/unused tail，独立旧reader跨全部新版本仍禁止原页
+写入且重新运行数学正确，共享clean页保持原bytes。第二个独立encoder或paired Graph内
+V encoder输入NaN时，最终result/completion均保留InvalidArgument，全部4个writer都不能
+发布，旧页面bytes保持；不是只验证先观察到错误就假定退役。
+
+首次Apple fixture误用readonly-export query，违反原native batch要求同resource的Q合同，
+已用原device LeasePool准备Q，不修改权限边界。首次Vulkan实际发现CE09默认Graph路由
+缺失；唯一产品修复是把CacheEncode交给已有Compute Plan。只读复核还补齐了非零K/
+加权oracle、完整K页与全部writer失败检查，最终差分无新增MUST。
+
+此处不签CPU/CUDA新域producer组合、CPU-only ffa、新域完整risk/SDK/P1或整个G04/G05。
+Apple BF16新域数学已有CE05证据，本次F2/联合夹具仅签F16；其余准入格保留待验，不冒签。
+十一owner仍AUDITED；当前没有活跃重型任务，Windows canonical工作树保留全部本批变更。

@@ -1,0 +1,366 @@
+{
+  "kind": "G04_G05_ENCODED_NATIVE_PAGE_DELTA_SOURCE_STAGE",
+  "verdict": "PASS_FINITE_ACTUAL_AIR_APPLE_VULKAN_NATIVE_AND_CPU_JOINT_SOURCE",
+  "owners_remain": "AUDITED, eleven owners; whole G04/G05 not accepted",
+  "input_sha256": {
+    "tests/compute_batch/encoded_page_native_consumer.cc": "02121c9a3d3b0b5b1b1509ae93299f146df62dcd611262e6b366775b93d54a0d",
+    "src/graph_route_vulkan/vulkan_lowering.cc": "a4beb31bbdb5706000779526f02bbf1699adad1ea0e9b4ff226df02917231d96"
+  },
+  "delivery": "Cached ordinary shared source parents, canonical Windows one-way archives, shipping product with separate GTest executable",
+  "tests": "3 tests per actual route: 8 successful episodes x6 updates plus4 accepted numerical failure episodes per route",
+  "qualified": [
+    "Actual Apple and Vulkan, native page receiver and CPU+GPU joint Graph receiver; no CPU fallback for native page math",
+    "Single request activeQ1 and two requests activeQ18, Dqk/Dv(64,128) and(256,256), page16, causal window16",
+    "Alternating paired K/V CacheEncode nodes in one Graph and two separately accepted Graph results to the same original F2 Update",
+    "Nonzero dirty K and Q=.125; joint CPU Abs(-.125)/Cast and Cast/Neg suffix, independently weighted softmax over reference Q8 bytes",
+    "No intermediate producer/F2 wait, move-only source ownership, retained results prevent update recovery, original controls returned after final completion",
+    "First update explicitly clones old pages; subsequent updates copy only actual dirty encoded K/V rows with independent row widths",
+    "Full K/V destination byte oracles include untouched rows; shared clean page and retained old page bytes stay unchanged",
+    "Old frame remains read-protected and actual old attention still matches its independent oracle after all new version updates",
+    "Paired-Graph and independent second-Graph NaN source errors propagate InvalidArgument through final result/completion; every destination writer rejects publication",
+    "Vulkan Graph default CacheEncode forwards to original already-qualified Compute Plan without user custom lowering"
+  ],
+  "P0": "Original Graph/Program/slots/status/result/F2/controller/queue and exact page guards reused; CE09 is one cold allowlist entry. Encoder work is only new dirty rows. First-episode clone is explicit; later logical bytes=requests*(Krow+Vrow). No new runtime, public metadata, full-history decode, mask or capture claim. Native private storage remains UNKNOWN.",
+  "not_proven": [
+    "CPU/CUDA new-domain producer/F2/Graph consumers and CPU-only ffa execution",
+    "New-domain complete OOM/cancellation/unknown/concurrency/retirement and tiny-scale numerical risk matrix",
+    "static/shared installed SDK delivery and remaining source profiles",
+    "qualified P1",
+    "whole G01/G02/G04/G05 and G06-G10"
+  ],
+  "runs": [
+    {
+      "state": "TERMINAL_FAIL",
+      "identity": {
+        "model": "Mac16,12",
+        "arch": "arm64",
+        "os": "ProductName:\t\tmacOS\nProductVersion:\t\t27.0.1\nBuildVersion:\t\t26A434",
+        "compiler": "Apple clang version 21.0.0 (clang-2100.3.34.2)\nTarget: arm64-apple-darwin27.0.0\nThread model: posix\nInstalledDir: /Library/Developer/CommandLineTools/usr/bin",
+        "memory": "17179869184"
+      },
+      "max_jobs": 4,
+      "stages": [
+        {
+          "stage": "configure",
+          "command": [
+            "/opt/homebrew/bin/cmake",
+            "-S",
+            "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-parent",
+            "-B",
+            "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-build"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 6.033287292000001,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-pages/configure-apple-1.log"
+        },
+        {
+          "stage": "compile",
+          "command": [
+            "/opt/homebrew/bin/cmake",
+            "--build",
+            "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-build",
+            "--target",
+            "g04_g05_encoded_pages",
+            "--parallel",
+            "4"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 8.308853834,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-pages/compile-apple-1.log"
+        },
+        {
+          "stage": "tests",
+          "command": [
+            "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-build/g04_g05_encoded_pages",
+            "--gtest_output=xml:/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-pages/tests-apple-1.xml"
+          ],
+          "exit_code": 1,
+          "elapsed_seconds": 3.108396375,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-pages/tests-apple-1.log"
+        }
+      ],
+      "scope": "CE07 actual paired/separate Graph encoders to native/joint page receiver; no whole model/SDK/sanitizer/P1 verdict",
+      "cumulative_seconds": 17.450537501,
+      "attempt": "apple-1"
+    },
+    {
+      "state": "TERMINAL_PASS",
+      "identity": {
+        "model": "Mac16,12",
+        "arch": "arm64",
+        "os": "ProductName:\t\tmacOS\nProductVersion:\t\t27.0.1\nBuildVersion:\t\t26A434",
+        "compiler": "Apple clang version 21.0.0 (clang-2100.3.34.2)\nTarget: arm64-apple-darwin27.0.0\nThread model: posix\nInstalledDir: /Library/Developer/CommandLineTools/usr/bin",
+        "memory": "17179869184"
+      },
+      "max_jobs": 4,
+      "stages": [
+        {
+          "stage": "configure",
+          "command": [
+            "/opt/homebrew/bin/cmake",
+            "-S",
+            "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-parent",
+            "-B",
+            "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-build"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 4.198317916000001,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-pages/configure-apple-2.log"
+        },
+        {
+          "stage": "compile",
+          "command": [
+            "/opt/homebrew/bin/cmake",
+            "--build",
+            "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-build",
+            "--target",
+            "g04_g05_encoded_pages",
+            "--parallel",
+            "4"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 6.136657459000001,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-pages/compile-apple-2.log"
+        },
+        {
+          "stage": "tests",
+          "command": [
+            "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-build/g04_g05_encoded_pages",
+            "--gtest_output=xml:/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-pages/tests-apple-2.xml"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 1.9662202919999991,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-pages/tests-apple-2.log"
+        }
+      ],
+      "scope": "CE07 actual paired/separate Graph encoders to native/joint page receiver; no whole model/SDK/sanitizer/P1 verdict",
+      "cumulative_seconds": 12.301195667000002,
+      "attempt": "apple-2"
+    },
+    {
+      "state": "TERMINAL_PASS",
+      "identity": {
+        "model": "Mac16,12",
+        "arch": "arm64",
+        "os": "ProductName:\t\tmacOS\nProductVersion:\t\t27.0.1\nBuildVersion:\t\t26A434",
+        "compiler": "Apple clang version 21.0.0 (clang-2100.3.34.2)\nTarget: arm64-apple-darwin27.0.0\nThread model: posix\nInstalledDir: /Library/Developer/CommandLineTools/usr/bin",
+        "memory": "17179869184"
+      },
+      "max_jobs": 4,
+      "stages": [
+        {
+          "stage": "configure",
+          "command": [
+            "/opt/homebrew/bin/cmake",
+            "-S",
+            "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-parent",
+            "-B",
+            "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-build"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 4.18571275,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-pages/configure-apple-3.log"
+        },
+        {
+          "stage": "compile",
+          "command": [
+            "/opt/homebrew/bin/cmake",
+            "--build",
+            "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-build",
+            "--target",
+            "g04_g05_encoded_pages",
+            "--parallel",
+            "4"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 6.161204667000001,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-pages/compile-apple-3.log"
+        },
+        {
+          "stage": "tests",
+          "command": [
+            "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-build/g04_g05_encoded_pages",
+            "--gtest_output=xml:/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-pages/tests-apple-3.xml"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 1.0359783339999993,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-pages/tests-apple-3.log"
+        }
+      ],
+      "scope": "CE07 actual paired/separate Graph encoders to native/joint page receiver; no whole model/SDK/sanitizer/P1 verdict",
+      "cumulative_seconds": 11.382895751,
+      "attempt": "apple-3"
+    },
+    {
+      "state": "TERMINAL_PASS",
+      "identity": {
+        "model": "Mac16,12",
+        "arch": "arm64",
+        "os": "ProductName:\t\tmacOS\nProductVersion:\t\t27.0.1\nBuildVersion:\t\t26A434",
+        "compiler": "Apple clang version 21.0.0 (clang-2100.3.34.2)\nTarget: arm64-apple-darwin27.0.0\nThread model: posix\nInstalledDir: /Library/Developer/CommandLineTools/usr/bin",
+        "memory": "17179869184"
+      },
+      "max_jobs": 4,
+      "stages": [
+        {
+          "stage": "configure",
+          "command": [
+            "/opt/homebrew/bin/cmake",
+            "-S",
+            "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-parent",
+            "-B",
+            "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-build"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 4.161429833,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-pages/configure-apple-4.log"
+        },
+        {
+          "stage": "compile",
+          "command": [
+            "/opt/homebrew/bin/cmake",
+            "--build",
+            "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-build",
+            "--target",
+            "g04_g05_encoded_pages",
+            "--parallel",
+            "4"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 6.1247050000000005,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-pages/compile-apple-4.log"
+        },
+        {
+          "stage": "tests",
+          "command": [
+            "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-build/g04_g05_encoded_pages",
+            "--gtest_output=xml:/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-pages/tests-apple-4.xml"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 1.1052173750000005,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-pages/tests-apple-4.log"
+        }
+      ],
+      "scope": "CE07 actual paired/separate Graph encoders to native/joint page receiver; no whole model/SDK/sanitizer/P1 verdict",
+      "cumulative_seconds": 11.391352208,
+      "attempt": "apple-4"
+    },
+    {
+      "state": "TERMINAL_FAIL",
+      "identity": {
+        "model": "Mac16,12",
+        "arch": "arm64",
+        "os": "ProductName:\t\tmacOS\nProductVersion:\t\t27.0.1\nBuildVersion:\t\t26A434",
+        "compiler": "Apple clang version 21.0.0 (clang-2100.3.34.2)\nTarget: arm64-apple-darwin27.0.0\nThread model: posix\nInstalledDir: /Library/Developer/CommandLineTools/usr/bin",
+        "memory": "17179869184"
+      },
+      "max_jobs": 4,
+      "stages": [
+        {
+          "stage": "configure",
+          "command": [
+            "/opt/homebrew/bin/cmake",
+            "-S",
+            "/Users/kiro/hyle-scratch/compute-unified/a-cpu-vulkan/selected-graph/source-parent",
+            "-B",
+            "/Users/kiro/hyle-scratch/compute-unified/a-cpu-vulkan/selected-graph/source-build"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 19.538824208,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-pages/configure-vulkan-1.log"
+        },
+        {
+          "stage": "compile",
+          "command": [
+            "/opt/homebrew/bin/cmake",
+            "--build",
+            "/Users/kiro/hyle-scratch/compute-unified/a-cpu-vulkan/selected-graph/source-build",
+            "--target",
+            "g04_g05_encoded_pages",
+            "--parallel",
+            "4"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 8.31756325,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-pages/compile-vulkan-1.log"
+        },
+        {
+          "stage": "tests",
+          "command": [
+            "/Users/kiro/hyle-scratch/compute-unified/a-cpu-vulkan/selected-graph/source-build/g04_g05_encoded_pages",
+            "--gtest_output=xml:/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-pages/tests-vulkan-1.xml"
+          ],
+          "exit_code": 1,
+          "elapsed_seconds": 3.077396499999999,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-pages/tests-vulkan-1.log"
+        }
+      ],
+      "scope": "CE07 actual paired/separate Graph encoders to native/joint page receiver; no whole model/SDK/sanitizer/P1 verdict",
+      "cumulative_seconds": 30.933783958,
+      "attempt": "vulkan-1"
+    },
+    {
+      "state": "TERMINAL_PASS",
+      "identity": {
+        "model": "Mac16,12",
+        "arch": "arm64",
+        "os": "ProductName:\t\tmacOS\nProductVersion:\t\t27.0.1\nBuildVersion:\t\t26A434",
+        "compiler": "Apple clang version 21.0.0 (clang-2100.3.34.2)\nTarget: arm64-apple-darwin27.0.0\nThread model: posix\nInstalledDir: /Library/Developer/CommandLineTools/usr/bin",
+        "memory": "17179869184"
+      },
+      "max_jobs": 4,
+      "stages": [
+        {
+          "stage": "configure",
+          "command": [
+            "/opt/homebrew/bin/cmake",
+            "-S",
+            "/Users/kiro/hyle-scratch/compute-unified/a-cpu-vulkan/selected-graph/source-parent",
+            "-B",
+            "/Users/kiro/hyle-scratch/compute-unified/a-cpu-vulkan/selected-graph/source-build"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 18.075206583,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-pages/configure-vulkan-2.log"
+        },
+        {
+          "stage": "compile",
+          "command": [
+            "/opt/homebrew/bin/cmake",
+            "--build",
+            "/Users/kiro/hyle-scratch/compute-unified/a-cpu-vulkan/selected-graph/source-build",
+            "--target",
+            "g04_g05_encoded_pages",
+            "--parallel",
+            "4"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 6.109368500000002,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-pages/compile-vulkan-2.log"
+        },
+        {
+          "stage": "tests",
+          "command": [
+            "/Users/kiro/hyle-scratch/compute-unified/a-cpu-vulkan/selected-graph/source-build/g04_g05_encoded_pages",
+            "--gtest_output=xml:/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-pages/tests-vulkan-2.xml"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 2.0666429169999994,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-pages/tests-vulkan-2.log"
+        }
+      ],
+      "scope": "CE07 actual paired/separate Graph encoders to native/joint page receiver; no whole model/SDK/sanitizer/P1 verdict",
+      "cumulative_seconds": 26.251218,
+      "attempt": "vulkan-2"
+    }
+  ],
+  "cumulative_seconds": 109.71098308500001,
+  "bounded_readonly_review": {
+    "MUST_resolved": [
+      "Zero-K mean-only oracle replaced by nonzero K and independently weighted softmax, including required CPU Abs/Cast query consumption",
+      "Full K/V byte checks and all four destination writers checked on source failure"
+    ],
+    "new_MUST": 0,
+    "scope": "Current fixture only; cross-platform acceptance limited to actual Air Apple/Vulkan results"
+  }
+}

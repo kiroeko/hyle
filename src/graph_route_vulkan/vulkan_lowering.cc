@@ -140,6 +140,7 @@ static Result<cv::Program> compile_impl(const cv::Context &context,
       if (!node)
         continue;
       const bool mature_custom =
+          node->operation.custom_as<compute::model_ops::CacheEncode>() ||
           node->operation.custom_as<compute::model_ops::Float8WeightDecode>() ||
           node->operation.custom_as<compute::model_ops::Float8BlockLinear>() ||
           node->operation.custom_as<compute::model_ops::GroupedFloat8Linear>() ||
