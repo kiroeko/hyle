@@ -514,14 +514,9 @@
     },
     {
       "module": "compute_route_apple",
-      "state": "CLOSED",
-      "record": "docs/implementation/tasks/compute/inference-g03-copy-update-terminal.md",
-      "summary": "G03 CU01–CU03有限source CLOSED：CopyBatchUpdate移动原2controls、typed pending input/native prefix/ordered read复用原F1/F2。四source公共65步、Apple8/Vulkan6/CUDA4风险/CPU6、六hostsan、六SDK18heads与Windows通过；P0旧常态字段/队列/分配/锁/原子不变。完整pending attention/late输出仍compute_batch SCOPED，原native同步/取消差异/privateUNKNOWN和其它G项保留。",
-      "candidate": "bcaec010b528e372671f737f40b4aa53eb076aaf",
-      "performance": {
-        "tier": "P0",
-        "evidence": "docs/implementation/tasks/compute/inference-g03-copy-update-terminal.md"
-      }
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/compute/inference-g03-native-dependency-admission.md",
+      "summary": "G03 native dependency cancellation admission SCOPED: actual Apple/Vulkan source-cancelled attention-success counterexample; finite original endpoint qualifier checks, no queue/layout/allocator/normal math change. Full receiver status aggregation/pending pages/late output remains compute_batch SCOPED."
     },
     {
       "module": "graph_route_apple",
@@ -536,14 +531,9 @@
     },
     {
       "module": "compute_route_vulkan",
-      "state": "CLOSED",
-      "record": "docs/implementation/tasks/compute/inference-g03-copy-update-terminal.md",
-      "summary": "G03 CU01–CU03有限source CLOSED：CopyBatchUpdate移动原2controls、typed pending input/native prefix/ordered read复用原F1/F2。四source公共65步、Apple8/Vulkan6/CUDA4风险/CPU6、六hostsan、六SDK18heads与Windows通过；P0旧常态字段/队列/分配/锁/原子不变。完整pending attention/late输出仍compute_batch SCOPED，原native同步/取消差异/privateUNKNOWN和其它G项保留。",
-      "candidate": "bcaec010b528e372671f737f40b4aa53eb076aaf",
-      "performance": {
-        "tier": "P0",
-        "evidence": "docs/implementation/tasks/compute/inference-g03-copy-update-terminal.md"
-      }
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/compute/inference-g03-native-dependency-admission.md",
+      "summary": "G03 native dependency cancellation admission SCOPED: actual Apple/Vulkan source-cancelled attention-success counterexample; finite original endpoint qualifier checks, no queue/layout/allocator/normal math change. Full receiver status aggregation/pending pages/late output remains compute_batch SCOPED."
     },
     {
       "module": "graph_route_vulkan",

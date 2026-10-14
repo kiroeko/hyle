@@ -127,3 +127,7 @@ metadata/capture 优化仍留 G06，不在 G03 重开已关闭的数学与性能
 
 下一步仅固定上述 receiver 与 late output 的有限 API/ownership/FIX；实际必要的下层
 改动先按本反证登记新 scope。主 owner 仍 SCOPED，不由此自动进入 AUDITED。
+
+已请求取消的原 dependency 接纳检查按
+[两 native owner 有限新轮](inference-g03-native-dependency-admission.md)单独登记；
+不把这一步检查当完整 receiver 聚合或 pending 页形状完成。
