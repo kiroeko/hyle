@@ -1,6 +1,6 @@
 # G03 原 F2 update 所有权与受控 pending 输入
 
-状态：AUDITED，2026-10-14；owner `compute`、`compute_route_apple`、
+状态：CANDIDATE，2026-10-14；owner `compute`、`compute_route_apple`、
 `compute_route_vulkan`；baseline `f764a1053`。compute_batch仍按
 [主卡](inference-g03-pending-page-consumption.md)SCOPED裁决完整receiver/页/late native输出。
 本卡是必要的F2 source权限接缝，不签整个pending producer→attention或G03。
@@ -118,3 +118,16 @@ backend文件，无nvcc数学kernel或全模型。累计74.464秒（含约69.4�
 拒绝、最后inline phase保真native prefix，原writer无ready；只final update.wait，bytes49
 与原guards退休通过。累计62.046秒（含约60.2秒原parent configure）；
 该case不代签CUDA完整receiver与失败/unknown风险。测试/source证据已保存，CU03仍施工。
+
+## 固定产品 candidate
+
+`bcaec010b528e372671f737f40b4aa53eb076aaf` 固定 CU01/CU02 的公开形状、私有typed source seam和P0成本结构；
+普通原invocation/submission字段与allocator/队列/锁/原子未更改，opt-in owner仅两个
+handles，几何/known-status/native-prefix检查按原finite phases/copies有界扫描。source
+证据覆盖产品字节；仅fixture行尾恢复LF不是API/算法变化。CU03工程门继续，未运行或
+不能裁决项不能写PASS/NOT_APPLICABLE；当前CANDIDATE不签七门全部通过。
+
+下一组仅对该candidate复用原copy风险、typed拒绝/unknown/cancel/abandon/closed寿命，
+运行适用hostsan与source/static/shared公共consumer/独立头/定向Windows，保上面所有
+fixture FAIL/预算与原private UNKNOWN。不重跑已闭数学P1，不把真实copy后继当attention
+数学资格；主卡compute_batch仍SCOPED。若新事实改变此形状，先合法退回AUDITED。

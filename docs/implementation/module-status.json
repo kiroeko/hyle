@@ -270,9 +270,10 @@
     },
     {
       "module": "compute",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/inference-g03-copy-update-owner.md",
-      "summary": "G03 CU01-CU03 AUDITED: frozen move-only CopyBatchUpdate owns original invocation+submission, compiled actual identity/retirement, trusted original mutable geometry/native prefix/ordered read. No new default F2 layout/lock/atomic/allocator/runtime; four-route source qualification required. Receiver/page/late native output and wholeG03 remain mainSCOPED task; old closed facts retained."
+      "summary": "G03 CopyBatchUpdate CU01/CU02 原controls所有权与trusted pending input/native prefix/admit_read已固定；四source公共64步、Apple五生命周期及真实原copy后继三场景、CUDA gated成功权限/prefix通过。CU03其余失败/unknown、hostsan、SDK/独立头和Windows资格仍施工；不签完整pending attention或G03。",
+      "candidate": "bcaec010b528e372671f737f40b4aa53eb076aaf"
     },
     {
       "module": "graph",
@@ -509,9 +510,10 @@
     },
     {
       "module": "compute_route_apple",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/inference-g03-copy-update-owner.md",
-      "summary": "G03 CU01-CU03 AUDITED: frozen move-only CopyBatchUpdate owns original invocation+submission, compiled actual identity/retirement, trusted original mutable geometry/native prefix/ordered read. No new default F2 layout/lock/atomic/allocator/runtime; four-route source qualification required. Receiver/page/late native output and wholeG03 remain mainSCOPED task; old closed facts retained."
+      "summary": "G03 CopyBatchUpdate CU01/CU02 原controls所有权与trusted pending input/native prefix/admit_read已固定；四source公共64步、Apple五生命周期及真实原copy后继三场景、CUDA gated成功权限/prefix通过。CU03其余失败/unknown、hostsan、SDK/独立头和Windows资格仍施工；不签完整pending attention或G03。",
+      "candidate": "bcaec010b528e372671f737f40b4aa53eb076aaf"
     },
     {
       "module": "graph_route_apple",
@@ -526,9 +528,10 @@
     },
     {
       "module": "compute_route_vulkan",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/inference-g03-copy-update-owner.md",
-      "summary": "G03 CU01-CU03 AUDITED: frozen move-only CopyBatchUpdate owns original invocation+submission, compiled actual identity/retirement, trusted original mutable geometry/native prefix/ordered read. No new default F2 layout/lock/atomic/allocator/runtime; four-route source qualification required. Receiver/page/late native output and wholeG03 remain mainSCOPED task; old closed facts retained."
+      "summary": "G03 CopyBatchUpdate CU01/CU02 原controls所有权与trusted pending input/native prefix/admit_read已固定；四source公共64步、Apple五生命周期及真实原copy后继三场景、CUDA gated成功权限/prefix通过。CU03其余失败/unknown、hostsan、SDK/独立头和Windows资格仍施工；不签完整pending attention或G03。",
+      "candidate": "bcaec010b528e372671f737f40b4aa53eb076aaf"
     },
     {
       "module": "graph_route_vulkan",
