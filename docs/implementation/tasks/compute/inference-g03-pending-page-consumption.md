@@ -213,3 +213,27 @@ CopyBatchUpdate.take_mutable返回了writer。原F1拒绝其立即view/publish�
 take_mutable入口的原WriteLease.view唯一性/成功资格检查；拒绝不移动原binding。复用
 既有F1，不改F1布局/锁/原子或另建controller，显式withdraw增加一次原常数检查。
 第1次测试失败为32KiB fixture遗漏sentinel的1字节，已补齐；两次原FAIL/日志/elapsed保留。
+
+## PF01–PF03 已验证实施检查点（2026-10-14）
+
+本批产品和三个专用测试已实现；[输入资格验证记录](../../../../evidence/correctness/inference-g03-pending-page-inputs/validation-result.json)
+保留原日志、每次 FAIL/累计时间、最终 source hash、native artifact receipt、两原 TSan
+模型与 SDK consumer 编译命令。四 owner 仍 AUDITED，未把整个 G03 转入 CANDIDATE/CLOSED。
+
+Windows 20 项与原 public64；Air 两 actual native、六 host sanitizer（每组 page20、
+native 两 episode、原 CPU copy8）；两 relocated static/shared 各 page20 与三 standalone
+头；CUDA actual256-byte 原 gated producer/F2/download＋byte/sum oracle 均 PASS。
+初始化洞、shared/non-tail、root/generation/extent、每冷分配 OOM、两原 copy slot/64步、
+旧 guard 与原 controls 回收得到定向验证。Windows 最终 receipt 后只有 common detail
+头合同注释变化；Air/CUDA final manifest 匹配产品字节，未伪造 Windows 新编译身份。
+
+真实 withdrawal 反证已修于三个原 take_mutable：先用既有 F1 view 的唯一性和成功检查，
+拒绝不移动 binding。冷 frame 最多四分配，payload 不复制；coverage/admission 不观察
+producer、不新增队列。原 source native fixture 不算 installed native receiver 交付；
+host sanitizer 不签 shader/driver，CUDA 沿原 source HYLE_TESTING 树且无 nvcc/kernel。
+所有 fixture FAIL、原 worker teardown ASan、autonomous counter 误判和 WSL 输入扫描
+中断均保留。没有重型 run 存活；不重复本批、IP、cold source 与原数学已证明门。
+
+下一步继续本主卡的真实 native/Batch receiver、原 Graph completion 聚合与 late output；
+在此固定下一有限 FIX/公开消费形状后实现。完整七路线64步/两请求/两slot/独立 reduction、
+原 G01/G02 未决门与 G04–G10 均未代签。整体粗估18%–20%，完整 G 项仍0/10。

@@ -328,6 +328,8 @@ Result<WriteLease> detail::CopyStreamAccess::take_mutable(
   auto &binding = state->bindings[id.value];
   if (!binding.write.valid())
     return std::unexpected(Status::FailedPrecondition("copy binding has no mutable lease"));
+  HYLE_ASSIGN_OR_RETURN(auto unique, binding.write.view());
+  (void)unique;
   auto writer = std::move(binding.write);
   binding = {};
   state->physical[id.value] = {};
@@ -597,6 +599,16 @@ Result<compute::detail::CopyUpdateInput> detail::CopyStreamAccess::input(
   HYLE_ASSIGN_OR_RETURN(auto view, compute::detail::LeaseAccess::ordered_view(binding.write));
   return compute::detail::CopyUpdateInput{&binding.write, view, state->physical[id.value],
       binding.root, {last}};
+}
+Status detail::CopyStreamAccess::covers(const CopyBatchUpdate &owner, CopyResourceId id,
+                                      std::size_t offset, std::size_t bytes) noexcept {
+  HYLE_ASSIGN_OR_RETURN(auto original, input(owner, id));
+  if (offset > original.view.size() || bytes > original.view.size() - offset)
+    return Status::OutOfRange("copy update coverage exceeds original destination");
+  const auto *state = detail::CopyUpdateAccess::invocation(owner).state_;
+  return compute::detail::copy_output_coverage(
+      std::span(state->written).first(state->report.active_copies), id,
+      original.last_write, offset, bytes);
 }
 Result<compute::detail::CompletionDependency> detail::CopyStreamAccess::dependency(
     const CopyBatchUpdate &owner) noexcept {

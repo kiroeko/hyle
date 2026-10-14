@@ -1,0 +1,126 @@
+{
+  "windows": [
+    {
+      "stage": "arena",
+      "command": [
+        "C:\\h7\\inference-g01-native-vulkan\\build\\g03_paged_arena_risks.exe"
+      ],
+      "exit_code": 1,
+      "elapsed_seconds": 0.030999999988125637,
+      "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g03\\pending-frame-windows\\arena-1.log"
+    },
+    {
+      "stage": "arena",
+      "command": [
+        "C:\\h7\\inference-g01-native-vulkan\\build\\g03_paged_arena_risks.exe"
+      ],
+      "exit_code": 1,
+      "elapsed_seconds": 0.046999999991385266,
+      "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g03\\pending-frame-windows\\arena-2.log"
+    },
+    {
+      "stage": "arena",
+      "command": [
+        "C:\\h7\\inference-g01-native-vulkan\\build\\g03_paged_arena_risks.exe"
+      ],
+      "exit_code": 1,
+      "elapsed_seconds": 0.015000000013969839,
+      "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g03\\pending-frame-windows\\arena-3.log"
+    }
+  ],
+  "air": [
+    {
+      "route": "apple",
+      "mode": "source",
+      "stage": "build",
+      "command": [
+        "/opt/homebrew/bin/cmake",
+        "--build",
+        "/Users/kiro/hyle-scratch/compute-unified/g03-pending-frame/apple-source/build",
+        "--target",
+        "native",
+        "--parallel",
+        "4"
+      ],
+      "exit_code": 1,
+      "elapsed_seconds": 0.5868634580000007,
+      "log": "/Users/kiro/hyle-scratch/compute-unified/g03-pending-frame/apple-source-build-1.log"
+    },
+    {
+      "route": "apple",
+      "mode": "source",
+      "stage": "native",
+      "command": [
+        "/Users/kiro/hyle-scratch/compute-unified/g03-pending-frame/apple-source/build/native"
+      ],
+      "exit_code": -11,
+      "elapsed_seconds": 0.5639351250000004,
+      "log": "/Users/kiro/hyle-scratch/compute-unified/g03-pending-frame/apple-source-native-1.log"
+    },
+    {
+      "route": "apple",
+      "mode": "asan",
+      "stage": "g03_pending_native",
+      "command": [
+        "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-apple-asan/build/g03_pending_native"
+      ],
+      "exit_code": -6,
+      "elapsed_seconds": 0.9497462080000005,
+      "log": "/Users/kiro/hyle-scratch/compute-unified/g03-pending-frame/apple-asan-g03_pending_native-1.log"
+    },
+    {
+      "route": "apple",
+      "mode": "asan",
+      "stage": "g03_pending_native",
+      "command": [
+        "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-apple-asan/build/g03_pending_native"
+      ],
+      "exit_code": 1,
+      "elapsed_seconds": 0.8516542499999993,
+      "log": "/Users/kiro/hyle-scratch/compute-unified/g03-pending-frame/apple-asan-g03_pending_native-2.log"
+    },
+    {
+      "route": "apple",
+      "mode": "asan",
+      "stage": "g03_pending_native",
+      "command": [
+        "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-apple-asan/build/g03_pending_native"
+      ],
+      "exit_code": 1,
+      "elapsed_seconds": 0.841967750000002,
+      "log": "/Users/kiro/hyle-scratch/compute-unified/g03-pending-frame/apple-asan-g03_pending_native-3.log"
+    }
+  ],
+  "preparation": [
+    {
+      "platform": "WSL",
+      "kind": "Wrong-environment canonical Git scan",
+      "observed_seconds_approximately": 200,
+      "pids": [
+        557,
+        650
+      ],
+      "result": "Only preparer Python terminated after process diagnosis; child Git already gone. No build or CUDA execution had started.",
+      "cause": "Linux Git scanned Windows NTFS worktree and CRLF evidence while collecting input list",
+      "correction": "Canonical Windows Git precomputes bounded input names; final configure/build/CUDA PASS"
+    }
+  ],
+  "diagnostics": [
+    "Windows test fixture first omitted the 1-byte sentinel; corrected 32769-byte backing",
+    "Windows discovered original take_mutable returned a writer while ordered readers retained the block; common/Apple/Vulkan now check original F1 unique view before moving it",
+    "Windows attempt3 repeated the same product failure because multi-file patch verification failed and common fix was absent; all attempts retained",
+    "Air fixture selected Vulkan-only MemoryKind in Apple branch; corrected original Apple create call",
+    "Air ASan diagnosed borrowed-resource teardown before original worker cleanup; explicit fixture Context.close before resource destruction fixes it",
+    "Air original worker host/native wait counters could advance autonomously during comparison; existing MLX checkpoint gates the observer-cost measurement",
+    "LLDB noninteractive SSH permission prevented debugging; ASan supplied the teardown diagnosis"
+  ],
+  "prior": "All original G01-G03 failures, unknowns, elapsed and budgets remain in prior evidence; no reset",
+  "mechanical": [
+    {
+      "stage": "closure --previous-ref1c45605cf",
+      "result": "FAIL",
+      "reason": "Registry summary changed but generated status.md had not yet been synchronized",
+      "correction": "Original checker --write-status regenerated the existing status projection; no public tool modification"
+    }
+  ]
+}

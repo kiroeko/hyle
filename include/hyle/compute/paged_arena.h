@@ -1,6 +1,7 @@
 #pragma once
 
 #include "hyle/compute/batch_layout.h"
+#include "hyle/compute/batch_transfer.h"
 
 namespace hyle::compute {
 struct PagedArenaOptions final {
@@ -8,9 +9,17 @@ struct PagedArenaOptions final {
   mem::AllocatorRef allocator = mem::system_allocator();
   ResourceBudget resource_budget{};
 };
-namespace detail {struct PagedArenaData;struct PagedArenaReadData;struct PagedArenaAccess;}
+namespace detail {struct PagedArenaData;struct PagedArenaReadData;struct PagedArenaPendingReadData;struct PagedArenaAccess;}
 class PagedPageWriter;
 class PagedArenaRead;
+class PagedArenaPendingRead;
+// Construction borrows page only for the call. The original copy control must
+// hold this page's consumed lease at the specified destination ID; the receiver
+// separately qualifies its accepted episode before admitting a read.
+struct PagedPageUpdate final {
+  const PagedPageWriter *page = nullptr;
+  CopyResourceId resource;
+};
 // Explicit contiguous physical arena with independent original F1 page blocks.
 // Page choice/eviction is caller policy. Control is thread-compatible; resources
 // and injected allocator outlive all writers/readers/native uses. Old versions
@@ -40,6 +49,11 @@ public:
   // order is arbitrary. Only trusted mathematical adapters see the raw span.
   HYLE_COMPUTE_BATCH_API Result<PagedArenaRead> read(BatchLayoutVersion,
       std::span<const ReadLease>)const noexcept;
+  // Cold immutable footprint for ready pages plus consumed original writers.
+  // This is not ready/read permission. A receiver must prove accepted copy
+  // coverage and native ordering before admitting any pending page read.
+  HYLE_COMPUTE_BATCH_API Result<PagedArenaPendingRead> pending_read(BatchLayoutVersion,
+      std::span<const ReadLease>,std::span<const PagedPageUpdate>)const noexcept;
   HYLE_COMPUTE_BATCH_API Status close() noexcept;
 private:
   friend class PagedPageWriter;
@@ -96,5 +110,26 @@ private:
   friend struct detail::PagedArenaAccess;
   explicit PagedArenaRead(detail::PagedArenaReadData*p)noexcept:data_(p){}
   detail::PagedArenaReadData*data_=nullptr;
+};
+// Exact owned layout and original page identities awaiting receiver admission.
+// No public bytes, ready conversion or execution owner. Source copy controls
+// outlive every receiver use; dropping this frame neither observes nor cancels.
+class PagedArenaPendingRead final {
+public:
+  PagedArenaPendingRead() noexcept = default;
+  HYLE_COMPUTE_BATCH_API PagedArenaPendingRead(const PagedArenaPendingRead&) noexcept;
+  HYLE_COMPUTE_BATCH_API PagedArenaPendingRead&operator=(const PagedArenaPendingRead&) noexcept;
+  HYLE_COMPUTE_BATCH_API PagedArenaPendingRead(PagedArenaPendingRead&&) noexcept;
+  HYLE_COMPUTE_BATCH_API PagedArenaPendingRead&operator=(PagedArenaPendingRead&&) noexcept;
+  HYLE_COMPUTE_BATCH_API ~PagedArenaPendingRead();
+  bool valid()const noexcept{return data_!=nullptr;}
+  HYLE_COMPUTE_BATCH_API BatchLayoutVersion layout()const noexcept;
+  HYLE_COMPUTE_BATCH_API std::size_t page_count()const noexcept;
+  HYLE_COMPUTE_BATCH_API std::size_t pending_count()const noexcept;
+private:
+  friend class PagedArena;
+  friend struct detail::PagedArenaAccess;
+  explicit PagedArenaPendingRead(detail::PagedArenaPendingReadData*p)noexcept:data_(p){}
+  detail::PagedArenaPendingReadData*data_=nullptr;
 };
 } // namespace hyle::compute

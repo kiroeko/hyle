@@ -1,0 +1,32 @@
+[
+  {
+    "directory": "/Users/kiro/hyle-scratch/compute-unified/g03-pending-frame/static/build",
+    "command": "/usr/bin/c++ -DHYLE_COMPUTE_CPU=1 -DHYLE_COMPUTE_GGML_CPU=1 -DHYLE_COMPUTE_VULKAN=1 -DHYLE_IO_HAS_COROUTINE_TRANSPORT=1 -DHYLE_STATIC -isystem /Users/kiro/hyle-scratch/compute-unified/g03-pending-frame/static/relocated/include -isystem /Users/kiro/Library/Caches/hyle/dependencies/v1/sources/googletest-063de7e9578f-162765170ae6/googletest/include -isystem /Users/kiro/Library/Caches/hyle/dependencies/v1/sources/googletest-063de7e9578f-162765170ae6/googletest -O3 -DNDEBUG -std=gnu++23 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk -Wall -Wextra -Wpedantic -Werror -o CMakeFiles/arena.dir/paged_arena_test.cc.o -c /Users/kiro/hyle-scratch/compute-unified/g03-pending-frame/static/consumer/paged_arena_test.cc",
+    "file": "/Users/kiro/hyle-scratch/compute-unified/g03-pending-frame/static/consumer/paged_arena_test.cc",
+    "output": "/Users/kiro/hyle-scratch/compute-unified/g03-pending-frame/static/build/CMakeFiles/arena.dir/paged_arena_test.cc.o"
+  },
+  {
+    "directory": "/Users/kiro/hyle-scratch/compute-unified/g03-pending-frame/static/build",
+    "command": "/usr/bin/c++ -DHYLE_COMPUTE_CPU=1 -DHYLE_COMPUTE_GGML_CPU=1 -DHYLE_COMPUTE_VULKAN=1 -DHYLE_IO_HAS_COROUTINE_TRANSPORT=1 -DHYLE_STATIC -isystem /Users/kiro/hyle-scratch/compute-unified/g03-pending-frame/static/relocated/include -isystem /Users/kiro/Library/Caches/hyle/dependencies/v1/sources/googletest-063de7e9578f-162765170ae6/googletest/include -isystem /Users/kiro/Library/Caches/hyle/dependencies/v1/sources/googletest-063de7e9578f-162765170ae6/googletest -O3 -DNDEBUG -std=gnu++23 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk -Wall -Wextra -Wpedantic -Werror -o CMakeFiles/arena.dir/paged_arena_pending_test.cc.o -c /Users/kiro/hyle-scratch/compute-unified/g03-pending-frame/static/consumer/paged_arena_pending_test.cc",
+    "file": "/Users/kiro/hyle-scratch/compute-unified/g03-pending-frame/static/consumer/paged_arena_pending_test.cc",
+    "output": "/Users/kiro/hyle-scratch/compute-unified/g03-pending-frame/static/build/CMakeFiles/arena.dir/paged_arena_pending_test.cc.o"
+  },
+  {
+    "directory": "/Users/kiro/hyle-scratch/compute-unified/g03-pending-frame/static/build",
+    "command": "/usr/bin/c++ -DHYLE_COMPUTE_CPU=1 -DHYLE_COMPUTE_GGML_CPU=1 -DHYLE_COMPUTE_VULKAN=1 -DHYLE_IO_HAS_COROUTINE_TRANSPORT=1 -DHYLE_STATIC -isystem /Users/kiro/hyle-scratch/compute-unified/g03-pending-frame/static/relocated/include -O3 -DNDEBUG -std=gnu++23 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk -Wall -Wextra -Wpedantic -Werror -o CMakeFiles/headers.dir/header-0.cc.o -c /Users/kiro/hyle-scratch/compute-unified/g03-pending-frame/static/consumer/header-0.cc",
+    "file": "/Users/kiro/hyle-scratch/compute-unified/g03-pending-frame/static/consumer/header-0.cc",
+    "output": "/Users/kiro/hyle-scratch/compute-unified/g03-pending-frame/static/build/CMakeFiles/headers.dir/header-0.cc.o"
+  },
+  {
+    "directory": "/Users/kiro/hyle-scratch/compute-unified/g03-pending-frame/static/build",
+    "command": "/usr/bin/c++ -DHYLE_COMPUTE_CPU=1 -DHYLE_COMPUTE_GGML_CPU=1 -DHYLE_COMPUTE_VULKAN=1 -DHYLE_IO_HAS_COROUTINE_TRANSPORT=1 -DHYLE_STATIC -isystem /Users/kiro/hyle-scratch/compute-unified/g03-pending-frame/static/relocated/include -O3 -DNDEBUG -std=gnu++23 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk -Wall -Wextra -Wpedantic -Werror -o CMakeFiles/headers.dir/header-1.cc.o -c /Users/kiro/hyle-scratch/compute-unified/g03-pending-frame/static/consumer/header-1.cc",
+    "file": "/Users/kiro/hyle-scratch/compute-unified/g03-pending-frame/static/consumer/header-1.cc",
+    "output": "/Users/kiro/hyle-scratch/compute-unified/g03-pending-frame/static/build/CMakeFiles/headers.dir/header-1.cc.o"
+  },
+  {
+    "directory": "/Users/kiro/hyle-scratch/compute-unified/g03-pending-frame/static/build",
+    "command": "/usr/bin/c++ -DHYLE_COMPUTE_CPU=1 -DHYLE_COMPUTE_GGML_CPU=1 -DHYLE_COMPUTE_VULKAN=1 -DHYLE_IO_HAS_COROUTINE_TRANSPORT=1 -DHYLE_STATIC -isystem /Users/kiro/hyle-scratch/compute-unified/g03-pending-frame/static/relocated/include -O3 -DNDEBUG -std=gnu++23 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk -Wall -Wextra -Wpedantic -Werror -o CMakeFiles/headers.dir/header-2.cc.o -c /Users/kiro/hyle-scratch/compute-unified/g03-pending-frame/static/consumer/header-2.cc",
+    "file": "/Users/kiro/hyle-scratch/compute-unified/g03-pending-frame/static/consumer/header-2.cc",
+    "output": "/Users/kiro/hyle-scratch/compute-unified/g03-pending-frame/static/build/CMakeFiles/headers.dir/header-2.cc.o"
+  }
+]

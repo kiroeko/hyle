@@ -1,0 +1,88 @@
+{
+  "identity": {
+    "uname": "Linux kiro-workstation 6.18.54.1-microsoft-standard-WSL2 #1 SMP PREEMPT_DYNAMIC Tue Oct  6 19:13:07 UTC 2026 x86_64 x86_64 x86_64 GNU/Linux",
+    "gpu": "NVIDIA GeForce RTX 4070, 617.14, 2436 MiB, 5 %"
+  },
+  "inputs": [
+    {
+      "path": "include/hyle/compute/detail/copy_stream_access.h",
+      "sha256": "18174b9024917acdcc1d985265a1a0da6afc5f29a2b437c80ebf52163aab1bb4"
+    },
+    {
+      "path": "include/hyle/compute/detail/paged_arena_access.h",
+      "sha256": "80d6cd5d2eaadf9e02d160f8a9673c1ef7c5923d21679aeda99b38b56da80069"
+    },
+    {
+      "path": "include/hyle/compute/paged_arena.h",
+      "sha256": "dfe0d1cd46505b122e6ae4c41c879f1316b37d899a7be0c6014be675273b53b7"
+    },
+    {
+      "path": "src/compute/batch_transfer.cc",
+      "sha256": "d9e0731bd10cd93dfbd2a0f98da27ea2c4b3f15a624d9c7e62d946beb453e5c3"
+    },
+    {
+      "path": "src/compute_batch/paged_arena.cc",
+      "sha256": "f3c7ba69723f2964876f3d3966929589afcb69819e13a09b8450456eb98a8616"
+    },
+    {
+      "path": "src/compute_route_apple/apple_copy_program.cc",
+      "sha256": "219e3c48fa4782fc0f74c94ecc3c632e07cb9800453d24900eeae84f796c1918"
+    },
+    {
+      "path": "src/compute_route_apple/apple_file_stream_access.h",
+      "sha256": "fd88f59f68db7f7b501e13c873a309df5e140910ad4ef80cdb5414979b79e55f"
+    },
+    {
+      "path": "src/compute_route_vulkan/vulkan_copy_program.cc",
+      "sha256": "231acfe00272d8bad138cfb3f286217cb71d403548e24e85df2b9b11bd3eaa95"
+    },
+    {
+      "path": "src/compute_route_vulkan/vulkan_file_stream_access.h",
+      "sha256": "6726c22f750118a00995ed787eb6d4173e25552dc1ad3f6e08f5664627f56dcd"
+    },
+    {
+      "path": "tests/compute_batch/paged_arena_pending_cuda_probe.cc",
+      "sha256": "b27a6c7e45f0de2f8358100d3a679440796af66a2ca3b4474904df3540dc889d"
+    }
+  ],
+  "stages": [
+    {
+      "stage": "configure",
+      "command": [
+        "cmake",
+        "-S",
+        "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/source-parent",
+        "-B",
+        "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/source-build"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 47.748166106999975,
+      "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g03/pending-frame-cuda/configure-1.log"
+    },
+    {
+      "stage": "build",
+      "command": [
+        "cmake",
+        "--build",
+        "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/source-build",
+        "--target",
+        "g03_pending_frame_cuda",
+        "--parallel",
+        "4"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 3.2093638279999936,
+      "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g03/pending-frame-cuda/build-1.log"
+    },
+    {
+      "stage": "actual-256-byte",
+      "command": [
+        "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/source-build/g03_pending_frame_cuda"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 0.3283215749999897,
+      "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g03/pending-frame-cuda/actual-256-byte-1.log"
+    }
+  ],
+  "cumulative_seconds": 51.28585150999996
+}

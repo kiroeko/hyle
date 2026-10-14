@@ -31,6 +31,19 @@ struct PagedArenaReadData final:util::RefCounted<PagedArenaReadData>{
   PagedArenaData*arena;BatchLayoutVersion layout;mem::AllocatorRef allocator;
   std::vector<ReadLease,mem::StdAllocator<ReadLease>> pages;
 };
+struct PagedArenaPendingReadData final:util::RefCounted<PagedArenaPendingReadData>{
+  PagedArenaPendingReadData(PagedArenaData*p,BatchLayoutVersion l)
+      :arena(p),layout(std::move(l)),allocator(p->allocator),
+       pages(mem::StdAllocator<ReadLease>(allocator)),
+       pending(mem::StdAllocator<PendingArenaPage>(allocator)){p->incref();}
+  void destroy()noexcept{
+    auto*p=arena;const auto a=allocator;this->~PagedArenaPendingReadData();p->decref();
+    a.deallocate(this,sizeof(*this),alignof(PagedArenaPendingReadData));
+  }
+  PagedArenaData*arena;BatchLayoutVersion layout;mem::AllocatorRef allocator;
+  std::vector<ReadLease,mem::StdAllocator<ReadLease>> pages;
+  std::vector<PendingArenaPage,mem::StdAllocator<PendingArenaPage>> pending;
+};
 } // namespace detail
 namespace {
 Result<std::uint32_t> page_id(const detail::PagedArenaData&p,const ReadLease&lease)noexcept{
@@ -128,6 +141,74 @@ Result<PagedArenaRead> PagedArena::read(BatchLayoutVersion layout,std::span<cons
   for(std::size_t i=0;i<required.size();++i)if(id(p->pages[i])!=std::uint32_t(required[i]))return std::unexpected(Status::InvalidArgument("paged arena read page IDs differ from layout"));
   return result;
 }
+Result<PagedArenaPendingRead> PagedArena::pending_read(BatchLayoutVersion layout,
+    std::span<const ReadLease> ready,std::span<const PagedPageUpdate> updates)const noexcept{
+  if(!data_ || data_->closed)return std::unexpected(Status::FailedPrecondition("paged arena is closed/empty"));
+  if(!data_->schema.owns(layout))return std::unexpected(Status::InvalidArgument("pending arena layout schema is foreign"));
+  const auto refs=layout.facts().page_refs;
+  if(!refs || ready.size()>refs || updates.size()>refs || ready.size()>refs-updates.size())
+    return std::unexpected(Status::InvalidArgument("pending arena needs its exact nonempty referenced pages"));
+  for(const auto&lease:ready){HYLE_ASSIGN_OR_RETURN(auto id,page_id(*data_,lease));(void)id;}
+  for(const auto&update:updates){
+    const auto*writer=update.page;
+    if(!writer || !update.resource.valid() || writer->arena_!=data_ || writer->writer_.valid() ||
+        writer->page_>=data_->slots.size() || !data_->slots[writer->page_].acquired)
+      return std::unexpected(Status::InvalidArgument("pending page needs this arena's consumed original writer"));
+  }
+  auto*p=data_->allocator.construct<detail::PagedArenaPendingReadData>(data_,std::move(layout));
+  if(!p)return std::unexpected(Status::ResourceExhausted("pending arena frame metadata"));
+  PagedArenaPendingRead result(p);
+  struct Required final {std::uint32_t page,rows;};
+  std::vector<Required,mem::StdAllocator<Required>> required(mem::StdAllocator<Required>(data_->allocator));
+  const auto id=[&](const ReadLease&lease){return std::uint32_t((lease.view()->offset()-data_->span.offset())/data_->page_bytes);};
+  try{
+    p->pages.assign(ready.begin(),ready.end());
+    std::sort(p->pages.begin(),p->pages.end(),[&](const auto&a,const auto&b){return id(a)<id(b);});
+    p->pages.erase(std::unique(p->pages.begin(),p->pages.end(),[&](const auto&a,const auto&b){return id(a)==id(b);}),p->pages.end());
+    p->pending.reserve(updates.size());
+    for(const auto&update:updates){
+      const auto page=update.page->page_;const auto&slot=data_->slots[page];
+      p->pending.push_back({update.resource,page,slot.initialized_rows,0,slot.identity,slot.generation,0,0});
+    }
+    std::sort(p->pending.begin(),p->pending.end(),[](const auto&a,const auto&b){return a.page<b.page;});
+    for(std::size_t i=1;i<p->pending.size();++i)if(p->pending[i-1].page==p->pending[i].page)
+      return std::unexpected(Status::InvalidArgument("pending arena repeats a mutable physical page"));
+    required.reserve(refs);const auto host=p->layout.host();const auto full=data_->schema.capacity().page_size;
+    for(std::size_t request=0;request<p->layout.facts().requests;++request){
+      const auto first=std::size_t(host.kv_indptr[request]),end=std::size_t(host.kv_indptr[request+1]);
+      for(auto index=first;index<end;++index)
+        required.push_back({std::uint32_t(host.page_indices[index]),index+1==end?std::uint32_t(host.last_page_lengths[request]):full});
+    }
+  }catch(const std::bad_alloc&){return std::unexpected(Status::ResourceExhausted("pending arena fixed footprint metadata"));}
+  std::sort(required.begin(),required.end(),[](const auto&a,const auto&b){return a.page<b.page;});
+  std::size_t unique=0;
+  for(const auto entry:required){
+    if(unique && required[unique-1].page==entry.page)required[unique-1].rows=std::max(required[unique-1].rows,entry.rows);
+    else required[unique++]=entry;
+  }
+  required.resize(unique);
+  if(p->pages.size()+p->pending.size()!=required.size())
+    return std::unexpected(Status::InvalidArgument("pending arena page set is incomplete or excessive"));
+  std::size_t r=0,u=0;const auto row_bytes=data_->page_bytes/data_->schema.capacity().page_size;
+  for(const auto&entry:required){
+    const bool has_ready=r<p->pages.size() && id(p->pages[r])==entry.page;
+    const bool has_pending=u<p->pending.size() && p->pending[u].page==entry.page;
+    if(has_ready==has_pending)
+      return std::unexpected(Status::InvalidArgument("pending arena page IDs differ or overlap"));
+    if(has_ready){
+      if(data_->slots[entry.page].initialized_rows<entry.rows)
+        return std::unexpected(Status::FailedPrecondition("ready page does not cover pending layout rows"));
+      ++r;
+    }else{
+      auto&pending=p->pending[u++];pending.required_rows=entry.rows;
+      if(entry.rows>pending.initialized_rows){
+        pending.new_offset=std::size_t(pending.initialized_rows)*row_bytes;
+        pending.new_bytes=std::size_t(entry.rows-pending.initialized_rows)*row_bytes;
+      }
+    }
+  }
+  return result;
+}
 Status PagedArena::close()noexcept{if(data_)data_->closed=true;return Status::Ok();}
 PagedPageWriter::PagedPageWriter(detail::PagedArenaData*p,std::uint32_t page,std::uint32_t rows,WriteLease writer)noexcept:arena_(p),page_(page),initialized_rows_(rows),writer_(std::move(writer)){p->incref();}
 PagedPageWriter::PagedPageWriter(PagedPageWriter&&p)noexcept:arena_(std::exchange(p.arena_,nullptr)),page_(p.page_),initialized_rows_(p.initialized_rows_),writer_(std::move(p.writer_)){}
@@ -155,4 +236,33 @@ BatchLayoutVersion PagedArenaRead::layout()const noexcept{return data_?data_->la
 std::size_t PagedArenaRead::page_count()const noexcept{return data_?data_->pages.size():0;}
 Result<ConstTensorView> detail::PagedArenaAccess::tensor(const PagedArenaRead&read)noexcept{if(!read.data_)return std::unexpected(Status::FailedPrecondition("paged arena read is empty"));return ConstTensorView::create(read.data_->arena->description,read.data_->arena->span);}
 std::span<const ReadLease> detail::PagedArenaAccess::pages(const PagedArenaRead&read)noexcept{return read.data_?std::span<const ReadLease>(read.data_->pages):std::span<const ReadLease>{};}
+PagedArenaPendingRead::PagedArenaPendingRead(const PagedArenaPendingRead&p)noexcept:data_(p.data_){if(data_)data_->incref();}
+PagedArenaPendingRead&PagedArenaPendingRead::operator=(const PagedArenaPendingRead&p)noexcept{if(this!=&p){PagedArenaPendingRead next(p);std::swap(data_,next.data_);}return *this;}
+PagedArenaPendingRead::PagedArenaPendingRead(PagedArenaPendingRead&&p)noexcept:data_(std::exchange(p.data_,nullptr)){}
+PagedArenaPendingRead&PagedArenaPendingRead::operator=(PagedArenaPendingRead&&p)noexcept{if(this!=&p){PagedArenaPendingRead next(std::move(p));std::swap(data_,next.data_);}return *this;}
+PagedArenaPendingRead::~PagedArenaPendingRead(){if(data_)data_->decref();}
+BatchLayoutVersion PagedArenaPendingRead::layout()const noexcept{return data_?data_->layout:BatchLayoutVersion{};}
+std::size_t PagedArenaPendingRead::page_count()const noexcept{return data_?data_->pages.size()+data_->pending.size():0;}
+std::size_t PagedArenaPendingRead::pending_count()const noexcept{return data_?data_->pending.size():0;}
+Result<ConstTensorView> detail::PagedArenaAccess::tensor(const PagedArenaPendingRead&read)noexcept{
+  if(!read.data_)return std::unexpected(Status::FailedPrecondition("pending arena frame is empty"));
+  return ConstTensorView::create(read.data_->arena->description,read.data_->arena->span);
+}
+std::span<const ReadLease> detail::PagedArenaAccess::pages(const PagedArenaPendingRead&read)noexcept{return read.data_?std::span<const ReadLease>(read.data_->pages):std::span<const ReadLease>{};}
+std::span<const detail::PendingArenaPage> detail::PagedArenaAccess::pending(const PagedArenaPendingRead&read)noexcept{return read.data_?std::span<const PendingArenaPage>(read.data_->pending):std::span<const PendingArenaPage>{};}
+Status detail::PagedArenaAccess::validate_page(const PagedArenaPendingRead&read,
+    std::size_t index,const CopyUpdateInput&input)noexcept{
+  if(!read.data_ || index>=read.data_->pending.size())return Status::InvalidArgument("pending arena input index is invalid");
+  const auto&frame=*read.data_;const auto&arena=*frame.arena;const auto&page=frame.pending[index];
+  const auto&slot=arena.slots[page.page];
+  if(arena.closed || !slot.acquired || slot.ready || slot.identity!=page.root ||
+      slot.generation!=page.generation || slot.initialized_rows!=page.initialized_rows)
+    return Status::FailedPrecondition("pending arena original reservation changed/closed");
+  if(!input.writer || input.root!=page.root || LeaseAccess::identity(*input.writer)!=page.root ||
+      input.writer->generation()!=page.generation || input.view.resource()!=arena.span.resource() ||
+      input.view.native_handle()!=arena.span.native_handle() || input.view.size()!=arena.page_bytes ||
+      input.view.offset()!=arena.span.offset()+std::size_t(page.page)*arena.page_bytes)
+    return Status::InvalidArgument("pending copy destination is not the exact original arena page");
+  return Status::Ok();
+}
 } // namespace hyle::compute

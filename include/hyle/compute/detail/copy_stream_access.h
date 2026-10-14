@@ -29,6 +29,10 @@ struct CopyStreamAccess final {
   // Trusted update receivers only: no host reads or public ready conversion.
   static HYLE_COMPUTE_API Result<compute::detail::CopyUpdateInput> input(
       const CopyBatchUpdate &, CopyResourceId) noexcept;
+  // Logical bytes written by the accepted original episode; no observation,
+  // publication or permission transfer. Successful retirement is separate.
+  static HYLE_COMPUTE_API Status covers(const CopyBatchUpdate &, CopyResourceId,
+                                      std::size_t offset, std::size_t bytes) noexcept;
   // Borrow the latest real async prefix; empty final logical phases must not
   // erase preceding native work. Known failures always reject. Do not observe
   // or return the owner between resolving and recording this exact dependency.

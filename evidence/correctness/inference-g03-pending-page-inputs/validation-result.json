@@ -1,0 +1,24 @@
+{
+  "scope": "PF01-PF03 input qualification implementation checkpoint; main owners remain AUDITED",
+  "passed": [
+    "Windows20 page tests and original public64 steps",
+    "Apple/Vulkan actual original updates and ordered-reader qualification with contiguous512-byte coverage and gap rejection",
+    "Six host sanitizer configurations: page20, native2 episodes and original CPU copy8 each",
+    "Two relocated common static/shared SDK consumers:20 tests and3 headers each",
+    "Actual CUDA256-byte original producer/F2/download, CPU byte+sum oracle, original cold source and completion, final-only wait, guard and control recovery"
+  ],
+  "seconds": {
+    "windows": 97.23300000000745,
+    "air": 246.5092206620001,
+    "cuda": 51.28585150999996
+  },
+  "limits": [
+    "Pending frame is a cold metadata owner; O((refs+inputs)log(refs+inputs)) construction, up to4 allocator calls; not whole-decode zero allocation",
+    "Source native proofs use private source headers; relocated SDK tests qualify common installed pending API only",
+    "Host sanitizer scope excludes shaders/drivers; original two exact TSan models retained and no LSan claim",
+    "CUDA original source tree retains existing HYLE_TESTING event observation hooks; tiny actual execution is not shipping SDK or P1 qualification; no nvcc/model build",
+    "Windows final20/public64 receipt predates only a contract-comment change in copy_stream_access.h; final behavior is unchanged, Air and CUDA manifests match final product bytes",
+    "Original attention/Graph receivers, late native output and full seven-route journey are not accepted by this checkpoint"
+  ],
+  "remaining": "Actual native/Batch receiver and Graph source aggregation, late producer backing, seven routes64/two requests/two slots/independent reduction; original G01/G02 unresolved gates and G04-G10 unchanged"
+}

@@ -219,6 +219,14 @@ F2 clone/append成功后调用complete(ready, initialized_rows)或publish(initia
 initialized_rows()只返回已提交前缀，写入与copy退休不会自动扩大它。由调用方在真实写成功后声明。
 未引用的页可以写，仍有旧reader/native use的页不能覆写；整个arena的subview不是独立writer。
 
+`arena.pending_read(layout, ready_pages, page_updates)`可冷构造独立的
+`PagedArenaPendingRead`：ready页保原权限，pending页记录已消费writer的原页身份、代际
+和已提交初始化前缀。`PagedPageUpdate{&page, destination_id}`只在构造调用中借用page；
+原copy控制必须持有该目的页。frame保精确layout与arena，但不产生ready lease或public字节
+读取权限；原ready-only bind/run不接受此类型。receiver须验证本次accepted copy覆盖新增
+要读的bytes、实际native排序与全引用页guard，并合并来源结果；这部分控制器接入仍在G03
+活动轮内，不能把构造pending frame当成attention已可异步消费。
+
 原F2已消费page writer时，保留PagedPageWriter，等成功ready输出后调用complete；若放弃
 这个已消费的控制对象，arena不会猜测该页已退休或重新ready。失败/无法完成观察的页按
 已声明合同保持不可再acquire，显式close/recreate arena；不能把它当普通未提交writer归还。
@@ -250,7 +258,7 @@ page.lease() = copy.unbind_mutable(destination).value();
 page_ready = page.publish(page.initialized_rows()).value();
 ```
 
-`unbind_mutable` 不等待、不产生 readonly output；retained submission、pending/unknown/
+`unbind_mutable` 不等待、不产生 readonly output；retained submission/后继ordered read use、pending/unknown/
 failure、closed 或已 publish 的 binding 都拒绝。成功使旧 replay preparation 失效。
 它会沿原 F2 作非阻塞退休观察；仅放弃 submission 时仍保留 PagedPageWriter，后续
 调用可在成功实际退休后取回权限。不能销毁 page writer 后猜测 arena slot 已恢复。

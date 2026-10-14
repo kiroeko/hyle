@@ -1,0 +1,114 @@
+{
+  "stages": [
+    {
+      "stage": "build",
+      "command": [
+        "cmake",
+        "--build",
+        "C:\\h7\\inference-g01-native-vulkan\\build",
+        "--target",
+        "g03_paged_arena_risks",
+        "g03_dirty_page_public",
+        "--parallel",
+        "4"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 85.35900000002584,
+      "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g03\\pending-frame-windows\\build-1.log"
+    },
+    {
+      "stage": "arena",
+      "command": [
+        "C:\\h7\\inference-g01-native-vulkan\\build\\g03_paged_arena_risks.exe"
+      ],
+      "exit_code": 1,
+      "elapsed_seconds": 0.030999999988125637,
+      "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g03\\pending-frame-windows\\arena-1.log"
+    },
+    {
+      "stage": "build",
+      "command": [
+        "cmake",
+        "--build",
+        "C:\\h7\\inference-g01-native-vulkan\\build",
+        "--target",
+        "g03_paged_arena_risks",
+        "g03_dirty_page_public",
+        "--parallel",
+        "4"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 4.48399999999674,
+      "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g03\\pending-frame-windows\\build-2.log"
+    },
+    {
+      "stage": "arena",
+      "command": [
+        "C:\\h7\\inference-g01-native-vulkan\\build\\g03_paged_arena_risks.exe"
+      ],
+      "exit_code": 1,
+      "elapsed_seconds": 0.046999999991385266,
+      "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g03\\pending-frame-windows\\arena-2.log"
+    },
+    {
+      "stage": "build",
+      "command": [
+        "cmake",
+        "--build",
+        "C:\\h7\\inference-g01-native-vulkan\\build",
+        "--target",
+        "g03_paged_arena_risks",
+        "g03_dirty_page_public",
+        "--parallel",
+        "4"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 4.296999999991385,
+      "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g03\\pending-frame-windows\\build-3.log"
+    },
+    {
+      "stage": "arena",
+      "command": [
+        "C:\\h7\\inference-g01-native-vulkan\\build\\g03_paged_arena_risks.exe"
+      ],
+      "exit_code": 1,
+      "elapsed_seconds": 0.015000000013969839,
+      "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g03\\pending-frame-windows\\arena-3.log"
+    },
+    {
+      "stage": "build",
+      "command": [
+        "cmake",
+        "--build",
+        "C:\\h7\\inference-g01-native-vulkan\\build",
+        "--target",
+        "g03_paged_arena_risks",
+        "g03_dirty_page_public",
+        "--parallel",
+        "4"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 2.9530000000086147,
+      "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g03\\pending-frame-windows\\build-4.log"
+    },
+    {
+      "stage": "arena",
+      "command": [
+        "C:\\h7\\inference-g01-native-vulkan\\build\\g03_paged_arena_risks.exe"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 0.0159999999741558,
+      "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g03\\pending-frame-windows\\arena-4.log"
+    },
+    {
+      "stage": "public",
+      "command": [
+        "C:\\h7\\inference-g01-native-vulkan\\build\\g03_dirty_page_public.exe"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 0.031000000017229468,
+      "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g03\\pending-frame-windows\\public-1.log"
+    }
+  ],
+  "cumulative_seconds": 97.23300000000745
+}
