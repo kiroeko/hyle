@@ -373,9 +373,9 @@
     },
     {
       "module": "compute_provider_ggml",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/inference-g04-g05-cache-attention-domain.md",
-      "summary": "G04/G05 SCOPED: finite Q8_0 CPU/Apple/Vulkan and FP8 E4M3 CUDA cache, independent K/V geometry, immutable scales, dirty encoding via original F2/G03; causal window/full noncausal/unequal Dv. Native source anchors and finite FIX on shared card; runtime/math/risk/delivery/P1 remain UNPROVEN. Original closed scopes and failures retained."
+      "summary": "G04/G05 AUDITED: finite Q8_0 CPU/Apple/Vulkan and FP8 E4M3 CUDA cache, independent K/V geometry, immutable scales, dirty encoding via original F2/G03; causal window/full noncausal/unequal Dv. Native source anchors and finite FIX on shared card; runtime/math/risk/delivery/P1 remain UNPROVEN. Original closed scopes and failures retained."
     },
     {
       "module": "graph_provider_onednn",
@@ -390,9 +390,9 @@
     },
     {
       "module": "compute_ops",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/inference-g04-g05-cache-attention-domain.md",
-      "summary": "G04/G05 SCOPED: finite Q8_0 CPU/Apple/Vulkan and FP8 E4M3 CUDA cache, independent K/V geometry, immutable scales, dirty encoding via original F2/G03; causal window/full noncausal/unequal Dv. Native source anchors and finite FIX on shared card; runtime/math/risk/delivery/P1 remain UNPROVEN. Original closed scopes and failures retained."
+      "summary": "G04/G05 AUDITED: finite Q8_0 CPU/Apple/Vulkan and FP8 E4M3 CUDA cache, independent K/V geometry, immutable scales, dirty encoding via original F2/G03; causal window/full noncausal/unequal Dv. Native source anchors and finite FIX on shared card; runtime/math/risk/delivery/P1 remain UNPROVEN. Original closed scopes and failures retained."
     },
     {
       "module": "compute_backend_cpu",
@@ -507,9 +507,9 @@
     },
     {
       "module": "compute_route_apple",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/inference-g04-g05-cache-attention-domain.md",
-      "summary": "G04/G05 SCOPED: finite Q8_0 CPU/Apple/Vulkan and FP8 E4M3 CUDA cache, independent K/V geometry, immutable scales, dirty encoding via original F2/G03; causal window/full noncausal/unequal Dv. Native source anchors and finite FIX on shared card; runtime/math/risk/delivery/P1 remain UNPROVEN. Original closed scopes and failures retained."
+      "summary": "G04/G05 AUDITED: finite Q8_0 CPU/Apple/Vulkan and FP8 E4M3 CUDA cache, independent K/V geometry, immutable scales, dirty encoding via original F2/G03; causal window/full noncausal/unequal Dv. Native source anchors and finite FIX on shared card; runtime/math/risk/delivery/P1 remain UNPROVEN. Original closed scopes and failures retained."
     },
     {
       "module": "graph_route_apple",
@@ -524,9 +524,9 @@
     },
     {
       "module": "compute_route_vulkan",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/inference-g04-g05-cache-attention-domain.md",
-      "summary": "G04/G05 SCOPED: finite Q8_0 CPU/Apple/Vulkan and FP8 E4M3 CUDA cache, independent K/V geometry, immutable scales, dirty encoding via original F2/G03; causal window/full noncausal/unequal Dv. Native source anchors and finite FIX on shared card; runtime/math/risk/delivery/P1 remain UNPROVEN. Original closed scopes and failures retained."
+      "summary": "G04/G05 AUDITED: finite Q8_0 CPU/Apple/Vulkan and FP8 E4M3 CUDA cache, independent K/V geometry, immutable scales, dirty encoding via original F2/G03; causal window/full noncausal/unequal Dv. Native source anchors and finite FIX on shared card; runtime/math/risk/delivery/P1 remain UNPROVEN. Original closed scopes and failures retained."
     },
     {
       "module": "graph_route_vulkan",
@@ -541,15 +541,15 @@
     },
     {
       "module": "compute_provider_ggml_vulkan",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/inference-g04-g05-cache-attention-domain.md",
-      "summary": "G04/G05 SCOPED: finite Q8_0 CPU/Apple/Vulkan and FP8 E4M3 CUDA cache, independent K/V geometry, immutable scales, dirty encoding via original F2/G03; causal window/full noncausal/unequal Dv. Native source anchors and finite FIX on shared card; runtime/math/risk/delivery/P1 remain UNPROVEN. Original closed scopes and failures retained."
+      "summary": "G04/G05 AUDITED: finite Q8_0 CPU/Apple/Vulkan and FP8 E4M3 CUDA cache, independent K/V geometry, immutable scales, dirty encoding via original F2/G03; causal window/full noncausal/unequal Dv. Native source anchors and finite FIX on shared card; runtime/math/risk/delivery/P1 remain UNPROVEN. Original closed scopes and failures retained."
     },
     {
       "module": "compute_ggml_runtime",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/inference-g04-g05-cache-attention-domain.md",
-      "summary": "G04/G05 SCOPED: finite Q8_0 CPU/Apple/Vulkan and FP8 E4M3 CUDA cache, independent K/V geometry, immutable scales, dirty encoding via original F2/G03; causal window/full noncausal/unequal Dv. Native source anchors and finite FIX on shared card; runtime/math/risk/delivery/P1 remain UNPROVEN. Original closed scopes and failures retained."
+      "summary": "G04/G05 AUDITED: finite Q8_0 CPU/Apple/Vulkan and FP8 E4M3 CUDA cache, independent K/V geometry, immutable scales, dirty encoding via original F2/G03; causal window/full noncausal/unequal Dv. Native source anchors and finite FIX on shared card; runtime/math/risk/delivery/P1 remain UNPROVEN. Original closed scopes and failures retained."
     },
     {
       "module": "compute_provider_ggml_cuda",
@@ -575,9 +575,9 @@
     },
     {
       "module": "compute_provider_flashinfer",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/inference-g04-g05-cache-attention-domain.md",
-      "summary": "G04/G05 SCOPED: finite Q8_0 CPU/Apple/Vulkan and FP8 E4M3 CUDA cache, independent K/V geometry, immutable scales, dirty encoding via original F2/G03; causal window/full noncausal/unequal Dv. Native source anchors and finite FIX on shared card; runtime/math/risk/delivery/P1 remain UNPROVEN. Original closed scopes and failures retained."
+      "summary": "G04/G05 AUDITED: finite Q8_0 CPU/Apple/Vulkan and FP8 E4M3 CUDA cache, independent K/V geometry, immutable scales, dirty encoding via original F2/G03; causal window/full noncausal/unequal Dv. Native source anchors and finite FIX on shared card; runtime/math/risk/delivery/P1 remain UNPROVEN. Original closed scopes and failures retained."
     },
     {
       "module": "compute_provider_ggml_metal",
@@ -670,15 +670,15 @@
     },
     {
       "module": "compute_batch",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/inference-g04-g05-cache-attention-domain.md",
-      "summary": "G04/G05 SCOPED: finite Q8_0 CPU/Apple/Vulkan and FP8 E4M3 CUDA cache, independent K/V geometry, immutable scales, dirty encoding via original F2/G03; causal window/full noncausal/unequal Dv. Native source anchors and finite FIX on shared card; runtime/math/risk/delivery/P1 remain UNPROVEN. Original closed scopes and failures retained."
+      "summary": "G04/G05 AUDITED: finite Q8_0 CPU/Apple/Vulkan and FP8 E4M3 CUDA cache, independent K/V geometry, immutable scales, dirty encoding via original F2/G03; causal window/full noncausal/unequal Dv. Native source anchors and finite FIX on shared card; runtime/math/risk/delivery/P1 remain UNPROVEN. Original closed scopes and failures retained."
     },
     {
       "module": "graph_batch",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/inference-g04-g05-cache-attention-domain.md",
-      "summary": "G04/G05 SCOPED: finite Q8_0 CPU/Apple/Vulkan and FP8 E4M3 CUDA cache, independent K/V geometry, immutable scales, dirty encoding via original F2/G03; causal window/full noncausal/unequal Dv. Native source anchors and finite FIX on shared card; runtime/math/risk/delivery/P1 remain UNPROVEN. Original closed scopes and failures retained."
+      "summary": "G04/G05 AUDITED: finite Q8_0 CPU/Apple/Vulkan and FP8 E4M3 CUDA cache, independent K/V geometry, immutable scales, dirty encoding via original F2/G03; causal window/full noncausal/unequal Dv. Native source anchors and finite FIX on shared card; runtime/math/risk/delivery/P1 remain UNPROVEN. Original closed scopes and failures retained."
     }
   ]
 }

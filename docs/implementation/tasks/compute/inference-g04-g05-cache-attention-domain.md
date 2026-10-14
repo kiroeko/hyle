@@ -1,9 +1,9 @@
 # G04/G05 编码 KV 与有限 attention 语义实施批
 
-状态：**SCOPED，2026-10-14**。baseline `694a3d1a4b02540cb56b6ceae35b73dd1dd93440`；
-当前共同形状 owner：compute_ops、compute_batch。原 G03 已 CLOSED，不由本卡重开其权限/
-退休实现。具体 native/Provider/Graph owner只在实际路径与改动确定后加入同卡；AUDITED
-和有限 FIX 冻结之前不写产品代码。本批沿[十项总卡](../project/inference-gaps-goal-execution-2026-10.md)，
+状态：**AUDITED，2026-10-15**。baseline `694a3d1a4b02540cb56b6ceae35b73dd1dd93440`；
+共同批owner见下表：九个实际组件；有限CE01–07/API/成本合同已冻结。原 G03 已 CLOSED，不由本卡重开其权限/
+退休实现。九owner已合法SCOPED后进入AUDITED；仅下列有限FIX授权产品实现。
+本批沿[十项总卡](../project/inference-gaps-goal-execution-2026-10.md)，
 不取消其余 G 项，也不把本地 BF16 模型不需要量化 KV 当作完成 G04。
 
 ## 新事实与范围
@@ -48,7 +48,7 @@ quant K/V与dense布局条件下会展开全部K/V到F16 scratch；Metal也有kv
 source/outcome。只修改必要真实几何与数学承载，不建立第二权限体系、planner、executor
 或通用format schema；不能为躲开private成本把正常域缩成仅一个decode token。
 
-## 本轮审计与实施入口
+## 原SCOPED审计入口与预算（已由下文裁决）
 
 在一张卡中完成以下有限决定后进入AUDITED：选定编码/scale、Q与K/V真实描述、Dqk/Dv/
 物理页/输出字节、metadata/port与G03 carrier回映、actual native owner、有限数学域及
@@ -68,7 +68,7 @@ P0先固定分配/metadata/copy/wait/量化Q与cache解码账。新增数学必�
 审计、实施、验证各2h检查点；沿用户常设授权有限追加，所有原FAIL/elapsed/累计保留。
 停止条件是有限域/FIX和实际门可裁决，或真实外部阻断；一次失败、构建慢、未知成本不
 作为goal停止。Windows canonical、Air only实查身份，验证副本单向；heavy串行、4jobs，
-不启动本机重型GPU/完整模型或全局测试。当前仅审计，未启动任何产品构建。
+不启动本机重型GPU/完整模型或全局测试。SCOPED阶段未启动产品构建；当前按下文AUDITED实施。
 
 ## 当前公共反证与native费用（2026-10-15）
 
@@ -85,13 +85,13 @@ page16384 bytes，原infer_batch_attention拒绝该编码描述。causal=false�
 锁定Metal在Q>=32的Q8_0可选择kv_f16，且extra_kv_f16还可能常态预留整套F16 K/V scratch；
 只限制Q到decode不会交付本goal的prefill/存储成本目标。FI混合Q/KV模板存在，但原Python
 把Kscale折入sm_scale、Vscale放在输出后，必须计入真实后处理或资格化原fused variant。
-编码最终选择与各native直接读路径仍须一遍有限核对；两共同owner保持SCOPED。
+这次probe时两共同owner为SCOPED；编码与路径现已按下文固定，实际native资格仍未验收。
 
 ## 共同域裁决与具体 owner（2026-10-15）
 
 锁定native源码摘录及整文件SHA见
 [native-source-anchors](../../../../evidence/architecture/inference-g04-g05-domain-intake/native-source-anchors.json)。
-原始peer归档、公公开缺口probe与原失败不变。此节冻结架构与有限FIX，不把模板/源码存在签为实际资格。
+原始peer归档、公开缺口probe与原失败不变。此节冻结架构与有限FIX，不把模板/源码存在签为实际资格。
 
 | owner | 本轮新事实与允许改动 |
 |---|---|
@@ -211,3 +211,6 @@ engineering_performance：P0逐owner记录encoding/copy/plan/allocation/wait与s
 模板/窄patch可能必须重编本owner依赖，准许本卡对应小native TU（包括必要nvcc）和构建闭包，
 heavy串行/4jobs；不借此重建全库或恢复本机heavy GPU/完整模型。Air运行前实查身份，产品
 只来自Windows单向archive。当前没有运行中的构建或native资格程序。
+
+2026-10-15：九owner的SCOPED登记与mandatory checks已提交；同卡进入AUDITED，
+CE01–07开始同一实现批。新能力/运行资格仍UNPROVEN，原G03与G01/G02历史状态不回填。

@@ -1,0 +1,39 @@
+{
+  "kind": "G04_G05_FINITE_DOMAIN_AUDIT_CHECKS",
+  "previous_ref": "daefd0a71",
+  "state": "AUDITED",
+  "owners": 9,
+  "fix": [
+    "CE01",
+    "CE02",
+    "CE03",
+    "CE04",
+    "CE05",
+    "CE06",
+    "CE07"
+  ],
+  "closure": {
+    "exit_code": 0,
+    "modules": 64,
+    "schema_version": 4
+  },
+  "docs": {
+    "exit_code": 0,
+    "markdown": 1241,
+    "relative_links": 6055
+  },
+  "selector": {
+    "state": "READY",
+    "selected": [
+      "docs",
+      "closure"
+    ],
+    "skipped_reused": 146
+  },
+  "diff_check": {
+    "exit_code": 0
+  },
+  "product_changed": false,
+  "runtime_qualification": "UNPROVEN",
+  "live_jobs": []
+}
