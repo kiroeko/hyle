@@ -86,3 +86,128 @@ page16384 bytes，原infer_batch_attention拒绝该编码描述。causal=false�
 只限制Q到decode不会交付本goal的prefill/存储成本目标。FI混合Q/KV模板存在，但原Python
 把Kscale折入sm_scale、Vscale放在输出后，必须计入真实后处理或资格化原fused variant。
 编码最终选择与各native直接读路径仍须一遍有限核对；两共同owner保持SCOPED。
+
+## 共同域裁决与具体 owner（2026-10-15）
+
+锁定native源码摘录及整文件SHA见
+[native-source-anchors](../../../../evidence/architecture/inference-g04-g05-domain-intake/native-source-anchors.json)。
+原始peer归档、公公开缺口probe与原失败不变。此节冻结架构与有限FIX，不把模板/源码存在签为实际资格。
+
+| owner | 本轮新事实与允许改动 |
+|---|---|
+| compute_ops | 编码spec/描述/dirty encoder与有限attention语义；现有roundtrip无真实编码输出 |
+| compute_batch | schema、K/V/page/output独立几何、arena role、适用数学layout检查；原权限/controller复用 |
+| compute_provider_ggml | 原native batch/region Q8 ports、不同Dv、窗口与编码producer；当前仅同dtype/plain |
+| compute_ggml_runtime | 原CPU page地址patch的有限窗口/编码承载；原算法复用，不改锁/获取/构建核心 |
+| compute_provider_flashinfer | 原planner/Params/kernel有限混合FP8、QK/VO、mask/window及编码producer |
+| compute_route_apple | 原MLX Program/array/command buffers，原private paged attention tile decoder及dirty encoder |
+| compute_route_vulkan | 原paged/ragged计划及原tensor producer；不同Q/K/V/output描述 |
+| compute_provider_ggml_vulkan | 原ggml region、量化ports和原shader/page patch；排除整历史F16临时展开 |
+| graph_batch | 原NativePagedAttention描述与输出活跃区；当前硬造同shape K/V和同Dv输出 |
+
+只新增以上七个实际owner到同卡SCOPED；compute_ops/batch原已SCOPED。F1/F2、native result
+source观察/退休、hybrid coordinator、queues、dependency/capture authority不重写，原G03不重新验收。
+若出现必须修改该边界的新事实，再定向加入owner，不能悄悄在CLOSED路径写产品。
+
+### 能力族与承载
+
+| 能力族 | 层级/来源 | 当前覆盖 | 动作与唯一owner |
+|---|---|---|---|
+| 真实编码新增行 | 原子；llama set_rows、vLLM update、ggml Q8参考/FI FP8 | MISSING | FIX/BORROW：compute_ops语义，既有Provider/native算法；输出本轮实际carrier |
+| 编码驻留页→attention | 复合；Qwen shape与量化留出消费者、三个peer | PARTIAL | FIX：compute_batch几何，原F2/G03权限和完成BORROW，native math各原owner |
+| causal window/full noncausal/不同Dv | 原子；FI/llama实际参数与正交交叉attention | PARTIAL | FIX/BORROW：共同数学合同，原CPU/FI/MLX/ggml Vulkan核 |
+| scale校准/精度选择/page策略 | 应用策略 | OUT_OF_SCOPE | REJECT下沉；engine选择常量，库只冻结表示与使用合同 |
+| 原ready/pending/旧reader/失败/退休 | 复合；G03终审 | COMPLETE于原域 | KEEP/BORROW原owner；新增编码/几何须做直接consumer反证 |
+
+公开面回映：BatchSchema/Version是容量/布局identity；Paged/RaggedAttention与BatchProgram是
+数学recipe；NativePagedBatchProgram/Version是原native recipe/准确索引；PagedArena/Writer/
+Read/PendingRead是原精确页面权限；Graph NativePagedAttention是同recipe的节点；原Materialized
+reference入口保plain参考档，编码页必须明确拒绝或合格native，不能偷偷全历史decode后签直接消费。
+
+### API、identity与费用冻结
+
+选择共同逻辑合同与有限native表示：CPU/Apple/Vulkan **GGUF Q8_0**，CUDA **E4M3FN**。
+既有plain F16/BF16资格保留；Vulkan原F16数学域不扩成无证据BF16。Q8不冒充FI原生格式，
+FP8不冒充已有block128权重格式。各格式在四路线都有所选真实承载，仍须实际run才能签PASS。
+
+compute_ops增加小值类型CacheStorage：data_type、原StorageFormat、scale；plain scale=1，
+Q8_0 logical F32、原block identity/32/34/末D轴、scale在block且外部scale=1；E4M3FN
+是plain8-bit scalar、正有限F32外部scale。工厂/描述helper复用原TensorDesc，不造format registry。
+K/V的FP8 scale随同一不可变BatchSchema/cache identity固定；改变scale必须新schema/cache，
+encode与消费读取同spec。校准是应用政策，不新增动态全局scale/requant生命周期。
+
+BatchCapacity分query_type/output_type、key_storage/value_storage、qk_head_dim/value_head_dim；
+默认plainF16/D64，成熟有限资格先为Q/output同F16或同BF16，K/V同选定编码，(64,64)/
+(128,128)/(256,256)/(64,128)。公用description helper分别生成Q、K、V、output；不留旧签名
+转发/双轨兼容。PagedArena::create显式key/value role，字节/prefix用各自真实row/page描述。
+所有现有仓库consumer随同批迁移。schema结构检查不含causal规则；非空Q仍须非空KV，
+causal Q<=KV在适用recipe/native admission检查，full noncausal允许Q>KV。
+
+CacheEncode是一个readonly-input→本轮encoded-output的原子Operation，带同CacheStorage；
+支持F16/BF16/F32输入的完整D行。Q8输出plain U8物理carrier（本轮row count与真实row bytes），
+FP8输出plain E4M3FN carrier；typed helper给出相应logical cache描述。原NativeCopyResults
+仍只消费真实plain dense carrier，F2搬准确字节，原arena admission保逻辑描述/scale identity。
+不增加任意GPU原位mutation、模型slot_mapping或第二completion/controller。
+
+Q8：每32元素F32 absmax/127，存F16 scale，zero block全零，codes roundf（half-away-from-zero）
+并界定[-127,127]；本轮确定性编码使用参考规则，不能借optimized ties差异声称byte一致。
+输入是有限且scale可表示的数值域（amax/127<=65504）；非有限输入不承诺有效数学，invalid
+format/scale/extent在冷准备返回错误。FP8：x/scale→finite-saturating nearest-even E4M3FN；
+消费数值为code*scale。CPU原flash额外Q转换是明确精度合同，不被F32累加名义掩盖。
+
+window_left int32默认-1、合法>=-1；causal=true时按上文bottom-right/inclusive规则。
+full noncausal本轮仅window=-1；不自动加bidirectional localwindow。窗口/不同Dv不制造
+Q×KV mask展开。复用原CPU循环/MLX tile/FI mask variant/Vulkan shader的有效行判断。
+FP8 FI用独立Q/KV模板、独立K/V stride、编译时QK/VO；原AttentionVariantBase已有v_scale
+检测/OutputTransform，private derived Params可传scale，在原F32归一化后输出cast前使用；
+Kscale折入sm_scale。split-KV需实际oracle反证，不猜default Params有此字段。
+
+cold：固定schema/spec、description、native plan/slot与workspace，保持原allocator/resource预算。
+warm encoder只处理dirty rows，F2只复制dirty bytes，native attention只在row/tile scratch解码；
+禁止整历史K/V解码/展开或为规避它缩成decode-only。既有cold prepare等metadata wait保留G06，
+native private UNKNOWN照实报告。借原owner的affinity、cancel/refusal、accepted-prefix、old-output/
+实际retirement；控制外部串行，readonly schema/version按原allocator线程安全约束。
+
+自然旅程：建CacheStorage和带K/V几何的BatchSchema→分别建key/value arena→CacheEncode本轮
+K/V→原result source/F2准确range→原pending frame→原Direct/Graph receiver→成功output。
+CPU/GPU联合保真实CPU前后数学，单/多请求、长prefill和跨页decode均覆盖。正交消费者是
+full noncausal Q>KV、(64,128)交叉attention，与Qwen既有GQA8/KV2 D256互相反证。
+
+### 有限FIX（一次实现批，不逐helper建卡）
+
+| ID | 允许改动 | 验收 |
+|---|---|---|
+| CE01 | CacheStorage/描述与CacheEncode，明确Q8/FP8字节、scale、rounding/输出carrier | 独立字节oracle、ties/zero/saturation、invalid scale/shape、各native真实producer |
+| CE02 | BatchCapacity、真实K/V/output描述、arena role与layout数学分层 | page/row bytes、Q>KV full noncausal、不同Dv、原prefix/foreign/OOM/shared reader |
+| CE03 | 原CPU native batch/region与CPU页patch直接Q8、窗口、不同Dv、编码producer | double oracle+CPU Q转换误差、跨页、prefill/decode，零整历史展开 |
+| CE04 | 原FI scheduler/Params/kernel混合FP8、window/noncausal、不同Dv及delta encoder | 实际CUDA源/SDK、split-KV/scale/oracle、长prefill与delta；无host fallback |
+| CE05 | 原MLX native private paged/ragged tile与encoder，真实Q8 U8输入与不同Dv | 实际Air F16/BF16 Q、Q8/math/window/长prefill与delta，原MLX queues/slots |
+| CE06 | 原Vulkan region/page shader/encoder，Q8与窗口/不同Dv、显式直接压缩档 | 实际Air F16 Q、长prefill触发域，禁止fullKV F16 scratch，原native lifetime |
+| CE07 | 原Graph节点描述、全部直接consumer迁移、指南与三交付 | 七真实路线、两个source owners/同Update/旧reader、source/static/shared/逐头、P0/P1 |
+
+所有FIX当前UNPROVEN。实现细节可在固定owner/API/成本等级内定向查；改变这些合同须回AUDITED。
+
+### 预声明门与七问
+
+scope/architecture：本节、实际源码SHA、公开缺口probe与readonly consumer audit；不签native PASS。
+correctness：独立Q8/FP8编码bytes与数学oracle；主D256 GQA8/2及留出(64,128)，单/多请求，
+Q1/17/65与长KV/跨页/双slots；window -1/0/15/16与offset，full noncausal Q>KV；至少两次
+增量只改变新行且历史字节不变，旧reader共享页、foreign描述/scale identity、invalid/OOM/
+budget、原accepted错误/cancel/abandon/实际retirement。原未变G03风险借用，新增几何/encoder
+与实际consumer适用host ASan/UBSan/TSan；shader/driver不由host sanitizer签发。
+delivery/usability：只对应factor与真实直接consumer、独立public headers、四native source与
+static/shared、三联合；shipping无HYLE_TESTING。文档/registry轮不构建，不跑P1。
+red_team：不可变candidate独立反证，当前readonly agent已建议真实carrier和固定scale合同。
+engineering_performance：P0逐owner记录encoding/copy/plan/allocation/wait与scratch；冻结candidate
+后一次有限同合同P1（5% material margin），与锁定原native同编码、同有效区/完成/费用比，
+先语义/费用/A-A/双顺序preflight，支持原P1仪器；不是跨格式或plain-vs-quant速度排名。
+
+七问按以上门裁决：第三方仍原ggml/FI/MLX精确锁和现有许可证，无新依赖/升级；能力完整
+按CE01–07有限域；内部复用原TensorDesc/F1/F2/G03/native数学/队列；性能计入真实全部费用；
+没有C/FFI；三交付仍同原组件图且必要私有源码patch留既有owner；用户按明确spec/role自然消费。
+当前后三类运行证据仍UNPROVEN，不能用源码存在、模板可实例化或G03通过替代。
+
+本批budget仍2h阶段检查点/自动追加/保累计；已做公开probe81.797秒保留。实际新增native
+模板/窄patch可能必须重编本owner依赖，准许本卡对应小native TU（包括必要nvcc）和构建闭包，
+heavy串行/4jobs；不借此重建全库或恢复本机heavy GPU/完整模型。Air运行前实查身份，产品
+只来自Windows单向archive。当前没有运行中的构建或native资格程序。

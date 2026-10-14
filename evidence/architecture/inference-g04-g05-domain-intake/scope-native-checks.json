@@ -1,0 +1,27 @@
+{
+  "kind": "G04_G05_NATIVE_OWNER_SCOPE_CHECKS",
+  "previous_ref": "aa2bf261954fac1e72167cb48252a527357c5432",
+  "closure": {
+    "exit_code": 0,
+    "modules": 64,
+    "schema_version": 4
+  },
+  "docs": {
+    "exit_code": 0,
+    "markdown": 1241,
+    "relative_links": 6055
+  },
+  "selector": {
+    "state": "READY",
+    "selected": [
+      "docs",
+      "closure"
+    ],
+    "skipped_reused": 146
+  },
+  "diff_check": {
+    "exit_code": 0
+  },
+  "product_changed": false,
+  "live_jobs": []
+}

@@ -373,15 +373,9 @@
     },
     {
       "module": "compute_provider_ggml",
-      "state": "CLOSED",
-      "record": "docs/implementation/tasks/compute/inference-g01-cpu-paged-terminal.md",
-      "summary": "G01 CPU page16 finite read CLOSED: exact owned page table and native roots, two original CPU cores; source/three san/relocated static+shared/Air mixed CPU PASS, qualified P1 all5pct noninferiority+controls PASS verify0. D256 small LOSS retained; GPU pages/G02-G10 incomplete.",
-      "candidate": "1e9cdfd45307ea4a15b92374377ad2b268203193",
-      "performance": {
-        "tier": "P1",
-        "material_margin_pct": 5,
-        "evidence": "evidence/performance/inference-g01-cpu-page16-w1-p1/receipt.json"
-      }
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/compute/inference-g04-g05-cache-attention-domain.md",
+      "summary": "G04/G05 SCOPED: finite Q8_0 CPU/Apple/Vulkan and FP8 E4M3 CUDA cache, independent K/V geometry, immutable scales, dirty encoding via original F2/G03; causal window/full noncausal/unequal Dv. Native source anchors and finite FIX on shared card; runtime/math/risk/delivery/P1 remain UNPROVEN. Original closed scopes and failures retained."
     },
     {
       "module": "graph_provider_onednn",
@@ -398,7 +392,7 @@
       "module": "compute_ops",
       "state": "SCOPED",
       "record": "docs/implementation/tasks/compute/inference-g04-g05-cache-attention-domain.md",
-      "summary": "G04/G05 SCOPED at694a3d1a4. Current batch couples Q/K/V dtype and K/V dimensions with plain page geometry; no window port, FI causal/D,D/T,T,T restriction. Fixed peer archives reverified; audit real8-bit encoding/scales/append/direct resident math, causal-window/full-noncausal/finite unequal V dimension. Native paths and finite FIX not frozen; no product changes/build authorized yet. Original G03 CLOSED retained."
+      "summary": "G04/G05 SCOPED: finite Q8_0 CPU/Apple/Vulkan and FP8 E4M3 CUDA cache, independent K/V geometry, immutable scales, dirty encoding via original F2/G03; causal window/full noncausal/unequal Dv. Native source anchors and finite FIX on shared card; runtime/math/risk/delivery/P1 remain UNPROVEN. Original closed scopes and failures retained."
     },
     {
       "module": "compute_backend_cpu",
@@ -513,14 +507,9 @@
     },
     {
       "module": "compute_route_apple",
-      "state": "CLOSED",
-      "record": "docs/implementation/tasks/compute/inference-g03-final-closure.md",
-      "summary": "G03 CLOSED finite admitted producer/update/Direct/Graph journeys. Four original and three required CPU+GPU routes qualified through public64, lifetime/host risks/source-static-shared; independent native source owners and true CPU+CUDA8 covered. Original native math/slots/queues reused, exact permissions and source errors retained. P0 bind allocations/checked waits/private UNKNOWN explicit; original G01/G02 whole-item gates and G04-G10 remain.",
-      "candidate": "11b2403e794b6eed2c89418d72b8c89aeaaac746",
-      "performance": {
-        "tier": "P0",
-        "evidence": "docs/implementation/tasks/compute/inference-g03-final-closure.md"
-      }
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/compute/inference-g04-g05-cache-attention-domain.md",
+      "summary": "G04/G05 SCOPED: finite Q8_0 CPU/Apple/Vulkan and FP8 E4M3 CUDA cache, independent K/V geometry, immutable scales, dirty encoding via original F2/G03; causal window/full noncausal/unequal Dv. Native source anchors and finite FIX on shared card; runtime/math/risk/delivery/P1 remain UNPROVEN. Original closed scopes and failures retained."
     },
     {
       "module": "graph_route_apple",
@@ -535,14 +524,9 @@
     },
     {
       "module": "compute_route_vulkan",
-      "state": "CLOSED",
-      "record": "docs/implementation/tasks/compute/inference-g03-final-closure.md",
-      "summary": "G03 CLOSED finite admitted producer/update/Direct/Graph journeys. Four original and three required CPU+GPU routes qualified through public64, lifetime/host risks/source-static-shared; independent native source owners and true CPU+CUDA8 covered. Original native math/slots/queues reused, exact permissions and source errors retained. P0 bind allocations/checked waits/private UNKNOWN explicit; original G01/G02 whole-item gates and G04-G10 remain.",
-      "candidate": "11b2403e794b6eed2c89418d72b8c89aeaaac746",
-      "performance": {
-        "tier": "P0",
-        "evidence": "docs/implementation/tasks/compute/inference-g03-final-closure.md"
-      }
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/compute/inference-g04-g05-cache-attention-domain.md",
+      "summary": "G04/G05 SCOPED: finite Q8_0 CPU/Apple/Vulkan and FP8 E4M3 CUDA cache, independent K/V geometry, immutable scales, dirty encoding via original F2/G03; causal window/full noncausal/unequal Dv. Native source anchors and finite FIX on shared card; runtime/math/risk/delivery/P1 remain UNPROVEN. Original closed scopes and failures retained."
     },
     {
       "module": "graph_route_vulkan",
@@ -557,27 +541,15 @@
     },
     {
       "module": "compute_provider_ggml_vulkan",
-      "state": "CLOSED",
-      "record": "docs/implementation/tasks/compute/inference-g01-native-paged-terminal.md",
-      "summary": "G01 native page16 finite domain CLOSED at520: actual Air Apple F16/BF16 and Vulkan F16 original page math, exact guards/version/zero-domain/native failure/retirement/OOM, four relocated SDKs/headers, six host sanitizer finals with explicit Metal TSan model, Windows compile/link only. Both immutable P1 QUALIFIED/noninferiority PASS/verify0, original FAIL/UNKNOWN retained. Whole G01/G02/goal remain incomplete.",
-      "candidate": "520027a57ff41da96ac908ad0d35896e2dda9734",
-      "performance": {
-        "tier": "P1",
-        "evidence": "docs/implementation/tasks/compute/inference-g01-native-paged-terminal.md",
-        "material_margin_pct": 5
-      }
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/compute/inference-g04-g05-cache-attention-domain.md",
+      "summary": "G04/G05 SCOPED: finite Q8_0 CPU/Apple/Vulkan and FP8 E4M3 CUDA cache, independent K/V geometry, immutable scales, dirty encoding via original F2/G03; causal window/full noncausal/unequal Dv. Native source anchors and finite FIX on shared card; runtime/math/risk/delivery/P1 remain UNPROVEN. Original closed scopes and failures retained."
     },
     {
       "module": "compute_ggml_runtime",
-      "state": "CLOSED",
-      "record": "docs/implementation/tasks/compute/inference-g01-native-paged-terminal.md",
-      "summary": "G01 native page16 finite domain CLOSED at520: actual Air Apple F16/BF16 and Vulkan F16 original page math, exact guards/version/zero-domain/native failure/retirement/OOM, four relocated SDKs/headers, six host sanitizer finals with explicit Metal TSan model, Windows compile/link only. Both immutable P1 QUALIFIED/noninferiority PASS/verify0, original FAIL/UNKNOWN retained. Whole G01/G02/goal remain incomplete.",
-      "candidate": "520027a57ff41da96ac908ad0d35896e2dda9734",
-      "performance": {
-        "tier": "P1",
-        "evidence": "docs/implementation/tasks/compute/inference-g01-native-paged-terminal.md",
-        "material_margin_pct": 5
-      }
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/compute/inference-g04-g05-cache-attention-domain.md",
+      "summary": "G04/G05 SCOPED: finite Q8_0 CPU/Apple/Vulkan and FP8 E4M3 CUDA cache, independent K/V geometry, immutable scales, dirty encoding via original F2/G03; causal window/full noncausal/unequal Dv. Native source anchors and finite FIX on shared card; runtime/math/risk/delivery/P1 remain UNPROVEN. Original closed scopes and failures retained."
     },
     {
       "module": "compute_provider_ggml_cuda",
@@ -603,14 +575,9 @@
     },
     {
       "module": "compute_provider_flashinfer",
-      "state": "CLOSED",
-      "record": "docs/implementation/tasks/compute/foundation-f5-final-closure.md",
-      "summary": "F5 finite typed paged/ragged and state/Graph seams CLOSED; actual native/reference qualifications, host risks, SDK18 and component contract verified. IREE owner only TSAN configuration fix; original scopes and vendor/capture/performance limits retained.",
-      "candidate": "11c348e404df2c3fc404056ff3a9e885d4d990bc",
-      "performance": {
-        "tier": "P0",
-        "evidence": "evidence/correctness/foundation-f5-final/receipt.json"
-      }
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/compute/inference-g04-g05-cache-attention-domain.md",
+      "summary": "G04/G05 SCOPED: finite Q8_0 CPU/Apple/Vulkan and FP8 E4M3 CUDA cache, independent K/V geometry, immutable scales, dirty encoding via original F2/G03; causal window/full noncausal/unequal Dv. Native source anchors and finite FIX on shared card; runtime/math/risk/delivery/P1 remain UNPROVEN. Original closed scopes and failures retained."
     },
     {
       "module": "compute_provider_ggml_metal",
@@ -705,18 +672,13 @@
       "module": "compute_batch",
       "state": "SCOPED",
       "record": "docs/implementation/tasks/compute/inference-g04-g05-cache-attention-domain.md",
-      "summary": "G04/G05 SCOPED at694a3d1a4. Current batch couples Q/K/V dtype and K/V dimensions with plain page geometry; no window port, FI causal/D,D/T,T,T restriction. Fixed peer archives reverified; audit real8-bit encoding/scales/append/direct resident math, causal-window/full-noncausal/finite unequal V dimension. Native paths and finite FIX not frozen; no product changes/build authorized yet. Original G03 CLOSED retained."
+      "summary": "G04/G05 SCOPED: finite Q8_0 CPU/Apple/Vulkan and FP8 E4M3 CUDA cache, independent K/V geometry, immutable scales, dirty encoding via original F2/G03; causal window/full noncausal/unequal Dv. Native source anchors and finite FIX on shared card; runtime/math/risk/delivery/P1 remain UNPROVEN. Original closed scopes and failures retained."
     },
     {
       "module": "graph_batch",
-      "state": "CLOSED",
-      "record": "docs/implementation/tasks/compute/inference-g03-final-closure.md",
-      "summary": "G03 CLOSED finite admitted producer/update/Direct/Graph journeys. Four original and three required CPU+GPU routes qualified through public64, lifetime/host risks/source-static-shared; independent native source owners and true CPU+CUDA8 covered. Original native math/slots/queues reused, exact permissions and source errors retained. P0 bind allocations/checked waits/private UNKNOWN explicit; original G01/G02 whole-item gates and G04-G10 remain.",
-      "candidate": "11b2403e794b6eed2c89418d72b8c89aeaaac746",
-      "performance": {
-        "tier": "P0",
-        "evidence": "docs/implementation/tasks/compute/inference-g03-final-closure.md"
-      }
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/compute/inference-g04-g05-cache-attention-domain.md",
+      "summary": "G04/G05 SCOPED: finite Q8_0 CPU/Apple/Vulkan and FP8 E4M3 CUDA cache, independent K/V geometry, immutable scales, dirty encoding via original F2/G03; causal window/full noncausal/unequal Dv. Native source anchors and finite FIX on shared card; runtime/math/risk/delivery/P1 remain UNPROVEN. Original closed scopes and failures retained."
     }
   ]
 }
