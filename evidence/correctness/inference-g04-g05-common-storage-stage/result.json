@@ -57,7 +57,7 @@
   "test_count": 12,
   "coverage": [
     "Q8_0 last depth block axis and NHD physical row/page strides",
-    "exact Q8 U8 carrier and independent depth64/128/256 description sizes",
+    "exact Q8 U8 carrier and independent depth128/256 description sizes",
     "FP8 code bytes independent of positive immutable scale value",
     "invalid scale/forged block/logical type/extent/overflow refusal",
     "dirty encoder operation output descriptions for F16/BF16/F32 and empty input",
