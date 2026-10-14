@@ -514,14 +514,9 @@
     },
     {
       "module": "compute_route_apple",
-      "state": "CLOSED",
-      "record": "docs/implementation/tasks/compute/inference-g03-dirty-page-terminal.md",
-      "summary": "G03 GP01/GP02 finite CLOSED atb428: original whole ready page unique content/gen-preserving reacquire; public F2 nonblocking actual-retirement observe and mutable return. CPU64/arena9, native192/copy9, F3direct14, six modeled hostsan, six relocated SDKs22headers, tiny actual CUDA source+SDK64each and W1 compile/link PASS. Original failures/unknown/private/Windows unrun limits retained; full pending producer-to-attention and wholeG03/goal remain required.",
-      "candidate": "b42832de3ddda21bdc3e98ad4cc87e73622cbba4",
-      "performance": {
-        "tier": "P0",
-        "evidence": "docs/implementation/tasks/compute/inference-g03-dirty-page-terminal.md"
-      }
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/compute/inference-g03-apple-copy-source.md",
+      "summary": "G03 Apple readonly native output -> fixed F2 source SCOPED; actual two-export identity seam at66b433. Finite typed import-source qualification only; original writers, leases, device/alias checks, FIFO retirement reused. Full pending page-to-attention/wholeG03 and old CLOSED limits remain."
     },
     {
       "module": "graph_route_apple",
