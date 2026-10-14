@@ -103,6 +103,10 @@ Status episode(bool cancelled) {
   unknown=false;
   auto outcome=attention.wait(); // No producer/copy host wait after submission.
 #if defined(HYLE_PENDING_ADMISSION_QUALIFICATION)
+  // A retired suffix proves native ordering, but does not settle the source's
+  // original logical observation. First observe its actual successful Run;
+  // only a subsequent cancellation request must preserve that success.
+  HYLE_RETURN_IF_ERROR(owner.observe());
   HYLE_RETURN_IF_ERROR(owner.request_cancel());
   HYLE_RETURN_IF_ERROR(n::detail::qualify_copy_dependency(n::detail::Access::runtime(context),dependency));
 #endif
