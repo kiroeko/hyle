@@ -259,6 +259,9 @@ Result<Program> prepare_plan(const Context &context, const Plan &plan,
           last_uses[output] = plan.steps.size();
     for (std::size_t index = 0; index < plan.steps.size();) {
       const auto &step = plan.steps[index];
+      if(step.operation.custom_as<model_ops::CacheEncode>()){
+        HYLE_RETURN_IF_ERROR(lower_cache_encoder(*program,step,last_uses));++index;continue;
+      }
       if (matches_mature_default(*program, step, DefaultCarrier::kIree) &&
           iree_operation(*program, step)) {
         HYLE_RETURN_IF_ERROR(lower_iree(*program, step));

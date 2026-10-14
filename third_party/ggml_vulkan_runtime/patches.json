@@ -418,9 +418,49 @@
         {
           "before": "                if (hyle_full_f32) {\n                    if (HSK != HSV",
           "after": "                const bool hyle_paged = op->src[5] != nullptr &&\n                    op->op_params[hyle::compute::ggml_vulkan::bridge::kFlashAttentionPagedSlot] ==\n                    hyle::compute::ggml_vulkan::bridge::kFlashAttentionPaged;\n                if (hyle_paged) {\n                    const auto * table = op->src[5];\n                    const int32_t rows = op->op_params[hyle::compute::ggml_vulkan::bridge::kFlashAttentionLogicalRowsSlot];\n                    const int32_t offset = op->op_params[hyle::compute::ggml_vulkan::bridge::kFlashAttentionTableOffsetSlot];\n                    if (!hyle_full_f32 || op->src[3] || op->src[4] || rows <= 0 || offset < 0 ||\n                        table->type != GGML_TYPE_I32 || !ggml_is_contiguous(table) ||\n                        int64_t(offset) + (int64_t(rows) + 15) / 16 > ggml_nelements(table) ||\n                        op->src[1]->type != GGML_TYPE_F16 || op->src[2]->type != GGML_TYPE_F16 ||\n                        op->src[1]->ne[1] % 16 != 0 ||\n                        (op->op_params[hyle::compute::ggml_vulkan::bridge::kFlashAttentionCausalSlot] && rows < op->src[0]->ne[1])) {\n                        return false;\n                    }\n                }\n                if (hyle_full_f32) {\n                    if (HSK != HSV"
+        },
+        {
+          "before": "                if (hyle_full_f32) {\n                    if (HSK != HSV || (HSK != 64 && HSK != 128 && HSK != 256) ||\n                        (op->src[1]->type != GGML_TYPE_F16 && op->src[1]->type != GGML_TYPE_F32) ||\n                        (op->src[2]->type != GGML_TYPE_F16 && op->src[2]->type != GGML_TYPE_F32)) {\n                        return false;\n",
+          "after": "                if (hyle_full_f32) {\n                    if ((HSK != HSV && !(HSK == 64 && HSV == 128)) || (HSK != 64 && HSK != 128 && HSK != 256) ||\n                        (op->src[1]->type != GGML_TYPE_F16 && op->src[1]->type != GGML_TYPE_F32 && op->src[1]->type != GGML_TYPE_Q8_0) ||\n                        (op->src[2]->type != GGML_TYPE_F16 && op->src[2]->type != GGML_TYPE_F32 && op->src[2]->type != GGML_TYPE_Q8_0)) {\n                        return false;\n"
+        },
+        {
+          "before": "                        int64_t(offset) + (int64_t(rows) + 15) / 16 > ggml_nelements(table) ||\n                        op->src[1]->type != GGML_TYPE_F16 || op->src[2]->type != GGML_TYPE_F16 ||\n                        op->src[1]->ne[1] % 16 != 0 ||\n",
+          "after": "                        int64_t(offset) + (int64_t(rows) + 15) / 16 > ggml_nelements(table) ||\n                        (op->src[1]->type != GGML_TYPE_F16 && op->src[1]->type != GGML_TYPE_Q8_0) ||\n                        op->src[2]->type != op->src[1]->type ||\n                        op->src[1]->ne[1] % 16 != 0 ||\n"
+        },
+        {
+          "before": "    vk_op_unary_push_constants p = vk_op_unary_push_constants_init(src0, dst, ne);\n    ggml_vk_op_f32(ctx, subctx, src0, nullptr, nullptr, nullptr, dst, GGML_OP_CPY, std::move(p));\n",
+          "after": "    vk_op_unary_push_constants p = vk_op_unary_push_constants_init(src0, dst, ne);\n    if (dst->type == GGML_TYPE_Q8_0 && dst->op_params[hyle::compute::ggml_vulkan::bridge::kCacheEncoderCopySlot] ==\n        hyle::compute::ggml_vulkan::bridge::kCacheEncoderCopyExact) p.param4 = 1.0f;\n    ggml_vk_op_f32(ctx, subctx, src0, nullptr, nullptr, nullptr, dst, GGML_OP_CPY, std::move(p));\n"
+        },
+        {
+          "before": "                                              (uint32_t)nev2, (uint32_t)nev3,\n                                              hyle_paged ? uint32_t(neq1) : nem1,\n                                              hyle_paged ? uint32_t(dst->op_params[hyle::compute::ggml_vulkan::bridge::kFlashAttentionTableOffsetSlot]) : nem2,\n                                              hyle_paged ? 1u : nem3,\n                                              q_stride, (uint32_t)nbq2, (uint32_t)nbq3,\n",
+          "after": "                                              (uint32_t)nev2, (uint32_t)nev3,\n                                              (hyle_paged || hyle_cache) ? uint32_t(neq1) : nem1,\n                                              (hyle_paged || hyle_cache) ? uint32_t(dst->op_params[hyle::compute::ggml_vulkan::bridge::kFlashAttentionTableOffsetSlot]) : nem2,\n                                              hyle_cache ? uint32_t(dst->op_params[hyle::compute::ggml_vulkan::bridge::kFlashAttentionWindowSlot] + 1) : (hyle_paged ? 1u : nem3),\n                                              q_stride, (uint32_t)nbq2, (uint32_t)nbq3,\n"
+        },
+        {
+          "before": "            fa_pipeline_state.flags |= 32u;\n        }\n    }\n",
+          "after": "            fa_pipeline_state.flags |= 32u;\n        if (hyle_cache && dst->op_params[hyle::compute::ggml_vulkan::bridge::kFlashAttentionWindowSlot] >= 0)\n            fa_pipeline_state.flags |= 64u;\n    }\n"
+        },
+        {
+          "before": "        GGML_ASSERT(hyle_full_f32 && !mask && !sinks && !use_mask_opt);\n        fa_pipeline_state.flags |= 16u;\n        if (dst->op_params[hyle::compute::ggml_vulkan::bridge::kFlashAttentionCausalSlot]) {\n            fa_pipeline_state.flags |= 32u;\n",
+          "after": "        GGML_ASSERT(hyle_full_f32 && !mask && !sinks && !use_mask_opt);\n        if (hyle_paged) fa_pipeline_state.flags |= 16u;\n        if (hyle_cache) fa_pipeline_state.flags |= 128u;\n        if (dst->op_params[hyle::compute::ggml_vulkan::bridge::kFlashAttentionCausalSlot])\n            fa_pipeline_state.flags |= 32u;\n"
+        },
+        {
+          "before": "    fa_pipeline_state.hyle_full_f32 = hyle_full_f32;\n    if (hyle_paged) {\n        GGML_ASSERT(hyle_full_f32 && !mask && !sinks && !use_mask_opt);\n",
+          "after": "    fa_pipeline_state.hyle_full_f32 = hyle_full_f32;\n    if (hyle_paged || hyle_cache) {\n        GGML_ASSERT(hyle_full_f32 && !mask && !sinks && !use_mask_opt);\n"
+        },
+        {
+          "before": "        hyle::compute::ggml_vulkan::bridge::kFlashAttentionPaged;\n    const uint32_t KV = hyle_paged ? uint32_t(dst->op_params[\n        hyle::compute::ggml_vulkan::bridge::kFlashAttentionLogicalRowsSlot]) : uint32_t(nek1);\n",
+          "after": "        hyle::compute::ggml_vulkan::bridge::kFlashAttentionPaged;\n    const uint32_t KV = (hyle_paged || hyle_cache) ? uint32_t(dst->op_params[\n        hyle::compute::ggml_vulkan::bridge::kFlashAttentionLogicalRowsSlot]) : uint32_t(nek1);\n"
+        },
+        {
+          "before": "    uint32_t N = neq1;\n    const bool hyle_paged = dst->src[5] != nullptr &&\n",
+          "after": "    uint32_t N = neq1;\n    const bool hyle_cache = dst->op_params[hyle::compute::ggml_vulkan::bridge::kFlashAttentionCacheSlot] ==\n        hyle::compute::ggml_vulkan::bridge::kFlashAttentionCache;\n    const bool hyle_paged = dst->src[5] != nullptr &&\n"
+        },
+        {
+          "before": "uint32_t(dst->op_params[hyle::compute::ggml_vulkan::bridge::kFlashAttentionWindowSlot] + 1)",
+          "after": "(uint32_t(dst->op_params[hyle::compute::ggml_vulkan::bridge::kFlashAttentionWindowSlot]) + 1u)"
         }
       ],
-      "after_sha256": "a3ac8de7a4ad26251f79ab2777edf61fe5f85391af2334b41784f6c7241866bc"
+      "after_sha256": "af7dea1e1c981877a9ca0f1ce955844c35a11593a0ec88b3addf263a8f4e261a"
     },
     {
       "path": "src/ggml.cpp",
@@ -744,9 +784,48 @@
         {
           "before": "        float eMf[rows_per_thread];",
           "after": "        if (HYLE_CAUSAL) {\n            [[unroll]] for (uint32_t r = 0; r < rows_per_thread; ++r) {\n                uint32_t query_row = p.gqa_ratio > 1 ? gqa_iq1 : i * Br + tile_row(r);\n                [[unroll]] for (uint32_t c = 0; c < cols_per_thread; ++c) {\n                    if (j * Bc + c * cols_per_iter + col_tid > KV - p.nem1 + query_row) {\n                        Sf[r][c] = ACC_TYPE(-1.0 / 0.0);\n                    }\n                }\n            }\n        }\n\n        float eMf[rows_per_thread];"
+        },
+        {
+          "before": "                [[unroll]] for (uint32_t c = 0; c < cols_per_thread; ++c) {\n                    if (j * Bc + c * cols_per_iter + col_tid > KV - p.nem1 + query_row) {\n                        Sf[r][c] = ACC_TYPE(-1.0 / 0.0);\n",
+          "after": "                [[unroll]] for (uint32_t c = 0; c < cols_per_thread; ++c) {\n                    uint position = KV - p.nem1 + query_row;\n                    uint key_row = j * Bc + c * cols_per_iter + col_tid;\n                    if (key_row > position || (HYLE_WINDOW && int(key_row) < max(0, int(position) - int(p.nem3 - 1u)))) {\n                        Sf[r][c] = ACC_TYPE(-1.0 / 0.0);\n"
+        },
+        {
+          "before": "\n    [[dont_unroll]]\n",
+          "after": "\n    if (HYLE_WINDOW) {\n        uint first_query = p.gqa_ratio > 1 ? gqa_iq1 : i * Br;\n        uint last_query = p.gqa_ratio > 1 ? first_query : min(p.nem1 - 1u, i * Br + Br - 1u);\n        uint first_key = uint(max(0, int(KV - p.nem1 + first_query) - int(p.nem3 - 1u)));\n        uint last_key = KV - p.nem1 + last_query + 1u;\n        start_j = max(start_j, first_key / Bc);\n        end_j = min(end_j, CEIL_DIV(last_key, Bc));\n    }\n    [[dont_unroll]]\n"
+        },
+        {
+          "before": "uint32_t hyle_kv_row(uint32_t logical_row) {\n    if (!HYLE_PAGED) return logical_row;\n    return (data_mask_opt[p.nem2 + (logical_row >> 4)] << 4) + (logical_row & 15u);\n",
+          "after": "uint32_t hyle_kv_row(uint32_t logical_row) {\n    if (!HYLE_PAGED) return logical_row + (HYLE_CACHE ? p.nem2 : 0u);\n    return (data_mask_opt[p.nem2 + (logical_row >> 4)] << 4) + (logical_row & 15u);\n"
+        },
+        {
+          "before": "const bool HYLE_CAUSAL = (Flags & 32u) != 0;\nuint32_t hyle_kv_row(uint32_t logical_row) {\n",
+          "after": "const bool HYLE_CAUSAL = (Flags & 32u) != 0;\nconst bool HYLE_WINDOW = (Flags & 64u) != 0;\nconst bool HYLE_CACHE = (Flags & 128u) != 0;\nuint32_t hyle_kv_row(uint32_t logical_row) {\n"
         }
       ],
-      "after_sha256": "81fb89f3486518625a11e4e7e3d72f71e13066c3496564f2b756b5073b63b73d"
+      "after_sha256": "6286c022977503dcaebfa0b40e13b15380b4989da5df306e3eb922f7637b228d"
+    },
+    {
+      "path": "src/ggml-vulkan/vulkan-shaders/copy_to_quant.comp",
+      "before_sha256": "4d7c9207f8635fc2a777569fda4576d48c58804604e4ba270e097705df362021",
+      "edits": [
+        {
+          "before": "\n        data_q[dst_idx].qs[j] = int8_t(round(x0));\n    }\n",
+          "after": "\n        float rounded = round(x0);\n#ifndef SET_ROWS\n        if (p.param4 == 1.0f) {\n            float magnitude = abs(x0), base = floor(magnitude);\n            rounded = sign(x0) * (base + float(magnitude - base >= 0.5f));\n        }\n#endif\n        data_q[dst_idx].qs[j] = int8_t(rounded);\n    }\n"
+        },
+        {
+          "before": "    const float d = amax / ((1 << 7) - 1);\n    const float id = (d != 0.0) ? 1.0/d : 0.0;",
+          "after": "    float d = amax / ((1 << 7) - 1);\n    float id = (d != 0.0) ? 1.0/d : 0.0;\n#ifndef SET_ROWS\n    if (p.param4 == 1.0f) {\n        precise float exact_d = amax / 127.0f;\n        precise float exact_id = exact_d != 0.0f ? 1.0f / exact_d : 0.0f;\n        d = exact_d;\n        id = exact_id;\n    }\n#endif"
+        },
+        {
+          "before": "            float magnitude = abs(x0), base = floor(magnitude);",
+          "after": "            precise float exact_x = float(data_s[src_idx + j]) * id;\n            float magnitude = abs(exact_x), base = floor(magnitude);"
+        },
+        {
+          "before": "        precise float exact_d = amax / 127.0f;\n        precise float exact_id = exact_d != 0.0f ? 1.0f / exact_d : 0.0f;",
+          "after": "        precise float exact_d = amax / 127.0f;\n        // Native shader division may be approximate. Residual correction\n        // retains the reference's two distinct F32 rounded quotients.\n        precise float d_residual = fma(-exact_d, 127.0f, amax);\n        exact_d = fma(d_residual, 1.0f / 127.0f, exact_d);\n        precise float exact_id = exact_d != 0.0f ? 1.0f / exact_d : 0.0f;\n        if (exact_d != 0.0f) {\n            precise float id_residual = fma(-exact_id, exact_d, 1.0f);\n            exact_id = fma(id_residual, exact_id, exact_id);\n        }"
+        }
+      ],
+      "after_sha256": "1242cf8ff02c31138ee143c599705c04fad6e3c2b92af3a3546a58cdae2908cf"
     }
   ]
 }

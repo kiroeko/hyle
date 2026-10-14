@@ -388,3 +388,42 @@ paged fixture漏host metadata预算与空tail记录；NOTICE更新后漏同步li
 readonly反证还纠正roundf临界、二pass缓存键与独立Dv空形状。所有修复在既定owner/有限FIX
 内，实际共享库源码目标、原MLX编译/运行，无全局测试/模型/P1；未变原域没有重复性能验证。
 当前无活跃重型任务。十owner仍AUDITED；Vulkan、增量F2/Graph、新域风险/SDK/P1仍未验收。
+
+CE06本批具体承载已固定在原Plan/Region内：attention借原FullF32 scalar Q8 decoder及独立
+HSK/HSV，原use_dequant_kv已排除FullF32；只扩原private cache op的几何、causal/window、
+table/row offset。ragged保真实完整K/V roots并传physical row offset，避免Q8 D64/Hkv2
+的31*136-byte prefix不能满足descriptor根地址对齐；packed Q8的2-byte pitch与根descriptor
+alignment分开，原root guard不减弱。没有全KV展开、Q×KV mask或第二执行器。
+
+dirty CacheEncode先借原checked tensor输出安全F32新行，按abs(x)<=65504*127检查payload，
+原status bit4经reset/retirement翻译InvalidArgument；随后借原ggml F32→Q8 Copy，输出以
+零拷贝I8/U8 view发布原block34字节。不造slot_mapping/identity rows或另一个producer owner。
+原Copy push已有unused param4，只由带private exact tag的新encoder启用fraction>=.5
+ties-away；普通Q8 Copy/SetRows保持原规则。费用新增O(dirty elements) F32安全区和一次
+checked dispatch，encoded output与原status/work/storage计入现有allocator；不触碰历史页。
+这些仍属已冻结CE06有限FIX/原owner，当前draft，实际Air数学/三交付/风险/P1尚未签发。
+
+CE06实际Air source阶段现已通过，见
+[阶段证据](../../../../evidence/correctness/inference-g04-g05-vulkan-encoding-math-stage/result.json)。
+最终10项测试PASS；实查Mac16,12、arm64、macOS27.0.1、AppleClang21，普通shared源码产物。
+F16 Q/output直接消费paged/ragged Q8，有限四组Dqk/Dv、window -1/0/15/16/INT32_MAX、
+full noncausal Q>KV、D256 Q1/65长prefill、共享重排逻辑274/物理256页均通过独立double oracle。
+8192-row Q1/Q65大值抵消、plain/Q8长窗口切换、独立Dv空输出[0,8,128]及原plain同D
+64/128/256无界域完成定向回归；没有全历史解码或Q×KV mask。
+
+encoder三种输入各128个block的实际bytes与独立参考一致，含zero、signed ties和
+nextafter(.5)临界；NaN/Inf与F32 scale overflow均实际接受提交后由原Results报InvalidArgument。
+原shader除法的近似会把amax=1.375、x=-.6875的参考-63.499996变成-63.5，仅precise不足；
+private exact分支按两次独立F32 quotient保留舍入，并以FMA residual修正。每block增加常数算术，
+不改普通Copy/SetRows规则。readonly有界复核无新增MUST；exact分支每block显式增加4次FMA，
+重复division能否消除由编译器决定。此处只签实际oracle覆盖的输入，不代签所有极小scale边界；
+subnormal/FTZ及极小非零scale倒数溢出仍属于本卡待验数值风险。
+
+四次attempt累计375.797秒，全部原FAIL和canonical输入SHA保留：首次raw ggml_view_tensor
+没有producer图边，导致空图，改为原ggml_view_4d；空slice保留非canonical stride，先走零
+payload Copy后reshape；第二、三次仅byte临界失败。readonly反证修正INT32_MAX窗口打包的
+有符号溢出，使用uint32后加1，-1仍编码为0。原错误、预算和累计没有重置。
+
+本阶段仅签实际Air Vulkan有限source数学/编码；四后端源码阶段至此都有实际证据。十owner仍
+AUDITED，增量encoder/F2/Graph、多producer和三联合consumer、新域风险/SDK/P1与CPU-only
+原ffa执行继续待验；G04/G05完整项目未关闭。当前没有活跃重型任务。

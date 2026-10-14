@@ -550,6 +550,15 @@ void main() {
 void main() {
     uint index = gl_GlobalInvocationID.x + gl_GlobalInvocationID.y * gl_NumWorkGroups.x * 128u;
 #ifdef HYLE_TENSOR_CHECKED
+    if (operation == 15) {
+        if (index >= count) return;
+        uint offset = tensor_address(index).x;
+        float value = decode(load_bytes(0, offset, width(type_a)), type_a);
+        bool valid = !isnan(value) && !isinf(value) && abs(value) <= 65504.0 * 127.0;
+        d[index] = floatBitsToUint(valid ? value : 0.0);
+        if (!valid) atomicOr(c[0], 4u);
+        return;
+    }
     if (operation == 14) {
         if (index >= count) return;
         uint offset = tensor_address(index).x;

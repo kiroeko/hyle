@@ -6,6 +6,7 @@
 #include <limits>
 
 #include "vulkan_shaders.h"
+#include "hyle/compute/model_ops.h"
 
 namespace hyle::compute::vulkan::detail {
 std::optional<std::uint32_t> tensor_storage_type(DataType type) noexcept {
@@ -273,6 +274,38 @@ Status lower_concat(ProgramState &program, const PlanStep &step) {
   return Status::Ok();
 }
 } // namespace
+
+Status lower_cache_encoder(ProgramState &program, const PlanStep &step,
+                           std::span<const std::size_t> last_uses) {
+  const auto encode=step.operation.custom_as<model_ops::CacheEncode>();
+  if(!encode || encode->storage!=CacheStorage::q8_0().value())
+    return Status::Unimplemented("Vulkan cache encoder admits Q8_0 storage");
+  const auto input=program.values[step.inputs[0]].description;
+  const auto count=*input.element_count();
+  if(!count)return Status::Ok();
+  if(count>INT32_MAX || count>program.runtime->device->properties.limits.maxStorageBufferRange/4)
+    return Status::OutOfRange("Vulkan cache encoder dirty extent exceeds native limits");
+  const auto append=[&](TensorDesc description){
+    const auto id=static_cast<std::uint32_t>(program.values.size());
+    program.values.push_back({description,{}});program.aliases.push_back({id,0});return id;
+  };
+  HYLE_ASSIGN_OR_RETURN(auto safe_desc,TensorDesc::dense(DataType::kFloat32,input.dimensions()));
+  const auto safe=append(safe_desc);
+  if(!program.status_value){HYLE_ASSIGN_OR_RETURN(auto status,TensorDesc::dense(DataType::kInt32,{}));program.status_value=append(status);}
+  std::array<SpecializationConstant,42> specialization{};Dispatch dispatch;
+  HYLE_RETURN_IF_ERROR(tensor_layout(program,step.inputs,safe,specialization,dispatch));
+  specialization[0].value=15;specialization[5].value=1;
+  dispatch.values[2]=*program.status_value;dispatch.checked_status=true;
+  HYLE_RETURN_IF_ERROR(append_tensor_dispatch(program,std::move(dispatch),
+      shaders::checked_tensor(),specialization,static_cast<std::uint32_t>((count+127)/128)));
+  // The original native Q8 copy sees only safe F32 dirty rows. The owning
+  // checked status still rejects publication after the full accepted work.
+  Plan native;native.workload=program.workload;native.values=program.values;
+  native.inputs={safe};native.outputs=step.outputs;
+  auto node=step;node.inputs={safe};native.steps.push_back(std::move(node));
+  std::vector<std::size_t> uses(last_uses.begin(),last_uses.end());uses.resize(program.values.size(),1);
+  return lower_region(program,native,0,1,uses);
+}
 
 Status lower_index_check(ProgramState &program, std::uint32_t input,
                          std::uint32_t output, std::uint64_t extent,

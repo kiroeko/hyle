@@ -20,6 +20,8 @@ bool floating(DataType type) noexcept {
          type == DataType::kBFloat16;
 }
 ggml_type native_type(DataType type) noexcept {
+  if (type == DataType::kUInt8)
+    return GGML_TYPE_I8;
   if (type == DataType::kFloat16)
     return GGML_TYPE_F16;
   if (type == DataType::kBFloat16)
@@ -135,8 +137,12 @@ bool resident_attention_view(const TensorDesc &description) noexcept {
   return true;
 }
 bool tensor_domain(const TensorDesc &description) noexcept {
+  const bool cache = description.rank() >= 3 && description.rank() <= 4 &&
+      description.block_axis() == description.rank()-1 &&
+      description.storage_format() == CacheStorage::q8_0().value().format() &&
+      description.data_type() == DataType::kFloat32;
   return description.valid() &&
-         (native_embedding_table(description) ||
+         (cache || native_embedding_table(description) ||
           quantized_weight_domain(description) ||
           quantized_grouped_weight_domain(description) ||
           (description.is_plain() &&
@@ -342,32 +348,49 @@ struct Imports final {
 Status PagedAttentionRead::infer_output_descriptions(
     std::span<const TensorDesc> inputs,
     std::span<TensorDesc> outputs) const noexcept {
-  if (inputs.size() != 4 || outputs.size() != 1 || !logical_rows ||
+  if (inputs.size() != (paged ? 4u : 3u) || outputs.size() != 1 || !logical_rows ||
       logical_rows > INT32_MAX || !std::isfinite(scale) ||
-      inputs[0].rank() != 4 || inputs[1].rank() != 4 ||
-      inputs[2] != inputs[1] || !inputs[3].is_dense() ||
-      inputs[3].rank() != 1 || inputs[3].data_type() != DataType::kInt32)
+      inputs[0].rank() != 4 || inputs[1].rank() != (paged?4u:3u) ||
+      inputs[2].rank() != inputs[1].rank() || window_left < -1 || (!causal && window_left != -1) ||
+      (paged && (!inputs[3].is_dense() || inputs[3].rank() != 1 ||
+                 inputs[3].data_type() != DataType::kInt32)))
     return Status::InvalidArgument("Vulkan paged read domain");
-  const auto q = inputs[0].dimensions(), k = inputs[1].dimensions();
+  const auto q = inputs[0].dimensions(), k = inputs[1].dimensions(), v = inputs[2].dimensions();
+  const auto heads=k[k.size()-2], value_heads=v[v.size()-2];
+  const auto physical_rows=paged?std::uint64_t(k[0])*std::uint64_t(k[1]):std::uint64_t(k[0]);
   const auto refs = (std::uint64_t(logical_rows) + 15) / 16;
-  if (q[0] != 1 || k[0] != 1 || k[1] <= 0 || k[1] % 16 ||
+  if (q[0] != 1 || k[0] <= 0 || k[0] != v[0] ||
+      heads <= 0 || heads != value_heads || q[2] <= 0 || q[2] % heads || q[3] != k.back() ||
+      (paged && (k[1] != 16 || v[1] != 16)) || (!paged && std::uint64_t(table_offset)+logical_rows > physical_rows) ||
       q[1] <= 0 || (causal && std::uint64_t(q[1]) > logical_rows) ||
-      std::uint64_t(table_offset) + refs >
-          std::uint64_t(inputs[3].dimensions()[0]))
+      (paged && std::uint64_t(table_offset) + refs >
+          std::uint64_t(inputs[3].dimensions()[0])))
     return Status::InvalidArgument("Vulkan paged logical/table bounds");
-  if (inputs[0].data_type() != DataType::kFloat16 ||
-      inputs[1].data_type() != DataType::kFloat16 ||
-      (q[3] != 64 && q[3] != 128 && q[3] != 256))
+  const bool plain = inputs[1].is_plain() && inputs[2].is_plain() &&
+      inputs[1].data_type() == DataType::kFloat16 && inputs[2].data_type() == DataType::kFloat16;
+  const auto q8 = CacheStorage::q8_0().value();
+  const auto key_cache = cache_tensor_description(q8,k), value_cache = cache_tensor_description(q8,v);
+  const bool encoded = key_cache && value_cache && inputs[1] == *key_cache && inputs[2] == *value_cache;
+  if (!inputs[0].is_plain() || inputs[0].data_type() != DataType::kFloat16 ||
+      (!plain && !encoded) ||
+      (q[3] != 64 && q[3] != 128 && q[3] != 256) ||
+      (v.back() != q[3] && !(q[3] == 64 && v.back() == 128)))
     return Status::Unimplemented("Vulkan paged qualified F16 flash depth");
-  return compute::infer_output_descriptions(
-      Operation(ScaledDotProductAttention{
-          .layout = AttentionLayout::kBatchSequenceHeadDepth,
-          .scale = scale, .causal = false}), inputs.first(3), outputs);
+  HYLE_ASSIGN_OR_RETURN(outputs[0],TensorDesc::dense(DataType::kFloat16,
+      std::array<std::int64_t,4>{1,q[1],q[2],v.back()}));
+  return Status::Ok();
 }
 
 bool region_supports(const Operation &operation,
                      std::span<const TensorDesc> inputs,
                      std::span<const TensorDesc> outputs) noexcept {
+  if (const auto encode = operation.custom_as<model_ops::CacheEncode>()) {
+    std::array<TensorDesc,1> inferred;
+    return encode->storage == CacheStorage::q8_0().value() && inputs.size()==1 &&
+        inputs[0].is_dense() && inputs[0].data_type()==DataType::kFloat32 &&
+        tensor_domain(inputs[0]) && outputs.size()==1 &&
+        infer_output_descriptions(operation,inputs,inferred).ok() && outputs[0]==inferred[0];
+  }
   if (inputs.empty() || outputs.empty() ||
       !std::ranges::all_of(outputs, tensor_domain) ||
       !std::ranges::all_of(inputs, tensor_domain))
@@ -386,7 +409,7 @@ bool region_supports(const Operation &operation,
       operation.custom_as<model_ops::GroupedMatMul>().has_value();
   const bool embedding =
       operation.get_if<Gather>() && native_embedding_table(inputs[0]);
-  if (!operation.get_if<MatMul>() && !grouped &&
+  if (!operation.get_if<MatMul>() && !grouped && !operation.custom_as<PagedAttentionRead>() &&
       !embedding && (!std::ranges::all_of(inputs, [](const auto &input) {
         return input.is_plain();
       }) || !std::ranges::all_of(outputs, [](const auto &output) {
@@ -800,7 +823,21 @@ Result<Region> Region::create(NativeDevice device,
       }
       auto *left = arguments[0];
       ggml_tensor *output = nullptr;
-      if (node.operation.get_if<View>()) {
+      if (node.operation.custom_as<model_ops::CacheEncode>()) {
+        auto *encoded = ggml_cast(context,left,GGML_TYPE_Q8_0);
+        encoded->op_params[bridge::kCacheEncoderCopySlot]=bridge::kCacheEncoderCopyExact;
+        // Publish the exact block34 bytes through the original U8 carrier.
+        // This is a native storage alias of the producer, with no payload copy.
+        output = ggml_view_4d(context, encoded, encoded->ne[0], encoded->ne[1],
+                              encoded->ne[2], encoded->ne[3], encoded->nb[1],
+                              encoded->nb[2], encoded->nb[3], 0);
+        output->type = GGML_TYPE_I8;
+        const auto shape = native_shape(recipe.values[node.outputs[0]]);
+        std::ranges::copy(shape,output->ne);
+        output->nb[0]=1;
+        for(std::size_t axis=1;axis<GGML_MAX_DIMS;++axis)
+          output->nb[axis]=output->nb[axis-1]*std::size_t(output->ne[axis-1]);
+      } else if (node.operation.get_if<View>()) {
         // A qualified dense reshape stays inside the original graph; the
         // common shape restoration below creates only the native view.
         output = left;
@@ -937,16 +974,20 @@ Result<Region> Region::create(NativeDevice device,
       } else if (const auto paged = node.operation.custom_as<PagedAttentionRead>()) {
         auto *query = ggml_permute(context,
             ggml_cast(context, arguments[0], GGML_TYPE_F32), 0, 2, 1, 3);
-        auto *key = ggml_permute(context, arguments[1], 0, 2, 1, 3);
-        auto *value = ggml_permute(context, arguments[2], 0, 2, 1, 3);
+        const auto root=[&](ggml_tensor* tensor){return ggml_reshape_4d(context,tensor,
+            tensor->ne[0],tensor->ne[1],tensor->ne[2]*tensor->ne[3],1);};
+        auto *key = ggml_permute(context, root(arguments[1]), 0, 2, 1, 3);
+        auto *value = ggml_permute(context, root(arguments[2]), 0, 2, 1, 3);
         output = ggml_flash_attn_ext(context, query, key, value, nullptr,
                                     paged->scale, 0.0F, 0.0F);
-        output->src[5] = arguments[3];
+        if (paged->paged) output->src[5] = arguments[3];
         output->op_params[bridge::kFlashAttentionMathSlot] = bridge::kFlashAttentionFullF32;
-        output->op_params[bridge::kFlashAttentionPagedSlot] = bridge::kFlashAttentionPaged;
+        output->op_params[bridge::kFlashAttentionPagedSlot] = paged->paged ? bridge::kFlashAttentionPaged : 0;
         output->op_params[bridge::kFlashAttentionLogicalRowsSlot] = static_cast<std::int32_t>(paged->logical_rows);
         output->op_params[bridge::kFlashAttentionTableOffsetSlot] = static_cast<std::int32_t>(paged->table_offset);
         output->op_params[bridge::kFlashAttentionCausalSlot] = paged->causal;
+        output->op_params[bridge::kFlashAttentionWindowSlot] = paged->window_left;
+        output->op_params[bridge::kFlashAttentionCacheSlot] = bridge::kFlashAttentionCache;
         if (!ggml_prec_set_acc(output, GGML_PREC_F32))
           return std::unexpected(Status::Unimplemented("Vulkan paged flash accumulation"));
         output = ggml_cast(context, output, GGML_TYPE_F16);
@@ -1306,8 +1347,9 @@ Result<Region> Region::create(NativeDevice device,
                               state.device.native().storage_buffer_alignment));
       for (std::size_t source = 0; source < 3; ++source) {
         auto *tensor = node->src[source];
+        const auto pitch_alignment = tensor->type == GGML_TYPE_Q8_0 ? 2u : 16u;
         for (std::size_t axis = 1; axis < 4; ++axis)
-          if (tensor->ne[axis] > 1 && tensor->nb[axis] % 16 != 0)
+          if (tensor->ne[axis] > 1 && tensor->nb[axis] % pitch_alignment != 0)
             return std::unexpected(
                 Status::Unimplemented("ggml Vulkan flash vec4 pitch"));
         if (tensor->view_offs % alignment != 0)

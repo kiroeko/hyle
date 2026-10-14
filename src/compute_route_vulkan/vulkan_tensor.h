@@ -7,6 +7,8 @@
 namespace hyle::compute::vulkan::detail {
 std::optional<std::uint32_t> tensor_storage_type(DataType type) noexcept;
 Status lower_tensor(ProgramState &program, const PlanStep &step);
+Status lower_cache_encoder(ProgramState &program, const PlanStep &step,
+                           std::span<const std::size_t> last_uses);
 Status lower_index_check(ProgramState &program, std::uint32_t input,
                          std::uint32_t output, std::uint64_t extent,
                          bool checked);

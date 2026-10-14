@@ -48,6 +48,16 @@ original FP32 SPIR-V, accounts for float shared storage, and has a separate
 pipeline-cache key. Other ggml calls and device capability flags are unchanged.
 No attention shader, kernel or replacement queue/runtime is introduced.
 
+The tagged cache domain additionally admits canonical Q8_0 K/V with F16 Q
+and output, independent (Dqk,Dv)=(64,128), and causal inclusive left windows.
+The original scalar F32 shader decodes Q8 blocks as F32 at the row/tile load;
+this domain excludes the native full-history F16 dequantization branch.
+Ragged requests retain the aligned physical root and carry a row offset;
+paged requests use the original owned table. Logical length, offset and window
+reuse mask-only push fields and remain in the private pipeline identity.
+The original Q8 copy shader has a tagged reference roundf mode, including exact
+ties and adjacent values. Other Q8 copies keep their original rounding.
+
 The two Argsort shaders retain the upstream bitonic sorting networks, barriers,
 dispatch and scratch management. Their comparison uses original F32 storage
 keys and source indices to provide stable ties, equal signed zeros, NaN-last in

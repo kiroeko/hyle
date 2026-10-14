@@ -1,0 +1,441 @@
+{
+  "kind": "G04_G05_VULKAN_ENCODING_AND_NATIVE_MATH_SOURCE_STAGE",
+  "verdict": "PASS_FINITE_MACBOOK_AIR_SOURCE_DOMAIN",
+  "owners_remain": "AUDITED; whole G04/G05 not accepted",
+  "identity": {
+    "model": "Mac16,12",
+    "arch": "arm64",
+    "os": "ProductName:\t\tmacOS\nProductVersion:\t\t27.0.1\nBuildVersion:\t\t26A434",
+    "compiler": "Apple clang version 21.0.0 (clang-2100.3.34.2)\nTarget: arm64-apple-darwin27.0.0\nThread model: posix\nInstalledDir: /Library/Developer/CommandLineTools/usr/bin",
+    "memory": "17179869184"
+  },
+  "delivery": "Actual shared shipping source target; no HYLE_TESTING, canonical Windows one-way archives; original build-local ggml Vulkan patch",
+  "input_sha256": {
+    "cmake/HyleDependencyLock.json": "38e2f2cc26d1d1983114e98d15c0f469a00cfa53e864414b6554e8b13621d83b",
+    "src/compute_provider_ggml_vulkan/CMakeLists.txt": "6d5e4307229281d39bbd0e920100cea6d504ef00afb7dc7d3b59c9a523c74a4d",
+    "src/compute_provider_ggml_vulkan/metadata_arena.h": "43869fa1c1fcc4947687c07342adf5d4403104591cfce173687850a9e88f2652",
+    "src/compute_provider_ggml_vulkan/native_bridge.h": "d129d55d110bfbd97665c6ecd36aebf0256b82f88d67a899eedee3b9012de146",
+    "src/compute_provider_ggml_vulkan/native_device.cc": "e0340a3049f1572e005400bc837bf1d49368cde9985a9771eb3daedf0a5ca978",
+    "src/compute_provider_ggml_vulkan/native_device.h": "f4c84a9883968760a7fb2efd65697fd46ef9719ac024ed74c874e6a8281bcdb9",
+    "src/compute_provider_ggml_vulkan/native_graph.cc": "1e8f7273fe1ba510686a634a15cb5d7e3d5540446e84de28ea6a81dae08f404c",
+    "src/compute_provider_ggml_vulkan/native_graph.h": "27e8be4e0be5db1e7958a5fa13cc2fe15e657793cc591496a54ee3d8f72e56ab",
+    "src/compute_provider_ggml_vulkan/native_runtime_impl.h": "37dd0fdf3453bdf162af172cff5d563689d5f1688e2424efa5d75b491615bcd3",
+    "src/compute_provider_ggml_vulkan/native_storage_impl.h": "3c196d5d732d856fac1bfbd8c7b112f3f4482a8c6924a656f8687eeed996233b",
+    "src/compute_provider_ggml_vulkan/native_work_impl.h": "eeba414032aff5939d62ae0624f71ef01038a4fe677c82c7b0f1b0b4ddc34f2e",
+    "src/compute_provider_ggml_vulkan/region.cc": "fbcdb56e40a2a63efe93d7aa76d2853e04f6934b007c024bacab7e5fe8ae51e7",
+    "src/compute_provider_ggml_vulkan/region.h": "21dab715781b8631dd629f795163c12a8f2e9553fa7d68e4f66d4ed83ef0f64f",
+    "src/compute_route_vulkan/CMakeLists.txt": "3ffb023d8db69d54a6bc285033a59663e637e41bf392f69e890662439b2ee9f8",
+    "src/compute_route_vulkan/build_shaders.py": "2e91e2c5f7845e402b6b285bd0746f03a2bccd5a9d89c11a685a66c7bee254aa",
+    "src/compute_route_vulkan/file_stream.cc": "b3a04f58ec736001306bb238efc57b05f3caba19b1ddcb7413cc9ed7119bd31d",
+    "src/compute_route_vulkan/shaders/integer_scan.comp": "6e943c8bb3dfe76e80e1b9917a200d3b465afac2feb4076ab7ccdf4efd704950",
+    "src/compute_route_vulkan/shaders/tensor.comp": "0015a81877af5ec7b3d433c41718a2f6471aae84cf29d47433a30264b3c2ad31",
+    "src/compute_route_vulkan/vulkan_batch.cc": "40cceb2370284ba6ab4fafea5295d840b8097714f3658188d3a0f6090645bbd7",
+    "src/compute_route_vulkan/vulkan_build.h.in": "52f5f2a02a7852c823d1543bafc3d0b9525ce0903d65b738ebbed6cb713f8e9a",
+    "src/compute_route_vulkan/vulkan_composition_access.h": "654250f6a197fa4aa68838d59f9503bcc3d3c56ead5e086eec9dc4f1064c676e",
+    "src/compute_route_vulkan/vulkan_copy_internal.h": "2ef2cd519750c9adb73b774fcb8da4df2b413ab94530937c1cd3f054a0d62e03",
+    "src/compute_route_vulkan/vulkan_copy_program.cc": "685ef1b1073b22a68bb2298e3c5a96a58e0aa24edad7e32f952c4cb1d4f4f3a7",
+    "src/compute_route_vulkan/vulkan_copy_recording.cc": "e58d2f4756f70ce02a0d68b97e3b9ebbd244894615d68b25daf1fee3b54211d2",
+    "src/compute_route_vulkan/vulkan_device.cc": "c279ea75854e7e19a04c24877802e96ac031445249b7ba34ce562189f01c7c49",
+    "src/compute_route_vulkan/vulkan_elementwise.cc": "35f20637c1c56a925a3b6480894254a9c621b538a6a104941323b07838c1f0b5",
+    "src/compute_route_vulkan/vulkan_file_stream_access.h": "6726c22f750118a00995ed787eb6d4173e25552dc1ad3f6e08f5664627f56dcd",
+    "src/compute_route_vulkan/vulkan_internal.h": "622bdb184191db5f53db44733ba415ecb2b5e1d6cb24c247549bad28b4061165",
+    "src/compute_route_vulkan/vulkan_iq1.cc": "a13ebf78593e2f1d7e0a94dbffacceba5c14f9941fd983d5f7ca95d23b161a06",
+    "src/compute_route_vulkan/vulkan_iq1.h": "0292ab87e11ae5f53262be30009d3827e0494969f7b6fbd45e5cab5e6669a511",
+    "src/compute_route_vulkan/vulkan_iree.cc": "e9d86c892f5193285ef455cbca335705a90e0c3690d32276efa34a80afb89940",
+    "src/compute_route_vulkan/vulkan_iree.h": "7ddff582d6d8017d4372b564a912bf8cab2ef96ab67ee71f2b52071d1b2123e2",
+    "src/compute_route_vulkan/vulkan_leased_invocation.cc": "8a245d9d8fcc29ae88d80406dfd65ce548db7f46cf6ea3b01177b35bf522ba83",
+    "src/compute_route_vulkan/vulkan_materialized_invocation.cc": "f6a7635118edcc5f9c704ff5622a53f363842bf41b87661610a987726ba971f7",
+    "src/compute_route_vulkan/vulkan_memory.cc": "78ea54d398c3de8c1adc16e68172069a840f7354a8e272a1a40eaffbcce9fc5e",
+    "src/compute_route_vulkan/vulkan_memory_internal.h": "8ebd7b6d94316607937683f63a7e990e04ef1031330c4ba282c7970b66de371a",
+    "src/compute_route_vulkan/vulkan_mlx.cc": "dca494fd5cf471ebe09b7e1710939f686d03c9bd6814140c823a47e31ed542a9",
+    "src/compute_route_vulkan/vulkan_mlx.h": "ad36a316c71f36758d16699eec970058ba78104e89054617d1c2757209c2745a",
+    "src/compute_route_vulkan/vulkan_normalization.cc": "90b25978d1ae851b107e8a0caa4962a502d3f0e18cbc8e17f7938896b97b6d33",
+    "src/compute_route_vulkan/vulkan_official.cc": "f96ec913c578fc21eebd2b38c829caac85bba65d60e9f02556ed9a2836c6afbc",
+    "src/compute_route_vulkan/vulkan_official.h": "6c4e128d70ec02469537d08b203a9b411ddf7ed071d617c3573748a63281dc6d",
+    "src/compute_route_vulkan/vulkan_operations.cc": "8bcf46b8c05cc096c5761657d10049c83db83852827bb6b42b5694b7dac1d9d2",
+    "src/compute_route_vulkan/vulkan_pipeline.cc": "59aec5b0eb94cadbd383236707e7813d6a763366ebdc2ec20010b5407d11ee2c",
+    "src/compute_route_vulkan/vulkan_policy.h": "0652c58c8dddd89d52c7eb2ad051be15c218d2b7dc5634b517913a535d37bec9",
+    "src/compute_route_vulkan/vulkan_program.cc": "70ca0b4433afbde3578fb0785e5cbc8b5ad6512a7b632aaa0c72c7034987400e",
+    "src/compute_route_vulkan/vulkan_program_internal.h": "6b3e17e08406e4aa484b0e2a8a031f36441d86257aefedba8e261bde761a8eb9",
+    "src/compute_route_vulkan/vulkan_recorder.cc": "de668bb1adabb6c69b12fb5484e9af904eac33fe73b2df4adb062d7eab250f4c",
+    "src/compute_route_vulkan/vulkan_reduction.cc": "b8a292ec9f6eaca989acef7a0faaaa97a4c1cc1d26369f03aaee93a55629dc1f",
+    "src/compute_route_vulkan/vulkan_region.cc": "8d5d62804351798413941324cdd38497148c22b8b5345acf84dd09406c2b9792",
+    "src/compute_route_vulkan/vulkan_run.cc": "f750e64f7bb12738db147e1b2a5b6ba4f5c833aea3d04417820c0f3750bfd6e5",
+    "src/compute_route_vulkan/vulkan_scatter.cc": "458dd3af544a486a27864f2e36d09d98f9d540644f6d069cb7a229dd21875601",
+    "src/compute_route_vulkan/vulkan_tensor.cc": "cd983bcaa8716f78f96946fcf202442ad7d4127513b9e59b0551472467b5fa69",
+    "src/compute_route_vulkan/vulkan_tensor.h": "3809832ea25efae4d1bdf959823a13fdf6c369b4b9f0e731b403c6f996daef10",
+    "src/compute_route_vulkan/vulkan_transfer.cc": "62b17eb21e8b393ffaf4ddc4f41352f9cddc74bfb84ab3c9d8ff3bfd80633661",
+    "src/compute_route_vulkan/vulkan_transfer_internal.h": "8d7c9edf8c0e1bcc9a8f8a387064defdcfec3e558c661b5818615017b8615ab5",
+    "src/compute_route_vulkan/vulkan_transfer_slot.cc": "5d604842fe0d06e8511cafa008f74c0b3573f032d8bf5657ce32b05f68fdf68d",
+    "src/compute_route_vulkan/vulkan_weights.cc": "f8fcb6031851a856ffd0ac1fa588ae562308f4068d451627aa3c04b9de4b790d",
+    "tests/compute_route_vulkan/CMakeLists.txt": "2024a9dbef81ecd5b75950751b5359d4a3b6e9238ae80db60a476beb2f0265f7",
+    "tests/compute_route_vulkan/affine.comp": "8dd28bfc2868f05bea98f9303d6497863ec047c73b990fce3f35b40a0b1f8c69",
+    "tests/compute_route_vulkan/artifact_test_support.h": "69c5c93469b6484aa504d924488d7196ff4a9142c67801ca4335cf257ad0c4cf",
+    "tests/compute_route_vulkan/catalogue_gguf_test_support.h": "9ace484fde25919f505d430bdc7686f08d4d9b9a4db9a776cc65d21e41b40221",
+    "tests/compute_route_vulkan/catalogue_parameter_tests.h": "b8ca67611f9ed20b4eb4de0e8932aca23c566d82d7bee355e66990046b81d741",
+    "tests/compute_route_vulkan/catalogue_test.cc": "52c0bc6802a49d1efad410674c6da736c612db6b1703f8ccce4cacca567ff30b",
+    "tests/compute_route_vulkan/catalogue_test_support.h": "526c39af4f9d7c1232873093c9e49ccc3d23acd7c91ae2aaed9b018d92fc8f2e",
+    "tests/compute_route_vulkan/concat_test.cc": "f126829b6bcbc7fb33e280b7f648a54fc21e689e65142837be40f0561f933e73",
+    "tests/compute_route_vulkan/concat_test_support.h": "2290997ec8db69b9eea6f3953dc5f01ad6fced5b562e8af3ed3b9c7fb2986120",
+    "tests/compute_route_vulkan/copy_program_test.cc": "43bc6aa1c59f2f122d329f94f9080222edbe395f690356f0e14b16e8f74f8c46",
+    "tests/compute_route_vulkan/copy_recording_test.cc": "1848478defc644c49d2b7cbaeff215d7af37a7b185161013ab113c07fe312813",
+    "tests/compute_route_vulkan/current_state_test_support.h": "20738a3f9180a8601e1a6595c20f5f354eb7a83dd66d793a7fd30b8860d73aa2",
+    "tests/compute_route_vulkan/current_state_tests.h": "82e964e618c27a88bb0178ccc115e6c38abede9c636d7f8b5e32c07e1289d9e6",
+    "tests/compute_route_vulkan/d5_qwen35_execution_test.cc": "0606810070be788681c30008bcddb98cb6c4ee2f4237f3b09d6e5b647fcb7d59",
+    "tests/compute_route_vulkan/d5_qwen35_profile_test.cc": "89b32e44a507d1d6f29b5f678998c55a4241889e4d9cbcfb68e48ce387457092",
+    "tests/compute_route_vulkan/file_stream_test.cc": "9340822d9cfb606d9fb7698cb5cb836d8ad87b949652b4cc31e9297966ec3b0a",
+    "tests/compute_route_vulkan/fixture.h": "a623eeb8e1fca33f907dfa509a523f22e07954a2d640c0601c7f417afa050df3",
+    "tests/compute_route_vulkan/gate_norm_test.cc": "eb286e050e48b9cc63de41d980ac6180bcc543f92fbb5de90828de7a86863c7e",
+    "tests/compute_route_vulkan/gate_norm_test_support.h": "f154829c31c9a6ee290249ca3934f3e0e6b0a67c3ba4565fda47e68cf427a036",
+    "tests/compute_route_vulkan/gather_test.cc": "338535611a6d198d6626c9cf4275de9fd5659f348c80d82df75c34218ecf6e15",
+    "tests/compute_route_vulkan/gather_test_support.h": "145834418f85d0d2010e783e992c7611c37aea868844980555d51061672908ec",
+    "tests/compute_route_vulkan/gguf_test.cc": "ffaa5a335b6ad0d7ff41fccff88322765ced83ea68e9bf7ce1bfa693875f26c7",
+    "tests/compute_route_vulkan/gguf_test_support.h": "15e0c87c22c484045011e937ee8875374990e5bb868301135f65e211b51d4c07",
+    "tests/compute_route_vulkan/iq1_original_grid.h": "8115aa41e2f98ec91e59bdbc8d73e835b09238f317a2f32d7a65b9cf1ebf3271",
+    "tests/compute_route_vulkan/iq1_test_support.h": "8df3fa7d5e705d21af20c41562d1206c44f5f58077b7d1ae7159973b47c39804",
+    "tests/compute_route_vulkan/iree_test.cc": "bbde1fd7a25ec9069efad1c053803e1e493a07022f4ecf87d53e8cabdf7bcb9f",
+    "tests/compute_route_vulkan/iree_test_support.h": "2e669ed5e4487f16a19407adbf64d40eb9a975661a2675a439ce34f80b27b800",
+    "tests/compute_route_vulkan/lifecycle_test.cc": "cbf19c2b590bfae371fba2ee5767c060235c72becca99af8ef23d04356e8316d",
+    "tests/compute_route_vulkan/managed_region_test.cc": "d8b431b9e0fd9ab70ed4cff2ade2da70c1f8f2b5ed372499a49a96caece7226a",
+    "tests/compute_route_vulkan/mature_tensor_test.cc": "120cdc5aec41361f2394a1a0df3c407b5e74053d47f8c0f8c252b88ed51aee4d",
+    "tests/compute_route_vulkan/mlx_test_support.h": "2d4869a1ab42848ba7de9db39c43909a060ad6229834b8c39c58a7695aa0b73a",
+    "tests/compute_route_vulkan/mxfp4_test.cc": "cfd543a86ed2668c89fc84d65e0e9a0b14decf61f52ce9a4557368f19ba12bda",
+    "tests/compute_route_vulkan/mxfp4_test_support.h": "965bee29eddd9dfe58ffed305c83b4dcac51d3f48dc5b91fb12b9cefe16a01f4",
+    "tests/compute_route_vulkan/native_cache_test.cc": "2c60fb510a4e205fb16ebd2eff16233e23751426514d2deb5fa577f400ae50d4",
+    "tests/compute_route_vulkan/native_ragged_cost_test.cc": "bff44d662988f5ca0aebdcffbe88fa2a7277056e57b3ddaa451a6beeab291be7",
+    "tests/compute_route_vulkan/native_ragged_test.cc": "b65db92ff9a0a48d1f25858e04617bcdf7d868f1f46f1a34a460f664fef0a125",
+    "tests/compute_route_vulkan/native_test.cc": "70f62391f13c42dafafd98f166802f3a098eaf1a61c8164279f22246fc654227",
+    "tests/compute_route_vulkan/official_test_support.h": "2cb1afdb462e124245d9a591ce2e4cb358215d5cf1ea5b08da0a617a45665103",
+    "tests/compute_route_vulkan/provider_bridge_test.cc": "832ba069c1c6d858275c11f69da25a9f4132f6b714ac1ab41f34e9d55b8ea0e4",
+    "tests/compute_route_vulkan/recurrent_test.cc": "1f7c389e870160159fe0d607de0474ff9e5bf3970c6d3c8d86114307e414504e",
+    "tests/compute_route_vulkan/recurrent_test_support.h": "567a9e629908293aff15e3216406641bb2803f47429deced192bf1f66227475b",
+    "tests/compute_route_vulkan/reduction_test.cc": "46416d573095523450b0707114b37891413e1c411dda6dc2d610dcc9c0a5a083",
+    "tests/compute_route_vulkan/reduction_test_support.h": "9994d1a92208000b67dec297e045991cdc16183884718a654ab87a1427cc0ce9",
+    "tests/compute_route_vulkan/scan_test.cc": "78f75d90aa0076e1fb30bf7f6a9c6279b1184dd60a397c63c28646e6d713bf5c",
+    "tests/compute_route_vulkan/scan_test_support.h": "1c09f339e559769fd7a081f27c1ee013d95baddcf62b2f3993e8c43727a7d6ea",
+    "tests/compute_route_vulkan/scatter_test.cc": "68040be93da9b5502940f11fe8e54f74e069ef5c2d6c828e96372ba5bac7de69",
+    "tests/compute_route_vulkan/scatter_test_support.h": "20209c1b9987b72a18492dd98f467aa4606e78aeb04aeb0593ed38aa77dec203",
+    "tests/compute_route_vulkan/tensor_test.cc": "31bd19252b640c8305518ce2413b11d2cd5e86af4fcecd0c46370e92f734c963",
+    "tests/compute_route_vulkan/tensor_test_support.h": "d8f404d2ebccc65278b96d5cb7a1319acee82baa6d4efcf659986a5eb1a66ae7",
+    "tests/compute_route_vulkan/topk_test.cc": "df8afc53978870722439fcbb7a5be6c7ff06c777584b7d2d4dcf1e5b3084b32a",
+    "tests/compute_route_vulkan/topk_test_support.h": "78504214f58ee3bdf2c3818d9b569b3f4040c5aab60ad65d8c32404b8e503498",
+    "tests/compute_route_vulkan/view_test.cc": "97db345831edf67e33c7710d7af21df536f624d3080a2a49c9c4d662d1192f27",
+    "third_party/ggml_vulkan_runtime/LICENSE": "94f29bbed6a22c35b992c5c6ebf0e7c92f13b836b90f36f461c9cf2f0f1d010d",
+    "third_party/ggml_vulkan_runtime/NOTICE.md": "47a8e943c65843d9069f049bbf074d9905581ded27f0006ca3b5ff9cbd0709c4",
+    "third_party/ggml_vulkan_runtime/patches.json": "420b47ce9a1ce672701ea02338b8a8bc93e839213fc23cacfaad8396f93ec762"
+  },
+  "verified_patch_derivations": [
+    {
+      "path": "src/ggml-vulkan/vulkan-shaders/vulkan-shaders-gen.cpp",
+      "after_sha256": "dba91aefb190fdb35ddc31df0ea2c3a28a14a17f2a93de9d1cd1299075a19180"
+    },
+    {
+      "path": "src/ggml-vulkan/CMakeLists.txt",
+      "after_sha256": "db8781a89f4611d25bc782544c9692ab94051333153fc0b8e0f723655c525a65"
+    },
+    {
+      "path": "src/ggml-vulkan/ggml-vulkan.cpp",
+      "after_sha256": "af7dea1e1c981877a9ca0f1ce955844c35a11593a0ec88b3addf263a8f4e261a"
+    },
+    {
+      "path": "src/ggml.cpp",
+      "after_sha256": "630bc93ec4f90d83bdd34e5fe8e87227f125763db850b0c546b8ab3cf78353e0"
+    },
+    {
+      "path": "src/ggml-alloc.c",
+      "after_sha256": "fe5e14485d28466f516fd934bde9dab82f8bd1b0ac241b197fae59c5de8f837d"
+    },
+    {
+      "path": "src/ggml-vulkan/vulkan-shaders/unary.comp",
+      "after_sha256": "0644a5049aefb8c2cfc01ef7e67a74786a56ed25467e902e701dfc1f6fdb103e"
+    },
+    {
+      "path": "src/ggml-vulkan/vulkan-shaders/swiglu.comp",
+      "after_sha256": "83abd99f64caa408099f93e22cd27a0f22c8b3bdd2e735afd66f86a275f9ed00"
+    },
+    {
+      "path": "src/ggml-vulkan/vulkan-shaders/argsort.comp",
+      "after_sha256": "25fe06a2f60d148c23aa749eff9b9997ff5417be482185aaab7442ba97ae5ac4"
+    },
+    {
+      "path": "src/ggml-vulkan/vulkan-shaders/argsort_large.comp",
+      "after_sha256": "21d4e5a2575a6fda4583a3e79478ebd0d4aad34c90fb4335d68b65624591acef"
+    },
+    {
+      "path": "src/ggml-vulkan/vulkan-shaders/soft_max_large2.comp",
+      "after_sha256": "a6a9caebe5d1e59787f22c823e7fd07177c597e9a52ab7a9075639260d44a7ed"
+    },
+    {
+      "path": "src/ggml-vulkan/vulkan-shaders/soft_max_large3.comp",
+      "after_sha256": "a2cb7ccdfc19129b84df93dd3960248906cafb6e60c28584c2f3d7de88fa5499"
+    },
+    {
+      "path": "src/ggml-vulkan/vulkan-shaders/log.comp",
+      "after_sha256": "5acc3d885f97d4fc0385d12615f2bd50466310c49ad15f6a60f03b1640676016"
+    },
+    {
+      "path": "src/ggml-vulkan/vulkan-shaders/flash_attn.comp",
+      "after_sha256": "6286c022977503dcaebfa0b40e13b15380b4989da5df306e3eb922f7637b228d"
+    },
+    {
+      "path": "src/ggml-vulkan/vulkan-shaders/copy_to_quant.comp",
+      "after_sha256": "1242cf8ff02c31138ee143c599705c04fad6e3c2b92af3a3546a58cdae2908cf"
+    }
+  ],
+  "tests": {
+    "final": 10
+  },
+  "qualified": [
+    "Q8_0 encoder bytes for F16/BF16/F32: zero blocks, exact ties and signed nextafter(.5) boundary",
+    "NaN/Inf and finite F32 scale overflow accepted then reported by original Results numeric status",
+    "Actual direct paged/ragged Q8 physical roots, F16 Q/output, D64/D128/D256 and independent (64,128)",
+    "Causal inclusive window -1/0/15/16/INT32_MAX, full noncausal Q33/35 over KV31/33",
+    "D256 Q1/65 long prefill; shared/reordered logical274 over physical256; independent double oracle",
+    "8192-row Q8 high-value cancellation Q1/Q65: direct F32 block decode and partial storage",
+    "8192-row Q8/plain window -1/0/16/-1 specialization and bounded effective scans",
+    "Empty paged/ragged Q8 independent-Dv output [0,8,128]",
+    "Original plain coupled/unbounded paged/ragged D64/D128/D256"
+  ],
+  "P0": "Original scalar full-F32 flash tile/row Q8 decode, independent K/V strides, no full-history F16 expansion or QxKV mask. Ragged retains aligned roots and physical row offset, Q8 pitch2 independent of root descriptor alignment. Encoder original checked F32 dirty scratch plus original Q8 CPY/reference-roundf tag and dependency-carrying zero-copy carrier view. No new runtime/queue/controller. Original native private bytes remain UNKNOWN.",
+  "review_fixes": [
+    "Dependency-carrying ggml_view_4d retains encoded CPY producer; raw ggml_view_tensor had made an empty graph",
+    "Zero payload Copy canonicalizes the sliced empty descriptor before independent-Dv reshape; no device payload dispatch",
+    "Legal INT32_MAX window packed by unsigned addition, including -1 unsigned wrap to zero",
+    "Reference encoder keeps scale/division/product intermediate rounding rather than reassociating across a byte rounding boundary"
+  ],
+  "not_proven": [
+    "Incremental encoder/F2/Graph page consumer journey",
+    "static/shared SDK delivery",
+    "new-domain sanitizer/OOM/concurrency/retirement matrix",
+    "qualified P1",
+    "whole G04/G05",
+    "Subnormal/FTZ and reciprocal-overflow boundaries of very small nonzero encoder scales"
+  ],
+  "runs": [
+    {
+      "state": "TERMINAL_FAIL",
+      "identity": {
+        "model": "Mac16,12",
+        "arch": "arm64",
+        "os": "ProductName:\t\tmacOS\nProductVersion:\t\t27.0.1\nBuildVersion:\t\t26A434",
+        "compiler": "Apple clang version 21.0.0 (clang-2100.3.34.2)\nTarget: arm64-apple-darwin27.0.0\nThread model: posix\nInstalledDir: /Library/Developer/CommandLineTools/usr/bin",
+        "memory": "17179869184"
+      },
+      "max_jobs": 4,
+      "stages": [
+        {
+          "stage": "configure",
+          "command": [
+            "/opt/homebrew/bin/cmake",
+            "-S",
+            "/Users/kiro/hyle-scratch/compute-unified/a-cpu-vulkan/selected-graph/source-parent",
+            "-B",
+            "/Users/kiro/hyle-scratch/compute-unified/a-cpu-vulkan/selected-graph/source-build"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 20.842515332999998,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g04-g05-vulkan-cache/configure-1.log"
+        },
+        {
+          "stage": "compile",
+          "command": [
+            "/opt/homebrew/bin/cmake",
+            "--build",
+            "/Users/kiro/hyle-scratch/compute-unified/a-cpu-vulkan/selected-graph/source-build",
+            "--target",
+            "g04_g05_vulkan_cache",
+            "--parallel",
+            "4"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 67.803539917,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g04-g05-vulkan-cache/compile-1.log"
+        },
+        {
+          "stage": "tests",
+          "command": [
+            "/Users/kiro/hyle-scratch/compute-unified/a-cpu-vulkan/selected-graph/source-build/g04_g05_vulkan_cache",
+            "--gtest_output=xml:/Users/kiro/hyle-scratch/compute-unified/g04-g05-vulkan-cache/tests-1.xml"
+          ],
+          "exit_code": 1,
+          "elapsed_seconds": 10.926746332999997,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g04-g05-vulkan-cache/tests-1.log"
+        }
+      ],
+      "scope": "Only real Vulkan new-cache source fixture; no model/whole-test/SDK/sanitizer/P1 verdict",
+      "cumulative_seconds": 99.57280158299999
+    },
+    {
+      "state": "TERMINAL_FAIL",
+      "identity": {
+        "model": "Mac16,12",
+        "arch": "arm64",
+        "os": "ProductName:\t\tmacOS\nProductVersion:\t\t27.0.1\nBuildVersion:\t\t26A434",
+        "compiler": "Apple clang version 21.0.0 (clang-2100.3.34.2)\nTarget: arm64-apple-darwin27.0.0\nThread model: posix\nInstalledDir: /Library/Developer/CommandLineTools/usr/bin",
+        "memory": "17179869184"
+      },
+      "max_jobs": 4,
+      "stages": [
+        {
+          "stage": "configure",
+          "command": [
+            "/opt/homebrew/bin/cmake",
+            "-S",
+            "/Users/kiro/hyle-scratch/compute-unified/a-cpu-vulkan/selected-graph/source-parent",
+            "-B",
+            "/Users/kiro/hyle-scratch/compute-unified/a-cpu-vulkan/selected-graph/source-build"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 20.609191459,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g04-g05-vulkan-cache/configure-2.log"
+        },
+        {
+          "stage": "compile",
+          "command": [
+            "/opt/homebrew/bin/cmake",
+            "--build",
+            "/Users/kiro/hyle-scratch/compute-unified/a-cpu-vulkan/selected-graph/source-build",
+            "--target",
+            "g04_g05_vulkan_cache",
+            "--parallel",
+            "4"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 60.245900457999994,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g04-g05-vulkan-cache/compile-2.log"
+        },
+        {
+          "stage": "tests",
+          "command": [
+            "/Users/kiro/hyle-scratch/compute-unified/a-cpu-vulkan/selected-graph/source-build/g04_g05_vulkan_cache",
+            "--gtest_output=xml:/Users/kiro/hyle-scratch/compute-unified/g04-g05-vulkan-cache/tests-2.xml"
+          ],
+          "exit_code": 1,
+          "elapsed_seconds": 11.305122541000003,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g04-g05-vulkan-cache/tests-2.log"
+        }
+      ],
+      "scope": "Only real Vulkan new-cache source fixture; no model/whole-test/SDK/sanitizer/P1 verdict",
+      "cumulative_seconds": 92.160214458
+    },
+    {
+      "state": "TERMINAL_FAIL",
+      "identity": {
+        "model": "Mac16,12",
+        "arch": "arm64",
+        "os": "ProductName:\t\tmacOS\nProductVersion:\t\t27.0.1\nBuildVersion:\t\t26A434",
+        "compiler": "Apple clang version 21.0.0 (clang-2100.3.34.2)\nTarget: arm64-apple-darwin27.0.0\nThread model: posix\nInstalledDir: /Library/Developer/CommandLineTools/usr/bin",
+        "memory": "17179869184"
+      },
+      "max_jobs": 4,
+      "stages": [
+        {
+          "stage": "configure",
+          "command": [
+            "/opt/homebrew/bin/cmake",
+            "-S",
+            "/Users/kiro/hyle-scratch/compute-unified/a-cpu-vulkan/selected-graph/source-parent",
+            "-B",
+            "/Users/kiro/hyle-scratch/compute-unified/a-cpu-vulkan/selected-graph/source-build"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 20.936826083,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g04-g05-vulkan-cache/configure-3.log"
+        },
+        {
+          "stage": "compile",
+          "command": [
+            "/opt/homebrew/bin/cmake",
+            "--build",
+            "/Users/kiro/hyle-scratch/compute-unified/a-cpu-vulkan/selected-graph/source-build",
+            "--target",
+            "g04_g05_vulkan_cache",
+            "--parallel",
+            "4"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 61.247333916,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g04-g05-vulkan-cache/compile-3.log"
+        },
+        {
+          "stage": "tests",
+          "command": [
+            "/Users/kiro/hyle-scratch/compute-unified/a-cpu-vulkan/selected-graph/source-build/g04_g05_vulkan_cache",
+            "--gtest_output=xml:/Users/kiro/hyle-scratch/compute-unified/g04-g05-vulkan-cache/tests-3.xml"
+          ],
+          "exit_code": 1,
+          "elapsed_seconds": 10.139182082999994,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g04-g05-vulkan-cache/tests-3.log"
+        }
+      ],
+      "scope": "Only real Vulkan new-cache source fixture; no model/whole-test/SDK/sanitizer/P1 verdict",
+      "cumulative_seconds": 92.323342082
+    },
+    {
+      "state": "TERMINAL_PASS",
+      "identity": {
+        "model": "Mac16,12",
+        "arch": "arm64",
+        "os": "ProductName:\t\tmacOS\nProductVersion:\t\t27.0.1\nBuildVersion:\t\t26A434",
+        "compiler": "Apple clang version 21.0.0 (clang-2100.3.34.2)\nTarget: arm64-apple-darwin27.0.0\nThread model: posix\nInstalledDir: /Library/Developer/CommandLineTools/usr/bin",
+        "memory": "17179869184"
+      },
+      "max_jobs": 4,
+      "stages": [
+        {
+          "stage": "configure",
+          "command": [
+            "/opt/homebrew/bin/cmake",
+            "-S",
+            "/Users/kiro/hyle-scratch/compute-unified/a-cpu-vulkan/selected-graph/source-parent",
+            "-B",
+            "/Users/kiro/hyle-scratch/compute-unified/a-cpu-vulkan/selected-graph/source-build"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 21.019076917,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g04-g05-vulkan-cache/configure-4.log"
+        },
+        {
+          "stage": "compile",
+          "command": [
+            "/opt/homebrew/bin/cmake",
+            "--build",
+            "/Users/kiro/hyle-scratch/compute-unified/a-cpu-vulkan/selected-graph/source-build",
+            "--target",
+            "g04_g05_vulkan_cache",
+            "--parallel",
+            "4"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 61.347291583,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g04-g05-vulkan-cache/compile-4.log"
+        },
+        {
+          "stage": "tests",
+          "command": [
+            "/Users/kiro/hyle-scratch/compute-unified/a-cpu-vulkan/selected-graph/source-build/g04_g05_vulkan_cache",
+            "--gtest_output=xml:/Users/kiro/hyle-scratch/compute-unified/g04-g05-vulkan-cache/tests-4.xml"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 9.374440833999998,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g04-g05-vulkan-cache/tests-4.log"
+        }
+      ],
+      "scope": "Only real Vulkan new-cache source fixture; no model/whole-test/SDK/sanitizer/P1 verdict",
+      "cumulative_seconds": 91.74080933399999
+    }
+  ],
+  "cumulative_seconds": 375.797167457,
+  "bounded_readonly_review": {
+    "new_MUST": 0,
+    "scope": "CE06 frozen source4 only; preview and manifest hash checked",
+    "cost": "Four explicit FMA per Q8 block in private exact branch; repeated source division elimination is compiler-dependent; no extra dispatch/payload/synchronization",
+    "limitation": "No all-F32 correctly-rounded guarantee. Subnormal/FTZ and reciprocal overflow for very small nonzero scale remain UNPROVEN under the already-declared new-domain numerical risk matrix."
+  },
+  "post_run_format_only": {
+    "path": "tests/compute_route_vulkan/native_cache_test.cc",
+    "before_sha256": "2c60fb510a4e205fb16ebd2eff16233e23751426514d2deb5fa577f400ae50d4",
+    "after_sha256": "4f1d182832ebd84207cbb22eb22f1120de66d786eb0ba3c6c63f92766c7c47fa",
+    "proof": "Only trailing ASCII whitespace removed; whitespace-stripped bytes identical. Native product bytes unchanged; no repeat build/test."
+  }
+}

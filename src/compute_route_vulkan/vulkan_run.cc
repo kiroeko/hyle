@@ -146,6 +146,8 @@ Status checked_status(Run &run, bool reset) noexcept {
       std::memcpy(&value, buffer->mapped, sizeof(value));
       if ((value & 2u) != 0)
         return Status::OutOfRange("Vulkan Scan prefix exceeds I32");
+      if ((value & 4u) != 0)
+        return Status::InvalidArgument("Vulkan cache encoder requires finite representable scales");
       if (value != 0)
         return Status::OutOfRange("Vulkan index is outside the selected axis");
     }
