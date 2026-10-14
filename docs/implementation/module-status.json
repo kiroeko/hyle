@@ -514,9 +514,9 @@
     },
     {
       "module": "compute_route_apple",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/inference-g03-native-dependency-admission.md",
-      "summary": "G03 native dependency cancellation admission SCOPED: actual Apple/Vulkan source-cancelled attention-success counterexample; finite original endpoint qualifier checks, no queue/layout/allocator/normal math change. Full receiver status aggregation/pending pages/late output remains compute_batch SCOPED."
+      "summary": "G03 native dependency cancellation admission AUDITED: actual Apple/Vulkan source-cancelled attention-success counterexample; finite original endpoint qualifier checks, no queue/layout/allocator/normal math change. Full receiver status aggregation/pending pages/late output remains compute_batch SCOPED."
     },
     {
       "module": "graph_route_apple",
@@ -531,9 +531,9 @@
     },
     {
       "module": "compute_route_vulkan",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/inference-g03-native-dependency-admission.md",
-      "summary": "G03 native dependency cancellation admission SCOPED: actual Apple/Vulkan source-cancelled attention-success counterexample; finite original endpoint qualifier checks, no queue/layout/allocator/normal math change. Full receiver status aggregation/pending pages/late output remains compute_batch SCOPED."
+      "summary": "G03 native dependency cancellation admission AUDITED: actual Apple/Vulkan source-cancelled attention-success counterexample; finite original endpoint qualifier checks, no queue/layout/allocator/normal math change. Full receiver status aggregation/pending pages/late output remains compute_batch SCOPED."
     },
     {
       "module": "graph_route_vulkan",

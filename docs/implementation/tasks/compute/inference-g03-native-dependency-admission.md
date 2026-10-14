@@ -1,6 +1,6 @@
 # G03 原 native dependency 的取消接纳边界
 
-状态：SCOPED，2026-10-14；owner compute_route_apple、compute_route_vulkan；
+状态：AUDITED，2026-10-14；owner compute_route_apple、compute_route_vulkan；
 baseline `8512c09ebee5c1efd54d133b4a795df059517dca`。原 source
 [terminal](inference-g03-copy-update-terminal.md)保持历史事实；本轮由
 [真实 receiver 反例](../../../../evidence/architecture/inference-g03-pending-attention-receiver/README.md)
@@ -49,4 +49,26 @@ fixture/链接/观察失败先查原因，不重复旧工作或增加全局治�
 F2 create/bind/prepare/submit/output/close/drain 全部仍回指原 source 能力；本轮仅修
 已有 bind_producer/prepare 和 trusted receiver 共用的资格边界。
 
-有限 FIX 待在 AUDITED 固定；SCOPED 不授权产品修改。
+## 冻结 FIX 与成本
+
+| ID | 固定修改 | 验收 |
+|---|---|---|
+| DA01 | Apple qualify_recording_dependency 与 qualify_copy_dependency：先保已退休 terminal，然后对原 pending cancel 原子 acquire 返回 Cancelled | gated 原 copy 与原 native producer：取消后不接纳后继；非消费、foreign、原 error 与 actual retirement 保留 |
+| DA02 | Vulkan qualify_copy_dependency：在原 Runtime mutex 下先保原 failure/terminal，然后拒绝原 pending cancelled Run | 实际 native queue/fence 取消负例、成功对照、原 unknown/closed/abandon 生命周期；不新增锁或 native wait |
+| DA03 | 修正 receiver 验证，把取消发生在资格检查前与接纳后分开；原反例证据不覆盖、不擦除 | 两实际 route，原 source/static/shared 与风险；最终聚合仍待主卡 |
+
+Apple 新增一次已有 cancel 状态 load，只在 trusted dependency 资格检查中；Vulkan
+复用已有 mutex、一次原 bool 检查。没有 default layout、热字段、分配、原子写、
+线程、queue、结果 owner、buffer 或 native 同步变化。不以该成本检查代签完整 receiver。
+只允许 apple_context.cc、apple_copy_recording.mm、vulkan_run.cc 与对应直接 tests/
+guide/task/evidence；现有 endpoint/terminal precedence 和公共签名保持。
+
+公开调用仍是原 F2 bind_producer(resource, std::move(completion))；失败保持该
+Completion 和原 binding 不变。trusted batch adapter 在原 endpoint qualifier 成功
+之后才 admit_read/submit。检查与请求取消由唯一观察 owner 外部串行；source worker
+仅发布原 terminal/done。并发取消在检查之后发生，按原 accepted lifetime 处理，
+不宣称原 GPU 抢占或最终聚合已经完成。
+
+七问已裁决：无新增第三方/FFI；两个具名纵切与真实反例；复用原 native/F1/F2；
+P0 原结构成本；三种交付/相关头适用；错误非消费与指南说明。工程/正确性/交付/
+红队仍待实跑，AUDITED 不写 PASS。原 source terminal 的其它资格和失败仍保。
