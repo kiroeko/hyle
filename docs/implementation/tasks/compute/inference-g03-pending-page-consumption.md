@@ -1,6 +1,6 @@
 # G03 已接纳页更新到原 attention 的组合范围
 
-状态：SCOPED，2026-10-14；当前owner compute_batch；续接baseline `1dcc26cc0af4c6c68a4c9ab330fbd8088dc6aaa9`（初始baseline `c8ea4cc31`保留）。
+状态：AUDITED，2026-10-14；当前owner compute_batch；续接baseline `1dcc26cc0af4c6c68a4c9ab330fbd8088dc6aaa9`（初始baseline `c8ea4cc31`保留）。
 授权与全项范围仍为[十项goal](../project/inference-gaps-goal-execution-2026-10.md)。
 GP01/GP02已按[有限terminal](inference-g03-dirty-page-terminal.md)关闭，原数学/性能/失败
 和private UNKNOWN保留；只因原goal尚未完成的真实producer→attention旅程启动新轮。
@@ -156,3 +156,53 @@ SDK/宿主风险通过，原控制可回接。当前 compute_batch 有限施工�
 仍只接成功ready frame，不能消费已接纳F2 update并证明prefix与actual write coverage合并。
 继续既有goal中未交付的组合范围，不重开有限IP轮；尚须固定receiver公开形状/有限FIX，
 不得从本段直接开始产品实现。来源聚合和cold source节点仍沿f307/cdb8原实体。
+
+## 当前接纳合同实施批（PF01–PF03，AUDITED）
+
+baseline `503a98344`。compute_batch负责原页/布局组合，compute及两native route只负责
+读取原F2 accepted逻辑写覆盖；三source owner原OO审计阶段保留、当前有限增补绑定本卡。
+本批固定全部页接纳事实，不先修改数学、原native控制器或Graph产品；那些后续接入仍是
+完整G03的必需项，不由本批代签。普通numeric page→reduction与主KV追加共用合同。
+
+PF01：公开PagedPageUpdate{const PagedPageWriter* page, CopyResourceId resource}描述
+源update中的目的页；arena.pending_read(layout, ready_pages, updates)产生独立
+PagedArenaPendingRead。它保原arena/schema/layout、ready guards及pending页root/generation/
+原initialized prefix与布局实际required rows；不把pending变ReadLease，不能传入原ready
+bind/run。构造时原页writer必须同arena且已消费原lease，exact referenced set、ready/pending
+不相交、pending物理页不重复；重复/shared引用合并最大行需求。descriptor只在构造时借用，
+记录复制identity而不借PageWriter地址；原source controls/实际writer寿命由receiver冷槽保留。
+
+PF02：三个原CopyStreamAccess增加covers(update,id,offset,bytes)，复用原input资格与
+copy_output_coverage、最后accepted write，拒绝known source/tail错误、不观察/分配/消费。
+这是逻辑coverage检查，不签source成功；suffix仍须原native dependency与OutcomeSources。
+原Apple observations同步合同保持，无新默认锁/原子/元数据。
+
+PF03：trusted PagedArenaAccess.validate逐原input核root/原writer/generation/resource/
+native handle/全page offset与extent、仍acquired且无新代际；按每个pending页required rows
+减原prefix求新增byte gap，仅用上述accepted coverage覆盖它。继承前缀不要求本次重写；
+不连续写洞、typed subrange/外来root不合格。admit_read先验证全部，再对ready页用原read、
+pending页用原ordered read；receiver必须在此前资格化本源的实际native prefix/endpoint。
+source observe/reset与resolve/admission之间禁止交错。tensor只对trusted math返回容量，
+frame没有public host字节读取、ready转换或另外execution owner。
+
+自然序列：旧页acquire→F2 bind_mutable/producer→submit/take原Update→pending_read（也可
+在bind之后、submit之前冷构造）→receiver冷source槽take→validate/原prefix资格→原F1
+admit→原suffix→原DependentCompletion合并；失败不发布页/结果，完成后沿原take_mutable与
+显式publish(rows)回接。两request、shared page、old frames及多目的资源同样按exact域。
+新页prefix0只读实际copy覆盖，不能沿旧探针用“其它布局的ready页frame”提供假权限。
+
+冷热/并发：新frame是显式冷owned layout metadata，保原ready路径和结构不变；最多一个
+frame对象、两个实际输入vector和一个exact-domain scratch，不拷贝payload。排序/合并
+O((refs+inputs)log(refs+inputs))，validate/admit为每pending一次原input+coverage扫描；
+记录真实成本，不称整步零分配。source input/coverage原借用串行；各frame句柄独立可复制。
+无依赖/FFI/factor扩张，public ABI允许直接改，不做旧签名兼容。
+
+有限FIX仅PF01–03，冻结后允许实现；不增加第五种copy执行器或在本批修元数据planning。
+预声明：exact foreign/root/gen/subrange/重复/superset、shared非尾页、初始化洞与partial row、
+多phase/gap accepted coverage、known拒绝不消费、旧ready/native guard及64步追加独立oracle、
+每cold allocation OOM与资源预算、原ready回归；Windows对应common/CPU直接consumer，
+Air实际Apple/Vulkan原Update接纳并核no poll、3hostsan、source/static/shared和独立头；
+CUDA共用source编译/小payload资格沿现有树、禁止nvcc/旧模型重构。当前PF新frame不能由
+这些测试签原controller/Graph pending消费完成。普通docs/closure/selector保skip，P0不做P1。
+沿原2h检查点和用户常设延长记录累计，heavy串行/4jobs。必要下一接入在本主卡固定原
+controller/source槽与Graph生命周期后再授权，完整G03与全部G01–G10范围不变。

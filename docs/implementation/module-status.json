@@ -271,8 +271,8 @@
     {
       "module": "compute",
       "state": "AUDITED",
-      "record": "docs/implementation/tasks/compute/inference-g03-owned-outcome-observation.md",
-      "summary": "G03 owned outcome OO01–OO04 AUDITED: fixed trusted original Result completion access, original accepted-phase/used-producer borrow, opt-in cold completion source aggregation/actual retirement protocol. Preserve original slot/payload/queues/normal native layout; actual primitive/Graph shape proofs retained. Full pending page/late producer and overall G03 not signed."
+      "record": "docs/implementation/tasks/compute/inference-g03-pending-page-consumption.md",
+      "summary": "G03 PF01-PF03 AUDITED: fixed independent pending arena/layout/root/committed-prefix input, original accepted F2 coverage check, exact full referenced guard admission. Three source owners only expose original logical coverage; no new control/queue/default locks. Whole native/Graph receiver, late output and7routes remain required after this implementation batch."
     },
     {
       "module": "graph",
@@ -510,8 +510,8 @@
     {
       "module": "compute_route_apple",
       "state": "AUDITED",
-      "record": "docs/implementation/tasks/compute/inference-g03-owned-outcome-observation.md",
-      "summary": "G03 owned outcome OO01–OO04 AUDITED: fixed trusted original Result completion access, original accepted-phase/used-producer borrow, opt-in cold completion source aggregation/actual retirement protocol. Preserve original slot/payload/queues/normal native layout; actual primitive/Graph shape proofs retained. Full pending page/late producer and overall G03 not signed."
+      "record": "docs/implementation/tasks/compute/inference-g03-pending-page-consumption.md",
+      "summary": "G03 PF01-PF03 AUDITED: fixed independent pending arena/layout/root/committed-prefix input, original accepted F2 coverage check, exact full referenced guard admission. Three source owners only expose original logical coverage; no new control/queue/default locks. Whole native/Graph receiver, late output and7routes remain required after this implementation batch."
     },
     {
       "module": "graph_route_apple",
@@ -527,8 +527,8 @@
     {
       "module": "compute_route_vulkan",
       "state": "AUDITED",
-      "record": "docs/implementation/tasks/compute/inference-g03-owned-outcome-observation.md",
-      "summary": "G03 owned outcome OO01–OO04 AUDITED: fixed trusted original Result completion access, original accepted-phase/used-producer borrow, opt-in cold completion source aggregation/actual retirement protocol. Preserve original slot/payload/queues/normal native layout; actual primitive/Graph shape proofs retained. Full pending page/late producer and overall G03 not signed."
+      "record": "docs/implementation/tasks/compute/inference-g03-pending-page-consumption.md",
+      "summary": "G03 PF01-PF03 AUDITED: fixed independent pending arena/layout/root/committed-prefix input, original accepted F2 coverage check, exact full referenced guard admission. Three source owners only expose original logical coverage; no new control/queue/default locks. Whole native/Graph receiver, late output and7routes remain required after this implementation batch."
     },
     {
       "module": "graph_route_vulkan",
@@ -689,9 +689,9 @@
     },
     {
       "module": "compute_batch",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/inference-g03-pending-page-consumption.md",
-      "summary": "Main G03 pending receiver SCOPED after finite initialization-prefix CLOSED1dcc: actual original arena ready frames now enforce committed row domains; original Batch/native controllers remain ready-only and cannot admit accepted F2 updates. Continue existing goal receiver/root/layout/coverage/guards, late native output and Graph/7route contract. Do not reopen or rerun completed IP/source/math evidence; product edits wait for fixed AUDITED receiver FIX."
+      "summary": "G03 PF01-PF03 AUDITED: fixed independent pending arena/layout/root/committed-prefix input, original accepted F2 coverage check, exact full referenced guard admission. Three source owners only expose original logical coverage; no new control/queue/default locks. Whole native/Graph receiver, late output and7routes remain required after this implementation batch."
     },
     {
       "module": "graph_batch",
