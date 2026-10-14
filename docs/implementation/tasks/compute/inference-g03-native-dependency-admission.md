@@ -80,7 +80,7 @@ layout/数学/默认机制不变。两实际 native source 取消接纳与成功
 Apple 同时验证原 native invocation 与 copy recording 的 pending cancel 拒绝；
 Vulkan 验证实际 Run/copy fence 的 pending cancel 拒绝。source 控制保留，最终退休后
 仍无 mutable success。两 route 各原公共 65 steps、Apple 原 8/Vulkan 原 6 生命周期
-亦通过，累计 14.560 秒。这里不宣称 Vulkan managed producer 的原 unsupported
+亦通过，累计 13.760 秒。这里不宣称 Vulkan managed producer 的原 unsupported
 prefix 已变为支持，不签最终 receiver 错误合并/late native 输出。
 
 三交付/宿主风险与直接 consumer 影响回映仍待验；没有未运行 PASS。

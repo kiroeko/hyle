@@ -517,11 +517,7 @@
       "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/inference-g03-native-dependency-admission.md",
       "summary": "G03 native dependency cancellation admission CANDIDATE: actual Apple/Vulkan source-cancelled attention-success counterexample; finite original endpoint qualifier checks, no queue/layout/allocator/normal math change. Full receiver status aggregation/pending pages/late output remains compute_batch SCOPED.",
-      "candidate": "9404af694cf6dd622fd13e6e4965805db49b8428",
-      "performance": {
-        "tier": "P0",
-        "evidence": "docs/implementation/tasks/compute/inference-g03-native-dependency-admission.md"
-      }
+      "candidate": "9404af694cf6dd622fd13e6e4965805db49b8428"
     },
     {
       "module": "graph_route_apple",
@@ -539,11 +535,7 @@
       "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/inference-g03-native-dependency-admission.md",
       "summary": "G03 native dependency cancellation admission CANDIDATE: actual Apple/Vulkan source-cancelled attention-success counterexample; finite original endpoint qualifier checks, no queue/layout/allocator/normal math change. Full receiver status aggregation/pending pages/late output remains compute_batch SCOPED.",
-      "candidate": "9404af694cf6dd622fd13e6e4965805db49b8428",
-      "performance": {
-        "tier": "P0",
-        "evidence": "docs/implementation/tasks/compute/inference-g03-native-dependency-admission.md"
-      }
+      "candidate": "9404af694cf6dd622fd13e6e4965805db49b8428"
     },
     {
       "module": "graph_route_vulkan",

@@ -108,6 +108,9 @@ auto ready = copied.output({0}, {1}, 0, 4096).value();
 取消与未知退役均不发布 ready。较早组可独立观察，后继 readonly 搬运仍保活它。
 生产者有尚未退休的写时，用 `bind_producer` 交接同 native owner 的实际 Completion；未知外部
 完成不能猜成 native fence。失败绑定不消费传入 lease/Completion。
+Apple/Vulkan 的原 native dependency 接纳会拒绝已经请求取消且仍在途的来源，
+返回 Cancelled 并保留传入 Completion。取消不证明退休；接纳之后才发生的取消仍
+按原 native 完成合同处理。排序本身也不替消费者合并来源与后继的最终错误。
 
 搬运保持原编码，不做 dtype 转换或量化重打包。`physical_bytes=0` 为 exact copy；显式 padding
 必须属于源和目标的已分配范围，计入 alias 与 byte budget。Metal 的 offset/size 为 4-byte 对齐；
