@@ -1,0 +1,2 @@
+BASELINE full page 16384 bytes -> PagedPageWriter.complete PASS
+GAP exact dirty row 1024/16384 bytes: full output refused: copy output includes uncopied logical bytes; page completion refused: paged ready output is not the original page writer

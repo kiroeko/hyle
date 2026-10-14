@@ -1,0 +1,101 @@
+1340:             ggml_row_size(v->type, kv_size*hparams.n_embd_head_v(il)),  // v->nb[1]
+1341:             ggml_row_size(v->type, kv_size),                        // v->nb[2]
+1342:             ggml_row_size(v->type, kv_size*n_embd_v_gqa),           // v->nb[3]
+1343:             ggml_row_size(v->type, kv_size*n_embd_v_gqa)*sinfo.s0);
+1344: }
+1345: 
+1346: ggml_tensor * llama_kv_cache::cpy_k(ggml_context * ctx, ggml_tensor * k_cur, ggml_tensor * k_idxs, int32_t il, const slot_info & sinfo) const {
+1347:     GGML_UNUSED(sinfo);
+1348: 
+1349:     const int32_t ikv = map_layer_ids.at(il);
+1350: 
+1351:     ggml_tensor * k = layers[ikv].k;
+1352: 
+1353:     const int64_t n_embd_head = k_cur->ne[0];
+1354:     const int64_t n_head      = k_cur->ne[1];
+1355:     const int64_t n_tokens    = k_cur->ne[2];
+1356: 
+1357:     const int64_t n_embd_gqa = n_embd_head*n_head;
+1358: 
+1359:     // we can merge dims 0 and 1
+1360:     // TODO: add ggml helper function for this?
+1361:     GGML_ASSERT(ggml_row_size(k_cur->type, n_embd_head) == k_cur->nb[1]);
+1362: 
+1363:     k_cur = ggml_view_2d(ctx, k_cur, n_embd_gqa, n_tokens, k_cur->nb[2], 0);
+1364: 
+1365:     const int64_t n_stream = k->ne[2];
+1366: 
+1367:     if (n_stream > 1) {
+1368:         const int64_t kv_size = get_size();
+1369: 
+1370:         assert(n_embd_gqa == k->ne[0]);
+1371:         assert(kv_size    == k->ne[1]);
+1372: 
+1373:         // merge the buffer across all streams because the idxs are global
+1374:         k = ggml_reshape_2d(ctx, k, n_embd_gqa, kv_size*n_stream);
+1375:     }
+1376: 
+1377:     // store the current K values into the cache
+1378:     return ggml_set_rows(ctx, k, k_cur, k_idxs);
+1379: }
+1380: 
+1381: ggml_tensor * llama_kv_cache::cpy_v(ggml_context * ctx, ggml_tensor * v_cur, ggml_tensor * v_idxs, int32_t il, const slot_info & sinfo) const {
+1382:     GGML_UNUSED(sinfo);
+1383: 
+1384:     const int32_t ikv = map_layer_ids.at(il);
+1385: 
+1386:     auto * v = layers[ikv].v;
+1387: 
+1388:     const int64_t n_embd_head = v_cur->ne[0];
+1389:     const int64_t n_head      = v_cur->ne[1];
+1390:     const int64_t n_tokens    = v_cur->ne[2];
+1391: 
+1392:     const int64_t n_embd_gqa = n_embd_head*n_head;
+1393: 
+1394:     // we can merge dims 0 and 1
+1395:     GGML_ASSERT(ggml_row_size(v_cur->type, n_embd_head) == v_cur->nb[1]);
+1396: 
+1397:     const int64_t n_stream = v->ne[2];
+1398: 
+1399:     // take this branch when FA is enabled (the V cache is not transposed)
+1400:     if (!v_trans) {
+1401:         v_cur = ggml_view_2d(ctx, v_cur, n_embd_gqa, n_tokens, v_cur->nb[2], 0);
+1402: 
+1403:         if (n_stream > 1) {
+1404:             const int64_t kv_size = get_size();
+1405: 
+1406:             assert(n_embd_gqa == v->ne[0]);
+1407:             assert(kv_size    == v->ne[1]);
+1408: 
+1409:             // merge the buffer across all streams because the idxs are global
+1410:             v = ggml_reshape_2d(ctx, v, n_embd_gqa, kv_size*n_stream);
+1411:         }
+1412: 
+1413:         return ggml_set_rows(ctx, v, v_cur, v_idxs);
+1414:     }
+1415: 
+1416:     if (ggml_row_size(v_cur->type, n_embd_gqa) == v_cur->nb[2]) {
+1417:         // we can merge dims 0, 1 and 2
+1418:         v_cur = ggml_reshape_2d(ctx, v_cur, n_embd_gqa, n_tokens);
+1419:     } else {
+1420:         // otherwise -> make a copy to get contiguous data
+1421:         v_cur = ggml_cont_2d   (ctx, v_cur, n_embd_gqa, n_tokens);
+1422:     }
+1423: 
+1424:     // [TAG_V_CACHE_VARIABLE]
+1425:     if (n_embd_gqa < v->ne[0]) {
+1426:         v_cur = ggml_pad(ctx, v_cur, v->ne[0] - n_embd_gqa, 0, 0, 0);
+1427:     }
+1428: 
+1429:     // in this branch the v_idxs are constructed in such a way that each row is a single head element
+1430:     ggml_tensor * v_view = ggml_reshape_2d(ctx, v, 1, ggml_nelements(v));
+1431: 
+1432:     v_cur = ggml_reshape_2d(ctx, v_cur, 1, ggml_nelements(v_cur));
+1433: 
+1434:     return ggml_set_rows(ctx, v_view, v_cur, v_idxs);
+1435: }
+1436: 
+1437: ggml_tensor * llama_kv_cache::build_input_k_idxs(ggml_context * ctx, const llama_ubatch & ubatch) const {
+1438:     const uint32_t n_tokens = ubatch.n_tokens;
+1439: 
+1440:     ggml_tensor * k_idxs = ggml_new_tensor_1d(ctx, GGML_TYPE_I64, n_tokens);

@@ -1,0 +1,56 @@
+1420:                 num_splits=num_splits,
+1421:                 s_aux=self.sinks,
+1422:                 mask_mod=rswa_mask_mod_fn or mm_mask_mod,
+1423:                 aux_tensors=rswa_aux or mm_aux,
+1424:             )
+1425:             return output
+1426: 
+1427:     def do_kv_cache_update(
+1428:         self,
+1429:         layer: torch.nn.Module,
+1430:         key: torch.Tensor,
+1431:         value: torch.Tensor,
+1432:         kv_cache: torch.Tensor,
+1433:         slot_mapping: torch.Tensor,
+1434:     ) -> None:
+1435:         if self.attn_type in (AttentionType.ENCODER_ONLY, AttentionType.ENCODER):
+1436:             # For encoder attention,
+1437:             # we use direct Q, K, V tensors without caching
+1438:             return
+1439: 
+1440:         # Scatter write into the KV cache using slot_mapping indices.
+1441:         # No TMA kernel is invoked here, so stride canonicalization is not needed.
+1442:         # (B, H, N, 2*D) -> ((B, N, H, D), (B, N, H, D))
+1443:         key_cache, value_cache = kv_cache.transpose(1, 2).split(self.head_size, dim=-1)
+1444: 
+1445:         # Reshape the input keys and values and store them in the cache.
+1446:         # Skip this if sharing KV cache with an earlier attention layer.
+1447:         # NOTE(woosuk): Here, key and value are padded while slot_mapping is
+1448:         # not padded. However, we don't need to do key[:num_actual_tokens]
+1449:         # and value[:num_actual_tokens] because the reshape_and_cache_flash
+1450:         # op uses the slot_mapping's shape to determine the number of
+1451:         # actual tokens.
+1452:         reshape_and_cache_flash(
+1453:             key,
+1454:             value,
+1455:             key_cache,
+1456:             value_cache,
+1457:             slot_mapping,
+1458:             self.kv_cache_dtype,
+1459:             layer._k_scale,
+1460:             layer._v_scale,
+1461:         )
+1462: 
+1463:     def _forward_with_dcp(
+1464:         self,
+1465:         query: torch.Tensor,
+1466:         key: torch.Tensor,
+1467:         value: torch.Tensor,
+1468:         key_cache: torch.Tensor,
+1469:         value_cache: torch.Tensor,
+1470:         output: torch.Tensor,
+1471:         attn_metadata: FlashAttentionMetadata,
+1472:         q_descale: torch.Tensor | None = None,
+1473:         k_descale: torch.Tensor | None = None,
+1474:         v_descale: torch.Tensor | None = None,
+1475:     ) -> torch.Tensor:

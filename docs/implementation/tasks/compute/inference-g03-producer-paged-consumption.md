@@ -1,6 +1,7 @@
 # G03 已接纳 producer 到精确分页消费
 
-状态：SCOPED，2026-10-14；初始owner compute_batch，baseline `5e80c4df0`。
+状态：SCOPED，2026-10-14；owner compute_batch、compute、compute_route_apple、
+compute_route_vulkan，baseline `5e80c4df0`；公共形状反证基于 `3cbbd4e2e`。
 授权来自[十项goal](../project/inference-gaps-goal-execution-2026-10.md)，输入G03来自
 [固定源码审计](../project/inference-single-machine-foundation-audit-2026-10.md)。
 原G01 native、CPU页与G02 native联合有限terminal保留；本卡不重开旧数学/P1、原G02
@@ -55,3 +56,17 @@ retained input成本与private UNKNOWN。若必须引入新的算法/常态结�
 源审计/实现/验证各2h检查点，按用户常设授权有限延长保原FAIL/累计；heavy serial、四
 jobs，不扩建selector/checker/性能或全局构建核心。停止依据有限FIX及实际门终态、
 明确协议回退/真实外部阻断，不以短观察timeout重启或把未知门改名PASS。
+
+## 2026-10-14 精确 dirty 更新子批 scope
+
+[实际公共反证](../../../../evidence/architecture/inference-g03-dirty-page-consumer/README.md)：
+16384字节整页成功，1024字节单行更新不能经现有output/complete回接原page；两个拒绝
+都正确。source audit找到三路线原CopyStreamAccess::take_mutable，不复制其retirement。
+新事实只重开compute及两native route的F2公开权限返回，原数学/P1不重开。
+
+本子批只解决原page内容保留/独占再取得与F2精确range update后的权限回收；G03整项
+还保producer→attention的native依赖、成功转换、低host边界与idle imports消费证明，
+不能由本子批关闭代签。不新增pending ReadLease、whole-arena permission或引擎事务。
+下一阶段固定两个公共调用：PagedArena.acquire(ReadLease&)和各CopyBatchInvocation的
+unbind_mutable(CopyResourceId)，通过原unique/actual successful retirement门复用现成机制。
+原CopyStream私有消费不迁移到另一状态机；F3与batch/native为直接消费者。

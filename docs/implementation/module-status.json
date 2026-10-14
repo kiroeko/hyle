@@ -270,14 +270,9 @@
     },
     {
       "module": "compute",
-      "state": "CLOSED",
-      "record": "docs/implementation/tasks/compute/foundation-f5-final-closure.md",
-      "summary": "F5 finite typed paged/ragged and state/Graph seams CLOSED; actual native/reference qualifications, host risks, SDK18 and component contract verified. IREE owner only TSAN configuration fix; original scopes and vendor/capture/performance limits retained.",
-      "candidate": "11c348e404df2c3fc404056ff3a9e885d4d990bc",
-      "performance": {
-        "tier": "P0",
-        "evidence": "evidence/correctness/foundation-f5-final/receipt.json"
-      }
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/compute/inference-g03-producer-paged-consumption.md",
+      "summary": "G03 exact dirty page update public consumer proves missing mutable return; SCOPED to reuse original F2 successful actual retirement and existing CopyStream authority. Original math/P1 and whole G03 producer/native consumption remain separate; no product edit before AUDITED."
     },
     {
       "module": "graph",
@@ -514,15 +509,9 @@
     },
     {
       "module": "compute_route_apple",
-      "state": "CLOSED",
-      "record": "docs/implementation/tasks/compute/inference-g01-native-paged-terminal.md",
-      "summary": "G01 native page16 finite domain CLOSED at520: actual Air Apple F16/BF16 and Vulkan F16 original page math, exact guards/version/zero-domain/native failure/retirement/OOM, four relocated SDKs/headers, six host sanitizer finals with explicit Metal TSan model, Windows compile/link only. Both immutable P1 QUALIFIED/noninferiority PASS/verify0, original FAIL/UNKNOWN retained. Whole G01/G02/goal remain incomplete.",
-      "candidate": "520027a57ff41da96ac908ad0d35896e2dda9734",
-      "performance": {
-        "tier": "P1",
-        "evidence": "docs/implementation/tasks/compute/inference-g01-native-paged-terminal.md",
-        "material_margin_pct": 5
-      }
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/compute/inference-g03-producer-paged-consumption.md",
+      "summary": "G03 exact dirty page update public consumer proves missing mutable return; SCOPED to reuse original F2 successful actual retirement and existing CopyStream authority. Original math/P1 and whole G03 producer/native consumption remain separate; no product edit before AUDITED."
     },
     {
       "module": "graph_route_apple",
@@ -537,15 +526,9 @@
     },
     {
       "module": "compute_route_vulkan",
-      "state": "CLOSED",
-      "record": "docs/implementation/tasks/compute/inference-g01-native-paged-terminal.md",
-      "summary": "G01 native page16 finite domain CLOSED at520: actual Air Apple F16/BF16 and Vulkan F16 original page math, exact guards/version/zero-domain/native failure/retirement/OOM, four relocated SDKs/headers, six host sanitizer finals with explicit Metal TSan model, Windows compile/link only. Both immutable P1 QUALIFIED/noninferiority PASS/verify0, original FAIL/UNKNOWN retained. Whole G01/G02/goal remain incomplete.",
-      "candidate": "520027a57ff41da96ac908ad0d35896e2dda9734",
-      "performance": {
-        "tier": "P1",
-        "evidence": "docs/implementation/tasks/compute/inference-g01-native-paged-terminal.md",
-        "material_margin_pct": 5
-      }
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/compute/inference-g03-producer-paged-consumption.md",
+      "summary": "G03 exact dirty page update public consumer proves missing mutable return; SCOPED to reuse original F2 successful actual retirement and existing CopyStream authority. Original math/P1 and whole G03 producer/native consumption remain separate; no product edit before AUDITED."
     },
     {
       "module": "graph_route_vulkan",

@@ -1,0 +1,32 @@
+{
+  "baseline": "3cbbd4e2e517e7766b3bee176627043643396874",
+  "source_sha256": "ee0980742834abb90b299a6901a64a4376b5fce887b55989098c076d0a27f301",
+  "scope": "CPU public producer page shape audit, no GPU run",
+  "stages": [
+    {
+      "stage": "build",
+      "command": [
+        "cmake",
+        "--build",
+        "C:\\h7\\inference-g01-native-vulkan\\build",
+        "--target",
+        "g03_producer_page_public_probe",
+        "--parallel",
+        "4"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 83.48399999999674,
+      "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g03\\public-probe\\build-1.log"
+    },
+    {
+      "stage": "host-cpu-public-probe",
+      "command": [
+        "C:\\h7\\inference-g01-native-vulkan\\build\\g03_producer_page_public_probe.exe"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 0.015000000013969839,
+      "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g03\\public-probe\\host-cpu-public-probe-1.log"
+    }
+  ],
+  "cumulative_seconds": 83.49900000001071
+}
