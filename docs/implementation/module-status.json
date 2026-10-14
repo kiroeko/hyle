@@ -689,9 +689,10 @@
     },
     {
       "module": "compute_batch",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/inference-g03-page-initialization-prefix.md",
-      "summary": "G03 IP01-IP03 AUDITED: fixed original arena/writer committed initialized-row prefix, acquire/move/recovery semantics, immutable layout read-domain refusal before allocation; reuse64/F2/old readers/3deliveries/host risks declared. Padding storage, no source/native/math/controller expansion; main pending/late output/7routes remain."
+      "summary": "G03 IP01-IP03 CANDIDATE: mandatory initialized-row publish/complete, original page/writer prefix and immutable-layout bounds; 23 consumer files migrated. Windows14 and public64 plus native/joint compile PASS; Air host risks and relocated delivery running. No compatibility branches; no whole G03/7route acceptance.",
+      "candidate": "ef78cd07f3dddd3fd2c8ccae46d1db849f11f752"
     },
     {
       "module": "graph_batch",

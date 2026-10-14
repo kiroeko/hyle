@@ -1,6 +1,6 @@
 # G03 原 Arena 页的有效初始化前缀
 
-状态：AUDITED，2026-10-14；owner compute_batch；baseline
+状态：CANDIDATE，2026-10-14；owner compute_batch；baseline
 `cdb8fb9ba251d04f481df02a1e48df5b3a20d890`。这是
 [主 pending 消费卡](inference-g03-pending-page-consumption.md)的初始化合同，G01–G10 全范围保留。
 
@@ -47,3 +47,6 @@ loc并做physical write loc核对；vLLM98f7211 prefetch.py269–295 只证明co
 buffer排序；llama.cpp cbe28bb3 ggml-backend.cpp651–669 保layout/copy排序并在不支持时同步。
 这些排序/容量接口不证明未写余量是有效数据。完整性准入仍由HYLE现有精确page/layout
 consumer及普通数值prefix追加驱动，不借peer引用外推其产品已实现本API。
+
+候选：`ef78cd07f3dddd3fd2c8ccae46d1db849f11f752`；公开合同/算法/常态布局已冻结。Windows14项（原9+新增5）与公开
+64步dirty更新、Vulkan/联合调用编译PASS。Air三host风险及relocated交付正在验收，未运行门不写PASS。
