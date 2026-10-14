@@ -94,7 +94,7 @@ template<class T> Status exercise(n::Context& context, n::MemoryResource& device
     HYLE_ASSIGN_OR_RETURN(auto submitted,copy_slot.submit());
     HYLE_RETURN_IF_ERROR(submitted.wait());
     HYLE_ASSIGN_OR_RETURN(auto ready,submitted.output({0},{1},0,page_bytes));
-    HYLE_RETURN_IF_ERROR(writer.complete(ready));return ready;
+    HYLE_RETURN_IF_ERROR(writer.complete(ready,cap.page_size));return ready;
   };
   for(unsigned p=0;p<4;++p){HYLE_ASSIGN_OR_RETURN(kr[p],fill(keys,k,p));HYLE_ASSIGN_OR_RETURN(vr[p],fill(values,v,p));}
   const std::array exact_k{kr[3],kr[0],kr[1]},exact_v{vr[1],vr[3],vr[0]};

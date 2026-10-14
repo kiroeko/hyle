@@ -65,8 +65,8 @@ Status exercise(n::Context& context,n::MemoryResource& device,n::MemoryResource&
   std::vector<std::uint16_t> zeros(page_bytes/2,0),q(18*heads*depth,bf?0x3e00:0x3000);
   std::array<c::ReadLease,10> kr,vr;
   for(unsigned p=0;p<10;++p){
-    HYLE_ASSIGN_OR_RETURN(auto k,keys.acquire(p));HYLE_ASSIGN_OR_RETURN(kr[p],fill(std::move(k.lease()),zeros));HYLE_RETURN_IF_ERROR(k.complete(kr[p]));
-    HYLE_ASSIGN_OR_RETURN(auto v,values.acquire(p));HYLE_ASSIGN_OR_RETURN(vr[p],fill(std::move(v.lease()),zeros));HYLE_RETURN_IF_ERROR(v.complete(vr[p]));
+    HYLE_ASSIGN_OR_RETURN(auto k,keys.acquire(p));HYLE_ASSIGN_OR_RETURN(kr[p],fill(std::move(k.lease()),zeros));HYLE_RETURN_IF_ERROR(k.complete(kr[p],cap.page_size));
+    HYLE_ASSIGN_OR_RETURN(auto v,values.acquire(p));HYLE_ASSIGN_OR_RETURN(vr[p],fill(std::move(v.lease()),zeros));HYLE_RETURN_IF_ERROR(v.complete(vr[p],cap.page_size));
   }
   HYLE_ASSIGN_OR_RETURN(auto query_pool,c::LeasePool::create(device.ref(),q.size()*2+512));
   HYLE_ASSIGN_OR_RETURN(auto qw,query_pool.allocate(q.size()*2,64));
@@ -156,8 +156,8 @@ Status exercise(n::Context& context,n::MemoryResource& device,n::MemoryResource&
       const auto page=destinations[request];
       HYLE_ASSIGN_OR_RETURN(writers[2*request].lease(),update.unbind_mutable({2*request+1}));
       HYLE_ASSIGN_OR_RETURN(writers[2*request+1].lease(),update.unbind_mutable({2*request+2}));
-      HYLE_ASSIGN_OR_RETURN(kr[page],writers[2*request].publish());
-      HYLE_ASSIGN_OR_RETURN(vr[page],writers[2*request+1].publish());
+      HYLE_ASSIGN_OR_RETURN(kr[page],writers[2*request].publish(cap.page_size));
+      HYLE_ASSIGN_OR_RETURN(vr[page],writers[2*request+1].publish(cap.page_size));
       HYLE_RETURN_IF_ERROR(require(kr[page].generation()==generations[2*request] && vr[page].generation()==generations[2*request+1],"native dirty update changed original generation"));
     }
     std::vector<c::ReadLease> key_reads,value_reads;
@@ -166,7 +166,7 @@ Status exercise(n::Context& context,n::MemoryResource& device,n::MemoryResource&
     HYLE_ASSIGN_OR_RETURN(auto vframe,values.read(layout,value_reads));
     HYLE_RETURN_IF_ERROR(slot.bind(query,kframe,vframe));
     HYLE_RETURN_IF_ERROR(require(!keys.acquire(kr[destinations[0]]),"bound native frame permitted dirty page mutation"));
-    {HYLE_ASSIGN_OR_RETURN(auto free,keys.acquire(kr[9]));HYLE_ASSIGN_OR_RETURN(kr[9],free.publish());}
+    {HYLE_ASSIGN_OR_RETURN(auto free,keys.acquire(kr[9]));HYLE_ASSIGN_OR_RETURN(kr[9],free.publish(cap.page_size));}
     {HYLE_ASSIGN_OR_RETURN(auto submitted,slot.submit());HYLE_ASSIGN_OR_RETURN(auto result,submitted.wait());
       const auto active=layout.facts().query_rows;
       std::vector<std::uint16_t> actual(active*heads*depth);

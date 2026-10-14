@@ -212,7 +212,11 @@ exported storage和F1 uses销毁。控制对象thread-compatible，caller串行�
 ## 页写入、append与F4发布
 
 PagedArena冷分配连续backing和独立page权限。acquire取得具体physical页writer；经原
-F2 clone/append成功后complete/publish，read(layout, exact ready pages)产生精确页frame。
+F2 clone/append成功后调用complete(ready, initialized_rows)或publish(initialized_rows)，
+显式提交连续有效行前缀；值须在[0,page_size]内，0表示尚无有效行。read(layout, exact ready pages)
+检查每个引用所需的有效行数，非尾页需要整页，重复/共享页必须满足所有request后才产生精确页frame。
+首次取得页或旧页回收为新generation时前缀为0；acquire(ready)与未提交writer归还保持原前缀。
+initialized_rows()只返回已提交前缀，写入与copy退休不会自动扩大它。由调用方在真实写成功后声明。
 未引用的页可以写，仍有旧reader/native use的页不能覆写；整个arena的subview不是独立writer。
 
 原F2已消费page writer时，保留PagedPageWriter，等成功ready输出后调用complete；若放弃
@@ -230,7 +234,7 @@ G03 的[精确增量有限路径](../implementation/tasks/compute/inference-g03-
 
 F2 只写 dirty range 时，`output` 仍不能把未写 bytes 算成成功 copy。保留 page writer，
 在实际成功退休且 submission 已释放后，用 `copy.unbind_mutable(id)` 取回原 WriteLease，
-放回 `page.lease()`，再 `page.publish()`。未写部分是 caller 原来已初始化的内容，成本
+放回 `page.lease()`，再 `page.publish(initialized_rows)`。未写部分是 caller 原来已初始化的内容，成本
 只计本次 dirty bytes；新页仍须初始化所有将被读取的 bytes。示例顺序如下：
 
 ```cpp
@@ -242,7 +246,8 @@ HYLE_RETURN_IF_ERROR(copy.bind_mutable(destination, std::move(page.lease())));
   HYLE_RETURN_IF_ERROR(submitted.wait());
 }
 page.lease() = copy.unbind_mutable(destination).value();
-page_ready = page.publish().value();
+// This example overwrites existing rows; an append must declare its new prefix.
+page_ready = page.publish(page.initialized_rows()).value();
 ```
 
 `unbind_mutable` 不等待、不产生 readonly output；retained submission、pending/unknown/

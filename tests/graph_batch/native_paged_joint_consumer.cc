@@ -63,7 +63,7 @@ Status exercise(c::Context& cpu,n::Context& native,n::MemoryResource& device,
     HYLE_ASSIGN_OR_RETURN(auto ready,host.publish());HYLE_RETURN_IF_ERROR(upload.bind_source({0},ready));HYLE_RETURN_IF_ERROR(upload.bind_mutable({1},std::move(writer.lease())));
     const std::array<c::CopyPhase,1> phases{{{}}};const std::array<c::CopyRange,1> ranges{{{{0},{1},{0},0,0,bytes}}};
     HYLE_RETURN_IF_ERROR(upload.prepare_replay(phases,ranges));HYLE_ASSIGN_OR_RETURN(auto submitted,upload.submit());HYLE_RETURN_IF_ERROR(submitted.wait());
-    HYLE_ASSIGN_OR_RETURN(auto output,submitted.output({0},{1},0,bytes));HYLE_RETURN_IF_ERROR(writer.complete(output));return output;
+    HYLE_ASSIGN_OR_RETURN(auto output,submitted.output({0},{1},0,bytes));HYLE_RETURN_IF_ERROR(writer.complete(output,cap.page_size));return output;
   };
   for(unsigned p=0;p<4;++p){HYLE_ASSIGN_OR_RETURN(kr[p],fill(keys,k,p));HYLE_ASSIGN_OR_RETURN(vr[p],fill(values,v,p));}
   const std::array key_reads{kr[3],kr[0],kr[1]},value_reads{vr[1],vr[3],vr[0]};

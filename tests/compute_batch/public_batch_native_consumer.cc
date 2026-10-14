@@ -68,7 +68,7 @@ Status exercise(bool paged,bool bf16){
   if(paged){
     HYLE_ASSIGN_OR_RETURN(key_arena,c::PagedArena::create(schema,memory.ref(),{.max_backing_bytes=4096}));HYLE_ASSIGN_OR_RETURN(value_arena,c::PagedArena::create(schema,memory.ref(),{.max_backing_bytes=4096}));std::array<c::ReadLease,2> k,v;
     for(unsigned i=0;i<2;++i){const unsigned id=i?0:2;HYLE_ASSIGN_OR_RETURN(auto kw,key_arena.acquire(id));HYLE_ASSIGN_OR_RETURN(auto vw,value_arena.acquire(id));std::vector<std::uint16_t> a(256,encoded(0,bf16)),b(256);for(unsigned j=0;j<256;++j)b[j]=encoded(i?(j<128?.375f:1.f):(j<128?.125f:.25f),bf16);
-      HYLE_ASSIGN_OR_RETURN(k[i],upload(context,host,memory.ref(),staging.ref(),std::move(kw.lease()),a));HYLE_ASSIGN_OR_RETURN(v[i],upload(context,host,memory.ref(),staging.ref(),std::move(vw.lease()),b));HYLE_RETURN_IF_ERROR(kw.complete(k[i]));HYLE_RETURN_IF_ERROR(vw.complete(v[i]));
+      HYLE_ASSIGN_OR_RETURN(k[i],upload(context,host,memory.ref(),staging.ref(),std::move(kw.lease()),a));HYLE_ASSIGN_OR_RETURN(v[i],upload(context,host,memory.ref(),staging.ref(),std::move(vw.lease()),b));HYLE_RETURN_IF_ERROR(kw.complete(k[i],cap.page_size));HYLE_RETURN_IF_ERROR(vw.complete(v[i],cap.page_size));
     }HYLE_ASSIGN_OR_RETURN(keys,key_arena.read(layout,k));HYLE_ASSIGN_OR_RETURN(values,value_arena.read(layout,v));
   }else{
     HYLE_ASSIGN_OR_RETURN(ragged_k,load(context,pool,host,memory.ref(),staging.ref(),zero));std::vector<std::uint16_t> data(512);for(unsigned i=0;i<data.size();++i)data[i]=encoded(i<128?.125f:i<256?.25f:i<384?.375f:1.f,bf16);HYLE_ASSIGN_OR_RETURN(ragged_v,load(context,pool,host,memory.ref(),staging.ref(),data));

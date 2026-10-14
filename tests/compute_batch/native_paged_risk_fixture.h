@@ -69,9 +69,9 @@ inline Result<Inputs> inputs(n::Context& context,n::MemoryResource& device,n::Me
   HYLE_ASSIGN_OR_RETURN(data.query,upload(qw,std::span(words).first(1024)));
   for(unsigned i=0;i<2;++i){
     const unsigned page=i?2:0;
-    HYLE_ASSIGN_OR_RETURN(auto kw,data.keys.acquire(page));HYLE_ASSIGN_OR_RETURN(data.key_reads[i],upload(kw.lease(),words));HYLE_RETURN_IF_ERROR(kw.complete(data.key_reads[i]));
+    HYLE_ASSIGN_OR_RETURN(auto kw,data.keys.acquire(page));HYLE_ASSIGN_OR_RETURN(data.key_reads[i],upload(kw.lease(),words));HYLE_RETURN_IF_ERROR(kw.complete(data.key_reads[i],cap.page_size));
     for(unsigned j=0;j<words.size();++j)words[j]=hyle::simd::f32_to_f16(float((j+page)%17)/32.F).bits;
-    HYLE_ASSIGN_OR_RETURN(auto vw,data.values.acquire(page));HYLE_ASSIGN_OR_RETURN(data.value_reads[i],upload(vw.lease(),words));HYLE_RETURN_IF_ERROR(vw.complete(data.value_reads[i]));
+    HYLE_ASSIGN_OR_RETURN(auto vw,data.values.acquire(page));HYLE_ASSIGN_OR_RETURN(data.value_reads[i],upload(vw.lease(),words));HYLE_RETURN_IF_ERROR(vw.complete(data.value_reads[i],cap.page_size));
   }
   HYLE_ASSIGN_OR_RETURN(data.key_frame,data.keys.read(data.layout,data.key_reads));
   HYLE_ASSIGN_OR_RETURN(data.value_frame,data.values.read(data.layout,data.value_reads));

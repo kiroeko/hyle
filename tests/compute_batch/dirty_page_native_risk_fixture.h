@@ -35,7 +35,7 @@ inline Result<Case> prepare(n::Context& context,n::MemoryResource& device,n::Mem
 inline Status success(Case& state){
   HYLE_ASSIGN_OR_RETURN(state.writer.lease(),state.copy.unbind_mutable({1}));
   HYLE_RETURN_IF_ERROR(r::require(state.writer.lease().generation()==state.generation,"native withdrawal changed original generation"));
-  HYLE_ASSIGN_OR_RETURN(state.data.key_reads[0],state.writer.publish());
+  HYLE_ASSIGN_OR_RETURN(state.data.key_reads[0],state.writer.publish(state.data.schema.capacity().page_size));
   HYLE_ASSIGN_OR_RETURN(auto frame,state.data.keys.read(state.data.layout,state.data.key_reads));
   return r::require(frame.page_count()==2 && state.row_pool.stats().active_uses==0,
       "successful native withdrawal failed exact frame or retained actual uses");

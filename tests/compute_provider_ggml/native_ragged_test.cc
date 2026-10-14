@@ -201,7 +201,7 @@ void accepted_failure(bool paged) {
       auto kw=keys.acquire(page).value(),vw=values.acquire(page).value();
       ASSERT_TRUE(kw.lease().view()->write(std::as_bytes(std::span(zero))).ok());
       ASSERT_TRUE(vw.lease().view()->write(std::as_bytes(std::span(zero))).ok());
-      auto ready_key=kw.publish(),ready_value=vw.publish();
+      auto ready_key=kw.publish(cap.page_size),ready_value=vw.publish(cap.page_size);
       ASSERT_TRUE(ready_key)<<ready_key.error().message();ASSERT_TRUE(ready_value)<<ready_value.error().message();
       key_guards[page]=std::move(*ready_key);value_guards[page]=std::move(*ready_value);
     }

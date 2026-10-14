@@ -28,10 +28,10 @@ Status run(){
   std::vector<std::uint16_t> expected(elements,0x3000),actual(elements);
   HYLE_ASSIGN_OR_RETURN(auto first,arena.acquire(0));
   HYLE_RETURN_IF_ERROR(first.lease().view()->write(std::as_bytes(std::span(expected))));
-  HYLE_ASSIGN_OR_RETURN(auto ready,first.publish());
+  HYLE_ASSIGN_OR_RETURN(auto ready,first.publish(cap.page_size));
   HYLE_ASSIGN_OR_RETURN(auto clean,arena.acquire(1));
   HYLE_RETURN_IF_ERROR(clean.lease().view()->fill(std::byte{0}));
-  HYLE_ASSIGN_OR_RETURN(auto shared,clean.publish());
+  HYLE_ASSIGN_OR_RETURN(auto shared,clean.publish(cap.page_size));
   const std::array<std::int32_t,3> qp{0,1,2},kp{0,1,2};
   const std::array<std::int32_t,2> ids{0,1},tails{16,16};
   HYLE_ASSIGN_OR_RETURN(auto layout,schema.version({qp,kp,ids,tails}));
@@ -82,7 +82,7 @@ Status run(){
     }
     HYLE_ASSIGN_OR_RETURN(writer.lease(),copy.unbind_mutable({1}));
     HYLE_RETURN_IF_ERROR(require(!copy.unbind_mutable({1}),"mutable binding withdrawn twice"));
-    HYLE_ASSIGN_OR_RETURN(ready,writer.publish());
+    HYLE_ASSIGN_OR_RETURN(ready,writer.publish(cap.page_size));
     HYLE_RETURN_IF_ERROR(require(ready.generation()==generation && ready.view()->offset()==origin,"update changed original page identity/range"));
     HYLE_RETURN_IF_ERROR(copy.reset());
     std::copy(row.begin(),row.end(),expected.begin()+offset/2);

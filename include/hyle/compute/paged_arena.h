@@ -34,7 +34,8 @@ public:
   // bytes and generation. Success consumes ready; rejection leaves it intact.
   // Every other reader and actual native use must retire first. No allocation.
   HYLE_COMPUTE_BATCH_API Result<PagedPageWriter> acquire(ReadLease& ready) noexcept;
-  // All referenced physical pages must be ready original blocks of this arena.
+  // All referenced physical pages must be ready original blocks of this arena
+  // with initialized prefixes covering every row required by this layout.
   // Supersets are rejected; repeated page references share one guard. Source
   // order is arbitrary. Only trusted mathematical adapters see the raw span.
   HYLE_COMPUTE_BATCH_API Result<PagedArenaRead> read(BatchLayoutVersion,
@@ -56,17 +57,24 @@ public:
   HYLE_COMPUTE_BATCH_API ~PagedPageWriter();
   bool valid()const noexcept{return arena_!=nullptr;}
   std::uint32_t page()const noexcept{return page_;}
+  // Committed initialized row prefix inherited from the original page. Dirty
+  // writes do not expand it until successful publish/complete explicitly does.
+  std::uint32_t initialized_rows()const noexcept{return initialized_rows_;}
   WriteLease&lease()noexcept{return writer_;}
-  HYLE_COMPUTE_BATCH_API Result<ReadLease> publish() noexcept;
+  // Declare the initialized prefix in [0, schema.capacity().page_size]. The
+  // caller commits actual initialized contents after successful writes.
+  HYLE_COMPUTE_BATCH_API Result<ReadLease> publish(std::uint32_t initialized_rows) noexcept;
   // F2 may consume lease(). Complete only with its successfully ready output
   // of the same original block/range. Abandoned accepted work never frees a
   // slot speculatively; retain this writer until observation, or close/recreate.
-  HYLE_COMPUTE_BATCH_API Status complete(const ReadLease&) noexcept;
+  HYLE_COMPUTE_BATCH_API Status complete(const ReadLease&,
+      std::uint32_t initialized_rows) noexcept;
 private:
   friend class PagedArena;
-  PagedPageWriter(detail::PagedArenaData*,std::uint32_t,WriteLease)noexcept;
+  PagedPageWriter(detail::PagedArenaData*,std::uint32_t,std::uint32_t,WriteLease)noexcept;
   detail::PagedArenaData*arena_=nullptr;
   std::uint32_t page_=0;
+  std::uint32_t initialized_rows_=0;
   WriteLease writer_;
 };
 // Immutable layout + exact physical page permissions/backing owner. Distinct

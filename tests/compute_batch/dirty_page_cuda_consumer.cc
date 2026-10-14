@@ -38,7 +38,7 @@ Status run(){
   HYLE_ASSIGN_OR_RETURN(auto source_writer,source_pool.allocate(page_bytes));
   std::vector<std::byte> expected(page_bytes,std::byte{17}),actual(page_bytes);
   HYLE_RETURN_IF_ERROR(source_writer.view()->write(expected));
-  HYLE_ASSIGN_OR_RETURN(auto source,source_writer.publish());
+  HYLE_ASSIGN_OR_RETURN(auto source,source_writer.publish(cap.page_size));
   const std::array specs{c::CopyResourceSpec{host.ref(),page_bytes},c::CopyResourceSpec{device.ref(),page_bytes}};
   HYLE_ASSIGN_OR_RETURN(auto program,c::CopyBatchProgram::prepare(context,specs));
   HYLE_ASSIGN_OR_RETURN(auto copy,c::CopyBatchInvocation::create(program,queue));
@@ -49,7 +49,7 @@ Status run(){
   HYLE_RETURN_IF_ERROR(copy.prepare_replay(phases,full));
   c::ReadLease ready;
   {HYLE_ASSIGN_OR_RETURN(auto submitted,copy.submit());HYLE_RETURN_IF_ERROR(submitted.wait());
-    HYLE_ASSIGN_OR_RETURN(ready,submitted.output({0},{1},0,page_bytes));HYLE_RETURN_IF_ERROR(first.complete(ready));}
+    HYLE_ASSIGN_OR_RETURN(ready,submitted.output({0},{1},0,page_bytes));HYLE_RETURN_IF_ERROR(first.complete(ready,cap.page_size));}
   HYLE_RETURN_IF_ERROR(copy.reset());const auto generation=ready.generation();
   const std::array down_specs{c::CopyResourceSpec{device.ref(),page_bytes},c::CopyResourceSpec{host.ref(),page_bytes}};
   HYLE_ASSIGN_OR_RETURN(auto down_program,c::CopyBatchProgram::prepare(context,down_specs));
@@ -57,7 +57,7 @@ Status run(){
   for(unsigned step=0;step<64;++step){
     HYLE_ASSIGN_OR_RETURN(source_writer,source.try_write());
     HYLE_RETURN_IF_ERROR(source_writer.view()->fill(std::byte(23+step)));
-    HYLE_ASSIGN_OR_RETURN(source,source_writer.publish());
+    HYLE_ASSIGN_OR_RETURN(source,source_writer.publish(cap.page_size));
     {auto alias=ready;HYLE_RETURN_IF_ERROR(require(!arena.acquire(ready) && ready.valid(),"CUDA shared page permitted mutation or consumed reader"));}
     HYLE_ASSIGN_OR_RETURN(auto writer,arena.acquire(ready));
     HYLE_RETURN_IF_ERROR(copy.bind_source({0},source));HYLE_RETURN_IF_ERROR(copy.bind_mutable({1},std::move(writer.lease())));
@@ -83,7 +83,7 @@ Status run(){
       HYLE_RETURN_IF_ERROR(require(submitted.report().logical_bytes==row_bytes,"CUDA update copied history"));
     }
     HYLE_ASSIGN_OR_RETURN(writer.lease(),copy.unbind_mutable({1}));
-    HYLE_ASSIGN_OR_RETURN(ready,writer.publish());
+    HYLE_ASSIGN_OR_RETURN(ready,writer.publish(cap.page_size));
     HYLE_RETURN_IF_ERROR(require(ready.generation()==generation,"CUDA in-place update changed generation"));
     HYLE_RETURN_IF_ERROR(copy.reset());
     std::fill_n(expected.begin()+offset,row_bytes,std::byte(23+step));

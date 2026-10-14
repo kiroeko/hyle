@@ -91,8 +91,8 @@ Status hybrid_paged(bool bf16) {
     HYLE_ASSIGN_OR_RETURN(auto vb,vw.lease().view());
     HYLE_RETURN_IF_ERROR(kb.write(std::as_bytes(std::span(k).subspan(p*elements,elements))));
     HYLE_RETURN_IF_ERROR(vb.write(std::as_bytes(std::span(v).subspan(p*elements,elements))));
-    HYLE_ASSIGN_OR_RETURN(ready_k[p],kw.publish());
-    HYLE_ASSIGN_OR_RETURN(ready_v[p],vw.publish());
+    HYLE_ASSIGN_OR_RETURN(ready_k[p],kw.publish(cap.page_size));
+    HYLE_ASSIGN_OR_RETURN(ready_v[p],vw.publish(cap.page_size));
   }
   HYLE_ASSIGN_OR_RETURN(auto host_pool,c::LeasePool::create(host,256u<<10));
   const auto load_float=[&](std::span<const float> data)->hyle::Result<c::ReadLease>{

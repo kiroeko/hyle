@@ -115,7 +115,7 @@ Status episode(unsigned mode) {
         HYLE_ASSIGN_OR_RETURN(state.writer.lease(), returned->take_mutable({1}));
         HYLE_RETURN_IF_ERROR(r::require(state.writer.lease().generation() == state.generation,
                                        "update owner changed original page generation"));
-        HYLE_ASSIGN_OR_RETURN(state.data.key_reads[0], state.writer.publish());
+        HYLE_ASSIGN_OR_RETURN(state.data.key_reads[0], state.writer.publish(state.data.schema.capacity().page_size));
         HYLE_ASSIGN_OR_RETURN(auto frame, state.data.keys.read(state.data.layout, state.data.key_reads));
         HYLE_RETURN_IF_ERROR(r::require(frame.page_count() == 2, "returned update writer broke exact frame"));
       }
@@ -212,7 +212,7 @@ Status successor(unsigned mode) {
     HYLE_ASSIGN_OR_RETURN(state.writer.lease(), owner.take_mutable({1}));
     HYLE_RETURN_IF_ERROR(r::require(state.writer.lease().generation() == state.generation,
         "ordered successor changed the original page generation"));
-    HYLE_ASSIGN_OR_RETURN(state.data.key_reads[0], state.writer.publish());
+    HYLE_ASSIGN_OR_RETURN(state.data.key_reads[0], state.writer.publish(state.data.schema.capacity().page_size));
   } else {
     HYLE_RETURN_IF_ERROR(r::require(report.native_calls == 0 && !owner.take_mutable({1}),
         "failed prefix executed suffix or published a ready original page"));

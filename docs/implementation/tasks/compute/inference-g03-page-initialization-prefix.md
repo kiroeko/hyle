@@ -10,8 +10,8 @@
 不能靠裸容量、ready bool 或默认填充整个 KV 历史冒充该事实。普通数值分页读取/追加是
 正交消费者，机制是连续有效行前缀，不下沉 request、token、evict 或模型策略。
 
-固定公开形状：原 PagedPageWriter 的 publish/complete 增加 optional initialized_rows；
-省略承诺整页有效，显式值为 [0,page_size]。initialized_rows() 返回本次 acquire 保留的
+固定公开形状：原 PagedPageWriter 的 publish/complete 必须显式传入 initialized_rows，
+值为 [0,page_size]；按用户要求不保留旧签名或省略参数的兼容分支。initialized_rows() 返回本次 acquire 保留的
 已提交有效前缀。原 Arena 存原 identity/generation 和已提交行数；read 按 immutable layout
 对每次引用实际需要的行数检查。重复/shared page 取所有引用的最大需求，非尾页需要全页。
 声明由实际 producer 成功后提交；不读取/猜测 payload 值来推断初始化。未来 pending 合并

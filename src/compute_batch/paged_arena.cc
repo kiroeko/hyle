@@ -8,7 +8,9 @@
 
 namespace hyle::compute {
 namespace detail {
-struct ArenaPage final {WriteLease writer;const void*identity=nullptr;std::uint64_t generation=0;bool acquired=false,ready=false;};
+struct ArenaPage final {WriteLease writer;const void*identity=nullptr;std::uint64_t generation=0;bool acquired=false,ready=false;std::uint32_t initialized_rows=0;};
+static_assert(sizeof(void*)!=8 || sizeof(ArenaPage)==48);
+static_assert(sizeof(void*)!=8 || sizeof(PagedPageWriter)==40);
 // Independently retained backing contract, with no LeasePool/control back-link.
 // The original resource remains borrowed; the domain itself owns allocation and
 // budget charge. Escaped pages keep this qualified schema/accounting identity.
@@ -87,17 +89,17 @@ Result<PagedPageWriter> PagedArena::acquire(std::uint32_t page)noexcept{
     if(!allocation){if(allocation.error().IsResourceExhausted())return std::unexpected(Status::Unavailable("paged arena page readers/native uses still retain storage"));return std::unexpected(allocation.error());}
     HYLE_ASSIGN_OR_RETURN(auto range,allocation->view());const auto actual=(range.offset()-data_->span.offset())/data_->page_bytes;
     if(actual>=data_->slots.size() || (range.offset()-data_->span.offset())%data_->page_bytes)return std::unexpected(Status::Internal("paged arena reclaimed range geometry"));
-    auto&reclaimed=data_->slots[actual];reclaimed.identity=detail::LeaseAccess::identity(*allocation);reclaimed.generation=allocation->generation();reclaimed.ready=false;reclaimed.writer=std::move(*allocation);
+    auto&reclaimed=data_->slots[actual];reclaimed.identity=detail::LeaseAccess::identity(*allocation);reclaimed.generation=allocation->generation();reclaimed.ready=false;reclaimed.initialized_rows=0;reclaimed.writer=std::move(*allocation);
   }
   if(!slot.writer.valid())return std::unexpected(Status::Unavailable("paged arena requested page is retained"));
-  HYLE_ASSIGN_OR_RETURN(auto view,slot.writer.view());(void)view;slot.acquired=true;return PagedPageWriter(data_,page,std::move(slot.writer));
+  HYLE_ASSIGN_OR_RETURN(auto view,slot.writer.view());(void)view;slot.acquired=true;return PagedPageWriter(data_,page,slot.initialized_rows,std::move(slot.writer));
 }
 Result<PagedPageWriter> PagedArena::acquire(ReadLease& ready)noexcept{
   if(!data_ || data_->closed)return std::unexpected(Status::FailedPrecondition("paged arena is closed/empty"));
   HYLE_ASSIGN_OR_RETURN(auto page,page_id(*data_,ready));
   HYLE_ASSIGN_OR_RETURN(auto writer,ready.try_write());
   auto&slot=data_->slots[page];slot.ready=false;slot.acquired=true;
-  return PagedPageWriter(data_,page,std::move(writer));
+  return PagedPageWriter(data_,page,slot.initialized_rows,std::move(writer));
 }
 Result<PagedArenaRead> PagedArena::read(BatchLayoutVersion layout,std::span<const ReadLease> input)const noexcept{
   if(!data_ || data_->closed)return std::unexpected(Status::FailedPrecondition("paged arena is closed/empty"));
@@ -105,6 +107,16 @@ Result<PagedArenaRead> PagedArena::read(BatchLayoutVersion layout,std::span<cons
   if(input.size()>layout.facts().page_refs || input.empty())return std::unexpected(Status::InvalidArgument("paged arena needs its exact nonempty referenced pages"));
   // Validate every incoming permission before allocating the immutable frame.
   for(const auto&lease:input){HYLE_ASSIGN_OR_RETURN(auto id,page_id(*data_,lease));(void)id;}
+  const auto host=layout.host();
+  const auto page_rows=data_->schema.capacity().page_size;
+  for(std::size_t request=0;request<layout.facts().requests;++request){
+    const auto first=std::size_t(host.kv_indptr[request]),end=std::size_t(host.kv_indptr[request+1]);
+    for(auto index=first;index<end;++index){
+      const auto rows=index+1==end?std::uint32_t(host.last_page_lengths[request]):page_rows;
+      if(data_->slots[std::uint32_t(host.page_indices[index])].initialized_rows<rows)
+        return std::unexpected(Status::FailedPrecondition("paged arena layout exceeds initialized page prefix"));
+    }
+  }
   auto*p=data_->allocator.construct<detail::PagedArenaReadData>(data_,std::move(layout));if(!p)return std::unexpected(Status::ResourceExhausted("paged arena read metadata"));PagedArenaRead result(p);
   try{p->pages.assign(input.begin(),input.end());}catch(const std::bad_alloc&){return std::unexpected(Status::ResourceExhausted("paged arena read page guards"));}
   const auto id=[&](const ReadLease&lease){return std::uint32_t((lease.view()->offset()-data_->span.offset())/data_->page_bytes);};
@@ -117,20 +129,22 @@ Result<PagedArenaRead> PagedArena::read(BatchLayoutVersion layout,std::span<cons
   return result;
 }
 Status PagedArena::close()noexcept{if(data_)data_->closed=true;return Status::Ok();}
-PagedPageWriter::PagedPageWriter(detail::PagedArenaData*p,std::uint32_t page,WriteLease writer)noexcept:arena_(p),page_(page),writer_(std::move(writer)){p->incref();}
-PagedPageWriter::PagedPageWriter(PagedPageWriter&&p)noexcept:arena_(std::exchange(p.arena_,nullptr)),page_(p.page_),writer_(std::move(p.writer_)){}
-PagedPageWriter&PagedPageWriter::operator=(PagedPageWriter&&p)noexcept{if(this!=&p){PagedPageWriter next(std::move(p));std::swap(arena_,next.arena_);std::swap(page_,next.page_);std::swap(writer_,next.writer_);}return *this;}
+PagedPageWriter::PagedPageWriter(detail::PagedArenaData*p,std::uint32_t page,std::uint32_t rows,WriteLease writer)noexcept:arena_(p),page_(page),initialized_rows_(rows),writer_(std::move(writer)){p->incref();}
+PagedPageWriter::PagedPageWriter(PagedPageWriter&&p)noexcept:arena_(std::exchange(p.arena_,nullptr)),page_(p.page_),initialized_rows_(p.initialized_rows_),writer_(std::move(p.writer_)){}
+PagedPageWriter&PagedPageWriter::operator=(PagedPageWriter&&p)noexcept{if(this!=&p){PagedPageWriter next(std::move(p));std::swap(arena_,next.arena_);std::swap(page_,next.page_);std::swap(initialized_rows_,next.initialized_rows_);std::swap(writer_,next.writer_);}return *this;}
 PagedPageWriter::~PagedPageWriter(){release_writer(arena_,page_,std::move(writer_));}
-Result<ReadLease> PagedPageWriter::publish()noexcept{
+Result<ReadLease> PagedPageWriter::publish(std::uint32_t rows)noexcept{
   if(!arena_)return std::unexpected(Status::FailedPrecondition("paged page writer is empty"));
-  HYLE_ASSIGN_OR_RETURN(auto ready,writer_.publish());HYLE_RETURN_IF_ERROR(complete(ready));return ready;
+  if(rows>arena_->schema.capacity().page_size)return std::unexpected(Status::InvalidArgument("paged initialized row prefix exceeds page"));
+  HYLE_ASSIGN_OR_RETURN(auto ready,writer_.publish());HYLE_RETURN_IF_ERROR(complete(ready,rows));return ready;
 }
-Status PagedPageWriter::complete(const ReadLease&ready)noexcept{
+Status PagedPageWriter::complete(const ReadLease&ready,std::uint32_t rows)noexcept{
   if(!arena_ || writer_.valid())return Status::FailedPrecondition("paged completion requires the consumed original writer");
+  if(rows>arena_->schema.capacity().page_size)return Status::InvalidArgument("paged initialized row prefix exceeds page");
   auto&slot=arena_->slots[page_];HYLE_ASSIGN_OR_RETURN(auto view,ready.view());
   if(!slot.acquired || detail::LeaseAccess::identity(ready)!=slot.identity || ready.generation()!=slot.generation || view.resource()!=arena_->span.resource() || view.native_handle()!=arena_->span.native_handle() || view.offset()!=arena_->span.offset()+std::size_t(page_)*arena_->page_bytes || view.size()!=arena_->page_bytes)
     return Status::InvalidArgument("paged ready output is not the original page writer");
-  slot.ready=true;slot.acquired=false;auto*p=std::exchange(arena_,nullptr);p->decref();return Status::Ok();
+  slot.ready=true;slot.acquired=false;slot.initialized_rows=rows;initialized_rows_=rows;auto*p=std::exchange(arena_,nullptr);p->decref();return Status::Ok();
 }
 PagedArenaRead::PagedArenaRead(const PagedArenaRead&p)noexcept:data_(p.data_){if(data_)data_->incref();}
 PagedArenaRead&PagedArenaRead::operator=(const PagedArenaRead&p)noexcept{if(this!=&p){PagedArenaRead next(p);std::swap(data_,next.data_);}return *this;}

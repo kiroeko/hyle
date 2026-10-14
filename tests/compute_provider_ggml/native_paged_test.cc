@@ -30,7 +30,7 @@ template<class T>void paged_case(unsigned depth,bool causal){
       data[(row*2+head)*depth+d]=half_test::encode<T>(float(pages[index])*.0625F+float(row)*.00390625F+float(head)*.03125F);
     }
     ASSERT_TRUE(kw.lease().view()->write(std::as_bytes(std::span(zero))).ok());
-    ASSERT_TRUE(vw.lease().view()->write(std::as_bytes(std::span(data))).ok());k[index]=kw.publish().value();v[index]=vw.publish().value();
+    ASSERT_TRUE(vw.lease().view()->write(std::as_bytes(std::span(data))).ok());k[index]=kw.publish(cap.page_size).value();v[index]=vw.publish(cap.page_size).value();
   }
   auto kr=keys.read(layout,k).value(),vr=values.read(layout,v).value();
   auto pool=c::LeasePool::create(hyle::mem::system_resource(),21*8*depth*2+64).value();auto writer=pool.allocate(21*8*depth*2).value();
