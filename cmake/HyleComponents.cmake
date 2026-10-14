@@ -497,6 +497,7 @@ _hyle_declare_component(graph_provider_ggml_cuda
 _hyle_declare_component(compute_provider_flashinfer
     PRIVATE_DEPS compute_backend_cuda compute_batch compute_ops error mem
   PUBLIC_DEPS core compute
+  TEST_DEPS simd
   SPLIT_PUBLIC_HEADERS hyle/compute/providers/flashinfer.h)
 
 # M1-A: independent original Metal program and native resource boundary.

@@ -22,7 +22,8 @@ hyle_fetchcontent_make_available_locked(flashinfer)
 FetchContent_GetProperties(flashinfer)
 
 hyle_add_module(compute_provider_flashinfer
-  SOURCES flashinfer_provider.cc native_attention.cu native_batch.cu)
+  SOURCES flashinfer_provider.cc native_attention.cu native_batch.cu
+    native_cache.cu native_cache_encoder.cu)
 set_target_properties(hyle_compute_provider_flashinfer PROPERTIES
   CUDA_STANDARD 17 CUDA_STANDARD_REQUIRED ON CUDA_RUNTIME_LIBRARY Shared)
 # CMake's CXX visibility settings do not cover nvcc's generated host code.

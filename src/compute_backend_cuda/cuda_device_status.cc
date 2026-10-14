@@ -68,6 +68,8 @@ Status completed_device_status(const EventSlot *slot) noexcept {
     return Status::OutOfRange("CUDA index is outside the selected axis");
   case DeviceStatusCode::kIntegerOverflow:
     return Status::OutOfRange("CUDA integer prefix sum overflows I32");
+  case DeviceStatusCode::kInvalidNumericInput:
+    return Status::InvalidArgument("CUDA encoder requires finite numeric inputs");
   }
   return Status::Internal("CUDA program returned an unknown device status");
 }

@@ -10,8 +10,10 @@
 #include <new>
 
 #include "hyle/compute/route_policy.h"
+#include "hyle/compute/model_ops.h"
 #include "native_attention.h"
 #include "native_batch.h"
+#include "native_cache_encoder.h"
 #include "hyle/compute/detail/batch_provider.h"
 #include "native_context.h"
 #include "provider_internal.h"
@@ -127,13 +129,19 @@ Status qualify_batch(void*opaque,BatchCapacity capacity,const BatchProgramOption
   auto&context=*static_cast<ProviderContext*>(opaque);
   HYLE_RETURN_IF_ERROR(validate_batch_capacity(capacity));
   HYLE_RETURN_IF_ERROR(validate_batch_attention_options(options.causal,options.window_left));
-  if(options.window_left!=-1 || capacity.value_head_dim!=capacity.qk_head_dim ||
-      capacity.output_type!=capacity.query_type ||
-      !capacity.key_storage.format().is_plain() || !capacity.value_storage.format().is_plain() ||
-      capacity.key_storage.data_type()!=capacity.query_type || capacity.value_storage.data_type()!=capacity.query_type)
-    return Status::Unimplemented("FlashInfer encoded/window/unequal-V batch kernel is not implemented yet");
+  const bool fp8=capacity.key_storage.data_type()==DataType::kFloat8E4M3FN &&
+                 capacity.value_storage.data_type()==DataType::kFloat8E4M3FN;
+  const bool plain=capacity.key_storage.format().is_plain() && capacity.value_storage.format().is_plain() &&
+      capacity.key_storage.data_type()==capacity.query_type && capacity.value_storage.data_type()==capacity.query_type;
+  if(capacity.output_type!=capacity.query_type || (!fp8 && !plain) ||
+     (capacity.query_type!=DataType::kFloat16 && capacity.query_type!=DataType::kBFloat16) ||
+     !(capacity.value_head_dim==capacity.qk_head_dim || (capacity.qk_head_dim==64 && capacity.value_head_dim==128)))
+    return Status::Unimplemented("FlashInfer batch requires same-type Q/output, plain or FP8 K/V and finite geometry");
+  const auto effective_scale=options.scale*capacity.key_storage.scale();
+  if(!std::isfinite(effective_scale) || std::abs(effective_scale)>std::numeric_limits<float>::max()/1.4426950408889634F)
+    return Status::InvalidArgument("FlashInfer effective QK log2 scale must be finite");
   const auto group=capacity.query_heads/capacity.kv_heads;
-  if(!context.maximum_grid || !options.causal ||
+  if(!context.maximum_grid ||
      (capacity.qk_head_dim!=64 && capacity.qk_head_dim!=128 && capacity.qk_head_dim!=256) ||
      (group!=1 && group!=2 && group!=4 && group!=8))return Status::Unimplemented("FlashInfer batch domain is not qualified");
   return Status::Ok();
@@ -146,9 +154,12 @@ Status create_batch_slot(void*opaque,BatchCapacity capacity,const BatchProgramOp
   p->primary=context.primary;p->plan_bytes=native::batch_state_bytes();p->plan=allocator.allocate(p->plan_bytes,16);
   if(!p->plan){allocator.destroy(p);return Status::ResourceExhausted("FlashInfer batch plan metadata");}
   native::initialize_batch_state(p->plan);
-  p->spec={.query_heads=capacity.query_heads,.kv_heads=capacity.kv_heads,.head_dim=capacity.qk_head_dim,.page_size=capacity.page_size,
+  p->spec={.query_heads=capacity.query_heads,.kv_heads=capacity.kv_heads,.qk_head_dim=capacity.qk_head_dim,
+    .value_head_dim=capacity.value_head_dim,.page_size=capacity.page_size,
     .query_indptr_offset=offsets.query_indptr,.kv_indptr_offset=offsets.kv_indptr,.page_indices_offset=offsets.page_indices,.tail_offset=offsets.last_page_lengths,
-    .scale=options.scale,.paged=capacity.storage==BatchStorage::kPaged,.bfloat16=capacity.query_type==DataType::kBFloat16};
+    .scale=options.scale,.key_scale=capacity.key_storage.scale(),.value_scale=capacity.value_storage.scale(),
+    .window_left=options.window_left,.paged=capacity.storage==BatchStorage::kPaged,.bfloat16=capacity.query_type==DataType::kBFloat16,
+    .fp8=capacity.key_storage.data_type()==DataType::kFloat8E4M3FN,.causal=options.causal};
   *output=p;return Status::Ok();
 }
 void destroy_batch_slot(void*opaque,mem::AllocatorRef allocator)noexcept {
@@ -224,6 +235,8 @@ struct Prepared final {
   std::size_t query_batch_bytes = 0;
   std::size_t kv_batch_bytes = 0;
   std::size_t workspace_bytes = 0;
+  native::EncoderSpec encoder{};
+  bool cache_encode=false;
 };
 
 struct Invocation final {
@@ -287,6 +300,19 @@ Status describe(const ProviderContext &context, Operation operation,
                 std::span<const TensorDesc> inputs,
                 std::span<const TensorDesc> outputs,
                 Prepared &prepared) noexcept {
+  if(const auto encode=operation.custom_as<model_ops::CacheEncode>()){
+    if(!context.maximum_grid || encode->storage.data_type()!=DataType::kFloat8E4M3FN)
+      return Status::Unimplemented("FlashInfer encoder requires the admitted FP8 CUDA domain");
+    TensorDesc output;
+    HYLE_RETURN_IF_ERROR(infer_output_descriptions(operation,inputs,std::span(&output,1)));
+    if(outputs.size()!=1 || outputs[0]!=output)
+      return Status::InvalidArgument("FlashInfer cache encoder output carrier differs");
+    const auto type=inputs[0].data_type();
+    prepared={.primary=context.primary,.encoder={.elements=*inputs[0].required_bytes()/data_type_size(type),
+      .scale=encode->storage.scale(),.input=type==DataType::kFloat32?native::EncoderInput::kFloat32:
+          type==DataType::kBFloat16?native::EncoderInput::kBFloat16:native::EncoderInput::kFloat16},.cache_encode=true};
+    return Status::Ok();
+  }
   const auto *attention = operation.get_if<ScaledDotProductAttention>();
   const RouteMatchInput route_input{
       .platform = kBuildRoutePlatform,
@@ -386,6 +412,13 @@ Status propose(void *state, const detail::ProviderOperationRequest &request,
                .synchronization_count = 0,
                .dispatch_count = std::nullopt},
       .implementation = ProviderImplementationId{1}};
+  if(prepared.cache_encode){
+    proposal->route=2;proposal->implementation=ProviderImplementationId{2};
+    proposal->policy={0x48594c45464c5348ULL,3,1};proposal->preference=100;
+    proposal->cost.dispatch_count=prepared.encoder.elements?1u:0u;
+    proposal->cost.synchronization_count=std::nullopt; // original status reset/D2H/completion
+    return Status::Ok();
+  }
   proposal->policy = request.inputs.front().data_type() == DataType::kFloat16
                          ? kFloat16AttentionPolicy.id
                          : kBFloat16AttentionPolicy.id;
@@ -407,13 +440,16 @@ Status create_invocation(void *state, mem::AllocatorRef allocator,
   const auto &prepared = *static_cast<Prepared *>(state);
   if (workspace.size() < prepared.workspace_bytes)
     return Status::InvalidArgument("FlashInfer workspace is too small");
-  auto pointer = cuda::detail::mutable_pointer(workspace, kAlignment, 1);
-  if (!pointer)
-    return std::move(pointer).error();
+  void *pointer=nullptr;
+  if(prepared.workspace_bytes){
+    auto mapped=cuda::detail::mutable_pointer(workspace,kAlignment,1);
+    if(!mapped)return std::move(mapped).error();
+    pointer=*mapped;
+  }
   void *storage = allocator.allocate(sizeof(Invocation), alignof(Invocation));
   if (storage == nullptr)
     return Status::ResourceExhausted("FlashInfer invocation allocation failed");
-  *output = ::new (storage) Invocation{*pointer};
+  *output = ::new (storage) Invocation{pointer};
   return Status::Ok();
 }
 
@@ -436,6 +472,20 @@ detail::EnqueueResult submit(void *state, void *lane, Queue &queue,
   auto stream = cuda::stream(queue);
   if (!stream)
     return detail::EnqueueResult::rejected(std::move(stream).error());
+  if(prepared.cache_encode){
+    if(!prepared.encoder.elements)return detail::EnqueueResult::accepted_command();
+    auto input=cuda::detail::const_pointer(inputs[0].storage(),kAlignment,1);
+    if(!input)return detail::EnqueueResult::rejected(input.error());
+    auto output=cuda::detail::mutable_pointer(outputs[0].storage(),kAlignment,1);
+    if(!output)return detail::EnqueueResult::rejected(output.error());
+    cuda::detail::ScopedPrimaryContext scope(prepared.primary);
+    if(!scope)return detail::EnqueueResult::rejected(scope.status());
+    unsigned *word=nullptr;auto initialized=cuda::detail::acquire_device_status(queue,&word);
+    if(!initialized.status.ok())return initialized;
+    auto status=cuda::status(native::encode_cache(prepared.encoder,*input,*output,word,*stream));
+    invocation.failed=!status.ok();
+    return detail::EnqueueResult::accepted_command(std::move(status));
+  }
   std::array<const std::byte *, 3> pointers{};
   for (std::size_t i = 0; i < pointers.size(); ++i) {
     auto pointer =
@@ -491,7 +541,7 @@ ProviderPrepareOutcome prepare(void *state,
                                mem::AllocatorRef allocator,
                                detail::ProviderPrepared *output) noexcept {
   *output = {};
-  if (request.route != 1 || !request.shape.exact())
+  if (!request.shape.exact())
     return ProviderPrepareOutcome::error(
         Status::InvalidArgument("FlashInfer prepare route differs"));
   Prepared value;
@@ -502,6 +552,9 @@ ProviderPrepareOutcome prepare(void *state,
     return status.IsUnimplemented()
                ? ProviderPrepareOutcome::unsupported(std::move(status))
                : ProviderPrepareOutcome::error(std::move(status));
+  if (request.route != (value.cache_encode ? 2u : 1u))
+    return ProviderPrepareOutcome::error(
+        Status::InvalidArgument("FlashInfer prepare route differs"));
   void *storage = allocator.allocate(sizeof(Prepared), alignof(Prepared));
   if (storage == nullptr)
     return ProviderPrepareOutcome::resource_declined(

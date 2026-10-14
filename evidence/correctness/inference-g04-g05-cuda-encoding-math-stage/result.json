@@ -1,0 +1,384 @@
+{
+  "kind": "G04_G05_CUDA_ENCODING_AND_NATIVE_MATH_SOURCE_STAGE",
+  "verdict": "PASS_FINITE_LINUX_CUDA_SOURCE_DOMAIN",
+  "owners_remain": "AUDITED; whole G04/G05 not accepted",
+  "identity": {
+    "host": "Linux kiro-workstation 6.18.54.1-microsoft-standard-WSL2 #1 SMP PREEMPT_DYNAMIC Tue Oct  6 19:13:07 UTC 2026 x86_64 x86_64 x86_64 GNU/Linux",
+    "compiler": "g++-14 (Ubuntu 14.2.0-4ubuntu2~24.04.1) 14.2.0\nCopyright (C) 2024 Free Software Foundation, Inc.\nThis is free software; see the source for copying conditions.  There is NO\nwarranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.",
+    "cuda": "nvcc: NVIDIA (R) Cuda compiler driver\nCopyright (c) 2005-2026 NVIDIA Corporation\nBuilt on Tue_Jun_09_02:43:40_PM_PDT_2026\nCuda compilation tools, release 13.3, V13.3.73\nBuild cuda_13.3.r13.3/compiler.38244171_0",
+    "gpu": "NVIDIA GeForce RTX 4070, 617.14, 12282 MiB, 2251 MiB, 3 %"
+  },
+  "input_sha256": {
+    "cmake/HyleComponents.cmake": "7ef2491d2538a0293cecb2137d42fbf1a8daeb726ca1284276adc77dec6913c6",
+    "src/compute_backend_cuda/CMakeLists.txt": "33b7f50087ce639f3c234ce34122616ca13328c761ebd0e61ab97ceca29b1d2a",
+    "src/compute_backend_cuda/HyleCudaSdkConfig.cmake": "ced73b57d23bb9505c818b681910afde1ec3a37c1e9f7fe38c2301839159f1eb",
+    "src/compute_backend_cuda/cuda_backend.cc": "10c52cc53f313ee850d71f24b06277fb02f483c82a84c9d143c0f908b31712f5",
+    "src/compute_backend_cuda/cuda_batch_transfer.cc": "8bff62fcf237cedb424b4916e283f36d438c3c9fe9876363f7efc9bdb8b4ec8a",
+    "src/compute_backend_cuda/cuda_device_status.cc": "25920ddf25f1dc045f600f450113a48fd3cd10a70757c580b5dbff568e3ed29d",
+    "src/compute_backend_cuda/cuda_internal.h": "5ca7d7a0f154ed0c475b7acff918ba529af82f8bbefd3e3c5db3cf756079f402",
+    "src/compute_backend_cuda/cuda_memory.cc": "8475aafd9c1112189a50025afd700775ea3e048c75bf19a0f04f04f65253aac2",
+    "src/compute_backend_cuda/device_status_kernel.cu": "8cbf208c1030255067bed53c78a2157c751e5fbc1e0a832c28fdf5970ed6a0ae",
+    "src/compute_backend_cuda/device_status_kernel.h": "ef331996915f9881e62d2f4fb2c4a3aa77440463ddd13320a7f34461fee70304",
+    "src/compute_backend_cuda/driver_release.cc": "4beb3a0fd098e12989e964844459b92122b7523b28c3fbe4d993c16f94ef4ee2",
+    "src/compute_backend_cuda/driver_release.h": "5a6520d985cf44d39b8fbe49ed4bf1d2153ddded186073d09033f7f3951aa6da",
+    "src/compute_backend_cuda/native_context.h": "f92b1cbb8b6ea2f637abfb3422844687672ec14b8daba27cb3817f968f4a7d38",
+    "src/compute_backend_cuda/resource_admission.h": "7f89aa5e35821f0df991b9a4ea4f54954459a31ba78b6fa4eb9d9b3ee4888954",
+    "src/compute_provider_flashinfer/CMakeLists.txt": "e5a0976ec8c2975a95e8d91e22bde1e113bc085a887dc2096a188ddd0564b1ae",
+    "src/compute_provider_flashinfer/flashinfer_provider.cc": "ca6d5b837e1e8e03703768ffb12b1b899193817c41acfaccfed73f3dd8aabe1a",
+    "src/compute_provider_flashinfer/native_attention.cu": "ee2638f5b4cb9f7f25be71027ab2e0f12a3e0229a6da574ef10e76be4d724146",
+    "src/compute_provider_flashinfer/native_attention.h": "f8efa77d2aaa406a9992f5921c1dab0e675eaa6edac3105f16e683248bb724d7",
+    "src/compute_provider_flashinfer/native_batch.cu": "f9f29d694c1c2681de6640f0bef910801a20fd8cb6b3d9778a375ba1324cb0d4",
+    "src/compute_provider_flashinfer/native_batch.h": "d9bb3832b4908ec466fff78649e3638318001a5acd5dde9d3c72a6566f13c25f",
+    "src/compute_provider_flashinfer/native_cache.cu": "577be742049165e21cb426ac83f8aeec58988f44045e0ce149c198848774ed4e",
+    "src/compute_provider_flashinfer/native_cache_encoder.cu": "d5cd11c34b51751d215bdfa294f972d6393d5eb0d67dd076482119975bb6bacf",
+    "src/compute_provider_flashinfer/native_cache_encoder.h": "d06025695dc4a03cafbc53c7ef802bca63b5881ec537f6a40a41cdeed7f8513d",
+    "tests/compute_provider_flashinfer/CMakeLists.txt": "2c3dd1e492631c8815266f8ef97a5215a6de29b0537229c6b046873504c2089a",
+    "tests/compute_provider_flashinfer/attention_test_support.h": "b4abf0b382418f30732863eea8af5a103469a3c661538f94662e6cdda9dd0ac0",
+    "tests/compute_provider_flashinfer/failure_test.cc": "69a1ad9271263beab2377054cbd32fda4f6fa55f5231df0bebb70720f9109376",
+    "tests/compute_provider_flashinfer/flashinfer_provider_test.cc": "59d6048d4d73f3ea47e2921b51017a4fb8bbd8ebe5ea21252e54f48de31eb16f",
+    "tests/compute_provider_flashinfer/native_cache_test.cc": "2036c668f108ce64cd0ab5cecb4be5f26143a95764f10b4f0ce2df7fe95dfa3d"
+  },
+  "tests": {
+    "final": 12,
+    "original": 4,
+    "new": 8
+  },
+  "qualified": [
+    "FP8 E4M3FN encoder independent bytes: F16/BF16/F32 inputs, scales, ties, zero and saturation",
+    "Accepted nonfinite encoder payload reports InvalidArgument through original Completion",
+    "Direct paged/ragged FP8 K/V, independent sK=.5 and sV=2, F16/BF16 query/output",
+    "Finite (64,64)/(128,128)/(256,256)/(64,128), window -1/0/15/16, full noncausal Q>KV",
+    "D256 long prefill Q1/65 and KV129/145; paged logical274 over physical256",
+    "Explicit split-KV8192 rows, +/-65536 values with sV512, F32 partial/merge then final scale/cast",
+    "Plain window and independent Dv; long cancellation; original one-op math and cold allocation tests"
+  ],
+  "not_proven": [
+    "SDK static/shared",
+    "incremental F2 and Graph encoder/page journey",
+    "new domain host sanitizers/concurrency/allocation faults",
+    "qualified P1",
+    "Apple/Vulkan new domains",
+    "whole G04/G05"
+  ],
+  "runs": [
+    {
+      "state": "TERMINAL_FAIL",
+      "pid": 553,
+      "identity": {
+        "host": "Linux kiro-workstation 6.18.54.1-microsoft-standard-WSL2 #1 SMP PREEMPT_DYNAMIC Tue Oct  6 19:13:07 UTC 2026 x86_64 x86_64 x86_64 GNU/Linux",
+        "compiler": "g++-14 (Ubuntu 14.2.0-4ubuntu2~24.04.1) 14.2.0\nCopyright (C) 2024 Free Software Foundation, Inc.\nThis is free software; see the source for copying conditions.  There is NO\nwarranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.",
+        "cuda": "nvcc: NVIDIA (R) Cuda compiler driver\nCopyright (c) 2005-2026 NVIDIA Corporation\nBuilt on Tue_Jun_09_02:43:40_PM_PDT_2026\nCuda compilation tools, release 13.3, V13.3.73\nBuild cuda_13.3.r13.3/compiler.38244171_0",
+        "gpu": "NVIDIA GeForce RTX 4070, 617.14, 12282 MiB, 2249 MiB, 3 %"
+      },
+      "scope": "CE04/08 actual source target compile only. No GPU/model/math/SDK/sanitizer/P1 pass",
+      "max_jobs": 4,
+      "stages": [
+        {
+          "stage": "configure",
+          "command": [
+            "cmake",
+            "-S",
+            "/root/hyle-scratch/compute-unified/source-7a7b4c3b",
+            "-B",
+            "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/shared-sdk-build"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 51.672170561,
+          "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/cuda-native/configure-1.log"
+        },
+        {
+          "stage": "compile",
+          "command": [
+            "cmake",
+            "--build",
+            "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/shared-sdk-build",
+            "--target",
+            "hyle_compute_provider_flashinfer",
+            "--parallel",
+            "4"
+          ],
+          "exit_code": 1,
+          "elapsed_seconds": 88.359021164,
+          "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/cuda-native/compile-1.log"
+        }
+      ],
+      "cumulative_seconds": 140.03119172499999
+    },
+    {
+      "state": "TERMINAL_PASS",
+      "pid": 534,
+      "identity": {
+        "host": "Linux kiro-workstation 6.18.54.1-microsoft-standard-WSL2 #1 SMP PREEMPT_DYNAMIC Tue Oct  6 19:13:07 UTC 2026 x86_64 x86_64 x86_64 GNU/Linux",
+        "compiler": "g++-14 (Ubuntu 14.2.0-4ubuntu2~24.04.1) 14.2.0\nCopyright (C) 2024 Free Software Foundation, Inc.\nThis is free software; see the source for copying conditions.  There is NO\nwarranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.",
+        "cuda": "nvcc: NVIDIA (R) Cuda compiler driver\nCopyright (c) 2005-2026 NVIDIA Corporation\nBuilt on Tue_Jun_09_02:43:40_PM_PDT_2026\nCuda compilation tools, release 13.3, V13.3.73\nBuild cuda_13.3.r13.3/compiler.38244171_0",
+        "gpu": "NVIDIA GeForce RTX 4070, 617.14, 12282 MiB, 2250 MiB, 2 %"
+      },
+      "scope": "CE04/08 actual source target compile only. No GPU/model/math/SDK/sanitizer/P1 pass",
+      "max_jobs": 4,
+      "stages": [
+        {
+          "stage": "compile",
+          "command": [
+            "cmake",
+            "--build",
+            "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/shared-sdk-build",
+            "--target",
+            "hyle_compute_provider_flashinfer",
+            "--parallel",
+            "4"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 554.54230716,
+          "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/cuda-native/compile-2.log"
+        }
+      ],
+      "cumulative_seconds": 554.54230716
+    },
+    {
+      "state": "TERMINAL_FAIL",
+      "pid": 535,
+      "identity": {
+        "host": "Linux kiro-workstation 6.18.54.1-microsoft-standard-WSL2 #1 SMP PREEMPT_DYNAMIC Tue Oct  6 19:13:07 UTC 2026 x86_64 x86_64 x86_64 GNU/Linux",
+        "compiler": "g++-14 (Ubuntu 14.2.0-4ubuntu2~24.04.1) 14.2.0\nCopyright (C) 2024 Free Software Foundation, Inc.\nThis is free software; see the source for copying conditions.  There is NO\nwarranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.",
+        "cuda": "nvcc: NVIDIA (R) Cuda compiler driver\nCopyright (c) 2005-2026 NVIDIA Corporation\nBuilt on Tue_Jun_09_02:43:40_PM_PDT_2026\nCuda compilation tools, release 13.3, V13.3.73\nBuild cuda_13.3.r13.3/compiler.38244171_0",
+        "gpu": "NVIDIA GeForce RTX 4070, 617.14, 12282 MiB, 2242 MiB, 3 %"
+      },
+      "scope": "CE04/08 actual shipping factor plus bounded original/new FI tests; no model/heavy GPU/SDK/sanitizer/P1 acceptance",
+      "max_jobs": 4,
+      "stages": [
+        {
+          "stage": "configure",
+          "command": [
+            "cmake",
+            "-S",
+            "/root/hyle-scratch/compute-unified/source-7a7b4c3b",
+            "-B",
+            "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/shared-sdk-build",
+            "-DHYLE_BUILD_TESTS=ON",
+            "-DHYLE_TESTING=OFF"
+          ],
+          "exit_code": 1,
+          "elapsed_seconds": 0.4974624349999992,
+          "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/cuda-native/configure-3.log"
+        }
+      ],
+      "cumulative_seconds": 0.4974624349999992
+    },
+    {
+      "state": "TERMINAL_FAIL",
+      "pid": 559,
+      "identity": {
+        "host": "Linux kiro-workstation 6.18.54.1-microsoft-standard-WSL2 #1 SMP PREEMPT_DYNAMIC Tue Oct  6 19:13:07 UTC 2026 x86_64 x86_64 x86_64 GNU/Linux",
+        "compiler": "g++-14 (Ubuntu 14.2.0-4ubuntu2~24.04.1) 14.2.0\nCopyright (C) 2024 Free Software Foundation, Inc.\nThis is free software; see the source for copying conditions.  There is NO\nwarranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.",
+        "cuda": "nvcc: NVIDIA (R) Cuda compiler driver\nCopyright (c) 2005-2026 NVIDIA Corporation\nBuilt on Tue_Jun_09_02:43:40_PM_PDT_2026\nCuda compilation tools, release 13.3, V13.3.73\nBuild cuda_13.3.r13.3/compiler.38244171_0",
+        "gpu": "NVIDIA GeForce RTX 4070, 617.14, 12282 MiB, 2242 MiB, 3 %"
+      },
+      "scope": "CE04/08 actual shipping factor plus bounded original/new FI tests; no model/heavy GPU/SDK/sanitizer/P1 acceptance",
+      "max_jobs": 4,
+      "stages": [
+        {
+          "stage": "configure",
+          "command": [
+            "cmake",
+            "-S",
+            "/root/hyle-scratch/compute-unified/source-7a7b4c3b",
+            "-B",
+            "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/shared-sdk-build",
+            "-DHYLE_INSTALL=OFF",
+            "-DHYLE_BUILD_TESTS=ON",
+            "-DHYLE_TEST_INSTRUMENTATION=OFF"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 49.635671824999996,
+          "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/cuda-native/configure-4.log"
+        },
+        {
+          "stage": "compile",
+          "command": [
+            "cmake",
+            "--build",
+            "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/shared-sdk-build",
+            "--target",
+            "hyle_compute_provider_flashinfer_test",
+            "--parallel",
+            "4"
+          ],
+          "exit_code": 1,
+          "elapsed_seconds": 30.081022106000006,
+          "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/cuda-native/compile-4.log"
+        }
+      ],
+      "cumulative_seconds": 79.71669393100001
+    },
+    {
+      "state": "TERMINAL_FAIL",
+      "pid": 569,
+      "identity": {
+        "host": "Linux kiro-workstation 6.18.54.1-microsoft-standard-WSL2 #1 SMP PREEMPT_DYNAMIC Tue Oct  6 19:13:07 UTC 2026 x86_64 x86_64 x86_64 GNU/Linux",
+        "compiler": "g++-14 (Ubuntu 14.2.0-4ubuntu2~24.04.1) 14.2.0\nCopyright (C) 2024 Free Software Foundation, Inc.\nThis is free software; see the source for copying conditions.  There is NO\nwarranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.",
+        "cuda": "nvcc: NVIDIA (R) Cuda compiler driver\nCopyright (c) 2005-2026 NVIDIA Corporation\nBuilt on Tue_Jun_09_02:43:40_PM_PDT_2026\nCuda compilation tools, release 13.3, V13.3.73\nBuild cuda_13.3.r13.3/compiler.38244171_0",
+        "gpu": "NVIDIA GeForce RTX 4070, 617.14, 12282 MiB, 2241 MiB, 3 %"
+      },
+      "scope": "CE04/08 actual shipping factor plus bounded original/new FI tests; no model/heavy GPU/SDK/sanitizer/P1 acceptance",
+      "max_jobs": 4,
+      "stages": [
+        {
+          "stage": "configure",
+          "command": [
+            "cmake",
+            "-S",
+            "/root/hyle-scratch/compute-unified/source-7a7b4c3b",
+            "-B",
+            "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/shared-sdk-build",
+            "-DHYLE_INSTALL=OFF",
+            "-DHYLE_BUILD_TESTS=ON",
+            "-DHYLE_TEST_INSTRUMENTATION=OFF"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 44.26749111000001,
+          "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/cuda-native/configure-5.log"
+        },
+        {
+          "stage": "compile",
+          "command": [
+            "cmake",
+            "--build",
+            "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/shared-sdk-build",
+            "--target",
+            "hyle_compute_provider_flashinfer_test",
+            "--parallel",
+            "4"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 13.014646774,
+          "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/cuda-native/compile-5.log"
+        },
+        {
+          "stage": "tests",
+          "command": [
+            "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/shared-sdk-build/bin/hyle_compute_provider_flashinfer_test",
+            "--gtest_output=xml:/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/cuda-native/tests-5.xml"
+          ],
+          "exit_code": 1,
+          "elapsed_seconds": 0.528096244000011,
+          "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/cuda-native/tests-5.log"
+        }
+      ],
+      "cumulative_seconds": 57.81023412800002
+    },
+    {
+      "state": "TERMINAL_FAIL",
+      "pid": 559,
+      "identity": {
+        "host": "Linux kiro-workstation 6.18.54.1-microsoft-standard-WSL2 #1 SMP PREEMPT_DYNAMIC Tue Oct  6 19:13:07 UTC 2026 x86_64 x86_64 x86_64 GNU/Linux",
+        "compiler": "g++-14 (Ubuntu 14.2.0-4ubuntu2~24.04.1) 14.2.0\nCopyright (C) 2024 Free Software Foundation, Inc.\nThis is free software; see the source for copying conditions.  There is NO\nwarranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.",
+        "cuda": "nvcc: NVIDIA (R) Cuda compiler driver\nCopyright (c) 2005-2026 NVIDIA Corporation\nBuilt on Tue_Jun_09_02:43:40_PM_PDT_2026\nCuda compilation tools, release 13.3, V13.3.73\nBuild cuda_13.3.r13.3/compiler.38244171_0",
+        "gpu": "NVIDIA GeForce RTX 4070, 617.14, 12282 MiB, 2241 MiB, 3 %"
+      },
+      "scope": "CE04/08 actual shipping factor plus bounded original/new FI tests; no model/heavy GPU/SDK/sanitizer/P1 acceptance",
+      "max_jobs": 4,
+      "stages": [
+        {
+          "stage": "configure",
+          "command": [
+            "cmake",
+            "-S",
+            "/root/hyle-scratch/compute-unified/source-7a7b4c3b",
+            "-B",
+            "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/shared-sdk-build",
+            "-DHYLE_INSTALL=OFF",
+            "-DHYLE_BUILD_TESTS=ON",
+            "-DHYLE_TEST_INSTRUMENTATION=OFF"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 58.716702485,
+          "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/cuda-native/configure-6.log"
+        },
+        {
+          "stage": "compile",
+          "command": [
+            "cmake",
+            "--build",
+            "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/shared-sdk-build",
+            "--target",
+            "hyle_compute_provider_flashinfer_test",
+            "--parallel",
+            "4"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 12.66255468,
+          "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/cuda-native/compile-6.log"
+        },
+        {
+          "stage": "tests",
+          "command": [
+            "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/shared-sdk-build/bin/hyle_compute_provider_flashinfer_test",
+            "--gtest_output=xml:/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/cuda-native/tests-6.xml"
+          ],
+          "exit_code": 1,
+          "elapsed_seconds": 1.6144311019999975,
+          "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/cuda-native/tests-6.log"
+        }
+      ],
+      "cumulative_seconds": 72.993688267
+    },
+    {
+      "state": "TERMINAL_PASS",
+      "pid": 529,
+      "identity": {
+        "host": "Linux kiro-workstation 6.18.54.1-microsoft-standard-WSL2 #1 SMP PREEMPT_DYNAMIC Tue Oct  6 19:13:07 UTC 2026 x86_64 x86_64 x86_64 GNU/Linux",
+        "compiler": "g++-14 (Ubuntu 14.2.0-4ubuntu2~24.04.1) 14.2.0\nCopyright (C) 2024 Free Software Foundation, Inc.\nThis is free software; see the source for copying conditions.  There is NO\nwarranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.",
+        "cuda": "nvcc: NVIDIA (R) Cuda compiler driver\nCopyright (c) 2005-2026 NVIDIA Corporation\nBuilt on Tue_Jun_09_02:43:40_PM_PDT_2026\nCuda compilation tools, release 13.3, V13.3.73\nBuild cuda_13.3.r13.3/compiler.38244171_0",
+        "gpu": "NVIDIA GeForce RTX 4070, 617.14, 12282 MiB, 2251 MiB, 3 %"
+      },
+      "scope": "CE04/08 actual shipping factor plus bounded original/new FI tests; no model/heavy GPU/SDK/sanitizer/P1 acceptance",
+      "max_jobs": 4,
+      "stages": [
+        {
+          "stage": "configure",
+          "command": [
+            "cmake",
+            "-S",
+            "/root/hyle-scratch/compute-unified/source-7a7b4c3b",
+            "-B",
+            "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/shared-sdk-build",
+            "-DHYLE_INSTALL=OFF",
+            "-DHYLE_BUILD_TESTS=ON",
+            "-DHYLE_TEST_INSTRUMENTATION=OFF"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 42.366997068,
+          "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/cuda-native/configure-7.log"
+        },
+        {
+          "stage": "compile",
+          "command": [
+            "cmake",
+            "--build",
+            "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/shared-sdk-build",
+            "--target",
+            "hyle_compute_provider_flashinfer_test",
+            "--parallel",
+            "4"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 14.09103502299999,
+          "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/cuda-native/compile-7.log"
+        },
+        {
+          "stage": "tests",
+          "command": [
+            "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/shared-sdk-build/bin/hyle_compute_provider_flashinfer_test",
+            "--gtest_output=xml:/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/cuda-native/tests-7.xml"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 2.3995631370000012,
+          "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/cuda-native/tests-7.log"
+        }
+      ],
+      "cumulative_seconds": 58.857595227999994
+    }
+  ],
+  "cumulative_seconds": 964.4491728739999,
+  "P0": "Only dirty encoding rows; FP8 staging align16(Qactive*Hq*Dv*4) counted in float budget; one final scale/cast dispatch, no full-KV expansion; original queues/slots/retirement/status reused"
+}

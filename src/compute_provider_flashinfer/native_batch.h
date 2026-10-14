@@ -4,11 +4,13 @@
 #include <cuda_runtime_api.h>
 namespace hyle::compute::flashinfer::native {
 struct BatchSpec final {
-  std::uint32_t query_heads=0,kv_heads=0,head_dim=0,page_size=0;
+  std::uint32_t query_heads=0,kv_heads=0,qk_head_dim=0,value_head_dim=0,page_size=0;
   std::uint32_t query_rows=0,requests=0;
   std::size_t query_indptr_offset=0,kv_indptr_offset=0,page_indices_offset=0,tail_offset=0;
   float scale=1.0F;
-  bool paged=false,bfloat16=false;
+  float key_scale=1.0F,value_scale=1.0F;
+  std::int32_t window_left=-1;
+  bool paged=false,bfloat16=false,fp8=false,causal=true;
 };
 struct BatchFacts final {
   std::size_t float_bytes=0,int_bytes=0;
@@ -22,4 +24,8 @@ void destroy_batch_state(void *) noexcept;
 cudaError_t query_batch_workspace(BatchSpec,const std::int32_t *,const std::int32_t *,cudaStream_t,BatchFacts &);
 cudaError_t plan_batch(void *,BatchSpec,const std::int32_t *,const std::int32_t *,void *,std::size_t,void *,void *,std::size_t,cudaStream_t,BatchFacts &);
 cudaError_t run_batch(const void *,BatchSpec,const void *,const void *,const void *,const void *,void *,void *,void *,cudaStream_t);
+// Opt-in output storage for FP8's F32 partial/merge, followed by one final
+// scale/cast. This is O(Q*Hq*Dv), never a dequantized KV history.
+std::size_t batch_output_staging_bytes(BatchSpec) noexcept;
+cudaError_t run_cache_batch(const void *,BatchSpec,const void *,const void *,const void *,const void *,void *,void *,void *,cudaStream_t);
 } // namespace hyle::compute::flashinfer::native

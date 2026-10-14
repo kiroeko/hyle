@@ -7,8 +7,8 @@
 
 ## 选择执行路线
 
-G04/G05 正在实施；CPU新域已完成一轮Windows source数学检查，其他原生路线、三交付与
-完整风险/性能资格尚未签发；进度见
+G04/G05 正在实施；CPU新域已完成Windows source数学检查，CUDA新域已完成Linux/SM89
+source数学检查，Apple/Vulkan新域、三交付与完整风险/性能资格尚未签发；进度见
 [活动卡](../implementation/tasks/compute/inference-g04-g05-cache-attention-domain.md)。
 普通旧 plain 旅程使用显式的新字段，库不保旧签名转发。schema/descriptor接受一种形状，
 不代表所选native核已支持；当前未接通的组合在准备时返回Unimplemented。
@@ -60,6 +60,16 @@ Q8 K/V同格式、Q/output同F16或BF16；当前有限几何是(64,64)/(128,128)
 转成Q8 dot表示，精度应按这次额外转换评估。新域的字节、窗口、非因果、长prefill和
 F32累加结果见[有限source证据](../../evidence/correctness/inference-g04-g05-cpu-encoding-math-stage/result.json)，
 尚未完成的增量组合、CPU-only核心、SDK、sanitizer和P1不能从这些测试推导。
+
+Linux CUDA的FlashInfer入口现可用同一CacheEncode操作编码E4M3FN新行。准备时显式传入
+CUDA device resource，BatchProgram的host_workspace使用同设备原pinned-host resource。
+K/V均为FP8，分别固定scale，Q/output同F16或BF16，几何与窗口合同如上；有限输入的编码
+采用nearest-even及finite saturation，NaN/Inf在接受提交后的原Completion返回InvalidArgument。
+原attention直接读FP8字节；Kscale折入softmax scale，Vscale在F32 partial/merge后乘入并
+转换最终输出。额外float workspace为align16(Qactive*Hq*Dv*4)，并有一次最终scale/cast
+dispatch；不展开整套历史KV。实际RTX4070/SM89的12项测试见
+[CUDA有限source证据](../../evidence/correctness/inference-g04-g05-cuda-encoding-math-stage/result.json)。
+它尚不签发Windows CUDA、增量F2/Graph组合、SDK、宿主风险或P1资格。
 
 | 路线 | 数学与公开入口 | 准备与成本 |
 |---|---|---|

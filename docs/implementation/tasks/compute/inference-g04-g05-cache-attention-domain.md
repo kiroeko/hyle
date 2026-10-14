@@ -314,3 +314,47 @@ switch的P0为无新增布局/分配，CUDA数学性能仍属于冻结candidate�
 CE08已核对原 `cuda_device_status.cc::completed_device_status` 和原首错/reset/merge；
 范围、owner、完成/失败/费用形状及有限FIX固定，同卡正式进入AUDITED。十owner的新数学/
 风险/交付/P1仍UNPROVEN，CE08只允许上述码和原switch翻译及其真实encoder消费者。
+
+CE04同AUDITED内的实质数值反证：原variant在split各partial内乘sV后存DTypeO；F16
+partial的±65536可先变Inf，即使最终相消应有限也会NaN。原FI明确支持DTypeO=float及
+F32 merge，因此FP8路径固定未缩放F32 partial/merge，最后一个有限native kernel乘sV
+并转实际F16/BF16输出；QK scale仍在原softmax前。planner的output width=4、KV width=1，
+输出staging为align16(Qactive*Hq*Dv*4)，计入float workspace硬预算/报告，末kernel计一次
+dispatch。成本O(Q*Hq*Dv)，无整KV展开；原plain同D/causal/unbounded仍走原2-byte入口。
+独立K/V paged strides使用原ctor，单位为元素，原layout/plan/queues/retirement不变。
+实际sV512正负相消、split与非split/scale/window/Dv oracle仍必须运行，源码支持不签PASS。
+
+CE04首轮实际WSL源target编译：configure51.672秒后，native_cache F32 merge的原generic
+派发实例化未准入D512，触发cp_async 512-bit静态断言；compile88.359秒原FAIL保留。
+当前窄修复在原F32 merge入口做D64/128/256有限specialization，调用同一原persistent
+kernel/四stage/128线程/原params，不编写另一套merge数学，也不改upstream cache或pin。
+真实运行继续同树、同target，仅重编受影响TU；新CUDA域仍UNPROVEN。
+源码反证也核了SM89共享内存：D256长prefill由原planner选CTA64，FP8/F32约96KiB，
+D64/D128/(64,128)约32/72/80KiB，均在约99KiB block上限内；不得借此先签运行PASS。
+有效QK scale及其log2乘积须有限，准备时明确拒绝溢出；新encoder沿原numeric状态协议。
+
+CE04第二次同target定向编译已terminal PASS，554.542秒；含初次configure/FAIL累计
+694.573秒。实查WSL RTX4070/SM89、driver617.14、CUDA13.3.73/GCC14.2，源码来自Windows
+单向manifest archive，shipping HYLE_TESTING OFF。新的encoder/FP8数学与CE08真实产物
+已编译，当前没有活跃构建或GPU程序。新增公开fixture已登记factor test与simd仅测试依赖，
+包含sK=.5/sV=2、全部有限shape/window与sV512 split正负大值抵消；这些fixture尚未执行，
+不由compile PASS代签correctness/risk/SDK/P1。十owner仍AUDITED，产品draft尚未提交。
+
+CE04/08有限Linux CUDA source阶段现已通过，见
+[原始结果](../../../../evidence/correctness/inference-g04-g05-cuda-encoding-math-stage/result.json)。
+最终12项测试全部PASS：原4项one-op数学/冷分配与新增8项FP8字节、接受后numeric错误、
+paged/ragged编码消费、独立sK=.5/sV=2、F16/BF16 Q/output、有限四组Dqk/Dv、window
+-1/0/15/16、full noncausal Q>KV、D256 Q1/65长prefill与共享/重排逻辑274行/物理256行。
+8192-row split-KV明确断言真实split开启；BF16编码的±65536、sV512相消后F16输出有限零，
+证明本反例中没有partial half溢出。独立oracle读取实际编码bytes，不借用native输出做参考。
+
+七次attempt与全部FAIL/elapsed保留在证据；attempt3原install/tests配置冲突，attempt4
+测试直接compute_batch缺链接，attempt5缺device workspace/pinned-host配置，attempt6
+实际encoder route2未通过旧route1 preparation guard，均没有改写为PASS。最后修复在原
+describe后按encoder/attention检查route；numeric测试新增接受提交标记，冷准备错误不能
+冒充device numeric状态通过。所有重型任务串行/4jobs，同缓存树按需编译，巨大native TU
+只在算法改动时编译，后续fixture修复没有重复它。当前无活跃native程序。
+
+本阶段只签Linux RTX4070/SM89、原shared shipping源码factor资格；增量F2/Graph、
+新域风险、static/shared SDK、Windows实际CUDA、Apple/Vulkan和P1仍UNPROVEN，
+十owner保持AUDITED，G04/G05整个项目未关闭。
