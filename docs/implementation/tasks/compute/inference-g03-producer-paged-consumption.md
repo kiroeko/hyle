@@ -1,6 +1,6 @@
 # G03 已接纳 producer 到精确分页消费
 
-状态：SCOPED，2026-10-14；owner compute_batch、compute、compute_route_apple、
+状态：AUDITED，2026-10-14；owner compute_batch、compute、compute_route_apple、
 compute_route_vulkan，baseline `5e80c4df0`；公共形状反证基于 `3cbbd4e2e`。
 授权来自[十项goal](../project/inference-gaps-goal-execution-2026-10.md)，输入G03来自
 [固定源码审计](../project/inference-single-machine-foundation-audit-2026-10.md)。
@@ -70,3 +70,42 @@ jobs，不扩建selector/checker/性能或全局构建核心。停止依据有�
 下一阶段固定两个公共调用：PagedArena.acquire(ReadLease&)和各CopyBatchInvocation的
 unbind_mutable(CopyResourceId)，通过原unique/actual successful retirement门复用现成机制。
 原CopyStream私有消费不迁移到另一状态机；F3与batch/native为直接消费者。
+
+## 固定 API、coverage 与有限 FIX
+
+这次owner轮只固定两个机制。ready page→exclusive update目前PARTIAL，GP01 FIX；
+F2 update→原mutable权限返回已有private实现，GP02 BORROW/FIX其public入口。
+原成功F2 range output、精确frame、原page IDs/identity、native uses/retirement、F3文件流、
+普通batch数学与旧输出门KEEP。slot_mapping/request/KV政策REJECT为基础库机制。
+完整pending producer→attention仍PARTIAL，待这两个机制的真实长期consumer回映；
+本ledger不把它DEFER成完成，也不授权未审计的native ordering/Graph公开合同变化。
+
+| FIX | owner与产品形状 | 成功/失败与成本 |
+|---|---|---|
+| GP01 | compute_batch：PagedArena::acquire(ReadLease& ready)→PagedPageWriter | 只接受此arena当前ready original整页，复用ReadLease::try_write；成功消费入参、同block/offset/generation、slot变acquired，失败不消费/不改slot。保old frame/read/native use的unique拒绝；无payload copy、allocation或扫描，全页内容由caller原初始化证明 |
+| GP02 | compute/Apple/Vulkan：CopyBatchInvocation::unbind_mutable(CopyResourceId)→WriteLease | 直接借原CopyStreamAccess::take_mutable；无retained submission/actual uses，所有accepted phases成功retired才返原writer，或撤回尚未提交binding。失败/unknown/closed/readonly/output已publish/错误ID拒绝不消费。成功清原binding并使prepared失效；无host wait/new state/allocator/metadata |
+
+自然调用是arena.acquire(page_ready)→F2 bind_mutable(move(page.lease()))→bind_producer/
+prepare/submit→实际wait成功→drop submission→page.lease()=copy.unbind_mutable(id)→
+page.publish()。未写bytes仍是caller拥有的旧内容，不称其为本次copy output；F2原output
+coverage保持严格。第一次page.acquire(id)须caller先初始化所有即将被数学读的bytes；
+新API不追踪模型有效区，也不宣布未初始化padding可读。两个独立consumer是KV dirty
+row append和驻留数值页range replace→readonly reduction，保old/shared observers拒绝。
+
+Context/Queue/native resources/allocator仍稳定借用；控制仍thread-compatible、外部串行。
+cancel/abandon/unknown必须沿原Completion实际退休，不新增destructor wait；closed/failed
+不通过unbind逃出错误。cold拒绝可withdraw未提交writer，原prepare必须重新执行。
+native readonly output不能变成mutable；三交付签名与export由同owner传播，无新依赖/SDK。
+
+预声明本子批验证：CPU public64步更新/独立数值、只copy1024byte、同generation与untouched
+bytes；shared/read/use/foreign/subrange/stale/closed/retained submission/outputpublished/失败
+拒绝、cold撤回/reprepare；原PagedArena/F4、F2/文件stream直接消费者；三host san、actual
+Air Apple/Vulkan dirty页→原分页数学及失败/unknown；对应relocated static/shared及逐头。
+MSVC定向公共链接、轻量CPU执行；原未决重型WindowsGPU门保。cold allocation/budget
+行为原样，新增入口以零分配quota反证。P0够裁决无新算法的本子批，未启动新P1；若
+后续异步组合改变normal cost/算法，另在此G03内冻结相应有限owner/FIX与必要P1。
+
+产品只允许GP01/GP02与直接consumer/使用说明；不改F1权限、copy coverage、native
+math、controller、Graph/scheduler或公共selector/checker。该子批完成后仍逐项核G03
+pending chain与其余七实际路线，不签整个G03/goal。预算沿原2h检查点、自动有限追加
+保全部FAIL/elapsed，不以本scope/audit提交重置原验证成本。

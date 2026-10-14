@@ -270,9 +270,9 @@
     },
     {
       "module": "compute",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/inference-g03-producer-paged-consumption.md",
-      "summary": "G03 exact dirty page update public consumer proves missing mutable return; SCOPED to reuse original F2 successful actual retirement and existing CopyStream authority. Original math/P1 and whole G03 producer/native consumption remain separate; no product edit before AUDITED."
+      "summary": "G03 GP01/GP02 finite AUDITED: reacquire original unique ready page without reallocating/copying; public F2 mutable withdrawal borrows original CopyStream successful actual-retirement gate across CPU/CUDA and Apple/Vulkan. Fixed permission/lifetime/error/cost/API ledger; original math and full pending producer-to-attention remain unclaimed."
     },
     {
       "module": "graph",
@@ -509,9 +509,9 @@
     },
     {
       "module": "compute_route_apple",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/inference-g03-producer-paged-consumption.md",
-      "summary": "G03 exact dirty page update public consumer proves missing mutable return; SCOPED to reuse original F2 successful actual retirement and existing CopyStream authority. Original math/P1 and whole G03 producer/native consumption remain separate; no product edit before AUDITED."
+      "summary": "G03 GP01/GP02 finite AUDITED: reacquire original unique ready page without reallocating/copying; public F2 mutable withdrawal borrows original CopyStream successful actual-retirement gate across CPU/CUDA and Apple/Vulkan. Fixed permission/lifetime/error/cost/API ledger; original math and full pending producer-to-attention remain unclaimed."
     },
     {
       "module": "graph_route_apple",
@@ -526,9 +526,9 @@
     },
     {
       "module": "compute_route_vulkan",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/inference-g03-producer-paged-consumption.md",
-      "summary": "G03 exact dirty page update public consumer proves missing mutable return; SCOPED to reuse original F2 successful actual retirement and existing CopyStream authority. Original math/P1 and whole G03 producer/native consumption remain separate; no product edit before AUDITED."
+      "summary": "G03 GP01/GP02 finite AUDITED: reacquire original unique ready page without reallocating/copying; public F2 mutable withdrawal borrows original CopyStream successful actual-retirement gate across CPU/CUDA and Apple/Vulkan. Fixed permission/lifetime/error/cost/API ledger; original math and full pending producer-to-attention remain unclaimed."
     },
     {
       "module": "graph_route_vulkan",
@@ -689,9 +689,9 @@
     },
     {
       "module": "compute_batch",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/inference-g03-producer-paged-consumption.md",
-      "summary": "G03 producer-to-exact-page consumption SCOPED after native G01/G02 finite closure: audit existing exclusive/F2/native waits/ready frame and idle input release with fixed peers and genuine QKV/dirty page update/attention consumer. Preserve closed math, original common Windows gates and G04-G10 boundaries. No product edit before finite API/owner/FIX AUDITED; no fake ready/whole arena/new controller."
+      "summary": "G03 GP01/GP02 finite AUDITED: reacquire original unique ready page without reallocating/copying; public F2 mutable withdrawal borrows original CopyStream successful actual-retirement gate across CPU/CUDA and Apple/Vulkan. Fixed permission/lifetime/error/cost/API ledger; original math and full pending producer-to-attention remain unclaimed."
     },
     {
       "module": "graph_batch",
