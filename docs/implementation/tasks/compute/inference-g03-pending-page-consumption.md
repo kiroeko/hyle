@@ -404,3 +404,47 @@ output 的剩余有限接缝，再批量验证七路线与正交 reduction；对
 API/寿命/成本审计，保原 G02 未决门。按用户要求一批实现、批量检查、针对失败修复，
 不再按单 helper 切施工卡或重复已证明门。原十项 goal、失败/UNKNOWN保留；本批后
 整体粗估约22%，完整 G 项验收仍0/10，不由receiver三交付代签完整G03。
+
+## Graph 与 late output 集中实施批（GL01–GL04，SCOPED）
+
+baseline `19413efdd0427cd21f4431dfa7561291e9034bde`。本批只补本主卡尚未完成的
+pending producer → 原 F2 → 原 Graph 页读取 → 原数值结果，不重新验原数学、PF、RC、BC。
+真实新事实是 `batch::Invocation::bind(PagedArenaRead)`、两联合 Graph 的同名绑定只认
+ready 页；Apple `Results::arrays()` 在原 worker 执行前为空，而原 F2 只认 ready ReadLease。
+因此两 CLOSED graph_route_cpu_apple/vulkan 按新 pending 消费事实重开；graph/graph_batch
+的 G02 candidate 因新公开合同回退 AUDITED，原未决 Windows gate 与旧 candidate 证据保留。
+四现有 AUDITED compute owner 续用本卡。没有新 component、数学实现或执行器。
+
+主消费者仍是 GQA8/2 D256、F16/BF16（各路线资格单列）、Q1/17、双请求/双原 slot/64 步
+增长跨页；正交消费者是普通 native 数值 producer → range update → reduction。七路线
+全部保留，不以两个 receiver 或 host 显式等待版本代签。既有三 peer 固定源码与
+[原 source anchors](../../../../evidence/architecture/inference-single-machine-foundation-audit/source-anchors.json)
+仍作为机制分工输入：请求/cache/模型政策上移，native 执行与 backing 留在原 owner。
+
+| ID | 能力/现状 | owner、有限改动与冻结合同 | 验收 |
+|---|---|---|---|
+| GL01 | Graph 原 ordered sequence 与 final result 已有，pending permission 接缝 MISSING | graph BORROW 原 SubmissionCursor/LeasedInvocation/use pool/retention；trusted projected binding 与 submit callbacks，回调在原 QueueSequence 内先接 source wait，再接 exact guards，最终聚合在原公共 completion 槽内发布；普通 ready 调用无新增 owner 字段 | rejected-prefix 回接、accepted-prefix 不丢失、source 失败无 output，原 ready 回归 |
+| GL02 | common batch region slots 已有，public pending 组合 MISSING | graph_batch SELF 一个显式冷 PendingInvocation，移动原 Invocation，保一个原 CopyOutcomeSource/DependentCompletion 与有限 pending input 表；bind/prepare/report 委托原 slot，submit(Update&&)/take_update 自然回接；不另建 Graph/Batch invocation/queue/output | CPU、CUDA、CPU+CUDA 实际主/正交 journey、风险、三交付/独立头 |
+| GL03 | 原两 native 联合 Graph 只接 ready，PARTIAL | 两 graph_route BORROW 原 PageSlots/MaterializedNativeState 与原 Graph ResultSlot；增加 pending frame bind、submit(Update&&)、take_update。source 只在显式 pending 冷扩展创建，一 Update 可供同图多个页节点，最终映射同一 Graph OwnedResult。exact node/layout/readers 在 replay 前固定 | Apple/Vulkan 单 GPU 与两联合路线 actual journey、两节点、旧结果、源失败/unknown/取消/放弃/预算 |
+| GL04 | 原 native accepted result → F2 late source MISSING | 两 compute_route SELF typed bind_source(id, OwnedResult<Results>&&, output_index, TensorDesc)；冷持原 result storage，移动其真实 completion 到原 producer binding。Apple backing 在原 FIFO copy Job 的 preflight 成功后解析，完整物理别名/范围再验后才 blit；Vulkan 可冷解析地址但仍保 producer 排序/成功合同。绝不创建 public pending ReadLease；接纳拒绝不消费结果。复用原 recording/worker/queue/phase guard | actual非零数值 producer、多个来源/phase、foreign/shape/alias/OOM、错误与实际退休，三交付 |
+
+自然调用为 common `PendingInvocation::create(std::move(original), capacity, leases)`，然后
+prepare_batch、bind(Q ready/输出 writer/KV pending)、submit(std::move(update))、最终 wait、
+output、释放旧 output/completion 后 take_update。native joint 在原 Invocation 上选择 pending
+bind 与 submit(Update&&)。native F2 的 accepted output 绑定成功后才转移原 OwnedResult；
+回收原 producer slot 须等原 copy/source/结果引用全部退休。各 control 对象外部串行，
+原 context/resources/allocator/budget 保至 actual retirement。失败 epoch 不被 prepare 洗掉。
+
+冷热冻结：GL01/02 不扩普通 Graph/Batch 对象；冷输入表按有限节点/输入数预留，暖 submit
+不分配 source 协议节点、不拷贝 KV、不新开线程/队列。GL03/04 允许原 native 私有冷 state
+保存一个 nullable 扩展指针，扩展只在选择 pending 时分配；这是明确的常数冷 metadata
+成本，不能藏成零成本。native 原 tracing/import/结果/同步费用继续如实列账；不因这批
+顺手做 G06 规划或 G09 流水。late physical proof 不可伪装成 ready/F1 权限。
+
+P0；预声明 source/static/shared 同 public journey、逐头、对应 Windows common/CPU 与
+native C++ 编译、WSL CUDA 既有 kernel artifact、Air 实际 Apple/Vulkan 与宿主三 sanitizer。
+原 ready consumer 只跑直接受影响代表；不全局构建、不 P1、不重跑已证明数学/PF/RC/BC。
+所有 heavy 串行、最多四 jobs，原 2h 检查点与用户常设延长保累计。每批集中实现再集中
+验证，失败只定向修复；不逐函数另建施工卡。适用但未完成的 gate 保 UNPROVEN，不写 PASS。
+七问沿本卡既有依赖/FFI/交付边界；新增公开形状须落使用指南，固定原 lifetime/owner，
+工具无缺陷不扩工具。有限 GL01–04 全部实现并验后才候选；新架构事实先改本节审计。
