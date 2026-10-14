@@ -1,0 +1,422 @@
+{
+  "kind": "G04_G05_CPU_ONLY_ENCODER_F2_DIRECT_GRAPH_SOURCE_STAGE",
+  "verdict": "PASS_FINITE_WINDOWS_CPU_ONLY_SOURCE",
+  "owners_remain": "AUDITED; whole G04/G05 not accepted",
+  "identity": {
+    "host": {
+      "host": "KIRO-WORKSTATIO",
+      "compiler": "14.50.35717",
+      "routes": "cpu",
+      "source_pin": "check actual derived ggml after configure"
+    },
+    "cpu": "13th Gen Intel Core i9-13900K,24cores/32logical",
+    "os": "Windows11 Pro for Workstations 10.0.26200 build26200",
+    "ggml": "ffa4e8b80930029a35991f94e7c8a93cd67730ab-hyle",
+    "delivery": "ordinary static source, HYLE_TESTING OFF"
+  },
+  "fixture_sha256": "f09e2dfa5b29198077a1c5920aa52fe3dd127de09e80f2bb9f13f6dda3f439af",
+  "qualified": [
+    "CPU-only ffa original native encoder/math15 test cases all PASS in attempt2, whose aggregate run remains FAIL due new fixture",
+    "Final new two consumer tests PASS:8successful Direct/Graph episodes x6updates plus4 synchronous source failure episodes",
+    "Single/multi request, activeQ1/18, Q8 K/V, F16 Q/output, independent D64/128 and main D256/256, window16",
+    "Paired Graph publishes two disjoint encoded outputs in one caller-owned WriteLease, one original Completion/F1 ticket/F2 producer0",
+    "Independent K/V Graphs publish separate original Completion and writer0/1; original F2 Update feeds page receiver or Graph",
+    "Nonzero K with independently weighted softmax and explicit CPU Abs/Cast and Cast/Neg Graph journey",
+    "Exact dirty byte report, complete K/V byte oracles, shared clean page unchanged, old reader permission and math across new versions",
+    "CPU failed encoder remains original synchronous failure: no producer/F2 submission, no result, retired original guards, all target writers returned uninitialized, old page unchanged",
+    "Original inline completion may permit Update recovery; retained output still prevents preparation/overwrite"
+  ],
+  "bounded_readonly_review": "Original post-final-error output check added for asynchronous branch; CPU refusal branch is separately labelled, no fabricated failed Completion or suffix",
+  "P0": "Original shared Queue, Graph/one-op prepared routes, F1 ticket, F2 controllers and native batch reused. Caller supplies dirty-only storage and actual Completion. No new runtime/API/controller, no full-history decode. Normal Graph fallback policy may wrap native one-op kernels; this is not an algorithmic CPU fallback.",
+  "not_proven": [
+    "CUDA/CPU+CUDA new consumer stage",
+    "BF16 encoded F2/Graph qualification",
+    "complete new-domain risks/installed SDK/P1",
+    "tiny-scale subnormal/FTZ/reciprocal-overflow input matrix",
+    "whole G04/G05 and remaining goal items"
+  ],
+  "native_math_cases": [
+    {
+      "name": "Q8ReferenceBytesTiesZeroAndThreeInputTypes",
+      "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_provider_ggml\\native_paged_test.cc",
+      "line": "60",
+      "status": "run",
+      "result": "completed",
+      "time": "0.",
+      "timestamp": "2026-10-15T04:09:43.940",
+      "classname": "GgmlCpuCacheEncode"
+    },
+    {
+      "name": "Float8CodesMatchIndependentEnumerationIncludingRoundingAndSaturation",
+      "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_provider_ggml\\native_paged_test.cc",
+      "line": "82",
+      "status": "run",
+      "result": "completed",
+      "time": "0.002",
+      "timestamp": "2026-10-15T04:09:43.941",
+      "classname": "GgmlCpuCacheEncode"
+    },
+    {
+      "name": "InvalidPayloadReturnsOriginalCompletionErrorAfterWorkersRetire",
+      "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_provider_ggml\\native_paged_test.cc",
+      "line": "93",
+      "status": "run",
+      "result": "completed",
+      "time": "0.",
+      "timestamp": "2026-10-15T04:09:43.943",
+      "classname": "GgmlCpuCacheEncode"
+    },
+    {
+      "name": "IndependentInvocationsAndFreshRecoveryAfterOriginalWorkersRetire",
+      "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_provider_ggml\\native_paged_test.cc",
+      "line": "103",
+      "status": "run",
+      "result": "completed",
+      "time": "0.",
+      "timestamp": "2026-10-15T04:09:43.944",
+      "classname": "GgmlCpuCacheEncode"
+    },
+    {
+      "name": "QuantizedPagedAndRaggedIndependentValueDepthAndWindow",
+      "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_provider_ggml\\native_paged_test.cc",
+      "line": "228",
+      "status": "run",
+      "result": "completed",
+      "time": "0.077",
+      "timestamp": "2026-10-15T04:09:43.945",
+      "classname": "GgmlCpuBoxed"
+    },
+    {
+      "name": "QuantizedFullNoncausalAllowsMoreQueriesThanKeys",
+      "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_provider_ggml\\native_paged_test.cc",
+      "line": "234",
+      "status": "run",
+      "result": "completed",
+      "time": "0.103",
+      "timestamp": "2026-10-15T04:09:44.022",
+      "classname": "GgmlCpuBoxed"
+    },
+    {
+      "name": "PlainWindowAndIndependentValueDepth",
+      "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_provider_ggml\\native_paged_test.cc",
+      "line": "240",
+      "status": "run",
+      "result": "completed",
+      "time": "0.245",
+      "timestamp": "2026-10-15T04:09:44.125",
+      "classname": "GgmlCpuBoxed"
+    },
+    {
+      "name": "QuantizedCoupledDepthsIncludingMainD256AndLongPrefill",
+      "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_provider_ggml\\native_paged_test.cc",
+      "line": "246",
+      "status": "run",
+      "result": "completed",
+      "time": "0.988",
+      "timestamp": "2026-10-15T04:09:44.371",
+      "classname": "GgmlCpuBoxed"
+    },
+    {
+      "name": "LongF16WindowUsesF32AccumulatorAgainstCancellation",
+      "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_provider_ggml\\native_paged_test.cc",
+      "line": "256",
+      "status": "run",
+      "result": "completed",
+      "time": "0.221",
+      "timestamp": "2026-10-15T04:09:45.359",
+      "classname": "GgmlCpuBoxed"
+    },
+    {
+      "name": "FiniteBf16QueryScaleOverflowIsAnAcceptedErrorAndFreshSlotSucceeds",
+      "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_provider_ggml\\native_paged_test.cc",
+      "line": "259",
+      "status": "run",
+      "result": "completed",
+      "time": "0.001",
+      "timestamp": "2026-10-15T04:09:45.581",
+      "classname": "GgmlCpuBoxed"
+    },
+    {
+      "name": "OriginalFlashReadsExactPhysicalPagesAndTail",
+      "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_provider_ggml\\native_paged_test.cc",
+      "line": "408",
+      "status": "run",
+      "result": "completed",
+      "time": "41.281",
+      "timestamp": "2026-10-15T04:09:45.582",
+      "classname": "GgmlCpuPaged"
+    },
+    {
+      "name": "NativeFlashReadsTwoRequestsWithoutKvMaterialization",
+      "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_provider_ggml\\native_ragged_test.cc",
+      "line": "118",
+      "status": "run",
+      "result": "completed",
+      "time": "0.118",
+      "timestamp": "2026-10-15T04:10:26.863",
+      "classname": "GgmlCpuRagged"
+    },
+    {
+      "name": "ColdBudgetAndPagedQualificationAreExplicit",
+      "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_provider_ggml\\native_ragged_test.cc",
+      "line": "122",
+      "status": "run",
+      "result": "completed",
+      "time": "0.",
+      "timestamp": "2026-10-15T04:10:26.982",
+      "classname": "GgmlCpuRagged"
+    },
+    {
+      "name": "EveryColdAllocationFailureReleasesThePartialNativePlan",
+      "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_provider_ggml\\native_ragged_test.cc",
+      "line": "145",
+      "status": "run",
+      "result": "completed",
+      "time": "0.001",
+      "timestamp": "2026-10-15T04:10:26.982",
+      "classname": "GgmlCpuRagged"
+    },
+    {
+      "name": "AcceptedMathFailureRetiresUsesWithoutPublishingOutput",
+      "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_provider_ggml\\native_ragged_test.cc",
+      "line": "223",
+      "status": "run",
+      "result": "completed",
+      "time": "0.",
+      "timestamp": "2026-10-15T04:10:26.983",
+      "classname": "GgmlCpuRagged"
+    }
+  ],
+  "runs": [
+    {
+      "state": "TERMINAL_FAIL",
+      "identity": {
+        "host": "KIRO-WORKSTATIO",
+        "compiler": "14.50.35717",
+        "routes": "cpu",
+        "source_pin": "check actual derived ggml after configure"
+      },
+      "scope": "CPU-only actual encoder/F2/Direct/Graph source plus bounded native CPU numerical tests; no SDK/san/P1 verdict",
+      "max_jobs": 4,
+      "stages": [
+        {
+          "stage": "configure",
+          "command": [
+            "cmake",
+            "-S",
+            "C:\\public\\project-hyle\\hyle",
+            "-B",
+            "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 112.76599999997416,
+          "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\common-encoded\\cpu-1\\configure.log"
+        },
+        {
+          "stage": "compile",
+          "command": [
+            "cmake",
+            "--build",
+            "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev",
+            "--target",
+            "g04_g05_encoded_common_pages",
+            "--parallel",
+            "4"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 47.67200000002049,
+          "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\common-encoded\\cpu-1\\compile.log"
+        },
+        {
+          "stage": "tests",
+          "command": [
+            "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\g04_g05_encoded_common_pages.exe",
+            "--gtest_output=xml:C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\common-encoded\\cpu-1\\tests.xml"
+          ],
+          "exit_code": 3,
+          "elapsed_seconds": 0.21900000001187436,
+          "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\common-encoded\\cpu-1\\tests.log"
+        }
+      ],
+      "cumulative_seconds": 160.65700000000652,
+      "attempt": 1
+    },
+    {
+      "state": "TERMINAL_FAIL",
+      "identity": {
+        "host": "KIRO-WORKSTATIO",
+        "compiler": "14.50.35717",
+        "routes": "cpu",
+        "source_pin": "check actual derived ggml after configure"
+      },
+      "scope": "CPU-only actual encoder/F2/Direct/Graph source plus bounded native CPU numerical tests; no SDK/san/P1 verdict",
+      "max_jobs": 4,
+      "stages": [
+        {
+          "stage": "configure",
+          "command": [
+            "cmake",
+            "-S",
+            "C:\\public\\project-hyle\\hyle",
+            "-B",
+            "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 33.39100000000326,
+          "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\common-encoded\\cpu-2\\configure.log"
+        },
+        {
+          "stage": "compile",
+          "command": [
+            "cmake",
+            "--build",
+            "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev",
+            "--target",
+            "g04_g05_encoded_common_pages",
+            "--parallel",
+            "4"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 29.45299999997951,
+          "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\common-encoded\\cpu-2\\compile.log"
+        },
+        {
+          "stage": "tests",
+          "command": [
+            "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\g04_g05_encoded_common_pages.exe",
+            "--gtest_output=xml:C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\common-encoded\\cpu-2\\tests.xml"
+          ],
+          "exit_code": 1,
+          "elapsed_seconds": 43.344000000011874,
+          "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\common-encoded\\cpu-2\\tests.log"
+        }
+      ],
+      "cumulative_seconds": 106.18799999999464,
+      "attempt": 2
+    },
+    {
+      "state": "TERMINAL_FAIL",
+      "identity": {
+        "host": "KIRO-WORKSTATIO",
+        "compiler": "14.50.35717",
+        "routes": "cpu",
+        "source_pin": "check actual derived ggml after configure"
+      },
+      "scope": "CPU-only actual encoder/F2/Direct/Graph source plus bounded native CPU numerical tests; no SDK/san/P1 verdict",
+      "max_jobs": 4,
+      "stages": [
+        {
+          "stage": "compile",
+          "command": [
+            "cmake",
+            "--build",
+            "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev",
+            "--target",
+            "g04_g05_encoded_common_pages",
+            "--parallel",
+            "4"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 4.375,
+          "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\common-encoded\\cpu-3\\compile.log"
+        },
+        {
+          "stage": "tests",
+          "command": [
+            "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\g04_g05_encoded_common_pages.exe",
+            "--gtest_output=xml:C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\common-encoded\\cpu-3\\tests.xml",
+            "--gtest_filter=EncodedCommonPages.*"
+          ],
+          "exit_code": 1,
+          "elapsed_seconds": 0.26600000000325963,
+          "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\common-encoded\\cpu-3\\tests.log"
+        }
+      ],
+      "cumulative_seconds": 4.64100000000326,
+      "attempt": 3
+    },
+    {
+      "state": "TERMINAL_FAIL",
+      "identity": {
+        "host": "KIRO-WORKSTATIO",
+        "compiler": "14.50.35717",
+        "routes": "cpu",
+        "source_pin": "check actual derived ggml after configure"
+      },
+      "scope": "CPU-only actual encoder/F2/Direct/Graph source plus bounded native CPU numerical tests; no SDK/san/P1 verdict",
+      "max_jobs": 4,
+      "stages": [
+        {
+          "stage": "compile",
+          "command": [
+            "cmake",
+            "--build",
+            "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev",
+            "--target",
+            "g04_g05_encoded_common_pages",
+            "--parallel",
+            "4"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 4.282000000006519,
+          "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\common-encoded\\cpu-4\\compile.log"
+        },
+        {
+          "stage": "tests",
+          "command": [
+            "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\g04_g05_encoded_common_pages.exe",
+            "--gtest_output=xml:C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\common-encoded\\cpu-4\\tests.xml",
+            "--gtest_filter=EncodedCommonPages.*"
+          ],
+          "exit_code": 1,
+          "elapsed_seconds": 0.25,
+          "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\common-encoded\\cpu-4\\tests.log"
+        }
+      ],
+      "cumulative_seconds": 4.532000000006519,
+      "attempt": 4
+    },
+    {
+      "state": "TERMINAL_PASS",
+      "identity": {
+        "host": "KIRO-WORKSTATIO",
+        "compiler": "14.50.35717",
+        "routes": "cpu",
+        "source_pin": "check actual derived ggml after configure"
+      },
+      "scope": "CPU-only actual encoder/F2/Direct/Graph source plus bounded native CPU numerical tests; no SDK/san/P1 verdict",
+      "max_jobs": 4,
+      "stages": [
+        {
+          "stage": "compile",
+          "command": [
+            "cmake",
+            "--build",
+            "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev",
+            "--target",
+            "g04_g05_encoded_common_pages",
+            "--parallel",
+            "4"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 4.532000000006519,
+          "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\common-encoded\\cpu-5\\compile.log"
+        },
+        {
+          "stage": "tests",
+          "command": [
+            "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\g04_g05_encoded_common_pages.exe",
+            "--gtest_output=xml:C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\common-encoded\\cpu-5\\tests.xml",
+            "--gtest_filter=EncodedCommonPages.*"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 0.25,
+          "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\common-encoded\\cpu-5\\tests.log"
+        }
+      ],
+      "cumulative_seconds": 4.782000000006519,
+      "attempt": 5
+    }
+  ],
+  "cumulative_seconds": 280.80000000001746
+}

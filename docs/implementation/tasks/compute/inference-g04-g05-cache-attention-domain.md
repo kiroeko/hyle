@@ -476,3 +476,34 @@ V encoder输入NaN时，最终result/completion均保留InvalidArgument，全部
 此处不签CPU/CUDA新域producer组合、CPU-only ffa、新域完整risk/SDK/P1或整个G04/G05。
 Apple BF16新域数学已有CE05证据，本次F2/联合夹具仅签F16；其余准入格保留待验，不冒签。
 十一owner仍AUDITED；当前没有活跃重型任务，Windows canonical工作树保留全部本批变更。
+
+### CE07 CPU-only 编码 producer 到页面消费 source 阶段
+
+[阶段证据](../../../../evidence/correctness/inference-g04-g05-cpu-only-encoded-page-source/result.json)
+保存实际 Windows CPU-only static shipping 构建、五次 attempt、原始 FAIL 和累计 280.800 秒。
+实际使用 CPU-only ggml `ffa4e8b80930029a35991f94e7c8a93cd67730ab-hyle`，
+HYLE_TESTING OFF；i9-13900K、Windows build 26200、MSVC 19.50.35728.0。
+原生 CacheEncode/paged/ragged 等 15 项在 attempt2 各自通过，但该次整体因新夹具失败仍记 FAIL；
+产品输入哈希相同，因此不重复旧测试。最终 attempt5 的两项新增 public consumer 测试通过。
+
+共享夹具 `tests/compute_batch/encoded_page_common_consumer.cc` 使用原 Graph invocation、
+LeaseUsePool 写票、CopyBatchUpdate 与 Direct/Graph pending receiver，没有新增产品执行器。
+八个成功 episode 各六次更新，覆盖 single activeQ1/multi activeQ18、(64,128)/(256,256)、
+Q8 KV、F16 Q/output、page16/window16；Graph 前后使用原 CPU Abs/Cast 和 Cast/Neg。
+同 Graph 的 K/V 编码输出是同一个真实 WriteLease 的不重叠子视图，携带一个原始 Completion；
+两个独立 Graph 则分别绑定原始 WriteLease 和 Completion，不合成共享完成对象。
+首次显式克隆旧尾页，此后仅复制 requests*(Krow+Vrow) 字节；完整 K/V bytes、独立量化
+softmax oracle、共享干净页及跨新版本旧 reader 的权限/数学均实际检查。
+
+四个坏输入 episode 覆盖 paired/independent producer 与 Direct/Graph receiver。
+CPU 的真实数值错误可能在 Graph submit、写票附着或 F2 bind_mutable 的 poisoned-source
+准入阶段同步拒绝；本阶段如实检查 InvalidArgument、producer 无 output、无 inflight/phase
+completion/use guard、所有目的 writer 撤回及旧页面不变，不冒充接受后的异步传播资格。
+共享夹具的异步分支另在最终 wait 报错后检查 output 仍拒绝，再取回原 Update 并逐个检查
+目的 writer 不可发布；CUDA 对应分支尚待实际执行，不由 CPU 同步拒绝代签。
+
+原失败包括 CPU wrapper 默认 resource 未配置、把持有 ready output 时仍允许取回 Update
+误判为失败、以及把同步 poisoned-source 准入拒绝误当异步提交失败。修正均在夹具中，
+没有修改已验产品或错误/权限边界。只读有限复核未发现新增 MUST。
+本证据只签该 CPU-only 源码阶段；CUDA/CPU+CUDA、新域完整风险、SDK、其余准入 dtype 与
+P1 继续待验，G04/G05 和十一 owner 的 AUDITED 状态不变。
