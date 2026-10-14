@@ -704,14 +704,9 @@
     },
     {
       "module": "compute_batch",
-      "state": "CLOSED",
-      "record": "docs/implementation/tasks/compute/inference-g03-dirty-page-terminal.md",
-      "summary": "G03 GP01/GP02 finite CLOSED atb428: original whole ready page unique content/gen-preserving reacquire; public F2 nonblocking actual-retirement observe and mutable return. CPU64/arena9, native192/copy9, F3direct14, six modeled hostsan, six relocated SDKs22headers, tiny actual CUDA source+SDK64each and W1 compile/link PASS. Original failures/unknown/private/Windows unrun limits retained; full pending producer-to-attention and wholeG03/goal remain required.",
-      "candidate": "b42832de3ddda21bdc3e98ad4cc87e73622cbba4",
-      "performance": {
-        "tier": "P0",
-        "evidence": "docs/implementation/tasks/compute/inference-g03-dirty-page-terminal.md"
-      }
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/compute/inference-g03-pending-page-consumption.md",
+      "summary": "G03 pending page update-to-attention SCOPED after GP01/GP02 finite closure. Actual public CUDA writer producer->original F2 ordered source works without producer host wait; no duplicate F2 mechanism. Audit ready frame/native attention dependency and complete lifecycle/cost across original routes, no fake ready/whole arena/new controller. No product edit before finite owner/API/FIX AUDITED."
     },
     {
       "module": "graph_batch",

@@ -1,0 +1,5 @@
+producer probe: source/use/copy prepared
+producer probe: native prefix accepted
+producer probe: original F1 guard attached uses=1
+producer probe: pending binding ok=1 writer=0 uses=1 status=
+actual pending CUDA writer producer -> original F2 ordered source -> successfully ready destination PASS without intermediate producer host wait; final copy wait explicit, not producer-to-attention qualification

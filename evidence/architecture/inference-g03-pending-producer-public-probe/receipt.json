@@ -1,0 +1,107 @@
+{
+  "candidate": "b42832de3ddda21bdc3e98ad4cc87e73622cbba4",
+  "identity": {
+    "uname": "Linux kiro-workstation 6.18.54.1-microsoft-standard-WSL2 #1 SMP PREEMPT_DYNAMIC Tue Oct  6 19:13:07 UTC 2026 x86_64 x86_64 x86_64 GNU/Linux",
+    "gpu": "NVIDIA GeForce RTX 4070, 617.14, 1850 MiB, 3 %",
+    "compiler": "g++-14 (Ubuntu 14.2.0-4ubuntu2~24.04.1) 14.2.0"
+  },
+  "stages": [
+    {
+      "stage": "build",
+      "command": [
+        "cmake",
+        "--build",
+        "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/source-build",
+        "--target",
+        "g03_producer_source_probe",
+        "--parallel",
+        "4"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 49.676617742999994,
+      "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g03/producer-source-probe/build-1.log"
+    },
+    {
+      "stage": "tiny-producer-probe",
+      "command": [
+        "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/source-build/g03_producer_source_probe"
+      ],
+      "exit_code": -6,
+      "elapsed_seconds": 1.7350546269999967,
+      "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g03/producer-source-probe/tiny-producer-probe-1.log"
+    },
+    {
+      "stage": "build",
+      "command": [
+        "cmake",
+        "--build",
+        "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/source-build",
+        "--target",
+        "g03_producer_source_probe",
+        "--parallel",
+        "4"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 1.3989268729999997,
+      "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g03/producer-source-probe/build-2.log"
+    },
+    {
+      "stage": "tiny-producer-probe",
+      "command": [
+        "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/source-build/g03_producer_source_probe"
+      ],
+      "exit_code": 1,
+      "elapsed_seconds": 0.18542989300000023,
+      "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g03/producer-source-probe/tiny-producer-probe-2.log"
+    },
+    {
+      "stage": "build",
+      "command": [
+        "cmake",
+        "--build",
+        "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/source-build",
+        "--target",
+        "g03_producer_source_probe",
+        "--parallel",
+        "4"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 1.3349616490000002,
+      "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g03/producer-source-probe/build-3.log"
+    },
+    {
+      "stage": "tiny-producer-probe",
+      "command": [
+        "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/source-build/g03_producer_source_probe"
+      ],
+      "exit_code": 1,
+      "elapsed_seconds": 0.17995864399999562,
+      "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g03/producer-source-probe/tiny-producer-probe-3.log"
+    },
+    {
+      "stage": "build",
+      "command": [
+        "cmake",
+        "--build",
+        "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/source-build",
+        "--target",
+        "g03_producer_source_probe",
+        "--parallel",
+        "4"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 1.2755043589999957,
+      "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g03/producer-source-probe/build-4.log"
+    },
+    {
+      "stage": "tiny-producer-probe",
+      "command": [
+        "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/source-build/g03_producer_source_probe"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 0.18013784299999713,
+      "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g03/producer-source-probe/tiny-producer-probe-4.log"
+    }
+  ],
+  "cumulative_seconds": 55.96659163099998
+}
