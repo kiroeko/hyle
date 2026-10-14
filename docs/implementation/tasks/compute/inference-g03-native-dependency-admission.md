@@ -1,6 +1,6 @@
 # G03 原 native dependency 的取消接纳边界
 
-状态：AUDITED，2026-10-14；owner compute_route_apple、compute_route_vulkan；
+状态：CANDIDATE，2026-10-14；owner compute_route_apple、compute_route_vulkan；
 baseline `8512c09ebee5c1efd54d133b4a795df059517dca`。原 source
 [terminal](inference-g03-copy-update-terminal.md)保持历史事实；本轮由
 [真实 receiver 反例](../../../../evidence/architecture/inference-g03-pending-attention-receiver/README.md)
@@ -72,3 +72,15 @@ Completion 和原 binding 不变。trusted batch adapter 在原 endpoint qualifi
 七问已裁决：无新增第三方/FFI；两个具名纵切与真实反例；复用原 native/F1/F2；
 P0 原结构成本；三种交付/相关头适用；错误非消费与指南说明。工程/正确性/交付/
 红队仍待实跑，AUDITED 不写 PASS。原 source terminal 的其它资格和失败仍保。
+
+## Candidate 与实际 source 检查
+
+不可变产品 candidate `9404af694`；只改三 qualifier 的原 cancel 检查，公共签名/
+layout/数学/默认机制不变。两实际 native source 取消接纳与成功 attention 对照通过，
+Apple 同时验证原 native invocation 与 copy recording 的 pending cancel 拒绝；
+Vulkan 验证实际 Run/copy fence 的 pending cancel 拒绝。source 控制保留，最终退休后
+仍无 mutable success。两 route 各原公共 65 steps、Apple 原 8/Vulkan 原 6 生命周期
+亦通过，累计 14.560 秒。这里不宣称 Vulkan managed producer 的原 unsupported
+prefix 已变为支持，不签最终 receiver 错误合并/late native 输出。
+
+三交付/宿主风险与直接 consumer 影响回映仍待验；没有未运行 PASS。
