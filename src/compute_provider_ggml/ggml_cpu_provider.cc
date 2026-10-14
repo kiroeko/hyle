@@ -6,6 +6,7 @@
 #include <algorithm>
 #include <array>
 #include <atomic>
+#include <bit>
 #include <climits>
 #include <cmath>
 #include <cstdint>
@@ -347,6 +348,28 @@ float cache_input_value(const ggml_tensor &input,std::int64_t index) noexcept {
   if(input.type==GGML_TYPE_F32)return static_cast<const float*>(input.data)[index];
   if(input.type==GGML_TYPE_F16)return ggml_fp16_to_fp32(static_cast<const ggml_fp16_t*>(input.data)[index]);
   return ggml_bf16_to_fp32(static_cast<const ggml_bf16_t*>(input.data)[index]);
+}
+bool valid_q8_query(const ggml_tensor &query) noexcept {
+  const auto count=ggml_nelements(&query);
+  constexpr auto limit=std::bit_cast<std::uint32_t>(65504.F*127.F);
+  std::uint32_t invalid=0;
+  // Positive IEEE encodings preserve magnitude order. This also rejects every
+  // Inf/NaN encoding without one external scalar conversion call per value.
+  // All three admitted query roots are dense and remain mapped through run().
+  if(query.type==GGML_TYPE_BF16){
+    const auto *values=static_cast<const ggml_bf16_t*>(query.data);
+    for(std::int64_t i=0;i<count;++i)
+      invalid|=(values[i].bits&0x7fffU)>(limit>>16);
+  }else if(query.type==GGML_TYPE_F16){
+    const auto *values=static_cast<const ggml_fp16_t*>(query.data);
+    for(std::int64_t i=0;i<count;++i)
+      invalid|=(values[i]&0x7fffU)>=0x7c00U;
+  }else if(query.type==GGML_TYPE_F32){
+    const auto *values=static_cast<const float*>(query.data);
+    for(std::int64_t i=0;i<count;++i)
+      invalid|=(std::bit_cast<std::uint32_t>(values[i])&0x7fffffffU)>limit;
+  }else return false;
+  return invalid==0;
 }
 void encode_cache_rows(ggml_tensor *output,int ith,int nth,void *opaque) noexcept {
   const auto &call=*static_cast<const CacheEncodingCall*>(opaque);
@@ -1185,12 +1208,8 @@ Status run(Program &program, Invocation &invocation,
   // batch queries are dense leaf bindings; refuse overflow before touching
   // outputs instead of allowing a finite BF16 value to produce an Inf scale.
   if(invocation.encoding)for(const auto *query:invocation.encoding->q8_queries){
-    const auto count=ggml_nelements(query);
-    for(std::int64_t i=0;i<count;++i){
-      const auto value=cache_input_value(*query,i);
-      if(!std::isfinite(value) || std::abs(value)>65504.F*127.F)
-        return finish(Status::InvalidArgument("Q8_0 attention requires finite queries and representable query scales"));
-    }
+    if(!valid_q8_query(*query))
+      return finish(Status::InvalidArgument("Q8_0 attention requires finite queries and representable query scales"));
   }
   // Indexed nodes are leaf boundaries. Validate current payload before the
   // original kernel can assert, and before mapping or modifying any output.

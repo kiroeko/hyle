@@ -887,3 +887,29 @@ finite/range验证按dtype在循环外派发，使用类型正确的inline位表
 GPU/math/原G03证据按输入与实际路径借用。重新冻结后只对同合同、同原仪器/样本/5%门
 做有限P1，若仍有material差异再按实际机制裁决。当前CUDAASan只执行已归档f772输入，
 不得从canonical反向覆盖或在其运行时再启动本机重型验证。
+
+### CUDA 新域宿主 ASan 实际结果
+
+[本阶段记录](../../../../evidence/correctness/inference-g04-g05-cuda-encoded-host-asan/receipt.json)
+绑定冻结的 CE12 前输入与实际 RTX4070/SM89：十项 native 数学、三个 Direct/Graph/CPU+CUDA
+增量消费者，以及五种 source 失败/unknown/晚到/放弃/foreign queue 风险全部通过地址检查。
+两次尝试累计已测509.217秒；第一次编译成功，测试启动脚本误用 bin 路径，保留原 FAIL 与
+启动耗时 unknown。第二次核对完整源码及实际二进制 SHA 后复用同一产物，仅续跑测试，未重编。
+原146对象 ggml CUDA archive 复用证明、完整宿主/FI sanitizer 命令和原始日志已封存。
+本阶段不签 LSan、UBSan/TSan、shader/driver 或 private-pool 上界；后两种宿主检查仍待运行。
+
+CE12 查询验证使用原类型的 IEEE magnitude 位顺序，循环外按 dtype 派发；F16 只需排除
+Inf/NaN，BF16/F32 保留同一65504*127界限。独立规则遍历每种16位格式全部65536种表示，
+与原 finite/range 判定无差异；这是源码规则复核，不冒充编译后测试。新增公开 consumer 对
+20种 F16、26种 BF16 表示各检查首尾，共92个 episode，涵盖正负边界/次正规/Inf/NaN、
+实际输出及 poisoned slot 生命周期。实际 source、三宿主风险与两安装配置结果尚待收集。
+
+CE12 第一次普通 factor 构建发现原 provider 测试 target 漏接真实 Batch/CPU route fixture：
+共享链接49个 unresolved，产品 provider 与新增测试 TU 已编译。该实际验证接缝只补
+provider 的 TEST_DEPS compute_route_cpu 及测试 target 的 compute_batch/compute_route_cpu；
+不改任何产品依赖、公开头、shipping target 或构建核心。原 FAIL/累计180.640秒保留，
+同一缓存树补接后仅续编选中的三个 factor/common target。
+
+selector 对仅 TEST_DEPS 的中央声明变化误选全库，已登记
+[独立工具反例](../build/validation-selector-test-only-component-deps.md)，保留原两份 plan；
+本轮按已证明的测试接线影响执行上述有限 gates，不重写 selector 或重编无关产品。

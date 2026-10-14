@@ -8,6 +8,7 @@
 #include "../compute_provider_native/half_test_support.h"
 #include <array>
 #include <algorithm>
+#include <bit>
 #include <cmath>
 #include <cstring>
 #include <cstdio>
@@ -405,6 +406,58 @@ TEST(GgmlCpuBoxed, FiniteBf16QueryScaleOverflowIsAnAcceptedErrorAndFreshSlotSucc
     ASSERT_TRUE(slot.close().ok());
   }
   ASSERT_TRUE(context.drain().ok());
+}
+
+template<class T>void query_representation_boundaries(std::span<const std::uint16_t> codes){
+  auto context=c::cpu::create_context({.native_threads=1}).value();
+  auto queue=context.create_queue().value();
+  const c::BatchCapacity cap{.storage=c::BatchStorage::kRagged,.query_type=half_test::data_type<T>(),
+    .output_type=half_test::data_type<T>(),.key_storage=c::CacheStorage::q8_0().value(),
+    .value_storage=c::CacheStorage::q8_0().value(),.max_query_rows=1,.max_kv_rows=1,
+    .max_pages=0,.max_page_refs=0,.qk_head_dim=64,.value_head_dim=64,.page_size=1};
+  auto schema=c::BatchSchema::create(cap).value();
+  const std::array<std::int32_t,2> indptr{0,1};auto layout=schema.version({indptr,indptr,{},{}}).value();
+  std::vector<float> zero(64,0.F),one(64,1.F);std::vector<std::uint8_t> kb,vb;
+  ASSERT_TRUE(encode_words(half_test::data_type<T>(),cap.key_storage,zero,kb).ok());
+  ASSERT_TRUE(encode_words(half_test::data_type<T>(),cap.value_storage,one,vb).ok());
+  auto pool=c::LeasePool::create(hyle::mem::system_resource(),2048).value();
+  const auto load=[&](std::span<const std::byte> bytes){auto writer=pool.allocate(bytes.size()).value();
+    EXPECT_TRUE(writer.view()->write(bytes).ok());return writer.publish().value();};
+  auto k=load(std::as_bytes(std::span(kb))),v=load(std::as_bytes(std::span(vb)));
+  auto program=c::BatchProgram::prepare(context,schema,{.resource=hyle::mem::system_resource(),.scale=.125F}).value();
+  for(auto code:codes)for(unsigned index:{0u,63u}){
+    SCOPED_TRACE(::testing::Message()<<"code="<<code<<" index="<<index);
+    std::array<T,64> query;query.fill(half_test::encode<T>(1.F));query[index]=T::from_bits(code);
+    const auto value=half_test::decode(query[index]);
+    const bool valid=std::isfinite(value)&&std::abs(value)<=65504.*127.;
+    auto slot=c::BatchInvocation::create(program,queue).value();auto prepared=slot.update_batch(layout);
+    ASSERT_TRUE(prepared)<<prepared.error().message();
+    auto q=load(std::as_bytes(std::span(query)));const std::array inputs{q,k,v};
+    auto completion=prepared->run(inputs);ASSERT_TRUE(completion)<<completion.error().message();
+    const auto status=completion->wait();
+    if(valid){
+      ASSERT_TRUE(status.ok())<<status.message();auto output=slot.output().value();std::array<T,64> actual;
+      ASSERT_TRUE(output.view()->read(std::as_writable_bytes(std::span(actual))).ok());
+      for(auto element:actual)EXPECT_NEAR(half_test::decode(element),1.,.01);
+    }else{
+      EXPECT_TRUE(status.IsInvalidArgument())<<status.message();EXPECT_FALSE(slot.output());
+      *completion={};*prepared={};auto refused=slot.update_batch(layout);
+      ASSERT_FALSE(refused);EXPECT_TRUE(refused.error().IsFailedPrecondition());
+    }
+    *completion={};*prepared={};ASSERT_TRUE(slot.close().ok());
+  }
+  ASSERT_TRUE(context.drain().ok());
+}
+TEST(GgmlCpuBoxed, QuerySafetyChecksBothEndsAtRepresentationBoundaries){
+  const std::array<std::uint16_t,20> half{0,0x8000,1,0x8001,0x03ff,0x83ff,0x0400,0x8400,
+    0x3c00,0xbc00,0x7bff,0xfbff,0x7c00,0xfc00,0x7c01,0xfc01,0x7e00,0xfe00,0x7fff,0xffff};
+  query_representation_boundaries<hyle::simd::float16_t>(half);
+  constexpr auto edge=std::uint16_t(std::bit_cast<std::uint32_t>(65504.F*127.F)>>16);
+  const std::array<std::uint16_t,26> bfloat{0,0x8000,1,0x8001,0x007f,0x807f,0x0080,0x8080,
+    0x3f80,0xbf80,std::uint16_t(edge-1),edge,std::uint16_t(edge+1),
+    std::uint16_t((edge-1)|0x8000),std::uint16_t(edge|0x8000),std::uint16_t((edge+1)|0x8000),
+    0x7f7f,0xff7f,0x7f80,0xff80,0x7f81,0xff81,0x7fc0,0xffc0,0x7fff,0xffff};
+  query_representation_boundaries<hyle::simd::bfloat16_t>(bfloat);
 }
 
 template<class T>void paged_case(unsigned depth,bool causal){

@@ -362,6 +362,7 @@ _hyle_declare_component(compute_provider_onednn
 _hyle_declare_component(compute_provider_ggml
   PRIVATE_DEPS compute_backend_cpu compute_batch compute_ops compute_ggml_runtime error mem simd
   PUBLIC_DEPS core compute
+  TEST_DEPS compute_route_cpu
   SPLIT_PUBLIC_HEADERS hyle/compute/providers/ggml_cpu.h)
 
 # Graph-only oneDNN BRGEMM region.  Its public factory remains provider-erased;
