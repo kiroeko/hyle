@@ -1,0 +1,4 @@
+actual CUDA CopyBatchUpdate mode=0 PASS:1024bytes real gate/memset/copy, success/unsupported-cancel/unknown/abandon original terminal and native retirement
+actual CUDA CopyBatchUpdate mode=1 PASS:1024bytes real gate/memset/copy, success/unsupported-cancel/unknown/abandon original terminal and native retirement
+actual CUDA CopyBatchUpdate mode=2 PASS:1024bytes real gate/memset/copy, success/unsupported-cancel/unknown/abandon original terminal and native retirement
+actual CUDA CopyBatchUpdate mode=3 PASS:1024bytes real gate/memset/copy, success/unsupported-cancel/unknown/abandon original terminal and native retirement

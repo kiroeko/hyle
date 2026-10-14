@@ -72,3 +72,26 @@ admission；本主卡不因此进入AUDITED，不把fixture线程/wait当产品�
 canonical，Air only实查身份，WSL/Air可丢弃单向副本。所有heavy serial、最多四jobs，
 不跑本地重型GPU/full model、不重启旧Windows大套件、不改公共构建/性能/治理工具。
 停止依据有限FIX和实际门裁决，普通一次失败/未知/短观察timeout不作为停止或重启理由。
+
+## 当前已完成的 source 接缝与有限下一步
+
+原F2的[CopyBatchUpdate有限terminal](inference-g03-copy-update-terminal.md)现已关闭
+compute/Apple/Vulkan三source owner CU01–CU03：两原controls移动到唯一观察owner，
+trusted mutable geometry/root/last-write、保原native prefix、原ordered read admission；
+四source/生命周期/六hostsan/六SDK与定向Windows证据成立。这里是当前主卡重新纳入
+的已验输入，不授权重新修改CLOSED source产品。
+
+接下来本主卡的有限审计只固定两个仍真实缺失的receiver组合：
+
+1. 原Paged/Batch controller消费移交的update，精确核页原root/初始化/布局/写范围与
+   全部referenced页权限，借原native endpoint排序和F1 use；最终合并所有producer/
+   acceptedprefix错误，actual suffix退休前保原source owner，不伪造ReadLease或新队列。
+2. 原Direct/native producer到update的实际输出寿命：CPU/CUDA已存在caller-owned
+   writer/producer自然序列；Apple original backing在原worker eval之后才产生，Vulkan
+   冷buffer不是成功读取权限。需逐原owner确定late backing/已接纳native输出的受控
+   消费入口、cold/warm账与失败/取消/unknown规则，再固定scope/audit/FIX。不得由ready
+   显式hostwait版本代签；新source机制如确需修改CLOSED owner，另注册真实新轮。
+
+仍须四路线/三CPU+GPU联合、主attention与正交数值reduction、64步两request/两slot/
+旧结果、actual数值oracle及完整风险/交付。当前仅SCOPED，未固定receiver公开形状，
+不允许compute_batch产品实现。原G01/G02未决门及G04–G10目标全部保留。

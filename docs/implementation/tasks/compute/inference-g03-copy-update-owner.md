@@ -1,6 +1,6 @@
 # G03 原 F2 update 所有权与受控 pending 输入
 
-状态：CANDIDATE，2026-10-14；owner `compute`、`compute_route_apple`、
+状态：CLOSED，2026-10-14；owner `compute`、`compute_route_apple`、
 `compute_route_vulkan`；baseline `f764a1053`。compute_batch仍按
 [主卡](inference-g03-pending-page-consumption.md)SCOPED裁决完整receiver/页/late native输出。
 本卡是必要的F2 source权限接缝，不签整个pending producer→attention或G03。
@@ -131,3 +131,19 @@ handles，几何/known-status/native-prefix检查按原finite phases/copies有�
 运行适用hostsan与source/static/shared公共consumer/独立头/定向Windows，保上面所有
 fixture FAIL/预算与原private UNKNOWN。不重跑已闭数学P1，不把真实copy后继当attention
 数学资格；主卡compute_batch仍SCOPED。若新事实改变此形状，先合法退回AUDITED。
+
+## CU03 当前资格
+
+[Windows定向验证](../../../../evidence/correctness/inference-g03-copy-update-windows/README.md)
+已完成MSVC编译/link及CPU65步，252.547s；原Vulkan candidate编译不代签WindowsGPU。
+[Vulkan六生命周期](../../../../evidence/correctness/inference-g03-copy-update-vulkan-risks/README.md)
+已通过成功/原suffix拒绝/unknown/closed/cancel/abandon。unknown observation按原Run合同
+仍pending/Unavailable，typed geometry/native prefix仅借用，不能public ready；实际fence
+退休后保第一OOM并拒绝input/dependency/writer。初版fixture错误预期立即OOM与geometry
+拒绝的FAIL保留，未改candidate。abandon只屏蔽positive poll、原native fence/wait保真。
+六hostsan已启动；CPU新增published/坏ID/unaccepted/inline原source拒绝测试属于fixture。
+风险/SDK尚未全验收，CANDIDATE与完整主卡SCOPED保持，不写CLOSED。
+
+有限CU01–CU03现按[terminal](inference-g03-copy-update-terminal.md)收口，四source与
+生命周期、六hostsan、六SDK/18heads及Windows已实际通过；不恢复本卡日常施工。
+完整receiver/late native backing继续compute_batch主卡，新产品需求须新scope/audit。

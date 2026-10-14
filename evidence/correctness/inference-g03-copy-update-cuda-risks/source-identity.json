@@ -1,0 +1,12 @@
+{
+  "product": "bcaec010b528e372671f737f40b4aa53eb076aaf",
+  "canonical_equals_validation": true,
+  "files": {
+    "include/hyle/compute/batch_transfer.h": "3319446ddbfb9b58b3ee5ddef6b4ca63dfc6d34c9e4423fe6edf865d98fedb60",
+    "include/hyle/compute/detail/copy_stream_access.h": "bf3e1abb1d1b2a711b1464080d013307ab9e147d6b7f75e58d6381ba94e9475c",
+    "src/compute/batch_transfer.cc": "9956069af542795f34d00f036c409178fa77246a96b1dab5c8f9ac3e0f58adeb",
+    "tests/compute_batch/copy_update_cuda_risks.cc": "04e787e210bcb26aa30883bfa2eeb5f18428e8917cccd3dcba5b5576517dc5f8",
+    "src/compute_backend_cuda/cuda_backend.cc": "10c52cc53f313ee850d71f24b06277fb02f483c82a84c9d143c0f908b31712f5",
+    "src/compute_backend_cuda/cuda_internal.h": "5ca7d7a0f154ed0c475b7acff918ba529af82f8bbefd3e3c5db3cf756079f402"
+  }
+}

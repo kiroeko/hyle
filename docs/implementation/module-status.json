@@ -270,10 +270,14 @@
     },
     {
       "module": "compute",
-      "state": "CANDIDATE",
-      "record": "docs/implementation/tasks/compute/inference-g03-copy-update-owner.md",
-      "summary": "G03 CopyBatchUpdate CU01/CU02 原controls所有权与trusted pending input/native prefix/admit_read已固定；四source公共64步、Apple五生命周期及真实原copy后继三场景、CUDA gated成功权限/prefix通过。CU03其余失败/unknown、hostsan、SDK/独立头和Windows资格仍施工；不签完整pending attention或G03。",
-      "candidate": "bcaec010b528e372671f737f40b4aa53eb076aaf"
+      "state": "CLOSED",
+      "record": "docs/implementation/tasks/compute/inference-g03-copy-update-terminal.md",
+      "summary": "G03 CU01–CU03有限source CLOSED：CopyBatchUpdate移动原2controls、typed pending input/native prefix/ordered read复用原F1/F2。四source公共65步、Apple8/Vulkan6/CUDA4风险/CPU6、六hostsan、六SDK18heads与Windows通过；P0旧常态字段/队列/分配/锁/原子不变。完整pending attention/late输出仍compute_batch SCOPED，原native同步/取消差异/privateUNKNOWN和其它G项保留。",
+      "candidate": "bcaec010b528e372671f737f40b4aa53eb076aaf",
+      "performance": {
+        "tier": "P0",
+        "evidence": "docs/implementation/tasks/compute/inference-g03-copy-update-terminal.md"
+      }
     },
     {
       "module": "graph",
@@ -510,10 +514,14 @@
     },
     {
       "module": "compute_route_apple",
-      "state": "CANDIDATE",
-      "record": "docs/implementation/tasks/compute/inference-g03-copy-update-owner.md",
-      "summary": "G03 CopyBatchUpdate CU01/CU02 原controls所有权与trusted pending input/native prefix/admit_read已固定；四source公共64步、Apple五生命周期及真实原copy后继三场景、CUDA gated成功权限/prefix通过。CU03其余失败/unknown、hostsan、SDK/独立头和Windows资格仍施工；不签完整pending attention或G03。",
-      "candidate": "bcaec010b528e372671f737f40b4aa53eb076aaf"
+      "state": "CLOSED",
+      "record": "docs/implementation/tasks/compute/inference-g03-copy-update-terminal.md",
+      "summary": "G03 CU01–CU03有限source CLOSED：CopyBatchUpdate移动原2controls、typed pending input/native prefix/ordered read复用原F1/F2。四source公共65步、Apple8/Vulkan6/CUDA4风险/CPU6、六hostsan、六SDK18heads与Windows通过；P0旧常态字段/队列/分配/锁/原子不变。完整pending attention/late输出仍compute_batch SCOPED，原native同步/取消差异/privateUNKNOWN和其它G项保留。",
+      "candidate": "bcaec010b528e372671f737f40b4aa53eb076aaf",
+      "performance": {
+        "tier": "P0",
+        "evidence": "docs/implementation/tasks/compute/inference-g03-copy-update-terminal.md"
+      }
     },
     {
       "module": "graph_route_apple",
@@ -528,10 +536,14 @@
     },
     {
       "module": "compute_route_vulkan",
-      "state": "CANDIDATE",
-      "record": "docs/implementation/tasks/compute/inference-g03-copy-update-owner.md",
-      "summary": "G03 CopyBatchUpdate CU01/CU02 原controls所有权与trusted pending input/native prefix/admit_read已固定；四source公共64步、Apple五生命周期及真实原copy后继三场景、CUDA gated成功权限/prefix通过。CU03其余失败/unknown、hostsan、SDK/独立头和Windows资格仍施工；不签完整pending attention或G03。",
-      "candidate": "bcaec010b528e372671f737f40b4aa53eb076aaf"
+      "state": "CLOSED",
+      "record": "docs/implementation/tasks/compute/inference-g03-copy-update-terminal.md",
+      "summary": "G03 CU01–CU03有限source CLOSED：CopyBatchUpdate移动原2controls、typed pending input/native prefix/ordered read复用原F1/F2。四source公共65步、Apple8/Vulkan6/CUDA4风险/CPU6、六hostsan、六SDK18heads与Windows通过；P0旧常态字段/队列/分配/锁/原子不变。完整pending attention/late输出仍compute_batch SCOPED，原native同步/取消差异/privateUNKNOWN和其它G项保留。",
+      "candidate": "bcaec010b528e372671f737f40b4aa53eb076aaf",
+      "performance": {
+        "tier": "P0",
+        "evidence": "docs/implementation/tasks/compute/inference-g03-copy-update-terminal.md"
+      }
     },
     {
       "module": "graph_route_vulkan",

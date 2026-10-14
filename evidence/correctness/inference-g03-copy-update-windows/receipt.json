@@ -1,0 +1,32 @@
+{
+  "baseline": "ac27cdd517c845775ccef846b638c140101e5256",
+  "source_sha256": "b10205e309ec573d0d29557ff7fd8200f31f9d4b4150b406a95275198444f95e",
+  "scope": "AUDITED CopyBatchUpdate Windows CPU public64; native owners compile only; no GPU run",
+  "stages": [
+    {
+      "stage": "build",
+      "command": [
+        "cmake",
+        "--build",
+        "C:\\h7\\inference-g01-native-vulkan\\build",
+        "--target",
+        "g03_copy_update_public",
+        "--parallel",
+        "4"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 252.42199999999139,
+      "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g03\\copy-update-windows-cpu\\build-1.log"
+    },
+    {
+      "stage": "host-cpu-public-probe",
+      "command": [
+        "C:\\h7\\inference-g01-native-vulkan\\build\\g03_copy_update_public.exe"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 0.125,
+      "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g03\\copy-update-windows-cpu\\host-cpu-public-probe-1.log"
+    }
+  ],
+  "cumulative_seconds": 252.54699999999139
+}

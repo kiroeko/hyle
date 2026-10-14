@@ -1,0 +1,97 @@
+{
+  "candidate": "bcaec010b528e372671f737f40b4aa53eb076aaf",
+  "stages": [
+    {
+      "route": "apple",
+      "mode": "asan",
+      "command": [
+        "python3",
+        "/Users/kiro/hyle-scratch/compute-unified/g03-copy-update-host/copy_update_san_air.py",
+        "apple",
+        "asan"
+      ],
+      "exit_code": 1,
+      "elapsed_seconds": 0.014487749999999997,
+      "log": "/Users/kiro/hyle-scratch/compute-unified/g03-copy-update-host-all/apple-asan-1.log"
+    },
+    {
+      "route": "apple",
+      "mode": "asan",
+      "command": [
+        "python3",
+        "/Users/kiro/hyle-scratch/compute-unified/g03-copy-update-host/copy_update_san_air.py",
+        "apple",
+        "asan"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 19.746654167,
+      "log": "/Users/kiro/hyle-scratch/compute-unified/g03-copy-update-host-all/apple-asan-2.log"
+    },
+    {
+      "route": "apple",
+      "mode": "ubsan",
+      "command": [
+        "python3",
+        "/Users/kiro/hyle-scratch/compute-unified/g03-copy-update-host/copy_update_san_air.py",
+        "apple",
+        "ubsan"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 20.011461083999997,
+      "log": "/Users/kiro/hyle-scratch/compute-unified/g03-copy-update-host-all/apple-ubsan-1.log"
+    },
+    {
+      "route": "apple",
+      "mode": "tsan",
+      "command": [
+        "python3",
+        "/Users/kiro/hyle-scratch/compute-unified/g03-copy-update-host/copy_update_san_air.py",
+        "apple",
+        "tsan"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 22.549870792,
+      "log": "/Users/kiro/hyle-scratch/compute-unified/g03-copy-update-host-all/apple-tsan-1.log"
+    },
+    {
+      "route": "vulkan",
+      "mode": "asan",
+      "command": [
+        "python3",
+        "/Users/kiro/hyle-scratch/compute-unified/g03-copy-update-host/copy_update_san_air.py",
+        "vulkan",
+        "asan"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 35.000899541,
+      "log": "/Users/kiro/hyle-scratch/compute-unified/g03-copy-update-host-all/vulkan-asan-1.log"
+    },
+    {
+      "route": "vulkan",
+      "mode": "ubsan",
+      "command": [
+        "python3",
+        "/Users/kiro/hyle-scratch/compute-unified/g03-copy-update-host/copy_update_san_air.py",
+        "vulkan",
+        "ubsan"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 35.47559887499999,
+      "log": "/Users/kiro/hyle-scratch/compute-unified/g03-copy-update-host-all/vulkan-ubsan-1.log"
+    },
+    {
+      "route": "vulkan",
+      "mode": "tsan",
+      "command": [
+        "python3",
+        "/Users/kiro/hyle-scratch/compute-unified/g03-copy-update-host/copy_update_san_air.py",
+        "vulkan",
+        "tsan"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 37.96875070799999,
+      "log": "/Users/kiro/hyle-scratch/compute-unified/g03-copy-update-host-all/vulkan-tsan-1.log"
+    }
+  ],
+  "cumulative_seconds": 170.767722917
+}

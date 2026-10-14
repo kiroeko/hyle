@@ -1,0 +1,216 @@
+apple/asan: PASS; 19.747s
+apple/ubsan: PASS; 20.011s
+apple/tsan: PASS; 22.550s
+vulkan/asan: PASS; 35.001s
+vulkan/ubsan: PASS; 35.476s
+vulkan/tsan: PASS; 37.969s
+
+public CopyBatchUpdate PASS: initialization + 64 dirty updates, 1024/16384 bytes, original generation/cold slot, foreign rejection and control recovery
+
+actual Apple original copy invocation+submission move handoff mode=0 PASS; one observer, original retirement/guards/failure, 16-byte local owner; explicit fixture wait, not pending attention qualification
+actual Apple original copy invocation+submission move handoff mode=1 PASS; one observer, original retirement/guards/failure, 16-byte local owner; explicit fixture wait, not pending attention qualification
+actual Apple original copy invocation+submission move handoff mode=2 PASS; one observer, original retirement/guards/failure, 16-byte local owner; explicit fixture wait, not pending attention qualification
+actual Apple original copy invocation+submission move handoff mode=3 PASS; one observer, original retirement/guards/failure, 16-byte local owner; explicit fixture wait, not pending attention qualification
+actual Apple original copy invocation+submission move handoff mode=4 PASS; one observer, original retirement/guards/failure, 16-byte local owner; explicit fixture wait, not pending attention qualification
+actual Apple typed update -> original native copy suffix mode=0 PASS; foreign endpoint rejected, original ordered read guard, terminal propagation; only final suffix host wait; source seam proof, not pending attention
+actual Apple typed update -> original native copy suffix mode=1 PASS; foreign endpoint rejected, original ordered read guard, terminal propagation; only final suffix host wait; source seam proof, not pending attention
+actual Apple typed update -> original native copy suffix mode=2 PASS; foreign endpoint rejected, original ordered read guard, terminal propagation; only final suffix host wait; source seam proof, not pending attention
+
+Running main() from /Users/kiro/Library/Caches/hyle/dependencies/v1/sources/googletest-063de7e9578f-162765170ae6/googletest/src/gtest_main.cc
+[==========] Running 6 tests from 2 test suites.
+[----------] Global test environment set-up.
+[----------] 5 tests from CpuCopyProgram
+[ RUN      ] CpuCopyProgram.TwoSlotsUseOriginalSynchronousCopyAndFixedMetadataReplay
+[       OK ] CpuCopyProgram.TwoSlotsUseOriginalSynchronousCopyAndFixedMetadataReplay (15 ms)
+[ RUN      ] CpuCopyProgram.LaterWriteBlocksEarlierOutputAndAliasHazardsRequireExplicitPhases
+[       OK ] CpuCopyProgram.LaterWriteBlocksEarlierOutputAndAliasHazardsRequireExplicitPhases (0 ms)
+[ RUN      ] CpuCopyProgram.PhysicalSelfCopyAcrossReadSubviewsEmptyInvalidAndOomHaveNoNativeWork
+[       OK ] CpuCopyProgram.PhysicalSelfCopyAcrossReadSubviewsEmptyInvalidAndOomHaveNoNativeWork (0 ms)
+[ RUN      ] CpuCopyProgram.StreamChunksKeepWholeTargetMutableUntilGroupPublication
+[       OK ] CpuCopyProgram.StreamChunksKeepWholeTargetMutableUntilGroupPublication (0 ms)
+[ RUN      ] CpuCopyProgram.StreamWithdrawalAndBackingAccountingPreserveOriginalOwners
+[       OK ] CpuCopyProgram.StreamWithdrawalAndBackingAccountingPreserveOriginalOwners (0 ms)
+[----------] 5 tests from CpuCopyProgram (16 ms total)
+
+[----------] 1 test from CpuCopyUpdate
+[ RUN      ] CpuCopyUpdate.InvalidUnacceptedAndPublishedControlsDoNotCreatePendingAuthority
+[       OK ] CpuCopyUpdate.InvalidUnacceptedAndPublishedControlsDoNotCreatePendingAuthority (0 ms)
+[----------] 1 test from CpuCopyUpdate (0 ms total)
+
+[----------] Global test environment tear-down
+[==========] 6 tests from 2 test suites ran. (16 ms total)
+[  PASSED  ] 6 tests.
+
+public CopyBatchUpdate PASS: initialization + 64 dirty updates, 1024/16384 bytes, original generation/cold slot, foreign rejection and control recovery
+
+actual Apple original copy invocation+submission move handoff mode=0 PASS; one observer, original retirement/guards/failure, 16-byte local owner; explicit fixture wait, not pending attention qualification
+actual Apple original copy invocation+submission move handoff mode=1 PASS; one observer, original retirement/guards/failure, 16-byte local owner; explicit fixture wait, not pending attention qualification
+actual Apple original copy invocation+submission move handoff mode=2 PASS; one observer, original retirement/guards/failure, 16-byte local owner; explicit fixture wait, not pending attention qualification
+actual Apple original copy invocation+submission move handoff mode=3 PASS; one observer, original retirement/guards/failure, 16-byte local owner; explicit fixture wait, not pending attention qualification
+actual Apple original copy invocation+submission move handoff mode=4 PASS; one observer, original retirement/guards/failure, 16-byte local owner; explicit fixture wait, not pending attention qualification
+actual Apple typed update -> original native copy suffix mode=0 PASS; foreign endpoint rejected, original ordered read guard, terminal propagation; only final suffix host wait; source seam proof, not pending attention
+actual Apple typed update -> original native copy suffix mode=1 PASS; foreign endpoint rejected, original ordered read guard, terminal propagation; only final suffix host wait; source seam proof, not pending attention
+actual Apple typed update -> original native copy suffix mode=2 PASS; foreign endpoint rejected, original ordered read guard, terminal propagation; only final suffix host wait; source seam proof, not pending attention
+
+Running main() from /Users/kiro/Library/Caches/hyle/dependencies/v1/sources/googletest-063de7e9578f-162765170ae6/googletest/src/gtest_main.cc
+[==========] Running 6 tests from 2 test suites.
+[----------] Global test environment set-up.
+[----------] 5 tests from CpuCopyProgram
+[ RUN      ] CpuCopyProgram.TwoSlotsUseOriginalSynchronousCopyAndFixedMetadataReplay
+[       OK ] CpuCopyProgram.TwoSlotsUseOriginalSynchronousCopyAndFixedMetadataReplay (0 ms)
+[ RUN      ] CpuCopyProgram.LaterWriteBlocksEarlierOutputAndAliasHazardsRequireExplicitPhases
+[       OK ] CpuCopyProgram.LaterWriteBlocksEarlierOutputAndAliasHazardsRequireExplicitPhases (0 ms)
+[ RUN      ] CpuCopyProgram.PhysicalSelfCopyAcrossReadSubviewsEmptyInvalidAndOomHaveNoNativeWork
+[       OK ] CpuCopyProgram.PhysicalSelfCopyAcrossReadSubviewsEmptyInvalidAndOomHaveNoNativeWork (0 ms)
+[ RUN      ] CpuCopyProgram.StreamChunksKeepWholeTargetMutableUntilGroupPublication
+[       OK ] CpuCopyProgram.StreamChunksKeepWholeTargetMutableUntilGroupPublication (0 ms)
+[ RUN      ] CpuCopyProgram.StreamWithdrawalAndBackingAccountingPreserveOriginalOwners
+[       OK ] CpuCopyProgram.StreamWithdrawalAndBackingAccountingPreserveOriginalOwners (0 ms)
+[----------] 5 tests from CpuCopyProgram (0 ms total)
+
+[----------] 1 test from CpuCopyUpdate
+[ RUN      ] CpuCopyUpdate.InvalidUnacceptedAndPublishedControlsDoNotCreatePendingAuthority
+[       OK ] CpuCopyUpdate.InvalidUnacceptedAndPublishedControlsDoNotCreatePendingAuthority (0 ms)
+[----------] 1 test from CpuCopyUpdate (0 ms total)
+
+[----------] Global test environment tear-down
+[==========] 6 tests from 2 test suites ran. (0 ms total)
+[  PASSED  ] 6 tests.
+
+public CopyBatchUpdate PASS: initialization + 64 dirty updates, 1024/16384 bytes, original generation/cold slot, foreign rejection and control recovery
+
+actual Apple original copy invocation+submission move handoff mode=0 PASS; one observer, original retirement/guards/failure, 16-byte local owner; explicit fixture wait, not pending attention qualification
+actual Apple original copy invocation+submission move handoff mode=1 PASS; one observer, original retirement/guards/failure, 16-byte local owner; explicit fixture wait, not pending attention qualification
+actual Apple original copy invocation+submission move handoff mode=2 PASS; one observer, original retirement/guards/failure, 16-byte local owner; explicit fixture wait, not pending attention qualification
+actual Apple original copy invocation+submission move handoff mode=3 PASS; one observer, original retirement/guards/failure, 16-byte local owner; explicit fixture wait, not pending attention qualification
+actual Apple original copy invocation+submission move handoff mode=4 PASS; one observer, original retirement/guards/failure, 16-byte local owner; explicit fixture wait, not pending attention qualification
+actual Apple typed update -> original native copy suffix mode=0 PASS; foreign endpoint rejected, original ordered read guard, terminal propagation; only final suffix host wait; source seam proof, not pending attention
+actual Apple typed update -> original native copy suffix mode=1 PASS; foreign endpoint rejected, original ordered read guard, terminal propagation; only final suffix host wait; source seam proof, not pending attention
+actual Apple typed update -> original native copy suffix mode=2 PASS; foreign endpoint rejected, original ordered read guard, terminal propagation; only final suffix host wait; source seam proof, not pending attention
+
+Running main() from /Users/kiro/Library/Caches/hyle/dependencies/v1/sources/googletest-063de7e9578f-162765170ae6/googletest/src/gtest_main.cc
+[==========] Running 6 tests from 2 test suites.
+[----------] Global test environment set-up.
+[----------] 5 tests from CpuCopyProgram
+[ RUN      ] CpuCopyProgram.TwoSlotsUseOriginalSynchronousCopyAndFixedMetadataReplay
+[       OK ] CpuCopyProgram.TwoSlotsUseOriginalSynchronousCopyAndFixedMetadataReplay (0 ms)
+[ RUN      ] CpuCopyProgram.LaterWriteBlocksEarlierOutputAndAliasHazardsRequireExplicitPhases
+[       OK ] CpuCopyProgram.LaterWriteBlocksEarlierOutputAndAliasHazardsRequireExplicitPhases (0 ms)
+[ RUN      ] CpuCopyProgram.PhysicalSelfCopyAcrossReadSubviewsEmptyInvalidAndOomHaveNoNativeWork
+[       OK ] CpuCopyProgram.PhysicalSelfCopyAcrossReadSubviewsEmptyInvalidAndOomHaveNoNativeWork (0 ms)
+[ RUN      ] CpuCopyProgram.StreamChunksKeepWholeTargetMutableUntilGroupPublication
+[       OK ] CpuCopyProgram.StreamChunksKeepWholeTargetMutableUntilGroupPublication (0 ms)
+[ RUN      ] CpuCopyProgram.StreamWithdrawalAndBackingAccountingPreserveOriginalOwners
+[       OK ] CpuCopyProgram.StreamWithdrawalAndBackingAccountingPreserveOriginalOwners (0 ms)
+[----------] 5 tests from CpuCopyProgram (1 ms total)
+
+[----------] 1 test from CpuCopyUpdate
+[ RUN      ] CpuCopyUpdate.InvalidUnacceptedAndPublishedControlsDoNotCreatePendingAuthority
+[       OK ] CpuCopyUpdate.InvalidUnacceptedAndPublishedControlsDoNotCreatePendingAuthority (0 ms)
+[----------] 1 test from CpuCopyUpdate (0 ms total)
+
+[----------] Global test environment tear-down
+[==========] 6 tests from 2 test suites ran. (1 ms total)
+[  PASSED  ] 6 tests.
+
+public CopyBatchUpdate PASS: initialization + 64 dirty updates, 1024/16384 bytes, original generation/cold slot, foreign rejection and control recovery
+
+actual Vulkan CopyBatchUpdate mode=0 PASS: native submits=1 accepted=1 waits=1 confirmed=0; original permissions/terminal/retirement retained
+actual Vulkan CopyBatchUpdate mode=1 PASS: native submits=1 accepted=0 waits=0 confirmed=0; original permissions/terminal/retirement retained
+actual Vulkan CopyBatchUpdate mode=2 PASS: native submits=1 accepted=1 waits=1 confirmed=0; original permissions/terminal/retirement retained
+actual Vulkan CopyBatchUpdate mode=3 PASS: native submits=1 accepted=1 waits=1 confirmed=0; original permissions/terminal/retirement retained
+actual Vulkan CopyBatchUpdate mode=4 PASS: native submits=1 accepted=1 waits=1 confirmed=0; original permissions/terminal/retirement retained
+actual Vulkan CopyBatchUpdate mode=5 PASS: native submits=1 accepted=1 waits=1 confirmed=0; original permissions/terminal/retirement retained
+
+Running main() from /Users/kiro/Library/Caches/hyle/dependencies/v1/sources/googletest-063de7e9578f-162765170ae6/googletest/src/gtest_main.cc
+[==========] Running 6 tests from 2 test suites.
+[----------] Global test environment set-up.
+[----------] 5 tests from CpuCopyProgram
+[ RUN      ] CpuCopyProgram.TwoSlotsUseOriginalSynchronousCopyAndFixedMetadataReplay
+[       OK ] CpuCopyProgram.TwoSlotsUseOriginalSynchronousCopyAndFixedMetadataReplay (15 ms)
+[ RUN      ] CpuCopyProgram.LaterWriteBlocksEarlierOutputAndAliasHazardsRequireExplicitPhases
+[       OK ] CpuCopyProgram.LaterWriteBlocksEarlierOutputAndAliasHazardsRequireExplicitPhases (0 ms)
+[ RUN      ] CpuCopyProgram.PhysicalSelfCopyAcrossReadSubviewsEmptyInvalidAndOomHaveNoNativeWork
+[       OK ] CpuCopyProgram.PhysicalSelfCopyAcrossReadSubviewsEmptyInvalidAndOomHaveNoNativeWork (0 ms)
+[ RUN      ] CpuCopyProgram.StreamChunksKeepWholeTargetMutableUntilGroupPublication
+[       OK ] CpuCopyProgram.StreamChunksKeepWholeTargetMutableUntilGroupPublication (0 ms)
+[ RUN      ] CpuCopyProgram.StreamWithdrawalAndBackingAccountingPreserveOriginalOwners
+[       OK ] CpuCopyProgram.StreamWithdrawalAndBackingAccountingPreserveOriginalOwners (0 ms)
+[----------] 5 tests from CpuCopyProgram (15 ms total)
+
+[----------] 1 test from CpuCopyUpdate
+[ RUN      ] CpuCopyUpdate.InvalidUnacceptedAndPublishedControlsDoNotCreatePendingAuthority
+[       OK ] CpuCopyUpdate.InvalidUnacceptedAndPublishedControlsDoNotCreatePendingAuthority (0 ms)
+[----------] 1 test from CpuCopyUpdate (0 ms total)
+
+[----------] Global test environment tear-down
+[==========] 6 tests from 2 test suites ran. (15 ms total)
+[  PASSED  ] 6 tests.
+
+public CopyBatchUpdate PASS: initialization + 64 dirty updates, 1024/16384 bytes, original generation/cold slot, foreign rejection and control recovery
+
+actual Vulkan CopyBatchUpdate mode=0 PASS: native submits=1 accepted=1 waits=1 confirmed=0; original permissions/terminal/retirement retained
+actual Vulkan CopyBatchUpdate mode=1 PASS: native submits=1 accepted=0 waits=0 confirmed=0; original permissions/terminal/retirement retained
+actual Vulkan CopyBatchUpdate mode=2 PASS: native submits=1 accepted=1 waits=1 confirmed=0; original permissions/terminal/retirement retained
+actual Vulkan CopyBatchUpdate mode=3 PASS: native submits=1 accepted=1 waits=1 confirmed=0; original permissions/terminal/retirement retained
+actual Vulkan CopyBatchUpdate mode=4 PASS: native submits=1 accepted=1 waits=1 confirmed=0; original permissions/terminal/retirement retained
+actual Vulkan CopyBatchUpdate mode=5 PASS: native submits=1 accepted=1 waits=1 confirmed=0; original permissions/terminal/retirement retained
+
+Running main() from /Users/kiro/Library/Caches/hyle/dependencies/v1/sources/googletest-063de7e9578f-162765170ae6/googletest/src/gtest_main.cc
+[==========] Running 6 tests from 2 test suites.
+[----------] Global test environment set-up.
+[----------] 5 tests from CpuCopyProgram
+[ RUN      ] CpuCopyProgram.TwoSlotsUseOriginalSynchronousCopyAndFixedMetadataReplay
+[       OK ] CpuCopyProgram.TwoSlotsUseOriginalSynchronousCopyAndFixedMetadataReplay (0 ms)
+[ RUN      ] CpuCopyProgram.LaterWriteBlocksEarlierOutputAndAliasHazardsRequireExplicitPhases
+[       OK ] CpuCopyProgram.LaterWriteBlocksEarlierOutputAndAliasHazardsRequireExplicitPhases (0 ms)
+[ RUN      ] CpuCopyProgram.PhysicalSelfCopyAcrossReadSubviewsEmptyInvalidAndOomHaveNoNativeWork
+[       OK ] CpuCopyProgram.PhysicalSelfCopyAcrossReadSubviewsEmptyInvalidAndOomHaveNoNativeWork (0 ms)
+[ RUN      ] CpuCopyProgram.StreamChunksKeepWholeTargetMutableUntilGroupPublication
+[       OK ] CpuCopyProgram.StreamChunksKeepWholeTargetMutableUntilGroupPublication (0 ms)
+[ RUN      ] CpuCopyProgram.StreamWithdrawalAndBackingAccountingPreserveOriginalOwners
+[       OK ] CpuCopyProgram.StreamWithdrawalAndBackingAccountingPreserveOriginalOwners (0 ms)
+[----------] 5 tests from CpuCopyProgram (0 ms total)
+
+[----------] 1 test from CpuCopyUpdate
+[ RUN      ] CpuCopyUpdate.InvalidUnacceptedAndPublishedControlsDoNotCreatePendingAuthority
+[       OK ] CpuCopyUpdate.InvalidUnacceptedAndPublishedControlsDoNotCreatePendingAuthority (0 ms)
+[----------] 1 test from CpuCopyUpdate (0 ms total)
+
+[----------] Global test environment tear-down
+[==========] 6 tests from 2 test suites ran. (0 ms total)
+[  PASSED  ] 6 tests.
+
+public CopyBatchUpdate PASS: initialization + 64 dirty updates, 1024/16384 bytes, original generation/cold slot, foreign rejection and control recovery
+
+actual Vulkan CopyBatchUpdate mode=0 PASS: native submits=1 accepted=1 waits=1 confirmed=0; original permissions/terminal/retirement retained
+actual Vulkan CopyBatchUpdate mode=1 PASS: native submits=1 accepted=0 waits=0 confirmed=0; original permissions/terminal/retirement retained
+actual Vulkan CopyBatchUpdate mode=2 PASS: native submits=1 accepted=1 waits=1 confirmed=0; original permissions/terminal/retirement retained
+actual Vulkan CopyBatchUpdate mode=3 PASS: native submits=1 accepted=1 waits=1 confirmed=0; original permissions/terminal/retirement retained
+actual Vulkan CopyBatchUpdate mode=4 PASS: native submits=1 accepted=1 waits=1 confirmed=0; original permissions/terminal/retirement retained
+actual Vulkan CopyBatchUpdate mode=5 PASS: native submits=1 accepted=1 waits=1 confirmed=0; original permissions/terminal/retirement retained
+
+Running main() from /Users/kiro/Library/Caches/hyle/dependencies/v1/sources/googletest-063de7e9578f-162765170ae6/googletest/src/gtest_main.cc
+[==========] Running 6 tests from 2 test suites.
+[----------] Global test environment set-up.
+[----------] 5 tests from CpuCopyProgram
+[ RUN      ] CpuCopyProgram.TwoSlotsUseOriginalSynchronousCopyAndFixedMetadataReplay
+[       OK ] CpuCopyProgram.TwoSlotsUseOriginalSynchronousCopyAndFixedMetadataReplay (0 ms)
+[ RUN      ] CpuCopyProgram.LaterWriteBlocksEarlierOutputAndAliasHazardsRequireExplicitPhases
+[       OK ] CpuCopyProgram.LaterWriteBlocksEarlierOutputAndAliasHazardsRequireExplicitPhases (0 ms)
+[ RUN      ] CpuCopyProgram.PhysicalSelfCopyAcrossReadSubviewsEmptyInvalidAndOomHaveNoNativeWork
+[       OK ] CpuCopyProgram.PhysicalSelfCopyAcrossReadSubviewsEmptyInvalidAndOomHaveNoNativeWork (0 ms)
+[ RUN      ] CpuCopyProgram.StreamChunksKeepWholeTargetMutableUntilGroupPublication
+[       OK ] CpuCopyProgram.StreamChunksKeepWholeTargetMutableUntilGroupPublication (0 ms)
+[ RUN      ] CpuCopyProgram.StreamWithdrawalAndBackingAccountingPreserveOriginalOwners
+[       OK ] CpuCopyProgram.StreamWithdrawalAndBackingAccountingPreserveOriginalOwners (0 ms)
+[----------] 5 tests from CpuCopyProgram (1 ms total)
+
+[----------] 1 test from CpuCopyUpdate
+[ RUN      ] CpuCopyUpdate.InvalidUnacceptedAndPublishedControlsDoNotCreatePendingAuthority
+[       OK ] CpuCopyUpdate.InvalidUnacceptedAndPublishedControlsDoNotCreatePendingAuthority (0 ms)
+[----------] 1 test from CpuCopyUpdate (0 ms total)
+
+[----------] Global test environment tear-down
+[==========] 6 tests from 2 test suites ran. (1 ms total)
+[  PASSED  ] 6 tests.

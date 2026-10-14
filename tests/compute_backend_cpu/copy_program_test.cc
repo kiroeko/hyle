@@ -202,4 +202,47 @@ TEST(CpuCopyProgram, StreamWithdrawalAndBackingAccountingPreserveOriginalOwners)
   EXPECT_FALSE(ready.try_write().has_value());
   EXPECT_FALSE(hyle::compute::detail::LeaseAccess::backing(ReadLease{}).has_value());
 }
+
+TEST(CpuCopyUpdate, InvalidUnacceptedAndPublishedControlsDoNotCreatePendingAuthority) {
+  CopyBatchInvocation empty_invocation;
+  CopyBatchSubmission empty_submission;
+  EXPECT_FALSE(CopyBatchUpdate::take(std::move(empty_invocation), std::move(empty_submission)));
+  auto context = Context::create(cpu::device()).value();
+  auto queue = context.create_queue().value();
+  auto program = CopyBatchProgram::prepare(context, specs()).value();
+  auto invocation = CopyBatchInvocation::create(program, queue).value();
+  EXPECT_FALSE(CopyBatchUpdate::take(std::move(invocation), std::move(empty_submission)));
+  EXPECT_TRUE(invocation.valid());
+  std::array<LeasePool, 4> pools;
+  for (auto &pool : pools) pool = LeasePool::create(mem::system_resource(), 1024).value();
+  ASSERT_TRUE(bind(pools, invocation, std::byte{61}).ok());
+  ASSERT_TRUE(invocation.prepare_replay(kPhases, kRanges).ok());
+  auto submission = invocation.submit().value();
+  auto published = submission.output({2}, {3}, 0, 32).value();
+  auto update = CopyBatchUpdate::take(std::move(invocation), std::move(submission)).value();
+  EXPECT_FALSE(invocation.valid()); EXPECT_FALSE(submission.valid());
+  EXPECT_FALSE(detail::CopyStreamAccess::input(update, {0}));
+  EXPECT_FALSE(detail::CopyStreamAccess::input(update, {3}));
+  EXPECT_FALSE(detail::CopyStreamAccess::input(update, {4}));
+  auto input = detail::CopyStreamAccess::input(update, {1}).value();
+  EXPECT_NE(input.root, nullptr); EXPECT_NE(input.writer, nullptr);
+  EXPECT_EQ(input.last_write.value, 0u); EXPECT_EQ(input.view.size(), 32u);
+  auto dependency = detail::CopyStreamAccess::dependency(update).value();
+  EXPECT_FALSE(dependency.pending()); // Original CPU copy is synchronously retired.
+  auto uses = LeaseUsePool::create().value();
+  auto use = uses.begin().value();
+  ASSERT_TRUE(detail::CopyStreamAccess::admit_read(use, update, {1}).ok());
+  EXPECT_EQ(pools[1].stats().active_uses, 1u);
+  use = {};
+  auto writer = update.take_mutable({1}).value();
+  EXPECT_FALSE(update.take_mutable({1}));
+  auto recovered = update.release_invocation().value();
+  EXPECT_TRUE(recovered.valid()); EXPECT_FALSE(update.valid());
+  ASSERT_TRUE(recovered.reset().ok());
+  std::array<std::byte,32> bytes;
+  ASSERT_TRUE(writer.view()->read(bytes).ok());
+  for (auto byte : bytes) EXPECT_EQ(byte, std::byte{61});
+  ASSERT_TRUE(published.view()->read(bytes).ok());
+  for (auto byte : bytes) EXPECT_EQ(byte, std::byte{61});
+}
 } // namespace

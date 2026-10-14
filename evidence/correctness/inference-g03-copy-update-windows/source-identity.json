@@ -1,0 +1,12 @@
+{
+  "product": "bcaec010b528e372671f737f40b4aa53eb076aaf",
+  "canonical_equals_candidate": true,
+  "files": {
+    "tests/compute_batch/copy_update_public_consumer.cc": "b10205e309ec573d0d29557ff7fd8200f31f9d4b4150b406a95275198444f95e",
+    "include/hyle/compute/batch_transfer.h": "3319446ddbfb9b58b3ee5ddef6b4ca63dfc6d34c9e4423fe6edf865d98fedb60",
+    "include/hyle/compute/vulkan_memory.h": "7f4c1667bbe73b1271e531f8f3a616d7f5aaa96109ccfb690b9146ca63845860",
+    "include/hyle/compute/detail/copy_stream_access.h": "bf3e1abb1d1b2a711b1464080d013307ab9e147d6b7f75e58d6381ba94e9475c",
+    "src/compute/batch_transfer.cc": "9956069af542795f34d00f036c409178fa77246a96b1dab5c8f9ac3e0f58adeb",
+    "src/compute_route_vulkan/vulkan_copy_program.cc": "73440bb1ee4fcb997f406648ddb1c6aa3783e4e40939439da3b5ab69ddfd34d8"
+  }
+}
