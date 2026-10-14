@@ -1,6 +1,6 @@
 # G03 已接纳 producer 到精确分页消费
 
-状态：AUDITED，2026-10-14；owner compute_batch、compute、compute_route_apple、
+状态：CANDIDATE，2026-10-14；owner compute_batch、compute、compute_route_apple、
 compute_route_vulkan，baseline `5e80c4df0`；公共形状反证基于 `3cbbd4e2e`。
 授权来自[十项goal](../project/inference-gaps-goal-execution-2026-10.md)，输入G03来自
 [固定源码审计](../project/inference-single-machine-foundation-audit-2026-10.md)。
@@ -125,3 +125,8 @@ abandon FAIL/input，重跑受影响的CPU/actual native入口与必要风险，
 native copy风险PASS；原CPU64/arena9复验与F3直接14tests通过。保abandon真缺口、
 Vulkan fixture的UMA路径/empty accepted prefix与错误teardown FAIL及对应inputs/ips。
 host san、三交付/头仍待候选资格，整个pending producer→attention和G03其它路线保留。
+
+GP01/GP02固定产品candidate `b42832de3ddda21bdc3e98ad4cc87e73622cbba4`：API、算法与
+常态形状停止变化；只两机制、原输入生命周期与完整自然调用，原直接F3和source风险
+通过。进入CANDIDATE4完成适用san/relocated static/shared/逐头，不重跑不变数学P1。
+这一候选仍不签整个G03的pending producer链、其它准入域或goal0/10。

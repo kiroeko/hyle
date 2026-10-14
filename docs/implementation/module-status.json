@@ -270,9 +270,10 @@
     },
     {
       "module": "compute",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/inference-g03-producer-paged-consumption.md",
-      "summary": "G03 GP01/GP02 finite AUDITED: reacquire original unique ready page without reallocating/copying; public F2 mutable withdrawal borrows original CopyStream successful actual-retirement gate across CPU/CUDA and Apple/Vulkan. Fixed permission/lifetime/error/cost/API ledger; original math and full pending producer-to-attention remain unclaimed."
+      "summary": "G03 GP01/GP02 fixed CANDIDATE b428: original unique ready page content/gen-preserving reacquisition and public F2 nonblocking actual-retirement observation/mutable return. CPU64/arena9, Air native mixed F16/BF16/F16 192steps and nine actual copy lifecycle risks, F3 direct14 PASS; host san/relocated SDK/header pending. Full pending producer-to-attention and whole G03/goal not claimed.",
+      "candidate": "b42832de3ddda21bdc3e98ad4cc87e73622cbba4"
     },
     {
       "module": "graph",
@@ -509,9 +510,10 @@
     },
     {
       "module": "compute_route_apple",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/inference-g03-producer-paged-consumption.md",
-      "summary": "G03 GP01/GP02 finite AUDITED: reacquire original unique ready page without reallocating/copying; public F2 mutable withdrawal borrows original CopyStream successful actual-retirement gate across CPU/CUDA and Apple/Vulkan. Fixed permission/lifetime/error/cost/API ledger; original math and full pending producer-to-attention remain unclaimed."
+      "summary": "G03 GP01/GP02 fixed CANDIDATE b428: original unique ready page content/gen-preserving reacquisition and public F2 nonblocking actual-retirement observation/mutable return. CPU64/arena9, Air native mixed F16/BF16/F16 192steps and nine actual copy lifecycle risks, F3 direct14 PASS; host san/relocated SDK/header pending. Full pending producer-to-attention and whole G03/goal not claimed.",
+      "candidate": "b42832de3ddda21bdc3e98ad4cc87e73622cbba4"
     },
     {
       "module": "graph_route_apple",
@@ -526,9 +528,10 @@
     },
     {
       "module": "compute_route_vulkan",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/inference-g03-producer-paged-consumption.md",
-      "summary": "G03 GP01/GP02 finite AUDITED: reacquire original unique ready page without reallocating/copying; public F2 mutable withdrawal borrows original CopyStream successful actual-retirement gate across CPU/CUDA and Apple/Vulkan. Fixed permission/lifetime/error/cost/API ledger; original math and full pending producer-to-attention remain unclaimed."
+      "summary": "G03 GP01/GP02 fixed CANDIDATE b428: original unique ready page content/gen-preserving reacquisition and public F2 nonblocking actual-retirement observation/mutable return. CPU64/arena9, Air native mixed F16/BF16/F16 192steps and nine actual copy lifecycle risks, F3 direct14 PASS; host san/relocated SDK/header pending. Full pending producer-to-attention and whole G03/goal not claimed.",
+      "candidate": "b42832de3ddda21bdc3e98ad4cc87e73622cbba4"
     },
     {
       "module": "graph_route_vulkan",
@@ -689,9 +692,10 @@
     },
     {
       "module": "compute_batch",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/inference-g03-producer-paged-consumption.md",
-      "summary": "G03 GP01/GP02 finite AUDITED: reacquire original unique ready page without reallocating/copying; public F2 mutable withdrawal borrows original CopyStream successful actual-retirement gate across CPU/CUDA and Apple/Vulkan. Fixed permission/lifetime/error/cost/API ledger; original math and full pending producer-to-attention remain unclaimed."
+      "summary": "G03 GP01/GP02 fixed CANDIDATE b428: original unique ready page content/gen-preserving reacquisition and public F2 nonblocking actual-retirement observation/mutable return. CPU64/arena9, Air native mixed F16/BF16/F16 192steps and nine actual copy lifecycle risks, F3 direct14 PASS; host san/relocated SDK/header pending. Full pending producer-to-attention and whole G03/goal not claimed.",
+      "candidate": "b42832de3ddda21bdc3e98ad4cc87e73622cbba4"
     },
     {
       "module": "graph_batch",
