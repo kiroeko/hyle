@@ -102,16 +102,25 @@ Status episode(bool cancelled) {
       "original attention published result before its actual native retirement"));
   unknown=false;
   auto outcome=attention.wait(); // No producer/copy host wait after submission.
+#if defined(HYLE_PENDING_ADMISSION_QUALIFICATION)
+  HYLE_RETURN_IF_ERROR(owner.request_cancel());
+  HYLE_RETURN_IF_ERROR(n::detail::qualify_copy_dependency(n::detail::Access::runtime(context),dependency));
+#endif
   const auto source=owner.observe();
   HYLE_RETURN_IF_ERROR(r::require(outcome.has_value() && (*outcome)->tensors().size()==1 &&
       (cancelled ? source.IsCancelled() : source.ok()) && uses.active_batches()==0,
       "receiver counterexample did not observe the expected original source/suffix statuses"));
   const auto result=*outcome;
   HYLE_RETURN_IF_ERROR(r::require(result->tensors()[0].description()==state.data.recipe.descriptions()[0],"receiver used a different numerical shape"));
+#if defined(HYLE_PENDING_ADMISSION_QUALIFICATION)
+  std::fprintf(stderr,"Vulkan original Run success remains successful after late cancel request; "
+      "same Runtime/queue + exact guards, final attention shape2x8x64 PASS\n");
+#else
   std::fprintf(stderr,"actual Vulkan source cancelled=%d, original source status=%d, attention SUCCESS shape2x8x64; "
       "same original Runtime/queue+exact original F1 guards; only retirement observations masked, only final attention wait; "
       "cancelled case witnesses missing source preflight/status merge, not a safe public receiver\n",
       cancelled,int(source.code()));
+#endif
   return Status::Ok();
 }
 Status run(){ HYLE_RETURN_IF_ERROR(episode(false));return episode(true); }
