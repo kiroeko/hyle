@@ -343,6 +343,10 @@ class ImpactTest(unittest.TestCase):
                 "container_queue", "sched", "io_core", "io_tls", "io_http",
                 "io_http2", "io_transfer", "io_watch", "process",
                 "io_websocket",
+                "compute_stream", "compute_route_cpu", "compute_route_cuda",
+                "compute_route_apple", "compute_route_vulkan", "graph_route_cpu",
+                "graph_route_cuda", "graph_route_apple", "graph_route_vulkan",
+                "graph_route_cpu_cuda", "graph_route_cpu_apple", "graph_route_cpu_vulkan",
             },
         )
         self.assertIn("headers:container_queue", self.selected(plan))
@@ -449,7 +453,7 @@ class ImpactTest(unittest.TestCase):
         self.commit()
         plan = self.plan()
         self.assertEqual(plan["verdict"], "READY")
-        self.assertEqual(plan["selected_factors"], ["compute_route_apple", "graph_route_apple"])
+        self.assertEqual(plan["selected_factors"], ["compute_route_apple", "graph_route_apple", "graph_route_cpu_apple"])
         selected = self.selected(plan)
         self.assertIn("factor:compute_route_apple", selected)
         self.assertIn("factor:graph_route_apple", selected)
