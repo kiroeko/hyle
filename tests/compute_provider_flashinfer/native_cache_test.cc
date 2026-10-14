@@ -66,10 +66,10 @@ double fp8_value(std::uint8_t code){
   return code&128?-value:value;
 }
 template<class T>void boxed_case(bool paged,bool quantized,unsigned depth,unsigned value_depth,
-                                bool causal,int window,bool long_precision=false,bool long_prefill=false){
+                                bool causal,int window,bool long_precision=false,bool long_prefill=false,bool strong_weights=false){
   SCOPED_TRACE(::testing::Message()<<"paged="<<paged<<" quantized="<<quantized<<" depth="<<depth
       <<" value_depth="<<value_depth<<" window="<<window<<" long_prefill="<<long_prefill);
-  const unsigned query_rows=long_precision?1u:(long_prefill?66u:(causal?18u:68u));
+  const unsigned query_rows=long_precision?1u:(long_prefill?66u:strong_weights?2u:(causal?18u:68u));
   const unsigned physical_rows=long_precision?4096u:(long_prefill?(paged?256u:274u):64u);
   const unsigned heads=long_precision?1u:8u,kv_heads=long_precision?1u:2u;
   const auto storage=quantized?c::CacheStorage::float8(.5F).value():
@@ -86,7 +86,7 @@ template<class T>void boxed_case(bool paged,bool quantized,unsigned depth,unsign
   auto host=c::cuda::MemoryResource::create(context,c::cuda::MemoryKind::kPinnedHost).value();
   auto queue=context.create_queue().value();auto schema=c::BatchSchema::create(cap).value();
   const std::vector<std::int32_t> qp=long_precision?std::vector<std::int32_t>{0,1}:
-      (long_prefill?std::vector<std::int32_t>{0,1,66}:(causal?std::vector<std::int32_t>{0,1,18}:std::vector<std::int32_t>{0,33,68}));
+      (long_prefill?std::vector<std::int32_t>{0,1,66}:strong_weights?std::vector<std::int32_t>{0,1,2}:(causal?std::vector<std::int32_t>{0,1,18}:std::vector<std::int32_t>{0,33,68}));
   const std::vector<std::int32_t> kp=long_precision?std::vector<std::int32_t>{0,4096}:
       (long_prefill?(paged?std::vector<std::int32_t>{0,9,19}:std::vector<std::int32_t>{0,129,274}):
        (paged?std::vector<std::int32_t>{0,2,5}:std::vector<std::int32_t>{0,31,64}));
@@ -98,10 +98,10 @@ template<class T>void boxed_case(bool paged,bool quantized,unsigned depth,unsign
   auto layout=schema.version({qp,kp,ids,tails}).value();
   std::vector<T> q(std::size_t(query_rows)*heads*depth);
   std::vector<float> k(std::size_t(physical_rows)*kv_heads*depth),v(std::size_t(physical_rows)*kv_heads*value_depth);
-  for(std::size_t i=0;i<q.size();++i)q[i]=half_test::encode<T>(long_precision?0.:.17*std::sin(double(i)*.23));
-  for(std::size_t i=0;i<k.size();++i)k[i]=long_precision?0.F:float(.19*std::cos(double(i)*.13));
+  for(std::size_t i=0;i<q.size();++i)q[i]=half_test::encode<T>(long_precision?0.:strong_weights?.125:.17*std::sin(double(i)*.23));
+  for(std::size_t i=0;i<k.size();++i)k[i]=long_precision?0.F:strong_weights?float((i/(kv_heads*depth))%5)*.25F:float(.19*std::cos(double(i)*.13));
   for(std::size_t i=0;i<v.size();++i)v[i]=long_precision?
-      (i/value_depth<3072?1.F:-1.F):float(.23*std::sin(double(i)*.07)+.05*std::cos(double(i)*.17));
+      (i/value_depth<3072?1.F:-1.F):strong_weights?float(1+(i/(kv_heads*value_depth))%5)*.0625F:float(.23*std::sin(double(i)*.07)+.05*std::cos(double(i)*.17));
   std::vector<std::uint8_t> kb,vb;
   const auto cache_bytes=[&](std::span<const float> input,c::CacheStorage spec,std::vector<std::uint8_t>& output){
     if(quantized){const auto status=encode_words(half_test::data_type<T>(),spec,input,output);
@@ -138,6 +138,10 @@ template<class T>void boxed_case(bool paged,bool quantized,unsigned depth,unsign
       .max_float_workspace_bytes=8u<<20,.max_int_workspace_bytes=4096,.scale=scale,.causal=causal,.window_left=window});
   ASSERT_TRUE(program)<<program.error().message();auto slot=c::BatchInvocation::create(*program,queue).value();
   auto prepared=slot.prepare_batch(layout);ASSERT_TRUE(prepared)<<prepared.error().message();
+  if(strong_weights){
+    if(long_prefill){ASSERT_GT(slot.report().cta_tile_q,16u);}
+    else {ASSERT_EQ(slot.report().cta_tile_q,16u);}
+  }
   const std::array inputs{query,key_lease,value_lease};
   auto done=paged?prepared->run(query,key_frame,value_frame):prepared->run(inputs);
   ASSERT_TRUE(done)<<done.error().message();ASSERT_TRUE(done->wait().ok());auto result=slot.output().value();
@@ -157,11 +161,20 @@ template<class T>void boxed_case(bool paged,bool quantized,unsigned depth,unsign
           expected+=weights[static_cast<std::size_t>(j)]*value_at(false,(std::size_t(physical)*kv_heads+head/(heads/kv_heads))*value_depth+d);}
         // Reference decodes actual FP8 bytes and independent K/V scales.
         // Tolerance includes the native tile arithmetic and output rounding.
-        EXPECT_NEAR(half_test::decode(actual[(std::size_t(qp[request]+row)*heads+head)*value_depth+d]),expected/sum,
-                    long_precision?.0006:.0025);}
+        const auto observed=half_test::decode(actual[(std::size_t(qp[request]+row)*heads+head)*value_depth+d]);
+        if(strong_weights){ASSERT_NEAR(observed,expected/sum,.0025);}
+        else EXPECT_NEAR(observed,expected/sum,long_precision?.0006:.0025);}
     }
   }
   result.reset();*done={};*prepared={};ASSERT_TRUE(slot.close().ok());ASSERT_TRUE(context.drain().ok());
+}
+// Correlated, exactly representable FP8 rows make missing QK loads materially
+// different from uniform averaging. Weak oscillating keys hid the K64 load bug.
+TEST(FlashinferCache, MixedFp8ShortKeyStrongWeightsInLoopAndRepackedTiles){
+  for(bool paged:{false,true})for(bool prefill:{false,true}){
+    boxed_case<hyle::simd::float16_t>(paged,true,64,128,true,16,false,prefill,true);
+    boxed_case<hyle::simd::bfloat16_t>(paged,true,64,128,true,16,false,prefill,true);
+  }
 }
 TEST(FlashinferCache, QuantizedPagedAndRaggedIndependentValueDepthAndWindow){
   for(bool paged:{false,true})for(int window:{-1,0,15,16}){

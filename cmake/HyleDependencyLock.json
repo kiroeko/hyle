@@ -956,6 +956,37 @@
       }
     },
     {
+      "name": "flashinfer_cache_patches",
+      "class": "in_tree",
+      "repository": "https://github.com/flashinfer-ai/flashinfer.git",
+      "version": "hyle-flashinfer-fp8-short-k-v1",
+      "revision": "69ff11fc4954396d98326656dc85debd2223f637",
+      "git_tree": "f5804ee37b4780d8e1a8b6019f9d4619230987d1",
+      "archive": {
+        "url": "https://codeload.github.com/flashinfer-ai/flashinfer/tar.gz/69ff11fc4954396d98326656dc85debd2223f637",
+        "sha256": "4fc85abaa6210d6a1773e6011ff572aa0c04b7030644b74f75a2db2dbda472a9"
+      },
+      "license": {
+        "expression": "Apache-2.0",
+        "files": [
+          {
+            "root": "hyle",
+            "path": "third_party/flashinfer_cache/LICENSE",
+            "sha256": "f3514f24f2b94d09c409abbf4020cf600e4059098c697110eb91a4a2b235fbb7"
+          },
+          {
+            "root": "hyle",
+            "path": "third_party/flashinfer_cache/NOTICE.md",
+            "sha256": "2f614378c8b596891b4b9e408dcfe04a381649ded8ad689b1e73aeabcb153aff"
+          }
+        ]
+      },
+      "vendored": {
+        "path": "third_party/flashinfer_cache",
+        "tree_sha256": "1d337e9d8d8e5aa34c20bcd0f9b607e51875ef622ca89649a2cbc0cbc6897616"
+      }
+    },
+    {
       "name": "ggml_cuda_runtime_patches",
       "class": "in_tree",
       "repository": "https://github.com/ggml-org/ggml.git",

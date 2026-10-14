@@ -1,0 +1,57 @@
+{
+  "kind": "G04_G05_CPU_BF16_ENCODER_F2_DIRECT_GRAPH_SOURCE_SUPPLEMENT",
+  "verdict": "PASS_FINITE_WINDOWS_CPU_ONLY_F16_BF16_SOURCE",
+  "fixture_sha256": "9c063827e18523f41bbe5882d2e3d67943b685bdb517522c44392160bf174e05",
+  "qualified": [
+    "Three new-consumer tests: original F16 Direct/Graph plus BF16 success and synchronous failure matrix",
+    "Each dtype8successful episodes x6updates and4synchronous source refusals; old readers, exact dirty/full-page bytes and independent weighted oracle",
+    "BF16 query bits .125 and CPU Graph casts/output decoding are typed together; Q8 block scales remain F16 as specified"
+  ],
+  "owners_remain": "AUDITED; no whole G04/G05 closure",
+  "run": {
+    "state": "TERMINAL_PASS",
+    "identity": {
+      "host": "KIRO-WORKSTATIO",
+      "compiler": "14.50.35717",
+      "routes": "cpu",
+      "source_pin": "check actual derived ggml after configure"
+    },
+    "scope": "CPU-only actual encoder/F2/Direct/Graph source plus bounded native CPU numerical tests; no SDK/san/P1 verdict",
+    "max_jobs": 4,
+    "stages": [
+      {
+        "stage": "compile",
+        "command": [
+          "cmake",
+          "--build",
+          "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev",
+          "--target",
+          "g04_g05_encoded_common_pages",
+          "--parallel",
+          "4"
+        ],
+        "exit_code": 0,
+        "elapsed_seconds": 4.937999999994645,
+        "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\common-encoded\\cpu-6\\compile.log"
+      },
+      {
+        "stage": "tests",
+        "command": [
+          "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\g04_g05_encoded_common_pages.exe",
+          "--gtest_output=xml:C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\common-encoded\\cpu-6\\tests.xml",
+          "--gtest_filter=EncodedCommonPages.*"
+        ],
+        "exit_code": 0,
+        "elapsed_seconds": 0.29699999999138527,
+        "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\common-encoded\\cpu-6\\tests.log"
+      }
+    ],
+    "cumulative_seconds": 5.23499999998603
+  },
+  "cumulative_seconds": 5.23499999998603,
+  "previous_evidence": "inference-g04-g05-cpu-only-encoded-page-source retains original5attempts/15native cases/280.800s, not overwritten",
+  "not_proven": [
+    "complete new-domain risk/SDK/P1",
+    "whole G04/G05"
+  ]
+}

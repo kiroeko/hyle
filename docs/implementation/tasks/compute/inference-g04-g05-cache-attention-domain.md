@@ -540,3 +540,58 @@ Invocation::output 固定以 FailedPrecondition 拒绝失败结果；公开合�
 承诺。按原合同保留最终 wait 的严格错误断言及 wait 后 output 拒绝检查，attempt4六组
 失败 episode 全部通过，没有改产品。attempt2诊断printf误用string_view::c_str导致的
 编译失败也保留；不因修正夹具把 original attempt1/2/3/4 的整体 FAIL 改写为 PASS。
+
+新增 FlashInfer patch 只登记唯一 owner 数据，没有改 selector 算法。工具检查发现两项
+既有消费者闭包期望过时，换回 baseline policy 后原样重现，作为
+[独立测试维护任务](../build/validation-selector-consumer-expectations-2026-10.md)处理；
+仅更新两个期望集合后两项定向测试通过，原失败保留。
+
+### CE04/07 CUDA 有限修复与实际组合 source 通过
+
+[阶段证据](../../../../evidence/correctness/inference-g04-g05-cuda-encoded-page-source/result.json)
+保存六次 attempt、全部原 FAIL 与累计 1316.471 秒。attempt5 的局部 Python 解释器未查找
+造成配置失败，已在本 owner CMake 显式 find_package；没有修改公共工具。attempt6 编译
+561.986 秒、测试 1.024 秒通过：F16 Q/output、FP8 sK=.5/sV=2，Direct/CUDA Graph/
+required CPU+CUDA，single Q1/multi Q18、(64,128)/(256,256)，十二组成功各六次更新，
+六组原始 encoder 接受后数值失败，最终 wait 保留 InvalidArgument、output 拒绝、全部
+目的 writer 不可发布。完整 K/V bytes、独立加权 oracle 与旧 reader/共享页不变均通过。
+
+有限补丁位于 third_party/flashinfer_cache/patches.json，锁定原 FI revision 和 before/after
+header SHA；复用既有 exact-source preparer，不修改 immutable cache。仅 native_cache.cu
+的实际编译命令使用派生 include，其余原 TU 保留原头路径。真实派生 header SHA 与 manifest
+相同，原缓存 header SHA 未改变，均保存在证据。K tile 增加 CTA_TILE_KV*64 bytes、padding
+列 zero-fill，repack 仍只转换真实64元素；三处 native dispatcher 的 shared-memory 账同步。
+无公开 metadata/队列/权限/历史 cache 扩展，native private 费用未由本阶段代签已知。
+有限独立只读复核无剩余 MUST。本阶段尚不签强权重 ragged/repack 负对照、BF16新组合、
+完整risk/SDK/P1或整个G04/G05。
+
+CPU-only BF16 新组合已另行通过，见
+[补充证据](../../../../evidence/correctness/inference-g04-g05-cpu-bf16-encoded-page-source/result.json)。
+原两项 F16 与新增 BF16 共3项 consumer 测试通过；每dtype八组成功各六次更新、四组同步
+拒绝。BF16 query bits/Cast/描述/解码一起切换，Q8 block scale仍是F16；原oracle/权限/
+dirty bytes不变。仅夹具编译4.938秒、测试.297秒，累计5.235秒，原15native测试不重复，
+原五attempt/280.800秒不重置。十一owner保持AUDITED。
+
+### CE04/07 强权重负对照与 CUDA BF16 补充
+
+[补充证据](../../../../evidence/correctness/inference-g04-g05-cuda-bf16-strong-weight-source/result.json)
+保存 attempt7/8；八次CUDA source累计1388.252秒，前六次证据不覆盖。attempt7编译通过，
+但原ELF RPATH优先于LD_LIBRARY_PATH，负对照loader检查拒绝运行；实际worker退出1，
+如实记录terminal FAIL，测试未运行。attempt8只在负对照设置显式LD_PRELOAD，实际ldd
+确认加载修复前原动态库（链接attempt6之前已保存，SHA054f65b8…）；正向测试不设置它。
+
+原坏库在一个具名测试的八个子组合全部失败，退出1/XML tests1 failures1且八条数值失败；
+修复后同测试通过。组合为paged/ragged、F16/BF16、Q2明确CTA16/Q66明确CTA>16 repack。
+K/V按同一physical row的period5相关，Q=.125；独立oracle读取实际FP8 bytes与原page IDs，
+原坏库与期望差约.03，不能被原.0025容差掩盖。只对强权重helper使用ASSERT_NEAR，以便
+失败时每个子组合最多输出一条；旧数学断言保持原规则。
+
+最终12项全部PASS：共同F16/BF16 producer→同F2 Update→Direct/CUDA Graph/required
+CPU+CUDA，各dtype十二组成功各六次更新、六组接受后错误；九项native数学/编码测试包含
+新增强权重及原八项窗口/非因果/独立Dv/长prefill/scale/split-KV抵消回归。第二轮仅fixture
+编译17.379秒，后续0.077秒复用；没有重编未变native TU。只读有限复核无剩余MUST。
+
+CE07本批source至此具有CPU、CUDA、Apple、Vulkan及三联合真实consumer证据；CPU/CUDA/
+Apple签所列F16/BF16，Vulkan仍仅F16。它不签所有模式/capture/成本完全对称；新域完整
+tiny-scale/subnormal/FTZ等数值风险、OOM/cancel/unknown/concurrency/retirement、source/
+static/shared/逐头与不可变candidate P1仍待验，G04/G05和十一owner未关闭。

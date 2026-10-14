@@ -21,9 +21,28 @@ FetchContent_Declare(flashinfer
 hyle_fetchcontent_make_available_locked(flashinfer)
 FetchContent_GetProperties(flashinfer)
 
+# Only the new encoded-cache TU needs the finite mixed FP8 K-tile repair.
+# Reuse the exact-source preparer; never edit the authenticated upstream cache.
+hyle_audit_in_tree_dependencies(flashinfer_cache_patches)
+find_package(Python3 REQUIRED COMPONENTS Interpreter)
+set(_cache_patch_root "${HYLE_SOURCE_DIR}/third_party/flashinfer_cache")
+set(_cache_manifest "${_cache_patch_root}/patches.json")
+set(_cache_source "${CMAKE_CURRENT_BINARY_DIR}/cache-source-${HYLE_DEP_FLASHINFER_CACHE_PATCHES_VENDORED_TREE_SHA256}")
+set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS
+  "${_cache_manifest}" "${HYLE_SOURCE_DIR}/src/compute_ggml_runtime/prepare_source.py")
+execute_process(
+  COMMAND "${Python3_EXECUTABLE}" "${HYLE_SOURCE_DIR}/src/compute_ggml_runtime/prepare_source.py"
+    --source "${flashinfer_SOURCE_DIR}" --output "${_cache_source}" --manifest "${_cache_manifest}"
+  RESULT_VARIABLE _cache_patch_result OUTPUT_VARIABLE _cache_patch_output ERROR_VARIABLE _cache_patch_error)
+if(NOT _cache_patch_result EQUAL 0)
+  message(FATAL_ERROR "FlashInfer encoded-cache source preparation failed (${_cache_patch_result}): ${_cache_patch_error}")
+endif()
+
 hyle_add_module(compute_provider_flashinfer
   SOURCES flashinfer_provider.cc native_attention.cu native_batch.cu
     native_cache.cu native_cache_encoder.cu)
+set_source_files_properties(native_cache.cu PROPERTIES
+  INCLUDE_DIRECTORIES "${_cache_source}/include")
 set_target_properties(hyle_compute_provider_flashinfer PROPERTIES
   CUDA_STANDARD 17 CUDA_STANDARD_REQUIRED ON CUDA_RUNTIME_LIBRARY Shared)
 # CMake's CXX visibility settings do not cover nvcc's generated host code.
@@ -49,6 +68,8 @@ hyle_register_package_dependency(
   NAME compute_flashinfer OWNER compute_provider_flashinfer
   FEATURES compute_cuda
   FIND_DEPENDENCIES CUDAToolkit|13.3
-  LOCKED_DEPENDENCIES flashinfer
+  LOCKED_DEPENDENCIES flashinfer flashinfer_cache_patches
   RUNTIME_FILE_SPECS
-    "${flashinfer_SOURCE_DIR}/LICENSE|${CMAKE_INSTALL_DATADIR}/licenses/Hyle|flashinfer-LICENSE")
+    "${flashinfer_SOURCE_DIR}/LICENSE|${CMAKE_INSTALL_DATADIR}/licenses/Hyle|flashinfer-LICENSE"
+    "${_cache_patch_root}/LICENSE|${CMAKE_INSTALL_DATADIR}/licenses/Hyle|flashinfer-cache-patches-LICENSE"
+    "${_cache_patch_root}/NOTICE.md|${CMAKE_INSTALL_DATADIR}/licenses/Hyle|flashinfer-cache-patches-NOTICE.md")

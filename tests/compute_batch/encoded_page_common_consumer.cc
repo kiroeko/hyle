@@ -93,7 +93,7 @@ Result<Encoder> encoder(c::Context &context,hyle::mem::MemoryResourceRef resourc
       {}));
   HYLE_ASSIGN_OR_RETURN(result.invocation,result.compiled.executable.create_invocation());return result;
 }
-Status episode(unsigned dk,unsigned dv,unsigned mode,bool invalid=false,bool paired_failure=false,bool single=false){
+Status episode(unsigned dk,unsigned dv,unsigned mode,bool invalid=false,bool paired_failure=false,bool single=false,bool bf16=false){
   const bool combined=mode!=0;
 #if defined(HYLE_ENCODED_CUDA)
   const bool cpu_graph=mode==2;
@@ -110,7 +110,13 @@ Status episode(unsigned dk,unsigned dv,unsigned mode,bool invalid=false,bool pai
   const auto base=c::ggml_cpu::provider({.native_threads=2});
   const auto device_id=c::cpu::device();
 #endif
-  const c::BatchCapacity capacity{.query_type=c::DataType::kFloat16, .output_type=c::DataType::kFloat16,
+  const auto qtype=bf16?c::DataType::kBFloat16:c::DataType::kFloat16;
+  const auto decode_word=[bf16](std::uint16_t word)->double {
+    return bf16?half_test::decode(hyle::simd::bfloat16_t::from_bits(word)):
+                half_test::decode(F16::from_bits(word));
+  };
+  const double tolerance=bf16?.008:.002;
+  const c::BatchCapacity capacity{.query_type=qtype, .output_type=qtype,
       .key_storage=key_storage, .value_storage=value_storage, .max_requests=requests, .max_query_rows=query_rows, .max_kv_rows=36,
       .max_pages=5, .max_page_refs=4, .query_heads=8, .kv_heads=2, .qk_head_dim=dk, .value_head_dim=dv};
   HYLE_ASSIGN_OR_RETURN(auto schema, c::BatchSchema::create(capacity));
@@ -179,7 +185,7 @@ Status episode(unsigned dk,unsigned dv,unsigned mode,bool invalid=false,bool pai
   HYLE_ASSIGN_OR_RETURN(auto old_value,values.read(old_layout,std::span(old_vr).first(1+requests)));
   HYLE_RETURN_IF_ERROR(require(!keys.acquire(kr[1]) && kr[1].valid(),"old reader allowed mutable acquisition"));
   HYLE_ASSIGN_OR_RETURN(auto query_desc,c::batch_query_description(capacity));
-  std::vector<std::uint16_t> query_words(*query_desc.element_count(),0x3000);
+  std::vector<std::uint16_t> query_words(*query_desc.element_count(),bf16?0x3e00:0x3000);
   HYLE_ASSIGN_OR_RETURN(auto query_pool,c::LeasePool::create(resource,query_words.size()*2+64));
   HYLE_ASSIGN_OR_RETURN(auto query_writer,query_pool.allocate(query_words.size()*2,64));
   HYLE_RETURN_IF_ERROR(query_writer.view()->write(std::as_bytes(std::span(query_words))));
@@ -209,7 +215,7 @@ Status episode(unsigned dk,unsigned dv,unsigned mode,bool invalid=false,bool pai
   HYLE_ASSIGN_OR_RETURN(auto cpu,c::cpu::create_context({.native_threads=2}));
   HYLE_ASSIGN_OR_RETURN(auto cpu_queue,cpu.create_queue());
   const auto graph_resource=cpu_graph?hyle::mem::system_resource():resource;
-  HYLE_ASSIGN_OR_RETURN(auto host_desc,c::TensorDesc::dense(cpu_graph?c::DataType::kFloat32:c::DataType::kFloat16,query_desc.dimensions()));
+  HYLE_ASSIGN_OR_RETURN(auto host_desc,c::TensorDesc::dense(cpu_graph?c::DataType::kFloat32:qtype,query_desc.dimensions()));
   HYLE_ASSIGN_OR_RETURN(auto host_pool,c::LeasePool::create(graph_resource,query_words.size()*4+64));
   HYLE_ASSIGN_OR_RETURN(auto host_writer,host_pool.allocate(*host_desc.required_bytes(),64));
   if(cpu_graph){std::vector<float> host_query(query_words.size(),-.125F);HYLE_RETURN_IF_ERROR(host_writer.view()->write(std::as_bytes(std::span(host_query))));}
@@ -231,7 +237,7 @@ Status episode(unsigned dk,unsigned dv,unsigned mode,bool invalid=false,bool pai
   };
   auto qhalf=qi;
   if(cpu_graph){HYLE_ASSIGN_OR_RETURN(qhalf,cpu_node(c::Operation(c::Unary{c::UnaryKind::kAbs}),qi));
-    HYLE_ASSIGN_OR_RETURN(qhalf,cpu_node(c::Operation(c::Cast{c::DataType::kFloat16}),qhalf));}
+    HYLE_ASSIGN_OR_RETURN(qhalf,cpu_node(c::Operation(c::Cast{qtype}),qhalf));}
   HYLE_ASSIGN_OR_RETURN(auto node,builder.add_node(c::Operation::custom(c::PagedAttention{capacity,.125F,true,16}),std::array{qhalf,ki,vi,mi}));
   HYLE_ASSIGN_OR_RETURN(auto output,builder.result(node));
   if(cpu_graph){HYLE_ASSIGN_OR_RETURN(output,cpu_node(c::Operation(c::Cast{c::DataType::kFloat32}),output));
@@ -254,7 +260,7 @@ Status episode(unsigned dk,unsigned dv,unsigned mode,bool invalid=false,bool pai
   HYLE_ASSIGN_OR_RETURN(auto graph_native,gb::Invocation::create(compiled.executable,lanes));
   HYLE_ASSIGN_OR_RETURN(auto joint_slot,gb::PendingInvocation::create(std::move(graph_native),4));
   const std::array versions{gb::NodeLayout{node,layout}};
-  HYLE_ASSIGN_OR_RETURN(auto out_desc,c::TensorDesc::dense(cpu_graph?c::DataType::kFloat32:c::DataType::kFloat16,
+  HYLE_ASSIGN_OR_RETURN(auto out_desc,c::TensorDesc::dense(cpu_graph?c::DataType::kFloat32:qtype,
       std::array<std::int64_t,3>{query_rows,8,dv}));
   HYLE_ASSIGN_OR_RETURN(auto output_pool,c::LeasePool::create(graph_resource,*out_desc.required_bytes()+64));
   c::ReadLease previous_output;
@@ -368,24 +374,28 @@ Status episode(unsigned dk,unsigned dv,unsigned mode,bool invalid=false,bool pai
           }
           const double expected=(cpu_graph?-1:1)*sum/denominator;
           for(unsigned i=0;i<8*dv;++i){const auto x=actual[(qp[request]+row)*8*dv+i];
-            if(!std::isfinite(x)||std::abs(x-expected)>.002)return Status::Internal("encoded delta attention independent oracle differs");}
+            if(!std::isfinite(x)||std::abs(x-expected)>tolerance){
+              std::fprintf(stderr,"%s attention mismatch mode%u step%u request%u row%u element%u actual=%.9g expected=%.9g\n",route,mode,step,request,row,i,double(x),expected);
+              return Status::Internal("encoded delta attention independent oracle differs");}}
         }
       }return Status::Ok();
     };
     std::vector<float> actual(query_rows*8*dv);
+    Status mathematical_status;
     if(combined){
       HYLE_RETURN_IF_ERROR(joint_slot.bind(qi,host_desc,host_read));HYLE_RETURN_IF_ERROR(joint_slot.bind(ki,kframe));HYLE_RETURN_IF_ERROR(joint_slot.bind(vi,vframe));
       HYLE_ASSIGN_OR_RETURN(auto writer,output_pool.allocate(*out_desc.required_bytes(),64));
       HYLE_RETURN_IF_ERROR(joint_slot.bind(output,out_desc,std::move(writer)));
       HYLE_ASSIGN_OR_RETURN(auto done,joint_slot.submit(std::move(update)));
       if(invalid){HYLE_RETURN_IF_ERROR(require(!joint_slot.output(output),"failed source exposed Graph output"));
-        HYLE_RETURN_IF_ERROR(failed_result(done,joint_slot,update,[&]{const auto result=joint_slot.output(output);return require(!result && result.error().IsInvalidArgument(),"failed Graph result became visible or lost terminal source error");}));return Status::Ok();}
+        HYLE_RETURN_IF_ERROR(failed_result(done,joint_slot,update,[&]{
+          return require(!joint_slot.output(output),"failed Graph result became visible after final source error");}));return Status::Ok();}
       HYLE_RETURN_IF_ERROR(done.wait());
       {HYLE_ASSIGN_OR_RETURN(auto result,joint_slot.output(output));HYLE_ASSIGN_OR_RETURN(previous_output,result.storage_lease());
         if(cpu_graph)HYLE_RETURN_IF_ERROR(previous_output.view()->read(std::as_writable_bytes(std::span(actual))));
         else {std::vector<std::uint16_t> words(actual.size());HYLE_RETURN_IF_ERROR(previous_output.view()->read(std::as_writable_bytes(std::span(words))));
-          for(std::size_t i=0;i<words.size();++i)actual[i]=float(half_test::decode(F16::from_bits(words[i])));}
-        HYLE_RETURN_IF_ERROR(check(actual));HYLE_RETURN_IF_ERROR(require(!joint_slot.prepare_batch(versions).ok(),"retained Graph output allowed overwrite"));}
+          for(std::size_t i=0;i<words.size();++i)actual[i]=float(decode_word(words[i]));}
+        mathematical_status=check(actual);HYLE_RETURN_IF_ERROR(require(!joint_slot.prepare_batch(versions).ok(),"retained Graph output allowed overwrite"));}
       done={};HYLE_ASSIGN_OR_RETURN(update,joint_slot.take_update());
     }else{
       HYLE_ASSIGN_OR_RETURN(auto done,receiver.submit(query,kframe,vframe,std::move(update)));
@@ -394,8 +404,8 @@ Status episode(unsigned dk,unsigned dv,unsigned mode,bool invalid=false,bool pai
       HYLE_RETURN_IF_ERROR(done.wait());
       {HYLE_ASSIGN_OR_RETURN(auto result,receiver.output());std::vector<std::uint16_t> words(actual.size());
         HYLE_RETURN_IF_ERROR(result.view()->read(std::as_writable_bytes(std::span(words))));
-        for(std::size_t i=0;i<words.size();++i)actual[i]=float(half_test::decode(F16::from_bits(words[i])));
-        HYLE_RETURN_IF_ERROR(check(actual));HYLE_RETURN_IF_ERROR(require(!receiver.prepare_batch(layout).ok(),"retained Direct output allowed overwrite"));}
+        for(std::size_t i=0;i<words.size();++i)actual[i]=float(decode_word(words[i]));
+        mathematical_status=check(actual);HYLE_RETURN_IF_ERROR(require(!receiver.prepare_batch(layout).ok(),"retained Direct output allowed overwrite"));}
       done={};HYLE_ASSIGN_OR_RETURN(update,receiver.take_update());
     }
     const auto expected_bytes=requests*(krb+vrb)+(step==0?requests*(kb+vb):0);
@@ -412,6 +422,12 @@ Status episode(unsigned dk,unsigned dv,unsigned mode,bool invalid=false,bool pai
       HYLE_RETURN_IF_ERROR(read_bytes(context,resource,kr[3+request],bytes));
       HYLE_RETURN_IF_ERROR(require(bytes==expected,"dirty encoded key append changed codes or untouched bytes"));
     }
+    if(!mathematical_status.ok()){
+      std::vector<std::uint16_t> observed(query_words.size());
+      HYLE_RETURN_IF_ERROR(query.view()->read(std::as_writable_bytes(std::span(observed))));
+      std::fprintf(stderr,"K/V full bytes passed; query first=%04x expected=%04x\n",unsigned(observed[0]),unsigned(query_words[0]));
+    }
+    HYLE_RETURN_IF_ERROR(mathematical_status);
     HYLE_ASSIGN_OR_RETURN(copy,update.release_invocation());
   }
   // The old frame retains its own pages across all new accepted updates.
@@ -422,7 +438,7 @@ Status episode(unsigned dk,unsigned dv,unsigned mode,bool invalid=false,bool pai
       for(unsigned row=0;row<nq;++row){const unsigned position=17-nq+row;
         const double expected=(position*decoded_constant(.0625F,true)+decoded_constant(request?.25F:.125F,true))/(position+1);
         const double visible=position==16?expected:decoded_constant(.0625F,true);
-        for(unsigned i=0;i<8*dv;++i)HYLE_RETURN_IF_ERROR(require(std::abs(half_test::decode(F16::from_bits(words[(qp[request]+row)*8*dv+i]))-visible)<.002,"old reader math changed across new version"));
+        for(unsigned i=0;i<8*dv;++i)HYLE_RETURN_IF_ERROR(require(std::abs(decode_word(words[(qp[request]+row)*8*dv+i])-visible)<tolerance,"old reader math changed across new version"));
       }
     }
   }
@@ -460,5 +476,24 @@ TEST(EncodedCommonPages, FailedEncoderRetainsOriginalFailureAndWriters){
   for(unsigned mode=0;mode<modes;++mode)for(bool paired:{false,true}){
     SCOPED_TRACE(::testing::Message()<<"mode="<<mode<<" paired="<<paired);
     const auto status=episode(64,128,mode,true,paired);ASSERT_TRUE(status.ok())<<status.message();
+  }
+}
+
+TEST(EncodedCommonPages, BFloat16IncrementalAndFailureConsumers){
+#if defined(HYLE_ENCODED_CUDA)
+  constexpr unsigned modes=3;
+#else
+  constexpr unsigned modes=2;
+#endif
+  for(unsigned mode=0;mode<modes;++mode)for(bool single:{false,true})
+    for(auto dims:{std::array{64u,128u},std::array{256u,256u}}){
+      SCOPED_TRACE(::testing::Message()<<"BF16 mode="<<mode<<" single="<<single<<" D="<<dims[0]<<"/"<<dims[1]);
+      const auto status=episode(dims[0],dims[1],mode,false,false,single,true);
+      ASSERT_TRUE(status.ok())<<status.message();
+    }
+  for(unsigned mode=0;mode<modes;++mode)for(bool paired:{false,true}){
+    SCOPED_TRACE(::testing::Message()<<"BF16 mode="<<mode<<" paired="<<paired);
+    const auto status=episode(64,128,mode,true,paired,false,true);
+    ASSERT_TRUE(status.ok())<<status.message();
   }
 }

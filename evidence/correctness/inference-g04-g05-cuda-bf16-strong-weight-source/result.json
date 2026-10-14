@@ -1,0 +1,147 @@
+{
+  "kind": "G04_G05_CUDA_BF16_AND_STRONG_WEIGHT_SOURCE_SUPPLEMENT",
+  "verdict": "PASS_FINITE_ACTUAL_CUDA_F16_BF16_AND_CPU_CUDA_WITH_VERIFIED_NEGATIVE_CONTROL",
+  "owners_remain": "AUDITED; not complete G04/G05",
+  "identity": {
+    "host": "Linux kiro-workstation 6.18.54.1-microsoft-standard-WSL2 #1 SMP PREEMPT_DYNAMIC Tue Oct  6 19:13:07 UTC 2026 x86_64 x86_64 x86_64 GNU/Linux",
+    "compiler": "g++-14 (Ubuntu 14.2.0-4ubuntu2~24.04.1) 14.2.0\nCopyright (C) 2024 Free Software Foundation, Inc.\nThis is free software; see the source for copying conditions.  There is NO\nwarranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.",
+    "cuda": "nvcc: NVIDIA (R) Cuda compiler driver\nCopyright (c) 2005-2026 NVIDIA Corporation\nBuilt on Tue_Jun_09_02:43:40_PM_PDT_2026\nCuda compilation tools, release 13.3, V13.3.73\nBuild cuda_13.3.r13.3/compiler.38244171_0",
+    "gpu": "NVIDIA GeForce RTX 4070, 617.14, 12282 MiB, 2292 MiB, 4 %"
+  },
+  "input_sha256": {
+    "tests/compute_batch/encoded_page_common_consumer.cc": "9c063827e18523f41bbe5882d2e3d67943b685bdb517522c44392160bf174e05",
+    "tests/compute_provider_flashinfer/native_cache_test.cc": "8f43fa69d0c26c903469ac45578ca3fba3e8c7e5d8039bcd9fc32130190d77ec",
+    "src/compute_provider_flashinfer/CMakeLists.txt": "625cf907e1aa1896121576993b99d95f872785f44f84baaa1e9043ae9092de6d",
+    "third_party/flashinfer_cache/patches.json": "e63c00787a4e087db68084757d9403407f37bbb7a8c13942eb9dfd9419caf625"
+  },
+  "qualified": [
+    "Twelve tests PASS: three common-consumer plus nine native CacheEncode/attention tests",
+    "F16 and BF16: each12successful Direct/CUDA Graph/CPU+CUDA episodes x6updates and6accepted source failures",
+    "Strong-weight eight combinations: paged/ragged xF16/BF16 xCTA16 decode/CTA>16 repack, independent encoded-byte oracle",
+    "Actual loader-selected original broken provider fails all8 strong-weight combinations; one GTest with8 recorded failures and process exit1; repaired provider passes the same test",
+    "All original eight new-domain math/encoder cases rerun after native kernel patch, including window/noncausal/longprefill/split-KV cancellation"
+  ],
+  "negative_control": {
+    "original_provider": {
+      "sha256": "054f65b85e2f6cf8b4d564293519c48e2f490650dbac981c8fded87d093d742d",
+      "source": "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/shared-sdk-build/bin/libhyle_compute_provider_flashinfer.so.0.1.0",
+      "size": 50517296,
+      "scope": "Original unpatched CUDA provider copied before source6 links, for bounded new strong-weight negative control only"
+    },
+    "failures_in_eight_combinations": 8,
+    "source7_failure": "Original RPATH prevented LD_LIBRARY_PATH override, loader guard refused to run; retained original terminal FAIL",
+    "source8_selection": "Explicit LD_PRELOAD for negative control only, actual ldd path recorded; normal tests use repaired original library"
+  },
+  "previous_evidence": "inference-g04-g05-cuda-encoded-page-source preserves original6attempts/1316.471s and actual immutable upstream/derived header SHA",
+  "supplement_cumulative_seconds": 71.78105939200009,
+  "all_eight_attempts_cumulative_seconds": 1388.252025832,
+  "runs": [
+    {
+      "state": "TERMINAL_FAIL",
+      "identity": {
+        "host": "Linux kiro-workstation 6.18.54.1-microsoft-standard-WSL2 #1 SMP PREEMPT_DYNAMIC Tue Oct  6 19:13:07 UTC 2026 x86_64 x86_64 x86_64 GNU/Linux",
+        "compiler": "g++-14 (Ubuntu 14.2.0-4ubuntu2~24.04.1) 14.2.0\nCopyright (C) 2024 Free Software Foundation, Inc.\nThis is free software; see the source for copying conditions.  There is NO\nwarranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.",
+        "cuda": "nvcc: NVIDIA (R) Cuda compiler driver\nCopyright (c) 2005-2026 NVIDIA Corporation\nBuilt on Tue_Jun_09_02:43:40_PM_PDT_2026\nCuda compilation tools, release 13.3, V13.3.73\nBuild cuda_13.3.r13.3/compiler.38244171_0",
+        "gpu": "NVIDIA GeForce RTX 4070, 617.14, 12282 MiB, 2412 MiB, 7 %"
+      },
+      "max_jobs": 4,
+      "stages": [
+        {
+          "stage": "configure",
+          "command": [
+            "cmake",
+            "-S",
+            "/root/hyle-scratch/compute-unified/source-7a7b4c3b",
+            "-B",
+            "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/shared-sdk-build",
+            "-DCMAKE_PROJECT_INCLUDE=/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/common-encoded/cuda-project.cmake"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 50.28197040000009,
+          "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/common-encoded/cuda-7/configure.log"
+        },
+        {
+          "stage": "compile",
+          "command": [
+            "cmake",
+            "--build",
+            "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/shared-sdk-build",
+            "--target",
+            "g04_g05_encoded_common_cuda",
+            "--parallel",
+            "4"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 17.379384760999983,
+          "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/common-encoded/cuda-7/compile.log"
+        }
+      ],
+      "cumulative_seconds": 67.66135516100007,
+      "scope": "Actual CUDA/CPU+CUDA encoded producer/F2/Direct/Graph source; no model/SDK/san/P1 verdict",
+      "worker_failure": "Actual worker exited1 at negative-control loader assertion before execution: original ELF RPATH selected current library despite LD_LIBRARY_PATH. No negative/normal tests ran."
+    },
+    {
+      "state": "TERMINAL_PASS",
+      "identity": {
+        "host": "Linux kiro-workstation 6.18.54.1-microsoft-standard-WSL2 #1 SMP PREEMPT_DYNAMIC Tue Oct  6 19:13:07 UTC 2026 x86_64 x86_64 x86_64 GNU/Linux",
+        "compiler": "g++-14 (Ubuntu 14.2.0-4ubuntu2~24.04.1) 14.2.0\nCopyright (C) 2024 Free Software Foundation, Inc.\nThis is free software; see the source for copying conditions.  There is NO\nwarranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.",
+        "cuda": "nvcc: NVIDIA (R) Cuda compiler driver\nCopyright (c) 2005-2026 NVIDIA Corporation\nBuilt on Tue_Jun_09_02:43:40_PM_PDT_2026\nCuda compilation tools, release 13.3, V13.3.73\nBuild cuda_13.3.r13.3/compiler.38244171_0",
+        "gpu": "NVIDIA GeForce RTX 4070, 617.14, 12282 MiB, 2292 MiB, 4 %"
+      },
+      "max_jobs": 4,
+      "stages": [
+        {
+          "stage": "compile",
+          "command": [
+            "cmake",
+            "--build",
+            "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/shared-sdk-build",
+            "--target",
+            "g04_g05_encoded_common_cuda",
+            "--parallel",
+            "4"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 0.07673287900001924,
+          "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/common-encoded/cuda-8/compile.log"
+        },
+        {
+          "stage": "negative-control",
+          "command": [
+            "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/shared-sdk-build/bin/g04_g05_encoded_common_cuda",
+            "--gtest_filter=FlashinferCache.MixedFp8ShortKeyStrongWeightsInLoopAndRepackedTiles",
+            "--gtest_output=xml:/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/common-encoded/cuda-8/negative-control.xml"
+          ],
+          "exit_code": 1,
+          "elapsed_seconds": 0.8445141370000329,
+          "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/common-encoded/cuda-8/negative-control.log"
+        },
+        {
+          "stage": "tests",
+          "command": [
+            "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/shared-sdk-build/bin/g04_g05_encoded_common_cuda",
+            "--gtest_output=xml:/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/common-encoded/cuda-8/tests.xml"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 3.198457214999962,
+          "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/common-encoded/cuda-8/tests.log"
+        }
+      ],
+      "cumulative_seconds": 4.119704231000014,
+      "scope": "Actual CUDA/CPU+CUDA encoded producer/F2/Direct/Graph source; no model/SDK/san/P1 verdict",
+      "negative_control_original_provider": {
+        "sha256": "054f65b85e2f6cf8b4d564293519c48e2f490650dbac981c8fded87d093d742d",
+        "source": "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/shared-sdk-build/bin/libhyle_compute_provider_flashinfer.so.0.1.0",
+        "size": 50517296,
+        "scope": "Original unpatched CUDA provider copied before source6 links, for bounded new strong-weight negative control only"
+      },
+      "negative_control_expected_failure": true
+    }
+  ],
+  "not_proven": [
+    "complete new-domain numeric/tiny-scale/OOM/cancel/unknown/concurrency/retirement risk matrix",
+    "source/static/shared full delivery profiles and public headers",
+    "qualified frozen candidate P1",
+    "whole G04/G05 and remaining goal"
+  ]
+}

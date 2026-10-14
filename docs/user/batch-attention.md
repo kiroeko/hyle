@@ -8,8 +8,9 @@
 ## 选择执行路线
 
 G04/G05 正在实施；CPU新域已完成Windows source数学检查，CUDA新域已完成Linux/SM89
-source数学检查，Apple/Vulkan新域已完成Air source数学检查。CPU-only与Apple/Vulkan的
-F16增量分页/Graph消费已有有限source证据；新域三交付与完整风险/性能资格尚未签发。进度见
+source数学检查，Apple/Vulkan新域已完成Air source数学检查。四后端与三联合路线的
+F16增量分页/Graph消费已有有限source证据；CPU/CUDA/Apple的BF16增量组合也已实测。
+新域三交付与完整风险/性能资格尚未签发。进度见
 [活动卡](../implementation/tasks/compute/inference-g04-g05-cache-attention-domain.md)。
 普通旧 plain 旅程使用显式的新字段，库不保旧签名转发。schema/descriptor接受一种形状，
 不代表所选native核已支持；当前未接通的组合在准备时返回Unimplemented。
@@ -62,6 +63,8 @@ Q8 K/V同格式、Q/output同F16或BF16；当前有限几何是(64,64)/(128,128)
 F32累加结果见[有限source证据](../../evidence/correctness/inference-g04-g05-cpu-encoding-math-stage/result.json)，
 CPU-only实际ggml核心及F16增量F2/Graph组合另有
 [有限source证据](../../evidence/correctness/inference-g04-g05-cpu-only-encoded-page-source/result.json)；
+[BF16补充](../../evidence/correctness/inference-g04-g05-cpu-bf16-encoded-page-source/result.json)
+覆盖同一Direct/Graph增量旅程。
 SDK、sanitizer和P1仍不能从源码阶段测试推导。
 
 Linux CUDA的FlashInfer入口现可用同一CacheEncode操作编码E4M3FN新行。准备时显式传入
@@ -72,7 +75,13 @@ K/V均为FP8，分别固定scale，Q/output同F16或BF16，几何与窗口合同
 转换最终输出。额外float workspace为align16(Qactive*Hq*Dv*4)，并有一次最终scale/cast
 dispatch；不展开整套历史KV。实际RTX4070/SM89的12项测试见
 [CUDA有限source证据](../../evidence/correctness/inference-g04-g05-cuda-encoding-math-stage/result.json)。
-它尚不签发Windows CUDA、增量F2/Graph组合、SDK、宿主风险或P1资格。
+F16增量F2/Direct/CUDA Graph/CPU+CUDA组合另有
+[有限source证据](../../evidence/correctness/inference-g04-g05-cuda-encoded-page-source/result.json)。
+其中修复了原native FP8 Dqk64/Dv128漏载K的问题：仅tile内K行补至128 bytes并填零，
+global cache与QK数学保持64维；额外shared为CTA_TILE_KV*64 bytes。原始依赖cache不变。
+BF16增量组合与强权重paged/ragged、CTA16/repack反例及修复前库负对照见
+[source补充](../../evidence/correctness/inference-g04-g05-cuda-bf16-strong-weight-source/result.json)。
+这些阶段尚不签发Windows CUDA、SDK、宿主完整风险或P1资格。
 
 Apple原MLX入口现可编码Q8_0新行，并在paged/ragged attention中直接读取U8压缩carrier。
 Q/output为F16或BF16，支持上述有限几何、窗口与full noncausal；空输出仍按Dv给出形状。
