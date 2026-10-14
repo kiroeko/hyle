@@ -1,0 +1,8 @@
+{
+  "closure": "PASS64/schema4, previous694a3d1a4 proves CLOSED->SCOPED for only compute_ops/compute_batch",
+  "docs": "PASS1241/6061",
+  "diff": "PASS",
+  "selector": "READY docs/closure only;146 skip/reuse reasons preserved",
+  "product_delta": "EMPTY include/src/tests",
+  "goal": "ACTIVE28%,1/10 G03; this scope is not implementation or capability completion"
+}

@@ -1,0 +1,94 @@
+{
+  "kind": "SCOPED_G04_G05_CURRENT_DOMAIN_INTAKE",
+  "baseline": "694a3d1a4b02540cb56b6ceae35b73dd1dd93440",
+  "state": "SCOPED",
+  "product_changed": false,
+  "builds_run": "Only declared public audit probe, unchanged canonical product, cached Windows tree,4jobs; no native math/GPU/model/P1.",
+  "peers": [
+    {
+      "name": "sglang",
+      "commit": "7224fce1b5e488c9916f20ec0556d696e595d512",
+      "archive_sha256": "21559aac7538426c4d75262a25d041d8c24070785a4d8f550459f68c3398b0e0"
+    },
+    {
+      "name": "vllm",
+      "commit": "98f721116227f0f48690deb05c815c057bac0668",
+      "archive_sha256": "984cc5cd0ddc5bc93c8f1055f7b2a19da128d372343896510952060bd2b71423"
+    },
+    {
+      "name": "llama.cpp",
+      "commit": "cbe28bb3cb0758f0c566a9a3561766821aeb0748",
+      "archive_sha256": "e71cd4a1645b151a45c46a9d4c0bf5de0fa2a94080ce31ca508a6c65ad1a3562"
+    }
+  ],
+  "facts": [
+    "One BatchCapacity dtype/head_dim drives Q/K/V/page/output geometry; public window parameter absent. Current carrier cannot naturally express query F16 with compressed KV or different V depth.",
+    "Current batch layout unconditionally rejects query rows greater than KV rows, independent of requested causal=false; genuine full noncausal qualification must distinguish this bound from causal positional contract.",
+    "Existing BlockQuantizationRoundtrip emits dense BF16 rather than storage codes/scales; GGUF format/tensor metadata and F1/F2/G03 permission machinery can be reused but do not implement cache math.",
+    "ggml CPU native quant attention converts Q according to K vec_dot_type, uses per-row V to_float temporary. Vulkan and Metal may choose whole-KV dequant for prefill. FI separates mixed input type but Python calibration V scale may run post output. Exact native qualification before API/FIX freeze required."
+  ],
+  "scope": "Finite actual8-bit cache and scale route plus causal-window/full noncausal/finite unequal QK-V dimensions, four routes/three deployments retained. No universal format or future MLA/sink/mask expansion.",
+  "current_source_inputs": [
+    {
+      "path": "include/hyle/compute/batch_layout.h",
+      "sha256": "654d7d3aedcbb9e50532e137ea3d89bb8aa0c5f5697879d4ff79455843fe5402"
+    },
+    {
+      "path": "include/hyle/compute/batch_execution.h",
+      "sha256": "cc61080e8ebeee41563e5e061f3735baa09831acaa9ab0f221c7f121e1b561f8"
+    },
+    {
+      "path": "include/hyle/compute/tensor_desc.h",
+      "sha256": "e5496e00c643bcce2efbb42666773f4172243d10458b756d6f9881b0e677eb9a"
+    },
+    {
+      "path": "include/hyle/compute/model_ops.h",
+      "sha256": "d3f3b76c2ec0923b0b9ece176dfe7e484c053cb63bee24c27bcff182617ed1b9"
+    },
+    {
+      "path": "src/compute_batch/batch_layout.cc",
+      "sha256": "9643f20396e320aac8f2184ddd243f996a70ee46e81487eb397fa3a54ac020f4"
+    },
+    {
+      "path": "src/compute_batch/paged_arena.cc",
+      "sha256": "f3c7ba69723f2964876f3d3966929589afcb69819e13a09b8450456eb98a8616"
+    },
+    {
+      "path": "src/compute_provider_flashinfer/native_batch.h",
+      "sha256": "503b895787443169bec1efbc299c6cbf5982e7baae0911d2f316f6980e7a5140"
+    },
+    {
+      "path": "src/compute_provider_flashinfer/native_batch.cu",
+      "sha256": "aecdbf870616f08600359e00179e4a054513bdff861be5ebc1136db13e33d136"
+    },
+    {
+      "path": "src/compute_provider_ggml/native_batch.cc",
+      "sha256": "a62a61ca8f4c88963b9dfa3174f209242b189a67ebb4dce296e1f3a7c80efdf2"
+    },
+    {
+      "path": "src/compute_provider_ggml/ggml_cpu_provider.cc",
+      "sha256": "85cd82183ac07e57db2f1ae99101230c5854d5d2f3c02925abb69a3dc2017e8b"
+    },
+    {
+      "path": "src/compute_provider_ggml_metal/native_program.cc",
+      "sha256": "3bb39e5c2740ea7e7f6b184f558d17223a3d8f713fe8108942346ce58116c3d4"
+    }
+  ],
+  "next": "Read locked native encoding/scale and direct-read conditions; run only declared tiny public/native probes if needed. Add actual provider/route owners to same card before AUDITED. No product code edits before finite architecture/FIX freeze.",
+  "public_probe": {
+    "state": "OBSERVED_DOMAIN_GAP",
+    "exit_code": 0,
+    "cumulative_seconds": 81.79699999999139,
+    "dtype": "Desired mixed query/encoded KV cannot be expressed by current capacity; current FP8 capacity rejects",
+    "bytes": "GGUF Q8_0 logical root descriptor17408 bytes exists versus current F16 root32768/page16384; infer_batch_attention refuses real encoded description",
+    "noncausal": "Recipe causal=false, but BatchSchema.version forQ2/KV1 rejects before native math",
+    "provenance": "No product implementation/capability pass; source in public-probe-raw.zip"
+  },
+  "native_costs": {
+    "cpu": "Locked ggml CPU ops.cpp8688..8694/8731: Q converts to K vec_dot_type; V per-row O(Dv) scratch, no all-history float materialization",
+    "vulkan": "Locked ggml Vulkan11248..11260: quant K/V, Q>=64, dense, device conditions choose full F16 KV dequant scratch",
+    "metal": "Locked ggml Metal2862..2895: vector thresholdQ<20; Q8_0 andQ>=32 choose kv_f16. extra_kv_f163102..3122 unconditionally reserves full F16 K/V scratch even if vector path does not execute dequant. Need actual path/cost qualification, not narrow-to-decode workaround",
+    "flashinfer": "Mixed DTypeQ/DTypeKV templates exist; default Params have no directv_scale, Python prefill1414/1460 and2916/3136 foldKscale into sm_scale and applyVscale after output. Charge output scaling or qualify a fused original variant."
+  },
+  "audited_at": "2026-10-15"
+}
