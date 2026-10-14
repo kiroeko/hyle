@@ -4,6 +4,10 @@
 
 namespace hyle::compute::apple::detail {
 struct CopyStreamAccess final {
+  // Original FIFO preflight also observes these completions. Share its lock
+  // for nonblocking qualification, observation and retirement attachment.
+  static HYLE_COMPUTE_ROUTE_APPLE_API void serialize(
+      CopyBatchUpdate &, void (*)(void *) noexcept, void *) noexcept;
   static HYLE_COMPUTE_ROUTE_APPLE_API Result<std::size_t> retirement_sources(
       CopyBatchUpdate &, std::span<Completion *>) noexcept;
   // Trusted update receivers only: no host reads or public ready conversion.

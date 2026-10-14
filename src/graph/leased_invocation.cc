@@ -101,12 +101,13 @@ Status RegionAccess::reserve_reads(LeasedInvocation&invocation,std::uint32_t ext
   catch(...){return Status::ResourceExhausted("projected graph fixed permission metadata");}
   state->uses=std::move(uses);return Status::Ok();
 }
-Status RegionAccess::bind_projected(LeasedInvocation&invocation,ValueId value,
+Status bind_projected(LeasedInvocationState*state,ValueId value,
     compute::ConstTensorView tensor,std::span<const compute::ReadLease> pages,
-    compute::ProviderId provider,std::span<const std::uint32_t> readers)noexcept{
-  auto*state=invocation.state_;HYLE_RETURN_IF_ERROR(control_ready(state));
+    compute::ProviderId provider,std::span<const std::uint32_t> readers,
+    bool pending)noexcept{
+  HYLE_RETURN_IF_ERROR(control_ready(state));
   auto*binding=find_binding(state,value);
-  if(!binding || !binding->input || !tensor.valid() || pages.empty() || readers.empty())
+  if(!binding || !binding->input || !tensor.valid() || (!pending && pages.empty()) || readers.empty())
     return Status::InvalidArgument("projected graph requires an input and actual page permissions");
   if(binding->read.valid() || binding->write.valid())
     return Status::FailedPrecondition("projected graph input needs an explicit reset before rebinding");
@@ -131,7 +132,7 @@ Status RegionAccess::bind_projected(LeasedInvocation&invocation,ValueId value,
     }
   }
   if(!consumed)return Status::InvalidArgument("projected capacity has no qualified reader");
-  if(pages.size()-1>state->bindings.capacity()-state->bindings.size())
+  if(!pages.empty() && pages.size()-1>state->bindings.capacity()-state->bindings.size())
     return Status::ResourceExhausted("projected graph permission capacity exhausted");
   const auto storage=tensor.storage();
   for(const auto&page:pages){HYLE_ASSIGN_OR_RETURN(auto view,page.view());
@@ -141,9 +142,26 @@ Status RegionAccess::bind_projected(LeasedInvocation&invocation,ValueId value,
       return Status::InvalidArgument("projected page permission is outside its native capacity");
   }
   HYLE_RETURN_IF_ERROR(state->invocation.bind(value,tensor));
-  binding->read=pages.front();binding->description=tensor.description();binding->exclusive=false;
+  if(!pages.empty())binding->read=pages.front();
+  binding->description=tensor.description();binding->exclusive=false;
   for(std::size_t i=1;i<pages.size();++i)state->bindings.push_back({.read=pages[i]});
   return Status::Ok();
+}
+Status RegionAccess::bind_projected(LeasedInvocation&invocation,ValueId value,
+    compute::ConstTensorView tensor,std::span<const compute::ReadLease> pages,
+    compute::ProviderId provider,std::span<const std::uint32_t> readers)noexcept{
+  return detail::bind_projected(invocation.state_,value,tensor,pages,provider,readers,false);
+}
+Status RegionAccess::bind_pending_projected(LeasedInvocation&invocation,ValueId value,
+    compute::ConstTensorView tensor,compute::ProviderId provider,
+    std::span<const std::uint32_t> readers)noexcept{
+  return detail::bind_projected(invocation.state_,value,tensor,{},provider,readers,true);
+}
+bool RegionAccess::outcome_available(const LeasedInvocation&invocation)noexcept{
+  const auto*state=invocation.state_;
+  return state && !state->busy.load(std::memory_order_acquire) &&
+      !state->invocation.in_flight() && !state->results.load(std::memory_order_acquire) &&
+      state->completion.available();
 }
 Status RegionAccess::bind_gather(LeasedInvocation&invocation,const Graph&graph,
     ValueId capacity,ValueId indices,compute::ConstTensorView tensor,
@@ -447,15 +465,26 @@ Result<compute::Completion> LeasedInvocation::submit(compute::Queue &queue) noex
   return std::unexpected(Status::Internal("leased graph active queue is missing"));
 }
 Result<compute::Completion> LeasedInvocation::submit(std::span<const QueueBinding> queues) noexcept {
+  return detail::RegionAccess::submit(*this,queues,{});
+}
+Result<compute::Completion> detail::RegionAccess::submit(LeasedInvocation&invocation,
+    std::span<const QueueBinding> queues,OrderedGraphSubmission ordered)noexcept{
+  auto*state_=invocation.state_;
   HYLE_RETURN_IF_ERROR(detail::control_ready(state_));
+  if(bool(ordered.admit)!=bool(ordered.map) || bool(ordered.admit)!=bool(ordered.pending_input) ||
+      (ordered.admit && !ordered.owner))
+    return std::unexpected(Status::InvalidArgument("ordered Graph submission requires both admission and mapping"));
   for (auto &binding : state_->bindings) {
     if (binding.exclusive && binding.read.valid()) {
       HYLE_ASSIGN_OR_RETURN(binding.write, binding.read.try_write());
     }
   }
   HYLE_ASSIGN_OR_RETURN(auto batch, state_->uses.begin());
-  for (const auto &binding : state_->bindings)
+  for (const auto &binding : state_->bindings) {
+    if(!binding.exclusive && !binding.read.valid() && binding.input &&
+        ordered.pending_input && ordered.pending_input(ordered.owner,binding.value))continue;
     HYLE_RETURN_IF_ERROR(binding.exclusive ? batch.write(binding.write) : batch.read(binding.read));
+  }
   HYLE_ASSIGN_OR_RETURN(auto cursor, detail::SubmissionCursor::begin(state_->invocation, queues));
   state_->completion_retirement = state_->completion.reserve_retirement();
   {
@@ -466,13 +495,21 @@ Result<compute::Completion> LeasedInvocation::submit(std::span<const QueueBindin
     state_->busy.store(true, std::memory_order_release);
     state_->incref();
   }
+  struct Admission final {LeasedInvocationState* state;OrderedGraphSubmission ordered;};
+  Admission admission{state_,ordered};
+  const SharedSequenceFn before=ordered.admit?+[](void*opaque,ExecutionLaneId lane,
+      compute::detail::QueueSequence&sequence)noexcept->Status{
+    auto&call=*static_cast<Admission*>(opaque);
+    return call.ordered.admit(call.ordered.owner,lane,sequence,call.state->batch);
+  }:nullptr;
   while (!cursor.done()) {
-    auto advanced = cursor.advance(true, &detail::retain_accepted, state_);
+    auto advanced = cursor.advance(true, &detail::retain_accepted, state_,before,&admission);
     if (!advanced) cursor.reject_successors(std::move(advanced).error());
   }
   detail::record_error(state_, cursor.submission_error());
   auto completion = cursor.finish(true);
   if (completion) {
+    if(ordered.map)*completion=ordered.map(ordered.owner,std::move(*completion));
     detail::retain_accepted(state_, state_->retentions.size() - 1, *completion);
   } else {
     detail::record_error(state_, completion.error());

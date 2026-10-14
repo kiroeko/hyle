@@ -1,5 +1,6 @@
 #pragma once
 #include "hyle/compute/detail/apple_batch_access.h"
+#include "../compute_route_apple/apple_file_stream_access.h"
 #include "../graph_batch/native_paged_slots.h"
 
 namespace hyle::graph::cpu_apple::detail {
@@ -13,6 +14,8 @@ struct PageTraits final {
   using Memory=compute::apple::MemoryResource;using Invocation=compute::apple::Invocation;
   using CopyInvocation=compute::apple::CopyBatchInvocation;using View=mlx::core::array;
   using Submission=compute::OwnedResult<compute::apple::Results>;
+  using CopyUpdate=compute::apple::CopyBatchUpdate;
+  using CopyAccess=compute::apple::detail::CopyStreamAccess;
   static Status validate_query_resource(const Memory& memory,mem::ConstBufferView view){
     if(view.resource().properties().domain!=memory.ref().properties().domain)
       return Status::InvalidArgument("page query is not an original readonly Metal carrier");
@@ -25,6 +28,8 @@ struct PageTraits final {
   static auto copy_invocation(const compute::apple::CopyBatchProgram& p){return CopyInvocation::create(p);}
   static auto binding(const Memory& m,compute::ReadLease r,compute::TensorDesc d,compute::LeaseImportOptions o){return m.binding(std::move(r),d,o);}
   static auto paged_binding(const Memory& m,compute::PagedArenaRead r,compute::LeaseImportOptions o){return compute::apple::detail::PagedBatchAccess::binding(m,std::move(r),o);}
+  static auto paged_binding(const Memory& m,compute::PagedArenaPendingRead r,compute::LeaseImportOptions o){return compute::apple::detail::PagedBatchAccess::binding(m,std::move(r),o);}
+  static auto qualify_source(const Context&c,compute::detail::CompletionDependency p){return compute::apple::detail::PagedBatchAccess::qualify_source(*c.native,p);}
   static auto submit(Invocation& i,compute::LeaseUseBatch u){return compute::apple::detail::PagedBatchAccess::submit(i,std::move(u));}
   static auto wait_native(Invocation& i){return compute::apple::detail::PagedBatchAccess::wait_native(i);}
   static auto reuse_gate(Invocation& i){return compute::apple::detail::PagedBatchAccess::reuse_gate(i);}

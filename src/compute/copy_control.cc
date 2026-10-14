@@ -27,8 +27,14 @@ mem::AllocatorRef CopyMetadata::allocator() noexcept {
   }, this};
 }
 Status prepare_copy_control(std::span<const CopyBinding> bindings, std::span<const CopyPhase> phases,
-    std::span<const ResolvedCopyRange> copies, CopyControlScratch scratch) noexcept {
+    std::span<const ResolvedCopyRange> copies, CopyControlScratch scratch,
+    std::span<const CopyResourceId> native_sources) noexcept {
   const auto n = bindings.size();
+  const auto owned=[&](std::size_t id){return std::any_of(native_sources.begin(),native_sources.end(),
+      [&](CopyResourceId source){return source.value==id;});};
+  for(const auto id:native_sources)if(id.value>=n || !bindings[id.value].root ||
+      bindings[id.value].read.valid() || bindings[id.value].write.valid())
+    return Status::InvalidArgument("native result source requires its retained readonly owner");
   if (phases.size() > 64 || n > SIZE_MAX / (std::max)(phases.size(), std::size_t{1}) ||
       scratch.root_order.size() < n || scratch.root_leader.size() < n || scratch.last_write.size() < n ||
       scratch.roles.size() < n * phases.size() || scratch.native_ranges.size() < copies.size() ||
@@ -54,12 +60,23 @@ Status prepare_copy_control(std::span<const CopyBinding> bindings, std::span<con
     const auto &source = bindings[copy.source], &destination = bindings[copy.destination];
     if (!source.root || !destination.root || !destination.write.valid())
       return Status::FailedPrecondition("copy control permission is missing");
-    HYLE_ASSIGN_OR_RETURN(auto source_view, source.source.subview(copy.source_offset, copy.physical_bytes));
+    mem::ConstBufferView source_view;
+    if(!owned(copy.source)){HYLE_ASSIGN_OR_RETURN(source_view,source.source.subview(copy.source_offset,copy.physical_bytes));}
     HYLE_ASSIGN_OR_RETURN(auto destination_view, destination.destination.subview(copy.destination_offset, copy.physical_bytes));
     scratch.native_ranges[index] = {destination_view, source_view};
     scratch.roles[copy.phase * n + scratch.root_leader[copy.source]] |= 1;
     scratch.roles[copy.phase * n + scratch.root_leader[copy.destination]] |= 2;
     if (source.producer.valid()) scratch.roles[copy.phase * n + copy.source] |= 4;
+    else if(owned(copy.source)){
+      // Several outputs of one move-only native result share one completion.
+      // Every referencing phase checks that original observer, including a
+      // phase which reads only a different output binding.
+      bool producer=false;
+      for(const auto id:native_sources)if(bindings[id.value].root==source.root && bindings[id.value].producer.valid()){
+        scratch.roles[copy.phase*n+id.value]|=4;producer=true;break;
+      }
+      if(!producer)return Status::FailedPrecondition("native result source has no original producer");
+    }
     if (destination.producer.valid()) scratch.roles[copy.phase * n + copy.destination] |= 4;
     scratch.last_write[scratch.root_leader[copy.destination]] = copy.phase;
     scratch.written[index] = {copy.destination, copy.phase, copy.destination_offset, copy.destination_offset + copy.logical_bytes};
@@ -93,7 +110,7 @@ Status prepare_copy_control(std::span<const CopyBinding> bindings, std::span<con
 }
 Status admit_copy_control(LeaseUsePool &pool, std::span<const CopyBinding> bindings,
     std::span<const CopyPhasePlan> phases, std::span<const CopyRootUse> uses,
-    std::span<LeaseUseBatch> tickets) noexcept {
+    std::span<LeaseUseBatch> tickets,std::span<const CopyResourceId> native_sources) noexcept {
   if (tickets.size() < phases.size()) return Status::ResourceExhausted("copy use ticket capacity");
   Status admission;
   for (std::size_t phase = 0; phase < phases.size() && admission.ok(); ++phase) {
@@ -107,6 +124,13 @@ Status admit_copy_control(LeaseUsePool &pool, std::span<const CopyBinding> bindi
     for (const auto &use : uses.subspan(plan.use_first, plan.use_count)) {
       if (use.binding >= bindings.size()) { admission = Status::InvalidArgument("copy use binding is invalid"); break; }
       const auto &binding = bindings[use.binding];
+      if(!use.write && std::any_of(native_sources.begin(),native_sources.end(),
+          [&](CopyResourceId id){return id.value==use.binding;})){
+        if(!binding.root || binding.read.valid() || binding.write.valid()){
+          admission=Status::InvalidArgument("native result source owner is invalid");break;
+        }
+        continue; // Original native phase retains immutable result storage.
+      }
       admission = use.write ? LeaseAccess::write_unique(tickets[phase], binding.write, use.ordered)
           : binding.write.valid() ? LeaseAccess::ordered_read_unique(tickets[phase], binding.write)
                                   : LeaseAccess::read_unique(tickets[phase], binding.read);

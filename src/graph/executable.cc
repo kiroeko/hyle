@@ -7990,7 +7990,8 @@ void detail::SubmissionCursor::reject_successors(Status terminal) noexcept {
 }
 
 Result<bool> detail::SubmissionCursor::advance(bool wait_dependencies,
-    AcceptedCompletionFn accepted, void *owner) noexcept {
+    AcceptedCompletionFn accepted, void *owner, SharedSequenceFn admission,
+    void *admission_owner) noexcept {
   if (state_ == nullptr || finished_)
     return std::unexpected(Status::FailedPrecondition(
         "graph submission cursor is invalid or finished"));
@@ -8072,8 +8073,16 @@ Result<bool> detail::SubmissionCursor::advance(bool wait_dependencies,
         tail_error = std::move(sequence).error();
         break;
       }
+      if (admission) {
+        const auto admitted = admission(admission_owner, segment.lane, *sequence);
+        if (!admitted.ok()) {
+          tail_error = admitted;
+          sequence->record(compute::detail::EnqueueResult::rejected(admitted));
+          continue_segment = false;
+        }
+      }
       for (std::size_t dependency_index = segment.dependency_begin;
-           dependency_index < dependency_end; ++dependency_index) {
+           continue_segment && dependency_index < dependency_end; ++dependency_index) {
         if (state_->dependency_routes[dependency_index] ==
             ReplayDependencyRoute::kDeviceWait) {
           const std::uint32_t source_segment =

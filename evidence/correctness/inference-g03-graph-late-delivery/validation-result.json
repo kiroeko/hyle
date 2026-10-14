@@ -1,0 +1,27 @@
+{
+  "kind": "PARTIAL_GRAPH_LATE_INSTALLED_NATIVE_AND_COMMON_DELIVERY",
+  "state": "AUDITED",
+  "whole_g03_completed": false,
+  "verified": [
+    "Apple/Vulkan relocated static/shared: public CPU Graph64, native accepted late source/F2/paged64, CPU+native Graph64 with required CPU fragments/two page nodes, independent reverse-range/reduction64 and four standalone public headers each",
+    "Each SDK consumer compile command uses installed headers without canonical source or producer build paths; shipping product commands have no HYLE_TESTING",
+    "New actual native joint shared metadata exhaustion refuses pending source cold owner and pending binding without consuming Update/page permissions/leaking charges; both routes source and three host sanitizer configurations pass, Apple nine/Vulkan eleven cases",
+    "Actual CUDA Graph eight lifecycle cases: true gated numeric suffix/old output/page writer recovery, known/unknown/late source errors, abandonment, original CPU Queue rejection, two native cancel refusal boundaries"
+  ],
+  "limitations": [
+    "CUDA original native cancellation is Unimplemented. Refusal preserves accepted work and live permissions to actual retirement; not a cancellation support certificate. Requesting cancel on original Update also closes its slot, preventing successful mutable withdrawal.",
+    "Readonly aliases and source range proof covered by prior risk checkpoint; independent mutable import of these native result allocations is absent from public HYLE API. Out-of-contract native mutation is not declared tested.",
+    "CPU+CUDA full source/factor and installed CUDA static/shared qualification still running or unproven; old frozen archive diagnostic does not substitute.",
+    "Host sanitizer model/private-driver limitations and original G01/G02 unresolved gates/G04-G10 retained"
+  ],
+  "failures": "Original CUDA graph risk preflight required unwanted ggml CUDA closure and was refused; directed actual Queue dependency fixed. Initial cancellation assertions expected unsupported preemption; preserved original Unimplemented failures and corrected fixture to actual declared native contract. No product cancel weakening or budget reset.",
+  "cumulative_seconds": {
+    "installed_native": 110.58186233000004,
+    "host_sanitizers": 330.398713417,
+    "cuda_source": 759.1694805779999
+  },
+  "remaining": [
+    "CPU+CUDA full matching component archives, installed static/shared and lifecycle of required CPU/GPU fragments",
+    "Finite remaining G03 gates and original G01/G02 unresolved acceptance; G04-G10 unchanged"
+  ]
+}

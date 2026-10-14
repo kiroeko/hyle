@@ -1,4 +1,5 @@
 #include "vulkan_memory_internal.h"
+#include "vulkan_copy_internal.h"
 #include "hyle/compute/detail/vulkan_batch_access.h"
 #include "hyle/compute/detail/paged_arena_access.h"
 
@@ -268,5 +269,22 @@ Result<NativeStorage> MemoryResource::storage_info(const Tensor &tensor) const n
   return NativeStorage{buffer.handle, buffer.offset, buffer.bytes,
       buffer.allocation_bytes != 0 ? std::optional<std::size_t>(buffer.allocation_bytes) : std::nullopt,
       buffer.transfer_eligible};
+}
+Result<detail::CopySpan> detail::result_copy_span(const std::shared_ptr<Runtime>&runtime,
+    const Results&result,std::size_t index,const TensorDesc&description)noexcept{
+  const auto tensors=result.tensors();
+  if(index>=tensors.size())return std::unexpected(Status::OutOfRange("Vulkan result copy output index"));
+  const auto&tensor=tensors[index];
+  if(!tensor.valid() || tensor.description()!=description || !description.is_plain() || !description.is_dense())
+    return std::unexpected(Status::InvalidArgument("Vulkan result copy dense carrier differs"));
+  const auto&buffer=Access::buffer(tensor);
+  HYLE_ASSIGN_OR_RETURN(auto bytes,description.required_bytes());
+  if(!runtime || !buffer || buffer->device!=runtime->device || !buffer->allocation_bytes ||
+      buffer->offset>SIZE_MAX || bytes>buffer->bytes)
+    return std::unexpected(Status::InvalidArgument("Vulkan result copy backing/Device is not qualified"));
+  std::uint64_t key=0;static_assert(sizeof(buffer->handle)<=sizeof(key));
+  std::memcpy(&key,&buffer->handle,sizeof(buffer->handle));
+  return CopySpan{buffer,{reinterpret_cast<std::uintptr_t>(runtime->device.get()),key,
+      static_cast<std::size_t>(buffer->offset),bytes,4},buffer->offset};
 }
 } // namespace hyle::compute::vulkan

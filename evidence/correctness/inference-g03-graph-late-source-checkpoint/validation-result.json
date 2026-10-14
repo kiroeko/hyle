@@ -1,0 +1,59 @@
+{
+  "kind": "PARTIAL_IMPLEMENTATION_CHECKPOINT",
+  "status": "AUDITED",
+  "baseline": "19413efdd0427cd21f4431dfa7561291e9034bde",
+  "authority": "2bc71f56a",
+  "whole_item_completed": false,
+  "verified": [
+    "Windows common Graph pending64 F16/BF16, 2requests/2slots/GQA8/2D256 and independent oracle",
+    "Windows original receiver9 and original outcome36",
+    "Air Apple native multi-output Abs -> original F2 -> pending Direct attention64 F16/BF16",
+    "Air Vulkan same producer/F2/Direct attention64 F16",
+    "Windows copy-range9 including logical-only late source and full physical overlap proof"
+  ],
+  "unproven": [
+    "Native joint Graph pending numeric/lifecycle consumers",
+    "CUDA and CPU+CUDA Graph pending full journeys",
+    "Independent reduction through new late source",
+    "New-interface error/unknown/cancel/abandon/OOM/alias risks",
+    "New source/static/shared delivery and standalone headers",
+    "Applicable new host sanitizers and remaining selector reverse factors",
+    "Whole G03 and original G01/G02 unresolved gates"
+  ],
+  "failures": "All per-attempt compile/test failures and cumulative times preserved in raw receipts. No host-wait substitute for native result source, no rejected managed-producer fixture replacement.",
+  "provenance": "Per-stage Windows product/test hashes; Air full tracked-source manifest digests, individual attempt manifests and identity. Current draft zip is a checkpoint, not an immutable candidate or a claim that every earlier attempt used latest bytes.",
+  "costs": "Nullable native cold metadata pointers and explicit cold reserve allocations; no new executor/queue/output slot/KV history copy. Windows target registration reran configure and regenerated cached SIMD dispatch objects; retained actual build cost, no public build-system change.",
+  "totals": {
+    "windows": 451.3749999999709,
+    "air": 69.512447834
+  },
+  "ordinary_checks": [
+    {
+      "name": "closure",
+      "command": [
+        "python",
+        "scripts/check-module-closure.py",
+        "--previous-ref",
+        "2bc71f56a"
+      ],
+      "exit_code": 0
+    },
+    {
+      "name": "docs",
+      "command": [
+        "python",
+        "scripts/check-docs.py"
+      ],
+      "exit_code": 0
+    },
+    {
+      "name": "diff",
+      "command": [
+        "git",
+        "diff",
+        "--check"
+      ],
+      "exit_code": 0
+    }
+  ]
+}

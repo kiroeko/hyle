@@ -16,6 +16,7 @@ namespace detail { struct CopyProgramState; struct CopyInvocationState; struct C
 
 class CopyBatchInvocation;
 class CopyBatchSubmission;
+struct ResultCopyBinding final {CopyResourceId resource;std::size_t output_index=0;TensorDesc description;};
 // Original Apple Runtime and native resources, with immutable cold limits.
 class CopyBatchProgram final {
 public:
@@ -50,6 +51,11 @@ public:
   // replay preparation still verifies the original Metal Device. Mutable
   // endpoints require the exact resource. No implicit evaluation or wait.
   HYLE_COMPUTE_ROUTE_APPLE_API Status bind_source(CopyResourceId, const ReadLease &) noexcept;
+  // Retains one accepted original native result for any number of outputs.
+  // No host wait/evaluation or ready lease. The original FIFO copy Job resolves
+  // and checks backing/shape/aliases before blit. Failure preserves result;
+  // binding IDs stay owned until reset, and native aliases must not mutate.
+  HYLE_COMPUTE_ROUTE_APPLE_API Status bind_source(std::span<const ResultCopyBinding>,OwnedResult<Results>&&)noexcept;
   HYLE_COMPUTE_ROUTE_APPLE_API Status bind_mutable(CopyResourceId, WriteLease &&) noexcept;
   HYLE_COMPUTE_ROUTE_APPLE_API Status bind_producer(CopyResourceId, Completion &&) noexcept;
   // Return the original mutable binding after all accepted phases actually

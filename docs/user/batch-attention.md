@@ -254,8 +254,8 @@ copy = update.release_invocation().value();
 不发布成功结果，并保全部 source 与页 guards 至实际退休。控制访问外部串行；旧
 OwnedResult/ResultLease、pending 工作或尚未回接的 source 阻止 receiver 复用。
 frame 与 native binding 有显式冷 metadata 分配，原 metadata prepare 的等待和 native
-private unknown 保留。这个入口当前覆盖两 native 路线；CPU/CUDA、Graph 组合与 late
-native producer output 的完整 G03 验收仍在活动轮内。
+private unknown 保留。这个 Direct 入口覆盖两 native 路线；Graph 组合与 late native producer
+output 的完整 G03 验收仍在活动轮内。
 
 共同 `hyle::compute::PagedBatchReceiver` 移交原 `BatchInvocation`，沿其原队列、
 PreparedBatch 和输出 buffer 消费同样的 pending frame。CPU 与已资格的 Linux CUDA
@@ -278,6 +278,74 @@ update = receiver.take_update().value();
 或归还原 Update；已接纳 wait/math prefix 的错误通过真实 Completion 返回并保 guards
 至实际退休。旧 output reader 阻止原 buffer 覆盖，尚未回接的 Update 阻止 receiver
 复用；外部 PreparedBatch ticket 与 Graph 外部输出控制器不能移交给这个 Direct 扩展。
+
+### Graph pending 与 native producer 输出（G03 活动接口）
+
+`graph::batch::PendingInvocation` 移交原 Graph batch coordinator，在其原队列和输出槽内
+组合 Update；pending frame 只绑定已准备的 paged 节点 K/V 输入。Q 用 ready lease，外部
+输出用 writer，metadata 由原 prepare_batch 绑定。CPU/CUDA source 的双请求/双槽/64步 F16/BF16
+已验证；CPU+CUDA 与新接口全部风险/三交付仍看
+[活动 G03 卡](../implementation/tasks/compute/inference-g03-pending-page-consumption.md)。
+
+```cpp
+auto pending = graph::batch::PendingInvocation::create(std::move(original), source_capacity).value();
+HYLE_RETURN_IF_ERROR(pending.prepare_batch(node_layouts));
+HYLE_RETURN_IF_ERROR(pending.bind(query_id, query_desc, query));
+HYLE_RETURN_IF_ERROR(pending.bind(key_id, keys)); // PagedArenaPendingRead
+HYLE_RETURN_IF_ERROR(pending.bind(value_id, values));
+HYLE_RETURN_IF_ERROR(pending.bind(output_id, output_desc, std::move(output_writer)));
+{
+  auto completion = pending.submit(std::move(update)).value();
+  HYLE_RETURN_IF_ERROR(completion.wait());
+  auto output = pending.output(output_id).value();
+  // output.storage_lease() retains the original output storage.
+}
+update = pending.take_update().value();
+```
+
+来源排序在原 shared sequence 中先接纳，随后取得精确 pending 页 guards；原公共
+completion 合并来源与实际消费结果。来源失败不发布成功输出。旧 Graph output/completion、
+实际 pending uses 或未回接的 Update 阻止复用，不能只释放一个 public handle就覆盖原槽。
+两 native 联合 Graph 在原 Invocation 上冷调用 `reserve_pending_sources(capacity)`，再
+prepare_batch、bind(PagedArenaPendingRead)、submit(Update&&)、take_update。实际两路线的
+双请求/64步、两个页节点共享同一 Update与 CPU 前后段已通过数值 source 消费，新增完整
+生命周期/交付验收仍在进行。一个固定图的 active Q 输出行数保持固定；2行 decode与18行
+混合 prefill可冷准备两个图，每个图各两槽，合计四个冷槽。这些槽/metadata准备/跨CPU边界
+的 checked等待均计成本。它不创建第二个 Graph 或 native 执行器。
+
+CUDA wrapper 可先用 `BatchProgramOptions.resource={}` 声明 schema，在其 Context 上创建
+实际 device/pinned资源，再通过显式 CompileEnvironment固定这些 storage domain。F2、lane
+workspace和页 arena使用同一个 Context的资源；其它 Context的同设备资源不能冒充这个身份。
+
+Apple/Vulkan 原 F2 可冷绑定同一个已接纳 native producer 的多个输出；以下 `native` 指
+`compute::apple` 或 `compute::vulkan`。每条描述必须与实际输出的 dtype、dense shape及字节
+尺寸一致，output_index 指原结果中的输出序号：
+
+```cpp
+auto produced = producer.submit().value();
+const std::array sources{
+    native::ResultCopyBinding{key_source_id, 0, key_desc},
+    native::ResultCopyBinding{value_source_id, 1, value_desc}};
+HYLE_RETURN_IF_ERROR(copy.bind_source(sources, std::move(produced)));
+HYLE_RETURN_IF_ERROR(copy.prepare_replay(phases, ranges));
+auto copied = copy.submit().value();
+update = native::CopyBatchUpdate::take(std::move(copy), std::move(copied)).value();
+// Transfer update to the pending consumer; no producer.wait() is required.
+```
+
+同一次 copy还可分别绑定两个独立 producer结果：各调用一次 `bind_source`，使用互不重复
+的 resource ID；随后一次 prepare/submit，移交一个 Update给消费者。每个 accepted结果
+只保自己的原 completion，不为 K/V或两个 page节点复制 producer执行或来源观察者。
+
+成功绑定才移交整个 OwnedResult与它的唯一 completion owner，拒绝保留入参。输出逻辑尺寸
+不构成 ready/F1 权限：Apple 在原 worker 的 preflight 取得实际 backing 并完整重验范围/别名
+后才 blit；Vulkan 可冷取得实际地址，但来源排序与成功仍由原 producer合同裁决。foreign
+Runtime、未资格的动态 queue prefix及不匹配输出拒绝。producer 槽须等原结果/storage/source
+全部引用与实际工作退休后回收。两路线的实际多输出 Abs→F2→Direct pending attention source
+旅程已验证，独立 Abs多输出→两阶段范围重排→CPU reduction的64步source也已验证；这个
+正交消费者在最终 F2成功后显式搬运256字节至host，不声明 GPU reduction流水或零copy。
+Apple/Vulkan 新接口的上述 Direct/joint/正交消费者已通过 source 与迁址 static/shared；
+完整 G03 路线资格仍按当前施工卡裁决。
 
 原F2已消费page writer时，保留PagedPageWriter，等成功ready输出后调用complete；若放弃
 这个已消费的控制对象，arena不会猜测该页已退休或重新ready。失败/无法完成观察的页按
@@ -333,6 +401,14 @@ metadata/scratch/driver费仍是UNKNOWN，硬拒未知预算按原资格明确�
 accepted native prefix已退休；drain按实际guard/fence/worker等待并保留原错误。正常放弃
 可在真实退休后成功排空，取消停止未开始工作。close/drain后的对象不重用；错误slot的
 复用必须遵守原route失败合同，不靠清除一个cached status假装恢复。
+共同 pending Graph每次 `prepare_batch` 清除上次 pending输入，后续 bind会为 reader和lane
+表请求 bounded metadata；外层 reserve不等于每步零分配。warm submit不新增来源协议节点、
+不复制KV或创建队列；完整 prepare/bind/submit费用应分别计入。CPU+CUDA图的 GPU→CPU
+边界可沿原 replay合同执行 checked host wait，因此 submit不保证非阻塞。G06规划与G09
+流水分别处理这些成本，不从 pending页接纳推导完全异步或 capture资格。
+
+CUDA 已接纳 native work 的 request_cancel 可返回 Unimplemented；必须检查返回值，
+不能把拒绝取消当成已经取消或退休。停止提交后继，等原实际工作退休后再释放相关权限。
 
 当前F5 batch没有已资格的capture；稳定地址、固定batch size或MLX shapeless本身不能
 证明capture topology。需要不同容量/算法域时冷创建新的受资格program/slot，明确计预算。

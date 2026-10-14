@@ -18,6 +18,7 @@ namespace detail { struct CopyProgramState; struct CopyInvocationState; struct C
 
 class CopyBatchInvocation;
 class CopyBatchSubmission;
+struct ResultCopyBinding final {CopyResourceId resource;std::size_t output_index=0;TensorDesc description;};
 // Original Vulkan Runtime and native resources, with immutable cold limits.
 class CopyBatchProgram final {
 public:
@@ -48,6 +49,11 @@ public:
   HYLE_COMPUTE_ROUTE_VULKAN_API static Result<CopyBatchInvocation> create(const CopyBatchProgram &) noexcept;
   bool valid() const noexcept { return state_ != nullptr; }
   HYLE_COMPUTE_ROUTE_VULKAN_API Status bind_source(CopyResourceId, const ReadLease &) noexcept;
+  // Retains one accepted original native result for any number of outputs.
+  // Cold buffer addresses do not grant ready permission: the original producer
+  // and queue still govern success/retirement. Failure preserves result;
+  // binding IDs stay owned until reset, and native aliases must not mutate.
+  HYLE_COMPUTE_ROUTE_VULKAN_API Status bind_source(std::span<const ResultCopyBinding>,OwnedResult<Results>&&)noexcept;
   HYLE_COMPUTE_ROUTE_VULKAN_API Status bind_mutable(CopyResourceId, WriteLease &&) noexcept;
   HYLE_COMPUTE_ROUTE_VULKAN_API Status bind_producer(CopyResourceId, Completion &&) noexcept;
   // Return the original mutable binding after all accepted phases actually

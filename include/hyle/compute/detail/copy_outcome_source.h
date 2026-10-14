@@ -27,6 +27,7 @@ struct CopyOutcomeSourceControl final {
   Status (*wait)(void *) noexcept = nullptr;
   Status (*request_cancel)(void *) noexcept = nullptr;
   void (*abandon)(void *) noexcept = nullptr;
+  void (*serialize)(void *, void (*)(void *) noexcept, void *) noexcept = nullptr;
 };
 struct CopyOutcomeSourceAccess final {
   static HYLE_COMPUTE_API Result<CopyOutcomeSourceState *> create(
@@ -69,7 +70,10 @@ public:
         [](void *p) noexcept { return static_cast<Update *>(p)->observe(); },
         [](void *p) noexcept { return static_cast<Update *>(p)->wait(); },
         [](void *p) noexcept { return static_cast<Update *>(p)->request_cancel(); },
-        [](void *p) noexcept { *static_cast<Update *>(p) = {}; }};
+        [](void *p) noexcept { *static_cast<Update *>(p) = {}; },
+        [](void *p, void (*action)(void *) noexcept, void *context) noexcept {
+          serialize(*static_cast<Update *>(p), action, context);
+        }};
     HYLE_ASSIGN_OR_RETURN(auto state, CopyOutcomeSourceAccess::create(
         capacity, sizeof(Update), alignof(Update), control, std::move(options)));
     return CopyOutcomeSource(state);
@@ -89,13 +93,19 @@ public:
     HYLE_ASSIGN_OR_RETURN(auto destinations, CopyOutcomeSourceAccess::prepare(state_, count));
     HYLE_ASSIGN_OR_RETURN(auto filled, Access::retirement_sources(source, destinations));
     HYLE_FATAL_ASSERT(filled == count);
-    for (auto *completion : destinations) {
-      if (!completion)
-        return std::unexpected(Status::InvalidArgument("copy outcome source completion"));
-      HYLE_ASSIGN_OR_RETURN(auto original, RetainedCompletion::native_dependency(*completion));
-      if (original.terminal_hint && !original.terminal_hint->ok())
-        return std::unexpected(*original.terminal_hint);
-    }
+    struct Qualification final { std::span<Completion *> completions; Status terminal; } qualification{destinations, {}};
+    serialize(source, [](void *opaque) noexcept {
+      auto &check=*static_cast<Qualification *>(opaque);
+      for (auto *completion : check.completions) {
+        if (!completion) { check.terminal=Status::InvalidArgument("copy outcome source completion"); return; }
+        auto original=RetainedCompletion::native_dependency(*completion);
+        if (!original) { check.terminal=original.error(); return; }
+        if (original->terminal_hint && !original->terminal_hint->ok()) {
+          check.terminal=*original->terminal_hint; return;
+        }
+      }
+    }, &qualification);
+    HYLE_RETURN_IF_ERROR(qualification.terminal);
     update() = std::move(source);
     return CopyOutcomeSourceAccess::commit(state_, count);
   }
@@ -109,6 +119,11 @@ public:
     if (auto *state = std::exchange(state_, nullptr)) CopyOutcomeSourceAccess::release(state);
   }
 private:
+  static void serialize(Update &source, void (*action)(void *) noexcept, void *context) noexcept {
+    if constexpr (requires { Access::serialize(source,action,context); })
+      Access::serialize(source,action,context);
+    else action(context);
+  }
   explicit CopyOutcomeSource(CopyOutcomeSourceState *state) noexcept : state_(state) {}
   CopyOutcomeSourceState *state_ = nullptr;
 };

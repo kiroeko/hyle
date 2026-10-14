@@ -216,6 +216,38 @@ Result<Completion> submit_copy_recording(CopyRecording &state) noexcept {
   state.report.phase_completions = 1;
   return cd::CompletionAccess::make(&copy_completion_vtable, &state);
 }
+Status bind_result_copy_recording(CopyRecording&state,std::span<const cd::CopyBackendRange>ranges)noexcept{
+  std::lock_guard lock(state.completion_mutex);
+  if(state.done.load(std::memory_order_acquire)==0 || state.completion_owner || state.admitted_owner)
+    return Status::Unavailable("Apple result-copy phase is retained");
+  if(!state.terminal.ok())return state.terminal;
+  state.prepared=false;
+  if(ranges.size()>state.limits.max_copies)return Status::ResourceExhausted("Apple result-copy capacity");
+  std::size_t bytes=0;
+  for(std::size_t index=0;index<ranges.size();++index){
+    HYLE_ASSIGN_OR_RETURN(auto destination,copy_span(ranges[index].destination));
+    if(destination.physical.address_space!=state.device)return Status::InvalidArgument("Apple result-copy destination Device differs");
+    if(destination.physical.capacity>state.limits.max_bytes-bytes)return Status::ResourceExhausted("Apple result-copy byte capacity");
+    bytes+=destination.physical.capacity;
+    state.commands[index]={nullptr,destination.buffer,0,destination.physical.origin,destination.physical.capacity};
+  }
+  state.report={};state.report.active_copies=static_cast<std::uint32_t>(ranges.size());
+  state.report.logical_bytes=bytes;state.report.physical_bytes=bytes;state.report.native_metadata_unknown=true;
+  state.prefix_marker=true;state.prepared=true;
+  state.calls.store(0,std::memory_order_relaxed);state.waits.store(0,std::memory_order_relaxed);return Status::Ok();
+}
+Status resolve_result_copy_recording(CopyRecording&state,std::span<const cd::CopyBackendRange>ranges,
+    ResultCopySourceFn source,void*owner)noexcept{
+  if(!source || state.runtime->owner_id.load(std::memory_order_acquire)!=platform::this_thread::get_id())
+    return Status::FailedPrecondition("Apple result-copy resolution requires the original FIFO owner");
+  if(ranges.size()!=state.report.active_copies)return Status::Internal("Apple result-copy descriptor set changed");
+  for(std::size_t index=0;index<ranges.size();++index){
+    HYLE_ASSIGN_OR_RETURN(auto span,source(owner,index));
+    if(span.physical.address_space!=state.device || span.physical.capacity!=ranges[index].destination.size())
+      return Status::InvalidArgument("Apple result-copy source Device/range differs");
+    state.commands[index].source=span.buffer;state.commands[index].source_offset=span.physical.origin;
+  }return Status::Ok();
+}
 CopyBatchReport copy_recording_report(const CopyRecording &state) noexcept {
   std::lock_guard lock(state.completion_mutex);
   auto report = state.report;

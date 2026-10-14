@@ -325,6 +325,22 @@ Status match_dense(const mx::array &array, const TensorDesc &description) noexce
 }
 } // namespace
 
+Result<detail::CopySpan> detail::result_copy_span(const Results&result,std::size_t index,
+    const TensorDesc&description)noexcept{
+  const auto arrays=result.arrays();
+  if(index>=arrays.size())return std::unexpected(Status::OutOfRange("Apple result copy output index"));
+  const auto&array=arrays[index];
+  if(array.status()!=mx::array::available)return std::unexpected(Status::Unavailable("Apple result backing is not ready on its original owner"));
+  HYLE_RETURN_IF_ERROR(match_dense(array,description));
+  if(array.offset()<0)return std::unexpected(Status::OutOfRange("Apple result copy origin is negative"));
+  id<MTLBuffer> buffer=(__bridge id<MTLBuffer>)array.buffer().ptr();
+  const auto offset=static_cast<std::size_t>(array.offset());
+  if(buffer==nil || buffer.storageMode!=MTLStorageModeShared || offset>buffer.length || array.nbytes()>buffer.length-offset)
+    return std::unexpected(Status::InvalidArgument("Apple result copy exceeds original shared backing"));
+  return CopySpan{const_cast<void*>(array.buffer().ptr()),{reinterpret_cast<std::uintptr_t>((__bridge void*)buffer.device),
+    reinterpret_cast<std::uintptr_t>(array.buffer().ptr()),offset,array.nbytes(),4}};
+}
+
 Status MemoryResource::copy_from_host(const mx::array &destination, ConstTensorView source) const noexcept {
   if (!source.valid()) return Status::InvalidArgument("invalid Apple boundary source");
   HYLE_RETURN_IF_ERROR(match_dense(destination, source.description()));

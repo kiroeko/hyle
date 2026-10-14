@@ -1,0 +1,31 @@
+[0/2] Re-checking globbed directories...
+[1/31] cd /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-build/hyle/src/compute_route_apple && /opt/homebrew/bin/cmake -E copy_if_different /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-build/hyle/_deps/mlx-build/mlx/backend/metal/kernels/mlx.metallib /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-build/hyle/_deps/mlx-build/mlx.metallib
+[2/31] Building CXX object hyle/src/graph_batch/CMakeFiles/hyle_graph_batch.dir/native_paged_node.cc.o
+[3/31] Building CXX object hyle/src/graph_batch/CMakeFiles/hyle_graph_batch.dir/materialized_invocation.cc.o
+[4/31] Building CXX object hyle/src/graph_batch/CMakeFiles/hyle_graph_batch.dir/batch.cc.o
+[5/31] Building OBJCXX object hyle/src/compute_route_apple/CMakeFiles/hyle_compute_route_apple.dir/apple_memory.mm.o
+[6/31] Building CXX object hyle/src/compute_route_apple/CMakeFiles/hyle_compute_route_apple.dir/apple_recurrent.cc.o
+[7/31] Building CXX object hyle/src/compute_route_apple/CMakeFiles/hyle_compute_route_apple.dir/apple_mature_indexing.cc.o
+[8/31] Building CXX object hyle/src/compute_route_apple/CMakeFiles/hyle_compute_route_apple.dir/apple_mature_reduction.cc.o
+[9/31] Linking CXX shared library hyle/src/compute_route_cpu/libhyle_compute_route_cpu.0.1.0.dylib
+[10/31] Linking CXX shared library hyle/src/graph_batch/libhyle_graph_batch.0.1.0.dylib
+[11/31] Creating library symlink hyle/src/compute_route_cpu/libhyle_compute_route_cpu.dylib
+[12/31] Creating library symlink hyle/src/graph_batch/libhyle_graph_batch.dylib
+[13/31] Building CXX object hyle/src/compute_route_apple/CMakeFiles/hyle_compute_route_apple.dir/apple_mature_artifact.cc.o
+[14/31] Building CXX object hyle/src/compute_route_apple/CMakeFiles/hyle_compute_route_apple.dir/apple_mature_gguf.cc.o
+[15/31] Linking CXX shared library hyle/src/graph_route_cpu/libhyle_graph_route_cpu.0.1.0.dylib
+[16/31] Creating library symlink hyle/src/graph_route_cpu/libhyle_graph_route_cpu.dylib
+[17/31] Building CXX object hyle/src/compute_route_apple/CMakeFiles/hyle_compute_route_apple.dir/apple_mature_float.cc.o
+[18/31] Linking CXX shared library hyle/src/compute_route_apple/libhyle_compute_route_apple.0.1.0.dylib
+[19/31] Creating library symlink hyle/src/compute_route_apple/libhyle_compute_route_apple.dylib
+[20/31] Building CXX object hyle/src/graph_route_apple/CMakeFiles/hyle_graph_route_apple.dir/apple_batch.cc.o
+[21/31] cd /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-build && /opt/homebrew/bin/cmake -P /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-build/hyle-apple-runtime/g03_late_result64-Release.cmake
+[22/31] Building CXX object hyle/src/graph_route_apple/CMakeFiles/hyle_graph_route_apple.dir/apple_lowering.cc.o
+[23/31] Linking CXX shared library hyle/src/graph_route_apple/libhyle_graph_route_apple.0.1.0.dylib
+[24/31] Creating library symlink hyle/src/graph_route_apple/libhyle_graph_route_apple.dylib
+[25/31] Building CXX object hyle/src/graph_route_cpu_apple/CMakeFiles/hyle_graph_route_cpu_apple.dir/compile.cc.o
+[26/31] Building CXX object CMakeFiles/g03_late_result64.dir/Users/kiro/hyle-scratch/compute-unified/source-c8874688/tests/compute_batch/pending_paged_receiver_native_consumer.cc.o
+[27/31] Building CXX object hyle/src/graph_route_cpu_apple/CMakeFiles/hyle_graph_route_cpu_apple.dir/invocation.cc.o
+[28/31] Linking CXX shared library hyle/src/graph_route_cpu_apple/libhyle_graph_route_cpu_apple.0.1.0.dylib
+[29/31] Creating library symlink hyle/src/graph_route_cpu_apple/libhyle_graph_route_cpu_apple.dylib
+[30/31] Linking CXX executable g03_late_result64

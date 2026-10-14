@@ -1,0 +1,19 @@
+[0/2] Re-checking globbed directories...
+[1/25] Performing build step for 'vulkan-shaders-gen'
+ninja: no work to do.
+[2/25] Performing install step for 'vulkan-shaders-gen'
+-- Up-to-date: C:/h7/inference-g01-native-vulkan/build/Release/vulkan-shaders-gen.exe
+[3/25] Completed 'vulkan-shaders-gen'
+[4/25] Building CXX object hyle\src\graph_batch\CMakeFiles\hyle_graph_batch.dir\materialized_invocation.cc.obj
+[5/25] Building CXX object hyle\src\graph\CMakeFiles\hyle_graph.dir\region_access.cc.obj
+[6/25] C:\WINDOWS\system32\cmd.exe /C "cd /D C:\h7\inference-g01-native-vulkan\build && "C:\Program Files\CMake\bin\cmake.exe" -P C:/h7/inference-g01-native-vulkan/build/hyle-runtime/g03_owned_outcome-Release.cmake"
+[7/25] Building CXX object hyle\src\graph\CMakeFiles\hyle_graph.dir\leased_invocation.cc.obj
+[8/25] Linking CXX shared library hyle\src\graph\hyle_graph.dll
+[9/23] Building CXX object hyle\src\graph_batch\CMakeFiles\hyle_graph_batch.dir\batch.cc.obj
+[10/23] Linking CXX shared library hyle\src\graph_batch\hyle_graph_batch.dll
+[11/23] Building CXX object hyle\src\compute_route_vulkan\CMakeFiles\hyle_compute_route_vulkan.dir\vulkan_run.cc.obj
+[12/23] Linking CXX shared library hyle\src\compute_route_vulkan\hyle_compute_route_vulkan.dll
+[13/17] C:\WINDOWS\system32\cmd.exe /C "cd /D C:\h7\inference-g01-native-vulkan\build && "C:\Program Files\CMake\bin\cmake.exe" -P C:/h7/inference-g01-native-vulkan/build/hyle-runtime/g02_joint_public_compile-Release.cmake"
+[14/17] C:\WINDOWS\system32\cmd.exe /C "cd /D C:\h7\inference-g01-native-vulkan\build && "C:\Program Files\CMake\bin\cmake.exe" -P C:/h7/inference-g01-native-vulkan/build/hyle-runtime/g03_late_result64-Release.cmake"
+[15/17] C:\WINDOWS\system32\cmd.exe /C "cd /D C:\h7\inference-g01-native-vulkan\build && "C:\Program Files\CMake\bin\cmake.exe" -P C:/h7/inference-g01-native-vulkan/build/hyle-runtime/g03_pending_graph64-Release.cmake"
+[16/17] C:\WINDOWS\system32\cmd.exe /C "cd /D C:\h7\inference-g01-native-vulkan\build && "C:\Program Files\CMake\bin\cmake.exe" -P C:/h7/inference-g01-native-vulkan/build/hyle-runtime/g03_common_receiver_risks-Release.cmake"

@@ -1,0 +1,9 @@
+common CPU receiver mode=0 native mean/output/source/ready frame and reuse PASS
+common CPU receiver rejection mode=1 original controls preserved PASS
+common CPU receiver rejection mode=2 original controls preserved PASS
+common CPU receiver mode=3 native mean/output/source/ready frame and reuse PASS
+common CPU receiver rejection mode=4 original controls preserved PASS
+common CPU receiver rejection mode=5 original controls preserved PASS
+common CPU receiver external prepared ticket original owner preserved PASS
+common CPU receiver mode=7 native mean/output/source/ready frame and reuse PASS
+common CPU receiver aggregate/owner abandonment releases actual original native slot PASS

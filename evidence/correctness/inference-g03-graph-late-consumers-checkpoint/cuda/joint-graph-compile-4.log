@@ -1,0 +1,367 @@
+[0/2] Re-checking globbed directories...
+[1/2] Building CXX object CMakeFiles/g03_pending_cpucuda_graph64.dir/root/hyle-scratch/compute-unified/source-7a7b4c3b/tests/compute_batch/pending_paged_receiver_cpu_consumer.cc.o
+FAILED: CMakeFiles/g03_pending_cpucuda_graph64.dir/root/hyle-scratch/compute-unified/source-7a7b4c3b/tests/compute_batch/pending_paged_receiver_cpu_consumer.cc.o 
+/usr/bin/g++-14 -DHYLE_COMPUTE_CPU=1 -DHYLE_COMPUTE_CUDA=1 -DHYLE_COMPUTE_FLASHINFER=1 -DHYLE_PENDING_GRAPH_CPU_CUDA=1 -DHYLE_PENDING_GRAPH_CUDA=1 -DHYLE_PENDING_GRAPH_RECEIVER=1 -DHYLE_STATIC -I/root/hyle-scratch/compute-unified/source-7a7b4c3b/include -isystem /usr/local/cuda-13.3/targets/x86_64-linux/include -O3 -DNDEBUG -std=gnu++23 -Wall -Wextra -Wpedantic -Werror -MD -MT CMakeFiles/g03_pending_cpucuda_graph64.dir/root/hyle-scratch/compute-unified/source-7a7b4c3b/tests/compute_batch/pending_paged_receiver_cpu_consumer.cc.o -MF CMakeFiles/g03_pending_cpucuda_graph64.dir/root/hyle-scratch/compute-unified/source-7a7b4c3b/tests/compute_batch/pending_paged_receiver_cpu_consumer.cc.o.d -o CMakeFiles/g03_pending_cpucuda_graph64.dir/root/hyle-scratch/compute-unified/source-7a7b4c3b/tests/compute_batch/pending_paged_receiver_cpu_consumer.cc.o -c /root/hyle-scratch/compute-unified/source-7a7b4c3b/tests/compute_batch/pending_paged_receiver_cpu_consumer.cc
+In file included from /root/hyle-scratch/compute-unified/source-7a7b4c3b/include/hyle/compute/completion.h:4,
+                 from /root/hyle-scratch/compute-unified/source-7a7b4c3b/include/hyle/compute/backends/cuda.h:14,
+                 from /root/hyle-scratch/compute-unified/source-7a7b4c3b/tests/compute_batch/pending_paged_receiver_cpu_consumer.cc:2:
+/root/hyle-scratch/compute-unified/source-7a7b4c3b/tests/compute_batch/pending_paged_receiver_cpu_consumer.cc: In function ‘hyle::Status {anonymous}::exercise(hyle::compute::Context&, hyle::compute::Queue&, bool, hyle::mem::MemoryResourceRef, hyle::mem::MemoryResourceRef)’:
+/root/hyle-scratch/compute-unified/source-7a7b4c3b/tests/compute_batch/pending_paged_receiver_cpu_consumer.cc:149:50: error: no matching function for call to ‘prepare(hyle::compute::Context&, hyle::compute::Unary, hyle::compute::TensorDesc&, hyle::compute::TensorDesc&)’
+  149 |   HYLE_ASSIGN_OR_RETURN(auto cpu_query,c::prepare(cpu_context,c::Unary{c::UnaryKind::kNeg},qdesc,qdesc));
+      |                                        ~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/root/hyle-scratch/compute-unified/source-7a7b4c3b/include/hyle/error/result.h:832:17: note: in definition of macro ‘HYLE_ASSIGN_OR_RETURN_IMPL’
+  832 |   auto&& tmp = (expr);                                                      \
+      |                 ^~~~
+/root/hyle-scratch/compute-unified/source-7a7b4c3b/tests/compute_batch/pending_paged_receiver_cpu_consumer.cc:149:3: note: in expansion of macro ‘HYLE_ASSIGN_OR_RETURN’
+  149 |   HYLE_ASSIGN_OR_RETURN(auto cpu_query,c::prepare(cpu_context,c::Unary{c::UnaryKind::kNeg},qdesc,qdesc));
+      |   ^~~~~~~~~~~~~~~~~~~~~
+In file included from /root/hyle-scratch/compute-unified/source-7a7b4c3b/include/hyle/graph/executable.h:10,
+                 from /root/hyle-scratch/compute-unified/source-7a7b4c3b/include/hyle/graph/leased_invocation.h:4,
+                 from /root/hyle-scratch/compute-unified/source-7a7b4c3b/include/hyle/graph/batch.h:2,
+                 from /root/hyle-scratch/compute-unified/source-7a7b4c3b/tests/compute_batch/pending_paged_receiver_cpu_consumer.cc:10:
+/root/hyle-scratch/compute-unified/source-7a7b4c3b/include/hyle/compute/prepared_operation.h:216:3: note: candidate: ‘hyle::Result<hyle::compute::PreparedOperation> hyle::compute::prepare(const Context&, Operation, std::span<const TensorDesc>, std::span<const TensorDesc>, OperationResourceBindings, const WorkloadContext&)’
+  216 |   prepare(const Context &, Operation, std::span<const TensorDesc>,
+      |   ^~~~~~~
+/root/hyle-scratch/compute-unified/source-7a7b4c3b/include/hyle/compute/prepared_operation.h:216:3: note:   candidate expects 6 arguments, 4 provided
+/root/hyle-scratch/compute-unified/source-7a7b4c3b/include/hyle/compute/prepared_operation.h:153:1: note: candidate: ‘hyle::Result<hyle::compute::PreparedOperation> hyle::compute::prepare(const Context&, Operation, std::span<const TensorDesc>, std::span<const TensorDesc>, hyle::mem::MemoryResourceRef, const WorkloadContext&)’
+  153 | prepare(const Context &context, Operation operation,
+      | ^~~~~~~
+/root/hyle-scratch/compute-unified/source-7a7b4c3b/include/hyle/compute/prepared_operation.h:153:1: note:   candidate expects 6 arguments, 4 provided
+/root/hyle-scratch/compute-unified/source-7a7b4c3b/include/hyle/compute/prepared_operation.h:161:1: note: candidate: ‘hyle::Result<hyle::compute::PreparedOperation> hyle::compute::prepare(const Context&, Operation, std::span<const ConstTensorView>, std::span<const TensorView>, hyle::mem::MemoryResourceRef, const WorkloadContext&)’
+  161 | prepare(const Context &context, Operation operation,
+      | ^~~~~~~
+/root/hyle-scratch/compute-unified/source-7a7b4c3b/include/hyle/compute/prepared_operation.h:161:43: note:   no known conversion for argument 2 from ‘hyle::compute::Unary’ to ‘hyle::compute::Operation’
+  161 | prepare(const Context &context, Operation operation,
+      |                                 ~~~~~~~~~~^~~~~~~~~
+/root/hyle-scratch/compute-unified/source-7a7b4c3b/include/hyle/compute/prepared_operation.h:296:1: note: candidate: ‘hyle::Result<hyle::compute::PreparedOperation> hyle::compute::prepare(const Context&, View, TensorDesc, hyle::mem::MemoryResourceRef, const WorkloadContext&)’
+  296 | prepare(const Context &context, View operation, TensorDesc input,
+      | ^~~~~~~
+/root/hyle-scratch/compute-unified/source-7a7b4c3b/include/hyle/compute/prepared_operation.h:296:38: note:   no known conversion for argument 2 from ‘hyle::compute::Unary’ to ‘hyle::compute::View’
+  296 | prepare(const Context &context, View operation, TensorDesc input,
+      |                                 ~~~~~^~~~~~~~~
+/root/hyle-scratch/compute-unified/source-7a7b4c3b/include/hyle/compute/prepared_operation.h:300:1: note: candidate: ‘hyle::Result<hyle::compute::PreparedOperation> hyle::compute::prepare(const Context&, Copy, TensorDesc, hyle::mem::MemoryResourceRef, const WorkloadContext&)’
+  300 | prepare(const Context &context, Copy operation, TensorDesc input,
+      | ^~~~~~~
+/root/hyle-scratch/compute-unified/source-7a7b4c3b/include/hyle/compute/prepared_operation.h:300:38: note:   no known conversion for argument 2 from ‘hyle::compute::Unary’ to ‘hyle::compute::Copy’
+  300 | prepare(const Context &context, Copy operation, TensorDesc input,
+      |                                 ~~~~~^~~~~~~~~
+/root/hyle-scratch/compute-unified/source-7a7b4c3b/include/hyle/compute/prepared_operation.h:304:1: note: candidate: ‘hyle::Result<hyle::compute::PreparedOperation> hyle::compute::prepare(const Context&, Fill, hyle::mem::MemoryResourceRef, const WorkloadContext&)’
+  304 | prepare(const Context &context, Fill operation,
+      | ^~~~~~~
+/root/hyle-scratch/compute-unified/source-7a7b4c3b/include/hyle/compute/prepared_operation.h:304:38: note:   no known conversion for argument 2 from ‘hyle::compute::Unary’ to ‘hyle::compute::Fill’
+  304 | prepare(const Context &context, Fill operation,
+      |                                 ~~~~~^~~~~~~~~
+/root/hyle-scratch/compute-unified/source-7a7b4c3b/include/hyle/compute/prepared_operation.h:308:1: note: candidate: ‘hyle::Result<hyle::compute::PreparedOperation> hyle::compute::prepare(const Context&, Cast, TensorDesc, hyle::mem::MemoryResourceRef, const WorkloadContext&)’
+  308 | prepare(const Context &context, Cast operation, TensorDesc input,
+      | ^~~~~~~
+/root/hyle-scratch/compute-unified/source-7a7b4c3b/include/hyle/compute/prepared_operation.h:308:38: note:   no known conversion for argument 2 from ‘hyle::compute::Unary’ to ‘hyle::compute::Cast’
+  308 | prepare(const Context &context, Cast operation, TensorDesc input,
+      |                                 ~~~~~^~~~~~~~~
+/root/hyle-scratch/compute-unified/source-7a7b4c3b/include/hyle/compute/prepared_operation.h:312:1: note: candidate: ‘hyle::Result<hyle::compute::PreparedOperation> hyle::compute::prepare(const Context&, Unary, TensorDesc, hyle::mem::MemoryResourceRef, const WorkloadContext&)’
+  312 | prepare(const Context &context, Unary operation, TensorDesc input,
+      | ^~~~~~~
+/root/hyle-scratch/compute-unified/source-7a7b4c3b/include/hyle/compute/prepared_operation.h:313:32: note:   no known conversion for argument 4 from ‘hyle::compute::TensorDesc’ to ‘hyle::mem::MemoryResourceRef’
+  313 |         mem::MemoryResourceRef resource = mem::system_resource(),
+      |         ~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/root/hyle-scratch/compute-unified/source-7a7b4c3b/include/hyle/compute/prepared_operation.h:316:1: note: candidate: ‘hyle::Result<hyle::compute::PreparedOperation> hyle::compute::prepare(const Context&, Binary, TensorDesc, TensorDesc, hyle::mem::MemoryResourceRef, const WorkloadContext&)’
+  316 | prepare(const Context &context, Binary operation, TensorDesc left,
+      | ^~~~~~~
+/root/hyle-scratch/compute-unified/source-7a7b4c3b/include/hyle/compute/prepared_operation.h:316:40: note:   no known conversion for argument 2 from ‘hyle::compute::Unary’ to ‘hyle::compute::Binary’
+  316 | prepare(const Context &context, Binary operation, TensorDesc left,
+      |                                 ~~~~~~~^~~~~~~~~
+/root/hyle-scratch/compute-unified/source-7a7b4c3b/include/hyle/compute/prepared_operation.h:321:1: note: candidate: ‘hyle::Result<hyle::compute::PreparedOperation> hyle::compute::prepare(const Context&, Select, TensorDesc, TensorDesc, TensorDesc, hyle::mem::MemoryResourceRef, const WorkloadContext&)’
+  321 | prepare(const Context &context, Select operation, TensorDesc condition,
+      | ^~~~~~~
+/root/hyle-scratch/compute-unified/source-7a7b4c3b/include/hyle/compute/prepared_operation.h:321:1: note:   candidate expects 7 arguments, 4 provided
+/root/hyle-scratch/compute-unified/source-7a7b4c3b/include/hyle/compute/prepared_operation.h:326:1: note: candidate: ‘hyle::Result<hyle::compute::PreparedOperation> hyle::compute::prepare(const Context&, Reduce, TensorDesc, hyle::mem::MemoryResourceRef, const WorkloadContext&)’
+  326 | prepare(const Context &context, Reduce operation, TensorDesc input,
+      | ^~~~~~~
+/root/hyle-scratch/compute-unified/source-7a7b4c3b/include/hyle/compute/prepared_operation.h:326:40: note:   no known conversion for argument 2 from ‘hyle::compute::Unary’ to ‘hyle::compute::Reduce’
+  326 | prepare(const Context &context, Reduce operation, TensorDesc input,
+      |                                 ~~~~~~~^~~~~~~~~
+/root/hyle-scratch/compute-unified/source-7a7b4c3b/include/hyle/compute/prepared_operation.h:331:1: note: candidate: ‘hyle::Result<hyle::compute::PreparedOperation> hyle::compute::prepare(const Context&, Scan, TensorDesc, hyle::mem::MemoryResourceRef, const WorkloadContext&)’
+  331 | prepare(const Context &context, Scan operation, TensorDesc input,
+      | ^~~~~~~
+/root/hyle-scratch/compute-unified/source-7a7b4c3b/include/hyle/compute/prepared_operation.h:331:38: note:   no known conversion for argument 2 from ‘hyle::compute::Unary’ to ‘hyle::compute::Scan’
+  331 | prepare(const Context &context, Scan operation, TensorDesc input,
+      |                                 ~~~~~^~~~~~~~~
+/root/hyle-scratch/compute-unified/source-7a7b4c3b/include/hyle/compute/prepared_operation.h:335:1: note: candidate: ‘hyle::Result<hyle::compute::PreparedOperation> hyle::compute::prepare(const Context&, LayerNorm, TensorDesc, hyle::mem::MemoryResourceRef, const WorkloadContext&)’
+  335 | prepare(const Context &context, LayerNorm operation, TensorDesc input,
+      | ^~~~~~~
+/root/hyle-scratch/compute-unified/source-7a7b4c3b/include/hyle/compute/prepared_operation.h:335:43: note:   no known conversion for argument 2 from ‘hyle::compute::Unary’ to ‘hyle::compute::LayerNorm’
+  335 | prepare(const Context &context, LayerNorm operation, TensorDesc input,
+      |                                 ~~~~~~~~~~^~~~~~~~~
+/root/hyle-scratch/compute-unified/source-7a7b4c3b/include/hyle/compute/prepared_operation.h:339:1: note: candidate: ‘hyle::Result<hyle::compute::PreparedOperation> hyle::compute::prepare(const Context&, LayerNorm, TensorDesc, TensorDesc, hyle::mem::MemoryResourceRef, const WorkloadContext&)’
+  339 | prepare(const Context &context, LayerNorm operation, TensorDesc input,
+      | ^~~~~~~
+/root/hyle-scratch/compute-unified/source-7a7b4c3b/include/hyle/compute/prepared_operation.h:339:43: note:   no known conversion for argument 2 from ‘hyle::compute::Unary’ to ‘hyle::compute::LayerNorm’
+  339 | prepare(const Context &context, LayerNorm operation, TensorDesc input,
+      |                                 ~~~~~~~~~~^~~~~~~~~
+/root/hyle-scratch/compute-unified/source-7a7b4c3b/include/hyle/compute/prepared_operation.h:344:1: note: candidate: ‘hyle::Result<hyle::compute::PreparedOperation> hyle::compute::prepare(const Context&, LayerNorm, TensorDesc, TensorDesc, TensorDesc, hyle::mem::MemoryResourceRef, const WorkloadContext&)’
+  344 | prepare(const Context &context, LayerNorm operation, TensorDesc input,
+      | ^~~~~~~
+/root/hyle-scratch/compute-unified/source-7a7b4c3b/include/hyle/compute/prepared_operation.h:344:1: note:   candidate expects 7 arguments, 4 provided
+/root/hyle-scratch/compute-unified/source-7a7b4c3b/include/hyle/compute/prepared_operation.h:349:1: note: candidate: ‘hyle::Result<hyle::compute::PreparedOperation> hyle::compute::prepare(const Context&, RmsNorm, TensorDesc, hyle::mem::MemoryResourceRef, const WorkloadContext&)’
+  349 | prepare(const Context &context, RmsNorm operation, TensorDesc input,
+      | ^~~~~~~
+/root/hyle-scratch/compute-unified/source-7a7b4c3b/include/hyle/compute/prepared_operation.h:349:41: note:   no known conversion for argument 2 from ‘hyle::compute::Unary’ to ‘hyle::compute::RmsNorm’
+  349 | prepare(const Context &context, RmsNorm operation, TensorDesc input,
+      |                                 ~~~~~~~~^~~~~~~~~
+/root/hyle-scratch/compute-unified/source-7a7b4c3b/include/hyle/compute/prepared_operation.h:353:1: note: candidate: ‘hyle::Result<hyle::compute::PreparedOperation> hyle::compute::prepare(const Context&, RmsNorm, TensorDesc, TensorDesc, hyle::mem::MemoryResourceRef, const WorkloadContext&)’
+  353 | prepare(const Context &context, RmsNorm operation, TensorDesc input,
+      | ^~~~~~~
+/root/hyle-scratch/compute-unified/source-7a7b4c3b/include/hyle/compute/prepared_operation.h:353:41: note:   no known conversion for argument 2 from ‘hyle::compute::Unary’ to ‘hyle::compute::RmsNorm’
+  353 | prepare(const Context &context, RmsNorm operation, TensorDesc input,
+      |                                 ~~~~~~~~^~~~~~~~~
+/root/hyle-scratch/compute-unified/source-7a7b4c3b/include/hyle/compute/prepared_operation.h:358:1: note: candidate: ‘hyle::Result<hyle::compute::PreparedOperation> hyle::compute::prepare(const Context&, MatMul, TensorDesc, TensorDesc, hyle::mem::MemoryResourceRef, const WorkloadContext&)’
+  358 | prepare(const Context &context, MatMul operation, TensorDesc left,
+      | ^~~~~~~
+/root/hyle-scratch/compute-unified/source-7a7b4c3b/include/hyle/compute/prepared_operation.h:358:40: note:   no known conversion for argument 2 from ‘hyle::compute::Unary’ to ‘hyle::compute::MatMul’
+  358 | prepare(const Context &context, MatMul operation, TensorDesc left,
+      |                                 ~~~~~~~^~~~~~~~~
+/root/hyle-scratch/compute-unified/source-7a7b4c3b/include/hyle/compute/prepared_operation.h:363:1: note: candidate: ‘hyle::Result<hyle::compute::PreparedOperation> hyle::compute::prepare(const Context&, MatMul, TensorDesc, TensorDesc, TensorDesc, hyle::mem::MemoryResourceRef, const WorkloadContext&)’
+  363 | prepare(const Context &context, MatMul operation, TensorDesc left,
+      | ^~~~~~~
+/root/hyle-scratch/compute-unified/source-7a7b4c3b/include/hyle/compute/prepared_operation.h:363:1: note:   candidate expects 7 arguments, 4 provided
+/root/hyle-scratch/compute-unified/source-7a7b4c3b/include/hyle/compute/prepared_operation.h:368:1: note: candidate: ‘hyle::Result<hyle::compute::PreparedOperation> hyle::compute::prepare(const Context&, GatedActivation, TensorDesc, hyle::mem::MemoryResourceRef, const WorkloadContext&)’
+  368 | prepare(const Context &context, GatedActivation operation, TensorDesc input,
+      | ^~~~~~~
+/root/hyle-scratch/compute-unified/source-7a7b4c3b/include/hyle/compute/prepared_operation.h:368:49: note:   no known conversion for argument 2 from ‘hyle::compute::Unary’ to ‘hyle::compute::GatedActivation’
+  368 | prepare(const Context &context, GatedActivation operation, TensorDesc input,
+      |                                 ~~~~~~~~~~~~~~~~^~~~~~~~~
+/root/hyle-scratch/compute-unified/source-7a7b4c3b/include/hyle/compute/prepared_operation.h:372:1: note: candidate: ‘hyle::Result<hyle::compute::PreparedOperation> hyle::compute::prepare(const Context&, GatedActivation, TensorDesc, TensorDesc, hyle::mem::MemoryResourceRef, const WorkloadContext&)’
+  372 | prepare(const Context &context, GatedActivation operation, TensorDesc gate,
+      | ^~~~~~~
+/root/hyle-scratch/compute-unified/source-7a7b4c3b/include/hyle/compute/prepared_operation.h:372:49: note:   no known conversion for argument 2 from ‘hyle::compute::Unary’ to ‘hyle::compute::GatedActivation’
+  372 | prepare(const Context &context, GatedActivation operation, TensorDesc gate,
+      |                                 ~~~~~~~~~~~~~~~~^~~~~~~~~
+/root/hyle-scratch/compute-unified/source-7a7b4c3b/include/hyle/compute/prepared_operation.h:377:1: note: candidate: ‘hyle::Result<hyle::compute::PreparedOperation> hyle::compute::prepare(const Context&, Gather, TensorDesc, TensorDesc, hyle::mem::MemoryResourceRef, const WorkloadContext&)’
+  377 | prepare(const Context &context, Gather operation, TensorDesc source,
+      | ^~~~~~~
+/root/hyle-scratch/compute-unified/source-7a7b4c3b/include/hyle/compute/prepared_operation.h:377:40: note:   no known conversion for argument 2 from ‘hyle::compute::Unary’ to ‘hyle::compute::Gather’
+  377 | prepare(const Context &context, Gather operation, TensorDesc source,
+      |                                 ~~~~~~~^~~~~~~~~
+/root/hyle-scratch/compute-unified/source-7a7b4c3b/include/hyle/compute/prepared_operation.h:382:1: note: candidate: ‘hyle::Result<hyle::compute::PreparedOperation> hyle::compute::prepare(const Context&, Scatter, TensorDesc, TensorDesc, TensorDesc, hyle::mem::MemoryResourceRef, const WorkloadContext&)’
+  382 | prepare(const Context &context, Scatter operation, TensorDesc input,
+      | ^~~~~~~
+/root/hyle-scratch/compute-unified/source-7a7b4c3b/include/hyle/compute/prepared_operation.h:382:1: note:   candidate expects 7 arguments, 4 provided
+/root/hyle-scratch/compute-unified/source-7a7b4c3b/include/hyle/compute/prepared_operation.h:387:1: note: candidate: ‘hyle::Result<hyle::compute::PreparedOperation> hyle::compute::prepare(const Context&, Concat, std::span<const TensorDesc>, hyle::mem::MemoryResourceRef, const WorkloadContext&)’
+  387 | prepare(const Context &context, Concat operation,
+      | ^~~~~~~
+/root/hyle-scratch/compute-unified/source-7a7b4c3b/include/hyle/compute/prepared_operation.h:387:40: note:   no known conversion for argument 2 from ‘hyle::compute::Unary’ to ‘hyle::compute::Concat’
+  387 | prepare(const Context &context, Concat operation,
+      |                                 ~~~~~~~^~~~~~~~~
+/root/hyle-scratch/compute-unified/source-7a7b4c3b/include/hyle/compute/prepared_operation.h:392:1: note: candidate: ‘hyle::Result<hyle::compute::PreparedOperation> hyle::compute::prepare(const Context&, RoPE, TensorDesc, TensorDesc, TensorDesc, hyle::mem::MemoryResourceRef, const WorkloadContext&)’
+  392 | prepare(const Context &context, RoPE operation, TensorDesc input,
+      | ^~~~~~~
+/root/hyle-scratch/compute-unified/source-7a7b4c3b/include/hyle/compute/prepared_operation.h:392:1: note:   candidate expects 7 arguments, 4 provided
+/root/hyle-scratch/compute-unified/source-7a7b4c3b/include/hyle/compute/prepared_operation.h:397:1: note: candidate: ‘hyle::Result<hyle::compute::PreparedOperation> hyle::compute::prepare(const Context&, Hadamard, TensorDesc, hyle::mem::MemoryResourceRef, const WorkloadContext&)’
+  397 | prepare(const Context &context, Hadamard operation, TensorDesc input,
+      | ^~~~~~~
+/root/hyle-scratch/compute-unified/source-7a7b4c3b/include/hyle/compute/prepared_operation.h:397:42: note:   no known conversion for argument 2 from ‘hyle::compute::Unary’ to ‘hyle::compute::Hadamard’
+  397 | prepare(const Context &context, Hadamard operation, TensorDesc input,
+      |                                 ~~~~~~~~~^~~~~~~~~
+/root/hyle-scratch/compute-unified/source-7a7b4c3b/include/hyle/compute/prepared_operation.h:401:1: note: candidate: ‘hyle::Result<hyle::compute::PreparedOperation> hyle::compute::prepare(const Context&, Softmax, TensorDesc, hyle::mem::MemoryResourceRef, const WorkloadContext&)’
+  401 | prepare(const Context &context, Softmax operation, TensorDesc input,
+      | ^~~~~~~
+/root/hyle-scratch/compute-unified/source-7a7b4c3b/include/hyle/compute/prepared_operation.h:401:41: note:   no known conversion for argument 2 from ‘hyle::compute::Unary’ to ‘hyle::compute::Softmax’
+  401 | prepare(const Context &context, Softmax operation, TensorDesc input,
+      |                                 ~~~~~~~~^~~~~~~~~
+/root/hyle-scratch/compute-unified/source-7a7b4c3b/include/hyle/compute/prepared_operation.h:405:1: note: candidate: ‘hyle::Result<hyle::compute::PreparedOperation> hyle::compute::prepare(const Context&, Softmax, TensorDesc, TensorDesc, hyle::mem::MemoryResourceRef, const WorkloadContext&)’
+  405 | prepare(const Context &context, Softmax operation, TensorDesc input,
+      | ^~~~~~~
+/root/hyle-scratch/compute-unified/source-7a7b4c3b/include/hyle/compute/prepared_operation.h:405:41: note:   no known conversion for argument 2 from ‘hyle::compute::Unary’ to ‘hyle::compute::Softmax’
+  405 | prepare(const Context &context, Softmax operation, TensorDesc input,
+      |                                 ~~~~~~~~^~~~~~~~~
+/root/hyle-scratch/compute-unified/source-7a7b4c3b/include/hyle/compute/prepared_operation.h:410:1: note: candidate: ‘hyle::Result<hyle::compute::PreparedOperation> hyle::compute::prepare(const Context&, TopK, TensorDesc, hyle::mem::MemoryResourceRef, const WorkloadContext&)’
+  410 | prepare(const Context &context, TopK operation, TensorDesc input,
+      | ^~~~~~~
+/root/hyle-scratch/compute-unified/source-7a7b4c3b/include/hyle/compute/prepared_operation.h:410:38: note:   no known conversion for argument 2 from ‘hyle::compute::Unary’ to ‘hyle::compute::TopK’
+  410 | prepare(const Context &context, TopK operation, TensorDesc input,
+      |                                 ~~~~~^~~~~~~~~
+/root/hyle-scratch/compute-unified/source-7a7b4c3b/include/hyle/compute/prepared_operation.h:414:1: note: candidate: ‘hyle::Result<hyle::compute::PreparedOperation> hyle::compute::prepare(const Context&, ScaledDotProductAttention, TensorDesc, TensorDesc, TensorDesc, hyle::mem::MemoryResourceRef, const WorkloadContext&)’
+  414 | prepare(const Context &context, ScaledDotProductAttention operation,
+      | ^~~~~~~
+/root/hyle-scratch/compute-unified/source-7a7b4c3b/include/hyle/compute/prepared_operation.h:414:1: note:   candidate expects 7 arguments, 4 provided
+/root/hyle-scratch/compute-unified/source-7a7b4c3b/include/hyle/compute/prepared_operation.h:419:1: note: candidate: ‘hyle::Result<hyle::compute::PreparedOperation> hyle::compute::prepare(const Context&, ScaledDotProductAttention, TensorDesc, TensorDesc, TensorDesc, TensorDesc, hyle::mem::MemoryResourceRef, const WorkloadContext&)’
+  419 | prepare(const Context &context, ScaledDotProductAttention operation,
+      | ^~~~~~~
+/root/hyle-scratch/compute-unified/source-7a7b4c3b/include/hyle/compute/prepared_operation.h:419:1: note:   candidate expects 8 arguments, 4 provided
+/root/hyle-scratch/compute-unified/source-7a7b4c3b/tests/compute_batch/pending_paged_receiver_cpu_consumer.cc:150:51: error: no matching function for call to ‘prepare(hyle::compute::Context&, hyle::compute::Unary, hyle::compute::TensorDesc&, hyle::compute::TensorDesc&)’
+  150 |   HYLE_ASSIGN_OR_RETURN(auto cpu_result,c::prepare(cpu_context,c::Unary{c::UnaryKind::kNeg},qdesc,qdesc));
+      |                                         ~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/root/hyle-scratch/compute-unified/source-7a7b4c3b/include/hyle/error/result.h:832:17: note: in definition of macro ‘HYLE_ASSIGN_OR_RETURN_IMPL’
+  832 |   auto&& tmp = (expr);                                                      \
+      |                 ^~~~
+/root/hyle-scratch/compute-unified/source-7a7b4c3b/tests/compute_batch/pending_paged_receiver_cpu_consumer.cc:150:3: note: in expansion of macro ‘HYLE_ASSIGN_OR_RETURN’
+  150 |   HYLE_ASSIGN_OR_RETURN(auto cpu_result,c::prepare(cpu_context,c::Unary{c::UnaryKind::kNeg},qdesc,qdesc));
+      |   ^~~~~~~~~~~~~~~~~~~~~
+/root/hyle-scratch/compute-unified/source-7a7b4c3b/include/hyle/compute/prepared_operation.h:216:3: note: candidate: ‘hyle::Result<hyle::compute::PreparedOperation> hyle::compute::prepare(const Context&, Operation, std::span<const TensorDesc>, std::span<const TensorDesc>, OperationResourceBindings, const WorkloadContext&)’
+  216 |   prepare(const Context &, Operation, std::span<const TensorDesc>,
+      |   ^~~~~~~
+/root/hyle-scratch/compute-unified/source-7a7b4c3b/include/hyle/compute/prepared_operation.h:216:3: note:   candidate expects 6 arguments, 4 provided
+/root/hyle-scratch/compute-unified/source-7a7b4c3b/include/hyle/compute/prepared_operation.h:153:1: note: candidate: ‘hyle::Result<hyle::compute::PreparedOperation> hyle::compute::prepare(const Context&, Operation, std::span<const TensorDesc>, std::span<const TensorDesc>, hyle::mem::MemoryResourceRef, const WorkloadContext&)’
+  153 | prepare(const Context &context, Operation operation,
+      | ^~~~~~~
+/root/hyle-scratch/compute-unified/source-7a7b4c3b/include/hyle/compute/prepared_operation.h:153:1: note:   candidate expects 6 arguments, 4 provided
+/root/hyle-scratch/compute-unified/source-7a7b4c3b/include/hyle/compute/prepared_operation.h:161:1: note: candidate: ‘hyle::Result<hyle::compute::PreparedOperation> hyle::compute::prepare(const Context&, Operation, std::span<const ConstTensorView>, std::span<const TensorView>, hyle::mem::MemoryResourceRef, const WorkloadContext&)’
+  161 | prepare(const Context &context, Operation operation,
+      | ^~~~~~~
+/root/hyle-scratch/compute-unified/source-7a7b4c3b/include/hyle/compute/prepared_operation.h:161:43: note:   no known conversion for argument 2 from ‘hyle::compute::Unary’ to ‘hyle::compute::Operation’
+  161 | prepare(const Context &context, Operation operation,
+      |                                 ~~~~~~~~~~^~~~~~~~~
+/root/hyle-scratch/compute-unified/source-7a7b4c3b/include/hyle/compute/prepared_operation.h:296:1: note: candidate: ‘hyle::Result<hyle::compute::PreparedOperation> hyle::compute::prepare(const Context&, View, TensorDesc, hyle::mem::MemoryResourceRef, const WorkloadContext&)’
+  296 | prepare(const Context &context, View operation, TensorDesc input,
+      | ^~~~~~~
+/root/hyle-scratch/compute-unified/source-7a7b4c3b/include/hyle/compute/prepared_operation.h:296:38: note:   no known conversion for argument 2 from ‘hyle::compute::Unary’ to ‘hyle::compute::View’
+  296 | prepare(const Context &context, View operation, TensorDesc input,
+      |                                 ~~~~~^~~~~~~~~
+/root/hyle-scratch/compute-unified/source-7a7b4c3b/include/hyle/compute/prepared_operation.h:300:1: note: candidate: ‘hyle::Result<hyle::compute::PreparedOperation> hyle::compute::prepare(const Context&, Copy, TensorDesc, hyle::mem::MemoryResourceRef, const WorkloadContext&)’
+  300 | prepare(const Context &context, Copy operation, TensorDesc input,
+      | ^~~~~~~
+/root/hyle-scratch/compute-unified/source-7a7b4c3b/include/hyle/compute/prepared_operation.h:300:38: note:   no known conversion for argument 2 from ‘hyle::compute::Unary’ to ‘hyle::compute::Copy’
+  300 | prepare(const Context &context, Copy operation, TensorDesc input,
+      |                                 ~~~~~^~~~~~~~~
+/root/hyle-scratch/compute-unified/source-7a7b4c3b/include/hyle/compute/prepared_operation.h:304:1: note: candidate: ‘hyle::Result<hyle::compute::PreparedOperation> hyle::compute::prepare(const Context&, Fill, hyle::mem::MemoryResourceRef, const WorkloadContext&)’
+  304 | prepare(const Context &context, Fill operation,
+      | ^~~~~~~
+/root/hyle-scratch/compute-unified/source-7a7b4c3b/include/hyle/compute/prepared_operation.h:304:38: note:   no known conversion for argument 2 from ‘hyle::compute::Unary’ to ‘hyle::compute::Fill’
+  304 | prepare(const Context &context, Fill operation,
+      |                                 ~~~~~^~~~~~~~~
+/root/hyle-scratch/compute-unified/source-7a7b4c3b/include/hyle/compute/prepared_operation.h:308:1: note: candidate: ‘hyle::Result<hyle::compute::PreparedOperation> hyle::compute::prepare(const Context&, Cast, TensorDesc, hyle::mem::MemoryResourceRef, const WorkloadContext&)’
+  308 | prepare(const Context &context, Cast operation, TensorDesc input,
+      | ^~~~~~~
+/root/hyle-scratch/compute-unified/source-7a7b4c3b/include/hyle/compute/prepared_operation.h:308:38: note:   no known conversion for argument 2 from ‘hyle::compute::Unary’ to ‘hyle::compute::Cast’
+  308 | prepare(const Context &context, Cast operation, TensorDesc input,
+      |                                 ~~~~~^~~~~~~~~
+/root/hyle-scratch/compute-unified/source-7a7b4c3b/include/hyle/compute/prepared_operation.h:312:1: note: candidate: ‘hyle::Result<hyle::compute::PreparedOperation> hyle::compute::prepare(const Context&, Unary, TensorDesc, hyle::mem::MemoryResourceRef, const WorkloadContext&)’
+  312 | prepare(const Context &context, Unary operation, TensorDesc input,
+      | ^~~~~~~
+/root/hyle-scratch/compute-unified/source-7a7b4c3b/include/hyle/compute/prepared_operation.h:313:32: note:   no known conversion for argument 4 from ‘hyle::compute::TensorDesc’ to ‘hyle::mem::MemoryResourceRef’
+  313 |         mem::MemoryResourceRef resource = mem::system_resource(),
+      |         ~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/root/hyle-scratch/compute-unified/source-7a7b4c3b/include/hyle/compute/prepared_operation.h:316:1: note: candidate: ‘hyle::Result<hyle::compute::PreparedOperation> hyle::compute::prepare(const Context&, Binary, TensorDesc, TensorDesc, hyle::mem::MemoryResourceRef, const WorkloadContext&)’
+  316 | prepare(const Context &context, Binary operation, TensorDesc left,
+      | ^~~~~~~
+/root/hyle-scratch/compute-unified/source-7a7b4c3b/include/hyle/compute/prepared_operation.h:316:40: note:   no known conversion for argument 2 from ‘hyle::compute::Unary’ to ‘hyle::compute::Binary’
+  316 | prepare(const Context &context, Binary operation, TensorDesc left,
+      |                                 ~~~~~~~^~~~~~~~~
+/root/hyle-scratch/compute-unified/source-7a7b4c3b/include/hyle/compute/prepared_operation.h:321:1: note: candidate: ‘hyle::Result<hyle::compute::PreparedOperation> hyle::compute::prepare(const Context&, Select, TensorDesc, TensorDesc, TensorDesc, hyle::mem::MemoryResourceRef, const WorkloadContext&)’
+  321 | prepare(const Context &context, Select operation, TensorDesc condition,
+      | ^~~~~~~
+/root/hyle-scratch/compute-unified/source-7a7b4c3b/include/hyle/compute/prepared_operation.h:321:1: note:   candidate expects 7 arguments, 4 provided
+/root/hyle-scratch/compute-unified/source-7a7b4c3b/include/hyle/compute/prepared_operation.h:326:1: note: candidate: ‘hyle::Result<hyle::compute::PreparedOperation> hyle::compute::prepare(const Context&, Reduce, TensorDesc, hyle::mem::MemoryResourceRef, const WorkloadContext&)’
+  326 | prepare(const Context &context, Reduce operation, TensorDesc input,
+      | ^~~~~~~
+/root/hyle-scratch/compute-unified/source-7a7b4c3b/include/hyle/compute/prepared_operation.h:326:40: note:   no known conversion for argument 2 from ‘hyle::compute::Unary’ to ‘hyle::compute::Reduce’
+  326 | prepare(const Context &context, Reduce operation, TensorDesc input,
+      |                                 ~~~~~~~^~~~~~~~~
+/root/hyle-scratch/compute-unified/source-7a7b4c3b/include/hyle/compute/prepared_operation.h:331:1: note: candidate: ‘hyle::Result<hyle::compute::PreparedOperation> hyle::compute::prepare(const Context&, Scan, TensorDesc, hyle::mem::MemoryResourceRef, const WorkloadContext&)’
+  331 | prepare(const Context &context, Scan operation, TensorDesc input,
+      | ^~~~~~~
+/root/hyle-scratch/compute-unified/source-7a7b4c3b/include/hyle/compute/prepared_operation.h:331:38: note:   no known conversion for argument 2 from ‘hyle::compute::Unary’ to ‘hyle::compute::Scan’
+  331 | prepare(const Context &context, Scan operation, TensorDesc input,
+      |                                 ~~~~~^~~~~~~~~
+/root/hyle-scratch/compute-unified/source-7a7b4c3b/include/hyle/compute/prepared_operation.h:335:1: note: candidate: ‘hyle::Result<hyle::compute::PreparedOperation> hyle::compute::prepare(const Context&, LayerNorm, TensorDesc, hyle::mem::MemoryResourceRef, const WorkloadContext&)’
+  335 | prepare(const Context &context, LayerNorm operation, TensorDesc input,
+      | ^~~~~~~
+/root/hyle-scratch/compute-unified/source-7a7b4c3b/include/hyle/compute/prepared_operation.h:335:43: note:   no known conversion for argument 2 from ‘hyle::compute::Unary’ to ‘hyle::compute::LayerNorm’
+  335 | prepare(const Context &context, LayerNorm operation, TensorDesc input,
+      |                                 ~~~~~~~~~~^~~~~~~~~
+/root/hyle-scratch/compute-unified/source-7a7b4c3b/include/hyle/compute/prepared_operation.h:339:1: note: candidate: ‘hyle::Result<hyle::compute::PreparedOperation> hyle::compute::prepare(const Context&, LayerNorm, TensorDesc, TensorDesc, hyle::mem::MemoryResourceRef, const WorkloadContext&)’
+  339 | prepare(const Context &context, LayerNorm operation, TensorDesc input,
+      | ^~~~~~~
+/root/hyle-scratch/compute-unified/source-7a7b4c3b/include/hyle/compute/prepared_operation.h:339:43: note:   no known conversion for argument 2 from ‘hyle::compute::Unary’ to ‘hyle::compute::LayerNorm’
+  339 | prepare(const Context &context, LayerNorm operation, TensorDesc input,
+      |                                 ~~~~~~~~~~^~~~~~~~~
+/root/hyle-scratch/compute-unified/source-7a7b4c3b/include/hyle/compute/prepared_operation.h:344:1: note: candidate: ‘hyle::Result<hyle::compute::PreparedOperation> hyle::compute::prepare(const Context&, LayerNorm, TensorDesc, TensorDesc, TensorDesc, hyle::mem::MemoryResourceRef, const WorkloadContext&)’
+  344 | prepare(const Context &context, LayerNorm operation, TensorDesc input,
+      | ^~~~~~~
+/root/hyle-scratch/compute-unified/source-7a7b4c3b/include/hyle/compute/prepared_operation.h:344:1: note:   candidate expects 7 arguments, 4 provided
+/root/hyle-scratch/compute-unified/source-7a7b4c3b/include/hyle/compute/prepared_operation.h:349:1: note: candidate: ‘hyle::Result<hyle::compute::PreparedOperation> hyle::compute::prepare(const Context&, RmsNorm, TensorDesc, hyle::mem::MemoryResourceRef, const WorkloadContext&)’
+  349 | prepare(const Context &context, RmsNorm operation, TensorDesc input,
+      | ^~~~~~~
+/root/hyle-scratch/compute-unified/source-7a7b4c3b/include/hyle/compute/prepared_operation.h:349:41: note:   no known conversion for argument 2 from ‘hyle::compute::Unary’ to ‘hyle::compute::RmsNorm’
+  349 | prepare(const Context &context, RmsNorm operation, TensorDesc input,
+      |                                 ~~~~~~~~^~~~~~~~~
+/root/hyle-scratch/compute-unified/source-7a7b4c3b/include/hyle/compute/prepared_operation.h:353:1: note: candidate: ‘hyle::Result<hyle::compute::PreparedOperation> hyle::compute::prepare(const Context&, RmsNorm, TensorDesc, TensorDesc, hyle::mem::MemoryResourceRef, const WorkloadContext&)’
+  353 | prepare(const Context &context, RmsNorm operation, TensorDesc input,
+      | ^~~~~~~
+/root/hyle-scratch/compute-unified/source-7a7b4c3b/include/hyle/compute/prepared_operation.h:353:41: note:   no known conversion for argument 2 from ‘hyle::compute::Unary’ to ‘hyle::compute::RmsNorm’
+  353 | prepare(const Context &context, RmsNorm operation, TensorDesc input,
+      |                                 ~~~~~~~~^~~~~~~~~
+/root/hyle-scratch/compute-unified/source-7a7b4c3b/include/hyle/compute/prepared_operation.h:358:1: note: candidate: ‘hyle::Result<hyle::compute::PreparedOperation> hyle::compute::prepare(const Context&, MatMul, TensorDesc, TensorDesc, hyle::mem::MemoryResourceRef, const WorkloadContext&)’
+  358 | prepare(const Context &context, MatMul operation, TensorDesc left,
+      | ^~~~~~~
+/root/hyle-scratch/compute-unified/source-7a7b4c3b/include/hyle/compute/prepared_operation.h:358:40: note:   no known conversion for argument 2 from ‘hyle::compute::Unary’ to ‘hyle::compute::MatMul’
+  358 | prepare(const Context &context, MatMul operation, TensorDesc left,
+      |                                 ~~~~~~~^~~~~~~~~
+/root/hyle-scratch/compute-unified/source-7a7b4c3b/include/hyle/compute/prepared_operation.h:363:1: note: candidate: ‘hyle::Result<hyle::compute::PreparedOperation> hyle::compute::prepare(const Context&, MatMul, TensorDesc, TensorDesc, TensorDesc, hyle::mem::MemoryResourceRef, const WorkloadContext&)’
+  363 | prepare(const Context &context, MatMul operation, TensorDesc left,
+      | ^~~~~~~
+/root/hyle-scratch/compute-unified/source-7a7b4c3b/include/hyle/compute/prepared_operation.h:363:1: note:   candidate expects 7 arguments, 4 provided
+/root/hyle-scratch/compute-unified/source-7a7b4c3b/include/hyle/compute/prepared_operation.h:368:1: note: candidate: ‘hyle::Result<hyle::compute::PreparedOperation> hyle::compute::prepare(const Context&, GatedActivation, TensorDesc, hyle::mem::MemoryResourceRef, const WorkloadContext&)’
+  368 | prepare(const Context &context, GatedActivation operation, TensorDesc input,
+      | ^~~~~~~
+/root/hyle-scratch/compute-unified/source-7a7b4c3b/include/hyle/compute/prepared_operation.h:368:49: note:   no known conversion for argument 2 from ‘hyle::compute::Unary’ to ‘hyle::compute::GatedActivation’
+  368 | prepare(const Context &context, GatedActivation operation, TensorDesc input,
+      |                                 ~~~~~~~~~~~~~~~~^~~~~~~~~
+/root/hyle-scratch/compute-unified/source-7a7b4c3b/include/hyle/compute/prepared_operation.h:372:1: note: candidate: ‘hyle::Result<hyle::compute::PreparedOperation> hyle::compute::prepare(const Context&, GatedActivation, TensorDesc, TensorDesc, hyle::mem::MemoryResourceRef, const WorkloadContext&)’
+  372 | prepare(const Context &context, GatedActivation operation, TensorDesc gate,
+      | ^~~~~~~
+/root/hyle-scratch/compute-unified/source-7a7b4c3b/include/hyle/compute/prepared_operation.h:372:49: note:   no known conversion for argument 2 from ‘hyle::compute::Unary’ to ‘hyle::compute::GatedActivation’
+  372 | prepare(const Context &context, GatedActivation operation, TensorDesc gate,
+      |                                 ~~~~~~~~~~~~~~~~^~~~~~~~~
+/root/hyle-scratch/compute-unified/source-7a7b4c3b/include/hyle/compute/prepared_operation.h:377:1: note: candidate: ‘hyle::Result<hyle::compute::PreparedOperation> hyle::compute::prepare(const Context&, Gather, TensorDesc, TensorDesc, hyle::mem::MemoryResourceRef, const WorkloadContext&)’
+  377 | prepare(const Context &context, Gather operation, TensorDesc source,
+      | ^~~~~~~
+/root/hyle-scratch/compute-unified/source-7a7b4c3b/include/hyle/compute/prepared_operation.h:377:40: note:   no known conversion for argument 2 from ‘hyle::compute::Unary’ to ‘hyle::compute::Gather’
+  377 | prepare(const Context &context, Gather operation, TensorDesc source,
+      |                                 ~~~~~~~^~~~~~~~~
+/root/hyle-scratch/compute-unified/source-7a7b4c3b/include/hyle/compute/prepared_operation.h:382:1: note: candidate: ‘hyle::Result<hyle::compute::PreparedOperation> hyle::compute::prepare(const Context&, Scatter, TensorDesc, TensorDesc, TensorDesc, hyle::mem::MemoryResourceRef, const WorkloadContext&)’
+  382 | prepare(const Context &context, Scatter operation, TensorDesc input,
+      | ^~~~~~~
+/root/hyle-scratch/compute-unified/source-7a7b4c3b/include/hyle/compute/prepared_operation.h:382:1: note:   candidate expects 7 arguments, 4 provided
+/root/hyle-scratch/compute-unified/source-7a7b4c3b/include/hyle/compute/prepared_operation.h:387:1: note: candidate: ‘hyle::Result<hyle::compute::PreparedOperation> hyle::compute::prepare(const Context&, Concat, std::span<const TensorDesc>, hyle::mem::MemoryResourceRef, const WorkloadContext&)’
+  387 | prepare(const Context &context, Concat operation,
+      | ^~~~~~~
+/root/hyle-scratch/compute-unified/source-7a7b4c3b/include/hyle/compute/prepared_operation.h:387:40: note:   no known conversion for argument 2 from ‘hyle::compute::Unary’ to ‘hyle::compute::Concat’
+  387 | prepare(const Context &context, Concat operation,
+      |                                 ~~~~~~~^~~~~~~~~
+/root/hyle-scratch/compute-unified/source-7a7b4c3b/include/hyle/compute/prepared_operation.h:392:1: note: candidate: ‘hyle::Result<hyle::compute::PreparedOperation> hyle::compute::prepare(const Context&, RoPE, TensorDesc, TensorDesc, TensorDesc, hyle::mem::MemoryResourceRef, const WorkloadContext&)’
+  392 | prepare(const Context &context, RoPE operation, TensorDesc input,
+      | ^~~~~~~
+/root/hyle-scratch/compute-unified/source-7a7b4c3b/include/hyle/compute/prepared_operation.h:392:1: note:   candidate expects 7 arguments, 4 provided
+/root/hyle-scratch/compute-unified/source-7a7b4c3b/include/hyle/compute/prepared_operation.h:397:1: note: candidate: ‘hyle::Result<hyle::compute::PreparedOperation> hyle::compute::prepare(const Context&, Hadamard, TensorDesc, hyle::mem::MemoryResourceRef, const WorkloadContext&)’
+  397 | prepare(const Context &context, Hadamard operation, TensorDesc input,
+      | ^~~~~~~
+/root/hyle-scratch/compute-unified/source-7a7b4c3b/include/hyle/compute/prepared_operation.h:397:42: note:   no known conversion for argument 2 from ‘hyle::compute::Unary’ to ‘hyle::compute::Hadamard’
+  397 | prepare(const Context &context, Hadamard operation, TensorDesc input,
+      |                                 ~~~~~~~~~^~~~~~~~~
+/root/hyle-scratch/compute-unified/source-7a7b4c3b/include/hyle/compute/prepared_operation.h:401:1: note: candidate: ‘hyle::Result<hyle::compute::PreparedOperation> hyle::compute::prepare(const Context&, Softmax, TensorDesc, hyle::mem::MemoryResourceRef, const WorkloadContext&)’
+  401 | prepare(const Context &context, Softmax operation, TensorDesc input,
+      | ^~~~~~~
+/root/hyle-scratch/compute-unified/source-7a7b4c3b/include/hyle/compute/prepared_operation.h:401:41: note:   no known conversion for argument 2 from ‘hyle::compute::Unary’ to ‘hyle::compute::Softmax’
+  401 | prepare(const Context &context, Softmax operation, TensorDesc input,
+      |                                 ~~~~~~~~^~~~~~~~~
+/root/hyle-scratch/compute-unified/source-7a7b4c3b/include/hyle/compute/prepared_operation.h:405:1: note: candidate: ‘hyle::Result<hyle::compute::PreparedOperation> hyle::compute::prepare(const Context&, Softmax, TensorDesc, TensorDesc, hyle::mem::MemoryResourceRef, const WorkloadContext&)’
+  405 | prepare(const Context &context, Softmax operation, TensorDesc input,
+      | ^~~~~~~
+/root/hyle-scratch/compute-unified/source-7a7b4c3b/include/hyle/compute/prepared_operation.h:405:41: note:   no known conversion for argument 2 from ‘hyle::compute::Unary’ to ‘hyle::compute::Softmax’
+  405 | prepare(const Context &context, Softmax operation, TensorDesc input,
+      |                                 ~~~~~~~~^~~~~~~~~
+/root/hyle-scratch/compute-unified/source-7a7b4c3b/include/hyle/compute/prepared_operation.h:410:1: note: candidate: ‘hyle::Result<hyle::compute::PreparedOperation> hyle::compute::prepare(const Context&, TopK, TensorDesc, hyle::mem::MemoryResourceRef, const WorkloadContext&)’
+  410 | prepare(const Context &context, TopK operation, TensorDesc input,
+      | ^~~~~~~
+/root/hyle-scratch/compute-unified/source-7a7b4c3b/include/hyle/compute/prepared_operation.h:410:38: note:   no known conversion for argument 2 from ‘hyle::compute::Unary’ to ‘hyle::compute::TopK’
+  410 | prepare(const Context &context, TopK operation, TensorDesc input,
+      |                                 ~~~~~^~~~~~~~~
+/root/hyle-scratch/compute-unified/source-7a7b4c3b/include/hyle/compute/prepared_operation.h:414:1: note: candidate: ‘hyle::Result<hyle::compute::PreparedOperation> hyle::compute::prepare(const Context&, ScaledDotProductAttention, TensorDesc, TensorDesc, TensorDesc, hyle::mem::MemoryResourceRef, const WorkloadContext&)’
+  414 | prepare(const Context &context, ScaledDotProductAttention operation,
+      | ^~~~~~~
+/root/hyle-scratch/compute-unified/source-7a7b4c3b/include/hyle/compute/prepared_operation.h:414:1: note:   candidate expects 7 arguments, 4 provided
+/root/hyle-scratch/compute-unified/source-7a7b4c3b/include/hyle/compute/prepared_operation.h:419:1: note: candidate: ‘hyle::Result<hyle::compute::PreparedOperation> hyle::compute::prepare(const Context&, ScaledDotProductAttention, TensorDesc, TensorDesc, TensorDesc, TensorDesc, hyle::mem::MemoryResourceRef, const WorkloadContext&)’
+  419 | prepare(const Context &context, ScaledDotProductAttention operation,
+      | ^~~~~~~
+/root/hyle-scratch/compute-unified/source-7a7b4c3b/include/hyle/compute/prepared_operation.h:419:1: note:   candidate expects 8 arguments, 4 provided
+ninja: build stopped: subcommand failed.

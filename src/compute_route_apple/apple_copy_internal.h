@@ -12,6 +12,7 @@ struct CopySpan final {
 // Cold type/device/capacity proof. Buffer handles stay original opaque Metal
 // objects; ordinary common Compute headers never acquire vendor declarations.
 Result<CopySpan> copy_span(mem::ConstBufferView view) noexcept;
+Result<CopySpan> result_copy_span(const Results&,std::size_t,const TensorDesc&)noexcept;
 bool is_copy_resource(mem::MemoryResourceRef resource) noexcept;
 // A readonly MLX export owns a distinct resource token for correct freeing.
 // Only that private carrier may match a nominated native source family.
@@ -25,6 +26,14 @@ Result<std::shared_ptr<CopyRecording>> prepare_copy_recording_runtime(const std:
 // controller; private/native callers must retain them through actual use.
 HYLE_COMPUTE_ROUTE_APPLE_API Status bind_copy_recording(CopyRecording &,
     std::span<const compute::detail::CopyBackendRange>, bool prefix_marker = false) noexcept;
+// Deferred descriptors contain destinations and logical source references,
+// not invented native handles. The original FIFO Job's preflight resolves and
+// validates all real source coordinates before touching its existing commands.
+using ResultCopySourceFn=Result<CopySpan>(*)(void*,std::size_t)noexcept;
+Status bind_result_copy_recording(CopyRecording&,
+    std::span<const compute::detail::CopyBackendRange>)noexcept;
+Status resolve_result_copy_recording(CopyRecording&,
+    std::span<const compute::detail::CopyBackendRange>,ResultCopySourceFn,void*)noexcept;
 HYLE_COMPUTE_ROUTE_APPLE_API Result<Completion> submit_copy_recording(CopyRecording &) noexcept;
 HYLE_COMPUTE_ROUTE_APPLE_API CopyBatchReport copy_recording_report(const CopyRecording &) noexcept;
 Status clear_copy_recording(CopyRecording &) noexcept;

@@ -1,6 +1,7 @@
 #pragma once
 #include "hyle/graph/leased_invocation.h"
 #include "hyle/compute/detail/provider_extension.h"
+#include "hyle/compute/detail/queue_sequence.h"
 namespace hyle::graph::detail {
 struct RegionAccessView final {
   std::uint32_t step=0;
@@ -12,6 +13,19 @@ struct RegionAccessView final {
   ExecutionLaneId lane{};
 };
 using RegionAccessFn=Status(*)(void*,const RegionAccessView&) noexcept;
+struct OrderedGraphSubmission final {
+  // Runs in each original shared-lane sequence, before any consumer command.
+  // Record source ordering before admitting exact pending reads to uses.
+  Status (*admit)(void*,ExecutionLaneId,compute::detail::QueueSequence&,
+                  compute::LeaseUseBatch&) noexcept = nullptr;
+  // Infallible after cold capacity/lifetime qualification. Maps the actual
+  // accepted suffix in the same original public observation slot.
+  compute::Completion (*map)(void*,compute::Completion&&) noexcept = nullptr;
+  void* owner = nullptr;
+  // Only these exact inputs defer their missing ready permission to admit.
+  // Every other binding still goes through the ordinary lease checks.
+  bool (*pending_input)(void*,ValueId) noexcept = nullptr;
+};
 // Explicit cold/idle opt-in only. Views borrow the callback scope, never a
 // different execution slot. Ordinary compile/submit do not call this visitor.
 struct RegionAccess final {
@@ -30,6 +44,16 @@ struct RegionAccess final {
   HYLE_GRAPH_API static Status bind_projected(LeasedInvocation&,ValueId,
       compute::ConstTensorView,std::span<const compute::ReadLease>,
       compute::ProviderId,std::span<const std::uint32_t> reader_steps) noexcept;
+  // No ready permission is manufactured. The trusted adapter owns the typed
+  // pending frame and supplies all exact guards in OrderedGraphSubmission.
+  HYLE_GRAPH_API static Status bind_pending_projected(LeasedInvocation&,ValueId,
+      compute::ConstTensorView,compute::ProviderId,
+      std::span<const std::uint32_t> reader_steps) noexcept;
+  HYLE_GRAPH_API static Result<compute::Completion> submit(LeasedInvocation&,
+      std::span<const QueueBinding>,OrderedGraphSubmission) noexcept;
+  // Observation/result gate only; failed or closed episodes may still return
+  // their original source controls after actual retirement.
+  HYLE_GRAPH_API static bool outcome_available(const LeasedInvocation&) noexcept;
   // Same immutable Graph, uniquely qualified dense reshape -> checked Gather.
   HYLE_GRAPH_API static Status bind_gather(LeasedInvocation&,const Graph&,
       ValueId capacity,ValueId indices,compute::ConstTensorView,

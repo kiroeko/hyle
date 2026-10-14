@@ -1,0 +1,1 @@
+common receiver: CUDA tensor resource belongs to a different backend or device

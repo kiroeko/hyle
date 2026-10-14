@@ -1,0 +1,1 @@
+native late source orthogonal reduction PASS:64 steps/two source and copy slots, one multi-output completion, producer first bound output consumed in later phase, reverse range permutation, checked final F2 then explicit256-byte host reduction staging

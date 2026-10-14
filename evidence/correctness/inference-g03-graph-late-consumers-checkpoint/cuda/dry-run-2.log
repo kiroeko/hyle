@@ -1,0 +1,26 @@
+ninja: Entering directory `/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/source-build'
+[1/25] Building CXX object CMakeFiles/g03_pending_cuda_graph64.dir/root/hyle-scratch/compute-unified/source-7a7b4c3b/tests/compute_batch/pending_paged_receiver_cpu_consumer.cc.o
+[2/25] Building CXX object hyle/src/compute/CMakeFiles/hyle_compute.dir/batch_transfer.cc.o
+[3/25] Building CXX object hyle/src/compute/CMakeFiles/hyle_compute.dir/copy_control.cc.o
+[4/25] Building CXX object hyle/src/compute/CMakeFiles/hyle_compute.dir/copy_ranges.cc.o
+[5/25] Building CXX object hyle/src/compute/CMakeFiles/hyle_compute.dir/result.cc.o
+[6/25] Building CXX object hyle/src/graph/CMakeFiles/hyle_graph.dir/executable.cc.o
+[7/25] Building CXX object hyle/src/graph/CMakeFiles/hyle_graph.dir/leased_invocation.cc.o
+[8/25] Building CXX object hyle/src/graph/CMakeFiles/hyle_graph.dir/lease_submission.cc.o
+[9/25] Building CXX object hyle/src/graph/CMakeFiles/hyle_graph.dir/region_access.cc.o
+[10/25] Building CXX object hyle/src/compute_batch/CMakeFiles/hyle_compute_batch.dir/batch_execution.cc.o
+[11/25] Building CXX object hyle/src/compute_batch/CMakeFiles/hyle_compute_batch.dir/materialized_invocation.cc.o
+[12/25] Building CXX object hyle/src/compute_batch/CMakeFiles/hyle_compute_batch.dir/paged_arena.cc.o
+[13/25] Building CXX object hyle/src/compute_backend_cuda/CMakeFiles/hyle_compute_backend_cuda.dir/cuda_backend.cc.o
+[14/25] Building CXX object hyle/src/compute_backend_cuda/CMakeFiles/hyle_compute_backend_cuda.dir/cuda_batch_transfer.cc.o
+[15/25] Building CXX object hyle/src/compute_backend_cuda/CMakeFiles/hyle_compute_backend_cuda.dir/cuda_memory.cc.o
+[16/25] Building CXX object hyle/src/compute_backend_cuda/CMakeFiles/hyle_compute_backend_cuda.dir/cuda_device_status.cc.o
+[17/25] Building CXX object hyle/src/graph_batch/CMakeFiles/hyle_graph_batch.dir/batch.cc.o
+[18/25] Building CXX object hyle/src/graph_batch/CMakeFiles/hyle_graph_batch.dir/materialized_invocation.cc.o
+[19/25] Building CXX object hyle/src/graph_batch/CMakeFiles/hyle_graph_batch.dir/native_paged_node.cc.o
+[20/25] Linking CXX static library hyle/src/compute/libhyle_compute.a
+[21/25] Linking CXX static library hyle/src/graph/libhyle_graph.a
+[22/25] Linking CXX static library hyle/src/compute_batch/libhyle_compute_batch.a
+[23/25] Linking CXX static library hyle/src/compute_backend_cuda/libhyle_compute_backend_cuda.a
+[24/25] Linking CXX static library hyle/src/graph_batch/libhyle_graph_batch.a
+[25/25] Linking CXX executable g03_pending_cuda_graph64

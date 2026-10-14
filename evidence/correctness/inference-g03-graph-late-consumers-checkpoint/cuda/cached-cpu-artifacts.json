@@ -1,0 +1,137 @@
+{
+  "scope": "Immutable copies of existing original CPU GGML artifacts for actual joint source diagnostic; whole-factor rebuild, relocation and complete artifact input qualification remain unproven",
+  "libraries": [
+    {
+      "original": "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/source-build/hyle/src/compute_provider_ggml/libhyle_compute_provider_ggml.a",
+      "frozen": "/root/hyle-scratch/compute-unified/g03-graph-late-cached-cpu/d98147e218cd5ba269d8a0ef0dc7a9ac599a76ba39684016d9a4c51f89a9fc06/libhyle_compute_provider_ggml.a",
+      "bytes": 208644,
+      "sha256": "d98147e218cd5ba269d8a0ef0dc7a9ac599a76ba39684016d9a4c51f89a9fc06"
+    },
+    {
+      "original": "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/source-build/hyle/src/compute_ggml_runtime/libhyle_compute_ggml_runtime.a",
+      "frozen": "/root/hyle-scratch/compute-unified/g03-graph-late-cached-cpu/b7840d13869448292b1bf93f4d749ed20cc71ce3550fae2a8c10b53da1ba7f22/libhyle_compute_ggml_runtime.a",
+      "bytes": 43452,
+      "sha256": "b7840d13869448292b1bf93f4d749ed20cc71ce3550fae2a8c10b53da1ba7f22"
+    },
+    {
+      "original": "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/source-build/hyle/src/compute_ggml_runtime/vendor/src/libggml.a",
+      "frozen": "/root/hyle-scratch/compute-unified/g03-graph-late-cached-cpu/0b9735319cd569179e28e2a72b08ebe0e3a72640c0951863b36328276e2c37b8/libggml.a",
+      "bytes": 61752,
+      "sha256": "0b9735319cd569179e28e2a72b08ebe0e3a72640c0951863b36328276e2c37b8"
+    },
+    {
+      "original": "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/source-build/hyle/src/compute_ggml_runtime/vendor/src/libggml-cpu.a",
+      "frozen": "/root/hyle-scratch/compute-unified/g03-graph-late-cached-cpu/5beb5eeafba0e0c7193f9e637468d8675cc3988a4f03fea34dd47d0ed056fac0/libggml-cpu.a",
+      "bytes": 1295176,
+      "sha256": "5beb5eeafba0e0c7193f9e637468d8675cc3988a4f03fea34dd47d0ed056fac0"
+    },
+    {
+      "original": "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/source-build/hyle/src/compute_ggml_runtime/vendor/src/libggml-base.a",
+      "frozen": "/root/hyle-scratch/compute-unified/g03-graph-late-cached-cpu/5dc85bfb16266f68f37fbc517434d96a24d090352104d26a98bda0d91682cc31/libggml-base.a",
+      "bytes": 1362860,
+      "sha256": "5dc85bfb16266f68f37fbc517434d96a24d090352104d26a98bda0d91682cc31"
+    }
+  ],
+  "source_inputs": [
+    {
+      "path": "include/hyle/compute/providers/ggml_cpu.h",
+      "sha256": "1df53042a6ad5d6e899aca9fc75418d9fa561c85eb769d79ea72b88f3530d6b1"
+    },
+    {
+      "path": "src/compute_ggml_runtime/CMakeLists.txt",
+      "sha256": "7162fc8461e519e644f67f197799bddf5458a3c3ed68fee90221279123d25a0d"
+    },
+    {
+      "path": "src/compute_ggml_runtime/CPU_SOURCE_NOTICE.txt",
+      "sha256": "ef38651827525111fd410846adffedfeb5a06bfdc179ccfb4246f7256918900c"
+    },
+    {
+      "path": "src/compute_ggml_runtime/HyleGgmlCpuRuntimeConfig.cmake.in",
+      "sha256": "334aaf14d001bf33d963976091a4aa111dff37160d83f2ddfb3d815def2751da"
+    },
+    {
+      "path": "src/compute_ggml_runtime/cpu_execution.cc",
+      "sha256": "7afabc73d8ab541c98fde67e41f2e1384994c15cd123582ef218f89322a0d2db"
+    },
+    {
+      "path": "src/compute_ggml_runtime/cpu_execution.h",
+      "sha256": "0ca5a22a3c5aefe9c01e2384ea363b7f9252674040b5f6e2aafd0bcff3eccd98"
+    },
+    {
+      "path": "src/compute_ggml_runtime/cpu_program.cc",
+      "sha256": "d0bc0d0389877f4f9bee055895e9180604d535ad17b2d8c3f0390e8e6c6ba09c"
+    },
+    {
+      "path": "src/compute_ggml_runtime/cpu_program.cmake",
+      "sha256": "255bf04a9fe0e73e30e1aae28d30c4870ccfba948dac39412263243d97daa91e"
+    },
+    {
+      "path": "src/compute_ggml_runtime/cpu_program.h",
+      "sha256": "8dabcd5b7f57c768c8cd317058f6958c685d462f548cac3b2248be2597b40065"
+    },
+    {
+      "path": "src/compute_ggml_runtime/cpu_program_abi.h",
+      "sha256": "2268eef8042a00ec5dbffdf38ce4d9c5f27454cfa163cec56d51138bf3ba0004"
+    },
+    {
+      "path": "src/compute_ggml_runtime/cpu_program_export.cc",
+      "sha256": "b450247a43dda0ca1658d54727b8114e439e9449e0df8644eaecaa909afb49c2"
+    },
+    {
+      "path": "src/compute_ggml_runtime/explicit_rope.h",
+      "sha256": "eb3adc26db7641a35c433e83492c74c1d5316b32433c799a161d8a8b31289e8e"
+    },
+    {
+      "path": "src/compute_ggml_runtime/metadata_arena.cc",
+      "sha256": "0b1cbdc5d063593a1f780df92ed9420ba6905ec02f1f492ae486e3046fde1d09"
+    },
+    {
+      "path": "src/compute_ggml_runtime/metadata_arena.h",
+      "sha256": "27d9639094db0f0fc72a7dd9c8b767d6e5b63f5bfd4cafe849cf0f97ec719dfb"
+    },
+    {
+      "path": "src/compute_ggml_runtime/prepare_cuda_iq1_manifest.py",
+      "sha256": "f0a923427a1616c548640eacddb33a3c5e94bd7dfdd7d997ada3f7e3c4a49b4a"
+    },
+    {
+      "path": "src/compute_ggml_runtime/prepare_metal_iq1_manifest.py",
+      "sha256": "105e84192472c5bdef27d74adbdbd41c02eb5fbce4b6c3196c5d86868be9425e"
+    },
+    {
+      "path": "src/compute_ggml_runtime/prepare_mixed_cpu_manifest.py",
+      "sha256": "56d86439ecdebaf354f435d73ce5acba4829d77bc34576d20bb9979443fc44ea"
+    },
+    {
+      "path": "src/compute_ggml_runtime/prepare_source.py",
+      "sha256": "ccde3399d6a65ecb68f3ecc6886522ff559df2eb7e5da405ae71612372615c7c"
+    },
+    {
+      "path": "src/compute_provider_ggml/CMakeLists.txt",
+      "sha256": "4a1e5e6b64d3e684c6f9454fb4b1d42909d5ee72f8b4efed7fad1c88941d5551"
+    },
+    {
+      "path": "src/compute_provider_ggml/ggml_cpu_provider.cc",
+      "sha256": "85cd82183ac07e57db2f1ae99101230c5854d5d2f3c02925abb69a3dc2017e8b"
+    },
+    {
+      "path": "src/compute_provider_ggml/native_batch.cc",
+      "sha256": "a62a61ca8f4c88963b9dfa3174f209242b189a67ebb4dce296e1f3a7c80efdf2"
+    },
+    {
+      "path": "src/compute_provider_ggml/native_batch.h",
+      "sha256": "dac15e6f7e54955ec4e2f1291c46da0139dfd14ec4dda03d2687d400d6ada8f4"
+    },
+    {
+      "path": "src/compute_provider_ggml/program.h",
+      "sha256": "cfe6389cb783a6ca238f752048462d62da4c6c0520637fa6afa44a1348b295ee"
+    },
+    {
+      "path": "src/compute_provider_ggml/standard_index.cc",
+      "sha256": "a069b7ec6b4eb06851c60e8140db7226903c0821e2a6e63f3cb4f245a0c4e3e8"
+    },
+    {
+      "path": "src/compute_provider_ggml/standard_index.h",
+      "sha256": "9a760f757eafad3aa86ff8d08110a80e37b8ebffa9595e963d26f4f4699ea2a2"
+    }
+  ]
+}

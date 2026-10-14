@@ -1,0 +1,10 @@
+[0/2] Re-checking globbed directories...
+[1/8] Performing build step for 'vulkan-shaders-gen'
+ninja: no work to do.
+[2/8] Performing install step for 'vulkan-shaders-gen'
+-- Up-to-date: /Users/kiro/hyle-scratch/compute-unified/a-cpu-vulkan/selected-graph/source-build/Release/./vulkan-shaders-gen
+[3/8] Completed 'vulkan-shaders-gen'
+[4/8] Building CXX object hyle/src/graph_route_cpu_vulkan/CMakeFiles/hyle_graph_route_cpu_vulkan.dir/invocation.cc.o
+[5/8] Linking CXX shared library hyle/src/graph_route_cpu_vulkan/libhyle_graph_route_cpu_vulkan.0.1.0.dylib
+[6/8] Creating library symlink hyle/src/graph_route_cpu_vulkan/libhyle_graph_route_cpu_vulkan.dylib
+[7/8] Linking CXX executable g03_pending_joint64

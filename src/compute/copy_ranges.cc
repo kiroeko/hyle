@@ -35,7 +35,13 @@ Result<std::size_t> origin(const PhysicalCopyResource &resource,
 Result<CopyBatchReport> validate_copy_ranges(
     std::span<const PhysicalCopyResource> resources,
     std::span<const CopyPhase> phases, std::span<const CopyRange> ranges,
-    const CopyBatchOptions &limits, CopyRangeScratch scratch) noexcept {
+    const CopyBatchOptions &limits, CopyRangeScratch scratch,
+    std::span<const CopyResourceId> unresolved_sources) noexcept {
+  const auto unresolved=[&](CopyResourceId id){return std::find(unresolved_sources.begin(),
+      unresolved_sources.end(),id)!=unresolved_sources.end();};
+  for(const auto id:unresolved_sources)if(id.value>=resources.size() || resources[id.value].address_space ||
+      resources[id.value].backing || resources[id.value].origin)
+    return std::unexpected(Status::InvalidArgument("unresolved copy source cannot claim physical coordinates"));
   if (limits.max_resources == 0 || limits.max_copies == 0 || limits.max_phases == 0 ||
       limits.max_phases > 64 || limits.max_bytes == 0)
     return std::unexpected(Status::InvalidArgument("copy batch limits are invalid"));
@@ -78,10 +84,12 @@ Result<CopyBatchReport> validate_copy_ranges(
     if (copy.bytes > limits.max_bytes - report.logical_bytes)
       return std::unexpected(Status::ResourceExhausted("copy byte capacity exhausted"));
     const auto &source = resources[copy.source.value], &destination = resources[copy.destination.value];
+    if(unresolved(copy.destination))return std::unexpected(Status::InvalidArgument("unresolved copy endpoint must be a readonly source"));
+    const bool source_known=!unresolved(copy.source);
     HYLE_ASSIGN_OR_RETURN(auto source_begin, origin(source, copy.source_offset, bytes));
     HYLE_ASSIGN_OR_RETURN(auto destination_begin, origin(destination, copy.destination_offset, bytes));
     report.logical_bytes += copy.bytes;
-    if (bytes == 0 || (source.address_space == destination.address_space && source.backing == destination.backing &&
+    if (bytes == 0 || (source_known && source.address_space == destination.address_space && source.backing == destination.backing &&
                       source_begin == destination_begin)) {
       ++report.no_op_copies;
       continue;
@@ -95,7 +103,7 @@ Result<CopyBatchReport> validate_copy_ranges(
     scratch.copies[report.active_copies++] = {
         copy.source.value, copy.destination.value, copy.phase.value, static_cast<std::uint32_t>(index),
         copy.source_offset, copy.destination_offset, copy.bytes, bytes};
-    scratch.intervals[interval_count++] = {source.address_space, source.backing, source_begin,
+    if(source_known)scratch.intervals[interval_count++] = {source.address_space, source.backing, source_begin,
         source_begin + bytes, copy.phase.value, false};
     scratch.intervals[interval_count++] = {destination.address_space, destination.backing, destination_begin,
         destination_begin + bytes, copy.phase.value, true};

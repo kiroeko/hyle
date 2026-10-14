@@ -1,0 +1,170 @@
+{
+  "kind": "PARTIAL_FULL_CUDA_INSTALLED_DELIVERY_AND_INDEPENDENT_NATIVE_SOURCES",
+  "state": "AUDITED",
+  "whole_g03_completed": false,
+  "verified": [
+    "Original full CPU+CUDA dependency closure builds, installs and relocates in static and shared profiles; no frozen CPU archive or explicit compiler translation unit workaround.",
+    "Both installed profiles run CUDA and required CPU+CUDA public Graph/F2 pending consumers: 64 steps F16/BF16, two requests/two slots, cross-page growth, independent double oracle. Four standalone public headers per profile.",
+    "Installed consumer commands have no source or producer build includes; five shipping object receipts per profile have no HYLE_TESTING.",
+    "Two independently accepted native Abs result owners enter the same original F2 Update and two joint page nodes with required CPU fragments; actual nonzero success oracle, second producer cancellation failure and abandonment pass on Apple/Vulkan.",
+    "Native readonly result used as destination is rejected before copy acceptance, retaining the accepted producer owner; both source routes and six ASan/UBSan/TSan configurations pass.",
+    "Independent two-producer source lifecycle fixture passes on all six original host sanitizer profiles."
+  ],
+  "limitations": [
+    "This is a partial checkpoint; required CPU+CUDA source lifecycle qualification is separately running, not signed here.",
+    "No immutable G03 candidate or final seven-gate verdict; original G01/G02 unresolved gates and G04-G10 remain.",
+    "Original sanitizer model/private-driver limitations, native CUDA Unimplemented cancellation, cold table waits and bounded per-binding allocations remain explicit."
+  ],
+  "failures": "All original compile/runtime failures and cumulative records retained. New multi-source fixture compile warning, incorrect output read length and pre-recovery Vulkan status expectations were corrected without product weakening. Original source ownership must be recovered before failed epoch admission is judged.",
+  "cumulative_seconds": {
+    "cuda_sdk": 1277.7699397910003,
+    "native_source": 311.1405972079999,
+    "host_sanitizers": 480.88330683499987
+  },
+  "current_product_inputs": [
+    {
+      "path": "include/hyle/compute/apple_memory.h",
+      "sha256": "b70c2e897ccda96b108ac8105ee77b391b6eeec503985444d0e8192cfbe68eac"
+    },
+    {
+      "path": "include/hyle/compute/detail/apple_batch_access.h",
+      "sha256": "b83b2e5109c97d5ac97b3b1ec1fc858d688b8557bae50616442a05c436159924"
+    },
+    {
+      "path": "include/hyle/compute/detail/copy_control.h",
+      "sha256": "8fd8ba40beeb810bcc7d635853b6f94e860e3dce4b22fa06fe5830dc10f7e909"
+    },
+    {
+      "path": "include/hyle/compute/detail/copy_outcome_source.h",
+      "sha256": "b6a6d6648e6fa3a351cedace1a7f598fc086e1671414061bf1a2ab4e99dcdbfa"
+    },
+    {
+      "path": "include/hyle/compute/detail/copy_ranges.h",
+      "sha256": "86b711e8dd26d63bba37e0ebbd47956f28bfd58b28934ac8073f28df81c543e7"
+    },
+    {
+      "path": "include/hyle/compute/detail/native_lease_inputs.h",
+      "sha256": "eca0780a39defc70e73ccbd1f8a2aec1aac66e67af95078b6912d7671f7ff7d6"
+    },
+    {
+      "path": "include/hyle/compute/detail/vulkan_batch_access.h",
+      "sha256": "22823b2c4a846fddf14ba0440e78a944ebeaf27f564e043424f5e2cca13eda01"
+    },
+    {
+      "path": "include/hyle/compute/vulkan_memory.h",
+      "sha256": "0fa5c0ffa7b316da2645f03c8176d02fc871151700720c195d2e238c802b53fc"
+    },
+    {
+      "path": "include/hyle/graph/batch.h",
+      "sha256": "7e5b1ae675bcf5048c739e32dfd94c2209cd6af6c63fa2cc4cd10ebec2d89b1f"
+    },
+    {
+      "path": "include/hyle/graph/cpu_apple.h",
+      "sha256": "645f557d8a6fefe3f69bc25f37c03e637ed28311fb7817bfb8de0e5373b0eb32"
+    },
+    {
+      "path": "include/hyle/graph/cpu_vulkan.h",
+      "sha256": "9b4c99f9ef9948f85435de4415a788b83d17a00752664074edf462addc6693f6"
+    },
+    {
+      "path": "include/hyle/graph/detail/region_access.h",
+      "sha256": "ab9974ad248e491e47659c5020b0cdc337156cc42f7e24feb525ef0557bcfc13"
+    },
+    {
+      "path": "src/compute/copy_control.cc",
+      "sha256": "0de266027785e1598c587b19f15cbc422125af7a8fff262fb3064f4b0126d786"
+    },
+    {
+      "path": "src/compute/copy_ranges.cc",
+      "sha256": "8b35ebef012a2d1cd72c1c989b02a997861d42e336a7a31275d04fd3085a9c97"
+    },
+    {
+      "path": "src/compute/retained_completion.cc",
+      "sha256": "196aa0b36e81a114dcd0d5ef38c520cce5de30e7c78a1e30292ac4d0c403e071"
+    },
+    {
+      "path": "src/compute_route_apple/apple_copy_internal.h",
+      "sha256": "ff139033c6cd0a9472ae5e68cd7962cecb64ceb96d13ee4fa3bdf632db1c6d88"
+    },
+    {
+      "path": "src/compute_route_apple/apple_copy_program.cc",
+      "sha256": "5c705087c887fbb02b2cb44eb0089eb498d9395c6b078b754d9cf7d18fcef6e0"
+    },
+    {
+      "path": "src/compute_route_apple/apple_copy_recording.mm",
+      "sha256": "b2786a571ad4fe67973da0f64b8c230acc1bc9fad6d49cf6f229fa8e001af3bb"
+    },
+    {
+      "path": "src/compute_route_apple/apple_file_stream_access.h",
+      "sha256": "183f94fa1c3b280b58247ad1344a4937a43bcb1cd21fb374ade25f525619d046"
+    },
+    {
+      "path": "src/compute_route_apple/apple_materialized_invocation.cc",
+      "sha256": "2da369419d9eb7c87c1a29c04c9460cd8609a88ada46e4d75e31008980103457"
+    },
+    {
+      "path": "src/compute_route_apple/apple_memory.mm",
+      "sha256": "2da66548242675285830054cd6e6a82422630f28cab4113ca45e9f3eddc156af"
+    },
+    {
+      "path": "src/compute_route_vulkan/vulkan_copy_internal.h",
+      "sha256": "2ef2cd519750c9adb73b774fcb8da4df2b413ab94530937c1cd3f054a0d62e03"
+    },
+    {
+      "path": "src/compute_route_vulkan/vulkan_copy_program.cc",
+      "sha256": "685ef1b1073b22a68bb2298e3c5a96a58e0aa24edad7e32f952c4cb1d4f4f3a7"
+    },
+    {
+      "path": "src/compute_route_vulkan/vulkan_copy_recording.cc",
+      "sha256": "e58d2f4756f70ce02a0d68b97e3b9ebbd244894615d68b25daf1fee3b54211d2"
+    },
+    {
+      "path": "src/compute_route_vulkan/vulkan_materialized_invocation.cc",
+      "sha256": "6fe31b7026b2aa130f5add655178bed7971c95ff07133325d1fde468c9045066"
+    },
+    {
+      "path": "src/compute_route_vulkan/vulkan_memory.cc",
+      "sha256": "78ea54d398c3de8c1adc16e68172069a840f7354a8e272a1a40eaffbcce9fc5e"
+    },
+    {
+      "path": "src/compute_route_vulkan/vulkan_run.cc",
+      "sha256": "4b4296e0a01f5c0b1a0e05ee6970d85246d7619e540a202e35daa141a476fa96"
+    },
+    {
+      "path": "src/graph/executable.cc",
+      "sha256": "5514ae6bdf3548a356b2b04e8b12435e8625ba3debe6036641736a5ad5c5ab45"
+    },
+    {
+      "path": "src/graph/leased_invocation.cc",
+      "sha256": "d2e07eaa53072b6cae6f5182bb0c4590eac2ab5ed492c1c3aae2f2392bdc8260"
+    },
+    {
+      "path": "src/graph/submission_internal.h",
+      "sha256": "8a48ad4a490bb9bc7a57dd67e7ecc6500ab091141e75230221a5b1ada5ea0f66"
+    },
+    {
+      "path": "src/graph_batch/batch.cc",
+      "sha256": "e036969aa842c55db377c332496f2f85f486c074d674c52d2c4f32f51e18c994"
+    },
+    {
+      "path": "src/graph_batch/native_paged_slots.h",
+      "sha256": "e479b0f89273eabd4db8e0db0b5506d42738e95e31cbab08bf9711c40d1b3386"
+    },
+    {
+      "path": "src/graph_route_cpu_apple/invocation.cc",
+      "sha256": "773be9ed03475a613bd7fb413bdf8598072c0ea603e98e0a075cecbdbb9af6b3"
+    },
+    {
+      "path": "src/graph_route_cpu_apple/paged.h",
+      "sha256": "716c973b06a4f2fb872c32b81e051d40f93ca6bd2f5f32c7b472df9cbcdd557d"
+    },
+    {
+      "path": "src/graph_route_cpu_vulkan/invocation.cc",
+      "sha256": "64556f8172f8f409d195c1cb7fc6a74b89310f4f35e8150bbebe32fb0176da77"
+    },
+    {
+      "path": "src/graph_route_cpu_vulkan/paged.h",
+      "sha256": "234d8840de9cfab1535dfbcc96359ac64f866f16d76b7ff56c66524d8b25d4c9"
+    }
+  ]
+}

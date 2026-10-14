@@ -1,0 +1,35 @@
+[0/2] Re-checking globbed directories...
+[1/35] Performing build step for 'vulkan-shaders-gen'
+ninja: no work to do.
+[2/35] Performing install step for 'vulkan-shaders-gen'
+-- Up-to-date: C:/h7/inference-g01-native-vulkan/build/Release/vulkan-shaders-gen.exe
+[3/35] Linking CXX shared library hyle\src\graph_provider_onednn\hyle_graph_provider_onednn.dll
+[4/35] Completed 'vulkan-shaders-gen'
+[5/35] Linking CXX shared library hyle\src\compute_state\hyle_compute_state.dll
+[6/35] Building CXX object CMakeFiles\g03_result_owner.dir\C_\public\project-hyle\hyle\tests\compute\result_owner_producer.cc.obj
+[7/35] Building CXX object hyle\src\graph_batch\CMakeFiles\hyle_graph_batch.dir\batch.cc.obj
+[8/35] Building CXX object hyle\src\compute_route_vulkan\CMakeFiles\hyle_compute_route_vulkan.dir\vulkan_leased_invocation.cc.obj
+[9/35] Building CXX object hyle\src\compute_route_vulkan\CMakeFiles\hyle_compute_route_vulkan.dir\vulkan_memory.cc.obj
+[10/35] Building CXX object hyle\src\compute_route_vulkan\CMakeFiles\hyle_compute_route_vulkan.dir\vulkan_program.cc.obj
+[11/35] Linking CXX shared library hyle\src\compute_route_cpu\hyle_compute_route_cpu.dll
+[12/35] Linking CXX shared library hyle\src\graph_batch\hyle_graph_batch.dll
+[13/35] Building CXX object hyle\src\compute_route_vulkan\CMakeFiles\hyle_compute_route_vulkan.dir\vulkan_batch.cc.obj
+[14/35] Building CXX object hyle\src\compute_route_vulkan\CMakeFiles\hyle_compute_route_vulkan.dir\vulkan_materialized_invocation.cc.obj
+[15/35] Building CXX object hyle\src\compute_route_vulkan\CMakeFiles\hyle_compute_route_vulkan.dir\vulkan_iree.cc.obj
+[16/35] Linking CXX shared library hyle\src\graph_route_cpu\hyle_graph_route_cpu.dll
+[17/35] Linking CXX shared library hyle\src\compute_route_vulkan\hyle_compute_route_vulkan.dll
+[18/35] Building CXX object hyle\src\graph_route_vulkan\CMakeFiles\hyle_graph_route_vulkan.dir\vulkan_batch.cc.obj
+[19/35] Linking CXX shared library g03_result_owner.dll
+[20/35] C:\WINDOWS\system32\cmd.exe /C "cd /D C:\h7\inference-g01-native-vulkan\build && "C:\Program Files\CMake\bin\cmake.exe" -P C:/h7/inference-g01-native-vulkan/build/hyle-runtime/g03_owned_outcome-Release.cmake"
+[21/35] Building CXX object hyle\src\graph_route_cpu_vulkan\CMakeFiles\hyle_graph_route_cpu_vulkan.dir\invocation.cc.obj
+FAILED: [code=2] hyle/src/graph_route_cpu_vulkan/CMakeFiles/hyle_graph_route_cpu_vulkan.dir/invocation.cc.obj 
+"C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\bin\Hostx64\x64\cl.exe"  /nologo /TP -DHYLE_COMPUTE_CPU=1 -DHYLE_COMPUTE_VULKAN=1 -DHYLE_GRAPH_ROUTE_CPU_VULKAN_BUILD -DHYLE_IO_HAS_COROUTINE_TRANSPORT=1 -Dhyle_graph_route_cpu_vulkan_EXPORTS -IC:\public\project-hyle\hyle\include -IC:\public\project-hyle\hyle\src\graph_route_cpu_vulkan -external:IC:\public\tools\hyle-dependencies\v1\sources\vulkan_headers-e3b1eec08173-69d6adc9001f\include -external:W0 /DWIN32 /D_WINDOWS /GR /EHsc /O2 /Ob2 /DNDEBUG -std:c++latest -MD /W4 /permissive- /wd4324 /Zc:__cplusplus /utf-8 /Zc:preprocessor /showIncludes /Fohyle\src\graph_route_cpu_vulkan\CMakeFiles\hyle_graph_route_cpu_vulkan.dir\invocation.cc.obj /Fdhyle\src\graph_route_cpu_vulkan\CMakeFiles\hyle_graph_route_cpu_vulkan.dir\ /FS -c C:\public\project-hyle\hyle\src\graph_route_cpu_vulkan\invocation.cc
+C:\public\project-hyle\hyle\src\graph_route_cpu_vulkan\invocation.cc(789): error C2672: 'hyle::graph::batch::detail::NativePagedSlots<hyle::graph::cpu_vulkan::detail::PageTraits>::validate_frame': no matching overloaded function found
+C:\public\project-hyle\hyle\src\graph_route_cpu_vulkan\../graph_batch/native_paged_slots.h(102): note: could be 'hyle::Status hyle::graph::batch::detail::NativePagedSlots<hyle::graph::cpu_vulkan::detail::PageTraits>::validate_frame(size_t,const Frame &) noexcept const'
+C:\public\project-hyle\hyle\src\graph_route_cpu_vulkan\invocation.cc(789): note: 'hyle::Status hyle::graph::batch::detail::NativePagedSlots<hyle::graph::cpu_vulkan::detail::PageTraits>::validate_frame(size_t,const Frame &) noexcept const': could not deduce template argument for 'Frame'
+C:\public\project-hyle\hyle\src\graph_route_cpu_vulkan\invocation.cc(789): error C2530: 'hyle_status_207': references must be initialized
+C:\public\project-hyle\hyle\src\graph_route_cpu_vulkan\invocation.cc(789): error C3536: 'hyle_status_207': cannot be used before it is initialized
+[22/35] Building CXX object hyle\src\graph_route_vulkan\CMakeFiles\hyle_graph_route_vulkan.dir\vulkan_lowering.cc.obj
+[23/35] Building CXX object hyle\src\graph_route_cpu_vulkan\CMakeFiles\hyle_graph_route_cpu_vulkan.dir\compile.cc.obj
+[24/35] C:\WINDOWS\system32\cmd.exe /C "cd /D C:\h7\inference-g01-native-vulkan\build && "C:\Program Files\CMake\bin\cmake.exe" -P C:/h7/inference-g01-native-vulkan/build/hyle-runtime/g03_common_receiver_risks-Release.cmake"
+ninja: build stopped: subcommand failed.

@@ -426,7 +426,7 @@ ready 页；Apple `Results::arrays()` 在原 worker 执行前为空，而原 F2 
 | GL01 | Graph 原 ordered sequence 与 final result 已有，pending permission 接缝 MISSING | graph BORROW 原 SubmissionCursor/LeasedInvocation/use pool/retention；trusted projected binding 与 submit callbacks，回调在原 QueueSequence 内先接 source wait，再接 exact guards，最终聚合在原公共 completion 槽内发布；普通 ready 调用无新增 owner 字段 | rejected-prefix 回接、accepted-prefix 不丢失、source 失败无 output，原 ready 回归 |
 | GL02 | common batch region slots 已有，public pending 组合 MISSING | graph_batch SELF 一个显式冷 PendingInvocation，移动原 Invocation，保一个原 CopyOutcomeSource/DependentCompletion 与有限 pending input 表；bind/prepare/report 委托原 slot，submit(Update&&)/take_update 自然回接；不另建 Graph/Batch invocation/queue/output | CPU、CUDA、CPU+CUDA 实际主/正交 journey、风险、三交付/独立头 |
 | GL03 | 原两 native 联合 Graph 只接 ready，PARTIAL | 两 graph_route BORROW 原 PageSlots/MaterializedNativeState 与原 Graph ResultSlot；增加 pending frame bind、submit(Update&&)、take_update。source 只在显式 pending 冷扩展创建，一 Update 可供同图多个页节点，最终映射同一 Graph OwnedResult。exact node/layout/readers 在 replay 前固定 | Apple/Vulkan 单 GPU 与两联合路线 actual journey、两节点、旧结果、源失败/unknown/取消/放弃/预算 |
-| GL04 | 原 native accepted result → F2 late source MISSING | 两 compute_route SELF typed bind_source(id, OwnedResult<Results>&&, output_index, TensorDesc)；冷持原 result storage，移动其真实 completion 到原 producer binding。Apple backing 在原 FIFO copy Job 的 preflight 成功后解析，完整物理别名/范围再验后才 blit；Vulkan 可冷解析地址但仍保 producer 排序/成功合同。绝不创建 public pending ReadLease；接纳拒绝不消费结果。复用原 recording/worker/queue/phase guard | actual非零数值 producer、多个来源/phase、foreign/shape/alias/OOM、错误与实际退休，三交付 |
+| GL04 | 原 native accepted result → F2 late source MISSING | 两 compute_route SELF typed bind_source(span<ResultCopyBinding>, OwnedResult<Results>&&)；每条 binding 固定 resource/output_index/TensorDesc，同一原结果可供多个 K/V 来源，仍只有一个 completion 观察 owner。冷持原 result storage，移动其真实 completion 到原 producer binding。Apple backing 在原 FIFO copy Job 的 preflight 成功后解析，完整物理别名/范围再验后才 blit；Vulkan 可冷解析地址但仍保 producer 排序/成功合同。绝不创建 public pending ReadLease；接纳拒绝不消费结果。复用原 recording/worker/queue/phase guard | actual非零数值 producer、多个来源/phase、foreign/shape/alias/OOM、错误与实际退休，三交付 |
 
 自然调用为 common `PendingInvocation::create(std::move(original), capacity, leases)`，然后
 prepare_batch、bind(Q ready/输出 writer/KV pending)、submit(std::move(update))、最终 wait、
@@ -449,7 +449,190 @@ native C++ 编译、WSL CUDA 既有 kernel artifact、Air 实际 Apple/Vulkan �
 七问沿本卡既有依赖/FFI/交付边界；新增公开形状须落使用指南，固定原 lifetime/owner，
 工具无缺陷不扩工具。有限 GL01–04 全部实现并验后才候选；新架构事实先改本节审计。
 
+GL03 的显式冷入口固定为 `reserve_pending_sources(max_source_completions)`，在原 joint
+Invocation 上调用一次，随后 bind(PagedArenaPendingRead)/submit(Update&&)/take_update。
+一次 Update 共用全图 source owner，不能按每个页节点复制观察者。GL04 采用批量 result
+binding，是因为一个 native QKV producer 的同一 OwnedResult 可以同时包含多个输出；
+不能要求用户为 K/V 重复执行 producer，或移动同一 move-only completion 两次。来源的
+逻辑尺寸是声明，实际 backing/别名 proof 在 native owner 里兑现，不能造假 Buffer/ReadLease。
+
+2026-10-14 实施中：GL01–GL04 主体已写入工作树，沿本批集中实现、批量检查和定向修复。
+Windows 已编译 common/native Vulkan/两联合 Graph 接缝；common CPU Graph 的 F16/BF16、
+双请求/双槽/64步真实 pending 消费通过，九项原来源风险与36项原结果回归通过。Air Apple
+F16/BF16、Vulkan F16 的实际 Abs 多输出 producer→原 F2→pending Direct attention 同64步
+及独立 double oracle通过；producer 返回后至消费间没有 host wait。这只签上述 source
+journey，不签 GL03 联合 pending、CUDA Graph、正交 reduction、三交付或完整 G03。
+
+本批真实失败保留：CPU Graph 曾提前对尚无 ready permission 的 typed pending 输入调用
+普通 lease admission，现只对本次 trusted adapter 明确列出的 exact input 延后至原 sequence
+回调，其余 ready 检查仍执行。Vulkan 原资格检查曾拒绝所有 managed producer；实际源代码
+证明非 async 原 NativeWork 在 submit 返回前将整个 resident graph 与原 fence 提交到同一
+Runtime compute queue，F2 使用同一 queue/submit lock，因此允许这个固定前缀。async、
+needs_drain、IREE 未证明前缀继续拒绝；原 producer checked error/unknown/cancel 与实际
+retirement 仍参与最终 source outcome，未插入 host wait 或换成更简单 producer 回避失败。
+原 Windows/Apple 编译失败、fixture警告与全部累计保留。全部 owner 仍 AUDITED，待上述
+剩余消费者和适用风险/交付通过后再冻结 candidate，不能把本段或 selector READY 当全门 PASS。
+
+[本批 source 检查点](../../../../evidence/correctness/inference-g03-graph-late-source-checkpoint/validation-result.json)
+保逐次输入 manifest、真实硬件身份、全部编译/消费失败与累计；Windows 九项 copy-range
+测试还验证 logical-only 来源不能伪造物理坐标/写目的权限、未知来源仍不得绕过已知目的
+hazard，以及 backing 解析后的真实部分别名必须拒绝。该记录明确为 partial implementation，
+不代签新增生命周期/宿主 sanitizer/三交付/selector reverse-factor 或整项验收。
+
+## GL 集中消费续验检查点（2026-10-14）
+
+Air 的 CPU+Apple F16/BF16、CPU+Vulkan F16 已通过实际 native Abs 多输出→原 F2→联合
+Graph 两个页节点共享同一 Update→必需 CPU 前后段的64步/双请求/独立 double校验。
+active Q 2/18沿原固定输出合同冷编译两图，各两原 Graph槽、合计四个冷槽；两原 copy/
+producer槽不变。每步释放所有冷变体的旧导入再取页 writer；不得缩成固定Q或把四槽报成两槽。
+Vulkan 首次未执行变体重复prepare失败证明原 output引用基线直到driver才seal，现移到原
+冷 prepare_batch 的输出/transfer桥全部固定后seal，未删除旧结果、引用数或实际退休gate。
+Apple 两个 fixture错误（不存在的drain调用、equal bytes不同layout identity）及固定图换
+shape拒绝、Vulkan idle cold输出FAIL全部保留。
+
+CUDA共同 Graph 的 F16/BF16、双请求/双槽/64步actual消费通过。原 fixture错用foreign Context
+资源拒绝保留，修为同一wrapper Context的原资源/queue/F2，显式 storage domain；无产品
+弱化/no-op tensor。WSL首选facade预检会触发无关ggml CUDA kernel，未启动；定向维护factor
+只编译原Graph/Batch/backend/FlashInfer C++，原kernel artifact复用。header CUDA传播夹具
+漏链与全部configure成本保留。CPU+CUDA source尚在诊断；原完整组件/三交付未代签。
+
+两native正交非attention source通过：原Abs四输出、共享一个completion、两phase反序重排，
+首个绑定output仅在后phase使用，64步/双copy槽与独立排列和CPU sum数值oracle。最终F2
+成功后显式256字节host staging算成本；不把它宣称异步GPU reduction。原遗漏公共header
+编译FAIL保留。完整新风险/sanitizer/SDK、原G01/G02未决门与G04–G10仍必需，owner继续AUDITED。
+
+[续验记录](../../../../evidence/correctness/inference-g03-graph-late-consumers-checkpoint/validation-result.json)
+保上述 source输入/原失败/机器身份和累计。CPU+CUDA 的同64步现已实际通过：原公开联合
+compiler源码 TU与共同 PendingInvocation，真实 CPU ggml F32 Neg/Cast前后段与原FlashInfer。
+这次维护消费复用五个冻结CPU ggml archive和原AVX2 capsule；完整组件archive输入资格与
+安装交付仍UNPROVEN，记录将此条明确为diagnostic，不能由数值PASS代签完整factor/SDK。
+原provider子域拒绝、OpenMP/static链接/运行时capsule缺失与全部构建成本保留。当前Windows
+新联合public TU/link、更新后的CPU Graph64/九来源风险/36结果回归也通过；无本机GPU执行。
+
 审计裁决：GL01–04 作为一个有限实施批固定；所有既有 source/数学/ready controller 为 BORROW，
 只补实际 pending 组合和 late backing 生命周期。拒绝第二 executor/result slot、whole-arena
 权限和同步 ready 冒充。原 G02 candidate 5ce0bed8/1cd08939 与未决 gate 保历史证据，
 不能用本轮状态回退擦除。source anchors 与上述当前入口逐项回映后，允许本批产品实现。
+
+GL04 宿主 TSan 新事实：Apple late result 的原 producer Completion 由 FIFO preflight 在
+原 copy slot observations 锁内观察，CopyOutcomeSource 的实际退休订阅却在锁外修改同一
+Completion lifetime；64步 source 消费实际报告竞态。修正仍归 GL04：trusted source access
+在同一个原观察锁内完成资格检查、非阻塞观察和 retention attachment；阻塞等待先沿原
+Update/native recording 完成，不能持该锁等 worker。只增加 opt-in cold source control
+callback，不改变普通 Completion 的外部串行合同，不增加 queue/结果槽/工作线程。
+首个联合风险 TSan 报告另为测试 fault allocator 非原子计数，已改为并发计数夹具；该失败
+与真正产品竞态分别保留，未通过的配置仍未签章。
+
+## GL 生命周期与宿主风险检查点（2026-10-14）
+
+[本批证据](../../../../evidence/correctness/inference-g03-graph-late-risks/validation-result.json)
+保存 source/Windows/六宿主配置的所有尝试、输入、失败、累计、instrumentation 与原 TSan
+模型 SHA。common CPU Graph 九风险、两 native late result 各十二风险、联合 Apple 八/Vulkan
+十风险通过；原 ready joint 两路线亦通过。最后产品字节在 Apple/Vulkan 各 ASan/UBSan/TSan
+下的六个定向程序全部通过，含 source/joint64 的真实数值消费者。原 Apple source tests 在
+同步修复前通过，未冒充修复后的新增普通 source 资格；宿主风险不签 LSan/shader/driver。
+
+TSan 发现的 fault allocator 夹具竞态与 GL04 真正 completion attachment 竞态分别修复，
+原报告/失败/累计保留。Windows 最后新风险编译/CPU 九风险、Graph64、原 receiver 九风险与
+36 outcome 回归通过。owner 仍 AUDITED；新安装 static/shared/public-header、common GPU
+Graph 与 CPU+CUDA 生命周期、完整联合 factor/artifact、部分预算/非法 native alias 门和原
+G01/G02 未决门均未代签。十项整体仍粗估22%，完整 G 项0/10；本批所有 heavy 已 terminal。
+
+## 完整 CPU+CUDA 组件资格的缓存裁决（2026-10-14）
+
+原 maintenance 数值消费者的 frozen CPU archive 仍只签 diagnostic。实际 Ninja explain 已
+证明当前完整 `graph_route_cpu_cuda` 闭包中，ggml 准备源码时间戳晚于旧对象，precise-unary/
+CPU capsule 部分对象缺失，另有编译命令变化；不能只复制旧 archive 冒充当前组件/交付资格。
+普通小 CUDA Graph 风险仍只用匹配的原 FlashInfer kernel，并已通过八项 actual lifecycle。
+
+因此本次原三交付门允许一次明确的完整 CPU+CUDA 组件依赖构建：复用原 source/static/shared
+树，构建 graph/graph_batch/graph_route_cpu_cuda/compute_batch 及其真实依赖；允许其中
+必需的原 ggml CUDA translation units 重编译，不改原算法、vendor、工具或构建系统，不跑
+全模块测试/P1/full model。此例外只用于补完整组件身份，不能扩成日常无条件 nvcc；相同
+input/tree/toolchain 通过后复用。各 profile 原 configure/失败/累计保留，heavy 串行/最多
+四 jobs，2h 检查点与用户常设追加时间授权继续适用，期间不修改产品输入。
+
+## GL 安装交付与剩余资格检查点（2026-10-14）
+
+[本批记录](../../../../evidence/correctness/inference-g03-graph-late-delivery/validation-result.json)
+证明 Apple/Vulkan 各 relocated static/shared 的 CPU Graph64、native late source64、联合
+Graph64、正交 reduction64及四 standalone public headers；消费者只用 installed 产品头，
+shipping 对象无 HYLE_TESTING。CPU+native 联合新增共享 metadata exhaustion 的 cold owner/
+pending bind 拒绝在 source 与三 host sanitizer 下均通过，Apple 九/Vulkan 十一风险。
+
+CUDA 新 Graph 八风险实际通过；known/unknown/late source 错误、abandon、旧输出、页回接
+与原 CPU Queue拒绝保留原合同。原 CUDA native cancel 返回 Unimplemented；取消拒绝后
+不虚构退休，真实工作成功后才能取结果。原 Update 的 request_cancel 同时关闭 slot，仍
+不得成功 withdraw writer；不把这个负例写成 native preemption 支持。最初错误的取消
+断言和触发无关 kernel 的 preflight失败保留。实际 readonly native result 用作 destination
+的新增负例已写入本批测试，尚未运行；独立 mutable native alias import 没有公共入口，
+不为测试伪造原结果 allocation 的可写权限。
+
+完整 CPU+CUDA static SDK 正按上节缓存裁决构建；尚未通过，不由 maintenance cached CPU
+archive代签。shared 及必需 CPU/GPU fragments 的剩余 lifecycle 仍需验证。owner 继续
+AUDITED；原 G01/G02 未决 gate 与 G04–G10完整保留，整体粗估24%，完整G项0/10。
+
+GL 收口复核固定两个剩余证据格：一是两个独立 accepted native OwnedResult（不能用一个
+结果的多 outputs代签）经同一 F2 Update进入原 receiver；二是真 required CPU+CUDA 前后
+数学 fragments 的 source error/abandon/old-output/actual retirement。两者都沿本卡原公开
+形状与 GL01–04 实现，不增加能力/组件/执行器。前者小非零双 Abs source→两个 joint page
+节点，独立 constant-value oracle及第二来源取消失败/放弃；后者同 gated CUDA 来源，但
+真实 CPU Neg/Cast与Cast/Neg、双行 double oracle，沿完整原 factor构建，禁止借 frozen
+archive或纯 GPU attention风险代签。san只定向选择改变的风险夹具。
+
+P0冻结账：common `prepare_batch` 会清 pending 输入，随后每次 bind会为 native readers 与
+lane表各请求一次 bounded metadata（实际分配至少两次/输入，另有原frame metadata）。
+外层 reserve不等于内层向量冷一次后永不分配；承诺只限 warm submit 不分配 source协议
+节点/不复制KV/不开新queue。重复 prepare/bind账保留，由 G06 再处理，不能本轮偷偷改
+算法或签全 decode零分配。native原 metadata table上传/host wait、两形状×两slots＝四
+冷 Graph slots、正交256-byte staging、private UNKNOWN均保留，不重跑原数学/P1。
+
+## 完整 CUDA 交付与独立多来源续验（2026-10-14）
+
+[新增证据检查点](../../../../evidence/correctness/inference-g03-full-cuda-delivery-multi-source/validation-result.json)
+证明完整原 CPU+CUDA 闭包的 static/shared 构建、安装、迁址和公开消费者均通过。两交付各
+执行 pure CUDA 与 required CPU+CUDA 的 F16/BF16 同64步双请求、双槽、跨页和独立 double
+oracle；各四 standalone public headers。消费者没有源码/producer build include，五项
+shipping object命令无 HYLE_TESTING。原 frozen archive消费仍为历史 diagnostic；本次不借
+该 workaround，实际依赖重编成本与输入逐次保留，两profile累计1277.770秒。
+
+readonly native result用作destination的新增负例在 Apple/Vulkan source及六 host sanitizer
+配置均通过。两个独立 accepted native Abs OwnedResult通过同一原 F2 Update进入两个联合
+page节点；实际非零oracle、第二来源取消失败、abandon在两source与六 ASan/UBSan/TSan
+配置均通过。夹具曾有 macro编译警告、输出长度错误、Vulkan回收source前状态预期错误；
+已定向修正，全部原失败和累计保留，未改产品成功/失败权限。回收原Update之后 failed epoch
+仍必须拒绝，不能由回收前的Unavailable推断产品可复用。
+
+真实 required CPU+CUDA 前后数学片段的八项 source lifecycle已启动，正在原 source tree
+构建完整factor及必要原依赖，最多四jobs；未通过前不签该门。其他已通过产品字节一致的
+数学、host风险和installed证据直接复用。owner继续AUDITED，未冻结candidate、未签完整
+G03；原 G01/G02 未决验收和 G04–G10保留。整体仍以约24%粗估，完整G项仍0/10。
+
+## GL 实现停止与候选准备（2026-10-14）
+
+[最后 source 证据](../../../../evidence/correctness/inference-g03-source-joint-final-checkpoint/validation-result.json)
+已补完整原 CPU+CUDA factor的公开 hyle::graph源码消费：F16/BF16 同64步/双请求/双槽/
+跨页与double oracle通过，没有explicit compiler TU或frozen CPU archive。required CPU
+Neg/Cast→CUDA paged→CPU Cast/Neg八生命周期通过；最终 pure CUDA八项回归、改动后的
+MSVC native result/joint夹具编译也通过。全部重型任务terminal，无新增产品修改。
+
+首joint夹具将 Gate释放放在submit返回后，原GPU→CPU replay允许checked host wait，
+因而在实际cudaEventSynchronize处挂起。backtrace、-15/94.718秒与全源码构建551.340秒
+保留；夹具现于原非source Graph event同步点先核producer guards仍live，再释放Gate。
+joint放弃是在checked boundary之后放弃returned result/owner；pure CUDA另验真正pending
+abandon。两种原公开语义不混报，不并发析构正执行的外部串行控制对象。独立用户授权
+red-team复核确认该反证合法，未发现新产品缺陷或G03 MUST；有限实现到此停止扩张。
+
+| 七问 | 本批结论与位置 |
+|---|---|
+| 第三方 | 原 dependency lock/版本/许可证和native Provider不变；FlashInfer、MLX、ggml原数学BORROW，实际backend/domain拒绝保留。原三peer源码与需求回映沿本卡及十项源码审计，不以SDK构建行新增能力。 |
+| 完整度 | GL01–04全部兑现四原路线/三联合公开journey、来源错误与actual retirement；双独立native producer、两page节点同Update、正交range/reduction补齐。未准入Vulkan BF16/async/IREE等域明示，不代G04–G10数学/规划/流水。 |
+| 内部复用 | 原Invocation/Graph slots、F2 controls、原ResultStorage/唯一completion、QueueSequence/原FIFO/native fence、F1 exact guards与DependentCompletion；无第二executor/queue/result slot。 |
+| 性能 | 本批P0结构审计：nullable cold扩展/有限输入表；submit不新建协议节点/复制KV/新queue；bind有bounded分配，Apple late backing实际物理重验及原观察锁收费，metadata/crossCPU waits与private UNKNOWN保留。未改数学、不以计时签parity，不重复旧P1。 |
+| FFI | 同名公开C++机制；无C/Native FFI、无第三方原生类型泄露到新增通用入口。 |
+| 三交付 | source与Apple/Vulkan/完整CPU+CUDA迁址static/shared实际public64、独立头、shipping无HYLE_TESTING；最后完整source新factor及8档风险见上述检查点；Windows只签C++编译和CPU。 |
+| 易用 | batch-attention指南列自然prepare/bind/submit/take_update、两独立producer与multioutput、拒绝不消费、原结果/旧guard/失败slot、storage identity、cancel拒绝/checked等待及bounded metadata成本。 |
+
+scope/architecture/correctness/delivery/usability_docs/red_team/engineering_performance的
+本批适用门已具实际证据。冻结commit后只补candidate身份/LOC/七门裁决，不再改产品。
+原G01/G02未决整体验收不能被本批销成PASS；G04–G10保留，goal继续active。

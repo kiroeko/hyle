@@ -68,6 +68,44 @@ TEST(CopyRanges, PhysicalAliasesAcrossDifferentBindingsDoNotEvadeChecks) {
   EXPECT_EQ(result->no_op_copies, 1u);
 }
 
+TEST(CopyRanges, LateReadonlySourceCannotInventPhysicalProof) {
+  Scratch scratch;
+  std::array resources{PhysicalCopyResource{0, 0, 0, 32, 4},
+                       PhysicalCopyResource{3, 7, 100, 32, 4}};
+  const std::array phases{CopyPhase{}};
+  const std::array copies{range(0, 1, 0, 0, 8)};
+  const std::array unresolved{CopyResourceId{0}};
+  auto admitted = validate_copy_ranges(resources, phases, copies, {}, scratch.view(), unresolved);
+  ASSERT_TRUE(admitted.has_value());
+  EXPECT_EQ(admitted->active_copies, 1u);
+  EXPECT_EQ(admitted->no_op_copies, 0u);
+  auto oversized = copies;
+  oversized[0].source_offset = 28;
+  EXPECT_FALSE(validate_copy_ranges(resources, phases, oversized, {}, scratch.view(), unresolved));
+  const std::array reversed{range(1, 0, 0, 0, 8)};
+  EXPECT_FALSE(validate_copy_ranges(resources, phases, reversed, {}, scratch.view(), unresolved));
+  resources[0].backing = 7;
+  EXPECT_FALSE(validate_copy_ranges(resources, phases, copies, {}, scratch.view(), unresolved));
+  // Resolution proves a real partial overlap; a logical admission never
+  // licenses executing these bytes before this full physical rejection.
+  resources[0] = {3, 7, 102, 32, 4};
+  EXPECT_FALSE(validate_copy_ranges(resources, phases, copies, {}, scratch.view()));
+}
+
+TEST(CopyRanges, LateSourceStillRejectsUnorderedDestinationHazards) {
+  Scratch scratch;
+  const std::array resources{PhysicalCopyResource{0, 0, 0, 32, 4},
+      PhysicalCopyResource{3, 7, 100, 32, 4}, PhysicalCopyResource{3, 7, 104, 32, 4}};
+  const std::array unresolved{CopyResourceId{0}};
+  std::array phases{CopyPhase{}, CopyPhase{}};
+  const std::array copies{range(0, 1, 0, 0, 8), range(0, 2, 0, 0, 8, 1)};
+  EXPECT_FALSE(validate_copy_ranges(resources, phases, copies, {}, scratch.view(), unresolved));
+  phases[1].dependency_mask = 1;
+  auto ordered = validate_copy_ranges(resources, phases, copies, {}, scratch.view(), unresolved);
+  ASSERT_TRUE(ordered.has_value());
+  EXPECT_EQ(ordered->physical_bytes, 16u);
+}
+
 TEST(CopyRanges, ProducerConsumerChainRequiresExplicitTransitivePhaseEdges) {
   Scratch scratch;
   const std::array resources{PhysicalCopyResource{1, 1, 0, 64}, PhysicalCopyResource{1, 2, 0, 64},

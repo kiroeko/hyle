@@ -88,13 +88,14 @@ void release_invocation(InvocationState *state) noexcept {
   std::destroy_at(state);
   allocator.deallocate(state, sizeof(InvocationState), alignof(InvocationState));
 }
-Status admit(InvocationState *state) noexcept {
+Status admit(InvocationState *state,bool accepting_source=false) noexcept {
   if (state == nullptr || state->closed)
     return Status::FailedPrecondition("CPU+Vulkan invocation is empty or closed");
   if (state->run->running.load(std::memory_order_acquire))
     return Status::FailedPrecondition("CPU+Vulkan invocation is running");
   if (state->run->retired)
     return Status::FailedPrecondition("CPU+Vulkan failed invocation is retired");
+  if(!accepting_source && state->run->pages)HYLE_RETURN_IF_ERROR(state->run->pages->reusable());
   if (!state->write.valid()) {
     HYLE_ASSIGN_OR_RETURN(auto write, state->result.begin());
     state->write = std::move(write);
@@ -344,9 +345,7 @@ Status drive_graph(RunState &run, bool &accepted) noexcept {
           if(!run.values[qid].native_value)return std::unexpected(Status::Internal("page query producer did not complete"));
           HYLE_ASSIGN_OR_RETURN(auto query,run.plan->environment.device->import_readonly(
               *run.values[qid].native_value,{.allocator=run.allocator,.resource_budget=run.plan->budget}));
-          HYLE_RETURN_IF_ERROR(page->controller.bind(std::move(query),page->frames[0],page->frames[1]));
-          HYLE_RETURN_IF_ERROR(ca::detail::CompositionAccess::seal(page->controller.native));
-          return page->controller.submit();
+          return run.pages->submit_fragment(*page,std::move(query));
         }
         return slot.vulkan.submit();
       }();
@@ -647,10 +646,33 @@ Status Invocation::bind(ValueId id, compute::TensorDesc description, compute::Re
   run.leases.bind(static_cast<std::size_t>(slot), std::move(source));
   return Status::Ok();
 }
+Status Invocation::reserve_pending_sources(std::size_t capacity)noexcept {
+  HYLE_RETURN_IF_ERROR(admit(state_));auto&run=*state_->run;
+  if(!run.pages)return Status::InvalidArgument("graph has no native page nodes");
+  return run.pages->reserve_pending(capacity,run.plan->budget);
+}
+Status Invocation::bind(ValueId id,compute::PagedArenaPendingRead frame)noexcept {
+  HYLE_RETURN_IF_ERROR(admit(state_));auto&run=*state_->run;
+  HYLE_ASSIGN_OR_RETURN(auto index,input_index(run,id));
+  if(!run.pages || !run.pages->pending)return Status::FailedPrecondition("reserve native Graph pending source capacity first");
+  HYLE_RETURN_IF_ERROR(run.pages->validate_frame(index,frame));
+  if(!frame.valid())return Status::InvalidArgument("pending Graph needs an actual page frame");
+  if(!run.plan->effect_bindings.empty())return Status::Unimplemented("pending page capacity has no whole-arena effect footprint");
+  HYLE_ASSIGN_OR_RETURN(auto native,ca::detail::PagedBatchAccess::binding(
+      *run.plan->environment.device,frame,{.allocator=run.allocator,.resource_budget=run.plan->budget}));
+  HYLE_RETURN_IF_ERROR(native_input(run.plan->values[index],native));
+  HYLE_RETURN_IF_ERROR(ensure_leases(run));
+  HYLE_RETURN_IF_ERROR(run.pages->commit_pending(index,std::move(frame)));
+  const auto slot=std::find(run.plan->inputs.begin(),run.plan->inputs.end(),index)-run.plan->inputs.begin();
+  run.leases.clear(std::size_t(slot));
+  auto&value=run.values[index];value.native_input=std::move(native);value.host_input={};value.weight.reset();
+  run.prepared=false;return Status::Ok();
+}
 Status Invocation::bind(ValueId id,compute::PagedArenaRead frame) noexcept {
   HYLE_RETURN_IF_ERROR(admit(state_));auto& run=*state_->run;
   HYLE_ASSIGN_OR_RETURN(auto index,input_index(run,id));
   if(!run.pages)return Status::InvalidArgument("graph has no native page inputs");
+  if(run.pages->pending_input(index))return Status::FailedPrecondition("pending Graph input needs reset before ready binding");
   HYLE_RETURN_IF_ERROR(run.pages->validate_frame(index,frame));
   if(!run.plan->effect_bindings.empty())
     return Status::Unimplemented("page capacity has no whole-arena effect footprint");
@@ -708,6 +730,10 @@ Status Invocation::prepare_batch(std::span<const batch::NodeLayout> layouts) noe
       }
     }
     value.native_value=std::move(output);
+    // All retained output bridges are already fixed here. Seal this cold
+    // baseline even if this finite variant is not submitted this episode;
+    // a later idle prepare must not mistake our own exports for user results.
+    HYLE_RETURN_IF_ERROR(ca::detail::CompositionAccess::seal(page->controller.native));
   }
   run.pages->prepared=true;
   return Status::Ok();
@@ -763,7 +789,7 @@ Status Invocation::prepare_replay(ReplayOptions options) noexcept {
         value.native_input = std::move(array);
       }
       if(run.pages && run.pages->page_input(id)){
-        HYLE_RETURN_IF_ERROR(run.pages->validate_frame(id,{}).ok() || value.native_input
+        HYLE_RETURN_IF_ERROR(run.pages->validate_frame(id,compute::PagedArenaRead{}).ok() || value.native_input
             ? Status::Ok():Status::FailedPrecondition("native page input frame is not bound"));
         value.native_value=value.native_input;continue;
       }
@@ -869,9 +895,25 @@ Result<ResourceReport> Invocation::resource_report() const noexcept {
     return std::unexpected(Status::FailedPrecondition("empty or closed CPU+Vulkan invocation"));
   return cpu_vulkan::resource_report(*state_->run);
 }
+Result<compute::OwnedResult<Results>> Invocation::submit(ca::CopyBatchUpdate&&update)noexcept {
+  HYLE_RETURN_IF_ERROR(admit(state_));auto&run=*state_->run;
+  if(!run.prepared || !run.pages)return std::unexpected(Status::FailedPrecondition("pending Graph replay is not prepared"));
+  HYLE_RETURN_IF_ERROR(run.pages->take_source(std::move(update)));
+  auto result=submit();
+  if(!result){run.pages->restore_source(update);return std::unexpected(result.error());}
+  run.incref();
+  run.pages->map_result(*result,&run,[](void*owner)noexcept{static_cast<RunState*>(owner)->decref();});
+  return std::move(*result);
+}
+Result<ca::CopyBatchUpdate> Invocation::take_update()noexcept {
+  if(!state_ || !state_->run->pages)return std::unexpected(Status::FailedPrecondition("native Graph has no pending source owner"));
+  return state_->run->pages->take_update();
+}
 Result<compute::OwnedResult<Results>> Invocation::submit() noexcept {
-  HYLE_RETURN_IF_ERROR(admit(state_));
+  HYLE_RETURN_IF_ERROR(admit(state_,true));
   auto &run = *state_->run;
+  if(run.pages && run.pages->has_pending() && !run.pages->pending->source.update().valid())
+    return std::unexpected(Status::FailedPrecondition("pending Graph requires submit with its original Update"));
   if (!run.prepared) return std::unexpected(Status::FailedPrecondition("CPU+Vulkan replay is not prepared"));
   if(run.pages){
     if(!run.pages->prepared)return std::unexpected(Status::FailedPrecondition("page episode already consumed"));

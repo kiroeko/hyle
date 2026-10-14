@@ -5,6 +5,11 @@
 
 namespace hyle::compute::vulkan {
 namespace detail {
+Status PagedBatchAccess::qualify_source(const Context&context,
+    compute::detail::CompletionDependency prefix)noexcept{
+  if(!context.valid())return Status::InvalidArgument("Vulkan pending source Context is empty");
+  return qualify_copy_dependency(Access::runtime(context),prefix);
+}
 struct BatchTraits final {
   using Context=vulkan::Context;using Program=vulkan::Program;using Memory=MemoryResource;
   using Invocation=vulkan::Invocation;using CopyInvocation=CopyBatchInvocation;using View=Tensor;using Submission=OwnedResult<Results>;

@@ -4,12 +4,18 @@
 #include <cstdint>
 
 #include "hyle/graph/executable.h"
+#include "hyle/compute/detail/queue_sequence.h"
 
 namespace hyle::graph::detail {
 
 struct InvocationState;
 using AcceptedCompletionFn = void (*)(void *owner, std::size_t segment,
                                       compute::Completion &completion) noexcept;
+// Opt-in composition admission inside the original ordered sequence. The
+// callback records its real prefix before admitting externally ordered reads.
+// It must retain every borrowed source through the final mapped completion.
+using SharedSequenceFn = Status (*)(void *, ExecutionLaneId,
+                                    compute::detail::QueueSequence &) noexcept;
 #if defined(HYLE_TESTING)
 // Native observation decoration only, after opt-in retention admission.
 HYLE_GRAPH_API AcceptedCompletionFn set_accepted_observation_hook(AcceptedCompletionFn hook) noexcept;
@@ -35,7 +41,9 @@ public:
   // its declared synchronous work, so the caller must use the right endpoint.
   HYLE_GRAPH_API Result<bool> advance(bool wait_dependencies = false,
                                      AcceptedCompletionFn accepted = nullptr,
-                                     void *owner = nullptr) noexcept;
+                                     void *owner = nullptr,
+                                     SharedSequenceFn admission = nullptr,
+                                     void *admission_owner = nullptr) noexcept;
   HYLE_GRAPH_API bool done() const noexcept;
   HYLE_GRAPH_API ExecutionTargetId next_target() const noexcept;
   const compute::Completion *pending_dependency() const noexcept {

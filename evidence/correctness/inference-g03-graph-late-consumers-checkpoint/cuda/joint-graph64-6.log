@@ -1,0 +1,2 @@
+CPU+CUDA exact CPU F32 Neg and F16/BF16 Cast preparations PASS
+common receiver: ggml CPU AVX2 program

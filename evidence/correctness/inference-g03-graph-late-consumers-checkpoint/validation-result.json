@@ -1,0 +1,42 @@
+{
+  "kind": "PARTIAL_SOURCE_CONSUMER_CHECKPOINT",
+  "state": "AUDITED",
+  "whole_g03_completed": false,
+  "verified": [
+    "Windows current CPU Graph pending64 F16/BF16, original receiver9/outcome36 and prior range9; Vulkan native joint C++ link only",
+    "Air CPU+Apple F16/BF16 and CPU+Vulkan F16: native multi-output Abs producer/F2/shared Update to two real paged nodes, required CPU pre/post, double oracle64, exact shape variants2/18 with two Graph slots EACH (four total) and two copy/producer slots",
+    "Air Apple/Vulkan independent native Abs four outputs/F2 two-phase reverse range/CPU reduction64, explicit256-byte host staging after F2 success",
+    "Actual CUDA Graph F16/BF16 same GQA8/2 D256, two requests/two slots64, original FlashInfer kernels; no nvcc/new kernel"
+  ],
+  "diagnostic": "Actual CPU+CUDA F16/BF16 same64 double oracle passes through original public compiler source TU and common PendingInvocation with real CPU GGML Neg/Cast and FlashInfer. Reused frozen cached CPU GGML libraries and original AVX2 runtime capsule; full component artifact input qualification, component binary assembly and SDK are UNPROVEN, not substituted by this diagnostic.",
+  "remaining": [
+    "New pending Graph/native result source known-error/unknown/cancel/abandon/OOM/alias and budget risks",
+    "Directly affected original ready native joint regression after earlier cold seal",
+    "New host sanitizer configurations",
+    "Source/static/shared full new interfaces and standalone headers",
+    "CPU+CUDA original full factor/artifact qualification",
+    "Remaining selector reverse factors, whole G03 and original G01/G02 gates; G04-G10"
+  ],
+  "failures": "All fixture/compile/runtime refusals and cumulative costs retained. Wrong fixed output shape, equal bytes but distinct layout identity, nonexistent drain/header, Vulkan idle unsealed own output, CUDA foreign Context, unsupported explicit CPU provider domains, source registration/OpenMP/static link/runtime capsule staging and no-kernel preflight refusals are not erased.",
+  "provenance": "Per-attempt Air/CUDA full canonical source manifests and original device/toolchain identity; Windows stage input hashes. Latest-current draft zip is not an immutable candidate, nor proof all old logs used final bytes.",
+  "costs": "Native joint finite variants use four total cold Graph slots, table uploads/checked host boundaries retained; scalar orthogonal staging256 bytes. CUDA maintenance target registration repeatedly regenerated SIMD C++ and incurred recorded configure costs; no public build-system edit. Last runner now writes unchanged parent bytes only when necessary.",
+  "ordinary_checks": [
+    {
+      "name": "closure",
+      "exit_code": 0
+    },
+    {
+      "name": "docs",
+      "exit_code": 0
+    },
+    {
+      "name": "diff",
+      "exit_code": 0
+    }
+  ],
+  "cumulative_seconds": {
+    "windows": 538.405999999959,
+    "air": 156.45629520899996,
+    "cuda": 643.541375972
+  }
+}

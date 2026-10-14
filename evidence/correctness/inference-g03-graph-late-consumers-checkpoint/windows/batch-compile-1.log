@@ -1,0 +1,74 @@
+[0/2] Re-checking globbed directories...
+[1/64] Performing build step for 'vulkan-shaders-gen'
+ninja: no work to do.
+[2/64] Performing install step for 'vulkan-shaders-gen'
+-- Up-to-date: C:/h7/inference-g01-native-vulkan/build/Release/vulkan-shaders-gen.exe
+[3/64] Completed 'vulkan-shaders-gen'
+[4/64] Building CXX object hyle\src\compute\CMakeFiles\hyle_compute.dir\copy_control.cc.obj
+[5/64] Building CXX object hyle\src\compute\CMakeFiles\hyle_compute.dir\copy_ranges.cc.obj
+[6/64] Building CXX object hyle\src\compute\CMakeFiles\hyle_compute.dir\batch_transfer.cc.obj
+[7/64] Linking CXX shared library hyle\src\compute\hyle_compute.dll
+[8/64] Building CXX object hyle\src\compute_batch\CMakeFiles\hyle_compute_batch.dir\batch_execution.cc.obj
+[9/64] Building CXX object hyle\src\compute_batch\CMakeFiles\hyle_compute_batch.dir\paged_arena.cc.obj
+[10/64] Building CXX object hyle\src\compute_batch\CMakeFiles\hyle_compute_batch.dir\materialized_invocation.cc.obj
+[11/64] Linking CXX shared library hyle\src\compute_batch\hyle_compute_batch.dll
+[12/64] Linking CXX shared library hyle\src\compute_provider_ggml_vulkan\hyle_compute_provider_ggml_vulkan.dll
+[13/63] Building CXX object hyle\src\compute_stream\CMakeFiles\hyle_compute_stream.dir\stream_sources.cc.obj
+[14/63] Building CXX object hyle\src\compute_stream\CMakeFiles\hyle_compute_stream.dir\file_stream.cc.obj
+[15/63] Linking CXX shared library hyle\src\compute_stream\hyle_compute_stream.dll
+[16/63] Building CXX object hyle\src\graph\CMakeFiles\hyle_graph.dir\leased_invocation.cc.obj
+[17/63] Linking CXX shared library hyle\src\compute_backend_cpu\hyle_compute_backend_cpu.dll
+[18/63] Linking CXX shared library hyle\src\compute_provider_ggml\hyle_compute_provider_ggml.dll
+[19/63] Linking CXX shared library hyle\src\compute_provider_native\hyle_compute_provider_native.dll
+[20/63] Building CXX object hyle\src\graph\CMakeFiles\hyle_graph.dir\region_access.cc.obj
+[21/63] Linking CXX shared library hyle\src\compute_provider_onednn\hyle_compute_provider_onednn.dll
+[22/63] Building CXX object hyle\src\compute_route_cpu\CMakeFiles\hyle_compute_route_cpu.dir\file_stream.cc.obj
+[23/63] Building CXX object hyle\src\graph_batch\CMakeFiles\hyle_graph_batch.dir\materialized_invocation.cc.obj
+[24/63] Building CXX object hyle\src\graph_batch\CMakeFiles\hyle_graph_batch.dir\batch.cc.obj
+C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\xutility(5421): warning C4244: '=': conversion from 'const _Ty' to 'unsigned char', possible loss of data
+        with
+        [
+            _Ty=int
+        ]
+C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\xutility(5421): note: the template instantiation context (the oldest one first) is
+C:\public\project-hyle\hyle\src\graph_batch\batch.cc(354): note: see reference to function template instantiation 'void std::fill<std::_Vector_iterator<std::_Vector_val<std::_Simple_types<_Ty>>>,int>(const _FwdIt,const _FwdIt,const int &)' being compiled
+        with
+        [
+            _Ty=unsigned char,
+            _FwdIt=std::_Vector_iterator<std::_Vector_val<std::_Simple_types<unsigned char>>>
+        ]
+C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\xutility(5375): warning C4244: 'initializing': conversion from 'const _Ty' to 'unsigned char', possible loss of data
+        with
+        [
+            _Ty=int
+        ]
+C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\xutility(5375): note: the template instantiation context (the oldest one first) is
+C:\public\project-hyle\hyle\src\graph_batch\batch.cc(354): note: see reference to function template instantiation 'void std::fill<std::_Vector_iterator<std::_Vector_val<std::_Simple_types<_Ty>>>,int>(const _FwdIt,const _FwdIt,const int &)' being compiled
+        with
+        [
+            _Ty=unsigned char,
+            _FwdIt=std::_Vector_iterator<std::_Vector_val<std::_Simple_types<unsigned char>>>
+        ]
+C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\xutility(5410): note: see reference to function template instantiation 'void std::_Fill_memset<unsigned char*,_Ty>(_CtgIt,const _Ty,const size_t)' being compiled
+        with
+        [
+            _Ty=int,
+            _CtgIt=unsigned char *
+        ]
+[25/63] Building CXX object hyle\src\graph_batch\CMakeFiles\hyle_graph_batch.dir\native_paged_node.cc.obj
+[26/63] Building CXX object hyle\src\graph\CMakeFiles\hyle_graph.dir\executable.cc.obj
+[27/63] Linking CXX shared library hyle\src\graph\hyle_graph.dll
+[28/63] Building CXX object hyle\src\compute_route_vulkan\CMakeFiles\hyle_compute_route_vulkan.dir\vulkan_memory.cc.obj
+[29/63] Building CXX object hyle\src\compute_route_vulkan\CMakeFiles\hyle_compute_route_vulkan.dir\vulkan_copy_recording.cc.obj
+[30/63] Building CXX object hyle\src\compute_route_vulkan\CMakeFiles\hyle_compute_route_vulkan.dir\file_stream.cc.obj
+[31/63] Building CXX object hyle\src\compute_route_vulkan\CMakeFiles\hyle_compute_route_vulkan.dir\vulkan_copy_program.cc.obj
+[32/63] Building CXX object hyle\src\compute_route_vulkan\CMakeFiles\hyle_compute_route_vulkan.dir\vulkan_leased_invocation.cc.obj
+FAILED: [code=2] hyle/src/compute_route_vulkan/CMakeFiles/hyle_compute_route_vulkan.dir/vulkan_leased_invocation.cc.obj 
+"C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\bin\Hostx64\x64\cl.exe"  /nologo /TP -DHYLE_COMPUTE_ROUTE_VULKAN_BUILD -DHYLE_COMPUTE_VULKAN=1 -DHYLE_IO_HAS_COROUTINE_TRANSPORT=1 -Dhyle_compute_route_vulkan_EXPORTS -IC:\public\project-hyle\hyle\include -IC:\public\project-hyle\hyle\src\compute_route_vulkan -IC:\public\project-hyle\hyle\src\compute_route_vulkan\..\compute -IC:\h7\inference-g01-native-vulkan\build\hyle\src\compute_route_vulkan -IC:\h7\inference-g01-native-vulkan\build\hyle\src\compute_route_vulkan\shaders -external:IC:\public\tools\hyle-dependencies\v1\sources\vulkan_headers-e3b1eec08173-69d6adc9001f\include -external:W0 /DWIN32 /D_WINDOWS /GR /EHsc /O2 /Ob2 /DNDEBUG -std:c++latest -MD /W4 /permissive- /wd4324 /Zc:__cplusplus /utf-8 /Zc:preprocessor /showIncludes /Fohyle\src\compute_route_vulkan\CMakeFiles\hyle_compute_route_vulkan.dir\vulkan_leased_invocation.cc.obj /Fdhyle\src\compute_route_vulkan\CMakeFiles\hyle_compute_route_vulkan.dir\ /FS -c C:\public\project-hyle\hyle\src\compute_route_vulkan\vulkan_leased_invocation.cc
+C:\public\project-hyle\hyle\include\hyle/compute/detail/vulkan_batch_access.h(22): error C2039: 'CompletionDependency': is not a member of 'hyle::compute::detail'
+C:\public\project-hyle\hyle\include\hyle/compute/batch_paged_native.h(34): note: see declaration of 'hyle::compute::detail'
+C:\public\project-hyle\hyle\include\hyle/compute/detail/vulkan_batch_access.h(22): error C2061: syntax error: identifier 'CompletionDependency'
+[33/63] Building CXX object hyle\src\compute_route_vulkan\CMakeFiles\hyle_compute_route_vulkan.dir\vulkan_transfer_slot.cc.obj
+[34/63] Building CXX object hyle\src\compute_route_vulkan\CMakeFiles\hyle_compute_route_vulkan.dir\vulkan_weights.cc.obj
+[35/63] Building CXX object hyle\src\compute_route_vulkan\CMakeFiles\hyle_compute_route_vulkan.dir\vulkan_program.cc.obj
+ninja: build stopped: subcommand failed.

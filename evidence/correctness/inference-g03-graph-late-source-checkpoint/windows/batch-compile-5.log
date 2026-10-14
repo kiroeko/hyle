@@ -1,0 +1,12 @@
+[0/2] Re-checking globbed directories...
+[1/10] C:\WINDOWS\system32\cmd.exe /C "cd /D C:\h7\inference-g01-native-vulkan\build && "C:\Program Files\CMake\bin\cmake.exe" -P C:/h7/inference-g01-native-vulkan/build/hyle-runtime/g03_owned_outcome-Release.cmake"
+[2/10] Performing build step for 'vulkan-shaders-gen'
+ninja: no work to do.
+[3/10] Performing install step for 'vulkan-shaders-gen'
+-- Up-to-date: C:/h7/inference-g01-native-vulkan/build/Release/vulkan-shaders-gen.exe
+[4/10] Completed 'vulkan-shaders-gen'
+[5/10] C:\WINDOWS\system32\cmd.exe /C "cd /D C:\h7\inference-g01-native-vulkan\build && "C:\Program Files\CMake\bin\cmake.exe" -P C:/h7/inference-g01-native-vulkan/build/hyle-runtime/g02_joint_public_compile-Release.cmake"
+[6/10] C:\WINDOWS\system32\cmd.exe /C "cd /D C:\h7\inference-g01-native-vulkan\build && "C:\Program Files\CMake\bin\cmake.exe" -P C:/h7/inference-g01-native-vulkan/build/hyle-runtime/g03_common_receiver_risks-Release.cmake"
+[7/10] C:\WINDOWS\system32\cmd.exe /C "cd /D C:\h7\inference-g01-native-vulkan\build && "C:\Program Files\CMake\bin\cmake.exe" -P C:/h7/inference-g01-native-vulkan/build/hyle-runtime/g03_late_result64-Release.cmake"
+[8/10] Building CXX object CMakeFiles\g03_late_result64.dir\C_\public\project-hyle\hyle\tests\compute_batch\pending_paged_receiver_native_consumer.cc.obj
+[9/10] Linking CXX executable g03_late_result64.exe

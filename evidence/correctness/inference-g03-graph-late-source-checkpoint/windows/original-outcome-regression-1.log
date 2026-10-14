@@ -1,0 +1,93 @@
+Running main() from C:\public\tools\hyle-dependencies\v1\sources\googletest-063de7e9578f-162765170ae6\googletest\src\gtest_main.cc
+[==========] Running 36 tests from 5 test suites.
+[----------] Global test environment set-up.
+[----------] 7 tests from CopyOutcomeSource
+[ RUN      ] CopyOutcomeSource.EveryColdAllocationOomRollsBackWithoutAnyNativeWork
+[       OK ] CopyOutcomeSource.EveryColdAllocationOomRollsBackWithoutAnyNativeWork (0 ms)
+[ RUN      ] CopyOutcomeSource.ResourceBudgetChargesColdNodesAndReleasesEveryFailedOrSuccessfulBlock
+[       OK ] CopyOutcomeSource.ResourceBudgetChargesColdNodesAndReleasesEveryFailedOrSuccessfulBlock (0 ms)
+[ RUN      ] CopyOutcomeSource.CapacityAndKnownPrefixFailureDoNotConsumeOriginalControl
+[       OK ] CopyOutcomeSource.CapacityAndKnownPrefixFailureDoNotConsumeOriginalControl (0 ms)
+[ RUN      ] CopyOutcomeSource.UsedProducerUnknownCannotReleaseSourceOrResultBeforeActualRetirement
+[       OK ] CopyOutcomeSource.UsedProducerUnknownCannotReleaseSourceOrResultBeforeActualRetirement (0 ms)
+[ RUN      ] CopyOutcomeSource.AbandonWaitsForEveryAcceptedActualCallbackWithoutCallbackBlocking
+[       OK ] CopyOutcomeSource.AbandonWaitsForEveryAcceptedActualCallbackWithoutCallbackBlocking (0 ms)
+[ RUN      ] CopyOutcomeSource.RejectedSuffixAndDroppedColdHandleRetainExactlyTheirOwnReferences
+[       OK ] CopyOutcomeSource.RejectedSuffixAndDroppedColdHandleRetainExactlyTheirOwnReferences (0 ms)
+[ RUN      ] CopyOutcomeSource.TwoSourceSlotsAndObserversReuse64EpisodesWithOnlyColdAllocations
+[       OK ] CopyOutcomeSource.TwoSourceSlotsAndObserversReuse64EpisodesWithOnlyColdAllocations (0 ms)
+[----------] 7 tests from CopyOutcomeSource (0 ms total)
+
+[----------] 8 tests from DependentCompletion
+[ RUN      ] DependentCompletion.SourcesAreObservedOnlyAfterSuffixActuallyRetires
+[       OK ] DependentCompletion.SourcesAreObservedOnlyAfterSuffixActuallyRetires (0 ms)
+[ RUN      ] DependentCompletion.UnknownSuffixRemainsPendingUntilActualCallback
+[       OK ] DependentCompletion.UnknownSuffixRemainsPendingUntilActualCallback (0 ms)
+[ RUN      ] DependentCompletion.UnknownSourceKeepsResultAttachmentUntilBothRetire
+[       OK ] DependentCompletion.UnknownSourceKeepsResultAttachmentUntilBothRetire (0 ms)
+[ RUN      ] DependentCompletion.AbandonTransfersSourceOnlyAfterBorrowingSuffixRetires
+[       OK ] DependentCompletion.AbandonTransfersSourceOnlyAfterBorrowingSuffixRetires (0 ms)
+[ RUN      ] DependentCompletion.OriginalOwnedResultHasOneVerdictAndRetainsItsSlot
+[       OK ] DependentCompletion.OriginalOwnedResultHasOneVerdictAndRetainsItsSlot (0 ms)
+[ RUN      ] DependentCompletion.ColdAllocationOomAndInvalidAllocatorAreReported
+[       OK ] DependentCompletion.ColdAllocationOomAndInvalidAllocatorAreReported (0 ms)
+[ RUN      ] DependentCompletion.WaitDrainsUnknownNativeRetirementWithoutCallbackWaiting
+[       OK ] DependentCompletion.WaitDrainsUnknownNativeRetirementWithoutCallbackWaiting (0 ms)
+[ RUN      ] DependentCompletion.TwoColdSlotsReuseWithoutWarmMetadataAllocations
+[       OK ] DependentCompletion.TwoColdSlotsReuseWithoutWarmMetadataAllocations (0 ms)
+[----------] 8 tests from DependentCompletion (0 ms total)
+
+[----------] 3 tests from CopyDependency
+[ RUN      ] CopyDependency.RetainedNativeIdentityIsResolvedWithoutObservationOrRetirement
+[       OK ] CopyDependency.RetainedNativeIdentityIsResolvedWithoutObservationOrRetirement (0 ms)
+[ RUN      ] CopyDependency.InlineErrorInvalidAndOuterTailHintArePreserved
+[       OK ] CopyDependency.InlineErrorInvalidAndOuterTailHintArePreserved (0 ms)
+[ RUN      ] CopyDependency.CachedUnknownErrorCannotManufactureNativeSuccessOrRelease
+[       OK ] CopyDependency.CachedUnknownErrorCannotManufactureNativeSuccessOrRelease (0 ms)
+[----------] 3 tests from CopyDependency (0 ms total)
+
+[----------] 11 tests from Completion
+[ RUN      ] Completion.RetainedObserverDrainsWhilePublicHandleIsHeld
+[       OK ] Completion.RetainedObserverDrainsWhilePublicHandleIsHeld (0 ms)
+[ RUN      ] Completion.RetainedObserverForwardsAttachmentOnlyAfterActualUnknownRetirement
+[       OK ] Completion.RetainedObserverForwardsAttachmentOnlyAfterActualUnknownRetirement (0 ms)
+[ RUN      ] Completion.RetainedObserverMayBeDroppedBeforePublicCompletion
+[       OK ] Completion.RetainedObserverMayBeDroppedBeforePublicCompletion (0 ms)
+[ RUN      ] Completion.RetainedCompoundObserverDoesNotTreatCachedRootErrorAsRetirement
+[       OK ] Completion.RetainedCompoundObserverDoesNotTreatCachedRootErrorAsRetirement (0 ms)
+[ RUN      ] Completion.ImmediateSuccessAndFailureRemainInline
+[       OK ] Completion.ImmediateSuccessAndFailureRemainInline (0 ms)
+[ RUN      ] Completion.CompositeRetentionPreservesBothOwnersAndRejectsReuse
+[       OK ] Completion.CompositeRetentionPreservesBothOwnersAndRejectsReuse (0 ms)
+[ RUN      ] Completion.SimulatedAsyncStateSupportsMovePollWaitAndCancel
+[       OK ] Completion.SimulatedAsyncStateSupportsMovePollWaitAndCancel (0 ms)
+[ RUN      ] Completion.LifetimeSettlesExactlyOnceAtObservedTerminal
+[       OK ] Completion.LifetimeSettlesExactlyOnceAtObservedTerminal (0 ms)
+[ RUN      ] Completion.AbandonedHandleDefersLifetimeUntilBackendTerminal
+[       OK ] Completion.AbandonedHandleDefersLifetimeUntilBackendTerminal (0 ms)
+[ RUN      ] Completion.AbandonedHandleTransfersSavedTailErrorToBackend
+[       OK ] Completion.AbandonedHandleTransfersSavedTailErrorToBackend (0 ms)
+[ RUN      ] Completion.FailedObservationHandsRetentionToActualRuntimeRetirement
+[       OK ] Completion.FailedObservationHandsRetentionToActualRuntimeRetirement (0 ms)
+[----------] 11 tests from Completion (0 ms total)
+
+[----------] 7 tests from OwnedResult
+[ RUN      ] OwnedResult.RetainedResultSurvivesSlotAndSubmissionAndBlocksOverwrite
+[       OK ] OwnedResult.RetainedResultSurvivesSlotAndSubmissionAndBlocksOverwrite (0 ms)
+[ RUN      ] OwnedResult.AbandonmentKeepsNativeOwnerUntilRealTerminal
+[       OK ] OwnedResult.AbandonmentKeepsNativeOwnerUntilRealTerminal (0 ms)
+[ RUN      ] OwnedResult.FailureAndCancellationDoNotPublishReadyLease
+[       OK ] OwnedResult.FailureAndCancellationDoNotPublishReadyLease (0 ms)
+[ RUN      ] OwnedResult.InvalidPublishPreservesAcceptedCompletionAndWriteCanRecover
+[       OK ] OwnedResult.InvalidPublishPreservesAcceptedCompletionAndWriteCanRecover (0 ms)
+[ RUN      ] OwnedResult.ColdAllocationFailureAndUnsubmittedRollback
+[       OK ] OwnedResult.ColdAllocationFailureAndUnsubmittedRollback (0 ms)
+[ RUN      ] OwnedResult.OveralignedOwnerAndConcurrentBeginAdmission
+[       OK ] OwnedResult.OveralignedOwnerAndConcurrentBeginAdmission (0 ms)
+[ RUN      ] OwnedResult.ProducerDsoOwnsDestructionAfterConsumerLeaseOutlivesSubmission
+[       OK ] OwnedResult.ProducerDsoOwnsDestructionAfterConsumerLeaseOutlivesSubmission (0 ms)
+[----------] 7 tests from OwnedResult (0 ms total)
+
+[----------] Global test environment tear-down
+[==========] 36 tests from 5 test suites ran. (1 ms total)
+[  PASSED  ] 36 tests.

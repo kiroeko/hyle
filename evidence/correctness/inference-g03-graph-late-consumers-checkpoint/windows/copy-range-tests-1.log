@@ -1,0 +1,27 @@
+Running main() from C:\public\tools\hyle-dependencies\v1\sources\googletest-063de7e9578f-162765170ae6\googletest\src\gtest_main.cc
+[==========] Running 9 tests from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 9 tests from CopyRanges
+[ RUN      ] CopyRanges.EmptyExactSelfCopyAndZeroRangesNeedNoNativeWork
+[       OK ] CopyRanges.EmptyExactSelfCopyAndZeroRangesNeedNoNativeWork (0 ms)
+[ RUN      ] CopyRanges.RepeatedReadsAndDistinctDestinationWindowsAreIndependent
+[       OK ] CopyRanges.RepeatedReadsAndDistinctDestinationWindowsAreIndependent (0 ms)
+[ RUN      ] CopyRanges.PhysicalAliasesAcrossDifferentBindingsDoNotEvadeChecks
+[       OK ] CopyRanges.PhysicalAliasesAcrossDifferentBindingsDoNotEvadeChecks (0 ms)
+[ RUN      ] CopyRanges.LateReadonlySourceCannotInventPhysicalProof
+[       OK ] CopyRanges.LateReadonlySourceCannotInventPhysicalProof (0 ms)
+[ RUN      ] CopyRanges.LateSourceStillRejectsUnorderedDestinationHazards
+[       OK ] CopyRanges.LateSourceStillRejectsUnorderedDestinationHazards (0 ms)
+[ RUN      ] CopyRanges.ProducerConsumerChainRequiresExplicitTransitivePhaseEdges
+[       OK ] CopyRanges.ProducerConsumerChainRequiresExplicitTransitivePhaseEdges (0 ms)
+[ RUN      ] CopyRanges.ExplicitPaddingIsChargedAndStaysInsideOwnedNativeRanges
+[       OK ] CopyRanges.ExplicitPaddingIsChargedAndStaysInsideOwnedNativeRanges (0 ms)
+[ RUN      ] CopyRanges.IDsByteCapsArithmeticAndScratchRefuseBeforeAdmission
+[       OK ] CopyRanges.IDsByteCapsArithmeticAndScratchRefuseBeforeAdmission (0 ms)
+[ RUN      ] CopyRanges.SweepMatchesIndependentSmallGeometricAndReachabilityModel
+[       OK ] CopyRanges.SweepMatchesIndependentSmallGeometricAndReachabilityModel (0 ms)
+[----------] 9 tests from CopyRanges (0 ms total)
+
+[----------] Global test environment tear-down
+[==========] 9 tests from 1 test suite ran. (0 ms total)
+[  PASSED  ] 9 tests.

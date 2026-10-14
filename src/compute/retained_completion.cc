@@ -424,10 +424,13 @@ OutcomeSources source_protocol(CopyOutcomeSourceState &state) noexcept {
   return {&state,
       [](void *opaque) noexcept -> Result<CompletionPoll> {
         auto &source = *static_cast<CopyOutcomeSourceState *>(opaque);
-        for (std::size_t i = 0; i < source.count; ++i) {
-          auto observed = source.completions[i]->poll();
-          if (!observed) source_record(source, observed.error());
-        }
+        source.control.serialize(source.original, [](void *context) noexcept {
+          auto &source=*static_cast<CopyOutcomeSourceState *>(context);
+          for (std::size_t i = 0; i < source.count; ++i) {
+            auto observed = source.completions[i]->poll();
+            if (!observed) source_record(source, observed.error());
+          }
+        }, &source);
         if (source.remaining.load(std::memory_order_acquire))
           return CompletionPoll::kPending;
         source_record(source, source.control.observe(source.original));
@@ -437,9 +440,14 @@ OutcomeSources source_protocol(CopyOutcomeSourceState &state) noexcept {
       },
       [](void *opaque) noexcept {
         auto &source = *static_cast<CopyOutcomeSourceState *>(opaque);
-        for (std::size_t i = 0; i < source.count; ++i)
-          source_record(source, source.completions[i]->wait());
+        // The original Update waits outside its observation lock so native
+        // worker preflight can progress. Shared completions are then retired.
         source_record(source, source.control.wait(source.original));
+        source.control.serialize(source.original, [](void *context) noexcept {
+          auto &source=*static_cast<CopyOutcomeSourceState *>(context);
+          for (std::size_t i = 0; i < source.count; ++i)
+            source_record(source, source.completions[i]->wait());
+        }, &source);
         return source_status(source);
       },
       [](void *opaque) noexcept {
@@ -457,13 +465,16 @@ OutcomeSources source_protocol(CopyOutcomeSourceState &state) noexcept {
         source.retirement = retirement;
         source.remaining.store(source.count, std::memory_order_release);
         source.incref(static_cast<std::uint32_t>(source.count));
-        for (std::size_t i = 0; i < source.count; ++i) {
-          auto &node = source.nodes[i];
-          node.owner = &source;
-          node.retention.own = {&node, &source_terminal, &source_release};
-          HYLE_FATAL_ASSERT(CompletionAccess::attach_retention(
-              *source.completions[i], node.retention).ok());
-        }
+        source.control.serialize(source.original, [](void *context) noexcept {
+          auto &source=*static_cast<CopyOutcomeSourceState *>(context);
+          for (std::size_t i = 0; i < source.count; ++i) {
+            auto &node = source.nodes[i];
+            node.owner = &source;
+            node.retention.own = {&node, &source_terminal, &source_release};
+            HYLE_FATAL_ASSERT(CompletionAccess::attach_retention(
+                *source.completions[i], node.retention).ok());
+          }
+        }, &source);
       },
       [](void *opaque) noexcept {
         auto &source = *static_cast<CopyOutcomeSourceState *>(opaque);
@@ -484,7 +495,7 @@ Result<CopyOutcomeSourceState *> CopyOutcomeSourceAccess::create(
       capacity > SIZE_MAX / sizeof(Completion *) || !payload_bytes || !payload_alignment ||
       (payload_alignment & (payload_alignment - 1)) || !options.allocator.valid() ||
       !control.construct || !control.destroy || !control.observe || !control.wait ||
-      !control.request_cancel || !control.abandon)
+      !control.request_cancel || !control.abandon || !control.serialize)
     return std::unexpected(Status::InvalidArgument("copy outcome cold source configuration"));
   auto allocator = options.allocator;
   if (options.resource_budget.valid()) {

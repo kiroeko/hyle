@@ -5,6 +5,11 @@
 
 namespace hyle::compute::apple {
 namespace detail {
+Status PagedBatchAccess::qualify_source(const Context&context,
+    compute::detail::CompletionDependency prefix)noexcept{
+  if(!context.valid())return Status::InvalidArgument("Apple pending source Context is empty");
+  return qualify_recording_dependency(ContextAccess::runtime(context),prefix);
+}
 struct BatchTraits final {
   using Context=apple::Context;using Program=apple::Program;using Memory=MemoryResource;
   using Invocation=apple::Invocation;using CopyInvocation=CopyBatchInvocation;using View=mlx::core::array;using Submission=OwnedResult<Results>;

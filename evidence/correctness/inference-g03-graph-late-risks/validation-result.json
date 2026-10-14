@@ -1,0 +1,53 @@
+{
+  "kind": "PARTIAL_GRAPH_LATE_RISK_AND_HOST_SANITIZER_CHECKPOINT",
+  "state": "AUDITED",
+  "whole_g03_completed": false,
+  "baseline": "19413efdd0427cd21f4431dfa7561291e9034bde",
+  "audit": "2bc71f56a",
+  "immutable_candidate": false,
+  "verified": [
+    "Common CPU pending Graph nine real coverage/layout/capacity/closed/budget/allocation/abandon cases",
+    "Apple/Vulkan native accepted multi-output result source twelve original F2 risks each; real readonly alias/invalid IDs/index/dtype/foreign/cancel/abandon/cold OOM/shared budget",
+    "Actual CPU+Apple pending joint eight cases and CPU+Vulkan ten including unknown and accepted native suffix refusal; two native nodes share original Update",
+    "Both actual Air native routes: six selected host programs each under ASan/UBSan/TSan, including original source and joint64-step double-oracle consumers",
+    "Directly affected original ready joint source consumers pass on both native routes"
+  ],
+  "fixes": [
+    "GL04 original Apple Copy slot observations lock now serializes source completion qualification/poll/retention attachment; native blocking wait runs outside that lock",
+    "Concurrent fault allocator counters fix fixture race during true abandoned joint Graph progress"
+  ],
+  "limits": [
+    "No LSan/shader/driver/private-pool sanitizer certificate; original qualified TSan refcount/fence and Metal callback models retained with SHA receipts",
+    "Earlier ordinary source tests preceded GL04 synchronization repair; final behavior verified by six sanitizer configurations and Windows, not fabricated as newly repeated original source math",
+    "Vulkan unknown uses original accepted source fence observation; Apple accepted producer failure uses existing native checkpoint",
+    "Readonly native alias tested; full illegal mutable native alias and new native-joint shared-budget qualification not claimed"
+  ],
+  "failures": [
+    {
+      "route": "apple",
+      "mode": "tsan",
+      "stage": "g03_gl_joint_risks",
+      "exit_code": -6,
+      "log": "apple-tsan-g03_gl_joint_risks-1.log"
+    },
+    {
+      "route": "apple",
+      "mode": "tsan",
+      "stage": "g03_gl_source64",
+      "exit_code": -6,
+      "log": "apple-tsan-g03_gl_source64-1.log"
+    }
+  ],
+  "retained": "All stage failures and cumulative costs retained, including original fixture invalid closed status, submit-vs-bind reuse distinction, failed epoch status, Vulkan actual unknown observation timing, fault allocator TSan and actual GL04 lifetime race; no budget reset.",
+  "cumulative_seconds": {
+    "sanitizers": 307.9288187920001,
+    "windows": 646.9049999999406,
+    "source": 229.30628433099992
+  },
+  "remaining": [
+    "New common Graph GPU/CPU+CUDA lifecycle risk and real async queue refusal",
+    "Full source/static/shared installed new public API consumers and standalone headers",
+    "CPU+CUDA complete factor/archive qualification, not cached diagnostic substitution",
+    "Finite G03 remaining gates and original G01/G02 unresolved gates; G04-G10 remain"
+  ]
+}

@@ -1,0 +1,2563 @@
+{
+  "scope": "G03 GL01-04 batch Windows directed compile and original common/outcome regressions; no native GPU execution, new Graph public numeric journey still required",
+  "stages": [
+    {
+      "stage": "batch-compile",
+      "command": [
+        "cmake",
+        "--build",
+        "C:\\h7\\inference-g01-native-vulkan\\build",
+        "--target",
+        "hyle_graph_batch",
+        "hyle_graph_route_cpu_vulkan",
+        "g03_common_receiver_risks",
+        "g02_joint_public_compile",
+        "g03_owned_outcome",
+        "--parallel",
+        "4"
+      ],
+      "exit_code": 2,
+      "elapsed_seconds": 11.59399999998277,
+      "inputs": [
+        {
+          "path": "include/hyle/compute/apple_memory.h",
+          "sha256": "b70c2e897ccda96b108ac8105ee77b391b6eeec503985444d0e8192cfbe68eac"
+        },
+        {
+          "path": "include/hyle/compute/detail/apple_batch_access.h",
+          "sha256": "982dd568c8b018351e75f5f9611a958e1f6ed231151391d2d6d18d947899840b"
+        },
+        {
+          "path": "include/hyle/compute/detail/copy_control.h",
+          "sha256": "8fd8ba40beeb810bcc7d635853b6f94e860e3dce4b22fa06fe5830dc10f7e909"
+        },
+        {
+          "path": "include/hyle/compute/detail/copy_ranges.h",
+          "sha256": "86b711e8dd26d63bba37e0ebbd47956f28bfd58b28934ac8073f28df81c543e7"
+        },
+        {
+          "path": "include/hyle/compute/detail/native_lease_inputs.h",
+          "sha256": "eca0780a39defc70e73ccbd1f8a2aec1aac66e67af95078b6912d7671f7ff7d6"
+        },
+        {
+          "path": "include/hyle/compute/detail/vulkan_batch_access.h",
+          "sha256": "3e0f760474027706e9b58cb1e3481d116930dd8df0f17b70fcd0eaa5f42efc4c"
+        },
+        {
+          "path": "include/hyle/compute/vulkan_memory.h",
+          "sha256": "0fa5c0ffa7b316da2645f03c8176d02fc871151700720c195d2e238c802b53fc"
+        },
+        {
+          "path": "include/hyle/graph/batch.h",
+          "sha256": "7e5b1ae675bcf5048c739e32dfd94c2209cd6af6c63fa2cc4cd10ebec2d89b1f"
+        },
+        {
+          "path": "include/hyle/graph/cpu_apple.h",
+          "sha256": "645f557d8a6fefe3f69bc25f37c03e637ed28311fb7817bfb8de0e5373b0eb32"
+        },
+        {
+          "path": "include/hyle/graph/cpu_vulkan.h",
+          "sha256": "9b4c99f9ef9948f85435de4415a788b83d17a00752664074edf462addc6693f6"
+        },
+        {
+          "path": "include/hyle/graph/detail/region_access.h",
+          "sha256": "ff23b8758171c23b970e9e5b48655f08f5d09e77ca45f0dfe0ef8a9595636a79"
+        },
+        {
+          "path": "src/compute/copy_control.cc",
+          "sha256": "0de266027785e1598c587b19f15cbc422125af7a8fff262fb3064f4b0126d786"
+        },
+        {
+          "path": "src/compute/copy_ranges.cc",
+          "sha256": "8b35ebef012a2d1cd72c1c989b02a997861d42e336a7a31275d04fd3085a9c97"
+        },
+        {
+          "path": "src/compute_route_apple/apple_copy_internal.h",
+          "sha256": "ff139033c6cd0a9472ae5e68cd7962cecb64ceb96d13ee4fa3bdf632db1c6d88"
+        },
+        {
+          "path": "src/compute_route_apple/apple_copy_program.cc",
+          "sha256": "bd4b35876a56573e8f5028dcc319d5fa43535e8bc70d5678179f17825ff178f9"
+        },
+        {
+          "path": "src/compute_route_apple/apple_copy_recording.mm",
+          "sha256": "b2786a571ad4fe67973da0f64b8c230acc1bc9fad6d49cf6f229fa8e001af3bb"
+        },
+        {
+          "path": "src/compute_route_apple/apple_materialized_invocation.cc",
+          "sha256": "2da369419d9eb7c87c1a29c04c9460cd8609a88ada46e4d75e31008980103457"
+        },
+        {
+          "path": "src/compute_route_apple/apple_memory.mm",
+          "sha256": "0f9de8e223486108059628cbc1ef9e4dc672f669da49200e534a76c7edf1bd9b"
+        },
+        {
+          "path": "src/compute_route_vulkan/vulkan_copy_internal.h",
+          "sha256": "2ef2cd519750c9adb73b774fcb8da4df2b413ab94530937c1cd3f054a0d62e03"
+        },
+        {
+          "path": "src/compute_route_vulkan/vulkan_copy_program.cc",
+          "sha256": "9ff9d6cb84e0ce5f1f339435fb872002dd7ea9bfaaca96bbad695a023fcc62dc"
+        },
+        {
+          "path": "src/compute_route_vulkan/vulkan_copy_recording.cc",
+          "sha256": "e58d2f4756f70ce02a0d68b97e3b9ebbd244894615d68b25daf1fee3b54211d2"
+        },
+        {
+          "path": "src/compute_route_vulkan/vulkan_materialized_invocation.cc",
+          "sha256": "6fe31b7026b2aa130f5add655178bed7971c95ff07133325d1fde468c9045066"
+        },
+        {
+          "path": "src/compute_route_vulkan/vulkan_memory.cc",
+          "sha256": "78ea54d398c3de8c1adc16e68172069a840f7354a8e272a1a40eaffbcce9fc5e"
+        },
+        {
+          "path": "src/graph/executable.cc",
+          "sha256": "5514ae6bdf3548a356b2b04e8b12435e8625ba3debe6036641736a5ad5c5ab45"
+        },
+        {
+          "path": "src/graph/leased_invocation.cc",
+          "sha256": "c7e1a65f525ae0af071bc24c9efe23099ca65a05d6adf78083d9c1432609d288"
+        },
+        {
+          "path": "src/graph/submission_internal.h",
+          "sha256": "8a48ad4a490bb9bc7a57dd67e7ecc6500ab091141e75230221a5b1ada5ea0f66"
+        },
+        {
+          "path": "src/graph_batch/batch.cc",
+          "sha256": "374a30dbd89d118fa9ae83b8dc3997e223c9b39c8018f55bfa3123b4eceb264e"
+        },
+        {
+          "path": "src/graph_batch/native_paged_slots.h",
+          "sha256": "e479b0f89273eabd4db8e0db0b5506d42738e95e31cbab08bf9711c40d1b3386"
+        },
+        {
+          "path": "src/graph_route_cpu_apple/invocation.cc",
+          "sha256": "14d71b2790ff6d54c08ffbe68a96bf1751e8484fdb16a54c5b8458ca329ecdcf"
+        },
+        {
+          "path": "src/graph_route_cpu_apple/paged.h",
+          "sha256": "716c973b06a4f2fb872c32b81e051d40f93ca6bd2f5f32c7b472df9cbcdd557d"
+        },
+        {
+          "path": "src/graph_route_cpu_vulkan/invocation.cc",
+          "sha256": "3f75287128a8906d420be77811432eb63bfa002c0e3909a51ec3a07358294123"
+        },
+        {
+          "path": "src/graph_route_cpu_vulkan/paged.h",
+          "sha256": "234d8840de9cfab1535dfbcc96359ac64f866f16d76b7ff56c66524d8b25d4c9"
+        }
+      ],
+      "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g03\\graph-late-windows\\batch-compile-1.log"
+    },
+    {
+      "stage": "batch-compile",
+      "command": [
+        "cmake",
+        "--build",
+        "C:\\h7\\inference-g01-native-vulkan\\build",
+        "--target",
+        "hyle_graph_batch",
+        "hyle_graph_route_cpu_vulkan",
+        "g03_common_receiver_risks",
+        "g02_joint_public_compile",
+        "g03_owned_outcome",
+        "--parallel",
+        "4"
+      ],
+      "exit_code": 2,
+      "elapsed_seconds": 8.46799999999348,
+      "inputs": [
+        {
+          "path": "include/hyle/compute/apple_memory.h",
+          "sha256": "b70c2e897ccda96b108ac8105ee77b391b6eeec503985444d0e8192cfbe68eac"
+        },
+        {
+          "path": "include/hyle/compute/detail/apple_batch_access.h",
+          "sha256": "b83b2e5109c97d5ac97b3b1ec1fc858d688b8557bae50616442a05c436159924"
+        },
+        {
+          "path": "include/hyle/compute/detail/copy_control.h",
+          "sha256": "8fd8ba40beeb810bcc7d635853b6f94e860e3dce4b22fa06fe5830dc10f7e909"
+        },
+        {
+          "path": "include/hyle/compute/detail/copy_ranges.h",
+          "sha256": "86b711e8dd26d63bba37e0ebbd47956f28bfd58b28934ac8073f28df81c543e7"
+        },
+        {
+          "path": "include/hyle/compute/detail/native_lease_inputs.h",
+          "sha256": "eca0780a39defc70e73ccbd1f8a2aec1aac66e67af95078b6912d7671f7ff7d6"
+        },
+        {
+          "path": "include/hyle/compute/detail/vulkan_batch_access.h",
+          "sha256": "22823b2c4a846fddf14ba0440e78a944ebeaf27f564e043424f5e2cca13eda01"
+        },
+        {
+          "path": "include/hyle/compute/vulkan_memory.h",
+          "sha256": "0fa5c0ffa7b316da2645f03c8176d02fc871151700720c195d2e238c802b53fc"
+        },
+        {
+          "path": "include/hyle/graph/batch.h",
+          "sha256": "7e5b1ae675bcf5048c739e32dfd94c2209cd6af6c63fa2cc4cd10ebec2d89b1f"
+        },
+        {
+          "path": "include/hyle/graph/cpu_apple.h",
+          "sha256": "645f557d8a6fefe3f69bc25f37c03e637ed28311fb7817bfb8de0e5373b0eb32"
+        },
+        {
+          "path": "include/hyle/graph/cpu_vulkan.h",
+          "sha256": "9b4c99f9ef9948f85435de4415a788b83d17a00752664074edf462addc6693f6"
+        },
+        {
+          "path": "include/hyle/graph/detail/region_access.h",
+          "sha256": "ff23b8758171c23b970e9e5b48655f08f5d09e77ca45f0dfe0ef8a9595636a79"
+        },
+        {
+          "path": "src/compute/copy_control.cc",
+          "sha256": "0de266027785e1598c587b19f15cbc422125af7a8fff262fb3064f4b0126d786"
+        },
+        {
+          "path": "src/compute/copy_ranges.cc",
+          "sha256": "8b35ebef012a2d1cd72c1c989b02a997861d42e336a7a31275d04fd3085a9c97"
+        },
+        {
+          "path": "src/compute_route_apple/apple_copy_internal.h",
+          "sha256": "ff139033c6cd0a9472ae5e68cd7962cecb64ceb96d13ee4fa3bdf632db1c6d88"
+        },
+        {
+          "path": "src/compute_route_apple/apple_copy_program.cc",
+          "sha256": "bd4b35876a56573e8f5028dcc319d5fa43535e8bc70d5678179f17825ff178f9"
+        },
+        {
+          "path": "src/compute_route_apple/apple_copy_recording.mm",
+          "sha256": "b2786a571ad4fe67973da0f64b8c230acc1bc9fad6d49cf6f229fa8e001af3bb"
+        },
+        {
+          "path": "src/compute_route_apple/apple_materialized_invocation.cc",
+          "sha256": "2da369419d9eb7c87c1a29c04c9460cd8609a88ada46e4d75e31008980103457"
+        },
+        {
+          "path": "src/compute_route_apple/apple_memory.mm",
+          "sha256": "0f9de8e223486108059628cbc1ef9e4dc672f669da49200e534a76c7edf1bd9b"
+        },
+        {
+          "path": "src/compute_route_vulkan/vulkan_copy_internal.h",
+          "sha256": "2ef2cd519750c9adb73b774fcb8da4df2b413ab94530937c1cd3f054a0d62e03"
+        },
+        {
+          "path": "src/compute_route_vulkan/vulkan_copy_program.cc",
+          "sha256": "9ff9d6cb84e0ce5f1f339435fb872002dd7ea9bfaaca96bbad695a023fcc62dc"
+        },
+        {
+          "path": "src/compute_route_vulkan/vulkan_copy_recording.cc",
+          "sha256": "e58d2f4756f70ce02a0d68b97e3b9ebbd244894615d68b25daf1fee3b54211d2"
+        },
+        {
+          "path": "src/compute_route_vulkan/vulkan_materialized_invocation.cc",
+          "sha256": "6fe31b7026b2aa130f5add655178bed7971c95ff07133325d1fde468c9045066"
+        },
+        {
+          "path": "src/compute_route_vulkan/vulkan_memory.cc",
+          "sha256": "78ea54d398c3de8c1adc16e68172069a840f7354a8e272a1a40eaffbcce9fc5e"
+        },
+        {
+          "path": "src/graph/executable.cc",
+          "sha256": "5514ae6bdf3548a356b2b04e8b12435e8625ba3debe6036641736a5ad5c5ab45"
+        },
+        {
+          "path": "src/graph/leased_invocation.cc",
+          "sha256": "c7e1a65f525ae0af071bc24c9efe23099ca65a05d6adf78083d9c1432609d288"
+        },
+        {
+          "path": "src/graph/submission_internal.h",
+          "sha256": "8a48ad4a490bb9bc7a57dd67e7ecc6500ab091141e75230221a5b1ada5ea0f66"
+        },
+        {
+          "path": "src/graph_batch/batch.cc",
+          "sha256": "13706924914da9986296c0b8c7b87626a4fced6899475c69f2a846b02f6cfea0"
+        },
+        {
+          "path": "src/graph_batch/native_paged_slots.h",
+          "sha256": "e479b0f89273eabd4db8e0db0b5506d42738e95e31cbab08bf9711c40d1b3386"
+        },
+        {
+          "path": "src/graph_route_cpu_apple/invocation.cc",
+          "sha256": "14d71b2790ff6d54c08ffbe68a96bf1751e8484fdb16a54c5b8458ca329ecdcf"
+        },
+        {
+          "path": "src/graph_route_cpu_apple/paged.h",
+          "sha256": "716c973b06a4f2fb872c32b81e051d40f93ca6bd2f5f32c7b472df9cbcdd557d"
+        },
+        {
+          "path": "src/graph_route_cpu_vulkan/invocation.cc",
+          "sha256": "3f75287128a8906d420be77811432eb63bfa002c0e3909a51ec3a07358294123"
+        },
+        {
+          "path": "src/graph_route_cpu_vulkan/paged.h",
+          "sha256": "234d8840de9cfab1535dfbcc96359ac64f866f16d76b7ff56c66524d8b25d4c9"
+        }
+      ],
+      "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g03\\graph-late-windows\\batch-compile-2.log"
+    },
+    {
+      "stage": "batch-compile",
+      "command": [
+        "cmake",
+        "--build",
+        "C:\\h7\\inference-g01-native-vulkan\\build",
+        "--target",
+        "hyle_graph_batch",
+        "hyle_graph_route_cpu_vulkan",
+        "g03_common_receiver_risks",
+        "g02_joint_public_compile",
+        "g03_owned_outcome",
+        "--parallel",
+        "4"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 7.077999999979511,
+      "inputs": [
+        {
+          "path": "include/hyle/compute/apple_memory.h",
+          "sha256": "b70c2e897ccda96b108ac8105ee77b391b6eeec503985444d0e8192cfbe68eac"
+        },
+        {
+          "path": "include/hyle/compute/detail/apple_batch_access.h",
+          "sha256": "b83b2e5109c97d5ac97b3b1ec1fc858d688b8557bae50616442a05c436159924"
+        },
+        {
+          "path": "include/hyle/compute/detail/copy_control.h",
+          "sha256": "8fd8ba40beeb810bcc7d635853b6f94e860e3dce4b22fa06fe5830dc10f7e909"
+        },
+        {
+          "path": "include/hyle/compute/detail/copy_ranges.h",
+          "sha256": "86b711e8dd26d63bba37e0ebbd47956f28bfd58b28934ac8073f28df81c543e7"
+        },
+        {
+          "path": "include/hyle/compute/detail/native_lease_inputs.h",
+          "sha256": "eca0780a39defc70e73ccbd1f8a2aec1aac66e67af95078b6912d7671f7ff7d6"
+        },
+        {
+          "path": "include/hyle/compute/detail/vulkan_batch_access.h",
+          "sha256": "22823b2c4a846fddf14ba0440e78a944ebeaf27f564e043424f5e2cca13eda01"
+        },
+        {
+          "path": "include/hyle/compute/vulkan_memory.h",
+          "sha256": "0fa5c0ffa7b316da2645f03c8176d02fc871151700720c195d2e238c802b53fc"
+        },
+        {
+          "path": "include/hyle/graph/batch.h",
+          "sha256": "7e5b1ae675bcf5048c739e32dfd94c2209cd6af6c63fa2cc4cd10ebec2d89b1f"
+        },
+        {
+          "path": "include/hyle/graph/cpu_apple.h",
+          "sha256": "645f557d8a6fefe3f69bc25f37c03e637ed28311fb7817bfb8de0e5373b0eb32"
+        },
+        {
+          "path": "include/hyle/graph/cpu_vulkan.h",
+          "sha256": "9b4c99f9ef9948f85435de4415a788b83d17a00752664074edf462addc6693f6"
+        },
+        {
+          "path": "include/hyle/graph/detail/region_access.h",
+          "sha256": "ff23b8758171c23b970e9e5b48655f08f5d09e77ca45f0dfe0ef8a9595636a79"
+        },
+        {
+          "path": "src/compute/copy_control.cc",
+          "sha256": "0de266027785e1598c587b19f15cbc422125af7a8fff262fb3064f4b0126d786"
+        },
+        {
+          "path": "src/compute/copy_ranges.cc",
+          "sha256": "8b35ebef012a2d1cd72c1c989b02a997861d42e336a7a31275d04fd3085a9c97"
+        },
+        {
+          "path": "src/compute_route_apple/apple_copy_internal.h",
+          "sha256": "ff139033c6cd0a9472ae5e68cd7962cecb64ceb96d13ee4fa3bdf632db1c6d88"
+        },
+        {
+          "path": "src/compute_route_apple/apple_copy_program.cc",
+          "sha256": "bd4b35876a56573e8f5028dcc319d5fa43535e8bc70d5678179f17825ff178f9"
+        },
+        {
+          "path": "src/compute_route_apple/apple_copy_recording.mm",
+          "sha256": "b2786a571ad4fe67973da0f64b8c230acc1bc9fad6d49cf6f229fa8e001af3bb"
+        },
+        {
+          "path": "src/compute_route_apple/apple_materialized_invocation.cc",
+          "sha256": "2da369419d9eb7c87c1a29c04c9460cd8609a88ada46e4d75e31008980103457"
+        },
+        {
+          "path": "src/compute_route_apple/apple_memory.mm",
+          "sha256": "0f9de8e223486108059628cbc1ef9e4dc672f669da49200e534a76c7edf1bd9b"
+        },
+        {
+          "path": "src/compute_route_vulkan/vulkan_copy_internal.h",
+          "sha256": "2ef2cd519750c9adb73b774fcb8da4df2b413ab94530937c1cd3f054a0d62e03"
+        },
+        {
+          "path": "src/compute_route_vulkan/vulkan_copy_program.cc",
+          "sha256": "9ff9d6cb84e0ce5f1f339435fb872002dd7ea9bfaaca96bbad695a023fcc62dc"
+        },
+        {
+          "path": "src/compute_route_vulkan/vulkan_copy_recording.cc",
+          "sha256": "e58d2f4756f70ce02a0d68b97e3b9ebbd244894615d68b25daf1fee3b54211d2"
+        },
+        {
+          "path": "src/compute_route_vulkan/vulkan_materialized_invocation.cc",
+          "sha256": "6fe31b7026b2aa130f5add655178bed7971c95ff07133325d1fde468c9045066"
+        },
+        {
+          "path": "src/compute_route_vulkan/vulkan_memory.cc",
+          "sha256": "78ea54d398c3de8c1adc16e68172069a840f7354a8e272a1a40eaffbcce9fc5e"
+        },
+        {
+          "path": "src/graph/executable.cc",
+          "sha256": "5514ae6bdf3548a356b2b04e8b12435e8625ba3debe6036641736a5ad5c5ab45"
+        },
+        {
+          "path": "src/graph/leased_invocation.cc",
+          "sha256": "c7e1a65f525ae0af071bc24c9efe23099ca65a05d6adf78083d9c1432609d288"
+        },
+        {
+          "path": "src/graph/submission_internal.h",
+          "sha256": "8a48ad4a490bb9bc7a57dd67e7ecc6500ab091141e75230221a5b1ada5ea0f66"
+        },
+        {
+          "path": "src/graph_batch/batch.cc",
+          "sha256": "13706924914da9986296c0b8c7b87626a4fced6899475c69f2a846b02f6cfea0"
+        },
+        {
+          "path": "src/graph_batch/native_paged_slots.h",
+          "sha256": "e479b0f89273eabd4db8e0db0b5506d42738e95e31cbab08bf9711c40d1b3386"
+        },
+        {
+          "path": "src/graph_route_cpu_apple/invocation.cc",
+          "sha256": "773be9ed03475a613bd7fb413bdf8598072c0ea603e98e0a075cecbdbb9af6b3"
+        },
+        {
+          "path": "src/graph_route_cpu_apple/paged.h",
+          "sha256": "716c973b06a4f2fb872c32b81e051d40f93ca6bd2f5f32c7b472df9cbcdd557d"
+        },
+        {
+          "path": "src/graph_route_cpu_vulkan/invocation.cc",
+          "sha256": "f039fea76839376dd238bf5cfc58d1e9f72c0d95e50933773d8cfc5420abada1"
+        },
+        {
+          "path": "src/graph_route_cpu_vulkan/paged.h",
+          "sha256": "234d8840de9cfab1535dfbcc96359ac64f866f16d76b7ff56c66524d8b25d4c9"
+        }
+      ],
+      "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g03\\graph-late-windows\\batch-compile-3.log"
+    },
+    {
+      "stage": "common-receiver-risks",
+      "command": [
+        "C:\\h7\\inference-g01-native-vulkan\\build\\g03_common_receiver_risks.exe"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 0.2340000000258442,
+      "inputs": [
+        {
+          "path": "include/hyle/compute/apple_memory.h",
+          "sha256": "b70c2e897ccda96b108ac8105ee77b391b6eeec503985444d0e8192cfbe68eac"
+        },
+        {
+          "path": "include/hyle/compute/detail/apple_batch_access.h",
+          "sha256": "b83b2e5109c97d5ac97b3b1ec1fc858d688b8557bae50616442a05c436159924"
+        },
+        {
+          "path": "include/hyle/compute/detail/copy_control.h",
+          "sha256": "8fd8ba40beeb810bcc7d635853b6f94e860e3dce4b22fa06fe5830dc10f7e909"
+        },
+        {
+          "path": "include/hyle/compute/detail/copy_ranges.h",
+          "sha256": "86b711e8dd26d63bba37e0ebbd47956f28bfd58b28934ac8073f28df81c543e7"
+        },
+        {
+          "path": "include/hyle/compute/detail/native_lease_inputs.h",
+          "sha256": "eca0780a39defc70e73ccbd1f8a2aec1aac66e67af95078b6912d7671f7ff7d6"
+        },
+        {
+          "path": "include/hyle/compute/detail/vulkan_batch_access.h",
+          "sha256": "22823b2c4a846fddf14ba0440e78a944ebeaf27f564e043424f5e2cca13eda01"
+        },
+        {
+          "path": "include/hyle/compute/vulkan_memory.h",
+          "sha256": "0fa5c0ffa7b316da2645f03c8176d02fc871151700720c195d2e238c802b53fc"
+        },
+        {
+          "path": "include/hyle/graph/batch.h",
+          "sha256": "7e5b1ae675bcf5048c739e32dfd94c2209cd6af6c63fa2cc4cd10ebec2d89b1f"
+        },
+        {
+          "path": "include/hyle/graph/cpu_apple.h",
+          "sha256": "645f557d8a6fefe3f69bc25f37c03e637ed28311fb7817bfb8de0e5373b0eb32"
+        },
+        {
+          "path": "include/hyle/graph/cpu_vulkan.h",
+          "sha256": "9b4c99f9ef9948f85435de4415a788b83d17a00752664074edf462addc6693f6"
+        },
+        {
+          "path": "include/hyle/graph/detail/region_access.h",
+          "sha256": "ff23b8758171c23b970e9e5b48655f08f5d09e77ca45f0dfe0ef8a9595636a79"
+        },
+        {
+          "path": "src/compute/copy_control.cc",
+          "sha256": "0de266027785e1598c587b19f15cbc422125af7a8fff262fb3064f4b0126d786"
+        },
+        {
+          "path": "src/compute/copy_ranges.cc",
+          "sha256": "8b35ebef012a2d1cd72c1c989b02a997861d42e336a7a31275d04fd3085a9c97"
+        },
+        {
+          "path": "src/compute_route_apple/apple_copy_internal.h",
+          "sha256": "ff139033c6cd0a9472ae5e68cd7962cecb64ceb96d13ee4fa3bdf632db1c6d88"
+        },
+        {
+          "path": "src/compute_route_apple/apple_copy_program.cc",
+          "sha256": "bd4b35876a56573e8f5028dcc319d5fa43535e8bc70d5678179f17825ff178f9"
+        },
+        {
+          "path": "src/compute_route_apple/apple_copy_recording.mm",
+          "sha256": "b2786a571ad4fe67973da0f64b8c230acc1bc9fad6d49cf6f229fa8e001af3bb"
+        },
+        {
+          "path": "src/compute_route_apple/apple_materialized_invocation.cc",
+          "sha256": "2da369419d9eb7c87c1a29c04c9460cd8609a88ada46e4d75e31008980103457"
+        },
+        {
+          "path": "src/compute_route_apple/apple_memory.mm",
+          "sha256": "0f9de8e223486108059628cbc1ef9e4dc672f669da49200e534a76c7edf1bd9b"
+        },
+        {
+          "path": "src/compute_route_vulkan/vulkan_copy_internal.h",
+          "sha256": "2ef2cd519750c9adb73b774fcb8da4df2b413ab94530937c1cd3f054a0d62e03"
+        },
+        {
+          "path": "src/compute_route_vulkan/vulkan_copy_program.cc",
+          "sha256": "9ff9d6cb84e0ce5f1f339435fb872002dd7ea9bfaaca96bbad695a023fcc62dc"
+        },
+        {
+          "path": "src/compute_route_vulkan/vulkan_copy_recording.cc",
+          "sha256": "e58d2f4756f70ce02a0d68b97e3b9ebbd244894615d68b25daf1fee3b54211d2"
+        },
+        {
+          "path": "src/compute_route_vulkan/vulkan_materialized_invocation.cc",
+          "sha256": "6fe31b7026b2aa130f5add655178bed7971c95ff07133325d1fde468c9045066"
+        },
+        {
+          "path": "src/compute_route_vulkan/vulkan_memory.cc",
+          "sha256": "78ea54d398c3de8c1adc16e68172069a840f7354a8e272a1a40eaffbcce9fc5e"
+        },
+        {
+          "path": "src/graph/executable.cc",
+          "sha256": "5514ae6bdf3548a356b2b04e8b12435e8625ba3debe6036641736a5ad5c5ab45"
+        },
+        {
+          "path": "src/graph/leased_invocation.cc",
+          "sha256": "c7e1a65f525ae0af071bc24c9efe23099ca65a05d6adf78083d9c1432609d288"
+        },
+        {
+          "path": "src/graph/submission_internal.h",
+          "sha256": "8a48ad4a490bb9bc7a57dd67e7ecc6500ab091141e75230221a5b1ada5ea0f66"
+        },
+        {
+          "path": "src/graph_batch/batch.cc",
+          "sha256": "13706924914da9986296c0b8c7b87626a4fced6899475c69f2a846b02f6cfea0"
+        },
+        {
+          "path": "src/graph_batch/native_paged_slots.h",
+          "sha256": "e479b0f89273eabd4db8e0db0b5506d42738e95e31cbab08bf9711c40d1b3386"
+        },
+        {
+          "path": "src/graph_route_cpu_apple/invocation.cc",
+          "sha256": "773be9ed03475a613bd7fb413bdf8598072c0ea603e98e0a075cecbdbb9af6b3"
+        },
+        {
+          "path": "src/graph_route_cpu_apple/paged.h",
+          "sha256": "716c973b06a4f2fb872c32b81e051d40f93ca6bd2f5f32c7b472df9cbcdd557d"
+        },
+        {
+          "path": "src/graph_route_cpu_vulkan/invocation.cc",
+          "sha256": "f039fea76839376dd238bf5cfc58d1e9f72c0d95e50933773d8cfc5420abada1"
+        },
+        {
+          "path": "src/graph_route_cpu_vulkan/paged.h",
+          "sha256": "234d8840de9cfab1535dfbcc96359ac64f866f16d76b7ff56c66524d8b25d4c9"
+        }
+      ],
+      "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g03\\graph-late-windows\\common-receiver-risks-1.log"
+    },
+    {
+      "stage": "original-outcome-regression",
+      "command": [
+        "C:\\h7\\inference-g01-native-vulkan\\build\\g03_owned_outcome.exe"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 0.046999999991385266,
+      "inputs": [
+        {
+          "path": "include/hyle/compute/apple_memory.h",
+          "sha256": "b70c2e897ccda96b108ac8105ee77b391b6eeec503985444d0e8192cfbe68eac"
+        },
+        {
+          "path": "include/hyle/compute/detail/apple_batch_access.h",
+          "sha256": "b83b2e5109c97d5ac97b3b1ec1fc858d688b8557bae50616442a05c436159924"
+        },
+        {
+          "path": "include/hyle/compute/detail/copy_control.h",
+          "sha256": "8fd8ba40beeb810bcc7d635853b6f94e860e3dce4b22fa06fe5830dc10f7e909"
+        },
+        {
+          "path": "include/hyle/compute/detail/copy_ranges.h",
+          "sha256": "86b711e8dd26d63bba37e0ebbd47956f28bfd58b28934ac8073f28df81c543e7"
+        },
+        {
+          "path": "include/hyle/compute/detail/native_lease_inputs.h",
+          "sha256": "eca0780a39defc70e73ccbd1f8a2aec1aac66e67af95078b6912d7671f7ff7d6"
+        },
+        {
+          "path": "include/hyle/compute/detail/vulkan_batch_access.h",
+          "sha256": "22823b2c4a846fddf14ba0440e78a944ebeaf27f564e043424f5e2cca13eda01"
+        },
+        {
+          "path": "include/hyle/compute/vulkan_memory.h",
+          "sha256": "0fa5c0ffa7b316da2645f03c8176d02fc871151700720c195d2e238c802b53fc"
+        },
+        {
+          "path": "include/hyle/graph/batch.h",
+          "sha256": "7e5b1ae675bcf5048c739e32dfd94c2209cd6af6c63fa2cc4cd10ebec2d89b1f"
+        },
+        {
+          "path": "include/hyle/graph/cpu_apple.h",
+          "sha256": "645f557d8a6fefe3f69bc25f37c03e637ed28311fb7817bfb8de0e5373b0eb32"
+        },
+        {
+          "path": "include/hyle/graph/cpu_vulkan.h",
+          "sha256": "9b4c99f9ef9948f85435de4415a788b83d17a00752664074edf462addc6693f6"
+        },
+        {
+          "path": "include/hyle/graph/detail/region_access.h",
+          "sha256": "ff23b8758171c23b970e9e5b48655f08f5d09e77ca45f0dfe0ef8a9595636a79"
+        },
+        {
+          "path": "src/compute/copy_control.cc",
+          "sha256": "0de266027785e1598c587b19f15cbc422125af7a8fff262fb3064f4b0126d786"
+        },
+        {
+          "path": "src/compute/copy_ranges.cc",
+          "sha256": "8b35ebef012a2d1cd72c1c989b02a997861d42e336a7a31275d04fd3085a9c97"
+        },
+        {
+          "path": "src/compute_route_apple/apple_copy_internal.h",
+          "sha256": "ff139033c6cd0a9472ae5e68cd7962cecb64ceb96d13ee4fa3bdf632db1c6d88"
+        },
+        {
+          "path": "src/compute_route_apple/apple_copy_program.cc",
+          "sha256": "bd4b35876a56573e8f5028dcc319d5fa43535e8bc70d5678179f17825ff178f9"
+        },
+        {
+          "path": "src/compute_route_apple/apple_copy_recording.mm",
+          "sha256": "b2786a571ad4fe67973da0f64b8c230acc1bc9fad6d49cf6f229fa8e001af3bb"
+        },
+        {
+          "path": "src/compute_route_apple/apple_materialized_invocation.cc",
+          "sha256": "2da369419d9eb7c87c1a29c04c9460cd8609a88ada46e4d75e31008980103457"
+        },
+        {
+          "path": "src/compute_route_apple/apple_memory.mm",
+          "sha256": "0f9de8e223486108059628cbc1ef9e4dc672f669da49200e534a76c7edf1bd9b"
+        },
+        {
+          "path": "src/compute_route_vulkan/vulkan_copy_internal.h",
+          "sha256": "2ef2cd519750c9adb73b774fcb8da4df2b413ab94530937c1cd3f054a0d62e03"
+        },
+        {
+          "path": "src/compute_route_vulkan/vulkan_copy_program.cc",
+          "sha256": "9ff9d6cb84e0ce5f1f339435fb872002dd7ea9bfaaca96bbad695a023fcc62dc"
+        },
+        {
+          "path": "src/compute_route_vulkan/vulkan_copy_recording.cc",
+          "sha256": "e58d2f4756f70ce02a0d68b97e3b9ebbd244894615d68b25daf1fee3b54211d2"
+        },
+        {
+          "path": "src/compute_route_vulkan/vulkan_materialized_invocation.cc",
+          "sha256": "6fe31b7026b2aa130f5add655178bed7971c95ff07133325d1fde468c9045066"
+        },
+        {
+          "path": "src/compute_route_vulkan/vulkan_memory.cc",
+          "sha256": "78ea54d398c3de8c1adc16e68172069a840f7354a8e272a1a40eaffbcce9fc5e"
+        },
+        {
+          "path": "src/graph/executable.cc",
+          "sha256": "5514ae6bdf3548a356b2b04e8b12435e8625ba3debe6036641736a5ad5c5ab45"
+        },
+        {
+          "path": "src/graph/leased_invocation.cc",
+          "sha256": "c7e1a65f525ae0af071bc24c9efe23099ca65a05d6adf78083d9c1432609d288"
+        },
+        {
+          "path": "src/graph/submission_internal.h",
+          "sha256": "8a48ad4a490bb9bc7a57dd67e7ecc6500ab091141e75230221a5b1ada5ea0f66"
+        },
+        {
+          "path": "src/graph_batch/batch.cc",
+          "sha256": "13706924914da9986296c0b8c7b87626a4fced6899475c69f2a846b02f6cfea0"
+        },
+        {
+          "path": "src/graph_batch/native_paged_slots.h",
+          "sha256": "e479b0f89273eabd4db8e0db0b5506d42738e95e31cbab08bf9711c40d1b3386"
+        },
+        {
+          "path": "src/graph_route_cpu_apple/invocation.cc",
+          "sha256": "773be9ed03475a613bd7fb413bdf8598072c0ea603e98e0a075cecbdbb9af6b3"
+        },
+        {
+          "path": "src/graph_route_cpu_apple/paged.h",
+          "sha256": "716c973b06a4f2fb872c32b81e051d40f93ca6bd2f5f32c7b472df9cbcdd557d"
+        },
+        {
+          "path": "src/graph_route_cpu_vulkan/invocation.cc",
+          "sha256": "f039fea76839376dd238bf5cfc58d1e9f72c0d95e50933773d8cfc5420abada1"
+        },
+        {
+          "path": "src/graph_route_cpu_vulkan/paged.h",
+          "sha256": "234d8840de9cfab1535dfbcc96359ac64f866f16d76b7ff56c66524d8b25d4c9"
+        }
+      ],
+      "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g03\\graph-late-windows\\original-outcome-regression-1.log"
+    },
+    {
+      "stage": "batch-compile",
+      "command": [
+        "cmake",
+        "--build",
+        "C:\\h7\\inference-g01-native-vulkan\\build",
+        "--target",
+        "hyle_graph_batch",
+        "hyle_graph_route_cpu_vulkan",
+        "g03_common_receiver_risks",
+        "g02_joint_public_compile",
+        "g03_owned_outcome",
+        "g03_late_result64",
+        "--parallel",
+        "4"
+      ],
+      "exit_code": 2,
+      "elapsed_seconds": 249.03200000000652,
+      "inputs": [
+        {
+          "path": "include/hyle/compute/apple_memory.h",
+          "sha256": "b70c2e897ccda96b108ac8105ee77b391b6eeec503985444d0e8192cfbe68eac"
+        },
+        {
+          "path": "include/hyle/compute/detail/apple_batch_access.h",
+          "sha256": "b83b2e5109c97d5ac97b3b1ec1fc858d688b8557bae50616442a05c436159924"
+        },
+        {
+          "path": "include/hyle/compute/detail/copy_control.h",
+          "sha256": "8fd8ba40beeb810bcc7d635853b6f94e860e3dce4b22fa06fe5830dc10f7e909"
+        },
+        {
+          "path": "include/hyle/compute/detail/copy_ranges.h",
+          "sha256": "86b711e8dd26d63bba37e0ebbd47956f28bfd58b28934ac8073f28df81c543e7"
+        },
+        {
+          "path": "include/hyle/compute/detail/native_lease_inputs.h",
+          "sha256": "eca0780a39defc70e73ccbd1f8a2aec1aac66e67af95078b6912d7671f7ff7d6"
+        },
+        {
+          "path": "include/hyle/compute/detail/vulkan_batch_access.h",
+          "sha256": "22823b2c4a846fddf14ba0440e78a944ebeaf27f564e043424f5e2cca13eda01"
+        },
+        {
+          "path": "include/hyle/compute/vulkan_memory.h",
+          "sha256": "0fa5c0ffa7b316da2645f03c8176d02fc871151700720c195d2e238c802b53fc"
+        },
+        {
+          "path": "include/hyle/graph/batch.h",
+          "sha256": "7e5b1ae675bcf5048c739e32dfd94c2209cd6af6c63fa2cc4cd10ebec2d89b1f"
+        },
+        {
+          "path": "include/hyle/graph/cpu_apple.h",
+          "sha256": "645f557d8a6fefe3f69bc25f37c03e637ed28311fb7817bfb8de0e5373b0eb32"
+        },
+        {
+          "path": "include/hyle/graph/cpu_vulkan.h",
+          "sha256": "9b4c99f9ef9948f85435de4415a788b83d17a00752664074edf462addc6693f6"
+        },
+        {
+          "path": "include/hyle/graph/detail/region_access.h",
+          "sha256": "ff23b8758171c23b970e9e5b48655f08f5d09e77ca45f0dfe0ef8a9595636a79"
+        },
+        {
+          "path": "src/compute/copy_control.cc",
+          "sha256": "0de266027785e1598c587b19f15cbc422125af7a8fff262fb3064f4b0126d786"
+        },
+        {
+          "path": "src/compute/copy_ranges.cc",
+          "sha256": "8b35ebef012a2d1cd72c1c989b02a997861d42e336a7a31275d04fd3085a9c97"
+        },
+        {
+          "path": "src/compute_route_apple/apple_copy_internal.h",
+          "sha256": "ff139033c6cd0a9472ae5e68cd7962cecb64ceb96d13ee4fa3bdf632db1c6d88"
+        },
+        {
+          "path": "src/compute_route_apple/apple_copy_program.cc",
+          "sha256": "ee80a1f29df261397ff18aaa24ed529a8b70bd5efc4da376991e6381835715bc"
+        },
+        {
+          "path": "src/compute_route_apple/apple_copy_recording.mm",
+          "sha256": "b2786a571ad4fe67973da0f64b8c230acc1bc9fad6d49cf6f229fa8e001af3bb"
+        },
+        {
+          "path": "src/compute_route_apple/apple_materialized_invocation.cc",
+          "sha256": "2da369419d9eb7c87c1a29c04c9460cd8609a88ada46e4d75e31008980103457"
+        },
+        {
+          "path": "src/compute_route_apple/apple_memory.mm",
+          "sha256": "0f9de8e223486108059628cbc1ef9e4dc672f669da49200e534a76c7edf1bd9b"
+        },
+        {
+          "path": "src/compute_route_vulkan/vulkan_copy_internal.h",
+          "sha256": "2ef2cd519750c9adb73b774fcb8da4df2b413ab94530937c1cd3f054a0d62e03"
+        },
+        {
+          "path": "src/compute_route_vulkan/vulkan_copy_program.cc",
+          "sha256": "685ef1b1073b22a68bb2298e3c5a96a58e0aa24edad7e32f952c4cb1d4f4f3a7"
+        },
+        {
+          "path": "src/compute_route_vulkan/vulkan_copy_recording.cc",
+          "sha256": "e58d2f4756f70ce02a0d68b97e3b9ebbd244894615d68b25daf1fee3b54211d2"
+        },
+        {
+          "path": "src/compute_route_vulkan/vulkan_materialized_invocation.cc",
+          "sha256": "6fe31b7026b2aa130f5add655178bed7971c95ff07133325d1fde468c9045066"
+        },
+        {
+          "path": "src/compute_route_vulkan/vulkan_memory.cc",
+          "sha256": "78ea54d398c3de8c1adc16e68172069a840f7354a8e272a1a40eaffbcce9fc5e"
+        },
+        {
+          "path": "src/graph/executable.cc",
+          "sha256": "5514ae6bdf3548a356b2b04e8b12435e8625ba3debe6036641736a5ad5c5ab45"
+        },
+        {
+          "path": "src/graph/leased_invocation.cc",
+          "sha256": "c7e1a65f525ae0af071bc24c9efe23099ca65a05d6adf78083d9c1432609d288"
+        },
+        {
+          "path": "src/graph/submission_internal.h",
+          "sha256": "8a48ad4a490bb9bc7a57dd67e7ecc6500ab091141e75230221a5b1ada5ea0f66"
+        },
+        {
+          "path": "src/graph_batch/batch.cc",
+          "sha256": "13706924914da9986296c0b8c7b87626a4fced6899475c69f2a846b02f6cfea0"
+        },
+        {
+          "path": "src/graph_batch/native_paged_slots.h",
+          "sha256": "e479b0f89273eabd4db8e0db0b5506d42738e95e31cbab08bf9711c40d1b3386"
+        },
+        {
+          "path": "src/graph_route_cpu_apple/invocation.cc",
+          "sha256": "773be9ed03475a613bd7fb413bdf8598072c0ea603e98e0a075cecbdbb9af6b3"
+        },
+        {
+          "path": "src/graph_route_cpu_apple/paged.h",
+          "sha256": "716c973b06a4f2fb872c32b81e051d40f93ca6bd2f5f32c7b472df9cbcdd557d"
+        },
+        {
+          "path": "src/graph_route_cpu_vulkan/invocation.cc",
+          "sha256": "f039fea76839376dd238bf5cfc58d1e9f72c0d95e50933773d8cfc5420abada1"
+        },
+        {
+          "path": "src/graph_route_cpu_vulkan/paged.h",
+          "sha256": "234d8840de9cfab1535dfbcc96359ac64f866f16d76b7ff56c66524d8b25d4c9"
+        },
+        {
+          "path": "tests/compute_batch/pending_paged_receiver_native_consumer.cc",
+          "sha256": "b1cd51982e6a8a2ef9db8c933b00b843d8cf6fc716901841f9b2b0ef826b68d0"
+        }
+      ],
+      "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g03\\graph-late-windows\\batch-compile-4.log"
+    },
+    {
+      "stage": "batch-compile",
+      "command": [
+        "cmake",
+        "--build",
+        "C:\\h7\\inference-g01-native-vulkan\\build",
+        "--target",
+        "hyle_graph_batch",
+        "hyle_graph_route_cpu_vulkan",
+        "g03_common_receiver_risks",
+        "g02_joint_public_compile",
+        "g03_owned_outcome",
+        "g03_late_result64",
+        "--parallel",
+        "4"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 5.921999999991385,
+      "inputs": [
+        {
+          "path": "include/hyle/compute/apple_memory.h",
+          "sha256": "b70c2e897ccda96b108ac8105ee77b391b6eeec503985444d0e8192cfbe68eac"
+        },
+        {
+          "path": "include/hyle/compute/detail/apple_batch_access.h",
+          "sha256": "b83b2e5109c97d5ac97b3b1ec1fc858d688b8557bae50616442a05c436159924"
+        },
+        {
+          "path": "include/hyle/compute/detail/copy_control.h",
+          "sha256": "8fd8ba40beeb810bcc7d635853b6f94e860e3dce4b22fa06fe5830dc10f7e909"
+        },
+        {
+          "path": "include/hyle/compute/detail/copy_ranges.h",
+          "sha256": "86b711e8dd26d63bba37e0ebbd47956f28bfd58b28934ac8073f28df81c543e7"
+        },
+        {
+          "path": "include/hyle/compute/detail/native_lease_inputs.h",
+          "sha256": "eca0780a39defc70e73ccbd1f8a2aec1aac66e67af95078b6912d7671f7ff7d6"
+        },
+        {
+          "path": "include/hyle/compute/detail/vulkan_batch_access.h",
+          "sha256": "22823b2c4a846fddf14ba0440e78a944ebeaf27f564e043424f5e2cca13eda01"
+        },
+        {
+          "path": "include/hyle/compute/vulkan_memory.h",
+          "sha256": "0fa5c0ffa7b316da2645f03c8176d02fc871151700720c195d2e238c802b53fc"
+        },
+        {
+          "path": "include/hyle/graph/batch.h",
+          "sha256": "7e5b1ae675bcf5048c739e32dfd94c2209cd6af6c63fa2cc4cd10ebec2d89b1f"
+        },
+        {
+          "path": "include/hyle/graph/cpu_apple.h",
+          "sha256": "645f557d8a6fefe3f69bc25f37c03e637ed28311fb7817bfb8de0e5373b0eb32"
+        },
+        {
+          "path": "include/hyle/graph/cpu_vulkan.h",
+          "sha256": "9b4c99f9ef9948f85435de4415a788b83d17a00752664074edf462addc6693f6"
+        },
+        {
+          "path": "include/hyle/graph/detail/region_access.h",
+          "sha256": "ff23b8758171c23b970e9e5b48655f08f5d09e77ca45f0dfe0ef8a9595636a79"
+        },
+        {
+          "path": "src/compute/copy_control.cc",
+          "sha256": "0de266027785e1598c587b19f15cbc422125af7a8fff262fb3064f4b0126d786"
+        },
+        {
+          "path": "src/compute/copy_ranges.cc",
+          "sha256": "8b35ebef012a2d1cd72c1c989b02a997861d42e336a7a31275d04fd3085a9c97"
+        },
+        {
+          "path": "src/compute_route_apple/apple_copy_internal.h",
+          "sha256": "ff139033c6cd0a9472ae5e68cd7962cecb64ceb96d13ee4fa3bdf632db1c6d88"
+        },
+        {
+          "path": "src/compute_route_apple/apple_copy_program.cc",
+          "sha256": "ee80a1f29df261397ff18aaa24ed529a8b70bd5efc4da376991e6381835715bc"
+        },
+        {
+          "path": "src/compute_route_apple/apple_copy_recording.mm",
+          "sha256": "b2786a571ad4fe67973da0f64b8c230acc1bc9fad6d49cf6f229fa8e001af3bb"
+        },
+        {
+          "path": "src/compute_route_apple/apple_materialized_invocation.cc",
+          "sha256": "2da369419d9eb7c87c1a29c04c9460cd8609a88ada46e4d75e31008980103457"
+        },
+        {
+          "path": "src/compute_route_apple/apple_memory.mm",
+          "sha256": "0f9de8e223486108059628cbc1ef9e4dc672f669da49200e534a76c7edf1bd9b"
+        },
+        {
+          "path": "src/compute_route_vulkan/vulkan_copy_internal.h",
+          "sha256": "2ef2cd519750c9adb73b774fcb8da4df2b413ab94530937c1cd3f054a0d62e03"
+        },
+        {
+          "path": "src/compute_route_vulkan/vulkan_copy_program.cc",
+          "sha256": "685ef1b1073b22a68bb2298e3c5a96a58e0aa24edad7e32f952c4cb1d4f4f3a7"
+        },
+        {
+          "path": "src/compute_route_vulkan/vulkan_copy_recording.cc",
+          "sha256": "e58d2f4756f70ce02a0d68b97e3b9ebbd244894615d68b25daf1fee3b54211d2"
+        },
+        {
+          "path": "src/compute_route_vulkan/vulkan_materialized_invocation.cc",
+          "sha256": "6fe31b7026b2aa130f5add655178bed7971c95ff07133325d1fde468c9045066"
+        },
+        {
+          "path": "src/compute_route_vulkan/vulkan_memory.cc",
+          "sha256": "78ea54d398c3de8c1adc16e68172069a840f7354a8e272a1a40eaffbcce9fc5e"
+        },
+        {
+          "path": "src/graph/executable.cc",
+          "sha256": "5514ae6bdf3548a356b2b04e8b12435e8625ba3debe6036641736a5ad5c5ab45"
+        },
+        {
+          "path": "src/graph/leased_invocation.cc",
+          "sha256": "c7e1a65f525ae0af071bc24c9efe23099ca65a05d6adf78083d9c1432609d288"
+        },
+        {
+          "path": "src/graph/submission_internal.h",
+          "sha256": "8a48ad4a490bb9bc7a57dd67e7ecc6500ab091141e75230221a5b1ada5ea0f66"
+        },
+        {
+          "path": "src/graph_batch/batch.cc",
+          "sha256": "13706924914da9986296c0b8c7b87626a4fced6899475c69f2a846b02f6cfea0"
+        },
+        {
+          "path": "src/graph_batch/native_paged_slots.h",
+          "sha256": "e479b0f89273eabd4db8e0db0b5506d42738e95e31cbab08bf9711c40d1b3386"
+        },
+        {
+          "path": "src/graph_route_cpu_apple/invocation.cc",
+          "sha256": "773be9ed03475a613bd7fb413bdf8598072c0ea603e98e0a075cecbdbb9af6b3"
+        },
+        {
+          "path": "src/graph_route_cpu_apple/paged.h",
+          "sha256": "716c973b06a4f2fb872c32b81e051d40f93ca6bd2f5f32c7b472df9cbcdd557d"
+        },
+        {
+          "path": "src/graph_route_cpu_vulkan/invocation.cc",
+          "sha256": "f039fea76839376dd238bf5cfc58d1e9f72c0d95e50933773d8cfc5420abada1"
+        },
+        {
+          "path": "src/graph_route_cpu_vulkan/paged.h",
+          "sha256": "234d8840de9cfab1535dfbcc96359ac64f866f16d76b7ff56c66524d8b25d4c9"
+        },
+        {
+          "path": "tests/compute_batch/pending_paged_receiver_native_consumer.cc",
+          "sha256": "8e8310e60c270c370723e26e20b5cfba86e09fe8de75e08633a441f2103e2045"
+        }
+      ],
+      "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g03\\graph-late-windows\\batch-compile-5.log"
+    },
+    {
+      "stage": "common-receiver-risks",
+      "command": [
+        "C:\\h7\\inference-g01-native-vulkan\\build\\g03_common_receiver_risks.exe"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 0.3120000000053551,
+      "inputs": [
+        {
+          "path": "include/hyle/compute/apple_memory.h",
+          "sha256": "b70c2e897ccda96b108ac8105ee77b391b6eeec503985444d0e8192cfbe68eac"
+        },
+        {
+          "path": "include/hyle/compute/detail/apple_batch_access.h",
+          "sha256": "b83b2e5109c97d5ac97b3b1ec1fc858d688b8557bae50616442a05c436159924"
+        },
+        {
+          "path": "include/hyle/compute/detail/copy_control.h",
+          "sha256": "8fd8ba40beeb810bcc7d635853b6f94e860e3dce4b22fa06fe5830dc10f7e909"
+        },
+        {
+          "path": "include/hyle/compute/detail/copy_ranges.h",
+          "sha256": "86b711e8dd26d63bba37e0ebbd47956f28bfd58b28934ac8073f28df81c543e7"
+        },
+        {
+          "path": "include/hyle/compute/detail/native_lease_inputs.h",
+          "sha256": "eca0780a39defc70e73ccbd1f8a2aec1aac66e67af95078b6912d7671f7ff7d6"
+        },
+        {
+          "path": "include/hyle/compute/detail/vulkan_batch_access.h",
+          "sha256": "22823b2c4a846fddf14ba0440e78a944ebeaf27f564e043424f5e2cca13eda01"
+        },
+        {
+          "path": "include/hyle/compute/vulkan_memory.h",
+          "sha256": "0fa5c0ffa7b316da2645f03c8176d02fc871151700720c195d2e238c802b53fc"
+        },
+        {
+          "path": "include/hyle/graph/batch.h",
+          "sha256": "7e5b1ae675bcf5048c739e32dfd94c2209cd6af6c63fa2cc4cd10ebec2d89b1f"
+        },
+        {
+          "path": "include/hyle/graph/cpu_apple.h",
+          "sha256": "645f557d8a6fefe3f69bc25f37c03e637ed28311fb7817bfb8de0e5373b0eb32"
+        },
+        {
+          "path": "include/hyle/graph/cpu_vulkan.h",
+          "sha256": "9b4c99f9ef9948f85435de4415a788b83d17a00752664074edf462addc6693f6"
+        },
+        {
+          "path": "include/hyle/graph/detail/region_access.h",
+          "sha256": "ff23b8758171c23b970e9e5b48655f08f5d09e77ca45f0dfe0ef8a9595636a79"
+        },
+        {
+          "path": "src/compute/copy_control.cc",
+          "sha256": "0de266027785e1598c587b19f15cbc422125af7a8fff262fb3064f4b0126d786"
+        },
+        {
+          "path": "src/compute/copy_ranges.cc",
+          "sha256": "8b35ebef012a2d1cd72c1c989b02a997861d42e336a7a31275d04fd3085a9c97"
+        },
+        {
+          "path": "src/compute_route_apple/apple_copy_internal.h",
+          "sha256": "ff139033c6cd0a9472ae5e68cd7962cecb64ceb96d13ee4fa3bdf632db1c6d88"
+        },
+        {
+          "path": "src/compute_route_apple/apple_copy_program.cc",
+          "sha256": "ee80a1f29df261397ff18aaa24ed529a8b70bd5efc4da376991e6381835715bc"
+        },
+        {
+          "path": "src/compute_route_apple/apple_copy_recording.mm",
+          "sha256": "b2786a571ad4fe67973da0f64b8c230acc1bc9fad6d49cf6f229fa8e001af3bb"
+        },
+        {
+          "path": "src/compute_route_apple/apple_materialized_invocation.cc",
+          "sha256": "2da369419d9eb7c87c1a29c04c9460cd8609a88ada46e4d75e31008980103457"
+        },
+        {
+          "path": "src/compute_route_apple/apple_memory.mm",
+          "sha256": "0f9de8e223486108059628cbc1ef9e4dc672f669da49200e534a76c7edf1bd9b"
+        },
+        {
+          "path": "src/compute_route_vulkan/vulkan_copy_internal.h",
+          "sha256": "2ef2cd519750c9adb73b774fcb8da4df2b413ab94530937c1cd3f054a0d62e03"
+        },
+        {
+          "path": "src/compute_route_vulkan/vulkan_copy_program.cc",
+          "sha256": "685ef1b1073b22a68bb2298e3c5a96a58e0aa24edad7e32f952c4cb1d4f4f3a7"
+        },
+        {
+          "path": "src/compute_route_vulkan/vulkan_copy_recording.cc",
+          "sha256": "e58d2f4756f70ce02a0d68b97e3b9ebbd244894615d68b25daf1fee3b54211d2"
+        },
+        {
+          "path": "src/compute_route_vulkan/vulkan_materialized_invocation.cc",
+          "sha256": "6fe31b7026b2aa130f5add655178bed7971c95ff07133325d1fde468c9045066"
+        },
+        {
+          "path": "src/compute_route_vulkan/vulkan_memory.cc",
+          "sha256": "78ea54d398c3de8c1adc16e68172069a840f7354a8e272a1a40eaffbcce9fc5e"
+        },
+        {
+          "path": "src/graph/executable.cc",
+          "sha256": "5514ae6bdf3548a356b2b04e8b12435e8625ba3debe6036641736a5ad5c5ab45"
+        },
+        {
+          "path": "src/graph/leased_invocation.cc",
+          "sha256": "c7e1a65f525ae0af071bc24c9efe23099ca65a05d6adf78083d9c1432609d288"
+        },
+        {
+          "path": "src/graph/submission_internal.h",
+          "sha256": "8a48ad4a490bb9bc7a57dd67e7ecc6500ab091141e75230221a5b1ada5ea0f66"
+        },
+        {
+          "path": "src/graph_batch/batch.cc",
+          "sha256": "13706924914da9986296c0b8c7b87626a4fced6899475c69f2a846b02f6cfea0"
+        },
+        {
+          "path": "src/graph_batch/native_paged_slots.h",
+          "sha256": "e479b0f89273eabd4db8e0db0b5506d42738e95e31cbab08bf9711c40d1b3386"
+        },
+        {
+          "path": "src/graph_route_cpu_apple/invocation.cc",
+          "sha256": "773be9ed03475a613bd7fb413bdf8598072c0ea603e98e0a075cecbdbb9af6b3"
+        },
+        {
+          "path": "src/graph_route_cpu_apple/paged.h",
+          "sha256": "716c973b06a4f2fb872c32b81e051d40f93ca6bd2f5f32c7b472df9cbcdd557d"
+        },
+        {
+          "path": "src/graph_route_cpu_vulkan/invocation.cc",
+          "sha256": "f039fea76839376dd238bf5cfc58d1e9f72c0d95e50933773d8cfc5420abada1"
+        },
+        {
+          "path": "src/graph_route_cpu_vulkan/paged.h",
+          "sha256": "234d8840de9cfab1535dfbcc96359ac64f866f16d76b7ff56c66524d8b25d4c9"
+        },
+        {
+          "path": "tests/compute_batch/pending_paged_receiver_native_consumer.cc",
+          "sha256": "8e8310e60c270c370723e26e20b5cfba86e09fe8de75e08633a441f2103e2045"
+        }
+      ],
+      "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g03\\graph-late-windows\\common-receiver-risks-2.log"
+    },
+    {
+      "stage": "original-outcome-regression",
+      "command": [
+        "C:\\h7\\inference-g01-native-vulkan\\build\\g03_owned_outcome.exe"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 0.01600000000325963,
+      "inputs": [
+        {
+          "path": "include/hyle/compute/apple_memory.h",
+          "sha256": "b70c2e897ccda96b108ac8105ee77b391b6eeec503985444d0e8192cfbe68eac"
+        },
+        {
+          "path": "include/hyle/compute/detail/apple_batch_access.h",
+          "sha256": "b83b2e5109c97d5ac97b3b1ec1fc858d688b8557bae50616442a05c436159924"
+        },
+        {
+          "path": "include/hyle/compute/detail/copy_control.h",
+          "sha256": "8fd8ba40beeb810bcc7d635853b6f94e860e3dce4b22fa06fe5830dc10f7e909"
+        },
+        {
+          "path": "include/hyle/compute/detail/copy_ranges.h",
+          "sha256": "86b711e8dd26d63bba37e0ebbd47956f28bfd58b28934ac8073f28df81c543e7"
+        },
+        {
+          "path": "include/hyle/compute/detail/native_lease_inputs.h",
+          "sha256": "eca0780a39defc70e73ccbd1f8a2aec1aac66e67af95078b6912d7671f7ff7d6"
+        },
+        {
+          "path": "include/hyle/compute/detail/vulkan_batch_access.h",
+          "sha256": "22823b2c4a846fddf14ba0440e78a944ebeaf27f564e043424f5e2cca13eda01"
+        },
+        {
+          "path": "include/hyle/compute/vulkan_memory.h",
+          "sha256": "0fa5c0ffa7b316da2645f03c8176d02fc871151700720c195d2e238c802b53fc"
+        },
+        {
+          "path": "include/hyle/graph/batch.h",
+          "sha256": "7e5b1ae675bcf5048c739e32dfd94c2209cd6af6c63fa2cc4cd10ebec2d89b1f"
+        },
+        {
+          "path": "include/hyle/graph/cpu_apple.h",
+          "sha256": "645f557d8a6fefe3f69bc25f37c03e637ed28311fb7817bfb8de0e5373b0eb32"
+        },
+        {
+          "path": "include/hyle/graph/cpu_vulkan.h",
+          "sha256": "9b4c99f9ef9948f85435de4415a788b83d17a00752664074edf462addc6693f6"
+        },
+        {
+          "path": "include/hyle/graph/detail/region_access.h",
+          "sha256": "ff23b8758171c23b970e9e5b48655f08f5d09e77ca45f0dfe0ef8a9595636a79"
+        },
+        {
+          "path": "src/compute/copy_control.cc",
+          "sha256": "0de266027785e1598c587b19f15cbc422125af7a8fff262fb3064f4b0126d786"
+        },
+        {
+          "path": "src/compute/copy_ranges.cc",
+          "sha256": "8b35ebef012a2d1cd72c1c989b02a997861d42e336a7a31275d04fd3085a9c97"
+        },
+        {
+          "path": "src/compute_route_apple/apple_copy_internal.h",
+          "sha256": "ff139033c6cd0a9472ae5e68cd7962cecb64ceb96d13ee4fa3bdf632db1c6d88"
+        },
+        {
+          "path": "src/compute_route_apple/apple_copy_program.cc",
+          "sha256": "ee80a1f29df261397ff18aaa24ed529a8b70bd5efc4da376991e6381835715bc"
+        },
+        {
+          "path": "src/compute_route_apple/apple_copy_recording.mm",
+          "sha256": "b2786a571ad4fe67973da0f64b8c230acc1bc9fad6d49cf6f229fa8e001af3bb"
+        },
+        {
+          "path": "src/compute_route_apple/apple_materialized_invocation.cc",
+          "sha256": "2da369419d9eb7c87c1a29c04c9460cd8609a88ada46e4d75e31008980103457"
+        },
+        {
+          "path": "src/compute_route_apple/apple_memory.mm",
+          "sha256": "0f9de8e223486108059628cbc1ef9e4dc672f669da49200e534a76c7edf1bd9b"
+        },
+        {
+          "path": "src/compute_route_vulkan/vulkan_copy_internal.h",
+          "sha256": "2ef2cd519750c9adb73b774fcb8da4df2b413ab94530937c1cd3f054a0d62e03"
+        },
+        {
+          "path": "src/compute_route_vulkan/vulkan_copy_program.cc",
+          "sha256": "685ef1b1073b22a68bb2298e3c5a96a58e0aa24edad7e32f952c4cb1d4f4f3a7"
+        },
+        {
+          "path": "src/compute_route_vulkan/vulkan_copy_recording.cc",
+          "sha256": "e58d2f4756f70ce02a0d68b97e3b9ebbd244894615d68b25daf1fee3b54211d2"
+        },
+        {
+          "path": "src/compute_route_vulkan/vulkan_materialized_invocation.cc",
+          "sha256": "6fe31b7026b2aa130f5add655178bed7971c95ff07133325d1fde468c9045066"
+        },
+        {
+          "path": "src/compute_route_vulkan/vulkan_memory.cc",
+          "sha256": "78ea54d398c3de8c1adc16e68172069a840f7354a8e272a1a40eaffbcce9fc5e"
+        },
+        {
+          "path": "src/graph/executable.cc",
+          "sha256": "5514ae6bdf3548a356b2b04e8b12435e8625ba3debe6036641736a5ad5c5ab45"
+        },
+        {
+          "path": "src/graph/leased_invocation.cc",
+          "sha256": "c7e1a65f525ae0af071bc24c9efe23099ca65a05d6adf78083d9c1432609d288"
+        },
+        {
+          "path": "src/graph/submission_internal.h",
+          "sha256": "8a48ad4a490bb9bc7a57dd67e7ecc6500ab091141e75230221a5b1ada5ea0f66"
+        },
+        {
+          "path": "src/graph_batch/batch.cc",
+          "sha256": "13706924914da9986296c0b8c7b87626a4fced6899475c69f2a846b02f6cfea0"
+        },
+        {
+          "path": "src/graph_batch/native_paged_slots.h",
+          "sha256": "e479b0f89273eabd4db8e0db0b5506d42738e95e31cbab08bf9711c40d1b3386"
+        },
+        {
+          "path": "src/graph_route_cpu_apple/invocation.cc",
+          "sha256": "773be9ed03475a613bd7fb413bdf8598072c0ea603e98e0a075cecbdbb9af6b3"
+        },
+        {
+          "path": "src/graph_route_cpu_apple/paged.h",
+          "sha256": "716c973b06a4f2fb872c32b81e051d40f93ca6bd2f5f32c7b472df9cbcdd557d"
+        },
+        {
+          "path": "src/graph_route_cpu_vulkan/invocation.cc",
+          "sha256": "f039fea76839376dd238bf5cfc58d1e9f72c0d95e50933773d8cfc5420abada1"
+        },
+        {
+          "path": "src/graph_route_cpu_vulkan/paged.h",
+          "sha256": "234d8840de9cfab1535dfbcc96359ac64f866f16d76b7ff56c66524d8b25d4c9"
+        },
+        {
+          "path": "tests/compute_batch/pending_paged_receiver_native_consumer.cc",
+          "sha256": "8e8310e60c270c370723e26e20b5cfba86e09fe8de75e08633a441f2103e2045"
+        }
+      ],
+      "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g03\\graph-late-windows\\original-outcome-regression-2.log"
+    },
+    {
+      "stage": "batch-compile",
+      "command": [
+        "cmake",
+        "--build",
+        "C:\\h7\\inference-g01-native-vulkan\\build",
+        "--target",
+        "hyle_graph_batch",
+        "hyle_graph_route_cpu_vulkan",
+        "g03_common_receiver_risks",
+        "g02_joint_public_compile",
+        "g03_owned_outcome",
+        "g03_late_result64",
+        "g03_pending_graph64",
+        "--parallel",
+        "4"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 82.48399999999674,
+      "inputs": [
+        {
+          "path": "include/hyle/compute/apple_memory.h",
+          "sha256": "b70c2e897ccda96b108ac8105ee77b391b6eeec503985444d0e8192cfbe68eac"
+        },
+        {
+          "path": "include/hyle/compute/detail/apple_batch_access.h",
+          "sha256": "b83b2e5109c97d5ac97b3b1ec1fc858d688b8557bae50616442a05c436159924"
+        },
+        {
+          "path": "include/hyle/compute/detail/copy_control.h",
+          "sha256": "8fd8ba40beeb810bcc7d635853b6f94e860e3dce4b22fa06fe5830dc10f7e909"
+        },
+        {
+          "path": "include/hyle/compute/detail/copy_ranges.h",
+          "sha256": "86b711e8dd26d63bba37e0ebbd47956f28bfd58b28934ac8073f28df81c543e7"
+        },
+        {
+          "path": "include/hyle/compute/detail/native_lease_inputs.h",
+          "sha256": "eca0780a39defc70e73ccbd1f8a2aec1aac66e67af95078b6912d7671f7ff7d6"
+        },
+        {
+          "path": "include/hyle/compute/detail/vulkan_batch_access.h",
+          "sha256": "22823b2c4a846fddf14ba0440e78a944ebeaf27f564e043424f5e2cca13eda01"
+        },
+        {
+          "path": "include/hyle/compute/vulkan_memory.h",
+          "sha256": "0fa5c0ffa7b316da2645f03c8176d02fc871151700720c195d2e238c802b53fc"
+        },
+        {
+          "path": "include/hyle/graph/batch.h",
+          "sha256": "7e5b1ae675bcf5048c739e32dfd94c2209cd6af6c63fa2cc4cd10ebec2d89b1f"
+        },
+        {
+          "path": "include/hyle/graph/cpu_apple.h",
+          "sha256": "645f557d8a6fefe3f69bc25f37c03e637ed28311fb7817bfb8de0e5373b0eb32"
+        },
+        {
+          "path": "include/hyle/graph/cpu_vulkan.h",
+          "sha256": "9b4c99f9ef9948f85435de4415a788b83d17a00752664074edf462addc6693f6"
+        },
+        {
+          "path": "include/hyle/graph/detail/region_access.h",
+          "sha256": "ff23b8758171c23b970e9e5b48655f08f5d09e77ca45f0dfe0ef8a9595636a79"
+        },
+        {
+          "path": "src/compute/copy_control.cc",
+          "sha256": "0de266027785e1598c587b19f15cbc422125af7a8fff262fb3064f4b0126d786"
+        },
+        {
+          "path": "src/compute/copy_ranges.cc",
+          "sha256": "8b35ebef012a2d1cd72c1c989b02a997861d42e336a7a31275d04fd3085a9c97"
+        },
+        {
+          "path": "src/compute_route_apple/apple_copy_internal.h",
+          "sha256": "ff139033c6cd0a9472ae5e68cd7962cecb64ceb96d13ee4fa3bdf632db1c6d88"
+        },
+        {
+          "path": "src/compute_route_apple/apple_copy_program.cc",
+          "sha256": "ee80a1f29df261397ff18aaa24ed529a8b70bd5efc4da376991e6381835715bc"
+        },
+        {
+          "path": "src/compute_route_apple/apple_copy_recording.mm",
+          "sha256": "b2786a571ad4fe67973da0f64b8c230acc1bc9fad6d49cf6f229fa8e001af3bb"
+        },
+        {
+          "path": "src/compute_route_apple/apple_materialized_invocation.cc",
+          "sha256": "2da369419d9eb7c87c1a29c04c9460cd8609a88ada46e4d75e31008980103457"
+        },
+        {
+          "path": "src/compute_route_apple/apple_memory.mm",
+          "sha256": "2da66548242675285830054cd6e6a82422630f28cab4113ca45e9f3eddc156af"
+        },
+        {
+          "path": "src/compute_route_vulkan/vulkan_copy_internal.h",
+          "sha256": "2ef2cd519750c9adb73b774fcb8da4df2b413ab94530937c1cd3f054a0d62e03"
+        },
+        {
+          "path": "src/compute_route_vulkan/vulkan_copy_program.cc",
+          "sha256": "685ef1b1073b22a68bb2298e3c5a96a58e0aa24edad7e32f952c4cb1d4f4f3a7"
+        },
+        {
+          "path": "src/compute_route_vulkan/vulkan_copy_recording.cc",
+          "sha256": "e58d2f4756f70ce02a0d68b97e3b9ebbd244894615d68b25daf1fee3b54211d2"
+        },
+        {
+          "path": "src/compute_route_vulkan/vulkan_materialized_invocation.cc",
+          "sha256": "6fe31b7026b2aa130f5add655178bed7971c95ff07133325d1fde468c9045066"
+        },
+        {
+          "path": "src/compute_route_vulkan/vulkan_memory.cc",
+          "sha256": "78ea54d398c3de8c1adc16e68172069a840f7354a8e272a1a40eaffbcce9fc5e"
+        },
+        {
+          "path": "src/graph/executable.cc",
+          "sha256": "5514ae6bdf3548a356b2b04e8b12435e8625ba3debe6036641736a5ad5c5ab45"
+        },
+        {
+          "path": "src/graph/leased_invocation.cc",
+          "sha256": "c7e1a65f525ae0af071bc24c9efe23099ca65a05d6adf78083d9c1432609d288"
+        },
+        {
+          "path": "src/graph/submission_internal.h",
+          "sha256": "8a48ad4a490bb9bc7a57dd67e7ecc6500ab091141e75230221a5b1ada5ea0f66"
+        },
+        {
+          "path": "src/graph_batch/batch.cc",
+          "sha256": "13706924914da9986296c0b8c7b87626a4fced6899475c69f2a846b02f6cfea0"
+        },
+        {
+          "path": "src/graph_batch/native_paged_slots.h",
+          "sha256": "e479b0f89273eabd4db8e0db0b5506d42738e95e31cbab08bf9711c40d1b3386"
+        },
+        {
+          "path": "src/graph_route_cpu_apple/invocation.cc",
+          "sha256": "773be9ed03475a613bd7fb413bdf8598072c0ea603e98e0a075cecbdbb9af6b3"
+        },
+        {
+          "path": "src/graph_route_cpu_apple/paged.h",
+          "sha256": "716c973b06a4f2fb872c32b81e051d40f93ca6bd2f5f32c7b472df9cbcdd557d"
+        },
+        {
+          "path": "src/graph_route_cpu_vulkan/invocation.cc",
+          "sha256": "f039fea76839376dd238bf5cfc58d1e9f72c0d95e50933773d8cfc5420abada1"
+        },
+        {
+          "path": "src/graph_route_cpu_vulkan/paged.h",
+          "sha256": "234d8840de9cfab1535dfbcc96359ac64f866f16d76b7ff56c66524d8b25d4c9"
+        },
+        {
+          "path": "tests/compute_batch/pending_paged_receiver_cpu_consumer.cc",
+          "sha256": "62e0c668dc631cdec90cbb0c96c42813a5e06e3a21b97f323bd3e85a7df2af98"
+        },
+        {
+          "path": "tests/compute_batch/pending_paged_receiver_native_consumer.cc",
+          "sha256": "434225028a3258227dc7a4b8201c0607c974b6587381166cc9b3d43584108feb"
+        }
+      ],
+      "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g03\\graph-late-windows\\batch-compile-6.log"
+    },
+    {
+      "stage": "pending-graph64",
+      "command": [
+        "C:\\h7\\inference-g01-native-vulkan\\build\\g03_pending_graph64.exe"
+      ],
+      "exit_code": 1,
+      "elapsed_seconds": 0.23499999998603016,
+      "inputs": [
+        {
+          "path": "include/hyle/compute/apple_memory.h",
+          "sha256": "b70c2e897ccda96b108ac8105ee77b391b6eeec503985444d0e8192cfbe68eac"
+        },
+        {
+          "path": "include/hyle/compute/detail/apple_batch_access.h",
+          "sha256": "b83b2e5109c97d5ac97b3b1ec1fc858d688b8557bae50616442a05c436159924"
+        },
+        {
+          "path": "include/hyle/compute/detail/copy_control.h",
+          "sha256": "8fd8ba40beeb810bcc7d635853b6f94e860e3dce4b22fa06fe5830dc10f7e909"
+        },
+        {
+          "path": "include/hyle/compute/detail/copy_ranges.h",
+          "sha256": "86b711e8dd26d63bba37e0ebbd47956f28bfd58b28934ac8073f28df81c543e7"
+        },
+        {
+          "path": "include/hyle/compute/detail/native_lease_inputs.h",
+          "sha256": "eca0780a39defc70e73ccbd1f8a2aec1aac66e67af95078b6912d7671f7ff7d6"
+        },
+        {
+          "path": "include/hyle/compute/detail/vulkan_batch_access.h",
+          "sha256": "22823b2c4a846fddf14ba0440e78a944ebeaf27f564e043424f5e2cca13eda01"
+        },
+        {
+          "path": "include/hyle/compute/vulkan_memory.h",
+          "sha256": "0fa5c0ffa7b316da2645f03c8176d02fc871151700720c195d2e238c802b53fc"
+        },
+        {
+          "path": "include/hyle/graph/batch.h",
+          "sha256": "7e5b1ae675bcf5048c739e32dfd94c2209cd6af6c63fa2cc4cd10ebec2d89b1f"
+        },
+        {
+          "path": "include/hyle/graph/cpu_apple.h",
+          "sha256": "645f557d8a6fefe3f69bc25f37c03e637ed28311fb7817bfb8de0e5373b0eb32"
+        },
+        {
+          "path": "include/hyle/graph/cpu_vulkan.h",
+          "sha256": "9b4c99f9ef9948f85435de4415a788b83d17a00752664074edf462addc6693f6"
+        },
+        {
+          "path": "include/hyle/graph/detail/region_access.h",
+          "sha256": "ff23b8758171c23b970e9e5b48655f08f5d09e77ca45f0dfe0ef8a9595636a79"
+        },
+        {
+          "path": "src/compute/copy_control.cc",
+          "sha256": "0de266027785e1598c587b19f15cbc422125af7a8fff262fb3064f4b0126d786"
+        },
+        {
+          "path": "src/compute/copy_ranges.cc",
+          "sha256": "8b35ebef012a2d1cd72c1c989b02a997861d42e336a7a31275d04fd3085a9c97"
+        },
+        {
+          "path": "src/compute_route_apple/apple_copy_internal.h",
+          "sha256": "ff139033c6cd0a9472ae5e68cd7962cecb64ceb96d13ee4fa3bdf632db1c6d88"
+        },
+        {
+          "path": "src/compute_route_apple/apple_copy_program.cc",
+          "sha256": "ee80a1f29df261397ff18aaa24ed529a8b70bd5efc4da376991e6381835715bc"
+        },
+        {
+          "path": "src/compute_route_apple/apple_copy_recording.mm",
+          "sha256": "b2786a571ad4fe67973da0f64b8c230acc1bc9fad6d49cf6f229fa8e001af3bb"
+        },
+        {
+          "path": "src/compute_route_apple/apple_materialized_invocation.cc",
+          "sha256": "2da369419d9eb7c87c1a29c04c9460cd8609a88ada46e4d75e31008980103457"
+        },
+        {
+          "path": "src/compute_route_apple/apple_memory.mm",
+          "sha256": "2da66548242675285830054cd6e6a82422630f28cab4113ca45e9f3eddc156af"
+        },
+        {
+          "path": "src/compute_route_vulkan/vulkan_copy_internal.h",
+          "sha256": "2ef2cd519750c9adb73b774fcb8da4df2b413ab94530937c1cd3f054a0d62e03"
+        },
+        {
+          "path": "src/compute_route_vulkan/vulkan_copy_program.cc",
+          "sha256": "685ef1b1073b22a68bb2298e3c5a96a58e0aa24edad7e32f952c4cb1d4f4f3a7"
+        },
+        {
+          "path": "src/compute_route_vulkan/vulkan_copy_recording.cc",
+          "sha256": "e58d2f4756f70ce02a0d68b97e3b9ebbd244894615d68b25daf1fee3b54211d2"
+        },
+        {
+          "path": "src/compute_route_vulkan/vulkan_materialized_invocation.cc",
+          "sha256": "6fe31b7026b2aa130f5add655178bed7971c95ff07133325d1fde468c9045066"
+        },
+        {
+          "path": "src/compute_route_vulkan/vulkan_memory.cc",
+          "sha256": "78ea54d398c3de8c1adc16e68172069a840f7354a8e272a1a40eaffbcce9fc5e"
+        },
+        {
+          "path": "src/graph/executable.cc",
+          "sha256": "5514ae6bdf3548a356b2b04e8b12435e8625ba3debe6036641736a5ad5c5ab45"
+        },
+        {
+          "path": "src/graph/leased_invocation.cc",
+          "sha256": "c7e1a65f525ae0af071bc24c9efe23099ca65a05d6adf78083d9c1432609d288"
+        },
+        {
+          "path": "src/graph/submission_internal.h",
+          "sha256": "8a48ad4a490bb9bc7a57dd67e7ecc6500ab091141e75230221a5b1ada5ea0f66"
+        },
+        {
+          "path": "src/graph_batch/batch.cc",
+          "sha256": "13706924914da9986296c0b8c7b87626a4fced6899475c69f2a846b02f6cfea0"
+        },
+        {
+          "path": "src/graph_batch/native_paged_slots.h",
+          "sha256": "e479b0f89273eabd4db8e0db0b5506d42738e95e31cbab08bf9711c40d1b3386"
+        },
+        {
+          "path": "src/graph_route_cpu_apple/invocation.cc",
+          "sha256": "773be9ed03475a613bd7fb413bdf8598072c0ea603e98e0a075cecbdbb9af6b3"
+        },
+        {
+          "path": "src/graph_route_cpu_apple/paged.h",
+          "sha256": "716c973b06a4f2fb872c32b81e051d40f93ca6bd2f5f32c7b472df9cbcdd557d"
+        },
+        {
+          "path": "src/graph_route_cpu_vulkan/invocation.cc",
+          "sha256": "f039fea76839376dd238bf5cfc58d1e9f72c0d95e50933773d8cfc5420abada1"
+        },
+        {
+          "path": "src/graph_route_cpu_vulkan/paged.h",
+          "sha256": "234d8840de9cfab1535dfbcc96359ac64f866f16d76b7ff56c66524d8b25d4c9"
+        },
+        {
+          "path": "tests/compute_batch/pending_paged_receiver_cpu_consumer.cc",
+          "sha256": "62e0c668dc631cdec90cbb0c96c42813a5e06e3a21b97f323bd3e85a7df2af98"
+        },
+        {
+          "path": "tests/compute_batch/pending_paged_receiver_native_consumer.cc",
+          "sha256": "434225028a3258227dc7a4b8201c0607c974b6587381166cc9b3d43584108feb"
+        }
+      ],
+      "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g03\\graph-late-windows\\pending-graph64-1.log"
+    },
+    {
+      "stage": "batch-compile",
+      "command": [
+        "cmake",
+        "--build",
+        "C:\\h7\\inference-g01-native-vulkan\\build",
+        "--target",
+        "hyle_graph_batch",
+        "hyle_graph_route_cpu_vulkan",
+        "g03_common_receiver_risks",
+        "g02_joint_public_compile",
+        "g03_owned_outcome",
+        "g03_late_result64",
+        "g03_pending_graph64",
+        "--parallel",
+        "4"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 6.5460000000020955,
+      "inputs": [
+        {
+          "path": "include/hyle/compute/apple_memory.h",
+          "sha256": "b70c2e897ccda96b108ac8105ee77b391b6eeec503985444d0e8192cfbe68eac"
+        },
+        {
+          "path": "include/hyle/compute/detail/apple_batch_access.h",
+          "sha256": "b83b2e5109c97d5ac97b3b1ec1fc858d688b8557bae50616442a05c436159924"
+        },
+        {
+          "path": "include/hyle/compute/detail/copy_control.h",
+          "sha256": "8fd8ba40beeb810bcc7d635853b6f94e860e3dce4b22fa06fe5830dc10f7e909"
+        },
+        {
+          "path": "include/hyle/compute/detail/copy_ranges.h",
+          "sha256": "86b711e8dd26d63bba37e0ebbd47956f28bfd58b28934ac8073f28df81c543e7"
+        },
+        {
+          "path": "include/hyle/compute/detail/native_lease_inputs.h",
+          "sha256": "eca0780a39defc70e73ccbd1f8a2aec1aac66e67af95078b6912d7671f7ff7d6"
+        },
+        {
+          "path": "include/hyle/compute/detail/vulkan_batch_access.h",
+          "sha256": "22823b2c4a846fddf14ba0440e78a944ebeaf27f564e043424f5e2cca13eda01"
+        },
+        {
+          "path": "include/hyle/compute/vulkan_memory.h",
+          "sha256": "0fa5c0ffa7b316da2645f03c8176d02fc871151700720c195d2e238c802b53fc"
+        },
+        {
+          "path": "include/hyle/graph/batch.h",
+          "sha256": "7e5b1ae675bcf5048c739e32dfd94c2209cd6af6c63fa2cc4cd10ebec2d89b1f"
+        },
+        {
+          "path": "include/hyle/graph/cpu_apple.h",
+          "sha256": "645f557d8a6fefe3f69bc25f37c03e637ed28311fb7817bfb8de0e5373b0eb32"
+        },
+        {
+          "path": "include/hyle/graph/cpu_vulkan.h",
+          "sha256": "9b4c99f9ef9948f85435de4415a788b83d17a00752664074edf462addc6693f6"
+        },
+        {
+          "path": "include/hyle/graph/detail/region_access.h",
+          "sha256": "ab9974ad248e491e47659c5020b0cdc337156cc42f7e24feb525ef0557bcfc13"
+        },
+        {
+          "path": "src/compute/copy_control.cc",
+          "sha256": "0de266027785e1598c587b19f15cbc422125af7a8fff262fb3064f4b0126d786"
+        },
+        {
+          "path": "src/compute/copy_ranges.cc",
+          "sha256": "8b35ebef012a2d1cd72c1c989b02a997861d42e336a7a31275d04fd3085a9c97"
+        },
+        {
+          "path": "src/compute_route_apple/apple_copy_internal.h",
+          "sha256": "ff139033c6cd0a9472ae5e68cd7962cecb64ceb96d13ee4fa3bdf632db1c6d88"
+        },
+        {
+          "path": "src/compute_route_apple/apple_copy_program.cc",
+          "sha256": "ee80a1f29df261397ff18aaa24ed529a8b70bd5efc4da376991e6381835715bc"
+        },
+        {
+          "path": "src/compute_route_apple/apple_copy_recording.mm",
+          "sha256": "b2786a571ad4fe67973da0f64b8c230acc1bc9fad6d49cf6f229fa8e001af3bb"
+        },
+        {
+          "path": "src/compute_route_apple/apple_materialized_invocation.cc",
+          "sha256": "2da369419d9eb7c87c1a29c04c9460cd8609a88ada46e4d75e31008980103457"
+        },
+        {
+          "path": "src/compute_route_apple/apple_memory.mm",
+          "sha256": "2da66548242675285830054cd6e6a82422630f28cab4113ca45e9f3eddc156af"
+        },
+        {
+          "path": "src/compute_route_vulkan/vulkan_copy_internal.h",
+          "sha256": "2ef2cd519750c9adb73b774fcb8da4df2b413ab94530937c1cd3f054a0d62e03"
+        },
+        {
+          "path": "src/compute_route_vulkan/vulkan_copy_program.cc",
+          "sha256": "685ef1b1073b22a68bb2298e3c5a96a58e0aa24edad7e32f952c4cb1d4f4f3a7"
+        },
+        {
+          "path": "src/compute_route_vulkan/vulkan_copy_recording.cc",
+          "sha256": "e58d2f4756f70ce02a0d68b97e3b9ebbd244894615d68b25daf1fee3b54211d2"
+        },
+        {
+          "path": "src/compute_route_vulkan/vulkan_materialized_invocation.cc",
+          "sha256": "6fe31b7026b2aa130f5add655178bed7971c95ff07133325d1fde468c9045066"
+        },
+        {
+          "path": "src/compute_route_vulkan/vulkan_memory.cc",
+          "sha256": "78ea54d398c3de8c1adc16e68172069a840f7354a8e272a1a40eaffbcce9fc5e"
+        },
+        {
+          "path": "src/compute_route_vulkan/vulkan_run.cc",
+          "sha256": "4b4296e0a01f5c0b1a0e05ee6970d85246d7619e540a202e35daa141a476fa96"
+        },
+        {
+          "path": "src/graph/executable.cc",
+          "sha256": "5514ae6bdf3548a356b2b04e8b12435e8625ba3debe6036641736a5ad5c5ab45"
+        },
+        {
+          "path": "src/graph/leased_invocation.cc",
+          "sha256": "d2e07eaa53072b6cae6f5182bb0c4590eac2ab5ed492c1c3aae2f2392bdc8260"
+        },
+        {
+          "path": "src/graph/submission_internal.h",
+          "sha256": "8a48ad4a490bb9bc7a57dd67e7ecc6500ab091141e75230221a5b1ada5ea0f66"
+        },
+        {
+          "path": "src/graph_batch/batch.cc",
+          "sha256": "e036969aa842c55db377c332496f2f85f486c074d674c52d2c4f32f51e18c994"
+        },
+        {
+          "path": "src/graph_batch/native_paged_slots.h",
+          "sha256": "e479b0f89273eabd4db8e0db0b5506d42738e95e31cbab08bf9711c40d1b3386"
+        },
+        {
+          "path": "src/graph_route_cpu_apple/invocation.cc",
+          "sha256": "773be9ed03475a613bd7fb413bdf8598072c0ea603e98e0a075cecbdbb9af6b3"
+        },
+        {
+          "path": "src/graph_route_cpu_apple/paged.h",
+          "sha256": "716c973b06a4f2fb872c32b81e051d40f93ca6bd2f5f32c7b472df9cbcdd557d"
+        },
+        {
+          "path": "src/graph_route_cpu_vulkan/invocation.cc",
+          "sha256": "f039fea76839376dd238bf5cfc58d1e9f72c0d95e50933773d8cfc5420abada1"
+        },
+        {
+          "path": "src/graph_route_cpu_vulkan/paged.h",
+          "sha256": "234d8840de9cfab1535dfbcc96359ac64f866f16d76b7ff56c66524d8b25d4c9"
+        },
+        {
+          "path": "tests/compute_batch/pending_paged_receiver_cpu_consumer.cc",
+          "sha256": "62e0c668dc631cdec90cbb0c96c42813a5e06e3a21b97f323bd3e85a7df2af98"
+        },
+        {
+          "path": "tests/compute_batch/pending_paged_receiver_native_consumer.cc",
+          "sha256": "434225028a3258227dc7a4b8201c0607c974b6587381166cc9b3d43584108feb"
+        }
+      ],
+      "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g03\\graph-late-windows\\batch-compile-7.log"
+    },
+    {
+      "stage": "pending-graph64",
+      "command": [
+        "C:\\h7\\inference-g01-native-vulkan\\build\\g03_pending_graph64.exe"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 0.28200000000651926,
+      "inputs": [
+        {
+          "path": "include/hyle/compute/apple_memory.h",
+          "sha256": "b70c2e897ccda96b108ac8105ee77b391b6eeec503985444d0e8192cfbe68eac"
+        },
+        {
+          "path": "include/hyle/compute/detail/apple_batch_access.h",
+          "sha256": "b83b2e5109c97d5ac97b3b1ec1fc858d688b8557bae50616442a05c436159924"
+        },
+        {
+          "path": "include/hyle/compute/detail/copy_control.h",
+          "sha256": "8fd8ba40beeb810bcc7d635853b6f94e860e3dce4b22fa06fe5830dc10f7e909"
+        },
+        {
+          "path": "include/hyle/compute/detail/copy_ranges.h",
+          "sha256": "86b711e8dd26d63bba37e0ebbd47956f28bfd58b28934ac8073f28df81c543e7"
+        },
+        {
+          "path": "include/hyle/compute/detail/native_lease_inputs.h",
+          "sha256": "eca0780a39defc70e73ccbd1f8a2aec1aac66e67af95078b6912d7671f7ff7d6"
+        },
+        {
+          "path": "include/hyle/compute/detail/vulkan_batch_access.h",
+          "sha256": "22823b2c4a846fddf14ba0440e78a944ebeaf27f564e043424f5e2cca13eda01"
+        },
+        {
+          "path": "include/hyle/compute/vulkan_memory.h",
+          "sha256": "0fa5c0ffa7b316da2645f03c8176d02fc871151700720c195d2e238c802b53fc"
+        },
+        {
+          "path": "include/hyle/graph/batch.h",
+          "sha256": "7e5b1ae675bcf5048c739e32dfd94c2209cd6af6c63fa2cc4cd10ebec2d89b1f"
+        },
+        {
+          "path": "include/hyle/graph/cpu_apple.h",
+          "sha256": "645f557d8a6fefe3f69bc25f37c03e637ed28311fb7817bfb8de0e5373b0eb32"
+        },
+        {
+          "path": "include/hyle/graph/cpu_vulkan.h",
+          "sha256": "9b4c99f9ef9948f85435de4415a788b83d17a00752664074edf462addc6693f6"
+        },
+        {
+          "path": "include/hyle/graph/detail/region_access.h",
+          "sha256": "ab9974ad248e491e47659c5020b0cdc337156cc42f7e24feb525ef0557bcfc13"
+        },
+        {
+          "path": "src/compute/copy_control.cc",
+          "sha256": "0de266027785e1598c587b19f15cbc422125af7a8fff262fb3064f4b0126d786"
+        },
+        {
+          "path": "src/compute/copy_ranges.cc",
+          "sha256": "8b35ebef012a2d1cd72c1c989b02a997861d42e336a7a31275d04fd3085a9c97"
+        },
+        {
+          "path": "src/compute_route_apple/apple_copy_internal.h",
+          "sha256": "ff139033c6cd0a9472ae5e68cd7962cecb64ceb96d13ee4fa3bdf632db1c6d88"
+        },
+        {
+          "path": "src/compute_route_apple/apple_copy_program.cc",
+          "sha256": "ee80a1f29df261397ff18aaa24ed529a8b70bd5efc4da376991e6381835715bc"
+        },
+        {
+          "path": "src/compute_route_apple/apple_copy_recording.mm",
+          "sha256": "b2786a571ad4fe67973da0f64b8c230acc1bc9fad6d49cf6f229fa8e001af3bb"
+        },
+        {
+          "path": "src/compute_route_apple/apple_materialized_invocation.cc",
+          "sha256": "2da369419d9eb7c87c1a29c04c9460cd8609a88ada46e4d75e31008980103457"
+        },
+        {
+          "path": "src/compute_route_apple/apple_memory.mm",
+          "sha256": "2da66548242675285830054cd6e6a82422630f28cab4113ca45e9f3eddc156af"
+        },
+        {
+          "path": "src/compute_route_vulkan/vulkan_copy_internal.h",
+          "sha256": "2ef2cd519750c9adb73b774fcb8da4df2b413ab94530937c1cd3f054a0d62e03"
+        },
+        {
+          "path": "src/compute_route_vulkan/vulkan_copy_program.cc",
+          "sha256": "685ef1b1073b22a68bb2298e3c5a96a58e0aa24edad7e32f952c4cb1d4f4f3a7"
+        },
+        {
+          "path": "src/compute_route_vulkan/vulkan_copy_recording.cc",
+          "sha256": "e58d2f4756f70ce02a0d68b97e3b9ebbd244894615d68b25daf1fee3b54211d2"
+        },
+        {
+          "path": "src/compute_route_vulkan/vulkan_materialized_invocation.cc",
+          "sha256": "6fe31b7026b2aa130f5add655178bed7971c95ff07133325d1fde468c9045066"
+        },
+        {
+          "path": "src/compute_route_vulkan/vulkan_memory.cc",
+          "sha256": "78ea54d398c3de8c1adc16e68172069a840f7354a8e272a1a40eaffbcce9fc5e"
+        },
+        {
+          "path": "src/compute_route_vulkan/vulkan_run.cc",
+          "sha256": "4b4296e0a01f5c0b1a0e05ee6970d85246d7619e540a202e35daa141a476fa96"
+        },
+        {
+          "path": "src/graph/executable.cc",
+          "sha256": "5514ae6bdf3548a356b2b04e8b12435e8625ba3debe6036641736a5ad5c5ab45"
+        },
+        {
+          "path": "src/graph/leased_invocation.cc",
+          "sha256": "d2e07eaa53072b6cae6f5182bb0c4590eac2ab5ed492c1c3aae2f2392bdc8260"
+        },
+        {
+          "path": "src/graph/submission_internal.h",
+          "sha256": "8a48ad4a490bb9bc7a57dd67e7ecc6500ab091141e75230221a5b1ada5ea0f66"
+        },
+        {
+          "path": "src/graph_batch/batch.cc",
+          "sha256": "e036969aa842c55db377c332496f2f85f486c074d674c52d2c4f32f51e18c994"
+        },
+        {
+          "path": "src/graph_batch/native_paged_slots.h",
+          "sha256": "e479b0f89273eabd4db8e0db0b5506d42738e95e31cbab08bf9711c40d1b3386"
+        },
+        {
+          "path": "src/graph_route_cpu_apple/invocation.cc",
+          "sha256": "773be9ed03475a613bd7fb413bdf8598072c0ea603e98e0a075cecbdbb9af6b3"
+        },
+        {
+          "path": "src/graph_route_cpu_apple/paged.h",
+          "sha256": "716c973b06a4f2fb872c32b81e051d40f93ca6bd2f5f32c7b472df9cbcdd557d"
+        },
+        {
+          "path": "src/graph_route_cpu_vulkan/invocation.cc",
+          "sha256": "f039fea76839376dd238bf5cfc58d1e9f72c0d95e50933773d8cfc5420abada1"
+        },
+        {
+          "path": "src/graph_route_cpu_vulkan/paged.h",
+          "sha256": "234d8840de9cfab1535dfbcc96359ac64f866f16d76b7ff56c66524d8b25d4c9"
+        },
+        {
+          "path": "tests/compute_batch/pending_paged_receiver_cpu_consumer.cc",
+          "sha256": "62e0c668dc631cdec90cbb0c96c42813a5e06e3a21b97f323bd3e85a7df2af98"
+        },
+        {
+          "path": "tests/compute_batch/pending_paged_receiver_native_consumer.cc",
+          "sha256": "434225028a3258227dc7a4b8201c0607c974b6587381166cc9b3d43584108feb"
+        }
+      ],
+      "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g03\\graph-late-windows\\pending-graph64-2.log"
+    },
+    {
+      "stage": "common-receiver-risks",
+      "command": [
+        "C:\\h7\\inference-g01-native-vulkan\\build\\g03_common_receiver_risks.exe"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 0.21799999999348074,
+      "inputs": [
+        {
+          "path": "include/hyle/compute/apple_memory.h",
+          "sha256": "b70c2e897ccda96b108ac8105ee77b391b6eeec503985444d0e8192cfbe68eac"
+        },
+        {
+          "path": "include/hyle/compute/detail/apple_batch_access.h",
+          "sha256": "b83b2e5109c97d5ac97b3b1ec1fc858d688b8557bae50616442a05c436159924"
+        },
+        {
+          "path": "include/hyle/compute/detail/copy_control.h",
+          "sha256": "8fd8ba40beeb810bcc7d635853b6f94e860e3dce4b22fa06fe5830dc10f7e909"
+        },
+        {
+          "path": "include/hyle/compute/detail/copy_ranges.h",
+          "sha256": "86b711e8dd26d63bba37e0ebbd47956f28bfd58b28934ac8073f28df81c543e7"
+        },
+        {
+          "path": "include/hyle/compute/detail/native_lease_inputs.h",
+          "sha256": "eca0780a39defc70e73ccbd1f8a2aec1aac66e67af95078b6912d7671f7ff7d6"
+        },
+        {
+          "path": "include/hyle/compute/detail/vulkan_batch_access.h",
+          "sha256": "22823b2c4a846fddf14ba0440e78a944ebeaf27f564e043424f5e2cca13eda01"
+        },
+        {
+          "path": "include/hyle/compute/vulkan_memory.h",
+          "sha256": "0fa5c0ffa7b316da2645f03c8176d02fc871151700720c195d2e238c802b53fc"
+        },
+        {
+          "path": "include/hyle/graph/batch.h",
+          "sha256": "7e5b1ae675bcf5048c739e32dfd94c2209cd6af6c63fa2cc4cd10ebec2d89b1f"
+        },
+        {
+          "path": "include/hyle/graph/cpu_apple.h",
+          "sha256": "645f557d8a6fefe3f69bc25f37c03e637ed28311fb7817bfb8de0e5373b0eb32"
+        },
+        {
+          "path": "include/hyle/graph/cpu_vulkan.h",
+          "sha256": "9b4c99f9ef9948f85435de4415a788b83d17a00752664074edf462addc6693f6"
+        },
+        {
+          "path": "include/hyle/graph/detail/region_access.h",
+          "sha256": "ab9974ad248e491e47659c5020b0cdc337156cc42f7e24feb525ef0557bcfc13"
+        },
+        {
+          "path": "src/compute/copy_control.cc",
+          "sha256": "0de266027785e1598c587b19f15cbc422125af7a8fff262fb3064f4b0126d786"
+        },
+        {
+          "path": "src/compute/copy_ranges.cc",
+          "sha256": "8b35ebef012a2d1cd72c1c989b02a997861d42e336a7a31275d04fd3085a9c97"
+        },
+        {
+          "path": "src/compute_route_apple/apple_copy_internal.h",
+          "sha256": "ff139033c6cd0a9472ae5e68cd7962cecb64ceb96d13ee4fa3bdf632db1c6d88"
+        },
+        {
+          "path": "src/compute_route_apple/apple_copy_program.cc",
+          "sha256": "ee80a1f29df261397ff18aaa24ed529a8b70bd5efc4da376991e6381835715bc"
+        },
+        {
+          "path": "src/compute_route_apple/apple_copy_recording.mm",
+          "sha256": "b2786a571ad4fe67973da0f64b8c230acc1bc9fad6d49cf6f229fa8e001af3bb"
+        },
+        {
+          "path": "src/compute_route_apple/apple_materialized_invocation.cc",
+          "sha256": "2da369419d9eb7c87c1a29c04c9460cd8609a88ada46e4d75e31008980103457"
+        },
+        {
+          "path": "src/compute_route_apple/apple_memory.mm",
+          "sha256": "2da66548242675285830054cd6e6a82422630f28cab4113ca45e9f3eddc156af"
+        },
+        {
+          "path": "src/compute_route_vulkan/vulkan_copy_internal.h",
+          "sha256": "2ef2cd519750c9adb73b774fcb8da4df2b413ab94530937c1cd3f054a0d62e03"
+        },
+        {
+          "path": "src/compute_route_vulkan/vulkan_copy_program.cc",
+          "sha256": "685ef1b1073b22a68bb2298e3c5a96a58e0aa24edad7e32f952c4cb1d4f4f3a7"
+        },
+        {
+          "path": "src/compute_route_vulkan/vulkan_copy_recording.cc",
+          "sha256": "e58d2f4756f70ce02a0d68b97e3b9ebbd244894615d68b25daf1fee3b54211d2"
+        },
+        {
+          "path": "src/compute_route_vulkan/vulkan_materialized_invocation.cc",
+          "sha256": "6fe31b7026b2aa130f5add655178bed7971c95ff07133325d1fde468c9045066"
+        },
+        {
+          "path": "src/compute_route_vulkan/vulkan_memory.cc",
+          "sha256": "78ea54d398c3de8c1adc16e68172069a840f7354a8e272a1a40eaffbcce9fc5e"
+        },
+        {
+          "path": "src/compute_route_vulkan/vulkan_run.cc",
+          "sha256": "4b4296e0a01f5c0b1a0e05ee6970d85246d7619e540a202e35daa141a476fa96"
+        },
+        {
+          "path": "src/graph/executable.cc",
+          "sha256": "5514ae6bdf3548a356b2b04e8b12435e8625ba3debe6036641736a5ad5c5ab45"
+        },
+        {
+          "path": "src/graph/leased_invocation.cc",
+          "sha256": "d2e07eaa53072b6cae6f5182bb0c4590eac2ab5ed492c1c3aae2f2392bdc8260"
+        },
+        {
+          "path": "src/graph/submission_internal.h",
+          "sha256": "8a48ad4a490bb9bc7a57dd67e7ecc6500ab091141e75230221a5b1ada5ea0f66"
+        },
+        {
+          "path": "src/graph_batch/batch.cc",
+          "sha256": "e036969aa842c55db377c332496f2f85f486c074d674c52d2c4f32f51e18c994"
+        },
+        {
+          "path": "src/graph_batch/native_paged_slots.h",
+          "sha256": "e479b0f89273eabd4db8e0db0b5506d42738e95e31cbab08bf9711c40d1b3386"
+        },
+        {
+          "path": "src/graph_route_cpu_apple/invocation.cc",
+          "sha256": "773be9ed03475a613bd7fb413bdf8598072c0ea603e98e0a075cecbdbb9af6b3"
+        },
+        {
+          "path": "src/graph_route_cpu_apple/paged.h",
+          "sha256": "716c973b06a4f2fb872c32b81e051d40f93ca6bd2f5f32c7b472df9cbcdd557d"
+        },
+        {
+          "path": "src/graph_route_cpu_vulkan/invocation.cc",
+          "sha256": "f039fea76839376dd238bf5cfc58d1e9f72c0d95e50933773d8cfc5420abada1"
+        },
+        {
+          "path": "src/graph_route_cpu_vulkan/paged.h",
+          "sha256": "234d8840de9cfab1535dfbcc96359ac64f866f16d76b7ff56c66524d8b25d4c9"
+        },
+        {
+          "path": "tests/compute_batch/pending_paged_receiver_cpu_consumer.cc",
+          "sha256": "62e0c668dc631cdec90cbb0c96c42813a5e06e3a21b97f323bd3e85a7df2af98"
+        },
+        {
+          "path": "tests/compute_batch/pending_paged_receiver_native_consumer.cc",
+          "sha256": "434225028a3258227dc7a4b8201c0607c974b6587381166cc9b3d43584108feb"
+        }
+      ],
+      "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g03\\graph-late-windows\\common-receiver-risks-3.log"
+    },
+    {
+      "stage": "original-outcome-regression",
+      "command": [
+        "C:\\h7\\inference-g01-native-vulkan\\build\\g03_owned_outcome.exe"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 0.01600000000325963,
+      "inputs": [
+        {
+          "path": "include/hyle/compute/apple_memory.h",
+          "sha256": "b70c2e897ccda96b108ac8105ee77b391b6eeec503985444d0e8192cfbe68eac"
+        },
+        {
+          "path": "include/hyle/compute/detail/apple_batch_access.h",
+          "sha256": "b83b2e5109c97d5ac97b3b1ec1fc858d688b8557bae50616442a05c436159924"
+        },
+        {
+          "path": "include/hyle/compute/detail/copy_control.h",
+          "sha256": "8fd8ba40beeb810bcc7d635853b6f94e860e3dce4b22fa06fe5830dc10f7e909"
+        },
+        {
+          "path": "include/hyle/compute/detail/copy_ranges.h",
+          "sha256": "86b711e8dd26d63bba37e0ebbd47956f28bfd58b28934ac8073f28df81c543e7"
+        },
+        {
+          "path": "include/hyle/compute/detail/native_lease_inputs.h",
+          "sha256": "eca0780a39defc70e73ccbd1f8a2aec1aac66e67af95078b6912d7671f7ff7d6"
+        },
+        {
+          "path": "include/hyle/compute/detail/vulkan_batch_access.h",
+          "sha256": "22823b2c4a846fddf14ba0440e78a944ebeaf27f564e043424f5e2cca13eda01"
+        },
+        {
+          "path": "include/hyle/compute/vulkan_memory.h",
+          "sha256": "0fa5c0ffa7b316da2645f03c8176d02fc871151700720c195d2e238c802b53fc"
+        },
+        {
+          "path": "include/hyle/graph/batch.h",
+          "sha256": "7e5b1ae675bcf5048c739e32dfd94c2209cd6af6c63fa2cc4cd10ebec2d89b1f"
+        },
+        {
+          "path": "include/hyle/graph/cpu_apple.h",
+          "sha256": "645f557d8a6fefe3f69bc25f37c03e637ed28311fb7817bfb8de0e5373b0eb32"
+        },
+        {
+          "path": "include/hyle/graph/cpu_vulkan.h",
+          "sha256": "9b4c99f9ef9948f85435de4415a788b83d17a00752664074edf462addc6693f6"
+        },
+        {
+          "path": "include/hyle/graph/detail/region_access.h",
+          "sha256": "ab9974ad248e491e47659c5020b0cdc337156cc42f7e24feb525ef0557bcfc13"
+        },
+        {
+          "path": "src/compute/copy_control.cc",
+          "sha256": "0de266027785e1598c587b19f15cbc422125af7a8fff262fb3064f4b0126d786"
+        },
+        {
+          "path": "src/compute/copy_ranges.cc",
+          "sha256": "8b35ebef012a2d1cd72c1c989b02a997861d42e336a7a31275d04fd3085a9c97"
+        },
+        {
+          "path": "src/compute_route_apple/apple_copy_internal.h",
+          "sha256": "ff139033c6cd0a9472ae5e68cd7962cecb64ceb96d13ee4fa3bdf632db1c6d88"
+        },
+        {
+          "path": "src/compute_route_apple/apple_copy_program.cc",
+          "sha256": "ee80a1f29df261397ff18aaa24ed529a8b70bd5efc4da376991e6381835715bc"
+        },
+        {
+          "path": "src/compute_route_apple/apple_copy_recording.mm",
+          "sha256": "b2786a571ad4fe67973da0f64b8c230acc1bc9fad6d49cf6f229fa8e001af3bb"
+        },
+        {
+          "path": "src/compute_route_apple/apple_materialized_invocation.cc",
+          "sha256": "2da369419d9eb7c87c1a29c04c9460cd8609a88ada46e4d75e31008980103457"
+        },
+        {
+          "path": "src/compute_route_apple/apple_memory.mm",
+          "sha256": "2da66548242675285830054cd6e6a82422630f28cab4113ca45e9f3eddc156af"
+        },
+        {
+          "path": "src/compute_route_vulkan/vulkan_copy_internal.h",
+          "sha256": "2ef2cd519750c9adb73b774fcb8da4df2b413ab94530937c1cd3f054a0d62e03"
+        },
+        {
+          "path": "src/compute_route_vulkan/vulkan_copy_program.cc",
+          "sha256": "685ef1b1073b22a68bb2298e3c5a96a58e0aa24edad7e32f952c4cb1d4f4f3a7"
+        },
+        {
+          "path": "src/compute_route_vulkan/vulkan_copy_recording.cc",
+          "sha256": "e58d2f4756f70ce02a0d68b97e3b9ebbd244894615d68b25daf1fee3b54211d2"
+        },
+        {
+          "path": "src/compute_route_vulkan/vulkan_materialized_invocation.cc",
+          "sha256": "6fe31b7026b2aa130f5add655178bed7971c95ff07133325d1fde468c9045066"
+        },
+        {
+          "path": "src/compute_route_vulkan/vulkan_memory.cc",
+          "sha256": "78ea54d398c3de8c1adc16e68172069a840f7354a8e272a1a40eaffbcce9fc5e"
+        },
+        {
+          "path": "src/compute_route_vulkan/vulkan_run.cc",
+          "sha256": "4b4296e0a01f5c0b1a0e05ee6970d85246d7619e540a202e35daa141a476fa96"
+        },
+        {
+          "path": "src/graph/executable.cc",
+          "sha256": "5514ae6bdf3548a356b2b04e8b12435e8625ba3debe6036641736a5ad5c5ab45"
+        },
+        {
+          "path": "src/graph/leased_invocation.cc",
+          "sha256": "d2e07eaa53072b6cae6f5182bb0c4590eac2ab5ed492c1c3aae2f2392bdc8260"
+        },
+        {
+          "path": "src/graph/submission_internal.h",
+          "sha256": "8a48ad4a490bb9bc7a57dd67e7ecc6500ab091141e75230221a5b1ada5ea0f66"
+        },
+        {
+          "path": "src/graph_batch/batch.cc",
+          "sha256": "e036969aa842c55db377c332496f2f85f486c074d674c52d2c4f32f51e18c994"
+        },
+        {
+          "path": "src/graph_batch/native_paged_slots.h",
+          "sha256": "e479b0f89273eabd4db8e0db0b5506d42738e95e31cbab08bf9711c40d1b3386"
+        },
+        {
+          "path": "src/graph_route_cpu_apple/invocation.cc",
+          "sha256": "773be9ed03475a613bd7fb413bdf8598072c0ea603e98e0a075cecbdbb9af6b3"
+        },
+        {
+          "path": "src/graph_route_cpu_apple/paged.h",
+          "sha256": "716c973b06a4f2fb872c32b81e051d40f93ca6bd2f5f32c7b472df9cbcdd557d"
+        },
+        {
+          "path": "src/graph_route_cpu_vulkan/invocation.cc",
+          "sha256": "f039fea76839376dd238bf5cfc58d1e9f72c0d95e50933773d8cfc5420abada1"
+        },
+        {
+          "path": "src/graph_route_cpu_vulkan/paged.h",
+          "sha256": "234d8840de9cfab1535dfbcc96359ac64f866f16d76b7ff56c66524d8b25d4c9"
+        },
+        {
+          "path": "tests/compute_batch/pending_paged_receiver_cpu_consumer.cc",
+          "sha256": "62e0c668dc631cdec90cbb0c96c42813a5e06e3a21b97f323bd3e85a7df2af98"
+        },
+        {
+          "path": "tests/compute_batch/pending_paged_receiver_native_consumer.cc",
+          "sha256": "434225028a3258227dc7a4b8201c0607c974b6587381166cc9b3d43584108feb"
+        }
+      ],
+      "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g03\\graph-late-windows\\original-outcome-regression-3.log"
+    },
+    {
+      "stage": "copy-range-compile",
+      "command": [
+        "cmake",
+        "--build",
+        "C:\\h7\\inference-g01-native-vulkan\\build",
+        "--target",
+        "g03_copy_ranges",
+        "--parallel",
+        "4"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 78.85899999999674,
+      "inputs": [
+        {
+          "path": "include/hyle/compute/apple_memory.h",
+          "sha256": "b70c2e897ccda96b108ac8105ee77b391b6eeec503985444d0e8192cfbe68eac"
+        },
+        {
+          "path": "include/hyle/compute/detail/apple_batch_access.h",
+          "sha256": "b83b2e5109c97d5ac97b3b1ec1fc858d688b8557bae50616442a05c436159924"
+        },
+        {
+          "path": "include/hyle/compute/detail/copy_control.h",
+          "sha256": "8fd8ba40beeb810bcc7d635853b6f94e860e3dce4b22fa06fe5830dc10f7e909"
+        },
+        {
+          "path": "include/hyle/compute/detail/copy_ranges.h",
+          "sha256": "86b711e8dd26d63bba37e0ebbd47956f28bfd58b28934ac8073f28df81c543e7"
+        },
+        {
+          "path": "include/hyle/compute/detail/native_lease_inputs.h",
+          "sha256": "eca0780a39defc70e73ccbd1f8a2aec1aac66e67af95078b6912d7671f7ff7d6"
+        },
+        {
+          "path": "include/hyle/compute/detail/vulkan_batch_access.h",
+          "sha256": "22823b2c4a846fddf14ba0440e78a944ebeaf27f564e043424f5e2cca13eda01"
+        },
+        {
+          "path": "include/hyle/compute/vulkan_memory.h",
+          "sha256": "0fa5c0ffa7b316da2645f03c8176d02fc871151700720c195d2e238c802b53fc"
+        },
+        {
+          "path": "include/hyle/graph/batch.h",
+          "sha256": "7e5b1ae675bcf5048c739e32dfd94c2209cd6af6c63fa2cc4cd10ebec2d89b1f"
+        },
+        {
+          "path": "include/hyle/graph/cpu_apple.h",
+          "sha256": "645f557d8a6fefe3f69bc25f37c03e637ed28311fb7817bfb8de0e5373b0eb32"
+        },
+        {
+          "path": "include/hyle/graph/cpu_vulkan.h",
+          "sha256": "9b4c99f9ef9948f85435de4415a788b83d17a00752664074edf462addc6693f6"
+        },
+        {
+          "path": "include/hyle/graph/detail/region_access.h",
+          "sha256": "ab9974ad248e491e47659c5020b0cdc337156cc42f7e24feb525ef0557bcfc13"
+        },
+        {
+          "path": "src/compute/copy_control.cc",
+          "sha256": "0de266027785e1598c587b19f15cbc422125af7a8fff262fb3064f4b0126d786"
+        },
+        {
+          "path": "src/compute/copy_ranges.cc",
+          "sha256": "8b35ebef012a2d1cd72c1c989b02a997861d42e336a7a31275d04fd3085a9c97"
+        },
+        {
+          "path": "src/compute_route_apple/apple_copy_internal.h",
+          "sha256": "ff139033c6cd0a9472ae5e68cd7962cecb64ceb96d13ee4fa3bdf632db1c6d88"
+        },
+        {
+          "path": "src/compute_route_apple/apple_copy_program.cc",
+          "sha256": "ee80a1f29df261397ff18aaa24ed529a8b70bd5efc4da376991e6381835715bc"
+        },
+        {
+          "path": "src/compute_route_apple/apple_copy_recording.mm",
+          "sha256": "b2786a571ad4fe67973da0f64b8c230acc1bc9fad6d49cf6f229fa8e001af3bb"
+        },
+        {
+          "path": "src/compute_route_apple/apple_materialized_invocation.cc",
+          "sha256": "2da369419d9eb7c87c1a29c04c9460cd8609a88ada46e4d75e31008980103457"
+        },
+        {
+          "path": "src/compute_route_apple/apple_memory.mm",
+          "sha256": "2da66548242675285830054cd6e6a82422630f28cab4113ca45e9f3eddc156af"
+        },
+        {
+          "path": "src/compute_route_vulkan/vulkan_copy_internal.h",
+          "sha256": "2ef2cd519750c9adb73b774fcb8da4df2b413ab94530937c1cd3f054a0d62e03"
+        },
+        {
+          "path": "src/compute_route_vulkan/vulkan_copy_program.cc",
+          "sha256": "685ef1b1073b22a68bb2298e3c5a96a58e0aa24edad7e32f952c4cb1d4f4f3a7"
+        },
+        {
+          "path": "src/compute_route_vulkan/vulkan_copy_recording.cc",
+          "sha256": "e58d2f4756f70ce02a0d68b97e3b9ebbd244894615d68b25daf1fee3b54211d2"
+        },
+        {
+          "path": "src/compute_route_vulkan/vulkan_materialized_invocation.cc",
+          "sha256": "6fe31b7026b2aa130f5add655178bed7971c95ff07133325d1fde468c9045066"
+        },
+        {
+          "path": "src/compute_route_vulkan/vulkan_memory.cc",
+          "sha256": "78ea54d398c3de8c1adc16e68172069a840f7354a8e272a1a40eaffbcce9fc5e"
+        },
+        {
+          "path": "src/compute_route_vulkan/vulkan_run.cc",
+          "sha256": "4b4296e0a01f5c0b1a0e05ee6970d85246d7619e540a202e35daa141a476fa96"
+        },
+        {
+          "path": "src/graph/executable.cc",
+          "sha256": "5514ae6bdf3548a356b2b04e8b12435e8625ba3debe6036641736a5ad5c5ab45"
+        },
+        {
+          "path": "src/graph/leased_invocation.cc",
+          "sha256": "d2e07eaa53072b6cae6f5182bb0c4590eac2ab5ed492c1c3aae2f2392bdc8260"
+        },
+        {
+          "path": "src/graph/submission_internal.h",
+          "sha256": "8a48ad4a490bb9bc7a57dd67e7ecc6500ab091141e75230221a5b1ada5ea0f66"
+        },
+        {
+          "path": "src/graph_batch/batch.cc",
+          "sha256": "e036969aa842c55db377c332496f2f85f486c074d674c52d2c4f32f51e18c994"
+        },
+        {
+          "path": "src/graph_batch/native_paged_slots.h",
+          "sha256": "e479b0f89273eabd4db8e0db0b5506d42738e95e31cbab08bf9711c40d1b3386"
+        },
+        {
+          "path": "src/graph_route_cpu_apple/invocation.cc",
+          "sha256": "773be9ed03475a613bd7fb413bdf8598072c0ea603e98e0a075cecbdbb9af6b3"
+        },
+        {
+          "path": "src/graph_route_cpu_apple/paged.h",
+          "sha256": "716c973b06a4f2fb872c32b81e051d40f93ca6bd2f5f32c7b472df9cbcdd557d"
+        },
+        {
+          "path": "src/graph_route_cpu_vulkan/invocation.cc",
+          "sha256": "f039fea76839376dd238bf5cfc58d1e9f72c0d95e50933773d8cfc5420abada1"
+        },
+        {
+          "path": "src/graph_route_cpu_vulkan/paged.h",
+          "sha256": "234d8840de9cfab1535dfbcc96359ac64f866f16d76b7ff56c66524d8b25d4c9"
+        },
+        {
+          "path": "tests/compute/copy_ranges_test.cc",
+          "sha256": "28fc9eaa42a5c0ff8b6f34a61cc0666418cb5258070cd5e7a9ca3c8c094a45c4"
+        },
+        {
+          "path": "tests/compute_batch/pending_paged_receiver_cpu_consumer.cc",
+          "sha256": "62e0c668dc631cdec90cbb0c96c42813a5e06e3a21b97f323bd3e85a7df2af98"
+        },
+        {
+          "path": "tests/compute_batch/pending_paged_receiver_native_consumer.cc",
+          "sha256": "434225028a3258227dc7a4b8201c0607c974b6587381166cc9b3d43584108feb"
+        }
+      ],
+      "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g03\\graph-late-windows\\copy-range-compile-1.log"
+    },
+    {
+      "stage": "copy-range-tests",
+      "command": [
+        "C:\\h7\\inference-g01-native-vulkan\\build\\g03_copy_ranges.exe"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 0.03200000000651926,
+      "inputs": [
+        {
+          "path": "include/hyle/compute/apple_memory.h",
+          "sha256": "b70c2e897ccda96b108ac8105ee77b391b6eeec503985444d0e8192cfbe68eac"
+        },
+        {
+          "path": "include/hyle/compute/detail/apple_batch_access.h",
+          "sha256": "b83b2e5109c97d5ac97b3b1ec1fc858d688b8557bae50616442a05c436159924"
+        },
+        {
+          "path": "include/hyle/compute/detail/copy_control.h",
+          "sha256": "8fd8ba40beeb810bcc7d635853b6f94e860e3dce4b22fa06fe5830dc10f7e909"
+        },
+        {
+          "path": "include/hyle/compute/detail/copy_ranges.h",
+          "sha256": "86b711e8dd26d63bba37e0ebbd47956f28bfd58b28934ac8073f28df81c543e7"
+        },
+        {
+          "path": "include/hyle/compute/detail/native_lease_inputs.h",
+          "sha256": "eca0780a39defc70e73ccbd1f8a2aec1aac66e67af95078b6912d7671f7ff7d6"
+        },
+        {
+          "path": "include/hyle/compute/detail/vulkan_batch_access.h",
+          "sha256": "22823b2c4a846fddf14ba0440e78a944ebeaf27f564e043424f5e2cca13eda01"
+        },
+        {
+          "path": "include/hyle/compute/vulkan_memory.h",
+          "sha256": "0fa5c0ffa7b316da2645f03c8176d02fc871151700720c195d2e238c802b53fc"
+        },
+        {
+          "path": "include/hyle/graph/batch.h",
+          "sha256": "7e5b1ae675bcf5048c739e32dfd94c2209cd6af6c63fa2cc4cd10ebec2d89b1f"
+        },
+        {
+          "path": "include/hyle/graph/cpu_apple.h",
+          "sha256": "645f557d8a6fefe3f69bc25f37c03e637ed28311fb7817bfb8de0e5373b0eb32"
+        },
+        {
+          "path": "include/hyle/graph/cpu_vulkan.h",
+          "sha256": "9b4c99f9ef9948f85435de4415a788b83d17a00752664074edf462addc6693f6"
+        },
+        {
+          "path": "include/hyle/graph/detail/region_access.h",
+          "sha256": "ab9974ad248e491e47659c5020b0cdc337156cc42f7e24feb525ef0557bcfc13"
+        },
+        {
+          "path": "src/compute/copy_control.cc",
+          "sha256": "0de266027785e1598c587b19f15cbc422125af7a8fff262fb3064f4b0126d786"
+        },
+        {
+          "path": "src/compute/copy_ranges.cc",
+          "sha256": "8b35ebef012a2d1cd72c1c989b02a997861d42e336a7a31275d04fd3085a9c97"
+        },
+        {
+          "path": "src/compute_route_apple/apple_copy_internal.h",
+          "sha256": "ff139033c6cd0a9472ae5e68cd7962cecb64ceb96d13ee4fa3bdf632db1c6d88"
+        },
+        {
+          "path": "src/compute_route_apple/apple_copy_program.cc",
+          "sha256": "ee80a1f29df261397ff18aaa24ed529a8b70bd5efc4da376991e6381835715bc"
+        },
+        {
+          "path": "src/compute_route_apple/apple_copy_recording.mm",
+          "sha256": "b2786a571ad4fe67973da0f64b8c230acc1bc9fad6d49cf6f229fa8e001af3bb"
+        },
+        {
+          "path": "src/compute_route_apple/apple_materialized_invocation.cc",
+          "sha256": "2da369419d9eb7c87c1a29c04c9460cd8609a88ada46e4d75e31008980103457"
+        },
+        {
+          "path": "src/compute_route_apple/apple_memory.mm",
+          "sha256": "2da66548242675285830054cd6e6a82422630f28cab4113ca45e9f3eddc156af"
+        },
+        {
+          "path": "src/compute_route_vulkan/vulkan_copy_internal.h",
+          "sha256": "2ef2cd519750c9adb73b774fcb8da4df2b413ab94530937c1cd3f054a0d62e03"
+        },
+        {
+          "path": "src/compute_route_vulkan/vulkan_copy_program.cc",
+          "sha256": "685ef1b1073b22a68bb2298e3c5a96a58e0aa24edad7e32f952c4cb1d4f4f3a7"
+        },
+        {
+          "path": "src/compute_route_vulkan/vulkan_copy_recording.cc",
+          "sha256": "e58d2f4756f70ce02a0d68b97e3b9ebbd244894615d68b25daf1fee3b54211d2"
+        },
+        {
+          "path": "src/compute_route_vulkan/vulkan_materialized_invocation.cc",
+          "sha256": "6fe31b7026b2aa130f5add655178bed7971c95ff07133325d1fde468c9045066"
+        },
+        {
+          "path": "src/compute_route_vulkan/vulkan_memory.cc",
+          "sha256": "78ea54d398c3de8c1adc16e68172069a840f7354a8e272a1a40eaffbcce9fc5e"
+        },
+        {
+          "path": "src/compute_route_vulkan/vulkan_run.cc",
+          "sha256": "4b4296e0a01f5c0b1a0e05ee6970d85246d7619e540a202e35daa141a476fa96"
+        },
+        {
+          "path": "src/graph/executable.cc",
+          "sha256": "5514ae6bdf3548a356b2b04e8b12435e8625ba3debe6036641736a5ad5c5ab45"
+        },
+        {
+          "path": "src/graph/leased_invocation.cc",
+          "sha256": "d2e07eaa53072b6cae6f5182bb0c4590eac2ab5ed492c1c3aae2f2392bdc8260"
+        },
+        {
+          "path": "src/graph/submission_internal.h",
+          "sha256": "8a48ad4a490bb9bc7a57dd67e7ecc6500ab091141e75230221a5b1ada5ea0f66"
+        },
+        {
+          "path": "src/graph_batch/batch.cc",
+          "sha256": "e036969aa842c55db377c332496f2f85f486c074d674c52d2c4f32f51e18c994"
+        },
+        {
+          "path": "src/graph_batch/native_paged_slots.h",
+          "sha256": "e479b0f89273eabd4db8e0db0b5506d42738e95e31cbab08bf9711c40d1b3386"
+        },
+        {
+          "path": "src/graph_route_cpu_apple/invocation.cc",
+          "sha256": "773be9ed03475a613bd7fb413bdf8598072c0ea603e98e0a075cecbdbb9af6b3"
+        },
+        {
+          "path": "src/graph_route_cpu_apple/paged.h",
+          "sha256": "716c973b06a4f2fb872c32b81e051d40f93ca6bd2f5f32c7b472df9cbcdd557d"
+        },
+        {
+          "path": "src/graph_route_cpu_vulkan/invocation.cc",
+          "sha256": "f039fea76839376dd238bf5cfc58d1e9f72c0d95e50933773d8cfc5420abada1"
+        },
+        {
+          "path": "src/graph_route_cpu_vulkan/paged.h",
+          "sha256": "234d8840de9cfab1535dfbcc96359ac64f866f16d76b7ff56c66524d8b25d4c9"
+        },
+        {
+          "path": "tests/compute/copy_ranges_test.cc",
+          "sha256": "28fc9eaa42a5c0ff8b6f34a61cc0666418cb5258070cd5e7a9ca3c8c094a45c4"
+        },
+        {
+          "path": "tests/compute_batch/pending_paged_receiver_cpu_consumer.cc",
+          "sha256": "62e0c668dc631cdec90cbb0c96c42813a5e06e3a21b97f323bd3e85a7df2af98"
+        },
+        {
+          "path": "tests/compute_batch/pending_paged_receiver_native_consumer.cc",
+          "sha256": "434225028a3258227dc7a4b8201c0607c974b6587381166cc9b3d43584108feb"
+        }
+      ],
+      "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g03\\graph-late-windows\\copy-range-tests-1.log"
+    }
+  ],
+  "cumulative_seconds": 451.3749999999709
+}

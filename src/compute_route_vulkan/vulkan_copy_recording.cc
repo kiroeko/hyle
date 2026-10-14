@@ -94,7 +94,8 @@ Result<std::shared_ptr<CopyRecording>> prepare_copy_recording_runtime(const std:
   }
 }
 Status bind_copy_recording(CopyRecording &recording,
-    std::span<const cd::CopyBackendRange> ranges, bool host_upload_ready, bool prefix_marker) noexcept {
+    std::span<const cd::CopyBackendRange> ranges, bool host_upload_ready, bool prefix_marker,
+    ResultCopySourceFn resolve_source,void*source_owner) noexcept {
   std::lock_guard lock(recording.runtime->mutex);
   HYLE_RETURN_IF_ERROR(mutable_recording(recording));
   recording.prepared = false;
@@ -104,16 +105,18 @@ Status bind_copy_recording(CopyRecording &recording,
   for (auto &pair : recording.pairs) pair = {};
   for (auto &buffer : recording.run->retained_buffers) buffer.reset();
   for (std::size_t index = 0; index < ranges.size(); ++index) {
-    if (ranges[index].source.size() != ranges[index].destination.size())
+    if (!resolve_source && ranges[index].source.size() != ranges[index].destination.size())
       return Status::InvalidArgument("Vulkan copy range sizes differ");
-    HYLE_ASSIGN_OR_RETURN(auto source, MemoryAccess::copy_span(recording.runtime, ranges[index].source));
+    HYLE_ASSIGN_OR_RETURN(auto source,resolve_source?resolve_source(source_owner,index):
+        MemoryAccess::copy_span(recording.runtime,ranges[index].source));
     HYLE_ASSIGN_OR_RETURN(auto destination, MemoryAccess::copy_span(recording.runtime, ranges[index].destination));
     recording.physical[2 * index] = source.physical;
     recording.physical[2 * index + 1] = destination.physical;
     const auto id = static_cast<std::uint32_t>(index);
-    recording.inputs[index] = {{2 * id}, {2 * id + 1}, {0}, 0, 0, ranges[index].source.size()};
+    if(source.physical.capacity!=ranges[index].destination.size())return Status::InvalidArgument("Vulkan native source size differs");
+    recording.inputs[index] = {{2 * id}, {2 * id + 1}, {0}, 0, 0, ranges[index].destination.size()};
     recording.pairs[index] = {std::move(source.backing), std::move(destination.backing), 0, 0,
-        {source.offset, destination.offset, ranges[index].source.size()}, index};
+        {source.offset, destination.offset, ranges[index].destination.size()}, index};
   }
   const std::array<CopyPhase, 1> phase{{{}}};
   HYLE_ASSIGN_OR_RETURN(auto report, cd::validate_copy_ranges(

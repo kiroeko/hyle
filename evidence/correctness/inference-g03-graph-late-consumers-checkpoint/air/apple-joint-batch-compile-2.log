@@ -1,0 +1,16 @@
+[0/2] Re-checking globbed directories...
+[1/16] cd /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-build/hyle/src/compute_route_apple && /opt/homebrew/bin/cmake -E copy_if_different /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-build/hyle/_deps/mlx-build/mlx/backend/metal/kernels/mlx.metallib /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-build/hyle/_deps/mlx-build/mlx.metallib
+[2/16] cd /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-build && /opt/homebrew/bin/cmake -P /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-build/hyle-apple-runtime/g03_pending_joint64-Release.cmake
+[3/16] Creating library symlink hyle/src/graph_route_apple/libhyle_graph_route_apple.dylib
+[4/16] Linking CXX shared library hyle/src/simd/libhyle_simd.0.1.0.dylib
+[5/16] Creating library symlink hyle/src/simd/libhyle_simd.dylib
+[6/16] Linking CXX shared library hyle/src/compute_provider_native/libhyle_compute_provider_native.0.1.0.dylib
+[7/16] Creating library symlink hyle/src/compute_provider_native/libhyle_compute_provider_native.dylib
+[8/16] Linking CXX shared library hyle/src/compute_route_cpu/libhyle_compute_route_cpu.0.1.0.dylib
+[9/16] Creating library symlink hyle/src/compute_route_cpu/libhyle_compute_route_cpu.dylib
+[10/16] Linking CXX shared library hyle/src/graph_route_cpu/libhyle_graph_route_cpu.0.1.0.dylib
+[11/16] Creating library symlink hyle/src/graph_route_cpu/libhyle_graph_route_cpu.dylib
+[12/16] Linking CXX shared library hyle/src/graph_route_cpu_apple/libhyle_graph_route_cpu_apple.0.1.0.dylib
+[13/16] Creating library symlink hyle/src/graph_route_cpu_apple/libhyle_graph_route_cpu_apple.dylib
+[14/16] Building CXX object CMakeFiles/g03_pending_joint64.dir/Users/kiro/hyle-scratch/compute-unified/source-c8874688/tests/compute_batch/pending_paged_receiver_native_consumer.cc.o
+[15/16] Linking CXX executable g03_pending_joint64

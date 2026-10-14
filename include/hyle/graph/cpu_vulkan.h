@@ -181,6 +181,10 @@ public:
   // Only exact page inputs of qualified native page fragments. All actual
   // readers use the same owned layout; no ordinary capacity permission.
   HYLE_GRAPH_ROUTE_CPU_VULKAN_API Status bind(ValueId, compute::PagedArenaRead) noexcept;
+  // Explicit cold source capacity. Reserve before pending frame bindings;
+  // one original Update supplies all qualified native paged nodes.
+  HYLE_GRAPH_ROUTE_CPU_VULKAN_API Status reserve_pending_sources(std::size_t)noexcept;
+  HYLE_GRAPH_ROUTE_CPU_VULKAN_API Status bind(ValueId,compute::PagedArenaPendingRead)noexcept;
   HYLE_GRAPH_ROUTE_CPU_VULKAN_API Status bind(ValueId, const compute::vulkan::Tensor &) noexcept;
   HYLE_GRAPH_ROUTE_CPU_VULKAN_API Status
   bind(ValueId, const compute::vulkan::WeightBatch &, std::uint64_t id) noexcept;
@@ -193,6 +197,10 @@ public:
   HYLE_GRAPH_ROUTE_CPU_VULKAN_API Result<ReplayReport> replay_report() const noexcept;
   HYLE_GRAPH_ROUTE_CPU_VULKAN_API Result<ResourceReport> resource_report() const noexcept;
   HYLE_GRAPH_ROUTE_CPU_VULKAN_API Result<compute::OwnedResult<Results>> submit() noexcept;
+  HYLE_GRAPH_ROUTE_CPU_VULKAN_API Result<compute::OwnedResult<Results>> submit(compute::vulkan::CopyBatchUpdate&&)noexcept;
+  // Release old Graph result/completion first; actual retirement and failed
+  // source permission remain governed by the original Update.
+  HYLE_GRAPH_ROUTE_CPU_VULKAN_API Result<compute::vulkan::CopyBatchUpdate> take_update()noexcept;
   HYLE_GRAPH_ROUTE_CPU_VULKAN_API Result<compute::ResultLease<Results>> run() noexcept;
   HYLE_GRAPH_ROUTE_CPU_VULKAN_API Status close() noexcept;
 private:

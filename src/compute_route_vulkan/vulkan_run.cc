@@ -436,8 +436,13 @@ Status qualify_copy_dependency(const std::shared_ptr<Runtime> &runtime, cd::Comp
   std::lock_guard lock(runtime->mutex);
   if (run.async || run.needs_drain)
     return Status::Unimplemented("Vulkan composed producer has no fixed native queue prefix");
-  for (const auto &stage : run.stages) if (stage.managed || stage.iree)
-    return Status::Unimplemented("Vulkan managed producer has no fixed native queue prefix");
+  // Non-async managed regions submit their entire resident graph before
+  // submit_locked returns. NativeWork uses this Runtime's compute queue and
+  // appends its original completion fence there; F2 uses the same submit lock.
+  // This qualifies ordering only: the original producer still owns checked
+  // errors, cancellation and actual retirement in the copy outcome.
+  for (const auto &stage : run.stages) if (stage.iree)
+    return Status::Unimplemented("Vulkan IREE producer has no fixed native queue prefix");
   if (!run.submission_failure.ok()) return run.submission_failure;
   if (!run.observation_error.ok()) return run.observation_error;
   if (!run.terminal.ok()) return run.terminal;

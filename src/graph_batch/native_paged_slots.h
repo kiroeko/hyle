@@ -29,9 +29,25 @@ template<class Traits> struct NativePagedSlots final {
     void operator()(Slot* slot)const noexcept{allocator.destroy(slot);}
   };
   using Owner=std::unique_ptr<Slot,Delete>;
+  struct Pending final {
+    explicit Pending(mem::AllocatorRef a):allocator(a),frames(mem::StdAllocator<std::array<compute::PagedArenaPendingRead,2>>(a)){}
+    mem::AllocatorRef allocator;
+    compute::detail::CopyOutcomeSource<typename Traits::CopyUpdate,typename Traits::CopyAccess> source;
+    compute::detail::DependentCompletion dependent;
+    compute::detail::OutcomeSources sources{};
+    compute::detail::CompletionRetention retention{};
+    std::vector<std::array<compute::PagedArenaPendingRead,2>,mem::StdAllocator<std::array<compute::PagedArenaPendingRead,2>>> frames;
+    compute::detail::ResultStorage*outcome=nullptr;
+    Status terminal;
+    void*execution_owner=nullptr;
+    compute::detail::CompletionLifetime::ReleaseFn release_owner=nullptr;
+    bool submitted=false;
+  };
+  struct PendingDelete final {void operator()(Pending*p)const noexcept{if(p){const auto a=p->allocator;a.destroy(p);}}};
   explicit NativePagedSlots(mem::AllocatorRef a):allocator(a),slots(mem::StdAllocator<Owner>(a)) {}
   mem::AllocatorRef allocator;
   std::vector<Owner,mem::StdAllocator<Owner>> slots;
+  std::unique_ptr<Pending,PendingDelete> pending;
   bool prepared=false;
   Slot* fragment(std::size_t index) noexcept {
     const auto found=std::find_if(slots.begin(),slots.end(),[&](const auto& s){return s->fragment==index;});
@@ -74,6 +90,7 @@ template<class Traits> struct NativePagedSlots final {
     return Status::Ok();
   }
   Status prepare(std::span<const NodeLayout> layouts) noexcept {
+    HYLE_RETURN_IF_ERROR(reusable());
     prepared=false;HYLE_RETURN_IF_ERROR(validate_layouts(layouts));
     for(auto& slot:slots){
       slot->frames={};
@@ -82,7 +99,7 @@ template<class Traits> struct NativePagedSlots final {
     }
     prepared=true;return Status::Ok();
   }
-  Status validate_frame(std::size_t input,const compute::PagedArenaRead& frame)const noexcept {
+  template<class Frame>Status validate_frame(std::size_t input,const Frame& frame)const noexcept {
     if(!prepared || !page_input(input))return Status::FailedPrecondition("page frame needs explicit prepared node");
     for(const auto& slot:slots){
       if(slot->inputs[1]!=input && slot->inputs[2]!=input)continue;
@@ -98,6 +115,96 @@ template<class Traits> struct NativePagedSlots final {
     for(auto& slot:slots)for(std::size_t p=1;p<3;++p)
       if(slot->inputs[p]==input)slot->frames[p-1]=frame;
   }
-  void reset() noexcept {prepared=false;for(auto& slot:slots)slot->frames={};}
+  Status reserve_pending(std::size_t capacity,compute::ResourceBudget budget)noexcept{
+    if(!capacity || pending)return Status::InvalidArgument("native Graph pending source capacity must be reserved once");
+    auto selected=allocator;if(budget.valid()){HYLE_ASSIGN_OR_RETURN(selected,budget.metadata_allocator());}
+    auto*p=selected.template construct<Pending>(selected);
+    if(!p)return Status::ResourceExhausted("native Graph pending metadata");
+    std::unique_ptr<Pending,PendingDelete> owner(p);
+    HYLE_ASSIGN_OR_RETURN(p->source,(compute::detail::CopyOutcomeSource<typename Traits::CopyUpdate,typename Traits::CopyAccess>::create(
+        capacity,{.allocator=selected,.resource_budget=budget})));
+    HYLE_ASSIGN_OR_RETURN(p->dependent,compute::detail::DependentCompletion::create(selected));
+    try{p->frames.resize(slots.size());}catch(...){return Status::ResourceExhausted("native Graph pending frame capacity");}
+    pending=std::move(owner);return Status::Ok();
+  }
+  Status reusable()noexcept{
+    if(!pending)return Status::Ok();
+    if(!pending->source.available() || !pending->dependent.available() || pending->source.update().valid())
+      return Status::Unavailable("native Graph pending outcome/source remains owned");
+    if(pending->submitted && !pending->terminal.ok())return Status::FailedPrecondition("native Graph pending epoch failed");
+    return Status::Ok();
+  }
+  bool has_pending()const noexcept{
+    if(!pending)return false;
+    return std::any_of(pending->frames.begin(),pending->frames.end(),[](const auto&f){return f[0].valid() || f[1].valid();});
+  }
+  bool pending_input(std::size_t input)const noexcept{
+    if(!pending)return false;
+    for(std::size_t i=0;i<slots.size();++i)for(std::size_t p=1;p<3;++p)
+      if(slots[i]->inputs[p]==input && pending->frames[i][p-1].valid())return true;
+    return false;
+  }
+  Status commit_pending(std::size_t input,compute::PagedArenaPendingRead frame)noexcept{
+    if(!pending)return Status::FailedPrecondition("reserve native Graph pending source capacity first");
+    HYLE_RETURN_IF_ERROR(reusable());HYLE_RETURN_IF_ERROR(validate_frame(input,frame));
+    for(std::size_t i=0;i<slots.size();++i)for(std::size_t p=1;p<3;++p)
+      if(slots[i]->inputs[p]==input && (slots[i]->frames[p-1].valid() || pending->frames[i][p-1].valid()))
+        return Status::FailedPrecondition("native Graph page input needs reset before rebinding");
+    for(std::size_t i=0;i<slots.size();++i)for(std::size_t p=1;p<3;++p)
+      if(slots[i]->inputs[p]==input)pending->frames[i][p-1]=frame;
+    return Status::Ok();
+  }
+  Status take_source(typename Traits::CopyUpdate&&update)noexcept{
+    HYLE_RETURN_IF_ERROR(reusable());
+    if(!prepared || !has_pending())return Status::FailedPrecondition("native Graph needs prepared pending frames");
+    HYLE_ASSIGN_OR_RETURN(auto prefix,Traits::CopyAccess::dependency(update));
+    for(std::size_t i=0;i<slots.size();++i){const auto&f=pending->frames[i];
+      if(!f[0].valid() && !f[1].valid())continue;
+      if(!f[0].valid() || !f[1].valid())return Status::InvalidArgument("native Graph pending node needs both exact KV frames");
+      HYLE_RETURN_IF_ERROR(Traits::qualify_source(slots[i]->preparation,prefix));
+      for(const auto&frame:f)HYLE_RETURN_IF_ERROR((compute::detail::PagedArenaAccess::validate<typename Traits::CopyUpdate,typename Traits::CopyAccess>(frame,update)));
+    }
+    HYLE_ASSIGN_OR_RETURN(pending->sources,pending->source.take(std::move(update)));return Status::Ok();
+  }
+  void restore_source(typename Traits::CopyUpdate&update)noexcept{
+    update=std::move(pending->source.update());
+    const auto sources=std::exchange(pending->sources,{});sources.release(sources.state);
+  }
+  auto submit_fragment(Slot&slot,compute::ReadLease query)noexcept->Result<typename Traits::Submission>{
+    const auto found=std::find_if(slots.begin(),slots.end(),[&](const auto&s){return s.get()==&slot;});
+    const auto index=std::size_t(found-slots.begin());
+    if(pending && (pending->frames[index][0].valid() || pending->frames[index][1].valid())){
+      auto&f=pending->frames[index];
+      HYLE_ASSIGN_OR_RETURN(auto prefix,Traits::CopyAccess::dependency(pending->source.update()));
+      HYLE_RETURN_IF_ERROR(Traits::qualify_source(slot.preparation,prefix));
+      HYLE_RETURN_IF_ERROR(slot.controller.bind_pages(std::move(query),f[0],f[1]));
+      return slot.controller.template submit_pending<typename Traits::CopyUpdate,typename Traits::CopyAccess>(f[0],f[1],pending->source.update());
+    }
+    HYLE_RETURN_IF_ERROR(slot.controller.bind(std::move(query),slot.frames[0],slot.frames[1]));
+    return slot.controller.submit();
+  }
+  template<class Result>void map_result(Result&result,void*owner,
+      compute::detail::CompletionLifetime::ReleaseFn release)noexcept{
+    auto&p=*pending;p.outcome=compute::detail::ResultAccess::storage(result);p.submitted=true;
+    p.execution_owner=owner;p.release_owner=release;
+    p.retention.own={&p,[](void*opaque,const Status&status)noexcept{static_cast<Pending*>(opaque)->terminal=status;},
+      [](void*opaque)noexcept{auto*p=static_cast<Pending*>(opaque);
+        const auto release=p->release_owner;auto*owner=p->execution_owner;release(owner);}};
+    auto&completion=compute::detail::ResultAccess::completion(result);
+    completion=p.dependent.publish(std::move(completion),std::exchange(p.sources,{}));
+    HYLE_FATAL_ASSERT(compute::detail::CompletionAccess::attach_retention(completion,p.retention).ok());
+  }
+  Result<typename Traits::CopyUpdate> take_update()noexcept{
+    if(!pending || !pending->source.available() || !pending->dependent.available() ||
+        !pending->source.update().valid() || pending->source.update().in_flight())
+      return std::unexpected(Status::Unavailable("native Graph source/outcome remains retained"));
+    if(pending->outcome){HYLE_RETURN_IF_ERROR(compute::detail::begin_result(pending->outcome));
+      compute::detail::rollback_result(pending->outcome);pending->outcome=nullptr;}
+    return std::move(pending->source.update());
+  }
+  void reset() noexcept {
+    prepared=false;for(auto& slot:slots)slot->frames={};
+    if(pending){for(auto&f:pending->frames)f={};}
+  }
 };
 } // namespace hyle::graph::batch::detail

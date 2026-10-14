@@ -33,10 +33,13 @@ struct CopyControlScratch final {
 };
 HYLE_COMPUTE_API Status prepare_copy_control(std::span<const CopyBinding> bindings,
     std::span<const CopyPhase> phases, std::span<const ResolvedCopyRange> copies,
-    CopyControlScratch scratch) noexcept;
+    CopyControlScratch scratch,std::span<const CopyResourceId> native_result_sources={}) noexcept;
 HYLE_COMPUTE_API Status admit_copy_control(LeaseUsePool &pool, std::span<const CopyBinding> bindings,
     std::span<const CopyPhasePlan> phases, std::span<const CopyRootUse> uses,
-    std::span<LeaseUseBatch> tickets) noexcept;
+    std::span<LeaseUseBatch> tickets,std::span<const CopyResourceId> native_result_sources={}) noexcept;
+// Explicit trusted native-only source IDs retain original immutable Result
+// storage in the native phase owner, instead of inventing a ready F1 lease.
+// Their physical address/alias proof and producer ordering remain mandatory.
 // Checks logical output coverage only. Actual successful retirement of every
 // participating write remains a requirement of the native caller.
 HYLE_COMPUTE_API Status copy_output_coverage(std::span<const CopyWrittenSpan> written,

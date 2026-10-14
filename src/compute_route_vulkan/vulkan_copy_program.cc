@@ -9,6 +9,7 @@
 #include "vulkan_copy_internal.h"
 #include "vulkan_file_stream_access.h"
 #include "hyle/compute/detail/copy_control.h"
+#include "hyle/compute/detail/native_lease_inputs.h"
 #include "hyle/compute/detail/lease_access.h"
 #include "hyle/compute/detail/retained_completion.h"
 #include "hyle/core/assert.h"
@@ -41,6 +42,11 @@ struct CopyNativePhase final {
   Status terminal;
   std::atomic<bool> retired{false};
 };
+struct ResultSources final {
+  explicit ResultSources(mem::AllocatorRef a):results(a),spans(mem::StdAllocator<CopySpan>(a)){}
+  cd::NativeCopyResults<Results> results;
+  CopyArray<CopySpan> spans;
+};
 struct CopyInvocationState final : util::RefCounted<CopyInvocationState> {
   explicit CopyInvocationState(CopyProgramState *selected)
       : program(selected), bindings(mem::StdAllocator<cd::CopyBinding>(allocator())),
@@ -70,7 +76,9 @@ struct CopyInvocationState final : util::RefCounted<CopyInvocationState> {
     for (auto *phase : phases) {
       std::destroy_at(phase); selected.deallocate(phase, sizeof(CopyNativePhase), alignof(CopyNativePhase));
     }
-    std::destroy_at(this); selected.deallocate(this, sizeof(CopyInvocationState), alignof(CopyInvocationState));
+    auto*extra=result_sources;
+    std::destroy_at(this);if(extra)selected.destroy(extra);
+    selected.deallocate(this, sizeof(CopyInvocationState), alignof(CopyInvocationState));
     retained->decref();
   }
   CopyProgramState *program;
@@ -81,6 +89,7 @@ struct CopyInvocationState final : util::RefCounted<CopyInvocationState> {
   bool prepared = false, closed = false, failed = false;
   Status tail;
   CopyBatchReport report;
+  ResultSources*result_sources=nullptr; // Explicit opt-in cold ownership only.
   CopyArray<cd::CopyBinding> bindings;
   CopyArray<cd::PhysicalCopyResource> physical;
   CopyArray<cd::CopyInterval> intervals;
@@ -96,6 +105,21 @@ struct CopyInvocationState final : util::RefCounted<CopyInvocationState> {
   CopyArray<LeaseUseBatch> tickets;
 };
 namespace {
+Result<CopySpan> result_source_range(void*opaque,std::size_t index)noexcept {
+  auto&phase=*static_cast<CopyNativePhase*>(opaque);auto&state=*phase.owner;
+  const auto&plan=state.plans[phase.index];
+  if(index>=plan.copies)return std::unexpected(Status::OutOfRange("native result source range index"));
+  const auto&copy=state.copies[plan.first+index];
+  if(!state.result_sources || !state.result_sources->results.owns(copy.source))
+    return MemoryAccess::copy_span(state.program->runtime,state.ranges[plan.first+index].source);
+  auto source=state.result_sources->spans[copy.source];
+  if(copy.source_offset>source.physical.capacity || copy.physical_bytes>source.physical.capacity-copy.source_offset ||
+      copy.source_offset>SIZE_MAX-source.physical.origin)
+    return std::unexpected(Status::OutOfRange("native result source subrange exceeds output"));
+  source.physical.origin+=copy.source_offset;source.physical.capacity=copy.physical_bytes;
+  source.offset+=copy.source_offset;
+  return source;
+}
 void phase_terminal(void *opaque, const Status &native) noexcept {
   auto &phase = *static_cast<CopyNativePhase *>(opaque); auto &state = *phase.owner;
   Status terminal = native;
@@ -268,7 +292,9 @@ Status detail::CopyStreamAccess::observe(CopyBatchInvocation &invocation) noexce
   return result;
 }
 Status CopyBatchInvocation::bind_source(CopyResourceId id, const ReadLease &source) noexcept {
-  HYLE_RETURN_IF_ERROR(detail::valid_binding(state_, id)); HYLE_ASSIGN_OR_RETURN(auto view, source.view());
+  HYLE_RETURN_IF_ERROR(detail::valid_binding(state_, id));
+  if(state_->result_sources && state_->result_sources->results.owns(id.value))return Status::FailedPrecondition("native result binding needs reset before replacement");
+  HYLE_ASSIGN_OR_RETURN(auto view, source.view());
   const auto &spec = state_->program->specs[id.value];
   if (view.resource() != spec.resource || view.size() > spec.capacity_bytes)
     return Status::InvalidArgument("Vulkan copy source endpoint/capacity differs");
@@ -277,8 +303,36 @@ Status CopyBatchInvocation::bind_source(CopyResourceId id, const ReadLease &sour
   binding.root = compute::detail::LeaseAccess::identity(source); state_->physical[id.value] = span.physical;
   state_->prepared = false; return Status::Ok();
 }
+Status CopyBatchInvocation::bind_source(std::span<const ResultCopyBinding>rows,OwnedResult<Results>&&result)noexcept {
+  if(!state_)return Status::FailedPrecondition("vulkan result-copy invocation is empty");
+  HYLE_RETURN_IF_ERROR(state_->mutable_slot());
+  HYLE_ASSIGN_OR_RETURN(auto prefix,compute::detail::RetainedCompletion::native_dependency(result.completion()));
+  HYLE_RETURN_IF_ERROR(detail::qualify_copy_dependency(state_->program->runtime,prefix));
+  if(!state_->result_sources){
+    auto*extra=state_->allocator().construct<detail::ResultSources>(state_->allocator());
+    if(!extra)return Status::ResourceExhausted("native result-copy extension metadata");
+    const auto fail=[&](Status error){state_->allocator().destroy(extra);return error;};
+    auto reserved=extra->results.reserve(state_->bindings.size());if(!reserved.ok())return fail(reserved);
+    try{extra->spans.resize(state_->bindings.size());}
+    catch(...){return fail(Status::ResourceExhausted("native result-copy fixed descriptors"));}
+    state_->result_sources=extra;
+  }
+  auto*extra=state_->result_sources;
+  HYLE_RETURN_IF_ERROR(extra->results.validate(rows,state_->program->specs,result));
+  auto*payload=static_cast<const Results*>(compute::detail::result_payload(compute::detail::ResultAccess::storage(result)));
+  for(const auto&row:rows){HYLE_ASSIGN_OR_RETURN(extra->spans[row.resource.value],
+      detail::result_copy_span(state_->program->runtime,*payload,row.output_index,row.description));}
+  auto producer=extra->results.take(rows,std::move(result));
+  for(const auto&row:rows){auto&binding=state_->bindings[row.resource.value];binding={};
+    binding.root=extra->results.root(row.resource.value);
+    state_->physical[row.resource.value]=extra->spans[row.resource.value].physical;
+  }
+  state_->bindings[rows.front().resource.value].producer=std::move(producer);
+  state_->prepared=false;return Status::Ok();
+}
 Status CopyBatchInvocation::bind_mutable(CopyResourceId id, WriteLease &&destination) noexcept {
   HYLE_RETURN_IF_ERROR(detail::valid_binding(state_, id));
+  if(state_->result_sources && state_->result_sources->results.owns(id.value))return Status::FailedPrecondition("native result binding needs reset before replacement");
   HYLE_ASSIGN_OR_RETURN(auto view, compute::detail::LeaseAccess::ordered_view(destination));
   const auto &spec = state_->program->specs[id.value];
   if (view.resource() != spec.resource || view.size() > spec.capacity_bytes)
@@ -290,6 +344,7 @@ Status CopyBatchInvocation::bind_mutable(CopyResourceId id, WriteLease &&destina
 }
 Status CopyBatchInvocation::bind_producer(CopyResourceId id, Completion &&producer) noexcept {
   HYLE_RETURN_IF_ERROR(detail::valid_binding(state_, id));
+  if(state_->result_sources && state_->result_sources->results.owns(id.value))return Status::FailedPrecondition("native result binding needs reset before replacement");
   if (!state_->bindings[id.value].root) return Status::FailedPrecondition("Vulkan copy producer resource is unbound");
   HYLE_ASSIGN_OR_RETURN(auto dependency, compute::detail::RetainedCompletion::native_dependency(producer));
   HYLE_RETURN_IF_ERROR(detail::qualify_copy_dependency(state_->program->runtime, dependency));
@@ -305,7 +360,8 @@ Status CopyBatchInvocation::prepare_replay(std::span<const CopyPhase> phases, st
       state_->program->options, {state_->intervals, state_->copies, state_->closure}));
   HYLE_RETURN_IF_ERROR(compute::detail::prepare_copy_control(state_->bindings, phases,
       std::span(state_->copies).first(report.active_copies), {state_->order, state_->leader, state_->last_write,
-      state_->producers, state_->roles, state_->root_uses, state_->written, state_->ranges, state_->plans}));
+      state_->producers, state_->roles, state_->root_uses, state_->written, state_->ranges, state_->plans},
+      state_->result_sources?state_->result_sources->results.ids():std::span<const CopyResourceId>{}));
   for (std::size_t id = 0; id < phases.size(); ++id) {
     const auto &plan = state_->plans[id]; bool host_ready = plan.dependency_mask == 0 && plan.producer_count == 0;
     for (std::size_t index = plan.first; index < plan.first + plan.copies; ++index) {
@@ -314,7 +370,9 @@ Status CopyBatchInvocation::prepare_replay(std::span<const CopyPhase> phases, st
     }
     HYLE_RETURN_IF_ERROR(detail::bind_copy_recording(*state_->phases[id]->recording,
         std::span(state_->ranges).subspan(plan.first, plan.copies), host_ready,
-        plan.dependency_mask != 0 || plan.producer_count != 0));
+        plan.dependency_mask != 0 || plan.producer_count != 0,
+        state_->result_sources && !state_->result_sources->results.ids().empty()?&detail::result_source_range:nullptr,
+        state_->phases[id]));
     state_->phases[id]->completion = {}; state_->phases[id]->terminal = Status::Ok();
     state_->phases[id]->retired.store(false, std::memory_order_relaxed);
   }
@@ -336,7 +394,8 @@ Result<CopyBatchSubmission> CopyBatchInvocation::submit() noexcept {
     }
   }
   HYLE_RETURN_IF_ERROR(compute::detail::admit_copy_control(state_->uses, state_->bindings,
-      std::span(state_->plans).first(state_->phase_count), state_->root_uses, state_->tickets));
+      std::span(state_->plans).first(state_->phase_count), state_->root_uses, state_->tickets,
+      state_->result_sources?state_->result_sources->results.ids():std::span<const CopyResourceId>{}));
   state_->prepared = false;
   for (std::uint32_t id = 0; id < state_->phase_count; ++id) {
     auto &phase = *state_->phases[id];
@@ -363,6 +422,7 @@ Status CopyBatchInvocation::reset() noexcept {
   for (auto *phase : state_->phases) phase->completion = {};
   for (auto *phase : state_->phases) HYLE_RETURN_IF_ERROR(detail::clear_copy_recording(*phase->recording));
   for (auto &binding : state_->bindings) binding = {};
+  if(state_->result_sources){state_->result_sources->results.reset();for(auto&span:state_->result_sources->spans)span={};}
   std::fill(state_->physical.begin(), state_->physical.end(), compute::detail::PhysicalCopyResource{});
   state_->prepared = false; state_->failed = false; state_->submitted = 0; state_->phase_count = 0; state_->tail = Status::Ok();
   return Status::Ok();

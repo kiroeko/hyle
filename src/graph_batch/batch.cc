@@ -4,6 +4,7 @@
 #include "hyle/compute/detail/batch_graph_access.h"
 #include "hyle/compute/detail/paged_arena_access.h"
 #include "hyle/compute/detail/context_ref.h"
+#include "hyle/compute/detail/copy_outcome_source.h"
 #include "hyle/mem/std_allocator.h"
 #include "hyle/util/ref_counted.h"
 #include "../compute/provider_internal.h"
@@ -129,6 +130,33 @@ struct InvocationData final {
   std::vector<QueueBinding,mem::StdAllocator<QueueBinding>>queues;
   std::vector<Binding,mem::StdAllocator<Binding>>bindings;
 };
+struct PendingInvocationData final:util::RefCounted<PendingInvocationData>{
+  struct Input final {
+    ValueId value;
+    c::PagedArenaPendingRead frame;
+    std::vector<ExecutionLaneId,mem::StdAllocator<ExecutionLaneId>> lanes;
+  };
+  explicit PendingInvocationData(mem::AllocatorRef a):allocator(a),
+      inputs(mem::StdAllocator<Input>(a)),admitted(mem::StdAllocator<unsigned char>(a)){}
+  void destroy()noexcept{const auto a=allocator;a.destroy(this);}
+  bool contains(ValueId value)const noexcept{
+    return std::any_of(inputs.begin(),inputs.end(),[&](const auto&input){return input.value==value;});
+  }
+  Status reusable()noexcept{
+    if(!source.available() || !dependent.available() || source.update().valid())
+      return Status::Unavailable("pending Graph still owns source/outcome controls");
+    return Status::Ok();
+  }
+  mem::AllocatorRef allocator;
+  Invocation original;
+  cd::CopyOutcomeSource<c::CopyBatchUpdate,cd::CopyStreamAccess> source;
+  cd::DependentCompletion dependent;
+  cd::OutcomeSources sources{};
+  cd::CompletionRetention retention{};
+  std::vector<Input,mem::StdAllocator<Input>> inputs;
+  std::vector<unsigned char,mem::StdAllocator<unsigned char>> admitted;
+  bool submitted=false;
+};
 void destroy(InvocationData*p)noexcept{if(p){const auto allocator=p->allocator;allocator.destroy(p);}}
 } // namespace detail
 Result<MaterializedGraph> materialized_graph(const c::MaterializedBatchProgram&program,GraphBuilderOptions options)noexcept{
@@ -228,6 +256,155 @@ Result<c::Completion> Invocation::submit()noexcept{
   if(data_->original.replay_route()==ReplayRoute::kUnprepared)HYLE_RETURN_IF_ERROR(data_->original.prepare_replay(data_->queues,data_->replay));
   return data_->original.submit(data_->queues);
 }
+PendingInvocation::PendingInvocation(PendingInvocation&&other)noexcept:data_(std::exchange(other.data_,nullptr)){}
+PendingInvocation&PendingInvocation::operator=(PendingInvocation&&other)noexcept{
+  if(this!=&other){if(data_)data_->decref();data_=std::exchange(other.data_,nullptr);}return *this;
+}
+PendingInvocation::~PendingInvocation(){if(data_)data_->decref();}
+Result<PendingInvocation> PendingInvocation::create(Invocation&&owner,std::size_t capacity,
+    LeasedInvocationOptions options)noexcept{
+  if(!owner.data_ || !capacity || !options.allocator.valid())
+    return std::unexpected(Status::InvalidArgument("pending Graph requires an original coordinator/source capacity"));
+  if(!gd::RegionAccess::outcome_available(owner.data_->original))
+    return std::unexpected(Status::Unavailable("pending Graph original outcome is retained"));
+  auto allocator=options.allocator;
+  if(options.resource_budget.valid()){HYLE_ASSIGN_OR_RETURN(allocator,options.resource_budget.metadata_allocator());}
+  auto*p=allocator.construct<detail::PendingInvocationData>(allocator);
+  if(!p)return std::unexpected(Status::ResourceExhausted("pending Graph cold owner metadata"));
+  PendingInvocation result(p);
+  HYLE_ASSIGN_OR_RETURN(p->source,(cd::CopyOutcomeSource<c::CopyBatchUpdate,cd::CopyStreamAccess>::create(
+      capacity,{.allocator=allocator,.resource_budget=options.resource_budget})));
+  HYLE_ASSIGN_OR_RETURN(p->dependent,cd::DependentCompletion::create(allocator));
+  if(owner.data_->bindings.size()>SIZE_MAX/2)
+    return std::unexpected(Status::ResourceExhausted("pending Graph input capacity overflow"));
+  try{p->inputs.reserve(2*owner.data_->bindings.size());p->admitted.resize(owner.data_->queues.size());}
+  catch(...){return std::unexpected(Status::ResourceExhausted("pending Graph fixed input metadata"));}
+  p->original=std::move(owner);return result;
+}
+Status PendingInvocation::prepare_batch(std::span<const NodeLayout>layouts,bool update)noexcept{
+  if(!data_)return Status::FailedPrecondition("pending Graph is empty");
+  HYLE_RETURN_IF_ERROR(data_->reusable());
+  HYLE_RETURN_IF_ERROR(data_->original.prepare_batch(layouts,update));
+  data_->inputs.clear();data_->submitted=false;return Status::Ok();
+}
+Status PendingInvocation::bind(ValueId value,c::TensorDesc description,c::ReadLease source)noexcept{
+  if(!data_)return Status::FailedPrecondition("pending Graph is empty");
+  HYLE_RETURN_IF_ERROR(data_->reusable());
+  if(data_->contains(value))return Status::FailedPrecondition("pending Graph input needs prepare before rebinding");
+  return data_->original.bind(value,description,std::move(source));
+}
+Status PendingInvocation::bind(ValueId value,c::TensorDesc description,c::WriteLease&&destination)noexcept{
+  if(!data_)return Status::FailedPrecondition("pending Graph is empty");
+  HYLE_RETURN_IF_ERROR(data_->reusable());
+  if(data_->contains(value))return Status::FailedPrecondition("pending Graph input needs prepare before rebinding");
+  return data_->original.bind(value,description,std::move(destination));
+}
+Status PendingInvocation::bind(ValueId value,c::PagedArenaRead frame)noexcept{
+  if(!data_)return Status::FailedPrecondition("pending Graph is empty");
+  HYLE_RETURN_IF_ERROR(data_->reusable());
+  if(data_->contains(value))return Status::FailedPrecondition("pending Graph input needs prepare before rebinding");
+  return data_->original.bind(value,std::move(frame));
+}
+Status PendingInvocation::bind(ValueId value,c::PagedArenaPendingRead frame)noexcept{
+  if(!data_ || !frame.valid())return Status::InvalidArgument("pending Graph binding requires its typed frame");
+  auto&p=*data_;HYLE_RETURN_IF_ERROR(p.reusable());
+  if(p.contains(value))return Status::FailedPrecondition("pending Graph input needs prepare before rebinding");
+  auto&original=*p.original.data_;
+  std::vector<std::uint32_t,mem::StdAllocator<std::uint32_t>> readers{mem::StdAllocator<std::uint32_t>(p.allocator)};
+  detail::PendingInvocationData::Input input{value,std::move(frame),
+      std::vector<ExecutionLaneId,mem::StdAllocator<ExecutionLaneId>>(mem::StdAllocator<ExecutionLaneId>(p.allocator))};
+  try{
+    readers.reserve(original.bindings.size());input.lanes.reserve(original.queues.size());
+    for(const auto&b:original.bindings){const auto&r=*b.region;
+      if(r.values[0]==value || r.values[3]==value)return Status::InvalidArgument("pending pages cannot bind query/metadata");
+      if(r.values[1]!=value && r.values[2]!=value)continue;
+      if(r.config->schema.capacity().storage!=c::BatchStorage::kPaged || !r.config->schema.owns(input.frame.layout()) ||
+          !b.slot->token.valid() || b.slot->layout!=input.frame.layout())
+        return Status::InvalidArgument("pending Graph frame differs from its prepared reader/layout");
+      if((r.values[1]==value && b.slot->keys.valid()) || (r.values[2]==value && b.slot->values.valid()))
+        return Status::FailedPrecondition("ready Graph input needs prepare before pending binding");
+      readers.push_back(b.step);
+    }
+  }catch(...){return Status::ResourceExhausted("pending Graph exact reader metadata");}
+  struct Readers final {std::span<const std::uint32_t> steps;decltype(input.lanes)*lanes;};
+  Readers selected{readers,&input.lanes};
+  HYLE_RETURN_IF_ERROR(gd::RegionAccess::visit(original.original,[](void*opaque,const gd::RegionAccessView&view)noexcept->Status{
+    auto&readers=*static_cast<Readers*>(opaque);
+    if(std::find(readers.steps.begin(),readers.steps.end(),view.step)!=readers.steps.end() &&
+        std::find(readers.lanes->begin(),readers.lanes->end(),view.lane)==readers.lanes->end()){
+      if(readers.lanes->size()==readers.lanes->capacity())return Status::ResourceExhausted("pending Graph lane capacity");
+      readers.lanes->push_back(view.lane);
+    }return Status::Ok();
+  },&selected));
+  if(input.lanes.empty())return Status::InvalidArgument("pending Graph input has no exact paged reader");
+  HYLE_ASSIGN_OR_RETURN(auto tensor,cd::PagedArenaAccess::tensor(input.frame));
+  if(p.inputs.size()==p.inputs.capacity())return Status::ResourceExhausted("pending Graph input capacity");
+  HYLE_RETURN_IF_ERROR(gd::RegionAccess::bind_pending_projected(original.original,value,tensor,kProviderId,readers));
+  p.inputs.push_back(std::move(input));return Status::Ok();
+}
+Result<c::Completion> PendingInvocation::submit(c::CopyBatchUpdate&&update)noexcept{
+  if(!data_)return std::unexpected(Status::FailedPrecondition("pending Graph is empty"));
+  auto&p=*data_;HYLE_RETURN_IF_ERROR(p.reusable());auto&original=*p.original.data_;
+  if(p.inputs.empty() || p.submitted)return std::unexpected(Status::FailedPrecondition("pending Graph has no unconsumed page inputs"));
+  for(const auto&input:p.inputs)
+    HYLE_RETURN_IF_ERROR((cd::PagedArenaAccess::validate<c::CopyBatchUpdate,cd::CopyStreamAccess>(input.frame,update)));
+  if(original.original.replay_route()==ReplayRoute::kUnprepared)
+    HYLE_RETURN_IF_ERROR(original.original.prepare_replay(original.queues,original.replay));
+  HYLE_ASSIGN_OR_RETURN(p.sources,p.source.take(std::move(update)));
+  std::fill(p.admitted.begin(),p.admitted.end(),static_cast<unsigned char>(0));
+  struct Call final {detail::PendingInvocationData*data;detail::InvocationData*original;};
+  Call call{&p,&original};
+  // The callbacks borrow only this synchronous submission scope; aggregate
+  // retention owns the cold state after acceptance, including abandonment.
+  const gd::OrderedGraphSubmission ordered{
+    [](void*opaque,ExecutionLaneId lane,cd::QueueSequence&sequence,c::LeaseUseBatch&uses)noexcept->Status{
+      auto&call=*static_cast<Call*>(opaque);auto&p=*call.data;
+      const auto queued=std::find_if(call.original->queues.begin(),call.original->queues.end(),
+          [&](const auto&binding){return binding.lane==lane;});
+      if(queued==call.original->queues.end())return Status::Internal("pending Graph lane is missing");
+      const auto index=std::size_t(queued-call.original->queues.begin());
+      if(p.admitted[index])return Status::Ok();
+      const auto reads=[&](const auto&input){return std::find(input.lanes.begin(),input.lanes.end(),lane)!=input.lanes.end();};
+      if(std::none_of(p.inputs.begin(),p.inputs.end(),reads))return Status::Ok();
+      HYLE_ASSIGN_OR_RETURN(auto prefix,cd::CopyStreamAccess::dependency(p.source.update()));
+      if(prefix.pending()){
+        auto waited=sequence.enqueue_resolved_wait(prefix);const auto status=waited.status;
+        sequence.record(std::move(waited));HYLE_RETURN_IF_ERROR(status);
+      }
+      for(const auto&input:p.inputs)if(reads(input))
+        HYLE_RETURN_IF_ERROR((cd::PagedArenaAccess::admit_read<c::CopyBatchUpdate,cd::CopyStreamAccess>(uses,input.frame,p.source.update())));
+      p.admitted[index]=1;return Status::Ok();
+    },
+    [](void*opaque,c::Completion&&suffix)noexcept->c::Completion{
+      auto&p=*static_cast<Call*>(opaque)->data;p.submitted=true;p.incref();
+      p.retention.own={&p,[](void*,const Status&)noexcept{},
+          [](void*owner)noexcept{static_cast<detail::PendingInvocationData*>(owner)->decref();}};
+      auto aggregate=p.dependent.publish(std::move(suffix),std::exchange(p.sources,{}));
+      HYLE_FATAL_ASSERT(cd::CompletionAccess::attach_retention(aggregate,p.retention).ok());
+      return aggregate;
+    },&call,[](void*opaque,ValueId value)noexcept->bool{
+      return static_cast<Call*>(opaque)->data->contains(value);
+    }};
+  auto result=gd::RegionAccess::submit(original.original,original.queues,ordered);
+  if(!result){update=std::move(p.source.update());auto sources=std::exchange(p.sources,{});sources.release(sources.state);}
+  return result;
+}
+Result<LeasedGraphOutput> PendingInvocation::output(ValueId value)noexcept{
+  if(!data_ || !data_->submitted)return std::unexpected(Status::FailedPrecondition("pending Graph has no submitted output"));
+  return data_->original.output(value);
+}
+Result<c::CopyBatchUpdate> PendingInvocation::take_update()noexcept{
+  if(!data_ || !data_->dependent.available() || !data_->source.available() ||
+      !data_->source.update().valid() || data_->source.update().in_flight() ||
+      !gd::RegionAccess::outcome_available(data_->original.data_->original))
+    return std::unexpected(Status::Unavailable("pending Graph source/outcome remains retained"));
+  return std::move(data_->source.update());
+}
+Result<c::BatchPlanReport> PendingInvocation::report(NodeId node)const noexcept{
+  if(!data_)return std::unexpected(Status::FailedPrecondition("pending Graph is empty"));return data_->original.report(node);
+}
+Status PendingInvocation::close()noexcept{return data_?data_->original.close():Status::Ok();}
+Status PendingInvocation::drain()noexcept{return data_?data_->original.drain():Status::Ok();}
 Result<LeasedGraphOutput> Invocation::output(ValueId value)noexcept{if(!data_)return std::unexpected(Status::FailedPrecondition("Graph batch coordinator is empty"));return data_->original.output(value);}
 Result<c::BatchPlanReport> Invocation::report(NodeId node)const noexcept{if(!data_)return std::unexpected(Status::FailedPrecondition("Graph batch coordinator is empty"));for(const auto&b:data_->bindings)if(b.node==node)return b.slot->native.report();return std::unexpected(Status::InvalidArgument("Graph batch report node is foreign"));}
 Status Invocation::close()noexcept{return data_?data_->original.close():Status::Ok();}

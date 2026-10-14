@@ -1,0 +1,23 @@
+{
+  "artifacts": [
+    {
+      "path": "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/source-build/hyle/src/compute_provider_flashinfer/libhyle_compute_provider_flashinfer.a",
+      "bytes": 17275058,
+      "sha256": "6e8706e7ac370e8636006843b9e26433a865fe549dbc99695bf23a773d7e2cb2"
+    },
+    {
+      "path": "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/source-build/hyle/src/compute_provider_flashinfer/libhyle_compute_provider_flashinfer.so",
+      "bytes": 3805272,
+      "sha256": "2e2d8a2a188f74465d2a728afd99ae88fe4c1022f49767fdc45054906a28d925"
+    },
+    {
+      "path": "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/source-build/hyle/src/compute_provider_flashinfer/libhyle_compute_provider_flashinfer.so.0.1.0",
+      "bytes": 3805272,
+      "sha256": "2e2d8a2a188f74465d2a728afd99ae88fe4c1022f49767fdc45054906a28d925"
+    }
+  ],
+  "kernel_lines": [],
+  "original_manifest_sha256": "5a22a279bf4c152b4b539c27b8d9354efb108cc5f17e533fe49e7da6e9ae9793",
+  "dry_manifest_identical": true,
+  "actual_build_uses_original_manifest": true
+}

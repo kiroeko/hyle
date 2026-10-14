@@ -1,0 +1,24 @@
+[0/2] Re-checking globbed directories...
+[1/22] Performing build step for 'vulkan-shaders-gen'
+ninja: no work to do.
+[2/22] Performing install step for 'vulkan-shaders-gen'
+-- Up-to-date: /Users/kiro/hyle-scratch/compute-unified/a-cpu-vulkan/selected-graph/source-build/Release/./vulkan-shaders-gen
+[3/22] Completed 'vulkan-shaders-gen'
+[4/22] Building CXX object hyle/src/graph_batch/CMakeFiles/hyle_graph_batch.dir/materialized_invocation.cc.o
+[5/22] Building CXX object hyle/src/graph/CMakeFiles/hyle_graph.dir/region_access.cc.o
+[6/22] Building CXX object hyle/src/graph/CMakeFiles/hyle_graph.dir/leased_invocation.cc.o
+[7/22] Linking CXX shared library hyle/src/graph/libhyle_graph.0.1.0.dylib
+[8/22] Creating library symlink hyle/src/graph/libhyle_graph.dylib
+[9/22] Linking CXX shared library hyle/src/graph_route_cpu/libhyle_graph_route_cpu.0.1.0.dylib
+[10/22] Creating library symlink hyle/src/graph_route_cpu/libhyle_graph_route_cpu.dylib
+[11/22] Building CXX object hyle/src/graph_batch/CMakeFiles/hyle_graph_batch.dir/batch.cc.o
+[12/22] Linking CXX shared library hyle/src/graph_batch/libhyle_graph_batch.0.1.0.dylib
+[13/22] Creating library symlink hyle/src/graph_batch/libhyle_graph_batch.dylib
+[14/22] Building CXX object hyle/src/compute_route_vulkan/CMakeFiles/hyle_compute_route_vulkan.dir/vulkan_run.cc.o
+[15/22] Linking CXX shared library hyle/src/compute_route_vulkan/libhyle_compute_route_vulkan.0.1.0.dylib
+[16/22] Creating library symlink hyle/src/compute_route_vulkan/libhyle_compute_route_vulkan.dylib
+[17/22] Linking CXX shared library hyle/src/graph_route_vulkan/libhyle_graph_route_vulkan.0.1.0.dylib
+[18/22] Creating library symlink hyle/src/graph_route_vulkan/libhyle_graph_route_vulkan.dylib
+[19/22] Linking CXX shared library hyle/src/graph_route_cpu_vulkan/libhyle_graph_route_cpu_vulkan.0.1.0.dylib
+[20/22] Creating library symlink hyle/src/graph_route_cpu_vulkan/libhyle_graph_route_cpu_vulkan.dylib
+[21/22] Linking CXX executable g03_late_result64

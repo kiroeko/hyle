@@ -65,7 +65,7 @@ struct MaterializedGraph final {
 // Bind owned same-version indices/mask; upload them with original F2 first.
 HYLE_GRAPH_BATCH_API Result<MaterializedGraph> materialized_graph(
     const compute::MaterializedBatchProgram&,GraphBuilderOptions = {}) noexcept;
-namespace detail {struct InvocationData;struct MaterializedInvocationData;}
+namespace detail {struct InvocationData;struct MaterializedInvocationData;struct PendingInvocationData;}
 struct MaterializedInvocationOptions final {
   // One cold output backing, including alignment padding; explicit byte cap.
   std::size_t max_output_bytes=0;
@@ -152,7 +152,45 @@ public:
   HYLE_GRAPH_BATCH_API Status close() noexcept;
   HYLE_GRAPH_BATCH_API Status drain() noexcept;
 private:
+  friend class PendingInvocation;
   explicit Invocation(detail::InvocationData*p)noexcept:data_(p){}
   detail::InvocationData*data_=nullptr;
+};
+// Explicit cold composition owner over the same original Graph invocation,
+// region slots and public completion. Pending page capacity is accepted only
+// by its exact prepared paged readers. It never grants a public ready view.
+// A single original Update may supply several inputs/nodes/lanes; unsupported
+// asynchronous CPU ordering rejects without introducing a hidden host wait.
+class PendingInvocation final {
+public:
+  PendingInvocation()noexcept=default;
+  PendingInvocation(const PendingInvocation&)=delete;
+  PendingInvocation&operator=(const PendingInvocation&)=delete;
+  HYLE_GRAPH_BATCH_API PendingInvocation(PendingInvocation&&)noexcept;
+  HYLE_GRAPH_BATCH_API PendingInvocation&operator=(PendingInvocation&&)noexcept;
+  HYLE_GRAPH_BATCH_API ~PendingInvocation();
+  // Failure preserves owner. Allocator/budget and original Context/Queue/
+  // resources remain alive through outcomes and actual native retirement.
+  HYLE_GRAPH_BATCH_API static Result<PendingInvocation> create(Invocation&& owner,
+      std::size_t max_source_completions,LeasedInvocationOptions options={})noexcept;
+  bool valid()const noexcept{return data_!=nullptr;}
+  HYLE_GRAPH_BATCH_API Status prepare_batch(std::span<const NodeLayout>,bool update=true)noexcept;
+  HYLE_GRAPH_BATCH_API Status bind(ValueId,compute::TensorDesc,compute::ReadLease)noexcept;
+  HYLE_GRAPH_BATCH_API Status bind(ValueId,compute::PagedArenaRead)noexcept;
+  HYLE_GRAPH_BATCH_API Status bind(ValueId,compute::PagedArenaPendingRead)noexcept;
+  HYLE_GRAPH_BATCH_API Status bind(ValueId,compute::TensorDesc,compute::WriteLease&&)noexcept;
+  // Before acceptance rejection preserves Update. After any accepted prefix,
+  // return its actual aggregate, including errors; do not drop native owners.
+  HYLE_GRAPH_BATCH_API Result<compute::Completion> submit(compute::CopyBatchUpdate&&)noexcept;
+  HYLE_GRAPH_BATCH_API Result<LeasedGraphOutput> output(ValueId)noexcept;
+  // Observe/release old completion/output first. Returning controls does not
+  // convert a failed update into successful mutable/read permission.
+  HYLE_GRAPH_BATCH_API Result<compute::CopyBatchUpdate> take_update()noexcept;
+  HYLE_GRAPH_BATCH_API Result<compute::BatchPlanReport> report(NodeId)const noexcept;
+  HYLE_GRAPH_BATCH_API Status close()noexcept;
+  HYLE_GRAPH_BATCH_API Status drain()noexcept;
+private:
+  explicit PendingInvocation(detail::PendingInvocationData*p)noexcept:data_(p){}
+  detail::PendingInvocationData*data_=nullptr;
 };
 } // namespace hyle::graph::batch

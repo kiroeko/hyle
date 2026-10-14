@@ -1,0 +1,55 @@
+[0/2] Re-checking globbed directories...
+[1/40] Building CXX object hyle/src/simd/CMakeFiles/hyle_simd.dir/random/random_dispatch.cc.o
+[2/40] Building CXX object hyle/src/simd/CMakeFiles/hyle_simd.dir/ops/dispatch_ops.cc.o
+[3/40] Building CXX object hyle/src/simd/CMakeFiles/hyle_simd.dir/search/search_dispatch.cc.o
+[4/40] Building CXX object hyle/src/simd/CMakeFiles/hyle_simd.dir/runtime.cc.o
+[5/40] Building CXX object hyle/src/simd/CMakeFiles/hyle_simd.dir/narrow/narrow_dispatch.cc.o
+[6/40] Building CXX object hyle/src/simd/CMakeFiles/hyle_simd.dir/scan/scan_dispatch.cc.o
+[7/40] Building CXX object hyle/src/simd/CMakeFiles/hyle_simd.dir/dtype/dtype_dispatch.cc.o
+[8/40] Building CXX object hyle/src/simd/CMakeFiles/hyle_simd.dir/math/math_dispatch.cc.o
+[9/40] Building CXX object hyle/src/simd/CMakeFiles/hyle_simd.dir/bitpack/bitpack_dispatch.cc.o
+[10/40] Building CXX object hyle/src/simd/CMakeFiles/hyle_simd.dir/sort/sort_dispatch.cc.o
+[11/40] Building CXX object hyle/src/simd/CMakeFiles/hyle_simd.dir/generated/simd-dispatch/ops/ops_scalar.cc.o
+[12/40] Building CXX object hyle/src/simd/CMakeFiles/hyle_simd.dir/generated/simd-dispatch/ops/ops_sse4.cc.o
+[13/40] Building CXX object hyle/src/simd/CMakeFiles/hyle_simd.dir/generated/simd-dispatch/dtype_convert/dtype_convert_scalar.cc.o
+[14/40] Building CXX object hyle/src/simd/CMakeFiles/hyle_simd.dir/generated/simd-dispatch/ops/ops_avx2.cc.o
+[15/40] Building CXX object hyle/src/simd/CMakeFiles/hyle_simd.dir/generated/simd-dispatch/ops/ops_avx512.cc.o
+[16/40] Building CXX object hyle/src/simd/CMakeFiles/hyle_simd.dir/generated/simd-dispatch/dtype_convert/dtype_convert_sse4.cc.o
+[17/40] Building CXX object hyle/src/simd/CMakeFiles/hyle_simd.dir/generated/simd-dispatch/dtype_convert/dtype_convert_avx2.cc.o
+[18/40] Building CXX object hyle/src/simd/CMakeFiles/hyle_simd.dir/generated/simd-dispatch/scan/scan_scalar.cc.o
+[19/40] Building CXX object hyle/src/simd/CMakeFiles/hyle_simd.dir/generated/simd-dispatch/scan/scan_sse4.cc.o
+[20/40] Building CXX object hyle/src/simd/CMakeFiles/hyle_simd.dir/generated/simd-dispatch/dtype_convert/dtype_convert_avx512.cc.o
+[21/40] Building CXX object hyle/src/simd/CMakeFiles/hyle_simd.dir/generated/simd-dispatch/random/random_scalar.cc.o
+[22/40] Building CXX object hyle/src/simd/CMakeFiles/hyle_simd.dir/generated/simd-dispatch/scan/scan_avx2.cc.o
+[23/40] Building CXX object hyle/src/simd/CMakeFiles/hyle_simd.dir/generated/simd-dispatch/random/random_sse4.cc.o
+[24/40] Building CXX object hyle/src/simd/CMakeFiles/hyle_simd.dir/generated/simd-dispatch/scan/scan_avx512.cc.o
+[25/40] Building CXX object hyle/src/simd/CMakeFiles/hyle_simd.dir/generated/simd-dispatch/random/random_avx2.cc.o
+[26/40] Building CXX object hyle/src/simd/CMakeFiles/hyle_simd.dir/generated/simd-dispatch/random/random_avx512.cc.o
+[27/40] Building CXX object hyle/src/simd/CMakeFiles/hyle_simd.dir/generated/simd-dispatch/search/search_scalar.cc.o
+[28/40] Building CXX object hyle/src/simd/CMakeFiles/hyle_simd.dir/generated/simd-dispatch/search/search_sse4.cc.o
+[29/40] Building CXX object hyle/src/simd/CMakeFiles/hyle_simd.dir/generated/simd-dispatch/narrow/narrow_scalar.cc.o
+[30/40] Building CXX object hyle/src/simd/CMakeFiles/hyle_simd.dir/generated/simd-dispatch/narrow/narrow_sse4.cc.o
+[31/40] Building CXX object hyle/src/simd/CMakeFiles/hyle_simd.dir/generated/simd-dispatch/search/search_avx512.cc.o
+[32/40] Building CXX object hyle/src/simd/CMakeFiles/hyle_simd.dir/generated/simd-dispatch/narrow/narrow_avx2.cc.o
+[33/40] Building CXX object hyle/src/simd/CMakeFiles/hyle_simd.dir/generated/simd-dispatch/search/search_avx2.cc.o
+[34/40] Building CXX object hyle/src/simd/CMakeFiles/hyle_simd.dir/generated/simd-dispatch/bitpack/bitpack_scalar.cc.o
+[35/40] Building CXX object hyle/src/simd/CMakeFiles/hyle_simd.dir/generated/simd-dispatch/narrow/narrow_avx512.cc.o
+[36/40] Building CXX object hyle/src/simd/CMakeFiles/hyle_simd.dir/generated/simd-dispatch/bitpack/bitpack_sse4.cc.o
+[37/40] Building CXX object hyle/src/simd/CMakeFiles/hyle_simd.dir/generated/simd-dispatch/bitpack/bitpack_avx2.cc.o
+[38/40] Building CXX object hyle/src/simd/CMakeFiles/hyle_simd.dir/generated/simd-dispatch/bitpack/bitpack_avx512.cc.o
+[39/40] Linking CXX static library hyle/src/simd/libhyle_simd.a
+[40/40] Linking CXX executable g03_pending_cpucuda_graph64
+FAILED: g03_pending_cpucuda_graph64 
+: && /usr/bin/g++-14 -O3 -DNDEBUG -Wl,--disable-new-dtags CMakeFiles/g03_pending_cpucuda_graph64.dir/root/hyle-scratch/compute-unified/source-7a7b4c3b/tests/compute_batch/pending_paged_receiver_cpu_consumer.cc.o CMakeFiles/g03_pending_cpucuda_graph64.dir/root/hyle-scratch/compute-unified/source-7a7b4c3b/src/graph_route_cpu_cuda/compile.cc.o -o g03_pending_cpucuda_graph64 -L/lib/intel64   -L/lib/intel64_win   -L/lib/win-x64 -Wl,-rpath,/root/.cache/hyle/dependencies/v1/sdks/torch-cpu/Linux-8dea5bcfed4b53ca0f6852517bea4b4d1f3ff1cc0c21da662e834d34af1ec824/libtorch/lib:/lib/intel64:/lib/intel64_win:/lib/win-x64:/usr/local/cuda-13.3/targets/x86_64-linux/lib  hyle/src/graph_batch/libhyle_graph_batch.a  hyle/src/compute_backend_cuda/libhyle_compute_backend_cuda.a  hyle/src/compute_provider_flashinfer/libhyle_compute_provider_flashinfer.a  hyle/src/compute_backend_cpu/libhyle_compute_backend_cpu.a  hyle/src/compute_provider_native/libhyle_compute_provider_native.a  hyle/src/graph/libhyle_graph.a  hyle/src/container/libhyle_container.a  hyle/src/compute_backend_cuda/libhyle_compute_backend_cuda.a  hyle/src/platform_thread/libhyle_platform_thread.a  hyle/src/time/libhyle_time.a  /usr/local/cuda-13.3/targets/x86_64-linux/lib/stubs/libcuda.so  hyle/src/compute_batch/libhyle_compute_batch.a  /usr/local/cuda-13.3/targets/x86_64-linux/lib/libcudart.so  hyle/src/compute_backend_cpu/libhyle_compute_backend_cpu.a  hyle/src/compute/libhyle_compute.a  hyle/src/mem/libhyle_mem.a  hyle/src/mem/libmimalloc_static.a  hyle/src/simd/libhyle_simd.a  hyle/src/platform/libhyle_platform.a  -ldl  /root/.cache/hyle/dependencies/v1/sdks/torch-cpu/Linux-8dea5bcfed4b53ca0f6852517bea4b4d1f3ff1cc0c21da662e834d34af1ec824/libtorch/lib/libtorch.so  -Wl,--no-as-needed,"/root/.cache/hyle/dependencies/v1/sdks/torch-cpu/Linux-8dea5bcfed4b53ca0f6852517bea4b4d1f3ff1cc0c21da662e834d34af1ec824/libtorch/lib/libtorch_cpu.so" -Wl,--as-needed  /root/.cache/hyle/dependencies/v1/sdks/torch-cpu/Linux-8dea5bcfed4b53ca0f6852517bea4b4d1f3ff1cc0c21da662e834d34af1ec824/libtorch/lib/libtorch_cpu.so  /root/.cache/hyle/dependencies/v1/sdks/torch-cpu/Linux-8dea5bcfed4b53ca0f6852517bea4b4d1f3ff1cc0c21da662e834d34af1ec824/libtorch/lib/libc10.so  hyle/src/compute_ops/libhyle_compute_ops.a  hyle/src/error/libhyle_error.a  /root/hyle-scratch/compute-unified/g03-graph-late-cached-cpu/d98147e218cd5ba269d8a0ef0dc7a9ac599a76ba39684016d9a4c51f89a9fc06/libhyle_compute_provider_ggml.a  /root/hyle-scratch/compute-unified/g03-graph-late-cached-cpu/b7840d13869448292b1bf93f4d749ed20cc71ce3550fae2a8c10b53da1ba7f22/libhyle_compute_ggml_runtime.a  /root/hyle-scratch/compute-unified/g03-graph-late-cached-cpu/0b9735319cd569179e28e2a72b08ebe0e3a72640c0951863b36328276e2c37b8/libggml.a  /root/hyle-scratch/compute-unified/g03-graph-late-cached-cpu/5beb5eeafba0e0c7193f9e637468d8675cc3988a4f03fea34dd47d0ed056fac0/libggml-cpu.a  /root/hyle-scratch/compute-unified/g03-graph-late-cached-cpu/5dc85bfb16266f68f37fbc517434d96a24d090352104d26a98bda0d91682cc31/libggml-base.a  /usr/lib/gcc/x86_64-linux-gnu/14/libgomp.so  /usr/lib/x86_64-linux-gnu/libpthread.a && :
+/usr/bin/ld: /root/hyle-scratch/compute-unified/g03-graph-late-cached-cpu/d98147e218cd5ba269d8a0ef0dc7a9ac599a76ba39684016d9a4c51f89a9fc06/libhyle_compute_provider_ggml.a(ggml_cpu_provider.cc.o): in function `hyle::compute::ggml_cpu::(anonymous namespace)::native_quantized_type(hyle::compute::TensorDesc const&)':
+ggml_cpu_provider.cc:(.text+0xe9): undefined reference to `hyle::compute::gguf_quantized_type(hyle::compute::StorageFormat const&)'
+/usr/bin/ld: /root/hyle-scratch/compute-unified/g03-graph-late-cached-cpu/d98147e218cd5ba269d8a0ef0dc7a9ac599a76ba39684016d9a4c51f89a9fc06/libhyle_compute_provider_ggml.a(ggml_cpu_provider.cc.o): in function `hyle::compute::ggml_cpu::(anonymous namespace)::representable(hyle::compute::TensorDesc const&, bool)':
+ggml_cpu_provider.cc:(.text+0x108a): undefined reference to `hyle::compute::gguf_quantized_type(hyle::compute::StorageFormat const&)'
+/usr/bin/ld: /root/hyle-scratch/compute-unified/g03-graph-late-cached-cpu/d98147e218cd5ba269d8a0ef0dc7a9ac599a76ba39684016d9a4c51f89a9fc06/libhyle_compute_provider_ggml.a(ggml_cpu_provider.cc.o): in function `hyle::compute::ggml_cpu::internal::supports(void*, hyle::compute::Operation, std::span<hyle::compute::TensorDesc const, 18446744073709551615ul>, std::span<hyle::compute::TensorDesc const, 18446744073709551615ul>)':
+ggml_cpu_provider.cc:(.text+0x3f88): undefined reference to `hyle::compute::gguf_quantized_type(hyle::compute::StorageFormat const&)'
+/usr/bin/ld: ggml_cpu_provider.cc:(.text+0x4d46): undefined reference to `hyle::compute::gguf_quantized_type(hyle::compute::StorageFormat const&)'
+/usr/bin/ld: /root/hyle-scratch/compute-unified/g03-graph-late-cached-cpu/d98147e218cd5ba269d8a0ef0dc7a9ac599a76ba39684016d9a4c51f89a9fc06/libhyle_compute_provider_ggml.a(ggml_cpu_provider.cc.o): in function `hyle::compute::ggml_cpu::(anonymous namespace)::create_invocation(void*, hyle::mem::AllocatorRef, hyle::mem::BufferView, void**)':
+ggml_cpu_provider.cc:(.text+0x68d1): undefined reference to `hyle::compute::gguf_quantized_type(hyle::compute::StorageFormat const&)'
+/usr/bin/ld: /root/hyle-scratch/compute-unified/g03-graph-late-cached-cpu/d98147e218cd5ba269d8a0ef0dc7a9ac599a76ba39684016d9a4c51f89a9fc06/libhyle_compute_provider_ggml.a(ggml_cpu_provider.cc.o):ggml_cpu_provider.cc:(.text+0x699b): more undefined references to `hyle::compute::gguf_quantized_type(hyle::compute::StorageFormat const&)' follow
+collect2: error: ld returned 1 exit status
+ninja: build stopped: subcommand failed.

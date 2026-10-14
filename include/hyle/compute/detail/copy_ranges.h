@@ -9,6 +9,9 @@ namespace hyle::compute::detail {
 // Native adapters supply canonical physical coordinates once at binding.
 // Distinct wrapper addresses never establish independent backing. For a host
 // address domain, backing may be zero and origin the actual byte address.
+// Explicit unresolved_source IDs use only capacity/alignment here; their
+// address fields are empty and MUST be resolved and fully revalidated by the
+// native owner before any data command. They are never physical alias proof.
 struct PhysicalCopyResource final {
   std::uintptr_t address_space = 0;
   std::uint64_t backing = 0;
@@ -40,6 +43,7 @@ struct CopyRangeScratch final {
 HYLE_COMPUTE_API Result<CopyBatchReport> validate_copy_ranges(
     std::span<const PhysicalCopyResource> resources,
     std::span<const CopyPhase> phases, std::span<const CopyRange> ranges,
-    const CopyBatchOptions &limits, CopyRangeScratch scratch) noexcept;
+    const CopyBatchOptions &limits, CopyRangeScratch scratch,
+    std::span<const CopyResourceId> unresolved_sources={}) noexcept;
 
 } // namespace hyle::compute::detail
