@@ -311,3 +311,44 @@ SDK journey 无私有头，source风险使用既有边界仪器；两原 TSan �
 下一步接 common CPU/CUDA 与原 Graph，补 late native producer backing 和七路线/
 独立 reduction 最终旅程；原 G01/G02 未决门、G04–G10 与所有失败/成本继续保留。
 不重复 PF/IP/source/数学和本批已证明门；所有 heavy 工作按实际 terminal 收尾。
+
+## 当前 common Batch receiver 接入批（BC01–BC04，AUDITED）
+
+baseline `5f496b827`，owner compute_batch；沿既有 compute 的来源机制，不重开原
+CPU/FlashInfer数学、native页适配或ready controller。真实入口是CPU与CUDA共享的
+BatchProgram/BatchInvocation/PreparedBatch。原队列已有 enqueue_resolved_wait 和
+provider enqueue_admitted，可把原来源等待和原数学放在同一个原 QueueSequence。
+CPU队列只接已实际完成的inline来源，不偷偷wait异步来源；CUDA资格由原backend裁决。
+
+BC01：公开显式冷 PagedBatchReceiver::create(BatchInvocation&&,
+max_source_completions)，持原controller、原PreparedBatch ticket、原CopyOutcomeSource/
+DependentCompletion。prepare_batch(layout,update)委托原plan/update；submit(query,
+pending_keys,pending_values,CopyBatchUpdate&&)沿同一schema/layout与已验PF规则。
+create拒绝旧ticket/外部Graph输出slot，不消费被拒controller；所有冷分配失败保原owner。
+原ready对象没有新增字段/分配。一个原Update可含多producer/phase/目的页。
+
+BC02：完整检查typed input、覆盖、原准备代际和资源，然后在原sequence记录实际
+来源wait，只有排序接纳成功后才原ordered-read接纳pending页并enqueue原数学。
+无接纳prefix的拒绝回接同一个Update；wait或数学已接纳的prefix必须返回其真实
+Completion与首个error，保source到actual retirement，不能当普通error丢掉prefix。
+借原ProviderExtensionAccess.enqueue_admitted，不新增backend/provider/public工具机制。
+
+BC03：原BatchInvocation已有RetainedCompletion作为公共观察槽，在它内部映射原
+DependentCompletion。receiver冷owner用一个既有CompletionRetention接收聚合的最终
+状态并保原controller，不创建第二结果槽或另外executor。output()只在原聚合成功和
+actual retirement后委托原F1发布；suffix成功/source失败不能发布。take_update检查原
+公共观察、全部actual guards和来源引用均退休；旧output阻止原output复用。失败epoch
+不自动洗掉错误，关闭与drain沿原Queue/guards/完整聚合，放弃不隐藏wait。
+
+BC04：原CPU ggml page16实际两request/两slot/64步F16/BF16、独立double oracle与
+正交page payload→数值消费；初始化洞、精确页/外来layout、旧output、未知异步来源
+拒绝不隐式wait、每冷分配OOM/资源预算/接纳拒绝/已接纳prefix错误；Windows定向
+common/CPU与source消费，Air或WSL对应宿主风险/三交付按缓存身份。CUDA沿原树小
+payload与现有数学artifact资格，禁止新nvcc/kernel构建；若artifact不匹配只记录未完成，
+继续真实Graph/late-output等其余原目标，不冒充CUDA math PASS。全部heavy串行/4jobs，
+不启动full model/P1/全局构建，仍沿原2h检查点、常设延长和所有原失败/unknown预算。
+
+有限FIX冻结为BC01–04。冷source四分配、observer与owner元数据显式计费；暖submit
+不复制KV、不新开queue/线程、不另分配source节点，原provider/plan成本保留。原
+controller/queue/context/allocator/source访问外部串行并保至真实退休。完整Graph、
+native late backing与七路线仍是本主卡必需后续，不由本批或API形状代签。
