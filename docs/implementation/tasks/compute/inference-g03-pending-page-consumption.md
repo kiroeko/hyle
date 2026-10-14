@@ -206,3 +206,10 @@ CUDA共用source编译/小payload资格沿现有树、禁止nvcc/旧模型重构
 这些测试签原controller/Graph pending消费完成。普通docs/closure/selector保skip，P0不做P1。
 沿原2h检查点和用户常设延长记录累计，heavy串行/4jobs。必要下一接入在本主卡固定原
 controller/source槽与Graph生命周期后再授权，完整G03与全部G01–G10范围不变。
+
+PF02审计增补（实现时真实反证）：Windows第2次测试在原ordered_read仍保页时，
+CopyBatchUpdate.take_mutable返回了writer。原F1拒绝其立即view/publish，但原接口声明
+“无实际native use才归还”没有在移交前检查。PF02固定增加共同/Apple/Vulkan三个原
+take_mutable入口的原WriteLease.view唯一性/成功资格检查；拒绝不移动原binding。复用
+既有F1，不改F1布局/锁/原子或另建controller，显式withdraw增加一次原常数检查。
+第1次测试失败为32KiB fixture遗漏sentinel的1字节，已补齐；两次原FAIL/日志/elapsed保留。
