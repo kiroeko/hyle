@@ -427,3 +427,18 @@ payload Copy后reshape；第二、三次仅byte临界失败。readonly反证修�
 本阶段仅签实际Air Vulkan有限source数学/编码；四后端源码阶段至此都有实际证据。十owner仍
 AUDITED，增量encoder/F2/Graph、多producer和三联合consumer、新域风险/SDK/P1与CPU-only
 原ffa执行继续待验；G04/G05完整项目未关闭。当前没有活跃重型任务。
+
+### CE09 Vulkan Graph 默认编码接缝（2026-10-15，SCOPED）
+
+新增实际owner `graph_route_vulkan`，本轮baseline `4a40ebd0fb04489d39e27736353df6d53698729d`。
+原F5 CLOSED域保留；新公开消费者 `tests/compute_batch/encoded_page_native_consumer.cc`
+以真实CacheEncode Graph producer接原F2与pending page receiver，Air Vulkan attempt1实际
+被 `vulkan_lowering.cc` 的具名custom白名单拒绝，报“Vulkan custom schema needs a cold native
+lowering”。Compute端同一CacheEncode已有CE06实测，不是新增编码算法或要求调用方再写lowering。
+
+有限FIX仅将CacheEncode路由给已存在的原Compute Plan lowering；GraphBuilder/原Program/
+结果owner/F2保持原旅程，不增加API、对象字段、常态metadata、queue或同步。主消费者是两个
+独立编码Graph接同Update；正交消费者是同Graph内两个不同K/V维度encoder与CPU前后数学。
+只运行已声明的新域source consumer、适用source/static/shared/风险门及文档/closure检查；
+该转发本身P0，无独立P1。沿本卡预算与用户常设追加授权，不重置原FAIL与累计时间。
+先SCOPED登记，再审计固定上述一项FIX后AUDITED，产品改动只在后者提交。

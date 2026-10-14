@@ -525,14 +525,9 @@
     },
     {
       "module": "graph_route_vulkan",
-      "state": "CLOSED",
-      "record": "docs/implementation/tasks/compute/foundation-f5-final-closure.md",
-      "summary": "F5 finite typed paged/ragged and state/Graph seams CLOSED; actual native/reference qualifications, host risks, SDK18 and component contract verified. IREE owner only TSAN configuration fix; original scopes and vendor/capture/performance limits retained.",
-      "candidate": "11c348e404df2c3fc404056ff3a9e885d4d990bc",
-      "performance": {
-        "tier": "P0",
-        "evidence": "evidence/correctness/foundation-f5-final/receipt.json"
-      }
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/compute/inference-g04-g05-cache-attention-domain.md",
+      "summary": "G04/G05 CE09 SCOPED: actual encoded Graph producer is rejected by custom allowlist although original Compute CacheEncode works. Finite default routing into the existing Plan; no new API/runtime/metadata. Original F5 scope retained; new-domain source/risk/delivery UNPROVEN."
     },
     {
       "module": "compute_provider_ggml_vulkan",
