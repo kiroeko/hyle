@@ -6,7 +6,7 @@
 #include <hyle/compute/detail/apple_batch_access.h>
 #include <hyle/compute/detail/apple_plan.h>
 #include <hyle/compute/detail/paged_arena_access.h>
-#include "pending_outcome_owner_probe.h"
+#include "owned_outcome_completion_fixture.h"
 #include <optional>
 #include <array>
 #include <cstdio>
@@ -95,7 +95,7 @@ Status episode(bool cancelled,bool abandoned=false,bool observation_failed=false
   HYLE_RETURN_IF_ERROR(n::detail::CopyStreamAccess::admit_read(reading,owner,{1}));
   HYLE_ASSIGN_OR_RETURN(auto attention,n::detail::PagedBatchAccess::submit(invocation,std::move(reading)));
   using Aggregate=hyle_g03_outcome_probe::Outcome<n::Results,n::CopyBatchUpdate>;
-  HYLE_ASSIGN_OR_RETURN(auto joined,Aggregate::take(std::move(attention),std::move(owner)));
+  HYLE_ASSIGN_OR_RETURN(auto joined,Aggregate::take<n::detail::CopyStreamAccess>(std::move(attention),std::move(owner)));
   std::optional<Aggregate> aggregate(std::move(joined));
   auto watch=aggregate->watch();
   HYLE_RETURN_IF_ERROR(r::require(!aggregate->result() && uses.active_batches()==1 &&

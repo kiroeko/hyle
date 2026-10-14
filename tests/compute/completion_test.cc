@@ -10,6 +10,7 @@
 
 #include "completion_internal.h"
 #include "hyle/compute/completion.h"
+#include "hyle/compute/detail/dependent_completion.h"
 #include "hyle/compute/detail/generated_result.h"
 #include "hyle/compute/detail/retained_completion.h"
 #if !defined(HYLE_STATIC)
@@ -102,6 +103,263 @@ void observe_terminal(void *state, const hyle::Status &terminal) noexcept {
 
 void release_lifetime(void *state) noexcept {
   ++static_cast<LifetimeProbe *>(state)->release_count;
+}
+
+struct OutcomeSourceProbe final {
+  hyle::compute::Completion original;
+  hyle::compute::detail::CompletionRetention retention;
+  unsigned observations = 0;
+  unsigned abandons = 0;
+  unsigned releases = 0;
+
+  hyle::compute::detail::OutcomeSources protocol() noexcept {
+    using namespace hyle::compute;
+    return {this,
+        [](void *opaque) noexcept -> hyle::Result<CompletionPoll> {
+          auto &source = *static_cast<OutcomeSourceProbe *>(opaque);
+          ++source.observations;
+          return source.original.poll();
+        },
+        [](void *opaque) noexcept {
+          auto &source = *static_cast<OutcomeSourceProbe *>(opaque);
+          ++source.observations;
+          return source.original.wait();
+        },
+        [](void *opaque) noexcept {
+          return static_cast<OutcomeSourceProbe *>(opaque)->original.request_cancel();
+        },
+        [](void *opaque) noexcept {
+          auto &source = *static_cast<OutcomeSourceProbe *>(opaque);
+          ++source.abandons;
+          source.original = {};
+        },
+        [](void *opaque, detail::CompletionLifetime lifetime) noexcept {
+          auto &source = *static_cast<OutcomeSourceProbe *>(opaque);
+          source.retention.own = lifetime;
+          const auto attached = detail::CompletionAccess::attach_retention(
+              source.original, source.retention);
+          EXPECT_TRUE(attached.ok());
+        },
+        [](void *opaque) noexcept {
+          ++static_cast<OutcomeSourceProbe *>(opaque)->releases;
+        }};
+  }
+};
+
+void retire_abandoned(AsyncProbe &native) {
+  ASSERT_TRUE(native.abandoned.valid());
+  native.complete = true;
+  auto lifetime = std::exchange(native.abandoned, {});
+  lifetime.terminal(lifetime.state, native.abandoned_hint);
+  lifetime.release(lifetime.state);
+}
+
+TEST(DependentCompletion, SourcesAreObservedOnlyAfterSuffixActuallyRetires) {
+  using namespace hyle::compute;
+  auto slot = detail::DependentCompletion::create(hyle::mem::system_allocator()).value();
+  AsyncProbe source_native, suffix_native;
+  OutcomeSourceProbe source;
+  source.original = detail::CompletionAccess::make(&kAsyncVTable, &source_native);
+  auto completion = slot.publish(
+      detail::CompletionAccess::make(&kAsyncVTable, &suffix_native), source.protocol());
+  EXPECT_EQ(completion.poll().value(), CompletionPoll::kPending);
+  EXPECT_EQ(source.observations, 0u);
+  EXPECT_FALSE(slot.available());
+  suffix_native.complete = true;
+  EXPECT_EQ(completion.poll().value(), CompletionPoll::kPending);
+  EXPECT_EQ(source.observations, 1u);
+  source_native.cancelled = true;
+  source_native.complete = true;
+  auto terminal = completion.poll();
+  ASSERT_FALSE(terminal.has_value());
+  EXPECT_TRUE(terminal.error().IsCancelled());
+  EXPECT_TRUE(completion.wait().IsCancelled());
+  EXPECT_EQ(source.releases, 1u);
+  EXPECT_TRUE(slot.available());
+}
+
+TEST(DependentCompletion, UnknownSuffixRemainsPendingUntilActualCallback) {
+  using namespace hyle::compute;
+  auto slot = detail::DependentCompletion::create(hyle::mem::system_allocator()).value();
+  AsyncProbe suffix_native;
+  suffix_native.observation_failed = true;
+  OutcomeSourceProbe source;
+  source.original = Completion::completed(hyle::Status::Cancelled("source failed"));
+  auto completion = slot.publish(
+      detail::CompletionAccess::make(&kAsyncVTable, &suffix_native), source.protocol());
+  EXPECT_EQ(completion.poll().value(), CompletionPoll::kPending);
+  EXPECT_EQ(source.observations, 0u);
+  EXPECT_EQ(source.releases, 0u);
+  EXPECT_FALSE(slot.available());
+  retire_abandoned(suffix_native);
+  auto terminal = completion.poll();
+  ASSERT_FALSE(terminal.has_value());
+  // The source's inline known error was delivered by its subscription first.
+  EXPECT_TRUE(terminal.error().IsCancelled());
+  EXPECT_EQ(source.releases, 1u);
+  EXPECT_TRUE(slot.available());
+}
+
+TEST(DependentCompletion, UnknownSourceKeepsResultAttachmentUntilBothRetire) {
+  using namespace hyle::compute;
+  auto slot = detail::DependentCompletion::create(hyle::mem::system_allocator()).value();
+  AsyncProbe source_native;
+  source_native.observation_failed = true;
+  OutcomeSourceProbe source;
+  source.original = detail::CompletionAccess::make(&kAsyncVTable, &source_native);
+  auto completion = slot.publish(Completion::completed(), source.protocol());
+  LifetimeProbe result;
+  detail::CompletionLifetime lifetime{&result, &observe_terminal, &release_lifetime};
+  ASSERT_TRUE(detail::CompletionAccess::attach_lifetime(completion, lifetime).ok());
+  EXPECT_EQ(completion.poll().value(), CompletionPoll::kPending);
+  EXPECT_EQ(result.release_count, 0u);
+  EXPECT_EQ(source.releases, 0u);
+  retire_abandoned(source_native);
+  EXPECT_TRUE(completion.wait().IsUnavailable());
+  EXPECT_EQ(result.release_count, 1u);
+  EXPECT_EQ(result.terminal_code, hyle::StatusCode::Unavailable);
+  EXPECT_EQ(source.releases, 1u);
+  EXPECT_TRUE(slot.available());
+}
+
+TEST(DependentCompletion, AbandonTransfersSourceOnlyAfterBorrowingSuffixRetires) {
+  using namespace hyle::compute;
+  auto slot = detail::DependentCompletion::create(hyle::mem::system_allocator()).value();
+  AsyncProbe source_native, suffix_native;
+  OutcomeSourceProbe source;
+  source.original = detail::CompletionAccess::make(&kAsyncVTable, &source_native);
+  auto completion = slot.publish(
+      detail::CompletionAccess::make(&kAsyncVTable, &suffix_native), source.protocol());
+  LifetimeProbe result;
+  detail::CompletionLifetime lifetime{&result, &observe_terminal, &release_lifetime};
+  ASSERT_TRUE(detail::CompletionAccess::attach_lifetime(completion, lifetime).ok());
+  completion = {};
+  EXPECT_EQ(source.abandons, 0u);
+  EXPECT_EQ(source.releases, 0u);
+  EXPECT_EQ(result.release_count, 0u);
+  retire_abandoned(suffix_native);
+  EXPECT_EQ(source.abandons, 1u);
+  EXPECT_EQ(source.observations, 0u);
+  EXPECT_EQ(source.releases, 0u);
+  EXPECT_EQ(result.release_count, 0u);
+  retire_abandoned(source_native);
+  EXPECT_EQ(source.releases, 1u);
+  EXPECT_EQ(result.release_count, 1u);
+  EXPECT_TRUE(slot.available());
+}
+
+TEST(DependentCompletion, OriginalOwnedResultHasOneVerdictAndRetainsItsSlot) {
+  using namespace hyle::compute;
+  auto observer = detail::DependentCompletion::create(hyle::mem::system_allocator()).value();
+  auto slot = detail::ResultSlot<int>::create(hyle::mem::system_allocator()).value();
+  for (int episode = 0; episode < 2; ++episode) {
+    auto write = slot.begin().value();
+    ASSERT_TRUE(write.emplace(int{23 + episode}).ok());
+    auto result = write.publish(Completion::completed()).value();
+    OutcomeSourceProbe source;
+    source.original = Completion::completed();
+    auto &original = detail::ResultAccess::completion(result);
+    auto ignored = detail::ResultAccess::replace_completion(
+        result, observer.publish(std::move(original), source.protocol()));
+    EXPECT_FALSE(ignored.valid());
+    ASSERT_TRUE(result.completion().wait().ok()); // Actual Graph consumption shape.
+    auto lease = result.wait().value();
+    EXPECT_EQ(*lease, 23 + episode);
+    EXPECT_EQ(result.result().value().get(), lease.get());
+    result = {};
+    EXPECT_FALSE(slot.begin().has_value());
+    lease = {};
+    EXPECT_TRUE(observer.available());
+    EXPECT_EQ(source.releases, 1u);
+  }
+  auto write = slot.begin().value();
+  ASSERT_TRUE(write.emplace(99).ok());
+  auto result = write.publish(Completion::completed()).value();
+  OutcomeSourceProbe failed;
+  failed.original = Completion::completed(hyle::Status::Cancelled("source"));
+  auto &original = detail::ResultAccess::completion(result);
+  auto replaced = detail::ResultAccess::replace_completion(
+      result, observer.publish(std::move(original), failed.protocol()));
+  EXPECT_FALSE(replaced.valid());
+  EXPECT_TRUE(result.completion().wait().IsCancelled());
+  EXPECT_TRUE(result.wait().error().IsCancelled());
+  EXPECT_TRUE(result.result().error().IsCancelled());
+}
+
+TEST(DependentCompletion, ColdAllocationOomAndInvalidAllocatorAreReported) {
+  using namespace hyle::compute;
+  EXPECT_FALSE(detail::DependentCompletion::create({}).has_value());
+  hyle::mem::AllocatorRef exhausted{
+      [](void *, std::size_t, std::size_t) noexcept -> void * { return nullptr; },
+      [](void *, void *, std::size_t, std::size_t) noexcept {},
+      [](void *, void *, std::size_t, std::size_t, std::size_t) noexcept -> void * {
+        return nullptr;
+      }, nullptr};
+  auto failed = detail::DependentCompletion::create(exhausted);
+  ASSERT_FALSE(failed.has_value());
+  EXPECT_TRUE(failed.error().IsResourceExhausted());
+}
+
+TEST(DependentCompletion, WaitDrainsUnknownNativeRetirementWithoutCallbackWaiting) {
+  using namespace hyle::compute;
+  auto slot = detail::DependentCompletion::create(hyle::mem::system_allocator()).value();
+  AsyncProbe suffix_native;
+  suffix_native.observation_failed = true;
+  OutcomeSourceProbe source;
+  source.original = Completion::completed();
+  auto completion = slot.publish(
+      detail::CompletionAccess::make(&kAsyncVTable, &suffix_native), source.protocol());
+  EXPECT_EQ(completion.poll().value(), CompletionPoll::kPending);
+  std::barrier start(2);
+  std::thread retirement([&] {
+    start.arrive_and_wait();
+    retire_abandoned(suffix_native);
+  });
+  start.arrive_and_wait();
+  EXPECT_TRUE(completion.wait().IsUnavailable());
+  retirement.join();
+  EXPECT_EQ(source.releases, 1u);
+  EXPECT_TRUE(slot.available());
+}
+
+TEST(DependentCompletion, TwoColdSlotsReuseWithoutWarmMetadataAllocations) {
+  using namespace hyle::compute;
+  struct Allocations final { std::size_t allocations = 0, frees = 0; } counters;
+  hyle::mem::AllocatorRef allocator{
+      [](void *opaque, std::size_t bytes, std::size_t alignment) noexcept -> void * {
+        ++static_cast<Allocations *>(opaque)->allocations;
+        return hyle::mem::system_allocator().allocate(bytes, alignment);
+      },
+      [](void *opaque, void *pointer, std::size_t bytes, std::size_t alignment) noexcept {
+        ++static_cast<Allocations *>(opaque)->frees;
+        hyle::mem::system_allocator().deallocate(pointer, bytes, alignment);
+      },
+      [](void *, void *pointer, std::size_t old_bytes, std::size_t bytes,
+          std::size_t alignment) noexcept -> void * {
+        return hyle::mem::system_allocator().reallocate(pointer, old_bytes, bytes, alignment);
+      }, &counters};
+  auto first = detail::DependentCompletion::create(allocator).value();
+  auto second = detail::DependentCompletion::create(allocator).value();
+  EXPECT_EQ(counters.allocations, 2u);
+  for (unsigned episode = 0; episode < 64; ++episode) {
+    OutcomeSourceProbe one, two;
+    one.original = Completion::completed();
+    two.original = Completion::completed();
+    auto left = first.publish(Completion::completed(), one.protocol());
+    auto right = second.publish(Completion::completed(), two.protocol());
+    EXPECT_FALSE(first.available());
+    EXPECT_FALSE(second.available());
+    ASSERT_TRUE(right.wait().ok());
+    ASSERT_TRUE(left.wait().ok());
+    EXPECT_EQ(one.releases, 1u);
+    EXPECT_EQ(two.releases, 1u);
+    EXPECT_TRUE(first.available());
+    EXPECT_TRUE(second.available());
+    EXPECT_EQ(counters.allocations, 2u);
+    EXPECT_EQ(counters.frees, 0u);
+  }
+  first.reset(); second.reset();
+  EXPECT_EQ(counters.frees, 2u);
 }
 
 TEST(CopyDependency, RetainedNativeIdentityIsResolvedWithoutObservationOrRetirement) {

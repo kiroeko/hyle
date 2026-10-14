@@ -4,6 +4,8 @@
 
 namespace hyle::compute::apple::detail {
 struct CopyStreamAccess final {
+  static HYLE_COMPUTE_ROUTE_APPLE_API Result<std::size_t> retirement_sources(
+      CopyBatchUpdate &, std::span<Completion *>) noexcept;
   // Trusted update receivers only: no host reads or public ready conversion.
   static HYLE_COMPUTE_ROUTE_APPLE_API Result<compute::detail::CopyUpdateInput> input(
       const CopyBatchUpdate &, CopyResourceId) noexcept;

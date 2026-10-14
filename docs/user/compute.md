@@ -1527,6 +1527,11 @@ oneDNN 类型不会泄漏到 Tensor、Operation 或 Graph API。
   原提交对象和生产槽可销毁；同槽仍有结果引用时不能覆盖，另一槽可继续使用。T 的 runtime 决定如何读其数据，
   HYLE 不把它伪装为 Mem allocation，也不隐式创建 host shadow copy。注入 allocator 必须活过所有结果引用。
   这些共同接口不描述 MLX/Metal 或 Vulkan 的原生 Program；其默认规则和验收范围见对应路线指南。
+  组合执行的实现者可在冷路径创建 `detail::DependentCompletion`，用 trusted 来源协议替换原结果的
+  completion；结果 storage 与 payload 保持原样，`completion()`、`wait()`、`result()` 消费同一状态。
+  来源只有一个观察 owner，后继实际退休后才观察或移交原 producer/copy completions；查询错误不能
+  充当实际退休。协议订阅须覆盖全部已接纳来源，并由实际退休回调释放其保活，不能在回调里等待
+  另一个回调。该内部实现接缝不自动给普通原生 Program 添加分页输入或推理策略。
 - RMSNorm 允许 input/output 精确同址；所有 operation 拒绝不安全 partial overlap 和第二输入/output
   overlap。CPU route 要求 host-accessible storage，并如实调用 non-coherent resource 的 invalidate/flush。
 - 不同 Queue 可并发；同一 ordered Queue 是单 producer 提交域，两个线程同时录入会明确失败。Graph 会用

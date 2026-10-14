@@ -9,6 +9,7 @@ namespace hyle::compute {
 
 namespace detail {
 struct ResultStorage;
+struct ResultAccess;
 template <class T> class ResultWrite;
 HYLE_COMPUTE_API void retain_result(ResultStorage *storage) noexcept;
 HYLE_COMPUTE_API void release_result(ResultStorage *storage) noexcept;
@@ -118,6 +119,7 @@ public:
 
 private:
   friend class detail::ResultWrite<T>;
+  friend struct detail::ResultAccess;
   OwnedResult(detail::ResultStorage *storage, Completion &&completion) noexcept
       : completion_(std::move(completion)), storage_(storage) {}
   void reset() noexcept {

@@ -1,0 +1,79 @@
+{
+  "baseline": "16d677b38db855482ada49ed260a3611f5c17147",
+  "audit": "e34080781",
+  "inputs": [
+    {
+      "path": "include/hyle/compute/detail/copy_stream_access.h",
+      "sha256": "ae27087c250587e3b9b2a76118ea2e3d6b1e619ed1c5c863d9e887a8faf6719c"
+    },
+    {
+      "path": "include/hyle/compute/detail/dependent_completion.h",
+      "sha256": "25aecc0c64d1edfad3d71523b04dc222f523ac7cd71f99e63193495a8431cc9b"
+    },
+    {
+      "path": "include/hyle/compute/detail/generated_result.h",
+      "sha256": "a9fa5d3cebc9e300c0fb0e17bec447a18448c126a64846d74eb830df166933f1"
+    },
+    {
+      "path": "include/hyle/compute/result.h",
+      "sha256": "07a584147b7de3b3f3c1a238207df4ec548130308295b583fc8c93a4d36a4164"
+    },
+    {
+      "path": "src/compute/batch_transfer.cc",
+      "sha256": "d4533f07e2126b6fe6754176ba7a450414a1b734469b7874adb8c15dd104a22b"
+    },
+    {
+      "path": "src/compute/retained_completion.cc",
+      "sha256": "8977b8fc091662b83922f54d91b21244e55ddaae6105bde3fbf7493e9630ee10"
+    },
+    {
+      "path": "src/compute_route_apple/apple_copy_program.cc",
+      "sha256": "20cf5d7af8888ae88679d77ca702d196d99b41e0f982a9cdb0fb3d17c6fb8491"
+    },
+    {
+      "path": "src/compute_route_apple/apple_file_stream_access.h",
+      "sha256": "ed95f31528c936fd3ac62f551f0e5b748a39cf278d5816f12008fadde44ada67"
+    },
+    {
+      "path": "src/compute_route_vulkan/vulkan_copy_program.cc",
+      "sha256": "445262be12a11b52463a2c08c0ae7738249c64fc1109b2352e563c28f7bc6c8c"
+    },
+    {
+      "path": "src/compute_route_vulkan/vulkan_file_stream_access.h",
+      "sha256": "3feb0a15f2ecd4d23e333e049402cad71d4b96aa78b67bcb12b0116d6de5a217"
+    },
+    {
+      "path": "tests/compute/completion_test.cc",
+      "sha256": "944ca105495c0494ae6dba7b1d5f9994dd6f93f4e44b22af7cff5c3900b231f0"
+    },
+    {
+      "path": "tests/compute/owned_outcome_sdk_consumer.cc",
+      "sha256": "15d385f038dff2ba577c0f9a0b02166e448300e61f725dceec27a322b1dc54ed"
+    },
+    {
+      "path": "tests/compute_backend_cpu/copy_program_test.cc",
+      "sha256": "1b2231b50e6fd90db4ac4ef45589c0dda47814694ff63670c9e0a82673373b87"
+    },
+    {
+      "path": "tests/compute_batch/owned_outcome_completion_fixture.h",
+      "sha256": "5a62dd56fb74f82b2e9a2677652d9347c42cd2ba0178f9ffffb1317844c0680b"
+    },
+    {
+      "path": "tests/compute_batch/owned_outcome_cpu_consumer.cc",
+      "sha256": "708379d863bb93e1552e302967f58f25570271158c1ac42b41ef7d0ab2995c98"
+    },
+    {
+      "path": "tests/compute_batch/owned_outcome_cuda_consumer.cc",
+      "sha256": "298f38983fd41dbf44b00024bf491cf9167954897899d860dc9cb323daaefb13"
+    },
+    {
+      "path": "tests/compute_batch/pending_outcome_owner_apple_probe.cc",
+      "sha256": "f93967c323b255efd188b574d624d6809191bf4cf85faef581603d7cb3e871b1"
+    },
+    {
+      "path": "tests/compute_batch/pending_outcome_owner_vulkan_probe.cc",
+      "sha256": "d2af8882fcd900c267e3983cdd6ba6ef0ce932bb069322f300fecac79eaf3584"
+    }
+  ],
+  "comment_only_delta_after_source_host_tests": "dependent_completion.h release-reference contract comment; exact original header preserved in air input-1.zip; no code change"
+}

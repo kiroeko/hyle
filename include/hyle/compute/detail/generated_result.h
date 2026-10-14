@@ -10,6 +10,22 @@
 
 namespace hyle::compute::detail {
 
+// Trusted same-build observation adapters only. The original storage/payload
+// stays with OwnedResult; replacing its completion never creates a result slot.
+struct ResultAccess final {
+  template<class T>
+  static Completion &completion(OwnedResult<T> &result) noexcept {
+    return result.completion_;
+  }
+  template<class T>
+  static Completion replace_completion(OwnedResult<T> &result,
+                                       Completion replacement) noexcept {
+    Completion original=std::move(result.completion_);
+    result.completion_=std::move(replacement);
+    return original;
+  }
+};
+
 using ResultDestroyFn = void (*)(void *) noexcept;
 HYLE_COMPUTE_API Result<ResultStorage *>
 create_result_storage(mem::AllocatorRef allocator, std::size_t size,

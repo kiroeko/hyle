@@ -478,6 +478,30 @@ Result<compute::detail::CompletionDependency> detail::CopyStreamAccess::dependen
   }
   return latest;
 }
+Result<std::size_t> detail::CopyStreamAccess::retirement_sources(
+    CopyBatchUpdate &owner, std::span<Completion *> output) noexcept {
+  auto &invocation=detail::CopyUpdateAccess::invocation(owner);
+  auto &submission=detail::CopyUpdateAccess::submission(owner);
+  HYLE_RETURN_IF_ERROR(detail::CopyUpdateAccess::qualify(invocation,submission));
+  auto *state=invocation.state_;
+  const auto used=[&](std::size_t binding) noexcept {
+    for(std::uint32_t phase=0;phase<state->submitted;++phase) {
+      const auto &plan=state->plans[phase];
+      for(std::size_t i=plan.producer_first;i<plan.producer_first+plan.producer_count;++i)
+        if(state->producers[i]==binding)return true;
+    }
+    return false;
+  };
+  std::size_t count=state->submitted;
+  for(std::size_t i=0;i<state->bindings.size();++i)if(used(i))++count;
+  if(output.empty())return count;
+  if(output.size()<count)return std::unexpected(Status::ResourceExhausted("Vulkan retirement source capacity"));
+  std::size_t at=0;
+  for(std::size_t i=0;i<state->bindings.size();++i)
+    if(used(i))output[at++]=&state->bindings[i].producer;
+  for(std::uint32_t i=0;i<state->submitted;++i)output[at++]=&state->phases[i]->completion;
+  return count;
+}
 Status detail::CopyStreamAccess::admit_read(LeaseUseBatch &uses,
     const CopyBatchUpdate &owner, CopyResourceId id) noexcept {
   HYLE_ASSIGN_OR_RETURN(auto original, input(owner, id));

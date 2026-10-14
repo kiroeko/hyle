@@ -1,0 +1,34 @@
+{
+  "state": "AUDITED implementation checkpoint, not CLOSED",
+  "cumulative_seconds": {
+    "source": 50.022752000000004,
+    "host": 159.97335045900002,
+    "sdk": 55.65281241500001,
+    "windows": 241.59400000001187,
+    "cuda": 69.105334108
+  },
+  "passed": [
+    "Windows29 completion/result tests and affected Vulkan compile",
+    "Air Apple3/Vulkan5 original native ownership and errors",
+    "Air actual CPU1024-byte source/F2/suffix oracle",
+    "six host sanitizer configs with native/core28/CPU7",
+    "four relocated static/shared SDKs, sixteen standalone header compile units and public64 episodes",
+    "actual CUDA1024-byte source/F2/suffix four success/unsupported-cancel/unknown/abandon cases without nvcc"
+  ],
+  "retained_failures": [
+    "Windows first build C4834 discarded nodiscard replacement result; test corrected, second build/pass retained"
+  ],
+  "remaining": [
+    "original source partial accepted-prefix and used-producer failure fan-out adversarial coverage",
+    "source owner cold preallocation and per-node OOM in production pending adapter",
+    "actual final Graph integration rather than equivalent await_completion/completion+wait shape",
+    "main G03 typed pending pages/late native output/7-route64-step oracle",
+    "old Graph Windows gates and G04-G10"
+  ],
+  "limits": [
+    "host instrumentation uses only the two existing explicit TSan models, no new models/suppressions/LSan/driver/shader/private-pool claim",
+    "source fixture still allocates shared source per episode; only product observer proves warm no metadata allocation",
+    "private native fixture is not public pending receiver qualification",
+    "closed original source/math/P1 gates not rerun"
+  ]
+}

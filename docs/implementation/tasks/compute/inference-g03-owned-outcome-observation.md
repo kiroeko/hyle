@@ -80,3 +80,19 @@ late producer/public receiver 仍主卡；本有限FIX处理它们需要的真�
 七问裁决：无需新依赖/FFI；两个具名纵切和真实 Graph completion消费；借原 native/
 F1/F2/结果槽；P0 有界 phase/producer扫描与冷固定元数据；三交付原签名/头成立；
 guide须说明Actual retirement与唯一观察。验证门未完成，不把 AUDITED 写成 PASS。
+
+## 2026-10-14 实现检查点
+
+OO01–OO04 的原 completion 接缝已写入产品，并通过
+[实际检查点证据](../../../../evidence/correctness/inference-g03-owned-outcome-observation/README.md)：
+Windows29 core/result；Air Apple3/Vulkan5 原 native lifecycle＋CPU byte oracle；
+六组 host sanitizer；四组 relocated static/shared SDK/16 独立头/每组64 episodes；
+实际 CUDA1 KiB 原 producer/F2/suffix 四案例，无 nvcc/kernel rebuild。
+没有第二 executor/结果槽，没有普通对象字段改动；两个 cold observer slots 的64次复用
+没有额外 metadata allocation。原 Graph 的 completion→wait 消费形状使用同一个原 OwnedResult。
+
+本卡保持 AUDITED：原 partial accepted-prefix/used-producer failure 对抗 fan-out、生产
+source owner 冷预留/逐节点 OOM及实际 Graph 集成尚未完成；测试 source owner 的每次
+make_shared 不代签生产 warm 成本。主卡 pending page/late native backing/七路线64-step
+仍未完成。窗口内 Windows 首编译测试 nodiscard FAIL 保留；各构建累计及原限制见证据。
+下个实现动作只补这些固定验收及主卡准入形状，不重跑旧数学/P1或重开全库研究。

@@ -1,0 +1,334 @@
+{
+  "scope": "installed/relocated original compute result and opt-in detail observer only; no repository include paths, static and shared, no native private qualifier export claim",
+  "stages": [
+    {
+      "route": "apple",
+      "mode": "static",
+      "stage": "producer-build",
+      "command": [
+        "/opt/homebrew/bin/cmake",
+        "--build",
+        "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-build",
+        "--target",
+        "hyle_compute",
+        "hyle_compute_route_apple",
+        "--parallel",
+        "4"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 0.429458583,
+      "log": "/Users/kiro/hyle-scratch/compute-unified/g03-owned-outcome-sdk/apple-static-producer-build-1.log"
+    },
+    {
+      "route": "apple",
+      "mode": "static",
+      "stage": "install",
+      "command": [
+        "/opt/homebrew/bin/cmake",
+        "--install",
+        "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-build",
+        "--prefix",
+        "/Users/kiro/hyle-scratch/compute-unified/g03-owned-outcome-sdk/apple-static/staging"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 0.49912937499999993,
+      "log": "/Users/kiro/hyle-scratch/compute-unified/g03-owned-outcome-sdk/apple-static-install-1.log"
+    },
+    {
+      "route": "apple",
+      "mode": "static",
+      "stage": "configure",
+      "command": [
+        "/opt/homebrew/bin/cmake",
+        "-S",
+        "/Users/kiro/hyle-scratch/compute-unified/g03-owned-outcome-sdk/apple-static/consumer",
+        "-B",
+        "/Users/kiro/hyle-scratch/compute-unified/g03-owned-outcome-sdk/apple-static/build",
+        "-G",
+        "Ninja",
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DCMAKE_PREFIX_PATH=/Users/kiro/hyle-scratch/compute-unified/g03-owned-outcome-sdk/apple-static/relocated",
+        "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 1.3271659580000001,
+      "log": "/Users/kiro/hyle-scratch/compute-unified/g03-owned-outcome-sdk/apple-static-configure-1.log"
+    },
+    {
+      "route": "apple",
+      "mode": "static",
+      "stage": "build",
+      "command": [
+        "/opt/homebrew/bin/cmake",
+        "--build",
+        "/Users/kiro/hyle-scratch/compute-unified/g03-owned-outcome-sdk/apple-static/build",
+        "--target",
+        "outcome",
+        "headers",
+        "--parallel",
+        "4"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 0.35172241599999987,
+      "log": "/Users/kiro/hyle-scratch/compute-unified/g03-owned-outcome-sdk/apple-static-build-1.log"
+    },
+    {
+      "route": "apple",
+      "mode": "static",
+      "stage": "outcome",
+      "command": [
+        "/Users/kiro/hyle-scratch/compute-unified/g03-owned-outcome-sdk/apple-static/build/outcome"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 0.484349833,
+      "log": "/Users/kiro/hyle-scratch/compute-unified/g03-owned-outcome-sdk/apple-static-outcome-1.log"
+    },
+    {
+      "route": "apple",
+      "mode": "shared",
+      "stage": "producer-build",
+      "command": [
+        "/opt/homebrew/bin/cmake",
+        "--build",
+        "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-build",
+        "--target",
+        "hyle_compute",
+        "hyle_compute_route_apple",
+        "--parallel",
+        "4"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 10.146084084,
+      "log": "/Users/kiro/hyle-scratch/compute-unified/g03-owned-outcome-sdk/apple-shared-producer-build-1.log"
+    },
+    {
+      "route": "apple",
+      "mode": "shared",
+      "stage": "install",
+      "command": [
+        "/opt/homebrew/bin/cmake",
+        "--install",
+        "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-build",
+        "--prefix",
+        "/Users/kiro/hyle-scratch/compute-unified/g03-owned-outcome-sdk/apple-shared/staging"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 0.3801129999999997,
+      "log": "/Users/kiro/hyle-scratch/compute-unified/g03-owned-outcome-sdk/apple-shared-install-1.log"
+    },
+    {
+      "route": "apple",
+      "mode": "shared",
+      "stage": "configure",
+      "command": [
+        "/opt/homebrew/bin/cmake",
+        "-S",
+        "/Users/kiro/hyle-scratch/compute-unified/g03-owned-outcome-sdk/apple-shared/consumer",
+        "-B",
+        "/Users/kiro/hyle-scratch/compute-unified/g03-owned-outcome-sdk/apple-shared/build",
+        "-G",
+        "Ninja",
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DCMAKE_PREFIX_PATH=/Users/kiro/hyle-scratch/compute-unified/g03-owned-outcome-sdk/apple-shared/relocated",
+        "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 1.2469381250000016,
+      "log": "/Users/kiro/hyle-scratch/compute-unified/g03-owned-outcome-sdk/apple-shared-configure-1.log"
+    },
+    {
+      "route": "apple",
+      "mode": "shared",
+      "stage": "build",
+      "command": [
+        "/opt/homebrew/bin/cmake",
+        "--build",
+        "/Users/kiro/hyle-scratch/compute-unified/g03-owned-outcome-sdk/apple-shared/build",
+        "--target",
+        "outcome",
+        "headers",
+        "--parallel",
+        "4"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 0.3384089999999986,
+      "log": "/Users/kiro/hyle-scratch/compute-unified/g03-owned-outcome-sdk/apple-shared-build-1.log"
+    },
+    {
+      "route": "apple",
+      "mode": "shared",
+      "stage": "outcome",
+      "command": [
+        "/Users/kiro/hyle-scratch/compute-unified/g03-owned-outcome-sdk/apple-shared/build/outcome"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 6.783217041,
+      "log": "/Users/kiro/hyle-scratch/compute-unified/g03-owned-outcome-sdk/apple-shared-outcome-1.log"
+    },
+    {
+      "route": "vulkan",
+      "mode": "static",
+      "stage": "producer-build",
+      "command": [
+        "/opt/homebrew/bin/cmake",
+        "--build",
+        "/Users/kiro/hyle-scratch/compute-unified/a-cpu-vulkan/selected-graph/static-sdk-build",
+        "--target",
+        "hyle_compute",
+        "hyle_compute_route_vulkan",
+        "--parallel",
+        "4"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 0.43727266699999845,
+      "log": "/Users/kiro/hyle-scratch/compute-unified/g03-owned-outcome-sdk/vulkan-static-producer-build-1.log"
+    },
+    {
+      "route": "vulkan",
+      "mode": "static",
+      "stage": "install",
+      "command": [
+        "/opt/homebrew/bin/cmake",
+        "--install",
+        "/Users/kiro/hyle-scratch/compute-unified/a-cpu-vulkan/selected-graph/static-sdk-build",
+        "--prefix",
+        "/Users/kiro/hyle-scratch/compute-unified/g03-owned-outcome-sdk/vulkan-static/staging"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 0.4777848330000012,
+      "log": "/Users/kiro/hyle-scratch/compute-unified/g03-owned-outcome-sdk/vulkan-static-install-1.log"
+    },
+    {
+      "route": "vulkan",
+      "mode": "static",
+      "stage": "configure",
+      "command": [
+        "/opt/homebrew/bin/cmake",
+        "-S",
+        "/Users/kiro/hyle-scratch/compute-unified/g03-owned-outcome-sdk/vulkan-static/consumer",
+        "-B",
+        "/Users/kiro/hyle-scratch/compute-unified/g03-owned-outcome-sdk/vulkan-static/build",
+        "-G",
+        "Ninja",
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DCMAKE_PREFIX_PATH=/Users/kiro/hyle-scratch/compute-unified/g03-owned-outcome-sdk/vulkan-static/relocated",
+        "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 1.3021456250000014,
+      "log": "/Users/kiro/hyle-scratch/compute-unified/g03-owned-outcome-sdk/vulkan-static-configure-1.log"
+    },
+    {
+      "route": "vulkan",
+      "mode": "static",
+      "stage": "build",
+      "command": [
+        "/opt/homebrew/bin/cmake",
+        "--build",
+        "/Users/kiro/hyle-scratch/compute-unified/g03-owned-outcome-sdk/vulkan-static/build",
+        "--target",
+        "outcome",
+        "headers",
+        "--parallel",
+        "4"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 0.3377681670000001,
+      "log": "/Users/kiro/hyle-scratch/compute-unified/g03-owned-outcome-sdk/vulkan-static-build-1.log"
+    },
+    {
+      "route": "vulkan",
+      "mode": "static",
+      "stage": "outcome",
+      "command": [
+        "/Users/kiro/hyle-scratch/compute-unified/g03-owned-outcome-sdk/vulkan-static/build/outcome"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 0.4018495420000008,
+      "log": "/Users/kiro/hyle-scratch/compute-unified/g03-owned-outcome-sdk/vulkan-static-outcome-1.log"
+    },
+    {
+      "route": "vulkan",
+      "mode": "shared",
+      "stage": "producer-build",
+      "command": [
+        "/opt/homebrew/bin/cmake",
+        "--build",
+        "/Users/kiro/hyle-scratch/compute-unified/a-cpu-vulkan/selected-graph/shared-sdk-build",
+        "--target",
+        "hyle_compute",
+        "hyle_compute_route_vulkan",
+        "--parallel",
+        "4"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 21.640996458,
+      "log": "/Users/kiro/hyle-scratch/compute-unified/g03-owned-outcome-sdk/vulkan-shared-producer-build-1.log"
+    },
+    {
+      "route": "vulkan",
+      "mode": "shared",
+      "stage": "install",
+      "command": [
+        "/opt/homebrew/bin/cmake",
+        "--install",
+        "/Users/kiro/hyle-scratch/compute-unified/a-cpu-vulkan/selected-graph/shared-sdk-build",
+        "--prefix",
+        "/Users/kiro/hyle-scratch/compute-unified/g03-owned-outcome-sdk/vulkan-shared/staging"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 0.3572670000000002,
+      "log": "/Users/kiro/hyle-scratch/compute-unified/g03-owned-outcome-sdk/vulkan-shared-install-1.log"
+    },
+    {
+      "route": "vulkan",
+      "mode": "shared",
+      "stage": "configure",
+      "command": [
+        "/opt/homebrew/bin/cmake",
+        "-S",
+        "/Users/kiro/hyle-scratch/compute-unified/g03-owned-outcome-sdk/vulkan-shared/consumer",
+        "-B",
+        "/Users/kiro/hyle-scratch/compute-unified/g03-owned-outcome-sdk/vulkan-shared/build",
+        "-G",
+        "Ninja",
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DCMAKE_PREFIX_PATH=/Users/kiro/hyle-scratch/compute-unified/g03-owned-outcome-sdk/vulkan-shared/relocated",
+        "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 1.2376000829999967,
+      "log": "/Users/kiro/hyle-scratch/compute-unified/g03-owned-outcome-sdk/vulkan-shared-configure-1.log"
+    },
+    {
+      "route": "vulkan",
+      "mode": "shared",
+      "stage": "build",
+      "command": [
+        "/opt/homebrew/bin/cmake",
+        "--build",
+        "/Users/kiro/hyle-scratch/compute-unified/g03-owned-outcome-sdk/vulkan-shared/build",
+        "--target",
+        "outcome",
+        "headers",
+        "--parallel",
+        "4"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 0.33441441700000496,
+      "log": "/Users/kiro/hyle-scratch/compute-unified/g03-owned-outcome-sdk/vulkan-shared-build-1.log"
+    },
+    {
+      "route": "vulkan",
+      "mode": "shared",
+      "stage": "outcome",
+      "command": [
+        "/Users/kiro/hyle-scratch/compute-unified/g03-owned-outcome-sdk/vulkan-shared/build/outcome"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 7.139126208,
+      "log": "/Users/kiro/hyle-scratch/compute-unified/g03-owned-outcome-sdk/vulkan-shared-outcome-1.log"
+    }
+  ],
+  "cumulative_seconds": 55.65281241500001
+}

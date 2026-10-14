@@ -245,4 +245,41 @@ TEST(CpuCopyUpdate, InvalidUnacceptedAndPublishedControlsDoNotCreatePendingAutho
   ASSERT_TRUE(published.view()->read(bytes).ok());
   for (auto byte : bytes) EXPECT_EQ(byte, std::byte{61});
 }
+TEST(CpuCopyUpdate, RetirementSourceBorrowCountsAcceptedPhasesAndDistinctUsedProducers) {
+  auto context = Context::create(cpu::device()).value();
+  auto queue = context.create_queue().value();
+  std::array<CopyResourceSpec, 5> resources;
+  for (auto &resource : resources) resource = {mem::system_resource(), 32};
+  auto program = CopyBatchProgram::prepare(context, resources).value();
+  auto invocation = CopyBatchInvocation::create(program, queue).value();
+  std::array<LeasePool, 4> pools;
+  for (auto &pool : pools) pool = LeasePool::create(mem::system_resource(), 512).value();
+  ASSERT_TRUE(bind(pools, invocation, std::byte{37}).ok());
+  auto unused_pool = LeasePool::create(mem::system_resource(), 512).value();
+  auto unused_writer = unused_pool.allocate(32).value();
+  ASSERT_TRUE(invocation.bind_mutable({4}, std::move(unused_writer)).ok());
+  ASSERT_TRUE(invocation.bind_producer({0}, Completion::completed()).ok());
+  ASSERT_TRUE(invocation.bind_producer({4}, Completion::completed()).ok());
+  const std::array<CopyRange, 3> ranges{{{{0}, {1}, {0}, 0, 0, 32},
+      {{1}, {2}, {1}, 0, 0, 32}, {{0}, {3}, {2}, 0, 0, 32}}};
+  ASSERT_TRUE(invocation.prepare_replay(kPhases, ranges).ok());
+  auto submitted = invocation.submit().value();
+  auto update = CopyBatchUpdate::take(std::move(invocation), std::move(submitted)).value();
+  ASSERT_EQ(detail::CopyStreamAccess::retirement_sources(update, {}).value(), 4u);
+  std::array<Completion *, 4> original{};
+  ASSERT_EQ(detail::CopyStreamAccess::retirement_sources(update, original).value(), 4u);
+  for (auto *completion : original) ASSERT_NE(completion, nullptr);
+  std::array<Completion *, 3> short_buffer{original[0], original[1], original[2]};
+  const auto before = short_buffer;
+  EXPECT_TRUE(detail::CopyStreamAccess::retirement_sources(update, short_buffer)
+      .error().IsResourceExhausted());
+  EXPECT_EQ(short_buffer, before);
+  std::array<Completion *, 4> repeated{};
+  ASSERT_EQ(detail::CopyStreamAccess::retirement_sources(update, repeated).value(), 4u);
+  EXPECT_EQ(repeated, original);
+  EXPECT_TRUE(update.valid());
+  EXPECT_TRUE(update.wait().ok());
+  CopyBatchUpdate invalid;
+  EXPECT_FALSE(detail::CopyStreamAccess::retirement_sources(invalid, {}));
+}
 } // namespace

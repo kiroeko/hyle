@@ -20,6 +20,12 @@ struct CopyUpdateInput final {
   CopyPhaseId last_write;
 };
 struct CopyStreamAccess final {
+  // Borrow original completions for an opt-in actual-retirement observer.
+  // Empty output queries capacity. A nonempty insufficient span is untouched.
+  // Accepted phases and only their used producer bindings are included; no
+  // poll/wait/reset is performed and the update remains the sole owner.
+  static HYLE_COMPUTE_API Result<std::size_t> retirement_sources(
+      CopyBatchUpdate &, std::span<Completion *>) noexcept;
   // Trusted update receivers only: no host reads or public ready conversion.
   static HYLE_COMPUTE_API Result<compute::detail::CopyUpdateInput> input(
       const CopyBatchUpdate &, CopyResourceId) noexcept;
