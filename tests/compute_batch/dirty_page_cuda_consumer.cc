@@ -38,7 +38,7 @@ Status run(){
   HYLE_ASSIGN_OR_RETURN(auto source_writer,source_pool.allocate(page_bytes));
   std::vector<std::byte> expected(page_bytes,std::byte{17}),actual(page_bytes);
   HYLE_RETURN_IF_ERROR(source_writer.view()->write(expected));
-  HYLE_ASSIGN_OR_RETURN(auto source,source_writer.publish(cap.page_size));
+  HYLE_ASSIGN_OR_RETURN(auto source,source_writer.publish());
   const std::array specs{c::CopyResourceSpec{host.ref(),page_bytes},c::CopyResourceSpec{device.ref(),page_bytes}};
   HYLE_ASSIGN_OR_RETURN(auto program,c::CopyBatchProgram::prepare(context,specs));
   HYLE_ASSIGN_OR_RETURN(auto copy,c::CopyBatchInvocation::create(program,queue));
@@ -57,7 +57,7 @@ Status run(){
   for(unsigned step=0;step<64;++step){
     HYLE_ASSIGN_OR_RETURN(source_writer,source.try_write());
     HYLE_RETURN_IF_ERROR(source_writer.view()->fill(std::byte(23+step)));
-    HYLE_ASSIGN_OR_RETURN(source,source_writer.publish(cap.page_size));
+    HYLE_ASSIGN_OR_RETURN(source,source_writer.publish());
     {auto alias=ready;HYLE_RETURN_IF_ERROR(require(!arena.acquire(ready) && ready.valid(),"CUDA shared page permitted mutation or consumed reader"));}
     HYLE_ASSIGN_OR_RETURN(auto writer,arena.acquire(ready));
     HYLE_RETURN_IF_ERROR(copy.bind_source({0},source));HYLE_RETURN_IF_ERROR(copy.bind_mutable({1},std::move(writer.lease())));
