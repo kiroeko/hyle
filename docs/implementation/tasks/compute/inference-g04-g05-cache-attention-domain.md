@@ -1,6 +1,6 @@
 # G04/G05 编码 KV 与有限 attention 语义实施批
 
-状态：**共同 CANDIDATE；CPU provider 的 CE12 修正 AUDITED，2026-10-15**。baseline `694a3d1a4b02540cb56b6ceae35b73dd1dd93440`；
+状态：**共同 CANDIDATE；CPU provider 的 CE12 为5f9b261bf，2026-10-15**。baseline `694a3d1a4b02540cb56b6ceae35b73dd1dd93440`；
 共同批owner见下表：九个原实际组件及下文新增CUDA数值状态owner；有限CE01–07/API/成本合同已冻结。原 G03 已 CLOSED，不由本卡重开其权限/
 退休实现。九owner已合法SCOPED后进入AUDITED；仅下列有限FIX授权产品实现。
 本批沿[十项总卡](../project/inference-gaps-goal-execution-2026-10.md)，
@@ -913,3 +913,41 @@ provider 的 TEST_DEPS compute_route_cpu 及测试 target 的 compute_batch/comp
 selector 对仅 TEST_DEPS 的中央声明变化误选全库，已登记
 [独立工具反例](../build/validation-selector-test-only-component-deps.md)，保留原两份 plan；
 本轮按已证明的测试接线影响执行上述有限 gates，不重写 selector 或重编无关产品。
+
+GPU 性能 peer 准备先做独立数值预检：原始 GGML Vulkan full-F32/non-MMQ shader 已有
+Q8 type8/block34 和独立 HSK/HSV，不改 shader 算术。benchmark adapter 扩独立 K/V
+carrier/stride、Dv split/reduce 与有限 window 冷 F16 mask；保 query/output 转换和原生
+slot/completion。预检覆盖14个编码形状（含 D256/Q65、Q>KV、split、window0/16）与
+两个原 plain F16/F32 控制、两槽重放/readonly payload。仅准备数值与承载资格，不签 P1。
+原 Air SPIRV 必须逐 hash 核对原456 clean peer，并从其二进制重建一致 header；借用
+shipping static 缓存仅编两个 benchmark TU，dry-run 若牵连无关产品重编则先查接线。
+Air Mac16,12/arm64/macOS27.0.1/AppleClang21身份已实查；仍待 CPU 批次完成后串行实跑。
+
+### CE12 普通门完成与有限 CPU 复测候选
+
+[实际普通验证](../../../../evidence/correctness/inference-g04-g05-ce12-cpu-validation/receipt.json)
+绑定 CPU product5f9b261bfe6cfabdcbaf9fd84b693c35763b93a7：source22 PASS；provider、CPU
+route、Graph CPU 与 CPU executor 四个 CTest 全部 PASS（42.56/617.96/616.47/0.24秒）；
+三种宿主 sanitizer 各17测试＋9风险 PASS，ASan含LSan，UBSan含float-cast-overflow。
+relocated static/shared 各14数学、3公共消费者及12独立头 PASS。已测阶段累计2078.734秒，
+包含首次49 unresolved链接FAIL；封存脚本旧CTest摘要文字断言FAIL/耗时unknown另保留，
+只修本次打包匹配，没有因此重跑通过项目或修改公共工具。
+
+只将 CPU provider 冻结 CANDIDATE@5f9b261bf，其它十个 owner 仍为982676输入。公开头、
+API、对象布局、错误/退休和 attention 数学未变；F32内部 guard 分支不新增 F32 Batch资格。
+CPU 新 SDK 绑定见[复测来源记录](../../../../evidence/correctness/inference-g04-g05-ce12-cpu-validation/p1-rebind.json)：
+仅更换 installed SDK prefix 与 supporting provenance hashes，原形状/fixtures/ownership/
+16 A/A/n15/31/5%门及所有其它合同字段经结构化比较不变。artifact/provenance身份变化应由
+新 manifest 记录新 hash，不冒称原 d42锁未变化；原 QUALIFIED/FAIL 证据不覆盖或改名。
+复测未运行，当前不得写性能改善或全G04/G05 PASS。
+
+### Vulkan 独立 Q8 peer 数值预检完成
+
+[实际预检](../../../../evidence/correctness/inference-g04-g05-vulkan-encoded-peer-preflight/receipt.json)
+实际 Air/MoltenVK 原456 shader，14编码＋2原plain控制 PASS，编码各两slot四次重放，
+readonly K/V逐字节不变；最大绝对误差0.0000304988602。长KV case实际四dispatch包含
+split reduce。已测21.318秒，原 shader generator 为 no work；实际构建两benchmark TU
+及25个SIMD/State依赖TU。原 dry-run停在CMake重生成，未展示完整后续计划，实际日志
+如实封存；已核两个代表依赖的源码SHA/编译命令与原shipping SDK一致，不声称只编两TU。
+这里只签原始独立 shader adapter 的有限数值承载，不签P1/A/A、mask-opt、多batch、
+producer/growth/capture 或 CPU CE12；量化causal固定mask的O(Q*KV)冷存储明确计费。

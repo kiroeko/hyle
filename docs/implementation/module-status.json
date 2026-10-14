@@ -373,9 +373,10 @@
     },
     {
       "module": "compute_provider_ggml",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/inference-g04-g05-cache-attention-domain.md",
-      "summary": "G04/G05 CE12 AUDITED: qualified CPU Q8 P1 retains window UNRESOLVED and D64/Dv128 material LOSS/FAIL. Finite fix removes per-element external numeric-conversion calls from query safety validation via typed inline range checking, preserving all errors/output/lifetime/math. Other owners remain immutable candidates; original failures/costs retained."
+      "summary": "G04/G05 CE12 CANDIDATE: typed inline Q8 query safety preserves errors/output/lifetime/math. Source22, selected CPU factor4, ASan+LSan/UBSan/TSan17+9 each, relocated static/shared14+3 and twelve headers passed. Original qualified material LOSS/FAIL retained; same semantic finite P1 with new authenticated SDK pending. Other ten owners unchanged.",
+      "candidate": "5f9b261bfe6cfabdcbaf9fd84b693c35763b93a7"
     },
     {
       "module": "graph_provider_onednn",

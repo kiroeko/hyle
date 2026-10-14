@@ -1,0 +1,9 @@
+{
+  "kind": "CE12_CPU_P1_ARTIFACT_REBIND",
+  "original_qualified_contract_sha256": "d42c129fb8468c943df6abad858da54dddafcb226f8b6693bd6a6dfe3b709e16",
+  "new_contract_file_sha256": "7bb496baf157a34f2533fecdf3b2cda2174d7c071f6d17921ee30c31a072e4ec",
+  "semantic_diff": "NONE; only new SDK prefix and supporting provenance hash binding",
+  "prefix": "C:/h7/g04-sdk-cpu-static-ce12-1/relocated",
+  "prior_performance": "FAIL preserved; no samples/margins/fixtures changed",
+  "format": "original JSON bytes preserved except exact artifact-prefix/provenance hash replacements"
+}

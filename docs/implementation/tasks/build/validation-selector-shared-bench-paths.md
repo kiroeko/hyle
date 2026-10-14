@@ -73,3 +73,8 @@ A/A adapter 输入仍属同一 unknown 路径族，product_authorization 无 iss
 与146 skipped reasons。十一产品 owner 在982676 immutable 产品输入上进入 CANDIDATE；
 本轮无产品源码修改，仅独立原 DLL Q8 数学/交付片段预检通过。按活动卡继续有限原仪器
 合同，不以此修改 selector/性能核心、重建全库或将未运行风险/P1记PASS。
+
+同批 Vulkan Q8 原始 shader 数值预检扩展 reference.cc/.h 与一个独立预检 consumer；
+`.scratch/inference-gaps/g04-g05/vulkan-peer-preflight-validation-plan.json` 仍因同一路径族
+unknown 而 BLOCKED，product_authorization 无产品修改，docs/closure 与146 skipped reasons
+保留。仅按活动卡执行14编码/2plain数值、重放与readonly验证，不改公共工具或启动旧 P1。

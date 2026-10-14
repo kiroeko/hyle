@@ -1,0 +1,584 @@
+{
+  "kind": "G04_G05_CE12_CPU_QUERY_GUARD_VALIDATION",
+  "verdict": "PASS_FINITE_ORDINARY_GATES",
+  "product_commit": "5f9b261bfe6cfabdcbaf9fd84b693c35763b93a7",
+  "product_sha256": {
+    "src/compute_provider_ggml/ggml_cpu_provider.cc": "f542c7d1231955448a8e94469823f219f88c8263d22ffdcd5657baa577310277",
+    "tests/compute_provider_ggml/native_paged_test.cc": "014ab21f15fc62cb010ceb630bdd75188d0be9b6b3d820fcdaf5359bc24f5290",
+    "tests/compute_provider_ggml/CMakeLists.txt": "c6ba5f815bec3d3bedc761108fc4de88c110f697223e4dee708c4e5348d2cdad",
+    "cmake/HyleComponents.cmake": "2dc57c7351c9bfeaa8eba037d08bde71c8abea0fa77cd08b2506a778fe1b0ce3"
+  },
+  "runs": [
+    {
+      "kind": "source",
+      "mode": null,
+      "attempt": 1,
+      "state": "TERMINAL_FAIL",
+      "stages": [
+        {
+          "stage": "configure",
+          "command": [
+            "cmake",
+            "-S",
+            "C:\\public\\project-hyle\\hyle",
+            "-B",
+            "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev",
+            "-DCMAKE_PROJECT_INCLUDE=C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g02\\native-page-node\\project.cmake",
+            "-DHYLE_COMPONENTS=compute;graph",
+            "-DHYLE_COMPUTE_ROUTES=cpu",
+            "-DHYLE_BUILD_TESTS=ON",
+            "-DHYLE_BUILD_BENCH=OFF",
+            "-DHYLE_INSTALL=OFF",
+            "-DHYLE_TEST_INSTRUMENTATION=OFF"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 22.812000000005355,
+          "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\ce12\\cpu-source-1\\configure.log"
+        },
+        {
+          "stage": "compile",
+          "command": [
+            "cmake",
+            "--build",
+            "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev",
+            "--target",
+            "g04_g05_encoded_common_pages",
+            "hyle_compute_provider_ggml_tests",
+            "hyle_compute_route_cpu_tests",
+            "hyle_graph_route_cpu_tests",
+            "--parallel",
+            "4"
+          ],
+          "exit_code": 4294967295,
+          "elapsed_seconds": 157.82800000000861,
+          "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\ce12\\cpu-source-1\\compile.log"
+        }
+      ],
+      "cumulative_seconds": 180.64000000001397
+    },
+    {
+      "kind": "source",
+      "mode": null,
+      "attempt": 2,
+      "state": "TERMINAL_PASS",
+      "stages": [
+        {
+          "stage": "configure",
+          "command": [
+            "cmake",
+            "-S",
+            "C:\\public\\project-hyle\\hyle",
+            "-B",
+            "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev",
+            "-DCMAKE_PROJECT_INCLUDE=C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g02\\native-page-node\\project.cmake",
+            "-DHYLE_COMPONENTS=compute;graph",
+            "-DHYLE_COMPUTE_ROUTES=cpu",
+            "-DHYLE_BUILD_TESTS=ON",
+            "-DHYLE_BUILD_BENCH=OFF",
+            "-DHYLE_INSTALL=OFF",
+            "-DHYLE_TEST_INSTRUMENTATION=OFF"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 22.78100000001723,
+          "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\ce12\\cpu-source-2\\configure.log"
+        },
+        {
+          "stage": "compile",
+          "command": [
+            "cmake",
+            "--build",
+            "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev",
+            "--target",
+            "g04_g05_encoded_common_pages",
+            "hyle_compute_provider_ggml_tests",
+            "hyle_compute_route_cpu_tests",
+            "hyle_graph_route_cpu_tests",
+            "--parallel",
+            "4"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 31.57799999997951,
+          "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\ce12\\cpu-source-2\\compile.log"
+        },
+        {
+          "stage": "tests",
+          "command": [
+            "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\g04_g05_encoded_common_pages.exe",
+            "--gtest_output=xml:C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\ce12\\cpu-source-2\\tests.xml"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 42.17200000002049,
+          "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\ce12\\cpu-source-2\\tests.log"
+        },
+        {
+          "stage": "selected-factors",
+          "command": [
+            "ctest",
+            "--test-dir",
+            "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev",
+            "-C",
+            "Release",
+            "--output-on-failure",
+            "--no-tests=error",
+            "-L",
+            "^(compute_provider_ggml|compute_route_cpu|graph_route_cpu)$",
+            "-LE",
+            "headers"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 1277.6089999999967,
+          "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\ce12\\cpu-source-2\\selected-factors.log"
+        }
+      ],
+      "cumulative_seconds": 1374.140000000014
+    },
+    {
+      "kind": "host-risk",
+      "mode": "asan",
+      "attempt": null,
+      "state": "TERMINAL_PASS",
+      "stages": [
+        {
+          "stage": "configure",
+          "command": [
+            "cmake",
+            "-S",
+            "/home/kiro/hyle-f1/sanitizers/source-03242e7723cb",
+            "-B",
+            "/home/kiro/hyle-f1/sanitizers/asan-03242e7723cb",
+            "-DCMAKE_PROJECT_INCLUDE=/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/risk/host-asan-project.cmake"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 23.362897515,
+          "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/risk/host-asan-ce12-1/configure.log"
+        },
+        {
+          "stage": "compile",
+          "command": [
+            "cmake",
+            "--build",
+            "/home/kiro/hyle-f1/sanitizers/asan-03242e7723cb",
+            "--target",
+            "g04_encoded_host_tests",
+            "g04_encoded_host_risks",
+            "--parallel",
+            "4"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 44.593203182,
+          "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/risk/host-asan-ce12-1/compile.log"
+        },
+        {
+          "stage": "tests",
+          "command": [
+            "/home/kiro/hyle-f1/sanitizers/asan-03242e7723cb/bin/g04_encoded_host_tests",
+            "--gtest_filter=GgmlCpuCacheEncode.*:GgmlCpuBoxed.*:EncodedCommonPages.*",
+            "--gtest_output=xml:/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/risk/host-asan-ce12-1/tests.xml"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 2.375314870000011,
+          "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/risk/host-asan-ce12-1/tests.log"
+        },
+        {
+          "stage": "nine-risk-modes",
+          "command": [
+            "/home/kiro/hyle-f1/sanitizers/asan-03242e7723cb/bin/g04_encoded_host_risks"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 0.39973301199999867,
+          "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/risk/host-asan-ce12-1/nine-risk-modes.log"
+        }
+      ],
+      "cumulative_seconds": 70.73114857900002
+    },
+    {
+      "kind": "host-risk",
+      "mode": "ubsan",
+      "attempt": null,
+      "state": "TERMINAL_PASS",
+      "stages": [
+        {
+          "stage": "configure",
+          "command": [
+            "cmake",
+            "-S",
+            "/home/kiro/hyle-f1/sanitizers/source-03242e7723cb",
+            "-B",
+            "/home/kiro/hyle-f1/sanitizers/ubsan-03242e7723cb",
+            "-DCMAKE_PROJECT_INCLUDE=/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/risk/host-ubsan-project.cmake"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 19.737939382999997,
+          "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/risk/host-ubsan-ce12-1/configure.log"
+        },
+        {
+          "stage": "compile",
+          "command": [
+            "cmake",
+            "--build",
+            "/home/kiro/hyle-f1/sanitizers/ubsan-03242e7723cb",
+            "--target",
+            "g04_encoded_host_tests",
+            "g04_encoded_host_risks",
+            "--parallel",
+            "4"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 26.68597709299999,
+          "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/risk/host-ubsan-ce12-1/compile.log"
+        },
+        {
+          "stage": "tests",
+          "command": [
+            "/home/kiro/hyle-f1/sanitizers/ubsan-03242e7723cb/bin/g04_encoded_host_tests",
+            "--gtest_filter=GgmlCpuCacheEncode.*:GgmlCpuBoxed.*:EncodedCommonPages.*",
+            "--gtest_output=xml:/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/risk/host-ubsan-ce12-1/tests.xml"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 1.7483898019999913,
+          "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/risk/host-ubsan-ce12-1/tests.log"
+        },
+        {
+          "stage": "nine-risk-modes",
+          "command": [
+            "/home/kiro/hyle-f1/sanitizers/ubsan-03242e7723cb/bin/g04_encoded_host_risks"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 0.14771815799998933,
+          "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/risk/host-ubsan-ce12-1/nine-risk-modes.log"
+        }
+      ],
+      "cumulative_seconds": 48.32002443599997
+    },
+    {
+      "kind": "host-risk",
+      "mode": "tsan",
+      "attempt": null,
+      "state": "TERMINAL_PASS",
+      "stages": [
+        {
+          "stage": "configure",
+          "command": [
+            "cmake",
+            "-S",
+            "/home/kiro/hyle-f1/sanitizers/source-03242e7723cb",
+            "-B",
+            "/home/kiro/hyle-f1/sanitizers/tsan-03242e7723cb",
+            "-DCMAKE_PROJECT_INCLUDE=/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/risk/host-tsan-project.cmake"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 19.00045115799999,
+          "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/risk/host-tsan-ce12-1/configure.log"
+        },
+        {
+          "stage": "compile",
+          "command": [
+            "cmake",
+            "--build",
+            "/home/kiro/hyle-f1/sanitizers/tsan-03242e7723cb",
+            "--target",
+            "g04_encoded_host_tests",
+            "g04_encoded_host_risks",
+            "--parallel",
+            "4"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 19.637048059000023,
+          "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/risk/host-tsan-ce12-1/compile.log"
+        },
+        {
+          "stage": "tests",
+          "command": [
+            "setarch",
+            "x86_64",
+            "-R",
+            "/home/kiro/hyle-f1/sanitizers/tsan-03242e7723cb/bin/g04_encoded_host_tests",
+            "--gtest_filter=GgmlCpuCacheEncode.*:GgmlCpuBoxed.*:EncodedCommonPages.*",
+            "--gtest_output=xml:/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/risk/host-tsan-ce12-1/tests.xml"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 5.467244842000014,
+          "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/risk/host-tsan-ce12-1/tests.log"
+        },
+        {
+          "stage": "nine-risk-modes",
+          "command": [
+            "setarch",
+            "x86_64",
+            "-R",
+            "/home/kiro/hyle-f1/sanitizers/tsan-03242e7723cb/bin/g04_encoded_host_risks"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 0.37394809299999565,
+          "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/risk/host-tsan-ce12-1/nine-risk-modes.log"
+        }
+      ],
+      "cumulative_seconds": 44.47869215200002
+    },
+    {
+      "kind": "sdk",
+      "mode": "static",
+      "attempt": null,
+      "state": "TERMINAL_PASS",
+      "stages": [
+        {
+          "stage": "producer-configure",
+          "command": [
+            "cmake",
+            "-S",
+            "C:\\public\\project-hyle\\hyle",
+            "-B",
+            "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev",
+            "-UCMAKE_PROJECT_INCLUDE",
+            "-DHYLE_COMPONENTS=compute;graph",
+            "-DHYLE_COMPUTE_ROUTES=cpu",
+            "-DHYLE_BUILD_TESTS=OFF",
+            "-DHYLE_BUILD_BENCH=OFF",
+            "-DHYLE_INSTALL=ON",
+            "-DHYLE_STATIC=ON"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 19.82799999997951,
+          "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\cpu-sdk\\producer-configure-cpu-static-ce12-1.log"
+        },
+        {
+          "stage": "producer-build",
+          "command": [
+            "cmake",
+            "--build",
+            "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev",
+            "--target",
+            "hyle_compute",
+            "hyle_compute_batch",
+            "hyle_compute_stream",
+            "hyle_compute_state",
+            "hyle_compute_backend_cpu",
+            "hyle_compute_provider_ggml",
+            "hyle_compute_route_cpu",
+            "hyle_graph",
+            "hyle_graph_batch",
+            "--parallel",
+            "4"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 134.21799999999348,
+          "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\cpu-sdk\\producer-build-cpu-static-ce12-1.log"
+        },
+        {
+          "stage": "install",
+          "command": [
+            "cmake",
+            "--install",
+            "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev",
+            "--prefix",
+            "C:\\h7\\g04-sdk-cpu-static-ce12-1\\staging"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 1.9530000000086147,
+          "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\cpu-sdk\\install-cpu-static-ce12-1.log"
+        },
+        {
+          "stage": "consumer-configure",
+          "command": [
+            "cmake",
+            "-S",
+            "C:\\h7\\g04-sdk-cpu-static-ce12-1\\consumer",
+            "-B",
+            "C:\\h7\\g04-sdk-cpu-static-ce12-1\\build",
+            "-G",
+            "Ninja",
+            "-DCMAKE_BUILD_TYPE=Release",
+            "-DCMAKE_PREFIX_PATH=C:\\h7\\g04-sdk-cpu-static-ce12-1\\relocated",
+            "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 13.062999999994645,
+          "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\cpu-sdk\\consumer-configure-cpu-static-ce12-1.log"
+        },
+        {
+          "stage": "consumer-build",
+          "command": [
+            "cmake",
+            "--build",
+            "C:\\h7\\g04-sdk-cpu-static-ce12-1\\build",
+            "--target",
+            "cpu",
+            "cpu_math",
+            "headers",
+            "--parallel",
+            "4"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 7.171999999991385,
+          "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\cpu-sdk\\consumer-build-cpu-static-ce12-1.log"
+        },
+        {
+          "stage": "cpu_math",
+          "command": [
+            "C:\\h7\\g04-sdk-cpu-static-ce12-1\\build\\cpu_math.exe",
+            "--gtest_output=xml:C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\cpu-sdk\\cpu_math-cpu-static-ce12-1.xml",
+            "--gtest_filter=GgmlCpuCacheEncode.*:GgmlCpuBoxed.*"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 1.812000000005355,
+          "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\cpu-sdk\\cpu_math-cpu-static-ce12-1.log"
+        },
+        {
+          "stage": "cpu",
+          "command": [
+            "C:\\h7\\g04-sdk-cpu-static-ce12-1\\build\\cpu.exe",
+            "--gtest_output=xml:C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\cpu-sdk\\cpu-cpu-static-ce12-1.xml"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 0.28200000000651926,
+          "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\cpu-sdk\\cpu-cpu-static-ce12-1.log"
+        }
+      ],
+      "cumulative_seconds": 178.3279999999795
+    },
+    {
+      "kind": "sdk",
+      "mode": "shared",
+      "attempt": null,
+      "state": "TERMINAL_PASS",
+      "stages": [
+        {
+          "stage": "producer-configure",
+          "command": [
+            "cmake",
+            "-S",
+            "C:\\public\\project-hyle\\hyle",
+            "-B",
+            "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev",
+            "-UCMAKE_PROJECT_INCLUDE",
+            "-DHYLE_COMPONENTS=compute;graph",
+            "-DHYLE_COMPUTE_ROUTES=cpu",
+            "-DHYLE_BUILD_TESTS=OFF",
+            "-DHYLE_BUILD_BENCH=OFF",
+            "-DHYLE_INSTALL=ON",
+            "-DHYLE_STATIC=OFF"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 19.60999999998603,
+          "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\cpu-sdk\\producer-configure-cpu-shared-ce12-1.log"
+        },
+        {
+          "stage": "producer-build",
+          "command": [
+            "cmake",
+            "--build",
+            "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev",
+            "--target",
+            "hyle_compute",
+            "hyle_compute_batch",
+            "hyle_compute_stream",
+            "hyle_compute_state",
+            "hyle_compute_backend_cpu",
+            "hyle_compute_provider_ggml",
+            "hyle_compute_route_cpu",
+            "hyle_graph",
+            "hyle_graph_batch",
+            "--parallel",
+            "4"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 139.7039999999979,
+          "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\cpu-sdk\\producer-build-cpu-shared-ce12-1.log"
+        },
+        {
+          "stage": "install",
+          "command": [
+            "cmake",
+            "--install",
+            "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev",
+            "--prefix",
+            "C:\\h7\\g04-sdk-cpu-shared-ce12-1\\staging"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 1.062999999994645,
+          "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\cpu-sdk\\install-cpu-shared-ce12-1.log"
+        },
+        {
+          "stage": "consumer-configure",
+          "command": [
+            "cmake",
+            "-S",
+            "C:\\h7\\g04-sdk-cpu-shared-ce12-1\\consumer",
+            "-B",
+            "C:\\h7\\g04-sdk-cpu-shared-ce12-1\\build",
+            "-G",
+            "Ninja",
+            "-DCMAKE_BUILD_TYPE=Release",
+            "-DCMAKE_PREFIX_PATH=C:\\h7\\g04-sdk-cpu-shared-ce12-1\\relocated",
+            "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 12.75,
+          "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\cpu-sdk\\consumer-configure-cpu-shared-ce12-1.log"
+        },
+        {
+          "stage": "consumer-build",
+          "command": [
+            "cmake",
+            "--build",
+            "C:\\h7\\g04-sdk-cpu-shared-ce12-1\\build",
+            "--target",
+            "cpu",
+            "cpu_math",
+            "headers",
+            "--parallel",
+            "4"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 6.905999999988126,
+          "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\cpu-sdk\\consumer-build-cpu-shared-ce12-1.log"
+        },
+        {
+          "stage": "cpu_math",
+          "command": [
+            "C:\\h7\\g04-sdk-cpu-shared-ce12-1\\build\\cpu_math.exe",
+            "--gtest_output=xml:C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\cpu-sdk\\cpu_math-cpu-shared-ce12-1.xml",
+            "--gtest_filter=GgmlCpuCacheEncode.*:GgmlCpuBoxed.*"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 1.7969999999913853,
+          "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\cpu-sdk\\cpu_math-cpu-shared-ce12-1.log"
+        },
+        {
+          "stage": "cpu",
+          "command": [
+            "C:\\h7\\g04-sdk-cpu-shared-ce12-1\\build\\cpu.exe",
+            "--gtest_output=xml:C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\cpu-sdk\\cpu-cpu-shared-ce12-1.xml"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 0.26600000000325963,
+          "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\cpu-sdk\\cpu-cpu-shared-ce12-1.log"
+        }
+      ],
+      "cumulative_seconds": 182.09599999996135
+    }
+  ],
+  "cumulative_seconds": 2078.733865166969,
+  "post_source_orchestrator_wall_seconds": 548.4370000000054,
+  "packaging_failure": {
+    "attempt": 1,
+    "reason": "sealer expected obsolete CTest summary wording; actual four gates PASS",
+    "elapsed_seconds": null,
+    "original_record": "ce12/seal-attempt-1.json"
+  },
+  "source_tests": 22,
+  "host_tests_per_mode": 17,
+  "source_risk_modes_per_mode": 9,
+  "sdk_math_per_mode": 14,
+  "sdk_common_per_mode": 3,
+  "sdk_independent_headers_per_mode": 12,
+  "representation_patterns_reviewed": 131072,
+  "public_boundary_episodes_per_test_run": 92,
+  "limits": [
+    "Same finite query math/output/error contract; no public API change",
+    "P1 still pending; no speedup or whole G04/G05 claim",
+    "Two CPU SDK modes reuse one explicitly reconfigured producer tree",
+    "Old source link FAIL retained; selector test-only central declaration over-selection tracked separately; no unrelated global gates executed"
+  ],
+  "raw_zip_sha256": "675c1de19cf8f23162ceff1d76a1f4e4dd70ccb51f5cb12c3134974be1b48065"
+}

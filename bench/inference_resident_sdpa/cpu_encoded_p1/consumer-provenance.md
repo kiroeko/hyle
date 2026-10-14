@@ -35,9 +35,12 @@ Neither side defers warm computation or owner release beyond the measured call.
 Native pool maxima remain UNKNOWN; cold graph/mask/pool/cache setup/teardown
 are separately reported and are outside this explicitly resident-warm scope.
 
-Installed static SDK is the independently tested f772 product, with every linked
-library/program SHA authenticated. Existing unified instrument, machine policy,
+The original qualified run used the f772 static SDK and retained its material
+performance FAIL. CE12 uses the independently tested 5f9b261bf static SDK at
+C:/h7/g04-sdk-cpu-static-ce12-1/relocated; every linked library/program SHA is
+authenticated against the new SDK receipt. The semantic workload/lifecycle,
+fixtures, instrumentation, schedule and5% margin are unchanged. Existing unified instrument, machine policy,
 16-round nanobench compare, workload-matched A/A, both execution/allocation orders,
 placement replicas, original n15/31 schedule and5% margin remain fixed.
-No P1 started at provenance creation. This contract cannot sign producer/growth,
+Original qualification/FAIL remains immutable; the CE12 repeat has not started at this update. This contract cannot sign producer/growth,
 all G04/G05, native private budgets, capture or end-to-end token/s.

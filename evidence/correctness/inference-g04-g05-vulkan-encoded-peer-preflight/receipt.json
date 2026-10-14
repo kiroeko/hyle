@@ -1,0 +1,130 @@
+{
+  "kind": "G04_G05_ORIGINAL_VULKAN_Q8_ADAPTER_PREFLIGHT",
+  "verdict": "PASS_NUMERICAL_PREFLIGHT_ONLY",
+  "identity": {
+    "model": "Mac16,12",
+    "arch": "arm64",
+    "os": "ProductName:\t\tmacOS\nProductVersion:\t\t27.0.1\nBuildVersion:\t\t26A434",
+    "compiler": "Apple clang version 21.0.0 (clang-2100.3.34.2)\nTarget: arm64-apple-darwin27.0.0\nThread model: posix\nInstalledDir: /Library/Developer/CommandLineTools/usr/bin"
+  },
+  "inputs": [
+    {
+      "path": "reference.cc",
+      "sha256": "1acf9e3488a5d3078ce2b8f9b210aed13ed95a68776b1a0b729a32d6cfa28b4b"
+    },
+    {
+      "path": "reference.h",
+      "sha256": "45495570280809302b077707ae6e66e024a5d010c5f6d1d2e7fe6aa3a1dd6145"
+    },
+    {
+      "path": "vulkan_encoded_preflight.cc",
+      "sha256": "14f968349d1a42f4ebfccc0a229d18b72507d3cc5d6316ac876f0088f62474d6"
+    }
+  ],
+  "original_revision": "456172ec733a135778adcd32d00e576a58232e45",
+  "original_spirv_header_sha256": "56c25de82b3ff6a121fd5e37fb319c839791371e57cbc3f0aea4e222f4dc5531",
+  "stages": [
+    {
+      "stage": "configure",
+      "command": [
+        "/opt/homebrew/bin/cmake",
+        "-S",
+        "/Users/kiro/hyle-scratch/compute-unified/source-c8874688",
+        "-B",
+        "/Users/kiro/hyle-scratch/compute-unified/a-cpu-vulkan/selected-graph/static-sdk-build",
+        "-DCMAKE_PROJECT_INCLUDE=/Users/kiro/hyle-scratch/compute-unified/g04-vulkan-encoded-peer-preflight/1/project.cmake"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 13.395721333,
+      "log": "/Users/kiro/hyle-scratch/compute-unified/g04-vulkan-encoded-peer-preflight/1/configure.log"
+    },
+    {
+      "stage": "compile",
+      "command": [
+        "/opt/homebrew/bin/cmake",
+        "--build",
+        "/Users/kiro/hyle-scratch/compute-unified/a-cpu-vulkan/selected-graph/static-sdk-build",
+        "--target",
+        "g04_vulkan_encoded_peer_preflight",
+        "--parallel",
+        "4"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 5.990692624999999,
+      "log": "/Users/kiro/hyle-scratch/compute-unified/g04-vulkan-encoded-peer-preflight/1/compile.log"
+    },
+    {
+      "stage": "oracle",
+      "command": [
+        "/Users/kiro/hyle-scratch/compute-unified/a-cpu-vulkan/selected-graph/static-sdk-build/bin/g04_vulkan_encoded_peer_preflight"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 1.9315058749999992,
+      "log": "/Users/kiro/hyle-scratch/compute-unified/g04-vulkan-encoded-peer-preflight/1/oracle.log"
+    }
+  ],
+  "cumulative_seconds": 21.317919832999998,
+  "encoded_cases": 14,
+  "plain_controls": 2,
+  "encoded_replays_per_case": 4,
+  "slots": 2,
+  "max_abs_error": 3.04988602e-05,
+  "readonly_KV": "PASS_BYTE_IDENTICAL",
+  "split": "Q1/KV2048/D64_Dv128 window16 requires and executed four-dispatch recipe including original reduce",
+  "build_scope": {
+    "benchmark_tus": 2,
+    "other_compiled_tus": 25,
+    "total_build_edges": 34,
+    "original_shader_generator": "no work to do, recorded original shader SPIRV/header identity verified",
+    "prior_dry_run_limit": "dry-run stopped at CMake regeneration and did not expose later dependency steps; actual log is authoritative",
+    "unchanged_prerequisite_proof": [
+      {
+        "path": "src/simd/runtime.cc",
+        "source_sha_matches_original_sdk": true,
+        "same_compile_command_as_original_sdk": true
+      },
+      {
+        "path": "src/compute_state/state_versions.cc",
+        "source_sha_matches_original_sdk": true,
+        "same_compile_command_as_original_sdk": true
+      }
+    ],
+    "compiled_steps": [
+      "[4/34] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/ops/dispatch_ops.cc.o",
+      "[5/34] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/random/random_dispatch.cc.o",
+      "[6/34] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/runtime.cc.o",
+      "[7/34] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/search/search_dispatch.cc.o",
+      "[8/34] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/narrow/narrow_dispatch.cc.o",
+      "[9/34] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/scan/scan_dispatch.cc.o",
+      "[10/34] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/dtype/dtype_dispatch.cc.o",
+      "[11/34] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/math/math_dispatch.cc.o",
+      "[12/34] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/bitpack/bitpack_dispatch.cc.o",
+      "[13/34] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/sort/sort_dispatch.cc.o",
+      "[14/34] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/generated/simd-dispatch/ops/ops_scalar.cc.o",
+      "[15/34] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/generated/simd-dispatch/dtype_convert/dtype_convert_scalar.cc.o",
+      "[16/34] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/generated/simd-dispatch/scan/scan_scalar.cc.o",
+      "[17/34] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/generated/simd-dispatch/ops/ops_neon.cc.o",
+      "[18/34] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/generated/simd-dispatch/dtype_convert/dtype_convert_neon.cc.o",
+      "[19/34] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/generated/simd-dispatch/random/random_scalar.cc.o",
+      "[20/34] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/generated/simd-dispatch/scan/scan_neon.cc.o",
+      "[21/34] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/generated/simd-dispatch/random/random_neon.cc.o",
+      "[22/34] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/generated/simd-dispatch/narrow/narrow_scalar.cc.o",
+      "[23/34] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/generated/simd-dispatch/search/search_scalar.cc.o",
+      "[24/34] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/generated/simd-dispatch/bitpack/bitpack_scalar.cc.o",
+      "[25/34] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/generated/simd-dispatch/narrow/narrow_neon.cc.o",
+      "[26/34] Building CXX object src/compute_state/CMakeFiles/hyle_compute_state.dir/state_versions.cc.o",
+      "[27/34] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/generated/simd-dispatch/search/search_neon.cc.o",
+      "[29/34] Building CXX object CMakeFiles/g04_vulkan_encoded_peer_preflight.dir/Users/kiro/hyle-scratch/compute-unified/g04-vulkan-encoded-peer-preflight/1/reference.cc.o",
+      "[30/34] Building CXX object CMakeFiles/g04_vulkan_encoded_peer_preflight.dir/Users/kiro/hyle-scratch/compute-unified/g04-vulkan-encoded-peer-preflight/1/vulkan_encoded_preflight.cc.o",
+      "[31/34] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/generated/simd-dispatch/bitpack/bitpack_neon.cc.o"
+    ]
+  },
+  "limits": [
+    "No P1/AA/throughput or candidate performance verdict",
+    "No mask-opt, multi-batch, producer/growth/capture qualification",
+    "Original independent scalar non-MMQ shader; no candidate attention lowerer or shader arithmetic changes",
+    "Frozen shipping Vulkan runtime inputs; not CPU CE12 execution proof",
+    "Cold fixed F16 causal/window mask storage O(Q*KV) explicit; query/output conversion and split costs remain in native program"
+  ],
+  "raw_zip_sha256": "a6a62222b7e3a99368a61dc6803cb54ad907a3a8a83a8fcc94937d2ee34482c0"
+}

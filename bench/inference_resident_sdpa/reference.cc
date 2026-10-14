@@ -50,6 +50,14 @@ std::array<std::uint32_t, 2> divisor(std::uint32_t value) {
 
 v::Program reference_program(const v::Context &context, const c::TensorDesc &qd,
                              const c::TensorDesc &kd, bool causal) {
+  if(qd.rank()!=4){std::fprintf(stderr,"invalid resident reference rank\n");std::exit(2);}
+  return encoded_reference_program(context,qd,kd,kd,qd,causal,-1,
+      1.F/std::sqrt(float(qd.dimensions().back())));
+}
+
+v::Program encoded_reference_program(const v::Context &context,
+    const c::TensorDesc &qd,const c::TensorDesc &kd,const c::TensorDesc &vd,
+    const c::TensorDesc &od,bool causal,std::int32_t window_left,float scale) {
   const auto &facts = context.environment();
   // These are the two actually available machines. Do not guess AMD/Intel
   // architecture or occupancy properties for an unqualified third machine.
@@ -58,32 +66,43 @@ v::Program reference_program(const v::Context &context, const c::TensorDesc &qd,
     std::exit(2);
   }
   const auto type = qd.data_type();
-  if (qd.rank() != 4 || kd.rank() != 4) {
+  if (qd.rank() != 4 || kd.rank() != 4 || vd.rank()!=4 || od.rank()!=4) {
     std::fprintf(stderr, "invalid resident reference rank\n");
     std::exit(2);
   }
   const auto shape = qd.dimensions();
   const auto kshape = kd.dimensions();
+  const auto vshape = vd.dimensions();
+  const auto oshape = od.dimensions();
   const auto batch = std::uint32_t(shape[0]), rows = std::uint32_t(shape[1]),
              heads = std::uint32_t(shape[2]), depth = std::uint32_t(shape[3]),
              keys = std::uint32_t(kshape[1]),
              kv_heads = std::uint32_t(kshape[2]);
+  const auto value_depth=std::uint32_t(oshape[3]);
+  const bool quantized=kd.data_type()==c::DataType::kUInt8;
   if (qd.rank() != 4 || kd.rank() != 4 || !qd.is_dense() ||
+      !kd.is_dense() || !vd.is_dense() || !od.is_dense() ||
       (type != c::DataType::kFloat32 && type != c::DataType::kFloat16) ||
-      kd.data_type() != type || depth != kshape[3] || !kv_heads ||
-      heads % kv_heads != 0 || batch != kshape[0] || !rows || !keys || !heads ||
-      !kv_heads || (depth != 64 && depth != 128 && depth != 256) ||
+      (!quantized && kd.data_type()!=type) || vd.data_type()!=kd.data_type() ||
+      kshape[3]!=(quantized?depth/32*34:depth) ||
+      vshape[3]!=(quantized?value_depth/32*34:value_depth) ||
+      vshape[0]!=batch || vshape[1]!=keys || vshape[2]!=kv_heads ||
+      od.data_type()!=type || oshape[0]!=batch || oshape[1]!=rows || oshape[2]!=heads ||
+      !kv_heads || heads % kv_heads != 0 || batch != kshape[0] || !rows || !keys || !heads ||
+      (depth != 64 && depth != 128 && depth != 256) ||
+      (value_depth!=64 && value_depth!=128 && value_depth!=256) ||
+      !std::isfinite(scale) || window_left< -1 || (!causal && window_left>=0) ||
       (causal && keys < rows)) {
     std::fprintf(stderr, "invalid finite resident reference shape\n");
     std::exit(2);
   }
   auto state = std::make_shared<d::ProgramState>();
   state->runtime = d::Access::runtime(context);
-  state->values = {{qd, {}}, {kd, {}}, {kd, {}}, {qd, {}}};
+  state->values = {{qd, {}}, {kd, {}}, {vd, {}}, {od, {}}};
   state->inputs = {0, 1, 2};
   state->outputs = {3};
-  state->input_descriptions = {qd, kd, kd};
-  state->output_descriptions = {qd};
+  state->input_descriptions = {qd, kd, vd};
+  state->output_descriptions = {od};
   auto add = [&](c::DataType value_type, std::span<const std::int64_t> dims) {
     const auto id = std::uint32_t(state->values.size());
     state->values.push_back({take(c::TensorDesc::dense(value_type, dims)), {}});
@@ -128,11 +147,26 @@ v::Program reference_program(const v::Context &context, const c::TensorDesc &qd,
   auto query = 0u, output = 3u;
   if (type == c::DataType::kFloat16) {
     query = add(c::DataType::kFloat32, shape);
-    output = add(c::DataType::kFloat32, shape);
+    output = add(c::DataType::kFloat32, oshape);
     convert(0, query, spirv::query_float);
   }
   std::uint32_t mask = query;
-  if (causal) {
+  if(causal && (window_left>=0 || quantized)){
+    const std::array<std::int64_t,2> mask_shape{rows,keys};
+    mask=add(c::DataType::kFloat16,mask_shape);
+    std::vector<std::uint16_t> words(std::size_t(rows)*keys,0xfc00);
+    for(std::uint32_t row=0;row<rows;++row){
+      const auto last=keys-rows+row;
+      const auto first=window_left<0?0u:
+          (last>std::uint32_t(window_left)?last-std::uint32_t(window_left):0u);
+      std::fill(words.begin()+std::size_t(row)*keys+first,
+                words.begin()+std::size_t(row)*keys+last+1,std::uint16_t{0});
+    }
+    state->values[mask].constant=take(context.upload(state->values[mask].description,
+        std::as_bytes(std::span(words))));
+    std::fprintf(stderr,"# ORIGINAL_Q8_MASK_COLD bytes=%zu window_left=%d\n",
+                 words.size()*sizeof(std::uint16_t),int(window_left));
+  }else if (causal) {
     const std::array<std::int64_t, 2> mask_shape{rows, keys};
     const auto seed = add(c::DataType::kFloat32, mask_shape);
     const auto masked = seed;
@@ -173,7 +207,7 @@ v::Program reference_program(const v::Context &context, const c::TensorDesc &qd,
   const auto shmem = [&](std::uint32_t block_rows) {
     return workgroup * 4 + workgroup * 16 + bc * (block_rows + 1) * 4 + 16 * 4 +
            block_rows * (depth / 4 + 1) * 16 +
-           (staged ? bc * (depth / 4 + 1) * 16 : 16);
+           (staged ? bc * (std::max(depth,value_depth) / 4 + 1) * 16 : 16);
   };
   if (!reduced && shmem(br) > facts.shared_memory_bytes)
     br /= 2;
@@ -226,9 +260,10 @@ v::Program reference_program(const v::Context &context, const c::TensorDesc &qd,
            {words, row_tiles, 1}, mask_spec);
   }
   // Original F32 flash uses vec4 blocks, so nb?1 is in 16-byte blocks.
-  const auto kv_size = half ? 2u : 16u;
+  const auto kv_size = quantized ? 34u : (half ? 2u : 16u);
   const auto query_strides = state->values[query].description.byte_strides();
   const auto cache_strides = kd.byte_strides();
+  const auto value_strides = vd.byte_strides();
   std::array<std::uint32_t, 32> push{
       effective_rows,
       keys,
@@ -250,10 +285,10 @@ v::Program reference_program(const v::Context &context, const c::TensorDesc &qd,
       std::uint32_t(cache_strides[1] / kv_size),
       std::uint32_t(cache_strides[2]),
       std::uint32_t(cache_strides[0]),
-      std::uint32_t(cache_strides[1] / kv_size),
-      std::uint32_t(cache_strides[2]),
-      std::uint32_t(cache_strides[0]),
-      std::bit_cast<std::uint32_t>(1.F / std::sqrt(float(depth))),
+      std::uint32_t(value_strides[1] / kv_size),
+      std::uint32_t(value_strides[2]),
+      std::uint32_t(value_strides[0]),
+      std::bit_cast<std::uint32_t>(scale),
       0,
       0,
       std::bit_floor(heads),
@@ -267,7 +302,7 @@ v::Program reference_program(const v::Context &context, const c::TensorDesc &qd,
                                              br,
                                              bc,
                                              depth,
-                                             depth,
+                                             value_depth,
                                              keys % bc != 0 ? 1u : 0u,
                                              ds,
                                              row_split,
@@ -276,15 +311,15 @@ v::Program reference_program(const v::Context &context, const c::TensorDesc &qd,
                                              (causal ? 2u : 0u) |
                                                  (mask_opt ? 1u : 0u),
                                              0,
-                                             half ? 1u : 0u,
-                                             half ? 1u : 0u,
-                                             half ? 2u : 16u,
-                                             half ? 2u : 16u};
+                                             quantized ? 8u : (half ? 1u : 0u),
+                                             quantized ? 8u : (half ? 1u : 0u),
+                                             kv_size,
+                                             kv_size};
   for (std::uint32_t i = 0; i < spec.size(); ++i)
     spec[i] = {i, values[i]};
   auto flash_output = output;
   if (split > 1) {
-    const std::array<std::int64_t, 1> scratch{std::int64_t(depth + 2) * heads *
+    const std::array<std::int64_t, 1> scratch{std::int64_t(value_depth + 2) * heads *
                                               rows * batch * split};
     flash_output = add(c::DataType::kFloat32, scratch);
   }
@@ -295,9 +330,9 @@ v::Program reference_program(const v::Context &context, const c::TensorDesc &qd,
   if (split > 1) {
     const std::array<v::SpecializationConstant, 1> reduce_spec{{{0, subgroup}}};
     append(spirv::split_reduce, 3, {flash_output, query, output},
-           bytes(std::array<std::uint32_t, 6>{depth, heads, rows, batch, split,
+           bytes(std::array<std::uint32_t, 6>{value_depth, heads, rows, batch, split,
                                               0}),
-           {heads, (depth + subgroup - 1) / subgroup, rows * batch},
+           {heads, (value_depth + subgroup - 1) / subgroup, rows * batch},
            reduce_spec);
   }
   if (half)
