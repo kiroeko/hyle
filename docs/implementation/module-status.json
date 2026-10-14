@@ -270,9 +270,9 @@
     },
     {
       "module": "compute",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/inference-g03-copy-update-owner.md",
-      "summary": "G03 F2 copy-update owner SCOPED baseline f764: move both original invocation/submission to single typed ownership; admitted resource/native-prefix/ordered-read seam, no fake ready. Actual Apple5 ownership/lifetime probe passes; exact API/FIX audit required before products. Original GP01/GP02/Apple source CLOSED facts retained; full pending receiver/page/native output and whole goal remain required."
+      "summary": "G03 CU01-CU03 AUDITED: frozen move-only CopyBatchUpdate owns original invocation+submission, compiled actual identity/retirement, trusted original mutable geometry/native prefix/ordered read. No new default F2 layout/lock/atomic/allocator/runtime; four-route source qualification required. Receiver/page/late native output and wholeG03 remain mainSCOPED task; old closed facts retained."
     },
     {
       "module": "graph",
@@ -509,9 +509,9 @@
     },
     {
       "module": "compute_route_apple",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/inference-g03-copy-update-owner.md",
-      "summary": "G03 F2 copy-update owner SCOPED baseline f764: move both original invocation/submission to single typed ownership; admitted resource/native-prefix/ordered-read seam, no fake ready. Actual Apple5 ownership/lifetime probe passes; exact API/FIX audit required before products. Original GP01/GP02/Apple source CLOSED facts retained; full pending receiver/page/native output and whole goal remain required."
+      "summary": "G03 CU01-CU03 AUDITED: frozen move-only CopyBatchUpdate owns original invocation+submission, compiled actual identity/retirement, trusted original mutable geometry/native prefix/ordered read. No new default F2 layout/lock/atomic/allocator/runtime; four-route source qualification required. Receiver/page/late native output and wholeG03 remain mainSCOPED task; old closed facts retained."
     },
     {
       "module": "graph_route_apple",
@@ -526,9 +526,9 @@
     },
     {
       "module": "compute_route_vulkan",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/inference-g03-copy-update-owner.md",
-      "summary": "G03 F2 copy-update owner SCOPED baseline f764: move both original invocation/submission to single typed ownership; admitted resource/native-prefix/ordered-read seam, no fake ready. Actual Apple5 ownership/lifetime probe passes; exact API/FIX audit required before products. Original GP01/GP02/Apple source CLOSED facts retained; full pending receiver/page/native output and whole goal remain required."
+      "summary": "G03 CU01-CU03 AUDITED: frozen move-only CopyBatchUpdate owns original invocation+submission, compiled actual identity/retirement, trusted original mutable geometry/native prefix/ordered read. No new default F2 layout/lock/atomic/allocator/runtime; four-route source qualification required. Receiver/page/late native output and wholeG03 remain mainSCOPED task; old closed facts retained."
     },
     {
       "module": "graph_route_vulkan",
