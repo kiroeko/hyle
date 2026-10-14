@@ -1,0 +1,219 @@
+{
+  "candidate": "SCOPED receiver prototype, immutable product940/terminal16d677",
+  "identity": {
+    "model": "Mac16,12",
+    "arch": "arm64",
+    "os": "ProductName:\t\tmacOS\nProductVersion:\t\t27.0.1\nBuildVersion:\t\t26A434",
+    "compiler": "Apple clang version 21.0.0 (clang-2100.3.34.2)\nTarget: arm64-apple-darwin27.0.0\nThread model: posix\nInstalledDir: /Library/Developer/CommandLineTools/usr/bin"
+  },
+  "inputs": [
+    {
+      "path": "tests/compute_batch/pending_outcome_owner_probe.h",
+      "sha256": "6283e95467fd65261e83298c8972ec3d8aeab0093b0c4f1500f83679ccae6d28"
+    },
+    {
+      "path": "tests/compute_batch/pending_outcome_owner_apple_probe.cc",
+      "sha256": "fb11a95e827b2772652ca81ebdedfc8ceb0f88ce79aa50112f934acd34e9fe23"
+    },
+    {
+      "path": "tests/compute_batch/pending_outcome_owner_vulkan_probe.cc",
+      "sha256": "da3c7c8b7a6a948fa26abff6e8562e9ea5f49c13f95dc94099f6d4e08d1102d6"
+    }
+  ],
+  "stages": [
+    {
+      "route": "apple",
+      "stage": "configure",
+      "attempt": 1,
+      "command": [
+        "/opt/homebrew/bin/cmake",
+        "-S",
+        "/Users/kiro/hyle-scratch/compute-unified/g03-outcome-owner-probe/apple-source-parent",
+        "-B",
+        "/Users/kiro/hyle-scratch/compute-unified/g03-outcome-owner-probe/apple-source-build",
+        "-G",
+        "Ninja",
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DCMAKE_PREFIX_PATH=/Users/kiro/hyle-scratch/compute-unified/g03-dependency-admission-apple-static-sdk/relocated",
+        "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON"
+      ],
+      "exit_code": 0,
+      "log": "/Users/kiro/hyle-scratch/compute-unified/g03-outcome-owner-probe/apple-configure-1.log",
+      "elapsed_seconds": 1.2284277080000001
+    },
+    {
+      "route": "apple",
+      "stage": "build",
+      "attempt": 1,
+      "command": [
+        "/opt/homebrew/bin/cmake",
+        "--build",
+        "/Users/kiro/hyle-scratch/compute-unified/g03-outcome-owner-probe/apple-source-build",
+        "--target",
+        "admission",
+        "--parallel",
+        "4"
+      ],
+      "exit_code": 0,
+      "log": "/Users/kiro/hyle-scratch/compute-unified/g03-outcome-owner-probe/apple-build-1.log",
+      "elapsed_seconds": 1.109076416
+    },
+    {
+      "route": "apple",
+      "stage": "admission",
+      "attempt": 1,
+      "command": [
+        "/Users/kiro/hyle-scratch/compute-unified/g03-outcome-owner-probe/apple-source-build/admission"
+      ],
+      "exit_code": 0,
+      "log": "/Users/kiro/hyle-scratch/compute-unified/g03-outcome-owner-probe/apple-admission-1.log",
+      "elapsed_seconds": 0.5868385419999997
+    },
+    {
+      "route": "vulkan",
+      "stage": "configure",
+      "attempt": 1,
+      "command": [
+        "/opt/homebrew/bin/cmake",
+        "-S",
+        "/Users/kiro/hyle-scratch/compute-unified/g03-outcome-owner-probe/vulkan-source-parent",
+        "-B",
+        "/Users/kiro/hyle-scratch/compute-unified/g03-outcome-owner-probe/vulkan-source-build",
+        "-G",
+        "Ninja",
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DCMAKE_PREFIX_PATH=/Users/kiro/hyle-scratch/compute-unified/g03-dependency-admission-vulkan-static-sdk/relocated",
+        "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON"
+      ],
+      "exit_code": 0,
+      "log": "/Users/kiro/hyle-scratch/compute-unified/g03-outcome-owner-probe/vulkan-configure-1.log",
+      "elapsed_seconds": 1.2344763750000003
+    },
+    {
+      "route": "vulkan",
+      "stage": "build",
+      "attempt": 1,
+      "command": [
+        "/opt/homebrew/bin/cmake",
+        "--build",
+        "/Users/kiro/hyle-scratch/compute-unified/g03-outcome-owner-probe/vulkan-source-build",
+        "--target",
+        "admission",
+        "--parallel",
+        "4"
+      ],
+      "exit_code": 0,
+      "log": "/Users/kiro/hyle-scratch/compute-unified/g03-outcome-owner-probe/vulkan-build-1.log",
+      "elapsed_seconds": 0.9836660000000004
+    },
+    {
+      "route": "vulkan",
+      "stage": "admission",
+      "attempt": 1,
+      "command": [
+        "/Users/kiro/hyle-scratch/compute-unified/g03-outcome-owner-probe/vulkan-source-build/admission"
+      ],
+      "exit_code": 0,
+      "log": "/Users/kiro/hyle-scratch/compute-unified/g03-outcome-owner-probe/vulkan-admission-1.log",
+      "elapsed_seconds": 0.7420857500000002
+    },
+    {
+      "route": "apple",
+      "stage": "configure",
+      "attempt": 2,
+      "command": [
+        "/opt/homebrew/bin/cmake",
+        "-S",
+        "/Users/kiro/hyle-scratch/compute-unified/g03-outcome-owner-probe/apple-source-parent",
+        "-B",
+        "/Users/kiro/hyle-scratch/compute-unified/g03-outcome-owner-probe/apple-source-build",
+        "-G",
+        "Ninja",
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DCMAKE_PREFIX_PATH=/Users/kiro/hyle-scratch/compute-unified/g03-dependency-admission-apple-static-sdk/relocated",
+        "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON"
+      ],
+      "exit_code": 0,
+      "log": "/Users/kiro/hyle-scratch/compute-unified/g03-outcome-owner-probe/apple-configure-2.log",
+      "elapsed_seconds": 0.9795910409999999
+    },
+    {
+      "route": "apple",
+      "stage": "build",
+      "attempt": 2,
+      "command": [
+        "/opt/homebrew/bin/cmake",
+        "--build",
+        "/Users/kiro/hyle-scratch/compute-unified/g03-outcome-owner-probe/apple-source-build",
+        "--target",
+        "admission",
+        "--parallel",
+        "4"
+      ],
+      "exit_code": 0,
+      "log": "/Users/kiro/hyle-scratch/compute-unified/g03-outcome-owner-probe/apple-build-2.log",
+      "elapsed_seconds": 1.096418708
+    },
+    {
+      "route": "apple",
+      "stage": "admission",
+      "attempt": 2,
+      "command": [
+        "/Users/kiro/hyle-scratch/compute-unified/g03-outcome-owner-probe/apple-source-build/admission"
+      ],
+      "exit_code": 0,
+      "log": "/Users/kiro/hyle-scratch/compute-unified/g03-outcome-owner-probe/apple-admission-2.log",
+      "elapsed_seconds": 0.6037870000000001
+    },
+    {
+      "route": "vulkan",
+      "stage": "configure",
+      "attempt": 2,
+      "command": [
+        "/opt/homebrew/bin/cmake",
+        "-S",
+        "/Users/kiro/hyle-scratch/compute-unified/g03-outcome-owner-probe/vulkan-source-parent",
+        "-B",
+        "/Users/kiro/hyle-scratch/compute-unified/g03-outcome-owner-probe/vulkan-source-build",
+        "-G",
+        "Ninja",
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DCMAKE_PREFIX_PATH=/Users/kiro/hyle-scratch/compute-unified/g03-dependency-admission-vulkan-static-sdk/relocated",
+        "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON"
+      ],
+      "exit_code": 0,
+      "log": "/Users/kiro/hyle-scratch/compute-unified/g03-outcome-owner-probe/vulkan-configure-2.log",
+      "elapsed_seconds": 0.9985258750000003
+    },
+    {
+      "route": "vulkan",
+      "stage": "build",
+      "attempt": 2,
+      "command": [
+        "/opt/homebrew/bin/cmake",
+        "--build",
+        "/Users/kiro/hyle-scratch/compute-unified/g03-outcome-owner-probe/vulkan-source-build",
+        "--target",
+        "admission",
+        "--parallel",
+        "4"
+      ],
+      "exit_code": 0,
+      "log": "/Users/kiro/hyle-scratch/compute-unified/g03-outcome-owner-probe/vulkan-build-2.log",
+      "elapsed_seconds": 0.8902851250000001
+    },
+    {
+      "route": "vulkan",
+      "stage": "admission",
+      "attempt": 2,
+      "command": [
+        "/Users/kiro/hyle-scratch/compute-unified/g03-outcome-owner-probe/vulkan-source-build/admission"
+      ],
+      "exit_code": 0,
+      "log": "/Users/kiro/hyle-scratch/compute-unified/g03-outcome-owner-probe/vulkan-admission-2.log",
+      "elapsed_seconds": 0.8625814159999994
+    }
+  ],
+  "cumulative_seconds": 11.315759956,
+  "scope": "actual opt-in source outcome owner; original result/completion slot, success/post-accepted-cancel/abandon; no public pending frame or unknown/OOM qualification"
+}

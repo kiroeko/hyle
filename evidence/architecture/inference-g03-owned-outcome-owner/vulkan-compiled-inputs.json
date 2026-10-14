@@ -1,0 +1,8 @@
+[
+  {
+    "directory": "/Users/kiro/hyle-scratch/compute-unified/g03-outcome-owner-probe/vulkan-source-build",
+    "command": "/usr/bin/c++ -DHYLE_COMPUTE_CPU=1 -DHYLE_COMPUTE_GGML_CPU=1 -DHYLE_COMPUTE_VULKAN=1 -DHYLE_IO_HAS_COROUTINE_TRANSPORT=1 -DHYLE_STATIC -isystem /opt/homebrew/include -isystem /Users/kiro/hyle-scratch/compute-unified/g03-dependency-admission-vulkan-static-sdk/relocated/include -O3 -DNDEBUG -std=gnu++23 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk -Wall -Wextra -Wpedantic -Werror -o CMakeFiles/admission.dir/Users/kiro/hyle-scratch/compute-unified/source-c8874688/tests/compute_batch/pending_outcome_owner_vulkan_probe.cc.o -c /Users/kiro/hyle-scratch/compute-unified/source-c8874688/tests/compute_batch/pending_outcome_owner_vulkan_probe.cc",
+    "file": "/Users/kiro/hyle-scratch/compute-unified/source-c8874688/tests/compute_batch/pending_outcome_owner_vulkan_probe.cc",
+    "output": "/Users/kiro/hyle-scratch/compute-unified/g03-outcome-owner-probe/vulkan-source-build/CMakeFiles/admission.dir/Users/kiro/hyle-scratch/compute-unified/source-c8874688/tests/compute_batch/pending_outcome_owner_vulkan_probe.cc.o"
+  }
+]

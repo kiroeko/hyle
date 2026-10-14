@@ -136,3 +136,9 @@ metadata/capture 优化仍留 G06，不在 G03 重开已关闭的数学与性能
 public65/生命周期、六 host 风险、四 SDK/12 头、定向 Win Vulkan 编译全部完成，
 原 fixture/字段机械 FAIL 保留。后继接纳之后才出现的来源错误仍须由本主卡聚合，
 pending 页权限/late output 与完整七路线旅程仍未实现，本主卡继续 SCOPED。
+
+原结果槽的聚合观察按[有限新 scope](inference-g03-owned-outcome-observation.md)固定：
+源 controls 必须保到 actual suffix 退休，结果 payload/slot 不复制；原 Graph 还消费
+completion()，因此只改 façade 的 wait/result 不足。实际 move-owner 原型已通过
+Apple 三/Vulkan 五场景，包含接纳后取消、abandon、Vulkan unknown/final fence wait；
+完整公开形状/Source CPP retirement/四 source families仍须本新轮冻结并实现。

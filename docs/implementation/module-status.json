@@ -270,14 +270,9 @@
     },
     {
       "module": "compute",
-      "state": "CLOSED",
-      "record": "docs/implementation/tasks/compute/inference-g03-copy-update-terminal.md",
-      "summary": "G03 CU01–CU03有限source CLOSED：CopyBatchUpdate移动原2controls、typed pending input/native prefix/ordered read复用原F1/F2。四source公共65步、Apple8/Vulkan6/CUDA4风险/CPU6、六hostsan、六SDK18heads与Windows通过；P0旧常态字段/队列/分配/锁/原子不变。完整pending attention/late输出仍compute_batch SCOPED，原native同步/取消差异/privateUNKNOWN和其它G项保留。",
-      "candidate": "bcaec010b528e372671f737f40b4aa53eb076aaf",
-      "performance": {
-        "tier": "P0",
-        "evidence": "docs/implementation/tasks/compute/inference-g03-copy-update-terminal.md"
-      }
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/compute/inference-g03-owned-outcome-observation.md",
+      "summary": "G03 owned outcome observation SCOPED at16d677: actual original slot/source owner success, accepted-source cancel, abandon and Vulkan unknown proofs. Original Graph consumes completion() as well as wait(); freeze opt-in completion status/actual phase retirement seam before product code. Pending frame/late output and full G03 still maincompute_batch SCOPED; closed cancellation/math/source proofs preserved."
     },
     {
       "module": "graph",
@@ -514,14 +509,9 @@
     },
     {
       "module": "compute_route_apple",
-      "state": "CLOSED",
-      "record": "docs/implementation/tasks/compute/inference-g03-native-dependency-admission.md",
-      "summary": "G03 DA01–DA03 finite native cancelled dependency admission CLOSED at9404af694: original Apple copy/native and Vulkan Run qualifiers reject pending requested cancellation, preserve original controls/retirement/terminal errors; actual source/late cancel boundaries, public65 and original8/6, six hostsan, four SDK12 heads and MSVC Vulkan TU PASS. No public API/layout/queue/math change; full receiver aggregation/pending pages/late output stays compute_batch SCOPED; all prior failures/unknown/Graph gates remain.",
-      "candidate": "9404af694cf6dd622fd13e6e4965805db49b8428",
-      "performance": {
-        "tier": "P0",
-        "evidence": "docs/implementation/tasks/compute/inference-g03-native-dependency-admission.md"
-      }
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/compute/inference-g03-owned-outcome-observation.md",
+      "summary": "G03 owned outcome observation SCOPED at16d677: actual original slot/source owner success, accepted-source cancel, abandon and Vulkan unknown proofs. Original Graph consumes completion() as well as wait(); freeze opt-in completion status/actual phase retirement seam before product code. Pending frame/late output and full G03 still maincompute_batch SCOPED; closed cancellation/math/source proofs preserved."
     },
     {
       "module": "graph_route_apple",
@@ -536,14 +526,9 @@
     },
     {
       "module": "compute_route_vulkan",
-      "state": "CLOSED",
-      "record": "docs/implementation/tasks/compute/inference-g03-native-dependency-admission.md",
-      "summary": "G03 DA01–DA03 finite native cancelled dependency admission CLOSED at9404af694: original Apple copy/native and Vulkan Run qualifiers reject pending requested cancellation, preserve original controls/retirement/terminal errors; actual source/late cancel boundaries, public65 and original8/6, six hostsan, four SDK12 heads and MSVC Vulkan TU PASS. No public API/layout/queue/math change; full receiver aggregation/pending pages/late output stays compute_batch SCOPED; all prior failures/unknown/Graph gates remain.",
-      "candidate": "9404af694cf6dd622fd13e6e4965805db49b8428",
-      "performance": {
-        "tier": "P0",
-        "evidence": "docs/implementation/tasks/compute/inference-g03-native-dependency-admission.md"
-      }
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/compute/inference-g03-owned-outcome-observation.md",
+      "summary": "G03 owned outcome observation SCOPED at16d677: actual original slot/source owner success, accepted-source cancel, abandon and Vulkan unknown proofs. Original Graph consumes completion() as well as wait(); freeze opt-in completion status/actual phase retirement seam before product code. Pending frame/late output and full G03 still maincompute_batch SCOPED; closed cancellation/math/source proofs preserved."
     },
     {
       "module": "graph_route_vulkan",

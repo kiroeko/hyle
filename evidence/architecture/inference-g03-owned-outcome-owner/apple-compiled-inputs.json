@@ -1,0 +1,8 @@
+[
+  {
+    "directory": "/Users/kiro/hyle-scratch/compute-unified/g03-outcome-owner-probe/apple-source-build",
+    "command": "/usr/bin/c++ -DHYLE_COMPUTE_APPLE=1 -DHYLE_COMPUTE_CPU=1 -DHYLE_COMPUTE_GGML_CPU=1 -DHYLE_IO_HAS_COROUTINE_TRANSPORT=1 -DHYLE_STATIC -DMLX_STATIC -isystem /Users/kiro/hyle-scratch/compute-unified/g03-dependency-admission-apple-static-sdk/relocated/include -isystem /Users/kiro/hyle-scratch/compute-unified/g03-dependency-admission-apple-static-sdk/relocated/include/metal_cpp -O3 -DNDEBUG -std=gnu++23 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk -Wall -Wextra -Wpedantic -Werror -o CMakeFiles/admission.dir/Users/kiro/hyle-scratch/compute-unified/source-c8874688/tests/compute_batch/pending_outcome_owner_apple_probe.cc.o -c /Users/kiro/hyle-scratch/compute-unified/source-c8874688/tests/compute_batch/pending_outcome_owner_apple_probe.cc",
+    "file": "/Users/kiro/hyle-scratch/compute-unified/source-c8874688/tests/compute_batch/pending_outcome_owner_apple_probe.cc",
+    "output": "/Users/kiro/hyle-scratch/compute-unified/g03-outcome-owner-probe/apple-source-build/CMakeFiles/admission.dir/Users/kiro/hyle-scratch/compute-unified/source-c8874688/tests/compute_batch/pending_outcome_owner_apple_probe.cc.o"
+  }
+]

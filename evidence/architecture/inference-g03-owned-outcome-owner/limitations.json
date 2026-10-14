@@ -1,0 +1,26 @@
+{
+  "product_candidate": "9404af694",
+  "current_product_terminal": "16d677b38",
+  "product_modified": false,
+  "stage": "SCOPED audit prototype",
+  "actual_cases": {
+    "apple": 3,
+    "vulkan": 5
+  },
+  "cold_cost": "one make_shared source owner per fixture episode; prototype does not prove warm no-allocation",
+  "source_ownership": "moves both original CopyBatchUpdate controls into one observation owner; retained on original suffix Completion",
+  "slot": "original OwnedResult/ResultSlot/payload retained; no new result slot/queue/executor/native default fields",
+  "not_qualified": [
+    "public receiver API",
+    "completion()-level source merge (Graph requires it)",
+    "all producer and accepted-phase actual-retirement fan-out",
+    "CPU/CUDA outcome owner qualification",
+    "unknown CUDA cached-error blocking behavior",
+    "OOM/cold reusable metadata",
+    "pending page/init domain",
+    "late native output",
+    "64-step math oracle",
+    "seven routes"
+  ],
+  "fixture_cast": "non-const underlying OwnedResult completion reached through const_cast for audit only; product requires trusted Result access"
+}
