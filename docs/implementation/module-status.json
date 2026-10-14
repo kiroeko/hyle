@@ -514,9 +514,9 @@
     },
     {
       "module": "compute_route_apple",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/inference-g03-apple-copy-source.md",
-      "summary": "G03 Apple readonly native output -> fixed F2 source SCOPED; actual two-export identity seam at66b433. Finite typed import-source qualification only; original writers, leases, device/alias checks, FIFO retirement reused. Full pending page-to-attention/wholeG03 and old CLOSED limits remain."
+      "summary": "G03 Apple readonly native output -> fixed F2 source AUDITED; actual two-export identity seam at66b433. Finite typed import-source qualification only; original writers, leases, device/alias checks, FIFO retirement reused. Full pending page-to-attention/wholeG03 and old CLOSED limits remain."
     },
     {
       "module": "graph_route_apple",
