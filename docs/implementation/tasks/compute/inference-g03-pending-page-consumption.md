@@ -237,3 +237,43 @@ host sanitizer 不签 shader/driver，CUDA 沿原 source HYLE_TESTING 树且无 
 下一步继续本主卡的真实 native/Batch receiver、原 Graph completion 聚合与 late output；
 在此固定下一有限 FIX/公开消费形状后实现。完整七路线64步/两请求/两slot/独立 reduction、
 原 G01/G02 未决门与 G04–G10 均未代签。整体粗估18%–20%，完整 G 项仍0/10。
+
+## 当前原 native receiver 接入批（RC01–RC04，AUDITED）
+
+baseline `9b3cd6217`，沿本卡 compute_batch/Apple/Vulkan 的 AUDITED 实施。真实消费入口
+是原 PagedBatchInvocation；原 Graph 接纳原 OwnedResult.completion()，所以最终结果
+必须映射在同一个原 result storage 上。公共 source owner 不新增产品机制。
+
+RC01：两路线增加显式冷 PagedBatchReceiver::create(PagedBatchInvocation&&,
+max_source_completions)。它只拥有移交的原 controller、一原 CopyOutcomeSource 和
+DependentCompletion；不另建 native invocation、worker、queue 或 result slot，不给
+原 ready controller 增加字段/分配。prepare_batch 委托原 controller。调用
+submit(query, pending_keys, pending_values, CopyBatchUpdate&&)组合实际更新；一个
+原 Update 可以含多个原 producer binding/目的资源/phase。take_update 在原聚合观察
+引用和全部 actual retirement 结束后回接原 Update，writer/invocation 沿原 API 复用。
+
+RC02：同一个原 controller 的 page binding 重用原 address importer，新增 pending
+frame 重载；native view 保原 arena/layout，所有 permission 由原 use pool 精确接纳。
+先验证 schema/layout/root/init/accepted coverage 与原 runtime endpoint，再绑定，
+最后转移原 source。已知拒绝/OOM/容量不足不消费 caller Update；source 转移后若
+原 suffix 尚未接纳，归还同一 Update。不得用其它布局的 ready frame 提供假权限。
+
+RC03：原 suffix 接纳后借既有 DependentCompletion 替换原 OwnedResult completion；
+最终 wait/result/completion 都合并 source 状态。接纳后失败/取消/unknown 保所有
+guards 和 source 至 actual retirement；不承诺抢占。旧公共结果/聚合观察与尚未回接
+的原 source 阻止 slot reuse，close/drain 沿原 controller 并在 suffix 退休后处理 source。
+
+RC04：自然 C++ source/static/shared consumer 与 guide 覆盖真实 pending K/V→原
+attention→同一结果/原 control 回接；两请求、两原 source slot、64步数值 oracle，
+hole/foreign/cancel-before/cancel-after/unknown/abandon/old-result/OOM 定向风险。
+Air actual Apple/Vulkan、三 host sanitizer 与两交付独立头沿匹配缓存树，所有 heavy
+串行/4jobs；Windows 只对应公共 common/定向 Vulkan C++ 编译。Graph 真实组合、
+CPU/CUDA receiver、late native output及完整七路线仍由本主卡继续，不由单纯
+completion 形状或本批两 native PASS 代签。现阶段 P0 只核冷/暖成本和复杂度，
+保原 metadata upload host wait 与 native private unknown，不重跑原数学/P1。
+
+有限 FIX 冻结为上述四项。新 opt-in receiver 冷分配绑定原 allocator/budget，
+binding 沿原 native import 冷 metadata；submit 中 source take、资格与聚合 publish
+不增加 metadata 分配，原 native submit 的已有成本如实保留。原 Update 借用访问
+与 receiver 控制外部串行，资源/allocator/context 延续原寿命合同。验证失败累计
+在本卡保留，沿原2h检查点及用户常设延长，不新增逐函数施工卡。
