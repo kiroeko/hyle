@@ -11,6 +11,10 @@
 #include <cmath>
 #include <cstdio>
 #include <vector>
+#if defined(HYLE_DIRTY_PAGE_NATIVE_PRODUCER)
+#include <mlx/ops.h>
+#include <mlx/transforms.h>
+#endif
 
 namespace {
 namespace c=hyle::compute;
@@ -67,7 +71,19 @@ Status exercise(n::Context& context,n::MemoryResource& device,n::MemoryResource&
   HYLE_ASSIGN_OR_RETURN(auto query_pool,c::LeasePool::create(device.ref(),q.size()*2+512));
   HYLE_ASSIGN_OR_RETURN(auto qw,query_pool.allocate(q.size()*2,64));
   HYLE_ASSIGN_OR_RETURN(auto query,fill(std::move(qw),q));HYLE_RETURN_IF_ERROR(initialize.reset());
-  const std::array update_specs{c::CopyResourceSpec{staging.ref(),4*row_bytes},
+#if defined(HYLE_DIRTY_PAGE_NATIVE_PRODUCER)
+  namespace mx=mlx::core;
+  const auto native_type=bf?mx::bfloat16:mx::float16;
+  const std::array producer_specs{n::InputSpec{{4,2,256},native_type}};
+  HYLE_ASSIGN_OR_RETURN(auto producer,context.prepare(c::Unary{c::UnaryKind::kAbs},producer_specs));
+  HYLE_ASSIGN_OR_RETURN(auto producer_slot,producer.create_invocation());
+  HYLE_ASSIGN_OR_RETURN(auto producer_desc,c::TensorDesc::dense(cap.data_type,
+      std::array<std::int64_t,3>{4,2,256}));
+  const auto source_resource=device.ref();
+#else
+  const auto source_resource=staging.ref();
+#endif
+  const std::array update_specs{c::CopyResourceSpec{source_resource,4*row_bytes},
       c::CopyResourceSpec{device.ref(),page_bytes},c::CopyResourceSpec{device.ref(),page_bytes},
       c::CopyResourceSpec{device.ref(),page_bytes},c::CopyResourceSpec{device.ref(),page_bytes}};
   HYLE_ASSIGN_OR_RETURN(auto update_program,n::CopyBatchProgram::prepare(context,update_specs));
@@ -112,9 +128,23 @@ Status exercise(n::Context& context,n::MemoryResource& device,n::MemoryResource&
         ranges.push_back({{0},{port},{0},(port-1)*row_bytes,(row%16)*row_bytes,row_bytes});
       }
     }
+#if defined(HYLE_DIRTY_PAGE_NATIVE_PRODUCER)
+    // The finite producer has fixed ports; unused rows are not copied to pages.
+    std::vector<std::uint16_t> negative(4*row_elements,0x8000);
+    for(std::size_t i=0;i<incoming.size();++i)negative[i]=incoming[i]|0x8000U;
+    auto input=mx::view(mx::array(negative.data(),mx::Shape{4,2,256},mx::uint16),native_type);
+    mx::async_eval({input});mx::synchronize(mx::default_stream(mx::Device::gpu));input.wait();
+    const std::array producer_inputs{input};HYLE_RETURN_IF_ERROR(producer_slot.bind(producer_inputs));
+    c::ReadLease produced;
+    {HYLE_ASSIGN_OR_RETURN(auto pending,producer_slot.submit());
+      HYLE_ASSIGN_OR_RETURN(auto result,pending.wait());
+      HYLE_ASSIGN_OR_RETURN(produced,device.import_readonly(result->arrays()[0],producer_desc));}
+    HYLE_RETURN_IF_ERROR(update.bind_source({0},produced));
+#else
     HYLE_ASSIGN_OR_RETURN(auto hw,host_pool.allocate(incoming.size()*2,64));
     HYLE_RETURN_IF_ERROR(hw.view()->write(std::as_bytes(std::span(incoming))));
     HYLE_ASSIGN_OR_RETURN(auto host,hw.publish());HYLE_RETURN_IF_ERROR(update.bind_source({0},host));
+#endif
     HYLE_RETURN_IF_ERROR(update.prepare_replay(phases,ranges));
     {HYLE_ASSIGN_OR_RETURN(auto submitted,update.submit());
       HYLE_RETURN_IF_ERROR(require(!update.unbind_mutable({1}),"native retained submission permitted writer withdrawal"));
@@ -166,6 +196,9 @@ Status exercise(n::Context& context,n::MemoryResource& device,n::MemoryResource&
     }
   }
   HYLE_RETURN_IF_ERROR(update.close());HYLE_RETURN_IF_ERROR(slot.drain());
+#if defined(HYLE_DIRTY_PAGE_NATIVE_PRODUCER)
+  std::fprintf(stderr,"actual native Abs producer -> readonly -> fixed F2 -> original dirty page -> attention PASS; producer program/slot reused64, no host K/V result download, explicit producer-ready waits remain\n");
+#endif
   std::fprintf(stderr,"native dirty page PASS:64 steps GQA8/2 D256, two requests growth17..80/17..48, mixed Q1/17 prefill/decode, crosspage, exact frame, untouched history, same generation, BF16=%d dirty total=%llu bytes, original prepare releases imports; explicit host waits retained\n",bf,static_cast<unsigned long long>(dirty_total));
   return Status::Ok();
 }

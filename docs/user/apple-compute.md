@@ -361,3 +361,18 @@ Metal传输与MLX计算可以重叠，但硬件/调度/带宽可能降低收益�
 [完整CPU→Q4 FFN→CPU/正交分块样例](../../samples/package/graph/cpu_apple/README.md)
 使用同一源码/static/shared入口与`hyle_stage_runtime`，不手配Provider、metallib或动态库。
 引擎管理model/KV、offload比例和专家cache/预测/淘汰；本接口只提供放置、预算、迁移和寿命。
+
+
+## 原生只读输出到固定 copy slot
+
+成功的原生输出可经 `MemoryResource::import_readonly` 导出为独立永久只读 lease。
+冷准备 `CopyBatchProgram` 时以原 `memory.ref()` 与最大来源字节数声明 source endpoint，
+每步可将新的导出 `ReadLease` 绑定到同一 `CopyBatchInvocation`，无需按导出的 resource
+identity 重建 program/slot。`bind_source` 只接受原资源或受信 MLX readonly 导出家族；
+仅伪造相同 domain、host accessible 或来自其它普通 resource 均不成立。
+
+导出实际拥有者和精确 subview 会由原 F2 binding 保留；每次 replay 仍校验容量、别名和
+真实 Metal device，可写 endpoint 仍须精确资源身份。`reset`/重新绑定与关闭沿原实际
+退休规则清理持有者。readonly import 自身仍有冷 metadata/opaque MLX descriptor 成本，
+原 `MemoryResource` 仍需活到所有 program/slot/提交退休，不能经其它 MLX alias 改写源。
+这里消费成功 ready 输出，没有隐式求值、producer 等待或 pending 结果转换。

@@ -103,6 +103,15 @@ struct ImportedArrayStorage final : MemoryState {
 bool is_copy_resource(mem::MemoryResourceRef resource) noexcept {
   return resource.valid() && dynamic_cast<MemoryState *>(&resource.resource()) != nullptr;
 }
+bool copy_source_resource_matches(mem::MemoryResourceRef nominated,
+                                  mem::MemoryResourceRef actual) noexcept {
+  if (actual == nominated) return true;
+  if (!actual.valid() || !nominated.valid() ||
+      dynamic_cast<ImportedArrayStorage *>(&actual.resource()) == nullptr ||
+      dynamic_cast<MemoryState *>(&nominated.resource()) == nullptr)
+    return false;
+  return actual.domain() == nominated.domain();
+}
 Result<CopySpan> copy_span(mem::ConstBufferView view) noexcept {
   if (!view.valid() || dynamic_cast<MemoryState *>(&view.resource().resource()) == nullptr)
     return std::unexpected(Status::InvalidArgument("Apple copy requires original Metal resource"));

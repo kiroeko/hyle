@@ -13,6 +13,10 @@ struct CopySpan final {
 // objects; ordinary common Compute headers never acquire vendor declarations.
 Result<CopySpan> copy_span(mem::ConstBufferView view) noexcept;
 bool is_copy_resource(mem::MemoryResourceRef resource) noexcept;
+// A readonly MLX export owns a distinct resource token for correct freeing.
+// Only that private carrier may match a nominated native source family.
+bool copy_source_resource_matches(mem::MemoryResourceRef nominated,
+                                  mem::MemoryResourceRef actual) noexcept;
 HYLE_COMPUTE_ROUTE_APPLE_API Result<std::shared_ptr<CopyRecording>> prepare_copy_recording(
     const Context &, std::uint32_t capacity, mem::AllocatorRef allocator = mem::system_allocator()) noexcept;
 Result<std::shared_ptr<CopyRecording>> prepare_copy_recording_runtime(const std::shared_ptr<Runtime> &,

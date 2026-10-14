@@ -315,7 +315,8 @@ Status detail::CopyStreamAccess::observe(CopyBatchInvocation &invocation) noexce
 Status CopyBatchInvocation::bind_source(CopyResourceId id, const ReadLease &source) noexcept {
   HYLE_RETURN_IF_ERROR(detail::valid_binding(state_, id)); HYLE_ASSIGN_OR_RETURN(auto view, source.view());
   const auto &spec = state_->program->specs[id.value];
-  if (view.resource() != spec.resource || view.size() > spec.capacity_bytes)
+  if (!detail::copy_source_resource_matches(spec.resource, view.resource()) ||
+      view.size() > spec.capacity_bytes)
     return Status::InvalidArgument("Apple copy source endpoint/capacity differs");
   HYLE_ASSIGN_OR_RETURN(auto span, detail::copy_span(view));
   auto &binding = state_->bindings[id.value]; binding = {}; binding.read = source; binding.source = view;

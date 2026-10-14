@@ -44,6 +44,10 @@ public:
   HYLE_COMPUTE_ROUTE_APPLE_API ~CopyBatchInvocation();
   HYLE_COMPUTE_ROUTE_APPLE_API static Result<CopyBatchInvocation> create(const CopyBatchProgram &) noexcept;
   bool valid() const noexcept { return state_ != nullptr; }
+  // Accept the exact nominated resource or a trusted readonly MLX export
+  // from its native family. Retains that export's actual owner and byte range;
+  // replay preparation still verifies the original Metal Device. Mutable
+  // endpoints require the exact resource. No implicit evaluation or wait.
   HYLE_COMPUTE_ROUTE_APPLE_API Status bind_source(CopyResourceId, const ReadLease &) noexcept;
   HYLE_COMPUTE_ROUTE_APPLE_API Status bind_mutable(CopyResourceId, WriteLease &&) noexcept;
   HYLE_COMPUTE_ROUTE_APPLE_API Status bind_producer(CopyResourceId, Completion &&) noexcept;
