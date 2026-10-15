@@ -2303,3 +2303,8 @@ shared40960。按已查询shared容量均可容纳两CTA；这不是总occupancy
 再串行三host风险门，最后原AA/P1/strict。numeric与host门相互独立，全部仍须在P1前完成，
 未运行门不记PASS。三形状均保留，不以修prefill回退window/留出已过预算；原8/9/10FAIL、
 全部旧费用及第三方UNKNOWN保留。SM89/pool1/split3/Ninja2、heavy串行/常设追加不变。
+
+CE25原六开关已集中恢复；删除manifest中冗余的关闭层，并将后三个CE24 dispatcher补丁
+重绑到原开关，完整派生diff只显示六处谓词恢复。CE24准确行约束/工作集、F32输出tile
+容量、short-K stride/补零、原数学与同步均保留。FI仍AUDITED，尚未签新数学/device/
+codegen或吞吐。按本卡有限门验收，不重跑未变其它路线。

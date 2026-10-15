@@ -580,7 +580,7 @@
       "module": "compute_provider_flashinfer",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/inference-g04-g05-cache-attention-domain.md",
-      "summary": "G04/G05 CE25 AUDITED：qualified10 prefill FAIL与原六开关/重复fragment转换、当前MMA1共享容量构成两把钥匙；唯一FIX恢复成熟原prefill tile repack，保CE24预算/行约束与F32/同步/shortK。未实施或签新数学/性能，旧FAIL费用全保留。"
+      "summary": "G04/G05 CE25 AUDITED：原六处prefill tile repack谓词已恢复，冗余关闭补丁层删除；保CE24行约束/工作集及F32、short-K、原同步。新数学/device/codegen待验；原10 prefill qualified FAIL及全部费用保留，未关闭。"
     },
     {
       "module": "compute_provider_ggml_metal",
