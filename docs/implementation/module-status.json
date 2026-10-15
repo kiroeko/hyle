@@ -578,10 +578,9 @@
     },
     {
       "module": "compute_provider_flashinfer",
-      "state": "CANDIDATE",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/inference-g04-g05-cache-attention-domain.md",
-      "summary": "G04/G05 CANDIDATE: CE01-11 finite encoded KV/independent geometry/window/noncausal/unequal Dv frozen. Four-native/three-joint source, finite source risks, CPU+Apple/Vulkan host sanitizers and eight SDK configurations PASS. Cost review/CPU peer oracle PASS; CUDA new-domain host risk and qualified P1 remain pending. Original closed scopes/failures/unknown native private costs retained.",
-      "candidate": "982676cb05a6e6244e66e0a596347aa96043617b"
+      "summary": "G04/G05 CE19 AUDITED：保留原有限数学域与F32 partial精度，按真实量化cache消费及P0输出成本证据，只融合private unsplit最终缩放/输出与原生split merge最终缩放/转换；原attempt6 DIAGNOSTIC与费用保留，其它owner不变。"
     },
     {
       "module": "compute_provider_ggml_metal",

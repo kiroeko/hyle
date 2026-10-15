@@ -1696,3 +1696,37 @@ original BF16 MMA_KV1为Q32KiB+KV16KiB，共48KiB。原FI已经直接写F32输�
 SM预算不能同时容纳两个CTA；不据此盲改tile/调度或承诺减少shared。
 F32四stage merge实际16.5KiB，BF16为8.5KiB；selected另外有scale/cast dispatch。
 以上仅P0归因，不把profiler时长、diagnostic ratios或补充ISA声明提升为合格吞吐/LOSS。
+
+
+## CE19：有限最终输出适配（AUDITED）
+
+只将 compute_provider_flashinfer 从 CANDIDATE 退回 AUDITED，baseline为原982676cb05a6，
+当前证据锚3f17ffb40。其余owner、公开schema/API、对象/lifetime/OOM/cancel、编码与语义域
+KEEP。真实consumer仍是本卡量化KV的单/多请求驻留decode/prefill及正交noncausal/不等Dv；
+每次完成前对整个输出再读写和dispatch是源码已证实的额外线性成本，原生variant已具最终
+F32缩放，原persistent merge也在F32归一化后最终cast。因此以消费与P0机制双证据准入，
+不以未资格化ratio声称material LOSS，不改变attention tile或FP8 repack算法。
+
+有限FIX只有两项，一批实现/检查：
+
+- CE19-A：无split的FP8复用原variant私有v_scale，在F32归一化后直接写最终F16/BF16；
+  去掉整个最终F32 staging与scale_cast，普通非FP8语义不变。
+- CE19-B：split仍以F32保存所有partial，复用原persistent merge，在最终归一化后乘scale、
+  最后才cast到Q输出类型；单partial分支也不得先cast。vendor只加私有merge回调seam和
+  原merge可选scale epilogue，默认行为保留，不复制merge/softmax/attention算法。F32输入
+  pipeline固定两stage，以维持D256原BF16四stage相同的字节预算；其它资源形状不调参。
+
+删除不再使用的最终staging计费与独立scale_cast；原planner仍按F32 partial字节计算split
+workspace。只允许native_cache/native_batch私有实现、声明、具名vendor patch及真实数学
+回归测试；不改公共build/perf/checker、调度器或公共API，不新增fast模式。所有有限维度、
+paged/ragged、F16/BF16、window/noncausal、空/单/多partial均须正确，尤其保留原溢出反例，
+并将BF16/F16 partial低位抵消反例变成实际GPU回归，防止只保留文档算术证据。
+
+验证：selector owner授权/有限FI source+既有13数学与新抵消、直接batch消费者，source和
+static/shared SDK按影响复用未变依赖；三宿主sanitizer只验证实际受影响host部分，旧设备/driver
+限制保留，不重复G02或其它路线已验收矩阵。无API变化不重跑全局测试。固定候选前只作原
+三形状VERIFY_ONLY及一次短机制trace确认输出dispatch消失/partial正确；不签吞吐。候选固定
+后按原CUDA合同（含已补portable声明）重新数值绑定及A/A/P1/strict verify，原输入、5%、
+16路和n15/31不改。当前没有heavy任务；所有heavy串行、最多4jobs/CUDA pool1，2h检查点
+沿用户常设授权有限追加，原失败和累计成本不重置。若实际数学/host报错则保留原失败后在
+两FIX内修正；新架构/数学域需求必须重新定界，不能无限扩大CE19。G06仍不实施。
