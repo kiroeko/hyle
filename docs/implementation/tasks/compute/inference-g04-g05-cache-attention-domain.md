@@ -1998,3 +1998,10 @@ error/warning/hazard，实际二进制前后SHA一致。六处draft source1另�
 整个G04/G05。后续串行执行原static/shared relocated SDK、受影响三host facets及新numeric/
 原合同P1；复用经实际源码/command/dependency/object身份核验的146个未变ggml CUDA对象，
 当前FI仍实际重编，不触发全库构建，也不将私有构建manifest作为产品改动。
+
+CE21[搬迁静态SDK](../../../../evidence/correctness/inference-g04-g05-cuda-ce21-static-sdk/receipt.json)
+已实际PASS，累计514.153s：14 CPU math、13 native math、3 CPU与3 CUDA公共consumer，
+零FAIL/SKIP；12个独立公共头与16个consumer编译TU均只使用搬迁后的installed headers。
+shipping无HYLE_TESTING/sanitizer；146个未变native CUDA对象经源码、原command/dependency
+freshness和前后object SHA核验复用，当前FI四CUDA TU实际重编，原manifest前后不变。
+此项只签静态交付；动态SDK、三host facets、新numeric/P1仍待实际裁决。
