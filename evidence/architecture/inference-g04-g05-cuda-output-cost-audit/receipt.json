@@ -148,11 +148,43 @@
     "Actual selected GPU variant, runtime occupancy/bandwidth and exact share of loss remain unresolved.",
     "No end-to-end token/s or nativeLinux/Formal claim; original private-pool UNKNOWN unchanged."
   ],
-  "raw_zip_sha256": "98ac1647b83d1374ea1c52c564f688b0641b1778fc0924956219cae30f0af9b5",
+  "raw_zip_sha256": "eed48f41d932da9508d544dc960009dde31afbf9dbc2c4378e8a783d4e07ed55",
   "upstream_source_identity": {
     "receipt": "evidence/correctness/inference-g04-g05-cuda-episode-interleave-numeric-rebind/receipt.json",
     "receipt_sha256": "31e9e32c5082daa2050dae993786328ebedbae797e23e9a4f8102fff40ef5ee2",
     "revision": "69ff11fc4954396d98326656dc85debd2223f637",
     "variant_helper_sha256": "326c32f7722027da5002ca9297c84f74b604255f01e59263f193b2aee3edb159"
+  },
+  "partial_precision_counterexamples": {
+    "kind": "EXACT_ARITHMETIC_COUNTEREXAMPLE_NOT_GPU_EXECUTION",
+    "scope": "Existing page16 FP8 scaled-cache input domain: zeroQ/K yields uniform weights; equal chunks,exact representable E4M3 codes and positiveF32 scale512. Output16/64 fits bothF16/BF16. This refutes raw16-bit partial narrowing as a general equivalent replacement; no claim about runtime partition selection.",
+    "rows": [
+      {
+        "partial_type": "BF16",
+        "rows_per_equal_chunk": 64,
+        "total_kv_rows": 128,
+        "first_chunk": "one FP8 code0x71(144),remaining code0x70(128)",
+        "second_chunk": "all FP8 code0xf0(-128)",
+        "q_and_k": 0,
+        "value_scale": 512,
+        "positive_raw_partial": "513/4",
+        "negative_raw_partial": -128,
+        "exact_f32_partial_final_output": 64.0,
+        "narrow_raw_partial_then_merge_output": 0.0
+      },
+      {
+        "partial_type": "F16",
+        "rows_per_equal_chunk": 256,
+        "total_kv_rows": 512,
+        "first_chunk": "one FP8 code0x71(144),remaining code0x70(128)",
+        "second_chunk": "all FP8 code0xf0(-128)",
+        "q_and_k": 0,
+        "value_scale": 512,
+        "positive_raw_partial": "2049/16",
+        "negative_raw_partial": -128,
+        "exact_f32_partial_final_output": 16.0,
+        "narrow_raw_partial_then_merge_output": 0.0
+      }
+    ]
   }
 }
