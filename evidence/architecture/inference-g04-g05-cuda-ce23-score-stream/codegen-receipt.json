@@ -1,0 +1,200 @@
+{
+  "kind": "G04_G05_CE23_SAME_THREE_KERNEL_CODEGEN",
+  "verdict": "EXTRACTION_PASS_STATIC_RESOURCES_ONLY",
+  "product_candidate": "8c3491ee17f7bb02204b7f80c34e2cc672e7a288",
+  "binary_sha256": "7b0827b366d27241f2ff99565dafc06c32ec9d65229c38a875606d0cae927cff",
+  "header_sha256": "2ab335c2990b7edc8527b7addd3ec8cf30351c3983f143406f06d8d1a74465b7",
+  "comparisons": [
+    {
+      "mangled": "_ZN10flashinfer34BatchPrefillWithPagedKVCacheKernelINS_12KernelTraitsILNS_8MaskModeE1ELj64ELj1ELj2ELj16ELj16ELj4ELj1ELNS_15PosEncodingModeE0E13__nv_bfloat1613__nv_fp8_e4m3S4_fiNS_16DefaultAttentionILb0ELb1ELb0ELb0EEEEEN4hyle7compute10flashinfer6native48_GLOBAL__N__ca0ae4f1_15_native_cache_cu_95f5a4b012OutputParamsINS_23BatchPrefillPagedParamsIS4_S5_S4_iEEEEEEvT0_",
+      "qualified9": {
+        "REG": 255,
+        "STACK": 40,
+        "SHARED": 0,
+        "LOCAL": 0
+      },
+      "ce22": {
+        "REG": 255,
+        "STACK": 48,
+        "SHARED": 0,
+        "LOCAL": 0
+      },
+      "ce23": {
+        "REG": 255,
+        "STACK": 48,
+        "SHARED": 0,
+        "LOCAL": 0
+      },
+      "qualified9_local": {
+        "LDL": 8,
+        "STL": 8
+      },
+      "ce22_local": {
+        "LDL": 9,
+        "STL": 9
+      },
+      "ce23_local": {
+        "LDL": 9,
+        "STL": 9
+      }
+    },
+    {
+      "mangled": "_ZN10flashinfer34BatchPrefillWithPagedKVCacheKernelINS_12KernelTraitsILNS_8MaskModeE1ELj64ELj1ELj2ELj16ELj16ELj4ELj1ELNS_15PosEncodingModeE0E13__nv_bfloat1613__nv_fp8_e4m3ffiNS_16DefaultAttentionILb0ELb1ELb0ELb0EEEEEN4hyle7compute10flashinfer6native48_GLOBAL__N__ca0ae4f1_15_native_cache_cu_95f5a4b011MergeParamsINS_23BatchPrefillPagedParamsIS4_S5_fiEES4_Lj256EEEEEvT0_",
+      "qualified9": {
+        "REG": 255,
+        "STACK": 48,
+        "SHARED": 0,
+        "LOCAL": 0
+      },
+      "ce22": {
+        "REG": 255,
+        "STACK": 56,
+        "SHARED": 0,
+        "LOCAL": 0
+      },
+      "ce23": {
+        "REG": 255,
+        "STACK": 56,
+        "SHARED": 0,
+        "LOCAL": 0
+      },
+      "qualified9_local": {
+        "LDL": 10,
+        "STL": 10
+      },
+      "ce22_local": {
+        "LDL": 12,
+        "STL": 11
+      },
+      "ce23_local": {
+        "LDL": 12,
+        "STL": 11
+      }
+    },
+    {
+      "mangled": "_ZN10flashinfer34BatchPrefillWithPagedKVCacheKernelINS_12KernelTraitsILNS_8MaskModeE0ELj64ELj1ELj8ELj4ELj8ELj4ELj1ELNS_15PosEncodingModeE0E13__nv_bfloat1613__nv_fp8_e4m3S4_fiNS_16DefaultAttentionILb0ELb1ELb0ELb0EEEEEN4hyle7compute10flashinfer6native48_GLOBAL__N__ca0ae4f1_15_native_cache_cu_95f5a4b012OutputParamsINS_23BatchPrefillPagedParamsIS4_S5_S4_iEEEEEEvT0_",
+      "qualified9": {
+        "REG": 255,
+        "STACK": 120,
+        "SHARED": 0,
+        "LOCAL": 0
+      },
+      "ce22": {
+        "REG": 255,
+        "STACK": 144,
+        "SHARED": 0,
+        "LOCAL": 0
+      },
+      "ce23": {
+        "REG": 255,
+        "STACK": 160,
+        "SHARED": 0,
+        "LOCAL": 0
+      },
+      "qualified9_local": {
+        "LDL": 27,
+        "STL": 27
+      },
+      "ce22_local": {
+        "LDL": 30,
+        "STL": 31
+      },
+      "ce23_local": {
+        "LDL": 32,
+        "STL": 33
+      }
+    }
+  ],
+  "kernels": [
+    {
+      "mangled": "_ZN10flashinfer34BatchPrefillWithPagedKVCacheKernelINS_12KernelTraitsILNS_8MaskModeE1ELj64ELj1ELj2ELj16ELj16ELj4ELj1ELNS_15PosEncodingModeE0E13__nv_bfloat1613__nv_fp8_e4m3S4_fiNS_16DefaultAttentionILb0ELb1ELb0ELb0EEEEEN4hyle7compute10flashinfer6native48_GLOBAL__N__ca0ae4f1_15_native_cache_cu_95f5a4b012OutputParamsINS_23BatchPrefillPagedParamsIS4_S5_S4_iEEEEEEvT0_",
+      "demangled": "void flashinfer::BatchPrefillWithPagedKVCacheKernel<flashinfer::KernelTraits<(flashinfer::MaskMode)1, (unsigned int)64, (unsigned int)1, (unsigned int)2, (unsigned int)16, (unsigned int)16, (unsigned int)4, (unsigned int)1, (flashinfer::PosEncodingMode)0, __nv_bfloat16, __nv_fp8_e4m3, __nv_bfloat16, float, int, flashinfer::DefaultAttention<(bool)0, (bool)1, (bool)0, (bool)0>>, hyle::compute::flashinfer::native::<unnamed>::OutputParams<flashinfer::BatchPrefillPagedParams<__nv_bfloat16, __nv_fp8_e4m3, __nv_bfloat16, int>>>(T2)",
+      "before_resource": "REG:255 STACK:40 SHARED:0 LOCAL:0 CONSTANT[0]:720 TEXTURE:0 SURFACE:0 SAMPLER:0",
+      "after_resource": "REG:255 STACK:48 SHARED:0 LOCAL:0 CONSTANT[0]:720 TEXTURE:0 SURFACE:0 SAMPLER:0",
+      "before_sass": {
+        "LDL": 8,
+        "STL": 8
+      },
+      "after_sass": {
+        "LDL": 9,
+        "STL": 9
+      },
+      "ce22_resource": "REG:255 STACK:48 SHARED:0 LOCAL:0 CONSTANT[0]:720 TEXTURE:0 SURFACE:0 SAMPLER:0",
+      "ce22_sass": {
+        "LDL": 9,
+        "STL": 9
+      }
+    },
+    {
+      "mangled": "_ZN10flashinfer34BatchPrefillWithPagedKVCacheKernelINS_12KernelTraitsILNS_8MaskModeE1ELj64ELj1ELj2ELj16ELj16ELj4ELj1ELNS_15PosEncodingModeE0E13__nv_bfloat1613__nv_fp8_e4m3ffiNS_16DefaultAttentionILb0ELb1ELb0ELb0EEEEEN4hyle7compute10flashinfer6native48_GLOBAL__N__ca0ae4f1_15_native_cache_cu_95f5a4b011MergeParamsINS_23BatchPrefillPagedParamsIS4_S5_fiEES4_Lj256EEEEEvT0_",
+      "demangled": "void flashinfer::BatchPrefillWithPagedKVCacheKernel<flashinfer::KernelTraits<(flashinfer::MaskMode)1, (unsigned int)64, (unsigned int)1, (unsigned int)2, (unsigned int)16, (unsigned int)16, (unsigned int)4, (unsigned int)1, (flashinfer::PosEncodingMode)0, __nv_bfloat16, __nv_fp8_e4m3, float, float, int, flashinfer::DefaultAttention<(bool)0, (bool)1, (bool)0, (bool)0>>, hyle::compute::flashinfer::native::<unnamed>::MergeParams<flashinfer::BatchPrefillPagedParams<__nv_bfloat16, __nv_fp8_e4m3, float, int>, __nv_bfloat16, (unsigned int)256>>(T2)",
+      "before_resource": "REG:255 STACK:48 SHARED:0 LOCAL:0 CONSTANT[0]:728 TEXTURE:0 SURFACE:0 SAMPLER:0",
+      "after_resource": "REG:255 STACK:56 SHARED:0 LOCAL:0 CONSTANT[0]:728 TEXTURE:0 SURFACE:0 SAMPLER:0",
+      "before_sass": {
+        "LDL": 10,
+        "STL": 10
+      },
+      "after_sass": {
+        "LDL": 12,
+        "STL": 11
+      },
+      "ce22_resource": "REG:255 STACK:56 SHARED:0 LOCAL:0 CONSTANT[0]:728 TEXTURE:0 SURFACE:0 SAMPLER:0",
+      "ce22_sass": {
+        "LDL": 12,
+        "STL": 11
+      }
+    },
+    {
+      "mangled": "_ZN10flashinfer34BatchPrefillWithPagedKVCacheKernelINS_12KernelTraitsILNS_8MaskModeE0ELj64ELj1ELj8ELj4ELj8ELj4ELj1ELNS_15PosEncodingModeE0E13__nv_bfloat1613__nv_fp8_e4m3S4_fiNS_16DefaultAttentionILb0ELb1ELb0ELb0EEEEEN4hyle7compute10flashinfer6native48_GLOBAL__N__ca0ae4f1_15_native_cache_cu_95f5a4b012OutputParamsINS_23BatchPrefillPagedParamsIS4_S5_S4_iEEEEEEvT0_",
+      "demangled": "void flashinfer::BatchPrefillWithPagedKVCacheKernel<flashinfer::KernelTraits<(flashinfer::MaskMode)0, (unsigned int)64, (unsigned int)1, (unsigned int)8, (unsigned int)4, (unsigned int)8, (unsigned int)4, (unsigned int)1, (flashinfer::PosEncodingMode)0, __nv_bfloat16, __nv_fp8_e4m3, __nv_bfloat16, float, int, flashinfer::DefaultAttention<(bool)0, (bool)1, (bool)0, (bool)0>>, hyle::compute::flashinfer::native::<unnamed>::OutputParams<flashinfer::BatchPrefillPagedParams<__nv_bfloat16, __nv_fp8_e4m3, __nv_bfloat16, int>>>(T2)",
+      "before_resource": "REG:255 STACK:120 SHARED:0 LOCAL:0 CONSTANT[0]:720 TEXTURE:0 SURFACE:0 SAMPLER:0",
+      "after_resource": "REG:255 STACK:160 SHARED:0 LOCAL:0 CONSTANT[0]:720 TEXTURE:0 SURFACE:0 SAMPLER:0",
+      "before_sass": {
+        "LDL": 27,
+        "STL": 27
+      },
+      "after_sass": {
+        "LDL": 32,
+        "STL": 33
+      },
+      "ce22_resource": "REG:255 STACK:144 SHARED:0 LOCAL:0 CONSTANT[0]:720 TEXTURE:0 SURFACE:0 SAMPLER:0",
+      "ce22_sass": {
+        "LDL": 30,
+        "STL": 31
+      }
+    }
+  ],
+  "stages": [
+    {
+      "stage": "resources",
+      "command": [
+        "/usr/local/cuda-13.3/bin/cuobjdump",
+        "--dump-resource-usage",
+        "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/shared-sdk-build/bin/libhyle_compute_provider_flashinfer.so.0.1.0"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 3.589900964000094
+    },
+    {
+      "stage": "selected-sass",
+      "command": [
+        "/usr/local/cuda-13.3/bin/cuobjdump",
+        "--dump-sass",
+        "--function",
+        "_ZN10flashinfer34BatchPrefillWithPagedKVCacheKernelINS_12KernelTraitsILNS_8MaskModeE1ELj64ELj1ELj2ELj16ELj16ELj4ELj1ELNS_15PosEncodingModeE0E13__nv_bfloat1613__nv_fp8_e4m3S4_fiNS_16DefaultAttentionILb0ELb1ELb0ELb0EEEEEN4hyle7compute10flashinfer6native48_GLOBAL__N__ca0ae4f1_15_native_cache_cu_95f5a4b012OutputParamsINS_23BatchPrefillPagedParamsIS4_S5_S4_iEEEEEEvT0_,_ZN10flashinfer34BatchPrefillWithPagedKVCacheKernelINS_12KernelTraitsILNS_8MaskModeE1ELj64ELj1ELj2ELj16ELj16ELj4ELj1ELNS_15PosEncodingModeE0E13__nv_bfloat1613__nv_fp8_e4m3ffiNS_16DefaultAttentionILb0ELb1ELb0ELb0EEEEEN4hyle7compute10flashinfer6native48_GLOBAL__N__ca0ae4f1_15_native_cache_cu_95f5a4b011MergeParamsINS_23BatchPrefillPagedParamsIS4_S5_fiEES4_Lj256EEEEEvT0_,_ZN10flashinfer34BatchPrefillWithPagedKVCacheKernelINS_12KernelTraitsILNS_8MaskModeE0ELj64ELj1ELj8ELj4ELj8ELj4ELj1ELNS_15PosEncodingModeE0E13__nv_bfloat1613__nv_fp8_e4m3S4_fiNS_16DefaultAttentionILb0ELb1ELb0ELb0EEEEEN4hyle7compute10flashinfer6native48_GLOBAL__N__ca0ae4f1_15_native_cache_cu_95f5a4b012OutputParamsINS_23BatchPrefillPagedParamsIS4_S5_S4_iEEEEEEvT0_",
+        "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/shared-sdk-build/bin/libhyle_compute_provider_flashinfer.so.0.1.0"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 0.7964237709999225
+    }
+  ],
+  "measured_seconds": 4.3863247350000165,
+  "limits": [
+    "Actual source-test shared artifact, WSL SM89; same three exact mangled specializations as qualified attempt9.",
+    "Only static resource and instruction counts; no runtime timing, occupancy or throughput verdict.",
+    "Original tile, warp and math template parameters unchanged; SDK and fresh numeric/P1 remain separate gates.",
+    "Extraction success and source storage reduction do not by themselves establish throughput improvement or full G04/G05 closure.",
+    "All earlier qualified failures, CE22 unmet resource hypothesis and measured costs retained."
+  ],
+  "raw_zip_sha256": "7bc8476bfb3b3f58f0a69b25a320bdcc4f780f8eca301ce019987912bea97303"
+}

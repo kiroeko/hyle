@@ -1,0 +1,26 @@
+{
+  "kind": "CE22_CE23_UNMET_RESOURCE_ROLLBACK",
+  "restored_product_baseline": "9c9ab88bba3fca5dcc981a2a42100b08af1a45ae",
+  "files": [
+    {
+      "path": "third_party/flashinfer_cache/patches.json",
+      "normalized_baseline_sha256": "4c7b35bc156db34314eb7e985bdd1215049966a2cab0f7c8625b7b5633b09132",
+      "restored_sha256": "4c7b35bc156db34314eb7e985bdd1215049966a2cab0f7c8625b7b5633b09132"
+    },
+    {
+      "path": "third_party/flashinfer_cache/NOTICE.md",
+      "normalized_baseline_sha256": "767fc91e609a9ae47a1bd0faca81e689390db24543bc23c424d026911414a53d",
+      "restored_sha256": "767fc91e609a9ae47a1bd0faca81e689390db24543bc23c424d026911414a53d"
+    },
+    {
+      "path": "cmake/HyleDependencyLock.json",
+      "normalized_baseline_sha256": "8c64f6a3a6f92b0aaf3ba64747191e97391d7f0c9222ee2d4a263e49ac75d88c",
+      "restored_sha256": "8c64f6a3a6f92b0aaf3ba64747191e97391d7f0c9222ee2d4a263e49ac75d88c"
+    }
+  ],
+  "reason": "Both audited source lifetime hypotheses failed their actual P0 codegen objective. Remove both changes rather than retain unqualified resource complexity. Existing CE21 source/device/SDK/host/numeric evidence matches restored product inputs; qualified attempt9 FAIL remains authoritative.",
+  "limits": [
+    "No new mathematical or throughput PASS. All two-round source/device/codegen evidence and costs retained.",
+    "Only three scoped product inputs restored; unrelated worktree changes preserved."
+  ]
+}

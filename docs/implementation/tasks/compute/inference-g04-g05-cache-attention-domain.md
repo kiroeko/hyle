@@ -2156,3 +2156,17 @@ CE23唯一函数edit已集中实施，完整原始头逐条派生和最终SHA核
 分支保留原数组与循环，只有原FP8 float-QK PV用一个half块。FI仍AUDITED，尚未签新数学、
 设备或codegen。ce23-score-stream-plan为READY，产品授权仅FI且无issues；共同lock保守
 选择全库的selected/skipped理由保留，按本卡FI与真实直接consumer门执行，不全局构建。
+
+CE23[实际数学/device](../../../../evidence/correctness/inference-g04-g05-cuda-ce23-score-stream-source-device/receipt.json)
+17math、十mem/十race/两普通race全部PASS，零FAIL/SKIP及error/warning/hazard；source阶段
+429.651s，device17.479s。[同实例生成代码](../../../../evidence/architecture/inference-g04-g05-cuda-ce23-score-stream/codegen-receipt.json)
+显示D256两实例仍为255寄存器、48/56字节栈、9/9与12/11条LDL/STL，和CE22相同；
+留出栈从144增加到160字节、LDL/STL32/33。资源目标未达，不启动长后续门，也不冻结为
+新的性能candidate。源码数组的显式容量不能替代编译器实际存活/分配证据。
+
+按[精确回退记录](../../../../evidence/architecture/inference-g04-g05-cuda-ce23-score-stream/rollback.json)
+移除CE22页偏移与CE23概率片段两项未达目标的改动，三个产品输入逐字归一化恢复到9c9；
+该基线原source/device、SDK、三host及numeric证据可按相同产品输入复用，qualified9 FAIL
+继续有效。两次尝试的代码、实际检查、资源反证与费用全保留，不把回退写成新PASS。
+FI仍AUDITED，下一步只读核对packed tile逐lane读写约束与原16bit计算预算；不盲删
+最小对齐保护，不扫tile变体。G04/G05未关闭，G06不实施。

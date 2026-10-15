@@ -580,7 +580,7 @@
       "module": "compute_provider_flashinfer",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/inference-g04-g05-cache-attention-domain.md",
-      "summary": "G04/G05 CE23 AUDITED：原qualified FAIL/actual spill与完整half概率数组存活反证；唯一FIX在原FP8 float-QK PV循环按KV块转换/求和/消费，原数学与tile/对齐/同步全保留。先数学/device/codegen；旧失败及费用不清零。"
+      "summary": "G04/G05 AUDITED：CE23数学/device通过但实际资源目标未达，CE22/23两项改动已精确回退到9c9产品输入；原qualified9性能FAIL仍有效，全部尝试和费用保留。下一步仅审计packed tile实际lane约束与原16bit计算预算，未授权新FIX。"
     },
     {
       "module": "compute_provider_ggml_metal",

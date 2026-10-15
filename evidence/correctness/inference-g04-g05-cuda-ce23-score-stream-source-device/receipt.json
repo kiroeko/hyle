@@ -1,0 +1,160 @@
+{
+  "kind": "G04_G05_CUDA_CE23_SCORE_STREAM_SOURCE_DEVICE",
+  "verdict": "PASS_SOURCE17_CACHE_MEM10_RACE10_LEGACY_RACE2_ONLY",
+  "product_candidate": "8c3491ee17f7bb02204b7f80c34e2cc672e7a288",
+  "source_tests": 17,
+  "source_stages": [
+    {
+      "stage": "configure",
+      "command": [
+        "cmake",
+        "-S",
+        "/root/hyle-scratch/compute-unified/source-7a7b4c3b",
+        "-B",
+        "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/shared-sdk-build",
+        "-DHYLE_INSTALL=OFF",
+        "-DHYLE_BUILD_TESTS=ON",
+        "-DHYLE_TEST_INSTRUMENTATION=OFF",
+        "-DCMAKE_PROJECT_INCLUDE=/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/ce19_cuda_compile.cmake"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 49.77429886099998,
+      "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/ce23-source-1/configure.log"
+    },
+    {
+      "stage": "prepare-manifest",
+      "command": [
+        "ninja",
+        "-C",
+        "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/shared-sdk-build",
+        "build.ninja"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 0.053713415999993686,
+      "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/ce23-source-1/prepare-manifest.log"
+    },
+    {
+      "stage": "build",
+      "command": [
+        "cmake",
+        "--build",
+        "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/shared-sdk-build",
+        "--target",
+        "hyle_compute_provider_flashinfer_test",
+        "--parallel",
+        "2",
+        "--",
+        "-k",
+        "0"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 376.584889831,
+      "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/ce23-source-1/build.log"
+    },
+    {
+      "stage": "tests",
+      "command": [
+        "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/shared-sdk-build/bin/hyle_compute_provider_flashinfer_test",
+        "--gtest_output=xml:/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/ce23-source-1/tests.xml"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 3.2382096039999624,
+      "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/ce23-source-1/tests.log"
+    }
+  ],
+  "source_input_count": 3228,
+  "source_result_raw_sha256": "069eafd8807cba038eb8f883b07c085442947979a78d4c66fe32842b76b763dc",
+  "native_cuda_edges": [
+    "[41/48] Building CUDA object src/compute_provider_flashinfer/CMakeFiles/hyle_compute_provider_flashinfer.dir/native_attention.cu.o",
+    "[43/48] Building CUDA object src/compute_provider_flashinfer/CMakeFiles/hyle_compute_provider_flashinfer.dir/native_batch.cu.o",
+    "[44/48] Building CUDA object src/compute_provider_flashinfer/CMakeFiles/hyle_compute_provider_flashinfer.dir/native_cache.cu.o",
+    "[45/48] Building CUDA object src/compute_provider_flashinfer/CMakeFiles/hyle_compute_provider_flashinfer.dir/native_cache_encoder.cu.o"
+  ],
+  "device_stages": [
+    {
+      "label": "memcheck",
+      "mode": "memcheck",
+      "command": [
+        "/usr/local/cuda-13.3/bin/compute-sanitizer",
+        "--tool",
+        "memcheck",
+        "--error-exitcode",
+        "86",
+        "--print-limit",
+        "0",
+        "--leak-check",
+        "no",
+        "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/shared-sdk-build/bin/hyle_compute_provider_flashinfer_test",
+        "--gtest_filter=FlashinferCache.*",
+        "--gtest_output=xml:/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/ce23-device-risks-1/memcheck.xml"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 4.269371776000071,
+      "summary": [
+        "========= ERROR SUMMARY: 0 errors"
+      ]
+    },
+    {
+      "label": "racecheck",
+      "mode": "racecheck",
+      "command": [
+        "/usr/local/cuda-13.3/bin/compute-sanitizer",
+        "--tool",
+        "racecheck",
+        "--error-exitcode",
+        "86",
+        "--print-limit",
+        "0",
+        "--racecheck-num-workers",
+        "4",
+        "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/shared-sdk-build/bin/hyle_compute_provider_flashinfer_test",
+        "--gtest_filter=FlashinferCache.*",
+        "--gtest_output=xml:/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/ce23-device-risks-1/racecheck.xml"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 8.937743563000026,
+      "summary": [
+        "========= RACECHECK SUMMARY: 0 hazards displayed (0 errors, 0 warnings)"
+      ]
+    },
+    {
+      "label": "legacy-racecheck",
+      "mode": "racecheck",
+      "command": [
+        "/usr/local/cuda-13.3/bin/compute-sanitizer",
+        "--tool",
+        "racecheck",
+        "--error-exitcode",
+        "86",
+        "--print-limit",
+        "0",
+        "--racecheck-num-workers",
+        "4",
+        "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/shared-sdk-build/bin/hyle_compute_provider_flashinfer_test",
+        "--gtest_filter=Flashinfer.Fp16PrefillAndDecodeThroughCompute:Flashinfer.Bf16PrefillAndDecodeThroughCompute",
+        "--gtest_output=xml:/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/ce23-device-risks-1/legacy-racecheck.xml"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 4.272340283999938,
+      "summary": [
+        "========= RACECHECK SUMMARY: 0 hazards displayed (0 errors, 0 warnings)"
+      ]
+    }
+  ],
+  "artifacts": {
+    "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/shared-sdk-build/bin/hyle_compute_provider_flashinfer_test": "3ba4d1cf60b8843dd7e2dcc1bce4d8ff9706d61a211c57634d6a0bd53773ec90",
+    "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/shared-sdk-build/bin/libhyle_compute_provider_flashinfer.so.0.1.0": "7b0827b366d27241f2ff99565dafc06c32ec9d65229c38a875606d0cae927cff"
+  },
+  "measured_stage_seconds": {
+    "source": 429.65111171199993,
+    "device": 17.479455623000035
+  },
+  "limits": [
+    "Actual W1 WSL RTX4070 SM89 only; no other GPU or OS qualification.",
+    "One audited fix: stream original FP8 PV probability conversion and consumption per KV block; one private function edit.",
+    "Tile, math, alignment, async ordering and output synchronization preserved; no performance verdict.",
+    "All earlier qualified FAIL, hazards, diagnostic runs and measured costs remain immutable evidence.",
+    "Codegen comparison, static/shared SDK, three host facets, new numeric/P1 and aggregate G04/G05 remain pending."
+  ],
+  "raw_zip_sha256": "cfad37e06d84638c89327da404eef3e53f163b52edbed2b08e26cb11cf948e5c"
+}
