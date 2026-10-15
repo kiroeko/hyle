@@ -176,7 +176,9 @@ void measure(int q1,int q2,int k1,int k2,int dk,int dv,bool causal,int window){D
   std::fprintf(stderr,"# CUDA_FP8_PAIR max_abs_difference=%.9g\n",disagreement);
   for(int i=0;i<4;++i){auto a=candidate->execute();auto b=peer->execute();nb::doNotOptimizeAway(a);nb::doNotOptimizeAway(b);}
   if(set("HYLE_BENCH_VERIFY_ONLY"))return;
-  nb::Bench bench;bench.title("CUDA paged FP8 BF16 Q="+std::to_string(q1)+","+std::to_string(q2)+" KV="+std::to_string(k1)+","+std::to_string(k2)+" D="+std::to_string(dk)+"/"+std::to_string(dv)+" causal="+std::to_string(causal)+" window="+std::to_string(window)).batch(1).epochs(16).minEpochIterations(1).minEpochTime(std::chrono::milliseconds(4)).performanceCounters(false);
+  // The original 4ms segments showed >10% identical-route WSL scheduling noise.
+  // Keep full episodes and the original paired rounds; amortize that noise.
+  nb::Bench bench;bench.title("CUDA paged FP8 BF16 Q="+std::to_string(q1)+","+std::to_string(q2)+" KV="+std::to_string(k1)+","+std::to_string(k2)+" D="+std::to_string(dk)+"/"+std::to_string(dv)+" causal="+std::to_string(causal)+" window="+std::to_string(window)).batch(1).epochs(16).minEpochIterations(1).minEpochTime(std::chrono::milliseconds(40)).performanceCounters(false);
   const auto selected=[&]{auto result=candidate->execute();nb::doNotOptimizeAway(result);};const auto original=[&]{auto result=peer->execute();nb::doNotOptimizeAway(result);};
   if(set("HYLE_BENCH_RIVAL_FIRST"))(void)bench.compare("Original CUDA cold-expanded immutable lifecycle",original,"HYLE CUDA encoded paged",selected);
   else (void)bench.compare("HYLE CUDA encoded paged",selected,"Original CUDA cold-expanded immutable lifecycle",original);
