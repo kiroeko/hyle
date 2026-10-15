@@ -542,9 +542,10 @@
     },
     {
       "module": "compute_provider_ggml_vulkan",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/inference-g04-g05-cache-attention-domain.md",
-      "summary": "G02 CE16 AUDITED: actual F32 RoPE at inference positions has large-angle GLSL sin/cos error; bounded split-2pi/FMA shader diagnostic fixes original DeepSeek case with unchanged oracle/tolerances. Freeze private sin/cos argument reduction for abs(F32 phase)<=1048576, original outside-domain behavior and all lifecycle/other route inputs retained. CE15 alias fix116 preserved. Normal build/delivery/remaining G02 gates pending."
+      "summary": "G02 CE15/CE16 CANDIDATE: independent export roots plus bounded split-2pi/FMA Vulkan sin/cos reduction frozen. Scratch unchanged full DeepSeek case and independent phase oracle PASS; normal current-input build, original pending Vulkan cases, source/static/shared and Air alias/phase qualification pending. Old failures/unknown domain beyond abs phase2^20 retained; other routes and lifecycle unchanged.",
+      "candidate": "2b60d9a34be12fda9a9e3fdc26f7a61b495c3be7"
     },
     {
       "module": "compute_ggml_runtime",

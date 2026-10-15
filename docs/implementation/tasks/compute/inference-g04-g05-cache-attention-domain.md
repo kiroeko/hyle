@@ -1,6 +1,6 @@
 # G04/G05 编码 KV 与有限 attention 语义实施批
 
-状态：**Apple CE14 CLOSED3b5157532；Vulkan provider 的 CE16 退回 AUDITED；其余 owner 保持原 CANDIDATE，2026-10-15**。baseline `694a3d1a4b02540cb56b6ceae35b73dd1dd93440`；
+状态：**Apple CE14 CLOSED3b5157532；Vulkan provider 的 CE16 已固定 CANDIDATE；其余 owner 保持原 CANDIDATE，2026-10-15**。baseline `694a3d1a4b02540cb56b6ceae35b73dd1dd93440`；
 共同批owner见下表：九个原实际组件及下文新增CUDA数值状态owner；有限CE01–07/API/成本合同已冻结。原 G03 已 CLOSED，不由本卡重开其权限/
 退休实现。九owner已合法SCOPED后进入AUDITED；仅下列有限FIX授权产品实现。
 本批沿[十项总卡](../project/inference-gaps-goal-execution-2026-10.md)，
@@ -1478,3 +1478,15 @@ copy/wait。原G04/G05 encoded attention P1没有Sin/Cos节点，可按源码影
 实际Air对应Direct/Graph门。原精度门/状态反馈不改，不以native结果自证正确；
 若归约不能覆盖本次完整实际输入，回本节裁决，不靠放宽阈值。检查点/资源/停止沿CE15。
 当前仅完成诊断及有限审计，G02仍未验收。
+
+
+CE16 产品 candidate `2b60d9a34be12fda9a9e3fdc26f7a61b495c3be7`，先前AUDITED提交01a8a7cf4。原pin/revision/
+archive与所有其它依赖条目不变，只更新Vulkan patch内容及notice摘要。Direct回归冻结
+18个正负/零/边界位置、三个head、32个独立频率（含负/零频率），对原computed-F32
+phase的F64 sin/cos方程使用4e-6门。当前尚未在正常重配树实跑。
+
+原selector WORKTREE计划已保存在scratch：依赖lock整文件变化保守选择全库；该输出
+原样保留，不运行本卡明确排除的全库构建。此精确变更只含同一Vulkan in-tree pin的
+内容hash/notice hash和已登记provider输入；组件图、公开头与其它依赖条目未变。
+将原过宽结果作为独立验证工具限制保留，实际门仍按CE15/16的Vulkan owner、直接
+消费者、三交付与实际Air执行；未运行全局gate不写PASS，不扩建selector/core。
