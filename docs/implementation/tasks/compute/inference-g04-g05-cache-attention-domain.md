@@ -951,3 +951,32 @@ split reduce。已测21.318秒，原 shader generator 为 no work；实际构建
 如实封存；已核两个代表依赖的源码SHA/编译命令与原shipping SDK一致，不声称只编两TU。
 这里只签原始独立 shader adapter 的有限数值承载，不签P1/A/A、mask-opt、多batch、
 producer/growth/capture 或 CPU CE12；量化causal固定mask的O(Q*KV)冷存储明确计费。
+
+### Vulkan 多请求编码页比较的构造前合同
+
+下一步仅构造 benchmark adapter，不改变冻结产品或启动完整采样。正常用户沿原
+PagedBatchInvocation 两槽：prepare_batch(layout)→bind(真实 Q/K/V exact frames)→submit→
+wait→取得输出并释放。peer 沿原同一 MaterializedNativeState/PagedMetadataPolicy、F1/F2、
+native Program/Invocation 和 retirement，只把数学 recipe 换为独立原456 Q8 shader；
+逐请求压缩页 Concat 后接已预检 dense shader，独立 Dqk/Dv 和 bottom-right window。
+原 shader 算术不变，不使用 candidate attention lowerer。原 host 可能选择 MMQ/整历史
+F16 展开的事实保留；本 adapter 明确选原 non-MMQ direct-Q8 pipeline，不签最佳原 host。
+
+两侧每 operation 都计入 prepare 的 Program/Invocation 创建、完整页索引 F2 上传与
+host wait、exact permissions、bind/submit、native 完成与 output owner 返回/释放；peer
+额外压缩页 gather、Q/output 转换和输出拼接全计费。当前 submit 消耗 prepared/bound，
+不能在 benchmark 私下恢复标志以伪造 warm replay。长期不可变历史的初次 payload 上传、
+schema/layout 创建和槽建立属冷成本；按实际 prepare 创建的 mask、scratch、program
+仍计入每 operation，不能因内容不变就标为冷成本。
+
+有限形状沿 CPU 三组：Q1/17、KV1024/768、D256、window16；Q64/128、同 KV/D256、
+unbounded causal；Q17/1、KV7/47、Dqk64/Dv128、full noncausal。Vulkan Q/output 为 F16，
+K/V 同 Q8_0 bytes，页16、GQA8/2，重排及共享页、inactive poison，独立 stored-byte double
+oracle、两槽重放和 readonly bytes。构造后先执行数值/完整生命周期预检，再提交不可变
+benchmark 合同与实际源码时序账；A/A、双执行/分配顺序和原5%非劣门通过前不完整采样。
+本合同不签 G06 更新/增量 producer/capture、native private-pool 上界或端到端 token/s。
+
+三个 benchmark adapter 文件已完成源码接线；独立只读复核未发现新的 MUST，确认 stored
+Q8 oracle、独立 K/V stride、child constants/alias 保活、exact frame 和两槽重放/完整计费。
+这是静态复核，尚未编译运行，不签数值或 P1。原 selector 对三个共享 bench 路径仍
+unknown，原 BLOCKED plan 与146 skipped reasons保留在独立工具记录，不改公共 selector。
