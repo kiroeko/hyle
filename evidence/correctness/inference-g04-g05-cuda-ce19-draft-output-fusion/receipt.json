@@ -1,0 +1,98 @@
+{
+  "kind": "G04_G05_CUDA_CE19_OUTPUT_FUSION_DRAFT_SOURCE_MATH",
+  "verdict": "PASS_16_DRAFT_TESTS_NOT_FINAL_CE19_ACCEPTANCE",
+  "product_commit": "48b384fb2",
+  "later_private_host_isolation_commit": "82ddbb453",
+  "tests": 16,
+  "failures": 0,
+  "skips": 0,
+  "test_names": [
+    "ColdAllocationFailuresRollBack",
+    "UnqualifiedSemanticsDeclineDuringPrepare",
+    "Fp16PrefillAndDecodeThroughCompute",
+    "Bf16PrefillAndDecodeThroughCompute",
+    "MixedFp8ShortKeyStrongWeightsInLoopAndRepackedTiles",
+    "QuantizedPagedAndRaggedIndependentValueDepthAndWindow",
+    "QuantizedFullNoncausalAllowsMoreQueriesThanKeys",
+    "PlainWindowAndIndependentValueDepth",
+    "QuantizedCoupledDepthsIncludingMainD256AndLongPrefill",
+    "PlainLongWindowAgainstCancellation",
+    "SplitKvScalesOnlyAfterF32MergeAgainstPartialOverflow",
+    "SplitKvPreservesBfloat16PartialCancellationResidual",
+    "SplitKvPreservesFloat16PartialCancellationResidual",
+    "IndependentBytesForThreeInputsAndScales",
+    "FiniteFloat8ExtremePositiveScalesSaturateAndPreserveZero",
+    "NumericDomainUsesOriginalCompletionStatus"
+  ],
+  "stages": [
+    {
+      "stage": "configure",
+      "command": [
+        "cmake",
+        "-S",
+        "/root/hyle-scratch/compute-unified/source-7a7b4c3b",
+        "-B",
+        "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/shared-sdk-build",
+        "-DHYLE_INSTALL=OFF",
+        "-DHYLE_BUILD_TESTS=ON",
+        "-DHYLE_TEST_INSTRUMENTATION=OFF"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 68.348208934,
+      "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/ce19-source-2/configure.log"
+    },
+    {
+      "stage": "build",
+      "command": [
+        "cmake",
+        "--build",
+        "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/shared-sdk-build",
+        "--target",
+        "hyle_compute_provider_flashinfer_test",
+        "--parallel",
+        "4",
+        "--",
+        "-k",
+        "0"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 983.19907662,
+      "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/ce19-source-2/build.log"
+    },
+    {
+      "stage": "tests",
+      "command": [
+        "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/shared-sdk-build/bin/hyle_compute_provider_flashinfer_test",
+        "--gtest_output=xml:/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/ce19-source-2/tests.xml"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 3.0107016929998736,
+      "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/ce19-source-2/tests.log"
+    }
+  ],
+  "artifacts": {
+    "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/shared-sdk-build/bin/hyle_compute_provider_flashinfer_test": "59f169f18ba97a4f3605f6af0138e64dc6f3d71fdb516a4fb28e7dc5cb831100",
+    "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/shared-sdk-build/bin/libhyle_compute_provider_flashinfer.so.0.1.0": "e9c82af8dd660a1a61ad8505c98cdf01ca52e2b041277f68f05e52e4adb632cb"
+  },
+  "prior_configure_failure_seconds": 63.127972617000005,
+  "temporary_serialization": {
+    "state": "RESUMED_AFTER_OTHER_CUDA_COMPILER_EXIT",
+    "batch": [
+      1019
+    ],
+    "cache": [
+      1027
+    ],
+    "paused": [
+      1027,
+      1062,
+      1063
+    ],
+    "paused_seconds": 19.025618633999983
+  },
+  "limits": [
+    "Source2 freezes earlier draft; final private host-dispatch isolation requires source3/new artifact binding.",
+    "No new SDK/host sanitizer/device sanitizer/P1/whole G04-G05 acceptance. CUDA16+new cancellation tests do not close goal."
+  ],
+  "raw_zip_sha256": "cc2a87e0670fe618cbf6fdc254bfa031d952c618fb490691e70f43e6204dbf37"
+}

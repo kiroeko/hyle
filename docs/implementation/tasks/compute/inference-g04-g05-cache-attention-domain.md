@@ -1757,3 +1757,10 @@ CE19-B源码复核补充：patched cascade 的merge kernel新增scale参数，�
 Ninja最多2jobs（优化线程至多3，加一个普通CXX），不启LTO或改优化等级；只省无当前机器
 验收意义的SM80构建，不签其它GPU架构。新产物照常跑其真实math/SDK/风险及数值绑定，
 不把编译线程数选项当bitwise或性能等价证明。公共产品CMake/工具/core不改。
+
+CE19首轮draft48b384的[source/math实际记录](../../../../evidence/correctness/inference-g04-g05-cuda-ce19-draft-output-fusion/receipt.json)
+已封存：configure68.348s、build983.199s、16 tests/零FAIL/零SKIP 3.011s。
+新BF16残差64、F16残差16及原partial溢出0均通过，正常prefill/decode、mixed短K、window、
+noncausal、不等Dv/主D256长prefill、OOM回滚/拒绝与编码边界亦通过。该draft尚无后续
+82ddbb453私有host名字隔离，不能据此把最终CE19签PASS/CANDIDATE。原失败63.128s与
+19.026s串行暂停保留；下一source3用前节SM89有限profile取最终实际绑定，复用未变依赖。
