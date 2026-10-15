@@ -2595,3 +2595,16 @@ warning/hazard，artifact SHA稳定。实际stage费用source422.190s、device16
 源码/设备与静态资源通过不能代签实际吞吐，shared模型需新SDK运行身份核验。
 FI合法冻结CANDIDATE830dd9e01；接着两搬迁SDK、新numeric/runtime、三host及原P1，
 G04/G05未完成。原13及全部旧失败/未知和累计费用保留。
+
+CE28两搬迁SDK已实际通过：[static](../../../../evidence/correctness/inference-g04-g05-cuda-ce28-static-sdk/receipt.json)、
+[shared](../../../../evidence/correctness/inference-g04-g05-cuda-ce28-shared-sdk/receipt.json)各33测试、12公共头、
+16消费TU，零FAIL/SKIP；shipping无HYLE_TESTING/sanitizer，消费只使用迁址安装头。146个
+未变ggml CUDA对象逐一核源/依赖/原命令与Ninja freshness，不重编原生CUDA全依赖。
+实际stage费用static440.232s、shared145.195s分别保留。
+性能绑定仅更新实际SDK prefix、prose身份、三个workload provenance SHA及新numeric路径；
+原contract其它字段/换行保持，原三consumer与nested prose preflight PASS。新numeric/
+runtime、三host与原P1尚待，不签数值/吞吐或整项完成。
+
+ce28-sdk-binding-plan仍因同三shared bench JSON/Python路径unknown为BLOCKED，
+product_authorization无owner/issues；docs/closure与146 skipped reasons保留。沿原独立
+工具事项与本卡有限门继续，不修改公共selector或将该工具状态签为PASS。

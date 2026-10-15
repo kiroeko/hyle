@@ -41,7 +41,7 @@ The comparison measures resident warm operation rate and its explicit memory
 tradeoff. It does not claim direct original FP8 kernel throughput, best-of original
 host policy, compressed-cache end-to-end rate, token/s, G06 decode/capture, or a
 native-Linux/Formal result. The actual machine is W1-WSL on the existing SM89 GPU;
-it shares physical hardware with W1-WIN. The SDK is rebound to the actual CE27
+it shares physical hardware with W1-WIN. The SDK is rebound to the actual CE28
 candidate and its source/static/shared consumers; this remains a GPU comparison.
 Native private pool upper
 bounds remain UNKNOWN. Numerical preflight must pass before A/A or P1 sampling.
