@@ -19,3 +19,9 @@ stores and the attention/merge mathematics are unchanged.
 
 Every native route in this provider uses the same verified private headers, so
 ordinary and encoded attention share these synchronization fixes and merge ABI.
+
+The admitted FP8 cache route uses the original register-fragment conversion
+in compute_qk and compute_sfm_v rather than a complete BF16 shared-memory
+repack tile. Storage, KernelTraits and all three dispatcher budgets agree.
+The original planner and occupancy selection remain; FP32 partials, final
+scaling, output synchronization and physical short-K padding are retained.

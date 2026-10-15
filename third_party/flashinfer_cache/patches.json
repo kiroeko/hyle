@@ -1,11 +1,11 @@
 {
   "upstream_revision": "69ff11fc4954396d98326656dc85debd2223f637",
-  "scope": "One provider-private verified header set: finite mixed FP8 QK64/VO128 physical K tile; original F32 partial/merge with optional final scale; shared-storage handoff and warp output synchronization",
+  "scope": "One provider-private verified header set: finite mixed FP8 QK64/VO128 physical K tile; original F32 partial/merge with optional final scale; shared-storage handoff and warp output synchronization; original FP8 register-fragment conversion with matching storage/dispatcher budgets",
   "files": [
     {
       "path": "include/flashinfer/attention/prefill.cuh",
       "before_sha256": "f93cbea96e3a723254c15f5a52d6dd4c13e3892e88eb9b9fed1c0c0048c7d710",
-      "after_sha256": "549ae61296d6ad84da48f2c7b6d325210f1bbf709e63be2967184f55b3ef32a3",
+      "after_sha256": "babcaab98d6f33ed73814d406f980a515aeef1cf02daa04f9c6726d869594f78",
       "edits": [
         {
           "before": "      alignas(16) DTypeKV k_smem[CTA_TILE_KV * HEAD_DIM_QK];",
@@ -58,6 +58,30 @@
         {
           "before": "      uint32_t o_smem_offset_w = o_smem->template get_permuted_offset<UPCAST_STRIDE_O>(\n          warp_idx_x * KTraits::NUM_MMA_Q * 16 + lane_idx / 8, lane_idx % 8);",
           "after": "      // Independent thread scheduling requires the warp's rearranged stores\n      // to complete before its lanes load the coalesced output vectors.\n      __syncwarp();\n      uint32_t o_smem_offset_w = o_smem->template get_permuted_offset<UPCAST_STRIDE_O>(\n          warp_idx_x * KTraits::NUM_MMA_Q * 16 + lane_idx / 8, lane_idx % 8);"
+        },
+        {
+          "before": "bool = ((sizeof(DTypeKV) == 1) && !is_fp4_type_v<DTypeKV> && (HEAD_DIM_VO != 64) &&\n                  (HEAD_DIM_VO <= 256) && (CTA_TILE_Q > 16))>",
+          "after": "bool = false>  // HYLE keeps FP8 conversion in the original register fragments."
+        },
+        {
+          "before": "  static constexpr bool USE_KV_REPACK = (sizeof(DTypeKV) == 1) && !is_fp4_type_v<DTypeKV> &&\n                                        (HEAD_DIM_VO != 64) && (HEAD_DIM_VO <= 256) &&\n                                        (CTA_TILE_Q > 16);",
+          "after": "  static constexpr bool USE_KV_REPACK = false;  // Original FP8 register conversion."
+        },
+        {
+          "before": "  static constexpr bool USE_KV_REPACK = (sizeof(DTypeKV_) == 1) && !is_fp4_type_v<DTypeKV_> &&\n                                        (HEAD_DIM_VO != 64) && (HEAD_DIM_VO <= 256) &&\n                                        (CTA_TILE_Q > 16);",
+          "after": "  static constexpr bool USE_KV_REPACK = false;  // Original FP8 register conversion."
+        },
+        {
+          "before": "    constexpr bool kUseRepack = (sizeof(DTypeKV) == 1) && !is_fp4_type_v<DTypeKV> &&\n                                (HEAD_DIM_VO != 64) && (HEAD_DIM_VO <= 256) && (CTA_TILE_Q > 16);\n    constexpr bool kKVShared = !is_fp4_type_v<DTypeKV> && (HEAD_DIM_VO / 16 > 16) &&\n                               ((HEAD_DIM_VO / 16) % NUM_WARPS_KV == 0) &&\n",
+          "after": "    constexpr bool kUseRepack = false;  // Match the original register path storage.\n    constexpr bool kKVShared = !is_fp4_type_v<DTypeKV> && (HEAD_DIM_VO / 16 > 16) &&\n                               ((HEAD_DIM_VO / 16) % NUM_WARPS_KV == 0) &&\n"
+        },
+        {
+          "before": "  constexpr bool kUseRepack = (sizeof(DTypeKV) == 1) && !is_fp4_type_v<DTypeKV> &&\n                              (HEAD_DIM_VO != 64) && (HEAD_DIM_VO <= 256) && (CTA_TILE_Q > 16);\n  // Matches KernelTraits::USE_KV_SHARED_SMEM: at large head dims K and V\n  // time-share one smem buffer, so the occupancy budget counts the K/V\n",
+          "after": "  constexpr bool kUseRepack = false;  // Match the original register path storage.\n  // Matches KernelTraits::USE_KV_SHARED_SMEM: at large head dims K and V\n  // time-share one smem buffer, so the occupancy budget counts the K/V\n"
+        },
+        {
+          "before": "  constexpr bool kUseRepack = (sizeof(DTypeKV) == 1) && !is_fp4_type_v<DTypeKV> &&\n                              (HEAD_DIM_VO != 64) && (HEAD_DIM_VO <= 256) && (CTA_TILE_Q > 16);\n  // Matches KernelTraits::USE_KV_SHARED_SMEM: K/V share one smem buffer for bf16/fp16 at every\n  // tile and for FP8 only at CTA_TILE_Q=32 (not NVFP4), so the occupancy budget counts the K/V\n",
+          "after": "  constexpr bool kUseRepack = false;  // Match the original register path storage.\n  // Matches KernelTraits::USE_KV_SHARED_SMEM: K/V share one smem buffer for bf16/fp16 at every\n  // tile and for FP8 only at CTA_TILE_Q=32 (not NVFP4), so the occupancy budget counts the K/V\n"
         }
       ]
     },

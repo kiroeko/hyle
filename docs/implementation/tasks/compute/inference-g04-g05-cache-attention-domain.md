@@ -1970,3 +1970,8 @@ shared SDK以及受影响三host facet；复用未变CPU/G02/Apple/Vulkan与nati
 新source数学/设备门通过才固定新candidate，随后重新数值绑定及原合同A/A/P1/strict。
 若数学/设备出现真实失败仅在该六处一致性边界内修复；若与原寄存器路径本身矛盾，则
 保留失败并还原该试改，不靠删反例/放宽精度或任意新算法扩张。
+
+CE21六处一致性修改已集中实施，FI仍AUDITED，未签数学/成本改善。selector ce21-register-plan
+为READY，product_authorization仅FI且无issues；共同lock使选择器保守选全库，实际只有
+FI私有headers派生改变。沿已固定FI/直接consumer/source/SDK/风险门，身份未变的其它
+route/native依赖复用并保留skip理由，不为全库假签PASS或修改公共selector/build核心。
