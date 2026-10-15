@@ -1198,3 +1198,24 @@ CUDA 独立 peer 的有限公平性裁决已补入[原peer账单](../../../../ev
 split/merge；冷初始化/检查完成/释放与额外capacity bytes单列。没有真实producer/version/
 tail/page/scale变化时，反复warm全历史解码会人为降级peer，因此不采用。只裁决该有限
 adapter，不签实现/数学/P1，也不称原生直接FP8、动态增量或best-host比较。
+
+
+### CUDA 原版 BF16 快照比较器实现批（尚未编译）
+
+benchmark-only native TU 使用独立 namespace 包含未经修改的原69ff FI headers，
+避免与产品修复模板/内核合并。原 FP8 exact frames 冷阶段按授权物理页/有效行的并集
+解码到额外 BF16 snapshot，保留原 page IDs、独立 K/V stride、原 owner 和 scale；
+冷 decode 通过原 Queue/F1 实际完成后才 ready，两槽共用只读副本。每个 warm episode
+仍走原 Batch update、metadata/F1/F2、原 frame range/identity 检查、原 BF16 paged
+attention/原16-bit split-merge、实际 Completion/output owner 返回与释放。
+
+三组 workload 几何保持原合同，query/output 选择 BF16，K/V FP8 scale 为 .5/2；
+独立 fixture 使用非零 Q 和相关 K/V，double oracle 解实际 FP8 bytes，完整 physical
+readonly 与双方两槽四次重放均已接入。额外 snapshot capacity、实际 decoder read/write、
+冷初始化与 teardown 秒数单列，native private-pool upper 仍 UNKNOWN。原 CUDA static
+SDK 的 CPU 域早于 CE12/13；此次只验 GPU bridge，不代签新 CPU。
+
+新增独立 SDK CMake 只编 benchmark 与一个原 FI TU（该 TU compile pool=1，整体最多4），
+不重编产品或 native 依赖。当前仅实现/源码身份与普通文档检查；未编译、未执行数值，
+没有 A/A/P1 或 G04/G05 PASS。真实 CUDA 预检须等待既有 CPU→Vulkan→Apple 重型阶段
+实际结束，再按同一有限批次构建；首轮出现的问题集中记录后定向修正。
