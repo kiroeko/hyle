@@ -44,3 +44,12 @@ The original statistical policy remains eight strata, sixteen workload-matched
 A/A runs, dual execution/allocation order, placement perturbation, n15 then the
 single predeclared n31 extension, original controls, and five-percent margins.
 All qualified failures and measured/unknown costs are retained.
+
+For this WSL workload, the benchmark interleaves one complete episode per
+nanobench micro epoch using its original balanced ABBA/BAAB order. Every 2048
+paired episodes are summed into one arithmetic-mean group; all elapsed times,
+including slow observations, contribute. Sixteen groups feed the original
+Result/CompareResult statistics and ordinary operation-rate parser. Group sums
+and counts are emitted after timing. This preserves mean complete-episode cost
+while sharing the short host/API observation window. It changes only this
+benchmark adapter; the public performance core and product remain unchanged.

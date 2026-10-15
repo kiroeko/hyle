@@ -1,0 +1,110 @@
+{
+  "kind": "G04_G05_CUDA_EPISODE_INTERLEAVE_FINITE_PREFLIGHT",
+  "verdict": "PASS_FOUR_CONTROL_PREFLIGHT_ONLY",
+  "product_candidate": "982676cb05a6e6244e66e0a596347aa96043617b",
+  "identity": {
+    "host": "Linux kiro-workstation 6.18.54.1-microsoft-standard-WSL2 #1 SMP PREEMPT_DYNAMIC Tue Oct  6 19:13:07 UTC 2026 x86_64 x86_64 x86_64 GNU/Linux",
+    "compiler": "g++-14 (Ubuntu 14.2.0-4ubuntu2~24.04.1) 14.2.0\nCopyright (C) 2024 Free Software Foundation, Inc.\nThis is free software; see the source for copying conditions.  There is NO\nwarranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.",
+    "profiler": "NVIDIA Nsight Systems version 2026.1.3.425-261338342291v0",
+    "gpu": "NVIDIA GeForce RTX 4070, 617.14, GPU-e7376560-6f5d-ec19-6ee4-3dd3a2c81ef8, 8.9"
+  },
+  "sampling_policy": {
+    "environment": "wsl2",
+    "guest_affinity_only": true,
+    "physical_core_class_verifiable": false,
+    "applied_by": "benchmark-child-launcher"
+  },
+  "binary_sha256": "04475461eee321621f3afd8c6463b149e6d1df348a69c09fe490a456cfc1e81e",
+  "runs": [
+    {
+      "stage": "native-candidate-first",
+      "route": "native",
+      "peer_first": false,
+      "ratios": {
+        "CUDA paged FP8 BF16 Q=1,17 KV=1024,768 D=256/256 causal=1 window=16": 1.0024405056008439,
+        "CUDA paged FP8 BF16 Q=64,128 KV=1024,768 D=256/256 causal=1 window=-1": 1.0133389220876228,
+        "CUDA paged FP8 BF16 Q=17,1 KV=7,47 D=64/128 causal=0 window=-1": 1.0031628059518882
+      }
+    },
+    {
+      "stage": "native-peer-first",
+      "route": "native",
+      "peer_first": true,
+      "ratios": {
+        "CUDA paged FP8 BF16 Q=1,17 KV=1024,768 D=256/256 causal=1 window=16": 1.0110058417616796,
+        "CUDA paged FP8 BF16 Q=64,128 KV=1024,768 D=256/256 causal=1 window=-1": 0.9914282398830632,
+        "CUDA paged FP8 BF16 Q=17,1 KV=7,47 D=64/128 causal=0 window=-1": 1.0148052469758855
+      }
+    },
+    {
+      "stage": "selected-candidate-first",
+      "route": "selected",
+      "peer_first": false,
+      "ratios": {
+        "CUDA paged FP8 BF16 Q=1,17 KV=1024,768 D=256/256 causal=1 window=16": 0.9998550536301568,
+        "CUDA paged FP8 BF16 Q=64,128 KV=1024,768 D=256/256 causal=1 window=-1": 0.9997597874363927,
+        "CUDA paged FP8 BF16 Q=17,1 KV=7,47 D=64/128 causal=0 window=-1": 0.9887547110902967
+      }
+    },
+    {
+      "stage": "selected-peer-first",
+      "route": "selected",
+      "peer_first": true,
+      "ratios": {
+        "CUDA paged FP8 BF16 Q=1,17 KV=1024,768 D=256/256 causal=1 window=16": 1.0174897005174017,
+        "CUDA paged FP8 BF16 Q=64,128 KV=1024,768 D=256/256 causal=1 window=-1": 1.0065221036757597,
+        "CUDA paged FP8 BF16 Q=17,1 KV=7,47 D=64/128 causal=0 window=-1": 0.9806523951325548
+      }
+    }
+  ],
+  "stages": [
+    {
+      "stage": "compile",
+      "elapsed_seconds": 9.627509787999998,
+      "exit_code": 1
+    },
+    {
+      "stage": "compile-resume",
+      "elapsed_seconds": 7.9318836059999995,
+      "exit_code": 0
+    },
+    {
+      "stage": "link",
+      "elapsed_seconds": 1.4545554970000012,
+      "exit_code": 0
+    },
+    {
+      "stage": "native-candidate-first",
+      "elapsed_seconds": 16.069583885,
+      "exit_code": 0
+    },
+    {
+      "stage": "native-peer-first",
+      "elapsed_seconds": 15.905776148000001,
+      "exit_code": 0
+    },
+    {
+      "stage": "selected-candidate-first",
+      "elapsed_seconds": 17.889842572000006,
+      "exit_code": 0
+    },
+    {
+      "stage": "selected-peer-first",
+      "elapsed_seconds": 17.385364291000002,
+      "exit_code": 0
+    }
+  ],
+  "episode_count": 786432,
+  "groups_per_side": 16,
+  "pairs_per_group": 2048,
+  "measured_worker_seconds": 86.26451578700001,
+  "conclusion": "All12 same-implementation marginal operation-rate ratios .980652..1.017490 meet original5%band with every elapsed tail included. Finite evidence supports freezing the workload-local adapter and declaring original16-route qualification, not promoting four controls into A/A or product performance PASS.",
+  "limits": [
+    "Only placement1/peer-allocation-first, both original execution orders and both same-implementation routes",
+    "Original3 shapes, two slots,4 independent oracle replays,full update/run/wait/output release preserved",
+    "Initial scratch CXX compilation failed from missing iostream9.628s; original failure/log/source hash preserved, include fixed in same tree; no SDK/native/product rebuild",
+    "Group sums/counts retained; original stats and mean-episode estimand, no trimmed samples or copied favorable single-episode medians",
+    "Old4ms/40ms/200ms/500ms and16x128 group instability retained. Host sanitizer/SDK/native qualification not rerun; private pool upper UNKNOWN"
+  ],
+  "raw_zip_sha256": "d6d6668504144e2e9916af399534cfb79ead25383a688da7e13340140dac8527"
+}

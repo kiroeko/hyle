@@ -1567,3 +1567,63 @@ CUDA原声明200/500ms四控制已[实际结束并封存](../../../../evidence/p
 原SDK/其余对象SHA不变，原4ms/40ms失败及本次elapsed保留。当前无heavy进程；按原
 固定分支先反查真实时序/同步/地址/调度机制，再声明有限诊断，不改公共性能核心或产品。
 CUDA三宿主facet已有分别封存的ASan/UBSan/TSan结果；保原LSan和诊断线程边界，不重复。
+
+### CUDA 完整 episode 的有限机制诊断
+
+源码核查确认 `update_batch` 每次复制整 metadata、提交上传并等待；随后原生 run 和
+Completion 再等待，两个 A/A 对象各有两个独立 slot。nanobench compare 使用共同迭代数、
+块内 ABBA/BAAB 顺序，校准与计时均执行完整 episode；旧日志只有汇总，没有分段或原始轮次。
+这些事实尚不能裁决是地址、slot、宿主调度还是 GPU 服务时间造成失稳。
+
+固定下一诊断只编译一个 scratch benchmark CXX TU，链接原 attempt4 SDK/对象并核 SHA，
+不修改产品或公共性能核心。保原三个形状、两 slot、四次独立 oracle replay、完整
+update→run→wait→output/release。两无 profiler 进程分别运行 selected/native 同实现控制，
+均在原 placement1/peer-first allocation 层：每形状先八个 ABBA/BAAB epoch（每边512个
+episode），再2048个逐 episode 配对（同样平衡顺序）。记录每次 update、run submit、
+wait、output/release、wall/thread CPU、slot、实际CPU与线程 context switches；缓存记录后
+再输出，计时中不打印。另两进程仅对原 D64/128 留出作相同诊断，使用本机已安装的
+Nsight Systems CUDA API/GPU trace；禁 CPU sampling/context-switch profiler，避免扩大采样。
+profiler 与无 profiler 的结果分别保留，不作为产品吞吐或 A/A 资格。
+
+总计四诊断进程，不新增完整 P1/16路 A/A、不删除不利原形状；Nsight 不可用时保留该失败，
+仍分析无 profiler 分段。预算1h检查点，heavy串行、max4jobs，原失败与累计成本不重置。
+以分段/slot/调度和真实 GPU trace 决定下一分支；若无明确机制，不据此改产品或挑选有利时长。
+
+上述四进程[实际机制记录](../../../../evidence/performance/inference-g04-g05-cuda-episode-mechanism-diagnostic/receipt.json)
+已封存，compile/link/运行共31.701s。原留出 selected blocked配对中位1.11368，逐episode
+配对中位0.99912，但保留全部长尾后16×128 arithmetic组的边际ratio仍0.92292；不能用
+有利的单次中位数代替原完整episode平均吞吐。两slot无持续分离，guest context switch很少；
+Nsight留出GPU kernel约3.9us（original）或4.6+1.0us（selected），80B metadata copy约1.26us，
+而event synchronize中位15.6–17.5us、最大1.85–1.94ms。此为宿主/API完成观察时间尺度的
+直接证据，尚不细签Windows driver/hypervisor/桌面竞争的最终原因；profiler结果不作吞吐。
+
+下一有限诊断仅替换scratch benchmark计时调度：继续借原nanobench逐epoch ABBA/BAAB，
+每epoch恰好一个完整episode，固定16×2048 paired episodes。每2048个配对将两边**所有**
+elapsed相加、除以2048，形成原16个算术平均组，再用原Result/CompareResult格式和原配对
+统计输出。保留组sum/count与相同独立数学检查；不截尾、不剔除慢样本、不改estimand或5%门，
+不修改nanobench/hyle_perf核心或产品。原4ms/40ms/200ms/500ms结果全保留。
+只编译一个scratch CXX及link；同placement1/peer-allocation-first，两路线各candidate-first/
+peer-first一次，共四控制进程。若四控制三形状均在原5%带内，再冻结该局部adapter及其原始
+轮次/成本，声明完整16路A/A；本轮不能提前签资格或直接启动产品P1。若仍失稳，停止单纯
+追加样本量。预算1h检查点，heavy串行、max4jobs，复用对象SHA再次核验，原成本不重置。
+
+固定16×2048的[四控制预检](../../../../evidence/performance/inference-g04-g05-cuda-episode-interleave-preflight/receipt.json)
+实际PASS，12个原三形状比率0.98065–1.01749，原5%门不变。首次scratch CXX缺iostream
+编译FAIL9.628s保留，同树补include后compile/link及四进程完成，总86.265s；没有产品改动。
+据此冻结本workload局部adapter：原nanobench单episode交错、每2048对全量求和、原16组
+Result/CompareResult统计。canonical只改benchmark、原A/A telemetry/group校验和provenance
+摘要，公共性能核心/产品/API/输入/oracle/门槛均不改；组记录在计时后输出并flush。
+
+下一不可变benchmark候选按原 `cuda_encoded_p1/contract.json` 启动attempt5：原两placement、
+两执行顺序、两allocation顺序和两same-implementation route完整16路A/A；只有真实PASS
+才进入原n15八strata产品和controls，必要时仅原声明n31扩样。资格/产品结果与strict verify
+如实封存，原attempt3/4失败不重置、不回写；四控制不冒充完整资格。既有static CUDA SDK、
+原native数学、三宿主sanitizer均按身份借用，只构建该独立benchmark工程及所需pristine peer，
+无HYLE产品/native依赖全局重建。heavy保持串行，无Windows/Air并发；2h检查点沿常设授权
+追加，实际累计不清零。若A/A仍FAIL，按原stop分支停止同配置重跑；若资格通过而产品失败，
+保留真实LOSS并以实际机制/消费者重新裁决，不能放宽5%门或改变输入来通过。
+
+本次selector预检对四个benchmark/contract路径报告unknown mapping，未发现产品owner授权问题，
+只选docs/closure；原计划与skipped reasons保存在scratch，不把BLOCKED改写PASS、不扩建selector。
+这不改变产品组件状态；本次实际验证范围由上述具名独立benchmark卡与既有性能合同固定。
+docs/closure/diff及Python语法已通过，下一次资格仍须绑定提交后的不可变候选和原SDK身份。

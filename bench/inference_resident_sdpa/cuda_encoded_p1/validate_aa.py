@@ -128,11 +128,18 @@ def main():
                             'affinity_ok': 'not-applicable', 'verify_only': '0', 'aa_route': route,
                             'affinity_topology': 'external', 'paired_mode': 'nanobench-compare',
                             'paired_rounds': '16',
+                            'timing_schedule': 'episode-interleaved', 'arithmetic_group_size': '2048',
                             'execution_order': 'peer-first' if peer_first else 'candidate-first',
                             'allocation_order': 'peer-first' if allocation_first else 'candidate-first',
                             'placement': '1' if variant == 'placement' else '0'}
                         if any(actual.get(k) != v for k, v in expected.items()):
                             raise RuntimeError('CUDA A/A actual policy mismatch')
+                        groups = re.findall(r'# CUDA_EPISODE_GROUP side=([01]) group=(\d+) count=(\d+) seconds=([0-9.eE+-]+)', text)
+                        if len(groups) != 96 or any(int(n) != 2048 or float(seconds) <= 0 for _, _, n, seconds in groups):
+                            raise RuntimeError('CUDA A/A complete arithmetic groups missing')
+                        for first in range(0, 96, 32):
+                            if {(int(s), int(g)) for s, g, _, _ in groups[first:first+32]} != {(s,g) for s in (0,1) for g in range(16)}:
+                                raise RuntimeError('CUDA A/A group identity missing or duplicated')
                         facts = [re.sub(r' original=[01]$', '', line) for line in text.splitlines()
                             if line.startswith('# CUDA_ENCODED_ENV ')]
                         if len(facts) != 6 or len(set(facts)) != 1 or 'RTX 4070' not in facts[0] or 'sm=89' not in facts[0]:

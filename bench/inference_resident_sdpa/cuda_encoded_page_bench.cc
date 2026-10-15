@@ -18,6 +18,7 @@
 #include <chrono>
 #include <filesystem>
 #include <fstream>
+#include <iostream>
 #include <memory>
 #include <string>
 #include <vector>
@@ -108,6 +109,35 @@ struct Data {
     return output;
   }
 };
+template<class A,class B>
+nb::CompareResult episode_compare(nb::Bench&bench,const char*an,A&&a,const char*bn,B&&b){
+  constexpr unsigned groups=16,pairs=2048;
+  // Interleave whole episodes to share the WSL API/observation time window.
+  // Sum every elapsed sample, including tails, into the original mean groups.
+  const auto micro=bench.output(nullptr).epochs(groups*pairs).epochIterations(1).compare(an,a,bn,b);
+  std::vector<nb::Result> results;results.reserve(2);
+  for(unsigned side=0;side<2;++side){
+    auto config=micro[side].result.config();config.mNumEpochs=groups;
+    config.mEpochIterations=pairs;results.emplace_back(config);
+    if(micro[side].result.size()!=groups*pairs)std::abort();
+    for(unsigned group=0;group<groups;++group){
+      double seconds=0;
+      for(unsigned pair=0;pair<pairs;++pair){
+        const auto index=group*pairs+pair;
+        if(micro[side].result.get(index,nb::Result::Measure::iterations)!=1)std::abort();
+        seconds+=micro[side].result.get(index,nb::Result::Measure::elapsed);
+      }
+      std::printf("# CUDA_EPISODE_GROUP side=%u group=%u count=%u seconds=%.17g\n",side,group,pairs,seconds);
+      results[side].add(std::chrono::duration_cast<nb::Clock::duration>(std::chrono::duration<double>(seconds)),pairs,nb::detail::performanceCounters());
+    }
+  }
+  const auto ratios=nb::detail::pairedLogRatios(results[0],results[1]);
+  const auto ci=nb::detail::medianInterval(ratios,nb::detail::bonferroniConfidence(1));
+  std::vector<nb::CompareResult::Entry> entries;
+  entries.emplace_back(an,std::move(results[0]),1.,1.,1.,0);
+  entries.emplace_back(bn,std::move(results[1]),std::exp(nb::detail::medianOf(ratios)),std::exp(ci.first),std::exp(ci.second),nb::detail::countTiedRounds(ratios));
+  nb::CompareResult result(std::move(entries),groups);std::cout<<result;std::fflush(stdout);return result;
+}
 struct Harness {
   std::unique_ptr<hyle::bench::resident::CudaEncodedReferenceData> reference;
   c::Context context;c::cuda::MemoryResource memory,host;c::Queue queue;c::BatchSchema schema;c::BatchLayoutVersion layout;
@@ -176,12 +206,12 @@ void measure(int q1,int q2,int k1,int k2,int dk,int dv,bool causal,int window){D
   std::fprintf(stderr,"# CUDA_FP8_PAIR max_abs_difference=%.9g\n",disagreement);
   for(int i=0;i<4;++i){auto a=candidate->execute();auto b=peer->execute();nb::doNotOptimizeAway(a);nb::doNotOptimizeAway(b);}
   if(set("HYLE_BENCH_VERIFY_ONLY"))return;
-  // The original 4ms segments showed >10% identical-route WSL scheduling noise.
-  // Keep full episodes and the original paired rounds; amortize that noise.
+  // The workload-local adapter groups single-episode timings without dropping
+  // slow observations; the fixed epoch count overrides duration calibration.
   nb::Bench bench;bench.title("CUDA paged FP8 BF16 Q="+std::to_string(q1)+","+std::to_string(q2)+" KV="+std::to_string(k1)+","+std::to_string(k2)+" D="+std::to_string(dk)+"/"+std::to_string(dv)+" causal="+std::to_string(causal)+" window="+std::to_string(window)).batch(1).epochs(16).minEpochIterations(1).minEpochTime(std::chrono::milliseconds(40)).performanceCounters(false);
   const auto selected=[&]{auto result=candidate->execute();nb::doNotOptimizeAway(result);};const auto original=[&]{auto result=peer->execute();nb::doNotOptimizeAway(result);};
-  if(set("HYLE_BENCH_RIVAL_FIRST"))(void)bench.compare("Original CUDA cold-expanded immutable lifecycle",original,"HYLE CUDA encoded paged",selected);
-  else (void)bench.compare("HYLE CUDA encoded paged",selected,"Original CUDA cold-expanded immutable lifecycle",original);
+  if(set("HYLE_BENCH_RIVAL_FIRST"))(void)episode_compare(bench,"Original CUDA cold-expanded immutable lifecycle",original,"HYLE CUDA encoded paged",selected);
+  else (void)episode_compare(bench,"HYLE CUDA encoded paged",selected,"Original CUDA cold-expanded immutable lifecycle",original);
 }
 }
 int main(int,char **argv){const auto qos=hyle::bench::perf::configure_thread_qos();const auto affinity=hyle::bench::perf::configure_thread_affinity("HYLE_PERF_CALLER_CPU");
@@ -197,6 +227,6 @@ int main(int,char **argv){const auto qos=hyle::bench::perf::configure_thread_qos
   const auto actual_priority=GetPriorityClass(GetCurrentProcess());if(!actual_priority)fail(hyle::Status::Internal("ragged process priority observation"));priority=std::to_string(actual_priority);
 #endif
   const auto *aa=std::getenv("HYLE_BENCH_AA_ROUTE");
-  std::fprintf(stderr,"# HYLE_CUDA_ENCODED_RUN run_nonce=%s apple_qos=%s qos_ok=%s affinity_topology=%s caller_cpu=%s affinity_ok=%s verify_only=%d parent_mask=%s priority=%s placement=%d execution_order=%s allocation_order=%s aa_route=%s paired_mode=nanobench-compare paired_rounds=16\n",hyle::bench::perf::run_nonce(),qos.name,qos.ok,affinity.topology,affinity.cpu,affinity.ok,verify_only,parent_mask.c_str(),priority.c_str(),HYLE_RESIDENT_PLACEMENT,set("HYLE_BENCH_RIVAL_FIRST")?"peer-first":"candidate-first",set("HYLE_BENCH_PEER_ALLOCATION_FIRST")?"peer-first":"candidate-first",aa&&*aa?aa:"none");
+  std::fprintf(stderr,"# HYLE_CUDA_ENCODED_RUN run_nonce=%s apple_qos=%s qos_ok=%s affinity_topology=%s caller_cpu=%s affinity_ok=%s verify_only=%d parent_mask=%s priority=%s placement=%d execution_order=%s allocation_order=%s aa_route=%s paired_mode=nanobench-compare paired_rounds=16 timing_schedule=episode-interleaved arithmetic_group_size=2048\n",hyle::bench::perf::run_nonce(),qos.name,qos.ok,affinity.topology,affinity.cpu,affinity.ok,verify_only,parent_mask.c_str(),priority.c_str(),HYLE_RESIDENT_PLACEMENT,set("HYLE_BENCH_RIVAL_FIRST")?"peer-first":"candidate-first",set("HYLE_BENCH_PEER_ALLOCATION_FIRST")?"peer-first":"candidate-first",aa&&*aa?aa:"none");
   measure(1,17,1024,768,256,256,true,16);measure(64,128,1024,768,256,256,true,-1);measure(17,1,7,47,64,128,false,-1);
 }
