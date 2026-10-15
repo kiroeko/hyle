@@ -580,7 +580,7 @@
       "module": "compute_provider_flashinfer",
       "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/inference-g04-g05-cache-attention-domain.md",
-      "summary": "G04/G05 CE24 CANDIDATE6e57：本轮17数学/22设备、两SDK与三host风险检查均PASS，新1/1/4特化静态STACK/LDL/STL为零。新numeric、实际runtime身份及原P1待验；保原qualified FAIL、第三方UNKNOWN与全部费用，未关闭。",
+      "summary": "G04/G05 CE24 CANDIDATE6e57：数学/device、两SDK、三host、新numeric与实际runtime1/1/4身份均PASS；新特化静态栈读写为零。原AA/P1/strict待验；保旧qualified FAIL、第三方UNKNOWN与全部费用，未关闭。",
       "candidate": "6e57e28ada9e29ed07819fbe9a97b8a7d08271fe"
     },
     {

@@ -2246,3 +2246,21 @@ CUDA TU实际instrumentation与运行前后二进制SHA均核验一致。[串行
 宿主检查代签GPU shader/driver/private-pool上界。当前source/device、两SDK和三host均有
 6e57实际证据；接下来新numeric、实际runtime内核身份和原AA/P1/strict仍待签发。仅编译
 比较consumer与原peer CUDA TU，不重编产品；产品candidate和其它owner不变。
+
+CE24[新数值绑定](../../../../evidence/correctness/inference-g04-g05-cuda-ce24-packed-math-numeric-rebind/receipt.json)
+已实际PASS：primary/placement各24个独立double oracle，最大绝对误差0.00109081301，低于
+原8e-3；双slot重放/readonly、实际SDK artifacts/recipes/native archives及源码身份前后
+一致。primary另跑memcheck/racecheck零error/warning/hazard，build-contract预检PASS。
+只编译比较consumer与一个原peer CUDA TU；记录阶段76.610s，不包含前置WSL Git状态
+核对等未计时开销。产品manifest新身份fa98f671，peer仍仅取原两输出屏障，selected SHA
+47df06c7/effective prefill06189719不变，未把本轮guard/工作集规则应用到peer。
+
+随后一次[实际运行时身份trace](../../../../evidence/architecture/inference-g04-g05-cuda-ce24-packed-math-budget/runtime-receipt.json)
+已PASS：同一数值binary的24oracle通过，前后SHA相同；实际mangled kernels准确命中新
+1/1/4特化，register255/248/254、dynamic shared40960/40960/24576、block32×4×1，
+与本轮静态资源投影一致。capture阶段2.966s，只签实际身份与数学，不签吞吐/occupancy。
+
+source/device、两SDK、三host、新numeric和实际runtime身份至此均有当前6e57证据。
+下一独立attempt10按原16AA/8strata/n15,31/5%/五controls/三consumer/strict合同运行；
+资格预检继续前置到configure、A/A与采样之前。产品仍冻结6e57，所有旧qualified FAIL、
+两次未达资源目标的修正及费用保留，整个G04/G05和完整goal仍未关闭。

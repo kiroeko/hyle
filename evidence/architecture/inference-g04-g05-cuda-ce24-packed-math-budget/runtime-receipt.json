@@ -1,0 +1,54 @@
+{
+  "kind": "G04_G05_CE24_ACTUAL_RUNTIME_KERNEL_IDENTITY",
+  "verdict": "PASS_RUNTIME_DISPATCH_AND24_ORACLES_ONLY",
+  "product_candidate": "6e57e28ada9e29ed07819fbe9a97b8a7d08271fe",
+  "numeric_receipt_sha256": "a297dc6bc7fa14b529c7c7feb67552a240511a12bfd1fbf9fb198528a236dd8c",
+  "binary_sha256": "49dec95e909f19c09447d5729bc554f6edc1a2df0e635f0dbc8d2013e779c18e",
+  "actual_kernels": [
+    {
+      "mangled": "_ZN10flashinfer34BatchPrefillWithPagedKVCacheKernelINS_12KernelTraitsILNS_8MaskModeE1ELj64ELj1ELj1ELj16ELj16ELj4ELj1ELNS_15PosEncodingModeE0E13__nv_bfloat1613__nv_fp8_e4m3S4_fiNS_16DefaultAttentionILb0ELb1ELb0ELb0EEEEEN4hyle7compute10flashinfer6native48_GLOBAL__N__ca0ae4f1_15_native_cache_cu_95f5a4b012OutputParamsINS_23BatchPrefillPagedParamsIS4_S5_S4_iEEEEEEvT0_",
+      "demangled": "void flashinfer::BatchPrefillWithPagedKVCacheKernel<flashinfer::KernelTraits<(flashinfer::MaskMode)1, (unsigned int)64, (unsigned int)1, (unsigned int)1, (unsigned int)16, (unsigned int)16, (unsigned int)4, (unsigned int)1, (flashinfer::PosEncodingMode)0, __nv_bfloat16, __nv_fp8_e4m3, __nv_bfloat16, float, int, flashinfer::DefaultAttention<(bool)0, (bool)1, (bool)0, (bool)0>>, hyle::compute::flashinfer::native::<unnamed>::OutputParams<flashinfer::BatchPrefillPagedParams<__nv_bfloat16, __nv_fp8_e4m3, __nv_bfloat16, int>>>(T2)",
+      "projected_mma_kv": 1,
+      "registers": 255,
+      "dynamic_shared": 40960,
+      "block": [
+        32,
+        4,
+        1
+      ]
+    },
+    {
+      "mangled": "_ZN10flashinfer34BatchPrefillWithPagedKVCacheKernelINS_12KernelTraitsILNS_8MaskModeE1ELj64ELj1ELj1ELj16ELj16ELj4ELj1ELNS_15PosEncodingModeE0E13__nv_bfloat1613__nv_fp8_e4m3ffiNS_16DefaultAttentionILb0ELb1ELb0ELb0EEEEEN4hyle7compute10flashinfer6native48_GLOBAL__N__ca0ae4f1_15_native_cache_cu_95f5a4b011MergeParamsINS_23BatchPrefillPagedParamsIS4_S5_fiEES4_Lj256EEEEEvT0_",
+      "demangled": "void flashinfer::BatchPrefillWithPagedKVCacheKernel<flashinfer::KernelTraits<(flashinfer::MaskMode)1, (unsigned int)64, (unsigned int)1, (unsigned int)1, (unsigned int)16, (unsigned int)16, (unsigned int)4, (unsigned int)1, (flashinfer::PosEncodingMode)0, __nv_bfloat16, __nv_fp8_e4m3, float, float, int, flashinfer::DefaultAttention<(bool)0, (bool)1, (bool)0, (bool)0>>, hyle::compute::flashinfer::native::<unnamed>::MergeParams<flashinfer::BatchPrefillPagedParams<__nv_bfloat16, __nv_fp8_e4m3, float, int>, __nv_bfloat16, (unsigned int)256>>(T2)",
+      "projected_mma_kv": 1,
+      "registers": 248,
+      "dynamic_shared": 40960,
+      "block": [
+        32,
+        4,
+        1
+      ]
+    },
+    {
+      "mangled": "_ZN10flashinfer34BatchPrefillWithPagedKVCacheKernelINS_12KernelTraitsILNS_8MaskModeE0ELj64ELj1ELj4ELj4ELj8ELj4ELj1ELNS_15PosEncodingModeE0E13__nv_bfloat1613__nv_fp8_e4m3S4_fiNS_16DefaultAttentionILb0ELb1ELb0ELb0EEEEEN4hyle7compute10flashinfer6native48_GLOBAL__N__ca0ae4f1_15_native_cache_cu_95f5a4b012OutputParamsINS_23BatchPrefillPagedParamsIS4_S5_S4_iEEEEEEvT0_",
+      "demangled": "void flashinfer::BatchPrefillWithPagedKVCacheKernel<flashinfer::KernelTraits<(flashinfer::MaskMode)0, (unsigned int)64, (unsigned int)1, (unsigned int)4, (unsigned int)4, (unsigned int)8, (unsigned int)4, (unsigned int)1, (flashinfer::PosEncodingMode)0, __nv_bfloat16, __nv_fp8_e4m3, __nv_bfloat16, float, int, flashinfer::DefaultAttention<(bool)0, (bool)1, (bool)0, (bool)0>>, hyle::compute::flashinfer::native::<unnamed>::OutputParams<flashinfer::BatchPrefillPagedParams<__nv_bfloat16, __nv_fp8_e4m3, __nv_bfloat16, int>>>(T2)",
+      "projected_mma_kv": 4,
+      "registers": 254,
+      "dynamic_shared": 24576,
+      "block": [
+        32,
+        4,
+        1
+      ]
+    }
+  ],
+  "max_abs_error": 0.00109081301,
+  "measured_seconds": 2.9658168719997775,
+  "nsys_version": "NVIDIA Nsight Systems version 2026.1.3.425-261338342291v0",
+  "limits": [
+    "One short VERIFY_ONLY trace; no new A/A or throughput qualification.",
+    "Actual current immutable static SDK numeric binary; same three frozen workloads/peer.",
+    "Original qualified attempt9 FAIL and all failed hypotheses/costs retained."
+  ],
+  "raw_zip_sha256": "e5c0b520698c19f819d5d67aae9cd5699223349819479cff7997cc3546f65c04"
+}
