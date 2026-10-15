@@ -57,8 +57,16 @@ def main():
     if preflight.get('state') != 'TERMINAL_PASS':
         raise RuntimeError('CUDA numerical preflight has not passed')
     numeric = preflight['successful_run']
-    if original != numeric['original_source']:
-        raise RuntimeError('original CUDA header/archive identity changed')
+    # Qualification requires a real Git checkout; the numerical preflight
+    # authenticated an archive extraction. Location and archive transport may
+    # differ, while the revision and every original header must be identical.
+    for key in ('revision', 'inputs', 'all_original_headers', 'adaptation', 'status'):
+        if original[key] != numeric['original_source'][key]:
+            raise RuntimeError('original CUDA source identity changed: '+key)
+    peer_root = Path(original['source'])
+    if not (peer_root/'.git').exists() or \
+            Path(subprocess.check_output(['git','-C',str(peer_root),'rev-parse','--show-toplevel'],text=True).strip()).resolve() != peer_root.resolve():
+        raise RuntimeError('CUDA performance peer must own its Git checkout')
     for item in numeric['snapshot']['benchmark_inputs']:
         if digest(ROOT/item['path']) != item['sha256']:
             raise RuntimeError('CUDA numeric input changed: '+item['path'])

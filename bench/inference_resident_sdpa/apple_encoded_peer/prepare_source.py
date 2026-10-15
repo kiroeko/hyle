@@ -87,7 +87,9 @@ def materialize(original, output):
             embedded.append(line)
     if (common_inlines, impl_inlines) != (1, 1):
         raise ValueError('original embedding sentinel count changed')
-    raw = ''.join(embedded).encode('utf-8')
+    # The original embedded-library build defines this macro. Without it the
+    # original dequantize header selects its external ggml-common.h include.
+    raw = b'#define GGML_METAL_EMBED_LIBRARY 1\n' + ''.join(embedded).encode('utf-8')
     if b')HYLE_Q8_SOURCE"' in raw:
         raise ValueError('embedded C++ raw string delimiter collision')
     header = (b'#pragma once\nnamespace hyle::bench::resident {\n'
@@ -101,7 +103,7 @@ def materialize(original, output):
         'original_general_without_export_lines_sha256': digest(prefix.encode('utf-8')),
         'original_exports': list(EXPORTS),
         'added_template_instance': rectangular.strip(),
-        'embedding_recipe': 'Original Metal CMake lines 88-95; common/dequant/fa, then exact sentinels',
+        'embedding_recipe': 'Original Metal embedded-library macro and CMake lines 88-95; common/dequant/fa, then exact sentinels',
         'route': 'Original pad -> blk -> general Q8; no vector/split/reduce route',
         'limits': ['SOURCE_ONLY; no compiler, numerical, completion or P1 verdict',
                    '64/128 is a new explicit instance, not an original exported pipeline',

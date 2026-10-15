@@ -51,7 +51,7 @@ Status OriginalMetalCompletion::check_completed() {
 
 namespace {
 constexpr int kQueries = 8, kCache = 64, kSimdgroups = 4;
-constexpr const char *kLibrary = "hyle_peer_ggml456_general_q8_476f1d9932d1a341";
+constexpr const char *kLibrary = "hyle_peer_ggml456_general_q8_embed1";
 int pad(int value, int multiple) { return (value + multiple - 1) / multiple * multiple; }
 
 struct Request final {
