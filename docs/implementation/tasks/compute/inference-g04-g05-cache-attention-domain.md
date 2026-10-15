@@ -2424,3 +2424,14 @@ primary memcheck/racecheck零error/warning/hazard，build-contract及source/SDK/
 三attention为相同MMA1/1/4、shared49152/49152/40960；实际F32 merge同当前codegen身份，
 48register/8704shared/block32×4×1。此证据不签吞吐或线程谓词的收益；原三host与原P1
 继续，G04/G05未完成，旧失败/成本保留。
+
+CE26三项host风险门已实际通过：[ASan](../../../../evidence/correctness/inference-g04-g05-cuda-ce26-host-asan/receipt.json)、
+[UBSan](../../../../evidence/correctness/inference-g04-g05-cuda-ce26-host-ubsan/receipt.json)、
+[TSan](../../../../evidence/correctness/inference-g04-g05-cuda-ce26-host-tsan/receipt.json)各16测试/五风险模式、零SKIP，
+四FI CUDA TU按本facet带宿主插桩，当前vendor输入及artifact SHA稳定。费用分别为
+asan stage473.747s/outer488.000s；
+ubsan stage410.951s/outer424.500s；
+tsan stage415.670s/outer426.047s；
+outer与stage重叠不相加。[批次汇总](../../../../evidence/correctness/inference-g04-g05-cuda-ce26-host-tsan/batch-summary.json)
+保原LSan/diagnostic-thread lifetime INCONCLUSIVE及driver/shader/private-pool未知。
+现在只剩原AA/P1/strict与整项终审；本次不签性能或G04/G05完成，不重置旧失败/成本。
