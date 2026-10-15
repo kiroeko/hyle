@@ -578,9 +578,10 @@
     },
     {
       "module": "compute_provider_flashinfer",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/inference-g04-g05-cache-attention-domain.md",
-      "summary": "G04/G05 CE26 AUDITED：现有F32 merge单输出组修正已集中实施，保局部状态/原归约顺序/全部同步/原形状。新17math/device/codegen及后续门待验；qualified11 FAIL与全部旧失败/未知、累计成本保留。"
+      "summary": "G04/G05 CE26 CANDIDATE1e：F32 merge单输出组修正的新17math/22device及attention+merge零栈codegen通过。两SDK/numeric/runtime/三host/原P1待验；原qualified FAIL与全部旧失败/未知、累计成本保留。",
+      "candidate": "1e343ee3b440af5d522c6bfbdf12f9c6f37f0811"
     },
     {
       "module": "compute_provider_ggml_metal",

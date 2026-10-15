@@ -2392,3 +2392,12 @@ CE26单输出组修正已集中实施，只改private cascade的三个精确mani
 特化保原行为。FI仍AUDITED，尚无新数学/device/codegen/性能结论。selector
 ce26-single-output-plan为READY；共同lock变化保守选择全库因子，按本卡实际FI/direct
 consumer有限门执行，保留selected/skipped理由，不启动无改动路线或全库构建。
+
+CE26新数学与设备门已实际通过：[source/device](../../../../evidence/correctness/inference-g04-g05-cuda-ce26-single-output-source-device/receipt.json)
+为17数学、十cache memcheck/十racecheck及两普通F16/BF16 racecheck，零FAIL/SKIP/error/
+warning/hazard，artifact SHA稳定。实际stage费用source415.946s、device16.681s分别保留。
+新[codegen](../../../../evidence/architecture/inference-g04-g05-cuda-ce26-single-output-merge/codegen-receipt.json)
+逐一核当前相同MMA1/1/4 attention及F32 merge，四个kernel均STACK/LDL/STL零；实际
+register分别241/241/165/48。该静态资源与opcode结论不能代签运行线程谓词或吞吐。
+FI合法冻结CANDIDATE1e343ee3b；接着两搬迁SDK、新numeric/runtime（须包含实际merge
+身份）、三host及原P1。新候选尚无性能结论，G04/G05未完成，原11及全部旧失败/费用保留。
