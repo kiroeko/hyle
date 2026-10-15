@@ -1,0 +1,1779 @@
+{
+  "entries": [
+    {
+      "executable_id": "encoded-primary",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/g04-apple-encoded-p1-output-5/raw/n-15/product-primary-candidate-first-candidate-allocation-first-encoded-primary-run-01.log",
+        "sha256": "cfac667a7671db908e31d61330e6bfad1aa99c690d3419398131efdfe33ac2ca"
+      },
+      "kind": "product",
+      "run": 1,
+      "run_nonce": "e07826485caf99f99b42ae40cc1dbbf5",
+      "stage": 15,
+      "stratum_id": "primary-candidate-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "encoded-primary",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/g04-apple-encoded-p1-output-5/raw/n-15/product-primary-candidate-first-candidate-allocation-first-encoded-primary-run-02.log",
+        "sha256": "45c4917fb87761d15170e11672ac2873e62f55a1c0fe26b765d18a76b6d38d62"
+      },
+      "kind": "product",
+      "run": 2,
+      "run_nonce": "b7445033958bc015db9bd6a4daec371c",
+      "stage": 15,
+      "stratum_id": "primary-candidate-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "encoded-primary",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/g04-apple-encoded-p1-output-5/raw/n-15/product-primary-candidate-first-candidate-allocation-first-encoded-primary-run-03.log",
+        "sha256": "689c27b5b5de4fa469ff1fc4946ef4e87856ee8a9a495e6424a4bea99bb0c59b"
+      },
+      "kind": "product",
+      "run": 3,
+      "run_nonce": "9f21def80f8251edba8e4d543d5d139d",
+      "stage": 15,
+      "stratum_id": "primary-candidate-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "encoded-primary",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/g04-apple-encoded-p1-output-5/raw/n-15/product-primary-candidate-first-candidate-allocation-first-encoded-primary-run-04.log",
+        "sha256": "649ff8ba00477e8756df00ac5d9f96b88509219669822b1e75f16045f7802b3e"
+      },
+      "kind": "product",
+      "run": 4,
+      "run_nonce": "24bf2f0ae1edb7fe80a71033542fe085",
+      "stage": 15,
+      "stratum_id": "primary-candidate-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "encoded-primary",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/g04-apple-encoded-p1-output-5/raw/n-15/product-primary-candidate-first-candidate-allocation-first-encoded-primary-run-05.log",
+        "sha256": "a99f25f1371f0d5d4094a9726d1090a0bde9713445e27d456323af33c175645c"
+      },
+      "kind": "product",
+      "run": 5,
+      "run_nonce": "aebc1aab0cb863374bfe2ee79859f6a8",
+      "stage": 15,
+      "stratum_id": "primary-candidate-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "encoded-primary",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/g04-apple-encoded-p1-output-5/raw/n-15/product-primary-candidate-first-candidate-allocation-first-encoded-primary-run-06.log",
+        "sha256": "6c6707b37892711fcc441ec656a50205547bd28e6f695752ee34518dfe9f8ac4"
+      },
+      "kind": "product",
+      "run": 6,
+      "run_nonce": "80c63f6f59f0effb722d52e8b7b4e625",
+      "stage": 15,
+      "stratum_id": "primary-candidate-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "encoded-primary",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/g04-apple-encoded-p1-output-5/raw/n-15/product-primary-candidate-first-candidate-allocation-first-encoded-primary-run-07.log",
+        "sha256": "6870b188ba90977e5fbf27dd0c61ff346621d300339f71f284ecc72cdb698a82"
+      },
+      "kind": "product",
+      "run": 7,
+      "run_nonce": "8dfae7b77c99ad0ebea2671be2a70b4d",
+      "stage": 15,
+      "stratum_id": "primary-candidate-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "encoded-primary",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/g04-apple-encoded-p1-output-5/raw/n-15/product-primary-candidate-first-candidate-allocation-first-encoded-primary-run-08.log",
+        "sha256": "37d11042bd11bdf03a950ecfcdfaa320bb55cc097cd7d98925dfc588acaca2dc"
+      },
+      "kind": "product",
+      "run": 8,
+      "run_nonce": "6d3ab52a1f5d219a7ea2f4d93657ade1",
+      "stage": 15,
+      "stratum_id": "primary-candidate-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "encoded-primary",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/g04-apple-encoded-p1-output-5/raw/n-15/product-primary-candidate-first-candidate-allocation-first-encoded-primary-run-09.log",
+        "sha256": "644f7e703c3241c364f533d8b931e0907492d5c78234e1f6806138acca1a6ddc"
+      },
+      "kind": "product",
+      "run": 9,
+      "run_nonce": "7d5ff1bf95a5b158ff4b7d581b2bd43e",
+      "stage": 15,
+      "stratum_id": "primary-candidate-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "encoded-primary",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/g04-apple-encoded-p1-output-5/raw/n-15/product-primary-candidate-first-candidate-allocation-first-encoded-primary-run-10.log",
+        "sha256": "923dba9d754515155d8526cdc8f105107609621438bb1c92d33f8ccf8ce7bc2e"
+      },
+      "kind": "product",
+      "run": 10,
+      "run_nonce": "2f2c7a4691e1a0d0114ce14cc4f53a85",
+      "stage": 15,
+      "stratum_id": "primary-candidate-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "encoded-primary",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/g04-apple-encoded-p1-output-5/raw/n-15/product-primary-candidate-first-candidate-allocation-first-encoded-primary-run-11.log",
+        "sha256": "48b17e2ef6b70dacb97ef73d0ae179e4208b81f1ceeea632e5574f25add8f6f0"
+      },
+      "kind": "product",
+      "run": 11,
+      "run_nonce": "de1525a23a67bafe7a448d5cf788eb71",
+      "stage": 15,
+      "stratum_id": "primary-candidate-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "encoded-primary",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/g04-apple-encoded-p1-output-5/raw/n-15/product-primary-candidate-first-candidate-allocation-first-encoded-primary-run-12.log",
+        "sha256": "86d7d9ef59fa2b61414eef8a64e4b9e08f5fcf96cfbf7d0cb8a58ffa2da60ff3"
+      },
+      "kind": "product",
+      "run": 12,
+      "run_nonce": "c1ce298aec0eb46eed3b1babc950ffe0",
+      "stage": 15,
+      "stratum_id": "primary-candidate-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "encoded-primary",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/g04-apple-encoded-p1-output-5/raw/n-15/product-primary-candidate-first-candidate-allocation-first-encoded-primary-run-13.log",
+        "sha256": "da587fee98bd38654e8e1ac3732b709a8484b8b53dbfa707464f494d16a15e1f"
+      },
+      "kind": "product",
+      "run": 13,
+      "run_nonce": "2a44631bd43de1576ede2f70af3dbe63",
+      "stage": 15,
+      "stratum_id": "primary-candidate-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "encoded-primary",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/g04-apple-encoded-p1-output-5/raw/n-15/product-primary-candidate-first-candidate-allocation-first-encoded-primary-run-14.log",
+        "sha256": "35b6a0c9ecc2dc22942b4f342ed340ca2e79862dd16318f26428ba560a330a49"
+      },
+      "kind": "product",
+      "run": 14,
+      "run_nonce": "2abeba1b44ed906ea39c3f4d3999fd32",
+      "stage": 15,
+      "stratum_id": "primary-candidate-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "encoded-primary",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/g04-apple-encoded-p1-output-5/raw/n-15/product-primary-candidate-first-candidate-allocation-first-encoded-primary-run-15.log",
+        "sha256": "383226c5a59c5dbaa6d5f026480c262b9fd35553c8bbf5e6df786df495a14062"
+      },
+      "kind": "product",
+      "run": 15,
+      "run_nonce": "9fcd7b15b9c939f2f00dad8f6753d6f5",
+      "stage": 15,
+      "stratum_id": "primary-candidate-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "encoded-primary",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/g04-apple-encoded-p1-output-5/raw/n-15/product-primary-candidate-first-peer-allocation-first-encoded-primary-run-01.log",
+        "sha256": "8dd5726f22be7f652491ae806cb5b42933727c9f7da954958edaa4b9038262e0"
+      },
+      "kind": "product",
+      "run": 1,
+      "run_nonce": "6c564813d373d18ea9bcc9de588911a9",
+      "stage": 15,
+      "stratum_id": "primary-candidate-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "encoded-primary",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/g04-apple-encoded-p1-output-5/raw/n-15/product-primary-candidate-first-peer-allocation-first-encoded-primary-run-02.log",
+        "sha256": "b3a7f308b72e581d96a90e78a3f1bc373e529776a4e91b4d31407bcb7b940eae"
+      },
+      "kind": "product",
+      "run": 2,
+      "run_nonce": "0a27eca85c26a1bee530f1d853518cad",
+      "stage": 15,
+      "stratum_id": "primary-candidate-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "encoded-primary",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/g04-apple-encoded-p1-output-5/raw/n-15/product-primary-candidate-first-peer-allocation-first-encoded-primary-run-03.log",
+        "sha256": "d77eb56d44e34a0f2f5c888dfe13c973783bc1db349ffab3b97453db4e200762"
+      },
+      "kind": "product",
+      "run": 3,
+      "run_nonce": "dc459411f814e1f035a3fb0665ba538f",
+      "stage": 15,
+      "stratum_id": "primary-candidate-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "encoded-primary",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/g04-apple-encoded-p1-output-5/raw/n-15/product-primary-candidate-first-peer-allocation-first-encoded-primary-run-04.log",
+        "sha256": "f5f08a7b79a7c7ff5a373a51d39f134cb87a7f157075a3a5fd8239f4427e3db2"
+      },
+      "kind": "product",
+      "run": 4,
+      "run_nonce": "969038941f1293c4cab64744fe1f9ae6",
+      "stage": 15,
+      "stratum_id": "primary-candidate-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "encoded-primary",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/g04-apple-encoded-p1-output-5/raw/n-15/product-primary-candidate-first-peer-allocation-first-encoded-primary-run-05.log",
+        "sha256": "74ec0c4720f1c57fc8f2bf83508eeba3935e83dad1f54bc72eeac4297baf26cf"
+      },
+      "kind": "product",
+      "run": 5,
+      "run_nonce": "ccbaa933c44a73d7229718a8c22e15b6",
+      "stage": 15,
+      "stratum_id": "primary-candidate-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "encoded-primary",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/g04-apple-encoded-p1-output-5/raw/n-15/product-primary-candidate-first-peer-allocation-first-encoded-primary-run-06.log",
+        "sha256": "6b1655f44f42713f95a76d15f13390b68d642001358d8056239a621cc6ab247a"
+      },
+      "kind": "product",
+      "run": 6,
+      "run_nonce": "23029b936ce3a5018a10003e9ba296a3",
+      "stage": 15,
+      "stratum_id": "primary-candidate-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "encoded-primary",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/g04-apple-encoded-p1-output-5/raw/n-15/product-primary-candidate-first-peer-allocation-first-encoded-primary-run-07.log",
+        "sha256": "1cb6102439f9d8f1eebdf9405d15ed458d0a2f99fc636e0e9b011b334742e488"
+      },
+      "kind": "product",
+      "run": 7,
+      "run_nonce": "fa74946931bcdb61df6e013dc9f6b999",
+      "stage": 15,
+      "stratum_id": "primary-candidate-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "encoded-primary",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/g04-apple-encoded-p1-output-5/raw/n-15/product-primary-candidate-first-peer-allocation-first-encoded-primary-run-08.log",
+        "sha256": "d5b0b0ae7435fb0635372bf8def4f10280bd98a209978513363c385099113c7e"
+      },
+      "kind": "product",
+      "run": 8,
+      "run_nonce": "91c454139bba3e3116ea49285908b8ab",
+      "stage": 15,
+      "stratum_id": "primary-candidate-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "encoded-primary",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/g04-apple-encoded-p1-output-5/raw/n-15/product-primary-candidate-first-peer-allocation-first-encoded-primary-run-09.log",
+        "sha256": "26b5abe706d696544626ca1c4dcc5e49666e4c686d042a60718ef217a4492061"
+      },
+      "kind": "product",
+      "run": 9,
+      "run_nonce": "46413c81cf96370408d36d4fd40cf125",
+      "stage": 15,
+      "stratum_id": "primary-candidate-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "encoded-primary",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/g04-apple-encoded-p1-output-5/raw/n-15/product-primary-candidate-first-peer-allocation-first-encoded-primary-run-10.log",
+        "sha256": "a7bc96a738a081f97cca5ecdf286a0b39c1a81c06afce97ae4d7257a7f591887"
+      },
+      "kind": "product",
+      "run": 10,
+      "run_nonce": "a496a82c8f8d60a67d85d119a2fa75f1",
+      "stage": 15,
+      "stratum_id": "primary-candidate-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "encoded-primary",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/g04-apple-encoded-p1-output-5/raw/n-15/product-primary-candidate-first-peer-allocation-first-encoded-primary-run-11.log",
+        "sha256": "a045ea9a5e6d5c1d09a547b9f7a4d38a2e32bb00129d69851a889cae44807959"
+      },
+      "kind": "product",
+      "run": 11,
+      "run_nonce": "87d3035d1c21746d36900f495c88e97b",
+      "stage": 15,
+      "stratum_id": "primary-candidate-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "encoded-primary",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/g04-apple-encoded-p1-output-5/raw/n-15/product-primary-candidate-first-peer-allocation-first-encoded-primary-run-12.log",
+        "sha256": "8bf62e2e7985394841dcbbb8a99c7345e8d217c96ad80ff7c1a8eaa3ae34987c"
+      },
+      "kind": "product",
+      "run": 12,
+      "run_nonce": "5d63a432fc9227fe939c8cba04153754",
+      "stage": 15,
+      "stratum_id": "primary-candidate-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "encoded-primary",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/g04-apple-encoded-p1-output-5/raw/n-15/product-primary-candidate-first-peer-allocation-first-encoded-primary-run-13.log",
+        "sha256": "93eeb3b53e4d3a6c4f2355819f18761e9888c1191d86843554d4bd0cdb2ad0cf"
+      },
+      "kind": "product",
+      "run": 13,
+      "run_nonce": "89f4f2d153ffb58769ca6e3ba13645d2",
+      "stage": 15,
+      "stratum_id": "primary-candidate-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "encoded-primary",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/g04-apple-encoded-p1-output-5/raw/n-15/product-primary-candidate-first-peer-allocation-first-encoded-primary-run-14.log",
+        "sha256": "88731654cdda62a192f4e9afac736c53d7ee707b2cb9aab1a4e093a01b5fcb77"
+      },
+      "kind": "product",
+      "run": 14,
+      "run_nonce": "5081e33226b139d3c57fce24cb469fa6",
+      "stage": 15,
+      "stratum_id": "primary-candidate-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "encoded-primary",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/g04-apple-encoded-p1-output-5/raw/n-15/product-primary-candidate-first-peer-allocation-first-encoded-primary-run-15.log",
+        "sha256": "baf77b03e6b3ddc519999e231fa967cef3af8ff2d443e5e388cda26ccdd7ae19"
+      },
+      "kind": "product",
+      "run": 15,
+      "run_nonce": "b70e3cb841858e27d73119e16908e6e1",
+      "stage": 15,
+      "stratum_id": "primary-candidate-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "encoded-primary",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/g04-apple-encoded-p1-output-5/raw/n-15/product-primary-peer-first-candidate-allocation-first-encoded-primary-run-01.log",
+        "sha256": "c2559e8b5651d51652cfc6a1dda7334ea7f7b9ab8cfa65f97f9a2473d8cb1146"
+      },
+      "kind": "product",
+      "run": 1,
+      "run_nonce": "4ad74d9582a2cb29cb637a5986b4a84e",
+      "stage": 15,
+      "stratum_id": "primary-peer-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "encoded-primary",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/g04-apple-encoded-p1-output-5/raw/n-15/product-primary-peer-first-candidate-allocation-first-encoded-primary-run-02.log",
+        "sha256": "f3041c7df7d01b9c35a7b658931fcb86cd48863c27a5b7d262fdb125f7a5fc5f"
+      },
+      "kind": "product",
+      "run": 2,
+      "run_nonce": "d91df1564656c46afecfeff34f91a790",
+      "stage": 15,
+      "stratum_id": "primary-peer-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "encoded-primary",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/g04-apple-encoded-p1-output-5/raw/n-15/product-primary-peer-first-candidate-allocation-first-encoded-primary-run-03.log",
+        "sha256": "dc402c652f078fb84157bdd9089852fba10f5f17ab66612aef515664b0e22ae6"
+      },
+      "kind": "product",
+      "run": 3,
+      "run_nonce": "2fe3f9db75196e6f0dbf07b974500745",
+      "stage": 15,
+      "stratum_id": "primary-peer-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "encoded-primary",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/g04-apple-encoded-p1-output-5/raw/n-15/product-primary-peer-first-candidate-allocation-first-encoded-primary-run-04.log",
+        "sha256": "a9afc9051fbadc314faa494d5a2c9a4bc3ecd3aa68d79b0962ec295d99873d19"
+      },
+      "kind": "product",
+      "run": 4,
+      "run_nonce": "b1a3421695362c0a942d3acc8eb66708",
+      "stage": 15,
+      "stratum_id": "primary-peer-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "encoded-primary",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/g04-apple-encoded-p1-output-5/raw/n-15/product-primary-peer-first-candidate-allocation-first-encoded-primary-run-05.log",
+        "sha256": "c653a8c1212d36532e3a2d38ca4cf7f5d9687e9652f3f406b7aff950cb41bbf8"
+      },
+      "kind": "product",
+      "run": 5,
+      "run_nonce": "a361f4399ee3252f15264a8ee61edd06",
+      "stage": 15,
+      "stratum_id": "primary-peer-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "encoded-primary",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/g04-apple-encoded-p1-output-5/raw/n-15/product-primary-peer-first-candidate-allocation-first-encoded-primary-run-06.log",
+        "sha256": "e909c6d31e968e3d8f59e5e0f2f7109af0370b47f0f9ba2a0becb10eef461c80"
+      },
+      "kind": "product",
+      "run": 6,
+      "run_nonce": "71d6f5bf9892301037fa4b212c6c7c85",
+      "stage": 15,
+      "stratum_id": "primary-peer-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "encoded-primary",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/g04-apple-encoded-p1-output-5/raw/n-15/product-primary-peer-first-candidate-allocation-first-encoded-primary-run-07.log",
+        "sha256": "66788f650750daf484732ba9dfad5450700d6b4f65b05698a18fe020dd73611c"
+      },
+      "kind": "product",
+      "run": 7,
+      "run_nonce": "d3d51198033352c4726510fb5e17d454",
+      "stage": 15,
+      "stratum_id": "primary-peer-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "encoded-primary",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/g04-apple-encoded-p1-output-5/raw/n-15/product-primary-peer-first-candidate-allocation-first-encoded-primary-run-08.log",
+        "sha256": "cdfbc1ea46c70f367044eab3e51054cd7a6addbd83ec50a933565df106e05fe7"
+      },
+      "kind": "product",
+      "run": 8,
+      "run_nonce": "81c904a7c591f39bf69d0cccfd7eb6b9",
+      "stage": 15,
+      "stratum_id": "primary-peer-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "encoded-primary",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/g04-apple-encoded-p1-output-5/raw/n-15/product-primary-peer-first-candidate-allocation-first-encoded-primary-run-09.log",
+        "sha256": "fa689448c90cda946d6970c5b0daf407752ae300d90a91e13551bb01a45defb5"
+      },
+      "kind": "product",
+      "run": 9,
+      "run_nonce": "a9c1bb34d3c33fee62cfab0cce6b9870",
+      "stage": 15,
+      "stratum_id": "primary-peer-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "encoded-primary",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/g04-apple-encoded-p1-output-5/raw/n-15/product-primary-peer-first-candidate-allocation-first-encoded-primary-run-10.log",
+        "sha256": "c9dc8d9cfceddf430cf1ece7ea656eab31c7550ad40a5a813918e5101d33bd14"
+      },
+      "kind": "product",
+      "run": 10,
+      "run_nonce": "41e502f2d74bf222449f2088044dabeb",
+      "stage": 15,
+      "stratum_id": "primary-peer-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "encoded-primary",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/g04-apple-encoded-p1-output-5/raw/n-15/product-primary-peer-first-candidate-allocation-first-encoded-primary-run-11.log",
+        "sha256": "231bb7cc383a84c1fe4ebcd6374a687110768e5d04acc944929e6c8d587dfde7"
+      },
+      "kind": "product",
+      "run": 11,
+      "run_nonce": "416ab7f6cf4926b65b9577653f7f41d9",
+      "stage": 15,
+      "stratum_id": "primary-peer-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "encoded-primary",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/g04-apple-encoded-p1-output-5/raw/n-15/product-primary-peer-first-candidate-allocation-first-encoded-primary-run-12.log",
+        "sha256": "be41f5de86cd6b5acca1d9ae6f82dbd108a497605780aa16ac2ef48ecafe065f"
+      },
+      "kind": "product",
+      "run": 12,
+      "run_nonce": "e7385422052c0130d6fa29ba2bf0b394",
+      "stage": 15,
+      "stratum_id": "primary-peer-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "encoded-primary",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/g04-apple-encoded-p1-output-5/raw/n-15/product-primary-peer-first-candidate-allocation-first-encoded-primary-run-13.log",
+        "sha256": "619761848bc8f8d1a5109fd6ddc0e5be4fd9fd734cccc636c6585d54a435386d"
+      },
+      "kind": "product",
+      "run": 13,
+      "run_nonce": "d763eaf6cf743522a0060b732a02f8ce",
+      "stage": 15,
+      "stratum_id": "primary-peer-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "encoded-primary",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/g04-apple-encoded-p1-output-5/raw/n-15/product-primary-peer-first-candidate-allocation-first-encoded-primary-run-14.log",
+        "sha256": "83eb2d3692af052f88da69e6eb640f5961c398c97cf9c85ce0582f5d37ad1b2e"
+      },
+      "kind": "product",
+      "run": 14,
+      "run_nonce": "7243be0342f931af8f64ee01a45e4813",
+      "stage": 15,
+      "stratum_id": "primary-peer-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "encoded-primary",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/g04-apple-encoded-p1-output-5/raw/n-15/product-primary-peer-first-candidate-allocation-first-encoded-primary-run-15.log",
+        "sha256": "b0b913a0ed6eaa31e8d382d1a199a2655a6d08959f178a5d147c4d3489f9e57e"
+      },
+      "kind": "product",
+      "run": 15,
+      "run_nonce": "d88a1ef89fc23c4bf16c4927359dcd8e",
+      "stage": 15,
+      "stratum_id": "primary-peer-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "encoded-primary",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/g04-apple-encoded-p1-output-5/raw/n-15/product-primary-peer-first-peer-allocation-first-encoded-primary-run-01.log",
+        "sha256": "1b71e7674b7ecc3de493c7f03b23943334f441bd242622be33f6dcdd7e2cf991"
+      },
+      "kind": "product",
+      "run": 1,
+      "run_nonce": "1b62708c0a198ce0545d6030e39acdf0",
+      "stage": 15,
+      "stratum_id": "primary-peer-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "encoded-primary",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/g04-apple-encoded-p1-output-5/raw/n-15/product-primary-peer-first-peer-allocation-first-encoded-primary-run-02.log",
+        "sha256": "50efc4ac084e5774ee4199d601a23ff5f8b12db64e6c8fc6fa2ff101ea4ab0be"
+      },
+      "kind": "product",
+      "run": 2,
+      "run_nonce": "049b39624dbc862a803dc813e6e36f58",
+      "stage": 15,
+      "stratum_id": "primary-peer-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "encoded-primary",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/g04-apple-encoded-p1-output-5/raw/n-15/product-primary-peer-first-peer-allocation-first-encoded-primary-run-03.log",
+        "sha256": "5f3e5c2fa00fdb20b31adfdb4554c915dbf3f1f95a9736a2225f3e941bb77f8e"
+      },
+      "kind": "product",
+      "run": 3,
+      "run_nonce": "b68ea4aebe79c26bc207945ecec2df40",
+      "stage": 15,
+      "stratum_id": "primary-peer-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "encoded-primary",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/g04-apple-encoded-p1-output-5/raw/n-15/product-primary-peer-first-peer-allocation-first-encoded-primary-run-04.log",
+        "sha256": "b7d152e74770bbed452d77260e8816a35139a5e573dcba219a3f9494088c4792"
+      },
+      "kind": "product",
+      "run": 4,
+      "run_nonce": "6a871ff978ce54b0e70292c243fe9bac",
+      "stage": 15,
+      "stratum_id": "primary-peer-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "encoded-primary",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/g04-apple-encoded-p1-output-5/raw/n-15/product-primary-peer-first-peer-allocation-first-encoded-primary-run-05.log",
+        "sha256": "bfc7cc800ca1a37bd3244f3be27279b3d2f37cb2ce2a55389d0ded5a4f3543e7"
+      },
+      "kind": "product",
+      "run": 5,
+      "run_nonce": "dc05f89a2151abcef75740daa183dbe4",
+      "stage": 15,
+      "stratum_id": "primary-peer-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "encoded-primary",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/g04-apple-encoded-p1-output-5/raw/n-15/product-primary-peer-first-peer-allocation-first-encoded-primary-run-06.log",
+        "sha256": "dbcb984599f78e10cc04fc9e9c04d972ec6ca645551a130c95706ac37ce9df5a"
+      },
+      "kind": "product",
+      "run": 6,
+      "run_nonce": "5f8a6d93b453eb43462e5a23581d71ab",
+      "stage": 15,
+      "stratum_id": "primary-peer-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "encoded-primary",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/g04-apple-encoded-p1-output-5/raw/n-15/product-primary-peer-first-peer-allocation-first-encoded-primary-run-07.log",
+        "sha256": "67a2d81c1b3bbabf0b5303753821b3106aa5dd4a95f085351bef98a6d835ef25"
+      },
+      "kind": "product",
+      "run": 7,
+      "run_nonce": "568a1f7ff6fcc3d616c8a8087e7bbc7a",
+      "stage": 15,
+      "stratum_id": "primary-peer-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "encoded-primary",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/g04-apple-encoded-p1-output-5/raw/n-15/product-primary-peer-first-peer-allocation-first-encoded-primary-run-08.log",
+        "sha256": "ba1654d200daf0bc82bbc367a41603958b11f89c31ba235952d3d6d4cc9f12c7"
+      },
+      "kind": "product",
+      "run": 8,
+      "run_nonce": "8188324b9e73cbdd7f034a191d98f33e",
+      "stage": 15,
+      "stratum_id": "primary-peer-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "encoded-primary",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/g04-apple-encoded-p1-output-5/raw/n-15/product-primary-peer-first-peer-allocation-first-encoded-primary-run-09.log",
+        "sha256": "eac3da7200bd57136c8de3a383403b11da64dd780fd203dde6ea0e2d1fb5218e"
+      },
+      "kind": "product",
+      "run": 9,
+      "run_nonce": "4084ab40a6f8fdca3d14d269607133ae",
+      "stage": 15,
+      "stratum_id": "primary-peer-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "encoded-primary",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/g04-apple-encoded-p1-output-5/raw/n-15/product-primary-peer-first-peer-allocation-first-encoded-primary-run-10.log",
+        "sha256": "6621be1941a06e2cf7d87b1881115c0fcf76db537b2142b96675b0b7e2128b99"
+      },
+      "kind": "product",
+      "run": 10,
+      "run_nonce": "350eb34c116ae8757952f2b9d6b7e6cb",
+      "stage": 15,
+      "stratum_id": "primary-peer-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "encoded-primary",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/g04-apple-encoded-p1-output-5/raw/n-15/product-primary-peer-first-peer-allocation-first-encoded-primary-run-11.log",
+        "sha256": "306d86ad50073a2e59535c4f9d4c0235c21e9a858676757f72e9e299f022e50e"
+      },
+      "kind": "product",
+      "run": 11,
+      "run_nonce": "404b9bee4fd86f938e3ad99451cec8d5",
+      "stage": 15,
+      "stratum_id": "primary-peer-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "encoded-primary",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/g04-apple-encoded-p1-output-5/raw/n-15/product-primary-peer-first-peer-allocation-first-encoded-primary-run-12.log",
+        "sha256": "28fb24454cc2812e65d9a18d12e2d99ee3d8d9a14cd62783712208f3bf721c89"
+      },
+      "kind": "product",
+      "run": 12,
+      "run_nonce": "517808963762238d2e1e794b2f31fbdb",
+      "stage": 15,
+      "stratum_id": "primary-peer-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "encoded-primary",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/g04-apple-encoded-p1-output-5/raw/n-15/product-primary-peer-first-peer-allocation-first-encoded-primary-run-13.log",
+        "sha256": "7d0708e03ce3657980791210196e067dbd4fb65b18db284f9e5d55f4d1a334c7"
+      },
+      "kind": "product",
+      "run": 13,
+      "run_nonce": "fd4f7693531655ebab334ae74f9eaa0e",
+      "stage": 15,
+      "stratum_id": "primary-peer-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "encoded-primary",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/g04-apple-encoded-p1-output-5/raw/n-15/product-primary-peer-first-peer-allocation-first-encoded-primary-run-14.log",
+        "sha256": "8c3d5c37171572bc9cdc77e39863753f104ad869e8804cffa68df35f18a4ca8d"
+      },
+      "kind": "product",
+      "run": 14,
+      "run_nonce": "b74364eee817a55a2cb14ee959691046",
+      "stage": 15,
+      "stratum_id": "primary-peer-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "encoded-primary",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/g04-apple-encoded-p1-output-5/raw/n-15/product-primary-peer-first-peer-allocation-first-encoded-primary-run-15.log",
+        "sha256": "a88e488a24cf65c0ae72348fddf1e2542346baf547ae7b8c10cc37b59400c03c"
+      },
+      "kind": "product",
+      "run": 15,
+      "run_nonce": "19265a5dc2482ff1b317ddd8fa61d708",
+      "stage": 15,
+      "stratum_id": "primary-peer-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "encoded-placement",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/g04-apple-encoded-p1-output-5/raw/n-15/product-placement-candidate-first-candidate-allocation-first-encoded-placement-run-01.log",
+        "sha256": "6d2b70b7ac6ef7a0e217497bd626d8fbe80833302a75646caef11f32f59cac87"
+      },
+      "kind": "product",
+      "run": 1,
+      "run_nonce": "31b756dcde6f84d907ad635d2516ca9b",
+      "stage": 15,
+      "stratum_id": "placement-candidate-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "encoded-placement",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/g04-apple-encoded-p1-output-5/raw/n-15/product-placement-candidate-first-candidate-allocation-first-encoded-placement-run-02.log",
+        "sha256": "4b6ad79f81c8b95a6fe6de0ef8637bd6222caafb29cd9c16ee995df1ec5ec33d"
+      },
+      "kind": "product",
+      "run": 2,
+      "run_nonce": "b2ef88db8ebd053691e3aace84402837",
+      "stage": 15,
+      "stratum_id": "placement-candidate-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "encoded-placement",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/g04-apple-encoded-p1-output-5/raw/n-15/product-placement-candidate-first-candidate-allocation-first-encoded-placement-run-03.log",
+        "sha256": "deb20b12ce29a06eb8ec03dddbdeeda46751869653e0508fb32512886bbbd173"
+      },
+      "kind": "product",
+      "run": 3,
+      "run_nonce": "136e458fca0cbdb1914e5e9170c25274",
+      "stage": 15,
+      "stratum_id": "placement-candidate-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "encoded-placement",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/g04-apple-encoded-p1-output-5/raw/n-15/product-placement-candidate-first-candidate-allocation-first-encoded-placement-run-04.log",
+        "sha256": "03d278390e3bd7e6f46a6f1acf83c0d3aaed7a936398727e7ae763182256e7f7"
+      },
+      "kind": "product",
+      "run": 4,
+      "run_nonce": "35949fbda5cc9f5a52b4c1a64b79bb27",
+      "stage": 15,
+      "stratum_id": "placement-candidate-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "encoded-placement",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/g04-apple-encoded-p1-output-5/raw/n-15/product-placement-candidate-first-candidate-allocation-first-encoded-placement-run-05.log",
+        "sha256": "a95511ae3f1c3b60faa0acb12c99ece62e357ba60fe430bc32697dca1b02a4e2"
+      },
+      "kind": "product",
+      "run": 5,
+      "run_nonce": "3d49aa6c07d405ec71461622f966650b",
+      "stage": 15,
+      "stratum_id": "placement-candidate-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "encoded-placement",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/g04-apple-encoded-p1-output-5/raw/n-15/product-placement-candidate-first-candidate-allocation-first-encoded-placement-run-06.log",
+        "sha256": "661e16000a73623453f4d58515efc1a5d2ea6bed0a265a332350e555cede0d65"
+      },
+      "kind": "product",
+      "run": 6,
+      "run_nonce": "7c246bd1f6fb6f48db1bbe47f26fd816",
+      "stage": 15,
+      "stratum_id": "placement-candidate-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "encoded-placement",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/g04-apple-encoded-p1-output-5/raw/n-15/product-placement-candidate-first-candidate-allocation-first-encoded-placement-run-07.log",
+        "sha256": "ce462246ace6790dde6467e7c3278aeec5cb3e959fd2eec04f15dadebe479808"
+      },
+      "kind": "product",
+      "run": 7,
+      "run_nonce": "d662b9f1aebb38d9e750e69f4e95e8c4",
+      "stage": 15,
+      "stratum_id": "placement-candidate-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "encoded-placement",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/g04-apple-encoded-p1-output-5/raw/n-15/product-placement-candidate-first-candidate-allocation-first-encoded-placement-run-08.log",
+        "sha256": "283e6b7b92f925eace3be0cdfba0b58e8dc3c8b3e0381f7e33863fd1cce78fb4"
+      },
+      "kind": "product",
+      "run": 8,
+      "run_nonce": "fd7c62f8d01f801a9183146a842fd1db",
+      "stage": 15,
+      "stratum_id": "placement-candidate-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "encoded-placement",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/g04-apple-encoded-p1-output-5/raw/n-15/product-placement-candidate-first-candidate-allocation-first-encoded-placement-run-09.log",
+        "sha256": "c2c318317538afda65d8b67404646987008dd01c40c2efe54e9a732a09a6fcec"
+      },
+      "kind": "product",
+      "run": 9,
+      "run_nonce": "5a325a210d6778b9838b98a5da35e888",
+      "stage": 15,
+      "stratum_id": "placement-candidate-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "encoded-placement",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/g04-apple-encoded-p1-output-5/raw/n-15/product-placement-candidate-first-candidate-allocation-first-encoded-placement-run-10.log",
+        "sha256": "8ec35992861b932784c3b95b6a392e32e20b3c2361286b19ad61e6ee4b38858b"
+      },
+      "kind": "product",
+      "run": 10,
+      "run_nonce": "3b1266ac1a8ddf2bdf56d8f57c2988ae",
+      "stage": 15,
+      "stratum_id": "placement-candidate-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "encoded-placement",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/g04-apple-encoded-p1-output-5/raw/n-15/product-placement-candidate-first-candidate-allocation-first-encoded-placement-run-11.log",
+        "sha256": "69b2f6a53e5b0e339a2afabc3b4a2b84832339abe22239ba5b1fbea17cad99f9"
+      },
+      "kind": "product",
+      "run": 11,
+      "run_nonce": "c514800ecba2c86459adb802e46de37c",
+      "stage": 15,
+      "stratum_id": "placement-candidate-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "encoded-placement",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/g04-apple-encoded-p1-output-5/raw/n-15/product-placement-candidate-first-candidate-allocation-first-encoded-placement-run-12.log",
+        "sha256": "4fd1fff134a9018c7a9caab5deb357c1a440214af67c878e0ae9442814eb36ab"
+      },
+      "kind": "product",
+      "run": 12,
+      "run_nonce": "80386c904eb3498e50b646883c008df1",
+      "stage": 15,
+      "stratum_id": "placement-candidate-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "encoded-placement",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/g04-apple-encoded-p1-output-5/raw/n-15/product-placement-candidate-first-candidate-allocation-first-encoded-placement-run-13.log",
+        "sha256": "1f8f05c41f3f5b1dc7ae58e9d21cc9d888944936ee1e4d357283e3f08ff3f287"
+      },
+      "kind": "product",
+      "run": 13,
+      "run_nonce": "11cb441dffe2d25f2f8a626b10eaad10",
+      "stage": 15,
+      "stratum_id": "placement-candidate-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "encoded-placement",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/g04-apple-encoded-p1-output-5/raw/n-15/product-placement-candidate-first-candidate-allocation-first-encoded-placement-run-14.log",
+        "sha256": "e7776238792f249486c09c8461954bca0866b813cc8cb77231a820ac09616551"
+      },
+      "kind": "product",
+      "run": 14,
+      "run_nonce": "4d89346483085af97dab203081df6d8f",
+      "stage": 15,
+      "stratum_id": "placement-candidate-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "encoded-placement",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/g04-apple-encoded-p1-output-5/raw/n-15/product-placement-candidate-first-candidate-allocation-first-encoded-placement-run-15.log",
+        "sha256": "140600db8243def9b90f27cfeedfef73c1389415de595d05e6bccdc054881329"
+      },
+      "kind": "product",
+      "run": 15,
+      "run_nonce": "b54337947681c5f72e0c391ef804446a",
+      "stage": 15,
+      "stratum_id": "placement-candidate-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "encoded-placement",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/g04-apple-encoded-p1-output-5/raw/n-15/product-placement-candidate-first-peer-allocation-first-encoded-placement-run-01.log",
+        "sha256": "67c544e27c319531b8285e82ce45fa35bd9a12d46c6b56e2e7e8dd5f30dd7f03"
+      },
+      "kind": "product",
+      "run": 1,
+      "run_nonce": "6decfa8394ca505b21ee08dffbb47913",
+      "stage": 15,
+      "stratum_id": "placement-candidate-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "encoded-placement",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/g04-apple-encoded-p1-output-5/raw/n-15/product-placement-candidate-first-peer-allocation-first-encoded-placement-run-02.log",
+        "sha256": "834250cc19004c904e370f04b4eafad8191d28f5a2f3d4adc956157833e75da7"
+      },
+      "kind": "product",
+      "run": 2,
+      "run_nonce": "7db308e8a22f2bece21d2e89441a3f91",
+      "stage": 15,
+      "stratum_id": "placement-candidate-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "encoded-placement",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/g04-apple-encoded-p1-output-5/raw/n-15/product-placement-candidate-first-peer-allocation-first-encoded-placement-run-03.log",
+        "sha256": "63353ba8bac929521ba8808ca3f83b0222c707d77f90ec0961b22c06e5cf8a1c"
+      },
+      "kind": "product",
+      "run": 3,
+      "run_nonce": "1cb92028b4edab1009f481da22a5b5ef",
+      "stage": 15,
+      "stratum_id": "placement-candidate-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "encoded-placement",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/g04-apple-encoded-p1-output-5/raw/n-15/product-placement-candidate-first-peer-allocation-first-encoded-placement-run-04.log",
+        "sha256": "34a74ff9afd1a1384fb6c63e73a528c1803d1364bd89186b0103e1d0284e5eca"
+      },
+      "kind": "product",
+      "run": 4,
+      "run_nonce": "24777307cdb60f2c684322ac8cc4fbe3",
+      "stage": 15,
+      "stratum_id": "placement-candidate-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "encoded-placement",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/g04-apple-encoded-p1-output-5/raw/n-15/product-placement-candidate-first-peer-allocation-first-encoded-placement-run-05.log",
+        "sha256": "ca419999f5550a2e61748dc58f87e1b0d98fc261be0da4e866d82da80b36967a"
+      },
+      "kind": "product",
+      "run": 5,
+      "run_nonce": "88bbc7ff52ec779f5cc9d8a964010da3",
+      "stage": 15,
+      "stratum_id": "placement-candidate-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "encoded-placement",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/g04-apple-encoded-p1-output-5/raw/n-15/product-placement-candidate-first-peer-allocation-first-encoded-placement-run-06.log",
+        "sha256": "6938739f139a6aa70553e61475745f0096ef5ef278e316a08b19093d71d933be"
+      },
+      "kind": "product",
+      "run": 6,
+      "run_nonce": "683b773b5064296e0b1671bd17fc2e38",
+      "stage": 15,
+      "stratum_id": "placement-candidate-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "encoded-placement",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/g04-apple-encoded-p1-output-5/raw/n-15/product-placement-candidate-first-peer-allocation-first-encoded-placement-run-07.log",
+        "sha256": "a98e699db754384a60e33c70fd8a01a4aef390d42e6769f067ef9f7772103892"
+      },
+      "kind": "product",
+      "run": 7,
+      "run_nonce": "4a3d7f114431d72c5ee4dd1738732d06",
+      "stage": 15,
+      "stratum_id": "placement-candidate-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "encoded-placement",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/g04-apple-encoded-p1-output-5/raw/n-15/product-placement-candidate-first-peer-allocation-first-encoded-placement-run-08.log",
+        "sha256": "b179ae5025b020fa38bdccd94e0a0cf8278d4b9d0403e797d2a6fc8b322281c8"
+      },
+      "kind": "product",
+      "run": 8,
+      "run_nonce": "f7909e6eb5064a26815389ab0fdff506",
+      "stage": 15,
+      "stratum_id": "placement-candidate-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "encoded-placement",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/g04-apple-encoded-p1-output-5/raw/n-15/product-placement-candidate-first-peer-allocation-first-encoded-placement-run-09.log",
+        "sha256": "577cd81c95145935b3733ccadf1c192dbb87ebf3adee43b0f81de43be68e493e"
+      },
+      "kind": "product",
+      "run": 9,
+      "run_nonce": "59aaf5a1001bcfad29ffd6ccff2f781f",
+      "stage": 15,
+      "stratum_id": "placement-candidate-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "encoded-placement",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/g04-apple-encoded-p1-output-5/raw/n-15/product-placement-candidate-first-peer-allocation-first-encoded-placement-run-10.log",
+        "sha256": "2f8a7444296755f02aa6262df92fb26d0559213af179451172d3afdbd2260cdc"
+      },
+      "kind": "product",
+      "run": 10,
+      "run_nonce": "be9819ceb2dd23d4b7d5fb915cbde785",
+      "stage": 15,
+      "stratum_id": "placement-candidate-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "encoded-placement",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/g04-apple-encoded-p1-output-5/raw/n-15/product-placement-candidate-first-peer-allocation-first-encoded-placement-run-11.log",
+        "sha256": "2db7c44cf6d95e73d26f177d509d698403950734205e8f7c2988c42772b4005c"
+      },
+      "kind": "product",
+      "run": 11,
+      "run_nonce": "39615b83d3b8fad86e5874bf35ec768a",
+      "stage": 15,
+      "stratum_id": "placement-candidate-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "encoded-placement",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/g04-apple-encoded-p1-output-5/raw/n-15/product-placement-candidate-first-peer-allocation-first-encoded-placement-run-12.log",
+        "sha256": "1918782bbadf13f69d76a587d4d7eab834dad97b4bbb75fd9b4e1316d7e9848f"
+      },
+      "kind": "product",
+      "run": 12,
+      "run_nonce": "204c3afd0844c021bb6e287ed1e0eb22",
+      "stage": 15,
+      "stratum_id": "placement-candidate-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "encoded-placement",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/g04-apple-encoded-p1-output-5/raw/n-15/product-placement-candidate-first-peer-allocation-first-encoded-placement-run-13.log",
+        "sha256": "b4cba55f5491fda4d651234eef1ad86eae6c36f6dc42c603632958e31d436f2c"
+      },
+      "kind": "product",
+      "run": 13,
+      "run_nonce": "8e44797c1f92837a98016d238eb2b24e",
+      "stage": 15,
+      "stratum_id": "placement-candidate-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "encoded-placement",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/g04-apple-encoded-p1-output-5/raw/n-15/product-placement-candidate-first-peer-allocation-first-encoded-placement-run-14.log",
+        "sha256": "87b49aa8d747b35d33b08fcf5d79f229a559a4100dce9acc0dcb466411ea4dcc"
+      },
+      "kind": "product",
+      "run": 14,
+      "run_nonce": "526c73130aa60e498578dc773218d023",
+      "stage": 15,
+      "stratum_id": "placement-candidate-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "encoded-placement",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/g04-apple-encoded-p1-output-5/raw/n-15/product-placement-candidate-first-peer-allocation-first-encoded-placement-run-15.log",
+        "sha256": "621136bcdda342fc14d841622996884d359247f2d8fb9a38b5ee8f992cbbb216"
+      },
+      "kind": "product",
+      "run": 15,
+      "run_nonce": "687a61172f09f40b0a827aaae76adc05",
+      "stage": 15,
+      "stratum_id": "placement-candidate-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "encoded-placement",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/g04-apple-encoded-p1-output-5/raw/n-15/product-placement-peer-first-candidate-allocation-first-encoded-placement-run-01.log",
+        "sha256": "74f3bedb0e4bb3539b398b327deabda20ae9e61d2817648725dd8a150dd8f5e3"
+      },
+      "kind": "product",
+      "run": 1,
+      "run_nonce": "7e586c56929c2a3e168d04f52d61f68a",
+      "stage": 15,
+      "stratum_id": "placement-peer-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "encoded-placement",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/g04-apple-encoded-p1-output-5/raw/n-15/product-placement-peer-first-candidate-allocation-first-encoded-placement-run-02.log",
+        "sha256": "ffdcf30aab41dcb9f7534dfb21c5136794625358510a99d1a6834e323b53b041"
+      },
+      "kind": "product",
+      "run": 2,
+      "run_nonce": "49b192f684f96937069cc15341cdba14",
+      "stage": 15,
+      "stratum_id": "placement-peer-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "encoded-placement",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/g04-apple-encoded-p1-output-5/raw/n-15/product-placement-peer-first-candidate-allocation-first-encoded-placement-run-03.log",
+        "sha256": "312a8349c7757e8e32b6bc5efcec594c1ce86968ee48cb0508b30aaef347901b"
+      },
+      "kind": "product",
+      "run": 3,
+      "run_nonce": "d91c30b657af4bfebc55d5489c282760",
+      "stage": 15,
+      "stratum_id": "placement-peer-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "encoded-placement",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/g04-apple-encoded-p1-output-5/raw/n-15/product-placement-peer-first-candidate-allocation-first-encoded-placement-run-04.log",
+        "sha256": "40c117dc0f5db6b50c8cb3021ba143e7ffcddb5d033f7523780c8b2a3b7a45e7"
+      },
+      "kind": "product",
+      "run": 4,
+      "run_nonce": "25583741f47ab4f962b31b8aed7b7174",
+      "stage": 15,
+      "stratum_id": "placement-peer-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "encoded-placement",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/g04-apple-encoded-p1-output-5/raw/n-15/product-placement-peer-first-candidate-allocation-first-encoded-placement-run-05.log",
+        "sha256": "07d733410e49b17448227ee3a578e1816b399365dc32c36f29c77c970ba5a39a"
+      },
+      "kind": "product",
+      "run": 5,
+      "run_nonce": "f2decff79d33690628a567f3e9aef765",
+      "stage": 15,
+      "stratum_id": "placement-peer-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "encoded-placement",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/g04-apple-encoded-p1-output-5/raw/n-15/product-placement-peer-first-candidate-allocation-first-encoded-placement-run-06.log",
+        "sha256": "30b5dccccaa629fa227a66ae4d1de9268414feb107760fe5a01c76b6ec853b0f"
+      },
+      "kind": "product",
+      "run": 6,
+      "run_nonce": "ea5d144e328d69dab595f4e5a98d07c3",
+      "stage": 15,
+      "stratum_id": "placement-peer-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "encoded-placement",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/g04-apple-encoded-p1-output-5/raw/n-15/product-placement-peer-first-candidate-allocation-first-encoded-placement-run-07.log",
+        "sha256": "b17ca21240f75844efa2f3c962604a8d89eb4f936bb6ab06000be97ae1f72607"
+      },
+      "kind": "product",
+      "run": 7,
+      "run_nonce": "7dd75ba32d69f86b19f665fa37c7057d",
+      "stage": 15,
+      "stratum_id": "placement-peer-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "encoded-placement",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/g04-apple-encoded-p1-output-5/raw/n-15/product-placement-peer-first-candidate-allocation-first-encoded-placement-run-08.log",
+        "sha256": "c6c5ed14f56de56529d5d7064a4b1e205bf570bbfecacca296f67eef3eeec56c"
+      },
+      "kind": "product",
+      "run": 8,
+      "run_nonce": "7637700b397e755d0ece6c039c3f7e20",
+      "stage": 15,
+      "stratum_id": "placement-peer-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "encoded-placement",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/g04-apple-encoded-p1-output-5/raw/n-15/product-placement-peer-first-candidate-allocation-first-encoded-placement-run-09.log",
+        "sha256": "222efbdf908c5180bd131f4f153276cfd32bd8f870e5690afbfc7af028592535"
+      },
+      "kind": "product",
+      "run": 9,
+      "run_nonce": "1e880e1c41c34ec775bd92d9f9b65c68",
+      "stage": 15,
+      "stratum_id": "placement-peer-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "encoded-placement",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/g04-apple-encoded-p1-output-5/raw/n-15/product-placement-peer-first-candidate-allocation-first-encoded-placement-run-10.log",
+        "sha256": "0e9edda8fcda6d633e0e039dd1df48ae379d997668708508dd3d097f8a3e9d91"
+      },
+      "kind": "product",
+      "run": 10,
+      "run_nonce": "f098c4888b881c5268c14c8da8571c22",
+      "stage": 15,
+      "stratum_id": "placement-peer-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "encoded-placement",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/g04-apple-encoded-p1-output-5/raw/n-15/product-placement-peer-first-candidate-allocation-first-encoded-placement-run-11.log",
+        "sha256": "9c35c8f74aa68e169feff46b306bba24ff326a40d1fcfcd6d5ba02704cc20ff0"
+      },
+      "kind": "product",
+      "run": 11,
+      "run_nonce": "b096ad5d6d470f31d6a698f042d180b3",
+      "stage": 15,
+      "stratum_id": "placement-peer-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "encoded-placement",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/g04-apple-encoded-p1-output-5/raw/n-15/product-placement-peer-first-candidate-allocation-first-encoded-placement-run-12.log",
+        "sha256": "0f5f512212342823803b2a3a5d09f9b662e8f492260976e9a4855ee8cc980a72"
+      },
+      "kind": "product",
+      "run": 12,
+      "run_nonce": "c8f63aebf9f9560a7dcc8c495e5d1044",
+      "stage": 15,
+      "stratum_id": "placement-peer-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "encoded-placement",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/g04-apple-encoded-p1-output-5/raw/n-15/product-placement-peer-first-candidate-allocation-first-encoded-placement-run-13.log",
+        "sha256": "f6f55fdae00c2a3eaada6341dfe41679d49ed1a3bcd5c18a66ff03747ed67047"
+      },
+      "kind": "product",
+      "run": 13,
+      "run_nonce": "0badf87eb83dc834b4c75fb3f86e5624",
+      "stage": 15,
+      "stratum_id": "placement-peer-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "encoded-placement",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/g04-apple-encoded-p1-output-5/raw/n-15/product-placement-peer-first-candidate-allocation-first-encoded-placement-run-14.log",
+        "sha256": "5e98c7e27be433062d6e7a8bde881b703f55234dac96432c81cf8f8720552c2a"
+      },
+      "kind": "product",
+      "run": 14,
+      "run_nonce": "c1f02fc4b66930980ca4a2058097df23",
+      "stage": 15,
+      "stratum_id": "placement-peer-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "encoded-placement",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/g04-apple-encoded-p1-output-5/raw/n-15/product-placement-peer-first-candidate-allocation-first-encoded-placement-run-15.log",
+        "sha256": "e4181faa4dde2b9a176ac62fe1272449e1f7b6a6e72b744f739d8967832e02ac"
+      },
+      "kind": "product",
+      "run": 15,
+      "run_nonce": "71a2edce03faaa1946a64c17ef4b294e",
+      "stage": 15,
+      "stratum_id": "placement-peer-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "encoded-placement",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/g04-apple-encoded-p1-output-5/raw/n-15/product-placement-peer-first-peer-allocation-first-encoded-placement-run-01.log",
+        "sha256": "c63749dfd14aee0a5ae957e04eb4c9b1685b906bba52747eed6c4360383b9233"
+      },
+      "kind": "product",
+      "run": 1,
+      "run_nonce": "ffcae1d5bded1ae87ebf323238e9c02c",
+      "stage": 15,
+      "stratum_id": "placement-peer-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "encoded-placement",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/g04-apple-encoded-p1-output-5/raw/n-15/product-placement-peer-first-peer-allocation-first-encoded-placement-run-02.log",
+        "sha256": "3e2070dd26ce812103b1a8cdedbb7c4163c30f4896ba6ae81f8a1ca6d6934b9f"
+      },
+      "kind": "product",
+      "run": 2,
+      "run_nonce": "6e1553bcc5c99ee60cc4ce2986e6d0ac",
+      "stage": 15,
+      "stratum_id": "placement-peer-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "encoded-placement",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/g04-apple-encoded-p1-output-5/raw/n-15/product-placement-peer-first-peer-allocation-first-encoded-placement-run-03.log",
+        "sha256": "b84cc730aee3ad8497c5f7fbd72645ebf2c94477528d1f7aead76c8390cf9ec4"
+      },
+      "kind": "product",
+      "run": 3,
+      "run_nonce": "74f95fefbbe14854210512a29b6edaa3",
+      "stage": 15,
+      "stratum_id": "placement-peer-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "encoded-placement",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/g04-apple-encoded-p1-output-5/raw/n-15/product-placement-peer-first-peer-allocation-first-encoded-placement-run-04.log",
+        "sha256": "e049bb2a9343c15c5172bcd4695691e187de6c1b89705e23b3199c0e1798970b"
+      },
+      "kind": "product",
+      "run": 4,
+      "run_nonce": "2815936b1dc7ebdeb06fa7ad62ffd3ce",
+      "stage": 15,
+      "stratum_id": "placement-peer-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "encoded-placement",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/g04-apple-encoded-p1-output-5/raw/n-15/product-placement-peer-first-peer-allocation-first-encoded-placement-run-05.log",
+        "sha256": "3bb6842c6be26078e9a6787ba1f342145b8f90d50d9997bb185f31e183333549"
+      },
+      "kind": "product",
+      "run": 5,
+      "run_nonce": "8bfb7b5e96f9bc18f74c7f1a1895ea28",
+      "stage": 15,
+      "stratum_id": "placement-peer-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "encoded-placement",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/g04-apple-encoded-p1-output-5/raw/n-15/product-placement-peer-first-peer-allocation-first-encoded-placement-run-06.log",
+        "sha256": "dafc0d2a3bac01cb4dfb3eba6ab02b0954b5731605780c8e08c704ca2338253f"
+      },
+      "kind": "product",
+      "run": 6,
+      "run_nonce": "68448f32b28e6b5e7d02da53b2c01b8a",
+      "stage": 15,
+      "stratum_id": "placement-peer-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "encoded-placement",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/g04-apple-encoded-p1-output-5/raw/n-15/product-placement-peer-first-peer-allocation-first-encoded-placement-run-07.log",
+        "sha256": "7359f64bba9195bfdbceb58448102825cfe3693e4ef301a690418a8bf94cc719"
+      },
+      "kind": "product",
+      "run": 7,
+      "run_nonce": "f3232cedb21c2c9e66d25cce6aee37ec",
+      "stage": 15,
+      "stratum_id": "placement-peer-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "encoded-placement",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/g04-apple-encoded-p1-output-5/raw/n-15/product-placement-peer-first-peer-allocation-first-encoded-placement-run-08.log",
+        "sha256": "941c538e11858b0f91c9d37bbb06704831a64e2d6fe0f46b5d9f95016ef7016c"
+      },
+      "kind": "product",
+      "run": 8,
+      "run_nonce": "53612cec7fdaa101088a44fa37646706",
+      "stage": 15,
+      "stratum_id": "placement-peer-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "encoded-placement",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/g04-apple-encoded-p1-output-5/raw/n-15/product-placement-peer-first-peer-allocation-first-encoded-placement-run-09.log",
+        "sha256": "1281fc6fe7b271039476fd8beedcdd3d999afbc6797d6e6497c5110fad6b7d9e"
+      },
+      "kind": "product",
+      "run": 9,
+      "run_nonce": "75e35f94c3f9eae9652a9cfc49b160f9",
+      "stage": 15,
+      "stratum_id": "placement-peer-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "encoded-placement",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/g04-apple-encoded-p1-output-5/raw/n-15/product-placement-peer-first-peer-allocation-first-encoded-placement-run-10.log",
+        "sha256": "4a5886645fa9c447ac7bdbb852e6360f0e63134d217e48760ac7200339b92da6"
+      },
+      "kind": "product",
+      "run": 10,
+      "run_nonce": "7a07856fa0d3cc8157a9879e0adad92f",
+      "stage": 15,
+      "stratum_id": "placement-peer-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "encoded-placement",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/g04-apple-encoded-p1-output-5/raw/n-15/product-placement-peer-first-peer-allocation-first-encoded-placement-run-11.log",
+        "sha256": "81bc1c25daa0ae2f1e454df08405328eb2364b8b4cda39c68bb4cd0066910c14"
+      },
+      "kind": "product",
+      "run": 11,
+      "run_nonce": "ed09a49b5b916148dec1fb5ce67fad3d",
+      "stage": 15,
+      "stratum_id": "placement-peer-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "encoded-placement",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/g04-apple-encoded-p1-output-5/raw/n-15/product-placement-peer-first-peer-allocation-first-encoded-placement-run-12.log",
+        "sha256": "0ec14b6df7b77b8f8d2df3d2c9eff18ab310bd9ae26585efdfa7fcac823593e4"
+      },
+      "kind": "product",
+      "run": 12,
+      "run_nonce": "599ad7ab291d4be1d3ce1a3b39b61eff",
+      "stage": 15,
+      "stratum_id": "placement-peer-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "encoded-placement",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/g04-apple-encoded-p1-output-5/raw/n-15/product-placement-peer-first-peer-allocation-first-encoded-placement-run-13.log",
+        "sha256": "622a8e1c82704ad2d5eb083ef8c6fa9459910c32ccc5da98acca82d106d9051b"
+      },
+      "kind": "product",
+      "run": 13,
+      "run_nonce": "f16a32244fab1aaa342421d5c68881d2",
+      "stage": 15,
+      "stratum_id": "placement-peer-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "encoded-placement",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/g04-apple-encoded-p1-output-5/raw/n-15/product-placement-peer-first-peer-allocation-first-encoded-placement-run-14.log",
+        "sha256": "d246cf218bec85f3f3c16b83d22106e3f0e8afe00e938f7148b9f9aa10a95608"
+      },
+      "kind": "product",
+      "run": 14,
+      "run_nonce": "6e0bd702f4c0853e23af0308e175ca6f",
+      "stage": 15,
+      "stratum_id": "placement-peer-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "encoded-placement",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/g04-apple-encoded-p1-output-5/raw/n-15/product-placement-peer-first-peer-allocation-first-encoded-placement-run-15.log",
+        "sha256": "18dee9ed982e3079ebb52d597cc247746d15ad3368e5cf9e7676af74095cbec0"
+      },
+      "kind": "product",
+      "run": 15,
+      "run_nonce": "8934d22e79b41862520164d19c989e86",
+      "stage": 15,
+      "stratum_id": "placement-peer-first-peer-allocation-first"
+    },
+    {
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/g04-apple-encoded-p1-output-5/raw/n-15/control-candidate-first-run-01.log",
+        "sha256": "398557fd32ec74d4996f0bc9e842bf60a0d48b592ee8e04dca6b3b589b00c16d"
+      },
+      "kind": "control",
+      "order": "candidate-first",
+      "run": 1,
+      "run_nonce": "1792aeeaac047e8be7979b791757e490",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/g04-apple-encoded-p1-output-5/raw/n-15/control-candidate-first-run-02.log",
+        "sha256": "dbe7b91fe2c0df0be4e834740ca87243380a24548a17d093c3e5edd0ce0c3966"
+      },
+      "kind": "control",
+      "order": "candidate-first",
+      "run": 2,
+      "run_nonce": "b1ca414f5799646cf9066388ee18d18e",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/g04-apple-encoded-p1-output-5/raw/n-15/control-candidate-first-run-03.log",
+        "sha256": "6d3c65f56db63349f173e929b73de3eb029503c3e3f9824b2b8e30d561156d6e"
+      },
+      "kind": "control",
+      "order": "candidate-first",
+      "run": 3,
+      "run_nonce": "77402449233c78d35051ae1a40409c24",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/g04-apple-encoded-p1-output-5/raw/n-15/control-candidate-first-run-04.log",
+        "sha256": "19fdb5f92cbff7b6390e9dc776fcc858c1a02e1d4174882a71897fa6076625ad"
+      },
+      "kind": "control",
+      "order": "candidate-first",
+      "run": 4,
+      "run_nonce": "b031222c4587056f53eb114c24f03b05",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/g04-apple-encoded-p1-output-5/raw/n-15/control-candidate-first-run-05.log",
+        "sha256": "f6442011a87b78618a16baa348623338bafef853c9d90db530d792d684dd3af9"
+      },
+      "kind": "control",
+      "order": "candidate-first",
+      "run": 5,
+      "run_nonce": "ec9e29ada79b6a7aab18f9405a3ca691",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/g04-apple-encoded-p1-output-5/raw/n-15/control-candidate-first-run-06.log",
+        "sha256": "9b578f2b119b6c3cd7bb992f2bedd616fde926d1f5c181ff81d7d950cba38938"
+      },
+      "kind": "control",
+      "order": "candidate-first",
+      "run": 6,
+      "run_nonce": "40a9e6d5d36f848f374d2afa78b6a553",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/g04-apple-encoded-p1-output-5/raw/n-15/control-candidate-first-run-07.log",
+        "sha256": "b340e2b9568baad6f78300cd1b202821f5bcf603a9dda8d51786b26ca4344f94"
+      },
+      "kind": "control",
+      "order": "candidate-first",
+      "run": 7,
+      "run_nonce": "03ef8421fca024fa03cd00a1dbd35f27",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/g04-apple-encoded-p1-output-5/raw/n-15/control-candidate-first-run-08.log",
+        "sha256": "54f73c6436e24bcb3a719d3e30cffe6ec1b9d207abc4e933e3d887e001178dd2"
+      },
+      "kind": "control",
+      "order": "candidate-first",
+      "run": 8,
+      "run_nonce": "ddfd6f833ff677c6c7315419e10f88a8",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/g04-apple-encoded-p1-output-5/raw/n-15/control-candidate-first-run-09.log",
+        "sha256": "2f6438f1eabcea77c9e66854f303f2137fc5813fdd8e334c5cda3aac12cd4ba1"
+      },
+      "kind": "control",
+      "order": "candidate-first",
+      "run": 9,
+      "run_nonce": "1c6a3455ce520a389d7f5b549baa62e7",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/g04-apple-encoded-p1-output-5/raw/n-15/control-candidate-first-run-10.log",
+        "sha256": "49ef13415dcfaf31f925e123f434b0d6a1109f988a9e00622aed871179454552"
+      },
+      "kind": "control",
+      "order": "candidate-first",
+      "run": 10,
+      "run_nonce": "14225b5c18c7a680eff78ac8910a7d40",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/g04-apple-encoded-p1-output-5/raw/n-15/control-candidate-first-run-11.log",
+        "sha256": "6778edf663d281941f452b63005b80fe6fa19a1bcebe83d05917babb219343cb"
+      },
+      "kind": "control",
+      "order": "candidate-first",
+      "run": 11,
+      "run_nonce": "18bd95fc0927208d29f41806678fde96",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/g04-apple-encoded-p1-output-5/raw/n-15/control-candidate-first-run-12.log",
+        "sha256": "e0ecc25e54e1243b37a5ff83c70e5c5151acbcddc91f36080e2c7c59840ec6e4"
+      },
+      "kind": "control",
+      "order": "candidate-first",
+      "run": 12,
+      "run_nonce": "c47d54d9007d1e1eed72a31982f907df",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/g04-apple-encoded-p1-output-5/raw/n-15/control-candidate-first-run-13.log",
+        "sha256": "d300675288a822b4f2731881050fee9bbe427c1df386c3064876dfaad996a177"
+      },
+      "kind": "control",
+      "order": "candidate-first",
+      "run": 13,
+      "run_nonce": "8f272b13bc463c3a28dca7584d29ab2d",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/g04-apple-encoded-p1-output-5/raw/n-15/control-candidate-first-run-14.log",
+        "sha256": "fb596b4931b84a53180b10d5217470695cdf4bf43fff4e76c133ab5ea6f440ca"
+      },
+      "kind": "control",
+      "order": "candidate-first",
+      "run": 14,
+      "run_nonce": "32e0ca80c5991f8c65c73d52aa4975ad",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/g04-apple-encoded-p1-output-5/raw/n-15/control-candidate-first-run-15.log",
+        "sha256": "3c85a181fc0ef2f4038c42fcc47e56a283253b45b4e85b07033da2ce5383a954"
+      },
+      "kind": "control",
+      "order": "candidate-first",
+      "run": 15,
+      "run_nonce": "56972d20d1f77ad12af403b8c1e7c418",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/g04-apple-encoded-p1-output-5/raw/n-15/control-peer-first-run-01.log",
+        "sha256": "f036f51398acaed9760283bd16a2343df1e4cdee76da8b15a2197f821279f8d7"
+      },
+      "kind": "control",
+      "order": "peer-first",
+      "run": 1,
+      "run_nonce": "d2839f823b79b6c53ee326cff56bc12a",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/g04-apple-encoded-p1-output-5/raw/n-15/control-peer-first-run-02.log",
+        "sha256": "83c9538ec77f686b97759549dc89edb6f57230346825d3a1398aeb3a7b91c67d"
+      },
+      "kind": "control",
+      "order": "peer-first",
+      "run": 2,
+      "run_nonce": "6faf5492ab9f914ccf3a29a5b464795b",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/g04-apple-encoded-p1-output-5/raw/n-15/control-peer-first-run-03.log",
+        "sha256": "c99a278819505942dfc80fdf8a5c6b1cba66870f6bce83f6bcef1d6afed8452d"
+      },
+      "kind": "control",
+      "order": "peer-first",
+      "run": 3,
+      "run_nonce": "685d4c3ed3c36ad8050b788d3ab678c3",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/g04-apple-encoded-p1-output-5/raw/n-15/control-peer-first-run-04.log",
+        "sha256": "6da7d52dddafc9a8b029434d96184c36e43c731f09ec980c6ede741fe523e2d6"
+      },
+      "kind": "control",
+      "order": "peer-first",
+      "run": 4,
+      "run_nonce": "34764b3ee0726eb66631d0fc95a44329",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/g04-apple-encoded-p1-output-5/raw/n-15/control-peer-first-run-05.log",
+        "sha256": "ad357db27c30f2fa63660a2a62c92d26163c1d19ba5fda14f87a153cd79dd8f6"
+      },
+      "kind": "control",
+      "order": "peer-first",
+      "run": 5,
+      "run_nonce": "8ff9bbed5f71f9bec4880b401d258acb",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/g04-apple-encoded-p1-output-5/raw/n-15/control-peer-first-run-06.log",
+        "sha256": "2e61cf5d32dd3ac1ef13edb25b8cc5a274b350320ae9e87fd26e9d6bc323f5d5"
+      },
+      "kind": "control",
+      "order": "peer-first",
+      "run": 6,
+      "run_nonce": "97adff6d9fd3b33009f8a783535b3752",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/g04-apple-encoded-p1-output-5/raw/n-15/control-peer-first-run-07.log",
+        "sha256": "b86f909bd01332820f43ed7a12e13e271096bea4439d7497e167436055408537"
+      },
+      "kind": "control",
+      "order": "peer-first",
+      "run": 7,
+      "run_nonce": "f9c201f6064ff708e18e0aa57f2add14",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/g04-apple-encoded-p1-output-5/raw/n-15/control-peer-first-run-08.log",
+        "sha256": "87b0973a969f86178d274b50a180550390fe8b0d9aeeced2ef00e7375598ed24"
+      },
+      "kind": "control",
+      "order": "peer-first",
+      "run": 8,
+      "run_nonce": "511c1f256744900344cffa4651b87f15",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/g04-apple-encoded-p1-output-5/raw/n-15/control-peer-first-run-09.log",
+        "sha256": "cb1e30ca55de9037d312a3ef8aaf317e9c6b7aea1ef3698301cbe472e3ab6743"
+      },
+      "kind": "control",
+      "order": "peer-first",
+      "run": 9,
+      "run_nonce": "9e127046edb21f5fb0365cb3611975c4",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/g04-apple-encoded-p1-output-5/raw/n-15/control-peer-first-run-10.log",
+        "sha256": "c98da54d479d9aab2332bbc0c0b355e1b3ea35a2248e1d0de0c23e1d2805e60f"
+      },
+      "kind": "control",
+      "order": "peer-first",
+      "run": 10,
+      "run_nonce": "bbcfa40798889fd2e61972ce39765976",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/g04-apple-encoded-p1-output-5/raw/n-15/control-peer-first-run-11.log",
+        "sha256": "5d73758d42dc7b36bca706a10d86c134eb2b803a9a1a2f978bb71e303855db5f"
+      },
+      "kind": "control",
+      "order": "peer-first",
+      "run": 11,
+      "run_nonce": "b159a52adf058204bedacb3bffd0c09f",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/g04-apple-encoded-p1-output-5/raw/n-15/control-peer-first-run-12.log",
+        "sha256": "cf1ab58874321d7119e67225588f13231852d7058e38078413189da2aebf7719"
+      },
+      "kind": "control",
+      "order": "peer-first",
+      "run": 12,
+      "run_nonce": "b9690be96c253c06ca45eb2adb4a4ad0",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/g04-apple-encoded-p1-output-5/raw/n-15/control-peer-first-run-13.log",
+        "sha256": "187661efcfd8bc187e8a505752e1fd6c2e15622e638ed1789ccbde24158d8824"
+      },
+      "kind": "control",
+      "order": "peer-first",
+      "run": 13,
+      "run_nonce": "79a93b82e6d54133af96063a595519c6",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/g04-apple-encoded-p1-output-5/raw/n-15/control-peer-first-run-14.log",
+        "sha256": "cbb16aaf919c2d4a0049aa353bea65a4a2eb32c9a2ff165e07dfd201385f7ec1"
+      },
+      "kind": "control",
+      "order": "peer-first",
+      "run": 14,
+      "run_nonce": "38a7a43d9173a929467faea8c4bda498",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/g04-apple-encoded-p1-output-5/raw/n-15/control-peer-first-run-15.log",
+        "sha256": "a46373f2dd921277737ae000264993c3e37609b865208dd7e7b859078cd0261c"
+      },
+      "kind": "control",
+      "order": "peer-first",
+      "run": 15,
+      "run_nonce": "5eae5479b2737c16ca3a97c624bbff14",
+      "stage": 15
+    }
+  ],
+  "record": "hyle_perf_nanobench_raw_index",
+  "sample_stages": [
+    15
+  ],
+  "schema": "hyle.perf.nanobench-raw-index/v1"
+}
