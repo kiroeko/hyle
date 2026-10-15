@@ -1,0 +1,196 @@
+{
+  "kind": "G04_G05_VULKAN_ENCODED_PAGE_PRECONSTRUCTION_COSTS",
+  "state": "STATIC_LEDGER_NOT_EXECUTED_OR_P1",
+  "product_candidate": "982676cb05a6e6244e66e0a596347aa96043617b",
+  "baseline_benchmark_commit": "90084d79eb41bb0ad211129f4cfb9ab3fcbf3864",
+  "inputs": [
+    {
+      "path": "bench/inference_resident_sdpa/vulkan_encoded_page_bench.cc",
+      "sha256": "32d015adb20f72a91b6db1f34283315738362a7c3c860ed12cf3f435efe39584"
+    },
+    {
+      "path": "bench/inference_resident_sdpa/vulkan_encoded_page_reference.cc",
+      "sha256": "9ba1c6bea5850898cb5dc9872034c76120617d9f3220fc97a411480b9a9386b6"
+    },
+    {
+      "path": "bench/inference_resident_sdpa/reference.cc",
+      "sha256": "1acf9e3488a5d3078ce2b8f9b210aed13ed95a68776b1a0b729a32d6cfa28b4b"
+    },
+    {
+      "path": "include/hyle/compute/detail/materialized_native_controller.h",
+      "sha256": "9c92224885493ccfea20e872ae631b0c70142da31068f36b4a239fce0e4719f4"
+    },
+    {
+      "path": "src/compute_batch/batch_paged_native.cc",
+      "sha256": "d0276acb6dc6a0212402c26ecafc356b7799fc0bf39b02930b9e677ce0d97fda"
+    },
+    {
+      "path": "src/compute_route_vulkan/vulkan_region.cc",
+      "sha256": "8d5d62804351798413941324cdd38497148c22b8b5345acf84dd09406c2b9792"
+    },
+    {
+      "path": "src/compute_provider_ggml_vulkan/region.cc",
+      "sha256": "fbcdb56e40a2a63efe93d7aa76d2853e04f6934b007c024bacab7e5fe8ae51e7"
+    }
+  ],
+  "independent_original_get_rows": {
+    "revision": "456172ec733a135778adcd32d00e576a58232e45",
+    "path": "src/ggml-vulkan/vulkan-shaders/vulkan-shaders-gen.cpp",
+    "line": 840,
+    "sha256": "e2066c68067c91fa72a8c6420a0a6a4f6072ba6aec6b9ee303e2706517ed843c",
+    "types": "TEMP_TYPE/A_TYPE/D_TYPE uint, B_TYPE int; opaque bits copied without floating arithmetic"
+  },
+  "shared_owner": "Original MaterializedNativeState/PagedMetadataPolicy, F1/F2, queues, native slots and output owners on both arms",
+  "attention_peer": "Independent pinned original scalar non-MMQ Q8 flash shader; shared existing GetRows bit-copy wrapper, no candidate attention lowerer",
+  "per_operation": [
+    {
+      "phase": "version/index allocation and fill",
+      "candidate": "CHARGED",
+      "peer": "CHARGED"
+    },
+    {
+      "phase": "prepare native Program/Invocation/storage",
+      "candidate": "CHARGED",
+      "peer": "CHARGED"
+    },
+    {
+      "phase": "F2 metadata copy and checked host wait",
+      "candidate": "CHARGED",
+      "peer": "CHARGED"
+    },
+    {
+      "phase": "row-index creation/upload/normalization",
+      "candidate": "NOT_NEEDED",
+      "peer": "CHARGED"
+    },
+    {
+      "phase": "fixed F16 causal/window mask creation/upload",
+      "candidate": "NOT_NEEDED",
+      "peer": "CHARGED"
+    },
+    {
+      "phase": "Q8 row gather including generated output copies",
+      "candidate": "NOT_NEEDED",
+      "peer": "CHARGED"
+    },
+    {
+      "phase": "exact permissions/bind/submit/native wait",
+      "candidate": "CHARGED",
+      "peer": "CHARGED"
+    },
+    {
+      "phase": "query/output conversions, attention, split and output concat",
+      "candidate": "CHARGED_AS_GENERATED",
+      "peer": "CHARGED_AS_GENERATED"
+    },
+    {
+      "phase": "output owner return/release and actual retirement",
+      "candidate": "CHARGED",
+      "peer": "CHARGED"
+    }
+  ],
+  "cold_outside_timing": [
+    "original immutable K/V/Q payload placement",
+    "schema and layout creation",
+    "two outer native controller slots per arm",
+    "final Context close after all owned results released"
+  ],
+  "shapes": [
+    {
+      "query_rows": [
+        1,
+        17
+      ],
+      "kv_rows": [
+        1024,
+        768
+      ],
+      "Dqk": 256,
+      "Dv": 256,
+      "causal": true,
+      "window_left": 16,
+      "page_refs": [
+        64,
+        48
+      ],
+      "physical_pages": 114,
+      "unique_referenced_pages": 111,
+      "two_roots_payload_bytes": 1984512,
+      "index_table_bytes_per_prepare_both_arms": 448,
+      "peer_row_index_bytes_per_prepare": 7168,
+      "peer_gather_valid_encoded_bytes_per_operation": 1949696,
+      "peer_causal_mask_bytes_per_prepare": 28160,
+      "active_output_bytes": 73728,
+      "removed_page_concat_gather_dispatches": 76,
+      "replacement_gather_operations": 4
+    },
+    {
+      "query_rows": [
+        64,
+        128
+      ],
+      "kv_rows": [
+        1024,
+        768
+      ],
+      "Dqk": 256,
+      "Dv": 256,
+      "causal": true,
+      "window_left": -1,
+      "page_refs": [
+        64,
+        48
+      ],
+      "physical_pages": 114,
+      "unique_referenced_pages": 111,
+      "two_roots_payload_bytes": 1984512,
+      "index_table_bytes_per_prepare_both_arms": 448,
+      "peer_row_index_bytes_per_prepare": 7168,
+      "peer_gather_valid_encoded_bytes_per_operation": 1949696,
+      "peer_causal_mask_bytes_per_prepare": 327680,
+      "active_output_bytes": 786432,
+      "removed_page_concat_gather_dispatches": 76,
+      "replacement_gather_operations": 4
+    },
+    {
+      "query_rows": [
+        17,
+        1
+      ],
+      "kv_rows": [
+        7,
+        47
+      ],
+      "Dqk": 64,
+      "Dv": 128,
+      "causal": false,
+      "window_left": -1,
+      "page_refs": [
+        1,
+        3
+      ],
+      "physical_pages": 6,
+      "unique_referenced_pages": 3,
+      "two_roots_payload_bytes": 39168,
+      "index_table_bytes_per_prepare_both_arms": 16,
+      "peer_row_index_bytes_per_prepare": 216,
+      "peer_gather_valid_encoded_bytes_per_operation": 22032,
+      "peer_causal_mask_bytes_per_prepare": 0,
+      "active_output_bytes": 36864,
+      "removed_page_concat_gather_dispatches": 4,
+      "replacement_gather_operations": 4
+    }
+  ],
+  "complexity": "Original pagewise Concat dispatch count grew as O(page refs); replaced before any run by four existing row-Gather operations across two requests. Logical row-index creation remains O(active KV rows) per prepare and is charged. Exact page permission admission retains original O(G^2) scans pending G06, charged equally.",
+  "unknowns": [
+    "Actual generated dispatch counts and additional copies until real preflight inspection",
+    "Exact allocation/atomic/lock counts inside native pipelines",
+    "Split scratch and allocator bucket rounding",
+    "Driver/native private-pool retained bytes and hard upper bound"
+  ],
+  "limits": [
+    "No compilation, numerical, A/A, throughput, noninferiority, capture, incremental producer, G06 or whole G04/G05 verdict",
+    "Native slot rebuilding and peer mask/index uploads occur inside each measured operation; no kernel-only or forged warm replay",
+    "Explicit original non-MMQ pipeline, not a best-of original host or whole-engine comparison"
+  ]
+}

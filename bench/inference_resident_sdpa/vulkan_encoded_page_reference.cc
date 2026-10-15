@@ -34,24 +34,29 @@ Result<n::Program> encoded_page_reference_program(const n::Context& context,
     const int nq=host.query_indptr[r+1]-host.query_indptr[r];if(!nq)continue;
     const int begin=host.kv_indptr[r],end=host.kv_indptr[r+1];
     const int nk=(end-begin-1)*16+host.last_page_lengths[r];
+    std::vector<std::int32_t> rows(std::size_t(nk),0);
+    for(int row=0;row<nk;++row)rows[std::size_t(row)]=host.page_indices[begin+row/16]*16+row%16;
+    HYLE_ASSIGN_OR_RETURN(auto index_desc,c::TensorDesc::dense(c::DataType::kInt32,
+        std::array<std::int64_t,1>{nk}));
+    const auto indices=add(index_desc);
+    HYLE_ASSIGN_OR_RETURN(state->values[indices].constant,
+        context.upload(index_desc,std::as_bytes(std::span(rows))));
     std::array<std::uint32_t,2> gathered;
     for(unsigned port=1;port<3;++port){
       const auto depth=port==1?cap.qk_head_dim:cap.value_head_dim;
       const auto encoded_depth=depth/32*34;
-      std::vector<std::uint32_t> pages;
-      for(int ref=begin;ref<end;++ref){
-        const int rows=ref+1==end?host.last_page_lengths[r]:16;
-        HYLE_ASSIGN_OR_RETURN(auto desc,c::TensorDesc::dense(c::DataType::kUInt8,
-            std::array<std::int64_t,3>{rows,cap.kv_heads,encoded_depth}));
-        const auto value=add(desc);
-        state->aliases[value]={port,std::size_t(host.page_indices[ref])*16*cap.kv_heads*encoded_depth};
-        pages.push_back(value);
-      }
+      HYLE_ASSIGN_OR_RETURN(auto root_desc,c::TensorDesc::dense(c::DataType::kUInt8,
+          std::array<std::int64_t,3>{std::int64_t(cap.max_pages)*16,cap.kv_heads,encoded_depth}));
+      const auto root=add(root_desc);state->aliases[root]={port,0};
       HYLE_ASSIGN_OR_RETURN(auto desc,c::TensorDesc::dense(c::DataType::kUInt8,
           std::array<std::int64_t,3>{nk,cap.kv_heads,encoded_depth}));
       gathered[port-1]=add(desc);
-      HYLE_RETURN_IF_ERROR(d::lower_tensor(*state,{c::Operation(c::Concat{.axis=0}),
-          std::move(pages),{gathered[port-1]},{},{1,1,1},{}}));
+      // The original GetRows I32 route copies opaque storage bits. Reuse that
+      // bounded row adapter instead of O(page-count) three-input Concats.
+      // Its index normalization and output copies remain charged as generated.
+      HYLE_RETURN_IF_ERROR(d::lower_gather(*state,
+          {c::Operation(c::Gather{0,c::IndexBoundsPolicy::kUnchecked}),
+           {root,indices},{gathered[port-1]},{},{1,1,1},{}}));
     }
     HYLE_ASSIGN_OR_RETURN(auto qd,c::TensorDesc::dense(c::DataType::kFloat16,
         std::array<std::int64_t,4>{1,nq,cap.query_heads,cap.qk_head_dim}));

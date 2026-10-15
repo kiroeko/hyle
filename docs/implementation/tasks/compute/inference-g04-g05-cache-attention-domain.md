@@ -958,7 +958,7 @@ producer/growth/capture 或 CPU CE12；量化causal固定mask的O(Q*KV)冷存储
 PagedBatchInvocation 两槽：prepare_batch(layout)→bind(真实 Q/K/V exact frames)→submit→
 wait→取得输出并释放。peer 沿原同一 MaterializedNativeState/PagedMetadataPolicy、F1/F2、
 native Program/Invocation 和 retirement，只把数学 recipe 换为独立原456 Q8 shader；
-逐请求压缩页 Concat 后接已预检 dense shader，独立 Dqk/Dv 和 bottom-right window。
+逐请求压缩行 Gather 后接已预检 dense shader，独立 Dqk/Dv 和 bottom-right window。
 原 shader 算术不变，不使用 candidate attention lowerer。原 host 可能选择 MMQ/整历史
 F16 展开的事实保留；本 adapter 明确选原 non-MMQ direct-Q8 pipeline，不签最佳原 host。
 
@@ -980,3 +980,19 @@ benchmark 合同与实际源码时序账；A/A、双执行/分配顺序和原5%�
 Q8 oracle、独立 K/V stride、child constants/alias 保活、exact frame 和两槽重放/完整计费。
 这是静态复核，尚未编译运行，不签数值或 P1。原 selector 对三个共享 bench 路径仍
 unknown，原 BLOCKED plan 与146 skipped reasons保留在独立工具记录，不改公共 selector。
+
+构造后静态账发现，原先逐页三输入 Concat 在112个引用页的形状要产生76个 gather
+dispatch，不能把该人为分组作为成熟 peer 的固有成本。尚未运行该 adapter，现改用已有
+lower_gather 的原 GetRows I32 位复制路线：每请求共享一份 logical-row→physical-row
+I32 索引，K/V 各自按编码 row bytes gather，无量化解码或新 shader。索引生成/上传、原
+index normalization、生成的输出复制和所有 scratch 都在 prepare/operation 费用内；
+无论页数如何只构造两个请求各两个 Gather。原 attention shader 仍独立、算术未变。
+此修正发生在数值预检和任何采样之前；上述旧接线静态复核不代签新 Gather 的运行资格。
+
+[逐阶段静态成本账](../../../../evidence/architecture/inference-g04-g05-cost-preflight/vulkan-page-preconstruction.json)
+绑定实际源码 hash：两组 D256 每 operation 的 peer 有效压缩 gather 为1949696 bytes，
+window/prefill mask 分别28160/327680 bytes；D64/Dv128 holdout gather22032 bytes、无mask。
+这些是逻辑工作量，不是 driver/private-pool 存储上界。GetRows 原始生成器840明确
+TEMP/A/D 为 uint；已有 U8 Gather 仅重解释位模式。独立复核新接线未发现 MUST，
+同时明确 K/V 各有 normalization 和输出 Copy，不能只记两个 GetRows。实际生成 dispatch、
+额外复制与 native 分配尚待串行预检，不由静态账签 P1 或零 allocation。

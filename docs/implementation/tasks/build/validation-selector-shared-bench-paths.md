@@ -84,3 +84,7 @@ unknown 而 BLOCKED，product_authorization 无产品修改，docs/closure 与14
 product_authorization owners/issues 均为空，selected docs/closure 与146 skipped reasons 保留。
 仅构造独立比较消费链，下一步按活动卡预声明的三组 shape、两槽重放/readonly、数值和
 完整 prepare→output 返回预检取证；产品 candidate 不变，不借工具状态扩大构建范围。
+
+采样前把上述 adapter 的逐页 Concat 改为已有 GetRows 位复制 Gather 后，计划
+`.scratch/inference-gaps/g04-g05/vulkan-encoded-page-gather-validation-plan.json` 仍保留同类
+unknown 与146 skipped reasons，product_authorization 无 owner/issue；未修改产品或公共工具。
