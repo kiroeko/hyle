@@ -709,9 +709,21 @@
         {
           "before": "constant bool hyle_paged [[function_constant(303)]];\n\n",
           "after": "constant bool hyle_paged [[function_constant(303)]];\nconstant bool hyle_q8 [[function_constant(304)]];\nconstant bool hyle_window [[function_constant(305)]];\n\n"
+        },
+        {
+          "before": "      simdgroup_barrier(mem_flags::mem_none);\n\n      tile_matmad(Stile, Qtile, Ktile, Stile);\n",
+          "after": "      if (!hyle_q8) simdgroup_barrier(mem_flags::mem_none);\n\n      tile_matmad(Stile, Qtile, Ktile, Stile);\n"
+        },
+        {
+          "before": "          if constexpr (BD >= 128) {\n            simdgroup_barrier(mem_flags::mem_none);\n          }\n\n          const short kk = ik * kFragSize;\n",
+          "after": "          if constexpr (BD >= 128) {\n            if (!hyle_q8) simdgroup_barrier(mem_flags::mem_none);\n          }\n\n          const short kk = ik * kFragSize;\n"
+        },
+        {
+          "before": "          if constexpr (BD >= 128) {\n            simdgroup_barrier(mem_flags::mem_none);\n          }\n\n          MMAFrag_acc_t::mma(\n",
+          "after": "          if constexpr (BD >= 128) {\n            if (!hyle_q8) simdgroup_barrier(mem_flags::mem_none);\n          }\n\n          MMAFrag_acc_t::mma(\n"
         }
       ],
-      "after_sha256": "3b1e23ab676182a1efc0cb244223b0a793f832561941af2d132de81a68ada21e"
+      "after_sha256": "9a786abe9c58449eae776a3a7aa7cbd9557e8ad3789acc5caf517fccb5080dd3"
     },
     {
       "path": "mlx/backend/metal/kernels/scaled_dot_product_attention.metal",
