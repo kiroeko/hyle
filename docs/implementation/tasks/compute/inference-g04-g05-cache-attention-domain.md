@@ -1083,3 +1083,24 @@ io/container/其它 provider 或整 Graph CPU 回归。CUDA/Air 当前固定输�
 五种 source 风险全部 PASS，已测482.431秒。未改146对象 ggml CUDA archive 按原同配置
 证明复用，CPU/base/FI 与改动宿主正常编译，实际测试二进制前后 SHA 一致。TSan 随后已
 在同一串行队列启动；本阶段不签 shader/driver、LSan、private pool 上界或 CE12/13 CPU。
+
+[TSan 阶段](../../../../evidence/correctness/inference-g04-g05-cuda-encoded-host-tsan/receipt.json)
+现已完成同一冻结输入的13数学/消费者与5 source风险，数据竞争检查 PASS，已测453.707秒。
+ASan/UBSan/TSan 宿主三方面至此均有实际证据；原 NVIDIA 诊断线程 lifetime/LSan 的
+INCONCLUSIVE、不签 shader/driver/private pool 上界和 CPU CE12/13 的限制仍保留。
+
+### Vulkan 编码分页完整比较旅程的实际数值预检
+
+[完整预检](../../../../evidence/correctness/inference-g04-g05-vulkan-encoded-page-preflight/receipt.json)
+实际 Air/MoltenVK 三形状、双方实现各两槽四次重放全部 PASS，最大绝对误差
+0.0000304865893，readonly K/V逐字节不变；四次尝试已测阶段累计24.131秒，外层观察
+26.016秒另列且不重复相加。原第一次在 force-glob dry plan 截断前停止，旧阶段状态
+未因观察结束改写；实际 PID已消失且无子任务。随后 SDK变量名、complete初始化行数的
+configure/compile FAIL 均保留；只修比较器接线，不改产品或数学。
+
+最终采用独立 SDK 消费工程，逐 SHA 核原已验证 static库/配方/installed headers，仅编
+四个benchmark TU，无产品库/着色器重编。实际 configure 后用字节相同的外部 build.ninja
+副本只读查看完整计划，真实构建仍用原 manifest；不修改公共构建工具或 producer cache。
+全部物理页原本已完整上传，complete现在明确传16个初始化行；逻辑tail、poison、exact
+frame与费用合同不变。这里只签数值/生命周期，不签 A/A、P1、G06 或整批 G04/G05。
+CE13 已在这些任务实际结束后启动普通门，保持所有重型任务串行。

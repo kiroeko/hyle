@@ -136,8 +136,8 @@ struct Harness final {
     };
     auto qw=take(query_pool.allocate(query_bytes,64));query=upload(qw,std::as_bytes(std::span(data.query)));
     for(unsigned p=0;p<data.cap.max_pages;++p){
-      auto k=take(keys.acquire(p));key_reads.push_back(upload(k.lease(),std::span(data.packed[0]).subspan(p*keys.page_bytes(),keys.page_bytes())));check(k.complete(key_reads.back()));
-      auto v=take(values.acquire(p));value_reads.push_back(upload(v.lease(),std::span(data.packed[1]).subspan(p*values.page_bytes(),values.page_bytes())));check(v.complete(value_reads.back()));
+      auto k=take(keys.acquire(p));key_reads.push_back(upload(k.lease(),std::span(data.packed[0]).subspan(p*keys.page_bytes(),keys.page_bytes())));check(k.complete(key_reads.back(),16));
+      auto v=take(values.acquire(p));value_reads.push_back(upload(v.lease(),std::span(data.packed[1]).subspan(p*values.page_bytes(),values.page_bytes())));check(v.complete(value_reads.back(),16));
     }
     auto ids=data.pages;std::sort(ids.begin(),ids.end());ids.erase(std::unique(ids.begin(),ids.end()),ids.end());
     std::vector<c::ReadLease> exact_keys,exact_values;

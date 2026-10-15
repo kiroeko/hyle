@@ -8,7 +8,7 @@ set(HYLE_RESIDENT_REFERENCE_SOURCE "" CACHE PATH "Authenticated original ggml pe
 set(HYLE_RESIDENT_GLSLANG "" CACHE FILEPATH "Qualified GLSL compiler")
 find_package(Hyle CONFIG REQUIRED COMPONENTS compute graph)
 find_package(Python3 REQUIRED COMPONENTS Interpreter)
-if(NOT HYLE_STATIC)
+if(NOT Hyle_STATIC)
   message(FATAL_ERROR "Original private recipe adapter needs the qualified static SDK")
 endif()
 set(_source "${HYLE_SOURCE_DIR}/bench/inference_resident_sdpa")

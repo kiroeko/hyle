@@ -200,5 +200,13 @@
     "change": "Remove per-prepare mask metadata fprintf from helper. Cold shape bills already recorded; no attention arithmetic, allocation, upload, owner or failure change. Prevents unequal benchmark logging overhead before any run.",
     "old_source_commit": "0dd88e6a4",
     "prior_numeric_queue": "Cancelled before any child/heavy run; original wait record/time unknown preserved; CPU P1 unchanged."
+  },
+  "actual_preflight_corrections": {
+    "receipt": "evidence/correctness/inference-g04-g05-vulkan-encoded-page-preflight/receipt.json",
+    "benchmark_source_after_sha256": "9c91fc2b1f95c0735dd50d4640c5599e68110ab6955b87aa03b05049328b5081",
+    "change": "Both full-page uploads now explicitly complete 16 initialized rows, as required by the existing API; same original physical payload bytes, logical tail/poison/exact frames and operation cost boundary",
+    "sdk_guard": "Use exported Hyle_STATIC, not producer-only HYLE_STATIC, in SDK consumer CMake",
+    "build": "Authenticated installed static SDK; only four comparator TUs compiled. Actual producer dry-plan over-selection preserved and bypassed with separate SDK project",
+    "performance_claim": false
   }
 }
