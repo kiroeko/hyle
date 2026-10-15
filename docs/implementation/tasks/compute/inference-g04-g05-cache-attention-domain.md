@@ -1159,3 +1159,24 @@ Apple 独立 peer 的原源码 materializer 已实现并实际运行，生成
 独立只读接线审计已确认沿 MLX 原 CommandEncoder 绑定实际数组、追踪依赖并检查实际
 CommandBuffer 完成；mask查询轴必须按原Q=8补齐，K/V按原head-major行布局，不能用
 general尾部判断掩盖blk读取越界。后续有限桥保持原费用账，不扩大产品域。
+
+
+### Apple 独立比较器实现批（尚未运行）
+
+benchmark-only Custom、完整分页消费者及独立 SDK CMake 已集中实现；沿原 MLX encoder
+登记实际 Q/K/V/mask/pad/blk/output，沿原456 general Q8 数学，保留实际 MCB 直到原
+HYLE Completion 后检查。Q→F32、head-major Q8 gather/contiguous、F16 mask、原 pad/blk、
+F32→F16 输出与原 prepare/F2/权限/两槽/等待均计费，double oracle 与完整 readonly 检查
+不变。原 host 其它 vec/全KV展开选择不参与本次显式 general peer，不称原host最佳策略。
+
+[一次批量源码交叉检查](../../../../evidence/architecture/inference-g04-g05-cost-preflight/apple-adapter-review.json)
+发现的唯一 scratch 接纳前缀生命周期 MUST 已修正：临时 owner 与真实 MCB 在首个 dispatch
+前登记，后续 pipeline/launch 异常由原 MLX/HYLE drain 持有。修正版无未解决源码 MUST；
+这不是编译或数值 PASS。原 source materializer 已按原 SHA 实际生成，并可原样复用。
+
+独立工程只链接已验证 Apple static SDK。28个 HYLE 库、6个 native 库、10个配方和
+1个 metallib 的固定身份保存在
+[SDK 清单](../../../../bench/inference_resident_sdpa/apple_encoded_peer/qualified-sdk-artifacts.json)；
+native库与原producer整文件不同，但逐成员名称/顺序/对象字节一致。不据此猜测元数据差异
+原因，CPU域仍是旧SDK，不代签CE12/CE13。首轮只编3个benchmark TU并执行原三形状、
+双方两槽四次重放与readonly预检；必须等CPU与Vulkan实际重型进程终态后串行启动。

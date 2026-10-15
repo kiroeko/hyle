@@ -93,9 +93,6 @@ def materialize(original, output):
     header = (b'#pragma once\nnamespace hyle::bench::resident {\n'
               b'inline constexpr char kOriginalMetalQ8Source[] = R"HYLE_Q8_SOURCE('
               + raw + b')HYLE_Q8_SOURCE";\n}\n')
-    output.mkdir(parents=True, exist_ok=False)
-    (output / 'general-q8.metal').write_bytes(raw)
-    (output / 'general-q8-source.h').write_bytes(header)
     proof = {
         'kind': 'PINNED_ORIGINAL_GGML_METAL_GENERAL_Q8_SOURCE_ONLY',
         'revision': REVISION, 'input_sha256': INPUTS,
@@ -111,8 +108,18 @@ def materialize(original, output):
                    'Explicit general selection is not a best-of original host claim',
                    'Query conversion, gather, padding, mask, scratch and completion remain charged by the adapter'],
     }
-    (output / 'source-provenance.json').write_text(
-        json.dumps(proof, indent=2) + '\n', encoding='utf-8')
+    files = {'general-q8.metal': raw, 'general-q8-source.h': header,
+             'source-provenance.json': (json.dumps(proof, indent=2) + '\n').encode('utf-8')}
+    if output.exists():
+        if any(not (output / name).is_file() or (output / name).read_bytes() != data
+               for name, data in files.items() if name != 'source-provenance.json') or \
+                not (output / 'source-provenance.json').is_file() or \
+                json.loads((output / 'source-provenance.json').read_text(encoding='utf-8')) != proof:
+            raise ValueError('retained original peer source identity changed')
+    else:
+        output.mkdir(parents=True, exist_ok=False)
+        for name, data in files.items():
+            (output / name).write_bytes(data)
     return proof
 
 

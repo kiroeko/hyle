@@ -1,0 +1,1131 @@
+{
+  "prefix": "/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-sdk/apple-static-1/relocated",
+  "supplemental_native_archives": [
+    {
+      "path": "lib/libggml-base.a",
+      "sha256": "4c1e8c64624c1133a26c34299971c9a282fb4caddef20e425a9f0a3fe4bb2ce3",
+      "producer_path": "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-build/bin/libggml-base.a",
+      "producer_sha256": "7912f70a19754409f45cb88ccf243c55cbc8aa43e1b405951b4192f72fd1a52a",
+      "whole_archive_equal": false,
+      "ordered_member_payloads_equal": true,
+      "members": [
+        {
+          "name": "ggml.c.o",
+          "bytes": 272640,
+          "sha256": "adf2df448238123e9752ecf676fb9b5b0d458bb3e44b49e2e8e49fc5c21a851c"
+        },
+        {
+          "name": "ggml.cpp.o",
+          "bytes": 1968,
+          "sha256": "f400a51fb93761423c00c4965275f8d296265eeb77b08da35dd8c909da70df99"
+        },
+        {
+          "name": "ggml-alloc.c.o",
+          "bytes": 21000,
+          "sha256": "17a267849bbb06fed3f06e2d3b7cb51f5175fa080dd669443a39afa8cdb232c0"
+        },
+        {
+          "name": "ggml-backend.cpp.o",
+          "bytes": 87280,
+          "sha256": "d3a5689988c205c7a52e855a3c21e7bf616793235a4a0d596b5a76c4e816fadb"
+        },
+        {
+          "name": "ggml-backend-meta.cpp.o",
+          "bytes": 128296,
+          "sha256": "092492367f8594be7ad9fdc13cb6a03b355b2a99af373f732955f9eef7ff165a"
+        },
+        {
+          "name": "ggml-opt.cpp.o",
+          "bytes": 42656,
+          "sha256": "5f0eb419bdbdcc2d909ee0992588e5398b872c89172b0f7d5baef1e5c58371af"
+        },
+        {
+          "name": "ggml-threading.cpp.o",
+          "bytes": 1512,
+          "sha256": "007aba0f85c587b6edbeaed4d6100f0548b3b3a90eb68129a22e739de92b1d94"
+        },
+        {
+          "name": "ggml-quants.c.o",
+          "bytes": 270304,
+          "sha256": "17aa69008826f96f6b93e5094abe41b643828f5deb7a3fe3fe9e9fd39a94f1df"
+        },
+        {
+          "name": "gguf.cpp.o",
+          "bytes": 170560,
+          "sha256": "b750bdf68c808adbd41b2e627011eff7fdf8c8a9c27744cfb6659b14fb2ebc55"
+        }
+      ]
+    },
+    {
+      "path": "lib/libggml-cpu.a",
+      "sha256": "d539e7413da0d0099253c474476c52dbf6285bec8c517571165b849f09a2ddb3",
+      "producer_path": "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-build/bin/libggml-cpu.a",
+      "producer_sha256": "3294c6cc049b3cdebf75a5223ec01c5597044f95f582a6592dd4c591d6223a4f",
+      "whole_archive_equal": false,
+      "ordered_member_payloads_equal": true,
+      "members": [
+        {
+          "name": "ggml-cpu.c.o",
+          "bytes": 57352,
+          "sha256": "6dc96776e2bffcf79575caec5e862fd2d020ae0ccedd2459690f4c3d230701ff"
+        },
+        {
+          "name": "ggml-cpu.cpp.o",
+          "bytes": 29192,
+          "sha256": "d4b65296f982b589f54319681ad16b9814da7ef883398b281249ed943c2512ae"
+        },
+        {
+          "name": "repack.cpp.o",
+          "bytes": 255064,
+          "sha256": "1300d675e3a1332b7283a7a7bb5e894a21cbfba1a308c6da94ba1c324184b4fd"
+        },
+        {
+          "name": "iqp.cpp.o",
+          "bytes": 52672,
+          "sha256": "fafb871371d2c86c643db51300d90a373d39f460f8597b5b7602225f948ff87d"
+        },
+        {
+          "name": "hbm.cpp.o",
+          "bytes": 336,
+          "sha256": "39dc6f84556b7c3ed183a9aa954192560d734b69386bfd86e6175f1d84e206eb"
+        },
+        {
+          "name": "quants.c.o",
+          "bytes": 85560,
+          "sha256": "7b4b67740b2583bbcfb112f3b38170ea361bf30fd9941beab6eb50fc2c316e4c"
+        },
+        {
+          "name": "traits.cpp.o",
+          "bytes": 2480,
+          "sha256": "f10091117f2cf76a976278e2f1117e0d6039171d0cbca66c3c1a9e2cbf4df02e"
+        },
+        {
+          "name": "amx.cpp.o",
+          "bytes": 336,
+          "sha256": "39dc6f84556b7c3ed183a9aa954192560d734b69386bfd86e6175f1d84e206eb"
+        },
+        {
+          "name": "mmq.cpp.o",
+          "bytes": 336,
+          "sha256": "39dc6f84556b7c3ed183a9aa954192560d734b69386bfd86e6175f1d84e206eb"
+        },
+        {
+          "name": "binary-ops.cpp.o",
+          "bytes": 54888,
+          "sha256": "12164827278c394c9b0316432d54b940d974e2b79e32d1bd7ea018fe037ead40"
+        },
+        {
+          "name": "unary-ops.cpp.o",
+          "bytes": 102696,
+          "sha256": "6327321fb5763b5d86e92c64be5f16a84e3fa09762cb4c11a2ce7b6931f0b78e"
+        },
+        {
+          "name": "vec.cpp.o",
+          "bytes": 7912,
+          "sha256": "d2636cd5d9085e98845b83e0babcd69ad5b6046a80285b10089af3b514da1cdb"
+        },
+        {
+          "name": "ops.cpp.o",
+          "bytes": 362664,
+          "sha256": "98e199a05400f05dd37d44c8194e3e1fc56446c14465733f4e526958b92f0874"
+        },
+        {
+          "name": "quants.c.o",
+          "bytes": 62616,
+          "sha256": "6c4a400b767dab1205ebd81d16faef72354eaad7db0d8db4aadbe29ad3874042"
+        },
+        {
+          "name": "repack.cpp.o",
+          "bytes": 28744,
+          "sha256": "aad6cc8fdd9fedd93785b0fd55555ee15593dc498ef6d0f49edb117ce6083e3d"
+        }
+      ]
+    },
+    {
+      "path": "lib/libggml-metal.a",
+      "sha256": "da1c6cf910b8529fddad4ed3526e7eccc94fdf9bf4a31e294753f526161bdb93",
+      "producer_path": "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-build/bin/libggml-metal.a",
+      "producer_sha256": "7742be617054f1160cf7b19d17d0e673d2520ec10a72df76a9186fb3aaaced3a",
+      "whole_archive_equal": false,
+      "ordered_member_payloads_equal": true,
+      "members": [
+        {
+          "name": "ggml-metal.cpp.o",
+          "bytes": 47648,
+          "sha256": "efbd4b2c780c15bf4c4c420b46278b51e8f885b403b4aa5609e90052da8399ef"
+        },
+        {
+          "name": "ggml-metal-device.m.o",
+          "bytes": 57536,
+          "sha256": "c298495f6d2bc26816c058f9d9f60ac36b8eb4413d8c5c1479ef17ff34f67218"
+        },
+        {
+          "name": "ggml-metal-device.cpp.o",
+          "bytes": 76992,
+          "sha256": "7d55421c9e99c267fd9963386547be72590f03ce0d62679d8a4626fe0bc7af79"
+        },
+        {
+          "name": "ggml-metal-common.cpp.o",
+          "bytes": 14880,
+          "sha256": "a17fad37b8e8be95eb1949823acb58c3123fac03e04e9b4def851cdfcbed28cb"
+        },
+        {
+          "name": "ggml-metal-context.m.o",
+          "bytes": 18568,
+          "sha256": "0d778c3c5e5d7ce3f2db556296a4dcbc267c9977ab58bd3334892be9b7b75441"
+        },
+        {
+          "name": "ggml-metal-fusion.cpp.o",
+          "bytes": 15120,
+          "sha256": "10eedb9c7b5f199764f3795d563a42e6cb05aa27a0f120f322b5900f5c5374e6"
+        },
+        {
+          "name": "ggml-metal-ops.cpp.o",
+          "bytes": 98184,
+          "sha256": "e97ea5a81762858f249ef08aaf5224cb3405170e7b9522a0c21e51356ace8a98"
+        },
+        {
+          "name": "ggml-metal-tuning.cpp.o",
+          "bytes": 41888,
+          "sha256": "eec1734dcef5fa8ff5e1c9fd2db87aebffd10c63012838c81ddc022db4e24d1b"
+        },
+        {
+          "name": "ggml-metal-embed-fa.s.o",
+          "bytes": 446832,
+          "sha256": "27efa53c9f7d2b774eb51efb71382a0d4475dfc094102b7e0a1807635f73fb4a"
+        },
+        {
+          "name": "ggml-metal-embed-mul_mv.s.o",
+          "bytes": 400328,
+          "sha256": "70843876c4155c3884187a123b2512f552d2fb63acd29ea7568421764b0314b8"
+        },
+        {
+          "name": "ggml-metal-embed-mul_mm.s.o",
+          "bytes": 309152,
+          "sha256": "be17ec6ff2761221d0946cf35ff026a179ec92b56536d845a2505c2eb35e31f0"
+        },
+        {
+          "name": "ggml-metal-embed-quantize.s.o",
+          "bytes": 288976,
+          "sha256": "48e5f5593588059dfe67c4907eea2e3b2705698df1609cde5fac1c92d3628b11"
+        },
+        {
+          "name": "ggml-metal-embed-softmax.s.o",
+          "bytes": 38368,
+          "sha256": "8973dc080dd7e944b2381f7fa9705e7097fa15babd1c78f8e6bc3be7e64e91ea"
+        },
+        {
+          "name": "ggml-metal-embed-norm.s.o",
+          "bytes": 41160,
+          "sha256": "17075b40c03a871198ee06d386655fa1da802dc0ed4bcf5af706270a382f0adc"
+        },
+        {
+          "name": "ggml-metal-embed-unary.s.o",
+          "bytes": 45368,
+          "sha256": "5a3cdd8e349b498b484a6727762f8ebfa4863865f0db15ffc6e671b9c8935a80"
+        },
+        {
+          "name": "ggml-metal-embed-binbcast.s.o",
+          "bytes": 39240,
+          "sha256": "fe4433c1163cb6cbf796651cd4f9760b1d19e7da15647be44b8caf3f3255952a"
+        },
+        {
+          "name": "ggml-metal-embed-reduce.s.o",
+          "bytes": 37552,
+          "sha256": "ead3d9df330530f4de3424850264f2d7e4697a86b503220cd1bfae355d842887"
+        },
+        {
+          "name": "ggml-metal-embed-tri.s.o",
+          "bytes": 33928,
+          "sha256": "88c97ca2e8eed76a9993a5297459d85fd91d35c282c19dcadfc4f9984a417534"
+        },
+        {
+          "name": "ggml-metal-embed-ssm.s.o",
+          "bytes": 51176,
+          "sha256": "c2b6c245e0db573c1fc0b789d812afe0cfbad9074ffd0ab456a00e0c6da089ce"
+        },
+        {
+          "name": "ggml-metal-embed-wkv.s.o",
+          "bytes": 36840,
+          "sha256": "fa34acd817e7b4e60595100eb8fd002b00fc89a109ef7187e335bec9da807090"
+        },
+        {
+          "name": "ggml-metal-embed-gated_delta_net.s.o",
+          "bytes": 40536,
+          "sha256": "72d27bc9c1e511d5b50170504ed4547d9accedfdf1b3eb8f5dbbb016df5be847"
+        },
+        {
+          "name": "ggml-metal-embed-solve_tri.s.o",
+          "bytes": 33584,
+          "sha256": "778d6436984e9b64e2c5e2d7dbb35fa619dbda9479a0c88b4c6f78366377dbaf"
+        },
+        {
+          "name": "ggml-metal-embed-rope.s.o",
+          "bytes": 45072,
+          "sha256": "391b258049a37beecdd44b66a82dccc6f3ed88f228488d19138e6209693e449c"
+        },
+        {
+          "name": "ggml-metal-embed-conv.s.o",
+          "bytes": 57376,
+          "sha256": "6e88a389547c6da9fe6643fdd60180cfbe0bf79f45b6ee4e6869510a306ef4ed"
+        },
+        {
+          "name": "ggml-metal-embed-upscale.s.o",
+          "bytes": 38048,
+          "sha256": "1883fb2f1734727e2f61f556d969499aa35aac4f2c370f4457da4c8e5dede9fb"
+        },
+        {
+          "name": "ggml-metal-embed-argsort.s.o",
+          "bytes": 42104,
+          "sha256": "7b14b660df112d4775029c4be3d8845307b831d03d0d00cbb85e708596fceb3c"
+        },
+        {
+          "name": "ggml-metal-embed-pool.s.o",
+          "bytes": 35008,
+          "sha256": "0411a4da4da896aa8ced5f1cbec12d1c6d159d5bbd7d7010bc6e678978f16045"
+        },
+        {
+          "name": "ggml-metal-embed-misc.s.o",
+          "bytes": 51112,
+          "sha256": "c57ee8eeb44d6e3716997891af8190dc0b9c5b721e7e6558af671ff3767672f6"
+        }
+      ]
+    },
+    {
+      "path": "lib/libggml.a",
+      "sha256": "9018d60bccdcfb1b1196a3580168a463d2b5b0104628325c4844bc70e9f2d383",
+      "producer_path": "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-build/bin/libggml.a",
+      "producer_sha256": "4c01fa057cc8f0a28a1657b3d942419a08b7bb0e7e3ffe555d5bb9397f602704",
+      "whole_archive_equal": false,
+      "ordered_member_payloads_equal": true,
+      "members": [
+        {
+          "name": "ggml-backend-dl.cpp.o",
+          "bytes": 2856,
+          "sha256": "46f0510e421c84151e13abdea4150af2ff990050313af10143d9b3ac506c484b"
+        },
+        {
+          "name": "ggml-backend-reg.cpp.o",
+          "bytes": 35568,
+          "sha256": "ece9da3f291ca21e96f0bedfb40e8bd3e682a586d434ecade866a0c1e0afab58"
+        }
+      ]
+    },
+    {
+      "path": "lib/libmimalloc_static.a",
+      "sha256": "43e63862b6be9e5fbf2c47962f834ccc352cbbaf8acc8a1cf528989dfe846811",
+      "producer_path": "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-build/bin/libmimalloc_static.a",
+      "producer_sha256": "266e29b23fcfe20dd41df09c7175ca89c34e6386c5e6132c2e2b7348fef6cfd5",
+      "whole_archive_equal": false,
+      "ordered_member_payloads_equal": true,
+      "members": [
+        {
+          "name": "static.c.o",
+          "bytes": 295560,
+          "sha256": "019716e5a65fd958eaf8ddf6ad97d64bbbaf8888c580321af81d74fe65879674"
+        }
+      ]
+    },
+    {
+      "path": "lib/libmlx.a",
+      "sha256": "1f9afe4067d57eca040a133db6bf40e84284ba5b5a70e1bbc3c9431cb12a4eba",
+      "producer_path": "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-build/bin/libmlx.a",
+      "producer_sha256": "18fa4670e1918b405f01b579703473d8e430fba2570abd7f287a1b2b04b38cc5",
+      "whole_archive_equal": false,
+      "ordered_member_payloads_equal": true,
+      "members": [
+        {
+          "name": "version.cpp.o",
+          "bytes": 712,
+          "sha256": "f71d89ae491e31d90786bb55b66ef09e536a7e58fdc26905979e06640e4f9ce5"
+        },
+        {
+          "name": "array.cpp.o",
+          "bytes": 69096,
+          "sha256": "13743e5eb368c255d3fbcd46d4fa7674d99a1a2c03f89471828069be53496b99"
+        },
+        {
+          "name": "compile.cpp.o",
+          "bytes": 192912,
+          "sha256": "659ee8aa9ca03ac65324661a5f728ff6579b3b77ca38f2b80771b0871b5eaa3c"
+        },
+        {
+          "name": "device.cpp.o",
+          "bytes": 6560,
+          "sha256": "a072296285d903cee060ad46702f2a4ffa504ed67cf13fbcc05214d2ccc487ee"
+        },
+        {
+          "name": "dtype.cpp.o",
+          "bytes": 5040,
+          "sha256": "da7dd66eaa50cc705fecadf5a6b263f5c05fcd3873a70eadb96728aa10a6cc94"
+        },
+        {
+          "name": "dtype_utils.cpp.o",
+          "bytes": 1624,
+          "sha256": "711a5c02da4c0687a99da34f6ce8290aa02bb58dbfec371e9106e8e745c44628"
+        },
+        {
+          "name": "export.cpp.o",
+          "bytes": 1282832,
+          "sha256": "f14a3b50dc4479bde1d5b9bbb5db5e9c62cac035ebb03b29de641dd11dffe4f6"
+        },
+        {
+          "name": "einsum.cpp.o",
+          "bytes": 123872,
+          "sha256": "88f303d9a9634ae53a7d2fc6d533301cde2c8fde2509a841d728b9c746b24c3c"
+        },
+        {
+          "name": "fast.cpp.o",
+          "bytes": 249200,
+          "sha256": "994d2718df9553bf59a5a76563990b3e7ca7f9c604fbd8191730b709227e9cd5"
+        },
+        {
+          "name": "fft.cpp.o",
+          "bytes": 60928,
+          "sha256": "0076ad8e1d4ae43c53bddf21ba7bcfe9d006ff18a6a2515b1c5e6c68acc5c25a"
+        },
+        {
+          "name": "ops.cpp.o",
+          "bytes": 1001776,
+          "sha256": "ba1e3729a34fa2ab384241fb50d0c98c3dcba31782308cacb671ba2b2c8df3a7"
+        },
+        {
+          "name": "graph_utils.cpp.o",
+          "bytes": 45072,
+          "sha256": "16c76591f9ec833c935c1e55b815cb91df0fc20c9472f44325ed2207bb0b7785"
+        },
+        {
+          "name": "primitives.cpp.o",
+          "bytes": 610568,
+          "sha256": "5bac85fdd597e3da0f7faaae8e16c989c382b1917eead0b7391df9950b97f58c"
+        },
+        {
+          "name": "random.cpp.o",
+          "bytes": 112616,
+          "sha256": "70618ca358543bdad6bec15be18f8a132f5a5d36d777a45c9956206614268c6f"
+        },
+        {
+          "name": "scheduler.cpp.o",
+          "bytes": 48936,
+          "sha256": "0e7eb198602e6983e6d6c241ac54a471f79585b9614b4f8297684bcbca34b1c1"
+        },
+        {
+          "name": "stream.cpp.o",
+          "bytes": 19128,
+          "sha256": "23e74b139233ea6b173b319ea5b394f848b60946cc78af2685b720b18e763beb"
+        },
+        {
+          "name": "transforms.cpp.o",
+          "bytes": 245000,
+          "sha256": "0c318c96f4cc99e6f5d9bda07a7e5c45a8ad8c8db364854a4fb1de3b50b15f87"
+        },
+        {
+          "name": "utils.cpp.o",
+          "bytes": 49152,
+          "sha256": "4db951e59e85684756d06d92db2e0b31afb2688cb6ee430fe623a9597cf1c77e"
+        },
+        {
+          "name": "linalg.cpp.o",
+          "bytes": 155672,
+          "sha256": "1fe938773b4363b43ec63ba294d85a65aba23ce96c8ca602627f8781b58641df"
+        },
+        {
+          "name": "broadcasting.cpp.o",
+          "bytes": 7168,
+          "sha256": "7179ecfd98aa049082a8b5c8b69b444d3d270e2c5d7aec6a7f12aa4373bb0452"
+        },
+        {
+          "name": "compiled.cpp.o",
+          "bytes": 41608,
+          "sha256": "a6d011738800aa1faabedef54cc2fcff02adbebda81fe45aa8e7d437a1a06f1c"
+        },
+        {
+          "name": "common.cpp.o",
+          "bytes": 19000,
+          "sha256": "6a8923ab32db95568483ea3ffdfc5fac3182a7b55ba419f05bcd23cfc3d1987b"
+        },
+        {
+          "name": "load.cpp.o",
+          "bytes": 29880,
+          "sha256": "b4ce98c06ac17fc5e72c5f2f74b7655e570a6f103ed16c821ca760b42e3b1b19"
+        },
+        {
+          "name": "metal_kernel.cpp.o",
+          "bytes": 87328,
+          "sha256": "f71c01cb4281f8aca74a1696157b66e2dc8ba65048f7097ae4d6ef28650c092c"
+        },
+        {
+          "name": "reduce.cpp.o",
+          "bytes": 23936,
+          "sha256": "162a559abcbb09a87fae8f17b847201f51031cec94b4f34023247a976d833c72"
+        },
+        {
+          "name": "slicing.cpp.o",
+          "bytes": 15216,
+          "sha256": "7b783ff1660fa6bf61faf2ece4005247df554a36ef6fd7b51cf3126e5ba6a911"
+        },
+        {
+          "name": "utils.cpp.o",
+          "bytes": 17240,
+          "sha256": "9ac0b4fe5b2fc64762fd094d1e7c06817bae76e59bc75b4c910a03582b1b5b3c"
+        },
+        {
+          "name": "device_info.cpp.o",
+          "bytes": 3432,
+          "sha256": "ad616ac45bb6440547e988689de796fdcea019f45e8485ccb9b4e9a893a31d4e"
+        },
+        {
+          "name": "primitives.cpp.o",
+          "bytes": 294576,
+          "sha256": "cd48235f1ea18b33ef2d4e526c88fc386066bc0bb12de5a2d7f0b7d14581988d"
+        },
+        {
+          "name": "eval.cpp.o",
+          "bytes": 28472,
+          "sha256": "3e8a2e89932248498340a19c3b3e8b5ed0e086c9e0612e213d5b243bb9de0bdc"
+        },
+        {
+          "name": "encoder.cpp.o",
+          "bytes": 138704,
+          "sha256": "f029bbfeab2caaef0cb35045b658ad0c5e33b6d9e80d4ddf7a0e33038158dd98"
+        },
+        {
+          "name": "compiled.cpp.o",
+          "bytes": 3784,
+          "sha256": "1169a76b41c44d3f5a9f2a944ad44bf7758f78ddd98ef25e36b69dd08fb8c184"
+        },
+        {
+          "name": "primitives.cpp.o",
+          "bytes": 16040,
+          "sha256": "8809bbc8dffb1b6ef1f4dc9fc28a1de8f6fad266f36863eb0390329467ab8343"
+        },
+        {
+          "name": "ops.cpp.o",
+          "bytes": 36792,
+          "sha256": "c59cf4109a760172a5b677f315288d114fd8218d75c46e76449ca149609c1db8"
+        },
+        {
+          "name": "distributed.cpp.o",
+          "bytes": 34016,
+          "sha256": "f0a811002df6b0ff3f4c9d288ce3cdbdfda4b272b5be03e7fec2e1b644c80f10"
+        },
+        {
+          "name": "no_mpi.cpp.o",
+          "bytes": 1608,
+          "sha256": "6605461881defa6c92b7defe3304d0e61214121ae548f3668303db8aee997c2f"
+        },
+        {
+          "name": "no_ring.cpp.o",
+          "bytes": 1632,
+          "sha256": "1b89729577ac9f6f82020029bc6cebc5a832335bd2e31ba9c539c92489ada837"
+        },
+        {
+          "name": "no_nccl.cpp.o",
+          "bytes": 1632,
+          "sha256": "49346cd2e6dc216a9dbfda7d3686b3ef63b4919f05a590b14d22abd752337185"
+        },
+        {
+          "name": "no_jaccl.cpp.o",
+          "bytes": 2232,
+          "sha256": "d949dffd8b218585f6f8ce4891543883dcc25471dd433a2ba96b9b7eeee5d28d"
+        },
+        {
+          "name": "load.cpp.o",
+          "bytes": 66696,
+          "sha256": "a0a512f1308a79e4cfa6ebbed9da717d0f5ba180a3c5478a4ac984e06c0aed34"
+        },
+        {
+          "name": "no_safetensors.cpp.o",
+          "bytes": 3272,
+          "sha256": "160f89a659683b40ef1d48c94c05b005d822950a8a114b09eb0c190a7cbe06fa"
+        },
+        {
+          "name": "no_gguf.cpp.o",
+          "bytes": 2232,
+          "sha256": "67030c5b5f04dfa0a6227e9444f3adeed4b45871cbc3cb409a0bcd761198b0d2"
+        },
+        {
+          "name": "utils.cpp.o",
+          "bytes": 53680,
+          "sha256": "8b7ed1c62985d27c0d7958ee6dfc4898806cd687b269e0ddb4952f6484408208"
+        },
+        {
+          "name": "unary_ops.cpp.o",
+          "bytes": 23336,
+          "sha256": "0d542a34706e10f04821ff0260aae779cdf114ee4adf6360207cc13272332c17"
+        },
+        {
+          "name": "binary_ops.cpp.o",
+          "bytes": 8784,
+          "sha256": "f96b20f768f64685b0507384a98b00c3a2f4beb3d856fa05d5d9d79005b87256"
+        },
+        {
+          "name": "ternary_ops.cpp.o",
+          "bytes": 1336,
+          "sha256": "1bf824f915e57f6123c9d9193e0c50a1b14e2903207de2f2e844108b38a3e1c4"
+        },
+        {
+          "name": "reduce_utils.cpp.o",
+          "bytes": 19504,
+          "sha256": "f41daa269f0cca1758077b7b0994562694a5c3627f97262541c2826f985a5586"
+        },
+        {
+          "name": "scatter.cpp.o",
+          "bytes": 6200,
+          "sha256": "86a5fc04ff7b587843ea6b29068dcb4a9b2db08474399199b0fc8286e0f68bde"
+        },
+        {
+          "name": "masked_scatter.cpp.o",
+          "bytes": 2376,
+          "sha256": "33e60033b104aaf6f667f45e693a0aa2e9cd5737e06d19b783b08de8ab25a5f5"
+        },
+        {
+          "name": "gather.cpp.o",
+          "bytes": 3664,
+          "sha256": "d5d38562bdde51c6477169d88ebb5005a91c3ad66645e9f101fa9b05ef2ac5a3"
+        },
+        {
+          "name": "gather_front.cpp.o",
+          "bytes": 2608,
+          "sha256": "e2456db0c6423380bf8a751df5ccd7be0d6e25962737aa912e8ebb4d9ea1ce47"
+        },
+        {
+          "name": "gather_axis.cpp.o",
+          "bytes": 2680,
+          "sha256": "1618c18e4ccb7cb266b5039ab391b83d2f96885c162044a569a67bfa49562330"
+        },
+        {
+          "name": "scatter_axis.cpp.o",
+          "bytes": 2792,
+          "sha256": "b522ece0584b8363b40e10a9e475ad0fbee18cc82c4cfc94db30471354acc08d"
+        },
+        {
+          "name": "hadamard.cpp.o",
+          "bytes": 6560,
+          "sha256": "fcb75c55a28671c938b31e57fa0aa2ad4f2af5369bf084d31fd9eb54e16f7644"
+        },
+        {
+          "name": "jit_kernels.cpp.o",
+          "bytes": 571296,
+          "sha256": "d83629ef40073ff1ce898d400c00278e19d311205af70d6fbc1bd2f3d07c6348"
+        },
+        {
+          "name": "arange.cpp.o",
+          "bytes": 1392,
+          "sha256": "adadc0a484948178d74fd685ad502d1c3e06b893c9e249f2dd9bff2d3f80fb00"
+        },
+        {
+          "name": "copy.cpp.o",
+          "bytes": 10912,
+          "sha256": "4bbcf7f4dbc2b215fb74ae5e57e8d6b86bee34e83c6fb51b53e493999fb4664a"
+        },
+        {
+          "name": "unary.cpp.o",
+          "bytes": 3024,
+          "sha256": "647113cafac7fcba4f107aba547ba784596c629bdf14f1cdd26d3e99ff8a6989"
+        },
+        {
+          "name": "binary.cpp.o",
+          "bytes": 7112,
+          "sha256": "5a93dd7e0e9780fa19a100597896f8114212bfafd21e1919090415a6e4c6e581"
+        },
+        {
+          "name": "binary_two.cpp.o",
+          "bytes": 8192,
+          "sha256": "ad05713042d907085b41afca244a91738a874989a1adc2bfd85585b7a1fc9486"
+        },
+        {
+          "name": "fft.cpp.o",
+          "bytes": 65440,
+          "sha256": "59f8cae6626fe3b39b1ac2bce8514830b6cd943fa685132afdf0ef41faff1c41"
+        },
+        {
+          "name": "logsumexp.cpp.o",
+          "bytes": 5400,
+          "sha256": "bc52914839d31bc567608a4fba95d867da58183b27cf0af8566f38ed08edeb23"
+        },
+        {
+          "name": "ternary.cpp.o",
+          "bytes": 5728,
+          "sha256": "6c1f8ebe186d7374fe1967babe1094c64b1eb76a3086e8b41c468e611cf373d8"
+        },
+        {
+          "name": "softmax.cpp.o",
+          "bytes": 7160,
+          "sha256": "f4262662e431dc0412e6cd7519d68a19fc2882d9f5f4213ae970f2d97f0a6778"
+        },
+        {
+          "name": "scan.cpp.o",
+          "bytes": 24488,
+          "sha256": "503e1b60b73473537a25994b50d41bdb89edc93a65e1c3d9d889624371447682"
+        },
+        {
+          "name": "sort.cpp.o",
+          "bytes": 22920,
+          "sha256": "c94b1b8185965162b577774147772a6ee367a3f0ffff19d322d5acbee7c48c8d"
+        },
+        {
+          "name": "searchsorted.cpp.o",
+          "bytes": 2128,
+          "sha256": "22d41f4e4c1e87ce11e68e6da6dffca8622239facd908e828d0ef65b899152c6"
+        },
+        {
+          "name": "reduce.cpp.o",
+          "bytes": 29200,
+          "sha256": "d0b1dc673b802a2a6950d78c1799b9598adcd50bd95c401c9d6684bc176ffcc8"
+        },
+        {
+          "name": "gemm.cpp.o",
+          "bytes": 58048,
+          "sha256": "be044d6e190958680c1dc97cd9b1cc4a838acba2dfb6be6b1e779050e4a45928"
+        },
+        {
+          "name": "steel_gemm_fused.cpp.o",
+          "bytes": 11208,
+          "sha256": "13a1e4580086bd66826581e02d8dccff209587a7b91eba47f8ad431a015257a5"
+        },
+        {
+          "name": "steel_gemm_masked.cpp.o",
+          "bytes": 23272,
+          "sha256": "fb9058541d8df8e1c92b192a55793b8f1e3f4e467de46553014ed3d934419992"
+        },
+        {
+          "name": "steel_gemm_gather.cpp.o",
+          "bytes": 14640,
+          "sha256": "652a7078f231d7d7aa557750ae3ce790f7c093250c058988e07d078a9d1230d8"
+        },
+        {
+          "name": "steel_gemm_splitk.cpp.o",
+          "bytes": 7528,
+          "sha256": "60e0fd122699d93e408d57d9b1608aa6962d3f9b6def42de55519ffe63e8859f"
+        },
+        {
+          "name": "steel_gemm_segmented.cpp.o",
+          "bytes": 10072,
+          "sha256": "dcaea510b9f95267a42293b7556668286667cdaab3818476f93cef2ac9ad326d"
+        },
+        {
+          "name": "conv.cpp.o",
+          "bytes": 81792,
+          "sha256": "89f2a9d2502a36e02028d8e45d560e58c559970c219651f52afe3e4d47ed3643"
+        },
+        {
+          "name": "steel_conv.cpp.o",
+          "bytes": 6048,
+          "sha256": "bf8f795f1e4b6a6e1a601ae9b29d37dc907d3022acfe9f71d96496e84148fea3"
+        },
+        {
+          "name": "steel_conv_3d.cpp.o",
+          "bytes": 5088,
+          "sha256": "50c2a35a3fab47af59b72a26de311bed48326b8b2fe39404c930061cb7f4387f"
+        },
+        {
+          "name": "steel_conv_general.cpp.o",
+          "bytes": 19136,
+          "sha256": "d6d0bafcef4f43c051119933bcb89efbd0b26dc151defbbdf4767418cccb90fc"
+        },
+        {
+          "name": "quantized_utils.cpp.o",
+          "bytes": 3504,
+          "sha256": "5e6a7c16cdc11a74e19b0862e0a2de196f5aae7bbc3c5b3efe0793eeb2e04eb9"
+        },
+        {
+          "name": "quantized.cpp.o",
+          "bytes": 87464,
+          "sha256": "417e1ab202bcfd3682a24bf5dea5298bac64b233c811da6b46c859e25ea6dd0c"
+        },
+        {
+          "name": "fp_quantized.cpp.o",
+          "bytes": 72248,
+          "sha256": "1a935d553e691b674590f50f5d64eca2e50a84cf44bddc150020c8981f4616b3"
+        },
+        {
+          "name": "gemv.cpp.o",
+          "bytes": 91032,
+          "sha256": "76649f56a8c68484ad743e28c9760fcdc4015b7a31f1917ffedcb7d2aa1032f3"
+        },
+        {
+          "name": "gemv_masked.cpp.o",
+          "bytes": 29496,
+          "sha256": "1ff5aa2dee8070f173fcf0cb63b6ae6b4885ff9ce4456032a61dab2dea05b673"
+        },
+        {
+          "name": "steel_attention.cpp.o",
+          "bytes": 68776,
+          "sha256": "2da149315c1530d377b18ed1a15ae1ed2d259a829dbea6f1bb11c36f5c6b83b9"
+        },
+        {
+          "name": "allocator.cpp.o",
+          "bytes": 39416,
+          "sha256": "cd436deddf06ea85f4ce832671bb5762a22ab82bf2833a3529fcfffc0e1257c0"
+        },
+        {
+          "name": "binary.cpp.o",
+          "bytes": 40040,
+          "sha256": "c130a3093635fd140f9c660aaf9886a045f96f22461e98118c8773f76afefef8"
+        },
+        {
+          "name": "device_info.cpp.o",
+          "bytes": 18480,
+          "sha256": "24319aa5e8eeb0bdd46ba246438f88ef97c6bd082f14f968348b8aab1db45a4f"
+        },
+        {
+          "name": "compiled.cpp.o",
+          "bytes": 190848,
+          "sha256": "c61713a3d94e9aa257fa48e03865300b527c685dcfe48b5691311013ca591346"
+        },
+        {
+          "name": "conv.cpp.o",
+          "bytes": 147136,
+          "sha256": "3c37dbb810d7531de696369a497f4f900eb7920c4eb18cd186a8067891c39278"
+        },
+        {
+          "name": "copy.cpp.o",
+          "bytes": 35136,
+          "sha256": "37ef4077c6e4bd6a6e1d8c25ac605ddb5987c2cda8799789fb7f57f47a98c87d"
+        },
+        {
+          "name": "custom_kernel.cpp.o",
+          "bytes": 165496,
+          "sha256": "71016fa664f1f0d9e07b4fb981d2193e37e4772a635680d237ce70bbfdd9ddf0"
+        },
+        {
+          "name": "distributed.cpp.o",
+          "bytes": 3360,
+          "sha256": "f2bd9ed15876a91f0ed2ec852140c5ba3fc772a7c1e45005252bf7a9b6fc53bf"
+        },
+        {
+          "name": "device.cpp.o",
+          "bytes": 631336,
+          "sha256": "8426d88c9e06f349098207ec5a534c7071175565aa56db158ea8512de749b7e2"
+        },
+        {
+          "name": "event.cpp.o",
+          "bytes": 16480,
+          "sha256": "5e10b04571eb7d515047d0aab725f72a3622ec9660ce9c6ae1fc8b23dd09a931"
+        },
+        {
+          "name": "eval.cpp.o",
+          "bytes": 29824,
+          "sha256": "ada0402eacaa5e44f451244694e75c0bf47b3a2a3f0f818d6dc931ca0325adc9"
+        },
+        {
+          "name": "fence.cpp.o",
+          "bytes": 29728,
+          "sha256": "c662d4a6ca2c7b3ce3b93a3139ef841ee3bd1c05883475a4678f94abd0a3e386"
+        },
+        {
+          "name": "fft.cpp.o",
+          "bytes": 399576,
+          "sha256": "74456cc34d517a2c4ae08d50cf22b6578c4d28e38cd1fa61f65050b8cfc6ab57"
+        },
+        {
+          "name": "hadamard.cpp.o",
+          "bytes": 170320,
+          "sha256": "a2fbc2f39c3e99f732c2f5735eab5680df8a712408e13c266d725d4c42c3c7a4"
+        },
+        {
+          "name": "indexing.cpp.o",
+          "bytes": 252704,
+          "sha256": "12312f17e6036255268cbe96f86c01ab09544c7d8f365414ee7714f8d1bc008e"
+        },
+        {
+          "name": "logsumexp.cpp.o",
+          "bytes": 12784,
+          "sha256": "22539e6aeed2124b1a8b8aa6dfc393875368b55cef03b6d89b28cb1c00c23e26"
+        },
+        {
+          "name": "matmul.cpp.o",
+          "bytes": 221576,
+          "sha256": "ef6f577e01d10c724405423b673565e80f10894d3bb3918d214fa5c8a9ccf144"
+        },
+        {
+          "name": "scaled_dot_product_attention.cpp.o",
+          "bytes": 116208,
+          "sha256": "7d882b88fa4159952c4e811c48af7aaa7fca1d9058d60ea2142404d66245f503"
+        },
+        {
+          "name": "metal.cpp.o",
+          "bytes": 13464,
+          "sha256": "9101bfe414d0da7fac36d3067706fe3ef9f6f1c5ac2a06087692c1b8be50907a"
+        },
+        {
+          "name": "primitives.cpp.o",
+          "bytes": 30680,
+          "sha256": "975f0ebc08d3116963fd33c8c27ab863627f694a59473a7c18ba19d6f263c2e0"
+        },
+        {
+          "name": "quantized.cpp.o",
+          "bytes": 304264,
+          "sha256": "8c7979f10da4606c8f6494b89d40e04a559d126f95c89fc1600d66eaec9e0d96"
+        },
+        {
+          "name": "normalization.cpp.o",
+          "bytes": 44656,
+          "sha256": "0a7f45739504f7aac3459d232cc9ae5a121a886721c4b6a9ef94404df710d575"
+        },
+        {
+          "name": "rope.cpp.o",
+          "bytes": 23912,
+          "sha256": "872f08788cd44a0b04ea7a11cff7d8817d22f14bb18038cddd2c87e235e3fc23"
+        },
+        {
+          "name": "scan.cpp.o",
+          "bytes": 19680,
+          "sha256": "2201c2ce968486482d6e8bfb27b8fcfae447200368517e15eb7b291ceba2a9b0"
+        },
+        {
+          "name": "slicing.cpp.o",
+          "bytes": 151984,
+          "sha256": "8bb0dff2681b89ce166a29f480e3bafbb1a1067d104bdb9aeaf216759cb359c1"
+        },
+        {
+          "name": "softmax.cpp.o",
+          "bytes": 11496,
+          "sha256": "75bea1b5f2554c88910f496fdad022829422e16e844a55e6fff6d2e53717e612"
+        },
+        {
+          "name": "sort.cpp.o",
+          "bytes": 46784,
+          "sha256": "f600ca9b03e4b31b4a366913bdc00a5b7e10a6e705a3612d413acf0f71e0d7d9"
+        },
+        {
+          "name": "reduce.cpp.o",
+          "bytes": 58488,
+          "sha256": "3b6201a020c1b8119f2159f96e48e6fd1a666880c07f3d032799170237fca6e7"
+        },
+        {
+          "name": "ternary.cpp.o",
+          "bytes": 34000,
+          "sha256": "ec30da7d59b06b6b302de10464a1a11a8794d4bdb7354275e0b429cf3544607f"
+        },
+        {
+          "name": "unary.cpp.o",
+          "bytes": 44616,
+          "sha256": "d4c916d78594fc63d00509ecd5317083a20f6bf9bc0d899be18cf5b9e47ebe2e"
+        },
+        {
+          "name": "resident.cpp.o",
+          "bytes": 25376,
+          "sha256": "236da1b19657209bec409f10c3ba067e3eab9443b2850d1b3ae795373028b9a7"
+        },
+        {
+          "name": "utils.cpp.o",
+          "bytes": 3312,
+          "sha256": "f34db58316d37040e9fd121b225565668361be88705ec03026c4a3314ca1f5b6"
+        },
+        {
+          "name": "no_cuda.cpp.o",
+          "bytes": 2272,
+          "sha256": "577726cc8a3376ccf3639159a2069f0922e30bd07ed9e85df6320aa9e2d030ab"
+        },
+        {
+          "name": "copy.cpp.o",
+          "bytes": 11664,
+          "sha256": "2b251d71d9fe75aa8c3e8a357037afa510a5da80b49a61e118715b61bb74a27a"
+        },
+        {
+          "name": "primitives.cpp.o",
+          "bytes": 17640,
+          "sha256": "945dc53da3ab57737aac680f9934e16c8944a1c816925cd8bd4b1343788121c6"
+        },
+        {
+          "name": "slicing.cpp.o",
+          "bytes": 4224,
+          "sha256": "d95378f07773e5870a5ee679e32e3254d18750e50b60148074b4f3211a18dcb3"
+        }
+      ]
+    }
+  ],
+  "qualified_sdk_recipes": [
+    {
+      "path": "lib/cmake/Hyle/HyleAppleRuntime.cmake",
+      "sha256": "70b4dd4f0696a7d12048ae986ac2af4d19189d6d6b30858bc11b06f8d8a17869"
+    },
+    {
+      "path": "lib/cmake/Hyle/HyleConfig.cmake",
+      "sha256": "93dd07b093e2fc6ced34b8049792ba68b9a50305eefe05714233e266ac4b426e"
+    },
+    {
+      "path": "lib/cmake/Hyle/HyleConfigVersion.cmake",
+      "sha256": "d9f95ead4f9d6d91365d659e872794aacbaa4262a60cdc268231920763e3cf87"
+    },
+    {
+      "path": "lib/cmake/Hyle/HyleDispatch.cmake",
+      "sha256": "99942c5e5a8669b8a6c321c963cdb2d0314772c07e5274e3a566aec1f4c3ee70"
+    },
+    {
+      "path": "lib/cmake/Hyle/HyleIsa.cmake",
+      "sha256": "6c2a12a1921fd875fdec90314f70bf98ce6278bab086e96f6a91c1a429a33bc6"
+    },
+    {
+      "path": "lib/cmake/Hyle/HyleRuntimeStaging.cmake",
+      "sha256": "471d95794804c77309e77845beb4b7de4d4bcaa329b58d43bf4299434b935035"
+    },
+    {
+      "path": "lib/cmake/Hyle/HyleTargets-release.cmake",
+      "sha256": "c9948fe83efd59f2f321661920300619c17e9d4cdeacf1560fbfc4791b233aa5"
+    },
+    {
+      "path": "lib/cmake/Hyle/HyleTargets.cmake",
+      "sha256": "02385b013af9699ea43978380888a24a1e55b756878914e755bfb7f980eb22b7"
+    },
+    {
+      "path": "lib/cmake/HyleTorchCpuSdk/HyleTorchCpuSdkConfig.cmake",
+      "sha256": "267e1b814f31159486a8015565ae9d7122842c0c0aaafae8e0ba5248efe397f7"
+    },
+    {
+      "path": "lib/cmake/HyleTorchCpuSdk/torch_cpu_fetch.cmake",
+      "sha256": "c7d30e8df8388f716b9583ae95aff7014f8d42b6523b08cec54714999bee81fe"
+    }
+  ],
+  "native_metallibs": [
+    {
+      "path": "lib/mlx.metallib",
+      "sha256": "2f149b1a4c8fccd585410c1ee4abb0e5a711a574935d4dcc24f4458f5c9951d4"
+    }
+  ],
+  "qualified_hyle_artifacts": [
+    {
+      "path": "lib/libhyle_platform.a",
+      "sha256": "5d9bbfd43c0fb2e343f8489d6dce2dcca13c181337baa45608d9598fc2ef0244",
+      "bytes": 141920
+    },
+    {
+      "path": "lib/libhyle_platform_thread.a",
+      "sha256": "936cef3f0c9f3ce2c968ea8d031b835af783526028bf922e2dd67e7a849cc2ba",
+      "bytes": 20128
+    },
+    {
+      "path": "lib/libhyle_graph_batch.a",
+      "sha256": "d7d0026db3fa7201043901f9c65c9601ca83466d09f2f0985090b46b6cb114dd",
+      "bytes": 149208
+    },
+    {
+      "path": "lib/libhyle_time.a",
+      "sha256": "5c40cacac87d92e6318f6ee1654d6e828c36829aa4cbcbbab0a0d1e1430c30e1",
+      "bytes": 16096
+    },
+    {
+      "path": "lib/libhyle_io_core.a",
+      "sha256": "ccc38ab5957f60b67385996858d803896d2506bf39fd21f647edee29968393d7",
+      "bytes": 376584
+    },
+    {
+      "path": "lib/libhyle_compute_stream.a",
+      "sha256": "10891a8b36414b5e8c766238e3d1ee21da4b7cebb527ee2c512040f06031b478",
+      "bytes": 134600
+    },
+    {
+      "path": "lib/libhyle_graph_route_cpu_apple.a",
+      "sha256": "c2262d1fd831269a3d22d949a73ffde153e5f378383ae6a63a64a14beab4a7d8",
+      "bytes": 292200
+    },
+    {
+      "path": "lib/libhyle_graph.a",
+      "sha256": "c50dc20b01da7bdc0d74628a77d2698ffa276de8ef5d879adc4816a059b9ff01",
+      "bytes": 753200
+    },
+    {
+      "path": "lib/libhyle_error.a",
+      "sha256": "cefeaa0f985fd2611c19b9ad7b25a4e7f40198e4c79be689a2c1288803e7f5aa",
+      "bytes": 30216
+    },
+    {
+      "path": "lib/libhyle_compute_batch.a",
+      "sha256": "bef51facd5d3d8dd57e6f886ca2f7da116d5b81a47aadfa44e3bd0e2dc57ce4f",
+      "bytes": 328032
+    },
+    {
+      "path": "lib/libhyle_compute_backend_cpu.a",
+      "sha256": "9e0cb7c78c564fd7391a6b6075fcce70a76894ce8d5c8b51b0cbe9b7bc03e859",
+      "bytes": 13576
+    },
+    {
+      "path": "lib/libhyle_graph_route_cpu.a",
+      "sha256": "fa9b9108fa439fe0fa5a40ed54041bfa479c103ad4e86e430149dd7b5ffcb339",
+      "bytes": 44136
+    },
+    {
+      "path": "lib/libhyle_compute_route_apple.a",
+      "sha256": "2868d545245a3d78415827bddd2a5c7b078d359b5282edc21b14be59c20dc7d6",
+      "bytes": 1241192
+    },
+    {
+      "path": "lib/libhyle_compute.a",
+      "sha256": "9e113f63387e01a53f40d7995243a3f864c829fe4d6965755ce678bc47f46ff9",
+      "bytes": 606064
+    },
+    {
+      "path": "lib/libhyle_simd.a",
+      "sha256": "817c5b7948254cc25e1da1bb5380f87eef1f2bd17ce2b54629435743bf741e00",
+      "bytes": 1516216
+    },
+    {
+      "path": "lib/libhyle_compute_provider_ggml.a",
+      "sha256": "474bcd935af65b3b69606281c069dd691e369f5f3d303b189435d385cefca230",
+      "bytes": 173256
+    },
+    {
+      "path": "lib/libhyle_platform_fs.a",
+      "sha256": "8f09370ec977de22b30989eb1a3afb4f676b9cc2e39d5eec42aba9edde5190b7",
+      "bytes": 61184
+    },
+    {
+      "path": "lib/libhyle_mem_vm.a",
+      "sha256": "a8fe3c543ce42e2a4136ad5471311004d4ae0905084e634b42482d7545689db2",
+      "bytes": 59240
+    },
+    {
+      "path": "lib/libhyle_compute_ggml_runtime.a",
+      "sha256": "9e2bab70849788dc4df199799f80e9357ce4c19966b44bfa24d768e5a7ee385e",
+      "bytes": 21416
+    },
+    {
+      "path": "lib/libhyle_container.a",
+      "sha256": "b544d47ec302c28dd4a0b7088de9a0b22d01a40a78dba8dba08a7eb1649a23e1",
+      "bytes": 56448
+    },
+    {
+      "path": "lib/libhyle_compute_state.a",
+      "sha256": "48d97d60fff74026ec5266fc96df6ea5ab38461c119544cc99ced7e9c1559589",
+      "bytes": 95816
+    },
+    {
+      "path": "lib/libhyle_compute_ops.a",
+      "sha256": "b4a4c6765a39d84e33547913656cd352a253880e36e4c8c2ff130dd78c7f5048",
+      "bytes": 109680
+    },
+    {
+      "path": "lib/libhyle_mem.a",
+      "sha256": "574dc5da3baf5f177ce200c5d1a36a779cbe15f098522b016b1885b7f1245d34",
+      "bytes": 201456
+    },
+    {
+      "path": "lib/libhyle_compute_route_cpu.a",
+      "sha256": "a48fd11f324a8f838143fec1183b9f1aed870a5fd2ffec4c68adc273ae6f9a7e",
+      "bytes": 65920
+    },
+    {
+      "path": "lib/libhyle_compute_provider_ggml_metal.a",
+      "sha256": "0ac6ccc52ce4e86f9118a66fcf702084ec59a8ce5ffe672a9fd9ee928af8c8df",
+      "bytes": 34184
+    },
+    {
+      "path": "lib/libhyle_graph_route_apple.a",
+      "sha256": "2ea321c2f5279daf19613c8f7e0777913e7928db540da803cbc65e36616cbc16",
+      "bytes": 103240
+    },
+    {
+      "path": "lib/libhyle_sched.a",
+      "sha256": "bce38a74e9ed789232d51cc78334e899dc765d2473b7926330b06b03ec1cd136",
+      "bytes": 254456
+    },
+    {
+      "path": "lib/libhyle_compute_provider_native.a",
+      "sha256": "fcc5f830491d2f2a2840e379201fdd30176c0ec5d7a2b6022d499e6315d0fef8",
+      "bytes": 534632
+    }
+  ],
+  "scope": "Authenticated existing static Apple SDK for GPU-only finite peer preflight; CPU predates CE12/CE13. All six native SDK archives differ whole-file from producer, ordered original object payloads agree. No inference about archive metadata cause."
+}

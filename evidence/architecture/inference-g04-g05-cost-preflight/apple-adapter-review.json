@@ -1,0 +1,80 @@
+{
+  "verdict": "NO_OUTSTANDING_MUST_IN_FINITE_FIVE_FILE_BATCH_AFTER_SCRATCH_FIX",
+  "scope": "User-authorized readonly source cross-check; no compilation, tests or GPU run; only this ignored review receipt written.",
+  "input_sha256": {
+    "bench/inference_resident_sdpa/apple_encoded_page_reference.h": "2e8eff69c4e103bdb7108894a8047dd9ce51108c5441a7a42b2b132e3833d731",
+    "bench/inference_resident_sdpa/apple_encoded_page_reference.cc": "cb64a793fcde26116f7d3d5ecc71f7037852b16734a83870ec9dd8a0a2ef2cb7",
+    "bench/inference_resident_sdpa/apple_encoded_page_bench.cc": "cdd78df450955f7189d5d047ff65cac1cb7c99c758ed6ccf8c2119eabbf76d56",
+    "bench/inference_resident_sdpa/apple_encoded_peer/CMakeLists.txt": "7e4f795fb4a30d5a14d873c9accdf85f635520cbf78e2a4b35f3664157059def",
+    "bench/inference_resident_sdpa/apple_encoded_peer/prepare_source.py": "03d4693f50bfeaf81273f7937393c096522a29f855d01be62d52b885de199c81"
+  },
+  "resolved_must": {
+    "path": "bench/inference_resident_sdpa/apple_encoded_page_reference.cc",
+    "current_lines": [
+      103,
+      107
+    ],
+    "issue": "Scratch was originally registered only after all dispatches: an intermediate pipeline/launch/observer exception could release accepted-prefix scratch before the original catch/drain.",
+    "resolution": "Both scratch arrays and retained actual MCB are registered before first dispatch; terminal handler owns scratch. Local array copies remain available for binding.",
+    "support": "mlx/backend/metal/device.cpp:382-384,428-498; src/compute_route_apple/apple_context.cc:433-460"
+  },
+  "checked": [
+    {
+      "topic": "Custom and dependencies",
+      "result": "Constructor/eval_gpu/output_shapes/is_equivalent signatures match pinned MLX. All actual Q/K/V/mask/pad/blk/O are bound through original CommandEncoder set_input_array/set_output_array; dispatch_threadgroups calls maybeInsertBarrier. No raw encoder bypass or extra hidden wait.",
+      "anchors": [
+        "reference.cc:63-90,103-107",
+        "mlx/fast_primitives.h:14-36",
+        "mlx/backend/metal/device.cpp:345-414"
+      ]
+    },
+    {
+      "topic": "kargs/FC/layout",
+      "result": "Original impl structs are included from authenticated source. Q is contiguous [Hq,Q,Dk] F32, K/V are separately gathered/contiguous [Hkv,KV,34*(D/32)] U8. Byte strides, quantized NS10/NS20, GQA and final [Q,Hq,Dv] F32 output agree with original general kernel. FC mask/pad/nsg4/ns10/ns20 and disabled sinks/bias/scap are keyed. Q8 general uses Q8/C64/4simdgroups and original shared memory formula.",
+      "anchors": [
+        "reference.cc:108-180,203-240",
+        "original ggml-metal-ops.cpp:3331-3499",
+        "original fa.metal:224-318,811-903"
+      ]
+    },
+    {
+      "topic": "padding and mask",
+      "result": "Head-major tight K/V rows keep original pad byte copies within each head and independently size Dk/Dv. pad allocation includes both heads plus query-padded mask tail. Mask is constructed as F32 numerical 0/-65504 then explicitly converted to F16, with query rows rounded to8. blk and general ranges agree; selected masked KV lengths are multiples64, rectangular short-K holdout is full noncausal.",
+      "anchors": [
+        "reference.cc:93-101,113-141,220-234",
+        "original fa.metal:55-119,145-179"
+      ]
+    },
+    {
+      "topic": "completion/error/retirement",
+      "result": "Actual MCB NS::RetainPtr is observed before dispatch, deduplicated and held. Harness first waits the original submitted result then requires every observed buffer Completed and no NSError; it does not manufacture completion. Current source drains accepted prefixes via original HYLE/MLX failure path. Successful checks clear retained observations.",
+      "anchors": [
+        "reference.cc:26-49,103-107",
+        "bench.cc:151-162",
+        "src/compute_route_apple/apple_context.cc:307-319,433-460"
+      ]
+    },
+    {
+      "topic": "consumer and oracle",
+      "result": "Both arms use original MaterializedNativeState/PagedMetadataPolicy/F2 upload/exact F1 frames/two slots; each measured execute includes prepare/bind/submit/wait/output return and release. Peer actual Q cast/transpose, gather/transpose, F16 mask, pad/blk/math/output cast are inside prepare/run. Independent double oracle consumes stored Q8 scale+codes, nonzero K/Q, independent Dv, shared/reordered pages, inactive poison; all physical K/V bytes checked after four replays.",
+      "anchors": [
+        "bench.cc:33-93,95-188,190-209"
+      ]
+    },
+    {
+      "topic": "build/materializer",
+      "result": "Installed static SDK is imported, only two benchmark C++ TUs plus nanobench are built. Six original source SHA guards, normalized general-body equality, three original Q8 exports plus explicit64/128 instance, and immutable retained generated outputs are enforced by materializer. No candidate shader/body, vec split/reduce or new product API is selected.",
+      "anchors": [
+        "apple_encoded_peer/CMakeLists.txt:6-31",
+        "apple_encoded_peer/prepare_source.py:18-128"
+      ]
+    }
+  ],
+  "limits": [
+    "No actual compiler, native launch, numerical/preflight, A/A or P1 PASS is inferred.",
+    "Explicit general selection/new64/128 export is disclosed and is not original host best-of policy.",
+    "Original half Q/K/V tile arithmetic remains; the finite stored-Q8 oracle domain does not establish all possible finite Q8 values.",
+    "The benchmark is ready immutable history; no dirty encoder, cancellation or asynchronous source qualification is added.",
+    "Placement/A/A/provenance instruments still require their existing finite qualification before sampling; this source review does not authorize bypassing those gates."
+  ]
+}
