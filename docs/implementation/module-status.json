@@ -507,7 +507,7 @@
       "module": "compute_route_apple",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/inference-g04-g05-cache-attention-domain.md",
-      "summary": "G04/G05 CE14 AUDITED: qualified Apple Q8 D256 prefill loss 0.3249-0.3255 versus original general Q8 requires bounded native prefill correction. Reuse original NAX tile/softmax/F32 accumulators with direct Q8 page loads, explicit original TF32 arithmetic and unchanged finite numerical gates. No public API, full-history decode, permission/lifetime or other route change. Original candidate and all passed/failed evidence retained in active card."
+      "summary": "G04/G05 CE14 AUDITED: actual M4 STEEL Q8 D256 prefill has qualified 0.3249-0.3255 loss. NAX trial is inactive on g16; F32 tile/fence trial passed finite source/static SDK math but was slower and has been rejected/reverted to original product bytes. Next correction must preserve F32 range/cancellation, exact pages and original numerical/performance gates; other route candidates and all earlier evidence retained."
     },
     {
       "module": "graph_route_apple",
