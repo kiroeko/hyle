@@ -1987,3 +1987,14 @@ DTypeO；F32 write_o_reg_gmem明确只写global float2，不读写此output tile
 或重置耗时。最终七处版本必须在source1真正terminal后独立snapshot重新验证原17math
 与设备/SDK/host/P1门。canonical lock另只恢复未变字段的原序列化，和source1 JSON
 逐结构相等，有单独proof；该format-only变化不触发全库构建或代签runtime。
+
+CE21[最终七处source/device实测](../../../../evidence/correctness/inference-g04-g05-cuda-ce21-register-source-device/receipt.json)
+已PASS：最终source2为9c9ab88bb不可变快照，17项数学零FAIL/SKIP，阶段累计434.876s；
+十cache memcheck、十cache racecheck及两普通F16/BF16 racecheck共17.877s，全部零
+error/warning/hazard，实际二进制前后SHA一致。六处draft source1另为17项PASS、462.057s，
+只保留历史证据，不代签最终七处。以上阶段费用分别列账，不清零原qualified FAIL及累计。
+
+仅FI从AUDITED进入CANDIDATE9c9ab88bb，其他owner和已签路线不动；尚未签性能改善或
+整个G04/G05。后续串行执行原static/shared relocated SDK、受影响三host facets及新numeric/
+原合同P1；复用经实际源码/command/dependency/object身份核验的146个未变ggml CUDA对象，
+当前FI仍实际重编，不触发全库构建，也不将私有构建manifest作为产品改动。
