@@ -1143,3 +1143,9 @@ API、算法、公开形状或常态成本。CPU 同合同 P1 只重新绑定已
 provenance hash，三形状、两槽、16 A/A、执行/分配顺序、n15→31、5%门及原 peer 不变，
 [重绑定记录](../../../../evidence/correctness/inference-g04-g05-ce13-air-mixed-cpu/p1-rebind.json)
 用规范化结构相等核验。原 qualified FAIL 不覆盖；新 P1 尚未运行，G04/G05 仍未关闭。
+
+
+CPU CE13 P1 已从干净不可变 source5db68c92a136c2cdff9d0df621394d0bd85b57aa
+实际启动，使用新 static SDK；16组 workload-matched A/A 全部 PASS，已进入原正式采样。
+没有依据部分样本签性能结果。原 CPU 进程实际结束并封存后，才允许队列启动独立 Vulkan
+同合同 P1；重型任务继续串行，编译最多4 jobs。
