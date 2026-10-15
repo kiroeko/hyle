@@ -1,0 +1,90 @@
+{
+  "state": "CLOSED_FINITE_APPLE_DOMAIN",
+  "owner": "compute_route_apple",
+  "product_candidate": "3b51575320c3f823ad1a31d18e99b8c55523a117",
+  "record_authority": "docs/implementation/tasks/compute/inference-g04-g05-cache-attention-domain.md",
+  "scope": "G04/G05 finite actual Apple F16/BF16 query/output and resident Q8_0/page16 K/V; causal-window, noncausal, Dqk/Dv finite supported domain; native/requiredCPU+Apple Direct/Graph encoders -> originalF2 -> attention. No whole G04/G05/G06/token/s closure.",
+  "gates": {
+    "scope": "PASS",
+    "architecture": "PASS",
+    "correctness": "PASS",
+    "delivery": "PASS",
+    "usability_docs": "PASS",
+    "red_team": "PASS",
+    "engineering_performance": "PASS"
+  },
+  "ordinary": "evidence/correctness/inference-g04-g05-apple-ce14-ordinary/receipt.json",
+  "numeric": "evidence/correctness/inference-g04-g05-apple-encoded-page-preflight/receipt.json",
+  "borrowed_lifetime_risks": [
+    "evidence/correctness/inference-g04-g05-encoded-risk-stage/result.json",
+    "evidence/correctness/inference-g04-g05-native-host-sanitizers/result.json"
+  ],
+  "original_consumer": [
+    "evidence/correctness/inference-g04-g05-encoded-native-page-source/result.json",
+    "evidence/correctness/inference-g04-g05-apple-bf16-encoded-page-source/result.json"
+  ],
+  "candidate_correctness": "Source/static/shared original13 native math and4 public native/requiredjoint consumers, including actual6updates andpaired/independent acceptedencoder failures; unchanged originaldouble oracle; newsmallP*largeV andsubnormalQ*largeK witnesses; original52coldallocationfailures/6native lifecyclemodes.",
+  "red_team": "Whole/partialQ8 groups load scale once and only actual code count inside34byteblock; inactive rows do not read. Explicitushortscale bit decode preserves originalF32 staging. Original F16 query identity in primitive/equivalence/state/JITkey; default QueryT preserves originalplain floatfragments, BF16 not narrowed. K/V/P/scores/O andaccum F32, originalbarriers retained. Sevenprivatevendoredfiles, nopublicAPI/schema/permission/retirement change. No packedchar4 orrangeguard/no-fence rejectedtrials retained.",
+  "limits": [
+    "Actual Air M4 only, engineering notindependenthardwareFormal",
+    "ASan detect_leaks0; 2original explicit TSanboundarymodels, notshader/driver; actual shader validation separately proven with13+4 consumers andindependent8pipeline enabled-statewitness",
+    "Native private-pool retained andhardupper UNKNOWN",
+    "Metadata copying/wait/nativeprogram prep remaincharged; G06 handles currentdeclaredfinite improvements",
+    "Finite P1 F16Q/output3tworequestshapes only; noBF16throughput/capture/besthoststrategy/token-s claim"
+  ],
+  "loc": "evidence/correctness/inference-g04-g05-apple-ce14-acceptance/loc.json",
+  "loc_values": {
+    "repository": 3587223,
+    "self_without_tests": 179661,
+    "module_src": 4781
+  },
+  "failure_policy": "Preserve oldqualifiedprefillLOSS, allrejectedtrials, attempt3disksetupFAIL andattempt4provenancequalificationFAIL. Nevermanuallypromoteoldmanifest; pending5usescorrecthashchainbefore sampling.",
+  "reopen_triggers": [
+    "Reproducible mathematical/encodedbyte/stride/rowbound defect inacceptedfinite domain",
+    "Reproducible permission/oldreader/poison/retirement/resourceOOM defect",
+    "Actualconsumer demonstrates newcommonmechanism inthisowner; declare newSCOPED/AUDITED record",
+    "Qualifiedsamecontract material cost or deliveryregression, or relevantlockeddependency upgrade"
+  ],
+  "no_product_retest": "Evidence/doc/state only aftercandidate ordinary+P1; mandatorydocs/closure/diff checks, --previous-ref oldregistry ifchangingstate.",
+  "performance": "evidence/performance/inference-g04-g05-apple-encoded-m1-p1-attempt-5/receipt.json",
+  "performance_receipt_sha256": "b60ffe6f4beb67ca5ed097504cbc53ee19a393b04734784260e649c71735c637",
+  "performance_rows": [
+    {
+      "id": "encoded-window-d256",
+      "ratio_range": [
+        1.2278746792188722,
+        1.2381356048072847
+      ],
+      "noninferiority": "PASS",
+      "exact": "WIN",
+      "direction": "WIN"
+    },
+    {
+      "id": "encoded-prefill-d256",
+      "ratio_range": [
+        1.1443210230766079,
+        1.1512570464551701
+      ],
+      "noninferiority": "PASS",
+      "exact": "WIN",
+      "direction": "WIN"
+    },
+    {
+      "id": "encoded-noncausal-d64-dv128",
+      "ratio_range": [
+        1.0764657691967054,
+        1.083256998592462
+      ],
+      "noninferiority": "PASS",
+      "exact": "WIN",
+      "direction": "WIN"
+    }
+  ],
+  "performance_source": "4f2666b54a765330b9a35d88a0b5f06f5241aeab",
+  "previous_failures_retained": [
+    2,
+    3,
+    4
+  ],
+  "whole_goal": "Still2/10 accepted G01/G03; no wholeG04/G05/capture/G06/token-s acceptance"
+}

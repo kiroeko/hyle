@@ -1,6 +1,6 @@
 # G04/G05 编码 KV 与有限 attention 语义实施批
 
-状态：**Apple CE14 CANDIDATE3b5157532，其余 owner 保持原 CANDIDATE；CPU provider/runtime 的 CE13 为42a4c7cdcc，其余候选为982676cb05，2026-10-15**。baseline `694a3d1a4b02540cb56b6ceae35b73dd1dd93440`；
+状态：**Apple CE14 CLOSED3b5157532，其余 owner 保持原 CANDIDATE；CPU provider/runtime 的 CE13 为42a4c7cdcc，其余候选为982676cb05，2026-10-15**。baseline `694a3d1a4b02540cb56b6ceae35b73dd1dd93440`；
 共同批owner见下表：九个原实际组件及下文新增CUDA数值状态owner；有限CE01–07/API/成本合同已冻结。原 G03 已 CLOSED，不由本卡重开其权限/
 退休实现。九owner已合法SCOPED后进入AUDITED；仅下列有限FIX授权产品实现。
 本批沿[十项总卡](../project/inference-gaps-goal-execution-2026-10.md)，
@@ -1392,3 +1392,10 @@ rounds，将独立诊断副本的minEpochTime分别设200ms、500ms。各只运�
 资格或吞吐。若较长片段仍失稳，停止追加同配置完整采样，按实际同步/调度/地址机制进一步
 定界；若显示可用分辨率，再按原5%门固定一次全16路A/A验证。不能放宽阈值或删除不利形状。
 诊断预算1h检查点，沿用户常设授权追加、保留原失败和成本；heavy串行，max4jobs。
+
+Apple CE14 attempt5已[QUALIFIED/PASS/strict verify0](../../../../evidence/performance/inference-g04-g05-apple-encoded-m1-p1-attempt-5/receipt.json)：
+16 A/A、原n15的120产品/30controls完成，window1.2279–1.2381、prefill1.1443–1.1513、
+留出1.0765–1.0833，三组方向WIN、原5%非劣PASS；713.801秒及原失败保留。仅Apple owner
+依[有限域终审](inference-g04-g05-apple-ce14-terminal.md)合法CLOSED，其余owner/candidate
+不动，不代签整个G04/G05或goal。停止重复Apple已签域。当前先按总卡补G02 Windows尾项，
+其后才运行已声明CUDA测量诊断；G06不提前实施。

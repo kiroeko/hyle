@@ -505,10 +505,15 @@
     },
     {
       "module": "compute_route_apple",
-      "state": "CANDIDATE",
-      "record": "docs/implementation/tasks/compute/inference-g04-g05-cache-attention-domain.md",
-      "summary": "G04/G05 CE14 CANDIDATE3b5157532: exact whole/partial Q8 block decoding and original-F16 Query tiles preserve F32 KV/P/score/output range. Actual Air source/static/shared math13 and public4, three host sanitizers and enabled Metal shader validation passed. Two-order short prefill1.1429-1.1496 is diagnostic only; new same-contract P1 pending. Original qualified loss, failed trials, TSan models and native private-pool UNKNOWN retained.",
-      "candidate": "3b51575320c3f823ad1a31d18e99b8c55523a117"
+      "state": "CLOSED",
+      "record": "docs/implementation/tasks/compute/inference-g04-g05-apple-ce14-terminal.md",
+      "summary": "G04/G05 Apple finite encoded-page domain CLOSED at CE14: original Q8_0/page16 F16/BF16/window/noncausal/unequal Dv and native/required CPU+Apple producer/F2 journeys; source/static/shared/host risks/shader checks and qualified P1 PASS/verify0. Three F16 finite workload directions WIN. Original failures, host sanitizer models, metadata waits/private UNKNOWN retained; whole G04/G05, CUDA/G02 and G06-G10 remain.",
+      "candidate": "3b51575320c3f823ad1a31d18e99b8c55523a117",
+      "performance": {
+        "tier": "P1",
+        "evidence": "docs/implementation/evidence/performance/inference-encoded-g04-g05-2026-10.md",
+        "material_margin_pct": 5
+      }
     },
     {
       "module": "graph_route_apple",
