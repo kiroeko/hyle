@@ -50,3 +50,12 @@ D256 ratio0.986884–0.993310 / LOSS / 5%PASS，prefillD256 0.913710–0.926685 
 FAIL，noncausal D64/Dv128 0.981282–1.001226 / INCONCLUSIVE / PASS。整体performance
 FAIL，明确prefill失败不追加n31。worker2629.221s和重叠outer2691.563s分别保留。
 较原10改善不替代5%门；全部旧失败、方向、未知与成本继续保留。CUDA/G04/G05未关闭。
+
+[attempt12](../../../../evidence/performance/inference-g04-g05-cuda-encoded-w1-wsl-p1-attempt-12/receipt.json)
+对应CE26 candidate1e343ee3b，QUALIFIED/strict verify0，16AA、五controls、三consumer与
+采样前后三validator均PASS，artifact/input/host稳定。n15为120产品/30控制；
+windowD256 ratio0.987633–0.990970 / LOSS / 5%PASS；prefillD256
+0.943718–0.950556 / LOSS / 5%FAIL（exact INCONCLUSIVE）；noncausal D64/Dv128
+0.980925–0.993621 / INCONCLUSIVE / 5%PASS。整体performance FAIL，不追加n31。
+worker2625.142s、outer2671.843s重叠不相加，全部旧失败/方向/未知与费用保留。
+CUDA/G04/G05未关闭，不把较11的改善签为通过。

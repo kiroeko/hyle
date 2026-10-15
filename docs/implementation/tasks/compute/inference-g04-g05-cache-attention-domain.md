@@ -2435,3 +2435,21 @@ tsan stage415.670s/outer426.047s；
 outer与stage重叠不相加。[批次汇总](../../../../evidence/correctness/inference-g04-g05-cuda-ce26-host-tsan/batch-summary.json)
 保原LSan/diagnostic-thread lifetime INCONCLUSIVE及driver/shader/private-pool未知。
 现在只剩原AA/P1/strict与整项终审；本次不签性能或G04/G05完成，不重置旧失败/成本。
+
+## CE27：1e 合格结果与剩余转换同步只读复核
+
+[attempt12](../../../../evidence/performance/inference-g04-g05-cuda-encoded-w1-wsl-p1-attempt-12/receipt.json)
+已实际TERMINAL：candidate1e/sourcebc3ee20f1，QUALIFIED、performance FAIL、strict verify0。
+原16AA、五controls、三consumer与采样前后三validator均PASS，artifact/input/host稳定。
+n15完成120产品与30控制，已明确prefill非劣FAIL不追加n31；worker2625.142s、outer2671.843s互相重叠不相加。
+windowD256 ratio0.987633–0.990970 / LOSS / 5%PASS；prefillD256
+0.943718–0.950556 / LOSS / 5%FAIL（exact INCONCLUSIVE）；noncausal D64/Dv128
+0.980925–0.993621 / INCONCLUSIVE / 5%PASS。较11改善不代签原门槛，全部旧失败/未知和累计费用保留。
+
+FI保持CANDIDATE1e；失败不自动授权新产品修改。下一有限只读审计复用已捕获CE26 trace，
+核当前FP8 producer→tile转换的逐线程读写和cp.async完成域，以及完整CTA同步的实际
+跨线程依赖，判断是否存在可证明重复的等待。原输出同步、F32 partial/最终scale+cast、
+准确页/short-K、归约顺序与三形状均保留，不按计时盲删屏障，不新采profile或相同P1。
+15min只读检查点沿用户常设授权追加并保累计；只有material消费缺口与精确源码机制
+两把钥匙成立，才固定一个有限FIX并合法回AUDITED。当前没有新FIX或运行资格，
+G04/G05仍未关闭，完整goal3/10，G06不实施。
