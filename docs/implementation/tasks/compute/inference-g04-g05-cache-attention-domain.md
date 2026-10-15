@@ -1377,3 +1377,18 @@ DIAGNOSTIC/UNPROVEN，不能改写成合格PASS。实际717.606秒与旧失败�
 再沿原仪器运行一次；不修改性能核心、手工提升旧manifest或重跑产品/普通测试。原fresh
 合同只产生SDK比较程序，不触发native/product构建。启动前确认原parent终止与Air容量；
 继续heavy串行、max4jobs、原成本不重置。工程资格仍待这次证据绑定正确的结果。
+
+### CUDA A/A 失格后的有限测量诊断
+
+原attempt3的4ms和attempt4的40ms均已实际16 A/A FAIL；后一轮selected prefill出现0.8863，
+留出最高1.1250及factor bias。全部仍UNPROVEN，不把仪器不稳定当产品性能损失或PASS。
+下一步只在Apple attempt5真实终态后，复用原CUDA attempt4 SDK、对象和三形状/16 paired
+rounds，将独立诊断副本的minEpochTime分别设200ms、500ms。各只运行selected/native一对
+控制，共4进程；固定原失稳placement/peer-first/peer-allocation-first层，后一个时长换route
+顺序。数值oracle、两槽/4 replay、完整update→权限→原生完成→output release均不变。
+只重编这1个benchmark CXX TU的两个时长副本并链接原对象；无CUDA TU、native/product
+重建、无HYLE源码修改、无全库运行、无完整P1。实际原compdb/link和所有复用对象SHA先核。
+记录真实机器/驱动、环境/affinity、完整raw、时长与同路线比率；这是失稳归因，不签16路A/A
+资格或吞吐。若较长片段仍失稳，停止追加同配置完整采样，按实际同步/调度/地址机制进一步
+定界；若显示可用分辨率，再按原5%门固定一次全16路A/A验证。不能放宽阈值或删除不利形状。
+诊断预算1h检查点，沿用户常设授权追加、保留原失败和成本；heavy串行，max4jobs。
