@@ -40,18 +40,18 @@ Apple/Vulkan 的实际 OS/native 资格。共同验收位置、有效区、shape
 
 ## 十项跟踪
 
-下表是当前 goal 工作项，不是第二份模块 registry。完整项完成数 **2/10**（G01、G03）。
+下表是当前 goal 工作项，不是第二份模块 registry。完整项完成数 **3/10**（G01、G02、G03）。
 G01 原 plain 驻留读取范围已按各 finite CLOSED terminal 与原 Linux FI ROUTED/P0
 [聚合验收](../compute/inference-g01-aggregate-acceptance.md)；原八份声明 P1 的最终结果已核对，
-早先 FAIL/STOP/DIAGNOSTIC 和方向限制保留。G02 Windows 未决门、G04/G05 新编码与数学域、
+早先 FAIL/STOP/DIAGNOSTIC 和方向限制保留。G04/G05 新编码与数学域、
 G06–G10 不由该聚合裁决代签。
 
 | 项 | 当前状态 | 有限目标 | 预计涉及的机制 owner，需在活动卡精确定界 |
 |---|---|---|---|
 | G01 高效驻留读取 | [整项已验收](../compute/inference-g01-aggregate-acceptance.md)：CPU/Apple/Vulkan 原 resident/ragged/page16 子批均 CLOSED，八份声明 P1 已核最终通过；Linux FI 原完整公开路线沿用已签 P0，不伪造新 P1。只接受原 plain 有限域，其他 G 项继续 | 单请求先核 dense/view；多请求接 native/等价直接驻留消费，避免按每 Q/head 重复物化全 KV | compute_batch、原 route/Provider、graph_batch 必要桥 |
-| G02 联合分页 | common CPU+CUDA 与 Apple/Vulkan native 联合分页已有有限域证据；原 Windows CUDA804与Vulkan851默认门现已实际通过。补验发现的Vulkan输出别名/phase修正仍待受影响Air三交付尾验，整项暂未验收 | 原 multi-queue bindings 接 batch coordinator；native hybrid 接准确 page/layout 与原 region/slot，公开 CPU→GPU→CPU | graph_batch、三个 graph hybrid、原 compute/native 权限桥 |
+| G02 联合分页 | [整项已验收](../graph/inference-g02-aggregate-acceptance.md)：原common CPU+CUDA、精确页守卫及Apple/Vulkan native联合域完成；原Windows CUDA804/Vulkan851默认门及补验Vulkan alias/phase的实际Air三交付均通过。按原P0保留metadata/等待/去重和private UNKNOWN | 原 multi-queue bindings 接 batch coordinator；native hybrid 接准确 page/layout 与原 region/slot，公开 CPU→GPU→CPU | graph_batch、三个 graph hybrid、原 compute/native 权限桥 |
 | G03 增量 producer 组合 | [CLOSED](../compute/inference-g03-final-closure.md)，candidate11b2403e7：四原路线/三联合、Direct/Graph、多独立native来源、完整CPU+CUDA源码/两SDK、生命周期与P0通过；原失败/checked waits/费用保留 | 原 exclusive/F2/native waits到更新与读取；精确 dirty 域、成功 ready、idle input 生命周期 | compute_batch、compute/F2、原 native route与graph桥 |
-| G04 量化 KV | CPU CE13、Vulkan与Apple CE14的有限P1均QUALIFIED/PASS/verify0；Apple owner已按[终审](../compute/inference-g04-g05-apple-ce14-terminal.md)CLOSED，原prefill LOSS及证据hash失格保留。CUDA数值通过，4ms与40ms A/A均失败、性能UNPROVEN；其余owner仍CANDIDATE。当前优先补G02 Windows尾项，再收CUDA及本批聚合 | 按成熟实际 cache 编码冻结 payload/scales/layout、quantize append与直接读取，不每步解码完整历史 | compute_ops/batch、实际 Provider/native route |
+| G04 量化 KV | CPU CE13、Vulkan与Apple CE14的有限P1均QUALIFIED/PASS/verify0；Apple owner已按[终审](../compute/inference-g04-g05-apple-ce14-terminal.md)CLOSED，原prefill LOSS及证据hash失格保留。CUDA数值通过，4ms与40ms A/A均失败、性能UNPROVEN；其余owner仍CANDIDATE。当前收CUDA资格及本批聚合 | 按成熟实际 cache 编码冻结 payload/scales/layout、quantize append与直接读取，不每步解码完整历史 | compute_ops/batch、实际 Provider/native route |
 | G05 attention 语义域 | 同卡已实现 causal-window/full noncausal/有限 Dqk≠Dv，与 G04 共用数学、数值/生命周期和交付证据；适用性能及剩余风险未全部签发 | 固定真实消费者所需 window/mask/维度等域及失败边界，成熟承载；未准入未来特例不无限扩张 | compute_ops/batch、实际 Provider/native route |
 | G06 metadata/decode | 有限只读预审已定位 metadata、上传/等待、权限准入和原生规划四组成本；待活动 owner 定界，不授权实现 | host-known/device-produced分界，active/delta上传、完整 topology复用与decode档，实际capture资格 | compute_batch、FI/native Provider、graph_batch |
 | G07 packed 权重 | 待有限编码选择 | 锁定 artifact→resident→selected math，借原生packed/冷repack；checked IDs保错误，排除warm完整展开/多余host检查 | 实际低精度 Provider/native route及资源桥 |
@@ -254,3 +254,11 @@ Direct/Graph两wrapper按明确F32输入/累加的SDPA操作选择原F32参考�
 [Windows原默认门证据](../../../../evidence/correctness/inference-g02-vulkan-windows-default-acceptance/receipt.json)。
 仅本FIX对应Air源码/static/shared与alias/phase/metadata尾验继续串行；原所有失败和费用
 保留。完成项仍2/10，G02尚未聚合验收；不提前CUDA P1或G06，不重测已签域。
+
+
+2026-10-15 G02原有限范围已[整项验收](../graph/inference-g02-aggregate-acceptance.md)。
+原CUDA804/Vulkan851默认门和CE15/16的Windows正常source、实际Air源码/static/shared均
+通过；Air source另过独立输出端口及metadata失败/move/清理。13份证据逐项核SHA与原
+requirement；历史FAIL、预算/费用和private UNKNOWN保留。goal更新3/10（G01/G02/G03），
+停止重复原G02门，继续已声明CUDA测量诊断与G04/G05资格；G06–G10完整目标不缩减。
+本次仅goal聚合，不批量关闭G04/G05的registry候选。

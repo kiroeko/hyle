@@ -1,0 +1,389 @@
+{
+  "kind": "CE15_CE16_ACTUAL_AIR_THREE_DELIVERIES",
+  "verdict": "PASS_FINITE_SOURCE_STATIC_SHARED",
+  "results": {
+    "source": {
+      "state": "TERMINAL_FINITE_PASS",
+      "mode": "source",
+      "identity": {
+        "model": "Mac16,12",
+        "os": "ProductName:\t\tmacOS\nProductVersion:\t\t27.0.1\nBuildVersion:\t\t26A434",
+        "compiler": "Apple clang version 21.0.0 (clang-2100.3.34.2)\nTarget: arm64-apple-darwin27.0.0\nThread model: posix\nInstalledDir: /Library/Developer/CommandLineTools/usr/bin"
+      },
+      "canonical_head": "c195b24003fe363779e1f1fcee5d6ce63810b10d",
+      "product_candidate": "2b60d9a34be12fda9a9e3fdc26f7a61b495c3be7",
+      "stages": [
+        {
+          "stage": "dry-plan",
+          "command": [
+            "/opt/homebrew/bin/ninja",
+            "-C",
+            "/Users/kiro/hyle-scratch/compute-unified/a-cpu-vulkan/selected-graph/source-build",
+            "-f",
+            "/Users/kiro/hyle-scratch/compute-unified/g02-ce16-air/source/reuse-build.ninja",
+            "-n",
+            "ce16_public",
+            "ce16_provider"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 0.032973417000000005
+        },
+        {
+          "stage": "build",
+          "command": [
+            "/opt/homebrew/bin/ninja",
+            "-C",
+            "/Users/kiro/hyle-scratch/compute-unified/a-cpu-vulkan/selected-graph/source-build",
+            "-f",
+            "/Users/kiro/hyle-scratch/compute-unified/g02-ce16-air/source/reuse-build.ninja",
+            "-j",
+            "4",
+            "-k",
+            "0",
+            "ce16_public",
+            "ce16_provider"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 0.6844597079999999
+        },
+        {
+          "stage": "public-tests",
+          "command": [
+            "/Users/kiro/hyle-scratch/compute-unified/a-cpu-vulkan/selected-graph/source-build/ce16_public",
+            "--gtest_output=xml:/Users/kiro/hyle-scratch/compute-unified/g02-ce16-air/source/public.xml"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 4.548247333
+        },
+        {
+          "stage": "provider-risk",
+          "command": [
+            "/Users/kiro/hyle-scratch/compute-unified/a-cpu-vulkan/selected-graph/source-build/ce16_provider",
+            "--gtest_filter=GgmlVulkanRegion.PublishedReshapesBindIndependentInputAndOutputStorage:GgmlVulkanMetadata.*",
+            "--gtest_output=xml:/Users/kiro/hyle-scratch/compute-unified/g02-ce16-air/source/provider.xml"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 0.3676342089999993
+        }
+      ],
+      "scope": "Finite CE15/16 actual Air public phase+alias journeys in source/static/shared. Source additionally actual private alias regression and metadata failure/move/cleanup. No original851, P1 or wholeG02 verdict.",
+      "max_jobs": 4,
+      "prior_attempt": "attempt-1-result.json",
+      "original_elapsed_seconds": 70.463782625,
+      "stage": "provider-risk",
+      "pid": 92810,
+      "native_objects_reused_unchanged": 179,
+      "post_build_inputs_checked": 153,
+      "public_consumer_sha256": "332b96766dda1eecb4f01b928ff298ed24bc9f8b40c5d42f33c7a0e830d13780",
+      "binary_sha256": "f682760a1b1fef4006c8d55e2a2c4280c8a2e9d015a5ffdd25b11806fa5eafeb"
+    },
+    "static": {
+      "state": "TERMINAL_FINITE_PASS",
+      "mode": "static",
+      "identity": {
+        "model": "Mac16,12",
+        "os": "ProductName:\t\tmacOS\nProductVersion:\t\t27.0.1\nBuildVersion:\t\t26A434",
+        "compiler": "Apple clang version 21.0.0 (clang-2100.3.34.2)\nTarget: arm64-apple-darwin27.0.0\nThread model: posix\nInstalledDir: /Library/Developer/CommandLineTools/usr/bin"
+      },
+      "canonical_head": "c195b24003fe363779e1f1fcee5d6ce63810b10d",
+      "product_candidate": "2b60d9a34be12fda9a9e3fdc26f7a61b495c3be7",
+      "stages": [
+        {
+          "stage": "configure",
+          "command": [
+            "/opt/homebrew/bin/cmake",
+            "-S",
+            "/Users/kiro/hyle-scratch/compute-unified/source-c8874688",
+            "-B",
+            "/Users/kiro/hyle-scratch/compute-unified/a-cpu-vulkan/selected-graph/static-sdk-build",
+            "-UCMAKE_PROJECT_INCLUDE",
+            "-DHYLE_BUILD_TESTS=OFF",
+            "-DHYLE_BUILD_BENCH=OFF",
+            "-DHYLE_TESTING=OFF",
+            "-DHYLE_INSTALL=ON",
+            "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 15.985768375000001
+        },
+        {
+          "stage": "dry-plan",
+          "command": [
+            "/opt/homebrew/bin/ninja",
+            "-C",
+            "/Users/kiro/hyle-scratch/compute-unified/a-cpu-vulkan/selected-graph/static-sdk-build",
+            "-f",
+            "/Users/kiro/hyle-scratch/compute-unified/g02-ce16-air/static/reuse-build.ninja",
+            "-n",
+            "hyle_compute",
+            "hyle_compute_batch",
+            "hyle_graph",
+            "hyle_graph_batch",
+            "hyle_graph_route_cpu_vulkan",
+            "hyle_compute_route_vulkan",
+            "hyle_graph_route_vulkan"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 0.03834475000000026
+        },
+        {
+          "stage": "build",
+          "command": [
+            "/opt/homebrew/bin/ninja",
+            "-C",
+            "/Users/kiro/hyle-scratch/compute-unified/a-cpu-vulkan/selected-graph/static-sdk-build",
+            "-f",
+            "/Users/kiro/hyle-scratch/compute-unified/g02-ce16-air/static/reuse-build.ninja",
+            "-j",
+            "4",
+            "-k",
+            "0",
+            "hyle_compute",
+            "hyle_compute_batch",
+            "hyle_graph",
+            "hyle_graph_batch",
+            "hyle_graph_route_cpu_vulkan",
+            "hyle_compute_route_vulkan",
+            "hyle_graph_route_vulkan"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 48.351623167
+        },
+        {
+          "stage": "install",
+          "command": [
+            "/opt/homebrew/bin/cmake",
+            "--install",
+            "/Users/kiro/hyle-scratch/compute-unified/a-cpu-vulkan/selected-graph/static-sdk-build",
+            "--prefix",
+            "/Users/kiro/hyle-scratch/compute-unified/g02-ce16-air/static/staging"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 0.5248342089999909
+        },
+        {
+          "stage": "consumer-configure",
+          "command": [
+            "/opt/homebrew/bin/cmake",
+            "-S",
+            "/Users/kiro/hyle-scratch/compute-unified/g02-ce16-air/static/consumer",
+            "-B",
+            "/Users/kiro/hyle-scratch/compute-unified/g02-ce16-air/static/consumer-build",
+            "-G",
+            "Ninja",
+            "-DCMAKE_BUILD_TYPE=Release",
+            "-DCMAKE_PREFIX_PATH=/Users/kiro/hyle-scratch/compute-unified/g02-ce16-air/static/relocated",
+            "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 2.42847620900001
+        },
+        {
+          "stage": "consumer-build",
+          "command": [
+            "/opt/homebrew/bin/cmake",
+            "--build",
+            "/Users/kiro/hyle-scratch/compute-unified/g02-ce16-air/static/consumer-build",
+            "--target",
+            "consumer",
+            "--parallel",
+            "4"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 2.463179041999993
+        },
+        {
+          "stage": "public-tests",
+          "command": [
+            "/Users/kiro/hyle-scratch/compute-unified/g02-ce16-air/static/consumer-build/consumer",
+            "--gtest_output=xml:/Users/kiro/hyle-scratch/compute-unified/g02-ce16-air/static/public.xml"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 1.2341365830000086
+        }
+      ],
+      "scope": "Finite CE15/16 actual Air public phase+alias journeys in source/static/shared. Source additionally actual private alias regression and metadata failure/move/cleanup. No original851, P1 or wholeG02 verdict.",
+      "max_jobs": 4,
+      "stage": "public-tests",
+      "pid": 95317,
+      "native_objects_reused_unchanged": 180,
+      "post_build_inputs_checked": 154,
+      "prefix": "/Users/kiro/hyle-scratch/compute-unified/g02-ce16-air/static/relocated",
+      "public_consumer_sha256": "332b96766dda1eecb4f01b928ff298ed24bc9f8b40c5d42f33c7a0e830d13780",
+      "binary_sha256": "dff1aa7e811bce6f4b38fe17c8fcfcde5be5c191ce0b8374f520eaa787ec18d0"
+    },
+    "shared": {
+      "state": "TERMINAL_FINITE_PASS",
+      "mode": "shared",
+      "identity": {
+        "model": "Mac16,12",
+        "os": "ProductName:\t\tmacOS\nProductVersion:\t\t27.0.1\nBuildVersion:\t\t26A434",
+        "compiler": "Apple clang version 21.0.0 (clang-2100.3.34.2)\nTarget: arm64-apple-darwin27.0.0\nThread model: posix\nInstalledDir: /Library/Developer/CommandLineTools/usr/bin"
+      },
+      "canonical_head": "c195b24003fe363779e1f1fcee5d6ce63810b10d",
+      "product_candidate": "2b60d9a34be12fda9a9e3fdc26f7a61b495c3be7",
+      "stages": [
+        {
+          "stage": "configure",
+          "command": [
+            "/opt/homebrew/bin/cmake",
+            "-S",
+            "/Users/kiro/hyle-scratch/compute-unified/source-c8874688",
+            "-B",
+            "/Users/kiro/hyle-scratch/compute-unified/a-cpu-vulkan/selected-graph/shared-sdk-build",
+            "-UCMAKE_PROJECT_INCLUDE",
+            "-DHYLE_BUILD_TESTS=OFF",
+            "-DHYLE_BUILD_BENCH=OFF",
+            "-DHYLE_TESTING=OFF",
+            "-DHYLE_INSTALL=ON",
+            "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 15.632119166
+        },
+        {
+          "stage": "dry-plan",
+          "command": [
+            "/opt/homebrew/bin/ninja",
+            "-C",
+            "/Users/kiro/hyle-scratch/compute-unified/a-cpu-vulkan/selected-graph/shared-sdk-build",
+            "-f",
+            "/Users/kiro/hyle-scratch/compute-unified/g02-ce16-air/shared/reuse-build.ninja",
+            "-n",
+            "hyle_compute",
+            "hyle_compute_batch",
+            "hyle_graph",
+            "hyle_graph_batch",
+            "hyle_graph_route_cpu_vulkan",
+            "hyle_compute_route_vulkan",
+            "hyle_graph_route_vulkan"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 0.05092070799999959
+        },
+        {
+          "stage": "build",
+          "command": [
+            "/opt/homebrew/bin/ninja",
+            "-C",
+            "/Users/kiro/hyle-scratch/compute-unified/a-cpu-vulkan/selected-graph/shared-sdk-build",
+            "-f",
+            "/Users/kiro/hyle-scratch/compute-unified/g02-ce16-air/shared/reuse-build.ninja",
+            "-j",
+            "4",
+            "-k",
+            "0",
+            "hyle_compute",
+            "hyle_compute_batch",
+            "hyle_graph",
+            "hyle_graph_batch",
+            "hyle_graph_route_cpu_vulkan",
+            "hyle_compute_route_vulkan",
+            "hyle_graph_route_vulkan"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 49.34197004199999
+        },
+        {
+          "stage": "install",
+          "command": [
+            "/opt/homebrew/bin/cmake",
+            "--install",
+            "/Users/kiro/hyle-scratch/compute-unified/a-cpu-vulkan/selected-graph/shared-sdk-build",
+            "--prefix",
+            "/Users/kiro/hyle-scratch/compute-unified/g02-ce16-air/shared/staging"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 0.4612002499999903
+        },
+        {
+          "stage": "consumer-configure",
+          "command": [
+            "/opt/homebrew/bin/cmake",
+            "-S",
+            "/Users/kiro/hyle-scratch/compute-unified/g02-ce16-air/shared/consumer",
+            "-B",
+            "/Users/kiro/hyle-scratch/compute-unified/g02-ce16-air/shared/consumer-build",
+            "-G",
+            "Ninja",
+            "-DCMAKE_BUILD_TYPE=Release",
+            "-DCMAKE_PREFIX_PATH=/Users/kiro/hyle-scratch/compute-unified/g02-ce16-air/shared/relocated",
+            "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 2.4361880000000014
+        },
+        {
+          "stage": "consumer-build",
+          "command": [
+            "/opt/homebrew/bin/cmake",
+            "--build",
+            "/Users/kiro/hyle-scratch/compute-unified/g02-ce16-air/shared/consumer-build",
+            "--target",
+            "consumer",
+            "--parallel",
+            "4"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 2.4049159580000037
+        },
+        {
+          "stage": "public-tests",
+          "command": [
+            "/Users/kiro/hyle-scratch/compute-unified/g02-ce16-air/shared/consumer-build/consumer",
+            "--gtest_output=xml:/Users/kiro/hyle-scratch/compute-unified/g02-ce16-air/shared/public.xml"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 8.374768458000005
+        }
+      ],
+      "scope": "Finite CE15/16 actual Air public phase+alias journeys in source/static/shared. Source additionally actual private alias regression and metadata failure/move/cleanup. No original851, P1 or wholeG02 verdict.",
+      "max_jobs": 4,
+      "stage": "public-tests",
+      "pid": 97862,
+      "native_objects_reused_unchanged": 179,
+      "post_build_inputs_checked": 153,
+      "prefix": "/Users/kiro/hyle-scratch/compute-unified/g02-ce16-air/shared/relocated",
+      "public_consumer_sha256": "332b96766dda1eecb4f01b928ff298ed24bc9f8b40c5d42f33c7a0e830d13780",
+      "binary_sha256": "c436d84a7932aeba7f3ee4a2516a0f6c6ff4f9ce8d2feee32783fdff94e59045"
+    }
+  },
+  "raw_entries": 74,
+  "raw_zip_sha256": "1a8db0550adb388a36db7a2e5e6e45d48a619dfba9e6c98bb5952950511114b6",
+  "source_snapshot": {
+    "state": "PREPARE_ONLY_NO_CONFIGURE_BUILD_OR_GPU",
+    "identity": {
+      "model": "Mac16,12",
+      "os": "ProductName:\t\tmacOS\nProductVersion:\t\t27.0.1\nBuildVersion:\t\t26A434",
+      "compiler": "Apple clang version 21.0.0 (clang-2100.3.34.2)\nTarget: arm64-apple-darwin27.0.0\nThread model: posix\nInstalledDir: /Library/Developer/CommandLineTools/usr/bin"
+    },
+    "source": "/Users/kiro/hyle-scratch/compute-unified/source-c8874688",
+    "trees": {
+      "source": {
+        "build": "/Users/kiro/hyle-scratch/compute-unified/a-cpu-vulkan/selected-graph/source-build",
+        "old_native_objects": 181,
+        "objects_with_proven_dependencies": 181,
+        "snapshot_sha256": "3365475bc51585e8d19f89809a4245678be46aca651ef78d5eb7273192fa7c20"
+      },
+      "static": {
+        "build": "/Users/kiro/hyle-scratch/compute-unified/a-cpu-vulkan/selected-graph/static-sdk-build",
+        "old_native_objects": 181,
+        "objects_with_proven_dependencies": 181,
+        "snapshot_sha256": "a39fa81dc854c6e9955b22111b1afbad26337221e6840d06b4cc7ff4a80093d1"
+      },
+      "shared": {
+        "build": "/Users/kiro/hyle-scratch/compute-unified/a-cpu-vulkan/selected-graph/shared-sdk-build",
+        "old_native_objects": 181,
+        "objects_with_proven_dependencies": 181,
+        "snapshot_sha256": "8ead1257d52b5450e114a8fdd0262ef8062271a0447c02ad6220265a221e4f55"
+      }
+    },
+    "canonical_head": "c195b24003fe363779e1f1fcee5d6ce63810b10d",
+    "manifest_files": 3227,
+    "files_updated": 17,
+    "source_archive_sha256": "da261a41f781f1271e043e5738a89f301ba7d465319902498ecd07db544208f5",
+    "public_consumer_sha256": "332b96766dda1eecb4f01b928ff298ed24bc9f8b40c5d42f33c7a0e830d13780"
+  },
+  "scope": "PublicDirect+Graph18-position independentF64phase4e-6/two replays and publisheddensealias4replays/oldresults/close in all3deliveries; source additionally private independentportalias +metadata3 failure/move/cleanup. No P1/wholeG02 automatic verdict.",
+  "failure_history": "First source build post-generation SHA check caught obsolete reused unary object before tests. Actual elapsed in attempt1record, thenonly changedgeneratedunary CXX rebound, allother provenobjects retained. No firstattempt testsPASS claimed; all logs/proofs/time archived."
+}

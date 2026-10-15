@@ -1,0 +1,102 @@
+{
+  "kind": "G02_FINITE_GOAL_ITEM_AGGREGATE",
+  "verdict": "PASS_G02_COMPLETE",
+  "evidence_head": "10e484105ab32e57520fe4a0f6eca5f7981dacd5",
+  "scope": "Original common CPU+CUDA multi-context/multi-queue and exact guard retirement, plus original public CPU+Apple/Vulkan exact page native composition. Actual original Windows gates and finite CE15/16 defect qualification complete. Goal item only, no blanket close of G04/G05 registry candidates.",
+  "authorities": [
+    "docs/implementation/tasks/graph/inference-g02-multi-queue-batch.md",
+    "docs/implementation/tasks/graph/inference-g02-native-paged-terminal.md",
+    "docs/implementation/tasks/compute/inference-g04-g05-cache-attention-domain.md"
+  ],
+  "requirements": {
+    "common": "Original per-lane Context/Queue/staging, full layout/node set, qualified shared metadata, F16/BF16 realCPU→CUDA→CPU, publicexactframes, three deliveries/hostrisks/36OOM and actual affectedAir interface.",
+    "exact_guards": "Original multiple exact ReadLease guards, unreferenced blocks writable, partial admission rollback and unknown native completion release only at actual retirement; source/static/shared/threehostsan/actualnativeconsumers.",
+    "native_joint": "Apple F16/BF16 andVulkan F16, D64/128/256, page16single/mixedtwo-requests, reorder/duplicate/tail/sentinel, twoattentionnodes/fixedactiveoutput; originalsource216,long1152episodes,fourSDK,sixhostsan,Windowscompile and precise refusal/failure/retirement checks.",
+    "remaining_windows": "CUDA804+Vulkan851 originaldefault correctness/build gates now pass, no removed tests or loosened tolerance; test-only numerical-reference/IQ1 fixture defects explicitly resolved and old failures preserved.",
+    "ce15_ce16": "Immutable provider2b60 independent export roots and bounded sin/cos: Windowsnormalfourtargeted, original851,andactualAirsource/static/shared publicphase/alias plusprivatemetadata risk.",
+    "engineering_performance": "OriginalP0 cold/warm/metadata/queue/copy/privateUNKNOWN accounting retained. Newcopyonlyconflictingexport, F32sin/cosboundedreductionthreeFMA/noextra dispatch. No newP1 required, originalencodednoSinCos/noexportconflict branch unmodified."
+  },
+  "seven_gates": {
+    "scope": "PASS",
+    "architecture": "PASS",
+    "correctness": "PASS",
+    "delivery": "PASS",
+    "usability_docs": "PASS",
+    "red_team": "PASS",
+    "engineering_performance": "PASS"
+  },
+  "records": [
+    {
+      "path": "evidence/correctness/inference-g02-common/receipt.json",
+      "sha256": "355009b12c99f28693b8ab67d8e9ae74a40e1c9991f52f34cbfab6c67774f244"
+    },
+    {
+      "path": "evidence/correctness/inference-g02-exact-read-groups-host/receipt.json",
+      "sha256": "4f706b0ae5e7eac37ae25a57c544c9855e284cf2bd9007d04ac64b06934fa6bf"
+    },
+    {
+      "path": "evidence/correctness/inference-g02-exact-read-groups-delivery/receipt.json",
+      "sha256": "7251ff5352998b1a234d0523ceea117bed2c4d21920affddca254165a4f6db20"
+    },
+    {
+      "path": "evidence/correctness/inference-g02-native-page-joint-source-stage/receipt.json",
+      "sha256": "4b12b1e4933abff8f07e8ff2785627f4fb2793ba2feae222628e5b2a32e66170"
+    },
+    {
+      "path": "evidence/correctness/inference-g02-native-page-joint-long-stage/receipt.json",
+      "sha256": "eaa59ad5545268a1b221a5860b9e015975eec8c15ffc182c00a1133bb56240c8"
+    },
+    {
+      "path": "evidence/correctness/inference-g02-native-page-joint-risk-stage/receipt.json",
+      "sha256": "efbe5aa1876b736f15b2258fb56531250f3c8899f16c5a273b0652b9d05ca0f9"
+    },
+    {
+      "path": "evidence/correctness/inference-g02-native-page-joint-host-sanitizers/receipt.json",
+      "sha256": "d710cd6b85f37660ba923bcfbf051aea2c9293dfc7a9e902c508158fd645d3f1"
+    },
+    {
+      "path": "evidence/correctness/inference-g02-native-page-joint-sdk-stage/receipt.json",
+      "sha256": "f6f5ede0304dfcfdfeed667fddfbf150d1501e14394fc8e5426f32454da850f8"
+    },
+    {
+      "path": "evidence/correctness/inference-g02-native-page-joint-windows-compile/receipt.json",
+      "sha256": "57879e3bce1d8a758b383d21fb77fe2dd686212d7ea4e70eef8228ebb6d0b857"
+    },
+    {
+      "path": "evidence/correctness/inference-g02-original-windows-acceptance/receipt.json",
+      "sha256": "6151f29cd82d6150631fbe7385d06a6d1fd2e39dc5213292bc97e566d5dd7b77"
+    },
+    {
+      "path": "evidence/correctness/inference-g02-vulkan-alias-phase-windows-stage/receipt.json",
+      "sha256": "c32df81e6ea897c86152c52f894aa752fb87922fbc0a09b4a963669c20a34570"
+    },
+    {
+      "path": "evidence/correctness/inference-g02-vulkan-windows-default-acceptance/receipt.json",
+      "sha256": "8edb080d97f27ca4e25efd2be12e7a6b2ca4057abfba5e4282d4945c72c48391"
+    },
+    {
+      "path": "evidence/correctness/inference-g02-vulkan-alias-phase-air/receipt.json",
+      "sha256": "be878168d252ef0aba0ca5b807a289b4dfd2c71c2b24da9617c868aa34d72bf5"
+    }
+  ],
+  "performance_tier": "P0",
+  "retained_limits": [
+    "No whole-mode symmetry, capture, overlap or token/s claim",
+    "VulkanBF16joint not enlarged beyond original admittedG02F16 domain",
+    "LeaseUsePool worstO(guards^2), metadata prepare/waits and vendorprivate upperbounds remain charged/UNKNOWN forG06/G10",
+    "Original host sanitizer models do not sign GPUdriver/shader/privatepool; source metadata alias qualification separately actual",
+    "All historicalFAIL/SKIP/resource interruption/stale-generated-input guard/elapsed retained; no budget reset"
+  ],
+  "goal_progress_after_acceptance": {
+    "completed_items": [
+      "G01",
+      "G02",
+      "G03"
+    ],
+    "count": 3,
+    "total": 10,
+    "not_workload_percentage": true
+  },
+  "registry_unchanged": true,
+  "stop": "Stop repeating originalG02finitegates. Resume currentG04/G05CUDAqualification, thenG06-G10. Reopen only reproducible admitted journey/permission/retirement/cost/delivery defects or named new consumer mechanism."
+}

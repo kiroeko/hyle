@@ -1,0 +1,92 @@
+{
+  "kind": "G02_ORIGINAL_THREE_WINDOWS_GATES",
+  "verdict": "PASS_ALL_ORIGINAL_SELECTED_DEFAULTS",
+  "original_monolithic_ctest_executed": false,
+  "coverage": "Same original default GTest sets, one case/process, serial. No original case/shape/assertion removed. Missing fixture and incorrect private test references fixed explicitly, prior skips/failures preserved.",
+  "cuda": {
+    "default": 804,
+    "initial_pass": 797,
+    "initial_fixture_skip": 7,
+    "actual_followup_pass": 7,
+    "effective_pass": 804,
+    "fixture": {
+      "proof": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g02\\current-model-fixture.json",
+      "sha256": "dcfb47fe8851f414289d8dfc75dae9243cedf24189fb609aaeae469cec70e6bc",
+      "source_id": "4068044d8571635d8a86f1e96a43dad104efc7089169065f735601e350008155",
+      "files": 25
+    },
+    "executable": {
+      "path": "C:\\h7\\inference-g02-impacted\\bin\\hyle_graph_route_cuda_test.exe",
+      "sha256": "61516772b30cba3d70b44ae8454e0a59d9507acd45e06d659e0280104d47524b",
+      "mtime_ns": 1792042421885428500,
+      "bytes": 38341632
+    },
+    "original_result_sha256": "77fdf5e9a7f93c51da91b361b1afb6831d5513ef5057abc88c2c9c78c4b44137",
+    "followup_sha256": "b88d81406745ba5267a65969c44f997fae5eb4097857786bc58e3bdb842a5617",
+    "execution": "Complete default GTest set from the same rebuilt executable, one case per process, serial; original monolithic ctest command not claimed executed"
+  },
+  "vulkan": {
+    "default": 851,
+    "effective_pass": 851,
+    "acceptance": "evidence/correctness/inference-g02-vulkan-windows-default-acceptance/receipt.json",
+    "sha256": "8edb080d97f27ca4e25efd2be12e7a6b2ca4057abfba5e4282d4945c72c48391"
+  },
+  "original_rebound_build": {
+    "state": "TERMINAL_PASS",
+    "product_source": "7c88096f868f4d2b41106d5017a14fb4bf7025d4",
+    "evidence_head": "c20168e28819f108a834d5d20efaeae5a23e814f",
+    "source_delta_docs_evidence_only": [
+      "docs/implementation/evidence/performance/inference-encoded-g04-g05-2026-10.md",
+      "docs/implementation/module-status.json",
+      "docs/implementation/status.md",
+      "docs/implementation/tasks/compute/inference-g04-g05-apple-ce14-terminal.md",
+      "docs/implementation/tasks/compute/inference-g04-g05-cache-attention-domain.md",
+      "docs/implementation/tasks/project/inference-gaps-goal-execution-2026-10.md",
+      "evidence/correctness/inference-g04-g05-apple-ce14-acceptance/loc.json",
+      "evidence/correctness/inference-g04-g05-apple-ce14-acceptance/receipt.json"
+    ],
+    "commands": [],
+    "reused_native_objects": 169,
+    "reuse_receipt": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g02\\resume-windows-2\\native-reuse.json",
+    "reuse_receipt_sha256": "a2f6ccc3a104624822caa3a9743b30ae78fa1f3c739ee72ecd1b26d89db049b3",
+    "resource_policy": "Heavy tasks serial, below-normal priority, Ninja4, original validation CUDA target compile pool1; no GPU test concurrently",
+    "scope": "Two original G02 selected test targets, necessary current input rebind only; original pressure interruption and completed gates preserved.",
+    "pid": 30544,
+    "command": [
+      "ninja",
+      "-C",
+      "C:\\h7\\inference-g02-impacted",
+      "-f",
+      "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g02\\resume-windows-2\\reuse-build.ninja",
+      "-j",
+      "4",
+      "hyle_graph_route_cuda_tests",
+      "hyle_graph_route_vulkan_tests"
+    ],
+    "exit_code": 0,
+    "elapsed_seconds": 155.75,
+    "reused_objects_unchanged_after_build": true,
+    "artifacts": [
+      {
+        "route": "cuda",
+        "path": "C:\\h7\\inference-g02-impacted\\bin\\hyle_graph_route_cuda_test.exe",
+        "sha256": "61516772b30cba3d70b44ae8454e0a59d9507acd45e06d659e0280104d47524b"
+      },
+      {
+        "route": "vulkan",
+        "path": "C:\\h7\\inference-g02-impacted\\bin\\hyle_graph_route_vulkan_test.exe",
+        "sha256": "03cb0cdedaef25cb6fad9f80b7e093069a927ae53d8d6ad31f4687ebaac3512c"
+      }
+    ]
+  },
+  "cuda_reuse": "Only subsequent product deltas are Vulkan provider export handling, bounded native sin/cos and Vulkan manifest/notice hashes. CUDA exe exact SHA retained, all original main CUDA objects reused/verified and no CUDA math/route change; no repeat804.",
+  "subsequent_product_files": [
+    "cmake/HyleDependencyLock.json",
+    "src/compute_provider_ggml_vulkan/region.cc",
+    "third_party/ggml_vulkan_runtime/NOTICE.md",
+    "third_party/ggml_vulkan_runtime/patches.json"
+  ],
+  "old_interruption_and_all_failures_retained": true,
+  "limits": "Correctness/build gates only; no whole-library test, performance or token/s. Actual CE15/16 Air qualification is separate.",
+  "raw_zip_sha256": "1a11de834fb6727862d5cde03f54690c98d0daed77e0d262a6aae48139982421"
+}

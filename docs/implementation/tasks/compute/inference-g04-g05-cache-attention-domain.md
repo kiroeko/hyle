@@ -1546,3 +1546,15 @@ PASS：仅四个测试CXX TU、两个测试exe，12.844s；九Graph原失败与�
 在本次build后再次核SHA全同。普通source contract六项PASS。当前只剩本FIX的实际Air
 source/static/shared与对应alias/phase/metadata资格；整项G02仍未验收，不重复CUDA804、
 已通过842或P1，不扩大为全库验证。
+
+
+CE15/16 [实际Air三交付](../../../../evidence/correctness/inference-g02-vulkan-alias-phase-air/receipt.json)
+已PASS：source/static/shared各两项公开Direct/Graph phase与alias/旧结果/关闭，source
+另过独立输出端口及metadata三项风险。原computed-F32相位的独立F64门4e-6不变。
+首source构建后SHA检查识别生成unary.comp.cpp变化，未跑测试便补编该native对象；
+旧构建/elapsed保留，后续static/shared预先排除该对象复用，其余依实际deps/flags/SHA
+复用并做post-generation检查。当前产品2b60未再改。
+
+原G02 common/native/精确守卫、Windows804/851与本补验域已[聚合验收](../graph/inference-g02-aggregate-acceptance.md)，
+goal为3/10。此聚合不代签整个G04/G05或关闭其它当前候选；下一步按上文固定CUDA
+200/500ms四控制诊断收其资格，不重复G02/Apple已签P1，不提前G06。
