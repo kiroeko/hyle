@@ -1,0 +1,146 @@
+{
+  "kind": "G04_G05_CUDA_CE20_CACHE_PASS_LEGACY_SAME_WRITER_RACE",
+  "verdict": "CACHE_MATH_MEM_RACE_PASS_LEGACY_RACE_FAIL_NOT_PROVIDER_ACCEPTANCE",
+  "product_candidate": "a77bb28d15ddf1be3ae5e3131d4f03108292068f",
+  "source_stages": [
+    {
+      "stage": "configure",
+      "command": [
+        "cmake",
+        "-S",
+        "/root/hyle-scratch/compute-unified/source-7a7b4c3b",
+        "-B",
+        "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/shared-sdk-build",
+        "-DHYLE_INSTALL=OFF",
+        "-DHYLE_BUILD_TESTS=ON",
+        "-DHYLE_TEST_INSTRUMENTATION=OFF",
+        "-DCMAKE_PROJECT_INCLUDE=/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/ce19_cuda_compile.cmake"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 54.983233354000006,
+      "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/ce19-source-4/configure.log"
+    },
+    {
+      "stage": "prepare-manifest",
+      "command": [
+        "ninja",
+        "-C",
+        "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/shared-sdk-build",
+        "build.ninja"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 0.05439810199999329,
+      "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/ce19-source-4/prepare-manifest.log"
+    },
+    {
+      "stage": "build",
+      "command": [
+        "cmake",
+        "--build",
+        "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/shared-sdk-build",
+        "--target",
+        "hyle_compute_provider_flashinfer_test",
+        "--parallel",
+        "2",
+        "--",
+        "-k",
+        "0"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 289.729620099,
+      "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/ce19-source-4/build.log"
+    },
+    {
+      "stage": "tests",
+      "command": [
+        "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/shared-sdk-build/bin/hyle_compute_provider_flashinfer_test",
+        "--gtest_output=xml:/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/ce19-source-4/tests.xml"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 3.1547073220000357,
+      "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/ce19-source-4/tests.log"
+    }
+  ],
+  "source_tests": 17,
+  "device_stages": [
+    {
+      "label": "memcheck",
+      "mode": "memcheck",
+      "command": [
+        "/usr/local/cuda-13.3/bin/compute-sanitizer",
+        "--tool",
+        "memcheck",
+        "--error-exitcode",
+        "86",
+        "--print-limit",
+        "0",
+        "--leak-check",
+        "no",
+        "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/shared-sdk-build/bin/hyle_compute_provider_flashinfer_test",
+        "--gtest_filter=FlashinferCache.*",
+        "--gtest_output=xml:/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/ce20-device-risks-1/memcheck.xml"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 4.343031397000004,
+      "summary": [
+        "========= ERROR SUMMARY: 0 errors"
+      ]
+    },
+    {
+      "label": "racecheck",
+      "mode": "racecheck",
+      "command": [
+        "/usr/local/cuda-13.3/bin/compute-sanitizer",
+        "--tool",
+        "racecheck",
+        "--error-exitcode",
+        "86",
+        "--print-limit",
+        "0",
+        "--racecheck-num-workers",
+        "4",
+        "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/shared-sdk-build/bin/hyle_compute_provider_flashinfer_test",
+        "--gtest_filter=FlashinferCache.*",
+        "--gtest_output=xml:/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/ce20-device-risks-1/racecheck.xml"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 8.639317265999978,
+      "summary": [
+        "========= RACECHECK SUMMARY: 0 hazards displayed (0 errors, 0 warnings)"
+      ]
+    },
+    {
+      "label": "legacy-racecheck",
+      "mode": "racecheck",
+      "command": [
+        "/usr/local/cuda-13.3/bin/compute-sanitizer",
+        "--tool",
+        "racecheck",
+        "--error-exitcode",
+        "86",
+        "--print-limit",
+        "0",
+        "--racecheck-num-workers",
+        "4",
+        "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/shared-sdk-build/bin/hyle_compute_provider_flashinfer_test",
+        "--gtest_filter=Flashinfer.Fp16PrefillAndDecodeThroughCompute:Flashinfer.Bf16PrefillAndDecodeThroughCompute",
+        "--gtest_output=xml:/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/ce20-device-risks-1/legacy-racecheck.xml"
+      ],
+      "exit_code": 86,
+      "elapsed_seconds": 6.406318886000008,
+      "summary": [
+        "========= RACECHECK SUMMARY: 512 hazards displayed (0 errors, 512 warnings)"
+      ]
+    }
+  ],
+  "artifacts": {
+    "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/shared-sdk-build/bin/hyle_compute_provider_flashinfer_test": "3ba4d1cf60b8843dd7e2dcc1bce4d8ff9706d61a211c57634d6a0bd53773ec90",
+    "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/shared-sdk-build/bin/libhyle_compute_provider_flashinfer.so.0.1.0": "dee137c386bb89b71563384a0b12d6e5e3c1ffbda8fe4d90639ef61425a264d8"
+  },
+  "limits": [
+    "Originalten cache cases are clean under memcheck/racecheck; two legacy SinglePrefill cases still report512 read/write warnings, exit86.",
+    "Only cache CUDA TU rebuilt at this point; private header wiring must cover the full same-provider writer family before SDK/P1.",
+    "No global graph or other route acceptance; all original costs/failures preserved."
+  ],
+  "raw_zip_sha256": "a105a62b892c21cd9ea1a0c02f89195389933b6f554ebfb7b5088643392c3347"
+}

@@ -16,3 +16,6 @@ upstream routes retain their original output semantics. No public HYLE API is ad
 The 16-bit output writer synchronizes the CTA before reusing its aliased shared
 storage, and the output warp before reading its rearranged stores. FP32 direct
 stores and the attention/merge mathematics are unchanged.
+
+Every native route in this provider uses the same verified private headers, so
+ordinary and encoded attention share these synchronization fixes and merge ABI.

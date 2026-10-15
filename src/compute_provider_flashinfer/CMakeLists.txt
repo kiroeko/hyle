@@ -21,7 +21,7 @@ FetchContent_Declare(flashinfer
 hyle_fetchcontent_make_available_locked(flashinfer)
 FetchContent_GetProperties(flashinfer)
 
-# Only the new encoded-cache TU needs the finite mixed FP8 K-tile repair.
+# All native attention routes share one verified private header set and merge ABI.
 # Reuse the exact-source preparer; never edit the authenticated upstream cache.
 hyle_audit_in_tree_dependencies(flashinfer_cache_patches)
 find_package(Python3 REQUIRED COMPONENTS Interpreter)
@@ -41,8 +41,8 @@ endif()
 hyle_add_module(compute_provider_flashinfer
   SOURCES flashinfer_provider.cc native_attention.cu native_batch.cu
     native_cache.cu native_cache_encoder.cu)
-set_source_files_properties(native_cache.cu PROPERTIES
-  INCLUDE_DIRECTORIES "${_cache_source}/include")
+target_include_directories(hyle_compute_provider_flashinfer BEFORE PRIVATE
+  "${_cache_source}/include")
 set_target_properties(hyle_compute_provider_flashinfer PROPERTIES
   CUDA_STANDARD 17 CUDA_STANDARD_REQUIRED ON CUDA_RUNTIME_LIBRARY Shared)
 # CMake's CXX visibility settings do not cover nvcc's generated host code.

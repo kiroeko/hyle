@@ -1802,3 +1802,22 @@ KEEP。不新增kernel或条件fast模式。只改已登记private vendor patch/
 SDK/宿主facets和原合同P1；未变域身份匹配则借用，不重跑G02或其它路线已验收矩阵。
 预算2h检查点沿原常设授权追加、原失败/累计成本不清零；若仍有hazard保留实际报告并在
 这两个边界内定位，不为PASS放宽print/错误语义或压制检查。新范围需求须另定界。
+
+CE20同族反证补充：原native_attention/native_batch也包含同pin的pristine prefill writer。
+当前owner仍AUDITED，设备检查在原十项cache数学之外，另对现有Flashinfer的F16/BF16公开
+prefill/decode两case各走一次racecheck（无新增输入/产品算法）。它们复用同一同步边界，
+用于确认私有补丁的接线范围是否完整；若有同族报告，只允许同owner私有头接线覆盖，
+不复制第二份修正、不扩全局图或原G02矩阵。原补丁两barrier FIX不变。
+
+CE20 cache-only实际检查：source4 configure54.983s、build289.730s（仅native_cache一个CUDA
+TU）、17 tests3.155s PASS；memcheck4.343s/零error、原十项racecheck8.639s/零hazard/
+零error/零warning PASS。两条普通prefill/decode公开consumer的补充racecheck6.406s仍exit86，
+0errors/512warnings；其native_attention/native_batch仍从pristine头读取同一个未修正writer。
+这证明补丁接线未覆盖完整同owner能力，不把cache PASS代签整个Provider。
+
+仍在本轮AUDITED内补齐同一FIX的唯一私有承载：整个FI target统一读build-local verified
+header set，移除cache-only include例外；同步补丁只有前述两barrier，不复制第三份实现。
+统一后不再存在pristine/patched merge host ABI混用，恢复原generic host dispatcher名字，
+保留optional scale epilogue与private Params回调，decode头也自然复用原名称。无公共API/
+组件图/其它owner/公共build core改动。适用门仍原17math、十cache mem/race及两普通case
+race，再恢复SDK/宿主/P1；两个warning用例原记录保留，不压制检查或新增输入形状。
