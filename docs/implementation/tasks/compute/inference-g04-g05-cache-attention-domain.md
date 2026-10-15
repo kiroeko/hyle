@@ -1327,3 +1327,9 @@ mem_none SIMD执行屏障。上述循环没有shared写入，跨SIMD生产/消�
 的BQ8/BK16/WM1合并试改不同，不能从旧合并结果裁决独立机制。
 先一次source 12数学/4公开消费者/原风险、static SDK及原三形状双顺序短诊断；失败则
 撤回，不追加无变更P1。若机制成本改善且数值通过，再执行原适用风险/shared与冻结流程。
+
+上述独立同步试改已完成并否决：[source/静态SDK/短诊断原始记录](../../../../evidence/architecture/inference-g04-g05-apple-simd-sync-trial/receipt.json)。
+12数学、4公开消费者及原风险通过，双顺序prefill仅0.3275/0.3237，未改善原损失。
+原patch/lock再次恢复；不为这项无收益改动追加shared/sanitizer/P1。下一步先取实际
+Metal编译管线资源与loader成本证据，区分shared容量、活跃寄存器和重复解码，暂不实施
+新的精度、tile或同步试改。其它项目与资格保持原状。
