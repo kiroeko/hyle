@@ -1642,3 +1642,11 @@ receipt及所有旧attempt不覆盖。借用原SDK/原header认证并重核SHA�
 recipes/native archives与original headers全部核SHA未变。原数值receipt以完整SHA链接，
 不覆盖旧记录；validator只切换到此新补证。合同的measurement说明同步到真实16×2048，
 统计/输入/5%/n15/31不变。下一attempt6沿本节原资格序列，前次设置失败与费用继续累计。
+
+attempt6 source `2f01f4d991d58973d1cb1f0882f2fc86bd4b9ebc` 已实际通过
+[完整16路A/A](../../../../evidence/performance/inference-g04-g05-cuda-episode-aa-qualification/receipt.json)：
+48个原三形状ratio为0.98730–1.02326，gross/factor median检查均PASS、零errors；两原执行/
+分配顺序、两placement与两同实现route全部保留。此checkpoint不签完整P1或产品非劣。
+同一parent继续原n15八strata产品/controls和必要原n31扩样，未修改候选或重跑A/A。
+初始产品片段出现prefill耗时差异，当前只有进行中的样本，不据此签LOSS或改产品；待原
+完整统计裁决。若确有material损失，再按原机制/真实consumer回AUDITED有限修正。

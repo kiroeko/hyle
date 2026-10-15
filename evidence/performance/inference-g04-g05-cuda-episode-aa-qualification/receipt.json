@@ -1,0 +1,26 @@
+{
+  "kind": "CUDA_EPISODE_INTERLEAVE_FULL16_WORKLOAD_AA_CHECKPOINT",
+  "verdict": "PASS_FULL_AA_ONLY_PRODUCT_CONTROLS_PENDING",
+  "attempt": "6",
+  "source_commit": "2f01f4d991d58973d1cb1f0882f2fc86bd4b9ebc",
+  "product_candidate": "982676cb05a6e6244e66e0a596347aa96043617b",
+  "aa_gate": "PASS",
+  "runs": 16,
+  "shape_ratios": 48,
+  "ratio_range": [
+    0.9872963789550748,
+    1.0232600651475874
+  ],
+  "immutable_aa_receipt_sha256": "6a637d1b45b49e8b02741364ceaac1010c0b1e60b9a93aa0ddd010333d7525c8",
+  "raw_zip_sha256": "65dd90577bb2f763a3b136cf2796dc61ad1e58cd1d2faa903ce52889c4fc5d41",
+  "numeric_receipt": "evidence/correctness/inference-g04-g05-cuda-episode-interleave-numeric-rebind/receipt.json",
+  "numeric_receipt_sha256": "31e9e32c5082daa2050dae993786328ebedbae797e23e9a4f8102fff40ef5ee2",
+  "scope": "Both native/selected same-implementation routes,primary/placement,execution/allocation dual orders; original3 geometries,16 arithmetic groups of2048 complete episode pairs,all elapsed tails retained.",
+  "next": "Continue SAME live attempt6 originaln15/31 product/control sequence and strictverify. Do not rerun these matching A/A or claim product performance PASS before terminal.",
+  "limits": [
+    "Intermediate actual A/A receipt,not a terminal performance manifest or wholeG04/G05 acceptance",
+    "Original4/40/200/500 failures andattempt5hash setupFAIL preserved",
+    "No new product/math/SDK/sanitizer execution;only finitebenchmark build and A/A",
+    "Full timing totals remain with live parent; do not substitute observer elapsed for terminal cumulative time"
+  ]
+}
