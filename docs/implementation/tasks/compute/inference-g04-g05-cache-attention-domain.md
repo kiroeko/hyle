@@ -1627,3 +1627,18 @@ Result/CompareResult统计。canonical只改benchmark、原A/A telemetry/group�
 只选docs/closure；原计划与skipped reasons保存在scratch，不把BLOCKED改写PASS、不扩建selector。
 这不改变产品组件状态；本次实际验证范围由上述具名独立benchmark卡与既有性能合同固定。
 docs/closure/diff及Python语法已通过，下一次资格仍须绑定提交后的不可变候选和原SDK身份。
+
+attempt5在原数值receipt的benchmark SHA检查失败，完整A/A未启动，首产品进程因ready门拒绝，
+未取得任何timing样本；[原失败](../../../../evidence/performance/inference-g04-g05-cuda-encoded-w1-wsl-p1-attempt-5/receipt.json)
+与72.614s原样保留。下一步直接对已构建b7b8d264b的primary/placement两artifact运行原
+VERIFY_ONLY三形状/各四replay/独立double和readonly检查，签独立数值rebind补证；原数值
+receipt及所有旧attempt不覆盖。借用原SDK/原header认证并重核SHA，无重新配置/编译。
+两实际数值结果通过后，validator改为读取该补证，按同一冻结episode计时合同续attempt6。
+原5%/16路/原n15/31和预算不变；这只是缺失的数值绑定，不把设置失败当A/A FAIL或产品LOSS。
+
+[新数值绑定](../../../../evidence/correctness/inference-g04-g05-cuda-episode-interleave-numeric-rebind/receipt.json)
+实际PASS：复用attempt5两个已建artifact，各24次独立oracle核查与三组pair/readonly，
+共2.636s，零configure/compile。原23个benchmark输入只有主CXX变化，原SDK/artifact/
+recipes/native archives与original headers全部核SHA未变。原数值receipt以完整SHA链接，
+不覆盖旧记录；validator只切换到此新补证。合同的measurement说明同步到真实16×2048，
+统计/输入/5%/n15/31不变。下一attempt6沿本节原资格序列，前次设置失败与费用继续累计。

@@ -568,8 +568,9 @@
     "cpu_measurement": {
       "paired_rounds": 16,
       "minimum_epoch_iterations": 1,
-      "minimum_epoch_time_ms": 4,
-      "reason": "Original16 rounds/min1/4ms,8strata,n15/31,5% fixed. CUDA numerical preflight required; independent actual FP8 oracle, cold readonly BF16 alternate cache/init/teardown bytes and seconds explicit; no measured CUDA PASS yet."
+      "episode_interleave": true,
+      "pairs_per_arithmetic_group": 2048,
+      "reason": "One complete episode per balanced nanobench micro epoch; every elapsed tail summed into16 arithmetic groups of2048 pairs. Original8strata,n15/31,5% unchanged. Rebound actual primary/placement independent numeric oracle required; original SDK, cold cache bytes and teardown preserved. No product throughput PASS yet."
     }
   }
 }
