@@ -1,0 +1,65 @@
+{
+  "kind": "G04_G05_CE27_ACTUAL_RUNTIME_KERNEL_IDENTITY",
+  "verdict": "PASS_RUNTIME_DISPATCH_AND24_ORACLES_ONLY",
+  "product_candidate": "d41431f82a373ae400fb10e97418931031fa48e8",
+  "numeric_receipt_sha256": "ffa682587bc600ac598c95250d0684c6475218cf23bcb8cb5b45754deaaa821f",
+  "binary_sha256": "782bf354ae61f8e29fc7ef9fb6f8a2cbf36324550cd5d3bbd2d379d9434df3cb",
+  "actual_kernels": [
+    {
+      "mangled": "_ZN10flashinfer34BatchPrefillWithPagedKVCacheKernelINS_12KernelTraitsILNS_8MaskModeE1ELj64ELj1ELj1ELj16ELj16ELj4ELj1ELNS_15PosEncodingModeE0E13__nv_bfloat1613__nv_fp8_e4m3S4_fiNS_16DefaultAttentionILb0ELb1ELb0ELb0EEEEEN4hyle7compute10flashinfer6native48_GLOBAL__N__ca0ae4f1_15_native_cache_cu_95f5a4b012OutputParamsINS_23BatchPrefillPagedParamsIS4_S5_S4_iEEEEEEvT0_",
+      "demangled": "void flashinfer::BatchPrefillWithPagedKVCacheKernel<flashinfer::KernelTraits<(flashinfer::MaskMode)1, (unsigned int)64, (unsigned int)1, (unsigned int)1, (unsigned int)16, (unsigned int)16, (unsigned int)4, (unsigned int)1, (flashinfer::PosEncodingMode)0, __nv_bfloat16, __nv_fp8_e4m3, __nv_bfloat16, float, int, flashinfer::DefaultAttention<(bool)0, (bool)1, (bool)0, (bool)0>>, hyle::compute::flashinfer::native::<unnamed>::OutputParams<flashinfer::BatchPrefillPagedParams<__nv_bfloat16, __nv_fp8_e4m3, __nv_bfloat16, int>>>(T2)",
+      "projected_mma_kv": 1,
+      "registers": 241,
+      "dynamic_shared": 49152,
+      "block": [
+        32,
+        4,
+        1
+      ]
+    },
+    {
+      "mangled": "_ZN10flashinfer34BatchPrefillWithPagedKVCacheKernelINS_12KernelTraitsILNS_8MaskModeE1ELj64ELj1ELj1ELj16ELj16ELj4ELj1ELNS_15PosEncodingModeE0E13__nv_bfloat1613__nv_fp8_e4m3ffiNS_16DefaultAttentionILb0ELb1ELb0ELb0EEEEEN4hyle7compute10flashinfer6native48_GLOBAL__N__ca0ae4f1_15_native_cache_cu_95f5a4b011MergeParamsINS_23BatchPrefillPagedParamsIS4_S5_fiEES4_Lj256EEEEEvT0_",
+      "demangled": "void flashinfer::BatchPrefillWithPagedKVCacheKernel<flashinfer::KernelTraits<(flashinfer::MaskMode)1, (unsigned int)64, (unsigned int)1, (unsigned int)1, (unsigned int)16, (unsigned int)16, (unsigned int)4, (unsigned int)1, (flashinfer::PosEncodingMode)0, __nv_bfloat16, __nv_fp8_e4m3, float, float, int, flashinfer::DefaultAttention<(bool)0, (bool)1, (bool)0, (bool)0>>, hyle::compute::flashinfer::native::<unnamed>::MergeParams<flashinfer::BatchPrefillPagedParams<__nv_bfloat16, __nv_fp8_e4m3, float, int>, __nv_bfloat16, (unsigned int)256>>(T2)",
+      "projected_mma_kv": 1,
+      "registers": 241,
+      "dynamic_shared": 49152,
+      "block": [
+        32,
+        4,
+        1
+      ]
+    },
+    {
+      "mangled": "_ZN10flashinfer34BatchPrefillWithPagedKVCacheKernelINS_12KernelTraitsILNS_8MaskModeE0ELj64ELj1ELj4ELj4ELj8ELj4ELj1ELNS_15PosEncodingModeE0E13__nv_bfloat1613__nv_fp8_e4m3S4_fiNS_16DefaultAttentionILb0ELb1ELb0ELb0EEEEEN4hyle7compute10flashinfer6native48_GLOBAL__N__ca0ae4f1_15_native_cache_cu_95f5a4b012OutputParamsINS_23BatchPrefillPagedParamsIS4_S5_S4_iEEEEEEvT0_",
+      "demangled": "void flashinfer::BatchPrefillWithPagedKVCacheKernel<flashinfer::KernelTraits<(flashinfer::MaskMode)0, (unsigned int)64, (unsigned int)1, (unsigned int)4, (unsigned int)4, (unsigned int)8, (unsigned int)4, (unsigned int)1, (flashinfer::PosEncodingMode)0, __nv_bfloat16, __nv_fp8_e4m3, __nv_bfloat16, float, int, flashinfer::DefaultAttention<(bool)0, (bool)1, (bool)0, (bool)0>>, hyle::compute::flashinfer::native::<unnamed>::OutputParams<flashinfer::BatchPrefillPagedParams<__nv_bfloat16, __nv_fp8_e4m3, __nv_bfloat16, int>>>(T2)",
+      "projected_mma_kv": 4,
+      "registers": 165,
+      "dynamic_shared": 40960,
+      "block": [
+        32,
+        4,
+        1
+      ]
+    }
+  ],
+  "actual_merge": {
+    "mangled": "_ZN10flashinfer41PersistentVariableLengthMergeStatesKernelILj8ELj32ELj4ELj2Ef13__nv_bfloat16iLb1EEEvPT3_PfPT5_PT4_S4_jPjjf",
+    "demangled": "void flashinfer::PersistentVariableLengthMergeStatesKernel<(unsigned int)8, (unsigned int)32, (unsigned int)4, (unsigned int)2, float, __nv_bfloat16, int, (bool)1>(T5 *, float *, T7 *, T6 *, float *, unsigned int, unsigned int *, unsigned int, float)",
+    "registers": 48,
+    "dynamic_shared": 8704,
+    "block": [
+      32,
+      4,
+      1
+    ]
+  },
+  "max_abs_error": 0.00109081301,
+  "measured_seconds": 2.892766305999885,
+  "nsys_version": "NVIDIA Nsight Systems version 2026.1.3.425-261338342291v0",
+  "limits": [
+    "One short VERIFY_ONLY trace; no new A/A or throughput qualification.",
+    "Actual current immutable static SDK numeric binary; same three frozen workloads/peer.",
+    "Original qualified attempt9 FAIL and all failed hypotheses/costs retained."
+  ],
+  "raw_zip_sha256": "2648b8c6f56cbad4367468222e51164a5a7962a9c031d0d7704010ae276feb30"
+}
