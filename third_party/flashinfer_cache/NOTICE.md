@@ -29,3 +29,9 @@ scaling, output synchronization and physical short-K padding are retained.
 The unused FP32 output shared-memory member retains only one element; the
 original FP32 writer already stores fragments directly to global memory.
 All live Q/K/V and cross-warp state storage and 16-bit output capacity remain.
+
+FP8 paged loads borrow the original on-the-fly protective K/V offset loader
+at the existing asynchronous prefetch sites, removing persistent per-thread
+K/V address arrays. The existing short-K upper-zero rule is retained there.
+Tile/warp/MMA selection, packed alignment, arithmetic, synchronization and
+the compressed global cache representation are unchanged.

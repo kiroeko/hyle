@@ -2107,3 +2107,9 @@ tile/warp/MMA、packed最小对齐、原dispatcher、数学/scale/F32 partial与
 十cache mem/race及两普通case race；随后冻结candidate，补实际codegen、直接consumer、
 static/shared、受影响三host facets和新numeric/原16AA/P1/strict。其余路线证据按身份复用，
 SM89/FI pool1/split3/max2Ninja、heavy串行、每批2h检查点沿常设追加，原失败/费用不清零。
+
+CE22十处顺序manifest edit已集中实施，完整派生diff核对了initial K/V、K-next/V-next和
+current/next page base的时序；未改变commit/wait/barrier及数学顺序。FI仍AUDITED，
+尚未签数学、设备或寄存器/吞吐改善。ce22-paged-offset-plan为READY，授权仅FI且无issues；
+共同lock导致选择器保守选全库，保留selected/skipped理由，按本卡真实FI/直接consumer门
+执行，未变native依赖和其它已签路线按身份复用，不触发全库构建或改公共selector。
