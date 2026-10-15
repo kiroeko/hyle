@@ -2005,3 +2005,20 @@ CE21[搬迁静态SDK](../../../../evidence/correctness/inference-g04-g05-cuda-ce
 shipping无HYLE_TESTING/sanitizer；146个未变native CUDA对象经源码、原command/dependency
 freshness和前后object SHA核验复用，当前FI四CUDA TU实际重编，原manifest前后不变。
 此项只签静态交付；动态SDK、三host facets、新numeric/P1仍待实际裁决。
+
+CE21[搬迁动态SDK](../../../../evidence/correctness/inference-g04-g05-cuda-ce21-shared-sdk/receipt.json)
+已实际PASS：14/13/3/3测试、12公共头、16 consumer TU，零FAIL/SKIP，成功续跑105.582s。
+原shared1 configure47.970s后，复用guard发现一个precise unary对象缺少Ninja deps；未启动
+产品build即失败，原报告保留。只刷新该精确原对象6.265s，另外145个不重编；shared2核对
+相同source inputs与compiler/config后复用原configure，146个对象freshness及SHA核验通过。
+这些费用分开保留；未把缺失deps写PASS，也未重建全套native依赖。
+
+原P1仅重绑实际CE21 static prefix、prose身份、全部三consumer SHA及新numeric receipt路径；
+规范化合同其余字段逐项相等，原JSON换行保留。原三形状、peer两输出屏障派生、8strata/
+16AA/n15,31/5%/controls与所有旧FAIL均不变。宿主三facet和新numeric尚未签发，不能据
+SDK成功预写A/A或吞吐PASS。
+
+本次ce21-sdk-binding-plan仍因原shared benchmark路径族的三个JSON/Python输入unknown而
+BLOCKED；product_authorization无owner/issue，docs/closure及146 skipped reasons均保留。
+沿[既有独立工具记录](../build/validation-selector-shared-bench-paths.md)分账，按本卡原有限
+门继续，不改selector、公共性能核心或产品，也不将该工具归属状态写成验证PASS。
