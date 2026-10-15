@@ -729,7 +729,7 @@
       "version": "hyle-apple-native-patches-v2",
       "vendored": {
         "path": "third_party/mlx_cast",
-        "tree_sha256": "72b073332da19b46c92b55242cd18f173cda19ed26062dd647c76a66286f66d1"
+        "tree_sha256": "08f74cff0c0143c522786f517eacf5235d653cef5ca2c13fd6b8d0c6053e34a2"
       },
       "license": {
         "expression": "MIT AND Apache-2.0",

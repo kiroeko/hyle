@@ -414,9 +414,13 @@
         {
           "before": "                   rows_, offset_, q8_, window_});",
           "after": "                   rows_, offset_, q8_, window_, query_f16_});"
+        },
+        {
+          "before": "  if (page && page->q8 && bd == 256) { wm = 2; bq = 16; bk = half_query ? 16 : 8; }",
+          "after": "  if (page && page->q8 && bd == 256) { wm = half_query ? 4 : 2; bq = half_query ? 32 : 16; bk = 8; }"
         }
       ],
-      "after_sha256": "fe8eb7235dc6a240e91a32a185761bcae4212959f6340c96fbeb10e92bc51222"
+      "after_sha256": "08d9db2f0c0594b0ec0d480af10a9d8bb604eca49de637443895820490e6a4fe"
     },
     {
       "path": "mlx/backend/metal/kernels/sdpa_vector.h",
@@ -666,9 +670,13 @@
         {
           "before": "\n  METAL_FUNC void load_q8(const device uchar* root, const device int* pages,\n      const int offset, const int first, const int valid_rows) const thread {\n    for (short i = 0; i < BROWS; i += TROWS) {\n      const int logical = first + bi + i;\n      const bool valid = bi + i < valid_rows;\n",
           "after": "\n  METAL_FUNC void load_q8(const device uchar* root, const device int* pages,\n      const int offset, const int first, const int valid_rows) const thread {\n    // Each aligned 32-element code block owns one scale. Do not reconstruct\n    // its address/scale independently for every element in the block.\n    if constexpr (vec_size % 32 == 0 && BCOLS % 32 == 0) {\n      STEEL_PRAGMA_UNROLL\n      for (short i = 0; i < BROWS; i += TROWS) {\n        const bool valid = bi + i < valid_rows;\n        const int logical = first + bi + i;\n        const int physical = valid ? (pages ? ((pages[offset + (logical >> 4)] << 4) + (logical & 15)) : logical) : 0;\n        STEEL_PRAGMA_UNROLL\n        for (short j = 0; j < vec_size; j += 32) {\n          if (valid) {\n            const device uchar* block = root + physical * src_ld + ((bj + j) / 32) * 34;\n            const ushort bits = ushort(block[0]) | (ushort(block[1]) << 8);\n            const float scale = float(as_type<half>(bits));\n            STEEL_PRAGMA_UNROLL\n            for (short k = 0; k < 32; ++k)\n              dst[i * kDstStrRow + (j + k) * kDstStrCol] = T(scale * float(as_type<char>(block[2 + k])));\n          } else {\n            STEEL_PRAGMA_UNROLL\n            for (short k = 0; k < 32; ++k)\n              dst[i * kDstStrRow + (j + k) * kDstStrCol] = T(0);\n          }\n        }\n      }\n      return;\n    }\n    for (short i = 0; i < BROWS; i += TROWS) {\n      const int logical = first + bi + i;\n      const bool valid = bi + i < valid_rows;\n"
+        },
+        {
+          "before": "\n  METAL_FUNC void load_q8(const device uchar* root, const device int* pages,\n      const int offset, const int first, const int valid_rows) const thread {\n    // Each aligned 32-element code block owns one scale. Do not reconstruct\n    // its address/scale independently for every element in the block.\n    if constexpr (vec_size % 32 == 0 && BCOLS % 32 == 0) {\n      STEEL_PRAGMA_UNROLL\n      for (short i = 0; i < BROWS; i += TROWS) {\n        const bool valid = bi + i < valid_rows;\n        const int logical = first + bi + i;\n        const int physical = valid ? (pages ? ((pages[offset + (logical >> 4)] << 4) + (logical & 15)) : logical) : 0;\n        STEEL_PRAGMA_UNROLL\n        for (short j = 0; j < vec_size; j += 32) {\n          if (valid) {\n            const device uchar* block = root + physical * src_ld + ((bj + j) / 32) * 34;\n            const ushort bits = ushort(block[0]) | (ushort(block[1]) << 8);\n            const float scale = float(as_type<half>(bits));\n            STEEL_PRAGMA_UNROLL\n            for (short k = 0; k < 32; ++k)\n              dst[i * kDstStrRow + (j + k) * kDstStrCol] = T(scale * float(as_type<char>(block[2 + k])));\n          } else {\n            STEEL_PRAGMA_UNROLL\n            for (short k = 0; k < 32; ++k)\n              dst[i * kDstStrRow + (j + k) * kDstStrCol] = T(0);\n          }\n        }\n",
+          "after": "\n  METAL_FUNC void load_q8(const device uchar* root, const device int* pages,\n      const int offset, const int first, const int valid_rows) const thread {\n    // Each aligned complete or partial 32-element code block shares one scale. Do not reconstruct\n    // its address/scale independently for every element in the block.\n    if constexpr (BCOLS % 32 == 0 && (vec_size % 32 == 0 || 32 % vec_size == 0)) {\n      constexpr short block_reads = vec_size < 32 ? vec_size : 32;\n      STEEL_PRAGMA_UNROLL\n      for (short i = 0; i < BROWS; i += TROWS) {\n        const bool valid = bi + i < valid_rows;\n        const int logical = first + bi + i;\n        const int physical = valid ? (pages ? ((pages[offset + (logical >> 4)] << 4) + (logical & 15)) : logical) : 0;\n        STEEL_PRAGMA_UNROLL\n        for (short j = 0; j < vec_size; j += block_reads) {\n          if (valid) {\n            const device uchar* block = root + physical * src_ld + ((bj + j) / 32) * 34;\n            const ushort bits = ushort(block[0]) | (ushort(block[1]) << 8);\n            const float scale = float(as_type<half>(bits));\n            STEEL_PRAGMA_UNROLL\n            for (short k = 0; k < block_reads; ++k)\n              dst[i * kDstStrRow + (j + k) * kDstStrCol] = T(scale * float(as_type<char>(block[2 + (bj + j) % 32 + k])));\n          } else {\n            STEEL_PRAGMA_UNROLL\n            for (short k = 0; k < block_reads; ++k)\n              dst[i * kDstStrRow + (j + k) * kDstStrCol] = T(0);\n          }\n        }\n"
         }
       ],
-      "after_sha256": "e086da0747220398d88f67d7b7acd89824f11481a6695ad0844db70085269bb5"
+      "after_sha256": "a1ea2458b08bd2f259024eb5a06e56036fad1ddb703d14847ce7b8209d4c038e"
     },
     {
       "path": "mlx/backend/metal/kernels/steel/attn/kernels/steel_attention.h",
