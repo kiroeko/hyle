@@ -542,9 +542,10 @@
     },
     {
       "module": "compute_provider_ggml_vulkan",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/inference-g04-g05-cache-attention-domain.md",
-      "summary": "G02 CE15 AUDITED: actual DeepSeek Graph case aborts because two published dense views share one native CONCAT root and import allocation repeats. Freeze a bounded Region export ownership fix using existing native copy for conflicting roots; preserve public port arity, distinct caller storage, ordinary zero-copy roots, original lifecycle and all old evidence. Other owners unchanged; G02 and G04/G05 remain unaccepted."
+      "summary": "G02 CE15 CANDIDATE: conflicting exported native roots receive an owning ggml_dup while independent public bindings and ordinary roots are preserved. Finite source regression covers input aliases, three published computed reshapes, exact output capacity and two replays. Actual correctness, affected consumers and delivery still pending; original G02 failure and G04/G05 evidence retained.",
+      "candidate": "1168874af05b8038b27a9e685e83a44dc4204456"
     },
     {
       "module": "compute_ggml_runtime",

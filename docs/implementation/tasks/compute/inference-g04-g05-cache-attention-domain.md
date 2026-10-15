@@ -1,6 +1,6 @@
 # G04/G05 编码 KV 与有限 attention 语义实施批
 
-状态：**Apple CE14 CLOSED3b5157532；Vulkan provider 的 CE15 退回 AUDITED；其余 owner 保持原 CANDIDATE，2026-10-15**。baseline `694a3d1a4b02540cb56b6ceae35b73dd1dd93440`；
+状态：**Apple CE14 CLOSED3b5157532；Vulkan provider 的 CE15 已固定 CANDIDATE；其余 owner 保持原 CANDIDATE，2026-10-15**。baseline `694a3d1a4b02540cb56b6ceae35b73dd1dd93440`；
 共同批owner见下表：九个原实际组件及下文新增CUDA数值状态owner；有限CE01–07/API/成本合同已冻结。原 G03 已 CLOSED，不由本卡重开其权限/
 退休实现。九owner已合法SCOPED后进入AUDITED；仅下列有限FIX授权产品实现。
 本批沿[十项总卡](../project/inference-gaps-goal-execution-2026-10.md)，
@@ -1435,3 +1435,10 @@ encoded P1 的无冲突单输出输入可按源码分支及 artifact 影响借�
 全库、CUDA 或 P1。普通检查仍为 docs/closure/diff。实现/验证 2h 检查点，自动有限延长
 并保全部失败/elapsed；停止条件为本 FIX 和受影响门可裁决，或确切外部条件无法推进。
 本节只完成诊断和有限审计，尚无修复 PASS；G02 与 G04/G05 均未整体验收。
+
+
+CE15 产品 candidate `1168874af05b8038b27a9e685e83a44dc4204456`：只改 provider Region::create，
+冲突导出借 ggml_dup，metadata arena 为每个公开输出预留一个额外 tensor 上界；
+新增一个 provider 回归覆盖 input 别名与三个 computed reshape 输出、精确容量/小一字节拒绝、
+两次实际 replay。冷容量增加 O(outputs) 个 ggml tensor metadata，warm 只在冲突导出复制
+对应输出字节。AUDITED 提交3d40003bb早于产品提交；当前仅冻结实现，测试尚未实跑。
