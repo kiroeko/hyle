@@ -2022,3 +2022,10 @@ SDK成功预写A/A或吞吐PASS。
 BLOCKED；product_authorization无owner/issue，docs/closure及146 skipped reasons均保留。
 沿[既有独立工具记录](../build/validation-selector-shared-bench-paths.md)分账，按本卡原有限
 门继续，不改selector、公共性能核心或产品，也不将该工具归属状态写成验证PASS。
+
+CE21[ASan地址facet](../../../../evidence/correctness/inference-g04-g05-cuda-ce21-host-asan/receipt.json)
+已实际PASS：16测试零FAIL/SKIP及5个原source风险模式，最终七处vendor输入逐字绑定9c9，
+四FI CUDA TU及原直接host消费者均有实际instrumented command，运行前后二进制SHA一致。
+阶段累计524.610s，外层launch532.000s与之重叠，不重复相加；原NVIDIA process LSan仍
+INCONCLUSIVE，不由本地址facet冒充完整泄漏证明。三facet批次已串行进入UBSan，后续
+TSan、新numeric/P1尚未签发；产品candidate与其它owner不变。
