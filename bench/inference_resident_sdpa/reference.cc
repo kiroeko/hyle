@@ -164,8 +164,6 @@ v::Program encoded_reference_program(const v::Context &context,
     }
     state->values[mask].constant=take(context.upload(state->values[mask].description,
         std::as_bytes(std::span(words))));
-    std::fprintf(stderr,"# ORIGINAL_Q8_MASK_COLD bytes=%zu window_left=%d\n",
-                 words.size()*sizeof(std::uint16_t),int(window_left));
   }else if (causal) {
     const std::array<std::int64_t, 2> mask_shape{rows, keys};
     const auto seed = add(c::DataType::kFloat32, mask_shape);

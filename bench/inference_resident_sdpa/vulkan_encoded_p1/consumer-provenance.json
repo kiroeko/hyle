@@ -1,0 +1,78 @@
+{
+  "kind": "PROVISIONAL_ARCHETYPE",
+  "source": "consumer-provenance.md",
+  "sha256": "d9c5df5fb19afd53d7dc55adbe683680342f23b4973a7fc51d4dc9104cbff734",
+  "consumer": "Single-machine Q8 cache attention fragments with mixed Q1/prefill, long prefill and rectangular noncausal holdout",
+  "product_candidate": "982676cb05a6e6244e66e0a596347aa96043617b",
+  "backend": "vulkan",
+  "actual_dtype": "F16 query/output and independent Q8_0 K/V carriers",
+  "cases": [
+    {
+      "q": [
+        1,
+        17
+      ],
+      "kv": [
+        1024,
+        768
+      ],
+      "Dqk": 256,
+      "Dv": 256,
+      "causal": true,
+      "window_left": 16,
+      "hq": 8,
+      "hkv": 2,
+      "requests": 2,
+      "capacity_tail": 13
+    },
+    {
+      "q": [
+        64,
+        128
+      ],
+      "kv": [
+        1024,
+        768
+      ],
+      "Dqk": 256,
+      "Dv": 256,
+      "causal": true,
+      "window_left": -1,
+      "hq": 8,
+      "hkv": 2,
+      "requests": 2,
+      "capacity_tail": 13
+    },
+    {
+      "q": [
+        17,
+        1
+      ],
+      "kv": [
+        7,
+        47
+      ],
+      "Dqk": 64,
+      "Dv": 128,
+      "causal": false,
+      "window_left": -1,
+      "hq": 8,
+      "hkv": 2,
+      "requests": 2,
+      "capacity_tail": 13
+    }
+  ],
+  "model_scope_path": "docs/implementation/tasks/project/qwen35-2b-command-consumer-scope-2026-10.md",
+  "model_scope_sha256": "72125de2bd4d9c363ee44399b7705fa0a6784fa28743f6fbcc80febff4481048",
+  "whole_model_claim": false,
+  "page_size": 16,
+  "physical_page_order": "reverse with one shared readonly page",
+  "max_pages": "sum ceil(KV/16)+2; one replaced page makes three whole pages unreferenced",
+  "max_page_refs": "sum ceil(KV/16)",
+  "charged_prepare": true,
+  "qualified_sdk_identity": {
+    "path": "qualified-sdk-artifacts.json",
+    "sha256": "ac4ff2afd7cce78a5b661988e443d49974918c2528db365422e442113d21f538"
+  },
+  "numerical_preflight_required": "evidence/correctness/inference-g04-g05-vulkan-encoded-page-preflight/receipt.json"
+}

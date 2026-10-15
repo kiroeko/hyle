@@ -996,3 +996,17 @@ window/prefill mask 分别28160/327680 bytes；D64/Dv128 holdout gather22032 byt
 TEMP/A/D 为 uint；已有 U8 Gather 仅重解释位模式。独立复核新接线未发现 MUST，
 同时明确 K/V 各有 normalization 和输出 Copy，不能只记两个 GetRows。实际生成 dispatch、
 额外复制与 native 分配尚待串行预检，不由静态账签 P1 或零 allocation。
+
+正式比较的[独立 SDK 构建入口](../../../../bench/inference_resident_sdpa/vulkan_encoded_p1/CMakeLists.txt)、
+[合同](../../../../bench/inference_resident_sdpa/vulkan_encoded_p1/contract.json)及
+[费用/来源](../../../../bench/inference_resident_sdpa/vulkan_encoded_p1/consumer-provenance.md)
+已备齐，尚未运行。它只构建比较程序/control，直接链接已验证的 relocated static SDK，
+不会重新构建产品库。29个HYLE库与原封存哈希一致；三个原生archive整文件哈希不同，
+但有序对象成员152/9/15逐字节一致，原不等哈希与成员证据同时保留，不冒称整库文件相同。
+A/A 必须先读取实际 numerical/lifecycle receipt，再核对五个benchmark输入、公共/Vulkan
+产品输入、original SPIR-V、SDK库和installed headers；16进程与八strata、原controls、
+n15→31、5%门不变。独立静态复核无新增MUST；合同schema校验通过不代表构建、A/A或P1。
+
+数值运行前进一步移除 reference helper 每次 prepare 的 mask metadata fprintf，防止
+peer 额外日志污染计时；冷形状字节账保留，数学/上传/owner未变。此前Vulkan队列仍仅在
+等待、没有子进程或重型运行，已保存取消记录并换新源码快照；CPU扩样/后续CUDA不受影响。

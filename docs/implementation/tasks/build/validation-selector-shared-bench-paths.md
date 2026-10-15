@@ -88,3 +88,7 @@ product_authorization owners/issues 均为空，selected docs/closure 与146 ski
 采样前把上述 adapter 的逐页 Concat 改为已有 GetRows 位复制 Gather 后，计划
 `.scratch/inference-gaps/g04-g05/vulkan-encoded-page-gather-validation-plan.json` 仍保留同类
 unknown 与146 skipped reasons，product_authorization 无 owner/issue；未修改产品或公共工具。
+
+同批 Vulkan 编码页独立 SDK 比较合同归该共享目录族；计划
+`.scratch/inference-gaps/g04-g05/vulkan-encoded-p1-contract-validation-plan.json` 保留原 unknown
+与146 skipped reasons。仅构造合同/A/A、校验来源，不重编产品、不启动完整采样或改工具core。

@@ -1,0 +1,1075 @@
+{
+  "prefix": "/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-sdk/vulkan-static-1/relocated",
+  "supplemental_native_archives": [
+    {
+      "path": "lib/libggml-vulkan.a",
+      "sha256": "649762f96253bbfdfc5c45e17ab1c7d6cbd598cc435b811db9a56a4f38864464",
+      "producer_path": "/Users/kiro/hyle-scratch/compute-unified/a-cpu-vulkan/selected-graph/static-sdk-build/bin/libggml-vulkan.a",
+      "producer_sha256": "c2e0861f64918b24d9946cefa185b9dfc5b9101f94c42d9cf00fc8baf028d412",
+      "whole_archive_comparison": "DIFFERENT",
+      "member_comparison": "IDENTICAL_INCLUDING_ORDER_AND_NAMES",
+      "members": [
+        {
+          "name": "ggml-vulkan.cpp.o",
+          "bytes": 2016728,
+          "sha256": "b80a086896172e51d98fced98a77ebcb5367ad0b7502e7add382e97468ebdb61"
+        },
+        {
+          "name": "acc.comp.cpp.o",
+          "bytes": 7800,
+          "sha256": "006095c06c28a14a441146a84200d4e90b7c06e26f91717b56f5ff9f27aedb0c"
+        },
+        {
+          "name": "add.comp.cpp.o",
+          "bytes": 110064,
+          "sha256": "f091c95da7df09d3e69b3a83c4b56b5e6a1c59610791e3eaf2f266d5d0413e81"
+        },
+        {
+          "name": "add1.comp.cpp.o",
+          "bytes": 12792,
+          "sha256": "5259c90bc24bde877aac78215e30d54beb7b58419ffabb1e92dc8c4c087262f5"
+        },
+        {
+          "name": "add_id.comp.cpp.o",
+          "bytes": 2872,
+          "sha256": "6ab380c5012199a62d1614c12c66b201a03c97db4ce9540485d159247b406230"
+        },
+        {
+          "name": "arange.comp.cpp.o",
+          "bytes": 1720,
+          "sha256": "9a3f3b8aae39c63b4ee404ea3bfc499d8a54381d79534a3cc25397086b0fbf40"
+        },
+        {
+          "name": "argmax.comp.cpp.o",
+          "bytes": 3680,
+          "sha256": "f3c63d4b975d090fcd9b5e35b8b0f0a45a8be96bff53e5847cd1646402a89e5b"
+        },
+        {
+          "name": "argsort.comp.cpp.o",
+          "bytes": 7936,
+          "sha256": "b17d92fd5c6d5c9cd00a8063278e6447f4ab5b8dd35c13650832785e55dbfc09"
+        },
+        {
+          "name": "argsort_large.comp.cpp.o",
+          "bytes": 11776,
+          "sha256": "7b47a6217dc57309d6c2d792aa6c6aeb59070bdf275aafca60c5a5721608de8c"
+        },
+        {
+          "name": "col2im_1d.comp.cpp.o",
+          "bytes": 10856,
+          "sha256": "927a0fd316ea068a4e8e334b8c42b97b6f768be30961b4188d161a3f1a9dcfd9"
+        },
+        {
+          "name": "concat.comp.cpp.o",
+          "bytes": 22632,
+          "sha256": "aada5e9678699ea210eebfaae59f1a2634bfc7c6035a51156fe888df329de6c9"
+        },
+        {
+          "name": "contig_copy.comp.cpp.o",
+          "bytes": 30808,
+          "sha256": "8404ce653414a047974f16d27c01d0dd4a6d2658c9d56d44c4e6349a0038d789"
+        },
+        {
+          "name": "conv2d_dw.comp.cpp.o",
+          "bytes": 16240,
+          "sha256": "f380b637c52f0a2e8124714f7a1ade95e3ee5f1a40389f88e377db4abb419eb3"
+        },
+        {
+          "name": "conv2d_mm.comp.cpp.o",
+          "bytes": 246512,
+          "sha256": "316acbd89b4989b36033ea608a197d5c3568c0463d30442fa96f61ee7cc72c5a"
+        },
+        {
+          "name": "conv3d_mm.comp.cpp.o",
+          "bytes": 127648,
+          "sha256": "ac2ff4407e7bd368675b1100b776c8af58ac564492a0c656f2caefebef785030"
+        },
+        {
+          "name": "conv_transpose_1d.comp.cpp.o",
+          "bytes": 5736,
+          "sha256": "4989f0e0da143f43498e6812c3b683922fe62ab9cecc7f9cfb3e301309c8c5f2"
+        },
+        {
+          "name": "copy.comp.cpp.o",
+          "bytes": 49568,
+          "sha256": "881616c24b79d82ca206ec605ac6c20ba9de3f94a40a192aa213ab891489ae6f"
+        },
+        {
+          "name": "copy_from_quant.comp.cpp.o",
+          "bytes": 114248,
+          "sha256": "7bceaea277cacc1b84857086993a54ae0ce86c13d8a78fcd042f561928c7a9a0"
+        },
+        {
+          "name": "copy_to_quant.comp.cpp.o",
+          "bytes": 995008,
+          "sha256": "41b4bfdf0399a1521d858f635f6c21555bd164e15cc7cd02ed79186b46b04a92"
+        },
+        {
+          "name": "copy_transpose.comp.cpp.o",
+          "bytes": 21896,
+          "sha256": "2eb560a63832b107d35f2a6e74f51b73a1c5fa2cee99c66814cf6c975443bd9b"
+        },
+        {
+          "name": "copy_transpose_02.comp.cpp.o",
+          "bytes": 21912,
+          "sha256": "b28bceee4c67fa91e05cc5f5ff01ba5c1e100425ce870292a0ebd99bfbd60afc"
+        },
+        {
+          "name": "count_equal.comp.cpp.o",
+          "bytes": 2360,
+          "sha256": "7cc99150543b7991f7e04c1354e71fe8a445975e1d3bc8367d6b3e471ff5c7ea"
+        },
+        {
+          "name": "count_experts.comp.cpp.o",
+          "bytes": 11720,
+          "sha256": "8a8073270b47239c4a8f4b83df9c33269eb57140a83c4e31c8469aeb28ea7df1"
+        },
+        {
+          "name": "cross_entropy_loss.comp.cpp.o",
+          "bytes": 4776,
+          "sha256": "7b7e819b5711449a11de0f17ddeec51e0ad0200158de905dc9df169c3bd7bbdf"
+        },
+        {
+          "name": "cross_entropy_loss_back.comp.cpp.o",
+          "bytes": 4504,
+          "sha256": "fdd1dbc7c060a21fda2b6e7c207a285475cc3aedffe93e6f28546c835a7a29dc"
+        },
+        {
+          "name": "cumsum.comp.cpp.o",
+          "bytes": 6272,
+          "sha256": "d456f9d106b204f58544056207723cc4a21d6987398077231f65bf7f63c725c6"
+        },
+        {
+          "name": "cumsum_multipass1.comp.cpp.o",
+          "bytes": 4696,
+          "sha256": "fa288b52b00bb89a91352c8be21a4eeb2d74fcdfb3681db60183bb957b2cfcfb"
+        },
+        {
+          "name": "cumsum_multipass2.comp.cpp.o",
+          "bytes": 4304,
+          "sha256": "c170f0b64c2f583b5de7e829c7854bd66245f4c9b0f1eb4427fe1f78a9081526"
+        },
+        {
+          "name": "dequant_f32.comp.cpp.o",
+          "bytes": 3736,
+          "sha256": "214469b0ef3e478a456e3c46f315be29723338bebb5b5864bfcd19c93badea08"
+        },
+        {
+          "name": "dequant_iq1_m.comp.cpp.o",
+          "bytes": 31664,
+          "sha256": "2f64ba4d0e212751b05620035556c5640d38d84eb37679eedd918f497eed14c1"
+        },
+        {
+          "name": "dequant_iq1_s.comp.cpp.o",
+          "bytes": 30496,
+          "sha256": "605ce16bc9414afdfd7730b8dbca44919ef6a0ae9ccbaa83fe9f8bacdbf64f9f"
+        },
+        {
+          "name": "dequant_iq2_s.comp.cpp.o",
+          "bytes": 38072,
+          "sha256": "ce23d365c850eccb30169f9e831d3b8ef89e926baa6414e1219c4a6718996998"
+        },
+        {
+          "name": "dequant_iq2_xs.comp.cpp.o",
+          "bytes": 25352,
+          "sha256": "ba7d5bc56bee676b297f5265e09bf7e2d4372e127c8f7d6237c7ddf130c317b2"
+        },
+        {
+          "name": "dequant_iq2_xxs.comp.cpp.o",
+          "bytes": 18792,
+          "sha256": "802f4a18f27d0bdaf533e18e1a1a6589b3e3daa9bd27d464649498e5045ee08e"
+        },
+        {
+          "name": "dequant_iq3_s.comp.cpp.o",
+          "bytes": 23120,
+          "sha256": "78308ddefc97a3b654c0e476ab850ab1fd38da5162be785e2a0c5cd0681f1d0e"
+        },
+        {
+          "name": "dequant_iq3_xxs.comp.cpp.o",
+          "bytes": 16960,
+          "sha256": "e3a5496e5ccb8cd3318517de75021d4ee2fffa5cde914001cb9eebf0f6ca5c88"
+        },
+        {
+          "name": "dequant_iq4_nl.comp.cpp.o",
+          "bytes": 6640,
+          "sha256": "fa7c995d4abcb31acb621a55b0820fb6141c1bef3115d8fb08abe71aad50b51d"
+        },
+        {
+          "name": "dequant_iq4_xs.comp.cpp.o",
+          "bytes": 10640,
+          "sha256": "233a204629a408dd1beec2a45ac867671a024b0c054841fff36813de94aafc08"
+        },
+        {
+          "name": "dequant_mxfp4.comp.cpp.o",
+          "bytes": 7080,
+          "sha256": "ffb13adbf82213e10ca91ad4c2301dd3526ed96a9237d167bb0ef2fa84284e30"
+        },
+        {
+          "name": "dequant_nvfp4.comp.cpp.o",
+          "bytes": 7816,
+          "sha256": "55f604cf8ca46f9647874572745e371836e271c774b59c2ee3e2ab03230a136d"
+        },
+        {
+          "name": "dequant_q1_0.comp.cpp.o",
+          "bytes": 4280,
+          "sha256": "91a63ac16e9b5420368f2f9e1668a8824bb75dccfef096e2dabd4888ce397d3c"
+        },
+        {
+          "name": "dequant_q2_0.comp.cpp.o",
+          "bytes": 3040,
+          "sha256": "bbe54415c4bd5633a8edea61b7edb56ca50cc7caadd4398658e82bb9d84ab03f"
+        },
+        {
+          "name": "dequant_q2_k.comp.cpp.o",
+          "bytes": 4408,
+          "sha256": "1b344c1a6b13b4d7f983974350f1703ff031b62cb8be662a77c74e39594225fe"
+        },
+        {
+          "name": "dequant_q3_k.comp.cpp.o",
+          "bytes": 5232,
+          "sha256": "662f892e90e4a4a1ca6d873132ace2a5f7fe06a1c51d090f38c6b7e7cddfb0ce"
+        },
+        {
+          "name": "dequant_q4_0.comp.cpp.o",
+          "bytes": 5712,
+          "sha256": "9a8ce589ec5397555482afb7267f45e84f91082ba2ddfa513218735b97584667"
+        },
+        {
+          "name": "dequant_q4_1.comp.cpp.o",
+          "bytes": 5792,
+          "sha256": "cec676b3c52e01b168a38e8944789ddd2d8fb180ac39dc1777e530e0b6c196e5"
+        },
+        {
+          "name": "dequant_q4_k.comp.cpp.o",
+          "bytes": 6448,
+          "sha256": "ffd0ffb7f7d05bce8032b3c84c2fa057fd0125ff3c7f4510f4a3fcf7547f472f"
+        },
+        {
+          "name": "dequant_q5_0.comp.cpp.o",
+          "bytes": 7192,
+          "sha256": "2590ed7519218c2564b6ddef9849a765f447edfd3107666814af9caa49e3887a"
+        },
+        {
+          "name": "dequant_q5_1.comp.cpp.o",
+          "bytes": 7088,
+          "sha256": "32c1a1b137fc2c04bcd18afe1023640e7f9a4fa26721a05a9927565698a82765"
+        },
+        {
+          "name": "dequant_q5_k.comp.cpp.o",
+          "bytes": 6496,
+          "sha256": "dfae5141d1c54a41d1295e2cad0aeab6c8cde5f739da895c8c36c599aced60ec"
+        },
+        {
+          "name": "dequant_q6_k.comp.cpp.o",
+          "bytes": 4712,
+          "sha256": "92d9225a4506bb5a126cd0c7fe003e73c7906eea44b53c23d63be7a72ae3dabc"
+        },
+        {
+          "name": "dequant_q8_0.comp.cpp.o",
+          "bytes": 10616,
+          "sha256": "6aba96895dbe1ce147c509f3a668f7db2ed72a0c3cb0adf27da9d010e4748602"
+        },
+        {
+          "name": "dequant_tq1_0.comp.cpp.o",
+          "bytes": 3760,
+          "sha256": "d83d0641ba1591f4e5a0a281fa661201df669228dabb398efe2dd0ff2dc39358"
+        },
+        {
+          "name": "dequant_tq2_0.comp.cpp.o",
+          "bytes": 3344,
+          "sha256": "07c462b7b946152df0a34dda04d1bedd643f18be2301271a8ee156f3412beea1"
+        },
+        {
+          "name": "diag.comp.cpp.o",
+          "bytes": 9048,
+          "sha256": "b19d9a4b8706f11b1626b788f61b193a937679b18900195acd409941c8acd0af"
+        },
+        {
+          "name": "diag_mask_inf.comp.cpp.o",
+          "bytes": 2056,
+          "sha256": "a12eca15e4a622b694fdb8a850970419d1d7db7df26510cde68450e359441bb1"
+        },
+        {
+          "name": "div.comp.cpp.o",
+          "bytes": 55200,
+          "sha256": "e1006d7ffca5833df366603722f32a2e4ae0d0ad32c0c852c0f2922acb4179d2"
+        },
+        {
+          "name": "dsv4_hc_comb.comp.cpp.o",
+          "bytes": 4776,
+          "sha256": "a8a7cfdcaa6df2988f08e03a565ea339161aabc442e19569dfb3e788018b6f27"
+        },
+        {
+          "name": "dsv4_hc_post.comp.cpp.o",
+          "bytes": 6744,
+          "sha256": "be98757af89ef0af2bd8841f93e500151208f0a4dd79eb911c1832b5d8103c06"
+        },
+        {
+          "name": "dsv4_hc_pre.comp.cpp.o",
+          "bytes": 3832,
+          "sha256": "8b71c3d93e40c699ed7e600e2ded63762991e8e02c297ee67937ba54a811feaf"
+        },
+        {
+          "name": "fill.comp.cpp.o",
+          "bytes": 3152,
+          "sha256": "f721f42593410f90d84dec6e105267da1b87e0875baceb5b92ad1a16a57436fc"
+        },
+        {
+          "name": "flash_attn.comp.cpp.o",
+          "bytes": 864008,
+          "sha256": "f7c12339997193f753eb4578d1503c1a7c44ccf3ccec36218937ceee65c68320"
+        },
+        {
+          "name": "flash_attn_cm1.comp.cpp.o",
+          "bytes": 262968,
+          "sha256": "58b113bb3712bfe685ca25df717651bb4edbac147c95d1ad26c64f2214c83530"
+        },
+        {
+          "name": "flash_attn_cm2.comp.cpp.o",
+          "bytes": 148768,
+          "sha256": "f75e4fd252a646c37919017fc3af3c3c72012798946714e953ea756eb9dcf23c"
+        },
+        {
+          "name": "flash_attn_mask_opt.comp.cpp.o",
+          "bytes": 12896,
+          "sha256": "00a035a3cc31356bbedd62cda996d46635c1b132a552abf5d755002b2ebbe88b"
+        },
+        {
+          "name": "flash_attn_split_k_reduce.comp.cpp.o",
+          "bytes": 5944,
+          "sha256": "5136818a3ce2b86c40dc891e7e66d38908238302ef448f0e84010fa91afc450a"
+        },
+        {
+          "name": "fwht.comp.cpp.o",
+          "bytes": 8896,
+          "sha256": "8e69f3ed91308d9fe4b464632179ab7d8d48917ea19f4ccc2247fc9c7fd95251"
+        },
+        {
+          "name": "gated_delta_net.comp.cpp.o",
+          "bytes": 26728,
+          "sha256": "3cfd4468094ff9f14afda67d99b16ec0289ad86bd9353527a6d400088375d017"
+        },
+        {
+          "name": "geglu.comp.cpp.o",
+          "bytes": 12416,
+          "sha256": "bb97c10fae267f6591cbae8087b22cc99e05244820e6ec181892eaa6724ece20"
+        },
+        {
+          "name": "geglu_erf.comp.cpp.o",
+          "bytes": 14024,
+          "sha256": "b38099654f99ce80982e5383c68ac16efcb7d068a1ea4a486a48ba9ee957f5f5"
+        },
+        {
+          "name": "geglu_quick.comp.cpp.o",
+          "bytes": 11504,
+          "sha256": "ee1af63e8bf22040f9653350f968211f2f02f5a67bb36c317e7f95a8f7316737"
+        },
+        {
+          "name": "get_rows.comp.cpp.o",
+          "bytes": 33624,
+          "sha256": "5def3e6503c8d9c01cb07b757d98a20455cd08566fb03d93d35d59b51c4ef7dd"
+        },
+        {
+          "name": "get_rows_back.comp.cpp.o",
+          "bytes": 3960,
+          "sha256": "ed50d160f60eaa394821c4299f7d0762060d495ebd3ef8a755ccb3c98867432c"
+        },
+        {
+          "name": "get_rows_quant.comp.cpp.o",
+          "bytes": 493200,
+          "sha256": "61928628e877fced35d88d823e5c7ae212f28e244aaf8c2cc3e75d25a784f96b"
+        },
+        {
+          "name": "gla.comp.cpp.o",
+          "bytes": 29056,
+          "sha256": "ec556ab1fa9d145c5ca14ce9116ba38f9b4548c41e08916eec7afde10578ff44"
+        },
+        {
+          "name": "group_norm.comp.cpp.o",
+          "bytes": 3648,
+          "sha256": "8ff3507e5d320e524442c830ac03b6ac0fa80bac6bc5685f1bca0fc2d5b2a6a1"
+        },
+        {
+          "name": "im2col.comp.cpp.o",
+          "bytes": 22024,
+          "sha256": "f21afb04d3a1aca2a6dd6bc387839512233cc8d23edbea074320ac7117c530be"
+        },
+        {
+          "name": "im2col_3d.comp.cpp.o",
+          "bytes": 20672,
+          "sha256": "a1e73ef2ae7fd19ff052ed68933a90bd1d93938b631c1185a2db9361e4d784c6"
+        },
+        {
+          "name": "l2_norm.comp.cpp.o",
+          "bytes": 6392,
+          "sha256": "446fbaaf314b680f289293cee7c0b607daf7aaea694b3da0a6eb4bd666656156"
+        },
+        {
+          "name": "lightning_indexer.comp.cpp.o",
+          "bytes": 32296,
+          "sha256": "36dd29439add9b9ea7b10be01bc5ca900e10c3952ca895242a314b66d515219f"
+        },
+        {
+          "name": "log.comp.cpp.o",
+          "bytes": 11040,
+          "sha256": "88aec4ac924d6a07181ad8e473793894bfca2c52b2623e9f8e2d9dc5f8059bb7"
+        },
+        {
+          "name": "mul.comp.cpp.o",
+          "bytes": 55200,
+          "sha256": "b25095b2cdc964086119b41db6174675a86ca35f348bbdfacb272cee0a8bc657"
+        },
+        {
+          "name": "mul_mat_split_k_reduce.comp.cpp.o",
+          "bytes": 3288,
+          "sha256": "296d24259c66050430ad508adb6db4e26fca557a788782ed492ea486961486d2"
+        },
+        {
+          "name": "mul_mat_vec.comp.cpp.o",
+          "bytes": 4007112,
+          "sha256": "b74999c9f07e4c8e51660167446121e081e19bca0c5db26b5c34fe3ff278c80f"
+        },
+        {
+          "name": "mul_mat_vec_iq1_m.comp.cpp.o",
+          "bytes": 392136,
+          "sha256": "43a502a2a043aebb9bfb747ec5793e01ef1bf24fe8374d22494e3ed005340fce"
+        },
+        {
+          "name": "mul_mat_vec_iq1_s.comp.cpp.o",
+          "bytes": 319416,
+          "sha256": "10a079fb7e5a2aeb2dd59bb93215bf530d7ab107ff8652219487acdad024ccf9"
+        },
+        {
+          "name": "mul_mat_vec_iq2_s.comp.cpp.o",
+          "bytes": 406872,
+          "sha256": "94f3334c52acd7ceb784f83ececb71109e015d47f8d96cd1bcd13ae1e708d30e"
+        },
+        {
+          "name": "mul_mat_vec_iq2_xs.comp.cpp.o",
+          "bytes": 328032,
+          "sha256": "a55eddc89d188c3eddafab5827ec46693c87c983b24eac9c0417800bffcdd036"
+        },
+        {
+          "name": "mul_mat_vec_iq2_xxs.comp.cpp.o",
+          "bytes": 232288,
+          "sha256": "d378317f5b5ee8c2f273dc161bb1dccb3514e9d3207cc69963660a4fdcd3db98"
+        },
+        {
+          "name": "mul_mat_vec_iq3_s.comp.cpp.o",
+          "bytes": 267008,
+          "sha256": "28061bd67957abb68c7f337e175146b413fe9a94513a157081388dcac7367426"
+        },
+        {
+          "name": "mul_mat_vec_iq3_xxs.comp.cpp.o",
+          "bytes": 214096,
+          "sha256": "11838e2f2fedba24534506f2665952b8106ceddf223c250119aa9e45571b6195"
+        },
+        {
+          "name": "mul_mat_vec_iq4_xs.comp.cpp.o",
+          "bytes": 156480,
+          "sha256": "5a651ee012c6b52653d9249ecc6e153d57b260a11fb872a2aee34ec18d768806"
+        },
+        {
+          "name": "mul_mat_vec_nc.comp.cpp.o",
+          "bytes": 7416,
+          "sha256": "3b8593cb8f71379b0096c69590c3b7aabd929ea0cf7f3fb35cf6cf9b990da2f5"
+        },
+        {
+          "name": "mul_mat_vec_p021.comp.cpp.o",
+          "bytes": 14008,
+          "sha256": "f2993b2a0d9bb0115f944ef859e1b33c164f52401eb672b3ade4910ecaacf061"
+        },
+        {
+          "name": "mul_mat_vec_q2_k.comp.cpp.o",
+          "bytes": 288424,
+          "sha256": "b8631c66ed3ff54bad3d4627c66290ed8026cfdf2395e96e346c04d6d139307d"
+        },
+        {
+          "name": "mul_mat_vec_q3_k.comp.cpp.o",
+          "bytes": 311000,
+          "sha256": "ac11dbe5e004d04cf2f78c1b9c87a5aa7a4387145c4bb9e11f40b9f0474ae26d"
+        },
+        {
+          "name": "mul_mat_vec_q4_k.comp.cpp.o",
+          "bytes": 169336,
+          "sha256": "0c8312d8b59e63cd41fada40af57b7bd4a8ded8c26a725461fe815c9414dbdfc"
+        },
+        {
+          "name": "mul_mat_vec_q5_k.comp.cpp.o",
+          "bytes": 183256,
+          "sha256": "5da0b52e6d492bbc1225092c22530f297aee33a3eaf31a13af3ecb3de8fcd4fe"
+        },
+        {
+          "name": "mul_mat_vec_q6_k.comp.cpp.o",
+          "bytes": 241192,
+          "sha256": "3de1f2613019e359cb5895a721d9025b693db12ec28cebaedf8febacad420986"
+        },
+        {
+          "name": "mul_mat_vec_tq1_0.comp.cpp.o",
+          "bytes": 192320,
+          "sha256": "6885795b240aea2cf4677e3128b9bad4a1d1c2cdf2906932911548e167e00e40"
+        },
+        {
+          "name": "mul_mat_vec_tq2_0.comp.cpp.o",
+          "bytes": 153416,
+          "sha256": "476b7dae2031efa95bb691cae6c109ca1decd78dcedd502a27fda204e2232ebb"
+        },
+        {
+          "name": "mul_mat_vecq.comp.cpp.o",
+          "bytes": 3370768,
+          "sha256": "bf4fba302b8a548458e3d2cf684f677edcae874f495cf00833a3d6cd291484a1"
+        },
+        {
+          "name": "mul_mm.comp.cpp.o",
+          "bytes": 20728848,
+          "sha256": "3842236390037643878087f730a3ea204a9bc72bde55cf7c556effdb355974ab"
+        },
+        {
+          "name": "mul_mm_cm2.comp.cpp.o",
+          "bytes": 2999696,
+          "sha256": "155306ed2481aab79d94d2388794fc40be4769604ce8b0b07a73a9dfb5065825"
+        },
+        {
+          "name": "mul_mmq.comp.cpp.o",
+          "bytes": 1654744,
+          "sha256": "95f237e658c4a6778ee5fd5b52180c61f6995ac2552028c312806288e7841eb6"
+        },
+        {
+          "name": "multi_add.comp.cpp.o",
+          "bytes": 20384,
+          "sha256": "352d1a9f1be105c73a2dd00023ebd3cef2bf1130f81a3f9db8002cac72f44b75"
+        },
+        {
+          "name": "norm.comp.cpp.o",
+          "bytes": 6656,
+          "sha256": "39de376fae5789b57a972952cde36d31353c6779dff2f1d09e8714de0616c44c"
+        },
+        {
+          "name": "opt_step_adamw.comp.cpp.o",
+          "bytes": 3288,
+          "sha256": "57327eb21390792e8ff87ca7e8018c455d94979a869384b73c6514107531261a"
+        },
+        {
+          "name": "opt_step_sgd.comp.cpp.o",
+          "bytes": 2328,
+          "sha256": "99928fd579a38ca185f531194fdebc6ee998ef3eb4bbe5b5bdb4209440f7e26e"
+        },
+        {
+          "name": "out_prod.comp.cpp.o",
+          "bytes": 4944,
+          "sha256": "274609f905c6e90d69bded5ca3eb82dfe1aa0ea7ea5977c6a8ada0a461cf7ecb"
+        },
+        {
+          "name": "pad.comp.cpp.o",
+          "bytes": 6368,
+          "sha256": "855ffd2842cfcf86a4bd28d2d655220fa35f7990e0063e249d326268418c68f7"
+        },
+        {
+          "name": "pad_reflect_1d.comp.cpp.o",
+          "bytes": 4832,
+          "sha256": "09a64280ed18c9aca79b9c6af9666be53742db1fe86a50a642781f176dbb0681"
+        },
+        {
+          "name": "pool1d.comp.cpp.o",
+          "bytes": 3312,
+          "sha256": "b7b3ade289a5872be659cf2e79fbbfa7a09ac87d4513473707e38aa7efd7219c"
+        },
+        {
+          "name": "pool2d.comp.cpp.o",
+          "bytes": 4016,
+          "sha256": "f257de2b1f5bc1c71b7e04992252aba87181a3bb29f85bb2107da07030b87c2d"
+        },
+        {
+          "name": "quantize_q8_1.comp.cpp.o",
+          "bytes": 14784,
+          "sha256": "15e092be20e19a18cab0a7ed87355d28010513998bea7fbbd37caf16cc88cbab"
+        },
+        {
+          "name": "reglu.comp.cpp.o",
+          "bytes": 10992,
+          "sha256": "1ec2fcd1f5305813a11886a3ac282b6f06061fe9f9dc64ffdcc6d60c3dc1cc0c"
+        },
+        {
+          "name": "repeat.comp.cpp.o",
+          "bytes": 9376,
+          "sha256": "7e488144c90bb38dc5df182a98fa4a2a3b8fdc697da62d5a4d7449da6e59ac2f"
+        },
+        {
+          "name": "repeat_back.comp.cpp.o",
+          "bytes": 5288,
+          "sha256": "30d9f89671d09bde125f4aa4b65e34c31b46aab99c33f9fda0e5e0152325a937"
+        },
+        {
+          "name": "rms_norm.comp.cpp.o",
+          "bytes": 332416,
+          "sha256": "1b9382a5ea9bbe60b664510c6001a114058b3f0207092d1e399ceda56ecb31d1"
+        },
+        {
+          "name": "rms_norm_back.comp.cpp.o",
+          "bytes": 3760,
+          "sha256": "7c8bbf00ea7a9bc56c05b6e9865b84693445190142d67f2c800fb1effc2ed00c"
+        },
+        {
+          "name": "rms_norm_partials.comp.cpp.o",
+          "bytes": 12400,
+          "sha256": "e2425c8393e4898d3c699a6a1e32823e3e9428f37f4bcf8b5a8cd5055eb01d6b"
+        },
+        {
+          "name": "roll.comp.cpp.o",
+          "bytes": 6160,
+          "sha256": "aa5bbf14c39efa6973795891cbeba6295276dad4eccbb3f06e3c17571cffed7b"
+        },
+        {
+          "name": "rope_multi.comp.cpp.o",
+          "bytes": 52856,
+          "sha256": "64d8fcd40fae3b8f664955979dcb824b9eb879bc0d26bd7b444a5a04b7fa52e4"
+        },
+        {
+          "name": "rope_neox.comp.cpp.o",
+          "bytes": 39152,
+          "sha256": "1a7233c7ab2ba92955044c4bbcaea46000b3bec2321744ec16195cba15f01dec"
+        },
+        {
+          "name": "rope_norm.comp.cpp.o",
+          "bytes": 37240,
+          "sha256": "a786aa63173fa314877ce22a138a4d705a7f30e8cceb6bead9a9382763b62826"
+        },
+        {
+          "name": "rope_vision.comp.cpp.o",
+          "bytes": 25456,
+          "sha256": "e2d2f3673b5c38043a2cf2bfcc81ebefb2268b21de68def2e988c95060362494"
+        },
+        {
+          "name": "scale.comp.cpp.o",
+          "bytes": 3072,
+          "sha256": "abc7e1f6c97a0d5f582fa32bcd831ceb539975cf70e45630bee4cc4c374fb628"
+        },
+        {
+          "name": "silu_back.comp.cpp.o",
+          "bytes": 2352,
+          "sha256": "31752bff1c8227d31de8b4992e708c14369ef8e1048f14a9250c72a7efd151a9"
+        },
+        {
+          "name": "snake.comp.cpp.o",
+          "bytes": 8648,
+          "sha256": "751e83169c04e2c6f126df17958efef67ba6c8e08029db2dd0e84f913a89a0e3"
+        },
+        {
+          "name": "soft_max.comp.cpp.o",
+          "bytes": 159248,
+          "sha256": "c8edfa0ef985fcd19317193bad9d3ee8c842b21582723622d20f8f7aaba375d6"
+        },
+        {
+          "name": "soft_max_back.comp.cpp.o",
+          "bytes": 3512,
+          "sha256": "4cc84b50b3ac0bcdc59f3179e0ac13afba809d1c2f2138f71e4feca2d6bbe784"
+        },
+        {
+          "name": "soft_max_large1.comp.cpp.o",
+          "bytes": 11424,
+          "sha256": "84d81d3b8615dae36c218c6bd4a0599a13c5daf378e08a50912fd05787115b16"
+        },
+        {
+          "name": "soft_max_large2.comp.cpp.o",
+          "bytes": 13624,
+          "sha256": "dde8ac144ae7e38f8f1a57acba66f58b73668cfecaa3f5af87d186ef7bd2a805"
+        },
+        {
+          "name": "soft_max_large3.comp.cpp.o",
+          "bytes": 9536,
+          "sha256": "15f5fac99a6a5cac90d49c4da2b2a2310a44b9375d6a4629efff4876ed05ed88"
+        },
+        {
+          "name": "solve_tri.comp.cpp.o",
+          "bytes": 6656,
+          "sha256": "27ecaa663a4d1347e0902a6daa3fcfd5086033108992b04e7f5dc5ab3d9eb134"
+        },
+        {
+          "name": "ssm_conv.comp.cpp.o",
+          "bytes": 4792,
+          "sha256": "26011195ec826f30327377b74614152e4f9394cde1d9de1ffbbd3dbb8901b718"
+        },
+        {
+          "name": "ssm_scan.comp.cpp.o",
+          "bytes": 15448,
+          "sha256": "caf2b568d388e3c7cb70aca1936cb9a313a458ed874926086961721f98d53575"
+        },
+        {
+          "name": "sub.comp.cpp.o",
+          "bytes": 55200,
+          "sha256": "f2adc2cc81c114aa9b175e821b6c407541c7ad83f1ccc8c584451a16a87360ae"
+        },
+        {
+          "name": "sum_rows.comp.cpp.o",
+          "bytes": 4408,
+          "sha256": "88196831be19f4aa564785cd28213d047bdd02218b22da2ec0136bf9db12e2d0"
+        },
+        {
+          "name": "swiglu.comp.cpp.o",
+          "bytes": 13472,
+          "sha256": "2fedff6193feb5b06247940c261689bd9676fc581882cec76fbfb320b4c3410e"
+        },
+        {
+          "name": "swiglu_clamp.comp.cpp.o",
+          "bytes": 12064,
+          "sha256": "168195f26037d43ee65f140b2605923354744b69f46734bbeba8ce695af7e40b"
+        },
+        {
+          "name": "swiglu_oai.comp.cpp.o",
+          "bytes": 12688,
+          "sha256": "095959f40051ba1ffe94a1eff969e5732ba60e3d5cc94f2faba2487400584de7"
+        },
+        {
+          "name": "timestep_embedding.comp.cpp.o",
+          "bytes": 2456,
+          "sha256": "9dab3e598fbf6f3565a53f71ba045115942e8c492a41410211f6bb21ce1afaa7"
+        },
+        {
+          "name": "topk_argsort.comp.cpp.o",
+          "bytes": 9760,
+          "sha256": "f3cdc9da7f9dfff6041cd8c21684dde8140facd9a2c676ba9d5290dfa2b63749"
+        },
+        {
+          "name": "topk_moe.comp.cpp.o",
+          "bytes": 12144,
+          "sha256": "475afa70df33f2ca20ecfe9d9f81b360e5d98116a7358d42e88a558a199fa855"
+        },
+        {
+          "name": "topk_nary_search.comp.cpp.o",
+          "bytes": 10160,
+          "sha256": "bd4d302f423f8efa7e750d0825129481044c5e73abcdafb4fab356b4ccee5973"
+        },
+        {
+          "name": "topk_radix_select.comp.cpp.o",
+          "bytes": 7488,
+          "sha256": "e0d0bec93ae2c8d2f2ec1bbf00e46a5b31ed73285d63e9c70f138e09487ee9f8"
+        },
+        {
+          "name": "tri.comp.cpp.o",
+          "bytes": 13216,
+          "sha256": "fdbc365f62eb83a8b91e1b5d588f7d3533306c48a666be9c79d88a1ebd57c5ee"
+        },
+        {
+          "name": "unary.comp.cpp.o",
+          "bytes": 359992,
+          "sha256": "9f49d8cf29ef15f5e1fbcb214ffa2abd457aa17f8c0c9499945a9dd1cf5ab5c3"
+        },
+        {
+          "name": "upscale.comp.cpp.o",
+          "bytes": 12552,
+          "sha256": "fef2499708d5cde3051fc14fb5a56c8943e6668c629b5e21ca83af93e2712431"
+        },
+        {
+          "name": "wkv6.comp.cpp.o",
+          "bytes": 32632,
+          "sha256": "d094131327266956525f35921a98555c070091d5fb62a3579a28404e503e71f4"
+        },
+        {
+          "name": "wkv7.comp.cpp.o",
+          "bytes": 32720,
+          "sha256": "d8960c003cd6e6b837805585b881240e33865a1194ef1f8db1ddb42185a385ad"
+        }
+      ]
+    },
+    {
+      "path": "lib/libggml-base.a",
+      "sha256": "fe80013096a4f91cd7e481500c93ba34c109b32ad6021e22795fca39eeee62f0",
+      "producer_path": "/Users/kiro/hyle-scratch/compute-unified/a-cpu-vulkan/selected-graph/static-sdk-build/bin/libggml-base.a",
+      "producer_sha256": "2f02172c0301ce352951175e6e597e46705d401c027491b4c8f663e31b5bd7ee",
+      "whole_archive_comparison": "DIFFERENT",
+      "member_comparison": "IDENTICAL_INCLUDING_ORDER_AND_NAMES",
+      "members": [
+        {
+          "name": "ggml.c.o",
+          "bytes": 272640,
+          "sha256": "8f6f5c04faf3906c8bd4ddfe5cb47fe2ef6af9d8594b522d88831848bd3a645b"
+        },
+        {
+          "name": "ggml.cpp.o",
+          "bytes": 336,
+          "sha256": "39dc6f84556b7c3ed183a9aa954192560d734b69386bfd86e6175f1d84e206eb"
+        },
+        {
+          "name": "ggml-alloc.c.o",
+          "bytes": 19760,
+          "sha256": "41f3e73168cf806446d2003c7cf165152b7f8c98f413cb6d8c56340b48b82596"
+        },
+        {
+          "name": "ggml-backend.cpp.o",
+          "bytes": 87280,
+          "sha256": "8f43b01bc039f4f0eec14f61930e36236078fb9c9071ee72cd16f22c71932601"
+        },
+        {
+          "name": "ggml-backend-meta.cpp.o",
+          "bytes": 128296,
+          "sha256": "3095e909adb4cf66fb8043c957d44b6a1a3ab27d904d4e6d9b7cd75a857b428c"
+        },
+        {
+          "name": "ggml-opt.cpp.o",
+          "bytes": 42656,
+          "sha256": "8cfaef311ac4479fb67e739684e91d0f23e4b7056d7fd38df21d976363a8056f"
+        },
+        {
+          "name": "ggml-threading.cpp.o",
+          "bytes": 1512,
+          "sha256": "007aba0f85c587b6edbeaed4d6100f0548b3b3a90eb68129a22e739de92b1d94"
+        },
+        {
+          "name": "ggml-quants.c.o",
+          "bytes": 270304,
+          "sha256": "b715a236285d410272b5bcc2324c06226600d18a4f6d108df56774b4df21540e"
+        },
+        {
+          "name": "gguf.cpp.o",
+          "bytes": 170560,
+          "sha256": "45ade39561d429f4c27b1d8e91773a8cf998218b6fb5361ec5d1947d94204ef5"
+        }
+      ]
+    },
+    {
+      "path": "lib/libggml-cpu.a",
+      "sha256": "73c3b17820c8d67327ceafb50575d8df9cf3be42cd95022569b9d0f7fba36a88",
+      "producer_path": "/Users/kiro/hyle-scratch/compute-unified/a-cpu-vulkan/selected-graph/static-sdk-build/bin/libggml-cpu.a",
+      "producer_sha256": "50cb1344432e523d19dd2284caa312e8dcdec5db7c414149af5ca9e852a008f2",
+      "whole_archive_comparison": "DIFFERENT",
+      "member_comparison": "IDENTICAL_INCLUDING_ORDER_AND_NAMES",
+      "members": [
+        {
+          "name": "ggml-cpu.c.o",
+          "bytes": 57352,
+          "sha256": "862fb809a99286c400419b372851f7e99a6f7d8901a245451b7ad427575d3ead"
+        },
+        {
+          "name": "ggml-cpu.cpp.o",
+          "bytes": 29192,
+          "sha256": "cf6d88dde7c74556a02c2b9a68dfef78b424a5058c8d595d24705c01384e831f"
+        },
+        {
+          "name": "repack.cpp.o",
+          "bytes": 255064,
+          "sha256": "78612684161132c2647495694b9436714ea4ce4e93fd61dc970b3b2cb17459cb"
+        },
+        {
+          "name": "iqp.cpp.o",
+          "bytes": 52672,
+          "sha256": "e99489718740d4ad1d235cfae15f59985b1fd82dff4ee5e91a32688808836b26"
+        },
+        {
+          "name": "hbm.cpp.o",
+          "bytes": 336,
+          "sha256": "39dc6f84556b7c3ed183a9aa954192560d734b69386bfd86e6175f1d84e206eb"
+        },
+        {
+          "name": "quants.c.o",
+          "bytes": 85560,
+          "sha256": "7b4b67740b2583bbcfb112f3b38170ea361bf30fd9941beab6eb50fc2c316e4c"
+        },
+        {
+          "name": "traits.cpp.o",
+          "bytes": 2480,
+          "sha256": "f10091117f2cf76a976278e2f1117e0d6039171d0cbca66c3c1a9e2cbf4df02e"
+        },
+        {
+          "name": "amx.cpp.o",
+          "bytes": 336,
+          "sha256": "39dc6f84556b7c3ed183a9aa954192560d734b69386bfd86e6175f1d84e206eb"
+        },
+        {
+          "name": "mmq.cpp.o",
+          "bytes": 336,
+          "sha256": "39dc6f84556b7c3ed183a9aa954192560d734b69386bfd86e6175f1d84e206eb"
+        },
+        {
+          "name": "binary-ops.cpp.o",
+          "bytes": 54888,
+          "sha256": "59e45422aee73beb90dd4945154b04ca4f4ff83b11839e51d86f5d62365361e5"
+        },
+        {
+          "name": "unary-ops.cpp.o",
+          "bytes": 102696,
+          "sha256": "630dd818000ecaf38d6d24c086c7b0bc2211f3938a2e7aed8821c292aaf8a80c"
+        },
+        {
+          "name": "vec.cpp.o",
+          "bytes": 7912,
+          "sha256": "d2636cd5d9085e98845b83e0babcd69ad5b6046a80285b10089af3b514da1cdb"
+        },
+        {
+          "name": "ops.cpp.o",
+          "bytes": 362672,
+          "sha256": "b46169687af55e94d67807fe01090c14694bd4b047453faeebf6949e9cb6da47"
+        },
+        {
+          "name": "quants.c.o",
+          "bytes": 62616,
+          "sha256": "6c4a400b767dab1205ebd81d16faef72354eaad7db0d8db4aadbe29ad3874042"
+        },
+        {
+          "name": "repack.cpp.o",
+          "bytes": 28744,
+          "sha256": "aad6cc8fdd9fedd93785b0fd55555ee15593dc498ef6d0f49edb117ce6083e3d"
+        }
+      ]
+    }
+  ],
+  "qualified_sdk_recipes": [
+    {
+      "path": "lib/cmake/Hyle/HyleConfig.cmake",
+      "sha256": "32c09b3c3d1fded16adbf78975de75ae36a2222fa71d521a9b558fc86eab4eac"
+    },
+    {
+      "path": "lib/cmake/Hyle/HyleConfigVersion.cmake",
+      "sha256": "d9f95ead4f9d6d91365d659e872794aacbaa4262a60cdc268231920763e3cf87"
+    },
+    {
+      "path": "lib/cmake/Hyle/HyleDispatch.cmake",
+      "sha256": "99942c5e5a8669b8a6c321c963cdb2d0314772c07e5274e3a566aec1f4c3ee70"
+    },
+    {
+      "path": "lib/cmake/Hyle/HyleIsa.cmake",
+      "sha256": "6c2a12a1921fd875fdec90314f70bf98ce6278bab086e96f6a91c1a429a33bc6"
+    },
+    {
+      "path": "lib/cmake/Hyle/HyleRuntimeStaging.cmake",
+      "sha256": "471d95794804c77309e77845beb4b7de4d4bcaa329b58d43bf4299434b935035"
+    },
+    {
+      "path": "lib/cmake/Hyle/HyleTargets-release.cmake",
+      "sha256": "d377d4111b046af4ff243b32cc2a0a308287d6561e1554c8a8760b26b6b309c4"
+    },
+    {
+      "path": "lib/cmake/Hyle/HyleTargets.cmake",
+      "sha256": "e08d8bc23ae1225be8a6a1956122ec28281a8faa06d18fde47eb0bcd29539ad3"
+    }
+  ],
+  "kind": "G04_G05_VULKAN_QUALIFIED_STATIC_SDK_IDENTITY",
+  "sealed_product_commit": "f772fcad2f2a6a67aa605bbaee10b68f1d540708",
+  "actual_vulkan_candidate": "982676cb05a6e6244e66e0a596347aa96043617b",
+  "sealed_artifact_record": {
+    "path": "evidence/correctness/inference-g04-g05-encoded-sdk/raw.zip!artifacts-vulkan-static-1.json",
+    "sha256": "fec933cf68748641650ce5c3ed47f730dcdbc70356643c5f55b6ee4a17dda965"
+  },
+  "qualified_hyle_artifacts": [
+    {
+      "path": "lib/libhyle_platform.a",
+      "sha256": "c51892ec771550291ea48e6677b1430b1c4bbf4aafe8622fec8bf98d8d5df93e"
+    },
+    {
+      "path": "lib/libhyle_compute_provider_iree_vulkan.a",
+      "sha256": "e5bd52d335904491c60399279d920f4f72a2900ae149365c5883d8850e19a05c"
+    },
+    {
+      "path": "lib/libhyle_platform_thread.a",
+      "sha256": "38e85a36920c3d0b948376640535578a74ea759b654dafd8dcbf94a1f6ab2b49"
+    },
+    {
+      "path": "lib/libhyle_graph_batch.a",
+      "sha256": "2b34854f1086bc71a65b9d149a74593382eb1551dc378ac816982804867bc39e"
+    },
+    {
+      "path": "lib/libhyle_time.a",
+      "sha256": "b1266d6b86044c266183cd39e824eb9eecea5148efba35672201cdeaf40d6fa4"
+    },
+    {
+      "path": "lib/libhyle_io_core.a",
+      "sha256": "f08daf1dfecd843ff1de722c42670b56c13b8fb736ea666e3c681a6b6b7b1898"
+    },
+    {
+      "path": "lib/libhyle_compute_stream.a",
+      "sha256": "6907a33fa06da104b701dff5d37ffb3dc5182ad1d964b0d9e1ee28805371f58a"
+    },
+    {
+      "path": "lib/libhyle_graph.a",
+      "sha256": "e6f14f688646c7bbb0b8e1d6fc41f042937cf805e863a8f0f0c96c127d954926"
+    },
+    {
+      "path": "lib/libhyle_error.a",
+      "sha256": "7ad48b51c714fe76e768795f0b87f73948edfa98bf7a45ecc898cd3f1a80b540"
+    },
+    {
+      "path": "lib/libhyle_compute_batch.a",
+      "sha256": "0c64e4425089d193e9c84d1158f48dba723885d6f94c6851232d80e759ab740e"
+    },
+    {
+      "path": "lib/libhyle_graph_route_cpu_vulkan.a",
+      "sha256": "3aeb89d44f63a95c32d42cac24250929a6c87600b2ace2f80f880fa67d30f78a"
+    },
+    {
+      "path": "lib/libhyle_compute_backend_cpu.a",
+      "sha256": "f717f1ec6aa8d9fa7d42bf7e77c51451bb4bc79929061b28b9bf0a153e056d6b"
+    },
+    {
+      "path": "lib/libhyle_graph_route_cpu.a",
+      "sha256": "517d1c95fd5008a6a0d6fe94bd3c2ac37ecd91fa222992b549d4445470bb2ba1"
+    },
+    {
+      "path": "lib/libhyle_compute_provider_ggml_vulkan.a",
+      "sha256": "943fd887282d7e3ce80501867fc4f09c3acf857f8a43dfe1c1f31c76cd6a7029"
+    },
+    {
+      "path": "lib/libhyle_compute.a",
+      "sha256": "39e76b59936ce73913ed932394844c5f58697f8c55a3c4b6595debe35c771dca"
+    },
+    {
+      "path": "lib/libhyle_graph_route_vulkan.a",
+      "sha256": "43c151e70521ae442f932d5525bef57267382bf8c6c9b7fcabf603c224c70675"
+    },
+    {
+      "path": "lib/libhyle_simd.a",
+      "sha256": "abdd8653821147ccb942cfd0e2395a5c3bae827576c6614f53fe79b3e36f26c5"
+    },
+    {
+      "path": "lib/libhyle_compute_provider_ggml.a",
+      "sha256": "c6fd42ec2e0861eeac852267bc2076dc651615590642496c07ab8cbaf577f9af"
+    },
+    {
+      "path": "lib/libhyle_platform_fs.a",
+      "sha256": "c6b43f6c1552aef8ec341b6c25a0846b206d6ca9146a445f80e52c629ea06705"
+    },
+    {
+      "path": "lib/libhyle_mem_vm.a",
+      "sha256": "c7ce8d05684309c7723b0ba69e97f2f11d2a38c58b1560c061a39da28d21ab74"
+    },
+    {
+      "path": "lib/libhyle_compute_ggml_runtime.a",
+      "sha256": "b725a938c23220a1fe50f83bab3e55cb529749a465333dad4c6ef410d3670f35"
+    },
+    {
+      "path": "lib/libhyle_container.a",
+      "sha256": "c135ce515d9ca3fc53fa01223fb3256637d90763ab3a588cfd77db24087a66ab"
+    },
+    {
+      "path": "lib/libhyle_compute_state.a",
+      "sha256": "48e9d33d691123b7bcab0dfe5309ff9fc5fe931db3fc6287685186a4dd42f738"
+    },
+    {
+      "path": "lib/libhyle_compute_ops.a",
+      "sha256": "a9d062a563ca7472d6fb5993d1c9eb1b210d73bd22e909bc7911705f362f9ff8"
+    },
+    {
+      "path": "lib/libhyle_mem.a",
+      "sha256": "bcfb427421b53e3a421703628a1f3785c1e9aaac45e053f26f01aa0b83fac864"
+    },
+    {
+      "path": "lib/libhyle_compute_route_cpu.a",
+      "sha256": "e51347995b8672a1a45dd6bec9ba3f70dfedd33764800ca3843c503143d397ae"
+    },
+    {
+      "path": "lib/libhyle_sched.a",
+      "sha256": "091725b97e190d04a5f68068afe0dea4709402c5a7ef2120b665303604379a5e"
+    },
+    {
+      "path": "lib/libhyle_compute_route_vulkan.a",
+      "sha256": "8ee0fae20595b852ecfbd90dd85c2eb86b83e401a8e8b0bdd76119b7e24865ba"
+    },
+    {
+      "path": "lib/libhyle_compute_provider_native.a",
+      "sha256": "249580a0021e492f66dc93fceb759039c2e51139e788037913988b67573f47ff"
+    }
+  ],
+  "limits": [
+    "GPU code unchanged since f772; SDK CPU provider predates CE12, no CE12 CPU execution claim",
+    "Initial strict whole-archive equality check failed; all original unequal hashes retained. Ordered object payloads match; container/header/TOC difference is not called whole-file equality.",
+    "No new numerical or performance qualification; existing six-SDK delivery evidence is the source of product validation."
+  ]
+}

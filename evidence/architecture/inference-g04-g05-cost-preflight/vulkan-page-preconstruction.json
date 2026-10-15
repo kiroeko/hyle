@@ -192,5 +192,13 @@
     "No compilation, numerical, A/A, throughput, noninferiority, capture, incremental producer, G06 or whole G04/G05 verdict",
     "Native slot rebuilding and peer mask/index uploads occur inside each measured operation; no kernel-only or forged warm replay",
     "Explicit original non-MMQ pipeline, not a best-of original host or whole-engine comparison"
-  ]
+  ],
+  "before_first_execution_correction": {
+    "path": "bench/inference_resident_sdpa/reference.cc",
+    "before_sha256": "1acf9e3488a5d3078ce2b8f9b210aed13ed95a68776b1a0b729a32d6cfa28b4b",
+    "after_sha256": "cd20ecd5e0f0e17ad10b235ba71c3491505df35208291df437d2f1b2bb501e40",
+    "change": "Remove per-prepare mask metadata fprintf from helper. Cold shape bills already recorded; no attention arithmetic, allocation, upload, owner or failure change. Prevents unequal benchmark logging overhead before any run.",
+    "old_source_commit": "0dd88e6a4",
+    "prior_numeric_queue": "Cancelled before any child/heavy run; original wait record/time unknown preserved; CPU P1 unchanged."
+  }
 }
