@@ -53,7 +53,7 @@ Vulkan有限NR/RF轮已CLOSED，原两次FAIL仍保留。整个G01分页等范�
 | G01 高效驻留读取 | CPU973、Apple280与Vulkanbc0有限轮均CLOSED。Vulkan最终原1region＋安全记录通过十source tests/两SDK/三san/原联合回归及Win定向编译，multi P1 QUALIFIED/5%非劣PASS、verify0；mixedD256 WIN，prefill/D64方向INCONCLUSIVE。原两次qualified FAIL与全部限制保留，整个G01其它准入域与分页未完成 | 单请求先核 dense/view；多请求接 native/等价直接驻留消费，避免按每 Q/head 重复物化全 KV | compute_batch、原 route/Provider、graph_batch 必要桥 |
 | G02 联合分页 | common与CPU+CUDA实跑、三交付/宿主风险通过；Windows余门及Apple/Vulkan联合分页待验 | 原 multi-queue bindings 接 batch coordinator；native hybrid 接准确 page/layout 与原 region/slot，公开 CPU→GPU→CPU | graph_batch、三个 graph hybrid、原 compute/native 权限桥 |
 | G03 增量 producer 组合 | [CLOSED](../compute/inference-g03-final-closure.md)，candidate11b2403e7：四原路线/三联合、Direct/Graph、多独立native来源、完整CPU+CUDA源码/两SDK、生命周期与P0通过；原失败/checked waits/费用保留 | 原 exclusive/F2/native waits到更新与读取；精确 dirty 域、成功 ready、idle input 生命周期 | compute_batch、compute/F2、原 native route与graph桥 |
-| G04 量化 KV | [共同域 CANDIDATE；CPU CE12 AUDITED](../compute/inference-g04-g05-cache-attention-domain.md)。四原路线/三联合编码页、数学、八 SDK 已验证；CUDA 新域 ASan 通过，UBSan/TSan 待验；CPU 合格 P1 保留 material FAIL，正在验证有限修正 | 按成熟实际 cache 编码冻结 payload/scales/layout、quantize append与直接读取，不每步解码完整历史 | compute_ops/batch、实际 Provider/native route |
+| G04 量化 KV | [共同域与 CPU CE12 均 CANDIDATE](../compute/inference-g04-g05-cache-attention-domain.md)。四原路线/三联合编码页、数学、八 SDK 已验证；CUDA 新域 ASan 通过，UBSan/TSan 待验；CPU 合格 P1 保留 material FAIL，有限修正已通过普通门、正在同合同复测 | 按成熟实际 cache 编码冻结 payload/scales/layout、quantize append与直接读取，不每步解码完整历史 | compute_ops/batch、实际 Provider/native route |
 | G05 attention 语义域 | 同卡已实现 causal-window/full noncausal/有限 Dqk≠Dv，与 G04 共用数学、数值/生命周期和交付证据；适用性能及剩余风险未全部签发 | 固定真实消费者所需 window/mask/维度等域及失败边界，成熟承载；未准入未来特例不无限扩张 | compute_ops/batch、实际 Provider/native route |
 | G06 metadata/decode | 有限只读预审已定位 metadata、上传/等待、权限准入和原生规划四组成本；待活动 owner 定界，不授权实现 | host-known/device-produced分界，active/delta上传、完整 topology复用与decode档，实际capture资格 | compute_batch、FI/native Provider、graph_batch |
 | G07 packed 权重 | 待有限编码选择 | 锁定 artifact→resident→selected math，借原生packed/冷repack；checked IDs保错误，排除warm完整展开/多余host检查 | 实际低精度 Provider/native route及资源桥 |
@@ -75,6 +75,38 @@ G06 后续有限 FIX 应覆盖 active/delta 与 immutable generation、Graph 一
 成本资格。验收沿稳定 tail、跨页、加入/结束、重排、同 shape 不同 layout 记上传字节、
 plan/replan、host wait、分配与权限账；复用未变 G03 生命周期/G04–G05 数学，不扩大能力域。
 本段是只读预审结论；原活动 owner 仍按 registry，G06 未进入 SCOPED/AUDITED 或取得 PASS。
+
+### G06 有限实施约束与验收草案
+
+本节补齐下一批的输入和反证，尚不切换活动 owner。固定 peer 源码复核没有发现第五组机制；
+只保留上述四组，具体接口在活动卡进入 AUDITED 前冻结。引用均使用本总卡的固定版本：
+
+| 有限组 | 成熟承载或现有机制 | 实施约束 |
+|---|---|---|
+| active / changed metadata | [SGLang host-known 与 active buffers](https://github.com/sgl-project/sglang/blob/7224fce1b5e488c9916f20ec0556d696e595d512/python/sglang/srt/layers/attention/flashinfer_backend.py#L203)；原 BatchSchema / BatchLayoutVersion | SELF，归 compute_batch；按实际有效区与改变区计费。peer 只证明 active buffer 更新，不证明任意 delta 零成本；保 immutable generation、旧快照与 inactive 区合同 |
+| 一次共享上传与原依赖 | [llama attention input 的层外创建、逐层消费](https://github.com/ggml-org/llama.cpp/blob/cbe28bb3cb0758f0c566a9a3561766821aeb0748/src/models/llama.cpp#L113)；原 F2/G03 upload / dependency | SELF，归 graph_batch / compute_batch；同 layout 的共享发生在各 node 上传之前。native workspace、reader 退休和必要跨队列顺序仍由原 owner 管理 |
+| 准确 lease 准入 | 原 resource_leases 的 read_unique 和 batch 页权限证明 | BORROW 原内部入口，归 compute_batch 及必要原 controller；先对完整 lease identity 去重，不能用 page ID、地址或 shape 代替。保 permission、poison、writer 冲突和 pending ordering，不重写公共 F1 |
+| topology / runtime 与 Q1 decode | [vLLM decode wrapper 与 tensor-core 默认](https://github.com/vllm-project/vllm/blob/98f721116227f0f48690deb05c815c057bac0668/vllm/v1/attention/backends/flashinfer.py#L1310)；原四路线 native plan / Program / Invocation | BORROW 原数学、SELF 必要状态桥，归实际 Provider / native route；按真实 plan 输入、workspace、split 和更新成本选档。不能因 PrefillPlan 名称判缺 decode，也不能只放松 key 而继续使用编译期旧长度 |
+
+正常消费固定为一个请求和多个请求各自一次 Q1：`Q=[B,Hq,Dqk]`、
+`q_indptr=[0,1,...,B]`，每请求有独立 KV indptr、page IDs 和 tail，输出 `[B,Hq,Dv]`；
+混合 prefill/decode 仍使用现有一般 q_indptr。请求选择、bucket 和调度政策归引擎。
+host-known 路线不得暗中 D2H；device-produced 来源须经真实 checked boundary 取得可依赖
+的布局事实，不能伪造 host snapshot。capture 按实际路线单独签发，不由 plan reuse 推定。
+
+沿现有 public64 旅程批量验收，新增断言仅限本次四组成本和生命周期：
+
+| 输入或变化 | 必须反证 | 必须保留的账 |
+|---|---|---|
+| 稳定 tail、跨页 | 不读旧长度/旧页；无改变区不冒充上传 | active / changed / uploaded bytes、plan / replan、host waits、warm allocation |
+| 两请求重排、加入/结束、同 shape 不同 layout | shape 相同不代表 identity 相同；capacity 超限仍拒绝 | 完整 topology key、实际 native 对象重建与 workspace |
+| 两个真实 attention node 使用同 metadata | 只共享同 generation 且队列/依赖合格的上传；不共享可变 workspace | 上传次数、各 node 必要等待与实际退休 |
+| K/V 重复 readonly lease、不同 generation、pending writer→reader | 完整 identity 去重；权限、poison、失败 suffix 与旧结果不变 | permission admission 次数与复杂度，不以去重绕过安全检查 |
+| host-known / device-produced 来源 | 无隐式 D2H；未完成或失败来源不能发布 ready | checked boundary、实际 host / native waits 与未知成本 |
+
+四路线和三个联合消费者继续承担已准入域；未变数学与 G03 生命周期证据按实际输入借用，
+变动部分补对应 source / sanitizer / static / shared / header / 直接消费者门，不启动全库验证。
+先批量完成这四组，再集中检查并针对实际失败修复；本草案没有运行测试，也不计作 G06 完成。
 
 G01 [驻留SDPA子批](../compute/inference-g01-resident-sdpa.md)的单请求验证已完成：CPU P1
 2598.985s、Vulkan P1 3669.387s，均合格且5%非劣PASS；失败/STOP及原合同原样保留。
