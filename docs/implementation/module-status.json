@@ -578,9 +578,10 @@
     },
     {
       "module": "compute_provider_flashinfer",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/inference-g04-g05-cache-attention-domain.md",
-      "summary": "G04/G05 CE28 AUDITED：加载时原向量转换到分离K/V共享tile已集中实施，14个精确manifest片段；single/F32 merge/精度/生命周期/输出屏障/原形状保留。新数学/device/codegen等门待验；qualified13 FAIL及全部原失败/未知/费用保留。"
+      "summary": "G04/G05 CE28 CANDIDATE830：加载时转换的新17math/22device及attention+merge零栈codegen通过。两SDK/numeric/runtime/三host/原P1待验；原qualified FAIL与全部旧失败/未知、累计成本保留。",
+      "candidate": "830dd9e01829e3e5850ddff7eaa6355ee7c8fd0d"
     },
     {
       "module": "compute_provider_ggml_metal",

@@ -2586,3 +2586,12 @@ CE28加载时转换已集中实施：14个唯一manifest片段，仅private pref
 新数学/device/codegen等门均待验，不以流量证明或shared模型签运行安全/吞吐。
 selector共同lock的保守全库selected理由保留，实际按本卡FI及直接消费者有限门执行，
 不启动无改动路线或全库构建。
+
+CE28新数学与设备门已实际通过：[source/device](../../../../evidence/correctness/inference-g04-g05-cuda-ce28-direct-stage-source-device/receipt.json)
+17数学、十cache memcheck/十racecheck及两普通F16/BF16 racecheck，零FAIL/SKIP/error/
+warning/hazard，artifact SHA稳定。实际stage费用source422.190s、device16.321s分别保留。
+新[codegen](../../../../evidence/architecture/inference-g04-g05-cuda-ce28-producer-stage/codegen-receipt.json)
+核同MMA1/1/4 attention与原F32 merge，四kernel均STACK/LDL/STL零；register分别241/248/165/48。
+源码/设备与静态资源通过不能代签实际吞吐，shared模型需新SDK运行身份核验。
+FI合法冻结CANDIDATE830dd9e01；接着两搬迁SDK、新numeric/runtime、三host及原P1，
+G04/G05未完成。原13及全部旧失败/未知和累计费用保留。

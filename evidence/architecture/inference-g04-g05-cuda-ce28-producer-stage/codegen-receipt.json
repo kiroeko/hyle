@@ -1,0 +1,114 @@
+{
+  "kind": "G04_G05_CE28_PRODUCER_DIRECT_FP8_PRODUCER_STAGE_STATIC_CODEGEN",
+  "verdict": "EXTRACTION_PASS_STATIC_RESOURCES_ONLY",
+  "product_candidate": "830dd9e01829e3e5850ddff7eaa6355ee7c8fd0d",
+  "binary_sha256": "577e1e4148619f3deacb59a2451c2c924645611f8b6cc806aeabb34f1e4d63d2",
+  "header_sha256": "8146bd05db566d6f3c999a3aa3b83d91f7a565a343d06780edf2abd5faa0840f",
+  "cascade_sha256": "bb8892c4160b9095579a626b43ebb3cc55289a2e60c3bca06a168215cc65e9fa",
+  "kernels": [
+    {
+      "mangled": "_ZN10flashinfer34BatchPrefillWithPagedKVCacheKernelINS_12KernelTraitsILNS_8MaskModeE1ELj64ELj1ELj1ELj16ELj16ELj4ELj1ELNS_15PosEncodingModeE0E13__nv_bfloat1613__nv_fp8_e4m3S4_fiNS_16DefaultAttentionILb0ELb1ELb0ELb0EEEEEN4hyle7compute10flashinfer6native48_GLOBAL__N__ca0ae4f1_15_native_cache_cu_95f5a4b012OutputParamsINS_23BatchPrefillPagedParamsIS4_S5_S4_iEEEEEEvT0_",
+      "projected_mma_kv": 1,
+      "before_resource": "REG:241 STACK:0 SHARED:0 LOCAL:0 CONSTANT[0]:720 TEXTURE:0 SURFACE:0 SAMPLER:0",
+      "before_sass": {
+        "LDL": 0,
+        "STL": 0,
+        "STG": 20,
+        "BAR": 7
+      },
+      "after_resource": "REG:241 STACK:0 SHARED:0 LOCAL:0 CONSTANT[0]:720 TEXTURE:0 SURFACE:0 SAMPLER:0",
+      "after_sass": {
+        "LDL": 0,
+        "STL": 0,
+        "STG": 20,
+        "BAR": 7
+      }
+    },
+    {
+      "mangled": "_ZN10flashinfer34BatchPrefillWithPagedKVCacheKernelINS_12KernelTraitsILNS_8MaskModeE1ELj64ELj1ELj1ELj16ELj16ELj4ELj1ELNS_15PosEncodingModeE0E13__nv_bfloat1613__nv_fp8_e4m3ffiNS_16DefaultAttentionILb0ELb1ELb0ELb0EEEEEN4hyle7compute10flashinfer6native48_GLOBAL__N__ca0ae4f1_15_native_cache_cu_95f5a4b011MergeParamsINS_23BatchPrefillPagedParamsIS4_S5_fiEES4_Lj256EEEEEvT0_",
+      "projected_mma_kv": 1,
+      "before_resource": "REG:241 STACK:0 SHARED:0 LOCAL:0 CONSTANT[0]:728 TEXTURE:0 SURFACE:0 SAMPLER:0",
+      "before_sass": {
+        "LDL": 0,
+        "STL": 0,
+        "STG": 68,
+        "BAR": 6
+      },
+      "after_resource": "REG:248 STACK:0 SHARED:0 LOCAL:0 CONSTANT[0]:728 TEXTURE:0 SURFACE:0 SAMPLER:0",
+      "after_sass": {
+        "LDL": 0,
+        "STL": 0,
+        "STG": 68,
+        "BAR": 6
+      }
+    },
+    {
+      "mangled": "_ZN10flashinfer34BatchPrefillWithPagedKVCacheKernelINS_12KernelTraitsILNS_8MaskModeE0ELj64ELj1ELj4ELj4ELj8ELj4ELj1ELNS_15PosEncodingModeE0E13__nv_bfloat1613__nv_fp8_e4m3S4_fiNS_16DefaultAttentionILb0ELb1ELb0ELb0EEEEEN4hyle7compute10flashinfer6native48_GLOBAL__N__ca0ae4f1_15_native_cache_cu_95f5a4b012OutputParamsINS_23BatchPrefillPagedParamsIS4_S5_S4_iEEEEEEvT0_",
+      "projected_mma_kv": 4,
+      "before_resource": "REG:165 STACK:0 SHARED:0 LOCAL:0 CONSTANT[0]:720 TEXTURE:0 SURFACE:0 SAMPLER:0",
+      "before_sass": {
+        "LDL": 0,
+        "STL": 0,
+        "STG": 12,
+        "BAR": 8
+      },
+      "after_resource": "REG:165 STACK:0 SHARED:0 LOCAL:0 CONSTANT[0]:720 TEXTURE:0 SURFACE:0 SAMPLER:0",
+      "after_sass": {
+        "LDL": 0,
+        "STL": 0,
+        "STG": 12,
+        "BAR": 8
+      }
+    }
+  ],
+  "merge": {
+    "mangled": "_ZN10flashinfer41PersistentVariableLengthMergeStatesKernelILj8ELj32ELj4ELj2Ef13__nv_bfloat16iLb1EEEvPT3_PfPT5_PT4_S4_jPjjf",
+    "baseline_resource": "REG:48 STACK:0 SHARED:0 LOCAL:0 CONSTANT[0]:416 TEXTURE:0 SURFACE:0 SAMPLER:0",
+    "baseline_sass": {
+      "LDL": 0,
+      "STL": 0,
+      "STG": 6,
+      "BAR": 21
+    },
+    "after_resource": "REG:48 STACK:0 SHARED:0 LOCAL:0 CONSTANT[0]:416 TEXTURE:0 SURFACE:0 SAMPLER:0",
+    "after_sass": {
+      "LDL": 0,
+      "STL": 0,
+      "STG": 6,
+      "BAR": 21
+    },
+    "baseline_binary_sha256": "2e625f097ab3aaa890dc80b6073cb6f274822f9e3d5cc906c91123943946783d",
+    "baseline_record_sha256": "97d5075822a60eaebeb02b1cad4e31e8193f7bc95f1317b75e68ea23cfbf4a96"
+  },
+  "stages": [
+    {
+      "stage": "resources",
+      "command": [
+        "/usr/local/cuda-13.3/bin/cuobjdump",
+        "--dump-resource-usage",
+        "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/shared-sdk-build/bin/libhyle_compute_provider_flashinfer.so.0.1.0"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 3.5102564599999937
+    },
+    {
+      "stage": "selected-sass",
+      "command": [
+        "/usr/local/cuda-13.3/bin/cuobjdump",
+        "--dump-sass",
+        "--function",
+        "_ZN10flashinfer34BatchPrefillWithPagedKVCacheKernelINS_12KernelTraitsILNS_8MaskModeE1ELj64ELj1ELj1ELj16ELj16ELj4ELj1ELNS_15PosEncodingModeE0E13__nv_bfloat1613__nv_fp8_e4m3S4_fiNS_16DefaultAttentionILb0ELb1ELb0ELb0EEEEEN4hyle7compute10flashinfer6native48_GLOBAL__N__ca0ae4f1_15_native_cache_cu_95f5a4b012OutputParamsINS_23BatchPrefillPagedParamsIS4_S5_S4_iEEEEEEvT0_,_ZN10flashinfer34BatchPrefillWithPagedKVCacheKernelINS_12KernelTraitsILNS_8MaskModeE1ELj64ELj1ELj1ELj16ELj16ELj4ELj1ELNS_15PosEncodingModeE0E13__nv_bfloat1613__nv_fp8_e4m3ffiNS_16DefaultAttentionILb0ELb1ELb0ELb0EEEEEN4hyle7compute10flashinfer6native48_GLOBAL__N__ca0ae4f1_15_native_cache_cu_95f5a4b011MergeParamsINS_23BatchPrefillPagedParamsIS4_S5_fiEES4_Lj256EEEEEvT0_,_ZN10flashinfer34BatchPrefillWithPagedKVCacheKernelINS_12KernelTraitsILNS_8MaskModeE0ELj64ELj1ELj4ELj4ELj8ELj4ELj1ELNS_15PosEncodingModeE0E13__nv_bfloat1613__nv_fp8_e4m3S4_fiNS_16DefaultAttentionILb0ELb1ELb0ELb0EEEEEN4hyle7compute10flashinfer6native48_GLOBAL__N__ca0ae4f1_15_native_cache_cu_95f5a4b012OutputParamsINS_23BatchPrefillPagedParamsIS4_S5_S4_iEEEEEEvT0_,_ZN10flashinfer41PersistentVariableLengthMergeStatesKernelILj8ELj32ELj4ELj2Ef13__nv_bfloat16iLb1EEEvPT3_PfPT5_PT4_S4_jPjjf",
+        "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/shared-sdk-build/bin/libhyle_compute_provider_flashinfer.so.0.1.0"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 0.8719230720000155
+    }
+  ],
+  "measured_seconds": 4.382179532000009,
+  "limits": [
+    "Actual same1/1/4 attention and scaled F32 merge from current source-test shared artifact; no local spills in these four kernels.",
+    "Direct producer conversion requires actual zero-hazard device checks and resource bounds; static instruction counts alone do not prove a speedup.",
+    "New SDK, numeric/runtime, host facets and original P1 remain separate gates; all earlier failures/costs retained."
+  ],
+  "raw_zip_sha256": "fd329331ad11a87376b84386989bffe27f3f9ab413c15f8dba036a165d482162"
+}
