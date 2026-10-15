@@ -2170,3 +2170,31 @@ CE23[实际数学/device](../../../../evidence/correctness/inference-g04-g05-cud
 继续有效。两次尝试的代码、实际检查、资源反证与费用全保留，不把回退写成新PASS。
 FI仍AUDITED，下一步只读核对packed tile逐lane读写约束与原16bit计算预算；不盲删
 最小对齐保护，不扫tile变体。G04/G05未关闭，G06不实施。
+
+## CE24：准确 packed 行约束与原16bit计算粒度上界
+
+[源码与逐lane范围审计](../../../../evidence/architecture/inference-g04-g05-cuda-ce24-packed-math-budget/source-audit.json)
+绑定恢复后的9c9头与原mma/permuted_smem/fragment shuffle SHA。原128B producer实际要求
+NUM_MMA_KV×4可整除NUM_WARPS_Q，64B为×2；统一FP8×2 guard对128B偏保守。枚举本域
+64/64、64/128、128/128、256/256的四warp布局及1/2/4/8 KV块，合法producer的全部16字节
+写槽恰覆盖一次；128B的K/V LDMATRIX行地址全部落在相应16行块内，shuffle只跨同一warp。
+128B的MMA_KV1并不要求删除对齐保护；64B与FP4原更强约束仍需保留。
+
+原dispatch只按FP8压缩payload算KV存储预算，却在QK/PV中宽化到16bit片段。固定两真实
+消费者qualified9 FAIL、原255寄存器和栈反证，与该dtype缩存储却扩大每warp计算块的结构
+形成两把钥匙。借原native16bit footprint作为FP8计算粒度上界，不把它冒充实际shared字节
+或精确寄存器计数。实际W1查询每SM102400、每block opt-in101376字节；原公式投影D256
+MMA_KV2→1，留出8→4，实际compressed shared分别40960/24576；这些不是吞吐PASS。
+
+本轮唯一有限FIX包：FP8的IsInvalid与三dispatch最小tile采用原128B×4/64B×2真实行约束；
+FP4保原×2。三dispatch额外以原16bit(QK+VO) footprint限制FP8的MMA_KV计算粒度，最低
+夹到准确合法tile，继续与实际shared容量、原寄存器上界及原dispatch宏取min。普通16bit、
+FP4和既有unsupported边界不变。baseline9c9；只准private manifest/NOTICE/FI lock身份，
+FI已AUDITED并在实施前记录本包。不扫tile变体、不按benchmark行调参、不删所有guard。
+
+原planner/CTA_Q/warp、转换与QK/PV/softmax、mask/scale/F32partial/finalcast、prefetch/
+同步及权限退休全KEEP。先原17math、十mem/十race与两普通race，再核新1/1/4特化实际
+codegen；生成代码只签资源，运行时选择还须由后续实际consumer核实。资源目标未改善
+不启动长后续；若成立才冻结candidate，沿static/shared、受影响三host facets、新numeric、
+原16AA/三形状/8strata/n15,31/5%/strict全部门。其它路线按不变输入复用；SM89/pool1/
+split3/Ninja2、heavy串行与常设时间追加不变，原失败和费用全保留。

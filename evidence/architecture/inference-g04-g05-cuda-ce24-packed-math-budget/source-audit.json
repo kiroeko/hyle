@@ -1,0 +1,551 @@
+{
+  "kind": "CE24_PACKED_ROW_COVERAGE_AND_NATIVE16_MATH_BUDGET_AUDIT",
+  "baseline": "9c9ab88bba3fca5dcc981a2a42100b08af1a45ae",
+  "inputs": [
+    {
+      "path": "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/static-sdk-build/src/compute_provider_flashinfer/cache-source-cf631b8cecba2e9e50231019e0dbe44c186700f8e38c3d03cc88a1211e08db45/include/flashinfer/attention/prefill.cuh",
+      "sha256": "3be7cbfe176d40f6af962770a854a08c06f9094cca235d65af83b4e57e90f961"
+    },
+    {
+      "path": "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/static-sdk-build/src/compute_provider_flashinfer/cache-source-cf631b8cecba2e9e50231019e0dbe44c186700f8e38c3d03cc88a1211e08db45/include/flashinfer/permuted_smem.cuh",
+      "sha256": "1929a5d1ebb27c67b1e9be3308adf5083957443448d73b6529c0e46c01d7ee84"
+    },
+    {
+      "path": "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/static-sdk-build/src/compute_provider_flashinfer/cache-source-cf631b8cecba2e9e50231019e0dbe44c186700f8e38c3d03cc88a1211e08db45/include/flashinfer/mma.cuh",
+      "sha256": "f6df5d6475bf2fc33932399b7063894a2a4ed27cfabe45ae7cd239a1c61943e9"
+    },
+    {
+      "path": "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/static-sdk-build/src/compute_provider_flashinfer/cache-source-cf631b8cecba2e9e50231019e0dbe44c186700f8e38c3d03cc88a1211e08db45/include/flashinfer/frag_layout_swizzle.cuh",
+      "sha256": "cae96de0e3fd9a4b7dbcdc1e0a6e9fdddd3b1d79f67a83de3b7e1cd4549b175a"
+    }
+  ],
+  "coverage": [
+    {
+      "qk": 64,
+      "vo": 64,
+      "qwarps": 1,
+      "kvwarps": 4,
+      "mma_kv": 1,
+      "valid": true,
+      "producer_all16byte_slots_exact_once": true,
+      "ldmatrix128b_all_row_addresses_in_bounds": false
+    },
+    {
+      "qk": 64,
+      "vo": 64,
+      "qwarps": 1,
+      "kvwarps": 4,
+      "mma_kv": 2,
+      "valid": true,
+      "producer_all16byte_slots_exact_once": true,
+      "ldmatrix128b_all_row_addresses_in_bounds": false
+    },
+    {
+      "qk": 64,
+      "vo": 64,
+      "qwarps": 1,
+      "kvwarps": 4,
+      "mma_kv": 4,
+      "valid": true,
+      "producer_all16byte_slots_exact_once": true,
+      "ldmatrix128b_all_row_addresses_in_bounds": false
+    },
+    {
+      "qk": 64,
+      "vo": 64,
+      "qwarps": 1,
+      "kvwarps": 4,
+      "mma_kv": 8,
+      "valid": true,
+      "producer_all16byte_slots_exact_once": true,
+      "ldmatrix128b_all_row_addresses_in_bounds": false
+    },
+    {
+      "qk": 64,
+      "vo": 64,
+      "qwarps": 2,
+      "kvwarps": 2,
+      "mma_kv": 1,
+      "valid": true,
+      "producer_all16byte_slots_exact_once": true,
+      "ldmatrix128b_all_row_addresses_in_bounds": false
+    },
+    {
+      "qk": 64,
+      "vo": 64,
+      "qwarps": 2,
+      "kvwarps": 2,
+      "mma_kv": 2,
+      "valid": true,
+      "producer_all16byte_slots_exact_once": true,
+      "ldmatrix128b_all_row_addresses_in_bounds": false
+    },
+    {
+      "qk": 64,
+      "vo": 64,
+      "qwarps": 2,
+      "kvwarps": 2,
+      "mma_kv": 4,
+      "valid": true,
+      "producer_all16byte_slots_exact_once": true,
+      "ldmatrix128b_all_row_addresses_in_bounds": false
+    },
+    {
+      "qk": 64,
+      "vo": 64,
+      "qwarps": 2,
+      "kvwarps": 2,
+      "mma_kv": 8,
+      "valid": true,
+      "producer_all16byte_slots_exact_once": true,
+      "ldmatrix128b_all_row_addresses_in_bounds": false
+    },
+    {
+      "qk": 64,
+      "vo": 64,
+      "qwarps": 4,
+      "kvwarps": 1,
+      "mma_kv": 1,
+      "valid": false,
+      "reason": "original producer row-loop divisibility"
+    },
+    {
+      "qk": 64,
+      "vo": 64,
+      "qwarps": 4,
+      "kvwarps": 1,
+      "mma_kv": 2,
+      "valid": true,
+      "producer_all16byte_slots_exact_once": true,
+      "ldmatrix128b_all_row_addresses_in_bounds": false
+    },
+    {
+      "qk": 64,
+      "vo": 64,
+      "qwarps": 4,
+      "kvwarps": 1,
+      "mma_kv": 4,
+      "valid": true,
+      "producer_all16byte_slots_exact_once": true,
+      "ldmatrix128b_all_row_addresses_in_bounds": false
+    },
+    {
+      "qk": 64,
+      "vo": 64,
+      "qwarps": 4,
+      "kvwarps": 1,
+      "mma_kv": 8,
+      "valid": true,
+      "producer_all16byte_slots_exact_once": true,
+      "ldmatrix128b_all_row_addresses_in_bounds": false
+    },
+    {
+      "qk": 64,
+      "vo": 128,
+      "qwarps": 1,
+      "kvwarps": 4,
+      "mma_kv": 1,
+      "valid": true,
+      "producer_all16byte_slots_exact_once": true,
+      "ldmatrix128b_all_row_addresses_in_bounds": true
+    },
+    {
+      "qk": 64,
+      "vo": 128,
+      "qwarps": 1,
+      "kvwarps": 4,
+      "mma_kv": 2,
+      "valid": true,
+      "producer_all16byte_slots_exact_once": true,
+      "ldmatrix128b_all_row_addresses_in_bounds": true
+    },
+    {
+      "qk": 64,
+      "vo": 128,
+      "qwarps": 1,
+      "kvwarps": 4,
+      "mma_kv": 4,
+      "valid": true,
+      "producer_all16byte_slots_exact_once": true,
+      "ldmatrix128b_all_row_addresses_in_bounds": true
+    },
+    {
+      "qk": 64,
+      "vo": 128,
+      "qwarps": 1,
+      "kvwarps": 4,
+      "mma_kv": 8,
+      "valid": true,
+      "producer_all16byte_slots_exact_once": true,
+      "ldmatrix128b_all_row_addresses_in_bounds": true
+    },
+    {
+      "qk": 64,
+      "vo": 128,
+      "qwarps": 2,
+      "kvwarps": 2,
+      "mma_kv": 1,
+      "valid": true,
+      "producer_all16byte_slots_exact_once": true,
+      "ldmatrix128b_all_row_addresses_in_bounds": true
+    },
+    {
+      "qk": 64,
+      "vo": 128,
+      "qwarps": 2,
+      "kvwarps": 2,
+      "mma_kv": 2,
+      "valid": true,
+      "producer_all16byte_slots_exact_once": true,
+      "ldmatrix128b_all_row_addresses_in_bounds": true
+    },
+    {
+      "qk": 64,
+      "vo": 128,
+      "qwarps": 2,
+      "kvwarps": 2,
+      "mma_kv": 4,
+      "valid": true,
+      "producer_all16byte_slots_exact_once": true,
+      "ldmatrix128b_all_row_addresses_in_bounds": true
+    },
+    {
+      "qk": 64,
+      "vo": 128,
+      "qwarps": 2,
+      "kvwarps": 2,
+      "mma_kv": 8,
+      "valid": true,
+      "producer_all16byte_slots_exact_once": true,
+      "ldmatrix128b_all_row_addresses_in_bounds": true
+    },
+    {
+      "qk": 64,
+      "vo": 128,
+      "qwarps": 4,
+      "kvwarps": 1,
+      "mma_kv": 1,
+      "valid": true,
+      "producer_all16byte_slots_exact_once": true,
+      "ldmatrix128b_all_row_addresses_in_bounds": true
+    },
+    {
+      "qk": 64,
+      "vo": 128,
+      "qwarps": 4,
+      "kvwarps": 1,
+      "mma_kv": 2,
+      "valid": true,
+      "producer_all16byte_slots_exact_once": true,
+      "ldmatrix128b_all_row_addresses_in_bounds": true
+    },
+    {
+      "qk": 64,
+      "vo": 128,
+      "qwarps": 4,
+      "kvwarps": 1,
+      "mma_kv": 4,
+      "valid": true,
+      "producer_all16byte_slots_exact_once": true,
+      "ldmatrix128b_all_row_addresses_in_bounds": true
+    },
+    {
+      "qk": 64,
+      "vo": 128,
+      "qwarps": 4,
+      "kvwarps": 1,
+      "mma_kv": 8,
+      "valid": true,
+      "producer_all16byte_slots_exact_once": true,
+      "ldmatrix128b_all_row_addresses_in_bounds": true
+    },
+    {
+      "qk": 128,
+      "vo": 128,
+      "qwarps": 1,
+      "kvwarps": 4,
+      "mma_kv": 1,
+      "valid": true,
+      "producer_all16byte_slots_exact_once": true,
+      "ldmatrix128b_all_row_addresses_in_bounds": true
+    },
+    {
+      "qk": 128,
+      "vo": 128,
+      "qwarps": 1,
+      "kvwarps": 4,
+      "mma_kv": 2,
+      "valid": true,
+      "producer_all16byte_slots_exact_once": true,
+      "ldmatrix128b_all_row_addresses_in_bounds": true
+    },
+    {
+      "qk": 128,
+      "vo": 128,
+      "qwarps": 1,
+      "kvwarps": 4,
+      "mma_kv": 4,
+      "valid": true,
+      "producer_all16byte_slots_exact_once": true,
+      "ldmatrix128b_all_row_addresses_in_bounds": true
+    },
+    {
+      "qk": 128,
+      "vo": 128,
+      "qwarps": 1,
+      "kvwarps": 4,
+      "mma_kv": 8,
+      "valid": true,
+      "producer_all16byte_slots_exact_once": true,
+      "ldmatrix128b_all_row_addresses_in_bounds": true
+    },
+    {
+      "qk": 128,
+      "vo": 128,
+      "qwarps": 2,
+      "kvwarps": 2,
+      "mma_kv": 1,
+      "valid": true,
+      "producer_all16byte_slots_exact_once": true,
+      "ldmatrix128b_all_row_addresses_in_bounds": true
+    },
+    {
+      "qk": 128,
+      "vo": 128,
+      "qwarps": 2,
+      "kvwarps": 2,
+      "mma_kv": 2,
+      "valid": true,
+      "producer_all16byte_slots_exact_once": true,
+      "ldmatrix128b_all_row_addresses_in_bounds": true
+    },
+    {
+      "qk": 128,
+      "vo": 128,
+      "qwarps": 2,
+      "kvwarps": 2,
+      "mma_kv": 4,
+      "valid": true,
+      "producer_all16byte_slots_exact_once": true,
+      "ldmatrix128b_all_row_addresses_in_bounds": true
+    },
+    {
+      "qk": 128,
+      "vo": 128,
+      "qwarps": 2,
+      "kvwarps": 2,
+      "mma_kv": 8,
+      "valid": true,
+      "producer_all16byte_slots_exact_once": true,
+      "ldmatrix128b_all_row_addresses_in_bounds": true
+    },
+    {
+      "qk": 128,
+      "vo": 128,
+      "qwarps": 4,
+      "kvwarps": 1,
+      "mma_kv": 1,
+      "valid": true,
+      "producer_all16byte_slots_exact_once": true,
+      "ldmatrix128b_all_row_addresses_in_bounds": true
+    },
+    {
+      "qk": 128,
+      "vo": 128,
+      "qwarps": 4,
+      "kvwarps": 1,
+      "mma_kv": 2,
+      "valid": true,
+      "producer_all16byte_slots_exact_once": true,
+      "ldmatrix128b_all_row_addresses_in_bounds": true
+    },
+    {
+      "qk": 128,
+      "vo": 128,
+      "qwarps": 4,
+      "kvwarps": 1,
+      "mma_kv": 4,
+      "valid": true,
+      "producer_all16byte_slots_exact_once": true,
+      "ldmatrix128b_all_row_addresses_in_bounds": true
+    },
+    {
+      "qk": 128,
+      "vo": 128,
+      "qwarps": 4,
+      "kvwarps": 1,
+      "mma_kv": 8,
+      "valid": true,
+      "producer_all16byte_slots_exact_once": true,
+      "ldmatrix128b_all_row_addresses_in_bounds": true
+    },
+    {
+      "qk": 256,
+      "vo": 256,
+      "qwarps": 1,
+      "kvwarps": 4,
+      "mma_kv": 1,
+      "valid": true,
+      "producer_all16byte_slots_exact_once": true,
+      "ldmatrix128b_all_row_addresses_in_bounds": true
+    },
+    {
+      "qk": 256,
+      "vo": 256,
+      "qwarps": 1,
+      "kvwarps": 4,
+      "mma_kv": 2,
+      "valid": true,
+      "producer_all16byte_slots_exact_once": true,
+      "ldmatrix128b_all_row_addresses_in_bounds": true
+    },
+    {
+      "qk": 256,
+      "vo": 256,
+      "qwarps": 1,
+      "kvwarps": 4,
+      "mma_kv": 4,
+      "valid": true,
+      "producer_all16byte_slots_exact_once": true,
+      "ldmatrix128b_all_row_addresses_in_bounds": true
+    },
+    {
+      "qk": 256,
+      "vo": 256,
+      "qwarps": 1,
+      "kvwarps": 4,
+      "mma_kv": 8,
+      "valid": true,
+      "producer_all16byte_slots_exact_once": true,
+      "ldmatrix128b_all_row_addresses_in_bounds": true
+    },
+    {
+      "qk": 256,
+      "vo": 256,
+      "qwarps": 2,
+      "kvwarps": 2,
+      "mma_kv": 1,
+      "valid": true,
+      "producer_all16byte_slots_exact_once": true,
+      "ldmatrix128b_all_row_addresses_in_bounds": true
+    },
+    {
+      "qk": 256,
+      "vo": 256,
+      "qwarps": 2,
+      "kvwarps": 2,
+      "mma_kv": 2,
+      "valid": true,
+      "producer_all16byte_slots_exact_once": true,
+      "ldmatrix128b_all_row_addresses_in_bounds": true
+    },
+    {
+      "qk": 256,
+      "vo": 256,
+      "qwarps": 2,
+      "kvwarps": 2,
+      "mma_kv": 4,
+      "valid": true,
+      "producer_all16byte_slots_exact_once": true,
+      "ldmatrix128b_all_row_addresses_in_bounds": true
+    },
+    {
+      "qk": 256,
+      "vo": 256,
+      "qwarps": 2,
+      "kvwarps": 2,
+      "mma_kv": 8,
+      "valid": true,
+      "producer_all16byte_slots_exact_once": true,
+      "ldmatrix128b_all_row_addresses_in_bounds": true
+    },
+    {
+      "qk": 256,
+      "vo": 256,
+      "qwarps": 4,
+      "kvwarps": 1,
+      "mma_kv": 1,
+      "valid": true,
+      "producer_all16byte_slots_exact_once": true,
+      "ldmatrix128b_all_row_addresses_in_bounds": true
+    },
+    {
+      "qk": 256,
+      "vo": 256,
+      "qwarps": 4,
+      "kvwarps": 1,
+      "mma_kv": 2,
+      "valid": true,
+      "producer_all16byte_slots_exact_once": true,
+      "ldmatrix128b_all_row_addresses_in_bounds": true
+    },
+    {
+      "qk": 256,
+      "vo": 256,
+      "qwarps": 4,
+      "kvwarps": 1,
+      "mma_kv": 4,
+      "valid": true,
+      "producer_all16byte_slots_exact_once": true,
+      "ldmatrix128b_all_row_addresses_in_bounds": true
+    },
+    {
+      "qk": 256,
+      "vo": 256,
+      "qwarps": 4,
+      "kvwarps": 1,
+      "mma_kv": 8,
+      "valid": true,
+      "producer_all16byte_slots_exact_once": true,
+      "ldmatrix128b_all_row_addresses_in_bounds": true
+    }
+  ],
+  "actual_device_attributes": {
+    "MaxSharedMemoryPerMultiprocessor": 102400,
+    "MaxSharedMemoryPerBlockOptin": 101376
+  },
+  "dispatch": [
+    {
+      "shape": "windowD256",
+      "fixed": 32768,
+      "actual_smem_per_mma": 8192,
+      "native16_math_footprint_per_mma": 16384,
+      "previous_mma_kv": 2,
+      "corrected_mma_kv": 1,
+      "actual_smem_after": 40960
+    },
+    {
+      "shape": "prefillD256",
+      "fixed": 32768,
+      "actual_smem_per_mma": 8192,
+      "native16_math_footprint_per_mma": 16384,
+      "previous_mma_kv": 2,
+      "corrected_mma_kv": 1,
+      "actual_smem_after": 40960
+    },
+    {
+      "shape": "noncausalD64V128",
+      "fixed": 8192,
+      "actual_smem_per_mma": 4096,
+      "native16_math_footprint_per_mma": 6144,
+      "previous_mma_kv": 8,
+      "corrected_mma_kv": 4,
+      "actual_smem_after": 24576
+    }
+  ],
+  "findings": [
+    "Original128B producer requires NUM_MMA_KV*4 divisible by NUM_WARPS_Q;64B requires*2. The genericFP8*2 guard is conservative for128B, not the exact original row coverage requirement.",
+    "All4warp layouts and current finite64/64,64/128,128/128,256/256 domains enumerated.128B K/V LDMATRIX row addresses stay within the same16-row block for MMA_KV1; shuffles stay within the32-lane warp.",
+    "The original storage-only dispatch budget uses compressed1-byte KV payload although score and PV math widen to2-byte Q type and retain float accumulators. This can enlarge per-warp KV work relative to the original native16bit path.",
+    "A native16bit working-set bound borrows the original16bit footprint rule solely to bound FP8 MMA work; physical smem remains compressed. This is a selection bound, not a claimed register byte count."
+  ],
+  "finite_fix": [
+    "Use exact original128B*4 row divisibility and corresponding min valid tile only for FP8; retain64B*2 and allFP4 restrictions.",
+    "In three original dispatchers cap FP8 MMA_KV by the existing native16bit footprint budget, clamped to the exact valid minimum; retain actual physical smem cap, original register cap and dispatch macro.",
+    "No datatype-specific tile trials, shape-specific tuning, planner or mathematical primitive changes."
+  ],
+  "limits": [
+    "Source/math-layout audit and actual attribute projection only; no product implementation or performance PASS.",
+    "New smaller valid specializations require actual17math/device and codegen; runtime dispatch identity and original qualified P1 remain necessary."
+  ]
+}

@@ -580,7 +580,7 @@
       "module": "compute_provider_flashinfer",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/inference-g04-g05-cache-attention-domain.md",
-      "summary": "G04/G05 AUDITED：CE23数学/device通过但实际资源目标未达，CE22/23两项改动已精确回退到9c9产品输入；原qualified9性能FAIL仍有效，全部尝试和费用保留。下一步仅审计packed tile实际lane约束与原16bit计算预算，未授权新FIX。"
+      "summary": "G04/G05 CE24 AUDITED：9c9基线，原qualified FAIL与实际spill/packed逐lane覆盖两把钥匙；有限FIX为FP8准确128B×4/64B×2行约束和原native16bit计算粒度上界，保实际容量/原数学/同步，FP4/16bit不变。未实施或签新性能；旧失败费用全保留。"
     },
     {
       "module": "compute_provider_ggml_metal",
