@@ -1827,3 +1827,13 @@ race，再恢复SDK/宿主/P1；两个warning用例原记录保留，不压制�
 两普通F16/BF16 case racecheck4.129s亦全零。原cache-only 512warnings及CE19 40errors/
 378warnings不覆盖。只有FI owner回CANDIDATE274cd9fec，产品形状/实现冻结；下一步只做
 已声明static/shared公开SDK、受影响宿主facets与原合同数值/P1，未签全批CLOSED。
+
+CE20[动态SDK实际补证](../../../../evidence/correctness/inference-g04-g05-cuda-ce20-shared-sdk/receipt.json)
+已PASS：从搬迁prefix独立编译16个consumer/header TU，无仓库头；CPU/native数学与两种公开
+组合消费全部实际通过。首次配置45.013s/范围预检发现146个ggml CUDA因派生目录c41→2f41
+被判重编，guard exit1阻止产品build，原记录保留。242 native源码/头与5 canonical输入逐SHA
+相同，另名私有manifest只归一这些CUDA边的source/include路径和precise-unary对象引用；
+Ninja自身对146原对象验证原command identity和deps freshness，实际NO WORK0.323s。
+其余当前CPU/FI/product边不改；续跑原配置、不再configure，host producer80.763s、install
+0.542s，全部146旧对象前后SHA及原normal manifest SHA未变。public SDK检查不把此复用
+冒充当前未运行静态SDK、三宿主facet或P1；也不修改公共构建/selector核心。

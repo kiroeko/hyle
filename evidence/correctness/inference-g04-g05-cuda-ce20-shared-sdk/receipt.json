@@ -1,0 +1,250 @@
+{
+  "kind": "G04_G05_CUDA_CE20_RELOCATED_SHARED_SDK",
+  "verdict": "PASS_SHARED_SDK_ONLY_STATIC_HOST_P1_PENDING",
+  "product_candidate": "274cd9fec7cecb2e683cf5f0f87d6e0fd6b3ab55",
+  "tests": {
+    "cpu_math": 14,
+    "native_math": 13,
+    "cpu": 3,
+    "native": 3
+  },
+  "independent_public_headers": 12,
+  "consumer_compile_commands": 16,
+  "stages": [
+    {
+      "stage": "producer-prepare-manifest",
+      "command": [
+        "ninja",
+        "-C",
+        "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/shared-sdk-build",
+        "build.ninja"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 0.08877052600000468,
+      "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/sdk/producer-prepare-manifest-cuda-shared-ce19-resume-1.log"
+    },
+    {
+      "stage": "producer-plan",
+      "command": [
+        "ninja",
+        "-C",
+        "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/shared-sdk-build",
+        "-f",
+        "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/ce20-shared-native-reuse-1/reuse.ninja",
+        "-n",
+        "hyle_compute",
+        "hyle_compute_batch",
+        "hyle_graph",
+        "hyle_graph_batch",
+        "hyle_graph_route_cpu_cuda",
+        "hyle_compute_provider_flashinfer",
+        "hyle_compute_state"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 0.3949174250000027,
+      "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/sdk/producer-plan-cuda-shared-ce19-resume-1.log"
+    },
+    {
+      "stage": "producer-build",
+      "command": [
+        "ninja",
+        "-C",
+        "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/shared-sdk-build",
+        "-f",
+        "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/ce20-shared-native-reuse-1/reuse.ninja",
+        "-j",
+        "2",
+        "hyle_compute",
+        "hyle_compute_batch",
+        "hyle_graph",
+        "hyle_graph_batch",
+        "hyle_graph_route_cpu_cuda",
+        "hyle_compute_provider_flashinfer",
+        "hyle_compute_state"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 80.763225505,
+      "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/sdk/producer-build-cuda-shared-ce19-resume-1.log"
+    },
+    {
+      "stage": "install",
+      "command": [
+        "cmake",
+        "--install",
+        "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/shared-sdk-build",
+        "--prefix",
+        "/root/hyle-scratch/compute-unified/g04-g05-encoded-sdk/cuda-shared-ce19-resume-1/staging"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 0.5424257010000133,
+      "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/sdk/install-cuda-shared-ce19-resume-1.log"
+    },
+    {
+      "stage": "consumer-configure",
+      "command": [
+        "cmake",
+        "-S",
+        "/root/hyle-scratch/compute-unified/g04-g05-encoded-sdk/cuda-shared-ce19-resume-1/consumer",
+        "-B",
+        "/root/hyle-scratch/compute-unified/g04-g05-encoded-sdk/cuda-shared-ce19-resume-1/build",
+        "-G",
+        "Ninja",
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DCMAKE_PREFIX_PATH=/root/hyle-scratch/compute-unified/g04-g05-encoded-sdk/cuda-shared-ce19-resume-1/relocated",
+        "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON",
+        "-DCMAKE_CXX_COMPILER=/usr/bin/g++-14",
+        "-DCUDAToolkit_ROOT=/usr/local/cuda-13.3"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 31.089417032,
+      "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/sdk/consumer-configure-cuda-shared-ce19-resume-1.log"
+    },
+    {
+      "stage": "consumer-build",
+      "command": [
+        "cmake",
+        "--build",
+        "/root/hyle-scratch/compute-unified/g04-g05-encoded-sdk/cuda-shared-ce19-resume-1/build",
+        "--target",
+        "cpu",
+        "cpu_math",
+        "native",
+        "native_math",
+        "headers",
+        "--parallel",
+        "2"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 18.503152368000002,
+      "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/sdk/consumer-build-cuda-shared-ce19-resume-1.log"
+    },
+    {
+      "stage": "cpu_math",
+      "command": [
+        "/root/hyle-scratch/compute-unified/g04-g05-encoded-sdk/cuda-shared-ce19-resume-1/build/cpu_math",
+        "--gtest_output=xml:/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/sdk/cpu_math-cuda-shared-ce19-resume-1.xml",
+        "--gtest_filter=GgmlCpuCacheEncode.*:GgmlCpuBoxed.*"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 1.5619987309999885,
+      "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/sdk/cpu_math-cuda-shared-ce19-resume-1.log"
+    },
+    {
+      "stage": "native_math",
+      "command": [
+        "/root/hyle-scratch/compute-unified/g04-g05-encoded-sdk/cuda-shared-ce19-resume-1/build/native_math",
+        "--gtest_output=xml:/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/sdk/native_math-cuda-shared-ce19-resume-1.xml"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 3.0860024039999985,
+      "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/sdk/native_math-cuda-shared-ce19-resume-1.log"
+    },
+    {
+      "stage": "cpu",
+      "command": [
+        "/root/hyle-scratch/compute-unified/g04-g05-encoded-sdk/cuda-shared-ce19-resume-1/build/cpu",
+        "--gtest_output=xml:/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/sdk/cpu-cuda-shared-ce19-resume-1.xml"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 0.4500533599999983,
+      "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/sdk/cpu-cuda-shared-ce19-resume-1.log"
+    },
+    {
+      "stage": "native",
+      "command": [
+        "/root/hyle-scratch/compute-unified/g04-g05-encoded-sdk/cuda-shared-ce19-resume-1/build/native",
+        "--gtest_output=xml:/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/sdk/native-cuda-shared-ce19-resume-1.xml"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 1.199783167000021,
+      "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/sdk/native-cuda-shared-ce19-resume-1.log"
+    }
+  ],
+  "original_setup_guard": {
+    "exit_code": 1,
+    "stage": "producer-plan scope guard",
+    "product_build_started": false,
+    "prior_result_sha256": "b076234bdc34eaaff3aeac6f910ad0e1384a6aac0b9738ed3f1daf75566d4eeb",
+    "successful_stages": [
+      {
+        "stage": "producer-configure",
+        "command": [
+          "cmake",
+          "-S",
+          "/root/hyle-scratch/compute-unified/source-7a7b4c3b",
+          "-B",
+          "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/shared-sdk-build",
+          "-UCMAKE_PROJECT_INCLUDE",
+          "-DHYLE_BUILD_TESTS=OFF",
+          "-DHYLE_BUILD_BENCH=OFF",
+          "-DHYLE_INSTALL=ON",
+          "-DHYLE_TESTING=OFF",
+          "-DCMAKE_PROJECT_INCLUDE=/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/ce19_cuda_compile.cmake"
+        ],
+        "exit_code": 0,
+        "elapsed_seconds": 45.013136584999984,
+        "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/sdk/producer-configure-cuda-shared-ce19-1.log"
+      },
+      {
+        "stage": "producer-prepare-manifest",
+        "command": [
+          "ninja",
+          "-C",
+          "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/shared-sdk-build",
+          "build.ninja"
+        ],
+        "exit_code": 0,
+        "elapsed_seconds": 0.04763809799999308,
+        "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/sdk/producer-prepare-manifest-cuda-shared-ce19-1.log"
+      },
+      {
+        "stage": "producer-plan",
+        "command": [
+          "ninja",
+          "-C",
+          "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/shared-sdk-build",
+          "-f",
+          "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/sdk/preview-cuda-shared-ce19-1.ninja",
+          "-n",
+          "hyle_compute",
+          "hyle_compute_batch",
+          "hyle_graph",
+          "hyle_graph_batch",
+          "hyle_graph_route_cpu_cuda",
+          "hyle_compute_provider_flashinfer",
+          "hyle_compute_state"
+        ],
+        "exit_code": 0,
+        "elapsed_seconds": 0.11544921300003352,
+        "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/sdk/producer-plan-cuda-shared-ce19-1.log"
+      }
+    ]
+  },
+  "native_reuse": {
+    "state": "PASS_146_SHIPPING_OBJECTS_NATIVE_NINJA_NO_WORK",
+    "elapsed_seconds": 0.32298528000000015,
+    "build": "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/shared-sdk-build",
+    "old_derived_source": "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/shared-sdk-build/src/compute_ggml_runtime/source-c41bfd1864980360",
+    "new_derived_source": "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/shared-sdk-build/src/compute_ggml_runtime/source-2f41ad48bddb8a44",
+    "original_manifest_sha256": "f0723589b0b028ce9efee34a2efef5b928d66232b7ae9118dd2a6ac731465c33",
+    "reuse_manifest_sha256": "c2948f6f2a265fc8c0a4fa1911486ee4a4f7582972bf4ad452f149f7fcb1814e",
+    "verified_derived_inputs": 242,
+    "verified_canonical_inputs": 5,
+    "native_object_count": 146,
+    "original_object_checks": "Ninja validates original command identity and dependency freshness on old-source paths; no native compile is scheduled",
+    "scope": "Private build-local manifest maps only byte-identical ggml CUDA source/include paths and the precise unary object reference; all current CPU/FlashInfer/other product edges retained."
+  },
+  "prefix": "/root/hyle-scratch/compute-unified/g04-g05-encoded-sdk/cuda-shared-ce19-resume-1/relocated",
+  "identity": {
+    "host": "Linux kiro-workstation 6.18.54.1-microsoft-standard-WSL2 #1 SMP PREEMPT_DYNAMIC Tue Oct  6 19:13:07 UTC 2026 x86_64 x86_64 x86_64 GNU/Linux",
+    "compiler": "g++-14 (Ubuntu 14.2.0-4ubuntu2~24.04.1) 14.2.0\nCopyright (C) 2024 Free Software Foundation, Inc.\nThis is free software; see the source for copying conditions.  There is NO\nwarranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.",
+    "cuda": "nvcc: NVIDIA (R) Cuda compiler driver\nCopyright (c) 2005-2026 NVIDIA Corporation\nBuilt on Tue_Jun_09_02:43:40_PM_PDT_2026\nCuda compilation tools, release 13.3, V13.3.73\nBuild cuda_13.3.r13.3/compiler.38244171_0",
+    "gpu": "NVIDIA GeForce RTX 4070, 617.14, 12282 MiB"
+  },
+  "limits": [
+    "Actual relocated Linux shared C++ consumers, no repository headers; private snapshot reuses exactly146 shipping native objects through verified byte-equivalent source paths.",
+    "Original producer guard failure is retained, source archive identical on resume, configured identity stable; dynamic GPU usage telemetry is recorded rather than treated as compiler identity.",
+    "Source17 and GPU device checks are separate final receipts; static SDK/three host facets/newP1/whole G04-G05 not signed."
+  ],
+  "raw_zip_sha256": "1aed8b9db818b97dd1ee220edff3e0208511fa425906493df082a87c6662e72a"
+}
