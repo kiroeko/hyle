@@ -1023,3 +1023,20 @@ checked completion。原 host-pointer import 会扩大到 OS 页边界，真实 
 reduce 与全部转换/分页 gather 费用。64/128 只补原模板的 benchmark 显式实例，先实机
 编译和字节 oracle，再进入 P1；原 shader 算术不改，明确披露 general-kernel 选择，
 不声称原 host 最佳性能。当前仅源码资格准备，未编译、未签数值或性能通过。
+
+### CE12 CPU 同合同复测的实际裁决
+
+[完整复测](../../../../evidence/performance/inference-g04-g05-ce12-cpu-encoded-w1-p1/receipt.json)
+绑定原不可变 source993fc414e 与 CPU candidate5f9b261bf、已重绑的实际新 static SDK。
+16 A/A PASS，qualification QUALIFIED、verify退出0；原自动 n15→31 策略触发第二阶段，
+两阶段368产品＋92对照全部封存，最终统计仅用 n31、不合并样本。原5%门/形状/顺序/
+数据不变。本次3334.563秒，含原两次尝试累计4516.907秒，原 qualified FAIL 不覆盖。
+
+window D256 八strata比1.16564–1.17288，非劣 PASS、方向 WIN；长 prefill D256比
+0.98482–0.98704，非劣 PASS/band PARITY，稳定方向仍 LOSS。64/128非因果Q>KV留出比
+0.94915–0.95397，七strata非劣 UNRESOLVED、一项 FAIL，聚合 FAIL；相对1方向均 LOSS。
+因此整个 CPU P1 仍 FAIL，不能把主要场景改善代签留出通过，不能继续加样本或改阈值。
+
+provider 保持 CANDIDATE，先对实际留出残余成本作有限源码/生成代码定位，具备机制与
+真实消费两把钥匙后才回 AUDITED 修正。CUDA UBSan 已在同一串行队列续跑，TSan随后；
+其固定冻结输入不受 CPU 结果影响。Vulkan 数值队列继续等待两种 CUDA 宿主检查结束。
