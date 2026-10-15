@@ -1,0 +1,44 @@
+{
+  "kind": "CE22_FINITE_SOURCE_AUDIT_NOT_PRODUCT_OR_PERFORMANCE_PASS",
+  "baseline": "9c9ab88bba3fca5dcc981a2a42100b08af1a45ae",
+  "upstream_revision": "69ff11fc4954396d98326656dc85debd2223f637",
+  "upstream_prefill_sha256": "f93cbea96e3a723254c15f5a52d6dd4c13e3892e88eb9b9fed1c0c0048c7d710",
+  "current_prefill_sha256": "3be7cbfe176d40f6af962770a854a08c06f9094cca235d65af83b4e57e90f961",
+  "original_helper_sha256": "0cb1d86afd33270785a9f06bf6cb0d817e477fabbade57c0c283fbd4b3d28736",
+  "helper_unchanged_from_pinned_upstream": true,
+  "storage": [
+    {
+      "shape": "D256 currentMMA_KV2",
+      "offsets_per_array": 2,
+      "k_v_arrays": 2,
+      "bytes_per_offset": 8,
+      "bytes_per_thread": 32,
+      "register_words": 8
+    },
+    {
+      "shape": "D64/Dv128 currentMMA_KV8",
+      "offsets_per_array": 8,
+      "k_v_arrays": 2,
+      "bytes_per_offset": 8,
+      "bytes_per_thread": 128,
+      "register_words": 32
+    }
+  ],
+  "mechanism": "Current per-thread size_t K and V offset arrays are computed before score math and stay live through QK/softmax/PV; the original on-the-fly producer consumes one exact protective offset at the original async load site.",
+  "finite_fix": [
+    "BORROW the pinned original page_produce_kv_on_the_fly and original protective_get_k/v_offset for FP8 paged loads only.",
+    "Remove FP8 persistent K/V offset arrays and eager next-offset generation; retain current and next packed-page bases and original K/V async prefetch order.",
+    "Transfer existing HYLE_FP8_SHORT_K physical128-byte/upper-zero rule to the borrowed helper without changing64-element global layout or QK reduction."
+  ],
+  "keep": [
+    "All tile/warp/MMA choices, packed alignment minimum and dispatcher resource rules.",
+    "Original compressed cache storage, masks, scale, F32 partials/finalcast, synchronization, original page permission/retirement.",
+    "Ordinary16-bit, FP4, ragged and existing shared-KV loading behavior; no new API/runtime/history expansion."
+  ],
+  "costs": "Compute protective page offsets at load sites instead of retaining two address arrays. K/V may repeat page division; this explicit recomputation tradeoff needs codegen and original qualified workload validation.",
+  "validation": "Original17math, cache10mem/race plus2legacyrace, affected public consumers/static/shared/3host facets, current numeric and original16AA/P1/strict after candidate freeze.",
+  "limits": [
+    "Register-word accounting does not prove exact compiler register allocation or throughput improvement.",
+    "No product implementation, variant trial or new performance sample in this audit."
+  ]
+}

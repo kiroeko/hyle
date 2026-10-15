@@ -578,10 +578,9 @@
     },
     {
       "module": "compute_provider_flashinfer",
-      "state": "CANDIDATE",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/inference-g04-g05-cache-attention-domain.md",
-      "summary": "G04/G05 CE21 CANDIDATE：原FP8寄存器转换与实际live shared容量七处有限修正；最终17数学、十cache mem/race与两普通case race全PASS/零warning。static/shared SDK、三宿主facet、新numeric/P1待验；旧qualified FAIL与累计成本保留。",
-      "candidate": "9c9ab88bba3fca5dcc981a2a42100b08af1a45ae"
+      "summary": "G04/G05 CE22 AUDITED：原9c9 qualified FAIL与actual栈读写反证；唯一有限FIX借原on-the-fly protected页加载，去FP8 paged持久K/V地址数组，保tile/对齐/数学/同步/shortK补零与生命周期。未签新codegen或性能，原失败成本全保留。"
     },
     {
       "module": "compute_provider_ggml_metal",

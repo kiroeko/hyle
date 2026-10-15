@@ -2087,3 +2087,23 @@ register255/shared40960，参考MMA_KV4/register177/shared32768，attention约8.
 MMA_KV又有packed对齐约束；下一步只审计这两者与宽化fragment的实际寄存器开销。
 当前不授权简单对半tile、删除对齐检查或变体扫参；F32 partial/最终scale+cast、两输出
 屏障、shortK补零和已准入数学/consumer全KEEP，后续有限FIX必须先单独明确并合法AUDITED。
+
+CE22[有限页偏移源码审计](../../../../evidence/architecture/inference-g04-g05-cuda-ce22-attribution/paged-offset-source-audit.json)
+确认原69ff的page_produce_kv_on_the_fly在当前私有头中逐字未变。非shared paged内核保留
+两组size_t页偏移数组，D256共32字节/线程、D64/Dv128共128字节，提前生成的下一tile
+K/V地址贯穿QK/softmax/PV，与当前actual栈帧/LDL/STL反证对应。真实Qwen prefill及留出
+qualified FAIL和该持久地址结构两把钥匙成立；不以峰值寄存器数本身授权任意改tile。
+
+有限唯一FIX BORROW原按需页偏移加载器，只用于已准入FP8 paged路：复用原protective
+K/V offset和原async load，移除两组持久地址数组及提前生成的下一tile地址；保存current/
+next packed-page base，原K-next/V-next prefetch时序、commit/wait/barrier不动。把已签
+HYLE_FP8_SHORT_K的物理128字节/上半补零移到该原helper，global64行和QK64保持原样。
+tile/warp/MMA、packed最小对齐、原dispatcher、数学/scale/F32 partial与merge、权限/退休
+全KEEP；普通16-bit、FP4、ragged和原shared-KV路径不变。不新增公开API、控制器或整历史
+展开。只允许private manifest/NOTICE与FI lock身份，baseline9c9；FI合法回AUDITED后实施。
+
+显式成本取舍是加载处重算protected页偏移，K/V可能重复page divmod，换取移除跨数学阶段
+存活的地址数组；源码预算不等于已证明寄存器或吞吐改善。先一次集中实现，再原17math、
+十cache mem/race及两普通case race；随后冻结candidate，补实际codegen、直接consumer、
+static/shared、受影响三host facets和新numeric/原16AA/P1/strict。其余路线证据按身份复用，
+SM89/FI pool1/split3/max2Ninja、heavy串行、每批2h检查点沿常设追加，原失败/费用不清零。
