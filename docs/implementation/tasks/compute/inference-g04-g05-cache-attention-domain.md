@@ -1442,3 +1442,13 @@ CE15 产品 candidate `1168874af05b8038b27a9e685e83a44dc4204456`：只改 provid
 新增一个 provider 回归覆盖 input 别名与三个 computed reshape 输出、精确容量/小一字节拒绝、
 两次实际 replay。冷容量增加 O(outputs) 个 ggml tensor metadata，warm 只在冲突导出复制
 对应输出字节。AUDITED 提交3d40003bb早于产品提交；当前仅冻结实现，测试尚未实跑。
+
+
+CE15 首轮[实际定向结果](../../../../evidence/correctness/inference-g02-vulkan-port-alias-fix-stage/receipt.json)：
+增量 build6.531s（只有 provider 与原所需测试闭包，无 CUDA TU）；根别名独立回归
+0.391s PASS，涵盖输入 alias/三个 computed exports/精确容量/各两 replay。原失败
+DeepSeek Graph case4.031s 已无重复分配崩溃，正常生成 XML，但输出3/11等的数值门
+FAIL，主要在 V4-Flash Q8 ratio4/128。数值根因尚未裁决，不改容差或原 oracle，不签
+G02/CE15 CLOSED；764个原默认 Vulkan case 尚未运行。三交付/Air及受影响消费者待验。
+当前无重型进程在运行；先定位该同例数值差异，若需另改产品，先退回 AUDITED 更新
+有限 FIX。不得因这一个回归 PASS 回填整个原用例或851集合为 PASS。

@@ -1,0 +1,98 @@
+{
+  "schema_version": 1,
+  "candidate": "1168874af05b8038b27a9e685e83a44dc4204456",
+  "verdict": "PROVIDER_ALIAS_REGRESSION_PASS_GRAPH_NUMERICAL_FAIL",
+  "acceptance": "G02_UNPROVEN",
+  "stages": [
+    {
+      "stage": "dry-plan",
+      "command": [
+        "ninja",
+        "-C",
+        "C:\\h7\\inference-g02-impacted",
+        "-f",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g02\\resume-windows-2\\reuse-build.ninja",
+        "-j",
+        "4",
+        "-n",
+        "hyle_compute_provider_ggml_vulkan_tests",
+        "hyle_graph_route_vulkan_tests"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 0.0940000000409782
+    },
+    {
+      "stage": "build",
+      "command": [
+        "ninja",
+        "-C",
+        "C:\\h7\\inference-g02-impacted",
+        "-f",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g02\\resume-windows-2\\reuse-build.ninja",
+        "-j",
+        "4",
+        "hyle_compute_provider_ggml_vulkan_tests",
+        "hyle_graph_route_vulkan_tests"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 6.530999999959022
+    },
+    {
+      "stage": "provider",
+      "command": [
+        "C:\\h7\\inference-g02-impacted\\bin\\hyle_compute_provider_ggml_vulkan_test.exe",
+        "--gtest_filter=GgmlVulkanRegion.PublishedReshapesBindIndependentInputAndOutputStorage",
+        "--gtest_color=no",
+        "--gtest_output=xml:C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g02\\vulkan-port-alias-fix-1\\provider.xml"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 0.39100000000325963
+    },
+    {
+      "stage": "graph",
+      "command": [
+        "C:\\h7\\inference-g02-impacted\\bin\\hyle_graph_route_vulkan_test.exe",
+        "--gtest_filter=VulkanGraphMoeFragments.D5DeepSeekFullAttentionChain",
+        "--gtest_color=no",
+        "--gtest_output=xml:C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g02\\vulkan-port-alias-fix-1\\graph.xml"
+      ],
+      "exit_code": 1,
+      "elapsed_seconds": 4.0310000000172295
+    }
+  ],
+  "scope": "Exact conflicting-root fix, both private owning-port shapes and real original failed public Graph case",
+  "provider": "Actual input alias plus three computed published views, distinct 32-byte caller buffers, small capacity rejection and two replays each PASS",
+  "graph": "Original tensor->buffer NULL abort removed; same full DeepSeek test reaches normal terminal/XML but has numerical mismatches. No tolerance or oracle change. Numerical root cause not yet determined.",
+  "limits": [
+    "Whole provider/direct factors, Air and static/shared alias journey still pending",
+    "764 original default Vulkan cases remain unrun",
+    "CUDA original804 PASS preserved; no shared product change"
+  ],
+  "artifacts": [
+    {
+      "path": "C:\\h7\\inference-g02-impacted\\bin\\hyle_compute_provider_ggml_vulkan.dll",
+      "sha256": "78bc058f6397ad4ca6bac4ce5b0d6a978d29c25bfff3e112209b498835f08340"
+    },
+    {
+      "path": "C:\\h7\\inference-g02-impacted\\bin\\hyle_compute_provider_ggml_vulkan_test.exe",
+      "sha256": "80aaea92d5476ad67e58e2ffb1310b020b4431e336cc86fe2fa431597de0d3a4"
+    },
+    {
+      "path": "C:\\h7\\inference-g02-impacted\\bin\\hyle_graph_route_vulkan_test.exe",
+      "sha256": "5fc01d241c3adece0000e28d991ba6404f9d8bcab14436aad8fb21810039263c"
+    }
+  ],
+  "raw_sha256": "db3449d313b7526812e3abb0cc768b1c99c975e0ff020b3ed20221ab57a39eaa",
+  "raw_files": {
+    "build.log": "37639e6c404387c8c3d8c3df9647ef476e13748f700b0eccf5eacbd444864e13",
+    "dry-plan.log": "8216f8d758f951a9c6e0b820951f9e6abf79d046282bb74b71197434ad7bc44f",
+    "graph.log": "14d81a2b9f7227ef77b078117031953c3b0c4846ff5cc576e420e1ca4650c4ac",
+    "graph.xml": "df93217838c65c93d842db04c56e8c5f293c0bd14ab7ff4014513ca453a67b04",
+    "provider.log": "1fa7c500f0c287680797ab853d6a703f25fc248de6b83bb3a2a4e356f87121fb",
+    "provider.xml": "39a0c7405fc690085005269a4e0550c966f4e6f3d07df0379ae17565df495e5b",
+    "result.json": "40ea2b66dd302a29f931f504db21c33e7f107701eebdbdf01476ddb901f68258",
+    "runner.py": "00af8da105aaf57cea6e51ee95ff0a0a14bdab3882193e7cff4a1f6f363ab539",
+    "source/region.cc": "a3f9b71f0cc52049aaf1c64b416799c90269729b8dc61b9ca7a2e762066679ec",
+    "source/region_test.cc": "05721915fd8a111e31c0b85f9c878e775c8cd310769c4fa918ff1966e0f1256e"
+  }
+}
