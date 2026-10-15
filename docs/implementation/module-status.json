@@ -578,10 +578,9 @@
     },
     {
       "module": "compute_provider_flashinfer",
-      "state": "CANDIDATE",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/inference-g04-g05-cache-attention-domain.md",
-      "summary": "G04/G05 CE25 CANDIDATE014：source/device/codegen、两SDK、新numeric/runtime、三host均PASS；attempt11 QUALIFIED/strict0，但prefill仍5%非劣FAIL，窗口与留出PASS。仅复用已有trace只读归因，未授权新产品FIX；全部旧失败/未知与累计成本保留。",
-      "candidate": "0143102aebcbc29600a77ce2950136462fba2a36"
+      "summary": "G04/G05 CE26 AUDITED：qualified11 prefill仍非劣FAIL；已复核末级跨组归约/输出重复所有权，唯一FIX为现有F32 merge单输出组，保数学/全部同步/原形状。尚未改产品或签新门；旧失败/未知及累计成本保留。"
     },
     {
       "module": "compute_provider_ggml_metal",

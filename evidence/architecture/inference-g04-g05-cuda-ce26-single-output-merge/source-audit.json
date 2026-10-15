@@ -1,0 +1,259 @@
+{
+  "kind": "CE26_SINGLE_FINAL_OUTPUT_OWNER_SOURCE_AUDIT",
+  "baseline": "0143102aebcbc29600a77ce2950136462fba2a36",
+  "failed_qualified_receipt_sha256": "b0f8475fb37199e2efb8f6a2e479363bf5946b095e367a04b09f4a1534356385",
+  "current_cascade_sha256": "db2abdfda11857eb7feb6ec0e3566f8dd4733843ded6d0111148f52a7cb37e9e",
+  "upstream_cascade_sha256": "3ce6de505884bbc4efc78e63b0719eef4fe31fe152defa9fa4f050898fa51210",
+  "unchanged_original_broadcast_helper": "template <uint32_t bdx, uint32_t bdy, uint32_t vec_size, typename DTypeIn>\n__device__ __forceinline__ void threadblock_sync_state(state_t<vec_size>& st, DTypeIn* v_smem,\n                                                       float* s_smem,\n                                                       const uint32_t tx = threadIdx.x,\n                                                       const uint32_t ty = threadIdx.y) {\n  constexpr uint32_t head_dim = vec_size * bdx;\n  st.o.cast_store(v_smem + ty * head_dim + tx * vec_size);\n  s_smem[ty] = st.get_lse();\n  st.init();\n  __syncthreads();\n\n#pragma unroll\n  for (uint32_t iter = 0; iter < bdy; ++iter) {\n    float s = s_smem[iter];\n    vec_t<float, vec_size> v;\n    v.cast_load(v_smem + iter * head_dim + tx * vec_size);\n    st.merge(v, s, 1);\n  }\n}\n\n",
+  "unchanged_helper_sha256": "8dc0673b224a2f5954b6d571aa86857bd7adef824b4f6d03e01f6dedaaf7a6ae",
+  "actual_dispatches": [
+    {
+      "grid": [
+        3,
+        1,
+        2
+      ],
+      "demangled": "void flashinfer::BatchPrefillWithPagedKVCacheKernel<flashinfer::KernelTraits<(flashinfer::MaskMode)1, (unsigned int)64, (unsigned int)1, (unsigned int)1, (unsigned int)16, (unsigned int)16, (unsigned int)4, (unsigned int)1, (flashinfer::PosEncodingMode)0, __nv_bfloat16, __nv_fp8_e4m3, __nv_bfloat16, float, int, flashinfer::DefaultAttention<(bool)0, (bool)1, (bool)0, (bool)0>>, hyle::compute::flashinfer::native::<unnamed>::OutputParams<flashinfer::BatchPrefillPagedParams<__nv_bfloat16, __nv_fp8_e4m3, __nv_bfloat16, int>>>(T2)"
+    },
+    {
+      "grid": [
+        3,
+        1,
+        2
+      ],
+      "demangled": "void hyle_benchmark_original_flashinfer_69ff::BatchPrefillWithPagedKVCacheKernel<hyle_benchmark_original_flashinfer_69ff::KernelTraits<(hyle_benchmark_original_flashinfer_69ff::MaskMode)1, (unsigned int)64, (unsigned int)1, (unsigned int)1, (unsigned int)16, (unsigned int)16, (unsigned int)4, (unsigned int)1, (hyle_benchmark_original_flashinfer_69ff::PosEncodingMode)0, __nv_bfloat16, __nv_bfloat16, __nv_bfloat16, float, int, hyle_benchmark_original_flashinfer_69ff::DefaultAttention<(bool)0, (bool)1, (bool)0, (bool)0>>, hyle_benchmark_original_flashinfer_69ff::BatchPrefillPagedParams<__nv_bfloat16, __nv_bfloat16, __nv_bfloat16, int>>(T2)"
+    },
+    {
+      "grid": [
+        40,
+        1,
+        2
+      ],
+      "demangled": "void flashinfer::BatchPrefillWithPagedKVCacheKernel<flashinfer::KernelTraits<(flashinfer::MaskMode)1, (unsigned int)64, (unsigned int)1, (unsigned int)1, (unsigned int)16, (unsigned int)16, (unsigned int)4, (unsigned int)1, (flashinfer::PosEncodingMode)0, __nv_bfloat16, __nv_fp8_e4m3, float, float, int, flashinfer::DefaultAttention<(bool)0, (bool)1, (bool)0, (bool)0>>, hyle::compute::flashinfer::native::<unnamed>::MergeParams<flashinfer::BatchPrefillPagedParams<__nv_bfloat16, __nv_fp8_e4m3, float, int>, __nv_bfloat16, (unsigned int)256>>(T2)"
+    },
+    {
+      "grid": [
+        460,
+        1,
+        1
+      ],
+      "demangled": "void flashinfer::PersistentVariableLengthMergeStatesKernel<(unsigned int)8, (unsigned int)32, (unsigned int)4, (unsigned int)2, float, __nv_bfloat16, int, (bool)1>(T5 *, float *, T7 *, T6 *, float *, unsigned int, unsigned int *, unsigned int, float)"
+    },
+    {
+      "grid": [
+        40,
+        1,
+        2
+      ],
+      "demangled": "void hyle_benchmark_original_flashinfer_69ff::BatchPrefillWithPagedKVCacheKernel<hyle_benchmark_original_flashinfer_69ff::KernelTraits<(hyle_benchmark_original_flashinfer_69ff::MaskMode)1, (unsigned int)64, (unsigned int)1, (unsigned int)1, (unsigned int)16, (unsigned int)16, (unsigned int)4, (unsigned int)1, (hyle_benchmark_original_flashinfer_69ff::PosEncodingMode)0, __nv_bfloat16, __nv_bfloat16, __nv_bfloat16, float, int, hyle_benchmark_original_flashinfer_69ff::DefaultAttention<(bool)0, (bool)1, (bool)0, (bool)0>>, hyle_benchmark_original_flashinfer_69ff::BatchPrefillPagedParams<__nv_bfloat16, __nv_bfloat16, __nv_bfloat16, int>>(T2)"
+    },
+    {
+      "grid": [
+        460,
+        1,
+        1
+      ],
+      "demangled": "void hyle_benchmark_original_flashinfer_69ff::PersistentVariableLengthMergeStatesKernel<(unsigned int)8, (unsigned int)32, (unsigned int)4, (unsigned int)4, __nv_bfloat16, __nv_bfloat16, int>(T5 *, float *, T7 *, T6 *, float *, unsigned int, unsigned int *, unsigned int)"
+    },
+    {
+      "grid": [
+        3,
+        1,
+        2
+      ],
+      "demangled": "void flashinfer::BatchPrefillWithPagedKVCacheKernel<flashinfer::KernelTraits<(flashinfer::MaskMode)0, (unsigned int)64, (unsigned int)1, (unsigned int)4, (unsigned int)4, (unsigned int)8, (unsigned int)4, (unsigned int)1, (flashinfer::PosEncodingMode)0, __nv_bfloat16, __nv_fp8_e4m3, __nv_bfloat16, float, int, flashinfer::DefaultAttention<(bool)0, (bool)1, (bool)0, (bool)0>>, hyle::compute::flashinfer::native::<unnamed>::OutputParams<flashinfer::BatchPrefillPagedParams<__nv_bfloat16, __nv_fp8_e4m3, __nv_bfloat16, int>>>(T2)"
+    },
+    {
+      "grid": [
+        3,
+        1,
+        2
+      ],
+      "demangled": "void hyle_benchmark_original_flashinfer_69ff::BatchPrefillWithPagedKVCacheKernel<hyle_benchmark_original_flashinfer_69ff::KernelTraits<(hyle_benchmark_original_flashinfer_69ff::MaskMode)0, (unsigned int)64, (unsigned int)1, (unsigned int)4, (unsigned int)4, (unsigned int)8, (unsigned int)4, (unsigned int)1, (hyle_benchmark_original_flashinfer_69ff::PosEncodingMode)0, __nv_bfloat16, __nv_bfloat16, __nv_bfloat16, float, int, hyle_benchmark_original_flashinfer_69ff::DefaultAttention<(bool)0, (bool)1, (bool)0, (bool)0>>, hyle_benchmark_original_flashinfer_69ff::BatchPrefillPagedParams<__nv_bfloat16, __nv_bfloat16, __nv_bfloat16, int>>(T2)"
+    }
+  ],
+  "existing_trace_sha256": "7eb9cb79ffb59af1a615951fd1b5e82fc471ce782b1c199ed1fed38aa1ad2074",
+  "existing_trace_shapes": [
+    {
+      "reference_cold_decode": {
+        "count": 2,
+        "mean_ns": 12054,
+        "median_ns": 12054.0,
+        "registers": [
+          22
+        ],
+        "shared": [
+          0
+        ]
+      },
+      "selected_attention": {
+        "count": 8,
+        "mean_ns": 6459.5,
+        "median_ns": 6289.0,
+        "registers": [
+          241
+        ],
+        "shared": [
+          49152
+        ]
+      },
+      "original_attention": {
+        "count": 8,
+        "mean_ns": 5717,
+        "median_ns": 5574.0,
+        "registers": [
+          240
+        ],
+        "shared": [
+          49152
+        ]
+      }
+    },
+    {
+      "reference_cold_decode": {
+        "count": 2,
+        "mean_ns": 10401.5,
+        "median_ns": 10401.5,
+        "registers": [
+          22
+        ],
+        "shared": [
+          0
+        ]
+      },
+      "selected_attention": {
+        "count": 8,
+        "mean_ns": 43982.5,
+        "median_ns": 44070.0,
+        "registers": [
+          241
+        ],
+        "shared": [
+          49152
+        ]
+      },
+      "selected_merge": {
+        "count": 8,
+        "mean_ns": 11605,
+        "median_ns": 11609.0,
+        "registers": [
+          43
+        ],
+        "shared": [
+          8704
+        ]
+      },
+      "original_attention": {
+        "count": 8,
+        "mean_ns": 38590.875,
+        "median_ns": 38368.5,
+        "registers": [
+          240
+        ],
+        "shared": [
+          49152
+        ]
+      },
+      "original_merge": {
+        "count": 8,
+        "mean_ns": 8825.875,
+        "median_ns": 8814.0,
+        "registers": [
+          40
+        ],
+        "shared": [
+          8704
+        ]
+      }
+    },
+    {
+      "reference_cold_decode": {
+        "count": 2,
+        "mean_ns": 1397.5,
+        "median_ns": 1397.5,
+        "registers": [
+          22
+        ],
+        "shared": [
+          0
+        ]
+      },
+      "selected_attention": {
+        "count": 8,
+        "mean_ns": 4700.75,
+        "median_ns": 4462.5,
+        "registers": [
+          165
+        ],
+        "shared": [
+          40960
+        ]
+      },
+      "original_attention": {
+        "count": 8,
+        "mean_ns": 4025.75,
+        "median_ns": 3890.5,
+        "registers": [
+          177
+        ],
+        "shared": [
+          32768
+        ]
+      }
+    }
+  ],
+  "output_domain_proof": [
+    {
+      "depth": 64,
+      "vector": 4,
+      "bdx": 16,
+      "bdy": 8,
+      "old_final_vector_groups": 128,
+      "new_final_vector_groups": 16,
+      "old_scalar_lse_writers": 128,
+      "new_scalar_lse_writers": 1,
+      "old_final_reduction_copies": 8,
+      "new_final_reduction_copies": 1,
+      "unique_output_domain_proven": true
+    },
+    {
+      "depth": 128,
+      "vector": 4,
+      "bdx": 32,
+      "bdy": 4,
+      "old_final_vector_groups": 128,
+      "new_final_vector_groups": 32,
+      "old_scalar_lse_writers": 128,
+      "new_scalar_lse_writers": 1,
+      "old_final_reduction_copies": 4,
+      "new_final_reduction_copies": 1,
+      "unique_output_domain_proven": true
+    },
+    {
+      "depth": 256,
+      "vector": 8,
+      "bdx": 32,
+      "bdy": 4,
+      "old_final_vector_groups": 128,
+      "new_final_vector_groups": 32,
+      "old_scalar_lse_writers": 128,
+      "new_scalar_lse_writers": 1,
+      "old_final_reduction_copies": 4,
+      "new_final_reduction_copies": 1,
+      "unique_output_domain_proven": true
+    }
+  ],
+  "finding": "The original persistent merge broadcasts the same ordered final state to every ty group after its full CTA barrier, then redundantly normalizes/scales/stores all groups. Its zero/single-partial paths also repeat identical global accesses across ty. Current D256 has four ty groups and 128 duplicate LSE scalar stores when enabled; only one tx group and one scalar lane own distinct final output addresses.",
+  "finite_fix": "For the existing SCALE_OUTPUT=true F32 consumer only, retain all local partial accumulation/normalization/shared writes and every CTA/cp.async barrier, but make ty0 perform the identical ordered final cross-group merge, final normalization/scale/sole cast/output. Zero/single-partial final accesses use ty0 and optional scalar LSE uses tx0. Default upstream false specialization remains behaviorally unchanged. No tile/pipeline/precision/plan/API changes.",
+  "rejected": [
+    "Actual selected/reference grids match 3x1x2 /40x1x2 /3x1x2 and merge460; no plan-overpartition evidence.",
+    "Original F32 float2 output stores already cover distinct packed 32-byte sectors; no evidence to replace output staging or change F32 partials.",
+    "Original FP8 BF16 vector conversion already uses mature vLLM-derived four-element bit dequantization, not scalar conversion.",
+    "Do not remove output synchronization, narrow partials, alter stage count, or retry unchanged performance."
+  ],
+  "limits": [
+    "Only source/ownership proof and already captured diagnostic trace, no new profiling or timing sample.",
+    "Potential runtime benefit remains unproven; requires fresh math/device/codegen/SDK/numeric/runtime/host/originalP1 gates.",
+    "No product edit authorized before the finiteFIX is recorded and FI legally AUDITED; all qualified failures and costs remain."
+  ]
+}

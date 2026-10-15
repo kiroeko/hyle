@@ -2369,3 +2369,20 @@ FI保持CANDIDATE014；失败不自动授权改产品。下一步仅复用已有
 保留累计；不新采profile或同配置P1，不改peer/输入/统计/5%，不试tile变体。只有实际
 消费material缺口与具体源码机制两把钥匙成立，才固定有限FIX并合法回AUDITED。
 当前没有新FIX或运行资格，G04/G05未关闭，完整goal仍3/10，G06不实施。
+
+CE26唯一有限FIX已固定：[单输出组源码审计](../../../../evidence/architecture/inference-g04-g05-cuda-ce26-single-output-merge/source-audit.json)
+证明原threadblock_sync_state先同步各ty局部状态，再由每个ty按完全相同顺序读取/合并相同
+共享状态；当前D256四组重复最终归约、归一化、scale和相同输出写入，单partial分支也重复
+访问。实际原/产品grid一致，未发现plan分片差异；原F32 float2直写和成熟向量FP8转换保留。
+
+baseline014，仅FI合法CANDIDATE→AUDITED后实施：只为现有SCALE_OUTPUT=true的F32
+merge选择ty0承担相同顺序的最终跨组归约、归一化/scale/sole cast与输出；零/单partial
+最终访问也只由ty0执行，optional LSE只由tx0写。其它ty仍提交原局部状态并参与全部原
+CTA/cp.async同步；原SCALE_OUTPUT=false路径保持原行为。D64/128/256按真实bdx/bdy
+逐地址验证唯一覆盖，不新增数学、算法、tile、pipeline配置或API，不缩窄partial或移除屏障。
+
+两把钥匙为qualified11主consumer material FAIL与该可复核重复所有权成本。先集中修复
+private cascade manifest/NOTICE/FI lock，再原17math、十mem/十race/两普通race及codegen
+（新增实际merge特化资源/指令核对），两搬迁SDK、新numeric/runtime、三host和原P1。
+默认旧FI实例及三形状均保留；未运行门不记PASS。原2h检查点/自动追加/累计费用、SM89
+pool1/split3/Ninja2/heavy串行不变。当前仅审计与授权，尚未改产品或签新运行/性能。
