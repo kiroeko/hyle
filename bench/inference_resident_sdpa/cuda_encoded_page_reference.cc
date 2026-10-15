@@ -186,7 +186,12 @@ Status prepare_cuda_encoded_reference(CudaEncodedReferenceData &data,c::Queue &q
       for(auto rows:valid)read_bytes+=std::size_t(rows)*cap.kv_heads*depth;
     }
     auto completion=c::cuda::submit(queue,[&](cudaStream_t stream) noexcept ->cudaError_t {
-      for(unsigned port=0;port<2;++port){const auto status=n::decode(source[port],dest[port],valid_ptr,
+      for(unsigned port=0;port<2;++port){
+        // Define padding in our own alternate representation without reading
+        // any unborrowed FP8 row. Original masked tiles may load that padding.
+        auto status=cudaMemsetAsync(dest[port],0,data.expanded[port].size(),stream);
+        if(status!=cudaSuccess)return status;
+        status=n::decode(source[port],dest[port],valid_ptr,
           cap.max_pages,cap.page_size,cap.kv_heads,port?cap.value_head_dim:cap.qk_head_dim,
           port?cap.value_storage.scale():cap.key_storage.scale(),stream);
         if(status!=cudaSuccess)return status;
@@ -197,8 +202,8 @@ Status prepare_cuda_encoded_reference(CudaEncodedReferenceData &data,c::Queue &q
     status.Update(completion->wait()); // Also drains an accepted decoder prefix on error.
     HYLE_RETURN_IF_ERROR(status);
     data.ready=true;
-    std::fprintf(stderr,"# CUDA_ENCODED_ORIGINAL_COLD extra_cache_bytes=%zu decoder_read_bytes=%zu decoder_write_bytes=%zu valid_table_bytes=%zu seconds=%.9f shared_snapshot_slots=2 original_fp8_owners=retained private_pool_upper=UNKNOWN\n",
-        capacity_bytes,read_bytes,read_bytes*2,valid_buffer.size(),
+    std::fprintf(stderr,"# CUDA_ENCODED_ORIGINAL_COLD extra_cache_bytes=%zu decoder_read_bytes=%zu decoder_write_bytes=%zu zeroed_owned_bytes=%zu valid_table_bytes=%zu seconds=%.9f shared_snapshot_slots=2 original_fp8_owners=retained private_pool_upper=UNKNOWN\n",
+        capacity_bytes,read_bytes,read_bytes*2,capacity_bytes,valid_buffer.size(),
         std::chrono::duration<double>(std::chrono::steady_clock::now()-start).count());
     return Status::Ok();
   }catch(const std::bad_alloc &){return Status::ResourceExhausted("original CUDA cold snapshot allocation");}

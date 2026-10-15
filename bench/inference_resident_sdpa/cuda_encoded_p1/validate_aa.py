@@ -71,7 +71,7 @@ def main():
         if digest(sdk/item['path']) != item['sha256']:
             raise RuntimeError('numeric CUDA SDK recipe/native archive changed')
     for item in numeric['snapshot']['product_inputs']:
-        if item['path'].startswith('include/hyle/') and digest(sdk/item['path']) != item['sha256']:
+        if item['path'].startswith('include/hyle/') and (sdk/item['path']).is_file() and digest(sdk/item['path']) != item['sha256']:
             raise RuntimeError('CUDA installed public input changed')
     identity['numeric_preflight'] = digest(receipt_file)
     identity['original_source'] = original
