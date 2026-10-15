@@ -757,7 +757,8 @@ Result<Region> Region::create(NativeDevice device,
     // Row reduction: up to three exact row pieces, concat and shape restore.
     // GatedDeltaNet: fused native result, two views and two owning ports.
     // Other operations need at most three (Rsqrt: Fill, Sqrt, Div).
-    auto capacity = recipe.inputs.size() + 16;
+    // Each published alias may need its own owning export tensor.
+    auto capacity = recipe.inputs.size() + recipe.outputs.size() + 16;
     for (const auto &node : recipe.nodes) {
       capacity += node.operation.custom_as<model_ops::RecurrentGatedDeltaNet>() ? 9
                   : node.operation.get_if<Scan>()            ? 16
@@ -1324,14 +1325,21 @@ Result<Region> Region::create(NativeDevice device,
     }
     auto *graph = ggml_new_graph_custom(context, capacity, false);
     for (const auto output : recipe.outputs) {
-      ggml_set_output(tensors[output]);
-      auto *root = tensors[output];
+      auto *value = tensors[output];
+      auto *root = value;
       while (root->view_src)
         root = root->view_src;
+      // Public ports bind independent caller storage. A second export of a
+      // native root must not replace an input or another output's binding.
+      if (std::ranges::find(state.ports, root) != state.ports.end()) {
+        value = ggml_dup(context, value);
+        root = value;
+      }
+      ggml_set_output(value);
       // Shape restoration is a view. Bind the actual producer and protect a
       // published intermediate from native fusion and allocator reuse.
       ggml_set_output(root);
-      ggml_build_forward_expand(graph, tensors[output]);
+      ggml_build_forward_expand(graph, value);
       state.ports.push_back(root);
     }
     for (int i = 0; i < ggml_graph_n_nodes(graph); ++i) {

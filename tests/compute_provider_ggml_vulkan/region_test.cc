@@ -6,8 +6,10 @@
 #include "region.h"
 
 #include <algorithm>
+#include <array>
 #include <cmath>
 #include <cstddef>
+#include <cstdint>
 #include <memory>
 #include <vector>
 
@@ -29,6 +31,87 @@ using hyle::compute::ggml_vulkan::detail::MetadataArena;
 using hyle::compute::ggml_vulkan::detail::NativeDevice;
 using hyle::compute::ggml_vulkan::detail::NativeGraph;
 using hyle::compute::ggml_vulkan::detail::region_supports;
+
+TEST(GgmlVulkanRegion, PublishedReshapesBindIndependentInputAndOutputStorage) {
+  namespace d = hyle::compute::ggml_vulkan::detail;
+  auto device = NativeDevice::create();
+  ASSERT_TRUE(device) << device.error().message();
+  const auto matrix = c::TensorDesc::dense(
+      c::DataType::kFloat32, std::array<std::int64_t, 2>{2, 4}).value();
+  const auto flat = c::TensorDesc::dense(
+      c::DataType::kFloat32, std::array<std::int64_t, 1>{8}).value();
+  const auto row = c::TensorDesc::dense(
+      c::DataType::kFloat32, std::array<std::int64_t, 2>{1, 8}).value();
+  const auto reshape = [](const c::TensorDesc &description) {
+    return c::Operation(c::View::reshape(
+        c::TensorShape::create(description.dimensions()).value()).value());
+  };
+  for (bool computed : {false, true}) {
+    SCOPED_TRACE(computed);
+    d::RegionRecipe recipe;
+    recipe.inputs = {0};
+    if (computed) {
+      recipe.values = {matrix, matrix, flat, row};
+      recipe.nodes = {{c::Operation(c::Unary{c::UnaryKind::kNeg}), {0}, {1}},
+                      {reshape(flat), {1}, {2}}, {reshape(row), {1}, {3}}};
+      recipe.outputs = {1, 2, 3};
+    } else {
+      recipe.values = {matrix, flat, row};
+      recipe.nodes = {{reshape(flat), {0}, {1}}, {reshape(row), {1}, {2}}};
+      recipe.outputs = {1, 2};
+    }
+    auto region = d::Region::create(*device, recipe);
+    ASSERT_TRUE(region) << region.error().message();
+    const auto ports = recipe.inputs.size() + recipe.outputs.size();
+    auto arena = MetadataArena::create(ports * ggml_tensor_overhead(),
+                                       hyle::mem::system_allocator());
+    ASSERT_TRUE(arena) << arena.error().message();
+    std::vector<std::shared_ptr<ggml_backend_buffer>> buffers;
+    std::vector<ggml_tensor *> tensors;
+    std::vector<d::RegionBinding> bindings;
+    {
+      auto active = device->activate();
+      for (std::size_t port = 0; port < ports; ++port) {
+        auto buffer = device->allocate_buffer(8 * sizeof(float));
+        ASSERT_TRUE(buffer) << buffer.error().message();
+        buffers.emplace_back(*buffer, [owner = *device](auto *allocation) {
+          auto release_scope = owner.activate();
+          ggml_backend_buffer_free(allocation);
+        });
+        auto *tensor = ggml_new_tensor_1d(arena->get(), GGML_TYPE_F32, 8);
+        ASSERT_EQ(ggml_backend_tensor_alloc(*buffer, tensor,
+            ggml_backend_buffer_get_base(*buffer)), GGML_STATUS_SUCCESS);
+        tensors.push_back(tensor);
+        bindings.push_back({device->buffer_handle(*buffer), 0,
+                            8 * sizeof(float), buffers.back()});
+      }
+    }
+    auto too_small = bindings;
+    too_small.back().capacity -= 1;
+    EXPECT_FALSE(region->validate(too_small).ok());
+    ASSERT_TRUE(region->bind(bindings).ok());
+    for (int replay = 0; replay < 2; ++replay) {
+      std::array<float, 8> input{};
+      for (std::size_t i = 0; i < input.size(); ++i)
+        input[i] = float(i) + 0.5F + float(16 * replay);
+      {
+        auto active = device->activate();
+        ggml_backend_tensor_set(tensors[0], input.data(), 0, sizeof(input));
+      }
+      ASSERT_TRUE(region->submit().status.ok());
+      ASSERT_TRUE(region->wait().status.ok());
+      {
+        auto active = device->activate();
+        for (std::size_t port = 0; port < ports; ++port) {
+          std::array<float, 8> actual{};
+          ggml_backend_tensor_get(tensors[port], actual.data(), 0, sizeof(actual));
+          for (std::size_t i = 0; i < actual.size(); ++i)
+            EXPECT_EQ(actual[i], port && computed ? -input[i] : input[i]);
+        }
+      }
+    }
+  }
+}
 
 // A native producer uses the exported device and the same upstream queue lock.
 // Its write is made visible before the original ggml region consumes the buffer.
