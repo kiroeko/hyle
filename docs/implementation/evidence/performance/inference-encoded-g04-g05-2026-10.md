@@ -34,3 +34,11 @@ LOSS / PASS；prefillD256为0.883122–0.891172 / LOSS / FAIL；noncausal D64/Dv
 0.914731–0.926564 / LOSS / FAIL。窗口5%门通过不能代签其它两项或全CUDA。
 worker2635.632s和重叠外层2637.703s分别保留。当前只做同一冻结artifact的一次有限归因，
 原8及所有历史失败均不覆盖，原输入/peer/统计/门槛不变。
+
+[attempt10](../../../../evidence/performance/inference-g04-g05-cuda-encoded-w1-wsl-p1-attempt-10/receipt.json)
+对应CE24 candidate6e57e28ad，QUALIFIED/strict verify0，16AA、五controls、三consumer与
+三validator均PASS，原n15完成120产品与30控制进程。windowD256为0.977278–0.983388 /
+LOSS / 5%PASS；prefillD256为0.852769–0.858133 / LOSS / FAIL；noncausal D64/Dv128为
+0.976652–0.989723 / INCONCLUSIVE / PASS。整体performance FAIL，明确prefill失败不追加n31。
+worker2679.859s与外层2715.844s重叠，分开列账。新1/1/4特化零栈读写和实际runtime身份
+不代替吞吐；原8/9及全部失败、方向与成本保留，当前CUDA与整个G04/G05未关闭。

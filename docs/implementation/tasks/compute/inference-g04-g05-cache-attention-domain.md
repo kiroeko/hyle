@@ -2264,3 +2264,23 @@ source/device、两SDK、三host、新numeric和实际runtime身份至此均有�
 下一独立attempt10按原16AA/8strata/n15,31/5%/五controls/三consumer/strict合同运行；
 资格预检继续前置到configure、A/A与采样之前。产品仍冻结6e57，所有旧qualified FAIL、
 两次未达资源目标的修正及费用保留，整个G04/G05和完整goal仍未关闭。
+
+## CE25：6e57 合格结果与剩余 prefill 成本
+
+[attempt10](../../../../evidence/performance/inference-g04-g05-cuda-encoded-w1-wsl-p1-attempt-10/receipt.json)
+已实际TERMINAL：QUALIFIED、performance FAIL、strict verify0。原16AA、三consumer与
+三validator、五controls均PASS，artifacts/inputs/host稳定；n15完成120产品、30控制进程，
+因明确prefill FAIL不追加n31。worker2679.859s与外层2715.844s重叠，不重复相加。
+
+windowD256 ratio0.977278–0.983388、方向LOSS/5%非劣PASS；prefillD256为
+0.852769–0.858133、方向LOSS/非劣FAIL；noncausal D64/Dv128为0.976652–0.989723、
+方向INCONCLUSIVE/非劣PASS。静态零栈读写和实际1/1/4身份成立，不能替代prefill预算。
+原9与8 qualified FAIL及全部源/数学/device/SDK/host/numeric证据和费用不覆盖。
+
+FI保持CANDIDATE6e57，不由失败自动授权新产品修改。下一有限只读审计复用已捕获的
+当前6e57 runtime trace，按形状分离attention/merge成本，再核锁定69ff的原FP8 prefill
+共享BF16 tile repack路径与当前MMA1预算。原源码在CTA_Q>16、有限FP8域本来启用该
+路径；CE21为当时双tile/大shared成本关闭它，不能假定修正packed预算后仍应关闭。
+先证明原helper、物理容量、每SM实际shared上界与数学/同步一致，再固定唯一有限FIX并
+合法回AUDITED；不试多变体、不改peer/输入/5%或公共仪器、不新采相同P1。G04/G05仍
+未关闭，G06不实施，完整goal仍3/10。
