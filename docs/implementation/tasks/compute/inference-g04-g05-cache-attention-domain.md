@@ -1345,3 +1345,13 @@ vector路径保原数学，未增加公共参数、layout或跨模块owner。增
 乘大K的原double-oracle反例，防止staging丢失小Query；与原12数学/4公开消费者/原风险、
 static SDK和同三形状短成本一次批量执行。归因样例不代签13测试、完整生命周期或P1。
 后续适用host风险、shared SDK及正式同合同资格仍按原流程；所有原失败继续保留。
+
+本批[实际source/static结果](../../../../evidence/architecture/inference-g04-g05-apple-loader-query-stage/receipt.json)
+为13数学、4公开消费者、原风险及relocated static SDK通过；短诊断prefill已升至0.8206/
+0.8218，仍未达原非劣门，保持AUDITED。独立GPU探针确认每线程16元素也共享一个32元素
+Q8块scale；原loader在此正常几何仍逐元素重复解码。下一有限修正将scale复用覆盖完整
+块和对齐的半/子块：只读实际vec_size个code，不越过34字节块；F16 Query D256改回原
+32-query宽度并用BK8/WM4，Query half + K/V float占29184字节，复用同一F32累加与屏障。
+独立Q128/KV768核中该组合约0.687ms、原Q8核约3.08ms，输出一致；这仍不是完整episode/
+P1。只对K加half范围guard的探针更慢、packed_char4没有收益，均未进入产品。固定这批
+后再一次跑原13数学/4公开/风险/static/同三形状短诊断，不放宽数值或性能门。

@@ -507,7 +507,7 @@
       "module": "compute_route_apple",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/inference-g04-g05-cache-attention-domain.md",
-      "summary": "G04/G05 CE14 AUDITED: actual M4 STEEL Q8 D256 prefill has qualified 0.3249-0.3255 loss. NAX trial is inactive on g16; F32 tile/fence trial passed finite source/static SDK math but was slower and has been rejected/reverted to original product bytes. Next correction must preserve F32 range/cancellation, exact pages and original numerical/performance gates; other route candidates and all earlier evidence retained."
+      "summary": "G04/G05 CE14 AUDITED: block-scale reuse and exact F16 Query staging passed actual Air source/static SDK math13, public4 and original risks. Short prefill ratio improved from original qualified0.325 to0.821 but remains below original gate. Next finite correction covers aligned partial Q8 blocks and 32-query width with F32 KV/score/accumulators. Earlier rejected trials, full range and all original evidence retained; no new P1 PASS."
     },
     {
       "module": "graph_route_apple",
