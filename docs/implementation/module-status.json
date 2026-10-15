@@ -578,10 +578,9 @@
     },
     {
       "module": "compute_provider_flashinfer",
-      "state": "CANDIDATE",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/inference-g04-g05-cache-attention-domain.md",
-      "summary": "G04/G05 CE20 CANDIDATE：所有FI native路线统一verified私有头，两处输出shared/warp同步修正，F32 partial与融合最终scale/cast保留。最终17数学、十cache mem/race和两普通case race全PASS/零warning；SDK/宿主facets/新P1待验，旧失败/成本全部保留。",
-      "candidate": "274cd9fec7cecb2e683cf5f0f87d6e0fd6b3ab55"
+      "summary": "G04/G05 CE21 finite FIX: borrow pinned native FP8 register-fragment conversion instead of full BF16 repack; six storage/trait/dispatch predicates consistent. Qualified attempt8 prefill material FAIL retained, current274 attribution sealed. Preserve F32partials/finalscale/outputsync/shortK, API/planner/other owners unchanged; current source/SDK/risks not yet rebound."
     },
     {
       "module": "compute_provider_ggml_metal",

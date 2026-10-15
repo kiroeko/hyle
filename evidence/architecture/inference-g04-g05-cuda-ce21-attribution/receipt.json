@@ -1,0 +1,286 @@
+{
+  "kind": "G04_G05_CUDA_CE21_QUALIFIED_LOSS_ATTRIBUTION",
+  "verdict": "P0_ACTUAL_MECHANISM_ONLY_NOT_NEW_PERFORMANCE",
+  "product_candidate": "274cd9fec7cecb2e683cf5f0f87d6e0fd6b3ab55",
+  "profile": {
+    "state": "TERMINAL_FINITE_DIAGNOSTIC_PASS",
+    "purpose": "QUALIFIED_MATERIAL_LOSS_ATTRIBUTION",
+    "command": [
+      "nsys",
+      "profile",
+      "--trace=cuda",
+      "--sample=none",
+      "--cpuctxsw=none",
+      "--export=sqlite",
+      "--force-overwrite=false",
+      "--output=/root/hyle-scratch/compute-unified/ce21-cuda-product-profile-8/product",
+      "/root/hyle-scratch/compute-unified/g04-cuda-encoded-p1-fresh-8/bin/g04_cuda_encoded_bench"
+    ],
+    "binary_sha256": "e17cec79646c394fd0acb968fab5c3e61f5742a7a37386e4cb889df85b7fb9c4",
+    "qualifier_job": {
+      "state": "TERMINAL",
+      "snapshot": {
+        "attempt": "8",
+        "source_commit": "b9b61e939983aad7f611e240d2753c87023602c6",
+        "product_candidate": "274cd9fec7cecb2e683cf5f0f87d6e0fd6b3ab55",
+        "numeric_receipt_sha256": "43d8cf21d711f848281eb452c9aed58de3742fb66cb242a3b07d0f7e317f064e",
+        "contract_file_sha256": "03fefa3cdbd0e4d0b7a9483634d7897a1421740ad94083df2caffcdeedbab56a"
+      },
+      "source": "/root/hyle-scratch/compute-unified/g04-cuda-encoded-p1-source-8",
+      "build": "/root/hyle-scratch/compute-unified/g04-cuda-encoded-p1-fresh-8",
+      "output": "/root/hyle-scratch/compute-unified/g04-cuda-encoded-p1-output-8",
+      "observer_pid": 559,
+      "pid": 685,
+      "identity": {
+        "host": "Linux kiro-workstation 6.18.54.1-microsoft-standard-WSL2 #1 SMP PREEMPT_DYNAMIC Tue Oct  6 19:13:07 UTC 2026 x86_64 x86_64 x86_64 GNU/Linux",
+        "compiler": "g++-14 (Ubuntu 14.2.0-4ubuntu2~24.04.1) 14.2.0\nCopyright (C) 2024 Free Software Foundation, Inc.\nThis is free software; see the source for copying conditions.  There is NO\nwarranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.",
+        "cuda": "nvcc: NVIDIA (R) Cuda compiler driver\nCopyright (c) 2005-2026 NVIDIA Corporation\nBuilt on Tue_Jun_09_02:43:40_PM_PDT_2026\nCuda compilation tools, release 13.3, V13.3.73\nBuild cuda_13.3.r13.3/compiler.38244171_0",
+        "gpu": "NVIDIA GeForce RTX 4070, 617.14, GPU-e7376560-6f5d-ec19-6ee4-3dd3a2c81ef8, 8.9"
+      },
+      "command": [
+        "python3",
+        "/root/hyle-scratch/compute-unified/g04-cuda-encoded-p1-source-8/scripts/hyle-perf.py",
+        "qualify-platform",
+        "--contract",
+        "/root/hyle-scratch/compute-unified/g04-cuda-encoded-p1-source-8/bench/inference_resident_sdpa/cuda_encoded_p1/contract.json",
+        "--source",
+        "/root/hyle-scratch/compute-unified/g04-cuda-encoded-p1-source-8/bench/inference_resident_sdpa/cuda_encoded_p1",
+        "--machine",
+        "W1-WSL",
+        "--peer",
+        "original-flashinfer=/root/hyle-scratch/compute-unified/peers/flashinfer-69ff-git-1",
+        "--build",
+        "/root/hyle-scratch/compute-unified/g04-cuda-encoded-p1-fresh-8",
+        "--output",
+        "/root/hyle-scratch/compute-unified/g04-cuda-encoded-p1-output-8"
+      ],
+      "qualification_exit_code": 2,
+      "verify_exit": 0,
+      "verify_elapsed_seconds": 0.19467159699979675,
+      "exit_code": 2,
+      "elapsed_seconds": 2664.435379775
+    },
+    "original_summary_sha256": "4c31ba64290555ce4c5e26febe317c6bfb4802ac30af25b9f95d421c92af6f5b",
+    "nsys_version": "NVIDIA Nsight Systems version 2026.1.3.425-261338342291v0",
+    "exit_code": 0,
+    "elapsed_seconds": 3.12113624,
+    "max_abs_error": 0.00109081301,
+    "shapes": [
+      {
+        "cold_decoder": {
+          "count": 2,
+          "median_ns": 10707.5,
+          "mean_ns": 10707.5,
+          "registers": [
+            22
+          ],
+          "dynamic_shared": [
+            0
+          ],
+          "grids": [
+            [
+              3648,
+              1,
+              1
+            ]
+          ]
+        },
+        "selected_attention": {
+          "count": 8,
+          "median_ns": 9266.0,
+          "mean_ns": 9373,
+          "registers": [
+            248
+          ],
+          "dynamic_shared": [
+            98304
+          ],
+          "grids": [
+            [
+              3,
+              1,
+              2
+            ]
+          ]
+        },
+        "original_attention": {
+          "count": 8,
+          "median_ns": 5943.0,
+          "mean_ns": 6066,
+          "registers": [
+            240
+          ],
+          "dynamic_shared": [
+            49152
+          ],
+          "grids": [
+            [
+              3,
+              1,
+              2
+            ]
+          ]
+        }
+      },
+      {
+        "cold_decoder": {
+          "count": 2,
+          "median_ns": 10838.0,
+          "mean_ns": 10838,
+          "registers": [
+            22
+          ],
+          "dynamic_shared": [
+            0
+          ],
+          "grids": [
+            [
+              3648,
+              1,
+              1
+            ]
+          ]
+        },
+        "selected_attention": {
+          "count": 8,
+          "median_ns": 53193.0,
+          "mean_ns": 53180.875,
+          "registers": [
+            246
+          ],
+          "dynamic_shared": [
+            98304
+          ],
+          "grids": [
+            [
+              40,
+              1,
+              2
+            ]
+          ]
+        },
+        "selected_merge": {
+          "count": 8,
+          "median_ns": 12033.0,
+          "mean_ns": 12025.375,
+          "registers": [
+            43
+          ],
+          "dynamic_shared": [
+            8704
+          ],
+          "grids": [
+            [
+              460,
+              1,
+              1
+            ]
+          ]
+        },
+        "original_attention": {
+          "count": 8,
+          "median_ns": 39342.0,
+          "mean_ns": 39534.875,
+          "registers": [
+            240
+          ],
+          "dynamic_shared": [
+            49152
+          ],
+          "grids": [
+            [
+              40,
+              1,
+              2
+            ]
+          ]
+        },
+        "original_merge": {
+          "count": 8,
+          "median_ns": 9038.0,
+          "mean_ns": 9025.25,
+          "registers": [
+            40
+          ],
+          "dynamic_shared": [
+            8704
+          ],
+          "grids": [
+            [
+              460,
+              1,
+              1
+            ]
+          ]
+        }
+      },
+      {
+        "cold_decoder": {
+          "count": 2,
+          "median_ns": 1441.0,
+          "mean_ns": 1441,
+          "registers": [
+            22
+          ],
+          "dynamic_shared": [
+            0
+          ],
+          "grids": [
+            [
+              48,
+              1,
+              1
+            ],
+            [
+              96,
+              1,
+              1
+            ]
+          ]
+        },
+        "selected_attention": {
+          "count": 8,
+          "median_ns": 4600.5,
+          "mean_ns": 4780.75,
+          "registers": [
+            165
+          ],
+          "dynamic_shared": [
+            40960
+          ],
+          "grids": [
+            [
+              3,
+              1,
+              2
+            ]
+          ]
+        },
+        "original_attention": {
+          "count": 8,
+          "median_ns": 4028.0,
+          "mean_ns": 4138.125,
+          "registers": [
+            177
+          ],
+          "dynamic_shared": [
+            32768
+          ],
+          "grids": [
+            [
+              3,
+              1,
+              2
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  "source_fact": "Pinned native FP8 register-fragment conversion exists in compute_qk and compute_sfm_v. Current FP8 repack stores another entire tile in BF16 shared memory and selects larger MMA_KV; no extra final scale kernel remains.",
+  "limits": [
+    "One verify-only three-shape capture, 24independentoracles; timing points explain costs only, not newP1 verdict.",
+    "Original F32partials/finalscale, geometry/permissions/outputcontract remain required."
+  ],
+  "raw_zip_sha256": "f9db5976e11b671315c789da29d0ef7216aaa26c62cf30fdad25c2c4a1aaeeb9"
+}

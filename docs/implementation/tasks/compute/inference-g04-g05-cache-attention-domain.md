@@ -1945,3 +1945,28 @@ VERIFY_ONLY Nsight CUDA trace，核24独立oracle、actual kernel/merge与host l
 register/shared资源及原artifact SHA前后不变；不重采P1、不修改输入/门槛/peer或公共工具。
 只读阶段预算15min检查点沿常设授权追加，原cost不重置。先证明实际费用结构，再固定
 有限FIX并合法回AUDITED；此前不改CANDIDATE产品或以旧982的profile代签当前274。
+
+CE21[当前274实际归因](../../../../evidence/architecture/inference-g04-g05-cuda-ce21-attribution/receipt.json)
+3.121s/24oracle PASS，artifact前后SHA未变。D256 FP8实际MMA_KV4/98304 shared/246–248
+register；参考BF16 MMA_KV1/49152 shared/240register。prefill当前attention约53.2us、
+参考39.3us，merge约12.0/9.0us；无最终scale kernel。以上短trace只归因，不签新吞吐。
+
+源码核定：原compute_qk/compute_sfm_v已经有完整FP8寄存器fragment swizzle/vec_cast与
+原F32 MMA路径；repack只是用额外BF16整tile暂存替代该转换。现有kMinValidMmaKV仍
+保证packed布局对齐，原planner/split/workspace与F32 partial不必改变。真实Qwen GQA8/KV2
+D256 prefill material FAIL与该额外暂存/转换结构两把钥匙均成立。
+
+有限唯一FIX BORROW原寄存器转换：本provider私有已准入FP8 cache不再启用BF16 repack，
+存储/KernelTraits与三dispatch预算六处判定保持一致；原occupancy/MMA_KV选择自然按真实
+存储计算，不手工试tile、不改planner或benchmark形状。所有F16/BF16普通数学、F32
+partial/merge最终scale+cast、两个输出同步屏障和短K补零KEEP。无公共API/对象layout/
+executor、全历史解码、新fast选项或自写attention数学。只改具名private manifest/NOTICE
+与该依赖lock身份，upstream pin不变；其他owner及原所有证据不动。FI以原274为baseline
+合法回AUDITED后才实施，先集中一次实现，再批量验证，不先签性能改善。
+
+适用门固定原17math、十cache mem/race与两普通case race、直接3公共consumer、static/
+shared SDK以及受影响三host facet；复用未变CPU/G02/Apple/Vulkan与native ggml依赖，
+不跑全库。SM89/FI pool1/split3/max2Ninja、heavy串行；每批2h检查点按常设追加保原cost。
+新source数学/设备门通过才固定新candidate，随后重新数值绑定及原合同A/A/P1/strict。
+若数学/设备出现真实失败仅在该六处一致性边界内修复；若与原寄存器路径本身矛盾，则
+保留失败并还原该试改，不靠删反例/放宽精度或任意新算法扩张。
