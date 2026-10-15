@@ -74,6 +74,38 @@
         100,
         104
       ]
+    },
+    "backend_completion": {
+      "path": "C:\\public\\tools\\hyle-dependencies\\v1\\sources\\ggml-456172ec733a-41b7e10fd424\\src\\ggml-backend.cpp",
+      "sha256": "a39c4fe81b043c7e8616ebe57afb75d727c692fe3b26c3e9bc2ddde3c6991041",
+      "line_anchors": [
+        455,
+        458
+      ]
+    },
+    "metal_completion": {
+      "path": "C:\\public\\tools\\hyle-dependencies\\v1\\sources\\ggml-456172ec733a-41b7e10fd424\\src\\ggml-metal\\ggml-metal-context.m",
+      "sha256": "2be28299672d17fbbe1ba13eff773f69cbe5e7604885d59fc82d57bb889e5c61",
+      "line_anchors": [
+        251,
+        299
+      ]
+    },
+    "metal_encoder_bridge": {
+      "path": "C:\\public\\tools\\hyle-dependencies\\v1\\sources\\ggml-456172ec733a-41b7e10fd424\\src\\ggml-metal\\ggml-metal-device.h",
+      "sha256": "b126fa48627fabd430849a7b1f35756acea8860effe75090cd171aa5dc5b9cd4",
+      "line_anchors": [
+        67,
+        92
+      ]
+    },
+    "metal_host_mapping": {
+      "path": "C:\\public\\tools\\hyle-dependencies\\v1\\sources\\ggml-456172ec733a-41b7e10fd424\\src\\ggml-metal\\ggml-metal-device.m",
+      "sha256": "1c129311f152c88bb455e14a720aac731196a76450e4b0da0791f1cce2bcbc47",
+      "line_anchors": [
+        2160,
+        2196
+      ]
     }
   },
   "cpu": {
@@ -89,7 +121,16 @@
     "route": "Original independent GGML Metal Q8 pipeline, not original MLX fast SDPA (has no Q8 ports)",
     "adapter": "Account required Q conversion to F32, same compressed bytes/gather, original F16 mask for finite windows, output conversion and native completion. Q>=32 original host may expand complete KV to F16: valid same-Q8-input pipeline comparator only when ALL expansion dispatch/scratch/sync are counted, never a direct-compressed kernel claim.",
     "direct_compressed_peer": "Existing original general Q8 kernels64/64,128/128,256/256 can be explicitly selected in benchmark without changing shader arithmetic; host dispatch adaptation must be disclosed.",
-    "rectangular_64_128": "Original general template separates DK/DV and has no observed DK>=DV constraint; original exports lack Q8 64/128. Bypassing vec selection alone does not create pipeline. Benchmark-only explicit instantiation may be feasible, but requires real compiler/oracle/cost qualification and is not an already-qualified peer."
+    "rectangular_64_128": "Original general template separates DK/DV and has no observed DK>=DV constraint; original exports lack Q8 64/128. Bypassing vec selection alone does not create pipeline. Benchmark-only explicit instantiation may be feasible, but requires real compiler/oracle/cost qualification and is not an already-qualified peer.",
+    "resource_and_completion_audit": {
+      "status": "SOURCE_RECHECKED_NOT_RUNTIME_QUALIFIED",
+      "original_revision": "456172ec733a135778adcd32d00e576a58232e45",
+      "completion": "ggml_backend_graph_compute returns the pre-synchronize async status; Metal synchronize records late CommandBuffer failure only in private has_error. That return alone is insufficient evidence of checked completion for this operation.",
+      "mapping": "Original host-pointer import rounds down/up to OS page boundaries and creates another no-copy MTLBuffer. Exact HYLE page leases alone do not authorize that enlarged mapping.",
+      "bounded_adapter": "Prefer the original private encoder bridge with the actual ready MTLBuffer plus offset and retained owner/range/device proofs, then inspect this operation's real CommandBuffer completion status. Keep original general-Q8 padding/mask/split/reduce and charge all conversion/gather/prepare/wait costs.",
+      "rectangular_export": "Dqk64/Dv128 needs an explicit benchmark-only original-template instance and real compiler/oracle qualification. No shader arithmetic changes or presumed numeric/P1 PASS.",
+      "scope": "These are independent peer adapter qualification constraints, not evidence of a newly missing HYLE product mechanism. Explicit general-kernel selection must be disclosed; no best-of original-host claim."
+    }
   },
   "vulkan": {
     "route": "Original independent non-MMQ scalar Q8 shader supports HSK/HSV and direct block34 decode",

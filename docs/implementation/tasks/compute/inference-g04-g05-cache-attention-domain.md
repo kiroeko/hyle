@@ -1010,3 +1010,16 @@ n15→31、5%门不变。独立静态复核无新增MUST；合同schema校验通
 数值运行前进一步移除 reference helper 每次 prepare 的 mask metadata fprintf，防止
 peer 额外日志污染计时；冷形状字节账保留，数学/上传/owner未变。此前Vulkan队列仍仅在
 等待、没有子进程或重型运行，已保存取消记录并换新源码快照；CPU扩样/后续CUDA不受影响。
+
+### Apple 原始 peer 的资源与完成接线复核
+
+原456源码与文件SHA已补入上述 peer-preflight.json：graph_compute 返回同步前的异步状态，
+Metal synchronize 的晚到 CommandBuffer 失败只写内部 has_error，不能把该返回值当作本次
+checked completion。原 host-pointer import 会扩大到 OS 页边界，真实 exact page lease
+也不能单独证明这个扩大映射合法。这两项是独立比较器的接线约束，不是新增产品缺口。
+
+有限 adapter 优先沿原私有 encoder 的真实 MTLBuffer/offset 桥，保活原 owner、设备与精确
+范围，并检查本次实际 CommandBuffer 完成状态；保留原 general Q8 padding、mask、split/
+reduce 与全部转换/分页 gather 费用。64/128 只补原模板的 benchmark 显式实例，先实机
+编译和字节 oracle，再进入 P1；原 shader 算术不改，明确披露 general-kernel 选择，
+不声称原 host 最佳性能。当前仅源码资格准备，未编译、未签数值或性能通过。
