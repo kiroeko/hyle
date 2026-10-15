@@ -42,3 +42,11 @@ LOSS / 5%PASS；prefillD256为0.852769–0.858133 / LOSS / FAIL；noncausal D64/
 0.976652–0.989723 / INCONCLUSIVE / PASS。整体performance FAIL，明确prefill失败不追加n31。
 worker2679.859s与外层2715.844s重叠，分开列账。新1/1/4特化零栈读写和实际runtime身份
 不代替吞吐；原8/9及全部失败、方向与成本保留，当前CUDA与整个G04/G05未关闭。
+
+[attempt11](../../../../evidence/performance/inference-g04-g05-cuda-encoded-w1-wsl-p1-attempt-11/receipt.json)
+对应CE25 candidate0143102ae，QUALIFIED/strict verify0；16AA、五controls、三consumer与
+采样前后三validator均PASS，artifact/input/host稳定。n15完成120产品与30控制；window
+D256 ratio0.986884–0.993310 / LOSS / 5%PASS，prefillD256 0.913710–0.926685 / LOSS /
+FAIL，noncausal D64/Dv128 0.981282–1.001226 / INCONCLUSIVE / PASS。整体performance
+FAIL，明确prefill失败不追加n31。worker2629.221s和重叠outer2691.563s分别保留。
+较原10改善不替代5%门；全部旧失败、方向、未知与成本继续保留。CUDA/G04/G05未关闭。

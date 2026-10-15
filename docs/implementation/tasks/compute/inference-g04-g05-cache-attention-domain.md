@@ -2351,3 +2351,21 @@ tsan stage414.626s/outer425.219s；
 outer与stage互相重叠，不重复相加。[批次汇总](../../../../evidence/correctness/inference-g04-g05-cuda-ce25-host-tsan/batch-summary.json)
 不签shader/driver/private-pool证书，原进程LSan与diagnostic-thread lifetime INCONCLUSIVE保留。
 现在只剩原同合同AA/P1/strict及整项终审；本次不签性能或G04/G05完成，不重置旧失败/成本。
+
+## CE26：014 合格结果与剩余成本只读复核
+
+[attempt11](../../../../evidence/performance/inference-g04-g05-cuda-encoded-w1-wsl-p1-attempt-11/receipt.json)
+已实际TERMINAL，candidate014/source681a5277e，QUALIFIED、performance FAIL、strict verify0。
+原16AA、五controls、三consumer和采样前后三validator均PASS，artifact/input/host稳定。
+n15完成120产品与30控制，明确prefill FAIL不追加n31。worker2629.221s与outer2691.563s
+互相重叠，不重复相加。windowD256 ratio0.986884–0.993310、方向LOSS/5%PASS；
+prefillD256为0.913710–0.926685、方向LOSS/5%FAIL；noncausal D64/Dv128为
+0.981282–1.001226、方向INCONCLUSIVE/5%PASS。CE25恢复原路径使prefill较原10改善，
+仍未到原门槛，不将该改善签为性能PASS。原8/9/10及全部失败/费用不覆盖。
+
+FI保持CANDIDATE014；失败不自动授权改产品。下一步仅复用已有CE25 runtime trace，
+按三个实际形状分离attention、merge与其它GPU工作，再对照当前源/原peer的partial、
+最终scale/cast与调用边界，找出剩余可复核成本。15min只读检查点沿原用户常设授权追加、
+保留累计；不新采profile或同配置P1，不改peer/输入/统计/5%，不试tile变体。只有实际
+消费material缺口与具体源码机制两把钥匙成立，才固定有限FIX并合法回AUDITED。
+当前没有新FIX或运行资格，G04/G05未关闭，完整goal仍3/10，G06不实施。
