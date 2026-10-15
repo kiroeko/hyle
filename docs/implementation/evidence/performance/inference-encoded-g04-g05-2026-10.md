@@ -19,6 +19,10 @@
 CPU是W1-WIN，Apple/Vulkan是实际Air M1-MAC工程资格；各自contract/peer精度、准备、
 生命周期和资源差异见原receipt，不能跨行推断绝对速度。CPU保原Q缩窄；GPU peer明确
 使用原general Q8路线，不称原host最佳策略。native private-pool上界仍UNKNOWN。
-CUDA原4ms/40ms A/A失格和后续时长/机制诊断均保留。新的episode交错与全量算术分组已
-[通过完整16路A/A](../../../../evidence/performance/inference-g04-g05-cuda-episode-aa-qualification/receipt.json)，
-原P1采样仍在运行；没有完整合格throughput裁决，继续UNPROVEN，不列虚构的平局或PASS。
+CUDA原4ms/40ms A/A失格和后续时长/机制诊断、attempt6 ISA与attempt7 provenance绑定失格均保留。
+[attempt8](../../../../evidence/performance/inference-g04-g05-cuda-encoded-w1-wsl-p1-attempt-8/receipt.json)
+现为QUALIFIED/strict verify0，16AA及五controls PASS；三workload比率/方向/5%门为：
+windowD256 0.953993–0.958642 / LOSS / UNRESOLVED；prefillD256 0.861386–0.872412 /
+LOSS / FAIL；noncausal D64/Dv128 0.980057–0.994756 / INCONCLUSIVE / PASS。
+整体工程性能FAIL，不能以留出PASS或旧未合格样本关闭CUDA或整个G04/G05。
+当前仅作有限实际机制归因，不更改原5%/输入/统计或将压缩存储取舍改写为平局。

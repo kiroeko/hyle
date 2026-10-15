@@ -1928,3 +1928,20 @@ canonical侧已调用原load_contract和_evaluate_product_evidence：三项全PA
 亦PASS。private launcher同一检查前置到configure/A-A/采样之前，任一失败立即停止；公共
 性能core不改。下一独立attempt8保留原5%/8strata/16AA/n15,31，不重跑产品构建/数学/SDK/
 宿主风险；新资格只由新实际结果签发。沿原常设预算追加，原失败成本不重置。
+
+## CE21：合格成本反证与有限只读归因（CANDIDATE，未授权产品改动）
+
+[attempt8实际结果](../../../../evidence/performance/inference-g04-g05-cuda-encoded-w1-wsl-p1-attempt-8/receipt.json)
+为QUALIFIED、performance FAIL、strict verify0；worker2664.435s，重叠外层2667.750s。
+16AA、三个前后validator、三consumer资格、五controls及全部身份稳定性均PASS。
+D256 window比率0.953993–0.958642、方向LOSS/5%门UNRESOLVED；prefill0.861386–0.872412、
+方向LOSS/非劣FAIL；留出0.980057–0.994756、方向INCONCLUSIVE/5%门PASS。原n15已出现
+明确material FAIL，原停止规则不启动n31，不靠同配置重采寻找通过。原7 DIAGNOSTIC与
+全部失败/费用保留；G04/G05不能关闭，G06仍不实施。
+
+主消费者仍为Qwen真实GQA8/KV2 D256长prefill，多请求Q64/128与窗口消费；不引入新形状。
+在没有其它heavy任务且原8真正terminal后，仅一次对冻结8 primary artifact的原三形状
+VERIFY_ONLY Nsight CUDA trace，核24独立oracle、actual kernel/merge与host launch账、
+register/shared资源及原artifact SHA前后不变；不重采P1、不修改输入/门槛/peer或公共工具。
+只读阶段预算15min检查点沿常设授权追加，原cost不重置。先证明实际费用结构，再固定
+有限FIX并合法回AUDITED；此前不改CANDIDATE产品或以旧982的profile代签当前274。
