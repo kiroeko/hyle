@@ -13,7 +13,10 @@ F2 table upload and owned native completion/output. Every measured operation
 includes prepare/version, native Program/Invocation replacement, allocation,
 upload/wait, binding, submit, native completion and output return/release.
 Only initial immutable placement/schema/layout and outer slot creation are
-outside timing. Initial device library/pipeline compilation and cache warmup\nare inside the mandatory untimed numerical/warmup phase for both arms. Each\nsubsequent complete episode still charges native preparation. There is no\nprivate flag reset or warm replay shortcut.
+outside timing. Initial device library/pipeline compilation and cache warmup
+are inside the mandatory untimed numerical/warmup phase for both arms. Each
+subsequent complete episode still charges native preparation. There is no
+private flag reset or warm replay shortcut.
 
 The independent peer instantiates the unchanged original456 general Q8 Metal
 template, pad and mask-block kernels. Its original64/64,128/128,256/256 exports
@@ -41,7 +44,8 @@ Use only the independently tested relocated Apple static SDK. Its28 HYLE
 archives,6 native archives,10 recipes and1 metallib are authenticated. Each
 native archive differs whole-file from its producer, with exact ordered
 member payloads (9/15/28/2/1/120 objects). No cause for metadata differences is
-inferred. This GPU-only comparison does not qualify that SDK's older CPU path.
+inferred. This CE14 SDK uses the current CPU product and passed its ordinary
+14+3 consumers; this GPU-only comparison does not issue a CPU P1 verdict.
 
 Original machine policy,16 paired rounds,16 workload-matched A/A processes,
 execution/allocation orders, placement replicas, n15/31 and5% noninferiority

@@ -478,7 +478,7 @@
           "CMAKE_OSX_DEPLOYMENT_TARGET": "14.4",
           "CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
           "HYLE_DEP_SOURCE_CACHE": "/Users/kiro/Library/Caches/hyle/dependencies/v1",
-          "CMAKE_PREFIX_PATH": "/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-sdk/apple-static-1/relocated"
+          "CMAKE_PREFIX_PATH": "/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-sdk/apple-static-ce14-6/relocated"
         },
         "peer_cache": {
           "original-ggml-flash": "HYLE_RESIDENT_REFERENCE_SOURCE"

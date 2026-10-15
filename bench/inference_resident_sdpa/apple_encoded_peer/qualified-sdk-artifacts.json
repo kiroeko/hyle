@@ -1,43 +1,43 @@
 {
-  "prefix": "/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-sdk/apple-static-1/relocated",
+  "prefix": "/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-sdk/apple-static-ce14-6/relocated",
   "supplemental_native_archives": [
     {
       "path": "lib/libggml-base.a",
-      "sha256": "4c1e8c64624c1133a26c34299971c9a282fb4caddef20e425a9f0a3fe4bb2ce3",
+      "sha256": "984e4795480b26fc6ae9cd301f74518e29267e062425517f1b074130699fab86",
       "producer_path": "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-build/bin/libggml-base.a",
-      "producer_sha256": "7912f70a19754409f45cb88ccf243c55cbc8aa43e1b405951b4192f72fd1a52a",
+      "producer_sha256": "cd9208bb05a706698b267fa909ce4fcbad71d2dc351caa50587c38882d8323cb",
       "whole_archive_equal": false,
       "ordered_member_payloads_equal": true,
       "members": [
         {
           "name": "ggml.c.o",
           "bytes": 272640,
-          "sha256": "adf2df448238123e9752ecf676fb9b5b0d458bb3e44b49e2e8e49fc5c21a851c"
+          "sha256": "2c904126d2aad3617af3a78b6dc2122fe271c66a4e8dc0247c38967b7f026ea3"
         },
         {
           "name": "ggml.cpp.o",
           "bytes": 1968,
-          "sha256": "f400a51fb93761423c00c4965275f8d296265eeb77b08da35dd8c909da70df99"
+          "sha256": "57749e01dda6ee6cde0b5f6e428751865380e3fe69a86afa9b2c56a7a85a902f"
         },
         {
           "name": "ggml-alloc.c.o",
           "bytes": 21000,
-          "sha256": "17a267849bbb06fed3f06e2d3b7cb51f5175fa080dd669443a39afa8cdb232c0"
+          "sha256": "89771c7aa69e5ce416d296cc4abeb87676a75e7427527abc2da7c4dd2ffd9720"
         },
         {
           "name": "ggml-backend.cpp.o",
           "bytes": 87280,
-          "sha256": "d3a5689988c205c7a52e855a3c21e7bf616793235a4a0d596b5a76c4e816fadb"
+          "sha256": "0efa05b66824dcde387a4025915f1fb5798e577b35882935952f0df574f250f0"
         },
         {
           "name": "ggml-backend-meta.cpp.o",
           "bytes": 128296,
-          "sha256": "092492367f8594be7ad9fdc13cb6a03b355b2a99af373f732955f9eef7ff165a"
+          "sha256": "249d372cc89039893a76c39890093bbffeee7f0cff40d81859d0683576699ec3"
         },
         {
           "name": "ggml-opt.cpp.o",
           "bytes": 42656,
-          "sha256": "5f0eb419bdbdcc2d909ee0992588e5398b872c89172b0f7d5baef1e5c58371af"
+          "sha256": "8bf7d3d7cda1481b1a1cc696308e9f24c61143376af0b0afb7a7480be55ab769"
         },
         {
           "name": "ggml-threading.cpp.o",
@@ -47,42 +47,42 @@
         {
           "name": "ggml-quants.c.o",
           "bytes": 270304,
-          "sha256": "17aa69008826f96f6b93e5094abe41b643828f5deb7a3fe3fe9e9fd39a94f1df"
+          "sha256": "40f888b84a9a065501feae34393c3d4f1002fe31cb8059abd74700dd51c24154"
         },
         {
           "name": "gguf.cpp.o",
           "bytes": 170560,
-          "sha256": "b750bdf68c808adbd41b2e627011eff7fdf8c8a9c27744cfb6659b14fb2ebc55"
+          "sha256": "80d0795cf2e2d18b0f9acde245a3e2b54b3dfef62fa6ef58c5a0e66ade9f9065"
         }
       ]
     },
     {
       "path": "lib/libggml-cpu.a",
-      "sha256": "d539e7413da0d0099253c474476c52dbf6285bec8c517571165b849f09a2ddb3",
+      "sha256": "300fc80d42cb2d0d87c78688cab17aef60d02c54c54ed78460f5e94f2fb1f9c2",
       "producer_path": "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-build/bin/libggml-cpu.a",
-      "producer_sha256": "3294c6cc049b3cdebf75a5223ec01c5597044f95f582a6592dd4c591d6223a4f",
+      "producer_sha256": "28e268d445afbe8c1b85e230f4cd91de2c55195a91f4ec9e73eb9f33a7c631fb",
       "whole_archive_equal": false,
       "ordered_member_payloads_equal": true,
       "members": [
         {
           "name": "ggml-cpu.c.o",
           "bytes": 57352,
-          "sha256": "6dc96776e2bffcf79575caec5e862fd2d020ae0ccedd2459690f4c3d230701ff"
+          "sha256": "de3b6ac7af015e84050561e14af6d052573b712341b8a184421be35f0251ac0e"
         },
         {
           "name": "ggml-cpu.cpp.o",
           "bytes": 29192,
-          "sha256": "d4b65296f982b589f54319681ad16b9814da7ef883398b281249ed943c2512ae"
+          "sha256": "39f5e308b9f612ec59abe663ce55b61f5a9990d9c06ce4f4cfad164399e7556c"
         },
         {
           "name": "repack.cpp.o",
           "bytes": 255064,
-          "sha256": "1300d675e3a1332b7283a7a7bb5e894a21cbfba1a308c6da94ba1c324184b4fd"
+          "sha256": "8ca3671f8f7107fa88bd6e59ab7c1f7f38d60f3bec7dd2f2db280a762f639810"
         },
         {
           "name": "iqp.cpp.o",
           "bytes": 52672,
-          "sha256": "fafb871371d2c86c643db51300d90a373d39f460f8597b5b7602225f948ff87d"
+          "sha256": "156afe7459d8cf1a2f41156e175e4e5f543d4e47111f6918ea60c6af1f8bd3e7"
         },
         {
           "name": "hbm.cpp.o",
@@ -112,12 +112,12 @@
         {
           "name": "binary-ops.cpp.o",
           "bytes": 54888,
-          "sha256": "12164827278c394c9b0316432d54b940d974e2b79e32d1bd7ea018fe037ead40"
+          "sha256": "77519b251b32cc785338045c30a216be8bbceabe33dc96a5eea04ca875626ef4"
         },
         {
           "name": "unary-ops.cpp.o",
           "bytes": 102696,
-          "sha256": "6327321fb5763b5d86e92c64be5f16a84e3fa09762cb4c11a2ce7b6931f0b78e"
+          "sha256": "38aa78b8bedcf713876668cc6624f62de3c628bda9c8206250c605a7e8dd18bf"
         },
         {
           "name": "vec.cpp.o",
@@ -126,8 +126,8 @@
         },
         {
           "name": "ops.cpp.o",
-          "bytes": 362664,
-          "sha256": "98e199a05400f05dd37d44c8194e3e1fc56446c14465733f4e526958b92f0874"
+          "bytes": 362536,
+          "sha256": "a7958d73531691d5d2d52112f00695386daa33f4e7ba184cfa3a0e79b5ed40b0"
         },
         {
           "name": "quants.c.o",
@@ -143,46 +143,46 @@
     },
     {
       "path": "lib/libggml-metal.a",
-      "sha256": "da1c6cf910b8529fddad4ed3526e7eccc94fdf9bf4a31e294753f526161bdb93",
+      "sha256": "00beafdd7354e8696706e81b91dab2ce72bf5d849563ee880428ef4b6a67f5fa",
       "producer_path": "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-build/bin/libggml-metal.a",
-      "producer_sha256": "7742be617054f1160cf7b19d17d0e673d2520ec10a72df76a9186fb3aaaced3a",
+      "producer_sha256": "1a9f9b3b8b6e6de969bdf03693832ef99ebeec9d79897415189078680a6eabbd",
       "whole_archive_equal": false,
       "ordered_member_payloads_equal": true,
       "members": [
         {
           "name": "ggml-metal.cpp.o",
           "bytes": 47648,
-          "sha256": "efbd4b2c780c15bf4c4c420b46278b51e8f885b403b4aa5609e90052da8399ef"
+          "sha256": "d880b13d9749cce982cdc827c48b276d0eaacc01b172cdedad814db24433a74a"
         },
         {
           "name": "ggml-metal-device.m.o",
           "bytes": 57536,
-          "sha256": "c298495f6d2bc26816c058f9d9f60ac36b8eb4413d8c5c1479ef17ff34f67218"
+          "sha256": "daa22a30cc5c843eae14fcbecd3c2fda0c460d151f7ee6fbd586c06276ab7532"
         },
         {
           "name": "ggml-metal-device.cpp.o",
           "bytes": 76992,
-          "sha256": "7d55421c9e99c267fd9963386547be72590f03ce0d62679d8a4626fe0bc7af79"
+          "sha256": "bd4a9d5a294d31f3b339a8c2776aa07478738ed5272783c8e4985daec6c540fa"
         },
         {
           "name": "ggml-metal-common.cpp.o",
           "bytes": 14880,
-          "sha256": "a17fad37b8e8be95eb1949823acb58c3123fac03e04e9b4def851cdfcbed28cb"
+          "sha256": "6227f178832c96a2021833de3d54363b8f3d6dde885a080ed9ad828bd771e4e1"
         },
         {
           "name": "ggml-metal-context.m.o",
           "bytes": 18568,
-          "sha256": "0d778c3c5e5d7ce3f2db556296a4dcbc267c9977ab58bd3334892be9b7b75441"
+          "sha256": "b7fd3fb3c77aba7c996a875ad99723788a0c42ffca718dd64b8ba52273f48a6b"
         },
         {
           "name": "ggml-metal-fusion.cpp.o",
           "bytes": 15120,
-          "sha256": "10eedb9c7b5f199764f3795d563a42e6cb05aa27a0f120f322b5900f5c5374e6"
+          "sha256": "f2db234935648ec6e60a37f14902f9efc32c367e5273574a2a37ba9d02628b2f"
         },
         {
           "name": "ggml-metal-ops.cpp.o",
           "bytes": 98184,
-          "sha256": "e97ea5a81762858f249ef08aaf5224cb3405170e7b9522a0c21e51356ace8a98"
+          "sha256": "adcd113cec67d3569122982d37421b314a1a606bf4f7724e5f9e24658c6d1522"
         },
         {
           "name": "ggml-metal-tuning.cpp.o",
@@ -293,9 +293,9 @@
     },
     {
       "path": "lib/libggml.a",
-      "sha256": "9018d60bccdcfb1b1196a3580168a463d2b5b0104628325c4844bc70e9f2d383",
+      "sha256": "568a70aab3fb7c7f867aba91ee219bb2a63121224ded35ff11bbec65c41c3bc0",
       "producer_path": "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-build/bin/libggml.a",
-      "producer_sha256": "4c01fa057cc8f0a28a1657b3d942419a08b7bb0e7e3ffe555d5bb9397f602704",
+      "producer_sha256": "636d543a964386bab88547225d6cdea1614f3821b128112b0ca22a453dc4568c",
       "whole_archive_equal": false,
       "ordered_member_payloads_equal": true,
       "members": [
@@ -307,13 +307,13 @@
         {
           "name": "ggml-backend-reg.cpp.o",
           "bytes": 35568,
-          "sha256": "ece9da3f291ca21e96f0bedfb40e8bd3e682a586d434ecade866a0c1e0afab58"
+          "sha256": "9db98ec6132029404a8b4b527c76691705c0daaa8f9f2f2e05c3a1ce8941ec7b"
         }
       ]
     },
     {
       "path": "lib/libmimalloc_static.a",
-      "sha256": "43e63862b6be9e5fbf2c47962f834ccc352cbbaf8acc8a1cf528989dfe846811",
+      "sha256": "bc683953aa9cbd3ff65f19b1102ac6f609f8c623defb172acb630a6123fe967a",
       "producer_path": "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-build/bin/libmimalloc_static.a",
       "producer_sha256": "266e29b23fcfe20dd41df09c7175ca89c34e6386c5e6132c2e2b7348fef6cfd5",
       "whole_archive_equal": false,
@@ -328,9 +328,9 @@
     },
     {
       "path": "lib/libmlx.a",
-      "sha256": "1f9afe4067d57eca040a133db6bf40e84284ba5b5a70e1bbc3c9431cb12a4eba",
+      "sha256": "ef5dce70c1dcaaf8defe9884ff93c179ba5b67a696989da3ccc6f811d2584e31",
       "producer_path": "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-build/bin/libmlx.a",
-      "producer_sha256": "18fa4670e1918b405f01b579703473d8e430fba2570abd7f287a1b2b04b38cc5",
+      "producer_sha256": "f489ed1d51a3344a7cef0b0c477d7d0328eec936d6267dfc7a7a136da704d4ef",
       "whole_archive_equal": false,
       "ordered_member_payloads_equal": true,
       "members": [
@@ -376,8 +376,8 @@
         },
         {
           "name": "fast.cpp.o",
-          "bytes": 249200,
-          "sha256": "994d2718df9553bf59a5a76563990b3e7ca7f9c604fbd8191730b709227e9cd5"
+          "bytes": 249232,
+          "sha256": "8ccdf1d62cf24c2acacd9d15dfe327e5bd933bc1fb12b27abc7124264a314557"
         },
         {
           "name": "fft.cpp.o",
@@ -606,8 +606,8 @@
         },
         {
           "name": "jit_kernels.cpp.o",
-          "bytes": 571296,
-          "sha256": "d83629ef40073ff1ce898d400c00278e19d311205af70d6fbc1bd2f3d07c6348"
+          "bytes": 571632,
+          "sha256": "e6ee1b0c5b691b1ad3c3333d40c098a0df2a612d4f1a4e0322d24a1b7a0fee08"
         },
         {
           "name": "arange.cpp.o",
@@ -751,8 +751,8 @@
         },
         {
           "name": "steel_attention.cpp.o",
-          "bytes": 68776,
-          "sha256": "2da149315c1530d377b18ed1a15ae1ed2d259a829dbea6f1bb11c36f5c6b83b9"
+          "bytes": 70816,
+          "sha256": "b481ed00859b8daecc2c8c67360be27bae150df2157c0c0186f8a903f913b117"
         },
         {
           "name": "allocator.cpp.o",
@@ -841,8 +841,8 @@
         },
         {
           "name": "scaled_dot_product_attention.cpp.o",
-          "bytes": 116208,
-          "sha256": "7d882b88fa4159952c4e811c48af7aaa7fca1d9058d60ea2142404d66245f503"
+          "bytes": 116840,
+          "sha256": "da9ddad50a6fd4ce3e0ec2a6e7eb09ea36cfbd028f0f4b4336e1a046a30a6007"
         },
         {
           "name": "metal.cpp.o",
@@ -944,7 +944,7 @@
     },
     {
       "path": "lib/cmake/Hyle/HyleConfig.cmake",
-      "sha256": "93dd07b093e2fc6ced34b8049792ba68b9a50305eefe05714233e266ac4b426e"
+      "sha256": "68ee36fd6c626f527548ce96808657c023835d2f62f04912b0a96ef85e1d4db7"
     },
     {
       "path": "lib/cmake/Hyle/HyleConfigVersion.cmake",
@@ -968,7 +968,7 @@
     },
     {
       "path": "lib/cmake/Hyle/HyleTargets.cmake",
-      "sha256": "02385b013af9699ea43978380888a24a1e55b756878914e755bfb7f980eb22b7"
+      "sha256": "7ef5b226fb18fded369fbbc906ba5e73ab5b05efca925915523ac69bacdbc7fd"
     },
     {
       "path": "lib/cmake/HyleTorchCpuSdk/HyleTorchCpuSdkConfig.cmake",
@@ -988,144 +988,144 @@
   "qualified_hyle_artifacts": [
     {
       "path": "lib/libhyle_platform.a",
-      "sha256": "5d9bbfd43c0fb2e343f8489d6dce2dcca13c181337baa45608d9598fc2ef0244",
+      "sha256": "635058bf997282013a881beaf731fc9d1cd932f73da08b983b1d5f0335561e54",
       "bytes": 141920
     },
     {
       "path": "lib/libhyle_platform_thread.a",
-      "sha256": "936cef3f0c9f3ce2c968ea8d031b835af783526028bf922e2dd67e7a849cc2ba",
+      "sha256": "aaeb65ffa32861dd9e220789818e548accf66d48637b672af218b976360027e5",
       "bytes": 20128
     },
     {
       "path": "lib/libhyle_graph_batch.a",
-      "sha256": "d7d0026db3fa7201043901f9c65c9601ca83466d09f2f0985090b46b6cb114dd",
+      "sha256": "270ba11fc2228bf34031cc03655ed83d869dca7b2e10e90913119f1c4ca3676d",
       "bytes": 149208
     },
     {
       "path": "lib/libhyle_time.a",
-      "sha256": "5c40cacac87d92e6318f6ee1654d6e828c36829aa4cbcbbab0a0d1e1430c30e1",
+      "sha256": "22d5c554e70cb4dacdb966de04b5412352666fe7d838753319adc05770ab4016",
       "bytes": 16096
     },
     {
       "path": "lib/libhyle_io_core.a",
-      "sha256": "ccc38ab5957f60b67385996858d803896d2506bf39fd21f647edee29968393d7",
+      "sha256": "73e5d07e5857035d55d74d4909427d91a15f3505e2e61ff678822d4b286f9f6f",
       "bytes": 376584
     },
     {
       "path": "lib/libhyle_compute_stream.a",
-      "sha256": "10891a8b36414b5e8c766238e3d1ee21da4b7cebb527ee2c512040f06031b478",
+      "sha256": "bf700f94638834b533d721c89fc48607dff011ed9aec641e5fd4d85cb052073b",
       "bytes": 134600
     },
     {
       "path": "lib/libhyle_graph_route_cpu_apple.a",
-      "sha256": "c2262d1fd831269a3d22d949a73ffde153e5f378383ae6a63a64a14beab4a7d8",
+      "sha256": "1af338b11c9b529471cb559f33bee62a9690689d9a5ea5150d0e265455c1cae5",
       "bytes": 292200
     },
     {
       "path": "lib/libhyle_graph.a",
-      "sha256": "c50dc20b01da7bdc0d74628a77d2698ffa276de8ef5d879adc4816a059b9ff01",
+      "sha256": "a476098ca90727ceabf62074b9866cf815cfaa5ad0b6b25a42aada39d324c32c",
       "bytes": 753200
     },
     {
       "path": "lib/libhyle_error.a",
-      "sha256": "cefeaa0f985fd2611c19b9ad7b25a4e7f40198e4c79be689a2c1288803e7f5aa",
+      "sha256": "3dbfcca0b5b54c143312c0d67b9b02ad851ea864425a41ce1a40fadedce3d53e",
       "bytes": 30216
     },
     {
       "path": "lib/libhyle_compute_batch.a",
-      "sha256": "bef51facd5d3d8dd57e6f886ca2f7da116d5b81a47aadfa44e3bd0e2dc57ce4f",
+      "sha256": "20e53fc97473ee3c2e59448f0a7eefbe9999fae7f5853f00f35fb9644bed9b3c",
       "bytes": 328032
     },
     {
       "path": "lib/libhyle_compute_backend_cpu.a",
-      "sha256": "9e0cb7c78c564fd7391a6b6075fcce70a76894ce8d5c8b51b0cbe9b7bc03e859",
+      "sha256": "d64dde97673311084620b0466c851b39be4b8b4b3b07d0b83b49d1c09f34aaff",
       "bytes": 13576
     },
     {
       "path": "lib/libhyle_graph_route_cpu.a",
-      "sha256": "fa9b9108fa439fe0fa5a40ed54041bfa479c103ad4e86e430149dd7b5ffcb339",
+      "sha256": "5c4ab32684f36fee8665248bb49c6453b66c491d586810c7337be9db57652448",
       "bytes": 44136
     },
     {
       "path": "lib/libhyle_compute_route_apple.a",
-      "sha256": "2868d545245a3d78415827bddd2a5c7b078d359b5282edc21b14be59c20dc7d6",
+      "sha256": "33e67e3f1fce4c7917e09a4db5fab6cd3fc4e2357306ef797fe733aa6ca7bd0c",
       "bytes": 1241192
     },
     {
       "path": "lib/libhyle_compute.a",
-      "sha256": "9e113f63387e01a53f40d7995243a3f864c829fe4d6965755ce678bc47f46ff9",
+      "sha256": "3dc34d6e5e9226abed39108637144ab933e47104b231b0a041e7b0ea12bc61fa",
       "bytes": 606064
     },
     {
       "path": "lib/libhyle_simd.a",
-      "sha256": "817c5b7948254cc25e1da1bb5380f87eef1f2bd17ce2b54629435743bf741e00",
+      "sha256": "d01af5e8be148d7b1f897dc022b890465557245891b9a8c9cddb9c95275d5674",
       "bytes": 1516216
     },
     {
       "path": "lib/libhyle_compute_provider_ggml.a",
-      "sha256": "474bcd935af65b3b69606281c069dd691e369f5f3d303b189435d385cefca230",
-      "bytes": 173256
+      "sha256": "812e4e078e33868c2f8ec0d5e2617620ce263cea8ff9450e876adedb3312c553",
+      "bytes": 173656
     },
     {
       "path": "lib/libhyle_platform_fs.a",
-      "sha256": "8f09370ec977de22b30989eb1a3afb4f676b9cc2e39d5eec42aba9edde5190b7",
+      "sha256": "fd28c601c758b6b9dce0d1b18ba18026c45102fa0382b70ce2eed4171aaad8c0",
       "bytes": 61184
     },
     {
       "path": "lib/libhyle_mem_vm.a",
-      "sha256": "a8fe3c543ce42e2a4136ad5471311004d4ae0905084e634b42482d7545689db2",
+      "sha256": "fe4ba63a06139b17d91b077811b7289e718f43f24d66b5e48c3af639f9f144e3",
       "bytes": 59240
     },
     {
       "path": "lib/libhyle_compute_ggml_runtime.a",
-      "sha256": "9e2bab70849788dc4df199799f80e9357ce4c19966b44bfa24d768e5a7ee385e",
+      "sha256": "21e9302d031ef7a3db28707cbb09303e4da42e4251655c1144e0a61ccac0c5e3",
       "bytes": 21416
     },
     {
       "path": "lib/libhyle_container.a",
-      "sha256": "b544d47ec302c28dd4a0b7088de9a0b22d01a40a78dba8dba08a7eb1649a23e1",
+      "sha256": "d521ef980a248c2daafa54628a3e252d3a238b77d9163e1ef678808fde245958",
       "bytes": 56448
     },
     {
       "path": "lib/libhyle_compute_state.a",
-      "sha256": "48d97d60fff74026ec5266fc96df6ea5ab38461c119544cc99ced7e9c1559589",
+      "sha256": "b642d44ef41a9f8d13147081385b09429e1a424fb62998fda72da13126d65b69",
       "bytes": 95816
     },
     {
       "path": "lib/libhyle_compute_ops.a",
-      "sha256": "b4a4c6765a39d84e33547913656cd352a253880e36e4c8c2ff130dd78c7f5048",
+      "sha256": "ef0dc8fe0d17065e36c3f1066a82d29e48cc12fd7d635f59b34fca18818260ca",
       "bytes": 109680
     },
     {
       "path": "lib/libhyle_mem.a",
-      "sha256": "574dc5da3baf5f177ce200c5d1a36a779cbe15f098522b016b1885b7f1245d34",
+      "sha256": "6737d6fbd769db0457c9feeed01193c2b350ef7c3597d5cd72bfa3049234b581",
       "bytes": 201456
     },
     {
       "path": "lib/libhyle_compute_route_cpu.a",
-      "sha256": "a48fd11f324a8f838143fec1183b9f1aed870a5fd2ffec4c68adc273ae6f9a7e",
+      "sha256": "b1a1f91478efae1252228c9f80df4e8678f4ed98365368d287b22b88bf95bff4",
       "bytes": 65920
     },
     {
       "path": "lib/libhyle_compute_provider_ggml_metal.a",
-      "sha256": "0ac6ccc52ce4e86f9118a66fcf702084ec59a8ce5ffe672a9fd9ee928af8c8df",
+      "sha256": "43c29aab9025431fc4490d5d5267ceb18f1c5585ee40b5fb9303e67ba0f6496e",
       "bytes": 34184
     },
     {
       "path": "lib/libhyle_graph_route_apple.a",
-      "sha256": "2ea321c2f5279daf19613c8f7e0777913e7928db540da803cbc65e36616cbc16",
+      "sha256": "f6623749d55021af01d753d4a0a6387f945b777445a0dd4d89231f6c5890d8f2",
       "bytes": 103240
     },
     {
       "path": "lib/libhyle_sched.a",
-      "sha256": "bce38a74e9ed789232d51cc78334e899dc765d2473b7926330b06b03ec1cd136",
+      "sha256": "fbffd6e547931026ba933d58e513ecc391ae42530d1dc0202139d8967407ce2d",
       "bytes": 254456
     },
     {
       "path": "lib/libhyle_compute_provider_native.a",
-      "sha256": "fcc5f830491d2f2a2840e379201fdd30176c0ec5d7a2b6022d499e6315d0fef8",
+      "sha256": "4399eee0c32b8aaf80d56e950da4ab849b6bfce1594dd46a26d8ff5562b3eedd",
       "bytes": 534632
     }
   ],
-  "scope": "Authenticated existing static Apple SDK for GPU-only finite peer preflight; CPU predates CE12/CE13. All six native SDK archives differ whole-file from producer, ordered original object payloads agree. No inference about archive metadata cause."
+  "scope": "Actual CE14 static Apple SDK: source/installed native math13 and public4, CPU ordinary14+3, headers12 and Metal lifetime passed. Original native archive ordered object payloads checked against current producer. Performance requires its own immutable-source qualification; no CPU/GPU P1 or whole-goal claim here."
 }
