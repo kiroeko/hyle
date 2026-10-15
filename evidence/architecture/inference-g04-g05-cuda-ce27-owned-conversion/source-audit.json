@@ -1,0 +1,892 @@
+{
+  "kind": "CE27_PRODUCER_OWNED_FP8_CONVERSION_SPATIAL_TEMPORAL_AUDIT",
+  "baseline": "1e343ee3b440af5d522c6bfbdf12f9c6f37f0811",
+  "failed_qualified_receipt_sha256": "84971c7216985db830d4a1494bd4e9e643c34b2263fd5e4e201e8c50f8e6a443",
+  "header_sha256": "62988d66135c0e06525589ac7bb04a92aafc8bf8191d1fb84caa25ea695db981",
+  "source_anchors": {
+    "ragged_Q_group": {
+      "first_line": 2947,
+      "last_line": 2954,
+      "sha256": "dc72bb6e570294027a2230fc83b64258b20a041555a6e12c7d417e1089296e8f",
+      "source": "      uint32_t q_smem_offset_r = qo_smem.get_permuted_offset<UPCAST_STRIDE_Q>(\n          get_warp_idx_q<KTraits>(tid.y) * NUM_MMA_Q * 16 + lane_idx % 16, lane_idx / 16);\n\n      load_q_global_smem<KTraits>(qo_packed_idx_base, qo_upper_bound, q_ptr_base, q_stride_n,\n                                  q_stride_h, group_size, &qo_smem, tid);\n\n      cp_async::commit_group();\n\n"
+    },
+    "ragged_KV_initial_groups": {
+      "first_line": 3043,
+      "last_line": 3056,
+      "sha256": "f3f56e0b8225b157d1691a1aada5a725906b277b98e1a5dc9eb182b3e029c001",
+      "source": "      produce_kv<false, SharedMemFillMode::kNoFill, KTraits>(k_smem, &k_smem_offset_w, &k_ptr,\n                                                             k_stride_n, 0, chunk_size, tid);\n      produce_kv_sf<false, KTraits>(&smem_storage, maybe_k_cache_sf, kv_abs_base, kv_head_idx,\n                                    k_stride_n, k_stride_h, 0, chunk_size, warp_idx, lane_idx);\n      cp_async::commit_group();\n      if constexpr (!KTraits::USE_KV_SHARED_SMEM) {\n        // Shared K/V: don't preload V(0) (it would clobber K(0)); V(0) is loaded\n        // inside iter 0 after Q.K^T.\n        produce_kv<true, SharedMemFillMode::kFillZero, KTraits>(v_smem, &v_smem_offset_w, &v_ptr,\n                                                                v_stride_n, 0, chunk_size, tid);\n        produce_kv_sf<true, KTraits>(&smem_storage, maybe_v_cache_sf, kv_abs_base, kv_head_idx,\n                                     v_stride_n, v_stride_h, 0, chunk_size, warp_idx, lane_idx);\n        cp_async::commit_group();\n      }\n"
+    },
+    "ragged_K_wait_publish": {
+      "first_line": 3058,
+      "last_line": 3104,
+      "sha256": "8cd3ad543970614ea15a0f1fecdb7bed5f895ab40401e677309006bc6ac2b284",
+      "source": "#pragma unroll 1\n      for (uint32_t iter = 0; iter < num_iterations; ++iter) {\n        // Shared K/V serializes loads (no K/V prefetch overlap) -> drain fully.\n        if constexpr (KTraits::USE_KV_SHARED_SMEM) {\n          cp_async::wait_group<0>();\n        } else {\n          cp_async::wait_group<1>();\n        }\n        block.sync();\n\n        uint32_t kv_idx_base =\n            chunk_start + (iter * NUM_WARPS_KV + get_warp_idx_kv<KTraits>(tid.z)) * NUM_MMA_KV * 16;\n        [[maybe_unused]] uint32_t kv_rope_base = kv_idx_base;\n\n        if constexpr (KTraits::POS_ENCODING_MODE == PosEncodingMode::kRoPELlama) {\n          IdType* k_rope_offset = nullptr;\n          if constexpr (has_maybe_k_rope_offset_v<Params>) {\n            k_rope_offset = params.maybe_k_rope_offset;\n          }\n          const uint32_t rope_offset = k_rope_offset == nullptr ? 0 : k_rope_offset[request_idx];\n          kv_rope_base += rope_offset;\n          if constexpr (!is_fp4_type_v<DTypeKV>) {\n            k_smem_inplace_apply_rotary<KTraits>(rope_offset + chunk_start + iter * CTA_TILE_KV,\n                                                 &k_smem, &k_smem_offset_r, rope_freq, tid);\n            block.sync();\n          }\n        }\n\n        // compute attention score\n        if constexpr (KTraits::POS_ENCODING_MODE == PosEncodingMode::kRoPELlama &&\n                      is_fp4_type_v<DTypeKV>) {\n          compute_qk_fp4_rope<KTraits>(\n              &qo_smem, &q_smem_offset_r, &k_smem, &k_smem_offset_r,\n              smem_storage.k_sf_smem_ptr(get_warp_idx_kv<KTraits>(tid.z) * KTraits::NUM_MMA_KV *\n                                         16 * KTraits::NUM_MMA_D_QK),\n              lane_idx, kv_rope_base, rope_freq, s_frag);\n        } else if constexpr (KTraits::USE_KV_REPACK) {\n          // Dequantize FP8 K -> BF16 staging smem (shuffle-free), then read native 16-bit.\n          repack_fp8_tile_to_bf16<KTraits, KTraits::HEAD_DIM_QK>(smem_storage.k_smem,\n                                                                 smem_storage.kv_smem_repack_ptr(),\n                                                                 warp_idx * WARP_SIZE + lane_idx);\n          block.sync();\n          compute_qk<KTraits, /*REPACK_BF16=*/true>(\n              &qo_smem, &q_smem_offset_r, &k_smem_bf16, &k_smem_offset_r_bf16,\n              smem_storage.k_sf_smem_ptr(get_warp_idx_kv<KTraits>(tid.z) * KTraits::NUM_MMA_KV *\n                                         16 * KTraits::NUM_MMA_D_QK),\n              lane_idx, s_frag);\n"
+    },
+    "ragged_K_retire_V_wait_publish": {
+      "first_line": 3132,
+      "last_line": 3167,
+      "sha256": "3025efc257671646f2d268a5ea5599007727a99167ae80923c00d09f93934dd5",
+      "source": "        block.sync();\n        if constexpr (KTraits::USE_KV_SHARED_SMEM) {\n          // Load V(iter) into k_smem (time-shared) now that Q.K^T is done.\n          produce_kv<true, SharedMemFillMode::kFillZero, KTraits>(\n              v_smem, &v_smem_offset_w, &v_ptr, v_stride_n, iter * CTA_TILE_KV, chunk_size, tid);\n          cp_async::commit_group();\n          cp_async::wait_group<0>();\n        } else {\n          produce_kv<false, SharedMemFillMode::kNoFill, KTraits>(\n              k_smem, &k_smem_offset_w, &k_ptr, k_stride_n, (iter + 1) * CTA_TILE_KV, chunk_size,\n              tid);\n          produce_kv_sf<false, KTraits>(&smem_storage, maybe_k_cache_sf, kv_abs_base, kv_head_idx,\n                                        k_stride_n, k_stride_h, (iter + 1) * CTA_TILE_KV,\n                                        chunk_size, warp_idx, lane_idx);\n          cp_async::commit_group();\n          cp_async::wait_group<1>();\n        }\n        block.sync();\n\n        // compute sfm*v\n        if constexpr (KTraits::USE_SOFTMAX_VO_SPLIT) {\n          const uint32_t warp_vo_base =\n              get_warp_idx_kv<KTraits>(tid.z) * KTraits::NUM_MMA_D_VO_PER_WARP;\n          vosplit_compute_pv<KTraits>(&smem_storage, o_frag, o_scale, warp_vo_base,\n                                      get_warp_idx_q<KTraits>(tid.y), lane_idx);\n        } else if constexpr (KTraits::USE_KV_REPACK) {\n          // Dequantize FP8 V -> BF16 staging smem (shuffle-free), then read native 16-bit.\n          repack_fp8_tile_to_bf16<KTraits, KTraits::HEAD_DIM_VO>(smem_storage.v_smem,\n                                                                 smem_storage.kv_smem_repack_ptr(),\n                                                                 warp_idx * WARP_SIZE + lane_idx);\n          block.sync();\n          compute_sfm_v<KTraits, /*REPACK_BF16=*/true>(\n              &v_smem_bf16, &v_smem_offset_r_bf16,\n              smem_storage.v_sf_smem_ptr(get_warp_idx_kv<KTraits>(tid.z) * KTraits::NUM_MMA_KV *\n                                         16 * KTraits::NUM_MMA_D_VO),\n              lane_idx, s_frag, o_frag, d, d_base);\n"
+    },
+    "ragged_V_retire_final": {
+      "first_line": 3176,
+      "last_line": 3194,
+      "sha256": "bbb06b09573d61743b2ce458d7cc54bb3fa04f1cb634a706ffa222ef8e111309",
+      "source": "        block.sync();\n        if constexpr (KTraits::USE_KV_SHARED_SMEM) {\n          // K(iter+1) goes into the shared buffer only after sfm*v consumed V(iter).\n          produce_kv<false, SharedMemFillMode::kNoFill, KTraits>(\n              k_smem, &k_smem_offset_w, &k_ptr, k_stride_n, (iter + 1) * CTA_TILE_KV, chunk_size,\n              tid);\n          cp_async::commit_group();\n        } else {\n          produce_kv<true, SharedMemFillMode::kFillZero, KTraits>(\n              v_smem, &v_smem_offset_w, &v_ptr, v_stride_n, (iter + 1) * CTA_TILE_KV, chunk_size,\n              tid);\n          produce_kv_sf<true, KTraits>(&smem_storage, maybe_v_cache_sf, kv_abs_base, kv_head_idx,\n                                       v_stride_n, v_stride_h, (iter + 1) * CTA_TILE_KV, chunk_size,\n                                       warp_idx, lane_idx);\n          cp_async::commit_group();\n        }\n      }\n      cp_async::wait_group<0>();\n      block.sync();\n"
+    },
+    "paged_Q_group": {
+      "first_line": 3731,
+      "last_line": 3738,
+      "sha256": "dc72bb6e570294027a2230fc83b64258b20a041555a6e12c7d417e1089296e8f",
+      "source": "      uint32_t q_smem_offset_r = qo_smem.get_permuted_offset<UPCAST_STRIDE_Q>(\n          get_warp_idx_q<KTraits>(tid.y) * NUM_MMA_Q * 16 + lane_idx % 16, lane_idx / 16);\n\n      load_q_global_smem<KTraits>(qo_packed_idx_base, qo_upper_bound, q_ptr_base, q_stride_n,\n                                  q_stride_h, group_size, &qo_smem, tid);\n\n      cp_async::commit_group();\n\n"
+    },
+    "paged_initial_KV_groups": {
+      "first_line": 3826,
+      "last_line": 3844,
+      "sha256": "65a90e780678308990c91ca96ad72c78a6d414b539ecbf6703438bd00d1b460b",
+      "source": "        page_produce_kv<false, KTraits>(&smem_storage, &k_smem_offset_w, paged_kv.k_data, 0,\n                                        thr_local_kv_offset_k, chunk_size, warp_idx, lane_idx);\n      }\n      page_produce_kv_sf<false, KTraits>(\n          &smem_storage, maybe_k_cache_sf, packed_page_iter_base,\n          last_indptr * (uint32_t)paged_kv.page_size, kv_head_idx, k_sf_stride_page, k_sf_stride_h,\n          k_sf_stride_n, paged_kv.page_size, paged_kv.indices, 0, chunk_size, warp_idx, lane_idx);\n      cp_async::commit_group();\n      // Shared K/V loads V(0) inside iter 0 after Q.K^T; preloading it would clobber K(0).\n      if constexpr (!KTraits::USE_KV_SHARED_SMEM) {\n        page_produce_kv<true, KTraits>(&smem_storage, &v_smem_offset_w, paged_kv.v_data, 0,\n                                       thr_local_kv_offset_v, chunk_size, warp_idx, lane_idx);\n        page_produce_kv_sf<true, KTraits>(&smem_storage, maybe_v_cache_sf, packed_page_iter_base,\n                                          last_indptr * (uint32_t)paged_kv.page_size, kv_head_idx,\n                                          v_sf_stride_page, v_sf_stride_h, v_sf_stride_n,\n                                          paged_kv.page_size, paged_kv.indices, 0, chunk_size,\n                                          warp_idx, lane_idx);\n        cp_async::commit_group();\n      }\n"
+    },
+    "paged_K_wait_publish": {
+      "first_line": 3934,
+      "last_line": 3976,
+      "sha256": "5afef9abab0407bef3cb8238ea90a7278716438848c57223780b22d20395e8bd",
+      "source": "        // Shared K/V serializes loads (no K/V prefetch overlap) -> drain fully.\n        if constexpr (KTraits::USE_KV_SHARED_SMEM) {\n          cp_async::wait_group<0>();\n        } else {\n          cp_async::wait_group<1>();\n        }\n        block.sync();\n\n        uint32_t kv_idx_base =\n            chunk_start + (iter * NUM_WARPS_KV + get_warp_idx_kv<KTraits>(tid.z)) * NUM_MMA_KV * 16;\n        [[maybe_unused]] uint32_t kv_rope_base =\n            kv_idx_base +\n            (paged_kv.rope_pos_offset == nullptr ? 0 : paged_kv.rope_pos_offset[request_idx]);\n\n        if constexpr (KTraits::POS_ENCODING_MODE == PosEncodingMode::kRoPELlama) {\n          if constexpr (!is_fp4_type_v<DTypeKV>) {\n            k_smem_inplace_apply_rotary<KTraits>(\n                (paged_kv.rope_pos_offset == nullptr ? 0 : paged_kv.rope_pos_offset[request_idx]) +\n                    chunk_start + iter * CTA_TILE_KV,\n                &k_smem, &k_smem_offset_r, rope_freq, tid);\n            block.sync();\n          }\n        }\n\n        // compute attention score\n        if constexpr (KTraits::POS_ENCODING_MODE == PosEncodingMode::kRoPELlama &&\n                      is_fp4_type_v<DTypeKV>) {\n          compute_qk_fp4_rope<KTraits>(\n              &qo_smem, &q_smem_offset_r, &k_smem, &k_smem_offset_r,\n              smem_storage.k_sf_smem_ptr(get_warp_idx_kv<KTraits>(tid.z) * KTraits::NUM_MMA_KV *\n                                         16 * KTraits::NUM_MMA_D_QK),\n              lane_idx, kv_rope_base, rope_freq, s_frag);\n        } else if constexpr (KTraits::USE_KV_REPACK) {\n          // Dequantize FP8 K -> BF16 staging smem (shuffle-free), then read native 16-bit.\n          repack_fp8_tile_to_bf16<KTraits, KTraits::HEAD_DIM_QK>(smem_storage.k_smem,\n                                                                 smem_storage.kv_smem_repack_ptr(),\n                                                                 warp_idx * WARP_SIZE + lane_idx);\n          block.sync();\n          compute_qk<KTraits, /*REPACK_BF16=*/true>(\n              &qo_smem, &q_smem_offset_r, &k_smem_bf16, &k_smem_offset_r_bf16,\n              smem_storage.k_sf_smem_ptr(get_warp_idx_kv<KTraits>(tid.z) * KTraits::NUM_MMA_KV *\n                                         16 * KTraits::NUM_MMA_D_QK),\n              lane_idx, s_frag);\n"
+    },
+    "paged_K_retire_V_wait_publish": {
+      "first_line": 4029,
+      "last_line": 4066,
+      "sha256": "c0e40b3eb9a77be8a813448d8c3201443fb2018ee2fd9d8f884776d0af003c57",
+      "source": "        block.sync();\n        if constexpr (KTraits::USE_KV_SHARED_SMEM) {\n          page_produce_kv_on_the_fly<true, KTraits>(\n              &smem_storage, &v_smem_offset_w, paged_kv.v_data, paged_kv, packed_page_iter_base,\n              last_indptr, kv_head_idx, iter * CTA_TILE_KV, chunk_size, warp_idx, lane_idx);\n          cp_async::commit_group();\n          cp_async::wait_group<0>();\n        } else {\n          page_produce_kv<false, KTraits>(&smem_storage, &k_smem_offset_w, paged_kv.k_data,\n                                          (iter + 1) * CTA_TILE_KV, thr_local_kv_offset_k,\n                                          chunk_size, warp_idx, lane_idx);\n          page_produce_kv_sf<false, KTraits>(\n              &smem_storage, maybe_k_cache_sf, packed_page_iter_base,\n              last_indptr * (uint32_t)paged_kv.page_size, kv_head_idx, k_sf_stride_page,\n              k_sf_stride_h, k_sf_stride_n, paged_kv.page_size, paged_kv.indices,\n              (iter + 1) * CTA_TILE_KV, chunk_size, warp_idx, lane_idx);\n          cp_async::commit_group();\n          cp_async::wait_group<1>();\n        }\n        block.sync();\n\n        // compute sfm*v\n        if constexpr (KTraits::USE_VO_SPLIT) {\n          const uint32_t warp_vo_base =\n              get_warp_idx_kv<KTraits>(tid.z) * KTraits::NUM_MMA_D_VO_PER_WARP;\n          vosplit_compute_pv<KTraits>(&smem_storage, o_frag, o_scale, warp_vo_base,\n                                      get_warp_idx_q<KTraits>(tid.y), lane_idx);\n        } else if constexpr (KTraits::USE_KV_REPACK) {\n          // Dequantize FP8 V -> BF16 staging smem (shuffle-free), then read native 16-bit.\n          repack_fp8_tile_to_bf16<KTraits, KTraits::HEAD_DIM_VO>(smem_storage.v_smem,\n                                                                 smem_storage.kv_smem_repack_ptr(),\n                                                                 warp_idx * WARP_SIZE + lane_idx);\n          block.sync();\n          compute_sfm_v<KTraits, /*REPACK_BF16=*/true>(\n              &v_smem_bf16, &v_smem_offset_r_bf16,\n              smem_storage.v_sf_smem_ptr(get_warp_idx_kv<KTraits>(tid.z) * KTraits::NUM_MMA_KV *\n                                         16 * KTraits::NUM_MMA_D_VO),\n              lane_idx, s_frag, o_frag, d, d_base);\n"
+    },
+    "paged_V_retire_final": {
+      "first_line": 4075,
+      "last_line": 4096,
+      "sha256": "7aab1f512fe9e4bf4da39d795ae6d5cb4ee1e33b5b2807ecf38ca626fd05bf07",
+      "source": "        block.sync();\n        if constexpr (KTraits::USE_KV_SHARED_SMEM) {\n          page_produce_kv_on_the_fly<false, KTraits>(\n              &smem_storage, &k_smem_offset_w, paged_kv.k_data, paged_kv,\n              next_packed_page_iter_base, last_indptr, kv_head_idx, (iter + 1) * CTA_TILE_KV,\n              chunk_size, warp_idx, lane_idx);\n          cp_async::commit_group();\n          packed_page_iter_base = next_packed_page_iter_base;\n        } else {\n          page_produce_kv<true, KTraits>(&smem_storage, &v_smem_offset_w, paged_kv.v_data,\n                                         (iter + 1) * CTA_TILE_KV, thr_local_kv_offset_v,\n                                         chunk_size, warp_idx, lane_idx);\n          page_produce_kv_sf<true, KTraits>(\n              &smem_storage, maybe_v_cache_sf, packed_page_iter_base,\n              last_indptr * (uint32_t)paged_kv.page_size, kv_head_idx, v_sf_stride_page,\n              v_sf_stride_h, v_sf_stride_n, paged_kv.page_size, paged_kv.indices,\n              (iter + 1) * CTA_TILE_KV, chunk_size, warp_idx, lane_idx);\n          cp_async::commit_group();\n        }\n      }\n      cp_async::wait_group<0>();\n      block.sync();\n"
+    },
+    "producer_row_ownership": {
+      "first_line": 542,
+      "last_line": 616,
+      "sha256": "bebba587cb9bdc12de01e5c3154eaeb48b0418bc09f30689dca53de2cf6174f8",
+      "source": "template <bool produce_v, typename KTraits, typename SmemStorage>\n__device__ __forceinline__ void page_produce_kv(SmemStorage* smem_storage, uint32_t* smem_offset,\n                                                typename KTraits::DTypeKV* kv_ptr,\n                                                const uint32_t kv_idx_base,\n                                                const size_t* thr_local_kv_offset,\n                                                const uint32_t kv_len, const uint32_t warp_idx,\n                                                const uint32_t lane_idx) {\n  // NOTE: for fp8, this function doesn't work for head_dim = 64 at the moment\n  // K/V-shared path: V is loaded into k_smem (time-shared); v_smem is a [1] stub.\n  smem_t<KTraits::SWIZZLE_MODE_KV> smem(\n      (produce_v && !KTraits::USE_KV_SHARED_SMEM) ? smem_storage->v_smem : smem_storage->k_smem);\n  using DType = typename KTraits::DTypeKV;\n  using IdType = typename KTraits::IdType;\n  constexpr SharedMemFillMode fill_mode =\n      produce_v ? SharedMemFillMode::kFillZero : SharedMemFillMode::kNoFill;\n  constexpr uint32_t NUM_WARPS = KTraits::NUM_WARPS;\n  constexpr uint32_t NUM_WARPS_Q = KTraits::NUM_WARPS_Q;\n  constexpr uint32_t NUM_MMA_KV = KTraits::NUM_MMA_KV;\n  constexpr bool PAD_K = !produce_v && KTraits::HYLE_FP8_SHORT_K;\n  constexpr uint32_t NUM_MMA_D = PAD_K ? 8 : (produce_v ? KTraits::NUM_MMA_D_VO : KTraits::NUM_MMA_D_QK);\n  constexpr uint32_t UPCAST_STRIDE =\n      produce_v ? KTraits::UPCAST_STRIDE_V : KTraits::UPCAST_STRIDE_K;\n  // FP4 stores 2 elements per byte in GMEM (packed); SMEM uses 64b data + 64b zero per 128b slot.\n  // Use a 64b async load (cp.async with src-size=8) and advance GMEM pointer by half the normal\n  // amount, while SMEM addressing remains unchanged.\n  constexpr bool IS_FP4 = is_fp4_type_v<DType>;\n  if constexpr (KTraits::SWIZZLE_MODE_KV == SwizzleMode::k128B) {\n    uint32_t kv_idx = kv_idx_base + warp_idx * 4 + lane_idx / 8;\n    // NOTE: NUM_MMA_KV * 4 / NUM_WARPS_Q = NUM_WARPS_KV * NUM_MMA_KV * 4 / num_warps\n    static_assert(NUM_MMA_KV * 4 % NUM_WARPS_Q == 0);\n#pragma unroll\n    for (uint32_t i = 0; i < NUM_MMA_KV * 4 / NUM_WARPS_Q; ++i) {\n      DType* gptr = kv_ptr + thr_local_kv_offset[i];\n#pragma unroll\n      for (uint32_t j = 0; j < NUM_MMA_D / (8 / sizeof(DType)); ++j) {\n        if constexpr (IS_FP4) {\n          // Load 64b from packed GMEM into lower 64b of 128b SMEM slot (upper 64b zeroed)\n          smem.load_64b_async<fill_mode>(*smem_offset, gptr, kv_idx < kv_len);\n        } else {\n          if constexpr (PAD_K) {\n            smem.template load_128b_async<SharedMemFillMode::kFillZero>(\n                *smem_offset, gptr, kv_idx < kv_len && lane_idx % 8 < 4);\n          } else {\n            smem.load_128b_async<fill_mode>(*smem_offset, gptr, kv_idx < kv_len);\n          }\n        }\n        *smem_offset = smem.template advance_offset_by_column<8>(*smem_offset, j);\n        // FP4: GMEM row is HEAD_DIM/2 bytes wide (packed), so advance by half\n        gptr += (IS_FP4 ? 4 : 8) * upcast_size<DType>();\n      }\n      kv_idx += NUM_WARPS * 4;\n      *smem_offset =\n          smem.template advance_offset_by_row<NUM_WARPS * 4, UPCAST_STRIDE>(*smem_offset) -\n          sizeof(DType) * NUM_MMA_D;\n    }\n    *smem_offset -= KTraits::CTA_TILE_KV * UPCAST_STRIDE;\n  } else {\n    uint32_t kv_idx = kv_idx_base + warp_idx * 8 + lane_idx / 4;\n    // NOTE: NUM_MMA_KV * 2 / NUM_WARPS_Q = NUM_WARPS_KV * NUM_MMA_KV * 2 / num_warps\n    static_assert(NUM_MMA_KV * 2 % NUM_WARPS_Q == 0);\n#pragma unroll\n    for (uint32_t i = 0; i < NUM_MMA_KV * 2 / NUM_WARPS_Q; ++i) {\n      DType* gptr = kv_ptr + thr_local_kv_offset[i];\n      if constexpr (IS_FP4) {\n        smem.load_64b_async<fill_mode>(*smem_offset, gptr, kv_idx < kv_len);\n      } else {\n        smem.load_128b_async<fill_mode>(*smem_offset, gptr, kv_idx < kv_len);\n      }\n      kv_idx += NUM_WARPS * 8;\n      *smem_offset =\n          smem.template advance_offset_by_row<NUM_WARPS * 8, UPCAST_STRIDE>(*smem_offset);\n    }\n    *smem_offset -= KTraits::CTA_TILE_KV * UPCAST_STRIDE;\n  }\n}\n"
+    },
+    "converter_current_ownership": {
+      "first_line": 1170,
+      "last_line": 1198,
+      "sha256": "35d5678e447c38cae7e3a0de1621aaacf4641c7b7cd86fe49e94c2dc7093b01b",
+      "source": "template <typename KTraits, uint32_t HEAD_DIM>\n__device__ __forceinline__ void repack_fp8_tile_to_bf16(typename KTraits::DTypeKV* smem_fp8,\n                                                        typename KTraits::DTypeQ* smem_bf16,\n                                                        uint32_t thread_id) {\n  using DTypeKV = typename KTraits::DTypeKV;\n  using DTypeQ = typename KTraits::DTypeQ;\n  constexpr SwizzleMode SWIZZLE = KTraits::SWIZZLE_MODE_KV;\n  constexpr uint32_t NUM_THREADS = KTraits::NUM_THREADS;\n  constexpr uint32_t CTA_TILE_KV = KTraits::CTA_TILE_KV;\n  // b128 columns per row: FP8 packs 16 elems / 16B, BF16 packs 8 elems / 16B.\n  constexpr uint32_t FP8_COLS = HEAD_DIM / upcast_size<DTypeKV>();\n  constexpr uint32_t BF16_COLS = HEAD_DIM / upcast_size<DTypeQ>();\n  constexpr uint32_t NUM_B128 = CTA_TILE_KV * FP8_COLS;\n\n  b128_t* src = (b128_t*)smem_fp8;\n  b128_t* dst = (b128_t*)smem_bf16;\n#pragma unroll\n  for (uint32_t idx = thread_id; idx < NUM_B128; idx += NUM_THREADS) {\n    uint32_t row = idx / FP8_COLS, col = idx % FP8_COLS;\n    constexpr uint32_t SOURCE_COLS = KTraits::HYLE_FP8_SHORT_K && HEAD_DIM == 64 ? 8 : FP8_COLS;\n    b128_t packed = src[get_permuted_offset<SWIZZLE, SOURCE_COLS>(row, col)];\n    // alignas(16): conv is reinterpreted as b128_t (16B) for the smem stores below,\n    // so it must be 16-byte aligned (DTypeQ alone only guarantees 2B alignment).\n    alignas(16) DTypeQ conv[16];\n    vec_cast<DTypeQ, DTypeKV>::template cast<16>(conv, (DTypeKV*)&packed);\n    dst[get_permuted_offset<SWIZZLE, BF16_COLS>(row, 2 * col)] = *(b128_t*)&conv[0];\n    dst[get_permuted_offset<SWIZZLE, BF16_COLS>(row, 2 * col + 1)] = *(b128_t*)&conv[8];\n  }\n}\n"
+    }
+  },
+  "index_proof_sha256": "79129085feb3b7e829db5ab57dc39e2d26d6664d66b11d175db7c4775a35a735",
+  "index_cases": [
+    {
+      "qwarps": 1,
+      "kvwarps": 1,
+      "mma_kv": 1,
+      "depth": 128,
+      "slots": 128,
+      "old_cross_thread_conversion_reads": 0,
+      "proposed_cross_thread_reads": 0,
+      "source_exact_coverage": true,
+      "destination_exact_coverage": true
+    },
+    {
+      "qwarps": 1,
+      "kvwarps": 1,
+      "mma_kv": 1,
+      "depth": 256,
+      "slots": 256,
+      "old_cross_thread_conversion_reads": 192,
+      "proposed_cross_thread_reads": 0,
+      "source_exact_coverage": true,
+      "destination_exact_coverage": true
+    },
+    {
+      "qwarps": 1,
+      "kvwarps": 1,
+      "mma_kv": 2,
+      "depth": 128,
+      "slots": 256,
+      "old_cross_thread_conversion_reads": 0,
+      "proposed_cross_thread_reads": 0,
+      "source_exact_coverage": true,
+      "destination_exact_coverage": true
+    },
+    {
+      "qwarps": 1,
+      "kvwarps": 1,
+      "mma_kv": 2,
+      "depth": 256,
+      "slots": 512,
+      "old_cross_thread_conversion_reads": 384,
+      "proposed_cross_thread_reads": 0,
+      "source_exact_coverage": true,
+      "destination_exact_coverage": true
+    },
+    {
+      "qwarps": 1,
+      "kvwarps": 1,
+      "mma_kv": 4,
+      "depth": 128,
+      "slots": 512,
+      "old_cross_thread_conversion_reads": 0,
+      "proposed_cross_thread_reads": 0,
+      "source_exact_coverage": true,
+      "destination_exact_coverage": true
+    },
+    {
+      "qwarps": 1,
+      "kvwarps": 1,
+      "mma_kv": 4,
+      "depth": 256,
+      "slots": 1024,
+      "old_cross_thread_conversion_reads": 768,
+      "proposed_cross_thread_reads": 0,
+      "source_exact_coverage": true,
+      "destination_exact_coverage": true
+    },
+    {
+      "qwarps": 1,
+      "kvwarps": 1,
+      "mma_kv": 8,
+      "depth": 128,
+      "slots": 1024,
+      "old_cross_thread_conversion_reads": 0,
+      "proposed_cross_thread_reads": 0,
+      "source_exact_coverage": true,
+      "destination_exact_coverage": true
+    },
+    {
+      "qwarps": 1,
+      "kvwarps": 1,
+      "mma_kv": 8,
+      "depth": 256,
+      "slots": 2048,
+      "old_cross_thread_conversion_reads": 1536,
+      "proposed_cross_thread_reads": 0,
+      "source_exact_coverage": true,
+      "destination_exact_coverage": true
+    },
+    {
+      "qwarps": 1,
+      "kvwarps": 2,
+      "mma_kv": 1,
+      "depth": 128,
+      "slots": 256,
+      "old_cross_thread_conversion_reads": 0,
+      "proposed_cross_thread_reads": 0,
+      "source_exact_coverage": true,
+      "destination_exact_coverage": true
+    },
+    {
+      "qwarps": 1,
+      "kvwarps": 2,
+      "mma_kv": 1,
+      "depth": 256,
+      "slots": 512,
+      "old_cross_thread_conversion_reads": 448,
+      "proposed_cross_thread_reads": 0,
+      "source_exact_coverage": true,
+      "destination_exact_coverage": true
+    },
+    {
+      "qwarps": 1,
+      "kvwarps": 2,
+      "mma_kv": 2,
+      "depth": 128,
+      "slots": 512,
+      "old_cross_thread_conversion_reads": 0,
+      "proposed_cross_thread_reads": 0,
+      "source_exact_coverage": true,
+      "destination_exact_coverage": true
+    },
+    {
+      "qwarps": 1,
+      "kvwarps": 2,
+      "mma_kv": 2,
+      "depth": 256,
+      "slots": 1024,
+      "old_cross_thread_conversion_reads": 896,
+      "proposed_cross_thread_reads": 0,
+      "source_exact_coverage": true,
+      "destination_exact_coverage": true
+    },
+    {
+      "qwarps": 1,
+      "kvwarps": 2,
+      "mma_kv": 4,
+      "depth": 128,
+      "slots": 1024,
+      "old_cross_thread_conversion_reads": 0,
+      "proposed_cross_thread_reads": 0,
+      "source_exact_coverage": true,
+      "destination_exact_coverage": true
+    },
+    {
+      "qwarps": 1,
+      "kvwarps": 2,
+      "mma_kv": 4,
+      "depth": 256,
+      "slots": 2048,
+      "old_cross_thread_conversion_reads": 1792,
+      "proposed_cross_thread_reads": 0,
+      "source_exact_coverage": true,
+      "destination_exact_coverage": true
+    },
+    {
+      "qwarps": 1,
+      "kvwarps": 2,
+      "mma_kv": 8,
+      "depth": 128,
+      "slots": 2048,
+      "old_cross_thread_conversion_reads": 0,
+      "proposed_cross_thread_reads": 0,
+      "source_exact_coverage": true,
+      "destination_exact_coverage": true
+    },
+    {
+      "qwarps": 1,
+      "kvwarps": 2,
+      "mma_kv": 8,
+      "depth": 256,
+      "slots": 4096,
+      "old_cross_thread_conversion_reads": 3584,
+      "proposed_cross_thread_reads": 0,
+      "source_exact_coverage": true,
+      "destination_exact_coverage": true
+    },
+    {
+      "qwarps": 2,
+      "kvwarps": 1,
+      "mma_kv": 1,
+      "depth": 128,
+      "slots": 128,
+      "old_cross_thread_conversion_reads": 0,
+      "proposed_cross_thread_reads": 0,
+      "source_exact_coverage": true,
+      "destination_exact_coverage": true
+    },
+    {
+      "qwarps": 2,
+      "kvwarps": 1,
+      "mma_kv": 1,
+      "depth": 256,
+      "slots": 256,
+      "old_cross_thread_conversion_reads": 224,
+      "proposed_cross_thread_reads": 0,
+      "source_exact_coverage": true,
+      "destination_exact_coverage": true
+    },
+    {
+      "qwarps": 2,
+      "kvwarps": 1,
+      "mma_kv": 2,
+      "depth": 128,
+      "slots": 256,
+      "old_cross_thread_conversion_reads": 0,
+      "proposed_cross_thread_reads": 0,
+      "source_exact_coverage": true,
+      "destination_exact_coverage": true
+    },
+    {
+      "qwarps": 2,
+      "kvwarps": 1,
+      "mma_kv": 2,
+      "depth": 256,
+      "slots": 512,
+      "old_cross_thread_conversion_reads": 448,
+      "proposed_cross_thread_reads": 0,
+      "source_exact_coverage": true,
+      "destination_exact_coverage": true
+    },
+    {
+      "qwarps": 2,
+      "kvwarps": 1,
+      "mma_kv": 4,
+      "depth": 128,
+      "slots": 512,
+      "old_cross_thread_conversion_reads": 0,
+      "proposed_cross_thread_reads": 0,
+      "source_exact_coverage": true,
+      "destination_exact_coverage": true
+    },
+    {
+      "qwarps": 2,
+      "kvwarps": 1,
+      "mma_kv": 4,
+      "depth": 256,
+      "slots": 1024,
+      "old_cross_thread_conversion_reads": 896,
+      "proposed_cross_thread_reads": 0,
+      "source_exact_coverage": true,
+      "destination_exact_coverage": true
+    },
+    {
+      "qwarps": 2,
+      "kvwarps": 1,
+      "mma_kv": 8,
+      "depth": 128,
+      "slots": 1024,
+      "old_cross_thread_conversion_reads": 0,
+      "proposed_cross_thread_reads": 0,
+      "source_exact_coverage": true,
+      "destination_exact_coverage": true
+    },
+    {
+      "qwarps": 2,
+      "kvwarps": 1,
+      "mma_kv": 8,
+      "depth": 256,
+      "slots": 2048,
+      "old_cross_thread_conversion_reads": 1792,
+      "proposed_cross_thread_reads": 0,
+      "source_exact_coverage": true,
+      "destination_exact_coverage": true
+    },
+    {
+      "qwarps": 2,
+      "kvwarps": 2,
+      "mma_kv": 1,
+      "depth": 128,
+      "slots": 256,
+      "old_cross_thread_conversion_reads": 0,
+      "proposed_cross_thread_reads": 0,
+      "source_exact_coverage": true,
+      "destination_exact_coverage": true
+    },
+    {
+      "qwarps": 2,
+      "kvwarps": 2,
+      "mma_kv": 1,
+      "depth": 256,
+      "slots": 512,
+      "old_cross_thread_conversion_reads": 480,
+      "proposed_cross_thread_reads": 0,
+      "source_exact_coverage": true,
+      "destination_exact_coverage": true
+    },
+    {
+      "qwarps": 2,
+      "kvwarps": 2,
+      "mma_kv": 2,
+      "depth": 128,
+      "slots": 512,
+      "old_cross_thread_conversion_reads": 0,
+      "proposed_cross_thread_reads": 0,
+      "source_exact_coverage": true,
+      "destination_exact_coverage": true
+    },
+    {
+      "qwarps": 2,
+      "kvwarps": 2,
+      "mma_kv": 2,
+      "depth": 256,
+      "slots": 1024,
+      "old_cross_thread_conversion_reads": 960,
+      "proposed_cross_thread_reads": 0,
+      "source_exact_coverage": true,
+      "destination_exact_coverage": true
+    },
+    {
+      "qwarps": 2,
+      "kvwarps": 2,
+      "mma_kv": 4,
+      "depth": 128,
+      "slots": 1024,
+      "old_cross_thread_conversion_reads": 0,
+      "proposed_cross_thread_reads": 0,
+      "source_exact_coverage": true,
+      "destination_exact_coverage": true
+    },
+    {
+      "qwarps": 2,
+      "kvwarps": 2,
+      "mma_kv": 4,
+      "depth": 256,
+      "slots": 2048,
+      "old_cross_thread_conversion_reads": 1920,
+      "proposed_cross_thread_reads": 0,
+      "source_exact_coverage": true,
+      "destination_exact_coverage": true
+    },
+    {
+      "qwarps": 2,
+      "kvwarps": 2,
+      "mma_kv": 8,
+      "depth": 128,
+      "slots": 2048,
+      "old_cross_thread_conversion_reads": 0,
+      "proposed_cross_thread_reads": 0,
+      "source_exact_coverage": true,
+      "destination_exact_coverage": true
+    },
+    {
+      "qwarps": 2,
+      "kvwarps": 2,
+      "mma_kv": 8,
+      "depth": 256,
+      "slots": 4096,
+      "old_cross_thread_conversion_reads": 3840,
+      "proposed_cross_thread_reads": 0,
+      "source_exact_coverage": true,
+      "destination_exact_coverage": true
+    },
+    {
+      "qwarps": 4,
+      "kvwarps": 1,
+      "mma_kv": 1,
+      "depth": 128,
+      "slots": 128,
+      "old_cross_thread_conversion_reads": 0,
+      "proposed_cross_thread_reads": 0,
+      "source_exact_coverage": true,
+      "destination_exact_coverage": true
+    },
+    {
+      "qwarps": 4,
+      "kvwarps": 1,
+      "mma_kv": 1,
+      "depth": 256,
+      "slots": 256,
+      "old_cross_thread_conversion_reads": 240,
+      "proposed_cross_thread_reads": 0,
+      "source_exact_coverage": true,
+      "destination_exact_coverage": true
+    },
+    {
+      "qwarps": 4,
+      "kvwarps": 1,
+      "mma_kv": 2,
+      "depth": 128,
+      "slots": 256,
+      "old_cross_thread_conversion_reads": 0,
+      "proposed_cross_thread_reads": 0,
+      "source_exact_coverage": true,
+      "destination_exact_coverage": true
+    },
+    {
+      "qwarps": 4,
+      "kvwarps": 1,
+      "mma_kv": 2,
+      "depth": 256,
+      "slots": 512,
+      "old_cross_thread_conversion_reads": 480,
+      "proposed_cross_thread_reads": 0,
+      "source_exact_coverage": true,
+      "destination_exact_coverage": true
+    },
+    {
+      "qwarps": 4,
+      "kvwarps": 1,
+      "mma_kv": 4,
+      "depth": 128,
+      "slots": 512,
+      "old_cross_thread_conversion_reads": 0,
+      "proposed_cross_thread_reads": 0,
+      "source_exact_coverage": true,
+      "destination_exact_coverage": true
+    },
+    {
+      "qwarps": 4,
+      "kvwarps": 1,
+      "mma_kv": 4,
+      "depth": 256,
+      "slots": 1024,
+      "old_cross_thread_conversion_reads": 960,
+      "proposed_cross_thread_reads": 0,
+      "source_exact_coverage": true,
+      "destination_exact_coverage": true
+    },
+    {
+      "qwarps": 4,
+      "kvwarps": 1,
+      "mma_kv": 8,
+      "depth": 128,
+      "slots": 1024,
+      "old_cross_thread_conversion_reads": 0,
+      "proposed_cross_thread_reads": 0,
+      "source_exact_coverage": true,
+      "destination_exact_coverage": true
+    },
+    {
+      "qwarps": 4,
+      "kvwarps": 1,
+      "mma_kv": 8,
+      "depth": 256,
+      "slots": 2048,
+      "old_cross_thread_conversion_reads": 1920,
+      "proposed_cross_thread_reads": 0,
+      "source_exact_coverage": true,
+      "destination_exact_coverage": true
+    },
+    {
+      "qwarps": 4,
+      "kvwarps": 2,
+      "mma_kv": 1,
+      "depth": 128,
+      "slots": 256,
+      "old_cross_thread_conversion_reads": 0,
+      "proposed_cross_thread_reads": 0,
+      "source_exact_coverage": true,
+      "destination_exact_coverage": true
+    },
+    {
+      "qwarps": 4,
+      "kvwarps": 2,
+      "mma_kv": 1,
+      "depth": 256,
+      "slots": 512,
+      "old_cross_thread_conversion_reads": 496,
+      "proposed_cross_thread_reads": 0,
+      "source_exact_coverage": true,
+      "destination_exact_coverage": true
+    },
+    {
+      "qwarps": 4,
+      "kvwarps": 2,
+      "mma_kv": 2,
+      "depth": 128,
+      "slots": 512,
+      "old_cross_thread_conversion_reads": 0,
+      "proposed_cross_thread_reads": 0,
+      "source_exact_coverage": true,
+      "destination_exact_coverage": true
+    },
+    {
+      "qwarps": 4,
+      "kvwarps": 2,
+      "mma_kv": 2,
+      "depth": 256,
+      "slots": 1024,
+      "old_cross_thread_conversion_reads": 992,
+      "proposed_cross_thread_reads": 0,
+      "source_exact_coverage": true,
+      "destination_exact_coverage": true
+    },
+    {
+      "qwarps": 4,
+      "kvwarps": 2,
+      "mma_kv": 4,
+      "depth": 128,
+      "slots": 1024,
+      "old_cross_thread_conversion_reads": 0,
+      "proposed_cross_thread_reads": 0,
+      "source_exact_coverage": true,
+      "destination_exact_coverage": true
+    },
+    {
+      "qwarps": 4,
+      "kvwarps": 2,
+      "mma_kv": 4,
+      "depth": 256,
+      "slots": 2048,
+      "old_cross_thread_conversion_reads": 1984,
+      "proposed_cross_thread_reads": 0,
+      "source_exact_coverage": true,
+      "destination_exact_coverage": true
+    },
+    {
+      "qwarps": 4,
+      "kvwarps": 2,
+      "mma_kv": 8,
+      "depth": 128,
+      "slots": 2048,
+      "old_cross_thread_conversion_reads": 0,
+      "proposed_cross_thread_reads": 0,
+      "source_exact_coverage": true,
+      "destination_exact_coverage": true
+    },
+    {
+      "qwarps": 4,
+      "kvwarps": 2,
+      "mma_kv": 8,
+      "depth": 256,
+      "slots": 4096,
+      "old_cross_thread_conversion_reads": 3968,
+      "proposed_cross_thread_reads": 0,
+      "source_exact_coverage": true,
+      "destination_exact_coverage": true
+    },
+    {
+      "qwarps": 8,
+      "kvwarps": 1,
+      "mma_kv": 2,
+      "depth": 128,
+      "slots": 256,
+      "old_cross_thread_conversion_reads": 0,
+      "proposed_cross_thread_reads": 0,
+      "source_exact_coverage": true,
+      "destination_exact_coverage": true
+    },
+    {
+      "qwarps": 8,
+      "kvwarps": 1,
+      "mma_kv": 2,
+      "depth": 256,
+      "slots": 512,
+      "old_cross_thread_conversion_reads": 496,
+      "proposed_cross_thread_reads": 0,
+      "source_exact_coverage": true,
+      "destination_exact_coverage": true
+    },
+    {
+      "qwarps": 8,
+      "kvwarps": 1,
+      "mma_kv": 4,
+      "depth": 128,
+      "slots": 512,
+      "old_cross_thread_conversion_reads": 0,
+      "proposed_cross_thread_reads": 0,
+      "source_exact_coverage": true,
+      "destination_exact_coverage": true
+    },
+    {
+      "qwarps": 8,
+      "kvwarps": 1,
+      "mma_kv": 4,
+      "depth": 256,
+      "slots": 1024,
+      "old_cross_thread_conversion_reads": 992,
+      "proposed_cross_thread_reads": 0,
+      "source_exact_coverage": true,
+      "destination_exact_coverage": true
+    },
+    {
+      "qwarps": 8,
+      "kvwarps": 1,
+      "mma_kv": 8,
+      "depth": 128,
+      "slots": 1024,
+      "old_cross_thread_conversion_reads": 0,
+      "proposed_cross_thread_reads": 0,
+      "source_exact_coverage": true,
+      "destination_exact_coverage": true
+    },
+    {
+      "qwarps": 8,
+      "kvwarps": 1,
+      "mma_kv": 8,
+      "depth": 256,
+      "slots": 2048,
+      "old_cross_thread_conversion_reads": 1984,
+      "proposed_cross_thread_reads": 0,
+      "source_exact_coverage": true,
+      "destination_exact_coverage": true
+    },
+    {
+      "qwarps": 8,
+      "kvwarps": 2,
+      "mma_kv": 2,
+      "depth": 128,
+      "slots": 512,
+      "old_cross_thread_conversion_reads": 0,
+      "proposed_cross_thread_reads": 0,
+      "source_exact_coverage": true,
+      "destination_exact_coverage": true
+    },
+    {
+      "qwarps": 8,
+      "kvwarps": 2,
+      "mma_kv": 2,
+      "depth": 256,
+      "slots": 1024,
+      "old_cross_thread_conversion_reads": 1008,
+      "proposed_cross_thread_reads": 0,
+      "source_exact_coverage": true,
+      "destination_exact_coverage": true
+    },
+    {
+      "qwarps": 8,
+      "kvwarps": 2,
+      "mma_kv": 4,
+      "depth": 128,
+      "slots": 1024,
+      "old_cross_thread_conversion_reads": 0,
+      "proposed_cross_thread_reads": 0,
+      "source_exact_coverage": true,
+      "destination_exact_coverage": true
+    },
+    {
+      "qwarps": 8,
+      "kvwarps": 2,
+      "mma_kv": 4,
+      "depth": 256,
+      "slots": 2048,
+      "old_cross_thread_conversion_reads": 2016,
+      "proposed_cross_thread_reads": 0,
+      "source_exact_coverage": true,
+      "destination_exact_coverage": true
+    },
+    {
+      "qwarps": 8,
+      "kvwarps": 2,
+      "mma_kv": 8,
+      "depth": 128,
+      "slots": 2048,
+      "old_cross_thread_conversion_reads": 0,
+      "proposed_cross_thread_reads": 0,
+      "source_exact_coverage": true,
+      "destination_exact_coverage": true
+    },
+    {
+      "qwarps": 8,
+      "kvwarps": 2,
+      "mma_kv": 8,
+      "depth": 256,
+      "slots": 4096,
+      "old_cross_thread_conversion_reads": 4032,
+      "proposed_cross_thread_reads": 0,
+      "source_exact_coverage": true,
+      "destination_exact_coverage": true
+    }
+  ],
+  "existing_trace_shapes": [
+    {
+      "reference_cold_decode": {
+        "count": 2,
+        "mean_ns": 11346.5,
+        "median_ns": 11346.5,
+        "registers": [
+          22
+        ],
+        "shared": [
+          0
+        ]
+      },
+      "selected_attention": {
+        "count": 8,
+        "mean_ns": 6416.25,
+        "median_ns": 6302.5,
+        "registers": [
+          241
+        ],
+        "shared": [
+          49152
+        ]
+      },
+      "original_attention": {
+        "count": 8,
+        "mean_ns": 5697.125,
+        "median_ns": 5516.5,
+        "registers": [
+          240
+        ],
+        "shared": [
+          49152
+        ]
+      }
+    },
+    {
+      "reference_cold_decode": {
+        "count": 2,
+        "mean_ns": 10294,
+        "median_ns": 10294.0,
+        "registers": [
+          22
+        ],
+        "shared": [
+          0
+        ]
+      },
+      "selected_attention": {
+        "count": 8,
+        "mean_ns": 43683.25,
+        "median_ns": 43628.5,
+        "registers": [
+          241
+        ],
+        "shared": [
+          49152
+        ]
+      },
+      "selected_merge": {
+        "count": 8,
+        "mean_ns": 9826.375,
+        "median_ns": 9806.5,
+        "registers": [
+          48
+        ],
+        "shared": [
+          8704
+        ]
+      },
+      "original_attention": {
+        "count": 8,
+        "mean_ns": 38096.125,
+        "median_ns": 37939.0,
+        "registers": [
+          240
+        ],
+        "shared": [
+          49152
+        ]
+      },
+      "original_merge": {
+        "count": 8,
+        "mean_ns": 8687,
+        "median_ns": 8675.0,
+        "registers": [
+          40
+        ],
+        "shared": [
+          8704
+        ]
+      }
+    },
+    {
+      "reference_cold_decode": {
+        "count": 2,
+        "mean_ns": 1351.5,
+        "median_ns": 1351.5,
+        "registers": [
+          22
+        ],
+        "shared": [
+          0
+        ]
+      },
+      "selected_attention": {
+        "count": 8,
+        "mean_ns": 4746,
+        "median_ns": 4620.0,
+        "registers": [
+          165
+        ],
+        "shared": [
+          40960
+        ]
+      },
+      "original_attention": {
+        "count": 8,
+        "mean_ns": 4101.875,
+        "median_ns": 3961.0,
+        "registers": [
+          177
+        ],
+        "shared": [
+          32768
+        ]
+      }
+    }
+  ],
+  "existing_trace_result_sha256": "f593f215c7cae499cd01e826ded88b27de7fddf000d5fcf0a66463904a77cd0f",
+  "proposed_domain": "USE_KV_REPACK && !USE_KV_SHARED_SMEM && !USE_VO_SPLIT && !USE_SOFTMAX_VO_SPLIT && SWIZZLE_MODE_KV==k128B && HEAD_DIM>=128 && HEAD_DIM%128==0 && POS_ENCODING_MODE==kNone",
+  "temporal_proof": {
+    "groups": "Each thread commits Q0=0, K_t=2t+1 and V_t=2t+2. Before K_t conversion latest committed group is V_t; wait1 completes Q0 and K_t locally. Before V_t conversion latest is K_(t+1); wait1 completes V_t locally. Empty committed groups follow the same ordering.",
+    "conversion": "The proposed converter reads only payload slots copied by the same thread. It preserves the vector cast and exact BF16 output coordinates; its existing following full CTA barrier publishes all completed Q loads and converted tile writes to all matrix consumers.",
+    "retirement": "Existing full CTA barriers after QK/softmax and after PV remain: they retire K/V stage readers before the other role overwrites the shared conversion stage and before the compressed role is overwritten. Final wait0/full CTA and output synchronization remain.",
+    "eligibility": "RoPE, VO splits, time-shared K/V, FP4, CTA16, k64B and sub128-byte logical rows retain the original converter assignment and pre-conversion barriers. Short-K64 retains its physical padded row/zeroing/source stride; a full128-byte V role is independently eligible.",
+    "no_other_dependency": "In eligible POS_ENCODING=kNone/non-split paths, no intervening cross-thread shared reads occur between the conditional pre-barrier and owned conversion. K/V native math and all published row/layout values are unchanged."
+  },
+  "primary_reference": {
+    "url": "https://docs.nvidia.com/cuda/parallel-thread-execution/#data-movement-and-conversion-instructions-cp-async-wait-group-cp-async-wait-all",
+    "rule": "Async groups and their completion are per issuing thread; a completed wait makes that thread's copies visible to it. The retained post-conversion CTA barrier is still required for cross-thread publication."
+  },
+  "finite_fix": "Use one private constexpr eligibility predicate, reindex existing full-row FP8 conversion by the exact producer assignment, and condition the pre-K/pre-V CTA barriers in the original ragged and paged loops on that predicate. Keep every cp.async operation/commit/wait, all post-conversion/retirement/final/output barriers and the old converter path outside eligibility. No new algorithm, precision, storage, tile, pipeline depth, planner or public API.",
+  "rejection": "Direct removal of current pre-conversion barriers is unsafe: D256 currently has240/256cross-thread source reads. Ownership alignment is inseparable from barrier coalescing.",
+  "limits": [
+    "Source/spatial/temporal proof plus already captured diagnostic trace only; no new profile, runtime or throughput verdict.",
+    "Fresh source17/device22/codegen/SDK/numeric-runtime/host/originalP1 gates are required; all three workloads remain mandatory.",
+    "This record does not authorize product edits before the card fixes the finiteFIX and FI legally transitions to AUDITED; all old failures/costs remain."
+  ]
+}

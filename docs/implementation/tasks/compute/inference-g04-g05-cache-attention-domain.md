@@ -2453,3 +2453,23 @@ FI保持CANDIDATE1e；失败不自动授权新产品修改。下一有限只读�
 15min只读检查点沿用户常设授权追加并保累计；只有material消费缺口与精确源码机制
 两把钥匙成立，才固定一个有限FIX并合法回AUDITED。当前没有新FIX或运行资格，
 G04/G05仍未关闭，完整goal3/10，G06不实施。
+
+CE27唯一有限FIX已固定：[逐线程转换与时间依赖审计](../../../../evidence/architecture/inference-g04-g05-cuda-ce27-owned-conversion/source-audit.json)
+完成60组逐地址覆盖与ragged/paged两条Q/K/V时间链。当前D256有240/256转换片段跨线程
+读取，因此直接删屏障被否决；必须先沿原producer warp/lane/i/j重排转换所有权，再合并
+转换前/后的重复CTA同步。原per-thread wait1使本线程旧Q/K或V组完成，保留的转换后
+完整CTA屏障发布Q与新tile；QK/softmax后、PV后、final wait0/CTA及两输出屏障全部保留。
+
+baseline1e，仅FI合法CANDIDATE→AUDITED后，改private prefill manifest/NOTICE/FI lock。
+唯一predicate限定USE_KV_REPACK、非共享K/V/非VO split、k128B、当前role HEAD_DIM>=128
+且为128倍数、PosEncoding kNone；同predicate同时控制helper分工与两batch循环的K/V
+转换前屏障。其它路径保原分工/屏障，short-K64的padding/零填充/source stride不变。
+转换精度、BF16目的坐标、CE26单输出组merge/F32 partial/最终scale+sole cast、原MMA
+1/1/4、准确行约束/native16工作集、planner与所有公共API均不改，不增加全历史展开。
+
+material消费者缺口为qualified12 prefill非劣FAIL，另一把钥匙是上述逐线程所有权和
+时间依赖证明。一次集中实现后，原17math、十mem/十race/两普通race及attention+merge
+codegen，随后两搬迁SDK、新numeric/runtime、三host、原同合同AA/P1/strict。同步变更
+必须有实际零warning/hazard反证，不能只凭索引证明或静态BAR数签PASS。三形状和全部
+旧失败/未知/成本保留；原2h阶段检查点/自动追加、SM89/pool1/split3/Ninja2与heavy串行
+不变。当前仅固定审计与有限FIX，尚未实施新产品或签运行/吞吐。
