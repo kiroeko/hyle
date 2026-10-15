@@ -1666,3 +1666,33 @@ register/grid和关联launch API。禁CPU sampling/context-switch profiler；不
 binary或SDK，不与P1并发。保全部raw/实际elapsed，区分冷decoder/数值download与各数学
 kernel；profiling只作机制证据，不签吞吐。预算15min检查点沿原用户常设追加/原累计；
 只有实际归因后才scope有限产品修正，当前owner仍CANDIDATE、不提前实现G06。
+
+attempt6 [原完整记录](../../../../evidence/performance/inference-g04-g05-cuda-encoded-w1-wsl-p1-attempt-6/receipt.json)
+已TERMINAL：120产品/30controls、16路workload A/A、五项controls全部PASS，strict verify0，
+worker2535.381s；Windows外层2741.891s重叠另列，不相加。最终qualification为DIAGNOSTIC，
+performance仍UNPROVEN：唯一未过validator是build-contract的ISA=unknown，CUDA独立合同
+漏了其它三路线已有的 `HYLE_SIMD_EXACT_TARGET=""` cache声明。其余build字段、输入/
+artifact/host稳定性、干净source/peer与consumer evidence均通过。原manifest/样本不得回写
+或提升成QUALIFIED/产品LOSS；停止同一缺项配置的全量重采。
+
+本次最小合同修正只加同样的空exact-target声明，表示实际portable宿主代码。先在新的
+scratch树按原完整configure参数加该字段作configure-only预检，保存实际cache与compdb，
+对照旧/新编译命令（仅build路径归一化）、显式ISA flags与GCC实际默认target。不编译产品/
+peer、不改公共checker或旧树；后续新不可变候选须在采样前核实此字段及其它build条件。
+
+上节单次profile的条件仅为只读P0归因作明确补充：也允许本次已封存的DIAGNOSTIC输入，
+但必须再次证明只有build-contract ISA缺项、五controls/16A/A与其它validators PASS、所有
+稳定性/consumer/source/peer条件有效，且原parent实际终态/消失。仍只运行同一个primary的
+VERIFY_ONLY三形状CUDA trace，不重采产品性能、不把trace或diagnostic ratio当qualified LOSS。
+这是检查已证实的额外staging/dispatch结构成本；任何产品修正另按真实consumer与源码机制
+裁决并合法退回AUDITED，新P1必须包含正确ISA资格。预算/未知费用/原失败全部沿前节保留。
+
+前述 configure-only 与单次 profile [实际补证](../../../../evidence/architecture/inference-g04-g05-cuda-native-resource-diagnostic/receipt.json)
+已完成：37.640s configure、3.641s trace；八条归一化编译命令未变，portable声明与实际GCC
+x86-64默认一致，旧cache未改。trace原三形状共24 oracle、各方8次attention，全部原数值门通过。
+D256实际selected CTA64/MMA_KV4、Q32KiB+KV32KiB+FP8→BF16 repack32KiB，共96KiB；
+original BF16 MMA_KV1为Q32KiB+KV16KiB，共48KiB。原FI已经直接写F32输出，不能把差异
+误归因于另一个未使用的F32输出shared tile。FP8最小合法MMA_KV2仍需64KiB，当前100KiB
+SM预算不能同时容纳两个CTA；不据此盲改tile/调度或承诺减少shared。
+F32四stage merge实际16.5KiB，BF16为8.5KiB；selected另外有scale/cast dispatch。
+以上仅P0归因，不把profiler时长、diagnostic ratios或补充ISA声明提升为合格吞吐/LOSS。

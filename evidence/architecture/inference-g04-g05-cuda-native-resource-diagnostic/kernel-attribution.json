@@ -1,0 +1,2620 @@
+{
+  "state": "DIAGNOSTIC_ONLY_NO_NEW_PERFORMANCE_VERDICT",
+  "shapes": [
+    {
+      "cold_decoder": {
+        "count": 2,
+        "median_ns": 9862.5,
+        "mean_ns": 9862.5,
+        "registers": [
+          22
+        ],
+        "dynamic_shared": [
+          0
+        ],
+        "grids": [
+          [
+            3648,
+            1,
+            1
+          ]
+        ]
+      },
+      "selected_attention": {
+        "count": 8,
+        "median_ns": 8268.5,
+        "mean_ns": 8495.75,
+        "registers": [
+          246
+        ],
+        "dynamic_shared": [
+          98304
+        ],
+        "grids": [
+          [
+            3,
+            1,
+            2
+          ]
+        ]
+      },
+      "selected_scale_cast": {
+        "count": 8,
+        "median_ns": 1013.0,
+        "mean_ns": 1031.625,
+        "registers": [
+          16
+        ],
+        "dynamic_shared": [
+          0
+        ],
+        "grids": [
+          [
+            144,
+            1,
+            1
+          ]
+        ]
+      },
+      "original_attention": {
+        "count": 8,
+        "median_ns": 5185.0,
+        "mean_ns": 5512.375,
+        "registers": [
+          240
+        ],
+        "dynamic_shared": [
+          49152
+        ],
+        "grids": [
+          [
+            3,
+            1,
+            2
+          ]
+        ]
+      }
+    },
+    {
+      "cold_decoder": {
+        "count": 2,
+        "median_ns": 9773.5,
+        "mean_ns": 9773.5,
+        "registers": [
+          22
+        ],
+        "dynamic_shared": [
+          0
+        ],
+        "grids": [
+          [
+            3648,
+            1,
+            1
+          ]
+        ]
+      },
+      "selected_attention": {
+        "count": 8,
+        "median_ns": 48419.5,
+        "mean_ns": 48449.125,
+        "registers": [
+          246
+        ],
+        "dynamic_shared": [
+          98304
+        ],
+        "grids": [
+          [
+            40,
+            1,
+            2
+          ]
+        ]
+      },
+      "selected_merge": {
+        "count": 8,
+        "median_ns": 12276.0,
+        "mean_ns": 12313.375,
+        "registers": [
+          43
+        ],
+        "dynamic_shared": [
+          16896
+        ],
+        "grids": [
+          [
+            230,
+            1,
+            1
+          ]
+        ]
+      },
+      "selected_scale_cast": {
+        "count": 8,
+        "median_ns": 2920.0,
+        "mean_ns": 2916.125,
+        "registers": [
+          16
+        ],
+        "dynamic_shared": [
+          0
+        ],
+        "grids": [
+          [
+            1536,
+            1,
+            1
+          ]
+        ]
+      },
+      "original_attention": {
+        "count": 8,
+        "median_ns": 35905.0,
+        "mean_ns": 36254.875,
+        "registers": [
+          240
+        ],
+        "dynamic_shared": [
+          49152
+        ],
+        "grids": [
+          [
+            40,
+            1,
+            2
+          ]
+        ]
+      },
+      "original_merge": {
+        "count": 8,
+        "median_ns": 8239.0,
+        "mean_ns": 8238.875,
+        "registers": [
+          40
+        ],
+        "dynamic_shared": [
+          8704
+        ],
+        "grids": [
+          [
+            460,
+            1,
+            1
+          ]
+        ]
+      }
+    },
+    {
+      "cold_decoder": {
+        "count": 2,
+        "median_ns": 1326.5,
+        "mean_ns": 1326.5,
+        "registers": [
+          22
+        ],
+        "dynamic_shared": [
+          0
+        ],
+        "grids": [
+          [
+            48,
+            1,
+            1
+          ],
+          [
+            96,
+            1,
+            1
+          ]
+        ]
+      },
+      "selected_attention": {
+        "count": 8,
+        "median_ns": 4321.0,
+        "mean_ns": 4466,
+        "registers": [
+          165
+        ],
+        "dynamic_shared": [
+          49152
+        ],
+        "grids": [
+          [
+            3,
+            1,
+            2
+          ]
+        ]
+      },
+      "selected_scale_cast": {
+        "count": 8,
+        "median_ns": 953.5,
+        "mean_ns": 949.75,
+        "registers": [
+          16
+        ],
+        "dynamic_shared": [
+          0
+        ],
+        "grids": [
+          [
+            72,
+            1,
+            1
+          ]
+        ]
+      },
+      "original_attention": {
+        "count": 8,
+        "median_ns": 3635.0,
+        "mean_ns": 3739.5,
+        "registers": [
+          177
+        ],
+        "dynamic_shared": [
+          32768
+        ],
+        "grids": [
+          [
+            3,
+            1,
+            2
+          ]
+        ]
+      }
+    }
+  ],
+  "kernels": [
+    {
+      "shape": 0,
+      "kind": "cold_decoder",
+      "start_ns": 1039847476,
+      "duration_ns": 9922,
+      "name": "hyle::bench::resident::cuda_original::<unnamed>::decode_rows(const __nv_fp8_e4m3 *, __nv_bfloat16 *, const unsigned int *, unsigned int, unsigned int, unsigned int, float)",
+      "grid": [
+        3648,
+        1,
+        1
+      ],
+      "block": [
+        256,
+        1,
+        1
+      ],
+      "registers": 22,
+      "dynamic_shared": 0,
+      "launch_api": [
+        {
+          "name": "cudaLaunchKernel_v7000",
+          "ns": 1246336
+        }
+      ]
+    },
+    {
+      "shape": 0,
+      "kind": "cold_decoder",
+      "start_ns": 1039898220,
+      "duration_ns": 9803,
+      "name": "hyle::bench::resident::cuda_original::<unnamed>::decode_rows(const __nv_fp8_e4m3 *, __nv_bfloat16 *, const unsigned int *, unsigned int, unsigned int, unsigned int, float)",
+      "grid": [
+        3648,
+        1,
+        1
+      ],
+      "block": [
+        256,
+        1,
+        1
+      ],
+      "registers": 22,
+      "dynamic_shared": 0,
+      "launch_api": [
+        {
+          "name": "cudaLaunchKernel_v7000",
+          "ns": 6336
+        }
+      ]
+    },
+    {
+      "shape": 0,
+      "kind": "selected_attention",
+      "start_ns": 1154396972,
+      "duration_ns": 9177,
+      "name": "void flashinfer::BatchPrefillWithPagedKVCacheKernel<flashinfer::KernelTraits<(flashinfer::MaskMode)1, (unsigned int)64, (unsigned int)1, (unsigned int)4, (unsigned int)16, (unsigned int)16, (unsigned int)4, (unsigned int)1, (flashinfer::PosEncodingMode)0, __nv_bfloat16, __nv_fp8_e4m3, float, float, int, flashinfer::DefaultAttention<(bool)0, (bool)1, (bool)0, (bool)0>>, flashinfer::BatchPrefillPagedParams<__nv_bfloat16, __nv_fp8_e4m3, float, int>>(T2)",
+      "grid": [
+        3,
+        1,
+        2
+      ],
+      "block": [
+        32,
+        4,
+        1
+      ],
+      "registers": 246,
+      "dynamic_shared": 98304,
+      "launch_api": [
+        {
+          "name": "cudaLaunchKernel_v7000",
+          "ns": 31417
+        }
+      ]
+    },
+    {
+      "shape": 0,
+      "kind": "selected_scale_cast",
+      "start_ns": 1154453437,
+      "duration_ns": 1072,
+      "name": "void hyle::compute::flashinfer::native::<unnamed>::scale_cast<__nv_bfloat16>(const float *, T1 *, unsigned long, float)",
+      "grid": [
+        144,
+        1,
+        1
+      ],
+      "block": [
+        256,
+        1,
+        1
+      ],
+      "registers": 16,
+      "dynamic_shared": 0,
+      "launch_api": [
+        {
+          "name": "cudaLaunchKernel_v7000",
+          "ns": 29541
+        }
+      ]
+    },
+    {
+      "shape": 0,
+      "kind": "original_attention",
+      "start_ns": 1163865791,
+      "duration_ns": 6734,
+      "name": "void hyle_benchmark_original_flashinfer_69ff::BatchPrefillWithPagedKVCacheKernel<hyle_benchmark_original_flashinfer_69ff::KernelTraits<(hyle_benchmark_original_flashinfer_69ff::MaskMode)1, (unsigned int)64, (unsigned int)1, (unsigned int)1, (unsigned int)16, (unsigned int)16, (unsigned int)4, (unsigned int)1, (hyle_benchmark_original_flashinfer_69ff::PosEncodingMode)0, __nv_bfloat16, __nv_bfloat16, __nv_bfloat16, float, int, hyle_benchmark_original_flashinfer_69ff::DefaultAttention<(bool)0, (bool)1, (bool)0, (bool)0>>, hyle_benchmark_original_flashinfer_69ff::BatchPrefillPagedParams<__nv_bfloat16, __nv_bfloat16, __nv_bfloat16, int>>(T2)",
+      "grid": [
+        3,
+        1,
+        2
+      ],
+      "block": [
+        32,
+        4,
+        1
+      ],
+      "registers": 240,
+      "dynamic_shared": 49152,
+      "launch_api": [
+        {
+          "name": "cudaLaunchKernel_v7000",
+          "ns": 41609
+        }
+      ]
+    },
+    {
+      "shape": 0,
+      "kind": "selected_attention",
+      "start_ns": 1170591775,
+      "duration_ns": 8969,
+      "name": "void flashinfer::BatchPrefillWithPagedKVCacheKernel<flashinfer::KernelTraits<(flashinfer::MaskMode)1, (unsigned int)64, (unsigned int)1, (unsigned int)4, (unsigned int)16, (unsigned int)16, (unsigned int)4, (unsigned int)1, (flashinfer::PosEncodingMode)0, __nv_bfloat16, __nv_fp8_e4m3, float, float, int, flashinfer::DefaultAttention<(bool)0, (bool)1, (bool)0, (bool)0>>, flashinfer::BatchPrefillPagedParams<__nv_bfloat16, __nv_fp8_e4m3, float, int>>(T2)",
+      "grid": [
+        3,
+        1,
+        2
+      ],
+      "block": [
+        32,
+        4,
+        1
+      ],
+      "registers": 246,
+      "dynamic_shared": 98304,
+      "launch_api": [
+        {
+          "name": "cudaLaunchKernel_v7000",
+          "ns": 13148
+        }
+      ]
+    },
+    {
+      "shape": 0,
+      "kind": "selected_scale_cast",
+      "start_ns": 1170601995,
+      "duration_ns": 1043,
+      "name": "void hyle::compute::flashinfer::native::<unnamed>::scale_cast<__nv_bfloat16>(const float *, T1 *, unsigned long, float)",
+      "grid": [
+        144,
+        1,
+        1
+      ],
+      "block": [
+        256,
+        1,
+        1
+      ],
+      "registers": 16,
+      "dynamic_shared": 0,
+      "launch_api": [
+        {
+          "name": "cudaLaunchKernel_v7000",
+          "ns": 9286
+        }
+      ]
+    },
+    {
+      "shape": 0,
+      "kind": "original_attention",
+      "start_ns": 1176876084,
+      "duration_ns": 5572,
+      "name": "void hyle_benchmark_original_flashinfer_69ff::BatchPrefillWithPagedKVCacheKernel<hyle_benchmark_original_flashinfer_69ff::KernelTraits<(hyle_benchmark_original_flashinfer_69ff::MaskMode)1, (unsigned int)64, (unsigned int)1, (unsigned int)1, (unsigned int)16, (unsigned int)16, (unsigned int)4, (unsigned int)1, (hyle_benchmark_original_flashinfer_69ff::PosEncodingMode)0, __nv_bfloat16, __nv_bfloat16, __nv_bfloat16, float, int, hyle_benchmark_original_flashinfer_69ff::DefaultAttention<(bool)0, (bool)1, (bool)0, (bool)0>>, hyle_benchmark_original_flashinfer_69ff::BatchPrefillPagedParams<__nv_bfloat16, __nv_bfloat16, __nv_bfloat16, int>>(T2)",
+      "grid": [
+        3,
+        1,
+        2
+      ],
+      "block": [
+        32,
+        4,
+        1
+      ],
+      "registers": 240,
+      "dynamic_shared": 49152,
+      "launch_api": [
+        {
+          "name": "cudaLaunchKernel_v7000",
+          "ns": 13262
+        }
+      ]
+    },
+    {
+      "shape": 0,
+      "kind": "selected_attention",
+      "start_ns": 1187261208,
+      "duration_ns": 8343,
+      "name": "void flashinfer::BatchPrefillWithPagedKVCacheKernel<flashinfer::KernelTraits<(flashinfer::MaskMode)1, (unsigned int)64, (unsigned int)1, (unsigned int)4, (unsigned int)16, (unsigned int)16, (unsigned int)4, (unsigned int)1, (flashinfer::PosEncodingMode)0, __nv_bfloat16, __nv_fp8_e4m3, float, float, int, flashinfer::DefaultAttention<(bool)0, (bool)1, (bool)0, (bool)0>>, flashinfer::BatchPrefillPagedParams<__nv_bfloat16, __nv_fp8_e4m3, float, int>>(T2)",
+      "grid": [
+        3,
+        1,
+        2
+      ],
+      "block": [
+        32,
+        4,
+        1
+      ],
+      "registers": 246,
+      "dynamic_shared": 98304,
+      "launch_api": [
+        {
+          "name": "cudaLaunchKernel_v7000",
+          "ns": 13913
+        }
+      ]
+    },
+    {
+      "shape": 0,
+      "kind": "selected_scale_cast",
+      "start_ns": 1187270952,
+      "duration_ns": 1013,
+      "name": "void hyle::compute::flashinfer::native::<unnamed>::scale_cast<__nv_bfloat16>(const float *, T1 *, unsigned long, float)",
+      "grid": [
+        144,
+        1,
+        1
+      ],
+      "block": [
+        256,
+        1,
+        1
+      ],
+      "registers": 16,
+      "dynamic_shared": 0,
+      "launch_api": [
+        {
+          "name": "cudaLaunchKernel_v7000",
+          "ns": 5711
+        }
+      ]
+    },
+    {
+      "shape": 0,
+      "kind": "original_attention",
+      "start_ns": 1197879192,
+      "duration_ns": 5185,
+      "name": "void hyle_benchmark_original_flashinfer_69ff::BatchPrefillWithPagedKVCacheKernel<hyle_benchmark_original_flashinfer_69ff::KernelTraits<(hyle_benchmark_original_flashinfer_69ff::MaskMode)1, (unsigned int)64, (unsigned int)1, (unsigned int)1, (unsigned int)16, (unsigned int)16, (unsigned int)4, (unsigned int)1, (hyle_benchmark_original_flashinfer_69ff::PosEncodingMode)0, __nv_bfloat16, __nv_bfloat16, __nv_bfloat16, float, int, hyle_benchmark_original_flashinfer_69ff::DefaultAttention<(bool)0, (bool)1, (bool)0, (bool)0>>, hyle_benchmark_original_flashinfer_69ff::BatchPrefillPagedParams<__nv_bfloat16, __nv_bfloat16, __nv_bfloat16, int>>(T2)",
+      "grid": [
+        3,
+        1,
+        2
+      ],
+      "block": [
+        32,
+        4,
+        1
+      ],
+      "registers": 240,
+      "dynamic_shared": 49152,
+      "launch_api": [
+        {
+          "name": "cudaLaunchKernel_v7000",
+          "ns": 17056
+        }
+      ]
+    },
+    {
+      "shape": 0,
+      "kind": "selected_attention",
+      "start_ns": 1208177698,
+      "duration_ns": 8790,
+      "name": "void flashinfer::BatchPrefillWithPagedKVCacheKernel<flashinfer::KernelTraits<(flashinfer::MaskMode)1, (unsigned int)64, (unsigned int)1, (unsigned int)4, (unsigned int)16, (unsigned int)16, (unsigned int)4, (unsigned int)1, (flashinfer::PosEncodingMode)0, __nv_bfloat16, __nv_fp8_e4m3, float, float, int, flashinfer::DefaultAttention<(bool)0, (bool)1, (bool)0, (bool)0>>, flashinfer::BatchPrefillPagedParams<__nv_bfloat16, __nv_fp8_e4m3, float, int>>(T2)",
+      "grid": [
+        3,
+        1,
+        2
+      ],
+      "block": [
+        32,
+        4,
+        1
+      ],
+      "registers": 246,
+      "dynamic_shared": 98304,
+      "launch_api": [
+        {
+          "name": "cudaLaunchKernel_v7000",
+          "ns": 19418
+        }
+      ]
+    },
+    {
+      "shape": 0,
+      "kind": "selected_scale_cast",
+      "start_ns": 1208187828,
+      "duration_ns": 1073,
+      "name": "void hyle::compute::flashinfer::native::<unnamed>::scale_cast<__nv_bfloat16>(const float *, T1 *, unsigned long, float)",
+      "grid": [
+        144,
+        1,
+        1
+      ],
+      "block": [
+        256,
+        1,
+        1
+      ],
+      "registers": 16,
+      "dynamic_shared": 0,
+      "launch_api": [
+        {
+          "name": "cudaLaunchKernel_v7000",
+          "ns": 5671
+        }
+      ]
+    },
+    {
+      "shape": 0,
+      "kind": "original_attention",
+      "start_ns": 1217272421,
+      "duration_ns": 5929,
+      "name": "void hyle_benchmark_original_flashinfer_69ff::BatchPrefillWithPagedKVCacheKernel<hyle_benchmark_original_flashinfer_69ff::KernelTraits<(hyle_benchmark_original_flashinfer_69ff::MaskMode)1, (unsigned int)64, (unsigned int)1, (unsigned int)1, (unsigned int)16, (unsigned int)16, (unsigned int)4, (unsigned int)1, (hyle_benchmark_original_flashinfer_69ff::PosEncodingMode)0, __nv_bfloat16, __nv_bfloat16, __nv_bfloat16, float, int, hyle_benchmark_original_flashinfer_69ff::DefaultAttention<(bool)0, (bool)1, (bool)0, (bool)0>>, hyle_benchmark_original_flashinfer_69ff::BatchPrefillPagedParams<__nv_bfloat16, __nv_bfloat16, __nv_bfloat16, int>>(T2)",
+      "grid": [
+        3,
+        1,
+        2
+      ],
+      "block": [
+        32,
+        4,
+        1
+      ],
+      "registers": 240,
+      "dynamic_shared": 49152,
+      "launch_api": [
+        {
+          "name": "cudaLaunchKernel_v7000",
+          "ns": 16567
+        }
+      ]
+    },
+    {
+      "shape": 0,
+      "kind": "selected_attention",
+      "start_ns": 1222769146,
+      "duration_ns": 8165,
+      "name": "void flashinfer::BatchPrefillWithPagedKVCacheKernel<flashinfer::KernelTraits<(flashinfer::MaskMode)1, (unsigned int)64, (unsigned int)1, (unsigned int)4, (unsigned int)16, (unsigned int)16, (unsigned int)4, (unsigned int)1, (flashinfer::PosEncodingMode)0, __nv_bfloat16, __nv_fp8_e4m3, float, float, int, flashinfer::DefaultAttention<(bool)0, (bool)1, (bool)0, (bool)0>>, flashinfer::BatchPrefillPagedParams<__nv_bfloat16, __nv_fp8_e4m3, float, int>>(T2)",
+      "grid": [
+        3,
+        1,
+        2
+      ],
+      "block": [
+        32,
+        4,
+        1
+      ],
+      "registers": 246,
+      "dynamic_shared": 98304,
+      "launch_api": [
+        {
+          "name": "cudaLaunchKernel_v7000",
+          "ns": 12601
+        }
+      ]
+    },
+    {
+      "shape": 0,
+      "kind": "selected_scale_cast",
+      "start_ns": 1222778592,
+      "duration_ns": 1013,
+      "name": "void hyle::compute::flashinfer::native::<unnamed>::scale_cast<__nv_bfloat16>(const float *, T1 *, unsigned long, float)",
+      "grid": [
+        144,
+        1,
+        1
+      ],
+      "block": [
+        256,
+        1,
+        1
+      ],
+      "registers": 16,
+      "dynamic_shared": 0,
+      "launch_api": [
+        {
+          "name": "cudaLaunchKernel_v7000",
+          "ns": 9115
+        }
+      ]
+    },
+    {
+      "shape": 0,
+      "kind": "original_attention",
+      "start_ns": 1222840509,
+      "duration_ns": 5155,
+      "name": "void hyle_benchmark_original_flashinfer_69ff::BatchPrefillWithPagedKVCacheKernel<hyle_benchmark_original_flashinfer_69ff::KernelTraits<(hyle_benchmark_original_flashinfer_69ff::MaskMode)1, (unsigned int)64, (unsigned int)1, (unsigned int)1, (unsigned int)16, (unsigned int)16, (unsigned int)4, (unsigned int)1, (hyle_benchmark_original_flashinfer_69ff::PosEncodingMode)0, __nv_bfloat16, __nv_bfloat16, __nv_bfloat16, float, int, hyle_benchmark_original_flashinfer_69ff::DefaultAttention<(bool)0, (bool)1, (bool)0, (bool)0>>, hyle_benchmark_original_flashinfer_69ff::BatchPrefillPagedParams<__nv_bfloat16, __nv_bfloat16, __nv_bfloat16, int>>(T2)",
+      "grid": [
+        3,
+        1,
+        2
+      ],
+      "block": [
+        32,
+        4,
+        1
+      ],
+      "registers": 240,
+      "dynamic_shared": 49152,
+      "launch_api": [
+        {
+          "name": "cudaLaunchKernel_v7000",
+          "ns": 6324
+        }
+      ]
+    },
+    {
+      "shape": 0,
+      "kind": "selected_attention",
+      "start_ns": 1222910889,
+      "duration_ns": 8164,
+      "name": "void flashinfer::BatchPrefillWithPagedKVCacheKernel<flashinfer::KernelTraits<(flashinfer::MaskMode)1, (unsigned int)64, (unsigned int)1, (unsigned int)4, (unsigned int)16, (unsigned int)16, (unsigned int)4, (unsigned int)1, (flashinfer::PosEncodingMode)0, __nv_bfloat16, __nv_fp8_e4m3, float, float, int, flashinfer::DefaultAttention<(bool)0, (bool)1, (bool)0, (bool)0>>, flashinfer::BatchPrefillPagedParams<__nv_bfloat16, __nv_fp8_e4m3, float, int>>(T2)",
+      "grid": [
+        3,
+        1,
+        2
+      ],
+      "block": [
+        32,
+        4,
+        1
+      ],
+      "registers": 246,
+      "dynamic_shared": 98304,
+      "launch_api": [
+        {
+          "name": "cudaLaunchKernel_v7000",
+          "ns": 6908
+        }
+      ]
+    },
+    {
+      "shape": 0,
+      "kind": "selected_scale_cast",
+      "start_ns": 1222920334,
+      "duration_ns": 1013,
+      "name": "void hyle::compute::flashinfer::native::<unnamed>::scale_cast<__nv_bfloat16>(const float *, T1 *, unsigned long, float)",
+      "grid": [
+        144,
+        1,
+        1
+      ],
+      "block": [
+        256,
+        1,
+        1
+      ],
+      "registers": 16,
+      "dynamic_shared": 0,
+      "launch_api": [
+        {
+          "name": "cudaLaunchKernel_v7000",
+          "ns": 4353
+        }
+      ]
+    },
+    {
+      "shape": 0,
+      "kind": "original_attention",
+      "start_ns": 1222977931,
+      "duration_ns": 5185,
+      "name": "void hyle_benchmark_original_flashinfer_69ff::BatchPrefillWithPagedKVCacheKernel<hyle_benchmark_original_flashinfer_69ff::KernelTraits<(hyle_benchmark_original_flashinfer_69ff::MaskMode)1, (unsigned int)64, (unsigned int)1, (unsigned int)1, (unsigned int)16, (unsigned int)16, (unsigned int)4, (unsigned int)1, (hyle_benchmark_original_flashinfer_69ff::PosEncodingMode)0, __nv_bfloat16, __nv_bfloat16, __nv_bfloat16, float, int, hyle_benchmark_original_flashinfer_69ff::DefaultAttention<(bool)0, (bool)1, (bool)0, (bool)0>>, hyle_benchmark_original_flashinfer_69ff::BatchPrefillPagedParams<__nv_bfloat16, __nv_bfloat16, __nv_bfloat16, int>>(T2)",
+      "grid": [
+        3,
+        1,
+        2
+      ],
+      "block": [
+        32,
+        4,
+        1
+      ],
+      "registers": 240,
+      "dynamic_shared": 49152,
+      "launch_api": [
+        {
+          "name": "cudaLaunchKernel_v7000",
+          "ns": 5471
+        }
+      ]
+    },
+    {
+      "shape": 0,
+      "kind": "selected_attention",
+      "start_ns": 1223041934,
+      "duration_ns": 8194,
+      "name": "void flashinfer::BatchPrefillWithPagedKVCacheKernel<flashinfer::KernelTraits<(flashinfer::MaskMode)1, (unsigned int)64, (unsigned int)1, (unsigned int)4, (unsigned int)16, (unsigned int)16, (unsigned int)4, (unsigned int)1, (flashinfer::PosEncodingMode)0, __nv_bfloat16, __nv_fp8_e4m3, float, float, int, flashinfer::DefaultAttention<(bool)0, (bool)1, (bool)0, (bool)0>>, flashinfer::BatchPrefillPagedParams<__nv_bfloat16, __nv_fp8_e4m3, float, int>>(T2)",
+      "grid": [
+        3,
+        1,
+        2
+      ],
+      "block": [
+        32,
+        4,
+        1
+      ],
+      "registers": 246,
+      "dynamic_shared": 98304,
+      "launch_api": [
+        {
+          "name": "cudaLaunchKernel_v7000",
+          "ns": 6426
+        }
+      ]
+    },
+    {
+      "shape": 0,
+      "kind": "selected_scale_cast",
+      "start_ns": 1223051350,
+      "duration_ns": 1013,
+      "name": "void hyle::compute::flashinfer::native::<unnamed>::scale_cast<__nv_bfloat16>(const float *, T1 *, unsigned long, float)",
+      "grid": [
+        144,
+        1,
+        1
+      ],
+      "block": [
+        256,
+        1,
+        1
+      ],
+      "registers": 16,
+      "dynamic_shared": 0,
+      "launch_api": [
+        {
+          "name": "cudaLaunchKernel_v7000",
+          "ns": 4367
+        }
+      ]
+    },
+    {
+      "shape": 0,
+      "kind": "original_attention",
+      "start_ns": 1223107129,
+      "duration_ns": 5155,
+      "name": "void hyle_benchmark_original_flashinfer_69ff::BatchPrefillWithPagedKVCacheKernel<hyle_benchmark_original_flashinfer_69ff::KernelTraits<(hyle_benchmark_original_flashinfer_69ff::MaskMode)1, (unsigned int)64, (unsigned int)1, (unsigned int)1, (unsigned int)16, (unsigned int)16, (unsigned int)4, (unsigned int)1, (hyle_benchmark_original_flashinfer_69ff::PosEncodingMode)0, __nv_bfloat16, __nv_bfloat16, __nv_bfloat16, float, int, hyle_benchmark_original_flashinfer_69ff::DefaultAttention<(bool)0, (bool)1, (bool)0, (bool)0>>, hyle_benchmark_original_flashinfer_69ff::BatchPrefillPagedParams<__nv_bfloat16, __nv_bfloat16, __nv_bfloat16, int>>(T2)",
+      "grid": [
+        3,
+        1,
+        2
+      ],
+      "block": [
+        32,
+        4,
+        1
+      ],
+      "registers": 240,
+      "dynamic_shared": 49152,
+      "launch_api": [
+        {
+          "name": "cudaLaunchKernel_v7000",
+          "ns": 6139
+        }
+      ]
+    },
+    {
+      "shape": 0,
+      "kind": "selected_attention",
+      "start_ns": 1223165739,
+      "duration_ns": 8164,
+      "name": "void flashinfer::BatchPrefillWithPagedKVCacheKernel<flashinfer::KernelTraits<(flashinfer::MaskMode)1, (unsigned int)64, (unsigned int)1, (unsigned int)4, (unsigned int)16, (unsigned int)16, (unsigned int)4, (unsigned int)1, (flashinfer::PosEncodingMode)0, __nv_bfloat16, __nv_fp8_e4m3, float, float, int, flashinfer::DefaultAttention<(bool)0, (bool)1, (bool)0, (bool)0>>, flashinfer::BatchPrefillPagedParams<__nv_bfloat16, __nv_fp8_e4m3, float, int>>(T2)",
+      "grid": [
+        3,
+        1,
+        2
+      ],
+      "block": [
+        32,
+        4,
+        1
+      ],
+      "registers": 246,
+      "dynamic_shared": 98304,
+      "launch_api": [
+        {
+          "name": "cudaLaunchKernel_v7000",
+          "ns": 4658
+        }
+      ]
+    },
+    {
+      "shape": 0,
+      "kind": "selected_scale_cast",
+      "start_ns": 1223175095,
+      "duration_ns": 1013,
+      "name": "void hyle::compute::flashinfer::native::<unnamed>::scale_cast<__nv_bfloat16>(const float *, T1 *, unsigned long, float)",
+      "grid": [
+        144,
+        1,
+        1
+      ],
+      "block": [
+        256,
+        1,
+        1
+      ],
+      "registers": 16,
+      "dynamic_shared": 0,
+      "launch_api": [
+        {
+          "name": "cudaLaunchKernel_v7000",
+          "ns": 4320
+        }
+      ]
+    },
+    {
+      "shape": 0,
+      "kind": "original_attention",
+      "start_ns": 1223224349,
+      "duration_ns": 5184,
+      "name": "void hyle_benchmark_original_flashinfer_69ff::BatchPrefillWithPagedKVCacheKernel<hyle_benchmark_original_flashinfer_69ff::KernelTraits<(hyle_benchmark_original_flashinfer_69ff::MaskMode)1, (unsigned int)64, (unsigned int)1, (unsigned int)1, (unsigned int)16, (unsigned int)16, (unsigned int)4, (unsigned int)1, (hyle_benchmark_original_flashinfer_69ff::PosEncodingMode)0, __nv_bfloat16, __nv_bfloat16, __nv_bfloat16, float, int, hyle_benchmark_original_flashinfer_69ff::DefaultAttention<(bool)0, (bool)1, (bool)0, (bool)0>>, hyle_benchmark_original_flashinfer_69ff::BatchPrefillPagedParams<__nv_bfloat16, __nv_bfloat16, __nv_bfloat16, int>>(T2)",
+      "grid": [
+        3,
+        1,
+        2
+      ],
+      "block": [
+        32,
+        4,
+        1
+      ],
+      "registers": 240,
+      "dynamic_shared": 49152,
+      "launch_api": [
+        {
+          "name": "cudaLaunchKernel_v7000",
+          "ns": 4379
+        }
+      ]
+    },
+    {
+      "shape": 1,
+      "kind": "cold_decoder",
+      "start_ns": 1259797485,
+      "duration_ns": 9863,
+      "name": "hyle::bench::resident::cuda_original::<unnamed>::decode_rows(const __nv_fp8_e4m3 *, __nv_bfloat16 *, const unsigned int *, unsigned int, unsigned int, unsigned int, float)",
+      "grid": [
+        3648,
+        1,
+        1
+      ],
+      "block": [
+        256,
+        1,
+        1
+      ],
+      "registers": 22,
+      "dynamic_shared": 0,
+      "launch_api": [
+        {
+          "name": "cudaLaunchKernel_v7000",
+          "ns": 11395
+        }
+      ]
+    },
+    {
+      "shape": 1,
+      "kind": "cold_decoder",
+      "start_ns": 1259850940,
+      "duration_ns": 9684,
+      "name": "hyle::bench::resident::cuda_original::<unnamed>::decode_rows(const __nv_fp8_e4m3 *, __nv_bfloat16 *, const unsigned int *, unsigned int, unsigned int, unsigned int, float)",
+      "grid": [
+        3648,
+        1,
+        1
+      ],
+      "block": [
+        256,
+        1,
+        1
+      ],
+      "registers": 22,
+      "dynamic_shared": 0,
+      "launch_api": [
+        {
+          "name": "cudaLaunchKernel_v7000",
+          "ns": 7344
+        }
+      ]
+    },
+    {
+      "shape": 1,
+      "kind": "selected_attention",
+      "start_ns": 1880492293,
+      "duration_ns": 49641,
+      "name": "void flashinfer::BatchPrefillWithPagedKVCacheKernel<flashinfer::KernelTraits<(flashinfer::MaskMode)1, (unsigned int)64, (unsigned int)1, (unsigned int)4, (unsigned int)16, (unsigned int)16, (unsigned int)4, (unsigned int)1, (flashinfer::PosEncodingMode)0, __nv_bfloat16, __nv_fp8_e4m3, float, float, int, flashinfer::DefaultAttention<(bool)0, (bool)1, (bool)0, (bool)0>>, flashinfer::BatchPrefillPagedParams<__nv_bfloat16, __nv_fp8_e4m3, float, int>>(T2)",
+      "grid": [
+        40,
+        1,
+        2
+      ],
+      "block": [
+        32,
+        4,
+        1
+      ],
+      "registers": 246,
+      "dynamic_shared": 98304,
+      "launch_api": [
+        {
+          "name": "cudaLaunchKernel_v7000",
+          "ns": 31786
+        }
+      ]
+    },
+    {
+      "shape": 1,
+      "kind": "selected_merge",
+      "start_ns": 1882221777,
+      "duration_ns": 12604,
+      "name": "void flashinfer::PersistentVariableLengthMergeStatesKernel<(unsigned int)8, (unsigned int)32, (unsigned int)4, (unsigned int)4, float, float, int>(T5 *, float *, T7 *, T6 *, float *, unsigned int, unsigned int *, unsigned int)",
+      "grid": [
+        230,
+        1,
+        1
+      ],
+      "block": [
+        32,
+        4,
+        1
+      ],
+      "registers": 43,
+      "dynamic_shared": 16896,
+      "launch_api": [
+        {
+          "name": "cudaLaunchKernel_v7000",
+          "ns": 20782
+        }
+      ]
+    },
+    {
+      "shape": 1,
+      "kind": "selected_scale_cast",
+      "start_ns": 1882235632,
+      "duration_ns": 2950,
+      "name": "void hyle::compute::flashinfer::native::<unnamed>::scale_cast<__nv_bfloat16>(const float *, T1 *, unsigned long, float)",
+      "grid": [
+        1536,
+        1,
+        1
+      ],
+      "block": [
+        256,
+        1,
+        1
+      ],
+      "registers": 16,
+      "dynamic_shared": 0,
+      "launch_api": [
+        {
+          "name": "cudaLaunchKernel_v7000",
+          "ns": 5976
+        }
+      ]
+    },
+    {
+      "shape": 1,
+      "kind": "original_attention",
+      "start_ns": 1892923847,
+      "duration_ns": 37037,
+      "name": "void hyle_benchmark_original_flashinfer_69ff::BatchPrefillWithPagedKVCacheKernel<hyle_benchmark_original_flashinfer_69ff::KernelTraits<(hyle_benchmark_original_flashinfer_69ff::MaskMode)1, (unsigned int)64, (unsigned int)1, (unsigned int)1, (unsigned int)16, (unsigned int)16, (unsigned int)4, (unsigned int)1, (hyle_benchmark_original_flashinfer_69ff::PosEncodingMode)0, __nv_bfloat16, __nv_bfloat16, __nv_bfloat16, float, int, hyle_benchmark_original_flashinfer_69ff::DefaultAttention<(bool)0, (bool)1, (bool)0, (bool)0>>, hyle_benchmark_original_flashinfer_69ff::BatchPrefillPagedParams<__nv_bfloat16, __nv_bfloat16, __nv_bfloat16, int>>(T2)",
+      "grid": [
+        40,
+        1,
+        2
+      ],
+      "block": [
+        32,
+        4,
+        1
+      ],
+      "registers": 240,
+      "dynamic_shared": 49152,
+      "launch_api": [
+        {
+          "name": "cudaLaunchKernel_v7000",
+          "ns": 18728
+        }
+      ]
+    },
+    {
+      "shape": 1,
+      "kind": "original_merge",
+      "start_ns": 1893015144,
+      "duration_ns": 8283,
+      "name": "void hyle_benchmark_original_flashinfer_69ff::PersistentVariableLengthMergeStatesKernel<(unsigned int)8, (unsigned int)32, (unsigned int)4, (unsigned int)4, __nv_bfloat16, __nv_bfloat16, int>(T5 *, float *, T7 *, T6 *, float *, unsigned int, unsigned int *, unsigned int)",
+      "grid": [
+        460,
+        1,
+        1
+      ],
+      "block": [
+        32,
+        4,
+        1
+      ],
+      "registers": 40,
+      "dynamic_shared": 8704,
+      "launch_api": [
+        {
+          "name": "cudaLaunchKernel_v7000",
+          "ns": 9659
+        }
+      ]
+    },
+    {
+      "shape": 1,
+      "kind": "selected_attention",
+      "start_ns": 1903529406,
+      "duration_ns": 48658,
+      "name": "void flashinfer::BatchPrefillWithPagedKVCacheKernel<flashinfer::KernelTraits<(flashinfer::MaskMode)1, (unsigned int)64, (unsigned int)1, (unsigned int)4, (unsigned int)16, (unsigned int)16, (unsigned int)4, (unsigned int)1, (flashinfer::PosEncodingMode)0, __nv_bfloat16, __nv_fp8_e4m3, float, float, int, flashinfer::DefaultAttention<(bool)0, (bool)1, (bool)0, (bool)0>>, flashinfer::BatchPrefillPagedParams<__nv_bfloat16, __nv_fp8_e4m3, float, int>>(T2)",
+      "grid": [
+        40,
+        1,
+        2
+      ],
+      "block": [
+        32,
+        4,
+        1
+      ],
+      "registers": 246,
+      "dynamic_shared": 98304,
+      "launch_api": [
+        {
+          "name": "cudaLaunchKernel_v7000",
+          "ns": 15242
+        }
+      ]
+    },
+    {
+      "shape": 1,
+      "kind": "selected_merge",
+      "start_ns": 1903579762,
+      "duration_ns": 12127,
+      "name": "void flashinfer::PersistentVariableLengthMergeStatesKernel<(unsigned int)8, (unsigned int)32, (unsigned int)4, (unsigned int)4, float, float, int>(T5 *, float *, T7 *, T6 *, float *, unsigned int, unsigned int *, unsigned int)",
+      "grid": [
+        230,
+        1,
+        1
+      ],
+      "block": [
+        32,
+        4,
+        1
+      ],
+      "registers": 43,
+      "dynamic_shared": 16896,
+      "launch_api": [
+        {
+          "name": "cudaLaunchKernel_v7000",
+          "ns": 5192
+        }
+      ]
+    },
+    {
+      "shape": 1,
+      "kind": "selected_scale_cast",
+      "start_ns": 1903593052,
+      "duration_ns": 2949,
+      "name": "void hyle::compute::flashinfer::native::<unnamed>::scale_cast<__nv_bfloat16>(const float *, T1 *, unsigned long, float)",
+      "grid": [
+        1536,
+        1,
+        1
+      ],
+      "block": [
+        256,
+        1,
+        1
+      ],
+      "registers": 16,
+      "dynamic_shared": 0,
+      "launch_api": [
+        {
+          "name": "cudaLaunchKernel_v7000",
+          "ns": 4759
+        }
+      ]
+    },
+    {
+      "shape": 1,
+      "kind": "original_attention",
+      "start_ns": 1914314639,
+      "duration_ns": 37364,
+      "name": "void hyle_benchmark_original_flashinfer_69ff::BatchPrefillWithPagedKVCacheKernel<hyle_benchmark_original_flashinfer_69ff::KernelTraits<(hyle_benchmark_original_flashinfer_69ff::MaskMode)1, (unsigned int)64, (unsigned int)1, (unsigned int)1, (unsigned int)16, (unsigned int)16, (unsigned int)4, (unsigned int)1, (hyle_benchmark_original_flashinfer_69ff::PosEncodingMode)0, __nv_bfloat16, __nv_bfloat16, __nv_bfloat16, float, int, hyle_benchmark_original_flashinfer_69ff::DefaultAttention<(bool)0, (bool)1, (bool)0, (bool)0>>, hyle_benchmark_original_flashinfer_69ff::BatchPrefillPagedParams<__nv_bfloat16, __nv_bfloat16, __nv_bfloat16, int>>(T2)",
+      "grid": [
+        40,
+        1,
+        2
+      ],
+      "block": [
+        32,
+        4,
+        1
+      ],
+      "registers": 240,
+      "dynamic_shared": 49152,
+      "launch_api": [
+        {
+          "name": "cudaLaunchKernel_v7000",
+          "ns": 16410
+        }
+      ]
+    },
+    {
+      "shape": 1,
+      "kind": "original_merge",
+      "start_ns": 1914353225,
+      "duration_ns": 8224,
+      "name": "void hyle_benchmark_original_flashinfer_69ff::PersistentVariableLengthMergeStatesKernel<(unsigned int)8, (unsigned int)32, (unsigned int)4, (unsigned int)4, __nv_bfloat16, __nv_bfloat16, int>(T5 *, float *, T7 *, T6 *, float *, unsigned int, unsigned int *, unsigned int)",
+      "grid": [
+        460,
+        1,
+        1
+      ],
+      "block": [
+        32,
+        4,
+        1
+      ],
+      "registers": 40,
+      "dynamic_shared": 8704,
+      "launch_api": [
+        {
+          "name": "cudaLaunchKernel_v7000",
+          "ns": 5361
+        }
+      ]
+    },
+    {
+      "shape": 1,
+      "kind": "selected_attention",
+      "start_ns": 1924302038,
+      "duration_ns": 48866,
+      "name": "void flashinfer::BatchPrefillWithPagedKVCacheKernel<flashinfer::KernelTraits<(flashinfer::MaskMode)1, (unsigned int)64, (unsigned int)1, (unsigned int)4, (unsigned int)16, (unsigned int)16, (unsigned int)4, (unsigned int)1, (flashinfer::PosEncodingMode)0, __nv_bfloat16, __nv_fp8_e4m3, float, float, int, flashinfer::DefaultAttention<(bool)0, (bool)1, (bool)0, (bool)0>>, flashinfer::BatchPrefillPagedParams<__nv_bfloat16, __nv_fp8_e4m3, float, int>>(T2)",
+      "grid": [
+        40,
+        1,
+        2
+      ],
+      "block": [
+        32,
+        4,
+        1
+      ],
+      "registers": 246,
+      "dynamic_shared": 98304,
+      "launch_api": [
+        {
+          "name": "cudaLaunchKernel_v7000",
+          "ns": 15632
+        }
+      ]
+    },
+    {
+      "shape": 1,
+      "kind": "selected_merge",
+      "start_ns": 1924352245,
+      "duration_ns": 12246,
+      "name": "void flashinfer::PersistentVariableLengthMergeStatesKernel<(unsigned int)8, (unsigned int)32, (unsigned int)4, (unsigned int)4, float, float, int>(T5 *, float *, T7 *, T6 *, float *, unsigned int, unsigned int *, unsigned int)",
+      "grid": [
+        230,
+        1,
+        1
+      ],
+      "block": [
+        32,
+        4,
+        1
+      ],
+      "registers": 43,
+      "dynamic_shared": 16896,
+      "launch_api": [
+        {
+          "name": "cudaLaunchKernel_v7000",
+          "ns": 5406
+        }
+      ]
+    },
+    {
+      "shape": 1,
+      "kind": "selected_scale_cast",
+      "start_ns": 1924366071,
+      "duration_ns": 2920,
+      "name": "void hyle::compute::flashinfer::native::<unnamed>::scale_cast<__nv_bfloat16>(const float *, T1 *, unsigned long, float)",
+      "grid": [
+        1536,
+        1,
+        1
+      ],
+      "block": [
+        256,
+        1,
+        1
+      ],
+      "registers": 16,
+      "dynamic_shared": 0,
+      "launch_api": [
+        {
+          "name": "cudaLaunchKernel_v7000",
+          "ns": 5321
+        }
+      ]
+    },
+    {
+      "shape": 1,
+      "kind": "original_attention",
+      "start_ns": 1934305199,
+      "duration_ns": 36114,
+      "name": "void hyle_benchmark_original_flashinfer_69ff::BatchPrefillWithPagedKVCacheKernel<hyle_benchmark_original_flashinfer_69ff::KernelTraits<(hyle_benchmark_original_flashinfer_69ff::MaskMode)1, (unsigned int)64, (unsigned int)1, (unsigned int)1, (unsigned int)16, (unsigned int)16, (unsigned int)4, (unsigned int)1, (hyle_benchmark_original_flashinfer_69ff::PosEncodingMode)0, __nv_bfloat16, __nv_bfloat16, __nv_bfloat16, float, int, hyle_benchmark_original_flashinfer_69ff::DefaultAttention<(bool)0, (bool)1, (bool)0, (bool)0>>, hyle_benchmark_original_flashinfer_69ff::BatchPrefillPagedParams<__nv_bfloat16, __nv_bfloat16, __nv_bfloat16, int>>(T2)",
+      "grid": [
+        40,
+        1,
+        2
+      ],
+      "block": [
+        32,
+        4,
+        1
+      ],
+      "registers": 240,
+      "dynamic_shared": 49152,
+      "launch_api": [
+        {
+          "name": "cudaLaunchKernel_v7000",
+          "ns": 15655
+        }
+      ]
+    },
+    {
+      "shape": 1,
+      "kind": "original_merge",
+      "start_ns": 1934342683,
+      "duration_ns": 8224,
+      "name": "void hyle_benchmark_original_flashinfer_69ff::PersistentVariableLengthMergeStatesKernel<(unsigned int)8, (unsigned int)32, (unsigned int)4, (unsigned int)4, __nv_bfloat16, __nv_bfloat16, int>(T5 *, float *, T7 *, T6 *, float *, unsigned int, unsigned int *, unsigned int)",
+      "grid": [
+        460,
+        1,
+        1
+      ],
+      "block": [
+        32,
+        4,
+        1
+      ],
+      "registers": 40,
+      "dynamic_shared": 8704,
+      "launch_api": [
+        {
+          "name": "cudaLaunchKernel_v7000",
+          "ns": 5360
+        }
+      ]
+    },
+    {
+      "shape": 1,
+      "kind": "selected_attention",
+      "start_ns": 1942073557,
+      "duration_ns": 48181,
+      "name": "void flashinfer::BatchPrefillWithPagedKVCacheKernel<flashinfer::KernelTraits<(flashinfer::MaskMode)1, (unsigned int)64, (unsigned int)1, (unsigned int)4, (unsigned int)16, (unsigned int)16, (unsigned int)4, (unsigned int)1, (flashinfer::PosEncodingMode)0, __nv_bfloat16, __nv_fp8_e4m3, float, float, int, flashinfer::DefaultAttention<(bool)0, (bool)1, (bool)0, (bool)0>>, flashinfer::BatchPrefillPagedParams<__nv_bfloat16, __nv_fp8_e4m3, float, int>>(T2)",
+      "grid": [
+        40,
+        1,
+        2
+      ],
+      "block": [
+        32,
+        4,
+        1
+      ],
+      "registers": 246,
+      "dynamic_shared": 98304,
+      "launch_api": [
+        {
+          "name": "cudaLaunchKernel_v7000",
+          "ns": 16790
+        }
+      ]
+    },
+    {
+      "shape": 1,
+      "kind": "selected_merge",
+      "start_ns": 1942122930,
+      "duration_ns": 12306,
+      "name": "void flashinfer::PersistentVariableLengthMergeStatesKernel<(unsigned int)8, (unsigned int)32, (unsigned int)4, (unsigned int)4, float, float, int>(T5 *, float *, T7 *, T6 *, float *, unsigned int, unsigned int *, unsigned int)",
+      "grid": [
+        230,
+        1,
+        1
+      ],
+      "block": [
+        32,
+        4,
+        1
+      ],
+      "registers": 43,
+      "dynamic_shared": 16896,
+      "launch_api": [
+        {
+          "name": "cudaLaunchKernel_v7000",
+          "ns": 19751
+        }
+      ]
+    },
+    {
+      "shape": 1,
+      "kind": "selected_scale_cast",
+      "start_ns": 1942136428,
+      "duration_ns": 2920,
+      "name": "void hyle::compute::flashinfer::native::<unnamed>::scale_cast<__nv_bfloat16>(const float *, T1 *, unsigned long, float)",
+      "grid": [
+        1536,
+        1,
+        1
+      ],
+      "block": [
+        256,
+        1,
+        1
+      ],
+      "registers": 16,
+      "dynamic_shared": 0,
+      "launch_api": [
+        {
+          "name": "cudaLaunchKernel_v7000",
+          "ns": 6078
+        }
+      ]
+    },
+    {
+      "shape": 1,
+      "kind": "original_attention",
+      "start_ns": 1949830652,
+      "duration_ns": 37335,
+      "name": "void hyle_benchmark_original_flashinfer_69ff::BatchPrefillWithPagedKVCacheKernel<hyle_benchmark_original_flashinfer_69ff::KernelTraits<(hyle_benchmark_original_flashinfer_69ff::MaskMode)1, (unsigned int)64, (unsigned int)1, (unsigned int)1, (unsigned int)16, (unsigned int)16, (unsigned int)4, (unsigned int)1, (hyle_benchmark_original_flashinfer_69ff::PosEncodingMode)0, __nv_bfloat16, __nv_bfloat16, __nv_bfloat16, float, int, hyle_benchmark_original_flashinfer_69ff::DefaultAttention<(bool)0, (bool)1, (bool)0, (bool)0>>, hyle_benchmark_original_flashinfer_69ff::BatchPrefillPagedParams<__nv_bfloat16, __nv_bfloat16, __nv_bfloat16, int>>(T2)",
+      "grid": [
+        40,
+        1,
+        2
+      ],
+      "block": [
+        32,
+        4,
+        1
+      ],
+      "registers": 240,
+      "dynamic_shared": 49152,
+      "launch_api": [
+        {
+          "name": "cudaLaunchKernel_v7000",
+          "ns": 15237
+        }
+      ]
+    },
+    {
+      "shape": 1,
+      "kind": "original_merge",
+      "start_ns": 1949869238,
+      "duration_ns": 8254,
+      "name": "void hyle_benchmark_original_flashinfer_69ff::PersistentVariableLengthMergeStatesKernel<(unsigned int)8, (unsigned int)32, (unsigned int)4, (unsigned int)4, __nv_bfloat16, __nv_bfloat16, int>(T5 *, float *, T7 *, T6 *, float *, unsigned int, unsigned int *, unsigned int)",
+      "grid": [
+        460,
+        1,
+        1
+      ],
+      "block": [
+        32,
+        4,
+        1
+      ],
+      "registers": 40,
+      "dynamic_shared": 8704,
+      "launch_api": [
+        {
+          "name": "cudaLaunchKernel_v7000",
+          "ns": 5062
+        }
+      ]
+    },
+    {
+      "shape": 1,
+      "kind": "selected_attention",
+      "start_ns": 1957676630,
+      "duration_ns": 49045,
+      "name": "void flashinfer::BatchPrefillWithPagedKVCacheKernel<flashinfer::KernelTraits<(flashinfer::MaskMode)1, (unsigned int)64, (unsigned int)1, (unsigned int)4, (unsigned int)16, (unsigned int)16, (unsigned int)4, (unsigned int)1, (flashinfer::PosEncodingMode)0, __nv_bfloat16, __nv_fp8_e4m3, float, float, int, flashinfer::DefaultAttention<(bool)0, (bool)1, (bool)0, (bool)0>>, flashinfer::BatchPrefillPagedParams<__nv_bfloat16, __nv_fp8_e4m3, float, int>>(T2)",
+      "grid": [
+        40,
+        1,
+        2
+      ],
+      "block": [
+        32,
+        4,
+        1
+      ],
+      "registers": 246,
+      "dynamic_shared": 98304,
+      "launch_api": [
+        {
+          "name": "cudaLaunchKernel_v7000",
+          "ns": 14665
+        }
+      ]
+    },
+    {
+      "shape": 1,
+      "kind": "selected_merge",
+      "start_ns": 1957726956,
+      "duration_ns": 12515,
+      "name": "void flashinfer::PersistentVariableLengthMergeStatesKernel<(unsigned int)8, (unsigned int)32, (unsigned int)4, (unsigned int)4, float, float, int>(T5 *, float *, T7 *, T6 *, float *, unsigned int, unsigned int *, unsigned int)",
+      "grid": [
+        230,
+        1,
+        1
+      ],
+      "block": [
+        32,
+        4,
+        1
+      ],
+      "registers": 43,
+      "dynamic_shared": 16896,
+      "launch_api": [
+        {
+          "name": "cudaLaunchKernel_v7000",
+          "ns": 8567
+        }
+      ]
+    },
+    {
+      "shape": 1,
+      "kind": "selected_scale_cast",
+      "start_ns": 1957740633,
+      "duration_ns": 2890,
+      "name": "void hyle::compute::flashinfer::native::<unnamed>::scale_cast<__nv_bfloat16>(const float *, T1 *, unsigned long, float)",
+      "grid": [
+        1536,
+        1,
+        1
+      ],
+      "block": [
+        256,
+        1,
+        1
+      ],
+      "registers": 16,
+      "dynamic_shared": 0,
+      "launch_api": [
+        {
+          "name": "cudaLaunchKernel_v7000",
+          "ns": 6809
+        }
+      ]
+    },
+    {
+      "shape": 1,
+      "kind": "original_attention",
+      "start_ns": 1957805232,
+      "duration_ns": 35696,
+      "name": "void hyle_benchmark_original_flashinfer_69ff::BatchPrefillWithPagedKVCacheKernel<hyle_benchmark_original_flashinfer_69ff::KernelTraits<(hyle_benchmark_original_flashinfer_69ff::MaskMode)1, (unsigned int)64, (unsigned int)1, (unsigned int)1, (unsigned int)16, (unsigned int)16, (unsigned int)4, (unsigned int)1, (hyle_benchmark_original_flashinfer_69ff::PosEncodingMode)0, __nv_bfloat16, __nv_bfloat16, __nv_bfloat16, float, int, hyle_benchmark_original_flashinfer_69ff::DefaultAttention<(bool)0, (bool)1, (bool)0, (bool)0>>, hyle_benchmark_original_flashinfer_69ff::BatchPrefillPagedParams<__nv_bfloat16, __nv_bfloat16, __nv_bfloat16, int>>(T2)",
+      "grid": [
+        40,
+        1,
+        2
+      ],
+      "block": [
+        32,
+        4,
+        1
+      ],
+      "registers": 240,
+      "dynamic_shared": 49152,
+      "launch_api": [
+        {
+          "name": "cudaLaunchKernel_v7000",
+          "ns": 5868
+        }
+      ]
+    },
+    {
+      "shape": 1,
+      "kind": "original_merge",
+      "start_ns": 1957842179,
+      "duration_ns": 8165,
+      "name": "void hyle_benchmark_original_flashinfer_69ff::PersistentVariableLengthMergeStatesKernel<(unsigned int)8, (unsigned int)32, (unsigned int)4, (unsigned int)4, __nv_bfloat16, __nv_bfloat16, int>(T5 *, float *, T7 *, T6 *, float *, unsigned int, unsigned int *, unsigned int)",
+      "grid": [
+        460,
+        1,
+        1
+      ],
+      "block": [
+        32,
+        4,
+        1
+      ],
+      "registers": 40,
+      "dynamic_shared": 8704,
+      "launch_api": [
+        {
+          "name": "cudaLaunchKernel_v7000",
+          "ns": 4536
+        }
+      ]
+    },
+    {
+      "shape": 1,
+      "kind": "selected_attention",
+      "start_ns": 1957910056,
+      "duration_ns": 47883,
+      "name": "void flashinfer::BatchPrefillWithPagedKVCacheKernel<flashinfer::KernelTraits<(flashinfer::MaskMode)1, (unsigned int)64, (unsigned int)1, (unsigned int)4, (unsigned int)16, (unsigned int)16, (unsigned int)4, (unsigned int)1, (flashinfer::PosEncodingMode)0, __nv_bfloat16, __nv_fp8_e4m3, float, float, int, flashinfer::DefaultAttention<(bool)0, (bool)1, (bool)0, (bool)0>>, flashinfer::BatchPrefillPagedParams<__nv_bfloat16, __nv_fp8_e4m3, float, int>>(T2)",
+      "grid": [
+        40,
+        1,
+        2
+      ],
+      "block": [
+        32,
+        4,
+        1
+      ],
+      "registers": 246,
+      "dynamic_shared": 98304,
+      "launch_api": [
+        {
+          "name": "cudaLaunchKernel_v7000",
+          "ns": 5350
+        }
+      ]
+    },
+    {
+      "shape": 1,
+      "kind": "selected_merge",
+      "start_ns": 1957959518,
+      "duration_ns": 12157,
+      "name": "void flashinfer::PersistentVariableLengthMergeStatesKernel<(unsigned int)8, (unsigned int)32, (unsigned int)4, (unsigned int)4, float, float, int>(T5 *, float *, T7 *, T6 *, float *, unsigned int, unsigned int *, unsigned int)",
+      "grid": [
+        230,
+        1,
+        1
+      ],
+      "block": [
+        32,
+        4,
+        1
+      ],
+      "registers": 43,
+      "dynamic_shared": 16896,
+      "launch_api": [
+        {
+          "name": "cudaLaunchKernel_v7000",
+          "ns": 4467
+        }
+      ]
+    },
+    {
+      "shape": 1,
+      "kind": "selected_scale_cast",
+      "start_ns": 1957972927,
+      "duration_ns": 2890,
+      "name": "void hyle::compute::flashinfer::native::<unnamed>::scale_cast<__nv_bfloat16>(const float *, T1 *, unsigned long, float)",
+      "grid": [
+        1536,
+        1,
+        1
+      ],
+      "block": [
+        256,
+        1,
+        1
+      ],
+      "registers": 16,
+      "dynamic_shared": 0,
+      "launch_api": [
+        {
+          "name": "cudaLaunchKernel_v7000",
+          "ns": 4177
+        }
+      ]
+    },
+    {
+      "shape": 1,
+      "kind": "original_attention",
+      "start_ns": 1958039224,
+      "duration_ns": 35577,
+      "name": "void hyle_benchmark_original_flashinfer_69ff::BatchPrefillWithPagedKVCacheKernel<hyle_benchmark_original_flashinfer_69ff::KernelTraits<(hyle_benchmark_original_flashinfer_69ff::MaskMode)1, (unsigned int)64, (unsigned int)1, (unsigned int)1, (unsigned int)16, (unsigned int)16, (unsigned int)4, (unsigned int)1, (hyle_benchmark_original_flashinfer_69ff::PosEncodingMode)0, __nv_bfloat16, __nv_bfloat16, __nv_bfloat16, float, int, hyle_benchmark_original_flashinfer_69ff::DefaultAttention<(bool)0, (bool)1, (bool)0, (bool)0>>, hyle_benchmark_original_flashinfer_69ff::BatchPrefillPagedParams<__nv_bfloat16, __nv_bfloat16, __nv_bfloat16, int>>(T2)",
+      "grid": [
+        40,
+        1,
+        2
+      ],
+      "block": [
+        32,
+        4,
+        1
+      ],
+      "registers": 240,
+      "dynamic_shared": 49152,
+      "launch_api": [
+        {
+          "name": "cudaLaunchKernel_v7000",
+          "ns": 6607
+        }
+      ]
+    },
+    {
+      "shape": 1,
+      "kind": "original_merge",
+      "start_ns": 1958076083,
+      "duration_ns": 8313,
+      "name": "void hyle_benchmark_original_flashinfer_69ff::PersistentVariableLengthMergeStatesKernel<(unsigned int)8, (unsigned int)32, (unsigned int)4, (unsigned int)4, __nv_bfloat16, __nv_bfloat16, int>(T5 *, float *, T7 *, T6 *, float *, unsigned int, unsigned int *, unsigned int)",
+      "grid": [
+        460,
+        1,
+        1
+      ],
+      "block": [
+        32,
+        4,
+        1
+      ],
+      "registers": 40,
+      "dynamic_shared": 8704,
+      "launch_api": [
+        {
+          "name": "cudaLaunchKernel_v7000",
+          "ns": 6898
+        }
+      ]
+    },
+    {
+      "shape": 1,
+      "kind": "selected_attention",
+      "start_ns": 1958145181,
+      "duration_ns": 47734,
+      "name": "void flashinfer::BatchPrefillWithPagedKVCacheKernel<flashinfer::KernelTraits<(flashinfer::MaskMode)1, (unsigned int)64, (unsigned int)1, (unsigned int)4, (unsigned int)16, (unsigned int)16, (unsigned int)4, (unsigned int)1, (flashinfer::PosEncodingMode)0, __nv_bfloat16, __nv_fp8_e4m3, float, float, int, flashinfer::DefaultAttention<(bool)0, (bool)1, (bool)0, (bool)0>>, flashinfer::BatchPrefillPagedParams<__nv_bfloat16, __nv_fp8_e4m3, float, int>>(T2)",
+      "grid": [
+        40,
+        1,
+        2
+      ],
+      "block": [
+        32,
+        4,
+        1
+      ],
+      "registers": 246,
+      "dynamic_shared": 98304,
+      "launch_api": [
+        {
+          "name": "cudaLaunchKernel_v7000",
+          "ns": 6510
+        }
+      ]
+    },
+    {
+      "shape": 1,
+      "kind": "selected_merge",
+      "start_ns": 1958194107,
+      "duration_ns": 12366,
+      "name": "void flashinfer::PersistentVariableLengthMergeStatesKernel<(unsigned int)8, (unsigned int)32, (unsigned int)4, (unsigned int)4, float, float, int>(T5 *, float *, T7 *, T6 *, float *, unsigned int, unsigned int *, unsigned int)",
+      "grid": [
+        230,
+        1,
+        1
+      ],
+      "block": [
+        32,
+        4,
+        1
+      ],
+      "registers": 43,
+      "dynamic_shared": 16896,
+      "launch_api": [
+        {
+          "name": "cudaLaunchKernel_v7000",
+          "ns": 4236
+        }
+      ]
+    },
+    {
+      "shape": 1,
+      "kind": "selected_scale_cast",
+      "start_ns": 1958208111,
+      "duration_ns": 2920,
+      "name": "void hyle::compute::flashinfer::native::<unnamed>::scale_cast<__nv_bfloat16>(const float *, T1 *, unsigned long, float)",
+      "grid": [
+        1536,
+        1,
+        1
+      ],
+      "block": [
+        256,
+        1,
+        1
+      ],
+      "registers": 16,
+      "dynamic_shared": 0,
+      "launch_api": [
+        {
+          "name": "cudaLaunchKernel_v7000",
+          "ns": 4099
+        }
+      ]
+    },
+    {
+      "shape": 1,
+      "kind": "original_attention",
+      "start_ns": 1958268986,
+      "duration_ns": 35577,
+      "name": "void hyle_benchmark_original_flashinfer_69ff::BatchPrefillWithPagedKVCacheKernel<hyle_benchmark_original_flashinfer_69ff::KernelTraits<(hyle_benchmark_original_flashinfer_69ff::MaskMode)1, (unsigned int)64, (unsigned int)1, (unsigned int)1, (unsigned int)16, (unsigned int)16, (unsigned int)4, (unsigned int)1, (hyle_benchmark_original_flashinfer_69ff::PosEncodingMode)0, __nv_bfloat16, __nv_bfloat16, __nv_bfloat16, float, int, hyle_benchmark_original_flashinfer_69ff::DefaultAttention<(bool)0, (bool)1, (bool)0, (bool)0>>, hyle_benchmark_original_flashinfer_69ff::BatchPrefillPagedParams<__nv_bfloat16, __nv_bfloat16, __nv_bfloat16, int>>(T2)",
+      "grid": [
+        40,
+        1,
+        2
+      ],
+      "block": [
+        32,
+        4,
+        1
+      ],
+      "registers": 240,
+      "dynamic_shared": 49152,
+      "launch_api": [
+        {
+          "name": "cudaLaunchKernel_v7000",
+          "ns": 5270
+        }
+      ]
+    },
+    {
+      "shape": 1,
+      "kind": "original_merge",
+      "start_ns": 1958305874,
+      "duration_ns": 8283,
+      "name": "void hyle_benchmark_original_flashinfer_69ff::PersistentVariableLengthMergeStatesKernel<(unsigned int)8, (unsigned int)32, (unsigned int)4, (unsigned int)4, __nv_bfloat16, __nv_bfloat16, int>(T5 *, float *, T7 *, T6 *, float *, unsigned int, unsigned int *, unsigned int)",
+      "grid": [
+        460,
+        1,
+        1
+      ],
+      "block": [
+        32,
+        4,
+        1
+      ],
+      "registers": 40,
+      "dynamic_shared": 8704,
+      "launch_api": [
+        {
+          "name": "cudaLaunchKernel_v7000",
+          "ns": 4240
+        }
+      ]
+    },
+    {
+      "shape": 1,
+      "kind": "selected_attention",
+      "start_ns": 1958375836,
+      "duration_ns": 47585,
+      "name": "void flashinfer::BatchPrefillWithPagedKVCacheKernel<flashinfer::KernelTraits<(flashinfer::MaskMode)1, (unsigned int)64, (unsigned int)1, (unsigned int)4, (unsigned int)16, (unsigned int)16, (unsigned int)4, (unsigned int)1, (flashinfer::PosEncodingMode)0, __nv_bfloat16, __nv_fp8_e4m3, float, float, int, flashinfer::DefaultAttention<(bool)0, (bool)1, (bool)0, (bool)0>>, flashinfer::BatchPrefillPagedParams<__nv_bfloat16, __nv_fp8_e4m3, float, int>>(T2)",
+      "grid": [
+        40,
+        1,
+        2
+      ],
+      "block": [
+        32,
+        4,
+        1
+      ],
+      "registers": 246,
+      "dynamic_shared": 98304,
+      "launch_api": [
+        {
+          "name": "cudaLaunchKernel_v7000",
+          "ns": 5039
+        }
+      ]
+    },
+    {
+      "shape": 1,
+      "kind": "selected_merge",
+      "start_ns": 1958424584,
+      "duration_ns": 12186,
+      "name": "void flashinfer::PersistentVariableLengthMergeStatesKernel<(unsigned int)8, (unsigned int)32, (unsigned int)4, (unsigned int)4, float, float, int>(T5 *, float *, T7 *, T6 *, float *, unsigned int, unsigned int *, unsigned int)",
+      "grid": [
+        230,
+        1,
+        1
+      ],
+      "block": [
+        32,
+        4,
+        1
+      ],
+      "registers": 43,
+      "dynamic_shared": 16896,
+      "launch_api": [
+        {
+          "name": "cudaLaunchKernel_v7000",
+          "ns": 5641
+        }
+      ]
+    },
+    {
+      "shape": 1,
+      "kind": "selected_scale_cast",
+      "start_ns": 1958437962,
+      "duration_ns": 2890,
+      "name": "void hyle::compute::flashinfer::native::<unnamed>::scale_cast<__nv_bfloat16>(const float *, T1 *, unsigned long, float)",
+      "grid": [
+        1536,
+        1,
+        1
+      ],
+      "block": [
+        256,
+        1,
+        1
+      ],
+      "registers": 16,
+      "dynamic_shared": 0,
+      "launch_api": [
+        {
+          "name": "cudaLaunchKernel_v7000",
+          "ns": 6296
+        }
+      ]
+    },
+    {
+      "shape": 1,
+      "kind": "original_attention",
+      "start_ns": 1958497317,
+      "duration_ns": 35339,
+      "name": "void hyle_benchmark_original_flashinfer_69ff::BatchPrefillWithPagedKVCacheKernel<hyle_benchmark_original_flashinfer_69ff::KernelTraits<(hyle_benchmark_original_flashinfer_69ff::MaskMode)1, (unsigned int)64, (unsigned int)1, (unsigned int)1, (unsigned int)16, (unsigned int)16, (unsigned int)4, (unsigned int)1, (hyle_benchmark_original_flashinfer_69ff::PosEncodingMode)0, __nv_bfloat16, __nv_bfloat16, __nv_bfloat16, float, int, hyle_benchmark_original_flashinfer_69ff::DefaultAttention<(bool)0, (bool)1, (bool)0, (bool)0>>, hyle_benchmark_original_flashinfer_69ff::BatchPrefillPagedParams<__nv_bfloat16, __nv_bfloat16, __nv_bfloat16, int>>(T2)",
+      "grid": [
+        40,
+        1,
+        2
+      ],
+      "block": [
+        32,
+        4,
+        1
+      ],
+      "registers": 240,
+      "dynamic_shared": 49152,
+      "launch_api": [
+        {
+          "name": "cudaLaunchKernel_v7000",
+          "ns": 5248
+        }
+      ]
+    },
+    {
+      "shape": 1,
+      "kind": "original_merge",
+      "start_ns": 1958533877,
+      "duration_ns": 8165,
+      "name": "void hyle_benchmark_original_flashinfer_69ff::PersistentVariableLengthMergeStatesKernel<(unsigned int)8, (unsigned int)32, (unsigned int)4, (unsigned int)4, __nv_bfloat16, __nv_bfloat16, int>(T5 *, float *, T7 *, T6 *, float *, unsigned int, unsigned int *, unsigned int)",
+      "grid": [
+        460,
+        1,
+        1
+      ],
+      "block": [
+        32,
+        4,
+        1
+      ],
+      "registers": 40,
+      "dynamic_shared": 8704,
+      "launch_api": [
+        {
+          "name": "cudaLaunchKernel_v7000",
+          "ns": 5198
+        }
+      ]
+    },
+    {
+      "shape": 2,
+      "kind": "cold_decoder",
+      "start_ns": 1972544203,
+      "duration_ns": 1371,
+      "name": "hyle::bench::resident::cuda_original::<unnamed>::decode_rows(const __nv_fp8_e4m3 *, __nv_bfloat16 *, const unsigned int *, unsigned int, unsigned int, unsigned int, float)",
+      "grid": [
+        48,
+        1,
+        1
+      ],
+      "block": [
+        256,
+        1,
+        1
+      ],
+      "registers": 22,
+      "dynamic_shared": 0,
+      "launch_api": [
+        {
+          "name": "cudaLaunchKernel_v7000",
+          "ns": 15244
+        }
+      ]
+    },
+    {
+      "shape": 2,
+      "kind": "cold_decoder",
+      "start_ns": 1972559429,
+      "duration_ns": 1282,
+      "name": "hyle::bench::resident::cuda_original::<unnamed>::decode_rows(const __nv_fp8_e4m3 *, __nv_bfloat16 *, const unsigned int *, unsigned int, unsigned int, unsigned int, float)",
+      "grid": [
+        96,
+        1,
+        1
+      ],
+      "block": [
+        256,
+        1,
+        1
+      ],
+      "registers": 22,
+      "dynamic_shared": 0,
+      "launch_api": [
+        {
+          "name": "cudaLaunchKernel_v7000",
+          "ns": 3543
+        }
+      ]
+    },
+    {
+      "shape": 2,
+      "kind": "selected_attention",
+      "start_ns": 1975266360,
+      "duration_ns": 4946,
+      "name": "void flashinfer::BatchPrefillWithPagedKVCacheKernel<flashinfer::KernelTraits<(flashinfer::MaskMode)0, (unsigned int)64, (unsigned int)1, (unsigned int)4, (unsigned int)4, (unsigned int)8, (unsigned int)4, (unsigned int)1, (flashinfer::PosEncodingMode)0, __nv_bfloat16, __nv_fp8_e4m3, float, float, int, flashinfer::DefaultAttention<(bool)0, (bool)1, (bool)0, (bool)0>>, flashinfer::BatchPrefillPagedParams<__nv_bfloat16, __nv_fp8_e4m3, float, int>>(T2)",
+      "grid": [
+        3,
+        1,
+        2
+      ],
+      "block": [
+        32,
+        4,
+        1
+      ],
+      "registers": 165,
+      "dynamic_shared": 49152,
+      "launch_api": [
+        {
+          "name": "cudaLaunchKernel_v7000",
+          "ns": 12738
+        }
+      ]
+    },
+    {
+      "shape": 2,
+      "kind": "selected_scale_cast",
+      "start_ns": 1975272528,
+      "duration_ns": 983,
+      "name": "void hyle::compute::flashinfer::native::<unnamed>::scale_cast<__nv_bfloat16>(const float *, T1 *, unsigned long, float)",
+      "grid": [
+        72,
+        1,
+        1
+      ],
+      "block": [
+        256,
+        1,
+        1
+      ],
+      "registers": 16,
+      "dynamic_shared": 0,
+      "launch_api": [
+        {
+          "name": "cudaLaunchKernel_v7000",
+          "ns": 5281
+        }
+      ]
+    },
+    {
+      "shape": 2,
+      "kind": "original_attention",
+      "start_ns": 1975562240,
+      "duration_ns": 4321,
+      "name": "void hyle_benchmark_original_flashinfer_69ff::BatchPrefillWithPagedKVCacheKernel<hyle_benchmark_original_flashinfer_69ff::KernelTraits<(hyle_benchmark_original_flashinfer_69ff::MaskMode)0, (unsigned int)64, (unsigned int)1, (unsigned int)4, (unsigned int)4, (unsigned int)8, (unsigned int)4, (unsigned int)1, (hyle_benchmark_original_flashinfer_69ff::PosEncodingMode)0, __nv_bfloat16, __nv_bfloat16, __nv_bfloat16, float, int, hyle_benchmark_original_flashinfer_69ff::DefaultAttention<(bool)0, (bool)1, (bool)0, (bool)0>>, hyle_benchmark_original_flashinfer_69ff::BatchPrefillPagedParams<__nv_bfloat16, __nv_bfloat16, __nv_bfloat16, int>>(T2)",
+      "grid": [
+        3,
+        1,
+        2
+      ],
+      "block": [
+        32,
+        4,
+        1
+      ],
+      "registers": 177,
+      "dynamic_shared": 32768,
+      "launch_api": [
+        {
+          "name": "cudaLaunchKernel_v7000",
+          "ns": 12385
+        }
+      ]
+    },
+    {
+      "shape": 2,
+      "kind": "selected_attention",
+      "start_ns": 1976487871,
+      "duration_ns": 4946,
+      "name": "void flashinfer::BatchPrefillWithPagedKVCacheKernel<flashinfer::KernelTraits<(flashinfer::MaskMode)0, (unsigned int)64, (unsigned int)1, (unsigned int)4, (unsigned int)4, (unsigned int)8, (unsigned int)4, (unsigned int)1, (flashinfer::PosEncodingMode)0, __nv_bfloat16, __nv_fp8_e4m3, float, float, int, flashinfer::DefaultAttention<(bool)0, (bool)1, (bool)0, (bool)0>>, flashinfer::BatchPrefillPagedParams<__nv_bfloat16, __nv_fp8_e4m3, float, int>>(T2)",
+      "grid": [
+        3,
+        1,
+        2
+      ],
+      "block": [
+        32,
+        4,
+        1
+      ],
+      "registers": 165,
+      "dynamic_shared": 49152,
+      "launch_api": [
+        {
+          "name": "cudaLaunchKernel_v7000",
+          "ns": 12491
+        }
+      ]
+    },
+    {
+      "shape": 2,
+      "kind": "selected_scale_cast",
+      "start_ns": 1976494188,
+      "duration_ns": 983,
+      "name": "void hyle::compute::flashinfer::native::<unnamed>::scale_cast<__nv_bfloat16>(const float *, T1 *, unsigned long, float)",
+      "grid": [
+        72,
+        1,
+        1
+      ],
+      "block": [
+        256,
+        1,
+        1
+      ],
+      "registers": 16,
+      "dynamic_shared": 0,
+      "launch_api": [
+        {
+          "name": "cudaLaunchKernel_v7000",
+          "ns": 4663
+        }
+      ]
+    },
+    {
+      "shape": 2,
+      "kind": "original_attention",
+      "start_ns": 1977014734,
+      "duration_ns": 3814,
+      "name": "void hyle_benchmark_original_flashinfer_69ff::BatchPrefillWithPagedKVCacheKernel<hyle_benchmark_original_flashinfer_69ff::KernelTraits<(hyle_benchmark_original_flashinfer_69ff::MaskMode)0, (unsigned int)64, (unsigned int)1, (unsigned int)4, (unsigned int)4, (unsigned int)8, (unsigned int)4, (unsigned int)1, (hyle_benchmark_original_flashinfer_69ff::PosEncodingMode)0, __nv_bfloat16, __nv_bfloat16, __nv_bfloat16, float, int, hyle_benchmark_original_flashinfer_69ff::DefaultAttention<(bool)0, (bool)1, (bool)0, (bool)0>>, hyle_benchmark_original_flashinfer_69ff::BatchPrefillPagedParams<__nv_bfloat16, __nv_bfloat16, __nv_bfloat16, int>>(T2)",
+      "grid": [
+        3,
+        1,
+        2
+      ],
+      "block": [
+        32,
+        4,
+        1
+      ],
+      "registers": 177,
+      "dynamic_shared": 32768,
+      "launch_api": [
+        {
+          "name": "cudaLaunchKernel_v7000",
+          "ns": 20585
+        }
+      ]
+    },
+    {
+      "shape": 2,
+      "kind": "selected_attention",
+      "start_ns": 1977318749,
+      "duration_ns": 4291,
+      "name": "void flashinfer::BatchPrefillWithPagedKVCacheKernel<flashinfer::KernelTraits<(flashinfer::MaskMode)0, (unsigned int)64, (unsigned int)1, (unsigned int)4, (unsigned int)4, (unsigned int)8, (unsigned int)4, (unsigned int)1, (flashinfer::PosEncodingMode)0, __nv_bfloat16, __nv_fp8_e4m3, float, float, int, flashinfer::DefaultAttention<(bool)0, (bool)1, (bool)0, (bool)0>>, flashinfer::BatchPrefillPagedParams<__nv_bfloat16, __nv_fp8_e4m3, float, int>>(T2)",
+      "grid": [
+        3,
+        1,
+        2
+      ],
+      "block": [
+        32,
+        4,
+        1
+      ],
+      "registers": 165,
+      "dynamic_shared": 49152,
+      "launch_api": [
+        {
+          "name": "cudaLaunchKernel_v7000",
+          "ns": 9849
+        }
+      ]
+    },
+    {
+      "shape": 2,
+      "kind": "selected_scale_cast",
+      "start_ns": 1977324351,
+      "duration_ns": 953,
+      "name": "void hyle::compute::flashinfer::native::<unnamed>::scale_cast<__nv_bfloat16>(const float *, T1 *, unsigned long, float)",
+      "grid": [
+        72,
+        1,
+        1
+      ],
+      "block": [
+        256,
+        1,
+        1
+      ],
+      "registers": 16,
+      "dynamic_shared": 0,
+      "launch_api": [
+        {
+          "name": "cudaLaunchKernel_v7000",
+          "ns": 5065
+        }
+      ]
+    },
+    {
+      "shape": 2,
+      "kind": "original_attention",
+      "start_ns": 1977610189,
+      "duration_ns": 3606,
+      "name": "void hyle_benchmark_original_flashinfer_69ff::BatchPrefillWithPagedKVCacheKernel<hyle_benchmark_original_flashinfer_69ff::KernelTraits<(hyle_benchmark_original_flashinfer_69ff::MaskMode)0, (unsigned int)64, (unsigned int)1, (unsigned int)4, (unsigned int)4, (unsigned int)8, (unsigned int)4, (unsigned int)1, (hyle_benchmark_original_flashinfer_69ff::PosEncodingMode)0, __nv_bfloat16, __nv_bfloat16, __nv_bfloat16, float, int, hyle_benchmark_original_flashinfer_69ff::DefaultAttention<(bool)0, (bool)1, (bool)0, (bool)0>>, hyle_benchmark_original_flashinfer_69ff::BatchPrefillPagedParams<__nv_bfloat16, __nv_bfloat16, __nv_bfloat16, int>>(T2)",
+      "grid": [
+        3,
+        1,
+        2
+      ],
+      "block": [
+        32,
+        4,
+        1
+      ],
+      "registers": 177,
+      "dynamic_shared": 32768,
+      "launch_api": [
+        {
+          "name": "cudaLaunchKernel_v7000",
+          "ns": 6097
+        }
+      ]
+    },
+    {
+      "shape": 2,
+      "kind": "selected_attention",
+      "start_ns": 1978068133,
+      "duration_ns": 4291,
+      "name": "void flashinfer::BatchPrefillWithPagedKVCacheKernel<flashinfer::KernelTraits<(flashinfer::MaskMode)0, (unsigned int)64, (unsigned int)1, (unsigned int)4, (unsigned int)4, (unsigned int)8, (unsigned int)4, (unsigned int)1, (flashinfer::PosEncodingMode)0, __nv_bfloat16, __nv_fp8_e4m3, float, float, int, flashinfer::DefaultAttention<(bool)0, (bool)1, (bool)0, (bool)0>>, flashinfer::BatchPrefillPagedParams<__nv_bfloat16, __nv_fp8_e4m3, float, int>>(T2)",
+      "grid": [
+        3,
+        1,
+        2
+      ],
+      "block": [
+        32,
+        4,
+        1
+      ],
+      "registers": 165,
+      "dynamic_shared": 49152,
+      "launch_api": [
+        {
+          "name": "cudaLaunchKernel_v7000",
+          "ns": 11133
+        }
+      ]
+    },
+    {
+      "shape": 2,
+      "kind": "selected_scale_cast",
+      "start_ns": 1978087858,
+      "duration_ns": 954,
+      "name": "void hyle::compute::flashinfer::native::<unnamed>::scale_cast<__nv_bfloat16>(const float *, T1 *, unsigned long, float)",
+      "grid": [
+        72,
+        1,
+        1
+      ],
+      "block": [
+        256,
+        1,
+        1
+      ],
+      "registers": 16,
+      "dynamic_shared": 0,
+      "launch_api": [
+        {
+          "name": "cudaLaunchKernel_v7000",
+          "ns": 53189
+        }
+      ]
+    },
+    {
+      "shape": 2,
+      "kind": "original_attention",
+      "start_ns": 1978516810,
+      "duration_ns": 3635,
+      "name": "void hyle_benchmark_original_flashinfer_69ff::BatchPrefillWithPagedKVCacheKernel<hyle_benchmark_original_flashinfer_69ff::KernelTraits<(hyle_benchmark_original_flashinfer_69ff::MaskMode)0, (unsigned int)64, (unsigned int)1, (unsigned int)4, (unsigned int)4, (unsigned int)8, (unsigned int)4, (unsigned int)1, (hyle_benchmark_original_flashinfer_69ff::PosEncodingMode)0, __nv_bfloat16, __nv_bfloat16, __nv_bfloat16, float, int, hyle_benchmark_original_flashinfer_69ff::DefaultAttention<(bool)0, (bool)1, (bool)0, (bool)0>>, hyle_benchmark_original_flashinfer_69ff::BatchPrefillPagedParams<__nv_bfloat16, __nv_bfloat16, __nv_bfloat16, int>>(T2)",
+      "grid": [
+        3,
+        1,
+        2
+      ],
+      "block": [
+        32,
+        4,
+        1
+      ],
+      "registers": 177,
+      "dynamic_shared": 32768,
+      "launch_api": [
+        {
+          "name": "cudaLaunchKernel_v7000",
+          "ns": 7729
+        }
+      ]
+    },
+    {
+      "shape": 2,
+      "kind": "selected_attention",
+      "start_ns": 1978968079,
+      "duration_ns": 4321,
+      "name": "void flashinfer::BatchPrefillWithPagedKVCacheKernel<flashinfer::KernelTraits<(flashinfer::MaskMode)0, (unsigned int)64, (unsigned int)1, (unsigned int)4, (unsigned int)4, (unsigned int)8, (unsigned int)4, (unsigned int)1, (flashinfer::PosEncodingMode)0, __nv_bfloat16, __nv_fp8_e4m3, float, float, int, flashinfer::DefaultAttention<(bool)0, (bool)1, (bool)0, (bool)0>>, flashinfer::BatchPrefillPagedParams<__nv_bfloat16, __nv_fp8_e4m3, float, int>>(T2)",
+      "grid": [
+        3,
+        1,
+        2
+      ],
+      "block": [
+        32,
+        4,
+        1
+      ],
+      "registers": 165,
+      "dynamic_shared": 49152,
+      "launch_api": [
+        {
+          "name": "cudaLaunchKernel_v7000",
+          "ns": 7914
+        }
+      ]
+    },
+    {
+      "shape": 2,
+      "kind": "selected_scale_cast",
+      "start_ns": 1978973651,
+      "duration_ns": 924,
+      "name": "void hyle::compute::flashinfer::native::<unnamed>::scale_cast<__nv_bfloat16>(const float *, T1 *, unsigned long, float)",
+      "grid": [
+        72,
+        1,
+        1
+      ],
+      "block": [
+        256,
+        1,
+        1
+      ],
+      "registers": 16,
+      "dynamic_shared": 0,
+      "launch_api": [
+        {
+          "name": "cudaLaunchKernel_v7000",
+          "ns": 4888
+        }
+      ]
+    },
+    {
+      "shape": 2,
+      "kind": "original_attention",
+      "start_ns": 1979057916,
+      "duration_ns": 3635,
+      "name": "void hyle_benchmark_original_flashinfer_69ff::BatchPrefillWithPagedKVCacheKernel<hyle_benchmark_original_flashinfer_69ff::KernelTraits<(hyle_benchmark_original_flashinfer_69ff::MaskMode)0, (unsigned int)64, (unsigned int)1, (unsigned int)4, (unsigned int)4, (unsigned int)8, (unsigned int)4, (unsigned int)1, (hyle_benchmark_original_flashinfer_69ff::PosEncodingMode)0, __nv_bfloat16, __nv_bfloat16, __nv_bfloat16, float, int, hyle_benchmark_original_flashinfer_69ff::DefaultAttention<(bool)0, (bool)1, (bool)0, (bool)0>>, hyle_benchmark_original_flashinfer_69ff::BatchPrefillPagedParams<__nv_bfloat16, __nv_bfloat16, __nv_bfloat16, int>>(T2)",
+      "grid": [
+        3,
+        1,
+        2
+      ],
+      "block": [
+        32,
+        4,
+        1
+      ],
+      "registers": 177,
+      "dynamic_shared": 32768,
+      "launch_api": [
+        {
+          "name": "cudaLaunchKernel_v7000",
+          "ns": 8758
+        }
+      ]
+    },
+    {
+      "shape": 2,
+      "kind": "selected_attention",
+      "start_ns": 1979147842,
+      "duration_ns": 4321,
+      "name": "void flashinfer::BatchPrefillWithPagedKVCacheKernel<flashinfer::KernelTraits<(flashinfer::MaskMode)0, (unsigned int)64, (unsigned int)1, (unsigned int)4, (unsigned int)4, (unsigned int)8, (unsigned int)4, (unsigned int)1, (flashinfer::PosEncodingMode)0, __nv_bfloat16, __nv_fp8_e4m3, float, float, int, flashinfer::DefaultAttention<(bool)0, (bool)1, (bool)0, (bool)0>>, flashinfer::BatchPrefillPagedParams<__nv_bfloat16, __nv_fp8_e4m3, float, int>>(T2)",
+      "grid": [
+        3,
+        1,
+        2
+      ],
+      "block": [
+        32,
+        4,
+        1
+      ],
+      "registers": 165,
+      "dynamic_shared": 49152,
+      "launch_api": [
+        {
+          "name": "cudaLaunchKernel_v7000",
+          "ns": 6505
+        }
+      ]
+    },
+    {
+      "shape": 2,
+      "kind": "selected_scale_cast",
+      "start_ns": 1979153414,
+      "duration_ns": 924,
+      "name": "void hyle::compute::flashinfer::native::<unnamed>::scale_cast<__nv_bfloat16>(const float *, T1 *, unsigned long, float)",
+      "grid": [
+        72,
+        1,
+        1
+      ],
+      "block": [
+        256,
+        1,
+        1
+      ],
+      "registers": 16,
+      "dynamic_shared": 0,
+      "launch_api": [
+        {
+          "name": "cudaLaunchKernel_v7000",
+          "ns": 4874
+        }
+      ]
+    },
+    {
+      "shape": 2,
+      "kind": "original_attention",
+      "start_ns": 1979236547,
+      "duration_ns": 3635,
+      "name": "void hyle_benchmark_original_flashinfer_69ff::BatchPrefillWithPagedKVCacheKernel<hyle_benchmark_original_flashinfer_69ff::KernelTraits<(hyle_benchmark_original_flashinfer_69ff::MaskMode)0, (unsigned int)64, (unsigned int)1, (unsigned int)4, (unsigned int)4, (unsigned int)8, (unsigned int)4, (unsigned int)1, (hyle_benchmark_original_flashinfer_69ff::PosEncodingMode)0, __nv_bfloat16, __nv_bfloat16, __nv_bfloat16, float, int, hyle_benchmark_original_flashinfer_69ff::DefaultAttention<(bool)0, (bool)1, (bool)0, (bool)0>>, hyle_benchmark_original_flashinfer_69ff::BatchPrefillPagedParams<__nv_bfloat16, __nv_bfloat16, __nv_bfloat16, int>>(T2)",
+      "grid": [
+        3,
+        1,
+        2
+      ],
+      "block": [
+        32,
+        4,
+        1
+      ],
+      "registers": 177,
+      "dynamic_shared": 32768,
+      "launch_api": [
+        {
+          "name": "cudaLaunchKernel_v7000",
+          "ns": 7204
+        }
+      ]
+    },
+    {
+      "shape": 2,
+      "kind": "selected_attention",
+      "start_ns": 1979317593,
+      "duration_ns": 4291,
+      "name": "void flashinfer::BatchPrefillWithPagedKVCacheKernel<flashinfer::KernelTraits<(flashinfer::MaskMode)0, (unsigned int)64, (unsigned int)1, (unsigned int)4, (unsigned int)4, (unsigned int)8, (unsigned int)4, (unsigned int)1, (flashinfer::PosEncodingMode)0, __nv_bfloat16, __nv_fp8_e4m3, float, float, int, flashinfer::DefaultAttention<(bool)0, (bool)1, (bool)0, (bool)0>>, flashinfer::BatchPrefillPagedParams<__nv_bfloat16, __nv_fp8_e4m3, float, int>>(T2)",
+      "grid": [
+        3,
+        1,
+        2
+      ],
+      "block": [
+        32,
+        4,
+        1
+      ],
+      "registers": 165,
+      "dynamic_shared": 49152,
+      "launch_api": [
+        {
+          "name": "cudaLaunchKernel_v7000",
+          "ns": 5405
+        }
+      ]
+    },
+    {
+      "shape": 2,
+      "kind": "selected_scale_cast",
+      "start_ns": 1979323136,
+      "duration_ns": 923,
+      "name": "void hyle::compute::flashinfer::native::<unnamed>::scale_cast<__nv_bfloat16>(const float *, T1 *, unsigned long, float)",
+      "grid": [
+        72,
+        1,
+        1
+      ],
+      "block": [
+        256,
+        1,
+        1
+      ],
+      "registers": 16,
+      "dynamic_shared": 0,
+      "launch_api": [
+        {
+          "name": "cudaLaunchKernel_v7000",
+          "ns": 4493
+        }
+      ]
+    },
+    {
+      "shape": 2,
+      "kind": "original_attention",
+      "start_ns": 1979413717,
+      "duration_ns": 3635,
+      "name": "void hyle_benchmark_original_flashinfer_69ff::BatchPrefillWithPagedKVCacheKernel<hyle_benchmark_original_flashinfer_69ff::KernelTraits<(hyle_benchmark_original_flashinfer_69ff::MaskMode)0, (unsigned int)64, (unsigned int)1, (unsigned int)4, (unsigned int)4, (unsigned int)8, (unsigned int)4, (unsigned int)1, (hyle_benchmark_original_flashinfer_69ff::PosEncodingMode)0, __nv_bfloat16, __nv_bfloat16, __nv_bfloat16, float, int, hyle_benchmark_original_flashinfer_69ff::DefaultAttention<(bool)0, (bool)1, (bool)0, (bool)0>>, hyle_benchmark_original_flashinfer_69ff::BatchPrefillPagedParams<__nv_bfloat16, __nv_bfloat16, __nv_bfloat16, int>>(T2)",
+      "grid": [
+        3,
+        1,
+        2
+      ],
+      "block": [
+        32,
+        4,
+        1
+      ],
+      "registers": 177,
+      "dynamic_shared": 32768,
+      "launch_api": [
+        {
+          "name": "cudaLaunchKernel_v7000",
+          "ns": 7350
+        }
+      ]
+    },
+    {
+      "shape": 2,
+      "kind": "selected_attention",
+      "start_ns": 1979551556,
+      "duration_ns": 4321,
+      "name": "void flashinfer::BatchPrefillWithPagedKVCacheKernel<flashinfer::KernelTraits<(flashinfer::MaskMode)0, (unsigned int)64, (unsigned int)1, (unsigned int)4, (unsigned int)4, (unsigned int)8, (unsigned int)4, (unsigned int)1, (flashinfer::PosEncodingMode)0, __nv_bfloat16, __nv_fp8_e4m3, float, float, int, flashinfer::DefaultAttention<(bool)0, (bool)1, (bool)0, (bool)0>>, flashinfer::BatchPrefillPagedParams<__nv_bfloat16, __nv_fp8_e4m3, float, int>>(T2)",
+      "grid": [
+        3,
+        1,
+        2
+      ],
+      "block": [
+        32,
+        4,
+        1
+      ],
+      "registers": 165,
+      "dynamic_shared": 49152,
+      "launch_api": [
+        {
+          "name": "cudaLaunchKernel_v7000",
+          "ns": 6023
+        }
+      ]
+    },
+    {
+      "shape": 2,
+      "kind": "selected_scale_cast",
+      "start_ns": 1979557128,
+      "duration_ns": 954,
+      "name": "void hyle::compute::flashinfer::native::<unnamed>::scale_cast<__nv_bfloat16>(const float *, T1 *, unsigned long, float)",
+      "grid": [
+        72,
+        1,
+        1
+      ],
+      "block": [
+        256,
+        1,
+        1
+      ],
+      "registers": 16,
+      "dynamic_shared": 0,
+      "launch_api": [
+        {
+          "name": "cudaLaunchKernel_v7000",
+          "ns": 4572
+        }
+      ]
+    },
+    {
+      "shape": 2,
+      "kind": "original_attention",
+      "start_ns": 1979641393,
+      "duration_ns": 3635,
+      "name": "void hyle_benchmark_original_flashinfer_69ff::BatchPrefillWithPagedKVCacheKernel<hyle_benchmark_original_flashinfer_69ff::KernelTraits<(hyle_benchmark_original_flashinfer_69ff::MaskMode)0, (unsigned int)64, (unsigned int)1, (unsigned int)4, (unsigned int)4, (unsigned int)8, (unsigned int)4, (unsigned int)1, (hyle_benchmark_original_flashinfer_69ff::PosEncodingMode)0, __nv_bfloat16, __nv_bfloat16, __nv_bfloat16, float, int, hyle_benchmark_original_flashinfer_69ff::DefaultAttention<(bool)0, (bool)1, (bool)0, (bool)0>>, hyle_benchmark_original_flashinfer_69ff::BatchPrefillPagedParams<__nv_bfloat16, __nv_bfloat16, __nv_bfloat16, int>>(T2)",
+      "grid": [
+        3,
+        1,
+        2
+      ],
+      "block": [
+        32,
+        4,
+        1
+      ],
+      "registers": 177,
+      "dynamic_shared": 32768,
+      "launch_api": [
+        {
+          "name": "cudaLaunchKernel_v7000",
+          "ns": 7244
+        }
+      ]
+    }
+  ]
+}

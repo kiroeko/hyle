@@ -464,7 +464,8 @@
           "CUDAToolkit_ROOT": "/usr/local/cuda-13.3",
           "CMAKE_CUDA_COMPILER": "/usr/local/cuda-13.3/bin/nvcc",
           "CMAKE_CUDA_HOST_COMPILER": "/usr/bin/g++-14",
-          "CMAKE_CUDA_ARCHITECTURES": "89-real"
+          "CMAKE_CUDA_ARCHITECTURES": "89-real",
+          "HYLE_SIMD_EXACT_TARGET": ""
         },
         "peer_cache": {
           "original-flashinfer": "HYLE_FLASHINFER_ORIGINAL_SOURCE"

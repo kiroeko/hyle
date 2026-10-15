@@ -1,0 +1,72 @@
+{
+  "state": "PASS_CONFIGURE_ONLY_ISA_ATTESTATION_NO_NEW_PERFORMANCE",
+  "command": [
+    "cmake",
+    "-S",
+    "/root/hyle-scratch/compute-unified/g04-cuda-encoded-p1-source-6/bench/inference_resident_sdpa/cuda_encoded_p1",
+    "-B",
+    "/root/hyle-scratch/compute-unified/ce19-cuda-isa-attestation-1/build",
+    "-G",
+    "Ninja",
+    "-DCMAKE_BUILD_TYPE=Release",
+    "-DCMAKE_CUDA_ARCHITECTURES=89-real",
+    "-DCMAKE_CUDA_COMPILER=/usr/local/cuda-13.3/bin/nvcc",
+    "-DCMAKE_CUDA_HOST_COMPILER=/usr/bin/g++-14",
+    "-DCMAKE_CXX_COMPILER=/usr/bin/g++-14",
+    "-DCMAKE_C_COMPILER=/usr/bin/gcc-14",
+    "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON",
+    "-DCMAKE_INTERPROCEDURAL_OPTIMIZATION=OFF",
+    "-DCMAKE_PREFIX_PATH=/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/sdk/cuda-static-1/relocated",
+    "-DCUDAToolkit_ROOT=/usr/local/cuda-13.3",
+    "-DHYLE_BUILD_BENCH=OFF",
+    "-DHYLE_BUILD_TESTS=OFF",
+    "-DHYLE_COMPONENTS=compute;graph",
+    "-DHYLE_COMPUTE_ROUTES=cpu;cuda",
+    "-DHYLE_FLASHINFER_ORIGINAL_SOURCE=/root/hyle-scratch/compute-unified/peers/flashinfer-69ff-git-1",
+    "-DHYLE_SANITIZER=off",
+    "-DHYLE_SIMD_EXACT_TARGET=",
+    "-DHYLE_STATIC=ON"
+  ],
+  "elapsed_seconds": 37.640390991000004,
+  "old_isa": "unknown_from_missing_cache_key",
+  "new_isa": "portable_from_explicit_empty_exact_target",
+  "old_cache_unchanged_sha256": "ecbfef891476ba5fce83bcfbe80118d18fc79f9969fc7837bff771d1f112b0f2",
+  "compile_command_count": 8,
+  "normalized_compile_commands_unchanged": true,
+  "host_flags": [
+    {
+      "file": "/root/hyle-scratch/compute-unified/g04-cuda-encoded-p1-source-6/bench/inference_resident_sdpa/cpu_placement.cc",
+      "explicit_cpu_isa_flags": []
+    },
+    {
+      "file": "/root/hyle-scratch/compute-unified/g04-cuda-encoded-p1-source-6/bench/inference_resident_sdpa/cuda_encoded_page_bench.cc",
+      "explicit_cpu_isa_flags": []
+    },
+    {
+      "file": "/root/hyle-scratch/compute-unified/g04-cuda-encoded-p1-source-6/bench/inference_resident_sdpa/cuda_encoded_page_reference.cc",
+      "explicit_cpu_isa_flags": []
+    },
+    {
+      "file": "/root/hyle-scratch/compute-unified/g04-cuda-encoded-p1-source-6/bench/integration/perf_control_bench.cc",
+      "explicit_cpu_isa_flags": []
+    },
+    {
+      "file": "/root/hyle-scratch/compute-unified/g04-cuda-encoded-p1-source-6/bench/nanobench_impl.cc",
+      "explicit_cpu_isa_flags": []
+    },
+    {
+      "file": "/root/hyle-scratch/compute-unified/g04-cuda-encoded-p1-source-6/bench/inference_resident_sdpa/cuda_encoded_page_bench.cc",
+      "explicit_cpu_isa_flags": []
+    },
+    {
+      "file": "/root/hyle-scratch/compute-unified/g04-cuda-encoded-p1-source-6/bench/inference_resident_sdpa/cuda_encoded_page_reference.cc",
+      "explicit_cpu_isa_flags": []
+    }
+  ],
+  "compiler_default_march": "-march=                     \t\tx86-64",
+  "new_contract_sha256": "8f9cbf96538d81f4d3b50a40789f6a00921f81bcf020be58a054e6281260e183",
+  "limits": [
+    "Configure only plus CMake compiler identification; no product/peer target built,no GPU workload or P1 resampling",
+    "Original6 manifest remains DIAGNOSTIC and unchanged; this is a prospective declaration check,not retrospective qualification"
+  ]
+}

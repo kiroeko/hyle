@@ -1,0 +1,329 @@
+{
+  "state": "TERMINAL_FINITE_DIAGNOSTIC_PASS",
+  "purpose": "P0_ONLY_DIAGNOSTIC_ISA_DECLARATION_MISSING_NO_PRODUCT_VERDICT",
+  "command": [
+    "nsys",
+    "profile",
+    "--trace=cuda",
+    "--sample=none",
+    "--cpuctxsw=none",
+    "--export=sqlite",
+    "--force-overwrite=false",
+    "--output=/root/hyle-scratch/compute-unified/ce19-cuda-product-profile-6/product",
+    "/root/hyle-scratch/compute-unified/g04-cuda-encoded-p1-fresh-6/bin/g04_cuda_encoded_bench"
+  ],
+  "binary_sha256": "69221f64ae2039adf1251154a8c08f49e4a164d1a064f56df43bc8ec01648fd2",
+  "qualifier_job": {
+    "state": "TERMINAL",
+    "snapshot": {
+      "attempt": "6",
+      "source_commit": "2f01f4d991d58973d1cb1f0882f2fc86bd4b9ebc",
+      "product_candidate": "982676cb05a6e6244e66e0a596347aa96043617b",
+      "numeric_receipt_sha256": "31e9e32c5082daa2050dae993786328ebedbae797e23e9a4f8102fff40ef5ee2",
+      "contract_file_sha256": "b4091c24cce4ddd2987c8361293444e18e4246a4f57eb541e6cb537d4871edc6"
+    },
+    "source": "/root/hyle-scratch/compute-unified/g04-cuda-encoded-p1-source-6",
+    "build": "/root/hyle-scratch/compute-unified/g04-cuda-encoded-p1-fresh-6",
+    "output": "/root/hyle-scratch/compute-unified/g04-cuda-encoded-p1-output-6",
+    "observer_pid": 565,
+    "pid": 691,
+    "identity": {
+      "host": "Linux kiro-workstation 6.18.54.1-microsoft-standard-WSL2 #1 SMP PREEMPT_DYNAMIC Tue Oct  6 19:13:07 UTC 2026 x86_64 x86_64 x86_64 GNU/Linux",
+      "compiler": "g++-14 (Ubuntu 14.2.0-4ubuntu2~24.04.1) 14.2.0\nCopyright (C) 2024 Free Software Foundation, Inc.\nThis is free software; see the source for copying conditions.  There is NO\nwarranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.",
+      "cuda": "nvcc: NVIDIA (R) Cuda compiler driver\nCopyright (c) 2005-2026 NVIDIA Corporation\nBuilt on Tue_Jun_09_02:43:40_PM_PDT_2026\nCuda compilation tools, release 13.3, V13.3.73\nBuild cuda_13.3.r13.3/compiler.38244171_0",
+      "gpu": "NVIDIA GeForce RTX 4070, 617.14, GPU-e7376560-6f5d-ec19-6ee4-3dd3a2c81ef8, 8.9"
+    },
+    "command": [
+      "python3",
+      "/root/hyle-scratch/compute-unified/g04-cuda-encoded-p1-source-6/scripts/hyle-perf.py",
+      "qualify-platform",
+      "--contract",
+      "/root/hyle-scratch/compute-unified/g04-cuda-encoded-p1-source-6/bench/inference_resident_sdpa/cuda_encoded_p1/contract.json",
+      "--source",
+      "/root/hyle-scratch/compute-unified/g04-cuda-encoded-p1-source-6/bench/inference_resident_sdpa/cuda_encoded_p1",
+      "--machine",
+      "W1-WSL",
+      "--peer",
+      "original-flashinfer=/root/hyle-scratch/compute-unified/peers/flashinfer-69ff-git-1",
+      "--build",
+      "/root/hyle-scratch/compute-unified/g04-cuda-encoded-p1-fresh-6",
+      "--output",
+      "/root/hyle-scratch/compute-unified/g04-cuda-encoded-p1-output-6"
+    ],
+    "qualification_exit_code": 2,
+    "verify_exit": 0,
+    "verify_elapsed_seconds": 0.2203576809997685,
+    "exit_code": 2,
+    "elapsed_seconds": 2535.3813250820003
+  },
+  "original_summary_sha256": "ad5a348ae5cccbaff779862479e73ef697726ff1ef73cab4a24a628333170e39",
+  "nsys_version": "NVIDIA Nsight Systems version 2026.1.3.425-261338342291v0",
+  "exit_code": 0,
+  "elapsed_seconds": 3.641361367000002,
+  "max_abs_error": 0.00109081301,
+  "shapes": [
+    {
+      "cold_decoder": {
+        "count": 2,
+        "median_ns": 9862.5,
+        "mean_ns": 9862.5,
+        "registers": [
+          22
+        ],
+        "dynamic_shared": [
+          0
+        ],
+        "grids": [
+          [
+            3648,
+            1,
+            1
+          ]
+        ]
+      },
+      "selected_attention": {
+        "count": 8,
+        "median_ns": 8268.5,
+        "mean_ns": 8495.75,
+        "registers": [
+          246
+        ],
+        "dynamic_shared": [
+          98304
+        ],
+        "grids": [
+          [
+            3,
+            1,
+            2
+          ]
+        ]
+      },
+      "selected_scale_cast": {
+        "count": 8,
+        "median_ns": 1013.0,
+        "mean_ns": 1031.625,
+        "registers": [
+          16
+        ],
+        "dynamic_shared": [
+          0
+        ],
+        "grids": [
+          [
+            144,
+            1,
+            1
+          ]
+        ]
+      },
+      "original_attention": {
+        "count": 8,
+        "median_ns": 5185.0,
+        "mean_ns": 5512.375,
+        "registers": [
+          240
+        ],
+        "dynamic_shared": [
+          49152
+        ],
+        "grids": [
+          [
+            3,
+            1,
+            2
+          ]
+        ]
+      }
+    },
+    {
+      "cold_decoder": {
+        "count": 2,
+        "median_ns": 9773.5,
+        "mean_ns": 9773.5,
+        "registers": [
+          22
+        ],
+        "dynamic_shared": [
+          0
+        ],
+        "grids": [
+          [
+            3648,
+            1,
+            1
+          ]
+        ]
+      },
+      "selected_attention": {
+        "count": 8,
+        "median_ns": 48419.5,
+        "mean_ns": 48449.125,
+        "registers": [
+          246
+        ],
+        "dynamic_shared": [
+          98304
+        ],
+        "grids": [
+          [
+            40,
+            1,
+            2
+          ]
+        ]
+      },
+      "selected_merge": {
+        "count": 8,
+        "median_ns": 12276.0,
+        "mean_ns": 12313.375,
+        "registers": [
+          43
+        ],
+        "dynamic_shared": [
+          16896
+        ],
+        "grids": [
+          [
+            230,
+            1,
+            1
+          ]
+        ]
+      },
+      "selected_scale_cast": {
+        "count": 8,
+        "median_ns": 2920.0,
+        "mean_ns": 2916.125,
+        "registers": [
+          16
+        ],
+        "dynamic_shared": [
+          0
+        ],
+        "grids": [
+          [
+            1536,
+            1,
+            1
+          ]
+        ]
+      },
+      "original_attention": {
+        "count": 8,
+        "median_ns": 35905.0,
+        "mean_ns": 36254.875,
+        "registers": [
+          240
+        ],
+        "dynamic_shared": [
+          49152
+        ],
+        "grids": [
+          [
+            40,
+            1,
+            2
+          ]
+        ]
+      },
+      "original_merge": {
+        "count": 8,
+        "median_ns": 8239.0,
+        "mean_ns": 8238.875,
+        "registers": [
+          40
+        ],
+        "dynamic_shared": [
+          8704
+        ],
+        "grids": [
+          [
+            460,
+            1,
+            1
+          ]
+        ]
+      }
+    },
+    {
+      "cold_decoder": {
+        "count": 2,
+        "median_ns": 1326.5,
+        "mean_ns": 1326.5,
+        "registers": [
+          22
+        ],
+        "dynamic_shared": [
+          0
+        ],
+        "grids": [
+          [
+            48,
+            1,
+            1
+          ],
+          [
+            96,
+            1,
+            1
+          ]
+        ]
+      },
+      "selected_attention": {
+        "count": 8,
+        "median_ns": 4321.0,
+        "mean_ns": 4466,
+        "registers": [
+          165
+        ],
+        "dynamic_shared": [
+          49152
+        ],
+        "grids": [
+          [
+            3,
+            1,
+            2
+          ]
+        ]
+      },
+      "selected_scale_cast": {
+        "count": 8,
+        "median_ns": 953.5,
+        "mean_ns": 949.75,
+        "registers": [
+          16
+        ],
+        "dynamic_shared": [
+          0
+        ],
+        "grids": [
+          [
+            72,
+            1,
+            1
+          ]
+        ]
+      },
+      "original_attention": {
+        "count": 8,
+        "median_ns": 3635.0,
+        "mean_ns": 3739.5,
+        "registers": [
+          177
+        ],
+        "dynamic_shared": [
+          32768
+        ],
+        "grids": [
+          [
+            3,
+            1,
+            2
+          ]
+        ]
+      }
+    }
+  ]
+}
