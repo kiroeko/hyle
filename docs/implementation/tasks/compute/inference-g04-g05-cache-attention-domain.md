@@ -2608,3 +2608,14 @@ runtime、三host与原P1尚待，不签数值/吞吐或整项完成。
 ce28-sdk-binding-plan仍因同三shared bench JSON/Python路径unknown为BLOCKED，
 product_authorization无owner/issues；docs/closure与146 skipped reasons保留。沿原独立
 工具事项与本卡有限门继续，不修改公共selector或将该工具状态签为PASS。
+
+CE28真实数值与merge身份已核对：[numeric](../../../../evidence/correctness/inference-g04-g05-cuda-ce28-direct-stage-numeric-rebind/receipt.json)
+两个variant各24个独立double oracle通过，max_abs_error=0.00109081301低于8e-3；
+primary memcheck/racecheck零error/warning/hazard，build-contract及source/SDK/artifact
+只读核验PASS。仅编消费者与原peer一个CUDA TU，不重编产品库；记录stage费用
+75.189s，初始WSL canonical Git状态/身份检查位于计时前，未记录部分不记零。
+新[runtime](../../../../evidence/architecture/inference-g04-g05-cuda-ce28-producer-stage/runtime-receipt.json)
+为同一新static SDK消费binary的一次VERIFY_ONLY trace，3.141s、24 oracle通过、SHA不变。
+三attention为相同MMA1/1/4、shared49152/49152/40960；实际F32 merge同当前codegen身份，
+48register/8704shared/block32×4×1。此证据不签吞吐或线程谓词的收益；原三host与原P1
+继续，G04/G05未完成，旧失败/成本保留。

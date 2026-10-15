@@ -1,0 +1,2596 @@
+{
+  "state": "TERMINAL_PASS",
+  "kind": "G04_G05_CUDA_CE28_DIRECT_FP8_PRODUCER_STAGE_NATIVE_NUMERIC_REBIND",
+  "product_candidate": "830dd9e01829e3e5850ddff7eaa6355ee7c8fd0d",
+  "successful_run": {
+    "state": "TERMINAL_PASS",
+    "stages": [
+      {
+        "stage": "clone",
+        "command": [
+          "git",
+          "clone",
+          "--shared",
+          "--no-checkout",
+          "/mnt/c/public/project-hyle/hyle",
+          "/root/hyle-scratch/compute-unified/g04-ce28-producer-stage-source-1"
+        ],
+        "exit_code": 0,
+        "elapsed_seconds": 0.12464297899987287,
+        "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/ce28-direct-stage-numeric-1/clone.log"
+      },
+      {
+        "stage": "checkout",
+        "command": [
+          "git",
+          "-C",
+          "/root/hyle-scratch/compute-unified/g04-ce28-producer-stage-source-1",
+          "checkout",
+          "--detach",
+          "e5f784068d971d5ad3ab59741fe10bae14578074"
+        ],
+        "exit_code": 0,
+        "elapsed_seconds": 5.266121957999985,
+        "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/ce28-direct-stage-numeric-1/checkout.log"
+      },
+      {
+        "stage": "configure",
+        "command": [
+          "cmake",
+          "-S",
+          "/root/hyle-scratch/compute-unified/g04-ce28-producer-stage-source-1/bench/inference_resident_sdpa/cuda_encoded_p1",
+          "-B",
+          "/root/hyle-scratch/compute-unified/g04-ce28-producer-stage-build-1",
+          "-G",
+          "Ninja",
+          "-DHYLE_STATIC=ON",
+          "-DHYLE_BUILD_TESTS=OFF",
+          "-DHYLE_BUILD_BENCH=OFF",
+          "-DHYLE_COMPONENTS=compute;graph",
+          "-DHYLE_COMPUTE_ROUTES=cpu;cuda",
+          "-DHYLE_SANITIZER=off",
+          "-DCMAKE_INTERPROCEDURAL_OPTIMIZATION=OFF",
+          "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON",
+          "-DCMAKE_PREFIX_PATH=/root/hyle-scratch/compute-unified/g04-g05-encoded-sdk/cuda-static-ce28-1/relocated",
+          "-DCUDAToolkit_ROOT=/usr/local/cuda-13.3",
+          "-DCMAKE_CUDA_COMPILER=/usr/local/cuda-13.3/bin/nvcc",
+          "-DCMAKE_CUDA_HOST_COMPILER=/usr/bin/g++-14",
+          "-DCMAKE_CUDA_ARCHITECTURES=89-real",
+          "-DHYLE_SIMD_EXACT_TARGET=",
+          "-DCMAKE_CXX_COMPILER=/usr/bin/g++-14",
+          "-DCMAKE_C_COMPILER=/usr/bin/gcc-14",
+          "-DCMAKE_BUILD_TYPE=Release",
+          "-DHYLE_FLASHINFER_ORIGINAL_SOURCE=/root/hyle-scratch/compute-unified/peers/flashinfer-69ff-git-1"
+        ],
+        "exit_code": 0,
+        "elapsed_seconds": 31.485644504999982,
+        "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/ce28-direct-stage-numeric-1/configure.log"
+      },
+      {
+        "stage": "compile",
+        "command": [
+          "cmake",
+          "--build",
+          "/root/hyle-scratch/compute-unified/g04-ce28-producer-stage-build-1",
+          "--parallel",
+          "2",
+          "--target",
+          "g04_cuda_encoded_bench",
+          "g04_cuda_encoded_bench_placement",
+          "g04_cuda_encoded_perf_control"
+        ],
+        "exit_code": 0,
+        "elapsed_seconds": 16.67169628700003,
+        "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/ce28-direct-stage-numeric-1/compile.log"
+      },
+      {
+        "stage": "oracle-primary",
+        "command": [
+          "/root/hyle-scratch/compute-unified/g04-ce28-producer-stage-build-1/bin/g04_cuda_encoded_bench"
+        ],
+        "exit_code": 0,
+        "elapsed_seconds": 1.329521805000013,
+        "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/ce28-direct-stage-numeric-1/oracle-primary.log"
+      },
+      {
+        "stage": "oracle-placement",
+        "command": [
+          "/root/hyle-scratch/compute-unified/g04-ce28-producer-stage-build-1/bin/g04_cuda_encoded_bench_placement"
+        ],
+        "exit_code": 0,
+        "elapsed_seconds": 1.329383746000076,
+        "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/ce28-direct-stage-numeric-1/oracle-placement.log"
+      },
+      {
+        "stage": "memcheck",
+        "command": [
+          "/usr/local/cuda-13.3/bin/compute-sanitizer",
+          "--tool",
+          "memcheck",
+          "--error-exitcode",
+          "86",
+          "--print-limit",
+          "0",
+          "/root/hyle-scratch/compute-unified/g04-ce28-producer-stage-build-1/bin/g04_cuda_encoded_bench"
+        ],
+        "exit_code": 0,
+        "elapsed_seconds": 1.7350826429999415,
+        "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/ce28-direct-stage-numeric-1/memcheck.log"
+      },
+      {
+        "stage": "racecheck",
+        "command": [
+          "/usr/local/cuda-13.3/bin/compute-sanitizer",
+          "--tool",
+          "racecheck",
+          "--error-exitcode",
+          "86",
+          "--print-limit",
+          "0",
+          "--racecheck-num-workers",
+          "4",
+          "/root/hyle-scratch/compute-unified/g04-ce28-producer-stage-build-1/bin/g04_cuda_encoded_bench"
+        ],
+        "exit_code": 0,
+        "elapsed_seconds": 17.24703641499991,
+        "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/ce28-direct-stage-numeric-1/racecheck.log"
+      }
+    ],
+    "cumulative_seconds": 75.18913033799981,
+    "scope": "Current CE28 static SDK and sync-fixed native peer; two variants, three finite shapes, independent double oracle and actual primary device checks. No A/A or performance sampling.",
+    "heavy_serial": true,
+    "max_compile_jobs": 2,
+    "native_tu_pool": 1,
+    "identity": {
+      "host": "Linux kiro-workstation 6.18.54.1-microsoft-standard-WSL2 #1 SMP PREEMPT_DYNAMIC Tue Oct  6 19:13:07 UTC 2026 x86_64 x86_64 x86_64 GNU/Linux",
+      "compiler": "g++-14 (Ubuntu 14.2.0-4ubuntu2~24.04.1) 14.2.0\nCopyright (C) 2024 Free Software Foundation, Inc.\nThis is free software; see the source for copying conditions.  There is NO\nwarranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.",
+      "cuda": "nvcc: NVIDIA (R) Cuda compiler driver\nCopyright (c) 2005-2026 NVIDIA Corporation\nBuilt on Tue_Jun_09_02:43:40_PM_PDT_2026\nCuda compilation tools, release 13.3, V13.3.73\nBuild cuda_13.3.r13.3/compiler.38244171_0",
+      "gpu": "NVIDIA GeForce RTX 4070, 617.14, GPU-e7376560-6f5d-ec19-6ee4-3dd3a2c81ef8, 8.9"
+    },
+    "snapshot": {
+      "canonical_head": "e5f784068d971d5ad3ab59741fe10bae14578074",
+      "product_inputs": [
+        {
+          "path": "include/hyle/compute/apple.h",
+          "sha256": "8abdb414b5fce2bf8bfb2a275f3f4f253da2f607c4942f27936c15bfe074154a"
+        },
+        {
+          "path": "include/hyle/compute/apple_batch.h",
+          "sha256": "09fca736588dd38c1c189a0fb3b4fdbb4000c5078207e64caebf1cc33bae92f2"
+        },
+        {
+          "path": "include/hyle/compute/apple_memory.h",
+          "sha256": "b70c2e897ccda96b108ac8105ee77b391b6eeec503985444d0e8192cfbe68eac"
+        },
+        {
+          "path": "include/hyle/compute/apple_weights.h",
+          "sha256": "78197354b92152d701f320078f373868152ba8d68268442bfc825742bd10809f"
+        },
+        {
+          "path": "include/hyle/compute/backends/cpu.h",
+          "sha256": "a0b99762a3620c1b44b6856263c172d12fa6e482282fe9c2fcc06aa7d82a1d4d"
+        },
+        {
+          "path": "include/hyle/compute/backends/cuda.h",
+          "sha256": "9b1565cee1a199e46a524da1d244f6f5e1c3d8236bd5e69849583ee5ff27a91f"
+        },
+        {
+          "path": "include/hyle/compute/batch_execution.h",
+          "sha256": "6ee1371fe051124e3db7bf053640d9ab6346d4d952ab47403d01820deb04b45f"
+        },
+        {
+          "path": "include/hyle/compute/batch_layout.h",
+          "sha256": "6a47c47481ad9b1a4599b4b9dcb51428912e67e958540b9c971310fb7fe82e73"
+        },
+        {
+          "path": "include/hyle/compute/batch_materialize.h",
+          "sha256": "9f57cfe9748faf89faae485b604a4b14d6f222bc3ce475bc40a1a265b405b50b"
+        },
+        {
+          "path": "include/hyle/compute/batch_ops.h",
+          "sha256": "8af72d0f6d584ad38f596aa080d5f775aed857337beec6748cda4a8e7377165a"
+        },
+        {
+          "path": "include/hyle/compute/batch_paged_native.h",
+          "sha256": "af5dca3b00bdf561ce87dde510bb8220420bf07d8ba383ff1feafccc3784aa6e"
+        },
+        {
+          "path": "include/hyle/compute/batch_transfer.h",
+          "sha256": "3319446ddbfb9b58b3ee5ddef6b4ca63dfc6d34c9e4423fe6edf865d98fedb60"
+        },
+        {
+          "path": "include/hyle/compute/completion.h",
+          "sha256": "98b34b9ee4665e9aedac719504c029a509f304b0a4f566bf6b7f76d88dc2ef34"
+        },
+        {
+          "path": "include/hyle/compute/cpu.h",
+          "sha256": "bccb8e5d310086b41c6f010a84f56219ac33830e92e5da22ce2ff12cd608ccb6"
+        },
+        {
+          "path": "include/hyle/compute/cuda.h",
+          "sha256": "13757830a7d376d94d9ffc1993dd56b6872d5c7168961eb630c014e1efa57fa6"
+        },
+        {
+          "path": "include/hyle/compute/cuda_weights.h",
+          "sha256": "4fdd66441bdedc22b4352f19a8e8bf89dfefc214fb695750d38fd9636aa13d44"
+        },
+        {
+          "path": "include/hyle/compute/custom_kernel.h",
+          "sha256": "12ea43a8f599d6179d484b11e872ee998bbc47c61f9be66db90ac992e1532cbc"
+        },
+        {
+          "path": "include/hyle/compute/delegated_operation.h",
+          "sha256": "43a8c35359d39cb5db489892a5f9b79cd22a90af3b876992509353ad696ae960"
+        },
+        {
+          "path": "include/hyle/compute/detail/apple_batch_access.h",
+          "sha256": "b83b2e5109c97d5ac97b3b1ec1fc858d688b8557bae50616442a05c436159924"
+        },
+        {
+          "path": "include/hyle/compute/detail/apple_plan.h",
+          "sha256": "486c08435888b705ba90459c0e81f9c5804411b22322a05110cc6b94f8f5435d"
+        },
+        {
+          "path": "include/hyle/compute/detail/backend_extension.h",
+          "sha256": "0a67fcfb43e69f7106a2b4628442a74d14e9e18f0efe691109973b701d065cd4"
+        },
+        {
+          "path": "include/hyle/compute/detail/batch_graph_access.h",
+          "sha256": "5fd73efbbe44befba9f4359550eb45a5fc5b24b583750faacbb8398de0c83184"
+        },
+        {
+          "path": "include/hyle/compute/detail/batch_provider.h",
+          "sha256": "1850c8e70ec085f83b6480bcac367c55a83b4a984dcc2cc6baf19e776872c146"
+        },
+        {
+          "path": "include/hyle/compute/detail/command_capture.h",
+          "sha256": "6f40aeb2b44d2b0820e895bfb6667e0308c6dbb12ba4374571dbc076287aa6b0"
+        },
+        {
+          "path": "include/hyle/compute/detail/completion_access.h",
+          "sha256": "8699638e39a1a7d5708cbb6a5e41f191228b3ac571b16b026eadcc1aa6765e34"
+        },
+        {
+          "path": "include/hyle/compute/detail/context_ref.h",
+          "sha256": "0e44878fc04ea7b7378078e81045dcfb4760a27d44a5fc843b874ff612051ab3"
+        },
+        {
+          "path": "include/hyle/compute/detail/copy_backend.h",
+          "sha256": "6a6b2a44a81292297e5f5eb44eefe4e360a6003995a516676932de5e1b55b324"
+        },
+        {
+          "path": "include/hyle/compute/detail/copy_control.h",
+          "sha256": "8fd8ba40beeb810bcc7d635853b6f94e860e3dce4b22fa06fe5830dc10f7e909"
+        },
+        {
+          "path": "include/hyle/compute/detail/copy_outcome_source.h",
+          "sha256": "b6a6d6648e6fa3a351cedace1a7f598fc086e1671414061bf1a2ab4e99dcdbfa"
+        },
+        {
+          "path": "include/hyle/compute/detail/copy_ranges.h",
+          "sha256": "86b711e8dd26d63bba37e0ebbd47956f28bfd58b28934ac8073f28df81c543e7"
+        },
+        {
+          "path": "include/hyle/compute/detail/copy_stream_access.h",
+          "sha256": "18174b9024917acdcc1d985265a1a0da6afc5f29a2b437c80ebf52163aab1bb4"
+        },
+        {
+          "path": "include/hyle/compute/detail/dependent_completion.h",
+          "sha256": "25aecc0c64d1edfad3d71523b04dc222f523ac7cd71f99e63193495a8431cc9b"
+        },
+        {
+          "path": "include/hyle/compute/detail/file_stream_access.h",
+          "sha256": "de668186ac0617204ed5473880f811a0268b1b07c842329a979b34b0c0f40d2e"
+        },
+        {
+          "path": "include/hyle/compute/detail/file_stream_copy.h",
+          "sha256": "27b8705a7731d63a953e3bd93118d9420a0b95168abd9b884ec37dea7e166dc0"
+        },
+        {
+          "path": "include/hyle/compute/detail/generated_result.h",
+          "sha256": "bc47c925ff3302bd0ffb7df04ed68fa9ae7ad0865d021cc8b471a7547307d4aa"
+        },
+        {
+          "path": "include/hyle/compute/detail/lease_access.h",
+          "sha256": "a51b7fd93c33f76820189c18ae37377d49b7aa320399dc32a75c78a2d6c10e18"
+        },
+        {
+          "path": "include/hyle/compute/detail/materialized_native_controller.h",
+          "sha256": "9c92224885493ccfea20e872ae631b0c70142da31068f36b4a239fce0e4719f4"
+        },
+        {
+          "path": "include/hyle/compute/detail/native_lease_inputs.h",
+          "sha256": "eca0780a39defc70e73ccbd1f8a2aec1aac66e67af95078b6912d7671f7ff7d6"
+        },
+        {
+          "path": "include/hyle/compute/detail/paged_arena_access.h",
+          "sha256": "47e4c88a517ee066a45010c974b9207ee2b230e890a04b67081a24e012797d28"
+        },
+        {
+          "path": "include/hyle/compute/detail/prepared_callbacks.h",
+          "sha256": "2d00a2e823af0bcdaa9fc0330aa441b18ce6932f090dc903be876f1b08e449a1"
+        },
+        {
+          "path": "include/hyle/compute/detail/provider_extension.h",
+          "sha256": "fd2441737a83d03544fac2b63092c5d4ca880bebeb009fc65bfddbf022b8909d"
+        },
+        {
+          "path": "include/hyle/compute/detail/queue_sequence.h",
+          "sha256": "e2df077fcccf12d4d7f1225df238376e309d18a1a9d386310f6d2156c3062f5c"
+        },
+        {
+          "path": "include/hyle/compute/detail/resource_binding.h",
+          "sha256": "5728b7fc8d0b9e6faf413dd5f8e5ba13e7ddf4d86354a722770f554c1591c6e5"
+        },
+        {
+          "path": "include/hyle/compute/detail/retained_completion.h",
+          "sha256": "fdb06b6ccaebce4fe43eee5f926f4a912c1342deb475e99a9e4d86c933b9df07"
+        },
+        {
+          "path": "include/hyle/compute/detail/state_clone_access.h",
+          "sha256": "b56629d38582f595a9b46eb74d9e6d4b983868bf3a73cf91fb4a965248ee9608"
+        },
+        {
+          "path": "include/hyle/compute/detail/vulkan_batch_access.h",
+          "sha256": "22823b2c4a846fddf14ba0440e78a944ebeaf27f564e043424f5e2cca13eda01"
+        },
+        {
+          "path": "include/hyle/compute/detail/vulkan_plan.h",
+          "sha256": "88d3b62666ce55fba3a8e6b1b52348ec5d0377501b796ed6475b9c66d3cf8f2c"
+        },
+        {
+          "path": "include/hyle/compute/device.h",
+          "sha256": "6fabfe06600cad6f12ec70a0b83246d8dbbf8ea9a8f9fcc002e9dfab7f801c5a"
+        },
+        {
+          "path": "include/hyle/compute/file_stream.h",
+          "sha256": "b668f8b7480df6e0ade7785fe8a6581c6753ac422f1aae419caa33c38dae9cc6"
+        },
+        {
+          "path": "include/hyle/compute/leased_operation.h",
+          "sha256": "f86ac789b456e8084061f068de2ac947fddbdaf552ed1042585dd5beb1c56185"
+        },
+        {
+          "path": "include/hyle/compute/low_precision.h",
+          "sha256": "6488d615af7bb970472b2ccd84a8081e9b3bad12ea0e599651abc5706ff2db60"
+        },
+        {
+          "path": "include/hyle/compute/model_ops.h",
+          "sha256": "165cfc86281d90e246f137892c0fa1f625421a53f6bdbf9877aef9828773f8c9"
+        },
+        {
+          "path": "include/hyle/compute/operation.h",
+          "sha256": "584e57c2a1a10b7c17ee80d4a6f992b73f488f4cdbf1e71e39d908cd89600808"
+        },
+        {
+          "path": "include/hyle/compute/ops_visibility.h",
+          "sha256": "ae84b32667858fd2dd679bf2ba68e50d7405e9164ec0fd317173f20086b5fa6d"
+        },
+        {
+          "path": "include/hyle/compute/paged_arena.h",
+          "sha256": "15218780da6f3d1a8ee8de1e51cb9e6482448998c4ed44f95717809ce31f888c"
+        },
+        {
+          "path": "include/hyle/compute/prepared_operation.h",
+          "sha256": "3fe6a6f1ddc31c2181a208658e627be20933bde325ec0b63dba06281d007ed7b"
+        },
+        {
+          "path": "include/hyle/compute/provider.h",
+          "sha256": "1a4650e03cb2a0f6f46d22d914db197fb4bb7a59cd5aced180140feee0a7f337"
+        },
+        {
+          "path": "include/hyle/compute/providers/cublas.h",
+          "sha256": "6dfd5e49a9fcfb15f4624939454062bbc6a029b54f6edc4e3c59fe868a51d474"
+        },
+        {
+          "path": "include/hyle/compute/providers/cuda.h",
+          "sha256": "1b8c91cfd65b52b19503c3a8ddc31af9524093f35c1063071a2c0a56e4603106"
+        },
+        {
+          "path": "include/hyle/compute/providers/flashinfer.h",
+          "sha256": "a430e5cabd6b93bebef5b8c9d89b6f3bce7e6b0a081763b49362ae94f3e72984"
+        },
+        {
+          "path": "include/hyle/compute/providers/ggml_cpu.h",
+          "sha256": "1df53042a6ad5d6e899aca9fc75418d9fa561c85eb769d79ea72b88f3530d6b1"
+        },
+        {
+          "path": "include/hyle/compute/providers/ggml_cuda.h",
+          "sha256": "08b6ca997b48e4b1e4c8811669e62232b943a9364a77b10996341f5fb7e51e61"
+        },
+        {
+          "path": "include/hyle/compute/providers/native.h",
+          "sha256": "3be77c0f4ecda743d7b03d27658120d27867d281c77fd0ed5eaa5ad12ac3ad5d"
+        },
+        {
+          "path": "include/hyle/compute/providers/onednn.h",
+          "sha256": "3e9fbdfa34e309f2695600a043adf15828643feb6aa8d37c23f1358826bc681b"
+        },
+        {
+          "path": "include/hyle/compute/providers/torch_cuda.h",
+          "sha256": "a346ecc9a02d54caf6cf6c5fe0950fcb02aa0390aab45aef09baf605c082b5e8"
+        },
+        {
+          "path": "include/hyle/compute/resource_budget.h",
+          "sha256": "7e04cba9fb6727e883ef89a66a80b1f50b363c0b250bf327711ac430b6f13c5b"
+        },
+        {
+          "path": "include/hyle/compute/resource_leases.h",
+          "sha256": "22d7f2153ef8c0b1f6602b84ab00d96d75afc576f3b093a59749ab4f6891446d"
+        },
+        {
+          "path": "include/hyle/compute/resource_requirement.h",
+          "sha256": "0a1260090ba84ed86cf26b27ec5d187c8ed5d39b1acda641b632a3b84d3acf76"
+        },
+        {
+          "path": "include/hyle/compute/result.h",
+          "sha256": "07a584147b7de3b3f3c1a238207df4ec548130308295b583fc8c93a4d36a4164"
+        },
+        {
+          "path": "include/hyle/compute/route_policy.h",
+          "sha256": "71a4fd38cb6702769cf9879e9c02a631797986f6c1f18417f014b65bb8d70926"
+        },
+        {
+          "path": "include/hyle/compute/state_clone.h",
+          "sha256": "1e20c2363bb1fc6c1aa7b6b72247d5f1a2fde4d4f5ab04e5c2e7791c14d64b3f"
+        },
+        {
+          "path": "include/hyle/compute/state_versions.h",
+          "sha256": "a83193baa10ff4f00fc6eb7289b7f25091038096877ee3dc3aa0053a7b5ca878"
+        },
+        {
+          "path": "include/hyle/compute/tensor.h",
+          "sha256": "ac00f221a66d0f9044a2b49a1123a6b99a6c425568790898129c31d81519c538"
+        },
+        {
+          "path": "include/hyle/compute/tensor_desc.h",
+          "sha256": "e5496e00c643bcce2efbb42666773f4172243d10458b756d6f9881b0e677eb9a"
+        },
+        {
+          "path": "include/hyle/compute/transfer.h",
+          "sha256": "240e618942e9975640dac7ebcd4ce1b0fbbc2d01b1eb19a4576bf1be39e8090c"
+        },
+        {
+          "path": "include/hyle/compute/visibility.h",
+          "sha256": "fb05970d03d232298d57da8921c3a441cd93cd0d9dbb6cbcfcaa5b6a51964aa5"
+        },
+        {
+          "path": "include/hyle/compute/vulkan.h",
+          "sha256": "f9a0db613b0bcdc1670cb5c77109ef040ed71b2dc15e73640e1e401b940b5dff"
+        },
+        {
+          "path": "include/hyle/compute/vulkan_batch.h",
+          "sha256": "5f8e29e31e6d3a3177632f5a9055916ef21a4e8733ef90fdfaebc31fbaed6078"
+        },
+        {
+          "path": "include/hyle/compute/vulkan_memory.h",
+          "sha256": "0fa5c0ffa7b316da2645f03c8176d02fc871151700720c195d2e238c802b53fc"
+        },
+        {
+          "path": "include/hyle/compute/vulkan_weights.h",
+          "sha256": "7d1edd718226dbec3bc270da7250930d23ba367201b0a3eecaea4a3f45d302ff"
+        },
+        {
+          "path": "include/hyle/compute/workload.h",
+          "sha256": "2e7509d99d986e71b06788e4dd1dcb9595799e2ad972df48449ff0b58f0815ad"
+        },
+        {
+          "path": "include/hyle/container/base64.h",
+          "sha256": "04628b8c11314632838105ce3afd45ca05915245687d91b48d0bba90dd123a29"
+        },
+        {
+          "path": "include/hyle/container/bounded_queue.h",
+          "sha256": "fbf607da23ef58190f81fa6f58be24402ad19749c9d44018db05e5b947ea7f30"
+        },
+        {
+          "path": "include/hyle/container/btree.h",
+          "sha256": "cdabf1dd740a88281a461a64394c231da56830054864f22d8e5944b0ce0d8be1"
+        },
+        {
+          "path": "include/hyle/container/btree_map.h",
+          "sha256": "bc452a21c1c6e75a427a6eb3bc6772db3516c10e0e646103173ae1edd7667b13"
+        },
+        {
+          "path": "include/hyle/container/btree_set.h",
+          "sha256": "bc452a21c1c6e75a427a6eb3bc6772db3516c10e0e646103173ae1edd7667b13"
+        },
+        {
+          "path": "include/hyle/container/byte_ring_buffer.h",
+          "sha256": "0d7bd808bd9848a5534a3a7f099095ef8c3289b6a8534435d2308948fcea8c49"
+        },
+        {
+          "path": "include/hyle/container/circular_buffer.h",
+          "sha256": "3934a4e6b40418c5be12d3badba23aa4328a5a3602d141123539d4809869d542"
+        },
+        {
+          "path": "include/hyle/container/concurrent_flat_hash_map.h",
+          "sha256": "7f7328605a1044f251c8f473337e3f68509b703f1e0c05f51b5ab5e3ff8d3144"
+        },
+        {
+          "path": "include/hyle/container/concurrent_flat_hash_set.h",
+          "sha256": "56a295568d916cb4506b170f0ff3d19045c64ecb9b75758e840d041b29777cec"
+        },
+        {
+          "path": "include/hyle/container/concurrent_hash_map.h",
+          "sha256": "c57176d0fdd12026ce0841ac7f1dda9e901eef04d2dcfb3b34fd26b5cc59492b"
+        },
+        {
+          "path": "include/hyle/container/concurrent_node_hash_map.h",
+          "sha256": "65f591399e801364e97826599ee4e6daa1fa33587ca7db8ef700784d5d364cda"
+        },
+        {
+          "path": "include/hyle/container/concurrent_node_hash_set.h",
+          "sha256": "329d07114dc412ed0fa7e9052a3e0bc37d2dd394368e5350f6545703e7bc31ce"
+        },
+        {
+          "path": "include/hyle/container/concurrent_vector.h",
+          "sha256": "5532f67f3f7efb1bbea337527b92513ab0e55b18463dfa943fbad31972054fdc"
+        },
+        {
+          "path": "include/hyle/container/detail/adaptive_mutex.h",
+          "sha256": "600d1fb746f5a35438eb29177ecd281c08f662c7b8558b83df1045a0d264c472"
+        },
+        {
+          "path": "include/hyle/container/detail/adaptive_rw_lock.h",
+          "sha256": "a70ad907ba44d399f36284c87318022b0517314755d112ccf43a5e053b1825ae"
+        },
+        {
+          "path": "include/hyle/container/detail/flat_hash_probe.h",
+          "sha256": "9415366e42de93d3d7932745783b0964280e5d92f3a484f77b1d109a07d48582"
+        },
+        {
+          "path": "include/hyle/container/detail/flat_hash_table.h",
+          "sha256": "4e53aee82efdbb4b2bd6d50b523dc4ddc868f0d636d9f2e1dae1cfecd8cbf977"
+        },
+        {
+          "path": "include/hyle/container/detail/intrusive_member.h",
+          "sha256": "e3ea047e3ed723ab47061422c72ca83526ad107b983d3b6072d47fca91082f80"
+        },
+        {
+          "path": "include/hyle/container/dynamic_bitset.h",
+          "sha256": "8c0425e6f12e97dbe0880bb0b4881b7eea563438f406ba8cd5d548aa7d6a8036"
+        },
+        {
+          "path": "include/hyle/container/flat_hash_map.h",
+          "sha256": "0043e05aca5e33ab67af266e59dc44336e65babca9ffeddba696b6741d694b20"
+        },
+        {
+          "path": "include/hyle/container/flat_hash_set.h",
+          "sha256": "42a57cbe47983cdbb92041f374112e1b1f3ccd67401bed5748c8f865096dbdc9"
+        },
+        {
+          "path": "include/hyle/container/flat_map.h",
+          "sha256": "ed57615f51dad6355458fa0ae12c4f3804b092a1d7f6fcbe527935af3e5d0b8a"
+        },
+        {
+          "path": "include/hyle/container/flat_set.h",
+          "sha256": "ed57615f51dad6355458fa0ae12c4f3804b092a1d7f6fcbe527935af3e5d0b8a"
+        },
+        {
+          "path": "include/hyle/container/flat_sorted.h",
+          "sha256": "82bf77a6c6dc3d9d162c9f7949218c1e4946468b54df4913c3f5f4d31cad9537"
+        },
+        {
+          "path": "include/hyle/container/hash.h",
+          "sha256": "4ff2c8bfaf8b2bb683f05c676c741f8bbeca1e4d926061ae0cc58cb524e4e0d0"
+        },
+        {
+          "path": "include/hyle/container/inplace_vector.h",
+          "sha256": "decc3c909b493af3ab1dba1d379aa0cf3b6b398dc9a850482e718e72ecb8b82b"
+        },
+        {
+          "path": "include/hyle/container/intrusive_forward_list.h",
+          "sha256": "7e3c36a91067eb8b1ec8e9370b8fb001545804b2842e19c776eb02f1633bbb46"
+        },
+        {
+          "path": "include/hyle/container/intrusive_hlist.h",
+          "sha256": "ec18650198cd65bed765a6ebb83396cfc4b3bb9fff9704a6206bbc6378e4e680"
+        },
+        {
+          "path": "include/hyle/container/intrusive_list.h",
+          "sha256": "ad4739927482839590c349e5a6eeb9808f724406b0a27d9c5f46892148b7e688"
+        },
+        {
+          "path": "include/hyle/container/lru_cache.h",
+          "sha256": "0744e618e9500c0135c1a4d56cc38eea862360073d71a845578deb0199b96e24"
+        },
+        {
+          "path": "include/hyle/container/path.h",
+          "sha256": "f3b20f6ed2db01f1f30defd45f6abd8f1861e8eef6800449c85ec4eac79ce5fc"
+        },
+        {
+          "path": "include/hyle/container/pod_vector.h",
+          "sha256": "8b933769d0123a3c320007ae6bd0f98e3537d7700a622adad5b5630dd012e387"
+        },
+        {
+          "path": "include/hyle/container/ring_deque.h",
+          "sha256": "e588950a503951eda12b2ba7e4e3123eaf38b74cf7c4f0262b88bacc018ab3c3"
+        },
+        {
+          "path": "include/hyle/container/sharded_queue.h",
+          "sha256": "2bb473724a1cd6011f0e0183c69239fa5b5d8f68dd9343abf5e011825a540a61"
+        },
+        {
+          "path": "include/hyle/container/small_vector.h",
+          "sha256": "cd04f94cac8c7be603600dfeb2a343a88a576bb5230c914d6d38ae5676b99cee"
+        },
+        {
+          "path": "include/hyle/container/sparse_set.h",
+          "sha256": "02ade678ec0254381c5669fd0913a7ca02785fb8df939e82efeefa272a4f80b3"
+        },
+        {
+          "path": "include/hyle/container/spsc_queue.h",
+          "sha256": "25b7da4ed5c9988309d7d09af4efe395f56a9c4ba29847b860ef22116a5790f7"
+        },
+        {
+          "path": "include/hyle/container/static_vector.h",
+          "sha256": "d7531ee32750aeabdc8699893853da0caf80fa27469b69ab5caaf270dfdafc33"
+        },
+        {
+          "path": "include/hyle/container/string_algo.h",
+          "sha256": "75554759c316066e71834347cb6fdbed2225acd388bcd78d4325652fde175a16"
+        },
+        {
+          "path": "include/hyle/container/string_interner.h",
+          "sha256": "c08e1231cde8cdde39dd2509a967981bbfdcb067ea7f8d71cf75739e2a36463c"
+        },
+        {
+          "path": "include/hyle/container/string_view.h",
+          "sha256": "8ad22af887ff7e565f57ca20be9760fc95547c2146fdefbc35812fece0d347f6"
+        },
+        {
+          "path": "include/hyle/container/unbounded_queue.h",
+          "sha256": "db346ccfc311529b5cee6d8f2ff23662031e4171049a6cae9543c3c3ac5e64f6"
+        },
+        {
+          "path": "include/hyle/container/visibility.h",
+          "sha256": "431ce63538dd91c9f32742f654ab3f8eaaa6cfc16f004ea6bb8b0b171063d332"
+        },
+        {
+          "path": "include/hyle/container/work_stealing_deque.h",
+          "sha256": "a0fe74f0d2969e24a0ccb18a87913ee4b2a8384b60595e02559e9b1324403689"
+        },
+        {
+          "path": "include/hyle/container/ws_fifo_queue.h",
+          "sha256": "70208b3484fc6c8b0603f45a6e63f84d27cf36af3f743a18760efb88af2dc4cc"
+        },
+        {
+          "path": "include/hyle/core/assert.h",
+          "sha256": "5596728bc220ea27696be4f25e2f9eb9cf2705930f8eb0461747c4a862615790"
+        },
+        {
+          "path": "include/hyle/core/cache.h",
+          "sha256": "96ec55f30f1e6ec2e46c32b0ec01063e2feb0d0ee72ee7a353d1cd29e03e7048"
+        },
+        {
+          "path": "include/hyle/core/compiler.h",
+          "sha256": "e31151f0ed73c532e464c6568483acecd80a2da9c1ee7afc7e081db87d6fb687"
+        },
+        {
+          "path": "include/hyle/core/detail/compiler_attributes.h",
+          "sha256": "263c7691f9984073e198b69328092330bf572195113d3994d1ab54fe4564d88a"
+        },
+        {
+          "path": "include/hyle/core/detail/preprocessor.h",
+          "sha256": "1d9872ef98db007dcbed7e0128771244640e1de4092830d52a7a83537f98eb84"
+        },
+        {
+          "path": "include/hyle/core/environment.h",
+          "sha256": "3d289765b1b677499a444b38d1dbe366bb5e99f89fcb7670af2d08106fd958fa"
+        },
+        {
+          "path": "include/hyle/error/format.h",
+          "sha256": "2a10b7dfa4dafd3e5c7af610fa50a4ba6bb2520e5409fd01038871875261fa68"
+        },
+        {
+          "path": "include/hyle/error/result.h",
+          "sha256": "7718409ab2854eb76959215b356bf8077007134d87db1a24f9384a9b5deff2b5"
+        },
+        {
+          "path": "include/hyle/error/status.h",
+          "sha256": "e45875924420148b2af5d6195b1cdac86ef40d312fa963f1b3839acfbe071575"
+        },
+        {
+          "path": "include/hyle/error/system_error.h",
+          "sha256": "b02c11cd7cea737899d72d9dcea93f246fee021bdfc697ab6d744b0cc26d0f0c"
+        },
+        {
+          "path": "include/hyle/graph/apple.h",
+          "sha256": "1da9da16a29e46222562a2985a22180028e70368ee1f57427e966c066b03156e"
+        },
+        {
+          "path": "include/hyle/graph/batch.h",
+          "sha256": "ab0eb43aec5dfb4018ec81c55c885d07f5c8783fe1e1f9983f5def7fa92888b8"
+        },
+        {
+          "path": "include/hyle/graph/compile_report.h",
+          "sha256": "c42c30527d581975c49ddfebb182b0ae7928d799eed91172cb631779a2ad5b4f"
+        },
+        {
+          "path": "include/hyle/graph/cpu.h",
+          "sha256": "207f78caafbec1e73966f0ead5563b51aa2aaf3e5eccabde15b6a20447a25f99"
+        },
+        {
+          "path": "include/hyle/graph/cpu_apple.h",
+          "sha256": "645f557d8a6fefe3f69bc25f37c03e637ed28311fb7817bfb8de0e5373b0eb32"
+        },
+        {
+          "path": "include/hyle/graph/cpu_cuda.h",
+          "sha256": "b3fe45dc75ce6c999857bca3130816132018eb3c845e0c889d577165d8f1b098"
+        },
+        {
+          "path": "include/hyle/graph/cpu_vulkan.h",
+          "sha256": "9b4c99f9ef9948f85435de4415a788b83d17a00752664074edf462addc6693f6"
+        },
+        {
+          "path": "include/hyle/graph/cuda.h",
+          "sha256": "059264fb0360cfd298ea7e543ac153b334209e04ab90f0e5a66ea2857f4986e3"
+        },
+        {
+          "path": "include/hyle/graph/detail/lease_submission.h",
+          "sha256": "8efde18219e777f49026fabe884956500377ffb4f9d6034d8631433d55550684"
+        },
+        {
+          "path": "include/hyle/graph/detail/region_access.h",
+          "sha256": "ab9974ad248e491e47659c5020b0cdc337156cc42f7e24feb525ef0557bcfc13"
+        },
+        {
+          "path": "include/hyle/graph/executable.h",
+          "sha256": "8494f631596c1fefa336385fb909e9a9baee7708549abd4c8b5e8ce1a203e75f"
+        },
+        {
+          "path": "include/hyle/graph/graph.h",
+          "sha256": "c7a93ccf9fd1c86fb9dec286e7d3345aabcb1810c2fb6793a66093480a5a2136"
+        },
+        {
+          "path": "include/hyle/graph/leased_invocation.h",
+          "sha256": "093f1c04307abcc885c9d8ba0319531d10848ef500293da2289b6b038679ee75"
+        },
+        {
+          "path": "include/hyle/graph/native_variants.h",
+          "sha256": "59132374915cb4ca88528952f4aa4c0a091e6660e4a128c49e4f503d21f4a96b"
+        },
+        {
+          "path": "include/hyle/graph/providers/ggml_cuda.h",
+          "sha256": "9e809a554d9958445c74ac60fd063a6ceb4b35f9efcb603ed4374b0e9db24890"
+        },
+        {
+          "path": "include/hyle/graph/providers/onednn.h",
+          "sha256": "f593cd6715b39ab2deb01eb4b1d5cbaac74988579a60927445161d25de91bf7f"
+        },
+        {
+          "path": "include/hyle/graph/region_provider.h",
+          "sha256": "22b75e8e11f0763324385b607a14abec27ce1080d1302bfd9cdc8e9a99734d6b"
+        },
+        {
+          "path": "include/hyle/graph/visibility.h",
+          "sha256": "77700b210193f978cdec750c765fbf728e824409ace0566c1d870785fcb97005"
+        },
+        {
+          "path": "include/hyle/graph/vulkan.h",
+          "sha256": "08184fd1767ac709d98cec7eda2883b0856247d409375487761aec8c52d125b7"
+        },
+        {
+          "path": "include/hyle/io/buffer.h",
+          "sha256": "a8f184f572e7d7336bbeddbd6fdf0361173f8e0dd5e96e0ab4b028c9c64982cf"
+        },
+        {
+          "path": "include/hyle/io/capabilities.h",
+          "sha256": "747420b1f218e059f1f64b83b40ff20729899effcb7a5e82b4cc4297752605e8"
+        },
+        {
+          "path": "include/hyle/io/detail/io_context_access.h",
+          "sha256": "898fe60ba5e8604fba78a03d3468be1c9a89b1a13e6f43208fbe80e601214061"
+        },
+        {
+          "path": "include/hyle/io/detail/io_uring_access.h",
+          "sha256": "ef8e452cd95e2036769dc6b456ae477a4206201a2177a58bd9da0584fdafed41"
+        },
+        {
+          "path": "include/hyle/io/detail/net.h",
+          "sha256": "4b6fa8a2a90cc79b06fb275343069d5b466cee78abfd98756cdb71ceaadcfc14"
+        },
+        {
+          "path": "include/hyle/io/detail/net_budget.h",
+          "sha256": "558f0ac110e788bcf845ef9491fe5b0687ecd942913e03a1d68727c9721cb44d"
+        },
+        {
+          "path": "include/hyle/io/detail/net_cancel.h",
+          "sha256": "de65440fe690430e89a926bd8b139f0d13aebb57463843178480d2c00a153450"
+        },
+        {
+          "path": "include/hyle/io/detail/net_multishot.h",
+          "sha256": "7ea7c900fa1c432f07b96517d1070ee5f43cadad409046ab9540b334a6ac4cd9"
+        },
+        {
+          "path": "include/hyle/io/detail/net_timeout.h",
+          "sha256": "de05d4505d9d7cdac9a0a80809b6b4aef12fd96b994e2e01e05f90fe5843bb9a"
+        },
+        {
+          "path": "include/hyle/io/detail/proactor.h",
+          "sha256": "f0a70581e15132e686c255bbbff738ea2788750eb8c3f9afb2749b845fe8ab21"
+        },
+        {
+          "path": "include/hyle/io/dns.h",
+          "sha256": "4d9ef11b85075476747bc380cc6a68b4f5043dc955e45645883e8ffaa5ccb04c"
+        },
+        {
+          "path": "include/hyle/io/endpoint.h",
+          "sha256": "c95e2daf18be56a1642ce590eed0a6671346c3205395c059d7145dd12864dd81"
+        },
+        {
+          "path": "include/hyle/io/file.h",
+          "sha256": "385736644f18017bcc0f84c46e5de86505104f2369b3035fbea27e3b8a1f1106"
+        },
+        {
+          "path": "include/hyle/io/http.h",
+          "sha256": "f29a6004349dcceaef1abe0902d7adcebccf9c68e4675e6b4cd84b02d036ecc6"
+        },
+        {
+          "path": "include/hyle/io/http2.h",
+          "sha256": "ba54e113f31e0d2bb7dfed11c21b33513d74944819b21a11160ad1aec3185c61"
+        },
+        {
+          "path": "include/hyle/io/io_context.h",
+          "sha256": "97447d869458169ac8aa92e98b9a5e77ce49233d87568ff329d82c760b9b6beb"
+        },
+        {
+          "path": "include/hyle/io/io_uring.h",
+          "sha256": "985672fb3aea8f22e4c2c76ba31e19dafd142822aea38b50d08f20f7e9f9732b"
+        },
+        {
+          "path": "include/hyle/io/local.h",
+          "sha256": "e2cd6019fb918a1559f2108b90dd16b972e9619efa3d78d56fe532773a27850a"
+        },
+        {
+          "path": "include/hyle/io/operation.h",
+          "sha256": "780ac4f2b61e2cf3d2bef2fa852e48b6b9789f6b156a1067599e385ca0d944d6"
+        },
+        {
+          "path": "include/hyle/io/signal.h",
+          "sha256": "c61e75cc31f6ff14a26b83d4e311d0cffb305449e1c50d958e78db0dc0068f24"
+        },
+        {
+          "path": "include/hyle/io/tcp.h",
+          "sha256": "dd2312d729e3a993ea73b4548ee67776c88f0717848302926837805df30f73c9"
+        },
+        {
+          "path": "include/hyle/io/tls.h",
+          "sha256": "103a5910bb24e2b506e26be646ca2780624705c492785643e78bd32f7cd298c0"
+        },
+        {
+          "path": "include/hyle/io/transfer.h",
+          "sha256": "04d19cb22e31bf5ed3afd993c95920bf21e7eab80486bccac44fa6e8170131a7"
+        },
+        {
+          "path": "include/hyle/io/udp.h",
+          "sha256": "db88bcb39425ef71e13a7657f1d4136c2da10b45c2b44d859d5e5c386edadb65"
+        },
+        {
+          "path": "include/hyle/io/watch.h",
+          "sha256": "e910e1bcc22425de7a86f7505cdf2359530882efd555f492feb53218c0a643f4"
+        },
+        {
+          "path": "include/hyle/io/websocket.h",
+          "sha256": "e4d0129d521bb1a5922bf2da289be8bc7fb0d38645e32f2a7e06035ed0c4eb4b"
+        },
+        {
+          "path": "include/hyle/math/scalar.h",
+          "sha256": "10ca4013013fafc5383310bb0128ce6f11f389e77c815648b8c48bb06a00210a"
+        },
+        {
+          "path": "include/hyle/mem/alignment.h",
+          "sha256": "3ae961e6556cf2a3e5e56f5de9c80db224c7a50a591ce998d81b347a8c4be9ae"
+        },
+        {
+          "path": "include/hyle/mem/allocator.h",
+          "sha256": "8beaac413632fdc4409c2384f1cda7d6d5e75b72aafad73d188e13dbfa50781a"
+        },
+        {
+          "path": "include/hyle/mem/arena.h",
+          "sha256": "186d9f90620d9b81688c568cb0bcfc1fc0bef9e4a415ea6c99800822a6b7bc77"
+        },
+        {
+          "path": "include/hyle/mem/buffer.h",
+          "sha256": "346a4f810babb8c5dacba49faaf57903d998a3cbb49af12b8c62acc85f7be72c"
+        },
+        {
+          "path": "include/hyle/mem/buffer_pool.h",
+          "sha256": "b5bfcd6b861d2b54425c619097fdca65eb5ac6add7f0b443c815784c1e661951"
+        },
+        {
+          "path": "include/hyle/mem/fiber_stack.h",
+          "sha256": "d53e766fdac6fe9ee6fa3d0ba6b730f4fe9aa7d28c43a6d0cd60a0c5131bad30"
+        },
+        {
+          "path": "include/hyle/mem/fixed_pool.h",
+          "sha256": "1c7687075438c812a374c70df955c510cadc18498d62502fa063cb8b7bf4f828"
+        },
+        {
+          "path": "include/hyle/mem/growable_pool.h",
+          "sha256": "02f73b151d81f4e83d6be1a7929ffae6b9c24b5d6dfbbb63f25bad304e154f3b"
+        },
+        {
+          "path": "include/hyle/mem/heap.h",
+          "sha256": "a1bb4ea396d735d1de598e2d3656014066a80888a41aaf40c8f66a094a5cb2d2"
+        },
+        {
+          "path": "include/hyle/mem/large_mapping.h",
+          "sha256": "4431a447ac72eeea7ad7df59b9c5837c07afb8170f60cf85872d53aeb40ce8c1"
+        },
+        {
+          "path": "include/hyle/mem/large_page_reservation.h",
+          "sha256": "40bd1bf19d7582fca6a2af57c18cdc6b4d0045349bf8912c6d62b0845e9a0ffc"
+        },
+        {
+          "path": "include/hyle/mem/lifetime_plan.h",
+          "sha256": "72277c027d1b76a9c813bcfe7ef3420759274375f5647362ae915e8672bb3b1f"
+        },
+        {
+          "path": "include/hyle/mem/mapping.h",
+          "sha256": "98b1a1ea8c4d85eff4fb8ddeb0fd7a425e7619128c468ae29e11c5e3fbfd05c3"
+        },
+        {
+          "path": "include/hyle/mem/object_pool.h",
+          "sha256": "ddf1379e9dbcbe42f1dab99f3fcc28bac6af86e5dd6f3a818659b865a244a964"
+        },
+        {
+          "path": "include/hyle/mem/pmr.h",
+          "sha256": "bd3c370b8729b5d82eeb62fa86798f020b8ffe22afdbaef023acbe7105e9f38f"
+        },
+        {
+          "path": "include/hyle/mem/pool.h",
+          "sha256": "092acd7e9799aafb99db7c9b3f8d484a609ccc8ad07852e4b49dc068feb7c112"
+        },
+        {
+          "path": "include/hyle/mem/pool_cache.h",
+          "sha256": "992b1684e2409aacb207dff234301a2a39fff9d6a2d4dc28dd02a086210eba91"
+        },
+        {
+          "path": "include/hyle/mem/pool_loan.h",
+          "sha256": "9ad610a96ad71f9ca9eb64241d57e60d036aed6ac939d36fd143a1c1e06fa8c0"
+        },
+        {
+          "path": "include/hyle/mem/quota_allocator.h",
+          "sha256": "a88fe230dc5358ddde6209de96cc61a59e3f6e60d30b9e7534e986fab10224c9"
+        },
+        {
+          "path": "include/hyle/mem/range_allocator.h",
+          "sha256": "ad1b8455a5f940a08e9877526c21feaa2dd19c0344dcad01bd1e423ac898c20c"
+        },
+        {
+          "path": "include/hyle/mem/reclamation.h",
+          "sha256": "5349dd728c5fc371bcd5ac350038fbce8649439d3ce47eb4f0fa40fab8f84a40"
+        },
+        {
+          "path": "include/hyle/mem/region.h",
+          "sha256": "d2e83898337b974a8b70d8bdceff37d4644ef17eaa781a030420430813f64baf"
+        },
+        {
+          "path": "include/hyle/mem/resource.h",
+          "sha256": "3fc711a80803758b4a2cc573ffa5faee0703a7abf8ac3d45e248da257845d51e"
+        },
+        {
+          "path": "include/hyle/mem/shared_pool.h",
+          "sha256": "461e00d3021be144472781aba73ded3c271bf55e548f6ef3cb7cd7ff963e1649"
+        },
+        {
+          "path": "include/hyle/mem/stack_allocator.h",
+          "sha256": "dc64cfd68e49403d359fe96987c8f2c4c39891b2f4f2f7968f7a620a4eaff89c"
+        },
+        {
+          "path": "include/hyle/mem/stats.h",
+          "sha256": "aa52b5b04711711db64bb1b3bb770fe8118f4e436d95c929b8381e49a863a75c"
+        },
+        {
+          "path": "include/hyle/mem/std_allocator.h",
+          "sha256": "adee9ae71753fa27e001b7b71b1d57b61e14f7ebcfdea57bb3993d2a3e9550e4"
+        },
+        {
+          "path": "include/hyle/mem/system_inline.h",
+          "sha256": "989e58ea45a94a6480c45cd1a8c7dc1ecade5507239c0aa9d827ee11d262ce04"
+        },
+        {
+          "path": "include/hyle/mem/visibility.h",
+          "sha256": "c50f284339daa23058f71da43b99404a2c7cf523ccb350509c43b5b00cbcd76f"
+        },
+        {
+          "path": "include/hyle/obs/log.h",
+          "sha256": "166154c2e6ef18a716367f307a4f3c815fad60de0e53c8f95a0e3240d6477b04"
+        },
+        {
+          "path": "include/hyle/obs/log_control.h",
+          "sha256": "2497796458257cb233d17550eaa506fa7e660190f8203ece55a00810a58267a3"
+        },
+        {
+          "path": "include/hyle/obs/metrics.h",
+          "sha256": "6b69268b639d3d271980f71eb7d9990eecc488bbec73d401a25683d8ccd1ad1d"
+        },
+        {
+          "path": "include/hyle/obs/trace.h",
+          "sha256": "be0df49a044a0888d46c6c2411a292fdd04908b7bdc393557b87d68a70cf1f6f"
+        },
+        {
+          "path": "include/hyle/platform/cpu.h",
+          "sha256": "033953ef33ba5fd57c98af540818bb7c82b8189a4ca1e2502e3297dddde48342"
+        },
+        {
+          "path": "include/hyle/platform/cpu_convenience.h",
+          "sha256": "08bc95125239b63678d47571f6dd63e8059ad84af9dc09a0015e308906bbeaaf"
+        },
+        {
+          "path": "include/hyle/platform/dynlib.h",
+          "sha256": "39c8553b815e6af94377c7d9e911c6b03a38757e671d089509b74ff0fec54b3e"
+        },
+        {
+          "path": "include/hyle/platform/environment.h",
+          "sha256": "4b28bf70cc14f979b9a6b5c9a05bf3d3778814354c2a02c45ab312b349b4a5e9"
+        },
+        {
+          "path": "include/hyle/platform/environment_convenience.h",
+          "sha256": "468efe77558862d8801936bb1a175621c969c3113321fde2fbd037c0efdff117"
+        },
+        {
+          "path": "include/hyle/platform/fs.h",
+          "sha256": "2af351149fc82762267b89303439ef71626a2eb541d1922ff6f66014136a9ffa"
+        },
+        {
+          "path": "include/hyle/platform/fs_convenience.h",
+          "sha256": "338f513e95c69c6c78b2d71f4f442d9905c11b72d3dcf9e10453ece014456385"
+        },
+        {
+          "path": "include/hyle/platform/fs_visibility.h",
+          "sha256": "ab726b37038ea97cdd73ee48531ef78f4c9171cea6ce2c08bc643f7b85de6e8d"
+        },
+        {
+          "path": "include/hyle/platform/host_memory.h",
+          "sha256": "b190afc8630d8dd6a30d6b0b917338a150c5e4a52dfcb1ae1d85897208b72df1"
+        },
+        {
+          "path": "include/hyle/platform/numa.h",
+          "sha256": "e154f229dc7f6f5ceb1c44f20f769204b48bd422e57c5fed1e53c490607b8fde"
+        },
+        {
+          "path": "include/hyle/platform/process.h",
+          "sha256": "8f03d24953d964f8097be427616b7e40845f285a110e62a7d2ca24260c3f83c3"
+        },
+        {
+          "path": "include/hyle/platform/random.h",
+          "sha256": "2d7157339e2c8f2a6db20d6f82a7d33e3464ab066f14b18b2ca8800acaae6b04"
+        },
+        {
+          "path": "include/hyle/platform/thread.h",
+          "sha256": "fe5d5dd5ff4a7190f9f9d98e5cbbf924a6d44ce62c30d257556b96ff6f711d1d"
+        },
+        {
+          "path": "include/hyle/platform/thread_convenience.h",
+          "sha256": "f0d0c6e5b5a7f0943bb35f26b5ecf1ef8c90eea7a98c227a70a60ce2d6ae2eda"
+        },
+        {
+          "path": "include/hyle/platform/thread_visibility.h",
+          "sha256": "e81f90677f996179981bfd377cffa4fb5d439198afb813992f7a9881752aee87"
+        },
+        {
+          "path": "include/hyle/platform/virtual_memory.h",
+          "sha256": "1b01086d44f330a592a5d3b4946fb213e485095dce904db99bb71103e2a578b8"
+        },
+        {
+          "path": "include/hyle/platform/visibility.h",
+          "sha256": "49b4328d0b32ba9d211f2ce49b7b9ffa217baeff20a4ab855f8ffb7f874a781b"
+        },
+        {
+          "path": "include/hyle/platform/wait.h",
+          "sha256": "460fa7b1cab2f50b65b37a3f738cf0065bb607cde34cabf975cecc6e88f8d61f"
+        },
+        {
+          "path": "include/hyle/process/process.h",
+          "sha256": "dc9d642bc022eea3571727ff92fa3ded696c2c2c544fc588758035334fe0386a"
+        },
+        {
+          "path": "include/hyle/sched/blocking.h",
+          "sha256": "470034ee8a224d651c9947fd7d4a0627b1b8b6a929d87dca19fda4df2d673c9d"
+        },
+        {
+          "path": "include/hyle/sched/bulk.h",
+          "sha256": "9db1afd12f5ba19e6a20a89f35d3283b8fea082536d064e15cfcf885cd073458"
+        },
+        {
+          "path": "include/hyle/sched/cancel.h",
+          "sha256": "11cd27341282367f7d366e7a802b09f0699c868903bdc5657ac59388b2a8b11e"
+        },
+        {
+          "path": "include/hyle/sched/coro.h",
+          "sha256": "8694732bb1a069fde73f0359399b13f893d41c6981800f05cd824b293d93df54"
+        },
+        {
+          "path": "include/hyle/sched/detail/integration.h",
+          "sha256": "faac8fa8488a2a29f8613b2741959461c03bc0d72d5cfc6e7cb0058c051879bb"
+        },
+        {
+          "path": "include/hyle/sched/fiber.h",
+          "sha256": "906427614832e3653d3ca78913b7b4cb7ef357fa09a5ba475a7bc0f650386318"
+        },
+        {
+          "path": "include/hyle/sched/join.h",
+          "sha256": "ddff411dbf716c7fa1566ef115e8ddbe8ab010f8db701d82c6ccfee4077f8df4"
+        },
+        {
+          "path": "include/hyle/sched/priority.h",
+          "sha256": "2e86acbc6a9f8b7d80a9692682be4eca2340f132aacec76b3456a90f2d9aee1e"
+        },
+        {
+          "path": "include/hyle/sched/scheduler.h",
+          "sha256": "38a0dd5081479ddb3dc41b149be84bbedb8928cfbf67d9bf6b38f8ccf9354c5b"
+        },
+        {
+          "path": "include/hyle/sched/sync.h",
+          "sha256": "dfcc2c05e0205a22ce42634643aec65ccf85eda7fccae40c7a353fb6ed1d56d5"
+        },
+        {
+          "path": "include/hyle/sched/task_scope.h",
+          "sha256": "0cf2d97ee6b9578e3b95e2126cdd90f47c35c83018722cb8f394bcebb1ca0bdd"
+        },
+        {
+          "path": "include/hyle/sched/timer.h",
+          "sha256": "29c47e9eb3da00c19f9620d64c5cb572d6397b3625eab79ed75d7a16f8fe46c3"
+        },
+        {
+          "path": "include/hyle/sched/waker.h",
+          "sha256": "cc89173f57dd37373899ad0955c37c203108fa2ff0932136f3451d657db2d0d7"
+        },
+        {
+          "path": "include/hyle/simd/bitpack.h",
+          "sha256": "0f097b727d8989a7f0bdb9cf3dcfa6bdb7618164bacf851f9fd75e93b164ea90"
+        },
+        {
+          "path": "include/hyle/simd/dtype.h",
+          "sha256": "ef351c21ddf58309cd1bca6c7558862eb10fd53934194065e3a9d7d62f590ae8"
+        },
+        {
+          "path": "include/hyle/simd/dtype_ops.h",
+          "sha256": "67f53a3095f2a27fda8445c378d3154385fba06a70b28408cb082be333d8a822"
+        },
+        {
+          "path": "include/hyle/simd/fat_kernel.h",
+          "sha256": "82ebf7c6ab617b67bd18f2d2544f12c1900abe233d720fbb8423a0b1ff3dd989"
+        },
+        {
+          "path": "include/hyle/simd/math.h",
+          "sha256": "fbc4f22a4bd329c37fdb7cf08b6be2f56ba24cb1fbe2781bd1babf11c5c50dd6"
+        },
+        {
+          "path": "include/hyle/simd/narrow_ops.h",
+          "sha256": "98f9b01e898fc2f38deb0951e2f6c771ccb00c17e1882749ab1d9ab0a4df2298"
+        },
+        {
+          "path": "include/hyle/simd/ops.h",
+          "sha256": "7ca600d232b2dfcf0b0b3143678818a250d8aba2216febaee0438e1b94c1fd45"
+        },
+        {
+          "path": "include/hyle/simd/provider/hyle_winners-inl.h",
+          "sha256": "21d49f435351af7fa4af0387cfbe54fe6a9c32158140a45b5a40b0a47cf8a73e"
+        },
+        {
+          "path": "include/hyle/simd/provider/hyle_winners_avx2-inl.h",
+          "sha256": "9d2ad0bf893ad657e1e0c2de26755fcfd52043faf415b5a7742f9e63478f9ca6"
+        },
+        {
+          "path": "include/hyle/simd/provider/hyle_winners_neon-inl.h",
+          "sha256": "d1cf28563cc3bbf84c7adc0eba0602502be74d26064499bfcc44cef72e55cc6e"
+        },
+        {
+          "path": "include/hyle/simd/provider/operation_manifest.h",
+          "sha256": "78091576525c08d9f3400475c12208d1a57a824f6e563222ab3ce9b7009582c9"
+        },
+        {
+          "path": "include/hyle/simd/provider/route.h",
+          "sha256": "52891b2187eb9aaa0c53ae56ce29d75b1ef7066a260bb54b020d26ab79ce7e46"
+        },
+        {
+          "path": "include/hyle/simd/provider/routes_generated.h",
+          "sha256": "044652c75aee97f8fd4bd1214c78b643a56cdc8343b59fb7026c79ed7571491c"
+        },
+        {
+          "path": "include/hyle/simd/random.h",
+          "sha256": "b258ce03e1687fffbb898efdc0be62ec1883344b7399248d22484a31583655f3"
+        },
+        {
+          "path": "include/hyle/simd/runtime.h",
+          "sha256": "9bce97120633ed2b1b9e17e040a8b8726ab3800ffb8c9d63d9c13ffaedb7e166"
+        },
+        {
+          "path": "include/hyle/simd/scan.h",
+          "sha256": "c3712705333942794196603254345f9b8860e7398d64fb497aebf33c543eaa57"
+        },
+        {
+          "path": "include/hyle/simd/search.h",
+          "sha256": "b1a753bcddefeb3a6dbe74e821be15f80f094777a3ce84a00464e59bb3878ff2"
+        },
+        {
+          "path": "include/hyle/simd/sort.h",
+          "sha256": "5d3b5cd320fef2e6922e6ca7b68a52adcf7895828aa2e96bdb521ecc9396005a"
+        },
+        {
+          "path": "include/hyle/simd/target.h",
+          "sha256": "c6f6b7e3b4f9b1cca02b3957d4d0ff59e352c0da791c08aa16b5442e6c6e22b8"
+        },
+        {
+          "path": "include/hyle/simd/types.h",
+          "sha256": "e79863029c8036f918f36f93dd0267b8d42857516e0d74678584d75f8926abbd"
+        },
+        {
+          "path": "include/hyle/simd/visibility.h",
+          "sha256": "e6220681c938d0b898165975736f412d3025050e10597b57f62ee7b49799eb03"
+        },
+        {
+          "path": "include/hyle/time/clock.h",
+          "sha256": "78febfa3783722c360f4ad548b7b28c750296666c7897434918d8489a3a47f4e"
+        },
+        {
+          "path": "include/hyle/time/common_timeout_queue.h",
+          "sha256": "cc74aaf465f7965bd913f32225a0c0ee5dd3bf2aa012406b246cf86a0698d3a7"
+        },
+        {
+          "path": "include/hyle/time/native_interop.h",
+          "sha256": "b435bd3f7ba07dbf575dc0de837e959f854aa369df6b5f0d136bcbc855cd2ddf"
+        },
+        {
+          "path": "include/hyle/time/timer_entry.h",
+          "sha256": "7c4e58dc71513648edeeaf2e3eda9d1b2126356054332ac911c6b2a9743bfa83"
+        },
+        {
+          "path": "include/hyle/time/timer_queue.h",
+          "sha256": "c902b7e6ce94409f47a09568ec0bff309ffae8059e6b8253a6c0cb94c4d79330"
+        },
+        {
+          "path": "include/hyle/time/unix_timestamp.h",
+          "sha256": "bcd6bdc860d6ee1e73004ebd15e3b2b2a60ca3dff7a0818deecf9420f95b4496"
+        },
+        {
+          "path": "include/hyle/util/borrow.h",
+          "sha256": "c8940170d33e227c0861fafa63334502b00fa78cf86a808777d2555c0ab20cac"
+        },
+        {
+          "path": "include/hyle/util/demangle.h",
+          "sha256": "3c13b4642febce9e23e238274a3a4a1b0fe7b964774170425397bbe460655154"
+        },
+        {
+          "path": "include/hyle/util/function_ref.h",
+          "sha256": "e06e706944fd0a6a05ff21f3abd863ca47595775c8cdaf454f1182545643e304"
+        },
+        {
+          "path": "include/hyle/util/random.h",
+          "sha256": "28463daa826c69f453b5a9f2081b174002bcccc58394cb5833fdfe92757425df"
+        },
+        {
+          "path": "include/hyle/util/ref_counted.h",
+          "sha256": "47cc650a3bb704ace90bd718fc3e8f0b9d10485a32009551e3e7f456d9f5b5d6"
+        },
+        {
+          "path": "include/hyle/util/registry.h",
+          "sha256": "1682ce7a2ebae5f138f8e54cdd0e24a22792ae13e4bb8a5c0325916502aa8b5d"
+        },
+        {
+          "path": "include/hyle/util/scope_guard.h",
+          "sha256": "eec76c62b7b3035c978182a31405e145e3cd1c9faa4ee3f15d04e4bf91cdc13d"
+        },
+        {
+          "path": "include/hyle/util/spin_lock.h",
+          "sha256": "2de2d1d1718fdd07a46335fdda7f61bbf2b84f214a9f3ccbc661707141095fce"
+        },
+        {
+          "path": "include/hyle/util/type_name.h",
+          "sha256": "ff992e70082c80d595b024a73d7e1d9470b1e779c6c2529937c01a924d71a066"
+        },
+        {
+          "path": "include/hyle/util/unique_resource.h",
+          "sha256": "4a10bf96cef94563c068c4d06b194b20efbfdf19b468681375d148d8f685f4e4"
+        },
+        {
+          "path": "include/hyle/version.h",
+          "sha256": "eb910c915e9ea9bf52c69d0e1cd7fef16dba76bac8916cf42b895c92b7fa6dea"
+        },
+        {
+          "path": "include/hyle/visibility.h",
+          "sha256": "c6207853e7c4c90bdc9ebde3157581eb88b4a59c6e3be87e7aecfafd35da7165"
+        },
+        {
+          "path": "src/compute/backend_internal.h",
+          "sha256": "6154f3f1241a80e450988de68be6e9ecf7c3dc760eeba604754bd74a14aaa18a"
+        },
+        {
+          "path": "src/compute/completion_internal.h",
+          "sha256": "a1b80c32399f0b8c3bfa0927d72f94957f99abd30a134e78e3d226161e75cdec"
+        },
+        {
+          "path": "src/compute/context_state.h",
+          "sha256": "7f14aba048580f6e82f3b28e6bdfe842fe5487aaebce0daf5c00c6a593e4ff46"
+        },
+        {
+          "path": "src/compute/native_route.h",
+          "sha256": "fe7f47f962414b1ffc77284ca91e641d8df58c16018c80ca9f21cb4c04940ae3"
+        },
+        {
+          "path": "src/compute/prepared_state.h",
+          "sha256": "96de58e29bf49a1b183a7a7f9a0372a7650b189ce7b4ba7448681327b38b5ebe"
+        },
+        {
+          "path": "src/compute/provider_internal.h",
+          "sha256": "d95fa551c243cf36fc69963aa785fee7b21eefa674fce59bf4760b06e75efb92"
+        },
+        {
+          "path": "src/compute/shape_domain.h",
+          "sha256": "2c50da6b169b550e737a4dd95d5be66ab5803ac1843ba628ebc5cc37f2507846"
+        },
+        {
+          "path": "src/compute/shape_program.h",
+          "sha256": "1d58ee387d7c7bb21e14c7f9e6330ffa544aaf5eca91d3182b2c08f2927169f1"
+        },
+        {
+          "path": "src/compute_backend_cuda/CMakeLists.txt",
+          "sha256": "33b7f50087ce639f3c234ce34122616ca13328c761ebd0e61ab97ceca29b1d2a"
+        },
+        {
+          "path": "src/compute_backend_cuda/HyleCudaSdkConfig.cmake",
+          "sha256": "ced73b57d23bb9505c818b681910afde1ec3a37c1e9f7fe38c2301839159f1eb"
+        },
+        {
+          "path": "src/compute_backend_cuda/cuda_backend.cc",
+          "sha256": "10c52cc53f313ee850d71f24b06277fb02f483c82a84c9d143c0f908b31712f5"
+        },
+        {
+          "path": "src/compute_backend_cuda/cuda_batch_transfer.cc",
+          "sha256": "8bff62fcf237cedb424b4916e283f36d438c3c9fe9876363f7efc9bdb8b4ec8a"
+        },
+        {
+          "path": "src/compute_backend_cuda/cuda_device_status.cc",
+          "sha256": "25920ddf25f1dc045f600f450113a48fd3cd10a70757c580b5dbff568e3ed29d"
+        },
+        {
+          "path": "src/compute_backend_cuda/cuda_internal.h",
+          "sha256": "5ca7d7a0f154ed0c475b7acff918ba529af82f8bbefd3e3c5db3cf756079f402"
+        },
+        {
+          "path": "src/compute_backend_cuda/cuda_memory.cc",
+          "sha256": "8475aafd9c1112189a50025afd700775ea3e048c75bf19a0f04f04f65253aac2"
+        },
+        {
+          "path": "src/compute_backend_cuda/device_status_kernel.cu",
+          "sha256": "8cbf208c1030255067bed53c78a2157c751e5fbc1e0a832c28fdf5970ed6a0ae"
+        },
+        {
+          "path": "src/compute_backend_cuda/device_status_kernel.h",
+          "sha256": "ef331996915f9881e62d2f4fb2c4a3aa77440463ddd13320a7f34461fee70304"
+        },
+        {
+          "path": "src/compute_backend_cuda/driver_release.cc",
+          "sha256": "4beb3a0fd098e12989e964844459b92122b7523b28c3fbe4d993c16f94ef4ee2"
+        },
+        {
+          "path": "src/compute_backend_cuda/driver_release.h",
+          "sha256": "5a6520d985cf44d39b8fbe49ed4bf1d2153ddded186073d09033f7f3951aa6da"
+        },
+        {
+          "path": "src/compute_backend_cuda/native_context.h",
+          "sha256": "f92b1cbb8b6ea2f637abfb3422844687672ec14b8daba27cb3817f968f4a7d38"
+        },
+        {
+          "path": "src/compute_backend_cuda/resource_admission.h",
+          "sha256": "7f89aa5e35821f0df991b9a4ea4f54954459a31ba78b6fa4eb9d9b3ee4888954"
+        },
+        {
+          "path": "src/compute_batch/CMakeLists.txt",
+          "sha256": "ea7314ffe7ef7cb42224c5e2c033d2a65f25ab16592331fe1e10b46faf3b822f"
+        },
+        {
+          "path": "src/compute_batch/batch_execution.cc",
+          "sha256": "09c9fb3b55b716cc7f6a1fb15ce14f6b423eadbcb5e4f1b6051d19f2bc59a577"
+        },
+        {
+          "path": "src/compute_batch/batch_layout.cc",
+          "sha256": "7579869decc1e88fc6e21a75b017bc7a92ab5f3d0ac0f5a05172c42263df9fd7"
+        },
+        {
+          "path": "src/compute_batch/batch_materialize.cc",
+          "sha256": "ea6ca1a38691dfec72a6e9730a4c97d70a56394092aedb7fc37e62a1479edfda"
+        },
+        {
+          "path": "src/compute_batch/batch_paged_native.cc",
+          "sha256": "d0276acb6dc6a0212402c26ecafc356b7799fc0bf39b02930b9e677ce0d97fda"
+        },
+        {
+          "path": "src/compute_batch/materialized_invocation.cc",
+          "sha256": "860a21558c660eba7c581507b62e89c5a75c57db7547c13c7d860c454b7b272a"
+        },
+        {
+          "path": "src/compute_batch/paged_arena.cc",
+          "sha256": "ed18a28662a8c7424351f83227341d29944ded1c035095718c441496d7bd63e3"
+        },
+        {
+          "path": "src/compute_provider_flashinfer/CMakeLists.txt",
+          "sha256": "f00074ea6d0b250113366d9fbcb781683e381c8c9fb05de75c3ec0628ffb4671"
+        },
+        {
+          "path": "src/compute_provider_flashinfer/flashinfer_provider.cc",
+          "sha256": "ca6d5b837e1e8e03703768ffb12b1b899193817c41acfaccfed73f3dd8aabe1a"
+        },
+        {
+          "path": "src/compute_provider_flashinfer/native_attention.cu",
+          "sha256": "ee2638f5b4cb9f7f25be71027ab2e0f12a3e0229a6da574ef10e76be4d724146"
+        },
+        {
+          "path": "src/compute_provider_flashinfer/native_attention.h",
+          "sha256": "f8efa77d2aaa406a9992f5921c1dab0e675eaa6edac3105f16e683248bb724d7"
+        },
+        {
+          "path": "src/compute_provider_flashinfer/native_batch.cu",
+          "sha256": "f4ed4d922d3151728593058538feb534fef6546b11c79560b0faf7dc71b705e7"
+        },
+        {
+          "path": "src/compute_provider_flashinfer/native_batch.h",
+          "sha256": "49949837c8a0390683b5f8630b0e4a85c47db0c5580eff875dd07a9b51ba60ff"
+        },
+        {
+          "path": "src/compute_provider_flashinfer/native_cache.cu",
+          "sha256": "62ace94e0809144aca540fa317f72e9a2bc2b1d29b5099ef15048d3da6b92858"
+        },
+        {
+          "path": "src/compute_provider_flashinfer/native_cache_encoder.cu",
+          "sha256": "d5cd11c34b51751d215bdfa294f972d6393d5eb0d67dd076482119975bb6bacf"
+        },
+        {
+          "path": "src/compute_provider_flashinfer/native_cache_encoder.h",
+          "sha256": "d06025695dc4a03cafbc53c7ef802bca63b5881ec537f6a40a41cdeed7f8513d"
+        },
+        {
+          "path": "src/graph_batch/CMakeLists.txt",
+          "sha256": "60abda27d21dbb3c3dd16322367c674956057d27ef5efc5c3fdc8b55122101dc"
+        },
+        {
+          "path": "src/graph_batch/batch.cc",
+          "sha256": "a44ec69af0ffbcd4329f417e8c16d731b1faa37025f52aa01dca0fddc563cf7f"
+        },
+        {
+          "path": "src/graph_batch/materialized_invocation.cc",
+          "sha256": "f1e03803924b84b160512ec4e84f44b6a85e52adab9e4b9f8443a5c86df2360a"
+        },
+        {
+          "path": "src/graph_batch/native_paged_node.cc",
+          "sha256": "132b13c0bbd27729d9f8eb7027b8bffb5b517debf1fe3752ddbc189ccba761ab"
+        },
+        {
+          "path": "src/graph_batch/native_paged_nodes.h",
+          "sha256": "e9c2cfab727088e1c4d75c41ec7aafc8b1526a9b7c1334187274bc4eb3f2f94f"
+        },
+        {
+          "path": "src/graph_batch/native_paged_slots.h",
+          "sha256": "e479b0f89273eabd4db8e0db0b5506d42738e95e31cbab08bf9711c40d1b3386"
+        },
+        {
+          "path": "third_party/flashinfer_cache/LICENSE",
+          "sha256": "f3514f24f2b94d09c409abbf4020cf600e4059098c697110eb91a4a2b235fbb7"
+        },
+        {
+          "path": "third_party/flashinfer_cache/NOTICE.md",
+          "sha256": "35cb4a5998aded9e4c8c635c170d137ebbadee1c94232af0082c0693182709a2"
+        },
+        {
+          "path": "third_party/flashinfer_cache/patches.json",
+          "sha256": "1977b83b67495c4aedb391517c2f35c6034ea4b986716591732ddb2612cd1712"
+        }
+      ],
+      "benchmark_inputs": [
+        {
+          "path": "bench/common/perf_process.h",
+          "sha256": "988c5af99fbf3169fb8e828da2dc26452a823bf459eac43716dd91501574e496"
+        },
+        {
+          "path": "bench/inference_resident_sdpa/cpu_placement.cc",
+          "sha256": "2c2f6bd527014df6a0b87a11ba8b8ea060bd4066d341a624d61110adfb2513b6"
+        },
+        {
+          "path": "bench/inference_resident_sdpa/cuda_encoded_p1/CMakeLists.txt",
+          "sha256": "676a7b6d43128255112bf645672ac952d4cb18e8a9c28e823bded6581b469c38"
+        },
+        {
+          "path": "bench/inference_resident_sdpa/cuda_encoded_page_bench.cc",
+          "sha256": "d08de20041bc2d9dd36c9da2078145f68000b5dcbb25b653936fc49b708d658c"
+        },
+        {
+          "path": "bench/inference_resident_sdpa/cuda_encoded_page_native.cu",
+          "sha256": "cb7f2079a32b24b4956860e695d2e8328d04648f1f911a6b912ff30045ed5474"
+        },
+        {
+          "path": "bench/inference_resident_sdpa/cuda_encoded_page_native.h",
+          "sha256": "a29293f53f9400a54f19954e16b8c53dfa5a1e9e881f6e937017e6125df42044"
+        },
+        {
+          "path": "bench/inference_resident_sdpa/cuda_encoded_page_reference.cc",
+          "sha256": "df7603d499d58f009194f46f060c58fe0aed7e4ca778f1c47b5849fea1ec7924"
+        },
+        {
+          "path": "bench/inference_resident_sdpa/cuda_encoded_page_reference.h",
+          "sha256": "ba08471ca3ccc1d8437d418a9b37acce3b989a361a3d96529889325104ba4c5b"
+        },
+        {
+          "path": "bench/inference_resident_sdpa/cuda_encoded_peer/CMakeLists.txt",
+          "sha256": "053eb36bbcab97116b10d91d99e089f0a38ae3e7c6167f39fe3b39cb220b2f15"
+        },
+        {
+          "path": "bench/inference_resident_sdpa/cuda_encoded_peer/verify_source.py",
+          "sha256": "ba81a2eca6c7e4d51295bf56ac48658651478ea532d76b85f0bf28c831ef7a1a"
+        },
+        {
+          "path": "bench/integration/perf_control_bench.cc",
+          "sha256": "a6a6d33d1c83b9b008ef60805fe223984103f46905deae5daef8e0fa08bc1ada"
+        },
+        {
+          "path": "bench/nanobench_impl.cc",
+          "sha256": "40ffacc30949a5a66b651ea492f5666e48e698564824414e5b4f183884f45a27"
+        },
+        {
+          "path": "src/compute/backend_internal.h",
+          "sha256": "6154f3f1241a80e450988de68be6e9ecf7c3dc760eeba604754bd74a14aaa18a"
+        },
+        {
+          "path": "src/compute/completion_internal.h",
+          "sha256": "a1b80c32399f0b8c3bfa0927d72f94957f99abd30a134e78e3d226161e75cdec"
+        },
+        {
+          "path": "src/compute/context_state.h",
+          "sha256": "7f14aba048580f6e82f3b28e6bdfe842fe5487aaebce0daf5c00c6a593e4ff46"
+        },
+        {
+          "path": "src/compute/native_route.h",
+          "sha256": "fe7f47f962414b1ffc77284ca91e641d8df58c16018c80ca9f21cb4c04940ae3"
+        },
+        {
+          "path": "src/compute/prepared_state.h",
+          "sha256": "96de58e29bf49a1b183a7a7f9a0372a7650b189ce7b4ba7448681327b38b5ebe"
+        },
+        {
+          "path": "src/compute/provider_internal.h",
+          "sha256": "d95fa551c243cf36fc69963aa785fee7b21eefa674fce59bf4760b06e75efb92"
+        },
+        {
+          "path": "src/compute/shape_domain.h",
+          "sha256": "2c50da6b169b550e737a4dd95d5be66ab5803ac1843ba628ebc5cc37f2507846"
+        },
+        {
+          "path": "src/compute/shape_program.h",
+          "sha256": "1d58ee387d7c7bb21e14c7f9e6330ffa544aaf5eca91d3182b2c08f2927169f1"
+        },
+        {
+          "path": "src/compute_backend_cuda/cuda_internal.h",
+          "sha256": "5ca7d7a0f154ed0c475b7acff918ba529af82f8bbefd3e3c5db3cf756079f402"
+        },
+        {
+          "path": "src/compute_backend_cuda/device_status_kernel.h",
+          "sha256": "ef331996915f9881e62d2f4fb2c4a3aa77440463ddd13320a7f34461fee70304"
+        },
+        {
+          "path": "src/compute_backend_cuda/driver_release.h",
+          "sha256": "5a6520d985cf44d39b8fbe49ed4bf1d2153ddded186073d09033f7f3951aa6da"
+        },
+        {
+          "path": "src/compute_backend_cuda/native_context.h",
+          "sha256": "f92b1cbb8b6ea2f637abfb3422844687672ec14b8daba27cb3817f968f4a7d38"
+        },
+        {
+          "path": "src/compute_backend_cuda/resource_admission.h",
+          "sha256": "7f89aa5e35821f0df991b9a4ea4f54954459a31ba78b6fa4eb9d9b3ee4888954"
+        },
+        {
+          "path": "third_party/flashinfer_cache/patches.json",
+          "sha256": "1977b83b67495c4aedb391517c2f35c6034ea4b986716591732ddb2612cd1712"
+        },
+        {
+          "path": "third_party/nanobench/nanobench.h",
+          "sha256": "2cfcdd57044fd0ee11d1be2b5dc545781b05c36049613c0089a73b332afd8c4d"
+        }
+      ]
+    },
+    "sdk_artifacts": [
+      {
+        "path": "/root/hyle-scratch/compute-unified/g04-g05-encoded-sdk/cuda-static-ce28-1/relocated/lib/libhyle_compute_provider_flashinfer.a",
+        "sha256": "e8e282ce33f1bf31614c3b3968c38a28e83b4cb91b75075e27d3c91b2a32f2f9",
+        "bytes": 29887960
+      },
+      {
+        "path": "/root/hyle-scratch/compute-unified/g04-g05-encoded-sdk/cuda-static-ce28-1/relocated/lib/libhyle_ggml_cpu_avx2_456172ec_2f41ad48bddb8a44.so",
+        "sha256": "9c9c88e0a38144691ffcc76ae58e71e498bde6a595f25937998d29dbaef0f08c",
+        "bytes": 1808712
+      },
+      {
+        "path": "/root/hyle-scratch/compute-unified/g04-g05-encoded-sdk/cuda-static-ce28-1/relocated/lib/libhyle_graph_provider_onednn.a",
+        "sha256": "030e25a5af182812e702e3dcce7d2129e26fbd44ec136b485cd4ec2ffe13838e",
+        "bytes": 40218
+      },
+      {
+        "path": "/root/hyle-scratch/compute-unified/g04-g05-encoded-sdk/cuda-static-ce28-1/relocated/lib/libhyle_simd.a",
+        "sha256": "f3fa16bf3de16be0d495d89f03aa9ef82cb01fe4dcd4c24173fe22d71ed2437a",
+        "bytes": 3817078
+      },
+      {
+        "path": "/root/hyle-scratch/compute-unified/g04-g05-encoded-sdk/cuda-static-ce28-1/relocated/lib/libhyle_compute_provider_ggml.a",
+        "sha256": "be2d87d6921a5d0da078cc99748610c9d37fffec529b2f967859ee151d8bdd90",
+        "bytes": 230414
+      },
+      {
+        "path": "/root/hyle-scratch/compute-unified/g04-g05-encoded-sdk/cuda-static-ce28-1/relocated/lib/libhyle_compute_ggml_runtime.a",
+        "sha256": "0727278eead1efa0af590dc1f7d8366d1e4b64fda9502a748f9de6be9893ceb5",
+        "bytes": 43452
+      },
+      {
+        "path": "/root/hyle-scratch/compute-unified/g04-g05-encoded-sdk/cuda-static-ce28-1/relocated/lib/libhyle_platform.a",
+        "sha256": "0d1c492a7736e81748f0f71d01150316fce114738314f1bbecde29e77873e9d9",
+        "bytes": 278754
+      },
+      {
+        "path": "/root/hyle-scratch/compute-unified/g04-g05-encoded-sdk/cuda-static-ce28-1/relocated/lib/libhyle_container.a",
+        "sha256": "34b676ef9acb99cfeeb8d9e140dbf92d7e5c418459349bdc4f3e0ff6c4d0ffe4",
+        "bytes": 88210
+      },
+      {
+        "path": "/root/hyle-scratch/compute-unified/g04-g05-encoded-sdk/cuda-static-ce28-1/relocated/lib/libhyle_compute_backend_cuda.a",
+        "sha256": "8817037ca1e03a4c4f58f8489dc27bd2e561a01a1c3fc58052fe13c0d1aff6d7",
+        "bytes": 210280
+      },
+      {
+        "path": "/root/hyle-scratch/compute-unified/g04-g05-encoded-sdk/cuda-static-ce28-1/relocated/lib/libhyle_mem.a",
+        "sha256": "2dbb96910630f92b1b27f943126a1fc3e36f088c8c79e99769167e5c269d6f1b",
+        "bytes": 250000
+      },
+      {
+        "path": "/root/hyle-scratch/compute-unified/g04-g05-encoded-sdk/cuda-static-ce28-1/relocated/lib/libhyle_compute_provider_torch_cuda.a",
+        "sha256": "c1c3165f6ca44221432af8143b8912fc78022e05904455987f59f2bdee4c6331",
+        "bytes": 177948
+      },
+      {
+        "path": "/root/hyle-scratch/compute-unified/g04-g05-encoded-sdk/cuda-static-ce28-1/relocated/lib/libhyle_compute_provider_cuda.a",
+        "sha256": "618ff1eb6035c8833bee1ad4412e6e05adb707ca58c8b33fd521e981b86fccff",
+        "bytes": 26202842
+      },
+      {
+        "path": "/root/hyle-scratch/compute-unified/g04-g05-encoded-sdk/cuda-static-ce28-1/relocated/lib/libhyle_compute_stream.a",
+        "sha256": "8ed380abc1060a102be88c1d39b0ffa8208ba8dffd0740c2091c44df25585c77",
+        "bytes": 165108
+      },
+      {
+        "path": "/root/hyle-scratch/compute-unified/g04-g05-encoded-sdk/cuda-static-ce28-1/relocated/lib/libhyle_compute.a",
+        "sha256": "1c02a19693885e04ad4a782b49cd22c8b3688ab42bf2576ac38c7ba7f8c3e594",
+        "bytes": 821950
+      },
+      {
+        "path": "/root/hyle-scratch/compute-unified/g04-g05-encoded-sdk/cuda-static-ce28-1/relocated/lib/libhyle_mem_vm.a",
+        "sha256": "69ba52f79cf8e830371e551c71a96747fbcd97a9b79e3bb9e539aea78888e2e5",
+        "bytes": 82538
+      },
+      {
+        "path": "/root/hyle-scratch/compute-unified/g04-g05-encoded-sdk/cuda-static-ce28-1/relocated/lib/libhyle_compute_state.a",
+        "sha256": "80cf9cd8d4168aa9bdab6b3542c11a519ff573646951b26185fe3bab26d4b1b2",
+        "bytes": 106518
+      },
+      {
+        "path": "/root/hyle-scratch/compute-unified/g04-g05-encoded-sdk/cuda-static-ce28-1/relocated/lib/libhyle_graph_route_cpu_cuda.a",
+        "sha256": "beca45288a64445ce63544c01697ceeed01f28b08f0dc36effd87f9e3f0d5bf7",
+        "bytes": 84246
+      },
+      {
+        "path": "/root/hyle-scratch/compute-unified/g04-g05-encoded-sdk/cuda-static-ce28-1/relocated/lib/libhyle_platform_thread.a",
+        "sha256": "b2dc2541ee46c2e1d8f5a7201a235b714202d1656b5d37a5223b1ec495f75fcf",
+        "bytes": 29396
+      },
+      {
+        "path": "/root/hyle-scratch/compute-unified/g04-g05-encoded-sdk/cuda-static-ce28-1/relocated/lib/libhyle_compute_route_cuda.a",
+        "sha256": "6f5a2cd7ce268aa989fe4f0e529827f99af6a8abc2f2bfe1c81b9b542b0194b8",
+        "bytes": 143522
+      },
+      {
+        "path": "/root/hyle-scratch/compute-unified/g04-g05-encoded-sdk/cuda-static-ce28-1/relocated/lib/libhyle_error.a",
+        "sha256": "017c25f6a233a5afec65714fdb408b9cca94822a10464018fa21cba3fc8f9e6d",
+        "bytes": 62966
+      },
+      {
+        "path": "/root/hyle-scratch/compute-unified/g04-g05-encoded-sdk/cuda-static-ce28-1/relocated/lib/libhyle_compute_ops.a",
+        "sha256": "830e710c85e2f204fef5ea4c456d7d758eb599b87ee1e16dfad7dc1fe15a56f6",
+        "bytes": 176974
+      },
+      {
+        "path": "/root/hyle-scratch/compute-unified/g04-g05-encoded-sdk/cuda-static-ce28-1/relocated/lib/libhyle_sched.a",
+        "sha256": "7082e46522fcc71ce2eee9192da80491070d1b6c5be758a7fa15deb7ac595118",
+        "bytes": 333442
+      },
+      {
+        "path": "/root/hyle-scratch/compute-unified/g04-g05-encoded-sdk/cuda-static-ce28-1/relocated/lib/libhyle_time.a",
+        "sha256": "31137efe0fdd645d572b1cce86e7d06a78b38a77f57066c5cf1970abd2bcbcc3",
+        "bytes": 22704
+      },
+      {
+        "path": "/root/hyle-scratch/compute-unified/g04-g05-encoded-sdk/cuda-static-ce28-1/relocated/lib/libhyle_io_core.a",
+        "sha256": "db6ef6cef172894fe96dab2265f57f6331c3ce803a9549eaa7caf450b271a892",
+        "bytes": 594824
+      },
+      {
+        "path": "/root/hyle-scratch/compute-unified/g04-g05-encoded-sdk/cuda-static-ce28-1/relocated/lib/libhyle_graph_route_cpu.a",
+        "sha256": "2b7891a21b7f014800fe9df4beda450aa43368de84c5e0433fcb53af19cd7ea0",
+        "bytes": 57524
+      },
+      {
+        "path": "/root/hyle-scratch/compute-unified/g04-g05-encoded-sdk/cuda-static-ce28-1/relocated/lib/libhyle_graph_route_cuda.a",
+        "sha256": "8aad0986e0a584c95f17dc1a1204669e37b520b92e96dc6ab0cf18b07d3cb20c",
+        "bytes": 14094
+      },
+      {
+        "path": "/root/hyle-scratch/compute-unified/g04-g05-encoded-sdk/cuda-static-ce28-1/relocated/lib/libhyle_compute_batch.a",
+        "sha256": "25f98c25641b008476b13d37ded48c6bff357662c92cb47cc5d8afa90bc46279",
+        "bytes": 422548
+      },
+      {
+        "path": "/root/hyle-scratch/compute-unified/g04-g05-encoded-sdk/cuda-static-ce28-1/relocated/lib/libhyle_graph.a",
+        "sha256": "26ee75d81b6867f42dc2958fa1a1a582e325f2da72fdd8b4b36caf0b78587f9b",
+        "bytes": 1007546
+      },
+      {
+        "path": "/root/hyle-scratch/compute-unified/g04-g05-encoded-sdk/cuda-static-ce28-1/relocated/lib/libhyle_compute_provider_ggml_cuda.a",
+        "sha256": "37d60301d154ffce40cc2fc2754a22288cf132806df61a9ce88ea74bb59a20af",
+        "bytes": 112574
+      },
+      {
+        "path": "/root/hyle-scratch/compute-unified/g04-g05-encoded-sdk/cuda-static-ce28-1/relocated/lib/libhyle_platform_fs.a",
+        "sha256": "c51987bdf5587bc9416253c0e571de999bba7944fbca9f03875700f93fb4af29",
+        "bytes": 76214
+      },
+      {
+        "path": "/root/hyle-scratch/compute-unified/g04-g05-encoded-sdk/cuda-static-ce28-1/relocated/lib/libhyle_compute_route_cpu.a",
+        "sha256": "dff9fbaaa6e5715d41f356a648fe8bd3fc12f9c113ae74de077dae0995198c7f",
+        "bytes": 79078
+      },
+      {
+        "path": "/root/hyle-scratch/compute-unified/g04-g05-encoded-sdk/cuda-static-ce28-1/relocated/lib/libhyle_compute_backend_cpu.a",
+        "sha256": "9162e82080bf8240bb3a857defb70e42a8b23452316b8f709463558dafad11ab",
+        "bytes": 19954
+      },
+      {
+        "path": "/root/hyle-scratch/compute-unified/g04-g05-encoded-sdk/cuda-static-ce28-1/relocated/lib/libhyle_compute_provider_cublas.a",
+        "sha256": "0cb66257dcedcfc2f3681f6466b92673e3dd62e7b9e05834ae8145105056989c",
+        "bytes": 20782
+      },
+      {
+        "path": "/root/hyle-scratch/compute-unified/g04-g05-encoded-sdk/cuda-static-ce28-1/relocated/lib/libhyle_graph_provider_ggml_cuda.a",
+        "sha256": "7865ed9876d6900a66a4c6064e034f8320f30402fbcc0456336eb017c02e4137",
+        "bytes": 49772
+      },
+      {
+        "path": "/root/hyle-scratch/compute-unified/g04-g05-encoded-sdk/cuda-static-ce28-1/relocated/lib/libhyle_graph_batch.a",
+        "sha256": "b0df63d32804b3f833a74f76ad862f639112a9641dfe99fb51a62eb7d910e9a0",
+        "bytes": 190294
+      },
+      {
+        "path": "/root/hyle-scratch/compute-unified/g04-g05-encoded-sdk/cuda-static-ce28-1/relocated/lib/libhyle_compute_provider_native.a",
+        "sha256": "4be6749aebb0ea2d283f20f30da861110c081113430aa3618b9b04830450f753",
+        "bytes": 695008
+      },
+      {
+        "path": "/root/hyle-scratch/compute-unified/g04-g05-encoded-sdk/cuda-static-ce28-1/relocated/lib/libhyle_compute_provider_onednn.a",
+        "sha256": "0f080a4646919c535c6d3bf4e488bc27e17e8a6244bf39ca56f0acb0a804d260",
+        "bytes": 112178
+      }
+    ],
+    "sdk_recipes": [
+      {
+        "path": "lib/cmake/Hyle/HyleConfig.cmake",
+        "sha256": "f54b27bb34f1e27900f89f50dda6cdc52247a919f9599117c80666e45dde8cfb"
+      },
+      {
+        "path": "lib/cmake/Hyle/HyleConfigVersion.cmake",
+        "sha256": "d9f95ead4f9d6d91365d659e872794aacbaa4262a60cdc268231920763e3cf87"
+      },
+      {
+        "path": "lib/cmake/Hyle/HyleDispatch.cmake",
+        "sha256": "99942c5e5a8669b8a6c321c963cdb2d0314772c07e5274e3a566aec1f4c3ee70"
+      },
+      {
+        "path": "lib/cmake/Hyle/HyleIsa.cmake",
+        "sha256": "6c2a12a1921fd875fdec90314f70bf98ce6278bab086e96f6a91c1a429a33bc6"
+      },
+      {
+        "path": "lib/cmake/Hyle/HyleRuntimeStaging.cmake",
+        "sha256": "471d95794804c77309e77845beb4b7de4d4bcaa329b58d43bf4299434b935035"
+      },
+      {
+        "path": "lib/cmake/Hyle/HyleTargets-release.cmake",
+        "sha256": "7812011f7c535f071fb74f298b676e455b6c6d63a654ff7ee212277d3c9b3962"
+      },
+      {
+        "path": "lib/cmake/Hyle/HyleTargets.cmake",
+        "sha256": "0b0ed59b88ae61b087367527c541683cf5863eff664a87dd3aecb2215d0d216d"
+      },
+      {
+        "path": "lib/cmake/HyleCudaSdk/HyleCudaSdkConfig.cmake",
+        "sha256": "ced73b57d23bb9505c818b681910afde1ec3a37c1e9f7fe38c2301839159f1eb"
+      },
+      {
+        "path": "lib/cmake/HyleGgmlCpuRuntime/HyleGgmlCpuRuntimeConfig.cmake",
+        "sha256": "cac56b4cb134c126eff1de278761ccc207c5a0950c48d3c5fb561dbde4a9d3f8"
+      },
+      {
+        "path": "lib/cmake/HyleTorchCpuSdk/HyleDependencyLock.json",
+        "sha256": "f1bd968215236a28d504067c22db595d8b54a86eba37a3a7ea9b56017dc3a779"
+      },
+      {
+        "path": "lib/cmake/HyleTorchCpuSdk/HyleTorchCpuSdkConfig.cmake",
+        "sha256": "267e1b814f31159486a8015565ae9d7122842c0c0aaafae8e0ba5248efe397f7"
+      },
+      {
+        "path": "lib/cmake/HyleTorchCpuSdk/torch_cpu_fetch.cmake",
+        "sha256": "c7d30e8df8388f716b9583ae95aff7014f8d42b6523b08cec54714999bee81fe"
+      },
+      {
+        "path": "lib/cmake/HyleTorchCudaSdk/HyleDependencyLock.json",
+        "sha256": "f1bd968215236a28d504067c22db595d8b54a86eba37a3a7ea9b56017dc3a779"
+      },
+      {
+        "path": "lib/cmake/HyleTorchCudaSdk/HyleTorchCpuSdkConfig.cmake",
+        "sha256": "267e1b814f31159486a8015565ae9d7122842c0c0aaafae8e0ba5248efe397f7"
+      },
+      {
+        "path": "lib/cmake/HyleTorchCudaSdk/HyleTorchCudaSdkConfig.cmake",
+        "sha256": "8c18f38c2b87aeacf274d60603d8ce21da6780b389ce617b9ad9bbfc9c0ed287"
+      },
+      {
+        "path": "lib/cmake/HyleTorchCudaSdk/torch_cpu_fetch.cmake",
+        "sha256": "c7d30e8df8388f716b9583ae95aff7014f8d42b6523b08cec54714999bee81fe"
+      },
+      {
+        "path": "lib/cmake/HyleTorchCudaSdk/torch_cuda_fetch.cmake",
+        "sha256": "7610909071928564dabfc87d898a6fc8a59eb59fb3297931ad704fc2eab2ed41"
+      },
+      {
+        "path": "lib/cmake/HyleTorchCudaSdk/torch_cuda_linux.cmake",
+        "sha256": "d598d5f7a7b6bf4e25e7aac8446ab41c8ec4721f0c68ea889a44355796240700"
+      }
+    ],
+    "sdk_native_archives": [
+      {
+        "path": "lib/libdnnl.a",
+        "sha256": "ed81c96c2626142076441ed4808f35f37510fe9a8214ecdf8fa57d51de4fc168"
+      },
+      {
+        "path": "lib/libggml-base.a",
+        "sha256": "c7ea4945b7b658b8753fbcc114dda8d4864d9c0a69bc8b725127621c8d6ea8e5"
+      },
+      {
+        "path": "lib/libggml-cpu.a",
+        "sha256": "c08c4a8ecae462d9d2245eb9b18307a716329dd36e0291015b94e04dfde831f2"
+      },
+      {
+        "path": "lib/libggml-cuda.a",
+        "sha256": "f335776c314e99573289a601da24d6beb24c748afea155c339d30e31c7a3f6b7"
+      },
+      {
+        "path": "lib/libggml.a",
+        "sha256": "bac7d2a0d94bd27ab7a79927e216b8c63631e7c7d3a7a7e9cc222b8394f83a84"
+      },
+      {
+        "path": "lib/libmimalloc_static.a",
+        "sha256": "6d58fad0037a9fefac0f3a61ea8e1b57c8571f50e2c8a430d607e92fd2ccf4d9"
+      }
+    ],
+    "shipping_receipt": {
+      "path": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/sdk/result-cuda-static-ce28-1.json",
+      "sha256": "e0ec1c7acea70c5d0aa3c80600f84e4b63dce3a09fd94727234ad2e7a9c534c0"
+    },
+    "original_source": {
+      "revision": "69ff11fc4954396d98326656dc85debd2223f637",
+      "source": "/root/hyle-scratch/compute-unified/peers/flashinfer-69ff-git-1",
+      "archive": null,
+      "inputs": {
+        "attention/prefill.cuh": "f93cbea96e3a723254c15f5a52d6dd4c13e3892e88eb9b9fed1c0c0048c7d710",
+        "attention/variants.cuh": "90a228dd71b3ce8030d663e2b16f67f840fe4a3e99912f8b47774d3fd905a080",
+        "attention/default_prefill_params.cuh": "5b0545df7e134dc031e6a1179ec9c64a6d6b0e4d41b2cd98d3826165b3ed3615",
+        "attention/scheduler.cuh": "a11a39aea393cdb380ad9439aac9170cd96849d7426ebbb920c5c8cdadfcc575",
+        "page.cuh": "98e0b40aa6a5007d767cc49b9a2421bf8df2fbea5045394982ea451892d03ace"
+      },
+      "all_original_headers": {
+        "include/flashinfer/activation.cuh": "8b400ad65615c08953d79964488654a750b817231bda98a4c48487ee4f4586fd",
+        "include/flashinfer/air_top_p.cuh": "e41572fbb55a214fc0b4dfb077f8e8e127fe61bf69b4d4b53ac092f6b80e22bc",
+        "include/flashinfer/allocator.h": "3d80e3d3d29b1ae41218eb1167ca0059f923a9ccd69de79905d7f37df7cb2109",
+        "include/flashinfer/arch_condition.h": "99d6b54df9bd2b9095bfe64401581122542ea65d84aa609e24e2ffc1be522418",
+        "include/flashinfer/attention/batch_pod.cuh": "dc8823c6ce47487b9ce265a8d8308b420cf306fdb3afb44f76bf38d22ae299fa",
+        "include/flashinfer/attention/blackwell/collective/fmha_common.hpp": "bcb548bf86772e270f5cc83d35799e557860aaa2de821625e4727897ad8315af",
+        "include/flashinfer/attention/blackwell/collective/fmha_fusion.hpp": "ec58b20871b807a679e90c5fb6c70459801849863af116b8bb529063c45c4863",
+        "include/flashinfer/attention/blackwell/collective/sm100_fmha_fwd_epilogue_tma_warpspecialized.hpp": "30111c63c75322fae9c64cf3bf90285b07d9874e5e7f6109b157005402b10c19",
+        "include/flashinfer/attention/blackwell/collective/sm100_fmha_fwd_mainloop_tma_warpspecialized.hpp": "9ecc2c380b42d177901f6fb8df6e3f878e76bb9762cd367f9917347dfebe6b8a",
+        "include/flashinfer/attention/blackwell/collective/sm100_fmha_gen_epilogue_warpspecialized.hpp": "2368ed84e4ee7055c955c679be1720439a5beb6a152b7c730101d207cba6981c",
+        "include/flashinfer/attention/blackwell/collective/sm100_fmha_gen_mainloop_warpspecialized.hpp": "829524da09400927dfc86f9f2f7495b6dea4b7012dc7a0fbaf3d5df2a69774bb",
+        "include/flashinfer/attention/blackwell/collective/sm100_fmha_load_cpasync_warpspecialized.hpp": "aceef621777dd5b8d37c545291fbb6d0a3c229d798ae70ff1bf4fb62b4e81687",
+        "include/flashinfer/attention/blackwell/collective/sm100_fmha_load_tma_warpspecialized.hpp": "e7f49c15bcf62842a7b66f60b5d1708a5403ef36d25f360a235a5cae2ff05b8d",
+        "include/flashinfer/attention/blackwell/common/pow_2.hpp": "a90bdb34e36ba546d8bf91d25514f203f7eba497b3f482476f9178afb6285bf4",
+        "include/flashinfer/attention/blackwell/device/fmha.hpp": "707fe88459a3714a4ea0ed8f37d275533c23d903d6d042fa5b8c44ea878fe61c",
+        "include/flashinfer/attention/blackwell/device/sm100_mla.hpp": "3623a777c0d24a2f12bcab5be475ff44a556c7f3182dc53727560f6d33155bc4",
+        "include/flashinfer/attention/blackwell/fmha_cutlass_sm100.cuh": "8f8a12c0e657f7a475d1b3264d418a7db2401f1998cd03ea1f358d1939630320",
+        "include/flashinfer/attention/blackwell/kernel/fmha_options.hpp": "bcfc6809b04ed7e9fafc01182af562611d801e43070092691a3ceeb40094e762",
+        "include/flashinfer/attention/blackwell/kernel/fmha_tile_scheduler.hpp": "88cb247abb4f62d16576efb7b32acd40ef8060c6292f0ec59e39b3d66713ea29",
+        "include/flashinfer/attention/blackwell/kernel/gather_tensor.hpp": "f72afc2a4340ce80aa13870a3648117e0999b78565cb5264809fb5570a9e63da",
+        "include/flashinfer/attention/blackwell/kernel/sm100_fmha_fwd_kernel_tma_warpspecialized.hpp": "c5d2ff111496c43b84d10eeae504cd7064e3284c710a77e51bb8ae11530d7b6e",
+        "include/flashinfer/attention/blackwell/kernel/sm100_fmha_gen_kernel_warpspecialized.hpp": "efc3bb326ae09b1773ef0ebc8fa78be6acef63c9d78626de0c44e62269234777",
+        "include/flashinfer/attention/blackwell/kernel/sm100_fmha_mla_reduction.hpp": "e698e4a38eb55351f6e4a8fbf9645d130f5a5e9d82a70ae64da49d00346265c2",
+        "include/flashinfer/attention/blackwell/kernel/sm100_fmha_mla_tma_warpspecialized.hpp": "71ab6759ab81ec7901f807504942f4b0f4b709acff59b13b4e301fe267f9e36f",
+        "include/flashinfer/attention/blackwell/kernel/sm100_mla_tile_scheduler.hpp": "e1db9b47e7326ba0cc9579a1f51c80596ca220030211e28647138ddfbf97365e",
+        "include/flashinfer/attention/blackwell/plan.cuh": "695826754109771b2641f27bff5d01bbafb017781033208a7510166cd782cb8a",
+        "include/flashinfer/attention/cascade.cuh": "3ce6de505884bbc4efc78e63b0719eef4fe31fe152defa9fa4f050898fa51210",
+        "include/flashinfer/attention/cutlass_mla.cuh": "6d055ba5ca5d2c4d3157f4dd3c84a53055ca2f08394f412d31e0b3efb541a43b",
+        "include/flashinfer/attention/decode.cuh": "bd699c64cff0af922305e532de587ff4db8bc377c198bd653db1d48aa74c2942",
+        "include/flashinfer/attention/decode_mla_cute_sm80.cuh": "4a6b5f18fc3ff27d7d2fa688b233b0947c7f234d9620e4526e9144ee51b640c2",
+        "include/flashinfer/attention/default_decode_params.cuh": "92388eb0b2c19cc01eb937d1dc7d45a46e512d25ac64e03cce91677f8cda6c4c",
+        "include/flashinfer/attention/default_prefill_params.cuh": "5b0545df7e134dc031e6a1179ec9c64a6d6b0e4d41b2cd98d3826165b3ed3615",
+        "include/flashinfer/attention/heap.h": "a0fa6879f813b4c1c21c132d7c593fe5c76abc51f3785dfcef621651524409bf",
+        "include/flashinfer/attention/hopper/attention_updater.cuh": "5619132d7acfe4ffad74e340b65f951b89cd09a3fc1f22ae1f220e3031058ea2",
+        "include/flashinfer/attention/hopper/default_params.cuh": "587a5c9e7ab52e6a157e17006c797128d5e4c98d3e9668fe5e8eaf461b186ff6",
+        "include/flashinfer/attention/hopper/epilogue.cuh": "196a68505ad49389c139a768f3eb551addb1d9414b67d80c8a0e38b62c0c3c3f",
+        "include/flashinfer/attention/hopper/kernel_traits.cuh": "ddd9b2a2a74157959a6d293797362f87752d30fe8208319cefd2cfe9452e924c",
+        "include/flashinfer/attention/hopper/mainloop.cuh": "a26e9897424dbdeff1b7d26da4f1faefc10a12244b5022d49cdfee94551a6d49",
+        "include/flashinfer/attention/hopper/mainloop_mma.cuh": "1512881b8e50d9dcd72a75693130208510b8c6278250d06ee62f9e47f48055b1",
+        "include/flashinfer/attention/hopper/named_barrier.cuh": "436c8b3ce6242a3013be3b4a146e29cba52cba6c20fce71ad09e0a4bb90b004b",
+        "include/flashinfer/attention/hopper/prefill_sm90.cuh": "0b20b38b91b295202258203cc484d588fc6251b6eacea9da4c0d5f57ea104ad9",
+        "include/flashinfer/attention/hopper/quantization/epilogue.cuh": "0e5560bff28eb939804c7dbdcebb4a98fd058010a6f5f5227e336e46e933bb79",
+        "include/flashinfer/attention/hopper/quantization/kernel_traits.cuh": "4c12864c46cd4566c37eda1c72a369ba96d675a8f59d89a0c4d9d747ad32a4b7",
+        "include/flashinfer/attention/hopper/quantization/mainloop_load.cuh": "624ce984a43e01850c7f8b5190eddc95737307222fcb28790654039187eb5ca2",
+        "include/flashinfer/attention/hopper/quantization/mainloop_mma.cuh": "a1c3404751621cd0474bd3443e174c7bdea48fcd8f9cb0b8df3fb02fa6158301",
+        "include/flashinfer/attention/hopper/quantization/mainloop_sparse_load.cuh": "88086c8d6874b019dbf6713547c0e98080bbfce6d1e72aed1d3d955507ecf2d1",
+        "include/flashinfer/attention/hopper/quantization/prefill_sm90.cuh": "c981ae078bd8a731c7c1ecc7907f329425fe4860569b910ae49c6df01d145b6e",
+        "include/flashinfer/attention/hopper/sparse_mainloop.cuh": "f8221219d00124385d13fec69283e6c8cbcc3942c5724e5f95f793b5fe383471",
+        "include/flashinfer/attention/hopper/tile_scheduler.cuh": "dcf709d560da39d0e70d077d8720b93859f14422f8a20d80f51ff352ee3a19df",
+        "include/flashinfer/attention/hopper/utils.cuh": "51d1bd1b9cf4c9160c94df802ec236b77bdfaeb751934d40ad878a60389d8631",
+        "include/flashinfer/attention/hopper/variant_helper.cuh": "a44458a26f41f39ec8e4fed2674c82ba19493be9e00542d10133c922d3d8395e",
+        "include/flashinfer/attention/hopper/variants.cuh": "1062a4c80f9f4cb371f7e809cdd5d518468520862519aede64ea41dd6c07b217",
+        "include/flashinfer/attention/hopper.cuh": "908db868c26413ece77371f49e75b4c3ff64ffbb22c0460f8987835f8e2f2daf",
+        "include/flashinfer/attention/mask.cuh": "aecde488616cbf433347534ba3d3862d7576eb35d50e3640f425e31dc95ef7a0",
+        "include/flashinfer/attention/mla.cuh": "3084a832425fa3872ce00b4b3ec52a32f9f319eb8c0403bc991e91c6d443d132",
+        "include/flashinfer/attention/mla_hopper.cuh": "58d855e6b74f36eefb1099eb12bb56a09445f5f214aff4488e33b10dfea2027d",
+        "include/flashinfer/attention/mla_params.cuh": "57be4a5ea15a670305fc45dc7d03b5f3b4f041321e6db05efed01096391946bf",
+        "include/flashinfer/attention/persistent.cuh": "448265a190d4359e26c396e2af962e56aeab45139f7c9c3810f83ff06cae0c4d",
+        "include/flashinfer/attention/persistent_template.cuh": "799679baadcc25b8d844a33ed9b23850aaa7071b30f3d0f030da3a5f92e0936a",
+        "include/flashinfer/attention/pod.cuh": "52374f31753489ea5e637fe728a7f998fcbb0226cc2a7c8f4b766f8655179132",
+        "include/flashinfer/attention/prefill.cuh": "f93cbea96e3a723254c15f5a52d6dd4c13e3892e88eb9b9fed1c0c0048c7d710",
+        "include/flashinfer/attention/scheduler.cuh": "a11a39aea393cdb380ad9439aac9170cd96849d7426ebbb920c5c8cdadfcc575",
+        "include/flashinfer/attention/sm120/nvfp4_attention_sm120/api/launcher.h": "b2891fbe54df2045c28753bcc9de7a5621c2912b98f0a20884ba9d5017df0ad5",
+        "include/flashinfer/attention/sm120/nvfp4_attention_sm120/common/block_info.h": "42db5a7f19200de6901a154b320cfdd7d0425eb10cb340c55ae27d07429b1104",
+        "include/flashinfer/attention/sm120/nvfp4_attention_sm120/common/cute_extension.h": "ebff69dd5d2c225ef95b030e20a1b8c0569708246650787ebf3fcbca630b2e7f",
+        "include/flashinfer/attention/sm120/nvfp4_attention_sm120/common/gemm_with_interleave.h": "5210c3d93bfa81a5ae8b16c9806f298bf0a12bd93b403334624bc1516875bb4e",
+        "include/flashinfer/attention/sm120/nvfp4_attention_sm120/common/params.h": "5c37f98a6be483dd7010f5c8f56c17bb6b5916f31071e27cee605c7ef94c23e9",
+        "include/flashinfer/attention/sm120/nvfp4_attention_sm120/common/static_switch.h": "b0bb66150d434516418a75483d583a8e1872c8f560ef8fba111eda3e1c35f888",
+        "include/flashinfer/attention/sm120/nvfp4_attention_sm120/compute/consumer/delta_correction.cuh": "db067b790c872f5e5538ea7996392a8e1315a92c5868416722bc66eef618b0fe",
+        "include/flashinfer/attention/sm120/nvfp4_attention_sm120/compute/consumer/pv_gemm.cuh": "5fa9f7d7f651f1739f965b644550627daa1ccbd7b39590538459ec7851a0c9b0",
+        "include/flashinfer/attention/sm120/nvfp4_attention_sm120/compute/consumer/qk_gemm.cuh": "1abe2386bbcd837c5bf89eae3a69dc197b3e0c964e5a73886467006687c02cd6",
+        "include/flashinfer/attention/sm120/nvfp4_attention_sm120/compute/consumer/softmax.cuh": "f1830965e5365c043027acdcd5a167371d9a10e86308660f7b4fc59af7ed6dc3",
+        "include/flashinfer/attention/sm120/nvfp4_attention_sm120/compute/epilogue/lse_writer.cuh": "a61414278ee4e367a0a0a08b9bfaac254559fb7f54c49cf9a3dfb2c5ddd614b5",
+        "include/flashinfer/attention/sm120/nvfp4_attention_sm120/compute/epilogue/output_writer.cuh": "298bf6d9f0c1de78f7ddacd37a9d33d147d9f87a14fbb7b902db7036505f1285",
+        "include/flashinfer/attention/sm120/nvfp4_attention_sm120/compute/epilogue.cuh": "d5fe649afe69c7486c4e08ff38959902c857c5aebe74c0286b601931dacfb6e4",
+        "include/flashinfer/attention/sm120/nvfp4_attention_sm120/compute/mainloop.cuh": "fe94295da3c0f5c0e047cc32f124ca9673477cc5dfad2d81e7cdba7e06c79a51",
+        "include/flashinfer/attention/sm120/nvfp4_attention_sm120/compute/producer/load_k.cuh": "82243e2ede4eeb37cb0bab741d6187877fc720fb78f0cefd8057de1300e2e232",
+        "include/flashinfer/attention/sm120/nvfp4_attention_sm120/compute/producer/load_q.cuh": "0df7b1923560a110d6e3de29451c80c8dc56d7ea4e6e95a924031ef72bb99aef",
+        "include/flashinfer/attention/sm120/nvfp4_attention_sm120/compute/producer/load_v.cuh": "aa094f048751b5dd176086daaf217456d41aab67d0ffaf802f2854f640e38c1c",
+        "include/flashinfer/attention/sm120/nvfp4_attention_sm120/kernel/attention_kernel.h": "e9fb34bd3f9e8c96fc4cf9a37ac58b788d6630e6ceabcaddd089a53652d41a39",
+        "include/flashinfer/attention/sm120/nvfp4_attention_sm120/kernel/scheduler.h": "b83524886137fe06ea8ee9d870f23274c37c2bc405be8b8237cb0016b8bf7033",
+        "include/flashinfer/attention/sm120/nvfp4_attention_sm120/kernel/traits.h": "d948265c99b0eea0724806cb6ef25904f8a9df281ffc199f470fe45294643b98",
+        "include/flashinfer/attention/sm120/nvfp4_attention_sm120/primitives/barrier.cuh": "a0ad7fa0ffcc16a79c90bcb0a95076885201076e66f88ab7e09989b3892c292b",
+        "include/flashinfer/attention/sm120/nvfp4_attention_sm120/primitives/pipeline.cuh": "96be5ba090aa05935c867b8eedecf50e4028ada3e49d1ef6a04c019e882c954d",
+        "include/flashinfer/attention/sm120/nvfp4_attention_sm120/primitives/tma.cuh": "27a9434e47de9645717f8fb6d88c2c97b165c7a4f9d247a63b2083d2b5438783",
+        "include/flashinfer/attention/sm120/nvfp4_attention_sm120/primitives/warpgroup.cuh": "3667ca52c48e849ed7b0b500948fecc061fb4a9f8dd480733d6e9a4e7a46ad1c",
+        "include/flashinfer/attention/sm120/nvfp4_attention_sm120/quantization/fp4_convert.cuh": "5af96f4c370a4cfba96fa9ef6ff1debbf545593403350863cdb7e1c3096ed746",
+        "include/flashinfer/attention/sm120/nvfp4_attention_sm120/quantization/fp4_layout.h": "2adee11761e3d670614f6980c071b596d02069af1c9f70fe455798331d8f6bdb",
+        "include/flashinfer/attention/sm120/nvfp4_attention_sm120/utils/copy.cuh": "de6ddcffe5bd01b979c6e1a45e083572fb219875288e5df1e39888e842a811a6",
+        "include/flashinfer/attention/sm120/nvfp4_attention_sm120/utils/layout.cuh": "487f9816ec70648f11de06a0775908608766d06728b16a2b1a160d59eb25a558",
+        "include/flashinfer/attention/sm120/nvfp4_attention_sm120/utils/math.cuh": "a43dc22c1e19b941704b50ab1ceb84ca85311171a457ade7eb695bb425e57a74",
+        "include/flashinfer/attention/sparse_mla_sm120/arch/barrier.cuh": "015f9507382fd2a6ad244078574c0f56f692c827619c879b44cfcb1833787615",
+        "include/flashinfer/attention/sparse_mla_sm120/arch/common.cuh": "bdd9f13c1d6a89cf4f6291f8f9b337f209d1f3fee622f56f3a3a5e053334b681",
+        "include/flashinfer/attention/sparse_mla_sm120/arch/cp_async.cuh": "ec2e59216add7516db4eadcfc6d9246d4f82468d2382acae10d3580f753305c7",
+        "include/flashinfer/attention/sparse_mla_sm120/arch/ldmatrix_sm120.cuh": "4081b48f37695947fae9f719d0c4c1f607da6b741848ede4efe9c40708536f5d",
+        "include/flashinfer/attention/sparse_mla_sm120/arch/mma_sm120.cuh": "ab0e9962c610845f39b5bc97eba2e2264ad041b63d2971e55fcc9d20055bb486",
+        "include/flashinfer/attention/sparse_mla_sm120/common/d2_load_b.cuh": "bcb8dec92916bc802853268a431f5ec53f8ea771fa6dab6b0f647912993a2d20",
+        "include/flashinfer/attention/sparse_mla_sm120/common/fp8_quant.cuh": "c4c503f6139d8e80ea9d0be7e876178f5af1c0b94a225975f91e49266b6c14b4",
+        "include/flashinfer/attention/sparse_mla_sm120/common/kv_cache_io.cuh": "f4c589ef931e311349f259e4e98f23093d71f2eae1f59485c02b8acd5931d365",
+        "include/flashinfer/attention/sparse_mla_sm120/common/online_softmax.cuh": "4b7110122e9576d72f4f40ab9b999e4f95f33738d69cf21f8f8a5448c382c459",
+        "include/flashinfer/attention/sparse_mla_sm120/common/q_rope.cuh": "2e7ae3932636052273574b87fab8f1dd09b9246fd7f34b1446a227b52b2c885e",
+        "include/flashinfer/attention/sparse_mla_sm120/common/scale_mma.cuh": "cbeaa1c19d1f2aae3cb593a8f41b3308f23fd13348515189d60c3efbc6957b99",
+        "include/flashinfer/attention/sparse_mla_sm120/common/smem_layout.cuh": "87b3b212dea1d6e112226c2b8fa58e92d14474026f641bace2ebaef2ceab8506",
+        "include/flashinfer/attention/sparse_mla_sm120/common/xv_rope_mma.cuh": "4107bc481f98c3dc1d60cd02b30cbff5f8142a0ab9fcc0f5f96d247c151356df",
+        "include/flashinfer/attention/sparse_mla_sm120/decode_dsv3_2_kernel.cuh": "b7860563129fbbfcf1faaab0a12195e5be1d2ce6ba64054413d7a1b2bc999ad1",
+        "include/flashinfer/attention/sparse_mla_sm120/decode_dsv4_kernel.cuh": "014c668d9bc9b30adc98f05dbc4bb5bedd9989def585a0d88347efb57f4eed54",
+        "include/flashinfer/attention/sparse_mla_sm120/model/kv_cache_traits.cuh": "95499904538b2f708f596887ea1128ba45d24bdb1f491502d541d08e4439d559",
+        "include/flashinfer/attention/sparse_mla_sm120/model/model_type.h": "d8eb2cfdc3eb228f1671f37c50233ff2a0c07908799cc9dcb8848d74a33cf0e9",
+        "include/flashinfer/attention/sparse_mla_sm120/model/scale_convert.cuh": "d431d62d1c400f74bf4b1f9986ec7d5ff47f2669f0aac0248fd481ffb07cd82a",
+        "include/flashinfer/attention/sparse_mla_sm120/prefill_kernel.cuh": "5f005980cff1606fc1a239faeb93d1d697710c92014d549e4425e9db04f675e0",
+        "include/flashinfer/attention/state.cuh": "b2f59c104c2857e7e69f1837faf577525a292da98b375d5fb24dbcfc15d78159",
+        "include/flashinfer/attention/variant_helper.cuh": "326c32f7722027da5002ca9297c84f74b604255f01e59263f193b2aee3edb159",
+        "include/flashinfer/attention/variants.cuh": "90a228dd71b3ce8030d663e2b16f67f840fe4a3e99912f8b47774d3fd905a080",
+        "include/flashinfer/attention_impl.cuh": "986131d458ffde1a8150c56878ee923f5a571747483a401eb234d15572d30f71",
+        "include/flashinfer/comm/mixed_comm.cuh": "ace61fb3289489ea40cdbb4452d9a6f68c0fdd0fdec22940b87b96641c6c6f86",
+        "include/flashinfer/comm/mixed_comm_decl.cuh": "3d48d8f305cc51e7be551fd191ffa43b9708d0f4d90997feb2fe8b2b9bcfc559",
+        "include/flashinfer/comm/trtllm_allreduce.cuh": "1aba1b25a72c1f6073b3d08fb6e23b355bb4b42250e2b4c1c55a3c225896735d",
+        "include/flashinfer/comm/trtllm_allreduce_fusion.cuh": "093b853acfef45e32fa2171bd25fff9bf522db361da7b79f5f189f5a8bb171ae",
+        "include/flashinfer/comm/trtllm_alltoall.cuh": "f348ab67c9a9f57af1fba2a4d65561b63fbf008271148efd00f15492e1b110a5",
+        "include/flashinfer/comm/trtllm_alltoall_prepare.cuh": "42cf2790a4b4e4ec65a2851c5a814fd26663c2187e1a4fa23b29e5b347f0bf72",
+        "include/flashinfer/comm/trtllm_mnnvl_allreduce.cuh": "3b33d6d3117e603335db7779c9d7e81b1da3840745ad731f8c4f4795a6365e9f",
+        "include/flashinfer/comm/trtllm_moe_allreduce_fusion.cuh": "518e42e290a7192c5a6338b5825c19f0e37687bac0dde3ec00ce2af4518a11da",
+        "include/flashinfer/comm/ulysses_all_to_all.cuh": "0f71e893808e9611fc19c5de8b0906079d7906897bbee87285a30f6c37043840",
+        "include/flashinfer/comm/vllm_custom_all_reduce.cuh": "7d8dc996752ba9cd338b760c8f7f982efac15a4c51782c747796ce8da82165a4",
+        "include/flashinfer/concat_mla.cuh": "8d83a2477d0d73284616d6da9733c6a4975a84542ee513f7a9161dcdb7638d3f",
+        "include/flashinfer/cp_async.cuh": "957a02a9d471280d333d7a2a98729f3753de69041870526e73a4f47bc6c94f06",
+        "include/flashinfer/cubin_loader.h": "a06b135ac7f8dee4cf67b60e398aad055fb14ed1cb10009c976a6066bbf99687",
+        "include/flashinfer/cutlass_utils.cuh": "2c2f6d2a96710c7418797643ab108c62cce944273b63420447030aacd0f1f4b7",
+        "include/flashinfer/exception.h": "83126766f5b3ef24586eca68bcd3ebe45b1f8b1c5952fb55940421618175f271",
+        "include/flashinfer/fast_topk_clusters_exact.cuh": "752a008e905ce35759a2dd7721ced1f6b05d483b4dc7ef107abd7405b11b061a",
+        "include/flashinfer/fastdiv.cuh": "5d79e2d63bd133f9da4fd3236342999cb585812eb07326ce55775d353ae62832",
+        "include/flashinfer/fp16.h": "dcc4b12d9b041264c1cbf25e64659b17e86c259c0411f554680c25bdbd1ff6e6",
+        "include/flashinfer/fp4_layout.cuh": "376faf8ebd6e9eff90eba6f3fbc4c1d8e45ed10f7058f256a5e673f0da638bcb",
+        "include/flashinfer/frag_layout_swizzle.cuh": "cae96de0e3fd9a4b7dbcdc1e0a6e9fdddd3b1d79f67a83de3b7e1cd4549b175a",
+        "include/flashinfer/fused_moe/da_config.cuh": "f47dc779229ebcacc7da8e84d17d422a6ebc9a95acb683692ca5efe2f59f0f45",
+        "include/flashinfer/fused_moe/da_moe.cuh": "ea17ef2c98c72682f663998af86fd28d548549c97e863df324e1b64a64a7fe6e",
+        "include/flashinfer/fused_moe/hash_topk.cuh": "bf6735058a90bb558941dfe5df8554b44be2e11c1d6b5f7d799bc8a1ffdeeab4",
+        "include/flashinfer/gemm/bf16_gemm_cutlass.h": "a5853923c63ed5fd190015b3b2af4909becf63604b567a72f0aead5fd98870b1",
+        "include/flashinfer/gemm/bf16_gemm_cutlass_template.h": "046c6fd2a815d13a8decd99d614633cf9a26e8d073ae37dd15c0679c25a6dabc",
+        "include/flashinfer/gemm/bf16_gemm_template_sm100.h": "8ead0065167d93360548336fcc4d80fdddc81eb73fbe5c551eb1a37419e0becf",
+        "include/flashinfer/gemm/bmm_fp8.cuh": "6f55c25e7bd0d10f02a7fe983ba41dc643ff766ef50bded82f473e41262b8b4b",
+        "include/flashinfer/gemm/cutlass_gemm_configs.h": "114f3a3ef96b914150475d2e20212309b6cac8a0b55443cf5114b84b092239be",
+        "include/flashinfer/gemm/dsv3_router_gemm.cuh": "d37d2934a47380269288447e7344deece139e14dd08a97cd193d03d6f4d1eedd",
+        "include/flashinfer/gemm/fp4_gemm_cutlass.h": "2c5811b5e8dbc722d35ba9ad197cf2437c998873e9dae9660a7e6cb06ad6662d",
+        "include/flashinfer/gemm/fp4_gemm_cutlass_template.h": "f4f6fcb68dc584cb13b340a996c34e51107867737abdbf67aa47a3394587f1a2",
+        "include/flashinfer/gemm/fp4_gemm_cutlass_template_sm103.h": "f6672a4e246f395915bf05152279beecf67ad48b99d5ce027a0848c71af1b7f2",
+        "include/flashinfer/gemm/fp4_gemm_cutlass_template_sm120.h": "446daaf38d34e643a4743169287b7e27c0c38bfedce3d7da68a2dfdefeb0b90e",
+        "include/flashinfer/gemm/fp4_gemm_epilogue_sm103.h": "6536a3a7dbc54af76ae3b98d89a8f34063137ded92485e061f12646722495e65",
+        "include/flashinfer/gemm/fp4_gemm_template_sm100.h": "868fad7f668ed07a3569e49691126da48f1f070b97085792ce84de3ef8fb4f86",
+        "include/flashinfer/gemm/fp4_gemm_template_sm103.h": "a337621037f06d527b862fc05827e43c201b4a32d32d2bff17fc355f2cfcc0e3",
+        "include/flashinfer/gemm/fp4_gemm_template_sm120.h": "a70a47370ed14ee8f88b4d93e54547db6a23891af2451f78ca1159de0eda312c",
+        "include/flashinfer/gemm/fp8_gemm_cutlass.h": "2970993a06bbea05a76c3123f39c199bc1daeee9db661ac1d3fa56c926bfe2c4",
+        "include/flashinfer/gemm/fp8_gemm_cutlass_template.h": "f09407134519f025774078512ce80f7a5f7c361ed4ad23a9177b2039744b88ba",
+        "include/flashinfer/gemm/fp8_gemm_template_sm100.h": "8407017e4cde08d27bd75279ac67a287ac7f6a464982a25cb61600221e197861",
+        "include/flashinfer/gemm/gemm_groupwise_sm100.cuh": "2970418dcbab8f6779ec777d9d579c454ab737103279c45b456e6beb8dc49b18",
+        "include/flashinfer/gemm/gemm_groupwise_sm120.cuh": "3ca72b44a2230c14ec640427738d5e421cfb6470aa15f7ab45060a88aa40e931",
+        "include/flashinfer/gemm/group_gemm.cuh": "ccd3eabe9b5445bb27cd7198eeaa44d3e9475588905cbe60a433a4b635a73a4c",
+        "include/flashinfer/gemm/group_gemm_fp8_groupwise_sm100.cuh": "fce7b6e0ac195ceb059aa2372b9d964a666bc89e5e98e89ca83308cedab6b73d",
+        "include/flashinfer/gemm/group_gemm_fp8_groupwise_sm120.cuh": "9fca2cabf6dcead2f4acbc9a59e5180d542177867a6142cde74304c121b7c350",
+        "include/flashinfer/gemm/group_gemm_lora.cuh": "4d9308f189130392fb9ea4cb62b38c924286578e2cb0464867c554cca39aa0cd",
+        "include/flashinfer/gemm/group_gemm_mxfp4_groupwise_sm100.cuh": "abe779f872a5b943674e789026d7ca7cb7b7da443d3af59afc8f7274e757a9f8",
+        "include/flashinfer/gemm/group_gemm_mxfp4_groupwise_sm120.cuh": "46799a771cc1328d59b939936099064c9a906d64914b03ab222c49741bd6ff64",
+        "include/flashinfer/gemm/group_gemm_nvfp4_groupwise_sm120.cuh": "8b513fd6ebe8a539899fb72f7ba7ca9aba02281b714fee9c4078eb96fbf6fff6",
+        "include/flashinfer/gemm/group_gemm_sm90.cuh": "c16b7b8062db566902d55d1e96aec91ed78b302b046fc4c65d2509bde3be5274",
+        "include/flashinfer/gemm/group_gemv.cuh": "2fa9e8ce10cfce1117f89e4cb7f30cb8c24afcec7155b4a681f89d1678e775c4",
+        "include/flashinfer/gemm/mm_bf16_cublaslt.cuh": "3e7833bd85fff8216b838bfaed99e601df6eaf810a87edba4bb672b1f5e51482",
+        "include/flashinfer/gemm/mxfp8_gemm_cutlass.h": "02f987cbc076bb6cedb51fbe508052a5e807a7f8114d71a7095eba50c7bbd3b9",
+        "include/flashinfer/gemm/mxfp8_gemm_cutlass_template.h": "202067a895375c6c6efe7e1276fe7b419680840601d034095f54a230555ccec7",
+        "include/flashinfer/gemm/mxfp8_gemm_cutlass_template_sm120.h": "57fe994ba800726e4b3414135840f451830f7dd5a950cbe8102ebf9a45fdbbe4",
+        "include/flashinfer/gemm/mxfp8_gemm_template_sm100.h": "ccf41a2df27bbab3a87be5efd0bd631cb84a7ab3eb98eb971514d1dd6f2f76d6",
+        "include/flashinfer/gemm/mxfp8_gemm_template_sm120.h": "b7dcdbf2036f4aff130548a67c3ff369283315dcda57c6435f6d0a6b1d0fe17a",
+        "include/flashinfer/gemm/nvfp4_smooth_quantize_sm100.cuh": "d725b90d163b7419613d0bf0ab5c152f1f878f5e1b557afd6b72f21ddd676852",
+        "include/flashinfer/gemm/nvfp4_svdquant_gemm_collective_sm100.h": "71170c6e00d1cb264135d345285acdc24a778ccb50bb4cbab7fbbd8607fb2858",
+        "include/flashinfer/gemm/nvfp4_svdquant_gemm_cutlass.h": "cfe83283a17805ae8d36631506a059f42593279f096f69762f64d8bc3f914448",
+        "include/flashinfer/gemm/nvfp4_svdquant_gemm_template_sm100.h": "920520a315a28cfb1981e94372a8507e541ba34a5decc4bdbc33dd53cbdaa25f",
+        "include/flashinfer/gemm/tgv_gemm.cuh": "70f94c5886295161c77f07bd20839c2dbf7d4034f15497d2ea4ff9cb8d378d55",
+        "include/flashinfer/gemm/tgv_gemm_configs.h": "1d8d0c0b6e5f5d3e837e16a212a40279f2f0d3353dcf4d1238d03aad08d735b7",
+        "include/flashinfer/gemm/tgv_gemm_template.h": "db8f8a7b9ee96bc0ccdca7fe54ab5418936c1f15d1b206cdc557dab25607b94a",
+        "include/flashinfer/layout.cuh": "f000e64b9c718b0659fff1acf3c3fa0c2cdf5c75862cede645b16014bfa7aa2b",
+        "include/flashinfer/logging.h": "690e48797b623e28ac54824fc476e189341fcdadcdf2ae19d0f134babf11348d",
+        "include/flashinfer/mamba/checkpointing_ssu.cuh": "fafa923f3079941a161ec7a6e1fb96c0b8fdf5c7f7206275b3717fe19c6c7b90",
+        "include/flashinfer/mamba/common.cuh": "523233b44b278808944afa9a3efeed945f9aace7fc0a7a9501253cc6e28872bd",
+        "include/flashinfer/mamba/conversion.cuh": "bf10c7c04e337efb4135f3f996cea2ca03262a05d87655c60bffe2bba8bff2bc",
+        "include/flashinfer/mamba/create_tensor_map.cuh": "09021831ba70c673e238005936921bbffa61d5854fede4abcfa84155ebf2deb1",
+        "include/flashinfer/mamba/invoke_selective_state_update_mtp.cuh": "5be5da574adc8b148064ee1214a9eda99881ec5163ef244e462cb53ae54c4bf8",
+        "include/flashinfer/mamba/kernel_checkpointing_ssu.cuh": "dceebc80abc3fdedb2fffdc86734d5ecd627a535a84bd47c66817f14b87ee3b4",
+        "include/flashinfer/mamba/kernel_checkpointing_ssu_8bit.cuh": "b17191a037a041953b802df5e63d7ccf4462177367277eff1e667a9c298aa5da",
+        "include/flashinfer/mamba/kernel_checkpointing_ssu_common.cuh": "38f188b79971623b450d295280b934e44c5fbd153f5e78cd1b3cfef03ea803e4",
+        "include/flashinfer/mamba/kernel_selective_state_update_mtp_async_horizontal.cuh": "78861db689b2426cc0a9c6e78a3011a8f510ebae365ba62aa595101c56948f2c",
+        "include/flashinfer/mamba/kernel_selective_state_update_mtp_horizontal.cuh": "7d07b8ef9faa9cfac7a24071ed235a48a65bd7842579c612f2c56e949440bdfa",
+        "include/flashinfer/mamba/kernel_selective_state_update_mtp_simple.cuh": "64b189b642d05970202964bdd3accf7055d34d6a50b7953a64c8a05a3e0a0dbe",
+        "include/flashinfer/mamba/kernel_selective_state_update_mtp_vertical.cuh": "8c8d292c08cc29eb0db47d231bcab47bdb86e285ff7b02f6135709e3a5058cca",
+        "include/flashinfer/mamba/kernel_selective_state_update_stp.cuh": "c0e13b64bf42f4f8155058dc9f5877f7aca90832f50a1e7602863894908e89fd",
+        "include/flashinfer/mamba/launch_checkpointing_ssu.cuh": "9208721847a46b5a43928bac056f684cc69bfe622dfaa180e7492d77c4751bff",
+        "include/flashinfer/mamba/selective_state_update.cuh": "004e37f97106fd39c922858a021844e21d5c83dca871b60a8d0704c82bb1e177",
+        "include/flashinfer/mamba/seq_chunk_cumsum.cuh": "d05b924c28bc22a55761eddb62b3ac71536406badfac15b0d839e3d8d672ec7b",
+        "include/flashinfer/mamba/ssu_mtp_common.cuh": "a2037245673c4459d30f3e1b926bb5489327b91f9fb9a6c97a718dafb0bd7675",
+        "include/flashinfer/math.cuh": "ad9461ba66273bf7e227af1e285a136b4e53f899fa60b3a41f08627ad738f2ed",
+        "include/flashinfer/mma.cuh": "f6df5d6475bf2fc33932399b7063894a2a4ed27cfabe45ae7cd239a1c61943e9",
+        "include/flashinfer/norm/fused_dit_layernorm.cuh": "f8d8af27f6715e282858547a3e8185a2cc71eaaad00d70923e9f02aad076e2f4",
+        "include/flashinfer/norm/fused_qk_rmsnorm_rope.cuh": "cd38bd434c7089057449a1460f76f0e6a7ce715077dea5fadfebe5ac34d5cf69",
+        "include/flashinfer/norm/ln_fwd_silu_kernel.cuh": "9ab23dc1a53b5444dcf2086c2815fba9f8f5ae21e128cb93d354aaef57a5026b",
+        "include/flashinfer/norm/ln_silu_headers.cuh": "0148de0cc48050cf8b87097aed2b70b94c547bd5127a6f0fb5f5e4ad8759f98a",
+        "include/flashinfer/norm.cuh": "88264c1294d609ad294954a923d0b02db3568c32f13c9211f13b9d5786605a28",
+        "include/flashinfer/page.cuh": "98e0b40aa6a5007d767cc49b9a2421bf8df2fbea5045394982ea451892d03ace",
+        "include/flashinfer/permuted_smem.cuh": "1929a5d1ebb27c67b1e9be3308adf5083957443448d73b6529c0e46c01d7ee84",
+        "include/flashinfer/pos_enc.cuh": "6a94df7647512f9474198ee99a04bf84b7dad9c65be1d10d8d20c9c9f9cf2abf",
+        "include/flashinfer/profiler.cuh": "99456bf371cce37079418572d607e12789ef2fce51a43e9eafea7c4a4bdb5952",
+        "include/flashinfer/quantization.cuh": "1b0824b17ad2d5e31ccfc5b0558969a43ccb5f797718c3429ba71e250ce59bd9",
+        "include/flashinfer/sampling.cuh": "8ae12bc1efdacd508040a30b06e19bc1b38ab1adb7214ef1599e0f354149a73b",
+        "include/flashinfer/topk.cuh": "1cc299ccd00bb6b6ae5bf376b7dc14c7032063468daa684ac36485d6352bbb80",
+        "include/flashinfer/topk_common.cuh": "4ed389d1535ab2e1b759eddca9fac3c46346b47711be2b72bbb1b99b21524f2d",
+        "include/flashinfer/trtllm/batched_gemm/KernelRunner.h": "d47cfd922333017c656881db6947ecc1f7ab5ab6a05a0a75eeb61b0cff46496a",
+        "include/flashinfer/trtllm/common/cudaBf16Fallbacks.cuh": "88b663058b16a02869432c49c153eda1e871a7667321011ff30dbe0eb79842a5",
+        "include/flashinfer/trtllm/common/cudaBf16Wrapper.h": "44075cca67013e32baaf5818699505039e2f8d22716db62c390cf5546ae0a7ee",
+        "include/flashinfer/trtllm/common/cudaFp8Utils.h": "4b56c231d1c5f7def7a66da0a65b2c3d52d15cbc475cd38aaccb255e1dc6a6f6",
+        "include/flashinfer/trtllm/common/cudaTypeUtils.cuh": "bf30235ba6db574aa2d843217d0c55b719bd4876afb4ae64bcae2d1884ab4d62",
+        "include/flashinfer/trtllm/common/cudaUtils.h": "2573c9e7a34e72f709f7f156b7a3c46b70d34392d334f5da2b35b2e56eef3a17",
+        "include/flashinfer/trtllm/common/reduceKernelUtils.cuh": "efb4a60ea4b4323d701959971e1bfd10a71a5d6d9fdc2e58d3e1978547d8c986",
+        "include/flashinfer/trtllm/common/sageQuant.h": "d8ca8b9f3d86691fa04649ac41b8d5a75789d6977eecae3105fd429852e3dd9f",
+        "include/flashinfer/trtllm/common.h": "cac4311837298c8bbaeb98b215a7fd708d7aa3befa1eb7350dcc0ca164ae2740",
+        "include/flashinfer/trtllm/fmha/decoder_impl_common.h": "77659878fd6c241c5a9854ac92fcdf5fce75bfc4a57d8829ca283cbddb4a2a8f",
+        "include/flashinfer/trtllm/fmha/decoder_params.h": "821b5095c138c06dddc4ba94452b885e2d8b6aeaf942d273dd9916afb11b6fef",
+        "include/flashinfer/trtllm/fmha/fmhaKernels.cuh": "95e3abffdd6355fca030a7280966c55fd1aea3484e5443305430e114dae2662e",
+        "include/flashinfer/trtllm/fmha/fmhaReduction.h": "d67172b8b8043f6fcfbcc849b5f23cdc1bcfd2547125c1b50da00c64f1ff2560",
+        "include/flashinfer/trtllm/fmha/fmhaRunner.cuh": "392e9218617fa3257ff0a6de174f5adead36ce5c3c260341c48c651538a7976b",
+        "include/flashinfer/trtllm/fmha/fmhaRunnerParams.h": "cd1296f8985c0ad2e150ad847a4b5a12d05ee0a3d032c50aad601286d4a3505b",
+        "include/flashinfer/trtllm/fmha/kernelParams.h": "553da952f21f04f487ce6bf38654adce1894259f7c0f9ed8ebbc25c894813da8",
+        "include/flashinfer/trtllm/fmha/kernelUtils.h": "460bbad83d93c0721acc80f4d8531ec7861be7d4beaf3e0fe583f6d1a7e5079c",
+        "include/flashinfer/trtllm/fmha/lse.cuh": "573cc0c824ef6929ba54b2abfecb2d86c1a8d119b75f99f558fedb0e95567e53",
+        "include/flashinfer/trtllm/fused_moe/DevKernel.h": "724d560c5391c5679769cd8c5f3af5bd86af0f866ef190b147c78663146fa49d",
+        "include/flashinfer/trtllm/fused_moe/IntFastDiv.h": "21608a4d3c69e166611d16996f955668c34cac341cb3cf3072311a8a28f1c004",
+        "include/flashinfer/trtllm/fused_moe/RoutingCustomPolicy.cuh": "77c075af95214d8cac6ab599e8cc48bffa50de2d2f67182371cf74e668ff0baf",
+        "include/flashinfer/trtllm/fused_moe/RoutingDevKernel.h": "7eb65d059dd9b0f27547f2b67e1f1587e6c80c3d1267571281244e357337a5ad",
+        "include/flashinfer/trtllm/fused_moe/RoutingKernel.cuh": "56f281b209e7846b2d6b510cf963ae705a1f639619d49563c6ac8d0e6549667a",
+        "include/flashinfer/trtllm/fused_moe/RoutingKernel.h": "50f52258c46401017e1e99648e04e46cbe749788d385ae0804581d4d0aaabad6",
+        "include/flashinfer/trtllm/fused_moe/RoutingKernelTopK.cuh": "6606d710ff917a7647565bddbdf787c68e09f9d6788b2d721cf213bd0cbba525",
+        "include/flashinfer/trtllm/fused_moe/noAuxTcKernels.h": "11db28558b0f09d0655268bcd8796a85bc1ee30890de1c8ba83628e3d537b03a",
+        "include/flashinfer/trtllm/fused_moe/runner.h": "1557a108d630f7f6efd9773f263935e89f7152aaf51e5c0fe72a960b58daefb3",
+        "include/flashinfer/utils.cuh": "d14edcb4d39503603b3347bdb20fdd6b96ff3467b97ba3f539af5f8fdd86adec",
+        "include/flashinfer/vec_dtypes.cuh": "3e292b05f261f29287cb18871fe62f6a9a59cf1f47e885bee45524776a984f2c"
+      },
+      "prepared_source": "/root/hyle-scratch/compute-unified/g04-ce28-producer-stage-build-1/original-peer/sync-fixed-flashinfer",
+      "effective_headers": {
+        "include/flashinfer/activation.cuh": "8b400ad65615c08953d79964488654a750b817231bda98a4c48487ee4f4586fd",
+        "include/flashinfer/air_top_p.cuh": "e41572fbb55a214fc0b4dfb077f8e8e127fe61bf69b4d4b53ac092f6b80e22bc",
+        "include/flashinfer/allocator.h": "3d80e3d3d29b1ae41218eb1167ca0059f923a9ccd69de79905d7f37df7cb2109",
+        "include/flashinfer/arch_condition.h": "99d6b54df9bd2b9095bfe64401581122542ea65d84aa609e24e2ffc1be522418",
+        "include/flashinfer/attention/batch_pod.cuh": "dc8823c6ce47487b9ce265a8d8308b420cf306fdb3afb44f76bf38d22ae299fa",
+        "include/flashinfer/attention/blackwell/collective/fmha_common.hpp": "bcb548bf86772e270f5cc83d35799e557860aaa2de821625e4727897ad8315af",
+        "include/flashinfer/attention/blackwell/collective/fmha_fusion.hpp": "ec58b20871b807a679e90c5fb6c70459801849863af116b8bb529063c45c4863",
+        "include/flashinfer/attention/blackwell/collective/sm100_fmha_fwd_epilogue_tma_warpspecialized.hpp": "30111c63c75322fae9c64cf3bf90285b07d9874e5e7f6109b157005402b10c19",
+        "include/flashinfer/attention/blackwell/collective/sm100_fmha_fwd_mainloop_tma_warpspecialized.hpp": "9ecc2c380b42d177901f6fb8df6e3f878e76bb9762cd367f9917347dfebe6b8a",
+        "include/flashinfer/attention/blackwell/collective/sm100_fmha_gen_epilogue_warpspecialized.hpp": "2368ed84e4ee7055c955c679be1720439a5beb6a152b7c730101d207cba6981c",
+        "include/flashinfer/attention/blackwell/collective/sm100_fmha_gen_mainloop_warpspecialized.hpp": "829524da09400927dfc86f9f2f7495b6dea4b7012dc7a0fbaf3d5df2a69774bb",
+        "include/flashinfer/attention/blackwell/collective/sm100_fmha_load_cpasync_warpspecialized.hpp": "aceef621777dd5b8d37c545291fbb6d0a3c229d798ae70ff1bf4fb62b4e81687",
+        "include/flashinfer/attention/blackwell/collective/sm100_fmha_load_tma_warpspecialized.hpp": "e7f49c15bcf62842a7b66f60b5d1708a5403ef36d25f360a235a5cae2ff05b8d",
+        "include/flashinfer/attention/blackwell/common/pow_2.hpp": "a90bdb34e36ba546d8bf91d25514f203f7eba497b3f482476f9178afb6285bf4",
+        "include/flashinfer/attention/blackwell/device/fmha.hpp": "707fe88459a3714a4ea0ed8f37d275533c23d903d6d042fa5b8c44ea878fe61c",
+        "include/flashinfer/attention/blackwell/device/sm100_mla.hpp": "3623a777c0d24a2f12bcab5be475ff44a556c7f3182dc53727560f6d33155bc4",
+        "include/flashinfer/attention/blackwell/fmha_cutlass_sm100.cuh": "8f8a12c0e657f7a475d1b3264d418a7db2401f1998cd03ea1f358d1939630320",
+        "include/flashinfer/attention/blackwell/kernel/fmha_options.hpp": "bcfc6809b04ed7e9fafc01182af562611d801e43070092691a3ceeb40094e762",
+        "include/flashinfer/attention/blackwell/kernel/fmha_tile_scheduler.hpp": "88cb247abb4f62d16576efb7b32acd40ef8060c6292f0ec59e39b3d66713ea29",
+        "include/flashinfer/attention/blackwell/kernel/gather_tensor.hpp": "f72afc2a4340ce80aa13870a3648117e0999b78565cb5264809fb5570a9e63da",
+        "include/flashinfer/attention/blackwell/kernel/sm100_fmha_fwd_kernel_tma_warpspecialized.hpp": "c5d2ff111496c43b84d10eeae504cd7064e3284c710a77e51bb8ae11530d7b6e",
+        "include/flashinfer/attention/blackwell/kernel/sm100_fmha_gen_kernel_warpspecialized.hpp": "efc3bb326ae09b1773ef0ebc8fa78be6acef63c9d78626de0c44e62269234777",
+        "include/flashinfer/attention/blackwell/kernel/sm100_fmha_mla_reduction.hpp": "e698e4a38eb55351f6e4a8fbf9645d130f5a5e9d82a70ae64da49d00346265c2",
+        "include/flashinfer/attention/blackwell/kernel/sm100_fmha_mla_tma_warpspecialized.hpp": "71ab6759ab81ec7901f807504942f4b0f4b709acff59b13b4e301fe267f9e36f",
+        "include/flashinfer/attention/blackwell/kernel/sm100_mla_tile_scheduler.hpp": "e1db9b47e7326ba0cc9579a1f51c80596ca220030211e28647138ddfbf97365e",
+        "include/flashinfer/attention/blackwell/plan.cuh": "695826754109771b2641f27bff5d01bbafb017781033208a7510166cd782cb8a",
+        "include/flashinfer/attention/cascade.cuh": "3ce6de505884bbc4efc78e63b0719eef4fe31fe152defa9fa4f050898fa51210",
+        "include/flashinfer/attention/cutlass_mla.cuh": "6d055ba5ca5d2c4d3157f4dd3c84a53055ca2f08394f412d31e0b3efb541a43b",
+        "include/flashinfer/attention/decode.cuh": "bd699c64cff0af922305e532de587ff4db8bc377c198bd653db1d48aa74c2942",
+        "include/flashinfer/attention/decode_mla_cute_sm80.cuh": "4a6b5f18fc3ff27d7d2fa688b233b0947c7f234d9620e4526e9144ee51b640c2",
+        "include/flashinfer/attention/default_decode_params.cuh": "92388eb0b2c19cc01eb937d1dc7d45a46e512d25ac64e03cce91677f8cda6c4c",
+        "include/flashinfer/attention/default_prefill_params.cuh": "5b0545df7e134dc031e6a1179ec9c64a6d6b0e4d41b2cd98d3826165b3ed3615",
+        "include/flashinfer/attention/heap.h": "a0fa6879f813b4c1c21c132d7c593fe5c76abc51f3785dfcef621651524409bf",
+        "include/flashinfer/attention/hopper/attention_updater.cuh": "5619132d7acfe4ffad74e340b65f951b89cd09a3fc1f22ae1f220e3031058ea2",
+        "include/flashinfer/attention/hopper/default_params.cuh": "587a5c9e7ab52e6a157e17006c797128d5e4c98d3e9668fe5e8eaf461b186ff6",
+        "include/flashinfer/attention/hopper/epilogue.cuh": "196a68505ad49389c139a768f3eb551addb1d9414b67d80c8a0e38b62c0c3c3f",
+        "include/flashinfer/attention/hopper/kernel_traits.cuh": "ddd9b2a2a74157959a6d293797362f87752d30fe8208319cefd2cfe9452e924c",
+        "include/flashinfer/attention/hopper/mainloop.cuh": "a26e9897424dbdeff1b7d26da4f1faefc10a12244b5022d49cdfee94551a6d49",
+        "include/flashinfer/attention/hopper/mainloop_mma.cuh": "1512881b8e50d9dcd72a75693130208510b8c6278250d06ee62f9e47f48055b1",
+        "include/flashinfer/attention/hopper/named_barrier.cuh": "436c8b3ce6242a3013be3b4a146e29cba52cba6c20fce71ad09e0a4bb90b004b",
+        "include/flashinfer/attention/hopper/prefill_sm90.cuh": "0b20b38b91b295202258203cc484d588fc6251b6eacea9da4c0d5f57ea104ad9",
+        "include/flashinfer/attention/hopper/quantization/epilogue.cuh": "0e5560bff28eb939804c7dbdcebb4a98fd058010a6f5f5227e336e46e933bb79",
+        "include/flashinfer/attention/hopper/quantization/kernel_traits.cuh": "4c12864c46cd4566c37eda1c72a369ba96d675a8f59d89a0c4d9d747ad32a4b7",
+        "include/flashinfer/attention/hopper/quantization/mainloop_load.cuh": "624ce984a43e01850c7f8b5190eddc95737307222fcb28790654039187eb5ca2",
+        "include/flashinfer/attention/hopper/quantization/mainloop_mma.cuh": "a1c3404751621cd0474bd3443e174c7bdea48fcd8f9cb0b8df3fb02fa6158301",
+        "include/flashinfer/attention/hopper/quantization/mainloop_sparse_load.cuh": "88086c8d6874b019dbf6713547c0e98080bbfce6d1e72aed1d3d955507ecf2d1",
+        "include/flashinfer/attention/hopper/quantization/prefill_sm90.cuh": "c981ae078bd8a731c7c1ecc7907f329425fe4860569b910ae49c6df01d145b6e",
+        "include/flashinfer/attention/hopper/sparse_mainloop.cuh": "f8221219d00124385d13fec69283e6c8cbcc3942c5724e5f95f793b5fe383471",
+        "include/flashinfer/attention/hopper/tile_scheduler.cuh": "dcf709d560da39d0e70d077d8720b93859f14422f8a20d80f51ff352ee3a19df",
+        "include/flashinfer/attention/hopper/utils.cuh": "51d1bd1b9cf4c9160c94df802ec236b77bdfaeb751934d40ad878a60389d8631",
+        "include/flashinfer/attention/hopper/variant_helper.cuh": "a44458a26f41f39ec8e4fed2674c82ba19493be9e00542d10133c922d3d8395e",
+        "include/flashinfer/attention/hopper/variants.cuh": "1062a4c80f9f4cb371f7e809cdd5d518468520862519aede64ea41dd6c07b217",
+        "include/flashinfer/attention/hopper.cuh": "908db868c26413ece77371f49e75b4c3ff64ffbb22c0460f8987835f8e2f2daf",
+        "include/flashinfer/attention/mask.cuh": "aecde488616cbf433347534ba3d3862d7576eb35d50e3640f425e31dc95ef7a0",
+        "include/flashinfer/attention/mla.cuh": "3084a832425fa3872ce00b4b3ec52a32f9f319eb8c0403bc991e91c6d443d132",
+        "include/flashinfer/attention/mla_hopper.cuh": "58d855e6b74f36eefb1099eb12bb56a09445f5f214aff4488e33b10dfea2027d",
+        "include/flashinfer/attention/mla_params.cuh": "57be4a5ea15a670305fc45dc7d03b5f3b4f041321e6db05efed01096391946bf",
+        "include/flashinfer/attention/persistent.cuh": "448265a190d4359e26c396e2af962e56aeab45139f7c9c3810f83ff06cae0c4d",
+        "include/flashinfer/attention/persistent_template.cuh": "799679baadcc25b8d844a33ed9b23850aaa7071b30f3d0f030da3a5f92e0936a",
+        "include/flashinfer/attention/pod.cuh": "52374f31753489ea5e637fe728a7f998fcbb0226cc2a7c8f4b766f8655179132",
+        "include/flashinfer/attention/prefill.cuh": "0618971946405be7b41071e47260bc9e2ce045893e5e585fd5b6854fbcb6d31b",
+        "include/flashinfer/attention/scheduler.cuh": "a11a39aea393cdb380ad9439aac9170cd96849d7426ebbb920c5c8cdadfcc575",
+        "include/flashinfer/attention/sm120/nvfp4_attention_sm120/api/launcher.h": "b2891fbe54df2045c28753bcc9de7a5621c2912b98f0a20884ba9d5017df0ad5",
+        "include/flashinfer/attention/sm120/nvfp4_attention_sm120/common/block_info.h": "42db5a7f19200de6901a154b320cfdd7d0425eb10cb340c55ae27d07429b1104",
+        "include/flashinfer/attention/sm120/nvfp4_attention_sm120/common/cute_extension.h": "ebff69dd5d2c225ef95b030e20a1b8c0569708246650787ebf3fcbca630b2e7f",
+        "include/flashinfer/attention/sm120/nvfp4_attention_sm120/common/gemm_with_interleave.h": "5210c3d93bfa81a5ae8b16c9806f298bf0a12bd93b403334624bc1516875bb4e",
+        "include/flashinfer/attention/sm120/nvfp4_attention_sm120/common/params.h": "5c37f98a6be483dd7010f5c8f56c17bb6b5916f31071e27cee605c7ef94c23e9",
+        "include/flashinfer/attention/sm120/nvfp4_attention_sm120/common/static_switch.h": "b0bb66150d434516418a75483d583a8e1872c8f560ef8fba111eda3e1c35f888",
+        "include/flashinfer/attention/sm120/nvfp4_attention_sm120/compute/consumer/delta_correction.cuh": "db067b790c872f5e5538ea7996392a8e1315a92c5868416722bc66eef618b0fe",
+        "include/flashinfer/attention/sm120/nvfp4_attention_sm120/compute/consumer/pv_gemm.cuh": "5fa9f7d7f651f1739f965b644550627daa1ccbd7b39590538459ec7851a0c9b0",
+        "include/flashinfer/attention/sm120/nvfp4_attention_sm120/compute/consumer/qk_gemm.cuh": "1abe2386bbcd837c5bf89eae3a69dc197b3e0c964e5a73886467006687c02cd6",
+        "include/flashinfer/attention/sm120/nvfp4_attention_sm120/compute/consumer/softmax.cuh": "f1830965e5365c043027acdcd5a167371d9a10e86308660f7b4fc59af7ed6dc3",
+        "include/flashinfer/attention/sm120/nvfp4_attention_sm120/compute/epilogue/lse_writer.cuh": "a61414278ee4e367a0a0a08b9bfaac254559fb7f54c49cf9a3dfb2c5ddd614b5",
+        "include/flashinfer/attention/sm120/nvfp4_attention_sm120/compute/epilogue/output_writer.cuh": "298bf6d9f0c1de78f7ddacd37a9d33d147d9f87a14fbb7b902db7036505f1285",
+        "include/flashinfer/attention/sm120/nvfp4_attention_sm120/compute/epilogue.cuh": "d5fe649afe69c7486c4e08ff38959902c857c5aebe74c0286b601931dacfb6e4",
+        "include/flashinfer/attention/sm120/nvfp4_attention_sm120/compute/mainloop.cuh": "fe94295da3c0f5c0e047cc32f124ca9673477cc5dfad2d81e7cdba7e06c79a51",
+        "include/flashinfer/attention/sm120/nvfp4_attention_sm120/compute/producer/load_k.cuh": "82243e2ede4eeb37cb0bab741d6187877fc720fb78f0cefd8057de1300e2e232",
+        "include/flashinfer/attention/sm120/nvfp4_attention_sm120/compute/producer/load_q.cuh": "0df7b1923560a110d6e3de29451c80c8dc56d7ea4e6e95a924031ef72bb99aef",
+        "include/flashinfer/attention/sm120/nvfp4_attention_sm120/compute/producer/load_v.cuh": "aa094f048751b5dd176086daaf217456d41aab67d0ffaf802f2854f640e38c1c",
+        "include/flashinfer/attention/sm120/nvfp4_attention_sm120/kernel/attention_kernel.h": "e9fb34bd3f9e8c96fc4cf9a37ac58b788d6630e6ceabcaddd089a53652d41a39",
+        "include/flashinfer/attention/sm120/nvfp4_attention_sm120/kernel/scheduler.h": "b83524886137fe06ea8ee9d870f23274c37c2bc405be8b8237cb0016b8bf7033",
+        "include/flashinfer/attention/sm120/nvfp4_attention_sm120/kernel/traits.h": "d948265c99b0eea0724806cb6ef25904f8a9df281ffc199f470fe45294643b98",
+        "include/flashinfer/attention/sm120/nvfp4_attention_sm120/primitives/barrier.cuh": "a0ad7fa0ffcc16a79c90bcb0a95076885201076e66f88ab7e09989b3892c292b",
+        "include/flashinfer/attention/sm120/nvfp4_attention_sm120/primitives/pipeline.cuh": "96be5ba090aa05935c867b8eedecf50e4028ada3e49d1ef6a04c019e882c954d",
+        "include/flashinfer/attention/sm120/nvfp4_attention_sm120/primitives/tma.cuh": "27a9434e47de9645717f8fb6d88c2c97b165c7a4f9d247a63b2083d2b5438783",
+        "include/flashinfer/attention/sm120/nvfp4_attention_sm120/primitives/warpgroup.cuh": "3667ca52c48e849ed7b0b500948fecc061fb4a9f8dd480733d6e9a4e7a46ad1c",
+        "include/flashinfer/attention/sm120/nvfp4_attention_sm120/quantization/fp4_convert.cuh": "5af96f4c370a4cfba96fa9ef6ff1debbf545593403350863cdb7e1c3096ed746",
+        "include/flashinfer/attention/sm120/nvfp4_attention_sm120/quantization/fp4_layout.h": "2adee11761e3d670614f6980c071b596d02069af1c9f70fe455798331d8f6bdb",
+        "include/flashinfer/attention/sm120/nvfp4_attention_sm120/utils/copy.cuh": "de6ddcffe5bd01b979c6e1a45e083572fb219875288e5df1e39888e842a811a6",
+        "include/flashinfer/attention/sm120/nvfp4_attention_sm120/utils/layout.cuh": "487f9816ec70648f11de06a0775908608766d06728b16a2b1a160d59eb25a558",
+        "include/flashinfer/attention/sm120/nvfp4_attention_sm120/utils/math.cuh": "a43dc22c1e19b941704b50ab1ceb84ca85311171a457ade7eb695bb425e57a74",
+        "include/flashinfer/attention/sparse_mla_sm120/arch/barrier.cuh": "015f9507382fd2a6ad244078574c0f56f692c827619c879b44cfcb1833787615",
+        "include/flashinfer/attention/sparse_mla_sm120/arch/common.cuh": "bdd9f13c1d6a89cf4f6291f8f9b337f209d1f3fee622f56f3a3a5e053334b681",
+        "include/flashinfer/attention/sparse_mla_sm120/arch/cp_async.cuh": "ec2e59216add7516db4eadcfc6d9246d4f82468d2382acae10d3580f753305c7",
+        "include/flashinfer/attention/sparse_mla_sm120/arch/ldmatrix_sm120.cuh": "4081b48f37695947fae9f719d0c4c1f607da6b741848ede4efe9c40708536f5d",
+        "include/flashinfer/attention/sparse_mla_sm120/arch/mma_sm120.cuh": "ab0e9962c610845f39b5bc97eba2e2264ad041b63d2971e55fcc9d20055bb486",
+        "include/flashinfer/attention/sparse_mla_sm120/common/d2_load_b.cuh": "bcb8dec92916bc802853268a431f5ec53f8ea771fa6dab6b0f647912993a2d20",
+        "include/flashinfer/attention/sparse_mla_sm120/common/fp8_quant.cuh": "c4c503f6139d8e80ea9d0be7e876178f5af1c0b94a225975f91e49266b6c14b4",
+        "include/flashinfer/attention/sparse_mla_sm120/common/kv_cache_io.cuh": "f4c589ef931e311349f259e4e98f23093d71f2eae1f59485c02b8acd5931d365",
+        "include/flashinfer/attention/sparse_mla_sm120/common/online_softmax.cuh": "4b7110122e9576d72f4f40ab9b999e4f95f33738d69cf21f8f8a5448c382c459",
+        "include/flashinfer/attention/sparse_mla_sm120/common/q_rope.cuh": "2e7ae3932636052273574b87fab8f1dd09b9246fd7f34b1446a227b52b2c885e",
+        "include/flashinfer/attention/sparse_mla_sm120/common/scale_mma.cuh": "cbeaa1c19d1f2aae3cb593a8f41b3308f23fd13348515189d60c3efbc6957b99",
+        "include/flashinfer/attention/sparse_mla_sm120/common/smem_layout.cuh": "87b3b212dea1d6e112226c2b8fa58e92d14474026f641bace2ebaef2ceab8506",
+        "include/flashinfer/attention/sparse_mla_sm120/common/xv_rope_mma.cuh": "4107bc481f98c3dc1d60cd02b30cbff5f8142a0ab9fcc0f5f96d247c151356df",
+        "include/flashinfer/attention/sparse_mla_sm120/decode_dsv3_2_kernel.cuh": "b7860563129fbbfcf1faaab0a12195e5be1d2ce6ba64054413d7a1b2bc999ad1",
+        "include/flashinfer/attention/sparse_mla_sm120/decode_dsv4_kernel.cuh": "014c668d9bc9b30adc98f05dbc4bb5bedd9989def585a0d88347efb57f4eed54",
+        "include/flashinfer/attention/sparse_mla_sm120/model/kv_cache_traits.cuh": "95499904538b2f708f596887ea1128ba45d24bdb1f491502d541d08e4439d559",
+        "include/flashinfer/attention/sparse_mla_sm120/model/model_type.h": "d8eb2cfdc3eb228f1671f37c50233ff2a0c07908799cc9dcb8848d74a33cf0e9",
+        "include/flashinfer/attention/sparse_mla_sm120/model/scale_convert.cuh": "d431d62d1c400f74bf4b1f9986ec7d5ff47f2669f0aac0248fd481ffb07cd82a",
+        "include/flashinfer/attention/sparse_mla_sm120/prefill_kernel.cuh": "5f005980cff1606fc1a239faeb93d1d697710c92014d549e4425e9db04f675e0",
+        "include/flashinfer/attention/state.cuh": "b2f59c104c2857e7e69f1837faf577525a292da98b375d5fb24dbcfc15d78159",
+        "include/flashinfer/attention/variant_helper.cuh": "326c32f7722027da5002ca9297c84f74b604255f01e59263f193b2aee3edb159",
+        "include/flashinfer/attention/variants.cuh": "90a228dd71b3ce8030d663e2b16f67f840fe4a3e99912f8b47774d3fd905a080",
+        "include/flashinfer/attention_impl.cuh": "986131d458ffde1a8150c56878ee923f5a571747483a401eb234d15572d30f71",
+        "include/flashinfer/comm/mixed_comm.cuh": "ace61fb3289489ea40cdbb4452d9a6f68c0fdd0fdec22940b87b96641c6c6f86",
+        "include/flashinfer/comm/mixed_comm_decl.cuh": "3d48d8f305cc51e7be551fd191ffa43b9708d0f4d90997feb2fe8b2b9bcfc559",
+        "include/flashinfer/comm/trtllm_allreduce.cuh": "1aba1b25a72c1f6073b3d08fb6e23b355bb4b42250e2b4c1c55a3c225896735d",
+        "include/flashinfer/comm/trtllm_allreduce_fusion.cuh": "093b853acfef45e32fa2171bd25fff9bf522db361da7b79f5f189f5a8bb171ae",
+        "include/flashinfer/comm/trtllm_alltoall.cuh": "f348ab67c9a9f57af1fba2a4d65561b63fbf008271148efd00f15492e1b110a5",
+        "include/flashinfer/comm/trtllm_alltoall_prepare.cuh": "42cf2790a4b4e4ec65a2851c5a814fd26663c2187e1a4fa23b29e5b347f0bf72",
+        "include/flashinfer/comm/trtllm_mnnvl_allreduce.cuh": "3b33d6d3117e603335db7779c9d7e81b1da3840745ad731f8c4f4795a6365e9f",
+        "include/flashinfer/comm/trtllm_moe_allreduce_fusion.cuh": "518e42e290a7192c5a6338b5825c19f0e37687bac0dde3ec00ce2af4518a11da",
+        "include/flashinfer/comm/ulysses_all_to_all.cuh": "0f71e893808e9611fc19c5de8b0906079d7906897bbee87285a30f6c37043840",
+        "include/flashinfer/comm/vllm_custom_all_reduce.cuh": "7d8dc996752ba9cd338b760c8f7f982efac15a4c51782c747796ce8da82165a4",
+        "include/flashinfer/concat_mla.cuh": "8d83a2477d0d73284616d6da9733c6a4975a84542ee513f7a9161dcdb7638d3f",
+        "include/flashinfer/cp_async.cuh": "957a02a9d471280d333d7a2a98729f3753de69041870526e73a4f47bc6c94f06",
+        "include/flashinfer/cubin_loader.h": "a06b135ac7f8dee4cf67b60e398aad055fb14ed1cb10009c976a6066bbf99687",
+        "include/flashinfer/cutlass_utils.cuh": "2c2f6d2a96710c7418797643ab108c62cce944273b63420447030aacd0f1f4b7",
+        "include/flashinfer/exception.h": "83126766f5b3ef24586eca68bcd3ebe45b1f8b1c5952fb55940421618175f271",
+        "include/flashinfer/fast_topk_clusters_exact.cuh": "752a008e905ce35759a2dd7721ced1f6b05d483b4dc7ef107abd7405b11b061a",
+        "include/flashinfer/fastdiv.cuh": "5d79e2d63bd133f9da4fd3236342999cb585812eb07326ce55775d353ae62832",
+        "include/flashinfer/fp16.h": "dcc4b12d9b041264c1cbf25e64659b17e86c259c0411f554680c25bdbd1ff6e6",
+        "include/flashinfer/fp4_layout.cuh": "376faf8ebd6e9eff90eba6f3fbc4c1d8e45ed10f7058f256a5e673f0da638bcb",
+        "include/flashinfer/frag_layout_swizzle.cuh": "cae96de0e3fd9a4b7dbcdc1e0a6e9fdddd3b1d79f67a83de3b7e1cd4549b175a",
+        "include/flashinfer/fused_moe/da_config.cuh": "f47dc779229ebcacc7da8e84d17d422a6ebc9a95acb683692ca5efe2f59f0f45",
+        "include/flashinfer/fused_moe/da_moe.cuh": "ea17ef2c98c72682f663998af86fd28d548549c97e863df324e1b64a64a7fe6e",
+        "include/flashinfer/fused_moe/hash_topk.cuh": "bf6735058a90bb558941dfe5df8554b44be2e11c1d6b5f7d799bc8a1ffdeeab4",
+        "include/flashinfer/gemm/bf16_gemm_cutlass.h": "a5853923c63ed5fd190015b3b2af4909becf63604b567a72f0aead5fd98870b1",
+        "include/flashinfer/gemm/bf16_gemm_cutlass_template.h": "046c6fd2a815d13a8decd99d614633cf9a26e8d073ae37dd15c0679c25a6dabc",
+        "include/flashinfer/gemm/bf16_gemm_template_sm100.h": "8ead0065167d93360548336fcc4d80fdddc81eb73fbe5c551eb1a37419e0becf",
+        "include/flashinfer/gemm/bmm_fp8.cuh": "6f55c25e7bd0d10f02a7fe983ba41dc643ff766ef50bded82f473e41262b8b4b",
+        "include/flashinfer/gemm/cutlass_gemm_configs.h": "114f3a3ef96b914150475d2e20212309b6cac8a0b55443cf5114b84b092239be",
+        "include/flashinfer/gemm/dsv3_router_gemm.cuh": "d37d2934a47380269288447e7344deece139e14dd08a97cd193d03d6f4d1eedd",
+        "include/flashinfer/gemm/fp4_gemm_cutlass.h": "2c5811b5e8dbc722d35ba9ad197cf2437c998873e9dae9660a7e6cb06ad6662d",
+        "include/flashinfer/gemm/fp4_gemm_cutlass_template.h": "f4f6fcb68dc584cb13b340a996c34e51107867737abdbf67aa47a3394587f1a2",
+        "include/flashinfer/gemm/fp4_gemm_cutlass_template_sm103.h": "f6672a4e246f395915bf05152279beecf67ad48b99d5ce027a0848c71af1b7f2",
+        "include/flashinfer/gemm/fp4_gemm_cutlass_template_sm120.h": "446daaf38d34e643a4743169287b7e27c0c38bfedce3d7da68a2dfdefeb0b90e",
+        "include/flashinfer/gemm/fp4_gemm_epilogue_sm103.h": "6536a3a7dbc54af76ae3b98d89a8f34063137ded92485e061f12646722495e65",
+        "include/flashinfer/gemm/fp4_gemm_template_sm100.h": "868fad7f668ed07a3569e49691126da48f1f070b97085792ce84de3ef8fb4f86",
+        "include/flashinfer/gemm/fp4_gemm_template_sm103.h": "a337621037f06d527b862fc05827e43c201b4a32d32d2bff17fc355f2cfcc0e3",
+        "include/flashinfer/gemm/fp4_gemm_template_sm120.h": "a70a47370ed14ee8f88b4d93e54547db6a23891af2451f78ca1159de0eda312c",
+        "include/flashinfer/gemm/fp8_gemm_cutlass.h": "2970993a06bbea05a76c3123f39c199bc1daeee9db661ac1d3fa56c926bfe2c4",
+        "include/flashinfer/gemm/fp8_gemm_cutlass_template.h": "f09407134519f025774078512ce80f7a5f7c361ed4ad23a9177b2039744b88ba",
+        "include/flashinfer/gemm/fp8_gemm_template_sm100.h": "8407017e4cde08d27bd75279ac67a287ac7f6a464982a25cb61600221e197861",
+        "include/flashinfer/gemm/gemm_groupwise_sm100.cuh": "2970418dcbab8f6779ec777d9d579c454ab737103279c45b456e6beb8dc49b18",
+        "include/flashinfer/gemm/gemm_groupwise_sm120.cuh": "3ca72b44a2230c14ec640427738d5e421cfb6470aa15f7ab45060a88aa40e931",
+        "include/flashinfer/gemm/group_gemm.cuh": "ccd3eabe9b5445bb27cd7198eeaa44d3e9475588905cbe60a433a4b635a73a4c",
+        "include/flashinfer/gemm/group_gemm_fp8_groupwise_sm100.cuh": "fce7b6e0ac195ceb059aa2372b9d964a666bc89e5e98e89ca83308cedab6b73d",
+        "include/flashinfer/gemm/group_gemm_fp8_groupwise_sm120.cuh": "9fca2cabf6dcead2f4acbc9a59e5180d542177867a6142cde74304c121b7c350",
+        "include/flashinfer/gemm/group_gemm_lora.cuh": "4d9308f189130392fb9ea4cb62b38c924286578e2cb0464867c554cca39aa0cd",
+        "include/flashinfer/gemm/group_gemm_mxfp4_groupwise_sm100.cuh": "abe779f872a5b943674e789026d7ca7cb7b7da443d3af59afc8f7274e757a9f8",
+        "include/flashinfer/gemm/group_gemm_mxfp4_groupwise_sm120.cuh": "46799a771cc1328d59b939936099064c9a906d64914b03ab222c49741bd6ff64",
+        "include/flashinfer/gemm/group_gemm_nvfp4_groupwise_sm120.cuh": "8b513fd6ebe8a539899fb72f7ba7ca9aba02281b714fee9c4078eb96fbf6fff6",
+        "include/flashinfer/gemm/group_gemm_sm90.cuh": "c16b7b8062db566902d55d1e96aec91ed78b302b046fc4c65d2509bde3be5274",
+        "include/flashinfer/gemm/group_gemv.cuh": "2fa9e8ce10cfce1117f89e4cb7f30cb8c24afcec7155b4a681f89d1678e775c4",
+        "include/flashinfer/gemm/mm_bf16_cublaslt.cuh": "3e7833bd85fff8216b838bfaed99e601df6eaf810a87edba4bb672b1f5e51482",
+        "include/flashinfer/gemm/mxfp8_gemm_cutlass.h": "02f987cbc076bb6cedb51fbe508052a5e807a7f8114d71a7095eba50c7bbd3b9",
+        "include/flashinfer/gemm/mxfp8_gemm_cutlass_template.h": "202067a895375c6c6efe7e1276fe7b419680840601d034095f54a230555ccec7",
+        "include/flashinfer/gemm/mxfp8_gemm_cutlass_template_sm120.h": "57fe994ba800726e4b3414135840f451830f7dd5a950cbe8102ebf9a45fdbbe4",
+        "include/flashinfer/gemm/mxfp8_gemm_template_sm100.h": "ccf41a2df27bbab3a87be5efd0bd631cb84a7ab3eb98eb971514d1dd6f2f76d6",
+        "include/flashinfer/gemm/mxfp8_gemm_template_sm120.h": "b7dcdbf2036f4aff130548a67c3ff369283315dcda57c6435f6d0a6b1d0fe17a",
+        "include/flashinfer/gemm/nvfp4_smooth_quantize_sm100.cuh": "d725b90d163b7419613d0bf0ab5c152f1f878f5e1b557afd6b72f21ddd676852",
+        "include/flashinfer/gemm/nvfp4_svdquant_gemm_collective_sm100.h": "71170c6e00d1cb264135d345285acdc24a778ccb50bb4cbab7fbbd8607fb2858",
+        "include/flashinfer/gemm/nvfp4_svdquant_gemm_cutlass.h": "cfe83283a17805ae8d36631506a059f42593279f096f69762f64d8bc3f914448",
+        "include/flashinfer/gemm/nvfp4_svdquant_gemm_template_sm100.h": "920520a315a28cfb1981e94372a8507e541ba34a5decc4bdbc33dd53cbdaa25f",
+        "include/flashinfer/gemm/tgv_gemm.cuh": "70f94c5886295161c77f07bd20839c2dbf7d4034f15497d2ea4ff9cb8d378d55",
+        "include/flashinfer/gemm/tgv_gemm_configs.h": "1d8d0c0b6e5f5d3e837e16a212a40279f2f0d3353dcf4d1238d03aad08d735b7",
+        "include/flashinfer/gemm/tgv_gemm_template.h": "db8f8a7b9ee96bc0ccdca7fe54ab5418936c1f15d1b206cdc557dab25607b94a",
+        "include/flashinfer/layout.cuh": "f000e64b9c718b0659fff1acf3c3fa0c2cdf5c75862cede645b16014bfa7aa2b",
+        "include/flashinfer/logging.h": "690e48797b623e28ac54824fc476e189341fcdadcdf2ae19d0f134babf11348d",
+        "include/flashinfer/mamba/checkpointing_ssu.cuh": "fafa923f3079941a161ec7a6e1fb96c0b8fdf5c7f7206275b3717fe19c6c7b90",
+        "include/flashinfer/mamba/common.cuh": "523233b44b278808944afa9a3efeed945f9aace7fc0a7a9501253cc6e28872bd",
+        "include/flashinfer/mamba/conversion.cuh": "bf10c7c04e337efb4135f3f996cea2ca03262a05d87655c60bffe2bba8bff2bc",
+        "include/flashinfer/mamba/create_tensor_map.cuh": "09021831ba70c673e238005936921bbffa61d5854fede4abcfa84155ebf2deb1",
+        "include/flashinfer/mamba/invoke_selective_state_update_mtp.cuh": "5be5da574adc8b148064ee1214a9eda99881ec5163ef244e462cb53ae54c4bf8",
+        "include/flashinfer/mamba/kernel_checkpointing_ssu.cuh": "dceebc80abc3fdedb2fffdc86734d5ecd627a535a84bd47c66817f14b87ee3b4",
+        "include/flashinfer/mamba/kernel_checkpointing_ssu_8bit.cuh": "b17191a037a041953b802df5e63d7ccf4462177367277eff1e667a9c298aa5da",
+        "include/flashinfer/mamba/kernel_checkpointing_ssu_common.cuh": "38f188b79971623b450d295280b934e44c5fbd153f5e78cd1b3cfef03ea803e4",
+        "include/flashinfer/mamba/kernel_selective_state_update_mtp_async_horizontal.cuh": "78861db689b2426cc0a9c6e78a3011a8f510ebae365ba62aa595101c56948f2c",
+        "include/flashinfer/mamba/kernel_selective_state_update_mtp_horizontal.cuh": "7d07b8ef9faa9cfac7a24071ed235a48a65bd7842579c612f2c56e949440bdfa",
+        "include/flashinfer/mamba/kernel_selective_state_update_mtp_simple.cuh": "64b189b642d05970202964bdd3accf7055d34d6a50b7953a64c8a05a3e0a0dbe",
+        "include/flashinfer/mamba/kernel_selective_state_update_mtp_vertical.cuh": "8c8d292c08cc29eb0db47d231bcab47bdb86e285ff7b02f6135709e3a5058cca",
+        "include/flashinfer/mamba/kernel_selective_state_update_stp.cuh": "c0e13b64bf42f4f8155058dc9f5877f7aca90832f50a1e7602863894908e89fd",
+        "include/flashinfer/mamba/launch_checkpointing_ssu.cuh": "9208721847a46b5a43928bac056f684cc69bfe622dfaa180e7492d77c4751bff",
+        "include/flashinfer/mamba/selective_state_update.cuh": "004e37f97106fd39c922858a021844e21d5c83dca871b60a8d0704c82bb1e177",
+        "include/flashinfer/mamba/seq_chunk_cumsum.cuh": "d05b924c28bc22a55761eddb62b3ac71536406badfac15b0d839e3d8d672ec7b",
+        "include/flashinfer/mamba/ssu_mtp_common.cuh": "a2037245673c4459d30f3e1b926bb5489327b91f9fb9a6c97a718dafb0bd7675",
+        "include/flashinfer/math.cuh": "ad9461ba66273bf7e227af1e285a136b4e53f899fa60b3a41f08627ad738f2ed",
+        "include/flashinfer/mma.cuh": "f6df5d6475bf2fc33932399b7063894a2a4ed27cfabe45ae7cd239a1c61943e9",
+        "include/flashinfer/norm/fused_dit_layernorm.cuh": "f8d8af27f6715e282858547a3e8185a2cc71eaaad00d70923e9f02aad076e2f4",
+        "include/flashinfer/norm/fused_qk_rmsnorm_rope.cuh": "cd38bd434c7089057449a1460f76f0e6a7ce715077dea5fadfebe5ac34d5cf69",
+        "include/flashinfer/norm/ln_fwd_silu_kernel.cuh": "9ab23dc1a53b5444dcf2086c2815fba9f8f5ae21e128cb93d354aaef57a5026b",
+        "include/flashinfer/norm/ln_silu_headers.cuh": "0148de0cc48050cf8b87097aed2b70b94c547bd5127a6f0fb5f5e4ad8759f98a",
+        "include/flashinfer/norm.cuh": "88264c1294d609ad294954a923d0b02db3568c32f13c9211f13b9d5786605a28",
+        "include/flashinfer/page.cuh": "98e0b40aa6a5007d767cc49b9a2421bf8df2fbea5045394982ea451892d03ace",
+        "include/flashinfer/permuted_smem.cuh": "1929a5d1ebb27c67b1e9be3308adf5083957443448d73b6529c0e46c01d7ee84",
+        "include/flashinfer/pos_enc.cuh": "6a94df7647512f9474198ee99a04bf84b7dad9c65be1d10d8d20c9c9f9cf2abf",
+        "include/flashinfer/profiler.cuh": "99456bf371cce37079418572d607e12789ef2fce51a43e9eafea7c4a4bdb5952",
+        "include/flashinfer/quantization.cuh": "1b0824b17ad2d5e31ccfc5b0558969a43ccb5f797718c3429ba71e250ce59bd9",
+        "include/flashinfer/sampling.cuh": "8ae12bc1efdacd508040a30b06e19bc1b38ab1adb7214ef1599e0f354149a73b",
+        "include/flashinfer/topk.cuh": "1cc299ccd00bb6b6ae5bf376b7dc14c7032063468daa684ac36485d6352bbb80",
+        "include/flashinfer/topk_common.cuh": "4ed389d1535ab2e1b759eddca9fac3c46346b47711be2b72bbb1b99b21524f2d",
+        "include/flashinfer/trtllm/batched_gemm/KernelRunner.h": "d47cfd922333017c656881db6947ecc1f7ab5ab6a05a0a75eeb61b0cff46496a",
+        "include/flashinfer/trtllm/common/cudaBf16Fallbacks.cuh": "88b663058b16a02869432c49c153eda1e871a7667321011ff30dbe0eb79842a5",
+        "include/flashinfer/trtllm/common/cudaBf16Wrapper.h": "44075cca67013e32baaf5818699505039e2f8d22716db62c390cf5546ae0a7ee",
+        "include/flashinfer/trtllm/common/cudaFp8Utils.h": "4b56c231d1c5f7def7a66da0a65b2c3d52d15cbc475cd38aaccb255e1dc6a6f6",
+        "include/flashinfer/trtllm/common/cudaTypeUtils.cuh": "bf30235ba6db574aa2d843217d0c55b719bd4876afb4ae64bcae2d1884ab4d62",
+        "include/flashinfer/trtllm/common/cudaUtils.h": "2573c9e7a34e72f709f7f156b7a3c46b70d34392d334f5da2b35b2e56eef3a17",
+        "include/flashinfer/trtllm/common/reduceKernelUtils.cuh": "efb4a60ea4b4323d701959971e1bfd10a71a5d6d9fdc2e58d3e1978547d8c986",
+        "include/flashinfer/trtllm/common/sageQuant.h": "d8ca8b9f3d86691fa04649ac41b8d5a75789d6977eecae3105fd429852e3dd9f",
+        "include/flashinfer/trtllm/common.h": "cac4311837298c8bbaeb98b215a7fd708d7aa3befa1eb7350dcc0ca164ae2740",
+        "include/flashinfer/trtllm/fmha/decoder_impl_common.h": "77659878fd6c241c5a9854ac92fcdf5fce75bfc4a57d8829ca283cbddb4a2a8f",
+        "include/flashinfer/trtllm/fmha/decoder_params.h": "821b5095c138c06dddc4ba94452b885e2d8b6aeaf942d273dd9916afb11b6fef",
+        "include/flashinfer/trtllm/fmha/fmhaKernels.cuh": "95e3abffdd6355fca030a7280966c55fd1aea3484e5443305430e114dae2662e",
+        "include/flashinfer/trtllm/fmha/fmhaReduction.h": "d67172b8b8043f6fcfbcc849b5f23cdc1bcfd2547125c1b50da00c64f1ff2560",
+        "include/flashinfer/trtllm/fmha/fmhaRunner.cuh": "392e9218617fa3257ff0a6de174f5adead36ce5c3c260341c48c651538a7976b",
+        "include/flashinfer/trtllm/fmha/fmhaRunnerParams.h": "cd1296f8985c0ad2e150ad847a4b5a12d05ee0a3d032c50aad601286d4a3505b",
+        "include/flashinfer/trtllm/fmha/kernelParams.h": "553da952f21f04f487ce6bf38654adce1894259f7c0f9ed8ebbc25c894813da8",
+        "include/flashinfer/trtllm/fmha/kernelUtils.h": "460bbad83d93c0721acc80f4d8531ec7861be7d4beaf3e0fe583f6d1a7e5079c",
+        "include/flashinfer/trtllm/fmha/lse.cuh": "573cc0c824ef6929ba54b2abfecb2d86c1a8d119b75f99f558fedb0e95567e53",
+        "include/flashinfer/trtllm/fused_moe/DevKernel.h": "724d560c5391c5679769cd8c5f3af5bd86af0f866ef190b147c78663146fa49d",
+        "include/flashinfer/trtllm/fused_moe/IntFastDiv.h": "21608a4d3c69e166611d16996f955668c34cac341cb3cf3072311a8a28f1c004",
+        "include/flashinfer/trtllm/fused_moe/RoutingCustomPolicy.cuh": "77c075af95214d8cac6ab599e8cc48bffa50de2d2f67182371cf74e668ff0baf",
+        "include/flashinfer/trtllm/fused_moe/RoutingDevKernel.h": "7eb65d059dd9b0f27547f2b67e1f1587e6c80c3d1267571281244e357337a5ad",
+        "include/flashinfer/trtllm/fused_moe/RoutingKernel.cuh": "56f281b209e7846b2d6b510cf963ae705a1f639619d49563c6ac8d0e6549667a",
+        "include/flashinfer/trtllm/fused_moe/RoutingKernel.h": "50f52258c46401017e1e99648e04e46cbe749788d385ae0804581d4d0aaabad6",
+        "include/flashinfer/trtllm/fused_moe/RoutingKernelTopK.cuh": "6606d710ff917a7647565bddbdf787c68e09f9d6788b2d721cf213bd0cbba525",
+        "include/flashinfer/trtllm/fused_moe/noAuxTcKernels.h": "11db28558b0f09d0655268bcd8796a85bc1ee30890de1c8ba83628e3d537b03a",
+        "include/flashinfer/trtllm/fused_moe/runner.h": "1557a108d630f7f6efd9773f263935e89f7152aaf51e5c0fe72a960b58daefb3",
+        "include/flashinfer/utils.cuh": "d14edcb4d39503603b3347bdb20fdd6b96ff3467b97ba3f539af5f8fdd86adec",
+        "include/flashinfer/vec_dtypes.cuh": "3e292b05f261f29287cb18871fe62f6a9a59cf1f47e885bee45524776a984f2c"
+      },
+      "derivation": {
+        "kind": "OUTPUT_STORAGE_CTA_AND_WARP_SYNCHRONIZATION_ONLY",
+        "product_manifest_sha256": "1977b83b67495c4aedb391517c2f35c6034ea4b986716591732ddb2612cd1712",
+        "selected_edits_sha256": "47df06c7625e4ee3d767d6982b211e0e6b10834245d31e24d4c5fe2bfba9f8cf",
+        "changed_headers": [
+          "include/flashinfer/attention/prefill.cuh"
+        ],
+        "barriers": 2,
+        "original_prefill_sha256": "f93cbea96e3a723254c15f5a52d6dd4c13e3892e88eb9b9fed1c0c0048c7d710",
+        "effective_prefill_sha256": "0618971946405be7b41071e47260bc9e2ce045893e5e585fd5b6854fbcb6d31b"
+      },
+      "adaptation": "namespace token plus two output synchronization barriers; original arithmetic/tile/layout/planner unchanged",
+      "status": "SOURCE_IDENTITY_ONLY_NOT_COMPILER_NUMERIC_OR_P1"
+    },
+    "build_contract_preflight": [
+      {
+        "id": "build-contract",
+        "gate": "PASS",
+        "details": {
+          "kind": "build-contract",
+          "compiler_id": "GNU",
+          "compiler_version": "14.2.0",
+          "configuration": "Release",
+          "fresh": true,
+          "linkage": "static",
+          "lto": "off",
+          "isa": "portable",
+          "expected_compiler_id": "GNU",
+          "expected_compiler_version_prefix": "14.2",
+          "compiler_matches_profile": true,
+          "toolchain": {
+            "schema": "hyle.perf.toolchain-record/v1",
+            "compiler_id": "GNU",
+            "compiler_version": "14.2.0",
+            "compiler_path": "/usr/bin/x86_64-linux-gnu-g++-14",
+            "compiler_sha256": "916ef3c03c2d024857af2e084d3648204033b9c79e0e62575974f567f99adc84",
+            "compiler_target": "unknown",
+            "compiler_frontend_variant": "GNU",
+            "linker_id": "GNU",
+            "linker_version": "GNU ld (GNU Binutils for Ubuntu) 2.42",
+            "linker_path": "/usr/bin/x86_64-linux-gnu-ld.bfd",
+            "linker_sha256": "e9ceb054c12207970f2726dfc07e9a66b411602748628baf27399f02a9bbb31b",
+            "sdk": "unknown",
+            "stdlib": "unknown",
+            "system_name": "Linux",
+            "system_version": "6.18.54.1-microsoft-standard-WSL2",
+            "system_processor": "x86_64",
+            "cmake_compiler_record_sha256": "ce7b60e91078713d85b3bc39b72ae5305d7e224e26daec25064976873686f0f7",
+            "formal_identity_complete": false
+          },
+          "toolchain_attested": true,
+          "formal_toolchain": {
+            "required": false,
+            "proven": false,
+            "reason": "machine runner profile has no pinned formal_toolchain",
+            "mismatches": {}
+          },
+          "configuration_observation": {
+            "value": "Release",
+            "mechanism": "CMAKE_BUILD_TYPE",
+            "available": [
+              "Release"
+            ],
+            "proven": true
+          },
+          "generator_matches_profile": true,
+          "architecture_matches_profile": true
+        }
+      }
+    ],
+    "actual_compile_steps": [
+      "[1/13] Building CXX object CMakeFiles/g04_cuda_encoded_bench_placement.dir/root/hyle-scratch/compute-unified/g04-ce28-producer-stage-source-1/bench/inference_resident_sdpa/cpu_placement.cc.o",
+      "[2/13] Building CXX object CMakeFiles/g04_cuda_encoded_bench_placement.dir/root/hyle-scratch/compute-unified/g04-ce28-producer-stage-source-1/bench/inference_resident_sdpa/cuda_encoded_page_reference.cc.o",
+      "[3/13] Building CXX object CMakeFiles/g04_cuda_encoded_bench_placement.dir/root/hyle-scratch/compute-unified/g04-ce28-producer-stage-source-1/bench/inference_resident_sdpa/cuda_encoded_page_bench.cc.o",
+      "[4/13] Building CXX object CMakeFiles/g04_cuda_encoded_perf_control.dir/root/hyle-scratch/compute-unified/g04-ce28-producer-stage-source-1/bench/integration/perf_control_bench.cc.o",
+      "[5/13] Building CXX object original-peer/CMakeFiles/g04_cuda_encoded_nanobench.dir/root/hyle-scratch/compute-unified/g04-ce28-producer-stage-source-1/bench/nanobench_impl.cc.o",
+      "[8/13] Building CXX object original-peer/CMakeFiles/g04_cuda_encoded_bench.dir/root/hyle-scratch/compute-unified/g04-ce28-producer-stage-source-1/bench/inference_resident_sdpa/cuda_encoded_page_bench.cc.o",
+      "[9/13] Building CXX object original-peer/CMakeFiles/g04_cuda_encoded_bench.dir/root/hyle-scratch/compute-unified/g04-ce28-producer-stage-source-1/bench/inference_resident_sdpa/cuda_encoded_page_reference.cc.o",
+      "[10/13] Building CUDA object original-peer/CMakeFiles/g04_cuda_encoded_original.dir/root/hyle-scratch/compute-unified/g04-ce28-producer-stage-source-1/bench/inference_resident_sdpa/cuda_encoded_page_native.cu.o"
+    ],
+    "actual_original_headers": [
+      {
+        "path": "/root/hyle-scratch/compute-unified/g04-ce28-producer-stage-build-1/original-peer/sync-fixed-flashinfer/include/flashinfer/attention/default_prefill_params.cuh",
+        "sha256": "5b0545df7e134dc031e6a1179ec9c64a6d6b0e4d41b2cd98d3826165b3ed3615"
+      },
+      {
+        "path": "/root/hyle-scratch/compute-unified/g04-ce28-producer-stage-build-1/original-peer/sync-fixed-flashinfer/include/flashinfer/page.cuh",
+        "sha256": "98e0b40aa6a5007d767cc49b9a2421bf8df2fbea5045394982ea451892d03ace"
+      },
+      {
+        "path": "/root/hyle-scratch/compute-unified/g04-ce28-producer-stage-build-1/original-peer/sync-fixed-flashinfer/include/flashinfer/exception.h",
+        "sha256": "83126766f5b3ef24586eca68bcd3ebe45b1f8b1c5952fb55940421618175f271"
+      },
+      {
+        "path": "/root/hyle-scratch/compute-unified/g04-ce28-producer-stage-build-1/original-peer/sync-fixed-flashinfer/include/flashinfer/fastdiv.cuh",
+        "sha256": "5d79e2d63bd133f9da4fd3236342999cb585812eb07326ce55775d353ae62832"
+      },
+      {
+        "path": "/root/hyle-scratch/compute-unified/g04-ce28-producer-stage-build-1/original-peer/sync-fixed-flashinfer/include/flashinfer/layout.cuh",
+        "sha256": "f000e64b9c718b0659fff1acf3c3fa0c2cdf5c75862cede645b16014bfa7aa2b"
+      },
+      {
+        "path": "/root/hyle-scratch/compute-unified/g04-ce28-producer-stage-build-1/original-peer/sync-fixed-flashinfer/include/flashinfer/utils.cuh",
+        "sha256": "d14edcb4d39503603b3347bdb20fdd6b96ff3467b97ba3f539af5f8fdd86adec"
+      },
+      {
+        "path": "/root/hyle-scratch/compute-unified/g04-ce28-producer-stage-build-1/original-peer/sync-fixed-flashinfer/include/flashinfer/vec_dtypes.cuh",
+        "sha256": "3e292b05f261f29287cb18871fe62f6a9a59cf1f47e885bee45524776a984f2c"
+      },
+      {
+        "path": "/root/hyle-scratch/compute-unified/g04-ce28-producer-stage-build-1/original-peer/sync-fixed-flashinfer/include/flashinfer/attention/prefill.cuh",
+        "sha256": "0618971946405be7b41071e47260bc9e2ce045893e5e585fd5b6854fbcb6d31b"
+      },
+      {
+        "path": "/root/hyle-scratch/compute-unified/g04-ce28-producer-stage-build-1/original-peer/sync-fixed-flashinfer/include/flashinfer/cp_async.cuh",
+        "sha256": "957a02a9d471280d333d7a2a98729f3753de69041870526e73a4f47bc6c94f06"
+      },
+      {
+        "path": "/root/hyle-scratch/compute-unified/g04-ce28-producer-stage-build-1/original-peer/sync-fixed-flashinfer/include/flashinfer/frag_layout_swizzle.cuh",
+        "sha256": "cae96de0e3fd9a4b7dbcdc1e0a6e9fdddd3b1d79f67a83de3b7e1cd4549b175a"
+      },
+      {
+        "path": "/root/hyle-scratch/compute-unified/g04-ce28-producer-stage-build-1/original-peer/sync-fixed-flashinfer/include/flashinfer/math.cuh",
+        "sha256": "ad9461ba66273bf7e227af1e285a136b4e53f899fa60b3a41f08627ad738f2ed"
+      },
+      {
+        "path": "/root/hyle-scratch/compute-unified/g04-ce28-producer-stage-build-1/original-peer/sync-fixed-flashinfer/include/flashinfer/mma.cuh",
+        "sha256": "f6df5d6475bf2fc33932399b7063894a2a4ed27cfabe45ae7cd239a1c61943e9"
+      },
+      {
+        "path": "/root/hyle-scratch/compute-unified/g04-ce28-producer-stage-build-1/original-peer/sync-fixed-flashinfer/include/flashinfer/permuted_smem.cuh",
+        "sha256": "1929a5d1ebb27c67b1e9be3308adf5083957443448d73b6529c0e46c01d7ee84"
+      },
+      {
+        "path": "/root/hyle-scratch/compute-unified/g04-ce28-producer-stage-build-1/original-peer/sync-fixed-flashinfer/include/flashinfer/pos_enc.cuh",
+        "sha256": "6a94df7647512f9474198ee99a04bf84b7dad9c65be1d10d8d20c9c9f9cf2abf"
+      },
+      {
+        "path": "/root/hyle-scratch/compute-unified/g04-ce28-producer-stage-build-1/original-peer/sync-fixed-flashinfer/include/flashinfer/attention/cascade.cuh",
+        "sha256": "3ce6de505884bbc4efc78e63b0719eef4fe31fe152defa9fa4f050898fa51210"
+      },
+      {
+        "path": "/root/hyle-scratch/compute-unified/g04-ce28-producer-stage-build-1/original-peer/sync-fixed-flashinfer/include/flashinfer/attention/state.cuh",
+        "sha256": "b2f59c104c2857e7e69f1837faf577525a292da98b375d5fb24dbcfc15d78159"
+      },
+      {
+        "path": "/root/hyle-scratch/compute-unified/g04-ce28-producer-stage-build-1/original-peer/sync-fixed-flashinfer/include/flashinfer/attention/mask.cuh",
+        "sha256": "aecde488616cbf433347534ba3d3862d7576eb35d50e3640f425e31dc95ef7a0"
+      },
+      {
+        "path": "/root/hyle-scratch/compute-unified/g04-ce28-producer-stage-build-1/original-peer/sync-fixed-flashinfer/include/flashinfer/attention/variants.cuh",
+        "sha256": "90a228dd71b3ce8030d663e2b16f67f840fe4a3e99912f8b47774d3fd905a080"
+      },
+      {
+        "path": "/root/hyle-scratch/compute-unified/g04-ce28-producer-stage-build-1/original-peer/sync-fixed-flashinfer/include/flashinfer/attention/variant_helper.cuh",
+        "sha256": "326c32f7722027da5002ca9297c84f74b604255f01e59263f193b2aee3edb159"
+      },
+      {
+        "path": "/root/hyle-scratch/compute-unified/g04-ce28-producer-stage-build-1/original-peer/sync-fixed-flashinfer/include/flashinfer/attention/scheduler.cuh",
+        "sha256": "a11a39aea393cdb380ad9439aac9170cd96849d7426ebbb920c5c8cdadfcc575"
+      },
+      {
+        "path": "/root/hyle-scratch/compute-unified/g04-ce28-producer-stage-build-1/original-peer/sync-fixed-flashinfer/include/flashinfer/allocator.h",
+        "sha256": "3d80e3d3d29b1ae41218eb1167ca0059f923a9ccd69de79905d7f37df7cb2109"
+      },
+      {
+        "path": "/root/hyle-scratch/compute-unified/g04-ce28-producer-stage-build-1/original-peer/sync-fixed-flashinfer/include/flashinfer/attention/heap.h",
+        "sha256": "a0fa6879f813b4c1c21c132d7c593fe5c76abc51f3785dfcef621651524409bf"
+      }
+    ],
+    "binaries": [
+      {
+        "variant": "primary",
+        "path": "/root/hyle-scratch/compute-unified/g04-ce28-producer-stage-build-1/bin/g04_cuda_encoded_bench",
+        "sha256": "23b704a6e4b573b1969b6cc25936fd9b3f993c55bc8424e681dbbd67b06aafba"
+      },
+      {
+        "variant": "placement",
+        "path": "/root/hyle-scratch/compute-unified/g04-ce28-producer-stage-build-1/bin/g04_cuda_encoded_bench_placement",
+        "sha256": "108aeb4b6d094bf5de551f5d93f84b9e9176e96e4fa42a29506de802008eb36d"
+      }
+    ],
+    "binary": {
+      "variant": "primary",
+      "path": "/root/hyle-scratch/compute-unified/g04-ce28-producer-stage-build-1/bin/g04_cuda_encoded_bench",
+      "sha256": "23b704a6e4b573b1969b6cc25936fd9b3f993c55bc8424e681dbbd67b06aafba"
+    },
+    "device_checks": [
+      {
+        "tool": "memcheck",
+        "verdict": "PASS",
+        "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/ce28-direct-stage-numeric-1/memcheck.log",
+        "sha256": "584bb85f83931f0a2558f951a72f3e5139546a066f4cf53b99f9b143c1001231"
+      },
+      {
+        "tool": "racecheck",
+        "verdict": "PASS",
+        "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/ce28-direct-stage-numeric-1/racecheck.log",
+        "sha256": "09c59125f9adf8ae8252985c83000ce2b641141c51641aa06fabaecef8bdb439"
+      }
+    ],
+    "native_environment": "# CUDA_ENCODED_ENV device=NVIDIA GeForce RTX 4070 sm=89 driver=617.14 runtime=13030 toolkit=13030",
+    "max_abs_error": 0.00109081301,
+    "readonly": "PASS",
+    "replays": 4,
+    "slots": 2
+  },
+  "measured_seconds": 75.18913033799981,
+  "raw_zip_sha256": "6e4ec16251d50a013146028fa5657fa5da4fa23dfe0e1e215f5e825352acdbb8",
+  "limits": [
+    "Actual current relocated static CUDA SDK, primary/placement independent double oracles and readonly checks; three finite shapes.",
+    "Primary memcheck/racecheck includes both current product and sync-fixed native peer, no suppressed hazards.",
+    "No A/A, throughput or whole G04-G05 verdict. W1-WSL SM89 engineering only; native private-pool upper UNKNOWN."
+  ]
+}
