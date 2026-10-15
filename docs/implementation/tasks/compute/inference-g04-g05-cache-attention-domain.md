@@ -1903,3 +1903,14 @@ CE20[TSan宿主数据竞争facet](../../../../evidence/correctness/inference-g04
 设备同步、static/shared SDK及ASan/UBSan/TSan三个受影响facet均已有独立实际PASS。
 下一步仅独立sync-fixed比较程序：两variant×三形状的原四次double oracle、readonly与
 primary双方memcheck/racecheck，再沿原统计门执行新A/A/P1；未通过不签整项完成。
+
+CE20[sync-fixed参考与当前静态SDK的实际数值/设备补证](../../../../evidence/correctness/inference-g04-g05-cuda-ce20-sync-fixed-numeric-rebind/receipt.json)
+已PASS：新独立比较程序仅编译一个原生CUDA TU及直接CXX，两variant×三形状×双方四次
+独立double oracle共48次，最大误差0.00109081301<0.008；每次原fixture均检查实际物理
+readonly页和两slots。primary双方memcheck1.813s零error、racecheck20.889s零hazard/
+error/warning。固定SDK的37个artifact、recipe、native archive与全部产品/比较输入SHA
+前后核验；实际compiler依赖闭包只读sync-fixed verified headers。原native pin与唯一
+两barrier derivation/effective headers均记录，不继承pristine旧参考的安全或性能结论。
+阶段命令累计105.858s（另有WSL只读canonical Git检查约两分钟，未计入命令阶段和性能）；
+实际公共build-contract预检PASS，portable ISA已从CMakeCache中的显式空值确认。新A/A
+与P1尚未签发；下一独立attempt7沿v2合同，原5%/8strata/16AA/n15,31与所有旧结果不变。
