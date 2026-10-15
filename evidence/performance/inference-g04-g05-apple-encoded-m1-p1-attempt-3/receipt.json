@@ -1,0 +1,146 @@
+{
+  "kind": "G04_G05_APPLE_Q8_ENCODED_PAGE_COMPLETE_JOURNEY_FINITE_P1",
+  "attempt": 3,
+  "product_candidate": "3b51575320c3f823ad1a31d18e99b8c55523a117",
+  "performance_source": "4a9c5ac9533359e4e21c0de2664e8f616d7cecfd",
+  "identity": {
+    "model": "Mac16,12",
+    "arch": "arm64",
+    "os": "ProductName:\t\tmacOS\nProductVersion:\t\t27.0.1\nBuildVersion:\t\t26A434",
+    "compiler": "Apple clang version 21.0.0 (clang-2100.3.34.2)\nTarget: arm64-apple-darwin27.0.0\nThread model: posix\nInstalledDir: /Library/Developer/CommandLineTools/usr/bin"
+  },
+  "qualification": "NO_SUMMARY",
+  "performance": "UNPROVEN",
+  "contract_sha256": null,
+  "numerical_preflight_sha256": "cd5f99eb5e1e5ea0a7493de4a6318c3caa09159d5e4ee9c5bb195ed43ea9d916",
+  "verify_exit": null,
+  "qualification_exit": 1,
+  "aa_processes": 0,
+  "aa_verdict": "NO_RECEIPT",
+  "product_processes": 0,
+  "control_processes": 0,
+  "sample_stages": [],
+  "sampling_scope": "Original automatic n15->n31 only; preserve every raw stage; qualified final observations do not pool stages",
+  "rows": [],
+  "job": {
+    "state": "TERMINAL_SETUP_FAIL",
+    "pid": 88378,
+    "snapshot": {
+      "attempt": 3,
+      "source_commit": "4a9c5ac9533359e4e21c0de2664e8f616d7cecfd",
+      "product_candidate": "3b51575320c3f823ad1a31d18e99b8c55523a117",
+      "bundle_base": "cee599774efcb5e47882309713dd343d019f3242",
+      "bundle_sha256": "f6fae17299da5c4fee00ea8f3411c57e73afa1bfce52cff089aa894beb9a06d6",
+      "bundle_seconds": 3.3439999999827705,
+      "numeric_receipt_sha256": "cd5f99eb5e1e5ea0a7493de4a6318c3caa09159d5e4ee9c5bb195ed43ea9d916",
+      "contract_file_sha256": "c27e3af6d6a68123518bc8672535f687d9cc350cadad3d182466fa88410bab31"
+    },
+    "source": "/Users/kiro/hyle-scratch/compute-unified/g04-apple-encoded-p1-source-3",
+    "build": "/Users/kiro/hyle-scratch/compute-unified/g04-apple-encoded-p1-fresh-3",
+    "output": "/Users/kiro/hyle-scratch/compute-unified/g04-apple-encoded-p1-output-3",
+    "identity": {
+      "model": "Mac16,12",
+      "arch": "arm64",
+      "os": "ProductName:\t\tmacOS\nProductVersion:\t\t27.0.1\nBuildVersion:\t\t26A434",
+      "compiler": "Apple clang version 21.0.0 (clang-2100.3.34.2)\nTarget: arm64-apple-darwin27.0.0\nThread model: posix\nInstalledDir: /Library/Developer/CommandLineTools/usr/bin"
+    },
+    "verification_git_alternates": [
+      "/Users/kiro/hyle-scratch/compute-unified/g01-p1-git-checkout/.git/objects",
+      "/Users/kiro/hyle-scratch/compute-unified/g01-rr-git-checkout/.git/objects",
+      "/Users/kiro/hyle-scratch/compute-unified/g01-vp-git-checkout/.git/objects",
+      "/Users/kiro/hyle-scratch/compute-unified/g01-native-ragged-p1-source/.git/objects",
+      "/Users/kiro/hyle-scratch/compute-unified/g01-native-ragged-p1-source-v2/.git/objects",
+      "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-p1-source/.git/objects",
+      "/Users/kiro/hyle-scratch/compute-unified/g04-vulkan-encoded-p1-source-1/.git/objects"
+    ],
+    "error": "ENOSPC during Git checkout; exception hook could not persist terminal state. Observer verified worker absent and qualification build/output never created.",
+    "elapsed_seconds": null,
+    "elapsed_limit": "Worker duration unknown because ENOSPC prevented terminal save; original outer observation7.156s retained separately.",
+    "verify_exit": null,
+    "exit_code": 1,
+    "checkout_exit_code": 128,
+    "observer_verified_no_live_process": true
+  },
+  "launch": {
+    "state": "TERMINAL",
+    "pid": 52312,
+    "command": [
+      "ssh",
+      "-o",
+      "BatchMode=yes",
+      "kiro@172.22.10.198",
+      "python3",
+      "/Users/kiro/hyle-scratch/compute-unified/g04-apple-encoded-p1-runs/3/apple_encoded_p1_air.py",
+      "/Users/kiro/hyle-scratch/compute-unified/g04-apple-encoded-p1-runs/3"
+    ],
+    "remote_run": "/Users/kiro/hyle-scratch/compute-unified/g04-apple-encoded-p1-runs/3",
+    "snapshot": {
+      "attempt": 3,
+      "source_commit": "4a9c5ac9533359e4e21c0de2664e8f616d7cecfd",
+      "product_candidate": "3b51575320c3f823ad1a31d18e99b8c55523a117",
+      "bundle_base": "cee599774efcb5e47882309713dd343d019f3242",
+      "bundle_sha256": "f6fae17299da5c4fee00ea8f3411c57e73afa1bfce52cff089aa894beb9a06d6",
+      "bundle_seconds": 3.3439999999827705,
+      "numeric_receipt_sha256": "cd5f99eb5e1e5ea0a7493de4a6318c3caa09159d5e4ee9c5bb195ed43ea9d916",
+      "contract_file_sha256": "c27e3af6d6a68123518bc8672535f687d9cc350cadad3d182466fa88410bab31"
+    },
+    "source_deploy_seconds": 1.8119999999762513,
+    "ssh_exit": 1,
+    "download_exit": 0,
+    "output_download_exit": null,
+    "elapsed_seconds": 7.1560000000172295,
+    "remote_state": {
+      "state": "TERMINAL_SETUP_FAIL",
+      "pid": 88378,
+      "snapshot": {
+        "attempt": 3,
+        "source_commit": "4a9c5ac9533359e4e21c0de2664e8f616d7cecfd",
+        "product_candidate": "3b51575320c3f823ad1a31d18e99b8c55523a117",
+        "bundle_base": "cee599774efcb5e47882309713dd343d019f3242",
+        "bundle_sha256": "f6fae17299da5c4fee00ea8f3411c57e73afa1bfce52cff089aa894beb9a06d6",
+        "bundle_seconds": 3.3439999999827705,
+        "numeric_receipt_sha256": "cd5f99eb5e1e5ea0a7493de4a6318c3caa09159d5e4ee9c5bb195ed43ea9d916",
+        "contract_file_sha256": "c27e3af6d6a68123518bc8672535f687d9cc350cadad3d182466fa88410bab31"
+      },
+      "source": "/Users/kiro/hyle-scratch/compute-unified/g04-apple-encoded-p1-source-3",
+      "build": "/Users/kiro/hyle-scratch/compute-unified/g04-apple-encoded-p1-fresh-3",
+      "output": "/Users/kiro/hyle-scratch/compute-unified/g04-apple-encoded-p1-output-3",
+      "identity": {
+        "model": "Mac16,12",
+        "arch": "arm64",
+        "os": "ProductName:\t\tmacOS\nProductVersion:\t\t27.0.1\nBuildVersion:\t\t26A434",
+        "compiler": "Apple clang version 21.0.0 (clang-2100.3.34.2)\nTarget: arm64-apple-darwin27.0.0\nThread model: posix\nInstalledDir: /Library/Developer/CommandLineTools/usr/bin"
+      },
+      "verification_git_alternates": [
+        "/Users/kiro/hyle-scratch/compute-unified/g01-p1-git-checkout/.git/objects",
+        "/Users/kiro/hyle-scratch/compute-unified/g01-rr-git-checkout/.git/objects",
+        "/Users/kiro/hyle-scratch/compute-unified/g01-vp-git-checkout/.git/objects",
+        "/Users/kiro/hyle-scratch/compute-unified/g01-native-ragged-p1-source/.git/objects",
+        "/Users/kiro/hyle-scratch/compute-unified/g01-native-ragged-p1-source-v2/.git/objects",
+        "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-p1-source/.git/objects",
+        "/Users/kiro/hyle-scratch/compute-unified/g04-vulkan-encoded-p1-source-1/.git/objects"
+      ],
+      "error": "ENOSPC during Git checkout; exception hook could not persist terminal state. Observer verified worker absent and qualification build/output never created.",
+      "elapsed_seconds": null,
+      "elapsed_limit": "Worker duration unknown because ENOSPC prevented terminal save; original outer observation7.156s retained separately.",
+      "verify_exit": null,
+      "exit_code": 1,
+      "checkout_exit_code": 128,
+      "observer_verified_no_live_process": true
+    },
+    "terminal_recovered_from": "Worker absence and no qualification build/output; ENOSPC terminal hook failed"
+  },
+  "measured_remote_seconds": null,
+  "source_bundle_seconds_separate": 3.3439999999827705,
+  "source_deploy_seconds_separate": 1.8119999999762513,
+  "outer_observation_seconds_overlaps_remote": 7.1560000000172295,
+  "cold_cost_model": "Original immutable payload/schema/slots cold; per-operation prepare/native objects/F2/exact guards/gather/mask/normalization/copies/completion/output release all charged",
+  "limits": [
+    "Finite F16 query/output and Q8_0 KV; three declared two-request shapes only",
+    "Original general Metal Q8/pad/blk selected explicitly with additional64/128 instance; no best-of original host claim",
+    "No capture, incremental producer/growth, G06, whole G04/G05 or token/s verdict",
+    "Native private-pool retained bytes and hard upper remain UNKNOWN",
+    "Current SDK CPU ordinary tests are separate; actual Apple GPU qualification only"
+  ],
+  "raw_zip_sha256": "d1ef24dad147ebae9e7d5854ba5a2ddbfff34a5e10bee0b204eb23e54a99c601"
+}
