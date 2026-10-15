@@ -1287,3 +1287,9 @@ plain档选择、公共API/精度验收门、ownership/失败/权限/退休均�
 输入身份复用。native输出/metadata/临时内存账检查无全历史decode。通过普通门并冻结新
 Apple候选后才重绑定同一三形状/16 A/A/双顺序/n15→31/5%合同运行有限P1；不重跑CPU/
 Vulkan/CUDA未变产品域。调查/实施/验证各2h检查点，沿用户授权追加且原成本不重置。
+
+CE14 的 selector 原计划保留 READY，但依赖账本单一内容hash变化被保守扩成全产品。
+结构对照已证明仅 mlx_cast_patches.tree_sha256 改变，17份原始/派生源码逐SHA可重演；
+组件图、其它依赖、公开头与package seam均未改。按本卡只运行Apple owner及其原
+页/Graph/联合消费者和三交付/适用风险，逐gate保留语义未变的skip理由；不运行全库，
+不修改公共selector或构建核心。此证明只签源码/归属，不签新数学或性能PASS。
