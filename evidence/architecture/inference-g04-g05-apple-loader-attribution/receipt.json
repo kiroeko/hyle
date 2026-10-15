@@ -1,0 +1,434 @@
+{
+  "verdict": "MECHANISM_ATTRIBUTION_ONLY",
+  "identity": {
+    "model": "Mac16,12",
+    "os": "ProductName:\t\tmacOS\nProductVersion:\t\t27.0.1\nBuildVersion:\t\t26A434",
+    "arch": "arm64",
+    "compiler": "Apple clang version 21.0.0 (clang-2100.3.34.2)\nTarget: arm64-apple-darwin27.0.0\nThread model: posix\nInstalledDir: /Library/Developer/CommandLineTools/usr/bin"
+  },
+  "six_round_gpu_seconds": {
+    "q8_f32_16x8": [
+      0.00308021354,
+      0.00307984375,
+      0.00307604167,
+      0.00308031771,
+      0.0030753125,
+      0.00307117187
+    ],
+    "plain_f32_16x8": [
+      0.00202240105,
+      0.00201928646,
+      0.00201899999,
+      0.00201912501,
+      0.00201939583,
+      0.00201895312
+    ],
+    "plain_half_16x8": [
+      0.000945546868,
+      0.000943239575,
+      0.000946421875,
+      0.000942359373,
+      0.000944223953,
+      0.00094122396
+    ],
+    "plain_half_32x16": [
+      0.00067358854,
+      0.000669229164,
+      0.000671208341,
+      0.000669447923,
+      0.000669468747,
+      0.000671953137
+    ],
+    "query_half_f32_16x16": [
+      0.00280660417,
+      0.00282172917,
+      0.002816625,
+      0.00281635417,
+      0.00281663542,
+      0.00281877084
+    ],
+    "hoisted_q8_f32_16x8": [
+      0.00125801563,
+      0.00125854688,
+      0.00125457814,
+      0.00125246355,
+      0.00125908334,
+      0.00125942187
+    ],
+    "query_half_hoisted_f32_16x16": [
+      0.0010093125,
+      0.00101246875,
+      0.00101093229,
+      0.00101346875,
+      0.00100925521,
+      0.00101234374
+    ]
+  },
+  "medians": {
+    "q8_f32_16x8": 0.00307794271,
+    "plain_f32_16x8": 0.0020192057349999997,
+    "plain_half_16x8": 0.0009437317639999999,
+    "plain_half_32x16": 0.000670338544,
+    "query_half_f32_16x16": 0.00281663021,
+    "hoisted_q8_f32_16x8": 0.001258281255,
+    "query_half_hoisted_f32_16x16": 0.001011638015
+  },
+  "output_differences": [
+    "DIFFERENCE plain_f32_16x8 max_abs=0",
+    "DIFFERENCE plain_half_16x8 max_abs=9.38074663e-07",
+    "DIFFERENCE plain_half_32x16 max_abs=9.38074663e-07",
+    "DIFFERENCE query_half_f32_16x16 max_abs=1.16415322e-09",
+    "DIFFERENCE hoisted_q8_f32_16x8 max_abs=0",
+    "DIFFERENCE query_half_hoisted_f32_16x16 max_abs=1.16415322e-09"
+  ],
+  "resource_observations": [
+    "RESOURCE q8_f32_16x8 shared=28928 max_threads=64 width=32 validation=2",
+    "RESOURCE plain_f32_16x8 shared=28928 max_threads=64 width=32 validation=2",
+    "RESOURCE plain_half_16x8 shared=16640 max_threads=64 width=32 validation=2",
+    "RESOURCE plain_half_32x16 shared=29184 max_threads=128 width=32 validation=2",
+    "RESOURCE query_half_f32_16x16 shared=28928 max_threads=64 width=32 validation=2",
+    "RESOURCE hoisted_q8_f32_16x8 shared=28928 max_threads=64 width=32 validation=2",
+    "RESOURCE query_half_hoisted_f32_16x16 shared=28928 max_threads=64 width=32 validation=2"
+  ],
+  "failed_attempt": "Attempt2 optimized loader compile failed: integer promotion in as_type<half>; fixed by explicit ushort bits before conversion. Raw failure preserved.",
+  "limits": [
+    "Kernel-only GPU timestamps, one primary component Q128/KV768/H8/Hkv2/D256; not full episode or P1.",
+    "Predecoded controls exclude materialization, allocation, F1/F2 and retirement; used only to localize cost.",
+    "Six diagnostic rounds include initial clock variation; no statistical qualification or throughput promise.",
+    "Attempt1 driver source was not copied before subsequent edit; input SHA and binary retained, not claimed independently source-reconstructible. Attempt3 current driver/header/loader are archived.",
+    "Query half staging only when original public Query is F16; BF16 remains original float path. K/V/probability/output accumulator remain F32."
+  ],
+  "raw_files": [
+    {
+      "path": ".scratch/inference-gaps/g04-g05/apple-prefill-cost-audit/candidate/CMakeLists.txt",
+      "sha256": "9b7b58026aa57e49000b5018323bc5ffd4c38d7394baf1f76eaa4f369091d8d6",
+      "bytes": 17323
+    },
+    {
+      "path": ".scratch/inference-gaps/g04-g05/apple-prefill-cost-audit/candidate/mlx/backend/metal/allocator.cpp",
+      "sha256": "79fb0c9f817f8f3777630f06265dce212ace3907384e99ccfd5196c04cc47603",
+      "bytes": 8028
+    },
+    {
+      "path": ".scratch/inference-gaps/g04-g05/apple-prefill-cost-audit/candidate/mlx/backend/metal/allocator.h",
+      "sha256": "df4f9a4bd104dc783269d6605558689ee858f2f8106dfabf9e28d1405afc5985",
+      "bytes": 2068
+    },
+    {
+      "path": ".scratch/inference-gaps/g04-g05/apple-prefill-cost-audit/candidate/mlx/backend/metal/jit_kernels.cpp",
+      "sha256": "8b9a94dd2f767337445eeaec9b81cca5a264b51d6c14f1963ecef0791e423b7a",
+      "bytes": 44527
+    },
+    {
+      "path": ".scratch/inference-gaps/g04-g05/apple-prefill-cost-audit/candidate/mlx/backend/metal/kernels/bf16.h",
+      "sha256": "78f0871b82a1157610867e02cbcee03a37620df032e53f0c1297541d113e164a",
+      "bytes": 838
+    },
+    {
+      "path": ".scratch/inference-gaps/g04-g05/apple-prefill-cost-audit/candidate/mlx/backend/metal/kernels/scaled_dot_product_attention.metal",
+      "sha256": "143cc4559aa0a9f140be4d714dc39f6d281b855a5ee74264868cfed5188c2b5a",
+      "bytes": 2798
+    },
+    {
+      "path": ".scratch/inference-gaps/g04-g05/apple-prefill-cost-audit/candidate/mlx/backend/metal/kernels/sdpa_vector.h",
+      "sha256": "6f80412a5b8d4b9f30b054051997b7b4b70ef6c5468f1d2ba47c4a98def010b5",
+      "bytes": 21510
+    },
+    {
+      "path": ".scratch/inference-gaps/g04-g05/apple-prefill-cost-audit/candidate/mlx/backend/metal/kernels/steel/attn/kernels/steel_attention.h",
+      "sha256": "3b1e23ab676182a1efc0cb244223b0a793f832561941af2d132de81a68ada21e",
+      "bytes": 16099
+    },
+    {
+      "path": ".scratch/inference-gaps/g04-g05/apple-prefill-cost-audit/candidate/mlx/backend/metal/kernels/steel/attn/kernels/steel_attention_nax.h",
+      "sha256": "7b9492a3afb4078e51229305690a595133eb72fcab2291593820156107de0020",
+      "bytes": 28795
+    },
+    {
+      "path": ".scratch/inference-gaps/g04-g05/apple-prefill-cost-audit/candidate/mlx/backend/metal/kernels/steel/attn/loader.h",
+      "sha256": "7767f33eb42818b13e2dda73b1b1d1063e7e6acb700a28570c8fb71a98cd43a4",
+      "bytes": 8931
+    },
+    {
+      "path": ".scratch/inference-gaps/g04-g05/apple-prefill-cost-audit/candidate/mlx/backend/metal/kernels/steel/attn/nax.h",
+      "sha256": "3e80d74e70137e59381e9d15bf8d88232d0ea1fad75dfc04223623e240b3882f",
+      "bytes": 26486
+    },
+    {
+      "path": ".scratch/inference-gaps/g04-g05/apple-prefill-cost-audit/candidate/mlx/backend/metal/kernels.h",
+      "sha256": "48a0a14fd6e791c46d1b0b134cb1017a4307150692c209fbbb4cde888c7ce97a",
+      "bytes": 10521
+    },
+    {
+      "path": ".scratch/inference-gaps/g04-g05/apple-prefill-cost-audit/candidate/mlx/backend/metal/scaled_dot_product_attention.cpp",
+      "sha256": "44bef8da4f7eabf1107f6a5963593b78063d468070fda87cf1a1545557edf8a7",
+      "bytes": 32442
+    },
+    {
+      "path": ".scratch/inference-gaps/g04-g05/apple-prefill-cost-audit/candidate/mlx/compile.cpp",
+      "sha256": "d228e64777bec074a04f37c7333bde88b53f33330063eb547768a75197f37a3c",
+      "bytes": 40554
+    },
+    {
+      "path": ".scratch/inference-gaps/g04-g05/apple-prefill-cost-audit/candidate/mlx/fast.cpp",
+      "sha256": "cd2d31589bef3cb36ea2ae8160633c3b1490a72ead1b12e4a15da193b3e5a04d",
+      "bytes": 37114
+    },
+    {
+      "path": ".scratch/inference-gaps/g04-g05/apple-prefill-cost-audit/candidate/mlx/fast.h",
+      "sha256": "df2d37f780abd40411228084aa2e38f13bd6fc92c3b659688c401f0ba09d281f",
+      "bytes": 3693
+    },
+    {
+      "path": ".scratch/inference-gaps/g04-g05/apple-prefill-cost-audit/candidate/mlx/fast_primitives.h",
+      "sha256": "5b44dc07adeb59d866ea41a62134a8a327f6ef237528cc0791e3779c67f40152",
+      "bytes": 14628
+    },
+    {
+      "path": ".scratch/inference-gaps/g04-g05/apple-prefill-cost-audit/pipeline-attribution-1/host-compile.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": ".scratch/inference-gaps/g04-g05/apple-prefill-cost-audit/pipeline-attribution-1/metal-compile.log",
+      "sha256": "3c59cfbaff2a157f15d7032757de737c38ce57469c5f66388c28a2ab53042b56",
+      "bytes": 4719
+    },
+    {
+      "path": ".scratch/inference-gaps/g04-g05/apple-prefill-cost-audit/pipeline-attribution-1/metallib.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": ".scratch/inference-gaps/g04-g05/apple-prefill-cost-audit/pipeline-attribution-1/probe",
+      "sha256": "3cd129905d34fa05b6613c4e49ff1b61775be426ac4e83a0450a3fc7f50cc11c",
+      "bytes": 53272
+    },
+    {
+      "path": ".scratch/inference-gaps/g04-g05/apple-prefill-cost-audit/pipeline-attribution-1/probe.air",
+      "sha256": "2281adb872c153698c55b165ae57fb99218d0cb6fcc97401f2353f97dc2bfeea",
+      "bytes": 36832
+    },
+    {
+      "path": ".scratch/inference-gaps/g04-g05/apple-prefill-cost-audit/pipeline-attribution-1/probe.log",
+      "sha256": "23cc5ea87721d9047a5f3b26527725b025786559f6f0dc2cc54174652db085b3",
+      "bytes": 1862
+    },
+    {
+      "path": ".scratch/inference-gaps/g04-g05/apple-prefill-cost-audit/pipeline-attribution-1/probe.metal",
+      "sha256": "b5595f159a390834e3f2aed6be51cf1f6c31edadfc9d4ad8c096d25cb5d2f293",
+      "bytes": 444
+    },
+    {
+      "path": ".scratch/inference-gaps/g04-g05/apple-prefill-cost-audit/pipeline-attribution-1/probe.metallib",
+      "sha256": "11749c6ad7d4e57bfec4f498e03fa26cb97033ee4482aaf6b28f07277773a62f",
+      "bytes": 55603
+    },
+    {
+      "path": ".scratch/inference-gaps/g04-g05/apple-prefill-cost-audit/pipeline-attribution-1/result.json",
+      "sha256": "f8c697c32bdb0d6c762f16ee7656497c436b9b7ac7e296e23990ca331e9f2fef",
+      "bytes": 2619
+    },
+    {
+      "path": ".scratch/inference-gaps/g04-g05/apple-prefill-cost-audit/pipeline-attribution-2/metal-compile.log",
+      "sha256": "7cf5c36d1b52a8fa2e3f6a445157009987e66b1ffaab64973593c44796c83435",
+      "bytes": 4719
+    },
+    {
+      "path": ".scratch/inference-gaps/g04-g05/apple-prefill-cost-audit/pipeline-attribution-2/metallib.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": ".scratch/inference-gaps/g04-g05/apple-prefill-cost-audit/pipeline-attribution-2/optimized/mlx/backend/metal/kernels/steel/attn/loader.h",
+      "sha256": "b703c7ff5fa716751eac2281e1d2cda590f837fea710748a3dd127acc627f4e6",
+      "bytes": 10421
+    },
+    {
+      "path": ".scratch/inference-gaps/g04-g05/apple-prefill-cost-audit/pipeline-attribution-2/optimized-metal.log",
+      "sha256": "201d7621861f7c40f43d1144d10a50cafef999a97c837d20b8cdf690f1a32bab",
+      "bytes": 14693
+    },
+    {
+      "path": ".scratch/inference-gaps/g04-g05/apple-prefill-cost-audit/pipeline-attribution-2/optimized.metal",
+      "sha256": "c129550cc9a2ee846212a9be5900e2995f58c7b019e2aba175a629bd47f6a544",
+      "bytes": 537
+    },
+    {
+      "path": ".scratch/inference-gaps/g04-g05/apple-prefill-cost-audit/pipeline-attribution-2/probe.air",
+      "sha256": "27880a0d92d6a27f3ed0a854342ea9fea48a1e29852e32646025792fac474951",
+      "bytes": 36832
+    },
+    {
+      "path": ".scratch/inference-gaps/g04-g05/apple-prefill-cost-audit/pipeline-attribution-2/probe.metal",
+      "sha256": "b5595f159a390834e3f2aed6be51cf1f6c31edadfc9d4ad8c096d25cb5d2f293",
+      "bytes": 444
+    },
+    {
+      "path": ".scratch/inference-gaps/g04-g05/apple-prefill-cost-audit/pipeline-attribution-2/probe.metallib",
+      "sha256": "11749c6ad7d4e57bfec4f498e03fa26cb97033ee4482aaf6b28f07277773a62f",
+      "bytes": 55603
+    },
+    {
+      "path": ".scratch/inference-gaps/g04-g05/apple-prefill-cost-audit/pipeline-attribution-2/query-metal.log",
+      "sha256": "a562aa239dd610104c58741cc35ddc205dd1fa2f4902930a2198a171f7a802c6",
+      "bytes": 4862
+    },
+    {
+      "path": ".scratch/inference-gaps/g04-g05/apple-prefill-cost-audit/pipeline-attribution-2/query-metallib.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": ".scratch/inference-gaps/g04-g05/apple-prefill-cost-audit/pipeline-attribution-2/query.air",
+      "sha256": "c4e6008999fec1e3c8df3721c0e397edca69285f374c70e945a87b3be06c527f",
+      "bytes": 45792
+    },
+    {
+      "path": ".scratch/inference-gaps/g04-g05/apple-prefill-cost-audit/pipeline-attribution-2/query.metal",
+      "sha256": "c129550cc9a2ee846212a9be5900e2995f58c7b019e2aba175a629bd47f6a544",
+      "bytes": 537
+    },
+    {
+      "path": ".scratch/inference-gaps/g04-g05/apple-prefill-cost-audit/pipeline-attribution-2/query.metallib",
+      "sha256": "6f59a2346b735c7530ac2a6e8e931975af447501845e48e84ea3d9dab4902383",
+      "bytes": 74572
+    },
+    {
+      "path": ".scratch/inference-gaps/g04-g05/apple-prefill-cost-audit/pipeline-attribution-2/result.json",
+      "sha256": "bfb2bfb529f8dfe9cb85d883fc6edcf77c6cb061c4d26ff642ba1f8b17839ceb",
+      "bytes": 3570
+    },
+    {
+      "path": ".scratch/inference-gaps/g04-g05/apple-prefill-cost-audit/pipeline-attribution-2/runner.py",
+      "sha256": "93fc9144587d9727942bb6eb270ad24238ac1561088aa5840b502a9351699983",
+      "bytes": 3690
+    },
+    {
+      "path": ".scratch/inference-gaps/g04-g05/apple-prefill-cost-audit/pipeline-attribution-3/host-compile.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": ".scratch/inference-gaps/g04-g05/apple-prefill-cost-audit/pipeline-attribution-3/metal-compile.log",
+      "sha256": "cdb8cb4e3d378f612e26fc9bfafa5a80b28e223d631af910c3badbbecd155d86",
+      "bytes": 4719
+    },
+    {
+      "path": ".scratch/inference-gaps/g04-g05/apple-prefill-cost-audit/pipeline-attribution-3/metallib.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": ".scratch/inference-gaps/g04-g05/apple-prefill-cost-audit/pipeline-attribution-3/optimized/mlx/backend/metal/kernels/steel/attn/loader.h",
+      "sha256": "bb5d4b7914389257111b953da6d46575b5e62de349b4e3515b5dfcdb4d618427",
+      "bytes": 10460
+    },
+    {
+      "path": ".scratch/inference-gaps/g04-g05/apple-prefill-cost-audit/pipeline-attribution-3/optimized-metal.log",
+      "sha256": "117f8a3edabf0d235db76a687b0b33761c63d064e7979491e5d72387417ac906",
+      "bytes": 5527
+    },
+    {
+      "path": ".scratch/inference-gaps/g04-g05/apple-prefill-cost-audit/pipeline-attribution-3/optimized-metallib.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": ".scratch/inference-gaps/g04-g05/apple-prefill-cost-audit/pipeline-attribution-3/optimized.air",
+      "sha256": "4d5055f3797c9ddd296465896998d460bf3aa6f45c5c45c5ce493b0129f43d0f",
+      "bytes": 46240
+    },
+    {
+      "path": ".scratch/inference-gaps/g04-g05/apple-prefill-cost-audit/pipeline-attribution-3/optimized.metal",
+      "sha256": "c129550cc9a2ee846212a9be5900e2995f58c7b019e2aba175a629bd47f6a544",
+      "bytes": 537
+    },
+    {
+      "path": ".scratch/inference-gaps/g04-g05/apple-prefill-cost-audit/pipeline-attribution-3/optimized.metallib",
+      "sha256": "bd064778f12c240eb74a87169942699816e23de7b52eec226b9532141611f09c",
+      "bytes": 75020
+    },
+    {
+      "path": ".scratch/inference-gaps/g04-g05/apple-prefill-cost-audit/pipeline-attribution-3/probe",
+      "sha256": "b3f8bfeed9f49b54154b40d790e31a265e1742f0fc05872508d746d132368319",
+      "bytes": 53272
+    },
+    {
+      "path": ".scratch/inference-gaps/g04-g05/apple-prefill-cost-audit/pipeline-attribution-3/probe.air",
+      "sha256": "44bb8979028e074316bbfc6915ecef59de1454f94a2d88e54293a50c8d52b1dd",
+      "bytes": 36832
+    },
+    {
+      "path": ".scratch/inference-gaps/g04-g05/apple-prefill-cost-audit/pipeline-attribution-3/probe.log",
+      "sha256": "c0a446a5a945d3addf3b193e55efa6081e02aa526e3e07304f21404157c7bde1",
+      "bytes": 3391
+    },
+    {
+      "path": ".scratch/inference-gaps/g04-g05/apple-prefill-cost-audit/pipeline-attribution-3/probe.metal",
+      "sha256": "b5595f159a390834e3f2aed6be51cf1f6c31edadfc9d4ad8c096d25cb5d2f293",
+      "bytes": 444
+    },
+    {
+      "path": ".scratch/inference-gaps/g04-g05/apple-prefill-cost-audit/pipeline-attribution-3/probe.metallib",
+      "sha256": "11749c6ad7d4e57bfec4f498e03fa26cb97033ee4482aaf6b28f07277773a62f",
+      "bytes": 55603
+    },
+    {
+      "path": ".scratch/inference-gaps/g04-g05/apple-prefill-cost-audit/pipeline-attribution-3/query-metal.log",
+      "sha256": "fd923d1e30d466a46ef217f5028feecbccec3e15e5cbcf35dd4605b99c0f7d80",
+      "bytes": 4862
+    },
+    {
+      "path": ".scratch/inference-gaps/g04-g05/apple-prefill-cost-audit/pipeline-attribution-3/query-metallib.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": ".scratch/inference-gaps/g04-g05/apple-prefill-cost-audit/pipeline-attribution-3/query.air",
+      "sha256": "b3f114b2831854941e623601dafb0c02de85b53d5942650c7dc212621fd69e50",
+      "bytes": 45792
+    },
+    {
+      "path": ".scratch/inference-gaps/g04-g05/apple-prefill-cost-audit/pipeline-attribution-3/query.metal",
+      "sha256": "c129550cc9a2ee846212a9be5900e2995f58c7b019e2aba175a629bd47f6a544",
+      "bytes": 537
+    },
+    {
+      "path": ".scratch/inference-gaps/g04-g05/apple-prefill-cost-audit/pipeline-attribution-3/query.metallib",
+      "sha256": "6f59a2346b735c7530ac2a6e8e931975af447501845e48e84ea3d9dab4902383",
+      "bytes": 74572
+    },
+    {
+      "path": ".scratch/inference-gaps/g04-g05/apple-prefill-cost-audit/pipeline-attribution-3/result.json",
+      "sha256": "bbb8f71a508359c6fbd65d5d9e9530f32cd29a1e1be8b8cc038dac466c6b88e5",
+      "bytes": 4958
+    },
+    {
+      "path": ".scratch/inference-gaps/g04-g05/apple-prefill-cost-audit/pipeline-attribution-3/runner.py",
+      "sha256": "dfc0d9fa583c5de53539ab44255e1107f75825e02a0e65e0a91066ef3f78e2ee",
+      "bytes": 3690
+    },
+    {
+      "path": ".scratch/inference-gaps/g04-g05/apple-prefill-cost-audit/query-stage-probe/kernel.h",
+      "sha256": "153cb697aa27c258f4246bb51d0b893ecd085bb7b9c6a69274431d776938020a",
+      "bytes": 17198
+    },
+    {
+      "path": ".scratch/inference-gaps/g04-g05/apple-prefill-cost-audit/query-stage-probe/loader.h",
+      "sha256": "bb5d4b7914389257111b953da6d46575b5e62de349b4e3515b5dfcdb4d618427",
+      "bytes": 10460
+    },
+    {
+      "path": ".scratch/inference-gaps/g04-g05/ce14_pipeline_probe.mm",
+      "sha256": "2e684029b30b38bd2dc62a994862a30683d93d060f4bf10d60da2e1611477cae",
+      "bytes": 6346
+    },
+    {
+      "path": ".scratch/inference-gaps/g04-g05/derive_ce14_query_loader_probe.py",
+      "sha256": "aa77104563ff09c75b4532187c9f5db14e7bec212d855f5353c57436a72241a2",
+      "bytes": 4191
+    }
+  ],
+  "raw_zip_sha256": "e1427625e3a5c7f7de0154e543910139b2cb99df43b2550f7e3010c4d8546531"
+}

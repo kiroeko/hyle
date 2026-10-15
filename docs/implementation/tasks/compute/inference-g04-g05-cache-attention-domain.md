@@ -1333,3 +1333,15 @@ mem_none SIMD执行屏障。上述循环没有shared写入，跨SIMD生产/消�
 原patch/lock再次恢复；不为这项无收益改动追加shared/sanitizer/P1。下一步先取实际
 Metal编译管线资源与loader成本证据，区分shared容量、活跃寄存器和重复解码，暂不实施
 新的精度、tile或同步试改。其它项目与资格保持原状。
+
+CE14 下一实施批按[实际归因](../../../../evidence/architecture/inference-g04-g05-apple-loader-attribution/receipt.json)
+固定两处私有修正，baseline325e964f2：对齐且每线程完整32元素块时只读一次scale，展开
+该块code→F32 staging；其它loader几何保原实现。仅原始Query为F16的Q8 STEEL路径使用
+F16 Query staging/fragment、BQ16/BK16/WM2；K/V staging、P、score、O与累加仍F32，保
+所有原屏障。实际资源归因显示Q8原kernel与纯F32同几何占28928字节，Query降为原F16
+后同样资源容量可容纳两倍BK。不是把K/V或小概率缩为half，不全历史解码或增添缓存。
+原Query类型作为private primitive状态保留，进入equivalence/state和JIT key；BF16及plain/
+vector路径保原数学，未增加公共参数、layout或跨模块owner。增加F16 subnormal Query
+乘大K的原double-oracle反例，防止staging丢失小Query；与原12数学/4公开消费者/原风险、
+static SDK和同三形状短成本一次批量执行。归因样例不代签13测试、完整生命周期或P1。
+后续适用host风险、shared SDK及正式同合同资格仍按原流程；所有原失败继续保留。
