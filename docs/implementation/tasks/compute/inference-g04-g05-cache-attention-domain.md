@@ -2308,3 +2308,11 @@ CE25原六开关已集中恢复；删除manifest中冗余的关闭层，并将�
 重绑到原开关，完整派生diff只显示六处谓词恢复。CE24准确行约束/工作集、F32输出tile
 容量、short-K stride/补零、原数学与同步均保留。FI仍AUDITED，尚未签新数学/device/
 codegen或吞吐。按本卡有限门验收，不重跑未变其它路线。
+
+CE25冻结candidate为0143102ae。新[源码与设备风险记录](../../../../evidence/correctness/inference-g04-g05-cuda-ce25-native-prefill-source-device/receipt.json)
+实际17math、十cache memcheck/十racecheck及两普通F16/BF16 racecheck全部PASS，无FAIL/SKIP、
+error、warning或hazard；source419.578s、device17.155s。新[codegen记录](../../../../evidence/architecture/inference-g04-g05-cuda-ce25-native-prefill/codegen-receipt.json)
+逐一核实际同1/1/4特化，STACK/LDL/STL保持全部零，register从CE24的255/248/254降为
+241/241/165。该结论仅为当前source shared artifact静态资源，不能签runtime dispatch或吞吐。
+FI由AUDITED合法进入CANDIDATE014；下一步两搬迁SDK、新numeric/runtime、三host及原P1，
+G04/G05仍未验收，完整goal仍3/10。全部旧失败、费用与第三方未知保留。

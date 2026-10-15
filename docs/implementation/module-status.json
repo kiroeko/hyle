@@ -578,9 +578,10 @@
     },
     {
       "module": "compute_provider_flashinfer",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/inference-g04-g05-cache-attention-domain.md",
-      "summary": "G04/G05 CE25 AUDITED：原六处prefill tile repack谓词已恢复，冗余关闭补丁层删除；保CE24行约束/工作集及F32、short-K、原同步。新数学/device/codegen待验；原10 prefill qualified FAIL及全部费用保留，未关闭。"
+      "summary": "G04/G05 CE25 CANDIDATE014：恢复成熟原prefill tile repack，保CE24行约束与工作集；17数学/22设备检查实测PASS、零warning，同1/1/4 codegen零栈读写、register241/241/165。两SDK、新numeric/runtime、三host及原P1待验；原qualified FAIL及累计成本保留。",
+      "candidate": "0143102aebcbc29600a77ce2950136462fba2a36"
     },
     {
       "module": "compute_provider_ggml_metal",
