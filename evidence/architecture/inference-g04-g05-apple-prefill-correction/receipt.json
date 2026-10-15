@@ -1,0 +1,942 @@
+{
+  "kind": "G04_G05_APPLE_PREFILL_CORRECTION_TRIALS_NOT_ACCEPTED",
+  "state": "REJECTED_TRIALS_OWNER_AUDITED",
+  "original_product_candidate": "982676cb05a6e6244e66e0a596347aa96043617b",
+  "trial_source_commit": "9147315f4",
+  "original_qualified_p1": "evidence/performance/inference-g04-g05-apple-encoded-m1-p1-attempt-2/receipt.json",
+  "route_attribution": {
+    "state": "ACTUAL_M4_STEEL_SOURCE_NOT_NAX",
+    "architecture": "applegpu_g16g",
+    "original_archive_sha256": "cb988a5bdc38c798918d042b9b1c6edda3ccc5f23a2155138d3aa5c1b2acc301",
+    "original_native_gate": {
+      "path": "mlx/backend/metal/device.cpp",
+      "sha256": "008b67e599f5508ab670a91f2ea80372162a8767b5226fbbeb9f3d23c85cdb7c",
+      "function_excerpt": "lloc()->init());\n}\n\nbool is_nax_available() {\n#ifdef MLX_METAL_NO_NAX\n  return false;\n#else\n  auto _check_nax = []() {\n    bool can_use_nax = false;\n    if (__builtin_available(\n            macOS 26.2, iOS 26.2, tvOS 26.2, visionOS 26.2, *)) {\n      can_use_nax = true;\n    }\n    auto& d = metal::device(mlx::core::Device::gpu);\n    auto arch = d.get_architecture().back();\n    auto gen = d.get_architecture_gen();\n    can_use_nax &= gen >= (arch == 'p' ? 18 : 17);\n    return can_use_nax;\n  };\n  static bool is_nax_available_ = _check_nax();\n  return is_nax_available_;\n#endif\n}\n\n} // namespace mlx::core::metal\n"
+    },
+    "derived_source_checks": [
+      {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-build/hyle/_deps/mlx-f77af297458f272c/source/mlx/backend/metal/kernels/bf16.h",
+        "sha256": "78f0871b82a1157610867e02cbcee03a37620df032e53f0c1297541d113e164a"
+      },
+      {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-build/hyle/_deps/mlx-f77af297458f272c/source/mlx/backend/metal/jit_kernels.cpp",
+        "sha256": "8b9a94dd2f767337445eeaec9b81cca5a264b51d6c14f1963ecef0791e423b7a"
+      },
+      {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-build/hyle/_deps/mlx-f77af297458f272c/source/mlx/compile.cpp",
+        "sha256": "d228e64777bec074a04f37c7333bde88b53f33330063eb547768a75197f37a3c"
+      },
+      {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-build/hyle/_deps/mlx-f77af297458f272c/source/mlx/fast.h",
+        "sha256": "df2d37f780abd40411228084aa2e38f13bd6fc92c3b659688c401f0ba09d281f"
+      },
+      {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-build/hyle/_deps/mlx-f77af297458f272c/source/mlx/fast_primitives.h",
+        "sha256": "5b44dc07adeb59d866ea41a62134a8a327f6ef237528cc0791e3779c67f40152"
+      },
+      {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-build/hyle/_deps/mlx-f77af297458f272c/source/mlx/fast.cpp",
+        "sha256": "cd2d31589bef3cb36ea2ae8160633c3b1490a72ead1b12e4a15da193b3e5a04d"
+      },
+      {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-build/hyle/_deps/mlx-f77af297458f272c/source/mlx/backend/metal/scaled_dot_product_attention.cpp",
+        "sha256": "f52da6623988022dd56d5598faa1dab4161b606c5952c7bedcbc19acc9634c20"
+      },
+      {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-build/hyle/_deps/mlx-f77af297458f272c/source/mlx/backend/metal/kernels/sdpa_vector.h",
+        "sha256": "6f80412a5b8d4b9f30b054051997b7b4b70ef6c5468f1d2ba47c4a98def010b5"
+      },
+      {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-build/hyle/_deps/mlx-f77af297458f272c/source/mlx/backend/metal/kernels/steel/attn/nax.h",
+        "sha256": "3e80d74e70137e59381e9d15bf8d88232d0ea1fad75dfc04223623e240b3882f"
+      },
+      {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-build/hyle/_deps/mlx-f77af297458f272c/source/mlx/backend/metal/kernels/steel/attn/kernels/steel_attention_nax.h",
+        "sha256": "7b9492a3afb4078e51229305690a595133eb72fcab2291593820156107de0020"
+      },
+      {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-build/hyle/_deps/mlx-f77af297458f272c/source/mlx/backend/metal/kernels/steel/attn/loader.h",
+        "sha256": "7767f33eb42818b13e2dda73b1b1d1063e7e6acb700a28570c8fb71a98cd43a4"
+      },
+      {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-build/hyle/_deps/mlx-f77af297458f272c/source/mlx/backend/metal/kernels/steel/attn/kernels/steel_attention.h",
+        "sha256": "2a0bf8af8db507f6a1165e2337b8a6e75fa44bfba31e508da6498afe344ea80f"
+      },
+      {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-build/hyle/_deps/mlx-f77af297458f272c/source/mlx/backend/metal/kernels/scaled_dot_product_attention.metal",
+        "sha256": "143cc4559aa0a9f140be4d714dc39f6d281b855a5ee74264868cfed5188c2b5a"
+      },
+      {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-build/hyle/_deps/mlx-f77af297458f272c/source/mlx/backend/metal/kernels.h",
+        "sha256": "48a0a14fd6e791c46d1b0b134cb1017a4307150692c209fbbb4cde888c7ce97a"
+      },
+      {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-build/hyle/_deps/mlx-f77af297458f272c/source/CMakeLists.txt",
+        "sha256": "9b7b58026aa57e49000b5018323bc5ffd4c38d7394baf1f76eaa4f369091d8d6"
+      },
+      {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-build/hyle/_deps/mlx-f77af297458f272c/source/mlx/backend/metal/allocator.h",
+        "sha256": "df4f9a4bd104dc783269d6605558689ee858f2f8106dfabf9e28d1405afc5985"
+      },
+      {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-build/hyle/_deps/mlx-f77af297458f272c/source/mlx/backend/metal/allocator.cpp",
+        "sha256": "79fb0c9f817f8f3777630f06265dce212ace3907384e99ccfd5196c04cc47603"
+      }
+    ],
+    "limits": "Selection and source identity proof; NAX not runtime qualified on M4."
+  },
+  "source_attempts": [
+    {
+      "attempt": "ce14-1",
+      "state": "TERMINAL_FAIL",
+      "seconds": 1.062460625,
+      "identity": {
+        "model": "Mac16,12",
+        "arch": "arm64",
+        "os": "ProductName:\t\tmacOS\nProductVersion:\t\t27.0.1\nBuildVersion:\t\t26A434",
+        "compiler": "Apple clang version 21.0.0 (clang-2100.3.34.2)\nTarget: arm64-apple-darwin27.0.0\nThread model: posix\nInstalledDir: /Library/Developer/CommandLineTools/usr/bin",
+        "memory": "17179869184"
+      },
+      "stages": [
+        {
+          "stage": "configure",
+          "command": [
+            "/opt/homebrew/bin/cmake",
+            "-S",
+            "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-parent",
+            "-B",
+            "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-build"
+          ],
+          "exit_code": 1,
+          "elapsed_seconds": 1.062460625,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g04-g05-apple-cache/configure-ce14-1.log"
+        }
+      ],
+      "input_count": 3225,
+      "raw_record": "apple-native/result-ce14-1.json",
+      "raw_record_sha256": "dc7786a48451dab595ace559b9d83f86efb97f8b9f8ae5942903c5ade8dc9c15"
+    },
+    {
+      "attempt": "ce14-2",
+      "state": "TERMINAL_PASS",
+      "seconds": 60.146020832,
+      "identity": {
+        "model": "Mac16,12",
+        "arch": "arm64",
+        "os": "ProductName:\t\tmacOS\nProductVersion:\t\t27.0.1\nBuildVersion:\t\t26A434",
+        "compiler": "Apple clang version 21.0.0 (clang-2100.3.34.2)\nTarget: arm64-apple-darwin27.0.0\nThread model: posix\nInstalledDir: /Library/Developer/CommandLineTools/usr/bin",
+        "memory": "17179869184"
+      },
+      "stages": [
+        {
+          "stage": "configure",
+          "command": [
+            "/opt/homebrew/bin/cmake",
+            "-S",
+            "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-parent",
+            "-B",
+            "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-build"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 4.644427415999999,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g04-g05-apple-cache/configure-ce14-2.log"
+        },
+        {
+          "stage": "plan",
+          "command": [
+            "/opt/homebrew/bin/ninja",
+            "-C",
+            "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-build",
+            "-f",
+            "/Users/kiro/hyle-scratch/compute-unified/g04-g05-apple-cache/exact-build-ce14-2.ninja",
+            "-n",
+            "g04_g05_apple_cache",
+            "g04_g05_encoded_pages",
+            "g04_encoded_native_risks"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 0.08897179199999972,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g04-g05-apple-cache/plan-ce14-2.log"
+        },
+        {
+          "stage": "compile",
+          "command": [
+            "/opt/homebrew/bin/cmake",
+            "--build",
+            "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-build",
+            "--target",
+            "g04_g05_apple_cache",
+            "g04_g05_encoded_pages",
+            "g04_encoded_native_risks",
+            "--parallel",
+            "4"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 38.866024874999994,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g04-g05-apple-cache/compile-ce14-2.log"
+        },
+        {
+          "stage": "tests",
+          "command": [
+            "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-build/g04_g05_apple_cache",
+            "--gtest_output=xml:/Users/kiro/hyle-scratch/compute-unified/g04-g05-apple-cache/tests-ce14-2.xml"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 14.030273166,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g04-g05-apple-cache/tests-ce14-2.log"
+        },
+        {
+          "stage": "pages",
+          "command": [
+            "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-build/g04_g05_encoded_pages",
+            "--gtest_output=xml:/Users/kiro/hyle-scratch/compute-unified/g04-g05-apple-cache/pages-ce14-2.xml"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 1.920575624999998,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g04-g05-apple-cache/pages-ce14-2.log"
+        },
+        {
+          "stage": "risks",
+          "command": [
+            "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-build/g04_encoded_native_risks"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 0.595747958000004,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g04-g05-apple-cache/risks-ce14-2.log"
+        }
+      ],
+      "input_count": 3225,
+      "raw_record": "apple-native/result-ce14-2.json",
+      "raw_record_sha256": "3566634c0ed73f7691a93ba508b6b854cc714897bc0b2e0ea5064ede14b0ad92"
+    },
+    {
+      "attempt": "ce14-3",
+      "state": "TERMINAL_PASS",
+      "seconds": 54.94098558400001,
+      "identity": {
+        "model": "Mac16,12",
+        "arch": "arm64",
+        "os": "ProductName:\t\tmacOS\nProductVersion:\t\t27.0.1\nBuildVersion:\t\t26A434",
+        "compiler": "Apple clang version 21.0.0 (clang-2100.3.34.2)\nTarget: arm64-apple-darwin27.0.0\nThread model: posix\nInstalledDir: /Library/Developer/CommandLineTools/usr/bin",
+        "memory": "17179869184"
+      },
+      "stages": [
+        {
+          "stage": "configure",
+          "command": [
+            "/opt/homebrew/bin/cmake",
+            "-S",
+            "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-parent",
+            "-B",
+            "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-build"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 5.718330209,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g04-g05-apple-cache/configure-ce14-3.log"
+        },
+        {
+          "stage": "plan",
+          "command": [
+            "/opt/homebrew/bin/ninja",
+            "-C",
+            "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-build",
+            "-f",
+            "/Users/kiro/hyle-scratch/compute-unified/g04-g05-apple-cache/exact-build-ce14-3.ninja",
+            "-n",
+            "g04_g05_apple_cache",
+            "g04_g05_encoded_pages",
+            "g04_encoded_native_risks"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 0.028950125000000604,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g04-g05-apple-cache/plan-ce14-3.log"
+        },
+        {
+          "stage": "compile",
+          "command": [
+            "/opt/homebrew/bin/cmake",
+            "--build",
+            "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-build",
+            "--target",
+            "g04_g05_apple_cache",
+            "g04_g05_encoded_pages",
+            "g04_encoded_native_risks",
+            "--parallel",
+            "4"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 33.371916584000004,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g04-g05-apple-cache/compile-ce14-3.log"
+        },
+        {
+          "stage": "tests",
+          "command": [
+            "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-build/g04_g05_apple_cache",
+            "--gtest_output=xml:/Users/kiro/hyle-scratch/compute-unified/g04-g05-apple-cache/tests-ce14-3.xml"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 13.322894333,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g04-g05-apple-cache/tests-ce14-3.log"
+        },
+        {
+          "stage": "pages",
+          "command": [
+            "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-build/g04_g05_encoded_pages",
+            "--gtest_output=xml:/Users/kiro/hyle-scratch/compute-unified/g04-g05-apple-cache/pages-ce14-3.xml"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 1.9254508750000028,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g04-g05-apple-cache/pages-ce14-3.log"
+        },
+        {
+          "stage": "risks",
+          "command": [
+            "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-build/g04_encoded_native_risks"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 0.5734434579999999,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g04-g05-apple-cache/risks-ce14-3.log"
+        }
+      ],
+      "input_count": 3225,
+      "raw_record": "apple-native/result-ce14-3.json",
+      "raw_record_sha256": "7d9bafea43529579ade55961e91b4ebed27afa7d4ddccb339b6528639b1e9085"
+    }
+  ],
+  "source_stage_seconds": 116.14946704100001,
+  "source_math_tests": 11,
+  "static_sdk_tests": {
+    "cpu_math": 14,
+    "native_math": 11,
+    "cpu": 3,
+    "native": 4
+  },
+  "standalone_headers": 12,
+  "static_sdk_stage_seconds": 64.42880154099998,
+  "diagnostics": [
+    {
+      "attempt": "diagnostic-1",
+      "state": "TERMINAL_FAIL",
+      "seconds": 4.688745459,
+      "stages": [
+        {
+          "stage": "original-source",
+          "command": [
+            "python3",
+            "/Users/kiro/hyle-scratch/compute-unified/source-c8874688/bench/inference_resident_sdpa/apple_encoded_peer/prepare_source.py",
+            "--original",
+            "/Users/kiro/hyle-scratch/compute-unified/g01-original-ggml-peer",
+            "--output",
+            "/Users/kiro/hyle-scratch/compute-unified/ce14-apple-diagnostic-1/original-metal"
+          ],
+          "env_additions": null,
+          "exit_code": 0,
+          "elapsed_seconds": 0.026945291999999996,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/ce14-apple-diagnostic-1/original-source.log"
+        },
+        {
+          "stage": "configure",
+          "command": [
+            "cmake",
+            "-S",
+            "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-parent",
+            "-B",
+            "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-build"
+          ],
+          "env_additions": null,
+          "exit_code": 0,
+          "elapsed_seconds": 4.634623417,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/ce14-apple-diagnostic-1/configure.log"
+        },
+        {
+          "stage": "plan",
+          "command": [
+            "ninja",
+            "-C",
+            "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-build",
+            "-f",
+            "/Users/kiro/hyle-scratch/compute-unified/ce14-apple-diagnostic-1/exact-build.ninja",
+            "-n",
+            "ce14_apple_diagnostic"
+          ],
+          "env_additions": null,
+          "exit_code": 0,
+          "elapsed_seconds": 0.02717674999999975,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/ce14-apple-diagnostic-1/plan.log"
+        }
+      ],
+      "raw_record": "apple-prefill-cost-audit/diagnostic-1/remote/result.json",
+      "raw_record_sha256": "de0afaa6f877067ff7da3dedcef036a43739315f0fb54573fd7fa6b62b7fa806",
+      "error": "AssertionError()"
+    },
+    {
+      "attempt": "diagnostic-2",
+      "state": "TERMINAL_FAIL",
+      "seconds": 10.541584790000002,
+      "stages": [
+        {
+          "stage": "original-source",
+          "command": [
+            "python3",
+            "/Users/kiro/hyle-scratch/compute-unified/source-c8874688/bench/inference_resident_sdpa/apple_encoded_peer/prepare_source.py",
+            "--original",
+            "/Users/kiro/hyle-scratch/compute-unified/g01-original-ggml-peer",
+            "--output",
+            "/Users/kiro/hyle-scratch/compute-unified/ce14-apple-diagnostic-2/original-metal"
+          ],
+          "env_additions": null,
+          "exit_code": 0,
+          "elapsed_seconds": 0.025334000000000002,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/ce14-apple-diagnostic-2/original-source.log"
+        },
+        {
+          "stage": "configure",
+          "command": [
+            "cmake",
+            "-S",
+            "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-parent",
+            "-B",
+            "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-build"
+          ],
+          "env_additions": null,
+          "exit_code": 0,
+          "elapsed_seconds": 4.2408082910000005,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/ce14-apple-diagnostic-2/configure.log"
+        },
+        {
+          "stage": "plan",
+          "command": [
+            "ninja",
+            "-C",
+            "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-build",
+            "-f",
+            "/Users/kiro/hyle-scratch/compute-unified/ce14-apple-diagnostic-2/exact-build.ninja",
+            "-n",
+            "ce14_apple_diagnostic_2"
+          ],
+          "env_additions": null,
+          "exit_code": 0,
+          "elapsed_seconds": 0.02724504099999958,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/ce14-apple-diagnostic-2/plan.log"
+        },
+        {
+          "stage": "compile",
+          "command": [
+            "cmake",
+            "--build",
+            "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-build",
+            "--target",
+            "ce14_apple_diagnostic_2",
+            "--parallel",
+            "4"
+          ],
+          "env_additions": null,
+          "exit_code": 1,
+          "elapsed_seconds": 6.248197458000001,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/ce14-apple-diagnostic-2/compile.log"
+        }
+      ],
+      "raw_record": "apple-prefill-cost-audit/diagnostic-2/remote/result.json",
+      "raw_record_sha256": "7e4ebd1ec9e7046e83ebc2d21898ef6ba3f2069579f7272a4f16c620c59f52aa",
+      "error": "AssertionError('compile failed; see /Users/kiro/hyle-scratch/compute-unified/ce14-apple-diagnostic-2/compile.log')"
+    },
+    {
+      "attempt": "diagnostic-3",
+      "state": "TERMINAL_FAIL",
+      "seconds": 10.589495584,
+      "stages": [
+        {
+          "stage": "original-source",
+          "command": [
+            "python3",
+            "/Users/kiro/hyle-scratch/compute-unified/source-c8874688/bench/inference_resident_sdpa/apple_encoded_peer/prepare_source.py",
+            "--original",
+            "/Users/kiro/hyle-scratch/compute-unified/g01-original-ggml-peer",
+            "--output",
+            "/Users/kiro/hyle-scratch/compute-unified/ce14-apple-diagnostic-3/original-metal"
+          ],
+          "env_additions": null,
+          "exit_code": 0,
+          "elapsed_seconds": 0.025728042,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/ce14-apple-diagnostic-3/original-source.log"
+        },
+        {
+          "stage": "configure",
+          "command": [
+            "cmake",
+            "-S",
+            "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-parent",
+            "-B",
+            "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-build"
+          ],
+          "env_additions": null,
+          "exit_code": 0,
+          "elapsed_seconds": 4.248799459000001,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/ce14-apple-diagnostic-3/configure.log"
+        },
+        {
+          "stage": "plan",
+          "command": [
+            "ninja",
+            "-C",
+            "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-build",
+            "-f",
+            "/Users/kiro/hyle-scratch/compute-unified/ce14-apple-diagnostic-3/exact-build.ninja",
+            "-n",
+            "ce14_apple_diagnostic_3"
+          ],
+          "env_additions": null,
+          "exit_code": 0,
+          "elapsed_seconds": 0.028077542000000122,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/ce14-apple-diagnostic-3/plan.log"
+        },
+        {
+          "stage": "compile",
+          "command": [
+            "cmake",
+            "--build",
+            "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-build",
+            "--target",
+            "ce14_apple_diagnostic_3",
+            "--parallel",
+            "4"
+          ],
+          "env_additions": null,
+          "exit_code": 1,
+          "elapsed_seconds": 6.286890540999999,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/ce14-apple-diagnostic-3/compile.log"
+        }
+      ],
+      "raw_record": "apple-prefill-cost-audit/diagnostic-3/remote/result.json",
+      "raw_record_sha256": "ed6a7aeaefcc775f8f9c81389db7dd6cf5ad3cff25e813a81c5a00d78964f2e1",
+      "error": "AssertionError('compile failed; see /Users/kiro/hyle-scratch/compute-unified/ce14-apple-diagnostic-3/compile.log')"
+    },
+    {
+      "attempt": "sdk-diagnostic-1",
+      "state": "TERMINAL_DIAGNOSTIC_ONLY",
+      "seconds": 23.159063792,
+      "stages": [
+        {
+          "stage": "configure",
+          "command": [
+            "cmake",
+            "-S",
+            "/Users/kiro/hyle-scratch/compute-unified/source-c8874688/bench/inference_resident_sdpa/apple_encoded_peer",
+            "-B",
+            "/Users/kiro/hyle-scratch/compute-unified/ce14-apple-sdk-diagnostic-1/build",
+            "-G",
+            "Ninja",
+            "-DCMAKE_BUILD_TYPE=Release",
+            "-DCMAKE_OSX_DEPLOYMENT_TARGET=14.4",
+            "-DCMAKE_PREFIX_PATH=/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-sdk/apple-static-ce14-1/relocated",
+            "-DHYLE_RESIDENT_REFERENCE_SOURCE=/Users/kiro/hyle-scratch/compute-unified/g01-original-ggml-peer"
+          ],
+          "env_additions": null,
+          "exit_code": 0,
+          "elapsed_seconds": 1.509385291,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/ce14-apple-sdk-diagnostic-1/configure.log"
+        },
+        {
+          "stage": "plan",
+          "command": [
+            "ninja",
+            "-C",
+            "/Users/kiro/hyle-scratch/compute-unified/ce14-apple-sdk-diagnostic-1/build",
+            "-f",
+            "/Users/kiro/hyle-scratch/compute-unified/ce14-apple-sdk-diagnostic-1/exact-build.ninja",
+            "-n",
+            "g04_apple_encoded_bench"
+          ],
+          "env_additions": null,
+          "exit_code": 0,
+          "elapsed_seconds": 0.002561124999999942,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/ce14-apple-sdk-diagnostic-1/plan.log"
+        },
+        {
+          "stage": "compile",
+          "command": [
+            "cmake",
+            "--build",
+            "/Users/kiro/hyle-scratch/compute-unified/ce14-apple-sdk-diagnostic-1/build",
+            "--target",
+            "g04_apple_encoded_bench",
+            "--parallel",
+            "4"
+          ],
+          "env_additions": null,
+          "exit_code": 0,
+          "elapsed_seconds": 2.50243125,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/ce14-apple-sdk-diagnostic-1/compile.log"
+        },
+        {
+          "stage": "numeric",
+          "command": [
+            "/Users/kiro/hyle-scratch/compute-unified/ce14-apple-sdk-diagnostic-1/build/g04_apple_encoded_bench"
+          ],
+          "env_additions": {
+            "HYLE_BENCH_VERIFY_ONLY": "1"
+          },
+          "exit_code": 0,
+          "elapsed_seconds": 3.164426709,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/ce14-apple-sdk-diagnostic-1/numeric.log"
+        },
+        {
+          "stage": "control-native-0",
+          "command": [
+            "/Users/kiro/hyle-scratch/compute-unified/ce14-apple-sdk-diagnostic-1/build/g04_apple_encoded_bench"
+          ],
+          "env_additions": {
+            "HYLE_BENCH_AA_ROUTE": "native"
+          },
+          "exit_code": 0,
+          "elapsed_seconds": 1.9663766250000005,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/ce14-apple-sdk-diagnostic-1/control-native-0.log"
+        },
+        {
+          "stage": "control-native-1",
+          "command": [
+            "/Users/kiro/hyle-scratch/compute-unified/ce14-apple-sdk-diagnostic-1/build/g04_apple_encoded_bench"
+          ],
+          "env_additions": {
+            "HYLE_BENCH_AA_ROUTE": "native",
+            "HYLE_BENCH_RIVAL_FIRST": "1",
+            "HYLE_BENCH_PEER_ALLOCATION_FIRST": "1"
+          },
+          "exit_code": 0,
+          "elapsed_seconds": 1.9709089169999991,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/ce14-apple-sdk-diagnostic-1/control-native-1.log"
+        },
+        {
+          "stage": "control-selected-0",
+          "command": [
+            "/Users/kiro/hyle-scratch/compute-unified/ce14-apple-sdk-diagnostic-1/build/g04_apple_encoded_bench"
+          ],
+          "env_additions": {
+            "HYLE_BENCH_AA_ROUTE": "selected"
+          },
+          "exit_code": 0,
+          "elapsed_seconds": 3.357330333,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/ce14-apple-sdk-diagnostic-1/control-selected-0.log"
+        },
+        {
+          "stage": "control-selected-1",
+          "command": [
+            "/Users/kiro/hyle-scratch/compute-unified/ce14-apple-sdk-diagnostic-1/build/g04_apple_encoded_bench"
+          ],
+          "env_additions": {
+            "HYLE_BENCH_AA_ROUTE": "selected",
+            "HYLE_BENCH_RIVAL_FIRST": "1",
+            "HYLE_BENCH_PEER_ALLOCATION_FIRST": "1"
+          },
+          "exit_code": 0,
+          "elapsed_seconds": 3.3586407089999994,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/ce14-apple-sdk-diagnostic-1/control-selected-1.log"
+        },
+        {
+          "stage": "comparison-0",
+          "command": [
+            "/Users/kiro/hyle-scratch/compute-unified/ce14-apple-sdk-diagnostic-1/build/g04_apple_encoded_bench"
+          ],
+          "env_additions": {},
+          "exit_code": 0,
+          "elapsed_seconds": 2.6836621250000015,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/ce14-apple-sdk-diagnostic-1/comparison-0.log"
+        },
+        {
+          "stage": "comparison-1",
+          "command": [
+            "/Users/kiro/hyle-scratch/compute-unified/ce14-apple-sdk-diagnostic-1/build/g04_apple_encoded_bench"
+          ],
+          "env_additions": {
+            "HYLE_BENCH_RIVAL_FIRST": "1",
+            "HYLE_BENCH_PEER_ALLOCATION_FIRST": "1"
+          },
+          "exit_code": 0,
+          "elapsed_seconds": 2.643340708,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/ce14-apple-sdk-diagnostic-1/comparison-1.log"
+        }
+      ],
+      "raw_record": "apple-prefill-cost-audit/sdk-diagnostic-1/remote/result.json",
+      "raw_record_sha256": "f714949381bac1eee93349a0bed7cb6e7e54400f08cde0dfada5fb724b4194b4",
+      "error": null
+    }
+  ],
+  "diagnostic_stage_seconds": 48.978889625,
+  "short_same_implementation_controls": [
+    {
+      "log": ".scratch\\inference-gaps\\g04-g05\\apple-prefill-cost-audit\\sdk-diagnostic-1\\remote\\control-native-0.log",
+      "ratios": {
+        "Apple page16 F16/Q8 Q=1,17 KV=1024,768 D=256 Dv=256 causal=1 window=16": 1.0073107481792098,
+        "Apple page16 F16/Q8 Q=17,1 KV=7,47 D=64 Dv=128 causal=0 window=-1": 0.9980260823278921,
+        "Apple page16 F16/Q8 Q=64,128 KV=1024,768 D=256 Dv=256 causal=1 window=-1": 1.0055076037813397
+      }
+    },
+    {
+      "log": ".scratch\\inference-gaps\\g04-g05\\apple-prefill-cost-audit\\sdk-diagnostic-1\\remote\\control-native-1.log",
+      "ratios": {
+        "Apple page16 F16/Q8 Q=1,17 KV=1024,768 D=256 Dv=256 causal=1 window=16": 0.9964671058913396,
+        "Apple page16 F16/Q8 Q=17,1 KV=7,47 D=64 Dv=128 causal=0 window=-1": 0.9993928086464049,
+        "Apple page16 F16/Q8 Q=64,128 KV=1024,768 D=256 Dv=256 causal=1 window=-1": 0.9989707698641416
+      }
+    },
+    {
+      "log": ".scratch\\inference-gaps\\g04-g05\\apple-prefill-cost-audit\\sdk-diagnostic-1\\remote\\control-selected-0.log",
+      "ratios": {
+        "Apple page16 F16/Q8 Q=1,17 KV=1024,768 D=256 Dv=256 causal=1 window=16": 1.0045987929616458,
+        "Apple page16 F16/Q8 Q=17,1 KV=7,47 D=64 Dv=128 causal=0 window=-1": 1.0045027026472608,
+        "Apple page16 F16/Q8 Q=64,128 KV=1024,768 D=256 Dv=256 causal=1 window=-1": 1.0003204101249599
+      }
+    },
+    {
+      "log": ".scratch\\inference-gaps\\g04-g05\\apple-prefill-cost-audit\\sdk-diagnostic-1\\remote\\control-selected-1.log",
+      "ratios": {
+        "Apple page16 F16/Q8 Q=1,17 KV=1024,768 D=256 Dv=256 causal=1 window=16": 0.9963410463923402,
+        "Apple page16 F16/Q8 Q=17,1 KV=7,47 D=64 Dv=128 causal=0 window=-1": 1.0001537814867594,
+        "Apple page16 F16/Q8 Q=64,128 KV=1024,768 D=256 Dv=256 causal=1 window=-1": 1.0003208213025345
+      }
+    }
+  ],
+  "short_comparison_ratios": {
+    "comparison-0.log": [
+      {
+        "shape": "Apple page16 F16/Q8 Q=1,17 KV=1024,768 D=256 Dv=256 causal=1 window=16",
+        "ratio": 1.1812857494731657
+      },
+      {
+        "shape": "Apple page16 F16/Q8 Q=17,1 KV=7,47 D=64 Dv=128 causal=0 window=-1",
+        "ratio": 1.076591585587987
+      },
+      {
+        "shape": "Apple page16 F16/Q8 Q=64,128 KV=1024,768 D=256 Dv=256 causal=1 window=-1",
+        "ratio": 0.1270230505149583
+      }
+    ],
+    "comparison-1.log": [
+      {
+        "shape": "Apple page16 F16/Q8 Q=1,17 KV=1024,768 D=256 Dv=256 causal=1 window=16",
+        "ratio": 1.1914858824811947
+      },
+      {
+        "shape": "Apple page16 F16/Q8 Q=17,1 KV=7,47 D=64 Dv=128 causal=0 window=-1",
+        "ratio": 1.075146874965425
+      },
+      {
+        "shape": "Apple page16 F16/Q8 Q=64,128 KV=1024,768 D=256 Dv=256 causal=1 window=-1",
+        "ratio": 0.12783065310141123
+      }
+    ]
+  },
+  "decision": [
+    "NAX trial did not execute on actual M4 g16 and is withdrawn; numerical PASS is not branch coverage.",
+    "BQ8/BK16/WM1 plus removed Q8 V-load fences passed finite math/source/static SDK but short prefill comparison was ~0.127 in both orders; reject this performance trial.",
+    "Restore only own MLX patch/lock edits to original product baseline; compute_route_apple stays AUDITED for actual STEEL correction.",
+    "No new candidate, P1 PASS, whole G04/G05 acceptance or G01 product reopening."
+  ],
+  "limits": [
+    "Source trial2 NAX and trial3 STEEL are distinct snapshots; do not combine their runtime claims.",
+    "Diagnostic/shared-Custom bridge setup failures retained; final diagnostic uses actual relocated static SDK.",
+    "SDK includes current CE13 CPU product; ordinary tests passed but no new CPU P1 claim.",
+    "Outer observer seconds overlap stage totals and are not added.",
+    "Several read-only route-proof parsing/check-command failures occurred before compiler; elapsed UNKNOWN.",
+    "CUDA 4ms and 40ms A/A failures remain separately sealed UNPROVEN; no CUDA throughput conclusion."
+  ],
+  "raw_zip_sha256": "d209030651bbb2f2807ba2f763dfd3426a2ee3ee2be9b79488a857c30da9433e",
+  "static_sdk": {
+    "state": "TERMINAL_PASS",
+    "identity": {
+      "model": "Mac16,12",
+      "arch": "arm64",
+      "os": "ProductName:\t\tmacOS\nProductVersion:\t\t27.0.1\nBuildVersion:\t\t26A434",
+      "compiler": "Apple clang version 21.0.0 (clang-2100.3.34.2)\nTarget: arm64-apple-darwin27.0.0\nThread model: posix\nInstalledDir: /Library/Developer/CommandLineTools/usr/bin"
+    },
+    "prefix": "/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-sdk/apple-static-ce14-1/relocated",
+    "stages": [
+      {
+        "stage": "producer-configure",
+        "command": [
+          "/opt/homebrew/bin/cmake",
+          "-S",
+          "/Users/kiro/hyle-scratch/compute-unified/source-c8874688",
+          "-B",
+          "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-build"
+        ],
+        "exit_code": 0,
+        "elapsed_seconds": 3.8194679579999997,
+        "log": "/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-sdk/producer-configure-apple-static-ce14-1.log"
+      },
+      {
+        "stage": "producer-plan",
+        "command": [
+          "/opt/homebrew/bin/ninja",
+          "-C",
+          "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-build",
+          "-f",
+          "/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-sdk/exact-build-apple-static-ce14-1.ninja",
+          "-n",
+          "hyle_compute",
+          "hyle_compute_batch",
+          "hyle_graph",
+          "hyle_graph_batch",
+          "hyle_graph_route_cpu_apple",
+          "hyle_compute_route_apple",
+          "hyle_graph_route_apple"
+        ],
+        "exit_code": 0,
+        "elapsed_seconds": 0.06240458300000018,
+        "log": "/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-sdk/producer-plan-apple-static-ce14-1.log"
+      },
+      {
+        "stage": "producer-build",
+        "command": [
+          "/opt/homebrew/bin/cmake",
+          "--build",
+          "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-build",
+          "--target",
+          "hyle_compute",
+          "hyle_compute_batch",
+          "hyle_graph",
+          "hyle_graph_batch",
+          "hyle_graph_route_cpu_apple",
+          "hyle_compute_route_apple",
+          "hyle_graph_route_apple",
+          "--parallel",
+          "4"
+        ],
+        "exit_code": 0,
+        "elapsed_seconds": 37.891685291,
+        "log": "/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-sdk/producer-build-apple-static-ce14-1.log"
+      },
+      {
+        "stage": "install",
+        "command": [
+          "/opt/homebrew/bin/cmake",
+          "--install",
+          "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-build",
+          "--prefix",
+          "/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-sdk/apple-static-ce14-1/staging"
+        ],
+        "exit_code": 0,
+        "elapsed_seconds": 0.4607286669999979,
+        "log": "/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-sdk/install-apple-static-ce14-1.log"
+      },
+      {
+        "stage": "consumer-configure",
+        "command": [
+          "/opt/homebrew/bin/cmake",
+          "-S",
+          "/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-sdk/apple-static-ce14-1/consumer",
+          "-B",
+          "/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-sdk/apple-static-ce14-1/build",
+          "-G",
+          "Ninja",
+          "-DCMAKE_BUILD_TYPE=Release",
+          "-DCMAKE_PREFIX_PATH=/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-sdk/apple-static-ce14-1/relocated",
+          "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON"
+        ],
+        "exit_code": 0,
+        "elapsed_seconds": 1.7776555840000015,
+        "log": "/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-sdk/consumer-configure-apple-static-ce14-1.log"
+      },
+      {
+        "stage": "consumer-build",
+        "command": [
+          "/opt/homebrew/bin/cmake",
+          "--build",
+          "/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-sdk/apple-static-ce14-1/build",
+          "--target",
+          "cpu",
+          "cpu_math",
+          "native",
+          "native_math",
+          "headers",
+          "--parallel",
+          "4"
+        ],
+        "exit_code": 0,
+        "elapsed_seconds": 4.117533999999999,
+        "log": "/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-sdk/consumer-build-apple-static-ce14-1.log"
+      },
+      {
+        "stage": "cpu_math",
+        "command": [
+          "/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-sdk/apple-static-ce14-1/build/cpu_math",
+          "--gtest_output=xml:/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-sdk/cpu_math-apple-static-ce14-1.xml",
+          "--gtest_filter=GgmlCpuCacheEncode.*:GgmlCpuBoxed.*"
+        ],
+        "exit_code": 0,
+        "elapsed_seconds": 1.3138032499999994,
+        "log": "/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-sdk/cpu_math-apple-static-ce14-1.log"
+      },
+      {
+        "stage": "native_math",
+        "command": [
+          "/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-sdk/apple-static-ce14-1/build/native_math",
+          "--gtest_output=xml:/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-sdk/native_math-apple-static-ce14-1.xml"
+        ],
+        "exit_code": 0,
+        "elapsed_seconds": 12.371314040999998,
+        "log": "/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-sdk/native_math-apple-static-ce14-1.log"
+      },
+      {
+        "stage": "cpu",
+        "command": [
+          "/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-sdk/apple-static-ce14-1/build/cpu",
+          "--gtest_output=xml:/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-sdk/cpu-apple-static-ce14-1.xml"
+        ],
+        "exit_code": 0,
+        "elapsed_seconds": 0.4807119999999969,
+        "log": "/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-sdk/cpu-apple-static-ce14-1.log"
+      },
+      {
+        "stage": "native",
+        "command": [
+          "/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-sdk/apple-static-ce14-1/build/native",
+          "--gtest_output=xml:/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-sdk/native-apple-static-ce14-1.xml"
+        ],
+        "exit_code": 0,
+        "elapsed_seconds": 1.1013807920000005,
+        "log": "/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-sdk/native-apple-static-ce14-1.log"
+      },
+      {
+        "stage": "installed-metal-lifetime-compile",
+        "command": [
+          "xcrun",
+          "clang++",
+          "-std=c++20",
+          "-O3",
+          "-g",
+          "-Wall",
+          "-Wextra",
+          "-Wpedantic",
+          "-Werror",
+          "-fsanitize=undefined",
+          "-fno-sanitize-recover=all",
+          "-isystem",
+          "/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-sdk/apple-static-ce14-1/relocated/include/metal_cpp",
+          "/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-sdk/apple-static-ce14-1/consumer/metal_shared_ptr_lifetime.cc",
+          "-framework",
+          "Foundation",
+          "-framework",
+          "Metal",
+          "-o",
+          "/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-sdk/apple-static-ce14-1/build/metal_lifetime"
+        ],
+        "exit_code": 0,
+        "elapsed_seconds": 0.7147434170000011,
+        "log": "/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-sdk/installed-metal-lifetime-compile-apple-static-ce14-1.log"
+      },
+      {
+        "stage": "installed-metal-lifetime",
+        "command": [
+          "/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-sdk/apple-static-ce14-1/build/metal_lifetime"
+        ],
+        "exit_code": 0,
+        "elapsed_seconds": 0.3173719579999954,
+        "log": "/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-sdk/installed-metal-lifetime-apple-static-ce14-1.log"
+      }
+    ],
+    "input_count": 3225,
+    "raw_record": "sdk/result-apple-static-ce14-1.json",
+    "raw_record_sha256": "ce2b252e603110759277081f3fdbbe77f087d7166b140637d338d81e6669b71e"
+  }
+}

@@ -64,7 +64,7 @@ Windows只定向compile/link及已允许的有限风险。P1仅不可变API/算�
 ## 原读点审计结果与共同owner
 
 [有限源审计](../../../../evidence/architecture/inference-native-paged-read-audit/README.md)已
-核实际原锁文件/host dispatch与HYLE现有patch：MLX在当前M4资格中的NAX路径用kU16，
+核实际原锁文件/host dispatch与HYLE现有patch：MLX的NAX源码分支用kU16，
 Ktile<T,2,1>一次加载32逻辑rows；任意page16不能仅替换这个32-row tile的base。必须处理
 每16-row原fragment的地址/边界，保原MMA/softmax/reduction；vector两路径、旧steel loader
 与NAX dsplit也不能由一个decoder路径的结果代签。
@@ -195,7 +195,7 @@ physical64、双slot/旧result/确切guard/generation/成本/metadata零用量 i
 首33.481s FAIL缺直接mlx/ops.h，修include后通过；保所有初版和final输入/日志与累计
 59.438s。原reference direct/Graph/fault/append负空间PASS，不代签新page风险。两路线
 普通public消费和限制已写[使用页](../../../user/batch-attention.md)。Older steel源码读点
-已映射，M4实际数值只签原选中的NAX/向量路径，不外推其它硬件。五owner仍AUDITED，
+已映射，M4实际数值只签原选中的STEEL/向量路径；NAX仅源码映射，不外推其它硬件。五owner仍AUDITED，
 新的错误/unknown/accepted-prefix风险、三交付/逐头、宿主风险和不可变同合同P1未验，
 不能由source数学代签CANDIDATE/CLOSED或全goal；整个G01–G10仍0/10。
 

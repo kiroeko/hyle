@@ -1278,7 +1278,14 @@ F32路径。原MLX is_nax_available按实际GPU generation判定；本机Apple M
 有限FIX CE14改为实际M4 STEEL承载：沿原矩阵乘、online softmax、F32 score/输出及原
 Q8 tile/page16 loader检查计算精度与tile形状，直接读取驻留编码，不全历史解码。必须保
 65532及长prefill/消去边界、字节stride和尾行权限；不得用half临时溢出、缩小prefill范围、
-放宽5%门或强开本机不支持的NAX。内部tile固定为Q8 D256 unbounded的BQ8/BK16/WM1，共28800-byte共享内存；原BQ16/BK8的28928-byte不降精度。复用同一F32 loader/online softmax/MMA，移除Q8 V矩阵每次加载前后重复的无内存SIMD fence；原threadgroup staging barrier及QK收敛点保留。
+放宽5%门或强开本机不支持的NAX。BQ8/BK16/WM1及移除Q8 V-load无内存fence的试改已被短成本反证否决并撤回，保原F32
+baseline。该试改的11项数学、4项公开消费者、原风险与static SDK虽通过，但双顺序prefill
+比率仅约0.127，不能进入candidate；精度/生命周期通过不能代替性能修正。
+[原始尝试与裁决](../../../../evidence/architecture/inference-g04-g05-apple-prefill-correction/receipt.json)
+保留所有输入、配置hash错误、未执行NAX路径、三次shared-Custom比较桥接失败、实际
+static比较与累计成本。接下来只核原STEEL的矩阵输入类型、mixed-input/F32-accumulator
+机制与编译器活跃寄存器边界，先固定可保65532/小数值的承载再实施下一批；不重跑失败
+配置、不放宽原数值或性能门。
 公共API、ownership、失败、权限、退休及未变路线不改。
 
 预声明验证：同一批已有public encoded页/Graph/联合消费者与原Apple native cache数学

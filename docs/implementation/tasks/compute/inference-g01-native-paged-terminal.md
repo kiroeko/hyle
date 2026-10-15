@@ -79,3 +79,8 @@ owned version、资源费用或失败退休的可复现缺陷，以及新真实�
 
 LOC 采用原 loc-report/cloc2.08、candidate520 self-check：全库2898994、自实现不含测试
 175806；compute_batch1011、Apple4355、Vulkan8944、ggml Vulkan provider2680。runtime402，同候选五份测量单独保留；vendor patches、测试和 benchmark 不算模块自实现 LOC。
+
+2026-10-15 路径归因勘误：固定MLX的原设备门要求非p架构gen>=17，本机M4为g16，
+因此实际矩阵路径是STEEL；早期施工卡写成M4 NAX属于路径归因错误。见
+[原archive与设备门核对](../../../../evidence/architecture/inference-g04-g05-apple-prefill-correction/receipt.json)。
+原实际数学/生命周期/交付/性能结果不改写，不由此签发NAX运行资格或重开G01产品。
