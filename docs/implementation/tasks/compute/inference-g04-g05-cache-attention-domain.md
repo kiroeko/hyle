@@ -1269,16 +1269,17 @@ baseline `89236554cf6a3efb6698fefbb013948e4ea53597`，原产品 candidate982676c
 非因果D64/Dv128比率1.0776–1.0837均非劣PASS，但D256 prefill仅0.3249–0.3255，明确LOSS/
 非劣FAIL。738.364秒及原设置失败保留，不重复无变更的同一性能运行。
 
-源码已核：Q8为保65532有限解码值而使用F32 query/tiles/partials；当前host明确拒绝Q8进入
-原NAX路径，prefill落到旧steel F32路径。原MLX NAX已具备float输入、F32累加/softmax及其
-显式TF32档；不能退回half临时值而重新引入溢出，也不能全历史解码、缩小prefill范围或改
-5%门。本批仅compute_route_apple从CANDIDATE退回AUDITED，其他owner和产品候选不动。
+源码已核：Q8为保65532有限解码值而使用F32 query/tiles/partials，prefill落到旧steel
+F32路径。原MLX is_nax_available按实际GPU generation判定；本机Apple M4 g16不满足
+非p架构gen>=17的原条件。先前NAX试改的源测试11数学/4公开页与原风险虽通过，但没有
+执行新NAX分支，不能作为性能修正证明；该试改已撤回，配置hash错误及实际60.146秒保留。
+仅compute_route_apple保持AUDITED；原产品和其他owner的候选不动。
 
-有限FIX CE14：在原NAX tile loader增加Q8_0逐元素/有效行解码和准确page16地址，保原
-矩阵乘、F32 score/softmax/output与原slots/encoder。仅既有NAX支持的等D、unbounded
-Q8 prefill进入明确TF32 native档；窗口和不同Dv保原已合格路线。真实Q8 stride是字节，
-不能按F32元素移动；尾行不得读取poison，native specialization key包含编码身份。
-plain档选择、公共API/精度验收门、ownership/失败/权限/退休均不变。
+有限FIX CE14改为实际M4 STEEL承载：沿原矩阵乘、online softmax、F32 score/输出及原
+Q8 tile/page16 loader检查计算精度与tile形状，直接读取驻留编码，不全历史解码。必须保
+65532及长prefill/消去边界、字节stride和尾行权限；不得用half临时溢出、缩小prefill范围、
+放宽5%门或强开本机不支持的NAX。内部tile固定为Q8 D256 unbounded的BQ8/BK16/WM1，共28800-byte共享内存；原BQ16/BK8的28928-byte不降精度。复用同一F32 loader/online softmax/MMA，移除Q8 V矩阵每次加载前后重复的无内存SIMD fence；原threadgroup staging barrier及QK收敛点保留。
+公共API、ownership、失败、权限、退休及未变路线不改。
 
 预声明验证：同一批已有public encoded页/Graph/联合消费者与原Apple native cache数学
 （F16/BF16、D64/128/256、ragged/page16、tail/重排、Q65以上、65504编码边界及两槽），
