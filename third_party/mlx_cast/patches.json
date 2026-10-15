@@ -712,7 +712,7 @@
         },
         {
           "before": "struct MaxOp {\n",
-          "after": "// Keep decoded Q8/staging/accumulators in F32. Narrow only a whole SIMD\n// fragment whose values cannot overflow or become half subnormals. The latter\n// matters for small softmax weights multiplying large, still finite V values.\nMETAL_FUNC bool hyle_normal_half_input(float value) {\n  const float magnitude = metal::abs(value);\n  return value == 0 || (magnitude >= 0x1p-14f && magnitude <= 65504.f);\n}\n\nMETAL_FUNC void hyle_q8_mma(thread float2& d, thread float2& a,\n    thread float2& b, thread float2& c) {\n  const bool normal = hyle_normal_half_input(a.x) &&\n      hyle_normal_half_input(a.y) && hyle_normal_half_input(b.x) &&\n      hyle_normal_half_input(b.y);\n  // The collective branch must be uniform across every lane supplying the\n  // original 8x8 matrix. Preserve the original F32 call on all other inputs.\n  if (simd_all(normal)) {\n    half2 ah(a), bh(b);\n    BaseMMAFrag<float, 8, 8>::mma(d, ah, bh, c);\n  } else {\n    BaseMMAFrag<float, 8, 8>::mma(d, a, b, c);\n  }\n}\n\nstruct MaxOp {\n"
+          "after": "// Keep decoded Q8/staging/accumulators in F32. Narrow only a whole SIMD\n// fragment whose values cannot overflow or become half subnormals. The latter\n// matters for small softmax weights multiplying large, still finite V values.\nMETAL_FUNC bool hyle_normal_half_input(float value) {\n  const float magnitude = metal::abs(value);\n  return value == 0 || (magnitude >= 0x1p-14f && magnitude <= 65504.f);\n}\n\nMETAL_FUNC void hyle_q8_mma(thread float2& d, thread float2& a,\n    thread float2& b, thread float2& c) {\n  const bool normal = hyle_normal_half_input(a.x) &&\n      hyle_normal_half_input(a.y) && hyle_normal_half_input(b.x) &&\n      hyle_normal_half_input(b.y);\n  // The collective branch must be uniform across every lane supplying the\n  // original 8x8 matrix. Preserve the original F32 call on all other inputs.\n  if (simd_all(normal)) {\n    half2 ah{static_cast<half>(a.x), static_cast<half>(a.y)};\n    half2 bh{static_cast<half>(b.x), static_cast<half>(b.y)};\n    BaseMMAFrag<float, 8, 8>::mma(d, ah, bh, c);\n  } else {\n    BaseMMAFrag<float, 8, 8>::mma(d, a, b, c);\n  }\n}\n\nstruct MaxOp {\n"
         },
         {
           "before": "      tile_matmad(Stile, Qtile, Ktile, Stile);\n",
@@ -723,7 +723,7 @@
           "after": "          if (hyle_q8) {\n            hyle_q8_mma(Otile.frag_at(iq, id), Stile.frag_at(iq, ik),\n                Vtile.frag_at(0, 0), Otile.frag_at(iq, id));\n          } else {\n            MMAFrag_acc_t::mma(\n                Otile.frag_at(iq, id),\n                Stile.frag_at(iq, ik),\n                Vtile.frag_at(0, 0),\n                Otile.frag_at(iq, id));\n          }\n"
         }
       ],
-      "after_sha256": "efad0234f280885101c92d32e977a0eeb361c684d239b329d7a528fec9a84e04"
+      "after_sha256": "2f85f8dceea20a764ba5f00141f8f8d110ccca6642943d458cc7cbec90322a58"
     },
     {
       "path": "mlx/backend/metal/kernels/scaled_dot_product_attention.metal",
