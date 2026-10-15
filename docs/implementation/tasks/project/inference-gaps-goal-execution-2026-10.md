@@ -51,7 +51,7 @@ G06–G10 不由该聚合裁决代签。
 | G01 高效驻留读取 | [整项已验收](../compute/inference-g01-aggregate-acceptance.md)：CPU/Apple/Vulkan 原 resident/ragged/page16 子批均 CLOSED，八份声明 P1 已核最终通过；Linux FI 原完整公开路线沿用已签 P0，不伪造新 P1。只接受原 plain 有限域，其他 G 项继续 | 单请求先核 dense/view；多请求接 native/等价直接驻留消费，避免按每 Q/head 重复物化全 KV | compute_batch、原 route/Provider、graph_batch 必要桥 |
 | G02 联合分页 | common CPU+CUDA 与 Apple/Vulkan native 联合分页已分别取得有限域证据；原 Windows graph_route_cuda 中断与 graph_route_vulkan 未跑门仍待裁决，不能整项 CLOSED | 原 multi-queue bindings 接 batch coordinator；native hybrid 接准确 page/layout 与原 region/slot，公开 CPU→GPU→CPU | graph_batch、三个 graph hybrid、原 compute/native 权限桥 |
 | G03 增量 producer 组合 | [CLOSED](../compute/inference-g03-final-closure.md)，candidate11b2403e7：四原路线/三联合、Direct/Graph、多独立native来源、完整CPU+CUDA源码/两SDK、生命周期与P0通过；原失败/checked waits/费用保留 | 原 exclusive/F2/native waits到更新与读取；精确 dirty 域、成功 ready、idle input 生命周期 | compute_batch、compute/F2、原 native route与graph桥 |
-| G04 量化 KV | CPU CE13/Vulkan P1均QUALIFIED/PASS/verify0；Apple实际P1窗口与非因果PASS，但D256 prefill比率0.3249–0.3255明确FAIL，Apple owner已退回AUDITED。早期CE14试改已否决撤回；新block-scale/原F16 Query批source/static13数学与公开4通过，短prefill比率升至约0.821，仍AUDITED，续做已定界partial-block修正。CUDA数值通过，4ms与40ms A/A均失败、性能UNPROVEN；原失败保留，其余owner仍CANDIDATE | 按成熟实际 cache 编码冻结 payload/scales/layout、quantize append与直接读取，不每步解码完整历史 | compute_ops/batch、实际 Provider/native route |
+| G04 量化 KV | CPU CE13/Vulkan P1均QUALIFIED/PASS/verify0。Apple CE14产品3b5157532已CANDIDATE，source/static/shared、适用风险和独立peer数值通过；attempt4的完整三形状采样改善但consumer文档hash失格，原结果保留，校验链已修正的attempt5正在运行。CUDA数值通过，4ms与40ms A/A均失败、性能UNPROVEN；其余owner仍CANDIDATE | 按成熟实际 cache 编码冻结 payload/scales/layout、quantize append与直接读取，不每步解码完整历史 | compute_ops/batch、实际 Provider/native route |
 | G05 attention 语义域 | 同卡已实现 causal-window/full noncausal/有限 Dqk≠Dv，与 G04 共用数学、数值/生命周期和交付证据；适用性能及剩余风险未全部签发 | 固定真实消费者所需 window/mask/维度等域及失败边界，成熟承载；未准入未来特例不无限扩张 | compute_ops/batch、实际 Provider/native route |
 | G06 metadata/decode | 有限只读预审已定位 metadata、上传/等待、权限准入和原生规划四组成本；待活动 owner 定界，不授权实现 | host-known/device-produced分界，active/delta上传、完整 topology复用与decode档，实际capture资格 | compute_batch、FI/native Provider、graph_batch |
 | G07 packed 权重 | 待有限编码选择 | 锁定 artifact→resident→selected math，借原生packed/冷repack；checked IDs保错误，排除warm完整展开/多余host检查 | 实际低精度 Provider/native route及资源桥 |
@@ -211,3 +211,28 @@ G01/G02 表项已按原 finite terminal 修正过时摘要，完整项仍仅 G03
 2026-10-15 G01 原 plain 有限目标已聚合完成，完整项更新为2/10（G01、G03）。
 这不表示整体工作量20%；各项大小不同。原 G02 Windows 三个未完成命令继续保持未证明，
 当前 G04/G05 owner 状态仍按 registry，不因 goal 工作项聚合回写 CLOSED。
+
+### 2026-10-15 调度纠正：先补 G02 验收尾项
+
+用户指出G02未终审却继续G03–G05。原Windows单CUDA测试在2026-10-13桌面资源压力下
+中断，Vulkan构建/测试未运行；后续独立工作不补签这些门。当前Apple attempt5真实结束
+并封存后，优先本次重新纳入的G02原3门，再处理CUDA失稳及G04/G05终审；G06–G10
+保持原完整目标，G06暂不实施。G01–G05即使全部验收也只有5/10整项，不宣称全库收口。
+
+有限验证仅原`factor:graph_route_cuda` command1与`factor:graph_route_vulkan` commands0/1，
+见[原施工卡](../graph/inference-g02-multi-queue-batch.md)和
+[保留证据](../../../../evidence/correctness/inference-g02-common/receipt.json)。Windows原树
+`C:/h7/inference-g02-impacted`已落后当前源码；先正常重新配置并核实际source/native输入，
+按当前不可变输入增量更新两测试target所需闭包。CUDA旧build PASS不作为当前artifact资格，
+必要增量构建是输入重绑定，不是复跑已完成门。只构建两原target，max4jobs/CUDA TU pool1，
+不启动全库、模型/server或P1。CMake/native产物变化如导致额外大规模重编，先记录具体
+差异及可复用的相同输入，不因路径改变就重建未变库，不修改公共构建系统。
+
+两原CTest correctness recipe的完整默认用例集合保持；为避免同进程vendor缓存累计到
+11.5GiB，允许scratch编排先枚举同一exe全部默认GoogleTest用例，再按单case独立进程
+串行执行并保存每项exit/XML/raw。这是资源隔离的等价测试覆盖，不伪造未运行的原ctest
+command为PASS，不缩减形状/断言/用例；disabled、真实skip与失败逐项保留并裁决。每个
+进程终态后才启动下一个，记录GPU/主存观测；不改全局驱动/电源/线程设置。原压力中断、
+错误和elapsed全部保留，普通/SDK/风险的原已过资格按匹配输入与实际影响借用，不重跑。
+本阶段为已有有限G02的证据补完，无产品FIX和模块状态跳转；若发现真实产品缺陷，按当前
+owner退回AUDITED并固定修正后才改产品。2h检查点/自动追加，不以墙钟到点假签验收。
