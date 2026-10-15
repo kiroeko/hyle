@@ -1104,3 +1104,10 @@ configure/compile FAIL 均保留；只修比较器接线，不改产品或数学
 全部物理页原本已完整上传，complete现在明确传16个初始化行；逻辑tail、poison、exact
 frame与费用合同不变。这里只签数值/生命周期，不签 A/A、P1、G06 或整批 G04/G05。
 CE13 已在这些任务实际结束后启动普通门，保持所有重型任务串行。
+
+CE13 Windows source 第一轮已通过：22项原数学/分页/ragged/Direct/Graph/数值边界，
+以及 provider、runtime/source合同、两种资源失败夹具共5个定向 CTest（42.65秒主测试，
+全部 CTest 43.06秒）。构建129.532秒。实际 AVX2 ops派生 SHA18c32123603a 与新锁匹配，
+generic 反汇编已无原两次外部 row-offset helper 调用；只把它作为已消除重复调用的生成
+代码证据，不签性能收益。三类宿主 sanitizer 与两种 SDK 仍沿实际串行队列执行，
+CPU provider/runtime 保持 AUDITED，尚未冻结新 P1 candidate。
