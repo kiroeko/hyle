@@ -1323,6 +1323,19 @@ void run_q24_semantic_fragment(
                });
       });
   auto full = sem::make_graph(fixture);
+  // The pooled score MatMul also explicitly retains both F32 operands.
+  // Its legacy native witness describes the default coopmat2/F16 path.
+  const bool full_f32_pool_scores =
+      fixture.region >= 0x08030801 && fixture.region <= 0x08030804 &&
+      !fixture.quantized && std::any_of(
+          fixture.nodes.begin(), fixture.nodes.end(), [&](const auto &node) {
+            return node.operation.template get_if<c::MatMul>() &&
+                   node.inputs.size() == 2 &&
+                   fixture.description(node.inputs[0]).data_type() ==
+                       c::DataType::kFloat32 &&
+                   fixture.description(node.inputs[1]).data_type() ==
+                       c::DataType::kFloat32;
+          });
   auto context = vulkan_test::context().value();
   std::vector<v::Tensor> constants;
   for (std::size_t index = 0; index < fixture.constant_bytes.size(); ++index)
@@ -1357,7 +1370,8 @@ void run_q24_semantic_fragment(
       SCOPED_TRACE(output);
       feedback.observe(output, actual);
       sem::expect_output(fixture, actual, expected.outputs[output],
-                         (full_f32_sdpa || expected.native_outputs.empty())
+                         (full_f32_sdpa || full_f32_pool_scores ||
+                          expected.native_outputs.empty())
                              ? std::span<const float>{}
                              : expected.native_outputs[output],
                          fixture.exact_output(output), fixture.id_validation(output),

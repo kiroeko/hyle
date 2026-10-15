@@ -1524,3 +1524,25 @@ VulkanGraphMoeFragments.D5GlmFlashPooledIndexerWithTail正常完成但数值FAIL
 随后保持同一四产物SHA和全部原assert/oracle，逐例串行跑剩余749项并收集所有失败，
 不再因首个数值失败中止整批。待批次终态后只对实际失败做定向诊断/修复与受影响复验；
 不重跑CUDA804、不提前G06/P1。G02仍未整体验收。
+
+
+CE16 原默认851项已全部实际执行，[原842 PASS／9 FAIL及环境诊断](../../../../evidence/correctness/inference-g02-vulkan-final-test-diagnostics/receipt.json)
+原样封存，零skip。原生参考Backend明确请求validation=true，但启动环境未发现本机已缓存
+Khronos layer；实际enumeration由11项缺层变为进程级VK_LAYER_PATH后的12项含层。
+仅停止旧parent并排空原child，未计分的in-flight case重跑；旧PASS保留、环境失败及未运行
+项在相同四产物SHA下续跑。没有关闭validation、重装系统、改产品或覆盖旧FAIL/elapsed。
+
+最终两个测试缺陷一次修正：pooled official Flash score仍用旧coopmat2/F16乘数witness，
+而当前公开F32 MatMul显式保留F32乘数；scratch保持原独立F32方程与严格门，四tail×四
+反馈16组全部bad_f32=0，旧F16 witness共620个超差。两Vulkan caller仅对此原region和
+F32 MatMul合同选回原F32参考。另一组八个IQ1 catalogue case因combined build的CPU扩展
+枚举误入无对应encoder的ggml_quantize_chunk，编码阶段断言；Vulkan Bank改按三种公开
+quant格式选择既有original raw bytes/grid与独立decoder，不由CPU枚举推断Vulkan量化器。
+
+[正常增量与完整默认门合并裁决](../../../../evidence/correctness/inference-g02-vulkan-windows-default-acceptance/receipt.json)
+PASS：仅四个测试CXX TU、两个测试exe，12.844s；九Graph原失败与九Direct对应case共18
+实际PASS，原842不受两个有限predicate影响的PASS保留，总851/851。原容差、独立方程、
+形状、产品candidate2b60及provider DLL均未变；321 native objects/151 generated inputs
+在本次build后再次核SHA全同。普通source contract六项PASS。当前只剩本FIX的实际Air
+source/static/shared与对应alias/phase/metadata资格；整项G02仍未验收，不重复CUDA804、
+已通过842或P1，不扩大为全库验证。

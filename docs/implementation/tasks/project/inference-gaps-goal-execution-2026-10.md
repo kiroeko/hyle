@@ -49,7 +49,7 @@ G06–G10 不由该聚合裁决代签。
 | 项 | 当前状态 | 有限目标 | 预计涉及的机制 owner，需在活动卡精确定界 |
 |---|---|---|---|
 | G01 高效驻留读取 | [整项已验收](../compute/inference-g01-aggregate-acceptance.md)：CPU/Apple/Vulkan 原 resident/ragged/page16 子批均 CLOSED，八份声明 P1 已核最终通过；Linux FI 原完整公开路线沿用已签 P0，不伪造新 P1。只接受原 plain 有限域，其他 G 项继续 | 单请求先核 dense/view；多请求接 native/等价直接驻留消费，避免按每 Q/head 重复物化全 KV | compute_batch、原 route/Provider、graph_batch 必要桥 |
-| G02 联合分页 | common CPU+CUDA 与 Apple/Vulkan native 联合分页已分别取得有限域证据；原 Windows graph_route_cuda 中断与 graph_route_vulkan 未跑门仍待裁决，不能整项 CLOSED | 原 multi-queue bindings 接 batch coordinator；native hybrid 接准确 page/layout 与原 region/slot，公开 CPU→GPU→CPU | graph_batch、三个 graph hybrid、原 compute/native 权限桥 |
+| G02 联合分页 | common CPU+CUDA 与 Apple/Vulkan native 联合分页已有有限域证据；原 Windows CUDA804与Vulkan851默认门现已实际通过。补验发现的Vulkan输出别名/phase修正仍待受影响Air三交付尾验，整项暂未验收 | 原 multi-queue bindings 接 batch coordinator；native hybrid 接准确 page/layout 与原 region/slot，公开 CPU→GPU→CPU | graph_batch、三个 graph hybrid、原 compute/native 权限桥 |
 | G03 增量 producer 组合 | [CLOSED](../compute/inference-g03-final-closure.md)，candidate11b2403e7：四原路线/三联合、Direct/Graph、多独立native来源、完整CPU+CUDA源码/两SDK、生命周期与P0通过；原失败/checked waits/费用保留 | 原 exclusive/F2/native waits到更新与读取；精确 dirty 域、成功 ready、idle input 生命周期 | compute_batch、compute/F2、原 native route与graph桥 |
 | G04 量化 KV | CPU CE13、Vulkan与Apple CE14的有限P1均QUALIFIED/PASS/verify0；Apple owner已按[终审](../compute/inference-g04-g05-apple-ce14-terminal.md)CLOSED，原prefill LOSS及证据hash失格保留。CUDA数值通过，4ms与40ms A/A均失败、性能UNPROVEN；其余owner仍CANDIDATE。当前优先补G02 Windows尾项，再收CUDA及本批聚合 | 按成熟实际 cache 编码冻结 payload/scales/layout、quantize append与直接读取，不每步解码完整历史 | compute_ops/batch、实际 Provider/native route |
 | G05 attention 语义域 | 同卡已实现 causal-window/full noncausal/有限 Dqk≠Dv，与 G04 共用数学、数值/生命周期和交付证据；适用性能及剩余风险未全部签发 | 固定真实消费者所需 window/mask/维度等域及失败边界，成熟承载；未准入未来特例不无限扩张 | compute_ops/batch、实际 Provider/native route |
@@ -246,3 +246,11 @@ Direct/Graph两wrapper按明确F32输入/累加的SDPA操作选择原F32参考�
 不放宽容差、不改公共fixture/其它native参考/产品或已合格P1。先定向两入口验证该例，
 再续原Vulkan未运行集合与本次受影响ID；原78已过且参考不受影响的案例不重复。G02仍未
 验收，不因诊断PASS代签851集合；原失败、原skip及全部成本保留。
+
+
+2026-10-15 G02补验已完成原Windows两个默认集合：CUDA804通过；Vulkan851先842PASS/
+9FAIL/零skip，完成两组有限测试参考/codec fixture纠正后，九Graph及九Direct实际PASS，
+完整默认851聚合通过。新Vulkan产品修正的正常source四项也已通过，详见
+[Windows原默认门证据](../../../../evidence/correctness/inference-g02-vulkan-windows-default-acceptance/receipt.json)。
+仅本FIX对应Air源码/static/shared与alias/phase/metadata尾验继续串行；原所有失败和费用
+保留。完成项仍2/10，G02尚未聚合验收；不提前CUDA P1或G06，不重测已签域。

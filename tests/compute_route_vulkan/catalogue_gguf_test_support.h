@@ -57,7 +57,11 @@ inline std::array<float,8> native_dots(ggml_type type,std::int64_t k,
 struct Bank final {
   ggml_type type;std::int64_t k;std::size_t stride;
   std::vector<std::byte> packed;std::vector<float> decoded;float l1=0;
-  explicit Bank(const in::Case &item):type(item.native),k(item.k),
+  // A combined CPU/CUDA build can expose IQ1 enums without a Vulkan native
+  // quantizer. These three formats use the original byte/grid fixture below.
+  explicit Bank(const in::Case &item):type(
+      std::ranges::find(vulkan_iq1_test::types,item.quant)!=vulkan_iq1_test::types.end()
+          ? GGML_TYPE_COUNT : item.native),k(item.k),
       stride(type==GGML_TYPE_COUNT ? static_cast<std::size_t>(k/256)*
           (item.quant==c::GgufQuantizedType::kIq1Xs?46:item.quant==c::GgufQuantizedType::kIq1Xxs?42:38)
                                   :ggml_row_size(type,k)),packed(8*stride),decoded(8*k) {

@@ -1,0 +1,451 @@
+{
+  "kind": "G02_ORIGINAL_VULKAN_DEFAULT_GATE_FINITE_WINDOWS_ACCEPTANCE",
+  "verdict": "PASS_ALL_851_ORIGINAL_DEFAULT_CASES_AFTER_FINITE_TEST_CORRECTIONS",
+  "product_candidate": "2b60d9a34be12fda9a9e3fdc26f7a61b495c3be7",
+  "evidence_head_before_test_only_commit": "c195b24003fe363779e1f1fcee5d6ce63810b10d",
+  "normal_targeted": {
+    "state": "TERMINAL_TARGETED_PASS",
+    "product_candidate": "2b60d9a34be12fda9a9e3fdc26f7a61b495c3be7",
+    "evidence_head": "c195b24003fe363779e1f1fcee5d6ce63810b10d",
+    "test_changes": [
+      {
+        "path": "tests/compute_route_vulkan/catalogue_gguf_test_support.h",
+        "sha256": "9cabf8a1e87502ec387b1e39bd10289b7c6b20afc4e036b5904b4e07d9af5314"
+      },
+      {
+        "path": "tests/compute_route_vulkan/d5_qwen35_execution_test.cc",
+        "sha256": "62f6ac3dae4670efe8f03520104291ad784f76701534005b4ce0f41b0d8b2443"
+      },
+      {
+        "path": "tests/graph_route_vulkan/d5_qwen35_execution_test.cc",
+        "sha256": "d1a1dec2cc04a93e5f060098789f98ee7eb84eb376d0de4bde1e00ee73051273"
+      }
+    ],
+    "scope": "Only original ninefailedGraph cases and counterpartDirect cases. Test reference/carrier corrections, no product/numerical threshold change. Original842PASS inherited only after exact unaffected-reference proof.",
+    "stages": [
+      {
+        "stage": "dry-plan",
+        "command": [
+          "ninja",
+          "-C",
+          "C:\\h7\\inference-g02-impacted",
+          "-f",
+          "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g02\\resume-windows-4\\reuse-build.ninja",
+          "-j",
+          "4",
+          "-k",
+          "0",
+          "-n",
+          "hyle_compute_route_vulkan_tests",
+          "hyle_graph_route_vulkan_tests"
+        ],
+        "exit_code": 0,
+        "elapsed_seconds": 0.09299999999348074
+      },
+      {
+        "stage": "build",
+        "command": [
+          "ninja",
+          "-C",
+          "C:\\h7\\inference-g02-impacted",
+          "-f",
+          "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g02\\resume-windows-4\\reuse-build.ninja",
+          "-j",
+          "4",
+          "-k",
+          "0",
+          "hyle_compute_route_vulkan_tests",
+          "hyle_graph_route_vulkan_tests"
+        ],
+        "exit_code": 0,
+        "elapsed_seconds": 12.844000000040978
+      },
+      {
+        "stage": "graph-00",
+        "command": [
+          "C:\\h7\\inference-g02-impacted\\bin\\hyle_graph_route_vulkan_test.exe",
+          "--gtest_filter=VulkanGraphMoeFragments.D5GlmFlashPooledIndexerWithTail",
+          "--gtest_color=no",
+          "--gtest_output=xml:C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g02\\ce16-normal-test-fixes\\graph-00.xml"
+        ],
+        "exit_code": 0,
+        "elapsed_seconds": 3.202999999979511
+      },
+      {
+        "stage": "graph-01",
+        "command": [
+          "C:\\h7\\inference-g02-impacted\\bin\\hyle_graph_route_vulkan_test.exe",
+          "--gtest_filter=CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g64b649142b8fea00",
+          "--gtest_color=no",
+          "--gtest_output=xml:C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g02\\ce16-normal-test-fixes\\graph-01.xml"
+        ],
+        "exit_code": 0,
+        "elapsed_seconds": 0.25
+      },
+      {
+        "stage": "graph-02",
+        "command": [
+          "C:\\h7\\inference-g02-impacted\\bin\\hyle_graph_route_vulkan_test.exe",
+          "--gtest_filter=CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g67726d00dbb43297",
+          "--gtest_color=no",
+          "--gtest_output=xml:C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g02\\ce16-normal-test-fixes\\graph-02.xml"
+        ],
+        "exit_code": 0,
+        "elapsed_seconds": 0.3440000000409782
+      },
+      {
+        "stage": "graph-03",
+        "command": [
+          "C:\\h7\\inference-g02-impacted\\bin\\hyle_graph_route_vulkan_test.exe",
+          "--gtest_filter=CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g80d5d1325cc09981",
+          "--gtest_color=no",
+          "--gtest_output=xml:C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g02\\ce16-normal-test-fixes\\graph-03.xml"
+        ],
+        "exit_code": 0,
+        "elapsed_seconds": 0.23499999998603016
+      },
+      {
+        "stage": "graph-04",
+        "command": [
+          "C:\\h7\\inference-g02-impacted\\bin\\hyle_graph_route_vulkan_test.exe",
+          "--gtest_filter=CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g928bf6ce5a12f293",
+          "--gtest_color=no",
+          "--gtest_output=xml:C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g02\\ce16-normal-test-fixes\\graph-04.xml"
+        ],
+        "exit_code": 0,
+        "elapsed_seconds": 0.25
+      },
+      {
+        "stage": "graph-05",
+        "command": [
+          "C:\\h7\\inference-g02-impacted\\bin\\hyle_graph_route_vulkan_test.exe",
+          "--gtest_filter=CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/ga2be3eedcbdb56e2",
+          "--gtest_color=no",
+          "--gtest_output=xml:C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g02\\ce16-normal-test-fixes\\graph-05.xml"
+        ],
+        "exit_code": 0,
+        "elapsed_seconds": 0.23399999999674037
+      },
+      {
+        "stage": "graph-06",
+        "command": [
+          "C:\\h7\\inference-g02-impacted\\bin\\hyle_graph_route_vulkan_test.exe",
+          "--gtest_filter=CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/ga5ebd3ecae344292",
+          "--gtest_color=no",
+          "--gtest_output=xml:C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g02\\ce16-normal-test-fixes\\graph-06.xml"
+        ],
+        "exit_code": 0,
+        "elapsed_seconds": 0.25
+      },
+      {
+        "stage": "graph-07",
+        "command": [
+          "C:\\h7\\inference-g02-impacted\\bin\\hyle_graph_route_vulkan_test.exe",
+          "--gtest_filter=CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gb5954d4f5bb321cb",
+          "--gtest_color=no",
+          "--gtest_output=xml:C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g02\\ce16-normal-test-fixes\\graph-07.xml"
+        ],
+        "exit_code": 0,
+        "elapsed_seconds": 0.375
+      },
+      {
+        "stage": "graph-08",
+        "command": [
+          "C:\\h7\\inference-g02-impacted\\bin\\hyle_graph_route_vulkan_test.exe",
+          "--gtest_filter=CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gcd102ff92aa448da",
+          "--gtest_color=no",
+          "--gtest_output=xml:C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g02\\ce16-normal-test-fixes\\graph-08.xml"
+        ],
+        "exit_code": 0,
+        "elapsed_seconds": 0.25
+      },
+      {
+        "stage": "direct-00",
+        "command": [
+          "C:\\h7\\inference-g02-impacted\\bin\\hyle_compute_route_vulkan_test.exe",
+          "--gtest_filter=VulkanMoeFragments.D5GlmFlashPooledIndexerWithTail",
+          "--gtest_color=no",
+          "--gtest_output=xml:C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g02\\ce16-normal-test-fixes\\direct-00.xml"
+        ],
+        "exit_code": 0,
+        "elapsed_seconds": 4.686999999976251
+      },
+      {
+        "stage": "direct-01",
+        "command": [
+          "C:\\h7\\inference-g02-impacted\\bin\\hyle_compute_route_vulkan_test.exe",
+          "--gtest_filter=CurrentDemand/VulkanCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g64b649142b8fea00",
+          "--gtest_color=no",
+          "--gtest_output=xml:C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g02\\ce16-normal-test-fixes\\direct-01.xml"
+        ],
+        "exit_code": 0,
+        "elapsed_seconds": 0.26600000000325963
+      },
+      {
+        "stage": "direct-02",
+        "command": [
+          "C:\\h7\\inference-g02-impacted\\bin\\hyle_compute_route_vulkan_test.exe",
+          "--gtest_filter=CurrentDemand/VulkanCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g67726d00dbb43297",
+          "--gtest_color=no",
+          "--gtest_output=xml:C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g02\\ce16-normal-test-fixes\\direct-02.xml"
+        ],
+        "exit_code": 0,
+        "elapsed_seconds": 0.35899999999674037
+      },
+      {
+        "stage": "direct-03",
+        "command": [
+          "C:\\h7\\inference-g02-impacted\\bin\\hyle_compute_route_vulkan_test.exe",
+          "--gtest_filter=CurrentDemand/VulkanCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g80d5d1325cc09981",
+          "--gtest_color=no",
+          "--gtest_output=xml:C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g02\\ce16-normal-test-fixes\\direct-03.xml"
+        ],
+        "exit_code": 0,
+        "elapsed_seconds": 0.25
+      },
+      {
+        "stage": "direct-04",
+        "command": [
+          "C:\\h7\\inference-g02-impacted\\bin\\hyle_compute_route_vulkan_test.exe",
+          "--gtest_filter=CurrentDemand/VulkanCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g928bf6ce5a12f293",
+          "--gtest_color=no",
+          "--gtest_output=xml:C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g02\\ce16-normal-test-fixes\\direct-04.xml"
+        ],
+        "exit_code": 0,
+        "elapsed_seconds": 0.23500000004423782
+      },
+      {
+        "stage": "direct-05",
+        "command": [
+          "C:\\h7\\inference-g02-impacted\\bin\\hyle_compute_route_vulkan_test.exe",
+          "--gtest_filter=CurrentDemand/VulkanCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/ga2be3eedcbdb56e2",
+          "--gtest_color=no",
+          "--gtest_output=xml:C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g02\\ce16-normal-test-fixes\\direct-05.xml"
+        ],
+        "exit_code": 0,
+        "elapsed_seconds": 0.25
+      },
+      {
+        "stage": "direct-06",
+        "command": [
+          "C:\\h7\\inference-g02-impacted\\bin\\hyle_compute_route_vulkan_test.exe",
+          "--gtest_filter=CurrentDemand/VulkanCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/ga5ebd3ecae344292",
+          "--gtest_color=no",
+          "--gtest_output=xml:C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g02\\ce16-normal-test-fixes\\direct-06.xml"
+        ],
+        "exit_code": 0,
+        "elapsed_seconds": 0.26600000000325963
+      },
+      {
+        "stage": "direct-07",
+        "command": [
+          "C:\\h7\\inference-g02-impacted\\bin\\hyle_compute_route_vulkan_test.exe",
+          "--gtest_filter=CurrentDemand/VulkanCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gb5954d4f5bb321cb",
+          "--gtest_color=no",
+          "--gtest_output=xml:C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g02\\ce16-normal-test-fixes\\direct-07.xml"
+        ],
+        "exit_code": 0,
+        "elapsed_seconds": 0.375
+      },
+      {
+        "stage": "direct-08",
+        "command": [
+          "C:\\h7\\inference-g02-impacted\\bin\\hyle_compute_route_vulkan_test.exe",
+          "--gtest_filter=CurrentDemand/VulkanCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gcd102ff92aa448da",
+          "--gtest_color=no",
+          "--gtest_output=xml:C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g02\\ce16-normal-test-fixes\\direct-08.xml"
+        ],
+        "exit_code": 0,
+        "elapsed_seconds": 0.25
+      }
+    ],
+    "cases": [
+      {
+        "route": "graph",
+        "original_graph_case": "VulkanGraphMoeFragments.D5GlmFlashPooledIndexerWithTail",
+        "name": "VulkanGraphMoeFragments.D5GlmFlashPooledIndexerWithTail",
+        "verdict": "PASS",
+        "stage": "graph-00",
+        "xml": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g02\\ce16-normal-test-fixes\\graph-00.xml"
+      },
+      {
+        "route": "graph",
+        "original_graph_case": "CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g64b649142b8fea00",
+        "name": "CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g64b649142b8fea00",
+        "verdict": "PASS",
+        "stage": "graph-01",
+        "xml": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g02\\ce16-normal-test-fixes\\graph-01.xml"
+      },
+      {
+        "route": "graph",
+        "original_graph_case": "CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g67726d00dbb43297",
+        "name": "CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g67726d00dbb43297",
+        "verdict": "PASS",
+        "stage": "graph-02",
+        "xml": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g02\\ce16-normal-test-fixes\\graph-02.xml"
+      },
+      {
+        "route": "graph",
+        "original_graph_case": "CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g80d5d1325cc09981",
+        "name": "CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g80d5d1325cc09981",
+        "verdict": "PASS",
+        "stage": "graph-03",
+        "xml": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g02\\ce16-normal-test-fixes\\graph-03.xml"
+      },
+      {
+        "route": "graph",
+        "original_graph_case": "CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g928bf6ce5a12f293",
+        "name": "CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g928bf6ce5a12f293",
+        "verdict": "PASS",
+        "stage": "graph-04",
+        "xml": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g02\\ce16-normal-test-fixes\\graph-04.xml"
+      },
+      {
+        "route": "graph",
+        "original_graph_case": "CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/ga2be3eedcbdb56e2",
+        "name": "CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/ga2be3eedcbdb56e2",
+        "verdict": "PASS",
+        "stage": "graph-05",
+        "xml": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g02\\ce16-normal-test-fixes\\graph-05.xml"
+      },
+      {
+        "route": "graph",
+        "original_graph_case": "CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/ga5ebd3ecae344292",
+        "name": "CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/ga5ebd3ecae344292",
+        "verdict": "PASS",
+        "stage": "graph-06",
+        "xml": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g02\\ce16-normal-test-fixes\\graph-06.xml"
+      },
+      {
+        "route": "graph",
+        "original_graph_case": "CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gb5954d4f5bb321cb",
+        "name": "CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gb5954d4f5bb321cb",
+        "verdict": "PASS",
+        "stage": "graph-07",
+        "xml": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g02\\ce16-normal-test-fixes\\graph-07.xml"
+      },
+      {
+        "route": "graph",
+        "original_graph_case": "CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gcd102ff92aa448da",
+        "name": "CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gcd102ff92aa448da",
+        "verdict": "PASS",
+        "stage": "graph-08",
+        "xml": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g02\\ce16-normal-test-fixes\\graph-08.xml"
+      },
+      {
+        "route": "direct",
+        "original_graph_case": "VulkanGraphMoeFragments.D5GlmFlashPooledIndexerWithTail",
+        "name": "VulkanMoeFragments.D5GlmFlashPooledIndexerWithTail",
+        "verdict": "PASS",
+        "stage": "direct-00",
+        "xml": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g02\\ce16-normal-test-fixes\\direct-00.xml"
+      },
+      {
+        "route": "direct",
+        "original_graph_case": "CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g64b649142b8fea00",
+        "name": "CurrentDemand/VulkanCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g64b649142b8fea00",
+        "verdict": "PASS",
+        "stage": "direct-01",
+        "xml": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g02\\ce16-normal-test-fixes\\direct-01.xml"
+      },
+      {
+        "route": "direct",
+        "original_graph_case": "CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g67726d00dbb43297",
+        "name": "CurrentDemand/VulkanCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g67726d00dbb43297",
+        "verdict": "PASS",
+        "stage": "direct-02",
+        "xml": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g02\\ce16-normal-test-fixes\\direct-02.xml"
+      },
+      {
+        "route": "direct",
+        "original_graph_case": "CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g80d5d1325cc09981",
+        "name": "CurrentDemand/VulkanCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g80d5d1325cc09981",
+        "verdict": "PASS",
+        "stage": "direct-03",
+        "xml": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g02\\ce16-normal-test-fixes\\direct-03.xml"
+      },
+      {
+        "route": "direct",
+        "original_graph_case": "CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g928bf6ce5a12f293",
+        "name": "CurrentDemand/VulkanCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g928bf6ce5a12f293",
+        "verdict": "PASS",
+        "stage": "direct-04",
+        "xml": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g02\\ce16-normal-test-fixes\\direct-04.xml"
+      },
+      {
+        "route": "direct",
+        "original_graph_case": "CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/ga2be3eedcbdb56e2",
+        "name": "CurrentDemand/VulkanCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/ga2be3eedcbdb56e2",
+        "verdict": "PASS",
+        "stage": "direct-05",
+        "xml": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g02\\ce16-normal-test-fixes\\direct-05.xml"
+      },
+      {
+        "route": "direct",
+        "original_graph_case": "CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/ga5ebd3ecae344292",
+        "name": "CurrentDemand/VulkanCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/ga5ebd3ecae344292",
+        "verdict": "PASS",
+        "stage": "direct-06",
+        "xml": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g02\\ce16-normal-test-fixes\\direct-06.xml"
+      },
+      {
+        "route": "direct",
+        "original_graph_case": "CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gb5954d4f5bb321cb",
+        "name": "CurrentDemand/VulkanCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gb5954d4f5bb321cb",
+        "verdict": "PASS",
+        "stage": "direct-07",
+        "xml": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g02\\ce16-normal-test-fixes\\direct-07.xml"
+      },
+      {
+        "route": "direct",
+        "original_graph_case": "CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gcd102ff92aa448da",
+        "name": "CurrentDemand/VulkanCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gcd102ff92aa448da",
+        "verdict": "PASS",
+        "stage": "direct-08",
+        "xml": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g02\\ce16-normal-test-fixes\\direct-08.xml"
+      }
+    ],
+    "stage": "direct-08",
+    "pid": 36044,
+    "artifacts": [
+      {
+        "path": "C:\\h7\\inference-g02-impacted\\bin\\hyle_compute_provider_ggml_vulkan.dll",
+        "sha256": "29b922d69a233fec637d47ba96db4567d75471a45331ac0e9789d21e75373eb2"
+      },
+      {
+        "path": "C:\\h7\\inference-g02-impacted\\bin\\hyle_compute_provider_ggml_vulkan_test.exe",
+        "sha256": "0d63d73a3d470e83c6767c3c96e544495394c765a1018bea78d9e77787a2bd92"
+      },
+      {
+        "path": "C:\\h7\\inference-g02-impacted\\bin\\hyle_compute_route_vulkan_test.exe",
+        "sha256": "3bdb8615aa170acb6a45686b91009f32e1233c152512fb47e4452880f76fac00"
+      },
+      {
+        "path": "C:\\h7\\inference-g02-impacted\\bin\\hyle_graph_route_vulkan_test.exe",
+        "sha256": "a902a08ec436bd7efffe848a60ae2b0fe66c58f1e7fc01a1c05efd0ea496e650"
+      }
+    ]
+  },
+  "effective_original_default_cases": 851,
+  "original_unaffected_pass_cases": 842,
+  "corrected_graph_pass_cases": 9,
+  "counterpart_direct_pass_cases": 9,
+  "skipped": 0,
+  "original_monolithic_ctest_executed": false,
+  "raw_original_gate": "evidence/correctness/inference-g02-vulkan-final-test-diagnostics/receipt.json",
+  "raw_original_gate_sha256": "490c430d822b9e4b2e66a290e494cd871184c8cc460743297c26094de7f3c615",
+  "inheritance_proof": [
+    "Only two private Vulkan run_q24_semantic_fragment reference callers and one private Vulkan Bank constructor changed; full product source/candidate/API/oracles/thresholds/shapes unchanged.",
+    "F32 reference branch only region0x08030801..04, nonquantized fixture with F32 MatMul. Direct and Graph call sites use this original region in pooled indexer test; DSA test explicitly excludes official models, sparse_attention changes region to0x07080310+tail. Other native reference branches untouched.",
+    "Bank branch only three public custom IQ1 formats. Complete C5 demand has exactly eight such items, all Kind::kExpert; all eight failed and now actually pass. All104 identities only chooses Kind::kProjection. Other Bank callers generate Q8_0/Q4_K/F16/BF16, unchanged.",
+    "Rebuilt exactly four test CXX TUs and two test exes. Native shader generator reports no work/up-to-date. Original provider DLL/test executable retain exact SHA.321 nativeobjects and151 generatedinputs independently rehashed unchanged after build."
+  ],
+  "native_reuse_post_build": {
+    "objects": 321,
+    "generated_inputs": 151,
+    "all_sha_unchanged": true
+  },
+  "scope": "Only original851 Windows graph_route_vulkan default set, plus18affectednormaltests. OriginalCUDA804 already independently complete; new CE15/16 Air/source/static/shared still pending. No aggregateG02/goal/registry acceptance.",
+  "history": "Original842PASS/9FAIL, missinglayer failures/parent-only interruption/unobserved in-flight child, oldalias/phase/math/build failures and all elapsed retained in immutable linked receipts; no failure reset or widened tolerance.",
+  "raw_zip_sha256": "cb472c6bb8d3b7d0a905ad50cbcca464d9a58761bb647438bf505fa996afae17"
+}
