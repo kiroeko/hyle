@@ -1,6 +1,6 @@
 # G04/G05 编码 KV 与有限 attention 语义实施批
 
-状态：**Apple CE14 CLOSED3b5157532，其余 owner 保持原 CANDIDATE；CPU provider/runtime 的 CE13 为42a4c7cdcc，其余候选为982676cb05，2026-10-15**。baseline `694a3d1a4b02540cb56b6ceae35b73dd1dd93440`；
+状态：**Apple CE14 CLOSED3b5157532；Vulkan provider 的 CE15 退回 AUDITED；其余 owner 保持原 CANDIDATE，2026-10-15**。baseline `694a3d1a4b02540cb56b6ceae35b73dd1dd93440`；
 共同批owner见下表：九个原实际组件及下文新增CUDA数值状态owner；有限CE01–07/API/成本合同已冻结。原 G03 已 CLOSED，不由本卡重开其权限/
 退休实现。九owner已合法SCOPED后进入AUDITED；仅下列有限FIX授权产品实现。
 本批沿[十项总卡](../project/inference-gaps-goal-execution-2026-10.md)，
@@ -1399,3 +1399,39 @@ Apple CE14 attempt5已[QUALIFIED/PASS/strict verify0](../../../../evidence/perfo
 依[有限域终审](inference-g04-g05-apple-ce14-terminal.md)合法CLOSED，其余owner/candidate
 不动，不代签整个G04/G05或goal。停止重复Apple已签域。当前先按总卡补G02 Windows尾项，
 其后才运行已声明CUDA测量诊断；G06不提前实施。
+
+
+## CE15：G02 补验发现的 Vulkan 输出根别名（AUDITED）
+
+baseline `54f081f52eecc64e309f46b04458e043aad42a9f`，原 provider candidate
+`982676cb05a6e6244e66e0a596347aa96043617b`。G02 Windows 补验在
+`VulkanGraphMoeFragments.D5DeepSeekFullAttentionChain` 触发原生分配断言。
+[原失败与独立诊断](../../../../evidence/correctness/inference-g02-vulkan-port-alias-diagnostic/receipt.json)
+已封存：scratch 仅增加端口 trace，正常源码/DLL/exe SHA 均未变；四输入、两输出的
+同一 region 中，公开 value 5/6 的 port 4/5 指向同一 CONCAT 根，第二次导入分配必然失败。
+这是已准入公开消费者的实际 correctness 缺陷，只有 compute_provider_ggml_vulkan 退回
+AUDITED；其他 owner、G03 terminal 和全部原失败不变。
+
+有限 FIX CE15 仅修原 Region::create 的公开输出导入：保留输入和每个输出的独立端口，
+当某输出追溯的根已被输入或先前输出占用时，借原 ggml_dup/cont 为该输出建立实际拥有的
+native producer。不能通过删除端口、共享两个 caller output binding 或绕过原生断言修复。
+无冲突输出仍沿原根导入；纯 reshape 的形状恢复与内部零拷贝 view 保留。原 graph、
+Imports、allocator、recording、失败回收与退休承载保持，禁止增加另一套 controller。
+主纵切为上述 DeepSeek attention；正交为普通数值管线发布同一计算结果的多个 dense
+reshape，另覆盖导出输入 reshape，避免模型专用判断。
+
+冻结公开 API/identity/权限/并发/交付 target 不变；每个公开端口仍有独立 binding/owner。
+P0：允许 prepare 时沿已有 ports 查重及每个冲突输出一个 native copy；对应运行费用按
+实际输出字节计，不增加无冲突路径的 payload copy 或每次 bind 的查重/分配。原 finite
+encoded P1 的无冲突单输出输入可按源码分支及 artifact 影响借用，不重跑已签数学性能。
+如事实要求修改公开别名语义、shader 数学或常态状态结构，须回本节重新裁决。
+
+批量实现后固定一个 candidate，再验证：provider 的根冲突反证（input/output、多个输出、
+不同 dense shape、精确独立容量与重复绑定），真实 Direct/Graph 入口与原失败 case；
+续跑 G02 原未运行 Vulkan 集合，既有 PASS 仅在能证明未触发该分支时复用。按 selector
+选 provider 与真实直接消费者，source/static/shared 及实际 Air 的对应输出别名旅程；
+原宿主 metadata/OOM/retirement 风险按输入匹配借用，新增元数据容量/清理须实测，
+不以 host sanitizer 冒充 GPU driver 检查。无公共头/layout/依赖变化，不启动无关 headers、
+全库、CUDA 或 P1。普通检查仍为 docs/closure/diff。实现/验证 2h 检查点，自动有限延长
+并保全部失败/elapsed；停止条件为本 FIX 和受影响门可裁决，或确切外部条件无法推进。
+本节只完成诊断和有限审计，尚无修复 PASS；G02 与 G04/G05 均未整体验收。
