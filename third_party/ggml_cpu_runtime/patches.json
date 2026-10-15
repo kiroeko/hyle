@@ -176,7 +176,7 @@
     {
       "path": "src/ggml-cpu/ops.cpp",
       "before_sha256": "215d16e7ebbb4066920e2d7a5f7ea6c46636d298aedd553e00f0b3ebb0d59305",
-      "after_sha256": "13ac378b7a33492cbd68d5ac1910e39272c85cb0b726bdd7f1455458e978dfac",
+      "after_sha256": "18c32123603a0d461851757463cd4274bc6f7c4a7cd5d5b4e9ad675e00802c03",
       "edits": [
         {
           "before": "        case GGML_TYPE_TQ1_0:\n        case GGML_TYPE_TQ2_0:\n        case GGML_TYPE_IQ2_XXS:\n        case GGML_TYPE_IQ2_XS:\n        case GGML_TYPE_IQ3_XXS:\n        case GGML_TYPE_IQ1_S:\n        case GGML_TYPE_IQ1_M:\n        case GGML_TYPE_IQ4_NL:\n        case GGML_TYPE_IQ4_XS:\n        case GGML_TYPE_IQ3_S:\n        case GGML_TYPE_IQ2_S:\n        case GGML_TYPE_Q8_K:\n        case GGML_TYPE_I8:",
@@ -212,11 +212,11 @@
         },
         {
           "before": "\n            const char * k_data = (const char *) k->data + ( ic*nbk1 + ik2*nbk2 + ik3*nbk3);\n            kq_vec_dot(DK, &s, 0, k_data, 0, Q_q, 0, 1);\n",
-          "after": "\n            const char * k_data = (const char *) k->data + ( hyle_flash_row_offset(dst,ic,nbk1) + ik2*nbk2 + ik3*nbk3);\n            kq_vec_dot(DK, &s, 0, k_data, 0, Q_q, 0, 1);\n"
+          "after": "\n            const size_t physical_row = hyle_flash_row_offset(dst, ic, 1);\n            const char * k_data = (const char *) k->data + ( physical_row*nbk1 + ik2*nbk2 + ik3*nbk3);\n            kq_vec_dot(DK, &s, 0, k_data, 0, Q_q, 0, 1);\n"
         },
         {
           "before": "\n            const char * v_data = ((const char *) v->data + (ic*nbv1 + iv2*nbv2 + iv3*nbv3));\n\n",
-          "after": "\n            const char * v_data = ((const char *) v->data + (hyle_flash_row_offset(dst,ic,nbv1) + iv2*nbv2 + iv3*nbv3));\n\n"
+          "after": "\n            const char * v_data = ((const char *) v->data + (physical_row*nbv1 + iv2*nbv2 + iv3*nbv3));\n\n"
         },
         {
           "before": "\n        for (int64_t ic = 0; ic < nek1; ic += KV_TILE_SZ) {\n            const int kv_tile = (int)std::min((int64_t)KV_TILE_SZ, nek1 - ic);\n\n",

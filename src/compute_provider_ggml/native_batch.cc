@@ -17,6 +17,8 @@ struct Request final {
   void *invocation = nullptr;
   std::array<TensorDesc, 3> inputs;
   TensorDesc output;
+  std::array<std::size_t, 3> input_bytes{};
+  std::size_t output_bytes = 0;
   std::size_t query_offset = 0, key_offset = 0, value_offset = 0, output_offset = 0;
   Request() = default;
   Request(const Request &) = delete;
@@ -188,6 +190,11 @@ detail::EnqueueResult plan(void *value, Queue &, const BatchLayoutVersion &layou
       }
       request->inputs = {*q, *k, *v};
       request->output = *out;
+      // The compiled request owns immutable descriptions. Keep their extents
+      // cold; each run still validates the actual storage and TensorViews.
+      for (std::size_t port = 0; port < request->inputs.size(); ++port)
+        request->input_bytes[port] = *request->inputs[port].required_bytes();
+      request->output_bytes = *request->output.required_bytes();
       request->query_offset = static_cast<std::size_t>(host.query_indptr[index]) *
           slot.capacity.query_heads * slot.capacity.qk_head_dim * width;
       const auto key_row=cache_tensor_description(slot.capacity.key_storage,
@@ -254,7 +261,7 @@ detail::EnqueueResult run(void *value, Queue &queue,
     std::array<ConstTensorView, 3> views;
     for (std::size_t port = 0; port < 3; ++port) {
       auto buffer = inputs[port].storage().subview(port == 0 ? request->query_offset : port==1?request->key_offset:request->value_offset,
-                                                 *request->inputs[port].required_bytes());
+                                                 request->input_bytes[port]);
       if (!buffer)
         return {accepted, buffer.error()};
       auto view = ConstTensorView::create(request->inputs[port], *buffer);
@@ -262,7 +269,7 @@ detail::EnqueueResult run(void *value, Queue &queue,
         return {accepted, view.error()};
       views[port] = *view;
     }
-    auto buffer = workspace.output.subview(request->output_offset, *request->output.required_bytes());
+    auto buffer = workspace.output.subview(request->output_offset, request->output_bytes);
     if (!buffer)
       return {accepted, buffer.error()};
     auto output = TensorView::create(request->output, *buffer);

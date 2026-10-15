@@ -1064,3 +1064,14 @@ tree/license身份及 native_batch 私有实现，不改公共工具、构建图
 借用，Apple 混合发行中的 CPU 另做有限运行。以原输入/失败/累计为基线，不重置预算；
 冻结新 candidate 后仅做原同语义 P1，不靠改形状/阈值/采样计划取得通过。
 独立只读复核未见新的 correctness MUST；具体收益与 locality贡献仍未知，不由源码签PASS。
+
+两处实现草稿已完成：同一地址改动同时进入 ffa CPU 与 mixed456 的原 patch context，
+原 mixed IQ1 19项组合器未改且实际推导通过。两个 in-tree snapshot、NOTICE/lock 原始
+身份校验已通过；首次打包哈希按 Windows Path 忽略大小写排序而失败，原 FAIL/unknown
+耗时保留，改回原 CMake 的 portable-string 顺序后通过，不改公共工具或产品算法。
+
+本次 lock 仅更新这两个 bundle 的 tree 与 NOTICE hash；selector 因中央 lock 选全库的原
+plan保留。依用户限定的模块/直接消费者范围，实际 source 选 runtime/provider 两factor
+及原 public encoded/paged/ragged Direct/Graph，借用未变 route 和通用头证据；不运行无关
+io/container/其它 provider 或整 Graph CPU 回归。CUDA/Air 当前固定输入仍单独完成，
+随后串行执行本 CE13 普通门；未运行的修复数学/风险/SDK/P1仍UNPROVEN。

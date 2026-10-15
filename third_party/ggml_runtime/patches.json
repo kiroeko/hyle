@@ -77,7 +77,7 @@
     {
       "path": "src/ggml-cpu/ops.cpp",
       "before_sha256": "dbffc3df9816cc3f7e5428f9fb9afa13db4ac2979899605a057121bb031ba136",
-      "after_sha256": "1d836166253473799872f429abc54d23466b5759b8cf3f8c155296a9aef78454",
+      "after_sha256": "5c1b3266a37697744f91344a9e549a6ca69c4ba6da539a32053d288e9b7a8b06",
       "edits": [
         {
           "before": "static void ggml_compute_forward_flash_attn_ext_f16_one_chunk(",
@@ -85,11 +85,11 @@
         },
         {
           "before": "\n            const char * k_data = (const char *) k->data + ( ic*nbk1 + ik2*nbk2 + ik3*nbk3);\n            kq_vec_dot(DK, &s, 0, k_data, 0, Q_q, 0, 1);\n",
-          "after": "\n            const char * k_data = (const char *) k->data + ( hyle_flash_row_offset(dst,ic,nbk1) + ik2*nbk2 + ik3*nbk3);\n            kq_vec_dot(DK, &s, 0, k_data, 0, Q_q, 0, 1);\n"
+          "after": "\n            const size_t physical_row = hyle_flash_row_offset(dst, ic, 1);\n            const char * k_data = (const char *) k->data + ( physical_row*nbk1 + ik2*nbk2 + ik3*nbk3);\n            kq_vec_dot(DK, &s, 0, k_data, 0, Q_q, 0, 1);\n"
         },
         {
           "before": "\n            const char * v_data = ((const char *) v->data + (ic*nbv1 + iv2*nbv2 + iv3*nbv3));\n\n",
-          "after": "\n            const char * v_data = ((const char *) v->data + (hyle_flash_row_offset(dst,ic,nbv1) + iv2*nbv2 + iv3*nbv3));\n\n"
+          "after": "\n            const char * v_data = ((const char *) v->data + (physical_row*nbv1 + iv2*nbv2 + iv3*nbv3));\n\n"
         },
         {
           "before": "\n        for (int64_t ic = 0; ic < nek1; ic += KV_TILE_SZ) {\n            const int kv_tile = (int)std::min((int64_t)KV_TILE_SZ, nek1 - ic);\n\n",

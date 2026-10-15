@@ -30,3 +30,6 @@ K/V read addresses change; vector dot products, tiled GEMM, online softmax and
 split reduction remain upstream. Ordinary untagged attention has no page table.
 The same address contexts are authenticated on the mixed 456172 core so the
 existing CPU IQ1 manifest composition deduplicates these shared edits.
+The generic per-token loop resolves its physical row once and applies the
+independent K/V byte strides to that same row; attention arithmetic and table
+ownership are unchanged.

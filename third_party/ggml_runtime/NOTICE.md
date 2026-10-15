@@ -41,3 +41,6 @@ CPU flash vec-dot, tiled GEMM, online softmax, split reduction and workspace;
 only effective row counts and four K/V address reads are adapted. Ordinary
 untagged CPU attention keeps its original data access. This is not a new math
 kernel or a public ggml ABI promise; Vulkan/Metal algorithms are unchanged.
+The generic CPU loop resolves one physical row per effective KV token and
+applies the independent K/V strides to that row, avoiding duplicate page-table
+resolution across the original dot product.
