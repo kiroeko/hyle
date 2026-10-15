@@ -2056,3 +2056,19 @@ build-contract预检PASS。只构建比较consumer与一个original CUDA TU，�
 与原CE20相同；新的product manifest身份4c7b35bc单独绑定，不把CE21七处资源策略应用到peer。
 下一独立attempt9按原合同运行16AA、8strata、n15/31、5%和strict verify，三consumer/prose
 资格检查仍前置到configure/A-A/采样之前；原attempt8的qualified FAIL及所有旧费用保留。
+
+## CE22：当前9c9的合格成本反证与有限只读归因
+
+[attempt9实际结果](../../../../evidence/performance/inference-g04-g05-cuda-encoded-w1-wsl-p1-attempt-9/receipt.json)
+为QUALIFIED、performance FAIL、strict verify0；16AA、120 product与30 control进程完成，
+原n15已出现material FAIL，按原规则不追加n31。worker2635.632s与外层2637.703s重叠，
+不重复相加。windowD256比率0.981006–0.985242、方向LOSS/5%非劣PASS；prefillD256
+0.883122–0.891172、方向LOSS/非劣FAIL；留出D64/Dv128为0.914731–0.926564、
+方向LOSS/非劣FAIL。原8 FAIL、全部数学/交付/风险证据和累计成本均保留。
+
+FI保持CANDIDATE9c9，不以新失败自动授权产品改动。原三形状与真实Qwen prefill、留出
+消费者不变；只在原9实际terminal后，对同一immutable primary artifact做一次VERIFY_ONLY
+Nsight CUDA trace：核24独立oracle、actual attention/merge/host launch及register/shared/
+grid，SHA前后不变。不新采P1、不试tile/算法变体、不改peer/输入/5%或公共工具；15min
+检查点沿常设授权追加、原预算不清零。先定位实际机制，再按原两把钥匙决定有限FIX并
+合法回AUDITED；没有机制证据不能无限重试。G04/G05未关闭，G06仍不实施。

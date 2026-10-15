@@ -26,3 +26,11 @@ windowD256 0.953993–0.958642 / LOSS / UNRESOLVED；prefillD256 0.861386–0.87
 LOSS / FAIL；noncausal D64/Dv128 0.980057–0.994756 / INCONCLUSIVE / PASS。
 整体工程性能FAIL，不能以留出PASS或旧未合格样本关闭CUDA或整个G04/G05。
 当前仅作有限实际机制归因，不更改原5%/输入/统计或将压缩存储取舍改写为平局。
+
+[attempt9](../../../../evidence/performance/inference-g04-g05-cuda-encoded-w1-wsl-p1-attempt-9/receipt.json)
+对应CE21 candidate9c9ab88bb，QUALIFIED/strict verify0，16AA通过；120产品与30控制进程
+按原n15完成，整体performance FAIL，不追加n31。windowD256为0.981006–0.985242 /
+LOSS / PASS；prefillD256为0.883122–0.891172 / LOSS / FAIL；noncausal D64/Dv128为
+0.914731–0.926564 / LOSS / FAIL。窗口5%门通过不能代签其它两项或全CUDA。
+worker2635.632s和重叠外层2637.703s分别保留。当前只做同一冻结artifact的一次有限归因，
+原8及所有历史失败均不覆盖，原输入/peer/统计/门槛不变。
