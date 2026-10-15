@@ -1219,3 +1219,27 @@ SDK 的 CPU 域早于 CE12/13；此次只验 GPU bridge，不代签新 CPU。
 不重编产品或 native 依赖。当前仅实现/源码身份与普通文档检查；未编译、未执行数值，
 没有 A/A/P1 或 G04/G05 PASS。真实 CUDA 预检须等待既有 CPU→Vulkan→Apple 重型阶段
 实际结束，再按同一有限批次构建；首轮出现的问题集中记录后定向修正。
+
+
+### CPU CE13 同合同性能通过，剩余路线串行资格
+
+[实际封存结果](../../../../evidence/performance/inference-g04-g05-ce13-cpu-encoded-w1-p1/receipt.json)
+为 QUALIFIED、performance PASS、verify0。16 A/A 通过，原自动 n15→31 完成，共368产品/
+92 controls，最终只用 n31 的248产品/62 controls，不混合两阶段。当前3337.063秒，保原
+两轮失败累计7853.970秒。windowD256 比率1.1716–1.1787，WIN；prefillD256 0.9899–0.9939，
+5%带内 PARITY、方向 INCONCLUSIVE；noncausal Q>KV D64/Dv128 0.9654–0.9685，5%带内
+PARITY、方向 LOSS。三组非劣全部 PASS。停止重复此已签 CPU 有限域，不代签 producer/
+growth、G06、GPU、整个 G04/G05 或 token/s。
+
+Vulkan 首次接力被 canonical-clean guard 在远程启动前拒绝：当时新 CUDA P1 文件正在
+提交，原5.5秒失败保留，没有真实 Vulkan run/采样被重置。源完成提交后，实际首 run
+从 clean cee599774 在 Air 启动，16 A/A 已通过并进入原正式采样，尚无最终性能 verdict。
+Apple 数值/正式 P1 与 CUDA 数值/正式 P1 的队列均只等待真实终态，不并发重型工作。
+
+CUDA [有限 P1 合同](../../../../bench/inference_resident_sdpa/cuda_encoded_p1/consumer-provenance.md)
+已通过 contract validate；源码原始 archive 与整个 include 内容实际匹配，332个 GPU SDK
+产品输入与当前 canonical 相同。只读源码交叉检查未发现原实现批 MUST，随后补了自有
+BF16 padding 清零及强 oracle witness；这些都未冒充编译/数值 PASS。首次源码检查误把
+archive extraction 当作 Git checkout 的失败与未知时间保留；已改为固定 archive SHA 和
+逐 include 字节核验，真实 Git 模式禁止向祖先仓库回溯。后续数值成功才封存、提交并进入
+不可变 W1-WSL/ext4 P1，仍为 engineering，不能签 native Linux/Formal。

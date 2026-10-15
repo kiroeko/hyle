@@ -50,10 +50,10 @@ Vulkan有限NR/RF轮已CLOSED，原两次FAIL仍保留。整个G01分页等范�
 
 | 项 | 当前状态 | 有限目标 | 预计涉及的机制 owner，需在活动卡精确定界 |
 |---|---|---|---|
-| G01 高效驻留读取 | CPU973、Apple280与Vulkanbc0有限轮均CLOSED。Vulkan最终原1region＋安全记录通过十source tests/两SDK/三san/原联合回归及Win定向编译，multi P1 QUALIFIED/5%非劣PASS、verify0；mixedD256 WIN，prefill/D64方向INCONCLUSIVE。原两次qualified FAIL与全部限制保留，整个G01其它准入域与分页未完成 | 单请求先核 dense/view；多请求接 native/等价直接驻留消费，避免按每 Q/head 重复物化全 KV | compute_batch、原 route/Provider、graph_batch 必要桥 |
-| G02 联合分页 | common与CPU+CUDA实跑、三交付/宿主风险通过；Windows余门及Apple/Vulkan联合分页待验 | 原 multi-queue bindings 接 batch coordinator；native hybrid 接准确 page/layout 与原 region/slot，公开 CPU→GPU→CPU | graph_batch、三个 graph hybrid、原 compute/native 权限桥 |
+| G01 高效驻留读取 | CPU resident/ragged/page16、Apple/Vulkan native ragged/page16 已分批 CLOSED，原 FAIL 与方向 INCONCLUSIVE 保留；整项须逐域聚合核对，不能由有限 terminal 代签 | 单请求先核 dense/view；多请求接 native/等价直接驻留消费，避免按每 Q/head 重复物化全 KV | compute_batch、原 route/Provider、graph_batch 必要桥 |
+| G02 联合分页 | common CPU+CUDA 与 Apple/Vulkan native 联合分页已分别取得有限域证据；原 Windows graph_route_cuda 中断与 graph_route_vulkan 未跑门仍待裁决，不能整项 CLOSED | 原 multi-queue bindings 接 batch coordinator；native hybrid 接准确 page/layout 与原 region/slot，公开 CPU→GPU→CPU | graph_batch、三个 graph hybrid、原 compute/native 权限桥 |
 | G03 增量 producer 组合 | [CLOSED](../compute/inference-g03-final-closure.md)，candidate11b2403e7：四原路线/三联合、Direct/Graph、多独立native来源、完整CPU+CUDA源码/两SDK、生命周期与P0通过；原失败/checked waits/费用保留 | 原 exclusive/F2/native waits到更新与读取；精确 dirty 域、成功 ready、idle input 生命周期 | compute_batch、compute/F2、原 native route与graph桥 |
-| G04 量化 KV | [CPU provider/runtime 冻结 CE13，其余九 owner 保持 CANDIDATE](../compute/inference-g04-g05-cache-attention-domain.md)。四原路线/三联合编码页、数学、八 SDK 已验证；CUDA 宿主 ASan/UBSan/TSan 各13+5通过，原 NVIDIA lifetime/LSan unknown保留。Vulkan完整编码分页peer数值/生命周期预检通过，P1未跑；CPU CE12 合格 P1 留出仍FAIL，两处修正的 CPU 源码/三san/两SDK普通门全部通过，Air混合CPU22项也已通过，新候选16 A/A通过、同合同正式P1采样中；原失败保留 | 按成熟实际 cache 编码冻结 payload/scales/layout、quantize append与直接读取，不每步解码完整历史 | compute_ops/batch、实际 Provider/native route |
+| G04 量化 KV | [CPU CE13 同合同 P1 现已 QUALIFIED/PASS/verify0](../../../../evidence/performance/inference-g04-g05-ce13-cpu-encoded-w1-p1/receipt.json)：16 A/A、368 产品/92 controls、三组5%非劣全通过；CPU普通门/Air混合CPU与四原路线/三联合编码页、八 SDK 证据保留。Vulkan实际Air P1 已启动且16 A/A通过；Apple/CUDA比较器与后续资格入口已实现，数值/性能待验；全部 owner 仍 CANDIDATE，原 FAIL 保留 | 按成熟实际 cache 编码冻结 payload/scales/layout、quantize append与直接读取，不每步解码完整历史 | compute_ops/batch、实际 Provider/native route |
 | G05 attention 语义域 | 同卡已实现 causal-window/full noncausal/有限 Dqk≠Dv，与 G04 共用数学、数值/生命周期和交付证据；适用性能及剩余风险未全部签发 | 固定真实消费者所需 window/mask/维度等域及失败边界，成熟承载；未准入未来特例不无限扩张 | compute_ops/batch、实际 Provider/native route |
 | G06 metadata/decode | 有限只读预审已定位 metadata、上传/等待、权限准入和原生规划四组成本；待活动 owner 定界，不授权实现 | host-known/device-produced分界，active/delta上传、完整 topology复用与decode档，实际capture资格 | compute_batch、FI/native Provider、graph_batch |
 | G07 packed 权重 | 待有限编码选择 | 锁定 artifact→resident→selected math，借原生packed/冷repack；checked IDs保错误，排除warm完整展开/多余host检查 | 实际低精度 Provider/native route及资源桥 |
@@ -201,3 +201,10 @@ G02新hybrid三owner仍AUDITED：公开联合草稿Apple编译已过，首次act
 2026-10-14 G03完整有限组合已按[终局](../compute/inference-g03-final-closure.md)CLOSED，
 正式计数1/10，整体阶段粗估约28%。G01/G02旧未决门仍原样保留，不由新G03回填为PASS；
 G04–G10继续。下一实现批依原总卡转G04/G05编码与数学域定界，避免重复已闭合G03。
+
+
+2026-10-15 当前 CPU CE13 性能已通过；停止重复该 immutable-history 有限合同。
+Vulkan 已在原 CPU 真正终态后从干净源码启动实际 Air P1；Apple 数值→P1、CUDA 数值→P1
+继续沿真实进程/远程终态串行。一次 canonical-clean 接力拒绝发生在 CUDA benchmark 文件
+提交期间，未创建 Vulkan run/远程子进程；原5.5秒失败保留，源提交完成后才启动首个真实 run。
+G01/G02 表项已按原 finite terminal 修正过时摘要，完整项仍仅 G03，不由摘要更新代签收口。
