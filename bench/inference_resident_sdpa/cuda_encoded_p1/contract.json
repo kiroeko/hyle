@@ -433,10 +433,10 @@
   },
   "hosts": {
     "allowed_platforms": [
-      "linux"
+      "wsl2"
     ],
     "certification_platforms": [
-      "linux"
+      "wsl2"
     ],
     "requirements": {
       "machine_profiles": [
