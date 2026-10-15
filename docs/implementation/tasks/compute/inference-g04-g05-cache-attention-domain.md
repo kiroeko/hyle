@@ -2545,3 +2545,12 @@ CE27 runtime trace，区分attention与F32 merge成本，再核当前私有实�
 同步与三形状全部保留。只有material消费缺口和精确源码机制两把钥匙成立，才固定
 一个有限FIX并合法回AUDITED。当前无新FIX、无新运行/性能资格，G04/G05未关闭，
 完整goal3/10，G06不实施。沿用户常设授权追加有限检查点并保累计，预算不重置。
+
+CE28首个有限只读检查点已形成：[源码成本记录](../../../../evidence/architecture/inference-g04-g05-cuda-ce28-producer-stage/audit-checkpoint.json)。
+QK/PV已逐片段读取、BF16转换已用原向量decoder、merge host准备与原生相同，以上猜测
+均不立FIX。确认现repack有compressed SMEM写→读→expanded写；等宽D256/16行K/V
+每轮比直接expanded写多16KiB共享流量。固定llama源码证明packed全局load后寄存器转换
+是成熟消费方式，但不冒充已有FP8 prefill实现，异步重叠/寄存器成本仍未知。
+沿常设授权仅追加一次15min检查点，完成producer逐地址、NoFill/zero-fill/page tail、
+expanded K/V存储及Q/K/V时间依赖证明；不新跑profile/P1，不改精度/tile/planner。
+FI仍CANDIDATEd414，无新产品FIX授权；原13及全部失败/未知费用保留。
