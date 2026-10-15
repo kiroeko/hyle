@@ -578,9 +578,10 @@
     },
     {
       "module": "compute_provider_flashinfer",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/inference-g04-g05-cache-attention-domain.md",
-      "summary": "G04/G05 CE27 AUDITED：producer-owned转换与相邻同步合并已集中实施，五个精确manifest片段；cascade/F32精度/生命周期/输出屏障/原形状保留。新数学/device/codegen等门待验；qualified12 FAIL及全部旧失败/未知/费用保留。"
+      "summary": "G04/G05 CE27 CANDIDATEd414：producer-owned转换/相邻同步修正的新17math/22device及attention+merge零栈codegen通过。两SDK/numeric/runtime/三host/原P1待验；原qualified FAIL与全部旧失败/未知、累计成本保留。",
+      "candidate": "d41431f82a373ae400fb10e97418931031fa48e8"
     },
     {
       "module": "compute_provider_ggml_metal",

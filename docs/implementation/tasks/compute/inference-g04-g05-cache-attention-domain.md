@@ -2481,3 +2481,12 @@ SHA为b4165b7d90e810e631249e0e049cd83d325bcaa8349d8d8f3cd2aa14dc0587f4，cascade
 原转换值和目的坐标不变。FI仍AUDITED，新数学/device/codegen/SDK/数值/host/P1均待验；
 不以源码证明或静态屏障数代签运行安全或性能。selector共同lock选项按本卡有限FI与
 直接消费者门执行，保留其它selected/skipped理由，不启动无改动全库构建。
+
+CE27新数学与设备门已实际通过：[source/device](../../../../evidence/correctness/inference-g04-g05-cuda-ce27-owned-conversion-source-device/receipt.json)
+17数学、十cache memcheck/十racecheck及两普通F16/BF16 racecheck，零FAIL/SKIP/error/
+warning/hazard，artifact SHA稳定。实际stage费用source415.917s、device16.736s分别保留。
+新[codegen](../../../../evidence/architecture/inference-g04-g05-cuda-ce27-owned-conversion/codegen-receipt.json)
+核同1/1/4 attention及不变F32 merge，四个kernel均STACK/LDL/STL零；register分别241/241/165/48。
+静态BAR计数（CE26→CE27）为9→7/8→6/9→8；这不代签实际吞吐。
+FI合法冻结CANDIDATEd41431f82，接着两搬迁SDK、新numeric/runtime、三host与原P1；
+G04/G05未完成，原12及全部旧失败/未知/累计费用保留。
