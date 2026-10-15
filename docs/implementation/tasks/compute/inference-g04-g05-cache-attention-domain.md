@@ -2554,3 +2554,27 @@ QK/PV已逐片段读取、BF16转换已用原向量decoder、merge host准备与
 沿常设授权仅追加一次15min检查点，完成producer逐地址、NoFill/zero-fill/page tail、
 expanded K/V存储及Q/K/V时间依赖证明；不新跑profile/P1，不改精度/tile/planner。
 FI仍CANDIDATEd414，无新产品FIX授权；原13及全部失败/未知费用保留。
+
+CE28唯一有限FIX已固定：[逐地址与时间依赖审计](../../../../evidence/architecture/inference-g04-g05-cuda-ce28-producer-stage/source-audit.json)
+完成60组布局、1416组边界及ragged/paged两条Q/K/V时间链。以qualified13 material
+prefill FAIL和已核额外compressed共享写/读两把钥匙，FI合法回AUDITED后仅改private
+prefill manifest/NOTICE/FI lock。
+
+唯一predicate为原USE_KV_REPACK、F32 partial输出、E4M3、PosNone、独立K/V、非VO split，
+且Dqk=Dv为128/256。原16B全局向量在producer中经原vec_cast16直接写入两个原native16
+目的向量；分离expanded K/V取代compressed K/V与共用repack tile，当前D256/16行
+名义shared仍49152字节。仅batch存储alias及显式producer开关启用；single-prefill和所有
+其它路径保原行为。短K64/128的padding/source stride、planner、tile/native16工作量上界、
+原MMA1/1/4、F32 partial/CE26单输出组merge/最终scale+sole cast与公共API均保留。
+
+直接路径显式wait0排空Q异步组，不依赖空K/V commit组推断完成；原转换后CTA发布位置
+保持，QK/softmax后与PV后CTA仍在对应K/V覆写之前，final/output同步全保留。K NoFill
+无效行不读源且不承诺其旧内容，原logits mask排除；V补精确零。原packed源、ragged指针
+推进、paged alias/tail权限与目的坐标不变，无全历史展开或常态metadata。
+
+集中实施后原17math、十mem/十race/两普通race及attention+merge codegen；实际零
+warning/hazard/SKIP和原三kernel零STACK/LDL/STL通过后，才冻结候选并继续两搬迁SDK、
+新numeric/runtime、三host及同合同AA/P1/strict。直接global load可能损失异步重叠或
+增加寄存器，源码流量下降不签吞吐收益；全部三负载/原门槛及旧失败/未知/累计费用保留。
+原2h阶段检查点/常设自动追加与SM89/pool1/split3/Ninja2/heavy串行不变。当前仅审计授权，
+尚未实施新产品或签新运行/性能；G04/G05未关闭，完整goal3/10，G06不实施。

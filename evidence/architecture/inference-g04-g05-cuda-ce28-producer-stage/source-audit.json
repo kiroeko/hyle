@@ -1,0 +1,1548 @@
+{
+  "kind": "CE28_DIRECT_FP8_PRODUCER_STAGE_FINITE_SOURCE_AUDIT",
+  "baseline": "d41431f82a373ae400fb10e97418931031fa48e8",
+  "failed_qualified_receipt_sha256": "84dce75f1a5895a639591a4f0dd10ae0547d6fa20f63b1a0cc597da3f8c35533",
+  "checkpoint_sha256": "a51721f31b128c013ca88021ecb59f15b54864b82270a7654f8bd8da08f12ed7",
+  "header_sha256": "b4165b7d90e810e631249e0e049cd83d325bcaa8349d8d8f3cd2aa14dc0587f4",
+  "source_anchors": {
+    "shared_storage": {
+      "first_line": 111,
+      "last_line": 214,
+      "sha256": "489db1bc822d66a12a0d101273715b61f5b0385b9cb9a80b773d4fd477c940f4",
+      "source": "// BF16/FP16 staging buffer for the FP8 \"repack\" path (compute_qk REPACK_BF16). Empty base\n// (0 bytes via EBO) when unused; same smem rationale as KVScaleFactorSmem above.\ntemplate <typename DTypeQ, typename DTypeKV, uint32_t CTA_TILE_Q, uint32_t CTA_TILE_KV,\n          uint32_t HEAD_DIM_QK, uint32_t HEAD_DIM_VO,\n          bool = ((sizeof(DTypeKV) == 1) && !is_fp4_type_v<DTypeKV> && (HEAD_DIM_VO != 64) &&\n                  (HEAD_DIM_VO <= 256) && (CTA_TILE_Q > 16))>\nstruct KVRepackSmem {};\ntemplate <typename DTypeQ, typename DTypeKV, uint32_t CTA_TILE_Q, uint32_t CTA_TILE_KV,\n          uint32_t HEAD_DIM_QK, uint32_t HEAD_DIM_VO>\nstruct KVRepackSmem<DTypeQ, DTypeKV, CTA_TILE_Q, CTA_TILE_KV, HEAD_DIM_QK, HEAD_DIM_VO, true> {\n  // Sized to max(HEAD_DIM_QK, HEAD_DIM_VO); time-shared between K and V within a tile.\n  alignas(16) DTypeQ\n      kv_smem_repack[CTA_TILE_KV * (HEAD_DIM_QK > HEAD_DIM_VO ? HEAD_DIM_QK : HEAD_DIM_VO)];\n};\n\n// VO-split staging (P matrix + cross-warp m/d). Empty base when VO-split is inactive so the\n// alignas(16) placeholders do not push HEAD_DIM 256 past the 64 KiB opt-in smem budget.\ntemplate <uint32_t NUM_WARPS_KV, uint32_t CTA_TILE_Q, uint32_t CTA_TILE_KV, uint32_t HEAD_DIM_VO,\n          typename DTypeQ, bool kEnableVOSplitOpt,\n          bool = kEnableVOSplitOpt && (HEAD_DIM_VO / 16 > 16) &&\n                 ((HEAD_DIM_VO / 16) % NUM_WARPS_KV == 0)>\nstruct VOSplitSmem {};\ntemplate <uint32_t NUM_WARPS_KV, uint32_t CTA_TILE_Q, uint32_t CTA_TILE_KV, uint32_t HEAD_DIM_VO,\n          typename DTypeQ, bool kEnableVOSplitOpt>\nstruct VOSplitSmem<NUM_WARPS_KV, CTA_TILE_Q, CTA_TILE_KV, HEAD_DIM_VO, DTypeQ, kEnableVOSplitOpt,\n                   true> {\n  alignas(16) DTypeQ p_smem[CTA_TILE_Q * CTA_TILE_KV];\n  alignas(16) float2 vosplit_md_smem[NUM_WARPS_KV * CTA_TILE_Q];\n};\n\ntemplate <uint32_t NUM_WARPS_KV, uint32_t CTA_TILE_Q, uint32_t CTA_TILE_KV, uint32_t HEAD_DIM_QK,\n          uint32_t HEAD_DIM_VO, typename DTypeQ, typename DTypeKV, typename DTypeO,\n          bool kEnableVOSplitOpt = false>\nstruct SharedStorageQKVO\n    : KVScaleFactorSmem<DTypeKV, CTA_TILE_KV, HEAD_DIM_QK, HEAD_DIM_VO>,\n      KVRepackSmem<DTypeQ, DTypeKV, CTA_TILE_Q, CTA_TILE_KV, HEAD_DIM_QK, HEAD_DIM_VO>,\n      VOSplitSmem<NUM_WARPS_KV, CTA_TILE_Q, CTA_TILE_KV, HEAD_DIM_VO, DTypeQ, kEnableVOSplitOpt> {\n  static constexpr bool kKVShareShape =\n      (HEAD_DIM_VO / 16 > 16) && ((HEAD_DIM_VO / 16) % NUM_WARPS_KV == 0);\n  static constexpr bool kVOSplit = kEnableVOSplitOpt && kKVShareShape;\n  // K/V time-sharing (V loaded into k_smem after Q.K^T) applies to ALL kernels\n  // at large head dims. Must match KernelTraits::USE_KV_SHARED_SMEM.\n  // Otherwise the single/ragged kernels cannot fit head_dim=512 K+V\n  // tiles on SKUs with 99KB-smem (SM86/89/120/121).\n  static constexpr bool kVShareActive = kKVShareShape && !is_fp4_type_v<DTypeKV> &&\n                                        (HEAD_DIM_QK == HEAD_DIM_VO) &&\n                                        (sizeof(DTypeKV) == 2 || CTA_TILE_Q > 16);\n  union {\n    struct {\n      alignas(16) DTypeQ q_smem[CTA_TILE_Q * HEAD_DIM_QK];\n      // The 128B swizzle needs a full physical K row for the mixed 64/128 FP8 tile.\n      // Global cache rows and the QK reduction retain their original 64 elements.\n      alignas(16) DTypeKV k_smem[CTA_TILE_KV *\n          ((sizeof(DTypeKV) == 1 && !is_fp4_type_v<DTypeKV> && HEAD_DIM_QK == 64 && HEAD_DIM_VO == 128) ? 128 : HEAD_DIM_QK)];\n      alignas(16)\n          std::conditional_t<kVShareActive, DTypeKV[1], DTypeKV[CTA_TILE_KV * HEAD_DIM_VO]> v_smem;\n    };\n    struct {  // NOTE(Zihao): synchronize attention states across warps\n      alignas(\n          16) std::conditional_t<NUM_WARPS_KV == 1 || kVOSplit, float[1],\n                                 float[NUM_WARPS_KV * CTA_TILE_Q *\n                                       (HEAD_DIM_VO > 256 ? 256 : HEAD_DIM_VO)]> cta_sync_o_smem;\n      alignas(16) std::conditional_t<NUM_WARPS_KV == 1, float2[1],\n                                     float2[NUM_WARPS_KV * CTA_TILE_Q]> cta_sync_md_smem;\n    };\n    // F32 fragments write global memory directly; only 16-bit output uses this tile.\n    alignas(16) DTypeO smem_o[sizeof(DTypeO) == 4 ? 1 : CTA_TILE_Q * HEAD_DIM_VO];\n  };\n  static constexpr bool USE_KV_REPACK = (sizeof(DTypeKV) == 1) && !is_fp4_type_v<DTypeKV> &&\n                                        (HEAD_DIM_VO != 64) && (HEAD_DIM_VO <= 256) &&\n                                        (CTA_TILE_Q > 16);\n  static constexpr bool VO_SPLIT_SMEM = kVOSplit;\n\n  // Accessors for the empty-base buffers above: return the buffer when present, else nullptr.\n  // The result is only dereferenced inside the matching `if constexpr` branch, and the offset is\n  // folded in here so it is never applied to nullptr. We static_cast to the populated base\n  // specialization so the member name is looked up on a type that actually declares it (robust\n  // against eager name lookup into dependent bases on stricter/older compilers); the cast and\n  // base specialization are never instantiated in the discarded branch.\n  __device__ __forceinline__ uint8_t* k_sf_smem_ptr(uint32_t offset = 0) {\n    if constexpr (is_fp4_type_v<DTypeKV>) {\n      using Base = KVScaleFactorSmem<DTypeKV, CTA_TILE_KV, HEAD_DIM_QK, HEAD_DIM_VO, true>;\n      return static_cast<Base*>(this)->k_sf_smem + offset;\n    } else {\n      return nullptr;\n    }\n  }\n  __device__ __forceinline__ uint8_t* v_sf_smem_ptr(uint32_t offset = 0) {\n    if constexpr (is_fp4_type_v<DTypeKV>) {\n      using Base = KVScaleFactorSmem<DTypeKV, CTA_TILE_KV, HEAD_DIM_QK, HEAD_DIM_VO, true>;\n      return static_cast<Base*>(this)->v_sf_smem + offset;\n    } else {\n      return nullptr;\n    }\n  }\n  __device__ __forceinline__ DTypeQ* kv_smem_repack_ptr() {\n    if constexpr (USE_KV_REPACK) {\n      using Base =\n          KVRepackSmem<DTypeQ, DTypeKV, CTA_TILE_Q, CTA_TILE_KV, HEAD_DIM_QK, HEAD_DIM_VO, true>;\n      return static_cast<Base*>(this)->kv_smem_repack;\n    } else {\n      return nullptr;\n    }\n  }\n"
+    },
+    "traits_and_aliases": {
+      "first_line": 240,
+      "last_line": 342,
+      "sha256": "1a5f36ea4656d4f41a795517de66a2bf3083208573170173fe5ca29e64896bcd",
+      "source": "template <MaskMode MASK_MODE_, uint32_t CTA_TILE_Q_, uint32_t NUM_MMA_Q_, uint32_t NUM_MMA_KV_,\n          uint32_t NUM_MMA_D_QK_, uint32_t NUM_MMA_D_VO_, uint32_t NUM_WARPS_Q_,\n          uint32_t NUM_WARPS_KV_, PosEncodingMode POS_ENCODING_MODE_, typename DTypeQ_,\n          typename DTypeKV_, typename DTypeO_, typename DTypeQKAccum_, typename IdType_,\n          typename AttentionVariant_>\nstruct KernelTraits {\n  static constexpr uint32_t NUM_STAGES = 1;  // used for BatchAttention Template\n  static constexpr MaskMode MASK_MODE = MASK_MODE_;\n  static constexpr uint32_t NUM_MMA_Q = NUM_MMA_Q_;\n  static constexpr uint32_t NUM_MMA_KV = NUM_MMA_KV_;\n  static constexpr uint32_t NUM_MMA_D_QK = NUM_MMA_D_QK_;\n  static constexpr uint32_t NUM_MMA_D_VO = NUM_MMA_D_VO_;\n  static constexpr uint32_t NUM_WARPS_Q = NUM_WARPS_Q_;\n  static constexpr uint32_t NUM_WARPS_KV = NUM_WARPS_KV_;\n  static constexpr uint32_t NUM_THREADS = NUM_WARPS_Q * NUM_WARPS_KV * WARP_SIZE;\n  static constexpr uint32_t NUM_WARPS = NUM_WARPS_Q * NUM_WARPS_KV;\n  static constexpr uint32_t HEAD_DIM_QK = NUM_MMA_D_QK * 16;\n  static constexpr uint32_t HEAD_DIM_VO = NUM_MMA_D_VO * 16;\n  static constexpr uint32_t NUM_MMA_D_VO_TILE = NUM_MMA_D_VO > 16 ? 16 : NUM_MMA_D_VO;\n  static constexpr uint32_t NUM_D_VO_TILES = NUM_MMA_D_VO / NUM_MMA_D_VO_TILE;\n  static_assert(NUM_MMA_D_VO % NUM_MMA_D_VO_TILE == 0,\n                \"NUM_MMA_D_VO must be divisible by NUM_MMA_D_VO_TILE\");\n  static constexpr uint32_t HEAD_DIM_VO_TILE = NUM_MMA_D_VO_TILE * 16;\n  static constexpr bool USE_VO_SPLIT = (NUM_MMA_D_VO > 16) && (NUM_MMA_D_VO % NUM_WARPS_KV == 0);\n  static constexpr uint32_t NUM_MMA_D_VO_PER_WARP =\n      USE_VO_SPLIT ? (NUM_MMA_D_VO / NUM_WARPS_KV) : NUM_MMA_D_VO;\n  static constexpr bool USE_KV_SHARED_SMEM = USE_VO_SPLIT && !is_fp4_type_v<DTypeKV_> &&\n                                             (HEAD_DIM_QK == HEAD_DIM_VO) &&\n                                             (sizeof(DTypeKV_) == 2 || CTA_TILE_Q_ > 16);\n  static constexpr bool USE_SOFTMAX_VO_SPLIT = USE_VO_SPLIT && AttentionVariant_::use_softmax &&\n                                               ((sizeof(DTypeKV_) == 2) || is_fp4_type_v<DTypeKV_>);\n  static constexpr bool USE_SINGLE_PREFILL_SOFTMAX_VO_SPLIT =\n      USE_SOFTMAX_VO_SPLIT && is_fp4_type_v<DTypeKV_>;\n  static constexpr bool USE_16B_VO_SPLIT =\n      USE_VO_SPLIT && (sizeof(DTypeKV_) == 2) && AttentionVariant_::use_softmax;\n  static constexpr bool USE_SHARED_ROPE_FREQ = POS_ENCODING_MODE_ == PosEncodingMode::kRoPELlama &&\n                                               HEAD_DIM_QK > 256 && HEAD_DIM_QK == HEAD_DIM_VO;\n  static constexpr uint32_t SHARED_ROPE_FREQ_BYTES =\n      USE_SHARED_ROPE_FREQ ? (4 * (NUM_MMA_D_QK / 2) * 4 * sizeof(float)) : 0;\n  static constexpr uint32_t UPCAST_STRIDE_Q = HEAD_DIM_QK / upcast_size<DTypeQ_>();\n  static constexpr bool HYLE_FP8_SHORT_K = sizeof(DTypeKV_) == 1 && !is_fp4_type_v<DTypeKV_> &&\n                                           HEAD_DIM_QK == 64 && HEAD_DIM_VO == 128;\n  static constexpr uint32_t UPCAST_STRIDE_K =\n      (HYLE_FP8_SHORT_K ? 128 : HEAD_DIM_QK) / upcast_size<DTypeKV_>();\n  static constexpr uint32_t UPCAST_STRIDE_V = HEAD_DIM_VO / upcast_size<DTypeKV_>();\n  static constexpr uint32_t UPCAST_STRIDE_O = HEAD_DIM_VO / upcast_size<DTypeO_>();\n  static constexpr uint32_t CTA_TILE_Q = CTA_TILE_Q_;\n  static constexpr uint32_t CTA_TILE_KV = NUM_MMA_KV * NUM_WARPS_KV * 16;\n\n  static constexpr SwizzleMode SWIZZLE_MODE_Q = SwizzleMode::k128B;\n  static constexpr SwizzleMode SWIZZLE_MODE_KV =\n      (sizeof(DTypeKV_) == 1 && HEAD_DIM_VO == 64) ? SwizzleMode::k64B : SwizzleMode::k128B;\n  static constexpr uint32_t KV_THR_LAYOUT_ROW = SWIZZLE_MODE_KV == SwizzleMode::k128B ? 4 : 8;\n  static constexpr uint32_t KV_THR_LAYOUT_COL = SWIZZLE_MODE_KV == SwizzleMode::k128B ? 8 : 4;\n  static constexpr PosEncodingMode POS_ENCODING_MODE = POS_ENCODING_MODE_;\n  using DTypeQ = DTypeQ_;\n  using DTypeKV = DTypeKV_;\n  using DTypeO = DTypeO_;\n  using DTypeQKAccum = DTypeQKAccum_;\n  using IdType = IdType_;\n  using AttentionVariant = AttentionVariant_;\n  static constexpr bool USE_KV_REPACK = (sizeof(DTypeKV_) == 1) && !is_fp4_type_v<DTypeKV_> &&\n                                        (HEAD_DIM_VO != 64) && (HEAD_DIM_VO <= 256) &&\n                                        (CTA_TILE_Q > 16);  // CTA16 = decode/short-q -> in-loop\n  // b128 columns per KV row in the FP8 (packed) and BF16 (repacked) layouts.\n  static constexpr uint32_t REPACK_STRIDE_QK = HEAD_DIM_QK / upcast_size<DTypeQ_>();\n  static constexpr uint32_t REPACK_STRIDE_VO = HEAD_DIM_VO / upcast_size<DTypeQ_>();\n\n  static constexpr bool IsInvalid() {\n    // The first clause prunes (CTA_TILE_Q, head_dim) pairs FA2DetermineCtaTileQ\n    // never selects: it picks from {16, 32} when head_dim_vo >= 512 (VO-split),\n    // {16} when head_dim_qk >= 512 with a smaller head_dim_vo, and\n    // {16, 64, 128} otherwise. The clause keys on HEAD_DIM_QK (which bounds\n    // CTA_TILE_Q <= 32 in both large-head cases); the kernel-instantiation\n    // lists additionally drop the never-selected CTA_TILE_Q=32 for\n    // head_dim_qk >= 512 with head_dim_vo < 512.\n    return ((HEAD_DIM_QK >= 512 ? (CTA_TILE_Q > 32) : (CTA_TILE_Q == 32)) || (NUM_MMA_D_VO < 4) ||\n            (NUM_MMA_D_VO == 4 && NUM_MMA_KV % 2 == 1) ||\n            (POS_ENCODING_MODE == PosEncodingMode::kRoPELlama && NUM_MMA_D_VO > 4 &&\n             NUM_MMA_D_VO % (2 * NUM_WARPS_Q) != 0) ||\n            (NUM_MMA_Q * (8 * (USE_VO_SPLIT ? NUM_MMA_D_VO_PER_WARP : NUM_MMA_D_VO_TILE) +\n                          2 * sizeof(DTypeQKAccum) * NUM_MMA_KV) >=\n             256) ||\n            (sizeof(DTypeKV) == 1 &&\n              NUM_MMA_KV * ((!is_fp4_type_v<DTypeKV> && SWIZZLE_MODE_KV == SwizzleMode::k128B)\n                                ? 4 : 2) % NUM_WARPS_Q != 0) ||\n            (sizeof(DTypeKV) == 1 && !is_fp4_type_v<DTypeKV> &&\n             POS_ENCODING_MODE == PosEncodingMode::kRoPELlama));\n  }\n\n  using BaseSharedStorage = SharedStorageQKVO<NUM_WARPS_KV, CTA_TILE_Q, CTA_TILE_KV, HEAD_DIM_QK,\n                                              HEAD_DIM_VO, DTypeQ, DTypeKV, DTypeO>;\n  using BaseSharedStoragePaged =\n      SharedStorageQKVO<NUM_WARPS_KV, CTA_TILE_Q, CTA_TILE_KV, HEAD_DIM_QK, HEAD_DIM_VO, DTypeQ,\n                        DTypeKV, DTypeO, /*kEnableVOSplitOpt=*/true>;\n  using SharedStorage =\n      std::conditional_t<USE_SHARED_ROPE_FREQ,\n                         SharedStorageWithRopeFreq<BaseSharedStorage, NUM_MMA_D_QK / 2>,\n                         BaseSharedStorage>;\n  using SharedStoragePaged =\n      std::conditional_t<USE_SHARED_ROPE_FREQ,\n                         SharedStorageWithRopeFreq<BaseSharedStoragePaged, NUM_MMA_D_QK / 2>,\n                         BaseSharedStoragePaged>;\n"
+    },
+    "ragged_producer": {
+      "first_line": 473,
+      "last_line": 540,
+      "sha256": "1e5f5266657f6c6f2abd9925fbd63ba877d4fd9cd828d14548a0432013079064",
+      "source": "template <bool produce_v, SharedMemFillMode fill_mode, typename KTraits>\n__device__ __forceinline__ void produce_kv(smem_t<KTraits::SWIZZLE_MODE_KV> smem,\n                                           uint32_t* smem_offset, typename KTraits::DTypeKV** gptr,\n                                           const uint32_t stride_n, const uint32_t kv_idx_base,\n                                           const uint32_t kv_len, const dim3 tid = threadIdx) {\n  // NOTE: for fp8, this function doesn't work for head_dim = 64 at the moment\n  using DTypeKV = typename KTraits::DTypeKV;\n  constexpr bool IS_FP4 = is_fp4_type_v<DTypeKV>;\n  constexpr uint32_t CTA_TILE_KV = KTraits::CTA_TILE_KV;\n  constexpr uint32_t NUM_WARPS = KTraits::NUM_WARPS;\n  constexpr uint32_t NUM_WARPS_Q = KTraits::NUM_WARPS_Q;\n  constexpr bool PAD_K = !produce_v && KTraits::HYLE_FP8_SHORT_K;\n  constexpr uint32_t NUM_MMA_D = PAD_K ? 8 : (produce_v ? KTraits::NUM_MMA_D_VO : KTraits::NUM_MMA_D_QK);\n  constexpr uint32_t NUM_MMA_KV = KTraits::NUM_MMA_KV;\n  constexpr uint32_t UPCAST_STRIDE =\n      produce_v ? KTraits::UPCAST_STRIDE_V : KTraits::UPCAST_STRIDE_K;\n  const uint32_t warp_idx = get_warp_idx<KTraits>(tid.y, tid.z), lane_idx = tid.x;\n\n  if constexpr (KTraits::SWIZZLE_MODE_KV == SwizzleMode::k128B) {\n    uint32_t kv_idx = kv_idx_base + warp_idx * 4 + lane_idx / 8;\n    // NOTE: NUM_MMA_KV * 4 / NUM_WARPS_Q = NUM_WARPS_KV * NUM_MMA_KV * 4 / num_warps\n    static_assert(NUM_MMA_KV * 4 % NUM_WARPS_Q == 0);\n#pragma unroll\n    for (uint32_t i = 0; i < NUM_MMA_KV * 4 / NUM_WARPS_Q; ++i) {\n#pragma unroll\n      for (uint32_t j = 0; j < NUM_MMA_D / (8 / sizeof(DTypeKV)); ++j) {\n        // FP4 GMEM rows are packed 2x denser; load 64b (upper 64b of smem slot zeroed).\n        if constexpr (IS_FP4) {\n          smem.template load_64b_async<fill_mode>(*smem_offset, *gptr, kv_idx < kv_len);\n        } else {\n          if constexpr (PAD_K) {\n            smem.template load_128b_async<SharedMemFillMode::kFillZero>(\n                *smem_offset, *gptr, kv_idx < kv_len && lane_idx % 8 < 4);\n          } else {\n            smem.template load_128b_async<fill_mode>(*smem_offset, *gptr, kv_idx < kv_len);\n          }\n        }\n        *smem_offset = smem.template advance_offset_by_column<8>(*smem_offset, j);\n        *gptr += (IS_FP4 ? 4 : 8) * upcast_size<DTypeKV>();\n      }\n      kv_idx += NUM_WARPS * 4;\n      *smem_offset =\n          smem.template advance_offset_by_row<NUM_WARPS * 4, UPCAST_STRIDE>(*smem_offset) -\n          sizeof(DTypeKV) * NUM_MMA_D;\n      *gptr += NUM_WARPS * 4 * stride_n -\n               (IS_FP4 ? 4 : 8) * upcast_size<DTypeKV>() * (NUM_MMA_D / (8 / sizeof(DTypeKV)));\n    }\n    *smem_offset -= CTA_TILE_KV * UPCAST_STRIDE;\n  } else {\n    uint32_t kv_idx = kv_idx_base + warp_idx * 8 + lane_idx / 4;\n    // NOTE: NUM_MMA_KV * 2 / NUM_WARPS_Q = NUM_WARPS_KV * NUM_MMA_KV * 2 / num_warps\n    static_assert(NUM_MMA_KV * 2 % NUM_WARPS_Q == 0);\n#pragma unroll\n    for (uint32_t i = 0; i < NUM_MMA_KV * 2 / NUM_WARPS_Q; ++i) {\n      // FP4 GMEM rows are packed 2x denser; load 64b (upper 64b of smem slot zeroed).\n      if constexpr (IS_FP4) {\n        smem.template load_64b_async<fill_mode>(*smem_offset, *gptr, kv_idx < kv_len);\n      } else {\n        smem.load_128b_async<fill_mode>(*smem_offset, *gptr, kv_idx < kv_len);\n      }\n      *smem_offset =\n          smem.template advance_offset_by_row<NUM_WARPS * 8, UPCAST_STRIDE>(*smem_offset);\n      kv_idx += NUM_WARPS * 8;\n      *gptr += NUM_WARPS * 8 * stride_n;\n    }\n    *smem_offset -= KTraits::CTA_TILE_KV * UPCAST_STRIDE;\n  }\n}\n"
+    },
+    "paged_producer": {
+      "first_line": 542,
+      "last_line": 616,
+      "sha256": "bebba587cb9bdc12de01e5c3154eaeb48b0418bc09f30689dca53de2cf6174f8",
+      "source": "template <bool produce_v, typename KTraits, typename SmemStorage>\n__device__ __forceinline__ void page_produce_kv(SmemStorage* smem_storage, uint32_t* smem_offset,\n                                                typename KTraits::DTypeKV* kv_ptr,\n                                                const uint32_t kv_idx_base,\n                                                const size_t* thr_local_kv_offset,\n                                                const uint32_t kv_len, const uint32_t warp_idx,\n                                                const uint32_t lane_idx) {\n  // NOTE: for fp8, this function doesn't work for head_dim = 64 at the moment\n  // K/V-shared path: V is loaded into k_smem (time-shared); v_smem is a [1] stub.\n  smem_t<KTraits::SWIZZLE_MODE_KV> smem(\n      (produce_v && !KTraits::USE_KV_SHARED_SMEM) ? smem_storage->v_smem : smem_storage->k_smem);\n  using DType = typename KTraits::DTypeKV;\n  using IdType = typename KTraits::IdType;\n  constexpr SharedMemFillMode fill_mode =\n      produce_v ? SharedMemFillMode::kFillZero : SharedMemFillMode::kNoFill;\n  constexpr uint32_t NUM_WARPS = KTraits::NUM_WARPS;\n  constexpr uint32_t NUM_WARPS_Q = KTraits::NUM_WARPS_Q;\n  constexpr uint32_t NUM_MMA_KV = KTraits::NUM_MMA_KV;\n  constexpr bool PAD_K = !produce_v && KTraits::HYLE_FP8_SHORT_K;\n  constexpr uint32_t NUM_MMA_D = PAD_K ? 8 : (produce_v ? KTraits::NUM_MMA_D_VO : KTraits::NUM_MMA_D_QK);\n  constexpr uint32_t UPCAST_STRIDE =\n      produce_v ? KTraits::UPCAST_STRIDE_V : KTraits::UPCAST_STRIDE_K;\n  // FP4 stores 2 elements per byte in GMEM (packed); SMEM uses 64b data + 64b zero per 128b slot.\n  // Use a 64b async load (cp.async with src-size=8) and advance GMEM pointer by half the normal\n  // amount, while SMEM addressing remains unchanged.\n  constexpr bool IS_FP4 = is_fp4_type_v<DType>;\n  if constexpr (KTraits::SWIZZLE_MODE_KV == SwizzleMode::k128B) {\n    uint32_t kv_idx = kv_idx_base + warp_idx * 4 + lane_idx / 8;\n    // NOTE: NUM_MMA_KV * 4 / NUM_WARPS_Q = NUM_WARPS_KV * NUM_MMA_KV * 4 / num_warps\n    static_assert(NUM_MMA_KV * 4 % NUM_WARPS_Q == 0);\n#pragma unroll\n    for (uint32_t i = 0; i < NUM_MMA_KV * 4 / NUM_WARPS_Q; ++i) {\n      DType* gptr = kv_ptr + thr_local_kv_offset[i];\n#pragma unroll\n      for (uint32_t j = 0; j < NUM_MMA_D / (8 / sizeof(DType)); ++j) {\n        if constexpr (IS_FP4) {\n          // Load 64b from packed GMEM into lower 64b of 128b SMEM slot (upper 64b zeroed)\n          smem.load_64b_async<fill_mode>(*smem_offset, gptr, kv_idx < kv_len);\n        } else {\n          if constexpr (PAD_K) {\n            smem.template load_128b_async<SharedMemFillMode::kFillZero>(\n                *smem_offset, gptr, kv_idx < kv_len && lane_idx % 8 < 4);\n          } else {\n            smem.load_128b_async<fill_mode>(*smem_offset, gptr, kv_idx < kv_len);\n          }\n        }\n        *smem_offset = smem.template advance_offset_by_column<8>(*smem_offset, j);\n        // FP4: GMEM row is HEAD_DIM/2 bytes wide (packed), so advance by half\n        gptr += (IS_FP4 ? 4 : 8) * upcast_size<DType>();\n      }\n      kv_idx += NUM_WARPS * 4;\n      *smem_offset =\n          smem.template advance_offset_by_row<NUM_WARPS * 4, UPCAST_STRIDE>(*smem_offset) -\n          sizeof(DType) * NUM_MMA_D;\n    }\n    *smem_offset -= KTraits::CTA_TILE_KV * UPCAST_STRIDE;\n  } else {\n    uint32_t kv_idx = kv_idx_base + warp_idx * 8 + lane_idx / 4;\n    // NOTE: NUM_MMA_KV * 2 / NUM_WARPS_Q = NUM_WARPS_KV * NUM_MMA_KV * 2 / num_warps\n    static_assert(NUM_MMA_KV * 2 % NUM_WARPS_Q == 0);\n#pragma unroll\n    for (uint32_t i = 0; i < NUM_MMA_KV * 2 / NUM_WARPS_Q; ++i) {\n      DType* gptr = kv_ptr + thr_local_kv_offset[i];\n      if constexpr (IS_FP4) {\n        smem.load_64b_async<fill_mode>(*smem_offset, gptr, kv_idx < kv_len);\n      } else {\n        smem.load_128b_async<fill_mode>(*smem_offset, gptr, kv_idx < kv_len);\n      }\n      kv_idx += NUM_WARPS * 8;\n      *smem_offset =\n          smem.template advance_offset_by_row<NUM_WARPS * 8, UPCAST_STRIDE>(*smem_offset);\n    }\n    *smem_offset -= KTraits::CTA_TILE_KV * UPCAST_STRIDE;\n  }\n}\n"
+    },
+    "original_converter": {
+      "first_line": 1170,
+      "last_line": 1215,
+      "sha256": "8c53b949def22bda15316bcc3ae80001e7b6c54c8417fc3ad6cb056b529f0d1c",
+      "source": "template <typename KTraits, uint32_t HEAD_DIM>\nconstexpr bool hyle_owned_fp8_repack =\n    KTraits::USE_KV_REPACK && !KTraits::USE_KV_SHARED_SMEM && !KTraits::USE_VO_SPLIT &&\n    !KTraits::USE_SOFTMAX_VO_SPLIT && KTraits::SWIZZLE_MODE_KV == SwizzleMode::k128B &&\n    HEAD_DIM >= 128 && HEAD_DIM % 128 == 0 &&\n    KTraits::POS_ENCODING_MODE == PosEncodingMode::kNone;\n\ntemplate <typename KTraits, uint32_t HEAD_DIM>\n__device__ __forceinline__ void repack_fp8_tile_to_bf16(typename KTraits::DTypeKV* smem_fp8,\n                                                        typename KTraits::DTypeQ* smem_bf16,\n                                                        uint32_t thread_id) {\n  using DTypeKV = typename KTraits::DTypeKV;\n  using DTypeQ = typename KTraits::DTypeQ;\n  constexpr SwizzleMode SWIZZLE = KTraits::SWIZZLE_MODE_KV;\n  constexpr uint32_t NUM_THREADS = KTraits::NUM_THREADS;\n  constexpr uint32_t CTA_TILE_KV = KTraits::CTA_TILE_KV;\n  // b128 columns per row: FP8 packs 16 elems / 16B, BF16 packs 8 elems / 16B.\n  constexpr uint32_t FP8_COLS = HEAD_DIM / upcast_size<DTypeKV>();\n  constexpr uint32_t BF16_COLS = HEAD_DIM / upcast_size<DTypeQ>();\n  constexpr uint32_t NUM_B128 = CTA_TILE_KV * FP8_COLS;\n\n  b128_t* src = (b128_t*)smem_fp8;\n  b128_t* dst = (b128_t*)smem_bf16;\n#pragma unroll\n  for (uint32_t idx = thread_id; idx < NUM_B128; idx += NUM_THREADS) {\n    uint32_t row = idx / FP8_COLS, col = idx % FP8_COLS;\n    if constexpr (hyle_owned_fp8_repack<KTraits, HEAD_DIM>) {\n      // Match the exact warp/lane ownership of produce_kv/page_produce_kv.\n      // Each thread consumes only its own completed asynchronous copies.\n      static_assert(CTA_TILE_KV % (KTraits::NUM_WARPS * 4) == 0);\n      constexpr uint32_t CHUNKS_PER_ROW_PASS = HEAD_DIM / 128;\n      const uint32_t warp = thread_id / 32, lane = thread_id % 32;\n      const uint32_t item = idx / NUM_THREADS;\n      row = warp * 4 + lane / 8 + (item / CHUNKS_PER_ROW_PASS) * KTraits::NUM_WARPS * 4;\n      col = lane % 8 + (item % CHUNKS_PER_ROW_PASS) * 8;\n    }\n    constexpr uint32_t SOURCE_COLS = KTraits::HYLE_FP8_SHORT_K && HEAD_DIM == 64 ? 8 : FP8_COLS;\n    b128_t packed = src[get_permuted_offset<SWIZZLE, SOURCE_COLS>(row, col)];\n    // alignas(16): conv is reinterpreted as b128_t (16B) for the smem stores below,\n    // so it must be 16-byte aligned (DTypeQ alone only guarantees 2B alignment).\n    alignas(16) DTypeQ conv[16];\n    vec_cast<DTypeQ, DTypeKV>::template cast<16>(conv, (DTypeKV*)&packed);\n    dst[get_permuted_offset<SWIZZLE, BF16_COLS>(row, 2 * col)] = *(b128_t*)&conv[0];\n    dst[get_permuted_offset<SWIZZLE, BF16_COLS>(row, 2 * col + 1)] = *(b128_t*)&conv[8];\n  }\n}\n"
+    },
+    "BatchPrefillWithRaggedKVCacheKernel": {
+      "sha256": "d5ee6a31bcfbc9226b4c7ba6f4c5841dbf5a8984340a157955465bc78c1c42cd",
+      "source": "2962:         init_states<KTraits>(variant, o_frag, m, d);\n2963:       }\n2964:       uint32_t q_smem_offset_r = qo_smem.get_permuted_offset<UPCAST_STRIDE_Q>(\n2965:           get_warp_idx_q<KTraits>(tid.y) * NUM_MMA_Q * 16 + lane_idx % 16, lane_idx / 16);\n2966: \n2967:       load_q_global_smem<KTraits>(qo_packed_idx_base, qo_upper_bound, q_ptr_base, q_stride_n,\n2968:                                   q_stride_h, group_size, &qo_smem, tid);\n2969: \n2970:       cp_async::commit_group();\n2971: \n2972:       if constexpr (KTraits::POS_ENCODING_MODE == PosEncodingMode::kRoPELlama) {\n2973:         cp_async::wait_group<0>();\n2974:         block.sync();\n2975:         IdType* q_rope_offset = nullptr;\n2976: \n2977:         if constexpr (has_maybe_q_rope_offset_v<Params>) {\n2978:           q_rope_offset = params.maybe_q_rope_offset;\n2979:         }\n2980:         if (!q_rope_offset) {\n2981:           q_smem_inplace_apply_rotary<KTraits>(qo_packed_idx_base, qo_len, kv_len, group_size,\n2982:                                                &qo_smem, &q_smem_offset_r, rope_freq, tid);\n3055:                         lane_idx / KV_THR_LAYOUT_COL) *\n3056:                            v_stride_n +\n3057:                        kv_head_idx * v_stride_h +\n3058:                        (lane_idx % KV_THR_LAYOUT_COL) * upcast_size<DTypeKV>() / fp4_pack;\n3059: \n3060:       produce_kv<false, SharedMemFillMode::kNoFill, KTraits>(k_smem, &k_smem_offset_w, &k_ptr,\n3061:                                                              k_stride_n, 0, chunk_size, tid);\n3062:       produce_kv_sf<false, KTraits>(&smem_storage, maybe_k_cache_sf, kv_abs_base, kv_head_idx,\n3063:                                     k_stride_n, k_stride_h, 0, chunk_size, warp_idx, lane_idx);\n3064:       cp_async::commit_group();\n3065:       if constexpr (!KTraits::USE_KV_SHARED_SMEM) {\n3066:         // Shared K/V: don't preload V(0) (it would clobber K(0)); V(0) is loaded\n3067:         // inside iter 0 after Q.K^T.\n3068:         produce_kv<true, SharedMemFillMode::kFillZero, KTraits>(v_smem, &v_smem_offset_w, &v_ptr,\n3069:                                                                 v_stride_n, 0, chunk_size, tid);\n3070:         produce_kv_sf<true, KTraits>(&smem_storage, maybe_v_cache_sf, kv_abs_base, kv_head_idx,\n3071:                                      v_stride_n, v_stride_h, 0, chunk_size, warp_idx, lane_idx);\n3072:         cp_async::commit_group();\n3073:       }\n3074: \n3075: #pragma unroll 1\n3076:       for (uint32_t iter = 0; iter < num_iterations; ++iter) {\n3077:         // Shared K/V serializes loads (no K/V prefetch overlap) -> drain fully.\n3078:         if constexpr (KTraits::USE_KV_SHARED_SMEM) {\n3079:           cp_async::wait_group<0>();\n3080:         } else {\n3081:           cp_async::wait_group<1>();\n3082:         }\n3083:         // The owned converter waits locally; its following CTA barrier\n3084:         // publishes the completed loads and converted tile to every consumer.\n3085:         if constexpr (!hyle_owned_fp8_repack<KTraits, KTraits::HEAD_DIM_QK>) {\n3086:           block.sync();\n3087:         }\n3088: \n3089:         uint32_t kv_idx_base =\n3090:             chunk_start + (iter * NUM_WARPS_KV + get_warp_idx_kv<KTraits>(tid.z)) * NUM_MMA_KV * 16;\n3112:               smem_storage.k_sf_smem_ptr(get_warp_idx_kv<KTraits>(tid.z) * KTraits::NUM_MMA_KV *\n3113:                                          16 * KTraits::NUM_MMA_D_QK),\n3114:               lane_idx, kv_rope_base, rope_freq, s_frag);\n3115:         } else if constexpr (KTraits::USE_KV_REPACK) {\n3116:           // Dequantize FP8 K -> BF16 staging smem (shuffle-free), then read native 16-bit.\n3117:           repack_fp8_tile_to_bf16<KTraits, KTraits::HEAD_DIM_QK>(smem_storage.k_smem,\n3118:                                                                  smem_storage.kv_smem_repack_ptr(),\n3119:                                                                  warp_idx * WARP_SIZE + lane_idx);\n3120:           block.sync();\n3121:           compute_qk<KTraits, /*REPACK_BF16=*/true>(\n3122:               &qo_smem, &q_smem_offset_r, &k_smem_bf16, &k_smem_offset_r_bf16,\n3123:               smem_storage.k_sf_smem_ptr(get_warp_idx_kv<KTraits>(tid.z) * KTraits::NUM_MMA_KV *\n3124:                                          16 * KTraits::NUM_MMA_D_QK),\n3125:               lane_idx, s_frag);\n3126:         } else {\n3134:                                   kv_idx_base, qo_len, kv_len, chunk_end, group_size, s_frag, tid,\n3135:                                   kv_head_idx);\n3136: \n3137:         // apply mask\n3138:         if (MASK_MODE == MaskMode::kCustom || (iter >= mask_iteration || iter < window_iteration)) {\n3139:           logits_mask<KTraits>(params, variant, /*batch_idx=*/request_idx, qo_packed_idx_base,\n3140:                                kv_idx_base, qo_len, kv_len, chunk_end, group_size, s_frag, tid,\n3141:                                kv_head_idx);\n3142:         }\n3143: \n3144:         // compute m,d states in online softmax\n3145:         if constexpr (KTraits::USE_SOFTMAX_VO_SPLIT) {\n3146:           vosplit_softmax_store_p<KTraits>(variant, s_frag, m, d, o_scale, &smem_storage,\n3147:                                            get_warp_idx_kv<KTraits>(tid.z),\n3148:                                            get_warp_idx_q<KTraits>(tid.y), lane_idx);\n3149:         } else {\n3150:           update_mdo_states<KTraits>(variant, s_frag, o_frag, m, d);\n3151:         }\n3152: \n3153:         block.sync();\n3154:         if constexpr (KTraits::USE_KV_SHARED_SMEM) {\n3155:           // Load V(iter) into k_smem (time-shared) now that Q.K^T is done.\n3156:           produce_kv<true, SharedMemFillMode::kFillZero, KTraits>(\n3157:               v_smem, &v_smem_offset_w, &v_ptr, v_stride_n, iter * CTA_TILE_KV, chunk_size, tid);\n3158:           cp_async::commit_group();\n3159:           cp_async::wait_group<0>();\n3160:         } else {\n3161:           produce_kv<false, SharedMemFillMode::kNoFill, KTraits>(\n3162:               k_smem, &k_smem_offset_w, &k_ptr, k_stride_n, (iter + 1) * CTA_TILE_KV, chunk_size,\n3163:               tid);\n3164:           produce_kv_sf<false, KTraits>(&smem_storage, maybe_k_cache_sf, kv_abs_base, kv_head_idx,\n3165:                                         k_stride_n, k_stride_h, (iter + 1) * CTA_TILE_KV,\n3166:                                         chunk_size, warp_idx, lane_idx);\n3167:           cp_async::commit_group();\n3168:           cp_async::wait_group<1>();\n3169:         }\n3170:         // The owned converter waits locally; its following CTA barrier\n3171:         // publishes the completed loads and converted tile to every consumer.\n3172:         if constexpr (!hyle_owned_fp8_repack<KTraits, KTraits::HEAD_DIM_VO>) {\n3173:           block.sync();\n3174:         }\n3175: \n3176:         // compute sfm*v\n3177:         if constexpr (KTraits::USE_SOFTMAX_VO_SPLIT) {\n3179:               get_warp_idx_kv<KTraits>(tid.z) * KTraits::NUM_MMA_D_VO_PER_WARP;\n3180:           vosplit_compute_pv<KTraits>(&smem_storage, o_frag, o_scale, warp_vo_base,\n3181:                                       get_warp_idx_q<KTraits>(tid.y), lane_idx);\n3182:         } else if constexpr (KTraits::USE_KV_REPACK) {\n3183:           // Dequantize FP8 V -> BF16 staging smem (shuffle-free), then read native 16-bit.\n3184:           repack_fp8_tile_to_bf16<KTraits, KTraits::HEAD_DIM_VO>(smem_storage.v_smem,\n3185:                                                                  smem_storage.kv_smem_repack_ptr(),\n3186:                                                                  warp_idx * WARP_SIZE + lane_idx);\n3187:           block.sync();\n3188:           compute_sfm_v<KTraits, /*REPACK_BF16=*/true>(\n3189:               &v_smem_bf16, &v_smem_offset_r_bf16,\n3190:               smem_storage.v_sf_smem_ptr(get_warp_idx_kv<KTraits>(tid.z) * KTraits::NUM_MMA_KV *\n3191:                                          16 * KTraits::NUM_MMA_D_VO),\n3192:               lane_idx, s_frag, o_frag, d, d_base);\n3193:         } else {\n3194:           compute_sfm_v<KTraits>(\n3195:               &v_smem, &v_smem_offset_r,\n3196:               smem_storage.v_sf_smem_ptr(get_warp_idx_kv<KTraits>(tid.z) * KTraits::NUM_MMA_KV *\n3197:                                          16 * KTraits::NUM_MMA_D_VO),\n3199:         }\n3200: \n3201:         block.sync();\n3202:         if constexpr (KTraits::USE_KV_SHARED_SMEM) {\n3203:           // K(iter+1) goes into the shared buffer only after sfm*v consumed V(iter).\n3204:           produce_kv<false, SharedMemFillMode::kNoFill, KTraits>(\n3205:               k_smem, &k_smem_offset_w, &k_ptr, k_stride_n, (iter + 1) * CTA_TILE_KV, chunk_size,\n3206:               tid);\n3207:           cp_async::commit_group();\n3208:         } else {\n3209:           produce_kv<true, SharedMemFillMode::kFillZero, KTraits>(\n3210:               v_smem, &v_smem_offset_w, &v_ptr, v_stride_n, (iter + 1) * CTA_TILE_KV, chunk_size,\n3211:               tid);\n3212:           produce_kv_sf<true, KTraits>(&smem_storage, maybe_v_cache_sf, kv_abs_base, kv_head_idx,\n3213:                                        v_stride_n, v_stride_h, (iter + 1) * CTA_TILE_KV, chunk_size,\n3214:                                        warp_idx, lane_idx);\n3215:           cp_async::commit_group();\n3216:         }\n3217:       }\n3218:       cp_async::wait_group<0>();\n3219:       block.sync();\n3220: \n3221:       finalize_m<KTraits>(variant, m);\n3222: \n3223:       const uint32_t num_kv_chunks =\n3224:           ceil_div(min(kv_len_safe, window_left + CTA_TILE_Q), kv_chunk_size);\n3225:       if constexpr (KTraits::USE_SOFTMAX_VO_SPLIT) {\n3226:         vosplit_write_o<KTraits>(o_frag, d, o_ptr_base, qo_packed_idx_base, qo_len,\n3227:                                  partition_kv ? num_kv_chunks * o_stride_n : o_stride_n, o_stride_h,\n"
+    },
+    "BatchPrefillWithPagedKVCacheDevice": {
+      "sha256": "9a71bacefe7186fab89876e115c8bb7172af625de37c26031660bebed6b74594",
+      "source": "3754:         init_states<KTraits>(variant, o_frag, m, d);\n3755:       }\n3756:       uint32_t q_smem_offset_r = qo_smem.get_permuted_offset<UPCAST_STRIDE_Q>(\n3757:           get_warp_idx_q<KTraits>(tid.y) * NUM_MMA_Q * 16 + lane_idx % 16, lane_idx / 16);\n3758: \n3759:       load_q_global_smem<KTraits>(qo_packed_idx_base, qo_upper_bound, q_ptr_base, q_stride_n,\n3760:                                   q_stride_h, group_size, &qo_smem, tid);\n3761: \n3762:       cp_async::commit_group();\n3763: \n3764:       if constexpr (KTraits::POS_ENCODING_MODE == PosEncodingMode::kRoPELlama) {\n3765:         cp_async::wait_group<0>();\n3766:         block.sync();\n3767:         IdType* q_rope_offset = nullptr;\n3768:         if constexpr (has_maybe_q_rope_offset_v<Params>) {\n3769:           q_rope_offset = params.maybe_q_rope_offset;\n3770:         }\n3771:         if (q_rope_offset == nullptr) {\n3772:           q_smem_inplace_apply_rotary<KTraits>(qo_packed_idx_base, qo_len, kv_len, group_size,\n3773:                                                &qo_smem, &q_smem_offset_r, rope_freq, tid);\n3774:         } else {\n3846:           thr_local_kv_offset_k[i] = paged_kv.protective_get_k_offset(\n3847:               page_iter, kv_head_idx, entry_idx, feat_idx, last_indptr);\n3848:           thr_local_kv_offset_v[i] = paged_kv.protective_get_v_offset(\n3849:               page_iter, kv_head_idx, entry_idx, feat_idx, last_indptr);\n3850:         }\n3851:         page_produce_kv<false, KTraits>(&smem_storage, &k_smem_offset_w, paged_kv.k_data, 0,\n3852:                                         thr_local_kv_offset_k, chunk_size, warp_idx, lane_idx);\n3853:       }\n3854:       page_produce_kv_sf<false, KTraits>(\n3855:           &smem_storage, maybe_k_cache_sf, packed_page_iter_base,\n3856:           last_indptr * (uint32_t)paged_kv.page_size, kv_head_idx, k_sf_stride_page, k_sf_stride_h,\n3857:           k_sf_stride_n, paged_kv.page_size, paged_kv.indices, 0, chunk_size, warp_idx, lane_idx);\n3858:       cp_async::commit_group();\n3859:       // Shared K/V loads V(0) inside iter 0 after Q.K^T; preloading it would clobber K(0).\n3860:       if constexpr (!KTraits::USE_KV_SHARED_SMEM) {\n3861:         page_produce_kv<true, KTraits>(&smem_storage, &v_smem_offset_w, paged_kv.v_data, 0,\n3862:                                        thr_local_kv_offset_v, chunk_size, warp_idx, lane_idx);\n3863:         page_produce_kv_sf<true, KTraits>(&smem_storage, maybe_v_cache_sf, packed_page_iter_base,\n3864:                                           last_indptr * (uint32_t)paged_kv.page_size, kv_head_idx,\n3865:                                           v_sf_stride_page, v_sf_stride_h, v_sf_stride_n,\n3866:                                           paged_kv.page_size, paged_kv.indices, 0, chunk_size,\n3867:                                           warp_idx, lane_idx);\n3868:         cp_async::commit_group();\n3869:       }\n3870: \n3956:                 page_iter, kv_head_idx, entry_idx, feat_idx, last_indptr);\n3957:           }\n3958:         }\n3959:         // Shared K/V serializes loads (no K/V prefetch overlap) -> drain fully.\n3960:         if constexpr (KTraits::USE_KV_SHARED_SMEM) {\n3961:           cp_async::wait_group<0>();\n3962:         } else {\n3963:           cp_async::wait_group<1>();\n3964:         }\n3965:         // The owned converter waits locally; its following CTA barrier\n3966:         // publishes the completed loads and converted tile to every consumer.\n3967:         if constexpr (!hyle_owned_fp8_repack<KTraits, KTraits::HEAD_DIM_QK>) {\n3968:           block.sync();\n3969:         }\n3970: \n3971:         uint32_t kv_idx_base =\n3972:             chunk_start + (iter * NUM_WARPS_KV + get_warp_idx_kv<KTraits>(tid.z)) * NUM_MMA_KV * 16;\n3992:               smem_storage.k_sf_smem_ptr(get_warp_idx_kv<KTraits>(tid.z) * KTraits::NUM_MMA_KV *\n3993:                                          16 * KTraits::NUM_MMA_D_QK),\n3994:               lane_idx, kv_rope_base, rope_freq, s_frag);\n3995:         } else if constexpr (KTraits::USE_KV_REPACK) {\n3996:           // Dequantize FP8 K -> BF16 staging smem (shuffle-free), then read native 16-bit.\n3997:           repack_fp8_tile_to_bf16<KTraits, KTraits::HEAD_DIM_QK>(smem_storage.k_smem,\n3998:                                                                  smem_storage.kv_smem_repack_ptr(),\n3999:                                                                  warp_idx * WARP_SIZE + lane_idx);\n4000:           block.sync();\n4001:           compute_qk<KTraits, /*REPACK_BF16=*/true>(\n4002:               &qo_smem, &q_smem_offset_r, &k_smem_bf16, &k_smem_offset_r_bf16,\n4003:               smem_storage.k_sf_smem_ptr(get_warp_idx_kv<KTraits>(tid.z) * KTraits::NUM_MMA_KV *\n4004:                                          16 * KTraits::NUM_MMA_D_QK),\n4005:               lane_idx, s_frag);\n4006:         } else {\n4014:                                   kv_idx_base, qo_len, kv_len, chunk_end, group_size, s_frag, tid,\n4015:                                   kv_head_idx);\n4016: \n4017:         // apply mask\n4018:         if (MASK_MODE == MaskMode::kCustom) {\n4019:           logits_mask<KTraits>(params, variant, /*batch_idx=*/request_idx, qo_packed_idx_base,\n4020:                                kv_idx_base, qo_len, kv_len, chunk_end, group_size, s_frag, tid,\n4021:                                kv_head_idx);\n4022:         } else {\n4023:           if constexpr (MASK_MODE != MaskMode::kMultiItemScoring) {\n4024:             if (iter >= mask_iteration || iter < window_iteration) {\n4025:               logits_mask<KTraits>(params, variant, /*batch_idx=*/request_idx, qo_packed_idx_base,\n4026:                                    kv_idx_base, qo_len, kv_len, chunk_end, group_size, s_frag, tid,\n4027:                                    kv_head_idx);\n4028:             }\n4029:           } else if constexpr (MASK_MODE == MaskMode::kMultiItemScoring) {\n4030:             if (iter + 1 >= num_iterations_prefix) {\n4031:               logits_mask_multi_item_scoring<KTraits>(\n4032:                   params, variant, /*batch_idx=*/request_idx, qo_packed_idx_base, kv_idx_base,\n4033:                   qo_len, kv_len, window_left, chunk_end, group_size, s_frag,\n4034:                   __ldg(maybe_prefix_len_ptr + request_idx),\n4035:                   maybe_token_pos_in_items_ptr + request_idx * token_pos_in_items_len, tid.x,\n4036:                   kv_head_idx);\n4037:             } else {\n4038:               if (iter >= mask_iteration || iter < window_iteration) {\n4039:                 logits_mask<KTraits>(params, variant, /*batch_idx=*/request_idx, qo_packed_idx_base,\n4040:                                      kv_idx_base, qo_len, kv_len, chunk_end, group_size, s_frag,\n4041:                                      tid, kv_head_idx);\n4042:               }\n4043:             }\n4044:           }\n4045:         }\n4046: \n4047:         // compute m,d states in online softmax\n4048:         if constexpr (KTraits::USE_VO_SPLIT) {\n4050:           // online rescale to apply to o_frag in vosplit_compute_pv below.\n4051:           vosplit_softmax_store_p<KTraits>(variant, s_frag, m, d, o_scale, &smem_storage,\n4052:                                            get_warp_idx_kv<KTraits>(tid.z),\n4053:                                            get_warp_idx_q<KTraits>(tid.y), lane_idx);\n4054:         } else {\n4055:           update_mdo_states<KTraits>(variant, s_frag, o_frag, m, d);\n4056:         }\n4057: \n4058:         block.sync();\n4059:         if constexpr (KTraits::USE_KV_SHARED_SMEM) {\n4060:           page_produce_kv_on_the_fly<true, KTraits>(\n4061:               &smem_storage, &v_smem_offset_w, paged_kv.v_data, paged_kv, packed_page_iter_base,\n4062:               last_indptr, kv_head_idx, iter * CTA_TILE_KV, chunk_size, warp_idx, lane_idx);\n4063:           cp_async::commit_group();\n4064:           cp_async::wait_group<0>();\n4065:         } else {\n4066:           page_produce_kv<false, KTraits>(&smem_storage, &k_smem_offset_w, paged_kv.k_data,\n4067:                                           (iter + 1) * CTA_TILE_KV, thr_local_kv_offset_k,\n4068:                                           chunk_size, warp_idx, lane_idx);\n4069:           page_produce_kv_sf<false, KTraits>(\n4070:               &smem_storage, maybe_k_cache_sf, packed_page_iter_base,\n4071:               last_indptr * (uint32_t)paged_kv.page_size, kv_head_idx, k_sf_stride_page,\n4072:               k_sf_stride_h, k_sf_stride_n, paged_kv.page_size, paged_kv.indices,\n4073:               (iter + 1) * CTA_TILE_KV, chunk_size, warp_idx, lane_idx);\n4074:           cp_async::commit_group();\n4075:           cp_async::wait_group<1>();\n4076:         }\n4077:         // The owned converter waits locally; its following CTA barrier\n4078:         // publishes the completed loads and converted tile to every consumer.\n4079:         if constexpr (!hyle_owned_fp8_repack<KTraits, KTraits::HEAD_DIM_VO>) {\n4080:           block.sync();\n4081:         }\n4082: \n4083:         // compute sfm*v\n4084:         if constexpr (KTraits::USE_VO_SPLIT) {\n4086:               get_warp_idx_kv<KTraits>(tid.z) * KTraits::NUM_MMA_D_VO_PER_WARP;\n4087:           vosplit_compute_pv<KTraits>(&smem_storage, o_frag, o_scale, warp_vo_base,\n4088:                                       get_warp_idx_q<KTraits>(tid.y), lane_idx);\n4089:         } else if constexpr (KTraits::USE_KV_REPACK) {\n4090:           // Dequantize FP8 V -> BF16 staging smem (shuffle-free), then read native 16-bit.\n4091:           repack_fp8_tile_to_bf16<KTraits, KTraits::HEAD_DIM_VO>(smem_storage.v_smem,\n4092:                                                                  smem_storage.kv_smem_repack_ptr(),\n4093:                                                                  warp_idx * WARP_SIZE + lane_idx);\n4094:           block.sync();\n4095:           compute_sfm_v<KTraits, /*REPACK_BF16=*/true>(\n4096:               &v_smem_bf16, &v_smem_offset_r_bf16,\n4097:               smem_storage.v_sf_smem_ptr(get_warp_idx_kv<KTraits>(tid.z) * KTraits::NUM_MMA_KV *\n4098:                                          16 * KTraits::NUM_MMA_D_VO),\n4099:               lane_idx, s_frag, o_frag, d, d_base);\n4100:         } else {\n4101:           compute_sfm_v<KTraits>(\n4102:               &v_smem, &v_smem_offset_r,\n4103:               smem_storage.v_sf_smem_ptr(get_warp_idx_kv<KTraits>(tid.z) * KTraits::NUM_MMA_KV *\n4104:                                          16 * KTraits::NUM_MMA_D_VO),\n4112:               next_packed_page_iter_base, last_indptr, kv_head_idx, (iter + 1) * CTA_TILE_KV,\n4113:               chunk_size, warp_idx, lane_idx);\n4114:           cp_async::commit_group();\n4115:           packed_page_iter_base = next_packed_page_iter_base;\n4116:         } else {\n4117:           page_produce_kv<true, KTraits>(&smem_storage, &v_smem_offset_w, paged_kv.v_data,\n4118:                                          (iter + 1) * CTA_TILE_KV, thr_local_kv_offset_v,\n4119:                                          chunk_size, warp_idx, lane_idx);\n4120:           page_produce_kv_sf<true, KTraits>(\n4121:               &smem_storage, maybe_v_cache_sf, packed_page_iter_base,\n4122:               last_indptr * (uint32_t)paged_kv.page_size, kv_head_idx, v_sf_stride_page,\n4123:               v_sf_stride_h, v_sf_stride_n, paged_kv.page_size, paged_kv.indices,\n4124:               (iter + 1) * CTA_TILE_KV, chunk_size, warp_idx, lane_idx);\n4125:           cp_async::commit_group();\n4126:         }\n4127:       }\n4128:       cp_async::wait_group<0>();\n4129:       block.sync();\n4130: \n4131:       finalize_m<KTraits>(variant, m);\n4132: \n4133:       const uint32_t num_kv_chunks =\n4134:           ceil_div(min(kv_len_safe, window_left + CTA_TILE_Q), kv_chunk_size);\n4135: \n4136:       if constexpr (KTraits::USE_VO_SPLIT) {\n4137:         vosplit_write_o<KTraits>(o_frag, d, o_ptr_base, qo_packed_idx_base, qo_len,\n"
+    }
+  },
+  "proof": {
+    "kind": "CE28_DIRECT_PRODUCER_STAGE_SPATIAL_TEMPORAL_PROOF_NOT_RUNTIME",
+    "candidate": "d41431f82a373ae400fb10e97418931031fa48e8",
+    "header_sha256": "b4165b7d90e810e631249e0e049cd83d325bcaa8349d8d8f3cd2aa14dc0587f4",
+    "layout_sha256": "1929a5d1ebb27c67b1e9be3308adf5083957443448d73b6529c0e46c01d7ee84",
+    "predicate": "USE_KV_REPACK && is_same_v<DTypeO,float> && is_same_v<DTypeKV,__nv_fp8_e4m3> && POS_ENCODING_MODE==kNone && !USE_KV_SHARED_SMEM && !USE_VO_SPLIT && HEAD_DIM_QK==HEAD_DIM_VO && (HEAD_DIM_QK==128 || HEAD_DIM_QK==256)",
+    "cases": [
+      {
+        "qwarps": 1,
+        "kvwarps": 1,
+        "mma_kv": 1,
+        "depth": 128,
+        "rows": 16,
+        "source_slots": 128,
+        "expanded_destination_b128_slots": 256,
+        "exact_source_destination_coverage": true,
+        "original_ragged_pointer_and_smem_offset_end_states_preserved": true,
+        "storage_upper_bounds": [
+          {
+            "query_tile": 64,
+            "old_bytes": 24576,
+            "direct_bytes": 24576
+          },
+          {
+            "query_tile": 128,
+            "old_bytes": 40960,
+            "direct_bytes": 40960
+          }
+        ],
+        "shared_traffic_removed_per_kv_pair_bytes": 8192
+      },
+      {
+        "qwarps": 1,
+        "kvwarps": 1,
+        "mma_kv": 1,
+        "depth": 256,
+        "rows": 16,
+        "source_slots": 256,
+        "expanded_destination_b128_slots": 512,
+        "exact_source_destination_coverage": true,
+        "original_ragged_pointer_and_smem_offset_end_states_preserved": true,
+        "storage_upper_bounds": [
+          {
+            "query_tile": 64,
+            "old_bytes": 49152,
+            "direct_bytes": 49152
+          },
+          {
+            "query_tile": 128,
+            "old_bytes": 81920,
+            "direct_bytes": 81920
+          }
+        ],
+        "shared_traffic_removed_per_kv_pair_bytes": 16384
+      },
+      {
+        "qwarps": 1,
+        "kvwarps": 1,
+        "mma_kv": 2,
+        "depth": 128,
+        "rows": 32,
+        "source_slots": 256,
+        "expanded_destination_b128_slots": 512,
+        "exact_source_destination_coverage": true,
+        "original_ragged_pointer_and_smem_offset_end_states_preserved": true,
+        "storage_upper_bounds": [
+          {
+            "query_tile": 64,
+            "old_bytes": 32768,
+            "direct_bytes": 32768
+          },
+          {
+            "query_tile": 128,
+            "old_bytes": 49152,
+            "direct_bytes": 49152
+          }
+        ],
+        "shared_traffic_removed_per_kv_pair_bytes": 16384
+      },
+      {
+        "qwarps": 1,
+        "kvwarps": 1,
+        "mma_kv": 2,
+        "depth": 256,
+        "rows": 32,
+        "source_slots": 512,
+        "expanded_destination_b128_slots": 1024,
+        "exact_source_destination_coverage": true,
+        "original_ragged_pointer_and_smem_offset_end_states_preserved": true,
+        "storage_upper_bounds": [
+          {
+            "query_tile": 64,
+            "old_bytes": 65536,
+            "direct_bytes": 65536
+          },
+          {
+            "query_tile": 128,
+            "old_bytes": 98304,
+            "direct_bytes": 98304
+          }
+        ],
+        "shared_traffic_removed_per_kv_pair_bytes": 32768
+      },
+      {
+        "qwarps": 1,
+        "kvwarps": 1,
+        "mma_kv": 4,
+        "depth": 128,
+        "rows": 64,
+        "source_slots": 512,
+        "expanded_destination_b128_slots": 1024,
+        "exact_source_destination_coverage": true,
+        "original_ragged_pointer_and_smem_offset_end_states_preserved": true,
+        "storage_upper_bounds": [
+          {
+            "query_tile": 64,
+            "old_bytes": 49152,
+            "direct_bytes": 49152
+          },
+          {
+            "query_tile": 128,
+            "old_bytes": 65536,
+            "direct_bytes": 65536
+          }
+        ],
+        "shared_traffic_removed_per_kv_pair_bytes": 32768
+      },
+      {
+        "qwarps": 1,
+        "kvwarps": 1,
+        "mma_kv": 4,
+        "depth": 256,
+        "rows": 64,
+        "source_slots": 1024,
+        "expanded_destination_b128_slots": 2048,
+        "exact_source_destination_coverage": true,
+        "original_ragged_pointer_and_smem_offset_end_states_preserved": true,
+        "storage_upper_bounds": [
+          {
+            "query_tile": 64,
+            "old_bytes": 98304,
+            "direct_bytes": 98304
+          },
+          {
+            "query_tile": 128,
+            "old_bytes": 131072,
+            "direct_bytes": 131072
+          }
+        ],
+        "shared_traffic_removed_per_kv_pair_bytes": 65536
+      },
+      {
+        "qwarps": 1,
+        "kvwarps": 1,
+        "mma_kv": 8,
+        "depth": 128,
+        "rows": 128,
+        "source_slots": 1024,
+        "expanded_destination_b128_slots": 2048,
+        "exact_source_destination_coverage": true,
+        "original_ragged_pointer_and_smem_offset_end_states_preserved": true,
+        "storage_upper_bounds": [
+          {
+            "query_tile": 64,
+            "old_bytes": 81920,
+            "direct_bytes": 81920
+          },
+          {
+            "query_tile": 128,
+            "old_bytes": 98304,
+            "direct_bytes": 98304
+          }
+        ],
+        "shared_traffic_removed_per_kv_pair_bytes": 65536
+      },
+      {
+        "qwarps": 1,
+        "kvwarps": 1,
+        "mma_kv": 8,
+        "depth": 256,
+        "rows": 128,
+        "source_slots": 2048,
+        "expanded_destination_b128_slots": 4096,
+        "exact_source_destination_coverage": true,
+        "original_ragged_pointer_and_smem_offset_end_states_preserved": true,
+        "storage_upper_bounds": [
+          {
+            "query_tile": 64,
+            "old_bytes": 163840,
+            "direct_bytes": 163840
+          },
+          {
+            "query_tile": 128,
+            "old_bytes": 196608,
+            "direct_bytes": 196608
+          }
+        ],
+        "shared_traffic_removed_per_kv_pair_bytes": 131072
+      },
+      {
+        "qwarps": 1,
+        "kvwarps": 2,
+        "mma_kv": 1,
+        "depth": 128,
+        "rows": 32,
+        "source_slots": 256,
+        "expanded_destination_b128_slots": 512,
+        "exact_source_destination_coverage": true,
+        "original_ragged_pointer_and_smem_offset_end_states_preserved": true,
+        "storage_upper_bounds": [
+          {
+            "query_tile": 64,
+            "old_bytes": 74752,
+            "direct_bytes": 66560
+          },
+          {
+            "query_tile": 128,
+            "old_bytes": 141312,
+            "direct_bytes": 133120
+          }
+        ],
+        "shared_traffic_removed_per_kv_pair_bytes": 16384
+      },
+      {
+        "qwarps": 1,
+        "kvwarps": 2,
+        "mma_kv": 1,
+        "depth": 256,
+        "rows": 32,
+        "source_slots": 512,
+        "expanded_destination_b128_slots": 1024,
+        "exact_source_destination_coverage": true,
+        "original_ragged_pointer_and_smem_offset_end_states_preserved": true,
+        "storage_upper_bounds": [
+          {
+            "query_tile": 64,
+            "old_bytes": 148480,
+            "direct_bytes": 132096
+          },
+          {
+            "query_tile": 128,
+            "old_bytes": 280576,
+            "direct_bytes": 264192
+          }
+        ],
+        "shared_traffic_removed_per_kv_pair_bytes": 32768
+      },
+      {
+        "qwarps": 1,
+        "kvwarps": 2,
+        "mma_kv": 2,
+        "depth": 128,
+        "rows": 64,
+        "source_slots": 512,
+        "expanded_destination_b128_slots": 1024,
+        "exact_source_destination_coverage": true,
+        "original_ragged_pointer_and_smem_offset_end_states_preserved": true,
+        "storage_upper_bounds": [
+          {
+            "query_tile": 64,
+            "old_bytes": 82944,
+            "direct_bytes": 66560
+          },
+          {
+            "query_tile": 128,
+            "old_bytes": 149504,
+            "direct_bytes": 133120
+          }
+        ],
+        "shared_traffic_removed_per_kv_pair_bytes": 32768
+      },
+      {
+        "qwarps": 1,
+        "kvwarps": 2,
+        "mma_kv": 2,
+        "depth": 256,
+        "rows": 64,
+        "source_slots": 1024,
+        "expanded_destination_b128_slots": 2048,
+        "exact_source_destination_coverage": true,
+        "original_ragged_pointer_and_smem_offset_end_states_preserved": true,
+        "storage_upper_bounds": [
+          {
+            "query_tile": 64,
+            "old_bytes": 164864,
+            "direct_bytes": 132096
+          },
+          {
+            "query_tile": 128,
+            "old_bytes": 296960,
+            "direct_bytes": 264192
+          }
+        ],
+        "shared_traffic_removed_per_kv_pair_bytes": 65536
+      },
+      {
+        "qwarps": 1,
+        "kvwarps": 2,
+        "mma_kv": 4,
+        "depth": 128,
+        "rows": 128,
+        "source_slots": 1024,
+        "expanded_destination_b128_slots": 2048,
+        "exact_source_destination_coverage": true,
+        "original_ragged_pointer_and_smem_offset_end_states_preserved": true,
+        "storage_upper_bounds": [
+          {
+            "query_tile": 64,
+            "old_bytes": 99328,
+            "direct_bytes": 81920
+          },
+          {
+            "query_tile": 128,
+            "old_bytes": 165888,
+            "direct_bytes": 133120
+          }
+        ],
+        "shared_traffic_removed_per_kv_pair_bytes": 65536
+      },
+      {
+        "qwarps": 1,
+        "kvwarps": 2,
+        "mma_kv": 4,
+        "depth": 256,
+        "rows": 128,
+        "source_slots": 2048,
+        "expanded_destination_b128_slots": 4096,
+        "exact_source_destination_coverage": true,
+        "original_ragged_pointer_and_smem_offset_end_states_preserved": true,
+        "storage_upper_bounds": [
+          {
+            "query_tile": 64,
+            "old_bytes": 197632,
+            "direct_bytes": 163840
+          },
+          {
+            "query_tile": 128,
+            "old_bytes": 329728,
+            "direct_bytes": 264192
+          }
+        ],
+        "shared_traffic_removed_per_kv_pair_bytes": 131072
+      },
+      {
+        "qwarps": 1,
+        "kvwarps": 2,
+        "mma_kv": 8,
+        "depth": 128,
+        "rows": 256,
+        "source_slots": 2048,
+        "expanded_destination_b128_slots": 4096,
+        "exact_source_destination_coverage": true,
+        "original_ragged_pointer_and_smem_offset_end_states_preserved": true,
+        "storage_upper_bounds": [
+          {
+            "query_tile": 64,
+            "old_bytes": 147456,
+            "direct_bytes": 147456
+          },
+          {
+            "query_tile": 128,
+            "old_bytes": 198656,
+            "direct_bytes": 163840
+          }
+        ],
+        "shared_traffic_removed_per_kv_pair_bytes": 131072
+      },
+      {
+        "qwarps": 1,
+        "kvwarps": 2,
+        "mma_kv": 8,
+        "depth": 256,
+        "rows": 256,
+        "source_slots": 4096,
+        "expanded_destination_b128_slots": 8192,
+        "exact_source_destination_coverage": true,
+        "original_ragged_pointer_and_smem_offset_end_states_preserved": true,
+        "storage_upper_bounds": [
+          {
+            "query_tile": 64,
+            "old_bytes": 294912,
+            "direct_bytes": 294912
+          },
+          {
+            "query_tile": 128,
+            "old_bytes": 395264,
+            "direct_bytes": 327680
+          }
+        ],
+        "shared_traffic_removed_per_kv_pair_bytes": 262144
+      },
+      {
+        "qwarps": 2,
+        "kvwarps": 1,
+        "mma_kv": 1,
+        "depth": 128,
+        "rows": 16,
+        "source_slots": 128,
+        "expanded_destination_b128_slots": 256,
+        "exact_source_destination_coverage": true,
+        "original_ragged_pointer_and_smem_offset_end_states_preserved": true,
+        "storage_upper_bounds": [
+          {
+            "query_tile": 64,
+            "old_bytes": 24576,
+            "direct_bytes": 24576
+          },
+          {
+            "query_tile": 128,
+            "old_bytes": 40960,
+            "direct_bytes": 40960
+          }
+        ],
+        "shared_traffic_removed_per_kv_pair_bytes": 8192
+      },
+      {
+        "qwarps": 2,
+        "kvwarps": 1,
+        "mma_kv": 1,
+        "depth": 256,
+        "rows": 16,
+        "source_slots": 256,
+        "expanded_destination_b128_slots": 512,
+        "exact_source_destination_coverage": true,
+        "original_ragged_pointer_and_smem_offset_end_states_preserved": true,
+        "storage_upper_bounds": [
+          {
+            "query_tile": 64,
+            "old_bytes": 49152,
+            "direct_bytes": 49152
+          },
+          {
+            "query_tile": 128,
+            "old_bytes": 81920,
+            "direct_bytes": 81920
+          }
+        ],
+        "shared_traffic_removed_per_kv_pair_bytes": 16384
+      },
+      {
+        "qwarps": 2,
+        "kvwarps": 1,
+        "mma_kv": 2,
+        "depth": 128,
+        "rows": 32,
+        "source_slots": 256,
+        "expanded_destination_b128_slots": 512,
+        "exact_source_destination_coverage": true,
+        "original_ragged_pointer_and_smem_offset_end_states_preserved": true,
+        "storage_upper_bounds": [
+          {
+            "query_tile": 64,
+            "old_bytes": 32768,
+            "direct_bytes": 32768
+          },
+          {
+            "query_tile": 128,
+            "old_bytes": 49152,
+            "direct_bytes": 49152
+          }
+        ],
+        "shared_traffic_removed_per_kv_pair_bytes": 16384
+      },
+      {
+        "qwarps": 2,
+        "kvwarps": 1,
+        "mma_kv": 2,
+        "depth": 256,
+        "rows": 32,
+        "source_slots": 512,
+        "expanded_destination_b128_slots": 1024,
+        "exact_source_destination_coverage": true,
+        "original_ragged_pointer_and_smem_offset_end_states_preserved": true,
+        "storage_upper_bounds": [
+          {
+            "query_tile": 64,
+            "old_bytes": 65536,
+            "direct_bytes": 65536
+          },
+          {
+            "query_tile": 128,
+            "old_bytes": 98304,
+            "direct_bytes": 98304
+          }
+        ],
+        "shared_traffic_removed_per_kv_pair_bytes": 32768
+      },
+      {
+        "qwarps": 2,
+        "kvwarps": 1,
+        "mma_kv": 4,
+        "depth": 128,
+        "rows": 64,
+        "source_slots": 512,
+        "expanded_destination_b128_slots": 1024,
+        "exact_source_destination_coverage": true,
+        "original_ragged_pointer_and_smem_offset_end_states_preserved": true,
+        "storage_upper_bounds": [
+          {
+            "query_tile": 64,
+            "old_bytes": 49152,
+            "direct_bytes": 49152
+          },
+          {
+            "query_tile": 128,
+            "old_bytes": 65536,
+            "direct_bytes": 65536
+          }
+        ],
+        "shared_traffic_removed_per_kv_pair_bytes": 32768
+      },
+      {
+        "qwarps": 2,
+        "kvwarps": 1,
+        "mma_kv": 4,
+        "depth": 256,
+        "rows": 64,
+        "source_slots": 1024,
+        "expanded_destination_b128_slots": 2048,
+        "exact_source_destination_coverage": true,
+        "original_ragged_pointer_and_smem_offset_end_states_preserved": true,
+        "storage_upper_bounds": [
+          {
+            "query_tile": 64,
+            "old_bytes": 98304,
+            "direct_bytes": 98304
+          },
+          {
+            "query_tile": 128,
+            "old_bytes": 131072,
+            "direct_bytes": 131072
+          }
+        ],
+        "shared_traffic_removed_per_kv_pair_bytes": 65536
+      },
+      {
+        "qwarps": 2,
+        "kvwarps": 1,
+        "mma_kv": 8,
+        "depth": 128,
+        "rows": 128,
+        "source_slots": 1024,
+        "expanded_destination_b128_slots": 2048,
+        "exact_source_destination_coverage": true,
+        "original_ragged_pointer_and_smem_offset_end_states_preserved": true,
+        "storage_upper_bounds": [
+          {
+            "query_tile": 64,
+            "old_bytes": 81920,
+            "direct_bytes": 81920
+          },
+          {
+            "query_tile": 128,
+            "old_bytes": 98304,
+            "direct_bytes": 98304
+          }
+        ],
+        "shared_traffic_removed_per_kv_pair_bytes": 65536
+      },
+      {
+        "qwarps": 2,
+        "kvwarps": 1,
+        "mma_kv": 8,
+        "depth": 256,
+        "rows": 128,
+        "source_slots": 2048,
+        "expanded_destination_b128_slots": 4096,
+        "exact_source_destination_coverage": true,
+        "original_ragged_pointer_and_smem_offset_end_states_preserved": true,
+        "storage_upper_bounds": [
+          {
+            "query_tile": 64,
+            "old_bytes": 163840,
+            "direct_bytes": 163840
+          },
+          {
+            "query_tile": 128,
+            "old_bytes": 196608,
+            "direct_bytes": 196608
+          }
+        ],
+        "shared_traffic_removed_per_kv_pair_bytes": 131072
+      },
+      {
+        "qwarps": 2,
+        "kvwarps": 2,
+        "mma_kv": 1,
+        "depth": 128,
+        "rows": 32,
+        "source_slots": 256,
+        "expanded_destination_b128_slots": 512,
+        "exact_source_destination_coverage": true,
+        "original_ragged_pointer_and_smem_offset_end_states_preserved": true,
+        "storage_upper_bounds": [
+          {
+            "query_tile": 64,
+            "old_bytes": 74752,
+            "direct_bytes": 66560
+          },
+          {
+            "query_tile": 128,
+            "old_bytes": 141312,
+            "direct_bytes": 133120
+          }
+        ],
+        "shared_traffic_removed_per_kv_pair_bytes": 16384
+      },
+      {
+        "qwarps": 2,
+        "kvwarps": 2,
+        "mma_kv": 1,
+        "depth": 256,
+        "rows": 32,
+        "source_slots": 512,
+        "expanded_destination_b128_slots": 1024,
+        "exact_source_destination_coverage": true,
+        "original_ragged_pointer_and_smem_offset_end_states_preserved": true,
+        "storage_upper_bounds": [
+          {
+            "query_tile": 64,
+            "old_bytes": 148480,
+            "direct_bytes": 132096
+          },
+          {
+            "query_tile": 128,
+            "old_bytes": 280576,
+            "direct_bytes": 264192
+          }
+        ],
+        "shared_traffic_removed_per_kv_pair_bytes": 32768
+      },
+      {
+        "qwarps": 2,
+        "kvwarps": 2,
+        "mma_kv": 2,
+        "depth": 128,
+        "rows": 64,
+        "source_slots": 512,
+        "expanded_destination_b128_slots": 1024,
+        "exact_source_destination_coverage": true,
+        "original_ragged_pointer_and_smem_offset_end_states_preserved": true,
+        "storage_upper_bounds": [
+          {
+            "query_tile": 64,
+            "old_bytes": 82944,
+            "direct_bytes": 66560
+          },
+          {
+            "query_tile": 128,
+            "old_bytes": 149504,
+            "direct_bytes": 133120
+          }
+        ],
+        "shared_traffic_removed_per_kv_pair_bytes": 32768
+      },
+      {
+        "qwarps": 2,
+        "kvwarps": 2,
+        "mma_kv": 2,
+        "depth": 256,
+        "rows": 64,
+        "source_slots": 1024,
+        "expanded_destination_b128_slots": 2048,
+        "exact_source_destination_coverage": true,
+        "original_ragged_pointer_and_smem_offset_end_states_preserved": true,
+        "storage_upper_bounds": [
+          {
+            "query_tile": 64,
+            "old_bytes": 164864,
+            "direct_bytes": 132096
+          },
+          {
+            "query_tile": 128,
+            "old_bytes": 296960,
+            "direct_bytes": 264192
+          }
+        ],
+        "shared_traffic_removed_per_kv_pair_bytes": 65536
+      },
+      {
+        "qwarps": 2,
+        "kvwarps": 2,
+        "mma_kv": 4,
+        "depth": 128,
+        "rows": 128,
+        "source_slots": 1024,
+        "expanded_destination_b128_slots": 2048,
+        "exact_source_destination_coverage": true,
+        "original_ragged_pointer_and_smem_offset_end_states_preserved": true,
+        "storage_upper_bounds": [
+          {
+            "query_tile": 64,
+            "old_bytes": 99328,
+            "direct_bytes": 81920
+          },
+          {
+            "query_tile": 128,
+            "old_bytes": 165888,
+            "direct_bytes": 133120
+          }
+        ],
+        "shared_traffic_removed_per_kv_pair_bytes": 65536
+      },
+      {
+        "qwarps": 2,
+        "kvwarps": 2,
+        "mma_kv": 4,
+        "depth": 256,
+        "rows": 128,
+        "source_slots": 2048,
+        "expanded_destination_b128_slots": 4096,
+        "exact_source_destination_coverage": true,
+        "original_ragged_pointer_and_smem_offset_end_states_preserved": true,
+        "storage_upper_bounds": [
+          {
+            "query_tile": 64,
+            "old_bytes": 197632,
+            "direct_bytes": 163840
+          },
+          {
+            "query_tile": 128,
+            "old_bytes": 329728,
+            "direct_bytes": 264192
+          }
+        ],
+        "shared_traffic_removed_per_kv_pair_bytes": 131072
+      },
+      {
+        "qwarps": 2,
+        "kvwarps": 2,
+        "mma_kv": 8,
+        "depth": 128,
+        "rows": 256,
+        "source_slots": 2048,
+        "expanded_destination_b128_slots": 4096,
+        "exact_source_destination_coverage": true,
+        "original_ragged_pointer_and_smem_offset_end_states_preserved": true,
+        "storage_upper_bounds": [
+          {
+            "query_tile": 64,
+            "old_bytes": 147456,
+            "direct_bytes": 147456
+          },
+          {
+            "query_tile": 128,
+            "old_bytes": 198656,
+            "direct_bytes": 163840
+          }
+        ],
+        "shared_traffic_removed_per_kv_pair_bytes": 131072
+      },
+      {
+        "qwarps": 2,
+        "kvwarps": 2,
+        "mma_kv": 8,
+        "depth": 256,
+        "rows": 256,
+        "source_slots": 4096,
+        "expanded_destination_b128_slots": 8192,
+        "exact_source_destination_coverage": true,
+        "original_ragged_pointer_and_smem_offset_end_states_preserved": true,
+        "storage_upper_bounds": [
+          {
+            "query_tile": 64,
+            "old_bytes": 294912,
+            "direct_bytes": 294912
+          },
+          {
+            "query_tile": 128,
+            "old_bytes": 395264,
+            "direct_bytes": 327680
+          }
+        ],
+        "shared_traffic_removed_per_kv_pair_bytes": 262144
+      },
+      {
+        "qwarps": 4,
+        "kvwarps": 1,
+        "mma_kv": 1,
+        "depth": 128,
+        "rows": 16,
+        "source_slots": 128,
+        "expanded_destination_b128_slots": 256,
+        "exact_source_destination_coverage": true,
+        "original_ragged_pointer_and_smem_offset_end_states_preserved": true,
+        "storage_upper_bounds": [
+          {
+            "query_tile": 64,
+            "old_bytes": 24576,
+            "direct_bytes": 24576
+          },
+          {
+            "query_tile": 128,
+            "old_bytes": 40960,
+            "direct_bytes": 40960
+          }
+        ],
+        "shared_traffic_removed_per_kv_pair_bytes": 8192
+      },
+      {
+        "qwarps": 4,
+        "kvwarps": 1,
+        "mma_kv": 1,
+        "depth": 256,
+        "rows": 16,
+        "source_slots": 256,
+        "expanded_destination_b128_slots": 512,
+        "exact_source_destination_coverage": true,
+        "original_ragged_pointer_and_smem_offset_end_states_preserved": true,
+        "storage_upper_bounds": [
+          {
+            "query_tile": 64,
+            "old_bytes": 49152,
+            "direct_bytes": 49152
+          },
+          {
+            "query_tile": 128,
+            "old_bytes": 81920,
+            "direct_bytes": 81920
+          }
+        ],
+        "shared_traffic_removed_per_kv_pair_bytes": 16384
+      },
+      {
+        "qwarps": 4,
+        "kvwarps": 1,
+        "mma_kv": 2,
+        "depth": 128,
+        "rows": 32,
+        "source_slots": 256,
+        "expanded_destination_b128_slots": 512,
+        "exact_source_destination_coverage": true,
+        "original_ragged_pointer_and_smem_offset_end_states_preserved": true,
+        "storage_upper_bounds": [
+          {
+            "query_tile": 64,
+            "old_bytes": 32768,
+            "direct_bytes": 32768
+          },
+          {
+            "query_tile": 128,
+            "old_bytes": 49152,
+            "direct_bytes": 49152
+          }
+        ],
+        "shared_traffic_removed_per_kv_pair_bytes": 16384
+      },
+      {
+        "qwarps": 4,
+        "kvwarps": 1,
+        "mma_kv": 2,
+        "depth": 256,
+        "rows": 32,
+        "source_slots": 512,
+        "expanded_destination_b128_slots": 1024,
+        "exact_source_destination_coverage": true,
+        "original_ragged_pointer_and_smem_offset_end_states_preserved": true,
+        "storage_upper_bounds": [
+          {
+            "query_tile": 64,
+            "old_bytes": 65536,
+            "direct_bytes": 65536
+          },
+          {
+            "query_tile": 128,
+            "old_bytes": 98304,
+            "direct_bytes": 98304
+          }
+        ],
+        "shared_traffic_removed_per_kv_pair_bytes": 32768
+      },
+      {
+        "qwarps": 4,
+        "kvwarps": 1,
+        "mma_kv": 4,
+        "depth": 128,
+        "rows": 64,
+        "source_slots": 512,
+        "expanded_destination_b128_slots": 1024,
+        "exact_source_destination_coverage": true,
+        "original_ragged_pointer_and_smem_offset_end_states_preserved": true,
+        "storage_upper_bounds": [
+          {
+            "query_tile": 64,
+            "old_bytes": 49152,
+            "direct_bytes": 49152
+          },
+          {
+            "query_tile": 128,
+            "old_bytes": 65536,
+            "direct_bytes": 65536
+          }
+        ],
+        "shared_traffic_removed_per_kv_pair_bytes": 32768
+      },
+      {
+        "qwarps": 4,
+        "kvwarps": 1,
+        "mma_kv": 4,
+        "depth": 256,
+        "rows": 64,
+        "source_slots": 1024,
+        "expanded_destination_b128_slots": 2048,
+        "exact_source_destination_coverage": true,
+        "original_ragged_pointer_and_smem_offset_end_states_preserved": true,
+        "storage_upper_bounds": [
+          {
+            "query_tile": 64,
+            "old_bytes": 98304,
+            "direct_bytes": 98304
+          },
+          {
+            "query_tile": 128,
+            "old_bytes": 131072,
+            "direct_bytes": 131072
+          }
+        ],
+        "shared_traffic_removed_per_kv_pair_bytes": 65536
+      },
+      {
+        "qwarps": 4,
+        "kvwarps": 1,
+        "mma_kv": 8,
+        "depth": 128,
+        "rows": 128,
+        "source_slots": 1024,
+        "expanded_destination_b128_slots": 2048,
+        "exact_source_destination_coverage": true,
+        "original_ragged_pointer_and_smem_offset_end_states_preserved": true,
+        "storage_upper_bounds": [
+          {
+            "query_tile": 64,
+            "old_bytes": 81920,
+            "direct_bytes": 81920
+          },
+          {
+            "query_tile": 128,
+            "old_bytes": 98304,
+            "direct_bytes": 98304
+          }
+        ],
+        "shared_traffic_removed_per_kv_pair_bytes": 65536
+      },
+      {
+        "qwarps": 4,
+        "kvwarps": 1,
+        "mma_kv": 8,
+        "depth": 256,
+        "rows": 128,
+        "source_slots": 2048,
+        "expanded_destination_b128_slots": 4096,
+        "exact_source_destination_coverage": true,
+        "original_ragged_pointer_and_smem_offset_end_states_preserved": true,
+        "storage_upper_bounds": [
+          {
+            "query_tile": 64,
+            "old_bytes": 163840,
+            "direct_bytes": 163840
+          },
+          {
+            "query_tile": 128,
+            "old_bytes": 196608,
+            "direct_bytes": 196608
+          }
+        ],
+        "shared_traffic_removed_per_kv_pair_bytes": 131072
+      },
+      {
+        "qwarps": 4,
+        "kvwarps": 2,
+        "mma_kv": 1,
+        "depth": 128,
+        "rows": 32,
+        "source_slots": 256,
+        "expanded_destination_b128_slots": 512,
+        "exact_source_destination_coverage": true,
+        "original_ragged_pointer_and_smem_offset_end_states_preserved": true,
+        "storage_upper_bounds": [
+          {
+            "query_tile": 64,
+            "old_bytes": 74752,
+            "direct_bytes": 66560
+          },
+          {
+            "query_tile": 128,
+            "old_bytes": 141312,
+            "direct_bytes": 133120
+          }
+        ],
+        "shared_traffic_removed_per_kv_pair_bytes": 16384
+      },
+      {
+        "qwarps": 4,
+        "kvwarps": 2,
+        "mma_kv": 1,
+        "depth": 256,
+        "rows": 32,
+        "source_slots": 512,
+        "expanded_destination_b128_slots": 1024,
+        "exact_source_destination_coverage": true,
+        "original_ragged_pointer_and_smem_offset_end_states_preserved": true,
+        "storage_upper_bounds": [
+          {
+            "query_tile": 64,
+            "old_bytes": 148480,
+            "direct_bytes": 132096
+          },
+          {
+            "query_tile": 128,
+            "old_bytes": 280576,
+            "direct_bytes": 264192
+          }
+        ],
+        "shared_traffic_removed_per_kv_pair_bytes": 32768
+      },
+      {
+        "qwarps": 4,
+        "kvwarps": 2,
+        "mma_kv": 2,
+        "depth": 128,
+        "rows": 64,
+        "source_slots": 512,
+        "expanded_destination_b128_slots": 1024,
+        "exact_source_destination_coverage": true,
+        "original_ragged_pointer_and_smem_offset_end_states_preserved": true,
+        "storage_upper_bounds": [
+          {
+            "query_tile": 64,
+            "old_bytes": 82944,
+            "direct_bytes": 66560
+          },
+          {
+            "query_tile": 128,
+            "old_bytes": 149504,
+            "direct_bytes": 133120
+          }
+        ],
+        "shared_traffic_removed_per_kv_pair_bytes": 32768
+      },
+      {
+        "qwarps": 4,
+        "kvwarps": 2,
+        "mma_kv": 2,
+        "depth": 256,
+        "rows": 64,
+        "source_slots": 1024,
+        "expanded_destination_b128_slots": 2048,
+        "exact_source_destination_coverage": true,
+        "original_ragged_pointer_and_smem_offset_end_states_preserved": true,
+        "storage_upper_bounds": [
+          {
+            "query_tile": 64,
+            "old_bytes": 164864,
+            "direct_bytes": 132096
+          },
+          {
+            "query_tile": 128,
+            "old_bytes": 296960,
+            "direct_bytes": 264192
+          }
+        ],
+        "shared_traffic_removed_per_kv_pair_bytes": 65536
+      },
+      {
+        "qwarps": 4,
+        "kvwarps": 2,
+        "mma_kv": 4,
+        "depth": 128,
+        "rows": 128,
+        "source_slots": 1024,
+        "expanded_destination_b128_slots": 2048,
+        "exact_source_destination_coverage": true,
+        "original_ragged_pointer_and_smem_offset_end_states_preserved": true,
+        "storage_upper_bounds": [
+          {
+            "query_tile": 64,
+            "old_bytes": 99328,
+            "direct_bytes": 81920
+          },
+          {
+            "query_tile": 128,
+            "old_bytes": 165888,
+            "direct_bytes": 133120
+          }
+        ],
+        "shared_traffic_removed_per_kv_pair_bytes": 65536
+      },
+      {
+        "qwarps": 4,
+        "kvwarps": 2,
+        "mma_kv": 4,
+        "depth": 256,
+        "rows": 128,
+        "source_slots": 2048,
+        "expanded_destination_b128_slots": 4096,
+        "exact_source_destination_coverage": true,
+        "original_ragged_pointer_and_smem_offset_end_states_preserved": true,
+        "storage_upper_bounds": [
+          {
+            "query_tile": 64,
+            "old_bytes": 197632,
+            "direct_bytes": 163840
+          },
+          {
+            "query_tile": 128,
+            "old_bytes": 329728,
+            "direct_bytes": 264192
+          }
+        ],
+        "shared_traffic_removed_per_kv_pair_bytes": 131072
+      },
+      {
+        "qwarps": 4,
+        "kvwarps": 2,
+        "mma_kv": 8,
+        "depth": 128,
+        "rows": 256,
+        "source_slots": 2048,
+        "expanded_destination_b128_slots": 4096,
+        "exact_source_destination_coverage": true,
+        "original_ragged_pointer_and_smem_offset_end_states_preserved": true,
+        "storage_upper_bounds": [
+          {
+            "query_tile": 64,
+            "old_bytes": 147456,
+            "direct_bytes": 147456
+          },
+          {
+            "query_tile": 128,
+            "old_bytes": 198656,
+            "direct_bytes": 163840
+          }
+        ],
+        "shared_traffic_removed_per_kv_pair_bytes": 131072
+      },
+      {
+        "qwarps": 4,
+        "kvwarps": 2,
+        "mma_kv": 8,
+        "depth": 256,
+        "rows": 256,
+        "source_slots": 4096,
+        "expanded_destination_b128_slots": 8192,
+        "exact_source_destination_coverage": true,
+        "original_ragged_pointer_and_smem_offset_end_states_preserved": true,
+        "storage_upper_bounds": [
+          {
+            "query_tile": 64,
+            "old_bytes": 294912,
+            "direct_bytes": 294912
+          },
+          {
+            "query_tile": 128,
+            "old_bytes": 395264,
+            "direct_bytes": 327680
+          }
+        ],
+        "shared_traffic_removed_per_kv_pair_bytes": 262144
+      },
+      {
+        "qwarps": 8,
+        "kvwarps": 1,
+        "mma_kv": 2,
+        "depth": 128,
+        "rows": 32,
+        "source_slots": 256,
+        "expanded_destination_b128_slots": 512,
+        "exact_source_destination_coverage": true,
+        "original_ragged_pointer_and_smem_offset_end_states_preserved": true,
+        "storage_upper_bounds": [
+          {
+            "query_tile": 64,
+            "old_bytes": 32768,
+            "direct_bytes": 32768
+          },
+          {
+            "query_tile": 128,
+            "old_bytes": 49152,
+            "direct_bytes": 49152
+          }
+        ],
+        "shared_traffic_removed_per_kv_pair_bytes": 16384
+      },
+      {
+        "qwarps": 8,
+        "kvwarps": 1,
+        "mma_kv": 2,
+        "depth": 256,
+        "rows": 32,
+        "source_slots": 512,
+        "expanded_destination_b128_slots": 1024,
+        "exact_source_destination_coverage": true,
+        "original_ragged_pointer_and_smem_offset_end_states_preserved": true,
+        "storage_upper_bounds": [
+          {
+            "query_tile": 64,
+            "old_bytes": 65536,
+            "direct_bytes": 65536
+          },
+          {
+            "query_tile": 128,
+            "old_bytes": 98304,
+            "direct_bytes": 98304
+          }
+        ],
+        "shared_traffic_removed_per_kv_pair_bytes": 32768
+      },
+      {
+        "qwarps": 8,
+        "kvwarps": 1,
+        "mma_kv": 4,
+        "depth": 128,
+        "rows": 64,
+        "source_slots": 512,
+        "expanded_destination_b128_slots": 1024,
+        "exact_source_destination_coverage": true,
+        "original_ragged_pointer_and_smem_offset_end_states_preserved": true,
+        "storage_upper_bounds": [
+          {
+            "query_tile": 64,
+            "old_bytes": 49152,
+            "direct_bytes": 49152
+          },
+          {
+            "query_tile": 128,
+            "old_bytes": 65536,
+            "direct_bytes": 65536
+          }
+        ],
+        "shared_traffic_removed_per_kv_pair_bytes": 32768
+      },
+      {
+        "qwarps": 8,
+        "kvwarps": 1,
+        "mma_kv": 4,
+        "depth": 256,
+        "rows": 64,
+        "source_slots": 1024,
+        "expanded_destination_b128_slots": 2048,
+        "exact_source_destination_coverage": true,
+        "original_ragged_pointer_and_smem_offset_end_states_preserved": true,
+        "storage_upper_bounds": [
+          {
+            "query_tile": 64,
+            "old_bytes": 98304,
+            "direct_bytes": 98304
+          },
+          {
+            "query_tile": 128,
+            "old_bytes": 131072,
+            "direct_bytes": 131072
+          }
+        ],
+        "shared_traffic_removed_per_kv_pair_bytes": 65536
+      },
+      {
+        "qwarps": 8,
+        "kvwarps": 1,
+        "mma_kv": 8,
+        "depth": 128,
+        "rows": 128,
+        "source_slots": 1024,
+        "expanded_destination_b128_slots": 2048,
+        "exact_source_destination_coverage": true,
+        "original_ragged_pointer_and_smem_offset_end_states_preserved": true,
+        "storage_upper_bounds": [
+          {
+            "query_tile": 64,
+            "old_bytes": 81920,
+            "direct_bytes": 81920
+          },
+          {
+            "query_tile": 128,
+            "old_bytes": 98304,
+            "direct_bytes": 98304
+          }
+        ],
+        "shared_traffic_removed_per_kv_pair_bytes": 65536
+      },
+      {
+        "qwarps": 8,
+        "kvwarps": 1,
+        "mma_kv": 8,
+        "depth": 256,
+        "rows": 128,
+        "source_slots": 2048,
+        "expanded_destination_b128_slots": 4096,
+        "exact_source_destination_coverage": true,
+        "original_ragged_pointer_and_smem_offset_end_states_preserved": true,
+        "storage_upper_bounds": [
+          {
+            "query_tile": 64,
+            "old_bytes": 163840,
+            "direct_bytes": 163840
+          },
+          {
+            "query_tile": 128,
+            "old_bytes": 196608,
+            "direct_bytes": 196608
+          }
+        ],
+        "shared_traffic_removed_per_kv_pair_bytes": 131072
+      },
+      {
+        "qwarps": 8,
+        "kvwarps": 2,
+        "mma_kv": 2,
+        "depth": 128,
+        "rows": 64,
+        "source_slots": 512,
+        "expanded_destination_b128_slots": 1024,
+        "exact_source_destination_coverage": true,
+        "original_ragged_pointer_and_smem_offset_end_states_preserved": true,
+        "storage_upper_bounds": [
+          {
+            "query_tile": 64,
+            "old_bytes": 82944,
+            "direct_bytes": 66560
+          },
+          {
+            "query_tile": 128,
+            "old_bytes": 149504,
+            "direct_bytes": 133120
+          }
+        ],
+        "shared_traffic_removed_per_kv_pair_bytes": 32768
+      },
+      {
+        "qwarps": 8,
+        "kvwarps": 2,
+        "mma_kv": 2,
+        "depth": 256,
+        "rows": 64,
+        "source_slots": 1024,
+        "expanded_destination_b128_slots": 2048,
+        "exact_source_destination_coverage": true,
+        "original_ragged_pointer_and_smem_offset_end_states_preserved": true,
+        "storage_upper_bounds": [
+          {
+            "query_tile": 64,
+            "old_bytes": 164864,
+            "direct_bytes": 132096
+          },
+          {
+            "query_tile": 128,
+            "old_bytes": 296960,
+            "direct_bytes": 264192
+          }
+        ],
+        "shared_traffic_removed_per_kv_pair_bytes": 65536
+      },
+      {
+        "qwarps": 8,
+        "kvwarps": 2,
+        "mma_kv": 4,
+        "depth": 128,
+        "rows": 128,
+        "source_slots": 1024,
+        "expanded_destination_b128_slots": 2048,
+        "exact_source_destination_coverage": true,
+        "original_ragged_pointer_and_smem_offset_end_states_preserved": true,
+        "storage_upper_bounds": [
+          {
+            "query_tile": 64,
+            "old_bytes": 99328,
+            "direct_bytes": 81920
+          },
+          {
+            "query_tile": 128,
+            "old_bytes": 165888,
+            "direct_bytes": 133120
+          }
+        ],
+        "shared_traffic_removed_per_kv_pair_bytes": 65536
+      },
+      {
+        "qwarps": 8,
+        "kvwarps": 2,
+        "mma_kv": 4,
+        "depth": 256,
+        "rows": 128,
+        "source_slots": 2048,
+        "expanded_destination_b128_slots": 4096,
+        "exact_source_destination_coverage": true,
+        "original_ragged_pointer_and_smem_offset_end_states_preserved": true,
+        "storage_upper_bounds": [
+          {
+            "query_tile": 64,
+            "old_bytes": 197632,
+            "direct_bytes": 163840
+          },
+          {
+            "query_tile": 128,
+            "old_bytes": 329728,
+            "direct_bytes": 264192
+          }
+        ],
+        "shared_traffic_removed_per_kv_pair_bytes": 131072
+      },
+      {
+        "qwarps": 8,
+        "kvwarps": 2,
+        "mma_kv": 8,
+        "depth": 128,
+        "rows": 256,
+        "source_slots": 2048,
+        "expanded_destination_b128_slots": 4096,
+        "exact_source_destination_coverage": true,
+        "original_ragged_pointer_and_smem_offset_end_states_preserved": true,
+        "storage_upper_bounds": [
+          {
+            "query_tile": 64,
+            "old_bytes": 147456,
+            "direct_bytes": 147456
+          },
+          {
+            "query_tile": 128,
+            "old_bytes": 198656,
+            "direct_bytes": 163840
+          }
+        ],
+        "shared_traffic_removed_per_kv_pair_bytes": 131072
+      },
+      {
+        "qwarps": 8,
+        "kvwarps": 2,
+        "mma_kv": 8,
+        "depth": 256,
+        "rows": 256,
+        "source_slots": 4096,
+        "expanded_destination_b128_slots": 8192,
+        "exact_source_destination_coverage": true,
+        "original_ragged_pointer_and_smem_offset_end_states_preserved": true,
+        "storage_upper_bounds": [
+          {
+            "query_tile": 64,
+            "old_bytes": 294912,
+            "direct_bytes": 294912
+          },
+          {
+            "query_tile": 128,
+            "old_bytes": 395264,
+            "direct_bytes": 327680
+          }
+        ],
+        "shared_traffic_removed_per_kv_pair_bytes": 262144
+      }
+    ],
+    "boundary_cases": 1416,
+    "actual_d256_example": {
+      "qwarps": 4,
+      "kvwarps": 1,
+      "mma_kv": 1,
+      "depth": 256,
+      "rows": 16,
+      "source_slots": 256,
+      "expanded_destination_b128_slots": 512,
+      "exact_source_destination_coverage": true,
+      "original_ragged_pointer_and_smem_offset_end_states_preserved": true,
+      "storage_upper_bounds": [
+        {
+          "query_tile": 64,
+          "old_bytes": 49152,
+          "direct_bytes": 49152
+        },
+        {
+          "query_tile": 128,
+          "old_bytes": 81920,
+          "direct_bytes": 81920
+        }
+      ],
+      "shared_traffic_removed_per_kv_pair_bytes": 16384
+    },
+    "storage_and_callers": [
+      "Add an explicit direct-stage flag to SharedStorageQKVO, default false; disable only its repack base and double K/V scalar-byte capacities for that flag.",
+      "Keep original SharedStorage and all single-prefill producer calls unchanged. Add a batch storage alias; only ragged batch kernel and dispatcher choose it. Paged batch storage gets the same flag. Single-prefill uses the paged storage only in the FP4 softmax split branch, which is mutually exclusive with E4M3 direct-stage eligibility.",
+      "Ragged produce_kv gets an explicit direct-stage template switch default false; only the batch call sites opt in. Paged producer only has the batch caller. K/V expanded accessors select separate role buffers; the original native16 matrix offset/read functions remain unchanged."
+    ],
+    "temporal": [
+      "Retain original Q cp.async and every surrounding commit call. In direct mode K/V packed global loads and vector casts/stores complete synchronously per issuing thread; original K/V async branches remain unchanged outside eligibility.",
+      "Use explicit wait_group<0> before K/V publication in direct mode. Do not rely on empty K/V committed groups to complete the outstanding Q group. The retained full CTA barrier at the old post-repack position publishes completed Q and expanded K or V.",
+      "Initial K/V direct loads populate separate expanded tiles. Each K tile is consumed only after its publication barrier. Existing QK/softmax retirement CTA barrier remains before loading K_(t+1), which cannot overwrite V_t.",
+      "Each V tile is consumed only after its publication barrier. Existing PV retirement CTA barrier remains before loading V_(t+1), which cannot overwrite K_(t+1). All final wait0/CTA and original output barriers remain.",
+      "NoFill K invalid rows perform no global read/store and retain unspecified prior K-stage bytes. Original logit/tail masks exclude those rows before softmax; invalid V rows receive exact zero. No invalid row contents or cross-request identity are newly promised."
+    ],
+    "math": "Load the exact original16-byte packed vector and call the exact existing vec_cast<DTypeQ,DTypeKV>::cast<16>; write its identical two native16 b128 vectors at the original repack destination coordinates. F32 partial/merge/normalization/scales/sole cast and all arithmetic order remain unchanged.",
+    "cost": "Remove one compressed shared write/read round trip. No permanent expanded cache or history materialization; direct stage storage does not exceed original storage in the checked geometry model.",
+    "limits": [
+      "Index/pointer/boundary/storage-model/source-order proof only; no new GPU/compiler/runtime/throughput qualification.",
+      "Direct global loads may lose async overlap or raise register pressure. Actual source17/device22/codegen/twoSDK/numeric-runtime/threehost/originalP1 gates remain mandatory.",
+      "Geometry cases over-cover producer layouts; they do not make invalid KernelTraits combinations or new shapes qualified.",
+      "No product edit authority before the card fixes this finite change and FI legally returns to AUDITED."
+    ]
+  },
+  "finite_fix": "For the exact declared F32-partial E4M3 equal128/256 batch predicate, load each original packed global16-byte vector, use the original vector decoder, and store its two original native16 destination vectors directly into separate expanded K/V shared tiles. Replace compressed K/V plus shared repack allocation with those separate tiles. Use explicit wait0 before retained publication CTA barriers; retain retirement/final/output synchronization and original math. Ragged default producer and single-prefill storage/callers stay original; only batch opts into the direct producer switch. All other paths remain the old implementation.",
+  "verification": "Fresh source17/cachemem10/race10/legacyrace2/codegen attention+merge; only after actual safety/resources pass freeze candidate, relocated static/sharedSDK, two numeric variants+actualruntime identity, three host facets, original AA/P1/strict. Zero warnings/hazards/skips required; no local spills in original three workload kernels. Source proof and traffic counts do not establish a speedup.",
+  "exclusions": [
+    "No changed dtype/scale/precision/order/F32 partial/CE26mergeowner/sole output cast; no planner/tile/native16 bound/shortK/publicAPI/format changes.",
+    "No new permanent expanded cache, history decode or metadata/capture/G06 feature. No source-cache mutation, benchmark threshold,peer,workload or instrument-core change.",
+    "KernelTraits geometry producer proof over-covers layouts; it does not add qualified domains. Direct global load latency/async overlap and register pressure remain measured risks."
+  ]
+}
