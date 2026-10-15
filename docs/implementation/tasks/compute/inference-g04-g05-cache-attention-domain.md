@@ -2233,3 +2233,16 @@ ce24-sdk-binding-plan沿[原独立工具事项](../build/validation-selector-sha
 docs/closure及146 skipped reasons保留，按本卡有限门继续。不在模块内改selector或公共
 性能核心，也不把该工具归属状态写PASS。接下来三host facets串行批验，随后新numeric/
 实际runtime身份及原AA/P1/strict；产品candidate6e57与其它owner不变。
+
+CE24[ASan](../../../../evidence/correctness/inference-g04-g05-cuda-ce24-host-asan/receipt.json)、
+[UBSan](../../../../evidence/correctness/inference-g04-g05-cuda-ce24-host-ubsan/receipt.json)与
+[TSan](../../../../evidence/correctness/inference-g04-g05-cuda-ce24-host-tsan/receipt.json)三项宿主
+检查均已实际PASS：各16测试零FAIL/SKIP、5个原风险模式通过，6e57三vendor输入、四FI
+CUDA TU实际instrumentation与运行前后二进制SHA均核验一致。[串行批次](../../../../evidence/correctness/inference-g04-g05-cuda-ce24-host-tsan/batch-summary.json)
+已TERMINAL_PASS，实际run/seal六阶段及全部费用保留。阶段分别536.579/474.641/470.187s；
+外层launch分别541.985/478.063/473.266s，与各自阶段重叠，不重复相加。
+
+原NVIDIA进程LSan及独立复现的diagnostic-thread lifetime仍INCONCLUSIVE，不由本三项
+宿主检查代签GPU shader/driver/private-pool上界。当前source/device、两SDK和三host均有
+6e57实际证据；接下来新numeric、实际runtime内核身份和原AA/P1/strict仍待签发。仅编译
+比较consumer与原peer CUDA TU，不重编产品；产品candidate和其它owner不变。
