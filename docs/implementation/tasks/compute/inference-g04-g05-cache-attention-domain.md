@@ -2328,3 +2328,14 @@ CE25两搬迁SDK均已实际通过：[static](../../../../evidence/correctness/i
 本次ce25-sdk-binding-plan仍因同三shared bench JSON/Python路径unknown为BLOCKED，
 product_authorization无owner/issues；docs/closure及146 skipped reasons保留，沿既有独立工具
 事项与本卡有限门继续，不改公共selector或将工具状态签为PASS。
+
+CE25真实消费数值与runtime身份已实际核对：新[numeric记录](../../../../evidence/correctness/inference-g04-g05-cuda-ce25-native-prefill-numeric-rebind/receipt.json)
+两个variant各24个独立double oracle通过，max_abs_error=0.00109081301低于8e-3；primary
+memcheck/racecheck零error/warning/hazard，build-contract与source/SDK/artifact只读核验PASS。
+仅编消费者及原peer一个CUDA TU，产品库不重编。实际记录stages费用78.441s；
+初始WSL canonical Git状态/身份检查位于该stage计时前，未记录部分不记零。
+新[runtime记录](../../../../evidence/architecture/inference-g04-g05-cuda-ce25-native-prefill/runtime-receipt.json)
+为同一新static SDK消费binary的一次VERIFY_ONLY trace，3.266s，24 oracle通过、SHA不变；
+实际三mangled特化与codegen完全一致，MMA1/1/4、register241/241/165、dynamic shared
+49152/49152/40960，block32×4×1。此为路径/数学证据，不作吞吐或总occupancy结论。
+接下来只跑原三host风险门与原P1；G04/G05未完成，所有旧FAIL/UNKNOWN与费用不覆盖。

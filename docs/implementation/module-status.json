@@ -580,7 +580,7 @@
       "module": "compute_provider_flashinfer",
       "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/inference-g04-g05-cache-attention-domain.md",
-      "summary": "G04/G05 CE25 CANDIDATE014：17数学/22设备检查实测PASS、零warning，同1/1/4 codegen零栈读写、register241/241/165；两搬迁SDK各33测试/12头/16TU PASS。新numeric/runtime、三host及原P1待验；原qualified FAIL及累计成本保留。",
+      "summary": "G04/G05 CE25 CANDIDATE014：17数学/22设备检查、同1/1/4零栈codegen、两搬迁SDK各33测试/12头/16TU、新numeric两个variant各24 oracle及设备检查、runtime1/1/4身份PASS。三host及原P1待验；原qualified FAIL及累计成本保留。",
       "candidate": "0143102aebcbc29600a77ce2950136462fba2a36"
     },
     {
