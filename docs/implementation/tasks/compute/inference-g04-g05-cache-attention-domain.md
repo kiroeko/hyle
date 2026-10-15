@@ -1040,3 +1040,27 @@ window D256 八strata比1.16564–1.17288，非劣 PASS、方向 WIN；长 prefi
 provider 保持 CANDIDATE，先对实际留出残余成本作有限源码/生成代码定位，具备机制与
 真实消费两把钥匙后才回 AUDITED 修正。CUDA UBSan 已在同一串行队列续跑，TSan随后；
 其固定冻结输入不受 CPU 结果影响。Vulkan 数值队列继续等待两种 CUDA 宿主检查结束。
+
+### CE13：有限 CPU 页地址与不可变描述成本修正
+
+baseline 为原 CPU provider5f9b261bf、runtime982676；其它九 owner 的冻结输入不变。
+CE12 合格留出失败与真实量化分页用户的逐请求/逐 token 路径共同构成修正依据。
+实际 shipping SDK 的 AVX2 DLL SHA143054661c3c 与原 producer 一致；该 producer 的
+ops.cpp 源码 SHA13ac378b7a33 匹配当前 patch manifest。MSVC14.50 反汇编确认原 generic
+循环在0x0808/0x08C3各调用一次 hyle_flash_row_offset，未内联或消除重复；页16本已
+shift/mask，不把它描述成两次动态除法。留出每episode1328个 KV token，共2656次调用。
+
+只将 compute_ggml_runtime、compute_provider_ggml 退回 AUDITED，同卡固定两项 FIX：
+原 generic 循环在有效 token 上只求一次 physical row，K/V 使用各自 stride；原 CPU
+batch Request 冷阶段保存四个已验证 byte extent，热路径仍校验实际 buffer 范围并创建
+原 TensorView，保全部 resource/输出权限检查。后者每请求增加四个 size_t（64位32B），
+计入原 sizeof(Request) workspace 账；不建缓存/索引或改变公开对象。
+
+原 Q8 query finite/range 检查及输出映射前失败、页表 identity/保活、非因果/window边界、
+线程池/plan/queue/completion、数学顺序和原 peer 均保留。仅改原 CPU patch bundle、锁的
+tree/license身份及 native_batch 私有实现，不改公共工具、构建图、公开头/API、GPU产品。
+两项一次实现后批量验证 source 的数学/页/Direct/Graph/数值边界和短资源拒绝、CPU三类
+宿主风险与 static/shared installed consumers；原 GPU/native 数学和 G03 证据按未变路径
+借用，Apple 混合发行中的 CPU 另做有限运行。以原输入/失败/累计为基线，不重置预算；
+冻结新 candidate 后仅做原同语义 P1，不靠改形状/阈值/采样计划取得通过。
+独立只读复核未见新的 correctness MUST；具体收益与 locality贡献仍未知，不由源码签PASS。
