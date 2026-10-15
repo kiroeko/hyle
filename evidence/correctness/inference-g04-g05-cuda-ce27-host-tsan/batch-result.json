@@ -1,0 +1,75 @@
+{
+  "state": "TERMINAL_PASS",
+  "product_candidate": "d41431f82a373ae400fb10e97418931031fa48e8",
+  "source_commit": "a6c32a3cb355da7294e240ab0ad9d0f286e6a61c",
+  "scope": "Three already-declared host facets, serial; no product/bench changes, SDK or P1 verdict",
+  "stages": [
+    {
+      "stage": "asan-run",
+      "command": [
+        "C:\\Program Files\\Python312\\python.exe",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\launch_ce19_host_san.py",
+        "asan",
+        "ce27-1"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 492.03100000001723
+    },
+    {
+      "stage": "asan-seal",
+      "command": [
+        "C:\\Program Files\\Python312\\python.exe",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\seal_ce27_host_facet.py",
+        "asan",
+        "ce27-1"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 0.5320000000065193
+    },
+    {
+      "stage": "ubsan-run",
+      "command": [
+        "C:\\Program Files\\Python312\\python.exe",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\launch_ce19_host_san.py",
+        "ubsan",
+        "ce27-1"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 431.7029999999795
+    },
+    {
+      "stage": "ubsan-seal",
+      "command": [
+        "C:\\Program Files\\Python312\\python.exe",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\seal_ce27_host_facet.py",
+        "ubsan",
+        "ce27-1"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 0.48499999998603016
+    },
+    {
+      "stage": "tsan-run",
+      "command": [
+        "C:\\Program Files\\Python312\\python.exe",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\launch_ce19_host_san.py",
+        "tsan",
+        "ce27-1"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 426.375
+    },
+    {
+      "stage": "tsan-seal",
+      "command": [
+        "C:\\Program Files\\Python312\\python.exe",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\seal_ce27_host_facet.py",
+        "tsan",
+        "ce27-1"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 0.45300000003771856
+    }
+  ],
+  "stage": "tsan-seal"
+}
