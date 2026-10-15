@@ -1,0 +1,212 @@
+{
+  "kind": "G04_G05_APPLE_Q8_ENCODED_PAGE_COMPLETE_JOURNEY_FINITE_P1",
+  "attempt": 2,
+  "product_candidate": "982676cb05a6e6244e66e0a596347aa96043617b",
+  "performance_source": "f589899625c42af15953f1c694cd7c40db0cc4aa",
+  "identity": {
+    "model": "Mac16,12",
+    "arch": "arm64",
+    "os": "ProductName:\t\tmacOS\nProductVersion:\t\t27.0.1\nBuildVersion:\t\t26A434",
+    "compiler": "Apple clang version 21.0.0 (clang-2100.3.34.2)\nTarget: arm64-apple-darwin27.0.0\nThread model: posix\nInstalledDir: /Library/Developer/CommandLineTools/usr/bin"
+  },
+  "qualification": "QUALIFIED",
+  "performance": "FAIL",
+  "contract_sha256": "6f9f444f5151e8842cc94938b3092cc65e1783a41f569fcc5929ca94c119a30a",
+  "numerical_preflight_sha256": "806a9b4a5a951bc24146285446f4f388b8ead817459e5fcf6445b8140a23ab7f",
+  "verify_exit": 0,
+  "qualification_exit": 2,
+  "aa_processes": 16,
+  "aa_verdict": "PASS",
+  "product_processes": 120,
+  "control_processes": 30,
+  "sample_stages": [
+    15
+  ],
+  "sampling_scope": "Original automatic n15->n31 only; preserve every raw stage; qualified final observations do not pool stages",
+  "rows": [
+    {
+      "id": "encoded-window-d256",
+      "ratio_range": [
+        1.1841208511095012,
+        1.1942434277770964
+      ],
+      "noninferiority": "PASS",
+      "exact": "WIN",
+      "direction": "WIN"
+    },
+    {
+      "id": "encoded-prefill-d256",
+      "ratio_range": [
+        0.3248522652659225,
+        0.32551247221536184
+      ],
+      "noninferiority": "FAIL",
+      "exact": "LOSE",
+      "direction": "LOSS"
+    },
+    {
+      "id": "encoded-noncausal-d64-dv128",
+      "ratio_range": [
+        1.0776367672885119,
+        1.0837241272269709
+      ],
+      "noninferiority": "PASS",
+      "exact": "WIN",
+      "direction": "WIN"
+    }
+  ],
+  "job": {
+    "state": "TERMINAL",
+    "pid": 63155,
+    "snapshot": {
+      "attempt": 2,
+      "source_commit": "f589899625c42af15953f1c694cd7c40db0cc4aa",
+      "product_candidate": "982676cb05a6e6244e66e0a596347aa96043617b",
+      "bundle_base": "cee599774efcb5e47882309713dd343d019f3242",
+      "bundle_sha256": "f9b5bc1e5dd7966f6c6760fb133b338219112bba55e463667aaee7d7006d5ca1",
+      "bundle_seconds": 0.21900000001187436,
+      "numeric_receipt_sha256": "806a9b4a5a951bc24146285446f4f388b8ead817459e5fcf6445b8140a23ab7f",
+      "contract_file_sha256": "d1b7308af09d6aba28a60f6c34d74278d0f7a97ce76ccfda54304674ed1043f7"
+    },
+    "source": "/Users/kiro/hyle-scratch/compute-unified/g04-apple-encoded-p1-source-2",
+    "build": "/Users/kiro/hyle-scratch/compute-unified/g04-apple-encoded-p1-fresh-2",
+    "output": "/Users/kiro/hyle-scratch/compute-unified/g04-apple-encoded-p1-output-2",
+    "identity": {
+      "model": "Mac16,12",
+      "arch": "arm64",
+      "os": "ProductName:\t\tmacOS\nProductVersion:\t\t27.0.1\nBuildVersion:\t\t26A434",
+      "compiler": "Apple clang version 21.0.0 (clang-2100.3.34.2)\nTarget: arm64-apple-darwin27.0.0\nThread model: posix\nInstalledDir: /Library/Developer/CommandLineTools/usr/bin"
+    },
+    "verification_git_alternates": [
+      "/Users/kiro/hyle-scratch/compute-unified/g01-p1-git-checkout/.git/objects",
+      "/Users/kiro/hyle-scratch/compute-unified/g01-rr-git-checkout/.git/objects",
+      "/Users/kiro/hyle-scratch/compute-unified/g01-vp-git-checkout/.git/objects",
+      "/Users/kiro/hyle-scratch/compute-unified/g01-native-ragged-p1-source/.git/objects",
+      "/Users/kiro/hyle-scratch/compute-unified/g01-native-ragged-p1-source-v2/.git/objects",
+      "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-p1-source/.git/objects",
+      "/Users/kiro/hyle-scratch/compute-unified/g04-vulkan-encoded-p1-source-1/.git/objects"
+    ],
+    "observer_pid": 63126,
+    "command": [
+      "/usr/bin/python3",
+      "/Users/kiro/hyle-scratch/compute-unified/g04-apple-encoded-p1-source-2/scripts/hyle-perf.py",
+      "qualify-platform",
+      "--contract",
+      "/Users/kiro/hyle-scratch/compute-unified/g04-apple-encoded-p1-source-2/bench/inference_resident_sdpa/apple_encoded_p1/contract.json",
+      "--source",
+      "/Users/kiro/hyle-scratch/compute-unified/g04-apple-encoded-p1-source-2/bench/inference_resident_sdpa/apple_encoded_p1",
+      "--machine",
+      "M1-MAC",
+      "--peer",
+      "original-ggml-flash=/Users/kiro/hyle-scratch/compute-unified/g01-original-ggml-peer",
+      "--build",
+      "/Users/kiro/hyle-scratch/compute-unified/g04-apple-encoded-p1-fresh-2",
+      "--output",
+      "/Users/kiro/hyle-scratch/compute-unified/g04-apple-encoded-p1-output-2"
+    ],
+    "resource_policy": "Heavy runs serial; original instrument parallel2 within cap4; SDK-only benchmark build",
+    "qualification_exit_code": 2,
+    "verify_exit": 0,
+    "verify_elapsed_seconds": 0.16199941700006093,
+    "exit_code": 2,
+    "elapsed_seconds": 738.364375875
+  },
+  "launch": {
+    "state": "TERMINAL",
+    "pid": 60132,
+    "command": [
+      "ssh",
+      "-o",
+      "BatchMode=yes",
+      "kiro@172.22.10.198",
+      "python3",
+      "/Users/kiro/hyle-scratch/compute-unified/g04-apple-encoded-p1-runs/2/apple_encoded_p1_air.py",
+      "/Users/kiro/hyle-scratch/compute-unified/g04-apple-encoded-p1-runs/2"
+    ],
+    "remote_run": "/Users/kiro/hyle-scratch/compute-unified/g04-apple-encoded-p1-runs/2",
+    "snapshot": {
+      "attempt": 2,
+      "source_commit": "f589899625c42af15953f1c694cd7c40db0cc4aa",
+      "product_candidate": "982676cb05a6e6244e66e0a596347aa96043617b",
+      "bundle_base": "cee599774efcb5e47882309713dd343d019f3242",
+      "bundle_sha256": "f9b5bc1e5dd7966f6c6760fb133b338219112bba55e463667aaee7d7006d5ca1",
+      "bundle_seconds": 0.21900000001187436,
+      "numeric_receipt_sha256": "806a9b4a5a951bc24146285446f4f388b8ead817459e5fcf6445b8140a23ab7f",
+      "contract_file_sha256": "d1b7308af09d6aba28a60f6c34d74278d0f7a97ce76ccfda54304674ed1043f7"
+    },
+    "source_deploy_seconds": 0.5929999999934807,
+    "ssh_exit": 2,
+    "download_exit": 0,
+    "output_download_exit": 0,
+    "elapsed_seconds": 742.3910000000033,
+    "remote_state": {
+      "state": "TERMINAL",
+      "pid": 63155,
+      "snapshot": {
+        "attempt": 2,
+        "source_commit": "f589899625c42af15953f1c694cd7c40db0cc4aa",
+        "product_candidate": "982676cb05a6e6244e66e0a596347aa96043617b",
+        "bundle_base": "cee599774efcb5e47882309713dd343d019f3242",
+        "bundle_sha256": "f9b5bc1e5dd7966f6c6760fb133b338219112bba55e463667aaee7d7006d5ca1",
+        "bundle_seconds": 0.21900000001187436,
+        "numeric_receipt_sha256": "806a9b4a5a951bc24146285446f4f388b8ead817459e5fcf6445b8140a23ab7f",
+        "contract_file_sha256": "d1b7308af09d6aba28a60f6c34d74278d0f7a97ce76ccfda54304674ed1043f7"
+      },
+      "source": "/Users/kiro/hyle-scratch/compute-unified/g04-apple-encoded-p1-source-2",
+      "build": "/Users/kiro/hyle-scratch/compute-unified/g04-apple-encoded-p1-fresh-2",
+      "output": "/Users/kiro/hyle-scratch/compute-unified/g04-apple-encoded-p1-output-2",
+      "identity": {
+        "model": "Mac16,12",
+        "arch": "arm64",
+        "os": "ProductName:\t\tmacOS\nProductVersion:\t\t27.0.1\nBuildVersion:\t\t26A434",
+        "compiler": "Apple clang version 21.0.0 (clang-2100.3.34.2)\nTarget: arm64-apple-darwin27.0.0\nThread model: posix\nInstalledDir: /Library/Developer/CommandLineTools/usr/bin"
+      },
+      "verification_git_alternates": [
+        "/Users/kiro/hyle-scratch/compute-unified/g01-p1-git-checkout/.git/objects",
+        "/Users/kiro/hyle-scratch/compute-unified/g01-rr-git-checkout/.git/objects",
+        "/Users/kiro/hyle-scratch/compute-unified/g01-vp-git-checkout/.git/objects",
+        "/Users/kiro/hyle-scratch/compute-unified/g01-native-ragged-p1-source/.git/objects",
+        "/Users/kiro/hyle-scratch/compute-unified/g01-native-ragged-p1-source-v2/.git/objects",
+        "/Users/kiro/hyle-scratch/compute-unified/g01-native-page-p1-source/.git/objects",
+        "/Users/kiro/hyle-scratch/compute-unified/g04-vulkan-encoded-p1-source-1/.git/objects"
+      ],
+      "observer_pid": 63126,
+      "command": [
+        "/usr/bin/python3",
+        "/Users/kiro/hyle-scratch/compute-unified/g04-apple-encoded-p1-source-2/scripts/hyle-perf.py",
+        "qualify-platform",
+        "--contract",
+        "/Users/kiro/hyle-scratch/compute-unified/g04-apple-encoded-p1-source-2/bench/inference_resident_sdpa/apple_encoded_p1/contract.json",
+        "--source",
+        "/Users/kiro/hyle-scratch/compute-unified/g04-apple-encoded-p1-source-2/bench/inference_resident_sdpa/apple_encoded_p1",
+        "--machine",
+        "M1-MAC",
+        "--peer",
+        "original-ggml-flash=/Users/kiro/hyle-scratch/compute-unified/g01-original-ggml-peer",
+        "--build",
+        "/Users/kiro/hyle-scratch/compute-unified/g04-apple-encoded-p1-fresh-2",
+        "--output",
+        "/Users/kiro/hyle-scratch/compute-unified/g04-apple-encoded-p1-output-2"
+      ],
+      "resource_policy": "Heavy runs serial; original instrument parallel2 within cap4; SDK-only benchmark build",
+      "qualification_exit_code": 2,
+      "verify_exit": 0,
+      "verify_elapsed_seconds": 0.16199941700006093,
+      "exit_code": 2,
+      "elapsed_seconds": 738.364375875
+    }
+  },
+  "measured_remote_seconds": 738.364375875,
+  "source_bundle_seconds_separate": 0.21900000001187436,
+  "source_deploy_seconds_separate": 0.5929999999934807,
+  "outer_observation_seconds_overlaps_remote": 742.3910000000033,
+  "cold_cost_model": "Original immutable payload/schema/slots cold; per-operation prepare/native objects/F2/exact guards/gather/mask/normalization/copies/completion/output release all charged",
+  "limits": [
+    "Finite F16 query/output and Q8_0 KV; three declared two-request shapes only",
+    "Original general Metal Q8/pad/blk selected explicitly with additional64/128 instance; no best-of original host claim",
+    "No capture, incremental producer/growth, G06, whole G04/G05 or token/s verdict",
+    "Native private-pool retained bytes and hard upper remain UNKNOWN",
+    "SDK CPU provider predates CE12/CE13; actual Apple GPU qualification only"
+  ],
+  "raw_zip_sha256": "c5eec35b61f3372dfef80306ce36501fd90f56753ff02c0dea12048f26d0222a"
+}
