@@ -578,9 +578,10 @@
     },
     {
       "module": "compute_provider_flashinfer",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/inference-g04-g05-cache-attention-domain.md",
-      "summary": "G04/G05 CE19 AUDITED：保留原有限数学域与F32 partial精度，按真实量化cache消费及P0输出成本证据，只融合private unsplit最终缩放/输出与原生split merge最终缩放/转换；原attempt6 DIAGNOSTIC与费用保留，其它owner不变。"
+      "summary": "G04/G05 CE19 CANDIDATE：私有unsplit输出与原生split merge最终scale/cast已融合，F32 partial保留；最终source17项真实测试与BF16/F16/单partial精度反例PASS。SDK、受影响风险和新CUDA P1待验，旧DIAGNOSTIC/失败/成本保留，不签全批关闭。",
+      "candidate": "82ddbb4535072461a77234e6e2f9ca6a74138dba"
     },
     {
       "module": "compute_provider_ggml_metal",

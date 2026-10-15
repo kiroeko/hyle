@@ -1764,3 +1764,19 @@ CE19首轮draft48b384的[source/math实际记录](../../../../evidence/correctne
 noncausal、不等Dv/主D256长prefill、OOM回滚/拒绝与编码边界亦通过。该draft尚无后续
 82ddbb453私有host名字隔离，不能据此把最终CE19签PASS/CANDIDATE。原失败63.128s与
 19.026s串行暂停保留；下一source3用前节SM89有限profile取最终实际绑定，复用未变依赖。
+
+CE19 source3配置实际55.459s PASS、prepare-manifest0.052s PASS；随后dry-run只显示
+VerifyGlobs强制phony→Re-running CMake，范围断言拒绝，进程exit1、产品编译/测试未启动。
+同一已配置树与全部snapshot输入SHA复核后，用build.ninja逐字节相同的另名preview.ninja
+展开真实对象图：47edges，仅FI四CUDA TU、无ggml CUDA。原normal cmake --build仍走原图，
+不修改公共Ninja/CMake或重配；续跑记录独立source3-resume-1，原source3结果和失败原样链接。
+四CUDA实际compdb均89-only/--split-compile=3，FI pool1、max2 Ninja；终态后还需核原manifest
+SHA未变。该预览修正只恢复原有限验证，不签任何产品PASS，不重置原费用或新增能力。
+
+CE19最终82ddbb453的[source17项实际证据](../../../../evidence/correctness/inference-g04-g05-cuda-ce19-final-output-source/receipt.json)
+已封存：同树resume build321.543s、16 tests2.968s；原manifest SHA未变、四CUDA对象均
+SM89/split-compile3且无ggml重建。追加单partial回归只编一个测试CXX3.795s、17 tests
+2.916s全PASS，产品library SHA未变；同batch里64-row短请求与8192-row长请求共同强制
+split，正确F16/BF16输出96.0625/96.5，先narrow再scale均误为96。原零/多partial精度及
+所有原数学用例仍通过。只将FI owner进入CANDIDATE82dd，原其它owner不动；源码数学
+稳定，不再扩产品形状。SDK、宿主/设备风险、原定数值/P1仍未代签PASS。

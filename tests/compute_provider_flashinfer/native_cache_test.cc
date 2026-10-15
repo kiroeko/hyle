@@ -240,24 +240,35 @@ TEST(FlashinferCacheEncode, NumericDomainUsesOriginalCompletionStatus){
       EXPECT_TRUE(status.IsInvalidArgument())<<status.message();
     }
 }
-template<class T>void split_precision_case(unsigned residual_period){
+template<class T>void split_precision_case(unsigned residual_period,bool single_partial=false){
   auto context=c::Context::create(c::cuda::device(0).value(),c::flashinfer::provider()).value();
   auto memory=c::cuda::MemoryResource::create(context,c::cuda::MemoryKind::kDevice).value();
   auto host=c::cuda::MemoryResource::create(context,c::cuda::MemoryKind::kPinnedHost).value();
   auto queue=context.create_queue().value();
-  constexpr unsigned rows=8192,depth=64,heads=8,kv_heads=2;
+  constexpr unsigned depth=64,heads=8,kv_heads=2;
+  const unsigned rows=8192+(single_partial?64:0),queries=single_partial?2:1;
   const c::BatchCapacity cap{.storage=c::BatchStorage::kRagged,
       .query_type=half_test::data_type<T>(),.output_type=half_test::data_type<T>(),
-      .key_storage=c::CacheStorage::float8(.5F).value(),.value_storage=c::CacheStorage::float8(512.F).value(),
-      .max_query_rows=1,.max_kv_rows=rows,.max_pages=0,.max_page_refs=0,
+      .key_storage=c::CacheStorage::float8(.5F).value(),.value_storage=c::CacheStorage::float8(single_partial?.75F:512.F).value(),
+      .max_requests=queries,.max_query_rows=queries,.max_kv_rows=rows,.max_pages=0,.max_page_refs=0,
       .query_heads=heads,.kv_heads=kv_heads,.qk_head_dim=depth,.value_head_dim=depth,.page_size=1};
   auto schema=c::BatchSchema::create(cap).value();
-  const std::array<std::int32_t,2> qp{0,1},kp{0,rows};auto layout=schema.version({qp,kp,{},{}}).value();
+  const std::vector<std::int32_t> qp=single_partial?std::vector<std::int32_t>{0,1,2}:std::vector<std::int32_t>{0,1};
+  const std::vector<std::int32_t> kp=single_partial?std::vector<std::int32_t>{0,64,std::int32_t(rows)}:
+      std::vector<std::int32_t>{0,std::int32_t(rows)};
+  auto layout=schema.version({qp,kp,{},{}}).value();
   std::vector<float> key(rows*kv_heads*depth,0.F),value(key.size());
   for(std::size_t i=0;i<value.size();++i){
     const auto row=i/(kv_heads*depth);
-    value[i]=row<rows/2?65536.F:-65536.F;
-    if(residual_period && row<rows/2 && row%residual_period==0)value[i]=73728.F;
+    if(single_partial){
+      float raw=row<64?128.F:0.F;
+      if constexpr(half_test::data_type<T>()==c::DataType::kBFloat16){if(row<2)raw=144.F;}
+      else if(row<4){constexpr float special[]{144.F,144.F,224.F,4.F};raw=special[row];}
+      value[i]=raw*.75F;
+    }else{
+      value[i]=row<rows/2?65536.F:-65536.F;
+      if(residual_period && row<rows/2 && row%residual_period==0)value[i]=73728.F;
+    }
   }
   std::vector<std::uint8_t> kb,vb;
   ASSERT_TRUE(encode_words(c::DataType::kBFloat16,cap.key_storage,key,kb).ok());
@@ -265,7 +276,7 @@ template<class T>void split_precision_case(unsigned residual_period){
   auto pool=c::LeasePool::create(memory.ref(),kb.size()+vb.size()+4096).value();
   const auto load=[&](std::span<const std::byte> bytes){auto writer=pool.allocate(bytes.size(),64).value();
     EXPECT_TRUE(writer.view()->write(bytes).ok());return writer.publish().value();};
-  std::array<std::uint16_t,heads*depth> query{};
+  std::vector<std::uint16_t> query(queries*heads*depth);
   const std::array inputs{load(std::as_bytes(std::span(query))),load(std::as_bytes(std::span(kb))),load(std::as_bytes(std::span(vb)))};
   auto program=c::BatchProgram::prepare(context,schema,{.resource=memory.ref(),.host_workspace=host.ref(),
       .max_float_workspace_bytes=8u<<20,.max_int_workspace_bytes=64u<<10,.scale=.125F,.causal=true}).value();
@@ -273,10 +284,15 @@ template<class T>void split_precision_case(unsigned residual_period){
   ASSERT_TRUE(prepared)<<prepared.error().message();ASSERT_TRUE(slot.report().split_kv);
   auto completion=prepared->run(inputs);ASSERT_TRUE(completion)<<completion.error().message();
   ASSERT_TRUE(completion->wait().ok());auto output=slot.output().value();
-  std::array<T,heads*depth> actual;
+  std::vector<T> actual(queries*heads*depth);
   ASSERT_TRUE(output.view()->read(std::as_writable_bytes(std::span(actual))).ok());
-  const double expected=residual_period?4096./residual_period:0.;
-  for(auto v:actual)EXPECT_NEAR(half_test::decode(v),expected,.01);
+  // The short request has one partial even while the long request forces split.
+  // Narrowing before scaling would return96 instead of96.5/96.0625.
+  const double single=half_test::data_type<T>()==c::DataType::kBFloat16?96.375:96.046875;
+  const double expected=single_partial?half_test::decode(half_test::encode<T>(single)):
+      (residual_period?4096./residual_period:0.);
+  for(std::size_t i=0;i<actual.size();++i)
+    EXPECT_NEAR(half_test::decode(actual[i]),single_partial && i>=heads*depth?0.:expected,.01);
   output.reset();*completion={};*prepared={};ASSERT_TRUE(slot.close().ok());ASSERT_TRUE(context.drain().ok());
 }
 TEST(FlashinferCache, SplitKvScalesOnlyAfterF32MergeAgainstPartialOverflow){
@@ -287,5 +303,9 @@ TEST(FlashinferCache, SplitKvPreservesBfloat16PartialCancellationResidual){
 }
 TEST(FlashinferCache, SplitKvPreservesFloat16PartialCancellationResidual){
   split_precision_case<hyle::simd::float16_t>(256);
+}
+TEST(FlashinferCache, SplitKvSinglePartialScalesBeforeFinalNarrowing){
+  split_precision_case<hyle::simd::float16_t>(0,true);
+  split_precision_case<hyle::simd::bfloat16_t>(0,true);
 }
 }
