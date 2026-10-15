@@ -2045,3 +2045,14 @@ CE21[TSan facet](../../../../evidence/correctness/inference-g04-g05-cuda-ce21-ho
 已TERMINAL_PASS，逐项run/seal与原费用全部保留；source/device、static/shared和三host
 facet至此均有当前9c9实际证据。接下来仅按原合同做新numeric及A/A/P1/strict验证，未签
 数值绑定、性能改善或整个G04/G05。
+
+CE21[新数值及设备绑定](../../../../evidence/correctness/inference-g04-g05-cuda-ce21-register-numeric-rebind/receipt.json)
+已实际PASS，记录阶段累计75.783s：primary/placement各24个独立double oracle，最大绝对
+误差0.00109081301，小于原8e-3；三形状、双slot重放/readonly与实际SDK artifacts/recipes/
+native archives前后SHA均通过。primary另跑memcheck/racecheck，零error/warning/hazard；
+build-contract预检PASS。只构建比较consumer与一个original CUDA TU，未重编产品库。
+
+原peer仍只取两处输出同步屏障：selected edits SHA47df06c7、effective prefill SHA06189719
+与原CE20相同；新的product manifest身份4c7b35bc单独绑定，不把CE21七处资源策略应用到peer。
+下一独立attempt9按原合同运行16AA、8strata、n15/31、5%和strict verify，三consumer/prose
+资格检查仍前置到configure/A-A/采样之前；原attempt8的qualified FAIL及所有旧费用保留。
