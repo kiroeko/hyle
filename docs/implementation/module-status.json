@@ -580,7 +580,7 @@
       "module": "compute_provider_flashinfer",
       "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/inference-g04-g05-cache-attention-domain.md",
-      "summary": "G04/G05 CE26 CANDIDATE1e：source/device/attention+merge零栈codegen与两搬迁SDK各33测试/12头/16TU PASS；新数值/runtime、三host及原P1待验；原qualified FAIL、全部旧失败/未知与累计成本保留。",
+      "summary": "G04/G05 CE26 CANDIDATE1e：source/device/codegen、两SDK、新数值两variant各24 oracle及设备检查、实际attention+merge身份PASS；三host及原P1待验；原qualified FAIL、全部旧失败/未知与累计成本保留。",
       "candidate": "1e343ee3b440af5d522c6bfbdf12f9c6f37f0811"
     },
     {
