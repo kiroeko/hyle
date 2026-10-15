@@ -1,0 +1,504 @@
+{
+  "kind": "CUDA_ENCODED_FOUR_SAME_IMPLEMENTATION_DURATION_CONTROLS",
+  "verdict": "DIAGNOSTIC_INSTRUMENT_UNQUALIFIED",
+  "scope": "200/500ms instead of original40ms; selected/native same-route controls in original placement/peer-first/peer-allocation-first stratum,16paired rounds and three original shapes. Four controls only, not full16A/A or P1.",
+  "actual": {
+    "state": "TERMINAL_DIAGNOSTIC_ONLY",
+    "stages": [
+      {
+        "stage": "compile-200",
+        "command": [
+          "/usr/bin/g++-14",
+          "-iquote",
+          "/root/hyle-scratch/compute-unified/g04-cuda-encoded-p1-source-4/bench/inference_resident_sdpa",
+          "-DHYLE_COMPUTE_CPU=1",
+          "-DHYLE_COMPUTE_CUDA=1",
+          "-DHYLE_COMPUTE_FLASHINFER=1",
+          "-DHYLE_COMPUTE_GGML_CPU=1",
+          "-DHYLE_COMPUTE_ONEDNN=1",
+          "-DHYLE_COMPUTE_TORCH_CUDA=1",
+          "-DHYLE_IO_HAS_COROUTINE_TRANSPORT=1",
+          "-DHYLE_RESIDENT_PLACEMENT=1",
+          "-DHYLE_STATIC",
+          "-I/root/hyle-scratch/compute-unified/g04-cuda-encoded-p1-source-4/src/compute_backend_cuda",
+          "-isystem",
+          "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/sdk/cuda-static-1/relocated/include",
+          "-isystem",
+          "/usr/local/cuda-13.3/targets/x86_64-linux/include",
+          "-isystem",
+          "/root/hyle-scratch/compute-unified/g04-cuda-encoded-p1-source-4/third_party/nanobench",
+          "-O3",
+          "-DNDEBUG",
+          "-std=gnu++23",
+          "-Wall",
+          "-Wextra",
+          "-Wpedantic",
+          "-Werror",
+          "-MD",
+          "-MT",
+          "/root/hyle-scratch/compute-unified/ce14-cuda-duration-diagnostic-1/bench-200.o",
+          "-MF",
+          "/root/hyle-scratch/compute-unified/ce14-cuda-duration-diagnostic-1/bench-200.d",
+          "-o",
+          "/root/hyle-scratch/compute-unified/ce14-cuda-duration-diagnostic-1/bench-200.o",
+          "-c",
+          "/root/hyle-scratch/compute-unified/ce14-cuda-duration-diagnostic-1/bench-200.cc"
+        ],
+        "exit_code": 0,
+        "elapsed_seconds": 10.761604737000003
+      },
+      {
+        "stage": "link-200",
+        "command": [
+          "/usr/bin/g++-14",
+          "-O3",
+          "-DNDEBUG",
+          "-Wl,--disable-new-dtags",
+          "CMakeFiles/g04_cuda_encoded_bench_placement.dir/root/hyle-scratch/compute-unified/g04-cuda-encoded-p1-source-4/bench/inference_resident_sdpa/cpu_placement.cc.o",
+          "/root/hyle-scratch/compute-unified/ce14-cuda-duration-diagnostic-1/bench-200.o",
+          "CMakeFiles/g04_cuda_encoded_bench_placement.dir/root/hyle-scratch/compute-unified/g04-cuda-encoded-p1-source-4/bench/inference_resident_sdpa/cuda_encoded_page_reference.cc.o",
+          "-o",
+          "/root/hyle-scratch/compute-unified/ce14-cuda-duration-diagnostic-1/bench-200",
+          "-L/lib/intel64",
+          "-L/lib/intel64_win",
+          "-L/lib/win-x64",
+          "-L/usr/local/cuda-13.3/targets/x86_64-linux/lib/stubs",
+          "-L/usr/local/cuda-13.3/targets/x86_64-linux/lib",
+          "-Wl,-rpath,/root/.cache/hyle/dependencies/v1/sdks/torch-cpu/Linux-8dea5bcfed4b53ca0f6852517bea4b4d1f3ff1cc0c21da662e834d34af1ec824/libtorch/lib:/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/sdk/cuda-static-1/relocated/lib:/root/.cache/hyle/dependencies/v1/sdks/torch-cuda-leaf/Linux-02c7258e917f3043c978b53acf6f02b818db0d0d85db0e58ae578af333b9b4e2-fab2a30375b0b92c/nvidia/cublas/lib:/root/.cache/hyle/dependencies/v1/sdks/torch-cuda-leaf/Linux-02c7258e917f3043c978b53acf6f02b818db0d0d85db0e58ae578af333b9b4e2-fab2a30375b0b92c/nvidia/cuda_cupti/lib:/root/.cache/hyle/dependencies/v1/sdks/torch-cuda-leaf/Linux-02c7258e917f3043c978b53acf6f02b818db0d0d85db0e58ae578af333b9b4e2-fab2a30375b0b92c/nvidia/cuda_nvrtc/lib:/root/.cache/hyle/dependencies/v1/sdks/torch-cuda-leaf/Linux-02c7258e917f3043c978b53acf6f02b818db0d0d85db0e58ae578af333b9b4e2-fab2a30375b0b92c/nvidia/cuda_runtime/lib:/root/.cache/hyle/dependencies/v1/sdks/torch-cuda-leaf/Linux-02c7258e917f3043c978b53acf6f02b818db0d0d85db0e58ae578af333b9b4e2-fab2a30375b0b92c/nvidia/cudnn/lib:/root/.cache/hyle/dependencies/v1/sdks/torch-cuda-leaf/Linux-02c7258e917f3043c978b53acf6f02b818db0d0d85db0e58ae578af333b9b4e2-fab2a30375b0b92c/nvidia/cufft/lib:/root/.cache/hyle/dependencies/v1/sdks/torch-cuda-leaf/Linux-02c7258e917f3043c978b53acf6f02b818db0d0d85db0e58ae578af333b9b4e2-fab2a30375b0b92c/nvidia/cufile/lib:/root/.cache/hyle/dependencies/v1/sdks/torch-cuda-leaf/Linux-02c7258e917f3043c978b53acf6f02b818db0d0d85db0e58ae578af333b9b4e2-fab2a30375b0b92c/nvidia/curand/lib:/root/.cache/hyle/dependencies/v1/sdks/torch-cuda-leaf/Linux-02c7258e917f3043c978b53acf6f02b818db0d0d85db0e58ae578af333b9b4e2-fab2a30375b0b92c/nvidia/cusolver/lib:/root/.cache/hyle/dependencies/v1/sdks/torch-cuda-leaf/Linux-02c7258e917f3043c978b53acf6f02b818db0d0d85db0e58ae578af333b9b4e2-fab2a30375b0b92c/nvidia/cusparse/lib:/root/.cache/hyle/dependencies/v1/sdks/torch-cuda-leaf/Linux-02c7258e917f3043c978b53acf6f02b818db0d0d85db0e58ae578af333b9b4e2-fab2a30375b0b92c/nvidia/cusparselt/lib:/root/.cache/hyle/dependencies/v1/sdks/torch-cuda-leaf/Linux-02c7258e917f3043c978b53acf6f02b818db0d0d85db0e58ae578af333b9b4e2-fab2a30375b0b92c/nvidia/nccl/lib:/root/.cache/hyle/dependencies/v1/sdks/torch-cuda-leaf/Linux-02c7258e917f3043c978b53acf6f02b818db0d0d85db0e58ae578af333b9b4e2-fab2a30375b0b92c/nvidia/nvjitlink/lib:/root/.cache/hyle/dependencies/v1/sdks/torch-cuda-leaf/Linux-02c7258e917f3043c978b53acf6f02b818db0d0d85db0e58ae578af333b9b4e2-fab2a30375b0b92c/nvidia/nvtx/lib:/root/.cache/hyle/dependencies/v1/sdks/torch-cuda-leaf/Linux-02c7258e917f3043c978b53acf6f02b818db0d0d85db0e58ae578af333b9b4e2-fab2a30375b0b92c/torch/lib:/lib/intel64:/lib/intel64_win:/lib/win-x64:/usr/local/cuda-13.3/lib64",
+          "original-peer/libg04_cuda_encoded_original.a",
+          "original-peer/libg04_cuda_encoded_nanobench.a",
+          "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/sdk/cuda-static-1/relocated/lib/libhyle_compute_state.a",
+          "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/sdk/cuda-static-1/relocated/lib/libhyle_compute_route_cpu.a",
+          "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/sdk/cuda-static-1/relocated/lib/libhyle_compute_route_cuda.a",
+          "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/sdk/cuda-static-1/relocated/lib/libhyle_compute_stream.a",
+          "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/sdk/cuda-static-1/relocated/lib/libhyle_io_core.a",
+          "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/sdk/cuda-static-1/relocated/lib/libhyle_sched.a",
+          "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/sdk/cuda-static-1/relocated/lib/libhyle_mem_vm.a",
+          "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/sdk/cuda-static-1/relocated/lib/libhyle_platform_fs.a",
+          "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/sdk/cuda-static-1/relocated/lib/libhyle_container.a",
+          "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/sdk/cuda-static-1/relocated/lib/libhyle_compute_provider_cublas.a",
+          "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/sdk/cuda-static-1/relocated/lib/libhyle_compute_provider_cuda.a",
+          "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/sdk/cuda-static-1/relocated/lib/libhyle_compute_provider_ggml_cuda.a",
+          "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/sdk/cuda-static-1/relocated/lib/libhyle_compute_provider_torch_cuda.a",
+          "/root/.cache/hyle/dependencies/v1/sdks/torch-cuda-leaf/Linux-02c7258e917f3043c978b53acf6f02b818db0d0d85db0e58ae578af333b9b4e2-fab2a30375b0b92c/torch/lib/libtorch_cuda.so",
+          "/root/.cache/hyle/dependencies/v1/sdks/torch-cuda-leaf/Linux-02c7258e917f3043c978b53acf6f02b818db0d0d85db0e58ae578af333b9b4e2-fab2a30375b0b92c/torch/lib/libc10_cuda.so",
+          "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/sdk/cuda-static-1/relocated/lib/libhyle_compute_provider_flashinfer.a",
+          "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/sdk/cuda-static-1/relocated/lib/libhyle_compute_backend_cuda.a",
+          "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/sdk/cuda-static-1/relocated/lib/libhyle_platform_thread.a",
+          "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/sdk/cuda-static-1/relocated/lib/libhyle_time.a",
+          "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/sdk/cuda-static-1/relocated/lib/libhyle_compute_provider_native.a",
+          "/root/.cache/hyle/dependencies/v1/sdks/torch-cpu/Linux-8dea5bcfed4b53ca0f6852517bea4b4d1f3ff1cc0c21da662e834d34af1ec824/libtorch/lib/libtorch.so",
+          "-Wl,--no-as-needed,/root/.cache/hyle/dependencies/v1/sdks/torch-cpu/Linux-8dea5bcfed4b53ca0f6852517bea4b4d1f3ff1cc0c21da662e834d34af1ec824/libtorch/lib/libtorch_cpu.so",
+          "-Wl,--as-needed",
+          "/root/.cache/hyle/dependencies/v1/sdks/torch-cpu/Linux-8dea5bcfed4b53ca0f6852517bea4b4d1f3ff1cc0c21da662e834d34af1ec824/libtorch/lib/libtorch_cpu.so",
+          "/root/.cache/hyle/dependencies/v1/sdks/torch-cpu/Linux-8dea5bcfed4b53ca0f6852517bea4b4d1f3ff1cc0c21da662e834d34af1ec824/libtorch/lib/libc10.so",
+          "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/sdk/cuda-static-1/relocated/lib/libhyle_compute_provider_onednn.a",
+          "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/sdk/cuda-static-1/relocated/lib/libdnnl.a",
+          "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/sdk/cuda-static-1/relocated/lib/libhyle_compute_provider_ggml.a",
+          "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/sdk/cuda-static-1/relocated/lib/libhyle_compute_batch.a",
+          "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/sdk/cuda-static-1/relocated/lib/libhyle_compute_backend_cpu.a",
+          "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/sdk/cuda-static-1/relocated/lib/libhyle_compute.a",
+          "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/sdk/cuda-static-1/relocated/lib/libhyle_compute_ops.a",
+          "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/sdk/cuda-static-1/relocated/lib/libhyle_simd.a",
+          "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/sdk/cuda-static-1/relocated/lib/libhyle_compute_ggml_runtime.a",
+          "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/sdk/cuda-static-1/relocated/lib/libhyle_mem.a",
+          "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/sdk/cuda-static-1/relocated/lib/libmimalloc_static.a",
+          "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/sdk/cuda-static-1/relocated/lib/libhyle_platform.a",
+          "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/sdk/cuda-static-1/relocated/lib/libhyle_error.a",
+          "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/sdk/cuda-static-1/relocated/lib/libggml.a",
+          "-ldl",
+          "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/sdk/cuda-static-1/relocated/lib/libggml-cpu.a",
+          "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/sdk/cuda-static-1/relocated/lib/libggml-cuda.a",
+          "/usr/local/cuda-13.3/lib64/libcudart.so",
+          "/usr/local/cuda-13.3/targets/x86_64-linux/lib/stubs/libcuda.so",
+          "/usr/local/cuda-13.3/lib64/libcublas.so",
+          "/usr/local/cuda-13.3/lib64/libcublasLt.so",
+          "/usr/local/cuda-13.3/lib64/libculibos.a",
+          "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/sdk/cuda-static-1/relocated/lib/libggml-base.a",
+          "-lm",
+          "-lcudadevrt",
+          "-lcudart_static",
+          "-lrt",
+          "-lpthread",
+          "-ldl"
+        ],
+        "exit_code": 0,
+        "elapsed_seconds": 1.6812004059999985
+      },
+      {
+        "stage": "control-200-selected",
+        "command": [
+          "/root/hyle-scratch/compute-unified/ce14-cuda-duration-diagnostic-1/bench-200"
+        ],
+        "exit_code": 0,
+        "elapsed_seconds": 25.102385042
+      },
+      {
+        "stage": "control-200-native",
+        "command": [
+          "/root/hyle-scratch/compute-unified/ce14-cuda-duration-diagnostic-1/bench-200"
+        ],
+        "exit_code": 0,
+        "elapsed_seconds": 23.340474754000006
+      },
+      {
+        "stage": "compile-500",
+        "command": [
+          "/usr/bin/g++-14",
+          "-iquote",
+          "/root/hyle-scratch/compute-unified/g04-cuda-encoded-p1-source-4/bench/inference_resident_sdpa",
+          "-DHYLE_COMPUTE_CPU=1",
+          "-DHYLE_COMPUTE_CUDA=1",
+          "-DHYLE_COMPUTE_FLASHINFER=1",
+          "-DHYLE_COMPUTE_GGML_CPU=1",
+          "-DHYLE_COMPUTE_ONEDNN=1",
+          "-DHYLE_COMPUTE_TORCH_CUDA=1",
+          "-DHYLE_IO_HAS_COROUTINE_TRANSPORT=1",
+          "-DHYLE_RESIDENT_PLACEMENT=1",
+          "-DHYLE_STATIC",
+          "-I/root/hyle-scratch/compute-unified/g04-cuda-encoded-p1-source-4/src/compute_backend_cuda",
+          "-isystem",
+          "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/sdk/cuda-static-1/relocated/include",
+          "-isystem",
+          "/usr/local/cuda-13.3/targets/x86_64-linux/include",
+          "-isystem",
+          "/root/hyle-scratch/compute-unified/g04-cuda-encoded-p1-source-4/third_party/nanobench",
+          "-O3",
+          "-DNDEBUG",
+          "-std=gnu++23",
+          "-Wall",
+          "-Wextra",
+          "-Wpedantic",
+          "-Werror",
+          "-MD",
+          "-MT",
+          "/root/hyle-scratch/compute-unified/ce14-cuda-duration-diagnostic-1/bench-500.o",
+          "-MF",
+          "/root/hyle-scratch/compute-unified/ce14-cuda-duration-diagnostic-1/bench-500.d",
+          "-o",
+          "/root/hyle-scratch/compute-unified/ce14-cuda-duration-diagnostic-1/bench-500.o",
+          "-c",
+          "/root/hyle-scratch/compute-unified/ce14-cuda-duration-diagnostic-1/bench-500.cc"
+        ],
+        "exit_code": 0,
+        "elapsed_seconds": 8.029802718
+      },
+      {
+        "stage": "link-500",
+        "command": [
+          "/usr/bin/g++-14",
+          "-O3",
+          "-DNDEBUG",
+          "-Wl,--disable-new-dtags",
+          "CMakeFiles/g04_cuda_encoded_bench_placement.dir/root/hyle-scratch/compute-unified/g04-cuda-encoded-p1-source-4/bench/inference_resident_sdpa/cpu_placement.cc.o",
+          "/root/hyle-scratch/compute-unified/ce14-cuda-duration-diagnostic-1/bench-500.o",
+          "CMakeFiles/g04_cuda_encoded_bench_placement.dir/root/hyle-scratch/compute-unified/g04-cuda-encoded-p1-source-4/bench/inference_resident_sdpa/cuda_encoded_page_reference.cc.o",
+          "-o",
+          "/root/hyle-scratch/compute-unified/ce14-cuda-duration-diagnostic-1/bench-500",
+          "-L/lib/intel64",
+          "-L/lib/intel64_win",
+          "-L/lib/win-x64",
+          "-L/usr/local/cuda-13.3/targets/x86_64-linux/lib/stubs",
+          "-L/usr/local/cuda-13.3/targets/x86_64-linux/lib",
+          "-Wl,-rpath,/root/.cache/hyle/dependencies/v1/sdks/torch-cpu/Linux-8dea5bcfed4b53ca0f6852517bea4b4d1f3ff1cc0c21da662e834d34af1ec824/libtorch/lib:/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/sdk/cuda-static-1/relocated/lib:/root/.cache/hyle/dependencies/v1/sdks/torch-cuda-leaf/Linux-02c7258e917f3043c978b53acf6f02b818db0d0d85db0e58ae578af333b9b4e2-fab2a30375b0b92c/nvidia/cublas/lib:/root/.cache/hyle/dependencies/v1/sdks/torch-cuda-leaf/Linux-02c7258e917f3043c978b53acf6f02b818db0d0d85db0e58ae578af333b9b4e2-fab2a30375b0b92c/nvidia/cuda_cupti/lib:/root/.cache/hyle/dependencies/v1/sdks/torch-cuda-leaf/Linux-02c7258e917f3043c978b53acf6f02b818db0d0d85db0e58ae578af333b9b4e2-fab2a30375b0b92c/nvidia/cuda_nvrtc/lib:/root/.cache/hyle/dependencies/v1/sdks/torch-cuda-leaf/Linux-02c7258e917f3043c978b53acf6f02b818db0d0d85db0e58ae578af333b9b4e2-fab2a30375b0b92c/nvidia/cuda_runtime/lib:/root/.cache/hyle/dependencies/v1/sdks/torch-cuda-leaf/Linux-02c7258e917f3043c978b53acf6f02b818db0d0d85db0e58ae578af333b9b4e2-fab2a30375b0b92c/nvidia/cudnn/lib:/root/.cache/hyle/dependencies/v1/sdks/torch-cuda-leaf/Linux-02c7258e917f3043c978b53acf6f02b818db0d0d85db0e58ae578af333b9b4e2-fab2a30375b0b92c/nvidia/cufft/lib:/root/.cache/hyle/dependencies/v1/sdks/torch-cuda-leaf/Linux-02c7258e917f3043c978b53acf6f02b818db0d0d85db0e58ae578af333b9b4e2-fab2a30375b0b92c/nvidia/cufile/lib:/root/.cache/hyle/dependencies/v1/sdks/torch-cuda-leaf/Linux-02c7258e917f3043c978b53acf6f02b818db0d0d85db0e58ae578af333b9b4e2-fab2a30375b0b92c/nvidia/curand/lib:/root/.cache/hyle/dependencies/v1/sdks/torch-cuda-leaf/Linux-02c7258e917f3043c978b53acf6f02b818db0d0d85db0e58ae578af333b9b4e2-fab2a30375b0b92c/nvidia/cusolver/lib:/root/.cache/hyle/dependencies/v1/sdks/torch-cuda-leaf/Linux-02c7258e917f3043c978b53acf6f02b818db0d0d85db0e58ae578af333b9b4e2-fab2a30375b0b92c/nvidia/cusparse/lib:/root/.cache/hyle/dependencies/v1/sdks/torch-cuda-leaf/Linux-02c7258e917f3043c978b53acf6f02b818db0d0d85db0e58ae578af333b9b4e2-fab2a30375b0b92c/nvidia/cusparselt/lib:/root/.cache/hyle/dependencies/v1/sdks/torch-cuda-leaf/Linux-02c7258e917f3043c978b53acf6f02b818db0d0d85db0e58ae578af333b9b4e2-fab2a30375b0b92c/nvidia/nccl/lib:/root/.cache/hyle/dependencies/v1/sdks/torch-cuda-leaf/Linux-02c7258e917f3043c978b53acf6f02b818db0d0d85db0e58ae578af333b9b4e2-fab2a30375b0b92c/nvidia/nvjitlink/lib:/root/.cache/hyle/dependencies/v1/sdks/torch-cuda-leaf/Linux-02c7258e917f3043c978b53acf6f02b818db0d0d85db0e58ae578af333b9b4e2-fab2a30375b0b92c/nvidia/nvtx/lib:/root/.cache/hyle/dependencies/v1/sdks/torch-cuda-leaf/Linux-02c7258e917f3043c978b53acf6f02b818db0d0d85db0e58ae578af333b9b4e2-fab2a30375b0b92c/torch/lib:/lib/intel64:/lib/intel64_win:/lib/win-x64:/usr/local/cuda-13.3/lib64",
+          "original-peer/libg04_cuda_encoded_original.a",
+          "original-peer/libg04_cuda_encoded_nanobench.a",
+          "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/sdk/cuda-static-1/relocated/lib/libhyle_compute_state.a",
+          "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/sdk/cuda-static-1/relocated/lib/libhyle_compute_route_cpu.a",
+          "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/sdk/cuda-static-1/relocated/lib/libhyle_compute_route_cuda.a",
+          "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/sdk/cuda-static-1/relocated/lib/libhyle_compute_stream.a",
+          "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/sdk/cuda-static-1/relocated/lib/libhyle_io_core.a",
+          "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/sdk/cuda-static-1/relocated/lib/libhyle_sched.a",
+          "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/sdk/cuda-static-1/relocated/lib/libhyle_mem_vm.a",
+          "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/sdk/cuda-static-1/relocated/lib/libhyle_platform_fs.a",
+          "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/sdk/cuda-static-1/relocated/lib/libhyle_container.a",
+          "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/sdk/cuda-static-1/relocated/lib/libhyle_compute_provider_cublas.a",
+          "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/sdk/cuda-static-1/relocated/lib/libhyle_compute_provider_cuda.a",
+          "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/sdk/cuda-static-1/relocated/lib/libhyle_compute_provider_ggml_cuda.a",
+          "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/sdk/cuda-static-1/relocated/lib/libhyle_compute_provider_torch_cuda.a",
+          "/root/.cache/hyle/dependencies/v1/sdks/torch-cuda-leaf/Linux-02c7258e917f3043c978b53acf6f02b818db0d0d85db0e58ae578af333b9b4e2-fab2a30375b0b92c/torch/lib/libtorch_cuda.so",
+          "/root/.cache/hyle/dependencies/v1/sdks/torch-cuda-leaf/Linux-02c7258e917f3043c978b53acf6f02b818db0d0d85db0e58ae578af333b9b4e2-fab2a30375b0b92c/torch/lib/libc10_cuda.so",
+          "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/sdk/cuda-static-1/relocated/lib/libhyle_compute_provider_flashinfer.a",
+          "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/sdk/cuda-static-1/relocated/lib/libhyle_compute_backend_cuda.a",
+          "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/sdk/cuda-static-1/relocated/lib/libhyle_platform_thread.a",
+          "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/sdk/cuda-static-1/relocated/lib/libhyle_time.a",
+          "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/sdk/cuda-static-1/relocated/lib/libhyle_compute_provider_native.a",
+          "/root/.cache/hyle/dependencies/v1/sdks/torch-cpu/Linux-8dea5bcfed4b53ca0f6852517bea4b4d1f3ff1cc0c21da662e834d34af1ec824/libtorch/lib/libtorch.so",
+          "-Wl,--no-as-needed,/root/.cache/hyle/dependencies/v1/sdks/torch-cpu/Linux-8dea5bcfed4b53ca0f6852517bea4b4d1f3ff1cc0c21da662e834d34af1ec824/libtorch/lib/libtorch_cpu.so",
+          "-Wl,--as-needed",
+          "/root/.cache/hyle/dependencies/v1/sdks/torch-cpu/Linux-8dea5bcfed4b53ca0f6852517bea4b4d1f3ff1cc0c21da662e834d34af1ec824/libtorch/lib/libtorch_cpu.so",
+          "/root/.cache/hyle/dependencies/v1/sdks/torch-cpu/Linux-8dea5bcfed4b53ca0f6852517bea4b4d1f3ff1cc0c21da662e834d34af1ec824/libtorch/lib/libc10.so",
+          "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/sdk/cuda-static-1/relocated/lib/libhyle_compute_provider_onednn.a",
+          "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/sdk/cuda-static-1/relocated/lib/libdnnl.a",
+          "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/sdk/cuda-static-1/relocated/lib/libhyle_compute_provider_ggml.a",
+          "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/sdk/cuda-static-1/relocated/lib/libhyle_compute_batch.a",
+          "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/sdk/cuda-static-1/relocated/lib/libhyle_compute_backend_cpu.a",
+          "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/sdk/cuda-static-1/relocated/lib/libhyle_compute.a",
+          "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/sdk/cuda-static-1/relocated/lib/libhyle_compute_ops.a",
+          "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/sdk/cuda-static-1/relocated/lib/libhyle_simd.a",
+          "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/sdk/cuda-static-1/relocated/lib/libhyle_compute_ggml_runtime.a",
+          "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/sdk/cuda-static-1/relocated/lib/libhyle_mem.a",
+          "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/sdk/cuda-static-1/relocated/lib/libmimalloc_static.a",
+          "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/sdk/cuda-static-1/relocated/lib/libhyle_platform.a",
+          "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/sdk/cuda-static-1/relocated/lib/libhyle_error.a",
+          "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/sdk/cuda-static-1/relocated/lib/libggml.a",
+          "-ldl",
+          "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/sdk/cuda-static-1/relocated/lib/libggml-cpu.a",
+          "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/sdk/cuda-static-1/relocated/lib/libggml-cuda.a",
+          "/usr/local/cuda-13.3/lib64/libcudart.so",
+          "/usr/local/cuda-13.3/targets/x86_64-linux/lib/stubs/libcuda.so",
+          "/usr/local/cuda-13.3/lib64/libcublas.so",
+          "/usr/local/cuda-13.3/lib64/libcublasLt.so",
+          "/usr/local/cuda-13.3/lib64/libculibos.a",
+          "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/sdk/cuda-static-1/relocated/lib/libggml-base.a",
+          "-lm",
+          "-lcudadevrt",
+          "-lcudart_static",
+          "-lrt",
+          "-lpthread",
+          "-ldl"
+        ],
+        "exit_code": 0,
+        "elapsed_seconds": 2.132392253000006
+      },
+      {
+        "stage": "control-500-native",
+        "command": [
+          "/root/hyle-scratch/compute-unified/ce14-cuda-duration-diagnostic-1/bench-500"
+        ],
+        "exit_code": 0,
+        "elapsed_seconds": 56.095552131000005
+      },
+      {
+        "stage": "control-500-selected",
+        "command": [
+          "/root/hyle-scratch/compute-unified/ce14-cuda-duration-diagnostic-1/bench-500"
+        ],
+        "exit_code": 0,
+        "elapsed_seconds": 56.68181059099999
+      }
+    ],
+    "runs": [
+      {
+        "milliseconds": 200,
+        "route": "selected",
+        "ratios": {
+          "CUDA paged FP8 BF16 Q=1,17 KV=1024,768 D=256/256 causal=1 window=16": 1.0140625804127426,
+          "CUDA paged FP8 BF16 Q=64,128 KV=1024,768 D=256/256 causal=1 window=-1": 1.0008286223185936,
+          "CUDA paged FP8 BF16 Q=17,1 KV=7,47 D=64/128 causal=0 window=-1": 0.9837553708335268
+        },
+        "binary_sha256": "b39db709bf1461cd8cb3869903d228f82668b21f24243c43cab8c292f938be4d"
+      },
+      {
+        "milliseconds": 200,
+        "route": "native",
+        "ratios": {
+          "CUDA paged FP8 BF16 Q=1,17 KV=1024,768 D=256/256 causal=1 window=16": 1.0082631518837957,
+          "CUDA paged FP8 BF16 Q=64,128 KV=1024,768 D=256/256 causal=1 window=-1": 1.012747210802128,
+          "CUDA paged FP8 BF16 Q=17,1 KV=7,47 D=64/128 causal=0 window=-1": 1.0356048469720396
+        },
+        "binary_sha256": "b39db709bf1461cd8cb3869903d228f82668b21f24243c43cab8c292f938be4d"
+      },
+      {
+        "milliseconds": 500,
+        "route": "native",
+        "ratios": {
+          "CUDA paged FP8 BF16 Q=1,17 KV=1024,768 D=256/256 causal=1 window=16": 0.9525101581436453,
+          "CUDA paged FP8 BF16 Q=64,128 KV=1024,768 D=256/256 causal=1 window=-1": 1.01504151714383,
+          "CUDA paged FP8 BF16 Q=17,1 KV=7,47 D=64/128 causal=0 window=-1": 0.9318852419286433
+        },
+        "binary_sha256": "c0cdb7d5ee7991fc602aed86432d7f52fac33be267d3f53c2bd65b49c0af4342"
+      },
+      {
+        "milliseconds": 500,
+        "route": "selected",
+        "ratios": {
+          "CUDA paged FP8 BF16 Q=1,17 KV=1024,768 D=256/256 causal=1 window=16": 0.9920933366587802,
+          "CUDA paged FP8 BF16 Q=64,128 KV=1024,768 D=256/256 causal=1 window=-1": 1.0040785098500524,
+          "CUDA paged FP8 BF16 Q=17,1 KV=7,47 D=64/128 causal=0 window=-1": 1.059741350589877
+        },
+        "binary_sha256": "c0cdb7d5ee7991fc602aed86432d7f52fac33be267d3f53c2bd65b49c0af4342"
+      }
+    ],
+    "limits": "Four diagnostic controls at the previously unstable placement/peer-first/peer-allocation-first stratum. Same original16paired rounds and three shapes; not full16A/A, P1 or a performance claim.",
+    "identity": {
+      "host": "Linux kiro-workstation 6.18.54.1-microsoft-standard-WSL2 #1 SMP PREEMPT_DYNAMIC Tue Oct  6 19:13:07 UTC 2026 x86_64 x86_64 x86_64 GNU/Linux",
+      "compiler": "g++-14 (Ubuntu 14.2.0-4ubuntu2~24.04.1) 14.2.0\nCopyright (C) 2024 Free Software Foundation, Inc.\nThis is free software; see the source for copying conditions.  There is NO\nwarranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.",
+      "gpu": "NVIDIA GeForce RTX 4070, 617.14, GPU-e7376560-6f5d-ec19-6ee4-3dd3a2c81ef8, 8.9"
+    },
+    "original_benchmark_sha256": "4bae130f20ae50b4a6d3f124af24810bf13a43756fdaa320787102f0a001061c",
+    "reused_objects": [
+      {
+        "path": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/sdk/cuda-static-1/relocated/lib/libdnnl.a",
+        "sha256": "ed81c96c2626142076441ed4808f35f37510fe9a8214ecdf8fa57d51de4fc168"
+      },
+      {
+        "path": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/sdk/cuda-static-1/relocated/lib/libggml-base.a",
+        "sha256": "e894669e83e8bafdecc8f5a2ad43df64e36570efe3d562e4e484e244b50b45ed"
+      },
+      {
+        "path": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/sdk/cuda-static-1/relocated/lib/libggml-cpu.a",
+        "sha256": "04cb180cab01c7ebe80ca95dc81668a6db90bc3e4fa68a6ac726abc95c15ca66"
+      },
+      {
+        "path": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/sdk/cuda-static-1/relocated/lib/libggml-cuda.a",
+        "sha256": "f335776c314e99573289a601da24d6beb24c748afea155c339d30e31c7a3f6b7"
+      },
+      {
+        "path": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/sdk/cuda-static-1/relocated/lib/libggml.a",
+        "sha256": "59153b8ac952ea8a7059b06eb6fb1c03040242a4dcdf3922ec9946ac5b17a2fc"
+      },
+      {
+        "path": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/sdk/cuda-static-1/relocated/lib/libhyle_compute.a",
+        "sha256": "1c02a19693885e04ad4a782b49cd22c8b3688ab42bf2576ac38c7ba7f8c3e594"
+      },
+      {
+        "path": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/sdk/cuda-static-1/relocated/lib/libhyle_compute_backend_cpu.a",
+        "sha256": "9162e82080bf8240bb3a857defb70e42a8b23452316b8f709463558dafad11ab"
+      },
+      {
+        "path": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/sdk/cuda-static-1/relocated/lib/libhyle_compute_backend_cuda.a",
+        "sha256": "8817037ca1e03a4c4f58f8489dc27bd2e561a01a1c3fc58052fe13c0d1aff6d7"
+      },
+      {
+        "path": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/sdk/cuda-static-1/relocated/lib/libhyle_compute_batch.a",
+        "sha256": "25f98c25641b008476b13d37ded48c6bff357662c92cb47cc5d8afa90bc46279"
+      },
+      {
+        "path": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/sdk/cuda-static-1/relocated/lib/libhyle_compute_ggml_runtime.a",
+        "sha256": "bd5a4c5681b169cb62bb6809da80fde3a8e093e0c5d5fa65e34e4c555cac10d9"
+      },
+      {
+        "path": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/sdk/cuda-static-1/relocated/lib/libhyle_compute_ops.a",
+        "sha256": "830e710c85e2f204fef5ea4c456d7d758eb599b87ee1e16dfad7dc1fe15a56f6"
+      },
+      {
+        "path": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/sdk/cuda-static-1/relocated/lib/libhyle_compute_provider_cublas.a",
+        "sha256": "0cb66257dcedcfc2f3681f6466b92673e3dd62e7b9e05834ae8145105056989c"
+      },
+      {
+        "path": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/sdk/cuda-static-1/relocated/lib/libhyle_compute_provider_cuda.a",
+        "sha256": "618ff1eb6035c8833bee1ad4412e6e05adb707ca58c8b33fd521e981b86fccff"
+      },
+      {
+        "path": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/sdk/cuda-static-1/relocated/lib/libhyle_compute_provider_flashinfer.a",
+        "sha256": "94816bdbeefbb3b3a7ba99464a91b8beda368fa81201246cb42e33ad9a69a8a1"
+      },
+      {
+        "path": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/sdk/cuda-static-1/relocated/lib/libhyle_compute_provider_ggml.a",
+        "sha256": "c81f121b33e87690b2ff8d7fd6ec4d8b28488899e59cd01af8fc5fe63a9e8939"
+      },
+      {
+        "path": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/sdk/cuda-static-1/relocated/lib/libhyle_compute_provider_ggml_cuda.a",
+        "sha256": "4de2ad08c47fb468930a308a02149e8a7941637f8d172599ea00c5cbeb888ad1"
+      },
+      {
+        "path": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/sdk/cuda-static-1/relocated/lib/libhyle_compute_provider_native.a",
+        "sha256": "4be6749aebb0ea2d283f20f30da861110c081113430aa3618b9b04830450f753"
+      },
+      {
+        "path": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/sdk/cuda-static-1/relocated/lib/libhyle_compute_provider_onednn.a",
+        "sha256": "0f080a4646919c535c6d3bf4e488bc27e17e8a6244bf39ca56f0acb0a804d260"
+      },
+      {
+        "path": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/sdk/cuda-static-1/relocated/lib/libhyle_compute_provider_torch_cuda.a",
+        "sha256": "c1c3165f6ca44221432af8143b8912fc78022e05904455987f59f2bdee4c6331"
+      },
+      {
+        "path": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/sdk/cuda-static-1/relocated/lib/libhyle_compute_route_cpu.a",
+        "sha256": "dff9fbaaa6e5715d41f356a648fe8bd3fc12f9c113ae74de077dae0995198c7f"
+      },
+      {
+        "path": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/sdk/cuda-static-1/relocated/lib/libhyle_compute_route_cuda.a",
+        "sha256": "6f5a2cd7ce268aa989fe4f0e529827f99af6a8abc2f2bfe1c81b9b542b0194b8"
+      },
+      {
+        "path": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/sdk/cuda-static-1/relocated/lib/libhyle_compute_state.a",
+        "sha256": "80cf9cd8d4168aa9bdab6b3542c11a519ff573646951b26185fe3bab26d4b1b2"
+      },
+      {
+        "path": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/sdk/cuda-static-1/relocated/lib/libhyle_compute_stream.a",
+        "sha256": "8ed380abc1060a102be88c1d39b0ffa8208ba8dffd0740c2091c44df25585c77"
+      },
+      {
+        "path": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/sdk/cuda-static-1/relocated/lib/libhyle_container.a",
+        "sha256": "34b676ef9acb99cfeeb8d9e140dbf92d7e5c418459349bdc4f3e0ff6c4d0ffe4"
+      },
+      {
+        "path": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/sdk/cuda-static-1/relocated/lib/libhyle_error.a",
+        "sha256": "017c25f6a233a5afec65714fdb408b9cca94822a10464018fa21cba3fc8f9e6d"
+      },
+      {
+        "path": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/sdk/cuda-static-1/relocated/lib/libhyle_io_core.a",
+        "sha256": "db6ef6cef172894fe96dab2265f57f6331c3ce803a9549eaa7caf450b271a892"
+      },
+      {
+        "path": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/sdk/cuda-static-1/relocated/lib/libhyle_mem.a",
+        "sha256": "2dbb96910630f92b1b27f943126a1fc3e36f088c8c79e99769167e5c269d6f1b"
+      },
+      {
+        "path": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/sdk/cuda-static-1/relocated/lib/libhyle_mem_vm.a",
+        "sha256": "69ba52f79cf8e830371e551c71a96747fbcd97a9b79e3bb9e539aea78888e2e5"
+      },
+      {
+        "path": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/sdk/cuda-static-1/relocated/lib/libhyle_platform.a",
+        "sha256": "0d1c492a7736e81748f0f71d01150316fce114738314f1bbecde29e77873e9d9"
+      },
+      {
+        "path": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/sdk/cuda-static-1/relocated/lib/libhyle_platform_fs.a",
+        "sha256": "c51987bdf5587bc9416253c0e571de999bba7944fbca9f03875700f93fb4af29"
+      },
+      {
+        "path": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/sdk/cuda-static-1/relocated/lib/libhyle_platform_thread.a",
+        "sha256": "b2dc2541ee46c2e1d8f5a7201a235b714202d1656b5d37a5223b1ec495f75fcf"
+      },
+      {
+        "path": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/sdk/cuda-static-1/relocated/lib/libhyle_sched.a",
+        "sha256": "7082e46522fcc71ce2eee9192da80491070d1b6c5be758a7fa15deb7ac595118"
+      },
+      {
+        "path": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/sdk/cuda-static-1/relocated/lib/libhyle_simd.a",
+        "sha256": "f3fa16bf3de16be0d495d89f03aa9ef82cb01fe4dcd4c24173fe22d71ed2437a"
+      },
+      {
+        "path": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/sdk/cuda-static-1/relocated/lib/libhyle_time.a",
+        "sha256": "31137efe0fdd645d572b1cce86e7d06a78b38a77f57066c5cf1970abd2bcbcc3"
+      },
+      {
+        "path": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/sdk/cuda-static-1/relocated/lib/libmimalloc_static.a",
+        "sha256": "6d58fad0037a9fefac0f3a61ea8e1b57c8571f50e2c8a430d607e92fd2ccf4d9"
+      },
+      {
+        "path": "/root/hyle-scratch/compute-unified/g04-cuda-encoded-p1-fresh-4/CMakeFiles/g04_cuda_encoded_bench_placement.dir/root/hyle-scratch/compute-unified/g04-cuda-encoded-p1-source-4/bench/inference_resident_sdpa/cpu_placement.cc.o",
+        "sha256": "96b4b10daf881d6edc079fd2ed11b4c698af72ef2576e5ba29dd936b552ab58a"
+      },
+      {
+        "path": "/root/hyle-scratch/compute-unified/g04-cuda-encoded-p1-fresh-4/CMakeFiles/g04_cuda_encoded_bench_placement.dir/root/hyle-scratch/compute-unified/g04-cuda-encoded-p1-source-4/bench/inference_resident_sdpa/cuda_encoded_page_reference.cc.o",
+        "sha256": "bfda30d1f05c17602ba5e35fb7940fd8d577fee11e2f79943bb60f27dda36c6f"
+      },
+      {
+        "path": "/root/hyle-scratch/compute-unified/g04-cuda-encoded-p1-fresh-4/original-peer/libg04_cuda_encoded_nanobench.a",
+        "sha256": "74025e924aa3f2b3b6be7c49716172ab62b813e152e8ce612992ea7791973dec"
+      },
+      {
+        "path": "/root/hyle-scratch/compute-unified/g04-cuda-encoded-p1-fresh-4/original-peer/libg04_cuda_encoded_original.a",
+        "sha256": "3abc18097e0f10e37904a2530fcbcb24a802e7e18200954c446ed444e657f0e5"
+      },
+      {
+        "path": "/usr/local/cuda-13.3/targets/x86_64-linux/lib/libculibos.a",
+        "sha256": "6b8782dcda51e108d779f3c23be1885a630ab6f304439b2b2be1a03c0ac9594f"
+      }
+    ],
+    "stage": "control-500-selected",
+    "pid": 712
+  },
+  "conclusion": "Increasing epoch duration alone does not resolve instability. At500ms native holdout .931885 and selected holdout1.059741 exceed original5%band in opposite directions.200ms closer-to-one outcomes do not authorize selecting only the favorable duration or starting another unchanged fullP1. Preserve original4ms/40msfullA/A failures.",
+  "next": "Stop repeating same full configuration. Inspect actual ordering/timing/placement/owner/synchronization mechanisms before a finite diagnostic; no product change from unqualified timing.",
+  "limits": [
+    "No throughput, non-inferiority, regression,WIN/LOSS or token/s conclusion",
+    "No CUDA/vendor/product rebuild: only originalbenchmarkCXX TU at two durations, all reusedobjectsSHAchecked",
+    "Existing CUDA source/static/shared and ASan/UBSan/TSan finite facets retained; host sanitizer limits and native private costs unchanged"
+  ],
+  "measured_elapsed_seconds": 183.82522263200002,
+  "raw_zip_sha256": "00ed2b0781a766c5334ce705d135f20fc88be83da7455c4558830a12b9e72875"
+}

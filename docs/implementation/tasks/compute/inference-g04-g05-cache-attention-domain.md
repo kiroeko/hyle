@@ -1558,3 +1558,12 @@ CE15/16 [实际Air三交付](../../../../evidence/correctness/inference-g02-vulk
 原G02 common/native/精确守卫、Windows804/851与本补验域已[聚合验收](../graph/inference-g02-aggregate-acceptance.md)，
 goal为3/10。此聚合不代签整个G04/G05或关闭其它当前候选；下一步按上文固定CUDA
 200/500ms四控制诊断收其资格，不重复G02/Apple已签P1，不提前G06。
+
+
+CUDA原声明200/500ms四控制已[实际结束并封存](../../../../evidence/performance/inference-g04-g05-cuda-duration-diagnostic/receipt.json)。
+200ms两路线三形状ratio为0.9838–1.0356；500ms原生留出0.9319、selected留出1.0597，
+同实现控制方向相反且超过原5%带。加长片段本身未消除不稳定；不挑200ms有利结果
+启动同配置完整P1，也不把它判成产品性能损失/通过。只有两份benchmark CXX TU重编，
+原SDK/其余对象SHA不变，原4ms/40ms失败及本次elapsed保留。当前无heavy进程；按原
+固定分支先反查真实时序/同步/地址/调度机制，再声明有限诊断，不改公共性能核心或产品。
+CUDA三宿主facet已有分别封存的ASan/UBSan/TSan结果；保原LSan和诊断线程边界，不重复。
