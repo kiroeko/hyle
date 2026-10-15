@@ -15,12 +15,17 @@ once into the exact BF16 representation. Both original compressed and expanded
 representations stay resident. Two slots share one immutable expanded snapshot;
 their mutable planning/output workspaces remain independent.
 
-The peer then calls pristine FlashInfer69ff BF16 paged prefill and original BF16
+The peer then calls FlashInfer69ff BF16 paged prefill and original BF16
 partial/split merge, with the original planner, mask and independent K/V strides.
-Only the preprocessor namespace token is changed, preventing kernel/template
-interposition with the product's patched FP8 implementation. Original header
-bytes are authenticated against the pinned archive and actual compiler closure.
-No repaired FP8 K64 kernel or product F32 merge specialization is reused.
+The namespace token prevents kernel/template interposition. A build-local copy
+adds exactly the two output synchronization barriers used by CE20: CTA handoff
+before reusing shared storage, and warp synchronization before reading rearranged
+stores. The original three-shape VERIFY_ONLY racecheck reported 192 peer warnings
+and reached the tool hazard limit, despite passing its numerical oracle. The
+pristine input headers remain authenticated; effective headers and the selected
+two edits have separate hashes. This is an explicitly sync-fixed native peer,
+not a pristine throughput claim. Arithmetic, tiles, layout, planner and BF16
+partial rounding are unchanged. No FP8 K64 repair or product F32 merge is reused.
 
 Both measured episodes include explicit same-topology update and metadata
 staging/upload/wait, original BatchProgram/F1/F2, original FP8 frame identity and
@@ -36,8 +41,9 @@ The comparison measures resident warm operation rate and its explicit memory
 tradeoff. It does not claim direct original FP8 kernel throughput, best-of original
 host policy, compressed-cache end-to-end rate, token/s, G06 decode/capture, or a
 native-Linux/Formal result. The actual machine is W1-WSL on the existing SM89 GPU;
-it shares physical hardware with W1-WIN. The reused CUDA SDK CPU domain predates
-CE12/CE13, and this comparison makes only a GPU claim. Native private pool upper
+it shares physical hardware with W1-WIN. The SDK is rebound to the actual CE20
+candidate and its source/static/shared consumers; this remains a GPU comparison.
+Native private pool upper
 bounds remain UNKNOWN. Numerical preflight must pass before A/A or P1 sampling.
 
 The original statistical policy remains eight strata, sixteen workload-matched

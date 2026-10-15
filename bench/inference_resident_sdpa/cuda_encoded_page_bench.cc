@@ -210,8 +210,8 @@ void measure(int q1,int q2,int k1,int k2,int dk,int dv,bool causal,int window){D
   // slow observations; the fixed epoch count overrides duration calibration.
   nb::Bench bench;bench.title("CUDA paged FP8 BF16 Q="+std::to_string(q1)+","+std::to_string(q2)+" KV="+std::to_string(k1)+","+std::to_string(k2)+" D="+std::to_string(dk)+"/"+std::to_string(dv)+" causal="+std::to_string(causal)+" window="+std::to_string(window)).batch(1).epochs(16).minEpochIterations(1).minEpochTime(std::chrono::milliseconds(40)).performanceCounters(false);
   const auto selected=[&]{auto result=candidate->execute();nb::doNotOptimizeAway(result);};const auto original=[&]{auto result=peer->execute();nb::doNotOptimizeAway(result);};
-  if(set("HYLE_BENCH_RIVAL_FIRST"))(void)episode_compare(bench,"Original CUDA cold-expanded immutable lifecycle",original,"HYLE CUDA encoded paged",selected);
-  else (void)episode_compare(bench,"HYLE CUDA encoded paged",selected,"Original CUDA cold-expanded immutable lifecycle",original);
+  if(set("HYLE_BENCH_RIVAL_FIRST"))(void)episode_compare(bench,"FI69ff sync-fixed cold-expanded immutable lifecycle",original,"HYLE CUDA encoded paged",selected);
+  else (void)episode_compare(bench,"HYLE CUDA encoded paged",selected,"FI69ff sync-fixed cold-expanded immutable lifecycle",original);
 }
 }
 int main(int,char **argv){const auto qos=hyle::bench::perf::configure_thread_qos();const auto affinity=hyle::bench::perf::configure_thread_affinity("HYLE_PERF_CALLER_CPU");

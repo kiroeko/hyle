@@ -1837,3 +1837,46 @@ Ninja自身对146原对象验证原command identity和deps freshness，实际NO 
 其余当前CPU/FI/product边不改；续跑原配置、不再configure，host producer80.763s、install
 0.542s，全部146旧对象前后SHA及原normal manifest SHA未变。public SDK检查不把此复用
 冒充当前未运行静态SDK、三宿主facet或P1；也不修改公共构建/selector核心。
+
+CE20静态SDK首次configure53.934s PASS，原producer plan guard在产品build前拒绝146个
+无关ggml CUDA对象（旧路径c41→当前2f41）。原失败/54.158s成功设置阶段保留。静态树
+单独核242 native源码/头、5 canonical输入与146实际对象；Ninja对原命令与deps判NO WORK，
+耗时0.266s。只在静态树自己的另名manifest映射等价CUDA输入/precise-unary引用，保留
+当前全部CPU/FI边；同source archive/同configure续跑，无公共工具或产品改动，FI四CUDA
+TU仍按新候选真实编译。该静态复用不是动态树复用的代签，终态再核146对象与normal图SHA。
+
+下一P1数值/资格前先补一次原peer安全反证：同pin pristine writer也缺少已实证的同步。
+静态SDK结束、无其它heavy任务后，只在冻结attempt6 primary artifact上运行一次原三形状
+VERIFY_ONLY racecheck，保原双方/四oracle/warmup，不重采性能或构建。该artifact内original
+namespace与HYLE namespace分开，逐类归因；其旧HYLE分支不签新候选。print-limit0、4workers、
+error-exit86、保存完整log/elapsed/前后artifact SHA。若原peer有同族hazard，先修复对比语义
+并明确记录本地derivation，再重新绑定数值；不能沿不安全baseline签LOSS/WIN，也不因读到
+相同源码就预判工具结果。无hazard则保实际清洁证据、继续原pristine peer。该反证不改变
+原5%、8strata/16AA/n15/31、输入/所有旧P1 verdict，不改公共性能核心。预算15min检查点
+沿常设授权有限追加，原失败与费用全部保留。
+
+CE20[静态SDK实际补证](../../../../evidence/correctness/inference-g04-g05-cuda-ce20-static-sdk/receipt.json)
+已PASS：CPU数学14、native数学13、CPU公开组合3、native公开组合3，以及12独立头/16个
+consumer编译TU，全从搬迁prefix消费，无仓库头。静态FI四CUDA TU实际编译，producer
+359.790s、install0.776s、consumer configure31.105s/build19.106s，续跑成功阶段416.825s；
+首次设置/范围guard54.158s另外保留。静态146 native对象复用有自己的Ninja无工作证明，
+对象前后SHA与normal图SHA均未变；不以动态模式证据代签。source/static/shared产品旅程
+至此均有当前候选实际结果；三个受影响宿主facet及原P1/聚合仍待验。
+
+[原peer安全反证](../../../../evidence/correctness/inference-g04-g05-cuda-ce20-peer-safety-preflight/receipt.json)
+实际22.578s，原24独立oracle最大误差0.001091<0.008均PASS，但racecheck exit86：192条
+已显示original namespace读写warning，另有一条达到hazard上限提示，不推断未显示域清洁。
+据此前节明确分支，下一独立比较改成sync-fixed native69ff：认证原Git pin/全部原头，在
+build-local副本仅选用与产品同样的两处输出同步，分别签effective header与selected-edits
+SHA；namespace隔离保留，原math/tile/layout/planner/BF16 partial不改，无FP8 padding/F32
+merge产品特例复用。统计行/claim/provenance显式标sync-fixed，合同id升v2，新数值补证
+指向独立CE20 receipt；旧receipt/manifest/样本全保留，不回写pristine旧结果。当前仅
+source-only制备验证通过；新的compiled数学/race和完整资格未运行，不代签PASS。
+
+本次只是workload-local peer安全修正、当前实际静态SDK prefix及数值绑定更新。API/产品
+candidate274不变，原输入/3形状、8strata/16AA/n15/31、5%门与全量尾样本统计不变；
+公共性能核心/工具不改。新数值receipt未实际形成前ready门必须拒绝采样。
+
+本次peer/合同变更的selector计划ce20-peer-sync-plan仍因同一共享bench目录归属缺口为
+BLOCKED（六个unknown路径，product_authorization无owner/issues），原146 skipped reasons保留。
+沿已登记独立工具任务与本卡有限验证续跑，不借此修改selector或全库构建，未运行项不代签。

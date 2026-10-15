@@ -9,6 +9,7 @@ endif()
 set(HYLE_FLASHINFER_ORIGINAL_SOURCE "" CACHE PATH "Pristine authenticated FlashInfer69ff checkout")
 execute_process(COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_LIST_DIR}/verify_source.py"
   --original "${HYLE_FLASHINFER_ORIGINAL_SOURCE}"
+  --prepared "${CMAKE_CURRENT_BINARY_DIR}/sync-fixed-flashinfer"
   --output "${CMAKE_CURRENT_BINARY_DIR}/original-flashinfer-source.json"
   RESULT_VARIABLE verified)
 if(NOT verified EQUAL 0)
@@ -20,7 +21,7 @@ set_property(TARGET g04_cuda_encoded_original PROPERTY CUDA_ARCHITECTURES 89-rea
 set_property(TARGET g04_cuda_encoded_original PROPERTY CUDA_STANDARD 20)
 set_property(TARGET g04_cuda_encoded_original PROPERTY JOB_POOL_COMPILE g04_cuda_peer_compile)
 set_property(GLOBAL APPEND PROPERTY JOB_POOLS g04_cuda_peer_compile=1)
-target_include_directories(g04_cuda_encoded_original PRIVATE "${HYLE_FLASHINFER_ORIGINAL_SOURCE}/include")
+target_include_directories(g04_cuda_encoded_original PRIVATE "${CMAKE_CURRENT_BINARY_DIR}/sync-fixed-flashinfer/include")
 target_compile_options(g04_cuda_encoded_original PRIVATE $<$<COMPILE_LANGUAGE:CUDA>:--expt-relaxed-constexpr>)
 add_library(g04_cuda_encoded_nanobench STATIC "${HYLE_SOURCE_DIR}/bench/nanobench_impl.cc")
 target_include_directories(g04_cuda_encoded_nanobench SYSTEM PUBLIC "${HYLE_SOURCE_DIR}/third_party/nanobench")

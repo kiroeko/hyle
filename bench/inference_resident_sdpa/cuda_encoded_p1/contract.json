@@ -1,8 +1,8 @@
 {
   "schema": "hyle.perf.contract/v1",
-  "id": "inference-cuda-encoded-page-w1-wsl-p1-v1",
+  "id": "inference-cuda-encoded-page-w1-wsl-p1-v2",
   "module": "compute_provider_flashinfer",
-  "claim": "Finite actual SM89 FP8 paged attention versus pristine original FI69ff cold-expanded readonly BF16 cache; complete warm Batch lifecycle and explicit extra cold memory. Three shapes; not direct original FP8/best-host/dynamic/G06/token-s/native-Linux/Formal.",
+  "claim": "Finite actual SM89 FP8 paged attention versus sync-fixed native FI69ff cold-expanded readonly BF16 cache; complete warm Batch lifecycle and explicit extra cold memory. Three shapes; not direct original FP8/best-host/dynamic/G06/token-s/native-Linux/Formal.",
   "candidate": {
     "target": "g04_cuda_encoded_bench",
     "delivery_shape": "static",
@@ -16,7 +16,7 @@
       "revision": "69ff11fc4954396d98326656dc85debd2223f637",
       "configuration": {
         "delivery_shape": "source",
-        "role": "Pristine original69ff BF16 paged attention and original16-bit split-merge in isolated benchmark namespace",
+        "role": "Sync-fixed native69ff BF16 paged attention and original16-bit split-merge in isolated benchmark namespace",
         "precision": "BF16 Q/output; exact powers-of-two FP8 decode cold, original BF16 partial rounding retained",
         "scope": "same ready immutable snapshot/complete warm lifecycle, additional BF16 physical cache explicitly reported"
       }
@@ -205,12 +205,12 @@
       "charged_phases": [
         "same-topology BatchInvocation.update_batch with original metadata upload/wait",
         "BatchProgram/F1/F2 exact FP8 page permission and full retained frame identity/range checks",
-        "actual direct FP8 candidate or pristine BF16 paged attention/original split-merge; necessary candidate output cast",
+        "actual direct FP8 candidate or sync-fixed native BF16 paged attention/original split-merge; necessary candidate output cast",
         "original Queue checked Completion.wait and owning output return/release"
       ],
       "pair": {
         "candidate": "HYLE CUDA encoded paged",
-        "peer": "Original CUDA cold-expanded immutable lifecycle"
+        "peer": "FI69ff sync-fixed cold-expanded immutable lifecycle"
       },
       "practical_margin_percent": 5,
       "noninferiority_margin_percent": 5,
@@ -290,12 +290,12 @@
       "charged_phases": [
         "same-topology BatchInvocation.update_batch with original metadata upload/wait",
         "BatchProgram/F1/F2 exact FP8 page permission and full retained frame identity/range checks",
-        "actual direct FP8 candidate or pristine BF16 paged attention/original split-merge; necessary candidate output cast",
+        "actual direct FP8 candidate or sync-fixed native BF16 paged attention/original split-merge; necessary candidate output cast",
         "original Queue checked Completion.wait and owning output return/release"
       ],
       "pair": {
         "candidate": "HYLE CUDA encoded paged",
-        "peer": "Original CUDA cold-expanded immutable lifecycle"
+        "peer": "FI69ff sync-fixed cold-expanded immutable lifecycle"
       },
       "practical_margin_percent": 5,
       "noninferiority_margin_percent": 5,
@@ -375,12 +375,12 @@
       "charged_phases": [
         "same-topology BatchInvocation.update_batch with original metadata upload/wait",
         "BatchProgram/F1/F2 exact FP8 page permission and full retained frame identity/range checks",
-        "actual direct FP8 candidate or pristine BF16 paged attention/original split-merge; necessary candidate output cast",
+        "actual direct FP8 candidate or sync-fixed native BF16 paged attention/original split-merge; necessary candidate output cast",
         "original Queue checked Completion.wait and owning output return/release"
       ],
       "pair": {
         "candidate": "HYLE CUDA encoded paged",
-        "peer": "Original CUDA cold-expanded immutable lifecycle"
+        "peer": "FI69ff sync-fixed cold-expanded immutable lifecycle"
       },
       "practical_margin_percent": 5,
       "noninferiority_margin_percent": 5,
@@ -460,7 +460,7 @@
           "HYLE_SANITIZER": "off",
           "CMAKE_INTERPROCEDURAL_OPTIMIZATION": "OFF",
           "CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
-          "CMAKE_PREFIX_PATH": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/sdk/cuda-static-1/relocated",
+          "CMAKE_PREFIX_PATH": "/root/hyle-scratch/compute-unified/g04-g05-encoded-sdk/cuda-static-ce19-resume-1/relocated",
           "CUDAToolkit_ROOT": "/usr/local/cuda-13.3",
           "CMAKE_CUDA_COMPILER": "/usr/local/cuda-13.3/bin/nvcc",
           "CMAKE_CUDA_HOST_COMPILER": "/usr/bin/g++-14",

@@ -52,7 +52,7 @@ def main():
     cache = dict(line.split('=', 1) for line in (build/'CMakeCache.txt').read_text().splitlines()
                  if '=' in line and not line.startswith(('#', '//')))
     original = json.loads((build/'original-peer/original-flashinfer-source.json').read_text())
-    receipt_file = ROOT/'evidence/correctness/inference-g04-g05-cuda-episode-interleave-numeric-rebind/receipt.json'
+    receipt_file = ROOT/'evidence/correctness/inference-g04-g05-cuda-ce20-sync-fixed-numeric-rebind/receipt.json'
     preflight = json.loads(receipt_file.read_text())
     if preflight.get('state') != 'TERMINAL_PASS':
         raise RuntimeError('CUDA numerical preflight has not passed')
@@ -60,13 +60,19 @@ def main():
     # Qualification requires a real Git checkout; the numerical preflight
     # authenticated an archive extraction. Location and archive transport may
     # differ, while the revision and every original header must be identical.
-    for key in ('revision', 'inputs', 'all_original_headers', 'adaptation', 'status'):
+    for key in ('revision', 'inputs', 'all_original_headers', 'effective_headers', 'derivation', 'adaptation', 'status'):
         if original[key] != numeric['original_source'][key]:
             raise RuntimeError('original CUDA source identity changed: '+key)
     peer_root = Path(original['source'])
     if not (peer_root/'.git').exists() or \
             Path(subprocess.check_output(['git','-C',str(peer_root),'rev-parse','--show-toplevel'],text=True).strip()).resolve() != peer_root.resolve():
         raise RuntimeError('CUDA performance peer must own its Git checkout')
+    prepared = Path(original['prepared_source']).resolve(strict=True)
+    if prepared != (build/'original-peer/sync-fixed-flashinfer').resolve(strict=True):
+        raise RuntimeError('unexpected sync-fixed CUDA peer root')
+    for path, expected in original['effective_headers'].items():
+        if digest(prepared/path) != expected:
+            raise RuntimeError('effective CUDA peer header changed: '+path)
     for item in numeric['snapshot']['benchmark_inputs']:
         if digest(ROOT/item['path']) != item['sha256']:
             raise RuntimeError('CUDA numeric input changed: '+item['path'])
@@ -150,7 +156,7 @@ def main():
                         ratios = {}
                         for q1, q2, k1, k2, dk, dv, causal, window in CASES:
                             title = f'CUDA paged FP8 BF16 Q={q1},{q2} KV={k1},{k2} D={dk}/{dv} causal={causal} window={window}'
-                            candidate, peer_row = select_pair(rows, 'HYLE CUDA encoded paged', 'Original CUDA cold-expanded immutable lifecycle', title=title)
+                            candidate, peer_row = select_pair(rows, 'HYLE CUDA encoded paged', 'FI69ff sync-fixed cold-expanded immutable lifecycle', title=title)
                             ratios[title] = candidate.operations_per_second/peer_row.operations_per_second
                         runs.append({'route': route, 'variant': variant, 'execution_order': expected['execution_order'],
                             'allocation_order': expected['allocation_order'], 'ratios': ratios,
