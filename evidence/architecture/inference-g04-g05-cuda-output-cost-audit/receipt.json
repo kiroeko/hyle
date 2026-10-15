@@ -1,0 +1,158 @@
+{
+  "kind": "G04_G05_CUDA_OUTPUT_EPILOGUE_READ_ONLY_COST_AUDIT",
+  "verdict": "READ_ONLY_MECHANISM_FACTS_NOT_PRODUCT_VERDICT",
+  "current_performance_source": "2f01f4d991d58973d1cb1f0882f2fc86bd4b9ebc",
+  "cuda_product_candidate": "982676cb05a6e6244e66e0a596347aa96043617b",
+  "inputs": [
+    {
+      "path": "src/compute_provider_flashinfer/native_cache.cu",
+      "sha256": "577be742049165e21cb426ac83f8aeec58988f44045e0ce149c198848774ed4e"
+    },
+    {
+      "path": "src/compute_provider_flashinfer/native_batch.cu",
+      "sha256": "f9f29d694c1c2681de6640f0bef910801a20fd8cb6b3d9778a375ba1324cb0d4"
+    },
+    {
+      "path": "src/compute_provider_flashinfer/native_batch.h",
+      "sha256": "d9bb3832b4908ec466fff78649e3638318001a5acd5dde9d3c72a6566f13c25f"
+    },
+    {
+      "path": "tests/compute_provider_flashinfer/native_cache_test.cc",
+      "sha256": "903a1a4efb2fe0cf6f8b1b8cde0ec1ab051cfd7cbec2d2fa2bc044433fb68cf2"
+    }
+  ],
+  "artifact": {
+    "path": "/root/hyle-scratch/compute-unified/g04-cuda-encoded-p1-fresh-6/bin/g04_cuda_encoded_bench",
+    "sha256": "69221f64ae2039adf1251154a8c08f49e4a164d1a064f56df43bc8ec01648fd2"
+  },
+  "resource_command": [
+    "/usr/local/cuda-13.3/bin/cuobjdump",
+    "--dump-resource-usage",
+    "/root/hyle-scratch/compute-unified/g04-cuda-encoded-p1-fresh-6/bin/g04_cuda_encoded_bench"
+  ],
+  "measured_static_tool_seconds": 0.2739219759999969,
+  "static_sm89_d256_causal_resources": [
+    {
+      "route": "pristine_bf16",
+      "arch": "sm_89",
+      "mask": "causal",
+      "tile": 64,
+      "kv_mma": 1,
+      "dimensions": [
+        256,
+        256
+      ],
+      "threads": 128,
+      "resource": "REG:240 STACK:0 SHARED:0 LOCAL:0 CONSTANT[0]:712 TEXTURE:0 SURFACE:0 SAMPLER:0",
+      "function": "Function void hyle_benchmark_original_flashinfer_69ff::BatchPrefillWithPagedKVCacheKernel<hyle_benchmark_original_flashinfer_69ff::KernelTraits<(hyle_benchmark_original_flashinfer_69ff::MaskMode)1, 64u, 1u, 1u, 16u, 16u, 4u, 1u, (hyle_benchmark_original_flashinfer_69ff::PosEncodingMode)0, __nv_bfloat16, __nv_bfloat16, __nv_bfloat16, float, int, hyle_benchmark_original_flashinfer_69ff::DefaultAttention<false, true, false, false> >, hyle_benchmark_original_flashinfer_69ff::BatchPrefillPagedParams<__nv_bfloat16, __nv_bfloat16, __nv_bfloat16, int> >(hyle_benchmark_original_flashinfer_69ff::BatchPrefillPagedParams<__nv_bfloat16, __nv_bfloat16, __nv_bfloat16, int>):"
+    },
+    {
+      "route": "pristine_bf16",
+      "arch": "sm_89",
+      "mask": "causal",
+      "tile": 64,
+      "kv_mma": 2,
+      "dimensions": [
+        256,
+        256
+      ],
+      "threads": 128,
+      "resource": "REG:238 STACK:0 SHARED:0 LOCAL:0 CONSTANT[0]:712 TEXTURE:0 SURFACE:0 SAMPLER:0",
+      "function": "Function void hyle_benchmark_original_flashinfer_69ff::BatchPrefillWithPagedKVCacheKernel<hyle_benchmark_original_flashinfer_69ff::KernelTraits<(hyle_benchmark_original_flashinfer_69ff::MaskMode)1, 64u, 1u, 2u, 16u, 16u, 4u, 1u, (hyle_benchmark_original_flashinfer_69ff::PosEncodingMode)0, __nv_bfloat16, __nv_bfloat16, __nv_bfloat16, float, int, hyle_benchmark_original_flashinfer_69ff::DefaultAttention<false, true, false, false> >, hyle_benchmark_original_flashinfer_69ff::BatchPrefillPagedParams<__nv_bfloat16, __nv_bfloat16, __nv_bfloat16, int> >(hyle_benchmark_original_flashinfer_69ff::BatchPrefillPagedParams<__nv_bfloat16, __nv_bfloat16, __nv_bfloat16, int>):"
+    },
+    {
+      "route": "pristine_bf16",
+      "arch": "sm_89",
+      "mask": "causal",
+      "tile": 64,
+      "kv_mma": 4,
+      "dimensions": [
+        256,
+        256
+      ],
+      "threads": 128,
+      "resource": "REG:240 STACK:0 SHARED:0 LOCAL:0 CONSTANT[0]:712 TEXTURE:0 SURFACE:0 SAMPLER:0",
+      "function": "Function void hyle_benchmark_original_flashinfer_69ff::BatchPrefillWithPagedKVCacheKernel<hyle_benchmark_original_flashinfer_69ff::KernelTraits<(hyle_benchmark_original_flashinfer_69ff::MaskMode)1, 64u, 1u, 4u, 16u, 16u, 4u, 1u, (hyle_benchmark_original_flashinfer_69ff::PosEncodingMode)0, __nv_bfloat16, __nv_bfloat16, __nv_bfloat16, float, int, hyle_benchmark_original_flashinfer_69ff::DefaultAttention<false, true, false, false> >, hyle_benchmark_original_flashinfer_69ff::BatchPrefillPagedParams<__nv_bfloat16, __nv_bfloat16, __nv_bfloat16, int> >(hyle_benchmark_original_flashinfer_69ff::BatchPrefillPagedParams<__nv_bfloat16, __nv_bfloat16, __nv_bfloat16, int>):"
+    },
+    {
+      "route": "pristine_bf16",
+      "arch": "sm_89",
+      "mask": "causal",
+      "tile": 64,
+      "kv_mma": 8,
+      "dimensions": [
+        256,
+        256
+      ],
+      "threads": 128,
+      "resource": "REG:255 STACK:24 SHARED:0 LOCAL:0 CONSTANT[0]:712 TEXTURE:0 SURFACE:0 SAMPLER:0",
+      "function": "Function void hyle_benchmark_original_flashinfer_69ff::BatchPrefillWithPagedKVCacheKernel<hyle_benchmark_original_flashinfer_69ff::KernelTraits<(hyle_benchmark_original_flashinfer_69ff::MaskMode)1, 64u, 1u, 8u, 16u, 16u, 4u, 1u, (hyle_benchmark_original_flashinfer_69ff::PosEncodingMode)0, __nv_bfloat16, __nv_bfloat16, __nv_bfloat16, float, int, hyle_benchmark_original_flashinfer_69ff::DefaultAttention<false, true, false, false> >, hyle_benchmark_original_flashinfer_69ff::BatchPrefillPagedParams<__nv_bfloat16, __nv_bfloat16, __nv_bfloat16, int> >(hyle_benchmark_original_flashinfer_69ff::BatchPrefillPagedParams<__nv_bfloat16, __nv_bfloat16, __nv_bfloat16, int>):"
+    },
+    {
+      "route": "selected_fp8_f32",
+      "arch": "sm_89",
+      "mask": "causal",
+      "tile": 64,
+      "kv_mma": 2,
+      "dimensions": [
+        256,
+        256
+      ],
+      "threads": 128,
+      "resource": "REG:244 STACK:0 SHARED:0 LOCAL:0 CONSTANT[0]:712 TEXTURE:0 SURFACE:0 SAMPLER:0",
+      "function": "Function void flashinfer::BatchPrefillWithPagedKVCacheKernel<flashinfer::KernelTraits<(flashinfer::MaskMode)1, 64u, 1u, 2u, 16u, 16u, 4u, 1u, (flashinfer::PosEncodingMode)0, __nv_bfloat16, __nv_fp8_e4m3, float, float, int, flashinfer::DefaultAttention<false, true, false, false> >, flashinfer::BatchPrefillPagedParams<__nv_bfloat16, __nv_fp8_e4m3, float, int> >(flashinfer::BatchPrefillPagedParams<__nv_bfloat16, __nv_fp8_e4m3, float, int>):"
+    },
+    {
+      "route": "selected_fp8_f32",
+      "arch": "sm_89",
+      "mask": "causal",
+      "tile": 64,
+      "kv_mma": 4,
+      "dimensions": [
+        256,
+        256
+      ],
+      "threads": 128,
+      "resource": "REG:246 STACK:0 SHARED:0 LOCAL:0 CONSTANT[0]:712 TEXTURE:0 SURFACE:0 SAMPLER:0",
+      "function": "Function void flashinfer::BatchPrefillWithPagedKVCacheKernel<flashinfer::KernelTraits<(flashinfer::MaskMode)1, 64u, 1u, 4u, 16u, 16u, 4u, 1u, (flashinfer::PosEncodingMode)0, __nv_bfloat16, __nv_fp8_e4m3, float, float, int, flashinfer::DefaultAttention<false, true, false, false> >, flashinfer::BatchPrefillPagedParams<__nv_bfloat16, __nv_fp8_e4m3, float, int> >(flashinfer::BatchPrefillPagedParams<__nv_bfloat16, __nv_fp8_e4m3, float, int>):"
+    },
+    {
+      "route": "selected_fp8_f32",
+      "arch": "sm_89",
+      "mask": "causal",
+      "tile": 64,
+      "kv_mma": 8,
+      "dimensions": [
+        256,
+        256
+      ],
+      "threads": 128,
+      "resource": "REG:255 STACK:56 SHARED:0 LOCAL:0 CONSTANT[0]:712 TEXTURE:0 SURFACE:0 SAMPLER:0",
+      "function": "Function void flashinfer::BatchPrefillWithPagedKVCacheKernel<flashinfer::KernelTraits<(flashinfer::MaskMode)1, 64u, 1u, 8u, 16u, 16u, 4u, 1u, (flashinfer::PosEncodingMode)0, __nv_bfloat16, __nv_fp8_e4m3, float, float, int, flashinfer::DefaultAttention<false, true, false, false> >, flashinfer::BatchPrefillPagedParams<__nv_bfloat16, __nv_fp8_e4m3, float, int> >(flashinfer::BatchPrefillPagedParams<__nv_bfloat16, __nv_fp8_e4m3, float, int>):"
+    }
+  ],
+  "facts": [
+    "All FP8 routes currently select DTypeO=float, write normalized raw output to O(Q*Hq*Dv)F32 staging, then enqueue separate scale_cast with value_scale and actual16-bit output. Non-split routes pay the same extra kernel/staging despite no partial merge.",
+    "D256 prefill staging192*8*256*4=1572864 bytes; additional final-output staging write+read is3145728 bytes. Window147456 staging bytes;holdout73728. These are source operation counts,not timing or hardware traffic counters.",
+    "The existing FI AttentionVariantBase already detects an optional private Params.v_scale and multiplies it into normalized F32 register output before dtype cast. The current product cannot use it indiscriminately on split partials: applying scale before16-bit partial storage can overflow before a finite cancellation.",
+    "SM89 causalD256/CTA64/kvMMA4 symbols show original240 and selected246 registers,zero static stack/local spills; kvMMA8 includes stack24/56 respectively. Runtime selected kvMMA and dynamic shared-memory occupancy are not established by these static symbols."
+  ],
+  "next_hypotheses": [
+    "After terminal qualified performance and any material loss, profile original complete3 shapes to separate FP8 attention, F32 merge, scale_cast and host API costs. No profiling/build concurrent with live P1.",
+    "If supported by actual attribution, non-split output can use existing private scaled Params and original F32 OutputTransform, cast once directly to actual output. Keep full precision/split cancellation domain; no BF16 partial narrowing, scale guards or input changes merely to pass the benchmark.",
+    "Split final merge/scale/cast fusion remains a hypothesis needing actual bounded native source and runtime attribution; do not invent another generic planner or change public APIs from a timing row."
+  ],
+  "not_proven": [
+    "Originaln15 product/control sequence is live; no complete qualification/product LOSS or PASS yet.",
+    "No source/static/shared/sanitizer test rerun and no product change; this record does not authorize implementation on CANDIDATE.",
+    "Actual selected GPU variant, runtime occupancy/bandwidth and exact share of loss remain unresolved.",
+    "No end-to-end token/s or nativeLinux/Formal claim; original private-pool UNKNOWN unchanged."
+  ],
+  "raw_zip_sha256": "98ac1647b83d1374ea1c52c564f688b0641b1778fc0924956219cae30f0af9b5",
+  "upstream_source_identity": {
+    "receipt": "evidence/correctness/inference-g04-g05-cuda-episode-interleave-numeric-rebind/receipt.json",
+    "receipt_sha256": "31e9e32c5082daa2050dae993786328ebedbae797e23e9a4f8102fff40ef5ee2",
+    "revision": "69ff11fc4954396d98326656dc85debd2223f637",
+    "variant_helper_sha256": "326c32f7722027da5002ca9297c84f74b604255f01e59263f193b2aee3edb159"
+  }
+}

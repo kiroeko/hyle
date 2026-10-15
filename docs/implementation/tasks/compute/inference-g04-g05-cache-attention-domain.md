@@ -1650,3 +1650,19 @@ attempt6 source `2f01f4d991d58973d1cb1f0882f2fc86bd4b9ebc` 已实际通过
 同一parent继续原n15八strata产品/controls和必要原n31扩样，未修改候选或重跑A/A。
 初始产品片段出现prefill耗时差异，当前只有进行中的样本，不据此签LOSS或改产品；待原
 完整统计裁决。若确有material损失，再按原机制/真实consumer回AUDITED有限修正。
+
+采样期间仅作[输出成本只读审计](../../../../evidence/architecture/inference-g04-g05-cuda-output-cost-audit/receipt.json)：
+未启动其它GPU任务或编译，cuobjdump静态读取实际artifact耗时0.274s。FP8无论是否split
+均写F32输出staging，再单独scale/cast；D256 prefill为1572864-byte staging，其write/read
+额外3145728 bytes及一个dispatch。原FI variant确有private v_scale的归一化后输出变换；
+它不能无条件用于16-bit split partial，否则原有限抵消会先溢出。SM89 causalD256/CTA64/
+kvMMA4的static符号original240/selected246 registers、均零stack/local；这不证明运行时
+选中了该variant，也不把静态SHARED:0当动态shared-memory为零。
+
+若同一attempt6真实TERMINAL、strict verify0、QUALIFIED且有material非劣FAIL，下一有限
+归因只在原primary artifact上运行一次Nsight Systems CUDA trace：原VERIFY_ONLY三形状、
+双方两slot/四oracle replay及原warmup，收actual attention/merge/scale_cast、动态shared/
+register/grid和关联launch API。禁CPU sampling/context-switch profiler；不改输入、阈值、
+binary或SDK，不与P1并发。保全部raw/实际elapsed，区分冷decoder/数值download与各数学
+kernel；profiling只作机制证据，不签吞吐。预算15min检查点沿原用户常设追加/原累计；
+只有实际归因后才scope有限产品修正，当前owner仍CANDIDATE、不提前实现G06。
