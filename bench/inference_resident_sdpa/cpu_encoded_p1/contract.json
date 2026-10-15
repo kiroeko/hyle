@@ -159,7 +159,7 @@
       "consumer_key": "inference-cpu-encoded/cpu-encoded-window-d256",
       "provenance": {
         "path": "consumer-provenance.json",
-        "sha256": "389ecd86934c3911683d84a8367cc47ed949d338860d9b8526628d8053dce7d4"
+        "sha256": "88c55d1e84fc7e0031374c4693664d0c08836ca41c6bfaffd343258c8446616e"
       },
       "ownership_topology": {
         "candidate": "ordinary CPU BatchProgram, exact ready encoded pages, original paged native Q8 math, two slots/F1/Queue/Completion/output lease",
@@ -244,7 +244,7 @@
       "consumer_key": "inference-cpu-encoded/cpu-encoded-prefill-d256",
       "provenance": {
         "path": "consumer-provenance.json",
-        "sha256": "389ecd86934c3911683d84a8367cc47ed949d338860d9b8526628d8053dce7d4"
+        "sha256": "88c55d1e84fc7e0031374c4693664d0c08836ca41c6bfaffd343258c8446616e"
       },
       "ownership_topology": {
         "candidate": "ordinary CPU BatchProgram, exact ready encoded pages, original paged native Q8 math, two slots/F1/Queue/Completion/output lease",
@@ -329,7 +329,7 @@
       "consumer_key": "inference-cpu-encoded/cpu-encoded-holdout-d64-v128",
       "provenance": {
         "path": "consumer-provenance.json",
-        "sha256": "389ecd86934c3911683d84a8367cc47ed949d338860d9b8526628d8053dce7d4"
+        "sha256": "88c55d1e84fc7e0031374c4693664d0c08836ca41c6bfaffd343258c8446616e"
       },
       "ownership_topology": {
         "candidate": "ordinary CPU BatchProgram, exact ready encoded pages, original paged native Q8 math, two slots/F1/Queue/Completion/output lease",
@@ -465,7 +465,7 @@
           "HYLE_SIMD_EXACT_TARGET": "",
           "CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
           "HYLE_DEP_SOURCE_CACHE": "C:/public/tools/hyle-dependencies/v1",
-          "CMAKE_PREFIX_PATH": "C:/h7/g04-sdk-cpu-static-ce12-1/relocated",
+          "CMAKE_PREFIX_PATH": "C:/h7/g04-sdk-cpu-static-ce13-1/relocated",
           "HYLE_CPU_PAGED_NATIVE_INCLUDE": "C:/public/project-hyle/hyle/.scratch/build-compute-v2-dev/src/compute_ggml_runtime/source-8570887ac0d71134/include",
           "HYLE_CPU_PAGED_ORIGINAL_DLL": "C:/h7/g01-cpu-paged-original-build/bin/g01_cpu_paged_original.dll"
         },

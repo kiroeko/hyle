@@ -36,11 +36,12 @@ Native pool maxima remain UNKNOWN; cold graph/mask/pool/cache setup/teardown
 are separately reported and are outside this explicitly resident-warm scope.
 
 The original qualified run used the f772 static SDK and retained its material
-performance FAIL. CE12 uses the independently tested 5f9b261bf static SDK at
-C:/h7/g04-sdk-cpu-static-ce12-1/relocated; every linked library/program SHA is
+performance FAIL. The CE12 run used the independently tested 5f9b261bf SDK and retained its
+qualified performance FAIL. CE13 uses the independently tested 42a4c7cdcc SDK at
+C:/h7/g04-sdk-cpu-static-ce13-1/relocated; every linked library/program SHA is
 authenticated against the new SDK receipt. The semantic workload/lifecycle,
 fixtures, instrumentation, schedule and5% margin are unchanged. Existing unified instrument, machine policy,
 16-round nanobench compare, workload-matched A/A, both execution/allocation orders,
 placement replicas, original n15/31 schedule and5% margin remain fixed.
-Original qualification/FAIL remains immutable; the CE12 repeat has not started at this update. This contract cannot sign producer/growth,
+Original and CE12 qualification/FAIL remain immutable; the CE13 repeat has not started at this update. This contract cannot sign producer/growth,
 all G04/G05, native private budgets, capture or end-to-end token/s.

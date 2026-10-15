@@ -1,0 +1,9 @@
+{
+  "kind": "CE13_CPU_P1_ARTIFACT_REBIND",
+  "product_candidate": "42a4c7cdcc0822a7b162efe575909622a906de1d",
+  "previous_contract_file_sha256": "7bb496baf157a34f2533fecdf3b2cda2174d7c071f6d17921ee30c31a072e4ec",
+  "new_contract_file_sha256": "33471f3b25e5169b337d2946c03bd0a71591a1a879a26ed0b242d981d317c683",
+  "semantic_diff": "NONE; only SDK prefix and supporting provenance hashes changed; original workload/fixtures/order/sampling/margin unchanged",
+  "previous_qualified_failure": "evidence/performance/inference-g04-g05-ce12-cpu-encoded-w1-p1/receipt.json",
+  "prefix": "C:/h7/g04-sdk-cpu-static-ce13-1/relocated"
+}

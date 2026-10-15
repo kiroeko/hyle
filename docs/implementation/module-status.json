@@ -373,9 +373,10 @@
     },
     {
       "module": "compute_provider_ggml",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/inference-g04-g05-cache-attention-domain.md",
-      "summary": "G04/G05 CE13 AUDITED: qualified CE12 window WIN/prefill noninferiority PASS but rectangular Q>KV holdout FAIL retained. Finite FIX: one physical-row resolution per generic KV token; cold immutable request byte extents with original bounds/permissions. No public API/math/query-safety/queue/lifetime changes. Other nine owner candidates and frozen CUDA/Air validation inputs unchanged."
+      "summary": "G04/G05 CE13 CANDIDATE: one physical-row resolution per token and four immutable request extents frozen. CPU source22/factor5, host sanitizer3x(17+9), static/shared SDK(14+3+12headers), actual Air mixed456 CPU22 PASS. Original CE12 qualified P1 FAIL retained; new same-contract P1 pending. Other owners and closed scopes unchanged.",
+      "candidate": "42a4c7cdcc0822a7b162efe575909622a906de1d"
     },
     {
       "module": "graph_provider_onednn",
@@ -543,9 +544,10 @@
     },
     {
       "module": "compute_ggml_runtime",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/inference-g04-g05-cache-attention-domain.md",
-      "summary": "G04/G05 CE13 AUDITED: qualified CE12 window WIN/prefill noninferiority PASS but rectangular Q>KV holdout FAIL retained. Finite FIX: one physical-row resolution per generic KV token; cold immutable request byte extents with original bounds/permissions. No public API/math/query-safety/queue/lifetime changes. Other nine owner candidates and frozen CUDA/Air validation inputs unchanged."
+      "summary": "G04/G05 CE13 CANDIDATE: one physical-row resolution per token and four immutable request extents frozen. CPU source22/factor5, host sanitizer3x(17+9), static/shared SDK(14+3+12headers), actual Air mixed456 CPU22 PASS. Original CE12 qualified P1 FAIL retained; new same-contract P1 pending. Other owners and closed scopes unchanged.",
+      "candidate": "42a4c7cdcc0822a7b162efe575909622a906de1d"
     },
     {
       "module": "compute_provider_ggml_cuda",

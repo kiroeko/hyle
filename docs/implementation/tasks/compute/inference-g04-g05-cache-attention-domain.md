@@ -1,6 +1,6 @@
 # G04/G05 编码 KV 与有限 attention 语义实施批
 
-状态：**共同 CANDIDATE；CPU provider 的 CE12 为5f9b261bf，2026-10-15**。baseline `694a3d1a4b02540cb56b6ceae35b73dd1dd93440`；
+状态：**共同 CANDIDATE；CPU provider/runtime 的 CE13 为42a4c7cdcc，其余九 owner 为982676cb05，2026-10-15**。baseline `694a3d1a4b02540cb56b6ceae35b73dd1dd93440`；
 共同批owner见下表：九个原实际组件及下文新增CUDA数值状态owner；有限CE01–07/API/成本合同已冻结。原 G03 已 CLOSED，不由本卡重开其权限/
 退休实现。九owner已合法SCOPED后进入AUDITED；仅下列有限FIX授权产品实现。
 本批沿[十项总卡](../project/inference-gaps-goal-execution-2026-10.md)，
@@ -1126,3 +1126,20 @@ native 依赖逐项核对的152对象 Vulkan archive，只重编受影响 CPU �
 计划若包含 GPU/shader 重编则先停止。验证用接线留在可丢弃副本，不修改产品构建系统。
 本次不代签新 GPU、完整混合 SDK 或 P1；CPU 两 owner 仍 AUDITED，待该有限验证与新
 不可变 candidate 性能裁决。
+
+
+### CE13 混合 CPU 有限资格通过与新候选冻结
+
+[Air 混合 CPU 证据](../../../../evidence/correctness/inference-g04-g05-ce13-air-mixed-cpu/receipt.json)
+实际 Mac16,12/AppleClang21/arm64、mixed456 runtime、无 HYLE_TESTING 的22项原消费者全部
+PASS；成功轮 configure12.950秒、CPU compile10.850秒、tests24.074秒，连同原两次
+接线/计划拒绝累计73.867秒。152对象 native Vulkan archive 按依赖与 SHA 证明复用，
+实际最终构建未包含 GPU/shader；测试用 archive 同字节副本避开 Ninja 原输出的重建规则。
+原配置依赖可见性 FAIL、意外重编 dry-plan 的预编译拒绝全保留，不签新 GPU/完整混合 SDK。
+
+CPU provider/runtime 以既有完整产品 commit42a4c7cdcc0822a7b162efe575909622a906de1d
+进入 CANDIDATE，其余九 owner 的候选不变。普通门与本有限混合消费均完成；没有追加
+API、算法、公开形状或常态成本。CPU 同合同 P1 只重新绑定已实测 CE13 static SDK 与
+provenance hash，三形状、两槽、16 A/A、执行/分配顺序、n15→31、5%门及原 peer 不变，
+[重绑定记录](../../../../evidence/correctness/inference-g04-g05-ce13-air-mixed-cpu/p1-rebind.json)
+用规范化结构相等核验。原 qualified FAIL 不覆盖；新 P1 尚未运行，G04/G05 仍未关闭。

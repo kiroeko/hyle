@@ -1,6 +1,6 @@
 {
   "source": "consumer-provenance.md",
-  "sha256": "2f41f8054b6b391717fc84310f6f811f8243dae31cd23274f5ee112174e5ee95",
+  "sha256": "6788551beb92c85bf87a02b4847eef4ad3662cd10c1e3db849cabe3d68d23b10",
   "consumer": "public CPU Q8 exact-page immutable-history warm attention with pristine native Q8 contiguous-cache baseline",
   "scope": "three finite encoded attention shapes, not dirty producer/growth/token/s/allG04G05",
   "peer_revision": "ffa4e8b80930029a35991f94e7c8a93cd67730ab"
