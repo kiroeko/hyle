@@ -578,9 +578,10 @@
     },
     {
       "module": "compute_provider_flashinfer",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/inference-g04-g05-cache-attention-domain.md",
-      "summary": "G04/G05 CE20 AUDITED：CE19 source17/math与device memcheck通过，但racecheck发现attention 16位最终输出shared复用/warp重排同步缺口；只修这两个私有barrier边界，保留原F32 partial/算法/API及失败/成本，SDK/P1未代签。"
+      "summary": "G04/G05 CE20 CANDIDATE：所有FI native路线统一verified私有头，两处输出shared/warp同步修正，F32 partial与融合最终scale/cast保留。最终17数学、十cache mem/race和两普通case race全PASS/零warning；SDK/宿主facets/新P1待验，旧失败/成本全部保留。",
+      "candidate": "274cd9fec7cecb2e683cf5f0f87d6e0fd6b3ab55"
     },
     {
       "module": "compute_provider_ggml_metal",

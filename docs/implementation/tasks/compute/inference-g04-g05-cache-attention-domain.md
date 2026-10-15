@@ -1821,3 +1821,9 @@ header set，移除cache-only include例外；同步补丁只有前述两barrier
 保留optional scale epilogue与private Params回调，decode头也自然复用原名称。无公共API/
 组件图/其它owner/公共build core改动。适用门仍原17math、十cache mem/race及两普通case
 race，再恢复SDK/宿主/P1；两个warning用例原记录保留，不压制检查或新增输入形状。
+
+统一私有头后的274cd9fec已取得[最终source/device证据](../../../../evidence/correctness/inference-g04-g05-cuda-ce20-output-sync-final/receipt.json)：
+17数学全PASS；十cache memcheck4.217s零error、racecheck8.637s零hazard/error/warning；
+两普通F16/BF16 case racecheck4.129s亦全零。原cache-only 512warnings及CE19 40errors/
+378warnings不覆盖。只有FI owner回CANDIDATE274cd9fec，产品形状/实现冻结；下一步只做
+已声明static/shared公开SDK、受影响宿主facets与原合同数值/P1，未签全批CLOSED。
