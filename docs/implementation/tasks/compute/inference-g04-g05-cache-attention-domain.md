@@ -1737,3 +1737,13 @@ CE19首次configure在依赖审计处FAIL63.128s，数学/编译尚未启动；�
 selector因具名vendor patch/共同lock保守选全库，原READY授权只FI AUDITED/无issues保留；
 实际只有FI build-local头发生数学变化。沿已声明有限FI/direct batch/source/static/shared门，
 无影响路线保留旧身份证据，未运行全库项不代签PASS，不借此重写selector或触发全局构建。
+
+CE19设备风险预声明：只读确认本机Compute Sanitizer 2026.2.1.0可用后，在本次source/math实际
+通过、同一artifact SHA固定且无其它heavy任务时，各运行一次 memcheck 与 racecheck，过滤
+FlashinferCache.* 真实数学cases（含paged/ragged/有限depth、单/多partial和三种split精度反例）。
+memcheck不签driver/private-pool泄漏，racecheck最多4 CPU workers；保正常异步launch，不强制
+blocking或改变stream/输入。固定 --error-exitcode 86，保存完整log/命令/elapsed及前后artifact
+SHA；任何未运行/工具失效或真实hazard分别记UNKNOWN/FAIL，不签设备PASS。预算15min检查点
+沿常设追加。此为新两stage共享内存流水及融合输出地址的实际风险验证，不替代三宿主facet，
+也不触发其它路线/原G02矩阵或P1。原normal CUDA编译短暂并行两TU，已用私有进程串行化
+保留19.026s暂停，不重启编译；后续配置只对FI target设compile pool1，普通CXX仍max4jobs。
