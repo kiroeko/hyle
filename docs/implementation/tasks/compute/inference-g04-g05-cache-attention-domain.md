@@ -1233,13 +1233,29 @@ growth、G06、GPU、整个 G04/G05 或 token/s。
 
 Vulkan 首次接力被 canonical-clean guard 在远程启动前拒绝：当时新 CUDA P1 文件正在
 提交，原5.5秒失败保留，没有真实 Vulkan run/采样被重置。源完成提交后，实际首 run
-从 clean cee599774 在 Air 启动，16 A/A 已通过并进入原正式采样，尚无最终性能 verdict。
-Apple 数值/正式 P1 与 CUDA 数值/正式 P1 的队列均只等待真实终态，不并发重型工作。
+从 clean cee599774 在 Air 启动的[正式结果](../../../../evidence/performance/inference-g04-g05-vulkan-encoded-m1-p1-attempt-1/receipt.json)
+现已封存：QUALIFIED、performance PASS、verify0，16 A/A 与 n15 的120产品/30 controls。
+windowD256 比率5.6315–5.6856、prefillD256 3.8990–4.0220、noncausal D64/Dv128
+5.5225–5.5900，三组方向 WIN、5%非劣 PASS。实际远程1104.133秒；bundle/deploy另列，
+外层观察与远程重叠不重复相加。只比较原456 general Q8路线，不称原host最佳策略或token/s。
 
 CUDA [有限 P1 合同](../../../../bench/inference_resident_sdpa/cuda_encoded_p1/consumer-provenance.md)
 已通过 contract validate；源码原始 archive 与整个 include 内容实际匹配，332个 GPU SDK
 产品输入与当前 canonical 相同。只读源码交叉检查未发现原实现批 MUST，随后补了自有
 BF16 padding 清零及强 oracle witness；这些都未冒充编译/数值 PASS。首次源码检查误把
 archive extraction 当作 Git checkout 的失败与未知时间保留；已改为固定 archive SHA 和
-逐 include 字节核验，真实 Git 模式禁止向祖先仓库回溯。后续数值成功才封存、提交并进入
-不可变 W1-WSL/ext4 P1，仍为 engineering，不能签 native Linux/Formal。
+逐 include 字节核验，真实 Git 模式禁止向祖先仓库回溯。
+
+[CUDA 数值预检](../../../../evidence/correctness/inference-g04-g05-cuda-encoded-page-preflight/receipt.json)
+现已实际通过：三形状、双方两槽四次重放共24正确性结果、3组pair与完整readonly，最大
+绝对误差0.00109081301，小于原8e-3门。四轮已测阶段累计126.802秒，原源码身份误判及
+未知耗时另保留；host Status 类型编译FAIL、重用对象枚举FAIL、日志字面量换行导致计数
+FAIL均保留。最终只重编1个benchmark TU，另外3对象按SHA复用，产品与原生依赖未重建。
+正式 P1 已从干净95276662bc2fb0103a53e6a2c8663c1042b43f91启动，尚无性能结论；
+实际 W1-WSL/ext4工程资格不能签 native Linux/Formal。
+
+Apple 首轮在配置前因验证脚本要求该SKU未安装的CUDA头而失败；脚本现仅核所选SDK头，
+并核真实compiler依赖中的HYLE头。第二轮3个benchmark TU中的reference编译因原Metal
+230690字节字符串触发overlength警告升级而失败；现保留原字节和警告，仅解除该警告的
+Werror。两轮失败/耗时保留，未取得Apple数值或P1通过。修正后的第三轮排在实际CUDA
+终态之后；重型任务串行，最多4编译jobs，不重跑已通过的CPU/Vulkan有限P1。
