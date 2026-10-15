@@ -1,6 +1,6 @@
 {
   "source": "consumer-provenance.md",
-  "sha256": "72b875b293eec0bc321432343db9a51297a343e0fd66ae1eee72eab968943dc3",
+  "sha256": "518a9b92cd106eaa912116a81362a7fbab9b6da6076833829f19e429211df5b8",
   "consumer": "public CUDA FP8 exact-page warm attention with sync-fixed native FI69ff cold-expanded readonly BF16 cache",
   "scope": "three finite immutable shapes; explicit memory tradeoff, no producer/growth/G06/token-s/Formal",
   "peer_revision": "69ff11fc4954396d98326656dc85debd2223f637"

@@ -159,7 +159,7 @@
       "consumer_key": "inference-cuda-encoded/cuda-encoded-window-d256",
       "provenance": {
         "path": "consumer-provenance.json",
-        "sha256": "dee5197f44f969f7144e97b140a71189acf7c888f4a77c5183c2664f9f16151c"
+        "sha256": "764a2622ed8355600fc7f3e391bd1abbf017c010789b26faa4c92f2a7d48a330"
       },
       "ownership_topology": {
         "candidate": "original CUDA BatchProgram, exact FP8 pages, direct encoded math, two slots/F1/Queue/Completion/output lease",
@@ -244,7 +244,7 @@
       "consumer_key": "inference-cuda-encoded/cuda-encoded-prefill-d256",
       "provenance": {
         "path": "consumer-provenance.json",
-        "sha256": "dee5197f44f969f7144e97b140a71189acf7c888f4a77c5183c2664f9f16151c"
+        "sha256": "764a2622ed8355600fc7f3e391bd1abbf017c010789b26faa4c92f2a7d48a330"
       },
       "ownership_topology": {
         "candidate": "original CUDA BatchProgram, exact FP8 pages, direct encoded math, two slots/F1/Queue/Completion/output lease",
@@ -329,7 +329,7 @@
       "consumer_key": "inference-cuda-encoded/cuda-encoded-holdout-d64-v128",
       "provenance": {
         "path": "consumer-provenance.json",
-        "sha256": "dee5197f44f969f7144e97b140a71189acf7c888f4a77c5183c2664f9f16151c"
+        "sha256": "764a2622ed8355600fc7f3e391bd1abbf017c010789b26faa4c92f2a7d48a330"
       },
       "ownership_topology": {
         "candidate": "original CUDA BatchProgram, exact FP8 pages, direct encoded math, two slots/F1/Queue/Completion/output lease",
@@ -460,7 +460,7 @@
           "HYLE_SANITIZER": "off",
           "CMAKE_INTERPROCEDURAL_OPTIMIZATION": "OFF",
           "CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
-          "CMAKE_PREFIX_PATH": "/root/hyle-scratch/compute-unified/g04-g05-encoded-sdk/cuda-static-ce24-1/relocated",
+          "CMAKE_PREFIX_PATH": "/root/hyle-scratch/compute-unified/g04-g05-encoded-sdk/cuda-static-ce25-1/relocated",
           "CUDAToolkit_ROOT": "/usr/local/cuda-13.3",
           "CMAKE_CUDA_COMPILER": "/usr/local/cuda-13.3/bin/nvcc",
           "CMAKE_CUDA_HOST_COMPILER": "/usr/bin/g++-14",

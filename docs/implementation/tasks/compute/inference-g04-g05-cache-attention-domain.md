@@ -2316,3 +2316,15 @@ error、warning或hazard；source419.578s、device17.155s。新[codegen记录](.
 241/241/165。该结论仅为当前source shared artifact静态资源，不能签runtime dispatch或吞吐。
 FI由AUDITED合法进入CANDIDATE014；下一步两搬迁SDK、新numeric/runtime、三host及原P1，
 G04/G05仍未验收，完整goal仍3/10。全部旧失败、费用与第三方未知保留。
+
+CE25两搬迁SDK均已实际通过：[static](../../../../evidence/correctness/inference-g04-g05-cuda-ce25-static-sdk/receipt.json)、
+[shared](../../../../evidence/correctness/inference-g04-g05-cuda-ce25-shared-sdk/receipt.json)各33测试、12公共头、
+16消费TU，零FAIL/SKIP；shipping无HYLE_TESTING/sanitizer、仅从搬迁安装头消费。146未变ggml CUDA
+对象逐一核源/依赖/原命令与Ninja freshness，未触发原生CUDA全量重编。实际stage费用static
+437.962s、shared151.052s分别保留。
+性能绑定仅将真实SDK prefix、prose身份、三个workload的provenance SHA及新numeric receipt路径
+迁移到CE25，原contract其它字段与换行保持；原三consumer+nested prose preflight PASS。
+下一步新numeric及一次runtime身份核对，再三host门和原P1；本次不签数值/吞吐或G04/G05完成。
+本次ce25-sdk-binding-plan仍因同三shared bench JSON/Python路径unknown为BLOCKED，
+product_authorization无owner/issues；docs/closure及146 skipped reasons保留，沿既有独立工具
+事项与本卡有限门继续，不改公共selector或将工具状态签为PASS。
