@@ -578,10 +578,9 @@
     },
     {
       "module": "compute_provider_flashinfer",
-      "state": "CANDIDATE",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/inference-g04-g05-cache-attention-domain.md",
-      "summary": "G04/G05 CE24 CANDIDATE6e57：attempt10 QUALIFIED/strict0，window与留出非劣PASS，prefill ratio0.853–0.858非劣FAIL。零spill与全部前置门证据保留；CE25只读核原prefill repack与当前预算，未授权新FIX，G04/G05未关闭。",
-      "candidate": "6e57e28ada9e29ed07819fbe9a97b8a7d08271fe"
+      "summary": "G04/G05 CE25 AUDITED：qualified10 prefill FAIL与原六开关/重复fragment转换、当前MMA1共享容量构成两把钥匙；唯一FIX恢复成熟原prefill tile repack，保CE24预算/行约束与F32/同步/shortK。未实施或签新数学/性能，旧FAIL费用全保留。"
     },
     {
       "module": "compute_provider_ggml_metal",

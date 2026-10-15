@@ -2284,3 +2284,22 @@ FI保持CANDIDATE6e57，不由失败自动授权新产品修改。下一有限�
 先证明原helper、物理容量、每SM实际shared上界与数学/同步一致，再固定唯一有限FIX并
 合法回AUDITED；不试多变体、不改peer/输入/5%或公共仪器、不新采相同P1。G04/G05仍
 未关闭，G06不实施，完整goal仍3/10。
+
+CE25[原prefill路径源码审计](../../../../evidence/architecture/inference-g04-g05-cuda-ce25-native-prefill/source-audit.json)
+已完成：原69ff六处storage/traits/三dispatcher开关逐一核对，确为有限FP8、VO非64且不大于
+256、CTA_Q>16时的成熟原路径。复用现有trace按形状分离，prefill attention均值约
+54.132/38.599us、merge11.533/8.711us；这些短trace只作机制证据，不另签性能。
+当前寄存器路径按Q warp重复FP8 fragment置换/转换，原helper可协作转换当前tile，再用
+原16bit ldmatrix/MMA；已有short-K SOURCE_COLS修正须保留。
+
+唯一有限FIX为恢复该原六开关的一致性，保CE24准确行约束/native16工作集上界，以及
+F32 partial/最终scale+cast、两输出屏障、short-K补零/stride和原权限退休。baseline6e57，
+仅FI合法回AUDITED后改private manifest/NOTICE/FI lock身份，不新增API、算法、全历史
+展开或tile试验。D256仍MMA1，shared含8192字节stage共49152；留出仍MMA4，stage16384、
+shared40960。按已查询shared容量均可容纳两CTA；这不是总occupancy或吞吐证明。
+
+先一次集中实现，再原17math、十mem/十race/两普通race及新codegen；静态/动态搬迁SDK
+各33测试/12公共头/16TU后，先新numeric与一次短runtime身份核对，尽早核实际路径与数学，
+再串行三host风险门，最后原AA/P1/strict。numeric与host门相互独立，全部仍须在P1前完成，
+未运行门不记PASS。三形状均保留，不以修prefill回退window/留出已过预算；原8/9/10FAIL、
+全部旧费用及第三方UNKNOWN保留。SM89/pool1/split3/Ninja2、heavy串行/常设追加不变。

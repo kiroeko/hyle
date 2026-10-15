@@ -1,0 +1,164 @@
+{
+  "kind": "CE25_ORIGINAL_NATIVE_PREFILL_REPACK_AUDIT_ONLY",
+  "baseline": "6e57e28ada9e29ed07819fbe9a97b8a7d08271fe",
+  "failed_qualified_receipt_sha256": "29a7a3edff887fd94501f41ad7a14f87cf39f6dc166f816dfc1e557519808523",
+  "current_header_sha256": "820b9635755396ac8b7ad31e5eb48d1bd5b53db8012c73a0569e2b7e24aab613",
+  "upstream_header_sha256": "f93cbea96e3a723254c15f5a52d6dd4c13e3892e88eb9b9fed1c0c0048c7d710",
+  "original_revision": "69ff11fc4954396d98326656dc85debd2223f637",
+  "original_six_predicates": [
+    {
+      "before": "bool = ((sizeof(DTypeKV) == 1) && !is_fp4_type_v<DTypeKV> && (HEAD_DIM_VO != 64) &&\n                  (HEAD_DIM_VO <= 256) && (CTA_TILE_Q > 16))>",
+      "disabled": "bool = false>  // HYLE keeps FP8 conversion in the original register fragments."
+    },
+    {
+      "before": "  static constexpr bool USE_KV_REPACK = (sizeof(DTypeKV) == 1) && !is_fp4_type_v<DTypeKV> &&\n                                        (HEAD_DIM_VO != 64) && (HEAD_DIM_VO <= 256) &&\n                                        (CTA_TILE_Q > 16);",
+      "disabled": "  static constexpr bool USE_KV_REPACK = false;  // Original FP8 register conversion."
+    },
+    {
+      "before": "  static constexpr bool USE_KV_REPACK = (sizeof(DTypeKV_) == 1) && !is_fp4_type_v<DTypeKV_> &&\n                                        (HEAD_DIM_VO != 64) && (HEAD_DIM_VO <= 256) &&\n                                        (CTA_TILE_Q > 16);",
+      "disabled": "  static constexpr bool USE_KV_REPACK = false;  // Original FP8 register conversion."
+    },
+    {
+      "before": "    constexpr bool kUseRepack = (sizeof(DTypeKV) == 1) && !is_fp4_type_v<DTypeKV> &&\n                                (HEAD_DIM_VO != 64) && (HEAD_DIM_VO <= 256) && (CTA_TILE_Q > 16);\n    constexpr bool kKVShared = !is_fp4_type_v<DTypeKV> && (HEAD_DIM_VO / 16 > 16) &&\n                               ((HEAD_DIM_VO / 16) % NUM_WARPS_KV == 0) &&\n",
+      "disabled": "    constexpr bool kUseRepack = false;  // Match the original register path storage.\n    constexpr bool kKVShared = !is_fp4_type_v<DTypeKV> && (HEAD_DIM_VO / 16 > 16) &&\n                               ((HEAD_DIM_VO / 16) % NUM_WARPS_KV == 0) &&\n"
+    },
+    {
+      "before": "  constexpr bool kUseRepack = (sizeof(DTypeKV) == 1) && !is_fp4_type_v<DTypeKV> &&\n                              (HEAD_DIM_VO != 64) && (HEAD_DIM_VO <= 256) && (CTA_TILE_Q > 16);\n  // Matches KernelTraits::USE_KV_SHARED_SMEM: at large head dims K and V\n  // time-share one smem buffer, so the occupancy budget counts the K/V\n",
+      "disabled": "  constexpr bool kUseRepack = false;  // Match the original register path storage.\n  // Matches KernelTraits::USE_KV_SHARED_SMEM: at large head dims K and V\n  // time-share one smem buffer, so the occupancy budget counts the K/V\n"
+    },
+    {
+      "before": "  constexpr bool kUseRepack = (sizeof(DTypeKV) == 1) && !is_fp4_type_v<DTypeKV> &&\n                              (HEAD_DIM_VO != 64) && (HEAD_DIM_VO <= 256) && (CTA_TILE_Q > 16);\n  // Matches KernelTraits::USE_KV_SHARED_SMEM: K/V share one smem buffer for bf16/fp16 at every\n  // tile and for FP8 only at CTA_TILE_Q=32 (not NVFP4), so the occupancy budget counts the K/V\n",
+      "disabled": "  constexpr bool kUseRepack = false;  // Match the original register path storage.\n  // Matches KernelTraits::USE_KV_SHARED_SMEM: K/V share one smem buffer for bf16/fp16 at every\n  // tile and for FP8 only at CTA_TILE_Q=32 (not NVFP4), so the occupancy budget counts the K/V\n"
+    }
+  ],
+  "current_repack_helper_sha256": "35d5678e447c38cae7e3a0de1621aaacf4641c7b7cd86fe49e94c2dc7093b01b",
+  "existing_trace_sha256": "90ddaa9c52f4033969e0f085741c958aa23a3de2f61a0d24087e7760406f660d",
+  "existing_runtime_binary_sha256": "49dec95e909f19c09447d5729bc554f6edc1a2df0e635f0dbc8d2013e779c18e",
+  "existing_trace_shapes": [
+    {
+      "selected_attention": {
+        "count": 8,
+        "median_ns": 6830.5,
+        "mean_ns": 7090.75,
+        "registers": [
+          255
+        ],
+        "dynamic_shared": [
+          40960
+        ]
+      },
+      "original_attention": {
+        "count": 8,
+        "median_ns": 5517.5,
+        "mean_ns": 5762.25,
+        "registers": [
+          240
+        ],
+        "dynamic_shared": [
+          49152
+        ]
+      }
+    },
+    {
+      "selected_attention": {
+        "count": 8,
+        "median_ns": 54179.5,
+        "mean_ns": 54132.125,
+        "registers": [
+          248
+        ],
+        "dynamic_shared": [
+          40960
+        ]
+      },
+      "original_attention": {
+        "count": 8,
+        "median_ns": 38196.0,
+        "mean_ns": 38599.125,
+        "registers": [
+          240
+        ],
+        "dynamic_shared": [
+          49152
+        ]
+      },
+      "selected_merge": {
+        "count": 8,
+        "median_ns": 11556.5,
+        "mean_ns": 11532.875,
+        "registers": [
+          43
+        ],
+        "dynamic_shared": [
+          8704
+        ]
+      },
+      "original_merge": {
+        "count": 8,
+        "median_ns": 8711.5,
+        "mean_ns": 8710.875,
+        "registers": [
+          40
+        ],
+        "dynamic_shared": [
+          8704
+        ]
+      }
+    },
+    {
+      "selected_attention": {
+        "count": 8,
+        "median_ns": 5027.5,
+        "mean_ns": 5177.75,
+        "registers": [
+          254
+        ],
+        "dynamic_shared": [
+          24576
+        ]
+      },
+      "original_attention": {
+        "count": 8,
+        "median_ns": 4142.0,
+        "mean_ns": 4197.375,
+        "registers": [
+          177
+        ],
+        "dynamic_shared": [
+          32768
+        ]
+      }
+    }
+  ],
+  "proposed_original_predicate_shared_budgets": [
+    {
+      "shape": "windowD256",
+      "mma_kv": 1,
+      "staging_bytes": 8192,
+      "actual_shared_bytes": 49152,
+      "ctas_by_shared": 2
+    },
+    {
+      "shape": "prefillD256",
+      "mma_kv": 1,
+      "staging_bytes": 8192,
+      "actual_shared_bytes": 49152,
+      "ctas_by_shared": 2
+    },
+    {
+      "shape": "noncausalD64V128",
+      "mma_kv": 4,
+      "staging_bytes": 16384,
+      "actual_shared_bytes": 40960,
+      "ctas_by_shared": 2
+    }
+  ],
+  "finding": "Qualified D256 prefill loss remains after actual spills reach zero. Current register path repeats FP8 fragment permutations/conversions per Q warp; pinned69ff already has a cooperative FP8-to-Q-type shared tile and direct16bit matrix loads for this finite prefill domain. Corrected row validity/native16 work bound now lets the original repack path keep MMA_KV1 forD256 within49152 bytes and twoCTAs by shared capacity; earlier MMA2 repack used98304 bytes.",
+  "finite_fix": "Restore the original six matching storage/traits/dispatcher repack predicates, keeping CE24 exact packed row guard/native16 work bound, physical short-K stride/zeroing, F32partial/finalscale, original math order and all synchronization. No new algorithm, tile trial, full-history expansion or public API.",
+  "limits": [
+    "Existing short trace reused; no new profile or performance sample. Diagnostic times do not replace qualified P1.",
+    "Shared-only occupancy projection is not measured total occupancy; actual codegen/runtime/math/device and original performance gates still required.",
+    "All three existing workloads remain mandatory; window/holdout PASS cannot be regressed or omitted.",
+    "This audit does not authorize product code before the finiteFIX is recorded and owner legallyAUDITED."
+  ]
+}
