@@ -5,7 +5,7 @@
     {
       "path": "include/flashinfer/attention/prefill.cuh",
       "before_sha256": "f93cbea96e3a723254c15f5a52d6dd4c13e3892e88eb9b9fed1c0c0048c7d710",
-      "after_sha256": "a83c8da19ccfc5d3fa57bc41efed7a1dd13655c1482b361e76861470238f1c99",
+      "after_sha256": "89206dda2713a2bc25a04ebdb4bc64d3d2830b937ed7bb87c88c4e888709d71e",
       "edits": [
         {
           "before": "      alignas(16) DTypeKV k_smem[CTA_TILE_KV * HEAD_DIM_QK];",
@@ -41,11 +41,11 @@
         },
         {
           "before": "              FLASHINFER_CUDA_CALL(VariableLengthMergeStates(\n                  tmp_v, tmp_s, params.merge_indptr, o, lse, params.max_total_num_rows,\n                  params.total_num_rows, num_qo_heads, HEAD_DIM_VO, enable_pdl, stream));\n            } else {\n              FLASHINFER_CUDA_CALL(VariableLengthAttentionSum(\n                  tmp_v, params.merge_indptr, o, params.max_total_num_rows, params.total_num_rows,\n                  num_qo_heads, HEAD_DIM_VO, enable_pdl, stream));\n            }\n          }\n        }\n      });\n  return cudaSuccess;\n}\n\ntemplate <uint32_t CTA_TILE_Q",
-          "after": "              // A private consumer may keep F32 partials and fuse its final output epilogue.\n              if constexpr (HyleHasMergeStates<Params>::value) {\n                FLASHINFER_CUDA_CALL(params.merge_states(tmp_v, tmp_s, lse, stream));\n              } else {\n                FLASHINFER_CUDA_CALL(VariableLengthMergeStates(\n                    tmp_v, tmp_s, params.merge_indptr, o, lse, params.max_total_num_rows,\n                    params.total_num_rows, num_qo_heads, HEAD_DIM_VO, enable_pdl, stream));\n              }\n            } else {\n              FLASHINFER_CUDA_CALL(VariableLengthAttentionSum(\n                  tmp_v, params.merge_indptr, o, params.max_total_num_rows, params.total_num_rows,\n                  num_qo_heads, HEAD_DIM_VO, enable_pdl, stream));\n            }\n          }\n        }\n      });\n  return cudaSuccess;\n}\n\ntemplate <uint32_t CTA_TILE_Q"
+          "after": "              // A private consumer may keep F32 partials and fuse its final output epilogue.\n              if constexpr (HyleHasMergeStates<Params>::value) {\n                FLASHINFER_CUDA_CALL(params.merge_states(tmp_v, tmp_s, lse, stream));\n              } else {\n                FLASHINFER_CUDA_CALL(HyleVariableLengthMergeStates(\n                    tmp_v, tmp_s, params.merge_indptr, o, lse, params.max_total_num_rows,\n                    params.total_num_rows, num_qo_heads, HEAD_DIM_VO, enable_pdl, stream));\n              }\n            } else {\n              FLASHINFER_CUDA_CALL(VariableLengthAttentionSum(\n                  tmp_v, params.merge_indptr, o, params.max_total_num_rows, params.total_num_rows,\n                  num_qo_heads, HEAD_DIM_VO, enable_pdl, stream));\n            }\n          }\n        }\n      });\n  return cudaSuccess;\n}\n\ntemplate <uint32_t CTA_TILE_Q"
         },
         {
           "before": "              FLASHINFER_CUDA_CALL(VariableLengthMergeStates(\n                  tmp_v, tmp_s, params.merge_indptr, o, lse, params.max_total_num_rows,\n                  params.total_num_rows, num_qo_heads, HEAD_DIM_VO, enable_pdl, stream));\n            } else {\n              FLASHINFER_CUDA_CALL(VariableLengthAttentionSum(\n                  tmp_v, params.merge_indptr, o, params.max_total_num_rows, params.total_num_rows,\n                  num_qo_heads, HEAD_DIM_VO, enable_pdl, stream));\n            }\n          }\n        }\n      });\n  return cudaSuccess;\n}\n\n}  // namespace flashinfer",
-          "after": "              // A private consumer may keep F32 partials and fuse its final output epilogue.\n              if constexpr (HyleHasMergeStates<Params>::value) {\n                FLASHINFER_CUDA_CALL(params.merge_states(tmp_v, tmp_s, lse, stream));\n              } else {\n                FLASHINFER_CUDA_CALL(VariableLengthMergeStates(\n                    tmp_v, tmp_s, params.merge_indptr, o, lse, params.max_total_num_rows,\n                    params.total_num_rows, num_qo_heads, HEAD_DIM_VO, enable_pdl, stream));\n              }\n            } else {\n              FLASHINFER_CUDA_CALL(VariableLengthAttentionSum(\n                  tmp_v, params.merge_indptr, o, params.max_total_num_rows, params.total_num_rows,\n                  num_qo_heads, HEAD_DIM_VO, enable_pdl, stream));\n            }\n          }\n        }\n      });\n  return cudaSuccess;\n}\n\n}  // namespace flashinfer"
+          "after": "              // A private consumer may keep F32 partials and fuse its final output epilogue.\n              if constexpr (HyleHasMergeStates<Params>::value) {\n                FLASHINFER_CUDA_CALL(params.merge_states(tmp_v, tmp_s, lse, stream));\n              } else {\n                FLASHINFER_CUDA_CALL(HyleVariableLengthMergeStates(\n                    tmp_v, tmp_s, params.merge_indptr, o, lse, params.max_total_num_rows,\n                    params.total_num_rows, num_qo_heads, HEAD_DIM_VO, enable_pdl, stream));\n              }\n            } else {\n              FLASHINFER_CUDA_CALL(VariableLengthAttentionSum(\n                  tmp_v, params.merge_indptr, o, params.max_total_num_rows, params.total_num_rows,\n                  num_qo_heads, HEAD_DIM_VO, enable_pdl, stream));\n            }\n          }\n        }\n      });\n  return cudaSuccess;\n}\n\n}  // namespace flashinfer"
         },
         {
           "before": "template <uint32_t CTA_TILE_Q, uint32_t HEAD_DIM_QK, uint32_t HEAD_DIM_VO,\n          PosEncodingMode POS_ENCODING_MODE, bool USE_FP16_QK_REDUCTION, MaskMode MASK_MODE,\n          typename AttentionVariant, typename Params>\ncudaError_t BatchPrefillWithRaggedKVCacheDispatched",
@@ -80,9 +80,13 @@
         {
           "before": "                                              max_seq_len, seq_len, num_heads));\n    } else {\n      FLASHINFER_CUDA_CALL(cudaLaunchKernel((void*)kernel, nblks, nthrs, args, smem_size, stream));\n    }\n  });\n  return cudaSuccess;\n}\n\ntemplate <typename DTypeIn, typename DTypeO, typename IdType>\ncudaError_t VariableLengthAttentionSum",
           "after": "                                              max_seq_len, seq_len, num_heads, output_scale));\n    } else {\n      FLASHINFER_CUDA_CALL(cudaLaunchKernel((void*)kernel, nblks, nthrs, args, smem_size, stream));\n    }\n  });\n  return cudaSuccess;\n}\n\ntemplate <typename DTypeIn, typename DTypeO, typename IdType>\ncudaError_t VariableLengthAttentionSum"
+        },
+        {
+          "before": "cudaError_t VariableLengthMergeStates(DTypeIn* v, float* s, IdType* indptr, DTypeO* v_merged,",
+          "after": "cudaError_t HyleVariableLengthMergeStates(DTypeIn* v, float* s, IdType* indptr, DTypeO* v_merged,"
         }
       ],
-      "after_sha256": "db2abdfda11857eb7feb6ec0e3566f8dd4733843ded6d0111148f52a7cb37e9e"
+      "after_sha256": "0e12b1c3995c014ba59ac6605da94c83ccac3fbc057d820c7e45ad626a88168b"
     }
   ]
 }

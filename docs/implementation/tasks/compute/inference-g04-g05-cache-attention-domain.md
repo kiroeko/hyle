@@ -1747,3 +1747,13 @@ SHA；任何未运行/工具失效或真实hazard分别记UNKNOWN/FAIL，不签�
 沿常设追加。此为新两stage共享内存流水及融合输出地址的实际风险验证，不替代三宿主facet，
 也不触发其它路线/原G02矩阵或P1。原normal CUDA编译短暂并行两TU，已用私有进程串行化
 保留19.026s暂停，不重启编译；后续配置只对FI target设compile pool1，普通CXX仍max4jobs。
+
+CE19-B源码复核补充：patched cascade 的merge kernel新增scale参数，但其它TU仍使用pristine
+头。因此同时给build-local默认merge host dispatcher私有名字，避免同一host模板名在两TU
+分别绑定8/9参数kernel的不同定义；默认数学保持原样，不把该差异留给linker选择。此为
+同一FIX的私有ABI隔离，不增加公共API、独立merge算法或其它owner改动。当前source2仍按
+其已冻结旧snapshot编译/测试，结果只对该snapshot签发，后续实际修正版须独立rebind。
+后续SDK/host风险私有profile固定本机SM89、FI compile pool1、NVCC --split-compile=3，
+Ninja最多2jobs（优化线程至多3，加一个普通CXX），不启LTO或改优化等级；只省无当前机器
+验收意义的SM80构建，不签其它GPU架构。新产物照常跑其真实math/SDK/风险及数值绑定，
+不把编译线程数选项当bitwise或性能等价证明。公共产品CMake/工具/core不改。
