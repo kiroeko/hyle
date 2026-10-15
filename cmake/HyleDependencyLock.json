@@ -964,7 +964,7 @@
       "name": "flashinfer_cache_patches",
       "class": "in_tree",
       "repository": "https://github.com/flashinfer-ai/flashinfer.git",
-      "version": "hyle-flashinfer-register-fp8-v5",
+      "version": "hyle-flashinfer-packed-math-budget-fp8-v6",
       "revision": "69ff11fc4954396d98326656dc85debd2223f637",
       "git_tree": "f5804ee37b4780d8e1a8b6019f9d4619230987d1",
       "archive": {
@@ -982,13 +982,13 @@
           {
             "root": "hyle",
             "path": "third_party/flashinfer_cache/NOTICE.md",
-            "sha256": "767fc91e609a9ae47a1bd0faca81e689390db24543bc23c424d026911414a53d"
+            "sha256": "1579b5b74dae1a0ae5fb58e95922a3cabef3ac6ac38b5630659ad32a88d13112"
           }
         ]
       },
       "vendored": {
         "path": "third_party/flashinfer_cache",
-        "tree_sha256": "cf631b8cecba2e9e50231019e0dbe44c186700f8e38c3d03cc88a1211e08db45"
+        "tree_sha256": "691b201f380cc285e3be29a858818a8509aa6799938351a396f5c5cba8e8ef99"
       }
     },
     {

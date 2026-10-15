@@ -29,3 +29,10 @@ scaling, output synchronization and physical short-K padding are retained.
 The unused FP32 output shared-memory member retains only one element; the
 original FP32 writer already stores fragments directly to global memory.
 All live Q/K/V and cross-warp state storage and 16-bit output capacity remain.
+
+FP8 tile validity follows the original producer row coverage:128-byte
+swizzled rows require MMA_KV*4 divisible by Q warps;64-byte rows and FP4
+retain their original MMA_KV*2 constraint. Dispatch additionally bounds
+FP8 per-warp work by the original native16-bit footprint budget because
+QK/PV use widened math fragments. Actual compressed shared-memory capacity,
+the original register bound, planner, arithmetic and synchronization remain.

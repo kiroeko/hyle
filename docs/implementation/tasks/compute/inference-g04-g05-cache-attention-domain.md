@@ -2198,3 +2198,7 @@ codegen；生成代码只签资源，运行时选择还须由后续实际consume
 不启动长后续；若成立才冻结candidate，沿static/shared、受影响三host facets、新numeric、
 原16AA/三形状/8strata/n15,31/5%/strict全部门。其它路线按不变输入复用；SM89/pool1/
 split3/Ninja2、heavy串行与常设时间追加不变，原失败和费用全保留。
+
+CE24四个manifest edit已集中实施：IsInvalid与三个原dispatcher，完整派生diff核对了真实
+物理容量、原寄存器上限、native16工作集上界及guard的一致性。未改数学或加载器。
+FI仍AUDITED，新数学/device/codegen尚未签发；按本卡有限门执行，未变路线不重跑。
