@@ -35,3 +35,9 @@ at the existing asynchronous prefetch sites, removing persistent per-thread
 K/V address arrays. The existing short-K upper-zero rule is retained there.
 Tile/warp/MMA selection, packed alignment, arithmetic, synchronization and
 the compressed global cache representation are unchanged.
+
+The original FP8 float-QK PV path converts and consumes one probability
+KV block at a time, retaining one half-score block instead of the full tile.
+Original conversion, row sum and matrix-multiply primitives and their
+per-output accumulation order are retained. Other datatype/repack paths
+keep their original whole-tile score flow; no tile or alignment changes.

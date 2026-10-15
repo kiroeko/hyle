@@ -2151,3 +2151,8 @@ finalcast和权限/退休全KEEP。先原17math、十mem/十race及两普通case
 mangled内核核实际codegen；源数组缩小不等于寄存器或吞吐改善。资源机制未改善则在长
 SDK/三host/numeric/P1前停止该修正批；若成立才冻结candidate、继续原声明门，未运行项
 不记PASS。SM89/FI pool1/split3/Ninja2、heavy串行及常设追加授权不变，旧失败费用不清零。
+
+CE23唯一函数edit已集中实施，完整原始头逐条派生和最终SHA核验通过；16bit/FP4/repack
+分支保留原数组与循环，只有原FP8 float-QK PV用一个half块。FI仍AUDITED，尚未签新数学、
+设备或codegen。ce23-score-stream-plan为READY，产品授权仅FI且无issues；共同lock保守
+选择全库的selected/skipped理由保留，按本卡FI与真实直接consumer门执行，不全局构建。
