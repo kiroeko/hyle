@@ -580,7 +580,7 @@
       "module": "compute_provider_flashinfer",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/inference-g04-g05-cache-attention-domain.md",
-      "summary": "G04/G05 CE26 AUDITED：qualified11 prefill仍非劣FAIL；已复核末级跨组归约/输出重复所有权，唯一FIX为现有F32 merge单输出组，保数学/全部同步/原形状。尚未改产品或签新门；旧失败/未知及累计成本保留。"
+      "summary": "G04/G05 CE26 AUDITED：现有F32 merge单输出组修正已集中实施，保局部状态/原归约顺序/全部同步/原形状。新17math/device/codegen及后续门待验；qualified11 FAIL与全部旧失败/未知、累计成本保留。"
     },
     {
       "module": "compute_provider_ggml_metal",

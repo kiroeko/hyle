@@ -2386,3 +2386,9 @@ private cascade manifest/NOTICE/FI lock，再原17math、十mem/十race/两普�
 （新增实际merge特化资源/指令核对），两搬迁SDK、新numeric/runtime、三host和原P1。
 默认旧FI实例及三形状均保留；未运行门不记PASS。原2h检查点/自动追加/累计费用、SM89
 pool1/split3/Ninja2/heavy串行不变。当前仅审计与授权，尚未改产品或签新运行/性能。
+
+CE26单输出组修正已集中实施，只改private cascade的三个精确manifest片段及NOTICE/FI lock；
+完整派生diff保留所有CTA/cp.async同步调用数，局部state写入和归约顺序不变，默认false
+特化保原行为。FI仍AUDITED，尚无新数学/device/codegen/性能结论。selector
+ce26-single-output-plan为READY；共同lock变化保守选择全库因子，按本卡实际FI/direct
+consumer有限门执行，保留selected/skipped理由，不启动无改动路线或全库构建。

@@ -38,3 +38,9 @@ retain their original MMA_KV*2 constraint. Dispatch additionally bounds
 FP8 per-warp work by the original native16-bit footprint budget because
 QK/PV use widened math fragments. Actual compressed shared-memory capacity,
 the original register bound, planner, arithmetic and synchronization remain.
+
+The opt-in scaled FP32 persistent merge retains all local state writes and
+CTA/async synchronization. Only its final output group performs the same
+ordered cross-group merge, final normalization, scale and sole output cast.
+Zero/single-partial final accesses share that owner; optional LSE has one
+scalar writer. The default upstream merge specialization stays unchanged.

@@ -964,7 +964,7 @@
       "name": "flashinfer_cache_patches",
       "class": "in_tree",
       "repository": "https://github.com/flashinfer-ai/flashinfer.git",
-      "version": "hyle-flashinfer-native-prefill-fp8-v7",
+      "version": "hyle-flashinfer-single-output-merge-v8",
       "revision": "69ff11fc4954396d98326656dc85debd2223f637",
       "git_tree": "f5804ee37b4780d8e1a8b6019f9d4619230987d1",
       "archive": {
@@ -982,13 +982,13 @@
           {
             "root": "hyle",
             "path": "third_party/flashinfer_cache/NOTICE.md",
-            "sha256": "503d2f704023e11785fc4a619de8b105ee6480b8c914d23d4feec0cf0e966dec"
+            "sha256": "f42a83cb99822008a8a3dd210ac9f245ddaf7a370d879a184c86305844319886"
           }
         ]
       },
       "vendored": {
         "path": "third_party/flashinfer_cache",
-        "tree_sha256": "9cee0d98a98a73d0583d3bebacdbfb36462abde8735c770e7534ab2dead33297"
+        "tree_sha256": "4f5956e47adacb9936f2f86ce41d046da32f7be0acc5a117598b47976c0a6e1e"
       }
     },
     {
