@@ -52,3 +52,12 @@ async waits precede conversion; the following full CTA barrier publishes
 Q and converted tile data. The adjacent pre-conversion barrier is retained
 for every other path. Consumer-retirement, final and output barriers remain;
 short-K padding, conversion values, destination layout and FP32 merge remain.
+
+The finite E4M3 F32-partial batch path with equal128/256 head dimensions
+loads packed global vectors through the original decoder directly into
+separate native16 K/V shared tiles. It replaces compressed shared staging
+and the common repack tile without expanding the resident cache. Explicit
+wait0 drains Q loads before the retained CTA publication barriers; consumer
+retirement, final and output barriers remain. Other paths and single-prefill
+retain their original producers, layouts and arithmetic. This structural
+change alone does not assert a qualified throughput improvement.

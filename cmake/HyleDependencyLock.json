@@ -964,7 +964,7 @@
       "name": "flashinfer_cache_patches",
       "class": "in_tree",
       "repository": "https://github.com/flashinfer-ai/flashinfer.git",
-      "version": "hyle-flashinfer-owned-fp8-conversion-v9",
+      "version": "hyle-flashinfer-direct-fp8-stage-v10",
       "revision": "69ff11fc4954396d98326656dc85debd2223f637",
       "git_tree": "f5804ee37b4780d8e1a8b6019f9d4619230987d1",
       "archive": {
@@ -982,13 +982,13 @@
           {
             "root": "hyle",
             "path": "third_party/flashinfer_cache/NOTICE.md",
-            "sha256": "ad76af3709f7db69538dfbc1a5fb2e8db33ebc96e9d6163213d6117aa0da3c60"
+            "sha256": "35cb4a5998aded9e4c8c635c170d137ebbadee1c94232af0082c0693182709a2"
           }
         ]
       },
       "vendored": {
         "path": "third_party/flashinfer_cache",
-        "tree_sha256": "8ab2bcc71a83581dfe3a5e0151f493c7856a3c63b66d2f7c718d32f4f81f94ce"
+        "tree_sha256": "92767c3031b8a0a753f0cd36ce14ea792ac4595d7e1939c81d8deadf49ba7c4b"
       }
     },
     {

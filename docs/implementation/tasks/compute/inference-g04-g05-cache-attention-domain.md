@@ -2578,3 +2578,11 @@ warning/hazard/SKIP和原三kernel零STACK/LDL/STL通过后，才冻结候选并
 增加寄存器，源码流量下降不签吞吐收益；全部三负载/原门槛及旧失败/未知/累计费用保留。
 原2h阶段检查点/常设自动追加与SM89/pool1/split3/Ninja2/heavy串行不变。当前仅审计授权，
 尚未实施新产品或签新运行/性能；G04/G05未关闭，完整goal3/10，G06不实施。
+
+CE28加载时转换已集中实施：14个唯一manifest片段，仅private prefill/NOTICE/FI lock，
+派生prefill SHA 8146bd05db566d6f3c999a3aa3b83d91f7a565a343d06780edf2abd5faa0840f，cascade保持CE26原身份。
+完整diff核对single-prefill函数体不变；原commit、CTA/final/output屏障语句均保留，
+仅直接路径显式wait0并由分离expanded K/V供原native16读取。FI仍AUDITED，
+新数学/device/codegen等门均待验，不以流量证明或shared模型签运行安全/吞吐。
+selector共同lock的保守全库selected理由保留，实际按本卡FI及直接消费者有限门执行，
+不启动无改动路线或全库构建。

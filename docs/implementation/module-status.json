@@ -580,7 +580,7 @@
       "module": "compute_provider_flashinfer",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/inference-g04-g05-cache-attention-domain.md",
-      "summary": "G04/G05 CE28 AUDITED：qualified13 prefill仍非劣FAIL；60组布局/1416边界及batch时间链已审计，唯一FIX为加载时原向量转换到分离K/V共享tile，保精度/原形状/生命周期。尚未实施新产品或签新门；全部旧失败/未知/费用保留。"
+      "summary": "G04/G05 CE28 AUDITED：加载时原向量转换到分离K/V共享tile已集中实施，14个精确manifest片段；single/F32 merge/精度/生命周期/输出屏障/原形状保留。新数学/device/codegen等门待验；qualified13 FAIL及全部原失败/未知/费用保留。"
     },
     {
       "module": "compute_provider_ggml_metal",
