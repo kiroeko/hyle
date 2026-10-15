@@ -2214,3 +2214,22 @@ source阶段450.089s，device17.233s，artifact前后SHA一致。随后[新1/1/4
 FI进入CANDIDATE6e57e28ad，继续串行static/shared relocated SDK、受影响三host facets、
 新numeric，再一次短VERIFY_ONLY核实际runtime1/1/4身份，最后原AA/P1/strict。其它owner
 不动；原qualified9 FAIL及两次未达目标的资源修正/费用全保留，G04/G05仍未关闭。
+
+CE24[静态SDK](../../../../evidence/correctness/inference-g04-g05-cuda-ce24-static-sdk/receipt.json)
+与[动态SDK](../../../../evidence/correctness/inference-g04-g05-cuda-ce24-shared-sdk/receipt.json)
+均已实际PASS：各14 CPU math、13 native math、3 CPU与3 CUDA consumer，零FAIL/SKIP；
+各12独立公共头、16 consumer TU仅用搬迁installed headers，无HYLE_TESTING/sanitizer。
+static阶段495.607s，shared153.239s，分别列账。146个未变native对象经源码、原command/
+Ninja依赖freshness与前后SHA核验复用；shared计划0个CUDA重编边，当前FI对象沿用本轮
+已实测构建，未借用旧candidate或跳过实际消费者。
+
+仅重绑原P1的实际CE24 static prefix、prose、全部三consumer SHA和当前numeric receipt
+路径；规范化其余合同字段逐项相同、原JSON换行保留。原三consumer_evidence与嵌套prose
+身份预检实际PASS；这不是numeric/A-A/吞吐PASS。三形状、原peer两屏障派生、16AA、
+8strata、n15,31、5%与全部旧FAIL不变。
+
+ce24-sdk-binding-plan沿[原独立工具事项](../build/validation-selector-shared-bench-paths.md)
+因既有shared benchmark的三unknown路径BLOCKED，product_authorization无owner/issue；
+docs/closure及146 skipped reasons保留，按本卡有限门继续。不在模块内改selector或公共
+性能核心，也不把该工具归属状态写PASS。接下来三host facets串行批验，随后新numeric/
+实际runtime身份及原AA/P1/strict；产品candidate6e57与其它owner不变。
