@@ -1880,3 +1880,12 @@ candidate274不变，原输入/3形状、8strata/16AA/n15/31、5%门与全量尾
 本次peer/合同变更的selector计划ce20-peer-sync-plan仍因同一共享bench目录归属缺口为
 BLOCKED（六个unknown路径，product_authorization无owner/issues），原146 skipped reasons保留。
 沿已登记独立工具任务与本卡有限验证续跑，不借此修改selector或全库构建，未运行项不代签。
+
+CE20[ASan宿主地址facet](../../../../evidence/correctness/inference-g04-g05-cuda-ce20-host-asan/receipt.json)
+实际PASS：16项native/common数学消费与五种原失败/未知/取消风险，累计523.003s；四个
+受影响FI CUDA TU的host instrumentation均从实际compdb核验，未以GPU设备检查代签。
+只借原同mode、同compiler/device/driver的不可变146-member ggml CUDA archive，当前242
+native输入和5 canonical输入再核SHA，历史散对象/系统header freshness没有重新证明；两次
+旧对象路径核对失败保留，未改写为PASS。当前runtime测试确实在新OS运行，不继承原F5
+runtime verdict。原NVIDIA LSan INCONCLUSIVE保留，本次detect_leaks=0只签地址facet；
+shader/driver/private-pool上界不由宿主ASan签发。UBSan、TSan与新数值/P1仍待验。
