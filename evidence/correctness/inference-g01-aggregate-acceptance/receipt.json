@@ -1,0 +1,77 @@
+{
+  "kind": "G01_ORIGINAL_FINITE_GOAL_ITEM_AGGREGATE_ACCEPTANCE",
+  "verdict": "ACCEPTED",
+  "canonical_review_head": "0ff5c46ae30d2a8bbf8f88bcbb98010bb3d56b69",
+  "scope": "Original G01 plain dense/resident ragged and page16 finite domains, source/OS/geometry as original terminals and Linux FI baseline. No new product/benchmark run.",
+  "registry_unchanged": true,
+  "registry_sha256": "2141bf99c483ddd38b9991393795f2c486d61080b61c0405032999dce949178e",
+  "closed_terminal_and_baseline_inputs": [
+    {
+      "path": "docs/implementation/tasks/compute/inference-g01-cpu-resident-ragged-terminal.md",
+      "sha256": "ada867adf78eb8730931923b6b868b085e7513f99855a8cf1d0c1da54b7a7865"
+    },
+    {
+      "path": "docs/implementation/tasks/compute/inference-g01-cpu-paged-terminal.md",
+      "sha256": "e1c90492200654c68b4d4e318b7a99c7aa1fe73421411084a0aa858e4e32490d"
+    },
+    {
+      "path": "docs/implementation/tasks/compute/inference-g01-apple-ragged-terminal.md",
+      "sha256": "6f0499ac134103c7d619619e80cee23f12e0769ac885fc1c24cb31550685e9c1"
+    },
+    {
+      "path": "docs/implementation/tasks/compute/inference-g01-vulkan-resident-terminal.md",
+      "sha256": "e01b9b1c82237c0893c290caee9c4db404345fc442ddd786574b4fe437c79942"
+    },
+    {
+      "path": "docs/implementation/tasks/compute/inference-g01-vulkan-ragged-terminal.md",
+      "sha256": "4f591980214b084eb8282dcc42c8338391df49ab53398d784239b0d00fdf90dd"
+    },
+    {
+      "path": "docs/implementation/tasks/compute/inference-g01-native-paged-terminal.md",
+      "sha256": "57d4d7e6f5eaf8eedd93fe6c8b8e9e7263060680e081e6e30bcfc90952b1f170"
+    },
+    {
+      "path": "docs/implementation/tasks/graph/inference-g02-native-paged-terminal.md",
+      "sha256": "bb9854b66c18a540c49bb537e7cd5d28df788c0bf48ba0b73c51c434a9e7a24a"
+    },
+    {
+      "path": "docs/implementation/tasks/compute/inference-g03-final-closure.md",
+      "sha256": "721cfa3410ccb752f09933abdbe884e133e825ccb8b080f0d573903ac9343658"
+    },
+    {
+      "path": "evidence/correctness/foundation-f5-final/receipt.json",
+      "sha256": "ab9cb75e51f955a7e9bad5cf812cd56cd21d893189e346b86e57e1de58db2e06"
+    },
+    {
+      "path": "evidence/correctness/foundation-f5-sdk-wsl-cpu-cuda-static-link-recheck/receipt.json",
+      "sha256": "7f98009dea7e0007f1de5830db12cbe4693f82700b7bd38920a98f3c8762240f"
+    },
+    {
+      "path": "evidence/correctness/foundation-f5-sdk-wsl-cpu-cuda-shared/receipt.json",
+      "sha256": "6a27ca8da352ba905a6eb307cad39576e31a5e6e2a5f09cde89470301ee45ded"
+    }
+  ],
+  "declared_p1_receipts": 8,
+  "declared_p1_gate": "All8 accepted receipts qualification PASS/QUALIFIED,performance PASS,verify0; original failed/diagnostic activities retained separately.",
+  "cuda_p0": "Original F5 P0 reused; native_attention.cu same bytes since25e4fb398; plain coupled/causal/unbounded batch dispatch remains original FI. No new quantitative Linux FI noninferiority/WIN claim.",
+  "coverage": {
+    "single_request": "CPU resident, Apple existing native, Vulkan direct-ports, Linux FI native dense",
+    "multi_request": "CPU/Apple/Vulkan closed ragged + page16; Linux FI original admitted ragged/paged public source/static/shared",
+    "joint_math": "Original G02 native joint finite domain and G03 public64 actual CPU-GPU-CPU; G02 Windows aggregate gates remain separate",
+    "structural_cost": "Direct resident native math/address mapping; no HYLE O(Q*H*KV*D) history expansion; actual native conversion/scratch/metadata/F1/wait costs retained",
+    "correctness_lifetime": "Effective rows/pages/tails/shared-reordered layout, exact guards,old owning outputs,two slots,errors/cancel/actual retirement per referenced finite domains",
+    "delivery": "Original source/relocated static/shared/public headers and actual applicable host-risk facets in closed terminal inputs",
+    "performance": "Declared original finite changed routes have accepted P1; existing unchanged Linux FI only its admitted P0"
+  },
+  "kept_separate": [
+    "G02 interrupted/not-run Windows factor gates",
+    "G03 already separately accepted",
+    "G04/G05 encoded KV,new attention domains and current P1",
+    "G06 planning/admission/decode costs",
+    "G07-G10",
+    "Windows FlashInfer and Vulkan BF16 outside admitted domain",
+    "native private pool,driver/kernel sanitizer limits",
+    "whole model/token-s/multiGPU/multinode"
+  ],
+  "owner_state": "This accepts a goal item by aggregating completed rounds; current module-status stays authoritative. Current11 G04/G05 owner candidates are not closed by this record."
+}

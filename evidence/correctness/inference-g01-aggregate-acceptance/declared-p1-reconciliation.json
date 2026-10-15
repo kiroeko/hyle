@@ -1,0 +1,199 @@
+{
+  "state": "EIGHT_DECLARED_G01_P1_RECEIPTS_CHECKED_NOT_YET_AGGREGATE_DECISION",
+  "head": "0ff5c46ae30d2a8bbf8f88bcbb98010bb3d56b69",
+  "rows": [
+    {
+      "role": "cpu_dense",
+      "qualification": "PASS",
+      "performance": "PASS",
+      "verify_exit": 0,
+      "inputs": [
+        {
+          "path": "evidence/performance/inference-g01-resident-cpu-w1-p1/receipt.json",
+          "sha256": "00fa1a156e0264023c9195ba6c862ad3ed8aee36600058e554974d48d1021f54"
+        },
+        {
+          "path": "evidence/performance/inference-g01-resident-cpu-w1-p1/summary.json",
+          "sha256": "62dc9b755255a18aeb3c70ba9fcffcf87f81e8e6bca7f8095f5c6ca432381d9a"
+        },
+        {
+          "path": "evidence/performance/inference-g01-resident-cpu-w1-p1/manifest.json",
+          "sha256": "81bb99c46a075bc13d7414fb1001e11d2f86cd8c7d552057af45d5c98bdabe98"
+        },
+        {
+          "path": "evidence/performance/inference-g01-resident-cpu-w1-p1/verify-receipt.json",
+          "sha256": "b303d5a6d35231de6fd25ca7eb43d589379895e13bdd25b488273933fe0ce980"
+        }
+      ]
+    },
+    {
+      "role": "cpu_ragged",
+      "qualification": "QUALIFIED",
+      "performance": "PASS",
+      "verify_exit": 0,
+      "inputs": [
+        {
+          "path": "evidence/performance/inference-g01-cpu-ragged-w1-p1/receipt.json",
+          "sha256": "806191497f8f7e068df3c3c179800cf006c5a1929e3b648a993f9d1c4de8715b"
+        },
+        {
+          "path": "evidence/performance/inference-g01-cpu-ragged-w1-p1/summary.json",
+          "sha256": "ac2114142f5f5063b53777f7b4d4cade5ef2cc71c965e10e5d9dedcb99235ed1"
+        },
+        {
+          "path": "evidence/performance/inference-g01-cpu-ragged-w1-p1/manifest.json",
+          "sha256": "29accedb3c62fafe117cf89ab11d605e90cd01a483e30324f8d71a48a99b9d85"
+        },
+        {
+          "path": "evidence/performance/inference-g01-cpu-ragged-w1-p1/verify-receipt.json",
+          "sha256": "87b0091f2eadfe767cf78d0f9457a63de285bd2df4c50782376c83e0c389201e"
+        }
+      ]
+    },
+    {
+      "role": "cpu_page16",
+      "qualification": "QUALIFIED",
+      "performance": "PASS",
+      "verify_exit": 0,
+      "inputs": [
+        {
+          "path": "evidence/performance/inference-g01-cpu-page16-w1-p1/receipt.json",
+          "sha256": "d407b11bd6dbb90d9e99a75ad5abe3a40ee39bc50505c5f4a0f9e548311957a0"
+        },
+        {
+          "path": "evidence/performance/inference-g01-cpu-page16-w1-p1/summary.json",
+          "sha256": "371a1be99dd214c689b24c86f659767c273d76a7fa7969f5bf5b4ef573255c25"
+        },
+        {
+          "path": "evidence/performance/inference-g01-cpu-page16-w1-p1/manifest.json",
+          "sha256": "c523053ad5db9db77bdc75438499303aca3995b0ffa8ed4e3fb5fab905ae4984"
+        },
+        {
+          "path": "evidence/performance/inference-g01-cpu-page16-w1-p1/verify-receipt.json",
+          "sha256": "b4727374ac1d8a1b4baed6c809110e9aa780fdb7559a2f82f9f50636f519fc4f"
+        }
+      ]
+    },
+    {
+      "role": "apple_ragged",
+      "qualification": "QUALIFIED",
+      "performance": "PASS",
+      "verify_exit": 0,
+      "inputs": [
+        {
+          "path": "evidence/performance/inference-g01-native-ragged-apple-m1-p1/receipt.json",
+          "sha256": "554e6799c2457c643ef6f4e62d9e99b154cfddbe096775fd1cb89b70d3ca9f84"
+        },
+        {
+          "path": "evidence/performance/inference-g01-native-ragged-apple-m1-p1/summary.json",
+          "sha256": "0a2f256256e5c677372b20cf3d522198310c0746f8b5799f36aa53a80d29d621"
+        },
+        {
+          "path": "evidence/performance/inference-g01-native-ragged-apple-m1-p1/manifest.json",
+          "sha256": "e59788bf7aa9962ed198402a021d55fbe661fbe33bf7143f8a4b391d202d27eb"
+        },
+        {
+          "path": "evidence/performance/inference-g01-native-ragged-apple-m1-p1/verify-receipt.json",
+          "sha256": "b13c1d7925a43e6495da5d005ae622431afba78ff5d2323da72ff8a7562a71ba"
+        }
+      ]
+    },
+    {
+      "role": "vulkan_dense",
+      "qualification": "PASS",
+      "performance": "PASS",
+      "verify_exit": 0,
+      "inputs": [
+        {
+          "path": "evidence/performance/inference-g01-resident-vulkan-direct-ports-m1-p1/receipt.json",
+          "sha256": "b9c170ffcd342f7c6b8f4ebe2f0a414e251ffe43484ba9679adb154016e68d91"
+        },
+        {
+          "path": "evidence/performance/inference-g01-resident-vulkan-direct-ports-m1-p1/summary.json",
+          "sha256": "93a0b88d0581535b43f0338e87563998aa46eb18ae7a2fdcdaf0209b3f26e1cd"
+        },
+        {
+          "path": "evidence/performance/inference-g01-resident-vulkan-direct-ports-m1-p1/manifest.json",
+          "sha256": "9628aa32f04052a20c21e09d802e4070565e5035c1bed6ed594228a2577e37ac"
+        },
+        {
+          "path": "evidence/performance/inference-g01-resident-vulkan-direct-ports-m1-p1/verify-receipt.json",
+          "sha256": "1da93b98c0a0ba6dea4cb6971c072c0fc3f0b6d1e9880761ed1b4d28caaa0f99"
+        }
+      ]
+    },
+    {
+      "role": "vulkan_ragged",
+      "qualification": "QUALIFIED",
+      "performance": "PASS",
+      "verify_exit": 0,
+      "inputs": [
+        {
+          "path": "evidence/performance/inference-g01-native-ragged-vulkan-rr-m1-p1/receipt.json",
+          "sha256": "e1cd0e1239c1b52b3ac03a5bbd35e62979a5fdf3dbe9e37abd4e5bcd488fa598"
+        },
+        {
+          "path": "evidence/performance/inference-g01-native-ragged-vulkan-rr-m1-p1/summary.json",
+          "sha256": "84786dfb1e333be70b399b84dbb22bc34740618bdee054b9c05611db3ec6dec0"
+        },
+        {
+          "path": "evidence/performance/inference-g01-native-ragged-vulkan-rr-m1-p1/manifest.json",
+          "sha256": "5628f9ac85a3d0f824d6ea4d93c22986ba04ac3db9240d361a42552de0b23100"
+        },
+        {
+          "path": "evidence/performance/inference-g01-native-ragged-vulkan-rr-m1-p1/verify-receipt.json",
+          "sha256": "5692beeee3aa0cd01fc6456b604a71fc1e0ef5e14792844496fe9b175884a34b"
+        }
+      ]
+    },
+    {
+      "role": "apple_page16",
+      "qualification": "QUALIFIED",
+      "performance": "PASS",
+      "verify_exit": 0,
+      "inputs": [
+        {
+          "path": "evidence/performance/inference-g01-native-page-apple-m1-p1/receipt.json",
+          "sha256": "e7ee2eb1cbfff1668c78891066480f2e868b3f80fc672f23d5ba46148e917161"
+        },
+        {
+          "path": "evidence/performance/inference-g01-native-page-apple-m1-p1/summary.json",
+          "sha256": "e624484ea51398aa3d4f24b6e86a7f9ffa0cf06c8c71f48235b9057520d0dfe9"
+        },
+        {
+          "path": "evidence/performance/inference-g01-native-page-apple-m1-p1/manifest.json",
+          "sha256": "f5393f8c8d93844a03c85483ae2b7339d803e03e75a1f53ea0e58072b0e95ab2"
+        },
+        {
+          "path": "evidence/performance/inference-g01-native-page-apple-m1-p1/verify-receipt.json",
+          "sha256": "3ac753f385a00160abac93f2de04de4696cadfc4c008ef822fff1e3a2b51ab78"
+        }
+      ]
+    },
+    {
+      "role": "vulkan_page16",
+      "qualification": "QUALIFIED",
+      "performance": "PASS",
+      "verify_exit": 0,
+      "inputs": [
+        {
+          "path": "evidence/performance/inference-g01-native-page-vulkan-m1-p1/receipt.json",
+          "sha256": "8abb602626b3d3dd9d822ff8432ffde0555bf14fee6f6282459554379376dfdc"
+        },
+        {
+          "path": "evidence/performance/inference-g01-native-page-vulkan-m1-p1/summary.json",
+          "sha256": "d27900e48f7e8fdfe1f23488a2029cc0b85ecf128c7aeed68ce4a784f2f41d64"
+        },
+        {
+          "path": "evidence/performance/inference-g01-native-page-vulkan-m1-p1/manifest.json",
+          "sha256": "1c11a14c72432bcf7d1d814d076dfd38359aed1e1d070264d44e909bead3721f"
+        },
+        {
+          "path": "evidence/performance/inference-g01-native-page-vulkan-m1-p1/verify-receipt.json",
+          "sha256": "e0b3b7539ddadf9685d5f06ef8dfb48d2d99192acee52fbaf0faa4b7f29ce259"
+        }
+      ]
+    }
+  ],
+  "cuda_limit": "Original admitted Linux FI baseline uses its already signed P0; no new same-domain P1 found or claimed."
+}

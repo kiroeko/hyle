@@ -1,0 +1,64 @@
+{
+  "kind": "FINITE_G01_LINUX_CUDA_BASELINE_RECONCILIATION_READONLY",
+  "verdict": "原plain dense/ragged/page16已实际ROUTED，功能/交付/结构P0可沿用；不是定量P1或全域高性能证书。",
+  "scope": "只核这一格；未编译、未运行GPU/P1、未改产品/文档/registry。无新增MUST。",
+  "identity": "原FlashInfer0.6.18/69ff11fc4954396d98326656dc85debd2223f637；WSL Ubuntu24.04/GCC14.2/CUDA13.3/RTX4070 SM89。Windows FI不由此准入。",
+  "public_calls": {
+    "dense": "Context→prepare(ScaledDotProductAttention)→Invocation.submit→Completion.wait；原native_attention.cu:16-58直接SingleDecode/SinglePrefill。M1-C实际F16/BF16、batch2、GQA8/2、D256 causal BSHD、Q17/KV31与Q1/KV513，source及迁址static/shared Direct/Graph、双队列/重放/旧输出/OOM/放弃。",
+    "ragged_paged": "BatchSchema/version→BatchProgram→prepare/update→PreparedBatch.run→wait→output；Graph同region slot。F5 actual D64短/D128长source；两SDK D256、GQA4/2、Q1/2、KV19/10、page16乱页/tail、F16/BF16×Direct/Graph各8 oracle，maxerror0.00227129799<0.007。G03 CLOSED另补GQA8/2 D256 Q1/17双槽64步及source/static/shared。"
+  },
+  "cost_and_retirement": "plain原FI直接读K/V roots/page table，无HYLE整KV gather或按Q/head物化；有效区由indptr/页号/tail及原causal数学控制。caller workspace/原split-merge、M字节metadata H2D、planner vectors/occupancy、prepare2/reuse1 waits、F1页guards仍收费，driver/private UNKNOWN。D128长KV8193/4097实际split：paged float1453056/int604，ragged1486080/int653 bytes。原F1/F2/Queue保accepted prefix至actual retirement；旧output阻覆写、prepare/run错误/suffix/unknown Gate/open-failed-slot有实际风险证据。",
+  "source_anchors": [
+    "src/compute_provider_flashinfer/native_attention.cu:16-58",
+    "src/compute_provider_flashinfer/native_batch.cu:14-83",
+    "src/compute_provider_flashinfer/flashinfer_provider.cc:169-228,324-378",
+    "src/compute_batch/batch_execution.cc:92-116,224-260,287-302",
+    "tests/compute_batch/public_batch_cuda_consumer.cc:37-194"
+  ],
+  "evidence": {
+    "dense": "evidence/correctness/compute-llm-moe-m1-cuda-admission/{README.md,flashinfer-admission.json}；最终有限candidate43732241，原admission67f3651f/visibility6ef8884d身份保留。",
+    "source_and_risks": "evidence/correctness/foundation-f5-{native-direct-first,native-graph-first,native-risk-recheck}/README.md；原probe extended只签raw数学，不冒充HYLE lifecycle。",
+    "delivery": "evidence/correctness/foundation-f5-sdk-wsl-cpu-cuda-{static-link-recheck,shared}/receipt.json；两raw.zip及实际run-native日志SHA均与receipt匹配，exit0，各15独立头，producer25e。",
+    "final": "evidence/correctness/foundation-f5-final/receipt.json：最终11c348e4、math/API25e4fb398、performance_tier=P0。",
+    "p0": "evidence/performance/foundation-f5-cost-structure/README.md；明确无自动P1，无timed WIN/PARITY/SOTA。",
+    "later_consumer": "docs/implementation/tasks/compute/inference-g03-final-closure.md:25-33,47-49：已CLOSED的LinuxFI public64与交付补证。"
+  },
+  "verified_sdk_identity": [
+    {
+      "folder": "evidence/correctness/foundation-f5-sdk-wsl-cpu-cuda-static-link-recheck",
+      "candidate": "25e4fb398e2a782ee60f916c3c6351c4736b6eda",
+      "archive_sha256": "1a962f9ad197e09572ef0b5e5f862acc7451797bbaa154667248f4feb51abc7d",
+      "archive_matches_receipt": true,
+      "terminal_log": "run-native-resume1.log",
+      "log_sha256": "5f5775c28f5f191be75e68e6b6c1ff42300f71c122407883bbfff333a4ce0d1b",
+      "log_matches_stage": true,
+      "exit_code": 0,
+      "historical_public_cuda_consumer_sha256": "eaef48f8b6b5e9770873a99505de354bf52bd2b9424b24256fef0a858ce93aed"
+    },
+    {
+      "folder": "evidence/correctness/foundation-f5-sdk-wsl-cpu-cuda-shared",
+      "candidate": "25e4fb398e2a782ee60f916c3c6351c4736b6eda",
+      "archive_sha256": "68ee1b6c8bbdbdc5950165eee40fbd19ed7bbd3cbd5a8ae29232d6844f5d86e4",
+      "archive_matches_receipt": true,
+      "terminal_log": "run-native.log",
+      "log_sha256": "5f5775c28f5f191be75e68e6b6c1ff42300f71c122407883bbfff333a4ce0d1b",
+      "log_matches_stage": true,
+      "exit_code": 0,
+      "historical_public_cuda_consumer_sha256": "eaef48f8b6b5e9770873a99505de354bf52bd2b9424b24256fef0a858ce93aed"
+    }
+  ],
+  "performance_reuse_limit": "有限检索未找到同域LinuxFI独立定量P1凭据；原F5只签P0，本G01未承诺无变化Linux baseline新P1。native_attention.cu与F5候选25e相比未变；现plain coupled/causal/unbounded仍用原FI分支。故无新算法/具体成本反例不重复旧数学/P1；不能称LinuxFI已测非劣/WIN。历史SDK消费者与当前fixture因G03 LaneBinding/G04显式storage/depth API不同，旧binary不改名当前PASS。",
+  "host_limits": "F5地址ASan/UBSan/数据竞争TSan有限消费者已过；NVIDIA整进程LSan/诊断线程仍INCONCLUSIVE，不签GPU kernel/driver/private-memory。",
+  "aggregate_ruling": "结合下列finite CLOSED terminals，未定位原G01 plain固定FIX仍欠实际门或明确承诺P1。可以聚合本有限接缝，不能扩大成全部数学域/平台高性能PASS；不改registry。",
+  "closed_terminal_prefix": "docs/implementation/tasks/compute/",
+  "closed_terminals": [
+    "inference-g01-cpu-resident-ragged-terminal.md",
+    "inference-g01-cpu-paged-terminal.md",
+    "inference-g01-apple-ragged-terminal.md",
+    "inference-g01-vulkan-resident-terminal.md",
+    "inference-g01-vulkan-ragged-terminal.md",
+    "inference-g01-native-paged-terminal.md"
+  ],
+  "kept_separate": "新FP8/window/不同Dv及其peerP1归G04/G05；metadata/guards/decode规划归G06；Windows联合未决归G02；预算/producer/growth/token/s保原卡。",
+  "original_plain_g01_concrete_unfulfilled_items": []
+}
