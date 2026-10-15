@@ -1075,3 +1075,11 @@ plan保留。依用户限定的模块/直接消费者范围，实际 source 选 
 及原 public encoded/paged/ragged Direct/Graph，借用未变 route 和通用头证据；不运行无关
 io/container/其它 provider 或整 Graph CPU 回归。CUDA/Air 当前固定输入仍单独完成，
 随后串行执行本 CE13 普通门；未运行的修复数学/风险/SDK/P1仍UNPROVEN。
+
+### CUDA 新域宿主 UBSan 实际结果
+
+[UBSan 阶段](../../../../evidence/correctness/inference-g04-g05-cuda-encoded-host-ubsan/receipt.json)
+绑定与 ASan 完全相同的冻结 archive：实际 RTX4070/SM89，13数学/Direct/Graph/联合测试与
+五种 source 风险全部 PASS，已测482.431秒。未改146对象 ggml CUDA archive 按原同配置
+证明复用，CPU/base/FI 与改动宿主正常编译，实际测试二进制前后 SHA 一致。TSan 随后已
+在同一串行队列启动；本阶段不签 shader/driver、LSan、private pool 上界或 CE12/13 CPU。
