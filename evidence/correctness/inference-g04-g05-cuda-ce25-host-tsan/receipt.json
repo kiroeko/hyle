@@ -1,0 +1,128 @@
+{
+  "kind": "G04_G05_CUDA_CE25_HOST_SANITIZER_FACET",
+  "mode": "tsan",
+  "verdict": "PASS_HOST_FACET_ONLY",
+  "product_candidate": "0143102aebcbc29600a77ce2950136462fba2a36",
+  "tests": 16,
+  "skips": 0,
+  "source_risk_modes": 5,
+  "stages": [
+    {
+      "stage": "configure",
+      "command": [
+        "cmake",
+        "-S",
+        "/root/hyle-scratch/compute-unified/source-7a7b4c3b",
+        "-B",
+        "/root/hyle-scratch/compute-unified/foundation-f5-native-host-cuda-tsan/build",
+        "-UCMAKE_PROJECT_TOP_LEVEL_INCLUDES",
+        "-DCMAKE_PROJECT_INCLUDE=/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/cuda-host-san/tsan-ce25-1/targets.cmake",
+        "-DHYLE_BUILD_TESTS=OFF",
+        "-DHYLE_BUILD_BENCH=OFF",
+        "-DHYLE_INSTALL=OFF"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 45.96841593599993,
+      "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/cuda-host-san/tsan-ce25-1/configure.log"
+    },
+    {
+      "stage": "prepare-manifest",
+      "command": [
+        "ninja",
+        "-C",
+        "/root/hyle-scratch/compute-unified/foundation-f5-native-host-cuda-tsan/build",
+        "build.ninja"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 0.07057668899960845,
+      "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/cuda-host-san/tsan-ce25-1/prepare-manifest.log"
+    },
+    {
+      "stage": "compile",
+      "command": [
+        "cmake",
+        "--build",
+        "/root/hyle-scratch/compute-unified/foundation-f5-native-host-cuda-tsan/build",
+        "--target",
+        "g04_cuda_encoded_host_tests",
+        "g04_cuda_encoded_host_risks",
+        "--parallel",
+        "2"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 352.995724077,
+      "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/cuda-host-san/tsan-ce25-1/compile.log"
+    },
+    {
+      "stage": "tests",
+      "command": [
+        "setarch",
+        "x86_64",
+        "-R",
+        "/root/hyle-scratch/compute-unified/foundation-f5-native-host-cuda-tsan/build/bin/g04_cuda_encoded_host_tests",
+        "--gtest_output=xml:/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/cuda-host-san/tsan-ce25-1/tests.xml"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 13.532491004000349,
+      "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/cuda-host-san/tsan-ce25-1/tests.log"
+    },
+    {
+      "stage": "five-risk-modes",
+      "command": [
+        "setarch",
+        "x86_64",
+        "-R",
+        "/root/hyle-scratch/compute-unified/foundation-f5-native-host-cuda-tsan/build/bin/g04_cuda_encoded_host_risks"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 2.058707696000056,
+      "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/cuda-host-san/tsan-ce25-1/five-risk-modes.log"
+    }
+  ],
+  "measured_seconds": 414.6259154019999,
+  "identity": {
+    "host": "Linux kiro-workstation 6.18.54.1-microsoft-standard-WSL2 #1 SMP PREEMPT_DYNAMIC Tue Oct  6 19:13:07 UTC 2026 x86_64 x86_64 x86_64 GNU/Linux",
+    "compiler": "g++-14 (Ubuntu 14.2.0-4ubuntu2~24.04.1) 14.2.0\nCopyright (C) 2024 Free Software Foundation, Inc.\nThis is free software; see the source for copying conditions.  There is NO\nwarranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.",
+    "cuda": "nvcc: NVIDIA (R) Cuda compiler driver\nCopyright (c) 2005-2026 NVIDIA Corporation\nBuilt on Tue_Jun_09_02:43:40_PM_PDT_2026\nCuda compilation tools, release 13.3, V13.3.73\nBuild cuda_13.3.r13.3/compiler.38244171_0",
+    "gpu": "NVIDIA GeForce RTX 4070, GPU-e7376560-6f5d-ec19-6ee4-3dd3a2c81ef8, 617.14, 12282 MiB"
+  },
+  "environment": {
+    "ASAN_OPTIONS": "halt_on_error=1:protect_shadow_gap=0:detect_leaks=0",
+    "UBSAN_OPTIONS": "halt_on_error=1:print_stacktrace=1",
+    "TSAN_OPTIONS": "halt_on_error=1:report_thread_leaks=0"
+  },
+  "native_dependency_reused": {
+    "archive": "/root/hyle-scratch/compute-unified/g04-encoded-host-reused/tsan/libggml-cuda.a",
+    "sha256": "14dc738087a3d6f5d5b1c2f5a569bce507d7324966c05d3422dccd3cef337414",
+    "scope": "Only unchanged original ggml CUDA native archive, same per-mode sanitizer/toolchain/SM89; CPU/base/FI/all changed host code still compiled."
+  },
+  "binaries": {
+    "g04_cuda_encoded_host_tests": {
+      "path": "/root/hyle-scratch/compute-unified/foundation-f5-native-host-cuda-tsan/build/bin/g04_cuda_encoded_host_tests",
+      "sha256": "f41618a2a979855e9f344aeeb8378939d5c579dfb9f21cfa9f1484b3b41f66d6"
+    },
+    "g04_cuda_encoded_host_risks": {
+      "path": "/root/hyle-scratch/compute-unified/foundation-f5-native-host-cuda-tsan/build/bin/g04_cuda_encoded_host_risks",
+      "sha256": "a825831bdeb29da08ca628837fb97a60344ee81771c364f28eba1af96e1bd7e7"
+    }
+  },
+  "previous_f5_scope": {
+    "tsan_scope": {
+      "data_race_scope": "New host F5 native callback/retirement and actual consumer memory accesses",
+      "thread_leak_verdict": "INCONCLUSIVE_FOREIGN_NVIDIA_DIAGNOSTIC_THREAD; exact no-HYLE lifecycle control reproduces same finished not-joined libnvdiagclt thread",
+      "TSAN_OPTIONS": "halt_on_error=1:report_thread_leaks=0",
+      "report_bugs_default_true": true,
+      "source": "https://github.com/google/sanitizers/wiki/ThreadSanitizerFlags",
+      "suppressions": "none",
+      "original_exit66_preserved": true
+    },
+    "verdict": "PASS_F5_ACTUAL_CUDA_HOST_TSAN"
+  },
+  "limits": [
+    "Host instrumentation only; no shader/driver/private-pool byte certificate",
+    "ASan address facet only; original NVIDIA process LSan remains INCONCLUSIVE",
+    "TSan data races only; original independently reproduced NVIDIA diagnostic-thread lifetime remains INCONCLUSIVE",
+    "Source risk observation hook in one backend host TU; not shipping SDK qualification"
+  ],
+  "raw_zip_sha256": "071ea3fd602d42c076f2801198a4dcae6061403a1b607a41190df1556e233902"
+}

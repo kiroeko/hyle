@@ -1,0 +1,57 @@
+{
+  "kind": "G04_G05_CE25_HOST_THREE_FACET_BATCH",
+  "verdict": "PASS_THREE_HOST_FACETS_ONLY",
+  "product_candidate": "0143102aebcbc29600a77ce2950136462fba2a36",
+  "facets": [
+    {
+      "mode": "asan",
+      "receipt": "evidence/correctness/inference-g04-g05-cuda-ce25-host-asan/receipt.json",
+      "receipt_sha256": "801c97aa9e01251a1eb374bde014ccec62d1ddc993eef54cc71eeb48c7f18668",
+      "measured_stage_seconds": 481.29754376000005,
+      "tests": 16,
+      "risk_modes": 5,
+      "limits": [
+        "Host instrumentation only; no shader/driver/private-pool byte certificate",
+        "ASan address facet only; original NVIDIA process LSan remains INCONCLUSIVE",
+        "TSan data races only; original independently reproduced NVIDIA diagnostic-thread lifetime remains INCONCLUSIVE",
+        "Source risk observation hook in one backend host TU; not shipping SDK qualification"
+      ],
+      "outer_run_seconds": 485.76600000000326
+    },
+    {
+      "mode": "ubsan",
+      "receipt": "evidence/correctness/inference-g04-g05-cuda-ce25-host-ubsan/receipt.json",
+      "receipt_sha256": "4a6e382f00d0a9337ae43488a307949319b8bbd45eba5cca99c9d8a121ccc9cb",
+      "measured_stage_seconds": 412.2770227030005,
+      "tests": 16,
+      "risk_modes": 5,
+      "limits": [
+        "Host instrumentation only; no shader/driver/private-pool byte certificate",
+        "ASan address facet only; original NVIDIA process LSan remains INCONCLUSIVE",
+        "TSan data races only; original independently reproduced NVIDIA diagnostic-thread lifetime remains INCONCLUSIVE",
+        "Source risk observation hook in one backend host TU; not shipping SDK qualification"
+      ],
+      "outer_run_seconds": 420.795999999973
+    },
+    {
+      "mode": "tsan",
+      "receipt": "evidence/correctness/inference-g04-g05-cuda-ce25-host-tsan/receipt.json",
+      "receipt_sha256": "b57a036d07b98d5ee78b31cebb7eafa86833d560839e95c24e00e4d8e1a09cc9",
+      "measured_stage_seconds": 414.6259154019999,
+      "tests": 16,
+      "risk_modes": 5,
+      "limits": [
+        "Host instrumentation only; no shader/driver/private-pool byte certificate",
+        "ASan address facet only; original NVIDIA process LSan remains INCONCLUSIVE",
+        "TSan data races only; original independently reproduced NVIDIA diagnostic-thread lifetime remains INCONCLUSIVE",
+        "Source risk observation hook in one backend host TU; not shipping SDK qualification"
+      ],
+      "outer_run_seconds": 425.21899999998277
+    }
+  ],
+  "time_accounting": "Each outer launcher duration overlaps the respective measured stage sum; never add outer and inner together. All earlier failures/costs retained.",
+  "limits": [
+    "No shader/driver/private-pool certificate; original LSan and diagnostic-thread lifetime limits remain.",
+    "Fresh numeric/runtime kernel identity/AA/P1 and whole G04/G05 acceptance remain separate gates."
+  ]
+}

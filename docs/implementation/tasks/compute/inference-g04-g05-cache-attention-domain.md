@@ -2339,3 +2339,15 @@ memcheck/racecheck零error/warning/hazard，build-contract与source/SDK/artifact
 实际三mangled特化与codegen完全一致，MMA1/1/4、register241/241/165、dynamic shared
 49152/49152/40960，block32×4×1。此为路径/数学证据，不作吞吐或总occupancy结论。
 接下来只跑原三host风险门与原P1；G04/G05未完成，所有旧FAIL/UNKNOWN与费用不覆盖。
+
+CE25三个宿主风险facet均已实际通过：[ASan](../../../../evidence/correctness/inference-g04-g05-cuda-ce25-host-asan/receipt.json)、
+[UBSan](../../../../evidence/correctness/inference-g04-g05-cuda-ce25-host-ubsan/receipt.json)、
+[TSan](../../../../evidence/correctness/inference-g04-g05-cuda-ce25-host-tsan/receipt.json)，
+每项16测试/零SKIP及五风险模式，四FI CUDA TU均按本facet带宿主插桩，当前candidate三vendor
+输入与binary SHA不变。费用逐facet保留：
+asan stage481.298s/outer485.766s；
+ubsan stage412.277s/outer420.796s；
+tsan stage414.626s/outer425.219s；
+outer与stage互相重叠，不重复相加。[批次汇总](../../../../evidence/correctness/inference-g04-g05-cuda-ce25-host-tsan/batch-summary.json)
+不签shader/driver/private-pool证书，原进程LSan与diagnostic-thread lifetime INCONCLUSIVE保留。
+现在只剩原同合同AA/P1/strict及整项终审；本次不签性能或G04/G05完成，不重置旧失败/成本。
