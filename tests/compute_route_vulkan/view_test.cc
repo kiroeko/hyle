@@ -7,6 +7,54 @@ namespace {
 using namespace vulkan_tensor_test;
 namespace d = v::detail;
 
+TEST(VulkanView, ExplicitFrequencyRopeRetainsAccuracyAtInferencePositions) {
+  auto context = vulkan_test::context().value();
+  const std::array<std::int32_t, 18> positions{
+      -1048576, -131071, -65536, -2303, -2055, -127, -1, 0, 1,
+      127, 2052, 2055, 2303, 65536, 131071, 262144, 1048575, 1048576};
+  constexpr std::int64_t heads = 3, depth = 64;
+  const auto desc = dense(c::DataType::kFloat32,
+                         {1, std::int64_t(positions.size()), heads, depth});
+  const auto pdesc = dense(c::DataType::kInt32, {std::int64_t(positions.size())});
+  const auto fdesc = dense(c::DataType::kFloat32, {depth / 2});
+  std::array<double, depth / 2> frequencies{};
+  for (std::size_t pair = 0; pair < frequencies.size(); ++pair)
+    frequencies[pair] = float(std::pow(10000.0, -double(pair) / 32));
+  frequencies[1] = float(std::acos(-1.0) / 1024);
+  frequencies[2] = -0.75;
+  frequencies[3] = 0;
+  frequencies[4] = -1;
+  std::vector<double> host(positions.size() * heads * depth);
+  for (std::size_t i = 0; i < host.size(); ++i)
+    host[i] = (int(i % 23) - 11) / 16.0;
+  const auto input = make(context, desc, host);
+  const auto position = context.upload(pdesc, std::as_bytes(std::span(positions))).value();
+  const auto frequency = make(context, fdesc, frequencies);
+  auto program = v::prepare(context, c::RoPE{
+      .rotary_dimensions = depth, .sequence_axis = 1,
+      .layout = c::RopeLayout::kInterleaved}, desc, pdesc, fdesc);
+  ASSERT_TRUE(program) << program.error().message();
+  auto slot = program->create_invocation().value();
+  ASSERT_TRUE(slot.bind(input, position, frequency).ok());
+  auto work = slot.submit().value();
+  auto result = work.wait();
+  ASSERT_TRUE(result) << result.error().message();
+  const auto actual = values(context, result->get()->tensors()[0]);
+  ASSERT_EQ(actual.size(), host.size());
+  for (std::size_t row = 0; row < positions.size(); ++row)
+    for (std::size_t head = 0; head < std::size_t(heads); ++head)
+      for (std::size_t pair = 0; pair < frequencies.size(); ++pair) {
+        // The public inputs multiply in F32 before the independent F64 trig.
+        const float phase = float(positions[row]) * float(frequencies[pair]);
+        const auto offset = (row * heads + head) * depth + 2 * pair;
+        const double a = host[offset], b = host[offset + 1];
+        EXPECT_NEAR(actual[offset], a * std::cos(double(phase)) -
+                                      b * std::sin(double(phase)), 4.0e-6);
+        EXPECT_NEAR(actual[offset + 1], a * std::sin(double(phase)) +
+                                          b * std::cos(double(phase)), 4.0e-6);
+      }
+}
+
 TEST(VulkanView, MetadataAliasesSixStorageTypesWithoutDeviceAllocation) {
   hyle::mem::QuotaAllocator quota(hyle::mem::system_allocator(), 1U << 22);
   auto context = vulkan_test::context(&quota).value();

@@ -615,7 +615,7 @@
     {
       "path": "src/ggml-vulkan/vulkan-shaders/unary.comp",
       "before_sha256": "224257d872b7658a3d9dba118818897511596093a4c5fc9b4ff866cfc7079709",
-      "after_sha256": "0644a5049aefb8c2cfc01ef7e67a74786a56ed25467e902e701dfc1f6fdb103e",
+      "after_sha256": "05765b16011f8964ed5d59d5c9102d41424566c4e45428eb30c4a8e135bf6cb7",
       "edits": [
         {
           "before": "float op_silu(float x) {\n    return x / (1.0f + exp(-x));\n}",
@@ -636,6 +636,10 @@
         {
           "before": "float op_softplus(float x) {\n    return (x > 20.0f) ? x : log(1.0f + exp(x));\n}",
           "after": "float op_softplus(float x) {\n    // HYLE's stable beta=1 contract; GLSL has no log1p intrinsic.\n    if (isnan(x)) return x;\n    if (isinf(x)) return x > 0.0f ? x : 0.0f;\n    const float e = exp(-abs(x));\n    precise float tail;\n    // Reuse HYLE's LogSoftmax small-tail formula; omitted term <= e^6 / 6.\n    if (e < 0.015625f) {\n        tail = e * (1.0f + e * (-0.5f + e *\n            (1.0f / 3.0f + e * (-0.25f + e * 0.2f))));\n    } else {\n        precise float sum = 1.0f + e;\n        precise float delta = sum - 1.0f;\n        tail = log(sum) * (e / delta);\n    }\n    return max(x, 0.0f) + tail;\n}"
+        },
+        {
+          "before": "float op_sin(float x) {\n    return sin(x);\n}\n\nfloat op_cos(float x) {\n    return cos(x);\n}",
+          "after": "float hyle_reduce_phase(float x) {\n    // Preserve the computed F32 phase; reduce before approximate GPU sin/cos.\n    // Three nonoverlapping 2pi parts retain accuracy through |phase|=2^20.\n    if (abs(x) > 1048576.0f || isnan(x) || isinf(x)) return x;\n    const float turns = roundEven(x * 0.15915494309189533577f);\n    precise float reduced = fma(-turns, 6.28125f, x);\n    reduced = fma(-turns, 0.00193530716933310032f, reduced);\n    return fma(-turns, 1.02533766063780756e-11f, reduced);\n}\n\nfloat op_sin(float x) {\n    return x == 0.0f ? x : sin(hyle_reduce_phase(x));\n}\n\nfloat op_cos(float x) {\n    return cos(hyle_reduce_phase(x));\n}"
         }
       ]
     },
