@@ -1508,3 +1508,19 @@ IQ1测试的double→float隐式range构造触发MSVC /WX；只改测试为显�
 编译（实际该TU已在首build完成），该setup断言失败单独保留，修为允许0或原单一TU；
 全部既有失败/成本不覆盖。下一正常重配只纳入此测试注册纠正，沿原树复用既有native
 对象与生成物；后续batch构建收集全部实际错误，不逐算子新建构建树。
+
+
+CE15/16 [正常 Windows 定向验证](../../../../evidence/correctness/inference-g02-vulkan-alias-phase-windows-stage/receipt.json)
+已实际 PASS：最后增量 build48.844s；provider独立输出根0.250s、Direct18位置phase0.297s、
+Direct完整DeepSeek5.906s、Graph完整DeepSeek3.860s，各一实际XML、零失败/跳过。正常
+重配与全部旧build/setup失败、321个native对象及151份生成输入的前后SHA、完整2263
+native文件双树摘要均已封存。最终构建无CUDA TU，产品candidate仍为2b60d9a34。
+这只签四项定向source结果；static/shared、Air和新增metadata容量/清理风险尚未签。
+
+原851默认Graph集合在同一正常产物上实跑：前101 PASS，第102项
+VulkanGraphMoeFragments.D5GlmFlashPooledIndexerWithTail正常完成但数值FAIL，失败保留。
+其差异只见official-fp8的output5；源码显示fixture仍把F16乘数witness作为严格参考，
+当前F32 MatMul显式保留F32乘数。仅作有限待证假设，不能据此改写FAIL或放宽门。
+随后保持同一四产物SHA和全部原assert/oracle，逐例串行跑剩余749项并收集所有失败，
+不再因首个数值失败中止整批。待批次终态后只对实际失败做定向诊断/修复与受影响复验；
+不重跑CUDA804、不提前G06/P1。G02仍未整体验收。

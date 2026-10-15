@@ -1,0 +1,403 @@
+{
+  "kind": "G02_CE15_CE16_NORMAL_WINDOWS_FINITE_STAGE",
+  "verdict": "PASS_FOUR_TARGETED_CASES_ONLY",
+  "product_source": "2b60d9a34be12fda9a9e3fdc26f7a61b495c3be7",
+  "evidence_head": "5f12cedc7687cda8e2df3632a82f50d4977d4bc1",
+  "scope": "Normal current-input source build, conflicting independent output bindings,18-position F32 phase oracle, original full DeepSeek Direct and Graph consumers. No full851 or SDK/Air/risk/wholeG02 acceptance.",
+  "normal": {
+    "state": "TERMINAL_TARGETED_PASS",
+    "candidate": "2b60d9a34be12fda9a9e3fdc26f7a61b495c3be7",
+    "stages": [
+      {
+        "stage": "dry-plan",
+        "command": [
+          "ninja",
+          "-C",
+          "C:\\h7\\inference-g02-impacted",
+          "-f",
+          "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g02\\resume-windows-4\\reuse-build.ninja",
+          "-j",
+          "4",
+          "-k",
+          "0",
+          "-n",
+          "hyle_compute_provider_ggml_vulkan_tests",
+          "hyle_compute_route_vulkan_tests",
+          "hyle_graph_route_vulkan_tests"
+        ],
+        "exit_code": 0,
+        "elapsed_seconds": 0.07800000003771856
+      },
+      {
+        "stage": "build",
+        "command": [
+          "ninja",
+          "-C",
+          "C:\\h7\\inference-g02-impacted",
+          "-f",
+          "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g02\\resume-windows-4\\reuse-build.ninja",
+          "-j",
+          "4",
+          "-k",
+          "0",
+          "hyle_compute_provider_ggml_vulkan_tests",
+          "hyle_compute_route_vulkan_tests",
+          "hyle_graph_route_vulkan_tests"
+        ],
+        "exit_code": 0,
+        "elapsed_seconds": 48.84399999998277
+      },
+      {
+        "stage": "provider",
+        "command": [
+          "C:\\h7\\inference-g02-impacted\\bin\\hyle_compute_provider_ggml_vulkan_test.exe",
+          "--gtest_filter=GgmlVulkanRegion.PublishedReshapesBindIndependentInputAndOutputStorage",
+          "--gtest_color=no",
+          "--gtest_output=xml:C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g02\\vulkan-phase-normal-fix-4\\provider.xml"
+        ],
+        "exit_code": 0,
+        "elapsed_seconds": 0.25
+      },
+      {
+        "stage": "direct-phase",
+        "command": [
+          "C:\\h7\\inference-g02-impacted\\bin\\hyle_compute_route_vulkan_test.exe",
+          "--gtest_filter=VulkanView.ExplicitFrequencyRopeRetainsAccuracyAtInferencePositions",
+          "--gtest_color=no",
+          "--gtest_output=xml:C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g02\\vulkan-phase-normal-fix-4\\direct-phase.xml"
+        ],
+        "exit_code": 0,
+        "elapsed_seconds": 0.29699999996228144
+      },
+      {
+        "stage": "direct-chain",
+        "command": [
+          "C:\\h7\\inference-g02-impacted\\bin\\hyle_compute_route_vulkan_test.exe",
+          "--gtest_filter=VulkanMoeFragments.D5DeepSeekFullAttentionChain",
+          "--gtest_color=no",
+          "--gtest_output=xml:C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g02\\vulkan-phase-normal-fix-4\\direct-chain.xml"
+        ],
+        "exit_code": 0,
+        "elapsed_seconds": 5.9060000000172295
+      },
+      {
+        "stage": "graph",
+        "command": [
+          "C:\\h7\\inference-g02-impacted\\bin\\hyle_graph_route_vulkan_test.exe",
+          "--gtest_filter=VulkanGraphMoeFragments.D5DeepSeekFullAttentionChain",
+          "--gtest_color=no",
+          "--gtest_output=xml:C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g02\\vulkan-phase-normal-fix-4\\graph.xml"
+        ],
+        "exit_code": 0,
+        "elapsed_seconds": 3.85999999998603
+      }
+    ],
+    "scope": "Finite alias/phase regression and actual Direct/Graph DeepSeek case, no full-factor or whole-G02 claim",
+    "resource_policy": "Ninja max4, below-normal, serialized native tests, no P1/CUDA build",
+    "stage": "graph",
+    "pid": 56468,
+    "conservative_cuda_rebind": [],
+    "reused_objects_unchanged_after_build": 321,
+    "generated_inputs_unchanged_after_build": 151,
+    "artifacts": [
+      {
+        "path": "C:\\h7\\inference-g02-impacted\\bin\\hyle_compute_provider_ggml_vulkan.dll",
+        "sha256": "29b922d69a233fec637d47ba96db4567d75471a45331ac0e9789d21e75373eb2"
+      },
+      {
+        "path": "C:\\h7\\inference-g02-impacted\\bin\\hyle_compute_provider_ggml_vulkan_test.exe",
+        "sha256": "0d63d73a3d470e83c6767c3c96e544495394c765a1018bea78d9e77787a2bd92"
+      },
+      {
+        "path": "C:\\h7\\inference-g02-impacted\\bin\\hyle_compute_route_vulkan_test.exe",
+        "sha256": "5f5d2a419a19c11d9574a613c8332ef1feff181cbbcf83027878f73d853cf31c"
+      },
+      {
+        "path": "C:\\h7\\inference-g02-impacted\\bin\\hyle_graph_route_vulkan_test.exe",
+        "sha256": "027da30a0ebfe8031104c1d7fd19de5033ab219ccce99fc46d27b670f815d03b"
+      }
+    ]
+  },
+  "configure": [
+    {
+      "state": "TERMINAL_PREPARATION_ONLY",
+      "source_commit": "9cd5cc678179132b5d06cc16edad61e380683b57",
+      "source_tree": "6f2c91d165358196ce395febea4919bbb9105b3f",
+      "stages": [
+        {
+          "stage": "configure",
+          "command": [
+            "cmake",
+            "-S",
+            "C:\\public\\project-hyle\\hyle",
+            "-B",
+            "C:\\h7\\inference-g02-impacted",
+            "-DCMAKE_PROJECT_INCLUDE=C:/public/project-hyle/hyle/.scratch/inference-gaps/g02/resume-windows-3/job-pools.cmake",
+            "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 335.90600000001723,
+          "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g02\\resume-windows-3\\configure.log"
+        },
+        {
+          "stage": "dry-plan",
+          "command": [
+            "ninja",
+            "-C",
+            "C:\\h7\\inference-g02-impacted",
+            "-n",
+            "hyle_compute_provider_ggml_vulkan_tests",
+            "hyle_compute_route_vulkan_tests",
+            "hyle_graph_route_vulkan_tests"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 0.09399999998277053,
+          "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g02\\resume-windows-3\\dry-plan.log"
+        }
+      ],
+      "scope": "CE15/16 current-input Vulkan owner and original Direct/Graph consumers; config and dry plan first. Native CUDA pool1/max4 build jobs. No product build or test launched by this preparation.",
+      "identity": {
+        "compiler": "Microsoft (R) C/C++ Optimizing Compiler Version 19.50.35728 for x64\nCopyright (C) Microsoft Corporation.  All rights reserved.",
+        "gpu": "NVIDIA GeForce RTX 4070, 617.14, GPU-e7376560-6f5d-ec19-6ee4-3dd3a2c81ef8, 8.9, 2477 MiB, 12282 MiB"
+      },
+      "original_cache_sha256": "48619ab4ee9e753d0c111d7fb26b7908ec7e8e1837bda9c5f6e041585e12bea0",
+      "validation_hook": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g02\\resume-windows-3\\job-pools.cmake",
+        "sha256": "33ab13d5f844e8311d8d8eb6a4093e4ecbd050fe9b0961bb6d1f76e600b8658e",
+        "purpose": "Validation-only scheduling cap; no compile flags, product source, public build logic or test semantics change"
+      },
+      "stage": "dry-plan",
+      "pid": 65088,
+      "counts": {
+        "Building CXX object": 0,
+        "Building C object": 0,
+        "Building CUDA object": 0,
+        "Linking": 0,
+        "Generating": 0,
+        "Performing build step": 0
+      },
+      "cache_sha256": "f00a56bb7ad5509108ec7aba81bcc1e328950fcdd60f79b1982817497a4b5852",
+      "build_manifest_sha256": "f5a9c85d3b39b747c0a0a6277882e94fd8ae2475af41c2a0394c469a7b0ed6ca",
+      "cuda_pool_assignments": 183
+    },
+    {
+      "state": "TERMINAL_PREPARATION_ONLY",
+      "source_commit": "5f12cedc7687cda8e2df3632a82f50d4977d4bc1",
+      "source_tree": "c3d1e398509ffb6f8303dcf3ef01368ea9d5c8cb",
+      "stages": [
+        {
+          "stage": "configure",
+          "command": [
+            "cmake",
+            "-S",
+            "C:\\public\\project-hyle\\hyle",
+            "-B",
+            "C:\\h7\\inference-g02-impacted",
+            "-DCMAKE_PROJECT_INCLUDE=C:/public/project-hyle/hyle/.scratch/inference-gaps/g02/resume-windows-4/job-pools.cmake",
+            "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 89.35899999999674,
+          "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g02\\resume-windows-4\\configure.log"
+        },
+        {
+          "stage": "dry-plan",
+          "command": [
+            "ninja",
+            "-C",
+            "C:\\h7\\inference-g02-impacted",
+            "-n",
+            "hyle_compute_provider_ggml_vulkan_tests",
+            "hyle_compute_route_vulkan_tests",
+            "hyle_graph_route_vulkan_tests"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 0.10999999998603016,
+          "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g02\\resume-windows-4\\dry-plan.log"
+        }
+      ],
+      "scope": "CE15/16 current-input Vulkan owner and original Direct/Graph consumers; config and dry plan first. Native CUDA pool1/max4 build jobs. No product build or test launched by this preparation.",
+      "identity": {
+        "compiler": "Microsoft (R) C/C++ Optimizing Compiler Version 19.50.35728 for x64\nCopyright (C) Microsoft Corporation.  All rights reserved.",
+        "gpu": "NVIDIA GeForce RTX 4070, 617.14, GPU-e7376560-6f5d-ec19-6ee4-3dd3a2c81ef8, 8.9, 2470 MiB, 12282 MiB"
+      },
+      "original_cache_sha256": "f00a56bb7ad5509108ec7aba81bcc1e328950fcdd60f79b1982817497a4b5852",
+      "validation_hook": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g02\\resume-windows-4\\job-pools.cmake",
+        "sha256": "33ab13d5f844e8311d8d8eb6a4093e4ecbd050fe9b0961bb6d1f76e600b8658e",
+        "purpose": "Validation-only scheduling cap; no compile flags, product source, public build logic or test semantics change"
+      },
+      "stage": "dry-plan",
+      "pid": 44964,
+      "counts": {
+        "Building CXX object": 0,
+        "Building C object": 0,
+        "Building CUDA object": 0,
+        "Linking": 0,
+        "Generating": 0,
+        "Performing build step": 0
+      },
+      "cache_sha256": "b2dac2f851ad8c40db53af60ac2f4c01e5f774048a022012034b183df48c9d55",
+      "build_manifest_sha256": "16506af482da648e80b60718307722458c15366ede8d6b4733df5283fa119b77",
+      "cuda_pool_assignments": 183
+    }
+  ],
+  "native_reuse": {
+    "objects": 321,
+    "generated_inputs": 151,
+    "actual_post_build_shas_verified": true,
+    "full_input_manifest": "raw.zip/resume-windows-3/full-native-input-shas.json",
+    "manifest_sha256": "96619873db7b0420ffcf5b46b81ffdf51dd3084e437dd0673e827af5505dc09f",
+    "changed_native_files": [
+      "src/ggml-vulkan/vulkan-shaders/unary.comp"
+    ],
+    "final_stage_cuda_compilations": 0,
+    "history": "One precise-unary CUDA TU conservatively rebound during earlier build because prior dependency evidence unavailable;149 existing main vendor CUDA objects retained. Full exact compiler blocks/dependencies/object SHAs and pre/post generated input SHAs archived."
+  },
+  "prior_attempts": [
+    {
+      "attempt": 1,
+      "result": {
+        "state": "TERMINAL_FAIL",
+        "candidate": "2b60d9a34be12fda9a9e3fdc26f7a61b495c3be7",
+        "stages": [
+          {
+            "stage": "dry-plan",
+            "command": [
+              "ninja",
+              "-C",
+              "C:\\h7\\inference-g02-impacted",
+              "-f",
+              "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g02\\resume-windows-3\\reuse-build.ninja",
+              "-j",
+              "4",
+              "-n",
+              "hyle_compute_provider_ggml_vulkan_tests",
+              "hyle_compute_route_vulkan_tests",
+              "hyle_graph_route_vulkan_tests"
+            ],
+            "exit_code": 0,
+            "elapsed_seconds": 0.061999999976251274
+          },
+          {
+            "stage": "build",
+            "command": [
+              "ninja",
+              "-C",
+              "C:\\h7\\inference-g02-impacted",
+              "-f",
+              "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g02\\resume-windows-3\\reuse-build.ninja",
+              "-j",
+              "4",
+              "hyle_compute_provider_ggml_vulkan_tests",
+              "hyle_compute_route_vulkan_tests",
+              "hyle_graph_route_vulkan_tests"
+            ],
+            "exit_code": 2,
+            "elapsed_seconds": 107.98399999999674
+          }
+        ],
+        "scope": "Finite alias/phase regression and actual Direct/Graph DeepSeek case, no full-factor or whole-G02 claim",
+        "resource_policy": "Ninja max4, below-normal, serialized native tests, no P1/CUDA build",
+        "stage": "build",
+        "pid": 29888,
+        "conservative_cuda_rebind": [
+          "[2/256] Building CUDA object src\\compute_ggml_runtime\\CMakeFiles\\ggml-cuda-precise-unary.dir\\source-6ab8cd77f92e8511\\src\\ggml-cuda\\unary.cu.obj"
+        ]
+      }
+    },
+    {
+      "attempt": 2,
+      "result": {
+        "state": "TERMINAL_SETUP_ASSERT_FAIL",
+        "candidate": "2b60d9a34be12fda9a9e3fdc26f7a61b495c3be7",
+        "stages": [
+          {
+            "stage": "dry-plan",
+            "command": [
+              "ninja",
+              "-C",
+              "C:\\h7\\inference-g02-impacted",
+              "-f",
+              "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g02\\resume-windows-3\\reuse-build.ninja",
+              "-j",
+              "4",
+              "-n",
+              "hyle_compute_provider_ggml_vulkan_tests",
+              "hyle_compute_route_vulkan_tests",
+              "hyle_graph_route_vulkan_tests"
+            ],
+            "exit_code": 0,
+            "elapsed_seconds": 0.0779999999795109
+          }
+        ],
+        "scope": "Finite alias/phase regression and actual Direct/Graph DeepSeek case, no full-factor or whole-G02 claim",
+        "resource_policy": "Ninja max4, below-normal, serialized native tests, no P1/CUDA build",
+        "stage": "dry-plan",
+        "pid": 75376,
+        "reason": "Resume dry plan correctly contains zero CUDA TU because the sole necessary TU completed in build1; stale driver expected exactly one. No build or tests started in this attempt."
+      }
+    },
+    {
+      "attempt": 3,
+      "result": {
+        "state": "TERMINAL_FAIL",
+        "candidate": "2b60d9a34be12fda9a9e3fdc26f7a61b495c3be7",
+        "stages": [
+          {
+            "stage": "dry-plan",
+            "command": [
+              "ninja",
+              "-C",
+              "C:\\h7\\inference-g02-impacted",
+              "-f",
+              "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g02\\resume-windows-3\\reuse-build.ninja",
+              "-j",
+              "4",
+              "-n",
+              "hyle_compute_provider_ggml_vulkan_tests",
+              "hyle_compute_route_vulkan_tests",
+              "hyle_graph_route_vulkan_tests"
+            ],
+            "exit_code": 0,
+            "elapsed_seconds": 0.0779999999795109
+          },
+          {
+            "stage": "build",
+            "command": [
+              "ninja",
+              "-C",
+              "C:\\h7\\inference-g02-impacted",
+              "-f",
+              "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g02\\resume-windows-3\\reuse-build.ninja",
+              "-j",
+              "4",
+              "hyle_compute_provider_ggml_vulkan_tests",
+              "hyle_compute_route_vulkan_tests",
+              "hyle_graph_route_vulkan_tests"
+            ],
+            "exit_code": 2,
+            "elapsed_seconds": 7.7189999999827705
+          }
+        ],
+        "scope": "Finite alias/phase regression and actual Direct/Graph DeepSeek case, no full-factor or whole-G02 claim",
+        "resource_policy": "Ninja max4, below-normal, serialized native tests, no P1/CUDA build",
+        "stage": "build",
+        "pid": 17300,
+        "conservative_cuda_rebind": []
+      }
+    }
+  ],
+  "history": "Original build errors preserved: test-only explicit double-to-float cast and missing Direct private fixture include corrected without product/tolerance changes. Setup assertion falsely requiring an already-built CUDA TU retained separately. Actual final build48.844s and all original elapsed retained.",
+  "pending": [
+    "Original Vulkan851 default cases (in progress, one known pooled-indexer numerical failure; no aggregate PASS)",
+    "CE15/16 affected static/shared, Air and new metadata capacity/cleanup risk qualification"
+  ],
+  "limits": [
+    "RTX4070 SM89 driver617.14; no new performance or token/s claim",
+    "No CUDA804 repeat or whole-library build",
+    "Finite original encoded attention P1 unaffected by alias-conflict and Sin/Cos branches, reused under active card"
+  ],
+  "raw_entries": 55,
+  "raw_zip_sha256": "9c13d7fadb781f8166b9d18692d307c05791310d00d445453c373bf0eafdb8c0"
+}
