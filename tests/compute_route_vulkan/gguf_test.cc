@@ -59,7 +59,10 @@ TEST(VulkanGguf, Iq1SOriginalQ8ActivationCauseCapture) {
   };
   for (int replay : {1, 2}) {
     auto x = activations(m, k, replay);
-    std::vector<float> f32(x.begin(), x.end());
+    std::vector<float> f32;
+    f32.reserve(x.size());
+    for (const auto value : x)
+      f32.push_back(static_cast<float>(value));
     std::vector<std::byte> q8(m * (k / 32) * 36);
     traits->from_float_ref(f32.data(), q8.data(), m * k);
     auto input = vulkan_tensor_test::make(context, input_desc, x);

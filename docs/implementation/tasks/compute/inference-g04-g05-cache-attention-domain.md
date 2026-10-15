@@ -1490,3 +1490,13 @@ phase的F64 sin/cos方程使用4e-6门。当前尚未在正常重配树实跑。
 内容hash/notice hash和已登记provider输入；组件图、公开头与其它依赖条目未变。
 将原过宽结果作为独立验证工具限制保留，实际门仍按CE15/16的Vulkan owner、直接
 消费者、三交付与实际Air执行；未运行全局gate不写PASS，不扩建selector/core。
+
+
+CE16 正常重配335.906s PASS，整个派生native树2263文件仅unary.comp不同；
+按实际compiler edge/依赖复用321个object，原149个vendor CUDA对象未重编，另一个
+precise-unary CUDA TU因旧依赖不可取证而保守重绑定。151份生成shader头/主CXX输入
+须在实际generation后再次核SHA，不能仅凭未改源假定生成物相同。首build在既有Direct
+IQ1测试的double→float隐式range构造触发MSVC /WX；只改测试为显式static_cast，
+保相同数值转换、原完整build FAIL与elapsed。产品candidate2b60不变，继续原树增量，
+不重新配置、不放宽warning/数值门。原默认851用例将在修正后的新正常产物上整集合一次
+串行复验，覆盖前缀已过但可能实际消费sin/cos的案例；不重跑CUDA804或其它模块。
