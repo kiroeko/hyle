@@ -1730,3 +1730,10 @@ static/shared SDK按影响复用未变依赖；三宿主sanitizer只验证实际
 16路和n15/31不改。当前没有heavy任务；所有heavy串行、最多4jobs/CUDA pool1，2h检查点
 沿用户常设授权有限追加，原失败和累计成本不重置。若实际数学/host报错则保留原失败后在
 两FIX内修正；新架构/数学域需求必须重新定界，不能无限扩大CE19。G06仍不实施。
+
+CE19首次configure在依赖审计处FAIL63.128s，数学/编译尚未启动；原日志保留。
+修正同一private patch的lock tree/NOTICE身份，版本仅标识本地patch v2，不改upstream pin。
+原FI CUDA标准为17，callback detection沿该依赖的void_t形式；不提高公共build/toolchain门槛。
+selector因具名vendor patch/共同lock保守选全库，原READY授权只FI AUDITED/无issues保留；
+实际只有FI build-local头发生数学变化。沿已声明有限FI/direct batch/source/static/shared门，
+无影响路线保留旧身份证据，未运行全库项不代签PASS，不借此重写selector或触发全局构建。

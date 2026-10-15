@@ -1,11 +1,11 @@
 {
   "upstream_revision": "69ff11fc4954396d98326656dc85debd2223f637",
-  "scope": "Finite mixed FP8 QK64/VO128 tile-only K row; original native kernel/math and global cache geometry retained",
+  "scope": "Finite mixed FP8 QK64/VO128 tile-only K row; private final-output merge hook and optional scale epilogue retaining original F32 partial/merge algorithm and default routes",
   "files": [
     {
       "path": "include/flashinfer/attention/prefill.cuh",
       "before_sha256": "f93cbea96e3a723254c15f5a52d6dd4c13e3892e88eb9b9fed1c0c0048c7d710",
-      "after_sha256": "5b9b94bb4a0a8d04e98850662193160d4dedd73483de6b7b201f2858bf797bb3",
+      "after_sha256": "a83c8da19ccfc5d3fa57bc41efed7a1dd13655c1482b361e76861470238f1c99",
       "edits": [
         {
           "before": "      alignas(16) DTypeKV k_smem[CTA_TILE_KV * HEAD_DIM_QK];",
@@ -38,8 +38,51 @@
         {
           "before": "E_Q=32 (not NVFP4), so the occupancy budget counts the K/V\n  // footprint once exactly when the kernel actually shares it.\n  constexpr bool kKVShared = !is_fp4_type_v<DTypeKV> && (HEAD_DIM_VO / 16 > 16) &&\n                             ((HEAD_DIM_VO / 16) % NUM_WARPS_KV == 0) &&\n                             (HEAD_DIM_QK == HEAD_DIM_VO) &&\n                             (sizeof(DTypeKV) == 2 || CTA_TILE_Q > 16);\n  constexpr bool kVOSplitDispatch =\n      (HEAD_DIM_VO / 16 > 16) && ((HEAD_DIM_VO / 16) % NUM_WARPS_KV == 0);\n  constexpr uint32_t kKVSmemPerMmaKV =\n      (kKVShared ? (HEAD_DIM_QK * 16 * NUM_WARPS_KV * sizeof(DTypeKV))\n                 : ((HEAD_DIM_QK + HEAD_DIM_VO) * 16 * NUM_WARPS_KV * sizeof(DTypeKV))) +",
           "after": "E_Q=32 (not NVFP4), so the occupancy budget counts the K/V\n  // footprint once exactly when the kernel actually shares it.\n  constexpr bool kKVShared = !is_fp4_type_v<DTypeKV> && (HEAD_DIM_VO / 16 > 16) &&\n                             ((HEAD_DIM_VO / 16) % NUM_WARPS_KV == 0) &&\n                             (HEAD_DIM_QK == HEAD_DIM_VO) &&\n                             (sizeof(DTypeKV) == 2 || CTA_TILE_Q > 16);\n  constexpr bool kVOSplitDispatch =\n      (HEAD_DIM_VO / 16 > 16) && ((HEAD_DIM_VO / 16) % NUM_WARPS_KV == 0);\n  constexpr uint32_t kKVSmemPerMmaKV =\n      (kKVShared ? (HEAD_DIM_QK * 16 * NUM_WARPS_KV * sizeof(DTypeKV))\n                 : ((((sizeof(DTypeKV) == 1 && !is_fp4_type_v<DTypeKV> && HEAD_DIM_QK == 64 && HEAD_DIM_VO == 128) ? 128 : HEAD_DIM_QK) + HEAD_DIM_VO) *\n                      16 * NUM_WARPS_KV * sizeof(DTypeKV))) +"
+        },
+        {
+          "before": "              FLASHINFER_CUDA_CALL(VariableLengthMergeStates(\n                  tmp_v, tmp_s, params.merge_indptr, o, lse, params.max_total_num_rows,\n                  params.total_num_rows, num_qo_heads, HEAD_DIM_VO, enable_pdl, stream));\n            } else {\n              FLASHINFER_CUDA_CALL(VariableLengthAttentionSum(\n                  tmp_v, params.merge_indptr, o, params.max_total_num_rows, params.total_num_rows,\n                  num_qo_heads, HEAD_DIM_VO, enable_pdl, stream));\n            }\n          }\n        }\n      });\n  return cudaSuccess;\n}\n\ntemplate <uint32_t CTA_TILE_Q",
+          "after": "              // A private consumer may keep F32 partials and fuse its final output epilogue.\n              if constexpr (HyleHasMergeStates<Params>::value) {\n                FLASHINFER_CUDA_CALL(params.merge_states(tmp_v, tmp_s, lse, stream));\n              } else {\n                FLASHINFER_CUDA_CALL(VariableLengthMergeStates(\n                    tmp_v, tmp_s, params.merge_indptr, o, lse, params.max_total_num_rows,\n                    params.total_num_rows, num_qo_heads, HEAD_DIM_VO, enable_pdl, stream));\n              }\n            } else {\n              FLASHINFER_CUDA_CALL(VariableLengthAttentionSum(\n                  tmp_v, params.merge_indptr, o, params.max_total_num_rows, params.total_num_rows,\n                  num_qo_heads, HEAD_DIM_VO, enable_pdl, stream));\n            }\n          }\n        }\n      });\n  return cudaSuccess;\n}\n\ntemplate <uint32_t CTA_TILE_Q"
+        },
+        {
+          "before": "              FLASHINFER_CUDA_CALL(VariableLengthMergeStates(\n                  tmp_v, tmp_s, params.merge_indptr, o, lse, params.max_total_num_rows,\n                  params.total_num_rows, num_qo_heads, HEAD_DIM_VO, enable_pdl, stream));\n            } else {\n              FLASHINFER_CUDA_CALL(VariableLengthAttentionSum(\n                  tmp_v, params.merge_indptr, o, params.max_total_num_rows, params.total_num_rows,\n                  num_qo_heads, HEAD_DIM_VO, enable_pdl, stream));\n            }\n          }\n        }\n      });\n  return cudaSuccess;\n}\n\n}  // namespace flashinfer",
+          "after": "              // A private consumer may keep F32 partials and fuse its final output epilogue.\n              if constexpr (HyleHasMergeStates<Params>::value) {\n                FLASHINFER_CUDA_CALL(params.merge_states(tmp_v, tmp_s, lse, stream));\n              } else {\n                FLASHINFER_CUDA_CALL(VariableLengthMergeStates(\n                    tmp_v, tmp_s, params.merge_indptr, o, lse, params.max_total_num_rows,\n                    params.total_num_rows, num_qo_heads, HEAD_DIM_VO, enable_pdl, stream));\n              }\n            } else {\n              FLASHINFER_CUDA_CALL(VariableLengthAttentionSum(\n                  tmp_v, params.merge_indptr, o, params.max_total_num_rows, params.total_num_rows,\n                  num_qo_heads, HEAD_DIM_VO, enable_pdl, stream));\n            }\n          }\n        }\n      });\n  return cudaSuccess;\n}\n\n}  // namespace flashinfer"
+        },
+        {
+          "before": "template <uint32_t CTA_TILE_Q, uint32_t HEAD_DIM_QK, uint32_t HEAD_DIM_VO,\n          PosEncodingMode POS_ENCODING_MODE, bool USE_FP16_QK_REDUCTION, MaskMode MASK_MODE,\n          typename AttentionVariant, typename Params>\ncudaError_t BatchPrefillWithRaggedKVCacheDispatched",
+          "after": "// This build-local adapter retains FlashInfer's CUDA C++17 compilation contract.\ntemplate <typename Params, typename = void>\nstruct HyleHasMergeStates : std::false_type {};\ntemplate <typename Params>\nstruct HyleHasMergeStates<Params, std::void_t<decltype(&Params::merge_states)>> : std::true_type {};\n\ntemplate <uint32_t CTA_TILE_Q, uint32_t HEAD_DIM_QK, uint32_t HEAD_DIM_VO,\n          PosEncodingMode POS_ENCODING_MODE, bool USE_FP16_QK_REDUCTION, MaskMode MASK_MODE,\n          typename AttentionVariant, typename Params>\ncudaError_t BatchPrefillWithRaggedKVCacheDispatched"
         }
       ]
+    },
+    {
+      "path": "include/flashinfer/attention/cascade.cuh",
+      "before_sha256": "3ce6de505884bbc4efc78e63b0719eef4fe31fe152defa9fa4f050898fa51210",
+      "edits": [
+        {
+          "before": "          typename DTypeO, typename IdType>\n__global__ void PersistentVariableLengthMergeStatesKernel(",
+          "after": "          typename DTypeO, typename IdType, bool SCALE_OUTPUT = false>\n__global__ void PersistentVariableLengthMergeStatesKernel("
+        },
+        {
+          "before": "    uint32_t num_heads) {\n  uint32_t tx = threadIdx.x, ty = threadIdx.y;\n  uint32_t cta_id = blockIdx.x;\n  uint32_t num_ctas = gridDim.x;\n  const uint32_t seq_len = seq_len_ptr ? *seq_len_ptr : max_seq_len;\n  uint32_t num_iters = ceil_div(seq_len * num_heads, num_ctas);\n  constexpr uint32_t vec_bits = sizeof(DTypeIn) * vec_size * 8;\n  constexpr uint32_t head_dim = vec_size * bdx;\n  extern __shared__ uint8_t smem[];\n  DTypeIn* v_smem = (DTypeIn*)smem;\n  float* s_smem = (float*)(smem + num_smem_stages * bdy * head_dim * sizeof(DTypeIn));",
+          "after": "    uint32_t num_heads, float output_scale = 1.f) {\n  uint32_t tx = threadIdx.x, ty = threadIdx.y;\n  uint32_t cta_id = blockIdx.x;\n  uint32_t num_ctas = gridDim.x;\n  const uint32_t seq_len = seq_len_ptr ? *seq_len_ptr : max_seq_len;\n  uint32_t num_iters = ceil_div(seq_len * num_heads, num_ctas);\n  constexpr uint32_t vec_bits = sizeof(DTypeIn) * vec_size * 8;\n  constexpr uint32_t head_dim = vec_size * bdx;\n  extern __shared__ uint8_t smem[];\n  DTypeIn* v_smem = (DTypeIn*)smem;\n  float* s_smem = (float*)(smem + num_smem_stages * bdy * head_dim * sizeof(DTypeIn));"
+        },
+        {
+          "before": "      vec_t<DTypeO, vec_size> v;\n      v.cast_load(V + (indptr[pos] * num_heads + head_idx) * head_dim + tx * vec_size);\n      v.store(v_merged + (pos * num_heads + head_idx) * head_dim + tx * vec_size);",
+          "after": "      // Scaling must precede the only narrowing, including the single-partial path.\n      vec_t<std::conditional_t<SCALE_OUTPUT, float, DTypeO>, vec_size> v;\n      v.cast_load(V + (indptr[pos] * num_heads + head_idx) * head_dim + tx * vec_size);\n      if constexpr (SCALE_OUTPUT) {\n#pragma unroll\n        for (uint32_t j = 0; j < vec_size; ++j) v[j] *= output_scale;\n      }\n      v.cast_store(v_merged + (pos * num_heads + head_idx) * head_dim + tx * vec_size);"
+        },
+        {
+          "before": "    st.o.cast_store(v_merged + (pos * num_heads + head_idx) * head_dim + tx * vec_size);\n    if (s_merged != nullptr) {\n      s_merged[pos * num_heads + head_idx] = st.get_lse();\n    }\n  }\n#if (__CUDACC_VER_MAJOR__ >= 12",
+          "after": "    if constexpr (SCALE_OUTPUT) {\n#pragma unroll\n      for (uint32_t j = 0; j < vec_size; ++j) st.o[j] *= output_scale;\n    }\n    st.o.cast_store(v_merged + (pos * num_heads + head_idx) * head_dim + tx * vec_size);\n    if (s_merged != nullptr) {\n      s_merged[pos * num_heads + head_idx] = st.get_lse();\n    }\n  }\n#if (__CUDACC_VER_MAJOR__ >= 12"
+        },
+        {
+          "before": "    void* args[] = {&v, &s, &indptr, &v_merged, &s_merged, &max_seq_len, &seq_len, &num_heads};",
+          "after": "    float output_scale = 1.f;\n    void* args[] = {&v, &s, &indptr, &v_merged, &s_merged, &max_seq_len, &seq_len, &num_heads,\n                    &output_scale};"
+        },
+        {
+          "before": "                                              max_seq_len, seq_len, num_heads));\n    } else {\n      FLASHINFER_CUDA_CALL(cudaLaunchKernel((void*)kernel, nblks, nthrs, args, smem_size, stream));\n    }\n  });\n  return cudaSuccess;\n}\n\ntemplate <typename DTypeIn, typename DTypeO, typename IdType>\ncudaError_t VariableLengthAttentionSum",
+          "after": "                                              max_seq_len, seq_len, num_heads, output_scale));\n    } else {\n      FLASHINFER_CUDA_CALL(cudaLaunchKernel((void*)kernel, nblks, nthrs, args, smem_size, stream));\n    }\n  });\n  return cudaSuccess;\n}\n\ntemplate <typename DTypeIn, typename DTypeO, typename IdType>\ncudaError_t VariableLengthAttentionSum"
+        }
+      ],
+      "after_sha256": "db2abdfda11857eb7feb6ec0e3566f8dd4733843ded6d0111148f52a7cb37e9e"
     }
   ]
 }

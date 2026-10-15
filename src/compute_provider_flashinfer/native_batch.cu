@@ -15,14 +15,11 @@ void initialize_batch_state(void *p) noexcept{::new(p)fi::PrefillPlanInfo();}
 void destroy_batch_state(void *p) noexcept{static_cast<fi::PrefillPlanInfo*>(p)->~PrefillPlanInfo();}
 cudaError_t query_batch_workspace(BatchSpec s,const std::int32_t*q,const std::int32_t*k,cudaStream_t stream,BatchFacts&facts){
   const auto status=fi::PrefillPlanWorkspaceSize(facts.float_bytes,facts.int_bytes,const_cast<std::int32_t*>(q),const_cast<std::int32_t*>(k),s.query_rows,s.requests,s.query_heads,s.kv_heads,s.qk_head_dim,s.value_head_dim,s.paged?s.page_size:1,false,s.fp8?4:2,s.window_left,-1,false,0,0,stream,s.fp8?1:2);
-  if(status==cudaSuccess)facts.float_bytes+=batch_output_staging_bytes(s);
   return status;
 }
 cudaError_t plan_batch(void *state,BatchSpec s,const std::int32_t*q,const std::int32_t*k,void*f,std::size_t fb,void*i,void*h,std::size_t ib,cudaStream_t stream,BatchFacts&facts){
   auto&plan=*static_cast<fi::PrefillPlanInfo*>(state);
-  const auto output_bytes=batch_output_staging_bytes(s);
-  if(output_bytes>fb)return cudaErrorInvalidValue;
-  const auto result=fi::PrefillPlan(static_cast<char*>(f)+output_bytes,fb-output_bytes,i,h,ib,plan,const_cast<std::int32_t*>(q),const_cast<std::int32_t*>(k),s.query_rows,s.requests,s.query_heads,s.kv_heads,s.qk_head_dim,s.value_head_dim,s.paged?s.page_size:1,false,s.fp8?4:2,s.window_left,-1,false,0,0,stream,s.fp8?1:2);
+  const auto result=fi::PrefillPlan(f,fb,i,h,ib,plan,const_cast<std::int32_t*>(q),const_cast<std::int32_t*>(k),s.query_rows,s.requests,s.query_heads,s.kv_heads,s.qk_head_dim,s.value_head_dim,s.paged?s.page_size:1,false,s.fp8?4:2,s.window_left,-1,false,0,0,stream,s.fp8?1:2);
   facts.cta_tile_q=std::uint32_t(plan.cta_tile_q);facts.padded_batch_size=std::uint32_t(plan.padded_batch_size);facts.split_kv=plan.split_kv;return result;
 }
 namespace {

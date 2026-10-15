@@ -240,21 +240,25 @@ TEST(FlashinferCacheEncode, NumericDomainUsesOriginalCompletionStatus){
       EXPECT_TRUE(status.IsInvalidArgument())<<status.message();
     }
 }
-TEST(FlashinferCache, SplitKvScalesOnlyAfterF32MergeAgainstPartialOverflow){
+template<class T>void split_precision_case(unsigned residual_period){
   auto context=c::Context::create(c::cuda::device(0).value(),c::flashinfer::provider()).value();
   auto memory=c::cuda::MemoryResource::create(context,c::cuda::MemoryKind::kDevice).value();
   auto host=c::cuda::MemoryResource::create(context,c::cuda::MemoryKind::kPinnedHost).value();
   auto queue=context.create_queue().value();
   constexpr unsigned rows=8192,depth=64,heads=8,kv_heads=2;
   const c::BatchCapacity cap{.storage=c::BatchStorage::kRagged,
-      .query_type=c::DataType::kFloat16,.output_type=c::DataType::kFloat16,
+      .query_type=half_test::data_type<T>(),.output_type=half_test::data_type<T>(),
       .key_storage=c::CacheStorage::float8(.5F).value(),.value_storage=c::CacheStorage::float8(512.F).value(),
       .max_query_rows=1,.max_kv_rows=rows,.max_pages=0,.max_page_refs=0,
       .query_heads=heads,.kv_heads=kv_heads,.qk_head_dim=depth,.value_head_dim=depth,.page_size=1};
   auto schema=c::BatchSchema::create(cap).value();
   const std::array<std::int32_t,2> qp{0,1},kp{0,rows};auto layout=schema.version({qp,kp,{},{}}).value();
   std::vector<float> key(rows*kv_heads*depth,0.F),value(key.size());
-  for(std::size_t i=0;i<value.size();++i)value[i]=i<value.size()/2?65536.F:-65536.F;
+  for(std::size_t i=0;i<value.size();++i){
+    const auto row=i/(kv_heads*depth);
+    value[i]=row<rows/2?65536.F:-65536.F;
+    if(residual_period && row<rows/2 && row%residual_period==0)value[i]=73728.F;
+  }
   std::vector<std::uint8_t> kb,vb;
   ASSERT_TRUE(encode_words(c::DataType::kBFloat16,cap.key_storage,key,kb).ok());
   ASSERT_TRUE(encode_words(c::DataType::kBFloat16,cap.value_storage,value,vb).ok());
@@ -269,9 +273,19 @@ TEST(FlashinferCache, SplitKvScalesOnlyAfterF32MergeAgainstPartialOverflow){
   ASSERT_TRUE(prepared)<<prepared.error().message();ASSERT_TRUE(slot.report().split_kv);
   auto completion=prepared->run(inputs);ASSERT_TRUE(completion)<<completion.error().message();
   ASSERT_TRUE(completion->wait().ok());auto output=slot.output().value();
-  std::array<hyle::simd::float16_t,heads*depth> actual;
+  std::array<T,heads*depth> actual;
   ASSERT_TRUE(output.view()->read(std::as_writable_bytes(std::span(actual))).ok());
-  for(auto v:actual)EXPECT_NEAR(half_test::decode(v),0.,.01);
+  const double expected=residual_period?4096./residual_period:0.;
+  for(auto v:actual)EXPECT_NEAR(half_test::decode(v),expected,.01);
   output.reset();*completion={};*prepared={};ASSERT_TRUE(slot.close().ok());ASSERT_TRUE(context.drain().ok());
+}
+TEST(FlashinferCache, SplitKvScalesOnlyAfterF32MergeAgainstPartialOverflow){
+  split_precision_case<hyle::simd::float16_t>(0);
+}
+TEST(FlashinferCache, SplitKvPreservesBfloat16PartialCancellationResidual){
+  split_precision_case<hyle::simd::bfloat16_t>(64);
+}
+TEST(FlashinferCache, SplitKvPreservesFloat16PartialCancellationResidual){
+  split_precision_case<hyle::simd::float16_t>(256);
 }
 }
