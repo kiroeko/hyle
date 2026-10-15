@@ -84,7 +84,7 @@ struct Data {
   std::size_t row_bytes(unsigned port)const{return std::size_t(2)*(port?capacity.value_head_dim:capacity.qk_head_dim);}
   std::vector<double> oracle()const{
     const auto dk=capacity.qk_head_dim,dv=capacity.value_head_dim;
-    std::vector<double> output(std::size_t(qp[2])*8*dv),weights;
+    std::vector<double> output(std::size_t(qp[2])*8*dv),weights;double uniform_difference=0;
     for(unsigned r=0;r<2;++r){const int nq=qp[r+1]-qp[r],nk=(kp[r+1]-kp[r]-1)*16+tails[r];weights.resize(nk);
       for(int row=0;row<nq;++row)for(unsigned h=0;h<8;++h){double sum=0;
         const auto position=nk-nq+row;
@@ -96,8 +96,16 @@ struct Data {
         }
         for(unsigned d=0;d<dv;++d)for(int j=0;j<nk;++j)output[(std::size_t(qp[r]+row)*8+h)*dv+d]+=
             weights[j]/sum*decoded[1][((std::size_t(ids[static_cast<unsigned>(kp[r]+j/16)])*16+j%16)*2+h/4)*dv+d];
+        double uniform=0;unsigned eligible=0;
+        for(int j=0;j<nk;++j)if(weights[j]>0){++eligible;
+          uniform+=decoded[1][((std::size_t(ids[unsigned(kp[r]+j/16)])*16+j%16)*2+h/4)*dv];}
+        uniform_difference=std::max(uniform_difference,std::abs(
+            output[(std::size_t(qp[r]+row)*8+h)*dv]-uniform/eligible));
       }
-    }return output;
+    }
+    if(uniform_difference<=.01)fail(hyle::Status::Internal("FP8 oracle fixture cannot distinguish missing QK loads"));
+    std::fprintf(stderr,"# CUDA_ENCODED_ORACLE uniform_difference=%.9g\\n",uniform_difference);
+    return output;
   }
 };
 struct Harness {
