@@ -1,0 +1,23 @@
+cmake_minimum_required(VERSION 3.25)
+project(g04_apple_encoded_p1 LANGUAGES C CXX)
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/bin")
+find_package(Hyle CONFIG REQUIRED COMPONENTS compute graph)
+add_subdirectory("${CMAKE_CURRENT_LIST_DIR}/../apple_encoded_peer" original-peer)
+get_filename_component(HYLE_SOURCE_DIR "${CMAKE_CURRENT_LIST_DIR}/../../.." ABSOLUTE)
+set(_source "${HYLE_SOURCE_DIR}/bench/inference_resident_sdpa")
+add_executable(g04_apple_encoded_bench_placement "${_source}/apple_encoded_page_bench.cc"
+  "${_source}/apple_encoded_page_reference.cc" "${_source}/placement.cc")
+target_compile_features(g04_apple_encoded_bench_placement PRIVATE cxx_std_23)
+target_compile_options(g04_apple_encoded_bench_placement PRIVATE -Wall -Wextra -Wpedantic -Werror)
+target_compile_definitions(g04_apple_encoded_bench_placement PRIVATE HYLE_ENCODED_PAGE_PLACEMENT=1)
+target_include_directories(g04_apple_encoded_bench_placement PRIVATE
+  "${CMAKE_CURRENT_BINARY_DIR}/original-peer/original-metal-q8"
+  "${HYLE_RESIDENT_REFERENCE_SOURCE}/src/ggml-metal" "${HYLE_SOURCE_DIR}/bench/common")
+target_link_libraries(g04_apple_encoded_bench_placement PRIVATE hyle::compute g04_apple_encoded_nanobench)
+set_property(TARGET g04_apple_encoded_bench_placement PROPERTY INTERPROCEDURAL_OPTIMIZATION FALSE)
+hyle_stage_runtime(g04_apple_encoded_bench_placement)
+add_executable(g04_apple_encoded_control "${HYLE_SOURCE_DIR}/bench/integration/perf_control_bench.cc")
+target_compile_features(g04_apple_encoded_control PRIVATE cxx_std_23)
+target_link_libraries(g04_apple_encoded_control PRIVATE hyle::compute g04_apple_encoded_nanobench)
+set_property(TARGET g04_apple_encoded_control PROPERTY INTERPROCEDURAL_OPTIMIZATION FALSE)
+hyle_stage_runtime(g04_apple_encoded_control)

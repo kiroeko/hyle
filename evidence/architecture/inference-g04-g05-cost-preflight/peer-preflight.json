@@ -115,7 +115,27 @@
   "cuda": {
     "route": "Independent raw FlashInfer Params/PrefillPlan and original mixed FP8 dispatch",
     "adapter": "Actual FP8 bytes/paged/ragged and independent K/V strides; sK in sm_scale, F32 output/split merge and final sV conversion must be included. No candidate provider entry as independent peer.",
-    "limitation": "Original pinned 69ff 64/128 short-K kernel is known incorrect and cannot qualify. Shared repaired kernel would only qualify wrapper overhead, not independent algorithm performance for that shape."
+    "limitation": "Original pinned 69ff 64/128 short-K kernel is known incorrect and cannot qualify. Shared repaired kernel would only qualify wrapper overhead, not independent algorithm performance for that shape.",
+    "finite_pipeline_peer_decision": {
+      "status": "SOURCE_AUDITED_NOT_IMPLEMENTED_OR_QUALIFIED",
+      "route": "Same immutable FP8 bytes -> cold checked GPU decode into extra readonly T16 snapshot -> pristine original69ff Params<T,T,T>/16-bit split merge",
+      "fairness": "Prefer cold snapshot, matching the already accepted CPU cold alternate-cache contract. Repeating unchanged full-history decode in warm operations would be an unnecessary peer downgrade.",
+      "identity": "Retain original FP8 exact-frame owners. Each episode verifies full original buffer/offset/extent/layout/scales/tails/pages identity; different payload/version requires rejection in this immutable scope.",
+      "cost": "Measure/report cold initialization/checked completion/destruction and actual expanded capacity bytes. Two slots may share the same readonly snapshot; warm native plan/execution/normal completion/output costs stay charged.",
+      "precision": "Decode K*sK and V*sV once into query same F16/BF16; sm_scale remains original attention scale. Only source-qualified finite dyadic .5/2 scale domain until actual independent oracle.",
+      "independence": "Only pristine original69ff templates in a distinct peer namespace or independent DSO. No product short-K patch, candidate provider lowering, or candidate F32 merge specialization.",
+      "limits": [
+        "No original correct direct-FP8 peer for all three shapes established",
+        "Resident-warm throughput vs extra-memory comparison, not direct-compressed or dirty/growth/capture/token-s qualification"
+      ],
+      "anchors": [
+        "bench/inference_resident_sdpa/cpu_paged_reference.cc:109-123,147-173",
+        "original prefill.cuh:488,560,600-616,3718-3743",
+        "original page.cuh:162-182",
+        "original cascade.cuh:697-706",
+        "original cp_async.cuh:175"
+      ]
+    }
   },
   "apple": {
     "route": "Original independent GGML Metal Q8 pipeline, not original MLX fast SDPA (has no Q8 ports)",

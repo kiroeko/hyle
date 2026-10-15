@@ -1,0 +1,590 @@
+{
+  "schema": "hyle.perf.contract/v1",
+  "id": "inference-apple-encoded-page-m1-p1-v1",
+  "module": "compute_route_apple",
+  "claim": "Finite actual Apple Q8_0 KV/page16 two-request GQA8/2, F16 query/output, three frozen shapes/window/noncausal/unequal Dv. Direct pages versus original456 general-Q8 template and original pad/blk on original MLX encoder. Both complete prepare/F2/exact guards/checked completion/output return charged; peer gather/contiguous/conversion/mask/scratch charged. Explicit general selection and new64/128 instance, not best-of original host/G06/capture/whole engine.",
+  "candidate": {
+    "target": "g04_apple_encoded_bench",
+    "delivery_shape": "static",
+    "revision": "runtime-bound",
+    "component": "compute_route_apple",
+    "entrypoint": "../apple_encoded_page_bench.cc"
+  },
+  "peers": [
+    {
+      "id": "original-ggml-flash",
+      "revision": "456172ec733a135778adcd32d00e576a58232e45",
+      "configuration": {
+        "delivery_shape": "source",
+        "role": "Independent original456 Metal general-Q8/pad/blk arithmetic; original exports plus explicit64/128 instance, original MLX encoder resource tracking",
+        "precision": "F16 Q/output, Q8_0 K/V; original half tiles and F32 scores/softmax/output; Q-F32/output-F16 conversions charged",
+        "scope": "Exact same three two-request encoded page journeys; complete prepare/permissions/native completion/owned output; explicit general route, not best-of original host"
+      }
+    }
+  ],
+  "strata": [
+    {
+      "id": "primary-candidate-first-candidate-allocation-first",
+      "dimensions": {
+        "placement": "primary",
+        "execution_order": "candidate-first",
+        "allocation_order": "candidate-first"
+      },
+      "target_variant": "primary"
+    },
+    {
+      "id": "primary-candidate-first-peer-allocation-first",
+      "dimensions": {
+        "placement": "primary",
+        "execution_order": "candidate-first",
+        "allocation_order": "peer-first"
+      },
+      "environment": {
+        "HYLE_BENCH_PEER_ALLOCATION_FIRST": "1"
+      },
+      "target_variant": "primary"
+    },
+    {
+      "id": "primary-peer-first-candidate-allocation-first",
+      "dimensions": {
+        "placement": "primary",
+        "execution_order": "peer-first",
+        "allocation_order": "candidate-first"
+      },
+      "environment": {
+        "HYLE_BENCH_RIVAL_FIRST": "1"
+      },
+      "target_variant": "primary"
+    },
+    {
+      "id": "primary-peer-first-peer-allocation-first",
+      "dimensions": {
+        "placement": "primary",
+        "execution_order": "peer-first",
+        "allocation_order": "peer-first"
+      },
+      "environment": {
+        "HYLE_BENCH_RIVAL_FIRST": "1",
+        "HYLE_BENCH_PEER_ALLOCATION_FIRST": "1"
+      },
+      "target_variant": "primary"
+    },
+    {
+      "id": "placement-candidate-first-candidate-allocation-first",
+      "dimensions": {
+        "placement": "perturbed",
+        "execution_order": "candidate-first",
+        "allocation_order": "candidate-first"
+      },
+      "target_variant": "placement"
+    },
+    {
+      "id": "placement-candidate-first-peer-allocation-first",
+      "dimensions": {
+        "placement": "perturbed",
+        "execution_order": "candidate-first",
+        "allocation_order": "peer-first"
+      },
+      "environment": {
+        "HYLE_BENCH_PEER_ALLOCATION_FIRST": "1"
+      },
+      "target_variant": "placement"
+    },
+    {
+      "id": "placement-peer-first-candidate-allocation-first",
+      "dimensions": {
+        "placement": "perturbed",
+        "execution_order": "peer-first",
+        "allocation_order": "candidate-first"
+      },
+      "environment": {
+        "HYLE_BENCH_RIVAL_FIRST": "1"
+      },
+      "target_variant": "placement"
+    },
+    {
+      "id": "placement-peer-first-peer-allocation-first",
+      "dimensions": {
+        "placement": "perturbed",
+        "execution_order": "peer-first",
+        "allocation_order": "peer-first"
+      },
+      "environment": {
+        "HYLE_BENCH_RIVAL_FIRST": "1",
+        "HYLE_BENCH_PEER_ALLOCATION_FIRST": "1"
+      },
+      "target_variant": "placement"
+    }
+  ],
+  "controls": [
+    {
+      "id": "aa",
+      "kind": "aa",
+      "parameters": {
+        "maximum_bias_percent": 5
+      }
+    },
+    {
+      "id": "delta5",
+      "kind": "known-delta",
+      "parameters": {
+        "nominal_percent": 5
+      }
+    },
+    {
+      "id": "delta10",
+      "kind": "known-delta",
+      "parameters": {
+        "nominal_percent": 10
+      }
+    },
+    {
+      "id": "timer-floor",
+      "kind": "timer-floor",
+      "parameters": {
+        "minimum_workload_floor_multiple": 20
+      }
+    },
+    {
+      "id": "placement",
+      "kind": "placement",
+      "parameters": {}
+    }
+  ],
+  "workloads": [
+    {
+      "id": "encoded-window-d256",
+      "tier": "consumer",
+      "gate_role": "product",
+      "consumer_key": "inference-apple-encoded-page/encoded-window-d256",
+      "provenance": {
+        "path": "consumer-provenance.json",
+        "sha256": "16fe30a462728d7bf24edf4e07813ec9dffccd74566f1d47be57c318b32b7b31"
+      },
+      "ownership_topology": {
+        "candidate": "Public PagedBatchInvocation, two independent slots and context; actual ready per-page arena guards and packed Q, owned page table, one packed result",
+        "peer": "Original MaterializedNativeState/PagedMetadataPolicy, two slots/context, original MLX opaque Q8 gather/contiguous and original456 general-Q8 template with pad/blk; retained actual command buffers",
+        "equivalence": "Same F16 queries/Q8 bytes/physical order/shared pages/tails/GQA/window/noncausal/Dqk/Dv/output; both prepare native Program/Invocation, F2 upload same table, bind exact frames, submit/wait and release output every episode"
+      },
+      "material_contribution": {
+        "frequency": 1,
+        "value": 1,
+        "unit": "complete-two-request-attention",
+        "budget": 5,
+        "denominator": "one two-request episode through original checked completion and packed result owner return",
+        "derivation": "named provisional single-machine attention fragment, not model frequency or end-to-end token/s"
+      },
+      "semantic_contract": "F16 query/output, Q8_0 K/V packed NHD requests2 GQA8/2 Q[1,17] KV[1024,768] Dqk256/Dv256 causal=True window_left=16; page16 shared/reversed, exact F1, per-episode owned version/prepare/F2/native completion/output return and release",
+      "comparability": "COMPARABLE",
+      "peer_id": "original-ggml-flash",
+      "metric": {
+        "name": "operations-per-second",
+        "unit": "op/s",
+        "direction": "higher-is-better"
+      },
+      "input": {
+        "distribution": "Deterministic actual Q8 F16 scales and signed codes; exact F16 queries, inactive encoded rows/pages poisoned; independent stored-byte double oracle2e-3, four replays/two slots and readonly byte checks",
+        "scale": {
+          "query_rows": [
+            1,
+            17
+          ],
+          "key_rows": [
+            1024,
+            768
+          ],
+          "Dqk": 256,
+          "Dv": 256,
+          "heads": 8,
+          "kv_heads": 2,
+          "requests": 2,
+          "page_size": 16,
+          "physical_order": "reverse plus one shared page",
+          "unused_whole_physical_pages": 3,
+          "unused_table_slots": 0,
+          "query_capacity_tail": 3
+        }
+      },
+      "setup": "Initial context/schema/layout/two outer slots and immutable resident Q/K/V placement, double oracle and readonly checks outside timing. Every per-episode native/version/metadata/index/mask preparation, allocation/upload/wait and replacement charged. Private-pool retained bytes/upper UNKNOWN. Initial device library/pipeline compilation/cache warmup is inside mandatory untimed numerical/warmup for both; subsequent per-episode native preparation remains charged.",
+      "charged_phases": [
+        "owned version/native Program and Invocation replacement, F2 I32 table upload/wait and exact guard binding",
+        "peer logical-row index creation, opaque Q8 gather, head-major contiguous K/V, padded F16 mask, original pad/blk, temporary owners",
+        "Q-to-F32, original half-tile/F32-accumulated exact attention, F32-to-F16 output and request joining; no vector/split/reduce",
+        "submit, checked completion, packed output owner return/release and actual retirement"
+      ],
+      "pair": {
+        "candidate": "HYLE Apple encoded page16",
+        "peer": "Original Apple Q8 gathered page lifecycle"
+      },
+      "practical_margin_percent": 5,
+      "noninferiority_margin_percent": 5,
+      "estimator": {
+        "kind": "process-median",
+        "minimum_independent_samples": 15,
+        "tail_alpha": 0.01
+      },
+      "required_strata": [
+        "primary-candidate-first-candidate-allocation-first",
+        "primary-candidate-first-peer-allocation-first",
+        "primary-peer-first-candidate-allocation-first",
+        "primary-peer-first-peer-allocation-first",
+        "placement-candidate-first-candidate-allocation-first",
+        "placement-candidate-first-peer-allocation-first",
+        "placement-peer-first-candidate-allocation-first",
+        "placement-peer-first-peer-allocation-first"
+      ],
+      "required_controls": [
+        "aa",
+        "delta5",
+        "delta10",
+        "timer-floor",
+        "placement"
+      ]
+    },
+    {
+      "id": "encoded-prefill-d256",
+      "tier": "consumer",
+      "gate_role": "product",
+      "consumer_key": "inference-apple-encoded-page/encoded-prefill-d256",
+      "provenance": {
+        "path": "consumer-provenance.json",
+        "sha256": "16fe30a462728d7bf24edf4e07813ec9dffccd74566f1d47be57c318b32b7b31"
+      },
+      "ownership_topology": {
+        "candidate": "Public PagedBatchInvocation, two independent slots and context; actual ready per-page arena guards and packed Q, owned page table, one packed result",
+        "peer": "Original MaterializedNativeState/PagedMetadataPolicy, two slots/context, original MLX opaque Q8 gather/contiguous and original456 general-Q8 template with pad/blk; retained actual command buffers",
+        "equivalence": "Same F16 queries/Q8 bytes/physical order/shared pages/tails/GQA/window/noncausal/Dqk/Dv/output; both prepare native Program/Invocation, F2 upload same table, bind exact frames, submit/wait and release output every episode"
+      },
+      "material_contribution": {
+        "frequency": 1,
+        "value": 1,
+        "unit": "complete-two-request-attention",
+        "budget": 5,
+        "denominator": "one two-request episode through original checked completion and packed result owner return",
+        "derivation": "named provisional single-machine attention fragment, not model frequency or end-to-end token/s"
+      },
+      "semantic_contract": "F16 query/output, Q8_0 K/V packed NHD requests2 GQA8/2 Q[64,128] KV[1024,768] Dqk256/Dv256 causal=True window_left=-1; page16 shared/reversed, exact F1, per-episode owned version/prepare/F2/native completion/output return and release",
+      "comparability": "COMPARABLE",
+      "peer_id": "original-ggml-flash",
+      "metric": {
+        "name": "operations-per-second",
+        "unit": "op/s",
+        "direction": "higher-is-better"
+      },
+      "input": {
+        "distribution": "Deterministic actual Q8 F16 scales and signed codes; exact F16 queries, inactive encoded rows/pages poisoned; independent stored-byte double oracle2e-3, four replays/two slots and readonly byte checks",
+        "scale": {
+          "query_rows": [
+            64,
+            128
+          ],
+          "key_rows": [
+            1024,
+            768
+          ],
+          "Dqk": 256,
+          "Dv": 256,
+          "heads": 8,
+          "kv_heads": 2,
+          "requests": 2,
+          "page_size": 16,
+          "physical_order": "reverse plus one shared page",
+          "unused_whole_physical_pages": 3,
+          "unused_table_slots": 0,
+          "query_capacity_tail": 3
+        }
+      },
+      "setup": "Initial context/schema/layout/two outer slots and immutable resident Q/K/V placement, double oracle and readonly checks outside timing. Every per-episode native/version/metadata/index/mask preparation, allocation/upload/wait and replacement charged. Private-pool retained bytes/upper UNKNOWN. Initial device library/pipeline compilation/cache warmup is inside mandatory untimed numerical/warmup for both; subsequent per-episode native preparation remains charged.",
+      "charged_phases": [
+        "owned version/native Program and Invocation replacement, F2 I32 table upload/wait and exact guard binding",
+        "peer logical-row index creation, opaque Q8 gather, head-major contiguous K/V, padded F16 mask, original pad/blk, temporary owners",
+        "Q-to-F32, original half-tile/F32-accumulated exact attention, F32-to-F16 output and request joining; no vector/split/reduce",
+        "submit, checked completion, packed output owner return/release and actual retirement"
+      ],
+      "pair": {
+        "candidate": "HYLE Apple encoded page16",
+        "peer": "Original Apple Q8 gathered page lifecycle"
+      },
+      "practical_margin_percent": 5,
+      "noninferiority_margin_percent": 5,
+      "estimator": {
+        "kind": "process-median",
+        "minimum_independent_samples": 15,
+        "tail_alpha": 0.01
+      },
+      "required_strata": [
+        "primary-candidate-first-candidate-allocation-first",
+        "primary-candidate-first-peer-allocation-first",
+        "primary-peer-first-candidate-allocation-first",
+        "primary-peer-first-peer-allocation-first",
+        "placement-candidate-first-candidate-allocation-first",
+        "placement-candidate-first-peer-allocation-first",
+        "placement-peer-first-candidate-allocation-first",
+        "placement-peer-first-peer-allocation-first"
+      ],
+      "required_controls": [
+        "aa",
+        "delta5",
+        "delta10",
+        "timer-floor",
+        "placement"
+      ]
+    },
+    {
+      "id": "encoded-noncausal-d64-dv128",
+      "tier": "consumer",
+      "gate_role": "product",
+      "consumer_key": "inference-apple-encoded-page/encoded-noncausal-d64-dv128",
+      "provenance": {
+        "path": "consumer-provenance.json",
+        "sha256": "16fe30a462728d7bf24edf4e07813ec9dffccd74566f1d47be57c318b32b7b31"
+      },
+      "ownership_topology": {
+        "candidate": "Public PagedBatchInvocation, two independent slots and context; actual ready per-page arena guards and packed Q, owned page table, one packed result",
+        "peer": "Original MaterializedNativeState/PagedMetadataPolicy, two slots/context, original MLX opaque Q8 gather/contiguous and original456 general-Q8 template with pad/blk; retained actual command buffers",
+        "equivalence": "Same F16 queries/Q8 bytes/physical order/shared pages/tails/GQA/window/noncausal/Dqk/Dv/output; both prepare native Program/Invocation, F2 upload same table, bind exact frames, submit/wait and release output every episode"
+      },
+      "material_contribution": {
+        "frequency": 1,
+        "value": 1,
+        "unit": "complete-two-request-attention",
+        "budget": 5,
+        "denominator": "one two-request episode through original checked completion and packed result owner return",
+        "derivation": "named provisional single-machine attention fragment, not model frequency or end-to-end token/s"
+      },
+      "semantic_contract": "F16 query/output, Q8_0 K/V packed NHD requests2 GQA8/2 Q[17,1] KV[7,47] Dqk64/Dv128 causal=False window_left=-1; page16 shared/reversed, exact F1, per-episode owned version/prepare/F2/native completion/output return and release",
+      "comparability": "COMPARABLE",
+      "peer_id": "original-ggml-flash",
+      "metric": {
+        "name": "operations-per-second",
+        "unit": "op/s",
+        "direction": "higher-is-better"
+      },
+      "input": {
+        "distribution": "Deterministic actual Q8 F16 scales and signed codes; exact F16 queries, inactive encoded rows/pages poisoned; independent stored-byte double oracle2e-3, four replays/two slots and readonly byte checks",
+        "scale": {
+          "query_rows": [
+            17,
+            1
+          ],
+          "key_rows": [
+            7,
+            47
+          ],
+          "Dqk": 64,
+          "Dv": 128,
+          "heads": 8,
+          "kv_heads": 2,
+          "requests": 2,
+          "page_size": 16,
+          "physical_order": "reverse plus one shared page",
+          "unused_whole_physical_pages": 3,
+          "unused_table_slots": 0,
+          "query_capacity_tail": 3
+        }
+      },
+      "setup": "Initial context/schema/layout/two outer slots and immutable resident Q/K/V placement, double oracle and readonly checks outside timing. Every per-episode native/version/metadata/index/mask preparation, allocation/upload/wait and replacement charged. Private-pool retained bytes/upper UNKNOWN. Initial device library/pipeline compilation/cache warmup is inside mandatory untimed numerical/warmup for both; subsequent per-episode native preparation remains charged.",
+      "charged_phases": [
+        "owned version/native Program and Invocation replacement, F2 I32 table upload/wait and exact guard binding",
+        "peer logical-row index creation, opaque Q8 gather, head-major contiguous K/V, padded F16 mask, original pad/blk, temporary owners",
+        "Q-to-F32, original half-tile/F32-accumulated exact attention, F32-to-F16 output and request joining; no vector/split/reduce",
+        "submit, checked completion, packed output owner return/release and actual retirement"
+      ],
+      "pair": {
+        "candidate": "HYLE Apple encoded page16",
+        "peer": "Original Apple Q8 gathered page lifecycle"
+      },
+      "practical_margin_percent": 5,
+      "noninferiority_margin_percent": 5,
+      "estimator": {
+        "kind": "process-median",
+        "minimum_independent_samples": 15,
+        "tail_alpha": 0.01
+      },
+      "required_strata": [
+        "primary-candidate-first-candidate-allocation-first",
+        "primary-candidate-first-peer-allocation-first",
+        "primary-peer-first-candidate-allocation-first",
+        "primary-peer-first-peer-allocation-first",
+        "placement-candidate-first-candidate-allocation-first",
+        "placement-candidate-first-peer-allocation-first",
+        "placement-peer-first-candidate-allocation-first",
+        "placement-peer-first-peer-allocation-first"
+      ],
+      "required_controls": [
+        "aa",
+        "delta5",
+        "delta10",
+        "timer-floor",
+        "placement"
+      ]
+    }
+  ],
+  "experiment": {
+    "sample_schedule": [
+      15,
+      31
+    ],
+    "order_policy": "fixed-dual",
+    "holdout": false
+  },
+  "build": {
+    "configuration": "Release",
+    "fresh": true,
+    "linkage": "static",
+    "lto": "off",
+    "isa": "portable",
+    "toolchain": "machine-profile-bound"
+  },
+  "artifacts": {
+    "validators": [
+      "artifact-identity",
+      "build-contract",
+      "apple-encoded-aa"
+    ]
+  },
+  "hosts": {
+    "allowed_platforms": [
+      "macos"
+    ],
+    "certification_platforms": [
+      "macos"
+    ],
+    "requirements": {
+      "machine_profiles": [
+        "M1-MAC"
+      ],
+      "qualified_role": "engineering",
+      "formal_independent_hardware": true
+    }
+  },
+  "extensions": {
+    "runner": {
+      "schema": "hyle.perf.nanobench-runner/v1",
+      "sampling_topology": "single-logical-cpu",
+      "cmake": {
+        "cache": {
+          "HYLE_STATIC": "ON",
+          "HYLE_BUILD_TESTS": "OFF",
+          "HYLE_BUILD_BENCH": "OFF",
+          "HYLE_COMPUTE_ROUTES": "cpu;apple",
+          "HYLE_COMPONENTS": "compute;graph",
+          "HYLE_INSTALL": "OFF",
+          "HYLE_SANITIZER": "off",
+          "HYLE_TRACE": "OFF",
+          "HYLE_WERROR": "ON",
+          "CMAKE_INTERPROCEDURAL_OPTIMIZATION": "OFF",
+          "HYLE_SIMD_EXACT_TARGET": "",
+          "CMAKE_OSX_DEPLOYMENT_TARGET": "14.4",
+          "CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
+          "HYLE_DEP_SOURCE_CACHE": "/Users/kiro/Library/Caches/hyle/dependencies/v1",
+          "CMAKE_PREFIX_PATH": "/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-sdk/apple-static-1/relocated"
+        },
+        "peer_cache": {
+          "original-ggml-flash": "HYLE_RESIDENT_REFERENCE_SOURCE"
+        }
+      },
+      "profiles": {
+        "M1-MAC": {
+          "generator": "Ninja",
+          "compiler_id": "AppleClang",
+          "compiler_version_prefix": "21.0",
+          "cache": {
+            "CMAKE_CXX_FLAGS": "-Wno-error=tautological-constant-out-of-range-compare"
+          }
+        }
+      },
+      "executables": [
+        {
+          "id": "encoded-primary",
+          "target": "g04_apple_encoded_bench",
+          "stem": "g04_apple_encoded_bench",
+          "target_variant": "primary",
+          "measurement_batch": 1,
+          "telemetry_prefixes": [
+            "# HYLE_ENCODED_PAGE_RUN "
+          ],
+          "workloads": [
+            {
+              "id": "encoded-window-d256",
+              "title": "Apple page16 F16/Q8 Q=1,17 KV=1024,768 D=256 Dv=256 causal=1 window=16"
+            },
+            {
+              "id": "encoded-prefill-d256",
+              "title": "Apple page16 F16/Q8 Q=64,128 KV=1024,768 D=256 Dv=256 causal=1 window=-1"
+            },
+            {
+              "id": "encoded-noncausal-d64-dv128",
+              "title": "Apple page16 F16/Q8 Q=17,1 KV=7,47 D=64 Dv=128 causal=0 window=-1"
+            }
+          ]
+        },
+        {
+          "id": "encoded-placement",
+          "target": "g04_apple_encoded_bench_placement",
+          "stem": "g04_apple_encoded_bench_placement",
+          "target_variant": "placement",
+          "measurement_batch": 1,
+          "telemetry_prefixes": [
+            "# HYLE_ENCODED_PAGE_RUN "
+          ],
+          "workloads": [
+            {
+              "id": "encoded-window-d256",
+              "title": "Apple page16 F16/Q8 Q=1,17 KV=1024,768 D=256 Dv=256 causal=1 window=16"
+            },
+            {
+              "id": "encoded-prefill-d256",
+              "title": "Apple page16 F16/Q8 Q=64,128 KV=1024,768 D=256 Dv=256 causal=1 window=-1"
+            },
+            {
+              "id": "encoded-noncausal-d64-dv128",
+              "title": "Apple page16 F16/Q8 Q=17,1 KV=7,47 D=64 Dv=128 causal=0 window=-1"
+            }
+          ]
+        }
+      ],
+      "control_executable": {
+        "target": "g04_apple_encoded_control",
+        "stem": "g04_apple_encoded_control"
+      },
+      "controlled_environment": [
+        "HYLE_BENCH_RIVAL_FIRST",
+        "HYLE_BENCH_PEER_ALLOCATION_FIRST",
+        "HYLE_PERF_APPLE_QOS",
+        "HYLE_BENCH_AA_ROUTE",
+        "HYLE_BENCH_VERIFY_ONLY"
+      ],
+      "validators": [
+        {
+          "id": "artifact-identity",
+          "kind": "artifact-identity"
+        },
+        {
+          "id": "build-contract",
+          "kind": "build-contract"
+        },
+        {
+          "id": "apple-encoded-aa",
+          "kind": "command",
+          "command": [
+            "{python}",
+            "validate_aa.py",
+            "--build",
+            "{build}",
+            "--output",
+            "{output}"
+          ]
+        }
+      ],
+      "measurement_adapter": "nanobench-paired-rows-v1"
+    },
+    "measurement_recipe": {
+      "paired_rounds": 16,
+      "minimum_epoch_iterations": 1,
+      "minimum_epoch_time_ms": 4,
+      "preflight_only": false,
+      "reason": "Prepared before sampling. Actual independent numerical/lifecycle preflight, unchanged immutable inputs and workload A/A must pass first; original n15/31,16 A/A,controls and5% policy unchanged."
+    }
+  }
+}

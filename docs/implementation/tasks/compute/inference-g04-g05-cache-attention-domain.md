@@ -1180,3 +1180,21 @@ F32→F16 输出与原 prepare/F2/权限/两槽/等待均计费，double oracle 
 native库与原producer整文件不同，但逐成员名称/顺序/对象字节一致。不据此猜测元数据差异
 原因，CPU域仍是旧SDK，不代签CE12/CE13。首轮只编3个benchmark TU并执行原三形状、
 双方两槽四次重放与readonly预检；必须等CPU与Vulkan实际重型进程终态后串行启动。
+
+
+Apple 预检后的正式 P1 包现已准备并通过 contract validate，尚未编译/A-A/采样。
+[合同与消费者账单](../../../../bench/inference_resident_sdpa/apple_encoded_p1/consumer-provenance.md)
+固定原3形状、8strata、16 A/A、双执行/分配顺序、placement、n15→31与5%门；
+实际数值预检、原 shader/header、SDK/object身份和product输入不匹配即停止。数值成功后
+才封存/提交对应 receipt，再从新干净不可变源码启动 P1；没有数值 PASS 不会进入采样。
+初次 device library/pipeline JIT 与缓存预热计入双方未计时数值/预热阶段；之后每episode
+的 native prepare/F2/权限/实际数学/完成/output release 仍全部计费。CPU、Vulkan和Apple
+重型阶段由实际进程/远程终态串行交接，不以观察超时启动下一项。
+
+CUDA 独立 peer 的有限公平性裁决已补入[原peer账单](../../../../evidence/architecture/inference-g04-g05-cost-preflight/peer-preflight.json)。
+原69ff短K/D64-Dv128 FP8 kernel已有错误，不能复用同一产品修复签独立算法。
+本轮 immutable history 应允许与CPU相同的冷只读替代cache：FP8精确页→冷阶段实际GPU
+解码成额外T16 snapshot，保留原frames并每次核identity，warm走原未修复T16 FI与原16-bit
+split/merge；冷初始化/检查完成/释放与额外capacity bytes单列。没有真实producer/version/
+tail/page/scale变化时，反复warm全历史解码会人为降级peer，因此不采用。只裁决该有限
+adapter，不签实现/数学/P1，也不称原生直接FP8、动态增量或best-host比较。
