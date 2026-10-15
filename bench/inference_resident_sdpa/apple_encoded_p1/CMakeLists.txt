@@ -9,6 +9,7 @@ add_executable(g04_apple_encoded_bench_placement "${_source}/apple_encoded_page_
   "${_source}/apple_encoded_page_reference.cc" "${_source}/placement.cc")
 target_compile_features(g04_apple_encoded_bench_placement PRIVATE cxx_std_23)
 target_compile_options(g04_apple_encoded_bench_placement PRIVATE -Wall -Wextra -Wpedantic -Werror)
+target_compile_options(g04_apple_encoded_bench_placement PRIVATE -Wno-error=overlength-strings)
 target_compile_definitions(g04_apple_encoded_bench_placement PRIVATE HYLE_ENCODED_PAGE_PLACEMENT=1)
 target_include_directories(g04_apple_encoded_bench_placement PRIVATE
   "${CMAKE_CURRENT_BINARY_DIR}/original-peer/original-metal-q8"

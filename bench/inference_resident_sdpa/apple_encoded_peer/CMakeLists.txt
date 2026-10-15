@@ -24,6 +24,9 @@ add_executable(g04_apple_encoded_bench "${_source}/apple_encoded_page_bench.cc"
   "${_source}/apple_encoded_page_reference.cc")
 target_compile_features(g04_apple_encoded_bench PRIVATE cxx_std_23)
 target_compile_options(g04_apple_encoded_bench PRIVATE -Wall -Wextra -Wpedantic -Werror)
+# Original Metal source is embedded byte-for-byte (230690 bytes). Clang accepts
+# this literal extension; retain its minimum-standard-limit warning in the log.
+target_compile_options(g04_apple_encoded_bench PRIVATE -Wno-error=overlength-strings)
 target_include_directories(g04_apple_encoded_bench PRIVATE "${_generated}"
   "${HYLE_RESIDENT_REFERENCE_SOURCE}/src/ggml-metal" "${HYLE_SOURCE_DIR}/bench/common")
 target_link_libraries(g04_apple_encoded_bench PRIVATE hyle::compute g04_apple_encoded_nanobench)
