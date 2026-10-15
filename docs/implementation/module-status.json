@@ -505,10 +505,9 @@
     },
     {
       "module": "compute_route_apple",
-      "state": "CANDIDATE",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/inference-g04-g05-cache-attention-domain.md",
-      "summary": "G04/G05 CANDIDATE: CE01-11 finite encoded KV/independent geometry/window/noncausal/unequal Dv frozen. Four-native/three-joint source, finite source risks, CPU+Apple/Vulkan host sanitizers and eight SDK configurations PASS. Cost review/CPU peer oracle PASS; CUDA new-domain host risk and qualified P1 remain pending. Original closed scopes/failures/unknown native private costs retained.",
-      "candidate": "982676cb05a6e6244e66e0a596347aa96043617b"
+      "summary": "G04/G05 CE14 AUDITED: qualified Apple Q8 D256 prefill loss 0.3249-0.3255 versus original general Q8 requires bounded native prefill correction. Reuse original NAX tile/softmax/F32 accumulators with direct Q8 page loads, explicit original TF32 arithmetic and unchanged finite numerical gates. No public API, full-history decode, permission/lifetime or other route change. Original candidate and all passed/failed evidence retained in active card."
     },
     {
       "module": "graph_route_apple",

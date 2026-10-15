@@ -1,6 +1,6 @@
 # G04/G05 编码 KV 与有限 attention 语义实施批
 
-状态：**共同 CANDIDATE；CPU provider/runtime 的 CE13 为42a4c7cdcc，其余九 owner 为982676cb05，2026-10-15**。baseline `694a3d1a4b02540cb56b6ceae35b73dd1dd93440`；
+状态：**Apple CE14 退回 AUDITED，其余 owner 保持原 CANDIDATE；CPU provider/runtime 的 CE13 为42a4c7cdcc，其余候选为982676cb05，2026-10-15**。baseline `694a3d1a4b02540cb56b6ceae35b73dd1dd93440`；
 共同批owner见下表：九个原实际组件及下文新增CUDA数值状态owner；有限CE01–07/API/成本合同已冻结。原 G03 已 CLOSED，不由本卡重开其权限/
 退休实现。九owner已合法SCOPED后进入AUDITED；仅下列有限FIX授权产品实现。
 本批沿[十项总卡](../project/inference-gaps-goal-execution-2026-10.md)，
@@ -1259,3 +1259,31 @@ Apple 首轮在配置前因验证脚本要求该SKU未安装的CUDA头而失败�
 230690字节字符串触发overlength警告升级而失败；现保留原字节和警告，仅解除该警告的
 Werror。两轮失败/耗时保留，未取得Apple数值或P1通过。修正后的第三轮排在实际CUDA
 终态之后；重型任务串行，最多4编译jobs，不重跑已通过的CPU/Vulkan有限P1。
+
+
+### CE14 Apple 量化 prefill 的合格性能反证与有限修正
+
+baseline `89236554cf6a3efb6698fefbb013948e4ea53597`，原产品 candidate982676cb05不改写。
+[Apple 实际 P1](../../../../evidence/performance/inference-g04-g05-apple-encoded-m1-p1-attempt-2/receipt.json)
+为 QUALIFIED、verify0、16 A/A PASS、120产品/30 controls；窗口D256比率1.1841–1.1942与
+非因果D64/Dv128比率1.0776–1.0837均非劣PASS，但D256 prefill仅0.3249–0.3255，明确LOSS/
+非劣FAIL。738.364秒及原设置失败保留，不重复无变更的同一性能运行。
+
+源码已核：Q8为保65532有限解码值而使用F32 query/tiles/partials；当前host明确拒绝Q8进入
+原NAX路径，prefill落到旧steel F32路径。原MLX NAX已具备float输入、F32累加/softmax及其
+显式TF32档；不能退回half临时值而重新引入溢出，也不能全历史解码、缩小prefill范围或改
+5%门。本批仅compute_route_apple从CANDIDATE退回AUDITED，其他owner和产品候选不动。
+
+有限FIX CE14：在原NAX tile loader增加Q8_0逐元素/有效行解码和准确page16地址，保原
+矩阵乘、F32 score/softmax/output与原slots/encoder。仅既有NAX支持的等D、unbounded
+Q8 prefill进入明确TF32 native档；窗口和不同Dv保原已合格路线。真实Q8 stride是字节，
+不能按F32元素移动；尾行不得读取poison，native specialization key包含编码身份。
+plain档选择、公共API/精度验收门、ownership/失败/权限/退休均不变。
+
+预声明验证：同一批已有public encoded页/Graph/联合消费者与原Apple native cache数学
+（F16/BF16、D64/128/256、ragged/page16、tail/重排、Q65以上、65504编码边界及两槽），
+保原double oracle门；新增断言只核新loader/选择/字节stride和有限数值边界。实际Air源、
+适用三种host sanitizer及static/shared对应库/消费者定向验证；未变公共头与原G03风险按
+输入身份复用。native输出/metadata/临时内存账检查无全历史decode。通过普通门并冻结新
+Apple候选后才重绑定同一三形状/16 A/A/双顺序/n15→31/5%合同运行有限P1；不重跑CPU/
+Vulkan/CUDA未变产品域。调查/实施/验证各2h检查点，沿用户授权追加且原成本不重置。
