@@ -57,7 +57,8 @@ double q8_value(std::span<const std::uint8_t> bytes,std::size_t index) {
 }
 
 template<class T>void boxed_case(bool paged,bool quantized,unsigned dk,unsigned dv,
-    bool causal,int window,bool long_prefill=false,bool large_values=false,bool bounded_long=false) {
+    bool causal,int window,bool long_prefill=false,bool large_values=false,bool bounded_long=false,
+    bool small_probability=false) {
   SCOPED_TRACE(::testing::Message()<<"paged="<<paged<<" q8="<<quantized<<" dk="<<dk
       <<" dv="<<dv<<" window="<<window<<" long="<<long_prefill<<" large="<<large_values);
   const unsigned qr=large_values?(long_prefill?65:1):(long_prefill?66:(causal?18:68));
@@ -89,6 +90,14 @@ template<class T>void boxed_case(bool paged,bool quantized,unsigned dk,unsigned 
   for(std::size_t i=0;i<key.size();++i)key[i]=large_values?0.F:float(.19*std::cos(double(i)*.13));
   for(std::size_t i=0;i<value.size();++i)value[i]=large_values&&!bounded_long?(i<value.size()/2?65504.F:-65504.F):
       float(.23*std::sin(double(i)*.07)+.05*std::cos(double(i)*.17));
+  if(small_probability) {
+    ASSERT_TRUE(large_values&&long_prefill&&!paged&&quantized&&dk==64);
+    std::fill(query.begin(),query.end(),half_test::encode<T>(1.F));
+    std::fill(key.begin(),key.end(),0.F);
+    std::fill_n(key.begin(),2*dk,2.F);
+    std::fill(value.begin(),value.end(),60000.F);
+    std::fill_n(value.begin(),2*dv,0.F);
+  }
   std::vector<std::uint8_t> kb,vb;
   const auto cache_bytes=[&](std::span<const float> source,std::vector<std::uint8_t>& output) {
     if(quantized){const auto status=encode_words(context,memory,half_test::data_type<T>(),source,output);
@@ -157,6 +166,7 @@ template<class T>void boxed_case(bool paged,bool quantized,unsigned dk,unsigned 
           expected+=weights[static_cast<std::size_t>(j)]/sum*at(false,(std::size_t(physical_row)*2+head/4)*dv+d);
         }
         const double decoded=half_test::decode(actual[(std::size_t(qp[request]+row)*8+head)*dv+d]);
+        if(small_probability)ASSERT_GT(expected,1.0);
         ASSERT_TRUE(std::isfinite(decoded));EXPECT_NEAR(decoded,expected,(large_values&&!bounded_long?.75:(std::is_same_v<T,BF16>?.008:.0025)));
       }
     }
@@ -190,6 +200,11 @@ TEST(AppleCache, MainDepthsAndLongPrefill) {
 TEST(AppleCache, Q8DecodeAndTwoPassKeepFiniteCancellation) {
   boxed_case<F16>(false,true,64,64,true,-1,false,true);
   boxed_case<F16>(false,true,64,64,true,-1,true,true);
+}
+TEST(AppleCache, SmallSoftmaxWeightsKeepLargeValueContributions) {
+  // exp(-16) is a half subnormal. Rounding each probability before a 60000
+  // value would change the accumulated contribution by several output units.
+  boxed_case<F16>(false,true,64,64,true,-1,true,true,false,true);
 }
 TEST(AppleCache, TwoPassWindowPipelinesPreserveTheirSpecialization) {
   for(int window:{-1,0,16,-1}) {
