@@ -2029,3 +2029,8 @@ CE21[ASan地址facet](../../../../evidence/correctness/inference-g04-g05-cuda-ce
 阶段累计524.610s，外层launch532.000s与之重叠，不重复相加；原NVIDIA process LSan仍
 INCONCLUSIVE，不由本地址facet冒充完整泄漏证明。三facet批次已串行进入UBSan，后续
 TSan、新numeric/P1尚未签发；产品candidate与其它owner不变。
+
+CE21[UBSan facet](../../../../evidence/correctness/inference-g04-g05-cuda-ce21-host-ubsan/receipt.json)
+已实际PASS：同一9c9最终七处输入，16测试零FAIL/SKIP、5个原source风险模式均通过，
+实际instrumented输入与运行前后二进制SHA核验通过。阶段累计457.414s，外层launch461.016s
+与之重叠，不重复相加。批次已串行进入TSan，未提前签TSan、新numeric/P1或整个G04/G05。
