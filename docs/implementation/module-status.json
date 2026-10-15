@@ -578,10 +578,9 @@
     },
     {
       "module": "compute_provider_flashinfer",
-      "state": "CANDIDATE",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/inference-g04-g05-cache-attention-domain.md",
-      "summary": "G04/G05 CE19 CANDIDATE：私有unsplit输出与原生split merge最终scale/cast已融合，F32 partial保留；最终source17项真实测试与BF16/F16/单partial精度反例PASS。SDK、受影响风险和新CUDA P1待验，旧DIAGNOSTIC/失败/成本保留，不签全批关闭。",
-      "candidate": "82ddbb4535072461a77234e6e2f9ca6a74138dba"
+      "summary": "G04/G05 CE20 AUDITED：CE19 source17/math与device memcheck通过，但racecheck发现attention 16位最终输出shared复用/warp重排同步缺口；只修这两个私有barrier边界，保留原F32 partial/算法/API及失败/成本，SDK/P1未代签。"
     },
     {
       "module": "compute_provider_ggml_metal",

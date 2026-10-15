@@ -1,0 +1,57 @@
+{
+  "kind": "G04_G05_CUDA_CE19_DEVICE_MEMORY_RACE",
+  "verdict": "MEMCHECK_PASS_RACECHECK_FAIL_NOT_ACCEPTED",
+  "product_candidate": "82ddbb4535072461a77234e6e2f9ca6a74138dba",
+  "stages": [
+    {
+      "mode": "memcheck",
+      "command": [
+        "/usr/local/cuda-13.3/bin/compute-sanitizer",
+        "--tool",
+        "memcheck",
+        "--error-exitcode",
+        "86",
+        "--leak-check",
+        "no",
+        "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/shared-sdk-build/bin/hyle_compute_provider_flashinfer_test",
+        "--gtest_filter=FlashinferCache.*",
+        "--gtest_output=xml:/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/ce19-device-risks-1/memcheck.xml"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 4.610066263999897,
+      "summary": [
+        "========= ERROR SUMMARY: 0 errors"
+      ]
+    },
+    {
+      "mode": "racecheck",
+      "command": [
+        "/usr/local/cuda-13.3/bin/compute-sanitizer",
+        "--tool",
+        "racecheck",
+        "--error-exitcode",
+        "86",
+        "--racecheck-num-workers",
+        "4",
+        "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/shared-sdk-build/bin/hyle_compute_provider_flashinfer_test",
+        "--gtest_filter=FlashinferCache.*",
+        "--gtest_output=xml:/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/ce19-device-risks-1/racecheck.xml"
+      ],
+      "exit_code": 86,
+      "elapsed_seconds": 10.143918147000022,
+      "summary": [
+        "========= RACECHECK SUMMARY: 100 hazards displayed (40 errors, 378 warnings)"
+      ]
+    }
+  ],
+  "artifacts": {
+    "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/shared-sdk-build/bin/hyle_compute_provider_flashinfer_test": "3ba4d1cf60b8843dd7e2dcc1bce4d8ff9706d61a211c57634d6a0bd53773ec90",
+    "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/shared-sdk-build/bin/libhyle_compute_provider_flashinfer.so.0.1.0": "83f1ec1a3ca51ca05312d29a0bed3f032427e3c6012c4f7a25b9f046bde6b683"
+  },
+  "limits": [
+    "All10 selected math cases pass under both tools; racecheck still exit86,40errors/378warnings/100displayed hazards. No suppressed verdict.",
+    "Displayed errors/warnings concern attention output shared-memory reads/writes; default print limit prevents claiming unseen kernel families are clean.",
+    "No SDK/hostSan/P1 launched after this failure. Candidate must retreat before product changes."
+  ],
+  "raw_zip_sha256": "42583b6bbe1571d3a2285f1d6af2d628c2ede1832693012e6551e9b078dd4416"
+}

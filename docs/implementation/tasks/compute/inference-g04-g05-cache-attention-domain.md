@@ -1780,3 +1780,25 @@ SM89/split-compile3且无ggml重建。追加单partial回归只编一个测试CX
 split，正确F16/BF16输出96.0625/96.5，先narrow再scale均误为96。原零/多partial精度及
 所有原数学用例仍通过。只将FI owner进入CANDIDATE82dd，原其它owner不动；源码数学
 稳定，不再扩产品形状。SDK、宿主/设备风险、原定数值/P1仍未代签PASS。
+
+
+## CE20：16位输出SMEM交接同步（AUDITED）
+
+真实[设备检查](../../../../evidence/correctness/inference-g04-g05-cuda-ce19-device-race/receipt.json)：
+memcheck4.610s/零error PASS；racecheck10.144s/exit86，40errors、378warnings、100hazards
+displayed，十项数学用例均通过仍不能签设备PASS。原raw完整保留，不压掉warning或放宽门。
+只将FI从CANDIDATE82dd退回AUDITED，真实consumer/公开scope/owner/API及原baseline不变。
+源码证据：SharedStorageQKVO把Q/K/V、跨warp归并与O staging放在union；原
+threadblock_sync_mdo_states结束读取后没有屏障，16位write_o_reg_gmem会复写同一区域，
+随后同warp还会从刚重排写入的SMEM加载128b。原F32直写路线不使用这段输出staging，
+本轮融合首次把所选FP8最终输出接到了该原生16位writer。这里必须按真实hazard修正，
+不能把数学PASS冒充同步安全，也不扩展attention数学/状态/公共编排层。
+
+有限FIX仅两处BORROW原生同步原语：16位writer复用SMEM前统一CTA barrier，warp0完成
+重排写后、读出前syncwarp；F32输出分支、partial/merge算法、tile/调度、编码和公共对象
+KEEP。不新增kernel或条件fast模式。只改已登记private vendor patch/原子更新lock身份；
+其它owner不变。一次集中实现后同SM89/pool1/split3/max2配置只重编实际受影响TU，先原
+17项math、再同十项memcheck/racecheck。两设备门均通过才冻结下一候选，随后恢复已声明
+SDK/宿主facets和原合同P1；未变域身份匹配则借用，不重跑G02或其它路线已验收矩阵。
+预算2h检查点沿原常设授权追加、原失败/累计成本不清零；若仍有hazard保留实际报告并在
+这两个边界内定位，不为PASS放宽print/错误语义或压制检查。新范围需求须另定界。
