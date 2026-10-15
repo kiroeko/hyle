@@ -2202,3 +2202,15 @@ split3/Ninja2、heavy串行与常设时间追加不变，原失败和费用全�
 CE24四个manifest edit已集中实施：IsInvalid与三个原dispatcher，完整派生diff核对了真实
 物理容量、原寄存器上限、native16工作集上界及guard的一致性。未改数学或加载器。
 FI仍AUDITED，新数学/device/codegen尚未签发；按本卡有限门执行，未变路线不重跑。
+
+CE24[当前6e57数学/device](../../../../evidence/correctness/inference-g04-g05-cuda-ce24-packed-math-source-device/receipt.json)
+已实际PASS：17math、十mem/十race及两普通race均零FAIL/SKIP与error/warning/hazard；
+source阶段450.089s，device17.233s，artifact前后SHA一致。随后[新1/1/4特化生成代码](../../../../evidence/architecture/inference-g04-g05-cuda-ce24-packed-math-budget/codegen-receipt.json)
+实际提取成功，和qualified9的2/2/8特化相比，三个STACK40/48/120全部变为0，LDL/STL
+8/8、10/10、27/27全部变为0，寄存器分别255/248/254。只签实际静态资源改善；尚不
+冒充运行时选中特化、动态shared、occupancy或吞吐通过。新符号与投影逐一绑定，未把
+旧模板参数写成未变。
+
+FI进入CANDIDATE6e57e28ad，继续串行static/shared relocated SDK、受影响三host facets、
+新numeric，再一次短VERIFY_ONLY核实际runtime1/1/4身份，最后原AA/P1/strict。其它owner
+不动；原qualified9 FAIL及两次未达目标的资源修正/费用全保留，G04/G05仍未关闭。
