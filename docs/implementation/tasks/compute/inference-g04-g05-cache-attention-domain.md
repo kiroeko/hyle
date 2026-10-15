@@ -2034,3 +2034,14 @@ CE21[UBSan facet](../../../../evidence/correctness/inference-g04-g05-cuda-ce21-h
 已实际PASS：同一9c9最终七处输入，16测试零FAIL/SKIP、5个原source风险模式均通过，
 实际instrumented输入与运行前后二进制SHA核验通过。阶段累计457.414s，外层launch461.016s
 与之重叠，不重复相加。批次已串行进入TSan，未提前签TSan、新numeric/P1或整个G04/G05。
+
+CE21[TSan facet](../../../../evidence/correctness/inference-g04-g05-cuda-ce21-host-tsan/receipt.json)
+已实际PASS：16测试零FAIL/SKIP、5个原source风险模式均通过，最终七处vendor9c9输入、
+四FI CUDA TU的实际instrumentation及运行前后二进制身份核验通过。阶段累计454.900s，
+外层launch458.640s与之重叠；原NVIDIA diagnostic-thread lifetime仍INCONCLUSIVE，
+不签线程泄漏、GPU shader/driver或private pool上界。
+
+三facet串行[原批次账](../../../../evidence/correctness/inference-g04-g05-cuda-ce21-host-tsan/batch-result.json)
+已TERMINAL_PASS，逐项run/seal与原费用全部保留；source/device、static/shared和三host
+facet至此均有当前9c9实际证据。接下来仅按原合同做新numeric及A/A/P1/strict验证，未签
+数值绑定、性能改善或整个G04/G05。
