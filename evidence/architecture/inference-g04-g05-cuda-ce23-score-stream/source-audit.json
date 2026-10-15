@@ -1,0 +1,39 @@
+{
+  "kind": "CE23_FINITE_SCORE_FRAGMENT_LIFETIME_SOURCE_AUDIT",
+  "baseline": "8d61d51f162a200fd519a8e27e90d0a787b51cd2",
+  "header_sha256": "dda21494fb89d6ac3a086babeb5f3334eabeae5dd864833f90db4137fcad37e8",
+  "function_sha256": "64cf394989dcfbf611ec3314eddb5ff0345db44656e6ccad4aeb6863c9f72259",
+  "consumers": [
+    "Unchanged actual Qwen causal D256 prefill qualified attempt9 FAIL",
+    "Unchanged actual full-noncausal D64/Dv128 held-out consumer qualified attempt9 FAIL"
+  ],
+  "mechanism": "compute_sfm_v converts every KV block into a full NUM_MMA_Q x NUM_MMA_KV x8 half score array before consuming one KV block at a time. Each consumed block needs only NUM_MMA_Q x8 half scores. This extra representation stays live through PV math with the float output accumulator.",
+  "storage": [
+    {
+      "shape": "D256 selected NUM_MMA_Q1/KV2",
+      "before_half_bytes": 32,
+      "after_half_bytes": 16
+    },
+    {
+      "shape": "D64/Dv128 selected NUM_MMA_Q1/KV8",
+      "before_half_bytes": 128,
+      "after_half_bytes": 16
+    }
+  ],
+  "fix": [
+    "Only original FP8, float-QK, non-repack PV: size the half score array for one KV block.",
+    "Move the existing vec_cast8 and original half rowsum to the existing ascending mma_kv consumption loop; retain per-query rowsum order.",
+    "Use slot0 for this path; preserve the existing whole-array conversion/rowsum/indexing for16bit,FP4,repack and non-float QK."
+  ],
+  "keep": [
+    "Original score float representation and online softmax; original conversion, rowsum and MMA primitives.",
+    "Exact per-output KV/MMA/Q accumulation order and per-query rowsum KV order; d is not read by PV math.",
+    "Original tile/warp/MMA/planner/alignment, all prefetch/wait/barriers, cache storage, scale/F32partials/finalcast and lifecycle.",
+    "All previous qualified failures, CE22 unmet resource hypothesis and measured costs."
+  ],
+  "validation": "First original17math and10mem/10race/2legacy; same exact3kernel codegen before long downstream SDK/host/numeric/original P1.",
+  "limits": [
+    "Source storage/lifetime audit only; compiler may already reuse registers. Actual codegen and later qualified workload must establish improvement.",
+    "No tile trials, algorithm replacement, public API or benchmark/threshold change. No implementation or performance PASS in this audit."
+  ]
+}

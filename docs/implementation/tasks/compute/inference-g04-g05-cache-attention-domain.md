@@ -2131,3 +2131,23 @@ LDL/STL从8/8、10/10、27/27变为9/9、12/11、30/31。提取成功不等于�
 必须解释相同实际实例的成本来源，优先借成熟原加载/矩阵乘路径。无新产品FIX授权，
 不试tile变体、不删除对齐保护、不改peer/统计/阈值；若形成有限修正，先合法回AUDITED。
 G04/G05仍未关闭，G06不实施；完整goal仍3/10。
+
+## CE23：原概率片段按消费顺序缩短存活范围
+
+[当前源码审计](../../../../evidence/architecture/inference-g04-g05-cuda-ce23-score-stream/source-audit.json)
+绑定8d61实际头与compute_sfm_v函数SHA。原函数先把全部NUM_MMA_KV概率转换成half数组，
+再按mma_kv升序逐块做PV；D256当前数组32字节/线程，留出128字节。每次PV只消费其中
+一块，每query仅需16字节；PV不读取d，原每query的rowsum KV升序可以原样保留。
+原两真实消费者qualified FAIL及实际栈溢出与该源码存活结构构成两把钥匙。
+
+本轮唯一有限FIX：仅原FP8、float QK、非repack路径将half概率数组缩为一个KV块，
+把原vec_cast8和m16k16_rowsum移到已有mma_kv消费循环，消费slot0。原转换、rowsum与MMA
+函数直接复用；每output的KV/MMA/Q加法顺序及每query的KV求和顺序不变。16bit、FP4、
+repack与非float QK仍用原整数组流程。只改private manifest/NOTICE及FI lock身份，
+baseline8d61；先合法回AUDITED再实施，不引入公开API或额外产品文件。
+
+tile/warp/MMA、planner、packed对齐、QK/softmax、prefetch/wait/barrier、scale/F32 partial/
+finalcast和权限/退休全KEEP。先原17math、十mem/十race及两普通case race，再对相同三
+mangled内核核实际codegen；源数组缩小不等于寄存器或吞吐改善。资源机制未改善则在长
+SDK/三host/numeric/P1前停止该修正批；若成立才冻结candidate、继续原声明门，未运行项
+不记PASS。SM89/FI pool1/split3/Ninja2、heavy串行及常设追加授权不变，旧失败费用不清零。

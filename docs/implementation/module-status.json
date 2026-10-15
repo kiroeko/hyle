@@ -578,10 +578,9 @@
     },
     {
       "module": "compute_provider_flashinfer",
-      "state": "CANDIDATE",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/inference-g04-g05-cache-attention-domain.md",
-      "summary": "G04/G05 CE22 CANDIDATE：原按需页偏移修正17数学与设备检查PASS；实际相同内核栈帧反增、255寄存器，减负假设未成立。长后续门未启动，先有限只读审计；原qualified FAIL与累计成本保留，G04/G05未关闭。",
-      "candidate": "8d61d51f162a200fd519a8e27e90d0a787b51cd2"
+      "summary": "G04/G05 CE23 AUDITED：原qualified FAIL/actual spill与完整half概率数组存活反证；唯一FIX在原FP8 float-QK PV循环按KV块转换/求和/消费，原数学与tile/对齐/同步全保留。先数学/device/codegen；旧失败及费用不清零。"
     },
     {
       "module": "compute_provider_ggml_metal",
