@@ -542,10 +542,9 @@
     },
     {
       "module": "compute_provider_ggml_vulkan",
-      "state": "CANDIDATE",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/inference-g04-g05-cache-attention-domain.md",
-      "summary": "G02 CE15 CANDIDATE: conflicting exported native roots receive an owning ggml_dup while independent public bindings and ordinary roots are preserved. Finite source regression covers input aliases, three published computed reshapes, exact output capacity and two replays. Actual correctness, affected consumers and delivery still pending; original G02 failure and G04/G05 evidence retained.",
-      "candidate": "1168874af05b8038b27a9e685e83a44dc4204456"
+      "summary": "G02 CE16 AUDITED: actual F32 RoPE at inference positions has large-angle GLSL sin/cos error; bounded split-2pi/FMA shader diagnostic fixes original DeepSeek case with unchanged oracle/tolerances. Freeze private sin/cos argument reduction for abs(F32 phase)<=1048576, original outside-domain behavior and all lifecycle/other route inputs retained. CE15 alias fix116 preserved. Normal build/delivery/remaining G02 gates pending."
     },
     {
       "module": "compute_ggml_runtime",

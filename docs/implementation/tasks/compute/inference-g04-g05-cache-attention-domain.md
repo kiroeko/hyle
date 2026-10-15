@@ -1,6 +1,6 @@
 # G04/G05 编码 KV 与有限 attention 语义实施批
 
-状态：**Apple CE14 CLOSED3b5157532；Vulkan provider 的 CE15 已固定 CANDIDATE；其余 owner 保持原 CANDIDATE，2026-10-15**。baseline `694a3d1a4b02540cb56b6ceae35b73dd1dd93440`；
+状态：**Apple CE14 CLOSED3b5157532；Vulkan provider 的 CE16 退回 AUDITED；其余 owner 保持原 CANDIDATE，2026-10-15**。baseline `694a3d1a4b02540cb56b6ceae35b73dd1dd93440`；
 共同批owner见下表：九个原实际组件及下文新增CUDA数值状态owner；有限CE01–07/API/成本合同已冻结。原 G03 已 CLOSED，不由本卡重开其权限/
 退休实现。九owner已合法SCOPED后进入AUDITED；仅下列有限FIX授权产品实现。
 本批沿[十项总卡](../project/inference-gaps-goal-execution-2026-10.md)，
@@ -1452,3 +1452,29 @@ FAIL，主要在 V4-Flash Q8 ratio4/128。数值根因尚未裁决，不改容�
 G02/CE15 CLOSED；764个原默认 Vulkan case 尚未运行。三交付/Air及受影响消费者待验。
 当前无重型进程在运行；先定位该同例数值差异，若需另改产品，先退回 AUDITED 更新
 有限 FIX。不得因这一个回归 PASS 回填整个原用例或851集合为 PASS。
+
+
+## CE16：G02 原消费者的大角度 RoPE 精度（AUDITED）
+
+baseline `6303460820bc1a451bde5927e9fa6f3d7298ea17`，仅 compute_provider_ggml_vulkan
+退回 AUDITED，保 CE15 产品1168874af及所有旧证据。
+[同输入源码与实际诊断](../../../../evidence/correctness/inference-g02-vulkan-rope-phase-diagnostic/receipt.json)
+排除 SinkAttention 操作数猜测；24个失败全在旋转尾部448–455。公开 F32 RoPE 在
+position2052误差1.68e-4，131071误差8.65e-3；原 shader直接调用GLSL sin/cos。
+scratch只替换两份原SPIR-V数组，用split-2pi/三次显式FMA归约后，原完整DeepSeek
+case（原测试二进制/独立oracle/所有原容差）PASS，独立12组phase最大误差4.18e-7。
+
+有限 FIX CE16 只改原 unary.comp 的 sin/cos：对 abs(F32 phase)<=1048576 使用三段
+2pi常量及显式FMA，保先乘出的原F32 phase；域外/NaN/Inf沿原intrinsic，不签域外
+新增精度。零符号明确保留。更新原manifest/notice与对应依赖内容hash，不升级依赖、
+不改CPU/CUDA/Apple、公开API、layout、权限、recording、队列或生命周期。原schema
+及F32 phase合同KEEP，原GPU dispatch/storage BORROW；无新原子或controller。
+主纵切为原DeepSeek完整attention，正交为普通相位旋转的负位置/逆频率、近零和范围边界。
+
+P0：sin/cos内增加一次round/乘法、三次FMA与有界分支，无新tensor/dispatch/allocation/
+copy/wait。原G04/G05 encoded attention P1没有Sin/Cos节点，可按源码影响借用；
+不复跑无关数学性能。实现后固定candidate，沿CE15三交付/风险和原未运行集合批量
+验证；增加Direct独立F64方程的F32 RoPE回归，覆盖正负位置/频率、零和域边界，
+实际Air对应Direct/Graph门。原精度门/状态反馈不改，不以native结果自证正确；
+若归约不能覆盖本次完整实际输入，回本节裁决，不靠放宽阈值。检查点/资源/停止沿CE15。
+当前仅完成诊断及有限审计，G02仍未验收。
