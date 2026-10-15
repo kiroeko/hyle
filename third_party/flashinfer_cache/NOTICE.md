@@ -12,3 +12,7 @@ The private encoded-cache adapter also permits a final merge callback and an opt
 scale epilogue in the original persistent merge. FP32 partials and accumulation remain
 unchanged; scaling precedes the sole final cast, including a single partial. Default
 upstream routes retain their original output semantics. No public HYLE API is added.
+
+The 16-bit output writer synchronizes the CTA before reusing its aliased shared
+storage, and the output warp before reading its rearranged stores. FP32 direct
+stores and the attention/merge mathematics are unchanged.

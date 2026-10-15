@@ -1,11 +1,11 @@
 {
   "upstream_revision": "69ff11fc4954396d98326656dc85debd2223f637",
-  "scope": "Finite mixed FP8 QK64/VO128 tile-only K row; private final-output merge hook and optional scale epilogue retaining original F32 partial/merge algorithm and default routes",
+  "scope": "Finite mixed FP8 QK64/VO128 tile-only K row; private final-output merge hook and optional scale epilogue retaining original F32 partial/merge algorithm and default routes; CTA shared-storage handoff and warp output-store/load synchronization",
   "files": [
     {
       "path": "include/flashinfer/attention/prefill.cuh",
       "before_sha256": "f93cbea96e3a723254c15f5a52d6dd4c13e3892e88eb9b9fed1c0c0048c7d710",
-      "after_sha256": "89206dda2713a2bc25a04ebdb4bc64d3d2830b937ed7bb87c88c4e888709d71e",
+      "after_sha256": "d27aed84354d162f23fe8c91ce9d8d77cd30d803985e8b635f0f980a7bb21f1a",
       "edits": [
         {
           "before": "      alignas(16) DTypeKV k_smem[CTA_TILE_KV * HEAD_DIM_QK];",
@@ -50,6 +50,14 @@
         {
           "before": "template <uint32_t CTA_TILE_Q, uint32_t HEAD_DIM_QK, uint32_t HEAD_DIM_VO,\n          PosEncodingMode POS_ENCODING_MODE, bool USE_FP16_QK_REDUCTION, MaskMode MASK_MODE,\n          typename AttentionVariant, typename Params>\ncudaError_t BatchPrefillWithRaggedKVCacheDispatched",
           "after": "// This build-local adapter retains FlashInfer's CUDA C++17 compilation contract.\ntemplate <typename Params, typename = void>\nstruct HyleHasMergeStates : std::false_type {};\ntemplate <typename Params>\nstruct HyleHasMergeStates<Params, std::void_t<decltype(&Params::merge_states)>> : std::true_type {};\n\ntemplate <uint32_t CTA_TILE_Q, uint32_t HEAD_DIM_QK, uint32_t HEAD_DIM_VO,\n          PosEncodingMode POS_ENCODING_MODE, bool USE_FP16_QK_REDUCTION, MaskMode MASK_MODE,\n          typename AttentionVariant, typename Params>\ncudaError_t BatchPrefillWithRaggedKVCacheDispatched"
+        },
+        {
+          "before": "  } else {\n    if (get_warp_idx_kv<KTraits>(tid.z) == 0) {\n#pragma unroll\n      for (uint32_t mma_q = 0; mma_q < KTraits::NUM_MMA_Q; ++mma_q) {",
+          "after": "  } else {\n    // Q/K/V and cross-warp states alias the output tile. All readers must\n    // finish before the output warp reuses that storage.\n    __syncthreads();\n    if (get_warp_idx_kv<KTraits>(tid.z) == 0) {\n#pragma unroll\n      for (uint32_t mma_q = 0; mma_q < KTraits::NUM_MMA_Q; ++mma_q) {"
+        },
+        {
+          "before": "      uint32_t o_smem_offset_w = o_smem->template get_permuted_offset<UPCAST_STRIDE_O>(\n          warp_idx_x * KTraits::NUM_MMA_Q * 16 + lane_idx / 8, lane_idx % 8);",
+          "after": "      // Independent thread scheduling requires the warp's rearranged stores\n      // to complete before its lanes load the coalesced output vectors.\n      __syncwarp();\n      uint32_t o_smem_offset_w = o_smem->template get_permuted_offset<UPCAST_STRIDE_O>(\n          warp_idx_x * KTraits::NUM_MMA_Q * 16 + lane_idx / 8, lane_idx % 8);"
         }
       ]
     },
