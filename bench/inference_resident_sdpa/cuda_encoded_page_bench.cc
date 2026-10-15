@@ -104,7 +104,7 @@ struct Data {
       }
     }
     if(uniform_difference<=.01)fail(hyle::Status::Internal("FP8 oracle fixture cannot distinguish missing QK loads"));
-    std::fprintf(stderr,"# CUDA_ENCODED_ORACLE uniform_difference=%.9g\\n",uniform_difference);
+    std::fprintf(stderr,"# CUDA_ENCODED_ORACLE uniform_difference=%.9g\n",uniform_difference);
     return output;
   }
 };
