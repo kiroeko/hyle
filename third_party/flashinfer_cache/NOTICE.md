@@ -25,3 +25,7 @@ in compute_qk and compute_sfm_v rather than a complete BF16 shared-memory
 repack tile. Storage, KernelTraits and all three dispatcher budgets agree.
 The original planner and occupancy selection remain; FP32 partials, final
 scaling, output synchronization and physical short-K padding are retained.
+
+The unused FP32 output shared-memory member retains only one element; the
+original FP32 writer already stores fragments directly to global memory.
+All live Q/K/V and cross-warp state storage and 16-bit output capacity remain.

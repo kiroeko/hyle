@@ -982,13 +982,13 @@
           {
             "root": "hyle",
             "path": "third_party/flashinfer_cache/NOTICE.md",
-            "sha256": "47d85d84e4ef2487ae381ae552a1a349668d60a8eebabe6e28f03c9cd08d3618"
+            "sha256": "767fc91e609a9ae47a1bd0faca81e689390db24543bc23c424d026911414a53d"
           }
         ]
       },
       "vendored": {
         "path": "third_party/flashinfer_cache",
-        "tree_sha256": "7318966b659c2397def34dd3b0f5360803e8d568aa44ec1bc78f8b5db8c9a2ab"
+        "tree_sha256": "cf631b8cecba2e9e50231019e0dbe44c186700f8e38c3d03cc88a1211e08db45"
       }
     },
     {

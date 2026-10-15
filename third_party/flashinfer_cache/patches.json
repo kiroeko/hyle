@@ -5,7 +5,7 @@
     {
       "path": "include/flashinfer/attention/prefill.cuh",
       "before_sha256": "f93cbea96e3a723254c15f5a52d6dd4c13e3892e88eb9b9fed1c0c0048c7d710",
-      "after_sha256": "babcaab98d6f33ed73814d406f980a515aeef1cf02daa04f9c6726d869594f78",
+      "after_sha256": "3be7cbfe176d40f6af962770a854a08c06f9094cca235d65af83b4e57e90f961",
       "edits": [
         {
           "before": "      alignas(16) DTypeKV k_smem[CTA_TILE_KV * HEAD_DIM_QK];",
@@ -82,6 +82,10 @@
         {
           "before": "  constexpr bool kUseRepack = (sizeof(DTypeKV) == 1) && !is_fp4_type_v<DTypeKV> &&\n                              (HEAD_DIM_VO != 64) && (HEAD_DIM_VO <= 256) && (CTA_TILE_Q > 16);\n  // Matches KernelTraits::USE_KV_SHARED_SMEM: K/V share one smem buffer for bf16/fp16 at every\n  // tile and for FP8 only at CTA_TILE_Q=32 (not NVFP4), so the occupancy budget counts the K/V\n",
           "after": "  constexpr bool kUseRepack = false;  // Match the original register path storage.\n  // Matches KernelTraits::USE_KV_SHARED_SMEM: K/V share one smem buffer for bf16/fp16 at every\n  // tile and for FP8 only at CTA_TILE_Q=32 (not NVFP4), so the occupancy budget counts the K/V\n"
+        },
+        {
+          "before": "    alignas(16) DTypeO smem_o[CTA_TILE_Q * HEAD_DIM_VO];",
+          "after": "    // F32 fragments write global memory directly; only 16-bit output uses this tile.\n    alignas(16) DTypeO smem_o[sizeof(DTypeO) == 4 ? 1 : CTA_TILE_Q * HEAD_DIM_VO];"
         }
       ]
     },
