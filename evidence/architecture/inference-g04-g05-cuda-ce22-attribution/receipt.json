@@ -1,0 +1,302 @@
+{
+  "kind": "CURRENT_CE21_CANDIDATE_QUALIFIED_LOSS_CE22_ATTRIBUTION",
+  "verdict": "PASS_FINITE_READ_ONLY_DIAGNOSTIC_NOT_NEW_PERFORMANCE",
+  "product_candidate": "9c9ab88bba3fca5dcc981a2a42100b08af1a45ae",
+  "qualified_failure": "evidence/performance/inference-g04-g05-cuda-encoded-w1-wsl-p1-attempt-9/receipt.json",
+  "independent_oracles": 24,
+  "max_abs_error": 0.00109081301,
+  "profile_seconds": 3.414917189999869,
+  "binary_sha256": "5a02a96a57fc6addbf6d87676f84d42b32dd23507b223873dfc8fc3ca62a9612",
+  "shapes": [
+    {
+      "cold_decoder": {
+        "count": 2,
+        "median_ns": 10871.5,
+        "mean_ns": 10871.5,
+        "registers": [
+          22
+        ],
+        "dynamic_shared": [
+          0
+        ],
+        "grids": [
+          [
+            3648,
+            1,
+            1
+          ]
+        ]
+      },
+      "selected_attention": {
+        "count": 8,
+        "median_ns": 7083.5,
+        "mean_ns": 7272.25,
+        "registers": [
+          255
+        ],
+        "dynamic_shared": [
+          49152
+        ],
+        "grids": [
+          [
+            3,
+            1,
+            2
+          ]
+        ]
+      },
+      "original_attention": {
+        "count": 8,
+        "median_ns": 5771.5,
+        "mean_ns": 6026,
+        "registers": [
+          240
+        ],
+        "dynamic_shared": [
+          49152
+        ],
+        "grids": [
+          [
+            3,
+            1,
+            2
+          ]
+        ]
+      }
+    },
+    {
+      "cold_decoder": {
+        "count": 2,
+        "median_ns": 10707.5,
+        "mean_ns": 10707.5,
+        "registers": [
+          22
+        ],
+        "dynamic_shared": [
+          0
+        ],
+        "grids": [
+          [
+            3648,
+            1,
+            1
+          ]
+        ]
+      },
+      "selected_attention": {
+        "count": 8,
+        "median_ns": 51176.5,
+        "mean_ns": 51213.5,
+        "registers": [
+          255
+        ],
+        "dynamic_shared": [
+          49152
+        ],
+        "grids": [
+          [
+            40,
+            1,
+            2
+          ]
+        ]
+      },
+      "selected_merge": {
+        "count": 8,
+        "median_ns": 11986.5,
+        "mean_ns": 11941.375,
+        "registers": [
+          43
+        ],
+        "dynamic_shared": [
+          8704
+        ],
+        "grids": [
+          [
+            460,
+            1,
+            1
+          ]
+        ]
+      },
+      "original_attention": {
+        "count": 8,
+        "median_ns": 39682.0,
+        "mean_ns": 39706.375,
+        "registers": [
+          240
+        ],
+        "dynamic_shared": [
+          49152
+        ],
+        "grids": [
+          [
+            40,
+            1,
+            2
+          ]
+        ]
+      },
+      "original_merge": {
+        "count": 8,
+        "median_ns": 9051.0,
+        "mean_ns": 9043.125,
+        "registers": [
+          40
+        ],
+        "dynamic_shared": [
+          8704
+        ],
+        "grids": [
+          [
+            460,
+            1,
+            1
+          ]
+        ]
+      }
+    },
+    {
+      "cold_decoder": {
+        "count": 2,
+        "median_ns": 1427.0,
+        "mean_ns": 1427,
+        "registers": [
+          22
+        ],
+        "dynamic_shared": [
+          0
+        ],
+        "grids": [
+          [
+            48,
+            1,
+            1
+          ],
+          [
+            96,
+            1,
+            1
+          ]
+        ]
+      },
+      "selected_attention": {
+        "count": 8,
+        "median_ns": 8691.0,
+        "mean_ns": 9215.625,
+        "registers": [
+          255
+        ],
+        "dynamic_shared": [
+          40960
+        ],
+        "grids": [
+          [
+            3,
+            1,
+            2
+          ]
+        ]
+      },
+      "original_attention": {
+        "count": 8,
+        "median_ns": 4345.0,
+        "mean_ns": 4410.875,
+        "registers": [
+          177
+        ],
+        "dynamic_shared": [
+          32768
+        ],
+        "grids": [
+          [
+            3,
+            1,
+            2
+          ]
+        ]
+      }
+    }
+  ],
+  "codegen": {
+    "kind": "READ_ONLY_CURRENT_CANDIDATE_CODEGEN_NO_VARIANTS",
+    "binary_sha256": "5a02a96a57fc6addbf6d87676f84d42b32dd23507b223873dfc8fc3ca62a9612",
+    "command": [
+      "/usr/local/cuda-13.3/bin/cuobjdump",
+      "--dump-sass",
+      "--function",
+      "_ZN10flashinfer34BatchPrefillWithPagedKVCacheKernelINS_12KernelTraitsILNS_8MaskModeE1ELj64ELj1ELj2ELj16ELj16ELj4ELj1ELNS_15PosEncodingModeE0E13__nv_bfloat1613__nv_fp8_e4m3S4_fiNS_16DefaultAttentionILb0ELb1ELb0ELb0EEEEEN4hyle7compute10flashinfer6native48_GLOBAL__N__ca0ae4f1_15_native_cache_cu_95f5a4b012OutputParamsINS_23BatchPrefillPagedParamsIS4_S5_S4_iEEEEEEvT0_,_ZN39hyle_benchmark_original_flashinfer_69ff34BatchPrefillWithPagedKVCacheKernelINS_12KernelTraitsILNS_8MaskModeE1ELj64ELj1ELj1ELj16ELj16ELj4ELj1ELNS_15PosEncodingModeE0E13__nv_bfloat16S4_S4_fiNS_16DefaultAttentionILb0ELb1ELb0ELb0EEEEENS_23BatchPrefillPagedParamsIS4_S4_S4_iEEEEvT0_,_ZN10flashinfer34BatchPrefillWithPagedKVCacheKernelINS_12KernelTraitsILNS_8MaskModeE1ELj64ELj1ELj2ELj16ELj16ELj4ELj1ELNS_15PosEncodingModeE0E13__nv_bfloat1613__nv_fp8_e4m3ffiNS_16DefaultAttentionILb0ELb1ELb0ELb0EEEEEN4hyle7compute10flashinfer6native48_GLOBAL__N__ca0ae4f1_15_native_cache_cu_95f5a4b011MergeParamsINS_23BatchPrefillPagedParamsIS4_S5_fiEES4_Lj256EEEEEvT0_,_ZN10flashinfer34BatchPrefillWithPagedKVCacheKernelINS_12KernelTraitsILNS_8MaskModeE0ELj64ELj1ELj8ELj4ELj8ELj4ELj1ELNS_15PosEncodingModeE0E13__nv_bfloat1613__nv_fp8_e4m3S4_fiNS_16DefaultAttentionILb0ELb1ELb0ELb0EEEEEN4hyle7compute10flashinfer6native48_GLOBAL__N__ca0ae4f1_15_native_cache_cu_95f5a4b012OutputParamsINS_23BatchPrefillPagedParamsIS4_S5_S4_iEEEEEEvT0_,_ZN39hyle_benchmark_original_flashinfer_69ff34BatchPrefillWithPagedKVCacheKernelINS_12KernelTraitsILNS_8MaskModeE0ELj64ELj1ELj4ELj4ELj8ELj4ELj1ELNS_15PosEncodingModeE0E13__nv_bfloat16S4_S4_fiNS_16DefaultAttentionILb0ELb1ELb0ELb0EEEEENS_23BatchPrefillPagedParamsIS4_S4_S4_iEEEEvT0_",
+      "/root/hyle-scratch/compute-unified/g04-cuda-encoded-p1-fresh-9/bin/g04_cuda_encoded_bench"
+    ],
+    "elapsed_seconds": 1.1323276240000268,
+    "header": "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/static-sdk-build/src/compute_provider_flashinfer/cache-source-cf631b8cecba2e9e50231019e0dbe44c186700f8e38c3d03cc88a1211e08db45/include/flashinfer/attention/prefill.cuh",
+    "header_sha256": "3be7cbfe176d40f6af962770a854a08c06f9094cca235d65af83b4e57e90f961",
+    "kernels": [
+      {
+        "demangled": "void flashinfer::BatchPrefillWithPagedKVCacheKernel<flashinfer::KernelTraits<(flashinfer::MaskMode)1, (unsigned int)64, (unsigned int)1, (unsigned int)2, (unsigned int)16, (unsigned int)16, (unsigned int)4, (unsigned int)1, (flashinfer::PosEncodingMode)0, __nv_bfloat16, __nv_fp8_e4m3, __nv_bfloat16, float, int, flashinfer::DefaultAttention<(bool)0, (bool)1, (bool)0, (bool)0>>, hyle::compute::flashinfer::native::<unnamed>::OutputParams<flashinfer::BatchPrefillPagedParams<__nv_bfloat16, __nv_fp8_e4m3, __nv_bfloat16, int>>>(T2)",
+        "mangled": "_ZN10flashinfer34BatchPrefillWithPagedKVCacheKernelINS_12KernelTraitsILNS_8MaskModeE1ELj64ELj1ELj2ELj16ELj16ELj4ELj1ELNS_15PosEncodingModeE0E13__nv_bfloat1613__nv_fp8_e4m3S4_fiNS_16DefaultAttentionILb0ELb1ELb0ELb0EEEEEN4hyle7compute10flashinfer6native48_GLOBAL__N__ca0ae4f1_15_native_cache_cu_95f5a4b012OutputParamsINS_23BatchPrefillPagedParamsIS4_S5_S4_iEEEEEEvT0_",
+        "registers": 255,
+        "resource": "REG:255 STACK:40 SHARED:0 LOCAL:0 CONSTANT[0]:720 TEXTURE:0 SURFACE:0 SAMPLER:0",
+        "sass_local_instructions": {
+          "LDL": 8,
+          "STL": 8
+        }
+      },
+      {
+        "demangled": "void hyle_benchmark_original_flashinfer_69ff::BatchPrefillWithPagedKVCacheKernel<hyle_benchmark_original_flashinfer_69ff::KernelTraits<(hyle_benchmark_original_flashinfer_69ff::MaskMode)1, (unsigned int)64, (unsigned int)1, (unsigned int)1, (unsigned int)16, (unsigned int)16, (unsigned int)4, (unsigned int)1, (hyle_benchmark_original_flashinfer_69ff::PosEncodingMode)0, __nv_bfloat16, __nv_bfloat16, __nv_bfloat16, float, int, hyle_benchmark_original_flashinfer_69ff::DefaultAttention<(bool)0, (bool)1, (bool)0, (bool)0>>, hyle_benchmark_original_flashinfer_69ff::BatchPrefillPagedParams<__nv_bfloat16, __nv_bfloat16, __nv_bfloat16, int>>(T2)",
+        "mangled": "_ZN39hyle_benchmark_original_flashinfer_69ff34BatchPrefillWithPagedKVCacheKernelINS_12KernelTraitsILNS_8MaskModeE1ELj64ELj1ELj1ELj16ELj16ELj4ELj1ELNS_15PosEncodingModeE0E13__nv_bfloat16S4_S4_fiNS_16DefaultAttentionILb0ELb1ELb0ELb0EEEEENS_23BatchPrefillPagedParamsIS4_S4_S4_iEEEEvT0_",
+        "registers": 240,
+        "resource": "REG:240 STACK:0 SHARED:0 LOCAL:0 CONSTANT[0]:712 TEXTURE:0 SURFACE:0 SAMPLER:0",
+        "sass_local_instructions": {
+          "LDL": 0,
+          "STL": 0
+        }
+      },
+      {
+        "demangled": "void flashinfer::BatchPrefillWithPagedKVCacheKernel<flashinfer::KernelTraits<(flashinfer::MaskMode)1, (unsigned int)64, (unsigned int)1, (unsigned int)2, (unsigned int)16, (unsigned int)16, (unsigned int)4, (unsigned int)1, (flashinfer::PosEncodingMode)0, __nv_bfloat16, __nv_fp8_e4m3, float, float, int, flashinfer::DefaultAttention<(bool)0, (bool)1, (bool)0, (bool)0>>, hyle::compute::flashinfer::native::<unnamed>::MergeParams<flashinfer::BatchPrefillPagedParams<__nv_bfloat16, __nv_fp8_e4m3, float, int>, __nv_bfloat16, (unsigned int)256>>(T2)",
+        "mangled": "_ZN10flashinfer34BatchPrefillWithPagedKVCacheKernelINS_12KernelTraitsILNS_8MaskModeE1ELj64ELj1ELj2ELj16ELj16ELj4ELj1ELNS_15PosEncodingModeE0E13__nv_bfloat1613__nv_fp8_e4m3ffiNS_16DefaultAttentionILb0ELb1ELb0ELb0EEEEEN4hyle7compute10flashinfer6native48_GLOBAL__N__ca0ae4f1_15_native_cache_cu_95f5a4b011MergeParamsINS_23BatchPrefillPagedParamsIS4_S5_fiEES4_Lj256EEEEEvT0_",
+        "registers": 255,
+        "resource": "REG:255 STACK:48 SHARED:0 LOCAL:0 CONSTANT[0]:728 TEXTURE:0 SURFACE:0 SAMPLER:0",
+        "sass_local_instructions": {
+          "LDL": 10,
+          "STL": 10
+        }
+      },
+      {
+        "demangled": "void flashinfer::BatchPrefillWithPagedKVCacheKernel<flashinfer::KernelTraits<(flashinfer::MaskMode)0, (unsigned int)64, (unsigned int)1, (unsigned int)8, (unsigned int)4, (unsigned int)8, (unsigned int)4, (unsigned int)1, (flashinfer::PosEncodingMode)0, __nv_bfloat16, __nv_fp8_e4m3, __nv_bfloat16, float, int, flashinfer::DefaultAttention<(bool)0, (bool)1, (bool)0, (bool)0>>, hyle::compute::flashinfer::native::<unnamed>::OutputParams<flashinfer::BatchPrefillPagedParams<__nv_bfloat16, __nv_fp8_e4m3, __nv_bfloat16, int>>>(T2)",
+        "mangled": "_ZN10flashinfer34BatchPrefillWithPagedKVCacheKernelINS_12KernelTraitsILNS_8MaskModeE0ELj64ELj1ELj8ELj4ELj8ELj4ELj1ELNS_15PosEncodingModeE0E13__nv_bfloat1613__nv_fp8_e4m3S4_fiNS_16DefaultAttentionILb0ELb1ELb0ELb0EEEEEN4hyle7compute10flashinfer6native48_GLOBAL__N__ca0ae4f1_15_native_cache_cu_95f5a4b012OutputParamsINS_23BatchPrefillPagedParamsIS4_S5_S4_iEEEEEEvT0_",
+        "registers": 255,
+        "resource": "REG:255 STACK:120 SHARED:0 LOCAL:0 CONSTANT[0]:720 TEXTURE:0 SURFACE:0 SAMPLER:0",
+        "sass_local_instructions": {
+          "LDL": 27,
+          "STL": 27
+        }
+      },
+      {
+        "demangled": "void hyle_benchmark_original_flashinfer_69ff::BatchPrefillWithPagedKVCacheKernel<hyle_benchmark_original_flashinfer_69ff::KernelTraits<(hyle_benchmark_original_flashinfer_69ff::MaskMode)0, (unsigned int)64, (unsigned int)1, (unsigned int)4, (unsigned int)4, (unsigned int)8, (unsigned int)4, (unsigned int)1, (hyle_benchmark_original_flashinfer_69ff::PosEncodingMode)0, __nv_bfloat16, __nv_bfloat16, __nv_bfloat16, float, int, hyle_benchmark_original_flashinfer_69ff::DefaultAttention<(bool)0, (bool)1, (bool)0, (bool)0>>, hyle_benchmark_original_flashinfer_69ff::BatchPrefillPagedParams<__nv_bfloat16, __nv_bfloat16, __nv_bfloat16, int>>(T2)",
+        "mangled": "_ZN39hyle_benchmark_original_flashinfer_69ff34BatchPrefillWithPagedKVCacheKernelINS_12KernelTraitsILNS_8MaskModeE0ELj64ELj1ELj4ELj4ELj8ELj4ELj1ELNS_15PosEncodingModeE0E13__nv_bfloat16S4_S4_fiNS_16DefaultAttentionILb0ELb1ELb0ELb0EEEEENS_23BatchPrefillPagedParamsIS4_S4_S4_iEEEEvT0_",
+        "registers": 177,
+        "resource": "REG:177 STACK:0 SHARED:0 LOCAL:0 CONSTANT[0]:712 TEXTURE:0 SURFACE:0 SAMPLER:0",
+        "sass_local_instructions": {
+          "LDL": 0,
+          "STL": 0
+        }
+      }
+    ],
+    "limits": [
+      "Static resources/instruction counts and short trace are mechanism evidence only; no new throughput verdict."
+    ]
+  },
+  "facts": [
+    "Actual D256 FP8 MMA_KV2/register255/shared49152 versus BF16 MMA_KV1/register240/shared49152.",
+    "Actual unequal D64/Dv128 FP8 MMA_KV8/register255/shared40960 versus BF16 MMA_KV4/register177/shared32768.",
+    "Codegen shows product window/prefill/holdout stack40/48/120 and8/10/27LDL plus same STL; actual reference stack0 with no LDL/STL.",
+    "Current shipping compile command selects cache-source-cf631 private header, not an obsolete generated cache. FP8 minimum valid MMA_KV depends on packed alignment; any resource correction must preserve this constraint."
+  ],
+  "limits": [
+    "One immutable existing artifact, no product changes, variant trials, new sampling or performance verdict.",
+    "Trace point times and static instruction counts explain costs but cannot sign a new throughput win.",
+    "FI remains CANDIDATE9c9 until an actual finite source-level correction is audited; no G04/G05 or goal closure."
+  ],
+  "raw_zip_sha256": "2d35697ce79d0f6e0c1f92d921107f6a08bb0c141b0b6489e30351077f8e2c80"
+}

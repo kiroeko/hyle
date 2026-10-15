@@ -2072,3 +2072,18 @@ Nsight CUDA trace：核24独立oracle、actual attention/merge/host launch及reg
 grid，SHA前后不变。不新采P1、不试tile/算法变体、不改peer/输入/5%或公共工具；15min
 检查点沿常设授权追加、原预算不清零。先定位实际机制，再按原两把钥匙决定有限FIX并
 合法回AUDITED；没有机制证据不能无限重试。G04/G05未关闭，G06仍不实施。
+
+CE22[当前artifact归因及生成代码](../../../../evidence/architecture/inference-g04-g05-cuda-ce22-attribution/receipt.json)
+已完成：profile3.415s，24oracle PASS/max0.00109081301，binary前后SHA相同；后续实际
+codegen提取1.132s不含先前cuobjdump资源表0.097s。短trace只作机制证据，不签新吞吐。
+D256产品MMA_KV2/register255/shared49152，参考MMA_KV1/register240/shared49152；
+prefill attention约51.177/39.682us、merge11.987/9.051us。D64/Dv128产品MMA_KV8/
+register255/shared40960，参考MMA_KV4/register177/shared32768，attention约8.691/4.345us。
+
+实际mangled kernel逐一匹配cuobjdump/SASS：产品window/prefill/holdout栈帧40/48/120字节，
+分别8/10/27条LDL及同数STL；实际参考均零栈帧、零LDL/STL。shipping compile command
+绑定cf631私有头，after SHA与当前manifest一致；未用旧generated cache推断当前资源。
+源码max_num_mma_kv_reg仍为原通用上界，smem按压缩payload预算，FP8 minimum valid
+MMA_KV又有packed对齐约束；下一步只审计这两者与宽化fragment的实际寄存器开销。
+当前不授权简单对半tile、删除对齐检查或变体扫参；F32 partial/最终scale+cast、两输出
+屏障、shortK补零和已准入数学/consumer全KEEP，后续有限FIX必须先单独明确并合法AUDITED。
