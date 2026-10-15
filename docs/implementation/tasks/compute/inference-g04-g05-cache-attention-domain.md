@@ -1288,6 +1288,17 @@ static比较与累计成本。接下来只核原STEEL的矩阵输入类型、mix
 配置、不放宽原数值或性能门。
 公共API、ownership、失败、权限、退休及未变路线不改。
 
+CE14 下一实施批固定为原M4 STEEL mixed-input机制：原`BaseMMAFrag<float>::mma`
+已接受独立A/B/C类型，复用其half-input/F32-accumulator指令，保原BQ16/BK8/WM2及
+原staging/收敛barrier。Q8解码和shared-memory数据仍为F32；每个8×8 fragment在SIMD
+一致性检查确认所有输入为零或绝对值位于[2^-14,65504]后才缩窄矩阵输入。任何微小非零、
+超half范围或非有限值仍走原F32矩阵调用，避免65532溢出和小概率贡献丢失。分支只使用
+局部fragment，不增加公共状态、整历史转换或host读取；正常档沿原Metal Q8 peer的
+half输入/F32累加精度，用原double误差门验证，不宣称逐位同F32乘法。
+同批增加原公开消费者的低概率大V反例：Q65/KV8192、一个高score行和其余低score大V行，
+要求原误差门保其非零贡献；与原高值消去/长prefill/独立Dv一次批量验证。数值或成本
+反证失败仍否决实现，不以新增测试或调阈值保留它。
+
 预声明验证：同一批已有public encoded页/Graph/联合消费者与原Apple native cache数学
 （F16/BF16、D64/128/256、ragged/page16、tail/重排、Q65以上、65504编码边界及两槽），
 保原double oracle门；新增断言只核新loader/选择/字节stride和有限数值边界。实际Air源、
