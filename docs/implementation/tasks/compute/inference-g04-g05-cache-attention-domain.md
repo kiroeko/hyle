@@ -1975,3 +1975,15 @@ CE21六处一致性修改已集中实施，FI仍AUDITED，未签数学/成本改
 为READY，product_authorization仅FI且无issues；共同lock使选择器保守选全库，实际只有
 FI私有headers派生改变。沿已固定FI/直接consumer/source/SDK/风险门，身份未变的其它
 route/native依赖复用并保留skip理由，不为全库假签PASS或修改公共selector/build核心。
+
+CE21同一存储FIX的静态补充：原SharedStorageQKVO还在union中预留CTA_TILE_Q*Dv个
+DTypeO；F32 write_o_reg_gmem明确只写global float2，不读写此output tile，16位writer
+才使用shared重排。只禁repack时D256 split的该未用F32数组仍把union撑到64KiB。
+因此有限FIX加一处条件容量：F32 unused output member仅保1元素，16位容量原样；Q/K/V
+与跨warp状态仍各自保完整成员，不能删整个union或共享live存储。此为同owner同资源
+结构问题，不改F32 partial或原merge数学/ABI。总七处存储/traits/预算判定固定。
+
+当前source1仍运行六处版本的不可变d1 archive，结果只对该draft签发；不改其运行中源码
+或重置耗时。最终七处版本必须在source1真正terminal后独立snapshot重新验证原17math
+与设备/SDK/host/P1门。canonical lock另只恢复未变字段的原序列化，和source1 JSON
+逐结构相等，有单独proof；该format-only变化不触发全库构建或代签runtime。
