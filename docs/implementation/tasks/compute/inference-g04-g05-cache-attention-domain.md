@@ -1914,3 +1914,17 @@ error/warning。固定SDK的37个artifact、recipe、native archive与全部产�
 阶段命令累计105.858s（另有WSL只读canonical Git检查约两分钟，未计入命令阶段和性能）；
 实际公共build-contract预检PASS，portable ISA已从CMakeCache中的显式空值确认。新A/A
 与P1尚未签发；下一独立attempt7沿v2合同，原5%/8strata/16AA/n15,31与所有旧结果不变。
+
+CE20[attempt7原始结果](../../../../evidence/performance/inference-g04-g05-cuda-encoded-w1-wsl-p1-attempt-7/receipt.json)
+已封存：worker2719.253s、重叠外层2721.891s，16AA/120产品/30controls及strict verify0。
+artifact/build-contract/16路AA三个前后validator、五controls与source/artifact/host稳定性均
+PASS，但三workload consumer evidence均FAIL：同步修正后的provenance JSON已更新，合同
+仍绑定旧61995c哈希，实际为f8d7d979。唯一资格失败是该绑定，最终DIAGNOSTIC/UNPROVEN；
+不提升旧manifest，也不据其prefill/窗口样本退回产品实现。原所有记录和费用不覆盖。
+
+本次只修正三处provenance SHA，规范化合同逐字段相等（除这三SHA）；产品candidate274、
+源码/SDK/全部数值、输入/统计/门槛/采样计划不变，原数值receipt继续按实际SHA复用。
+canonical侧已调用原load_contract和_evaluate_product_evidence：三项全PASS，嵌套prose SHA
+亦PASS。private launcher同一检查前置到configure/A-A/采样之前，任一失败立即停止；公共
+性能core不改。下一独立attempt8保留原5%/8strata/16AA/n15,31，不重跑产品构建/数学/SDK/
+宿主风险；新资格只由新实际结果签发。沿原常设预算追加，原失败成本不重置。
