@@ -17,6 +17,8 @@ if(HYLE_COMPUTE_VULKAN_ENABLED)
   target_include_directories(hyle_compute_route_vulkan_test PRIVATE
     "${HYLE_SOURCE_DIR}/src/compute_route_vulkan"
     "${HYLE_SOURCE_DIR}/src/compute")
+  target_include_directories(hyle_compute_route_vulkan_test SYSTEM PRIVATE
+    "${HYLE_GGML_SOURCE_DIR}/src")
   target_link_libraries(hyle_compute_route_vulkan_test PRIVATE
     hyle_compute_provider_ggml_vulkan hyle_compute_ggml_runtime ggml)
   hyle_stage_runtime(hyle_compute_route_vulkan_test)

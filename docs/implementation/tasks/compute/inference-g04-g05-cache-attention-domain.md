@@ -1500,3 +1500,11 @@ IQ1测试的double→float隐式range构造触发MSVC /WX；只改测试为显�
 保相同数值转换、原完整build FAIL与elapsed。产品candidate2b60不变，继续原树增量，
 不重新配置、不放宽warning/数值门。原默认851用例将在修正后的新正常产物上整集合一次
 串行复验，覆盖前缀已过但可能实际消费sin/cos的案例；不重跑CUDA804或其它模块。
+
+
+后续增量实际暴露Direct catalogue测试缺ggml-quants.h的私有include路径；Graph同一
+测试夹具已有正确SYSTEM PRIVATE HYLE_GGML_SOURCE_DIR/src。只为Direct测试target
+补相同目录，产品target/导出不改。第二个scratch驱动曾错误要求resume仍有一个CUDA
+编译（实际该TU已在首build完成），该setup断言失败单独保留，修为允许0或原单一TU；
+全部既有失败/成本不覆盖。下一正常重配只纳入此测试注册纠正，沿原树复用既有native
+对象与生成物；后续batch构建收集全部实际错误，不逐算子新建构建树。
