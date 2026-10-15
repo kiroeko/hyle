@@ -580,7 +580,7 @@
       "module": "compute_provider_flashinfer",
       "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/inference-g04-g05-cache-attention-domain.md",
-      "summary": "G04/G05 CE27 CANDIDATEd414：source/device/codegen、两SDK、新数值/runtime及三host各16测试/五风险模式均PASS；原AA/P1/strict及整项终审待验；原qualified FAIL、全部旧失败/未知与累计成本保留。",
+      "summary": "G04/G05 CE27 CANDIDATEd414：全部前置门PASS；attempt13 QUALIFIED/strict0，prefill仍5%非劣FAIL，窗口与留出PASS。CE28仅复用已有trace只读核剩余成本，未授权新FIX；全部原失败/未知及累计费用保留。",
       "candidate": "d41431f82a373ae400fb10e97418931031fa48e8"
     },
     {

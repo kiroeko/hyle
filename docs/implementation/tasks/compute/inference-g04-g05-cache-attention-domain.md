@@ -2525,3 +2525,23 @@ tsan stage409.740s/outer426.375s；
 outer与stage重叠不相加。[批次汇总](../../../../evidence/correctness/inference-g04-g05-cuda-ce27-host-tsan/batch-summary.json)
 保原LSan/diagnostic-thread lifetime INCONCLUSIVE及driver/shader/private-pool未知。
 现在只剩原AA/P1/strict与整项终审；本次不签性能或G04/G05完成，不重置旧失败/成本。
+
+## CE28：d414 合格失败与剩余成本只读复核
+
+[attempt13](../../../../evidence/performance/inference-g04-g05-cuda-encoded-w1-wsl-p1-attempt-13/receipt.json)
+已实际TERMINAL：candidated414/source54808678，QUALIFIED、performance FAIL、strict verify0。
+原16AA、五controls、三consumer与采样前后三validator均PASS，artifact/input/host稳定。
+n15完成120产品与30控制，明确prefill非劣FAIL不追加n31；worker2577.782s、outer2666.843s重叠不相加。
+windowD256 ratio0.986590–0.993320 / LOSS / 5%PASS（exact PARITY）；
+prefillD256 ratio0.940486–0.947439 / LOSS / 5%FAIL（exact INCONCLUSIVE）；
+noncausal D64/Dv128 ratio0.982965–0.994006 / INCONCLUSIVE / 5%PASS（exact PARITY）；
+CE27实际减少静态BAR且全部正确性/交付门通过，但本轮未通过性能门，不能签同步修正
+带来吞吐收益；原12与全部旧失败/未知/费用保留。
+
+FI保持CANDIDATEd414，失败不自动授权改产品。下一次15min有限只读复核仅复用已捕获
+CE27 runtime trace，区分attention与F32 merge成本，再核当前私有实现与锁定原生源码的
+实际额外工作；不重复原相同P1或采集新profile，不改tile/精度/shape/peer/门槛。
+原F32 partial/最终scale+sole cast、CE26输出所有权、准确页/short-K、原生命周期/输出
+同步与三形状全部保留。只有material消费缺口和精确源码机制两把钥匙成立，才固定
+一个有限FIX并合法回AUDITED。当前无新FIX、无新运行/性能资格，G04/G05未关闭，
+完整goal3/10，G06不实施。沿用户常设授权追加有限检查点并保累计，预算不重置。

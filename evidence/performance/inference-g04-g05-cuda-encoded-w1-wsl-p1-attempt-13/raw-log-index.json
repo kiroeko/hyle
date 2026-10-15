@@ -1,0 +1,1779 @@
+{
+  "entries": [
+    {
+      "executable_id": "cuda-encoded-primary",
+      "file": {
+        "path": "/root/hyle-scratch/compute-unified/g04-cuda-encoded-p1-output-13/raw/n-15/product-primary-candidate-first-candidate-allocation-first-cuda-encoded-primary-run-01.log",
+        "sha256": "f654cc59364e83cb371b1d7f255975b8f10fd8438ce1fa204c1ce1da61836cfe"
+      },
+      "kind": "product",
+      "run": 1,
+      "run_nonce": "24b8c8444d82321619e509319afd4e82",
+      "stage": 15,
+      "stratum_id": "primary-candidate-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "cuda-encoded-primary",
+      "file": {
+        "path": "/root/hyle-scratch/compute-unified/g04-cuda-encoded-p1-output-13/raw/n-15/product-primary-candidate-first-candidate-allocation-first-cuda-encoded-primary-run-02.log",
+        "sha256": "769619b93f305189933343e57c3d640c1d1ce927dc801051f564a4021e0edfac"
+      },
+      "kind": "product",
+      "run": 2,
+      "run_nonce": "970d5c34f3ad9a09ed0b9cef2c4a9c25",
+      "stage": 15,
+      "stratum_id": "primary-candidate-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "cuda-encoded-primary",
+      "file": {
+        "path": "/root/hyle-scratch/compute-unified/g04-cuda-encoded-p1-output-13/raw/n-15/product-primary-candidate-first-candidate-allocation-first-cuda-encoded-primary-run-03.log",
+        "sha256": "036081f76f49848aa4c3f347f04b64a88f77727edd033c0e34373827d52cf43d"
+      },
+      "kind": "product",
+      "run": 3,
+      "run_nonce": "89066eda9befd52178a56c2e93a6463e",
+      "stage": 15,
+      "stratum_id": "primary-candidate-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "cuda-encoded-primary",
+      "file": {
+        "path": "/root/hyle-scratch/compute-unified/g04-cuda-encoded-p1-output-13/raw/n-15/product-primary-candidate-first-candidate-allocation-first-cuda-encoded-primary-run-04.log",
+        "sha256": "44b86b795992fbe248030c2935b38c3264b1e682f6bafe831542c1a364ac5b02"
+      },
+      "kind": "product",
+      "run": 4,
+      "run_nonce": "5e50542fbe93fdeb0a91b8c0217649c3",
+      "stage": 15,
+      "stratum_id": "primary-candidate-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "cuda-encoded-primary",
+      "file": {
+        "path": "/root/hyle-scratch/compute-unified/g04-cuda-encoded-p1-output-13/raw/n-15/product-primary-candidate-first-candidate-allocation-first-cuda-encoded-primary-run-05.log",
+        "sha256": "d6737fccc2f3a751340aeefcd64ab7721193dde5b1ef54797c57b665179c4b70"
+      },
+      "kind": "product",
+      "run": 5,
+      "run_nonce": "ed7bf1148e9b44cc5413ebf65f51d1c6",
+      "stage": 15,
+      "stratum_id": "primary-candidate-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "cuda-encoded-primary",
+      "file": {
+        "path": "/root/hyle-scratch/compute-unified/g04-cuda-encoded-p1-output-13/raw/n-15/product-primary-candidate-first-candidate-allocation-first-cuda-encoded-primary-run-06.log",
+        "sha256": "be64fcc4ad2e12a4df70f2d2f77f25cbd834f3b445ba65f5099949948309302f"
+      },
+      "kind": "product",
+      "run": 6,
+      "run_nonce": "7d1cd7064687fa500a8cb6a684a18118",
+      "stage": 15,
+      "stratum_id": "primary-candidate-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "cuda-encoded-primary",
+      "file": {
+        "path": "/root/hyle-scratch/compute-unified/g04-cuda-encoded-p1-output-13/raw/n-15/product-primary-candidate-first-candidate-allocation-first-cuda-encoded-primary-run-07.log",
+        "sha256": "e27251bd073fa01ad5b30810b7563b0c4abdfeed708fcc54f6af258cbd3bc000"
+      },
+      "kind": "product",
+      "run": 7,
+      "run_nonce": "58bc45f1b33ce0c2a687c1e9f079a5a1",
+      "stage": 15,
+      "stratum_id": "primary-candidate-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "cuda-encoded-primary",
+      "file": {
+        "path": "/root/hyle-scratch/compute-unified/g04-cuda-encoded-p1-output-13/raw/n-15/product-primary-candidate-first-candidate-allocation-first-cuda-encoded-primary-run-08.log",
+        "sha256": "6aab3665d0bd106944ef6858eb718fdf7580dfa1ba5510459f5c11440d9689af"
+      },
+      "kind": "product",
+      "run": 8,
+      "run_nonce": "df089dd11870f9d3059155dc8107988f",
+      "stage": 15,
+      "stratum_id": "primary-candidate-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "cuda-encoded-primary",
+      "file": {
+        "path": "/root/hyle-scratch/compute-unified/g04-cuda-encoded-p1-output-13/raw/n-15/product-primary-candidate-first-candidate-allocation-first-cuda-encoded-primary-run-09.log",
+        "sha256": "0d3ba0a4d7c6d462f3b1795cb229ab46a3c317e8ff7a3e20e2e143f50738f6c2"
+      },
+      "kind": "product",
+      "run": 9,
+      "run_nonce": "330737b605795b2ff4cd074ab02cbbf2",
+      "stage": 15,
+      "stratum_id": "primary-candidate-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "cuda-encoded-primary",
+      "file": {
+        "path": "/root/hyle-scratch/compute-unified/g04-cuda-encoded-p1-output-13/raw/n-15/product-primary-candidate-first-candidate-allocation-first-cuda-encoded-primary-run-10.log",
+        "sha256": "439f028a936cc04208a3cdf5f7e4fb0a47e8bc1d874eaf92de1ade93a172477a"
+      },
+      "kind": "product",
+      "run": 10,
+      "run_nonce": "72335278052f13c55d3549d9f964fee8",
+      "stage": 15,
+      "stratum_id": "primary-candidate-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "cuda-encoded-primary",
+      "file": {
+        "path": "/root/hyle-scratch/compute-unified/g04-cuda-encoded-p1-output-13/raw/n-15/product-primary-candidate-first-candidate-allocation-first-cuda-encoded-primary-run-11.log",
+        "sha256": "25940f88e24c4a06ba7e454c54bfed7c74b2e9be84563986320b5d3e118e76ce"
+      },
+      "kind": "product",
+      "run": 11,
+      "run_nonce": "d61a9019c2a68d78c19dd1c9fe5e9fe5",
+      "stage": 15,
+      "stratum_id": "primary-candidate-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "cuda-encoded-primary",
+      "file": {
+        "path": "/root/hyle-scratch/compute-unified/g04-cuda-encoded-p1-output-13/raw/n-15/product-primary-candidate-first-candidate-allocation-first-cuda-encoded-primary-run-12.log",
+        "sha256": "690462337998de31f5abda23c26058cfd9862c213e11ca06f50ebbfc6daf149f"
+      },
+      "kind": "product",
+      "run": 12,
+      "run_nonce": "00bac1994fc62a148268bfaf6ec104f8",
+      "stage": 15,
+      "stratum_id": "primary-candidate-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "cuda-encoded-primary",
+      "file": {
+        "path": "/root/hyle-scratch/compute-unified/g04-cuda-encoded-p1-output-13/raw/n-15/product-primary-candidate-first-candidate-allocation-first-cuda-encoded-primary-run-13.log",
+        "sha256": "30742401b701a799d10684861a836f53a2e93953de76329e767f9f36a58a83a7"
+      },
+      "kind": "product",
+      "run": 13,
+      "run_nonce": "5a8db4b94d723478391d5f9919b2dddc",
+      "stage": 15,
+      "stratum_id": "primary-candidate-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "cuda-encoded-primary",
+      "file": {
+        "path": "/root/hyle-scratch/compute-unified/g04-cuda-encoded-p1-output-13/raw/n-15/product-primary-candidate-first-candidate-allocation-first-cuda-encoded-primary-run-14.log",
+        "sha256": "8a54d6f67b5e8cebe6c8cb4e8ebe37031389daf9bd188e6679bb69820cdd4095"
+      },
+      "kind": "product",
+      "run": 14,
+      "run_nonce": "98588630794468f2216218fb060e15f5",
+      "stage": 15,
+      "stratum_id": "primary-candidate-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "cuda-encoded-primary",
+      "file": {
+        "path": "/root/hyle-scratch/compute-unified/g04-cuda-encoded-p1-output-13/raw/n-15/product-primary-candidate-first-candidate-allocation-first-cuda-encoded-primary-run-15.log",
+        "sha256": "bae7c01e1c3a0987944858551d68ef0d6ad67bd3ea87f9f563808dbe35f23f5b"
+      },
+      "kind": "product",
+      "run": 15,
+      "run_nonce": "9271b3b5cf78fc5d5e9fbfb8a2b5785c",
+      "stage": 15,
+      "stratum_id": "primary-candidate-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "cuda-encoded-primary",
+      "file": {
+        "path": "/root/hyle-scratch/compute-unified/g04-cuda-encoded-p1-output-13/raw/n-15/product-primary-candidate-first-peer-allocation-first-cuda-encoded-primary-run-01.log",
+        "sha256": "4d9b259556f321a271803fb7bd7409bc67aace4eedf5cc3188dd9cea14a39e56"
+      },
+      "kind": "product",
+      "run": 1,
+      "run_nonce": "4338a6c98072710767c634a68176d7e9",
+      "stage": 15,
+      "stratum_id": "primary-candidate-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "cuda-encoded-primary",
+      "file": {
+        "path": "/root/hyle-scratch/compute-unified/g04-cuda-encoded-p1-output-13/raw/n-15/product-primary-candidate-first-peer-allocation-first-cuda-encoded-primary-run-02.log",
+        "sha256": "925af057c5171240d573b395c6964e21b673fd426aa413b224ff83eb11463e2f"
+      },
+      "kind": "product",
+      "run": 2,
+      "run_nonce": "ff3780d591c365a067b9bb05a4fa98f7",
+      "stage": 15,
+      "stratum_id": "primary-candidate-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "cuda-encoded-primary",
+      "file": {
+        "path": "/root/hyle-scratch/compute-unified/g04-cuda-encoded-p1-output-13/raw/n-15/product-primary-candidate-first-peer-allocation-first-cuda-encoded-primary-run-03.log",
+        "sha256": "5645cf6d4cee4d96246445f09a88782d5fdcf58f7289f0dea4780fe00d75cccb"
+      },
+      "kind": "product",
+      "run": 3,
+      "run_nonce": "c962f47047e5180c88c845cf4854e6e2",
+      "stage": 15,
+      "stratum_id": "primary-candidate-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "cuda-encoded-primary",
+      "file": {
+        "path": "/root/hyle-scratch/compute-unified/g04-cuda-encoded-p1-output-13/raw/n-15/product-primary-candidate-first-peer-allocation-first-cuda-encoded-primary-run-04.log",
+        "sha256": "11c690bc5c3a9d9d7c8dd85c311bfed8b02f48594eaeb4f4ca34033945793a27"
+      },
+      "kind": "product",
+      "run": 4,
+      "run_nonce": "103e96235dba9d778e074d64dfafc971",
+      "stage": 15,
+      "stratum_id": "primary-candidate-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "cuda-encoded-primary",
+      "file": {
+        "path": "/root/hyle-scratch/compute-unified/g04-cuda-encoded-p1-output-13/raw/n-15/product-primary-candidate-first-peer-allocation-first-cuda-encoded-primary-run-05.log",
+        "sha256": "27052bef380d2b9f3aa32a2066c47b29263eef4c701c7d2abeae7a179afba009"
+      },
+      "kind": "product",
+      "run": 5,
+      "run_nonce": "2a96cf99e86ddf786c169c5acc308844",
+      "stage": 15,
+      "stratum_id": "primary-candidate-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "cuda-encoded-primary",
+      "file": {
+        "path": "/root/hyle-scratch/compute-unified/g04-cuda-encoded-p1-output-13/raw/n-15/product-primary-candidate-first-peer-allocation-first-cuda-encoded-primary-run-06.log",
+        "sha256": "253d6a12c34a6a154bdd245bb53c64480ea03bb418cb3f470cc93243ee9b9874"
+      },
+      "kind": "product",
+      "run": 6,
+      "run_nonce": "28efab0779e411b0c9a86788724c1d54",
+      "stage": 15,
+      "stratum_id": "primary-candidate-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "cuda-encoded-primary",
+      "file": {
+        "path": "/root/hyle-scratch/compute-unified/g04-cuda-encoded-p1-output-13/raw/n-15/product-primary-candidate-first-peer-allocation-first-cuda-encoded-primary-run-07.log",
+        "sha256": "b5d682ea0c93904f78fb325d8b8f4afe97a58e0c1246b1af5d7e6d350eee411b"
+      },
+      "kind": "product",
+      "run": 7,
+      "run_nonce": "5a6b08a62ffa4856befd194a1b4af13c",
+      "stage": 15,
+      "stratum_id": "primary-candidate-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "cuda-encoded-primary",
+      "file": {
+        "path": "/root/hyle-scratch/compute-unified/g04-cuda-encoded-p1-output-13/raw/n-15/product-primary-candidate-first-peer-allocation-first-cuda-encoded-primary-run-08.log",
+        "sha256": "dc641fad3b10250dafdcf9314ab82d9843730c6f39a509c80d1ccbeacdae3c48"
+      },
+      "kind": "product",
+      "run": 8,
+      "run_nonce": "73ea81e77f513d2ba8115101906566a3",
+      "stage": 15,
+      "stratum_id": "primary-candidate-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "cuda-encoded-primary",
+      "file": {
+        "path": "/root/hyle-scratch/compute-unified/g04-cuda-encoded-p1-output-13/raw/n-15/product-primary-candidate-first-peer-allocation-first-cuda-encoded-primary-run-09.log",
+        "sha256": "d402814db40d6af10c2a75725147731c989e8534a82ac497a1eb42b252302f80"
+      },
+      "kind": "product",
+      "run": 9,
+      "run_nonce": "b13c04a0922ded40dae00fe067924168",
+      "stage": 15,
+      "stratum_id": "primary-candidate-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "cuda-encoded-primary",
+      "file": {
+        "path": "/root/hyle-scratch/compute-unified/g04-cuda-encoded-p1-output-13/raw/n-15/product-primary-candidate-first-peer-allocation-first-cuda-encoded-primary-run-10.log",
+        "sha256": "97a19c67e6321b75f726902b061ee17d0dd1686cf6cfc267058a9fde8920c3c8"
+      },
+      "kind": "product",
+      "run": 10,
+      "run_nonce": "75e7edb4403ea92d2d6c72fdb5fb9ac4",
+      "stage": 15,
+      "stratum_id": "primary-candidate-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "cuda-encoded-primary",
+      "file": {
+        "path": "/root/hyle-scratch/compute-unified/g04-cuda-encoded-p1-output-13/raw/n-15/product-primary-candidate-first-peer-allocation-first-cuda-encoded-primary-run-11.log",
+        "sha256": "cc022f20a0dabddccd69703194b0d86f4afa9035717491ba079048e9223339ab"
+      },
+      "kind": "product",
+      "run": 11,
+      "run_nonce": "f46e892c32b2e41090a02cd26d3e0884",
+      "stage": 15,
+      "stratum_id": "primary-candidate-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "cuda-encoded-primary",
+      "file": {
+        "path": "/root/hyle-scratch/compute-unified/g04-cuda-encoded-p1-output-13/raw/n-15/product-primary-candidate-first-peer-allocation-first-cuda-encoded-primary-run-12.log",
+        "sha256": "45569eb4edd8845fbbdd525bf7eb4f73e3422bc7d4f9679e3669fffaba6d0330"
+      },
+      "kind": "product",
+      "run": 12,
+      "run_nonce": "bee56e6a60f7519c559c7d8f0c9dd336",
+      "stage": 15,
+      "stratum_id": "primary-candidate-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "cuda-encoded-primary",
+      "file": {
+        "path": "/root/hyle-scratch/compute-unified/g04-cuda-encoded-p1-output-13/raw/n-15/product-primary-candidate-first-peer-allocation-first-cuda-encoded-primary-run-13.log",
+        "sha256": "ecbd81a18b2db9f4bb308f1c94cd24987c2464d809751db636a28b4caaef1245"
+      },
+      "kind": "product",
+      "run": 13,
+      "run_nonce": "ecccbc780c4b82daa56b45b742506b35",
+      "stage": 15,
+      "stratum_id": "primary-candidate-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "cuda-encoded-primary",
+      "file": {
+        "path": "/root/hyle-scratch/compute-unified/g04-cuda-encoded-p1-output-13/raw/n-15/product-primary-candidate-first-peer-allocation-first-cuda-encoded-primary-run-14.log",
+        "sha256": "9d82ee75449f1b255618168046ab1406f6dc92cb12178e941add91ccbe73b906"
+      },
+      "kind": "product",
+      "run": 14,
+      "run_nonce": "fd2ba166ed91542c48a61ee695c85623",
+      "stage": 15,
+      "stratum_id": "primary-candidate-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "cuda-encoded-primary",
+      "file": {
+        "path": "/root/hyle-scratch/compute-unified/g04-cuda-encoded-p1-output-13/raw/n-15/product-primary-candidate-first-peer-allocation-first-cuda-encoded-primary-run-15.log",
+        "sha256": "873dd089a483ce0379543018e56167a1f9d379262084b37a8ae14ad79ca95e48"
+      },
+      "kind": "product",
+      "run": 15,
+      "run_nonce": "5d0a3f84373421e97f2318311c7ef2b9",
+      "stage": 15,
+      "stratum_id": "primary-candidate-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "cuda-encoded-primary",
+      "file": {
+        "path": "/root/hyle-scratch/compute-unified/g04-cuda-encoded-p1-output-13/raw/n-15/product-primary-peer-first-candidate-allocation-first-cuda-encoded-primary-run-01.log",
+        "sha256": "86eebe2aed48ba33490d231ce73586b564a3d802f776214b238b091eaba53c19"
+      },
+      "kind": "product",
+      "run": 1,
+      "run_nonce": "47b4e5046a017cad0ac2f4fe2341da8f",
+      "stage": 15,
+      "stratum_id": "primary-peer-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "cuda-encoded-primary",
+      "file": {
+        "path": "/root/hyle-scratch/compute-unified/g04-cuda-encoded-p1-output-13/raw/n-15/product-primary-peer-first-candidate-allocation-first-cuda-encoded-primary-run-02.log",
+        "sha256": "ff14f209a7529b27cae3f750ead20b28480f71a99ee6044e09146f5807092218"
+      },
+      "kind": "product",
+      "run": 2,
+      "run_nonce": "4c622b39ed86561bceddacceb5768bc4",
+      "stage": 15,
+      "stratum_id": "primary-peer-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "cuda-encoded-primary",
+      "file": {
+        "path": "/root/hyle-scratch/compute-unified/g04-cuda-encoded-p1-output-13/raw/n-15/product-primary-peer-first-candidate-allocation-first-cuda-encoded-primary-run-03.log",
+        "sha256": "64083f8b1f87938bbc75b248b58b5e43a1c75ad7dd80b0594771469e83e9da52"
+      },
+      "kind": "product",
+      "run": 3,
+      "run_nonce": "344ead71a9a472644a677d71e80b564f",
+      "stage": 15,
+      "stratum_id": "primary-peer-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "cuda-encoded-primary",
+      "file": {
+        "path": "/root/hyle-scratch/compute-unified/g04-cuda-encoded-p1-output-13/raw/n-15/product-primary-peer-first-candidate-allocation-first-cuda-encoded-primary-run-04.log",
+        "sha256": "32a4ef6b06cbe62651b34f2d2f8ff2dfc0a236804873737547af1f5bce19fa6f"
+      },
+      "kind": "product",
+      "run": 4,
+      "run_nonce": "70db32c0d8a87793e380f62b13637a3f",
+      "stage": 15,
+      "stratum_id": "primary-peer-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "cuda-encoded-primary",
+      "file": {
+        "path": "/root/hyle-scratch/compute-unified/g04-cuda-encoded-p1-output-13/raw/n-15/product-primary-peer-first-candidate-allocation-first-cuda-encoded-primary-run-05.log",
+        "sha256": "de565a764aa211adfe7f0e96080cc84b103c406b4a767e69a3e0be84616d4426"
+      },
+      "kind": "product",
+      "run": 5,
+      "run_nonce": "19856aad6be33bee1af980131442d7c8",
+      "stage": 15,
+      "stratum_id": "primary-peer-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "cuda-encoded-primary",
+      "file": {
+        "path": "/root/hyle-scratch/compute-unified/g04-cuda-encoded-p1-output-13/raw/n-15/product-primary-peer-first-candidate-allocation-first-cuda-encoded-primary-run-06.log",
+        "sha256": "f82f47afdce90fbcf7bf3b02dded9fe66013b1dba97d228b82f722f553b06f7f"
+      },
+      "kind": "product",
+      "run": 6,
+      "run_nonce": "6982e1d8a49ceac9e47d886797ec6018",
+      "stage": 15,
+      "stratum_id": "primary-peer-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "cuda-encoded-primary",
+      "file": {
+        "path": "/root/hyle-scratch/compute-unified/g04-cuda-encoded-p1-output-13/raw/n-15/product-primary-peer-first-candidate-allocation-first-cuda-encoded-primary-run-07.log",
+        "sha256": "f782037a19e1ef83a18aeca94befc39bbe09d7bba6675532cda3acf6da059554"
+      },
+      "kind": "product",
+      "run": 7,
+      "run_nonce": "55376da363c6c854a633084b588b3eab",
+      "stage": 15,
+      "stratum_id": "primary-peer-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "cuda-encoded-primary",
+      "file": {
+        "path": "/root/hyle-scratch/compute-unified/g04-cuda-encoded-p1-output-13/raw/n-15/product-primary-peer-first-candidate-allocation-first-cuda-encoded-primary-run-08.log",
+        "sha256": "51920e9eba8c87f711235baa609aa21ea62b3ff2f1bcd280d4e452dca2ad9f03"
+      },
+      "kind": "product",
+      "run": 8,
+      "run_nonce": "faa1195421cd2f6bc9e78e0a8d881e93",
+      "stage": 15,
+      "stratum_id": "primary-peer-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "cuda-encoded-primary",
+      "file": {
+        "path": "/root/hyle-scratch/compute-unified/g04-cuda-encoded-p1-output-13/raw/n-15/product-primary-peer-first-candidate-allocation-first-cuda-encoded-primary-run-09.log",
+        "sha256": "16fd6d8fc6df10ae55c07e94dfd5943ac20cf448933f0985dff339460e11f313"
+      },
+      "kind": "product",
+      "run": 9,
+      "run_nonce": "a4af65e7cf5fe893ca84f131c94c1b93",
+      "stage": 15,
+      "stratum_id": "primary-peer-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "cuda-encoded-primary",
+      "file": {
+        "path": "/root/hyle-scratch/compute-unified/g04-cuda-encoded-p1-output-13/raw/n-15/product-primary-peer-first-candidate-allocation-first-cuda-encoded-primary-run-10.log",
+        "sha256": "4edac6f43c68359e92b0b375f8122514e9e375faee19646da4254cdff01f827b"
+      },
+      "kind": "product",
+      "run": 10,
+      "run_nonce": "99e479c752fb55a1bc19b526e98c4c17",
+      "stage": 15,
+      "stratum_id": "primary-peer-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "cuda-encoded-primary",
+      "file": {
+        "path": "/root/hyle-scratch/compute-unified/g04-cuda-encoded-p1-output-13/raw/n-15/product-primary-peer-first-candidate-allocation-first-cuda-encoded-primary-run-11.log",
+        "sha256": "eae7172fd42fe463ca7d8ca1f4bd812ee672a56fc0b203b6b8a63cb23d6608cf"
+      },
+      "kind": "product",
+      "run": 11,
+      "run_nonce": "94d90b4a8d68a4be868d9e8aca57f11f",
+      "stage": 15,
+      "stratum_id": "primary-peer-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "cuda-encoded-primary",
+      "file": {
+        "path": "/root/hyle-scratch/compute-unified/g04-cuda-encoded-p1-output-13/raw/n-15/product-primary-peer-first-candidate-allocation-first-cuda-encoded-primary-run-12.log",
+        "sha256": "54c090d60b312ce844332d65b016859651e89fe4ea344f5a0570eed110bc60c2"
+      },
+      "kind": "product",
+      "run": 12,
+      "run_nonce": "ea712d0b0a7f815b42a34d34c5b57fe4",
+      "stage": 15,
+      "stratum_id": "primary-peer-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "cuda-encoded-primary",
+      "file": {
+        "path": "/root/hyle-scratch/compute-unified/g04-cuda-encoded-p1-output-13/raw/n-15/product-primary-peer-first-candidate-allocation-first-cuda-encoded-primary-run-13.log",
+        "sha256": "1800aba2abfff5a0674b185e3c099bbd2fee41b1184381dc310e641ac2a2d160"
+      },
+      "kind": "product",
+      "run": 13,
+      "run_nonce": "2c65df23dabfa2593bf8e7c07b54d05e",
+      "stage": 15,
+      "stratum_id": "primary-peer-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "cuda-encoded-primary",
+      "file": {
+        "path": "/root/hyle-scratch/compute-unified/g04-cuda-encoded-p1-output-13/raw/n-15/product-primary-peer-first-candidate-allocation-first-cuda-encoded-primary-run-14.log",
+        "sha256": "8a2ce650842366541749b63dfc9917e59f2714b7d7a47e926d47c7a3e462d6d1"
+      },
+      "kind": "product",
+      "run": 14,
+      "run_nonce": "103e90bf8f32c0d3586dd66e4fdaa288",
+      "stage": 15,
+      "stratum_id": "primary-peer-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "cuda-encoded-primary",
+      "file": {
+        "path": "/root/hyle-scratch/compute-unified/g04-cuda-encoded-p1-output-13/raw/n-15/product-primary-peer-first-candidate-allocation-first-cuda-encoded-primary-run-15.log",
+        "sha256": "be3fe94c5a3270b1efa88a9fd72abec86a3c6d5fcc781def982e53aaead6d551"
+      },
+      "kind": "product",
+      "run": 15,
+      "run_nonce": "8537b89f5cc5a693340c6740b4dc6075",
+      "stage": 15,
+      "stratum_id": "primary-peer-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "cuda-encoded-primary",
+      "file": {
+        "path": "/root/hyle-scratch/compute-unified/g04-cuda-encoded-p1-output-13/raw/n-15/product-primary-peer-first-peer-allocation-first-cuda-encoded-primary-run-01.log",
+        "sha256": "3daff9a8ba483a0b8703f0cba078f9d1cba6642177b02fc89a6c0e5734a0e5db"
+      },
+      "kind": "product",
+      "run": 1,
+      "run_nonce": "db51063bf017b38f5362a8b7387e040a",
+      "stage": 15,
+      "stratum_id": "primary-peer-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "cuda-encoded-primary",
+      "file": {
+        "path": "/root/hyle-scratch/compute-unified/g04-cuda-encoded-p1-output-13/raw/n-15/product-primary-peer-first-peer-allocation-first-cuda-encoded-primary-run-02.log",
+        "sha256": "4168b28edf873a1062ca8be21d1312523730448250dd2be073524ee387ce9c41"
+      },
+      "kind": "product",
+      "run": 2,
+      "run_nonce": "cef2f889ecc9474ba3b480bbbc05d6a8",
+      "stage": 15,
+      "stratum_id": "primary-peer-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "cuda-encoded-primary",
+      "file": {
+        "path": "/root/hyle-scratch/compute-unified/g04-cuda-encoded-p1-output-13/raw/n-15/product-primary-peer-first-peer-allocation-first-cuda-encoded-primary-run-03.log",
+        "sha256": "bdbfe401c938e1cb59add0f04aa65b930316a1b6207da59f90659a0076c16dfc"
+      },
+      "kind": "product",
+      "run": 3,
+      "run_nonce": "90f8b381b3ad9798394d6fde47e0f682",
+      "stage": 15,
+      "stratum_id": "primary-peer-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "cuda-encoded-primary",
+      "file": {
+        "path": "/root/hyle-scratch/compute-unified/g04-cuda-encoded-p1-output-13/raw/n-15/product-primary-peer-first-peer-allocation-first-cuda-encoded-primary-run-04.log",
+        "sha256": "f2e94886f57cdc2dd069ae3e8b36433b03ef208ebc0ab42809cc78ff443d9484"
+      },
+      "kind": "product",
+      "run": 4,
+      "run_nonce": "eb771b224fdc9e3f7ff9a534b706580a",
+      "stage": 15,
+      "stratum_id": "primary-peer-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "cuda-encoded-primary",
+      "file": {
+        "path": "/root/hyle-scratch/compute-unified/g04-cuda-encoded-p1-output-13/raw/n-15/product-primary-peer-first-peer-allocation-first-cuda-encoded-primary-run-05.log",
+        "sha256": "1a0a5660268fe4422cf953f43e9e8f16076210e68ae1afe9911671834b19049c"
+      },
+      "kind": "product",
+      "run": 5,
+      "run_nonce": "e8e9064cfc9b86f462312b8e40873f47",
+      "stage": 15,
+      "stratum_id": "primary-peer-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "cuda-encoded-primary",
+      "file": {
+        "path": "/root/hyle-scratch/compute-unified/g04-cuda-encoded-p1-output-13/raw/n-15/product-primary-peer-first-peer-allocation-first-cuda-encoded-primary-run-06.log",
+        "sha256": "c1f98c8ff3e1334094a5254f712f1de189040305b192529a796589af66370fbf"
+      },
+      "kind": "product",
+      "run": 6,
+      "run_nonce": "e3237e5e5502a0744dd789d5b25f325b",
+      "stage": 15,
+      "stratum_id": "primary-peer-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "cuda-encoded-primary",
+      "file": {
+        "path": "/root/hyle-scratch/compute-unified/g04-cuda-encoded-p1-output-13/raw/n-15/product-primary-peer-first-peer-allocation-first-cuda-encoded-primary-run-07.log",
+        "sha256": "fd98bca7521cde172a48e995787ced7b566e82650c0bfffd6249abe89cd18cf6"
+      },
+      "kind": "product",
+      "run": 7,
+      "run_nonce": "c6e4811493371f18a47eac425f1eb66e",
+      "stage": 15,
+      "stratum_id": "primary-peer-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "cuda-encoded-primary",
+      "file": {
+        "path": "/root/hyle-scratch/compute-unified/g04-cuda-encoded-p1-output-13/raw/n-15/product-primary-peer-first-peer-allocation-first-cuda-encoded-primary-run-08.log",
+        "sha256": "c0d0ace8993a636676e99b2cfbba24a7b35c8c273fa8df6ca0a49215b5efe7e1"
+      },
+      "kind": "product",
+      "run": 8,
+      "run_nonce": "3f8843fc395547da41bc3cfb1adf0dcd",
+      "stage": 15,
+      "stratum_id": "primary-peer-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "cuda-encoded-primary",
+      "file": {
+        "path": "/root/hyle-scratch/compute-unified/g04-cuda-encoded-p1-output-13/raw/n-15/product-primary-peer-first-peer-allocation-first-cuda-encoded-primary-run-09.log",
+        "sha256": "467c01a0675305f12157451d698e42079e4f12cfb20ff8f638d878e1b4232dbd"
+      },
+      "kind": "product",
+      "run": 9,
+      "run_nonce": "71b32422cedb6c660f1bd3e792b7e1e9",
+      "stage": 15,
+      "stratum_id": "primary-peer-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "cuda-encoded-primary",
+      "file": {
+        "path": "/root/hyle-scratch/compute-unified/g04-cuda-encoded-p1-output-13/raw/n-15/product-primary-peer-first-peer-allocation-first-cuda-encoded-primary-run-10.log",
+        "sha256": "fd454648772cfd9682e1e70b9a83415b0adc66db5ac53bac40fc7d1d8a254378"
+      },
+      "kind": "product",
+      "run": 10,
+      "run_nonce": "e40dd7b6ebfd30a8f8b2d55bada23c1d",
+      "stage": 15,
+      "stratum_id": "primary-peer-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "cuda-encoded-primary",
+      "file": {
+        "path": "/root/hyle-scratch/compute-unified/g04-cuda-encoded-p1-output-13/raw/n-15/product-primary-peer-first-peer-allocation-first-cuda-encoded-primary-run-11.log",
+        "sha256": "331bcdb2d65dd26a82ee12107fa915fdded8062ca5c68cca17fd655e3d179f5e"
+      },
+      "kind": "product",
+      "run": 11,
+      "run_nonce": "13be7eef361a5bc3a2834bde6562b326",
+      "stage": 15,
+      "stratum_id": "primary-peer-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "cuda-encoded-primary",
+      "file": {
+        "path": "/root/hyle-scratch/compute-unified/g04-cuda-encoded-p1-output-13/raw/n-15/product-primary-peer-first-peer-allocation-first-cuda-encoded-primary-run-12.log",
+        "sha256": "0efa6039bb632a3ba45471d132dff5cca3fca4dda014041b727d3b34d99fe236"
+      },
+      "kind": "product",
+      "run": 12,
+      "run_nonce": "18700bf720e7d80ebcffe83d8d442d5c",
+      "stage": 15,
+      "stratum_id": "primary-peer-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "cuda-encoded-primary",
+      "file": {
+        "path": "/root/hyle-scratch/compute-unified/g04-cuda-encoded-p1-output-13/raw/n-15/product-primary-peer-first-peer-allocation-first-cuda-encoded-primary-run-13.log",
+        "sha256": "021602b6ad7f9f2e646433a61af137eaec9001b8c6262cf21b25d91d0bde354e"
+      },
+      "kind": "product",
+      "run": 13,
+      "run_nonce": "0c50b110da2705da62b81e443baafbcd",
+      "stage": 15,
+      "stratum_id": "primary-peer-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "cuda-encoded-primary",
+      "file": {
+        "path": "/root/hyle-scratch/compute-unified/g04-cuda-encoded-p1-output-13/raw/n-15/product-primary-peer-first-peer-allocation-first-cuda-encoded-primary-run-14.log",
+        "sha256": "9c7a2d7dd3c7f5a3487e62f527b3758e74d816bd6a5f2c70c186e8b57e6fc0c6"
+      },
+      "kind": "product",
+      "run": 14,
+      "run_nonce": "2db62704f53440aeabc1cd316bec8a53",
+      "stage": 15,
+      "stratum_id": "primary-peer-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "cuda-encoded-primary",
+      "file": {
+        "path": "/root/hyle-scratch/compute-unified/g04-cuda-encoded-p1-output-13/raw/n-15/product-primary-peer-first-peer-allocation-first-cuda-encoded-primary-run-15.log",
+        "sha256": "c96da3995c406812d8588c43af901ace28fef8b8b7b8558f5db02d98fc5570a0"
+      },
+      "kind": "product",
+      "run": 15,
+      "run_nonce": "bd4955d5dd55087c49e9390360508d4a",
+      "stage": 15,
+      "stratum_id": "primary-peer-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "cuda-encoded-placement",
+      "file": {
+        "path": "/root/hyle-scratch/compute-unified/g04-cuda-encoded-p1-output-13/raw/n-15/product-placement-candidate-first-candidate-allocation-first-cuda-encoded-placement-run-01.log",
+        "sha256": "1dd6f9c0750e64c19348c1d24fa5e02158ea352f834152585ca09a03bd6ae0db"
+      },
+      "kind": "product",
+      "run": 1,
+      "run_nonce": "a5ad54d0df0aa6616a773ef21f468a36",
+      "stage": 15,
+      "stratum_id": "placement-candidate-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "cuda-encoded-placement",
+      "file": {
+        "path": "/root/hyle-scratch/compute-unified/g04-cuda-encoded-p1-output-13/raw/n-15/product-placement-candidate-first-candidate-allocation-first-cuda-encoded-placement-run-02.log",
+        "sha256": "981adb3515f192e23812e6142b833cc48c87612564ba8a8c0dedade3f3efe2c3"
+      },
+      "kind": "product",
+      "run": 2,
+      "run_nonce": "406cabc284144ff54c08aff9bcce3556",
+      "stage": 15,
+      "stratum_id": "placement-candidate-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "cuda-encoded-placement",
+      "file": {
+        "path": "/root/hyle-scratch/compute-unified/g04-cuda-encoded-p1-output-13/raw/n-15/product-placement-candidate-first-candidate-allocation-first-cuda-encoded-placement-run-03.log",
+        "sha256": "eb540726c90593c29befc428288e59cf0e330e34110c95175df5d74f74c55f83"
+      },
+      "kind": "product",
+      "run": 3,
+      "run_nonce": "305cf879bb5c51a58a59e7c1e35c1af7",
+      "stage": 15,
+      "stratum_id": "placement-candidate-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "cuda-encoded-placement",
+      "file": {
+        "path": "/root/hyle-scratch/compute-unified/g04-cuda-encoded-p1-output-13/raw/n-15/product-placement-candidate-first-candidate-allocation-first-cuda-encoded-placement-run-04.log",
+        "sha256": "069b4534952f1600eee60bf569606ca023ac289e951d5dc0d8eba239531a77f3"
+      },
+      "kind": "product",
+      "run": 4,
+      "run_nonce": "104c293dc17ddeafa27c8b8cb58f6482",
+      "stage": 15,
+      "stratum_id": "placement-candidate-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "cuda-encoded-placement",
+      "file": {
+        "path": "/root/hyle-scratch/compute-unified/g04-cuda-encoded-p1-output-13/raw/n-15/product-placement-candidate-first-candidate-allocation-first-cuda-encoded-placement-run-05.log",
+        "sha256": "6f7644403584b46b07d29d8e8a171f4cd9ec209f000e01bc0c447f3a082fabb1"
+      },
+      "kind": "product",
+      "run": 5,
+      "run_nonce": "dc52d7f6e33d90db90345a4e4f037393",
+      "stage": 15,
+      "stratum_id": "placement-candidate-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "cuda-encoded-placement",
+      "file": {
+        "path": "/root/hyle-scratch/compute-unified/g04-cuda-encoded-p1-output-13/raw/n-15/product-placement-candidate-first-candidate-allocation-first-cuda-encoded-placement-run-06.log",
+        "sha256": "f02aa00b579b77855226498f5cfc3214e15004828765b8d3b0b680b29985b818"
+      },
+      "kind": "product",
+      "run": 6,
+      "run_nonce": "e2e52cdefeb34b3cb41e13fec403b0cb",
+      "stage": 15,
+      "stratum_id": "placement-candidate-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "cuda-encoded-placement",
+      "file": {
+        "path": "/root/hyle-scratch/compute-unified/g04-cuda-encoded-p1-output-13/raw/n-15/product-placement-candidate-first-candidate-allocation-first-cuda-encoded-placement-run-07.log",
+        "sha256": "caff8a809d5f6a14de97e809838fe25bf7fe8d7533c5d3e8a22225c2bfce3aa1"
+      },
+      "kind": "product",
+      "run": 7,
+      "run_nonce": "66c5f6018dbc1f70b3962050978eeea8",
+      "stage": 15,
+      "stratum_id": "placement-candidate-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "cuda-encoded-placement",
+      "file": {
+        "path": "/root/hyle-scratch/compute-unified/g04-cuda-encoded-p1-output-13/raw/n-15/product-placement-candidate-first-candidate-allocation-first-cuda-encoded-placement-run-08.log",
+        "sha256": "7b7e3492e6f554848d4b83806c28e2170ae53e0c944bda28399896137372f6b4"
+      },
+      "kind": "product",
+      "run": 8,
+      "run_nonce": "41b25ec0bcac5bd6eb58937a31165099",
+      "stage": 15,
+      "stratum_id": "placement-candidate-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "cuda-encoded-placement",
+      "file": {
+        "path": "/root/hyle-scratch/compute-unified/g04-cuda-encoded-p1-output-13/raw/n-15/product-placement-candidate-first-candidate-allocation-first-cuda-encoded-placement-run-09.log",
+        "sha256": "07a3c84f202168d8182df50c4f1ee536e0c4b67c6a3edcf2930c683f168dde80"
+      },
+      "kind": "product",
+      "run": 9,
+      "run_nonce": "1e21bf87f43dd896c1aaf5e0a24c003f",
+      "stage": 15,
+      "stratum_id": "placement-candidate-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "cuda-encoded-placement",
+      "file": {
+        "path": "/root/hyle-scratch/compute-unified/g04-cuda-encoded-p1-output-13/raw/n-15/product-placement-candidate-first-candidate-allocation-first-cuda-encoded-placement-run-10.log",
+        "sha256": "0e3a8b5b17dfb92f8e125730a442734a6408cab5eb6afc7bb88767144c0b28f1"
+      },
+      "kind": "product",
+      "run": 10,
+      "run_nonce": "0e47ced77a2fca00a80281759bbdd894",
+      "stage": 15,
+      "stratum_id": "placement-candidate-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "cuda-encoded-placement",
+      "file": {
+        "path": "/root/hyle-scratch/compute-unified/g04-cuda-encoded-p1-output-13/raw/n-15/product-placement-candidate-first-candidate-allocation-first-cuda-encoded-placement-run-11.log",
+        "sha256": "30d773cd51d241fba82548bd51fa4ee589f17c920a64ee2c26e359bb6d5bf92f"
+      },
+      "kind": "product",
+      "run": 11,
+      "run_nonce": "e4919180bafcb02d1ecf957b57de77c3",
+      "stage": 15,
+      "stratum_id": "placement-candidate-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "cuda-encoded-placement",
+      "file": {
+        "path": "/root/hyle-scratch/compute-unified/g04-cuda-encoded-p1-output-13/raw/n-15/product-placement-candidate-first-candidate-allocation-first-cuda-encoded-placement-run-12.log",
+        "sha256": "14239a0dca843d2abddacc7f15899eaa829f9085f78415f04f094da484a78497"
+      },
+      "kind": "product",
+      "run": 12,
+      "run_nonce": "4dd0232bc7ce7eaea99a0cf46229ced6",
+      "stage": 15,
+      "stratum_id": "placement-candidate-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "cuda-encoded-placement",
+      "file": {
+        "path": "/root/hyle-scratch/compute-unified/g04-cuda-encoded-p1-output-13/raw/n-15/product-placement-candidate-first-candidate-allocation-first-cuda-encoded-placement-run-13.log",
+        "sha256": "59d1d3db143f58558e7238ec2ae6dc67b0a03d1c5f34d283a25e8df8f7473d40"
+      },
+      "kind": "product",
+      "run": 13,
+      "run_nonce": "d8bf65737c1de994dfadc427a885a4ad",
+      "stage": 15,
+      "stratum_id": "placement-candidate-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "cuda-encoded-placement",
+      "file": {
+        "path": "/root/hyle-scratch/compute-unified/g04-cuda-encoded-p1-output-13/raw/n-15/product-placement-candidate-first-candidate-allocation-first-cuda-encoded-placement-run-14.log",
+        "sha256": "542d18ebd4c1eb9ec0182e04bbd8fa6032fc79cc35940e629d9d28c3c4a77628"
+      },
+      "kind": "product",
+      "run": 14,
+      "run_nonce": "cef9097da521e08035597d1d0ba92eda",
+      "stage": 15,
+      "stratum_id": "placement-candidate-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "cuda-encoded-placement",
+      "file": {
+        "path": "/root/hyle-scratch/compute-unified/g04-cuda-encoded-p1-output-13/raw/n-15/product-placement-candidate-first-candidate-allocation-first-cuda-encoded-placement-run-15.log",
+        "sha256": "2e0285354dea1de8274b36cd181251f97760f603fedf0d0db8a18859f990b26c"
+      },
+      "kind": "product",
+      "run": 15,
+      "run_nonce": "f7eb416535ec59b45bb1433eaa8a9785",
+      "stage": 15,
+      "stratum_id": "placement-candidate-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "cuda-encoded-placement",
+      "file": {
+        "path": "/root/hyle-scratch/compute-unified/g04-cuda-encoded-p1-output-13/raw/n-15/product-placement-candidate-first-peer-allocation-first-cuda-encoded-placement-run-01.log",
+        "sha256": "69874085c8a44c4b54802c77dda568ff40d2c01430b6b5bd6acc416e48fb6393"
+      },
+      "kind": "product",
+      "run": 1,
+      "run_nonce": "7033991c3d68c2523a3e50e175a2ae2b",
+      "stage": 15,
+      "stratum_id": "placement-candidate-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "cuda-encoded-placement",
+      "file": {
+        "path": "/root/hyle-scratch/compute-unified/g04-cuda-encoded-p1-output-13/raw/n-15/product-placement-candidate-first-peer-allocation-first-cuda-encoded-placement-run-02.log",
+        "sha256": "2f90e49ebcd704112d903e9160f3a3c769ba60b8832949da5e626f05f1aca73b"
+      },
+      "kind": "product",
+      "run": 2,
+      "run_nonce": "d8f6e8153f93e9c2daf578b49ba71646",
+      "stage": 15,
+      "stratum_id": "placement-candidate-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "cuda-encoded-placement",
+      "file": {
+        "path": "/root/hyle-scratch/compute-unified/g04-cuda-encoded-p1-output-13/raw/n-15/product-placement-candidate-first-peer-allocation-first-cuda-encoded-placement-run-03.log",
+        "sha256": "414b33864a5167700e8dfe078d8395bf6c158eb7a764708d0f861b6957d1bd74"
+      },
+      "kind": "product",
+      "run": 3,
+      "run_nonce": "858b71b2d421c2b16815de67a67ab543",
+      "stage": 15,
+      "stratum_id": "placement-candidate-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "cuda-encoded-placement",
+      "file": {
+        "path": "/root/hyle-scratch/compute-unified/g04-cuda-encoded-p1-output-13/raw/n-15/product-placement-candidate-first-peer-allocation-first-cuda-encoded-placement-run-04.log",
+        "sha256": "719ff1299bae1d0367220f60a46092bf3df1103d673e836f55e40572a93d2fb8"
+      },
+      "kind": "product",
+      "run": 4,
+      "run_nonce": "6dfa362d72bc1d2c5a4f83aefc404ad2",
+      "stage": 15,
+      "stratum_id": "placement-candidate-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "cuda-encoded-placement",
+      "file": {
+        "path": "/root/hyle-scratch/compute-unified/g04-cuda-encoded-p1-output-13/raw/n-15/product-placement-candidate-first-peer-allocation-first-cuda-encoded-placement-run-05.log",
+        "sha256": "113af231c97d741e1c721654218fc3d0873787d1f345051a992a2eb28342df01"
+      },
+      "kind": "product",
+      "run": 5,
+      "run_nonce": "071801757c1197b4c95e8a5e31f6912f",
+      "stage": 15,
+      "stratum_id": "placement-candidate-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "cuda-encoded-placement",
+      "file": {
+        "path": "/root/hyle-scratch/compute-unified/g04-cuda-encoded-p1-output-13/raw/n-15/product-placement-candidate-first-peer-allocation-first-cuda-encoded-placement-run-06.log",
+        "sha256": "19dc5ad811e88116de8f882af03dfa66d8b91be07ec02f0bca155725a7225d33"
+      },
+      "kind": "product",
+      "run": 6,
+      "run_nonce": "a0c51bb9293f9bfcde9a347ca7734ffc",
+      "stage": 15,
+      "stratum_id": "placement-candidate-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "cuda-encoded-placement",
+      "file": {
+        "path": "/root/hyle-scratch/compute-unified/g04-cuda-encoded-p1-output-13/raw/n-15/product-placement-candidate-first-peer-allocation-first-cuda-encoded-placement-run-07.log",
+        "sha256": "23fe312c949a6775fdb856027115a5170461837b805e91021b94c41bfd8bc223"
+      },
+      "kind": "product",
+      "run": 7,
+      "run_nonce": "f7eefd7b6712fb63735016c6bbdcb979",
+      "stage": 15,
+      "stratum_id": "placement-candidate-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "cuda-encoded-placement",
+      "file": {
+        "path": "/root/hyle-scratch/compute-unified/g04-cuda-encoded-p1-output-13/raw/n-15/product-placement-candidate-first-peer-allocation-first-cuda-encoded-placement-run-08.log",
+        "sha256": "f6752fa6fbe79e39afb8969334e1d30051913afe8b8abafb704d8cd2ebeb7f38"
+      },
+      "kind": "product",
+      "run": 8,
+      "run_nonce": "75c525fc83e792fcf4ac585964b165de",
+      "stage": 15,
+      "stratum_id": "placement-candidate-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "cuda-encoded-placement",
+      "file": {
+        "path": "/root/hyle-scratch/compute-unified/g04-cuda-encoded-p1-output-13/raw/n-15/product-placement-candidate-first-peer-allocation-first-cuda-encoded-placement-run-09.log",
+        "sha256": "def38cd006cd126a8dc3862cdb2819bc679b5cadb3976477b6641c6002415145"
+      },
+      "kind": "product",
+      "run": 9,
+      "run_nonce": "6d7416ce1e896f7177908d48ce2c626e",
+      "stage": 15,
+      "stratum_id": "placement-candidate-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "cuda-encoded-placement",
+      "file": {
+        "path": "/root/hyle-scratch/compute-unified/g04-cuda-encoded-p1-output-13/raw/n-15/product-placement-candidate-first-peer-allocation-first-cuda-encoded-placement-run-10.log",
+        "sha256": "ced346c68de4c5e8b006d7eace9ff392f0ad739db13f286e483b762ff287020f"
+      },
+      "kind": "product",
+      "run": 10,
+      "run_nonce": "d63fab35ccfe4bb1ee347a577ee38432",
+      "stage": 15,
+      "stratum_id": "placement-candidate-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "cuda-encoded-placement",
+      "file": {
+        "path": "/root/hyle-scratch/compute-unified/g04-cuda-encoded-p1-output-13/raw/n-15/product-placement-candidate-first-peer-allocation-first-cuda-encoded-placement-run-11.log",
+        "sha256": "7d8d524ac08e5cfc54c287587fa7fab582c6a58f249e2d99418fedbb2c0fb01d"
+      },
+      "kind": "product",
+      "run": 11,
+      "run_nonce": "7b6f3edc8cdaefb24a56413078e09357",
+      "stage": 15,
+      "stratum_id": "placement-candidate-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "cuda-encoded-placement",
+      "file": {
+        "path": "/root/hyle-scratch/compute-unified/g04-cuda-encoded-p1-output-13/raw/n-15/product-placement-candidate-first-peer-allocation-first-cuda-encoded-placement-run-12.log",
+        "sha256": "58e62f829b4c051b0c185b67e9a9abd90bdb1fbe98e92393e1f2656f9a1af1f1"
+      },
+      "kind": "product",
+      "run": 12,
+      "run_nonce": "0dd6d649b031fd55ff21c3eaee86130e",
+      "stage": 15,
+      "stratum_id": "placement-candidate-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "cuda-encoded-placement",
+      "file": {
+        "path": "/root/hyle-scratch/compute-unified/g04-cuda-encoded-p1-output-13/raw/n-15/product-placement-candidate-first-peer-allocation-first-cuda-encoded-placement-run-13.log",
+        "sha256": "68666e3944705a8c94ec66b951fbc62f37f2d63c2797cefc1d450e3608d7b9d3"
+      },
+      "kind": "product",
+      "run": 13,
+      "run_nonce": "7fe240b8e49a874015657841f250d18b",
+      "stage": 15,
+      "stratum_id": "placement-candidate-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "cuda-encoded-placement",
+      "file": {
+        "path": "/root/hyle-scratch/compute-unified/g04-cuda-encoded-p1-output-13/raw/n-15/product-placement-candidate-first-peer-allocation-first-cuda-encoded-placement-run-14.log",
+        "sha256": "7a005d139436c1f10aaeae9f80c019091931eca0c503fe9591d43aa5a5cb2bed"
+      },
+      "kind": "product",
+      "run": 14,
+      "run_nonce": "96d99987054ed9f5f4e538fb630edc57",
+      "stage": 15,
+      "stratum_id": "placement-candidate-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "cuda-encoded-placement",
+      "file": {
+        "path": "/root/hyle-scratch/compute-unified/g04-cuda-encoded-p1-output-13/raw/n-15/product-placement-candidate-first-peer-allocation-first-cuda-encoded-placement-run-15.log",
+        "sha256": "460e953d6120961fab7a806bf28fe33ed629d0eac2f536d93d98681e9ae16466"
+      },
+      "kind": "product",
+      "run": 15,
+      "run_nonce": "310e8c3d4bae865285c9f760437313d6",
+      "stage": 15,
+      "stratum_id": "placement-candidate-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "cuda-encoded-placement",
+      "file": {
+        "path": "/root/hyle-scratch/compute-unified/g04-cuda-encoded-p1-output-13/raw/n-15/product-placement-peer-first-candidate-allocation-first-cuda-encoded-placement-run-01.log",
+        "sha256": "54a824038a04d358c95be1c637e56f810865cd117945dcad062bb2bca34aea3b"
+      },
+      "kind": "product",
+      "run": 1,
+      "run_nonce": "16baf55062425e847778a6a909db5673",
+      "stage": 15,
+      "stratum_id": "placement-peer-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "cuda-encoded-placement",
+      "file": {
+        "path": "/root/hyle-scratch/compute-unified/g04-cuda-encoded-p1-output-13/raw/n-15/product-placement-peer-first-candidate-allocation-first-cuda-encoded-placement-run-02.log",
+        "sha256": "5aec149d51cc9af8b0e413e07c4d135d4985e284a63697e6fffa1a4e105de303"
+      },
+      "kind": "product",
+      "run": 2,
+      "run_nonce": "3754a19d071543b9212d64948785d444",
+      "stage": 15,
+      "stratum_id": "placement-peer-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "cuda-encoded-placement",
+      "file": {
+        "path": "/root/hyle-scratch/compute-unified/g04-cuda-encoded-p1-output-13/raw/n-15/product-placement-peer-first-candidate-allocation-first-cuda-encoded-placement-run-03.log",
+        "sha256": "8df810ec1219a03fa620f0fca521010b4142e6dab5a6ea1410f76a34431ab55a"
+      },
+      "kind": "product",
+      "run": 3,
+      "run_nonce": "bea0b84489d58bca19084153773a1fbe",
+      "stage": 15,
+      "stratum_id": "placement-peer-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "cuda-encoded-placement",
+      "file": {
+        "path": "/root/hyle-scratch/compute-unified/g04-cuda-encoded-p1-output-13/raw/n-15/product-placement-peer-first-candidate-allocation-first-cuda-encoded-placement-run-04.log",
+        "sha256": "4a25612d3e5a516e522e21627623745a6450c0e392a4519f7570e244fc8af5ee"
+      },
+      "kind": "product",
+      "run": 4,
+      "run_nonce": "37366309468455f4eb6d573a01cecb23",
+      "stage": 15,
+      "stratum_id": "placement-peer-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "cuda-encoded-placement",
+      "file": {
+        "path": "/root/hyle-scratch/compute-unified/g04-cuda-encoded-p1-output-13/raw/n-15/product-placement-peer-first-candidate-allocation-first-cuda-encoded-placement-run-05.log",
+        "sha256": "f7047468c5afaebbf8378d5ebc65726c54829707c58282fbc37f3031f24eb170"
+      },
+      "kind": "product",
+      "run": 5,
+      "run_nonce": "775fa9a8a9be7b14ee2bc75d0df7a3b9",
+      "stage": 15,
+      "stratum_id": "placement-peer-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "cuda-encoded-placement",
+      "file": {
+        "path": "/root/hyle-scratch/compute-unified/g04-cuda-encoded-p1-output-13/raw/n-15/product-placement-peer-first-candidate-allocation-first-cuda-encoded-placement-run-06.log",
+        "sha256": "1159ec654962d2287293ecd9ba0628e28407802801549ccfba9357d22380cee0"
+      },
+      "kind": "product",
+      "run": 6,
+      "run_nonce": "faba7e9693a38693b977a3c23d6eeca5",
+      "stage": 15,
+      "stratum_id": "placement-peer-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "cuda-encoded-placement",
+      "file": {
+        "path": "/root/hyle-scratch/compute-unified/g04-cuda-encoded-p1-output-13/raw/n-15/product-placement-peer-first-candidate-allocation-first-cuda-encoded-placement-run-07.log",
+        "sha256": "cc555de26f017bedc9e1887c4b7644a1d5e9fcb0450316697ba790af4ec1a0f2"
+      },
+      "kind": "product",
+      "run": 7,
+      "run_nonce": "cd7aa279cb7e8a9f909f266a46e637cf",
+      "stage": 15,
+      "stratum_id": "placement-peer-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "cuda-encoded-placement",
+      "file": {
+        "path": "/root/hyle-scratch/compute-unified/g04-cuda-encoded-p1-output-13/raw/n-15/product-placement-peer-first-candidate-allocation-first-cuda-encoded-placement-run-08.log",
+        "sha256": "3c6a312fbb2d6dffacda2381e270074d31f6a5909fc53fe4c67fb57d7aeed0d2"
+      },
+      "kind": "product",
+      "run": 8,
+      "run_nonce": "b239acf947d53000946b6c0f57655ef1",
+      "stage": 15,
+      "stratum_id": "placement-peer-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "cuda-encoded-placement",
+      "file": {
+        "path": "/root/hyle-scratch/compute-unified/g04-cuda-encoded-p1-output-13/raw/n-15/product-placement-peer-first-candidate-allocation-first-cuda-encoded-placement-run-09.log",
+        "sha256": "1c32893328d979c4e625cf348495ee2fc0392435f5748f8e803a0016e8a1918c"
+      },
+      "kind": "product",
+      "run": 9,
+      "run_nonce": "f0439886c390c2774865d48055c0b195",
+      "stage": 15,
+      "stratum_id": "placement-peer-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "cuda-encoded-placement",
+      "file": {
+        "path": "/root/hyle-scratch/compute-unified/g04-cuda-encoded-p1-output-13/raw/n-15/product-placement-peer-first-candidate-allocation-first-cuda-encoded-placement-run-10.log",
+        "sha256": "d3887c60e92ca3afeed3cb59dfbb9a4db6ff68dc456c9690193612bc056ccf90"
+      },
+      "kind": "product",
+      "run": 10,
+      "run_nonce": "8241486c07f6dbf4d26c70dc209a1bf8",
+      "stage": 15,
+      "stratum_id": "placement-peer-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "cuda-encoded-placement",
+      "file": {
+        "path": "/root/hyle-scratch/compute-unified/g04-cuda-encoded-p1-output-13/raw/n-15/product-placement-peer-first-candidate-allocation-first-cuda-encoded-placement-run-11.log",
+        "sha256": "4e8571a872f068bf3b6b0d60f4bf34394f233daffd4f5eeccaa881c35022219b"
+      },
+      "kind": "product",
+      "run": 11,
+      "run_nonce": "5c11fa96236314232d3a63cc463d2c30",
+      "stage": 15,
+      "stratum_id": "placement-peer-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "cuda-encoded-placement",
+      "file": {
+        "path": "/root/hyle-scratch/compute-unified/g04-cuda-encoded-p1-output-13/raw/n-15/product-placement-peer-first-candidate-allocation-first-cuda-encoded-placement-run-12.log",
+        "sha256": "91bedd233fa4dea67960a39d8ee5b560e5364c2672d66de56850de3da85ad8f8"
+      },
+      "kind": "product",
+      "run": 12,
+      "run_nonce": "6f97654b77097dbecb5cbb747122f7e9",
+      "stage": 15,
+      "stratum_id": "placement-peer-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "cuda-encoded-placement",
+      "file": {
+        "path": "/root/hyle-scratch/compute-unified/g04-cuda-encoded-p1-output-13/raw/n-15/product-placement-peer-first-candidate-allocation-first-cuda-encoded-placement-run-13.log",
+        "sha256": "e605b0255b24e11e16795af1423e3de80803f9e8b051d44cb3a785b6a083ca3d"
+      },
+      "kind": "product",
+      "run": 13,
+      "run_nonce": "f0a96687a6d96c0c6b53dfc0c1e0aa9f",
+      "stage": 15,
+      "stratum_id": "placement-peer-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "cuda-encoded-placement",
+      "file": {
+        "path": "/root/hyle-scratch/compute-unified/g04-cuda-encoded-p1-output-13/raw/n-15/product-placement-peer-first-candidate-allocation-first-cuda-encoded-placement-run-14.log",
+        "sha256": "405fd4d10ee47750ffad72a50691a34d9549042040d48cf881f341374e9d5c2a"
+      },
+      "kind": "product",
+      "run": 14,
+      "run_nonce": "db314bf2a3af7b1d935bcd45fe242adc",
+      "stage": 15,
+      "stratum_id": "placement-peer-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "cuda-encoded-placement",
+      "file": {
+        "path": "/root/hyle-scratch/compute-unified/g04-cuda-encoded-p1-output-13/raw/n-15/product-placement-peer-first-candidate-allocation-first-cuda-encoded-placement-run-15.log",
+        "sha256": "f181b35cf003a6f545c4d67cc505566f5e0a66be59c047b00bc3486165b9f00d"
+      },
+      "kind": "product",
+      "run": 15,
+      "run_nonce": "95ee9dfd4476adfae43e5fe651704714",
+      "stage": 15,
+      "stratum_id": "placement-peer-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "cuda-encoded-placement",
+      "file": {
+        "path": "/root/hyle-scratch/compute-unified/g04-cuda-encoded-p1-output-13/raw/n-15/product-placement-peer-first-peer-allocation-first-cuda-encoded-placement-run-01.log",
+        "sha256": "bbf991296233422602cfedc1635e1eb4efb4974c6b2a309371fb0024f31870d8"
+      },
+      "kind": "product",
+      "run": 1,
+      "run_nonce": "78797c22a0fb232ea1eefe0ea0aaae28",
+      "stage": 15,
+      "stratum_id": "placement-peer-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "cuda-encoded-placement",
+      "file": {
+        "path": "/root/hyle-scratch/compute-unified/g04-cuda-encoded-p1-output-13/raw/n-15/product-placement-peer-first-peer-allocation-first-cuda-encoded-placement-run-02.log",
+        "sha256": "d6f3ebd930cb8a808e9da399d951865199357aa234f1b3ff0bb37c3a5abe12bb"
+      },
+      "kind": "product",
+      "run": 2,
+      "run_nonce": "99c42ad55784253104bcd19e2b47beb7",
+      "stage": 15,
+      "stratum_id": "placement-peer-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "cuda-encoded-placement",
+      "file": {
+        "path": "/root/hyle-scratch/compute-unified/g04-cuda-encoded-p1-output-13/raw/n-15/product-placement-peer-first-peer-allocation-first-cuda-encoded-placement-run-03.log",
+        "sha256": "b6c5398d899071e654b2a397429da1e16b5ecc8f7176e23c6a9919d87eea41cf"
+      },
+      "kind": "product",
+      "run": 3,
+      "run_nonce": "2dd3f3eca974d6051296bec098550487",
+      "stage": 15,
+      "stratum_id": "placement-peer-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "cuda-encoded-placement",
+      "file": {
+        "path": "/root/hyle-scratch/compute-unified/g04-cuda-encoded-p1-output-13/raw/n-15/product-placement-peer-first-peer-allocation-first-cuda-encoded-placement-run-04.log",
+        "sha256": "45942f7fe8a35a9228a4a183f6dc2b0ce8ad4e079ba0597142d7b3fe562b9543"
+      },
+      "kind": "product",
+      "run": 4,
+      "run_nonce": "fcb7d79276e90539d1058cec4de8ed07",
+      "stage": 15,
+      "stratum_id": "placement-peer-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "cuda-encoded-placement",
+      "file": {
+        "path": "/root/hyle-scratch/compute-unified/g04-cuda-encoded-p1-output-13/raw/n-15/product-placement-peer-first-peer-allocation-first-cuda-encoded-placement-run-05.log",
+        "sha256": "78e0bed9c5b12aa4513b3905cb757ba00cfd1d1d45c54f770a3e20072e66c3f4"
+      },
+      "kind": "product",
+      "run": 5,
+      "run_nonce": "86f8325630f9191deb534b9cd9ca3ef5",
+      "stage": 15,
+      "stratum_id": "placement-peer-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "cuda-encoded-placement",
+      "file": {
+        "path": "/root/hyle-scratch/compute-unified/g04-cuda-encoded-p1-output-13/raw/n-15/product-placement-peer-first-peer-allocation-first-cuda-encoded-placement-run-06.log",
+        "sha256": "6a9a2d3af9daca37179933dbbc0543da23ec70813585fa37ec7267092a3a2db1"
+      },
+      "kind": "product",
+      "run": 6,
+      "run_nonce": "4cc772f26df7a24ebd39599f03f8ec23",
+      "stage": 15,
+      "stratum_id": "placement-peer-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "cuda-encoded-placement",
+      "file": {
+        "path": "/root/hyle-scratch/compute-unified/g04-cuda-encoded-p1-output-13/raw/n-15/product-placement-peer-first-peer-allocation-first-cuda-encoded-placement-run-07.log",
+        "sha256": "7d70758e45ba39f3d341970fcd212bcb199a10892311d7ff7667bc944898cb62"
+      },
+      "kind": "product",
+      "run": 7,
+      "run_nonce": "cff63feba55eac4501b0824dcab508b8",
+      "stage": 15,
+      "stratum_id": "placement-peer-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "cuda-encoded-placement",
+      "file": {
+        "path": "/root/hyle-scratch/compute-unified/g04-cuda-encoded-p1-output-13/raw/n-15/product-placement-peer-first-peer-allocation-first-cuda-encoded-placement-run-08.log",
+        "sha256": "fcebf816c291528d54f20ddd8675e62d1427a680f61b31638dfb75b63da69c02"
+      },
+      "kind": "product",
+      "run": 8,
+      "run_nonce": "e04475e4511267bded1df071114111ab",
+      "stage": 15,
+      "stratum_id": "placement-peer-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "cuda-encoded-placement",
+      "file": {
+        "path": "/root/hyle-scratch/compute-unified/g04-cuda-encoded-p1-output-13/raw/n-15/product-placement-peer-first-peer-allocation-first-cuda-encoded-placement-run-09.log",
+        "sha256": "8a663595a7ab6ef3b8438f8b8467cea39919e232a2735342299f9c27e487880f"
+      },
+      "kind": "product",
+      "run": 9,
+      "run_nonce": "6b3441411dec44b7f7eb4b65ef73cf6b",
+      "stage": 15,
+      "stratum_id": "placement-peer-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "cuda-encoded-placement",
+      "file": {
+        "path": "/root/hyle-scratch/compute-unified/g04-cuda-encoded-p1-output-13/raw/n-15/product-placement-peer-first-peer-allocation-first-cuda-encoded-placement-run-10.log",
+        "sha256": "6728c8468cef67b72aa40a64d16e0e3b412ecd91bcac23a80c477be163a34a62"
+      },
+      "kind": "product",
+      "run": 10,
+      "run_nonce": "14e89d7eca3de51f7baa3d8c4c059471",
+      "stage": 15,
+      "stratum_id": "placement-peer-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "cuda-encoded-placement",
+      "file": {
+        "path": "/root/hyle-scratch/compute-unified/g04-cuda-encoded-p1-output-13/raw/n-15/product-placement-peer-first-peer-allocation-first-cuda-encoded-placement-run-11.log",
+        "sha256": "7850dc54db22f92e2e707bd1a27388e2e8ac6511ad7a36fb7dc75b280b29e1a8"
+      },
+      "kind": "product",
+      "run": 11,
+      "run_nonce": "720a7866dfa6c7b03904395627d4ba44",
+      "stage": 15,
+      "stratum_id": "placement-peer-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "cuda-encoded-placement",
+      "file": {
+        "path": "/root/hyle-scratch/compute-unified/g04-cuda-encoded-p1-output-13/raw/n-15/product-placement-peer-first-peer-allocation-first-cuda-encoded-placement-run-12.log",
+        "sha256": "451602e5e2f6878b8bd68cdc00695bc3574f5735d40db61d2dfa278b1d241b56"
+      },
+      "kind": "product",
+      "run": 12,
+      "run_nonce": "644b4d8aac0f1b871da445cffc93c624",
+      "stage": 15,
+      "stratum_id": "placement-peer-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "cuda-encoded-placement",
+      "file": {
+        "path": "/root/hyle-scratch/compute-unified/g04-cuda-encoded-p1-output-13/raw/n-15/product-placement-peer-first-peer-allocation-first-cuda-encoded-placement-run-13.log",
+        "sha256": "aad83e19d1f12ef677dd158568322ec73b30d8e45ed6febe88eb7e3a0f34eaab"
+      },
+      "kind": "product",
+      "run": 13,
+      "run_nonce": "80277c0f4e665402c21dbe8adb4e7356",
+      "stage": 15,
+      "stratum_id": "placement-peer-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "cuda-encoded-placement",
+      "file": {
+        "path": "/root/hyle-scratch/compute-unified/g04-cuda-encoded-p1-output-13/raw/n-15/product-placement-peer-first-peer-allocation-first-cuda-encoded-placement-run-14.log",
+        "sha256": "c212f0b2e66bbcf095afa1363b8ff065755002cba0382c1c62049f47e8f0241d"
+      },
+      "kind": "product",
+      "run": 14,
+      "run_nonce": "ba8488fcb9966f6aa32398565ac0b4ed",
+      "stage": 15,
+      "stratum_id": "placement-peer-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "cuda-encoded-placement",
+      "file": {
+        "path": "/root/hyle-scratch/compute-unified/g04-cuda-encoded-p1-output-13/raw/n-15/product-placement-peer-first-peer-allocation-first-cuda-encoded-placement-run-15.log",
+        "sha256": "5e3890b9bae491c63dd37c5046cc2b4b6ad6e51bd378f5f3a2bb6d37e730a230"
+      },
+      "kind": "product",
+      "run": 15,
+      "run_nonce": "bfc63fcd6643c38f3724dbed10f0df01",
+      "stage": 15,
+      "stratum_id": "placement-peer-first-peer-allocation-first"
+    },
+    {
+      "file": {
+        "path": "/root/hyle-scratch/compute-unified/g04-cuda-encoded-p1-output-13/raw/n-15/control-candidate-first-run-01.log",
+        "sha256": "af37b948c7c75f60f6e0964505f11b37643bdc807417002b3762cc6bdfdba65e"
+      },
+      "kind": "control",
+      "order": "candidate-first",
+      "run": 1,
+      "run_nonce": "626fea84e92dde892fde8b7664c215d0",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "/root/hyle-scratch/compute-unified/g04-cuda-encoded-p1-output-13/raw/n-15/control-candidate-first-run-02.log",
+        "sha256": "ee3189d62a0a10e91ea95e46020618d95d7ff678b25482818c4e733af03c76e1"
+      },
+      "kind": "control",
+      "order": "candidate-first",
+      "run": 2,
+      "run_nonce": "d10c1e0b619f66a6ebfc6b7a8974db4e",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "/root/hyle-scratch/compute-unified/g04-cuda-encoded-p1-output-13/raw/n-15/control-candidate-first-run-03.log",
+        "sha256": "b48360fc37b60dfca215681165b2bd0a80ed695f3ca27b698a860553f67b1ca2"
+      },
+      "kind": "control",
+      "order": "candidate-first",
+      "run": 3,
+      "run_nonce": "074ecd52a4ae36ef2f7baa8943692b98",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "/root/hyle-scratch/compute-unified/g04-cuda-encoded-p1-output-13/raw/n-15/control-candidate-first-run-04.log",
+        "sha256": "71a071041abd9e8a4f20ba0598a9e9c0626b5671c44ee15430e50bac4c1c34c5"
+      },
+      "kind": "control",
+      "order": "candidate-first",
+      "run": 4,
+      "run_nonce": "2fc1d341c036493d43f9b6176544af22",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "/root/hyle-scratch/compute-unified/g04-cuda-encoded-p1-output-13/raw/n-15/control-candidate-first-run-05.log",
+        "sha256": "15d8641ed9cd2a86789124e66a7353e6087a6cd739f74cfe3cebe9490e2d121e"
+      },
+      "kind": "control",
+      "order": "candidate-first",
+      "run": 5,
+      "run_nonce": "4c1d77335d7c240c5d8b959c47109ff0",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "/root/hyle-scratch/compute-unified/g04-cuda-encoded-p1-output-13/raw/n-15/control-candidate-first-run-06.log",
+        "sha256": "2e6661cf88a6ba64d9ff24316bfc3207345377aa9a85dd075427f23bfb32393b"
+      },
+      "kind": "control",
+      "order": "candidate-first",
+      "run": 6,
+      "run_nonce": "8666749669b7fa52d99c067b7e77bd96",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "/root/hyle-scratch/compute-unified/g04-cuda-encoded-p1-output-13/raw/n-15/control-candidate-first-run-07.log",
+        "sha256": "2cf2048cd04e68d4a4cce41c693b5e5fb9c35f3146899691d137da7dfff06967"
+      },
+      "kind": "control",
+      "order": "candidate-first",
+      "run": 7,
+      "run_nonce": "2019d640e297d0c022a085628fd330bc",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "/root/hyle-scratch/compute-unified/g04-cuda-encoded-p1-output-13/raw/n-15/control-candidate-first-run-08.log",
+        "sha256": "3381356ff2090ff63825bebe2500a60c860933233f2954fc0ec164060b6b529a"
+      },
+      "kind": "control",
+      "order": "candidate-first",
+      "run": 8,
+      "run_nonce": "a64385f9e0c52e6734413296a30ba3ab",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "/root/hyle-scratch/compute-unified/g04-cuda-encoded-p1-output-13/raw/n-15/control-candidate-first-run-09.log",
+        "sha256": "66cae7ddce35767ac350825fa4ee75d94cc4a5956b7f07019cd1c7e039a33e15"
+      },
+      "kind": "control",
+      "order": "candidate-first",
+      "run": 9,
+      "run_nonce": "077be0f8340be7f7535ff919d1774f86",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "/root/hyle-scratch/compute-unified/g04-cuda-encoded-p1-output-13/raw/n-15/control-candidate-first-run-10.log",
+        "sha256": "ac490cd77349647516980c90ea5448865d3ab64859672a4cf14b9c322219e8e0"
+      },
+      "kind": "control",
+      "order": "candidate-first",
+      "run": 10,
+      "run_nonce": "d5373edd5f29a8581e5787040a47894e",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "/root/hyle-scratch/compute-unified/g04-cuda-encoded-p1-output-13/raw/n-15/control-candidate-first-run-11.log",
+        "sha256": "12c6f9f90dbf94e87a3a0bd7cc1787cca22a3a5fd535e8f949ebb117f4e176f9"
+      },
+      "kind": "control",
+      "order": "candidate-first",
+      "run": 11,
+      "run_nonce": "3b1a66228080676426c0cc0a059197c0",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "/root/hyle-scratch/compute-unified/g04-cuda-encoded-p1-output-13/raw/n-15/control-candidate-first-run-12.log",
+        "sha256": "0888533b15396f97f31e4644fc771c4a085c1e15f7f28bba0bc761c38de3a93b"
+      },
+      "kind": "control",
+      "order": "candidate-first",
+      "run": 12,
+      "run_nonce": "ed560dba14b532b057ee34ae555698f6",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "/root/hyle-scratch/compute-unified/g04-cuda-encoded-p1-output-13/raw/n-15/control-candidate-first-run-13.log",
+        "sha256": "ec69988e3e53c460491fd3a69006f38fe7fe14a181315017f429252ea0a77c76"
+      },
+      "kind": "control",
+      "order": "candidate-first",
+      "run": 13,
+      "run_nonce": "e396c1f46ffac63113a83534061e2ed7",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "/root/hyle-scratch/compute-unified/g04-cuda-encoded-p1-output-13/raw/n-15/control-candidate-first-run-14.log",
+        "sha256": "04d13dee82beecbca61c1f3fa59ffdcc0934647dc81dec54686af1e775a7227b"
+      },
+      "kind": "control",
+      "order": "candidate-first",
+      "run": 14,
+      "run_nonce": "d8c9097c0def73c74a3c369eec86469a",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "/root/hyle-scratch/compute-unified/g04-cuda-encoded-p1-output-13/raw/n-15/control-candidate-first-run-15.log",
+        "sha256": "ab82aea59e3482757c4908a6c2158baa4a6b2c9fedee2e6363a119b6967a136a"
+      },
+      "kind": "control",
+      "order": "candidate-first",
+      "run": 15,
+      "run_nonce": "6bc90bd41416ee6e8277d84702866192",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "/root/hyle-scratch/compute-unified/g04-cuda-encoded-p1-output-13/raw/n-15/control-peer-first-run-01.log",
+        "sha256": "8b8b7148a9284e70e1ee21faa3a1f7844042d4f7179a34aba431201a887573c7"
+      },
+      "kind": "control",
+      "order": "peer-first",
+      "run": 1,
+      "run_nonce": "53cb6b3340581a74283a8787f1feff0f",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "/root/hyle-scratch/compute-unified/g04-cuda-encoded-p1-output-13/raw/n-15/control-peer-first-run-02.log",
+        "sha256": "19bd7109d574e6c859fd7c8548f3e1b45095345d5d8e3c5f6ff46d491395a7d6"
+      },
+      "kind": "control",
+      "order": "peer-first",
+      "run": 2,
+      "run_nonce": "15bd9b3f44fb58166041ed330866f31d",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "/root/hyle-scratch/compute-unified/g04-cuda-encoded-p1-output-13/raw/n-15/control-peer-first-run-03.log",
+        "sha256": "f72a4c71522c71defd98f054c338093920ef63afa22a5dbbfb986c9d6325536e"
+      },
+      "kind": "control",
+      "order": "peer-first",
+      "run": 3,
+      "run_nonce": "97d7ae6655213682ef49e361a1e82973",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "/root/hyle-scratch/compute-unified/g04-cuda-encoded-p1-output-13/raw/n-15/control-peer-first-run-04.log",
+        "sha256": "14636531ff4282a679736e155398c3af56cb8961d2c8db01de0180ace433c775"
+      },
+      "kind": "control",
+      "order": "peer-first",
+      "run": 4,
+      "run_nonce": "59ce8cc54f25d51a6dbd4664a86e93d1",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "/root/hyle-scratch/compute-unified/g04-cuda-encoded-p1-output-13/raw/n-15/control-peer-first-run-05.log",
+        "sha256": "d0440f6d23a9a2c2eb9792e0b53e69a675d798c5478beb78603a612b9f0ee37e"
+      },
+      "kind": "control",
+      "order": "peer-first",
+      "run": 5,
+      "run_nonce": "cfb21f7d559aa94bcae29c611a39c527",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "/root/hyle-scratch/compute-unified/g04-cuda-encoded-p1-output-13/raw/n-15/control-peer-first-run-06.log",
+        "sha256": "8eacccb07df4f9bf7393090cb15418610ce9046ef7bc384e71450cefa9583b50"
+      },
+      "kind": "control",
+      "order": "peer-first",
+      "run": 6,
+      "run_nonce": "0f9462866b993a5c0ddc3ab5f2478b30",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "/root/hyle-scratch/compute-unified/g04-cuda-encoded-p1-output-13/raw/n-15/control-peer-first-run-07.log",
+        "sha256": "7f36cf217467adcd674c3db2fd9db165663c6ee75e0ae90cf8aeb32ae73477da"
+      },
+      "kind": "control",
+      "order": "peer-first",
+      "run": 7,
+      "run_nonce": "6767f7ade10823a7bf8df24a3a1ad1a0",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "/root/hyle-scratch/compute-unified/g04-cuda-encoded-p1-output-13/raw/n-15/control-peer-first-run-08.log",
+        "sha256": "cc314f8d36488cb7c427456cb805f0b9475a70f89e320301675921682376ef7b"
+      },
+      "kind": "control",
+      "order": "peer-first",
+      "run": 8,
+      "run_nonce": "eaf096b308352d6accd41bc23b0f1e78",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "/root/hyle-scratch/compute-unified/g04-cuda-encoded-p1-output-13/raw/n-15/control-peer-first-run-09.log",
+        "sha256": "2c1e8166c7994a13caf138b33ccaf6789ed97daf417bee061c3a92c5f042e0d6"
+      },
+      "kind": "control",
+      "order": "peer-first",
+      "run": 9,
+      "run_nonce": "c6d9f59fc570171e8ecebe560bd67278",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "/root/hyle-scratch/compute-unified/g04-cuda-encoded-p1-output-13/raw/n-15/control-peer-first-run-10.log",
+        "sha256": "e09fd31b3d824b86513e4e11f79792484a260136bcad0232e157558fce737ae1"
+      },
+      "kind": "control",
+      "order": "peer-first",
+      "run": 10,
+      "run_nonce": "56eec8f496308dc2abc316179c8d76d5",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "/root/hyle-scratch/compute-unified/g04-cuda-encoded-p1-output-13/raw/n-15/control-peer-first-run-11.log",
+        "sha256": "3e1a2dd6d545ac537365a45926f7fc639bf7e15f0705672cf81e4f0828d6c959"
+      },
+      "kind": "control",
+      "order": "peer-first",
+      "run": 11,
+      "run_nonce": "ead0356c206d3d517703c7ffa3396b2a",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "/root/hyle-scratch/compute-unified/g04-cuda-encoded-p1-output-13/raw/n-15/control-peer-first-run-12.log",
+        "sha256": "efde14acc4c39d23fccbf4ad35177fafa350c30a92c1ab01152b91fb967a7b92"
+      },
+      "kind": "control",
+      "order": "peer-first",
+      "run": 12,
+      "run_nonce": "2763d7f2bdd82369439cc08f5aca362b",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "/root/hyle-scratch/compute-unified/g04-cuda-encoded-p1-output-13/raw/n-15/control-peer-first-run-13.log",
+        "sha256": "13008ffbb80f2afe5e07f3c9d7f1155f986d57f4b25b2ea1b31a8ba63aa0594c"
+      },
+      "kind": "control",
+      "order": "peer-first",
+      "run": 13,
+      "run_nonce": "b7cd73e9cd40228e501691832a370304",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "/root/hyle-scratch/compute-unified/g04-cuda-encoded-p1-output-13/raw/n-15/control-peer-first-run-14.log",
+        "sha256": "a64e176c52ff61c652f12b4382b37f6b653313f0f42e1e73fb10086aa50c884f"
+      },
+      "kind": "control",
+      "order": "peer-first",
+      "run": 14,
+      "run_nonce": "a750c05b86dc8744270d3b8beb9b591b",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "/root/hyle-scratch/compute-unified/g04-cuda-encoded-p1-output-13/raw/n-15/control-peer-first-run-15.log",
+        "sha256": "3d4f8c1ff4d81c46322a8a1c6734c5f8600e562877f3330090ac1b18bcea0956"
+      },
+      "kind": "control",
+      "order": "peer-first",
+      "run": 15,
+      "run_nonce": "22e30fc1bc65562d62cd6c828d9fae69",
+      "stage": 15
+    }
+  ],
+  "record": "hyle_perf_nanobench_raw_index",
+  "sample_stages": [
+    15
+  ],
+  "schema": "hyle.perf.nanobench-raw-index/v1"
+}
