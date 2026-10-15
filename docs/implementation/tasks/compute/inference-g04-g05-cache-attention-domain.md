@@ -1312,3 +1312,18 @@ CE14 的 selector 原计划保留 READY，但依赖账本单一内容hash变化�
 组件图、其它依赖、公开头与package seam均未改。按本卡只运行Apple owner及其原
 页/Graph/联合消费者和三交付/适用风险，逐gate保留语义未变的skip理由；不运行全库，
 不修改公共selector或构建核心。此证明只签源码/归属，不签新数学或性能PASS。
+
+CE14 mixed-input 批现已否决并恢复原 patch/lock 字节，新增低概率贡献反例保留。
+[实际记录](../../../../evidence/architecture/inference-g04-g05-apple-guarded-mma-trial/receipt.json)
+包括首次 Metal half2 构造编译失败、修正后的 source 12数学/4公开消费者/原风险和
+static SDK通过。双顺序短诊断的prefill比率仅0.1825/0.1827，比原合格0.325更差；
+没有启动shared、sanitizer或正式P1，不将短诊断写为合格性能结论。父批与子阶段耗时重叠，
+分别保留而不重复累计。原范围、阈值及其它路线不动。
+
+下一有限修正只隔离原STEEL的寄存器fragment循环同步：保原F32数学、BQ16/BK8/WM2、
+threadgroup staging及全部mem_threadgroup屏障；仅Q8分支跳过QK load后和P×V load前后的
+mem_none SIMD执行屏障。上述循环没有shared写入，跨SIMD生产/消费由已有threadgroup屏障
+覆盖，矩阵collective仍由所有lane在同一固定循环调用；plain路径保原屏障。此项与已否决
+的BQ8/BK16/WM1合并试改不同，不能从旧合并结果裁决独立机制。
+先一次source 12数学/4公开消费者/原风险、static SDK及原三形状双顺序短诊断；失败则
+撤回，不追加无变更P1。若机制成本改善且数值通过，再执行原适用风险/shared与冻结流程。
