@@ -1111,3 +1111,18 @@ CE13 Windows source 第一轮已通过：22项原数学/分页/ragged/Direct/Gra
 generic 反汇编已无原两次外部 row-offset helper 调用；只把它作为已消除重复调用的生成
 代码证据，不签性能收益。三类宿主 sanitizer 与两种 SDK 仍沿实际串行队列执行，
 CPU provider/runtime 保持 AUDITED，尚未冻结新 P1 candidate。
+
+
+### CE13 CPU 普通门完成，混合发行有限验证启动
+
+[普通门证据](../../../../evidence/correctness/inference-g04-g05-ce13-cpu-validation/receipt.json)
+已封存：22项源码消费者、5个定向 factor CTest、三类宿主 sanitizer 各17数学/消费者与9风险、
+static/shared SDK 各14数学＋3共同消费者及12独立头全部 PASS。实际阶段累计815.230秒；
+外层845.079秒与阶段重叠，不重复相加。原 identity 包装失败与未知时间、CE12 合格性能
+FAIL 全保留；生成代码消除重复调用不直接作为性能改善。
+
+同一批重型任务已实际结束后，Air 混合发行的 CE12/CE13 CPU 数学验证才启动。复用与当前
+native 依赖逐项核对的152对象 Vulkan archive，只重编受影响 CPU 和原22项消费者；实际
+计划若包含 GPU/shader 重编则先停止。验证用接线留在可丢弃副本，不修改产品构建系统。
+本次不代签新 GPU、完整混合 SDK 或 P1；CPU 两 owner 仍 AUDITED，待该有限验证与新
+不可变 candidate 性能裁决。
