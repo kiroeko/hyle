@@ -1149,3 +1149,13 @@ CPU CE13 P1 已从干净不可变 source5db68c92a136c2cdff9d0df621394d0bd85b57aa
 实际启动，使用新 static SDK；16组 workload-matched A/A 全部 PASS，已进入原正式采样。
 没有依据部分样本签性能结果。原 CPU 进程实际结束并封存后，才允许队列启动独立 Vulkan
 同合同 P1；重型任务继续串行，编译最多4 jobs。
+
+
+Apple 独立 peer 的原源码 materializer 已实现并实际运行，生成
+[source-only 证明](../../../../evidence/architecture/inference-g04-g05-cost-preflight/apple-peer-source.json)：
+六个原456输入 SHA 全匹配，沿原 CMake 内联，去除显式导出行后的 general/pad/blk 原文本
+逐字不变，只保留三个原Q8实例及一个明确新增64/128模板实例。保留原 general 直接终态
+输出；没有选择 vec/split/reduce。此处只签源码生成，不签 Metal 编译、数学或 P1。
+独立只读接线审计已确认沿 MLX 原 CommandEncoder 绑定实际数组、追踪依赖并检查实际
+CommandBuffer 完成；mask查询轴必须按原Q=8补齐，K/V按原head-major行布局，不能用
+general尾部判断掩盖blk读取越界。后续有限桥保持原费用账，不扩大产品域。

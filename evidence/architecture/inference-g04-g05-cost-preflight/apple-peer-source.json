@@ -1,0 +1,31 @@
+{
+  "kind": "PINNED_ORIGINAL_GGML_METAL_GENERAL_Q8_SOURCE_ONLY",
+  "revision": "456172ec733a135778adcd32d00e576a58232e45",
+  "input_sha256": {
+    "src/ggml-common.h": "0061131b615c5721fc88a78feeb22c1f8c450f1c2646a317d80796a653bf595c",
+    "src/ggml-metal/kernels/common.h": "525d4d7f9dbdaef3702195be92235ba2cc7cc86d5c97101d374a52b06117215e",
+    "src/ggml-metal/kernels/dequantize.h": "2dd5d69e65deb3718dd01a7e04d6ce529f008955fecfb1d1d8abab3245e43d25",
+    "src/ggml-metal/ggml-metal-impl.h": "53cb45725c225093fdfce2a2011495ff9c7bd97c82eaf57364b5cc174ce1e1f8",
+    "src/ggml-metal/kernels/fa.metal": "88939f93ec5a38bb6a860dffee60d01885de65ca4464d87c14c31bbc511fda64",
+    "src/ggml-metal/CMakeLists.txt": "0f042e911c804fbae3dabefb5f5446bbeb39ac3148ad1e5f8b0310990a4941f8"
+  },
+  "embedded_source_sha256": "476f1d9932d1a341bba067895ceab5533b5357764814f268e78859eea5af848e",
+  "embedded_header_sha256": "facacf6f73d29cdba9e7bdb81cd70d8d76cb4ef19e91309fad692cf2436e00b5",
+  "original_general_without_export_lines_sha256": "4d42d443fd1c23c1497ada1f64c297b3351f21db4ebfa88d25dcee8ae7eabfb6",
+  "original_exports": [
+    "kernel_flash_attn_ext_q8_0_dk64_dv64",
+    "kernel_flash_attn_ext_q8_0_dk128_dv128",
+    "kernel_flash_attn_ext_q8_0_dk256_dv256"
+  ],
+  "added_template_instance": "template [[host_name(\"kernel_flash_attn_ext_q8_0_dk64_dv128\"  )]] kernel flash_attn_ext_t kernel_flash_attn_ext<FA_TYPES,    block_q8_0, 2, dequantize_q8_0, block_q8_0, 2, dequantize_q8_0, 64, 128>;",
+  "embedding_recipe": "Original Metal CMake lines 88-95; common/dequant/fa, then exact sentinels",
+  "route": "Original pad -> blk -> general Q8; no vector/split/reduce route",
+  "limits": [
+    "SOURCE_ONLY; no compiler, numerical, completion or P1 verdict",
+    "64/128 is a new explicit instance, not an original exported pipeline",
+    "Explicit general selection is not a best-of original host claim",
+    "Query conversion, gather, padding, mask, scratch and completion remain charged by the adapter"
+  ],
+  "generator": "bench/inference_resident_sdpa/apple_encoded_peer/prepare_source.py",
+  "actual_local_materialization": "PASS_SIX_INPUT_SHAS_AND_UNCHANGED_GENERAL_TEXT"
+}
