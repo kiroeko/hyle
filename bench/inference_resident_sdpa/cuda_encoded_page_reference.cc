@@ -197,7 +197,7 @@ Status prepare_cuda_encoded_reference(CudaEncodedReferenceData &data,c::Queue &q
         if(status!=cudaSuccess)return status;
       }return cudaSuccess;
     });
-    if(!completion){auto status=completion.error();status.Update(queue.drain());return status;}
+    if(!completion){Status status=completion.error();status.Update(queue.drain());return status;}
     auto status=uses.attach(*completion);
     status.Update(completion->wait()); // Also drains an accepted decoder prefix on error.
     HYLE_RETURN_IF_ERROR(status);
