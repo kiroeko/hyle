@@ -58,7 +58,7 @@ double q8_value(std::span<const std::uint8_t> bytes,std::size_t index) {
 
 template<class T>void boxed_case(bool paged,bool quantized,unsigned dk,unsigned dv,
     bool causal,int window,bool long_prefill=false,bool large_values=false,bool bounded_long=false,
-    bool small_probability=false) {
+    bool small_probability=false,bool subnormal_query=false) {
   SCOPED_TRACE(::testing::Message()<<"paged="<<paged<<" q8="<<quantized<<" dk="<<dk
       <<" dv="<<dv<<" window="<<window<<" long="<<long_prefill<<" large="<<large_values);
   const unsigned qr=large_values?(long_prefill?65:1):(long_prefill?66:(causal?18:68));
@@ -97,6 +97,12 @@ template<class T>void boxed_case(bool paged,bool quantized,unsigned dk,unsigned 
     std::fill_n(key.begin(),2*dk,2.F);
     std::fill(value.begin(),value.end(),60000.F);
     std::fill_n(value.begin(),2*dv,0.F);
+  }
+  if(subnormal_query) {
+    ASSERT_TRUE(long_prefill&&paged&&quantized&&dk==256&&!large_values);
+    std::fill(query.begin(),query.end(),half_test::encode<T>(std::ldexp(1.F,-20)));
+    for(std::size_t i=0;i<key.size();++i)key[i]=(i/(2*dk))%2? -65504.F:65504.F;
+    for(std::size_t i=0;i<value.size();++i)value[i]=(i/(2*dv))%2? -.125F:.125F;
   }
   std::vector<std::uint8_t> kb,vb;
   const auto cache_bytes=[&](std::span<const float> source,std::vector<std::uint8_t>& output) {
@@ -167,6 +173,7 @@ template<class T>void boxed_case(bool paged,bool quantized,unsigned dk,unsigned 
         }
         const double decoded=half_test::decode(actual[(std::size_t(qp[request]+row)*8+head)*dv+d]);
         if(small_probability)ASSERT_GT(expected,1.0);
+        if(subnormal_query)ASSERT_GT(std::abs(expected),.025);
         ASSERT_TRUE(std::isfinite(decoded));EXPECT_NEAR(decoded,expected,(large_values&&!bounded_long?.75:(std::is_same_v<T,BF16>?.008:.0025)));
       }
     }
@@ -205,6 +212,9 @@ TEST(AppleCache, SmallSoftmaxWeightsKeepLargeValueContributions) {
   // exp(-16) is a half subnormal. Rounding each probability before a 60000
   // value would change the accumulated contribution by several output units.
   boxed_case<F16>(false,true,64,64,true,-1,true,true,false,true);
+}
+TEST(AppleCache, SubnormalQueryKeepsLargeKeyScores) {
+  boxed_case<F16>(true,true,256,256,true,-1,true,false,false,false,true);
 }
 TEST(AppleCache, TwoPassWindowPipelinesPreserveTheirSpecialization) {
   for(int window:{-1,0,16,-1}) {
