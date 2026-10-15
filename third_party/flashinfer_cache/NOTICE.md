@@ -37,10 +37,18 @@ swizzled rows require MMA_KV*4 divisible by Q warps;64-byte rows and FP4
 retain their original MMA_KV*2 constraint. Dispatch additionally bounds
 FP8 per-warp work by the original native16-bit footprint budget because
 QK/PV use widened math fragments. Actual compressed shared-memory capacity,
-the original register bound, planner, arithmetic and synchronization remain.
+the original register bound, planner and arithmetic remain. The qualified
+tile synchronization adjustment is described below.
 
 The opt-in scaled FP32 persistent merge retains all local state writes and
 CTA/async synchronization. Only its final output group performs the same
 ordered cross-group merge, final normalization, scale and sole output cast.
 Zero/single-partial final accesses share that owner; optional LSE has one
 scalar writer. The default upstream merge specialization stays unchanged.
+
+Full128-byte FP8 conversion rows in the non-RoPE, non-split, separate-K/V
+path follow the exact original producer thread ownership. Existing local
+async waits precede conversion; the following full CTA barrier publishes
+Q and converted tile data. The adjacent pre-conversion barrier is retained
+for every other path. Consumer-retirement, final and output barriers remain;
+short-K padding, conversion values, destination layout and FP32 merge remain.

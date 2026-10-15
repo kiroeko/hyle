@@ -2473,3 +2473,11 @@ codegen，随后两搬迁SDK、新numeric/runtime、三host、原同合同AA/P1/
 必须有实际零warning/hazard反证，不能只凭索引证明或静态BAR数签PASS。三形状和全部
 旧失败/未知/成本保留；原2h阶段检查点/自动追加、SM89/pool1/split3/Ninja2与heavy串行
 不变。当前仅固定审计与有限FIX，尚未实施新产品或签运行/吞吐。
+
+CE27五个精确manifest片段已集中实施：一个共同predicate/转换helper和ragged/paged
+各K/V两个转换前屏障guard，NOTICE与FI lock同步；其它路径仍执行原屏障。派生prefill
+SHA为b4165b7d90e810e631249e0e049cd83d325bcaa8349d8d8f3cd2aa14dc0587f4，cascade与CE26完全相同。
+完整diff核对保留所有cp.async调用/commit/wait、转换后/消费结束/final/output屏障，
+原转换值和目的坐标不变。FI仍AUDITED，新数学/device/codegen/SDK/数值/host/P1均待验；
+不以源码证明或静态屏障数代签运行安全或性能。selector共同lock选项按本卡有限FI与
+直接消费者门执行，保留其它selected/skipped理由，不启动无改动全库构建。
