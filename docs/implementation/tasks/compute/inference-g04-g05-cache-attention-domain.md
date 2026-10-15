@@ -1,6 +1,6 @@
 # G04/G05 编码 KV 与有限 attention 语义实施批
 
-状态：**Apple CE14 退回 AUDITED，其余 owner 保持原 CANDIDATE；CPU provider/runtime 的 CE13 为42a4c7cdcc，其余候选为982676cb05，2026-10-15**。baseline `694a3d1a4b02540cb56b6ceae35b73dd1dd93440`；
+状态：**Apple CE14 CANDIDATE3b5157532，其余 owner 保持原 CANDIDATE；CPU provider/runtime 的 CE13 为42a4c7cdcc，其余候选为982676cb05，2026-10-15**。baseline `694a3d1a4b02540cb56b6ceae35b73dd1dd93440`；
 共同批owner见下表：九个原实际组件及下文新增CUDA数值状态owner；有限CE01–07/API/成本合同已冻结。原 G03 已 CLOSED，不由本卡重开其权限/
 退休实现。九owner已合法SCOPED后进入AUDITED；仅下列有限FIX授权产品实现。
 本批沿[十项总卡](../project/inference-gaps-goal-execution-2026-10.md)，
@@ -1355,3 +1355,13 @@ Q8块scale；原loader在此正常几何仍逐元素重复解码。下一有限�
 独立Q128/KV768核中该组合约0.687ms、原Q8核约3.08ms，输出一致；这仍不是完整episode/
 P1。只对K加half范围guard的探针更慢、packed_char4没有收益，均未进入产品。固定这批
 后再一次跑原13数学/4公开/风险/static/同三形状短诊断，不放宽数值或性能门。
+
+CE14 当前产品冻结为`3b5157532`：[普通工程证据](../../../../evidence/correctness/inference-g04-g05-apple-ce14-ordinary/receipt.json)
+已实际完成source13、public4、static/shared各13+4与CPU14+3/12headers，ASan/UBSan/TSan
+各13+4及原风险，Metal shader validation实际13+4与独立enabled-state见证。ASan不签
+LSan；TSan沿原两项显式模型，shader/driver/private pool不由host sanitizer代签。
+逐hunk反查确认partial-block不越过34字节块、inactive行不读、private Query类型进入
+equivalence/state/JIT key；默认QueryT保plain原float fragment，无公共API/schema/权限/
+退休变化。原数值门和旧失败全部保留。短诊断三形状双顺序均大于1，prefill1.1429–1.1496；
+这只允许冻结并进入原合同资格，不是P1通过。Apple owner合法进入CANDIDATE，其它owner
+候选不动；新SDK独立peer数值重绑定、16 A/A和原n15→31/5%正式门仍待完成。

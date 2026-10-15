@@ -505,9 +505,10 @@
     },
     {
       "module": "compute_route_apple",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/inference-g04-g05-cache-attention-domain.md",
-      "summary": "G04/G05 CE14 AUDITED: block-scale reuse and exact F16 Query staging passed actual Air source/static SDK math13, public4 and original risks. Short prefill ratio improved from original qualified0.325 to0.821 but remains below original gate. Next finite correction covers aligned partial Q8 blocks and 32-query width with F32 KV/score/accumulators. Earlier rejected trials, full range and all original evidence retained; no new P1 PASS."
+      "summary": "G04/G05 CE14 CANDIDATE3b5157532: exact whole/partial Q8 block decoding and original-F16 Query tiles preserve F32 KV/P/score/output range. Actual Air source/static/shared math13 and public4, three host sanitizers and enabled Metal shader validation passed. Two-order short prefill1.1429-1.1496 is diagnostic only; new same-contract P1 pending. Original qualified loss, failed trials, TSan models and native private-pool UNKNOWN retained.",
+      "candidate": "3b51575320c3f823ad1a31d18e99b8c55523a117"
     },
     {
       "module": "graph_route_apple",
