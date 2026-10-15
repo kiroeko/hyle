@@ -236,3 +236,13 @@ command为PASS，不缩减形状/断言/用例；disabled、真实skip与失败�
 错误和elapsed全部保留，普通/SDK/风险的原已过资格按匹配输入与实际影响借用，不重跑。
 本阶段为已有有限G02的证据补完，无产品FIX和模块状态跳转；若发现真实产品缺陷，按当前
 owner退回AUDITED并固定修正后才改产品。2h检查点/自动追加，不以墙钟到点假签验收。
+
+2026-10-15 G02补验：CUDA完整默认804项先797PASS/7缺fixture环境skip，核对既有真实
+Qwen3.5-2B fixture全部25文件SHA后仅补7项，实际7PASS/0skip；原记录保留。Vulkan完整
+默认集合851项在第79项终止：78PASS/0skip，24T attention对旧F16参考的误差约9.18e-5
+超过原门。scratch同输入诊断确认当前public SDPA的全F32程序对原独立F32方程最大仅
+8.20e-8，strict-F32误差/原门最大0.00101；产品与原exe/source未改。有限测试FIX仅
+Direct/Graph两wrapper按明确F32输入/累加的SDPA操作选择原F32参考，保原8e-5+4e-5门，
+不放宽容差、不改公共fixture/其它native参考/产品或已合格P1。先定向两入口验证该例，
+再续原Vulkan未运行集合与本次受影响ID；原78已过且参考不受影响的案例不重复。G02仍未
+验收，不因诊断PASS代签851集合；原失败、原skip及全部成本保留。

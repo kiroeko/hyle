@@ -1307,6 +1307,21 @@ TEST(VulkanGraphQwen38_24T,
 void run_q24_semantic_fragment(
     d5_qwen38_24t_semantic_fragments::Fragment fixture) {
   namespace sem = d5_qwen38_24t_semantic_fragments;
+  // Public F32 SDPA selects the original full-F32 Vulkan program. The
+  // optional coopmat2/F16 witness describes different arithmetic. Keep the
+  // independent F32 oracle and its unchanged, stricter nominal error gate.
+  const bool full_f32_sdpa = fixture.region == 0x040421 && std::any_of(
+      fixture.nodes.begin(), fixture.nodes.end(), [&](const auto &node) {
+        const auto *attention = node.operation.template get_if<
+            hyle::compute::ScaledDotProductAttention>();
+        return attention &&
+               attention->accumulation_type == hyle::compute::DataType::kFloat32 &&
+               node.inputs.size() == 3 &&
+               std::all_of(node.inputs.begin(), node.inputs.end(), [&](auto input) {
+                 return fixture.description(input).data_type() ==
+                        hyle::compute::DataType::kFloat32;
+               });
+      });
   auto full = sem::make_graph(fixture);
   auto context = vulkan_test::context().value();
   std::vector<v::Tensor> constants;
@@ -1342,7 +1357,7 @@ void run_q24_semantic_fragment(
       SCOPED_TRACE(output);
       feedback.observe(output, actual);
       sem::expect_output(fixture, actual, expected.outputs[output],
-                         expected.native_outputs.empty()
+                         (full_f32_sdpa || expected.native_outputs.empty())
                              ? std::span<const float>{}
                              : expected.native_outputs[output],
                          fixture.exact_output(output), fixture.id_validation(output),
