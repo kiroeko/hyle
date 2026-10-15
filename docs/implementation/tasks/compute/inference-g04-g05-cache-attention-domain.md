@@ -2113,3 +2113,21 @@ current/next page base的时序；未改变commit/wait/barrier及数学顺序。
 尚未签数学、设备或寄存器/吞吐改善。ce22-paged-offset-plan为READY，授权仅FI且无issues；
 共同lock导致选择器保守选全库，保留selected/skipped理由，按本卡真实FI/直接consumer门
 执行，未变native依赖和其它已签路线按身份复用，不触发全库构建或改公共selector。
+
+CE22[17数学与设备检查](../../../../evidence/correctness/inference-g04-g05-cuda-ce22-paged-offset-source-device/receipt.json)
+已实际PASS，product8d61d51f1：source阶段458.838s，十cache memcheck、十cache racecheck及
+两普通F16/BF16 racecheck共17.998s，零FAIL/SKIP、error/warning/hazard，二进制前后SHA一致。
+FI进入CANDIDATE8d61；此处只签数学与设备安全，不签资源、吞吐或整个G04/G05。
+
+随后按预声明执行[相同三个内核实例的实际生成代码对比](../../../../evidence/architecture/inference-g04-g05-cuda-ce22-paged-offset-codegen/receipt.json)：
+exact mangled symbols、SM89、原tile/warp/MMA相同，当前私有头SHA与manifest一致。
+window/prefill/holdout栈帧从40/48/120增加到48/56/144字节，峰值寄存器仍255；
+LDL/STL从8/8、10/10、27/27变为9/9、12/11、30/31。提取成功不等于资源目标通过：
+移除持久地址数组没有实现预期寄存器减负；不能据此宣称吞吐改善，也不能仅由栈增加
+断言实际吞吐回退。该P0反证出现后不启动长SDK/三host/numeric/P1批次，未运行门仍未裁决。
+保留8d数学/device PASS、代码与全部费用，所有原qualified FAIL不变。
+
+下一有限只读审计仅核当前内核的原FP8转换fragment、live寄存器与packed物理tile约束；
+必须解释相同实际实例的成本来源，优先借成熟原加载/矩阵乘路径。无新产品FIX授权，
+不试tile变体、不删除对齐保护、不改peer/统计/阈值；若形成有限修正，先合法回AUDITED。
+G04/G05仍未关闭，G06不实施；完整goal仍3/10。

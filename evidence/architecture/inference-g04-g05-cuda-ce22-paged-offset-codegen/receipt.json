@@ -1,0 +1,87 @@
+{
+  "kind": "G04_G05_CE22_PAGED_OFFSET_FIXED_KERNEL_CODEGEN",
+  "verdict": "EXTRACTION_PASS_RESOURCE_HYPOTHESIS_NOT_MET_NO_THROUGHPUT_VERDICT",
+  "product_candidate": "8d61d51f162a200fd519a8e27e90d0a787b51cd2",
+  "binary_sha256": "442aeb4d71237d176cf417a9081789a21b1fc48f2364c2b1e0fee4851253ecdf",
+  "header_sha256": "dda21494fb89d6ac3a086babeb5f3334eabeae5dd864833f90db4137fcad37e8",
+  "previous_codegen_sha256": "806d672cbc2e3ac616f51508bc5e7957c8b06235bbe4c63031a8ba117ea30297",
+  "kernels": [
+    {
+      "mangled": "_ZN10flashinfer34BatchPrefillWithPagedKVCacheKernelINS_12KernelTraitsILNS_8MaskModeE1ELj64ELj1ELj2ELj16ELj16ELj4ELj1ELNS_15PosEncodingModeE0E13__nv_bfloat1613__nv_fp8_e4m3S4_fiNS_16DefaultAttentionILb0ELb1ELb0ELb0EEEEEN4hyle7compute10flashinfer6native48_GLOBAL__N__ca0ae4f1_15_native_cache_cu_95f5a4b012OutputParamsINS_23BatchPrefillPagedParamsIS4_S5_S4_iEEEEEEvT0_",
+      "demangled": "void flashinfer::BatchPrefillWithPagedKVCacheKernel<flashinfer::KernelTraits<(flashinfer::MaskMode)1, (unsigned int)64, (unsigned int)1, (unsigned int)2, (unsigned int)16, (unsigned int)16, (unsigned int)4, (unsigned int)1, (flashinfer::PosEncodingMode)0, __nv_bfloat16, __nv_fp8_e4m3, __nv_bfloat16, float, int, flashinfer::DefaultAttention<(bool)0, (bool)1, (bool)0, (bool)0>>, hyle::compute::flashinfer::native::<unnamed>::OutputParams<flashinfer::BatchPrefillPagedParams<__nv_bfloat16, __nv_fp8_e4m3, __nv_bfloat16, int>>>(T2)",
+      "before_resource": "REG:255 STACK:40 SHARED:0 LOCAL:0 CONSTANT[0]:720 TEXTURE:0 SURFACE:0 SAMPLER:0",
+      "after_resource": "REG:255 STACK:48 SHARED:0 LOCAL:0 CONSTANT[0]:720 TEXTURE:0 SURFACE:0 SAMPLER:0",
+      "before_sass": {
+        "LDL": 8,
+        "STL": 8
+      },
+      "after_sass": {
+        "LDL": 9,
+        "STL": 9
+      }
+    },
+    {
+      "mangled": "_ZN10flashinfer34BatchPrefillWithPagedKVCacheKernelINS_12KernelTraitsILNS_8MaskModeE1ELj64ELj1ELj2ELj16ELj16ELj4ELj1ELNS_15PosEncodingModeE0E13__nv_bfloat1613__nv_fp8_e4m3ffiNS_16DefaultAttentionILb0ELb1ELb0ELb0EEEEEN4hyle7compute10flashinfer6native48_GLOBAL__N__ca0ae4f1_15_native_cache_cu_95f5a4b011MergeParamsINS_23BatchPrefillPagedParamsIS4_S5_fiEES4_Lj256EEEEEvT0_",
+      "demangled": "void flashinfer::BatchPrefillWithPagedKVCacheKernel<flashinfer::KernelTraits<(flashinfer::MaskMode)1, (unsigned int)64, (unsigned int)1, (unsigned int)2, (unsigned int)16, (unsigned int)16, (unsigned int)4, (unsigned int)1, (flashinfer::PosEncodingMode)0, __nv_bfloat16, __nv_fp8_e4m3, float, float, int, flashinfer::DefaultAttention<(bool)0, (bool)1, (bool)0, (bool)0>>, hyle::compute::flashinfer::native::<unnamed>::MergeParams<flashinfer::BatchPrefillPagedParams<__nv_bfloat16, __nv_fp8_e4m3, float, int>, __nv_bfloat16, (unsigned int)256>>(T2)",
+      "before_resource": "REG:255 STACK:48 SHARED:0 LOCAL:0 CONSTANT[0]:728 TEXTURE:0 SURFACE:0 SAMPLER:0",
+      "after_resource": "REG:255 STACK:56 SHARED:0 LOCAL:0 CONSTANT[0]:728 TEXTURE:0 SURFACE:0 SAMPLER:0",
+      "before_sass": {
+        "LDL": 10,
+        "STL": 10
+      },
+      "after_sass": {
+        "LDL": 12,
+        "STL": 11
+      }
+    },
+    {
+      "mangled": "_ZN10flashinfer34BatchPrefillWithPagedKVCacheKernelINS_12KernelTraitsILNS_8MaskModeE0ELj64ELj1ELj8ELj4ELj8ELj4ELj1ELNS_15PosEncodingModeE0E13__nv_bfloat1613__nv_fp8_e4m3S4_fiNS_16DefaultAttentionILb0ELb1ELb0ELb0EEEEEN4hyle7compute10flashinfer6native48_GLOBAL__N__ca0ae4f1_15_native_cache_cu_95f5a4b012OutputParamsINS_23BatchPrefillPagedParamsIS4_S5_S4_iEEEEEEvT0_",
+      "demangled": "void flashinfer::BatchPrefillWithPagedKVCacheKernel<flashinfer::KernelTraits<(flashinfer::MaskMode)0, (unsigned int)64, (unsigned int)1, (unsigned int)8, (unsigned int)4, (unsigned int)8, (unsigned int)4, (unsigned int)1, (flashinfer::PosEncodingMode)0, __nv_bfloat16, __nv_fp8_e4m3, __nv_bfloat16, float, int, flashinfer::DefaultAttention<(bool)0, (bool)1, (bool)0, (bool)0>>, hyle::compute::flashinfer::native::<unnamed>::OutputParams<flashinfer::BatchPrefillPagedParams<__nv_bfloat16, __nv_fp8_e4m3, __nv_bfloat16, int>>>(T2)",
+      "before_resource": "REG:255 STACK:120 SHARED:0 LOCAL:0 CONSTANT[0]:720 TEXTURE:0 SURFACE:0 SAMPLER:0",
+      "after_resource": "REG:255 STACK:144 SHARED:0 LOCAL:0 CONSTANT[0]:720 TEXTURE:0 SURFACE:0 SAMPLER:0",
+      "before_sass": {
+        "LDL": 27,
+        "STL": 27
+      },
+      "after_sass": {
+        "LDL": 30,
+        "STL": 31
+      }
+    }
+  ],
+  "stages": [
+    {
+      "stage": "resources",
+      "command": [
+        "/usr/local/cuda-13.3/bin/cuobjdump",
+        "--dump-resource-usage",
+        "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/shared-sdk-build/bin/libhyle_compute_provider_flashinfer.so.0.1.0"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 4.8761088210000025
+    },
+    {
+      "stage": "selected-sass",
+      "command": [
+        "/usr/local/cuda-13.3/bin/cuobjdump",
+        "--dump-sass",
+        "--function",
+        "_ZN10flashinfer34BatchPrefillWithPagedKVCacheKernelINS_12KernelTraitsILNS_8MaskModeE1ELj64ELj1ELj2ELj16ELj16ELj4ELj1ELNS_15PosEncodingModeE0E13__nv_bfloat1613__nv_fp8_e4m3S4_fiNS_16DefaultAttentionILb0ELb1ELb0ELb0EEEEEN4hyle7compute10flashinfer6native48_GLOBAL__N__ca0ae4f1_15_native_cache_cu_95f5a4b012OutputParamsINS_23BatchPrefillPagedParamsIS4_S5_S4_iEEEEEEvT0_,_ZN10flashinfer34BatchPrefillWithPagedKVCacheKernelINS_12KernelTraitsILNS_8MaskModeE1ELj64ELj1ELj2ELj16ELj16ELj4ELj1ELNS_15PosEncodingModeE0E13__nv_bfloat1613__nv_fp8_e4m3ffiNS_16DefaultAttentionILb0ELb1ELb0ELb0EEEEEN4hyle7compute10flashinfer6native48_GLOBAL__N__ca0ae4f1_15_native_cache_cu_95f5a4b011MergeParamsINS_23BatchPrefillPagedParamsIS4_S5_fiEES4_Lj256EEEEEvT0_,_ZN10flashinfer34BatchPrefillWithPagedKVCacheKernelINS_12KernelTraitsILNS_8MaskModeE0ELj64ELj1ELj8ELj4ELj8ELj4ELj1ELNS_15PosEncodingModeE0E13__nv_bfloat1613__nv_fp8_e4m3S4_fiNS_16DefaultAttentionILb0ELb1ELb0ELb0EEEEEN4hyle7compute10flashinfer6native48_GLOBAL__N__ca0ae4f1_15_native_cache_cu_95f5a4b012OutputParamsINS_23BatchPrefillPagedParamsIS4_S5_S4_iEEEEEEvT0_",
+        "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/shared-sdk-build/bin/libhyle_compute_provider_flashinfer.so.0.1.0"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 0.7866377429999147
+    }
+  ],
+  "measured_seconds": 5.662746563999917,
+  "limits": [
+    "Actual source-test shared artifact, WSL SM89; same three exact mangled specializations as qualified attempt9.",
+    "Only static resource and instruction counts; no runtime timing, occupancy or throughput verdict.",
+    "Original tile, warp and math template parameters unchanged; SDK and fresh numeric/P1 remain separate gates.",
+    "Actual stack frames increased40/48/120 to48/56/144; LDL/STL remain and peak registers255 unchanged.",
+    "This falsifies the proposed register-pressure relief; it does not establish actual throughput regression.",
+    "Downstream static/shared,host facets,numeric and P1 intentionally not launched while this P0 hypothesis remains unmet.",
+    "Correctness/device PASS and all original failures/costs remain; aggregate G04/G05 not accepted."
+  ],
+  "raw_zip_sha256": "b6a606927ecbd1c0cd61f155e98e02995f7a19293bb8be59cf2d75a3db537398"
+}

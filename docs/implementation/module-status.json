@@ -578,9 +578,10 @@
     },
     {
       "module": "compute_provider_flashinfer",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/inference-g04-g05-cache-attention-domain.md",
-      "summary": "G04/G05 CE22 AUDITED：原9c9 qualified FAIL与actual栈读写反证；唯一有限FIX借原on-the-fly protected页加载，去FP8 paged持久K/V地址数组，保tile/对齐/数学/同步/shortK补零与生命周期。未签新codegen或性能，原失败成本全保留。"
+      "summary": "G04/G05 CE22 CANDIDATE：原按需页偏移修正17数学与设备检查PASS；实际相同内核栈帧反增、255寄存器，减负假设未成立。长后续门未启动，先有限只读审计；原qualified FAIL与累计成本保留，G04/G05未关闭。",
+      "candidate": "8d61d51f162a200fd519a8e27e90d0a787b51cd2"
     },
     {
       "module": "compute_provider_ggml_metal",
