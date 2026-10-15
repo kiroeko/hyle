@@ -159,7 +159,7 @@
       "consumer_key": "inference-apple-encoded-page/encoded-window-d256",
       "provenance": {
         "path": "consumer-provenance.json",
-        "sha256": "16fe30a462728d7bf24edf4e07813ec9dffccd74566f1d47be57c318b32b7b31"
+        "sha256": "236929b48aac413eac5de056c69d378918c0038486d6b1007216c89b55491b88"
       },
       "ownership_topology": {
         "candidate": "Public PagedBatchInvocation, two independent slots and context; actual ready per-page arena guards and packed Q, owned page table, one packed result",
@@ -248,7 +248,7 @@
       "consumer_key": "inference-apple-encoded-page/encoded-prefill-d256",
       "provenance": {
         "path": "consumer-provenance.json",
-        "sha256": "16fe30a462728d7bf24edf4e07813ec9dffccd74566f1d47be57c318b32b7b31"
+        "sha256": "236929b48aac413eac5de056c69d378918c0038486d6b1007216c89b55491b88"
       },
       "ownership_topology": {
         "candidate": "Public PagedBatchInvocation, two independent slots and context; actual ready per-page arena guards and packed Q, owned page table, one packed result",
@@ -337,7 +337,7 @@
       "consumer_key": "inference-apple-encoded-page/encoded-noncausal-d64-dv128",
       "provenance": {
         "path": "consumer-provenance.json",
-        "sha256": "16fe30a462728d7bf24edf4e07813ec9dffccd74566f1d47be57c318b32b7b31"
+        "sha256": "236929b48aac413eac5de056c69d378918c0038486d6b1007216c89b55491b88"
       },
       "ownership_topology": {
         "candidate": "Public PagedBatchInvocation, two independent slots and context; actual ready per-page arena guards and packed Q, owned page table, one packed result",

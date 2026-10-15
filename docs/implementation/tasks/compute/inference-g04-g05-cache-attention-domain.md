@@ -1365,3 +1365,15 @@ equivalence/state/JIT key；默认QueryT保plain原float fragment，无公共API
 退休变化。原数值门和旧失败全部保留。短诊断三形状双顺序均大于1，prefill1.1429–1.1496；
 这只允许冻结并进入原合同资格，不是P1通过。Apple owner合法进入CANDIDATE，其它owner
 候选不动；新SDK独立peer数值重绑定、16 A/A和原n15→31/5%正式门仍待完成。
+
+CE14 正式attempt4已终止并[封存原始结果](../../../../evidence/performance/inference-g04-g05-apple-encoded-m1-p1-attempt-4/receipt.json)：
+16 A/A及5项controls全部PASS，原n15的120产品/30controls与strict verify0实际完成；三形状
+诊断比率分别1.2263–1.2357、1.1420–1.1504、1.0756–1.0807。但前次SDK证据更新遗漏同步
+contract内3个consumer-provenance.json SHA，product evidence因hash不同FAIL，整轮为
+DIAGNOSTIC/UNPROVEN，不能改写成合格PASS。实际717.606秒与旧失败全部保留。
+仅纠正这3个证据SHA为实际已提交文件236929b48aac413eac5de056c69d378918c0038486d6b1007216c89b55491b88；
+产品3b5157532、SDK、peer、三形状、时序/成本、16 A/A、n15→31、5%阈值全部不变。
+下一有限attempt5先核Git/worktree/远程的JSON→MD全部hash、完整合同及SDK identity，
+再沿原仪器运行一次；不修改性能核心、手工提升旧manifest或重跑产品/普通测试。原fresh
+合同只产生SDK比较程序，不触发native/product构建。启动前确认原parent终止与Air容量；
+继续heavy串行、max4jobs、原成本不重置。工程资格仍待这次证据绑定正确的结果。
