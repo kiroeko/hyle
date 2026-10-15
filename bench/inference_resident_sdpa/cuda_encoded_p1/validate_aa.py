@@ -52,7 +52,7 @@ def main():
     cache = dict(line.split('=', 1) for line in (build/'CMakeCache.txt').read_text().splitlines()
                  if '=' in line and not line.startswith(('#', '//')))
     original = json.loads((build/'original-peer/original-flashinfer-source.json').read_text())
-    receipt_file = ROOT/'evidence/correctness/inference-g04-g05-cuda-ce25-native-prefill-numeric-rebind/receipt.json'
+    receipt_file = ROOT/'evidence/correctness/inference-g04-g05-cuda-ce26-single-output-merge-numeric-rebind/receipt.json'
     preflight = json.loads(receipt_file.read_text())
     if preflight.get('state') != 'TERMINAL_PASS':
         raise RuntimeError('CUDA numerical preflight has not passed')
