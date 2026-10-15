@@ -1895,3 +1895,11 @@ CE20[UBSan宿主未定义行为facet](../../../../evidence/correctness/inference
 四个FI CUDA TU及直接受影响host链的instrumentation由实际compdb核验。只复用已核SHA的
 原同mode native archive，不代签原系统header freshness或设备/driver/private-pool上界。
 ASan/UBSan当前均通过，下一门TSan；sync-fixed参考的新数值与P1仍待实际执行。
+
+CE20[TSan宿主数据竞争facet](../../../../evidence/correctness/inference-g04-g05-cuda-ce20-host-tsan/receipt.json)
+实际PASS：16项数学/消费测试和五种source风险，累计460.325s；同候选四FI CUDA TU与
+受影响host链实际instrumentation。原NVIDIA诊断线程lifetime限制与LSan INCONCLUSIVE
+保留，不压制data-race检查，不把宿主结果当设备/driver/private-pool上界。当前source17、
+设备同步、static/shared SDK及ASan/UBSan/TSan三个受影响facet均已有独立实际PASS。
+下一步仅独立sync-fixed比较程序：两variant×三形状的原四次double oracle、readonly与
+primary双方memcheck/racecheck，再沿原统计门执行新A/A/P1；未通过不签整项完成。
