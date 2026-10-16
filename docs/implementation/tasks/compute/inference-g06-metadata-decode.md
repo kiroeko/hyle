@@ -1,6 +1,6 @@
 # G06 metadata 与 decode 成本收口
 
-状态：**G06 CANDIDATE；SDK八配置/23头、WSL三宿主san、Air六原生host配置与P0结构通过；最终七门/文档裁决待，2026-10-16**。本卡沿[完整十项目标](../project/inference-gaps-goal-execution-2026-10.md)，
+状态：**G06 ACCEPTED；十owner本轮CLOSED，FI另保G04/G05性能CANDIDATE，2026-10-16**。终局以[有限终审](inference-g06-final-closure.md)为准；下文按时间保留施工、失败与检查点。本卡沿[完整十项目标](../project/inference-gaps-goal-execution-2026-10.md)，
 不缩减 CPU、单 GPU、CPU＋单 GPU、单/多请求或四原生路线。先完成四组共同审计和形状冻结，
 再集中实施、批量检查、按实际失败定向修正；产品修改仅限下文已冻结且owner为AUDITED的批次。
 
@@ -861,3 +861,11 @@ checked waits和private UNKNOWN均保留。完整node-set旧校验最坏O(N³)�
 原kernel-only P1 UNRESOLVED、阈值/失败/费用继续保留。此处只通过P0，不签七门/易用文档、
 共享FI剩余G04状态或G06整项验收；11 owner仍CANDIDATE。下一步只做最终裁决/guide，
 不重跑已过SDK/LOC/san或unchanged旧P1。G06粗估95%，整goal仍3/10。
+
+
+### G06 整项终局
+
+[最终七门与语义矩阵](inference-g06-final-closure.md)和guide同步完成，产品候选不变。
+本卡M/S/L/D有限集合按P0验收，停止本轮产品施工；十个独立owner进入CLOSED。FI的D6/D7
+同样验收，但组件保留G04/G05原性能CANDIDATE并回当前数学卡做有界只读成本核对，不能
+用P0抹掉原UNRESOLVED。整goal现4/10：G01/G02/G03/G06；G04/G05及G07–G10继续。

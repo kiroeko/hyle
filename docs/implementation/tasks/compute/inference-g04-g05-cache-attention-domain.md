@@ -1,6 +1,6 @@
 # G04/G05 编码 KV 与有限 attention 语义实施批
 
-状态：**Apple CE14 CLOSED3b5157532；Vulkan provider 的 CE16 已固定 CANDIDATE；其余 owner 保持原 CANDIDATE，2026-10-15**。baseline `694a3d1a4b02540cb56b6ceae35b73dd1dd93440`；
+状态：**G06独立范围已验收；FI以当前0a29保留G04/G05 CUDA性能CANDIDATE，其余owner按registry，2026-10-16**。baseline `694a3d1a4b02540cb56b6ceae35b73dd1dd93440`；
 共同批owner见下表：九个原实际组件及下文新增CUDA数值状态owner；有限CE01–07/API/成本合同已冻结。原 G03 已 CLOSED，不由本卡重开其权限/
 退休实现。九owner已合法SCOPED后进入AUDITED；仅下列有限FIX授权产品实现。
 本批沿[十项总卡](../project/inference-gaps-goal-execution-2026-10.md)，
@@ -2679,3 +2679,20 @@ compute_batch与graph_batch本批聚合也受此未决门阻断，先明确BLOCK
 阻住其余完整goal。此更正不验收G04/G05、不删除任何风险/项目、不承诺G06会使CUDA
 比率改善；双方共同费用下降也可能暴露更大的内核相对差距。原G01–G03已验收，
 完整goal仍ACTIVE/3of10；G06本轮只准入审计，须固定形状并合法AUDITED后才实施。
+
+
+## G06 验收后的当前 FI 有限只读工作
+
+[G06终审](inference-g06-final-closure.md)已验收active/delta、schedule reuse、capture与相应
+生命周期/交付/P0。compute_batch/graph_batch及其它独立G06 owner可结束本轮；FI组件仍
+CANDIDATE，完整产品当前0a29（Graph补齐后的全树669），原CE28数学候选830和
+attempt14 qualified/strict0、prefill稳定LOSS与5%非劣UNRESOLVED全部保留，G04/G05未验收。
+G06没有改变原kernel-only计时门，不能凭其P0关闭FI或把3/10旧进度当当前状态。
+
+本段仅重新纳入一个由已完成G06真实成本改动触发的有限只读审查，最多一次2h检查点，
+不重置原[15,31]失败/预算。核当前timed consumer的真实admission→owner return边界，
+逐项判断G06改变位于哪个计时区段；核原candidate/peer当前执行中的FP8 load、F32 partial/
+merge和scale/cast所承担的同合同工作，并检查已有trace/反事实证据是否仍绑定当前输入。
+输出明确源码锚点与可归属成本；无新机制/material消费双钥匙就结束该调查并保留未决。
+没有授权新P1/n63/profile/tile/阈值搜索、数学修改或公共仪器重写；新FIX须另行冻结并
+合法回AUDITED。其它G项继续推进，整个goal保持ACTIVE，不以G06代签剩余六项。

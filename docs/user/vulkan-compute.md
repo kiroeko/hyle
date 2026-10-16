@@ -57,7 +57,9 @@ Q0 request跳过，全空输出为空；非空Q需KV，causal需KV≥Q。改变Q
 保原绑定；成功后旧input imports释放，必须重新bind。旧结果、在途/失败工作或关闭Context
 拒绝更新；接受后的更新错误使原slot失败，不能继续运行半更新状态。
 新入口的[实际Air source验证](../../evidence/correctness/inference-g06-native-ragged-runtime-source/receipt.json)
-覆盖单/多请求Q1、混合Q、plain/Q8及有限几何；最终sanitizer/迁址SDK/header与性能资格待G06收口。
+覆盖单/多请求Q1、混合Q、plain/Q8及有限几何。当前适用host sanitizer、迁址static/shared与
+独立头已通过，[G06终审](../implementation/tasks/compute/inference-g06-final-closure.md)给出P0成本与资格；
+原生private费用仍UNKNOWN，各路线capture与计时资格保持各自边界。
 caller需要取得KV writer时也须释放自己的旧native views/reader。
 初始固定布局候选的实际Air source/static/shared、宿主风险、Windows定向编译和同合同
 多请求性能非劣門均已通过，见[有限终审](../implementation/tasks/compute/inference-g01-vulkan-ragged-terminal.md)。

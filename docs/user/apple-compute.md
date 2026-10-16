@@ -39,7 +39,9 @@ HYLE_RETURN_IF_ERROR(slot.bind(std::array{query_array, key_array, value_array}))
 ```
 
 新更新入口的[实际Air source验证](../../evidence/correctness/inference-g06-native-ragged-runtime-source/receipt.json)
-覆盖单/多请求Q1和混合Q、plain/Q8及有限几何；最终sanitizer/迁址SDK/header与性能资格待G06收口。
+覆盖单/多请求Q1、混合Q、plain/Q8及有限几何。当前适用host sanitizer、迁址static/shared与
+独立头已通过，[G06终审](../implementation/tasks/compute/inference-g06-final-closure.md)给出P0成本与资格；
+原生private费用仍UNKNOWN，各路线capture与计时资格保持各自边界。
 更新只释放slot保留的输入；需要重新取得KV writer时，caller也要释放自身旧native views/reader。
 
 原生输入必须成功 ready；由 `MemoryResource::binding` 导入的数组保留原 readonly lease，

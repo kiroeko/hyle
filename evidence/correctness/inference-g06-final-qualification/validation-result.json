@@ -1,0 +1,279 @@
+{
+  "state": "PASS_G06_FINITE_METADATA_DECODE_ACCEPTANCE",
+  "timestamp_utc": "2026-10-16T08:04:52.935163+00:00",
+  "record": "docs/implementation/tasks/compute/inference-g06-final-closure.md",
+  "previous_registry_ref": "5b95fc210cc72abaad5ac303fa4eb2f678497a83",
+  "product_candidate": "669121418669b31f6849c74f64362aaf8d6eb919",
+  "product_unchanged_since_candidate": true,
+  "graph_only_product_delta_from_common": [
+    "src/graph/lease_submission.cc",
+    "src/graph/leased_invocation.cc",
+    "src/graph/submission_internal.h"
+  ],
+  "scope": "Frozen G06 M/S/L/D only; source and risk facets retain their exact original limitations.",
+  "goal": {
+    "state": "ACTIVE",
+    "accepted": [
+      "G01",
+      "G02",
+      "G03",
+      "G06"
+    ],
+    "accepted_count": 4,
+    "total": 10,
+    "remaining": [
+      "G04",
+      "G05",
+      "G07",
+      "G08",
+      "G09",
+      "G10"
+    ]
+  },
+  "gates": {
+    "scope": "PASS",
+    "architecture": "PASS",
+    "correctness": "PASS",
+    "delivery": "PASS",
+    "usability_docs": "PASS",
+    "red_team": "PASS",
+    "engineering_performance": "PASS"
+  },
+  "closed_owners": [
+    "compute",
+    "graph",
+    "compute_provider_ggml",
+    "compute_route_apple",
+    "compute_route_vulkan",
+    "compute_provider_ggml_vulkan",
+    "graph_route_cpu_apple",
+    "graph_route_cpu_vulkan",
+    "compute_batch",
+    "graph_batch"
+  ],
+  "retained_candidate": {
+    "module": "compute_provider_flashinfer",
+    "candidate": "0a29d119426b2975d48c238c37a2994675e0ba9f",
+    "record": "docs/implementation/tasks/compute/inference-g04-g05-cache-attention-domain.md",
+    "reason": "G06 D6/D7 accepted; original G04/G05 CUDA prefill performance remains UNRESOLVED. No P1 retry, budget reset or new product FIX authorized."
+  },
+  "registry_counts": {
+    "CLOSED": 59,
+    "CANDIDATE": 5
+  },
+  "primary_and_supporting_evidence": [
+    {
+      "path": "evidence/architecture/inference-g06-final-cost-review/loc.json",
+      "sha256": "cd778d4891ebf1e3b66a201ba77e57147fa6122482a3bd8108eca7f4d8e43a5f",
+      "original_verdict": "PASS_IMMUTABLE_CANDIDATE_LOC_ONLY",
+      "archive": "evidence/architecture/inference-g06-final-cost-review/loc-raw.zip",
+      "archive_sha256": "a38562efb05aefa5b7ec5862b4e1d1c91a02a01d76c49e1b68cae33ca6ea353a"
+    },
+    {
+      "path": "evidence/architecture/inference-g06-final-cost-review/p0.json",
+      "sha256": "b918ee11ca55e8b987c2e03da542765862a19e12641033d12de34ac8f5458a44",
+      "original_verdict": "PASS_G06_P0_STRUCTURE_ONLY",
+      "archive": "evidence/architecture/inference-g06-final-cost-review/p0-raw.zip",
+      "archive_sha256": "c2b28f6115cdcd90c0667594769e0861897c289bd62f059f2783da462dbfe4b8"
+    },
+    {
+      "path": "evidence/correctness/inference-g06-capture-replay-source/receipt.json",
+      "sha256": "76d433378b7108f727e6b1de9e61d5457e6d952a69d74a92b4ee7cf559b6b6ea",
+      "original_verdict": "PASS_ORDINARY_SOURCE_ONLY_FINAL_RISKS_PENDING",
+      "archive": "evidence/correctness/inference-g06-capture-replay-source/raw.zip",
+      "archive_sha256": "e24107fc6da978efb898c7662f83259bbc862066ca3f4df7e40f72ecbcd475a6"
+    },
+    {
+      "path": "evidence/correctness/inference-g06-common-source-windows-attempt-4/receipt.json",
+      "sha256": "910f51ee5a00fb74c77183ae3edd516f2fa9bea64af56635c6e405762094b4d1",
+      "original_verdict": "PASS_SOURCE_COMMON_CPU_ONLY",
+      "archive": "evidence/correctness/inference-g06-common-source-windows-attempt-4/raw.zip",
+      "archive_sha256": "315ec7071f9f72ebbf093fbfb50cdedf1bd484745ca92706db5a6cd4a62bf18e"
+    },
+    {
+      "path": "evidence/correctness/inference-g06-cpu-ragged-runtime-source/receipt.json",
+      "sha256": "3cb880ace3fdca7d94c45fbc2f65968ff836f2d781dfd38ac312f143040f2978",
+      "original_verdict": "PASS_WINDOWS_CPU_AND_AIR_MIXED_CORE_SOURCE",
+      "archive": "evidence/correctness/inference-g06-cpu-ragged-runtime-source/raw.zip",
+      "archive_sha256": "1ac569fb32dacb51a6e5eb00d53a7eaefb19c11187da5f06701f8827f281330c"
+    },
+    {
+      "path": "evidence/correctness/inference-g06-cpu-runtime-q1-source/receipt.json",
+      "sha256": "8ea31a4ca4e28ed579c7cea4ae0910deebf4bf0e315adb0465633d6f69290d75",
+      "original_verdict": "PASS_WINDOWS_CPU_AND_AIR_MIXED_CORE_SOURCE",
+      "archive": "evidence/correctness/inference-g06-cpu-runtime-q1-source/raw.zip",
+      "archive_sha256": "f7bd3b143ba4854230e9596a5b3acbc6faf962fd7cc4daa9944f6e87c8b40808"
+    },
+    {
+      "path": "evidence/correctness/inference-g06-fi-schedule-runtime-source/receipt.json",
+      "sha256": "f457ab015f33eb66fdf6c5da69d9217e6ae4da2be425ca3c2cb31a3b04657d1a",
+      "original_verdict": "PASS_ORDINARY_SOURCE_ONLY_INSTRUMENTED_RISKS_PENDING",
+      "archive": "evidence/correctness/inference-g06-fi-schedule-runtime-source/raw.zip",
+      "archive_sha256": "caeb70c8d0acfeaefaae0a98ae1392791e87f7c3a7cc99c643730a19b22f365c"
+    },
+    {
+      "path": "evidence/correctness/inference-g06-final-cuda-risks/receipt.json",
+      "sha256": "1610be074c37072b490dd0c0b93ed6ba27c1bf60e1dbe403e9ccde3e9ea9df0d",
+      "original_verdict": "PASS_FINITE_CUDA_INSTRUMENTED_RISKS_ONLY",
+      "archive": "evidence/correctness/inference-g06-final-cuda-risks/raw.zip",
+      "archive_sha256": "1bedbe31ac08475ab4c239d92a066bc09cc07587e70633c107debd69afa146d4"
+    },
+    {
+      "path": "evidence/correctness/inference-g06-final-native-air-source/receipt.json",
+      "sha256": "f9983aadf765152ae7fdb61d991748db38b00a7fed2c56e62e1532a05c44a6d7",
+      "original_verdict": "PASS_FINITE_APPLE_VULKAN_SOURCE_AND_RECORDER_RISKS_ONLY",
+      "archive": "evidence/correctness/inference-g06-final-native-air-source/raw.zip",
+      "archive_sha256": "d857f18dd081fe524c793e26b0dc345b348991cf5e143b13be99e130b8833f2f"
+    },
+    {
+      "path": "evidence/correctness/inference-g06-final-native-host-sanitizers/receipt.json",
+      "sha256": "ae18341cbaa8e1ae645c40cf0d831fbb39dbbe214c486eee255b23d71664a231",
+      "original_verdict": "PASS_SIX_CURRENT_NATIVE_HOST_SANITIZER_FACETS",
+      "archive": "evidence/correctness/inference-g06-final-native-host-sanitizers/raw.zip",
+      "archive_sha256": "2aca4616d36c484255d0f592535a4aa6ce828c07c86a8b208240ac9ffc18f872"
+    },
+    {
+      "path": "evidence/correctness/inference-g06-final-relocated-sdk/receipt.json",
+      "sha256": "0b4990d876ab2fc621cee6bdf602d851584b3b62eaad3db057410b71bb552238",
+      "original_verdict": "PASS_FOUR_ROUTE_RELOCATED_STATIC_SHARED_SDK",
+      "archive": "evidence/correctness/inference-g06-final-relocated-sdk/raw.zip",
+      "archive_sha256": "89f7377d7da0622c6ab8e8da55dc9ace056f52e5d7e44ba0ba92f95318f74201"
+    },
+    {
+      "path": "evidence/correctness/inference-g06-final-windows-source/receipt.json",
+      "sha256": "585481b73b6f591fedeabf64b40c1afe04f2bc3ed17e623b5639f74fbfd47504",
+      "original_verdict": "PASS_FINITE_WINDOWS_CPU_CORE_GRAPH_SOURCE_ONLY",
+      "archive": "evidence/correctness/inference-g06-final-windows-source/raw.zip",
+      "archive_sha256": "a96634abbcf8861bd65a54fd238ba0578e3970b123b777640daf2831cfdef16d"
+    },
+    {
+      "path": "evidence/correctness/inference-g06-graph-page-admission-windows-source/receipt.json",
+      "sha256": "dbb3c0cae2e8f62ebcfc023b4ad62e21f7c5180f563e9751b57a323485de9d42",
+      "original_verdict": "PASS_FINITE_WINDOWS_CPU_CORE_GRAPH_SOURCE_ONLY",
+      "archive": "evidence/correctness/inference-g06-graph-page-admission-windows-source/raw.zip",
+      "archive_sha256": "cd876a09c9bba531dceda571e4b898164b20c97cecd43c30f5b74ef8a34cb557"
+    },
+    {
+      "path": "evidence/correctness/inference-g06-graph-page-cuda-risks/receipt.json",
+      "sha256": "3dc0f5d9a5d54e4c4ea87be4e9ff6344ba325456c00fbe2bd0ec0c4fa86190b0",
+      "original_verdict": "PASS_G06_GRAPH_PAGE_AND_POST_RECORD_ARTIFACT_OOM_CUDA_RISKS_ONLY",
+      "archive": "evidence/correctness/inference-g06-graph-page-cuda-risks/raw.zip",
+      "archive_sha256": "b6e5bfc2c42ee565c1bdfd6f8160827eafde3db16232cf6f9135b12b7f3734f0"
+    },
+    {
+      "path": "evidence/correctness/inference-g06-graph-page-host-asan/receipt.json",
+      "sha256": "f6eed6dfd55ec696766ad2c922ab2222e8ba73af170c856573c3e949aaec3c1e",
+      "original_verdict": "PASS_HOST_ASAN_FACET_ONLY",
+      "archive": "evidence/correctness/inference-g06-graph-page-host-asan/raw.zip",
+      "archive_sha256": "4cbf1f35d0b0dc314f57dd6cdfd965271b205407a7679c1931bc5451a1404cfe"
+    },
+    {
+      "path": "evidence/correctness/inference-g06-graph-page-host-tsan/receipt.json",
+      "sha256": "6cf132d976f369cb9a095393f95ae6b5f17a97bc7c3663a3ab5140c9aca0810b",
+      "original_verdict": "PASS_HOST_TSAN_FACET_ONLY",
+      "archive": "evidence/correctness/inference-g06-graph-page-host-tsan/raw.zip",
+      "archive_sha256": "53f7d1fe4be5e3131302e344f4b9c15e144a0af280db32dda66382b12c7f53e2"
+    },
+    {
+      "path": "evidence/correctness/inference-g06-graph-page-host-ubsan/receipt.json",
+      "sha256": "93fa530c0275f4fd19b2bf483970788d0a7811c52019e2c55fe81e02493d7bb4",
+      "original_verdict": "PASS_HOST_UBSAN_FACET_ONLY",
+      "archive": "evidence/correctness/inference-g06-graph-page-host-ubsan/raw.zip",
+      "archive_sha256": "fa2df511a7fa881e9cf46fef70f18b17424001be1c27d00ae422f356f361e435"
+    },
+    {
+      "path": "evidence/correctness/inference-g06-native-pending-air-attempt-5/receipt.json",
+      "sha256": "f5eef5f1ac20ae397e2a6d7315267c744a2348e618e5e8b230f9e87cf82acaf6",
+      "original_verdict": "PASS_APPLE_VULKAN_NATIVE_AND_CPU_NATIVE_SOURCE",
+      "archive": "evidence/correctness/inference-g06-native-pending-air-attempt-5/raw.zip",
+      "archive_sha256": "e59a9992dd44a7c610cc75ae94596ec3898a8e533d7c7af6174a3bf8cdeaab1e"
+    },
+    {
+      "path": "evidence/correctness/inference-g06-native-ragged-runtime-source/receipt.json",
+      "sha256": "0dc8661d1288a92fb7b0d1a20eca4224fdb58de39f0a78b5944c9369332cf986",
+      "original_verdict": "PASS_SELECTED_APPLE_VULKAN_SOURCE_WITH_MATCHED_APPLE_REUSE",
+      "archive": "evidence/correctness/inference-g06-native-ragged-runtime-source/raw.zip",
+      "archive_sha256": "78dda90a3d683ff80fdb4dbdd10e9abf665139f4fc28a55a61356e37e9ab5558"
+    },
+    {
+      "path": "evidence/correctness/inference-g06-native-runtime-lengths-source/receipt.json",
+      "sha256": "f5a5e3c08a0c45064c925aa9b405723ecc40ba2ab8c9942cfadc8e1e06c0dae7",
+      "original_verdict": "PASS_SELECTED_NATIVE_COMMON_AND_HYBRID_SOURCE",
+      "archive": "evidence/correctness/inference-g06-native-runtime-lengths-source/raw.zip",
+      "archive_sha256": "a5bda7f6c5631bf3c1f59c0656a781eaa1fb4c0e05be0b6dbacd4b9de453127d"
+    }
+  ],
+  "validation": {
+    "selected": [
+      "docs",
+      "closure"
+    ],
+    "skipped_or_reused": 146,
+    "checks": [
+      {
+        "command": [
+          "python",
+          "-X",
+          "utf8",
+          "scripts/check-module-closure.py",
+          "--previous-ref",
+          "5b95fc210cc72abaad5ac303fa4eb2f678497a83",
+          "--write-status"
+        ],
+        "exit_code": 0,
+        "log": "final-closure-write-status.log",
+        "log_sha256": "f3ee637515b32d7f83a0a208c58566105062187d53f9cc8c65b42d33d73d747b",
+        "output": "updated generated module status: C:\\public\\project-hyle\\hyle\\docs\\implementation\\status.md"
+      },
+      {
+        "command": [
+          "python",
+          "-X",
+          "utf8",
+          "scripts/check-module-closure.py",
+          "--previous-ref",
+          "5b95fc210cc72abaad5ac303fa4eb2f678497a83"
+        ],
+        "exit_code": 0,
+        "log": "final-closure-check.log",
+        "log_sha256": "4360c505c9ee8e52712679590911dbc10bfac68570b53bd7b6a960d474f49d32",
+        "output": "module closure contract passed: 64 components, schema 4"
+      },
+      {
+        "command": [
+          "python",
+          "-X",
+          "utf8",
+          "scripts/check-docs.py"
+        ],
+        "exit_code": 0,
+        "log": "final-closure-docs.log",
+        "log_sha256": "dc4723737d205f8c914adc9db0412457d6cca2277dbae180f288223eb12d5e9f",
+        "output": "documentation contract passed: 1249 Markdown files, 6373 relative links checked"
+      },
+      {
+        "command": [
+          "git",
+          "diff",
+          "--check"
+        ],
+        "exit_code": 0,
+        "log": "final-closure-diff-check.log",
+        "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "output": ""
+      }
+    ],
+    "no_new_build_or_test_run": true
+  },
+  "private_sealer_setup_failure": "Attempt1 verified all 20 receipt/archive hashes, then FileNotFoundError: PowerShell Tee-Object did not create the empty successful git diff --check log. No aggregate was written. Reran only git diff --check with direct output redirection to retain its actual empty output; no product/build/test change.",
+  "limits": [
+    "Original failures, UNKNOWN costs, sanitizer models and source-input reuse are preserved in linked receipts.",
+    "Common Graph mirrors share before first upload; native Apple/Vulkan index banks remain per controller.",
+    "Active versions still allocate/copy/refcount; cached full exports lock. Native prepare has a small version-owner allocation.",
+    "Apple managed graph and Vulkan re-encoding costs remain; driver/shader/private-pool costs are not certified by host sanitizers.",
+    "P0 structural acceptance gives no latency parity or speedup. Original G04/G05 5% time gate and exhausted [15,31] attempt14 remain unresolved.",
+    "Outer Graph node-set cubic validation is unchanged baseline cost, separate from G06 grouped page admission.",
+    "Complete engine, token/s and multi-GPU/multi-machine remain outside this finite acceptance."
+  ],
+  "raw_sha256": "2471d834069bd38b23ac3616ece0a25e4c3c0cb9175d843bea470cf3ba2c76f3"
+}

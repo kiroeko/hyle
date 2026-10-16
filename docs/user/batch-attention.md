@@ -1,7 +1,7 @@
 # Paged / ragged attention 与显式批次准备
 
 本页描述当前 C++ surface。当前资格与限制以[模块状态](../implementation/module-status.json)
-及[本轮验证计划](../implementation/tasks/compute/foundation-f5-final-validation-plan.md)为准；
+及[G06终审](../implementation/tasks/compute/inference-g06-final-closure.md)为准；
 这页不承诺各平台相同吞吐、capture或全部native paged。普通接入只选Compute/Graph产品，
 不依赖内部factor target。
 
@@ -10,10 +10,10 @@
 G04/G05 正在实施；CPU新域已完成Windows source数学检查，CUDA新域已完成Linux/SM89
 source数学检查，Apple/Vulkan新域已完成Air source数学检查。四后端与三联合路线的
 F16增量分页/Graph消费已有有限source证据；CPU/CUDA/Apple的BF16增量组合也已实测。
-新域实际源码、有限 source 风险、CPU/Apple/Vulkan 宿主 sanitizer、静态/动态 SDK 与
-独立头交付已通过；CUDA 新域宿主 sanitizer 与性能资格仍待验。
-SDK 结果见[六组混合路线](../../evidence/correctness/inference-g04-g05-encoded-sdk/result.json)与
-[CPU-only 两配置](../../evidence/correctness/inference-g04-g05-cpu-only-encoded-sdk/result.json)。进度见
+当前输入的源码、适用宿主风险与[四路线八份迁址SDK](../../evidence/correctness/inference-g06-final-relocated-sdk/receipt.json)
+已通过，独立头联合23个；Apple/Vulkan另有[六组原生host sanitizer](../../evidence/correctness/inference-g06-final-native-host-sanitizers/receipt.json)。
+宿主检查保留原TSan边界模型及LSan/shader/driver限制。G06工程性能结论为P0结构；
+CPU/Apple/Vulkan原有限P1已过，CUDA prefill非劣仍UNRESOLVED。进度与原计时合同见
 [活动卡](../implementation/tasks/compute/inference-g04-g05-cache-attention-domain.md)。
 普通旧 plain 旅程使用显式的新字段，库不保旧签名转发。schema/descriptor接受一种形状，
 不代表所选native核已支持；当前未接通的组合在准备时返回Unimplemented。
@@ -74,7 +74,7 @@ CPU-only实际ggml核心及F16增量F2/Graph组合另有
 [有限source证据](../../evidence/correctness/inference-g04-g05-cpu-only-encoded-page-source/result.json)；
 [BF16补充](../../evidence/correctness/inference-g04-g05-cpu-bf16-encoded-page-source/result.json)
 覆盖同一Direct/Graph增量旅程。
-CPU 新域适用 sanitizer 与 SDK 已有独立证据，P1 仍待验，不能从源码阶段测试推导。
+CPU 新域原有限P1已通过；当前更新和metadata费用按G06的P0结构合同裁决。
 
 Linux CUDA的FlashInfer入口现可用同一CacheEncode操作编码E4M3FN新行。准备时显式传入
 CUDA device resource，BatchProgram的host_workspace使用同设备原pinned-host resource。
@@ -104,14 +104,14 @@ F16原生及CPU+Apple增量F2/Graph已有
 [有限source证据](../../evidence/correctness/inference-g04-g05-encoded-native-page-source/result.json)；
 BF16原生及CPU+Apple增量组合也已完成
 [有限source补充](../../evidence/correctness/inference-g04-g05-apple-bf16-encoded-page-source/result.json)；
-实际 Air 宿主 ASan/UBSan/TSan、风险和 SDK 已通过，P1 仍待验；宿主 sanitizer 不签 GPU shader/driver。
+实际Air当前宿主ASan/UBSan/TSan、风险和SDK已通过；原有限P1已过，宿主检查不签GPU shader/driver。
 
 Vulkan原Plan可以编码同一Q8_0 carrier，F16 paged/ragged路径在原FullF32 scalar核中
 直接按页解码，独立Dv与窗口无需整历史KV展开。NaN/Inf和编码scale溢出由原Results报错；
 普通Copy/SetRows保持原规则。实际Air的编码字节、长prefill与大值抵消见
 [Vulkan有限source证据](../../evidence/correctness/inference-g04-g05-vulkan-encoding-math-stage/result.json)，
 F16原生及CPU+Vulkan增量组合见上述共同source证据。极小 scale/subnormal/FTZ 边界、
-实际 Air 宿主 ASan/UBSan/TSan、风险和 SDK 已通过，P1 仍待验，BF16 attention 没有因此获准。
+实际Air当前宿主ASan/UBSan/TSan、风险和SDK已通过；原有限P1已过，BF16 attention仍未准入。
 
 ## 编码新行并接入原分页更新
 
@@ -136,7 +136,7 @@ WriteLease的两个不重叠子视图。原LeaseUsePool写票附着该Graph的�
 
 | 路线 | 数学与公开入口 | 准备与成本 |
 |---|---|---|
-| Linux CUDA | 原FlashInfer C++ native paged/ragged；BatchProgram、BatchInvocation、PreparedBatch；graph::batch::provider/Invocation | 每layout显式H2D及原plan；不同topology不能靠shape/address猜复用；native private bytes未知 |
+| Linux CUDA | 原FlashInfer C++ native paged/ragged；BatchProgram、BatchInvocation、PreparedBatch；graph::batch::provider/Invocation | 显式active/delta上传；原schedule等价时复用plan，跨界重规划；native private bytes未知 |
 | CPU 参考 | MaterializedBatchProgram；MaterializedBatchInvocation / graph::batch::MaterializedInvocation | 显式gather、GQA展开、F32矩阵、mask与Copy；Direct逐stage同步wait |
 | CPU page16 | 原CPU BatchProgram / BatchInvocation；详见[CPU批次入口](compute.md) | 原ggml flash直接读取确切物理页；Q1可更新运行时页表/长度，保原graph/pool/workspace。Materialized路径另为显式参考算法 |
 | Apple | apple::MaterializedBatchInvocation；graph::apple::prepare_materialized_batch | 原MLX Program/worker，固定两device metadata banks、原F2上传；managed replay/私有storage未知 |
@@ -157,14 +157,14 @@ packed offset，仍用三个 packed-capacity Q/K/V read ports。保持原 graph�
 caller 创建的新版本仍拥有 active-sized snapshot，metadata delta 上传也可有原 F2 等待，
 不能把计划零分配解读为整步零分配或零等待。
 [Windows 与 Air mixed-core source 验证](../../evidence/correctness/inference-g06-cpu-runtime-q1-source/receipt.json)
-覆盖单/多请求32组×64步与原数值/风险；最终 sanitizer/SDK/header 和新性能资格仍待。
+覆盖单/多请求32组×64步与原数值/风险；当前适用host风险、SDK与独立头已过，工程性能为P0结构。
 另有[CPU ragged Q1 source 验证](../../evidence/correctness/inference-g06-cpu-ragged-runtime-source/receipt.json)
 覆盖32组×64步 packed KV 增长/缩短、后续 request 起点移动、长 KV 及独立旧 slot 输出。
 Apple/Vulkan原生ragged沿各自`prepare_ragged_batch`返回的Program/Invocation，使用公开
 `update_ragged_batch(slot, layout)`，固定schema/完整Q拓扑下更新KV长度与packed起点，
 成功后重新bind原三个容量输入。调用外部串行，旧结果/在途/失败/关闭受原门保护；非法布局
 保旧绑定。其[当前source资格](../../evidence/correctness/inference-g06-native-ragged-runtime-source/receipt.json)
-不签capture、零native分配或最终SDK/性能；Apple变化长度仍managed建图，Vulkan仍重新编码。
+当前host风险、迁址SDK和独立头已过；Apple变化长度仍managed建图，Vulkan仍重新编码，capture资格单独声明。
 
 Linux CUDA的公开factory随普通产品传递，消费者只链接hyle::compute/hyle::graph；
 cuda.h在实际HYLE_COMPUTE_FLASHINFER资格下供应原factory头，未准入平台不供应该API。
@@ -220,14 +220,14 @@ controller 创建时经原 F2 分别清零两 bank，显式冷费用为两次全
 `NativePagedBatchVersion::indices()` 是显式、可并发的固定容量导出，首次分配填零并缓存，
 失败可重试；普通 version 与 controller prepare 不必生成这个全容量 blob。本批 G06 的
 [Air runtime lengths/native/联合 source 验证](../../evidence/correctness/inference-g06-native-runtime-lengths-source/receipt.json)
-已通过，最终适用风险与交付资格仍待；不继承旧候选的性能证书。
+及当前适用host风险、迁址SDK/独立头已通过；本轮结构成本按G06终审，不外推旧候选计时证书。
 Apple 每个 Invocation 独立保留当前 layout，初始长度使用原 compiled 路径，其它长度
 在原 worker 上组合原 MLX fast primitive；不逐 tail 重新 Context.compile，但仍有 managed
 图构造费用。Vulkan 更新当前 Invocation 的逻辑长度/表偏移，并让原录制失效后重新编码；
 原 graph 与 storage 保留。`reused_native_plan` 不表示 capture 或 native 零分配。
 无需全历史 KV gather、按 Q/head 展开或上传 additive mask。原 query/output/MLX compiled
 metadata、shader scratch 与 driver 存储仍是额外费用，private bytes 可以 UNKNOWN；
-不由这个入口签 delta planning、capture 或吞吐完全对称。
+本入口的delta和计划复用按G06的P0合同计费；capture资格按各原生路线声明。
 
 Context/device/staging/injected allocator 保持地址稳定，活过所有 native work 和结果；
 控制调用外部串行，多个 slot 独立。旧 result 阻止同 slot prepare；原结果与实际退休门
@@ -235,8 +235,8 @@ Context/device/staging/injected allocator 保持地址稳定，活过所有 nati
 仍须释放自己保留的旧 frame/reader。计划与原 Vulkan output bridge 可保留。close 停止新工作，
 drain 沿原实际退休观察，已接纳错误或未知完成不许可提前释放页 guard。结果按本 route
 原 Results/readonly import 使用。原 native accepted-prefix/未知退休、三交付及 P1
-记录绑定各自旧候选；本批输入释放、计划复用与 delta 的当前资格见上方 source 证据，
-最终 sanitizer/SDK/header 门仍待。宿主 sanitizer 不签 shader/driver；
+记录绑定各自旧候选；本批输入释放、计划复用与delta的当前source/host风险/SDK资格
+见G06终审及上方证据。宿主sanitizer不签shader/driver；
 Windows CPU source 不代签 Windows native GPU。
 
 ## CPU 与 Apple/Vulkan 联合分页
@@ -564,20 +564,25 @@ split与host waits；MaterializedBatchCosts是保守logical上限，包含view/a
 版本且原 plan 可复用时，metadata 上传与准备 host waits 都可以为零。不同 generation
 即使数组值相同，仍须更新版本字段。报告的 staging/upload bytes 是实际搬运量，不代表
 比较有效数组所需的 CPU 扫描量。共同 Graph 中多个 node 读取同一个 metadata 输入时，
-在首上传前共享镜像，每个 node 保留自己的 plan/workspace。此 G06 共同改动目前已有
-[Windows CPU source 资格](../../evidence/correctness/inference-g06-common-source-windows-attempt-4/receipt.json)；
-新平台/交付资格及 Apple/Vulkan controller 自身的 index banks、原生规划仍按各自状态验收。
+在首上传前共享镜像，每个node保留自己的plan/workspace；对应
+[两个实际attention节点验证](../../evidence/correctness/inference-g06-common-source-windows-attempt-4/receipt.json)
+及当前source/host风险/SDK见G06终审。Apple/Vulkan原生controller各自持有index banks，
+每个bank按自身旧值做delta，原生规划和费用沿各自报告。
 FlashInfer 的显式 update 在同 schema、完整 Q indptr 下，检查原计划实际 chunk/CTA/window
 及每个有效 request 的 chunk 数；调度表等价时复用原 plan，边界变化时真正 cold replan。
 KV offset、page IDs、tail 仍由原 runtime metadata 消费；该判断扫描 requests，原 F2
 另计 active metadata delta。当前[FI 普通source资格](../../evidence/correctness/inference-g06-fi-schedule-runtime-source/receipt.json)
-覆盖32组×64步及原Direct/Graph、CPU+CUDA和pending消费者；capture另有上述source资格，instrumented风险、
-最终SDK/性能尚待验收。零Q可经完整 owning Q/K/V入口执行 checked no-op，显式准备仍可
+覆盖32组×64步及原Direct/Graph、CPU+CUDA和pending消费者；当前capture风险和迁址SDK
+已过，P0结构结论保留G04/G05原kernel-only性能未决门。零Q可经完整owning Q/K/V入口
+执行checked no-op，显式准备仍可
 计一次立即completion的host wait；PagedArena.read继续要求非空准确页集合。原生private/
 driver费用仍为UNKNOWN。
 
 native controller报告staging、两份device mirror、固定backing、实际上传字节和原生计划复用；未知private
-metadata/scratch/driver费仍是UNKNOWN，硬拒未知预算按原资格明确拒绝。
+metadata/scratch/driver费仍是UNKNOWN，硬拒未知预算按原资格明确拒绝。每次prepare创建
+的小NativePagedBatchVersion owner可经recipe allocator分配；caller创建layout的active
+backing/control、generation CAS与拷贝也计费。另一个invocation allocator无新增attempt
+只证明该分配域的观察。显式metadata()/indices()首次生成全容量blob，重复缓存访问仍锁。
 
 失败和unknown观察都不产生成功输出。public terminal或释放public result/token不代表
 accepted native prefix已退休；drain按实际guard/fence/worker等待并保留原错误。正常放弃
@@ -592,8 +597,9 @@ accepted native prefix已退休；drain按实际guard/fence/worker等待并保�
 CUDA 已接纳 native work 的 request_cancel 可返回 Unimplemented；必须检查返回值，
 不能把拒绝取消当成已经取消或退休。停止提交后继，等原实际工作退休后再释放相关权限。
 
-G06 已有[CUDA/FI capture有限普通source资格](../../evidence/correctness/inference-g06-capture-replay-source/receipt.json)，
-最终风险、SDK与性能尚待验收。`PreparedBatch::prepare_replay(inputs)`或query＋paged ready
+G06 的[CUDA/FI capture源码](../../evidence/correctness/inference-g06-capture-replay-source/receipt.json)、
+当前宿主/故障风险和迁址SDK已通过，结构费用见G06终审。
+`PreparedBatch::prepare_replay(inputs)`或query＋paged ready
 frames显式录制，之后仍调用原`run`；Graph batch在prepare/bind后显式`prepare_replay()`，
 再原submit。录制checked-retire但不执行用户tensor或消费run token；每次真正执行重新准入
 当前权限，idle artifact不持page read权限。原native plan复用且Q/K/V、metadata、output
