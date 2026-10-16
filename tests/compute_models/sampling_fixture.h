@@ -367,10 +367,57 @@ template<class Session> void topk_selection() {
   }
   std::puts("PASS TopK: both outputs/NaN payload/ties/signed zero/subnormals/k>1 holdout/full R1+R16 vocabulary");
 }
+template<class Session> void graph_port_liveness() {
+  constexpr int rows=3,width=129;
+  for (const std::uint32_t mask : {1U,2U,3U}) {
+    Session session(c::sampling_ops::categorical(true),
+        {dense(c::DataType::kFloat32,{rows,width}),dense(c::DataType::kUInt32,{rows,4})},mask);
+    Output old;
+    for (int step=0;step<5;++step) {
+      std::vector<float> logits(rows*width,-INFINITY);
+      for (int r=0;r<rows;++r) {
+        const auto first=(step*7+r*13)%width,second=(first+65)%width;
+        logits[std::size_t(r*width+first)]=float(20+step);
+        if(step%2)logits[std::size_t(r*width+second)]=float(20+step);
+      }
+      const auto keys=identities(rows,0x100000000ULL+std::uint64_t(step));
+      auto result=take(session.run({pack(logits),pack(keys)},step==0?2:step%2));
+      check(result.bytes.size()==std::size_t(std::popcount(mask)),"Graph published categorical port count differs");
+      if(mask&1) {
+        const auto ids=unpack<std::int32_t>(result.bytes[0]);
+        check(ids.size()==rows,"Graph ID-only result row count differs");
+        for(int r=0;r<rows;++r) {
+          const auto first=(step*7+r*13)%width,second=(first+65)%width;
+          check(ids[std::size_t(r)]==first||(step%2&&ids[std::size_t(r)]==second),
+                "Graph ID-only port lost live score/input dependency");
+        }
+      }
+      if(mask&2) {
+        const auto scores=unpack<float>(result.bytes[mask&1?1:0]);
+        check(scores.size()==rows,"Graph score-only result row count differs");
+        for(const auto score:scores)
+          check(std::isfinite(score)&&std::abs(double(score)+(step%2?std::log(2.):0.))<=2e-5,
+                "Graph score-only port lost internal selection/normalizer dependency");
+      }
+      if(step==0)old=std::move(result);
+    }
+    // An unpublished ID cannot prune the checked status of a published score.
+    auto invalid=std::vector<float>(rows*width,-INFINITY);
+    const auto keys=identities(rows,89);
+    auto failed=session.run({pack(invalid),pack(keys)},1);
+    check(!failed&&failed.error().IsInvalidArgument(),"Graph single published port lost checked failure");
+    session.close();
+    check(old.read_again()==old.bytes,"Graph single published port changed old native owner after close");
+  }
+  std::puts("PASS Graph categorical: ID-only/score-only/both ports; live inputs/internal dependencies/checked failure/old owner");
+}
 template<class Session> void run() {
   topk_selection<Session>();
   random_journey<Session>();
   categorical_journey<Session>();
   categorical_quality<Session>();
+#if defined(HYLE_G08_GRAPH)
+  graph_port_liveness<Session>();
+#endif
 }
 } // namespace sampling_test

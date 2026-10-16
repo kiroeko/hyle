@@ -85,8 +85,8 @@ inline void native_joint() {
     }
     const auto keys=identities(rows,0xffffffffULL+std::uint64_t(step));
 #if defined(HYLE_G08_APPLE)
-    const auto input=mx::array(logits.data(),{rows,width},mx::float32);
-    const auto ids=mx::array(reinterpret_cast<const std::uint32_t *>(keys.data()),{rows,4},mx::uint32);
+    auto input=mx::array(logits.data(),{rows,width},mx::float32);
+    auto ids=mx::array(reinterpret_cast<const std::uint32_t *>(keys.data()),{rows,4},mx::uint32);
     mx::async_eval({input,ids});mx::synchronize(mx::default_stream(mx::Device::gpu));
     input.wait();ids.wait();
 #else

@@ -335,3 +335,11 @@ Apple/Vulkan首批前已实查Air Mac16,12 arm64、macOS27.0.1、clang21与Metal
 遗漏它，导致RandomBits→原Copy的Graph消费者被拒绝。仅补同一既有dtype映射，不扩大
 arithmetic/TopK dtype，不改Graph/runtime或增加新API。原TopK axis/stride/dtype/empty
 留出使用原两份test TU的私有target，只跑适用filter，不构建整个模型测试集。
+
+
+Apple首批fc15404bb使用原tree、4jobs，产品CPP已通过，测试TU在const mlx::array
+调用非const wait()处集中FAIL；仅修Direct/Graph、math和joint测试局部array可变性。
+原preflight VERIFY_GLOBS dry run失败及byte-identical frozen manifest恢复记录保留，
+本轮累计33.741s不重置。另补原预声明四条Graph的categorical
+ID-only/score-only/both独立port发布，变化输入、内部依赖、单port错误和旧owner；
+提供--ports-only，只补新分支时不重跑已过的全词表/质量旅程。尚无Apple runtime PASS。

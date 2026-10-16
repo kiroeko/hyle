@@ -13,7 +13,8 @@ namespace a = c::apple;
 namespace mx = mlx::core;
 class AppleSession final {
 public:
-  AppleSession(c::Operation operation, std::vector<c::TensorDesc> inputs)
+  AppleSession(c::Operation operation, std::vector<c::TensorDesc> inputs,
+               [[maybe_unused]] std::uint32_t published_mask = UINT32_MAX)
       : context_(take(a::Context::create())), descriptions_(std::move(inputs)) {
 #if defined(HYLE_G08_GRAPH)
     namespace g = hyle::graph;
@@ -22,8 +23,10 @@ public:
     for (const auto &description : descriptions_)
       produced.push_back(take(builder.add(c::Copy{}, take(builder.input(description)))));
     const auto node = take(builder.add_node(operation, produced));
-    for (std::size_t port = 0; port < c::operation_traits(operation).outputs; ++port)
-      require(builder.publish(take(builder.add(c::Copy{}, take(builder.result(node, port))))));
+    for (std::size_t port = 0; port < c::operation_traits(operation).outputs; ++port) {
+      if (published_mask & (1U << port))
+        require(builder.publish(take(builder.add(c::Copy{}, take(builder.result(node, port))))));
+    }
     auto logical = take(std::move(builder).finish());
     program_ = take(g::apple::compile(context_, logical));
 #else
@@ -46,7 +49,7 @@ public:
     }
     mx::async_eval(arrays);
     mx::synchronize(mx::default_stream(mx::Device::gpu));
-    for (const auto &array : arrays) array.wait();
+    for (auto &array : arrays) array.wait();
     auto &slot = slots_[std::size_t(bank)];
     HYLE_RETURN_IF_ERROR(slot.bind(arrays));
     HYLE_ASSIGN_OR_RETURN(auto work, slot.submit());
@@ -81,8 +84,15 @@ private:
 };
 } // namespace sampling_test
 
-int main() {
-  try { sampling_test::run<sampling_test::AppleSession>(); return 0; }
+int main([[maybe_unused]] int argc, [[maybe_unused]] char **argv) {
+  try {
+#if defined(HYLE_G08_GRAPH)
+    if (argc == 2 && std::string(argv[1]) == "--ports-only") {
+      sampling_test::graph_port_liveness<sampling_test::AppleSession>(); return 0;
+    }
+#endif
+    sampling_test::run<sampling_test::AppleSession>(); return 0;
+  }
   catch (const std::exception &error) {
     std::fprintf(stderr, "FAIL Apple sampling: %s\n", error.what()); return 1;
   }

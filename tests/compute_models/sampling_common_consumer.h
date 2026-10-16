@@ -29,7 +29,8 @@ namespace g = hyle::graph;
 
 class CommonSession final {
 public:
-  CommonSession(c::Operation operation, std::vector<c::TensorDesc> inputs)
+  CommonSession(c::Operation operation, std::vector<c::TensorDesc> inputs,
+                [[maybe_unused]] std::uint32_t published_mask = UINT32_MAX)
       : descriptions_(std::move(inputs)), outputs_(outputs(operation, descriptions_)) {
 #if defined(HYLE_G08_CUDA)
 #if defined(HYLE_G08_GRAPH)
@@ -61,13 +62,17 @@ public:
       produced.push_back(take(builder.add(c::Copy{}, input)));
     }
     const auto node = take(builder.add_node(operation, produced));
+    std::vector<c::TensorDesc> visible;
     for (std::size_t port = 0; port < outputs_.size(); ++port) {
+      if (!(published_mask & (1U << port))) continue;
       const auto value = take(builder.result(node, port));
       const auto copy = take(builder.add(c::Copy{}, value));
       output_ids_.push_back(copy);
+      visible.push_back(outputs_[port]);
       require(builder.publish(copy));
     }
     auto logical = take(std::move(builder).finish());
+    outputs_ = std::move(visible);
 #if defined(HYLE_G08_CUDA)
     auto compiled = take(g::cuda::compile(logical, context_, memory_));
 #else

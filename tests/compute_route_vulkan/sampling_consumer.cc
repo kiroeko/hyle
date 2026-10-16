@@ -11,7 +11,8 @@ namespace sampling_test {
 namespace v = c::vulkan;
 class VulkanSession final {
 public:
-  VulkanSession(c::Operation operation, std::vector<c::TensorDesc> inputs)
+  VulkanSession(c::Operation operation, std::vector<c::TensorDesc> inputs,
+                [[maybe_unused]] std::uint32_t published_mask = UINT32_MAX)
       : context_(take(v::Context::create(options()))), descriptions_(std::move(inputs)) {
     for (const auto &description : descriptions_) inputs_.push_back(take(context_.allocate(description)));
 #if defined(HYLE_G08_GRAPH)
@@ -21,8 +22,10 @@ public:
     for (const auto &description : descriptions_)
       produced.push_back(take(builder.add(c::Copy{}, take(builder.input(description)))));
     const auto node = take(builder.add_node(operation, produced));
-    for (std::size_t port = 0; port < c::operation_traits(operation).outputs; ++port)
-      require(builder.publish(take(builder.add(c::Copy{}, take(builder.result(node, port))))));
+    for (std::size_t port = 0; port < c::operation_traits(operation).outputs; ++port) {
+      if (published_mask & (1U << port))
+        require(builder.publish(take(builder.add(c::Copy{}, take(builder.result(node, port))))));
+    }
     auto logical = take(std::move(builder).finish());
     program_ = take(g::vulkan::compile(context_, logical));
 #else
@@ -80,8 +83,15 @@ private:
 };
 } // namespace sampling_test
 
-int main() {
-  try { sampling_test::run<sampling_test::VulkanSession>(); return 0; }
+int main([[maybe_unused]] int argc, [[maybe_unused]] char **argv) {
+  try {
+#if defined(HYLE_G08_GRAPH)
+    if (argc == 2 && std::string(argv[1]) == "--ports-only") {
+      sampling_test::graph_port_liveness<sampling_test::VulkanSession>(); return 0;
+    }
+#endif
+    sampling_test::run<sampling_test::VulkanSession>(); return 0;
+  }
   catch (const std::exception &error) {
     std::fprintf(stderr, "FAIL Vulkan sampling: %s\n", error.what()); return 1;
   }
