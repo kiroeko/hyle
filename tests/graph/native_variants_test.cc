@@ -208,4 +208,109 @@ TEST(NativeReachability, MandatoryCustomAliasNeedsNativeQualificationWhileCpuKee
   const std::array<std::uint8_t,1> cpu{1};
   EXPECT_TRUE(g::detail::analyze_native_pure(graph,m::system_allocator(),cpu));
 }
+
+TEST(NativePartition, IndependentPrefixDoesNotInheritJoinWaitInEitherInsertionOrder) {
+  for (const bool cpu_first : {false, true}) {
+    auto builder = g::GraphBuilder::create().value();
+    auto desc = c::TensorDesc::dense(c::DataType::kFloat32,
+        std::array<std::int64_t, 1>{64}).value();
+    auto x = builder.input(desc).value(), a = builder.input(desc).value();
+    g::ValueId cpu, gpu;
+    if (cpu_first) {
+      cpu = builder.add(c::Unary{c::UnaryKind::kAbs}, x).value();
+      gpu = builder.add(c::Unary{c::UnaryKind::kNeg}, a).value();
+    } else {
+      gpu = builder.add(c::Unary{c::UnaryKind::kNeg}, a).value();
+      cpu = builder.add(c::Unary{c::UnaryKind::kAbs}, x).value();
+    }
+    auto join = builder.add(c::Binary{}, cpu, gpu).value();
+    ASSERT_TRUE(builder.publish(join).ok());
+    auto graph = std::move(builder).finish().value();
+    auto analysis = g::detail::analyze_native_pure(graph).value();
+    const std::array targets{g::ExecutionTargetId{cpu_first ? 1u : 0u},
+        g::ExecutionTargetId{cpu_first ? 0u : 1u}, g::ExecutionTargetId{1}};
+    auto partition = g::detail::partition_native_joint(graph, analysis, targets);
+    ASSERT_TRUE(partition);
+    ASSERT_EQ(partition->fragments.size(), 3);
+    EXPECT_TRUE(partition->prerequisites(partition->fragments[0]).empty());
+    EXPECT_TRUE(partition->prerequisites(partition->fragments[1]).empty());
+    auto dependencies = partition->prerequisites(partition->fragments[2]);
+    ASSERT_EQ(dependencies.size(), 2);
+    EXPECT_NE(dependencies[0], dependencies[1]);
+    EXPECT_LT(dependencies[0], 2); EXPECT_LT(dependencies[1], 2);
+    EXPECT_EQ(partition->fragments[1].end, 2);
+  }
+}
+
+TEST(NativePartition, ExistingEntryDependencyKeepsWholeNativeOrCpuChain) {
+  auto builder = g::GraphBuilder::create().value();
+  auto desc = c::TensorDesc::dense(c::DataType::kFloat32,
+      std::array<std::int64_t, 1>{64}).value();
+  auto input = builder.input(desc).value();
+  auto gpu = builder.add(c::Unary{c::UnaryKind::kNeg}, input).value();
+  auto cpu = builder.add(c::Unary{c::UnaryKind::kAbs}, gpu).value();
+  auto output = builder.add(c::Binary{}, cpu, gpu).value();
+  ASSERT_TRUE(builder.publish(output).ok());
+  auto graph = std::move(builder).finish().value();
+  auto analysis = g::detail::analyze_native_pure(graph).value();
+  const std::array targets{g::ExecutionTargetId{0}, g::ExecutionTargetId{1},
+      g::ExecutionTargetId{1}};
+  auto partition = g::detail::partition_native_joint(graph, analysis, targets);
+  ASSERT_TRUE(partition); ASSERT_EQ(partition->fragments.size(), 2);
+  EXPECT_EQ(partition->fragments[1].begin, 1);
+  EXPECT_EQ(partition->fragments[1].end, 3);
+  auto dependencies = partition->prerequisites(partition->fragments[1]);
+  ASSERT_EQ(dependencies.size(), 1); EXPECT_EQ(dependencies[0], 0);
+  const std::array one_target{g::ExecutionTargetId{0}, g::ExecutionTargetId{0},
+      g::ExecutionTargetId{0}};
+  auto fused = g::detail::partition_native_joint(graph, analysis, one_target);
+  ASSERT_TRUE(fused); EXPECT_EQ(fused->fragments.size(), 1);
+}
+
+TEST(NativePartition, ControlOnlyPredecessorSurvivesDeadValuesAndDeduplicatesDataEdge) {
+  auto builder = g::GraphBuilder::create().value();
+  auto desc = c::TensorDesc::dense(c::DataType::kFloat32,
+      std::array<std::int64_t, 1>{8}).value();
+  auto input = builder.input(desc).value();
+  auto first = builder.add_node(c::Operation(c::Unary{c::UnaryKind::kAbs}),
+      std::array{input}).value();
+  (void)builder.add(c::Unary{c::UnaryKind::kNeg}, input).value(); // Unrelated dead node.
+  auto last = builder.add_node(c::Operation(c::Unary{c::UnaryKind::kNeg}),
+      std::array{input}).value();
+  ASSERT_TRUE(builder.depends_on(last, first).ok());
+  auto join = builder.add_node(c::Operation(c::Binary{}),
+      std::array{builder.result(first).value(), builder.result(last).value()}).value();
+  ASSERT_TRUE(builder.depends_on(join, first).ok());
+  ASSERT_TRUE(builder.publish(builder.result(join).value()).ok());
+  auto graph = std::move(builder).finish().value();
+  auto analysis = g::detail::analyze_native_pure(graph).value();
+  const std::array targets{g::ExecutionTargetId{0}, g::ExecutionTargetId{0},
+      g::ExecutionTargetId{1}, g::ExecutionTargetId{1}};
+  auto partition = g::detail::partition_native_joint(graph, analysis, targets);
+  ASSERT_TRUE(partition); ASSERT_EQ(partition->fragments.size(), 3);
+  EXPECT_EQ(partition->fragments[0].end, 2); // Dead gap adds no fragment.
+  auto control = partition->prerequisites(partition->fragments[1]);
+  ASSERT_EQ(control.size(), 1); EXPECT_EQ(control[0], 0);
+  auto join_dependencies = partition->prerequisites(partition->fragments[2]);
+  ASSERT_EQ(join_dependencies.size(), 2); // first appears as both data and control.
+  EXPECT_NE(join_dependencies[0], join_dependencies[1]);
+}
+
+TEST(NativePartition, MalformedInputsAndQuotaFailureKeepOriginalGraphAndReleaseMetadata) {
+  auto builder = g::GraphBuilder::create().value();
+  auto desc = c::TensorDesc::dense(c::DataType::kFloat32,
+      std::array<std::int64_t, 1>{8}).value();
+  auto input = builder.input(desc).value();
+  ASSERT_TRUE(builder.publish(builder.add(c::Unary{}, input).value()).ok());
+  auto graph = std::move(builder).finish().value();
+  auto analysis = g::detail::analyze_native_pure(graph).value();
+  const std::array targets{g::ExecutionTargetId{0}};
+  EXPECT_FALSE(g::detail::partition_native_joint(graph, analysis, {}));
+  m::QuotaAllocator quota(m::system_allocator(), 1);
+  auto failed = g::detail::partition_native_joint(graph, analysis, targets, quota.get());
+  ASSERT_FALSE(failed); EXPECT_TRUE(failed.error().IsResourceExhausted());
+  EXPECT_EQ(quota.used(), 0);
+  EXPECT_EQ(graph.input_id().value(), input);
+  EXPECT_TRUE(g::detail::partition_native_joint(graph, analysis, targets));
+}
 } // namespace

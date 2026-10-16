@@ -187,16 +187,17 @@ Result<std::shared_ptr<const Plan>> compile_plan(const Graph &graph, Environment
       if (value.cpu_use || value.vulkan_use || value.published)
         plan->inputs.push_back(id.ordinal());
     }
-    for (std::size_t begin = 0; begin < graph.node_count();) {
-      if (!needed[begin]) { ++begin; continue; }
+    HYLE_ASSIGN_OR_RETURN(auto partition, graph::detail::partition_native_joint(
+        graph, analysis, targets, allocator));
+    for (const auto &range : partition.fragments) {
+      const auto begin = range.begin, end = range.end;
       const auto target = targets[begin];
-      auto end = begin + 1;
-      while (!analysis.boundary[begin] && end < graph.node_count() &&
-             !analysis.boundary[end] && (!needed[end] || targets[end] == target)) ++end;
+      const auto dependencies = partition.prerequisites(range);
       const auto page_binding=std::find_if(options.paged_nodes.begin(),options.paged_nodes.end(),
           [&](const auto& b){return b.node.ordinal()==begin;});
       if(page_binding!=options.paged_nodes.end()){
         detail::Fragment fragment(allocator);fragment.target=kVulkanTarget;
+        fragment.dependencies.assign(dependencies.begin(), dependencies.end());
         for(std::size_t port=0;port<3;++port){
           HYLE_ASSIGN_OR_RETURN(auto input,graph.node_input(page_binding->node,port));
           fragment.inputs.push_back(input.ordinal());
@@ -209,7 +210,7 @@ Result<std::shared_ptr<const Plan>> compile_plan(const Graph &graph, Environment
             *environment.vulkan,page_binding->program,page_binding->layout,plan->workload));
         plan->paged.push_back({plan->fragments.size(),*page_binding,std::move(native)});
         if(report!=nullptr)report->fragments.push_back({.target=kVulkanTarget,.node_count=1});
-        plan->fragments.push_back(std::move(fragment));begin=end;continue;
+        plan->fragments.push_back(std::move(fragment));continue;
       }
       HYLE_ASSIGN_OR_RETURN(auto builder, GraphBuilder::create({allocator}));
       Vector<ValueId> mapped{mem::StdAllocator<ValueId>(allocator)};
@@ -223,6 +224,7 @@ Result<std::shared_ptr<const Plan>> compile_plan(const Graph &graph, Environment
       resources.resize(graph.effect_resource_count());
       detail::Fragment fragment(allocator);
       fragment.target = target;
+      fragment.dependencies.assign(dependencies.begin(), dependencies.end());
       std::size_t node_count = 0;
       for (auto index = begin; index < end; ++index) {
         if (!needed[index]) continue;
@@ -320,8 +322,13 @@ Result<std::shared_ptr<const Plan>> compile_plan(const Graph &graph, Environment
       }
       if (report != nullptr) report->fragments.push_back(std::move(facts));
       plan->fragments.push_back(std::move(fragment));
-      begin = end;
     }
+    for (const auto &fragment : plan->fragments) {
+      using Lane = graph::detail::JointPipelinePlan::Lane;
+      plan->pipeline.append(fragment.target == kCpuTarget ? Lane::kCpu : Lane::kNative,
+          fragment.dependencies);
+    }
+    HYLE_RETURN_IF_ERROR(plan->pipeline.prepare());
     // Only strided host graph inputs crossing into Vulkan need an additional
     // prepared CPU Copy. Ordinary CPU-only inputs keep their original layout.
     for (auto &value : plan->values) {

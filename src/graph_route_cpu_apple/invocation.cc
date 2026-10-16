@@ -43,7 +43,7 @@ struct RunState final : util::RefCounted<RunState> {
       : plan(std::move(source)), allocator(plan->allocator),
         values(mem::StdAllocator<ValueRun>(allocator)),
         fragments(mem::StdAllocator<FragmentRun>(allocator)),
-        pages(nullptr,PageSlotsDelete{allocator}) {}
+        pages(nullptr,PageSlotsDelete{allocator}), frontier(allocator) {}
   std::shared_ptr<const Plan> plan;
   mem::AllocatorRef allocator;
   graph::detail::LeaseSubmission leases;
@@ -53,6 +53,11 @@ struct RunState final : util::RefCounted<RunState> {
   sched::Scheduler *scheduler = nullptr;
   compute::Queue *cpu_queue = nullptr;
   sched::Event progress, finished;
+  graph::detail::JointPipelineFrontier frontier;
+  std::mutex pipeline_mutex, lease_mutex;
+  sched::ConditionVariable pipeline_ready;
+  Status pipeline_error;
+  bool cpu_stopped = false, pipeline_accepted = false;
   std::mutex retirement_mutex;
   cd::CompletionLifetime abandoned{};
   Status hint, terminal;
@@ -181,7 +186,10 @@ Status add_copy(ReplayReport &report, std::size_t bytes) noexcept {
 }
 
 Status await_completion(RunState &run, const compute::Completion &completion) noexcept {
-  if (run.leases.valid()) HYLE_RETURN_IF_ERROR(run.leases.protect(completion));
+  if (run.leases.valid()) {
+    std::lock_guard lock(run.lease_mutex);
+    HYLE_RETURN_IF_ERROR(run.leases.protect(completion));
+  }
   for (;;) {
     const auto ready = completion.poll();
     if (!ready) return ready.error();
@@ -251,11 +259,16 @@ const cd::CompletionVTable completion_vtable{
       return run.terminal;
     },
     .request_cancel = [](void *opaque) noexcept {
-      static_cast<RunState *>(opaque)->cancel.store(true, std::memory_order_release);
+      auto &run = *static_cast<RunState *>(opaque);
+      {
+        std::lock_guard lock(run.pipeline_mutex);
+        run.cancel.store(true, std::memory_order_release);
+      }
+      run.pipeline_ready.notify_all();
       return Status::Ok();
     }};
 
-Status drive_graph(RunState &run, bool &accepted) noexcept {
+Status prepare_inputs(RunState &run, bool &accepted) noexcept {
   // Bind metadata/owners are fixed. No Provider selection, tracing, graph
   // traversal, capacity growth or CPU weight upload occurs in this loop.
   for (auto id : run.plan->inputs) {
@@ -286,72 +299,135 @@ Status drive_graph(RunState &run, bool &accepted) noexcept {
       }
     }
   }
-  for (std::size_t index = 0; index < run.fragments.size(); ++index) {
-    if (run.cancel.load(std::memory_order_acquire))
-      return Status::Cancelled("CPU+Apple cancelled before the next coarse fragment");
-    const auto &fragment = run.plan->fragments[index];
-    auto &slot = run.fragments[index];
-    if (fragment.target == kCpuTarget) {
-      HYLE_ASSIGN_OR_RETURN(auto completion, slot.cpu.submit(*run.cpu_queue));
-      accepted = true;
-      HYLE_RETURN_IF_ERROR(await_completion(run, completion));
-      for (std::size_t port = 0; port < fragment.outputs.size(); ++port) {
-        const auto id = fragment.outputs[port];
-        auto &value = run.values[id];
-        HYLE_ASSIGN_OR_RETURN(auto output, slot.cpu.output(fragment.cpu_outputs[port]));
-        if (output.description() != run.plan->values[id].carrier)
-          return Status::Internal("CPU fragment output violates its fixed boundary description");
-        if (output.storage().native_handle() != value.host.native_handle() ||
-            output.storage().resource() != value.host.resource() || output.storage().offset() != 0)
-          HYLE_RETURN_IF_ERROR(value.host.view().copy_from(output.storage()));
-        HYLE_ASSIGN_OR_RETURN(auto destination, host_tensor(run, id));
-        value.host_value = destination.as_const();
-        if (run.plan->values[id].apple_use) {
-          HYLE_RETURN_IF_ERROR(run.plan->environment.native->copy_from_host(*value.boundary, value.host_value));
-          value.native_value = value.boundary;
-        }
+  return Status::Ok();
+}
+Status drive_fragment(RunState &run, std::size_t index, bool &accepted) noexcept {
+  if (run.cancel.load(std::memory_order_acquire))
+    return Status::Cancelled("CPU+Apple cancelled before the next coarse fragment");
+  const auto &fragment = run.plan->fragments[index];
+  auto &slot = run.fragments[index];
+  if (fragment.target == kCpuTarget) {
+    HYLE_ASSIGN_OR_RETURN(auto completion, slot.cpu.submit(*run.cpu_queue));
+    accepted = true;
+    HYLE_RETURN_IF_ERROR(await_completion(run, completion));
+    for (std::size_t port = 0; port < fragment.outputs.size(); ++port) {
+      const auto id = fragment.outputs[port];
+      auto &value = run.values[id];
+      HYLE_ASSIGN_OR_RETURN(auto output, slot.cpu.output(fragment.cpu_outputs[port]));
+      if (output.description() != run.plan->values[id].carrier)
+        return Status::Internal("CPU fragment output violates its fixed boundary description");
+      if (output.storage().native_handle() != value.host.native_handle() ||
+          output.storage().resource() != value.host.resource() || output.storage().offset() != 0)
+        HYLE_RETURN_IF_ERROR(value.host.view().copy_from(output.storage()));
+      HYLE_ASSIGN_OR_RETURN(auto destination, host_tensor(run, id));
+      value.host_value = destination.as_const();
+      if (run.plan->values[id].apple_use) {
+        HYLE_RETURN_IF_ERROR(run.plan->environment.native->copy_from_host(*value.boundary, value.host_value));
+        value.native_value = value.boundary;
       }
-    } else {
-      slot.lease = {};
-      auto submitted_result=[&]()->Result<compute::OwnedResult<ca::Results>>{
-        if(auto* page=run.pages?run.pages->fragment(index):nullptr){
-          const auto qid=fragment.inputs[0];
-          if(!run.values[qid].native_value)return std::unexpected(Status::Internal("page query producer did not complete"));
-          HYLE_ASSIGN_OR_RETURN(auto query,run.plan->environment.native->import_readonly(
-              *run.values[qid].native_value,run.plan->values[qid].carrier,
-              {.allocator=run.allocator,.resource_budget=run.plan->budget}));
-          return run.pages->submit_fragment(*page,std::move(query));
-        }
-        slot.arguments.clear();
-        for(auto id:fragment.inputs){
-          if(!run.values[id].native_value)return std::unexpected(Status::Internal("Apple fragment input was not produced"));
-          slot.arguments.push_back(*run.values[id].native_value);
-        }
-        HYLE_RETURN_IF_ERROR(slot.apple.bind(slot.arguments));return slot.apple.submit();
-      }();
-      HYLE_ASSIGN_OR_RETURN(auto submitted,std::move(submitted_result));
-      accepted = true;
-      // Cancellation stops successors, while the original Apple owner drains
-      // the already-accepted prefix before publishing its terminal result.
-      HYLE_RETURN_IF_ERROR(await_completion(run, submitted.completion()));
-      HYLE_ASSIGN_OR_RETURN(slot.lease, submitted.wait());
-      const auto arrays = slot.lease->arrays();
-      if (arrays.size() != fragment.outputs.size())
-        return Status::Internal("Apple fragment result arity differs");
-      for (std::size_t port = 0; port < arrays.size(); ++port) {
-        const auto id = fragment.outputs[port];
-        run.values[id].native_value = arrays[port];
-        if (run.plan->values[id].cpu_use) {
-          HYLE_ASSIGN_OR_RETURN(auto destination, host_tensor(run, id));
-          HYLE_RETURN_IF_ERROR(run.plan->environment.native->copy_to_host(arrays[port], destination));
-          run.values[id].host_value = destination.as_const();
-        }
+    }
+  } else {
+    slot.lease = {};
+    auto submitted_result=[&]()->Result<compute::OwnedResult<ca::Results>>{
+      if(auto* page=run.pages?run.pages->fragment(index):nullptr){
+        const auto qid=fragment.inputs[0];
+        if(!run.values[qid].native_value)return std::unexpected(Status::Internal("page query producer did not complete"));
+        HYLE_ASSIGN_OR_RETURN(auto query,run.plan->environment.native->import_readonly(
+            *run.values[qid].native_value,run.plan->values[qid].carrier,
+            {.allocator=run.allocator,.resource_budget=run.plan->budget}));
+        return run.pages->submit_fragment(*page,std::move(query));
+      }
+      slot.arguments.clear();
+      for(auto id:fragment.inputs){
+        if(!run.values[id].native_value)return std::unexpected(Status::Internal("Apple fragment input was not produced"));
+        slot.arguments.push_back(*run.values[id].native_value);
+      }
+      HYLE_RETURN_IF_ERROR(slot.apple.bind(slot.arguments));return slot.apple.submit();
+    }();
+    HYLE_ASSIGN_OR_RETURN(auto submitted,std::move(submitted_result));
+    accepted = true;
+    // Cancellation stops successors, while the original Apple owner drains
+    // the already-accepted prefix before publishing its terminal result.
+    HYLE_RETURN_IF_ERROR(await_completion(run, submitted.completion()));
+    HYLE_ASSIGN_OR_RETURN(slot.lease, submitted.wait());
+    const auto arrays = slot.lease->arrays();
+    if (arrays.size() != fragment.outputs.size())
+      return Status::Internal("Apple fragment result arity differs");
+    for (std::size_t port = 0; port < arrays.size(); ++port) {
+      const auto id = fragment.outputs[port];
+      run.values[id].native_value = arrays[port];
+      if (run.plan->values[id].cpu_use) {
+        HYLE_ASSIGN_OR_RETURN(auto destination, host_tensor(run, id));
+        HYLE_RETURN_IF_ERROR(run.plan->environment.native->copy_to_host(arrays[port], destination));
+        run.values[id].host_value = destination.as_const();
       }
     }
   }
-  return run.cancel.load(std::memory_order_acquire)
-      ? Status::Cancelled("CPU+Apple cancelled after native drain") : Status::Ok();
+  return Status::Ok();
 }
+
+using PipelineLane = graph::detail::JointPipelinePlan::Lane;
+
+void drive_lane(RunState &run, PipelineLane lane) noexcept {
+  for (;;) {
+    std::size_t index;
+    {
+      std::unique_lock lock(run.pipeline_mutex);
+      run.pipeline_ready.wait(lock, [&] {
+        return !run.pipeline_error.ok() || run.cancel.load(std::memory_order_acquire) ||
+               run.frontier.done() || run.frontier.ready(lane);
+      });
+      if (run.cancel.load(std::memory_order_acquire))
+        run.pipeline_error.Update(Status::Cancelled("joint pipeline cancelled before admission"));
+      if (!run.pipeline_error.ok() || run.frontier.done()) break;
+      index = run.frontier.take(lane);
+    }
+    bool accepted = false;
+    const auto status = drive_fragment(run, index, accepted);
+    {
+      std::lock_guard lock(run.pipeline_mutex);
+      run.pipeline_accepted = run.pipeline_accepted || accepted;
+      run.pipeline_error.Update(status);
+      if (status.ok()) run.frontier.complete(run.plan->pipeline, index);
+    }
+    run.pipeline_ready.notify_all();
+  }
+}
+
+void drive_cpu_lane(void *opaque) noexcept {
+  auto &run = *static_cast<RunState *>(opaque);
+  drive_lane(run, PipelineLane::kCpu);
+  {
+    std::lock_guard lock(run.pipeline_mutex);
+    run.cpu_stopped = true;
+  }
+  run.pipeline_ready.notify_all();
+  run.decref(); // no resettable per-run state is accessed after publication
+}
+
+Status drive_graph(RunState &run, bool &accepted) noexcept {
+  HYLE_RETURN_IF_ERROR(prepare_inputs(run, accepted));
+  if (!run.plan->pipeline.has_parallel_lanes) {
+    for (std::size_t index = 0; index < run.fragments.size(); ++index)
+      HYLE_RETURN_IF_ERROR(drive_fragment(run, index, accepted));
+  } else {
+    run.frontier.reset(run.plan->pipeline);
+    run.pipeline_error = Status::Ok();
+    run.pipeline_accepted = false;
+    run.cpu_stopped = false;
+    run.incref();
+    const auto launched = run.scheduler->spawn_detached(&drive_cpu_lane, &run, mem::kFiberStackLarge);
+    if (!launched.ok()) { run.decref(); return launched; }
+    drive_lane(run, PipelineLane::kNative);
+    std::unique_lock lock(run.pipeline_mutex);
+    run.pipeline_ready.wait(lock, [&] { return run.cpu_stopped; });
+    accepted = accepted || run.pipeline_accepted;
+    HYLE_RETURN_IF_ERROR(run.pipeline_error);
+  }
+  return run.cancel.load(std::memory_order_acquire)
+      ? Status::Cancelled("joint pipeline cancelled after native drain") : Status::Ok();
+}
+
 void drive(void *opaque) noexcept {
   auto &run = *static_cast<RunState *>(opaque);
   bool accepted = false;
@@ -440,6 +516,12 @@ Result<Invocation> Executable::create_invocation(sched::Scheduler &scheduler, co
   try {
     run.values.resize(state_->values.size());
     run.fragments.resize(state_->fragments.size());
+    if (state_->pipeline.has_parallel_lanes) {
+      HYLE_RETURN_IF_ERROR(run.frontier.prepare(state_->pipeline));
+      // Even ordinary borrowed bindings need every independent accepted
+      // prefix to retain this run after an early observation/other-lane error.
+      HYLE_RETURN_IF_ERROR(ensure_leases(run));
+    }
     for (std::size_t id = 0; id < run.values.size(); ++id) {
       const auto &spec = state_->values[id];
       if (!spec.id.valid()) continue;
@@ -861,7 +943,11 @@ Status Invocation::close() noexcept {
   if (state_ == nullptr) return Status::FailedPrecondition("empty CPU+Apple invocation");
   state_->closed = true;
   auto &run = *state_->run;
-  run.cancel.store(true, std::memory_order_release);
+  {
+    std::lock_guard lock(run.pipeline_mutex);
+    run.cancel.store(true, std::memory_order_release);
+  }
+  run.pipeline_ready.notify_all();
   while (run.running.load(std::memory_order_acquire))
     run.finished.wait_for(std::chrono::milliseconds(1));
   state_->write = {};

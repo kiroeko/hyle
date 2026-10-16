@@ -137,5 +137,32 @@ tokenizer、多GPU/多机或G10全进程线程预算放进来。不以要求消�
 普通最多4jobs/4logical、BelowNormal，CUDA pool1/split3/Ninja2；Windows/WSL/Air重型任务串行，
 Mac只用实际确认身份的MacBook Air。使用原合格依赖/对象和SDK，不让加一个joint消费者触发全库构建。
 修改前保存baseline registry，运行selector、docs/closure及状态投影/diff；最终聚合七门/七问、
-独立阶段终审、明确重开条件与统一LOC。当前新实现的运行时/性能门均为**未运行**，不能记PASS；
+独立阶段终审、明确重开条件与统一LOC。完整流水与性能门在下述检查点仍待证，不能预记PASS；
 上述旧SDK反证不代签这些门。
+
+## 实现检查点，2026-10-17
+
+本轮已冻结[实现前独立设计复核](../../../../evidence/architecture/inference-g09-cuda-preaudit/design-review.json)，
+开始J-F1–J-F5批量实现，仍为AUDITED而非candidate。
+
+- J-F1首版：原native analysis新增线性依赖分片投影，Apple/Vulkan接入真实data/control prerequisites；
+  common segment按新增外部依赖分开独立prefix，保原lane/预算复用边。
+- J-F2首版：新增私有冷依赖表/有界frontier，Apple/Vulkan使用原root/native driver和一个CPU child，
+  严格串行保inline；每个child仍用原Large stack pool，未增加OS线程或每segment fiber。
+  common原cursor已抽出逐segment local outcome/串行commit接缝，原advance复用该接缝；
+  **CUDA联合双lane调用者尚未接入**，不能据此宣称CUDA流水已完成。
+- J-F3未完成：当前native首版仍有旧的全输入边界准备阶段和producer端搬运；
+  按真实consumer的准备/transfer依赖推进仍须在本批完成，不从范围移除。
+- J-F4首版补短prefix-protect锁、取消的monitor wake、两driver汇合；普通borrowed并发图也冷建原
+  LeaseSubmission以保全部prefix及RunState。真实故障/取消/放弃后退休测试尚待执行。
+
+[本次common局部检查](../../../../evidence/architecture/inference-g09-partial-common-check/receipt.json)：
+Windows原source integration tree中初始75项、追加frontier后79项全部PASS，含原Graph/core/effect/
+lease/custom consumer与新增两顺序分片、join、control、反复frontier、quota。原目标增量构建13.078秒，
+新增frontier对象1.672秒，CUDA对象0；两次既有profile configure/manifest费用163.062/52.984秒保留。
+这是改变的common源码与具体测试的局部证据，**没有编译/验证Apple/Vulkan新driver，也没有签G09聚合门**。
+实际common/test源码在运行后逐项hash复核，native实现同期继续修改的事实在receipt中明确记录。
+
+下一步继续同一有限批次的CUDA caller与J-F3，集中编译三joint owner、真实两slots/65步/硬件时间线、
+错误与实际退休、适用风险/交付，然后固定candidate做预声明P1。当前完整native流水、三交付、
+风险与性能门均待证；不得因79项局部测试通过而提前收口。

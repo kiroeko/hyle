@@ -1,0 +1,91 @@
+{
+  "schema": "hyle.inference-g09-partial-common-check/v1",
+  "state": "PARTIAL_COMMON_79_PASS_NOT_G09_CANDIDATE_OR_AGGREGATE_GATE",
+  "base_commit": "a984aa9b56472baf8567ada24feee514893a96b0",
+  "product_identity": "AUDITED working tree; no immutable candidate yet",
+  "machine": "Windows, existing MSVC 19.50/Release source integration tree, shipping test interfaces; actual target commands in raw.zip",
+  "source_files": [
+    {
+      "path": "src/graph/executable.cc",
+      "sha256": "a8110f7234c5d8a8b48b3c99299b2e8f86f72c0b33134eaa962584b81d3a6aca"
+    },
+    {
+      "path": "src/graph/native_analysis.h",
+      "sha256": "edd5f0dff67b9accfbd771bc703df5722a1d91a6c627eefaf98836fbfd86cbbb"
+    },
+    {
+      "path": "src/graph/submission_internal.h",
+      "sha256": "1da2c63b573581fda8831cf3a36639f104c193f1911a29bdb0d58921c79510e9"
+    },
+    {
+      "path": "src/graph/joint_pipeline.h",
+      "sha256": "14d28d36449aa6c8b5b0d462cfd6dee78387839466519849f26d6cde1a0a9060"
+    },
+    {
+      "path": "tests/graph/native_variants_test.cc",
+      "sha256": "451063b0ae1b514c628f309cf20164c807122d60ac956629ede8c8842c8cbfaa"
+    },
+    {
+      "path": "tests/graph/joint_pipeline_test.cc",
+      "sha256": "64921b9378168bb6e396158aedff1ad16eba0f1321f8b0ded0f94f39da52a4f4"
+    },
+    {
+      "path": "tests/graph/graph_test.cc",
+      "sha256": "10203ee16060dc3aad5e3514ea27c4c76d30776bfbc573e76871b95189e3f101"
+    },
+    {
+      "path": "tests/graph/lease_submission_test.cc",
+      "sha256": "8deca44a9667560ef9e523e3e63454b2311b30f1e488768fe096401e42d840da"
+    },
+    {
+      "path": "tests/graph/effect_preflight_test.cc",
+      "sha256": "d992a98e802654d988c93ccfd3ecd49a7b8959abc5b1c8bad97059a9707e85b3"
+    },
+    {
+      "path": "tests/graph/custom_kernel_test.cc",
+      "sha256": "9ca1b2da0f117c25b77b1f1efee86d2a45a8f4c694ef6437b52d29731978e6e6"
+    }
+  ],
+  "test_target": "hyle_graph_test; original core/effect/lease/native variants plus direct custom consumer and new joint frontier tests",
+  "initial_tests": 75,
+  "final_tests": 79,
+  "failures": 0,
+  "disabled": 0,
+  "resource_profile": {
+    "priority": "BELOW_NORMAL",
+    "logical_cpus": 4,
+    "jobs": 4,
+    "cuda_objects_compiled": 0
+  },
+  "actual_cost": {
+    "initial_configure_manifest_seconds": 163.06199999997625,
+    "initial_build_seconds": 13.077999999979511,
+    "frontier_configure_manifest_seconds": 52.98399999999674,
+    "frontier_build_seconds": 1.6719999999622814,
+    "cumulative_seconds": 231.01600000000326
+  },
+  "scope": "Cold native independent prefix/join partitions and true control dependencies, existing ordinary Graph compile/submission through the extracted segment seam, bounded dependency-frontier release/order/replay/quota contracts. Native hybrid code was not compiled/linked by this target.",
+  "unverified": [
+    "Apple/Vulkan native route compile and actual two-lane runtime, source boundary transfer staging",
+    "CUDA joint two-lane consumer wiring (not implemented yet)",
+    "Two slots/65 real numerical steps, physical native overlap, cancel/error/accepted-prefix drain on hardware",
+    "Host/device risk tools, source/static/shared delivery, headers as selected, frozen candidate P1 and final review"
+  ],
+  "native_sources_changed_during_common_only_check": "Native route implementation continued during this common-only target; its launch input hashes are observations, not a whole-tree frozen candidate claim. Every actually changed common/test source compiled by this target was rechecked unchanged after the run; hashes above bind this partial result.",
+  "binary": {
+    "path": "binary/hyle_graph_test.exe",
+    "sha256": "e5db6eab087885c59b9feeabda44bd456dba890bd9f60f8838688fe9e53e87c1",
+    "bytes": 1782272
+  },
+  "raw": {
+    "path": "raw.zip",
+    "bytes": 961823,
+    "sha256": "7d678ea90e3226fe09b36656b236ff324135b3815b66e703dd86fa40c26e893f",
+    "crc": "PASS"
+  },
+  "limits": [
+    "These mechanism tests use existing public Graph/custom fixtures where appropriate; they do not sign real CPU/GPU hardware overlap.",
+    "No performance or complete G09 correctness/delivery PASS.",
+    "No new CUDA or dependency build; configure still traversed the already existing full source integration profile."
+  ]
+}

@@ -4,6 +4,7 @@
 #include "hyle/compute/detail/context_ref.h"
 #include "hyle/mem/std_allocator.h"
 #include "../graph/compile_internal.h"
+#include "../graph/joint_pipeline.h"
 
 #include <optional>
 
@@ -28,10 +29,11 @@ struct Fragment final {
   explicit Fragment(mem::AllocatorRef allocator)
       : inputs(mem::StdAllocator<std::size_t>(allocator)),
         outputs(mem::StdAllocator<std::size_t>(allocator)),
+        dependencies(mem::StdAllocator<std::size_t>(allocator)),
         cpu_inputs(mem::StdAllocator<ValueId>(allocator)),
         cpu_outputs(mem::StdAllocator<ValueId>(allocator)) {}
   ExecutionTargetId target;
-  Vector<std::size_t> inputs, outputs;
+  Vector<std::size_t> inputs, outputs, dependencies;
   Vector<ValueId> cpu_inputs, cpu_outputs;
   graph::Executable cpu;
   compute::vulkan::Program vulkan;
@@ -48,7 +50,7 @@ struct Plan final {
       : allocator(owner), values(mem::StdAllocator<Value>(owner)),
         inputs(mem::StdAllocator<std::size_t>(owner)),
         fragments(mem::StdAllocator<Fragment>(owner)),
-        paged(mem::StdAllocator<PagedFragment>(owner)), effect_bindings(owner) {}
+        paged(mem::StdAllocator<PagedFragment>(owner)), effect_bindings(owner), pipeline(owner) {}
   mem::AllocatorRef allocator;
   compute::ResourceBudget budget;
   compute::WorkloadContext workload;
@@ -59,6 +61,7 @@ struct Plan final {
   Vector<Fragment> fragments;
   Vector<PagedFragment> paged; // Empty ordinary path; no per-value page table.
   graph::detail::EffectBindings effect_bindings;
+  graph::detail::JointPipelinePlan pipeline;
   std::size_t host_workspace_bytes = 0;
 };
 

@@ -4944,6 +4944,67 @@ Status build_segments(detail::PlanState &plan,
   for (std::uint32_t &count : plan.lane_segment_counts)
     count = 0;
 
+  for (std::size_t step = 0; step < plan.steps.size(); ++step) {
+    const std::uint32_t identity = plan.steps[step].schedule_identity;
+    if (identity >= identity_steps.size() ||
+        identity_steps[identity] != detail::kNoNode) {
+      return Status::Internal("graph scheduled-step identity is invalid");
+    }
+    identity_steps[identity] = static_cast<std::uint32_t>(step);
+  }
+  for (std::size_t index = 0; index < plan.steps.size(); ++index) {
+    const detail::PlanStep &step = plan.steps[index];
+    for (std::size_t output_index = 0; output_index < step.output_count;
+         ++output_index) {
+      producers[plan.node_outputs[step.output_begin + output_index]] =
+          static_cast<std::uint32_t>(index);
+    }
+  }
+
+  // Index the existing memory-reuse edges by destination once. Together with
+  // tensor/control producers these are entry prerequisites, not removable
+  // apparent waits. This is cold O(steps + edges) metadata only.
+  Ordinals serialization_begin(plan.allocator), serialization_cursor(plan.allocator);
+  Ordinals serialization_sources(plan.allocator), entry_stamp(plan.allocator);
+  if (!serialization_begin.try_resize(plan.steps.size() + 1) ||
+      !serialization_cursor.try_resize(plan.steps.size()) ||
+      !serialization_sources.try_resize(plan.serialization_edges.size()) ||
+      !entry_stamp.try_resize(plan.steps.size())) return plan_allocation_failure();
+  std::fill(serialization_begin.begin(), serialization_begin.end(), 0u);
+  std::fill(entry_stamp.begin(), entry_stamp.end(), detail::kNoNode);
+  for (const auto edge : plan.serialization_edges) {
+    const auto source = static_cast<std::uint32_t>(edge >> 32);
+    const auto destination = static_cast<std::uint32_t>(edge);
+    if (source >= identity_steps.size() || destination >= identity_steps.size())
+      return Status::Internal("graph serialization edge identity is invalid");
+    ++serialization_begin[identity_steps[destination] + 1];
+  }
+  for (std::size_t i = 1; i < serialization_begin.size(); ++i)
+    serialization_begin[i] += serialization_begin[i - 1];
+  std::copy_n(serialization_begin.begin(), plan.steps.size(), serialization_cursor.begin());
+  for (const auto edge : plan.serialization_edges) {
+    const auto source = identity_steps[static_cast<std::uint32_t>(edge >> 32)];
+    const auto destination = identity_steps[static_cast<std::uint32_t>(edge)];
+    serialization_sources[serialization_cursor[destination]++] = source;
+  }
+  auto visit_sources = [&](std::size_t index, auto &&visit) noexcept -> Status {
+    const auto &step = plan.steps[index];
+    for (std::size_t port = 0; port < step.input_count; ++port)
+      visit(producers[plan.node_inputs[step.input_begin + port]]);
+    if (step.kind != detail::PlanStepKind::kCopy) {
+      const auto nodes = std::span<const std::uint32_t>(plan.step_nodes)
+          .subspan(step.node_set_begin, step.node_count);
+      for (const auto node : nodes) {
+        const auto &record = graph.nodes[node];
+        for (std::size_t edge = 0; edge < record.dependency_count; ++edge)
+          visit(plan.node_steps[graph.dependencies[record.dependency_begin + edge]]);
+      }
+    }
+    for (auto edge = serialization_begin[index]; edge < serialization_begin[index + 1]; ++edge)
+      visit(serialization_sources[edge]);
+    return Status::Ok();
+  };
+
   // Metadata-only View steps resolve aliases during binding preparation and
   // do not enter a Queue. Keep them inside the surrounding report interval, but
   // start/split runtime segments only for actual commands. This avoids an
@@ -4951,13 +5012,24 @@ Status build_segments(detail::PlanState &plan,
   // on one lane remain one uninterrupted Queue prefix.
   std::uint32_t active_segment = detail::kNoNode;
   for (std::size_t index = 0; index < plan.steps.size(); ++index) {
-    if (!plan.steps[index].emits_command())
+    if (!plan.steps[index].emits_command()) {
+      plan.step_segments[index] = active_segment;
       continue;
+    }
     const ExecutionLaneId lane = plan.steps[index].lane;
     if (!lane.valid() || lane.ordinal() >= plan.lanes.size())
       return Status::Internal("graph plan step has an invalid lane");
-    if (active_segment == detail::kNoNode ||
-        plan.segments[active_segment].lane != lane) {
+    bool split = active_segment == detail::kNoNode ||
+                 plan.segments[active_segment].lane != lane;
+    if (!split) {
+      HYLE_RETURN_IF_ERROR(visit_sources(index, [&](std::uint32_t source) noexcept {
+        if (source == detail::kNoNode || source >= index) return;
+        const auto prerequisite = plan.step_segments[source];
+        if (prerequisite != detail::kNoNode && prerequisite != active_segment &&
+            entry_stamp[prerequisite] != active_segment) split = true;
+      }));
+    }
+    if (split) {
       if (active_segment != detail::kNoNode) {
         detail::PlanSegment &previous = plan.segments[active_segment];
         previous.step_count =
@@ -4972,7 +5044,14 @@ Status build_segments(detail::PlanState &plan,
         return plan_allocation_failure();
       }
       active_segment = static_cast<std::uint32_t>(plan.segments.size() - 1);
+      HYLE_RETURN_IF_ERROR(visit_sources(index, [&](std::uint32_t source) noexcept {
+        if (source == detail::kNoNode || source >= index) return;
+        const auto prerequisite = plan.step_segments[source];
+        if (prerequisite != detail::kNoNode && prerequisite != active_segment)
+          entry_stamp[prerequisite] = active_segment;
+      }));
     }
+    plan.step_segments[index] = active_segment;
   }
   if (active_segment != detail::kNoNode) {
     detail::PlanSegment &last = plan.segments[active_segment];
@@ -4987,14 +5066,6 @@ Status build_segments(detail::PlanState &plan,
       plan.step_segments[step] = static_cast<std::uint32_t>(segment_index);
     ++plan.lane_segment_counts[segment.lane.ordinal()];
   }
-  for (std::size_t step = 0; step < plan.steps.size(); ++step) {
-    const std::uint32_t identity = plan.steps[step].schedule_identity;
-    if (identity >= identity_steps.size() ||
-        identity_steps[identity] != detail::kNoNode) {
-      return Status::Internal("graph scheduled-step identity is invalid");
-    }
-    identity_steps[identity] = static_cast<std::uint32_t>(step);
-  }
   for (std::size_t lane = 0; lane < plan.lane_segment_counts.size(); ++lane) {
     if (plan.lane_segment_counts[lane] != 0 &&
         plan.lanes[lane].runtime_mode ==
@@ -5003,14 +5074,6 @@ Status build_segments(detail::PlanState &plan,
     }
   }
 
-  for (std::size_t index = 0; index < plan.steps.size(); ++index) {
-    const detail::PlanStep &step = plan.steps[index];
-    for (std::size_t output_index = 0; output_index < step.output_count;
-         ++output_index) {
-      producers[plan.node_outputs[step.output_begin + output_index]] =
-          static_cast<std::uint32_t>(index);
-    }
-  }
 
   auto add_edge = [&](std::uint32_t segment,
                       std::uint32_t prerequisite) noexcept -> Status {
@@ -8016,19 +8079,16 @@ void detail::SubmissionCursor::reject_successors(Status terminal) noexcept {
     tail_error_ = std::move(terminal);
 }
 
-Result<bool> detail::SubmissionCursor::advance(bool wait_dependencies,
-    AcceptedCompletionFn accepted, void *owner, SharedSequenceFn admission,
+detail::SegmentSubmission detail::SubmissionCursor::submit_segment(
+    std::size_t segment_index, bool wait_dependencies, SharedSequenceFn admission,
     void *admission_owner) noexcept {
-  if (state_ == nullptr || finished_)
-    return std::unexpected(Status::FailedPrecondition(
-        "graph submission cursor is invalid or finished"));
-  if (done())
-    return true;
-  pending_ = nullptr;
-  pending_segment_ = SIZE_MAX;
+  SegmentSubmission outcome;
+  if (state_ == nullptr || finished_ || segment_index >= state_->plan->segments.size()) {
+    outcome.status = Status::FailedPrecondition("graph segment submission is invalid or finished");
+    return outcome;
+  }
   const auto &plan = *state_->plan;
-  const std::size_t segment_index = next_segment_;
-  auto &tail_error = tail_error_;
+  auto &tail_error = outcome.status;
   do {
     const detail::PlanSegment &segment = plan.segments[segment_index];
     const bool is_shared = shared_lane(plan, segment.lane);
@@ -8075,9 +8135,9 @@ Result<bool> detail::SubmissionCursor::advance(bool wait_dependencies,
           break;
         }
         if (*host == compute::CompletionPoll::kPending) {
-          pending_ = &source;
-          pending_segment_ = source_segment;
-          return false;
+          outcome.pending = &source;
+          outcome.pending_segment = source_segment;
+          return outcome;
         }
       } else if (route != ReplayDependencyRoute::kDeviceWait) {
         tail_error =
@@ -8154,12 +8214,7 @@ Result<bool> detail::SubmissionCursor::advance(bool wait_dependencies,
         tail_error = std::move(completion).error();
         break;
       }
-      state_->segment_completions[segment_index] = std::move(*completion);
-      if (accepted) accepted(owner, segment_index, state_->segment_completions[segment_index]);
-#if defined(HYLE_TESTING)
-      if (accepted && accepted_observation_hook)
-        accepted_observation_hook(nullptr, segment_index, state_->segment_completions[segment_index]);
-#endif
+      outcome.completion = std::move(*completion);
     } else {
       std::size_t imported_count = 0;
       for (std::size_t dependency_index = segment.dependency_begin;
@@ -8201,12 +8256,7 @@ Result<bool> detail::SubmissionCursor::advance(bool wait_dependencies,
           tail_error = std::move(completion).error();
           continue_segment = false;
         } else {
-          state_->segment_completions[segment_index] = std::move(*completion);
-          if (accepted) accepted(owner, segment_index, state_->segment_completions[segment_index]);
-#if defined(HYLE_TESTING)
-          if (accepted && accepted_observation_hook)
-            accepted_observation_hook(nullptr, segment_index, state_->segment_completions[segment_index]);
-#endif
+          outcome.completion = std::move(*completion);
         }
       }
     }
@@ -8214,8 +8264,47 @@ Result<bool> detail::SubmissionCursor::advance(bool wait_dependencies,
       break;
 
   } while (false);
-  if (tail_error_.ok())
-    ++next_segment_;
+  return outcome;
+}
+
+Status detail::SubmissionCursor::commit_segment(std::size_t segment_index,
+    SegmentSubmission outcome, AcceptedCompletionFn accepted, void *owner) noexcept {
+  if (state_ == nullptr || finished_ || segment_index >= state_->segment_completions.size() ||
+      state_->segment_completions[segment_index].valid() || outcome.pending != nullptr)
+    return Status::FailedPrecondition("graph segment outcome is not publishable");
+  if (outcome.completion.valid()) {
+    auto &completion = state_->segment_completions[segment_index];
+    completion = std::move(outcome.completion);
+    if (accepted) accepted(owner, segment_index, completion);
+#if defined(HYLE_TESTING)
+    if (accepted && accepted_observation_hook)
+      accepted_observation_hook(nullptr, segment_index, completion);
+#endif
+  }
+  return outcome.status;
+}
+
+void detail::SubmissionCursor::finish_submissions(Status terminal) noexcept {
+  if (state_ == nullptr || finished_) return;
+  reject_successors(std::move(terminal));
+  next_segment_ = state_->plan->segments.size();
+  pending_ = nullptr;
+  pending_segment_ = SIZE_MAX;
+}
+
+Result<bool> detail::SubmissionCursor::advance(bool wait_dependencies,
+    AcceptedCompletionFn accepted, void *owner, SharedSequenceFn admission,
+    void *admission_owner) noexcept {
+  if (state_ == nullptr || finished_)
+    return std::unexpected(Status::FailedPrecondition(
+        "graph submission cursor is invalid or finished"));
+  if (done()) return true;
+  auto outcome = submit_segment(next_segment_, wait_dependencies, admission, admission_owner);
+  pending_ = outcome.pending;
+  pending_segment_ = outcome.pending_segment;
+  if (pending_ != nullptr) return false;
+  tail_error_.Update(commit_segment(next_segment_, std::move(outcome), accepted, owner));
+  if (tail_error_.ok()) ++next_segment_;
   return true;
 }
 

@@ -41,6 +41,15 @@ using AcceptedCompletionFn = void (*)(void *owner, std::size_t segment,
 // It must retain every borrowed source through the final mapped completion.
 using SharedSequenceFn = Status (*)(void *, ExecutionLaneId,
                                     compute::detail::QueueSequence &) noexcept;
+// One uniquely claimed segment's local result. Keep an accepted prefix even
+// when a later command rejects. Publication and final aggregation belong to
+// the original run owner, never a concurrently executing provider callback.
+struct SegmentSubmission final {
+  compute::Completion completion;
+  Status status;
+  const compute::Completion *pending = nullptr;
+  std::size_t pending_segment = SIZE_MAX;
+};
 #if defined(HYLE_TESTING)
 // Native observation decoration only, after opt-in retention admission.
 HYLE_GRAPH_API AcceptedCompletionFn set_accepted_observation_hook(AcceptedCompletionFn hook) noexcept;
@@ -69,6 +78,19 @@ public:
                                      void *owner = nullptr,
                                      SharedSequenceFn admission = nullptr,
                                      void *admission_owner = nullptr) noexcept;
+  // Same-build joint composition only. Unique segment/step state and actual
+  // Queue single-producer ordering must be established before execution.
+  // Other segments' published Completion cells stay stable until all workers
+  // return. No bind/prepare/reset/budget growth or final finish runs alongside.
+  HYLE_GRAPH_API SegmentSubmission submit_segment(std::size_t segment,
+      bool wait_dependencies = false, SharedSequenceFn admission = nullptr,
+      void *admission_owner = nullptr) noexcept;
+  // Sole coordinator calls these after receiving a fully published outcome.
+  // Neither function encloses provider math or a native wait in a total lock.
+  HYLE_GRAPH_API Status commit_segment(std::size_t segment,
+      SegmentSubmission outcome, AcceptedCompletionFn accepted = nullptr,
+      void *owner = nullptr) noexcept;
+  HYLE_GRAPH_API void finish_submissions(Status terminal) noexcept;
   HYLE_GRAPH_API bool done() const noexcept;
   HYLE_GRAPH_API ExecutionTargetId next_target() const noexcept;
   const compute::Completion *pending_dependency() const noexcept {
