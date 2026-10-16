@@ -90,6 +90,7 @@ Status exercise(c::Context& cpu,n::Context& native,n::MemoryResource& device,
   hyle::sched::Scheduler scheduler(1,hyle::mem::system_allocator(),32);Drain drain{scheduler};HYLE_ASSIGN_OR_RETURN(auto queue,cpu.create_queue());
   std::array<joint::Invocation,2> slots;
   for(auto& slot:slots){HYLE_ASSIGN_OR_RETURN(slot,program.create_invocation(scheduler,queue));}
+  std::array<c::BatchLayoutVersion,2> uploaded_layouts;
   for(unsigned episode=0;episode<64;++episode){
     const auto& selected=episode%3==2?single:episode%2?next:layout;auto& slot=slots[episode%2];
     HYLE_ASSIGN_OR_RETURN(auto key_frame,keys.read(selected,key_reads));HYLE_ASSIGN_OR_RETURN(auto value_frame,values.read(selected,value_reads));
@@ -97,7 +98,11 @@ Status exercise(c::Context& cpu,n::Context& native,n::MemoryResource& device,
     HYLE_RETURN_IF_ERROR(slot.bind(q,qdesc,source));HYLE_RETURN_IF_ERROR(slot.bind(key,key_frame));HYLE_RETURN_IF_ERROR(slot.bind(value,value_frame));
     HYLE_RETURN_IF_ERROR(check(!slot.bind(key,recipe.descriptions()[1],key_reads[0]).ok(),"ordinary lease bypassed exact page binding"));
     HYLE_RETURN_IF_ERROR(slot.prepare_replay());HYLE_ASSIGN_OR_RETURN(auto report,slot.replay_report());
-    HYLE_RETURN_IF_ERROR(check(report.cpu_fragments==2 && report.paged_fragments==1 && report.paged_metadata_uploaded_bytes==32,"joint page math/table cost report differs"));
+    const auto previous=uploaded_layouts[episode%2];const auto before=previous.host().page_indices,after=selected.host().page_indices;
+    const bool same_table=previous.valid() && before.size()==after.size() && std::equal(before.begin(),before.end(),after.begin());
+    HYLE_RETURN_IF_ERROR(check(report.cpu_fragments==2 && report.paged_fragments==1 && report.paged_metadata_uploaded_bytes<=32 &&
+        (!same_table || report.paged_metadata_uploaded_bytes==0),"joint page math/table delta cost report differs"));
+    uploaded_layouts[episode%2]=selected;
     HYLE_ASSIGN_OR_RETURN(auto result,slot.run());HYLE_ASSIGN_OR_RETURN(auto tensor,result->output(output));
     std::vector<float> actual(18*8*depth);HYLE_RETURN_IF_ERROR(tensor.storage().read(std::as_writable_bytes(std::span(actual))));
     const auto host=selected.host();double worst=0;

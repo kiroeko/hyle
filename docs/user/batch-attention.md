@@ -191,9 +191,15 @@ foreign schema，不扩大未引用页权限。已 ready 页可共享，未引�
 其它代际的 live frames，旧空结果同样阻止 slot 更新。PagedArena.read 的原非空页权限
 合同保持不变；reference 或 Graph 的空域须按各自资格判断。
 
-每次 prepare 显式冷建原生 topology，并通过原 F2 完成单 I32 表的上传。当前上传与
-staging 容量均为 `4 * max_page_refs`，device mirrors 为其两倍，固定 backing cap 还需
-三组64byte对齐的最坏 padding；report 分别提供 uploaded/staging/device/backing bytes。
+原生分页 controller 在 schema、Q/KV indptr 与 tail 全部相等时复用原生 topology；长度
+变化仍显式冷建。page IDs 由 device 表消费，单独重排不会使 topology 失效。每个 mirror
+记录自己的有效页表，只通过原 F2 上传实际变化区间并清除缩小留下的旧值；相同表可零上传、
+零上传等待。staging 容量仍为 `4 * max_page_refs`，device mirrors 为其两倍，固定 backing
+cap 还需三组64byte对齐的最坏 padding。report 的 uploaded bytes/waits 是当次实际费用，
+staging/device/backing bytes 是容量；`reused_native_plan` 表示通过原结果/退休门后的计划复用。
+`NativePagedBatchVersion::indices()` 是显式、可并发的固定容量导出，首次分配填零并缓存，
+失败可重试；普通 version 与 controller prepare 不必生成这个全容量 blob。本批 G06 改动
+尚待实际 native/联合与交付资格，不继承旧候选的性能证书。
 无需全历史 KV gather、按 Q/head 展开或上传 additive mask。原 query/output/MLX compiled
 metadata、shader scratch 与 driver 存储仍是额外费用，private bytes 可以 UNKNOWN；
 不由这个入口签 delta planning、capture 或吞吐完全对称。
@@ -533,7 +539,7 @@ split与host waits；MaterializedBatchCosts是保守logical上限，包含view/a
 在首上传前共享镜像，每个 node 保留自己的 plan/workspace。此 G06 共同改动目前已有
 [Windows CPU source 资格](../../evidence/correctness/inference-g06-common-source-windows-attempt-4/receipt.json)；
 新平台/交付资格及 Apple/Vulkan controller 自身的 index banks、原生规划仍按各自状态验收。
-native controller报告staging、两份device mirror、固定backing和上传字节；未知private
+native controller报告staging、两份device mirror、固定backing、实际上传字节和原生计划复用；未知private
 metadata/scratch/driver费仍是UNKNOWN，硬拒未知预算按原资格明确拒绝。
 
 失败和unknown观察都不产生成功输出。public terminal或释放public result/token不代表

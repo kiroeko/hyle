@@ -7,15 +7,12 @@
 #include "hyle/compute/detail/copy_outcome_source.h"
 #include "hyle/core/assert.h"
 #include "hyle/util/ref_counted.h"
-#include "hyle/mem/std_allocator.h"
 #include <algorithm>
 #include <array>
 #include <atomic>
 #include <cmath>
 #include <cstring>
-#include <functional>
 #include <new>
-#include <vector>
 
 namespace hyle::compute {
 namespace d=detail;
@@ -33,7 +30,7 @@ struct BatchBuffers final:util::RefCounted<BatchBuffers>{
   BatchProgramData*program;mem::AllocatorRef allocator;ProviderExtensionRef provider_owner;LeasePool device,host;
 };
 struct BatchInvocationData final:util::RefCounted<BatchInvocationData>{
-  explicit BatchInvocationData(BatchProgramData*p):program(p),read_set(mem::StdAllocator<const ReadLease*>(p->allocator)){p->incref();}
+  explicit BatchInvocationData(BatchProgramData*p):program(p),read_set(p->allocator){p->incref();}
   void destroy()noexcept{
     auto*p=program;const auto a=p->allocator;
     if(native)p->table->destroy(native,a);
@@ -51,7 +48,7 @@ struct BatchInvocationData final:util::RefCounted<BatchInvocationData>{
   ReadLease graph_shared_metadata;
   CopyBatchInvocation upload;LeaseUsePool uses;RetainedCompletion completion;
   BatchLayoutVersion layout,mirror_layout;BatchPlanReport report;
-  std::vector<const ReadLease*,mem::StdAllocator<const ReadLease*>> read_set;
+  BatchPageReads read_set;
   CompletionRetention native_retention{};std::atomic<std::uint32_t> pending{0};
   Status terminal;std::uint64_t epoch=0;std::uint32_t users=1,tickets=0;
   bool closed=false,failed=false,prepared=false,ran=false,external_output=false;
@@ -116,21 +113,12 @@ Result<Completion> submit_native(d::BatchInvocationData&s,bool planning,
   if(!s.completion.available() || s.pending.load(std::memory_order_acquire) || s.uses.active_batches())
     return std::unexpected(Status::Unavailable("batch native slot or old completion retained"));
   HYLE_ASSIGN_OR_RETURN(auto use,s.uses.begin());
-  auto&reads=s.read_set;reads.clear();
-  if(leases.size()+key_pages.size()+value_pages.size()+1>reads.capacity())
-    return std::unexpected(Status::ResourceExhausted("batch read admission scratch capacity"));
-  for(const auto&lease:leases)reads.push_back(&lease);
-  for(const auto&lease:key_pages)reads.push_back(&lease);
-  for(const auto&lease:value_pages)reads.push_back(&lease);
-  reads.push_back(s.graph_shared_metadata.valid()?&s.graph_shared_metadata:&s.mirror_ready);
-  const auto identity=[](const ReadLease*p){return d::LeaseAccess::identity(*p);};
-  std::sort(reads.begin(),reads.end(),[&](auto*a,auto*b){return std::less<const void*>{}(identity(a),identity(b));});
-  Status admission;const ReadLease*previous=nullptr;
-  for(const auto*lease:reads){
-    if(previous && identity(previous)==identity(lease) && previous->generation()==lease->generation())continue;
-    admission=d::LeaseAccess::read_unique(use,*lease);if(!admission.ok())break;previous=lease;
-  }
-  reads.clear();HYLE_RETURN_IF_ERROR(admission);
+  auto&reads=s.read_set;reads.reset();
+  for(const auto&lease:leases)HYLE_RETURN_IF_ERROR(reads.add(lease));
+  for(const auto&lease:key_pages)HYLE_RETURN_IF_ERROR(reads.add(lease));
+  for(const auto&lease:value_pages)HYLE_RETURN_IF_ERROR(reads.add(lease));
+  HYLE_RETURN_IF_ERROR(reads.add(s.graph_shared_metadata.valid()?s.graph_shared_metadata:s.mirror_ready));
+  HYLE_RETURN_IF_ERROR(reads.admit(use));
   HYLE_RETURN_IF_ERROR(use.write(s.float_workspace));HYLE_RETURN_IF_ERROR(use.write(s.int_workspace));
   if(planning)HYLE_RETURN_IF_ERROR(use.write(s.host_workspace));else HYLE_RETURN_IF_ERROR(use.write(s.output));
   HYLE_ASSIGN_OR_RETURN(auto sequence,d::QueueSequence::begin(*s.queue));
@@ -205,7 +193,7 @@ Result<BatchInvocation> BatchInvocation::create(const BatchProgram&program,Queue
   HYLE_ASSIGN_OR_RETURN(s->upload,CopyBatchInvocation::create(p->upload,queue));
   const auto refs=p->schema.capacity().max_page_refs;
   if(refs>(UINT32_MAX-8u)/2u)return std::unexpected(Status::OutOfRange("batch page-use capacity overflow"));
-  try{s->read_set.reserve(8u+2u*refs);}catch(const std::bad_alloc&){return std::unexpected(Status::ResourceExhausted("batch read admission scratch"));}
+  HYLE_RETURN_IF_ERROR(s->read_set.reserve(8u+2u*refs));
   HYLE_ASSIGN_OR_RETURN(s->uses,LeaseUsePool::create({.max_batches=1,.max_resources_per_batch=8u+2u*refs,.allocator=p->allocator,.resource_budget=p->options.resource_budget}));
   HYLE_ASSIGN_OR_RETURN(s->completion,d::RetainedCompletion::create(p->allocator));
   HYLE_RETURN_IF_ERROR(d::ProviderExtensionAccess::call(p->extension,[](void*context,const void*table,void*opaque)noexcept{
@@ -431,8 +419,10 @@ Result<Completion> PagedBatchReceiver::submit(const ReadLease&query,
   if(!prefix)sequence->record(d::EnqueueResult::rejected(prefix.error()));
   else if(prefix->pending())sequence->record(sequence->enqueue_resolved_wait(*prefix));
   if(sequence->terminal().ok()){
-    auto admitted=d::PagedArenaAccess::admit_read<CopyBatchUpdate,d::CopyStreamAccess>(use,keys,p.source.update());
-    if(admitted.ok())admitted=d::PagedArenaAccess::admit_read<CopyBatchUpdate,d::CopyStreamAccess>(use,values,p.source.update());
+    auto&reads=s->read_set;reads.reset();
+    auto admitted=d::PagedArenaAccess::collect_reads<CopyBatchUpdate,d::CopyStreamAccess>(reads,keys,p.source.update());
+    if(admitted.ok())admitted=d::PagedArenaAccess::collect_reads<CopyBatchUpdate,d::CopyStreamAccess>(reads,values,p.source.update());
+    if(admitted.ok())admitted=reads.admit(use);
     if(!admitted.ok())sequence->record(d::EnqueueResult::rejected(admitted));
   }
   auto suffix=finish_native(*s,false,inputs,views,std::move(use),*sequence);

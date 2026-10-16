@@ -151,7 +151,7 @@ template<class T> Status exercise(n::Context& context, n::MemoryResource& device
   HYLE_ASSIGN_OR_RETURN(auto submitted,other.submit());
   HYLE_ASSIGN_OR_RETURN(auto old,submitted.wait());
   HYLE_RETURN_IF_ERROR(verify(*old,expected));
-  for(unsigned episode=0;episode<64;++episode){
+  for(unsigned episode=0;episode<64;++episode)for(unsigned replay=0;replay<2;++replay){
     const bool changed=episode%2;
     HYLE_RETURN_IF_ERROR(slot.prepare_batch(changed?next:layout));
     if(changed)HYLE_RETURN_IF_ERROR(require(!slot.bind(query,key_frame,next_values).ok(),"mixed generations accepted"));
@@ -161,8 +161,24 @@ template<class T> Status exercise(n::Context& context, n::MemoryResource& device
     HYLE_RETURN_IF_ERROR(require(!slot.prepare_batch(layout).ok(),"old output permitted native reuse"));
     HYLE_RETURN_IF_ERROR(verify(*old,expected));
     const auto report=slot.report();
-    HYLE_RETURN_IF_ERROR(require(report.uploaded_bytes==4*table_capacity && report.device_banks==2 &&
+    HYLE_RETURN_IF_ERROR(require(report.reused_native_plan==(replay!=0),"native complete topology reuse report differs"));
+    if(episode || replay)HYLE_RETURN_IF_ERROR(require(report.upload_host_waits==0,"unchanged page IDs incurred upload wait"));
+    HYLE_RETURN_IF_ERROR(require((episode==0 && replay==0 ? report.uploaded_bytes>0 && report.uploaded_bytes<=4*pages.size() : report.uploaded_bytes==0) && report.device_banks==2 &&
         report.staging_bytes==4*table_capacity && report.device_mirror_bytes==8*table_capacity,"native table costs expanded"));
+  }
+  std::rotate(pages.begin(),pages.begin()+1,pages.end());
+  HYLE_ASSIGN_OR_RETURN(auto reordered,schema.version({next_qp,kp,pages,tails}));
+  HYLE_ASSIGN_OR_RETURN(auto reordered_keys,keys.read(reordered,exact_k));
+  HYLE_ASSIGN_OR_RETURN(auto reordered_values,values.read(reordered,exact_v));
+  {
+    HYLE_RETURN_IF_ERROR(slot.prepare_batch(reordered));
+    const auto report=slot.report();
+    HYLE_RETURN_IF_ERROR(require(report.reused_native_plan && report.uploaded_bytes>0 &&
+        report.uploaded_bytes<=4*pages.size(),"page ID change did not reuse plan with actual delta upload"));
+    HYLE_RETURN_IF_ERROR(slot.bind(query,reordered_keys,reordered_values));
+    HYLE_ASSIGN_OR_RETURN(auto run,slot.submit());HYLE_ASSIGN_OR_RETURN(auto result,run.wait());
+    HYLE_RETURN_IF_ERROR(verify(*result,oracle(next_qp)));
+    HYLE_RETURN_IF_ERROR(verify(*old,expected));
   }
   HYLE_RETURN_IF_ERROR(slot.close());HYLE_RETURN_IF_ERROR(slot.drain());
   HYLE_RETURN_IF_ERROR(require(!slot.prepare_batch(layout).ok(),"closed slot accepted work"));

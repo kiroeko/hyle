@@ -4,6 +4,7 @@
 #include <cmath>
 #include <cstdint>
 #include <limits>
+#include <mutex>
 #include <utility>
 
 #include "hyle/compute/detail/lease_access.h"
@@ -29,6 +30,13 @@ struct NativePagedBatchVersionOwner final {
   NativePagedBatchProgram program;
   BatchLayoutVersion layout;
   mem::AllocatorRef allocator;
+};
+struct NativePagedBatchVersionData final:util::RefCounted<NativePagedBatchVersionData> {
+  NativePagedBatchVersionData(NativePagedBatchProgram p,BatchLayoutVersion l,mem::AllocatorRef a,ResourceBudget b)
+      :program(std::move(p)),layout(std::move(l)),allocator(a),budget(std::move(b)){}
+  void destroy()noexcept{const auto a=allocator;this->~NativePagedBatchVersionData();a.deallocate(this,sizeof(*this),alignof(NativePagedBatchVersionData));}
+  NativePagedBatchProgram program;BatchLayoutVersion layout;mem::AllocatorRef allocator;ResourceBudget budget;
+  mutable std::mutex export_lock;mutable ReadLease indices;
 };
 } // namespace detail
 namespace {
@@ -96,27 +104,37 @@ Result<NativePagedBatchVersion> NativePagedBatchProgram::version(BatchLayoutVers
   if (!data_->schema.owns(layout))
     return std::unexpected(Status::InvalidArgument("native page version schema differs"));
   HYLE_RETURN_IF_ERROR(validate_batch_attention_layout(layout,causal(),window_left()));
-  HYLE_ASSIGN_OR_RETURN(auto buffer, mem::Buffer::create(mem::system_resource(), data_->costs.index_bytes, 64));
+  auto*p=data_->allocator.construct<detail::NativePagedBatchVersionData>(*this,std::move(layout),data_->allocator,data_->options.resource_budget);
+  if(!p)return std::unexpected(Status::ResourceExhausted("native page active version owner"));
+  return NativePagedBatchVersion(p);
+}
+NativePagedBatchVersion::NativePagedBatchVersion(const NativePagedBatchVersion&v)noexcept:data_(v.data_){if(data_)data_->incref();}
+NativePagedBatchVersion&NativePagedBatchVersion::operator=(const NativePagedBatchVersion&v)noexcept{if(this!=&v){NativePagedBatchVersion next(v);std::swap(data_,next.data_);}return *this;}
+NativePagedBatchVersion::NativePagedBatchVersion(NativePagedBatchVersion&&v)noexcept:data_(std::exchange(v.data_,nullptr)){}
+NativePagedBatchVersion&NativePagedBatchVersion::operator=(NativePagedBatchVersion&&v)noexcept{if(this!=&v){NativePagedBatchVersion next(std::move(v));std::swap(data_,next.data_);}return *this;}
+NativePagedBatchVersion::~NativePagedBatchVersion(){if(data_)data_->decref();}
+BatchLayoutVersion NativePagedBatchVersion::layout() const noexcept { return data_?data_->layout:BatchLayoutVersion{}; }
+NativePagedBatchProgram NativePagedBatchVersion::program() const noexcept { return data_?data_->program:NativePagedBatchProgram{}; }
+Result<ReadLease> NativePagedBatchVersion::indices() const noexcept {
+  if(!data_)return std::unexpected(Status::FailedPrecondition("native page version is empty"));
+  std::lock_guard guard(data_->export_lock);if(data_->indices.valid())return data_->indices;
+  HYLE_ASSIGN_OR_RETURN(auto buffer, mem::Buffer::create(mem::system_resource(), data_->program.costs().index_bytes, 64));
   {
     HYLE_ASSIGN_OR_RETURN(auto mapping, buffer.view().map_host());
     HYLE_ASSIGN_OR_RETURN(auto writable, mapping.writable_bytes());
     auto *indices = reinterpret_cast<std::int32_t *>(writable.data());
-    std::fill_n(indices, data_->schema.capacity().max_page_refs, 0);
-    const auto pages = layout.host().page_indices;
+    std::fill_n(indices, data_->program.schema().capacity().max_page_refs, 0);
+    const auto pages = data_->layout.host().page_indices;
     std::copy(pages.begin(), pages.end(), indices);
     HYLE_RETURN_IF_ERROR(mapping.close());
   }
   HYLE_ASSIGN_OR_RETURN(auto ready, ReadLease::adopt(std::move(buffer),
-      {.allocator = data_->allocator, .resource_budget = data_->options.resource_budget}));
-  auto *owner = data_->allocator.construct<detail::NativePagedBatchVersionOwner>(*this, std::move(layout), data_->allocator);
+      {.allocator = data_->allocator, .resource_budget = data_->budget}));
+  // The export retains independent owners, never this cache-containing state.
+  // Otherwise cached lease -> version -> cached lease would form a cycle.
+  auto *owner = data_->allocator.construct<detail::NativePagedBatchVersionOwner>(data_->program,data_->layout,data_->allocator);
   if (!owner) return std::unexpected(Status::ResourceExhausted("native page version owner"));
   detail::LeaseAccess::retain_resource_owner(ready, owner, &release_version_owner);
-  return NativePagedBatchVersion(std::move(ready), owner);
-}
-BatchLayoutVersion NativePagedBatchVersion::layout() const noexcept { return valid() ? owner_->layout : BatchLayoutVersion{}; }
-NativePagedBatchProgram NativePagedBatchVersion::program() const noexcept { return valid() ? owner_->program : NativePagedBatchProgram{}; }
-Result<ReadLease> NativePagedBatchVersion::indices() const noexcept {
-  if (!valid()) return std::unexpected(Status::FailedPrecondition("native page version is empty"));
-  return indices_;
+  data_->indices=std::move(ready);return data_->indices;
 }
 } // namespace hyle::compute

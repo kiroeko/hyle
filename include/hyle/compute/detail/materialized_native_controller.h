@@ -1,4 +1,5 @@
 #pragma once
+#include <algorithm>
 #include <array>
 #include <optional>
 #include <type_traits>
@@ -48,7 +49,7 @@ template<class Context>struct LayoutNativePreparation final {
 };
 template<class T,class Policy=MaterializedMetadataPolicy>struct MaterializedNativeState {
   static constexpr std::size_t metadata_count=Policy::metadata_count,input_count=3+metadata_count;
-  explicit MaterializedNativeState(mem::AllocatorRef a):allocator(a){}
+  explicit MaterializedNativeState(mem::AllocatorRef a):allocator(a),page_reads(a){}
   mem::AllocatorRef allocator;typename Policy::Recipe recipe;
   [[no_unique_address]] std::conditional_t<Policy::prepare_native,
       LayoutNativePreparation<typename T::Context>,FixedNativePreparation> preparation;
@@ -58,7 +59,9 @@ template<class T,class Policy=MaterializedMetadataPolicy>struct MaterializedNati
   std::array<std::array<WriteLease,metadata_count>,2> mirror_writers;
   std::array<std::array<ReadLease,metadata_count>,2> mirror_ready;
   std::array<ReadLease,input_count> reads;PagedArenaRead keys,values;typename Policy::Version version;
-  LeaseUsePool uses;typename Policy::Report report;
+  LeaseUsePool uses;BatchPageReads page_reads;typename Policy::Report report;
+  [[no_unique_address]] std::conditional_t<Policy::prepare_native,
+      std::array<BatchLayoutVersion,2>,FixedNativePreparation> mirror_layouts;
   int native_bank=-1,prepared_bank=0;
   bool prepared=false,bound=false,closed=false,failed=false;
   LeaseImportOptions import;
@@ -78,6 +81,10 @@ template<class T,class Policy=MaterializedMetadataPolicy>struct MaterializedNati
     HYLE_ASSIGN_OR_RETURN(auto hp,LeasePool::create(h.ref(),bytes+metadata_count*63,{.max_blocks=std::uint32_t(metadata_count),.allocator=allocator,.resource_budget=options.resource_budget}));
     HYLE_ASSIGN_OR_RETURN(auto dp,LeasePool::create(d.ref(),2*bytes+2*metadata_count*63,{.max_blocks=std::uint32_t(2*metadata_count),.allocator=allocator,.resource_budget=options.resource_budget}));
     for(std::size_t i=0;i<metadata_count;++i){HYLE_ASSIGN_OR_RETURN(staging_writers[i],hp.allocate(lengths[i],64));for(auto&bank:mirror_writers){HYLE_ASSIGN_OR_RETURN(bank[i],dp.allocate(lengths[i],64));}}
+    if constexpr(Policy::prepare_native){
+      for(auto&writer:staging_writers)HYLE_RETURN_IF_ERROR(writer.view()->fill(std::byte{0}));
+      for(auto&bank:mirror_writers)for(auto&writer:bank)HYLE_RETURN_IF_ERROR(writer.view()->fill(std::byte{0}));
+    }
     for(auto*pool:{&hp,&dp}){
       auto*owner=allocator.template construct<NativeMirrorOwner<typename Policy::Recipe>>(recipe,allocator,options.resource_budget);if(!owner)return Status::ResourceExhausted("native mirror owner metadata");
       LeaseAccess::retain_resource_owner(*pool,owner,[](void*opaque)noexcept{auto*p=static_cast<NativeMirrorOwner<typename Policy::Recipe>*>(opaque);const auto a=p->allocator;a.destroy(p);});LeaseAccess::detach_pool_root(*pool);
@@ -87,6 +94,7 @@ template<class T,class Policy=MaterializedMetadataPolicy>struct MaterializedNati
     HYLE_ASSIGN_OR_RETURN(auto copy,T::copy_program(selected_context,specs,{.max_resources=std::uint32_t(2*metadata_count),.max_copies=std::uint32_t(metadata_count),.max_phases=1,.max_bytes=bytes,.allocator=allocator,.resource_budget=options.resource_budget}));
     HYLE_ASSIGN_OR_RETURN(upload,T::copy_invocation(copy));const auto refs=recipe.schema().capacity().max_page_refs;
     if(refs>(UINT32_MAX-input_count)/2)return Status::ResourceExhausted("native batch page use capacity");
+    HYLE_RETURN_IF_ERROR(page_reads.reserve(input_count+2*refs));
     HYLE_ASSIGN_OR_RETURN(uses,LeaseUsePool::create({.max_batches=1,.max_resources_per_batch=std::uint32_t(input_count)+2*refs,.allocator=allocator,.resource_budget=options.resource_budget}));
     report.staging_bytes=bytes;report.device_mirror_bytes=2*bytes;report.backing_bytes=3*bytes+padding;return Status::Ok();
   }
@@ -94,18 +102,55 @@ template<class T,class Policy=MaterializedMetadataPolicy>struct MaterializedNati
   Status prepare(BatchLayoutVersion layout)noexcept{
     HYLE_RETURN_IF_ERROR(open());HYLE_ASSIGN_OR_RETURN(auto next,recipe.version(std::move(layout)));
     if(native.valid()){HYLE_RETURN_IF_ERROR(T::reuse_gate(native));}if(uses.active_batches())return Status::Unavailable("native batch actual permission use retained");
+    [[maybe_unused]] bool reused_native=false;
     if constexpr(Policy::prepare_native){
-      HYLE_ASSIGN_OR_RETURN(auto program,T::prepare_program(*preparation.context,recipe,next.layout(),preparation.workload));
-      HYLE_ASSIGN_OR_RETURN(auto prepared_native,T::invocation(program,allocator));
-      // A rejected upload reset must leave the old prepared generation and
-      // its native recipe together. Commit the cold replacement only after
-      // this admission gate succeeds; later accepted failures poison the slot.
-      HYLE_RETURN_IF_ERROR(upload.reset());
-      native=std::move(prepared_native);
+      const auto old=version.layout(),current=next.layout();const auto a=old.host(),b=current.host();
+      const auto equal=[](auto x,auto y){return x.size()==y.size()&&std::equal(x.begin(),x.end(),y.begin());};
+      reused_native=native.valid()&&current.schema().owns(old)&&equal(a.query_indptr,b.query_indptr)&&equal(a.kv_indptr,b.kv_indptr)&&equal(a.last_page_lengths,b.last_page_lengths);
+      if(!reused_native){
+        HYLE_ASSIGN_OR_RETURN(auto program,T::prepare_program(*preparation.context,recipe,current,preparation.workload));
+        HYLE_ASSIGN_OR_RETURN(auto prepared_native,T::invocation(program,allocator));
+        // Commit a cold replacement only after this non-mutating admission
+        // gate. All later accepted upload failures poison the original slot.
+        HYLE_RETURN_IF_ERROR(upload.reset());native=std::move(prepared_native);
+      }else{HYLE_RETURN_IF_ERROR(upload.reset());}
     }else{HYLE_RETURN_IF_ERROR(upload.reset());}
     prepared=false;bound=false;reads={};keys={};values={};version={};
     prepared_bank=native_bank==0?1:0;
     const auto transfer=[&]()noexcept->Status{
+      if constexpr(Policy::prepare_native){
+        const auto current=next.layout();const auto pages=current.host().page_indices;
+        const auto equal=[](auto a,auto b){return a.size()==b.size()&&std::equal(a.begin(),a.end(),b.begin());};
+        // An unchanged table can keep the current readonly bank even while the
+        // original invocation retains its input arrays. Never overwrite it.
+        if(native_bank>=0 && mirror_ready[native_bank][0].valid() && equal(pages,mirror_layouts[native_bank].host().page_indices))prepared_bank=native_bank;
+        const auto old=mirror_layouts[prepared_bank].host().page_indices;
+        const auto extent=std::max(old.size(),pages.size());std::size_t first=extent,last=0;
+        for(std::size_t i=0;i<extent;++i){const auto a=i<old.size()?old[i]:0,b=i<pages.size()?pages[i]:0;if(a!=b){first=std::min(first,i);last=i+1;}}
+        report.uploaded_bytes=0;report.upload_host_waits=0;
+        if(first<last){
+          if(staging_ready[0].valid()){HYLE_ASSIGN_OR_RETURN(staging_writers[0],staging_ready[0].try_write());}
+          if(mirror_ready[prepared_bank][0].valid()){HYLE_ASSIGN_OR_RETURN(mirror_writers[prepared_bank][0],mirror_ready[prepared_bank][0].try_write());}
+          {
+            HYLE_ASSIGN_OR_RETURN(auto view,staging_writers[0].view());HYLE_ASSIGN_OR_RETURN(auto mapping,view.map_host());HYLE_ASSIGN_OR_RETURN(auto bytes,mapping.writable_bytes());
+            auto target=bytes.subspan(first*sizeof(std::int32_t),(last-first)*sizeof(std::int32_t));std::fill(target.begin(),target.end(),std::byte{0});
+            if(first<pages.size()){const auto source=std::as_bytes(pages.subspan(first,std::min(last,pages.size())-first));std::copy(source.begin(),source.end(),target.begin());}
+            HYLE_RETURN_IF_ERROR(mapping.close());
+          }
+          HYLE_ASSIGN_OR_RETURN(staging_ready[0],staging_writers[0].publish());
+          HYLE_RETURN_IF_ERROR(upload.bind_source({0},staging_ready[0]));HYLE_RETURN_IF_ERROR(upload.bind_mutable({1},std::move(mirror_writers[prepared_bank][0])));
+          const std::array<CopyPhase,1> phases{{{}}};const std::array<CopyRange,1> ranges{{{{0},{1},{0},first*4,first*4,(last-first)*4}}};
+          HYLE_RETURN_IF_ERROR(upload.prepare_replay(phases,ranges));HYLE_ASSIGN_OR_RETURN(auto submitted,upload.submit());HYLE_RETURN_IF_ERROR(submitted.wait());
+          const auto facts=submitted.report();report.uploaded_bytes=facts.logical_bytes;report.upload_host_waits=facts.host_waits;submitted={};
+          // Original F2 proves only the delta. Retake its retired writer and
+          // publish using cold-zero initialization plus every successful delta.
+          HYLE_ASSIGN_OR_RETURN(mirror_writers[prepared_bank][0],T::CopyAccess::take_mutable(upload,{1}));
+          HYLE_ASSIGN_OR_RETURN(mirror_ready[prepared_bank][0],mirror_writers[prepared_bank][0].publish());
+        }else if(!mirror_ready[prepared_bank][0].valid()){
+          HYLE_ASSIGN_OR_RETURN(mirror_ready[prepared_bank][0],mirror_writers[prepared_bank][0].publish());
+        }
+        mirror_layouts[prepared_bank]=current;report.layout_generation=current.generation();report.reused_native_plan=reused_native;return Status::Ok();
+      }else{
       const auto lengths=Policy::lengths(recipe);
       for(std::size_t i=0;i<metadata_count;++i){
         if(staging_ready[i].valid()){HYLE_ASSIGN_OR_RETURN(staging_writers[i],staging_ready[i].try_write());}
@@ -119,6 +164,7 @@ template<class T,class Policy=MaterializedMetadataPolicy>struct MaterializedNati
       HYLE_RETURN_IF_ERROR(upload.prepare_replay(phases,ranges));HYLE_ASSIGN_OR_RETURN(auto submitted,upload.submit());HYLE_RETURN_IF_ERROR(submitted.wait());
       for(std::size_t i=0;i<metadata_count;++i){HYLE_ASSIGN_OR_RETURN(mirror_ready[prepared_bank][i],submitted.output({0},{std::uint32_t(i+metadata_count)},0,lengths[i]));}
       const auto facts=submitted.report();report.layout_generation=next.layout().generation();report.uploaded_bytes=facts.logical_bytes;report.upload_host_waits=facts.host_waits;return Status::Ok();
+      }
     };
     const auto status=transfer();if(!status.ok()){failed=true;return status;}
     for(std::size_t i=0;i<metadata_count;++i)reads[3+i]=mirror_ready[prepared_bank][i];version=std::move(next);prepared=true;return Status::Ok();
@@ -176,9 +222,10 @@ template<class T,class Policy=MaterializedMetadataPolicy>struct MaterializedNati
   }
   auto submit()noexcept->Result<typename T::Submission>{
     HYLE_RETURN_IF_ERROR(open());if(!prepared || !bound)return std::unexpected(Status::FailedPrecondition("native batch is not prepared/bound"));
-    HYLE_ASSIGN_OR_RETURN(auto batch,uses.begin());for(const auto&lease:reads)if(lease.valid())HYLE_RETURN_IF_ERROR(batch.read(lease));
-    for(const auto&page:PagedArenaAccess::pages(keys))HYLE_RETURN_IF_ERROR(batch.read(page));
-    for(const auto&page:PagedArenaAccess::pages(values))HYLE_RETURN_IF_ERROR(batch.read(page));
+    HYLE_ASSIGN_OR_RETURN(auto batch,uses.begin());page_reads.reset();for(const auto&lease:reads)if(lease.valid())HYLE_RETURN_IF_ERROR(page_reads.add(lease));
+    for(const auto&page:PagedArenaAccess::pages(keys))HYLE_RETURN_IF_ERROR(page_reads.add(page));
+    for(const auto&page:PagedArenaAccess::pages(values))HYLE_RETURN_IF_ERROR(page_reads.add(page));
+    HYLE_RETURN_IF_ERROR(page_reads.admit(batch));
     auto submitted=T::submit(native,std::move(batch));prepared=false;bound=false;if(!submitted)failed=true;return submitted;
   }
   template<class Update,class Access>
@@ -188,8 +235,9 @@ template<class T,class Policy=MaterializedMetadataPolicy>struct MaterializedNati
     if(!prepared || !bound)return std::unexpected(Status::FailedPrecondition("native pending batch is not prepared/bound"));
     HYLE_ASSIGN_OR_RETURN(auto batch,uses.begin());
     for(const auto&lease:reads)if(lease.valid())HYLE_RETURN_IF_ERROR(batch.read(lease));
-    HYLE_RETURN_IF_ERROR((PagedArenaAccess::admit_read<Update,Access>(batch,k,update)));
-    HYLE_RETURN_IF_ERROR((PagedArenaAccess::admit_read<Update,Access>(batch,v,update)));
+    page_reads.reset();HYLE_RETURN_IF_ERROR((PagedArenaAccess::collect_reads<Update,Access>(page_reads,k,update)));
+    HYLE_RETURN_IF_ERROR((PagedArenaAccess::collect_reads<Update,Access>(page_reads,v,update)));
+    HYLE_RETURN_IF_ERROR(page_reads.admit(batch));
     auto submitted=T::submit(native,std::move(batch));
     prepared=false;bound=false;if(!submitted)failed=true;return submitted;
   }

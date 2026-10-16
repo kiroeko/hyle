@@ -137,7 +137,7 @@ struct PendingInvocationData final:util::RefCounted<PendingInvocationData>{
     std::vector<ExecutionLaneId,mem::StdAllocator<ExecutionLaneId>> lanes;
   };
   explicit PendingInvocationData(mem::AllocatorRef a):allocator(a),
-      inputs(mem::StdAllocator<Input>(a)),admitted(mem::StdAllocator<unsigned char>(a)){}
+      inputs(mem::StdAllocator<Input>(a)),admitted(mem::StdAllocator<unsigned char>(a)),page_reads(a){}
   void destroy()noexcept{const auto a=allocator;a.destroy(this);}
   bool contains(ValueId value)const noexcept{
     return std::any_of(inputs.begin(),inputs.end(),[&](const auto&input){return input.value==value;});
@@ -155,6 +155,7 @@ struct PendingInvocationData final:util::RefCounted<PendingInvocationData>{
   cd::CompletionRetention retention{};
   std::vector<Input,mem::StdAllocator<Input>> inputs;
   std::vector<unsigned char,mem::StdAllocator<unsigned char>> admitted;
+  cd::BatchPageReads page_reads;
   bool submitted=false;
 };
 void destroy(InvocationData*p)noexcept{if(p){const auto allocator=p->allocator;allocator.destroy(p);}}
@@ -281,6 +282,10 @@ Result<PendingInvocation> PendingInvocation::create(Invocation&&owner,std::size_
     return std::unexpected(Status::ResourceExhausted("pending Graph input capacity overflow"));
   try{p->inputs.reserve(2*owner.data_->bindings.size());p->admitted.resize(owner.data_->queues.size());}
   catch(...){return std::unexpected(Status::ResourceExhausted("pending Graph fixed input metadata"));}
+  std::size_t page_capacity=0;
+  for(const auto&binding:owner.data_->bindings){const auto refs=binding.region->config->schema.capacity().max_page_refs;
+    if(refs>(SIZE_MAX-page_capacity)/2)return std::unexpected(Status::ResourceExhausted("pending Graph page admission capacity overflow"));page_capacity+=2*refs;}
+  HYLE_RETURN_IF_ERROR(p->page_reads.reserve(page_capacity));
   p->original=std::move(owner);return result;
 }
 Status PendingInvocation::prepare_batch(std::span<const NodeLayout>layouts,bool update)noexcept{
@@ -376,8 +381,10 @@ Result<c::Completion> PendingInvocation::submit(c::CopyBatchUpdate&&update)noexc
         auto waited=sequence.enqueue_resolved_wait(prefix);const auto status=waited.status;
         sequence.record(std::move(waited));HYLE_RETURN_IF_ERROR(status);
       }
+      p.page_reads.reset();
       for(const auto&input:p.inputs)if(reads(input))
-        HYLE_RETURN_IF_ERROR((cd::PagedArenaAccess::admit_read<c::CopyBatchUpdate,cd::CopyStreamAccess>(uses,input.frame,p.source.update())));
+        HYLE_RETURN_IF_ERROR((cd::PagedArenaAccess::collect_reads<c::CopyBatchUpdate,cd::CopyStreamAccess>(p.page_reads,input.frame,p.source.update())));
+      HYLE_RETURN_IF_ERROR(p.page_reads.admit(uses));
       p.admitted[index]=1;return Status::Ok();
     },
     [](void*opaque,c::Completion&&suffix)noexcept->c::Completion{

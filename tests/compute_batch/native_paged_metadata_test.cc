@@ -3,6 +3,8 @@
 #include <array>
 #include <limits>
 #include <span>
+#include <thread>
+#include "hyle/compute/detail/lease_access.h"
 
 #include "allocation_fault_fixture.h"
 #include "hyle/compute/batch_paged_native.h"
@@ -140,11 +142,29 @@ TEST(NativePagedMetadata, EveryColdAllocationFailureReclaimsMetadataAndExportCan
       if (!recipe) EXPECT_TRUE(recipe.error().IsResourceExhausted()) << fail;
       else {
         auto version = recipe->version(owned);
-        ASSERT_FALSE(version) << fail;
-        EXPECT_TRUE(version.error().IsResourceExhausted()) << fail;
+        if(!version)EXPECT_TRUE(version.error().IsResourceExhausted()) << fail;
+        else{auto exported=version->indices();ASSERT_FALSE(exported)<<fail;EXPECT_TRUE(exported.error().IsResourceExhausted())<<fail;}
       }
     }
     EXPECT_EQ(fault.live, 0u) << fail;
   }
+}
+TEST(NativePagedMetadata, ActiveVersionDefersFullIndexAllocationUntilExplicitExport){
+  auto cap=schema().capacity();cap.max_page_refs=8192;auto selected=c::BatchSchema::create(cap).value();
+  auto owned=layout(selected);hyle_f5_fault_fixture::Allocator allocator;
+  auto recipe=c::NativePagedBatchProgram::prepare(selected,{.max_host_metadata_bytes=32768,.allocator=allocator.ref()}).value();
+  const auto before=allocator.attempts;auto version=recipe.version(owned).value();EXPECT_EQ(allocator.attempts,before+1);
+  EXPECT_EQ(version.layout(),owned);const auto active_attempts=allocator.attempts;allocator.fail=active_attempts;
+  auto failed=version.indices();ASSERT_FALSE(failed);EXPECT_TRUE(failed.error().IsResourceExhausted());EXPECT_EQ(version.layout(),owned);
+  allocator.fail=(std::numeric_limits<std::size_t>::max)();auto exported=version.indices();ASSERT_TRUE(exported);EXPECT_EQ(exported->size(),32768u);
+  const auto successful=allocator.attempts;auto repeated=version.indices();ASSERT_TRUE(repeated);EXPECT_EQ(allocator.attempts,successful);
+  EXPECT_EQ(c::detail::LeaseAccess::identity(*exported),c::detail::LeaseAccess::identity(*repeated));
+}
+TEST(NativePagedMetadata, ConcurrentExplicitExportsShareOneReadonlyTable){
+  auto selected=schema();auto recipe=c::NativePagedBatchProgram::prepare(selected,{.max_host_metadata_bytes=32}).value();
+  auto version=recipe.version(layout(selected)).value();std::array<c::ReadLease,8> copies;std::array<std::thread,8> threads;
+  for(unsigned i=0;i<threads.size();++i)threads[i]=std::thread([&,i]{auto exported=version.indices();EXPECT_TRUE(exported);if(exported)copies[i]=std::move(*exported);});
+  for(auto&thread:threads)thread.join();
+  for(const auto&copy:copies){ASSERT_TRUE(copy.valid());EXPECT_EQ(c::detail::LeaseAccess::identity(copy),c::detail::LeaseAccess::identity(copies[0]));}
 }
 } // namespace

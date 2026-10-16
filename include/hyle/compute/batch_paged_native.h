@@ -31,10 +31,12 @@ struct NativePagedBatchReport final {
   std::size_t staging_bytes = 0, device_mirror_bytes = 0, backing_bytes = 0, uploaded_bytes = 0;
   std::uint64_t upload_host_waits = 0;
   std::uint32_t device_banks = 2;
+  bool reused_native_plan = false;
 };
 namespace detail {
 struct NativePagedBatchProgramData;
 struct NativePagedBatchVersionOwner;
+struct NativePagedBatchVersionData;
 }
 class NativePagedBatchVersion;
 // Cold schema/attention recipe and compact page metadata, not native math
@@ -64,20 +66,26 @@ private:
   explicit NativePagedBatchProgram(detail::NativePagedBatchProgramData *data) noexcept : data_(data) {}
   detail::NativePagedBatchProgramData *data_ = nullptr;
 };
-// Immutable readonly page-ID snapshot. Its exported lease independently retains
-// the recipe and owned layout, even after every version handle is released.
+// Immutable active layout/recipe owner. indices() explicitly materializes the
+// fixed-capacity readonly page table on first use and shares its cached export.
+// Its lease independently retains recipe/layout after version handles die.
 class NativePagedBatchVersion final {
 public:
   NativePagedBatchVersion() noexcept = default;
-  bool valid() const noexcept { return indices_.valid(); }
+  HYLE_COMPUTE_BATCH_API NativePagedBatchVersion(const NativePagedBatchVersion&) noexcept;
+  HYLE_COMPUTE_BATCH_API NativePagedBatchVersion&operator=(const NativePagedBatchVersion&) noexcept;
+  HYLE_COMPUTE_BATCH_API NativePagedBatchVersion(NativePagedBatchVersion&&) noexcept;
+  HYLE_COMPUTE_BATCH_API NativePagedBatchVersion&operator=(NativePagedBatchVersion&&) noexcept;
+  HYLE_COMPUTE_BATCH_API ~NativePagedBatchVersion();
+  bool valid() const noexcept { return data_!=nullptr; }
   HYLE_COMPUTE_BATCH_API BatchLayoutVersion layout() const noexcept;
   HYLE_COMPUTE_BATCH_API NativePagedBatchProgram program() const noexcept;
+  // Thread-safe explicit export; failure preserves the active version and can
+  // be retried. Initial allocation/zeroing is charged only when requested.
   HYLE_COMPUTE_BATCH_API Result<ReadLease> indices() const noexcept;
 private:
   friend class NativePagedBatchProgram;
-  NativePagedBatchVersion(ReadLease indices, detail::NativePagedBatchVersionOwner *owner) noexcept
-      : indices_(std::move(indices)), owner_(owner) {}
-  ReadLease indices_;
-  detail::NativePagedBatchVersionOwner *owner_ = nullptr;
+  explicit NativePagedBatchVersion(detail::NativePagedBatchVersionData*data) noexcept:data_(data){}
+  detail::NativePagedBatchVersionData*data_=nullptr;
 };
 } // namespace hyle::compute

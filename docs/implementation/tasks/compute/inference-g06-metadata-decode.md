@@ -207,3 +207,17 @@ alias/phase与旧结果条件串行验证。独立数学/页有效区 oracle、q
 API和本批算法固定后一次候选集中跑适用san/header/static/shared及真实直接消费者；
 数学/设备程序未变的原证据只在输入身份确实匹配时借用，不启动全库或未变CUDA P1。
 该表不签长度runtime/Q1最优规划/capture的完成，也不将它们移出完整G06目标。
+
+### 原生与 pending 批集中实施（等待验证）
+
+M3/M4/D1/L2 已按有限表集中实现，六 owner 保持 AUDITED。Native version 保小型
+immutable owner，显式导出缓存独立 retainer；四个实际 native/hybrid instantiator 共用
+完整 topology key、逐 bank 有效 ID delta 与原 permission/retirement 门。原 reference
+MaterializedMetadataPolicy 的完整准备算法保持。共同/原生/pending 与 Graph 同 lane 页组
+使用同一 cold-reserved exact block/generation admission；普通 Graph 绑定原有 guard 不改。
+测试补导出并发与失败重试、共享 backing 的不同 block、准确准入数量及 closed gate；
+原 native 64 步拓扑变化各追加同布局 replay，并追加仅 ID 重排的独立 double 数值 oracle，
+核真实上传与复用报告。真实联合 64 步核同表零上传，保原数学和生命周期门。
+先冻结当前源快照，Windows 五个既有目标一次增量构建（最多4 worker），运行两 factor、
+CPU实际消费者及 plain/encoded 两组原 pending 风险；再串行实际 Air native/联合。
+本段仅记实施事实，当前新测试均未运行，不签 PASS、G06 完成或新性能资格。

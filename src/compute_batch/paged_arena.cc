@@ -3,11 +3,42 @@
 #include "hyle/mem/std_allocator.h"
 #include "hyle/util/ref_counted.h"
 #include <algorithm>
+#include <functional>
 #include <new>
 #include <vector>
 
 namespace hyle::compute {
 namespace detail {
+Status BatchPageReads::reserve(std::size_t count)noexcept{
+  if(count>entries_.max_size())return Status::OutOfRange("batch page admission scratch extent");
+  try{entries_.reserve(count);return Status::Ok();}
+  catch(const std::bad_alloc&){return Status::ResourceExhausted("batch page admission scratch");}
+}
+Status BatchPageReads::add(const ReadLease&lease)noexcept{
+  if(!lease.valid())return Status::FailedPrecondition("batch page reader is empty");
+  if(entries_.size()==entries_.capacity())return Status::ResourceExhausted("batch page admission scratch capacity");
+  entries_.push_back({&lease,nullptr});return Status::Ok();
+}
+Status BatchPageReads::add_ordered(const WriteLease&lease)noexcept{
+  if(!lease.valid())return Status::FailedPrecondition("batch ordered page writer is empty");
+  if(entries_.size()==entries_.capacity())return Status::ResourceExhausted("batch page admission scratch capacity");
+  entries_.push_back({nullptr,&lease});return Status::Ok();
+}
+Status BatchPageReads::admit(LeaseUseBatch&uses)noexcept{
+  const auto root=[](const Entry&e){return e.ready?LeaseAccess::identity(*e.ready):LeaseAccess::identity(*e.ordered);};
+  const auto generation=[](const Entry&e){return e.ready?e.ready->generation():e.ordered->generation();};
+  std::sort(entries_.begin(),entries_.end(),[&](const auto&a,const auto&b){return std::less<const void*>{}(root(a),root(b));});
+  Status status;const Entry*previous=nullptr;
+  for(const auto&entry:entries_){
+    if(previous && root(*previous)==root(entry) && generation(*previous)==generation(entry)){
+      if(bool(previous->ready)!=bool(entry.ready)){status=Status::InvalidArgument("batch page group mixes ready and mutable permission");break;}
+      continue;
+    }
+    status=entry.ready?LeaseAccess::read_unique(uses,*entry.ready):LeaseAccess::ordered_read_unique(uses,*entry.ordered);
+    if(!status.ok())break;previous=&entry;
+  }
+  entries_.clear();return status;
+}
 struct ArenaPage final {WriteLease writer;const void*identity=nullptr;std::uint64_t generation=0;bool acquired=false,ready=false;std::uint32_t initialized_rows=0;};
 static_assert(sizeof(void*)!=8 || sizeof(ArenaPage)==48);
 static_assert(sizeof(void*)!=8 || sizeof(PagedPageWriter)==40);

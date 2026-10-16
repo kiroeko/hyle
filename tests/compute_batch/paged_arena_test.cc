@@ -2,6 +2,7 @@
 #include <hyle/compute/backends/cpu.h>
 #include <hyle/compute/batch_transfer.h>
 #include <hyle/compute/state_versions.h>
+#include <hyle/compute/detail/lease_access.h>
 #include <hyle/mem/quota_allocator.h>
 #include <gtest/gtest.h>
 #include <array>
@@ -194,3 +195,22 @@ TEST(PagedArena, CompleteRejectsInvalidPrefixWithoutConsumingReservation){
   EXPECT_TRUE(arena.read(layout(schema,std::array<std::int32_t,1>{0},1),std::array{raw}));EXPECT_FALSE(arena.read(layout(schema,std::array<std::int32_t,1>{0},2),std::array{raw}));
 }
 } // namespace
+TEST(PagedAdmission, ExactBlocksDeduplicateSubviewsWithoutCollapsingSharedBacking){
+  auto pool=c::LeasePool::create(m::system_resource(),4096,{.max_blocks=4}).value();
+  auto wa=pool.allocate(512).value(),wb=pool.allocate(512).value();
+  auto a=wa.publish().value(),b=wb.publish().value();auto sub=a.subview(64,128).value();
+  ASSERT_EQ(c::detail::LeaseAccess::backing(a)->identity,c::detail::LeaseAccess::backing(b)->identity);
+  c::detail::BatchPageReads reads;ASSERT_TRUE(reads.reserve(6).ok());
+  ASSERT_TRUE(reads.add(a).ok());ASSERT_TRUE(reads.add(b).ok());ASSERT_TRUE(reads.add(sub).ok());ASSERT_TRUE(reads.add(b).ok());
+  auto uses=c::LeaseUsePool::create({.max_batches=1,.max_resources_per_batch=2}).value();auto use=uses.begin().value();
+  ASSERT_TRUE(reads.admit(use).ok());EXPECT_EQ(pool.stats().active_uses,2u);use={};EXPECT_EQ(pool.stats().active_uses,0u);
+  ASSERT_TRUE(reads.add(b).ok());ASSERT_TRUE(reads.add(b).ok());use=uses.begin().value();
+  ASSERT_TRUE(reads.admit(use).ok());EXPECT_EQ(pool.stats().active_uses,1u);use={};EXPECT_EQ(pool.stats().active_uses,0u);
+}
+TEST(PagedAdmission, ReserveLimitsAndOriginalClosedPermissionGateRemainEffective){
+  auto pool=c::LeasePool::create(m::system_resource(),4096).value();auto writer=pool.allocate(512).value();auto ready=writer.publish().value();
+  c::detail::BatchPageReads reads;EXPECT_TRUE(reads.add(ready).IsResourceExhausted());ASSERT_TRUE(reads.reserve(1).ok());
+  ASSERT_TRUE(reads.add(ready).ok());EXPECT_TRUE(reads.add(ready).IsResourceExhausted());reads.reset();
+  EXPECT_TRUE(reads.add(c::ReadLease{}).IsFailedPrecondition());ASSERT_TRUE(pool.close().ok());ASSERT_TRUE(reads.add(ready).ok());
+  auto uses=c::LeaseUsePool::create().value();auto use=uses.begin().value();EXPECT_TRUE(reads.admit(use).IsFailedPrecondition());EXPECT_EQ(pool.stats().active_uses,0u);
+}
