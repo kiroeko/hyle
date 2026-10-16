@@ -256,14 +256,21 @@
       "id": "D6.2",
       "decision": "SELF zero-work guard, BORROW checked completion",
       "shape": "query_rows==0 bypasses native scheduler and resets native plan/facts to zero. Native plan/run reports original no_op with no GPU launch; common framework may still count explicit immediate plan completion wait. Q topology changes return to original cold planning.",
-      "failure": "Non-empty native planning retains original accepted H2D prefix/error/poison handling. Original idle/ticket/old-output/foreign-schema/pending/retirement gates run before Provider update. Failed equivalence causes real cold plan, never partial metadata edit."
+      "failure": "Non-empty native planning retains original accepted H2D prefix/error/poison handling. Original idle/ticket/old-output/foreign-schema/pending/retirement gates run before Provider update. Failed equivalence causes real cold plan, never partial metadata edit.",
+      "common_empty_intake": {
+        "path": "src/compute_batch/batch_execution.cc",
+        "sha256": "07df206d163931e65506891ac0261773e41a52a92f1c8f97d6302fa81d2e6d79",
+        "owner": "compute_batch already AUDITED under G06",
+        "proof": "Cold create zero-initializes mirror as a WriteLease; an all-zero first layout has no changed ranges, so prepare reaches workspace_views while mirror_ready is still invalid. Publish the original fully initialized zero mirror when no prior ready mirror exists, before workspace_views. No upload, allocation, or fabricated F2 coverage."
+      }
     }
   ],
   "validation": [
     "One frozen source batch: existing hyle_compute_provider_flashinfer_test ordinary math/cache/encoder/failure tests plus 32 configurations x64 runtime episodes: paged/ragged plain/FP8, F16/BF16, single/multi Q1, mixed17+1, D64/128/256 and D64/Dv128/window/noncausal. Independent uniform-attention oracle from varying V coordinates and actual FP8 byte decode, inactive poison, grow/shrink across original128-row chunk boundary, IDs reorder/shared pages/packed offsets, Q0 requests, Q topology change, stable workspace on reuse, next injected allocation refused and old output preserved.",
     "Zero-request and all-Q0 layouts must prepare/run through original checked Completion without scheduler division or native launch.",
     "WSL original cached SM89 shared tree, Ninja2/NVCC pool1 split3, refuse ggml-cuda vendor rebuild and more than2 native CUDA translation units. Reconfigure once for full canonical changed-byte source sync; record all source/artifact/identity/logs.",
-    "Original public CUDA Direct/Graph, CPU+CUDA and plain/encoded pending consumers selected from existing build; exact target list bound before run. No unchanged G04/G05 P1; final G06 ASan/UBSan/TSan/header/relocated static/shared/P1 remain mandatory after full G06 API/algorithm freeze."
+    "Original public CUDA Direct/Graph, CPU+CUDA and plain/encoded pending consumers selected from existing build; exact target list bound before run. No unchanged G04/G05 P1; final G06 ASan/UBSan/TSan/header/relocated static/shared/P1 remain mandatory after full G06 API/algorithm freeze.",
+    "Source consumers frozen before run: hyle_g06_fi_public (existing public_batch_cuda_consumer.cc, four paged/ragged F16/BF16 Direct/Graph configurations); hyle_g06_fi_hybrid (existing public_hybrid_batch_consumer.cc CPU+CUDA); hyle_g06_fi_pending (existing pending_paged_receiver_cuda_consumer.cc); hyle_g06_fi_plain_risks and hyle_g06_fi_encoded_risks (same existing CUDA risk source, original macro selects FP8). Private CMake hook only, no public build change. Common empty mirror publication is covered by the new actual CUDA no-op source test; final common risk gates remain deferred until full G06 freeze."
   ],
   "remaining": [
     "Actual capture and corresponding Direct/Graph/hybrid lifetime qualification remain mandatory full G06 work, not inferred from schedule reuse or enabled by a Provider flag.",

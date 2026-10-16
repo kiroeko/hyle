@@ -515,3 +515,9 @@ source批固定原FI math/cache/encoder/failure加32组×64步独立数值/成�
 和下一次注入分配禁用。复用原WSL shared树，Ninja2/pool1/split3，最多两native CUDA TU，
 禁止ggml-cuda无关重建；直接消费者按原target固定后同批运行。失败只定向修正，不重跑P1。
 本段未签运行PASS；实际capture、最终风险/头/迁址SDK/性能和G04/G05原门继续保留。
+
+D6.2实施前补充原common空布局反证：cold mirror已清零，但首个全零布局无delta，
+尚未发布mirror_ready就进入workspace_views而失败。compute_batch仍AUDITED；在原prepare
+无旧ready mirror时发布已完整清零的原writer，不制造F2覆盖或上传。该修正与空request
+原生guard同批验证。Direct/Graph、CPU+CUDA、pending和plain/FP8原风险consumer固定
+为intake中五个private target；只加验证hook，不改公共构建或旧消费者源码。
