@@ -234,3 +234,16 @@ manifest0.076s成功，编译9.294s在CPU+Apple动态库链接时失败，测试
 原因是本批首次跨route动态库使用原CopyStreamAccess::take_mutable，但原内部声明未导出。
 有限修正只给Apple/Vulkan对应原声明加route export属性，不改变原退休/权限检查或算法；
 使用同一source/build缓存续做原native/联合门，保留首轮失败和16.458s外层成本。
+
+Air attempt2完成原Apple/Vulkan整批31个stage，外层108.541s（含stage且重叠），
+终态FAIL。Apple Direct的64×2及ID重排、长页域、真实联合64步、reference、encoded
+数值和原多数pending/生命周期门PASS；plain/encoded的cold OOM fixture仍用仅ID变化
+期待旧cold allocation失败，pending双node fixture仍期待旧全量64字节，三项FAIL均保留。
+Vulkan实际device allocation不可host-map，新冷清零在创建时失败，故其受影响native/
+联合门FAIL；reference及不经过该controller的pending Graph风险PASS，不冒签整批。
+有限修正：两device bank创建时均借原F2从冷零staging作完整初始化并实际wait，再取原
+writer发布；显式冷费用是两次全容量copy＋完成等待，后续report仍只记本次prepare。
+OOM改用真正改变tail编译key的版本，保原ResourceExhausted/旧generation可执行检查，
+另核ID-only更新在禁止下一次controller allocation时成功且reuse；双node pending保
+两真实paged/CPU fragment与独立数学、所有失败/旧结果门，改核实际delta上界和同表零上传。
+不改数学/vendor/公共工具，六owner保持AUDITED；同一缓存串行复验本批native构造与消费者。

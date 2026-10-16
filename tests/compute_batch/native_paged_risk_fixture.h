@@ -127,17 +127,28 @@ inline Status cold_failures(n::Context& context,n::MemoryResource& device,n::Mem
   fault.fail=SIZE_MAX;fault.attempts=0;
   {HYLE_ASSIGN_OR_RETURN(auto slot,create(context,device,staging,data,fault.ref()));
     HYLE_RETURN_IF_ERROR(slot.prepare_batch(data.layout));
+    const auto host=data.next.host();std::array<std::int32_t,2> cold_tails{6,15};
+    HYLE_ASSIGN_OR_RETURN(auto cold_layout,data.schema.version({host.query_indptr,host.kv_indptr,host.page_indices,cold_tails}));
     fault.fail=fault.attempts;
-    const auto denied=slot.prepare_batch(data.next);
+    const auto denied=slot.prepare_batch(cold_layout);
     HYLE_RETURN_IF_ERROR(require(denied.IsResourceExhausted() && slot.report().layout_generation==data.layout.generation(),"cold native allocation rejection changed generation"));
     fault.fail=SIZE_MAX;
     HYLE_RETURN_IF_ERROR(slot.bind(data.query,data.key_frame,data.value_frame));
+    {
     HYLE_ASSIGN_OR_RETURN(auto done,slot.submit());HYLE_ASSIGN_OR_RETURN(auto result,done.wait());
 #if defined(HYLE_G01_PAGE_RISK_APPLE)
     HYLE_RETURN_IF_ERROR(require(result->arrays().size()==1,"old prepared recipe lost after cold native rejection"));
 #else
     HYLE_RETURN_IF_ERROR(require(result->tensors().size()==1,"old prepared recipe lost after cold native rejection"));
 #endif
+    }
+    const auto before_reuse=fault.attempts;fault.fail=before_reuse;
+    HYLE_RETURN_IF_ERROR(slot.prepare_batch(data.next));
+    HYLE_RETURN_IF_ERROR(require(fault.attempts==before_reuse && slot.report().reused_native_plan &&
+        slot.report().layout_generation==data.next.generation(),"ID-only prepare allocated/rebuilt native topology"));
+    fault.fail=SIZE_MAX;
+    HYLE_RETURN_IF_ERROR(slot.bind(data.query,data.next_keys,data.next_values));
+    HYLE_ASSIGN_OR_RETURN(auto reused,slot.submit());HYLE_ASSIGN_OR_RETURN(auto result,reused.wait());
   }
   HYLE_RETURN_IF_ERROR(require(fault.live==0,"cold prepare rejection metadata leaked"));
   std::printf("%s native page cold create all %zu allocation faults and rejected prepare/old generation PASS\n",route,count);return Status::Ok();

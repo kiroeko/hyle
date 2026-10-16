@@ -83,7 +83,6 @@ template<class T,class Policy=MaterializedMetadataPolicy>struct MaterializedNati
     for(std::size_t i=0;i<metadata_count;++i){HYLE_ASSIGN_OR_RETURN(staging_writers[i],hp.allocate(lengths[i],64));for(auto&bank:mirror_writers){HYLE_ASSIGN_OR_RETURN(bank[i],dp.allocate(lengths[i],64));}}
     if constexpr(Policy::prepare_native){
       for(auto&writer:staging_writers)HYLE_RETURN_IF_ERROR(writer.view()->fill(std::byte{0}));
-      for(auto&bank:mirror_writers)for(auto&writer:bank)HYLE_RETURN_IF_ERROR(writer.view()->fill(std::byte{0}));
     }
     for(auto*pool:{&hp,&dp}){
       auto*owner=allocator.template construct<NativeMirrorOwner<typename Policy::Recipe>>(recipe,allocator,options.resource_budget);if(!owner)return Status::ResourceExhausted("native mirror owner metadata");
@@ -96,6 +95,20 @@ template<class T,class Policy=MaterializedMetadataPolicy>struct MaterializedNati
     if(refs>(UINT32_MAX-input_count)/2)return Status::ResourceExhausted("native batch page use capacity");
     HYLE_RETURN_IF_ERROR(page_reads.reserve(input_count+2*refs));
     HYLE_ASSIGN_OR_RETURN(uses,LeaseUsePool::create({.max_batches=1,.max_resources_per_batch=std::uint32_t(input_count)+2*refs,.allocator=allocator,.resource_budget=options.resource_budget}));
+    if constexpr(Policy::prepare_native){
+      // Device allocations need not be host-mappable. Initialize both banks
+      // through the original checked F2 path at cold controller creation.
+      HYLE_ASSIGN_OR_RETURN(staging_ready[0],staging_writers[0].publish());
+      for(unsigned bank=0;bank<2;++bank){
+        HYLE_RETURN_IF_ERROR(upload.reset());HYLE_RETURN_IF_ERROR(upload.bind_source({0},staging_ready[0]));
+        HYLE_RETURN_IF_ERROR(upload.bind_mutable({1},std::move(mirror_writers[bank][0])));
+        const std::array<CopyPhase,1> phases{{{}}};const std::array<CopyRange,1> ranges{{{{0},{1},{0},0,0,bytes}}};
+        HYLE_RETURN_IF_ERROR(upload.prepare_replay(phases,ranges));HYLE_ASSIGN_OR_RETURN(auto submitted,upload.submit());HYLE_RETURN_IF_ERROR(submitted.wait());submitted={};
+        HYLE_ASSIGN_OR_RETURN(mirror_writers[bank][0],T::CopyAccess::take_mutable(upload,{1}));
+        HYLE_ASSIGN_OR_RETURN(mirror_ready[bank][0],mirror_writers[bank][0].publish());
+      }
+      HYLE_RETURN_IF_ERROR(upload.reset());
+    }
     report.staging_bytes=bytes;report.device_mirror_bytes=2*bytes;report.backing_bytes=3*bytes+padding;return Status::Ok();
   }
   Status open()const noexcept{return closed || failed?Status::FailedPrecondition("native batch controller closed/failed"):Status::Ok();}

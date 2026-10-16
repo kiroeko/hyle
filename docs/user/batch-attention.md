@@ -197,6 +197,8 @@ foreign schema，不扩大未引用页权限。已 ready 页可共享，未引�
 零上传等待。staging 容量仍为 `4 * max_page_refs`，device mirrors 为其两倍，固定 backing
 cap 还需三组64byte对齐的最坏 padding。report 的 uploaded bytes/waits 是当次实际费用，
 staging/device/backing bytes 是容量；`reused_native_plan` 表示通过原结果/退休门后的计划复用。
+controller 创建时经原 F2 分别清零两 bank，显式冷费用为两次全容量 copy 与完成等待；
+它们不计入以后每次 prepare 的 delta 报告。device 不要求 host-mappable。
 `NativePagedBatchVersion::indices()` 是显式、可并发的固定容量导出，首次分配填零并缓存，
 失败可重试；普通 version 与 controller prepare 不必生成这个全容量 blob。本批 G06 改动
 尚待实际 native/联合与交付资格，不继承旧候选的性能证书。

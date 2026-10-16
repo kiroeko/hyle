@@ -149,6 +149,8 @@ double decode(std::uint16_t x,bool bf=false){
     std::array<g::NodeId,2> nodes;
     std::array<g::ValueId,2> outputs;
     std::array<joint::Invocation,2> slots;
+    std::array<c::BatchLayoutVersion,2> prepared_layouts;
+    std::array<bool,2> same_table{};
   };
   std::array<JointPoint,2> points;
   const std::array<std::int32_t,3> initial_prefill{0,17,18};
@@ -233,7 +235,12 @@ double decode(std::uint16_t x,bool bf=false){
         HYLE_ASSIGN_OR_RETURN(prepared_layout,schema.version({shape?(step%3==0?second_prefill:first_prefill):decode_qp,kp,pages,tails}));
       }
       const std::array versions{g::batch::NodeLayout{points[shape].nodes[0],prepared_layout},g::batch::NodeLayout{points[shape].nodes[1],prepared_layout}};
-      for(auto&receiver:points[shape].slots)HYLE_RETURN_IF_ERROR(receiver.prepare_batch(versions));
+      for(unsigned index=0;index<points[shape].slots.size();++index){
+        auto&variant=points[shape];const auto previous=variant.prepared_layouts[index];
+        const auto before=previous.host().page_indices,after=prepared_layout.host().page_indices;
+        variant.same_table[index]=previous.valid() && before.size()==after.size() && std::equal(before.begin(),before.end(),after.begin());
+        HYLE_RETURN_IF_ERROR(variant.slots[index].prepare_batch(versions));variant.prepared_layouts[index]=prepared_layout;
+      }
     }
     auto&slot=point.slots[step%2];
 #else
@@ -320,7 +327,8 @@ double decode(std::uint16_t x,bool bf=false){
     HYLE_RETURN_IF_ERROR(slot.prepare_replay());
     HYLE_ASSIGN_OR_RETURN(auto replay,slot.replay_report());
     HYLE_RETURN_IF_ERROR(require(replay.cpu_fragments>=2 && replay.paged_fragments==2 &&
-        replay.paged_metadata_uploaded_bytes==64,"joint pending graph did not execute two real paged nodes with CPU fragments"));
+        replay.paged_metadata_uploaded_bytes<=8*cap.max_page_refs &&
+        (!point.same_table[step%2] || replay.paged_metadata_uploaded_bytes==0),"joint pending graph two paged nodes/CPU fragments or actual table delta differs"));
     HYLE_ASSIGN_OR_RETURN(auto submitted,slot.submit(std::move(owner)));
 #else
     HYLE_ASSIGN_OR_RETURN(auto submitted,slot.submit(query,kframe,vframe,std::move(owner)));
