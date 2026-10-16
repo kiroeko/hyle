@@ -143,9 +143,10 @@
     },
     {
       "module": "mem",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/inference-g08-output-selection.md",
-      "summary": "G08 M1 AUDITED: mi_free_aligned fix source244/244 each on Windows/WSL/Air; selected static ASan51/UBSan50/TSan50 allocation/Buffer tests PASS. SDK/native host facets pending; natural path/layout/quota/vendor unchanged."
+      "summary": "G08 CANDIDATE 5103c13d8: finite S1-S4/M1 API and algorithms frozen; four-route numeric/distribution/65-step/independent ports, three joint consumers, actual CUDA/Metal/Vulkan device risks and CPU/CUDA/Apple/Vulkan scoped host facets PASS. Source/static/shared SDK, public headers, exact S1 P1 and terminal review pending.",
+      "candidate": "5103c13d8ed119b06aa64e799f9768aea45ab913"
     },
     {
       "module": "mem_vm",
@@ -368,9 +369,10 @@
     },
     {
       "module": "compute_provider_ggml",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/inference-g08-output-selection.md",
-      "summary": "G08 AUDITED: TopK1 scan without V-sized Entry scratch, CPU full Direct/Graph numerical and original selected TopK provider/Graph holdouts PASS. Three static host sanitizer consumer facets PASS; SDK/S1 P1 pending."
+      "summary": "G08 CANDIDATE 5103c13d8: finite S1-S4/M1 API and algorithms frozen; four-route numeric/distribution/65-step/independent ports, three joint consumers, actual CUDA/Metal/Vulkan device risks and CPU/CUDA/Apple/Vulkan scoped host facets PASS. Source/static/shared SDK, public headers, exact S1 P1 and terminal review pending.",
+      "candidate": "5103c13d8ed119b06aa64e799f9768aea45ab913"
     },
     {
       "module": "graph_provider_onednn",
@@ -385,9 +387,10 @@
     },
     {
       "module": "compute_ops",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/inference-g08-output-selection.md",
-      "summary": "G08 AUDITED: typed random/categorical schema, official Philox KAT3/3 and four-route main Direct/Graph numerical/distribution consumers PASS. Full risk/delivery/finite acceptance pending."
+      "summary": "G08 CANDIDATE 5103c13d8: finite S1-S4/M1 API and algorithms frozen; four-route numeric/distribution/65-step/independent ports, three joint consumers, actual CUDA/Metal/Vulkan device risks and CPU/CUDA/Apple/Vulkan scoped host facets PASS. Source/static/shared SDK, public headers, exact S1 P1 and terminal review pending.",
+      "candidate": "5103c13d8ed119b06aa64e799f9768aea45ab913"
     },
     {
       "module": "compute_backend_cpu",
@@ -413,9 +416,10 @@
     },
     {
       "module": "compute_provider_native",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/inference-g08-output-selection.md",
-      "summary": "G08 AUDITED: CPU counter/CDF full Direct/Graph numerical/distribution/65-step and independent-port consumers PASS, including all three static host sanitizer facets. SDK/final qualification pending; no speed claim."
+      "summary": "G08 CANDIDATE 5103c13d8: finite S1-S4/M1 API and algorithms frozen; four-route numeric/distribution/65-step/independent ports, three joint consumers, actual CUDA/Metal/Vulkan device risks and CPU/CUDA/Apple/Vulkan scoped host facets PASS. Source/static/shared SDK, public headers, exact S1 P1 and terminal review pending.",
+      "candidate": "5103c13d8ed119b06aa64e799f9768aea45ab913"
     },
     {
       "module": "compute_route_cpu",
@@ -463,9 +467,10 @@
     },
     {
       "module": "compute_provider_cuda",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/inference-g08-output-selection.md",
-      "summary": "G08 AUDITED: Direct/Graph/joint numerics and device1048772-pair math PASS; actual memcheck/racecheck all12 groups zero errors/hazards and all three static host sanitizer consumer facets PASS. SDK/S1 P1 pending."
+      "summary": "G08 CANDIDATE 5103c13d8: finite S1-S4/M1 API and algorithms frozen; four-route numeric/distribution/65-step/independent ports, three joint consumers, actual CUDA/Metal/Vulkan device risks and CPU/CUDA/Apple/Vulkan scoped host facets PASS. Source/static/shared SDK, public headers, exact S1 P1 and terminal review pending.",
+      "candidate": "5103c13d8ed119b06aa64e799f9768aea45ab913"
     },
     {
       "module": "compute_route_cuda",
@@ -491,9 +496,10 @@
     },
     {
       "module": "compute_route_apple",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/inference-g08-output-selection.md",
-      "summary": "G08 AUDITED: exact TopK keys and empty Binary consumer fix; all5 actual Metal API/GPU validation targets PASS a6 (Direct/Graph/math/joint/original4TopK), including zero-row normalization. Host sanitizer/SDK/S1 P1 pending."
+      "summary": "G08 CANDIDATE 5103c13d8: finite S1-S4/M1 API and algorithms frozen; four-route numeric/distribution/65-step/independent ports, three joint consumers, actual CUDA/Metal/Vulkan device risks and CPU/CUDA/Apple/Vulkan scoped host facets PASS. Source/static/shared SDK, public headers, exact S1 P1 and terminal review pending.",
+      "candidate": "5103c13d8ed119b06aa64e799f9768aea45ab913"
     },
     {
       "module": "graph_route_apple",
@@ -508,15 +514,17 @@
     },
     {
       "module": "compute_route_vulkan",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/inference-g08-output-selection.md",
-      "summary": "G08 AUDITED: centered math/byte origins and stable small-tail log fix; Windows Khronos validation plus full Direct/Graph/ports/origins and actual1048772-pair math PASS, Air MoltenVK numerics/math/joint PASS. Host facets/SDK/S1 P1 pending."
+      "summary": "G08 CANDIDATE 5103c13d8: finite S1-S4/M1 API and algorithms frozen; four-route numeric/distribution/65-step/independent ports, three joint consumers, actual CUDA/Metal/Vulkan device risks and CPU/CUDA/Apple/Vulkan scoped host facets PASS. Source/static/shared SDK, public headers, exact S1 P1 and terminal review pending.",
+      "candidate": "5103c13d8ed119b06aa64e799f9768aea45ab913"
     },
     {
       "module": "graph_route_vulkan",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/inference-g08-output-selection.md",
-      "summary": "G08 AUDITED: original plan/liveness/status/owners carry both sampling schemas; ID-only/score-only/both and native-origin View consumers PASS on actual Windows validation and Air ordinary route. SDK/final qualification pending."
+      "summary": "G08 CANDIDATE 5103c13d8: finite S1-S4/M1 API and algorithms frozen; four-route numeric/distribution/65-step/independent ports, three joint consumers, actual CUDA/Metal/Vulkan device risks and CPU/CUDA/Apple/Vulkan scoped host facets PASS. Source/static/shared SDK, public headers, exact S1 P1 and terminal review pending.",
+      "candidate": "5103c13d8ed119b06aa64e799f9768aea45ab913"
     },
     {
       "module": "compute_provider_ggml_vulkan",

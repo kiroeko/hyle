@@ -1,6 +1,6 @@
 # G08 设备端输出数值选择与可定位随机数
 
-状态：**AUDITED，2026-10-17；八owner按S1–S4及Mem M1有限FIX施工，四路线主要普通数值已过，风险/交付/P1及整项验收待完成**。baseline 为
+状态：**CANDIDATE，2026-10-17；八owner的S1–S4/M1接口与算法冻结于5103c13d8，普通数值及适用device/host风险已过，三交付/P1与终审待完成**。baseline 为
 `85bcfa4eb`，G07已经整项接受，新G07–G10 goal完成1/4。原G01–G07不重跑，G09/G10未开始。
 本卡只处理原[G08发现](../project/inference-single-machine-foundation-audit-2026-10.md)与
 [消费形状计划](../project/inference-consumer-adaptation-plan-2026-10.md)的有限输出数值域。
@@ -467,3 +467,23 @@ Windows layer实枚举、实请求，接受日志无Validation Error/VUID/SYNC-H
 CPU/CUDA三host facet原树串行已结束；Apple/Vulkan其余host facets、三交付与独立头、
 S1精确P1、文档/LOC/终审仍待完成。八owner保持AUDITED，尚不冻结candidate。
 G08施工粗估约75%，当前G07–G10 goal约45%，正式仅G07完成1/4；G09/G10与CLI未开始。
+
+### 2026-10-17 冻结候选与有限交付矩阵
+
+[Air六配置host证据](../../../../evidence/correctness/inference-g08-air-host-facets/receipt.json)：
+Apple/Vulkan各ASan/UBSan/TSan，六目标共36次运行全PASS，含完整Direct/Graph、joint、
+旧TopK留出与相关Mem/schema。保留原refcount/Metal completion边界模型及其原限制；
+Vulkan仅按相同GLSL/命令/feature配置复用生成的C++ DATA，产品/native C++均实际san编译。
+
+八owner由AUDITED进入CANDIDATE，固定完整commit `5103c13d8ed119b06aa64e799f9768aea45ab913`。
+后续只补交付、头、成本账、P1和终审；产品/API/算法若需变化，按协议退回AUDITED，不让
+旧证据隐式覆盖改动。P1精确时序账仍须在构造benchmark之前单独固定，尚未开始采样。
+
+交付沿实际受影响平台与原CUDA两OS承载冻结六profile：Windows CPU、Windows CPU+CUDA、
+Windows CPU+Vulkan、WSL CPU+CUDA、Air CPU+Apple、Air CPU+Vulkan；每个执行源码嵌入、
+relocated static、relocated shared。普通CPU入口在各真实SDK包中消费，新native Direct/
+Graph及对应joint使用原同源码public-only fixture；Mem复用原三个公开回归案例，禁止复制
+system_internal或产品src头到SDK消费者。逐一保留编译include隔离、runtime依赖、独立
+sampling_ops与各carrier/Mem头、Random123许可/NOTICE；无全库模型/性能测试根。
+源/SDK构建复用对应既有producer，重型串行；Windows普通4jobs/低优先级，CUDA仍pool1/
+split3/Ninja2，原flags/native输入资格保留。source/static/shared未过前不声明交付完成。
