@@ -981,6 +981,7 @@ Direct/Graph FFN、完整 CUDA 三交付与当前支持域 P1 已验收；单个
 |---|---|---|
 | `compute_provider_cublas` / `compute/providers/cublas.h` | `cublas::provider()` | FP16/FP32 rank-2 MatMul；输入 row/column-major、输出 dense row-major；FP32 累加；冷绑定算法，每槽独立 handle/workspace |
 | `compute_provider_ggml_cuda` / `compute/providers/ggml_cuda.h` | `ggml_cuda::provider()` | 原生 GGUF block MatMul/GroupedMatMul 及已登记张量/注意力有限域；直接消费 caller-owned packed bytes，不建立全量浮点副本 |
+| `compute_provider_torch_cuda` / `compute/providers/torch_cuda.h` | `torch_cuda::provider()` | MLX affine4/group32、64、128，MXFP4/MXFP8 group32 的原 packed linear/grouped；affine embedding；另有显式 artifact 解码与 Softplus |
 | `compute_provider_cuda` / `compute/providers/cuda.h` | `cuda_native::sglang_provider()` | 锁定 SGLang precise packed 门控片段，支持域与16字节对齐要求见默认规则；不引入 TVM/Python runtime |
 | `compute_provider_cuda` / `compute/providers/cuda.h` | `cuda_native::provider()` | dense FP16/BF16/FP32 SiLU/GELU/GELU-tanh 门控，packed halves 或 separate 输入；FP32 中间计算、输出一次舍入；输出元素数<=INT32_MAX；不允许输入输出重叠 |
 
@@ -989,6 +990,17 @@ allocation，也不发 kernel。Kernel 与 launch 配置在 prepare
 绑定，热提交仅在已有 CUDA stream 上 launch。共同层仍为每个 invocation 管理准入与真实完成。
 CUDA driver/code image 的全局开销不假报为零；payload 必须保活到 Completion 终态。所有 Provider
 失败执行槽都须按本页执行槽合同重建；设备失效仍受 backend 恢复限制。
+
+CUDA 的 MLX packed 接口与前述 CPU 端口相同，保留原 U32 words、scale/bias、dtype 提升与
+MX 每组先点积后缩放。它在调用方 Queue 上直接解码到寄存器并用 F32 累加；embedding 保留
+原 storage dtype 的乘法、加法各次舍入。grouped/embedding 先在设备检查全部 I32 IDs，越界
+由 Completion 报告 OutOfRange，并保留调用前的输出内容；失败执行槽仍需重建。
+线性为一个数学 kernel，checked 路径另有一次 IDs kernel；Queue 自身的 status reset/report
+仍按原协议收费。MLX 路径没有 ATen 权重展开、额外全局权重 workspace 或提交前 IDs host wait，
+允许修改绑定权重后再次提交。该 Provider 仍不接受 external capture 或严格私有内存硬预算；
+driver/code image 的进程费用不由数学 workspace 的零字节结论覆盖。
+显式 artifact 解码和 Softplus 保留 ATen managed 分配及原完成边界。
+这次 packed 实现的当前资格见 [G07 收口卡](../implementation/tasks/compute/inference-g07-packed-weights.md)。
 
 ### Grouped Q4 的逻辑描述
 

@@ -182,9 +182,13 @@ DeepSeek 的 power2 scale 和1e-4 floor 由操作描述显式选择。grouped �
 压缩存储，仅对本次选择的专家解码；负值或越界 ID 通过 Completion 返回 OutOfRange，
 不发布输出。原生 F32 运算允许 fused/unfused 舍入差异，不承诺与 CUDA 逐位一致。
 
-这些程序由原版 MLX 编解码、MatMul、ReduceMax、Take 等原语在冷期编译。
-执行成本包括选中权重的 F32 解码、中间乘积、scale 广播和必要复制，不能视为零分配或
-硬件原生 FP8 GEMM。Graph 捕获常量时的折叠由 MLX 管理，HYLE 不提供隐式权重缓存。
+FP8 点积通过 MLX Safe custom Metal 程序直接读取 packed codes/scales，在 tile 内解码并用
+原生 SIMDgroup F32 矩阵运算累加。每128元素先点积，再乘 activation scale、weight scale，
+最后按 K block 顺序加入 F32 结果；不生成完整 F32 权重或全部 block dots 临时张量。
+量化、选中 codes/scales、scale 广播、结果和必要复制仍由 MLX 管理并计入费用，
+这不是硬件原生 FP8 GEMM 或零分配保证。编译/JIT 属于冷准备，Graph/native 完成与数组
+寿命仍由原 MLX owner 管理。当前资格见 [G07 收口卡](../implementation/tasks/compute/inference-g07-packed-weights.md)。
+Graph 捕获常量时的折叠由 MLX 管理，HYLE 不提供隐式权重缓存。
 FP8 group64/128 roundtrip 也可用。FP4 group32 roundtrip接BF16二维输入，保留原E2M1
 最近偶数舍入、power2 scale/floor及最终BF16存储；极小值和零符号由GPU位视图适配保真。
 `model_ops::grouped_float4_linear()`消费canonical原E2M1 nibble/F32 group32专家权重、
