@@ -1,0 +1,49 @@
+{
+  "schema": "hyle.inference-g07-packed-preflight/v1",
+  "verdict": "PASS_INDEPENDENT_NUMERICAL_PREFLIGHT_ONLY",
+  "candidate": "b483b8939e9c1d28a98eee3a6ecd13b3fd45fc88",
+  "rows": [
+    {
+      "route": "cuda",
+      "source_revision": "4aa152eb574ca2130b0a8c5991e80fedeca82291",
+      "proof": "cuda/collected.json",
+      "proof_sha256": "cb8e21ad52b534aaa3ad19cae07248c27bf4f641ade93705218ee7eace1906de",
+      "replays_per_arm_and_shape": 3,
+      "shapes": [
+        1,
+        64
+      ],
+      "variants": [
+        "primary",
+        "placement"
+      ],
+      "scope": "Independent stored-byte double oracle; CUDA max absolute error0, Apple bit-exact BF16 for fixed finite dyadic inputs. No timing gate."
+    },
+    {
+      "route": "apple",
+      "source_revision": "04c4958b02e46545802107d4c6a92d7057c8b2f1",
+      "proof": "apple/collected.json",
+      "proof_sha256": "abb35f9852679db86c3bd6c1bbb66971cc8f6a33f66d070bdbd3152d285259b9",
+      "replays_per_arm_and_shape": 3,
+      "shapes": [
+        1,
+        64
+      ],
+      "variants": [
+        "primary",
+        "placement"
+      ],
+      "scope": "Independent stored-byte double oracle; CUDA max absolute error0, Apple bit-exact BF16 for fixed finite dyadic inputs. No timing gate."
+    }
+  ],
+  "raw_archive": {
+    "path": "raw.zip",
+    "sha256": "01acb185fe62b8d01df2aaf254b8d918ca4d9b61398070d51386aca31101ec13"
+  },
+  "limits": [
+    "Apple historical shared-clone chain exceeded alternate nesting; direct real object stores added to new disposable validation clones. Existing canonical source unchanged.",
+    "Apple benchmark-only missing transform declaration and unused-constant compile failures repaired; original failed logs/elapsed and same build retained.",
+    "CUDA preflight initial benchmark4aa, Apple corrected benchmark04c; formal unified qualification repeats final numerical oracle in every process. No original failure budget reset.",
+    "Deferred final native result/cache/Program teardown is explicit in P1 adapter audit."
+  ]
+}

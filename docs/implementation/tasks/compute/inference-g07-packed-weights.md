@@ -262,3 +262,14 @@ threadgroup staging、最终owner销毁及native UNKNOWN；没有把逻辑数组
 peak。实际两端、两形状独立oracle预检均通过；Apple的原/新实现各8个执行/分配/placement
 组合A/A已通过，正式P1仍运行中。CUDA普通数值预检最大绝对误差0；Apple选定精确dyadic
 输入的double→BF16 oracle逐bit一致。尚不因此签P1或整项完成。
+
+[独立数值预检](../../../../evidence/correctness/inference-g07-packed-weight-preflight/receipt.json)
+保存两端primary/placement、两形状、两实现各三次真实运行和原失败；CUDA最初bench为4aa，
+Apple修正后的bench为04c。正式统一资格会在最终bench每个进程重新先验oracle，不能只凭
+旧预检给修改后的代码代签。benchmark补include/unused常量及验证副本Git object-store链的
+修正没有修改产品。两条native runtime/driver私有池和最终销毁UNKNOWN仍保留。
+
+[统一LOC](../../../../evidence/architecture/inference-g07-packed-weight-audit/loc.json)
+以不可变7da快照测量（产品与b483相同）：全库3749352、自实现不含测试180854、两个owner
+唯一实现联合6060行/38文件。统一工具的原self-check通过；这些是实现总量，不是本轮新增
+或推理引擎待写代码预测。
