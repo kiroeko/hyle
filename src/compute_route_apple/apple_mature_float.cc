@@ -208,50 +208,81 @@ Quantized weight4(const mx::array &carrier, int count, int n, int k,
 
 mx::array packed_fp8_dot(const Quantized &a, const Quantized &b, mx::Stream s) {
   // Original MLX SIMDgroup F32 matmul/FP8 decode, with the same per-block
-  // scale order as block_dot. Stage only a16x32/b32x16 tile, not float weights
-  // or the complete [Kblocks,M,N] dots. MLX owns pipeline/stream/completion.
+  // scale order as block_dot. Keep the small tile; larger M uses original
+  // MLX small-device NT64x32x32 / four-SIMDgroup reuse. Only a bounded tile
+  // is staged, never float weights or the complete [Kblocks,M,N] dots.
+  // MLX owns pipeline/stream/completion and cold template compilation.
   static const auto kernel = mx::fast::metal_kernel("hyle_fp8_block128_f32",
       {"qa", "qw", "qs", "ws"}, {"out"}, R"METAL(
     const uint tid = thread_index_in_threadgroup;
     const uint sg = simdgroup_index_in_threadgroup;
     const uint batch = threadgroup_position_in_grid.z;
-    const uint row0 = threadgroup_position_in_grid.y * 16;
-    const uint column0 = threadgroup_position_in_grid.x * 16;
+    const uint row0 = threadgroup_position_in_grid.y * BM;
+    const uint column0 = threadgroup_position_in_grid.x * BN;
     const uint rows = qa_shape[1], columns = qw_shape[1];
-    threadgroup float left[512];
-    threadgroup float right[512];
-    float accumulated[2] = {0.f, 0.f};
+    threadgroup float left[BM * 32];
+    threadgroup float right[32 * BN];
+    float accumulated[BM * BN / 128] = {0.f};
     for (uint block = 0; block < uint(qa_shape[2]); ++block) {
-      auto partial = make_filled_simdgroup_matrix<float, 8>(0.f);
+      simdgroup_float8x8 partial[BM / 16][BN / 16];
+      #pragma unroll
+      for (uint mi = 0; mi < BM / 16; ++mi) {
+        #pragma unroll
+        for (uint ni = 0; ni < BN / 16; ++ni)
+          partial[mi][ni] = make_filled_simdgroup_matrix<float, 8>(0.f);
+      }
       for (uint chunk = 0; chunk < 128; chunk += 32) {
-        for (uint index = tid; index < 512; index += 128) {
+        for (uint index = tid; index < BM * 32; index += 128) {
           const uint row = row0 + index / 32;
           const uint k = chunk + index % 32;
           left[index] = row < rows ? hyle_fp8_value(qa[
               batch * qa_strides[0] + row * qa_strides[1] +
               block * qa_strides[2] + k * qa_strides[3]]) : 0.f;
-          const uint column = column0 + index % 16;
-          const uint wk = chunk + index / 16;
+        }
+        for (uint index = tid; index < 32 * BN; index += 128) {
+          const uint column = column0 + index % BN;
+          const uint wk = chunk + index / BN;
           right[index] = column < columns ? hyle_fp8_value(qw[
               batch * qw_strides[0] + column * qw_strides[1] +
               block * qw_strides[2] + wk * qw_strides[3]]) : 0.f;
         }
         threadgroup_barrier(mem_flags::mem_threadgroup);
         for (uint k = 0; k < 32; k += 8) {
-          simdgroup_float8x8 lhs, rhs;
-          simdgroup_load(lhs, left + (sg / 2) * 8 * 32 + k, 32);
-          simdgroup_load(rhs, right + k * 16 + (sg % 2) * 8, 16);
-          simdgroup_multiply_accumulate(partial, lhs, rhs, partial);
+          simdgroup_float8x8 lhs[BM / 16], rhs[BN / 16];
+          #pragma unroll
+          for (uint mi = 0; mi < BM / 16; ++mi)
+            simdgroup_load(lhs[mi], left +
+                ((sg / 2) * (BM / 2) + mi * 8) * 32 + k, 32);
+          #pragma unroll
+          for (uint ni = 0; ni < BN / 16; ++ni)
+            simdgroup_load(rhs[ni], right +
+                k * BN + (sg % 2) * (BN / 2) + ni * 8, BN);
+          #pragma unroll
+          for (uint mi = 0; mi < BM / 16; ++mi) {
+            #pragma unroll
+            for (uint ni = 0; ni < BN / 16; ++ni)
+              simdgroup_multiply_accumulate(
+                  partial[mi][ni], lhs[mi], rhs[ni], partial[mi][ni]);
+          }
         }
         threadgroup_barrier(mem_flags::mem_threadgroup);
       }
       // Reuse left only after every SIMDgroup has finished reading it.
-      simdgroup_store(partial, left + (sg / 2) * 8 * 16 + (sg % 2) * 8, 16);
+      // BM*BN fits BM*32 for both admitted tiles. Reuse the activation
+      // staging only after every SIMDgroup has finished reading it.
+      #pragma unroll
+      for (uint mi = 0; mi < BM / 16; ++mi) {
+        #pragma unroll
+        for (uint ni = 0; ni < BN / 16; ++ni)
+          simdgroup_store(partial[mi][ni], left +
+              ((sg / 2) * (BM / 2) + mi * 8) * BN +
+              (sg % 2) * (BN / 2) + ni * 8, BN);
+      }
       threadgroup_barrier(mem_flags::mem_threadgroup);
-      for (uint part = 0; part < 2; ++part) {
+      for (uint part = 0; part < BM * BN / 128; ++part) {
         const uint index = tid + part * 128;
-        const uint row = row0 + index / 16;
-        const uint column = column0 + index % 16;
+        const uint row = row0 + index / BN;
+        const uint column = column0 + index % BN;
         if (row < rows && column < columns) {
           float value = left[index] * qs[batch * qs_strides[0] +
               row * qs_strides[1] + block * qs_strides[2]];
@@ -262,10 +293,10 @@ mx::array packed_fp8_dot(const Quantized &a, const Quantized &b, mx::Stream s) {
       }
       threadgroup_barrier(mem_flags::mem_threadgroup);
     }
-    for (uint part = 0; part < 2; ++part) {
+    for (uint part = 0; part < BM * BN / 128; ++part) {
       const uint index = tid + part * 128;
-      const uint row = row0 + index / 16;
-      const uint column = column0 + index % 16;
+      const uint row = row0 + index / BN;
+      const uint column = column0 + index % BN;
       if (row < rows && column < columns)
         out[(ulong(batch) * rows + row) * columns + column] = accumulated[part];
     }
@@ -293,9 +324,13 @@ mx::array packed_fp8_dot(const Quantized &a, const Quantized &b, mx::Stream s) {
     return mx::zeros({batch, rows, columns}, mx::float32, s);
   if (columns > (std::numeric_limits<int>::max)() / 128 * 16)
     throw std::overflow_error("Apple FP8 native grid exceeds int capacity");
+  const int block_rows = rows <= 16 ? 16 : 64;
+  const int block_columns = rows <= 16 ? 16 : 32;
   return kernel({a.codes, b.codes, a.scales, b.scales}, {{batch, rows, columns}},
-      {mx::float32}, {((columns + 15) / 16) * 128, (rows + 15) / 16, batch},
-      {128, 1, 1}, {}, std::nullopt, false, s)[0];
+      {mx::float32}, {(1 + (columns - 1) / block_columns) * 128,
+                     1 + (rows - 1) / block_rows, batch},
+      {128, 1, 1}, {{"BM", block_rows}, {"BN", block_columns}},
+      std::nullopt, false, s)[0];
 }
 
 mx::array block_dot(const Quantized &a, const Quantized &b, mx::Stream s,
