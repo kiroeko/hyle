@@ -1,0 +1,59 @@
+{
+  "schema": "hyle.inference-g09-design-review/v1",
+  "date": "2026-10-17",
+  "observed_head": "27afb3b9b7070a2d0c30e03623f28fe02fa729b7",
+  "baseline": "9e2f25c469634a6f723e76eaf1aa2db5973bca9a",
+  "stage": "Independent finite design review BEFORE G09 product implementation/AUDITED FIX freeze; no product changes, build, test or GPU/performance run by this review.",
+  "inputs": [
+    "docs/implementation/tasks/graph/inference-g09-joint-pipeline.md",
+    "evidence/architecture/inference-g09-cuda-preaudit/receipt.json",
+    "evidence/architecture/inference-g09-cuda-preaudit/raw.zip"
+  ],
+  "decision": "APPROVE_FINITE_TWO_LANE_DESIGN_WITH_BELOW_INVARIANTS; NOT_RUNTIME_OR_P1_PASS",
+  "design": "Reuse the existing Scheduler: one root/native coarse driver is the sole graph-run coordinator and at most one additional CPU coarse driver. Keep strict serial DAGs on the existing inline path. Cold dependency-frontier partitioning prevents an independent prefix being fused with a dependent join. Ready work proceeds on the two original endpoints; no per-segment fiber, new pool, public API or universal scheduler.",
+  "cursor_decision": "Do NOT call the current SubmissionCursor::advance concurrently and do NOT lock the entire advance across CPU/provider math. Keep begin and final finish single-owner, extract the existing one-segment shared/delegated enqueue body into a same-build private seam. Worker produces a local Outcome (real Completion/accepted-prefix plus rejection/tail status); coordinator commits it to the graph-run cells and updates readiness. Current next_segment_/pending_/tail_error_/finished_ are serial cursor state, not a thread-safe work queue.",
+  "exact_mutable_boundary": [
+    {
+      "fields": "plan, submission_inputs, submission_outputs, readable/writable/bound, workspace and cold binding/route/capture descriptors",
+      "ownership": "Freeze after prepare_replay and begin; both execution paths may read stable spans. No bind/reset/prepare, vector growth, workspace replacement or budget reservation mutation while either lane runs. Buffers may be written only according to original data/control/effect/alias/lane/memory-reuse ordering.",
+      "anchors": "plan_state.h:971-1015; executable.cc:967-1056"
+    },
+    {
+      "fields": "invocations[step_index].operation.provider_state / .region invocation state",
+      "ownership": "Mutable and exclusive to its one claimed step/segment. enqueue_segment_steps and submit_delegated_segment themselves have NO additional common global mutable scratch: they read plan/view spans and call the selected step invocation. Distinct eligible segments can execute concurrently once original ownership/dependencies hold.",
+      "anchors": "executable.cc:1126-1154,1275-1316; plan_state.h:267-284,340-371; compute/operation.cc:1940-1964,2059-2098"
+    },
+    {
+      "fields": "completion_dependencies",
+      "ownership": "advance currently fills the range starting at segment.dependency_begin for delegated imports. Give each job its own already-reserved segment range or a cold bounded lane-local dependency snapshot; no concurrent append/resize or shared scratch cursor. Borrowed source Completion cells stay unmoved until all users return.",
+      "anchors": "executable.cc:8163-8199; plan_state.h:1000; executable.cc:7066-7067"
+    },
+    {
+      "fields": "segment_completions[index] and Outcome mailbox",
+      "ownership": "Worker-local outcome while submitting; publish to the coordinator through a short mutex or release/acquire handshake. Coordinator alone moves into segment_completions and updates ready/pending/accepted states. Do not poll/move/reset a Completion while the worker is still writing it. Protect original accepted children before first observation; preserve ordered-admission callbacks at their original before-enqueue point.",
+      "anchors": "executable.cc:8152-8161,8198-8209; submission_internal.h:AcceptedCompletionFn/SharedSequenceFn; leased_invocation.cc:518-535"
+    },
+    {
+      "fields": "phase, plan.exclusive_in_flight, outputs_ready, queue_seen and initial completion clearing",
+      "ownership": "Exactly one begin admission. These flags protect the whole run and provider concurrency restrictions, not each segment; never begin twice or drop plan exclusion when only one branch finishes.",
+      "anchors": "executable.cc:7839-7935; plan_state.h:1004-1015"
+    },
+    {
+      "fields": "aggregate_segments, aggregate_children, aggregate_completion, completion_lifetime, final phase/output retirement",
+      "ownership": "Exactly one final assembly/publication after all coarse submission workers have returned or reported unadmitted cancellation; then aggregate the real pending native work. No worker calls finish or marks invocation idle. Existing aggregate callbacks own their original atomic/lock-protected retirement tail.",
+      "anchors": "executable.cc:8222-8387,193-215; plan_state.h:891-924,1001-1008"
+    },
+    {
+      "fields": "Invocation storage Reservation.aggregate/resources and prepared workspace budget",
+      "ownership": "Construct/reserve during cold create_invocation and retain through provider/workspace destruction; worker does not recalculate quota or release a sibling branch reservation. Any new bounded ready/mailbox/fiber state is counted explicitly in this owner cost ledger; original native allocators/cache costs remain visible/unknown as before.",
+      "anchors": "plan_state.h:943-965; executable.cc:7029-7069"
+    }
+  ],
+  "queue_and_lock_rule": "A QueueSequence belongs wholly to its executing driver: begin -> original waits/enqueues -> finish on that driver, then return its real Completion. Preserve actual Queue identity and original same-lane submission order, including when multiple lane IDs alias one Queue. Queue::submitting and CUDA active_sequence/EventSlot are genuine shared single-producer state (compute/device.cc:915-936,967-979,1093-1116; cuda_backend.cc:948-975). Root and CPU child use distinct prepared endpoints; no cross-lane total lock, active-sequence handoff between OS threads or holding the Outcome/ready mutex over CPU math, native submit, wait, allocation callbacks or Scheduler suspension.",
+  "readiness_rule": "A cold graph-ready node is not yet a completed asynchronous dependency. kOrderedQueue needs its predecessor actually submitted and sequence released; kSynchronousSource must await return of its executing CPU worker, not just scheduling it; kDeviceWait borrows the published real prefix and keeps original endpoint import/error checks; kHostWait requires successful observed completion before dependent admission. Preserve all explicit control/effect, lane and workspace-reuse serialization edges. Split the CPU independent-prefix/join frontier before this runtime logic.",
+  "blocks_host_meaning": "Use original prepared artifact properties as host execution cost facts, not as CPU/GPU classification or proof that device work is complete. CPU backend is synchronous and its finish returns completed after inline math (cpu_backend.cc:37,75-83; native_provider.cc:370-385,415). The actual preaudit CUDA math also reports blocks_host=true: ggml_cuda/program.h:11-18 is managed/sharedQueue with host work; ggml_cuda_provider.cc:421-508 includes conditional checked D2H/sync and root-stream entry/exit event bridges. Other CUDA native paths report false and still return asynchronous device completion; collectives can report true for checked cases. Do not falsify a flag or turn it into a global host barrier. Start the independent CPU child and let root/native execute its own possibly-blocking submit on the other original Sched worker.",
+  "error_cancel_and_retirement": "Coordinator records first actual error/cancel, stops claiming unaccepted successors and wakes a waiting CPU lane to stop. A CPU job still inside submit counts as in flight even though no Completion has been returned yet. Its Outcome must be collected; a job that already accepted a prefix must finish the original QueueSequence and return that prefix with tail error, never substitute completed(error) or hide it in a Result error. Scheduler admission failure rolls back only the unaccepted job and still drains any sibling accepted prefix. Once all submission jobs settle, finish once over every actual accepted native episode and preserve first error. Latest HYLE prefix may cover earlier work ONLY on the same ordered Queue with preserved submission order; a delegated Completion is an independent provider episode, not automatically a backend/endpoint prefix (executable.cc:8229-8258). Keep each required native retention/guard and original Invocation, result backing, resources, allocator and Scheduler live through true retirement, including failed observations, abandon and close. Reuse waits for both lanes; child signal/refcount tails must not touch resettable submission state after publication.",
+  "bounded_cost": "Use cold-sized ready/outcome/dependency state and the existing fiber-aware Event/wait spine. At most root/native plus one CPU coarse driver per opted-in invocation, not one fiber per segment. Existing raw spawn_detached(fn,ctx) is available (scheduler.h:146-172) and its actual launch/stack-pool/allocator cost must be charged; this review does not claim allocation-free replay or create a new pool. Independent two slots retain independent mutable provider/workspaces/queues as required by current producer contracts. Native stream count/capture qualification and G10 global thread budget are unchanged.",
+  "finite_validation": "The old two-order CUDA counterexample is now real input, not positive overlap. Validate the implemented two-lane choice with both orders, necessary serial/control/effect/alias holdouts, two slots/65 steps/old results, error before and after acceptance, child spawn failure, cancel/close/abandon while both lanes hold work and actual native/CPU intervals. ASan/UBSan/TSan/device/delivery/P1 remain the current card gates, not performed or signed here. Independent frozen adapter/text review must precede new formal P1.",
+  "negative_space": "No leaf math/Queue/transfer/allocator reopening, public scheduler/API, new thread/native pool, per-segment task farm, weakening original effect/alias/capture acceptance or G01-G08 rescan. Apple/Vulkan use the same finite cold frontier principles and their original native/transfer owners, not a second executor."
+}

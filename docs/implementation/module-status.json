@@ -281,9 +281,9 @@
     },
     {
       "module": "graph",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/graph/inference-g09-joint-pipeline.md",
-      "summary": "G09 SCOPED: finite peer/source audit plus original-SDK CUDA counterexample confirms independent CPU/GPU branch serialization and dependency-union fragment boundary. Freeze original cold dependencies and joint progress/retirement design before implementation; no new-product runtime/P1 verdict."
+      "summary": "G09 AUDITED: finite J-F1..J-F5 cold dependency boundaries, bounded original-Sched CPU/native ready progress, original transfers and all accepted-prefix retirement frozen. Batch implementation authorized; no new implementation runtime/delivery/P1 verdict."
     },
     {
       "module": "container_concurrent",
@@ -649,21 +649,21 @@
     },
     {
       "module": "graph_route_cpu_cuda",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/graph/inference-g09-joint-pipeline.md",
-      "summary": "G09 SCOPED: finite peer/source audit plus original-SDK CUDA counterexample confirms independent CPU/GPU branch serialization and dependency-union fragment boundary. Freeze original cold dependencies and joint progress/retirement design before implementation; no new-product runtime/P1 verdict."
+      "summary": "G09 AUDITED: finite J-F1..J-F5 cold dependency boundaries, bounded original-Sched CPU/native ready progress, original transfers and all accepted-prefix retirement frozen. Batch implementation authorized; no new implementation runtime/delivery/P1 verdict."
     },
     {
       "module": "graph_route_cpu_apple",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/graph/inference-g09-joint-pipeline.md",
-      "summary": "G09 SCOPED: finite peer/source audit plus original-SDK CUDA counterexample confirms independent CPU/GPU branch serialization and dependency-union fragment boundary. Freeze original cold dependencies and joint progress/retirement design before implementation; no new-product runtime/P1 verdict."
+      "summary": "G09 AUDITED: finite J-F1..J-F5 cold dependency boundaries, bounded original-Sched CPU/native ready progress, original transfers and all accepted-prefix retirement frozen. Batch implementation authorized; no new implementation runtime/delivery/P1 verdict."
     },
     {
       "module": "graph_route_cpu_vulkan",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/graph/inference-g09-joint-pipeline.md",
-      "summary": "G09 SCOPED: finite peer/source audit plus original-SDK CUDA counterexample confirms independent CPU/GPU branch serialization and dependency-union fragment boundary. Freeze original cold dependencies and joint progress/retirement design before implementation; no new-product runtime/P1 verdict."
+      "summary": "G09 AUDITED: finite J-F1..J-F5 cold dependency boundaries, bounded original-Sched CPU/native ready progress, original transfers and all accepted-prefix retirement frozen. Batch implementation authorized; no new implementation runtime/delivery/P1 verdict."
     },
     {
       "module": "compute_stream",

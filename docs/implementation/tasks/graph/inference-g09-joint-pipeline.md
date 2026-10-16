@@ -1,6 +1,6 @@
 # G09 单CPU与单GPU联合流水
 
-状态：**SCOPED，2026-10-17；源码/peer审计及CUDA反证完成，依赖与推进设计待冻结，尚未授权产品实现**。
+状态：**AUDITED，2026-10-17；有限FIX及依赖/推进形状已冻结，进入批量实现；新实现尚未验收**。
 baseline为`9e2f25c469634a6f723e76eaf1aa2db5973bca9a`。
 G07/G08已接受，当前G07–G10 goal完成2/4；G10和完整文本CLI未开始。
 
@@ -20,7 +20,7 @@ Vulkan同样先完成fragment和需要的transfer才推进下一个。冷compile
 
 初始intake只打开Apple/Vulkan；随后一次最小CUDA公开consumer反证已确认同一J1旅程的额外串行化。
 当前施工owner为`graph_route_cpu_apple`、`graph_route_cpu_vulkan`、`graph`、`graph_route_cpu_cuda`，
-均为SCOPED。common/CUDA只纳入原cold segment边界与联合提交推进，不扩大为普通Graph全面重构。
+均为AUDITED。common/CUDA只纳入原cold segment边界与联合提交推进，不扩大为普通Graph全面重构。
 leaf数学、native Queue/transfer/allocator继续借原已签owner，不因此自动重开。
 不重新打开G01–G08已接受的数学、packed、分页或数值选择范围。
 
@@ -39,7 +39,54 @@ leaf数学、native Queue/transfer/allocator继续借原已签owner，不因此�
 
 同一raw包保存独立审计`independent-consumer-audit.json`：有限MUST为cold分片边界、真实ready推进、
 control/effect/alias依赖与所有accepted prefixes真实退休。必要lane/预算复用边不能因没有tensor边就删除。
-下一步只冻结这些FIX的owner/API/ownership/失败/并发/资源账后进入AUDITED，不再扩大缺口扫描。
+以下FIX冻结这些问题的owner/API/ownership/失败/并发/资源账，不再扩大缺口扫描。
+
+## AUDITED：有限改动集与形状冻结
+
+| ID | 能力裁决与允许改动 | 直接验收 |
+|---|---|---|
+| J-F1 | J1 `PARTIAL/FIX`，SELF原Graph冷依赖投影。Apple/Vulkan连续target分片在后续节点引入新的外部producer/control依赖时分开；common segment同样保留独立prefix。保已有native fusion、显式control/effect、真实lane与预算复用边 | 两插入顺序分片/依赖，纯串行链、不必拆开的同target链、control-only与effect留出；不机械逐op拆分 |
+| J-F2 | J1/J2 `PARTIAL/FIX`，SELF原hybrid组合推进。私有有界ready/frontier使用BORROW原Scheduler、CPU Queue、native Program/Invocation；native/root与一个CPU coarse child，最多两个原Sched fibers，保持每实际Queue单producer。严格串行DAG沿原inline推进 | 真数学两分支/join，两slots各65步；原worker数1/2，不靠fake provider或sleep签overlap |
+| J-F3 | J3 `PARTIAL/FIX`，原边界准备/搬运按实际消费者的依赖推进；native/transfer/page controller仍由原owner承载，可变page/transfer入场由native侧串行拥有。CPU repack服从同CPU Queue单producer；已可用host/native引用不增加设备等待 | host/native输入、跨域与相邻native片段、同源多consumer，原page/source旅程；记录真实copy与host observation |
+| J-F4 | J3权限/结果 `ROUTED/BORROW`，只补本轮并发保护：短入场/结果发布与LeaseSubmission.protect序列化，绝不持总锁执行CPU数学或native wait。取消/首错停止未接收工作；所有已接收worker/outcome/native prefix真实退休后原owner发布terminal | 第二支路失败、取消、poll error后仍在途、旧结果阻止reuse、drop/move/close、quota/OOM与实际权限/alias |
+| J-F5 | J4 `PARTIAL/FIX`，有界依赖metadata/每slot状态、原resource report和真实公开consumer；文档明确使用成本，三交付/实际硬件与适用风险补证。没有新public API、线程池、通用scheduler或新vendor | 下述固定targets、普通selector、P0账及固定candidate后P1、独立终审/LOC |
+
+J1/J2是复合机制，模型/request/microbatch分组仍为APPLICATION；不能要求消费者拆开同一个DAG。
+J3原tensor/lease/copy/native/math均KEEP/BORROW，未经资格的GPU mutable/alias域仍按原合同拒绝。
+J4 provider-private/UMA成本继续允许明确UNKNOWN；不把未知成本写成0。G10线程预算不在这里提前实现。
+
+普通调用保持`GraphBuilder`→placement/compile→原Sched/Queues→两个独立`create_invocation`→
+bind/prepare_replay→两次submit→各自checked owning Results→close；调用者持有原contexts/resources/
+allocator/Sched/Queues到真实退休，结果lease继续保护backing。共享只读输入允许，可变workspace与结果slot独立。
+不增加调用者必填调度policy或与benchmark相关的选项；三种C++交付入口不变。
+
+common Graph的重用接缝限定为same-build私有逐segment提交：一次begin/最终finish仍由单owner独占；
+worker读冻结的plan/bindings/routes/capture和本segment私有step invocation/scratch slice，返回本segment
+Completion/error outcome；短互斥发布后才解锁后继。原cursor逐次advance路线保留为同机制的串行调用者。
+cursor的next/pending/tail、aggregate、phase/exclusive与最终退休不可并发裸写。原QueueSequence必须在
+执行它的fiber内begin→finish，保实际Queue/lane顺序，不跨线程转交活动sequence。
+`blocks_host`只描述真实宿主执行成本，不能当设备完成证明；不得为了推进将其改成false。
+
+新增冷依赖投影/frontier准备为O(V+E)，每slot状态O(F+I+E)，空间经原metadata allocator/budget计费；
+不每op创建task/fiber，不新增OS线程。并发图每次submit至多一个额外原Sched detached driver及其
+原pool stack，原Sched allocation/admission失败须转Status；严格串行图没有该额外driver。
+warm只做已准备的依赖计数/就绪队列/短发布，原copy、必要wait、native私有费用仍单独记账。
+不能预先承诺所有provider零分配或所有硬件物理copy/compute并发。
+
+固定新增验证入口：common `hyle_graph_test` 的`NativePartition.*`/`JointPipeline.*`有限filters；
+三个现有`hyle_cpu_{cuda,apple,vulkan}_contracts`扩入公开流水旅程，必要独立硬件trace fixture使用
+`hyle_cpu_{cuda,apple,vulkan}_pipeline`名称。只为实际并发/lifetime风险增加测试，不为实现逐行镜像。
+common影响仅扩到原Graph executable、原leased/batch与三hybrid的真实直接消费者，未变叶证据复用。
+
+P1冻结为两自然形状：等长独立CPU/GPU数学支路+join、两个独立microbatch的CPU→GPU→CPU链；
+必要纯串行CPU→GPU→CPU作holdout。相同输入/数学/输出/原contexts/queues/slots、包括实际copy、
+prepare/submit/checked observation与退休；cold compile/native准备单独列账，不能从一侧省掉。
+baseline仍为9e2f25c4原HYLE；平台原5%/n15–31、A/A、双顺序和适用placement合同不变。
+每形状实际维度/批数/迭代预算与两侧时序静态账单在构造benchmark前绑定该具名consumer后固定，
+不可计时后挑有利尺寸；prospective独立review/text检查与短diagnostic合格后才正式采样。
+
+本轮实现/检查按J-F1–J-F5批量完成，验证失败仅定向修复；架构/API/常态成本级别变化才回退本审计。
+G07/G08已接受范围、叶Provider数学、公共构建/性能仪器不重写。没有产品gate在本节被预先判PASS。
 
 主纵切为单机推理的两microbatch：公开CPU→GPU→CPU链与一条独立CPU数值支路、持久输入和两个slots。
 正交纵切为批处理矩阵/向量管线：两个独立分支、显式join和不同图插入顺序，不引入token/request身份。
