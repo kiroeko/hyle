@@ -45,6 +45,7 @@ void run(std::int64_t rows) {
   auto context = take(g::cuda::create_context());
   auto memory = take(c::cuda::MemoryResource::create(context, c::cuda::MemoryKind::kDevice));
   auto queue = take(context.create_queue());
+  auto second_queue = take(context.create_queue());
   const std::array desc{
       dense(c::DataType::kFloat32, {rows,k}),
       dense(c::DataType::kFloat32, {1,slots,k}),
@@ -108,13 +109,13 @@ void run(std::int64_t rows) {
     auto second = take(compiled.executable.create_invocation());
     for (auto *slot : {&first,&second})
       for (std::size_t i = 0; i < ids.size(); ++i) require(slot->bind(ids[i], views[i]));
-    const auto bind = [&](g::Invocation &slot, std::size_t bank) {
+    const auto bind = [&](g::Invocation &slot, c::Queue &target, std::size_t bank) {
       require(slot.bind(projection, take(c::TensorView::create(out_desc[0],linear[bank].view()))));
       require(slot.bind(product, take(c::TensorView::create(out_desc[1],selected[bank].view()))));
-      require(g::cuda::prepare_replay(slot, queue,
+      require(g::cuda::prepare_replay(slot, target,
           {.mode=g::ReplayMode::kCommands,.host_wait=g::HostWaitPolicy::kReject}));
     };
-    bind(first,0); bind(second,1);
+    bind(first,queue,0); bind(second,second_queue,1);
     const auto oracle = [&](const std::vector<float> &a, std::int64_t row,
                             std::int64_t expert, std::int64_t column) {
       double result = 0;
@@ -148,7 +149,14 @@ void run(std::int64_t rows) {
       write(inputs[3],words); write(inputs[4],scales); write(inputs[5],biases);
       auto &slot = step%2 ? second : first;
       const std::size_t bank = step == 0 ? 0 : step%2 ? 1 : 2;
-      auto done = take(slot.submit(queue)); require(done.wait());
+      auto done = take(slot.submit(step%2 ? second_queue : queue));
+      if (step != 0 && step%16 == 0) {
+        // Two accepted streams read the same backing; both retire before
+        // the caller changes inputs for the next frame.
+        auto concurrent = take(second.submit(second_queue));
+        require(done.wait()); require(concurrent.wait());
+        check(read(selected[1]) == read(selected[2]), "Independent Graph slots interfered");
+      } else require(done.wait());
       const auto actual = read(linear[bank]), picked = read(selected[bank]);
       for (std::int64_t row = 0; row < rows; ++row)
         for (std::int64_t column = 0; column < n; ++column)
@@ -158,7 +166,7 @@ void run(std::int64_t rows) {
           check(picked[s*n+column] == oracle(grouped,s,expected_ids[s],column), "Graph selected stored-byte oracle differs");
       if (step == 0) {
         retained_linear = actual; retained_selected = picked;
-        bind(first,2); // One explicit cold rebind; subsequent runs keep two fixed banks.
+        bind(first,queue,2); // One explicit cold rebind; subsequent runs keep two fixed banks.
       }
     }
     const auto before = read(selected[2]);
