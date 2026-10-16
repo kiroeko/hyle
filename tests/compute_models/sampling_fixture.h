@@ -167,6 +167,10 @@ inline std::vector<std::int32_t> check_categorical(const Output &out,
     for (std::size_t j = 0; j < width; ++j)
       total += std::exp(double(start[std::ptrdiff_t(j)]) - double(maximum));
     const auto expected = (double(chosen) - double(maximum)) - std::log(total);
+    if (!std::isfinite(scores[row]) ||
+        std::abs(double(scores[row])-expected) > 2e-5+2e-5*std::abs(expected))
+      std::fprintf(stderr,"categorical score row=%zu id=%d chosen=%.9g max=%.9g mass=%.17g actual=%.9g expected=%.17g\n",
+          row,ids[row],double(chosen),double(maximum),total,double(scores[row]),expected);
     check(std::isfinite(scores[row]) &&
           std::abs(double(scores[row]) - expected) <= 2e-5 + 2e-5 * std::abs(expected),
           "selected log probability differs from independent F64 normalizer");
