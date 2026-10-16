@@ -1,4 +1,5 @@
 #include "hyle/compute/batch_ops.h"
+#include "hyle/compute/detail/batch_provider.h"
 #include "hyle/util/ref_counted.h"
 
 #include <algorithm>
@@ -6,6 +7,7 @@
 #include <atomic>
 #include <cstring>
 #include <limits>
+#include <mutex>
 #include <new>
 
 namespace hyle::compute {
@@ -16,6 +18,14 @@ struct MetadataHeader final {
   BatchLayoutFacts facts{};
 };
 static_assert(sizeof(MetadataHeader)==32);
+BatchMetadataOffsets active_offsets(BatchLayoutFacts facts,bool paged)noexcept {
+  const auto ptrbytes=(std::size_t(facts.requests)+1)*sizeof(std::int32_t);
+  const auto refbytes=std::size_t(facts.page_refs)*sizeof(std::int32_t);
+  const auto tailbytes=paged?std::size_t(facts.requests)*sizeof(std::int32_t):0;
+  return {sizeof(MetadataHeader),sizeof(MetadataHeader)+ptrbytes,
+      sizeof(MetadataHeader)+2*ptrbytes,sizeof(MetadataHeader)+2*ptrbytes+refbytes,
+      sizeof(MetadataHeader)+2*ptrbytes+refbytes+tailbytes};
+}
 Result<BatchLayoutFacts> validate_layout(BatchCapacity c,HostBatchLayout h) noexcept {
   if(h.query_indptr.empty() || h.query_indptr.size()>std::size_t(c.max_requests)+1 || h.kv_indptr.size()!=h.query_indptr.size())
     return std::unexpected(Status::InvalidArgument("batch indptr request extent"));
@@ -66,6 +76,8 @@ struct BatchLayoutData final:util::RefCounted<BatchLayoutData> {
   void destroy()noexcept{const auto a=allocator;this->~BatchLayoutData();a.deallocate(this,sizeof(*this),alignof(BatchLayoutData));}
   BatchSchema schema;mem::AllocatorRef allocator;
   ReadLease bytes;mem::HostMapping mapping; // mapping dies before its backing
+  mutable std::mutex export_lock;
+  mutable ReadLease exported;
   std::uint64_t generation=0;BatchLayoutFacts facts{};
 };
 } // namespace detail
@@ -183,14 +195,15 @@ Result<BatchLayoutVersion> BatchSchema::version(HostBatchLayout h)const noexcept
   auto*p=data_->allocator.construct<detail::BatchLayoutData>(*this,data_->allocator);
   if(!p)return std::unexpected(Status::ResourceExhausted("batch layout metadata"));
   BatchLayoutVersion result(p);p->generation=generation;p->facts=facts;
-  HYLE_ASSIGN_OR_RETURN(auto buffer,mem::Buffer::create(mem::system_resource(),data_->offsets.bytes,64));
+  const auto offsets=active_offsets(facts,data_->capacity.storage==BatchStorage::kPaged);
+  HYLE_ASSIGN_OR_RETURN(auto buffer,mem::Buffer::create(mem::system_resource(),offsets.bytes,64));
   {
     HYLE_ASSIGN_OR_RETURN(auto mapping,buffer.view().map_host());
-    HYLE_ASSIGN_OR_RETURN(auto bytes,mapping.writable_bytes());std::fill(bytes.begin(),bytes.end(),std::byte{0});
+    HYLE_ASSIGN_OR_RETURN(auto bytes,mapping.writable_bytes());
     const MetadataHeader header{.generation=generation,.facts=facts};std::memcpy(bytes.data(),&header,sizeof(header));
     const auto copy=[&](std::size_t offset,std::span<const std::int32_t> values){if(!values.empty())std::memcpy(bytes.data()+offset,values.data(),values.size_bytes());};
-    copy(data_->offsets.query_indptr,h.query_indptr);copy(data_->offsets.kv_indptr,h.kv_indptr);
-    copy(data_->offsets.page_indices,h.page_indices);copy(data_->offsets.last_page_lengths,h.last_page_lengths);
+    copy(offsets.query_indptr,h.query_indptr);copy(offsets.kv_indptr,h.kv_indptr);
+    copy(offsets.page_indices,h.page_indices);copy(offsets.last_page_lengths,h.last_page_lengths);
     HYLE_RETURN_IF_ERROR(mapping.close());
   }
   HYLE_ASSIGN_OR_RETURN(p->bytes,ReadLease::adopt(std::move(buffer),{.allocator=data_->allocator,.resource_budget=data_->options.resource_budget}));
@@ -207,14 +220,38 @@ BatchSchema BatchLayoutVersion::schema()const noexcept{return data_?data_->schem
 std::uint64_t BatchLayoutVersion::generation()const noexcept{return data_?data_->generation:0;}
 BatchLayoutFacts BatchLayoutVersion::facts()const noexcept{return data_?data_->facts:BatchLayoutFacts{};}
 HostBatchLayout BatchLayoutVersion::host()const noexcept {
-  if(!data_)return {};const auto bytes=data_->mapping.bytes();const auto offsets=data_->schema.metadata_offsets();
+  if(!data_)return {};const auto bytes=data_->mapping.bytes();
+  const auto offsets=active_offsets(data_->facts,data_->schema.capacity().storage==BatchStorage::kPaged);
   const auto span=[&](std::size_t offset,std::size_t count){return std::span<const std::int32_t>(reinterpret_cast<const std::int32_t*>(bytes.data()+offset),count);};
   const auto n=data_->facts.requests;const bool paged=data_->schema.capacity().storage==BatchStorage::kPaged;
   return {span(offsets.query_indptr,std::size_t(n)+1),span(offsets.kv_indptr,std::size_t(n)+1),
       span(offsets.page_indices,data_->facts.page_refs),span(offsets.last_page_lengths,paged?n:0)};
 }
 Result<ReadLease> BatchLayoutVersion::metadata()const noexcept {
-  if(!data_)return std::unexpected(Status::FailedPrecondition("batch layout is empty"));return data_->bytes;
+  if(!data_)return std::unexpected(Status::FailedPrecondition("batch layout is empty"));
+  std::lock_guard guard(data_->export_lock);
+  if(data_->exported.valid())return data_->exported;
+  HYLE_ASSIGN_OR_RETURN(auto buffer,mem::Buffer::create(mem::system_resource(),data_->schema.metadata_offsets().bytes,64));
+  {
+    HYLE_ASSIGN_OR_RETURN(auto mapping,buffer.view().map_host());
+    HYLE_ASSIGN_OR_RETURN(auto bytes,mapping.writable_bytes());
+    std::fill(bytes.begin(),bytes.end(),std::byte{0});
+    for(const auto&segment:detail::BatchLayoutAccess::segments(*this))
+      if(!segment.bytes.empty())std::memcpy(bytes.data()+segment.offset,segment.bytes.data(),segment.bytes.size());
+    HYLE_RETURN_IF_ERROR(mapping.close());
+  }
+  HYLE_ASSIGN_OR_RETURN(auto ready,ReadLease::adopt(std::move(buffer),
+      {.allocator=data_->allocator,.resource_budget=data_->schema.data_->options.resource_budget}));
+  data_->exported=std::move(ready);return data_->exported;
+}
+std::array<detail::BatchMetadataSegment,5> detail::BatchLayoutAccess::segments(const BatchLayoutVersion&version)noexcept {
+  if(!version.data_)return {};
+  const auto h=version.host();const auto offsets=version.schema().metadata_offsets();
+  return {{{0,version.data_->mapping.bytes().first(sizeof(MetadataHeader))},
+      {offsets.query_indptr,std::as_bytes(h.query_indptr)},
+      {offsets.kv_indptr,std::as_bytes(h.kv_indptr)},
+      {offsets.page_indices,std::as_bytes(h.page_indices)},
+      {offsets.last_page_lengths,std::as_bytes(h.last_page_lengths)}}};
 }
 bool BatchLayoutVersion::operator==(const BatchLayoutVersion&v)const noexcept{return data_==v.data_;}
 Status infer_batch_attention(BatchCapacity c,BatchStorage storage,std::span<const TensorDesc> inputs,std::span<TensorDesc> outputs)noexcept {

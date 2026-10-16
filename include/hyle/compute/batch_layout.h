@@ -44,7 +44,7 @@ struct BatchSchemaOptions final {
   mem::AllocatorRef allocator = mem::system_allocator();
   ResourceBudget resource_budget{};
 };
-namespace detail { struct BatchSchemaData; struct BatchLayoutData; }
+namespace detail { struct BatchSchemaData; struct BatchLayoutData; struct BatchLayoutAccess; }
 class BatchLayoutVersion;
 
 // Immutable capacity/identity. Cold version creation is thread-safe when the
@@ -66,7 +66,7 @@ public:
   HYLE_COMPUTE_BATCH_API BatchMetadataOffsets metadata_offsets() const noexcept;
   HYLE_COMPUTE_BATCH_API Result<TensorDesc> metadata_description() const noexcept;
   // Validates all borrowed input before allocation/copy. Stores an immutable
-  // fixed-capacity snapshot; repeated shape/page values still get a new version.
+  // active-sized snapshot; repeated shape/page values still get a new version.
   HYLE_COMPUTE_BATCH_API Result<BatchLayoutVersion> version(HostBatchLayout) const noexcept;
   HYLE_COMPUTE_BATCH_API bool owns(const BatchLayoutVersion &) const noexcept;
 private:
@@ -91,10 +91,14 @@ public:
   HYLE_COMPUTE_BATCH_API std::uint64_t generation() const noexcept;
   HYLE_COMPUTE_BATCH_API BatchLayoutFacts facts() const noexcept;
   HYLE_COMPUTE_BATCH_API HostBatchLayout host() const noexcept;
+  // Explicit fixed-capacity State/Graph export. First use allocates and zeros
+  // the inactive region; later calls share the same readonly backing. Export
+  // failure leaves the active version intact and can be retried. Thread-safe.
   HYLE_COMPUTE_BATCH_API Result<ReadLease> metadata() const noexcept;
   HYLE_COMPUTE_BATCH_API bool operator==(const BatchLayoutVersion &) const noexcept;
 private:
   friend class BatchSchema;
+  friend struct detail::BatchLayoutAccess;
   explicit BatchLayoutVersion(detail::BatchLayoutData *data) noexcept : data_(data) {}
   detail::BatchLayoutData *data_ = nullptr;
 };

@@ -1,8 +1,20 @@
 #pragma once
+#include <array>
+#include <cstddef>
+#include <span>
 #include "hyle/compute/batch_execution.h"
 #include "hyle/compute/detail/provider_extension.h"
 
 namespace hyle::compute::detail {
+// Active immutable payload at the schema's fixed device-wire offsets. Spans
+// borrow the version; inactive bytes are zero in an explicit full export.
+struct BatchMetadataSegment final {
+  std::size_t offset=0;
+  std::span<const std::byte> bytes;
+};
+struct BatchLayoutAccess final {
+  HYLE_COMPUTE_BATCH_API static std::array<BatchMetadataSegment,5> segments(const BatchLayoutVersion&) noexcept;
+};
 inline constexpr ProviderExtensionId kBatchPlanningExtensionId{0x48594c4542415443ULL,0x504c414e4e494e47ULL,1};
 struct BatchWorkspaceViews final {
   mem::ConstBufferView metadata;

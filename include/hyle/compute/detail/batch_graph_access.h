@@ -8,9 +8,10 @@ struct BatchGraphAccess final {
   HYLE_COMPUTE_BATCH_API static Result<BatchProgram> prepare(const Context&,BatchSchema,BatchProgramOptions,ProviderInstanceId) noexcept;
   HYLE_COMPUTE_BATCH_API static Result<BatchInvocation> create(const BatchProgram&,Queue&) noexcept;
   HYLE_COMPUTE_BATCH_API static Result<ReadLease> metadata(const BatchInvocation&) noexcept;
-  // Idle Graph coordinator only: share a proven same-layout device mirror
-  // between regions reading one IR metadata input. Each native plan stays local.
-  HYLE_COMPUTE_BATCH_API static Status share_metadata(BatchInvocation&,const BatchInvocation&) noexcept;
+  // Prepare a local plan using the source's already checked-retired same-layout
+  // mirror. Sharing precedes upload; each plan/workspace stays independent.
+  HYLE_COMPUTE_BATCH_API static Result<PreparedBatch> prepare_shared(BatchInvocation&,
+      const BatchLayoutVersion&,bool update,const BatchInvocation&) noexcept;
   HYLE_COMPUTE_BATCH_API static void clear_shared_metadata(BatchInvocation&) noexcept;
   HYLE_COMPUTE_BATCH_API static EnqueueResult enqueue(PreparedBatch&,Queue&,std::span<const ConstTensorView>,std::span<const TensorView>) noexcept;
 };

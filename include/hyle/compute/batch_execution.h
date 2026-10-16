@@ -67,7 +67,8 @@ public:
   HYLE_COMPUTE_BATCH_API ~BatchInvocation();
   HYLE_COMPUTE_BATCH_API static Result<BatchInvocation> create(const BatchProgram &,Queue &) noexcept;
   bool valid() const noexcept{return data_!=nullptr;}
-  // Explicit host waits for original F2 metadata upload and native planning.
+  // Changed active metadata and native planning use explicit checked waits.
+  // Unchanged metadata needs no upload; report() records actual bytes/waits.
   // Failed accepted prefixes invalidate the old plan and retain their uses.
   HYLE_COMPUTE_BATCH_API Result<PreparedBatch> prepare_batch(const BatchLayoutVersion &) noexcept;
   // Explicit update: reuse only when the provider proves its complete native
@@ -86,7 +87,8 @@ private:
   static Result<BatchInvocation> create(const BatchProgram&,Queue&,bool external_output) noexcept;
   explicit BatchInvocation(detail::BatchInvocationData *p) noexcept:data_(p){}
   detail::BatchInvocationData *data_=nullptr;
-  Result<PreparedBatch> prepare(const BatchLayoutVersion &,bool update) noexcept;
+  Result<PreparedBatch> prepare(const BatchLayoutVersion &,bool update,
+      const BatchInvocation *metadata_source=nullptr) noexcept;
 };
 class PreparedBatch final {
 public:

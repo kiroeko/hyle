@@ -7,10 +7,15 @@
 #include "hyle/compute/detail/copy_outcome_source.h"
 #include "hyle/core/assert.h"
 #include "hyle/util/ref_counted.h"
+#include "hyle/mem/std_allocator.h"
+#include <algorithm>
 #include <array>
 #include <atomic>
 #include <cmath>
+#include <cstring>
+#include <functional>
 #include <new>
+#include <vector>
 
 namespace hyle::compute {
 namespace d=detail;
@@ -28,7 +33,7 @@ struct BatchBuffers final:util::RefCounted<BatchBuffers>{
   BatchProgramData*program;mem::AllocatorRef allocator;ProviderExtensionRef provider_owner;LeasePool device,host;
 };
 struct BatchInvocationData final:util::RefCounted<BatchInvocationData>{
-  explicit BatchInvocationData(BatchProgramData*p):program(p){p->incref();}
+  explicit BatchInvocationData(BatchProgramData*p):program(p),read_set(mem::StdAllocator<const ReadLease*>(p->allocator)){p->incref();}
   void destroy()noexcept{
     auto*p=program;const auto a=p->allocator;
     if(native)p->table->destroy(native,a);
@@ -45,7 +50,8 @@ struct BatchInvocationData final:util::RefCounted<BatchInvocationData>{
   ReadLease mirror_ready,output_ready,staging_ready;
   ReadLease graph_shared_metadata;
   CopyBatchInvocation upload;LeaseUsePool uses;RetainedCompletion completion;
-  BatchLayoutVersion layout;BatchPlanReport report;
+  BatchLayoutVersion layout,mirror_layout;BatchPlanReport report;
+  std::vector<const ReadLease*,mem::StdAllocator<const ReadLease*>> read_set;
   CompletionRetention native_retention{};std::atomic<std::uint32_t> pending{0};
   Status terminal;std::uint64_t epoch=0;std::uint32_t users=1,tickets=0;
   bool closed=false,failed=false,prepared=false,ran=false,external_output=false;
@@ -81,7 +87,7 @@ void native_release(void*opaque)noexcept{
 }
 Result<d::BatchWorkspaceViews> workspace_views(d::BatchInvocationData&s)noexcept{
   d::BatchWorkspaceViews views;
-  HYLE_ASSIGN_OR_RETURN(views.metadata,s.mirror_ready.view());
+  HYLE_ASSIGN_OR_RETURN(views.metadata,(s.graph_shared_metadata.valid()?s.graph_shared_metadata:s.mirror_ready).view());
   HYLE_ASSIGN_OR_RETURN(views.float_workspace,s.float_workspace.view());
   HYLE_ASSIGN_OR_RETURN(views.int_workspace,s.int_workspace.view());
   HYLE_ASSIGN_OR_RETURN(views.host_workspace,s.host_workspace.view());
@@ -110,10 +116,21 @@ Result<Completion> submit_native(d::BatchInvocationData&s,bool planning,
   if(!s.completion.available() || s.pending.load(std::memory_order_acquire) || s.uses.active_batches())
     return std::unexpected(Status::Unavailable("batch native slot or old completion retained"));
   HYLE_ASSIGN_OR_RETURN(auto use,s.uses.begin());
-  for(const auto&lease:leases)HYLE_RETURN_IF_ERROR(use.read(lease));
-  for(const auto&lease:key_pages)HYLE_RETURN_IF_ERROR(use.read(lease));
-  for(const auto&lease:value_pages)HYLE_RETURN_IF_ERROR(use.read(lease));
-  HYLE_RETURN_IF_ERROR(use.read(s.mirror_ready));
+  auto&reads=s.read_set;reads.clear();
+  if(leases.size()+key_pages.size()+value_pages.size()+1>reads.capacity())
+    return std::unexpected(Status::ResourceExhausted("batch read admission scratch capacity"));
+  for(const auto&lease:leases)reads.push_back(&lease);
+  for(const auto&lease:key_pages)reads.push_back(&lease);
+  for(const auto&lease:value_pages)reads.push_back(&lease);
+  reads.push_back(s.graph_shared_metadata.valid()?&s.graph_shared_metadata:&s.mirror_ready);
+  const auto identity=[](const ReadLease*p){return d::LeaseAccess::identity(*p);};
+  std::sort(reads.begin(),reads.end(),[&](auto*a,auto*b){return std::less<const void*>{}(identity(a),identity(b));});
+  Status admission;const ReadLease*previous=nullptr;
+  for(const auto*lease:reads){
+    if(previous && identity(previous)==identity(lease) && previous->generation()==lease->generation())continue;
+    admission=d::LeaseAccess::read_unique(use,*lease);if(!admission.ok())break;previous=lease;
+  }
+  reads.clear();HYLE_RETURN_IF_ERROR(admission);
   HYLE_RETURN_IF_ERROR(use.write(s.float_workspace));HYLE_RETURN_IF_ERROR(use.write(s.int_workspace));
   if(planning)HYLE_RETURN_IF_ERROR(use.write(s.host_workspace));else HYLE_RETURN_IF_ERROR(use.write(s.output));
   HYLE_ASSIGN_OR_RETURN(auto sequence,d::QueueSequence::begin(*s.queue));
@@ -153,7 +170,7 @@ Result<BatchProgram> BatchProgram::prepare(const Context&context,BatchSchema sch
   },p));
   const auto bytes=p->schema.metadata_offsets().bytes;
   const std::array specs{CopyResourceSpec{p->options.host_workspace,bytes},CopyResourceSpec{p->options.resource,bytes}};
-  HYLE_ASSIGN_OR_RETURN(p->upload,CopyBatchProgram::prepare(context,specs,{.max_resources=2,.max_copies=1,.max_phases=1,.max_bytes=bytes,.allocator=a,.resource_budget=p->options.resource_budget}));
+  HYLE_ASSIGN_OR_RETURN(p->upload,CopyBatchProgram::prepare(context,specs,{.max_resources=2,.max_copies=5,.max_phases=1,.max_bytes=bytes,.allocator=a,.resource_budget=p->options.resource_budget}));
   return result;
 }
 BatchInvocation::BatchInvocation(BatchInvocation&&v)noexcept:data_(std::exchange(v.data_,nullptr)){}
@@ -181,11 +198,14 @@ Result<BatchInvocation> BatchInvocation::create(const BatchProgram&program,Queue
   HYLE_ASSIGN_OR_RETURN(s->float_workspace,s->buffers->device.allocate(p->options.max_float_workspace_bytes));
   HYLE_ASSIGN_OR_RETURN(s->int_workspace,s->buffers->device.allocate(p->options.max_int_workspace_bytes));HYLE_ASSIGN_OR_RETURN(s->host_workspace,s->buffers->host.allocate(p->options.max_int_workspace_bytes));
   HYLE_ASSIGN_OR_RETURN(s->staging,s->buffers->host.allocate(mirror));
+  HYLE_RETURN_IF_ERROR(s->mirror.view()->fill(std::byte{0}));
+  HYLE_RETURN_IF_ERROR(s->staging.view()->fill(std::byte{0}));
   const auto retain_domain=[&](LeasePool&pool){s->buffers->incref();d::LeaseAccess::retain_resource_owner(pool,s->buffers,[](void*p)noexcept{static_cast<d::BatchBuffers*>(p)->decref();});d::LeaseAccess::detach_pool_root(pool);};
   retain_domain(s->buffers->device);retain_domain(s->buffers->host);
   HYLE_ASSIGN_OR_RETURN(s->upload,CopyBatchInvocation::create(p->upload,queue));
   const auto refs=p->schema.capacity().max_page_refs;
   if(refs>(UINT32_MAX-8u)/2u)return std::unexpected(Status::OutOfRange("batch page-use capacity overflow"));
+  try{s->read_set.reserve(8u+2u*refs);}catch(const std::bad_alloc&){return std::unexpected(Status::ResourceExhausted("batch read admission scratch"));}
   HYLE_ASSIGN_OR_RETURN(s->uses,LeaseUsePool::create({.max_batches=1,.max_resources_per_batch=8u+2u*refs,.allocator=p->allocator,.resource_budget=p->options.resource_budget}));
   HYLE_ASSIGN_OR_RETURN(s->completion,d::RetainedCompletion::create(p->allocator));
   HYLE_RETURN_IF_ERROR(d::ProviderExtensionAccess::call(p->extension,[](void*context,const void*table,void*opaque)noexcept{
@@ -198,10 +218,20 @@ Result<PreparedBatch> BatchInvocation::prepare_batch(const BatchLayoutVersion&la
 Result<PreparedBatch> BatchInvocation::update_batch(const BatchLayoutVersion&layout)noexcept{
   return prepare(layout,true);
 }
-Result<PreparedBatch> BatchInvocation::prepare(const BatchLayoutVersion&layout,bool update)noexcept{
+Result<PreparedBatch> BatchInvocation::prepare(const BatchLayoutVersion&layout,bool update,
+    const BatchInvocation*metadata_source)noexcept{
   if(!data_ || data_->closed || data_->failed)return std::unexpected(Status::FailedPrecondition("batch invocation is closed/failed"));
   auto&s=*data_;
   if(!s.program->schema.owns(layout))return std::unexpected(Status::InvalidArgument("batch layout belongs to another schema"));
+  ReadLease shared;
+  if(metadata_source){
+    const auto*source=metadata_source->data_;
+    if(!source || source==&s || !s.external_output || !source->external_output || !source->prepared || source->ran || source->layout!=layout ||
+        source->program->options.resource!=s.program->options.resource)
+      return std::unexpected(Status::InvalidArgument("shared Graph metadata needs a prepared same-layout resource"));
+    shared=source->graph_shared_metadata.valid()?source->graph_shared_metadata:source->mirror_ready;
+    if(!shared.valid())return std::unexpected(Status::FailedPrecondition("shared Graph metadata is not ready"));
+  }
   HYLE_RETURN_IF_ERROR(validate_batch_attention_layout(layout,s.program->options.causal,s.program->options.window_left));
   if(s.tickets || in_flight() || !s.completion.available())return std::unexpected(Status::Unavailable("batch slot has a live ticket/native work/old completion"));
   // Native callbacks publish terminal before releasing pending. Check only
@@ -210,20 +240,57 @@ Result<PreparedBatch> BatchInvocation::prepare(const BatchLayoutVersion&layout,b
   if(s.output_ready.valid() && !d::LeaseAccess::unique_read_owner(s.output_ready))return std::unexpected(Status::Unavailable("old batch output prevents slot overwrite"));
   if(s.epoch==UINT64_MAX)return std::unexpected(Status::OutOfRange("batch slot epoch exhausted"));
   if(s.output_ready.valid()){HYLE_ASSIGN_OR_RETURN(s.output,s.output_ready.try_write());}
-  if(s.mirror_ready.valid()){HYLE_ASSIGN_OR_RETURN(s.mirror,s.mirror_ready.try_write());}
   ++s.epoch;s.prepared=false;s.ran=false;s.layout=layout;s.report={};s.terminal=Status::Ok();
-  HYLE_ASSIGN_OR_RETURN(auto source,layout.metadata());
-  HYLE_RETURN_IF_ERROR(s.upload.reset());
-  if(s.staging_ready.valid()){HYLE_ASSIGN_OR_RETURN(s.staging,s.staging_ready.try_write());}
-  HYLE_ASSIGN_OR_RETURN(auto source_view,source.view());HYLE_ASSIGN_OR_RETURN(auto source_mapping,source_view.map_host());
-  HYLE_ASSIGN_OR_RETURN(auto staging_view,s.staging.view());HYLE_RETURN_IF_ERROR(staging_view.write(source_mapping.bytes()));
-  HYLE_ASSIGN_OR_RETURN(s.staging_ready,s.staging.publish());
-  HYLE_RETURN_IF_ERROR(s.upload.bind_source({0},s.staging_ready));HYLE_RETURN_IF_ERROR(s.upload.bind_mutable({1},std::move(s.mirror)));
-  const std::array<CopyPhase,1> phases{{{}}};const std::array<CopyRange,1> ranges{{{{0},{1},{0},0,0,source.size()}}};
-  HYLE_RETURN_IF_ERROR(s.upload.prepare_replay(phases,ranges));HYLE_ASSIGN_OR_RETURN(auto uploaded,s.upload.submit());
-  auto terminal=uploaded.wait();if(!terminal.ok()){s.failed=true;return std::unexpected(terminal);}
-  HYLE_ASSIGN_OR_RETURN(s.mirror_ready,uploaded.output({0},{1},0,source.size()));uploaded={};
-  const auto upload_report=s.upload.report();HYLE_RETURN_IF_ERROR(s.upload.reset());
+  s.graph_shared_metadata=std::move(shared);
+  CopyBatchReport upload_report{};std::size_t staging_bytes=0;std::uint32_t upload_waits=0;
+  if(!s.graph_shared_metadata.valid()){
+    const auto next=d::BatchLayoutAccess::segments(layout),old=d::BatchLayoutAccess::segments(s.mirror_layout);
+    std::array<CopyRange,5> ranges{};std::size_t count=0;
+    // Only active words are compared. A shrinking segment includes its old
+    // active suffix; initialized mirrors contain zero everywhere else.
+    for(std::size_t part=0;part<next.size();++part){
+      const auto a=next[part].bytes,b=old[part].bytes;const auto extent=std::max(a.size(),b.size());
+      std::size_t first=extent,last=0;
+      for(std::size_t at=0;at<extent;at+=4){
+        std::uint32_t x=0,y=0;if(at<a.size())std::memcpy(&x,a.data()+at,4);if(at<b.size())std::memcpy(&y,b.data()+at,4);
+        if(x!=y){first=std::min(first,at);last=at+4;}
+      }
+      if(first<last)ranges[count++]={{0},{1},{0},next[part].offset+first,next[part].offset+first,last-first};
+    }
+    if(count){
+      HYLE_RETURN_IF_ERROR(s.upload.reset());
+      if(s.mirror_ready.valid()){HYLE_ASSIGN_OR_RETURN(s.mirror,s.mirror_ready.try_write());}
+      if(s.staging_ready.valid()){HYLE_ASSIGN_OR_RETURN(s.staging,s.staging_ready.try_write());}
+      {
+        HYLE_ASSIGN_OR_RETURN(auto view,s.staging.view());HYLE_ASSIGN_OR_RETURN(auto mapping,view.map_host());
+        HYLE_ASSIGN_OR_RETURN(auto bytes,mapping.writable_bytes());
+        for(const auto&range:std::span(ranges).first(count)){
+          auto target=bytes.subspan(range.source_offset,range.bytes);std::fill(target.begin(),target.end(),std::byte{0});
+          for(const auto&segment:next){
+            if(range.source_offset<segment.offset || range.source_offset>=segment.offset+segment.bytes.size())continue;
+            const auto from=range.source_offset-segment.offset;const auto length=std::min(target.size(),segment.bytes.size()-from);
+            std::memcpy(target.data(),segment.bytes.data()+from,length);break;
+          }
+          staging_bytes+=range.bytes;
+        }
+        HYLE_RETURN_IF_ERROR(mapping.close());
+      }
+      HYLE_ASSIGN_OR_RETURN(s.staging_ready,s.staging.publish());
+      HYLE_RETURN_IF_ERROR(s.upload.bind_source({0},s.staging_ready));HYLE_RETURN_IF_ERROR(s.upload.bind_mutable({1},std::move(s.mirror)));
+      const std::array<CopyPhase,1> phases{{{}}};
+      HYLE_RETURN_IF_ERROR(s.upload.prepare_replay(phases,std::span(ranges).first(count)));HYLE_ASSIGN_OR_RETURN(auto uploaded,s.upload.submit());
+      const auto terminal=uploaded.wait();if(!terminal.ok()){s.failed=true;return std::unexpected(terminal);}
+      upload_report=s.upload.report();upload_waits=1;uploaded={};
+      // F2 certifies only this episode's changed ranges. Retake the original
+      // writer after actual retirement: our cold zero initialization plus all
+      // successful deltas, not a fabricated whole-range F2 output, proves the
+      // complete mirror initialized before publication.
+      HYLE_ASSIGN_OR_RETURN(s.mirror,d::CopyStreamAccess::take_mutable(s.upload,{1}));
+      HYLE_ASSIGN_OR_RETURN(s.mirror_ready,s.mirror.publish());
+      HYLE_RETURN_IF_ERROR(s.upload.reset());
+    }
+    s.mirror_layout=layout;
+  }
   HYLE_ASSIGN_OR_RETURN(auto views,workspace_views(s));
   bool reused=false;
   if(update){struct Call{d::BatchInvocationData*state;bool reused=false;}call{&s};
@@ -234,10 +301,10 @@ Result<PreparedBatch> BatchInvocation::prepare(const BatchLayoutVersion&layout,b
   if(!reused){
     auto planned=submit_native(s,true,{}, {},views);
     if(!planned){s.failed=true;return std::unexpected(planned.error());}
-    terminal=planned->wait();*planned={};
+    const auto terminal=planned->wait();*planned={};
     if(!terminal.ok() || s.pending.load(std::memory_order_acquire) || s.uses.active_batches()){s.failed=true;return std::unexpected(!terminal.ok()?terminal:Status::Unavailable("batch planning retirement unproven"));}
   }
-  s.report.metadata_upload=upload_report;s.report.metadata_staging_bytes=source.size();s.report.host_waits=reused?1u:2u;s.report.reused_native_plan=reused;s.prepared=true;
+  s.report.metadata_upload=upload_report;s.report.metadata_staging_bytes=staging_bytes;s.report.host_waits=upload_waits+(reused?0u:1u);s.report.reused_native_plan=reused;s.prepared=true;
   ++s.tickets;++s.users;s.incref();return PreparedBatch(&s,s.epoch);
 }
 bool BatchInvocation::in_flight()const noexcept{return data_ && (data_->pending.load(std::memory_order_acquire) || data_->uses.active_batches() || data_->upload.in_flight());}
@@ -401,13 +468,9 @@ Result<ReadLease> d::BatchGraphAccess::metadata(const BatchInvocation&invocation
   if(!invocation.data_ || !invocation.data_->prepared)return std::unexpected(Status::FailedPrecondition("Graph batch slot is not prepared"));
   return invocation.data_->graph_shared_metadata.valid()?invocation.data_->graph_shared_metadata:invocation.data_->mirror_ready;
 }
-Status d::BatchGraphAccess::share_metadata(BatchInvocation&target,const BatchInvocation&source)noexcept{
-  auto*t=target.data_;auto*s=source.data_;
-  if(!t || !s || !t->external_output || !s->external_output || !t->prepared || !s->prepared || t->ran || s->ran || t->layout!=s->layout)
-    return Status::InvalidArgument("shared Graph metadata needs the same prepared layout");
-  if(t->program->options.resource!=s->program->options.resource)
-    return Status::InvalidArgument("shared Graph metadata crosses resource domains");
-  t->graph_shared_metadata=s->mirror_ready;return Status::Ok();
+Result<PreparedBatch> d::BatchGraphAccess::prepare_shared(BatchInvocation&target,
+    const BatchLayoutVersion&layout,bool update,const BatchInvocation&source)noexcept{
+  return target.prepare(layout,update,&source);
 }
 void d::BatchGraphAccess::clear_shared_metadata(BatchInvocation&invocation)noexcept{
   if(invocation.data_)invocation.data_->graph_shared_metadata.reset();

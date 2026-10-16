@@ -128,3 +128,14 @@ pending receiver/Graph 风险消费者按改变的共同机制取证。Windows c
 输入逐配置串行；先复用未变数学/设备证据，仅在真实新增风险时补设备门。
 M1/M2/S1/L1 的 P0 需独立数据/权限 oracle 与原 report/allocator/调用观测，源码说明本身
 不签 PASS。当前全部这些新门均未运行；不得签 G06、G04/G05 完成或新的 P1 吞吐。
+
+### 共同基础批集中实施（尚待验证）
+
+M1/M2/S1/L1已按冻结形状接线，未改native数学、vendor、公共F1或构建系统。
+F2只证明当次delta范围，不能用其output冒充全镜像覆盖；本实现待原上传实际成功退休后，
+通过原take_mutable取回writer，以冷零初始化＋逐次delta证明完整内容，再按原F1 publish。
+新增显式导出并发/OOM/独立固定blob oracle，原CPU64步复用补实际bytes/waits断言，
+并新增真实CPU两个dependent attention node、反向布局输入顺序、同版本/新generation
+三episode数值及一次共享上传断言。当前无运行PASS，owner仍AUDITED。
+selector READY，选中两owner/公开头反向直接消费者及compute/graph交付，保130 skipped
+reasons；先按卡执行Windows共同source与真实CPU消费，再串行适用风险/交付/native资格。

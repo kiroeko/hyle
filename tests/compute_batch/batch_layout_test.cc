@@ -1,6 +1,7 @@
 #include <hyle/compute/batch_ops.h>
 #include <hyle/compute/state_versions.h>
 #include <hyle/compute/detail/lease_access.h>
+#include <hyle/compute/detail/batch_provider.h>
 #include <hyle/mem/quota_allocator.h>
 #include <gtest/gtest.h>
 #include <algorithm>
@@ -28,6 +29,37 @@ TEST(BatchLayout, SameShapeNewPageValuesHaveNewGenerationAndOldVersionRemains){
   auto schema=c::BatchSchema::create(capacity()).value();Layout input;auto old=schema.version(input.host()).value();input.pages={6,5,4};auto next=schema.version(input.host()).value();
   EXPECT_GT(next.generation(),old.generation());EXPECT_FALSE(next==old);EXPECT_EQ(old.host().page_indices[0],2);EXPECT_EQ(next.host().page_indices[0],6);
   auto copy=old;EXPECT_TRUE(copy==old);schema={};old={};EXPECT_EQ(copy.host().last_page_lengths[1],10);
+}
+TEST(BatchLayout, ActiveSnapshotIsCompactAndExplicitExportZerosAllInactiveCapacity){
+  auto cap=capacity();cap.max_requests=4096;cap.max_page_refs=65536;
+  auto schema=c::BatchSchema::create(cap).value();Layout input;auto version=schema.version(input.host()).value();
+  const auto host=version.host();
+  EXPECT_EQ(reinterpret_cast<const std::byte*>(host.kv_indptr.data())-reinterpret_cast<const std::byte*>(host.query_indptr.data()),std::ptrdiff_t(input.q.size()*4));
+  std::size_t active=0;for(const auto&segment:c::detail::BatchLayoutAccess::segments(version))active+=segment.bytes.size();
+  EXPECT_EQ(active,32u+input.q.size()*4+input.kv.size()*4+input.pages.size()*4+input.tails.size()*4);
+  EXPECT_LT(active,schema.metadata_offsets().bytes/1000);
+  std::vector<std::byte> expected(schema.metadata_offsets().bytes,std::byte{0});
+  const auto put=[&](std::size_t at,const auto&values){const auto bytes=std::as_bytes(std::span(values));std::memcpy(expected.data()+at,bytes.data(),bytes.size());};
+  const std::array<std::uint64_t,2> prefix{0x48594c45424c0001ULL,version.generation()};
+  const std::array<std::uint32_t,4> facts{2,3,29,3};put(0,prefix);put(16,facts);
+  const auto offsets=schema.metadata_offsets();put(offsets.query_indptr,input.q);put(offsets.kv_indptr,input.kv);put(offsets.page_indices,input.pages);put(offsets.last_page_lengths,input.tails);
+  auto exported=version.metadata().value();std::vector<std::byte> actual(expected.size());
+  ASSERT_TRUE(exported.view()->read(actual).ok());EXPECT_EQ(actual,expected);
+  EXPECT_EQ(c::detail::LeaseAccess::identity(exported),c::detail::LeaseAccess::identity(version.metadata().value()));
+}
+TEST(BatchLayout, ConcurrentFirstFullExportsShareOneImmutableBacking){
+  auto schema=c::BatchSchema::create(capacity()).value();Layout input;auto version=schema.version(input.host()).value();
+  std::array<c::ReadLease,8> results;std::array<std::thread,8> threads;
+  for(unsigned i=0;i<threads.size();++i)threads[i]=std::thread([&,i]{auto result=version.metadata();EXPECT_TRUE(result);if(result)results[i]=std::move(*result);});
+  for(auto&thread:threads)thread.join();
+  for(const auto&lease:results){ASSERT_TRUE(lease.valid());EXPECT_EQ(c::detail::LeaseAccess::identity(lease),c::detail::LeaseAccess::identity(results[0]));}
+}
+TEST(BatchLayout, FailedExplicitExportPreservesActiveVersionAndCanRetry){
+  hyle::mem::QuotaAllocator quota(hyle::mem::system_allocator(),1u<<20);
+  auto schema=c::BatchSchema::create(capacity(),{.allocator=quota.get()}).value();Layout input;auto version=schema.version(input.host()).value();
+  {auto reserved=quota.try_reserve_bytes(quota.remaining());ASSERT_TRUE(reserved);auto failed=version.metadata();ASSERT_FALSE(failed);EXPECT_TRUE(failed.error().IsResourceExhausted());EXPECT_EQ(version.host().page_indices[0],2);}
+  auto exported=version.metadata();ASSERT_TRUE(exported);EXPECT_EQ(exported->size(),schema.metadata_offsets().bytes);
+  {auto reserved=quota.try_reserve_bytes(quota.remaining());ASSERT_TRUE(reserved);EXPECT_TRUE(version.metadata());}
 }
 TEST(BatchLayout, ForeignSchemaCannotAdmitAnIdenticalCapacityVersion){
   auto a=c::BatchSchema::create(capacity()).value(),b=c::BatchSchema::create(capacity()).value();Layout input;auto version=a.version(input.host()).value();

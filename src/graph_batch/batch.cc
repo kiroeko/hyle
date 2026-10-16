@@ -221,13 +221,12 @@ Status Invocation::prepare_batch(std::span<const NodeLayout>layouts,bool update)
   HYLE_RETURN_IF_ERROR(data_->original.reset());
   for(auto&binding:data_->bindings){binding.slot->token={};binding.slot->layout={};binding.slot->keys={};binding.slot->values={};cd::BatchGraphAccess::clear_shared_metadata(binding.slot->native);}
   const auto prepare=[&]()noexcept->Status{
-  for(const auto&layout:layouts){auto&binding=*std::find_if(data_->bindings.begin(),data_->bindings.end(),[&](auto&b){return b.node==layout.node;});binding.slot->token={};
+  for(std::size_t i=0;i<data_->bindings.size();++i){auto&binding=data_->bindings[i];auto previous=std::find_if(data_->bindings.begin(),data_->bindings.begin()+i,[&](auto&b){return b.metadata==binding.metadata;});
+    const auto&layout=*std::find_if(layouts.begin(),layouts.end(),[&](const auto&entry){return entry.node==binding.node;});
+    if(previous!=data_->bindings.begin()+i){HYLE_ASSIGN_OR_RETURN(binding.slot->token,cd::BatchGraphAccess::prepare_shared(binding.slot->native,layout.layout,update,previous->slot->native));binding.slot->layout=layout.layout;continue;}
     if(update){HYLE_ASSIGN_OR_RETURN(binding.slot->token,binding.slot->native.update_batch(layout.layout));}
     else{HYLE_ASSIGN_OR_RETURN(binding.slot->token,binding.slot->native.prepare_batch(layout.layout));}
     binding.slot->layout=layout.layout;
-  }
-  for(std::size_t i=0;i<data_->bindings.size();++i){auto&binding=data_->bindings[i];auto previous=std::find_if(data_->bindings.begin(),data_->bindings.begin()+i,[&](auto&b){return b.metadata==binding.metadata;});
-    if(previous!=data_->bindings.begin()+i){HYLE_RETURN_IF_ERROR(cd::BatchGraphAccess::share_metadata(binding.slot->native,previous->slot->native));continue;}
     HYLE_ASSIGN_OR_RETURN(auto mirror,cd::BatchGraphAccess::metadata(binding.slot->native));HYLE_ASSIGN_OR_RETURN(auto description,binding.region->config->schema.metadata_description());HYLE_RETURN_IF_ERROR(data_->original.bind(binding.metadata,description,std::move(mirror)));
   }return Status::Ok();};
   const auto status=prepare();if(!status.ok()){for(auto&binding:data_->bindings){binding.slot->token={};cd::BatchGraphAccess::clear_shared_metadata(binding.slot->native);}data_->original.reset().IgnoreError();}return status;

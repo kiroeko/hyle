@@ -510,10 +510,16 @@ template<class T>void paged_case(unsigned depth,bool causal){
     auto next_keys=keys.read(next,k).value(),next_values=values.read(next,v).value();
     auto reused=slot.update_batch(next);ASSERT_TRUE(reused)<<reused.error().message();
     EXPECT_TRUE(slot.report().reused_native_plan);EXPECT_EQ(slot.report().layout_generation,next.generation());
+    EXPECT_GT(slot.report().metadata_upload.logical_bytes,0u);
+    EXPECT_LE(slot.report().metadata_upload.logical_bytes,8u); // Only generation words changed.
+    EXPECT_EQ(slot.report().host_waits,1u);
     auto replay=reused->run(q,next_keys,next_values);ASSERT_TRUE(replay)<<replay.error().message();ASSERT_TRUE(replay->wait().ok());
     auto ready=slot.output().value();std::vector<T> current(zero.size());ASSERT_TRUE(ready.view()->read(std::as_writable_bytes(std::span(current))).ok());
     for(unsigned i=0;i<18*8*depth;++i)EXPECT_EQ(current[i].bits,actual[i].bits);
     ready.reset();*replay={};
+    *reused={};auto unchanged=slot.update_batch(next);ASSERT_TRUE(unchanged)<<unchanged.error().message();
+    EXPECT_TRUE(slot.report().reused_native_plan);EXPECT_EQ(slot.report().metadata_upload.logical_bytes,0u);
+    EXPECT_EQ(slot.report().metadata_staging_bytes,0u);EXPECT_EQ(slot.report().host_waits,0u);
   }
   ASSERT_TRUE(context.drain().ok());
   const std::array<std::int32_t,5> reordered{1,4,0,3,1};

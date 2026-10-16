@@ -455,6 +455,50 @@ Status episode(unsigned dk,unsigned dv,unsigned mode,bool invalid=false,bool pai
 }
 } // namespace
 
+#if !defined(HYLE_ENCODED_CUDA)
+TEST(EncodedCommonPages, TwoNativeAttentionNodesShareUploadBeforePreparation){
+  c::BatchCapacity cap{.max_requests=2,.max_query_rows=2,.max_kv_rows=16,.max_pages=2,.max_page_refs=4,
+      .query_heads=8,.kv_heads=2,.qk_head_dim=64,.value_head_dim=64,.page_size=16};
+  auto schema=c::BatchSchema::create(cap).value();const std::array<std::int32_t,2> qptr{0,1},kptr{0,1};
+  const std::array<std::int32_t,1> ids{1},tail{2};auto layout=schema.version({qptr,kptr,ids,tail}).value();
+  c::BatchProgramOptions options{.resource=hyle::mem::system_resource(),.max_float_workspace_bytes=1u<<20,.max_int_workspace_bytes=4096,.scale=.125F};
+  auto wrapped=gb::provider(c::ggml_cpu::provider({.native_threads=2}),schema,options).value();
+  auto context=c::Context::create(c::cpu::device(),wrapped).value();auto queue=context.create_queue().value();
+  struct Drain{c::Context&context;~Drain(){context.drain().IgnoreError();}}drain{context};
+  auto builder=g::GraphBuilder::create().value();const std::array descriptions{c::batch_query_description(cap).value(),c::batch_cache_description(cap,c::BatchCacheRole::kKey).value(),c::batch_cache_description(cap,c::BatchCacheRole::kValue).value(),schema.metadata_description().value()};
+  std::array<g::ValueId,4> inputs;for(unsigned i=0;i<4;++i)inputs[i]=builder.input(descriptions[i]).value();
+  auto first=builder.add_node(c::Operation::custom(c::PagedAttention{cap,.125F}),inputs).value();auto a=builder.result(first).value();
+  auto second=builder.add_node(c::Operation::custom(c::PagedAttention{cap,.125F}),std::array{a,inputs[1],inputs[2],inputs[3]}).value();auto b=builder.result(second).value();
+  ASSERT_TRUE(builder.publish(a).ok());ASSERT_TRUE(builder.publish(b).ok());auto graph=std::move(builder).finish().value();
+  const std::array domains{g::StorageDomain{hyle::mem::system_resource()}};const std::array targets{g::ExecutionTarget{&context,g::StorageDomainId{0}}};
+  auto compiled=g::compile(graph,{.storage_domains=domains,.targets=targets},{.operation_fallback=g::OperationFallbackPolicy::kReject}).value();
+  const std::array lanes{gb::LaneBinding{g::ExecutionLaneId{0},&context,&queue,hyle::mem::system_resource()}};
+  auto invocation=gb::Invocation::create(compiled.executable,lanes).value();
+  auto pool=c::LeasePool::create(hyle::mem::system_resource(),65536).value();std::array<c::ReadLease,3> reads;
+  for(unsigned i=0;i<3;++i){const auto bytes=descriptions[i].required_bytes().value();auto writer=pool.allocate(bytes).value();
+    std::vector<F16> words(bytes/2,half_test::encode<F16>(i==2?.25F:0.F));ASSERT_TRUE(writer.view()->write(std::as_bytes(std::span(words))).ok());reads[i]=writer.publish().value();}
+  for(unsigned episode=0;episode<3;++episode){
+    if(episode==2)layout=schema.version({qptr,kptr,ids,tail}).value();
+    // Deliberately reverse the input list: source selection follows stable IR
+    // bindings, not caller order, so the owner's mirror identity remains stable.
+    const std::array versions{gb::NodeLayout{second,layout},gb::NodeLayout{first,layout}};
+    auto prepared=invocation.prepare_batch(versions);ASSERT_TRUE(prepared.ok())<<prepared.message();
+    const auto one=invocation.report(first).value(),two=invocation.report(second).value();
+    EXPECT_EQ(two.metadata_upload.logical_bytes,0u);EXPECT_EQ(two.metadata_staging_bytes,0u);
+    if(episode==0){EXPECT_GT(one.metadata_upload.logical_bytes,0u);EXPECT_EQ(one.host_waits,2u);EXPECT_EQ(two.host_waits,1u);}
+    else{EXPECT_TRUE(one.reused_native_plan);EXPECT_TRUE(two.reused_native_plan);EXPECT_EQ(two.host_waits,0u);
+      if(episode==1){EXPECT_EQ(one.metadata_upload.logical_bytes,0u);EXPECT_EQ(one.host_waits,0u);}
+      else{EXPECT_GT(one.metadata_upload.logical_bytes,0u);EXPECT_LE(one.metadata_upload.logical_bytes,8u);EXPECT_EQ(one.host_waits,1u);}}
+    for(unsigned i=0;i<3;++i)ASSERT_TRUE(invocation.bind(inputs[i],descriptions[i],reads[i]).ok());
+    auto wa=pool.allocate(descriptions[0].required_bytes().value()).value(),wb=pool.allocate(descriptions[0].required_bytes().value()).value();
+    ASSERT_TRUE(invocation.bind(a,descriptions[0],std::move(wa)).ok());ASSERT_TRUE(invocation.bind(b,descriptions[0],std::move(wb)).ok());
+    auto done=invocation.submit();ASSERT_TRUE(done)<<done.error().message();ASSERT_TRUE(done->wait().ok());
+    for(auto output:{a,b}){auto result=invocation.output(output).value();auto storage=result.storage_lease().value();
+      std::array<F16,8*64> actual;ASSERT_TRUE(storage.view()->subview(0,sizeof(actual))->read(std::as_writable_bytes(std::span(actual))).ok());
+      for(auto value:actual)EXPECT_EQ(value.bits,half_test::encode<F16>(.25F).bits);}
+  }
+}
+#endif
 TEST(EncodedCommonPages, IncrementalProducersDirectGraphAndJoint){
 #if defined(HYLE_ENCODED_CUDA)
   constexpr unsigned modes=3;
