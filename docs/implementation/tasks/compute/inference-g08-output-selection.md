@@ -327,3 +327,11 @@ Mem WSL source244/244、schema3/3、CPU/CUDA Direct+Graph四个公开数值消�
 剩余风险/三交付/TopK S1 P1和最终文档/审查尚未完成；Mem其他OS/SDK/host facets也待验。
 下一步沿同一冻结范围验证Apple/Vulkan并补这些有限门，不启动G09/G10、CLI或新缺口扫描。
 全部重型任务已结束，保留同树缓存、原失败与累计费用；后续仍重型串行。
+
+
+Apple/Vulkan首批前已实查Air Mac16,12 arm64、macOS27.0.1、clang21与Metal32023.883，
+无活动build；使用原shared-sdk-build作source普通批，INSTALL=OFF/TESTS=ON，4jobs。
+补S4必要的Apple U32普通carrier映射：logical_type/input_spec原已支持U32，但native_type
+遗漏它，导致RandomBits→原Copy的Graph消费者被拒绝。仅补同一既有dtype映射，不扩大
+arithmetic/TopK dtype，不改Graph/runtime或增加新API。原TopK axis/stride/dtype/empty
+留出使用原两份test TU的私有target，只跑适用filter，不构建整个模型测试集。

@@ -62,6 +62,8 @@ Result<mx::Dtype> native_type(DataType type) {
     return mx::bool_;
   case DataType::kUInt8:
     return mx::uint8;
+  case DataType::kUInt32:
+    return mx::uint32;
   default:
     return std::unexpected(Status::Unimplemented(
         "Apple tensor output requires F32/F16/BF16/I32/I64/Bool storage"));
