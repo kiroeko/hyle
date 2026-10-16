@@ -175,6 +175,32 @@ Result<std::vector<mx::array>> scatter_add(
   return std::vector{std::move(output)};
 }
 
+// IEEE storage order is independent of the native floating FTZ mode. Keys
+// canonicalize +/-0, retain numeric order including subnormals, and put every
+// NaN after numbers. The original value is gathered without conversion.
+mx::array floating_order_keys(const mx::array &input, bool largest,
+                                bool sorting, mx::Stream stream) {
+  const bool wide = input.dtype() == mx::float32;
+  const std::uint32_t sign = wide ? 0x80000000U : 0x8000U;
+  const std::uint32_t mask = wide ? 0xffffffffU : 0xffffU;
+  const std::uint32_t infinity = wide ? 0x7f800000U
+      : input.dtype() == mx::float16 ? 0x7c00U : 0x7f80U;
+  auto bits = mx::astype(mx::view(input, wide ? mx::uint32 : mx::uint16, stream),
+                          mx::uint32, stream);
+  const auto magnitude = mx::bitwise_and(bits, mx::array(sign - 1), stream);
+  const auto nan = mx::greater(magnitude, mx::array(infinity), stream);
+  bits = mx::where(mx::equal(magnitude, mx::array(std::uint32_t{0}), stream),
+                    mx::array(std::uint32_t{0}), bits, stream);
+  const auto negative = mx::not_equal(mx::bitwise_and(bits, mx::array(sign), stream),
+                                       mx::array(std::uint32_t{0}), stream);
+  auto keys = mx::where(negative, mx::bitwise_xor(bits, mx::array(mask), stream),
+                          mx::bitwise_xor(bits, mx::array(sign), stream), stream);
+  if (sorting && largest)
+    keys = mx::bitwise_xor(keys, mx::array(std::uint32_t{UINT32_MAX}), stream);
+  return mx::where(nan,
+      mx::array(largest && !sorting ? std::uint32_t{0} : UINT32_MAX), keys, stream);
+}
+
 std::vector<mx::array> top_k(const TopK &operation, const mx::array &input,
                             mx::Stream stream) {
   const auto axis = native_axis(operation.axis, input);
@@ -189,39 +215,21 @@ std::vector<mx::array> top_k(const TopK &operation, const mx::array &input,
       if (input.dtype() == mx::int32)
         return operation.largest ? mx::argmax(input, axis, true, stream)
                                    : mx::argmin(input, axis, true, stream);
-      // Order original IEEE storage as unsigned integers. This preserves
-      // subnormals even when native floating reductions/comparisons flush
-      // them, and canonicalizes +/-0 only in the key, never in the value.
-      const bool wide = input.dtype() == mx::float32;
-      const std::uint32_t sign = wide ? 0x80000000U : 0x8000U;
-      const std::uint32_t mask = wide ? 0xffffffffU : 0xffffU;
-      const std::uint32_t infinity = wide ? 0x7f800000U
-          : input.dtype() == mx::float16 ? 0x7c00U : 0x7f80U;
-      auto bits = mx::astype(mx::view(input, wide ? mx::uint32 : mx::uint16, stream),
-                             mx::uint32, stream);
-      const auto magnitude = mx::bitwise_and(bits, mx::array(sign - 1), stream);
-      const auto nan = mx::greater(magnitude, mx::array(infinity), stream);
-      bits = mx::where(mx::equal(magnitude, mx::array(std::uint32_t{0}), stream),
-                       mx::array(std::uint32_t{0}), bits, stream);
-      const auto negative = mx::not_equal(mx::bitwise_and(bits, mx::array(sign), stream),
-                                          mx::array(std::uint32_t{0}), stream);
-      const auto keys = mx::where(nan,
-          mx::array(operation.largest ? std::uint32_t{0} : UINT32_MAX),
-          mx::where(negative, mx::bitwise_xor(bits, mx::array(mask), stream),
-                     mx::bitwise_xor(bits, mx::array(sign), stream), stream), stream);
+      const auto keys = floating_order_keys(input, operation.largest, false, stream);
       return operation.largest ? mx::argmax(keys, axis, true, stream)
                                  : mx::argmin(keys, axis, true, stream);
     }();
     order = mx::astype(order, mx::int32, stream);
     return {mx::take_along_axis(input, order, axis, stream), std::move(order)};
   }
-  // Original MLX argsort is stable and sorts NaNs last. Negate only widened
-  // keys: I32_MIN remains representable and output values keep storage bits.
-  auto keys = mx::astype(input, input.dtype() == mx::int32 ? mx::int64
-                                                         : mx::float32,
-                         stream);
-  if (operation.largest)
-    keys = mx::negative(keys, stream);
+  // Keep the original native stable argsort and output slice. Float keys
+  // share the exact storage order of count1; I32 retains its widened path.
+  auto keys = [&] {
+    if (input.dtype() != mx::int32)
+      return floating_order_keys(input, operation.largest, true, stream);
+    auto widened = mx::astype(input, mx::int64, stream);
+    return operation.largest ? mx::negative(widened, stream) : widened;
+  }();
   auto order = mx::argsort(keys, axis, stream);
   mx::Shape start(input.ndim(), 0), stop = input.shape();
   stop[axis] = static_cast<int>(operation.count);
