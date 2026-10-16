@@ -139,3 +139,19 @@ F2只证明当次delta范围，不能用其output冒充全镜像覆盖；本实�
 三episode数值及一次共享上传断言。当前无运行PASS，owner仍AUDITED。
 selector READY，选中两owner/公开头反向直接消费者及compute/graph交付，保130 skipped
 reasons；先按卡执行Windows共同source与真实CPU消费，再串行适用风险/交付/native资格。
+
+### Windows 共同 source 终态（096fb6b09）
+
+[原始证据](../../../../evidence/correctness/inference-g06-common-source-windows-attempt-4/receipt.json)
+实际PASS：compute_batch56、graph_batch6、原生CPU真实消费者24，共86项，零FAIL/SKIP。
+新增双dependent attention node、反向NodeLayout输入顺序与三episode数值/一次共享上传
+通过；独立完整wire oracle以64步覆盖空、增长、缩小、重排及inactive零清除；原64步
+真实attention还核仅generation变化时至多8字节与同版本零上传/零准备等待。
+active export并发、OOM重试、旧reader/F4及原CPU编码/producer/Direct/Graph/ragged
+数学、预算/失败门一并通过；并非把CPU保留host布局的数学结果代签镜像正确性。
+实际编译131.437s，source4外层176.062s含测试且与stage重叠；首次配置122.938s和
+manifest0.187s另保，三个private setup失败/原观察缺口及raw全部封存，不记缺失成本为零。
+仅增量构建三个目标的实际依赖闭包（包含旧SIMD生成依赖），没有CUDA编译/全局构建/P1。
+owner仍AUDITED；本证据不签三san/SDK/header/native新资格、pending L或四路线D完成。
+下步先补本G06依赖批后的native metadata/topology/runtime设计和实现，再对最终适用
+不可变候选集中做风险、三交付与各直接消费者；不为每个helper重复整套验证。

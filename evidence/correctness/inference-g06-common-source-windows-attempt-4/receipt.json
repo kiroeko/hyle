@@ -1,0 +1,505 @@
+{
+  "kind": "G06_COMMON_FOUNDATION_M1_M2_S1_L1_WINDOWS_SOURCE",
+  "verdict": "PASS_SOURCE_COMMON_CPU_ONLY",
+  "candidate": "096fb6b099e10ab1db1f02f8839e344745c8f71f",
+  "owner_states": {
+    "compute_batch": "AUDITED",
+    "graph_batch": "AUDITED"
+  },
+  "identity": {
+    "host": "KIRO-WORKSTATIO",
+    "compiler": "14.50.35717",
+    "route": "CPU/Windows"
+  },
+  "tests": [
+    {
+      "target": "hyle_compute_batch_test",
+      "tests": 56,
+      "failures": 0,
+      "errors": 0,
+      "disabled": 0,
+      "skipped": 0,
+      "testcases": [
+        "BatchLayout.ActiveRowsAreDistinctFromPhysicalCapacityAndHostIsOwned",
+        "BatchLayout.SameShapeNewPageValuesHaveNewGenerationAndOldVersionRemains",
+        "BatchLayout.ActiveSnapshotIsCompactAndExplicitExportZerosAllInactiveCapacity",
+        "BatchLayout.ConcurrentFirstFullExportsShareOneImmutableBacking",
+        "BatchLayout.FailedExplicitExportPreservesActiveVersionAndCanRetry",
+        "BatchLayout.ForeignSchemaCannotAdmitAnIdenticalCapacityVersion",
+        "BatchLayout.WrongIndptrStartMonotonicEndAndRequestCountAreRejected",
+        "BatchLayout.PhysicalPageBoundsAndTailBoundsAreCheckedBeforeSnapshot",
+        "BatchLayout.DuplicatePagesAreLegalReadonlySharing",
+        "BatchLayout.QueryWithoutKvAndCapacityExceededAreRejected",
+        "BatchLayout.EmptyBatchAndEmptyRequestHaveExplicitEmptyEffectiveRegions",
+        "BatchLayout.RaggedUsesPackedRowsAndRejectsPagedSideTables",
+        "BatchLayout.DtypeGqaIntegerAndPhysicalStrideOverflowAreRejected",
+        "BatchLayout.QuotaFailureDoesNotConsumeCallerSpansOrExistingVersion",
+        "BatchLayout.ExportedReadonlyBlobOutlivesAllSchemaAndVersionHandles",
+        "BatchLayout.ConcurrentColdVersionsHaveDistinctGenerationAndOwnedData",
+        "BatchLayout.TypedAttentionPortShapesAndOpaqueMetadataEncodingAreChecked",
+        "BatchLayout.F4BranchSharesAndPublishesLayoutBlobWithoutMutatingOldVersion",
+        "BatchLayout.FixedBlockRootTransferKeepsNativeAdmissionWithoutOwnerCycle",
+        "BatchLayout.WholeArenaSubviewCannotBecomeAnIndependentFreePageWriter",
+        "BatchLayout.SeparatePageBlocksKeepReadUseAndFreePageWriteIndependent",
+        "BatchLayout.EncodedKeysValuesAndOutputHaveIndependentTruthfulGeometry",
+        "BatchLayout.StructuralNoncausalQueryLengthDoesNotMintCausalQualification",
+        "BatchLayout.CacheBlockAndValueDepthOverflowRefuseBeforeVersionCreation",
+        "BatchMaterialize.PhysicalPagesGqaAndRightAlignedCausalMaskExcludePadding",
+        "BatchMaterialize.NoncausalUsesEveryValidKvButNeverTailPadding",
+        "BatchMaterialize.CausalWindowUsesInclusivePastCountAtBottomRightPosition",
+        "BatchMaterialize.FullNoncausalCrossAttentionUsesValueDepthAndOutputType",
+        "BatchMaterialize.EncodedCacheRequiresNativeRouteInsteadOfHistoryDecode",
+        "BatchMaterialize.InactiveQueryCapacityReadsOnlyPagesOfTheFirstActiveQuery",
+        "BatchMaterialize.RaggedOffsetsAndNewLayoutDoNotChangeOldOwnedIndices",
+        "BatchMaterialize.ForeignEmptyAndOverlongLayoutsAreRejectedBeforeGeneration",
+        "BatchMaterialize.ExplicitHostAndLogicalByteCapsAreCheckedAtColdPreparation",
+        "BatchMaterialize.FlattenedI32AndProductOverflowRejectWithoutPayloadAllocation",
+        "BatchMaterialize.AllocatorOomPreservesOldVersionAndExportRetiresAfterControls",
+        "NativePagedMetadata.FullNoncausalQGreaterThanKvAndIndependentEncodedRoots",
+        "NativePagedMetadata.CompactOwnedPageOrderAndTailGenerationAreIndependentOfQueryHeads",
+        "NativePagedMetadata.ExportedSnapshotRetainsOwnersAndEmptyVersionHasNoPageReads",
+        "NativePagedMetadata.ForeignSchemaBudgetAndNonfiniteScaleRejectBeforePublishing",
+        "NativePagedMetadata.EveryColdAllocationFailureReclaimsMetadataAndExportCanOutliveRecipe",
+        "PagedArena.EncodedKeyAndValuePagesKeepSeparateBytePrefixesAndPermissions",
+        "PagedArena.SameFloat8BytesDoNotProveTheOtherPortsScale",
+        "PagedArena.UsedPageReadersDoNotStopWritingAnUnreferencedPhysicalPage",
+        "PagedArena.ForeignSchemaPageRangeAndIncompleteOrExcessiveSetsReject",
+        "PagedArena.RepeatedPhysicalReferencesKeepOneActualGuard",
+        "PagedArena.F4LedgerAndArenaDoNotPinEachOtherAfterLastReaderRetires",
+        "PagedArena.UnsubmittedWriterRestoresButConsumedAbandonNeverPretendsReady",
+        "PagedArena.ByteCapacityAndMetadataOomAreExplicitAndOldGuardOutlivesControls",
+        "PagedArena.ActualF2PageCloneAppendAndF4PublishKeepOldStateAndShareCleanPage",
+        "PagedArena.OriginalReadyPageReacquiresWithoutCopyAllocationOrGenerationChange",
+        "PagedArena.F2MutableWithdrawalPreservesInitializedUntouchedBytesAndRejectsRetainedObservation",
+        "PagedArena.PartialPrefixRejectsUnwrittenTailBeforeAllocatingFrame",
+        "PagedArena.SharedPageMustCoverEveryRequestAndEveryNonTailReference",
+        "PagedArena.SixtyFourNumericRowAppendsPreservePrefixAndOriginalGeneration",
+        "PagedArena.ActualPartialF2SuccessCommitsOnlyOneInitializedRow",
+        "PagedArena.CompleteRejectsInvalidPrefixWithoutConsumingReservation"
+      ],
+      "xml_sha256": "7bde7e6aa1b7dcc50401e36d8ec038c6cc42ef7eee70240622aecd74f8dcda21"
+    },
+    {
+      "target": "hyle_graph_batch_test",
+      "tests": 6,
+      "failures": 0,
+      "errors": 0,
+      "disabled": 0,
+      "skipped": 0,
+      "testcases": [
+        "GraphBatch.PublicCapacityAndMetadataPortsSurviveRecipeRelease",
+        "GraphBatch.EmptyProgramCannotPublishAnArtifact",
+        "GraphBatch.EveryColdGraphAllocationFailureRollsBackAndAllowsFreshPreparation",
+        "NativePagedGraphNode.EncodedUnequalValueOutputKeepsScaleAndWindowRecipe",
+        "NativePagedGraphNode.TruthfulPhysicalRootsAndActivePackedOutput",
+        "NativePagedGraphNode.EmptyOutputStillDescribesTrueCapacityAndRejectsForgedRoots"
+      ],
+      "xml_sha256": "6f07ac325a4ca599e286f19e3bea5b0ee6b7698946e0f5bc59af909a78cf8c12"
+    },
+    {
+      "target": "g04_g05_encoded_common_pages",
+      "tests": 24,
+      "failures": 0,
+      "errors": 0,
+      "disabled": 0,
+      "skipped": 0,
+      "testcases": [
+        "EncodedCommonPages.TwoNativeAttentionNodesShareUploadBeforePreparation",
+        "EncodedCommonPages.IncrementalProducersDirectGraphAndJoint",
+        "EncodedCommonPages.FailedEncoderRetainsOriginalFailureAndWriters",
+        "EncodedCommonPages.BFloat16IncrementalAndFailureConsumers",
+        "GgmlCpuCacheEncode.Q8ReferenceBytesTiesZeroAndThreeInputTypes",
+        "GgmlCpuCacheEncode.Float8CodesMatchIndependentEnumerationIncludingRoundingAndSaturation",
+        "GgmlCpuCacheEncode.FiniteQ8ScaleBoundariesHaveCanonicalZeroBlocks",
+        "GgmlCpuCacheEncode.FiniteFloat8ExtremePositiveScalesSaturateAndPreserveZero",
+        "GgmlCpuCacheEncode.InvalidPayloadReturnsOriginalCompletionErrorAfterWorkersRetire",
+        "GgmlCpuCacheEncode.IndependentInvocationsAndFreshRecoveryAfterOriginalWorkersRetire",
+        "GgmlCpuCacheEncode.ConcurrentOriginalLanesKeepNumericFailureAndBytesIndependent",
+        "GgmlCpuBoxed.QuantizedPagedAndRaggedIndependentValueDepthAndWindow",
+        "GgmlCpuBoxed.QuantizedFullNoncausalAllowsMoreQueriesThanKeys",
+        "GgmlCpuBoxed.PlainWindowAndIndependentValueDepth",
+        "GgmlCpuBoxed.QuantizedCoupledDepthsIncludingMainD256AndLongPrefill",
+        "GgmlCpuBoxed.LongF16WindowUsesF32AccumulatorAgainstCancellation",
+        "GgmlCpuBoxed.FiniteBf16QueryScaleOverflowIsAnAcceptedErrorAndFreshSlotSucceeds",
+        "GgmlCpuBoxed.QuerySafetyChecksBothEndsAtRepresentationBoundaries",
+        "GgmlCpuPaged.OriginalFlashReadsExactPhysicalPagesAndTail",
+        "GgmlCpuPaged.DeltaMetadataMirrorMatchesIndependentFullWireAcrossGrowShrinkAndEmpty",
+        "GgmlCpuRagged.NativeFlashReadsTwoRequestsWithoutKvMaterialization",
+        "GgmlCpuRagged.ColdBudgetAndPagedQualificationAreExplicit",
+        "GgmlCpuRagged.EveryColdAllocationFailureReleasesThePartialNativePlan",
+        "GgmlCpuRagged.AcceptedMathFailureRetiresUsesWithoutPublishingOutput"
+      ],
+      "xml_sha256": "3915937fc0d41a92834e554cd97d70f0c31e4ebc57066c16b332933f5809d688"
+    }
+  ],
+  "total_tests": 86,
+  "source_inputs": [
+    {
+      "path": "docs/implementation/tasks/compute/inference-g06-metadata-decode.md",
+      "sha256": "e6127a11edbbe2c1ac582ec73b77a0793e6fe9bae7a74ac84e42f26f3f8d38f3"
+    },
+    {
+      "path": "docs/implementation/tasks/project/inference-gaps-goal-execution-2026-10.md",
+      "sha256": "7262f95ff7f025d0ecf843c60a6ce899da83387f85f944f4c9130e00d8b256cb"
+    },
+    {
+      "path": "include/hyle/compute/batch_execution.h",
+      "sha256": "3f60215aaa831ac0e15dd13b10fefbb7446705f152f5aaf069a00e4388cd3d59"
+    },
+    {
+      "path": "include/hyle/compute/batch_layout.h",
+      "sha256": "d48ed59a9090194d797422e6ddc86f8d12a9e4a98182e84c2307e4057a70e08e"
+    },
+    {
+      "path": "include/hyle/compute/detail/batch_graph_access.h",
+      "sha256": "900b699f342fd9eb03dc1590bfb28a19ad8d7ab534a8a1c520833d8fa11b2520"
+    },
+    {
+      "path": "include/hyle/compute/detail/batch_provider.h",
+      "sha256": "73a7d76f9082c58cbf5826585220f63c6df8b1015d4c98225651529dbb52dd86"
+    },
+    {
+      "path": "src/compute_batch/batch_execution.cc",
+      "sha256": "2d48fe97c37bc3c411123769d50e04f42ff302bbafed62c3d7e84ef3ebbf51c1"
+    },
+    {
+      "path": "src/compute_batch/batch_layout.cc",
+      "sha256": "445224004730d5804d0c1e83114d2032c2245ee05a1ca075ff1b8e5cd1307030"
+    },
+    {
+      "path": "src/graph_batch/batch.cc",
+      "sha256": "e347b6851938e524d82cd20ab0b45fdc037b5ce64f5650e2577508727567eb16"
+    },
+    {
+      "path": "tests/compute_batch/batch_layout_test.cc",
+      "sha256": "9c3885b9615ee06e3dd9b5916a94f0f3176dead505e81f1f718d93a8834e535e"
+    },
+    {
+      "path": "tests/compute_batch/encoded_page_common_consumer.cc",
+      "sha256": "267aa0146e0ef58e6da7a330d3641c86ab936c74c2f38c094f34f8211cd4ec4c"
+    },
+    {
+      "path": "tests/compute_provider_ggml/native_paged_test.cc",
+      "sha256": "69e13985950876e56bff156f91562ab9358d9976c11c0ba996d55c6eb7487729"
+    }
+  ],
+  "artifacts": [
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\hyle_compute_batch.dll",
+      "sha256": "ad9189e072d9d978b6396e71e7407391ddc2355c213dcb7a80469a37bc7dc11a",
+      "bytes": 221184
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\hyle_graph_batch.dll",
+      "sha256": "5218be7c9b2a741610e6246f52fd000d91a6b159e9884a04ebfccd07813722ad",
+      "bytes": 121344
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\hyle_compute_provider_ggml.dll",
+      "sha256": "87623f0b125c387a96970a695f591dbfc2a51a7c2d3ab92e5cb561b8ef10ea16",
+      "bytes": 463872
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\hyle_simd.dll",
+      "sha256": "41a56c8666d40ebce42687b1284817eb839ac095ceca757decba622a4e342edb",
+      "bytes": 1571840
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\hyle_compute_batch_test.exe",
+      "sha256": "9e551a2000317ef2869b8ce357b64e42ae0f5190e525b3c2213a35152e216910",
+      "bytes": 727040
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\hyle_graph_batch_test.exe",
+      "sha256": "a70bb3b49ff8a79f07e182aa976b263569f6f261e15e7bbe91ac801c0fc0743b",
+      "bytes": 364544
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\g04_g05_encoded_common_pages.exe",
+      "sha256": "391d70ce07edad5ace9aee2eb62181214c02c918bdac3fafc33f58901c667f01",
+      "bytes": 1111040
+    }
+  ],
+  "execution": {
+    "state": "TERMINAL_PASS",
+    "pid": 63000,
+    "candidate": "096fb6b099e10ab1db1f02f8839e344745c8f71f",
+    "build": "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev",
+    "max_jobs": 4,
+    "stages": [
+      {
+        "stage": "prepare-manifest",
+        "command": [
+          "ninja",
+          "-C",
+          "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev",
+          "build.ninja"
+        ],
+        "exit_code": 0,
+        "elapsed_seconds": 0.17099999997299165,
+        "log": "C:/public/project-hyle/hyle/.scratch/inference-gaps/g06/common-source-4/prepare-manifest.log"
+      },
+      {
+        "stage": "build",
+        "command": [
+          "cmake",
+          "--build",
+          "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev",
+          "--target",
+          "hyle_compute_batch_test",
+          "hyle_graph_batch_test",
+          "g04_g05_encoded_common_pages",
+          "--parallel",
+          "4",
+          "--",
+          "-k",
+          "0"
+        ],
+        "exit_code": 0,
+        "elapsed_seconds": 131.43699999997625,
+        "log": "C:/public/project-hyle/hyle/.scratch/inference-gaps/g06/common-source-4/build.log"
+      },
+      {
+        "stage": "hyle_compute_batch_test",
+        "command": [
+          "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\hyle_compute_batch_test.exe",
+          "--gtest_output=xml:C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g06\\common-source-4\\hyle_compute_batch_test.xml"
+        ],
+        "exit_code": 0,
+        "elapsed_seconds": 0.0940000000409782,
+        "log": "C:/public/project-hyle/hyle/.scratch/inference-gaps/g06/common-source-4/hyle_compute_batch_test.log"
+      },
+      {
+        "stage": "hyle_graph_batch_test",
+        "command": [
+          "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\hyle_graph_batch_test.exe",
+          "--gtest_output=xml:C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g06\\common-source-4\\hyle_graph_batch_test.xml"
+        ],
+        "exit_code": 0,
+        "elapsed_seconds": 0.061999999976251274,
+        "log": "C:/public/project-hyle/hyle/.scratch/inference-gaps/g06/common-source-4/hyle_graph_batch_test.log"
+      },
+      {
+        "stage": "g04_g05_encoded_common_pages",
+        "command": [
+          "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\g04_g05_encoded_common_pages.exe",
+          "--gtest_output=xml:C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g06\\common-source-4\\g04_g05_encoded_common_pages.xml"
+        ],
+        "exit_code": 0,
+        "elapsed_seconds": 42.75,
+        "log": "C:/public/project-hyle/hyle/.scratch/inference-gaps/g06/common-source-4/g04_g05_encoded_common_pages.log"
+      }
+    ],
+    "identity": {
+      "host": "KIRO-WORKSTATIO",
+      "compiler": "14.50.35717",
+      "route": "CPU/Windows"
+    },
+    "scope": "G06 common M1/M2/S1/L1 source factors and actual native CPU/Graph consumers only; no CUDA/native-Air/SDK/sanitizer/P1 verdict",
+    "reused_configuration": {
+      "from": "common-source-1",
+      "candidate": "4bc567c87931c13d8bb3c4b00a9c137258fd0455",
+      "stages": [
+        {
+          "stage": "configure",
+          "command": [
+            "cmake",
+            "-S",
+            "C:\\public\\project-hyle\\hyle",
+            "-B",
+            "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev",
+            "-DCMAKE_PROJECT_INCLUDE=C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g02\\native-page-node\\project.cmake",
+            "-DHYLE_COMPONENTS=compute;graph",
+            "-DHYLE_COMPUTE_ROUTES=cpu",
+            "-DHYLE_BUILD_TESTS=ON",
+            "-DHYLE_BUILD_BENCH=OFF",
+            "-DHYLE_INSTALL=OFF",
+            "-DHYLE_TEST_INSTRUMENTATION=OFF"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 122.93800000002375,
+          "log": "C:/public/project-hyle/hyle/.scratch/inference-gaps/g06/common-source-1/configure.log"
+        },
+        {
+          "stage": "prepare-manifest",
+          "command": [
+            "ninja",
+            "-C",
+            "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev",
+            "build.ninja"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 0.18699999997625127,
+          "log": "C:/public/project-hyle/hyle/.scratch/inference-gaps/g06/common-source-1/prepare-manifest.log"
+        }
+      ],
+      "old_failure_retained": true
+    },
+    "stage": "g04_g05_encoded_common_pages",
+    "outer_elapsed_seconds": 176.06199999997625,
+    "targets": [
+      "hyle_compute_batch_test",
+      "hyle_graph_batch_test",
+      "g04_g05_encoded_common_pages"
+    ],
+    "build_edges": 86
+  },
+  "prior_setup_failures": [
+    {
+      "attempt": 1,
+      "result": {
+        "state": "TERMINAL_SETUP_FAIL",
+        "pid": 50944,
+        "candidate": "4bc567c87931c13d8bb3c4b00a9c137258fd0455",
+        "build": "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev",
+        "max_jobs": 4,
+        "stages": [
+          {
+            "stage": "configure",
+            "command": [
+              "cmake",
+              "-S",
+              "C:\\public\\project-hyle\\hyle",
+              "-B",
+              "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev",
+              "-DCMAKE_PROJECT_INCLUDE=C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g02\\native-page-node\\project.cmake",
+              "-DHYLE_COMPONENTS=compute;graph",
+              "-DHYLE_COMPUTE_ROUTES=cpu",
+              "-DHYLE_BUILD_TESTS=ON",
+              "-DHYLE_BUILD_BENCH=OFF",
+              "-DHYLE_INSTALL=OFF",
+              "-DHYLE_TEST_INSTRUMENTATION=OFF"
+            ],
+            "exit_code": 0,
+            "elapsed_seconds": 122.93800000002375,
+            "log": "C:/public/project-hyle/hyle/.scratch/inference-gaps/g06/common-source-1/configure.log"
+          },
+          {
+            "stage": "prepare-manifest",
+            "command": [
+              "ninja",
+              "-C",
+              "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev",
+              "build.ninja"
+            ],
+            "exit_code": 0,
+            "elapsed_seconds": 0.18699999997625127,
+            "log": "C:/public/project-hyle/hyle/.scratch/inference-gaps/g06/common-source-1/prepare-manifest.log"
+          }
+        ],
+        "identity": {
+          "host": "KIRO-WORKSTATIO",
+          "compiler": "14.50.35717",
+          "route": "CPU/Windows"
+        },
+        "scope": "G06 common M1/M2/S1/L1 source factors and actual native CPU/Graph consumers only; no CUDA/native-Air/SDK/sanitizer/P1 verdict",
+        "stage": "prepare-manifest",
+        "failure": "Private runner assertion treated executable target hyle_compute_batch_test and aggregate target hyle_compute_batch_tests as ambiguous. Actual configure and manifest completed; no C++ build/test started.",
+        "exit_code": 1,
+        "outer_elapsed_lower_bound_seconds": 124.82799999997951,
+        "final_observation_gap": "UNKNOWN, not zero; recorded outer lower bound includes completed stages and environment capture"
+      }
+    },
+    {
+      "attempt": 2,
+      "result": {
+        "state": "TERMINAL_SETUP_FAIL",
+        "candidate": "096fb6b09",
+        "exit_code": 1,
+        "failure": "Dry run required existing CMake manifest refresh after Git revision changed; no C++ build/test started. Private runner now runs original ninja build.ninja before dry inspection.",
+        "observer_seconds": 1.8753498,
+        "observer_scope": "Overlaps preceding source-test commit plus runner launch; runner-only elapsed UNKNOWN, not zero.",
+        "reused_configuration": "common-source-1",
+        "raw_dry_run": "dry-run.log"
+      }
+    },
+    {
+      "attempt": 3,
+      "result": {
+        "state": "TERMINAL_SETUP_FAIL",
+        "pid": 70124,
+        "candidate": "096fb6b099e10ab1db1f02f8839e344745c8f71f",
+        "build": "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev",
+        "max_jobs": 4,
+        "stages": [
+          {
+            "stage": "prepare-manifest",
+            "command": [
+              "ninja",
+              "-C",
+              "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev",
+              "build.ninja"
+            ],
+            "exit_code": 0,
+            "elapsed_seconds": 0.14100000000325963,
+            "log": "C:/public/project-hyle/hyle/.scratch/inference-gaps/g06/common-source-3/prepare-manifest.log"
+          }
+        ],
+        "identity": {
+          "host": "KIRO-WORKSTATIO",
+          "compiler": "14.50.35717",
+          "route": "CPU/Windows"
+        },
+        "scope": "G06 common M1/M2/S1/L1 source factors and actual native CPU/Graph consumers only; no CUDA/native-Air/SDK/sanitizer/P1 verdict",
+        "reused_configuration": {
+          "from": "common-source-1",
+          "candidate": "4bc567c87931c13d8bb3c4b00a9c137258fd0455",
+          "stages": [
+            {
+              "stage": "configure",
+              "command": [
+                "cmake",
+                "-S",
+                "C:\\public\\project-hyle\\hyle",
+                "-B",
+                "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev",
+                "-DCMAKE_PROJECT_INCLUDE=C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g02\\native-page-node\\project.cmake",
+                "-DHYLE_COMPONENTS=compute;graph",
+                "-DHYLE_COMPUTE_ROUTES=cpu",
+                "-DHYLE_BUILD_TESTS=ON",
+                "-DHYLE_BUILD_BENCH=OFF",
+                "-DHYLE_INSTALL=OFF",
+                "-DHYLE_TEST_INSTRUMENTATION=OFF"
+              ],
+              "exit_code": 0,
+              "elapsed_seconds": 122.93800000002375,
+              "log": "C:/public/project-hyle/hyle/.scratch/inference-gaps/g06/common-source-1/configure.log"
+            },
+            {
+              "stage": "prepare-manifest",
+              "command": [
+                "ninja",
+                "-C",
+                "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev",
+                "build.ninja"
+              ],
+              "exit_code": 0,
+              "elapsed_seconds": 0.18699999997625127,
+              "log": "C:/public/project-hyle/hyle/.scratch/inference-gaps/g06/common-source-1/prepare-manifest.log"
+            }
+          ],
+          "old_failure_retained": true
+        },
+        "stage": "prepare-manifest",
+        "exit_code": 1,
+        "failure": "ninja -n treats VERIFY_GLOBS as dirty and predicts CMake even after actual glob verification; inspection guard rejected before C++ build. Fixed private preview uses existing CE28 copied-manifest pattern, no product/build-system change.",
+        "outer_elapsed_lower_bound_seconds": 1.5469999999622814,
+        "final_observation_gap": "UNKNOWN, not zero"
+      }
+    }
+  ],
+  "raw_zip_sha256": "315ec7071f9f72ebbf093fbfb50cdedf1bd484745ca92706db5a6cd4a62bf18e",
+  "proven": [
+    "Active-sized immutable snapshots, concurrent cached fixed-capacity exports, independent full blob zero-padding oracle, export OOM retry and old reader lifetime.",
+    "Actual original CPU attention with generation-only delta and identical-version zero upload/waits; 64-step independent complete wire oracle covers empty, growth, shrink, repeated/shared pages, reorder and inactive zeroing.",
+    "Two dependent actual CPU attention nodes share one metadata upload before planning; reversed caller NodeLayout order, local plan/workspace behavior, actual numeric output, same-version zero-upload and new generation delta assertions.",
+    "Original CPU F16/BF16 encoded producer/F2/Direct/Graph/joint fragments, native paged/ragged oracle/budget/failure consumers passed the complete24-test set."
+  ],
+  "limits": [
+    "This is finite source/correctness evidence; not G06 aggregate acceptance or an engineering throughput/capture claim.",
+    "ASan/UBSan/TSan, relocated static/shared and header/direct native qualifications remain pending on the final applicable candidate.",
+    "G06-D four-route runtime/topology/decode, native metadata banks and pending/native/Graph admission costs remain required; no unchanged CUDA P1 or vendor retry authorized.",
+    "Source4 outer time overlaps its stage times. Prior setup1 recorded configure122.938s/manifest0.187s; prior setup2 observer overlaps its commit+launch; setup3 recorded manifest and lower bound. Missing observation gaps remain UNKNOWN, never zero.",
+    "Actual targeted build includes required stale CPU dependency edges (including regenerated SIMD) from the existing cache; no CUDA compilation/global build/P1/model/server occurred."
+  ]
+}

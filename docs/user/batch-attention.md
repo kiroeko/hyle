@@ -289,6 +289,11 @@ page_indices为physical页ID，last_page_lengths为最后一页有效长度。�
 调用返回后caller可释放原数组。相同shape但新值仍是新generation，不能用地址当版本。
 错indptr/page/tail、overflow、foreign schema在接纳前拒绝。
 
+版本快照只拥有实际有效数组。需要将布局放入固定 State/Graph schema 时，显式调用
+`layout.metadata()` 导出固定容量 readonly blob：首次调用分配、填零 inactive 区并复制
+有效值，后续调用共享同一 backing。导出可并发，失败保留原版本并可重试；普通
+`BatchInvocation::prepare_batch/update_batch` 不需要消费方先做这个全容量导出。
+
 物理Q容量与active Q不同；只消费有效行，inactive output没有数学意义。尾padding不是KV。
 空布局的host元数据可以有明确定义，但native数学会按该route域明确接受或拒绝；不能从
 schema接受空元数据推断每个kernel也接受空执行。
@@ -521,6 +526,13 @@ clone有效prefix、append新行并初始化unused capacity；这不是独立物
 prepare/update可能copy、host wait或调用原native planner；它们属于显式准备，不是免费
 warm submit。BatchPlanReport记录generation、metadata上传、workspaces、replan/reuse、
 split与host waits；MaterializedBatchCosts是保守logical上限，包含view/alias等，不能当RSS。
+共同 BatchInvocation 只上传有效字段中改变的区间，并清零缩小有效区留下的旧值；同一
+版本且原 plan 可复用时，metadata 上传与准备 host waits 都可以为零。不同 generation
+即使数组值相同，仍须更新版本字段。报告的 staging/upload bytes 是实际搬运量，不代表
+比较有效数组所需的 CPU 扫描量。共同 Graph 中多个 node 读取同一个 metadata 输入时，
+在首上传前共享镜像，每个 node 保留自己的 plan/workspace。此 G06 共同改动目前已有
+[Windows CPU source 资格](../../evidence/correctness/inference-g06-common-source-windows-attempt-4/receipt.json)；
+新平台/交付资格及 Apple/Vulkan controller 自身的 index banks、原生规划仍按各自状态验收。
 native controller报告staging、两份device mirror、固定backing和上传字节；未知private
 metadata/scratch/driver费仍是UNKNOWN，硬拒未知预算按原资格明确拒绝。
 

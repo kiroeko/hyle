@@ -680,13 +680,13 @@
       "module": "compute_batch",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/inference-g06-metadata-decode.md",
-      "summary": "G06共同基础批AUDITED：冻结M1 active immutable快照/显式固定blob导出、M2五段delta上传、S1上传前共享和L1完整lease去重准入；只授权本卡有限FIX，native/decode/pending后续与G04/G05未决门仍完整保留。"
+      "summary": "G06共同基础批M1/M2/S1/L1已集中实施：active快照/显式固定导出、五段delta、上传前共享及ready lease去重。096fb6b09实际Windows source56+6+24 PASS/零SKIP；pending/native准入、四路线decode及最终风险/交付仍待，不签G06或G04/G05完成。"
     },
     {
       "module": "graph_batch",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/inference-g06-metadata-decode.md",
-      "summary": "G06共同基础批AUDITED：冻结M1 active immutable快照/显式固定blob导出、M2五段delta上传、S1上传前共享和L1完整lease去重准入；只授权本卡有限FIX，native/decode/pending后续与G04/G05未决门仍完整保留。"
+      "summary": "G06共同基础批M1/M2/S1/L1已集中实施：active快照/显式固定导出、五段delta、上传前共享及ready lease去重。096fb6b09实际Windows source56+6+24 PASS/零SKIP；pending/native准入、四路线decode及最终风险/交付仍待，不签G06或G04/G05完成。"
     }
   ]
 }
