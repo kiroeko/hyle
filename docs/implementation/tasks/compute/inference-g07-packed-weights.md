@@ -346,3 +346,7 @@ D2验证沿D1相同有限source/Graph/joint/public、Metal/三hostsan和迁址st
 D2产品实现为`91ae8e67faa028061d8f5e8e216310c827e024a3`，当前仍AUDITED，尚未运行
 实机验证，不复用D1通过给新kernel代签。CUDA第二轮A/A现已PASS，正式P1继续运行；
 这只是测量资格，尚无本轮最终速度裁决。重型任务仍串行，CUDA终态后再启动Apple检查。
+
+[D2静态费用](../../../../evidence/architecture/inference-g07-packed-weight-audit/p0-d2.json)
+绑定91ae实际源码，更新两种固定tile的staging、源码操作计数与原费用/UNKNOWN复用边界；
+这些计数不是缓存流量、实际峰值或速度测量，不能替代D2实机与P1。

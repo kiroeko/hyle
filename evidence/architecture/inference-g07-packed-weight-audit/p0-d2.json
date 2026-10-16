@@ -1,0 +1,63 @@
+{
+  "schema": "hyle.inference-g07-apple-d2-static-cost/v1",
+  "verdict": "PASS_SOURCE_COST_STRUCTURE_RUNTIME_QUALIFICATION_PENDING",
+  "candidate": "91ae8e67faa028061d8f5e8e216310c827e024a3",
+  "input": {
+    "path": "src/compute_route_apple/apple_mature_float.cc",
+    "sha256": "60cd69990e1430e854a8614edef691b35ad86404460977667374bdf4043592e1"
+  },
+  "reuse": {
+    "path": "p0.json",
+    "sha256": "b88bfa59c32bbec2f6ecbe97eececba3df9fb9a14cdfc11765338b7897c82cfc",
+    "scope": "Unchanged CUDA/W1/W3/W4 inputs, named packed/activation/scale/output arrays and native unknowns only. Original16x16 scratch description is historical, replaced below for larger M."
+  },
+  "fixed_carriers": [
+    {
+      "predicate": "M<=16",
+      "BM": 16,
+      "BN": 16,
+      "BK": 32,
+      "simdgroups": 4,
+      "threadgroup_scratch_bytes": 4096,
+      "register_output_cells_per_thread": 2
+    },
+    {
+      "predicate": "M>16",
+      "BM": 64,
+      "BN": 32,
+      "BK": 32,
+      "simdgroups": 4,
+      "threadgroup_scratch_bytes": 12288,
+      "register_output_cells_per_thread": 16
+    }
+  ],
+  "structural_example": {
+    "M": 64,
+    "N": 2048,
+    "K": 2048,
+    "block128": 16,
+    "old": {
+      "threadgroups": 512,
+      "threadgroup_barriers": 81920,
+      "code_conversions": 33554432,
+      "logical_weight_code_loads": 16777216
+    },
+    "d2": {
+      "threadgroups": 64,
+      "threadgroup_barriers": 10240,
+      "code_conversions": 12582912,
+      "logical_weight_code_loads": 4194304
+    },
+    "interpretation": "Source operation counts for the fully populated fixed shape, not measured traffic/cache misses/occupancy/latency. Same amount and order of F32 dot/scale arithmetic per output."
+  },
+  "cold": "MLX owns shape-template JIT, pipeline, native cache and Program metadata; fixed descriptor picks one of two source-derived carriers. No timing search or per-address weight cache.",
+  "warm": "Original activation quantization, scale repeat/selection, checked device status, dispatch and result ownership remain charged. Tile scratch is bounded; no global F32 decoded weights or per-Kblock dots bank.",
+  "completion": "Original MLX stream/native prefix and owning output path. Per-call public release charged; final retained result/Program/Invocation/process cache destruction explicitly deferred by p1-adapter.json.",
+  "precision": "Original F32 SIMDgroup dot per128 block; activation scale then weight scale then ordered F32 accumulation; final original output cast. Same E4M3 normal bitfields, subnormal, signed zero and reserved NaN handling as D1.",
+  "limits": [
+    "Source cost audit does not substitute source/Metal/hostsan/SDK execution or new same-contract P1.",
+    "Requested logical bytes are not actual private allocator peak; MLX/driver/native pool upper UNKNOWN.",
+    "No new capture or hard private-budget guarantee; GroupedFloat4 retains original separate implementation.",
+    "No engine tokens/s or llama.cpp ranking."
+  ]
+}
