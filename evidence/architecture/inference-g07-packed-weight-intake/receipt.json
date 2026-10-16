@@ -1,0 +1,203 @@
+{
+  "state": "SCOPED_INTAKE_NOT_A_PRODUCT_OR_ACCEPTANCE_VERDICT",
+  "timestamp_utc": "2026-10-16T08:15:02.458235+00:00",
+  "baseline": "a638938b783b6fdae57e83f572aa0427d7188e7f",
+  "product_input": "669121418669b31f6849c74f64362aaf8d6eb919",
+  "card": "docs/implementation/tasks/compute/inference-g07-packed-weights.md",
+  "initial_owners": [
+    {
+      "module": "compute_route_apple",
+      "state": "CLOSED",
+      "record": "docs/implementation/tasks/compute/inference-g06-final-closure.md",
+      "summary": "G06 CLOSED finite M/S/L/D scope: active immutable metadata, qualified delta/shared mirrors, exact grouped permissions and route-specific runtime/capture bridge. Current source/host risks/relocated static-shared/23-header union/P0 and seven gates passed; explicit version allocations, checked waits, native managed/re-encode and private UNKNOWN retained. Original G04/G05 CUDA performance gate and other goal items remain.",
+      "candidate": "0a29d119426b2975d48c238c37a2994675e0ba9f",
+      "performance": {
+        "tier": "P0",
+        "evidence": "evidence/architecture/inference-g06-final-cost-review/p0.json"
+      }
+    },
+    {
+      "module": "compute_provider_torch_cuda",
+      "state": "CLOSED",
+      "summary": "CUDA有限goal CLOSED：固定模型/量化/MTP完整原计算与状态、两OS CUDA-only/mixed三交付、cold成熟默认/真实能力门、六重复公式BORROW和具名unique保留、U5 42步/源码SDK增量及终审清理完成。AA原FAIL/性能INCONCLUSIVE无新WIN；按授权ENGINEERING_DEFAULT/P0关闭，不签全设备SOTA或推理engine。",
+      "record": "docs/implementation/tasks/compute/cuda-final-u6-audit.md",
+      "candidate": "657f291f6e4d50b0e1c14ca24cdbe7b1715066e4",
+      "performance": {
+        "tier": "P0",
+        "evidence": "docs/implementation/tasks/compute/cuda-final-u6-audit.md"
+      }
+    }
+  ],
+  "current_source_anchors": [
+    {
+      "path": "include/hyle/compute/model_ops.h",
+      "sha256": "165cfc86281d90e246f137892c0fa1f625421a53f6bdbf9877aef9828773f8c9",
+      "line_ranges": [
+        [
+          39,
+          130
+        ]
+      ]
+    },
+    {
+      "path": "src/compute_provider_torch_cuda/artifact_provider.cc",
+      "sha256": "c4f6e71cdd8135b409c0fef020fe77fc2eb4528e06fd5163846b27a631477d49",
+      "line_ranges": [
+        [
+          213,
+          239
+        ]
+      ]
+    },
+    {
+      "path": "src/compute_route_apple/apple_mature_float.cc",
+      "sha256": "20ffaec7840532a910596268546b5679e228a07e1a1a8613fcd8ce27aeebb962",
+      "line_ranges": [
+        [
+          169,
+          228
+        ]
+      ]
+    },
+    {
+      "path": "src/compute_route_apple/apple_tensor.cc",
+      "sha256": "93462583dfeb859fc9a59a5a8eef36540a84346bebca9cf6e331934bd10dc1f7",
+      "line_ranges": [
+        [
+          368,
+          428
+        ]
+      ]
+    },
+    {
+      "path": "src/compute_route_apple/apple_operations.cc",
+      "sha256": "4c90b14e44cc3a438c16c9935ef19e1e14a1642790179261004cb2d8d6065ee2",
+      "line_ranges": [
+        [
+          148,
+          179
+        ],
+        [
+          320,
+          368
+        ]
+      ]
+    },
+    {
+      "path": "src/compute_route_apple/apple_context.cc",
+      "sha256": "274037dda5c58fda4aab3a210a0606f1e86954385d62d448ed44e9802843fb37",
+      "line_ranges": [
+        [
+          743,
+          761
+        ]
+      ]
+    },
+    {
+      "path": "src/compute_provider_ggml_cuda/tensor_program.cc",
+      "sha256": "c25c915b548b48298388ad0ffdf796aafbf0a2508ce7808f29bd96e4acf098e0",
+      "line_ranges": [
+        [
+          679,
+          703
+        ]
+      ]
+    },
+    {
+      "path": "src/compute_route_vulkan/vulkan_mlx.cc",
+      "sha256": "dca494fd5cf471ebe09b7e1710939f686d03c9bd6814140c823a47e31ed542a9",
+      "line_ranges": [
+        [
+          19,
+          51
+        ],
+        [
+          112,
+          132
+        ]
+      ]
+    },
+    {
+      "path": "third_party/mlx_cuda_quant/mlx_cuda_quant.h",
+      "sha256": "672189b4cc387811845eb30ddceaaa5f40d1943723608740ec23fd57885233af",
+      "line_ranges": [
+        [
+          22,
+          79
+        ]
+      ]
+    }
+  ],
+  "fixed_peers": [
+    {
+      "name": "sglang",
+      "commit": "7224fce1b5e488c9916f20ec0556d696e595d512",
+      "archive_sha256": "21559aac7538426c4d75262a25d041d8c24070785a4d8f550459f68c3398b0e0",
+      "path": "python/sglang/srt/layers/quantization/awq/schemes/awq_linear.py",
+      "file_sha256": "cda3a8a9950edd0030f65748928ee8b17b1dad3555290509c5d55fade723bf4c",
+      "line_ranges": [
+        [
+          95,
+          101
+        ]
+      ]
+    },
+    {
+      "name": "vllm",
+      "commit": "98f721116227f0f48690deb05c815c057bac0668",
+      "archive_sha256": "984cc5cd0ddc5bc93c8f1055f7b2a19da128d372343896510952060bd2b71423",
+      "path": "vllm/model_executor/layers/quantization/auto_awq.py",
+      "file_sha256": "3c11c974ca3b506a12f6c13f6c8c620a1f5bac78249f360e5ab1b1b98b1eb86e",
+      "line_ranges": [
+        [
+          95,
+          160
+        ],
+        [
+          506,
+          514
+        ]
+      ]
+    },
+    {
+      "name": "llama.cpp",
+      "commit": "cbe28bb3cb0758f0c566a9a3561766821aeb0748",
+      "archive_sha256": "e71cd4a1645b151a45c46a9d4c0bf5de0fa2a94080ce31ca508a6c65ad1a3562",
+      "path": "ggml/src/ggml-metal/ggml-metal-ops.cpp",
+      "file_sha256": "c7b0b2789db4b79e6a0bd16f5c27bfc174cccc44bd6bd7d6dc871a976bd13c1a",
+      "line_ranges": [
+        [
+          2589,
+          2646
+        ],
+        [
+          2819,
+          2855
+        ]
+      ]
+    }
+  ],
+  "findings": [
+    "CUDA MLX adapter explicitly checks selected IDs via any().item<bool>() before original index_select; bound checks cannot be deleted.",
+    "Original MLX CUDA borrowed equation expands one selected K group at a time, not the complete dense expert bank. It still creates group temporaries/native calls per group on warm execution; do not exaggerate into full bank materialization.",
+    "Apple MLX affine linear/grouped already use native quantized_matmul/gather_qmm and device status; existing GGUF uses real ggml-Metal, not CPU fallback. These require cost/lifetime qualification before declaring complete, not an automatic new implementation.",
+    "Apple non-GGUF block128 block_dot explicitly decodes weight groups into a native matmul. Exact dtype/scale/rounding and native feature constraints must decide packed/repack alternatives.",
+    "Qwen3.5 GGUF primary tied vocabulary is Q6_K despite Q4 model variant name. W1 retains Q4_K/Q6_K/Q8_0 and original BF16 control."
+  ],
+  "next_action": "Finite W1-W4/API/owner audit before AUDITED; no product or benchmark/P1 edits authorized. Existing complete paths may close via actual ROUTED proof, not only interface existence.",
+  "limits": [
+    "Intake/source evidence only: no new runtime/build/model/server/profile or P1 executed.",
+    "No refreshed peer checkout or new general feature survey. Existing archive inputs only.",
+    "Other public formats and old model restrictions retain their recorded costs/qualification; no universal packing/precision or all-model claim.",
+    "Investigatory reads preceding this SCOPED record were not separately stopwatched; cost remains UNKNOWN, not zero. Four-hour finite audit checkpoint starts from this intake, without resetting prior G04/G05 costs."
+  ],
+  "maintenance_validation": {
+    "baseline": "a638938b783b6fdae57e83f572aa0427d7188e7f",
+    "selector": "READY docs,closure;146 skipped/reused",
+    "closure_transition_check": "PASS 64 components/schema4 with explicit previous-ref",
+    "generated_status": "written by check-module-closure.py --write-status",
+    "docs_check": "PASS 1250 Markdown files,6378 relative links",
+    "git_diff_check": "PASS",
+    "no_build_or_p1": true
+  }
+}
