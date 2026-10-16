@@ -53,7 +53,7 @@ G06–G10 不由该聚合裁决代签。
 | G03 增量 producer 组合 | [CLOSED](../compute/inference-g03-final-closure.md)，candidate11b2403e7：四原路线/三联合、Direct/Graph、多独立native来源、完整CPU+CUDA源码/两SDK、生命周期与P0通过；原失败/checked waits/费用保留 | 原 exclusive/F2/native waits到更新与读取；精确 dirty 域、成功 ready、idle input 生命周期 | compute_batch、compute/F2、原 native route与graph桥 |
 | G04 量化 KV | CPU CE13、Vulkan与Apple CE14有限P1均QUALIFIED/PASS/verify0，Apple已CLOSED。CUDA CE27前置门通过，但[attempt13](../../../../evidence/performance/inference-g04-g05-cuda-encoded-w1-wsl-p1-attempt-13/receipt.json)QUALIFIED/strict0，prefill ratio0.940486–0.947439仍非劣FAIL，窗口与留出PASS。CE28加载时转换的新17math/22device及同1/1/4 attention+merge零栈codegen通过，FI为CANDIDATE830；两SDK各33测试/12头/16TU PASS；新两variant各24 oracle/设备检查及实际merge身份PASS；三host各16测试/五风险模式PASS，[attempt14](../../../../evidence/performance/inference-g04-g05-cuda-encoded-w1-wsl-p1-attempt-14/receipt.json)已QUALIFIED/strict0，原[15,31]完成；窗口与留出非劣PASS，prefill ratio0.952972–0.961375但两层CI跨原5%耗时门，非劣UNRESOLVED。有限成本检查已终止，无新FI修正钥匙；FI及共同批聚合门BLOCKED，保留原候选与已过门；按下文调度更正转G06定界，整项未验收。旧失败、未知和累计费用见[活动卡](../compute/inference-g04-g05-cache-attention-domain.md)，整项未验收 | 按成熟实际 cache 编码冻结 payload/scales/layout、quantize append与直接读取，不每步解码完整历史 | compute_ops/batch、实际 Provider/native route |
 | G05 attention 语义域 | 同卡已实现 causal-window/full noncausal/有限 Dqk≠Dv，与 G04 共用数学、数值/生命周期和交付证据；适用性能及剩余风险未全部签发 | 固定真实消费者所需 window/mask/维度等域及失败边界，成熟承载；未准入未来特例不无限扩张 | compute_ops/batch、实际 Provider/native route |
-| G06 metadata/decode | 有限只读预审已定位 metadata、上传/等待、权限准入和原生规划四组成本；待活动 owner 定界，不授权实现 | host-known/device-produced分界，active/delta上传、完整 topology复用与decode档，实际capture资格 | compute_batch、FI/native Provider、graph_batch |
+| G06 metadata/decode | [新卡已 SCOPED](../compute/inference-g06-metadata-decode.md)：compute_batch/graph_batch合法从原聚合BLOCKED恢复；四组共同定界与形状冻结后再AUDITED批量实现。相邻native owner仍只读，原G04/G05未决保留 | host-known/device-produced分界，active/delta上传、完整 topology复用与decode档，实际capture资格 | compute_batch、FI/native Provider、graph_batch |
 | G07 packed 权重 | 待有限编码选择 | 锁定 artifact→resident→selected math，借原生packed/冷repack；checked IDs保错误，排除warm完整展开/多余host检查 | 实际低精度 Provider/native route及资源桥 |
 | G08 数值输出选择 | 待有限数值域选择 | row-wise greedy/selection与选定随机数值域，counter/state、质量/分布和少量结果返回 | compute_ops、实际 Provider/native route；模型采样政策不下沉 |
 | G09 联合流水 | 待最小consumer | 原有限slots/依赖推进，真实无依赖CPU/GPU支路及microbatch trace；不重复scheduler | 三个graph hybrid及必要原native执行桥 |
@@ -272,3 +272,6 @@ requirement；历史FAIL、预算/费用和private UNKNOWN保留。goal更新3/1
 实施前仍逐owner完成合法阶段，不借调度更正改未授权产品。不保证共有费用下降会
 改善CUDA相对比率，不为重跑旧候选而改消费者。G01–G10完整目标、旧失败/未知/费用
 均保持，完整完成数3/10。
+
+2026-10-16 G06 两共同 owner 已合法恢复 SCOPED，见[单卡](../compute/inference-g06-metadata-decode.md)；
+四组完整范围、原生与联合资格、冷热成本/权限/失败边界和预声明验收均保留，当前未改产品。
