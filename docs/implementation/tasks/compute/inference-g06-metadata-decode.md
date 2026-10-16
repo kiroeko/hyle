@@ -173,3 +173,37 @@ Program/Invocation重建、全容量索引快照与完整上传已由当前源�
 pending/原生readonly页准入，不把长度变化假装静态复用。长度runtime、四路线decode
 与实际capture裁决仍是原G06-D必做后续。主/正交消费者、预算、失败/关闭与预声明
 source/三san/SDK/直接native及三联合验证沿本卡，新增风险见AUDITED有限表后才实施。
+
+### 原生与 pending 批 AUDITED 有限表
+
+本批沿上述源码身份定界；共同两 owner 保持 AUDITED，Apple/native 两 hybrid 由 SCOPED
+进入 AUDITED，Vulkan route 从旧 CANDIDATE 合法回 AUDITED，原 candidate 见 intake。
+只实现以下四处；CPU/FI/runtime 当前源码与产品状态不变，完整 G06-D 继续。
+
+| FIX | 冻结形状与费用 | 不可破坏的验收 |
+|---|---|---|
+| M3 lazy native index | NativePagedBatchVersion 改为小型 intrusive immutable owner，保 program/layout；`indices()` 显式首次生成并缓存原 fixed-capacity zero-filled I32 blob。导出 lease 用独立 program/layout retainer，不回指含 cache 的版本，避免 owner cycle；并发导出用原样 cold mutex | 原导出字节/寿命/move/copy/空/预算/OOM；补创建版本不触发全容量 index 分配、并发首次导出与失败后重试 |
+| M4 actual bank delta | PagedMetadataPolicy controller 直接读 version.layout 的有效 page IDs；两 device bank 与 staging 仅冷初始化为零，每 bank 保自己的准确 layout。相同 page IDs 复用已有 readonly bank；否则对实际目标 bank 计算一次 word range，清旧 suffix，只上传改变范围 | shrink/empty/page reorder/两 bank 切换、同 generation 与新 generation、真实 uploaded bytes/waits。F2 仅签 delta；成功实际退休后取原 writer，以冷初始化＋全部 delta 证明完整内容并发布，不伪造 full output coverage |
+| D1 exact native reuse | 只在同 schema、Q/KV indptr 与 tail 完全相等时复用原 Program/Invocation；IDs 只影响 runtime table，不入编译 key。仍先原 reuse_gate 证明 output/worker/fence 释放，再过原 mirror writer 权限；长度变化仍冷重建，绝不复用旧常量 | 同内容新版本/仅ID重排无 native 重建；Q/tail/请求变化真实重建，原生错误/旧output/unknown/actual retirement继续阻止复用。NativePagedBatchReport 增加与 common 同名 `reused_native_plan`，其余 staging/device/backing字段仍是容量，不冒充本次搬运量 |
+| L2 page-group admission | 复用原 ready/ordered read 原语；cold reserve 的 BatchPageReads 收集准确 ready lease 或已验证 CopyUpdateInput.writer，按完整 block/generation 排序去重，再执行原 domain/permission/failure/refcount 检查。共同 pending、native ready/pending 与同lane Graph page group 集中准入 | 同 backing 不同 block 不合并；同组 ready/ordered冲突拒绝；source dependency qualification、lane wait、covers/validate_page、首错误和聚合实际退休保持。无 warm allocation，O(G log G) 比较＋O(G) 原准入 |
+
+L2 group 只借当前调用持有的 lease/update 指针，准入后立即清空；不缓存跨 generation 裸指针。
+原 Graph/F1 的普通绑定已先准入，不复制它们的状态表。它们与 page group 的同一只读 block
+可保留原来的平衡重复 guard，跨 lane 同样分别记录真实依赖；预留容量仍覆盖全部 guards。
+这不扩大 mutable 权限：writer/ready 冲突仍由原检查拒绝，pending writer 只有通过本来已
+验证的 original update、准确范围和 native ordering 才能调用 ordered_read_unique。
+不得把页 ID、backing 或地址当权限 identity，也不声称全图所有 readonly guards 全局最少。
+
+共享 controller 的 reference MaterializedMetadataPolicy 仍走原完整参考算法/metadata 合同；
+新增 zero/delta 与 topology reuse 仅 PagedMetadataPolicy。native traits 与两个真正 hybrid
+traits 都用原 CopyAccess::take_mutable 和原 invocation/reuse_gate，不引入第二 worker/queue。
+程序复用若仍有 native 内部 reader 阻止 bank 覆写，原 try_write 必须拒绝；不得删除该门，
+只有实测新事实才在本有限生命周期接缝修正。实际 Air 身份已读：Mac16,12、macOS27.0.1
+26A434、arm64、Apple clang21.0.0、CMake4.3.4、Ninja1.13.2；执行验证前再核实际硬件。
+
+预声明 source 先复用 Windows 三个既有 target 补 native index / group admission oracle 与
+原 pending CPU风险；Apple/Vulkan各 native Direct与真实CPU+GPU Graph的64步、原错误/
+alias/phase与旧结果条件串行验证。独立数学/页有效区 oracle、quant/精度门不放宽。
+API和本批算法固定后一次候选集中跑适用san/header/static/shared及真实直接消费者；
+数学/设备程序未变的原证据只在输入身份确实匹配时借用，不启动全库或未变CUDA P1。
+该表不签长度runtime/Q1最优规划/capture的完成，也不将它们移出完整G06目标。
