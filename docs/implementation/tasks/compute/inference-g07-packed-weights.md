@@ -426,3 +426,21 @@ benchmark精确改绑C1 static受验prefix，下一步只执行原两shape的固
 测不可变5f83快照、自检PASS：全库3759879、自实现不含测试180904、两owner唯一实现
 联合6110行/38文件。两owner产品仍分别为4274/91ae；这是完整实现总量，不是新增行数或
 引擎工作量预测。后续证据/文档不改变这个不可变计数身份，也不触发已过产品门重跑。
+
+### 独立终审阶段：Graph行数与持续消费补证
+
+终审复核实际fixture发现，N2的“完整row/K”指权重N/K；其activation实际M1、两次replay。
+因此原“N2已验M17/M64 Direct/Graph”的推断不成立。C1的M1/M5九dtype、Direct完整M64
+独立oracle和既有64步、Apple资格均保留；不把这些拼成未运行的Graph行数/65步证明。
+
+有限补证仅新增纯公开`tests/graph_route_cuda/packed_resident_consumer.cc`：M1/M17/M64
+各65步，两个固定活跃槽、旧caller-owned输出、重绑后的稳定replay、同一原packed backing的
+linear/grouped两个只读view；TopK在GPU产生I32 IDs后原View→checked grouped消费，覆盖
+重复/重排和非法expert2、失败不发布、原输出未改及Graph对象销毁。独立stored-byte标量
+oracle校验全部输出。产品/API/算法及P1比较仍冻结；这是原W2–W4验收缺格，不是新增功能域。
+
+普通source/SDK输入身份相同，借已受验C1 static/shared SDK分别installed-only编译/运行该
+消费者；static再执行实际memcheck/racecheck，三host facets按未变产品复用。当前均未运行。
+只在现有CUDA P1终态后串行执行，不重新安装/重建产品、不重复原22/24/32集合、不重跑P1。
+alias反证另核`compute/operation.cc:402`的公共bind验证和Provider的`alias_support=false`，
+非法input/output覆盖在kernel前拒绝；没有因去掉ATen临时值而悄悄准入原地写。
