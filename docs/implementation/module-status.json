@@ -519,9 +519,9 @@
     },
     {
       "module": "graph_route_vulkan",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/inference-g08-output-selection.md",
-      "summary": "G08 finite native sampling Graph seam: explicit custom whitelist and optional second categorical result. Original plan/status/liveness/owners borrowed; no new Graph API or execution machinery. Source audit pending; no product authorization."
+      "summary": "G08 finite native sampling Graph seam: explicit custom whitelist and optional second categorical result. Original plan/status/liveness/owners borrowed; no new Graph API or execution machinery. Two guards and public comment FIX frozen; runtime and SDK qualification pending."
     },
     {
       "module": "compute_provider_ggml_vulkan",

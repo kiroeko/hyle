@@ -175,3 +175,10 @@ Vulkan Graph sampling消费者、双结果独立发布/Copy消费、原TopK留�
 迁址。复用原PlanStep可变outputs、prepare_plan、status、owner、liveness与真实fence；
 不加Graph API、对象字段、dependency edge、private pool或新shader。P0接线无新增
 热路径循环/分配；G08已有四路线S1 P1范围不增。无该owner产品改动，无runtime PASS。
+
+
+该接缝审计完成：KEEP原PlanStep.outputs及逐port liveness；FIX仅新增RandomBits/
+Categorical到成熟custom识别，并将双输出Categorical纳入已有合格双port分支；BORROW
+全部Compute数值、状态、native资源与退休。两种公开输出形状、单/多请求反偏置与三peer
+数值/政策边界已由本卡S2–S4审计冻结，不增加语义。有限FIX固定，owner进入AUDITED；
+下节源码修改尚未编译/运行，不构成验收。其他六owner与原失败/费用不变。
