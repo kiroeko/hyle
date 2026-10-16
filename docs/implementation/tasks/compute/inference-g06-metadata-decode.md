@@ -386,3 +386,27 @@ D3有限source通过，不是完整G06或P1/capture。Apple变长度仍managed�
 仍原重新编码；native/driver私有分配和费用仍UNKNOWN。owner继续AUDITED，下一批为原
 ragged动态extent与FI Q1/capture定界；完整候选后再集中最终san/header/迁址static/shared。
 G04/G05原CUDA非劣UNRESOLVED与全部失败/费用仍保留，完成项仍3/10。
+
+## CPU ragged runtime Q1 批：SCOPED / AUDITED
+
+[D4有限源码审计](../../../../evidence/architecture/inference-g06-cpu-ragged-runtime-intake/intake.json)
+绑定1b68af80ba22307baf974cff1f659070df8b44b0，owner compute_provider_ggml已AUDITED。
+主旅程为单/多请求连续Q1、packed KV增长/缩短及后续request起点移动；反偏置为请求加入/
+结束/空中间request和独立旧slot结果。公共BatchProgram/Invocation与原queue/F1/F2不改。
+
+| FIX | 冻结形状与成本 | 验收 |
+|---|---|---|
+| D4.1 Q1 ragged extents | 同schema/Q indptr、每request为0或1 query，逐request预检唯一原FA/Q1/无mask、直接KV root及其原permute view。全体通过后更新root/view的KV extent、stride、n_kv_max及Request输入desc/byte extent/packed offset；原graph/pool/scratch保留。各Request初始recipe anchor保持，Slot保当前owned layout | 32组单/多、F16/BF16、plain/Q8、D64/128/256、D64/Dv128、window/noncausal，各64步增长/缩短/512边界、packed起点移动；原numeric、下一次注入分配禁止、workspace恒定、旧output拒绝 |
+| D4.2 原预算一致性 | private ragged Q1的零causal mask已由原lower省略，冷lower-bound预算同步省略；普通SDPA和非Q1不变。TensorDesc/required_bytes在全体预检阶段计算，提交阶段不引入可失败分配 | 原冷OOM、预算、接受前缀失败、取消/关闭/reader生命周期；普通attention与mixed prefill回归 |
+
+本批采用原private batch直接调用的ProviderPreparedVTable；该入口仅检查port数，实际
+storage范围由每次新TensorView及原map检查。Program.recipe保持初始immutable资格，Q及
+output形状不变，runtime只改每Invocation借入KV root/view。原CpuExecution plan workspace
+已由D2确认只依赖D/heads/threads，不依赖KV rows；不新写kernel或更改runtime/vendor。
+control仍外部串行，原update gate先于mutation，未完成native work或旧结果不能更新。
+
+集中实现后冻结候选，用原Windows CPU Provider普通factor＋真实native/common/Graph及
+两pending风险组，再串行Air两个mixed配置中的同组CPU消费；max4，不构建GPU vendor。
+最终san/header/static/shared沿完整G06集中验证。每2h检查点按用户授权有限追加，原失败/
+UNKNOWN保留。此批只完成CPU ragged Q1；非Q1继续原冷规划，Apple/Vulkan ragged runtime、
+FI Q1/capture和完整终验仍为原目标必做，不把本批当整个ragged或G06完成。

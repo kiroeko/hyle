@@ -1,0 +1,104 @@
+{
+  "kind": "G06_D4_CPU_RAGGED_Q1_SCOPE_AND_AUDIT",
+  "baseline": "1b68af80ba22307baf974cff1f659070df8b44b0",
+  "owner": "compute_provider_ggml",
+  "state_before_product": "AUDITED",
+  "sources": [
+    {
+      "path": "src/compute_provider_ggml/native_batch.cc",
+      "sha256": "c4c01e3c54081517caeedb88e015158fc4f72ca30224efa9ac07009df62542b4"
+    },
+    {
+      "path": "src/compute_provider_ggml/native_batch.h",
+      "sha256": "e54f6041c041818b1ec81d6a0b327e1be450a881960efdb7edc7a17f3e5f0476"
+    },
+    {
+      "path": "src/compute_provider_ggml/ggml_cpu_provider.cc",
+      "sha256": "ee228d0fb284a1bece98c2db2d5d491e71d1721c1d91efd3ba7463e2353e995f"
+    },
+    {
+      "path": "src/compute_ggml_runtime/cpu_execution.cc",
+      "sha256": "7afabc73d8ab541c98fde67e41f2e1384994c15cd123582ef218f89322a0d2db"
+    },
+    {
+      "path": "tests/compute_provider_ggml/native_ragged_test.cc",
+      "sha256": "24258c22f7852a68b744c435ac1a9be3c4f401a5391f5409d9a6f2223e23c60b"
+    }
+  ],
+  "fixed_peer_anchor_reuse": [
+    {
+      "name": "sglang",
+      "commit": "7224fce1b5e488c9916f20ec0556d696e595d512",
+      "archive_sha256": "21559aac7538426c4d75262a25d041d8c24070785a4d8f550459f68c3398b0e0",
+      "path": "python/sglang/srt/layers/attention/flashinfer_backend.py",
+      "file_sha256": "a5649f67038153c35864b3f50d5c368071a56cbef75f266bec804dbf7e64363f",
+      "line_ranges": [
+        [
+          203,
+          220
+        ],
+        [
+          251,
+          260
+        ]
+      ]
+    },
+    {
+      "name": "vllm",
+      "commit": "98f721116227f0f48690deb05c815c057bac0668",
+      "archive_sha256": "984cc5cd0ddc5bc93c8f1055f7b2a19da128d372343896510952060bd2b71423",
+      "path": "vllm/v1/attention/backends/flashinfer.py",
+      "file_sha256": "343b949d62db7fc03f6ca0c682e1ec1cb60125461069b081ac1554b7a05214e9",
+      "line_ranges": [
+        [
+          1310,
+          1345
+        ]
+      ]
+    },
+    {
+      "name": "llama.cpp",
+      "commit": "cbe28bb3cb0758f0c566a9a3561766821aeb0748",
+      "archive_sha256": "e71cd4a1645b151a45c46a9d4c0bf5de0fa2a94080ce31ca508a6c65ad1a3562",
+      "path": "src/models/llama.cpp",
+      "file_sha256": "10af5226730900378be77318691f4acbfccb46809c41a81a195a0ca0d5d48109",
+      "line_ranges": [
+        [
+          113,
+          126
+        ],
+        [
+          169,
+          169
+        ]
+      ]
+    }
+  ],
+  "findings": [
+    "Private batch calls ProviderPreparedVTable directly. ggml shared_submit checks port counts; run maps actual supplied TensorViews and rebinds original root/view pointers. Mutable Q1 KV extents can be updated per invocation without rebuilding immutable initial recipe or native execution.",
+    "Ragged K/V each use a direct external input root and one permute alias; no KV materialization. Q1 causal zero masks already omitted in private lower but cold budget still counted them.",
+    "D2 actual Windows/mixed Air planner source proof gives fixed D/heads/thread workspace independent of KV rows. Original full Q topology and all0/1 queries are necessary for bounded runtime update."
+  ],
+  "fixed": [
+    "D4.1 preflight all Q1 native nodes/root aliases and new TensorDesc/byte extents, then commit K/V root ne2/nb3, permute ne1/nb3, n_kv_max, request input descriptors/bytes and packed offsets. Keep original graph/pool/scratch, immutable recipe anchor, current owned layout and original public lifecycle.",
+    "D4.2 omit identically-zero private Q1 mask in cold lower-bound budget; original lower/math unchanged."
+  ],
+  "costs": [
+    "O(active requests + existing native nodes), fixed metadata fields reused; no warm injected allocator call, implicit D2H, new worker or native workspace growth.",
+    "Actual current TensorViews retain truthful active KV dimensions/byte extents and checked backing subviews. No enlarged physical descriptor or hidden gather.",
+    "Native opaque costs/initial version creation preserve original accounting; no zero-allocation statement for caller snapshot creation or new speed/capture qualification."
+  ],
+  "validation": [
+    "Windows provider ordinary factor excluding duplicate native suites, original real CPU/native/common/Graph suite, original plain/encoded pending nine-scenario groups.",
+    "32 configurations each64 Q1 ragged episodes: F16/BF16, plain/Q8, single/multi, D64/128/256 and D64/Dv128/window/noncausal; independently computed uniform attention from nonconstant physical V, growth/shrink, packed offsets, 512 threshold, join/end/empty middle, next injected allocation refused during reuse, constant workspace and old-output exclusion.",
+    "Actual Air CPU tests under both mixed CPU+Apple and CPU+Vulkan library configurations, serial max4; native GPU input unchanged. Final G06 san/header/relocated SDK later."
+  ],
+  "remaining": [
+    "Non-Q1 ragged remains original explicit cold preparation",
+    "Native Apple/Vulkan ragged runtime remains mandatory",
+    "FI Q1 and actual capture qualification",
+    "Final full G06 gates and G04/G05 original unresolved verdict"
+  ],
+  "elapsed": "Full intake elapsed not captured; UNKNOWN not zero",
+  "timestamp_utc": "2026-10-16T03:44:47.005240+00:00"
+}
