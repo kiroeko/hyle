@@ -158,7 +158,8 @@ TEST(CudaPackedWeights, Mxfp8CoversAllCodesWithIndependentScalarOracle) {
   auto completion=invocation.submit(data.queue,data.views,target).value();ASSERT_TRUE(completion.wait().ok());
   std::vector<float> result(rows*n);ASSERT_TRUE(output.view().read(std::as_writable_bytes(std::span(result))).ok());
   for(std::int64_t row=0;row<rows;++row)for(unsigned code=0;code<256;++code) {
-    SCOPED_TRACE(row);SCOPED_TRACE(code);const auto exponent=(code>>3)&15,mantissa=code&7;
+    SCOPED_TRACE(::testing::Message()<<row<<','<<code);
+    const auto exponent=(code>>3)&15,mantissa=code&7;
     if(exponent==15&&mantissa==7) { EXPECT_TRUE(std::isnan(result[row*n+code]));continue; }
     const auto magnitude=exponent?std::ldexp(1.F+float(mantissa)/8,int(exponent)-7):std::ldexp(float(mantissa),-9);
     EXPECT_EQ(result[row*n+code],(code&128?-magnitude:magnitude)*factors[row]);
