@@ -85,4 +85,49 @@ TEST(JointPipeline, FrontierQuotaFailureReleasesItsPartialColdAllocation) {
   }
   EXPECT_EQ(quota.used(), 0);
 }
+
+TEST(JointPipeline, BindingReadyInputDoesNotWaitForUnrelatedNativeUpload) {
+  Plan plan(hyle::mem::system_allocator());
+  plan.append(Lane::kNative, {}); // Host view is already ready: no download.
+  plan.append(Lane::kNative, {}); // Another input still requires real upload.
+  plan.append(Lane::kCpu, std::array<std::size_t, 1>{0});
+  plan.append(Lane::kNative, std::array<std::size_t, 1>{1});
+  plan.append(Lane::kCpu, std::array<std::size_t, 2>{2, 3});
+  ASSERT_TRUE(plan.prepare().ok());
+  const std::array<std::uint8_t, 5> ready_inputs{1, 0, 0, 0, 0};
+  EXPECT_TRUE(plan.parallel_after(ready_inputs));
+  Frontier frontier(hyle::mem::system_allocator());
+  ASSERT_TRUE(frontier.prepare(plan).ok());
+  frontier.reset(plan, ready_inputs);
+  EXPECT_EQ(frontier.take(Lane::kCpu), 2);
+  EXPECT_EQ(frontier.take(Lane::kNative), 1);
+  frontier.complete(plan, 2);
+  EXPECT_FALSE(frontier.ready(Lane::kCpu));
+  frontier.complete(plan, 1);
+  EXPECT_EQ(frontier.take(Lane::kNative), 3);
+  frontier.complete(plan, 3);
+  EXPECT_EQ(frontier.take(Lane::kCpu), 4);
+  frontier.complete(plan, 4); EXPECT_TRUE(frontier.done());
+}
+
+TEST(JointPipeline, AlreadyNativeInputDoesNotAddDriverToNecessarySerialChain) {
+  Plan plan(hyle::mem::system_allocator());
+  plan.append(Lane::kCpu, {}); // Conditional original CPU repack.
+  plan.append(Lane::kNative, std::array<std::size_t, 1>{0}); // Conditional upload.
+  plan.append(Lane::kCpu, {});
+  plan.append(Lane::kNative, std::array<std::size_t, 2>{1, 2});
+  plan.append(Lane::kCpu, std::array<std::size_t, 1>{3});
+  ASSERT_TRUE(plan.prepare().ok());
+  const std::array<std::uint8_t, 5> native_ready{1, 1, 0, 0, 0};
+  EXPECT_FALSE(plan.parallel_after(native_ready));
+  Frontier frontier(hyle::mem::system_allocator());
+  ASSERT_TRUE(frontier.prepare(plan).ok()); frontier.reset(plan, native_ready);
+  EXPECT_EQ(frontier.take(Lane::kCpu), 2);
+  EXPECT_FALSE(frontier.ready(Lane::kNative));
+  frontier.complete(plan, 2);
+  EXPECT_EQ(frontier.take(Lane::kNative), 3);
+  frontier.complete(plan, 3);
+  EXPECT_EQ(frontier.take(Lane::kCpu), 4);
+  frontier.complete(plan, 4); EXPECT_TRUE(frontier.done());
+}
 } // namespace

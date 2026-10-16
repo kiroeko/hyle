@@ -1,0 +1,59 @@
+{
+  "scope": "G09 CUDA cancellation/claim linearization; finite source-only review",
+  "review_timing": "After the implementation fix, before fixed-candidate runtime requalification; no build or runtime executed by this review.",
+  "snapshot": {
+    "head": "f6c978a7f41208d9d24b70e0c95c294a9dd29982",
+    "path": "src/graph_route_cpu_cuda/invocation.cc",
+    "sha256": "95774a044790677bad6e78c00258cdb88016e7af1679569566bc9ef5e896e665",
+    "worktree": true
+  },
+  "verdict": "PASS_SOURCE_ONLY_NO_OPEN_MUST_FOR_THIS_NARROW_ISSUE",
+  "previous_finding": {
+    "id": "CUDA_CANCEL_BEFORE_CLAIM",
+    "status": "FIX_VERIFIED_IN_SOURCE",
+    "reachable_window": "The coordinator previously read cancel_requested=false at the loop top; cancel_completion could then store true under pipeline_mutex and return; the coordinator could subsequently frontier.take(kNative) outside that mutex and submit a previously unclaimed native job.",
+    "contract": "Cancellation and new claims share one admission linearization point. A job claimed before cancellation wins the lock may finish and retire after cancellation; this is not device preemption."
+  },
+  "checks": [
+    {
+      "status": "PASS",
+      "anchors": [
+        "invocation.cc:270-277",
+        "invocation.cc:405-420",
+        "invocation.cc:858-862"
+      ],
+      "fact": "cancel_completion, close, and both CPU/native claim paths share pipeline_mutex. The admission block re-reads cancel_requested before frontier.take and CPU command publication."
+    },
+    {
+      "status": "PASS",
+      "anchors": [
+        "invocation.cc:412-419"
+      ],
+      "fact": "CPU command selection/publication and native selection are inside the same short critical section. If cancellation wins the lock, neither new claim is made."
+    },
+    {
+      "status": "PASS",
+      "anchors": [
+        "invocation.cc:421-425"
+      ],
+      "fact": "Notification and submit_segment occur after releasing pipeline_mutex. The fix holds no admission mutex across CPU math, native submission, or waiting."
+    },
+    {
+      "status": "PASS_SOURCE_UNCHANGED",
+      "anchors": [
+        "invocation.cc:453-461"
+      ],
+      "fact": "Stop/join/collect ordering remains: request child stop, wait for cpu_stopped, collect the already-entered CPU outcome, then let the original accepted-prefix aggregation retire real work. This narrow fix does not replace accepted work with a synthetic completion."
+    }
+  ],
+  "runtime": {
+    "status": "NOT_SIGNED_BY_THIS_REVIEW",
+    "parent_reported_prior_fact": "The first CUDA implementation run passed 81 common tests, original contracts/G08 joint, two 65-step slot journeys, and actual CUPTI device overlap. These are parent-reported earlier runtime results, not independently inspected or requalified here.",
+    "fixed_candidate_followup": "Incremental regression plus one-worker, cancellation, and drop cases are to be executed and judged by the parent; source review does not pre-sign them."
+  },
+  "limits": [
+    "Only the specified cancellation/claim window was reviewed; no new capability scan.",
+    "No product, benchmark, registry, documentation, or public tool was changed.",
+    "Already-claimed jobs may still submit or complete after cancellation and must follow original retirement; this review does not promise leaf-level cancellation or preemption."
+  ]
+}

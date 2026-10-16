@@ -137,6 +137,12 @@ Status leased_contracts() {
   HYLE_RETURN_IF_ERROR(require(original == values, "mixed source alias lost its lease backing"));
   HYLE_RETURN_IF_ERROR(require(pool.stats().live_blocks == 1, "old mixed result did not retain source"));
   retained = {};
+  // Work.wait has already proved permissions retired. Observe physical source
+  // reclamation after the original Scheduler's admitted callback tails return.
+  const auto before_drain = pool.stats().live_blocks;
+  scheduler.drain();
+  std::printf("F1 CPU+vulkan: source blocks before/after callback drain: %zu/%zu\n",
+      before_drain, pool.stats().live_blocks);
   HYLE_RETURN_IF_ERROR(require(pool.stats().live_blocks == 0, "mixed source lease was not reclaimed"));
   std::printf("F1 CPU+vulkan: leased host/native math, eight allocation-free replays, closed admission and retained source alias passed\n");
   return Status::Ok();

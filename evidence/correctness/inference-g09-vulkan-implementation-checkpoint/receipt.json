@@ -1,0 +1,405 @@
+{
+  "state": "PARTIAL_VULKAN_IMPLEMENTATION_CHECK_PASS",
+  "stages": [
+    {
+      "stage": "manifest",
+      "command": [
+        "ninja",
+        "-C",
+        "C:\\h7\\w-cpu-vulkan\\selected-graph\\source-build",
+        "build.ninja"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 66.375
+    },
+    {
+      "stage": "build",
+      "command": [
+        "ninja",
+        "-C",
+        "C:\\h7\\w-cpu-vulkan\\selected-graph\\source-build",
+        "-f",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g09-vulkan-implementation-check-1\\unchanged-leaf-reuse.ninja",
+        "-j",
+        "4",
+        "hyle_cpu_vulkan_pipeline",
+        "hyle_cpu_vulkan_contracts",
+        "joint"
+      ],
+      "exit_code": 2,
+      "elapsed_seconds": 76.64100000000326
+    },
+    {
+      "stage": "retry1-build",
+      "command": [
+        "ninja",
+        "-C",
+        "C:\\h7\\w-cpu-vulkan\\selected-graph\\source-build",
+        "-f",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g09-vulkan-implementation-check-1\\unchanged-leaf-reuse.ninja",
+        "-j",
+        "4",
+        "hyle_cpu_vulkan_pipeline",
+        "hyle_cpu_vulkan_contracts",
+        "joint"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 4.60899999999674
+    },
+    {
+      "stage": "retry1-contracts",
+      "command": [
+        "C:\\h7\\w-cpu-vulkan\\selected-graph\\source-build\\hyle_cpu_vulkan_contracts.exe"
+      ],
+      "exit_code": 1,
+      "elapsed_seconds": 0.625
+    },
+    {
+      "stage": "retry2-build",
+      "command": [
+        "ninja",
+        "-C",
+        "C:\\h7\\w-cpu-vulkan\\selected-graph\\source-build",
+        "-f",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g09-vulkan-implementation-check-1\\unchanged-leaf-reuse.ninja",
+        "-j",
+        "4",
+        "hyle_cpu_vulkan_pipeline",
+        "hyle_cpu_vulkan_contracts",
+        "joint"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 11.797000000020489
+    },
+    {
+      "stage": "retry2-contracts",
+      "command": [
+        "C:\\h7\\w-cpu-vulkan\\selected-graph\\source-build\\hyle_cpu_vulkan_contracts.exe"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 0.5779999999795109
+    },
+    {
+      "stage": "retry2-g08-joint-regression",
+      "command": [
+        "C:\\h7\\w-cpu-vulkan\\selected-graph\\source-build\\joint.exe"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 0.7660000000032596
+    },
+    {
+      "stage": "retry2-pipeline-correctness",
+      "command": [
+        "C:\\h7\\w-cpu-vulkan\\selected-graph\\source-build\\hyle_cpu_vulkan_pipeline.exe"
+      ],
+      "exit_code": 4294967295,
+      "elapsed_seconds": 77.29599999997299
+    },
+    {
+      "stage": "retry3-build",
+      "command": [
+        "ninja",
+        "-C",
+        "C:\\h7\\w-cpu-vulkan\\selected-graph\\source-build",
+        "-f",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g09-vulkan-implementation-check-1\\unchanged-leaf-reuse.ninja",
+        "-j",
+        "4",
+        "hyle_cpu_vulkan_pipeline",
+        "hyle_cpu_vulkan_contracts",
+        "joint"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 6.860000000044238
+    },
+    {
+      "stage": "retry3-contracts",
+      "command": [
+        "C:\\h7\\w-cpu-vulkan\\selected-graph\\source-build\\hyle_cpu_vulkan_contracts.exe"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 0.6089999999967404
+    },
+    {
+      "stage": "retry3-g08-joint-regression",
+      "command": [
+        "C:\\h7\\w-cpu-vulkan\\selected-graph\\source-build\\joint.exe"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 0.7349999999860302
+    },
+    {
+      "stage": "retry3-pipeline-correctness",
+      "command": [
+        "C:\\h7\\w-cpu-vulkan\\selected-graph\\source-build\\hyle_cpu_vulkan_pipeline.exe"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 11.21799999999348
+    }
+  ],
+  "pid": 29196,
+  "head": "f6c978a7f41208d9d24b70e0c95c294a9dd29982",
+  "scope": "Partial real Windows shared CPU+Vulkan source-integration owner/direct-consumer check, reused unchanged qualified leaf libraries; initial test-fixture compile failure and cumulative cost retained. No aggregate/P1/SDK delivery verdict.",
+  "max_jobs": 4,
+  "logical_cpu_limit": 4,
+  "priority": "BELOW_NORMAL",
+  "input_hashes": [
+    {
+      "path": "src/graph/executable.cc",
+      "sha256": "a8110f7234c5d8a8b48b3c99299b2e8f86f72c0b33134eaa962584b81d3a6aca"
+    },
+    {
+      "path": "src/graph/submission_internal.h",
+      "sha256": "1da2c63b573581fda8831cf3a36639f104c193f1911a29bdb0d58921c79510e9"
+    },
+    {
+      "path": "src/graph/native_analysis.h",
+      "sha256": "edd5f0dff67b9accfbd771bc703df5722a1d91a6c627eefaf98836fbfd86cbbb"
+    },
+    {
+      "path": "src/graph/joint_pipeline.h",
+      "sha256": "ecc9dd2d13ee4554d54bfc40feb7b0f8543ecea6273e2eac5011798dc005d3ea"
+    },
+    {
+      "path": "src/graph_route_cpu_vulkan/compile.cc",
+      "sha256": "56e92e98e397e75255b6fee2bc68eb426f14bab846f3e01ed872164b0533364b"
+    },
+    {
+      "path": "src/graph_route_cpu_vulkan/plan.h",
+      "sha256": "7b868236bd7b4d1afb82a37bfc41eae08668cb589c7e992cebb6ab53b20bc4cd"
+    },
+    {
+      "path": "src/graph_route_cpu_vulkan/invocation.cc",
+      "sha256": "ae521a0c6d01b7c48d573da875c34bf897e9dcfefc17c249b087ae20c0c4984e"
+    },
+    {
+      "path": "tests/graph/native_joint_pipeline.cc",
+      "sha256": "e4c085bce0c9c24cd4048982e91e3041f8fca5f8a58bf35806e1f023fe9c4398"
+    },
+    {
+      "path": "tests/graph/cpu_vulkan_contracts.cc",
+      "sha256": "84a71c69935d84334d8081790a471430fbf9bb2d4b8fe42a70b2c4104559fe9c"
+    }
+  ],
+  "borrowed_archives": [
+    {
+      "path": "C:\\h7\\w-cpu-vulkan\\selected-graph\\source-build\\hyle\\_deps\\onednn-build\\src\\dnnl.lib",
+      "sha256": "dc7112ebaffc451ac99c0395129c50844040b9782f7504ed494755dc3cb08990",
+      "bytes": 835137728
+    },
+    {
+      "path": "C:\\h7\\w-cpu-vulkan\\selected-graph\\source-build\\hyle\\src\\mem\\mimalloc_static.lib",
+      "sha256": "7a3bb24dbd7e2a0e3dafe25f4156f7f4d7666d0df6977c052cb0a872e23a1751",
+      "bytes": 989700
+    },
+    {
+      "path": "C:\\h7\\w-cpu-vulkan\\selected-graph\\source-build\\hyle\\src\\compute_ggml_runtime\\vendor\\src\\ggml-base.lib",
+      "sha256": "f5bc19ef08e296df9a44687db3942700dcfb5bcc61ff228a23fa47e1960d0fcb",
+      "bytes": 5582084
+    },
+    {
+      "path": "C:\\h7\\w-cpu-vulkan\\selected-graph\\source-build\\hyle\\src\\compute_ggml_runtime\\vendor\\src\\ggml.lib",
+      "sha256": "5e6a9fa9a73c22671ff94dcd674474ad749368c8ba994e68769fc195dad79d6f",
+      "bytes": 651524
+    },
+    {
+      "path": "C:\\h7\\w-cpu-vulkan\\selected-graph\\source-build\\hyle\\src\\compute_ggml_runtime\\vendor\\src\\ggml-cpu.lib",
+      "sha256": "3f08821761d8555d3830b4773edbb3a68c223a448607630987430f3cc17dce9f",
+      "bytes": 3046534
+    },
+    {
+      "path": "C:\\h7\\w-cpu-vulkan\\selected-graph\\source-build\\hyle\\src\\compute_ggml_runtime\\vendor\\src\\ggml-vulkan\\ggml-vulkan.lib",
+      "sha256": "13af2c1e8403e3cb25607c3d4268408419d009421ad727cc7f93bfdc539b8619",
+      "bytes": 52582842
+    },
+    {
+      "path": "C:\\h7\\w-cpu-vulkan\\selected-graph\\source-build\\lib\\gtest.lib",
+      "sha256": "19b532427289f2caa313a4a007aa56f0f20f5d65a9c8d0b9316396d7c2195618",
+      "bytes": 5785416
+    },
+    {
+      "path": "C:\\h7\\w-cpu-vulkan\\selected-graph\\source-build\\lib\\gtest_main.lib",
+      "sha256": "ade24dff7359383dee73674db631d0676d09153794ac3291b04436fb3c23b32a",
+      "bytes": 9870
+    },
+    {
+      "path": "C:\\h7\\w-cpu-vulkan\\selected-graph\\source-build\\hyle\\_deps\\onednn-build\\src\\dnnl.lib",
+      "sha256": "dc7112ebaffc451ac99c0395129c50844040b9782f7504ed494755dc3cb08990",
+      "bytes": 835137728
+    },
+    {
+      "path": "C:\\h7\\w-cpu-vulkan\\selected-graph\\source-build\\hyle\\src\\mem\\mimalloc_static.lib",
+      "sha256": "7a3bb24dbd7e2a0e3dafe25f4156f7f4d7666d0df6977c052cb0a872e23a1751",
+      "bytes": 989700
+    },
+    {
+      "path": "C:\\h7\\w-cpu-vulkan\\selected-graph\\source-build\\hyle\\src\\compute_ggml_runtime\\vendor\\src\\ggml-base.lib",
+      "sha256": "f5bc19ef08e296df9a44687db3942700dcfb5bcc61ff228a23fa47e1960d0fcb",
+      "bytes": 5582084
+    },
+    {
+      "path": "C:\\h7\\w-cpu-vulkan\\selected-graph\\source-build\\hyle\\src\\compute_ggml_runtime\\vendor\\src\\ggml.lib",
+      "sha256": "5e6a9fa9a73c22671ff94dcd674474ad749368c8ba994e68769fc195dad79d6f",
+      "bytes": 651524
+    },
+    {
+      "path": "C:\\h7\\w-cpu-vulkan\\selected-graph\\source-build\\hyle\\src\\compute_ggml_runtime\\vendor\\src\\ggml-cpu.lib",
+      "sha256": "3f08821761d8555d3830b4773edbb3a68c223a448607630987430f3cc17dce9f",
+      "bytes": 3046534
+    },
+    {
+      "path": "C:\\h7\\w-cpu-vulkan\\selected-graph\\source-build\\hyle\\src\\compute_ggml_runtime\\vendor\\src\\ggml-vulkan\\ggml-vulkan.lib",
+      "sha256": "13af2c1e8403e3cb25607c3d4268408419d009421ad727cc7f93bfdc539b8619",
+      "bytes": 52582842
+    },
+    {
+      "path": "C:\\h7\\w-cpu-vulkan\\selected-graph\\source-build\\lib\\gtest.lib",
+      "sha256": "19b532427289f2caa313a4a007aa56f0f20f5d65a9c8d0b9316396d7c2195618",
+      "bytes": 5785416
+    },
+    {
+      "path": "C:\\h7\\w-cpu-vulkan\\selected-graph\\source-build\\lib\\gtest_main.lib",
+      "sha256": "ade24dff7359383dee73674db631d0676d09153794ac3291b04436fb3c23b32a",
+      "bytes": 9870
+    },
+    {
+      "path": "C:\\h7\\w-cpu-vulkan\\selected-graph\\source-build\\hyle\\_deps\\onednn-build\\src\\dnnl.lib",
+      "sha256": "dc7112ebaffc451ac99c0395129c50844040b9782f7504ed494755dc3cb08990",
+      "bytes": 835137728
+    },
+    {
+      "path": "C:\\h7\\w-cpu-vulkan\\selected-graph\\source-build\\hyle\\src\\mem\\mimalloc_static.lib",
+      "sha256": "7a3bb24dbd7e2a0e3dafe25f4156f7f4d7666d0df6977c052cb0a872e23a1751",
+      "bytes": 989700
+    },
+    {
+      "path": "C:\\h7\\w-cpu-vulkan\\selected-graph\\source-build\\hyle\\src\\compute_ggml_runtime\\vendor\\src\\ggml-base.lib",
+      "sha256": "f5bc19ef08e296df9a44687db3942700dcfb5bcc61ff228a23fa47e1960d0fcb",
+      "bytes": 5582084
+    },
+    {
+      "path": "C:\\h7\\w-cpu-vulkan\\selected-graph\\source-build\\hyle\\src\\compute_ggml_runtime\\vendor\\src\\ggml.lib",
+      "sha256": "5e6a9fa9a73c22671ff94dcd674474ad749368c8ba994e68769fc195dad79d6f",
+      "bytes": 651524
+    },
+    {
+      "path": "C:\\h7\\w-cpu-vulkan\\selected-graph\\source-build\\hyle\\src\\compute_ggml_runtime\\vendor\\src\\ggml-cpu.lib",
+      "sha256": "3f08821761d8555d3830b4773edbb3a68c223a448607630987430f3cc17dce9f",
+      "bytes": 3046534
+    },
+    {
+      "path": "C:\\h7\\w-cpu-vulkan\\selected-graph\\source-build\\hyle\\src\\compute_ggml_runtime\\vendor\\src\\ggml-vulkan\\ggml-vulkan.lib",
+      "sha256": "13af2c1e8403e3cb25607c3d4268408419d009421ad727cc7f93bfdc539b8619",
+      "bytes": 52582842
+    },
+    {
+      "path": "C:\\h7\\w-cpu-vulkan\\selected-graph\\source-build\\lib\\gtest.lib",
+      "sha256": "19b532427289f2caa313a4a007aa56f0f20f5d65a9c8d0b9316396d7c2195618",
+      "bytes": 5785416
+    },
+    {
+      "path": "C:\\h7\\w-cpu-vulkan\\selected-graph\\source-build\\lib\\gtest_main.lib",
+      "sha256": "ade24dff7359383dee73674db631d0676d09153794ac3291b04436fb3c23b32a",
+      "bytes": 9870
+    },
+    {
+      "path": "C:\\h7\\w-cpu-vulkan\\selected-graph\\source-build\\hyle\\_deps\\onednn-build\\src\\dnnl.lib",
+      "sha256": "dc7112ebaffc451ac99c0395129c50844040b9782f7504ed494755dc3cb08990",
+      "bytes": 835137728
+    },
+    {
+      "path": "C:\\h7\\w-cpu-vulkan\\selected-graph\\source-build\\hyle\\src\\mem\\mimalloc_static.lib",
+      "sha256": "7a3bb24dbd7e2a0e3dafe25f4156f7f4d7666d0df6977c052cb0a872e23a1751",
+      "bytes": 989700
+    },
+    {
+      "path": "C:\\h7\\w-cpu-vulkan\\selected-graph\\source-build\\hyle\\src\\compute_ggml_runtime\\vendor\\src\\ggml-base.lib",
+      "sha256": "f5bc19ef08e296df9a44687db3942700dcfb5bcc61ff228a23fa47e1960d0fcb",
+      "bytes": 5582084
+    },
+    {
+      "path": "C:\\h7\\w-cpu-vulkan\\selected-graph\\source-build\\hyle\\src\\compute_ggml_runtime\\vendor\\src\\ggml.lib",
+      "sha256": "5e6a9fa9a73c22671ff94dcd674474ad749368c8ba994e68769fc195dad79d6f",
+      "bytes": 651524
+    },
+    {
+      "path": "C:\\h7\\w-cpu-vulkan\\selected-graph\\source-build\\hyle\\src\\compute_ggml_runtime\\vendor\\src\\ggml-cpu.lib",
+      "sha256": "3f08821761d8555d3830b4773edbb3a68c223a448607630987430f3cc17dce9f",
+      "bytes": 3046534
+    },
+    {
+      "path": "C:\\h7\\w-cpu-vulkan\\selected-graph\\source-build\\hyle\\src\\compute_ggml_runtime\\vendor\\src\\ggml-vulkan\\ggml-vulkan.lib",
+      "sha256": "13af2c1e8403e3cb25607c3d4268408419d009421ad727cc7f93bfdc539b8619",
+      "bytes": 52582842
+    },
+    {
+      "path": "C:\\h7\\w-cpu-vulkan\\selected-graph\\source-build\\lib\\gtest.lib",
+      "sha256": "19b532427289f2caa313a4a007aa56f0f20f5d65a9c8d0b9316396d7c2195618",
+      "bytes": 5785416
+    },
+    {
+      "path": "C:\\h7\\w-cpu-vulkan\\selected-graph\\source-build\\lib\\gtest_main.lib",
+      "sha256": "ade24dff7359383dee73674db631d0676d09153794ac3291b04436fb3c23b32a",
+      "bytes": 9870
+    }
+  ],
+  "stage": "retry3-pipeline-correctness",
+  "elapsed_seconds": 263.56199999997625,
+  "dry_run_edges": 12,
+  "retained_initial_record": "result-initial.json",
+  "retained_previous_record": "result-before-retry3.json",
+  "binaries": [
+    {
+      "target": "hyle_cpu_vulkan_pipeline",
+      "path": "C:\\h7\\w-cpu-vulkan\\selected-graph\\source-build\\hyle_cpu_vulkan_pipeline.exe",
+      "sha256": "c56620f91e6f5e542d364a8e13c37817626cd1248ce1785267d8a21d2206a173"
+    },
+    {
+      "target": "hyle_cpu_vulkan_contracts",
+      "path": "C:\\h7\\w-cpu-vulkan\\selected-graph\\source-build\\hyle_cpu_vulkan_contracts.exe",
+      "sha256": "148982e1cbd9c49abbdfeab61805ce09795efecc8048d4de2d75cbf3e8387e61"
+    },
+    {
+      "target": "joint",
+      "path": "C:\\h7\\w-cpu-vulkan\\selected-graph\\source-build\\joint.exe",
+      "sha256": "2aa520a13f8c29611f3a15119f38de570c3b09bc14006b0dc9d585f242fefa95"
+    }
+  ],
+  "schema": "hyle.inference-g09-vulkan-implementation-checkpoint/v1",
+  "independent_original_failure": {
+    "state": "FAIL",
+    "stages": [
+      {
+        "stage": "independent-pipeline",
+        "command": [
+          "C:\\h7\\w-cpu-vulkan\\selected-graph\\source-build\\hyle_cpu_vulkan_pipeline.exe"
+        ],
+        "exit_code": 4294967295,
+        "elapsed_seconds": 144.31199999997625
+      }
+    ],
+    "scope": "Independent real pipeline consumer; previous original contracts failure remains unresolved.",
+    "stage": "independent-pipeline"
+  },
+  "total_active_seconds_including_independent_diagnostic": 407.8739999999525,
+  "failures_retained": [
+    {
+      "kind": "fixture_compile",
+      "diagnosis": "New fixture called upload on MemoryResource instead of original native Context; fixed fixture only."
+    },
+    {
+      "kind": "physical_reclamation_observation",
+      "diagnosis": "Original work.wait permission assertions all passed. Last physical live_blocks assertion preceded Scheduler callback-tail return; retain all permission checks and observe physical reclamation after original scheduler.drain. Final measured source blocks 1 before / 0 after deterministic drain."
+    },
+    {
+      "kind": "cancel_no_progress",
+      "diagnosis": "Both two-slot 65-step math and joins succeeded; cancel dropped last active observer while LeaseSubmission body waited for original native prefix. Original Vulkan abandonment needs poll/wait/collect; fixed owner to checked-wait all accepted pending handles outside monitor before clearing them and releasing body sentinel. Two diagnostic runs stopped explicitly, not hidden TIMEOUT/PASS."
+    }
+  ],
+  "acceptance_limits": "Actual Windows CPU+Vulkan correctness/progress/lifetime check only. No positive native GPU overlap trace, Air run, sanitizer/device-validation, full SDK delivery or P1 verdict.",
+  "raw": {
+    "path": "raw.zip",
+    "sha256": "b352492707a2f9a43e95535cde7de5951b696aa69dd0d9060da8f0b092a8279b",
+    "bytes": 355435
+  }
+}

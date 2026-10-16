@@ -323,12 +323,6 @@ Result<std::shared_ptr<const Plan>> compile_plan(const Graph &graph, Environment
       if (report != nullptr) report->fragments.push_back(std::move(facts));
       plan->fragments.push_back(std::move(fragment));
     }
-    for (const auto &fragment : plan->fragments) {
-      using Lane = graph::detail::JointPipelinePlan::Lane;
-      plan->pipeline.append(fragment.target == kCpuTarget ? Lane::kCpu : Lane::kNative,
-          fragment.dependencies);
-    }
-    HYLE_RETURN_IF_ERROR(plan->pipeline.prepare());
     // Only strided host graph inputs crossing into Vulkan need an additional
     // prepared CPU Copy. Ordinary CPU-only inputs keep their original layout.
     for (auto &value : plan->values) {
@@ -345,6 +339,8 @@ Result<std::shared_ptr<const Plan>> compile_plan(const Graph &graph, Environment
         return std::unexpected(Status::ResourceExhausted("CPU+Vulkan repack workspace exceeds limit"));
       plan->host_workspace_bytes += value.repack.workspace_bytes();
     }
+    HYLE_RETURN_IF_ERROR(graph::detail::prepare_native_pipeline(*plan,
+        [](const auto &value) noexcept { return value.vulkan_use; }));
     if (report != nullptr) {
       report->host_workspace_bytes = plan->host_workspace_bytes;
       report->has_unknown_native_storage = std::ranges::any_of(plan->fragments, [](const auto &f) { return f.target == kVulkanTarget; });

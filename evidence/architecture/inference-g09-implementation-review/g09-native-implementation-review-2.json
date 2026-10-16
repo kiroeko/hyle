@@ -1,0 +1,95 @@
+{
+  "schema": "hyle.inference-g09-native-implementation-review/v1",
+  "date": "2026-10-17",
+  "observed_head": "f6c978a7f41208d9d24b70e0c95c294a9dd29982",
+  "stage": "Finite independent read-only review of an in-progress AUDITED worktree, before runtime qualification. No build/test/GPU/P1 run. Statements bind only the hashes below; subsequent edits require their own relevant review.",
+  "verdict": "ONE_CONCRETE_CANCEL_FINDING_REPORTED_AND_SOURCE_FIXED_BY_ROOT_DURING_REVIEW; NO_OTHER_REACHABLE_MUST_FOUND; NO_RUNTIME_PASS",
+  "source_snapshot": [
+    {
+      "path": "src/graph_route_cpu_apple/invocation.cc",
+      "sha256": "70741e8fae3b4a7db45324069a05b86488cb148aabe166d95833c8d40628d02c"
+    },
+    {
+      "path": "src/graph_route_cpu_vulkan/invocation.cc",
+      "sha256": "19579dbae740e6917aecdc06319f990871ad8f859205310fb0384cc2f6511ac6"
+    },
+    {
+      "path": "src/graph/joint_pipeline.h",
+      "sha256": "ecc9dd2d13ee4554d54bfc40feb7b0f8543ecea6273e2eac5011798dc005d3ea"
+    },
+    {
+      "path": "src/graph_route_cpu_apple/plan.h",
+      "sha256": "47dab6c478ef57c40dcc558433012487015c80d5d7400c494b3cd3de14b419dd"
+    },
+    {
+      "path": "src/graph_route_cpu_vulkan/plan.h",
+      "sha256": "7b868236bd7b4d1afb82a37bfc41eae08668cb589c7e992cebb6ab53b20bc4cd"
+    },
+    {
+      "path": "src/graph/lease_submission.cc",
+      "sha256": "6e04d5bc55365313c660ebbcd69a723f8de5584118ce8a544e1623e201a042ac"
+    },
+    {
+      "path": "src/compute_route_vulkan/vulkan_transfer_slot.cc",
+      "sha256": "5d604842fe0d06e8511cafa008f74c0b3573f032d8bf5657ce32b05f68fdf68d"
+    }
+  ],
+  "findings": [
+    {
+      "id": "NATIVE-CANCEL-BEFORE-CLAIM",
+      "severity": "MUST",
+      "status": "SOURCE_FIX_RECHECKED_NOT_RUNTIME_TESTED",
+      "original_locations": "Apple invocation.cc:448-470; Vulkan invocation.cc:510-532",
+      "counterexample": "Root passes the loop-top cancel check, polls an existing pending episode, cancellation is set and request_cancel returns during that observation, then root enters its second claim critical section. The earlier draft checked only pipeline_error there, so it could claim and submit a previously unclaimed native math/transfer job after cancellation. CPU claim and serial drive_stage already checked cancellation.",
+      "minimal_fix_by_root": "Recheck cancel under the second pipeline_mutex acquisition, Update(Cancelled), then reject take when pipeline_error is non-OK. Current Apple466-469 and Vulkan528-531 have this check. Already-claimed/accepted work is still retained/drained; no GPU preemption promise.",
+      "finite_verification": "Existing completion-observation decoration may pause pending observation after the loop-top check; cancel and release it, then verify that later ready native/transfer admission count does not increase. Not run by reviewer."
+    }
+  ],
+  "open_must_findings": [],
+  "invariants": [
+    {
+      "area": "Cold stages / initial binding facts",
+      "verdict": "SOURCE_PASS",
+      "anchors": "joint_pipeline.h:202-256; Apple prepare_replay:959-982; Vulkan:1103-1126",
+      "finding": "Only input stages with fragment==SIZE_MAX are marked initially_complete. Host binding skips download, native input skips repack/upload together; exact page bindings defer actual source permissions to the original page controller. Produced fragment outputs never become ready from this mask. Each math consumer also depends on its host/native representation stage plus original fragment data/control constraints; upload/download is not silently replaced by a placeholder native owner."
+    },
+    {
+      "area": "State publication before ready",
+      "verdict": "SOURCE_PASS",
+      "anchors": "Apple:304-376,385-444; Vulkan:319-403,412-506",
+      "finding": "CPU math checks completion, copies/commits host_value before locked frontier.complete. Apple native math only publishes output arrays after successful owning submitted.wait; Vulkan checks the original frozen output buffers after owning wait. Vulkan download polls/waits successful transfer, reads staging to the destination, sets host_value, then marks ready under pipeline_mutex. Producer writes happen-before consumer take on the same monitor; consumers cannot use the cold native/boundary placeholder as a data-ready signal."
+    },
+    {
+      "area": "Native pending work and multiple eligible jobs",
+      "verdict": "SOURCE_PASS",
+      "anchors": "Apple:385-487; Vulkan:412-549",
+      "finding": "Each fragment retains its original OwnedResult in FragmentRun.pending; Vulkan retains actual transfer Completion in ValueRun.pending_transfer. New admission protects once before first poll. False/pending retains the handle and fixed pending-job identity; the root services other ready work rather than unconditionally waiting one math episode. Completed work publishes first, drops the completed handle and is removed from pending. Pending storage is cold-sized by stage count, with no per-job fiber. Apple copies retain their original synchronous MemoryResource boundary; this review does not claim every native call is nonblocking."
+    },
+    {
+      "area": "Short Lease protection lock",
+      "verdict": "SOURCE_PASS",
+      "anchors": "Apple:163-181,194-209; Vulkan:177-195,214-228; graph/lease_submission.cc:227-269",
+      "finding": "lease_mutex serializes next_prefix/retention attachment for simultaneous CPU/native protection. No provider math, poll, native wait, staging read or copy is inside that lock. LeaseSubmission has a body sentinel, so immediate prefix callbacks cannot terminal-publish while a lane is still admitting work. The declared maximum 2*inputs + fragments + sum(fragment.outputs) covers input repack+upload versus input download, one math prefix per fragment and one crossing copy per output; native pending re-polls do not attach another prefix."
+    },
+    {
+      "area": "First error / cancel and true retirement",
+      "verdict": "SOURCE_PASS_WITH_TARGETED_RISK_TESTS_PENDING",
+      "anchors": "Apple:500-533; Vulkan:562-595; graph/lease_submission.cc:release_episode,prefix_release,protect,finish",
+      "finding": "First error is monitor-protected; cancellation stops unclaimed work including the corrected native claim point. Root waits cpu_stopped before dropping any native pending holders. It then clears all Run-owned pending math/transfer handles before LeaseSubmission.finish releases the body sentinel. Native abandonment hands already-accepted work to its original completion/reaper; every attached prefix separately retains the Run and only releases on real retirement. Removing pending holders breaks the Run -> native handle -> retained Run cycle. The body sentinel prevents premature final publication while clearing multiple holders; remaining callbacks preserve resources and failed slot exclusion until all accepted work retires. An observed error is not itself retirement."
+    },
+    {
+      "area": "CPU Queue and mutable slot ownership",
+      "verdict": "SOURCE_PASS",
+      "anchors": "Apple drive_lane/drive_cpu_lane:405-431,489-497; Vulkan:469-493,551-559; create_invocation and admit/ResultSlot paths",
+      "finding": "Parallel mode has a sole CPU child for CPU fragments and repack jobs; native stages cannot submit CPU Queue work. Root owns native/copy submission. Each lane takes/completes frontier under the same short monitor, with execution/waits outside. Child retains RunState until after its stopped notification; no further resettable state access follows. Separate slots keep independent frontier, mutable native/CPU invocations, boundary/staging and old-result exclusion. Original caller Queue ownership constraints remain."
+    },
+    {
+      "area": "Vulkan transfer-state safety",
+      "verdict": "SOURCE_PASS",
+      "anchors": "vulkan_transfer_slot.cc:validate_slot,upload,download,read; native invocation.cc:441-463",
+      "finding": "One ValueRun has at most the needed upload or download for its original representation/producer, and its pending handle remains valid until successful wait/read. The original TransferSlot refuses reuse with pending/completion_owner/observers/retiring state and records source/staging native owners; read requires successful completed download and exact description. No new transfer executor, queue or shader was introduced."
+    }
+  ],
+  "pending_qualification": "No runtime/retirement/overlap/sanitizer/delivery/P1 PASS is signed. The current G09 card must still execute both insertion orders, real CPU/native intervals, two slots/65 changes, old results, serial/control/effect/alias holdouts, OOM/admission failure, cancellation and early native/transfer error with outstanding sibling work and no leaked resources. The cancel source fix itself is not a completed runtime test.",
+  "limits": "No product/benchmark/registry/public-tool edits by reviewer; only this ignored JSON written. No scope or native math/transfer/allocator-owner expansion, new executor/pool, full-library rescan, G01-G08 reopening or inference-engine performance claim."
+}

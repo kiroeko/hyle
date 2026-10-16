@@ -1,0 +1,78 @@
+{
+  "schema": "hyle.inference-g09-implementation-review/v1",
+  "date": "2026-10-17",
+  "head": "f6c978a7f41208d9d24b70e0c95c294a9dd29982",
+  "scope": "One finite read-only source review of the current CUDA two-lane caller plus joint_pipeline.h ready-mask/native-stage preparation. The existing common private segment seam was read only to establish caller invariants. Apple/Vulkan asynchronous native/copy progress is actively being changed and is NOT reviewed as finished here.",
+  "verdict": "NO_CONCRETE_NEW_MUST_FOUND_IN_REVIEWED_SNAPSHOT; SOURCE_INVARIANTS_ONLY; RUNTIME_RISK_DELIVERY_AND_P1_UNRUN",
+  "source_snapshot": [
+    {
+      "path": "src/graph_route_cpu_cuda/invocation.cc",
+      "sha256": "407594c0096860a37a9099aaf9ff6606e764216139f4343cf1bedbdde9888c4b"
+    },
+    {
+      "path": "src/graph/joint_pipeline.h",
+      "sha256": "ecc9dd2d13ee4554d54bfc40feb7b0f8543ecea6273e2eac5011798dc005d3ea"
+    },
+    {
+      "path": "src/graph/submission_internal.h",
+      "sha256": "1da2c63b573581fda8831cf3a36639f104c193f1911a29bdb0d58921c79510e9"
+    },
+    {
+      "path": "src/graph/executable.cc",
+      "sha256": "a8110f7234c5d8a8b48b3c99299b2e8f86f72c0b33134eaa962584b81d3a6aca"
+    }
+  ],
+  "must_findings": [],
+  "checked": [
+    {
+      "area": "Unique coordinator versus CPU submission",
+      "verdict": "SOURCE_INVARIANT_PASS",
+      "anchors": "cpu_cuda/invocation.cc:311-453; executable.cc:8082-8292",
+      "finding": "CPU calls submit_segment only, with uniquely claimed CPU step/provider state, and builds a local SegmentSubmission. Outcome.status replaces shared cursor tail mutation. Root alone commits Completion cells, completes frontier jobs and calls finish_submissions/final finish; finish is not concurrent with the child. Cursor finished_/state/plan and cold views stay stable during execution; separate segment dependency slices are retained."
+    },
+    {
+      "area": "Mailbox synchronization and blocking work",
+      "verdict": "SOURCE_INVARIANT_PASS",
+      "anchors": "cpu_cuda/invocation.cc:341-453",
+      "finding": "Command consumption, Outcome/index/ready publication, stopped flag and CV predicates use pipeline_mutex; CPU math, submit, dependency poll/wait, root native submission, commit and final native drain run outside that mutex. cpu_busy prevents overwriting an uncollected Outcome. One extra existing Sched driver loops across CPU jobs; no per-segment fiber/pool or private thread. Frontier remains root-owned in this caller."
+    },
+    {
+      "area": "Queue producer and dependency ownership",
+      "verdict": "SOURCE_INVARIANT_PASS",
+      "anchors": "cpu_cuda/invocation.cc:308-337,399-443; graph/submission_internal.h:81-93; executable.cc:8104-8140",
+      "finding": "Child uses only its CPU segment QueueSequence and timed fiber observation of published upstream Completion; it does not enqueue wait_cuda_prefix/host callbacks on the native Queue. Root owns native submission. Cold original lane/data/control/workspace edges gate claim; a CPU predecessor is released only after submit has returned and root committed its Outcome. Native dependency Completion cells remain unmoved until child stop, so pending pointers are stable. Same-lane queue order still derives from the original graph edges."
+    },
+    {
+      "area": "Error/cancel and accepted-prefix collection",
+      "verdict": "SOURCE_INVARIANT_PASS",
+      "anchors": "cpu_cuda/invocation.cc:313-337,394-453,484-545,845-858; executable.cc:8212-8217,8270-8292",
+      "finding": "Pending CPU dependency error becomes an Outcome, not a lost source prefix. Root records terminal error/cancel, stops new work, sets pipeline_stop, wakes child and waits cpu_stopped; then collect_cpu commits any Outcome from a child already executing synchronous submit, including a Completion carrying accepted work plus an error status. A queued command that never entered submit may be skipped safely on stop. Final finish then retains/waits original accepted Graph prefixes and weight prefixes before terminal publication; no synthetic completed(error) replaces real accepted work. Child owns an independent RunState reference through notification/refcount tail."
+    },
+    {
+      "area": "Admission failure, slot lifetime and cold allocation",
+      "verdict": "SOURCE_INVARIANT_PASS",
+      "anchors": "cpu_cuda/invocation.cc:584-670,785-837; graph/plan_state.h InvocationState phase/exclusive fields",
+      "finding": "Pipeline metadata/frontier are allocated cold through the original metadata allocator (ResourceBudget metadata allocator when present). Child launch failure releases its pre-retained ref and returns an error for coordinator finish; root launch/publication failures retain the original empty-cursor rollback path. Binding/reuse remains behind run.running and ResultSlot lease exclusion. Strictly ordered cold pipelines retain the original inline cursor path."
+    },
+    {
+      "area": "Initial-ready mask and CSR frontier",
+      "verdict": "SOURCE_INVARIANT_PASS_FOR_CURRENT_MASK_PRODUCERS",
+      "anchors": "joint_pipeline.h:48-108,120-179; current native prepare_replay initially_complete construction (input stages only)",
+      "finding": "Cold prepare validates earlier job identities and builds the CSR successors with matching counts, including duplicate prerequisites. reset marks completed separately from claimed, deducts each completed source outgoing edge once, skips already-completed successors and queues only zero-count uncompleted jobs. parallel_after ignores skipped jobs and can select inline only when the remaining mixed-lane sequence is directly chained. Current input masks skip repack/upload together for a real native input (or exact page input) and skip download for a real host binding; no reachable completed-successor/uncompleted-predecessor mask was identified in these mask producers. It is not an API for arbitrary user completion masks."
+    },
+    {
+      "area": "Cold native stage dependency projection",
+      "verdict": "SOURCE_INVARIANT_PASS_NOT_NATIVE_RUNTIME_SIGNOFF",
+      "anchors": "joint_pipeline.h:193-259",
+      "finding": "prepare_native_pipeline stages original repack/upload/download separately from fragment math. Each consumer gets host_ready/native_ready for the actual representation; output upload/download depends on its producing fragment. Original fragment dependencies are also copied, so control-only constraints are not replaced by tensor edges. Constant/native storage and actual transfer/page owners stay with their original route. Job fragment IDs name earlier projected fragments and prepare rejects invalid forward prerequisites. This review does not assess the actively edited asynchronous stage execution loop."
+    }
+  ],
+  "finite_runtime_followups": [
+    "Existing G09 card gates still need actual execution; this review ran no test or build.",
+    "Exercise child admission failure, cancel while CPU command is queued, cancel/error while CPU is inside math and a GPU prefix is accepted, and GPU observation failure while child polls a host dependency; verify both stopped child and true native retirement before reuse.",
+    "Two slots/65 changes/old result refusal plus both insertion orders and necessary serial/control/effect/alias holdouts; use actual source/native intervals rather than pending counts.",
+    "For input mask/staging, keep current host-ready/native-ready and strided repack+upload cases, exact pending-page ownership and zero-byte boundaries in the targeted existing consumer scope."
+  ],
+  "cost_limits": "One extra coarse driver only on opted-in non-total-order two-lane graphs. Cold per-slot pipeline/CSR/frontier and existing Sched stack/launch costs remain real; no zero-allocation or all-private-memory claim. Native completion/error/status and driver notification tails are not inferred retired from a ready counter.",
+  "actions": "Only this ignored JSON was written. No product/benchmark/registry/public-tool change, build/test/GPU/performance run or new agent; no G01-G08 reopen and no full Apple/Vulkan implementation verdict."
+}

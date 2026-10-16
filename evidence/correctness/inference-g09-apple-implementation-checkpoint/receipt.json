@@ -1,0 +1,103 @@
+{
+  "state": "PARTIAL_APPLE_IMPLEMENTATION_CHECK_PASS",
+  "stages": [
+    {
+      "stage": "retry1-manifest",
+      "command": [
+        "/opt/homebrew/bin/ninja",
+        "-C",
+        "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-build",
+        "build.ninja"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 4.64802575
+    },
+    {
+      "stage": "retry1-build",
+      "command": [
+        "/opt/homebrew/bin/ninja",
+        "-C",
+        "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-build",
+        "-f",
+        "/Users/kiro/hyle-scratch/compute-unified/g09-apple-implementation-check-1/preview.ninja",
+        "-j",
+        "4",
+        "hyle_cpu_apple_pipeline",
+        "hyle_cpu_apple_contracts",
+        "joint"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 7.605138083
+    },
+    {
+      "stage": "retry1-contracts",
+      "command": [
+        "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-build/hyle_cpu_apple_contracts"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 3.150650458000001
+    },
+    {
+      "stage": "retry1-g08-joint-regression",
+      "command": [
+        "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-build/joint"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 1.0327495829999975
+    },
+    {
+      "stage": "retry1-pipeline-correctness",
+      "command": [
+        "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-build/hyle_cpu_apple_pipeline"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 4.632962166999999
+    }
+  ],
+  "model": "Mac16,12",
+  "input_hashes": {
+    "archive_entry": "full-inputs.json",
+    "sha256": "3c8124971991bc3a79163dbb041159b63612728270814c2e27cf1760d751a63e",
+    "files": 3321,
+    "source_tree": "c29a1201437c2c1c91c1b0697aca8f2ac8be8b31",
+    "description": "Complete canonical build/source snapshot, all tracked roots except historical evidence binaries; git archive from an isolated index captures every current tracked edit and new source. No manual file selection. LF Git content, not raw Windows CRLF bytes."
+  },
+  "canonical_windows_head": "f6c978a7f41208d9d24b70e0c95c294a9dd29982",
+  "canonical_source_tree": "c29a1201437c2c1c91c1b0697aca8f2ac8be8b31",
+  "retained_initial_manifest_seconds": 0.873946,
+  "retained_initial_failure": "result-initial.json",
+  "source_copy": "/Users/kiro/hyle-scratch/compute-unified/source-c8874688",
+  "max_jobs": 4,
+  "priority": "nice10",
+  "scope": "Actual MacBook Air Mac16,12 M4 correctness/progress/lifetime on canonical complete build/source Git snapshot. Current phase AUDITED. Source integration only; no positive Metal GPU overlap trace, device/host risk, complete SDK delivery, P1 or aggregate acceptance.",
+  "identity": {
+    "chip": "Apple M4",
+    "system": "ProductName:\t\tmacOS\nProductVersion:\t\t27.0.1\nBuildVersion:\t\t26A434",
+    "toolchain": "Apple clang version 21.0.0 (clang-2100.3.34.2)\nTarget: arm64-apple-darwin27.0.0\nThread model: posix\nInstalledDir: /Library/Developer/CommandLineTools/usr/bin",
+    "metal": "Apple metal version 32023.883 (metalfe-32023.883)\nTarget: air64-apple-darwin27.0.0\nThread model: posix\nInstalledDir: /Users/kiro/hyle-verify-tools/metal-17F109/Metal.xctoolchain/usr/metal/current/bin"
+  },
+  "stage": "retry1-pipeline-correctness",
+  "elapsed_seconds": 23.097945083,
+  "dry_run_edges": 58,
+  "binaries": [
+    {
+      "target": "hyle_cpu_apple_pipeline",
+      "sha256": "629c5b2aaf9c81c4b87ff9c0fb31658170118a5b5abe3ad1fdc4816d6b192a47"
+    },
+    {
+      "target": "hyle_cpu_apple_contracts",
+      "sha256": "c8bac10c1ce779db271a6396d46b1acbc817b46d8b9da5415c2d12ffdd394b8e"
+    },
+    {
+      "target": "joint",
+      "sha256": "313a9d150529267d98eb7699f0d8a7b8e924dd659e1e3af3500f98753872684a"
+    }
+  ],
+  "initial_failure_retained": "First setup omitted documented metal-17F109/shim PATH and stopped during CMake admission; no initial build ran. Same tree/profile resumed with documented shim; complete canonical Git source archive replaced initial delta input before qualified compilation. No system developer directory or dependency changed.",
+  "schema": "hyle.inference-g09-apple-implementation-checkpoint/v1",
+  "raw": {
+    "path": "raw.zip",
+    "sha256": "d0282e8c880c74d2a54f1186310a67a876e60aea2fb7ae7db6a3354b154d05b2",
+    "bytes": 662989
+  }
+}

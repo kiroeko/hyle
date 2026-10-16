@@ -33,12 +33,14 @@ struct ValueRun final {
   std::optional<ca::WeightBatch> weight;
   std::uint64_t weight_id = 0;
   graph::Invocation repack;
+  compute::Completion pending_transfer;
   ca::TransferSlot transfer;
 };
 struct FragmentRun final {
   graph::Invocation cpu;
   ca::Invocation vulkan;
   compute::ResultLease<ca::Results> lease;
+  compute::OwnedResult<ca::Results> pending;
   std::vector<cv::Tensor> arguments; // Vendor bind carrier, sized cold.
 };
 struct RunState final : util::RefCounted<RunState> {
@@ -46,7 +48,9 @@ struct RunState final : util::RefCounted<RunState> {
       : plan(std::move(source)), allocator(plan->allocator),
         values(mem::StdAllocator<ValueRun>(allocator)),
         fragments(mem::StdAllocator<FragmentRun>(allocator)),
-        pages(nullptr,PageSlotsDelete{allocator}), frontier(allocator) {}
+        pages(nullptr,PageSlotsDelete{allocator}), frontier(allocator),
+        initially_complete(mem::StdAllocator<std::uint8_t>(allocator)),
+        pending_native(mem::StdAllocator<std::size_t>(allocator)) {}
   std::shared_ptr<const Plan> plan;
   mem::AllocatorRef allocator;
   graph::detail::LeaseSubmission leases;
@@ -57,6 +61,9 @@ struct RunState final : util::RefCounted<RunState> {
   compute::Queue *cpu_queue = nullptr;
   sched::Event progress, finished;
   graph::detail::JointPipelineFrontier frontier;
+  Vector<std::uint8_t> initially_complete;
+  Vector<std::size_t> pending_native;
+  bool pipeline_parallel = false;
   std::mutex pipeline_mutex, lease_mutex;
   sched::ConditionVariable pipeline_ready;
   Status pipeline_error;
@@ -204,11 +211,15 @@ Status add_upload(const RunState &run, std::size_t id, ReplayReport &report) noe
   return Status::Ok();
 }
 
-Status await_completion(RunState &run, const compute::Completion &completion) noexcept {
+Status protect_prefix(RunState &run, const compute::Completion &completion) noexcept {
   if (run.leases.valid()) {
     std::lock_guard lock(run.lease_mutex);
-    HYLE_RETURN_IF_ERROR(run.leases.protect(completion));
+    return run.leases.protect(completion);
   }
+  return Status::Ok();
+}
+Status await_completion(RunState &run, const compute::Completion &completion) noexcept {
+  HYLE_RETURN_IF_ERROR(protect_prefix(run, completion));
   for (;;) {
     const auto ready = completion.poll();
     if (!ready) return ready.error();
@@ -288,44 +299,41 @@ const cd::CompletionVTable completion_vtable{
       return Status::Ok();
     }};
 
-Status prepare_inputs(RunState &run, bool &accepted) noexcept {
-  // Bind metadata/owners are fixed. No Provider selection, tracing, graph
-  // traversal, capacity growth or CPU weight upload occurs in this loop.
-  for (auto id : run.plan->inputs) {
-    if (run.cancel.load(std::memory_order_acquire))
-      return Status::Cancelled("CPU+Vulkan cancelled before boundary preparation");
-    auto &value = run.values[id];
-    const auto &spec = run.plan->values[id];
-    if(run.pages && run.pages->page_input(id) && !value.native_input)continue;
-    if (value.native_input) {
-      value.native_value = value.native_input;
-      if (spec.cpu_use) {
-        HYLE_ASSIGN_OR_RETURN(auto destination, host_tensor(run, id));
-        HYLE_ASSIGN_OR_RETURN(auto copy, value.transfer.download(*value.native_input));
-        accepted = true;
-        HYLE_RETURN_IF_ERROR(await_completion(run, copy));
-        HYLE_RETURN_IF_ERROR(value.transfer.read(destination));
-        value.host_value = destination.as_const();
-      }
-    } else {
-      value.host_value = value.host_input;
-      if (spec.vulkan_use) {
-        auto source = value.host_input;
-        if (value.repack.valid()) {
-          HYLE_ASSIGN_OR_RETURN(auto completion, value.repack.submit(*run.cpu_queue));
-          accepted = true;
-          HYLE_RETURN_IF_ERROR(await_completion(run, completion));
-          HYLE_ASSIGN_OR_RETURN(source, value.repack.output(spec.repack_output));
-        }
-        HYLE_ASSIGN_OR_RETURN(auto copy, value.transfer.upload(*value.boundary, source));
-        accepted = true;
-        HYLE_RETURN_IF_ERROR(await_completion(run, copy));
-        // Fixed boundary native owner was committed by cold prepare.
-      }
+Result<compute::OwnedResult<ca::Results>> submit_native_fragment(
+    RunState &run, std::size_t index) noexcept {
+  const auto &fragment = run.plan->fragments[index];
+  auto &slot = run.fragments[index];
+  slot.lease = {};
+  return [&]()->Result<compute::OwnedResult<ca::Results>>{
+    if(auto* page=run.pages?run.pages->fragment(index):nullptr){
+      const auto qid=fragment.inputs[0];
+      if(!run.values[qid].native_value)return std::unexpected(Status::Internal("page query producer did not complete"));
+      HYLE_ASSIGN_OR_RETURN(auto query,run.plan->environment.device->import_readonly(
+          *run.values[qid].native_value,{.allocator=run.allocator,.resource_budget=run.plan->budget}));
+      return run.pages->submit_fragment(*page,std::move(query));
     }
+    return slot.vulkan.submit();
+  }();
+
+}
+Status finish_native_fragment(RunState &run, std::size_t index,
+    compute::OwnedResult<ca::Results> &submitted) noexcept {
+  const auto &fragment = run.plan->fragments[index];
+  auto &slot = run.fragments[index];
+  HYLE_ASSIGN_OR_RETURN(slot.lease, submitted.wait());
+  const auto arrays = slot.lease->tensors();
+  if (arrays.size() != fragment.outputs.size())
+    return Status::Internal("Vulkan fragment result arity differs");
+  for (std::size_t port = 0; port < arrays.size(); ++port) {
+    const auto id = fragment.outputs[port];
+    // The same original native owners were bound cold. Do not replace
+    // their reference topology or construct an external ready import here.
+    if (arrays[port].native_buffer() != run.values[id].native_value->native_buffer())
+      return Status::Internal("Vulkan original output backing changed during replay");
   }
   return Status::Ok();
 }
+
 Status drive_fragment(RunState &run, std::size_t index, bool &accepted) noexcept {
   if (run.cancel.load(std::memory_order_acquire))
     return Status::Cancelled("CPU+Vulkan cancelled before the next coarse fragment");
@@ -346,52 +354,114 @@ Status drive_fragment(RunState &run, std::size_t index, bool &accepted) noexcept
         HYLE_RETURN_IF_ERROR(value.host.view().copy_from(output.storage()));
       HYLE_ASSIGN_OR_RETURN(auto destination, host_tensor(run, id));
       value.host_value = destination.as_const();
-      if (run.plan->values[id].vulkan_use) {
-        HYLE_ASSIGN_OR_RETURN(auto copy, value.transfer.upload(*value.boundary, value.host_value));
-        HYLE_RETURN_IF_ERROR(await_completion(run, copy));
-        // Fixed boundary native owner was committed by cold prepare.
-      }
     }
   } else {
-    slot.lease = {};
-    auto submitted_result=[&]()->Result<compute::OwnedResult<ca::Results>>{
-      if(auto* page=run.pages?run.pages->fragment(index):nullptr){
-        const auto qid=fragment.inputs[0];
-        if(!run.values[qid].native_value)return std::unexpected(Status::Internal("page query producer did not complete"));
-        HYLE_ASSIGN_OR_RETURN(auto query,run.plan->environment.device->import_readonly(
-            *run.values[qid].native_value,{.allocator=run.allocator,.resource_budget=run.plan->budget}));
-        return run.pages->submit_fragment(*page,std::move(query));
-      }
-      return slot.vulkan.submit();
-    }();
-    HYLE_ASSIGN_OR_RETURN(auto submitted,std::move(submitted_result));
+    HYLE_ASSIGN_OR_RETURN(auto submitted, submit_native_fragment(run, index));
     accepted = true;
-    // Cancellation stops successors, while the original Vulkan owner drains
-    // the already-accepted prefix before publishing its terminal result.
     HYLE_RETURN_IF_ERROR(await_completion(run, submitted.completion()));
-    HYLE_ASSIGN_OR_RETURN(slot.lease, submitted.wait());
-    const auto arrays = slot.lease->tensors();
-    if (arrays.size() != fragment.outputs.size())
-      return Status::Internal("Vulkan fragment result arity differs");
-    for (std::size_t port = 0; port < arrays.size(); ++port) {
-      const auto id = fragment.outputs[port];
-      // The same original native owners were bound cold. Do not replace
-      // their reference topology or construct an external ready import here.
-      if (arrays[port].native_buffer() != run.values[id].native_value->native_buffer())
-        return Status::Internal("Vulkan original output backing changed during replay");
-      if (run.plan->values[id].cpu_use) {
-        HYLE_ASSIGN_OR_RETURN(auto destination, host_tensor(run, id));
-        HYLE_ASSIGN_OR_RETURN(auto bytes,run.plan->values[id].carrier.required_bytes());
-        if(bytes || !(run.pages && run.pages->fragment(index))){
-          HYLE_ASSIGN_OR_RETURN(auto copy, run.values[id].transfer.download(arrays[port]));
-          HYLE_RETURN_IF_ERROR(await_completion(run, copy));
-          HYLE_RETURN_IF_ERROR(run.values[id].transfer.read(destination));
-        }
-        run.values[id].host_value = destination.as_const();
-      }
-    }
+    HYLE_RETURN_IF_ERROR(finish_native_fragment(run, index, submitted));
   }
   return Status::Ok();
+}
+
+Status drive_stage(RunState &run, std::size_t job, bool &accepted) noexcept {
+  using Kind = graph::detail::NativePipelineStage::Kind;
+  if (run.cancel.load(std::memory_order_acquire))
+    return Status::Cancelled("joint boundary stage cancelled before admission");
+  const auto &stage = run.plan->pipeline_stages[job];
+  if (stage.kind == Kind::kFragment) return drive_fragment(run, stage.index, accepted);
+  const auto id = stage.index;
+  auto &value = run.values[id];
+  const auto &spec = run.plan->values[id];
+  if (stage.kind == Kind::kRepack) {
+    HYLE_ASSIGN_OR_RETURN(auto completion, value.repack.submit(*run.cpu_queue));
+    accepted = true;
+    return await_completion(run, completion);
+  }
+  if (stage.kind == Kind::kUpload) {
+    auto source = spec.id.kind() == ValueKind::kInput ? value.host_input : value.host_value;
+    if (spec.id.kind() == ValueKind::kInput && value.repack.valid()) {
+      HYLE_ASSIGN_OR_RETURN(source, value.repack.output(spec.repack_output));
+    }
+    HYLE_ASSIGN_OR_RETURN(auto copy, value.transfer.upload(*value.boundary, source));
+    accepted = true;
+    HYLE_RETURN_IF_ERROR(await_completion(run, copy));
+    return Status::Ok();
+  }
+  if (stage.kind == Kind::kDownload) {
+    if (!value.native_value) return Status::Internal("native boundary producer is not available");
+    HYLE_ASSIGN_OR_RETURN(auto destination, host_tensor(run, id));
+    HYLE_ASSIGN_OR_RETURN(auto bytes, spec.carrier.required_bytes());
+    const bool empty_page = bytes == 0 && stage.fragment != SIZE_MAX && run.pages &&
+                            run.pages->fragment(stage.fragment) != nullptr;
+    if (!empty_page) {
+      HYLE_ASSIGN_OR_RETURN(auto copy, value.transfer.download(*value.native_value));
+      accepted = true;
+      HYLE_RETURN_IF_ERROR(await_completion(run, copy));
+      HYLE_RETURN_IF_ERROR(value.transfer.read(destination));
+    }
+    value.host_value = destination.as_const();
+    return Status::Ok();
+  }
+  return Status::Internal("joint boundary stage is invalid");
+}
+
+// One native admission/observation step. Retain original accepted handles in
+// the fixed slot while the root services other ready math/copies or CPU handoff.
+// No native wait strands an unrelated branch and no per-job fiber is created.
+Result<bool> advance_native_stage(RunState &run, std::size_t job, bool &accepted) noexcept {
+  using Kind = graph::detail::NativePipelineStage::Kind;
+  const auto &stage = run.plan->pipeline_stages[job];
+  if (stage.kind == Kind::kFragment) {
+    auto &slot = run.fragments[stage.index];
+    if (!slot.pending.valid()) {
+      HYLE_ASSIGN_OR_RETURN(slot.pending, submit_native_fragment(run, stage.index));
+      accepted = true;
+      HYLE_RETURN_IF_ERROR(protect_prefix(run, slot.pending.completion()));
+    }
+    HYLE_ASSIGN_OR_RETURN(auto ready, slot.pending.completion().poll());
+    if (ready == compute::CompletionPoll::kPending) return false;
+    HYLE_RETURN_IF_ERROR(finish_native_fragment(run, stage.index, slot.pending));
+    slot.pending = {};
+    return true;
+  }
+  if (stage.kind != Kind::kUpload && stage.kind != Kind::kDownload)
+    return std::unexpected(Status::Internal("native lane received a CPU stage"));
+  auto &value = run.values[stage.index];
+  const auto &spec = run.plan->values[stage.index];
+  if (stage.kind == Kind::kDownload) {
+    HYLE_ASSIGN_OR_RETURN(auto bytes, spec.carrier.required_bytes());
+    if (bytes == 0 && stage.fragment != SIZE_MAX && run.pages &&
+        run.pages->fragment(stage.fragment) != nullptr) {
+      HYLE_ASSIGN_OR_RETURN(auto destination, host_tensor(run, stage.index));
+      value.host_value = destination.as_const();
+      return true;
+    }
+  }
+  if (!value.pending_transfer.valid()) {
+    if (stage.kind == Kind::kUpload) {
+      auto source = spec.id.kind() == ValueKind::kInput ? value.host_input : value.host_value;
+      if (spec.id.kind() == ValueKind::kInput && value.repack.valid()) {
+        HYLE_ASSIGN_OR_RETURN(source, value.repack.output(spec.repack_output));
+      }
+      HYLE_ASSIGN_OR_RETURN(value.pending_transfer, value.transfer.upload(*value.boundary, source));
+    } else {
+      if (!value.native_value) return std::unexpected(Status::Internal("native transfer input is not available"));
+      HYLE_ASSIGN_OR_RETURN(value.pending_transfer, value.transfer.download(*value.native_value));
+    }
+    accepted = true;
+    HYLE_RETURN_IF_ERROR(protect_prefix(run, value.pending_transfer));
+  }
+  HYLE_ASSIGN_OR_RETURN(auto ready, value.pending_transfer.poll());
+  if (ready == compute::CompletionPoll::kPending) return false;
+  HYLE_RETURN_IF_ERROR(value.pending_transfer.wait());
+  if (stage.kind == Kind::kDownload) {
+    HYLE_ASSIGN_OR_RETURN(auto destination, host_tensor(run, stage.index));
+    HYLE_RETURN_IF_ERROR(value.transfer.read(destination));
+    value.host_value = destination.as_const();
+  }
+  value.pending_transfer = {};
+  return true;
 }
 
 using PipelineLane = graph::detail::JointPipelinePlan::Lane;
@@ -411,7 +481,7 @@ void drive_lane(RunState &run, PipelineLane lane) noexcept {
       index = run.frontier.take(lane);
     }
     bool accepted = false;
-    const auto status = drive_fragment(run, index, accepted);
+    const auto status = drive_stage(run, index, accepted);
     {
       std::lock_guard lock(run.pipeline_mutex);
       run.pipeline_accepted = run.pipeline_accepted || accepted;
@@ -422,34 +492,106 @@ void drive_lane(RunState &run, PipelineLane lane) noexcept {
   }
 }
 
+void drive_native_lane(RunState &run) noexcept {
+  std::size_t pending = 0;
+  auto advance = [&](std::size_t job) noexcept -> Result<bool> {
+    bool accepted = false;
+    auto result = advance_native_stage(run, job, accepted);
+    {
+      std::lock_guard lock(run.pipeline_mutex);
+      run.pipeline_accepted = run.pipeline_accepted || accepted;
+      if (!result) run.pipeline_error.Update(result.error());
+      else if (*result) run.frontier.complete(run.plan->pipeline, job);
+    }
+    run.pipeline_ready.notify_all();
+    return result;
+  };
+  for (;;) {
+    {
+      std::lock_guard lock(run.pipeline_mutex);
+      if (run.cancel.load(std::memory_order_acquire))
+        run.pipeline_error.Update(Status::Cancelled("joint native pipeline cancelled before admission"));
+      if (!run.pipeline_error.ok() || run.frontier.done()) break;
+    }
+    bool progressed = false;
+    for (std::size_t i = 0; i < pending;) {
+      auto ready = advance(run.pending_native[i]);
+      if (!ready) return;
+      if (*ready) {
+        run.pending_native[i] = run.pending_native[--pending];
+        progressed = true;
+      } else ++i;
+    }
+    std::size_t job;
+    {
+      std::lock_guard lock(run.pipeline_mutex);
+      if (run.cancel.load(std::memory_order_acquire))
+        run.pipeline_error.Update(Status::Cancelled("joint native pipeline cancelled before admission"));
+      if (!run.pipeline_error.ok()) break;
+      job = run.frontier.take(PipelineLane::kNative);
+    }
+    if (job != graph::detail::JointPipelineFrontier::kNone) {
+      auto ready = advance(job);
+      if (!ready) return;
+      if (!*ready) {
+        HYLE_FATAL_ASSERT(pending < run.pending_native.size());
+        run.pending_native[pending++] = job;
+      }
+      continue;
+    }
+    if (progressed) continue;
+    std::unique_lock lock(run.pipeline_mutex);
+    const auto changed = [&] {
+      return !run.pipeline_error.ok() || run.cancel.load(std::memory_order_acquire) ||
+             run.frontier.done() || run.frontier.ready(PipelineLane::kNative);
+    };
+    if (pending != 0) run.pipeline_ready.wait_for(lock, std::chrono::milliseconds(1), changed);
+    else run.pipeline_ready.wait(lock, changed);
+  }
+}
+
 void drive_cpu_lane(void *opaque) noexcept {
   auto &run = *static_cast<RunState *>(opaque);
   drive_lane(run, PipelineLane::kCpu);
   {
     std::lock_guard lock(run.pipeline_mutex);
+    // The root's admitted reference survives until it observes this handoff.
+    // Return the child's reference and notification access before that point.
+    run.decref();
     run.cpu_stopped = true;
+    run.pipeline_ready.notify_all();
   }
-  run.pipeline_ready.notify_all();
-  run.decref(); // no resettable per-run state is accessed after publication
 }
 
 Status drive_graph(RunState &run, bool &accepted) noexcept {
-  HYLE_RETURN_IF_ERROR(prepare_inputs(run, accepted));
-  if (!run.plan->pipeline.has_parallel_lanes) {
-    for (std::size_t index = 0; index < run.fragments.size(); ++index)
-      HYLE_RETURN_IF_ERROR(drive_fragment(run, index, accepted));
+  if (!run.pipeline_parallel) {
+    for (std::size_t index = 0; index < run.plan->pipeline_stages.size(); ++index)
+      if (!run.initially_complete[index]) HYLE_RETURN_IF_ERROR(drive_stage(run, index, accepted));
   } else {
-    run.frontier.reset(run.plan->pipeline);
+    run.frontier.reset(run.plan->pipeline, run.initially_complete);
     run.pipeline_error = Status::Ok();
     run.pipeline_accepted = false;
     run.cpu_stopped = false;
     run.incref();
     const auto launched = run.scheduler->spawn_detached(&drive_cpu_lane, &run, mem::kFiberStackLarge);
     if (!launched.ok()) { run.decref(); return launched; }
-    drive_lane(run, PipelineLane::kNative);
+    drive_native_lane(run);
     std::unique_lock lock(run.pipeline_mutex);
     run.pipeline_ready.wait(lock, [&] { return run.cpu_stopped; });
     accepted = accepted || run.pipeline_accepted;
+    lock.unlock();
+    // A pending native handle is also our active observer. On cancellation or
+    // first error, finish each accepted original prefix before dropping it:
+    // Vulkan abandonment alone does not start a background collector.
+    // Both drivers have stopped admitting work and no monitor is held here.
+    for (auto &fragment : run.fragments) if (fragment.pending.valid()) {
+      run.pipeline_error.Update(fragment.pending.completion().wait());
+      fragment.pending = {};
+    }
+    for (auto &value : run.values) if (value.pending_transfer.valid()) {
+      run.pipeline_error.Update(value.pending_transfer.wait());
+      value.pending_transfer = {};
+    }
     HYLE_RETURN_IF_ERROR(run.pipeline_error);
   }
   return run.cancel.load(std::memory_order_acquire)
@@ -546,6 +688,8 @@ Result<Invocation> Executable::create_invocation(sched::Scheduler &scheduler, co
   try {
     run.values.resize(state_->values.size());
     run.fragments.resize(state_->fragments.size());
+    run.initially_complete.resize(state_->pipeline.jobs.size());
+    run.pending_native.resize(state_->pipeline.jobs.size());
     if (state_->pipeline.has_parallel_lanes) {
       HYLE_RETURN_IF_ERROR(run.frontier.prepare(state_->pipeline));
       // Even ordinary borrowed bindings need every independent accepted
@@ -966,6 +1110,31 @@ Status Invocation::prepare_replay(ReplayOptions options) noexcept {
     for (auto &fragment : run.fragments)
       if (fragment.vulkan.valid()) HYLE_RETURN_IF_ERROR(ca::detail::CompositionAccess::seal(fragment.vulkan));
     run.native_sealed = true;
+  }
+  // Binding-ready views need no queue operation. Mark only these input
+  // facts complete; produced values always retain their actual math/copy edge.
+  using Kind = graph::detail::NativePipelineStage::Kind;
+  for (const auto id : run.plan->inputs) {
+    auto &value = run.values[id];
+    const auto &spec = run.plan->values[id];
+    if (value.native_input) value.native_value = value.native_input;
+    else if (spec.vulkan_use) value.native_value = value.boundary;
+  }
+  for (std::size_t i = 0; i < run.plan->pipeline_stages.size(); ++i) {
+    const auto &stage = run.plan->pipeline_stages[i];
+    bool complete = false;
+    if (stage.kind != Kind::kFragment && stage.fragment == SIZE_MAX) {
+      const auto &value = run.values[stage.index];
+      const bool page = run.pages && run.pages->page_input(stage.index) && !value.native_input;
+      if (stage.kind == Kind::kDownload) complete = !value.native_input || page;
+      else complete = bool(value.native_input) || page;
+    }
+    run.initially_complete[i] = complete;
+  }
+  run.pipeline_parallel = run.plan->pipeline.parallel_after(run.initially_complete);
+  if (run.pipeline_parallel) {
+    HYLE_RETURN_IF_ERROR(run.frontier.prepare(run.plan->pipeline));
+    HYLE_RETURN_IF_ERROR(ensure_leases(run));
   }
   run.report = report;
   run.prepared = true;

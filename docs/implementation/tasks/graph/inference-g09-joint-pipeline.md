@@ -142,27 +142,61 @@ Mac只用实际确认身份的MacBook Air。使用原合格依赖/对象和SDK�
 
 ## 实现检查点，2026-10-17
 
-本轮已冻结[实现前独立设计复核](../../../../evidence/architecture/inference-g09-cuda-preaudit/design-review.json)，
-开始J-F1–J-F5批量实现，仍为AUDITED而非candidate。
+仍为AUDITED。J-F1–J-F4实现已接齐，三native路线首轮实际消费者已运行；尚未固定最终candidate，
+不把局部运行结果当成G09聚合验收。G07/G08仍为本goal已验收2/4，G10未开始。
 
-- J-F1首版：原native analysis新增线性依赖分片投影，Apple/Vulkan接入真实data/control prerequisites；
-  common segment按新增外部依赖分开独立prefix，保原lane/预算复用边。
-- J-F2首版：新增私有冷依赖表/有界frontier，Apple/Vulkan使用原root/native driver和一个CPU child，
-  严格串行保inline；每个child仍用原Large stack pool，未增加OS线程或每segment fiber。
-  common原cursor已抽出逐segment local outcome/串行commit接缝，原advance复用该接缝；
-  **CUDA联合双lane调用者尚未接入**，不能据此宣称CUDA流水已完成。
-- J-F3未完成：当前native首版仍有旧的全输入边界准备阶段和producer端搬运；
-  按真实consumer的准备/transfer依赖推进仍须在本批完成，不从范围移除。
-- J-F4首版补短prefix-protect锁、取消的monitor wake、两driver汇合；普通borrowed并发图也冷建原
-  LeaseSubmission以保全部prefix及RunState。真实故障/取消/放弃后退休测试尚待执行。
+- J-F1：common segment与Apple/Vulkan冷分片保留独立prefix；真实data/control以及lane/预算复用边保留。
+- J-F2：三路线均接入原Sched的root/native与最多一个CPU coarse child；common逐segment返回local
+  outcome，由CUDA root独占commit/finish。实际活动阶段完全成链时保inline，不增加OS线程或每op任务。
+- J-F3：原输入repack、上传、下载与数学各按真实消费者依赖推进；绑定已经ready的host/native输入
+  不提交空操作。Apple/Vulkan root保留pending原生句柄后继续领取其它ready工作，复制/分页仍用原owner。
+  Apple共享内存复制仍为原同步调用，不把它改写成零成本或通用copy/compute并发保证。
+- J-F4：prefix protect使用短锁，数学/native wait不持总锁；取消与领取job在同一短monitor中线性化。
+  CPU child在root独立引用保护下，锁内归还引用、发布stopped并notify，解锁后不再访问Run。
+  取消/首错时停止新入场、汇合CPU，锁外用每个仍有效的原native/transfer句柄checked wait至真实退休，
+  然后清句柄并释放原Lease body sentinel。
+- J-F5尚未验收：冷依赖/每slot账已有实现，native pending观察每轮可扫描P个在途句柄，最坏O(P)，
+  用原有1ms fiber等待；不能仅凭frontier O(V+E)宣称总warm观察也是O(E)或无host成本。
 
-[本次common局部检查](../../../../evidence/architecture/inference-g09-partial-common-check/receipt.json)：
-Windows原source integration tree中初始75项、追加frontier后79项全部PASS，含原Graph/core/effect/
-lease/custom consumer与新增两顺序分片、join、control、反复frontier、quota。原目标增量构建13.078秒，
-新增frontier对象1.672秒，CUDA对象0；两次既有profile configure/manifest费用163.062/52.984秒保留。
-这是改变的common源码与具体测试的局部证据，**没有编译/验证Apple/Vulkan新driver，也没有签G09聚合门**。
-实际common/test源码在运行后逐项hash复核，native实现同期继续修改的事实在receipt中明确记录。
+### 本批有限验证与定向修复
 
-下一步继续同一有限批次的CUDA caller与J-F3，集中编译三joint owner、真实两slots/65步/硬件时间线、
-错误与实际退休、适用风险/交付，然后固定candidate做预声明P1。当前完整native流水、三交付、
-风险与性能门均待证；不得因79项局部测试通过而提前收口。
+[CUDA首轮](../../../../evidence/correctness/inference-g09-cuda-implementation-checkpoint/receipt.json)
+保留原预检拒绝199条重编计划的事实；未启动CUDA算子重建。复用同一既有合格叶archive，
+只做本owner的C++编译与消费者链接，不将此scratch复用投影代签新的source/static/shared交付。
+后续源码复核发现取消后仍可领取未claim job，已修复并在下一轮复测。
+
+[CUDA修复后复测](../../../../evidence/correctness/inference-g09-cuda-lifecycle-recheck/receipt.json)：
+81项common、289项原Graph executable/direct consumer、3项真实native retirement，合计373项PASS；
+原CPU+CUDA contracts、G08 joint回归也PASS。新公开消费者两插入顺序、1/2 workers、两slots各65步、
+旧结果、取消、move/drop与drain均PASS。CUPTI记录280个实际kernel区间；两顺序各8次单DAG CPU数学
+区间均有真实kernel重叠，双slot两顺序也观察到重叠。这只签该硬件/旅程，不能冒充P1或所有尺寸并发保证。
+HYLE_TESTING-only的第四条native-retirement故障用例在此shipping OFF profile未编译，适用风险仍待跑。
+本次增量仅7个C++对象、CUDA对象0；含第一轮与两次manifest的累计224.859秒保留。
+
+[Windows Vulkan](../../../../evidence/correctness/inference-g09-vulkan-implementation-checkpoint/receipt.json)：
+原contracts/G08 joint回归及5组两slot/65步旅程PASS（两插入顺序×1/2 workers，另加native输入）；
+每组取消后close与原数学oracle均PASS。原失败保留：一次fixture误用MemoryResource.upload编译失败；
+物理回收观察早于原Sched回调尾部返回；两次取消诊断显式停止。权限退休的逐wait active_uses==0
+断言不变，最终物理回收用原scheduler.drain作确定屏障，实测blocks 1→0。
+取消卡住的可达原因是丢掉原pending句柄后，没有主动observer继续推进Vulkan原abandoned prefix；
+已用上述锁外checked wait修正，没有改叶Completion/Queue。累计活动407.874秒含独立诊断，不重置费用。
+
+[MacBook Air Apple](../../../../evidence/correctness/inference-g09-apple-implementation-checkpoint/receipt.json)：
+实查Mac16,12/M4、macOS27.0.1(26A434)、AppleClang21、原Metal组件；原contracts/G08 joint和同5组
+两slot/65步/取消旅程PASS，累计23.098秒。初始环境未加文档规定Metal shim，configure失败，原失败保留；
+沿同树修正PATH，未重装依赖或更改全局developer directory。实际编译前已改用Windows canonical
+完整build/source Git archive，3321文件逐项校验，snapshot tree c29a1201437c2c1c91c1b0697aca8f2ac8be8b31；
+没有用手选delta冒充最终合格源码，也不从验证副本回写产品。
+
+独立复核原件按源码范围保留：
+[CUDA mailbox/frontier](../../../../evidence/architecture/inference-g09-implementation-review/g09-implementation-review-1.json)、
+[native阶段/取消领取](../../../../evidence/architecture/inference-g09-implementation-review/g09-native-implementation-review-2.json)、
+[CUDA取消领取修复](../../../../evidence/architecture/inference-g09-implementation-review/g09-cuda-cancel-claim-review-3.json)、
+[真实退休与child交接](../../../../evidence/architecture/inference-g09-implementation-review/g09-native-retirement-review-4.json)。
+这些源码判定不代签未运行风险或P1。此前[79项common局部检查](../../../../evidence/architecture/inference-g09-partial-common-check/receipt.json)
+及其原成本继续保留，不重复计成本。
+
+下一步限于本卡剩余验收：WSL CUDA与Air Vulkan适用消费/权限接缝，Apple/Vulkan原生执行时间线，
+原G02/G03/G06直接消费、适用host/device风险、三交付/公开头、P0完整账；candidate固定后按预声明
+两自然形状与必要串行holdout，先独立artifact/text预检，再正式P1，最后终审/LOC。
+尚未完成的门均待证；不追加缺口穷尽调研，不提前推进G10，不重跑已接受G01–G08数学/P1。

@@ -84,6 +84,17 @@ KV和请求循环。CPU+CUDA使用`hyle/graph/cpu_cuda.h`；CPU+MLX/Metal使用
 [H3卡](../implementation/tasks/compute/compute-h3-cpu-vulkan-composition.md)为准。
 `hybrid replay`仍只表示capture与普通命令组合，和CPU/GPU放置是不同的轴。
 
+联合调用继续使用调用者原有的Scheduler和各路线的Queue。一个DAG内的独立CPU/GPU支路按真实
+依赖推进，后续join不会把独立前缀变成额外等待；必要的数据、control/effect、别名及内存复用顺序仍有效。
+两个在途microbatch分别创建Invocation，使用独立可变workspace/结果slot；可共享只读输入。
+每个实际Queue仍遵守原producer合同。物理copy/compute并发取决于原native路线和硬件。
+
+冷准备建立有限依赖表与每slot状态。实际阶段可并行时，每次submit最多增加一个原Sched CPU
+coarse fiber；活动依赖完全成链时使用inline路径。边界repack/复制和必要native观察继续计费，
+Apple共享内存复制仍是原同步调用，provider-private/UMA未知成本不变成0。
+取消或首错停止新入场；已经接收的CPU与native工作按原完成合同退休。结果与借用资源须保活至真实
+退休；全部公开owner释放后，用原Scheduler的drain观察回调尾部和最终物理回收。
+
 ## 普通 CUDA 入口
 
 CUDA Graph 与 Direct 使用相同的默认计算规则，链接 `hyle::graph`。普通单 GPU 程序显式选择

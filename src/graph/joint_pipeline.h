@@ -89,6 +89,24 @@ struct JointPipelinePlan final {
       return Status::ResourceExhausted("joint dependency metadata allocation");
     }
   }
+
+  bool parallel_after(std::span<const std::uint8_t> completed) const noexcept {
+    HYLE_FATAL_ASSERT(completed.size() == jobs.size());
+    auto previous = std::numeric_limits<std::size_t>::max();
+    unsigned lanes = 0;
+    bool unordered = false;
+    for (std::size_t i = 0; i < jobs.size(); ++i) {
+      if (completed[i]) continue;
+      lanes |= 1u << static_cast<unsigned>(jobs[i].lane);
+      bool follows_previous = false;
+      const auto &job = jobs[i];
+      for (auto edge = job.dependency_begin; edge < job.dependency_begin + job.dependency_count; ++edge)
+        follows_previous = follows_previous || dependencies[edge] == previous;
+      if (previous != std::numeric_limits<std::size_t>::max() && !follows_previous) unordered = true;
+      previous = i;
+    }
+    return lanes == 3 && unordered;
+  }
 };
 
 class JointPipelineFrontier final {
@@ -115,14 +133,28 @@ public:
 
   // Warm reset cannot allocate. Called only after both original drivers have
   // returned and their accepted native owners have actually retired.
-  void reset(const JointPipelinePlan &plan) noexcept {
+  void reset(const JointPipelinePlan &plan, std::span<const std::uint8_t> completed = {}) noexcept {
     HYLE_FATAL_ASSERT(remaining_.size() == plan.jobs.size());
+    HYLE_FATAL_ASSERT(completed.empty() || completed.size() == plan.jobs.size());
     heads_.fill(kNone); tails_.fill(kNone); completed_ = 0;
     std::fill(next_.begin(), next_.end(), kNone);
     for (std::size_t i = 0; i < plan.jobs.size(); ++i) {
-      remaining_[i] = plan.jobs[i].dependency_count;
-      if (remaining_[i] == 0) enqueue(plan, i);
+      const bool ready = !completed.empty() && completed[i];
+      remaining_[i] = ready ? kNone - 1 : plan.jobs[i].dependency_count;
+      if (ready) ++completed_;
     }
+    // Already-ready host/native inputs are facts of the frozen binding, not
+    // queue jobs. Remove their outgoing obligations once without submitting a
+    // no-op or making an independent CPU branch wait for native preparation.
+    for (std::size_t i = 0; i < plan.jobs.size(); ++i) {
+      if (remaining_[i] != kNone - 1) continue;
+      for (auto edge = plan.successor_begin[i]; edge < plan.successor_begin[i + 1]; ++edge) {
+        auto &count = remaining_[plan.successors[edge]];
+        if (count != kNone - 1) { HYLE_FATAL_ASSERT(count != 0); --count; }
+      }
+    }
+    for (std::size_t i = 0; i < plan.jobs.size(); ++i)
+      if (remaining_[i] == 0) enqueue(plan, i);
   }
   bool ready(Lane lane) const noexcept { return heads_[static_cast<unsigned>(lane)] != kNone; }
   bool done() const noexcept { return completed_ == remaining_.size(); }
@@ -157,5 +189,74 @@ private:
   std::array<std::size_t, 2> heads_{kNone, kNone}, tails_{kNone, kNone};
   std::size_t completed_ = 0;
 };
+
+struct NativePipelineStage final {
+  enum class Kind : std::uint8_t { kRepack, kUpload, kDownload, kFragment };
+  Kind kind = Kind::kFragment;
+  std::size_t index = 0, fragment = SIZE_MAX;
+};
+
+// The two original native joint owners have the same data/control boundary
+// contract. Only their native-use flag differs. Project real conversion jobs
+// once; each route still executes its original Program/transfer/page owners.
+template<class Plan, class NativeUse>
+Status prepare_native_pipeline(Plan &plan, NativeUse native_use) noexcept {
+  using Lane = JointPipelinePlan::Lane;
+  using Kind = NativePipelineStage::Kind;
+  constexpr auto none = std::numeric_limits<std::size_t>::max();
+  try {
+    JointPipelinePlan::Vector<std::size_t> host_ready(plan.values.size(), none,
+        mem::StdAllocator<std::size_t>(plan.allocator));
+    JointPipelinePlan::Vector<std::size_t> native_ready(plan.values.size(), none,
+        mem::StdAllocator<std::size_t>(plan.allocator));
+    JointPipelinePlan::Vector<std::size_t> fragments(plan.fragments.size(), none,
+        mem::StdAllocator<std::size_t>(plan.allocator));
+    JointPipelinePlan::Vector<std::size_t> dependencies{mem::StdAllocator<std::size_t>(plan.allocator)};
+    auto append = [&](Kind kind, std::size_t index, std::size_t fragment, Lane lane,
+                      std::span<const std::size_t> prerequisites) {
+      const auto job = plan.pipeline.jobs.size();
+      plan.pipeline.append(lane, prerequisites);
+      plan.pipeline_stages.push_back({kind, index, fragment});
+      return job;
+    };
+    for (const auto id : plan.inputs) {
+      const auto &value = plan.values[id];
+      auto repack = none;
+      if (value.repack.valid()) repack = append(Kind::kRepack, id, none, Lane::kCpu, {});
+      if (value.cpu_use) host_ready[id] = append(Kind::kDownload, id, none, Lane::kNative, {});
+      if (native_use(value)) {
+        const std::span<const std::size_t> source = repack == none
+            ? std::span<const std::size_t>{} : std::span<const std::size_t>{&repack, 1};
+        native_ready[id] = append(Kind::kUpload, id, none, Lane::kNative, source);
+      }
+    }
+    for (std::size_t i = 0; i < plan.fragments.size(); ++i) {
+      const auto &fragment = plan.fragments[i];
+      const bool cpu = fragment.target.ordinal() == 1;
+      dependencies.clear();
+      for (const auto source : fragment.dependencies) {
+        if (source >= i) return Status::Internal("native pipeline control/data predecessor is not earlier");
+        dependencies.push_back(fragments[source]);
+      }
+      for (const auto input : fragment.inputs) {
+        const auto ready = cpu ? host_ready[input] : native_ready[input];
+        if (ready != none) dependencies.push_back(ready);
+      }
+      const auto math = append(Kind::kFragment, i, i, cpu ? Lane::kCpu : Lane::kNative, dependencies);
+      fragments[i] = math;
+      const std::span<const std::size_t> source{&math, 1};
+      for (const auto id : fragment.outputs) {
+        const auto &value = plan.values[id];
+        host_ready[id] = cpu ? math : none;
+        native_ready[id] = cpu ? none : math;
+        if (cpu && native_use(value)) native_ready[id] = append(Kind::kUpload, id, i, Lane::kNative, source);
+        if (!cpu && value.cpu_use) host_ready[id] = append(Kind::kDownload, id, i, Lane::kNative, source);
+      }
+    }
+    return plan.pipeline.prepare();
+  } catch (const std::bad_alloc &) {
+    return Status::ResourceExhausted("native joint boundary dependency metadata");
+  }
+}
 
 } // namespace hyle::graph::detail

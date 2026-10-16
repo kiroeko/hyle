@@ -1,0 +1,78 @@
+{
+  "scope": "G09 only: retained native observer retirement, three CPU-child ownership handoffs, final physical lease-reclamation barrier.",
+  "head": "f6c978a7f41208d9d24b70e0c95c294a9dd29982",
+  "snapshot": "WORKTREE; source hashes below define the reviewed snapshot.",
+  "verdict": "PASS_SOURCE_REPAIR_NO_NEW_MUST_WITHIN_THIS_SCOPE",
+  "source_sha256": {
+    "src/graph_route_cpu_apple/invocation.cc": "658cf19a02df86177cd3a0ad54b0821154dcd1f29477736580059a69335d565e",
+    "src/graph_route_cpu_vulkan/invocation.cc": "ae521a0c6d01b7c48d573da875c34bf897e9dcfefc17c249b087ae20c0c4984e",
+    "src/graph_route_cpu_cuda/invocation.cc": "fe2fe21832261a8869ef67a6a3228585be5b405e5d0b9c656670e8d4686e4604",
+    "src/compute_route_vulkan/vulkan_run.cc": "4e39ed74ffec1386c1c9cc3ad4b1f2270e1ba8b3dd097f3f8e86115124701ff9",
+    "src/compute/completion.cc": "97e28207d6798bcc367a5073f997e5a99cb70da1a0574898200250d730a05d48",
+    "src/compute_route_apple/apple_context.cc": "46b4c5bbf6a66bddfa8059d6a8648240244a21035cce20be2d4d2640edd07f43",
+    "src/graph/lease_submission.cc": "6e04d5bc55365313c660ebbcd69a723f8de5584118ce8a544e1623e201a042ac",
+    "tests/graph/cpu_vulkan_contracts.cc": "84a71c69935d84334d8081790a471430fbf9bb2d4b8fe42a70b2c4104559fe9c"
+  },
+  "finding_and_repair": {
+    "id": "NATIVE_CANCEL_DROPPED_ONLY_ACTIVE_OBSERVER",
+    "prior_reachability": "After cancellation/first error, the native driver stops polling and formerly dropped fragment.pending/pending_transfer. Vulkan destroy(pending) only stores the abandoned lifetime; LeaseSubmission body finish still waits for protected-prefix release, with no remaining active observation to retire and deliver it. This is a reachable progress deadlock, not a mathematical failure.",
+    "original_runtime_contract": [
+      "vulkan_run.cc:375-390 pending destroy records abandoned and transfers completion_owner; it does not itself observe the fence.",
+      "vulkan_run.cc:301-357 observe requires terminal native state and provider-tail retirement, then unlinks pending_owner, retires native uses, and delivers abandoned lifetime.",
+      "vulkan_run.cc:401-418 wait loops observe(true); unproved quiescence stays pending rather than returning an observation error as retirement. Explicit collect at :599 onward is another active observation entrance.",
+      "completion.cc:151-159 and :197-209 preserve original wait/attachment settlement; no synthetic completed(error) is introduced."
+    ],
+    "fixed_order": [
+      "Vulkan invocation.cc:578-595: stop native admission, join CPU child, unlock, wait each valid original fragment completion and transfer completion, preserve first error while visiting all handles, then clear them. Lease body is released only later at :604-605.",
+      "Apple invocation.cc:516-538: same stop/join/unlock/wait-all/clear/body-finish order for native fragments. Apple boundaries remain their original synchronous copy path.",
+      "Apple apple_context.cc:477-507 executes or drains the original stream before finish; :551-556 waits for that native done state."
+    ],
+    "limits": "Source verifies active observer retention and original retirement delegation. It does not guarantee progress through an irrecoverably non-quiescent driver failure; original wait deliberately retains that blocking contract."
+  },
+  "child_handoff": {
+    "status": "PASS_SOURCE",
+    "anchors": [
+      "CUDA invocation.cc:363-369 and :454-462",
+      "Apple invocation.cc:494-501 and :513-520",
+      "Vulkan invocation.cc:556-563 and :575-582"
+    ],
+    "invariant": "Each child now decrefs under pipeline_mutex, then publishes cpu_stopped and notifies under the same lock; it accesses no Run after unlocking. The root admitted reference remains alive until after joining, so child decref cannot destroy the monitor. The root acquiring this monitor sees the child reference and notification access returned. Root admission ownership is not released early."
+  },
+  "physical_reclamation": {
+    "status": "PASS_BOUNDARY_AND_INSPECTED_LOG",
+    "anchors": [
+      "cpu_vulkan_contracts.cc:66,101,111,126,132 retain immediate active_uses==0 checks",
+      "cpu_vulkan_contracts.cc:139-146 drops retained ResultLease, then original scheduler.drain before physical live_blocks==0"
+    ],
+    "contract": "cpu_vulkan.h:139-166 protects borrowed outputs and requires work/resource lifetimes; it does not promise all Sched callback tails returned when a mathematical/native completion is first observable. Baseline already publishes running=false before root worker decref. Physical reclamation is therefore observed after deterministic callback drain; permission retirement is still checked at work completion.",
+    "observed": "retry3-contracts.log records source blocks before/after callback drain 1/0 and final retirement PASS. No sleep/repeat or weakened permission assertion."
+  },
+  "runtime_evidence": {
+    "inspected_logs": [
+      {
+        "path": ".scratch/inference-gaps/g09-vulkan-implementation-check-1/retry2-pipeline-correctness.log",
+        "sha256": "ceb6ce6fc5141186dceb050a8deaa92b107d10d887c74cdf822122780cb91265"
+      },
+      {
+        "path": ".scratch/inference-gaps/g09-vulkan-implementation-check-1/retry3-pipeline-correctness.log",
+        "sha256": "5f4339a93b5e829254e2e2cc8f2f076974c0394023ca63a5225cd3470c7a8b41"
+      },
+      {
+        "path": ".scratch/inference-gaps/g09-vulkan-implementation-check-1/retry3-contracts.log",
+        "sha256": "2370b08f9a3f61035530cdb52495acca2f2e63ab61bc71f3b5ffd10d547c1369"
+      }
+    ],
+    "inspected_facts": [
+      "retry2 pipeline log reaches the 65-step oracle and then cancellation, without its closed marker; this alone is not a timeout certificate.",
+      "retry3 pipeline log records five cases: CPU/GPU first with 1/2 workers plus native input, each two slots and 65 changed steps, each cancellation closed marker and oracle PASS.",
+      "retry3 contracts log records cancellation, abandonment, accepted CPU prefix refusal, final 1/0 reclamation and contract PASS."
+    ],
+    "parent_reported_not_independently_executed": "Post-fix CUDA 373 tests (81+289+3), dual/single-worker 65-step cancel/drop and CUPTI overlap PASS; Vulkan all five scenarios PASS. This source review neither ran these jobs nor substitutes for their full runtime receipts.",
+    "not_signed": [
+      "Apple runtime requalification for this exact snapshot",
+      "P1 performance",
+      "Full G09 closure or any previous closed domain"
+    ]
+  },
+  "changes_by_reviewer": "Only this ignored JSON evidence file; no build, test, GPU execution, product, benchmark, registry, documentation, public tool, or scope change."
+}

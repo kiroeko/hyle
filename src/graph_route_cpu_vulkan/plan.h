@@ -50,7 +50,8 @@ struct Plan final {
       : allocator(owner), values(mem::StdAllocator<Value>(owner)),
         inputs(mem::StdAllocator<std::size_t>(owner)),
         fragments(mem::StdAllocator<Fragment>(owner)),
-        paged(mem::StdAllocator<PagedFragment>(owner)), effect_bindings(owner), pipeline(owner) {}
+        paged(mem::StdAllocator<PagedFragment>(owner)), effect_bindings(owner), pipeline(owner),
+        pipeline_stages(mem::StdAllocator<graph::detail::NativePipelineStage>(owner)) {}
   mem::AllocatorRef allocator;
   compute::ResourceBudget budget;
   compute::WorkloadContext workload;
@@ -62,6 +63,7 @@ struct Plan final {
   Vector<PagedFragment> paged; // Empty ordinary path; no per-value page table.
   graph::detail::EffectBindings effect_bindings;
   graph::detail::JointPipelinePlan pipeline;
+  Vector<graph::detail::NativePipelineStage> pipeline_stages;
   std::size_t host_workspace_bytes = 0;
 };
 

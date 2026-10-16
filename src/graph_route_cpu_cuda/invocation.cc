@@ -11,6 +11,7 @@
 
 #include "../compute/completion_internal.h"
 #include "../graph/plan_state.h"
+#include "../graph/joint_pipeline.h"
 #include "../graph/submission_internal.h"
 #include "hyle/compute/backends/cpu.h"
 #include "hyle/compute/detail/generated_result.h"
@@ -55,7 +56,8 @@ struct WeightUse final {
 // the owner that contains its own ResultSlot. This avoids a reference cycle.
 struct RunState final : util::RefCounted<RunState> {
   explicit RunState(mem::AllocatorRef owner) noexcept
-      : allocator(owner), weights(owner), weight_prefixes(owner) {}
+      : allocator(owner), weights(owner), weight_prefixes(owner),
+        pipeline(owner), frontier(owner) {}
   mem::AllocatorRef allocator{};
   // Bound batches also cover native Invocation destruction: provider state
   // may borrow its tensor backing until its destructor finishes.
@@ -67,7 +69,15 @@ struct RunState final : util::RefCounted<RunState> {
   std::size_t queue_count = 0;
   compute::Queue *cuda_queue = nullptr;
   graph::detail::SubmissionCursor cursor{};
-  sched::Event cuda_ready{};
+  sched::Event cuda_ready{}, cpu_dependency{};
+  graph::detail::JointPipelinePlan pipeline;
+  graph::detail::JointPipelineFrontier frontier;
+  std::mutex pipeline_mutex;
+  sched::ConditionVariable pipeline_ready;
+  graph::detail::SegmentSubmission cpu_outcome;
+  std::size_t cpu_command = SIZE_MAX, cpu_outcome_index = SIZE_MAX;
+  bool cpu_outcome_ready = false, cpu_stopped = false;
+  std::atomic<bool> pipeline_stop{false};
   sched::Event finished{};
   std::mutex retirement_mutex{};
   compute::detail::CompletionLifetime abandoned{};
@@ -258,8 +268,12 @@ Status wait_completion(void *opaque) noexcept {
 }
 
 Status cancel_completion(void *opaque) noexcept {
-  static_cast<RunState *>(opaque)->cancel_requested.store(
-      true, std::memory_order_release);
+  auto &run = *static_cast<RunState *>(opaque);
+  {
+    std::lock_guard lock(run.pipeline_mutex);
+    run.cancel_requested.store(true, std::memory_order_release);
+  }
+  run.pipeline_ready.notify_all();
   return Status::Ok();
 }
 
@@ -289,6 +303,166 @@ void publish_terminal(RunState &run, Status terminal) noexcept {
   run.running.store(false, std::memory_order_release);
 }
 
+using PipelineLane = graph::detail::JointPipelinePlan::Lane;
+
+// The child never produces commands on the native Queue, including a wake
+// callback: that Queue remains single-producer on the native/root driver.
+// Published source cells stay stable until this child has returned.
+graph::detail::SegmentSubmission submit_cpu_segment(RunState &run, std::size_t index) noexcept {
+  for (;;) {
+    if (run.pipeline_stop.load(std::memory_order_acquire) ||
+        run.cancel_requested.load(std::memory_order_acquire)) {
+      graph::detail::SegmentSubmission stopped;
+      stopped.status = Status::Cancelled("joint CPU segment cancelled before admission");
+      return stopped;
+    }
+    auto outcome = run.cursor.submit_segment(index);
+    if (outcome.pending == nullptr) return outcome;
+    // A failed observation is returned to the coordinator; the original
+    // source Completion is retained and aggregated through actual retirement.
+    auto ready = outcome.pending->poll();
+    if (!ready) {
+      outcome.status = ready.error();
+      outcome.pending = nullptr;
+      return outcome;
+    }
+    if (*ready == compute::CompletionPoll::kComplete) {
+      const auto status = outcome.pending->wait();
+      if (!status.ok()) {
+        outcome.status = status; outcome.pending = nullptr;
+        return outcome;
+      }
+      continue;
+    }
+    run.cpu_dependency.wait_for(std::chrono::milliseconds(1));
+  }
+}
+
+void drive_cpu_segments(void *opaque) noexcept {
+  auto &run = *static_cast<RunState *>(opaque);
+  for (;;) {
+    std::size_t index;
+    {
+      std::unique_lock lock(run.pipeline_mutex);
+      run.pipeline_ready.wait(lock, [&] {
+        return run.pipeline_stop.load(std::memory_order_acquire) || run.cpu_command != SIZE_MAX;
+      });
+      if (run.pipeline_stop.load(std::memory_order_acquire)) break;
+      index = std::exchange(run.cpu_command, SIZE_MAX);
+    }
+    auto outcome = submit_cpu_segment(run, index);
+    {
+      std::lock_guard lock(run.pipeline_mutex);
+      HYLE_FATAL_ASSERT(!run.cpu_outcome_ready);
+      run.cpu_outcome = std::move(outcome);
+      run.cpu_outcome_index = index;
+      run.cpu_outcome_ready = true;
+    }
+    run.pipeline_ready.notify_all();
+  }
+  {
+    std::lock_guard lock(run.pipeline_mutex);
+    // The root retains the run through the handoff and mailbox collection.
+    run.decref();
+    run.cpu_stopped = true;
+    run.pipeline_ready.notify_all();
+  }
+}
+
+Status drive_parallel_segments(RunState &run) noexcept {
+  run.frontier.reset(run.pipeline);
+  run.pipeline_stop.store(false, std::memory_order_relaxed);
+  run.cpu_command = run.cpu_outcome_index = SIZE_MAX;
+  run.cpu_outcome_ready = run.cpu_stopped = false;
+  run.cpu_outcome = {};
+  run.incref();
+  const auto launched = run.scheduler->spawn_detached(&drive_cpu_segments, &run, mem::kFiberStackLarge);
+  if (!launched.ok()) { run.decref(); return launched; }
+  Status terminal;
+  bool cpu_busy = false;
+  std::size_t pending_native = SIZE_MAX;
+  auto collect_cpu = [&]() noexcept {
+    graph::detail::SegmentSubmission outcome;
+    std::size_t index;
+    {
+      std::lock_guard lock(run.pipeline_mutex);
+      if (!run.cpu_outcome_ready) return false;
+      index = run.cpu_outcome_index;
+      outcome = std::move(run.cpu_outcome);
+      run.cpu_outcome_ready = false;
+    }
+    cpu_busy = false;
+    const auto status = run.cursor.commit_segment(index, std::move(outcome));
+    terminal.Update(status);
+    if (status.ok()) run.frontier.complete(run.pipeline, index);
+    return true;
+  };
+  while (!run.frontier.done()) {
+    const bool collected = collect_cpu();
+    if (run.cancel_requested.load(std::memory_order_acquire))
+      terminal.Update(Status::Cancelled("joint graph cancelled before the next segment"));
+    if (!terminal.ok()) break;
+    bool dispatched_cpu = false;
+    {
+      std::lock_guard lock(run.pipeline_mutex);
+      // Claim and cancellation share one admission linearization point. A
+      // request that has returned cannot be followed by a new unclaimed job.
+      if (run.cancel_requested.load(std::memory_order_acquire))
+        terminal.Update(Status::Cancelled("joint graph cancelled before segment admission"));
+      if (terminal.ok()) {
+        if (!cpu_busy && run.frontier.ready(PipelineLane::kCpu)) {
+          run.cpu_command = run.frontier.take(PipelineLane::kCpu);
+          cpu_busy = true;
+          dispatched_cpu = true;
+        }
+        if (pending_native == SIZE_MAX && run.frontier.ready(PipelineLane::kNative))
+          pending_native = run.frontier.take(PipelineLane::kNative);
+      }
+    }
+    if (!terminal.ok()) break;
+    if (dispatched_cpu) run.pipeline_ready.notify_all();
+    bool advanced = false;
+    if (pending_native != SIZE_MAX) {
+      auto outcome = run.cursor.submit_segment(pending_native);
+      if (outcome.pending == nullptr) {
+        const auto status = run.cursor.commit_segment(pending_native, std::move(outcome));
+        terminal.Update(status);
+        if (status.ok()) run.frontier.complete(run.pipeline, pending_native);
+        pending_native = SIZE_MAX;
+        advanced = true;
+      }
+    }
+    if (!terminal.ok()) break;
+    if (advanced || collected) continue;
+    if (!cpu_busy && pending_native == SIZE_MAX && !run.frontier.done()) {
+      terminal = Status::Internal("joint prepared dependency frontier made no progress");
+      break;
+    }
+    std::unique_lock lock(run.pipeline_mutex);
+    if (pending_native != SIZE_MAX) {
+      // Native host fallbacks can become ready without a CPU mailbox update.
+      // Timed observation uses the existing fiber wait spine, not a new pool.
+      run.pipeline_ready.wait_for(lock, std::chrono::milliseconds(1), [&] {
+        return run.cpu_outcome_ready || run.cancel_requested.load(std::memory_order_acquire);
+      });
+    } else {
+      run.pipeline_ready.wait(lock, [&] {
+        return run.cpu_outcome_ready || run.cancel_requested.load(std::memory_order_acquire);
+      });
+    }
+  }
+  {
+    std::unique_lock lock(run.pipeline_mutex);
+    run.pipeline_stop.store(true, std::memory_order_release);
+    run.pipeline_ready.notify_all();
+    run.pipeline_ready.wait(lock, [&] { return run.cpu_stopped; });
+  }
+  // Even on cancellation/error, publish the child that was already inside
+  // synchronous submit before final aggregation can release any backing.
+  collect_cpu();
+  return terminal;
+}
+
 void drive(void *opaque) noexcept {
   auto &run = *static_cast<RunState *>(opaque);
   // Fixed selections keep both device backing and upload prefix alive. Queue
@@ -316,33 +490,38 @@ void drive(void *opaque) noexcept {
       }
     }
   }
-  while (!run.cursor.done()) {
-    if (run.cancel_requested.load(std::memory_order_acquire)) {
-      run.cursor.request_cancel();
-      break;
+  if (!run.cursor.done() && run.pipeline.has_parallel_lanes) {
+    const auto terminal = drive_parallel_segments(run);
+    run.cursor.finish_submissions(terminal);
+  } else {
+    while (!run.cursor.done()) {
+      if (run.cancel_requested.load(std::memory_order_acquire)) {
+        run.cursor.request_cancel();
+        break;
+      }
+      auto advanced = run.cursor.advance(false);
+      if (!advanced) {
+        run.cursor.reject_successors(std::move(advanced).error());
+        break;
+      }
+      if (*advanced)
+        continue;
+      auto *source_queue = run.cursor.pending_queue();
+      Status dependency;
+      if (source_queue != nullptr &&
+          source_queue->device().backend_id() == compute::cuda::kBackendId) {
+        dependency = detail::wait_cuda_prefix(*source_queue, run.cuda_ready);
+      } else {
+        // A delegated provider owns its episode, not a HYLE stream. Preserve its
+        // declared host-wait cost instead of pretending it is a CUDA event.
+        const auto *source = run.cursor.pending_dependency();
+        dependency = source != nullptr
+                         ? source->wait()
+                         : Status::Internal("CPU+CUDA dependency disappeared");
+      }
+      if (!dependency.ok())
+        run.cursor.reject_successors(std::move(dependency));
     }
-    auto advanced = run.cursor.advance(false);
-    if (!advanced) {
-      run.cursor.reject_successors(std::move(advanced).error());
-      break;
-    }
-    if (*advanced)
-      continue;
-    auto *source_queue = run.cursor.pending_queue();
-    Status dependency;
-    if (source_queue != nullptr &&
-        source_queue->device().backend_id() == compute::cuda::kBackendId) {
-      dependency = detail::wait_cuda_prefix(*source_queue, run.cuda_ready);
-    } else {
-      // A delegated provider owns its episode, not a HYLE stream. Preserve its
-      // declared host-wait cost instead of pretending it is a CUDA event.
-      const auto *source = run.cursor.pending_dependency();
-      dependency = source != nullptr
-                       ? source->wait()
-                       : Status::Internal("CPU+CUDA dependency disappeared");
-    }
-    if (!dependency.ok())
-      run.cursor.reject_successors(std::move(dependency));
   }
   auto prefix = run.cursor.finish();
   Status terminal;
@@ -460,6 +639,31 @@ Result<Invocation> Invocation::create(graph::Invocation &&invocation,
     run->decref();
     allocator.deallocate(state_memory, sizeof(InvocationState), alignof(InvocationState));
     return std::unexpected(Status::ResourceExhausted("CPU+CUDA weight bindings"));
+  }
+  // Immutable segment/edge identity is copied once per joint slot through
+  // its original metadata allocator. No traversal/growth occurs during submit.
+  const auto prepared = [&]() noexcept -> Status {
+    try {
+      graph::detail::JointPipelinePlan::Vector<std::size_t> dependencies{
+          mem::StdAllocator<std::size_t>(allocator)};
+      for (const auto &segment : plan.segments) {
+        const auto begin = plan.segment_dependencies.begin() + segment.dependency_begin;
+        dependencies.assign(begin, begin + segment.dependency_count);
+        run->pipeline.append(segment.lane.ordinal() == 1 ? PipelineLane::kCpu : PipelineLane::kNative,
+            dependencies);
+      }
+      HYLE_RETURN_IF_ERROR(run->pipeline.prepare());
+      if (run->pipeline.has_parallel_lanes)
+        HYLE_RETURN_IF_ERROR(run->frontier.prepare(run->pipeline));
+      return Status::Ok();
+    } catch (const std::bad_alloc &) {
+      return Status::ResourceExhausted("CPU+CUDA joint dependency metadata");
+    }
+  }();
+  if (!prepared.ok()) {
+    run->decref();
+    allocator.deallocate(state_memory, sizeof(InvocationState), alignof(InvocationState));
+    return std::unexpected(prepared);
   }
   run->invocation = std::move(invocation);
   run->scheduler = &scheduler;
@@ -652,7 +856,11 @@ Status Invocation::close() noexcept {
     return Status::FailedPrecondition("invalid CPU+CUDA invocation");
   state_->closed = true;
   auto &run = *state_->run;
-  run.cancel_requested.store(true, std::memory_order_release);
+  {
+    std::lock_guard lock(run.pipeline_mutex);
+    run.cancel_requested.store(true, std::memory_order_release);
+  }
+  run.pipeline_ready.notify_all();
   while (run.running.load(std::memory_order_acquire))
     run.finished.wait_for(std::chrono::milliseconds(1));
   state_->write = {};

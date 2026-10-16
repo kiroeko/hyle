@@ -1,0 +1,435 @@
+{
+  "state": "PARTIAL_CUDA_IMPLEMENTATION_CHECK_PASS",
+  "stages": [
+    {
+      "stage": "manifest",
+      "command": [
+        "ninja",
+        "-C",
+        "C:\\h7\\w-cpu-cuda\\selected-graph\\source-build",
+        "build.ninja"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 56.06199999997625
+    },
+    {
+      "stage": "build-reuse",
+      "command": [
+        "ninja",
+        "-C",
+        "C:\\h7\\w-cpu-cuda\\selected-graph\\source-build",
+        "-f",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g09-cuda-implementation-check-2\\unchanged-leaf-reuse.ninja",
+        "-j",
+        "2",
+        "hyle_graph_test",
+        "hyle_cpu_cuda_pipeline",
+        "hyle_cpu_cuda_contracts",
+        "joint",
+        "hyle_graph_executable_test",
+        "hyle_graph_native_retirement_test"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 55.35999999998603
+    },
+    {
+      "stage": "common",
+      "command": [
+        "C:\\h7\\w-cpu-cuda\\selected-graph\\source-build\\hyle_graph_test.exe",
+        "--gtest_output=json:C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g09-cuda-implementation-check-2\\gtest.json"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 0.031000000017229468
+    },
+    {
+      "stage": "executable",
+      "command": [
+        "C:\\h7\\w-cpu-cuda\\selected-graph\\source-build\\hyle_graph_executable_test.exe",
+        "--gtest_output=json:C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g09-cuda-implementation-check-2\\gtest-executable.json"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 0.4529999999795109
+    },
+    {
+      "stage": "native-retirement",
+      "command": [
+        "C:\\h7\\w-cpu-cuda\\selected-graph\\source-build\\hyle_graph_native_retirement_test.exe",
+        "--gtest_output=json:C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g09-cuda-implementation-check-2\\gtest-retirement.json"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 0.3119999999762513
+    },
+    {
+      "stage": "contracts",
+      "command": [
+        "C:\\h7\\w-cpu-cuda\\selected-graph\\source-build\\hyle_cpu_cuda_contracts.exe"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 1.0160000000032596
+    },
+    {
+      "stage": "g08-joint-regression",
+      "command": [
+        "C:\\h7\\w-cpu-cuda\\selected-graph\\source-build\\joint.exe"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 1.0160000000032596
+    },
+    {
+      "stage": "pipeline-correctness",
+      "command": [
+        "C:\\h7\\w-cpu-cuda\\selected-graph\\source-build\\hyle_cpu_cuda_pipeline.exe"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 9.01600000000326
+    },
+    {
+      "stage": "pipeline-real-kernel-trace",
+      "command": [
+        "C:\\h7\\w-cpu-cuda\\selected-graph\\source-build\\hyle_cpu_cuda_pipeline.exe",
+        "--trace"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 4.4060000000172295
+    }
+  ],
+  "pid": 48156,
+  "head": "f6c978a7f41208d9d24b70e0c95c294a9dd29982",
+  "retained_preflight_seconds": 95.32799999997951,
+  "scope": "Partial CXX owner compilation and real CUDA public consumer execution, reusing qualified unchanged G08 leaf archives from the exact prior source-integration tree. Scratch Ninja projection only; not a new source/static/shared delivery gate or P1.",
+  "max_jobs": 2,
+  "logical_cpu_limit": 4,
+  "priority": "BELOW_NORMAL",
+  "input_hashes": [
+    {
+      "path": "src/graph/joint_pipeline.h",
+      "sha256": "ecc9dd2d13ee4554d54bfc40feb7b0f8543ecea6273e2eac5011798dc005d3ea"
+    },
+    {
+      "path": "src/graph_route_cpu_apple/compile.cc",
+      "sha256": "2f1523a3782a448e19af9250abde7b36061eeb97ed6a1af3d1f3294de6cf50c1"
+    },
+    {
+      "path": "src/graph_route_cpu_apple/invocation.cc",
+      "sha256": "658cf19a02df86177cd3a0ad54b0821154dcd1f29477736580059a69335d565e"
+    },
+    {
+      "path": "src/graph_route_cpu_apple/plan.h",
+      "sha256": "47dab6c478ef57c40dcc558433012487015c80d5d7400c494b3cd3de14b419dd"
+    },
+    {
+      "path": "src/graph_route_cpu_cuda/invocation.cc",
+      "sha256": "fe2fe21832261a8869ef67a6a3228585be5b405e5d0b9c656670e8d4686e4604"
+    },
+    {
+      "path": "src/graph_route_cpu_vulkan/compile.cc",
+      "sha256": "56e92e98e397e75255b6fee2bc68eb426f14bab846f3e01ed872164b0533364b"
+    },
+    {
+      "path": "src/graph_route_cpu_vulkan/invocation.cc",
+      "sha256": "ae521a0c6d01b7c48d573da875c34bf897e9dcfefc17c249b087ae20c0c4984e"
+    },
+    {
+      "path": "src/graph_route_cpu_vulkan/plan.h",
+      "sha256": "7b868236bd7b4d1afb82a37bfc41eae08668cb589c7e992cebb6ab53b20bc4cd"
+    },
+    {
+      "path": "tests/graph/cpu_cuda_contracts/CMakeLists.txt",
+      "sha256": "ce2b0ba4689c884bdfcc546a97994b7f1a9ab890abe79b24659222d9b14b45b2"
+    },
+    {
+      "path": "tests/graph/joint_pipeline_test.cc",
+      "sha256": "4c1afbc3d734918acda470c2f2ce2a0729c388c6cae31c88468d27eaa27f25ef"
+    },
+    {
+      "path": "tests/graph/cpu_cuda_pipeline.cc",
+      "sha256": "949cab23ebdfdc6d99fd08f93b6cafe434d069ce2d91c5d9beff9aeaaa1bea8c"
+    }
+  ],
+  "borrowed_archives": [
+    {
+      "path": "C:\\h7\\w-cpu-cuda\\selected-graph\\source-build\\hyle\\_deps\\onednn-build\\src\\dnnl.lib",
+      "sha256": "6778d32e1efe91484ab453527638c8ddfface2473f9c343178fdd14d3a2c2cf1",
+      "bytes": 835136952
+    },
+    {
+      "path": "C:\\h7\\w-cpu-cuda\\selected-graph\\source-build\\hyle\\src\\error\\hyle_error.lib",
+      "sha256": "d5638e29aad8741a793030afe3c819642c314d5e32aae042badd7c512a6d239b",
+      "bytes": 136934
+    },
+    {
+      "path": "C:\\h7\\w-cpu-cuda\\selected-graph\\source-build\\hyle\\src\\time\\hyle_time.lib",
+      "sha256": "ae645bd78c64d0e5e558551ade1148daf084b86bcaff57192c5aa470eb777be9",
+      "bytes": 113580
+    },
+    {
+      "path": "C:\\h7\\w-cpu-cuda\\selected-graph\\source-build\\hyle\\src\\platform\\hyle_platform.lib",
+      "sha256": "41fe6172028f46883e81c577d466879de894fb5ff6b8a14fc9f718b0daefb28c",
+      "bytes": 764056
+    },
+    {
+      "path": "C:\\h7\\w-cpu-cuda\\selected-graph\\source-build\\hyle\\src\\platform_thread\\hyle_platform_thread.lib",
+      "sha256": "35e33a5788ed539373f2f7ad3228b33f1435b794a75fbfa192353898882ff415",
+      "bytes": 119694
+    },
+    {
+      "path": "C:\\h7\\w-cpu-cuda\\selected-graph\\source-build\\hyle\\src\\platform_fs\\hyle_platform_fs.lib",
+      "sha256": "45fc71400fac773d7314f28f84df1ff723ac8f631dae622377c2be14680cc8fe",
+      "bytes": 286794
+    },
+    {
+      "path": "C:\\h7\\w-cpu-cuda\\selected-graph\\source-build\\hyle\\src\\mem\\hyle_mem.lib",
+      "sha256": "32abfaa909e60dc963ed369ff00d8e2cde824ab37412ec50d66747f14222ad49",
+      "bytes": 1280660
+    },
+    {
+      "path": "C:\\h7\\w-cpu-cuda\\selected-graph\\source-build\\hyle\\src\\mem\\mimalloc_static.lib",
+      "sha256": "1d28eb8876e1a1db9a9fb7240820556d8790a4460b4c95a0edd591fb3efecb3e",
+      "bytes": 989696
+    },
+    {
+      "path": "C:\\h7\\w-cpu-cuda\\selected-graph\\source-build\\hyle\\src\\mem_vm\\hyle_mem_vm.lib",
+      "sha256": "5fe8d084088dca78bf8d65995130e62a3a3f0505b56dedd0af1da95fe950f014",
+      "bytes": 332720
+    },
+    {
+      "path": "C:\\h7\\w-cpu-cuda\\selected-graph\\source-build\\hyle\\src\\simd\\hyle_simd.lib",
+      "sha256": "0f38dd2326608d4814ad7225e20302033d7ab848bb11e48a8c8606778c059be8",
+      "bytes": 27179660
+    },
+    {
+      "path": "C:\\h7\\w-cpu-cuda\\selected-graph\\source-build\\hyle\\src\\container\\hyle_container.lib",
+      "sha256": "bee0661240593ec9157a7eeee45a007257bdf15483e646baa33400021965f0aa",
+      "bytes": 300894
+    },
+    {
+      "path": "C:\\h7\\w-cpu-cuda\\selected-graph\\source-build\\hyle\\src\\sched\\hyle_sched.lib",
+      "sha256": "9998dd812a55146acf14bf91be1ddca5a2f89eb2004fa570177fa9dbec451df2",
+      "bytes": 1643934
+    },
+    {
+      "path": "C:\\h7\\w-cpu-cuda\\selected-graph\\source-build\\hyle\\src\\io_core\\hyle_io_core.lib",
+      "sha256": "606b53a0156f8f283014ddd8a1a49b0f7bb6bb5348b17eccb944a8778176b6f0",
+      "bytes": 2239888
+    },
+    {
+      "path": "C:\\h7\\w-cpu-cuda\\selected-graph\\source-build\\hyle\\src\\compute_ops\\hyle_compute_ops.lib",
+      "sha256": "9f85a9da7b27647e4b5ff78212ec39c504687679d8f562ca98f207ee4c711192",
+      "bytes": 858812
+    },
+    {
+      "path": "C:\\h7\\w-cpu-cuda\\selected-graph\\source-build\\hyle\\src\\compute\\hyle_compute.lib",
+      "sha256": "2e33ce184a91a78bc20782187b28b296c44f5180f669c3452eaf4a9184fbb553",
+      "bytes": 4635032
+    },
+    {
+      "path": "C:\\h7\\w-cpu-cuda\\selected-graph\\source-build\\hyle\\src\\compute_provider_onednn\\hyle_compute_provider_onednn.lib",
+      "sha256": "cd6b845169a21c01dbc6dbbb9c0ab42c7516f03a5f66a452f002316075cd4409",
+      "bytes": 548212
+    },
+    {
+      "path": "C:\\h7\\w-cpu-cuda\\selected-graph\\source-build\\hyle\\src\\compute_backend_cpu\\hyle_compute_backend_cpu.lib",
+      "sha256": "87e0a9bdafc7ad52168ab22655add6189fc354fee0adbb8910f38ebec3cc1f10",
+      "bytes": 82912
+    },
+    {
+      "path": "C:\\h7\\w-cpu-cuda\\selected-graph\\source-build\\hyle\\src\\compute_batch\\hyle_compute_batch.lib",
+      "sha256": "cb27fdc40d7d5a3e1b07c97592011e9f851d23b4679569428b8319fdf92e9564",
+      "bytes": 2710622
+    },
+    {
+      "path": "C:\\h7\\w-cpu-cuda\\selected-graph\\source-build\\hyle\\src\\compute_ggml_runtime\\hyle_compute_ggml_runtime.lib",
+      "sha256": "31118d217f52cb1fa38680df85374c3b2f89e38b8b5b716030cfcd37de43fa26",
+      "bytes": 158562
+    },
+    {
+      "path": "C:\\h7\\w-cpu-cuda\\selected-graph\\source-build\\hyle\\src\\compute_ggml_runtime\\vendor\\src\\ggml-base.lib",
+      "sha256": "577190619d55e50c945323a53b94083dfc8f5806dc3aebfdbf416e13b91e04f8",
+      "bytes": 5591984
+    },
+    {
+      "path": "C:\\h7\\w-cpu-cuda\\selected-graph\\source-build\\hyle\\src\\compute_ggml_runtime\\vendor\\src\\ggml.lib",
+      "sha256": "c2a7151440c59acc8b89e61ed60dc18fb41b68975d71d86ebe5779d33c418a31",
+      "bytes": 650764
+    },
+    {
+      "path": "C:\\h7\\w-cpu-cuda\\selected-graph\\source-build\\hyle\\src\\compute_ggml_runtime\\vendor\\src\\ggml-cpu.lib",
+      "sha256": "268508ed48b6c9d05004c99a3ddb042f3494111270b4a7741f5c6a5ac2c45fab",
+      "bytes": 3046486
+    },
+    {
+      "path": "C:\\h7\\w-cpu-cuda\\selected-graph\\source-build\\hyle\\src\\compute_ggml_runtime\\vendor\\src\\ggml-cuda\\ggml-cuda.lib",
+      "sha256": "d70fa98981854311dacd5d46a5c3e6940c35c5a7b1739bcfba3dff6ec00ac3aa",
+      "bytes": 148578602
+    },
+    {
+      "path": "C:\\h7\\w-cpu-cuda\\selected-graph\\source-build\\hyle\\src\\compute_provider_ggml\\hyle_compute_provider_ggml.lib",
+      "sha256": "e30cbc1ebda68dd853c2ce62a5c8f5f584644ad8254cae25e5e6771056486192",
+      "bytes": 2030674
+    },
+    {
+      "path": "C:\\h7\\w-cpu-cuda\\selected-graph\\source-build\\hyle\\src\\graph_provider_onednn\\hyle_graph_provider_onednn.lib",
+      "sha256": "8e03a9ca7da22fa53489cbde8c576e8023ccbd2a20757b3e8be2341b6216a8d4",
+      "bytes": 286148
+    },
+    {
+      "path": "C:\\h7\\w-cpu-cuda\\selected-graph\\source-build\\hyle\\src\\compute_backend_cuda\\hyle_compute_backend_cuda.lib",
+      "sha256": "1bd4815ad44b8fcb2ef207bb6a8b6530e67515a016e96fb5cc32065acdc79e15",
+      "bytes": 935402
+    },
+    {
+      "path": "C:\\h7\\w-cpu-cuda\\selected-graph\\source-build\\hyle\\src\\compute_provider_native\\hyle_compute_provider_native.lib",
+      "sha256": "61e3d8fe539e9b1303c004ec8a0a22ec14690b841197701084c5c68df7f7d50b",
+      "bytes": 5027598
+    },
+    {
+      "path": "C:\\h7\\w-cpu-cuda\\selected-graph\\source-build\\hyle\\src\\compute_stream\\hyle_compute_stream.lib",
+      "sha256": "cdd81984539eecfc84103ad574692fd4e756f1334d4f06f0d515db6a2d11881d",
+      "bytes": 1188322
+    },
+    {
+      "path": "C:\\h7\\w-cpu-cuda\\selected-graph\\source-build\\hyle\\src\\compute_route_cpu\\hyle_compute_route_cpu.lib",
+      "sha256": "cd49c4f83b08e611250c3ee288a2415b36b85e8d8e3dbcdf7956bbcb03ff75ef",
+      "bytes": 650392
+    },
+    {
+      "path": "C:\\h7\\w-cpu-cuda\\selected-graph\\source-build\\hyle\\src\\graph_route_cpu\\hyle_graph_route_cpu.lib",
+      "sha256": "d910dd26328c7ba5a457b967b082d1466d0f237da25d7aaa5b80fc5bf72f7098",
+      "bytes": 516198
+    },
+    {
+      "path": "C:\\h7\\w-cpu-cuda\\selected-graph\\source-build\\hyle\\src\\compute_provider_cublas\\hyle_compute_provider_cublas.lib",
+      "sha256": "cc9c3c849443e17ec2d440ccfb56b46147483a64b83e3a0d7c27f8d71d0336bc",
+      "bytes": 153176
+    },
+    {
+      "path": "C:\\h7\\w-cpu-cuda\\selected-graph\\source-build\\hyle\\src\\compute_provider_cuda\\hyle_compute_provider_cuda.lib",
+      "sha256": "816ffa722d25b314a4d14f46554d1ff201ef86c50dbbd6ea32b6126de3f0a527",
+      "bytes": 51049728
+    },
+    {
+      "path": "C:\\h7\\w-cpu-cuda\\selected-graph\\source-build\\hyle\\src\\compute_provider_ggml_cuda\\hyle_compute_provider_ggml_cuda.lib",
+      "sha256": "663c0cdf1cf2bc268757575bc00020b689a847f10a2d93da07f05f396dc98585",
+      "bytes": 1386952
+    },
+    {
+      "path": "C:\\h7\\w-cpu-cuda\\selected-graph\\source-build\\hyle\\src\\compute_provider_torch_cuda\\hyle_compute_provider_torch_cuda.lib",
+      "sha256": "d6fc09291eafc34c95d463f6dcfb949868787b72c8b39548c3ec1cf322e3b5c0",
+      "bytes": 1845932
+    },
+    {
+      "path": "C:\\h7\\w-cpu-cuda\\selected-graph\\source-build\\hyle\\src\\compute_route_cuda\\hyle_compute_route_cuda.lib",
+      "sha256": "a75f52bddad3203b33f62e7d43c8492c93e8dc638205346ba52438fbe3b2eb69",
+      "bytes": 1141542
+    },
+    {
+      "path": "C:\\h7\\w-cpu-cuda\\selected-graph\\source-build\\hyle\\src\\graph_provider_ggml_cuda\\hyle_graph_provider_ggml_cuda.lib",
+      "sha256": "c5ece6873d092be4095018a2637e966887a983fa4e48cb5ab3c2f6df44c08c47",
+      "bytes": 523468
+    },
+    {
+      "path": "C:\\h7\\w-cpu-cuda\\selected-graph\\source-build\\hyle\\src\\graph_route_cuda\\hyle_graph_route_cuda.lib",
+      "sha256": "f5df608021b91d0b64fa6462a8a0dfae17168c67b0db110a4886866c0afbdccc",
+      "bytes": 66490
+    },
+    {
+      "path": "C:\\h7\\w-cpu-cuda\\selected-graph\\source-build\\hyle\\src\\graph_batch\\hyle_graph_batch.lib",
+      "sha256": "6c8a37962e6acd9c79dc70a5420fe45a34b6a6bdb5413a2edabd901c6d358958",
+      "bytes": 1449672
+    },
+    {
+      "path": "C:\\h7\\w-cpu-cuda\\selected-graph\\source-build\\hyle\\src\\compute_state\\hyle_compute_state.lib",
+      "sha256": "012e94ffa42315b7613682d94820449fbdf90a8642d63fb7ccad51f675be3103",
+      "bytes": 811544
+    },
+    {
+      "path": "C:\\h7\\w-cpu-cuda\\selected-graph\\source-build\\lib\\gtest.lib",
+      "sha256": "1df274bec63bbd83af827bd593655d00742482aa4484265cf22a01ce6f7e607a",
+      "bytes": 5785412
+    },
+    {
+      "path": "C:\\h7\\w-cpu-cuda\\selected-graph\\source-build\\lib\\gtest_main.lib",
+      "sha256": "22ff27212525ac0d57303ee119dda34217514687112542c4d1abfb75038a204c",
+      "bytes": 9870
+    }
+  ],
+  "stage": "pipeline-real-kernel-trace",
+  "elapsed_seconds": 224.85899999999674,
+  "dry_run_edges": 20,
+  "cuda_edges": [],
+  "binaries": [
+    {
+      "target": "hyle_graph_test",
+      "path": "C:\\h7\\w-cpu-cuda\\selected-graph\\source-build\\hyle_graph_test.exe",
+      "sha256": "02a9d2d9d7edd1ecbea1293a13bb22730b221df8a3c89a706270f2508a89e050"
+    },
+    {
+      "target": "hyle_cpu_cuda_pipeline",
+      "path": "C:\\h7\\w-cpu-cuda\\selected-graph\\source-build\\hyle_cpu_cuda_pipeline.exe",
+      "sha256": "e6d800a29645fa0a76f335b98ab7a9119174e3f2639ae78e12117e713348f11e"
+    },
+    {
+      "target": "hyle_cpu_cuda_contracts",
+      "path": "C:\\h7\\w-cpu-cuda\\selected-graph\\source-build\\hyle_cpu_cuda_contracts.exe",
+      "sha256": "768449a3ee9e9a99531b4f53ec22df8cefd15a0c934229d7b6e2e8ed78561d53"
+    },
+    {
+      "target": "joint",
+      "path": "C:\\h7\\w-cpu-cuda\\selected-graph\\source-build\\joint.exe",
+      "sha256": "f93742244fff1f57a0f144bfc8214355fc941fcff369f44e169f43f7e238499e"
+    },
+    {
+      "target": "hyle_graph_executable_test",
+      "path": "C:\\h7\\w-cpu-cuda\\selected-graph\\source-build\\hyle_graph_executable_test.exe",
+      "sha256": "95b7bab0ab8b481ab087cd60177cee889c196fca96fbf8147e5ecd316664abb6"
+    },
+    {
+      "target": "hyle_graph_native_retirement_test",
+      "path": "C:\\h7\\w-cpu-cuda\\selected-graph\\source-build\\hyle_graph_native_retirement_test.exe",
+      "sha256": "db984c0edc3b3826a669e04e88c01af1fe1c9dba2c7fc620bec0806e483488e9"
+    }
+  ],
+  "schema": "hyle.inference-g09-cuda-lifecycle-recheck/v1",
+  "prior_record": "evidence/correctness/inference-g09-cuda-implementation-checkpoint/receipt.json",
+  "coverage": {
+    "common": 81,
+    "original_executable_consumers": 289,
+    "native_retirement": 3
+  },
+  "not_covered": "The HYLE_TESTING-only fourth native-retirement fault case was not compiled in this shipping instrumentation-OFF profile; scoped instrumented risk verification remains required. No ASan/UBSan/TSan/device-tool, full source/static/shared, Air, G09 P1 or aggregate gate accepted here.",
+  "extra_original_sources": [
+    {
+      "path": "src/graph/executable.cc",
+      "sha256": "a8110f7234c5d8a8b48b3c99299b2e8f86f72c0b33134eaa962584b81d3a6aca"
+    },
+    {
+      "path": "src/graph/submission_internal.h",
+      "sha256": "1da2c63b573581fda8831cf3a36639f104c193f1911a29bdb0d58921c79510e9"
+    },
+    {
+      "path": "src/graph/native_analysis.h",
+      "sha256": "edd5f0dff67b9accfbd771bc703df5722a1d91a6c627eefaf98836fbfd86cbbb"
+    },
+    {
+      "path": "tests/graph/executable_test.cc",
+      "sha256": "8f029acb09571cae588fa5c5877964d2cc0debc27b6490762f1e9507b5ba6e96"
+    },
+    {
+      "path": "tests/graph/region_provider_test.cc",
+      "sha256": "270776c6a9b45916e75b76a342da94b6355e3cd9addb305cee3e022ab16ce7ab"
+    },
+    {
+      "path": "tests/graph/cuda_graph_test.cc",
+      "sha256": "078131e5c0615df12e78c1c53fa911c6fbd357a2e0e3e422158dbd57529d55f8"
+    },
+    {
+      "path": "tests/graph/aggregate_native_retirement_test.cc",
+      "sha256": "54fab08437757ea6eda760ee59be354ef0e969cc156ae1b0698bc0beb71d7451"
+    }
+  ],
+  "raw": {
+    "path": "raw.zip",
+    "sha256": "dfaff78d339f3e31ce40e21ad5ae42da8e43631593b354cc794ec92d49e6677b",
+    "bytes": 298978
+  }
+}
