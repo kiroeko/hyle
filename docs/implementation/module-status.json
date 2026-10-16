@@ -678,15 +678,15 @@
     },
     {
       "module": "compute_batch",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/inference-g06-metadata-decode.md",
-      "summary": "G06 SCOPED：沿原四组定界active/delta metadata、Graph一次共享上传、准确lease去重和四路线topology/decode；当前只读审计、无产品FIX授权。保原G04/G05未决工程门及全部候选/失败/未知费用，goal ACTIVE/3of10。"
+      "summary": "G06共同基础批AUDITED：冻结M1 active immutable快照/显式固定blob导出、M2五段delta上传、S1上传前共享和L1完整lease去重准入；只授权本卡有限FIX，native/decode/pending后续与G04/G05未决门仍完整保留。"
     },
     {
       "module": "graph_batch",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/inference-g06-metadata-decode.md",
-      "summary": "G06 SCOPED：沿原四组定界active/delta metadata、Graph一次共享上传、准确lease去重和四路线topology/decode；当前只读审计、无产品FIX授权。保原G04/G05未决工程门及全部候选/失败/未知费用，goal ACTIVE/3of10。"
+      "summary": "G06共同基础批AUDITED：冻结M1 active immutable快照/显式固定blob导出、M2五段delta上传、S1上传前共享和L1完整lease去重准入；只授权本卡有限FIX，native/decode/pending后续与G04/G05未决门仍完整保留。"
     }
   ]
 }

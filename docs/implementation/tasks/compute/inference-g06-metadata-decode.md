@@ -1,8 +1,8 @@
 # G06 metadata 与 decode 成本收口
 
-状态：**SCOPED，2026-10-16**。本卡沿[完整十项目标](../project/inference-gaps-goal-execution-2026-10.md)，
+状态：**共同基础批 AUDITED，2026-10-16**。本卡沿[完整十项目标](../project/inference-gaps-goal-execution-2026-10.md)，
 不缩减 CPU、单 GPU、CPU＋单 GPU、单/多请求或四原生路线。先完成四组共同审计和形状冻结，
-再集中实施、批量检查、按实际失败定向修正；当前不授权产品修改。
+再集中实施、批量检查、按实际失败定向修正；仅下文已冻结的共同基础批允许产品修改。
 
 ## 当前 owner 与 baseline
 
@@ -82,3 +82,49 @@ P0 裁决 active/changed/uploaded bytes、上传次数、plan/replan、host wait
 
 七门、红队、LOC、完整剩余支持/负空间与最终性能方向在 immutable candidate 后实际裁决；
 当前没有任何 G06 产品或运行 PASS，完成项仍为 G01/G02/G03。
+
+## 共同基础批 AUDITED：M、S 与权限入口
+
+本节基于 `04b52e09b909cb07f8bb240a599c354226cdea82` 的实际共同源码冻结；compute_batch、graph_batch 从 SCOPED 进入
+AUDITED 后才实施。本批先落共同依赖，G06-D 与 native controller 的必要后续修改仍在
+同一 G06 目标内，不能用共同批通过替代四路线低成本 decode/capture 裁决。
+
+| FIX | 最终形状与成本 | 有限验收 |
+|---|---|---|
+| M1 active snapshot | `BatchSchema::version` 只分配 header＋实际四数组的紧凑 immutable backing。`host()` 返回其稳定 owned spans；每次成功 version 仍有独立 generation。固定容量 descriptor 是真实 State/Graph schema 需求，不删除；`metadata()` 在显式调用时才生成零填充全容量 blob，并缓存同一个 readonly lease | 新版本/旧快照/导出独立寿命、并发首次导出、空与 ragged、OOM 保旧、capacity 不扩大 active storage；原 F4 测试保持 |
+| M2 delta upload | 内部五段只读视图映射到原固定 wire offsets。slot 冷分配并初始化零 staging/mirror；每次只比较旧/新有效段，对每段生成至多一个包含变化的 word range，缩小有效区的旧字节清零。完全同版本零上传/零上传等待；新 generation 如仅 header 改变也须上传对应字段 | 对独立 full snapshot oracle 核 grow/shrink/reorder/empty、同 shape 不同内容；旧镜像只在成功上传后更新身份。报告 actual bytes/waits；不谎报扫描量为 changed bytes |
+| S1 prepare before sharing | 由原 Graph coordinator 按固定 binding 顺序找到同 metadata 输入的首节点；先准备首节点，其它节点通过内部 `prepare_shared` 消费它已 checked-retired 的同 generation/resource 镜像。各 native plan/workspace 独立；`run/enqueue` 仍核 exact metadata storage | 两节点首次一次上传、后续同版本零上传，各自必要 plan wait 仍计费；foreign/resource/旧 token/旧 output/失败前缀与跨 queue 原图依赖保持 |
+| L1 common ready admission | 原 common slot 冷预留指针 scratch；收集 ordinary/Q、准确 K/V page guards 和 mirror 的完整 block identity/generation，排序去重后借原 `read_unique`，写权限仍走原检查。保留所有输入 owner 到 admission 完成，排序不保存跨 episode 裸指针 | 同 backing 不同 block 不合并；相同 block 多 subview 只准入一次；permission/poison/retirement/OOM 与页权限原测试保持。pending/native/Graph 组合的对应准入费用仍是本卡后续必验，L1 不代签整个 L |
+
+本批无新 public 函数、Provider ABI、组件或依赖；只在既有 internal batch headers 增加
+active segments/共享准备入口，替换旧“上传后共享”入口。`BatchInvocation` public
+prepare/update/run/output/close 调用不变，但报告允许零上传/零上传等待。固定 blob 导出的
+首次全容量 allocation/copy/zeroing 是显式费用，不发生于普通 version/Direct/Graph prepare。
+immutable version 私有字段增加导出 cache 与 mutex；锁只用于显式首次/重复导出，不在
+普通 active snapshot、warm upload 或 native run 中取得。导出失败不发布半成品，允许重试；
+原 spans/source 在 version 期间不得并发修改，控制 slot 仍 externally serialized。
+
+slot 另存“实际自身镜像版本”，不能以当前共享布局冒充自身镜像内容；切换 shared/own 时
+据此产生正确 delta。source upload 已实际 wait 后才共享，跨 queue 不推定未完成 upload；
+原图 math/producer/native retirement 依赖不改。旧读者和任意未退休前缀阻止覆写，失败
+仍保留原 native owner/guard，无成功 suffix 掩盖错误。prepared ticket 保一次消费合同。
+
+L1 借用的 private `read_unique` 最初由 F2 引入；本批扩展可信 batch 内部调用者须证明
+全体只读 block 去重，函数原 domain lock、closed/permission/failure/refcount 检查完全
+保留。不修改公共 F1、其实现或 writer admission，不以共享 backing/address/page ID 去重。
+排序 scratch 冷 O(max guards) 指针空间，warm O(G log G) 比较＋O(G) 原权限操作，无 warm
+分配。该局部用途不会把 general LeaseUseBatch 默认改成免检查入口。
+
+本批明确未修改：CPU request PagedRead 的 retained page spans、FI q/kv indptr plan key、
+Apple/Vulkan 的编译期长度；已检查它们确实属于 G06-D 的后续 owner 工作。不能只改
+reuse key 使旧编译常量继续运行。四路线 D、pending L、native metadata banks 与三联合
+验收仍列为未完成，不以此次有限基础批缩小最终成功条件。
+
+共同 API/算法与本批消费者迁移集中完成后冻结一次候选，运行 selector 选中的两 factor
+正确性/逐头和真实 CPU Direct＋两 node Graph；原 encoded/common、paged/ragged、
+pending receiver/Graph 风险消费者按改变的共同机制取证。Windows cache
+`.scratch/build-compute-v2-dev` 只增量构建相应目标、最多4worker；无 CUDA vendor 修改，
+不重编 ggml CUDA。随后适用宿主三 sanitizer、搬迁 static/shared 和受影响 native/联合
+输入逐配置串行；先复用未变数学/设备证据，仅在真实新增风险时补设备门。
+M1/M2/S1/L1 的 P0 需独立数据/权限 oracle 与原 report/allocator/调用观测，源码说明本身
+不签 PASS。当前全部这些新门均未运行；不得签 G06、G04/G05 完成或新的 P1 吞吐。
