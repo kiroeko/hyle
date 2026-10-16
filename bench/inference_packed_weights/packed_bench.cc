@@ -29,6 +29,7 @@ namespace hyle::compute::torch_cuda { Provider g07_original_provider() noexcept;
 #include <hyle/compute/apple.h>
 #include <hyle/compute/low_precision.h>
 #include <mlx/ops.h>
+#include <mlx/transforms.h>
 namespace hyle::compute::apple::detail {
 Result<std::vector<mlx::core::array>> g07_original_lower_mlx_float(
     const Operation&, std::span<const TensorDesc>, std::span<const mlx::core::array>, mlx::core::Stream) noexcept;
