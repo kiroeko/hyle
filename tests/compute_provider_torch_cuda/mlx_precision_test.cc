@@ -51,9 +51,9 @@ public:
 private:
   bool previous_;
 };
-class CudaMlxPrecision:public ::testing::TestWithParam<std::tuple<Format,c::DataType>>{};
+class CudaMlxPrecision:public ::testing::TestWithParam<std::tuple<Format,c::DataType,std::int64_t>>{};
 TEST_P(CudaMlxPrecision, SourceF32EquationAndGroupScaleArePreservedUnderForeignTf32Policy) {
-  const auto [format,type]=GetParam();
+  const auto [format,type,rows]=GetParam();
   const bool affine=format==Format::kAffine4;
   const auto group=affine?64:32,pack=format==Format::kMxfp8?4:8;
   constexpr std::int64_t n=8,k=64;
@@ -64,11 +64,15 @@ TEST_P(CudaMlxPrecision, SourceF32EquationAndGroupScaleArePreservedUnderForeignT
     return c::TensorDesc::dense(t,{dimensions.begin(),dimensions.size()}).value();
   };
   std::vector<c::TensorDesc> descriptors{
-    dense(type,{1,k}),dense(c::DataType::kUInt32,{n,k/pack}),
+    dense(type,{rows,k}),dense(c::DataType::kUInt32,{n,k/pack}),
     dense(affine?type:c::DataType::kUInt8,{n,k/group})};
   if(affine)descriptors.push_back(descriptors.back());
   std::vector<std::vector<std::byte>> payloads;
-  std::vector<float> activation(k);activation[0]=1;activation[1]=-1.375f;
+  constexpr std::array factors{1.F,-1.F,2.F,-2.F,.5F};
+  std::vector<float> activation(rows*k);
+  for(std::int64_t row=0;row<rows;++row) {
+    activation[row*k]=factors[row];activation[row*k+1]=-1.375f*factors[row];
+  }
   payloads.push_back(floating(type,activation));
   const auto word=format==Format::kMxfp8?0x00004038U:0x00000057U;
   payloads.push_back(bytes(std::vector<std::uint32_t>(n*k/pack,word)));
@@ -99,16 +103,22 @@ TEST_P(CudaMlxPrecision, SourceF32EquationAndGroupScaleArePreservedUnderForeignT
     EXPECT_TRUE(at::globalContext().allowTF32CuBLAS());
   }
   const auto scale=rounded(type,.1f),bias=rounded(type,.03f);
-  const auto expected=affine?rounded(type,(7*scale+bias)-1.375f*(5*scale+bias)):
-      rounded(type,format==Format::kMxfp8?1-1.375f*2:6-1.375f*3);
-  const auto expected_bytes=floating(type,std::vector<float>(n,expected));
+  const auto source=affine?(7*scale+bias)-1.375f*(5*scale+bias):
+      format==Format::kMxfp8?1-1.375f*2:6-1.375f*3;
+  std::vector<float> expected(rows*n);
+  for(std::int64_t row=0;row<rows;++row)
+    for(std::int64_t column=0;column<n;++column)
+      expected[row*n+column]=rounded(type,source*factors[row]);
+  const auto expected_bytes=floating(type,expected);
   std::vector<std::byte> actual(output.size());ASSERT_TRUE(output.view().read(actual).ok());
   if(type==c::DataType::kFloat32) {
     // The original contract permits F32 reduction association, not bitwise
     // SIMD lane order. Charge cancellation against the two source terms.
-    std::vector<float> result(n);ASSERT_TRUE(output.view().read(std::as_writable_bytes(std::span(result))).ok());
+    std::vector<float> result(rows*n);ASSERT_TRUE(output.view().read(std::as_writable_bytes(std::span(result))).ok());
     const auto magnitude=affine?std::abs(7*scale+bias)+1.375f*std::abs(5*scale+bias):8.0f;
-    for(float value:result)EXPECT_NEAR(value,expected,8*std::numeric_limits<float>::epsilon()*magnitude);
+    for(std::int64_t row=0;row<rows;++row)for(std::int64_t column=0;column<n;++column)
+      EXPECT_NEAR(result[row*n+column],expected[row*n+column],
+          8*std::numeric_limits<float>::epsilon()*magnitude*std::abs(factors[row]));
   } else EXPECT_EQ(actual,expected_bytes);
   if(!affine) {
     for(const int exponent:{0,143,255}) {
@@ -120,16 +130,19 @@ TEST_P(CudaMlxPrecision, SourceF32EquationAndGroupScaleArePreservedUnderForeignT
       ASSERT_TRUE(submitted)<<submitted.error().message();
       const auto status=submitted->wait();ASSERT_TRUE(status.ok())<<status.message();
       const auto source_scale=rounded(type,std::ldexp(1.0f,int(exponent)-127));
-      auto boundary=rounded(type,(format==Format::kMxfp8?-1.75f:1.875f)*source_scale);
-      // The source reduction starts at positive zero. Adding a negative-zero
-      // group contribution therefore leaves positive zero in the result.
-      if(boundary==0)boundary=0;
+      for(std::int64_t row=0;row<rows;++row) {
+        auto boundary=rounded(type,(format==Format::kMxfp8?-1.75f:1.875f)*factors[row]*source_scale);
+        // Adding a negative-zero group to the initial positive zero gives +0.
+        if(boundary==0)boundary=0;
+        for(std::int64_t column=0;column<n;++column)expected[row*n+column]=boundary;
+      }
       std::vector<std::byte> result(output.size());ASSERT_TRUE(output.view().read(result).ok());
-      EXPECT_EQ(result,floating(type,std::vector<float>(n,boundary)));
+      EXPECT_EQ(result,floating(type,expected));
     }
   }
 }
 INSTANTIATE_TEST_SUITE_P(OriginalDtypes,CudaMlxPrecision,
   ::testing::Combine(::testing::Values(Format::kAffine4,Format::kMxfp4,Format::kMxfp8),
-                    ::testing::Values(c::DataType::kFloat16,c::DataType::kBFloat16,c::DataType::kFloat32)));
+                    ::testing::Values(c::DataType::kFloat16,c::DataType::kBFloat16,c::DataType::kFloat32),
+                    ::testing::Values(std::int64_t{1},std::int64_t{5})));
 } // namespace

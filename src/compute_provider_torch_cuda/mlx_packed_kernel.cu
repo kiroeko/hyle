@@ -25,7 +25,7 @@ __global__ void check_ids(const std::int32_t *ids, Index rows, Index limit,
 
 // Original MLX qmv warp-to-row mapping with the widened CPU equations:
 // no global unpacked bank, narrowed affine weights, or MX scale before dot.
-template<class Output, bool Embedding>
+template<class Output, bool Embedding, unsigned Rows = 1>
 __global__ void packed(MlxPacked p, const void *activation,
     const std::uint32_t *weights, const void *scales, const void *biases,
     const std::int32_t *ids, void *output, const unsigned *status) {
@@ -51,30 +51,46 @@ __global__ void packed(MlxPacked p, const void *activation,
     const Index first = (Index(blockIdx.x) * blockDim.x + threadIdx.x) / 32;
     const Index stride = Index(gridDim.x) * blockDim.x / 32;
     const unsigned lane = threadIdx.x % 32;
-    for (Index i = first; i < p.rows * p.columns; i += stride) {
-      const Index row = i / p.columns, column = i % p.columns;
+    const Index row_tiles = p.rows / Rows + (p.rows % Rows != 0);
+    for (Index i = first; i < row_tiles * p.columns; i += stride) {
+      const Index row = (i / p.columns) * Rows, column = i % p.columns;
       const Index expert = p.kind == Kind::kGrouped ? Index(ids[row]) : 0;
       const Index weight_row = expert * p.columns + column;
-      float result = 0;
+      float result[Rows] = {};
       for (Index group = 0; group < groups; ++group) {
         const Index scale_index = weight_row * groups + group;
         const bool affine = p.format == Format::kAffine4;
         const float scale = affine ? q::load(scales, scale_index, p.scale_type)
             : q::rounded(ldexpf(1.F, int(static_cast<const std::uint8_t *>(scales)[scale_index]) - 127), p.output_type);
         const float bias = affine ? q::load(biases, scale_index, p.scale_type) : 0.F;
-        float dot = 0;
+        float dot[Rows] = {};
         for (unsigned j = lane; j < p.group; j += 32) {
           const Index k = group * p.group + j;
           const auto word = weights[weight_row * (p.depth / pack) + k / pack];
           const auto code = (word >> ((k % pack) * bits)) & ((1U << bits) - 1);
           const float value = affine ? __fadd_rn(__fmul_rn(float(code), scale), bias)
               : p.format == Format::kMxfp4 ? q::fp4(code) : q::fp8(code);
-          dot = __fmaf_rn(q::load(activation, row * p.depth + k, p.activation_type), value, dot);
+          // Linear batches share this decode; each output retains its own
+          // original lane/FMA/reduction and group-scale order. Selected
+          // experts use Rows=1 so different IDs never share weights.
+          #pragma unroll
+          for (unsigned m = 0; m < Rows; ++m)
+            if (row + m < p.rows)
+              dot[m] = __fmaf_rn(q::load(activation,
+                  (row + m) * p.depth + k, p.activation_type), value, dot[m]);
         }
-        dot = q::warp_sum(dot);
-        result = __fadd_rn(result, affine ? dot : __fmul_rn(dot, scale));
+        #pragma unroll
+        for (unsigned m = 0; m < Rows; ++m) {
+          dot[m] = q::warp_sum(dot[m]);
+          result[m] = __fadd_rn(result[m], affine ? dot[m] : __fmul_rn(dot[m], scale));
+        }
       }
-      if (lane == 0) q::store<Output>(output, i, result);
+      if (lane == 0) {
+        #pragma unroll
+        for (unsigned m = 0; m < Rows; ++m)
+          if (row + m < p.rows)
+            q::store<Output>(output, (row + m) * p.columns + column, result[m]);
+      }
     }
   }
 }
@@ -106,10 +122,13 @@ cudaError_t launch(const MlxPacked &p, const void *const *inputs, void *output,
   }
   MlxPacked spec = p;
   void *args[]{&spec, &a, &weights, &scales, &biases, &ids, &output, &status};
+  const bool row_batch = p.kind == Kind::kLinear && p.rows > 1;
+  const Index work_rows = row_batch ? 1 + (p.rows - 1) / 4 : p.rows;
   const void *kernel = embedding ? reinterpret_cast<const void *>(packed<Output, true>)
-                                 : reinterpret_cast<const void *>(packed<Output, false>);
+      : row_batch ? reinterpret_cast<const void *>(packed<Output, false, 4>)
+                  : reinterpret_cast<const void *>(packed<Output, false>);
   return cudaLaunchKernel(kernel,
-      dim3(blocks(p.rows * (embedding ? p.depth : p.columns), embedding ? 256 : 8)),
+      dim3(blocks(work_rows * (embedding ? p.depth : p.columns), embedding ? 256 : 8)),
       dim3(256), args, 0, stream);
 }
 } // namespace
