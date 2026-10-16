@@ -1,6 +1,6 @@
 # G08 设备端输出数值选择与可定位随机数
 
-状态：**AUDITED，2026-10-16；仅授权末节有限FIX，尚无runtime/P1验收**。baseline 为
+状态：**AUDITED，2026-10-16；八owner按S1–S4及Mem M1有限FIX施工，首批CPU/CUDA runtime已过，尚未整项验收/P1**。baseline 为
 `85bcfa4eb`，G07已经整项接受，新G07–G10 goal完成1/4。原G01–G07不重跑，G09/G10未开始。
 本卡只处理原[G08发现](../project/inference-single-machine-foundation-audit-2026-10.md)与
 [消费形状计划](../project/inference-consumer-adaptation-plan-2026-10.md)的有限输出数值域。
@@ -311,3 +311,19 @@ cc081788d显式target/storage后已走过cold placement；joint原生GPU→CPU�
 消费异步GPU prefix，consumer先前kReject按原合同拒绝该拓扑。改用原默认kAllow，
 并断言replay report记录实际host wait；两跳staging和24-byte readback均收费，
 不声称零host wait或异步overlap。本次仍仅consumer修复，不扩展G09或改Graph产品。
+
+
+### 2026-10-16 首批CPU/CUDA源码普通门检查点
+
+[原始记录与所有失败归档](../../../../evidence/correctness/inference-g08-implementation-checkpoint/receipt.json)：
+Mem WSL source244/244、schema3/3、CPU/CUDA Direct+Graph四个公开数值消费者、实际CUDA
+1048772对端点及CPU+CUDA GPU selection→24-byte CPU lookup/add各65步/两槽均PASS。
+普通全词表R1/R16各65步、每law262144固定seed质量门、三浮点storage与错误/旧结果
+包含在四个公开消费者中；具体source snapshot、二进制hash、命令与原FAIL均保留。
+源代码最后产品改动为825e662a3，随后仅消费者/文档纠正；joint最新consumer0b4c9a421。
+
+当前八owner仍AUDITED，G08粗估约55%、新G07–G10 goal约40%，正式仅G07完成1/4。
+这些比例是施工粗估，不是验收门PASS比例。Apple/Vulkan尚未实际build/run，独立port发布、
+剩余风险/三交付/TopK S1 P1和最终文档/审查尚未完成；Mem其他OS/SDK/host facets也待验。
+下一步沿同一冻结范围验证Apple/Vulkan并补这些有限门，不启动G09/G10、CLI或新缺口扫描。
+全部重型任务已结束，保留同树缓存、原失败与累计费用；后续仍重型串行。

@@ -145,7 +145,7 @@
       "module": "mem",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/inference-g08-output-selection.md",
-      "summary": "G08 concrete dependency defect: Buffer884/alignment256 crashes with allocation/fill/free only. Finite over-aligned deallocation seam audit; original natural path/layout/quota/vendor unchanged. FIX M1 selects existing mature mi_free_aligned in the two HYLE backings; focused three-OS/delivery/risk and actual G08 consumers pending."
+      "summary": "G08 finite M1 dependency fix AUDITED: original Buffer884/alignment256 allocation-only crash fixed by mature mi_free_aligned in static/shared backings. WSL source244/244 and actual CPU/CUDA sampling consumers PASS; other OS/SDK/host risks pending. Natural path/layout/quota/vendor unchanged."
     },
     {
       "module": "mem_vm",
@@ -370,7 +370,7 @@
       "module": "compute_provider_ggml",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/inference-g08-output-selection.md",
-      "summary": "G08 AUDITED finite S1-S4/API frozen: existing TopK1 reduction, versioned Philox key64/draw64 raw words, categorical log-weights/optional logprob, original native/check/retirement and real Direct/Graph/joint small-result journey. Endpoint feasibility only; product/runtime/SDK/risk/P1 unrun. G07 accepted; G09-G10 remain."
+      "summary": "G08 AUDITED: finite TopK1 O(1) width-scratch single scan implemented; CPU public Direct/Graph bits/NaN/tie/subnormal/full-vocabulary and k>1 holdout PASS. Existing axis/stride/risk/delivery and S1 P1 pending."
     },
     {
       "module": "graph_provider_onednn",
@@ -387,7 +387,7 @@
       "module": "compute_ops",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/inference-g08-output-selection.md",
-      "summary": "G08 AUDITED finite S1-S4/API frozen: existing TopK1 reduction, versioned Philox key64/draw64 raw words, categorical log-weights/optional logprob, original native/check/retirement and real Direct/Graph/joint small-result journey. Endpoint feasibility only; product/runtime/SDK/risk/P1 unrun. G07 accepted; G09-G10 remain."
+      "summary": "G08 AUDITED: typed random/categorical schema and official Philox KAT source3/3 PASS; four CPU/CUDA public Direct/Graph consumers PASS. Four-route delivery/risks and final finite acceptance pending."
     },
     {
       "module": "compute_backend_cpu",
@@ -415,7 +415,7 @@
       "module": "compute_provider_native",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/inference-g08-output-selection.md",
-      "summary": "G08 AUDITED finite S1-S4/API frozen: existing TopK1 reduction, versioned Philox key64/draw64 raw words, categorical log-weights/optional logprob, original native/check/retirement and real Direct/Graph/joint small-result journey. Endpoint feasibility only; product/runtime/SDK/risk/P1 unrun. G07 accepted; G09-G10 remain."
+      "summary": "G08 AUDITED: CPU counter/CDF implementation and public Direct/Graph dtype/numerical/distribution/65-step consumers PASS. Candidate/risk/three-delivery qualification pending; no P1 claim."
     },
     {
       "module": "compute_route_cpu",
@@ -465,7 +465,7 @@
       "module": "compute_provider_cuda",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/inference-g08-output-selection.md",
-      "summary": "G08 AUDITED finite S1-S4/API frozen: existing TopK1 reduction, versioned Philox key64/draw64 raw words, categorical log-weights/optional logprob, original native/check/retirement and real Direct/Graph/joint small-result journey. Endpoint feasibility only; product/runtime/SDK/risk/P1 unrun. G07 accepted; G09-G10 remain."
+      "summary": "G08 AUDITED: source build, public CUDA Direct/Graph and CPU+CUDA joint numeric consumers PASS; actual device1048772-pair open64 endpoint gate PASS (maxabs1.31e-6). GPU risks/SDK/S1 P1 pending."
     },
     {
       "module": "compute_route_cuda",
@@ -493,7 +493,7 @@
       "module": "compute_route_apple",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/inference-g08-output-selection.md",
-      "summary": "G08 AUDITED finite S1-S4/API frozen: existing TopK1 reduction, versioned Philox key64/draw64 raw words, categorical log-weights/optional logprob, original native/check/retirement and real Direct/Graph/joint small-result journey. Endpoint feasibility only; product/runtime/SDK/risk/P1 unrun. G07 accepted; G09-G10 remain."
+      "summary": "G08 AUDITED: finite TopK1 and counter/categorical native implementation plus public Direct/Graph, joint and actual-device math tests written. Apple actual build/runtime/risk/three-delivery/S1 P1 pending."
     },
     {
       "module": "graph_route_apple",
@@ -510,13 +510,13 @@
       "module": "compute_route_vulkan",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/inference-g08-output-selection.md",
-      "summary": "G08 AUDITED finite S1-S4/API frozen: existing TopK1 reduction, versioned Philox key64/draw64 raw words, categorical log-weights/optional logprob, original native/check/retirement and real Direct/Graph/joint small-result journey. Endpoint feasibility only; product/runtime/SDK/risk/P1 unrun. G07 accepted; G09-G10 remain."
+      "summary": "G08 AUDITED: finite TopK1 and counter/categorical native shader implementation plus public Direct/Graph, joint and endpoint tests written. Vulkan actual build/runtime/validation/three-delivery/S1 P1 pending."
     },
     {
       "module": "graph_route_vulkan",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/inference-g08-output-selection.md",
-      "summary": "G08 finite native sampling Graph seam: explicit custom whitelist and optional second categorical result. Original plan/status/liveness/owners borrowed; no new Graph API or execution machinery. Two guards and public comment FIX frozen; runtime and SDK qualification pending."
+      "summary": "G08 AUDITED: finite native sampling custom whitelist and optional categorical second port implemented using original plan/status/liveness/owners. Actual source/SDK Graph consumer qualification pending."
     },
     {
       "module": "compute_provider_ggml_vulkan",
