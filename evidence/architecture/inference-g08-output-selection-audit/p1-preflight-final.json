@@ -1,0 +1,294 @@
+{
+  "schema": "hyle.inference-g08-p1-preflight-final/v1",
+  "verdict": "FOUR_ROUTE_DIAGNOSTIC_PREFLIGHT_READY_NOT_P1_QUALIFIED",
+  "candidate": "5103c13d8ed119b06aa64e799f9768aea45ab913",
+  "baseline": "85bcfa4ebc29cc4d2ed5fb122074204aca675d58",
+  "frozen_source_boundary": {
+    "path": "p1-boundary.json",
+    "sha256": "45f6a6845f826ab2ed1a3d4272b529ba6fac08dffe332d22290ba573418b0fb4"
+  },
+  "delivery_proof": {
+    "path": "evidence/delivery/inference-g08-sdk-final/receipt.json",
+    "sha256": "bf4bb2d16a20bbef9b345457fd7f2026c383cf498ac975a4ba76a36a379054cc"
+  },
+  "cpu_reused_raw": {
+    "path": "p1-cpu-probe-checkpoint-raw.zip",
+    "sha256": "744402dab6918bcf4612d32f1a9237978b5e7549d3a619c524c83f5162be7f6f"
+  },
+  "cases": [
+    {
+      "route": "cpu",
+      "benchmark_revision": "5fbc13992137af26d0766f026415d5a80c7f2dd8",
+      "job_exit_code": 0,
+      "verify_exit_code": 0,
+      "qualification": "DIAGNOSTIC",
+      "workload_aa_gate": "PASS",
+      "workload_aa_runs": 16,
+      "timer_floor_gate": "PASS",
+      "placement_gate": "PASS",
+      "generic_diagnostic_controls": {
+        "aa": {
+          "reported_gate": "FAIL",
+          "median_ratios_diagnostic_only": {
+            "candidate-first": 0.9980853101409632,
+            "peer-first": 1.0056858159753668
+          },
+          "predeclared_point_band": [
+            0.9523809523809523,
+            1.05
+          ],
+          "minimum_independent_samples_not_met": true
+        },
+        "delta5": {
+          "reported_gate": "FAIL",
+          "median_ratios_diagnostic_only": {
+            "candidate-first": 1.050497869984793,
+            "peer-first": 1.0510208873913025
+          },
+          "predeclared_point_band": [
+            1.025,
+            1.075
+          ],
+          "minimum_independent_samples_not_met": true
+        },
+        "delta10": {
+          "reported_gate": "FAIL",
+          "median_ratios_diagnostic_only": {
+            "candidate-first": 1.1063664359234824,
+            "peer-first": 1.0918877228863888
+          },
+          "predeclared_point_band": [
+            1.05,
+            1.15
+          ],
+          "minimum_independent_samples_not_met": true
+        }
+      },
+      "cumulative_elapsed_seconds": 117.03100000001723,
+      "facts": [
+        "# G08_FACT original=0 R=1 K=1 provider=ggml-cpu version=ffa4e8b80930029a35991f94e7c8a93cd67730ab+hyle-resource-iq1-e74fc9bb8964d04f ordinary_match=1 workspace=0 alignment=1 persistent_known=1 persistent=400 invocation_private_known=1 invocation_private=0 replay=1 blocks_host=1 private_threads=0 capture=0 readback_bytes=8",
+        "# G08_FACT original=1 R=1 K=1 provider=ggml-cpu version=ffa4e8b80930029a35991f94e7c8a93cd67730ab+hyle-resource-iq1-e74fc9bb8964d04f ordinary_match=1 workspace=0 alignment=1 persistent_known=1 persistent=400 invocation_private_known=1 invocation_private=0 replay=1 blocks_host=1 private_threads=0 capture=0 readback_bytes=8",
+        "# G08_ORACLE route=cpu R=1 V=248320 K=1 stored_bits_and_first_index=PASS cycles=3 warm_cycles=8 readback_bytes=8",
+        "# G08_FACT original=0 R=16 K=1 provider=ggml-cpu version=ffa4e8b80930029a35991f94e7c8a93cd67730ab+hyle-resource-iq1-e74fc9bb8964d04f ordinary_match=1 workspace=0 alignment=1 persistent_known=1 persistent=400 invocation_private_known=1 invocation_private=0 replay=1 blocks_host=1 private_threads=0 capture=0 readback_bytes=128",
+        "# G08_FACT original=1 R=16 K=1 provider=ggml-cpu version=ffa4e8b80930029a35991f94e7c8a93cd67730ab+hyle-resource-iq1-e74fc9bb8964d04f ordinary_match=1 workspace=0 alignment=1 persistent_known=1 persistent=400 invocation_private_known=1 invocation_private=0 replay=1 blocks_host=1 private_threads=0 capture=0 readback_bytes=128",
+        "# G08_ORACLE route=cpu R=16 V=248320 K=1 stored_bits_and_first_index=PASS cycles=3 warm_cycles=8 readback_bytes=128",
+        "# G08_FACT original=0 R=1 K=1 provider=ggml-cpu version=ffa4e8b80930029a35991f94e7c8a93cd67730ab+hyle-resource-iq1-e74fc9bb8964d04f ordinary_match=1 workspace=0 alignment=1 persistent_known=1 persistent=400 invocation_private_known=1 invocation_private=0 replay=1 blocks_host=1 private_threads=0 capture=0 readback_bytes=8",
+        "# G08_FACT original=1 R=1 K=1 provider=ggml-cpu version=ffa4e8b80930029a35991f94e7c8a93cd67730ab+hyle-resource-iq1-e74fc9bb8964d04f ordinary_match=1 workspace=0 alignment=1 persistent_known=1 persistent=400 invocation_private_known=1 invocation_private=0 replay=1 blocks_host=1 private_threads=0 capture=0 readback_bytes=8",
+        "# G08_ORACLE route=cpu R=1 V=248320 K=1 stored_bits_and_first_index=PASS cycles=3 warm_cycles=8 readback_bytes=8",
+        "# G08_FACT original=0 R=16 K=1 provider=ggml-cpu version=ffa4e8b80930029a35991f94e7c8a93cd67730ab+hyle-resource-iq1-e74fc9bb8964d04f ordinary_match=1 workspace=0 alignment=1 persistent_known=1 persistent=400 invocation_private_known=1 invocation_private=0 replay=1 blocks_host=1 private_threads=0 capture=0 readback_bytes=128",
+        "# G08_FACT original=1 R=16 K=1 provider=ggml-cpu version=ffa4e8b80930029a35991f94e7c8a93cd67730ab+hyle-resource-iq1-e74fc9bb8964d04f ordinary_match=1 workspace=0 alignment=1 persistent_known=1 persistent=400 invocation_private_known=1 invocation_private=0 replay=1 blocks_host=1 private_threads=0 capture=0 readback_bytes=128",
+        "# G08_ORACLE route=cpu R=16 V=248320 K=1 stored_bits_and_first_index=PASS cycles=3 warm_cycles=8 readback_bytes=128"
+      ],
+      "source_archive_sha256": "744402dab6918bcf4612d32f1a9237978b5e7549d3a619c524c83f5162be7f6f"
+    },
+    {
+      "route": "cuda",
+      "benchmark_revision": "47b63229d7e09afaa5c2e0f10f0ac5a4c5c7e953",
+      "job_exit_code": 0,
+      "verify_exit_code": 0,
+      "qualification": "DIAGNOSTIC",
+      "workload_aa_gate": "PASS",
+      "workload_aa_runs": 16,
+      "timer_floor_gate": "PASS",
+      "placement_gate": "PASS",
+      "generic_diagnostic_controls": {
+        "aa": {
+          "reported_gate": "FAIL",
+          "median_ratios_diagnostic_only": {
+            "candidate-first": 1.035817553651086,
+            "peer-first": 1.0057217284256805
+          },
+          "predeclared_point_band": [
+            0.9523809523809523,
+            1.05
+          ],
+          "minimum_independent_samples_not_met": true
+        },
+        "delta5": {
+          "reported_gate": "FAIL",
+          "median_ratios_diagnostic_only": {
+            "candidate-first": 1.04029838306088,
+            "peer-first": 1.0446570159715816
+          },
+          "predeclared_point_band": [
+            1.025,
+            1.075
+          ],
+          "minimum_independent_samples_not_met": true
+        },
+        "delta10": {
+          "reported_gate": "FAIL",
+          "median_ratios_diagnostic_only": {
+            "candidate-first": 1.1017449737460796,
+            "peer-first": 1.1012960715250226
+          },
+          "predeclared_point_band": [
+            1.05,
+            1.15
+          ],
+          "minimum_independent_samples_not_met": true
+        }
+      },
+      "cumulative_elapsed_seconds": 186.199134353,
+      "facts": [
+        "# G08_FACT original=0 R=1 K=1 provider=cccl-cuda version=CCCL-300304 ordinary_match=1 workspace=9728 alignment=256 persistent_known=1 persistent=416 invocation_private_known=1 invocation_private=8 replay=2 blocks_host=0 private_threads=0 capture=0 readback_bytes=8",
+        "# G08_FACT original=1 R=1 K=1 provider=cccl-cuda version=CCCL-300304 ordinary_match=1 workspace=12039680 alignment=256 persistent_known=1 persistent=416 invocation_private_known=1 invocation_private=8 replay=2 blocks_host=0 private_threads=0 capture=0 readback_bytes=8",
+        "# G08_ORACLE route=cuda R=1 V=248320 K=1 stored_bits_and_first_index=PASS cycles=3 warm_cycles=8 readback_bytes=8",
+        "# G08_FACT original=0 R=16 K=1 provider=cccl-cuda version=CCCL-300304 ordinary_match=1 workspace=512 alignment=256 persistent_known=1 persistent=416 invocation_private_known=1 invocation_private=8 replay=2 blocks_host=0 private_threads=0 capture=0 readback_bytes=128",
+        "# G08_FACT original=1 R=16 K=1 provider=cccl-cuda version=CCCL-300304 ordinary_match=1 workspace=192249344 alignment=256 persistent_known=1 persistent=416 invocation_private_known=1 invocation_private=8 replay=2 blocks_host=0 private_threads=0 capture=0 readback_bytes=128",
+        "# G08_ORACLE route=cuda R=16 V=248320 K=1 stored_bits_and_first_index=PASS cycles=3 warm_cycles=8 readback_bytes=128",
+        "# G08_FACT original=0 R=1 K=1 provider=cccl-cuda version=CCCL-300304 ordinary_match=1 workspace=9728 alignment=256 persistent_known=1 persistent=416 invocation_private_known=1 invocation_private=8 replay=2 blocks_host=0 private_threads=0 capture=0 readback_bytes=8",
+        "# G08_FACT original=1 R=1 K=1 provider=cccl-cuda version=CCCL-300304 ordinary_match=1 workspace=12039680 alignment=256 persistent_known=1 persistent=416 invocation_private_known=1 invocation_private=8 replay=2 blocks_host=0 private_threads=0 capture=0 readback_bytes=8",
+        "# G08_ORACLE route=cuda R=1 V=248320 K=1 stored_bits_and_first_index=PASS cycles=3 warm_cycles=8 readback_bytes=8",
+        "# G08_FACT original=0 R=16 K=1 provider=cccl-cuda version=CCCL-300304 ordinary_match=1 workspace=512 alignment=256 persistent_known=1 persistent=416 invocation_private_known=1 invocation_private=8 replay=2 blocks_host=0 private_threads=0 capture=0 readback_bytes=128",
+        "# G08_FACT original=1 R=16 K=1 provider=cccl-cuda version=CCCL-300304 ordinary_match=1 workspace=192249344 alignment=256 persistent_known=1 persistent=416 invocation_private_known=1 invocation_private=8 replay=2 blocks_host=0 private_threads=0 capture=0 readback_bytes=128",
+        "# G08_ORACLE route=cuda R=16 V=248320 K=1 stored_bits_and_first_index=PASS cycles=3 warm_cycles=8 readback_bytes=128"
+      ],
+      "source_archive_sha256": "25ada08b93f8c3420afe16e045d7a3f08c4eb6ed934cb93ec30a5c5a216cbf52"
+    },
+    {
+      "route": "apple",
+      "benchmark_revision": "47b63229d7e09afaa5c2e0f10f0ac5a4c5c7e953",
+      "job_exit_code": 0,
+      "verify_exit_code": 0,
+      "qualification": "DIAGNOSTIC",
+      "workload_aa_gate": "PASS",
+      "workload_aa_runs": 16,
+      "timer_floor_gate": "PASS",
+      "placement_gate": "PASS",
+      "generic_diagnostic_controls": {
+        "aa": {
+          "reported_gate": "FAIL",
+          "median_ratios_diagnostic_only": {
+            "candidate-first": 0.9945631272854123,
+            "peer-first": 0.9989485828735557
+          },
+          "predeclared_point_band": [
+            0.9523809523809523,
+            1.05
+          ],
+          "minimum_independent_samples_not_met": true
+        },
+        "delta5": {
+          "reported_gate": "FAIL",
+          "median_ratios_diagnostic_only": {
+            "candidate-first": 1.046259789409808,
+            "peer-first": 1.0525704137342595
+          },
+          "predeclared_point_band": [
+            1.025,
+            1.075
+          ],
+          "minimum_independent_samples_not_met": true
+        },
+        "delta10": {
+          "reported_gate": "FAIL",
+          "median_ratios_diagnostic_only": {
+            "candidate-first": 1.1015616213850778,
+            "peer-first": 1.106640834870091
+          },
+          "predeclared_point_band": [
+            1.05,
+            1.15
+          ],
+          "minimum_independent_samples_not_met": true
+        }
+      },
+      "cumulative_elapsed_seconds": 66.68497975,
+      "facts": [
+        "# G08_FACT original=0 R=1 K=1 carrier=apple-mlx readback_bytes=8 per_call_native_arrays=charged final_retained_array=deferred",
+        "# G08_FACT original=1 R=1 K=1 carrier=apple-mlx readback_bytes=8 per_call_native_arrays=charged final_retained_array=deferred",
+        "# G08_ORACLE route=apple R=1 V=248320 K=1 stored_bits_and_first_index=PASS cycles=3 warm_cycles=8 readback_bytes=8",
+        "# G08_FACT original=0 R=16 K=1 carrier=apple-mlx readback_bytes=128 per_call_native_arrays=charged final_retained_array=deferred",
+        "# G08_FACT original=1 R=16 K=1 carrier=apple-mlx readback_bytes=128 per_call_native_arrays=charged final_retained_array=deferred",
+        "# G08_ORACLE route=apple R=16 V=248320 K=1 stored_bits_and_first_index=PASS cycles=3 warm_cycles=8 readback_bytes=128",
+        "# G08_FACT original=0 R=16 K=3 carrier=apple-mlx readback_bytes=384 per_call_native_arrays=charged final_retained_array=deferred",
+        "# G08_FACT original=1 R=16 K=3 carrier=apple-mlx readback_bytes=384 per_call_native_arrays=charged final_retained_array=deferred",
+        "# G08_ORACLE route=apple R=16 V=248320 K=3 stored_bits_and_first_index=PASS cycles=3 warm_cycles=8 readback_bytes=384",
+        "# G08_FACT original=0 R=1 K=1 carrier=apple-mlx readback_bytes=8 per_call_native_arrays=charged final_retained_array=deferred",
+        "# G08_FACT original=1 R=1 K=1 carrier=apple-mlx readback_bytes=8 per_call_native_arrays=charged final_retained_array=deferred",
+        "# G08_ORACLE route=apple R=1 V=248320 K=1 stored_bits_and_first_index=PASS cycles=3 warm_cycles=8 readback_bytes=8",
+        "# G08_FACT original=0 R=16 K=1 carrier=apple-mlx readback_bytes=128 per_call_native_arrays=charged final_retained_array=deferred",
+        "# G08_FACT original=1 R=16 K=1 carrier=apple-mlx readback_bytes=128 per_call_native_arrays=charged final_retained_array=deferred",
+        "# G08_ORACLE route=apple R=16 V=248320 K=1 stored_bits_and_first_index=PASS cycles=3 warm_cycles=8 readback_bytes=128",
+        "# G08_FACT original=0 R=16 K=3 carrier=apple-mlx readback_bytes=384 per_call_native_arrays=charged final_retained_array=deferred",
+        "# G08_FACT original=1 R=16 K=3 carrier=apple-mlx readback_bytes=384 per_call_native_arrays=charged final_retained_array=deferred",
+        "# G08_ORACLE route=apple R=16 V=248320 K=3 stored_bits_and_first_index=PASS cycles=3 warm_cycles=8 readback_bytes=384"
+      ],
+      "source_archive_sha256": "d4669d5c9db93aee056dd25c20321b781f07fb829f624c9ffa931c428e4fbd06"
+    },
+    {
+      "route": "vulkan",
+      "benchmark_revision": "47b63229d7e09afaa5c2e0f10f0ac5a4c5c7e953",
+      "job_exit_code": 0,
+      "verify_exit_code": 0,
+      "qualification": "DIAGNOSTIC",
+      "workload_aa_gate": "PASS",
+      "workload_aa_runs": 16,
+      "timer_floor_gate": "PASS",
+      "placement_gate": "PASS",
+      "generic_diagnostic_controls": {
+        "aa": {
+          "reported_gate": "FAIL",
+          "median_ratios_diagnostic_only": {
+            "candidate-first": 0.998188157945378,
+            "peer-first": 0.9947543141306323
+          },
+          "predeclared_point_band": [
+            0.9523809523809523,
+            1.05
+          ],
+          "minimum_independent_samples_not_met": true
+        },
+        "delta5": {
+          "reported_gate": "FAIL",
+          "median_ratios_diagnostic_only": {
+            "candidate-first": 1.049618895453705,
+            "peer-first": 1.047707593056223
+          },
+          "predeclared_point_band": [
+            1.025,
+            1.075
+          ],
+          "minimum_independent_samples_not_met": true
+        },
+        "delta10": {
+          "reported_gate": "FAIL",
+          "median_ratios_diagnostic_only": {
+            "candidate-first": 1.0985746241104488,
+            "peer-first": 1.1003592671475744
+          },
+          "predeclared_point_band": [
+            1.05,
+            1.15
+          ],
+          "minimum_independent_samples_not_met": true
+        }
+      },
+      "cumulative_elapsed_seconds": 88.36332749900001,
+      "facts": [
+        "# G08_FACT original=0 R=1 K=1 carrier=vulkan ordinary_prepare=1 readback_bytes=8 download_staging_and_fences=charged",
+        "# G08_FACT original=1 R=1 K=1 carrier=vulkan ordinary_prepare=1 readback_bytes=8 download_staging_and_fences=charged",
+        "# G08_ORACLE route=vulkan R=1 V=248320 K=1 stored_bits_and_first_index=PASS cycles=3 warm_cycles=8 readback_bytes=8",
+        "# G08_FACT original=0 R=16 K=1 carrier=vulkan ordinary_prepare=1 readback_bytes=128 download_staging_and_fences=charged",
+        "# G08_FACT original=1 R=16 K=1 carrier=vulkan ordinary_prepare=1 readback_bytes=128 download_staging_and_fences=charged",
+        "# G08_ORACLE route=vulkan R=16 V=248320 K=1 stored_bits_and_first_index=PASS cycles=3 warm_cycles=8 readback_bytes=128",
+        "# G08_FACT original=0 R=1 K=1 carrier=vulkan ordinary_prepare=1 readback_bytes=8 download_staging_and_fences=charged",
+        "# G08_FACT original=1 R=1 K=1 carrier=vulkan ordinary_prepare=1 readback_bytes=8 download_staging_and_fences=charged",
+        "# G08_ORACLE route=vulkan R=1 V=248320 K=1 stored_bits_and_first_index=PASS cycles=3 warm_cycles=8 readback_bytes=8",
+        "# G08_FACT original=0 R=16 K=1 carrier=vulkan ordinary_prepare=1 readback_bytes=128 download_staging_and_fences=charged",
+        "# G08_FACT original=1 R=16 K=1 carrier=vulkan ordinary_prepare=1 readback_bytes=128 download_staging_and_fences=charged",
+        "# G08_ORACLE route=vulkan R=16 V=248320 K=1 stored_bits_and_first_index=PASS cycles=3 warm_cycles=8 readback_bytes=128"
+      ],
+      "source_archive_sha256": "d4669d5c9db93aee056dd25c20321b781f07fb829f624c9ffa931c428e4fbd06"
+    }
+  ],
+  "scope": "All four actual native builds, nine finite normal-F32 shape oracles on both primary/placement, both native/selected workload-matched A-A across8strata and registered process topology, plus real source/reference/native SDK identity. No qualified product speed/performance claim yet.",
+  "statistical_limit": "Diagnostic has one independent sample per product/control stratum; generic controls retain FAIL/insufficient-independent-samples and product performance INCONCLUSIVE. Their observed calibration medians are within frozen point bands with monotonic5-to10; timer floor and placement PASS. Formal qualification still uses unchanged15-to31 independent samples and5percent; no threshold or estimator relaxation.",
+  "next": "One serial qualify-platform per route, immutable CPU benchmark5fbc and GPU benchmark47b, same product5103 and clean original85 peer. Fresh qualified-build-1 trees required by stock instrument; original diagnostic/build-failure trees and cumulative costs retained.",
+  "raw": {
+    "path": "p1-preflight-final-raw.zip",
+    "sha256": "8dfb7e071b7fabfd3853e073d091d1469230bc36d8e05aa24a395b27cbaf59f1",
+    "bytes": 289005
+  }
+}
