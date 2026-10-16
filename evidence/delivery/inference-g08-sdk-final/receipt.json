@@ -1,0 +1,1703 @@
+{
+  "schema": "hyle.inference-g08-sdk-final/v1",
+  "verdict": "ALL_18_SOURCE_STATIC_SHARED_DELIVERIES_PASS",
+  "candidate": "5103c13d8ed119b06aa64e799f9768aea45ab913",
+  "configs": 18,
+  "cases": [
+    {
+      "platform": "air",
+      "route": "apple",
+      "mode": "shared",
+      "state": "RELOCATED_SDK_PUBLIC_CONSUMERS_HEADERS_LICENSE_PASS",
+      "source_snapshot": "95e85de0a0886cadf63620b09544d832fdaa2290",
+      "elapsed_seconds": 39.375043583,
+      "result_origin": {
+        "receipt": "evidence/delivery/inference-g08-air-sdk-checkpoint/receipt.json",
+        "archive_entry": "apple-shared-1/result.json"
+      },
+      "consumers": [
+        {
+          "name": "cpu_direct",
+          "path": "/Users/kiro/hyle-scratch/compute-unified/g08-sdk/apple-shared-1/consumer-build/cpu_direct",
+          "sha256": "bb29f8238e4628c5dedce2dddc93d9c1cfd02ec535bc19eea8046887f5f6b310"
+        },
+        {
+          "name": "cpu_graph",
+          "path": "/Users/kiro/hyle-scratch/compute-unified/g08-sdk/apple-shared-1/consumer-build/cpu_graph",
+          "sha256": "8cc84403918b5e9d805b6e356b51367d5bdaf8b2dc0b78e78820f1a06b30b92b"
+        },
+        {
+          "name": "native_direct",
+          "path": "/Users/kiro/hyle-scratch/compute-unified/g08-sdk/apple-shared-1/consumer-build/native_direct",
+          "sha256": "92eec503da291707f59b86891de9d68639c8af0152090eff26f9ef27dd072bc7"
+        },
+        {
+          "name": "native_graph",
+          "path": "/Users/kiro/hyle-scratch/compute-unified/g08-sdk/apple-shared-1/consumer-build/native_graph",
+          "sha256": "143c5165bf906b7d8dc3bde80441882e67f8284b23241a0e4eb5ba947c273479"
+        },
+        {
+          "name": "joint",
+          "path": "/Users/kiro/hyle-scratch/compute-unified/g08-sdk/apple-shared-1/consumer-build/joint",
+          "sha256": "dd3eea6b289d8a2a140755890322b4aaf19f4454e1ef1a1205c920998cd074e7"
+        },
+        {
+          "name": "mem",
+          "path": "/Users/kiro/hyle-scratch/compute-unified/g08-sdk/apple-shared-1/consumer-build/mem",
+          "sha256": "2b25c60984d36643e54ce39786d77aec11902d8e9e3a4676eec8fac2940f731d"
+        }
+      ],
+      "independent_headers": [
+        {
+          "path": "compute/sampling_ops.h",
+          "sha256": "887faba6ebe6249a0e2f766e2ea4b6bd83900bcf1e85165ad55e3e9be18528da"
+        },
+        {
+          "path": "compute/operation.h",
+          "sha256": "584e57c2a1a10b7c17ee80d4a6f992b73f488f4cdbf1e71e39d908cd89600808"
+        },
+        {
+          "path": "compute/prepared_operation.h",
+          "sha256": "3fe6a6f1ddc31c2181a208658e627be20933bde325ec0b63dba06281d007ed7b"
+        },
+        {
+          "path": "compute/cpu.h",
+          "sha256": "bccb8e5d310086b41c6f010a84f56219ac33830e92e5da22ce2ff12cd608ccb6"
+        },
+        {
+          "path": "graph/cpu.h",
+          "sha256": "207f78caafbec1e73966f0ead5563b51aa2aaf3e5eccabde15b6a20447a25f99"
+        },
+        {
+          "path": "mem/allocator.h",
+          "sha256": "8beaac413632fdc4409c2384f1cda7d6d5e75b72aafad73d188e13dbfa50781a"
+        },
+        {
+          "path": "mem/system_inline.h",
+          "sha256": "d890fe66b1a83a5f1a8f2b22c368276e7b3fadcfd0946df5279692ce055164f1"
+        },
+        {
+          "path": "mem/buffer.h",
+          "sha256": "346a4f810babb8c5dacba49faaf57903d998a3cbb49af12b8c62acc85f7be72c"
+        },
+        {
+          "path": "compute/apple.h",
+          "sha256": "25503bf098301a1bf3a0f30cd36e30df983749c0ab2b70987bcee47e1be7b89b"
+        },
+        {
+          "path": "graph/apple.h",
+          "sha256": "1da9da16a29e46222562a2985a22180028e70368ee1f57427e966c066b03156e"
+        },
+        {
+          "path": "graph/cpu_apple.h",
+          "sha256": "645f557d8a6fefe3f69bc25f37c03e637ed28311fb7817bfb8de0e5373b0eb32"
+        }
+      ]
+    },
+    {
+      "platform": "air",
+      "route": "apple",
+      "mode": "static",
+      "state": "RELOCATED_SDK_PUBLIC_CONSUMERS_HEADERS_LICENSE_PASS",
+      "source_snapshot": "95e85de0a0886cadf63620b09544d832fdaa2290",
+      "elapsed_seconds": 37.318951083,
+      "result_origin": {
+        "receipt": "evidence/delivery/inference-g08-air-sdk-checkpoint/receipt.json",
+        "archive_entry": "apple-static-1/result.json"
+      },
+      "consumers": [
+        {
+          "name": "cpu_direct",
+          "path": "/Users/kiro/hyle-scratch/compute-unified/g08-sdk/apple-static-1/consumer-build/cpu_direct",
+          "sha256": "67abbf1a11a31c63ad02904450b5857cbc91a9db1d65c0eadf0e84294cb0be9b"
+        },
+        {
+          "name": "cpu_graph",
+          "path": "/Users/kiro/hyle-scratch/compute-unified/g08-sdk/apple-static-1/consumer-build/cpu_graph",
+          "sha256": "9be4be9c931d1f85161cb73a5e05cf2627f45ba3a939a089f6a3627901f5f150"
+        },
+        {
+          "name": "native_direct",
+          "path": "/Users/kiro/hyle-scratch/compute-unified/g08-sdk/apple-static-1/consumer-build/native_direct",
+          "sha256": "bb49bbeab728779ac155f7804736f1022386507f34a0113376f8cfeaec0ae2ae"
+        },
+        {
+          "name": "native_graph",
+          "path": "/Users/kiro/hyle-scratch/compute-unified/g08-sdk/apple-static-1/consumer-build/native_graph",
+          "sha256": "1370ca0c36a8ec567531b71aa19247961be2d549c01701948c593acf3af96859"
+        },
+        {
+          "name": "joint",
+          "path": "/Users/kiro/hyle-scratch/compute-unified/g08-sdk/apple-static-1/consumer-build/joint",
+          "sha256": "c01e9d4719c2547a8dd2c232e2200930d472f11bdf4b1a3809bafb9dd4586235"
+        },
+        {
+          "name": "mem",
+          "path": "/Users/kiro/hyle-scratch/compute-unified/g08-sdk/apple-static-1/consumer-build/mem",
+          "sha256": "22c05b19e06aebf5fd4e7085410a160d0a286dd400edb4db7c4a6bdd8bd0a64d"
+        }
+      ],
+      "independent_headers": [
+        {
+          "path": "compute/sampling_ops.h",
+          "sha256": "887faba6ebe6249a0e2f766e2ea4b6bd83900bcf1e85165ad55e3e9be18528da"
+        },
+        {
+          "path": "compute/operation.h",
+          "sha256": "584e57c2a1a10b7c17ee80d4a6f992b73f488f4cdbf1e71e39d908cd89600808"
+        },
+        {
+          "path": "compute/prepared_operation.h",
+          "sha256": "3fe6a6f1ddc31c2181a208658e627be20933bde325ec0b63dba06281d007ed7b"
+        },
+        {
+          "path": "compute/cpu.h",
+          "sha256": "bccb8e5d310086b41c6f010a84f56219ac33830e92e5da22ce2ff12cd608ccb6"
+        },
+        {
+          "path": "graph/cpu.h",
+          "sha256": "207f78caafbec1e73966f0ead5563b51aa2aaf3e5eccabde15b6a20447a25f99"
+        },
+        {
+          "path": "mem/allocator.h",
+          "sha256": "8beaac413632fdc4409c2384f1cda7d6d5e75b72aafad73d188e13dbfa50781a"
+        },
+        {
+          "path": "mem/system_inline.h",
+          "sha256": "d890fe66b1a83a5f1a8f2b22c368276e7b3fadcfd0946df5279692ce055164f1"
+        },
+        {
+          "path": "mem/buffer.h",
+          "sha256": "346a4f810babb8c5dacba49faaf57903d998a3cbb49af12b8c62acc85f7be72c"
+        },
+        {
+          "path": "compute/apple.h",
+          "sha256": "25503bf098301a1bf3a0f30cd36e30df983749c0ab2b70987bcee47e1be7b89b"
+        },
+        {
+          "path": "graph/apple.h",
+          "sha256": "1da9da16a29e46222562a2985a22180028e70368ee1f57427e966c066b03156e"
+        },
+        {
+          "path": "graph/cpu_apple.h",
+          "sha256": "645f557d8a6fefe3f69bc25f37c03e637ed28311fb7817bfb8de0e5373b0eb32"
+        }
+      ]
+    },
+    {
+      "platform": "air",
+      "route": "apple",
+      "mode": "source",
+      "state": "PUBLIC_SOURCE_CONSUMERS_HEADERS_PASS",
+      "source_snapshot": "95e85de0a0886cadf63620b09544d832fdaa2290",
+      "elapsed_seconds": 43.669478874999996,
+      "result_origin": {
+        "receipt": "evidence/delivery/inference-g08-air-sdk-checkpoint/receipt.json",
+        "archive_entry": "apple-source-1/result.json"
+      },
+      "consumers": [
+        {
+          "name": "cpu_direct",
+          "path": "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-build/cpu_direct",
+          "sha256": "89c34484f3e48f2945efc77ef586977fdc1fa73f8fd9cd39af380e16e5ac7c20"
+        },
+        {
+          "name": "cpu_graph",
+          "path": "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-build/cpu_graph",
+          "sha256": "f941a76b148fdcfd46d0555c52ab088e85c9da710fe5dbd5140becb74cbbaf19"
+        },
+        {
+          "name": "native_direct",
+          "path": "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-build/native_direct",
+          "sha256": "f9f063d8caa90a2f8191ea5c030ad592bfe1e75f872f546597bb1a7ae7628d8f"
+        },
+        {
+          "name": "native_graph",
+          "path": "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-build/native_graph",
+          "sha256": "c71a45461d2759f7bbc159e43ebe225150aa8c621cae9aa28c339702be54f414"
+        },
+        {
+          "name": "joint",
+          "path": "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-build/joint",
+          "sha256": "313a9d150529267d98eb7699f0d8a7b8e924dd659e1e3af3500f98753872684a"
+        },
+        {
+          "name": "mem",
+          "path": "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-build/mem",
+          "sha256": "85d13dcd8a4f2757b166d66bb436a6375fbf35153364b18e24a0da527f0dc97d"
+        }
+      ],
+      "independent_headers": [
+        {
+          "path": "compute/sampling_ops.h",
+          "sha256": "887faba6ebe6249a0e2f766e2ea4b6bd83900bcf1e85165ad55e3e9be18528da"
+        },
+        {
+          "path": "compute/operation.h",
+          "sha256": "584e57c2a1a10b7c17ee80d4a6f992b73f488f4cdbf1e71e39d908cd89600808"
+        },
+        {
+          "path": "compute/prepared_operation.h",
+          "sha256": "3fe6a6f1ddc31c2181a208658e627be20933bde325ec0b63dba06281d007ed7b"
+        },
+        {
+          "path": "compute/cpu.h",
+          "sha256": "bccb8e5d310086b41c6f010a84f56219ac33830e92e5da22ce2ff12cd608ccb6"
+        },
+        {
+          "path": "graph/cpu.h",
+          "sha256": "207f78caafbec1e73966f0ead5563b51aa2aaf3e5eccabde15b6a20447a25f99"
+        },
+        {
+          "path": "mem/allocator.h",
+          "sha256": "8beaac413632fdc4409c2384f1cda7d6d5e75b72aafad73d188e13dbfa50781a"
+        },
+        {
+          "path": "mem/system_inline.h",
+          "sha256": "d890fe66b1a83a5f1a8f2b22c368276e7b3fadcfd0946df5279692ce055164f1"
+        },
+        {
+          "path": "mem/buffer.h",
+          "sha256": "346a4f810babb8c5dacba49faaf57903d998a3cbb49af12b8c62acc85f7be72c"
+        },
+        {
+          "path": "compute/apple.h",
+          "sha256": "25503bf098301a1bf3a0f30cd36e30df983749c0ab2b70987bcee47e1be7b89b"
+        },
+        {
+          "path": "graph/apple.h",
+          "sha256": "1da9da16a29e46222562a2985a22180028e70368ee1f57427e966c066b03156e"
+        },
+        {
+          "path": "graph/cpu_apple.h",
+          "sha256": "645f557d8a6fefe3f69bc25f37c03e637ed28311fb7817bfb8de0e5373b0eb32"
+        }
+      ]
+    },
+    {
+      "platform": "air",
+      "route": "vulkan",
+      "mode": "shared",
+      "state": "RELOCATED_SDK_PUBLIC_CONSUMERS_HEADERS_LICENSE_PASS",
+      "source_snapshot": "95e85de0a0886cadf63620b09544d832fdaa2290",
+      "elapsed_seconds": 48.636744583,
+      "result_origin": {
+        "receipt": "evidence/delivery/inference-g08-air-sdk-checkpoint/receipt.json",
+        "archive_entry": "vulkan-shared-1/result.json"
+      },
+      "consumers": [
+        {
+          "name": "cpu_direct",
+          "path": "/Users/kiro/hyle-scratch/compute-unified/g08-sdk/vulkan-shared-1/consumer-build/cpu_direct",
+          "sha256": "d43bb81a0554bdc02467d639d5626c8790470bda808ccc9d95dbbd6242395798"
+        },
+        {
+          "name": "cpu_graph",
+          "path": "/Users/kiro/hyle-scratch/compute-unified/g08-sdk/vulkan-shared-1/consumer-build/cpu_graph",
+          "sha256": "1a8f9c4f2962e69f6cf5ec72e824c1f02608b7c0eda31ec94643402343ecfd1c"
+        },
+        {
+          "name": "native_direct",
+          "path": "/Users/kiro/hyle-scratch/compute-unified/g08-sdk/vulkan-shared-1/consumer-build/native_direct",
+          "sha256": "0d2a4432a03d65447bb149a46d84a9947246602f5365aa8a50882b2ac8ace92b"
+        },
+        {
+          "name": "native_graph",
+          "path": "/Users/kiro/hyle-scratch/compute-unified/g08-sdk/vulkan-shared-1/consumer-build/native_graph",
+          "sha256": "fe49d095e7a50775698fed4cafba501bfdaf314b4f3bd4f08a16e91c25e11e28"
+        },
+        {
+          "name": "joint",
+          "path": "/Users/kiro/hyle-scratch/compute-unified/g08-sdk/vulkan-shared-1/consumer-build/joint",
+          "sha256": "092aff05f448d2687bd8b202b73eb11c918dc7f0c5f217c651ec78a17f43a168"
+        },
+        {
+          "name": "mem",
+          "path": "/Users/kiro/hyle-scratch/compute-unified/g08-sdk/vulkan-shared-1/consumer-build/mem",
+          "sha256": "b9b2d4892e86b30a6a37576acb404196f640c795ff365a4572a0d5e57c917f64"
+        }
+      ],
+      "independent_headers": [
+        {
+          "path": "compute/sampling_ops.h",
+          "sha256": "887faba6ebe6249a0e2f766e2ea4b6bd83900bcf1e85165ad55e3e9be18528da"
+        },
+        {
+          "path": "compute/operation.h",
+          "sha256": "584e57c2a1a10b7c17ee80d4a6f992b73f488f4cdbf1e71e39d908cd89600808"
+        },
+        {
+          "path": "compute/prepared_operation.h",
+          "sha256": "3fe6a6f1ddc31c2181a208658e627be20933bde325ec0b63dba06281d007ed7b"
+        },
+        {
+          "path": "compute/cpu.h",
+          "sha256": "bccb8e5d310086b41c6f010a84f56219ac33830e92e5da22ce2ff12cd608ccb6"
+        },
+        {
+          "path": "graph/cpu.h",
+          "sha256": "207f78caafbec1e73966f0ead5563b51aa2aaf3e5eccabde15b6a20447a25f99"
+        },
+        {
+          "path": "mem/allocator.h",
+          "sha256": "8beaac413632fdc4409c2384f1cda7d6d5e75b72aafad73d188e13dbfa50781a"
+        },
+        {
+          "path": "mem/system_inline.h",
+          "sha256": "d890fe66b1a83a5f1a8f2b22c368276e7b3fadcfd0946df5279692ce055164f1"
+        },
+        {
+          "path": "mem/buffer.h",
+          "sha256": "346a4f810babb8c5dacba49faaf57903d998a3cbb49af12b8c62acc85f7be72c"
+        },
+        {
+          "path": "compute/vulkan.h",
+          "sha256": "0edeb32b828136e277df83109f0ad5d0fb7c98cbfaa766055426ea36b115716b"
+        },
+        {
+          "path": "graph/vulkan.h",
+          "sha256": "2bed7d4b76f28f1e96c170a7ebb077f8aa5246ac2fc2906b2dc0e9b64b4c236f"
+        },
+        {
+          "path": "graph/cpu_vulkan.h",
+          "sha256": "9b4c99f9ef9948f85435de4415a788b83d17a00752664074edf462addc6693f6"
+        }
+      ]
+    },
+    {
+      "platform": "air",
+      "route": "vulkan",
+      "mode": "static",
+      "state": "RELOCATED_SDK_PUBLIC_CONSUMERS_HEADERS_LICENSE_PASS",
+      "source_snapshot": "95e85de0a0886cadf63620b09544d832fdaa2290",
+      "elapsed_seconds": 52.983540458,
+      "result_origin": {
+        "receipt": "evidence/delivery/inference-g08-air-sdk-checkpoint/receipt.json",
+        "archive_entry": "vulkan-static-1/result.json"
+      },
+      "consumers": [
+        {
+          "name": "cpu_direct",
+          "path": "/Users/kiro/hyle-scratch/compute-unified/g08-sdk/vulkan-static-1/consumer-build/cpu_direct",
+          "sha256": "55bb8b12bf5edfabd0ef16bfae2dca760baf430a657f97f46e503bb8c93f77e8"
+        },
+        {
+          "name": "cpu_graph",
+          "path": "/Users/kiro/hyle-scratch/compute-unified/g08-sdk/vulkan-static-1/consumer-build/cpu_graph",
+          "sha256": "ca357e1937b3be3a87d5a9cda24f7efbe8c365d69721fbda66b0ea64c98b17fe"
+        },
+        {
+          "name": "native_direct",
+          "path": "/Users/kiro/hyle-scratch/compute-unified/g08-sdk/vulkan-static-1/consumer-build/native_direct",
+          "sha256": "fbe2552579d298807173147e0f1c2d2f0e79bbca321b547acf459f6c77380240"
+        },
+        {
+          "name": "native_graph",
+          "path": "/Users/kiro/hyle-scratch/compute-unified/g08-sdk/vulkan-static-1/consumer-build/native_graph",
+          "sha256": "42a4623e5e7b08e6ccde83ab0a84a86221028839488b63eb6c259c155730d8f3"
+        },
+        {
+          "name": "joint",
+          "path": "/Users/kiro/hyle-scratch/compute-unified/g08-sdk/vulkan-static-1/consumer-build/joint",
+          "sha256": "5e2f4cd878c09622d8d0b2827c3b1619338ef02c1987fb52b5a6c59e94e0683d"
+        },
+        {
+          "name": "mem",
+          "path": "/Users/kiro/hyle-scratch/compute-unified/g08-sdk/vulkan-static-1/consumer-build/mem",
+          "sha256": "5f92a876601442db435c1b663e888b747f85c5c043c1053f8a9729763bf35871"
+        }
+      ],
+      "independent_headers": [
+        {
+          "path": "compute/sampling_ops.h",
+          "sha256": "887faba6ebe6249a0e2f766e2ea4b6bd83900bcf1e85165ad55e3e9be18528da"
+        },
+        {
+          "path": "compute/operation.h",
+          "sha256": "584e57c2a1a10b7c17ee80d4a6f992b73f488f4cdbf1e71e39d908cd89600808"
+        },
+        {
+          "path": "compute/prepared_operation.h",
+          "sha256": "3fe6a6f1ddc31c2181a208658e627be20933bde325ec0b63dba06281d007ed7b"
+        },
+        {
+          "path": "compute/cpu.h",
+          "sha256": "bccb8e5d310086b41c6f010a84f56219ac33830e92e5da22ce2ff12cd608ccb6"
+        },
+        {
+          "path": "graph/cpu.h",
+          "sha256": "207f78caafbec1e73966f0ead5563b51aa2aaf3e5eccabde15b6a20447a25f99"
+        },
+        {
+          "path": "mem/allocator.h",
+          "sha256": "8beaac413632fdc4409c2384f1cda7d6d5e75b72aafad73d188e13dbfa50781a"
+        },
+        {
+          "path": "mem/system_inline.h",
+          "sha256": "d890fe66b1a83a5f1a8f2b22c368276e7b3fadcfd0946df5279692ce055164f1"
+        },
+        {
+          "path": "mem/buffer.h",
+          "sha256": "346a4f810babb8c5dacba49faaf57903d998a3cbb49af12b8c62acc85f7be72c"
+        },
+        {
+          "path": "compute/vulkan.h",
+          "sha256": "0edeb32b828136e277df83109f0ad5d0fb7c98cbfaa766055426ea36b115716b"
+        },
+        {
+          "path": "graph/vulkan.h",
+          "sha256": "2bed7d4b76f28f1e96c170a7ebb077f8aa5246ac2fc2906b2dc0e9b64b4c236f"
+        },
+        {
+          "path": "graph/cpu_vulkan.h",
+          "sha256": "9b4c99f9ef9948f85435de4415a788b83d17a00752664074edf462addc6693f6"
+        }
+      ]
+    },
+    {
+      "platform": "air",
+      "route": "vulkan",
+      "mode": "source",
+      "state": "PUBLIC_SOURCE_CONSUMERS_HEADERS_PASS",
+      "source_snapshot": "95e85de0a0886cadf63620b09544d832fdaa2290",
+      "elapsed_seconds": 57.638187208,
+      "result_origin": {
+        "receipt": "evidence/delivery/inference-g08-air-sdk-checkpoint/receipt.json",
+        "archive_entry": "vulkan-source-1/result.json"
+      },
+      "consumers": [
+        {
+          "name": "cpu_direct",
+          "path": "/Users/kiro/hyle-scratch/compute-unified/a-cpu-vulkan/selected-graph/source-build/cpu_direct",
+          "sha256": "3f3888763692242da960d51a25fd7df6ac9abbd09663ba48f0aef0d5d2cf424d"
+        },
+        {
+          "name": "cpu_graph",
+          "path": "/Users/kiro/hyle-scratch/compute-unified/a-cpu-vulkan/selected-graph/source-build/cpu_graph",
+          "sha256": "19531b1529dae0beaede387e8aab4081bdba799e9c39525660dbc2308071a11d"
+        },
+        {
+          "name": "native_direct",
+          "path": "/Users/kiro/hyle-scratch/compute-unified/a-cpu-vulkan/selected-graph/source-build/native_direct",
+          "sha256": "63782470c056ec099aedfd7c4d56cd3501799fd380efb671c4c713401c3744f9"
+        },
+        {
+          "name": "native_graph",
+          "path": "/Users/kiro/hyle-scratch/compute-unified/a-cpu-vulkan/selected-graph/source-build/native_graph",
+          "sha256": "0bda5272d7ac6c30fbd312b5601f0a573b4f7bcebbdc3396ce497d628cb880b4"
+        },
+        {
+          "name": "joint",
+          "path": "/Users/kiro/hyle-scratch/compute-unified/a-cpu-vulkan/selected-graph/source-build/joint",
+          "sha256": "422ca1f95e474e6cff5d5aa45c7e2e14422bb401cb1d3bd09c97ed5bd71f4026"
+        },
+        {
+          "name": "mem",
+          "path": "/Users/kiro/hyle-scratch/compute-unified/a-cpu-vulkan/selected-graph/source-build/mem",
+          "sha256": "174abf836c41475a30a0043a4b8af03bc5cbaa6ed505c7c7b33b5d92076b7bfb"
+        }
+      ],
+      "independent_headers": [
+        {
+          "path": "compute/sampling_ops.h",
+          "sha256": "887faba6ebe6249a0e2f766e2ea4b6bd83900bcf1e85165ad55e3e9be18528da"
+        },
+        {
+          "path": "compute/operation.h",
+          "sha256": "584e57c2a1a10b7c17ee80d4a6f992b73f488f4cdbf1e71e39d908cd89600808"
+        },
+        {
+          "path": "compute/prepared_operation.h",
+          "sha256": "3fe6a6f1ddc31c2181a208658e627be20933bde325ec0b63dba06281d007ed7b"
+        },
+        {
+          "path": "compute/cpu.h",
+          "sha256": "bccb8e5d310086b41c6f010a84f56219ac33830e92e5da22ce2ff12cd608ccb6"
+        },
+        {
+          "path": "graph/cpu.h",
+          "sha256": "207f78caafbec1e73966f0ead5563b51aa2aaf3e5eccabde15b6a20447a25f99"
+        },
+        {
+          "path": "mem/allocator.h",
+          "sha256": "8beaac413632fdc4409c2384f1cda7d6d5e75b72aafad73d188e13dbfa50781a"
+        },
+        {
+          "path": "mem/system_inline.h",
+          "sha256": "d890fe66b1a83a5f1a8f2b22c368276e7b3fadcfd0946df5279692ce055164f1"
+        },
+        {
+          "path": "mem/buffer.h",
+          "sha256": "346a4f810babb8c5dacba49faaf57903d998a3cbb49af12b8c62acc85f7be72c"
+        },
+        {
+          "path": "compute/vulkan.h",
+          "sha256": "0edeb32b828136e277df83109f0ad5d0fb7c98cbfaa766055426ea36b115716b"
+        },
+        {
+          "path": "graph/vulkan.h",
+          "sha256": "2bed7d4b76f28f1e96c170a7ebb077f8aa5246ac2fc2906b2dc0e9b64b4c236f"
+        },
+        {
+          "path": "graph/cpu_vulkan.h",
+          "sha256": "9b4c99f9ef9948f85435de4415a788b83d17a00752664074edf462addc6693f6"
+        }
+      ]
+    },
+    {
+      "platform": "windows",
+      "route": "cpu",
+      "mode": "shared",
+      "state": "RELOCATED_SDK_PUBLIC_CONSUMERS_HEADERS_LICENSE_RUNTIME_PASS",
+      "source_snapshot": "95e85de0a0886cadf63620b09544d832fdaa2290",
+      "elapsed_seconds": 232.95300000003772,
+      "result_origin": {
+        "receipt": "evidence/delivery/inference-g08-windows-cpu-sdk-checkpoint/receipt.json",
+        "archive_entry": "result.json"
+      },
+      "consumers": [
+        {
+          "name": "cpu_direct",
+          "path": "C:\\h7\\g08-sdk\\cpu-shared-1\\consumer-build\\cpu_direct.exe",
+          "sha256": "7e19511ec436d707b666d96fb70cc71193bad8727d19c17c22db50b66ab72452"
+        },
+        {
+          "name": "cpu_graph",
+          "path": "C:\\h7\\g08-sdk\\cpu-shared-1\\consumer-build\\cpu_graph.exe",
+          "sha256": "c929f4f6a37d7686e60a0ab5f15560b51ef81cf81e9df7779bc6e028fd2f97e0"
+        },
+        {
+          "name": "mem",
+          "path": "C:\\h7\\g08-sdk\\cpu-shared-1\\consumer-build\\mem.exe",
+          "sha256": "a3500684e1a01e068e68ba279ebefe912a2430967292305f42dd5d02ec712b7b"
+        }
+      ],
+      "independent_headers": [
+        {
+          "path": "compute/sampling_ops.h",
+          "sha256": "887faba6ebe6249a0e2f766e2ea4b6bd83900bcf1e85165ad55e3e9be18528da"
+        },
+        {
+          "path": "compute/operation.h",
+          "sha256": "584e57c2a1a10b7c17ee80d4a6f992b73f488f4cdbf1e71e39d908cd89600808"
+        },
+        {
+          "path": "compute/prepared_operation.h",
+          "sha256": "3fe6a6f1ddc31c2181a208658e627be20933bde325ec0b63dba06281d007ed7b"
+        },
+        {
+          "path": "compute/cpu.h",
+          "sha256": "bccb8e5d310086b41c6f010a84f56219ac33830e92e5da22ce2ff12cd608ccb6"
+        },
+        {
+          "path": "graph/cpu.h",
+          "sha256": "207f78caafbec1e73966f0ead5563b51aa2aaf3e5eccabde15b6a20447a25f99"
+        },
+        {
+          "path": "mem/allocator.h",
+          "sha256": "8beaac413632fdc4409c2384f1cda7d6d5e75b72aafad73d188e13dbfa50781a"
+        },
+        {
+          "path": "mem/system_inline.h",
+          "sha256": "d890fe66b1a83a5f1a8f2b22c368276e7b3fadcfd0946df5279692ce055164f1"
+        },
+        {
+          "path": "mem/buffer.h",
+          "sha256": "346a4f810babb8c5dacba49faaf57903d998a3cbb49af12b8c62acc85f7be72c"
+        }
+      ]
+    },
+    {
+      "platform": "windows",
+      "route": "cpu",
+      "mode": "static",
+      "state": "RELOCATED_SDK_PUBLIC_CONSUMERS_HEADERS_LICENSE_RUNTIME_PASS",
+      "source_snapshot": "d5b9490a5958593915d69750cb3a4470866a7176",
+      "elapsed_seconds": 390.155999999959,
+      "result_origin": {
+        "receipt": "evidence/delivery/inference-g08-windows-cpu-sdk-checkpoint/remaining.json",
+        "archive_entry": "static/result.json"
+      },
+      "consumers": [
+        {
+          "name": "cpu_direct",
+          "path": "C:\\h7\\g08-sdk\\cpu-static-1\\consumer-build\\cpu_direct.exe",
+          "sha256": "d35b6e957561b44afdf7493baf9ee4570a2caeac4724f6f7ba948db37cc69cd2"
+        },
+        {
+          "name": "cpu_graph",
+          "path": "C:\\h7\\g08-sdk\\cpu-static-1\\consumer-build\\cpu_graph.exe",
+          "sha256": "6fab1967dc7fcb8fe849bfc63e3a8122c6ef5184342661d8dc9ace0e6439c0d9"
+        },
+        {
+          "name": "mem",
+          "path": "C:\\h7\\g08-sdk\\cpu-static-1\\consumer-build\\mem.exe",
+          "sha256": "4e5795b34c143b34c9cafa1324922cfd2a067e460efe665c8f90b1c3bc541655"
+        }
+      ],
+      "independent_headers": [
+        {
+          "path": "compute/sampling_ops.h",
+          "sha256": "887faba6ebe6249a0e2f766e2ea4b6bd83900bcf1e85165ad55e3e9be18528da"
+        },
+        {
+          "path": "compute/operation.h",
+          "sha256": "584e57c2a1a10b7c17ee80d4a6f992b73f488f4cdbf1e71e39d908cd89600808"
+        },
+        {
+          "path": "compute/prepared_operation.h",
+          "sha256": "3fe6a6f1ddc31c2181a208658e627be20933bde325ec0b63dba06281d007ed7b"
+        },
+        {
+          "path": "compute/cpu.h",
+          "sha256": "bccb8e5d310086b41c6f010a84f56219ac33830e92e5da22ce2ff12cd608ccb6"
+        },
+        {
+          "path": "graph/cpu.h",
+          "sha256": "207f78caafbec1e73966f0ead5563b51aa2aaf3e5eccabde15b6a20447a25f99"
+        },
+        {
+          "path": "mem/allocator.h",
+          "sha256": "8beaac413632fdc4409c2384f1cda7d6d5e75b72aafad73d188e13dbfa50781a"
+        },
+        {
+          "path": "mem/system_inline.h",
+          "sha256": "d890fe66b1a83a5f1a8f2b22c368276e7b3fadcfd0946df5279692ce055164f1"
+        },
+        {
+          "path": "mem/buffer.h",
+          "sha256": "346a4f810babb8c5dacba49faaf57903d998a3cbb49af12b8c62acc85f7be72c"
+        }
+      ]
+    },
+    {
+      "platform": "windows",
+      "route": "cpu",
+      "mode": "source",
+      "state": "PUBLIC_SOURCE_CONSUMERS_HEADERS_RUNTIME_PASS",
+      "source_snapshot": "d5b9490a5958593915d69750cb3a4470866a7176",
+      "elapsed_seconds": 487.64000000001397,
+      "result_origin": {
+        "receipt": "evidence/delivery/inference-g08-windows-cpu-sdk-checkpoint/remaining.json",
+        "archive_entry": "source/result.json"
+      },
+      "consumers": [
+        {
+          "name": "cpu_direct",
+          "path": "C:\\h7\\w-cpu-cuda\\selected-graph\\source-build\\cpu_direct.exe",
+          "sha256": "ae3df86e9eba9daa0c28f89b32d2ec5b438f70c17b4a2479d2ad2e77786e2389"
+        },
+        {
+          "name": "cpu_graph",
+          "path": "C:\\h7\\w-cpu-cuda\\selected-graph\\source-build\\cpu_graph.exe",
+          "sha256": "4f86a1e5c66ab0e1faa65ff8a0dc3c27a8281fc232b80fb11b9fb2a04aca62a7"
+        },
+        {
+          "name": "mem",
+          "path": "C:\\h7\\w-cpu-cuda\\selected-graph\\source-build\\mem.exe",
+          "sha256": "543138bb56837aa8f8f1a7f0364fbbef731529815e8d13d22d2b64782f2de028"
+        }
+      ],
+      "independent_headers": [
+        {
+          "path": "compute/sampling_ops.h",
+          "sha256": "887faba6ebe6249a0e2f766e2ea4b6bd83900bcf1e85165ad55e3e9be18528da"
+        },
+        {
+          "path": "compute/operation.h",
+          "sha256": "584e57c2a1a10b7c17ee80d4a6f992b73f488f4cdbf1e71e39d908cd89600808"
+        },
+        {
+          "path": "compute/prepared_operation.h",
+          "sha256": "3fe6a6f1ddc31c2181a208658e627be20933bde325ec0b63dba06281d007ed7b"
+        },
+        {
+          "path": "compute/cpu.h",
+          "sha256": "bccb8e5d310086b41c6f010a84f56219ac33830e92e5da22ce2ff12cd608ccb6"
+        },
+        {
+          "path": "graph/cpu.h",
+          "sha256": "207f78caafbec1e73966f0ead5563b51aa2aaf3e5eccabde15b6a20447a25f99"
+        },
+        {
+          "path": "mem/allocator.h",
+          "sha256": "8beaac413632fdc4409c2384f1cda7d6d5e75b72aafad73d188e13dbfa50781a"
+        },
+        {
+          "path": "mem/system_inline.h",
+          "sha256": "d890fe66b1a83a5f1a8f2b22c368276e7b3fadcfd0946df5279692ce055164f1"
+        },
+        {
+          "path": "mem/buffer.h",
+          "sha256": "346a4f810babb8c5dacba49faaf57903d998a3cbb49af12b8c62acc85f7be72c"
+        }
+      ]
+    },
+    {
+      "platform": "windows",
+      "route": "cuda",
+      "mode": "shared",
+      "state": "RELOCATED_SDK_PUBLIC_CONSUMERS_HEADERS_LICENSE_RUNTIME_PASS",
+      "source_snapshot": "d5b9490a5958593915d69750cb3a4470866a7176",
+      "elapsed_seconds": 831.6719999999623,
+      "result_origin": {
+        "receipt": "evidence/delivery/inference-g08-cuda-sdk-checkpoint/receipt.json",
+        "archive_entry": "windows-shared/result.json"
+      },
+      "consumers": [
+        {
+          "name": "cpu_direct",
+          "path": "C:\\h7\\g08-sdk\\cuda-shared-1\\consumer-build\\cpu_direct.exe",
+          "sha256": "ee2101f2cd6a7b79b79f18fb06086cad319d460ab81ffbf91fd667a5f60b8c54"
+        },
+        {
+          "name": "cpu_graph",
+          "path": "C:\\h7\\g08-sdk\\cuda-shared-1\\consumer-build\\cpu_graph.exe",
+          "sha256": "85e09c212f61aa05be93d64d54131d57ba117d7ff949517e3d230a9b3e34ba93"
+        },
+        {
+          "name": "native_direct",
+          "path": "C:\\h7\\g08-sdk\\cuda-shared-1\\consumer-build\\native_direct.exe",
+          "sha256": "67335ad514d5ec13537354ab2e4a7af475fc7deeaef0196d5b7c3dc07d5e0436"
+        },
+        {
+          "name": "native_graph",
+          "path": "C:\\h7\\g08-sdk\\cuda-shared-1\\consumer-build\\native_graph.exe",
+          "sha256": "07ed752b4ce3e0acf1a81aea1d0ab922001e841e978b0429396fe80f942d045f"
+        },
+        {
+          "name": "joint",
+          "path": "C:\\h7\\g08-sdk\\cuda-shared-1\\consumer-build\\joint.exe",
+          "sha256": "ffcd50e4f61bcec551b1d67cd0466226e24335c4ab3d689200d3ab532307414a"
+        },
+        {
+          "name": "mem",
+          "path": "C:\\h7\\g08-sdk\\cuda-shared-1\\consumer-build\\mem.exe",
+          "sha256": "a7e53942c689172430426f84af55a38ded3d6a4aba4dc899a1e9e3b266fa55ab"
+        }
+      ],
+      "independent_headers": [
+        {
+          "path": "compute/sampling_ops.h",
+          "sha256": "887faba6ebe6249a0e2f766e2ea4b6bd83900bcf1e85165ad55e3e9be18528da"
+        },
+        {
+          "path": "compute/operation.h",
+          "sha256": "584e57c2a1a10b7c17ee80d4a6f992b73f488f4cdbf1e71e39d908cd89600808"
+        },
+        {
+          "path": "compute/prepared_operation.h",
+          "sha256": "3fe6a6f1ddc31c2181a208658e627be20933bde325ec0b63dba06281d007ed7b"
+        },
+        {
+          "path": "compute/cpu.h",
+          "sha256": "bccb8e5d310086b41c6f010a84f56219ac33830e92e5da22ce2ff12cd608ccb6"
+        },
+        {
+          "path": "graph/cpu.h",
+          "sha256": "207f78caafbec1e73966f0ead5563b51aa2aaf3e5eccabde15b6a20447a25f99"
+        },
+        {
+          "path": "mem/allocator.h",
+          "sha256": "8beaac413632fdc4409c2384f1cda7d6d5e75b72aafad73d188e13dbfa50781a"
+        },
+        {
+          "path": "mem/system_inline.h",
+          "sha256": "d890fe66b1a83a5f1a8f2b22c368276e7b3fadcfd0946df5279692ce055164f1"
+        },
+        {
+          "path": "mem/buffer.h",
+          "sha256": "346a4f810babb8c5dacba49faaf57903d998a3cbb49af12b8c62acc85f7be72c"
+        },
+        {
+          "path": "compute/cuda.h",
+          "sha256": "13757830a7d376d94d9ffc1993dd56b6872d5c7168961eb630c014e1efa57fa6"
+        },
+        {
+          "path": "graph/cuda.h",
+          "sha256": "059264fb0360cfd298ea7e543ac153b334209e04ab90f0e5a66ea2857f4986e3"
+        },
+        {
+          "path": "graph/cpu_cuda.h",
+          "sha256": "b3fe45dc75ce6c999857bca3130816132018eb3c845e0c889d577165d8f1b098"
+        },
+        {
+          "path": "compute/backends/cuda.h",
+          "sha256": "9b1565cee1a199e46a524da1d244f6f5e1c3d8236bd5e69849583ee5ff27a91f"
+        },
+        {
+          "path": "compute/providers/cuda.h",
+          "sha256": "1b8c91cfd65b52b19503c3a8ddc31af9524093f35c1063071a2c0a56e4603106"
+        }
+      ]
+    },
+    {
+      "platform": "wsl",
+      "route": "cuda",
+      "mode": "static",
+      "state": "RELOCATED_SDK_PUBLIC_CONSUMERS_HEADERS_LICENSE_PASS",
+      "source_snapshot": "d5b9490a5958593915d69750cb3a4470866a7176",
+      "elapsed_seconds": 226.6393337,
+      "result_origin": {
+        "receipt": "evidence/delivery/inference-g08-cuda-sdk-checkpoint/receipt.json",
+        "archive_entry": "wsl-static/result.json"
+      },
+      "consumers": [
+        {
+          "name": "cpu_direct",
+          "path": "/root/hyle-scratch/compute-unified/g08-sdk/cuda-static-1/consumer-build/cpu_direct",
+          "sha256": "f25e1a075e549cb44c8dcc43724cec813014418dd4feda5b0d7a8300d244b171"
+        },
+        {
+          "name": "cpu_graph",
+          "path": "/root/hyle-scratch/compute-unified/g08-sdk/cuda-static-1/consumer-build/cpu_graph",
+          "sha256": "7cfccde52dba81e1f735cfd65dd49be0c7396f2c011d2804a7c253bab2bd3d9c"
+        },
+        {
+          "name": "native_direct",
+          "path": "/root/hyle-scratch/compute-unified/g08-sdk/cuda-static-1/consumer-build/native_direct",
+          "sha256": "6fa8caa95ada57e444597c9bd556253fa4d4ffdec324cf5cac2cadfc560512c4"
+        },
+        {
+          "name": "native_graph",
+          "path": "/root/hyle-scratch/compute-unified/g08-sdk/cuda-static-1/consumer-build/native_graph",
+          "sha256": "25978caae5586204b54546fa8adafa857f21cd335119b5dd9de77016ca2875ae"
+        },
+        {
+          "name": "joint",
+          "path": "/root/hyle-scratch/compute-unified/g08-sdk/cuda-static-1/consumer-build/joint",
+          "sha256": "67e7eb07f023d47aace7e6da64f7b6aef6f924708c98d8661cbeb5aa2a60f48c"
+        },
+        {
+          "name": "mem",
+          "path": "/root/hyle-scratch/compute-unified/g08-sdk/cuda-static-1/consumer-build/mem",
+          "sha256": "90aa800e4f8b5d31a7be53506ba72c9591c6dfe627e225deb59fd698498f55bd"
+        }
+      ],
+      "independent_headers": [
+        {
+          "path": "compute/sampling_ops.h",
+          "sha256": "887faba6ebe6249a0e2f766e2ea4b6bd83900bcf1e85165ad55e3e9be18528da"
+        },
+        {
+          "path": "compute/operation.h",
+          "sha256": "584e57c2a1a10b7c17ee80d4a6f992b73f488f4cdbf1e71e39d908cd89600808"
+        },
+        {
+          "path": "compute/prepared_operation.h",
+          "sha256": "3fe6a6f1ddc31c2181a208658e627be20933bde325ec0b63dba06281d007ed7b"
+        },
+        {
+          "path": "compute/cpu.h",
+          "sha256": "bccb8e5d310086b41c6f010a84f56219ac33830e92e5da22ce2ff12cd608ccb6"
+        },
+        {
+          "path": "graph/cpu.h",
+          "sha256": "207f78caafbec1e73966f0ead5563b51aa2aaf3e5eccabde15b6a20447a25f99"
+        },
+        {
+          "path": "mem/allocator.h",
+          "sha256": "8beaac413632fdc4409c2384f1cda7d6d5e75b72aafad73d188e13dbfa50781a"
+        },
+        {
+          "path": "mem/system_inline.h",
+          "sha256": "d890fe66b1a83a5f1a8f2b22c368276e7b3fadcfd0946df5279692ce055164f1"
+        },
+        {
+          "path": "mem/buffer.h",
+          "sha256": "346a4f810babb8c5dacba49faaf57903d998a3cbb49af12b8c62acc85f7be72c"
+        },
+        {
+          "path": "compute/cuda.h",
+          "sha256": "13757830a7d376d94d9ffc1993dd56b6872d5c7168961eb630c014e1efa57fa6"
+        },
+        {
+          "path": "graph/cuda.h",
+          "sha256": "059264fb0360cfd298ea7e543ac153b334209e04ab90f0e5a66ea2857f4986e3"
+        },
+        {
+          "path": "graph/cpu_cuda.h",
+          "sha256": "b3fe45dc75ce6c999857bca3130816132018eb3c845e0c889d577165d8f1b098"
+        },
+        {
+          "path": "compute/backends/cuda.h",
+          "sha256": "9b1565cee1a199e46a524da1d244f6f5e1c3d8236bd5e69849583ee5ff27a91f"
+        },
+        {
+          "path": "compute/providers/cuda.h",
+          "sha256": "1b8c91cfd65b52b19503c3a8ddc31af9524093f35c1063071a2c0a56e4603106"
+        }
+      ]
+    },
+    {
+      "platform": "wsl",
+      "route": "cuda",
+      "mode": "shared",
+      "state": "RELOCATED_SDK_PUBLIC_CONSUMERS_HEADERS_LICENSE_PASS",
+      "source_snapshot": "8349757252af1fbd505f62d22a45568e0fe2562e",
+      "elapsed_seconds": 174.50261253600002,
+      "result_origin": {
+        "archive_entry": "wsl-cuda-shared/result.json"
+      },
+      "consumers": [
+        {
+          "name": "cpu_direct",
+          "path": "/root/hyle-scratch/compute-unified/g08-sdk/cuda-shared-1/consumer-build/cpu_direct",
+          "sha256": "4e4eede891baa57ad1150fa64ce95d956f00a6c51e3a2c218f1d94b620f39460"
+        },
+        {
+          "name": "cpu_graph",
+          "path": "/root/hyle-scratch/compute-unified/g08-sdk/cuda-shared-1/consumer-build/cpu_graph",
+          "sha256": "814795c03c44f96f6659b56b33d086fe68b2d541e4222a55494e8f5f77316003"
+        },
+        {
+          "name": "native_direct",
+          "path": "/root/hyle-scratch/compute-unified/g08-sdk/cuda-shared-1/consumer-build/native_direct",
+          "sha256": "4f82ab3f5cba8c156b58d5704ad99dcea52e46b786fde04b436b21344ca69e14"
+        },
+        {
+          "name": "native_graph",
+          "path": "/root/hyle-scratch/compute-unified/g08-sdk/cuda-shared-1/consumer-build/native_graph",
+          "sha256": "983de2d463afed6f24af4699c171a516cdb62c30c1e7a83317ba2afe2cab5635"
+        },
+        {
+          "name": "joint",
+          "path": "/root/hyle-scratch/compute-unified/g08-sdk/cuda-shared-1/consumer-build/joint",
+          "sha256": "9fea88c14eea215d8f6efe02cba8cba006e815626e430bb37466504d27596de4"
+        },
+        {
+          "name": "mem",
+          "path": "/root/hyle-scratch/compute-unified/g08-sdk/cuda-shared-1/consumer-build/mem",
+          "sha256": "6dfa47c64e09e2639521aee9363b9ba816e96a63b388825986f1d748228cb74c"
+        }
+      ],
+      "independent_headers": [
+        {
+          "path": "compute/sampling_ops.h",
+          "sha256": "887faba6ebe6249a0e2f766e2ea4b6bd83900bcf1e85165ad55e3e9be18528da"
+        },
+        {
+          "path": "compute/operation.h",
+          "sha256": "584e57c2a1a10b7c17ee80d4a6f992b73f488f4cdbf1e71e39d908cd89600808"
+        },
+        {
+          "path": "compute/prepared_operation.h",
+          "sha256": "3fe6a6f1ddc31c2181a208658e627be20933bde325ec0b63dba06281d007ed7b"
+        },
+        {
+          "path": "compute/cpu.h",
+          "sha256": "bccb8e5d310086b41c6f010a84f56219ac33830e92e5da22ce2ff12cd608ccb6"
+        },
+        {
+          "path": "graph/cpu.h",
+          "sha256": "207f78caafbec1e73966f0ead5563b51aa2aaf3e5eccabde15b6a20447a25f99"
+        },
+        {
+          "path": "mem/allocator.h",
+          "sha256": "8beaac413632fdc4409c2384f1cda7d6d5e75b72aafad73d188e13dbfa50781a"
+        },
+        {
+          "path": "mem/system_inline.h",
+          "sha256": "d890fe66b1a83a5f1a8f2b22c368276e7b3fadcfd0946df5279692ce055164f1"
+        },
+        {
+          "path": "mem/buffer.h",
+          "sha256": "346a4f810babb8c5dacba49faaf57903d998a3cbb49af12b8c62acc85f7be72c"
+        },
+        {
+          "path": "compute/cuda.h",
+          "sha256": "13757830a7d376d94d9ffc1993dd56b6872d5c7168961eb630c014e1efa57fa6"
+        },
+        {
+          "path": "graph/cuda.h",
+          "sha256": "059264fb0360cfd298ea7e543ac153b334209e04ab90f0e5a66ea2857f4986e3"
+        },
+        {
+          "path": "graph/cpu_cuda.h",
+          "sha256": "b3fe45dc75ce6c999857bca3130816132018eb3c845e0c889d577165d8f1b098"
+        },
+        {
+          "path": "compute/backends/cuda.h",
+          "sha256": "9b1565cee1a199e46a524da1d244f6f5e1c3d8236bd5e69849583ee5ff27a91f"
+        },
+        {
+          "path": "compute/providers/cuda.h",
+          "sha256": "1b8c91cfd65b52b19503c3a8ddc31af9524093f35c1063071a2c0a56e4603106"
+        }
+      ]
+    },
+    {
+      "platform": "wsl",
+      "route": "cuda",
+      "mode": "source",
+      "state": "PUBLIC_SOURCE_CONSUMERS_HEADERS_PASS",
+      "source_snapshot": "8349757252af1fbd505f62d22a45568e0fe2562e",
+      "elapsed_seconds": 570.0624582849999,
+      "result_origin": {
+        "archive_entry": "wsl-cuda-source/result.json"
+      },
+      "consumers": [
+        {
+          "name": "cpu_direct",
+          "path": "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/source-build/cpu_direct",
+          "sha256": "e4b8b89758989651cd312cc9298edfc6ce05f2338b85e1d8cb765de60924e388"
+        },
+        {
+          "name": "cpu_graph",
+          "path": "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/source-build/cpu_graph",
+          "sha256": "50523bb180a67d987ba464bc9378df8e55dbb7977ddba0a22d06854dcc246df3"
+        },
+        {
+          "name": "native_direct",
+          "path": "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/source-build/native_direct",
+          "sha256": "be307a0ae637a218bbf0c44ea5a08eafc0eecb7e24d7374a9d884b28e60ebaad"
+        },
+        {
+          "name": "native_graph",
+          "path": "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/source-build/native_graph",
+          "sha256": "043d118d3ecd1771db211ad73f87f6ab80cde1575b0be96442c8b1b7c2896def"
+        },
+        {
+          "name": "joint",
+          "path": "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/source-build/joint",
+          "sha256": "38a343c223dd62f61bb76211a8e8eaeab16c591943927e8e8af6fbc360453894"
+        },
+        {
+          "name": "mem",
+          "path": "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/source-build/mem",
+          "sha256": "5c16cd39ced96f2e4286a3e58e49643bd68e26c29f81bca2e4b8d03b25db3d7b"
+        }
+      ],
+      "independent_headers": [
+        {
+          "path": "compute/sampling_ops.h",
+          "sha256": "887faba6ebe6249a0e2f766e2ea4b6bd83900bcf1e85165ad55e3e9be18528da"
+        },
+        {
+          "path": "compute/operation.h",
+          "sha256": "584e57c2a1a10b7c17ee80d4a6f992b73f488f4cdbf1e71e39d908cd89600808"
+        },
+        {
+          "path": "compute/prepared_operation.h",
+          "sha256": "3fe6a6f1ddc31c2181a208658e627be20933bde325ec0b63dba06281d007ed7b"
+        },
+        {
+          "path": "compute/cpu.h",
+          "sha256": "bccb8e5d310086b41c6f010a84f56219ac33830e92e5da22ce2ff12cd608ccb6"
+        },
+        {
+          "path": "graph/cpu.h",
+          "sha256": "207f78caafbec1e73966f0ead5563b51aa2aaf3e5eccabde15b6a20447a25f99"
+        },
+        {
+          "path": "mem/allocator.h",
+          "sha256": "8beaac413632fdc4409c2384f1cda7d6d5e75b72aafad73d188e13dbfa50781a"
+        },
+        {
+          "path": "mem/system_inline.h",
+          "sha256": "d890fe66b1a83a5f1a8f2b22c368276e7b3fadcfd0946df5279692ce055164f1"
+        },
+        {
+          "path": "mem/buffer.h",
+          "sha256": "346a4f810babb8c5dacba49faaf57903d998a3cbb49af12b8c62acc85f7be72c"
+        },
+        {
+          "path": "compute/cuda.h",
+          "sha256": "13757830a7d376d94d9ffc1993dd56b6872d5c7168961eb630c014e1efa57fa6"
+        },
+        {
+          "path": "graph/cuda.h",
+          "sha256": "059264fb0360cfd298ea7e543ac153b334209e04ab90f0e5a66ea2857f4986e3"
+        },
+        {
+          "path": "graph/cpu_cuda.h",
+          "sha256": "b3fe45dc75ce6c999857bca3130816132018eb3c845e0c889d577165d8f1b098"
+        },
+        {
+          "path": "compute/backends/cuda.h",
+          "sha256": "9b1565cee1a199e46a524da1d244f6f5e1c3d8236bd5e69849583ee5ff27a91f"
+        },
+        {
+          "path": "compute/providers/cuda.h",
+          "sha256": "1b8c91cfd65b52b19503c3a8ddc31af9524093f35c1063071a2c0a56e4603106"
+        }
+      ]
+    },
+    {
+      "platform": "windows",
+      "route": "cuda",
+      "mode": "static",
+      "state": "RELOCATED_SDK_PUBLIC_CONSUMERS_HEADERS_LICENSE_RUNTIME_PASS",
+      "source_snapshot": "8349757252af1fbd505f62d22a45568e0fe2562e",
+      "elapsed_seconds": 1225.2189999999828,
+      "result_origin": {
+        "archive_entry": "windows-cuda-static/result.json"
+      },
+      "consumers": [
+        {
+          "name": "cpu_direct",
+          "path": "C:\\h7\\g08-sdk\\cuda-static-1\\consumer-build\\cpu_direct.exe",
+          "sha256": "ea55901e8505a4a0b17702ba6876295f3140266745b5fc94dbefede1102fc791"
+        },
+        {
+          "name": "cpu_graph",
+          "path": "C:\\h7\\g08-sdk\\cuda-static-1\\consumer-build\\cpu_graph.exe",
+          "sha256": "3358ec0c1156c27e2af49fd25fa052f32865b9d1e02fb3989f3b43330704e52a"
+        },
+        {
+          "name": "native_direct",
+          "path": "C:\\h7\\g08-sdk\\cuda-static-1\\consumer-build\\native_direct.exe",
+          "sha256": "3480e7a372b2d518ac9fbd6c69313df19c2030cc8576f0ed0db69abc383a33b3"
+        },
+        {
+          "name": "native_graph",
+          "path": "C:\\h7\\g08-sdk\\cuda-static-1\\consumer-build\\native_graph.exe",
+          "sha256": "810ddbe5429a0b1be1dc4a7ab796cbc49b6641163425767415693e4f8b35f62e"
+        },
+        {
+          "name": "joint",
+          "path": "C:\\h7\\g08-sdk\\cuda-static-1\\consumer-build\\joint.exe",
+          "sha256": "df4f4811e4052c30d23c1b5e49fc3a2c70b570ea1db85e64105bac5377e83fcb"
+        },
+        {
+          "name": "mem",
+          "path": "C:\\h7\\g08-sdk\\cuda-static-1\\consumer-build\\mem.exe",
+          "sha256": "94538fa2f50474228977886b1a63b6336d96b0db1663476c305d285d4847a65b"
+        }
+      ],
+      "independent_headers": [
+        {
+          "path": "compute/sampling_ops.h",
+          "sha256": "887faba6ebe6249a0e2f766e2ea4b6bd83900bcf1e85165ad55e3e9be18528da"
+        },
+        {
+          "path": "compute/operation.h",
+          "sha256": "584e57c2a1a10b7c17ee80d4a6f992b73f488f4cdbf1e71e39d908cd89600808"
+        },
+        {
+          "path": "compute/prepared_operation.h",
+          "sha256": "3fe6a6f1ddc31c2181a208658e627be20933bde325ec0b63dba06281d007ed7b"
+        },
+        {
+          "path": "compute/cpu.h",
+          "sha256": "bccb8e5d310086b41c6f010a84f56219ac33830e92e5da22ce2ff12cd608ccb6"
+        },
+        {
+          "path": "graph/cpu.h",
+          "sha256": "207f78caafbec1e73966f0ead5563b51aa2aaf3e5eccabde15b6a20447a25f99"
+        },
+        {
+          "path": "mem/allocator.h",
+          "sha256": "8beaac413632fdc4409c2384f1cda7d6d5e75b72aafad73d188e13dbfa50781a"
+        },
+        {
+          "path": "mem/system_inline.h",
+          "sha256": "d890fe66b1a83a5f1a8f2b22c368276e7b3fadcfd0946df5279692ce055164f1"
+        },
+        {
+          "path": "mem/buffer.h",
+          "sha256": "346a4f810babb8c5dacba49faaf57903d998a3cbb49af12b8c62acc85f7be72c"
+        },
+        {
+          "path": "compute/cuda.h",
+          "sha256": "13757830a7d376d94d9ffc1993dd56b6872d5c7168961eb630c014e1efa57fa6"
+        },
+        {
+          "path": "graph/cuda.h",
+          "sha256": "059264fb0360cfd298ea7e543ac153b334209e04ab90f0e5a66ea2857f4986e3"
+        },
+        {
+          "path": "graph/cpu_cuda.h",
+          "sha256": "b3fe45dc75ce6c999857bca3130816132018eb3c845e0c889d577165d8f1b098"
+        },
+        {
+          "path": "compute/backends/cuda.h",
+          "sha256": "9b1565cee1a199e46a524da1d244f6f5e1c3d8236bd5e69849583ee5ff27a91f"
+        },
+        {
+          "path": "compute/providers/cuda.h",
+          "sha256": "1b8c91cfd65b52b19503c3a8ddc31af9524093f35c1063071a2c0a56e4603106"
+        }
+      ]
+    },
+    {
+      "platform": "windows",
+      "route": "cuda",
+      "mode": "source",
+      "state": "PUBLIC_SOURCE_CONSUMERS_HEADERS_RUNTIME_PASS",
+      "source_snapshot": "8349757252af1fbd505f62d22a45568e0fe2562e",
+      "elapsed_seconds": 574.4060000000172,
+      "result_origin": {
+        "archive_entry": "windows-cuda-source/result.json"
+      },
+      "consumers": [
+        {
+          "name": "cpu_direct",
+          "path": "C:\\h7\\w-cpu-cuda\\selected-graph\\source-build\\cpu_direct.exe",
+          "sha256": "3c5eddcf5e98ef60fb449338c9f950a900047aa29d885bc4432fdc5132f89b56"
+        },
+        {
+          "name": "cpu_graph",
+          "path": "C:\\h7\\w-cpu-cuda\\selected-graph\\source-build\\cpu_graph.exe",
+          "sha256": "a3cb61f49dd04c2a64ce210cfb1fa91174de66542fe49c3c0e00dd3e8199a3d8"
+        },
+        {
+          "name": "native_direct",
+          "path": "C:\\h7\\w-cpu-cuda\\selected-graph\\source-build\\native_direct.exe",
+          "sha256": "7ed277b20b1cdae48450f7fef64a4e513e741851129587693aca63dd1d3fd5fa"
+        },
+        {
+          "name": "native_graph",
+          "path": "C:\\h7\\w-cpu-cuda\\selected-graph\\source-build\\native_graph.exe",
+          "sha256": "b2e90aad84c84ba0befa32cea7f4af3b50fd96c390b035950fddcf5827890801"
+        },
+        {
+          "name": "joint",
+          "path": "C:\\h7\\w-cpu-cuda\\selected-graph\\source-build\\joint.exe",
+          "sha256": "69652af3da1a088af401c619b8ae0b9d6f8651c0277e7e952214cf4e9b0f56dc"
+        },
+        {
+          "name": "mem",
+          "path": "C:\\h7\\w-cpu-cuda\\selected-graph\\source-build\\mem.exe",
+          "sha256": "d975cd897e84e51ebdba4d75af1e52dfaf5bbdae0e5a47caff8b9bd437808ac4"
+        }
+      ],
+      "independent_headers": [
+        {
+          "path": "compute/sampling_ops.h",
+          "sha256": "887faba6ebe6249a0e2f766e2ea4b6bd83900bcf1e85165ad55e3e9be18528da"
+        },
+        {
+          "path": "compute/operation.h",
+          "sha256": "584e57c2a1a10b7c17ee80d4a6f992b73f488f4cdbf1e71e39d908cd89600808"
+        },
+        {
+          "path": "compute/prepared_operation.h",
+          "sha256": "3fe6a6f1ddc31c2181a208658e627be20933bde325ec0b63dba06281d007ed7b"
+        },
+        {
+          "path": "compute/cpu.h",
+          "sha256": "bccb8e5d310086b41c6f010a84f56219ac33830e92e5da22ce2ff12cd608ccb6"
+        },
+        {
+          "path": "graph/cpu.h",
+          "sha256": "207f78caafbec1e73966f0ead5563b51aa2aaf3e5eccabde15b6a20447a25f99"
+        },
+        {
+          "path": "mem/allocator.h",
+          "sha256": "8beaac413632fdc4409c2384f1cda7d6d5e75b72aafad73d188e13dbfa50781a"
+        },
+        {
+          "path": "mem/system_inline.h",
+          "sha256": "d890fe66b1a83a5f1a8f2b22c368276e7b3fadcfd0946df5279692ce055164f1"
+        },
+        {
+          "path": "mem/buffer.h",
+          "sha256": "346a4f810babb8c5dacba49faaf57903d998a3cbb49af12b8c62acc85f7be72c"
+        },
+        {
+          "path": "compute/cuda.h",
+          "sha256": "13757830a7d376d94d9ffc1993dd56b6872d5c7168961eb630c014e1efa57fa6"
+        },
+        {
+          "path": "graph/cuda.h",
+          "sha256": "059264fb0360cfd298ea7e543ac153b334209e04ab90f0e5a66ea2857f4986e3"
+        },
+        {
+          "path": "graph/cpu_cuda.h",
+          "sha256": "b3fe45dc75ce6c999857bca3130816132018eb3c845e0c889d577165d8f1b098"
+        },
+        {
+          "path": "compute/backends/cuda.h",
+          "sha256": "9b1565cee1a199e46a524da1d244f6f5e1c3d8236bd5e69849583ee5ff27a91f"
+        },
+        {
+          "path": "compute/providers/cuda.h",
+          "sha256": "1b8c91cfd65b52b19503c3a8ddc31af9524093f35c1063071a2c0a56e4603106"
+        }
+      ]
+    },
+    {
+      "platform": "windows",
+      "route": "vulkan",
+      "mode": "shared",
+      "state": "RELOCATED_SDK_PUBLIC_CONSUMERS_HEADERS_LICENSE_RUNTIME_PASS",
+      "source_snapshot": "8349757252af1fbd505f62d22a45568e0fe2562e",
+      "elapsed_seconds": 1179.2820000000065,
+      "result_origin": {
+        "archive_entry": "windows-vulkan-shared/result.json"
+      },
+      "consumers": [
+        {
+          "name": "cpu_direct",
+          "path": "C:\\h7\\g08-sdk\\vulkan-shared-1\\consumer-build\\cpu_direct.exe",
+          "sha256": "d86f134800afc706e19b33ca614662ff5551577a8ca6bb1c99f3d1161cbd1ad7"
+        },
+        {
+          "name": "cpu_graph",
+          "path": "C:\\h7\\g08-sdk\\vulkan-shared-1\\consumer-build\\cpu_graph.exe",
+          "sha256": "fd9a98e57a36e445804ee041bde0ab4cf1c6334b178e003b563dd676d227a7f8"
+        },
+        {
+          "name": "native_direct",
+          "path": "C:\\h7\\g08-sdk\\vulkan-shared-1\\consumer-build\\native_direct.exe",
+          "sha256": "c63b2b58be28dadcc4b1f6863a76482a92fbbc69a835d6f78e17f44cb4b528c9"
+        },
+        {
+          "name": "native_graph",
+          "path": "C:\\h7\\g08-sdk\\vulkan-shared-1\\consumer-build\\native_graph.exe",
+          "sha256": "6dc345d230b9ab49ef7bf890d6a802289d41bb32e05aa53b8d818d4bc63fdce6"
+        },
+        {
+          "name": "joint",
+          "path": "C:\\h7\\g08-sdk\\vulkan-shared-1\\consumer-build\\joint.exe",
+          "sha256": "024f8e19eadde02494a15aabadc48440484bef3cdb368036fe00f904411e3661"
+        },
+        {
+          "name": "mem",
+          "path": "C:\\h7\\g08-sdk\\vulkan-shared-1\\consumer-build\\mem.exe",
+          "sha256": "865ad4f5fdfdc60ecdef2d25d4bd8572f56641bfe548dff648f3114eff03207a"
+        }
+      ],
+      "independent_headers": [
+        {
+          "path": "compute/sampling_ops.h",
+          "sha256": "887faba6ebe6249a0e2f766e2ea4b6bd83900bcf1e85165ad55e3e9be18528da"
+        },
+        {
+          "path": "compute/operation.h",
+          "sha256": "584e57c2a1a10b7c17ee80d4a6f992b73f488f4cdbf1e71e39d908cd89600808"
+        },
+        {
+          "path": "compute/prepared_operation.h",
+          "sha256": "3fe6a6f1ddc31c2181a208658e627be20933bde325ec0b63dba06281d007ed7b"
+        },
+        {
+          "path": "compute/cpu.h",
+          "sha256": "bccb8e5d310086b41c6f010a84f56219ac33830e92e5da22ce2ff12cd608ccb6"
+        },
+        {
+          "path": "graph/cpu.h",
+          "sha256": "207f78caafbec1e73966f0ead5563b51aa2aaf3e5eccabde15b6a20447a25f99"
+        },
+        {
+          "path": "mem/allocator.h",
+          "sha256": "8beaac413632fdc4409c2384f1cda7d6d5e75b72aafad73d188e13dbfa50781a"
+        },
+        {
+          "path": "mem/system_inline.h",
+          "sha256": "d890fe66b1a83a5f1a8f2b22c368276e7b3fadcfd0946df5279692ce055164f1"
+        },
+        {
+          "path": "mem/buffer.h",
+          "sha256": "346a4f810babb8c5dacba49faaf57903d998a3cbb49af12b8c62acc85f7be72c"
+        },
+        {
+          "path": "compute/vulkan.h",
+          "sha256": "0edeb32b828136e277df83109f0ad5d0fb7c98cbfaa766055426ea36b115716b"
+        },
+        {
+          "path": "graph/vulkan.h",
+          "sha256": "2bed7d4b76f28f1e96c170a7ebb077f8aa5246ac2fc2906b2dc0e9b64b4c236f"
+        },
+        {
+          "path": "graph/cpu_vulkan.h",
+          "sha256": "9b4c99f9ef9948f85435de4415a788b83d17a00752664074edf462addc6693f6"
+        }
+      ]
+    },
+    {
+      "platform": "windows",
+      "route": "vulkan",
+      "mode": "static",
+      "state": "RELOCATED_SDK_PUBLIC_CONSUMERS_HEADERS_LICENSE_RUNTIME_PASS",
+      "source_snapshot": "8349757252af1fbd505f62d22a45568e0fe2562e",
+      "elapsed_seconds": 1119.3120000000345,
+      "result_origin": {
+        "archive_entry": "windows-vulkan-static/result.json"
+      },
+      "consumers": [
+        {
+          "name": "cpu_direct",
+          "path": "C:\\h7\\g08-sdk\\vulkan-static-1\\consumer-build\\cpu_direct.exe",
+          "sha256": "2499ff268537f4908f7abd33b91b8fd72c7ba18973af43c434b059e6a48a7466"
+        },
+        {
+          "name": "cpu_graph",
+          "path": "C:\\h7\\g08-sdk\\vulkan-static-1\\consumer-build\\cpu_graph.exe",
+          "sha256": "95b1db5c4c64187c35cffee3a621d9e4c5f829f10575b3a5a6b459251c16a949"
+        },
+        {
+          "name": "native_direct",
+          "path": "C:\\h7\\g08-sdk\\vulkan-static-1\\consumer-build\\native_direct.exe",
+          "sha256": "0f0673578f1b1364875c749338d202914febae0a5c329c0a99dbcb0a01d9a918"
+        },
+        {
+          "name": "native_graph",
+          "path": "C:\\h7\\g08-sdk\\vulkan-static-1\\consumer-build\\native_graph.exe",
+          "sha256": "c3a4877eaf5ad544f968178c2175190c3f01ea4a1dc431e71d623eb6b3582a75"
+        },
+        {
+          "name": "joint",
+          "path": "C:\\h7\\g08-sdk\\vulkan-static-1\\consumer-build\\joint.exe",
+          "sha256": "a02940ff24e6d1f3b0c1f3319a9b7aba5b206817123604a680306d6771f4fa88"
+        },
+        {
+          "name": "mem",
+          "path": "C:\\h7\\g08-sdk\\vulkan-static-1\\consumer-build\\mem.exe",
+          "sha256": "6dd3a3d355bd334944eeaed8779f4edeaec1d1eb22e310c67ef6006685f86288"
+        }
+      ],
+      "independent_headers": [
+        {
+          "path": "compute/sampling_ops.h",
+          "sha256": "887faba6ebe6249a0e2f766e2ea4b6bd83900bcf1e85165ad55e3e9be18528da"
+        },
+        {
+          "path": "compute/operation.h",
+          "sha256": "584e57c2a1a10b7c17ee80d4a6f992b73f488f4cdbf1e71e39d908cd89600808"
+        },
+        {
+          "path": "compute/prepared_operation.h",
+          "sha256": "3fe6a6f1ddc31c2181a208658e627be20933bde325ec0b63dba06281d007ed7b"
+        },
+        {
+          "path": "compute/cpu.h",
+          "sha256": "bccb8e5d310086b41c6f010a84f56219ac33830e92e5da22ce2ff12cd608ccb6"
+        },
+        {
+          "path": "graph/cpu.h",
+          "sha256": "207f78caafbec1e73966f0ead5563b51aa2aaf3e5eccabde15b6a20447a25f99"
+        },
+        {
+          "path": "mem/allocator.h",
+          "sha256": "8beaac413632fdc4409c2384f1cda7d6d5e75b72aafad73d188e13dbfa50781a"
+        },
+        {
+          "path": "mem/system_inline.h",
+          "sha256": "d890fe66b1a83a5f1a8f2b22c368276e7b3fadcfd0946df5279692ce055164f1"
+        },
+        {
+          "path": "mem/buffer.h",
+          "sha256": "346a4f810babb8c5dacba49faaf57903d998a3cbb49af12b8c62acc85f7be72c"
+        },
+        {
+          "path": "compute/vulkan.h",
+          "sha256": "0edeb32b828136e277df83109f0ad5d0fb7c98cbfaa766055426ea36b115716b"
+        },
+        {
+          "path": "graph/vulkan.h",
+          "sha256": "2bed7d4b76f28f1e96c170a7ebb077f8aa5246ac2fc2906b2dc0e9b64b4c236f"
+        },
+        {
+          "path": "graph/cpu_vulkan.h",
+          "sha256": "9b4c99f9ef9948f85435de4415a788b83d17a00752664074edf462addc6693f6"
+        }
+      ]
+    },
+    {
+      "platform": "windows",
+      "route": "vulkan",
+      "mode": "source",
+      "state": "PUBLIC_SOURCE_CONSUMERS_HEADERS_RUNTIME_PASS",
+      "source_snapshot": "8349757252af1fbd505f62d22a45568e0fe2562e",
+      "elapsed_seconds": 391.7029999999795,
+      "result_origin": {
+        "archive_entry": "windows-vulkan-source/result.json"
+      },
+      "consumers": [
+        {
+          "name": "cpu_direct",
+          "path": "C:\\h7\\w-cpu-vulkan\\selected-graph\\source-build\\cpu_direct.exe",
+          "sha256": "ce3b27cbe5cf4c8fc10981feacb041775d5b8484e0f5cf9a190e80f37967f6cd"
+        },
+        {
+          "name": "cpu_graph",
+          "path": "C:\\h7\\w-cpu-vulkan\\selected-graph\\source-build\\cpu_graph.exe",
+          "sha256": "fa0260d79cb706beeff589c7585ad4b0d06ad972380021dd245e959b3e93a4ab"
+        },
+        {
+          "name": "native_direct",
+          "path": "C:\\h7\\w-cpu-vulkan\\selected-graph\\source-build\\native_direct.exe",
+          "sha256": "8cd1e5d391fbbd0cc490fac40d594ea3dfaf48902dc86ea447d00c55c4f5a987"
+        },
+        {
+          "name": "native_graph",
+          "path": "C:\\h7\\w-cpu-vulkan\\selected-graph\\source-build\\native_graph.exe",
+          "sha256": "2b435899c7f867af33c76687e4637d22629b413fc522afd777607823afa5fe01"
+        },
+        {
+          "name": "joint",
+          "path": "C:\\h7\\w-cpu-vulkan\\selected-graph\\source-build\\joint.exe",
+          "sha256": "8e2daf80f506df34278bfa6859c04e213c982bbc657aa5641e3c7cd5a7b936ab"
+        },
+        {
+          "name": "mem",
+          "path": "C:\\h7\\w-cpu-vulkan\\selected-graph\\source-build\\mem.exe",
+          "sha256": "caf066132582c9e433a4a0ee4ef8d63e5e7cb8ddb24227667b5789943bea5e89"
+        }
+      ],
+      "independent_headers": [
+        {
+          "path": "compute/sampling_ops.h",
+          "sha256": "887faba6ebe6249a0e2f766e2ea4b6bd83900bcf1e85165ad55e3e9be18528da"
+        },
+        {
+          "path": "compute/operation.h",
+          "sha256": "584e57c2a1a10b7c17ee80d4a6f992b73f488f4cdbf1e71e39d908cd89600808"
+        },
+        {
+          "path": "compute/prepared_operation.h",
+          "sha256": "3fe6a6f1ddc31c2181a208658e627be20933bde325ec0b63dba06281d007ed7b"
+        },
+        {
+          "path": "compute/cpu.h",
+          "sha256": "bccb8e5d310086b41c6f010a84f56219ac33830e92e5da22ce2ff12cd608ccb6"
+        },
+        {
+          "path": "graph/cpu.h",
+          "sha256": "207f78caafbec1e73966f0ead5563b51aa2aaf3e5eccabde15b6a20447a25f99"
+        },
+        {
+          "path": "mem/allocator.h",
+          "sha256": "8beaac413632fdc4409c2384f1cda7d6d5e75b72aafad73d188e13dbfa50781a"
+        },
+        {
+          "path": "mem/system_inline.h",
+          "sha256": "d890fe66b1a83a5f1a8f2b22c368276e7b3fadcfd0946df5279692ce055164f1"
+        },
+        {
+          "path": "mem/buffer.h",
+          "sha256": "346a4f810babb8c5dacba49faaf57903d998a3cbb49af12b8c62acc85f7be72c"
+        },
+        {
+          "path": "compute/vulkan.h",
+          "sha256": "0edeb32b828136e277df83109f0ad5d0fb7c98cbfaa766055426ea36b115716b"
+        },
+        {
+          "path": "graph/vulkan.h",
+          "sha256": "2bed7d4b76f28f1e96c170a7ebb077f8aa5246ac2fc2906b2dc0e9b64b4c236f"
+        },
+        {
+          "path": "graph/cpu_vulkan.h",
+          "sha256": "9b4c99f9ef9948f85435de4415a788b83d17a00752664074edf462addc6693f6"
+        }
+      ]
+    }
+  ],
+  "prior_evidence": [
+    {
+      "receipt": "evidence/delivery/inference-g08-air-sdk-checkpoint/receipt.json",
+      "sha256": "9fb4c2fd8731cd9d06dd86e6daa81a67647d594ca6f19bc0761494bfbc4e4374",
+      "raw": {
+        "path": "raw.zip",
+        "sha256": "a20e84d8885bb5fed3fac0f7755949e45fae276c69a39480261affe25ec08270",
+        "bytes": 2417128
+      }
+    },
+    {
+      "receipt": "evidence/delivery/inference-g08-windows-cpu-sdk-checkpoint/receipt.json",
+      "sha256": "34810e60f2d8c2ec3e161689f9147b9dc3953a080f2c46110fc90a9d14626b78",
+      "raw": {
+        "path": "raw.zip",
+        "sha256": "38abb5622c7ac3bd516a08a970fcd729bf9bf327f50ec8091f6572724ebee253",
+        "bytes": 248979
+      }
+    },
+    {
+      "receipt": "evidence/delivery/inference-g08-windows-cpu-sdk-checkpoint/remaining.json",
+      "sha256": "4cbde6fe3379acdbc0f27ff4bdf0ebdf52fd4a96a2eed0611510e3e04779d0a7",
+      "raw": {
+        "path": "remaining-raw.zip",
+        "sha256": "f73c24cafe07aea9322f3fa888cab75e9eaaee9ead8270be2f554235f5273b48",
+        "bytes": 507691
+      }
+    },
+    {
+      "receipt": "evidence/delivery/inference-g08-cuda-sdk-checkpoint/receipt.json",
+      "sha256": "efd20100c2f8115b10fad90e7024ffb2c56fbfa2887822edd6ee5bbbff989998",
+      "raw": {
+        "path": "raw.zip",
+        "sha256": "b5a38921680759b0b75ca6f091685be5c4158845fe992d3caadfb49533f42177",
+        "bytes": 1532474
+      }
+    }
+  ],
+  "raw": {
+    "path": "raw.zip",
+    "sha256": "477274fcd498f4da4d3e03d09579a4f5a10912847765f37e669ee8325a8e8cb0",
+    "bytes": 3609345
+  },
+  "original_matrix": {
+    "state": "FAIL_WITH_ALL_CONFIGS_OBSERVED",
+    "cases": [
+      {
+        "platform": "wsl",
+        "route": "cuda",
+        "mode": "shared",
+        "exit_code": 0,
+        "state": "RELOCATED_SDK_PUBLIC_CONSUMERS_HEADERS_LICENSE_PASS",
+        "result": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g08-sdk\\cuda-shared-1\\result.json",
+        "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g08-remaining-sdk-matrix-1\\wsl-cuda-shared.log"
+      },
+      {
+        "platform": "wsl",
+        "route": "cuda",
+        "mode": "source",
+        "exit_code": 1,
+        "state": "FAIL",
+        "result": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g08-sdk\\cuda-source-1\\result.json",
+        "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g08-remaining-sdk-matrix-1\\wsl-cuda-source.log"
+      },
+      {
+        "platform": "windows",
+        "route": "cuda",
+        "mode": "static",
+        "exit_code": 0,
+        "state": "RELOCATED_SDK_PUBLIC_CONSUMERS_HEADERS_LICENSE_RUNTIME_PASS",
+        "result": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g08-sdk-windows\\cuda-static-1\\result.json",
+        "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g08-remaining-sdk-matrix-1\\windows-cuda-static.log"
+      },
+      {
+        "platform": "windows",
+        "route": "cuda",
+        "mode": "source",
+        "exit_code": 0,
+        "state": "PUBLIC_SOURCE_CONSUMERS_HEADERS_RUNTIME_PASS",
+        "result": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g08-sdk-windows\\cuda-source-1\\result.json",
+        "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g08-remaining-sdk-matrix-1\\windows-cuda-source.log"
+      },
+      {
+        "platform": "windows",
+        "route": "vulkan",
+        "mode": "shared",
+        "exit_code": 0,
+        "state": "RELOCATED_SDK_PUBLIC_CONSUMERS_HEADERS_LICENSE_RUNTIME_PASS",
+        "result": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g08-sdk-windows\\vulkan-shared-1\\result.json",
+        "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g08-remaining-sdk-matrix-1\\windows-vulkan-shared.log"
+      },
+      {
+        "platform": "windows",
+        "route": "vulkan",
+        "mode": "static",
+        "exit_code": 0,
+        "state": "RELOCATED_SDK_PUBLIC_CONSUMERS_HEADERS_LICENSE_RUNTIME_PASS",
+        "result": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g08-sdk-windows\\vulkan-static-1\\result.json",
+        "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g08-remaining-sdk-matrix-1\\windows-vulkan-static.log"
+      },
+      {
+        "platform": "windows",
+        "route": "vulkan",
+        "mode": "source",
+        "exit_code": 0,
+        "state": "PUBLIC_SOURCE_CONSUMERS_HEADERS_RUNTIME_PASS",
+        "result": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g08-sdk-windows\\vulkan-source-1\\result.json",
+        "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g08-remaining-sdk-matrix-1\\windows-vulkan-source.log"
+      }
+    ],
+    "elapsed_seconds": 4732.984999999986
+  },
+  "retained_failure": "Original WSL source helper assumed one historical unary object profile but found two. Both candidates were subsequently checked by exact input bytes, original Ninja commands and dependency freshness; exactly one qualified. The original48.571s remain. A second pre-build guard admitted only two CUDA TUs; actual source delivery needed ten exact Hyle dependency TUs (new/missing objects, device-status/native-batch header updates and old command drift). Ninja explanations and exact canonical source inputs were audited before admitting them. Both failures and cumulative same-tree cost remain; no product change, source reset or native-object timestamp/content mutation.",
+  "runtime": "Windows PE imports/staged Hyle DLL hashes and isolated PATH; POSIX ldd and Air actual dyld probes as separately archived. External validated LibTorch SDK/cache remains required by the existing distribution contract. Windows is not actual loaded-module tracing; host and device risk qualifications are separate records.",
+  "scope": "Exactly six supported profiles x source/static/shared. Public CPU/native Direct/Graph, joint and existing three Mem regression consumers;8/11/13 independent public headers. Binary SDK relocation and Random123 license/NOTICE installation checked; source embeds the pinned in-tree licensed implementation. Prior eleven configurations reuse immutable execution evidence; seven fresh final consumer binaries are rehashed here. No new risk run, P1 or full-engine claim."
+}

@@ -1,6 +1,6 @@
 # G08 设备端输出数值选择与可定位随机数
 
-状态：**CANDIDATE，2026-10-17；八owner的S1–S4/M1接口与算法冻结于5103c13d8，普通数值及适用device/host风险已过，交付11/18已过，S1时序账已冻结，剩余交付/P1与终审待完成**。baseline 为
+状态：**CANDIDATE，2026-10-17；八owner的S1–S4/M1接口与算法冻结于5103c13d8，普通数值及适用device/host风险已过，交付18/18已过，S1时序账与基准输入已固定，CPU probe首次构建接线已定位，四路线P1与终审待完成**。baseline 为
 `85bcfa4eb`，G07已经整项接受，新G07–G10 goal完成1/4。原G01–G07不重跑，G09/G10未开始。
 本卡只处理原[G08发现](../project/inference-single-machine-foundation-audit-2026-10.md)与
 [消费形状计划](../project/inference-consumer-adaptation-plan-2026-10.md)的有限输出数值域。
@@ -535,3 +535,62 @@ oracle/A/A/placement或P1，不能据此签同合同资格/性能PASS。5%、n15
 剩Windows CUDA static/source、WSL CUDA shared/source及Windows Vulkan三项，按串行一批执行，
 遇真实失败定向处理。产品candidate仍5103c13d8，G08粗估约85%、整个goal约46%，正式仅G07
 完成1/4；G09/G10尚未开始，不新增缺口扫描或CLI范围。
+
+### 2026-10-17 交付17/18与同合同基准工作区
+
+同一串行批次新增WSL CUDA shared、Windows CUDA static/source、Windows Vulkan三交付
+全部PASS，当前17/18。最后WSL CUDA source沿原parent/configure/build继续：原私有helper
+把两份历史native profile误当成唯一一份；按输入、原Ninja命令和依赖freshness只接受一份后，
+保留原48.571s。后续预检仅允许两项CUDA编译，实际需要十个精确Hyle依赖TU；已用Ninja
+explain核明新增/缺失对象、device-status/native-batch头更新和原命令变化，再定向续跑。
+146个未变ggml CUDA对象仍沿原资格复用；没有产品改动、时间戳伪造或失败预算重置。
+该source尚未结束，不能把交付总门写PASS。
+
+[源码复核](../../../../evidence/architecture/inference-g08-output-selection-audit/red-team-source-checkpoint.json)
+覆盖37个本轮include/src文件及三项依赖/公开头/selector登记，未发现新的产品缺陷；
+最终交付、adapter runtime及性能仍待复核，不把本次源码检查当整项red_team通过。
+[统一LOC](../../../../evidence/architecture/inference-g08-output-selection-audit/loc-final.json)
+在不可变8349757按八CANDIDATE owner唯一联合计数，self-check PASS：42679行/208文件；
+全库3797821行、自实现不含测试182302行。产品字节与5103相同，不是新增行数或引擎LOC预测。
+
+[基准源码](../../../../bench/compute_ops/CMakeLists.txt)固定于`df7ca0271`，
+Windows/WSL/Air使用干净的同一benchmark/evidence提交；原版peer为干净的85bc，
+CPU三TU、CUDA两TU、Apple两TU、Vulkan完整26TU共33个原实现TU及共用私有头均实际核对。
+旧完整include树只作原文，公共声明使用同一合格SDK；Vulkan仅自有声明作namespace隔离。
+[参考接线修正](../../../../evidence/architecture/inference-g08-output-selection-audit/p1-adapter-source-corrections.json)
+保留构建前发现的Git peer绑定缺失、Apple旧tensor误调用当前indexing实现的问题；
+现同时编译并隔离旧tensor和indexing，正式A/A前还检查实际符号与编译命令。
+
+[四路线工作区与实际配置](../../../../evidence/architecture/inference-g08-output-selection-audit/p1-workspace-checkpoint.json)
+均通过benchmark-only预览；配置后仅补A/A子进程使用原注册策略，
+Windows实测canary从默认NORMAL不符变为原ABOVE_NORMAL/CPU2策略匹配。公共仪器、数学、
+九形状、5%、n15/31未改。新JSON发布前统一LF并重算引用hash，原格式失败保留。
+尚无实际benchmark workload build、数值oracle、A/A或P1样本，不能据此报速度或性能PASS。
+重型任务继续串行；全部交付结束后先probe预检，再启动原正式仪器。G08粗估约88%，
+整个G07–G10 goal约47%，正式仍仅G07完成1/4；G09/G10及CLI未开始。
+
+### 2026-10-17 十八项交付完成与实际性能预检
+
+[最终交付凭据](../../../../evidence/delivery/inference-g08-sdk-final/receipt.json)汇总六profile各
+source/static/shared共18项全部PASS，归档hash与18组唯一身份已核对。最后WSL CUDA source
+沿原树完成252步及六个公开消费者、13个独立头；保留两次原私有helper/预检失败与累计
+570.062s，不重置预算。原LibTorch/CUDA多版本链接警告保留在日志，消费运行按既有SDK合同
+通过；不把此项扩大为hermetic LibTorch或实际Windows module tracing声明。
+
+CPU diagnostic probe已经实际启动，固定benchmark `df7ca0271`、original85 peer和合格static
+SDK；注册CPU2/ABOVE_NORMAL继承canary为PASS。尚未取得workload/oracle/A/A及正式P1
+结果，probe不作性能证据。后续其余三路线先按同样边界probe，再进入正式统一仪器。
+
+普通selector发现新`bench/inference_output_selection`目录无factor ownership；将canonical
+基准目录归入现有`bench/compute_ops`，23文件逐字节与df7的原目录一致，证明附在工作区
+检查点。没有修改selector、组件图或产品，正在使用df7的干净P1副本与原配置不受影响。
+
+当前G08粗估约90%，整个G07–G10 goal约48%，正式仍只接受G07一项。余四路线性能资格/
+正式裁决、最终文档聚合与终审；G09/G10及CLI未开始。
+
+[首次实际probe与定向修正](../../../../evidence/architecture/inference-g08-output-selection-audit/p1-probe-setup-checkpoint.json)：
+CPU原对照内部provider的ggml.h/ggml-cpu.h私有编译头未接入，首次build失败14.016s，
+没有进入数值oracle、A/A或产品计时。18项公开SDK消费者不受影响。仅给原对照target接入
+同CPU producer的e74fc9派生include，contract显式绑定，22份native头加入现有逐artifact
+hash核查；不修改产品或统计仪器。原失败/output/build完整保留。新目录/私有头配置需要
+新的不可变benchmark输入及明确setup-resume tree，原费用累计；不把它写成P1通过。

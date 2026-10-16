@@ -1,0 +1,138 @@
+{
+  "schema": "hyle.inference-g08-p1-probe-setup-checkpoint/v1",
+  "state": "CPU_INITIAL_PROBE_BUILD_FAILED_NO_ORACLE_AA_OR_PRODUCT_TIMING",
+  "candidate": "5103c13d8ed119b06aa64e799f9768aea45ab913",
+  "original_benchmark_revision": "df7ca0271cc0cc457ec5b1a54f47a34880e5fae6",
+  "retained_failure": {
+    "stage": "build",
+    "elapsed_seconds": 14.016,
+    "compiler_errors": [
+      "standard_index.cc: ggml.h not found",
+      "ggml_cpu_provider.cc/cpu_execution.h: ggml-cpu.h not found"
+    ],
+    "scope": "Private original-provider benchmark dependency wiring. All18 public SDK consumer configurations already PASS; this is not a public product SDK regression."
+  },
+  "fix": {
+    "kind": "benchmark_configuration_only",
+    "private_include": "C:/public/project-hyle/hyle/.scratch/build-compute-v2-dev/src/compute_ggml_runtime/source-e74fc9bb8964d04f/include",
+    "private_native_headers": [
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\src\\compute_ggml_runtime\\source-e74fc9bb8964d04f\\include\\ggml-alloc.h",
+        "sha256": "d114067f9099c4a0e2bbc0625c676d4894d9cf0ea27168ee072c7de0e71bb51d",
+        "bytes": 3689
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\src\\compute_ggml_runtime\\source-e74fc9bb8964d04f\\include\\ggml-backend.h",
+        "sha256": "5791edae1fb7622027621d15bc7a160198bd3b75ed8f96d06cb7b85e2b873756",
+        "bytes": 25776
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\src\\compute_ggml_runtime\\source-e74fc9bb8964d04f\\include\\ggml-blas.h",
+        "sha256": "e76cb8594dc9866d99e7d63191b9fff6ab8b50244b4a28ce3af0f962964a6b5b",
+        "bytes": 586
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\src\\compute_ggml_runtime\\source-e74fc9bb8964d04f\\include\\ggml-cann.h",
+        "sha256": "2cdb134f27fe5c4ec19d52f1eb58f5355aa42b8f54bf385f0e487501c5df7362",
+        "bytes": 4553
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\src\\compute_ggml_runtime\\source-e74fc9bb8964d04f\\include\\ggml-cpp.h",
+        "sha256": "bc15ba002c68685df23faae42df0d2b3d58032011f88b649021ab92485862c72",
+        "bytes": 1652
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\src\\compute_ggml_runtime\\source-e74fc9bb8964d04f\\include\\ggml-cpu.h",
+        "sha256": "316279e004cdeb8e6ef78599acb602bf79a8abdf897fed9fd1914808c1518c6e",
+        "bytes": 7753
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\src\\compute_ggml_runtime\\source-e74fc9bb8964d04f\\include\\ggml-cuda.h",
+        "sha256": "9cbfcea49f6da4d07f41dc22fa8dbf870825faaa2a68e34e65fe30ea6c41e042",
+        "bytes": 1565
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\src\\compute_ggml_runtime\\source-e74fc9bb8964d04f\\include\\ggml-et.h",
+        "sha256": "33118c0642b8059a99ea930fd4e4a045e78ccb41760b173ede221f1297c35977",
+        "bytes": 887
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\src\\compute_ggml_runtime\\source-e74fc9bb8964d04f\\include\\ggml-hexagon.h",
+        "sha256": "b2c12bac390f14707b16bdd27c8c75ce4f075ed509c729ee28fd4f03b17e7375",
+        "bytes": 351
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\src\\compute_ggml_runtime\\source-e74fc9bb8964d04f\\include\\ggml-metal.h",
+        "sha256": "322f36cd30f3e9e7aad7b5b9bc63078012fd0b7706ac4e24f5721b604f3d8980",
+        "bytes": 2141
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\src\\compute_ggml_runtime\\source-e74fc9bb8964d04f\\include\\ggml-opencl.h",
+        "sha256": "8e443e1aa9c8bc6e0cf116c4cc3f42f4858938fa15e65b06bc07b26686e1233a",
+        "bytes": 581
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\src\\compute_ggml_runtime\\source-e74fc9bb8964d04f\\include\\ggml-openvino.h",
+        "sha256": "c2e3f301e28ad815b4285888aad6130808a77e6acb4e8b558de63a648cf9743e",
+        "bytes": 1034
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\src\\compute_ggml_runtime\\source-e74fc9bb8964d04f\\include\\ggml-opt.h",
+        "sha256": "3586de1bc8a934b5c72339e2b6937b0641e8f149b512231e666f67de0736eea2",
+        "bytes": 14040
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\src\\compute_ggml_runtime\\source-e74fc9bb8964d04f\\include\\ggml-rpc.h",
+        "sha256": "196d2a7434f0abdb01f13c5360e0b118b9f2d66c6452e3a7a844fbecc890205c",
+        "bytes": 1184
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\src\\compute_ggml_runtime\\source-e74fc9bb8964d04f\\include\\ggml-sycl.h",
+        "sha256": "728e4f15d0853d63feb95dd596821c750181c26995fff57fe035e964e70fd85f",
+        "bytes": 2492
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\src\\compute_ggml_runtime\\source-e74fc9bb8964d04f\\include\\ggml-virtgpu.h",
+        "sha256": "ed231e7db3f0f58b84073f5ee67f9ec9d63046d1a7ed091c36a6cfe9f685a463",
+        "bytes": 194
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\src\\compute_ggml_runtime\\source-e74fc9bb8964d04f\\include\\ggml-vulkan.h",
+        "sha256": "7eae5dad2cc7bb4d3eca828539f441816d5fd59fdc7b224d49aa229fc7b7248c",
+        "bytes": 952
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\src\\compute_ggml_runtime\\source-e74fc9bb8964d04f\\include\\ggml-webgpu.h",
+        "sha256": "a91d855313a9e85e75ba597ff869a267247dea936a2c0faef03aeb7f1ea6e79c",
+        "bytes": 328
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\src\\compute_ggml_runtime\\source-e74fc9bb8964d04f\\include\\ggml-zdnn.h",
+        "sha256": "13e42214e6743abeb250b1ec9aa4be386a9f778d644001dbbb51e3f778bd84a9",
+        "bytes": 361
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\src\\compute_ggml_runtime\\source-e74fc9bb8964d04f\\include\\ggml-zendnn.h",
+        "sha256": "2cb034b842438281616ce647232d922fb224450323f0d422d2af567c334aa8ff",
+        "bytes": 498
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\src\\compute_ggml_runtime\\source-e74fc9bb8964d04f\\include\\ggml.h",
+        "sha256": "7b9513c9033ada7f91f03873a156c78006c4162692a2a3af7bf836551ede285d",
+        "bytes": 116600
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\src\\compute_ggml_runtime\\source-e74fc9bb8964d04f\\include\\gguf.h",
+        "sha256": "e56714aab702e5ce62ee587a409643c08f7e93e8fbb77f48ef7cc85075f96fa4",
+        "bytes": 11355
+      }
+    ],
+    "scope": "Target-local include for old provider, contract cache binding and existing SDK artifact hash validation. No product, algorithm, public tool or statistical threshold change."
+  },
+  "resumption": "Preserve original failed job, logs, output and configured tree. The corrected benchmark directory/contract is a new immutable setup input and uses an explicitly named setup-resume build/output; cumulative cost includes the original14.016s. There have been no qualified samples, so no product P1 budget reset or result selection.",
+  "raw": {
+    "path": "p1-probe-setup-checkpoint-raw.zip",
+    "sha256": "0a7d8f921de252c99fcbf7bb73f9b1ebed8d2d0aa23d90b75ed810fcaca0a630",
+    "bytes": 57988
+  }
+}

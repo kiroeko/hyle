@@ -7,6 +7,7 @@ set(HYLE_G08_REFERENCE_DIR "" CACHE PATH "Original85 materialization with source
 set(HYLE_G08_REFERENCE_SOURCE "" CACHE PATH "Clean pinned original85 Git checkout for qualified P1")
 set(HYLE_G08_VULKAN_PRODUCER "" CACHE PATH "Qualified producer src/compute_route_vulkan directory")
 set(HYLE_G08_GLSLANG "" CACHE FILEPATH "Same qualified Vulkan shader compiler")
+set(HYLE_G08_GGML_INCLUDE "" CACHE PATH "Qualified CPU producer private native headers for original provider only")
 if(NOT HYLE_G08_ROUTE MATCHES "^(cpu|cuda|apple|vulkan)$")
   message(FATAL_ERROR "Specify HYLE_G08_ROUTE=cpu, cuda, apple or vulkan")
 endif()
@@ -69,6 +70,11 @@ target_include_directories(g08_original85 PRIVATE
   "${HYLE_G08_REFERENCE_DIR}/src/compute_provider_ggml_vulkan")
 target_link_libraries(g08_original85 PUBLIC hyle::compute)
 if(_cpu)
+  if(NOT EXISTS "${HYLE_G08_GGML_INCLUDE}/ggml.h" OR
+     NOT EXISTS "${HYLE_G08_GGML_INCLUDE}/ggml-cpu.h")
+    message(FATAL_ERROR "Bind original CPU provider to the qualified producer private ggml headers")
+  endif()
+  target_include_directories(g08_original85 SYSTEM PRIVATE "${HYLE_G08_GGML_INCLUDE}")
   target_sources(g08_original85 PRIVATE reference_provider.cc)
   target_compile_definitions(g08_original85 PRIVATE ggml_cpu=g08_original_ggml_cpu
     HYLE_G08_CUDA=0 HYLE_GGML_CPU_F32_FLASH=1 HYLE_GGML_CPU_IQ1_EXTENSIONS=1

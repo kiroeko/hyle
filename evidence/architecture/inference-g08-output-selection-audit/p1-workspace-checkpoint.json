@@ -1,0 +1,349 @@
+{
+  "schema": "hyle.inference-g08-p1-workspace-checkpoint/v1",
+  "state": "FOUR_COMMITTED_SOURCE_PEER_AND_SDK_CONFIGURATIONS_PASS_WORKLOAD_BUILD_AND_P1_UNPROVEN",
+  "candidate": "5103c13d8ed119b06aa64e799f9768aea45ab913",
+  "benchmark_revision": "df7ca0271cc0cc457ec5b1a54f47a34880e5fae6",
+  "configured_revision": "c31e7919cb9fcaba1293d814cbfbb3a16d4a21cf",
+  "configuration_reuse": "Only validate_aa.py changed after configuration to apply the same existing registered child affinity/priority as formal sampling. CMake/workload/reference/math/source paths unchanged.",
+  "original_revision": "85bcfa4ebc29cc4d2ed5fb122074204aca675d58",
+  "configurations": [
+    {
+      "state": "COMMITTED_SOURCE_CLEAN_PEER_CONFIG_AND_BENCHMARK_ONLY_PREVIEW_PASS",
+      "pid": 54884,
+      "route": "cpu",
+      "source_revision": "c31e7919cb9fcaba1293d814cbfbb3a16d4a21cf",
+      "command": [
+        "cmake",
+        "-S",
+        "C:\\h7\\g08-p1-cpu\\source\\bench\\inference_output_selection",
+        "-B",
+        "C:\\h7\\g08-p1-cpu\\probe-build",
+        "-G",
+        "Ninja",
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DCMAKE_CXX_COMPILER=C:/Program Files/Microsoft Visual Studio/18/Enterprise/VC/Tools/MSVC/14.50.35717/bin/Hostx64/x64/cl.exe",
+        "-DCMAKE_C_COMPILER=C:/Program Files/Microsoft Visual Studio/18/Enterprise/VC/Tools/MSVC/14.50.35717/bin/Hostx64/x64/cl.exe",
+        "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON",
+        "-DCMAKE_INTERPROCEDURAL_OPTIMIZATION=OFF",
+        "-DCMAKE_PREFIX_PATH=C:/h7/g08-sdk/cpu-static-1/relocated",
+        "-DHYLE_BUILD_BENCH=OFF",
+        "-DHYLE_BUILD_TESTS=OFF",
+        "-DHYLE_COMPONENTS=compute",
+        "-DHYLE_COMPUTE_ROUTES=cpu",
+        "-DHYLE_G08_REFERENCE_DIR=C:/h7/g08-p1-cpu/reference85",
+        "-DHYLE_G08_REFERENCE_SOURCE=C:\\h7\\g08-p1-cpu\\original85",
+        "-DHYLE_G08_ROUTE=cpu",
+        "-DHYLE_G08_SOURCE=C:/h7/g08-p1-cpu/source",
+        "-DHYLE_INSTALL=OFF",
+        "-DHYLE_SANITIZER=off",
+        "-DHYLE_SIMD_EXACT_TARGET=",
+        "-DHYLE_STATIC=ON",
+        "-DHYLE_TRACE=OFF",
+        "-DHYLE_WERROR=ON"
+      ],
+      "scope": "Committed source/peer/SDK CMake configuration and benchmark-only Ninja preview. No actual workload build or timing.",
+      "exit_code": 0,
+      "elapsed_seconds": 15.75,
+      "preview_lines": 22
+    },
+    {
+      "state": "COMMITTED_SOURCE_CLEAN_PEER_CONFIG_AND_BENCHMARK_ONLY_PREVIEW_PASS",
+      "pid": 559,
+      "route": "cuda",
+      "source_revision": "c31e7919cb9fcaba1293d814cbfbb3a16d4a21cf",
+      "command": [
+        "cmake",
+        "-S",
+        "/root/hyle-scratch/compute-unified/g08-p1-cuda/source/bench/inference_output_selection",
+        "-B",
+        "/root/hyle-scratch/compute-unified/g08-p1-cuda/probe-build",
+        "-G",
+        "Ninja",
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DCMAKE_CXX_COMPILER=g++-14",
+        "-DCMAKE_C_COMPILER=gcc-14",
+        "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON",
+        "-DCMAKE_INTERPROCEDURAL_OPTIMIZATION=OFF",
+        "-DCMAKE_PREFIX_PATH=/root/hyle-scratch/compute-unified/g08-sdk/cuda-static-1/relocated",
+        "-DCUDAToolkit_ROOT=/usr/local/cuda-13.3",
+        "-DHYLE_BUILD_BENCH=OFF",
+        "-DHYLE_BUILD_TESTS=OFF",
+        "-DHYLE_COMPONENTS=compute",
+        "-DHYLE_COMPUTE_ROUTES=cpu;cuda",
+        "-DHYLE_G08_REFERENCE_DIR=/root/hyle-scratch/compute-unified/g08-p1-cuda/reference85",
+        "-DHYLE_G08_REFERENCE_SOURCE=/root/hyle-scratch/compute-unified/g08-p1-cuda/original85",
+        "-DHYLE_G08_ROUTE=cuda",
+        "-DHYLE_G08_SOURCE=/root/hyle-scratch/compute-unified/g08-p1-cuda/source",
+        "-DHYLE_INSTALL=OFF",
+        "-DHYLE_SANITIZER=off",
+        "-DHYLE_SIMD_EXACT_TARGET=",
+        "-DHYLE_STATIC=ON",
+        "-DHYLE_TRACE=OFF",
+        "-DHYLE_WERROR=ON"
+      ],
+      "scope": "Committed source/peer/SDK CMake configuration and benchmark-only Ninja preview. No actual workload build or timing.",
+      "exit_code": 0,
+      "elapsed_seconds": 55.469773191,
+      "preview_lines": 18
+    },
+    {
+      "state": "COMMITTED_SOURCE_CLEAN_PEER_CONFIG_AND_BENCHMARK_ONLY_PREVIEW_PASS",
+      "pid": 39153,
+      "route": "apple",
+      "source_revision": "c31e7919cb9fcaba1293d814cbfbb3a16d4a21cf",
+      "command": [
+        "cmake",
+        "-S",
+        "/Users/kiro/hyle-scratch/compute-unified/g08-p1-apple/source/bench/inference_output_selection",
+        "-B",
+        "/Users/kiro/hyle-scratch/compute-unified/g08-p1-apple/probe-build",
+        "-G",
+        "Ninja",
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON",
+        "-DCMAKE_INTERPROCEDURAL_OPTIMIZATION=OFF",
+        "-DCMAKE_OSX_DEPLOYMENT_TARGET=14.4",
+        "-DCMAKE_PREFIX_PATH=/Users/kiro/hyle-scratch/compute-unified/g08-sdk/apple-static-1/relocated",
+        "-DHYLE_BUILD_BENCH=OFF",
+        "-DHYLE_BUILD_TESTS=OFF",
+        "-DHYLE_COMPONENTS=compute",
+        "-DHYLE_COMPUTE_ROUTES=cpu;apple",
+        "-DHYLE_DEP_SOURCE_CACHE=/Users/kiro/Library/Caches/hyle/dependencies/v1",
+        "-DHYLE_G08_REFERENCE_DIR=/Users/kiro/hyle-scratch/compute-unified/g08-p1-apple/reference85",
+        "-DHYLE_G08_REFERENCE_SOURCE=/Users/kiro/hyle-scratch/compute-unified/g08-p1-apple/original85",
+        "-DHYLE_G08_ROUTE=apple",
+        "-DHYLE_G08_SOURCE=/Users/kiro/hyle-scratch/compute-unified/g08-p1-apple/source",
+        "-DHYLE_INSTALL=OFF",
+        "-DHYLE_SANITIZER=off",
+        "-DHYLE_SIMD_EXACT_TARGET=",
+        "-DHYLE_STATIC=ON",
+        "-DHYLE_TRACE=OFF",
+        "-DHYLE_WERROR=ON"
+      ],
+      "scope": "Committed source/peer/SDK CMake configuration and benchmark-only Ninja preview. No actual workload build or timing.",
+      "exit_code": 0,
+      "elapsed_seconds": 1.663422833,
+      "preview_lines": 20
+    },
+    {
+      "state": "COMMITTED_SOURCE_CLEAN_PEER_CONFIG_AND_BENCHMARK_ONLY_PREVIEW_PASS",
+      "pid": 39152,
+      "route": "vulkan",
+      "source_revision": "c31e7919cb9fcaba1293d814cbfbb3a16d4a21cf",
+      "command": [
+        "cmake",
+        "-S",
+        "/Users/kiro/hyle-scratch/compute-unified/g08-p1-vulkan/source/bench/inference_output_selection",
+        "-B",
+        "/Users/kiro/hyle-scratch/compute-unified/g08-p1-vulkan/probe-build",
+        "-G",
+        "Ninja",
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON",
+        "-DCMAKE_INTERPROCEDURAL_OPTIMIZATION=OFF",
+        "-DCMAKE_OSX_DEPLOYMENT_TARGET=14.4",
+        "-DCMAKE_PREFIX_PATH=/Users/kiro/hyle-scratch/compute-unified/g08-sdk/vulkan-static-1/relocated",
+        "-DHYLE_BUILD_BENCH=OFF",
+        "-DHYLE_BUILD_TESTS=OFF",
+        "-DHYLE_COMPONENTS=compute",
+        "-DHYLE_COMPUTE_ROUTES=cpu;vulkan",
+        "-DHYLE_DEP_SOURCE_CACHE=/Users/kiro/Library/Caches/hyle/dependencies/v1",
+        "-DHYLE_G08_GLSLANG=/opt/homebrew/bin/glslangValidator",
+        "-DHYLE_G08_REFERENCE_DIR=/Users/kiro/hyle-scratch/compute-unified/g08-p1-vulkan/reference85",
+        "-DHYLE_G08_REFERENCE_SOURCE=/Users/kiro/hyle-scratch/compute-unified/g08-p1-vulkan/original85",
+        "-DHYLE_G08_ROUTE=vulkan",
+        "-DHYLE_G08_SOURCE=/Users/kiro/hyle-scratch/compute-unified/g08-p1-vulkan/source",
+        "-DHYLE_G08_VULKAN_PRODUCER=/Users/kiro/hyle-scratch/compute-unified/a-cpu-vulkan/selected-graph/static-sdk-build/src/compute_route_vulkan",
+        "-DHYLE_INSTALL=OFF",
+        "-DHYLE_SANITIZER=off",
+        "-DHYLE_SIMD_EXACT_TARGET=",
+        "-DHYLE_STATIC=ON",
+        "-DHYLE_TRACE=OFF",
+        "-DHYLE_WERROR=ON"
+      ],
+      "scope": "Committed source/peer/SDK CMake configuration and benchmark-only Ninja preview. No actual workload build or timing.",
+      "exit_code": 0,
+      "elapsed_seconds": 1.61165,
+      "preview_lines": 43
+    }
+  ],
+  "source_proofs": [
+    {
+      "route": "cpu",
+      "proof": {
+        "state": "PINNED_REFERENCE_AND_SHARED_PRIVATE_BRIDGES_VERIFIED_NOT_RUNTIME_QUALIFICATION",
+        "route": "cpu",
+        "original_revision": "85bcfa4ebc29cc4d2ed5fb122074204aca675d58",
+        "source_identity_sha256": "a66f1d65685aa02ae81b7661d7a56633d26593137d19f24db024d1c27d1e9501",
+        "files": 320,
+        "shared_private_headers": 27,
+        "compiled_original_sources": [
+          "src/compute_provider_ggml/ggml_cpu_provider.cc",
+          "src/compute_provider_ggml/standard_index.cc",
+          "src/compute_provider_ggml/native_batch.cc"
+        ],
+        "original_checkout_verified": true,
+        "original_checkout": {
+          "revision": "85bcfa4ebc29cc4d2ed5fb122074204aca675d58",
+          "tree": "165e375ccaf1cbbee9d076728517defdee98a4e0"
+        }
+      },
+      "sha256": "6e87a9369927275af912b163f12c36cdbf34acd0e55cb774b8881ad5a7598e2c"
+    },
+    {
+      "route": "cuda",
+      "proof": {
+        "state": "PINNED_REFERENCE_AND_SHARED_PRIVATE_BRIDGES_VERIFIED_NOT_RUNTIME_QUALIFICATION",
+        "route": "cuda",
+        "original_revision": "85bcfa4ebc29cc4d2ed5fb122074204aca675d58",
+        "source_identity_sha256": "826317a2c1078b96f9a1ec633eff809490670026a782ea33bd35abc5cf33d191",
+        "files": 357,
+        "shared_private_headers": 27,
+        "compiled_original_sources": [
+          "src/compute_provider_cuda/collectives_provider.cc",
+          "src/compute_provider_cuda/collectives.cu"
+        ],
+        "original_checkout_verified": true,
+        "original_checkout": {
+          "revision": "85bcfa4ebc29cc4d2ed5fb122074204aca675d58",
+          "tree": "165e375ccaf1cbbee9d076728517defdee98a4e0"
+        }
+      },
+      "sha256": "9794288650f7adeee8058d2f66496206367f4b13d2440d3aac3c2a00d1a5671e"
+    },
+    {
+      "route": "apple",
+      "proof": {
+        "state": "PINNED_REFERENCE_AND_SHARED_PRIVATE_BRIDGES_VERIFIED_NOT_RUNTIME_QUALIFICATION",
+        "route": "apple",
+        "original_revision": "85bcfa4ebc29cc4d2ed5fb122074204aca675d58",
+        "source_identity_sha256": "c0b384539e12dbe862504a5ae679804bf8c0a098b93f593c389f1c58957accad",
+        "files": 343,
+        "shared_private_headers": 27,
+        "compiled_original_sources": [
+          "src/compute_route_apple/apple_tensor.cc",
+          "src/compute_route_apple/apple_mature_indexing.cc"
+        ],
+        "original_checkout_verified": true,
+        "original_checkout": {
+          "revision": "85bcfa4ebc29cc4d2ed5fb122074204aca675d58",
+          "tree": "165e375ccaf1cbbee9d076728517defdee98a4e0"
+        }
+      },
+      "sha256": "07d5f4aac3737b3783f614ca10b884d11a511ab2cd11051edaab0873519a8e17"
+    },
+    {
+      "route": "vulkan",
+      "proof": {
+        "state": "PINNED_REFERENCE_AND_SHARED_PRIVATE_BRIDGES_VERIFIED_NOT_RUNTIME_QUALIFICATION",
+        "route": "vulkan",
+        "original_revision": "85bcfa4ebc29cc4d2ed5fb122074204aca675d58",
+        "source_identity_sha256": "32c145229f128c5b6d113ad50b53378648078fd8f40721d395278d7e181310bd",
+        "files": 377,
+        "shared_private_headers": 27,
+        "compiled_original_sources": [
+          "src/compute_route_vulkan/file_stream.cc",
+          "src/compute_route_vulkan/vulkan_batch.cc",
+          "src/compute_route_vulkan/vulkan_copy_program.cc",
+          "src/compute_route_vulkan/vulkan_copy_recording.cc",
+          "src/compute_route_vulkan/vulkan_device.cc",
+          "src/compute_route_vulkan/vulkan_elementwise.cc",
+          "src/compute_route_vulkan/vulkan_iq1.cc",
+          "src/compute_route_vulkan/vulkan_iree.cc",
+          "src/compute_route_vulkan/vulkan_leased_invocation.cc",
+          "src/compute_route_vulkan/vulkan_materialized_invocation.cc",
+          "src/compute_route_vulkan/vulkan_memory.cc",
+          "src/compute_route_vulkan/vulkan_mlx.cc",
+          "src/compute_route_vulkan/vulkan_normalization.cc",
+          "src/compute_route_vulkan/vulkan_official.cc",
+          "src/compute_route_vulkan/vulkan_operations.cc",
+          "src/compute_route_vulkan/vulkan_pipeline.cc",
+          "src/compute_route_vulkan/vulkan_program.cc",
+          "src/compute_route_vulkan/vulkan_recorder.cc",
+          "src/compute_route_vulkan/vulkan_reduction.cc",
+          "src/compute_route_vulkan/vulkan_region.cc",
+          "src/compute_route_vulkan/vulkan_run.cc",
+          "src/compute_route_vulkan/vulkan_scatter.cc",
+          "src/compute_route_vulkan/vulkan_tensor.cc",
+          "src/compute_route_vulkan/vulkan_transfer.cc",
+          "src/compute_route_vulkan/vulkan_transfer_slot.cc",
+          "src/compute_route_vulkan/vulkan_weights.cc"
+        ],
+        "original_checkout_verified": true,
+        "original_checkout": {
+          "revision": "85bcfa4ebc29cc4d2ed5fb122074204aca675d58",
+          "tree": "165e375ccaf1cbbee9d076728517defdee98a4e0"
+        }
+      },
+      "sha256": "6f8f1523aba8b50323e290da170b1154f582d3d1defe6481547dcdecc83bf991"
+    }
+  ],
+  "windows_policy_canary": {
+    "scope": "Subprocess topology/priority canary only; no benchmark or timing.",
+    "policy": {
+      "environment": "windows",
+      "affinity_mask": "0x4",
+      "logical_cpu": 2,
+      "cpu_set_id": 258,
+      "required_efficiency_class": "maximum",
+      "smt_sibling_logical_cpu": 3,
+      "priority": "above-normal",
+      "applied_by": "benchmark-child-launcher"
+    },
+    "default_flags": {
+      "gate": "FAIL",
+      "error": "Windows child-policy canary mismatch: expected affinity '0x4', priority '0x8000'; observed {'affinity_mask': '0x4', 'ok': True, 'priority_class': '0x20'}"
+    },
+    "registered_flags": {
+      "gate": "PASS",
+      "environment": "windows",
+      "mechanism": "inherited-process-policy-canary",
+      "affinity_mask": "0x4",
+      "ok": true,
+      "priority_class": "0x8000"
+    }
+  },
+  "raw": {
+    "path": "p1-workspace-checkpoint-raw.zip",
+    "sha256": "710733f87cdbdc974b3761bf8c7ae91869d350bba3e98aecdafb01ad94b02871",
+    "bytes": 369993
+  },
+  "scope": "Four clean Windows-authored benchmark snapshots and clean original peers, immutable static SDK manifests,33 original TUs with exact original Git blobs and unchanged common private headers. Four actual CMake configurations and benchmark-only previews, no workload build/link/numerical/A-A/P1 sample. Windows default child priority mismatch and corrected registered flags proved before timing; public instrument/statistics untouched.",
+  "limits": [
+    "Air Git emits an existing nested-alternate warning; direct stores and pinned trees/blobs are all reachable and verified. The warning is retained, not a product/compiler failure.",
+    "Initial new JSON CRLF publication rejected by git diff --check; original output retained, only new text normalized to LF and reference hashes recomputed. Raw archives unchanged.",
+    "Last WSL source SDK still running; performance jobs must wait for all18delivery configurations."
+  ],
+  "canonical_benchmark_location": {
+    "path": "bench/compute_ops",
+    "immutable_benchmark_revision": "df7ca0271cc0cc457ec5b1a54f47a34880e5fae6",
+    "immutable_benchmark_path": "bench/inference_output_selection",
+    "verdict": "ALL_23_FILES_BYTE_IDENTICAL_AT_REVIEWED_COMPUTE_OPS_BENCHMARK_LOCATION",
+    "files_sha256": {
+      "apple_arm.cc": "bbc023f7f71b91b7dbbd4802be8c589887406a1a3fc4313377a090bf85c14386",
+      "CMakeLists.txt": "294c1d77034ed2821a72e4957b7189f589a5a61f2e3e2ba2ca272b1d97efc4f6",
+      "consumer-provenance-apple.json": "3fef982cfd1404bc3f14e387adc86b3ddaba9db2187976c174a4583935550409",
+      "consumer-provenance-cpu.json": "eabb68fb18b9009a6d787687b8d3c2288f255bcd3df1659eab1d2921fa1ccdbb",
+      "consumer-provenance-cuda.json": "eabb68fb18b9009a6d787687b8d3c2288f255bcd3df1659eab1d2921fa1ccdbb",
+      "consumer-provenance-vulkan.json": "eabb68fb18b9009a6d787687b8d3c2288f255bcd3df1659eab1d2921fa1ccdbb",
+      "contract-apple.json": "d84281ba1ff93747820f18879a77690493331dd025e7d36f927bff4c31f70310",
+      "contract-cpu.json": "cd68aafaa10dbc2f46801669b8609391e05752cc21e7b68d277cac8c74acc4c2",
+      "contract-cuda.json": "47fe94bb9d9775e53b3d02c1db4869d7bb1d50e4e431eabb352a16b44e4061e6",
+      "contract-vulkan.json": "dfc9f2ea0912b61b805868eefc374f06d54800a2ec45d6c00aca5e3a5c49d019",
+      "generic_arm.cc": "7520117037174a29cc93c55d70d8fdaf53fc13bfcc81b607d2995f5ee938143f",
+      "placement.cc": "7b4a7cc5b7e0d4bdc4b8d1954d63bec7caa4843136cdd4f0867d0d8fa9d8d7de",
+      "prepare_reference.py": "0d4b6a9fd764edfd215430b0f5188f598fa8ebc4f2a9e9c59307ec1d8bb24477",
+      "qualified-sdk-apple.json": "afff26800998b19c7f86bcab624007a1fdf34770077185260bf2b970dd6fac19",
+      "qualified-sdk-cpu.json": "47df27358b7adfc57917749d8249bfa17b2f243ea70e0b1fb0b8f52f074d45b1",
+      "qualified-sdk-cuda.json": "9d117be60813b7764bb9c5c8ea8dffcebaf613f8a77616f42b42212063fad50d",
+      "qualified-sdk-vulkan.json": "529fefcf480aa15b47a8141306e9a8dc682ccd4a815d536ae8e2bee715d0de01",
+      "reference_provider.cc": "0d8ad7edc82352af3e08da69c7c4c41b9a10b9b0940f115a6e33357113cd4e37",
+      "topk_bench.cc": "8c2aa70fac212c1d9590cec80602380e9cc8a601a68eb8eca763315087d497e4",
+      "topk_bench.h": "55dbe67e69749241bff8dc4a0a4f9ec8521a8f5078f594419fc7aaccd4d10a32",
+      "validate_aa.py": "e35b173db2ad88904445a0132a593b8223aae7efe962c184bc78ce1e724957c4",
+      "verify_reference.py": "585bee9b45f956cc7855152d40dc91157aec0ac2c9d2c44c6a804b05ffb304c8",
+      "vulkan_arm.cc": "e376b6cb2f89d9f950ff153ea374fbeb62ad32795f07a66c6f1e8fb8e31c7ea0"
+    },
+    "scope": "Directory relocation proof captured before the subsequent CPU private-header wiring correction. The23 stored hashes match df7 exactly at that checkpoint. The later setup correction has a separate failure/fix record; df7 is not the final corrected benchmark candidate."
+  }
+}

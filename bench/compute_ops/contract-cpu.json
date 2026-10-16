@@ -360,7 +360,8 @@
           "CMAKE_PREFIX_PATH": "C:/h7/g08-sdk/cpu-static-1/relocated",
           "HYLE_G08_ROUTE": "cpu",
           "HYLE_G08_SOURCE": "C:/h7/g08-p1-cpu/source",
-          "HYLE_G08_REFERENCE_DIR": "C:/h7/g08-p1-cpu/reference85"
+          "HYLE_G08_REFERENCE_DIR": "C:/h7/g08-p1-cpu/reference85",
+          "HYLE_G08_GGML_INCLUDE": "C:/public/project-hyle/hyle/.scratch/build-compute-v2-dev/src/compute_ggml_runtime/source-e74fc9bb8964d04f/include"
         },
         "peer_cache": {
           "original85": "HYLE_G08_REFERENCE_SOURCE"
