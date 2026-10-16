@@ -1,6 +1,6 @@
 # G04/G05 编码 KV 与有限 attention 语义实施批
 
-状态：**G06独立范围已验收；跨表示warm延迟差异已复现，其同约束算法归因不成立；C1 packed转换候选否决、未改产品；FI工程性能仍BLOCKED/INCONCLUSIVE，其余owner按registry，2026-10-16**。旧goal已由用户清除，本轮仅执行明确授权的有限诊断；baseline `694a3d1a4b02540cb56b6ceae35b73dd1dd93440`；
+状态：**本卡实施与诊断已结束；G04/G05按[新终审卡](inference-g04-g05-final-closure.md)接受明确资源/精度取舍并收口，2026-10-16**。原CUDA warm LOSS/5% UNRESOLVED、历史阶段/失败/费用全部保留；本卡下文的未决/继续指当时事实，不是当前待办。旧goal已由用户清除；baseline `694a3d1a4b02540cb56b6ceae35b73dd1dd93440`；
 共同批owner见下表：九个原实际组件及下文新增CUDA数值状态owner；有限CE01–07/API/成本合同已冻结。原 G03 已 CLOSED，不由本卡重开其权限/
 退休实现。九owner已合法SCOPED后进入AUDITED；仅下列有限FIX授权产品实现。
 本批沿[十项总卡](../project/inference-gaps-goal-execution-2026-10.md)，

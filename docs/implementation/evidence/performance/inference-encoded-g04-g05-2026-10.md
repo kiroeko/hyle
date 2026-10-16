@@ -1,8 +1,15 @@
 # G04/G05 编码页有限工程性能总账
 
-这里只记录已合格同合同工程 P1；不代表全模型 token/s、跨路线速度排名、capture 或
-整个 G04/G05。ratio大于1有利HYLE；方向相对1，非劣门独立使用原5%阈值。
+这里保留原合格工程P1及当前比较边界裁决；不代表全模型token/s、跨路线速度排名或capture。
+ratio大于1有利HYLE；方向相对1，历史非劣门独立使用原5%阈值。
 原 FAIL/DIAGNOSTIC 和全部成本保留在对应施工卡及原始 evidence。
+
+**2026-10-16当前裁决**：[G04/G05终审](../../tasks/compute/inference-g04-g05-final-closure.md)
+接受选定压缩驻留/F32数值合同，以P0结构成本结束本轮；无新计时或P1通过。CUDA原
+comparator是预展开BF16的FlashInfer自然方案，具有额外驻留/中间精度差异，不是llama.cpp，
+不签同约束FP8实现排名。attempt14窗口LOSS/5%PASS、prefill LOSS/5%UNRESOLVED、留出
+INCONCLUSIVE/5%PASS以及原整体FAIL标签保留；下文“未关闭”均为各历史阶段当时状态。
+精确未决数值不改成parity，C1私有候选拒绝也不计作产品退化。完整引擎tokens/s尚未实测。
 
 | route / candidate | workload | ratio范围 | 方向 | 5%非劣 | 原始证据 |
 |---|---|---|---|---|---|

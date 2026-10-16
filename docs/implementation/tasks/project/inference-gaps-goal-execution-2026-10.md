@@ -1,7 +1,8 @@
 # 单机推理基础缺口补齐执行总卡
 
-状态：**执行中，首批定界**，2026-10-13。用户明确要求先补前次统计的缺口，并在清除旧 goal
-后要求创建新 goal；本轮覆盖 G01–G10 的修正、成熟承载接入或已有完整公开路线的反证验收。
+状态：**G01–G06六项已验收；G07–G10全部保留，2026-10-16**。旧goal已由用户清除，
+当前用户要求先完成这四项有限范围，再开发Qwen3.5-2B full CUDA命令行引擎与llama.cpp比较
+prefill/decode tokens/s；本卡不自动创建或恢复goal。原G01–G10的修正、成熟承载或完整路线反证范围保留。
 不能以延后、引擎自己写胶水或一个小模型出字代替完成。
 
 baseline：`5d46db5fd99322e2f75d3fe07553c61fadff8eb9`。创建时工作树干净，64 个 registry owner
@@ -40,7 +41,7 @@ Apple/Vulkan 的实际 OS/native 资格。共同验收位置、有效区、shape
 
 ## 十项跟踪
 
-下表是当前 goal 工作项，不是第二份模块 registry。完整项完成数 **4/10**（G01、G02、G03、G06）。
+下表是有限工作项跟踪，不是第二份模块registry或活动goal。完整项完成数 **6/10**（G01–G06）。
 G01 原 plain 驻留读取范围已按各 finite CLOSED terminal 与原 Linux FI ROUTED/P0
 [聚合验收](../compute/inference-g01-aggregate-acceptance.md)；原八份声明 P1 的最终结果已核对，
 早先 FAIL/STOP/DIAGNOSTIC 和方向限制保留。G04/G05 新编码与数学域、
@@ -51,9 +52,9 @@ G06–G10 不由该聚合裁决代签。
 | G01 高效驻留读取 | [整项已验收](../compute/inference-g01-aggregate-acceptance.md)：CPU/Apple/Vulkan 原 resident/ragged/page16 子批均 CLOSED，八份声明 P1 已核最终通过；Linux FI 原完整公开路线沿用已签 P0，不伪造新 P1。只接受原 plain 有限域，其他 G 项继续 | 单请求先核 dense/view；多请求接 native/等价直接驻留消费，避免按每 Q/head 重复物化全 KV | compute_batch、原 route/Provider、graph_batch 必要桥 |
 | G02 联合分页 | [整项已验收](../graph/inference-g02-aggregate-acceptance.md)：原common CPU+CUDA、精确页守卫及Apple/Vulkan native联合域完成；原Windows CUDA804/Vulkan851默认门及补验Vulkan alias/phase的实际Air三交付均通过。按原P0保留metadata/等待/去重和private UNKNOWN | 原 multi-queue bindings 接 batch coordinator；native hybrid 接准确 page/layout 与原 region/slot，公开 CPU→GPU→CPU | graph_batch、三个 graph hybrid、原 compute/native 权限桥 |
 | G03 增量 producer 组合 | [CLOSED](../compute/inference-g03-final-closure.md)，candidate11b2403e7：四原路线/三联合、Direct/Graph、多独立native来源、完整CPU+CUDA源码/两SDK、生命周期与P0通过；原失败/checked waits/费用保留 | 原 exclusive/F2/native waits到更新与读取；精确 dirty 域、成功 ready、idle input 生命周期 | compute_batch、compute/F2、原 native route与graph桥 |
-| G04 量化 KV | CPU CE13、Vulkan与Apple CE14有限P1均QUALIFIED/PASS/verify0，Apple已CLOSED。CUDA CE27前置门通过，但[attempt13](../../../../evidence/performance/inference-g04-g05-cuda-encoded-w1-wsl-p1-attempt-13/receipt.json)QUALIFIED/strict0，prefill ratio0.940486–0.947439仍非劣FAIL，窗口与留出PASS。CE28加载时转换的新17math/22device及同1/1/4 attention+merge零栈codegen通过，FI为CANDIDATE830；两SDK各33测试/12头/16TU PASS；新两variant各24 oracle/设备检查及实际merge身份PASS；三host各16测试/五风险模式PASS，[attempt14](../../../../evidence/performance/inference-g04-g05-cuda-encoded-w1-wsl-p1-attempt-14/receipt.json)已QUALIFIED/strict0，原[15,31]完成；窗口与留出非劣PASS，prefill ratio0.952972–0.961375但两层CI跨原5%耗时门，非劣UNRESOLVED。原有限成本检查已终止，无新FI修正钥匙；G06现独立验收，post-G06只读成本核对已结束，未取得新因果FIX；FI性能门回BLOCKED，当前数学/原未决门/已过证据保留，后续当前候选资格须另卡绑定原完整warm合同，整项未验收。旧失败、未知和累计费用见[活动卡](../compute/inference-g04-g05-cache-attention-domain.md)，整项未验收 | 按成熟实际 cache 编码冻结 payload/scales/layout、quantize append与直接读取，不每步解码完整历史 | compute_ops/batch、实际 Provider/native route |
-| G05 attention 语义域 | 同卡已实现 causal-window/full noncausal/有限 Dqk≠Dv，与 G04 共用数学、数值/生命周期和交付证据；适用性能及剩余风险未全部签发 | 固定真实消费者所需 window/mask/维度等域及失败边界，成熟承载；未准入未来特例不无限扩张 | compute_ops/batch、实际 Provider/native route |
-| G06 metadata/decode | [整项已验收](../compute/inference-g06-final-closure.md)：四族active/delta、共同Graph首上传前共享、全block权限GlogG、四路线runtime与有限CUDA capture闭环；SDK八配置/23头、WSL三host各291/15模式、Air六nativehost及P0/七门通过。候选669，十owner本轮CLOSED；FI D6/D7已验收，组件原G04/G05性能未决按registry保留。所有旧失败/费用、managed/re-encode/版本分配/private UNKNOWN保留；整goal4/10 | host-known/device-produced分界，active/delta上传、正确 topology/runtime复用与decode档，实际capture资格 | compute_batch、FI/native Provider、graph_batch |
+| G04 量化 KV | [已验收，有限资源/精度取舍终审](../compute/inference-g04-g05-final-closure.md)。CPU/Apple/Vulkan原P1保留；CUDA按原生FP8驻留/F32 partial的P0成本合同收口，原warm LOSS/5%未决不改PASS。五个剩余owner结束本轮，所有旧失败/费用保留 | 实际编码append→resident→直接attention，不常驻完整历史解码副本 | compute_ops/batch、实际Provider/native route |
+| G05 attention 语义域 | [同终审已验收](../compute/inference-g04-g05-final-closure.md)：causal-window/full noncausal/有限Dqk≠Dv及原完整数值/生命周期/交付域；不以本轮收口声称所有未来数学域或完整引擎性能 | 固定有限window/mask/维度与失败边界 | compute_ops/batch、实际Provider/native route |
+| G06 metadata/decode | [原独立终审已验收](../compute/inference-g06-final-closure.md)：active/delta、共享上传、GlogG准入、四路线runtime与有限capture。当前FI另由G04/G05终审收口；原G06证据与所有限制保留 | host-known/device-produced、topology/runtime复用和decode成本 | compute_batch、FI/native Provider、graph_batch |
 | G07 packed 权重 | [SCOPED，有限 W1–W4 审计](../compute/inference-g07-packed-weights.md)：Qwen GGUF Q4_K/Q6_K/Q8_0、原 BF16 控制与所选非 GGUF/checked selection；两实际 owner 定界，产品/API承载和有限FIX待AUDITED，不计完成 | 锁定 artifact→resident→selected math，借原生packed/冷repack；checked IDs保错误，排除warm完整展开/多余host检查 | 实际低精度 Provider/native route及资源桥 |
 | G08 数值输出选择 | 待有限数值域选择 | row-wise greedy/selection与选定随机数值域，counter/state、质量/分布和少量结果返回 | compute_ops、实际 Provider/native route；模型采样政策不下沉 |
 | G09 联合流水 | 待最小consumer | 原有限slots/依赖推进，真实无依赖CPU/GPU支路及microbatch trace；不重复scheduler | 三个graph hybrid及必要原native执行桥 |
@@ -275,3 +276,15 @@ requirement；历史FAIL、预算/费用和private UNKNOWN保留。goal更新3/1
 
 2026-10-16 G06 两共同 owner 已合法恢复 SCOPED，见[单卡](../compute/inference-g06-metadata-decode.md)；
 四组完整范围、原生与联合资格、冷热成本/权限/失败边界和预声明验收均保留，当前未改产品。
+
+## 2026-10-16 当前交接
+
+G01–G06告一段落。剩余G07 packed权重、G08输出数值选择、G09联合流水、G10 CPU预算
+全部完成有限范围后，再按[Qwen CLI合同](qwen35-2b-command-consumer-scope-2026-10.md#7-g01g10之后的full-cuda命令与性能交付)
+开发纯文本、全CUDA、关闭MTP/多模态的命令行消费者。先匹配普通BF16基线，再单列
+其他合格精度/压缩方案。完整HYLE引擎尚未实测，先前FlashInfer跨表示warm对照不代表
+与llama.cpp的胜负，也不能宣称HYLE相对它获得了独有精度/内存优势。
+
+本节和顶部为当前调度；下文及上文历史日期的ACTIVE/旧完成数/继续语句只保留当时事实，
+不得据此恢复已清除的goal或重跑已结束实验。G07原两owner仍SCOPED，必须完成有限审计
+后才能实施；G08–G10不因未来引擎暂时用不到而删除，也不扩大为无终点调研。

@@ -1,5 +1,5 @@
 {
-  "state": "AUDITED_FINITE_EVIDENCE_REUSE_NO_PRODUCT_FIX",
+  "state": "CLOSED_FINITE_G04_G05_ACCEPTED_P0_TRADEOFF",
   "timestamp_utc": "2026-10-16T10:00:46.141028+00:00",
   "baseline": "68565dfc94f39ab610d1a2c8ad55181b26c6a8fc",
   "audit_head": "426ff84aef770321a32f791f432db74b0c979aea",
@@ -653,5 +653,40 @@
     "usability_docs": "PASS",
     "red_team": "PASS",
     "engineering_performance": "PASS"
+  },
+  "terminal_utc": "2026-10-16T10:06:45.718087+00:00",
+  "previous_registry_ref": "770e5ab624cb493d7da099cd079bd435feb00060",
+  "closed_owners": [
+    "compute_backend_cuda",
+    "compute_ggml_runtime",
+    "compute_ops",
+    "compute_provider_flashinfer",
+    "graph_route_vulkan"
+  ],
+  "scope_decision": "Explicit user-approved selected compressed-resident/F32 contract closes on P0 structure, with original cross-representation warm results retained. Original5% UNRESOLVED is not promoted to PASS.",
+  "accepted_items": [
+    "G01",
+    "G02",
+    "G03",
+    "G04",
+    "G05",
+    "G06"
+  ],
+  "remaining_items": [
+    "G07",
+    "G08",
+    "G09",
+    "G10"
+  ],
+  "goal_state": "Old goal cleared; no goal created/resumed.",
+  "new_product_candidate": false,
+  "validation": {
+    "selector": "READY:docs,closure;146 skipped/reused with preserved reasons",
+    "plan": ".scratch/validation/g04-g05-final-closure.json",
+    "previous_registry_ref": "770e5ab624cb493d7da099cd079bd435feb00060",
+    "module_closure": "PASS:64 components,schema4; legal previous-ref transitions",
+    "docs": "PASS:1251 Markdown files,6397 relative links",
+    "diff_check": "PASS",
+    "new_product_builds_or_p1": 0
   }
 }

@@ -1,6 +1,6 @@
 # G04/G05 有限能力与资源取舍终审
 
-状态：**CANDIDATE，原产品已绑定、终审证据已核，2026-10-16**。用户明确选择先收口本批，并将完整 Qwen3.5-2B CUDA
+状态：**CLOSED；G04/G05有限范围ACCEPTED，2026-10-16**。用户明确选择先收口本批，并将完整 Qwen3.5-2B CUDA
 命令行消费者与 llama.cpp 的 prefill/decode tokens/s 作为后续引擎验收。旧 goal 已清除；
 本轮不恢复 goal，不开始 G07–G10 或引擎实现。
 
@@ -88,3 +88,8 @@ CANDIDATE 终审。阶段提交只维护文档/registry，不产生新产品 can
 [Qwen 命令行消费者范围](../project/qwen35-2b-command-consumer-scope-2026-10.md)。
 全链消费者能暴露新的实际缺陷，届时带最小反例合法 reopen；不能以尚未开发的引擎
 或“可能再快一点”为由继续无限优化本批。
+
+终审按SCOPED `426ff84ae`、AUDITED `06804daa9`、CANDIDATE `770e5ab62`依次落盘；
+原产品candidate始终不变。五个本批剩余owner结束本轮，其他已验收范围及G07两SCOPED
+owner不变；G01–G06六项告一段落，G07–G10全部保留后再交付完整CLI。当前没有活动goal，
+不以本记录自动创建/恢复它。原14次性能尝试、全部失败/未知费用与原5%门原样保留。

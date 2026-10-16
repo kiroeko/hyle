@@ -6,6 +6,10 @@
 2026-10的G01 resident有限增量见[新分账](inference-resident-g01-2026-10.md)，包括两次
 原LOSS和最终同合同结果；不修改本历史快照的98个合同组计数。
 
+2026-10的G04/G05编码页有限结果与比较边界见
+[编码页分账](inference-encoded-g04-g05-2026-10.md)：保留CPU/Apple/Vulkan原方向及CUDA
+warm LOSS/5%未决；当前资源/精度取舍P0收口不提升旧P1、不外推llama.cpp整引擎胜负。
+
 本页是 [`full-library-scorecard.json`](full-library-scorecard.json) 的人读结论。机器账本绑定
 当轮 48 个 `CLOSED` factor，覆盖 R2 共同语义、
 Mem 定向尾项、R3–R6 四路线及 [R7 终局](../../tasks/compute/four-route-foundation-final-review.md)。
