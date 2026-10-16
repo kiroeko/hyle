@@ -1,6 +1,6 @@
 {
-  "candidate": "0333ed2cc9025dd976d7d2118dcd6759cffb5242",
-  "prefix": "/Users/kiro/hyle-scratch/compute-unified/g07-sdk/apple-static-d1/relocated",
-  "receipt": "evidence/delivery/inference-g07-apple-packed-d1/receipt.json",
-  "result_archive_entry": "apple-static-d1/result.json"
+  "candidate": "91ae8e67faa028061d8f5e8e216310c827e024a3",
+  "prefix": "/Users/kiro/hyle-scratch/compute-unified/g07-sdk/apple-static-d2/relocated",
+  "receipt": "evidence/delivery/inference-g07-apple-packed-d2/receipt.json",
+  "result_archive_entry": "apple-static-d2/result.json"
 }

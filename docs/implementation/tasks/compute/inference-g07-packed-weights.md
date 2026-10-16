@@ -363,3 +363,7 @@ M64比0.936–0.966、聚合方向INCONCLUSIVE、5%门FAIL。不是无资格计�
 的20Direct、13Graph、65步联合/公开消费、Metal13项、三hostsan各2项均通过，冻结91ae。
 仅两份新迁址SDK、原两形状同合同P1及最终聚合待做；D1及首版的合格M64 LOSS全部保留。
 CUDA/W1未变输入复用，G08–G10仍未开始；没有新增产品域或完整引擎吞吐结论。
+
+D2的[迁址static/shared SDK](../../../../evidence/delivery/inference-g07-apple-packed-d2/receipt.json)
+均通过，六次公开消费者与八次独立头编译，绑定91ae实际owner artifact；bench精确改绑D2
+受验prefix。后续Apple P1仅按原669、两shape、16轮/相同5%门/n15–31资格，不复用D1计时。
