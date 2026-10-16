@@ -375,7 +375,7 @@
       "module": "compute_provider_ggml",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/inference-g06-metadata-decode.md",
-      "summary": "G06-D2 CPU runtime Q1 AUDITED：固定同Q拓扑原I32 leaf/有效长度更新、compiled-layout anchor和Q1全零causal mask省略；复用原decode kernel/graph/pool/workspace，保原权限/错误/预算。待source与实际mixed CPU验证；runtime/vendor和其它D域未改，原G04/G05失败保留。"
+      "summary": "G06-D2 CPU runtime Q1 source通过：原graph/pool/scratch复用、I32 leaf/有效长度更新、初始recipe anchor及Q1零mask省略。Windows普通62＋真实消费25＋pending18、Air两mixed core各25 PASS，32×64步核无warm注入分配/固定workspace。仍AUDITED；ragged动态extent、其它native/FI/capture和最终san/header/SDK待，无新P1。"
     },
     {
       "module": "graph_provider_onednn",

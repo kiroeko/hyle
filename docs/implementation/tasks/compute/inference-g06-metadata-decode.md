@@ -1,10 +1,10 @@
 # G06 metadata 与 decode 成本收口
 
-状态：**G06 AUDITED；共同与原生/pending source批通过，CPU runtime Q1批已冻结，2026-10-16**。本卡沿[完整十项目标](../project/inference-gaps-goal-execution-2026-10.md)，
+状态：**G06 AUDITED；共同、原生/pending及CPU runtime Q1 source批通过，2026-10-16**。本卡沿[完整十项目标](../project/inference-gaps-goal-execution-2026-10.md)，
 不缩减 CPU、单 GPU、CPU＋单 GPU、单/多请求或四原生路线。先完成四组共同审计和形状冻结，
-再集中实施、批量检查、按实际失败定向修正；仅下文已冻结的共同基础批允许产品修改。
+再集中实施、批量检查、按实际失败定向修正；产品修改仅限下文已冻结且owner为AUDITED的批次。
 
-## 当前 owner 与 baseline
+## 初始 owner 与 baseline（后续批次逐段登记）
 
 canonical baseline：`10129b90bbfc4d85c25e1595c823962b5a9c8146`；本轮前产品输入分别为：
 
@@ -316,3 +316,24 @@ oracle覆盖32组×64步，断言runtime复用/原始长KV档、无warm allocati
 最终适用san/header/迁址static/shared随完整G06不可变候选集中做。仍按2h检查点和用户
 常设有限追加时间，原失败/未知不重置；不启动CUDA/P1，也不签其它G06-D完成。
 ragged动态extent、Apple/Vulkan runtime lengths、FI Q1/capture及原G07–G10仍保完整目标。
+
+### CPU runtime Q1 source 通过（bc3d8fadf）
+
+[实际source证据](../../../../evidence/correctness/inference-g06-cpu-runtime-q1-source/receipt.json)
+绑定bc3d8fadfb1c2139c3b7d12d3af00848fafa2bb3：Windows Provider普通回归62、真实
+native/common/Graph25项及plain/encoded各9个原pending场景PASS；新32组×64步覆盖
+F16/BF16、plain/Q8、D64/128/256和D64/Dv128、单/多请求、window/noncausal、tail
+增长/缩短、跨页、共享/重排及512长度边界。稳定Q拓扑禁止下一次注入分配仍成功且
+workspace不变；请求集合/空request拓扑变化实际重规划，旧owning output仍阻止更新。
+原普通attention/混合prefill和ragged回归通过，不把Paged Q1 key推广到它们的动态extent。
+原kernel的格式分档保留，F16 plain的长KV split与其它格式原路径不强求同一native档。
+
+实际Air Mac16,12/M4下CPU+Apple、CPU+Vulkan构建配置各25项同组CPU测试全部PASS，
+证明两个mixed core下的CPU运行时更新；没有用此测试冒充GPU数学或P1。Windows build
+9.390s、外层55.157s；Air两build6.320/6.207s、外层87.837s包含并重叠各stage。
+源码、命令、XML/raw、实际artifact SHA及原owner/baseline齐全；观察缺口仍UNKNOWN。
+本轮没有产品失败/重试，没有runtime/vendor/构建工具修改，也没有CUDA/P1/全局构建。
+
+CPU Provider保持AUDITED。剩余完整G06-D为ragged动态extent、Apple/Vulkan运行时长度、
+FI Q1规划与实际capture资格；最终三san/header/迁址static/shared在完整算法固定后集中
+验收。G04/G05 CUDA prefill未决与原失败不由本批代签，G07–G10仍保留。

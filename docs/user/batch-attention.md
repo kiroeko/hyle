@@ -138,7 +138,7 @@ WriteLease的两个不重叠子视图。原LeaseUsePool写票附着该Graph的�
 |---|---|---|
 | Linux CUDA | 原FlashInfer C++ native paged/ragged；BatchProgram、BatchInvocation、PreparedBatch；graph::batch::provider/Invocation | 每layout显式H2D及原plan；不同topology不能靠shape/address猜复用；native private bytes未知 |
 | CPU 参考 | MaterializedBatchProgram；MaterializedBatchInvocation / graph::batch::MaterializedInvocation | 显式gather、GQA展开、F32矩阵、mask与Copy；Direct逐stage同步wait |
-| CPU page16 | 原CPU BatchProgram / BatchInvocation；详见[CPU批次入口](compute.md) | 原ggml flash直接读取确切物理页，有限F16/BF16资格已收口；Materialized路径另为显式参考算法 |
+| CPU page16 | 原CPU BatchProgram / BatchInvocation；详见[CPU批次入口](compute.md) | 原ggml flash直接读取确切物理页；Q1可更新运行时页表/长度，保原graph/pool/workspace。Materialized路径另为显式参考算法 |
 | Apple | apple::MaterializedBatchInvocation；graph::apple::prepare_materialized_batch | 原MLX Program/worker，固定两device metadata banks、原F2上传；managed replay/私有storage未知 |
 | Vulkan | vulkan::MaterializedBatchInvocation；graph::vulkan::prepare_materialized_batch | 原native Plan/command/fence与ggml承载；固定两metadata banks，opaque scratch/driver仍未知 |
 | Apple page16，有限域已收口 | NativePagedBatchProgram；apple::PagedBatchInvocation | 原MLX vector/2pass/NAX直接页读取；单I32表、两个mirror banks；actual Air F16/BF16数学、风险、三交付与同合同P1与终审通过 |
@@ -148,6 +148,15 @@ WriteLease的两个不重叠子视图。原LeaseUsePool写票附着该Graph的�
 Apple/Vulkan参考档真的在原GPU上执行，但它们把页/packed KV显式gather/materialize后做
 数学；索引/掩码、GQA复制、payload/wait的费用必须计入。需要原native paged吞吐时，
 不能只看接口形状相同而假定性能已经对称。没有submit隐式plan、JIT或自动CPU fallback。
+
+CPU `BatchInvocation::update_batch` 在 Q-indptr 相同、每 request 为0或1 query时，允许
+tail、跨页和页 ID 重排更新原 native leaf；保持原 graph、线程池及 workspace，单查询的
+全零 causal mask 不分配。普通调用不需要另写 decode helper。请求集合或 Q 拓扑变化
+仍真正重规划，mixed/prefill 和 ragged 沿各自原合同；旧 output/ticket 仍阻止更新。
+caller 创建的新版本仍拥有 active-sized snapshot，metadata delta 上传也可有原 F2 等待，
+不能把计划零分配解读为整步零分配或零等待。
+[Windows 与 Air mixed-core source 验证](../../evidence/correctness/inference-g06-cpu-runtime-q1-source/receipt.json)
+覆盖单/多请求32组×64步与原数值/风险；最终 sanitizer/SDK/header 和新性能资格仍待。
 
 Linux CUDA的公开factory随普通产品传递，消费者只链接hyle::compute/hyle::graph；
 cuda.h在实际HYLE_COMPUTE_FLASHINFER资格下供应原factory头，未准入平台不供应该API。

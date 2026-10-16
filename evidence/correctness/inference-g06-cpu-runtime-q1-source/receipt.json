@@ -1,0 +1,481 @@
+{
+  "kind": "G06_D2_ORIGINAL_CPU_Q1_RUNTIME_SOURCE",
+  "verdict": "PASS_WINDOWS_CPU_AND_AIR_MIXED_CORE_SOURCE",
+  "candidate": "bc3d8fadfb1c2139c3b7d12d3af00848fafa2bb3",
+  "windows": {
+    "execution": {
+      "state": "TERMINAL_PASS",
+      "pid": 55016,
+      "candidate": "bc3d8fadfb1c2139c3b7d12d3af00848fafa2bb3",
+      "build": "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev",
+      "max_jobs": 4,
+      "stages": [
+        {
+          "stage": "prepare-manifest",
+          "command": [
+            "ninja",
+            "-C",
+            "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev",
+            "build.ninja"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 0.18699999997625127,
+          "log": "C:/public/project-hyle/hyle/.scratch/inference-gaps/g06/common-source-6/prepare-manifest.log"
+        },
+        {
+          "stage": "build",
+          "command": [
+            "cmake",
+            "--build",
+            "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev",
+            "--target",
+            "hyle_compute_provider_ggml_test",
+            "g04_g05_encoded_common_pages",
+            "g04_plain_pending_control",
+            "g04_encoded_pending_risks",
+            "--parallel",
+            "4",
+            "--",
+            "-k",
+            "0"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 9.39000000001397,
+          "log": "C:/public/project-hyle/hyle/.scratch/inference-gaps/g06/common-source-6/build.log"
+        },
+        {
+          "stage": "hyle_compute_provider_ggml_test",
+          "command": [
+            "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\hyle_compute_provider_ggml_test.exe",
+            "--gtest_output=xml:C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g06\\common-source-6\\hyle_compute_provider_ggml_test.xml",
+            "--gtest_filter=-GgmlCpuCacheEncode.*:GgmlCpuBoxed.*:GgmlCpuPaged.*:GgmlCpuRagged.*"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 0.6720000000204891,
+          "log": "C:/public/project-hyle/hyle/.scratch/inference-gaps/g06/common-source-6/hyle_compute_provider_ggml_test.log"
+        },
+        {
+          "stage": "g04_g05_encoded_common_pages",
+          "command": [
+            "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\g04_g05_encoded_common_pages.exe",
+            "--gtest_output=xml:C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g06\\common-source-6\\g04_g05_encoded_common_pages.xml"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 42.95299999997951,
+          "log": "C:/public/project-hyle/hyle/.scratch/inference-gaps/g06/common-source-6/g04_g05_encoded_common_pages.log"
+        },
+        {
+          "stage": "g04_plain_pending_control",
+          "command": [
+            "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\g04_plain_pending_control.exe"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 0.2029999999795109,
+          "log": "C:/public/project-hyle/hyle/.scratch/inference-gaps/g06/common-source-6/g04_plain_pending_control.log"
+        },
+        {
+          "stage": "g04_encoded_pending_risks",
+          "command": [
+            "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\g04_encoded_pending_risks.exe"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 0.20400000002700835,
+          "log": "C:/public/project-hyle/hyle/.scratch/inference-gaps/g06/common-source-6/g04_encoded_pending_risks.log"
+        }
+      ],
+      "identity": {
+        "host": "KIRO-WORKSTATIO",
+        "compiler": "14.50.35717",
+        "route": "CPU/Windows"
+      },
+      "scope": "G06 D2 original CPU Q1 runtime leaf/length reuse, ordinary provider regression and actual Direct/Graph/pending consumers; no native-GPU/CUDA/P1/final-SDK verdict",
+      "reused_configuration": {
+        "from": "common-source-1",
+        "candidate": "4bc567c87931c13d8bb3c4b00a9c137258fd0455",
+        "stages": [
+          {
+            "stage": "configure",
+            "command": [
+              "cmake",
+              "-S",
+              "C:\\public\\project-hyle\\hyle",
+              "-B",
+              "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev",
+              "-DCMAKE_PROJECT_INCLUDE=C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g02\\native-page-node\\project.cmake",
+              "-DHYLE_COMPONENTS=compute;graph",
+              "-DHYLE_COMPUTE_ROUTES=cpu",
+              "-DHYLE_BUILD_TESTS=ON",
+              "-DHYLE_BUILD_BENCH=OFF",
+              "-DHYLE_INSTALL=OFF",
+              "-DHYLE_TEST_INSTRUMENTATION=OFF"
+            ],
+            "exit_code": 0,
+            "elapsed_seconds": 122.93800000002375,
+            "log": "C:/public/project-hyle/hyle/.scratch/inference-gaps/g06/common-source-1/configure.log"
+          },
+          {
+            "stage": "prepare-manifest",
+            "command": [
+              "ninja",
+              "-C",
+              "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev",
+              "build.ninja"
+            ],
+            "exit_code": 0,
+            "elapsed_seconds": 0.18699999997625127,
+            "log": "C:/public/project-hyle/hyle/.scratch/inference-gaps/g06/common-source-1/prepare-manifest.log"
+          }
+        ],
+        "old_failure_retained": true
+      },
+      "stage": "g04_encoded_pending_risks",
+      "outer_elapsed_seconds": 55.15700000000652,
+      "targets": [
+        "hyle_compute_provider_ggml_test",
+        "g04_g05_encoded_common_pages",
+        "g04_plain_pending_control",
+        "g04_encoded_pending_risks"
+      ],
+      "build_edges": 17
+    },
+    "tests": [
+      {
+        "target": "hyle_compute_provider_ggml_test",
+        "tests": 62,
+        "failures": 0,
+        "skipped": 0,
+        "testcases": [
+          "GgmlCpuProvider.NormsUseIndependentOracleAcrossStorageTypes",
+          "GgmlCpuProvider.GenericSwiGluRequiresStableTailCarrier",
+          "GgmlCpuProvider.MatureCausalConvUsesNaturalSequenceLayout",
+          "GgmlCpuProvider.MatureKdaPublishesScoresAndStateIndependently",
+          "GgmlCpuProvider.D5Qwen38GroupedHeadsUseMatureGatedDeltaNet",
+          "GgmlCpuProvider.MatureMoeAndHyperConnectionBatchUsesOrdinaryEntry",
+          "GgmlCpuProvider.MatureLightningIndexerUsesOrdinaryEntryAndReplays",
+          "GgmlCpuProvider.AdmittedUnarySpecialValuesAndHalfCastRounding",
+          "GgmlCpuProvider.GenericSigmoidRequiresStableTailCarrier",
+          "GgmlCpuProvider.OriginalFloatingCastPreservesAllSourceNaNStorageMappings",
+          "GgmlCpuProvider.DenseRankSixBroadcastStridedCopyConcatAndGather",
+          "GgmlCpuProvider.GatherAxesPreserveTypesAndValidateCurrentStridedIndices",
+          "GgmlCpuProvider.GatherEmptyIndicesNeedNoPayload",
+          "GgmlCpuProvider.ScatterAddUsesMatureDuplicateReductionAndChecksIndices",
+          "GgmlCpuProvider.ScatterAddWithEmptyIndicesCopiesTheBase",
+          "GgmlCpuProvider.ColumnBroadcastKeepsOperandOrder",
+          "GgmlCpuProvider.GeneralBroadcastPreservesHeadBatchAndOperandAxes",
+          "GgmlCpuProvider.SelectedReductionsCoverAllRankSixAxisSets",
+          "GgmlCpuProvider.EmptyReductionsPublishIdentitiesAndScalarValues",
+          "GgmlCpuProvider.PersistentIndependentSlotsHonorExecutorAndClose",
+          "GgmlCpuProvider.DeclinesUnqualifiedDomainsAndInvalidThreadBudget",
+          "GgmlCpuProvider.D5RouterSoftmaxUsesMatureRowsAndKeepsNarrowDomain",
+          "GgmlCpuProvider.InvocationAllocationFailureRollsBackAndCanRecover",
+          "GgmlCpuProvider.StandardScanHandlesAxisStridesAndCheckedOverflow",
+          "GgmlCpuProvider.StandardSelectionPreservesStableOrderAndStorageBits",
+          "GgmlCpuProvider.StandardScanReplaysWithoutAllocationsAndHonorsQuota",
+          "GgmlCpuProvider.StandardSelectionKeepsAdjacentLargeIntegersDistinct",
+          "GgmlCpuProvider.EmptyScanHasNoNativeEpisodeOrPayloadAccess",
+          "GgmlCpuProvider.MatureLinearRopeAndHadamardUseOrdinaryEntry",
+          "GgmlCpuProvider.Bfloat16AndFloatRopeMatchQualifiedUpstreamTypes",
+          "GgmlCpuProvider.ExplicitRopePreservesLongPositionPhaseAndPartialTail",
+          "GgmlCpuProvider.NativeQ4KMatMulImportsGgufBytesAndReplays",
+          "GgmlCpuProvider.NativeEmbeddingRowsUseTargetGgufFormatsAndCheckBounds",
+          "GgmlCpuProvider.RepresentativeNativeGgufFormatsExecuteWithoutRepacking",
+          "GgmlCpuProvider.NativeQ8GroupedExpertsUseExactExpertIds",
+          "GgmlCpuProvider.BfloatRouterMatMulRetainsNativeF32Score",
+          "GgmlCpuProvider.DenseBfloatGroupedExpertsUseNativeMulMatIdAndReplay",
+          "GgmlCpuProvider.MalformedNativeGgufFormatIsRejectedAtPrepare",
+          "GgmlCpuProvider.BatchedMatMulBroadcastsNativeTransposedWeightsWithoutCopy",
+          "GgmlCpuProvider.HalfMatMulCoversDecodeTailAndRankFourBroadcast",
+          "GgmlCpuProvider.MatureAttentionHandlesQwen35Head256GqaDecode",
+          "GgmlCpuProvider.MatureAttentionHandlesQwen38Head256GqaDecode",
+          "GgmlCpuProvider.MatureAttentionAppliesCausalMaskForHalfPrefill",
+          "GgmlCpuProvider.D5AbsorbedMlaColdShapeBoundary",
+          "GgmlCpuProvider.LayoutMatMulReplaysRowMajorAndBothBroadcastDirections",
+          "GgmlCpuProvider.ZeroContractedMatMulProducesIndependentZeros",
+          "GgmlCpuProvider.SoftmaxRestoresArbitraryAxesMasksAndUndefinedRows",
+          "GgmlCpuProvider.AttentionPreservesBothLayoutsAndIndependentValueDepth",
+          "GgmlCpuProvider.F32AttentionActualWidthsReplayAndLongKv",
+          "GgmlCpuProvider.ResidentCacheViewsIgnoreCapacityPaddingAndPreserveSources",
+          "GgmlCpuProvider.ResidentAttentionRejectsNoncontiguousDepthAndOverlappingRows",
+          "GgmlCpuProvider.PlainStorageCopyConcatPreservesAllScalarBitsAndStrides",
+          "GgmlCpuProvider.StorageCarrierDoesNotAdmitUnprovidedWideMath",
+          "GgmlCpuProvider.MatureReluPropagatesNanAcrossStorageStrideAliasAndReplay",
+          "GgmlCpuProvider.MatureReluKeepsOddParallelChunksAndReplay",
+          "GgmlCpuProvider.F32BatchMatMulKeepsBothLeadingBroadcastAxesAndDecodeTail",
+          "GgmlCpuProvider.F32BatchMatMulAdmitsLeftBroadcastThroughOriginalRepeat",
+          "GgmlCpuProvider.TransformerSoftmaxBroadcastScaleStorageUndefinedRowsAndReplay",
+          "GgmlCpuProvider.SoftmaxZeroScaleAndResidualContractsRemainExplicit",
+          "GgmlCpuProvider.MatureFillHasNoInputsAndPreservesExactStorageBits",
+          "GgmlCpuProvider.NoncausalAttentionUsesOriginalRegionForGroupedHeadsAndLongerQuery",
+          "GgmlCpuProvider.F32AttentionUndefinedRowsAndFreshReplayKeepTheContract"
+        ]
+      },
+      {
+        "target": "g04_g05_encoded_common_pages",
+        "tests": 25,
+        "failures": 0,
+        "skipped": 0,
+        "testcases": [
+          "EncodedCommonPages.TwoNativeAttentionNodesShareUploadBeforePreparation",
+          "EncodedCommonPages.IncrementalProducersDirectGraphAndJoint",
+          "EncodedCommonPages.FailedEncoderRetainsOriginalFailureAndWriters",
+          "EncodedCommonPages.BFloat16IncrementalAndFailureConsumers",
+          "GgmlCpuPaged.RuntimeQ1UsesOriginalDecodeSlotAcrossPagesAndTails",
+          "GgmlCpuPaged.OriginalFlashReadsExactPhysicalPagesAndTail",
+          "GgmlCpuPaged.DeltaMetadataMirrorMatchesIndependentFullWireAcrossGrowShrinkAndEmpty",
+          "GgmlCpuCacheEncode.Q8ReferenceBytesTiesZeroAndThreeInputTypes",
+          "GgmlCpuCacheEncode.Float8CodesMatchIndependentEnumerationIncludingRoundingAndSaturation",
+          "GgmlCpuCacheEncode.FiniteQ8ScaleBoundariesHaveCanonicalZeroBlocks",
+          "GgmlCpuCacheEncode.FiniteFloat8ExtremePositiveScalesSaturateAndPreserveZero",
+          "GgmlCpuCacheEncode.InvalidPayloadReturnsOriginalCompletionErrorAfterWorkersRetire",
+          "GgmlCpuCacheEncode.IndependentInvocationsAndFreshRecoveryAfterOriginalWorkersRetire",
+          "GgmlCpuCacheEncode.ConcurrentOriginalLanesKeepNumericFailureAndBytesIndependent",
+          "GgmlCpuBoxed.QuantizedPagedAndRaggedIndependentValueDepthAndWindow",
+          "GgmlCpuBoxed.QuantizedFullNoncausalAllowsMoreQueriesThanKeys",
+          "GgmlCpuBoxed.PlainWindowAndIndependentValueDepth",
+          "GgmlCpuBoxed.QuantizedCoupledDepthsIncludingMainD256AndLongPrefill",
+          "GgmlCpuBoxed.LongF16WindowUsesF32AccumulatorAgainstCancellation",
+          "GgmlCpuBoxed.FiniteBf16QueryScaleOverflowIsAnAcceptedErrorAndFreshSlotSucceeds",
+          "GgmlCpuBoxed.QuerySafetyChecksBothEndsAtRepresentationBoundaries",
+          "GgmlCpuRagged.NativeFlashReadsTwoRequestsWithoutKvMaterialization",
+          "GgmlCpuRagged.ColdBudgetAndPagedQualificationAreExplicit",
+          "GgmlCpuRagged.EveryColdAllocationFailureReleasesThePartialNativePlan",
+          "GgmlCpuRagged.AcceptedMathFailureRetiresUsesWithoutPublishingOutput"
+        ]
+      }
+    ],
+    "total_tests": 87,
+    "pending_risk_scenarios": 18,
+    "artifacts": [
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\hyle_compute_provider_ggml.dll",
+        "sha256": "2ed797b0360e27bfa212f95e71404a7f4ae0210e9073328820b4c8d0da986958",
+        "bytes": 464384
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\hyle_compute_provider_ggml_test.exe",
+        "sha256": "7c6ecb9a0f5b6a1d7a998af173a44a57d310a75e45e1cc70442789ce6e05e2ae",
+        "bytes": 2084352
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\g04_g05_encoded_common_pages.exe",
+        "sha256": "25e2b638e3fa982534207ea418d2295db493af5f48fc8dbca70a89c05d9a856d",
+        "bytes": 1155072
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\g04_plain_pending_control.exe",
+        "sha256": "b2014c56a9234138adaa841dd9547ed44cecbdaf5318af708b5164db554d260a",
+        "bytes": 53760
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\g04_encoded_pending_risks.exe",
+        "sha256": "ea6440fbcd40bed6cbe5d7441fda665c15a994499834082b5bd9485f89bc58b3",
+        "bytes": 53760
+      }
+    ]
+  },
+  "air": {
+    "execution": {
+      "state": "TERMINAL_PASS",
+      "pid": 6139,
+      "candidate": "bc3d8fadfb1c2139c3b7d12d3af00848fafa2bb3",
+      "identity": {
+        "model": "Mac16,12",
+        "cpu": "Apple M4",
+        "memory": "17179869184",
+        "arch": "arm64",
+        "os": "ProductName:\t\tmacOS\nProductVersion:\t\t27.0.1\nBuildVersion:\t\t26A434",
+        "compiler": "Apple clang version 21.0.0 (clang-2100.3.34.2)\nTarget: arm64-apple-darwin27.0.0\nThread model: posix\nInstalledDir: /Library/Developer/CommandLineTools/usr/bin",
+        "gpu": "Graphics/Displays:\n\n    Apple M4:\n\n      Chipset Model: Apple M4\n      Type: GPU\n      Bus: Built-In\n      Total Number of Cores: 8\n      Vendor: Apple (0x106b)\n      Metal Support: Metal 4\n      Displays:\n        Color LCD:\n          Display Type: Built-in Liquid Retina Display\n          Resolution: 2560 x 1664 Retina\n          Main Display: Yes\n          Mirror: Off\n          Online: Yes\n          Automatically Adjust Brightness: Yes\n          Display Asleep: Yes\n          Connection Type: Internal",
+        "cmake": "cmake version 4.3.4\n\nCMake suite maintained and supported by Kitware (kitware.com/cmake).",
+        "ninja": "1.13.2"
+      },
+      "max_jobs": 4,
+      "source": "/Users/kiro/hyle-scratch/compute-unified/source-c8874688",
+      "stages": [
+        {
+          "route": "apple",
+          "stage": "configure",
+          "command": [
+            "/opt/homebrew/bin/cmake",
+            "-S",
+            "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-parent",
+            "-B",
+            "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-build"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 4.175694792,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g06-cpu-q1-1/apple-configure.log"
+        },
+        {
+          "route": "apple",
+          "stage": "prepare-manifest",
+          "command": [
+            "/opt/homebrew/bin/ninja",
+            "-C",
+            "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-build",
+            "build.ninja"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 0.1134950839999993,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g06-cpu-q1-1/apple-prepare-manifest.log"
+        },
+        {
+          "route": "apple",
+          "stage": "build",
+          "command": [
+            "/opt/homebrew/bin/cmake",
+            "--build",
+            "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-build",
+            "--target",
+            "g06_cpu_q1",
+            "--parallel",
+            "4"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 6.319756917,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g06-cpu-q1-1/apple-build.log"
+        },
+        {
+          "route": "apple",
+          "stage": "g06_cpu_q1",
+          "command": [
+            "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-build/g06_cpu_q1"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 25.568223083999996,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g06-cpu-q1-1/apple-g06_cpu_q1.log"
+        },
+        {
+          "route": "vulkan",
+          "stage": "configure",
+          "command": [
+            "/opt/homebrew/bin/cmake",
+            "-S",
+            "/Users/kiro/hyle-scratch/compute-unified/a-cpu-vulkan/selected-graph/source-parent",
+            "-B",
+            "/Users/kiro/hyle-scratch/compute-unified/a-cpu-vulkan/selected-graph/source-build"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 18.621718124999994,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g06-cpu-q1-1/vulkan-configure.log"
+        },
+        {
+          "route": "vulkan",
+          "stage": "prepare-manifest",
+          "command": [
+            "/opt/homebrew/bin/ninja",
+            "-C",
+            "/Users/kiro/hyle-scratch/compute-unified/a-cpu-vulkan/selected-graph/source-build",
+            "build.ninja"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 0.07262683300000106,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g06-cpu-q1-1/vulkan-prepare-manifest.log"
+        },
+        {
+          "route": "vulkan",
+          "stage": "build",
+          "command": [
+            "/opt/homebrew/bin/cmake",
+            "--build",
+            "/Users/kiro/hyle-scratch/compute-unified/a-cpu-vulkan/selected-graph/source-build",
+            "--target",
+            "g06_cpu_q1",
+            "--parallel",
+            "4"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 6.206520292,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g06-cpu-q1-1/vulkan-build.log"
+        },
+        {
+          "route": "vulkan",
+          "stage": "g06_cpu_q1",
+          "command": [
+            "/Users/kiro/hyle-scratch/compute-unified/a-cpu-vulkan/selected-graph/source-build/g06_cpu_q1"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 26.303106959000004,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g06-cpu-q1-1/vulkan-g06_cpu_q1.log"
+        }
+      ],
+      "scope": "G06 D2 actual CPU Q1 runtime growth/reorder/source risk consumers under original mixed Apple/Vulkan core builds; not native GPU, SDK, san, P1 or aggregate G06 verdict",
+      "outer_elapsed_seconds": 87.837325083,
+      "synced_files": [
+        "src/compute_provider_ggml/ggml_cpu_provider.cc",
+        "src/compute_provider_ggml/native_batch.cc",
+        "src/compute_provider_ggml/native_batch.h",
+        "tests/compute_provider_ggml/native_paged_test.cc"
+      ],
+      "input_count": 2090,
+      "one_way_canonical_sync": true,
+      "route": "vulkan",
+      "stage": "g06_cpu_q1"
+    },
+    "tests_by_build": {
+      "cpu_apple": 25,
+      "cpu_vulkan": 25
+    },
+    "artifacts": [
+      {
+        "route": "apple",
+        "path": "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-build/g06_cpu_q1",
+        "bytes": 1083272,
+        "sha256": "ab1e001864693db67eb24396b02df0aa630e8484cc6b3726f0aa10989b5c8289"
+      },
+      {
+        "route": "apple",
+        "path": "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-build/hyle/src/compute_provider_ggml/libhyle_compute_provider_ggml.0.1.0.dylib",
+        "bytes": 736376,
+        "sha256": "5b0299a207a9467f29e56ca7e4e718aefcbf297e7c75f392dbc0d7b045866b2a"
+      },
+      {
+        "route": "vulkan",
+        "path": "/Users/kiro/hyle-scratch/compute-unified/a-cpu-vulkan/selected-graph/source-build/g06_cpu_q1",
+        "bytes": 1083272,
+        "sha256": "fe25217369beb4848bb06e353758fd2bfa6adb0687d0f33dbaf476e338ae8118"
+      },
+      {
+        "route": "vulkan",
+        "path": "/Users/kiro/hyle-scratch/compute-unified/a-cpu-vulkan/selected-graph/source-build/hyle/src/compute_provider_ggml/libhyle_compute_provider_ggml.0.1.0.dylib",
+        "bytes": 719864,
+        "sha256": "a99d1dab4b1c6d7e3436912be5236419133907b6eb911c0083c0df702b6a35b3"
+      }
+    ]
+  },
+  "source_inputs": [
+    {
+      "path": "src/compute_provider_ggml/ggml_cpu_provider.cc",
+      "sha256": "ee228d0fb284a1bece98c2db2d5d491e71d1721c1d91efd3ba7463e2353e995f"
+    },
+    {
+      "path": "src/compute_provider_ggml/native_batch.cc",
+      "sha256": "c4c01e3c54081517caeedb88e015158fc4f72ca30224efa9ac07009df62542b4"
+    },
+    {
+      "path": "src/compute_provider_ggml/native_batch.h",
+      "sha256": "e54f6041c041818b1ec81d6a0b327e1be450a881960efdb7edc7a17f3e5f0476"
+    },
+    {
+      "path": "tests/compute_provider_ggml/native_paged_test.cc",
+      "sha256": "a57422e51b5081f6727539cf816b731cceca37ccbea289b8de51e5660117d608"
+    }
+  ],
+  "input_manifest_sha256": "2e7a55407c1e85a9836442fdab5fa77aa3dcde6f4052f1f74fa92f8b0aca5341",
+  "raw_zip_sha256": "f7bd3b143ba4854230e9596a5b3acbc6faf962fd7cc4daa9944f6e87c8b40808",
+  "proven": [
+    "32 finite single/multi/type/plain-Q8/depth/window configurations each run64 independent numeric episodes. Length growth/shrink, shared/reordered IDs, page crossing, original long-KV512 split boundary and request join/end/empty middle are checked.",
+    "Stable Q topology reuses the original native graph/pool/scratch, with next injected allocation prohibited and unchanged float_workspace_bytes. Changed Q topology/request set genuinely replans. Old owning output still rejects reuse.",
+    "Current slot layout owns updated native I32 leaf spans; each cold Request separately owns its immutable initial recipe layout. Equal-content new snapshots refresh Q1 pointers before old owner replacement; general paged recipes retain the original leaf owner.",
+    "Only private paged Q1 causal zero masks are omitted. Original kernels, arithmetic, window/boxed flags, dispatch thresholds, ordinary attention masks and native workspace planning remain unchanged.",
+    "Unused physical page contains poison and remains independently writable; exact original page frames and actual completion gates remain. Original plain/encoded pending nine-scenario risk sets pass.",
+    "Windows provider ordinary62 tests and original native/common/Graph25 tests run without duplicate long native suites. Real Air mixed CPU-only work runs inside both CPU+Apple and CPU+Vulkan library configurations."
+  ],
+  "limits": [
+    "This is CPU runtime correctness/P0 source evidence, not native Apple/Vulkan GPU speed, CUDA/FI qualification, new P1 or full G06 acceptance.",
+    "No-injected-allocation assertions cover prepared update after caller-created immutable versions. Version creation still owns an active-sized snapshot and native/driver/private costs keep their original accounting limits.",
+    "Variable ragged extents, native Apple/Vulkan runtime lengths, FI Q1/capture and final san/header/relocated SDK remain required; no goal scope was reduced.",
+    "Original G04/G05 performance failures and UNKNOWN costs remain. No runtime/vendor/CMake/public ABI source changes, CUDA/P1/profile/model/server or global build.",
+    "Recorded stage and outer durations overlap. Packaging, launch and observation gaps without a captured stopwatch remain UNKNOWN rather than zero."
+  ]
+}
