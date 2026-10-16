@@ -93,10 +93,12 @@ TEST(VulkanTopK, FrozenExpertWidthsTailsAndStableRawOutputs) {
         ASSERT_TRUE(prepared) << prepared.error().message();
         ASSERT_EQ(prepared->output_descriptions().size(), 2U);
         const auto &plan = v::detail::Access::program(*prepared);
-        EXPECT_TRUE(
+        const bool managed_region =
             std::ranges::any_of(plan->dispatches, [](const auto &dispatch) {
               return static_cast<bool>(dispatch.region);
-            }));
+            });
+        EXPECT_EQ(managed_region, count != 1);
+        if (count == 1) EXPECT_EQ(plan->dispatches.size(), 2U);
         auto outputs = execute_all(*prepared, input);
         ASSERT_TRUE(outputs) << outputs.error().message();
         expect_pair(context, *outputs, reference(desc, raw, operation));

@@ -22,18 +22,27 @@ layout(binding = 5) buffer Output1 { uint data[]; } output1;
 shared uint pair_bits[128], pair_indices[128];
 shared float pair_mass[128];
 
+uint input_word(uint port, uint index) {
+  return port == 0 ? input0.data[index] : input1.data[index];
+}
+uint load_input(uint port, uint bytes, uint size) {
+  uint shift = (bytes & 3u) * 8u;
+  uint value = input_word(port, bytes / 4u) >> shift;
+  if (shift + size * 8u > 32u)
+    value |= input_word(port, bytes / 4u + 1u) << (32u - shift);
+  return size == 4u ? value : value & 65535u;
+}
 uvec4 row_random(uint row, uint block) {
-  uint at = origins.input1 / 4 + row * 4;
-  return philox(uvec4(block, 0, input1.data[at+2], input1.data[at+3]),
-                 uvec2(input1.data[at], input1.data[at+1]));
+  uint at = origins.input1 + row * 16u;
+  return philox(uvec4(block, 0, load_input(1, at+8u, 4), load_input(1, at+12u, 4)),
+                 uvec2(load_input(1, at, 4), load_input(1, at+4u, 4)));
 }
 float load_logit(uint index) {
   uint bytes = origins.input0 + index * (TYPE == 0 ? 4 : 2);
-  uint word = input0.data[bytes / 4];
+  uint word = load_input(0, bytes, TYPE == 0 ? 4 : 2);
   if (TYPE == 0) return uintBitsToFloat(word);
-  uint half_word = (word >> ((bytes & 2u) * 8)) & 65535u;
-  return TYPE == 1 ? unpackHalf2x16(half_word).x
-                    : uintBitsToFloat(half_word << 16);
+  return TYPE == 1 ? unpackHalf2x16(word).x
+                    : uintBitsToFloat(word << 16);
 }
 
 // Integer IEEE ordering keeps subnormals and source payloads outside native
@@ -84,9 +93,9 @@ void main() {
     if (index >= ROWS * blocks) return;
     uint row = index / blocks, column = index % blocks;
     // Raw words use input0; categorical uses input1 for the same identity.
-    uint at = origins.input0 / 4 + row * 4;
-    uvec4 value = philox(uvec4(column, 0, input0.data[at+2], input0.data[at+3]),
-                          uvec2(input0.data[at], input0.data[at+1]));
+    uint at = origins.input0 + row * 16u;
+    uvec4 value = philox(uvec4(column, 0, load_input(0, at+8u, 4), load_input(0, at+12u, 4)),
+                          uvec2(load_input(0, at, 4), load_input(0, at+4u, 4)));
     for (uint i = 0; i < 4 && column*4+i < WIDTH; ++i)
       output0.data[row*WIDTH+column*4+i] = value[i];
     return;
@@ -103,7 +112,7 @@ void main() {
          column < WIDTH && column < (chunk+1)*4096u; column += 128) {
       uint bits;
       if (MODE == 1) {
-        bits = input0.data[origins.input0/4 + row*WIDTH+column];
+        bits = load_input(0, origins.input0+(row*WIDTH+column)*4u, 4);
       } else {
         float value = load_logit(row*WIDTH+column);
         if (MODE == 3) {
@@ -111,7 +120,7 @@ void main() {
             atomicOr(status.data[0], 4u);
           bits = floatBitsToUint(value);
         } else {
-          float shifted = value - uintBitsToFloat(scratch.data[partials+row]);
+          precise float shifted = value - uintBitsToFloat(scratch.data[partials+row]);
           uvec4 words = row_random(row, column/2);
           uint position = (column % 2) * 2;
           bits = floatBitsToUint(shifted + gumbel(words[position], words[position+1]));
@@ -159,8 +168,9 @@ void main() {
   } else if (MODE == 6) {
     output0.data[row] = selected.y;
     if (LOG_PROBABILITY != 0) {
-      float shifted = load_logit(row*WIDTH+selected.y) - uintBitsToFloat(scratch.data[partials+row]);
-      output1.data[row] = floatBitsToUint(shifted - log(pair_mass[0]));
+      precise float shifted = load_logit(row*WIDTH+selected.y) - uintBitsToFloat(scratch.data[partials+row]);
+      precise float result = shifted - log(pair_mass[0]);
+      output1.data[row] = floatBitsToUint(result);
     }
   }
 }

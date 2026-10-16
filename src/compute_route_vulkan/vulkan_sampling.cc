@@ -86,7 +86,9 @@ Status lower_sampling(ProgramState &program, const PlanStep &step) noexcept try 
     program.aliases.push_back({id, 0});
     return id;
   };
-  auto scratch = step.inputs[0]; // Raw bits need no temporary value.
+  // Unused raw-word bindings still need an aligned descriptor. Reuse the
+  // output owner rather than restricting a valid unaligned identity View.
+  auto scratch = step.outputs[0]; // Raw bits need no temporary value.
   if (scratch_words) {
     HYLE_ASSIGN_OR_RETURN(auto description, TensorDesc::dense(DataType::kUInt32,
         std::array<std::int64_t, 1>{static_cast<std::int64_t>(scratch_words)}));

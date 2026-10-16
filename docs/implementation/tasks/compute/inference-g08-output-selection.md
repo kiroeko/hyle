@@ -386,3 +386,17 @@ owning完成/5%门；普通有限normal logits让旧版也满足同一oracle，�
 下一Vulkan普通批补原native View输入byte origin1/3/17（旧公开typed carrier可消费）
 到TopK1、raw U32与三categorical dtype；Graph用原View producer保留origin，
 不由Copy物化掩盖Direct/Graph消费差异。仅是原S1/S2/S3有限dense/stride合同测试。
+
+Vulkan v1新origin测试括号错误已修，v2产品/测试全部完成编译。Air原外置validation
+layer目录已不存在，原带validation的失败保留；v3明确关闭该环境选项只签普通数值，
+不签validation风险。补原compute_route_vulkan计划中Categorical双输出白名单，与已冻结
+Graph接线一致，不改变SSA/outputs/status机制。v3 TopK数值与raw PASS，实际设备数学
+1048772对PASS(maxabs3.72330296e-6)、CPU+Vulkan 24-byte joint65步PASS。
+
+v4定位F32大offset score：row12选中值=max=1025.25，独立F64期望-1.832462711928077，
+实际-1.83251953；按原tensor.comp数值做法以precise固定shifted与最终减法，不放宽门。
+byte1原native View在未用raw scratch descriptor上被拒绝：改复用已拥有aligned输出作
+未用binding，不新增scratch；shader按原tensor load_bytes方法读取跨word的U32/窄float，
+仍使用原byte-origin push常量与descriptor。原17项TopK留出16项PASS，唯一失败仅要求
+所有count走旧managed region；count1改验原新两dispatch，所有原独立bits断言保留。
+这些属于原AUDITED S1–S4有限实现纠错；未进入CANDIDATE或启动P1。
