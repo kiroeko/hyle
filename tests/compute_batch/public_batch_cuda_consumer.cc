@@ -105,6 +105,7 @@ Status exercise(bool paged, bool bf16) {
       qptr, kvptr, paged ? std::span(ids) : std::span<const std::int32_t>{},
       paged ? std::span(tails) : std::span<const std::int32_t>{}}));
   const c::BatchProgramOptions options{
+      .resource={},
       .max_float_workspace_bytes = 8u << 20, .max_int_workspace_bytes = 64u << 10,
       .max_invocations = 2, .scale = 1.f / std::sqrt(float(depth))};
   HYLE_ASSIGN_OR_RETURN(auto wrapped, gb::provider(c::flashinfer::provider(), schema, options));

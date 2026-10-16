@@ -19,6 +19,7 @@ Status hybrid_paged(bool bf16) {
   HYLE_ASSIGN_OR_RETURN(auto schema,c::BatchSchema::create(cap));
   HYLE_ASSIGN_OR_RETURN(auto cpu,g::cpu::create_context());
   const c::BatchProgramOptions options{
+      .resource={},
       .max_float_workspace_bytes=8u<<20,.max_int_workspace_bytes=64u<<10,
       .max_invocations=2,.scale=1.f/std::sqrt(float(depth))};
   HYLE_ASSIGN_OR_RETURN(auto wrapped,gb::provider(c::flashinfer::provider(),schema,options));
@@ -35,7 +36,6 @@ Status hybrid_paged(bool bf16) {
   const std::array<std::int32_t,3> ids{0,1,2},reordered{2,1,0};
   HYLE_ASSIGN_OR_RETURN(auto initial,schema.version({qptr,kvptr,ids,tails}));
   HYLE_ASSIGN_OR_RETURN(auto next,schema.version({qptr,kvptr,reordered,tails}));
-  HYLE_ASSIGN_OR_RETURN(auto qdesc,c::TensorDesc::dense(cap.query_type,std::array<std::int64_t,3>{3,heads,depth}));
   HYLE_ASSIGN_OR_RETURN(auto xdesc,c::TensorDesc::dense(c::DataType::kFloat32,std::array<std::int64_t,3>{3,heads,depth}));
   HYLE_ASSIGN_OR_RETURN(auto scale_desc,c::TensorDesc::dense(c::DataType::kFloat32,std::array<std::int64_t,1>{depth}));
   HYLE_ASSIGN_OR_RETURN(auto kvdesc,c::TensorDesc::dense(cap.query_type,std::array<std::int64_t,4>{4,page,kv_heads,depth}));
