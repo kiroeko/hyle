@@ -92,6 +92,9 @@ KV和请求循环。CPU+CUDA使用`hyle/graph/cpu_cuda.h`；CPU+MLX/Metal使用
 冷准备建立有限依赖表与每slot状态。实际阶段可并行时，每次submit最多增加一个原Sched CPU
 coarse fiber；活动依赖完全成链时使用inline路径。边界repack/复制和必要native观察继续计费，
 Apple共享内存复制仍是原同步调用，provider-private/UMA未知成本不变成0。
+依赖表有界不代表总观察成本线性：Apple/Vulkan会重复扫描在途native工作，CUDA重试会重新检查
+segment依赖；实际费用随片段数、依赖和设备延迟变化。prepare_replay与ResourceReport也可能
+分配或枚举原资源，不能据此假定整个联合调用零分配。
 取消或首错停止新入场；已经接收的CPU与native工作按原完成合同退休。结果与借用资源须保活至真实
 退休；全部公开owner释放后，用原Scheduler的drain观察回调尾部和最终物理回收。
 

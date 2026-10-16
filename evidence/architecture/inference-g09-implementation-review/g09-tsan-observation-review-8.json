@@ -1,0 +1,187 @@
+{
+  "schema": "hyle.finite-readonly-review.v1",
+  "scope": "G09 CUDA host TSan three concrete reports only; no product edit, build, test, hardware run, suppressions or new scan",
+  "reviewed_at_utc": "2026-10-16T23:20:27.226197+00:00",
+  "decision": "SOURCE_EXPLAINS_ALL_THREE_AS_EXISTING_FINAL_ACQUIRE_FENCE_OBSERVATION_BOUNDARY; CURRENT_TSAN_REMAINS_FAIL_PENDING_ONE_EXISTING_MODEL_RECHECK",
+  "new_product_must_found": [],
+  "identity": {
+    "product_commit": "e09f30925c6dba5cf4540669fd3b4874f45bb158",
+    "validation_head": "3524413272cb52d06af5e64d634edbfef09b9864",
+    "validation_tree": "c1e52cd0b4061706bbbfca7ad6fa575ea2d5d238",
+    "wsl_source": "/root/hyle-scratch/compute-unified/source-7a7b4c3b",
+    "compiler": "g++-14 (Ubuntu 14.2.0-4ubuntu2~24.04.1) 14.2.0",
+    "source_sha256": {
+      "include/hyle/util/ref_counted.h": "47cc650a3bb704ace90bd718fc3e8f0b9d10485a32009551e3e7f456d9f5b5d6",
+      "src/compute/result.cc": "9e974aa39ff14d064902ed37525bba8363332ffe702bb0a0f4a2cfee83cf289c",
+      "src/graph/plan_state.h": "4f4388b8098fd6b85305fed8133d333ab779fe491403113f86ecd177bd9418fe",
+      "src/graph/executable.cc": "a8110f7234c5d8a8b48b3c99299b2e8f86f72c0b33134eaa962584b81d3a6aca",
+      "src/graph_route_cpu_cuda/invocation.cc": "fe2fe21832261a8869ef67a6a3228585be5b405e5d0b9c656670e8d4686e4604",
+      "tests/graph/aggregate_native_retirement_test.cc": "54fab08437757ea6eda760ee59be354ef0e969cc156ae1b0698bc0beb71d7451",
+      "tests/graph/cpu_cuda_contracts.cc": "48428d68a56fc603cdc6c4bcbbb0ba4e916b124d5b94b73e62c73e629b662ad1",
+      "tests/graph/cpu_cuda_pipeline.cc": "949cab23ebdfdc6d99fd08f93b6cafe434d069ce2d91c5d9beff9aeaaa1bea8c"
+    },
+    "wsl_source_identity": "Read-only sha256sum verified the same bytes for all eight listed files, including the original unmodeled util header; three current WSL binaries independently rehashed and matched result.json",
+    "binary_sha256": {
+      "g09_retirement": "0eecd5382787fe6a7c34a143812b6de6e01e3dcc59478ccf26a89c69d67945da",
+      "g09_contracts": "ad2911c490ffc54dc80e9612dd78063960c20d1306ba3fe20bc24a88ddd2777f",
+      "g09_pipeline": "9ef209f553b35a43555d492859f086258605a19f3ba7b6554e5974b2335d7ac2"
+    }
+  },
+  "common_hb": {
+    "source": "include/hyle/util/ref_counted.h:47-68,136-161",
+    "ownership": "Each new reference is derived from an existing live reference; intermediate drops perform atomic release fetch_sub. Final fetch_sub reads the release sequence, then the original acquire fence precedes destructor/free. This is the reclamation HB; public completion observation alone need not join a worker tail. No non-final drop may touch the object afterwards unless another explicitly retained reference protects the access.",
+    "detector_boundary": "GCC TSan does not implement standalone atomic_thread_fence HB. All reported previous atomic32 RMWs use release order, and the observed final destruction is preceded by the original final acquire fence. This source-specific classification is not a TSan runtime PASS."
+  },
+  "reports": [
+    {
+      "target": "g09_retirement",
+      "original_exit": 66,
+      "address": "0x7fff60150080",
+      "free": "T7 CUDA reaper -> finish_abandoned -> retained_release -> aggregate_child_release -> InvocationState::destroy -> release PlanState -> PlanState destructor -> shared SignatureState final decrement/acquire fence/free",
+      "previous_access": "main CompileReport destructor -> ReportState final destruction -> its SpecializationSignature member decrement",
+      "actual_object": "SignatureState, NOT ReportState itself. PlanState::specialization and ReportState::specialization own the same immutable refcounted signature.",
+      "source_anchors": [
+        "src/graph/plan_state.h:604-629,797,878,926-955",
+        "src/graph/executable.cc:82-89,203-213,6126,6391-6423,6490",
+        "tests/graph/aggregate_native_retirement_test.cc:125-127,152-188"
+      ],
+      "binary_proof": {
+        "build_id": "95bc49db27a01dded7b8aa6c33a0d15af6ae7ace",
+        "previous": "0x10fc16-0x10fc27: read member at ReportState+0x1db0; atomic32 release fetch_sub on that pointee, nested inside ReportState::decref destructor",
+        "final": "0x10be63: load PlanState+0x4120; 0x10be88 atomic32 release fetch_sub; old==1 branches to 0x10e070 acquire fence; 0x10e101-0x10e10e free(sizeof0xd0), matching SignatureState layout/owner",
+        "method": "Read-only objdump -d -C of original matching binary; no rebuild or execution"
+      },
+      "hb": "Report member signature decrement releases its reference; invocation/plan signature reference remains protected through native reaper retention. Its final release RMW plus original acquire fence orders both owners before SignatureState destruction. No shared report mutation/early native retirement is alleged by this warning.",
+      "classification": "EXACT_EXISTING_REFCOUNT_FENCE_PATTERN; RECHECK_REQUIRED"
+    },
+    {
+      "target": "g09_contracts",
+      "original_exit": 66,
+      "address": "0x7ffe60251e00",
+      "free": "main release_result -> ResultStorage payload destroy lambda -> Results::~Results -> RunState final decrement/acquire fence -> AllocationBudget::free -> mimalloc",
+      "previous_access": "T15 drive tail atomic release decrement of its scheduler-held RunState reference",
+      "actual_object": "graph::cpu_cuda::detail::RunState, retained separately by public completion, Results payload, Invocation owner and scheduler root/optional child",
+      "source_anchors": [
+        "src/graph_route_cpu_cuda/invocation.cc:55-111,224-248,283-303,363-369,552-574,803-835",
+        "src/compute/result.cc:24-36,74-76",
+        "tests/graph/cpu_cuda_contracts.cc:33-48,310-333"
+      ],
+      "binary_proof": {
+        "build_id": "8b2fd25d77022e7f79b20b2f43658b0aadadfe6a",
+        "previous": "0x21a47b-0x21a489: release-order atomic32 fetch_sub in drive tail",
+        "free": "0x2267c7-0x2267d1: allocator free sizeof0x4f8, matching RunState, in ResultSlot<Results> payload destructor"
+      },
+      "hb": "Worker protects run through cursor retirement, publish_terminal, lifetime callbacks and running=false; its last access is decref at line554. Main final payload release reads the refcount release sequence and performs final acquire fence before free. cpu_stopped handoff remains mutex-protected while root owns a separate live reference. No post-drop RunState access appears in this report.",
+      "classification": "EXACT_EXISTING_REFCOUNT_FENCE_PATTERN; RECHECK_REQUIRED"
+    },
+    {
+      "target": "g09_pipeline",
+      "original_exit": 66,
+      "address": "0x7ffe60240300",
+      "free": "T290 publish_terminal -> abandoned.release -> publish_result retention release lambda -> ResultStorage final decrement/acquire fence -> allocator free",
+      "previous_access": "main Invocation move assignment/destruction -> ResultSlot release_result release decrement during pending-result/Invocation abandon",
+      "actual_object": "compute::detail::ResultStorage, not a separate publication refcount/fence",
+      "source_anchors": [
+        "src/compute/result.cc:14-36,69-76,83-102,117-134",
+        "src/graph_route_cpu_cuda/invocation.cc:224-248,283-303,584-591,803-835",
+        "tests/graph/cpu_cuda_pipeline.cc:200-207"
+      ],
+      "binary_proof": {
+        "build_id": "29483087a91153a7e9a3a1d5bcb0170214794988",
+        "previous": "0x446cf30-0x446cf41: release_result release-order atomic32 fetch_sub directly on ResultStorage counter",
+        "free": "publish_result release-lambda 0x446cc53-0x446cc55 invokes stored allocator after original final-decrement/acquire-fence path"
+      },
+      "hb": "publish_result increments ResultStorage before handing its retention to the actual Completion. Main dropping result/slot cannot free it while that retention remains. Completion abandonment hands the lifetime to run.abandoned under retirement_mutex; worker consumes it at actual terminal. Its final decrement acquires all prior counter releases before clear_payload/free. busy.store(false,release) is a separate result-admission flag, not the reclamation mechanism.",
+      "classification": "EXACT_EXISTING_REFCOUNT_FENCE_PATTERN; RECHECK_REQUIRED"
+    }
+  ],
+  "existing_model": {
+    "archive": ".scratch/inference-gaps/g02/refcount-fence-probe/evidence.zip",
+    "member": "tsan-headers/hyle/util/ref_counted.h",
+    "original_header_sha256": "47cc650a3bb704ace90bd718fc3e8f0b9d10485a32009551e3e7f456d9f5b5d6",
+    "model_header_sha256": "2b90ab655a49ec3b9158a964872cd1fc3395ebf64d8ae430a2e19c4805bf5416",
+    "air_g08_recorded_sha_matches": true,
+    "exact_change": "Only include sanitizer/tsan_interface.h; make acquire_before_destroy a const member; after the unchanged final acquire fence call __tsan_acquire on this same atomic counter; call the member only at old==1/old==n. No release annotation/intermediate HB, order/layout/API/payload changes or suppressions.",
+    "prior_evidence": "R4 WSL independent no-HYLE two-thread 32-lifetime original fence FAIL, final acquire-load/acq_rel controls PASS. G02 Air independent two/three refs/2 producers original FAIL; final-only existing model PASS256. G02 and G08 actual Air host consumers use this exact model SHA. G06/G08 WSL earlier PASS is not evidence the current three new paths were modeled.",
+    "portability": "Same header bytes and sanitizer public interface can be reused in the disposable WSL validation copy. Existing Air result does not prove the GCC current run will pass; make one finite actual observation recheck, no new model."
+  },
+  "recheck_boundary": {
+    "required": true,
+    "minimum": "Original three full failing executables, same product/source/toolchain/config, original halt_on_error=1/report_thread_leaks=0; preserve the original FAIL/log/time. Existing seven-target batch may be reused as one observation attempt; no new shapes or stress loops.",
+    "compile_scope": "Apply the exact model before canonical include resolution in validation only. Must rebuild actual product final-drop sites result.cc (hyle_compute), executable.cc (hyle_graph, including PlanState/SignatureState), invocation.cc (hyle_graph_route_cpu_cuda, including RunState/ResultSlot payload), and consumers/dependent host TUs that instantiate the same inline RefCounted types. Fixture-only include flags are insufficient. Verify actual compile/dependency selection and linked object selection rather than treating a header on disk as coverage.",
+    "old_dependencies": "Unrebuilt archives retain their original TSan instrumentation/model state and cannot be signed as fully modeled. The unchanged imported ggml-cuda archive does not implement these three HYLE counter/final-drop sites, so these reports do not force its rebuild. No device/driver/foreign callback HB is added by this refcount model; fresh warnings at other sites remain separate facts. Avoid mixing differing inline model bodies for the same instantiated final-drop types across actual linked host TUs.",
+    "stop": "If one modeled batch reports a different access pattern, preserve it and inspect only that concrete report; do not add broad suppressions or infer universal race freedom. Current source review signs ownership/HB rationale, not runtime completion."
+  },
+  "input_sha256": {
+    ".scratch/inference-gaps/g09-cuda-host-tsan-1/result.json": "02d14ea6a9fa7ab77e9e3888f8752eafc15a057daf0f693e1be503cbfeb6d286",
+    ".scratch/inference-gaps/g09-cuda-host-tsan-1/g09_retirement.log": "e5ef3a665b81bd6af69d5bc15a2484d0d7590285bec1c6b851a9d76766bb9efc",
+    ".scratch/inference-gaps/g09-cuda-host-tsan-1/g09_contracts.log": "f07769299aab4229e0042b221e13861ca007d641c4df78dce0ea54b14b50faf1",
+    ".scratch/inference-gaps/g09-cuda-host-tsan-1/g09_pipeline.log": "2996e191db58b32e738421d7bd800a0472f56415777dd583ae4453053b79c793",
+    ".scratch/inference-gaps/g09-cuda-host-tsan-1/targets.cmake": "fa68f19d7915bbe60b538edaed1f6dc3ef1407be115cdd662de7a0dc30043630",
+    ".scratch/inference-gaps/g09-cuda-host-tsan-1/instrumented-inputs.json": "8dbeb25cefcc66e8b6aca497392f8793d2e7ec289ffd584561f1c80accf6a492",
+    "evidence/correctness/inference-g09-cuda-host-risk-checkpoint/receipt.json": "be44fa93388b10b1168162392e5b0d3687fd73c1c361e3372d1ebe6136dbe4a4",
+    "evidence/correctness/inference-g02-native-page-joint-host-sanitizers/receipt.json": "d710cd6b85f37660ba923bcfbf051aea2c9293dfc7a9e902c508158fd645d3f1",
+    ".scratch/inference-gaps/g02/refcount-fence-probe/evidence.zip": "887b5456b41126efd64db2dcdb4d1bba8000637a9f94e7f030758ecb5a101913",
+    "evidence/correctness/cuda-r4-host-qualification/summary.json": "e90dd1f0d1ead7314319165294bde9a54cbeec545021befdc5904f677d550739",
+    "evidence/correctness/cuda-r4-host-qualification/wsl-raw.tar.gz": "cc209fb286dc079988c2353f186f1f3c86bc47b023682b1934a8f68639d23849",
+    ".scratch/inference-gaps/g06/final-host-tsan-4/result.json": "533e7733c2117f0ba397f1c6c192cb81cad4f0036aa7d2a7775e9c649f5b3903",
+    "evidence/correctness/inference-g08-air-host-facets/receipt.json": "e05e32eb887caae1759d929cde7839fc8d45cdd1c7f6ee5b2c4dd76678730322"
+  },
+  "limits": [
+    "No TSan warnings are suppressed or relabeled PASS in the original receipt. halt_on_error stopped each target at its first warning; later paths remain unobserved until the finite recheck.",
+    "No shader/driver/private allocator/leak SDK or P1 certificate. No product refcount algorithm change is warranted by these three reports."
+  ],
+  "air_weight_callback_narrow_addendum": {
+    "scope": "Only original WeightSlots upload callback publication and existing model/header selection. No new model, suppression, product change or runtime run.",
+    "decision": "EXISTING_METAL_CPP_MODEL_IS_PRESENT_AND_FIRST_BUT_DOES_NOT_COVER_THIS_NATIVE_OBJECTIVE_C_SELECTOR_ENTRY; NOT_A_MISSING_INCLUDE_FIX",
+    "source": "src/compute_route_apple/apple_weights.mm:3,330-359",
+    "source_sha256": "c15e7514bf7b509c19a94c7500d68ae42743388ad6664d117877594291016d6f",
+    "canonical_and_actual_source_match": true,
+    "report": {
+      "log": "/Users/kiro/hyle-scratch/compute-unified/g09-apple-host-tsan-1/g09_contracts.log",
+      "sha256": "18d2207a67df4b1af0beccf2ffff0c5ac87b803a9b527ec316d889e44cff73a5",
+      "read_address": "0x00010bcb7830",
+      "allocation_base": "0x00010bcb7800",
+      "allocation_bytes": 64,
+      "reader": "GCD T2 MTLDispatchListApply -> WeightSlots::upload block invocation +0x10032b888",
+      "previous_writer": "main __Block_byref_object_copy_.22 +0x10032b7ac -> _Block_object_assign -> _call_copy_helpers_excp",
+      "actual_binary_sha256": "7657f0e5ec780b9b9bdb244a9a786864cb637121e85f40859e642627c9c28a3e",
+      "result": "Original actual contracts exit -6, preserved. Other four original targets completed exit0; not recertified by this read-only audit."
+    },
+    "actual_entry": "apple_weights.mm imports <Metal/Metal.h>, registers [command addCompletedHandler:^(id<MTLCommandBuffer> completed){...}] capturing __block backing/progress, then [command commit]. Neither call enters MTL::CommandBuffer C++ inline wrappers.",
+    "existing_model": {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-host-sanitizers/metal-tsan-08f74cff0c0143c5/Metal/MTLCommandBuffer.hpp",
+      "sha256": "4a58c6e564e3a7efcdf5c7709eeee99ec7b7c40594e2ada5ec5c91012171d504",
+      "coverage": "C++ HandlerFunction overload:288-291 acquires original CommandBuffer before reading captured function; C++ commit:320-323 releases same CommandBuffer before native commit. Does not intercept direct ObjC selector or the direct C++ block overload:283-285.",
+      "old_g01_path": "/Users/kiro/hyle-scratch/compute-unified/g01-metal-callback-tsan-probe/tsan-metal-cpp/Metal/MTLCommandBuffer.hpp",
+      "old_g01_actual_sha256": "4a58c6e564e3a7efcdf5c7709eeee99ec7b7c40594e2ada5ec5c91012171d504",
+      "shadowing": "Current build.ninja apple_weights.mm object INCLUDES starts G04 model, then G02 refcount model, then G01 model. Both Metal headers byte-identical; no older differing header selected explanation."
+    },
+    "actual_tu": {
+      "object": "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-apple-tsan/build/hyle/src/compute_route_apple/CMakeFiles/hyle_compute_route_apple.dir/apple_weights.mm.o",
+      "sha256": "1af81fd9e37a7e6c8d2b3a37842ac8358c6ddea32b632b98bb6fe13315e8ba69",
+      "flags": "OBJCXX Release -O3 -DNDEBUG -std=c++23 -arch arm64 -fsanitize=thread, HYLE_DETAIL_SANITIZER_THREAD=1",
+      "deps": "Read-only ninja -t deps reports 1819 VALID deps; no MTLCommandBuffer.hpp or hyle/util/ref_counted.h entry. Merely listing model include directories does not insert an annotation into this ObjC block.",
+      "parent_cmake_sha256": "6e7bd60a1ea71db91d956d3d264e498020ba6084afa7a542e963fc4a4514057b",
+      "compile_db_limit": "Root compile_commands.json currently lists174 CXX entries and omits this OBJCXX TU; actual build.ninja and recorded ninja deps were inspected instead."
+    },
+    "judgment": "This specific byref copy -> external completion read has a native publication edge in the normal Metal execution contract, but no corresponding annotation in the existing C++-only model at this actual entry. Source/log do not establish a new G09 ownership violation. Cannot use the existing model receipt to sign this warning away, and cannot claim an unchanged header-path fix will cover it. Any narrow explicit ObjC external publication model would be an additional validation model, outside this read-only mandate; stop here and preserve this precise boundary.",
+    "remote_result_sha256": "38b0831f10e0e1fa73bd7ba460667251f95b49d07449acec424e1ec45654bf05",
+    "baseline_equality": {
+      "baseline": "9e2f25c469634a6f723e76eaf1aa2db5973bca9a",
+      "path": "src/compute_route_apple/apple_weights.mm",
+      "baseline_sha256": "c15e7514bf7b509c19a94c7500d68ae42743388ad6664d117877594291016d6f",
+      "canonical_sha256": "c15e7514bf7b509c19a94c7500d68ae42743388ad6664d117877594291016d6f",
+      "actual_air_source_sha256": "c15e7514bf7b509c19a94c7500d68ae42743388ad6664d117877594291016d6f",
+      "exact_bytes_equal": true,
+      "method": "Read-only git show baseline:path bytes compared with canonical bytes; actual Air file independently SHA hashed."
+    },
+    "changed_owner_vs_old_leaf": {
+      "relationship": "The reported heap byref promotion/copy and first callback capture read occur entirely in unchanged WeightSlots::upload + external Metal block dispatch. G09 contracts naturally exercises this old leaf while validating the hybrid owner; the new pipeline driver does not publish or copy this Objective-C block. This is a concrete uncovered external publication edge, not evidence that new G09 mailbox/frontier/refcount code races.",
+      "actually_observed_pass": "Same actual Air TSan batch common/executable exit0; g09_pipeline exit0 with all five two-slot/65-step oracle+cancel/close scenarios (cpu/gpu insertion order x workers1/2 plus native-input GPU-first); g09_pending exit0 with F16/BF16 two cold variants and two slots, original required CPU fragments and actual encoded pending page consumption. These are finite changed-owner host observations under the recorded existing models.",
+      "pipeline_log_sha256": "61586604c84f8e50d1d74a9d1d3f349c28252d403f7a714e1650acef2615ff1a",
+      "pending_log_sha256": "c3c9c30054a535ca67963bfab4d15a3e8e07c7d1c60418c74597cbb477e2d3c4",
+      "not_signed": "g09_contracts process remains FAIL/-6; no PASS for original WeightSlots Objective-C external completion-publication edge, no whole-process/all-Apple race-free verdict, no new model/tool work within this task."
+    }
+  }
+}

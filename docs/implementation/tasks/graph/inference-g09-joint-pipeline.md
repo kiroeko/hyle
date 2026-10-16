@@ -70,7 +70,8 @@ cursor的next/pending/tail、aggregate、phase/exclusive与最终退休不可并
 新增冷依赖投影/frontier准备为O(V+E)，每slot状态O(F+I+E)，空间经原metadata allocator/budget计费；
 不每op创建task/fiber，不新增OS线程。并发图每次submit至多一个额外原Sched detached driver及其
 原pool stack，原Sched allocation/admission失败须转Status；严格串行图没有该额外driver。
-warm只做已准备的依赖计数/就绪队列/短发布，原copy、必要wait、native私有费用仍单独记账。
+warm frontier使用已准备的依赖计数/就绪队列/短发布；反复pending观察不受该线性界约束，
+原copy、必要wait、native私有费用仍单独记账。
 不能预先承诺所有provider零分配或所有硬件物理copy/compute并发。
 
 固定新增验证入口：common `hyle_graph_test` 的`NativePartition.*`/`JointPipeline.*`有限filters；
@@ -255,7 +256,40 @@ Windows用实际10MHz QPC域，Air用实际MONOTONIC_RAW ns域。逐replay保存
 未启动build；修正后只重编两个夹具C++对象，无CUDA或shader重编。Windows同树累计
 142.510秒包含原135.484秒及预检拒绝；Air30.696秒。没有产品源码改动或新的聚合gate PASS。
 
-下一步限于本卡剩余验收：原G02/G03/G06直接消费、适用host/device风险、
-三交付/公开头、P0完整账；candidate固定后按预声明
+### Host风险与P0成本账检查点，2026-10-17
+
+[WSL CUDA原始记录](../../../../evidence/correctness/inference-g09-cuda-host-risk-checkpoint/receipt.json)
+中ASan、UBSan各通过61项common、289项原Graph executable和4项native-retirement执行；
+HYLE_TESTING-only的accepted-observation拒绝故障分支此次确实编译并运行。另有原contracts、
+双slot/65步/取消move/drop流水及原G06 hybrid paged/pending receiver消费者均PASS。
+组间有重叠，354是每个配置的执行次数，不是唯一测试数。复用身份匹配的原native CUDA archive，
+只增量编译host C++与消费者，不用这一scratch配置代签完整SDK或设备instrumentation。
+
+TSan运行了同七组：common、executable和两个G06消费者PASS；retirement、contracts、pipeline
+各报一条销毁/deallocate与先前atomic引用释放的竞争，原退出66和完整栈保留。首次WSL配置没有
+编入单独的既有refcount acquire-fence观测模型；仍须逐条核对实际owner/HB并作有限复测，
+不能仅凭已有工具限制判PASS。三配置累计608.510秒，包含这次TSan失败，不重置成本。
+该记录未裁决全部host风险、Metal/Vulkan validation、CUDA device tools、交付或P1。
+
+[Air Apple原始记录](../../../../evidence/correctness/inference-g09-apple-host-risk-checkpoint/receipt.json)
+中ASan、UBSan各通过61项common与285项executable，以及原contracts、新流水5场景和原G06
+pending联合消费者。TSan中common/executable、新流水5场景与G06 pending也PASS；原contracts
+进程在未变`src/compute_route_apple/apple_weights.mm:345`直接Objective-C Metal回调的byref发布处
+报告竞争，该进程不能记PASS。原Metal-cpp模型只覆盖C++ wrapper，增加同一header路径无法覆盖
+这一selector；不在本卡内顺手扩建模型。三配置累计185.846秒，原失败、身份和实际覆盖均保留。
+[逐报源码/二进制复核](../../../../evidence/architecture/inference-g09-implementation-review/g09-tsan-observation-review-8.json)
+确认WSL三报分别对应原SignatureState、RunState、ResultStorage末减引用fence，仍需既有模型复测；
+Air回调源码与G09 baseline完全相同，现有模型的边界明确。局部PASS不代签这些待裁决边。
+
+[独立有限P0账](../../../../evidence/architecture/inference-g09-implementation-review/g09-p0-cost-review-7.json)
+已复核14份产品源码身份；仅frontier/CSR与具名依赖投影具有所列线性界，每slot metadata有界。
+Apple/Vulkan在每次新native入场前扫描现有pending：若N个ready任务持续pending，仅入场阶段就可能
+发生N(N−1)/2次重复观察，随后轮询次数还取决于实际延迟。CUDA重试逐次重扫segment依赖，成本含
+Σ(retry次数×该段indegree)。这些成本不被O(V+E)冷准备或原1ms等待抹掉。
+prepare_replay、原复制、Sched fiber/唤醒、native私有资源与真实退休另计；ResourceReport本身可能
+分配临时scratch并排序去重，ReplayReport不是实际poll/kernel/时间线计数。没有发现本轮新增
+具体MUST；不以成本结构单独授权改产品或更换P1形状，实际性能仍按固定合同待测。
+
+下一步限于本卡剩余验收：其余适用host/device风险、三交付/公开头；candidate固定后按预声明
 两自然形状与必要串行holdout，先独立artifact/text预检，再正式P1，最后终审/LOC。
 尚未完成的门均待证；不追加缺口穷尽调研，不提前推进G10，不重跑已接受G01–G08数学/P1。

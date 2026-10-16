@@ -1,0 +1,239 @@
+{
+  "scope": "G09 J-F5/P0 finite source cost ledger only; no new capabilities/shapes or reopening of closed leaf modules.",
+  "product_baseline": "e09f30925c6dba5cf4540669fd3b4874f45bb158",
+  "head_at_review": "3524413272cb52d06af5e64d634edbfef09b9864",
+  "source_identity": [
+    {
+      "path": "src/graph/joint_pipeline.h",
+      "sha256": "ecc9dd2d13ee4554d54bfc40feb7b0f8543ecea6273e2eac5011798dc005d3ea",
+      "matches_product_e09_after_lf_normalization": true
+    },
+    {
+      "path": "src/graph/executable.cc",
+      "sha256": "a8110f7234c5d8a8b48b3c99299b2e8f86f72c0b33134eaa962584b81d3a6aca",
+      "matches_product_e09_after_lf_normalization": true
+    },
+    {
+      "path": "src/graph/submission_internal.h",
+      "sha256": "1da2c63b573581fda8831cf3a36639f104c193f1911a29bdb0d58921c79510e9",
+      "matches_product_e09_after_lf_normalization": true
+    },
+    {
+      "path": "src/graph/plan_state.h",
+      "sha256": "4f4388b8098fd6b85305fed8133d333ab779fe491403113f86ecd177bd9418fe",
+      "matches_product_e09_after_lf_normalization": true
+    },
+    {
+      "path": "src/graph_route_cpu_cuda/invocation.cc",
+      "sha256": "fe2fe21832261a8869ef67a6a3228585be5b405e5d0b9c656670e8d4686e4604",
+      "matches_product_e09_after_lf_normalization": true
+    },
+    {
+      "path": "src/graph_route_cpu_apple/invocation.cc",
+      "sha256": "658cf19a02df86177cd3a0ad54b0821154dcd1f29477736580059a69335d565e",
+      "matches_product_e09_after_lf_normalization": true
+    },
+    {
+      "path": "src/graph_route_cpu_vulkan/invocation.cc",
+      "sha256": "ae521a0c6d01b7c48d573da875c34bf897e9dcfefc17c249b087ae20c0c4984e",
+      "matches_product_e09_after_lf_normalization": true
+    },
+    {
+      "path": "src/graph_route_cpu_apple/plan.h",
+      "sha256": "47dab6c478ef57c40dcc558433012487015c80d5d7400c494b3cd3de14b419dd",
+      "matches_product_e09_after_lf_normalization": true
+    },
+    {
+      "path": "src/graph_route_cpu_vulkan/plan.h",
+      "sha256": "7b868236bd7b4d1afb82a37bfc41eae08668cb589c7e992cebb6ab53b20bc4cd",
+      "matches_product_e09_after_lf_normalization": true
+    },
+    {
+      "path": "include/hyle/graph/cpu_cuda.h",
+      "sha256": "b3fe45dc75ce6c999857bca3130816132018eb3c845e0c889d577165d8f1b098",
+      "matches_product_e09_after_lf_normalization": true
+    },
+    {
+      "path": "include/hyle/graph/cpu_apple.h",
+      "sha256": "645f557d8a6fefe3f69bc25f37c03e637ed28311fb7817bfb8de0e5373b0eb32",
+      "matches_product_e09_after_lf_normalization": true
+    },
+    {
+      "path": "include/hyle/graph/cpu_vulkan.h",
+      "sha256": "9b4c99f9ef9948f85435de4415a788b83d17a00752664074edf462addc6693f6",
+      "matches_product_e09_after_lf_normalization": true
+    },
+    {
+      "path": "src/graph_route_cpu_apple/compile.cc",
+      "sha256": "2f1523a3782a448e19af9250abde7b36061eeb97ed6a1af3d1f3294de6cf50c1",
+      "matches_product_e09_after_lf_normalization": true
+    },
+    {
+      "path": "src/graph_route_cpu_vulkan/compile.cc",
+      "sha256": "56e92e98e397e75255b6fee2bc68eb426f14bab846f3e01ed872164b0533364b",
+      "matches_product_e09_after_lf_normalization": true
+    }
+  ],
+  "status": "FINITE_SOURCE_LEDGER_COMPLETE; NO_ADDITIONAL_CONCRETE_MUST_IDENTIFIED",
+  "symbols": {
+    "V": "logical value slots",
+    "I": "input capacity",
+    "F": "coarse fragments",
+    "S": "common Graph segments",
+    "J": "projected pipeline jobs including conversion/repack stages",
+    "E": "projected dependency entries including duplicates",
+    "D": "original fragment dependency entries",
+    "ports": "sum of actual fragment input/output ports",
+    "B": "observed native backing views before dedup",
+    "N": "simultaneously admitted still-pending native jobs"
+  },
+  "ledger": [
+    {
+      "item": "COLD_FRONTIER_ONLY",
+      "anchors": [
+        "src/graph/joint_pipeline.h:29-87,120-158"
+      ],
+      "cost": "JointPipelinePlan append/CSR prepare is amortized O(J+E) including duplicate projected edges; per-slot frontier prepare/reset is O(J+E) for the prepared graph. Plan stores jobs, forward dependencies, successor offsets, reverse successor edges. This is NOT the complete compiler or complete run cost.",
+      "allocator": "All these vectors use the original supplied mem::StdAllocator. Construction/resizing may allocate cold and capacity slack is real."
+    },
+    {
+      "item": "COLD_NATIVE_PROJECTION",
+      "anchors": [
+        "src/graph/joint_pipeline.h:203-258",
+        "src/graph_route_cpu_apple/plan.h:48-67",
+        "src/graph_route_cpu_vulkan/plan.h:48-67"
+      ],
+      "cost": "Beyond CSR, projection scans V values/I inputs/F fragments and their input/output ports and original dependency lists. Temporary host_ready/native_ready arrays are O(V), fragment index array O(F), dependency scratch O(max fragment degree); the shared immutable Plan retains pipeline+stages. Amortized O(V+I+F+ports+D+J+E) for this projection, not for native compilation/fusion/alias analysis."
+    },
+    {
+      "item": "COLD_CUDA_PROJECTION",
+      "anchors": [
+        "src/graph_route_cpu_cuda/invocation.cc:596-680",
+        "src/graph/plan_state.h:926-1015"
+      ],
+      "cost": "CUDA has no separate graph_route_cpu_cuda/plan.h; it borrows common PlanState and original Invocation. Each joint SLOT copies the common S segments and E dependencies into its own JointPipelinePlan, then CSR-prepares it O(S+E), plus frontier only when parallel. Unlike Apple/Vulkan shared Plan projection, this immutable identity copy is repeated per CUDA slot. Original common workspace/provider preparations remain additional costs.",
+      "allocator": "CUDA uses ResourceBudget metadata_allocator when the common invocation storage exposes a shared budget (:621-624), otherwise caller allocator; RunState, InvocationState and original ResultSlot are allocated cold."
+    },
+    {
+      "item": "PER_SLOT_METADATA",
+      "anchors": [
+        "src/graph_route_cpu_cuda/invocation.cc:57-107,625-657",
+        "src/graph_route_cpu_apple/invocation.cc:36-86,601-665",
+        "src/graph_route_cpu_vulkan/invocation.cc:28-90,670-746"
+      ],
+      "cost": "Charge sizeof RunState+InvocationState+ResultSlot, vectors at ACTUAL capacities, original sub-invocations/results/arguments/pages/lease pools, and backing/workspace separately. CUDA also has O(I) WeightUse/weight-prefix cells and a per-slot O(S+E) pipeline. Native routes have O(V) ValueRun, O(F) FragmentRun, J-byte initially_complete and J size_t pending slots; conditional frontier has two J size_t arrays. Native FragmentRun retains original pending OwnedResult; Vulkan ValueRun additionally retains transfer Completion/TransferSlot. These owners are not extra tensor copies.",
+      "payload_formula": "Pipeline capacity bytes = cap_jobs*sizeof(Job)+(cap_dependencies+cap_successor_begin+cap_successors)*sizeof(size_t). Frontier capacity bytes=(cap_remaining+cap_next)*sizeof(size_t), plus object/queue heads/tails. Use actual sizeof/capacity; no unmeasured ABI byte total or logical-size==allocated-size claim."
+    },
+    {
+      "item": "ALLOCATOR_AND_BUDGET_BOUNDARY",
+      "anchors": [
+        "src/graph_route_cpu_apple/compile.cc:73-80",
+        "src/graph_route_cpu_vulkan/compile.cc:78-85",
+        "src/graph_route_cpu_apple/invocation.cc:163-181,601-628,663-664",
+        "src/graph_route_cpu_vulkan/invocation.cc:177-195,670-697,739-741"
+      ],
+      "cost": "Native Plan/Run metadata follows selected allocator, switched to shared ResourceBudget metadata allocator when provided. LeaseSubmission is pre-sized with prefixes=2I+F+sum(fragment output ports), page reads=2*sum(max_page_refs). The std::vector native arguments carrier is reserved cold but uses its original std allocator, not the custom StdAllocator. Provider-private and Scheduler allocations are not magically in this metadata budget."
+    },
+    {
+      "item": "WARM_PREPARATION_IS_WORK",
+      "anchors": [
+        "src/graph_route_cpu_cuda/invocation.cc:730-768",
+        "src/graph_route_cpu_apple/invocation.cc:857-989",
+        "src/graph_route_cpu_vulkan/invocation.cc:972-1138"
+      ],
+      "cost": "prepare_replay is separate from submit: scans bindings/fragments/ports, validates exact carriers and descriptors, prepares original CPU/native/page/transfer state, counts planned copies/waits, may allocate a first/replacement backing, reserves actual completion capacity. CUDA requests S+2I+4 completion capacity and prepares original Graph. Native rebuilds J-bit binding-ready facts, parallel_after scans J+E, and when parallel frontier.prepare resets J+E; submit later resets again. Repeated unchanged capacity can reuse allocations, but binding changes, page updates, shape-dependent preparation and delegated costs are not universally allocation-free."
+    },
+    {
+      "item": "WARM_READY_FRONTIER",
+      "anchors": [
+        "src/graph/joint_pipeline.h:136-179",
+        "src/graph_route_cpu_cuda/invocation.cc:384-431",
+        "src/graph_route_cpu_apple/invocation.cc:407-429,433-489",
+        "src/graph_route_cpu_vulkan/invocation.cc:469-491,495-550"
+      ],
+      "cost": "FIFO take O(1); successful complete visits that job successors once, summing O(J+E) across successful job completions, under short admission/publication monitors. Math, copies, native observations and CPU execution occur outside the total monitor. This bound excludes repeated pending observation and provider work."
+    },
+    {
+      "item": "NATIVE_PENDING_OBSERVATION_NONLINEAR",
+      "anchors": [
+        "src/graph_route_cpu_apple/invocation.cc:433-489",
+        "src/graph_route_cpu_vulkan/invocation.cc:495-550"
+      ],
+      "cost": "Before admitting EACH next ready native job, the driver re-observes every currently pending native job. If N ready native jobs all remain pending, merely admitting them can cause N(N-1)/2 repeated pending observations, plus each initial observation. Subsequent observation count grows with actual latency and wakeups, with 1ms fiber backoff only when no immediately ready job/progress remains. Metadata is bounded by J; total polling is NOT bounded by E and need not be linear in J.",
+      "verdict": "Explicit material P0 structure, not an automatic new product defect or permission to alter implementation/P1 shapes. Actual P1 and selected consumers determine remaining qualification."
+    },
+    {
+      "item": "CUDA_RETRY_OBSERVATION",
+      "anchors": [
+        "src/graph/executable.cc:8082-8140,8171-8254",
+        "src/graph_route_cpu_cuda/invocation.cc:311-338,372-463"
+      ],
+      "cost": "Each submit_segment retry re-scans dependencies from its beginning before Queue admission; cumulative dependency inspection includes sum_s(retries_s*indegree_s), not merely E. CPU child may also immediately poll the returned pending Completion and then wait1ms; root native lane retries at mailbox/timed wakeups. Device waits, host waits and synchronous CPU/native provider episodes preserve original costs."
+    },
+    {
+      "item": "COMMON_SUBMISSION_AND_AGGREGATION",
+      "anchors": [
+        "src/graph/executable.cc:1126-1154,1275-1316,7112-7132,8082-8289,8311-8437",
+        "src/graph/submission_internal.h:45-93"
+      ],
+      "cost": "Original per-step invocations/input-output spans/segment Completion/dependency scratch are pre-sized. submit_segment uses its unique segment slice and local Outcome; coordinator commits and finishes. Shared QueueSequence begin/enqueue dependency waits/enqueue steps/finish and delegated region submit remain real calls. Final aggregation scans actual candidates/accepted segment cells, merges ordered Queue prefixes and retains exact delegated work according to the original common plan. No provider math is hidden inside a new global lock; aggregation is not zero work or a universal O(1) operation."
+    },
+    {
+      "item": "FIBERS_AND_SERIAL_FASTPATH",
+      "anchors": [
+        "src/graph/joint_pipeline.h:69-74,93-108",
+        "src/graph_route_cpu_cuda/invocation.cc:378-380,493-525,804-848",
+        "src/graph_route_cpu_apple/invocation.cc:504-540,1020-1063",
+        "src/graph_route_cpu_vulkan/invocation.cc:566-607,1158-1207"
+      ],
+      "cost": "Per active invocation, one existing Sched root and at most one extra coarse CPU child (kFiberStackLarge); no fiber per node/segment and no new thread pool. Two simultaneous slots may therefore use up to four such drivers, plus original native runtime workers. Fully ordered plans/binding-ready graphs use original inline root path without extra child. Serial fastpath does NOT remove all cold J metadata. spawn/stack-cache miss/parking/wakeup/refcounts and original Scheduler allocation costs remain real and are not covered by a claim of fixed frontier vectors."
+    },
+    {
+      "item": "REAL_COPY_AND_BOUNDARY_COSTS",
+      "anchors": [
+        "src/graph_route_cpu_apple/invocation.cc:281-401,857-964",
+        "src/graph_route_cpu_vulkan/invocation.cc:302-463,977-1112",
+        "src/graph_route_cpu_cuda/invocation.cc:466-550,746-765"
+      ],
+      "cost": "CPU output bridge copies occur if the original CPU owner did not produce into fixed host backing; repack is an actual CPU invocation. Apple uploads/downloads keep original synchronous MemoryResource operations and checked host completion; only native math observation is advanced nonblocking. Vulkan retains original transfer handles and observes/reads successful downloads; records independent-transfer vs compute-queue upload eligibility. CUDA keeps original host/device/staging copy steps and weight wait prefixes. Exact ready bindings can skip input jobs, not producer math/dependency edges. UMA does not establish zero memcpy, zero coherence/retention cost, or physical bytes moved."
+    },
+    {
+      "item": "CANCEL_AND_TRUE_RETIREMENT",
+      "anchors": [
+        "src/graph_route_cpu_cuda/invocation.cc:270-277,363-369,405-423,454-463,526-554",
+        "src/graph_route_cpu_apple/invocation.cc:491-540",
+        "src/graph_route_cpu_vulkan/invocation.cc:553-607"
+      ],
+      "cost": "Cancellation shares admission claim lock; stops unclaimed work, never preempts accepted math. CPU child returns its ref under monitor before stopped/notify; root joins before final publication. Apple/Vulkan retain and wait all still-valid original native/transfer handles outside lock before clear and Lease body finish. CUDA collects accepted child Outcome, finishes original aggregate and every weight prefix before terminal. Cancellation/close latency includes actual slowest accepted work/provider/driver drain; it is not a fixed-time or constant-cost operation."
+    },
+    {
+      "item": "REPORTS_QUALIFIED_SCOPE",
+      "anchors": [
+        "include/hyle/graph/cpu_cuda.h:46-67",
+        "include/hyle/graph/cpu_apple.h:61-89",
+        "include/hyle/graph/cpu_vulkan.h:63-93",
+        "src/graph_route_cpu_cuda/invocation.cc:146-221,730-768",
+        "src/graph_route_cpu_apple/invocation.cc:543-597",
+        "src/graph_route_cpu_vulkan/invocation.cc:610-665"
+      ],
+      "cost": "ReplayReport snapshots planned fragment/copy/repack/weight/native-completion and page-metadata costs, NOT actual poll iterations, kernel counts, timestamps, overlap, actual wait latency, or global allocations. ResourceReport covers requested shared-budget scope (including other invocations/old leases) plus deduplicated observed native backing, with unknown flags preserved. CUDA report requires shared budget; boundary_view_bytes may already be charged and must not be blindly added. Native managed fields remain partial without budget; default zero report fields do not prove private bytes zero."
+    },
+    {
+      "item": "REPORT_CALL_ITSELF_AND_PRIVATE_UNKNOWNS",
+      "anchors": [
+        "src/graph_route_cpu_cuda/invocation.cc:155-202",
+        "src/graph_route_cpu_apple/invocation.cc:569-596",
+        "src/graph_route_cpu_vulkan/invocation.cc:637-665"
+      ],
+      "cost": "Resource observation is a cold/idle operation: can allocate temporary metadata, query actual resource owners, sort/deduplicate backing/range views. Native O(V+B log B) backing enumeration plus budget resource scan; CUDA also scans constant ownership while collecting external ranges and sorts/merges ranges. It is not part of an allocation-free warm-submit promise. Driver queues/events/command buffers, MLX/provider compiler caches and temporary internals, runtime worker storage, external allocators, actual UMA residency/page migration and physical traffic remain UNKNOWN or excluded unless separately evidenced. No scope-wide memory/performance total follows from these snapshots."
+    }
+  ],
+  "must": [],
+  "explicit_nonclaims": [
+    "No claim that complete compilation or complete execution is O(V+E)/O(E). Only the stated frontier/projection portions have those bounds.",
+    "No zero-allocation guarantee for prepare_replay, spawn/waits, native/delegated runtime, cancellation or ResourceReport; fixed G09 vector capacities are only one component.",
+    "No walltime bound, universal overlap, all-private-memory cap, UMA zero-copy assertion, P1 verdict, sanitizer result, SDK result or overall G09 closure is signed by source inspection.",
+    "Native N(N-1)/2 repeated observations and CUDA sum(retries*indegree) are recorded as actual cost mechanisms; this review does not authorize changing the product, benchmark shapes or statistical contract."
+  ],
+  "audit_actions": "Only read source and git baseline blobs, inspect existing public report contracts, and write this requested ignored JSON. No builds/tests/performance/GPU work, product edits, new tools/frameworks or agents."
+}

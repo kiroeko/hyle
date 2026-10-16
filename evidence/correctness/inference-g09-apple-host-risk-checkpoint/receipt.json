@@ -1,0 +1,497 @@
+{
+  "schema": "hyle.inference-g09-apple-host-risk-checkpoint/v1",
+  "state": "PARTIAL_HOST_RISK_CHECKPOINT_ASAN_UBSAN_PASS_TSAN_CONTRACT_EXTERNAL_EDGE_UNQUALIFIED",
+  "canonical_product_commit": "e09f30925c6dba5cf4540669fd3b4874f45bb158",
+  "canonical_validation_head": "3524413272cb52d06af5e64d634edbfef09b9864",
+  "validation_source_tree": "c1e52cd0b4061706bbbfca7ad6fa575ea2d5d238",
+  "scope": "Actual Air Mac16,12 Apple M4 changed common Graph/CPU+Apple host sanitizer facets and direct joint/paged consumers. All modes execute 61 common +285 executable tests, contracts, default five joint pipeline cases (two slots/65 steps, order/workers/native input/cancel/move/drop) and original G06 pending native joint receiver.",
+  "results": "ASan/UBSan pass all five targets. TSan passes common/executable and all new pipeline scenarios plus G06 pending; original contracts process reports an external Metal callback publication race and is not PASS.",
+  "retained_external_edge": "Unchanged apple_weights.mm:345 invokes original Objective-C addCompletedHandler directly. The pre-existing byte-qualified Metal-cpp model only wraps C++ HandlerFunction addCompletedHandler/commit and cannot cover this ObjC selector by an include-path change. The callback byref copy/read report remains unqualified, outside the changed G09 implementation. This receipt does not infer whole-process TSan PASS or create a new model/suppression.",
+  "actual_cumulative_seconds": 185.845913875,
+  "cost_reset": false,
+  "cases": [
+    {
+      "mode": "asan",
+      "result": {
+        "state": "HOST_FACET_PASS",
+        "route": "apple",
+        "mode": "asan",
+        "stages": [
+          {
+            "stage": "configure",
+            "command": [
+              "/opt/homebrew/bin/cmake",
+              "-S",
+              "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-apple-asan/parent",
+              "-B",
+              "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-apple-asan/build"
+            ],
+            "exit_code": 0,
+            "elapsed_seconds": 5.094249792
+          },
+          {
+            "stage": "manifest",
+            "command": [
+              "/opt/homebrew/bin/ninja",
+              "-C",
+              "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-apple-asan/build",
+              "build.ninja"
+            ],
+            "exit_code": 0,
+            "elapsed_seconds": 0.08986908299999996
+          },
+          {
+            "stage": "build",
+            "command": [
+              "/opt/homebrew/bin/ninja",
+              "-C",
+              "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-apple-asan/build",
+              "-f",
+              "/Users/kiro/hyle-scratch/compute-unified/g09-apple-host-asan-1/preview.ninja",
+              "-j",
+              "4",
+              "g09_common",
+              "g09_executable",
+              "g09_contracts",
+              "g09_pipeline",
+              "g09_pending"
+            ],
+            "exit_code": 0,
+            "elapsed_seconds": 21.39019475
+          },
+          {
+            "stage": "g09_common",
+            "command": [
+              "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-apple-asan/build/g09_common",
+              "--gtest_output=json:/Users/kiro/hyle-scratch/compute-unified/g09-apple-host-asan-1/g09_common.json"
+            ],
+            "exit_code": 0,
+            "elapsed_seconds": 0.7397506249999992
+          },
+          {
+            "stage": "g09_executable",
+            "command": [
+              "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-apple-asan/build/g09_executable",
+              "--gtest_output=json:/Users/kiro/hyle-scratch/compute-unified/g09-apple-host-asan-1/g09_executable.json"
+            ],
+            "exit_code": 0,
+            "elapsed_seconds": 0.9274134590000003
+          },
+          {
+            "stage": "g09_contracts",
+            "command": [
+              "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-apple-asan/build/g09_contracts"
+            ],
+            "exit_code": 0,
+            "elapsed_seconds": 1.2742297919999999
+          },
+          {
+            "stage": "g09_pipeline",
+            "command": [
+              "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-apple-asan/build/g09_pipeline"
+            ],
+            "exit_code": 0,
+            "elapsed_seconds": 6.697157124999997
+          },
+          {
+            "stage": "g09_pending",
+            "command": [
+              "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-apple-asan/build/g09_pending"
+            ],
+            "exit_code": 0,
+            "elapsed_seconds": 2.0305781250000052
+          }
+        ],
+        "source": "/Users/kiro/hyle-scratch/compute-unified/source-c8874688",
+        "source_tree": "c1e52cd0b4061706bbbfca7ad6fa575ea2d5d238",
+        "canonical_head": "3524413272cb52d06af5e64d634edbfef09b9864",
+        "pid": 44217,
+        "max_jobs": 4,
+        "nice": 10,
+        "build": "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-apple-asan/build",
+        "scope": "Changed Graph/common and CPU/native owner host sanitizer facets, original direct Graph contracts, two-slot/65-step joint math/cancel consumer and original G06 pending native joint receiver. No shader/driver/private pool/leak/SDK/P1 certificate.",
+        "retained_limits": "Original G06/G08 refcount-fence TSan model; Apple original Metal external-completion model. No new model or broad suppression.",
+        "identity": {
+          "model": "Mac16,12",
+          "chip": "Apple M4",
+          "system": "ProductName:\t\tmacOS\nProductVersion:\t\t27.0.1\nBuildVersion:\t\t26A434",
+          "compiler": "Apple clang version 21.0.0 (clang-2100.3.34.2)\nTarget: arm64-apple-darwin27.0.0\nThread model: posix\nInstalledDir: /Library/Developer/CommandLineTools/usr/bin",
+          "metal": "Apple metal version 32023.883 (metalfe-32023.883)\nTarget: air64-apple-darwin27.0.0\nThread model: posix\nInstalledDir: /Users/kiro/hyle-verify-tools/metal-17F109/Metal.xctoolchain/usr/metal/current/bin"
+        },
+        "synced_paths": [
+          "docs/implementation/tasks/graph/inference-g09-joint-pipeline.md"
+        ],
+        "stage": "g09_pending",
+        "elapsed_seconds": 39.18076925,
+        "dry_run_edges": 56,
+        "binaries": [
+          {
+            "path": "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-apple-asan/build/g09_common",
+            "sha256": "2400ebbe90567de93d322a7136850605d6e2ff7e55e0120fd69cf4cb44a46f8c"
+          },
+          {
+            "path": "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-apple-asan/build/g09_executable",
+            "sha256": "f6eb586ed9e42882e060022121d2e1a81b3b5cf6927afcb4fcca43de3ed372bc"
+          },
+          {
+            "path": "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-apple-asan/build/g09_contracts",
+            "sha256": "54ccdb149ad857d5038f43b1f45a85cf1b88413ddade1439138b78b368fd42c9"
+          },
+          {
+            "path": "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-apple-asan/build/g09_pipeline",
+            "sha256": "2336839f32ae2c82ca49613c38ff199b420a5c011f15d00470c0fbce5518fff4"
+          },
+          {
+            "path": "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-apple-asan/build/g09_pending",
+            "sha256": "559caf3eaddb9c1795faef887b0ee1a3b2791cf00880e71826e31f7154da0e58"
+          }
+        ],
+        "failures": []
+      },
+      "gtest_execution_totals": [
+        {
+          "target": "g09_common",
+          "tests": 61,
+          "failures": 0,
+          "disabled": 0
+        },
+        {
+          "target": "g09_executable",
+          "tests": 285,
+          "failures": 0,
+          "disabled": 0
+        }
+      ]
+    },
+    {
+      "mode": "ubsan",
+      "result": {
+        "state": "HOST_FACET_PASS",
+        "route": "apple",
+        "mode": "ubsan",
+        "stages": [
+          {
+            "stage": "configure",
+            "command": [
+              "/opt/homebrew/bin/cmake",
+              "-S",
+              "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-apple-ubsan/parent",
+              "-B",
+              "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-apple-ubsan/build"
+            ],
+            "exit_code": 0,
+            "elapsed_seconds": 5.351342167
+          },
+          {
+            "stage": "manifest",
+            "command": [
+              "/opt/homebrew/bin/ninja",
+              "-C",
+              "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-apple-ubsan/build",
+              "build.ninja"
+            ],
+            "exit_code": 0,
+            "elapsed_seconds": 0.15010887499999992
+          },
+          {
+            "stage": "build",
+            "command": [
+              "/opt/homebrew/bin/ninja",
+              "-C",
+              "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-apple-ubsan/build",
+              "-f",
+              "/Users/kiro/hyle-scratch/compute-unified/g09-apple-host-ubsan-1/preview.ninja",
+              "-j",
+              "4",
+              "g09_common",
+              "g09_executable",
+              "g09_contracts",
+              "g09_pipeline",
+              "g09_pending"
+            ],
+            "exit_code": 0,
+            "elapsed_seconds": 21.3861505
+          },
+          {
+            "stage": "g09_common",
+            "command": [
+              "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-apple-ubsan/build/g09_common",
+              "--gtest_output=json:/Users/kiro/hyle-scratch/compute-unified/g09-apple-host-ubsan-1/g09_common.json"
+            ],
+            "exit_code": 0,
+            "elapsed_seconds": 0.5470853749999982
+          },
+          {
+            "stage": "g09_executable",
+            "command": [
+              "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-apple-ubsan/build/g09_executable",
+              "--gtest_output=json:/Users/kiro/hyle-scratch/compute-unified/g09-apple-host-ubsan-1/g09_executable.json"
+            ],
+            "exit_code": 0,
+            "elapsed_seconds": 0.627609875000001
+          },
+          {
+            "stage": "g09_contracts",
+            "command": [
+              "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-apple-ubsan/build/g09_contracts"
+            ],
+            "exit_code": 0,
+            "elapsed_seconds": 1.1054653750000014
+          },
+          {
+            "stage": "g09_pipeline",
+            "command": [
+              "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-apple-ubsan/build/g09_pipeline"
+            ],
+            "exit_code": 0,
+            "elapsed_seconds": 7.248611374999999
+          },
+          {
+            "stage": "g09_pending",
+            "command": [
+              "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-apple-ubsan/build/g09_pending"
+            ],
+            "exit_code": 0,
+            "elapsed_seconds": 1.466880875000001
+          }
+        ],
+        "source": "/Users/kiro/hyle-scratch/compute-unified/source-c8874688",
+        "source_tree": "c1e52cd0b4061706bbbfca7ad6fa575ea2d5d238",
+        "canonical_head": "3524413272cb52d06af5e64d634edbfef09b9864",
+        "pid": 44450,
+        "max_jobs": 4,
+        "nice": 10,
+        "build": "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-apple-ubsan/build",
+        "scope": "Changed Graph/common and CPU/native owner host sanitizer facets, original direct Graph contracts, two-slot/65-step joint math/cancel consumer and original G06 pending native joint receiver. No shader/driver/private pool/leak/SDK/P1 certificate.",
+        "retained_limits": "Original G06/G08 refcount-fence TSan model; Apple original Metal external-completion model. No new model or broad suppression.",
+        "identity": {
+          "model": "Mac16,12",
+          "chip": "Apple M4",
+          "system": "ProductName:\t\tmacOS\nProductVersion:\t\t27.0.1\nBuildVersion:\t\t26A434",
+          "compiler": "Apple clang version 21.0.0 (clang-2100.3.34.2)\nTarget: arm64-apple-darwin27.0.0\nThread model: posix\nInstalledDir: /Library/Developer/CommandLineTools/usr/bin",
+          "metal": "Apple metal version 32023.883 (metalfe-32023.883)\nTarget: air64-apple-darwin27.0.0\nThread model: posix\nInstalledDir: /Users/kiro/hyle-verify-tools/metal-17F109/Metal.xctoolchain/usr/metal/current/bin"
+        },
+        "synced_paths": [],
+        "stage": "g09_pending",
+        "elapsed_seconds": 38.778077833,
+        "dry_run_edges": 56,
+        "binaries": [
+          {
+            "path": "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-apple-ubsan/build/g09_common",
+            "sha256": "3337dcb613b27c08584bce676c3b0ce3deeb891aa6eb60a3024816f3e9486957"
+          },
+          {
+            "path": "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-apple-ubsan/build/g09_executable",
+            "sha256": "1b7da7f2e6805a5169316db09b06dc70552333ad8cfde26659c46ad420ec36ab"
+          },
+          {
+            "path": "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-apple-ubsan/build/g09_contracts",
+            "sha256": "176d1c2a9437dc3a31a0e71b32b22cdcaca778021b1ae1ce194392071cd93ad3"
+          },
+          {
+            "path": "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-apple-ubsan/build/g09_pipeline",
+            "sha256": "8593564fd394e36dd776861967e146c10ec37a7b089e43780f8821044007b25f"
+          },
+          {
+            "path": "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-apple-ubsan/build/g09_pending",
+            "sha256": "30d5cf6c93db97ffc289ca50d638a3f6c6fab71121e1c762b996337ce5198dd9"
+          }
+        ],
+        "failures": []
+      },
+      "gtest_execution_totals": [
+        {
+          "target": "g09_common",
+          "tests": 61,
+          "failures": 0,
+          "disabled": 0
+        },
+        {
+          "target": "g09_executable",
+          "tests": 285,
+          "failures": 0,
+          "disabled": 0
+        }
+      ]
+    },
+    {
+      "mode": "tsan",
+      "result": {
+        "state": "FAIL_WITH_ALL_TARGETS_OBSERVED",
+        "route": "apple",
+        "mode": "tsan",
+        "stages": [
+          {
+            "stage": "configure",
+            "command": [
+              "/opt/homebrew/bin/cmake",
+              "-S",
+              "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-apple-tsan/parent",
+              "-B",
+              "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-apple-tsan/build"
+            ],
+            "exit_code": 0,
+            "elapsed_seconds": 5.181460790999999
+          },
+          {
+            "stage": "manifest",
+            "command": [
+              "/opt/homebrew/bin/ninja",
+              "-C",
+              "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-apple-tsan/build",
+              "build.ninja"
+            ],
+            "exit_code": 0,
+            "elapsed_seconds": 0.09013729199999965
+          },
+          {
+            "stage": "build",
+            "command": [
+              "/opt/homebrew/bin/ninja",
+              "-C",
+              "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-apple-tsan/build",
+              "-f",
+              "/Users/kiro/hyle-scratch/compute-unified/g09-apple-host-tsan-1/preview.ninja",
+              "-j",
+              "4",
+              "g09_common",
+              "g09_executable",
+              "g09_contracts",
+              "g09_pipeline",
+              "g09_pending"
+            ],
+            "exit_code": 0,
+            "elapsed_seconds": 15.741769708
+          },
+          {
+            "stage": "g09_common",
+            "command": [
+              "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-apple-tsan/build/g09_common",
+              "--gtest_output=json:/Users/kiro/hyle-scratch/compute-unified/g09-apple-host-tsan-1/g09_common.json"
+            ],
+            "exit_code": 0,
+            "elapsed_seconds": 0.7330731250000007
+          },
+          {
+            "stage": "g09_executable",
+            "command": [
+              "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-apple-tsan/build/g09_executable",
+              "--gtest_output=json:/Users/kiro/hyle-scratch/compute-unified/g09-apple-host-tsan-1/g09_executable.json"
+            ],
+            "exit_code": 0,
+            "elapsed_seconds": 2.0011802499999973
+          },
+          {
+            "stage": "g09_contracts",
+            "command": [
+              "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-apple-tsan/build/g09_contracts"
+            ],
+            "exit_code": -6,
+            "elapsed_seconds": 1.3300922499999999
+          },
+          {
+            "stage": "g09_pipeline",
+            "command": [
+              "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-apple-tsan/build/g09_pipeline"
+            ],
+            "exit_code": 0,
+            "elapsed_seconds": 76.935978417
+          },
+          {
+            "stage": "g09_pending",
+            "command": [
+              "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-apple-tsan/build/g09_pending"
+            ],
+            "exit_code": 0,
+            "elapsed_seconds": 4.956463249999999
+          }
+        ],
+        "source": "/Users/kiro/hyle-scratch/compute-unified/source-c8874688",
+        "source_tree": "c1e52cd0b4061706bbbfca7ad6fa575ea2d5d238",
+        "canonical_head": "3524413272cb52d06af5e64d634edbfef09b9864",
+        "pid": 44682,
+        "max_jobs": 4,
+        "nice": 10,
+        "build": "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-apple-tsan/build",
+        "scope": "Changed Graph/common and CPU/native owner host sanitizer facets, original direct Graph contracts, two-slot/65-step joint math/cancel consumer and original G06 pending native joint receiver. No shader/driver/private pool/leak/SDK/P1 certificate.",
+        "retained_limits": "Original G06/G08 refcount-fence TSan model; Apple original Metal external-completion model. No new model or broad suppression.",
+        "identity": {
+          "model": "Mac16,12",
+          "chip": "Apple M4",
+          "system": "ProductName:\t\tmacOS\nProductVersion:\t\t27.0.1\nBuildVersion:\t\t26A434",
+          "compiler": "Apple clang version 21.0.0 (clang-2100.3.34.2)\nTarget: arm64-apple-darwin27.0.0\nThread model: posix\nInstalledDir: /Library/Developer/CommandLineTools/usr/bin",
+          "metal": "Apple metal version 32023.883 (metalfe-32023.883)\nTarget: air64-apple-darwin27.0.0\nThread model: posix\nInstalledDir: /Users/kiro/hyle-verify-tools/metal-17F109/Metal.xctoolchain/usr/metal/current/bin"
+        },
+        "synced_paths": [],
+        "models": [
+          {
+            "path": "/Users/kiro/hyle-scratch/compute-unified/g02-refcount-fence-probe/tsan-headers/hyle/util/ref_counted.h",
+            "sha256": "2b90ab655a49ec3b9158a964872cd1fc3395ebf64d8ae430a2e19c4805bf5416"
+          },
+          {
+            "path": "/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-host-sanitizers/metal-tsan-08f74cff0c0143c5/Metal/MTLCommandBuffer.hpp",
+            "sha256": "4a58c6e564e3a7efcdf5c7709eeee99ec7b7c40594e2ada5ec5c91012171d504",
+            "unchanged_product_tree": "/Users/kiro/hyle-scratch/compute-unified/g04-g05-encoded-host-sanitizers/metal-product-08f74cff0c0143c5"
+          }
+        ],
+        "stage": "g09_pending",
+        "elapsed_seconds": 107.887066792,
+        "dry_run_edges": 56,
+        "binaries": [
+          {
+            "path": "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-apple-tsan/build/g09_common",
+            "sha256": "96c324bf136e003ba4c482dcecafb9cd738df10c8f81c1da31aaabf121573ae6"
+          },
+          {
+            "path": "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-apple-tsan/build/g09_executable",
+            "sha256": "cc71ee2b8933331886d845d50ac5929f9f9997045cb29fc760ac0137974bcbcb"
+          },
+          {
+            "path": "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-apple-tsan/build/g09_contracts",
+            "sha256": "7657f0e5ec780b9b9bdb244a9a786864cb637121e85f40859e642627c9c28a3e"
+          },
+          {
+            "path": "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-apple-tsan/build/g09_pipeline",
+            "sha256": "771db9b29858a99840fe747b78df32453742d01ce0722dc56a1d9c8c90df6caa"
+          },
+          {
+            "path": "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-apple-tsan/build/g09_pending",
+            "sha256": "39724cddfd036f89c21174c151457ec4d6a2ccadca688b22fabe29cc50cb7a0b"
+          }
+        ],
+        "failures": [
+          "g09_contracts"
+        ]
+      },
+      "gtest_execution_totals": [
+        {
+          "target": "g09_common",
+          "tests": 61,
+          "failures": 0,
+          "disabled": 0
+        },
+        {
+          "target": "g09_executable",
+          "tests": 285,
+          "failures": 0,
+          "disabled": 0
+        }
+      ]
+    }
+  ],
+  "review": {
+    "path": "review/g09-tsan-observation-review-8.json",
+    "sha256": "702fece2274f56977957c78caec60b0d30bc6b3045cb5c73f5e43d3a2267050a"
+  },
+  "raw": {
+    "path": "raw.zip",
+    "sha256": "9dcc0f87d975e1be15ca59c7c15f1d42065e904f4feb35e571bd34f2959b62fd",
+    "bytes": 534696,
+    "crc": "PASS"
+  },
+  "not_signed": [
+    "The contracts TSan process or unchanged WeightSlots external Metal block publication.",
+    "Whole-process leaks, private native allocator/driver instrumentation, Metal shader validation.",
+    "New SDK relocation/headers, immutable-candidate P1 or aggregate G09 closure."
+  ]
+}

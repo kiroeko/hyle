@@ -1,0 +1,635 @@
+{
+  "schema": "hyle.inference-g09-cuda-host-risk-checkpoint/v1",
+  "state": "ASAN_UBSAN_HOST_FACETS_PASS_TSAN_OBSERVATIONS_PENDING_REVIEW",
+  "canonical_product_commit": "e09f30925c6dba5cf4540669fd3b4874f45bb158",
+  "canonical_validation_head": "3524413272cb52d06af5e64d634edbfef09b9864",
+  "validation_source_tree": "c1e52cd0b4061706bbbfca7ad6fa575ea2d5d238",
+  "source_archive_sha256": "4b1c5ba186f35f90e8a76542d2a1c394650bbf9cdef342fad533319c7c708337",
+  "scope": "WSL CPU+CUDA changed Graph/executable and joint route host sanitizer facets; original Graph contracts, original native retirement including HYLE_TESTING-only accepted-observation rejection, ordinary two-slot/65-step joint pipeline, G06 hybrid paged and pending receiver consumers. Same existing qualified native CUDA archives, no new CUDA math compilation.",
+  "results": "ASan and UBSan each pass 61 common + 289 Graph executable + 4 native-retirement executions, plus contracts, joint pipeline and both original G06 consumers. These overlapping executable groups are executions, not unique tests. All seven TSan targets were run: common, executable and both G06 consumers pass; retirement, contracts and pipeline stop on a reported race each.",
+  "tsan_observation": "First three reports pair object destruction/deallocation with a previous atomic reference decrement. The initial WSL binaries did not apply the separate existing refcount acquire-fence observation model. Reports remain failures pending source-specific review and any justified finite model recheck; no suppression or inferred PASS.",
+  "retained_limits": [
+    "Original ASan detect_leaks=0; no whole-process leak certificate.",
+    "Original external CUDA/runtime/private allocator instrumentation limits remain.",
+    "No Metal/Vulkan validation, device tool, relocated SDK, immutable-candidate P1 or aggregate G09 acceptance is signed."
+  ],
+  "actual_cumulative_seconds": 608.51046867,
+  "cost_reset": false,
+  "cases": [
+    {
+      "mode": "asan",
+      "result": {
+        "state": "HOST_FACET_PASS",
+        "mode": "asan",
+        "stages": [
+          {
+            "stage": "configure",
+            "command": [
+              "cmake",
+              "-S",
+              "/root/hyle-scratch/compute-unified/foundation-f5-native-host-cuda-asan/parent",
+              "-B",
+              "/root/hyle-scratch/compute-unified/foundation-f5-native-host-cuda-asan/build",
+              "-UCMAKE_PROJECT_TOP_LEVEL_INCLUDES",
+              "-DCMAKE_PROJECT_INCLUDE=/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g09-cuda-host-asan-1/targets.cmake",
+              "-DHYLE_BUILD_TESTS=OFF",
+              "-DHYLE_BUILD_BENCH=OFF",
+              "-DHYLE_INSTALL=OFF"
+            ],
+            "exit_code": 0,
+            "elapsed_seconds": 53.308585732
+          },
+          {
+            "stage": "manifest",
+            "command": [
+              "ninja",
+              "-C",
+              "/root/hyle-scratch/compute-unified/foundation-f5-native-host-cuda-asan/build",
+              "build.ninja"
+            ],
+            "exit_code": 0,
+            "elapsed_seconds": 0.07789593100000047
+          },
+          {
+            "stage": "build",
+            "command": [
+              "ninja",
+              "-C",
+              "/root/hyle-scratch/compute-unified/foundation-f5-native-host-cuda-asan/build",
+              "-f",
+              "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g09-cuda-host-asan-1/preview.ninja",
+              "-j",
+              "2",
+              "g09_common",
+              "g09_executable",
+              "g09_retirement",
+              "g09_contracts",
+              "g09_pipeline",
+              "g09_g06_hybrid",
+              "g09_g06_pending"
+            ],
+            "exit_code": 0,
+            "elapsed_seconds": 175.891122686
+          },
+          {
+            "stage": "g09_common",
+            "command": [
+              "/root/hyle-scratch/compute-unified/foundation-f5-native-host-cuda-asan/build/hyle/g09_common",
+              "--gtest_output=json:/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g09-cuda-host-asan-1/g09_common.json"
+            ],
+            "exit_code": 0,
+            "elapsed_seconds": 0.4762241349999954
+          },
+          {
+            "stage": "g09_executable",
+            "command": [
+              "/root/hyle-scratch/compute-unified/foundation-f5-native-host-cuda-asan/build/hyle/g09_executable",
+              "--gtest_output=json:/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g09-cuda-host-asan-1/g09_executable.json"
+            ],
+            "exit_code": 0,
+            "elapsed_seconds": 1.6995911879999994
+          },
+          {
+            "stage": "g09_retirement",
+            "command": [
+              "/root/hyle-scratch/compute-unified/foundation-f5-native-host-cuda-asan/build/hyle/g09_retirement",
+              "--gtest_output=json:/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g09-cuda-host-asan-1/g09_retirement.json"
+            ],
+            "exit_code": 0,
+            "elapsed_seconds": 0.8748622840000166
+          },
+          {
+            "stage": "g09_contracts",
+            "command": [
+              "/root/hyle-scratch/compute-unified/foundation-f5-native-host-cuda-asan/build/hyle/g09_contracts"
+            ],
+            "exit_code": 0,
+            "elapsed_seconds": 0.8767139859999986
+          },
+          {
+            "stage": "g09_pipeline",
+            "command": [
+              "/root/hyle-scratch/compute-unified/foundation-f5-native-host-cuda-asan/build/hyle/g09_pipeline"
+            ],
+            "exit_code": 0,
+            "elapsed_seconds": 15.323277183999977
+          },
+          {
+            "stage": "g09_g06_hybrid",
+            "command": [
+              "/root/hyle-scratch/compute-unified/foundation-f5-native-host-cuda-asan/build/hyle/g09_g06_hybrid"
+            ],
+            "exit_code": 0,
+            "elapsed_seconds": 0.9057783589999815
+          },
+          {
+            "stage": "g09_g06_pending",
+            "command": [
+              "/root/hyle-scratch/compute-unified/foundation-f5-native-host-cuda-asan/build/hyle/g09_g06_pending"
+            ],
+            "exit_code": 0,
+            "elapsed_seconds": 0.7301369749999935
+          }
+        ],
+        "source": "/root/hyle-scratch/compute-unified/source-7a7b4c3b",
+        "source_tree": "c1e52cd0b4061706bbbfca7ad6fa575ea2d5d238",
+        "canonical_head": "3524413272cb52d06af5e64d634edbfef09b9864",
+        "pid": 651,
+        "max_jobs": 2,
+        "logical_cpus": [
+          0,
+          1,
+          2,
+          3
+        ],
+        "nice": 10,
+        "nvcc_pool": 1,
+        "nvcc_split_compile": 3,
+        "scope": "G09 changed common/CPU-CUDA host instrumentation, original Graph direct consumers, real native-retirement fault seam, original two-slot joint pipeline and affected G06 batch/pending graph consumers. No device shader/driver/private allocator/leak certificate or SDK/P1 aggregate.",
+        "retained_limits": "Same original G06/G08 host sanitizer profile and qualified native CUDA archive, including original external runtime/refcount-fence TSan boundaries; no new broad suppression.",
+        "synced_paths": [
+          "SOURCE-MANIFEST.txt",
+          "docs/implementation/tasks/graph/inference-g09-joint-pipeline.md",
+          "tests/graph/cpu_apple_contracts/CMakeLists.txt",
+          "tests/graph/cpu_apple_pipeline_trace.mm",
+          "tests/graph/cpu_vulkan_contracts/CMakeLists.txt",
+          "tests/graph/cpu_vulkan_pipeline_trace.cc",
+          "tests/graph/native_joint_pipeline.cc",
+          "tests/graph/vulkan_pipeline_trace.h",
+          "tests/graph/vulkan_pipeline_trace_loader.cc"
+        ],
+        "native_reuse": {
+          "archive": "/root/hyle-scratch/compute-unified/g04-encoded-host-reused/asan/libggml-cuda.a",
+          "sha256": "f0f900aee245acf47cc5d5862d1237c4939e3fac32fb6a16f5220c46ebe9b4d5",
+          "original_proof": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/cuda-host-san/ggml-cuda-reuse-proof.json"
+        },
+        "stage": "g09_g06_pending",
+        "elapsed_seconds": 252.80363006200002,
+        "dry_run_edges": 72,
+        "binaries": [
+          {
+            "path": "/root/hyle-scratch/compute-unified/foundation-f5-native-host-cuda-asan/build/hyle/g09_common",
+            "sha256": "e1dfc30c2a0e3616d686817609a74b35cbbef3a78c4650660087db2ff696474c"
+          },
+          {
+            "path": "/root/hyle-scratch/compute-unified/foundation-f5-native-host-cuda-asan/build/hyle/g09_executable",
+            "sha256": "684706e5b03dca924740f5c975a8efa7d1bee5402c35881c56a1f6ca4f9c0d74"
+          },
+          {
+            "path": "/root/hyle-scratch/compute-unified/foundation-f5-native-host-cuda-asan/build/hyle/g09_retirement",
+            "sha256": "cb49a1d7e3bb879e7fe6305823183b2030e252edf95dff1f04579dc3010dd5aa"
+          },
+          {
+            "path": "/root/hyle-scratch/compute-unified/foundation-f5-native-host-cuda-asan/build/hyle/g09_contracts",
+            "sha256": "e39b1512e05960a0f99c57cee6d3556073487412e5c5ada096c305b81844b0db"
+          },
+          {
+            "path": "/root/hyle-scratch/compute-unified/foundation-f5-native-host-cuda-asan/build/hyle/g09_pipeline",
+            "sha256": "590c4da7a29e76b78c5802ae62791654ad7a037472690aec0ab0b357caf9ecf5"
+          },
+          {
+            "path": "/root/hyle-scratch/compute-unified/foundation-f5-native-host-cuda-asan/build/hyle/g09_g06_hybrid",
+            "sha256": "0727cb10bb8d688e74348ab058d9cef6e0caa4d54fce84aab04efc2c103341ea"
+          },
+          {
+            "path": "/root/hyle-scratch/compute-unified/foundation-f5-native-host-cuda-asan/build/hyle/g09_g06_pending",
+            "sha256": "d1f3961a8d7e17b8cde1ac228b31ccbf0e7ade89b5a371d2404f191984e9d95e"
+          }
+        ],
+        "failures": []
+      },
+      "gtest_execution_totals": [
+        {
+          "target": "g09_common",
+          "tests": 61,
+          "failures": 0,
+          "disabled": 0
+        },
+        {
+          "target": "g09_executable",
+          "tests": 289,
+          "failures": 0,
+          "disabled": 0
+        },
+        {
+          "target": "g09_retirement",
+          "tests": 4,
+          "failures": 0,
+          "disabled": 0
+        }
+      ]
+    },
+    {
+      "mode": "ubsan",
+      "result": {
+        "state": "HOST_FACET_PASS",
+        "mode": "ubsan",
+        "stages": [
+          {
+            "stage": "configure",
+            "command": [
+              "cmake",
+              "-S",
+              "/root/hyle-scratch/compute-unified/source-7a7b4c3b",
+              "-B",
+              "/root/hyle-scratch/compute-unified/foundation-f5-native-host-cuda-ubsan/build",
+              "-UCMAKE_PROJECT_TOP_LEVEL_INCLUDES",
+              "-DCMAKE_PROJECT_INCLUDE=/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g09-cuda-host-ubsan-1/targets.cmake",
+              "-DHYLE_BUILD_TESTS=OFF",
+              "-DHYLE_BUILD_BENCH=OFF",
+              "-DHYLE_INSTALL=OFF"
+            ],
+            "exit_code": 0,
+            "elapsed_seconds": 52.032324675000005
+          },
+          {
+            "stage": "manifest",
+            "command": [
+              "ninja",
+              "-C",
+              "/root/hyle-scratch/compute-unified/foundation-f5-native-host-cuda-ubsan/build",
+              "build.ninja"
+            ],
+            "exit_code": 0,
+            "elapsed_seconds": 0.13075804300000016
+          },
+          {
+            "stage": "build",
+            "command": [
+              "ninja",
+              "-C",
+              "/root/hyle-scratch/compute-unified/foundation-f5-native-host-cuda-ubsan/build",
+              "-f",
+              "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g09-cuda-host-ubsan-1/preview.ninja",
+              "-j",
+              "2",
+              "g09_common",
+              "g09_executable",
+              "g09_retirement",
+              "g09_contracts",
+              "g09_pipeline",
+              "g09_g06_hybrid",
+              "g09_g06_pending"
+            ],
+            "exit_code": 0,
+            "elapsed_seconds": 106.478978528
+          },
+          {
+            "stage": "g09_common",
+            "command": [
+              "/root/hyle-scratch/compute-unified/foundation-f5-native-host-cuda-ubsan/build/bin/g09_common",
+              "--gtest_output=json:/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g09-cuda-host-ubsan-1/g09_common.json"
+            ],
+            "exit_code": 0,
+            "elapsed_seconds": 0.22631188399998337
+          },
+          {
+            "stage": "g09_executable",
+            "command": [
+              "/root/hyle-scratch/compute-unified/foundation-f5-native-host-cuda-ubsan/build/bin/g09_executable",
+              "--gtest_output=json:/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g09-cuda-host-ubsan-1/g09_executable.json"
+            ],
+            "exit_code": 0,
+            "elapsed_seconds": 0.6740467570000135
+          },
+          {
+            "stage": "g09_retirement",
+            "command": [
+              "/root/hyle-scratch/compute-unified/foundation-f5-native-host-cuda-ubsan/build/bin/g09_retirement",
+              "--gtest_output=json:/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g09-cuda-host-ubsan-1/g09_retirement.json"
+            ],
+            "exit_code": 0,
+            "elapsed_seconds": 0.6288323850000097
+          },
+          {
+            "stage": "g09_contracts",
+            "command": [
+              "/root/hyle-scratch/compute-unified/foundation-f5-native-host-cuda-ubsan/build/bin/g09_contracts"
+            ],
+            "exit_code": 0,
+            "elapsed_seconds": 0.5803296690000082
+          },
+          {
+            "stage": "g09_pipeline",
+            "command": [
+              "/root/hyle-scratch/compute-unified/foundation-f5-native-host-cuda-ubsan/build/bin/g09_pipeline"
+            ],
+            "exit_code": 0,
+            "elapsed_seconds": 12.65281885799999
+          },
+          {
+            "stage": "g09_g06_hybrid",
+            "command": [
+              "/root/hyle-scratch/compute-unified/foundation-f5-native-host-cuda-ubsan/build/bin/g09_g06_hybrid"
+            ],
+            "exit_code": 0,
+            "elapsed_seconds": 0.3763172719999943
+          },
+          {
+            "stage": "g09_g06_pending",
+            "command": [
+              "/root/hyle-scratch/compute-unified/foundation-f5-native-host-cuda-ubsan/build/bin/g09_g06_pending"
+            ],
+            "exit_code": 0,
+            "elapsed_seconds": 0.3238255089999882
+          }
+        ],
+        "source": "/root/hyle-scratch/compute-unified/source-7a7b4c3b",
+        "source_tree": "c1e52cd0b4061706bbbfca7ad6fa575ea2d5d238",
+        "canonical_head": "3524413272cb52d06af5e64d634edbfef09b9864",
+        "pid": 558,
+        "max_jobs": 2,
+        "logical_cpus": [
+          0,
+          1,
+          2,
+          3
+        ],
+        "nice": 10,
+        "nvcc_pool": 1,
+        "nvcc_split_compile": 3,
+        "scope": "G09 changed common/CPU-CUDA host instrumentation, original Graph direct consumers, real native-retirement fault seam, original two-slot joint pipeline and affected G06 batch/pending graph consumers. No device shader/driver/private allocator/leak certificate or SDK/P1 aggregate.",
+        "retained_limits": "Same original G06/G08 host sanitizer profile and qualified native CUDA archive, including original external runtime/refcount-fence TSan boundaries; no new broad suppression.",
+        "synced_paths": [],
+        "native_reuse": {
+          "archive": "/root/hyle-scratch/compute-unified/g04-encoded-host-reused/ubsan/libggml-cuda.a",
+          "sha256": "0d75dd63db7ba706fc0f615da7cbc0c6981430b3db8a94f414e282334c033cd6",
+          "original_proof": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/cuda-host-san/ggml-cuda-reuse-proof.json"
+        },
+        "stage": "g09_g06_pending",
+        "elapsed_seconds": 176.92176490999998,
+        "dry_run_edges": 72,
+        "binaries": [
+          {
+            "path": "/root/hyle-scratch/compute-unified/foundation-f5-native-host-cuda-ubsan/build/bin/g09_common",
+            "sha256": "7799f60fac5db168d0d5d0ee2559c7c9dc0beb7fb9fbae9c53d356972e81dbde"
+          },
+          {
+            "path": "/root/hyle-scratch/compute-unified/foundation-f5-native-host-cuda-ubsan/build/bin/g09_executable",
+            "sha256": "a674713efa8e3abc7aaca2836cbe0645ae01ed1605a77020739a9b3fafd05fbb"
+          },
+          {
+            "path": "/root/hyle-scratch/compute-unified/foundation-f5-native-host-cuda-ubsan/build/bin/g09_retirement",
+            "sha256": "525ae2d8940a21bdfecb11a713ae071f368ecea7b3a4994b7405103cc1079dcf"
+          },
+          {
+            "path": "/root/hyle-scratch/compute-unified/foundation-f5-native-host-cuda-ubsan/build/bin/g09_contracts",
+            "sha256": "5933c41903e6b1b0a247f9c0cb64c72691cf063da91cce4ec1dd972db34236e5"
+          },
+          {
+            "path": "/root/hyle-scratch/compute-unified/foundation-f5-native-host-cuda-ubsan/build/bin/g09_pipeline",
+            "sha256": "e03fc6a04998dc92d94d926cfb10967d93923d478743451a68491fa145a3f9ee"
+          },
+          {
+            "path": "/root/hyle-scratch/compute-unified/foundation-f5-native-host-cuda-ubsan/build/bin/g09_g06_hybrid",
+            "sha256": "4dd58436d0a61d171c77e1dc0d5de9384b1329006923707727a7f8ab65be9717"
+          },
+          {
+            "path": "/root/hyle-scratch/compute-unified/foundation-f5-native-host-cuda-ubsan/build/bin/g09_g06_pending",
+            "sha256": "cdea8c844f0cfa07c0838a7d02b9f4b32d7ed767950a7090bd264be6008bcd24"
+          }
+        ],
+        "failures": []
+      },
+      "gtest_execution_totals": [
+        {
+          "target": "g09_common",
+          "tests": 61,
+          "failures": 0,
+          "disabled": 0
+        },
+        {
+          "target": "g09_executable",
+          "tests": 289,
+          "failures": 0,
+          "disabled": 0
+        },
+        {
+          "target": "g09_retirement",
+          "tests": 4,
+          "failures": 0,
+          "disabled": 0
+        }
+      ]
+    },
+    {
+      "mode": "tsan",
+      "result": {
+        "state": "FAIL_WITH_ALL_TARGETS_OBSERVED",
+        "mode": "tsan",
+        "stages": [
+          {
+            "stage": "configure",
+            "command": [
+              "cmake",
+              "-S",
+              "/root/hyle-scratch/compute-unified/source-7a7b4c3b",
+              "-B",
+              "/root/hyle-scratch/compute-unified/foundation-f5-native-host-cuda-tsan/build",
+              "-UCMAKE_PROJECT_TOP_LEVEL_INCLUDES",
+              "-DCMAKE_PROJECT_INCLUDE=/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g09-cuda-host-tsan-1/targets.cmake",
+              "-DHYLE_BUILD_TESTS=OFF",
+              "-DHYLE_BUILD_BENCH=OFF",
+              "-DHYLE_INSTALL=OFF"
+            ],
+            "exit_code": 0,
+            "elapsed_seconds": 44.907449127999996
+          },
+          {
+            "stage": "manifest",
+            "command": [
+              "ninja",
+              "-C",
+              "/root/hyle-scratch/compute-unified/foundation-f5-native-host-cuda-tsan/build",
+              "build.ninja"
+            ],
+            "exit_code": 0,
+            "elapsed_seconds": 0.07415753600002972
+          },
+          {
+            "stage": "build",
+            "command": [
+              "ninja",
+              "-C",
+              "/root/hyle-scratch/compute-unified/foundation-f5-native-host-cuda-tsan/build",
+              "-f",
+              "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g09-cuda-host-tsan-1/preview.ninja",
+              "-j",
+              "2",
+              "g09_common",
+              "g09_executable",
+              "g09_retirement",
+              "g09_contracts",
+              "g09_pipeline",
+              "g09_g06_hybrid",
+              "g09_g06_pending"
+            ],
+            "exit_code": 0,
+            "elapsed_seconds": 92.944165123
+          },
+          {
+            "stage": "g09_common",
+            "command": [
+              "setarch",
+              "x86_64",
+              "-R",
+              "/root/hyle-scratch/compute-unified/foundation-f5-native-host-cuda-tsan/build/bin/g09_common",
+              "--gtest_output=json:/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g09-cuda-host-tsan-1/g09_common.json"
+            ],
+            "exit_code": 0,
+            "elapsed_seconds": 0.4386191199999985
+          },
+          {
+            "stage": "g09_executable",
+            "command": [
+              "setarch",
+              "x86_64",
+              "-R",
+              "/root/hyle-scratch/compute-unified/foundation-f5-native-host-cuda-tsan/build/bin/g09_executable",
+              "--gtest_output=json:/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g09-cuda-host-tsan-1/g09_executable.json"
+            ],
+            "exit_code": 0,
+            "elapsed_seconds": 4.379395778999992
+          },
+          {
+            "stage": "g09_retirement",
+            "command": [
+              "setarch",
+              "x86_64",
+              "-R",
+              "/root/hyle-scratch/compute-unified/foundation-f5-native-host-cuda-tsan/build/bin/g09_retirement",
+              "--gtest_output=json:/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g09-cuda-host-tsan-1/g09_retirement.json"
+            ],
+            "exit_code": 66,
+            "elapsed_seconds": 0.9719160719999991
+          },
+          {
+            "stage": "g09_contracts",
+            "command": [
+              "setarch",
+              "x86_64",
+              "-R",
+              "/root/hyle-scratch/compute-unified/foundation-f5-native-host-cuda-tsan/build/bin/g09_contracts"
+            ],
+            "exit_code": 66,
+            "elapsed_seconds": 1.2807160530000488
+          },
+          {
+            "stage": "g09_pipeline",
+            "command": [
+              "setarch",
+              "x86_64",
+              "-R",
+              "/root/hyle-scratch/compute-unified/foundation-f5-native-host-cuda-tsan/build/bin/g09_pipeline"
+            ],
+            "exit_code": 66,
+            "elapsed_seconds": 28.296382967
+          },
+          {
+            "stage": "g09_g06_hybrid",
+            "command": [
+              "setarch",
+              "x86_64",
+              "-R",
+              "/root/hyle-scratch/compute-unified/foundation-f5-native-host-cuda-tsan/build/bin/g09_g06_hybrid"
+            ],
+            "exit_code": 0,
+            "elapsed_seconds": 1.9181598790000294
+          },
+          {
+            "stage": "g09_g06_pending",
+            "command": [
+              "setarch",
+              "x86_64",
+              "-R",
+              "/root/hyle-scratch/compute-unified/foundation-f5-native-host-cuda-tsan/build/bin/g09_g06_pending"
+            ],
+            "exit_code": 0,
+            "elapsed_seconds": 1.9766201799999976
+          }
+        ],
+        "source": "/root/hyle-scratch/compute-unified/source-7a7b4c3b",
+        "source_tree": "c1e52cd0b4061706bbbfca7ad6fa575ea2d5d238",
+        "canonical_head": "3524413272cb52d06af5e64d634edbfef09b9864",
+        "pid": 549,
+        "max_jobs": 2,
+        "logical_cpus": [
+          0,
+          1,
+          2,
+          3
+        ],
+        "nice": 10,
+        "nvcc_pool": 1,
+        "nvcc_split_compile": 3,
+        "scope": "G09 changed common/CPU-CUDA host instrumentation, original Graph direct consumers, real native-retirement fault seam, original two-slot joint pipeline and affected G06 batch/pending graph consumers. No device shader/driver/private allocator/leak certificate or SDK/P1 aggregate.",
+        "retained_limits": "Same original G06/G08 host sanitizer profile and qualified native CUDA archive, including original external runtime/refcount-fence TSan boundaries; no new broad suppression.",
+        "synced_paths": [],
+        "native_reuse": {
+          "archive": "/root/hyle-scratch/compute-unified/g04-encoded-host-reused/tsan/libggml-cuda.a",
+          "sha256": "14dc738087a3d6f5d5b1c2f5a569bce507d7324966c05d3422dccd3cef337414",
+          "original_proof": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/cuda-host-san/ggml-cuda-reuse-proof.json"
+        },
+        "stage": "g09_g06_pending",
+        "elapsed_seconds": 178.78507369800002,
+        "dry_run_edges": 72,
+        "binaries": [
+          {
+            "path": "/root/hyle-scratch/compute-unified/foundation-f5-native-host-cuda-tsan/build/bin/g09_common",
+            "sha256": "ba9b58708a59386f0b7fc294dd3fbad78f85b3c32cf412e5cb2c147dbd53bb39"
+          },
+          {
+            "path": "/root/hyle-scratch/compute-unified/foundation-f5-native-host-cuda-tsan/build/bin/g09_executable",
+            "sha256": "baa69e079b3457694016bf5bb630c0d6ec562665d1b73c80ee6721b078053b16"
+          },
+          {
+            "path": "/root/hyle-scratch/compute-unified/foundation-f5-native-host-cuda-tsan/build/bin/g09_retirement",
+            "sha256": "0eecd5382787fe6a7c34a143812b6de6e01e3dcc59478ccf26a89c69d67945da"
+          },
+          {
+            "path": "/root/hyle-scratch/compute-unified/foundation-f5-native-host-cuda-tsan/build/bin/g09_contracts",
+            "sha256": "ad2911c490ffc54dc80e9612dd78063960c20d1306ba3fe20bc24a88ddd2777f"
+          },
+          {
+            "path": "/root/hyle-scratch/compute-unified/foundation-f5-native-host-cuda-tsan/build/bin/g09_pipeline",
+            "sha256": "9ef209f553b35a43555d492859f086258605a19f3ba7b6554e5974b2335d7ac2"
+          },
+          {
+            "path": "/root/hyle-scratch/compute-unified/foundation-f5-native-host-cuda-tsan/build/bin/g09_g06_hybrid",
+            "sha256": "a8a30fd10a8f6cd0f3ff1ec895bc499791d0da394e121592831970036d549a18"
+          },
+          {
+            "path": "/root/hyle-scratch/compute-unified/foundation-f5-native-host-cuda-tsan/build/bin/g09_g06_pending",
+            "sha256": "852b4c8478fb476ef11e9ceeb341a68b0af670bd9232da486ea74d8b23535341"
+          }
+        ],
+        "failures": [
+          "g09_retirement",
+          "g09_contracts",
+          "g09_pipeline"
+        ]
+      },
+      "gtest_execution_totals": [
+        {
+          "target": "g09_common",
+          "tests": 61,
+          "failures": 0,
+          "disabled": 0
+        },
+        {
+          "target": "g09_executable",
+          "tests": 289,
+          "failures": 0,
+          "disabled": 0
+        }
+      ]
+    }
+  ],
+  "raw": {
+    "path": "raw.zip",
+    "sha256": "d32563025441fd4f81eaf8d267e6ff73b05165f56e5959f68930fbaaa465ac39",
+    "bytes": 1068027,
+    "crc": "PASS"
+  },
+  "binary_retention": "Each actually executed binary absolute WSL path and SHA256 is in its result.json. Large original static ELF files remain in the unchanged verification build tree; they are not duplicated in this raw package."
+}
