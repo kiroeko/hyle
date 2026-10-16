@@ -1,6 +1,6 @@
 # G06 metadata 与 decode 成本收口
 
-状态：**共同基础批 AUDITED，2026-10-16**。本卡沿[完整十项目标](../project/inference-gaps-goal-execution-2026-10.md)，
+状态：**G06 AUDITED；共同与原生/pending source批通过，CPU runtime Q1批已冻结，2026-10-16**。本卡沿[完整十项目标](../project/inference-gaps-goal-execution-2026-10.md)，
 不缩减 CPU、单 GPU、CPU＋单 GPU、单/多请求或四原生路线。先完成四组共同审计和形状冻结，
 再集中实施、批量检查、按实际失败定向修正；仅下文已冻结的共同基础批允许产品修改。
 
@@ -289,3 +289,30 @@ Windows source5的90项＋18个pending场景按确实未变的共同产品输入
 M3/M4/D1/L2当前有限source批完成，未签完整G06：四路线runtime lengths、CPU/FI Q1
 decode规划与实际capture裁决仍必做，最终适用三san/header/迁址static/shared及各真实
 直接消费者待API/算法固定后集中验收。G04/G05原CUDA prefill非劣门与精确归因仍未解决。
+
+## CPU runtime Q1 批：SCOPED / AUDITED
+
+[定界源码与成本反证](../../../../evidence/architecture/inference-g06-cpu-runtime-q1-intake/intake.json)
+绑定baseline ca9846561fae1641936bf88f9f30afb00c5f5be1，原CPU Provider candidate为
+42a4c7cdcc0822a7b162efe575909622a906de1d。本批只使compute_provider_ggml从原CANDIDATE
+合法回AUDITED并绑定本卡；compute_ggml_runtime仍保原candidate，只借现成原语，不改vendor。
+真实阻碍是每次tail/页ID改变都会重建原请求/graph/pool；现有CPU native kernel已经有Q1
+及长KV split档，planner workspace由D/heads/threads决定，当前Windows CPU-only及实际Air
+两个mixed配置源码均核实不依赖logical rows/page refs，不因Prefill/Decode名称另造数学。
+
+| FIX | 冻结形状与常态成本 | 原样保留的验收 |
+|---|---|---|
+| D2.1 CPU runtime页元数据 | 同schema/Q-indptr且每request为0或1 query时，先预检所有active request的原FLASH_ATTN_EXT节点；再更新其原I32 leaf指针/长度与n_kv_max，保原graph、pool与scratch。Slot持当前owned layout；不修改原PreparedBatch/API或原错误/退休门 | 单/多请求64步tail、跨页、长KV跨512原decode split、页重排/共享，原独立数值；无warm injected allocation，稳定Q拓扑workspace恒定；新Q拓扑仍真正cold replan |
+| D2.2 immutable recipe寿命 | 每个原Request冷持首个compiled layout anchor和request index，防止Program.recipe的初始borrowed spans随Slot版本替换悬空；本次执行I32数据由当前Slot.layout保活。sizeof(Request)自动进入原metadata预算 | 保旧快照、两slot、OOM、无效版本、旧输出/关闭与原pending源、OOM不半提交。全体预检通过后才无失败地提交运行时指针 |
+| D2.3 Q1零mask | 仅private paged且query_rows=1时省去causal全零mask；lower/prepare与预算一致。此时causal确实允许全部有效KV；window/boxed仍由原kernel计算，普通SDPA和prefill保原数学 | F16/BF16、plain/Q8、D64/128/256、D64/Dv128、window/noncausal与原普通attention回归；不放宽精度、不改native阈值/dispatch |
+
+源码CPP/API、allocator、ownership、失败/并发和冷热边界已固定后实施；无需兼容旧私有形状。
+主消费者为单/多请求Q1，正交消费者为现有真实两node attention及请求加入/结束/空request。
+CPU-only及mixed core的原kernel/planner均复用，runtime/source preparer与构建系统不修改。
+预声明Windows原缓存一次4worker构建Provider factor、原common实际消费以及两pending风险
+target；factor排除已由common可执行完整覆盖的native suites，避免重复长数学。新独立Q1
+oracle覆盖32组×64步，断言runtime复用/原始长KV档、无warm allocation与稳定scratch。
+再串行Air实际CPU+Apple/CPU+Vulkan配置的同组CPU消费，保原lane/源错误与数值门。
+最终适用san/header/迁址static/shared随完整G06不可变候选集中做。仍按2h检查点和用户
+常设有限追加时间，原失败/未知不重置；不启动CUDA/P1，也不签其它G06-D完成。
+ragged动态extent、Apple/Vulkan runtime lengths、FI Q1/capture及原G07–G10仍保完整目标。

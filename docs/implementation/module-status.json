@@ -373,10 +373,9 @@
     },
     {
       "module": "compute_provider_ggml",
-      "state": "CANDIDATE",
-      "record": "docs/implementation/tasks/compute/inference-g04-g05-cache-attention-domain.md",
-      "summary": "G04/G05 CE13 CANDIDATE: one physical-row resolution per token and four immutable request extents frozen. CPU source22/factor5, host sanitizer3x(17+9), static/shared SDK(14+3+12headers), actual Air mixed456 CPU22 PASS. Original CE12 qualified P1 FAIL retained; new same-contract P1 pending. Other owners and closed scopes unchanged.",
-      "candidate": "42a4c7cdcc0822a7b162efe575909622a906de1d"
+      "state": "AUDITED",
+      "record": "docs/implementation/tasks/compute/inference-g06-metadata-decode.md",
+      "summary": "G06-D2 CPU runtime Q1 AUDITED：固定同Q拓扑原I32 leaf/有效长度更新、compiled-layout anchor和Q1全零causal mask省略；复用原decode kernel/graph/pool/workspace，保原权限/错误/预算。待source与实际mixed CPU验证；runtime/vendor和其它D域未改，原G04/G05失败保留。"
     },
     {
       "module": "graph_provider_onednn",

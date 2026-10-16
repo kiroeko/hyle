@@ -1,0 +1,138 @@
+{
+  "kind": "G06_D2_CPU_RUNTIME_Q1_SCOPE_AND_AUDIT",
+  "baseline": "ca9846561fae1641936bf88f9f30afb00c5f5be1",
+  "prior_owner": {
+    "module": "compute_provider_ggml",
+    "state": "CANDIDATE",
+    "record": "docs/implementation/tasks/compute/inference-g04-g05-cache-attention-domain.md",
+    "summary": "G04/G05 CE13 CANDIDATE: one physical-row resolution per token and four immutable request extents frozen. CPU source22/factor5, host sanitizer3x(17+9), static/shared SDK(14+3+12headers), actual Air mixed456 CPU22 PASS. Original CE12 qualified P1 FAIL retained; new same-contract P1 pending. Other owners and closed scopes unchanged.",
+    "candidate": "42a4c7cdcc0822a7b162efe575909622a906de1d"
+  },
+  "runtime_owner_unchanged": {
+    "module": "compute_ggml_runtime",
+    "state": "CANDIDATE",
+    "record": "docs/implementation/tasks/compute/inference-g04-g05-cache-attention-domain.md",
+    "summary": "G04/G05 CE13 CANDIDATE: one physical-row resolution per token and four immutable request extents frozen. CPU source22/factor5, host sanitizer3x(17+9), static/shared SDK(14+3+12headers), actual Air mixed456 CPU22 PASS. Original CE12 qualified P1 FAIL retained; new same-contract P1 pending. Other owners and closed scopes unchanged.",
+    "candidate": "42a4c7cdcc0822a7b162efe575909622a906de1d"
+  },
+  "sources": [
+    {
+      "path": "src/compute_provider_ggml/native_batch.cc",
+      "sha256": "e7a1b319a8b5e3e5862cfe4b5d3531615c800aa9e3f726942e8accc685b8ad3b"
+    },
+    {
+      "path": "src/compute_provider_ggml/native_batch.h",
+      "sha256": "a7095513a63a25edd1c024916c38c59396b0ae1b6824183ac3b3f2251e6cd64b"
+    },
+    {
+      "path": "src/compute_provider_ggml/ggml_cpu_provider.cc",
+      "sha256": "f542c7d1231955448a8e94469823f219f88c8263d22ffdcd5657baa577310277"
+    },
+    {
+      "path": "src/compute_ggml_runtime/cpu_execution.cc",
+      "sha256": "7afabc73d8ab541c98fde67e41f2e1384994c15cd123582ef218f89322a0d2db"
+    },
+    {
+      "path": "third_party/ggml_cpu_runtime/patches.json",
+      "sha256": "4070993e0041da3ed78a42aa9aa137f6373b13bda1ace443e1d10c7b43e821aa"
+    },
+    {
+      "path": "third_party/ggml_runtime/patches.json",
+      "sha256": "947f0cd67546ec634fa4259667bda9a4efa1cb4ad0d70e00ca2732f658d31a2f"
+    },
+    {
+      "path": "tests/compute_provider_ggml/native_paged_test.cc",
+      "sha256": "69e13985950876e56bff156f91562ab9358d9976c11c0ba996d55c6eb7487729"
+    }
+  ],
+  "air_workspace_intake": {
+    "model": "Mac16,12",
+    "apple": {
+      "cpu_sources": [
+        "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-build/hyle/src/compute_ggml_runtime/source-0bae7e9e90b384d8/src/ggml-cpu/ggml-cpu.c"
+      ],
+      "cpu_test_targets": [],
+      "planner": "case GGML_OP_FLASH_ATTN_EXT:\n                    {\n                        const int64_t neq2 = node->src[0]->ne[2]; // number of query heads\n                        const int64_t DK = node->src[1]->ne[0];\n                        const int64_t DV = node->src[2]->ne[0];\n\n                        // Tiled flash attention scratch (tile sizes defined in common.h)\n                        // Per-thread: Q_q + KQ + mask + VKQ32 + V32 + K_f32 + padding\n                        size_t prefill  = sizeof(float)*(GGML_FA_TILE_Q*DK + 2*GGML_FA_TILE_Q*GGML_FA_TILE_KV + GGML_FA_TILE_Q*DV + GGML_FA_TILE_KV*DV + GGML_FA_TILE_KV*DK)*n_tasks;\n\n                        // Decode path: n_kv_chunks = n_tasks (one chunk per thread)\n                        // Per-thread: VKQ accmulator (DV), partial M, partial S + intra-thread scratch for V, Q and VKQ\n                        size_t n_chunks = n_tasks;\n                        size_t decode   = sizeof(float)*(neq2*n_chunks*(2+DV) + n_tasks*(DK + 2*DV));\n\n                        cur += MAX(prefill, decode);\n                    } break;\n                case GGML_OP_FLASH_ATTN_BACK:\n                    {\n                        const int64_t    D = node->src[0]->ne[0];\n                        const int64_t ne11 = ggml_up(node->src[1]->ne[1], GGML_SOFT_MAX_UNROLL);\n                        const int64_t mxDn = MAX(D, ne11) * 2; // *2 because of S and SM in ggml_compute_forward_flash_attn_back\n                        if (node->src[1]->type == GGML_TYPE_F32) {\n                            cur  = sizeof(float)*mxDn*n_tasks; // TODO: this can become (n_tasks-1)\n                            cur += sizeof(float)*mxDn*n_tasks; // this is overestimated by x2\n      "
+    },
+    "vulkan": {
+      "cpu_sources": [
+        "/Users/kiro/hyle-scratch/compute-unified/a-cpu-vulkan/selected-graph/source-build/hyle/src/compute_ggml_runtime/source-5909b243d5fdb965/src/ggml-cpu/ggml-cpu.c"
+      ],
+      "cpu_test_targets": [],
+      "planner": "case GGML_OP_FLASH_ATTN_EXT:\n                    {\n                        const int64_t neq2 = node->src[0]->ne[2]; // number of query heads\n                        const int64_t DK = node->src[1]->ne[0];\n                        const int64_t DV = node->src[2]->ne[0];\n\n                        // Tiled flash attention scratch (tile sizes defined in common.h)\n                        // Per-thread: Q_q + KQ + mask + VKQ32 + V32 + K_f32 + padding\n                        size_t prefill  = sizeof(float)*(GGML_FA_TILE_Q*DK + 2*GGML_FA_TILE_Q*GGML_FA_TILE_KV + GGML_FA_TILE_Q*DV + GGML_FA_TILE_KV*DV + GGML_FA_TILE_KV*DK)*n_tasks;\n\n                        // Decode path: n_kv_chunks = n_tasks (one chunk per thread)\n                        // Per-thread: VKQ accmulator (DV), partial M, partial S + intra-thread scratch for V, Q and VKQ\n                        size_t n_chunks = n_tasks;\n                        size_t decode   = sizeof(float)*(neq2*n_chunks*(2+DV) + n_tasks*(DK + 2*DV));\n\n                        cur += MAX(prefill, decode);\n                    } break;\n                case GGML_OP_FLASH_ATTN_BACK:\n                    {\n                        const int64_t    D = node->src[0]->ne[0];\n                        const int64_t ne11 = ggml_up(node->src[1]->ne[1], GGML_SOFT_MAX_UNROLL);\n                        const int64_t mxDn = MAX(D, ne11) * 2; // *2 because of S and SM in ggml_compute_forward_flash_attn_back\n                        if (node->src[1]->type == GGML_TYPE_F32) {\n                            cur  = sizeof(float)*mxDn*n_tasks; // TODO: this can become (n_tasks-1)\n                            cur += sizeof(float)*mxDn*n_tasks; // this is overestimated by x2\n      "
+    }
+  },
+  "fixed_peer_anchor_reuse": [
+    {
+      "name": "sglang",
+      "commit": "7224fce1b5e488c9916f20ec0556d696e595d512",
+      "archive_sha256": "21559aac7538426c4d75262a25d041d8c24070785a4d8f550459f68c3398b0e0",
+      "path": "python/sglang/srt/layers/attention/flashinfer_backend.py",
+      "file_sha256": "a5649f67038153c35864b3f50d5c368071a56cbef75f266bec804dbf7e64363f",
+      "line_ranges": [
+        [
+          203,
+          220
+        ],
+        [
+          251,
+          260
+        ]
+      ]
+    },
+    {
+      "name": "vllm",
+      "commit": "98f721116227f0f48690deb05c815c057bac0668",
+      "archive_sha256": "984cc5cd0ddc5bc93c8f1055f7b2a19da128d372343896510952060bd2b71423",
+      "path": "vllm/v1/attention/backends/flashinfer.py",
+      "file_sha256": "343b949d62db7fc03f6ca0c682e1ec1cb60125461069b081ac1554b7a05214e9",
+      "line_ranges": [
+        [
+          1310,
+          1345
+        ]
+      ]
+    },
+    {
+      "name": "llama.cpp",
+      "commit": "cbe28bb3cb0758f0c566a9a3561766821aeb0748",
+      "archive_sha256": "e71cd4a1645b151a45c46a9d4c0bf5de0fa2a94080ce31ca508a6c65ad1a3562",
+      "path": "src/models/llama.cpp",
+      "file_sha256": "10af5226730900378be77318691f4acbfccb46809c41a81a195a0ca0d5d48109",
+      "line_ranges": [
+        [
+          113,
+          126
+        ],
+        [
+          169,
+          169
+        ]
+      ]
+    }
+  ],
+  "findings": [
+    "CPU native batch currently compares all four arrays and retains immutable PagedRead pages/rows; tail/ID change rebuilds request/graph/threadpool.",
+    "Existing native ggml CPU Q1 split-KV path is selected at qualified logical row count>=512; no new kernel/name-only decode rewrite needed.",
+    "Active CPU-only generated ops SHA exactly matches canonical ggml_cpu_runtime patch; active Windows and actual Air mixed planners allocate flash workspace from dimensions/threads, independent of logical row/page count.",
+    "A causal single query sees all valid KV rows. Its existing all-zero dense causal mask can be omitted without changing arithmetic; window/boxed flags retain their original kernel semantics."
+  ],
+  "fixed": [
+    "D2.1 same Q-indptr all0/1 paged batches update per-invocation native I32 leaf and n_kv_max only after all requests preflight, retain graph/pool/workspace and replace slot current owned layout",
+    "D2.2 keep original layout in each cold Request anchor so its immutable recipe borrowed spans remain valid after runtime pointer update; cold request-size budget accounts anchor/index",
+    "D2.3 omit only private paged Q1 all-zero causal mask in prepare/lower/budget; ordinary attention and mixed/prefill math unchanged"
+  ],
+  "negative_space": [
+    "Paged Q1 runtime batch only; changed Q topology/active request set and general mixed/prefill still use original cold plan.",
+    "Ragged variable extents, Apple/Vulkan runtime lengths, FI Q1 planning/capture and full G06 final gates remain required; no goal shrink or automatic qualification.",
+    "No runtime/vendor/CMake/public API changes; compute_ggml_runtime remains original CANDIDATE. No CUDA/P1/profile run."
+  ],
+  "validation": [
+    "Windows max4 cached targets: provider factor excluding duplicated native suites, original common real-consumer suite includes all native suites plus new64 runtime oracle, two original pending-risk binaries.",
+    "32 single/multi/type/cache/depth finite configurations across64 growth/shrink/reorder/page-cross/512 split boundary episodes; original kernel outputs vs independent uniform-weight oracle; no injected warm allocation, constant workspace under stable Q topology; joins/end/empty request force correct cold plan.",
+    "Actual Air CPU+Apple and CPU+Vulkan build configurations use same public CPU tests with mixed core, serial max4; no native GPU change or P1 claim.",
+    "Final G06 san/header/relocated SDK after full API/algorithm freeze; docs/closure/diff and selector now."
+  ],
+  "elapsed": "Full intake stopwatch not captured; UNKNOWN rather than zero",
+  "timestamp_utc": "2026-10-16T03:07:10.118558+00:00"
+}
