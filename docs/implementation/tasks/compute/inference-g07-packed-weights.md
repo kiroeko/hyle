@@ -249,3 +249,16 @@ shared缺少已清理旧prefix的setup失败、同配置续跑全部保留；不
 最后一份结果及Program/Invocation/native缓存最终销毁明确DEFERRED。独立benchmark只重命名
 原导出符号，使用同一公共提交与完成路径；不搬动数学到冷期。此记录只是可比性源码预审，
 尚未运行独立数值preflight、A/A或P1，不签速度门。owner仍CANDIDATE。
+
+[W1最终回映](../../../../evidence/architecture/inference-g07-packed-weight-audit/w1-reconciliation.json)
+绑定70份与669相同的原生/资源桥源码与20项原记录，继续KEEP/ROUTED原Q4_K/Q6_K/Q8_0
+及普通dense BF16控制。它连接原实际角色数值、当前已关闭生命周期合同和本轮受影响SDK，
+不冒充新跑的全部GGUF×路线×64矩阵。原GGUF CUDA selected的D2H IDs和stream wait仍
+明确计费；原BF16 grouped可能整权重cast的限制保留，不能以新MLX kernel概括消除。
+
+[P0账单](../../../../evidence/architecture/inference-g07-packed-weight-audit/p0.json)
+给出原物理权重、activation/scales/输出、CUDA无全局展开、Apple必要scale/quantize和4KiB
+threadgroup staging、最终owner销毁及native UNKNOWN；没有把逻辑数组字节当私有allocator
+peak。实际两端、两形状独立oracle预检均通过；Apple的原/新实现各8个执行/分配/placement
+组合A/A已通过，正式P1仍运行中。CUDA普通数值预检最大绝对误差0；Apple选定精确dyadic
+输入的double→BF16 oracle逐bit一致。尚不因此签P1或整项完成。

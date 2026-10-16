@@ -1,0 +1,119 @@
+{
+  "schema": "hyle.inference-g07-cost-review/v1",
+  "verdict": "PASS_FINITE_P0_STRUCTURE_WITH_NATIVE_UNKNOWNS",
+  "candidate": "b483b8939e9c1d28a98eee3a6ecd13b3fd45fc88",
+  "inputs": [
+    {
+      "path": "src/compute_provider_torch_cuda/artifact_provider.cc",
+      "sha256": "eb2a53e76d3bb307436b956eb7b12159a289eecbc07f2c4e701b32d29f9e1a20"
+    },
+    {
+      "path": "src/compute_provider_torch_cuda/mlx_packed_kernel.cu",
+      "sha256": "99150d8904f0df3dfdd7f2aeb242eb03c56f850fdec2f2517f115c2e1a819f02"
+    },
+    {
+      "path": "src/compute_provider_torch_cuda/mlx_packed_kernel.h",
+      "sha256": "d88163997086a4cf51e9217aa57f67e09bafb1aed6f0a5c9188f367a3c6aa2bc"
+    },
+    {
+      "path": "src/compute_route_apple/apple_mature_float.cc",
+      "sha256": "06c7c152fcc064f8af049b3ad8a6b5fbe4fb7c24a6b225c4188dc4de001d6779"
+    },
+    {
+      "path": "third_party/mlx_cuda_quant/mlx_cuda_quant.h",
+      "sha256": "c390f4a047ec1af47182cbac7e1c39438fcf4a5c83fcedbea8ef3a6095d06ea5"
+    }
+  ],
+  "families": [
+    {
+      "id": "W1",
+      "decision": "KEEP_ROUTED",
+      "evidence": "w1-reconciliation.json",
+      "resident": "Original exact packed TensorDesc bytes, no new F32 weight shadow",
+      "warm": "Original native workspace/activation transforms/selected-row output/status/copy/waits. GGUF CUDA selected-index D2H/sync remains charged, not removed by MLX kernel.",
+      "limits": "Native private upper UNKNOWN; original BF16 grouped cast limitation retained."
+    },
+    {
+      "id": "W2-CUDA",
+      "decision": "FIX",
+      "cold": "No ATen initialization/table/decoded-weight bank for MLX; Program immutable descriptors/formats, direct original device payload at submit.",
+      "resident": "Caller owns packed words/scales/bias plus inputs/output; provider reports sizeof(Program) and sizeof(Invocation), no decoded bank.",
+      "warm": "One packed math kernel for linear; original F32/half/BF16 promotion and MX scale order. No Kgroup tensor unpack/from_blob/matmul/sum temporaries or output-copy for MLX. Artifact decoders and Softplus still use original ATen.",
+      "example": {
+        "K": 2048,
+        "N": 6144,
+        "group": 64,
+        "packed_words_bytes": 6291456,
+        "scales_bytes": 786432,
+        "bias_bytes": 786432,
+        "activation_bytes": {
+          "M1": 8192,
+          "M64": 524288
+        },
+        "output_bytes": {
+          "M1": 24576,
+          "M64": 1572864
+        },
+        "native_full_float_weight_temporary_bytes": 0
+      },
+      "evidence": "Correctness source receipt includes native packed run with original Torch device allocator limit0, actual-width N2, windows source and all SDKs."
+    },
+    {
+      "id": "W2-Apple",
+      "decision": "FIX",
+      "cold": "Original MLX Context/Program compiler/JIT/library metadata. No predecoded full float weight captured by benchmark or ordinary explicit-input API.",
+      "resident": "Original E4M3FN codes and F32 block128 scales; ordinary native MLX owners retained.",
+      "warm": "Full original BF16 dynamic quantization and scales; original scale repeat/selected-code materialization where required; custom tile reads packed codes and produces F32 output followed by original final cast. 16x16 output tile,32 staging,4096B threadgroup staging. No full F32 decoded weight or per-Kblock global dots bank.",
+      "example": {
+        "K": 2048,
+        "N": 2048,
+        "weight_codes_bytes": 4194304,
+        "physical_weight_scales_bytes": 1024,
+        "repeated_weight_scales_logical_bytes": 131072,
+        "activation_bf16_bytes": {
+          "M1": 4096,
+          "M64": 262144
+        },
+        "quantized_activation_codes_logical_bytes": {
+          "M1": 2048,
+          "M64": 131072
+        },
+        "activation_scales_logical_bytes": {
+          "M1": 64,
+          "M64": 4096
+        },
+        "native_f32_output_logical_bytes": {
+          "M1": 8192,
+          "M64": 524288
+        },
+        "final_output_bf16_bytes": {
+          "M1": 4096,
+          "M64": 262144
+        },
+        "full_float_weight_temporary_bytes": 0
+      },
+      "limits": "Logical named arrays are not a claimed MLX allocator peak; fusion/private cache/selected-code/repeated-scale actual allocation upper UNKNOWN. GroupedFloat4 remains original separate path."
+    },
+    {
+      "id": "W3",
+      "decision": "FIX_MLX_CUDA_KEEP_OTHER_ORIGINAL_CHECKS",
+      "warm": "All I32 IDs validated by original Queue device-status storage and one checked kernel before any payload/output write; math checks nonzero status. Queue reset/report/event and final wait charged. No selected .any().item host step.",
+      "failure": "Negative/upper-bound ID => OutOfRange and old output bytes unchanged, failed slot recreated. Repeated/reordered/modified IDs read real current bindings; no address cache.",
+      "limits": "No capture/strict-budget/new status-owner qualification; this is not a claim that every original GGUF/native route has zero host index validation."
+    },
+    {
+      "id": "W4",
+      "decision": "BORROW_EXISTING_OWNERS_QUALIFY_CHANGED_PATHS",
+      "cold": "Explicit resource allocation/upload, Program/Invocation and two ordinary slots as declared; no engine scheduler/loader/cache policy added.",
+      "warm": "At least64 modified-input/selection steps on changed CUDA packed and CPU+Apple packed paths, old outputs/close/independent slots; source/12currentSDKconsumer runs and unchanged resource/bridge evidence.",
+      "limits": "Partial/accepted prefix/drain/close governed by original Queue/Completion and MLX workers. Final retained native arrays and process caches are not falsely billed as per-call destruction. Not a new all GGUF x route x64 run."
+    }
+  ],
+  "measurement": "P0 establishes structure/bytes and actual ordinary lifecycle. P1 uses fixed complete warm call and original669 exact lowering, two shapes per affected route. No token/s or kernel-only ranking.",
+  "native_unknowns": [
+    "Driver/module/context memory and private native cache peak/retained upper",
+    "Apple MLX allocation/fusion cache upper",
+    "Original non-MLX ATen/BLAS allocator and diagnostic thread/LSan lifetime",
+    "No new hard private-budget or external capture guarantee"
+  ]
+}

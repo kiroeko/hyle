@@ -1,0 +1,514 @@
+{
+  "schema": "hyle.inference-g07-w1-reconciliation/v1",
+  "verdict": "KEEP_EXISTING_ROUTED_W1_WITH_EXPLICIT_COSTS",
+  "baseline": "669121418669b31f6849c74f64362aaf8d6eb919",
+  "candidate": "b483b8939e9c1d28a98eee3a6ecd13b3fd45fc88",
+  "source_bindings": [
+    {
+      "path": "include/hyle/compute/low_precision.h",
+      "sha256": "6488d615af7bb970472b2ccd84a8081e9b3bad12ea0e599651abc5706ff2db60",
+      "same_as_closed_baseline": true
+    },
+    {
+      "path": "include/hyle/compute/model_ops.h",
+      "sha256": "165cfc86281d90e246f137892c0fa1f625421a53f6bdbf9877aef9828773f8c9",
+      "same_as_closed_baseline": true
+    },
+    {
+      "path": "src/compute_ggml_runtime/CMakeLists.txt",
+      "sha256": "7162fc8461e519e644f67f197799bddf5458a3c3ed68fee90221279123d25a0d",
+      "same_as_closed_baseline": true
+    },
+    {
+      "path": "src/compute_ggml_runtime/CPU_SOURCE_NOTICE.txt",
+      "sha256": "ef38651827525111fd410846adffedfeb5a06bfdc179ccfb4246f7256918900c",
+      "same_as_closed_baseline": true
+    },
+    {
+      "path": "src/compute_ggml_runtime/HyleGgmlCpuRuntimeConfig.cmake.in",
+      "sha256": "334aaf14d001bf33d963976091a4aa111dff37160d83f2ddfb3d815def2751da",
+      "same_as_closed_baseline": true
+    },
+    {
+      "path": "src/compute_ggml_runtime/cpu_execution.cc",
+      "sha256": "7afabc73d8ab541c98fde67e41f2e1384994c15cd123582ef218f89322a0d2db",
+      "same_as_closed_baseline": true
+    },
+    {
+      "path": "src/compute_ggml_runtime/cpu_execution.h",
+      "sha256": "0ca5a22a3c5aefe9c01e2384ea363b7f9252674040b5f6e2aafd0bcff3eccd98",
+      "same_as_closed_baseline": true
+    },
+    {
+      "path": "src/compute_ggml_runtime/cpu_program.cc",
+      "sha256": "d0bc0d0389877f4f9bee055895e9180604d535ad17b2d8c3f0390e8e6c6ba09c",
+      "same_as_closed_baseline": true
+    },
+    {
+      "path": "src/compute_ggml_runtime/cpu_program.cmake",
+      "sha256": "255bf04a9fe0e73e30e1aae28d30c4870ccfba948dac39412263243d97daa91e",
+      "same_as_closed_baseline": true
+    },
+    {
+      "path": "src/compute_ggml_runtime/cpu_program.h",
+      "sha256": "8dabcd5b7f57c768c8cd317058f6958c685d462f548cac3b2248be2597b40065",
+      "same_as_closed_baseline": true
+    },
+    {
+      "path": "src/compute_ggml_runtime/cpu_program_abi.h",
+      "sha256": "2268eef8042a00ec5dbffdf38ce4d9c5f27454cfa163cec56d51138bf3ba0004",
+      "same_as_closed_baseline": true
+    },
+    {
+      "path": "src/compute_ggml_runtime/cpu_program_export.cc",
+      "sha256": "b450247a43dda0ca1658d54727b8114e439e9449e0df8644eaecaa909afb49c2",
+      "same_as_closed_baseline": true
+    },
+    {
+      "path": "src/compute_ggml_runtime/explicit_rope.h",
+      "sha256": "eb3adc26db7641a35c433e83492c74c1d5316b32433c799a161d8a8b31289e8e",
+      "same_as_closed_baseline": true
+    },
+    {
+      "path": "src/compute_ggml_runtime/metadata_arena.cc",
+      "sha256": "0b1cbdc5d063593a1f780df92ed9420ba6905ec02f1f492ae486e3046fde1d09",
+      "same_as_closed_baseline": true
+    },
+    {
+      "path": "src/compute_ggml_runtime/metadata_arena.h",
+      "sha256": "27d9639094db0f0fc72a7dd9c8b767d6e5b63f5bfd4cafe849cf0f97ec719dfb",
+      "same_as_closed_baseline": true
+    },
+    {
+      "path": "src/compute_ggml_runtime/prepare_cuda_iq1_manifest.py",
+      "sha256": "f0a923427a1616c548640eacddb33a3c5e94bd7dfdd7d997ada3f7e3c4a49b4a",
+      "same_as_closed_baseline": true
+    },
+    {
+      "path": "src/compute_ggml_runtime/prepare_metal_iq1_manifest.py",
+      "sha256": "105e84192472c5bdef27d74adbdbd41c02eb5fbce4b6c3196c5d86868be9425e",
+      "same_as_closed_baseline": true
+    },
+    {
+      "path": "src/compute_ggml_runtime/prepare_mixed_cpu_manifest.py",
+      "sha256": "56d86439ecdebaf354f435d73ce5acba4829d77bc34576d20bb9979443fc44ea",
+      "same_as_closed_baseline": true
+    },
+    {
+      "path": "src/compute_ggml_runtime/prepare_source.py",
+      "sha256": "ccde3399d6a65ecb68f3ecc6886522ff559df2eb7e5da405ae71612372615c7c",
+      "same_as_closed_baseline": true
+    },
+    {
+      "path": "src/compute_ops/low_precision.cc",
+      "sha256": "4f1921d032a42822af8bf74aed96f7c42289943b032271beb69843a31099b2d1",
+      "same_as_closed_baseline": true
+    },
+    {
+      "path": "src/compute_ops/weight_decode.cc",
+      "sha256": "7cd0b17f6383883206548322cafe6fc1576e66400f43182d45defd8e6d70a44f",
+      "same_as_closed_baseline": true
+    },
+    {
+      "path": "src/compute_provider_ggml/CMakeLists.txt",
+      "sha256": "4a1e5e6b64d3e684c6f9454fb4b1d42909d5ee72f8b4efed7fad1c88941d5551",
+      "same_as_closed_baseline": true
+    },
+    {
+      "path": "src/compute_provider_ggml/ggml_cpu_provider.cc",
+      "sha256": "86de40460a93736741e1c0e36beebc740cd483ea1f10d9070058ec52df43a275",
+      "same_as_closed_baseline": true
+    },
+    {
+      "path": "src/compute_provider_ggml/native_batch.cc",
+      "sha256": "8e5e54e2728ffc92040fa4b9eba0bb6e88eed1f2b83d51ac647514555adc18c3",
+      "same_as_closed_baseline": true
+    },
+    {
+      "path": "src/compute_provider_ggml/native_batch.h",
+      "sha256": "db7e1d74af8d9edbf8c84337c2e0e3c817b7ddbcf89da1be81daaec4f4dd2054",
+      "same_as_closed_baseline": true
+    },
+    {
+      "path": "src/compute_provider_ggml/program.h",
+      "sha256": "cfe6389cb783a6ca238f752048462d62da4c6c0520637fa6afa44a1348b295ee",
+      "same_as_closed_baseline": true
+    },
+    {
+      "path": "src/compute_provider_ggml/standard_index.cc",
+      "sha256": "a069b7ec6b4eb06851c60e8140db7226903c0821e2a6e63f3cb4f245a0c4e3e8",
+      "same_as_closed_baseline": true
+    },
+    {
+      "path": "src/compute_provider_ggml/standard_index.h",
+      "sha256": "9a760f757eafad3aa86ff8d08110a80e37b8ebffa9595e963d26f4f4699ea2a2",
+      "same_as_closed_baseline": true
+    },
+    {
+      "path": "src/compute_provider_ggml_cuda/CMakeLists.txt",
+      "sha256": "cb412657fe897000e6fa201c739119957d99f4709048d32d583faec005fc983e",
+      "same_as_closed_baseline": true
+    },
+    {
+      "path": "src/compute_provider_ggml_cuda/ggml_cuda_provider.cc",
+      "sha256": "f302339643036ff93d4424558bdbd723828670e45106aa1c98726bb711328941",
+      "same_as_closed_baseline": true
+    },
+    {
+      "path": "src/compute_provider_ggml_cuda/native_bridge.h",
+      "sha256": "ef4396085c72729326314637c9511968bdaf9d3eab7a7781bfc9d8230fd7f9d2",
+      "same_as_closed_baseline": true
+    },
+    {
+      "path": "src/compute_provider_ggml_cuda/native_bridge_impl.h",
+      "sha256": "d72e81b4e4047012d03e313c8a0ae78c3894fbf6c2c27bf6ba9aeb3e2c42537c",
+      "same_as_closed_baseline": true
+    },
+    {
+      "path": "src/compute_provider_ggml_cuda/program.h",
+      "sha256": "a2542e315e3672187b6fd0e313bc1a2b78e8ce208ff7e8d04b9ae5ec15aca8a5",
+      "same_as_closed_baseline": true
+    },
+    {
+      "path": "src/compute_provider_ggml_cuda/tensor_program.cc",
+      "sha256": "c25c915b548b48298388ad0ffdf796aafbf0a2508ce7808f29bd96e4acf098e0",
+      "same_as_closed_baseline": true
+    },
+    {
+      "path": "src/compute_provider_ggml_cuda/tensor_program.h",
+      "sha256": "06a8751b8f13ca8f8ff06712db40b6636aa20f0c036b72f0c5def405bb1d2830",
+      "same_as_closed_baseline": true
+    },
+    {
+      "path": "src/compute_provider_ggml_metal/CMakeLists.txt",
+      "sha256": "442c2e502b96dbe8ed4966f8fa1fa0de480aa4c4c55851f15f93fca3fb8ab655",
+      "same_as_closed_baseline": true
+    },
+    {
+      "path": "src/compute_provider_ggml_metal/native_program.cc",
+      "sha256": "3bb39e5c2740ea7e7f6b184f558d17223a3d8f713fe8108942346ce58116c3d4",
+      "same_as_closed_baseline": true
+    },
+    {
+      "path": "src/compute_provider_ggml_metal/native_program.h",
+      "sha256": "9ffd4db7f52aa696d3e7ab5fa2b960f7bf4d976fddf0f7e57f8ac3a4a643e22e",
+      "same_as_closed_baseline": true
+    },
+    {
+      "path": "src/compute_provider_ggml_vulkan/CMakeLists.txt",
+      "sha256": "6d5e4307229281d39bbd0e920100cea6d504ef00afb7dc7d3b59c9a523c74a4d",
+      "same_as_closed_baseline": true
+    },
+    {
+      "path": "src/compute_provider_ggml_vulkan/metadata_arena.h",
+      "sha256": "43869fa1c1fcc4947687c07342adf5d4403104591cfce173687850a9e88f2652",
+      "same_as_closed_baseline": true
+    },
+    {
+      "path": "src/compute_provider_ggml_vulkan/native_bridge.h",
+      "sha256": "d129d55d110bfbd97665c6ecd36aebf0256b82f88d67a899eedee3b9012de146",
+      "same_as_closed_baseline": true
+    },
+    {
+      "path": "src/compute_provider_ggml_vulkan/native_device.cc",
+      "sha256": "e0340a3049f1572e005400bc837bf1d49368cde9985a9771eb3daedf0a5ca978",
+      "same_as_closed_baseline": true
+    },
+    {
+      "path": "src/compute_provider_ggml_vulkan/native_device.h",
+      "sha256": "f4c84a9883968760a7fb2efd65697fd46ef9719ac024ed74c874e6a8281bcdb9",
+      "same_as_closed_baseline": true
+    },
+    {
+      "path": "src/compute_provider_ggml_vulkan/native_graph.cc",
+      "sha256": "1e8f7273fe1ba510686a634a15cb5d7e3d5540446e84de28ea6a81dae08f404c",
+      "same_as_closed_baseline": true
+    },
+    {
+      "path": "src/compute_provider_ggml_vulkan/native_graph.h",
+      "sha256": "27e8be4e0be5db1e7958a5fa13cc2fe15e657793cc591496a54ee3d8f72e56ab",
+      "same_as_closed_baseline": true
+    },
+    {
+      "path": "src/compute_provider_ggml_vulkan/native_runtime_impl.h",
+      "sha256": "37dd0fdf3453bdf162af172cff5d563689d5f1688e2424efa5d75b491615bcd3",
+      "same_as_closed_baseline": true
+    },
+    {
+      "path": "src/compute_provider_ggml_vulkan/native_storage_impl.h",
+      "sha256": "3c196d5d732d856fac1bfbd8c7b112f3f4482a8c6924a656f8687eeed996233b",
+      "same_as_closed_baseline": true
+    },
+    {
+      "path": "src/compute_provider_ggml_vulkan/native_work_impl.h",
+      "sha256": "eeba414032aff5939d62ae0624f71ef01038a4fe677c82c7b0f1b0b4ddc34f2e",
+      "same_as_closed_baseline": true
+    },
+    {
+      "path": "src/compute_provider_ggml_vulkan/region.cc",
+      "sha256": "360ecaa742b33e62c751b895da6bb498527f514940f21ee00e221d4791a1e56f",
+      "same_as_closed_baseline": true
+    },
+    {
+      "path": "src/compute_provider_ggml_vulkan/region.h",
+      "sha256": "f05a25c22fa48b04806384754ef1cdaa8f1d2b21176c386b9f66f8f543ccb66f",
+      "same_as_closed_baseline": true
+    },
+    {
+      "path": "src/compute_route_apple/apple_context.cc",
+      "sha256": "274037dda5c58fda4aab3a210a0606f1e86954385d62d448ed44e9802843fb37",
+      "same_as_closed_baseline": true
+    },
+    {
+      "path": "src/compute_route_apple/apple_mature_gguf.cc",
+      "sha256": "8dcb44488a72c2bfc4cef47f4edcc46d9f1bd9b9fa7e66a06308d3e7ead1e400",
+      "same_as_closed_baseline": true
+    },
+    {
+      "path": "src/compute_route_apple/apple_operations.cc",
+      "sha256": "4c90b14e44cc3a438c16c9935ef19e1e14a1642790179261004cb2d8d6065ee2",
+      "same_as_closed_baseline": true
+    },
+    {
+      "path": "src/compute_route_apple/apple_tensor.cc",
+      "sha256": "93462583dfeb859fc9a59a5a8eef36540a84346bebca9cf6e331934bd10dc1f7",
+      "same_as_closed_baseline": true
+    },
+    {
+      "path": "src/compute_route_vulkan/vulkan_mlx.cc",
+      "sha256": "dca494fd5cf471ebe09b7e1710939f686d03c9bd6814140c823a47e31ed542a9",
+      "same_as_closed_baseline": true
+    },
+    {
+      "path": "src/graph_route_cpu_apple/CMakeLists.txt",
+      "sha256": "04f7911b650fe1b04251af6d2ac522ffb0986bf8c2444c779adb3b063d826d02",
+      "same_as_closed_baseline": true
+    },
+    {
+      "path": "src/graph_route_cpu_apple/compile.cc",
+      "sha256": "1197508f62804c6093d0acd4f535f8447a2303e8f93f27bc01ace9f433b2c567",
+      "same_as_closed_baseline": true
+    },
+    {
+      "path": "src/graph_route_cpu_apple/invocation.cc",
+      "sha256": "773be9ed03475a613bd7fb413bdf8598072c0ea603e98e0a075cecbdbb9af6b3",
+      "same_as_closed_baseline": true
+    },
+    {
+      "path": "src/graph_route_cpu_apple/paged.h",
+      "sha256": "ffbe2264541bccf59a4e6db51075354e3c0c444139417919cea846c0bf672dfc",
+      "same_as_closed_baseline": true
+    },
+    {
+      "path": "src/graph_route_cpu_apple/plan.h",
+      "sha256": "2b9f13e858d4bfc46ea3bb5addf76e8f4bb8d3aa5e2b87d8750dac590d50d2a4",
+      "same_as_closed_baseline": true
+    },
+    {
+      "path": "src/graph_route_cpu_cuda/CMakeLists.txt",
+      "sha256": "b35c072652c0ec62fd0a806ce48dcc253378fb745aef192bf73db7a34683dfd6",
+      "same_as_closed_baseline": true
+    },
+    {
+      "path": "src/graph_route_cpu_cuda/compile.cc",
+      "sha256": "ac51efee0c84ccf4a06aea54b8a10bbbb6dccc792ffcb781b07598c08f09295b",
+      "same_as_closed_baseline": true
+    },
+    {
+      "path": "src/graph_route_cpu_cuda/invocation.cc",
+      "sha256": "d069fb89c22f6f9f1d8b794859fe126a59eac465f046591d84f2880b57b1509e",
+      "same_as_closed_baseline": true
+    },
+    {
+      "path": "src/graph_route_cpu_cuda/progress.cc",
+      "sha256": "fd9aa5491165e58ad6d4db9f8fd83b1e6dc139a9199b8760476f9bcbe0b2d3d5",
+      "same_as_closed_baseline": true
+    },
+    {
+      "path": "src/graph_route_cpu_cuda/progress.h",
+      "sha256": "87be82c3848a81eb10325c10ed05971188a0381592b0a62886d10fdc70ac36bd",
+      "same_as_closed_baseline": true
+    },
+    {
+      "path": "src/graph_route_cpu_vulkan/CMakeLists.txt",
+      "sha256": "e075b7b60587e5166b04bf7872bea52e3f168a5f1f8b0eaec179df2a4f298d6a",
+      "same_as_closed_baseline": true
+    },
+    {
+      "path": "src/graph_route_cpu_vulkan/compile.cc",
+      "sha256": "b41e3a4d0c3645e249c68019a9088f63462c30f1e9dc83e9107a5dced1c7c66e",
+      "same_as_closed_baseline": true
+    },
+    {
+      "path": "src/graph_route_cpu_vulkan/invocation.cc",
+      "sha256": "538b67c55718a79d0ec54bc0d7e7fce15cf55679690c3abbf686849767c93580",
+      "same_as_closed_baseline": true
+    },
+    {
+      "path": "src/graph_route_cpu_vulkan/paged.h",
+      "sha256": "c445222621fd1f33cc3af6807864a07c2621ca54916c5e317dbae876c8968620",
+      "same_as_closed_baseline": true
+    },
+    {
+      "path": "src/graph_route_cpu_vulkan/plan.h",
+      "sha256": "c771f5639987bf6cec4415f5f080403547fa1890a05fbfb9c71760610a2e0d6e",
+      "same_as_closed_baseline": true
+    }
+  ],
+  "evidence": [
+    {
+      "path": "evidence/correctness/cpu-quant-mtp-c5-matrix/windows/summary.json",
+      "sha256": "35d68f65b6ca61d2821abcd5be71559bebda75c9856704850bf2901f49f92c2e",
+      "role": "Existing CPU Direct/Graph actual-width format/role oracle, synthetic valid payload"
+    },
+    {
+      "path": "evidence/correctness/cpu-quant-mtp-c5-matrix/windows/receipt.json",
+      "sha256": "e9a4d1cb2b893cf027b8bee6579d0c6bc0dfd39d73fdf76bf8748b4c42fc316b",
+      "role": "Actual original selected build/Direct/Graph commands, return codes and timing"
+    },
+    {
+      "path": "evidence/correctness/cpu-quant-mtp-c5-matrix/linux/summary.json",
+      "sha256": "188a39f847705eb44eddfc4557a1c5a44a0e56974bbc577e6f211bbcb5b89917",
+      "role": "Existing CPU Direct/Graph actual-width format/role oracle, synthetic valid payload"
+    },
+    {
+      "path": "evidence/correctness/cpu-quant-mtp-c5-matrix/linux/receipt.json",
+      "sha256": "37190ce10b977ca58de29589b44439b379875265048df7180cf05f5a621cda55",
+      "role": "Actual original selected build/Direct/Graph commands, return codes and timing"
+    },
+    {
+      "path": "evidence/correctness/llm-moe-d5-real-fragments/cuda-qwen35-primary-gguf-complete/receipt.json",
+      "sha256": "f67e72b1427673fa6ae737e968403503de0293ae2bc8a9924643b7f49bbf9ada",
+      "role": "Existing actual-width Qwen GGUF FFN and full-role Direct/Graph semantic qualification"
+    },
+    {
+      "path": "evidence/correctness/llm-moe-d5-real-fragments/cuda-qwen35-primary-gguf-r01/receipt.json",
+      "sha256": "1a717db33a65a0fb654327dc387ba1048983d3f4d61415e32358c9f1567a5269",
+      "role": "Actual tied-vocabulary/checked failure or all projection-format role evidence"
+    },
+    {
+      "path": "evidence/correctness/llm-moe-d5-real-fragments/cuda-qwen35-primary-gguf-projections/receipt.json",
+      "sha256": "c2792fada1afc6567e6d5c5c339e32ea6f84df0e8e3c8b1730478850253f5e3f",
+      "role": "Actual tied-vocabulary/checked failure or all projection-format role evidence"
+    },
+    {
+      "path": "evidence/correctness/llm-moe-d5-real-fragments/apple-qwen35-primary-gguf-complete/receipt.json",
+      "sha256": "47ffa9633e89b4490bbc14caf5db9ced59ce6888084a57a0a18e62ad33e7c488",
+      "role": "Existing actual-width Qwen GGUF FFN and full-role Direct/Graph semantic qualification"
+    },
+    {
+      "path": "evidence/correctness/llm-moe-d5-real-fragments/apple-qwen35-primary-gguf-r01/receipt.json",
+      "sha256": "8fde868941a23ff3f44d046a95439ba4600ba7d6c81b755c480108e8c2aaf8d8",
+      "role": "Actual tied-vocabulary/checked failure or all projection-format role evidence"
+    },
+    {
+      "path": "evidence/correctness/llm-moe-d5-real-fragments/apple-qwen35-primary-gguf-projections/receipt.json",
+      "sha256": "3749b302b122772cace90a911d71d839f62f6a40e51708d1d73fb7fe0cfc1040",
+      "role": "Actual tied-vocabulary/checked failure or all projection-format role evidence"
+    },
+    {
+      "path": "evidence/correctness/llm-moe-d5-real-fragments/vulkan-qwen35-primary-gguf-complete/receipt.json",
+      "sha256": "ac383dd7c40c6c77efef18bbb5eb99b69991a5143488164c4364a1514cb00841",
+      "role": "Existing actual-width Qwen GGUF FFN and full-role Direct/Graph semantic qualification"
+    },
+    {
+      "path": "evidence/correctness/llm-moe-d5-real-fragments/vulkan-qwen35-primary-gguf-r01/receipt.json",
+      "sha256": "83ce65ba7e89238e352e1eafa2cf8683052ed3379485c3a715462f8df4fe8994",
+      "role": "Actual tied-vocabulary/checked failure or all projection-format role evidence"
+    },
+    {
+      "path": "evidence/correctness/llm-moe-d5-real-fragments/vulkan-qwen35-primary-gguf-projections/receipt.json",
+      "sha256": "8eae1caddd6ded2a92cc31917449c58c0d4e93475753da0dddc4d71255beed1a",
+      "role": "Actual tied-vocabulary/checked failure or all projection-format role evidence"
+    },
+    {
+      "path": "evidence/correctness/compute-h1-offload-wsl/source-receipt.json",
+      "sha256": "7d148e83fd1cf38a09a6ae3d2ad048837edddebd05102b818ed293a0f48523c0",
+      "role": "Closed CPU+GPU weight migration, DMA/leases/owned output/replay composition qualification"
+    },
+    {
+      "path": "evidence/correctness/compute-h1-offload-wsl/static-receipt.json",
+      "sha256": "b00940937e6143ceaa07ed718cff4fb718f0d2b77880b1932c95ae55b533a6de",
+      "role": "Closed CPU+GPU weight migration, DMA/leases/owned output/replay composition qualification"
+    },
+    {
+      "path": "evidence/correctness/compute-h1-offload-wsl/shared-receipt.json",
+      "sha256": "6659b707972813471e2fc31c5d81f0154a7fd359cba3a028e5c011afd63f1b9c",
+      "role": "Closed CPU+GPU weight migration, DMA/leases/owned output/replay composition qualification"
+    },
+    {
+      "path": "evidence/correctness/compute-h2-apple-sdk/sdk-result.json",
+      "sha256": "95a08813895936cc3ec57eed1c9572c38ca05acf8fb035f46c8db68309917ab9",
+      "role": "Closed CPU+GPU weight migration, DMA/leases/owned output/replay composition qualification"
+    },
+    {
+      "path": "evidence/correctness/compute-h3-vulkan-static/README.md",
+      "sha256": "d049e74a84fa43638de7f266c1aa9e10ac661ae7f7d58f6bfe17b2d098dd904e",
+      "role": "Closed CPU+GPU weight migration, DMA/leases/owned output/replay composition qualification"
+    },
+    {
+      "path": "evidence/correctness/inference-g06-final-relocated-sdk/receipt.json",
+      "sha256": "0b4990d876ab2fc621cee6bdf602d851584b3b62eaad3db057410b71bb552238",
+      "role": "Closed baseline current common resource/lease/version/admission/lifecycle ABI in all eight SDK configurations; not a new GGUF format matrix"
+    },
+    {
+      "path": "evidence/delivery/inference-g07-packed-weights/receipt.json",
+      "sha256": "5978ae9bb0f9ce5bc7b0953a853bc94f0a4642d87289d34e32beca4bb173cfc4",
+      "role": "Current affected CUDA/Apple SDK pure packed, weight migration and joint consumers; not a new W1 cross-product run"
+    }
+  ],
+  "routes": [
+    {
+      "route": "CPU",
+      "decision": "KEEP_ROUTED",
+      "public": "TensorDesc storage format + normal MatMul/Gather or Graph",
+      "native": "Original ggml CPU quantized tensor roots point to mapped caller bytes; native quantized matmul/dot and selected-row decoding",
+      "anchor": "src/compute_provider_ggml/ggml_cpu_provider.cc:1185",
+      "warm": "Original activation codec/workspace/result required by ggml is charged. No HYLE full-bank F32 decode or weight address cache introduced."
+    },
+    {
+      "route": "CUDA",
+      "decision": "KEEP_ROUTED",
+      "public": "Same checked tensor/operation/Graph contracts",
+      "native": "Original ggml CUDA binding_buffer ports acquire payload only at submit, tensor data=actual device pointer; native quantized RHS/selected mul_mat_id",
+      "anchor": "src/compute_provider_ggml_cuda/ggml_cuda_provider.cc:430",
+      "warm": "Native ggml workspace/activation transforms and output charged. Existing GGUF index_checks explicitly perform D2H and stream sync before math; retained known cost. New MLX no-item path does not remove this GGUF cost."
+    },
+    {
+      "route": "Apple",
+      "decision": "KEEP_ROUTED",
+      "public": "Checked logical InputSpec + Context.prepare/Graph; original native arrays/buffers",
+      "native": "Original ggml Metal tensors import native Metal buffer+offset; exact Q4_K gather first selects requested rows, then decodes selected output only",
+      "anchor": "src/compute_provider_ggml_metal/native_program.cc:484",
+      "warm": "Original MLX/Metal allocation/worker/sync and selected output expansion charged. Original checked-index host-visible validation retained. No full-bank hidden dense constant."
+    },
+    {
+      "route": "Vulkan",
+      "decision": "KEEP_ROUTED",
+      "public": "Normal native tensor/Graph and joint staged bindings",
+      "native": "Original external VkBuffer+capacity+offset+owner binding and native graph submit; quantized shader math retained",
+      "anchor": "src/compute_provider_ggml_vulkan/region.cc:1487",
+      "warm": "Native descriptor/workspace/checked status/fence costs charged; no HYLE full-bank F32 weight expansion."
+    }
+  ],
+  "formats": [
+    "Q4_K FFN gate/up [2048,6144]",
+    "Q6_K FFN down [6144,2048] and tied vocabulary/head actual rows",
+    "Q8_0 recurrent output [2048,2048]",
+    "Original BF16 dense control; no model file modified"
+  ],
+  "composition": "Reuse closed native mathematical/format-role semantics and closed resource/DMA/lease/retirement ABI independently; current two changed owners additionally have real64-step packed tests and migrated source/static/shared consumers. No reopening unchanged CPU/Vulkan/GGUF owners.",
+  "cost_bill": {
+    "cold": "Original explicit allocation/upload/preparation. Engine file parsing/optional format conversion remains explicit engine work, never hidden per call.",
+    "resident": "Exact encoded TensorDesc required_bytes; no new full F32 weight shadow. Example Q4_K2048x6144=7077888B, Q6_K6144x2048=10321920B, Q8_02048x2048=4456448B, plus original metadata/native runtime.",
+    "warm": "Activation conversion, native workspace, selected-row output, actual required status/copy/waits; unknown driver/private allocator upper remains UNKNOWN.",
+    "bf16_limit": "Original CUDA plain BF16 grouped path may cast the complete input weight to F32. This is not the ordinary dense BF16 control or selected packed W1 domain; do not claim zero-copy every BF16 grouped operation."
+  },
+  "limits": [
+    "This is evidence reconciliation against a CLOSED baseline, not newly run all GGUF x route x joint x64 matrix.",
+    "Historical C5/D5 phase-specific remaining/delivery/P1 fields keep their original status; current closed baseline and G07 changed-owner evidence are separate.",
+    "Actual format-valid deterministic payload and true role dimensions are not real downloaded model payload or a full engine.",
+    "G07 native MLX checked-ID improvement is not an all-backend/all-format no-host-wait claim.",
+    "No tokens/s, llama.cpp ranking or multi-device qualification."
+  ]
+}
