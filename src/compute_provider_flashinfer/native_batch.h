@@ -14,7 +14,7 @@ struct BatchSpec final {
 };
 struct BatchFacts final {
   std::size_t float_bytes=0,int_bytes=0;
-  std::uint32_t cta_tile_q=0,padded_batch_size=0;
+  std::uint32_t cta_tile_q=0,padded_batch_size=0,kv_chunk_rows=0;
   bool split_kv=false;
 };
 std::size_t batch_state_bytes() noexcept;

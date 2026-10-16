@@ -122,6 +122,7 @@ struct BatchSlot final {
   void*plan=nullptr;
   std::size_t plan_bytes=0;
   std::uint64_t generation=0;
+  std::uint32_t kv_chunk_rows=0;
   BatchLayoutVersion layout;
   BatchPlanReport report;
 };
@@ -192,8 +193,8 @@ detail::EnqueueResult plan_batch_slot(void*opaque,Queue&queue,const BatchLayoutV
     // After this boundary preserve a possibly accepted original H2D prefix.
     try {
       status=cuda::status(native::plan_batch(slot.plan,spec,metadata.query_indptr.data(),metadata.kv_indptr.data(),*floating,workspace.float_workspace.size(),*integer,host_pointer,workspace.int_workspace.size(),*stream,facts));
-      if(status.ok()){slot.spec=spec;slot.generation=layout.generation();slot.layout=layout;*report={.layout_generation=layout.generation(),.float_workspace_bytes=facts.float_bytes,.int_workspace_bytes=facts.int_bytes,.cta_tile_q=facts.cta_tile_q,.padded_batch_size=facts.padded_batch_size,.split_kv=facts.split_kv};slot.report=*report;}
-      return detail::EnqueueResult::accepted_command(status);
+      if(status.ok()){slot.kv_chunk_rows=facts.kv_chunk_rows;slot.spec=spec;slot.generation=layout.generation();slot.layout=layout;*report={.layout_generation=layout.generation(),.float_workspace_bytes=facts.float_bytes,.int_workspace_bytes=facts.int_bytes,.cta_tile_q=facts.cta_tile_q,.padded_batch_size=facts.padded_batch_size,.split_kv=facts.split_kv};slot.report=*report;}
+      return spec.query_rows==0 && status.ok()?detail::EnqueueResult::no_op():detail::EnqueueResult::accepted_command(status);
     }catch(const std::bad_alloc&){return detail::EnqueueResult::accepted_command(Status::ResourceExhausted("FlashInfer batch planning host allocation"));}
      catch(const std::exception&e){return detail::EnqueueResult::accepted_command(Status::Internal(e.what()));}
   }catch(const std::bad_alloc&){return detail::EnqueueResult::rejected(Status::ResourceExhausted("FlashInfer batch workspace query host allocation"));}
@@ -204,6 +205,7 @@ detail::EnqueueResult run_batch_slot(void*opaque,Queue&queue,std::span<const Con
   auto&slot=*static_cast<BatchSlot*>(opaque);
   if(!slot.generation || inputs.size()!=3)return detail::EnqueueResult::rejected(Status::FailedPrecondition("FlashInfer batch slot has no prepared layout"));
   auto stream=cuda::stream(queue);if(!stream)return detail::EnqueueResult::rejected(stream.error());
+  if(slot.spec.query_rows==0)return detail::EnqueueResult::no_op();
   std::array<const void*,3> pointers{};
   for(std::size_t i=0;i<3;++i){auto p=cuda::detail::const_pointer(inputs[i].storage(),16,1);if(!p)return detail::EnqueueResult::rejected(p.error());pointers[i]=*p;}
   auto metadata=cuda::detail::const_pointer(mem::ConstBufferView(workspace.metadata),8,1);if(!metadata)return detail::EnqueueResult::rejected(metadata.error());
@@ -219,9 +221,27 @@ Result<bool> update_batch_slot(void*opaque,const BatchLayoutVersion&layout,Batch
   auto&slot=*static_cast<BatchSlot*>(opaque);if(!slot.generation || !slot.layout.schema().owns(layout))return false;
   const auto old=slot.layout.host(),next=layout.host();
   const auto equal=[](auto a,auto b){return a.size()==b.size()&&std::equal(a.begin(),a.end(),b.begin());};
-  // Original PrefillPlan consumes these indptr values and the immutable spec,
-  // not physical page IDs/tails. Ragged KV offsets are part of this full key.
-  if(!equal(old.query_indptr,next.query_indptr)||!equal(old.kv_indptr,next.kv_indptr))return false;
+  if(!equal(old.query_indptr,next.query_indptr))return false;
+  if(slot.spec.query_rows && !equal(old.kv_indptr,next.kv_indptr)){
+    const std::uint64_t units=slot.spec.paged?slot.spec.page_size:1u;
+    if(!slot.kv_chunk_rows || slot.kv_chunk_rows%units || !slot.report.cta_tile_q)return false;
+    const auto chunk=slot.kv_chunk_rows/units;
+    const auto chunks=[&](HostBatchLayout metadata,std::size_t request){
+      auto length=std::uint64_t(metadata.kv_indptr[request+1]-metadata.kv_indptr[request]);
+      if(slot.spec.window_left>=0){
+        const auto window=std::uint64_t(slot.spec.window_left)+slot.report.cta_tile_q;
+        length=std::min(length,(window+units-1u)/units);
+      }
+      return (std::max(length,std::uint64_t{1})+chunk-1u)/chunk;
+    };
+    // At the original chunk/CTA, equal active-request chunk counts preserve
+    // every request/q/kv tile and output/merge offset. The existing kernels
+    // read current KV offsets, page IDs and tails from the runtime metadata.
+    for(std::size_t request=0;request+1<next.query_indptr.size();++request){
+      if(next.query_indptr[request]==next.query_indptr[request+1])continue;
+      if(chunks(old,request)!=chunks(next,request))return false;
+    }
+  }
   slot.layout=layout;slot.generation=layout.generation();*report=slot.report;report->layout_generation=slot.generation;report->reused_native_plan=true;
   slot.report=*report;return true;
 }

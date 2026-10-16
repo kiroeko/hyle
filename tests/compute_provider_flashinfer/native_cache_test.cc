@@ -6,6 +6,7 @@
 #include <hyle/compute/model_ops.h>
 #include <hyle/compute/prepared_operation.h>
 #include "../compute_provider_native/half_test_support.h"
+#include "../compute_batch/allocation_fault_fixture.h"
 #include <array>
 #include <algorithm>
 #include <cmath>
@@ -168,6 +169,154 @@ template<class T>void boxed_case(bool paged,bool quantized,unsigned depth,unsign
   }
   result.reset();*done={};*prepared={};ASSERT_TRUE(slot.close().ok());ASSERT_TRUE(context.drain().ok());
 }
+// The locked scheduler's minimum chunk is 128 rows (eight 16-row pages).
+// These episodes exercise that actual table on both sides of its boundary;
+// the expected reuse decisions do not call the implementation's predicate.
+template<class T>void runtime_schedule(bool paged,bool fp8,unsigned depth,unsigned value_depth,
+                                      int window,unsigned mode){
+  hyle_f5_fault_fixture::Allocator fault;
+  {
+  const auto type=half_test::data_type<T>();const bool causal=depth!=128;
+  const auto key_storage=fp8?c::CacheStorage::float8(.5F).value():c::CacheStorage::plain(type).value();
+  const auto value_storage=fp8?c::CacheStorage::float8(2.F).value():key_storage;
+  const unsigned physical_rows=paged?2048u:2049u;
+  const c::BatchCapacity cap{.storage=paged?c::BatchStorage::kPaged:c::BatchStorage::kRagged,
+      .query_type=type,.output_type=type,.key_storage=key_storage,.value_storage=value_storage,
+      .max_requests=3,.max_query_rows=18,.max_kv_rows=2049,.max_pages=paged?128u:0u,
+      .max_page_refs=paged?128u:0u,.query_heads=8,.kv_heads=2,.qk_head_dim=depth,
+      .value_head_dim=value_depth,.page_size=paged?16u:1u};
+  auto context=c::Context::create(c::cuda::device(0).value(),c::flashinfer::provider()).value();
+  auto memory=c::cuda::MemoryResource::create(context,c::cuda::MemoryKind::kDevice).value();
+  auto host=c::cuda::MemoryResource::create(context,c::cuda::MemoryKind::kPinnedHost).value();
+  auto queue=context.create_queue().value();auto schema=c::BatchSchema::create(cap).value();
+  const auto sample=[](unsigned row,unsigned head,unsigned d){return float(int((row*3+head*5+d)%15)-7)*.125F;};
+  const auto cache=[&](bool value){
+    const auto width=value?value_depth:depth;const auto storage=value?value_storage:key_storage;
+    std::vector<std::uint8_t> bytes(std::size_t(physical_rows)*2*width*(fp8?1u:2u));
+    for(unsigned row=0;row<physical_rows;++row)for(unsigned head=0;head<2;++head)for(unsigned d=0;d<width;++d){
+      const auto offset=(std::size_t(row)*2+head)*width+d;
+      // Last physical row is deliberately never part of an active layout.
+      const auto number=row+1==physical_rows?std::numeric_limits<float>::quiet_NaN():value?sample(row,head,d):0.F;
+      if(fp8)bytes[offset]=std::isnan(number)?std::uint8_t{127}:float8_oracle(double(number)/storage.scale());
+      else{const auto word=half_test::encode<T>(number);std::memcpy(bytes.data()+offset*2,&word,2);}
+    }
+    return bytes;
+  };
+  const auto kb=cache(false),vb=cache(true);
+  auto pool=c::LeasePool::create(memory.ref(),kb.size()+vb.size()+18u*8u*depth*2u+512u).value();
+  const auto load=[&](std::span<const std::byte> bytes){auto writer=pool.allocate(bytes.size(),64).value();
+    EXPECT_TRUE(writer.view()->write(bytes).ok());return writer.publish().value();};
+  std::vector<T> qwords(18u*8u*depth);const auto query=load(std::as_bytes(std::span(qwords)));
+  c::ReadLease key,value;std::vector<c::ReadLease> key_pages(128),value_pages(128);c::PagedArena ka,va;
+  if(paged){
+    ka=c::PagedArena::create(schema,c::BatchCacheRole::kKey,memory.ref(),{.max_backing_bytes=kb.size()+64}).value();
+    va=c::PagedArena::create(schema,c::BatchCacheRole::kValue,memory.ref(),{.max_backing_bytes=vb.size()+64}).value();
+    for(unsigned page=0;page<128;++page){auto kw=ka.acquire(page).value(),vw=va.acquire(page).value();
+      ASSERT_TRUE(kw.lease().view()->write(std::as_bytes(std::span(kb).subspan(page*kb.size()/128,kb.size()/128))).ok());
+      ASSERT_TRUE(vw.lease().view()->write(std::as_bytes(std::span(vb).subspan(page*vb.size()/128,vb.size()/128))).ok());
+      key_pages[page]=kw.publish(16).value();value_pages[page]=vw.publish(16).value();}
+  }else{key=load(std::as_bytes(std::span(kb)));value=load(std::as_bytes(std::span(vb)));}
+  auto program=c::BatchProgram::prepare(context,schema,{.resource=memory.ref(),.host_workspace=host.ref(),
+      .max_float_workspace_bytes=8u<<20,.max_int_workspace_bytes=16384,.scale=.125F,.causal=causal,
+      .window_left=window,.allocator=fault.ref()}).value();
+  auto slot=c::BatchInvocation::create(program,queue).value(),other=c::BatchInvocation::create(program,queue).value();
+  c::ReadLease retained;c::BatchLayoutVersion initial;c::BatchPlanReport previous;
+  const auto verify=[&](const c::ReadLease&output,const c::BatchLayoutVersion&layout){
+    std::vector<T> actual(18u*8u*value_depth);ASSERT_TRUE(output.view()->read(std::as_writable_bytes(std::span(actual))).ok());
+    const auto h=layout.host();
+    for(unsigned request=0;request<layout.facts().requests;++request){
+      const auto queries=h.query_indptr[request+1]-h.query_indptr[request];
+      const auto units=h.kv_indptr[request+1]-h.kv_indptr[request];
+      const int rows=paged?(units?((units-1)*16+h.last_page_lengths[request]):0):units;
+      for(int row=0;row<queries;++row){const int position=rows-queries+row;
+        const int first=window<0?0:std::max(0,position-window),last=causal?position+1:rows;
+        for(unsigned head=0;head<8;++head)for(unsigned d:std::array{0u,value_depth/2,value_depth-1}){
+          double expected=0;
+          for(int at=first;at<last;++at){const auto physical=paged?unsigned(h.page_indices[h.kv_indptr[request]+at/16])*16u+unsigned(at%16):unsigned(h.kv_indptr[request]+at);
+            const auto index=(std::size_t(physical)*2+head/4)*value_depth+d;
+            if(fp8)expected+=fp8_value(vb[index])*value_storage.scale();
+            else{T word;std::memcpy(&word,vb.data()+index*2,2);expected+=half_test::decode(word);}}
+          const auto observed=half_test::decode(actual[(std::size_t(h.query_indptr[request]+row)*8+head)*value_depth+d]);
+          ASSERT_TRUE(std::isfinite(observed));ASSERT_NEAR(observed,expected/double(last-first),type==c::DataType::kFloat16?.0025:.008);
+        }
+      }
+    }
+  };
+  for(unsigned step=0;step<64;++step){
+    SCOPED_TRACE(::testing::Message()<<"paged="<<paged<<" fp8="<<fp8<<" d="<<depth<<" dv="<<value_depth<<" mode="<<mode<<" step="<<step);
+    const bool moved_empty=step>=48 && step<56;const unsigned active=mode==1?1u:2u;
+    std::vector<std::int32_t> qp{0},kp{0},ids,tails;
+    for(unsigned request=0;request<=active;++request){
+      const unsigned empty=moved_empty?(mode==1?0u:1u):active;
+      const unsigned queries=request==empty?0u:mode==18 && qp.back()?17u:1u;
+      const unsigned rows=queries?((step>=16 && step<32) || step>=56?129u+step%31u:32u+step%63u):step%2?512u:0u;
+      qp.push_back(qp.back()+int(queries));
+      if(paged){const auto pages=(rows+15)/16;kp.push_back(kp.back()+int(pages));tails.push_back(rows?(int(rows)-1)%16+1:0);
+        for(unsigned page=0;page<pages;++page)ids.push_back(int((ids.size()*17+step*7)%127));}
+      else kp.push_back(kp.back()+int(rows));
+    }
+    auto layout=schema.version({qp,kp,ids,tails}).value();
+    const auto run=[&](c::PreparedBatch&prepared){
+      if(paged){
+        auto selected=ids;std::sort(selected.begin(),selected.end());selected.erase(std::unique(selected.begin(),selected.end()),selected.end());
+        std::vector<c::ReadLease> keys,values;for(auto page:selected){keys.push_back(key_pages[page]);values.push_back(value_pages[page]);}
+        auto kr=ka.read(layout,keys).value(),vr=va.read(layout,values).value();return prepared.run(query,kr,vr);
+      }
+      return prepared.run(std::array{query,key,value});
+    };
+    if(step==0){initial=layout;auto prepared=other.prepare_batch(layout).value();auto done=run(prepared).value();ASSERT_TRUE(done.wait().ok());retained=other.output().value();}
+    const bool reuse=step!=0 && step!=48 && step!=56 && (window>=0 || (step!=16 && step!=32));
+    const auto before=fault.attempts;if(reuse)fault.fail=before;
+    auto prepared=slot.update_batch(layout);fault.fail=SIZE_MAX;ASSERT_TRUE(prepared)<<prepared.error().message();
+    const auto report=slot.report();EXPECT_EQ(report.reused_native_plan,reuse);
+    if(reuse){EXPECT_EQ(fault.attempts,before);EXPECT_EQ(report.float_workspace_bytes,previous.float_workspace_bytes);
+      EXPECT_EQ(report.int_workspace_bytes,previous.int_workspace_bytes);EXPECT_EQ(report.padded_batch_size,previous.padded_batch_size);
+      EXPECT_EQ(report.host_waits,report.metadata_upload.physical_bytes?1u:0u);}
+    previous=report;auto done=run(*prepared);ASSERT_TRUE(done)<<done.error().message();ASSERT_TRUE(done->wait().ok());
+    auto output=slot.output().value();*done={};*prepared={};EXPECT_FALSE(slot.update_batch(layout));
+    verify(output,layout);verify(retained,initial);
+  }
+  retained={};ASSERT_TRUE(slot.close().ok());ASSERT_TRUE(other.close().ok());ASSERT_TRUE(context.drain().ok());
+  }
+  EXPECT_EQ(fault.live,0u);
+}
+TEST(FlashinferCache, RuntimeScheduleReusesActualTilesAcrossKvExtents){
+  using F16=hyle::simd::float16_t;using BF16=hyle::simd::bfloat16_t;
+  for(bool paged:{false,true})for(bool fp8:{false,true}){
+    for(unsigned mode:{1u,2u}){runtime_schedule<F16>(paged,fp8,64,64,-1,mode);runtime_schedule<BF16>(paged,fp8,64,64,-1,mode);}
+    runtime_schedule<F16>(paged,fp8,128,128,-1,2);runtime_schedule<BF16>(paged,fp8,256,256,-1,2);
+    runtime_schedule<F16>(paged,fp8,64,128,16,2);runtime_schedule<BF16>(paged,fp8,64,128,-1,18);
+  }
+}
+TEST(FlashinferCache, EmptyRequestsAndAllZeroQueriesUseCheckedNoOp){
+  for(bool paged:{false,true}){
+    auto context=c::Context::create(c::cuda::device(0).value(),c::flashinfer::provider()).value();
+    auto memory=c::cuda::MemoryResource::create(context,c::cuda::MemoryKind::kDevice).value();
+    auto host=c::cuda::MemoryResource::create(context,c::cuda::MemoryKind::kPinnedHost).value();auto queue=context.create_queue().value();
+    const auto plain=c::CacheStorage::plain(c::DataType::kFloat16).value();
+    const c::BatchCapacity cap{.storage=paged?c::BatchStorage::kPaged:c::BatchStorage::kRagged,
+        .query_type=c::DataType::kFloat16,.output_type=c::DataType::kFloat16,.key_storage=plain,.value_storage=plain,
+        .max_requests=2,.max_query_rows=1,.max_kv_rows=16,.max_pages=paged?1u:0u,.max_page_refs=paged?1u:0u,
+        .query_heads=8,.kv_heads=2,.qk_head_dim=64,.value_head_dim=64,.page_size=paged?16u:1u};
+    auto schema=c::BatchSchema::create(cap).value();auto program=c::BatchProgram::prepare(context,schema,
+        {.resource=memory.ref(),.host_workspace=host.ref(),.max_float_workspace_bytes=1u<<20,.max_int_workspace_bytes=4096}).value();
+    auto slot=c::BatchInvocation::create(program,queue).value();auto pool=c::LeasePool::create(memory.ref(),16384).value();
+    const auto load=[&](std::size_t bytes){auto w=pool.allocate(bytes).value();EXPECT_TRUE(w.view()->fill(std::byte{0}).ok());return w.publish().value();};
+    const std::array inputs{load(1024),load(4096),load(4096)};
+    // Both zero-request and nonempty all-Q0 layouts use original carriers.
+    for(unsigned count:{0u,2u}){
+      const std::vector<std::int32_t> ptr(count+1,0),tails(paged?count:0,0);
+      auto layout=schema.version({ptr,ptr,{},tails}).value();auto prepared=slot.update_batch(layout).value();
+      EXPECT_EQ(slot.report().float_workspace_bytes,0u);EXPECT_EQ(slot.report().int_workspace_bytes,0u);
+      if(paged){auto ka=c::PagedArena::create(schema,c::BatchCacheRole::kKey,memory.ref(),{.max_backing_bytes=4160}).value();
+        auto va=c::PagedArena::create(schema,c::BatchCacheRole::kValue,memory.ref(),{.max_backing_bytes=4160}).value();
+        auto kr=ka.read(layout,{}).value(),vr=va.read(layout,{}).value();auto done=prepared.run(inputs[0],kr,vr).value();ASSERT_TRUE(done.wait().ok());}
+      else{auto done=prepared.run(inputs).value();ASSERT_TRUE(done.wait().ok());}
+    }
+    ASSERT_TRUE(slot.close().ok());ASSERT_TRUE(context.drain().ok());
+  }
+}
+
 // Correlated, exactly representable FP8 rows make missing QK loads materially
 // different from uniform averaging. Weak oscillating keys hid the K64 load bug.
 TEST(FlashinferCache, MixedFp8ShortKeyStrongWeightsInLoopAndRepackedTiles){
