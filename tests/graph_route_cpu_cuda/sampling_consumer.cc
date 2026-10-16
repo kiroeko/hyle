@@ -72,10 +72,12 @@ void run() {
     slots[bank]=t::take(b::Invocation::create(std::move(ordinary),scheduler,queues));
     t::require(slots[bank].bind(x,input_view));t::require(slots[bank].bind(key,key_view));
     t::require(slots[bank].bind(sum,t::take(c::TensorView::create(output_desc,outputs[bank].view()))));
-    t::require(slots[bank].prepare_replay({.mode=g::ReplayMode::kCommands,.host_wait=g::HostWaitPolicy::kReject}));
+    t::require(slots[bank].prepare_replay({.mode=g::ReplayMode::kCommands,.host_wait=g::HostWaitPolicy::kAllow}));
     const auto replay=t::take(slots[bank].replay_report());
     t::check(replay.staging_copy_count==4&&replay.staging_copy_bytes==rows*16,
              "CUDA joint did not restrict migration to two small selection outputs (two-hop staging charged)");
+    t::check(replay.graph.host_wait_dependency_count>0,
+             "CUDA -> CPU boundary omitted its actual host wait from the report");
   }
   Drain drain{scheduler};
   for(int step=0;step<65;++step) {
@@ -99,7 +101,7 @@ void run() {
   }
   for(auto &slot:slots)t::require(slot.close());
   t::require(cuda.close());t::require(cpu.close());
-  std::puts("PASS CPU+CUDA: GPU producer/categorical -> 24-byte CPU lookup+add; 65 steps/two slots; staging charged");
+  std::puts("PASS CPU+CUDA: GPU producer/categorical -> 24-byte CPU lookup+add; 65 steps/two slots; staging and host wait charged");
 }
 }
 int main() {

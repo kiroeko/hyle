@@ -305,3 +305,9 @@ joint定向诊断确认测试选了现公开Cast不支持的I32→F32域；该�
 Graph搜索器，先将本consumer原本已知的三个GPU节点、两个CPU节点和六个中间值
 storage全部用原公开required合同表达，避免让编译器枚举并不需要的CPU/GPU选择。
 只有该joint继续定向验证，其他已通过数值测试、Mem和device math证据复用。
+
+
+cc081788d显式target/storage后已走过cold placement；joint原生GPU→CPU队列不能
+消费异步GPU prefix，consumer先前kReject按原合同拒绝该拓扑。改用原默认kAllow，
+并断言replay report记录实际host wait；两跳staging和24-byte readback均收费，
+不声称零host wait或异步overlap。本次仍仅consumer修复，不扩展G09或改Graph产品。
