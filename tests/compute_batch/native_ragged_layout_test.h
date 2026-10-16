@@ -153,7 +153,7 @@ template<class T>void runtime_native_ragged(bool encoded,unsigned depth,unsigned
   auto schema=c::BatchSchema::create(cap).value();auto initial=schema.version({qp,kp,{},{}}).value();
   auto program=n::prepare_ragged_batch(context,initial,{cap,.125F,causal,window}).value();
   auto slot=program.create_invocation().value(),other=program.create_invocation().value();
-  n::Invocation invalid;EXPECT_FALSE(n::update_ragged_batch(invalid,initial));
+  n::Invocation invalid;EXPECT_FALSE(n::update_ragged_batch(invalid,initial).ok());
   const auto qd=c::batch_query_description(cap).value(),kd=c::batch_cache_description(cap,c::BatchCacheRole::kKey).value(),
       vd=c::batch_cache_description(cap,c::BatchCacheRole::kValue).value();
 #if defined(HYLE_G01_APPLE_RAGGED)
@@ -198,7 +198,7 @@ template<class T>void runtime_native_ragged(bool encoded,unsigned depth,unsigned
           for(unsigned j=first;j<end;++j)expected+=double(code(unsigned(host.kv_indptr[r])+j,head/4))/64.;
           expected/=double(end-first);
           for(unsigned d=0;d<value_depth;++d){const auto value=half_test::decode(actual[(std::size_t(qp[r])+row)*8*value_depth+head*value_depth+d]);
-            ASSERT_TRUE(std::isfinite(value));EXPECT_NEAR(value,expected,std::is_same_v<T,BF16>?.008:.002);
+            ASSERT_TRUE(std::isfinite(value));EXPECT_NEAR(value,expected,(std::is_same_v<T,BF16>?.008:.002));
           }
         }
       }
@@ -219,11 +219,11 @@ template<class T>void runtime_native_ragged(bool encoded,unsigned depth,unsigned
     auto layout=schema.version({qp,current_k,{},{}}).value();
     ASSERT_TRUE(n::update_ragged_batch(slot,layout).ok());EXPECT_FALSE(slot.submit()); // Success unbinds old imports.
     ASSERT_TRUE(slot.bind(inputs).ok());auto run=slot.submit().value();
-    EXPECT_FALSE(n::update_ragged_batch(slot,layout)); // Owning completion/pending work excludes reuse.
+    EXPECT_FALSE(n::update_ragged_batch(slot,layout).ok()); // Owning completion/pending work excludes reuse.
     auto result=run.wait().value();verify(*result,layout);verify(*old,initial);
-    EXPECT_FALSE(n::update_ragged_batch(slot,layout)); // The old output still excludes reuse.
+    EXPECT_FALSE(n::update_ragged_batch(slot,layout).ok()); // The old output still excludes reuse.
   }
-  old={};old_run={};ASSERT_TRUE(context.close().ok());EXPECT_FALSE(n::update_ragged_batch(slot,initial));
+  old={};old_run={};ASSERT_TRUE(context.close().ok());EXPECT_FALSE(n::update_ragged_batch(slot,initial).ok());
 }
 TEST(NativeRaggedLayout, PublicRuntimeKvUpdatesKeepIndependentSlotsAndCheckedBoundaries){
   for(unsigned mode:{0U,1U,2U})for(bool encoded:{false,true}){
