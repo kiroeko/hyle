@@ -1,6 +1,6 @@
 # G07 packed 权重消费与 checked selection
 
-状态：**2026-10-16，CUDA CANDIDATE；Apple按合格M64回退退回AUDITED；G07–G10 goal ACTIVE**。G01–G06已告一段落，
+状态：**2026-10-16，CUDA b483/Apple0333均CANDIDATE；G07–G10 goal ACTIVE**。G01–G06已告一段落，
 本卡不重开它们。原baseline为 `a638938b783b6fdae57e83f572aa0427d7188e7f`；
 产品输入保持完整 `669121418669b31f6849c74f64362aaf8d6eb919`。
 当前施工 owner 仅 `compute_provider_torch_cuda`、`compute_route_apple`，从各自 CLOSED
@@ -300,3 +300,17 @@ paired rounds改为现有仪器已有的104轮、4ms epoch；两个固定形状/
 original和selected A/A、n15–31、5%与统计核心不变。首轮A/A全量保留，未成功的首条product
 进程因ready=FAIL主动拒绝，不是合格性能数据。新artifact/合同必须重新资格，不能复用失败
 A/A，也不改CUDA产品。两轮累计费用保持；不再扫计时姿势。
+
+### D1纠正后的冻结与交付
+
+Apple现冻结`0333ed2cc9025dd976d7d2118dcd6759cffb5242`，仅替换正常E4M3的等价F32
+位构造，原F32 tile/scale顺序与4KiB staging不变。[源码及风险](../../../../evidence/correctness/inference-g07-apple-exact-decode-d1/receipt.json)
+的20项Direct、13项Graph、65步联合与公开消费者、实际Metal13项和三san各2项均通过；
+[两份新迁址SDK](../../../../evidence/delivery/inference-g07-apple-packed-d1/receipt.json)
+共6消费者、8独立头通过。CUDA保持b483产品/SDK/风险身份，没有随Apple改动重跑。
+
+两份benchmark的`qualified-sdk-*.json`精确绑定实际受验prefix、产品candidate与原始SDK记录，
+A/A验证器会核installed owner hash与真实CMake解析prefix。Apple原16轮合同只更新实际SDK
+身份；CUDA沿上一节唯一104轮warm纠正。[原CUDA A/A失败](../../../../evidence/performance/inference-g07-cuda-packed-aa-attempt-1/receipt.json)
+和Apple564.218秒合格LOSS均保留。下一次资格仍使用原两形状/原669公式与完全相同的warm
+收费边界，资格前重新执行两端独立oracle。不以SDK通过签速度，G08–G10仍未开始。
