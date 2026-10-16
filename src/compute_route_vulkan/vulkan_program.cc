@@ -10,6 +10,7 @@
 
 #include "hyle/compute/low_precision.h"
 #include "hyle/compute/model_ops.h"
+#include "hyle/compute/sampling_ops.h"
 #include "hyle/obs/trace.h"
 
 #include <algorithm>
@@ -206,7 +207,8 @@ Result<Program> prepare_plan(const Context &context, const Plan &plan,
           (step.operation.kind() == OperationKind::kCustom &&
            step.outputs.size() != 1 &&
            !(step.outputs.size() == 2 &&
-             step.operation.custom_as<model_ops::RecurrentGatedDeltaNet>())))
+             (step.operation.custom_as<model_ops::RecurrentGatedDeltaNet>() ||
+              step.operation.custom_as<sampling_ops::Categorical>()))))
         return std::unexpected(Status::Unimplemented(
             "Vulkan requires pure SSA operations with supported arity"));
       std::vector<TensorDesc> descriptions;
