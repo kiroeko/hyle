@@ -279,9 +279,6 @@ Result<PreparedBatch> BatchInvocation::prepare(const BatchLayoutVersion&layout,b
     }
     s.mirror_layout=layout;
   }
-  // A first all-zero layout needs no delta. Publish the original cold-zeroed
-  // writer too, so planning always receives a valid complete metadata mirror.
-  if(!s.mirror_ready.valid()){HYLE_ASSIGN_OR_RETURN(s.mirror_ready,s.mirror.publish());}
   HYLE_ASSIGN_OR_RETURN(auto views,workspace_views(s));
   bool reused=false;
   if(update){struct Call{d::BatchInvocationData*state;bool reused=false;}call{&s};

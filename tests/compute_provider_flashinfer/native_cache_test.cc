@@ -290,30 +290,42 @@ TEST(FlashinferCache, RuntimeScheduleReusesActualTilesAcrossKvExtents){
 }
 TEST(FlashinferCache, EmptyRequestsAndAllZeroQueriesUseCheckedNoOp){
   for(bool paged:{false,true}){
-    auto context=c::Context::create(c::cuda::device(0).value(),c::flashinfer::provider()).value();
-    auto memory=c::cuda::MemoryResource::create(context,c::cuda::MemoryKind::kDevice).value();
-    auto host=c::cuda::MemoryResource::create(context,c::cuda::MemoryKind::kPinnedHost).value();auto queue=context.create_queue().value();
-    const auto plain=c::CacheStorage::plain(c::DataType::kFloat16).value();
-    const c::BatchCapacity cap{.storage=paged?c::BatchStorage::kPaged:c::BatchStorage::kRagged,
-        .query_type=c::DataType::kFloat16,.output_type=c::DataType::kFloat16,.key_storage=plain,.value_storage=plain,
-        .max_requests=2,.max_query_rows=1,.max_kv_rows=16,.max_pages=paged?1u:0u,.max_page_refs=paged?1u:0u,
-        .query_heads=8,.kv_heads=2,.qk_head_dim=64,.value_head_dim=64,.page_size=paged?16u:1u};
-    auto schema=c::BatchSchema::create(cap).value();auto program=c::BatchProgram::prepare(context,schema,
-        {.resource=memory.ref(),.host_workspace=host.ref(),.max_float_workspace_bytes=1u<<20,.max_int_workspace_bytes=4096}).value();
-    auto slot=c::BatchInvocation::create(program,queue).value();auto pool=c::LeasePool::create(memory.ref(),16384).value();
-    const auto load=[&](std::size_t bytes){auto w=pool.allocate(bytes).value();EXPECT_TRUE(w.view()->fill(std::byte{0}).ok());return w.publish().value();};
-    const std::array inputs{load(1024),load(4096),load(4096)};
-    // Both zero-request and nonempty all-Q0 layouts use original carriers.
-    for(unsigned count:{0u,2u}){
-      const std::vector<std::int32_t> ptr(count+1,0),tails(paged?count:0,0);
-      auto layout=schema.version({ptr,ptr,{},tails}).value();auto prepared=slot.update_batch(layout).value();
-      EXPECT_EQ(slot.report().float_workspace_bytes,0u);EXPECT_EQ(slot.report().int_workspace_bytes,0u);
-      if(paged){auto ka=c::PagedArena::create(schema,c::BatchCacheRole::kKey,memory.ref(),{.max_backing_bytes=4160}).value();
-        auto va=c::PagedArena::create(schema,c::BatchCacheRole::kValue,memory.ref(),{.max_backing_bytes=4160}).value();
-        auto kr=ka.read(layout,{}).value(),vr=va.read(layout,{}).value();auto done=prepared.run(inputs[0],kr,vr).value();ASSERT_TRUE(done.wait().ok());}
-      else{auto done=prepared.run(inputs).value();ASSERT_TRUE(done.wait().ok());}
-    }
-    ASSERT_TRUE(slot.close().ok());ASSERT_TRUE(context.drain().ok());
+    SCOPED_TRACE(::testing::Message()<<"empty paged="<<paged);
+    const auto exercise=[&]() ->hyle::Status{
+      HYLE_ASSIGN_OR_RETURN(auto context,c::Context::create(c::cuda::device(0).value(),c::flashinfer::provider()));
+      HYLE_ASSIGN_OR_RETURN(auto memory,c::cuda::MemoryResource::create(context,c::cuda::MemoryKind::kDevice));
+      HYLE_ASSIGN_OR_RETURN(auto host,c::cuda::MemoryResource::create(context,c::cuda::MemoryKind::kPinnedHost));
+      HYLE_ASSIGN_OR_RETURN(auto queue,context.create_queue());
+      HYLE_ASSIGN_OR_RETURN(auto plain,c::CacheStorage::plain(c::DataType::kFloat16));
+      const c::BatchCapacity cap{.storage=paged?c::BatchStorage::kPaged:c::BatchStorage::kRagged,
+          .query_type=c::DataType::kFloat16,.output_type=c::DataType::kFloat16,.key_storage=plain,.value_storage=plain,
+          .max_requests=2,.max_query_rows=1,.max_kv_rows=16,.max_pages=paged?1u:0u,.max_page_refs=paged?1u:0u,
+          .query_heads=8,.kv_heads=2,.qk_head_dim=64,.value_head_dim=64,.page_size=paged?16u:1u};
+      HYLE_ASSIGN_OR_RETURN(auto schema,c::BatchSchema::create(cap));
+      HYLE_ASSIGN_OR_RETURN(auto program,c::BatchProgram::prepare(context,schema,
+          {.resource=memory.ref(),.host_workspace=host.ref(),.max_float_workspace_bytes=1u<<20,.max_int_workspace_bytes=4096}));
+      HYLE_ASSIGN_OR_RETURN(auto slot,c::BatchInvocation::create(program,queue));
+      HYLE_ASSIGN_OR_RETURN(auto pool,c::LeasePool::create(memory.ref(),16384));
+      const auto load=[&](std::size_t bytes)->hyle::Result<c::ReadLease>{
+        HYLE_ASSIGN_OR_RETURN(auto w,pool.allocate(bytes));HYLE_RETURN_IF_ERROR(w.view()->fill(std::byte{0}));return w.publish();};
+      HYLE_ASSIGN_OR_RETURN(auto query,load(1024));HYLE_ASSIGN_OR_RETURN(auto key,load(4096));HYLE_ASSIGN_OR_RETURN(auto value,load(4096));
+      const std::array inputs{query,key,value};
+      for(unsigned count:{0u,2u}){
+        SCOPED_TRACE(::testing::Message()<<"requests="<<count);
+        const std::vector<std::int32_t> ptr(count+1,0),tails(paged?count:0,0);
+        HYLE_ASSIGN_OR_RETURN(auto layout,schema.version({ptr,ptr,{},tails}));
+        HYLE_ASSIGN_OR_RETURN(auto prepared,slot.update_batch(layout));
+        EXPECT_EQ(slot.report().float_workspace_bytes,0u);EXPECT_EQ(slot.report().int_workspace_bytes,0u);
+        if(paged){
+          HYLE_ASSIGN_OR_RETURN(auto ka,c::PagedArena::create(schema,c::BatchCacheRole::kKey,memory.ref(),{.max_backing_bytes=4160}));
+          HYLE_ASSIGN_OR_RETURN(auto va,c::PagedArena::create(schema,c::BatchCacheRole::kValue,memory.ref(),{.max_backing_bytes=4160}));
+          HYLE_ASSIGN_OR_RETURN(auto kr,ka.read(layout,{}));HYLE_ASSIGN_OR_RETURN(auto vr,va.read(layout,{}));
+          HYLE_ASSIGN_OR_RETURN(auto done,prepared.run(query,kr,vr));HYLE_RETURN_IF_ERROR(done.wait());
+        }else{HYLE_ASSIGN_OR_RETURN(auto done,prepared.run(inputs));HYLE_RETURN_IF_ERROR(done.wait());}
+      }
+      HYLE_RETURN_IF_ERROR(slot.close());return context.drain();
+    };
+    const auto status=exercise();ASSERT_TRUE(status.ok())<<status.message();
   }
 }
 
