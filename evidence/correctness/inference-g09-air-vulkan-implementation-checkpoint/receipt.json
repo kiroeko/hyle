@@ -1,0 +1,159 @@
+{
+  "state": "PARTIAL_NATIVE_CHECKPOINT_PASS",
+  "tag": "air-vulkan",
+  "stages": [
+    {
+      "stage": "manifest",
+      "command": [
+        "/opt/homebrew/bin/ninja",
+        "-C",
+        "/Users/kiro/hyle-scratch/compute-unified/a-cpu-vulkan/selected-graph/source-build",
+        "build.ninja"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 16.284682500000002
+    },
+    {
+      "stage": "build",
+      "command": [
+        "/opt/homebrew/bin/ninja",
+        "-C",
+        "/Users/kiro/hyle-scratch/compute-unified/a-cpu-vulkan/selected-graph/source-build",
+        "-f",
+        "/Users/kiro/hyle-scratch/compute-unified/g09-air-vulkan-implementation-check-1/preview.ninja",
+        "-j",
+        "4",
+        "hyle_cpu_vulkan_pipeline",
+        "hyle_cpu_vulkan_contracts",
+        "joint"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 7.265171459000001
+    },
+    {
+      "stage": "hyle_cpu_vulkan_pipeline",
+      "command": [
+        "/Users/kiro/hyle-scratch/compute-unified/a-cpu-vulkan/selected-graph/source-build/hyle_cpu_vulkan_pipeline"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 9.176159875000003
+    },
+    {
+      "stage": "hyle_cpu_vulkan_contracts",
+      "command": [
+        "/Users/kiro/hyle-scratch/compute-unified/a-cpu-vulkan/selected-graph/source-build/hyle_cpu_vulkan_contracts"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 0.5455224580000007
+    },
+    {
+      "stage": "joint",
+      "command": [
+        "/Users/kiro/hyle-scratch/compute-unified/a-cpu-vulkan/selected-graph/source-build/joint"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 0.781521583
+    }
+  ],
+  "source": "/Users/kiro/hyle-scratch/compute-unified/source-c8874688",
+  "canonical_commit": "e09f30925c6dba5cf4540669fd3b4874f45bb158",
+  "source_archive_sha256": "fbb95681c8701b43cd9daebef6bdc2ccfb963e6e152a0d21898b233e2ff732b2",
+  "source_files": 3321,
+  "max_jobs": 4,
+  "nice": 10,
+  "pid": 43068,
+  "logical_cpus": "macOS has no supported hard affinity; four build jobs",
+  "scope": "Actual Mac16,12/M4 Air Vulkan original source integration and original contracts/G08 joint plus five ordinary two-slot/65-step changed-input, oracle, cancellation/close consumers. No Vulkan device math timeline yet.",
+  "identity": {
+    "model": "Mac16,12",
+    "chip": "Apple M4",
+    "system": "ProductName:\t\tmacOS\nProductVersion:\t\t27.0.1\nBuildVersion:\t\t26A434",
+    "compiler": "Apple clang version 21.0.0 (clang-2100.3.34.2)\nTarget: arm64-apple-darwin27.0.0\nThread model: posix\nInstalledDir: /Library/Developer/CommandLineTools/usr/bin"
+  },
+  "updated_files": [
+    "SOURCE-MANIFEST.txt",
+    "docs/implementation/tasks/graph/inference-g09-joint-pipeline.md",
+    "docs/user/graph.md"
+  ],
+  "stage": "joint",
+  "elapsed_seconds": 34.80837475,
+  "dry_run_edges": 57,
+  "binaries": [
+    {
+      "target": "hyle_cpu_vulkan_pipeline",
+      "sha256": "17f92a3863d6d971436984454ed44753c50b72ce864f5aa4a347d6feb99c9ecb"
+    },
+    {
+      "target": "hyle_cpu_vulkan_contracts",
+      "sha256": "076bd2984895544f0d20d91db8bd651f43a5410ed47bffb6b7e8ed6706614e5a"
+    },
+    {
+      "target": "joint",
+      "sha256": "422ca1f95e474e6cff5d5aa45c7e2e14422bb401cb1d3bd09c97ed5bd71f4026"
+    }
+  ],
+  "schema": "hyle.inference-g09-native-checkpoint/v1",
+  "canonical_product_commit": "e09f30925c6dba5cf4540669fd3b4874f45bb158",
+  "canonical_source_inputs": {
+    "path": "run/inputs.json",
+    "archive_sha256": "fbb95681c8701b43cd9daebef6bdc2ccfb963e6e152a0d21898b233e2ff732b2",
+    "files": 3321,
+    "tree": "e09f30925c6dba5cf4540669fd3b4874f45bb158"
+  },
+  "bound_source_snapshots": [
+    {
+      "path": "tests/graph/native_joint_pipeline.cc",
+      "sha256": "e4c085bce0c9c24cd4048982e91e3041f8fca5f8a58bf35806e1f023fe9c4398"
+    },
+    {
+      "path": "tests/graph/cpu_cuda_pipeline.cc",
+      "sha256": "949cab23ebdfdc6d99fd08f93b6cafe434d069ce2d91c5d9beff9aeaaa1bea8c"
+    },
+    {
+      "path": "tests/graph/cpu_apple_contracts/CMakeLists.txt",
+      "sha256": "3f53a42342b2e5194bd880b54a45336a0a170e456601e216769909dd01da41b4"
+    },
+    {
+      "path": "src/graph/joint_pipeline.h",
+      "sha256": "ecc9dd2d13ee4554d54bfc40feb7b0f8543ecea6273e2eac5011798dc005d3ea"
+    },
+    {
+      "path": "src/graph/executable.cc",
+      "sha256": "a8110f7234c5d8a8b48b3c99299b2e8f86f72c0b33134eaa962584b81d3a6aca"
+    },
+    {
+      "path": "src/graph/native_analysis.h",
+      "sha256": "edd5f0dff67b9accfbd771bc703df5722a1d91a6c627eefaf98836fbfd86cbbb"
+    },
+    {
+      "path": "src/graph/submission_internal.h",
+      "sha256": "1da2c63b573581fda8831cf3a36639f104c193f1911a29bdb0d58921c79510e9"
+    },
+    {
+      "path": "src/graph_route_cpu_cuda/invocation.cc",
+      "sha256": "fe2fe21832261a8869ef67a6a3228585be5b405e5d0b9c656670e8d4686e4604"
+    },
+    {
+      "path": "src/graph_route_cpu_apple/invocation.cc",
+      "sha256": "658cf19a02df86177cd3a0ad54b0821154dcd1f29477736580059a69335d565e"
+    },
+    {
+      "path": "src/graph_route_cpu_vulkan/invocation.cc",
+      "sha256": "ae521a0c6d01b7c48d573da875c34bf897e9dcfefc17c249b087ae20c0c4984e"
+    }
+  ],
+  "actual_gtest_executions": [],
+  "actual_trace_summary": null,
+  "raw": {
+    "path": "raw.zip",
+    "sha256": "28f0dcd85ccd7c3f588e519e50f2d2b0c55e2e5178e5c643c6eccedbf23cdf0c",
+    "bytes": 696247,
+    "crc": "PASS"
+  },
+  "no_aggregate_acceptance": [
+    "Current owners remain AUDITED; G09 still open.",
+    "No P1, sanitizer/device-tool aggregate or relocated static/shared SDK delivery verdict.",
+    "No default-provider/size/platform universal overlap guarantee."
+  ],
+  "source_collection_note": "Canonical e09 Git archive supplies source/ entries. The shared disposable source tree had advanced to validation-only Metal fixtures after this completed run; those later test files from initial collection were replaced by the exact immutable run snapshot. Original run inputs manifest and binary hashes retained."
+}

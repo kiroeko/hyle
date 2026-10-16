@@ -1,0 +1,305 @@
+{
+  "state": "PARTIAL_NATIVE_CHECKPOINT_PASS",
+  "stages": [
+    {
+      "stage": "manifest",
+      "command": [
+        "/opt/homebrew/bin/ninja",
+        "-C",
+        "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-build",
+        "build.ninja"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 5.566638458
+    },
+    {
+      "stage": "build",
+      "command": [
+        "/opt/homebrew/bin/ninja",
+        "-C",
+        "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-build",
+        "-f",
+        "/Users/kiro/hyle-scratch/compute-unified/g09-metal-timeline-check-1/preview.ninja",
+        "-j",
+        "4",
+        "hyle_cpu_apple_pipeline",
+        "hyle_cpu_apple_contracts",
+        "joint"
+      ],
+      "exit_code": 1,
+      "elapsed_seconds": 0.719167208
+    },
+    {
+      "stage": "manifest-language-fix",
+      "command": [
+        "/opt/homebrew/bin/ninja",
+        "-C",
+        "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-build",
+        "build.ninja"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 3.9017009169999994
+    },
+    {
+      "stage": "build-language-fix",
+      "command": [
+        "/opt/homebrew/bin/ninja",
+        "-C",
+        "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-build",
+        "-f",
+        "/Users/kiro/hyle-scratch/compute-unified/g09-metal-timeline-check-1/preview-language-fix.ninja",
+        "-j",
+        "4",
+        "hyle_cpu_apple_pipeline",
+        "hyle_cpu_apple_contracts",
+        "joint"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 6.341390583
+    },
+    {
+      "stage": "ordinary-pipeline",
+      "command": [
+        "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-build/hyle_cpu_apple_pipeline"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 7.268940417000001
+    },
+    {
+      "stage": "contracts",
+      "command": [
+        "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-build/hyle_cpu_apple_contracts"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 0.5038364580000021
+    },
+    {
+      "stage": "g08-joint-regression",
+      "command": [
+        "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-build/joint"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 0.7266218329999994
+    },
+    {
+      "stage": "metal-real-math-timeline",
+      "command": [
+        "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-build/hyle_cpu_apple_pipeline",
+        "--trace"
+      ],
+      "exit_code": 1,
+      "elapsed_seconds": 0.31475425
+    },
+    {
+      "stage": "build-silu",
+      "command": [
+        "/opt/homebrew/bin/ninja",
+        "-C",
+        "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-build",
+        "-f",
+        "/Users/kiro/hyle-scratch/compute-unified/g09-metal-timeline-check-1/preview-language-fix.ninja",
+        "-j",
+        "4",
+        "hyle_cpu_apple_pipeline"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 1.108852042
+    },
+    {
+      "stage": "ordinary-pipeline-final",
+      "command": [
+        "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-build/hyle_cpu_apple_pipeline"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 4.508129083
+    },
+    {
+      "stage": "metal-silu-real-math-timeline",
+      "command": [
+        "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-build/hyle_cpu_apple_pipeline",
+        "--trace"
+      ],
+      "exit_code": 1,
+      "elapsed_seconds": 0.6110643749999998
+    },
+    {
+      "stage": "build-exp",
+      "command": [
+        "/opt/homebrew/bin/ninja",
+        "-C",
+        "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-build",
+        "-f",
+        "/Users/kiro/hyle-scratch/compute-unified/g09-metal-timeline-check-1/preview-language-fix.ninja",
+        "-j",
+        "4",
+        "hyle_cpu_apple_pipeline"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 1.110612417
+    },
+    {
+      "stage": "ordinary-pipeline-exp-final",
+      "command": [
+        "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-build/hyle_cpu_apple_pipeline"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 4.506119334
+    },
+    {
+      "stage": "metal-exp-real-math-timeline",
+      "command": [
+        "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-build/hyle_cpu_apple_pipeline",
+        "--trace"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 0.5011389170000005
+    }
+  ],
+  "identity": {
+    "model": "Mac16,12",
+    "chip": "Apple M4",
+    "system": "ProductName:\t\tmacOS\nProductVersion:\t\t27.0.1\nBuildVersion:\t\t26A434",
+    "compiler": "Apple clang version 21.0.0 (clang-2100.3.34.2)\nTarget: arm64-apple-darwin27.0.0\nThread model: posix\nInstalledDir: /Library/Developer/CommandLineTools/usr/bin",
+    "metal": "Apple metal version 32023.883 (metalfe-32023.883)\nTarget: air64-apple-darwin27.0.0\nThread model: posix\nInstalledDir: /Users/kiro/hyle-verify-tools/metal-17F109/Metal.xctoolchain/usr/metal/current/bin"
+  },
+  "source_tree": "3a4688353638ef0f6268a80fafaedac8d77d4dc6",
+  "canonical_head": "e09f30925c6dba5cf4540669fd3b4874f45bb158",
+  "max_jobs": 4,
+  "nice": 10,
+  "scope": "Actual Air M4 fixed single-DAG Exp+Neg+join, native-ready input, one warm plus eight diagnostic episodes per original insertion order. Transparent original Metal selectors preserve actual math, original MTLFunction identity, one pure Neg dispatch per nonblit command buffer, completed GPUStart/End on mach time, whole device interval inside actual independent CPU Exp executor task. Original default Abs two-slot/65-step and original contracts/G08 joint pass separately. Observation only, not performance.",
+  "updated_files": [
+    "SOURCE-MANIFEST.txt",
+    "tests/graph/cpu_apple_contracts/CMakeLists.txt",
+    "tests/graph/cpu_apple_pipeline_trace.mm",
+    "tests/graph/native_joint_pipeline.cc"
+  ],
+  "stage": "metal-exp-real-math-timeline",
+  "elapsed_seconds": 39.006180376,
+  "dry_run_edges": 56,
+  "source_tree_language_fix": "d5459cd8309dbb8ff827c1224579af476aabd6ca",
+  "retained_failure": "result-language-failure.json",
+  "dry_run_language_fix_edges": 56,
+  "source_tree_silu": "efa704ea7839d0b3848f46bf2a201716489b8cc5",
+  "diagnostic_shape": "Same 4M F32 independent real CPU SiLU and original GPU Neg plus original CPU join; one cold warm-up, eight observed replays per insertion order, one active slot. Original Abs default remains ordinary correctness; initial Abs non-overlap is retained. No P1 claim or product change.",
+  "source_tree_exp": "0eda7095c52ab7d25525efc3640006ef81cd27ca",
+  "diagnostic_shape_exp": "Final fixed same 4M F32 CPU Exp through the original default GGML executor, original GPU Neg and CPU join. One cold warm-up and eight single-slot observations per insertion order. Double oracle with fixed 2e-6 absolute plus 2e-6 relative error and nonfinite rejection. Earlier Abs no-overlap and SiLU incomplete CPU observation retained separately. No further shape search, no P1 or product change.",
+  "binaries": [
+    {
+      "target": "hyle_cpu_apple_pipeline",
+      "sha256": "4fded7db4b3de870374ccdf504315d28fe327b727549ab2c78a16118b29ba8bb"
+    },
+    {
+      "target": "hyle_cpu_apple_contracts",
+      "sha256": "c8bac10c1ce779db271a6396d46b1acbc817b46d8b9da5415c2d12ffdd394b8e"
+    },
+    {
+      "target": "joint",
+      "sha256": "313a9d150529267d98eb7699f0d8a7b8e924dd659e1e3af3500f98753872684a"
+    }
+  ],
+  "schema": "hyle.inference-g09-native-checkpoint/v1",
+  "canonical_product_commit": "e09f30925c6dba5cf4540669fd3b4874f45bb158",
+  "canonical_source_inputs": {
+    "path": "run/inputs-exp.json",
+    "archive_sha256": "989c7f3891f32da57773cb18e2394ddb47ae5ee27b0275d0905cfa643c6a1de8",
+    "files": 3322,
+    "tree": "0eda7095c52ab7d25525efc3640006ef81cd27ca"
+  },
+  "bound_source_snapshots": [
+    {
+      "path": "tests/graph/native_joint_pipeline.cc",
+      "sha256": "dc7fe3acfeeb00cec64ff678532ab08a63fe369161757967c7ad35ee2011d33b"
+    },
+    {
+      "path": "tests/graph/cpu_cuda_pipeline.cc",
+      "sha256": "949cab23ebdfdc6d99fd08f93b6cafe434d069ce2d91c5d9beff9aeaaa1bea8c"
+    },
+    {
+      "path": "tests/graph/cpu_apple_contracts/CMakeLists.txt",
+      "sha256": "5e86510fc9ff42d1d37f47bb8299b4055d80958ee02f0901d5725bda849b0963"
+    },
+    {
+      "path": "src/graph/joint_pipeline.h",
+      "sha256": "ecc9dd2d13ee4554d54bfc40feb7b0f8543ecea6273e2eac5011798dc005d3ea"
+    },
+    {
+      "path": "src/graph/executable.cc",
+      "sha256": "a8110f7234c5d8a8b48b3c99299b2e8f86f72c0b33134eaa962584b81d3a6aca"
+    },
+    {
+      "path": "src/graph/native_analysis.h",
+      "sha256": "edd5f0dff67b9accfbd771bc703df5722a1d91a6c627eefaf98836fbfd86cbbb"
+    },
+    {
+      "path": "src/graph/submission_internal.h",
+      "sha256": "1da2c63b573581fda8831cf3a36639f104c193f1911a29bdb0d58921c79510e9"
+    },
+    {
+      "path": "src/graph_route_cpu_cuda/invocation.cc",
+      "sha256": "fe2fe21832261a8869ef67a6a3228585be5b405e5d0b9c656670e8d4686e4604"
+    },
+    {
+      "path": "src/graph_route_cpu_apple/invocation.cc",
+      "sha256": "658cf19a02df86177cd3a0ad54b0821154dcd1f29477736580059a69335d565e"
+    },
+    {
+      "path": "src/graph_route_cpu_vulkan/invocation.cc",
+      "sha256": "ae521a0c6d01b7c48d573da875c34bf897e9dcfefc17c249b087ae20c0c4984e"
+    },
+    {
+      "path": "tests/graph/cpu_apple_pipeline_trace.mm",
+      "sha256": "77f60ac823d1eab28afedcd38807678e9e39b53925663f39b67bc50cfffd2edf"
+    }
+  ],
+  "actual_gtest_executions": [],
+  "actual_trace_summary": {
+    "single_dag": true,
+    "warm_episodes_per_order": 8,
+    "clock": "system_mach_time",
+    "timebase_numer": 125,
+    "timebase_denom": 3,
+    "guard_ns": 1000,
+    "pure_negative_buffers": [
+      8,
+      8
+    ],
+    "whole_gpu_inside_cpu_task": [
+      8,
+      8
+    ]
+  },
+  "raw": {
+    "path": "raw.zip",
+    "sha256": "b82b3f8aaadd5e553beaccc3c2e2f9065399c172a8f2f7fbe74dd999ecc97129",
+    "bytes": 1138549,
+    "crc": "PASS"
+  },
+  "no_aggregate_acceptance": [
+    "Current owners remain AUDITED; G09 still open.",
+    "No P1, sanitizer/device-tool aggregate or relocated static/shared SDK delivery verdict.",
+    "No default-provider/size/platform universal overlap guarantee."
+  ],
+  "retained_failures": [
+    {
+      "record": "run/result-language-failure.json",
+      "verdict": "Fixture global OBJCXX configuration compiled existing GGML .m as C++; compile failed. Scoped -x objective-c++ to the test source; no leaf/product fix."
+    },
+    {
+      "record": "run/result-abs-no-overlap.json",
+      "log": "run/metal-abs-no-overlap.log",
+      "verdict": "Original 4M Abs finishes before GPU starts in this diagnostic; no overlap proof. Original MTLFunction Negative name also failed the initial lowercase predicate. Exact original name is now bound."
+    },
+    {
+      "record": "run/result-silu-observation-gap.json",
+      "log": "run/metal-silu-real-math-timeline.log",
+      "verdict": "Numerical SiLU passes, but default ATen does not use ParallelExecutorRef; only CPU join was recorded. This is incomplete CPU observation, not a SiLU overlap/performance loss."
+    }
+  ],
+  "uncertainty": "Shared documented system mach clock; recorded timebase 125/3 ns per CPU tick and exact raw GPU double seconds. 1000 ns is a conservative diagnostic guard, not a measured statistical/device timestamp confidence bound. Only these unmixed command-buffer envelopes and fixed shapes are signed; no P1 claim.",
+  "final_format_only_change": {
+    "path": "tests/graph/native_joint_pipeline.cc",
+    "run_sha256": "dc7fe3acfeeb00cec64ff678532ab08a63fe369161757967c7ad35ee2011d33b",
+    "committed_lf_sha256": "a74a7c257eebb05964d9f45c4cb3c3f6fd2b5af9e2524b7d4aef63f0ca3412a3",
+    "proof": "Exact byte equality after replacing CRLF by LF. Restores original HEAD line-ending format; no token or semantic change, so no duplicate build/run."
+  }
+}

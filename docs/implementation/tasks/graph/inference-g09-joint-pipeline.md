@@ -196,7 +196,41 @@ HYLE_TESTING-only的第四条native-retirement故障用例在此shipping OFF pro
 这些源码判定不代签未运行风险或P1。此前[79项common局部检查](../../../../evidence/architecture/inference-g09-partial-common-check/receipt.json)
 及其原成本继续保留，不重复计成本。
 
-下一步限于本卡剩余验收：WSL CUDA与Air Vulkan适用消费/权限接缝，Apple/Vulkan原生执行时间线，
-原G02/G03/G06直接消费、适用host/device风险、三交付/公开头、P0完整账；candidate固定后按预声明
+### 跨平台与真实数学时间线检查点，2026-10-17
+
+产品源码固定为e09f30925；本批只增加验证夹具，四owner仍为AUDITED，G10未开始。
+
+[WSL CUDA](../../../../evidence/correctness/inference-g09-wsl-cuda-implementation-checkpoint/receipt.json)：
+GCC14.2/CUDA13.3/RTX4070实际运行原contracts、G08 joint、新双slot/65步与取消旅程；
+61项common、289项Graph executable/direct和3项native retirement均PASS，合计353次执行，
+存在fixture覆盖交叠，不能称353个独立测试。CUPTI记录280个真实kernel区间，单图两顺序分别
+7/8和8/8次有CPU数学/kernel重叠，双slot分别129和129次；不代签P1。
+原预检210条边、147个CUDA对象的重建计划在编译前拒绝；同树复用逐项hash核验的未变叶archive，
+实际只编译本owner/直接消费者C++，不冒充全新source/static/shared交付。累计133.680秒含原预检。
+
+[Air Vulkan](../../../../evidence/correctness/inference-g09-air-vulkan-implementation-checkpoint/receipt.json)：
+Mac16,12/M4原source集成，原contracts/G08 joint与5组双slot/65步/取消close旅程均PASS，
+累计34.808秒。完整canonical build/source archive绑定e09f30925，共3321文件。
+此结果尚无Vulkan实际数学GPU时间线，不能以pending或host墙钟替代。
+
+[Air Metal实际数学](../../../../evidence/correctness/inference-g09-apple-real-math-timeline/receipt.json)：
+固定同4M F32元素、默认CPU Exp与原GPU Neg及CPU join，单活动slot、warm一次后每插入顺序
+8次诊断。透明装饰原Metal调用，按真实MTLFunction名`vn_Negativefloat32float32`追踪
+pipeline/dispatch/command buffer；只接受无blit、恰好一次该数学dispatch、完成成功的buffer。
+GPUStart/End与CPU executor数学区间使用同一system mach clock；两顺序各8/8次整个GPU区间
+落入独立CPU Exp task，原join均在GPU完成后。固定double oracle、abs2e-6+rel2e-6，
+拒绝非有限值；默认Abs/双slot/65步以及原contracts/G08 joint也PASS。
+这只签该形状的真实重叠存在性，不签全尺寸/全provider或5%性能。
+
+保留三种原结果：首次全局启用OBJCXX令未变GGML `.m`误按C++编译而失败，后将语言配置限定到
+夹具自身；原短Abs支路在GPU启动前结束，未证明重叠；补充SiLU数值PASS，但默认ATen不使用
+ParallelExecutorRef，记录只覆盖join，属于CPU观测不足，不能记为SiLU性能/并发失败。
+Exp是最后一次固定补充诊断，不再换尺寸或算子。以上同树累计39.006秒包含各原失败及重试。
+1us仅作诊断guard，不是统计或设备时间戳置信界；实际最小左右包含余量约384us/3777us。
+运行源码及三份原快照、raw日志、binary hash与独立观察复核均在receipt归档中；最后只恢复
+`native_joint_pipeline.cc`原有LF，保留CRLF→LF逐字节相等证明，不为格式变化重复构建。
+
+下一步限于本卡剩余验收：Vulkan原生执行时间线，原G02/G03/G06直接消费、适用host/device风险、
+三交付/公开头、P0完整账；candidate固定后按预声明
 两自然形状与必要串行holdout，先独立artifact/text预检，再正式P1，最后终审/LOC。
 尚未完成的门均待证；不追加缺口穷尽调研，不提前推进G10，不重跑已接受G01–G08数学/P1。

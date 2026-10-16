@@ -13,7 +13,17 @@ add_executable(hyle_cpu_apple_contracts ../cpu_apple_contracts.cc)
 target_compile_features(hyle_cpu_apple_contracts PRIVATE cxx_std_23)
 target_link_libraries(hyle_cpu_apple_contracts PRIVATE hyle::graph)
 hyle_stage_runtime(hyle_cpu_apple_contracts)
-add_executable(hyle_cpu_apple_pipeline ../native_joint_pipeline.cc)
+option(HYLE_G09_NATIVE_TRACE "Build the original Metal observation fixture" OFF)
+if(HYLE_G09_NATIVE_TRACE)
+  add_executable(hyle_cpu_apple_pipeline ../cpu_apple_pipeline_trace.mm)
+  # Scope the observation fixture's language to this source. Enabling OBJCXX
+  # globally changes the language selection of the existing GGML .m sources.
+  set_source_files_properties(../cpu_apple_pipeline_trace.mm PROPERTIES
+    LANGUAGE CXX COMPILE_OPTIONS "-x;objective-c++")
+  target_link_libraries(hyle_cpu_apple_pipeline PRIVATE "-framework Foundation" "-framework Metal")
+else()
+  add_executable(hyle_cpu_apple_pipeline ../native_joint_pipeline.cc)
+endif()
 target_compile_features(hyle_cpu_apple_pipeline PRIVATE cxx_std_23)
 target_compile_definitions(hyle_cpu_apple_pipeline PRIVATE HYLE_G09_APPLE=1)
 target_link_libraries(hyle_cpu_apple_pipeline PRIVATE hyle::graph)

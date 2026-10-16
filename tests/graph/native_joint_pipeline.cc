@@ -6,6 +6,7 @@
 #include <hyle/graph/cpu_vulkan.h>
 #endif
 
+#include <algorithm>
 #include <array>
 #include <cmath>
 #include <cstdio>
@@ -39,7 +40,10 @@ Status require(bool condition, const char *message) {
 // Public consumption only: independent real math, mandatory join, two original
 // slots, changed inputs, shared readonly native source and retained old results.
 // This fixture proves correctness/progress; it makes no device-overlap claim.
-Status branches(b::Environment environment, bool cpu_first, unsigned workers, bool native_input) {
+Status branches(b::Environment environment, bool cpu_first, unsigned workers, bool native_input,
+    unsigned iterations = 65, unsigned active_slots = 2,
+    Status (*observe)(unsigned, bool) = nullptr, bool exp_branch = false) {
+  HYLE_RETURN_IF_ERROR(require(active_slots == 1 || active_slots == 2, "invalid observation slot count"));
   constexpr std::size_t elements = 4 * 1024 * 1024;
   HYLE_ASSIGN_OR_RETURN(auto desc, c::TensorDesc::dense(c::DataType::kFloat32,
       std::array<std::int64_t, 1>{elements}));
@@ -56,12 +60,13 @@ Status branches(b::Environment environment, bool cpu_first, unsigned workers, bo
   HYLE_ASSIGN_OR_RETURN(auto xi, builder.input(desc));
   HYLE_ASSIGN_OR_RETURN(auto ai, builder.input(desc));
   g::ValueId cv, av;
+  const c::Unary cpu_math{exp_branch ? c::UnaryKind::kExp : c::UnaryKind::kAbs};
   if (cpu_first) {
-    HYLE_ASSIGN_OR_RETURN(cv, builder.add(c::Unary{c::UnaryKind::kAbs}, xi));
+    HYLE_ASSIGN_OR_RETURN(cv, builder.add(cpu_math, xi));
     HYLE_ASSIGN_OR_RETURN(av, builder.add(c::Unary{c::UnaryKind::kNeg}, ai));
   } else {
     HYLE_ASSIGN_OR_RETURN(av, builder.add(c::Unary{c::UnaryKind::kNeg}, ai));
-    HYLE_ASSIGN_OR_RETURN(cv, builder.add(c::Unary{c::UnaryKind::kAbs}, xi));
+    HYLE_ASSIGN_OR_RETURN(cv, builder.add(cpu_math, xi));
   }
   HYLE_ASSIGN_OR_RETURN(auto out, builder.add(c::Binary{}, cv, av));
   HYLE_RETURN_IF_ERROR(builder.publish(out));
@@ -101,27 +106,37 @@ Status branches(b::Environment environment, bool cpu_first, unsigned workers, bo
     HYLE_RETURN_IF_ERROR(view.storage().read(std::as_writable_bytes(std::span(values))));
     for (std::size_t i = 0; i < elements; ++i) {
       const auto source_value = float(int(i % 101) - 50) * 0.125f + float(step) * 0.0625f + float(slot) * 0.25f;
-      if (values[i] != std::abs(source_value) - 1.25f)
+      const auto expected = exp_branch ? std::exp(double(source_value)) - 1.25
+                                       : double(std::abs(source_value) - 1.25f);
+      const auto differs = exp_branch
+          ? !std::isfinite(values[i]) || std::abs(double(values[i]) - expected) > 2e-6 + 2e-6 * std::abs(expected)
+          : double(values[i]) != expected;
+      if (differs)
         return Status::Internal("independent CPU/native branch+join oracle differs");
     }
     return Status::Ok();
   };
-  for (unsigned step = 0; step < 65; ++step) {
-    HYLE_RETURN_IF_ERROR(bind(0, step)); HYLE_RETURN_IF_ERROR(bind(1, step));
-    if (step == 0) { std::puts("G09 prepared both slots"); std::fflush(stdout); }
+  for (unsigned step = 0; step < iterations; ++step) {
+    HYLE_RETURN_IF_ERROR(bind(0, step));
+    if (active_slots == 2) HYLE_RETURN_IF_ERROR(bind(1, step));
+    if (step == 0) { std::printf("G09 prepared %u slots\n", active_slots); std::fflush(stdout); }
     {
+      if (observe != nullptr) HYLE_RETURN_IF_ERROR(observe(step, true));
       HYLE_ASSIGN_OR_RETURN(auto first, slots[0].submit());
-      HYLE_ASSIGN_OR_RETURN(auto second, slots[1].submit());
-      if (step == 0) { std::puts("G09 submitted both slots"); std::fflush(stdout); }
+      c::OwnedResult<b::Results> second;
+      if (active_slots == 2) { HYLE_ASSIGN_OR_RETURN(second, slots[1].submit()); }
+      if (step == 0) { std::printf("G09 submitted %u slots\n", active_slots); std::fflush(stdout); }
       HYLE_ASSIGN_OR_RETURN(auto old, first.wait());
-      HYLE_ASSIGN_OR_RETURN(auto other, second.wait());
+      c::ResultLease<b::Results> other;
+      if (active_slots == 2) { HYLE_ASSIGN_OR_RETURN(other, second.wait()); }
+      if (observe != nullptr) HYLE_RETURN_IF_ERROR(observe(step, false));
       HYLE_RETURN_IF_ERROR(require(!slots[0].bind(xi, x[0].view.as_const()).ok(),
           "retained result did not prevent slot overwrite"));
       HYLE_RETURN_IF_ERROR(verify(*old, 0, step));
-      HYLE_RETURN_IF_ERROR(verify(*other, 1, step));
+      if (active_slots == 2) HYLE_RETURN_IF_ERROR(verify(*other, 1, step));
     }
   }
-  std::puts("G09 65-step oracle passed; cancelling"); std::fflush(stdout);
+  std::printf("G09 %u-step oracle passed; cancelling\n", iterations); std::fflush(stdout);
   // Cancellation may lose to successful completion. Either result must retire
   // before close, and successful completion must still satisfy the oracle.
   HYLE_RETURN_IF_ERROR(bind(0, 91));
@@ -137,8 +152,9 @@ Status branches(b::Environment environment, bool cpu_first, unsigned workers, bo
   HYLE_RETURN_IF_ERROR(require(closed.ok() || closed.IsCancelled(), "cancelled slot did not close"));
   HYLE_RETURN_IF_ERROR(slots[1].close());
   scheduler.drain();
-  std::printf("{\"case\":\"%s\",\"workers\":%u,\"native_input\":%s,\"oracle\":\"PASS\",\"slots\":2,\"changed_steps\":65}\n",
-      cpu_first ? "cpu-first" : "gpu-first", workers, native_input ? "true" : "false");
+  std::printf("{\"case\":\"%s\",\"workers\":%u,\"native_input\":%s,\"oracle\":\"PASS\",\"slots\":%u,\"changed_steps\":%u,\"cpu_math\":\"%s\"}\n",
+      cpu_first ? "cpu-first" : "gpu-first", workers, native_input ? "true" : "false", active_slots, iterations,
+      exp_branch ? "exp" : "abs");
   return Status::Ok();
 }
 
