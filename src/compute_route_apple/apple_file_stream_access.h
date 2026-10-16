@@ -24,7 +24,7 @@ struct CopyStreamAccess final {
   static HYLE_COMPUTE_ROUTE_APPLE_API Status admit_read(LeaseUseBatch &, const CopyBatchUpdate &,
                                 CopyResourceId) noexcept;
 
-  static Result<WriteLease> take_mutable(CopyBatchInvocation &, CopyResourceId) noexcept;
+  static HYLE_COMPUTE_ROUTE_APPLE_API Result<WriteLease> take_mutable(CopyBatchInvocation &, CopyResourceId) noexcept;
   static Result<compute::detail::PhysicalCopyResource> physical(CopyBatchInvocation &, mem::ConstBufferView, bool) noexcept;
   static Status observe(CopyBatchInvocation &) noexcept;
 };

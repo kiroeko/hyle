@@ -221,3 +221,16 @@ MaterializedMetadataPolicy 的完整准备算法保持。共同/原生/pending �
 先冻结当前源快照，Windows 五个既有目标一次增量构建（最多4 worker），运行两 factor、
 CPU实际消费者及 plain/encoded 两组原 pending 风险；再串行实际 Air native/联合。
 本段仅记实施事实，当前新测试均未运行，不签 PASS、G06 完成或新性能资格。
+
+### 原生/pending Windows source5 与 Air 首轮
+
+源快照25fd231e4dd17af416f92321a2ea4766b5378da9的
+[Windows source5证据](../../../../evidence/correctness/inference-g06-native-pending-windows-attempt-5/receipt.json)
+为PASS：两factor60＋6、CPU实际消费者24，共90项；plain/encoded各9个原pending风险
+全部通过。五个既有目标一次增量编译7.187s，外层52.047s含测试并与stage重叠。
+原source4通过及setup1/2/3失败和费用不重置。未重复未变CUDA/P1或全库构建。
+Air attempt1实际身份Mac16,12/M4/8核GPU/16GiB/macOS27.0.1/clang21；配置6.334s、
+manifest0.076s成功，编译9.294s在CPU+Apple动态库链接时失败，测试尚未运行。
+原因是本批首次跨route动态库使用原CopyStreamAccess::take_mutable，但原内部声明未导出。
+有限修正只给Apple/Vulkan对应原声明加route export属性，不改变原退休/权限检查或算法；
+使用同一source/build缓存续做原native/联合门，保留首轮失败和16.458s外层成本。

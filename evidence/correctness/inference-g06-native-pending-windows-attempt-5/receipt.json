@@ -1,0 +1,387 @@
+{
+  "kind": "G06_NATIVE_PENDING_M3_M4_D1_L2_WINDOWS_SOURCE",
+  "verdict": "PASS_WINDOWS_COMMON_CPU_ONLY",
+  "candidate": "25fd231e4dd17af416f92321a2ea4766b5378da9",
+  "total_tests": 90,
+  "tests": [
+    {
+      "target": "hyle_compute_batch_test",
+      "tests": 60,
+      "failures": 0,
+      "skipped": 0,
+      "testcases": [
+        "BatchLayout.ActiveRowsAreDistinctFromPhysicalCapacityAndHostIsOwned",
+        "BatchLayout.SameShapeNewPageValuesHaveNewGenerationAndOldVersionRemains",
+        "BatchLayout.ActiveSnapshotIsCompactAndExplicitExportZerosAllInactiveCapacity",
+        "BatchLayout.ConcurrentFirstFullExportsShareOneImmutableBacking",
+        "BatchLayout.FailedExplicitExportPreservesActiveVersionAndCanRetry",
+        "BatchLayout.ForeignSchemaCannotAdmitAnIdenticalCapacityVersion",
+        "BatchLayout.WrongIndptrStartMonotonicEndAndRequestCountAreRejected",
+        "BatchLayout.PhysicalPageBoundsAndTailBoundsAreCheckedBeforeSnapshot",
+        "BatchLayout.DuplicatePagesAreLegalReadonlySharing",
+        "BatchLayout.QueryWithoutKvAndCapacityExceededAreRejected",
+        "BatchLayout.EmptyBatchAndEmptyRequestHaveExplicitEmptyEffectiveRegions",
+        "BatchLayout.RaggedUsesPackedRowsAndRejectsPagedSideTables",
+        "BatchLayout.DtypeGqaIntegerAndPhysicalStrideOverflowAreRejected",
+        "BatchLayout.QuotaFailureDoesNotConsumeCallerSpansOrExistingVersion",
+        "BatchLayout.ExportedReadonlyBlobOutlivesAllSchemaAndVersionHandles",
+        "BatchLayout.ConcurrentColdVersionsHaveDistinctGenerationAndOwnedData",
+        "BatchLayout.TypedAttentionPortShapesAndOpaqueMetadataEncodingAreChecked",
+        "BatchLayout.F4BranchSharesAndPublishesLayoutBlobWithoutMutatingOldVersion",
+        "BatchLayout.FixedBlockRootTransferKeepsNativeAdmissionWithoutOwnerCycle",
+        "BatchLayout.WholeArenaSubviewCannotBecomeAnIndependentFreePageWriter",
+        "BatchLayout.SeparatePageBlocksKeepReadUseAndFreePageWriteIndependent",
+        "BatchLayout.EncodedKeysValuesAndOutputHaveIndependentTruthfulGeometry",
+        "BatchLayout.StructuralNoncausalQueryLengthDoesNotMintCausalQualification",
+        "BatchLayout.CacheBlockAndValueDepthOverflowRefuseBeforeVersionCreation",
+        "BatchMaterialize.PhysicalPagesGqaAndRightAlignedCausalMaskExcludePadding",
+        "BatchMaterialize.NoncausalUsesEveryValidKvButNeverTailPadding",
+        "BatchMaterialize.CausalWindowUsesInclusivePastCountAtBottomRightPosition",
+        "BatchMaterialize.FullNoncausalCrossAttentionUsesValueDepthAndOutputType",
+        "BatchMaterialize.EncodedCacheRequiresNativeRouteInsteadOfHistoryDecode",
+        "BatchMaterialize.InactiveQueryCapacityReadsOnlyPagesOfTheFirstActiveQuery",
+        "BatchMaterialize.RaggedOffsetsAndNewLayoutDoNotChangeOldOwnedIndices",
+        "BatchMaterialize.ForeignEmptyAndOverlongLayoutsAreRejectedBeforeGeneration",
+        "BatchMaterialize.ExplicitHostAndLogicalByteCapsAreCheckedAtColdPreparation",
+        "BatchMaterialize.FlattenedI32AndProductOverflowRejectWithoutPayloadAllocation",
+        "BatchMaterialize.AllocatorOomPreservesOldVersionAndExportRetiresAfterControls",
+        "NativePagedMetadata.FullNoncausalQGreaterThanKvAndIndependentEncodedRoots",
+        "NativePagedMetadata.CompactOwnedPageOrderAndTailGenerationAreIndependentOfQueryHeads",
+        "NativePagedMetadata.ExportedSnapshotRetainsOwnersAndEmptyVersionHasNoPageReads",
+        "NativePagedMetadata.ForeignSchemaBudgetAndNonfiniteScaleRejectBeforePublishing",
+        "NativePagedMetadata.EveryColdAllocationFailureReclaimsMetadataAndExportCanOutliveRecipe",
+        "NativePagedMetadata.ActiveVersionDefersFullIndexAllocationUntilExplicitExport",
+        "NativePagedMetadata.ConcurrentExplicitExportsShareOneReadonlyTable",
+        "PagedArena.EncodedKeyAndValuePagesKeepSeparateBytePrefixesAndPermissions",
+        "PagedArena.SameFloat8BytesDoNotProveTheOtherPortsScale",
+        "PagedArena.UsedPageReadersDoNotStopWritingAnUnreferencedPhysicalPage",
+        "PagedArena.ForeignSchemaPageRangeAndIncompleteOrExcessiveSetsReject",
+        "PagedArena.RepeatedPhysicalReferencesKeepOneActualGuard",
+        "PagedArena.F4LedgerAndArenaDoNotPinEachOtherAfterLastReaderRetires",
+        "PagedArena.UnsubmittedWriterRestoresButConsumedAbandonNeverPretendsReady",
+        "PagedArena.ByteCapacityAndMetadataOomAreExplicitAndOldGuardOutlivesControls",
+        "PagedArena.ActualF2PageCloneAppendAndF4PublishKeepOldStateAndShareCleanPage",
+        "PagedArena.OriginalReadyPageReacquiresWithoutCopyAllocationOrGenerationChange",
+        "PagedArena.F2MutableWithdrawalPreservesInitializedUntouchedBytesAndRejectsRetainedObservation",
+        "PagedArena.PartialPrefixRejectsUnwrittenTailBeforeAllocatingFrame",
+        "PagedArena.SharedPageMustCoverEveryRequestAndEveryNonTailReference",
+        "PagedArena.SixtyFourNumericRowAppendsPreservePrefixAndOriginalGeneration",
+        "PagedArena.ActualPartialF2SuccessCommitsOnlyOneInitializedRow",
+        "PagedArena.CompleteRejectsInvalidPrefixWithoutConsumingReservation",
+        "PagedAdmission.ExactBlocksDeduplicateSubviewsWithoutCollapsingSharedBacking",
+        "PagedAdmission.ReserveLimitsAndOriginalClosedPermissionGateRemainEffective"
+      ]
+    },
+    {
+      "target": "hyle_graph_batch_test",
+      "tests": 6,
+      "failures": 0,
+      "skipped": 0,
+      "testcases": [
+        "GraphBatch.PublicCapacityAndMetadataPortsSurviveRecipeRelease",
+        "GraphBatch.EmptyProgramCannotPublishAnArtifact",
+        "GraphBatch.EveryColdGraphAllocationFailureRollsBackAndAllowsFreshPreparation",
+        "NativePagedGraphNode.EncodedUnequalValueOutputKeepsScaleAndWindowRecipe",
+        "NativePagedGraphNode.TruthfulPhysicalRootsAndActivePackedOutput",
+        "NativePagedGraphNode.EmptyOutputStillDescribesTrueCapacityAndRejectsForgedRoots"
+      ]
+    },
+    {
+      "target": "g04_g05_encoded_common_pages",
+      "tests": 24,
+      "failures": 0,
+      "skipped": 0,
+      "testcases": [
+        "EncodedCommonPages.TwoNativeAttentionNodesShareUploadBeforePreparation",
+        "EncodedCommonPages.IncrementalProducersDirectGraphAndJoint",
+        "EncodedCommonPages.FailedEncoderRetainsOriginalFailureAndWriters",
+        "EncodedCommonPages.BFloat16IncrementalAndFailureConsumers",
+        "GgmlCpuCacheEncode.Q8ReferenceBytesTiesZeroAndThreeInputTypes",
+        "GgmlCpuCacheEncode.Float8CodesMatchIndependentEnumerationIncludingRoundingAndSaturation",
+        "GgmlCpuCacheEncode.FiniteQ8ScaleBoundariesHaveCanonicalZeroBlocks",
+        "GgmlCpuCacheEncode.FiniteFloat8ExtremePositiveScalesSaturateAndPreserveZero",
+        "GgmlCpuCacheEncode.InvalidPayloadReturnsOriginalCompletionErrorAfterWorkersRetire",
+        "GgmlCpuCacheEncode.IndependentInvocationsAndFreshRecoveryAfterOriginalWorkersRetire",
+        "GgmlCpuCacheEncode.ConcurrentOriginalLanesKeepNumericFailureAndBytesIndependent",
+        "GgmlCpuBoxed.QuantizedPagedAndRaggedIndependentValueDepthAndWindow",
+        "GgmlCpuBoxed.QuantizedFullNoncausalAllowsMoreQueriesThanKeys",
+        "GgmlCpuBoxed.PlainWindowAndIndependentValueDepth",
+        "GgmlCpuBoxed.QuantizedCoupledDepthsIncludingMainD256AndLongPrefill",
+        "GgmlCpuBoxed.LongF16WindowUsesF32AccumulatorAgainstCancellation",
+        "GgmlCpuBoxed.FiniteBf16QueryScaleOverflowIsAnAcceptedErrorAndFreshSlotSucceeds",
+        "GgmlCpuBoxed.QuerySafetyChecksBothEndsAtRepresentationBoundaries",
+        "GgmlCpuPaged.OriginalFlashReadsExactPhysicalPagesAndTail",
+        "GgmlCpuPaged.DeltaMetadataMirrorMatchesIndependentFullWireAcrossGrowShrinkAndEmpty",
+        "GgmlCpuRagged.NativeFlashReadsTwoRequestsWithoutKvMaterialization",
+        "GgmlCpuRagged.ColdBudgetAndPagedQualificationAreExplicit",
+        "GgmlCpuRagged.EveryColdAllocationFailureReleasesThePartialNativePlan",
+        "GgmlCpuRagged.AcceptedMathFailureRetiresUsesWithoutPublishingOutput"
+      ]
+    }
+  ],
+  "pending_risks": [
+    {
+      "target": "g04_plain_pending_control",
+      "scenarios": 9,
+      "exit_code": 0
+    },
+    {
+      "target": "g04_encoded_pending_risks",
+      "scenarios": 9,
+      "exit_code": 0
+    }
+  ],
+  "execution": {
+    "state": "TERMINAL_PASS",
+    "pid": 43032,
+    "candidate": "25fd231e4dd17af416f92321a2ea4766b5378da9",
+    "build": "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev",
+    "max_jobs": 4,
+    "stages": [
+      {
+        "stage": "prepare-manifest",
+        "command": [
+          "ninja",
+          "-C",
+          "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev",
+          "build.ninja"
+        ],
+        "exit_code": 0,
+        "elapsed_seconds": 0.15600000001722947,
+        "log": "C:/public/project-hyle/hyle/.scratch/inference-gaps/g06/common-source-5/prepare-manifest.log"
+      },
+      {
+        "stage": "build",
+        "command": [
+          "cmake",
+          "--build",
+          "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev",
+          "--target",
+          "hyle_compute_batch_test",
+          "hyle_graph_batch_test",
+          "g04_g05_encoded_common_pages",
+          "g04_plain_pending_control",
+          "g04_encoded_pending_risks",
+          "--parallel",
+          "4",
+          "--",
+          "-k",
+          "0"
+        ],
+        "exit_code": 0,
+        "elapsed_seconds": 7.186999999976251,
+        "log": "C:/public/project-hyle/hyle/.scratch/inference-gaps/g06/common-source-5/build.log"
+      },
+      {
+        "stage": "hyle_compute_batch_test",
+        "command": [
+          "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\hyle_compute_batch_test.exe",
+          "--gtest_output=xml:C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g06\\common-source-5\\hyle_compute_batch_test.xml"
+        ],
+        "exit_code": 0,
+        "elapsed_seconds": 0.15600000001722947,
+        "log": "C:/public/project-hyle/hyle/.scratch/inference-gaps/g06/common-source-5/hyle_compute_batch_test.log"
+      },
+      {
+        "stage": "hyle_graph_batch_test",
+        "command": [
+          "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\hyle_graph_batch_test.exe",
+          "--gtest_output=xml:C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g06\\common-source-5\\hyle_graph_batch_test.xml"
+        ],
+        "exit_code": 0,
+        "elapsed_seconds": 0.06300000002374873,
+        "log": "C:/public/project-hyle/hyle/.scratch/inference-gaps/g06/common-source-5/hyle_graph_batch_test.log"
+      },
+      {
+        "stage": "g04_g05_encoded_common_pages",
+        "command": [
+          "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\g04_g05_encoded_common_pages.exe",
+          "--gtest_output=xml:C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g06\\common-source-5\\g04_g05_encoded_common_pages.xml"
+        ],
+        "exit_code": 0,
+        "elapsed_seconds": 42.51499999995576,
+        "log": "C:/public/project-hyle/hyle/.scratch/inference-gaps/g06/common-source-5/g04_g05_encoded_common_pages.log"
+      },
+      {
+        "stage": "g04_plain_pending_control",
+        "command": [
+          "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\g04_plain_pending_control.exe"
+        ],
+        "exit_code": 0,
+        "elapsed_seconds": 0.2190000000409782,
+        "log": "C:/public/project-hyle/hyle/.scratch/inference-gaps/g06/common-source-5/g04_plain_pending_control.log"
+      },
+      {
+        "stage": "g04_encoded_pending_risks",
+        "command": [
+          "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\g04_encoded_pending_risks.exe"
+        ],
+        "exit_code": 0,
+        "elapsed_seconds": 0.21899999998277053,
+        "log": "C:/public/project-hyle/hyle/.scratch/inference-gaps/g06/common-source-5/g04_encoded_pending_risks.log"
+      }
+    ],
+    "identity": {
+      "host": "KIRO-WORKSTATIO",
+      "compiler": "14.50.35717",
+      "route": "CPU/Windows"
+    },
+    "scope": "G06 native/pending M3/M4/D1/L2 common source factors, actual CPU/Graph consumers and original plain/encoded pending risks; no CUDA/native-Air/SDK/sanitizer/P1 verdict",
+    "reused_configuration": {
+      "from": "common-source-1",
+      "candidate": "4bc567c87931c13d8bb3c4b00a9c137258fd0455",
+      "stages": [
+        {
+          "stage": "configure",
+          "command": [
+            "cmake",
+            "-S",
+            "C:\\public\\project-hyle\\hyle",
+            "-B",
+            "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev",
+            "-DCMAKE_PROJECT_INCLUDE=C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g02\\native-page-node\\project.cmake",
+            "-DHYLE_COMPONENTS=compute;graph",
+            "-DHYLE_COMPUTE_ROUTES=cpu",
+            "-DHYLE_BUILD_TESTS=ON",
+            "-DHYLE_BUILD_BENCH=OFF",
+            "-DHYLE_INSTALL=OFF",
+            "-DHYLE_TEST_INSTRUMENTATION=OFF"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 122.93800000002375,
+          "log": "C:/public/project-hyle/hyle/.scratch/inference-gaps/g06/common-source-1/configure.log"
+        },
+        {
+          "stage": "prepare-manifest",
+          "command": [
+            "ninja",
+            "-C",
+            "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev",
+            "build.ninja"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 0.18699999997625127,
+          "log": "C:/public/project-hyle/hyle/.scratch/inference-gaps/g06/common-source-1/prepare-manifest.log"
+        }
+      ],
+      "old_failure_retained": true
+    },
+    "stage": "g04_encoded_pending_risks",
+    "outer_elapsed_seconds": 52.04700000002049,
+    "targets": [
+      "hyle_compute_batch_test",
+      "hyle_graph_batch_test",
+      "g04_g05_encoded_common_pages",
+      "g04_plain_pending_control",
+      "g04_encoded_pending_risks"
+    ],
+    "build_edges": 28
+  },
+  "inputs": [
+    {
+      "path": "docs/implementation/tasks/compute/inference-g06-metadata-decode.md",
+      "sha256": "59c5bd6c1327354d8da27c66d23011ec12baa39781dccca04d7226d07bdd3505"
+    },
+    {
+      "path": "docs/user/batch-attention.md",
+      "sha256": "ec12276386964cddf703a9e0586a73ba46fb84069fd9d2ff7599b726c02ed96e"
+    },
+    {
+      "path": "include/hyle/compute/batch_paged_native.h",
+      "sha256": "7fa33691681f37390d6db444f27a1f1745850283709d6828a6ab9027515b5d3f"
+    },
+    {
+      "path": "include/hyle/compute/detail/materialized_native_controller.h",
+      "sha256": "b25f1a5d445d41c17b9f26a6a98b70cbff569ba78f1de383a30a998bcbc8ab21"
+    },
+    {
+      "path": "include/hyle/compute/detail/paged_arena_access.h",
+      "sha256": "5a053111b9e6a77203adbf553a9955ba581e3cc754a0e290225739369aac1dd7"
+    },
+    {
+      "path": "src/compute_batch/batch_execution.cc",
+      "sha256": "07df206d163931e65506891ac0261773e41a52a92f1c8f97d6302fa81d2e6d79"
+    },
+    {
+      "path": "src/compute_batch/batch_paged_native.cc",
+      "sha256": "e68ddef090e911be2314b75a2733f94313f366e224f3a94d28defb4df1d3797f"
+    },
+    {
+      "path": "src/compute_batch/paged_arena.cc",
+      "sha256": "cf4843e36b5676a16d4bbe94bb68c658a403af9c5240e83345005c931b6e5668"
+    },
+    {
+      "path": "src/graph_batch/batch.cc",
+      "sha256": "77e4532fe76124d83e3edc89f0d72b72626a2bcd3909ce96afee4dffb8ffa85a"
+    },
+    {
+      "path": "tests/compute_batch/native_paged_apple_consumer.cc",
+      "sha256": "5e0e3366132f4c1046c7319cdab5fd35a07f82dd35a7d5db5a27632498877f5a"
+    },
+    {
+      "path": "tests/compute_batch/native_paged_metadata_test.cc",
+      "sha256": "8f575139e2ae8590ce2f720321d7ebc66d3aebad25ccb2d69d0ae58776492b53"
+    },
+    {
+      "path": "tests/compute_batch/native_paged_vulkan_consumer.cc",
+      "sha256": "bc60cae364ecb1ec54c371ee546da25052b9899f0528e0c29136d72086358e2b"
+    },
+    {
+      "path": "tests/compute_batch/paged_arena_test.cc",
+      "sha256": "f7bfe6f0ee974239992604a78a0296cc7e941b4bc15f9e138ca3134d8a992904"
+    },
+    {
+      "path": "tests/graph_batch/native_paged_joint_consumer.cc",
+      "sha256": "754269e6c8b140dcee2f24e7b3b4511b10420f8be2f2a5266bff74f2e516beee"
+    }
+  ],
+  "artifacts": [
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\hyle_compute_batch.dll",
+      "sha256": "d33f3583714e1f2821b41017ab6ef5274a4cd915babd81905a96d4a0f9985724",
+      "bytes": 221696
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\hyle_graph_batch.dll",
+      "sha256": "aaf74a4d22400844fda4398af9577a8e56c8d06469e041180e8d203865fee139",
+      "bytes": 122880
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\hyle_compute_batch_test.exe",
+      "sha256": "8e31283cbd504c346d827248b8c97bd20b691018a9595215fc1f299c4eecfafe",
+      "bytes": 755200
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\hyle_graph_batch_test.exe",
+      "sha256": "06ff921c155274f3b67767b85e5c1904f76d169b53f261496b1eb0fe4a06c7c3",
+      "bytes": 364544
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\g04_g05_encoded_common_pages.exe",
+      "sha256": "47c56633e1d854e7bd71b57ae684de6d55cdc332e30768964eab65bf8347aead",
+      "bytes": 1111040
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\g04_plain_pending_control.exe",
+      "sha256": "b2014c56a9234138adaa841dd9547ed44cecbdaf5318af708b5164db554d260a",
+      "bytes": 53760
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\g04_encoded_pending_risks.exe",
+      "sha256": "ea6440fbcd40bed6cbe5d7441fda665c15a994499834082b5bd9485f89bc58b3",
+      "bytes": 53760
+    }
+  ],
+  "raw_zip_sha256": "6d3bbe50e04e2931b705bb500e693345cb1d0e82fa0889cf0dc64077a1ef00ae",
+  "proven": [
+    "Lazy native index export allocation, cached concurrent export, OOM retry and original byte/lifetime tests passed.",
+    "Exact block/generation ready admission distinguishes same backing blocks, deduplicates repeated subviews, preserves capacity and original closed permission gate.",
+    "Original common/Graph/CPU numerical, full wire mirror, metadata sharing, paged/ragged and pending controls all passed.",
+    "Plain and encoded pending receiver original success/hole/foreign/allocation/capacity/closed/old-ticket/budget/abandon journeys each passed."
+  ],
+  "limits": [
+    "Native controller template runtime, actual Apple/Vulkan Direct and CPU+GPU reports/math/retirement have not been qualified by this CPU-only run.",
+    "No G06 aggregate closure, runtime lengths/Q1 decode/capture verdict, new CUDA/P1, SDK, sanitizer or header verdict.",
+    "Common source4 PASS and setup1/2/3 failures remain separately preserved; reused configure setup costs are not erased. Source5 outer time overlaps all its stages."
+  ]
+}
