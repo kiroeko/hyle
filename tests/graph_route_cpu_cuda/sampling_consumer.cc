@@ -41,14 +41,25 @@ void run() {
   const auto sum=t::take(builder.add(c::Binary{c::BinaryKind::kAdd},gathered,score));
   t::require(builder.publish(sum));auto logical=t::take(std::move(builder).finish());
   const std::array placements{
+      g::NodePlacement{t::take(logical.node_id(0)),b::kCudaTarget,g::PlacementStrength::kRequired},
+      g::NodePlacement{t::take(logical.node_id(1)),b::kCudaTarget,g::PlacementStrength::kRequired},
+      g::NodePlacement{t::take(logical.node_id(2)),b::kCudaTarget,g::PlacementStrength::kRequired},
       g::NodePlacement{t::take(logical.node_id(3)),b::kCpuTarget,g::PlacementStrength::kRequired},
       g::NodePlacement{t::take(logical.node_id(4)),b::kCpuTarget,g::PlacementStrength::kRequired}};
+  const std::array locations{
+      g::ValuePlacement{produced,b::kDeviceStorage,g::PlacementStrength::kRequired},
+      g::ValuePlacement{counter,b::kDeviceStorage,g::PlacementStrength::kRequired},
+      g::ValuePlacement{index,b::kDeviceStorage,g::PlacementStrength::kRequired},
+      g::ValuePlacement{score,b::kDeviceStorage,g::PlacementStrength::kRequired},
+      g::ValuePlacement{gathered,b::kHostStorage,g::PlacementStrength::kRequired},
+      g::ValuePlacement{sum,b::kHostStorage,g::PlacementStrength::kRequired}};
   const std::array external{g::ExternalResourceContract{x,b::kDeviceStorage},
       g::ExternalResourceContract{key,b::kDeviceStorage},
       g::ExternalResourceContract{table,b::kHostStorage},
       g::ExternalResourceContract{sum,b::kHostStorage}};
   auto compiled=t::take(b::compile(logical,{.cpu=&cpu,.cuda=&cuda,.staging=&staging,.device=&device,
-      .staging_workspace_budget_bytes=512},{.constants=constants,.node_placements=placements,.external_resources=external}));
+      .staging_workspace_budget_bytes=512},{.constants=constants,.node_placements=placements,
+      .value_placements=locations,.external_resources=external}));
   std::array<c::Queue,2> gpu_queues,cpu_queues;
   std::array<m::Buffer,2> outputs;
   std::array<b::Invocation,2> slots;

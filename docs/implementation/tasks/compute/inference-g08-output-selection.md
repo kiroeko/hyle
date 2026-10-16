@@ -299,3 +299,9 @@ joint定向诊断确认测试选了现公开Cast不支持的I32→F32域；该�
 测试错误是遗漏CPU table常量的host external_resource合同，导致默认storage0尝试
 把普通host常量直接物化到GPU；仅补公开consumer的table→kHostStorage，不改Graph。
 下一增量只构建/运行该joint，四个已过的普通消费者和Mem不重复运行。
+
+
+019bf6e43 joint仅2个增量edge后进入原冷placement搜索预算上限；不增加预算或改
+Graph搜索器，先将本consumer原本已知的三个GPU节点、两个CPU节点和六个中间值
+storage全部用原公开required合同表达，避免让编译器枚举并不需要的CPU/GPU选择。
+只有该joint继续定向验证，其他已通过数值测试、Mem和device math证据复用。
