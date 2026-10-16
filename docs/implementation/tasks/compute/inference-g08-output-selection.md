@@ -357,3 +357,25 @@ alias拒绝；仅修测试先reset旧binding集合再绑定新owner，不改Grap
 私有holdout实际输出在bin，a2 runner最后错误路径的SETUP_FAIL及全部前序测试日志保留；
 只修runner定位，后续定向跑未过目标。测试增加有限phase参数用于独立补验，不重跑已过
 的Mem/CPU Direct/math/joint或恢复全库测试。
+
+
+### 2026-10-17 AUDITED补充：同一Apple浮点key缺陷覆盖原k>1
+
+a3 b06bf3bf1证据：新k1的原storage整数key已通过；F32负subnormal的k3/smallest
+原argsort输出index0、bits80000001，独立oracle要求index16、bits80000011。原四项
+TopK holdout仍PASS，说明它们未覆盖这个旧缺陷，不能据此删掉新边界用例。Air CPU
+Graph完整数值/质量及新独立port旅程已PASS。原日志/费用保留。
+
+仍在原owner compute_route_apple/AUDITED、本卡S1既有TopK数值合同内；不准增加dtype、
+schema、API或新机制。有限FIX增补A1：将k1刚修正的IEEE原storage key抽成同一私有
+helper，k>1浮点也接同一key，但继续原stable mx::argsort、原slice和take_along_axis；
+largest仅反转整数有序key、NaN恒置排序末端，±0归同key由原稳定排序保first index。
+原I32 k1 arg reduction、k>1 widening/sort保持不变，输入/结果与所有owner合同不改。
+
+P0：k>1仍原O(VlogV) argsort、4-byte/key（窄float原也widen为F32），无新host wait/
+私有pool/metadata/额外排序索引owner；整数key的点运算沿MLX已有fusion。撤销此前
+“k>1实现完全不变”这一限制，仅允许上述同因key修正。为量化合法正常数据上的额外费用，
+Apple S1 P1增加且仅增加一个holdout：R16×V248320、count3、largest、同原85bc两输出/
+owning完成/5%门；普通有限normal logits让旧版也满足同一oracle，不以旧版会崩的Tiny
+案例做速度比较。其他三路线仍各两形状，Apple原R1/R16 count1保持。尚未构造P1。
+先完成此AUDITED有限决定再改产品，产品实现后普通数值通过再冻结candidate。
