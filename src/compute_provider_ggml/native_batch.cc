@@ -112,19 +112,47 @@ Result<bool> update(void *value, const BatchLayoutVersion &layout,
   if(!equal(old.query_indptr,next.query_indptr))return false;
   const bool same=equal(old.kv_indptr,next.kv_indptr) && equal(old.page_indices,next.page_indices) &&
       equal(old.last_page_lengths,next.last_page_lengths);
-  const bool paged=slot.capacity.storage==BatchStorage::kPaged;bool runtime=paged;
+  const bool paged=slot.capacity.storage==BatchStorage::kPaged;bool runtime=true;
   for(std::size_t index=0;runtime && index+1<next.query_indptr.size();++index)
     if(next.query_indptr[index+1]-next.query_indptr[index]>1)runtime=false;
   // No mutation until every native request accepts the same runtime contract.
-  if(runtime)for(const auto*request:slot.requests)
-    if(!native_invocation_can_update_q1_pages(request->invocation)){runtime=false;break;}
+  if(runtime)for(const auto*request:slot.requests){
+    if(paged){
+      if(!native_invocation_can_update_q1_pages(request->invocation)){runtime=false;break;}
+    }else{
+      if(!native_invocation_can_update_q1_ragged(request->invocation)){runtime=false;break;}
+      const auto index=request->request_index;const auto rows=next.kv_indptr[index+1]-next.kv_indptr[index];
+      for(unsigned port=1;port<3;++port){
+        const auto storage=port==1?slot.capacity.key_storage:slot.capacity.value_storage;
+        const auto depth=port==1?slot.capacity.qk_head_dim:slot.capacity.value_head_dim;
+        HYLE_ASSIGN_OR_RETURN(auto desc,cache_tensor_description(storage,
+            std::array<std::int64_t,4>{1,rows,slot.capacity.kv_heads,depth}));
+        if(auto bytes=desc.required_bytes();!bytes)return std::unexpected(bytes.error());
+      }
+    }
+  }
   if(!same && !runtime)return false;
   if(runtime){
     for(auto*request:slot.requests){
       const auto index=request->request_index;const auto first=std::size_t(next.kv_indptr[index]);
       const auto refs=std::size_t(next.kv_indptr[index+1])-first;
-      const auto rows=std::uint32_t((refs-1)*slot.capacity.page_size+std::uint32_t(next.last_page_lengths[index]));
-      native_invocation_update_q1_pages(request->invocation,next.page_indices.subspan(first,refs),rows);
+      if(paged){
+        const auto rows=std::uint32_t((refs-1)*slot.capacity.page_size+std::uint32_t(next.last_page_lengths[index]));
+        native_invocation_update_q1_pages(request->invocation,next.page_indices.subspan(first,refs),rows);
+      }else{
+        // All descriptors and native aliases were preflighted before mutation.
+        // The private submit maps these actual views; immutable Q/output stay fixed.
+        for(unsigned port=1;port<3;++port){
+          const auto storage=port==1?slot.capacity.key_storage:slot.capacity.value_storage;
+          const auto depth=port==1?slot.capacity.qk_head_dim:slot.capacity.value_head_dim;
+          auto desc=cache_tensor_description(storage,
+              std::array<std::int64_t,4>{1,std::int64_t(refs),slot.capacity.kv_heads,depth}).value();
+          const auto offset=first*std::size_t(desc.byte_strides()[1]);
+          (port==1?request->key_offset:request->value_offset)=offset;
+          request->input_bytes[port]=desc.required_bytes().value();request->inputs[port]=std::move(desc);
+        }
+        native_invocation_update_q1_ragged(request->invocation,std::uint32_t(refs));
+      }
     }
   }
   // Each recipe retains its first compiled layout separately. Runtime leaf
@@ -173,7 +201,7 @@ detail::EnqueueResult plan(void *value, Queue &, const BatchLayoutVersion &layou
       const bool boxed=slot.options.window_left>=0 ||
           !slot.capacity.key_storage.format().is_plain() ||
           slot.capacity.qk_head_dim!=slot.capacity.value_head_dim;
-      const auto mask_bytes = slot.options.causal && !boxed && !(paged && queries==1)
+      const auto mask_bytes = slot.options.causal && !boxed && queries!=1
           ? static_cast<std::uint64_t>(queries)*static_cast<std::uint64_t>(keys)*2u : 0u;
       const auto query_row_bytes = std::uint64_t(slot.capacity.query_heads)*slot.capacity.qk_head_dim*8u;
       const auto available = slot.options.max_float_workspace_bytes - slot.known_bytes;

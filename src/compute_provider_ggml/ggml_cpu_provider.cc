@@ -1496,6 +1496,38 @@ void native_invocation_update_q1_pages(void*slot,std::span<const std::int32_t>pa
   table->nb[1]=table->nb[2]=table->nb[3]=pages.size()*sizeof(std::int32_t);
   ggml_flash_attn_ext_set_n_kv_max(node,static_cast<std::int32_t>(rows));
 }
+static ggml_tensor* q1_ragged_node(void* slot) noexcept {
+  if(!native_invocation_reads_kv(slot))return nullptr;
+  auto& invocation=*static_cast<Invocation*>(slot);ggml_tensor* found=nullptr;
+  for(int i=0;i<ggml_graph_n_nodes(invocation.graph);++i){
+    auto* node=ggml_graph_node(invocation.graph,i);
+    if(node->op!=GGML_OP_FLASH_ATTN_EXT)continue;
+    if(found || node->src[5] || node->src[3] || node->src[0]->ne[1]!=1)return nullptr;
+    for(unsigned port=1;port<3;++port){
+      const auto* root=invocation.input_roots[port];const auto* view=node->src[port];
+      if(root->view_src || root->ne[3]!=1 || view->view_src!=root || view->view_offs ||
+          view->ne[0]!=root->ne[0] || view->ne[1]!=root->ne[2] ||
+          view->ne[2]!=root->ne[1] || view->ne[3]!=1 ||
+          view->nb[0]!=root->nb[0] || view->nb[1]!=root->nb[2] ||
+          view->nb[2]!=root->nb[1] || view->nb[3]!=root->nb[3])return nullptr;
+    }
+    found=node;
+  }
+  return found;
+}
+bool native_invocation_can_update_q1_ragged(void* slot) noexcept {
+  return q1_ragged_node(slot)!=nullptr;
+}
+void native_invocation_update_q1_ragged(void* slot,std::uint32_t rows) noexcept {
+  auto* node=q1_ragged_node(slot);HYLE_FATAL_ASSERT(node!=nullptr && rows!=0);
+  auto& invocation=*static_cast<Invocation*>(slot);
+  for(unsigned port=1;port<3;++port){
+    auto* root=invocation.input_roots[port];auto* view=node->src[port];
+    root->ne[2]=rows;root->nb[3]=root->nb[2]*rows;
+    view->ne[1]=rows;view->nb[3]=root->nb[3];
+  }
+  ggml_flash_attn_ext_set_n_kv_max(node,static_cast<std::int32_t>(rows));
+}
 ProviderRuntimeProperties runtime(void *value) noexcept {
   return {.mode = ProviderRuntimeMode::kSharedQueue,
           .workspace_owner = ProviderWorkspaceOwner::kProvider,

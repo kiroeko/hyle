@@ -45,4 +45,6 @@ bool native_invocation_reads_pages(void *,std::span<const std::int32_t>,
 bool native_invocation_can_update_q1_pages(void *) noexcept;
 // Caller preflights every request and retains the new immutable layout.
 void native_invocation_update_q1_pages(void *,std::span<const std::int32_t>,std::uint32_t) noexcept;
+bool native_invocation_can_update_q1_ragged(void *) noexcept;
+void native_invocation_update_q1_ragged(void *,std::uint32_t) noexcept;
 }

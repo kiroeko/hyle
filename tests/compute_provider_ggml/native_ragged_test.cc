@@ -14,6 +14,7 @@
 #include <cstdint>
 #include <cstring>
 #include <span>
+#include <limits>
 #include <type_traits>
 #include <vector>
 
@@ -42,6 +43,94 @@ template<class T> c::ReadLease load(c::LeasePool &pool, const std::vector<T> &va
   auto writer = pool.allocate(values.size()*sizeof(T)).value();
   EXPECT_TRUE(writer.view()->write(std::as_bytes(std::span(values))).ok());
   return writer.publish().value();
+}
+
+template<class T>void runtime_ragged_q1(bool encoded,unsigned depth,unsigned value_depth,int window,unsigned requested){
+  hyle_f5_fault_fixture::Allocator fault;
+  {
+  const auto type=half_test::data_type<T>();const bool causal=depth!=128;
+  const auto storage=encoded?c::CacheStorage::q8_0().value():c::CacheStorage::plain(type).value();
+  c::BatchCapacity cap{.storage=c::BatchStorage::kRagged,.query_type=type,.output_type=type,
+      .key_storage=storage,.value_storage=storage,.max_requests=3,.max_query_rows=2,.max_kv_rows=2049,
+      .max_pages=0,.max_page_refs=0,.query_heads=8,.kv_heads=2,.qk_head_dim=depth,
+      .value_head_dim=value_depth,.page_size=1};
+  auto schema=c::BatchSchema::create(cap).value();
+  auto context=c::cpu::create_context({.native_threads=2}).value();auto queue=context.create_queue().value();
+  const auto kd=c::batch_cache_description(cap,c::BatchCacheRole::kKey).value();
+  const auto vd=c::batch_cache_description(cap,c::BatchCacheRole::kValue).value();
+  auto pool=c::LeasePool::create(hyle::mem::system_resource(),kd.required_bytes().value()+vd.required_bytes().value()+2*8*depth*2+256).value();
+  const auto code=[](unsigned row,unsigned head){return int((row*3+head*5)%63)-31;};
+  const auto make=[&](bool value)->c::ReadLease{
+    const auto desc=value?vd:kd;const auto width=value?value_depth:depth;
+    auto writer=pool.allocate(desc.required_bytes().value(),64).value();
+    if(encoded){
+      std::vector<std::byte> bytes(desc.required_bytes().value(),std::byte{0});
+      for(unsigned row=0;row<2049;++row)for(unsigned head=0;head<2;++head)for(unsigned block=0;block<width/32;++block){
+        const auto offset=((row*2+head)*(width/32)+block)*34;
+        const std::uint16_t scale=row==2048?0x7e00:value?0x2400:0;std::memcpy(bytes.data()+offset,&scale,2);
+        const auto sample=std::uint8_t(value?code(row,head):0);
+        std::fill_n(bytes.begin()+offset+2,32,std::byte{sample});
+      }
+      EXPECT_TRUE(writer.view()->write(bytes).ok());
+    }else{
+      std::vector<T> words(2049*2*width);
+      for(unsigned row=0;row<2049;++row)for(unsigned head=0;head<2;++head)for(unsigned d=0;d<width;++d)
+        words[(row*2+head)*width+d]=half_test::encode<T>(row==2048?std::numeric_limits<float>::quiet_NaN():value?float(code(row,head))/64.F:0.F);
+      EXPECT_TRUE(writer.view()->write(std::as_bytes(std::span(words))).ok());
+    }
+    return writer.publish().value();
+  };
+  const auto key=make(false),value=make(true);
+  auto qw=pool.allocate(2*8*depth*2).value();ASSERT_TRUE(qw.view()->fill(std::byte{0}).ok());
+  const std::array inputs{qw.publish().value(),key,value};
+  auto program=c::BatchProgram::prepare(context,schema,{.resource=hyle::mem::system_resource(),.max_float_workspace_bytes=8u<<20,
+      .max_int_workspace_bytes=4096,.scale=.125F,.causal=causal,.window_left=window,.allocator=fault.ref()}).value();
+  auto slot=c::BatchInvocation::create(program,queue).value(),other=c::BatchInvocation::create(program,queue).value();
+  c::ReadLease retained;std::vector<std::int32_t> previous;std::size_t workspace=0;
+  for(unsigned step=0;step<64;++step){
+    SCOPED_TRACE(::testing::Message()<<"ragged encoded="<<encoded<<" d="<<depth<<" dv="<<value_depth<<" requests="<<requested<<" step="<<step);
+    unsigned count=requested;if(requested==2 && step>=16 && step<24)count=1;
+    if(requested==2 && step>=32 && step<48)count=3;
+    std::vector<std::int32_t> q{0},k{0};unsigned active=0;
+    for(unsigned request=0;request<count;++request){
+      const bool live=count!=3 || request!=1;q.push_back(q.back()+(live?1:0));
+      const unsigned rows=live?1+(step*(17+active*6)+active*509)%1024:0;
+      k.push_back(k.back()+int(rows));if(live)++active;
+    }
+    auto layout=schema.version({q,k,{},{}}).value();
+    if(step==0){auto prepared=other.prepare_batch(layout).value();auto done=prepared.run(inputs).value();ASSERT_TRUE(done.wait().ok());retained=other.output().value();}
+    const bool reuse=!previous.empty() && previous==q;const auto before=fault.attempts;if(reuse)fault.fail=before;
+    auto prepared=slot.update_batch(layout);fault.fail=SIZE_MAX;ASSERT_TRUE(prepared)<<prepared.error().message();
+    EXPECT_EQ(slot.report().reused_native_plan,reuse);
+    if(reuse){EXPECT_EQ(fault.attempts,before);EXPECT_EQ(slot.report().float_workspace_bytes,workspace);}
+    workspace=slot.report().float_workspace_bytes;previous=q;
+    auto done=prepared->run(inputs);ASSERT_TRUE(done)<<done.error().message();ASSERT_TRUE(done->wait().ok());
+    auto output=slot.output().value();*done={};*prepared={};EXPECT_FALSE(slot.update_batch(layout));
+    std::vector<T> actual(2*8*value_depth);ASSERT_TRUE(output.view()->read(std::as_writable_bytes(std::span(actual))).ok());
+    for(unsigned request=0;request<count;++request){if(q[request]==q[request+1])continue;
+      const auto rows=unsigned(k[request+1]-k[request]);
+      const auto first=window<0?0:rows>unsigned(window+1)?rows-unsigned(window+1):0;
+      for(unsigned head=0;head<8;++head){double expected=0;
+        for(unsigned row=first;row<rows;++row)expected+=double(code(unsigned(k[request])+row,head/4))/64.;
+        expected/=double(rows-first);
+        for(unsigned d=0;d<value_depth;++d)EXPECT_NEAR(half_test::decode(actual[(q[request]*8+head)*value_depth+d]),expected,type==c::DataType::kFloat16?.002:.008);
+      }
+    }
+    std::vector<T> old(2*8*value_depth);ASSERT_TRUE(retained.view()->read(std::as_writable_bytes(std::span(old))).ok());
+    for(unsigned head=0;head<8;++head)for(unsigned d=0;d<value_depth;++d)
+      EXPECT_NEAR(half_test::decode(old[head*value_depth+d]),double(code(0,head/4))/64.,type==c::DataType::kFloat16?.002:.008);
+  }
+  retained={};ASSERT_TRUE(slot.close().ok());ASSERT_TRUE(other.close().ok());ASSERT_TRUE(context.drain().ok());
+  }
+  EXPECT_EQ(fault.live,0u);
+}
+TEST(GgmlCpuRagged, RuntimeQ1KeepsGraphAcrossPackedKvExtents){
+  for(unsigned requests:{1U,2U})for(bool encoded:{false,true})for(unsigned d:{64U,128U,256U}){
+    runtime_ragged_q1<F16>(encoded,d,d,-1,requests);runtime_ragged_q1<BF16>(encoded,d,d,-1,requests);
+  }
+  for(unsigned requests:{1U,2U})for(bool encoded:{false,true}){
+    runtime_ragged_q1<F16>(encoded,64,128,16,requests);runtime_ragged_q1<BF16>(encoded,64,128,16,requests);
+  }
 }
 template<class T> void exercise(int depth, bool causal) {
   constexpr int heads=8, kv_heads=2, queries=18, keys=78;
