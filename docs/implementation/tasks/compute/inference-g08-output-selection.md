@@ -1,6 +1,6 @@
 # G08 设备端输出数值选择与可定位随机数
 
-状态：**CANDIDATE，2026-10-17；八owner的S1–S4/M1接口与算法冻结于5103c13d8，普通数值及适用device/host风险已过，三交付/P1与终审待完成**。baseline 为
+状态：**CANDIDATE，2026-10-17；八owner的S1–S4/M1接口与算法冻结于5103c13d8，普通数值及适用device/host风险已过，交付7/18已过，剩余交付/P1与终审待完成**。baseline 为
 `85bcfa4eb`，G07已经整项接受，新G07–G10 goal完成1/4。原G01–G07不重跑，G09/G10未开始。
 本卡只处理原[G08发现](../project/inference-single-machine-foundation-audit-2026-10.md)与
 [消费形状计划](../project/inference-consumer-adaptation-plan-2026-10.md)的有限输出数值域。
@@ -487,3 +487,22 @@ system_internal或产品src头到SDK消费者。逐一保留编译include隔离�
 sampling_ops与各carrier/Mem头、Random123许可/NOTICE；无全库模型/性能测试根。
 源/SDK构建复用对应既有producer，重型串行；Windows普通4jobs/低优先级，CUDA仍pool1/
 split3/Ninja2，原flags/native输入资格保留。source/static/shared未过前不声明交付完成。
+
+### 2026-10-17 交付检查点：7/18
+
+[Air六交付](../../../../evidence/delivery/inference-g08-air-sdk-checkpoint/receipt.json)：Apple/Vulkan
+各源码嵌入、迁址static、迁址shared全PASS。每配置原六个公开CPU/native Direct/Graph、joint与
+Mem消费者、11个独立公开头；Mem仅原三个公开回归案例。static/shared实际迁址，Random123
+LICENSE/NOTICE均安装；每配置六个轻量runtime probe实际打印dyld加载路径，Hyle库仅来自
+对应迁址prefix或源码producer。保留首Apple shared私有脚本的头名错误及同树续验费用。
+
+[Windows CPU shared](../../../../evidence/delivery/inference-g08-windows-cpu-sdk-checkpoint/receipt.json)：
+原producer增量104步、公开CPU Direct/Graph完整数值/质量/full-vocab与Mem三回归PASS，8个
+公开头独立编译、许可/NOTICE、迁址include隔离和staged DLL逐一匹配安装包hash均PASS。
+执行PATH排除产品/producer；Windows此项不冒充实际module tracing。私有runner曾错误假定
+ggml CPU变体DLL也安装于bin；按实际lib路径修正、保留两次setup失败，复用原prefix，未重建
+或重装producer。普通4jobs/四逻辑CPU/BelowNormal已实核。
+
+冻结产品candidate仍5103c13d8；本批仅说明与证据。G08施工粗估约80%，G07–G10 goal约45%，
+正式仍仅G07完成1/4。余下11项交付、S1精确时序账/P1、最终文档/LOC/独立终审未完成；
+不把当前数值/风险PASS或交付计数当整项验收，不启动G09/G10或CLI。

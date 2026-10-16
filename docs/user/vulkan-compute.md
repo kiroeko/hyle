@@ -436,7 +436,10 @@ constants 按 Graph 常量顺序，bind 按输入顺序，结果按 publish 顺�
 常量句柄；Program 保有自己的原生 owner。Graph 冷期删除 dead pure nodes、规划中间 buffer
 生命周期；每个槽独立拥有可变 scratch、命令、descriptor、fence 和生成结果。HYLE 重放不遍历
 原语义 DAG；托管 region 的原厂执行器仍会访问其已准备的图。
-当前接受固定 shape 的 pure typed node（含 View、Gather 与双输出 TopK）；custom node 保持单输出合同。
+当前接受固定 shape 的 pure typed node（含 View、Gather 与双输出 TopK）；普通custom node保持
+单输出合同，已注册的Categorical数值schema可发布ID与log probability两个独立端口。
+随机字与categorical见[数值选择](compute.md#设备端单选与可定位随机数)。dense末轴F32的
+TopK(count=1)使用有界pair归约，其他合法TopK域沿原实现。
 符号、资源效果、control edge、其它必须别名节点和直接 publish 输入/常量会明确拒绝。
 TopK 使用 `builder.add_node(c::Operation(c::TopK{.count = 8}), std::array{scores})`，随后
 `builder.result(node, 0)` / `builder.result(node, 1)` 分别取得 values / indices；可独立消费或

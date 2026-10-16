@@ -1,0 +1,449 @@
+{
+  "schema": "hyle.inference-g08-windows-cpu-sdk-checkpoint/v1",
+  "verdict": "RELOCATED_SDK_PUBLIC_CONSUMERS_HEADERS_LICENSE_RUNTIME_PASS",
+  "result": {
+    "state": "RELOCATED_SDK_PUBLIC_CONSUMERS_HEADERS_LICENSE_RUNTIME_PASS",
+    "pid": 21236,
+    "route": "cpu",
+    "mode": "shared",
+    "producer": "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev",
+    "max_jobs": 4,
+    "stages": [
+      {
+        "stage": "producer-configure",
+        "command": [
+          "cmake",
+          "-S",
+          "C:/public/project-hyle/hyle",
+          "-B",
+          "C:/public/project-hyle/hyle/.scratch/build-compute-v2-dev",
+          "-DHYLE_BUILD_TESTS=OFF",
+          "-DHYLE_BUILD_BENCH=OFF",
+          "-DHYLE_INSTALL=ON",
+          "-DHYLE_TEST_INSTRUMENTATION=OFF",
+          "-DHYLE_COMPONENTS=compute;graph",
+          "-DHYLE_COMPUTE_ROUTES=cpu",
+          "-DHYLE_STATIC=OFF",
+          "-UCMAKE_PROJECT_INCLUDE"
+        ],
+        "exit_code": 0,
+        "elapsed_seconds": 92.53200000000652,
+        "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g08-sdk-windows\\cpu-shared-1\\producer-configure.log"
+      },
+      {
+        "stage": "producer-build-manifest",
+        "command": [
+          "ninja",
+          "-C",
+          "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev",
+          "build.ninja"
+        ],
+        "exit_code": 0,
+        "elapsed_seconds": 0.1720000000204891,
+        "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g08-sdk-windows\\cpu-shared-1\\producer-build-manifest.log"
+      },
+      {
+        "stage": "producer-build",
+        "command": [
+          "ninja",
+          "-C",
+          "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev",
+          "-f",
+          "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g08-sdk-windows\\cpu-shared-1\\producer-build-preview.ninja",
+          "-j",
+          "4",
+          "hyle_compute",
+          "hyle_compute_ops",
+          "hyle_compute_batch",
+          "hyle_compute_state",
+          "hyle_compute_stream",
+          "hyle_graph",
+          "hyle_graph_batch",
+          "hyle_compute_route_cpu",
+          "hyle_graph_route_cpu"
+        ],
+        "exit_code": 0,
+        "elapsed_seconds": 90.06300000002375,
+        "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g08-sdk-windows\\cpu-shared-1\\producer-build.log"
+      },
+      {
+        "stage": "install",
+        "command": [
+          "cmake",
+          "--install",
+          "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev",
+          "--prefix",
+          "C:\\h7\\g08-sdk\\cpu-shared-1\\staging"
+        ],
+        "exit_code": 0,
+        "elapsed_seconds": 1.2649999999557622,
+        "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g08-sdk-windows\\cpu-shared-1\\install.log"
+      },
+      {
+        "stage": "consumer-configure",
+        "command": [
+          "cmake",
+          "-S",
+          "C:/h7/g08-sdk/cpu-shared-1/consumer",
+          "-B",
+          "C:/h7/g08-sdk/cpu-shared-1/consumer-build",
+          "-G",
+          "Ninja",
+          "-DCMAKE_BUILD_TYPE=Release",
+          "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON",
+          "-DCMAKE_PREFIX_PATH=C:/h7/g08-sdk/cpu-shared-1/relocated"
+        ],
+        "exit_code": 0,
+        "elapsed_seconds": 14.047000000020489,
+        "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g08-sdk-windows\\cpu-shared-1\\consumer-configure.log"
+      },
+      {
+        "stage": "consumer-build-manifest",
+        "command": [
+          "ninja",
+          "-C",
+          "C:\\h7\\g08-sdk\\cpu-shared-1\\consumer-build",
+          "build.ninja"
+        ],
+        "exit_code": 0,
+        "elapsed_seconds": 0.030999999959021807,
+        "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g08-sdk-windows\\cpu-shared-1\\consumer-build-manifest.log"
+      },
+      {
+        "stage": "consumer-build",
+        "command": [
+          "ninja",
+          "-C",
+          "C:\\h7\\g08-sdk\\cpu-shared-1\\consumer-build",
+          "-f",
+          "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g08-sdk-windows\\cpu-shared-1\\consumer-build-preview.ninja",
+          "-j",
+          "4",
+          "cpu_direct",
+          "cpu_graph",
+          "mem",
+          "headers"
+        ],
+        "exit_code": 0,
+        "elapsed_seconds": 9.125,
+        "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g08-sdk-windows\\cpu-shared-1\\consumer-build.log"
+      },
+      {
+        "stage": "consumer-configure",
+        "command": [
+          "cmake",
+          "-S",
+          "C:/h7/g08-sdk/cpu-shared-1/consumer",
+          "-B",
+          "C:/h7/g08-sdk/cpu-shared-1/consumer-build",
+          "-G",
+          "Ninja",
+          "-DCMAKE_BUILD_TYPE=Release",
+          "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON",
+          "-DCMAKE_PREFIX_PATH=C:/h7/g08-sdk/cpu-shared-1/relocated"
+        ],
+        "exit_code": 0,
+        "elapsed_seconds": 11.03200000000652,
+        "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g08-sdk-windows\\cpu-shared-1\\consumer-configure-resume2.log"
+      },
+      {
+        "stage": "consumer-build-manifest",
+        "command": [
+          "ninja",
+          "-C",
+          "C:\\h7\\g08-sdk\\cpu-shared-1\\consumer-build",
+          "build.ninja"
+        ],
+        "exit_code": 0,
+        "elapsed_seconds": 0.045999999972991645,
+        "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g08-sdk-windows\\cpu-shared-1\\consumer-build-manifest-resume2.log"
+      },
+      {
+        "stage": "consumer-build",
+        "command": [
+          "ninja",
+          "-C",
+          "C:\\h7\\g08-sdk\\cpu-shared-1\\consumer-build",
+          "-f",
+          "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g08-sdk-windows\\cpu-shared-1\\consumer-build-preview.ninja",
+          "-j",
+          "4",
+          "cpu_direct",
+          "cpu_graph",
+          "mem",
+          "headers"
+        ],
+        "exit_code": 0,
+        "elapsed_seconds": 6.60899999999674,
+        "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g08-sdk-windows\\cpu-shared-1\\consumer-build-resume2.log"
+      },
+      {
+        "stage": "cpu_direct",
+        "command": [
+          "C:\\h7\\g08-sdk\\cpu-shared-1\\consumer-build\\cpu_direct.exe"
+        ],
+        "exit_code": 0,
+        "elapsed_seconds": 2.719000000040978,
+        "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g08-sdk-windows\\cpu-shared-1\\cpu_direct-resume2.log"
+      },
+      {
+        "stage": "cpu_graph",
+        "command": [
+          "C:\\h7\\g08-sdk\\cpu-shared-1\\consumer-build\\cpu_graph.exe"
+        ],
+        "exit_code": 0,
+        "elapsed_seconds": 2.7660000000032596,
+        "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g08-sdk-windows\\cpu-shared-1\\cpu_graph-resume2.log"
+      },
+      {
+        "stage": "mem",
+        "command": [
+          "C:\\h7\\g08-sdk\\cpu-shared-1\\consumer-build\\mem.exe"
+        ],
+        "exit_code": 0,
+        "elapsed_seconds": 0.0470000000204891,
+        "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g08-sdk-windows\\cpu-shared-1\\mem-resume2.log"
+      }
+    ],
+    "candidate": "5103c13d8ed119b06aa64e799f9768aea45ab913",
+    "scope": "G08 Windows public numerical consumers, affected Mem regression cases, independent headers and source or relocated shipping SDK. No P1/full-engine claim.",
+    "source_snapshot": "95e85de0a0886cadf63620b09544d832fdaa2290",
+    "identity": {
+      "host": "KIRO-WORKSTATIO",
+      "compiler": "14.50.35717",
+      "os": "Microsoft Windows [Version 10.0.26200.9457]"
+    },
+    "resource_profile": {
+      "priority": "BELOW_NORMAL",
+      "logical_cpus": 4,
+      "affinity_mask": "0xf",
+      "jobs": 4,
+      "cuda_compile_pool": null
+    },
+    "stage": "mem",
+    "elapsed_seconds": 232.95300000003772,
+    "producer-build_preflight": {
+      "edges": 107,
+      "cuda_edges": []
+    },
+    "consumer-build_preflight": {
+      "edges": 18,
+      "cuda_edges": []
+    },
+    "retained_setup_failures": [
+      {
+        "error": "AssertionError('C:\\\\h7\\\\g08-sdk\\\\cpu-shared-1\\\\relocated\\\\bin\\\\hyle_ggml_cpu_avx2_ffa4e8b8_e74fc9bb8964d04f.dll')",
+        "elapsed_seconds": 208.21900000004098
+      },
+      {
+        "error": "AssertionError()",
+        "elapsed_seconds": 208.28100000001723
+      }
+    ],
+    "staged_runtime": [
+      {
+        "staged": "C:\\h7\\g08-sdk\\cpu-shared-1\\consumer-build\\hyle_compute.dll",
+        "original": "C:\\h7\\g08-sdk\\cpu-shared-1\\relocated\\bin\\hyle_compute.dll",
+        "sha256": "d1cfa58814ecfe6d68a4327160c44f2eb36f3def5e537b50f89b6c17f220fcc6"
+      },
+      {
+        "staged": "C:\\h7\\g08-sdk\\cpu-shared-1\\consumer-build\\hyle_compute_backend_cpu.dll",
+        "original": "C:\\h7\\g08-sdk\\cpu-shared-1\\relocated\\bin\\hyle_compute_backend_cpu.dll",
+        "sha256": "d41e7c3ce7f43b340becd5ba8d8fc8fa6db814ef22f6b6f04ca2d1beb962678d"
+      },
+      {
+        "staged": "C:\\h7\\g08-sdk\\cpu-shared-1\\consumer-build\\hyle_compute_batch.dll",
+        "original": "C:\\h7\\g08-sdk\\cpu-shared-1\\relocated\\bin\\hyle_compute_batch.dll",
+        "sha256": "ac90b7d22b883d114e04c8c1c14da22212f6ed89b805173a621f08dfe07207cc"
+      },
+      {
+        "staged": "C:\\h7\\g08-sdk\\cpu-shared-1\\consumer-build\\hyle_compute_ggml_runtime.dll",
+        "original": "C:\\h7\\g08-sdk\\cpu-shared-1\\relocated\\bin\\hyle_compute_ggml_runtime.dll",
+        "sha256": "d406e785dbd1fc5032528e88e3386210cc76ea2e8e11d2a0b500750cbfb332ee"
+      },
+      {
+        "staged": "C:\\h7\\g08-sdk\\cpu-shared-1\\consumer-build\\hyle_compute_ops.dll",
+        "original": "C:\\h7\\g08-sdk\\cpu-shared-1\\relocated\\bin\\hyle_compute_ops.dll",
+        "sha256": "f33c5c511ab6543222841f735274bf0711acd142553b7d7a346449b464b5a353"
+      },
+      {
+        "staged": "C:\\h7\\g08-sdk\\cpu-shared-1\\consumer-build\\hyle_compute_provider_ggml.dll",
+        "original": "C:\\h7\\g08-sdk\\cpu-shared-1\\relocated\\bin\\hyle_compute_provider_ggml.dll",
+        "sha256": "d1067c6dd19c12b14a390b8635ba00843775826b7df30f2aba717bb9a971aef4"
+      },
+      {
+        "staged": "C:\\h7\\g08-sdk\\cpu-shared-1\\consumer-build\\hyle_compute_provider_native.dll",
+        "original": "C:\\h7\\g08-sdk\\cpu-shared-1\\relocated\\bin\\hyle_compute_provider_native.dll",
+        "sha256": "283ef289342f46b6ad72b6604843197f7bcfa62b5d02b71b0c38c4f544ea76b5"
+      },
+      {
+        "staged": "C:\\h7\\g08-sdk\\cpu-shared-1\\consumer-build\\hyle_compute_provider_onednn.dll",
+        "original": "C:\\h7\\g08-sdk\\cpu-shared-1\\relocated\\bin\\hyle_compute_provider_onednn.dll",
+        "sha256": "f11a43a9238dcb67f02cc3cd06747df153b6c763321baa8a301702761ee01d7d"
+      },
+      {
+        "staged": "C:\\h7\\g08-sdk\\cpu-shared-1\\consumer-build\\hyle_compute_route_cpu.dll",
+        "original": "C:\\h7\\g08-sdk\\cpu-shared-1\\relocated\\bin\\hyle_compute_route_cpu.dll",
+        "sha256": "fff53c9672c0527a2659e9a4b0f982d5afde4d710d638095cedb29a798c3de9e"
+      },
+      {
+        "staged": "C:\\h7\\g08-sdk\\cpu-shared-1\\consumer-build\\hyle_compute_state.dll",
+        "original": "C:\\h7\\g08-sdk\\cpu-shared-1\\relocated\\bin\\hyle_compute_state.dll",
+        "sha256": "b33f639d1e191803b9530bf52005545e6323627683f415254bf02c8acea08879"
+      },
+      {
+        "staged": "C:\\h7\\g08-sdk\\cpu-shared-1\\consumer-build\\hyle_compute_stream.dll",
+        "original": "C:\\h7\\g08-sdk\\cpu-shared-1\\relocated\\bin\\hyle_compute_stream.dll",
+        "sha256": "e1b7f9795269da9cec3947e69bd4281134fb97a287ca58e69e184a854916cac5"
+      },
+      {
+        "staged": "C:\\h7\\g08-sdk\\cpu-shared-1\\consumer-build\\hyle_container.dll",
+        "original": "C:\\h7\\g08-sdk\\cpu-shared-1\\relocated\\bin\\hyle_container.dll",
+        "sha256": "42e3bb77441a96588640427d4e242b2c06ec6428687b1c33f12448c5a7fc04ea"
+      },
+      {
+        "staged": "C:\\h7\\g08-sdk\\cpu-shared-1\\consumer-build\\hyle_error.dll",
+        "original": "C:\\h7\\g08-sdk\\cpu-shared-1\\relocated\\bin\\hyle_error.dll",
+        "sha256": "68b6fadbab085e18ea46f1f827b262753d9dd4c6959b13d8cffe4d914f0639ab"
+      },
+      {
+        "staged": "C:\\h7\\g08-sdk\\cpu-shared-1\\consumer-build\\hyle_ggml_cpu_avx2_ffa4e8b8_e74fc9bb8964d04f.dll",
+        "original": "C:\\h7\\g08-sdk\\cpu-shared-1\\relocated\\lib\\hyle_ggml_cpu_avx2_ffa4e8b8_e74fc9bb8964d04f.dll",
+        "sha256": "09828878dd44d62eb6ae844827e20382ee2b457d0dbd76594b6577bea3ad5434"
+      },
+      {
+        "staged": "C:\\h7\\g08-sdk\\cpu-shared-1\\consumer-build\\hyle_graph.dll",
+        "original": "C:\\h7\\g08-sdk\\cpu-shared-1\\relocated\\bin\\hyle_graph.dll",
+        "sha256": "58f6a7eff51bb8cf418e790d0bf84cae2cc167ba849336df09228d47e7c80964"
+      },
+      {
+        "staged": "C:\\h7\\g08-sdk\\cpu-shared-1\\consumer-build\\hyle_graph_batch.dll",
+        "original": "C:\\h7\\g08-sdk\\cpu-shared-1\\relocated\\bin\\hyle_graph_batch.dll",
+        "sha256": "e9e75ddc5e3a8164f9c0677462c33a8b68740d76c88fecb58a0746bc5e17fcb3"
+      },
+      {
+        "staged": "C:\\h7\\g08-sdk\\cpu-shared-1\\consumer-build\\hyle_graph_provider_onednn.dll",
+        "original": "C:\\h7\\g08-sdk\\cpu-shared-1\\relocated\\bin\\hyle_graph_provider_onednn.dll",
+        "sha256": "e2050fb58e60f8372e5a970dac43fedb7bf8b4467f85b1ac701a28aa6e134def"
+      },
+      {
+        "staged": "C:\\h7\\g08-sdk\\cpu-shared-1\\consumer-build\\hyle_graph_route_cpu.dll",
+        "original": "C:\\h7\\g08-sdk\\cpu-shared-1\\relocated\\bin\\hyle_graph_route_cpu.dll",
+        "sha256": "5b4126e0599a89783328f0711bfb83b4054ed212c2eb70f17f7c7461bfae10e9"
+      },
+      {
+        "staged": "C:\\h7\\g08-sdk\\cpu-shared-1\\consumer-build\\hyle_io_core.dll",
+        "original": "C:\\h7\\g08-sdk\\cpu-shared-1\\relocated\\bin\\hyle_io_core.dll",
+        "sha256": "e2fdcc1fa737e79799e4441f090d22b598c775c36a72778fad4c3d67f330833f"
+      },
+      {
+        "staged": "C:\\h7\\g08-sdk\\cpu-shared-1\\consumer-build\\hyle_mem.dll",
+        "original": "C:\\h7\\g08-sdk\\cpu-shared-1\\relocated\\bin\\hyle_mem.dll",
+        "sha256": "bda5bb7fda77f367f550b4c776c4c9118ed1695cf8ea7fa2eba4114f0f8ffa47"
+      },
+      {
+        "staged": "C:\\h7\\g08-sdk\\cpu-shared-1\\consumer-build\\hyle_mem_vm.dll",
+        "original": "C:\\h7\\g08-sdk\\cpu-shared-1\\relocated\\bin\\hyle_mem_vm.dll",
+        "sha256": "2da3fb587a20f016e3a84af1d052aed3895e220cdd0452ab2e54420b4f8acec0"
+      },
+      {
+        "staged": "C:\\h7\\g08-sdk\\cpu-shared-1\\consumer-build\\hyle_platform.dll",
+        "original": "C:\\h7\\g08-sdk\\cpu-shared-1\\relocated\\bin\\hyle_platform.dll",
+        "sha256": "c49af7c069b7d8ef1442bffbffb5fcf098ade5630a0d54330d5c7c816a11c52d"
+      },
+      {
+        "staged": "C:\\h7\\g08-sdk\\cpu-shared-1\\consumer-build\\hyle_platform_fs.dll",
+        "original": "C:\\h7\\g08-sdk\\cpu-shared-1\\relocated\\bin\\hyle_platform_fs.dll",
+        "sha256": "c4cbe0e366f57f298453ba12ede8aed67d5ce5dc289ecbc9d105045be6aee235"
+      },
+      {
+        "staged": "C:\\h7\\g08-sdk\\cpu-shared-1\\consumer-build\\hyle_platform_thread.dll",
+        "original": "C:\\h7\\g08-sdk\\cpu-shared-1\\relocated\\bin\\hyle_platform_thread.dll",
+        "sha256": "c6b365a2e0dcf2d9800cff2fcf3677cf7c44e204f1643ff6141ba9ebb3a0ddf2"
+      },
+      {
+        "staged": "C:\\h7\\g08-sdk\\cpu-shared-1\\consumer-build\\hyle_sched.dll",
+        "original": "C:\\h7\\g08-sdk\\cpu-shared-1\\relocated\\bin\\hyle_sched.dll",
+        "sha256": "8c98c804e31b2f6ef624487c173d395a99f02894a0b33607278fdaac2ba75180"
+      },
+      {
+        "staged": "C:\\h7\\g08-sdk\\cpu-shared-1\\consumer-build\\hyle_simd.dll",
+        "original": "C:\\h7\\g08-sdk\\cpu-shared-1\\relocated\\bin\\hyle_simd.dll",
+        "sha256": "dd012cb755db8afb97d38337a6539a798174d0c2a773027ebaebde11dfd0f05f"
+      },
+      {
+        "staged": "C:\\h7\\g08-sdk\\cpu-shared-1\\consumer-build\\hyle_time.dll",
+        "original": "C:\\h7\\g08-sdk\\cpu-shared-1\\relocated\\bin\\hyle_time.dll",
+        "sha256": "6284454939c063f888eb437cd09c98648c8385d182dd95106db0149228364891"
+      }
+    ],
+    "consumers": [
+      {
+        "name": "cpu_direct",
+        "path": "C:\\h7\\g08-sdk\\cpu-shared-1\\consumer-build\\cpu_direct.exe",
+        "sha256": "7e19511ec436d707b666d96fb70cc71193bad8727d19c17c22db50b66ab72452"
+      },
+      {
+        "name": "cpu_graph",
+        "path": "C:\\h7\\g08-sdk\\cpu-shared-1\\consumer-build\\cpu_graph.exe",
+        "sha256": "c929f4f6a37d7686e60a0ab5f15560b51ef81cf81e9df7779bc6e028fd2f97e0"
+      },
+      {
+        "name": "mem",
+        "path": "C:\\h7\\g08-sdk\\cpu-shared-1\\consumer-build\\mem.exe",
+        "sha256": "a3500684e1a01e068e68ba279ebefe912a2430967292305f42dd5d02ec712b7b"
+      }
+    ],
+    "independent_headers": [
+      {
+        "path": "compute/sampling_ops.h",
+        "sha256": "887faba6ebe6249a0e2f766e2ea4b6bd83900bcf1e85165ad55e3e9be18528da"
+      },
+      {
+        "path": "compute/operation.h",
+        "sha256": "584e57c2a1a10b7c17ee80d4a6f992b73f488f4cdbf1e71e39d908cd89600808"
+      },
+      {
+        "path": "compute/prepared_operation.h",
+        "sha256": "3fe6a6f1ddc31c2181a208658e627be20933bde325ec0b63dba06281d007ed7b"
+      },
+      {
+        "path": "compute/cpu.h",
+        "sha256": "bccb8e5d310086b41c6f010a84f56219ac33830e92e5da22ce2ff12cd608ccb6"
+      },
+      {
+        "path": "graph/cpu.h",
+        "sha256": "207f78caafbec1e73966f0ead5563b51aa2aaf3e5eccabde15b6a20447a25f99"
+      },
+      {
+        "path": "mem/allocator.h",
+        "sha256": "8beaac413632fdc4409c2384f1cda7d6d5e75b72aafad73d188e13dbfa50781a"
+      },
+      {
+        "path": "mem/system_inline.h",
+        "sha256": "d890fe66b1a83a5f1a8f2b22c368276e7b3fadcfd0946df5279692ce055164f1"
+      },
+      {
+        "path": "mem/buffer.h",
+        "sha256": "346a4f810babb8c5dacba49faaf57903d998a3cbb49af12b8c62acc85f7be72c"
+      }
+    ],
+    "random123_license": [
+      {
+        "path": "C:\\h7\\g08-sdk\\cpu-shared-1\\relocated\\share\\licenses\\Hyle\\random123-counter-LICENSE",
+        "sha256": "5fd0885ab205878bd90c19144677286252eb9b988c1545a3a910edfe1e27b6df"
+      },
+      {
+        "path": "C:\\h7\\g08-sdk\\cpu-shared-1\\relocated\\share\\licenses\\Hyle\\random123-counter-NOTICE.md",
+        "sha256": "af105c0b38b45cd3c41848058b56bbb38e86907acc56f51ae740556d7150a87b"
+      }
+    ]
+  },
+  "raw": {
+    "path": "raw.zip",
+    "sha256": "38abb5622c7ac3bd516a08a970fcd729bf9bf327f50ec8091f6572724ebee253",
+    "bytes": 248979
+  },
+  "retained_failures": "Private runner first assumed all Hyle runtime DLLs were installed under bin; actual existing ggml CPU variant DLL lives under lib. Corrected unique matching against the actual relocated installation. First resume then refused the new untracked evidence checkpoint; narrowed the clean-source assertion to exclude only evidence, retaining source manifest identity. Both setup failures/time and original logs retained; producer was not rebuilt or reinstalled.",
+  "scope": "Actual Windows/MSVC CPU-only relocated shared SDK. Public CPU Direct/Graph full numerical/quality/full-vocabulary and three existing public Mem regressions PASS. Eight independent public headers, installed Random123 license/NOTICE, installed-only compile includes and exact staged DLL hashes under a runtime PATH excluding canonical/producer paths. Windows runtime checks staged DLL identity and isolated search paths; no claim of actual module tracing. No Windows static/source, CUDA/Vulkan SDK or P1 verdict."
+}

@@ -122,7 +122,10 @@ const auto &native_output = result.get()->arrays()[0]; // 成功终态后的 lea
   F32中间数组、mask转换及原版归约临时资源计入执行成本，由MLX管理。
 - TopK 支持 F32/F16/BF16/I32，返回原始存储类型 values 与 I32 indices。同分含 ±0 按小索引
   优先，NaN 总在最后；largest/smallest 均可，sorted=false 仍返回有序结果。使用原版 MLX
-  stable argsort 后取 k 项；完整排序、排序键和必要布局/精度转换计入成本。Graph 用 `add_node()` 与
+  count=1 arg reduction；浮点使用原IEEE storage的整数有序key，保留subnormal与源bits。
+  count>1继续stable argsort后取k项，浮点共用该有序key；排序、key和必要布局转换计入成本。
+  随机字与categorical的输入、数值差异和错误合同见[数值选择](compute.md#设备端单选与可定位随机数)。
+  Graph 用 `add_node()` 与
   `result(node, 0/1)` 消费两个输出，Direct 从成功 result 的 `arrays()[0/1]` 读取。
 - Gather 接收上述六类 source 存储与 I32/I64 indices，支持任意轴、scalar/多维索引和原生布局；
   输出保留原始位。默认 checked 在 GPU 检查索引，负值和越界通过完成结果返回 OutOfRange，

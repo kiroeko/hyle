@@ -1,5 +1,43 @@
 # HYLE Compute：何时直接执行一个计算
 
+## 设备端单选与可定位随机数
+
+确定性单选直接使用原 `TopK{.count = 1}`，仍返回原存储类型的 values 与 I32 indices，
+同分取首索引、NaN 排在非 NaN 后。CPU、CUDA、Apple 和 Vulkan 的适用形状使用归约；
+其它 count 和原先合法的 axis/stride 域沿各路线原合同执行，不需要额外的 greedy API。
+
+`hyle/compute/sampling_ops.h` 提供两种独立数值操作，沿原 Direct prepare 或 Graph builder 使用：
+
+```cpp
+#include <hyle/compute/sampling_ops.h>
+namespace c = hyle::compute;
+auto words = c::sampling_ops::random_bits(8);
+auto selected = c::sampling_ops::categorical();
+auto scored = c::sampling_ops::categorical(true);
+```
+
+`random_bits(W)` 接收 dense U32[R,4]，每行依次是 key 的低/高32位、draw 的低/高32位，
+输出 dense U32[R,W]。固定 Philox4x32-10 映射让相同 key/draw/word 地址在已验证路线间逐位
+一致；改变请求行顺序或 W 不改变原行的字前缀。W≤INT32_MAX，零行/零W合法，draw 接受全部
+64位值。调用方维护请求身份、draw 唯一性与溢出政策，操作不会隐式前进 counter 或持有全局 RNG。
+
+`categorical()` 接收 dense F16/BF16/F32[R,V] log-weights 和同一 U32[R,4] counter，
+V 为1..INT32_MAX，输出 I32[R]。`categorical(true)` 另返回 F32[R]：选中项归一化后的
+log probability。-Inf 表示零质量；NaN、+Inf 或任一全-Inf行通过原 checked 完成报告
+InvalidArgument，失败不发布可用结果。零行合法。先观察成功完成，再读取或向下游发布结果，
+并按原 invocation 的失败恢复与结果寿命合同复用槽。
+
+CPU 使用 SIMD exp、F64 累加的 CDF；GPU 使用居中 log-weights 与开放64位 midpoint 的
+Gumbel 选择。同一路线、相同输入/counter可重放和重排；不承诺 CPU 与 GPU 选择相同 ID。
+两者扫描词表，复杂度 O(RV)；可选 log probability 增加所选标量的归一化计算，GPU未请求时
+省略对应normalizer。临时资源、native
+完成和少量结果读取沿原路线 owner，不能由“设备端选择”推断零分配、零等待或新增 capture 支持。
+temperature、top-p、penalty、grammar、EOS 等政策由应用组合，本数值域不接管这些政策。
+
+这些能力当前处于 [G08 候选验收](../implementation/tasks/compute/inference-g08-output-selection.md)：
+普通数值与适用设备/host风险已通过；平台交付矩阵和 TopK 性能对照仍按该卡收口。
+没有据此声明完整推理引擎的 prefill/decode 吞吐。
+
 ## 有界文件与资源管线
 
 `hyle/compute/file_stream.h` 的 `FileResourcePipeline` 把原 IO、资源租约与批量搬运组合成
@@ -711,9 +749,10 @@ Reduce 和 Softmax/LogSoftmax 支持 F32/F16/BF16、任意轴/普通 byte stride
 TopK 在上述已资格化环境通过普通入口绑定原版CCCL，返回原始位模式的 F32/F16/BF16/I32 values
 与 I32 indices；支持任意轴和byte stride，两个输出dense，输入与输出及两输出之间都不重叠。
 同分（包括±0）按较小列号优先，NaN排在全部非NaN后；largest/smallest均可，sorted=false仍可
-返回有序结果。原版DeviceRadixSort对逻辑行与分数稳定排序，再通过库Transform提取原值/下标，
-没有4096列限制。按`workspace_requirement()`分配每个invocation的独立CUDA工作区；其大小随
-输入元素数增长，包括两份keys/indices及SDK临时区。默认managed执行不接受外部capture。
+返回有序结果。count=1 使用原版CCCL DeviceReduce/DeviceSegmentedReduce，随后Transform
+发布原值/下标；count>1 继续DeviceRadixSort稳定排序与Transform，没有4096列限制。
+按`workspace_requirement()`分配每个invocation的独立CUDA工作区；单选包含行级arg pair及
+SDK临时区，多选包含原两份keys/indices及SDK临时区。默认managed执行不接受外部capture。
 Concat 支持同类型的任意数量 plain 1/2/4/8 字节输入、任意轴/byte stride 和 dense output，
 逐位保留数据，无输入输出重叠，输出元素数≤INT32_MAX。每最多四个输入一组原生 kernel，常见
 双输入一次提交；空组不取指针或启动 kernel，程序元数据按输入数量冷分配，无 caller workspace
@@ -1436,7 +1475,8 @@ keep-dim；必要的分组转置沿原版 view/cont 执行。空归约集合发�
 
 同一 CPU 接入还组合 M0 已登记的 C++ 标准库 indexed 路径：F32/I32 `Scan` 调用原版
 `std::inclusive_scan`，I32 在 I64 临时域检查全部前缀和最终总和，再发布 inclusive/exclusive
-结果；越界不写输出。F32/F16/BF16/I32 `TopK` 调用 `std::partial_sort`，按 value 与原下标
+结果；越界不写输出。F32/F16/BF16/I32 `TopK` 的count=1沿输入扫描、不分配词表宽度Entry
+scratch，count>1继续调用 `std::partial_sort`，按 value 与原下标
 的全序保留 ties，NaN 始终放在非 NaN 后，values 保留输入位模式，indices 为 I32。
 这两个叶程序支持 rank1..8、任意合法 axis、非负 byte stride；不进入 ggml 数学图，也没有
 私有 worker。每个 invocation 的 scratch 通过所供 allocator 冷分配，执行沿同一 CPU Queue
