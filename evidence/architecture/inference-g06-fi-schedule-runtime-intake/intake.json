@@ -261,7 +261,8 @@
         "path": "src/compute_batch/batch_execution.cc",
         "sha256": "07df206d163931e65506891ac0261773e41a52a92f1c8f97d6302fa81d2e6d79",
         "owner": "compute_batch already AUDITED under G06",
-        "proof": "Cold create zero-initializes mirror as a WriteLease; an all-zero first layout has no changed ranges, so prepare reaches workspace_views while mirror_ready is still invalid. Publish the original fully initialized zero mirror when no prior ready mirror exists, before workspace_views. No upload, allocation, or fabricated F2 coverage."
+        "proof": "Cold create zero-initializes mirror as a WriteLease; an all-zero first layout has no changed ranges, so prepare reaches workspace_views while mirror_ready is still invalid. Publish the original fully initialized zero mirror when no prior ready mirror exists, before workspace_views. No upload, allocation, or fabricated F2 coverage.",
+        "decision": "REJECTED_AFTER_FULL_SEGMENT_CHECK: MetadataHeader encoding/generation is nonzero even for zero requests; BatchLayoutAccess::segments always includes it. First empty prepare therefore has an actual delta and publishes the original mirror. Remove the redundant fallback branch; no common product change is needed for this hypothesis."
       }
     }
   ],
@@ -275,5 +276,11 @@
   "remaining": [
     "Actual capture and corresponding Direct/Graph/hybrid lifetime qualification remain mandatory full G06 work, not inferred from schedule reuse or enabled by a Provider flag.",
     "Original G04/G05 CUDA prefill noninferiority UNRESOLVED and cost attribution UNKNOWN remain; no new performance PASS."
-  ]
+  ],
+  "source_checkpoint": {
+    "attempt1": "TERMINAL_SETUP_FAIL; original unchanged146 CUDA edges guarded, configure57.959s/outer162.318s",
+    "attempt2": "TERMINAL_FAIL; two existing consumer warning errors and two fault-target missing HYLE_TESTING hook link errors; both required native FI CUDA objects completed, build374.084s; product math not yet run. Existing public fixture warnings fixed1049fbe6f.",
+    "attempt3": "TERMINAL_FAIL; provider18/19 PASS, including32x64 runtime schedule cases. Empty batch test throws bad_expected_access; next change replaces unchecked test unwrap with status propagation to identify actual error. No native math failure observed.",
+    "risk_configuration": "Shipping ordinary sources cannot link original instrumented backend observation hooks. Keep original failures; original plain/FP8 fault consumers remain mandatory in the final instrumented G06 risk batch after full API/algorithm freeze. Ordinary subset verdict must explicitly leave these risks pending."
+  }
 }

@@ -521,3 +521,16 @@ D6.2实施前补充原common空布局反证：cold mirror已清零，但首个�
 无旧ready mirror时发布已完整清零的原writer，不制造F2覆盖或上传。该修正与空request
 原生guard同批验证。Direct/Graph、CPU+CUDA、pending和plain/FP8原风险consumer固定
 为intake中五个private target；只加验证hook，不改公共构建或旧消费者源码。
+
+D6 source检查点：attempt1在编译前拦下146个未变ggml CUDA对象的伪重建；借原已验证
+242派生/5 canonical输入及Ninja command/deps证明复用，保留setup失败和162.318s。
+attempt2完成两FI CUDA TU，旧public/hybrid fixture警告已在1049fbe6f修正；两个原风险
+fixture依赖HYLE_TESTING hook，shipping backend不导出而链接失败，原374.084s不重置。
+风险fixture归入完整G06最终instrumented风险批，仍为必做；普通source子集不能代签。
+attempt3普通FI 18/19通过，包含32×64 schedule数值/复用/成本反证；新增空batch因测试
+unchecked expected取值失败，先补原错误传播定位。未签本批/完整G06/P1完成。
+
+审计纠正（产品删除前登记）：原common空mirror假设不成立；segments包含始终非零的
+MetadataHeader encoding/generation，首个空布局仍会真实上传并发布mirror。因此删除
+fca058dc1中新增的冗余fallback，common实现恢复原字节；不为虚构问题新增常态分支。
+D6.1原调度等价及D6.2原生零query guard保留，空用例继续验证，不放宽合同。
