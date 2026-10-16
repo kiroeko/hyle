@@ -11,7 +11,7 @@
   },
   "peer_revision": "669121418669b31f6849c74f64362aaf8d6eb919",
   "source": "packed_bench.cc",
-  "sha256": "b7db81238009596832c5d3319026ac41f069ed1bdbf3dc983f9d449757f5440b",
+  "sha256": "65b4c9a8876d026dd1327ec3491a5f68eab0049cc96f69736dd5fed0338d1a28",
   "adapter_audit": {
     "path": "../../evidence/architecture/inference-g07-packed-weight-audit/p1-adapter.json",
     "sha256": "ed8c247b81f25894f7d01aeaef173b0f88427ef9dbe8c0ec2678280345ea86ba"

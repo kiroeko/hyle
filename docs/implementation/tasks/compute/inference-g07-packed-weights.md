@@ -294,3 +294,9 @@ scale顺序。固定MLX原`fp8.h`也直接用码位转换，不能据其half转�
 
 CUDA首轮A/A的M1不稳定，未形成合格P1结果；原始资格失败保留，只能修正测量资格，不能
 据此改CUDA产品或宣称胜负。原完整数值与SDK/风险证据仍有效。G08–G10尚未开始。
+
+CUDA测量资格仅允许一次harness纠正：每次比较前双方完整自然调用交替warm至少1秒，原16
+paired rounds改为现有仪器已有的104轮、4ms epoch；两个固定形状/全部order与placement/
+original和selected A/A、n15–31、5%与统计核心不变。首轮A/A全量保留，未成功的首条product
+进程因ready=FAIL主动拒绝，不是合格性能数据。新artifact/合同必须重新资格，不能复用失败
+A/A，也不改CUDA产品。两轮累计费用保持；不再扫计时姿势。

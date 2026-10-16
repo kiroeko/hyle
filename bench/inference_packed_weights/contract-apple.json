@@ -159,7 +159,7 @@
       "consumer_key": "inference-apple-resident-packed/m1",
       "provenance": {
         "path": "consumer-provenance-apple.json",
-        "sha256": "13eb72201554e4350f637a741c1311d09f306c4edeccd36fa94a5503dba40883"
+        "sha256": "dcf883b0b9d74a27e744fbc6df8b83dcc4042ebdea3bc481dc9506677073b47c"
       },
       "ownership_topology": {
         "candidate": "One public prepared Program/Invocation with resident immutable explicit inputs, complete submit/wait/public temporary release",
@@ -234,7 +234,7 @@
       "consumer_key": "inference-apple-resident-packed/m64",
       "provenance": {
         "path": "consumer-provenance-apple.json",
-        "sha256": "13eb72201554e4350f637a741c1311d09f306c4edeccd36fa94a5503dba40883"
+        "sha256": "dcf883b0b9d74a27e744fbc6df8b83dcc4042ebdea3bc481dc9506677073b47c"
       },
       "ownership_topology": {
         "candidate": "One public prepared Program/Invocation with resident immutable explicit inputs, complete submit/wait/public temporary release",

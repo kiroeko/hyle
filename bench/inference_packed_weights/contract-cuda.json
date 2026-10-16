@@ -159,7 +159,7 @@
       "consumer_key": "inference-cuda-resident-packed/m1",
       "provenance": {
         "path": "consumer-provenance-cuda.json",
-        "sha256": "571a10c8708f078dccc93e5701083072ecf63371338e401d46537b302184c2be"
+        "sha256": "70ed704d41ab49b52442760d3bb4b671988375e26b63026b2c917b399db79898"
       },
       "ownership_topology": {
         "candidate": "One public prepared Program/Invocation with resident immutable explicit inputs, complete submit/wait/public temporary release",
@@ -234,7 +234,7 @@
       "consumer_key": "inference-cuda-resident-packed/m64",
       "provenance": {
         "path": "consumer-provenance-cuda.json",
-        "sha256": "571a10c8708f078dccc93e5701083072ecf63371338e401d46537b302184c2be"
+        "sha256": "70ed704d41ab49b52442760d3bb4b671988375e26b63026b2c917b399db79898"
       },
       "ownership_topology": {
         "candidate": "One public prepared Program/Invocation with resident immutable explicit inputs, complete submit/wait/public temporary release",
@@ -455,11 +455,11 @@
       "measurement_adapter": "nanobench-paired-rows-v1"
     },
     "measurement_recipe": {
-      "paired_rounds": 16,
+      "paired_rounds": 104,
       "minimum_epoch_iterations": 1,
       "minimum_epoch_time_ms": 4,
       "preflight_only": false,
-      "reason": "Frozen finite G07 complete warm call. Independent oracle before every timed process, original/selected A/A each8strata, n15/31 and5% unchanged; no kernel-only substitution."
+      "reason": "One bounded WSL A/A harness correction after retained unqualified16-round failure: alternate complete calls warm1s per shape,104paired rounds at4ms; same shape/semantics/owners, original n15/31 and5%/statistics unchanged."
     }
   }
 }

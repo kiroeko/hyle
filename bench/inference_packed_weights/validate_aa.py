@@ -111,7 +111,7 @@ def main():
                     expected = dict(run_nonce=e['HYLE_PERF_RUN_NONCE'], route=route, verify_only='0', aa_route=arm,
                         execution_order='peer-first' if execution else 'candidate-first',
                         allocation_order='peer-first' if allocation else 'candidate-first',
-                        placement='1' if variant=='placement' else '0', paired_rounds='16',
+                        placement='1' if variant=='placement' else '0', paired_rounds='16' if air else '104',
                         apple_qos='user-interactive' if air else 'not-applicable', qos_ok='1' if air else 'not-applicable')
                     if any(actual.get(k)!=v for k,v in expected.items()):
                         raise RuntimeError('A/A policy mismatch')

@@ -48,6 +48,7 @@ bool set(const char* n) {const auto* p=std::getenv(n);return p&&*p&&std::strcmp(
 constexpr int k=2048;
 #if HYLE_G07_CUDA
 constexpr int n=6144,group=64;
+constexpr int paired_rounds=104;
 constexpr const char* route="CUDA";
 struct Data {
   int m;std::vector<float> x,scales,bias,expected;std::vector<std::uint32_t> words;
@@ -98,6 +99,7 @@ struct Harness {
 namespace mx=mlx::core;
 namespace a=c::apple;
 constexpr int n=2048;
+constexpr int paired_rounds=16;
 constexpr const char* route="Apple";
 float fp8(std::uint8_t code){const int e=(code>>3)&15,f=code&7;const float v=e?std::ldexp(1.F+float(f)/8,e-7):std::ldexp(float(f),-9);return code&128?-v:v;}
 std::uint16_t bf16(float value){auto bits=std::bit_cast<std::uint32_t>(value);return std::uint16_t((bits+0x7fff+((bits>>16)&1))>>16);}
@@ -155,8 +157,15 @@ void measure(int m){
   candidate->verify(data);peer->verify(data);
   for(int i=0;i<4;++i){candidate->execute();peer->execute();}
   if(set("HYLE_BENCH_VERIFY_ONLY"))return;
+#if HYLE_G07_CUDA
+  // The desktop WSL M1 A/A was not stable with only16short rounds. Warm both
+  // complete public calls through one second before sampling, then use the
+  // existing104-round instrument recipe. No work moves out of either call.
+  const auto warmed=std::chrono::steady_clock::now()+std::chrono::seconds(1);
+  do{candidate->execute();peer->execute();}while(std::chrono::steady_clock::now()<warmed);
+#endif
   nb::Bench bench;bench.title(std::string(route)+" resident packed M="+std::to_string(m)+" K=2048 N="+std::to_string(n))
-    .batch(1).epochs(16).minEpochIterations(1).minEpochTime(std::chrono::milliseconds(4)).performanceCounters(false);
+    .batch(1).epochs(paired_rounds).minEpochIterations(1).minEpochTime(std::chrono::milliseconds(4)).performanceCounters(false);
   const auto a=[&]{candidate->execute();};const auto b=[&]{peer->execute();};
   const auto cn=std::string("HYLE ")+route+" resident packed",pn=std::string("Original669 ")+route+" packed";
   if(set("HYLE_BENCH_RIVAL_FIRST"))(void)bench.compare(pn,b,cn,a);else(void)bench.compare(cn,a,pn,b);
@@ -168,8 +177,8 @@ int main(int,char** argv){
     if(!set("HYLE_BENCH_VERIFY_ONLY")&&!set("HYLE_BENCH_AA_ROUTE")&&set("HYLE_PERF_RUN_NONCE")){
       std::string ready;std::ifstream(std::filesystem::absolute(argv[0]).parent_path()/"g07_packed_aa.ready")>>ready;
       if(ready!="PASS")throw std::runtime_error("packed A/A not qualified");}
-    std::fprintf(stderr,"# HYLE_PACKED_RUN run_nonce=%s apple_qos=%s qos_ok=%s route=%s verify_only=%d paired_rounds=16 placement=%d execution_order=%s allocation_order=%s aa_route=%s\n",
-      hyle::bench::perf::run_nonce(),qos.name,qos.ok,route,set("HYLE_BENCH_VERIFY_ONLY"),HYLE_G07_PLACEMENT,
+    std::fprintf(stderr,"# HYLE_PACKED_RUN run_nonce=%s apple_qos=%s qos_ok=%s route=%s verify_only=%d paired_rounds=%d placement=%d execution_order=%s allocation_order=%s aa_route=%s\n",
+      hyle::bench::perf::run_nonce(),qos.name,qos.ok,route,set("HYLE_BENCH_VERIFY_ONLY"),paired_rounds,HYLE_G07_PLACEMENT,
       set("HYLE_BENCH_RIVAL_FIRST")?"peer-first":"candidate-first",set("HYLE_BENCH_PEER_ALLOCATION_FIRST")?"peer-first":"candidate-first",
       std::getenv("HYLE_BENCH_AA_ROUTE")?std::getenv("HYLE_BENCH_AA_ROUTE"):"none");
     measure(1);measure(64);return 0;
