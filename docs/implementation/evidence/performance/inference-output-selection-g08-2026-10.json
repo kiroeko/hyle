@@ -1,6 +1,6 @@
 {
   "schema": "hyle.inference-g08-performance-ledger/v1",
-  "state": "IN_PROGRESS_CPU_CUDA_QUALIFIED_TWO_ROUTES_AWAIT_PUBLICATION",
+  "state": "ALL_FOUR_ROUTES_QUALIFIED_P1_PASS",
   "candidate": "5103c13d8ed119b06aa64e799f9768aea45ab913",
   "baseline": "85bcfa4ebc29cc4d2ed5fb122074204aca675d58",
   "scope": "Finite complete warm TopK(1) public comparison; Apple adds frozenTopK(3) holdout. No categorical/RNG speed or full-engine/llama.cpp ranking.",
@@ -13,7 +13,9 @@
   "expected_workloads": 9,
   "completed_qualified_routes": [
     "cpu",
-    "cuda"
+    "cuda",
+    "apple",
+    "vulkan"
   ],
   "qualified_workloads": [
     {
@@ -95,12 +97,109 @@
         15
       ],
       "comparability": "COMPARABLE"
+    },
+    {
+      "route": "apple",
+      "id": "topk-r1-k1",
+      "strict_direction": "WIN",
+      "instrument_exact_verdict": "WIN",
+      "noninferiority_gate": "PASS",
+      "median_ratio_range": [
+        2.5149045160562835,
+        2.533181235991034
+      ],
+      "confidence_interval_envelope": [
+        2.4939605341837754,
+        2.5543017761121067
+      ],
+      "strata": 8,
+      "independent_processes_per_stratum": [
+        15
+      ],
+      "comparability": "COMPARABLE"
+    },
+    {
+      "route": "apple",
+      "id": "topk-r16-k1",
+      "strict_direction": "WIN",
+      "instrument_exact_verdict": "WIN",
+      "noninferiority_gate": "PASS",
+      "median_ratio_range": [
+        9.529468990676936,
+        9.58018676410881
+      ],
+      "confidence_interval_envelope": [
+        9.411010068203963,
+        9.70564843369583
+      ],
+      "strata": 8,
+      "independent_processes_per_stratum": [
+        15
+      ],
+      "comparability": "COMPARABLE"
+    },
+    {
+      "route": "apple",
+      "id": "topk-r16-k3",
+      "strict_direction": "WIN",
+      "instrument_exact_verdict": "PARITY",
+      "noninferiority_gate": "PASS",
+      "median_ratio_range": [
+        1.0431672221770587,
+        1.0438389589263928
+      ],
+      "confidence_interval_envelope": [
+        1.0426189507930053,
+        1.0443430061949788
+      ],
+      "strata": 8,
+      "independent_processes_per_stratum": [
+        15
+      ],
+      "comparability": "COMPARABLE"
+    },
+    {
+      "route": "vulkan",
+      "id": "topk-r1-k1",
+      "strict_direction": "WIN",
+      "instrument_exact_verdict": "WIN",
+      "noninferiority_gate": "PASS",
+      "median_ratio_range": [
+        4.400117388114453,
+        4.427782672540382
+      ],
+      "confidence_interval_envelope": [
+        4.379936555979162,
+        4.454940314383642
+      ],
+      "strata": 8,
+      "independent_processes_per_stratum": [
+        15
+      ],
+      "comparability": "COMPARABLE"
+    },
+    {
+      "route": "vulkan",
+      "id": "topk-r16-k1",
+      "strict_direction": "WIN",
+      "instrument_exact_verdict": "WIN",
+      "noninferiority_gate": "PASS",
+      "median_ratio_range": [
+        41.62322274881517,
+        41.91512041058034
+      ],
+      "confidence_interval_envelope": [
+        41.488353730754056,
+        42.54818325434439
+      ],
+      "strata": 8,
+      "independent_processes_per_stratum": [
+        15
+      ],
+      "comparability": "COMPARABLE"
     }
   ],
-  "pending_routes": [
-    "apple",
-    "vulkan"
-  ],
+  "pending_routes": [],
   "evidence": [
     {
       "route": "cpu",
@@ -115,7 +214,31 @@
       "benchmark_revision": "47b63229d7e09afaa5c2e0f10f0ac5a4c5c7e953",
       "qualification": "QUALIFIED",
       "performance_gate": "PASS"
+    },
+    {
+      "route": "apple",
+      "receipt": "evidence/performance/inference-g08-output-selection/apple/receipt.json",
+      "benchmark_revision": "47b63229d7e09afaa5c2e0f10f0ac5a4c5c7e953",
+      "qualification": "QUALIFIED",
+      "performance_gate": "PASS"
+    },
+    {
+      "route": "vulkan",
+      "receipt": "evidence/performance/inference-g08-output-selection/vulkan/receipt.json",
+      "benchmark_revision": "47b63229d7e09afaa5c2e0f10f0ac5a4c5c7e953",
+      "qualification": "QUALIFIED",
+      "performance_gate": "PASS"
     }
   ],
-  "historical_2026_09_claim_counts_unchanged": true
+  "historical_2026_09_claim_counts_unchanged": true,
+  "strict_direction_counts": {
+    "WIN": 9,
+    "LOSS": 0,
+    "INCONCLUSIVE": 0
+  },
+  "engineering_noninferiority_counts": {
+    "PASS": 9
+  },
+  "artifact_review": "evidence/architecture/inference-g08-output-selection-audit/p1-artifact-postreview.json",
+  "limits": "Finite same-contract warm engineering comparison only. Independent review/section-size/disassembly were retrospective supplements, not prospective full Formal preflight sign-off. CUDA binary retention is external/live as its receipt specifies. Historical scorecard counts and G04/G05 results unchanged."
 }

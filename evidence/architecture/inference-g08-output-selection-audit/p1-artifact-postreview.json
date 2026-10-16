@@ -1,0 +1,99 @@
+{
+  "schema": "hyle.inference-g08-artifact-postreview/v1",
+  "verdict": "PASS_RETROSPECTIVE_ENGINEERING_SUPPLEMENT",
+  "candidate": "5103c13d8ed119b06aa64e799f9768aea45ab913",
+  "reviews": [
+    {
+      "route": "cpu",
+      "state": "PASS_RETROSPECTIVE_ENGINEERING_SUPPLEMENT",
+      "capture_sha256": "fdd81cd30e5348a49052204ad778baf6c30a54349bf58de94e860378b0a566a8",
+      "text_sizes": [
+        18022379,
+        18022411
+      ],
+      "text_delta_bytes": 32,
+      "manual_review": {
+        "placement": "Actual linked GenericArm execute moves16B; total .text grows32B/18022379B. Both role objects match same linked484B ICF-shared wrapper, still dispatching through their separately prepared native provider instances.",
+        "completion": "Actual compiled/linked execute retains submit, checked true completion, two small output reads and step Completion destructor. No constant folding/DCE of these operations.",
+        "flags": "Saved actual commands: CPU same MSVC/O2/NDEBUG/Ob2, CUDA same GCC14/O3/NDEBUG; same LTO-off CMake targets, no one-arm-only sanitizer/debug-iterator/ISA switch. Imports/dynamic dependencies saved; same static public completion APIs on both arms.",
+        "linked_evidence": "linked-functions.json",
+        "procedural_deviation": "Section sizes and symbol disassembly were collected after P1, as was the independent review. Source contract/cost ledger and workload A/A preceded P1. This is an engineering terminal supplement and not a backdated complete preflight or Formal release qualification."
+      }
+    },
+    {
+      "route": "cuda",
+      "state": "PASS_RETROSPECTIVE_ENGINEERING_SUPPLEMENT",
+      "capture_sha256": "fe9f5265c7678d5ab0623b6083b841fa2189fd6708ef2288ec7dc4ce25d08b9c",
+      "text_sizes": [
+        21985650,
+        21985650
+      ],
+      "text_delta_bytes": 0,
+      "manual_review": {
+        "placement": "CPU actual execute shifts16B with .text +32B. CUDA actual timed erased callbacks shift16B with unchanged total .text, while GenericArm bodies remain at prior addresses; no stronger device-code placement claim.",
+        "completion": "Actual compiled/linked execute retains submit, checked true completion, two small output reads and step Completion destructor. No constant folding/DCE of these operations.",
+        "flags": "Saved actual commands: CPU same MSVC/O2/NDEBUG/Ob2, CUDA same GCC14/O3/NDEBUG; same LTO-off CMake targets, no one-arm-only sanitizer/debug-iterator/ISA switch. Imports/dynamic dependencies saved; same static public completion APIs on both arms.",
+        "linked_evidence": "linked-functions.json",
+        "procedural_deviation": "Section sizes and symbol disassembly were collected after P1, as was the independent review. Source contract/cost ledger and workload A/A preceded P1. This is an engineering terminal supplement and not a backdated complete preflight or Formal release qualification."
+      }
+    },
+    {
+      "route": "apple",
+      "state": "PASS_RETROSPECTIVE_ENGINEERING_SUPPLEMENT",
+      "capture_sha256": "d15137c30292a974c06cdf904fe26a6c7cec3d3927229ef8d0a8373801261a96",
+      "text_sizes": [
+        3559260,
+        3559280
+      ],
+      "text_delta_bytes": 20,
+      "manual_review": {
+        "placement": "Both execute bodies and both timed erased callbacks move20B. Total __text grows20B; cold prefix does not enter timed callbacks.",
+        "completion": "Exact final binary retains same native submit and common Completion.wait. Apple both native-result buffer pointers and two memcpy calls resolved through actual indirect-symbol table; Vulkan two namespace-correct Context.download calls. Result/lease/completion destruction occurs before callback return.",
+        "flags": "Saved actual commands show equal Release/optimized/arm64/LTO-off settings in both arm targets and both variants. No one-arm-only sanitizer/debug-iterator/ISA flag or public completion import thunk difference.",
+        "linked_evidence": "linked-functions.json",
+        "procedural_deviation": "Section sizes/disassembly and the independent review were completed after P1 began. This is retrospective engineering evidence correction, without backdating prospective preflight or asserting Formal release qualification."
+      }
+    },
+    {
+      "route": "vulkan",
+      "state": "PASS_RETROSPECTIVE_ENGINEERING_SUPPLEMENT",
+      "capture_sha256": "eb8335c669d38739f0e31218c447d8e14c38e5b1cbff944f914b89d571c8e3ae",
+      "text_sizes": [
+        2774532,
+        2774552
+      ],
+      "text_delta_bytes": 20,
+      "manual_review": {
+        "placement": "Both execute bodies and both timed erased callbacks move20B. Total __text grows20B; cold prefix does not enter timed callbacks.",
+        "completion": "Exact final binary retains same native submit and common Completion.wait. Apple both native-result buffer pointers and two memcpy calls resolved through actual indirect-symbol table; Vulkan two namespace-correct Context.download calls. Result/lease/completion destruction occurs before callback return.",
+        "flags": "Saved actual commands show equal Release/optimized/arm64/LTO-off settings in both arm targets and both variants. No one-arm-only sanitizer/debug-iterator/ISA flag or public completion import thunk difference.",
+        "linked_evidence": "linked-functions.json",
+        "procedural_deviation": "Section sizes/disassembly and the independent review were completed after P1 began. This is retrospective engineering evidence correction, without backdating prospective preflight or asserting Formal release qualification."
+      }
+    }
+  ],
+  "retained_large_disassembly": [
+    {
+      "route": "cpu",
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g08-artifact-postreview-1\\cpu\\placement-disasm.txt",
+      "sha256": "f94d051943ee0edbe6bfd24bb0007b381c966acd59dd869cffff84c6a7450d2a",
+      "bytes": 188484130,
+      "reason": "Full final executable disassembly is retained live; archived linked execute snippets plus exact relocation-aware matching and object libraries provide the finite review."
+    },
+    {
+      "route": "cpu",
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g08-artifact-postreview-1\\cpu\\primary-disasm.txt",
+      "sha256": "551d9afdffce498fe7497334e81f6b460a6eb3a5407ecc1fc5fa7afe88f66c7b",
+      "bytes": 188482517,
+      "reason": "Full final executable disassembly is retained live; archived linked execute snippets plus exact relocation-aware matching and object libraries provide the finite review."
+    }
+  ],
+  "timing": "All captures and the independent consumer review took place after formal sampling started. No backdated preflight sign-off; full completion/cost/source ledger and workload-matched A/A retain their own earlier timestamps. This finite terminal supplement changed no executed binary, sample, contract, peer or statistics.",
+  "scope": "Actual immutable host section sizes, selected linked symbols and arm disassembly; static public calls/native entry points remain, same Release/LTO-off policy, no material text inflation or hot prefix work. No inspected-all-vendor-code, hardware-counter, GPU-code-placement or Formal-release procedural claim.",
+  "engineering_disposition": "Accepted as a retrospective engineering evidence correction because actual frozen artifacts satisfy the finite structural/codegen properties and no comparability-invalidating finding was found. The late recording/independent-review timing is a retained procedural deviation; it is not represented as prospective full Formal preflight compliance.",
+  "raw": {
+    "path": "p1-artifact-postreview-raw.zip",
+    "sha256": "17b8fb744965ab798ad4009e5c8f3646a5bc135bdd82c15e5c0f262b9afbb0d8",
+    "bytes": 2534216
+  }
+}

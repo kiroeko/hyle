@@ -1,0 +1,78 @@
+{
+  "schema": "hyle.inference-g08-independent-consumer-review/v1",
+  "review_date": "2026-10-17",
+  "review_head": "95066b160c5ecbe9c6166ede4eeeeb0d7c0136e9",
+  "candidate": "5103c13d8ed119b06aa64e799f9768aea45ab913",
+  "baseline": "85bcfa4ebc29cc4d2ed5fb122074204aca675d58",
+  "verdict": "FINITE_S1_COMPARABILITY_REVIEW_PASS_NO_NEW_MUST; APPLE_VULKAN_FORMAL_P1_PENDING",
+  "scope": "独立只读终审S1原TopK(1)完整消费比较；未构建、运行设备/性能、修改产品/benchmark/registry或重开G01–G06。",
+  "checks": [
+    {
+      "area": "自然入口与同数学合同",
+      "verdict": "PASS",
+      "evidence": "bench/compute_ops/generic_arm.cc:37-85、apple_arm.cc:33-46、vulkan_arm.cc:26-32；topk_bench.h:21-66",
+      "finding": "CPU/CUDA原完整Provider→prepare→OperationInvocation，cold核普通route provider+implementation相同；Apple原完整lowerer经同Context.compile，候选普通prepare；Vulkan双方各自完整Context/prepare。固定normal F32 dense末axis、largest、R1/R16×V248320 K1及Apple R16 K3；两口F32源bits+首index I32相同，非仅ID或替换数学精度。显式9/9 tie及8.5给独立闭式oracle；不外推NaN/subnormal、其它dtype/形状或引擎。"
+    },
+    {
+      "area": "旧实现身份及当前数学泄漏",
+      "verdict": "PASS",
+      "evidence": "prepare_reference.py、verify_reference.py、CMakeLists.txt:56-126；p1-preflight-final-raw.zip内g08-final-probe-air.zip；CPU/CUDA正式raw.zip",
+      "finding": "原clean Git85bc tree165e375绑定。CPU3TU/CUDA2TU原Git blob SHA逐项独立核对；Apple2TU及Vulkan26TU原blob及逐字/仅namespace变换SHA亦独立重算一致。CPU/CUDA alias隔离；Apple实际nm旧tensor调用旧indexing且三个入口隔离，未落到当前S1；Vulkan原完整route与其shader generator/body，不注入当前S1。公共framework/修复后Mem与锁定原native依赖由两arm共同使用，是冻结比较边界，不是整仓旧二进制对整仓新二进制。",
+      "recomputed_air_source_checks": {
+        "apple": {
+          "compiled_original_tus": 2,
+          "git_blob_and_exact_transform_sha_match": true
+        },
+        "vulkan": {
+          "compiled_original_tus": 26,
+          "git_blob_and_exact_transform_sha_match": true
+        }
+      }
+    },
+    {
+      "area": "逐步实际完成、两小结果与局部owner",
+      "verdict": "PASS",
+      "evidence": "generic_arm.cc:98-103；apple_arm.cc:50-58；vulkan_arm.cc:36-46；cuda_memory.cc:107-121；apple_context.cc:320-327；vulkan_run.cc:264-302；vulkan_transfer.cc:34-113",
+      "finding": "每个execute均实际submit→成功checked wait→两结果读取→局部Completion/OwnedResult/lease离域后才返回计时器。CPU BufferView读；CUDA两次真实cuMemcpyDtoH；Apple同步全部native输出后data+memcpy；Vulkan两次download的staging/submit/fence/invalidate/memcpy/临时销毁全在回调内。读回8RK bytes，未全词表D2H，未仅计enqueue/event-record。"
+    },
+    {
+      "area": "冷费用与最后retained/cache析构",
+      "verdict": "PASS_WITH_DISCLOSED_DEFERRED_BOUNDARY",
+      "evidence": "p1-boundary.json phase/resource ledger；topk_bench.cc:26-58；generic_arm.cc:107-109；apple_arm.cc:62；vulkan_arm.cc:50；apple_context.cc:457-507,977-1007",
+      "finding": "两arm分别持久构造输入、workspace、invocation/context；上传/JIT、3轮oracle及8轮warm在计时前，finish在计时后双方执行。原sort每次fill/keys/sort/extract未冷缓存。Apple每次submit清上次arrays，原worker尾部在下一次本arm重放前完成，稳态替换仍收费；最后一个保留native结果、post-done尾部及最终runtime/allocator/library cache释放双方DEFERRED，不能声称回调返回时所有内部owner/缓存已释放。此边界符合持久resident一步消费者，不签cold首次、每步close或总生命周期摊销。"
+    },
+    {
+      "area": "包装、编译与link公平性",
+      "verdict": "PASS_FINITE_ENGINEERING_BOUNDARY",
+      "evidence": "CMakeLists.txt:26-185；validate_aa.py:25-72,95-124；CPU/CUDA正式raw.zip内compile_commands.json、topk-aa.json及manifest；四路线最终预检",
+      "finding": "两arm同公开framework/SDK、Release、LTO off及同平台toolchain；实际CPU MSVC/O2、CUDA GCC14/O3+nvcc13.3 sm89原TU命名隔离可见，arm仅reference选择不同。primary/纯placement及双执行/分配顺序、native-native与selected-selected16路A/A实际通过。未找到人为fallback、one-arm-only等待/回读或旧sort热费用移出。私有native/driver缓存上界和主线程另补.text/反汇编结果不由本审查推断。"
+    },
+    {
+      "area": "CPU/CUDA正式性能凭据",
+      "verdict": "PASS_EXISTING_ROUTE_TERMINALS",
+      "evidence": "evidence/performance/inference-g08-output-selection/{cpu,cuda}/receipt.json及raw.zip",
+      "finding": "独立重算两raw ZIP SHA及归档manifest/summary/合同文件SHA均与receipt一致；真实首样本含两arm ordinary_match与两口oracle，正式A/A各16路。QUALIFIED、verify0、五controls/5%NI均PASS，8strata各15进程；CPU两形状WIN，CUDA两形状WIN。仅认各自机器/固定warm形状，未重跑统计器或扩大到categorical/RNG。"
+    },
+    {
+      "area": "Apple/Vulkan当前同合同与性能终态",
+      "verdict": "COMPARABILITY_PREFLIGHT_PASS_FORMAL_PERFORMANCE_PENDING",
+      "evidence": "evidence/architecture/inference-g08-output-selection-audit/p1-preflight-final.json及其raw；主线程当前串行运行状态",
+      "finding": "两路线真实普通构建、9组总形状分配中的各自oracle、primary/placement与16路workload A/A有既有PASS。diagnostic独立样本不足导致通用controls原FAIL/INCONCLUSIVE被保留，不能冒充正式P1。Apple正式控制组运行、Vulkan随后；终审此刻不签这两路线正式performance或G08总关闭。"
+    }
+  ],
+  "must_findings": [],
+  "remaining_evidence": [
+    "Apple与Vulkan各自正式P1 terminal/stock verify/controls/5%门；当前尚未结束，须由实际结果裁决。",
+    "At review time actual .text section sizes/selected symbol disassembly were absent from the evidence. Root is supplementing them read-only from existing immutable executable/arm archives, with no implementation/statistics change or rerun. This supplement is PENDING, not treated as fulfilled by this review."
+  ],
+  "limits": "一次有限独立审查；不自动授权新功能、修改锁定P1输入或补全库验证。异常/取消/失败和交付资格沿既有G08证据，本S1成功时序不替代那些合同。",
+  "review_timing": "This independent review was performed after the current formal P1 sampling had started (CPU/CUDA already terminal); it is a retrospective independent comparability judgment, NOT a review signed before n15. Source-boundary/self-review records keep their separate historical timing.",
+  "formal_run_state_at_review": {
+    "cpu": "QUALIFIED; controls/NI/verify PASS; R1/R16 WIN",
+    "cuda": "QUALIFIED; controls/NI/verify PASS; R1/R16 WIN",
+    "apple": "Formal n15 control processes running; no terminal claimed",
+    "vulkan": "Formal P1 not started; no terminal claimed"
+  },
+  "cuda_binary_retention": "Receipt commits complete original raw samples/source/build metadata in raw.zip (335953 bytes). The unchanged original full ZIP (172223450 bytes, three binaries) is explicitly retained at the receipt SHA/path in ignored Windows content-addressed cache; live qualified binaries remain. Engineering evidence, no Formal long-term retention/signature claim; this review verified committed metadata/raw archive hashes, not the full 172MB retained binary archive.",
+  "independent_current_comparability_judgment": "PASS for the frozen finite S1 same-contract comparison based on actual natural entry points, isolated original math, identical two-output oracle, complete warm submit/completion/readback/local-owner boundary, symmetric deferred teardown, locked build identities and actual A/A evidence. No concrete invalidating wiring/consumer-shape defect found. This judgment does not backdate pre-sampling independent sign-off or substitute missing binary-codegen supplements/unfinished Apple-Vulkan formal terminals."
+}

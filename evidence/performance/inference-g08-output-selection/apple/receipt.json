@@ -1,0 +1,111 @@
+{
+  "schema": "hyle.inference-g08-topk-p1-route/v1",
+  "verdict": "APPLE_QUALIFIED_P1_PASS",
+  "route": "apple",
+  "candidate": "5103c13d8ed119b06aa64e799f9768aea45ab913",
+  "benchmark_revision": "47b63229d7e09afaa5c2e0f10f0ac5a4c5c7e953",
+  "original_revision": "85bcfa4ebc29cc4d2ed5fb122074204aca675d58",
+  "machine": "M1-MAC",
+  "qualification": "QUALIFIED",
+  "qualification_gate": "PASS",
+  "performance_gate": "PASS",
+  "stock_verify_exit_code": 0,
+  "contract_sha256": "cac9fb965279fa05cee90bfd35b9af1e4c0c608af1f80964fcc2116aa491acdb",
+  "contract_file_sha256": "d84281ba1ff93747820f18879a77690493331dd025e7d36f927bff4c31f70310",
+  "manifest_sha256": "fda44a905226ad8ee4ad7b43061527ea43c272a172b9322de32abaa128164a81",
+  "summary_sha256": "951fff2be431ee87f2dcfe01f33f037cfed30c6e0aceeb177e4279369f7e1907",
+  "controls": [
+    {
+      "id": "aa",
+      "gate": "PASS"
+    },
+    {
+      "id": "delta5",
+      "gate": "PASS"
+    },
+    {
+      "id": "delta10",
+      "gate": "PASS"
+    },
+    {
+      "id": "timer-floor",
+      "gate": "PASS"
+    },
+    {
+      "id": "placement",
+      "gate": "PASS"
+    }
+  ],
+  "workloads": [
+    {
+      "id": "topk-r1-k1",
+      "strict_direction": "WIN",
+      "instrument_exact_verdict": "WIN",
+      "noninferiority_gate": "PASS",
+      "median_ratio_range": [
+        2.5149045160562835,
+        2.533181235991034
+      ],
+      "confidence_interval_envelope": [
+        2.4939605341837754,
+        2.5543017761121067
+      ],
+      "strata": 8,
+      "independent_processes_per_stratum": [
+        15
+      ],
+      "comparability": "COMPARABLE"
+    },
+    {
+      "id": "topk-r16-k1",
+      "strict_direction": "WIN",
+      "instrument_exact_verdict": "WIN",
+      "noninferiority_gate": "PASS",
+      "median_ratio_range": [
+        9.529468990676936,
+        9.58018676410881
+      ],
+      "confidence_interval_envelope": [
+        9.411010068203963,
+        9.70564843369583
+      ],
+      "strata": 8,
+      "independent_processes_per_stratum": [
+        15
+      ],
+      "comparability": "COMPARABLE"
+    },
+    {
+      "id": "topk-r16-k3",
+      "strict_direction": "WIN",
+      "instrument_exact_verdict": "PARITY",
+      "noninferiority_gate": "PASS",
+      "median_ratio_range": [
+        1.0431672221770587,
+        1.0438389589263928
+      ],
+      "confidence_interval_envelope": [
+        1.0426189507930053,
+        1.0443430061949788
+      ],
+      "strata": 8,
+      "independent_processes_per_stratum": [
+        15
+      ],
+      "comparability": "COMPARABLE"
+    }
+  ],
+  "ratio_definition": "candidate/peer for higher-is-better; peer/candidate for lower-is-better; greater than one favors candidate",
+  "mechanism": "K1 integer-key arg reduction replaces full argsort; K3 retains exact key argsort/slice/gather and is separately measured.",
+  "qualified_elapsed_seconds": 589.011655125,
+  "retained_diagnostic_seconds": 66.68497975,
+  "known_qualified_and_diagnostic_seconds": 655.696634875,
+  "preflight": "evidence/architecture/inference-g08-output-selection-audit/p1-preflight-final.json",
+  "scope": "Complete warm public TopK including native work, checked completion, both stored-F32 values/I32 indices readback and step-local handles. R1/R16 V248320 K1 plus Apple R16 K3, eight execution/allocation/placement strata; original15-to31 independent process schedule and5percent. No categorical/RNG speed, llama.cpp or full-engine token/s claim.",
+  "limits": "Final retained invocation result/runtime/cache destruction remains deferred as frozen source ledger. Private native/cache upper bounds not inferred from timers. Only this route/profile/finite shapes; not whole G08 acceptance.",
+  "raw": {
+    "path": "raw.zip",
+    "sha256": "4a2ea4402032999048e407c1d6dafbd214e2946e0d3f58136af5bc488a2069ae",
+    "bytes": 5621376
+  }
+}

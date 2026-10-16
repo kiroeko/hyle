@@ -1,6 +1,6 @@
 # G08 设备端输出数值选择与可定位随机数
 
-状态：**CANDIDATE，2026-10-17；八owner的S1–S4/M1接口与算法冻结于5103c13d8，普通数值及适用device/host风险已过，交付18/18已过，四路线数值及workload A/A/短预检已过，CPU/CUDA/Apple正式P1通过，Vulkan正式批次进行中，最终artifact审查与终审落账待完成**。baseline 为
+状态：**CANDIDATE，2026-10-17；八owner的S1–S4/M1接口与算法冻结于5103c13d8，普通数值及适用device/host风险已过，交付18/18已过，四路线正式P1与回溯artifact终审补证已过，最终LOC/状态落账待完成**。baseline 为
 `85bcfa4eb`，G07已经整项接受，新G07–G10 goal完成1/4。原G01–G07不重跑，G09/G10未开始。
 本卡只处理原[G08发现](../project/inference-single-machine-foundation-audit-2026-10.md)与
 [消费形状计划](../project/inference-consumer-adaptation-plan-2026-10.md)的有限输出数值域。
@@ -649,3 +649,26 @@ CPU新旧都O(RV)，所省的是V宽Entry scratch/fill与partial_sort触达。
 CPU正式阶段508.265s及原117.031s诊断分别保留；没有复位原失败。CUDA正式P1已经接上，
 其后Apple、Vulkan按原批次串行，不能提前接受整项G08。八owner保持CANDIDATE；
 G09/G10与CLI仍未开始。
+
+### 2026-10-17 四路线正式P1及终审补证完成
+
+[四路线性能分账](../../evidence/performance/inference-output-selection-g08-2026-10.md)与原始
+CPU/CUDA/Apple/Vulkan receipt均已封存：每路线八strata各n15、120产品进程与30控制，
+qualification、五controls、stock verify及原5%非劣门全部PASS。九形状相对1的严格方向均WIN；
+Apple K3约1.043倍、原instrument exact verdict为PARITY，两口径各自保留，不互相替换。
+比较对象为原HYLE85bc，没有推断整模型或llama.cpp的token/s。
+
+[独立消费终审](../../../../evidence/architecture/inference-g08-output-selection-audit/independent-consumer-review.json)
+未发现有限S1同合同的MUST；它发生于正式采样开始后，原文保留当时Apple/Vulkan尚未terminal的
+状态，不回写。该历史pending由当前四路线实际terminal补齐。
+[实际artifact补证](../../../../evidence/architecture/inference-g08-output-selection-audit/p1-artifact-postreview.json)
+确认四路线同优化设置、真实submit/wait/两输出读取和局部owner释放未被消除；CPU execute移动16B，
+CUDA计时callback移动16B（不声称其GenericArm或GPU代码也移动），Apple/Vulkan execute与callback
+移动20B，text分别仅增加32/0/20/20B。section/反汇编记录也是采样后补证；作为工程终审证据修正接受，
+保留未在preflight附齐该记录的流程偏差，不声称完整Formal release预签。
+
+四路线正式阶段合计2411.786s，连已记录诊断合计2870.065s；串行controller墙时2455.485s
+另列，未吞掉原失败或冒充整轮历史总成本。CUDA172MB含binary原ZIP在receipt明确标识的本地
+内容寻址缓存，live qualified artifacts保留；提交raw含全部样本/身份，工程证据不宣称Formal长期保存。
+其它三路线提交归档含实际binary。最终43项产品/依赖输入hash仍匹配5103，当前只剩LOC、
+terminal七门/七问和八owner的CANDIDATE→CLOSED落账，G09/G10与CLI尚未开始。
