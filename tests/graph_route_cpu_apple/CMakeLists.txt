@@ -15,3 +15,9 @@ if(HYLE_COMPUTE_APPLE_ENABLED AND HYLE_COMPUTE_CPU)
   hyle_stage_runtime(hyle_graph_route_cpu_apple_finite_test)
   hyle_stage_runtime(hyle_graph_route_cpu_apple_packed_weights_test)
 endif()
+
+if(HYLE_COMPUTE_APPLE_ENABLED AND HYLE_COMPUTE_CPU)
+  hyle_add_test(graph_route_cpu_apple NAME sampling_consumer
+    SOURCES sampling_consumer.cc DEPS hyle_graph_route_cpu)
+  hyle_stage_runtime(hyle_graph_route_cpu_apple_sampling_consumer_test)
+endif()

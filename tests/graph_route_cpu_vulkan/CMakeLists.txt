@@ -13,3 +13,9 @@ if(HYLE_COMPUTE_VULKAN_ENABLED AND HYLE_COMPUTE_CPU)
   hyle_stage_runtime(hyle_graph_route_cpu_vulkan_public_consumer_test)
   hyle_stage_runtime(hyle_graph_route_cpu_vulkan_finite_test)
 endif()
+
+if(HYLE_COMPUTE_VULKAN_ENABLED AND HYLE_COMPUTE_CPU)
+  hyle_add_test(graph_route_cpu_vulkan NAME sampling_consumer
+    SOURCES sampling_consumer.cc DEPS hyle_graph_route_cpu)
+  hyle_stage_runtime(hyle_graph_route_cpu_vulkan_sampling_consumer_test)
+endif()

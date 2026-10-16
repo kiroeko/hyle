@@ -213,3 +213,10 @@ runtime。已定向合并到原custom分支并按两个sampling descriptor分派
 并将sampling并行work估计限定为这两个descriptor，避免影响旧custom成本。
 原日志`.scratch/inference-gaps/g08-cuda-source-1`、已用113.327s
 与146个native CUDA对象复用证明保留；同一build tree继续，未更换预算或宣称PASS。
+
+
+第二次同树批checkpoint ba64ff2a3在CMake generate真实FAIL：新CU数学测试位于原
+enable_language(CUDA)的兄弟目录，缺CMAKE_CUDA_COMPILE_OBJECT；只在该测试目录
+启用原已锁定CUDA language，产品构建算法未改。此轮66.804s及
+原失败完整保留。三joint公开消费者已写：GPU Copy producer→categorical双结果→CPU
+Cast/Add，65步/两slots，仅迁移R个I32与R个F32；CUDA两跳staging明确收费，仍待运行。

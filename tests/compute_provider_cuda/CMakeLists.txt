@@ -6,6 +6,7 @@ if(HYLE_COMPUTE_CUDA_ENABLED)
 endif()
 
 if(HYLE_COMPUTE_CUDA_ENABLED)
+  enable_language(CUDA)
   hyle_add_test(compute_provider_cuda NAME sampling_math
     SOURCES sampling_math_test.cc sampling_math_probe.cu
     DEPS hyle_compute_backend_cuda)
