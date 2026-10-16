@@ -278,6 +278,9 @@ bool region_operation(const ProgramState &program, const PlanStep &step,
 
 bool managed_operation(const ProgramState &program,
                        const PlanStep &step) noexcept {
+  // The row-wise single-selection carrier keeps the original TopK schema,
+  // while avoiding this mature region's full argsort and its buffers.
+  if (single_topk_operation(program, step)) return false;
   // Dynamic expert IDs need the same checked publication boundary as Gather.
   return !step.operation.custom_as<model_ops::GroupedMatMul>() &&
          region_operation(program, step, false);

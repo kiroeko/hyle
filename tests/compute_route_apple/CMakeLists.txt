@@ -14,3 +14,10 @@ if(HYLE_COMPUTE_APPLE_ENABLED)
   target_include_directories(hyle_compute_route_apple_test PRIVATE "${HYLE_GGML_SOURCE_DIR}/src")
   target_include_directories(hyle_compute_route_apple_test PRIVATE "${HYLE_SOURCE_DIR}/src/compute_route_apple")
 endif()
+
+if(HYLE_COMPUTE_APPLE_ENABLED)
+
+hyle_add_test(compute_route_apple NAME sampling_consumer
+  SOURCES sampling_consumer.cc)
+hyle_stage_runtime(hyle_compute_route_apple_sampling_consumer_test)
+endif()

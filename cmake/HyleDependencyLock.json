@@ -1509,6 +1509,37 @@
           }
         ]
       }
+    },
+    {
+      "name": "random123_counter",
+      "repository": "https://github.com/DEShawResearch/random123.git",
+      "revision": "726a093cd9a73f3ec3c8d7a70ff10ed8efec8d13",
+      "git_tree": "73e4186ef73e469fd3c17d02b9a427567ee5c168",
+      "archive": {
+        "url": "https://codeload.github.com/DEShawResearch/random123/tar.gz/726a093cd9a73f3ec3c8d7a70ff10ed8efec8d13",
+        "sha256": "8190cdbe6f31307a642a465f8ff4770d06502962690062e3ec040573baef9382"
+      },
+      "version": "philox4x32-10-fixed-counter-1.14.0",
+      "class": "in_tree",
+      "vendored": {
+        "path": "third_party/random123_counter",
+        "tree_sha256": "0d584cf8096da707dcc1a7eaefb9755a310bb7d688e0a9ae41047fe39eabb82c"
+      },
+      "license": {
+        "expression": "BSD-3-Clause",
+        "files": [
+          {
+            "root": "hyle",
+            "path": "third_party/random123_counter/LICENSE",
+            "sha256": "5fd0885ab205878bd90c19144677286252eb9b988c1545a3a910edfe1e27b6df"
+          },
+          {
+            "root": "hyle",
+            "path": "third_party/random123_counter/NOTICE.md",
+            "sha256": "af105c0b38b45cd3c41848058b56bbb38e86907acc56f51ae740556d7150a87b"
+          }
+        ]
+      }
     }
   ]
 }

@@ -1,5 +1,6 @@
 #include "hyle/compute/providers/cuda.h"
 #include "hyle/compute/model_ops.h"
+#include "hyle/compute/sampling_ops.h"
 
 #include <algorithm>
 #include <climits>
@@ -17,6 +18,7 @@
 #include "reduction_provider.h"
 #include "router_provider.h"
 #include "scatter_provider.h"
+#include "sampling_provider.h"
 #include "tensor_provider.h"
 #include "qualified_prepare.h"
 
@@ -153,6 +155,9 @@ Status propose(void *state, const detail::ProviderOperationRequest &request,
       return normalization::sglang_propose(request, inputs, outputs, proposal);
   }
   if constexpr (!Sglang) {
+    if (request.operation.custom_as<sampling_ops::RandomBits>() ||
+        request.operation.custom_as<sampling_ops::Categorical>())
+      return sampling::propose(request, inputs, outputs, proposal);
     if (request.operation.kind() == OperationKind::kScatter)
       return scattering::propose(request, inputs, outputs, proposal);
     if (request.operation.kind() == OperationKind::kConcat)
@@ -299,6 +304,8 @@ ProviderPrepareOutcome prepare(void *state,
       return normalization::sglang_prepare(state, request, allocator, output);
   }
   if constexpr (!Sglang) {
+    if (request.route == sampling::kRoute)
+      return sampling::prepare(state, request, allocator, output);
     if (request.route == scattering::kRoute && request.shape.exact())
       return scattering::prepare(state, request, allocator, output);
     if (request.route == concatenation::kRoute && request.shape.exact())

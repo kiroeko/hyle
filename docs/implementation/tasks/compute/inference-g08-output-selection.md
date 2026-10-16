@@ -182,3 +182,19 @@ Categorical到成熟custom识别，并将双输出Categorical纳入已有合格�
 全部Compute数值、状态、native资源与退休。两种公开输出形状、单/多请求反偏置与三peer
 数值/政策边界已由本卡S2–S4审计冻结，不增加语义。有限FIX固定，owner进入AUDITED；
 下节源码修改尚未编译/运行，不构成验收。其他六owner与原失败/费用不变。
+
+
+### 四路线实现与消费者批次，尚未验收
+
+S1与S2/S3已接原CPU/CUDA/Apple/Vulkan承载，补八个同源码公开Direct/Graph
+sampling消费者与schema/KAT单元测试。共享消费者仅使用公开头；原native数学的
+端点风险、三joint、小形状独立port发布、host/device风险、三交付和S1 P1仍待补齐/运行。
+已写262144样本×均匀/非均匀/屏蔽质量门、独立F64 selected logprob、窄dtype、真实
+V248320的R1/R16各65步、变化输入/高draw/请求重排、payload失败后同key复现与旧结果。
+采用两个正常replay slots并保留一个旧结果slot；Vulkan原Tensor owner禁止在旧结果
+仍被消费时覆盖同slot，测试遵守该合同，不新增产品输出分配/隐藏复制。
+
+首次WSL g++14公开CPU Direct/Graph及schema纯语法批检查通过；不代签链接或runtime。
+selector首次消费批因Random123新vendor缺少独立归属映射而拒绝；按已审compute_ops
+owner仅追加validation-policy的vendor data entry，算法/门/选择器实现未改，不绕过
+授权。中央manifest/lock造成的保守全库选择仍保留，非相关产品不启动全局编译。

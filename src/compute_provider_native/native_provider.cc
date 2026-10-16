@@ -13,6 +13,7 @@
 #include "../compute/provider_internal.h"
 #include "default_rules.h"
 #include "hyle/compute/prepared_operation.h"
+#include "hyle/compute/sampling_ops.h"
 #include "hyle/math/scalar.h"
 #include "hyle/mem/resource.h"
 #include "hyle/simd/math.h"
@@ -527,6 +528,9 @@ Status build_plan(Operation operation, std::span<const TensorDesc> inputs,
   case OperationKind::kScaledDotProductAttention:
     return Status::Unimplemented(
         "native SDPA retired; use a mature CPU provider");
+  case OperationKind::kCustom:
+    HYLE_RETURN_IF_ERROR(internal::prepare_sampling(operation, inputs, outputs, plan));
+    break;
   default:
     return Status::Unimplemented(
         "operation has no current HYLE native executable route");
@@ -538,6 +542,7 @@ Status build_plan(Operation operation, std::span<const TensorDesc> inputs,
   switch (operation.kind()) {
   case OperationKind::kRmsNorm:
   case OperationKind::kGatedActivation:
+  case OperationKind::kCustom:
     work_per_unit = plan.parameters[1];
     break;
   default:
@@ -545,6 +550,16 @@ Status build_plan(Operation operation, std::span<const TensorDesc> inputs,
   }
   plan.parallel_tasks =
       recommended_parallel_tasks(executor, parallel_units, work_per_unit);
+  if (operation.custom_as<sampling_ops::Categorical>() && plan.parameters[0] != 0) {
+    const auto limit = SIZE_MAX / sizeof(float);
+    if (plan.parallel_tasks > limit / plan.parameters[2])
+      return Status::OutOfRange("CPU sampling scratch overflows");
+    const auto tiles = plan.parallel_tasks * plan.parameters[2];
+    if (plan.parameters[0] > limit - tiles)
+      return Status::OutOfRange("CPU sampling row workspace overflows");
+    plan.workspace = {.size = (plan.parameters[0] + tiles) * sizeof(float),
+                       .alignment = alignof(float)};
+  }
   return Status::Ok();
 }
 

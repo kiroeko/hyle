@@ -5,7 +5,7 @@ if(HYLE_COMPUTE_CUDA_ENABLED)
   endif()
   enable_language(CUDA)
   hyle_add_module(compute_provider_cuda SOURCES
-    collectives_provider.cc collectives.cu
+    collectives_provider.cc collectives.cu sampling_provider.cc sampling_kernel.cu
     cuda_provider.cc native_kernel.cu sglang_kernel.cu sglang_norm_kernel.cu
     router_provider.cc sglang_router_kernel.cu fp8_provider.cc grouped_fp8_provider.cc
     deepseek_fp8_provider.cc deepseek_grouped_fp4_provider.cc

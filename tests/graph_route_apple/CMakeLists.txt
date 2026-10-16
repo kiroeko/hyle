@@ -8,3 +8,11 @@ if(HYLE_COMPUTE_APPLE_ENABLED)
     SOURCES packed_resident_consumer.cc)
   hyle_stage_runtime(hyle_graph_route_apple_packed_consumer_test)
 endif()
+
+if(HYLE_COMPUTE_APPLE_ENABLED)
+
+hyle_add_test(graph_route_apple NAME sampling_consumer
+  SOURCES ../compute_route_apple/sampling_consumer.cc)
+target_compile_definitions(hyle_graph_route_apple_sampling_consumer_test PRIVATE HYLE_G08_GRAPH=1)
+hyle_stage_runtime(hyle_graph_route_apple_sampling_consumer_test)
+endif()

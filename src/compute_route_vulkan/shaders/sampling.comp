@@ -1,0 +1,188 @@
+#version 450
+
+// Philox4x32-10 equations: Copyright 2010-2012 D. E. Shaw Research,
+// BSD-3-Clause; see the installed random123-counter license/NOTICE.
+// Core U32 storage and arithmetic require neither shaderInt64 nor Float64.
+layout(local_size_x = 128) in;
+layout(constant_id = 0) const uint MODE = 0;
+layout(constant_id = 1) const uint TYPE = 0;
+layout(constant_id = 2) const uint ROWS = 1;
+layout(constant_id = 3) const uint WIDTH = 1;
+layout(constant_id = 4) const uint CHUNKS = 1;
+layout(constant_id = 5) const uint LOG_PROBABILITY = 0;
+layout(constant_id = 6) const uint LARGEST = 1;
+layout(push_constant) uniform Origins { uint input0, input1, status; } origins;
+layout(binding = 0) readonly buffer Input { uint data[]; } input0;
+layout(binding = 1) readonly buffer Identities { uint data[]; } input1;
+layout(binding = 2) buffer Status { uint data[]; } status;
+layout(binding = 3) buffer Output0 { uint data[]; } output0;
+layout(binding = 4) buffer Scratch { uint data[]; } scratch;
+layout(binding = 5) buffer Output1 { uint data[]; } output1;
+shared uint pair_bits[128], pair_indices[128];
+shared float pair_mass[128];
+
+uvec4 philox(uvec4 value, uvec2 key) {
+  for (uint round = 0; round < 10; ++round) {
+    uint high0, low0, high1, low1;
+    umulExtended(0xd2511f53u, value.x, high0, low0);
+    umulExtended(0xcd9e8d57u, value.z, high1, low1);
+    value = uvec4(high1 ^ value.y ^ key.x, low1,
+                  high0 ^ value.w ^ key.y, low0);
+    key += uvec2(0x9e3779b9u, 0xbb67ae85u);
+  }
+  return value;
+}
+uvec4 row_random(uint row, uint block) {
+  uint at = origins.input1 / 4 + row * 4;
+  return philox(uvec4(block, 0, input1.data[at+2], input1.data[at+3]),
+                 uvec2(input1.data[at], input1.data[at+1]));
+}
+float gumbel(uint hi, uint lo) {
+  bool upper = (hi & 0x80000000u) != 0;
+  if (upper) { hi = ~hi; lo = ~lo; }
+  float small = float(hi) * 2.3283064365386962890625e-10 +
+                  (float(lo) + .5) * 5.421010862427522170037264e-20;
+  precise float t = 1.0 - small;
+  // Compensated log1p equation, retaining positive exponential noise even
+  // when 1-small rounds to one. Never clamp an already rounded U to an end.
+  float exponential = upper ? (t == 1.0 ? small : small * (log(t) / (t - 1.0)))
+                              : -log(small);
+  return -log(exponential);
+}
+float load_logit(uint index) {
+  uint bytes = origins.input0 + index * (TYPE == 0 ? 4 : 2);
+  uint word = input0.data[bytes / 4];
+  if (TYPE == 0) return uintBitsToFloat(word);
+  uint half_word = (word >> ((bytes & 2u) * 8)) & 65535u;
+  return TYPE == 1 ? unpackHalf2x16(half_word).x
+                    : uintBitsToFloat(half_word << 16);
+}
+
+// Integer IEEE ordering keeps subnormals and source payloads outside native
+// floating comparison/FTZ behavior. NaNs follow numbers; +/-0 tie by index.
+bool before(uvec2 a, uvec2 b) {
+  if (a.y == 0xffffffffu) return false;
+  if (b.y == 0xffffffffu) return true;
+  uint aa = a.x & 0x7fffffffu, bb = b.x & 0x7fffffffu;
+  bool an = aa > 0x7f800000u, bn = bb > 0x7f800000u;
+  if (an != bn) return !an;
+  if ((an && bn) || (aa == 0 && bb == 0)) return a.y < b.y;
+  uint ka = (a.x & 0x80000000u) != 0 ? ~a.x : a.x ^ 0x80000000u;
+  uint kb = (b.x & 0x80000000u) != 0 ? ~b.x : b.x ^ 0x80000000u;
+  if (ka == kb) return a.y < b.y;
+  bool largest = MODE == 1 || MODE == 2 ? LARGEST != 0 : true;
+  return largest ? ka > kb : ka < kb;
+}
+uvec2 reduce_pair(uvec2 value, float mass) {
+  uint lane = gl_LocalInvocationIndex;
+  pair_bits[lane] = value.x;
+  pair_indices[lane] = value.y;
+  pair_mass[lane] = mass;
+  barrier();
+  for (uint stride = 64; stride != 0; stride >>= 1) {
+    if (lane < stride) {
+      uvec2 other = uvec2(pair_bits[lane+stride], pair_indices[lane+stride]);
+      if (before(other, uvec2(pair_bits[lane], pair_indices[lane]))) {
+        pair_bits[lane] = other.x;
+        pair_indices[lane] = other.y;
+      }
+      if (LOG_PROBABILITY != 0 && (MODE == 5 || MODE == 6))
+        pair_mass[lane] += pair_mass[lane+stride];
+    }
+    barrier();
+  }
+  return uvec2(pair_bits[0], pair_indices[0]);
+}
+uint group_index() {
+  return gl_WorkGroupID.x + gl_NumWorkGroups.x * gl_WorkGroupID.y;
+}
+
+void main() {
+  uint group = group_index(), lane = gl_LocalInvocationIndex;
+  const uint partials = ROWS * CHUNKS;
+  if (MODE == 0) {
+    uint blocks = (WIDTH + 3u) / 4u;
+    uint index = group * 128u + lane;
+    if (index >= ROWS * blocks) return;
+    uint row = index / blocks, column = index % blocks;
+    // Raw words use input0; categorical uses input1 for the same identity.
+    uint at = origins.input0 / 4 + row * 4;
+    uvec4 value = philox(uvec4(column, 0, input0.data[at+2], input0.data[at+3]),
+                          uvec2(input0.data[at], input0.data[at+1]));
+    for (uint i = 0; i < 4 && column*4+i < WIDTH; ++i)
+      output0.data[row*WIDTH+column*4+i] = value[i];
+    return;
+  }
+  uint groups = MODE == 2 || MODE == 4 || MODE == 6 ? ROWS : partials;
+  if (group >= groups) return;
+  uint row = MODE == 2 || MODE == 4 || MODE == 6 ? group : group / CHUNKS;
+  uint chunk = group % CHUNKS;
+  uvec2 selected = uvec2(0xff800000u, 0xffffffffu);
+  float mass = 0.0;
+  if (MODE == 1 || MODE == 3 || MODE == 5) {
+    if (MODE == 5 && status.data[0] != 0) return;
+    for (uint column = chunk*4096u+lane;
+         column < WIDTH && column < (chunk+1)*4096u; column += 128) {
+      uint bits;
+      if (MODE == 1) {
+        bits = input0.data[origins.input0/4 + row*WIDTH+column];
+      } else {
+        float value = load_logit(row*WIDTH+column);
+        if (MODE == 3) {
+          if (isnan(value) || value == uintBitsToFloat(0x7f800000u))
+            atomicOr(status.data[0], 4u);
+          bits = floatBitsToUint(value);
+        } else {
+          float shifted = value - uintBitsToFloat(scratch.data[partials+row]);
+          uvec4 words = row_random(row, column/2);
+          uint position = (column % 2) * 2;
+          bits = floatBitsToUint(shifted + gumbel(words[position], words[position+1]));
+          if (LOG_PROBABILITY != 0) mass += exp(shifted);
+        }
+      }
+      uvec2 candidate = uvec2(bits, column);
+      if (before(candidate, selected)) selected = candidate;
+    }
+  } else {
+    if (MODE == 6 && status.data[0] != 0) return;
+    for (uint i = lane; i < CHUNKS; i += 128) {
+      uint at = row*CHUNKS+i;
+      uvec2 candidate;
+      if (MODE == 2)
+        candidate = uvec2(scratch.data[at*2], scratch.data[at*2+1]);
+      else if (MODE == 4)
+        candidate = uvec2(scratch.data[at], i);
+      else {
+        candidate = uvec2(scratch.data[partials+ROWS+at], scratch.data[2*partials+ROWS+at]);
+        if (LOG_PROBABILITY != 0) mass += uintBitsToFloat(scratch.data[3*partials+ROWS+at]);
+      }
+      if (before(candidate, selected)) selected = candidate;
+    }
+  }
+  selected = reduce_pair(selected, mass);
+  if (lane != 0) return;
+  if (MODE == 1) {
+    scratch.data[group*2] = selected.x;
+    scratch.data[group*2+1] = selected.y;
+  } else if (MODE == 2) {
+    output0.data[row] = selected.x;
+    output1.data[row] = selected.y;
+  } else if (MODE == 3) {
+    scratch.data[group] = selected.x;
+  } else if (MODE == 4) {
+    float maximum = uintBitsToFloat(selected.x);
+    if (isinf(maximum) || isnan(maximum)) atomicOr(status.data[0], 4u);
+    scratch.data[partials+row] = selected.x;
+  } else if (MODE == 5) {
+    scratch.data[partials+ROWS+group] = selected.x;
+    scratch.data[2*partials+ROWS+group] = selected.y;
+    if (LOG_PROBABILITY != 0)
+      scratch.data[3*partials+ROWS+group] = floatBitsToUint(pair_mass[0]);
+  } else if (MODE == 6) {
+    output0.data[row] = selected.y;
+    if (LOG_PROBABILITY != 0) {
+      float shifted = load_logit(row*WIDTH+selected.y) - uintBitsToFloat(scratch.data[partials+row]);
+      output1.data[row] = floatBitsToUint(shifted - log(pair_mass[0]));
+    }
+  }
+}

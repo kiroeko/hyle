@@ -178,6 +178,33 @@ Result<std::vector<mx::array>> scatter_add(
 std::vector<mx::array> top_k(const TopK &operation, const mx::array &input,
                             mx::Stream stream) {
   const auto axis = native_axis(operation.axis, input);
+  if (operation.count == 1) {
+    if (input.size() == 0) {
+      auto shape = input.shape();
+      shape[axis] = 1;
+      return {mx::zeros(shape, input.dtype(), stream),
+              mx::zeros(shape, mx::int32, stream)};
+    }
+    auto order = [&] {
+      if (input.dtype() == mx::int32)
+        return operation.largest ? mx::argmax(input, axis, true, stream)
+                                   : mx::argmin(input, axis, true, stream);
+      // Native arg reductions choose the first tied index. A valid-tie
+      // mask distinguishes a real +/-Inf from a masked NaN; all-NaN rows
+      // deliberately retain index zero, as the stable argsort does.
+      const auto valid = mx::logical_not(mx::isnan(input, stream), stream);
+      const auto sentinel = operation.largest
+                                ? -std::numeric_limits<float>::infinity()
+                                : std::numeric_limits<float>::infinity();
+      const auto keys = mx::where(valid, input, mx::array(sentinel), stream);
+      const auto value = operation.largest ? mx::max(keys, axis, true, stream)
+                                            : mx::min(keys, axis, true, stream);
+      const auto tied = mx::logical_and(valid, mx::equal(input, value, stream), stream);
+      return mx::argmax(tied, axis, true, stream);
+    }();
+    order = mx::astype(order, mx::int32, stream);
+    return {mx::take_along_axis(input, order, axis, stream), std::move(order)};
+  }
   // Original MLX argsort is stable and sorts NaNs last. Negate only widened
   // keys: I32_MIN remains representable and output values keep storage bits.
   auto keys = mx::astype(input, input.dtype() == mx::int32 ? mx::int64

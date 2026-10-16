@@ -20,3 +20,7 @@ get_target_property(_hyle_torch_cpu hyle_compute_provider_native HYLE_TORCH_CPU_
 if(_hyle_torch_cpu)
   target_compile_definitions(hyle_compute_route_cpu_test PRIVATE HYLE_TEST_TORCH_CPU=1)
 endif()
+
+hyle_add_test(compute_route_cpu NAME sampling_consumer
+  SOURCES sampling_consumer.cc DEPS hyle_compute_provider_native hyle_compute_provider_ggml hyle_compute_provider_onednn)
+hyle_stage_runtime(hyle_compute_route_cpu_sampling_consumer_test)

@@ -31,3 +31,8 @@ hyle_add_test(graph_route_cpu NAME cpu_executor
   SOURCES ../../samples/package/graph/cpu_executor/main.cc
   DEPS hyle_sched hyle_compute_provider_native hyle_graph_provider_onednn)
 hyle_stage_runtime(hyle_graph_route_cpu_cpu_executor_test)
+
+hyle_add_test(graph_route_cpu NAME sampling_consumer
+  SOURCES ../compute_route_cpu/sampling_consumer.cc DEPS hyle_compute_provider_native hyle_compute_provider_ggml hyle_compute_provider_onednn hyle_graph_provider_onednn)
+target_compile_definitions(hyle_graph_route_cpu_sampling_consumer_test PRIVATE HYLE_G08_GRAPH=1)
+hyle_stage_runtime(hyle_graph_route_cpu_sampling_consumer_test)

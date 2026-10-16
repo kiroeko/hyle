@@ -11,3 +11,11 @@ if(HYLE_COMPUTE_CUDA_ENABLED)
     SOURCES packed_resident_consumer.cc DEPS hyle_compute_backend_cuda)
   hyle_stage_runtime(hyle_graph_route_cuda_packed_consumer_test)
 endif()
+
+if(HYLE_COMPUTE_CUDA_ENABLED)
+
+hyle_add_test(graph_route_cuda NAME sampling_consumer
+  SOURCES ../compute_route_cuda/sampling_consumer.cc DEPS hyle_compute_backend_cuda)
+target_compile_definitions(hyle_graph_route_cuda_sampling_consumer_test PRIVATE HYLE_G08_GRAPH=1)
+hyle_stage_runtime(hyle_graph_route_cuda_sampling_consumer_test)
+endif()

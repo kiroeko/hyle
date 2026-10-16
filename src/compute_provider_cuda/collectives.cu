@@ -3,6 +3,7 @@
 #include <cub/device/device_radix_sort.cuh>
 #include <cub/device/device_reduce.cuh>
 #include <cub/device/device_scan.cuh>
+#include <cub/device/device_segmented_reduce.cuh>
 #include <cub/device/device_transform.cuh>
 #include <cub/version.cuh>
 #include <cuda/std/functional>
@@ -189,6 +190,79 @@ struct IndexOutput {
   }
 };
 
+template<class Score> struct ArgPair {
+  Score value;
+  std::int32_t index;
+};
+template<class Score> struct ArgBest {
+  bool largest;
+  __host__ __device__ ArgPair<Score> operator()(ArgPair<Score> left,
+                                                ArgPair<Score> right) const {
+    if (left.index == INT32_MAX) return right;
+    if (right.index == INT32_MAX) return left;
+    bool left_nan = false, right_nan = false;
+    if constexpr (std::is_floating_point_v<Score>) {
+      left_nan = left.value != left.value;
+      right_nan = right.value != right.value;
+    }
+    if (left_nan != right_nan) return left_nan ? right : left;
+    if (!left_nan && left.value != right.value)
+      return (largest ? left.value > right.value : left.value < right.value)
+                 ? left : right;
+    return left.index < right.index ? left : right;
+  }
+};
+template<class T> struct ArgInput {
+  Layout layout;
+  const void *input;
+  __device__ ArgPair<Accumulation<T>> operator()(std::size_t index) const {
+    return {static_cast<Accumulation<T>>(layout.read<T>(input, index)),
+            static_cast<std::int32_t>(index % layout.program.width)};
+  }
+};
+struct SegmentBoundary {
+  std::size_t width;
+  __host__ __device__ std::size_t operator()(std::size_t index) const {
+    return index * width;
+  }
+};
+template<class T> struct ArgValue {
+  Layout layout;
+  const void *input;
+  const ArgPair<Accumulation<T>> *selected;
+  __device__ T operator()(std::size_t logical) const {
+    const auto row = layout.ordered_output(logical, 1) / layout.program.width;
+    return layout.read<T>(input, row * layout.program.width + selected[row].index);
+  }
+};
+template<class Score> struct ArgIndex {
+  Layout layout;
+  const ArgPair<Score> *selected;
+  __device__ std::int32_t operator()(std::size_t logical) const {
+    return selected[layout.ordered_output(logical, 1) / layout.program.width].index;
+  }
+};
+template<class T>
+cudaError_t arg_reduce(const Program &program, const void *input,
+    ArgPair<Accumulation<T>> *output, void *temporary, std::size_t &bytes,
+    cudaStream_t stream) {
+  using Acc = Accumulation<T>;
+  const auto values = thrust::make_transform_iterator(Counter(0),
+                                                       ArgInput<T>{{program}, input});
+  const ArgPair<Acc> initial{Acc{}, INT32_MAX};
+  const ArgBest<Acc> best{program.largest};
+  const auto rows = program.count / program.width;
+  // A single vocabulary row uses the mature device-wide reduction, so all
+  // SMs can participate. Independent rows use the native segmented carrier.
+  if (rows == 1)
+    return cub::DeviceReduce::Reduce(temporary, bytes, values, output,
+                                      program.count, best, initial, stream);
+  const auto offsets = thrust::make_transform_iterator(Counter(0),
+                                                         SegmentBoundary{program.width});
+  return cub::DeviceSegmentedReduce::Reduce(temporary, bytes, values, output,
+      static_cast<std::int64_t>(rows), offsets, offsets + 1, best, initial, stream);
+}
+
 bool reserve(Program &program, std::size_t bytes, std::size_t &offset) {
   constexpr auto maximum = std::numeric_limits<std::size_t>::max();
   if (bytes > maximum - 255 ||
@@ -268,6 +342,17 @@ cudaError_t gather(const Program &program, const void *input,
 template <class T> cudaError_t configure_typed(Program &program) {
   using Acc = Accumulation<T>;
   const Layout layout{program};
+  if (program.kind == Kind::kTopK && program.k == 1) {
+    auto status = arg_reduce<T>(program, nullptr, nullptr, nullptr,
+                                 program.temporary_bytes, nullptr);
+    if (status != cudaSuccess) return status;
+    const auto rows = program.count / program.width;
+    if (rows > SIZE_MAX / sizeof(ArgPair<Acc>) ||
+        !reserve(program, rows * sizeof(ArgPair<Acc>), program.prefix_offset) ||
+        !reserve(program, program.temporary_bytes, program.temporary_offset))
+      return cudaErrorInvalidValue;
+    return cudaSuccess;
+  }
   if (program.kind == Kind::kScan) {
     const auto keys =
         thrust::make_transform_iterator(Counter(0), Group{program.width});
@@ -330,6 +415,18 @@ cudaError_t submit_typed(const Program &program, const void *input,
   auto *storage = static_cast<char *>(workspace);
   auto *temporary = storage + program.temporary_offset;
   auto bytes = program.temporary_bytes;
+  if (program.kind == Kind::kTopK && program.k == 1) {
+    auto *selected = reinterpret_cast<ArgPair<Acc> *>(storage + program.prefix_offset);
+    auto status = arg_reduce<T>(program, input, selected, temporary, bytes, stream);
+    if (status != cudaSuccess) return status;
+    const auto rows = program.count / program.width;
+    status = cub::DeviceTransform::Transform(Counter(0), static_cast<T *>(output),
+        rows, ArgValue<T>{layout, input, selected}, stream);
+    if (status != cudaSuccess) return status;
+    return cub::DeviceTransform::Transform(Counter(0),
+        static_cast<std::int32_t *>(indices), rows,
+        ArgIndex<Acc>{layout, selected}, stream);
+  }
   if (program.kind == Kind::kScan) {
     auto *prefix = reinterpret_cast<Acc *>(storage + program.prefix_offset);
     const auto keys =

@@ -102,7 +102,8 @@ struct CompileOptions final {
 // bindings or a finite compile_variants table. Pure control endpoints separate
 // native regions and retain predecessor outputs through original barriers.
 // Effects, unsupported alias schemas and input/constant-only published outputs
-// are rejected explicitly. Typed TopK has two outputs; custom nodes require one.
+// are rejected explicitly. TopK and qualified recurrent/categorical schemas may
+// have two outputs; arbitrary custom lowering still requires one.
 // Native buffer readiness is a caller contract.
 HYLE_GRAPH_ROUTE_VULKAN_API Result<compute::vulkan::Program>
 compile(const compute::vulkan::Context &context, const Graph &graph,

@@ -83,7 +83,7 @@ Status algorithm_status(std::int32_t code) {
   case kScanOverflow:
     return Status::OutOfRange("Apple integer Scan prefix exceeds I32");
   case kInvalidNumericInput:
-    return Status::InvalidArgument("Apple cache encoder requires finite representable scales");
+    return Status::InvalidArgument("Apple numeric input is outside the operation domain");
   default:
     return Status::Internal("Apple region returned an unknown device status");
   }

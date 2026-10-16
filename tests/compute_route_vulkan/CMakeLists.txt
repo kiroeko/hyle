@@ -23,3 +23,10 @@ if(HYLE_COMPUTE_VULKAN_ENABLED)
     hyle_compute_provider_ggml_vulkan hyle_compute_ggml_runtime ggml)
   hyle_stage_runtime(hyle_compute_route_vulkan_test)
 endif()
+
+if(HYLE_COMPUTE_VULKAN_ENABLED)
+
+hyle_add_test(compute_route_vulkan NAME sampling_consumer
+  SOURCES sampling_consumer.cc)
+hyle_stage_runtime(hyle_compute_route_vulkan_sampling_consumer_test)
+endif()

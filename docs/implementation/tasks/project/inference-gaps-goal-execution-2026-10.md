@@ -57,7 +57,7 @@ G06–G10 不由该聚合裁决代签。
 | G05 attention 语义域 | [同终审已验收](../compute/inference-g04-g05-final-closure.md)：causal-window/full noncausal/有限Dqk≠Dv及原完整数值/生命周期/交付域；不以本轮收口声称所有未来数学域或完整引擎性能 | 固定有限window/mask/维度与失败边界 | compute_ops/batch、实际Provider/native route |
 | G06 metadata/decode | [原独立终审已验收](../compute/inference-g06-final-closure.md)：active/delta、共享上传、GlogG准入、四路线runtime与有限capture。当前FI另由G04/G05终审收口；原G06证据与所有限制保留 | host-known/device-produced、topology/runtime复用和decode成本 | compute_batch、FI/native Provider、graph_batch |
 | G07 packed 权重 | [ACCEPTED](../compute/inference-g07-final-closure.md)：CUDA C1 4274/Apple D2 91ae CLOSED；两路线源码/实际风险/迁址static-shared及M1/17/64各65步Graph补证通过；原669同合同P1四项均WIN/5%PASS，原失败/费用/限制保留 | 原驻留packed/checked IDs、生命周期与七门验收完成；不代签整引擎token/s | 两owner保持各自candidate，停止重跑 |
-| G08 数值输出选择 | [AUDITED，六owner有限改动已冻结](../compute/inference-g08-output-selection.md)，即将批量实现 | row-wise greedy/selection与选定随机数值域，counter/state、质量/分布和少量结果返回 | compute_ops、实际 Provider/native route；模型采样政策不下沉 |
+| G08 数值输出选择 | [AUDITED，六owner有限改动已冻结](../compute/inference-g08-output-selection.md)，四路线主体与八个公开Direct/Graph消费者已写，集中编译验证待开始 | row-wise greedy/selection与选定随机数值域，counter/state、质量/分布和少量结果返回 | compute_ops、实际 Provider/native route；模型采样政策不下沉 |
 | G09 联合流水 | 待最小consumer | 原有限slots/依赖推进，真实无依赖CPU/GPU支路及microbatch trace；不重复scheduler | 三个graph hybrid及必要原native执行桥 |
 | G10 CPU预算 | 待最小consumer | executor/native private pools明确报告和约束边界，阶段与并发invocation组合 | compute_route_cpu及实际CPU Provider |
 

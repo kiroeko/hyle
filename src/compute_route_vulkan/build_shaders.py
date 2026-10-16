@@ -19,6 +19,7 @@ def main():
     args = parser.parse_args()
     args.output.mkdir(parents=True, exist_ok=True)
     variants = [
+        ('sampling', str((args.tensor_source / 'sampling.comp').resolve()), {}, {1}),
         ('tensor', str((args.tensor_source / 'tensor.comp').resolve()), {}, {1}),
         ('checked_tensor', str((args.tensor_source / 'tensor.comp').resolve()),
          dict(HYLE_TENSOR_CHECKED='1'), {1}),

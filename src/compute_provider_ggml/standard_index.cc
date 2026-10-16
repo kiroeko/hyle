@@ -171,22 +171,35 @@ void top_k(const Program &program, Invocation &invocation, std::byte *values,
   };
   for (std::size_t row = 0; row < program.rows; ++row) {
     const auto *input = source + input_row(program, row);
+    const auto offset = output_row(program, row, operation.count);
+    const auto publish = [&](std::size_t column, std::int32_t index) noexcept {
+      const auto target = offset + column * program.inner;
+      // Preserve source storage bits (including NaN payloads and signed zero).
+      std::memcpy(values + target * program.item_bytes,
+                  input + static_cast<std::size_t>(index) * stride,
+                  program.item_bytes);
+      std::memcpy(indices + target * sizeof(index), &index, sizeof(index));
+    };
+    if (operation.count == 1) {
+      Entry selected{key(input, program.input.data_type()), 0};
+      for (std::size_t column = 1; column < program.width; ++column) {
+        const Entry candidate{
+            key(input + column * stride, program.input.data_type()),
+            static_cast<std::int32_t>(column)};
+        if (before(candidate, selected))
+          selected = candidate;
+      }
+      publish(0, selected.index);
+      continue;
+    }
     for (std::size_t column = 0; column < program.width; ++column)
       entries[column] = {
           key(input + column * stride, program.input.data_type()),
           static_cast<std::int32_t>(column)};
     std::partial_sort(entries, entries + operation.count,
                       entries + program.width, before);
-    const auto offset = output_row(program, row, operation.count);
-    for (std::size_t column = 0; column < operation.count; ++column) {
-      const auto target = offset + column * program.inner;
-      const auto index = entries[column].index;
-      // Preserve source storage bits (including NaN payloads and signed zero).
-      std::memcpy(values + target * program.item_bytes,
-                  input + static_cast<std::size_t>(index) * stride,
-                  program.item_bytes);
-      std::memcpy(indices + target * sizeof(index), &index, sizeof(index));
-    }
+    for (std::size_t column = 0; column < operation.count; ++column)
+      publish(column, entries[column].index);
   }
 }
 Status run(const Program &program, Invocation &invocation,
@@ -363,7 +376,9 @@ ProviderPrepareOutcome prepare(Options options,
   program.item_bytes = data_type_size(program.input.data_type());
   for (std::size_t i = program.axis + 1; i < program.input.rank(); ++i)
     program.inner *= static_cast<std::size_t>(program.input.dimensions()[i]);
-  const auto units = scan ? count : (count == 0 ? 0 : program.width);
+  const auto units = scan ? count
+                     : count == 0 || request.operation.get_if<TopK>()->count == 1
+                         ? 0 : program.width;
   const auto unit_bytes = scan ? (program.input.data_type() == DataType::kInt32
                                       ? sizeof(std::int64_t)
                                       : sizeof(float))

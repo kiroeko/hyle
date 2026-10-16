@@ -1,6 +1,6 @@
 hyle_add_header_self_contained_test(compute_ops
   HEADER_DIR compute
-  HEADERS ops_visibility.h tensor_desc.h low_precision.h operation.h model_ops.h)
+  HEADERS ops_visibility.h tensor_desc.h low_precision.h operation.h model_ops.h sampling_ops.h)
 
 set(_hyle_compute_ops_test_deps)
 if(NOT HYLE_STATIC)
@@ -27,3 +27,5 @@ else()
 endif()
 
 unset(_hyle_compute_ops_test_deps)
+
+hyle_add_test(compute_ops NAME sampling SOURCES sampling_test.cc)

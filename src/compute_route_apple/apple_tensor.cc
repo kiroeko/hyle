@@ -21,6 +21,7 @@
 #include "apple_mature_artifact.h"
 #include "apple_mature_reduction.h"
 #include "hyle/compute/model_ops.h"
+#include "hyle/compute/sampling_ops.h"
 
 namespace hyle::compute::apple::detail {
 namespace mx = mlx::core;
@@ -327,7 +328,9 @@ bool is_mlx_tensor_custom(const Operation &operation) noexcept {
   return operation.custom_as<model_ops::CausalConv1d>().has_value() ||
          operation.custom_as<model_ops::SinkAttention>().has_value() ||
          operation.custom_as<model_ops::ArtifactWeightDecode>().has_value() ||
-         operation.custom_as<model_ops::MlxQuantized>().has_value();
+         operation.custom_as<model_ops::MlxQuantized>().has_value() ||
+         operation.custom_as<sampling_ops::RandomBits>().has_value() ||
+         operation.custom_as<sampling_ops::Categorical>().has_value();
 }
 
 Result<std::vector<mx::array>> lower_tensor(const Operation &operation,
@@ -356,6 +359,9 @@ Result<std::vector<mx::array>> lower_tensor(const Operation &operation,
     std::vector<TensorDesc> outputs(operation_traits(operation).outputs);
     HYLE_RETURN_IF_ERROR(
         infer_output_descriptions(operation, descriptions, outputs));
+    if (operation.custom_as<sampling_ops::RandomBits>() ||
+        operation.custom_as<sampling_ops::Categorical>())
+      return lower_sampling(operation, inputs, stream);
     const auto &output = outputs[0];
     HYLE_ASSIGN_OR_RETURN(auto type, native_type(output.data_type()));
     HYLE_ASSIGN_OR_RETURN(auto shape, native_shape(output));

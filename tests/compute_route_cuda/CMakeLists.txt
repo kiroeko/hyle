@@ -13,3 +13,10 @@ if(HYLE_COMPUTE_CUDA_ENABLED)
   target_include_directories(hyle_compute_route_cuda_test PRIVATE "${HYLE_GGML_SOURCE_DIR}/src")
   hyle_stage_runtime(hyle_compute_route_cuda_test)
 endif()
+
+if(HYLE_COMPUTE_CUDA_ENABLED)
+
+hyle_add_test(compute_route_cuda NAME sampling_consumer
+  SOURCES sampling_consumer.cc DEPS hyle_compute_backend_cuda)
+hyle_stage_runtime(hyle_compute_route_cuda_sampling_consumer_test)
+endif()

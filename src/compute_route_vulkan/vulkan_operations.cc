@@ -1,5 +1,6 @@
 #include "vulkan_program_internal.h"
 #include "vulkan_tensor.h"
+#include "hyle/compute/sampling_ops.h"
 
 #include <new>
 #include <utility>
@@ -9,6 +10,10 @@ namespace hyle::compute::vulkan::detail {
 Status lower_operation(ProgramState &program,
                        const PlanStep &step) noexcept {
   try {
+    if (step.operation.custom_as<sampling_ops::RandomBits>() ||
+        step.operation.custom_as<sampling_ops::Categorical>() ||
+        single_topk_operation(program, step))
+      return lower_sampling(program, step);
     if (managed_elementwise_limits(program, step))
       return lower_managed_elementwise(program, step);
     if (step.operation.kind() == OperationKind::kReduce ||

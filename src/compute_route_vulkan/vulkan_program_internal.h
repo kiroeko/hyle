@@ -140,6 +140,8 @@ Status lower_layer_norm(ProgramState &, const PlanStep &) noexcept;
 bool managed_reduction_limits(const ProgramState &, const Operation &,
                               const TensorDesc &) noexcept;
 Status lower_managed_reduction(ProgramState &, const PlanStep &) noexcept;
+bool single_topk_operation(const ProgramState &, const PlanStep &) noexcept;
+Status lower_sampling(ProgramState &, const PlanStep &) noexcept;
 Status lower_topk(ProgramState &, const PlanStep &) noexcept;
 Status lower_gather(ProgramState &, const PlanStep &) noexcept;
 Status lower_scan(ProgramState &, const PlanStep &) noexcept;

@@ -11,6 +11,7 @@
 
 #include "hyle/compute/detail/vulkan_plan.h"
 #include "hyle/compute/model_ops.h"
+#include "hyle/compute/sampling_ops.h"
 
 namespace hyle::graph::vulkan {
 namespace cv = compute::vulkan;
@@ -113,7 +114,8 @@ static Result<cv::Program> compile_impl(const cv::Context &context,
       if ((operation.kind() == compute::OperationKind::kCustom &&
            output_count != 1 &&
            !(output_count == 2 &&
-             operation.custom_as<compute::model_ops::RecurrentGatedDeltaNet>())) ||
+             (operation.custom_as<compute::model_ops::RecurrentGatedDeltaNet>() ||
+              operation.custom_as<compute::sampling_ops::Categorical>()))) ||
           (traits.alias == compute::AliasPolicy::kMustAliasInput0 &&
            operation.kind() != compute::OperationKind::kView))
         return std::unexpected(
@@ -140,6 +142,8 @@ static Result<cv::Program> compile_impl(const cv::Context &context,
       if (!node)
         continue;
       const bool mature_custom =
+          node->operation.custom_as<compute::sampling_ops::RandomBits>() ||
+          node->operation.custom_as<compute::sampling_ops::Categorical>() ||
           node->operation.custom_as<compute::model_ops::CacheEncode>() ||
           node->operation.custom_as<compute::model_ops::Float8WeightDecode>() ||
           node->operation.custom_as<compute::model_ops::Float8BlockLinear>() ||

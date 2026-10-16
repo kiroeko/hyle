@@ -173,6 +173,9 @@ logical_broadcast_byte_offset(const TensorDesc &input,
   return offset;
 }
 
+Status prepare_sampling(Operation operation, std::span<const TensorDesc> inputs,
+                          std::span<const TensorDesc> outputs,
+                          NativePlan &plan) noexcept;
 Status prepare_transform(Operation operation,
                          std::span<const TensorDesc> inputs,
                          std::span<const TensorDesc> outputs,

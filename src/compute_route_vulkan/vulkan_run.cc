@@ -147,7 +147,7 @@ Status checked_status(Run &run, bool reset) noexcept {
       if ((value & 2u) != 0)
         return Status::OutOfRange("Vulkan Scan prefix exceeds I32");
       if ((value & 4u) != 0)
-        return Status::InvalidArgument("Vulkan cache encoder requires finite representable scales");
+        return Status::InvalidArgument("Vulkan numeric input is outside the operation domain");
       if (value != 0)
         return Status::OutOfRange("Vulkan index is outside the selected axis");
     }
