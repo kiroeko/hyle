@@ -1,7 +1,7 @@
 # 单机推理基础缺口补齐执行总卡
 
 状态：**G01–G06六项已验收；新G07–G10 goal ACTIVE，2026-10-16**。旧goal不恢复；用户
-已明确要求创建新goal并开始剩余四项，现推进G07两CANDIDATE owner的交付与有限P1验收。
+已明确要求创建新goal并开始剩余四项，现推进G07：CUDA CANDIDATE，Apple按D1合格回退AUDITED并实施有限D2。
 四项完成后再开发Qwen3.5-2B full CUDA文本CLI，与llama.cpp比较prefill/decode tokens/s；
 CLI实现在本goal之外。原G01–G10的修正、成熟承载或完整路线反证范围保留。
 不能以延后、引擎自己写胶水或一个小模型出字代替完成。
@@ -56,7 +56,7 @@ G06–G10 不由该聚合裁决代签。
 | G04 量化 KV | [已验收，有限资源/精度取舍终审](../compute/inference-g04-g05-final-closure.md)。CPU/Apple/Vulkan原P1保留；CUDA按原生FP8驻留/F32 partial的P0成本合同收口，原warm LOSS/5%未决不改PASS。五个剩余owner结束本轮，所有旧失败/费用保留 | 实际编码append→resident→直接attention，不常驻完整历史解码副本 | compute_ops/batch、实际Provider/native route |
 | G05 attention 语义域 | [同终审已验收](../compute/inference-g04-g05-final-closure.md)：causal-window/full noncausal/有限Dqk≠Dv及原完整数值/生命周期/交付域；不以本轮收口声称所有未来数学域或完整引擎性能 | 固定有限window/mask/维度与失败边界 | compute_ops/batch、实际Provider/native route |
 | G06 metadata/decode | [原独立终审已验收](../compute/inference-g06-final-closure.md)：active/delta、共享上传、GlogG准入、四路线runtime与有限capture。当前FI另由G04/G05终审收口；原G06证据与所有限制保留 | host-known/device-produced、topology/runtime复用和decode成本 | compute_batch、FI/native Provider、graph_batch |
-| G07 packed 权重 | [CANDIDATE，CUDA b483/Apple0333](../compute/inference-g07-packed-weights.md)：原81项普通测试、设备/宿主facet、Windows4项与四种SDK通过，W1/P0已回映。Apple原P1单行WIN、M64合格LOSS保留；等价F32解码纠正后的34项/公开消费、风险与两SDK通过。CUDA原A/A未资格，仅修有限warm104轮harness。两端下一次有限P1、七门/红队仍待，不计整项完成 | 锁定 artifact→resident→selected math，借原生packed/冷repack；checked IDs保错误，排除warm完整展开/多余host检查 | 实际低精度 Provider/native route及资源桥 |
+| G07 packed 权重 | [CUDA CANDIDATE / Apple AUDITED D2](../compute/inference-g07-packed-weights.md)：原81项、设备/宿主facet、Windows4项与四种SDK通过，W1/P0已回映。Apple原版与D1均单行WIN、M64合格LOSS；有限D2采用锁定MLX分块复用，已实现但尚未验证。CUDA有限104轮harness的第二轮A/A通过、正式P1运行中；七门/红队仍待，不计整项完成 | 锁定 artifact→resident→selected math，借原生packed/冷repack；checked IDs保错误，排除warm完整展开/多余host检查 | 实际低精度 Provider/native route及资源桥 |
 | G08 数值输出选择 | 待有限数值域选择 | row-wise greedy/selection与选定随机数值域，counter/state、质量/分布和少量结果返回 | compute_ops、实际 Provider/native route；模型采样政策不下沉 |
 | G09 联合流水 | 待最小consumer | 原有限slots/依赖推进，真实无依赖CPU/GPU支路及microbatch trace；不重复scheduler | 三个graph hybrid及必要原native执行桥 |
 | G10 CPU预算 | 待最小consumer | executor/native private pools明确报告和约束边界，阶段与并发invocation组合 | compute_route_cpu及实际CPU Provider |
@@ -281,7 +281,7 @@ requirement；历史FAIL、预算/费用和private UNKNOWN保留。goal更新3/1
 ## 2026-10-16 当前交接
 
 本次用户明确授权后已创建**新的G07–G10 goal**，当前ACTIVE、完成0/4；本总清单历史
-累计完成6/10。G07已开始W1–W4源码与自然路线审计，见
+累计完成6/10。G07已完成W1–W4有限审计与首版资格，当前处理有限性能修正，见
 [当前卡](../compute/inference-g07-packed-weights.md)。顺序为G07→G08→G09→G10；每项先定
 有限owner/API/语义/费用与适用验收，批量实现、集中检查、定向修复。范围独立且不冲突的
 只读准备可并行；重型构建/验证串行，不默认生成新subagent或全库build。
@@ -293,5 +293,5 @@ G01–G06告一段落。剩余G07 packed权重、G08输出数值选择、G09联�
 与llama.cpp的胜负，也不能宣称HYLE相对它获得了独有精度/内存优势。
 
 本节和顶部为当前调度；下文及上文历史日期的ACTIVE/旧完成数/继续语句只保留当时事实，
-不得据此恢复已清除的goal或重跑已结束实验。G07原两owner仍SCOPED，必须完成有限审计
-后才能实施；G08–G10不因未来引擎暂时用不到而删除，也不扩大为无终点调研。
+不得据此恢复已清除的goal或重跑已结束实验。G07当前CUDA为CANDIDATE、Apple为AUDITED D2；
+执行只按活动卡冻结范围。G08–G10不因未来引擎暂时用不到而删除，也不扩大为无终点调研。

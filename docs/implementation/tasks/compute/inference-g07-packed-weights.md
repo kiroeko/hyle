@@ -342,3 +342,7 @@ A/A验证器会核installed owner hash与真实CMake解析prefix。Apple原16轮
 D2验证沿D1相同有限source/Graph/joint/public、Metal/三hostsan和迁址static/shared范围，
 不重跑CUDA/W1；产品冻结后原两形状/原669/相同16轮Apple与5%/n15–31资格一次。该轮只
 包含原small与peer固定分块，不追加候选tile表。CUDA仍只允许已声明的一次harness资格纠正。
+
+D2产品实现为`91ae8e67faa028061d8f5e8e216310c827e024a3`，当前仍AUDITED，尚未运行
+实机验证，不复用D1通过给新kernel代签。CUDA第二轮A/A现已PASS，正式P1继续运行；
+这只是测量资格，尚无本轮最终速度裁决。重型任务仍串行，CUDA终态后再启动Apple检查。
