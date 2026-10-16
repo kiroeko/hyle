@@ -140,26 +140,28 @@ TEST(CudaPackedWeights, Grouped64StepsObserveChangedWordsAndIdsWithoutTorchTempo
 }
 
 TEST(CudaPackedWeights, Mxfp8CoversAllCodesWithIndependentScalarOracle) {
-  constexpr std::int64_t n=256,k=32;
-  std::vector<float> a(k,0);a[0]=1;
+  constexpr std::int64_t rows=5,n=256,k=32;
+  constexpr std::array factors{1.F,-1.F,2.F,-2.F,.5F};
+  std::vector<float> a(rows*k,0);
+  for(std::int64_t row=0;row<rows;++row)a[row*k]=factors[row];
   std::vector<std::uint32_t> words(n*k/4,0);
   for(unsigned code=0;code<256;++code)words[code*(k/4)]=code;
-  InputSet data({dense(c::DataType::kFloat32,{1,k}),dense(c::DataType::kUInt32,{n,k/4}),
+  InputSet data({dense(c::DataType::kFloat32,{rows,k}),dense(c::DataType::kUInt32,{n,k/4}),
       dense(c::DataType::kUInt8,{n,1})},{bytes(a),bytes(words),bytes(std::vector<std::uint8_t>(n,127))});
   const auto op=c::model_ops::mlx_quantized_matmul(c::model_ops::MlxWeightFormat::kMxfp8,32);
   std::array<c::TensorDesc,1> output_desc;
   ASSERT_TRUE(c::infer_output_descriptions(op,data.descriptions,output_desc).ok());
   auto prepared=c::prepare(data.context,op,data.descriptions,output_desc,data.resource.ref()).value();
   auto invocation=prepared.create_invocation().value();
-  auto output=mem::Buffer::create(data.resource.ref(),n*sizeof(float),256).value();
+  auto output=mem::Buffer::create(data.resource.ref(),rows*n*sizeof(float),256).value();
   const std::array target{c::TensorView::create(output_desc[0],output.view()).value()};
   auto completion=invocation.submit(data.queue,data.views,target).value();ASSERT_TRUE(completion.wait().ok());
-  std::vector<float> result(n);ASSERT_TRUE(output.view().read(std::as_writable_bytes(std::span(result))).ok());
-  for(unsigned code=0;code<256;++code) {
-    SCOPED_TRACE(code);const auto exponent=(code>>3)&15,mantissa=code&7;
-    if(exponent==15&&mantissa==7) { EXPECT_TRUE(std::isnan(result[code]));continue; }
+  std::vector<float> result(rows*n);ASSERT_TRUE(output.view().read(std::as_writable_bytes(std::span(result))).ok());
+  for(std::int64_t row=0;row<rows;++row)for(unsigned code=0;code<256;++code) {
+    SCOPED_TRACE(row);SCOPED_TRACE(code);const auto exponent=(code>>3)&15,mantissa=code&7;
+    if(exponent==15&&mantissa==7) { EXPECT_TRUE(std::isnan(result[row*n+code]));continue; }
     const auto magnitude=exponent?std::ldexp(1.F+float(mantissa)/8,int(exponent)-7):std::ldexp(float(mantissa),-9);
-    EXPECT_EQ(result[code],code&128?-magnitude:magnitude);
+    EXPECT_EQ(result[row*n+code],(code&128?-magnitude:magnitude)*factors[row]);
   }
 }
 
