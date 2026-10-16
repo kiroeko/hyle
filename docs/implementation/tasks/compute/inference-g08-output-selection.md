@@ -255,3 +255,18 @@ allocate/reallocate/Buffer/SystemAllocator/跨线程释放及零/大请求留出
 correctness/公开头与三个OS source/static/shared，host sanitizer facets和G08真实CPU/
 Graph/joint直接消费者。沿原树、串行、普通最多4jobs、保留已有失败/费用。停止于此一
 分支修复及适用验证，不扩写allocator或公共构建/统计仪器。当前无Mem产品修改。
+
+
+Mem依赖审计：锁定vendor free.c:308–348的mi_free_size_aligned直接调用mi_free_size；
+后者按caller size≤MI_SMALL_SIZE_MAX进入small-page metadata路径，而aligned分配
+alloc-aligned.c会过分配size+alignment-1，884+255越过small阈值，实际page类别不再由
+caller size证明。成熟mi_free_aligned直接沿mi_free检查真实page，不依赖这个错误推断。
+有限FIX M1：仅HYLE过对齐分支调用原mi_free_aligned，两个static/shared入口一致；
+KEEP natural≤16分支mi_free_size、所有分配与realloc、对象字段/API/资源账；BORROW原
+vendor真实page判断，禁止修改mimalloc或手写新的allocator/free算法。增加实际回归与
+输入guard。仅此有限集合授权AUDITED。
+
+性能按P0记录：缺陷884/256 baseline本身崩溃，不能构造有效同合同旧版本P1或把修复
+声称为计时胜利。natural默认路径逐源码保持，已有有效大size的旧over-aligned路径本也
+进入同一mi_free；修复仍O(1)、无新增分配/锁/状态。若实现偏离这个成本边界，先重审；
+不把未测的整库性能写PASS。G08四路线TopK原P1范围、三GPU数学门保持不变。

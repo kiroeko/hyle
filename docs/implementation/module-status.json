@@ -143,9 +143,9 @@
     },
     {
       "module": "mem",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/inference-g08-output-selection.md",
-      "summary": "G08 concrete dependency defect: Buffer884/alignment256 crashes with allocation/fill/free only. Finite over-aligned deallocation seam audit; original natural path/layout/quota/vendor unchanged. No Mem product authorization yet."
+      "summary": "G08 concrete dependency defect: Buffer884/alignment256 crashes with allocation/fill/free only. Finite over-aligned deallocation seam audit; original natural path/layout/quota/vendor unchanged. FIX M1 selects existing mature mi_free_aligned in the two HYLE backings; focused three-OS/delivery/risk and actual G08 consumers pending."
     },
     {
       "module": "mem_vm",
