@@ -182,7 +182,7 @@ Status capture_batch(d::BatchInvocationData&s,std::span<const ConstTensorView>in
   const auto begun=d::CommandCaptureAccess::begin(extension,sequence);
   if(!begun.ok()){
     sequence.record(d::EnqueueResult::rejected(begun));
-    auto finished=sequence.finish();return finished?begun:finished.error();
+    auto finished=sequence.finish();if(!finished)return finished.error();return begun;
   }
   struct Call{d::BatchInvocationData*state;std::span<const ConstTensorView>inputs;d::BatchWorkspaceViews views;}call{&s,inputs,views};
   sequence.record(d::ProviderExtensionAccess::enqueue_admitted(s.program->extension,sequence,inputs,{},
@@ -202,7 +202,7 @@ Status capture_batch(d::BatchInvocationData&s,std::span<const ConstTensorView>in
   auto finished=sequence.finish();
   if(!finished){if(accepted)s.failed=true;return finished.error();}
   HYLE_ASSIGN_OR_RETURN(auto retained,retain_native(s,std::move(use),std::move(*finished)));
-  HYLE_ASSIGN_OR_RETURN(auto completion,s.completion.publish(std::move(retained)));
+  auto completion=s.completion.publish(std::move(retained));
   const auto terminal=completion.wait();completion={};++s.report.host_waits;
   if(!terminal.ok() || s.pending.load(std::memory_order_acquire) || s.uses.active_batches()){
     s.failed=true;return terminal.ok()?Status::Unavailable("batch capture preparation retirement unproven"):terminal;

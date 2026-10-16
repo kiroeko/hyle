@@ -601,3 +601,8 @@ D7实现检查点：六处FIX及普通source fixture已集中写出，尚未编�
 recapture、原public Direct/Graph/CPU+CUDA、idle页writer恢复及同controller继承capture的
 pending producer/F2，以及原Graph bound-port/borrowed launch exact-context反证。下一步固定
 不可变源码candidate，在原WSL缓存树一次source批，禁止无关ggml或FI CUDA TU重编。
+
+D7 source attempt1：configure62.309s，零CUDA guard及146对象复用通过；CXX build103.211s
+发现新增capture helper两处返回类型误用：Status/ResultError三元歧义，以及原publish直接
+返回Completion却使用Result宏。定向修正，保留本轮编译FAIL；实际capture测试尚未启动。
+原cache/config及其它输入一致时第二轮复用已成功configure，只重编受这两处改动影响的CXX。

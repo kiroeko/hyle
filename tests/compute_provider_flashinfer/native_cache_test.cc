@@ -287,7 +287,7 @@ template<class T>void runtime_schedule(bool paged,bool fp8,unsigned depth,unsign
       if(kept)fault.fail=before_capture;
       const auto status=prepare_capture();fault.fail=SIZE_MAX;
       ASSERT_TRUE(status.ok())<<status.message();EXPECT_TRUE(slot.report().capture_compatible);
-      if(kept)EXPECT_EQ(fault.attempts,before_capture);
+      if(kept){EXPECT_EQ(fault.attempts,before_capture);}
       EXPECT_EQ(slot.report().host_waits,report.host_waits+(kept?0u:1u));
       if(step==0 && !paged && !fp8 && depth==64 && mode==1 && type==c::DataType::kFloat16){
         auto replacement_pool=c::LeasePool::create(memory.ref(),qwords.size()*sizeof(T)+256).value();
