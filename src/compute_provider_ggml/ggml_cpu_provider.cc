@@ -1,5 +1,6 @@
 #include "program.h"
 #include "hyle/core/environment.h"
+#include "hyle/core/assert.h"
 #include "standard_index.h"
 #include "native_batch.h"
 
@@ -951,7 +952,7 @@ std::vector<ggml_tensor *> lower(Program &program, Invocation &invocation,
     }
     if (native_flash(recipe.values[node.inputs[0]].data_type())) {
       ggml_tensor *mask = nullptr;
-      if (attention->causal && !boxed) {
+      if (attention->causal && !boxed && !(paged && query->ne[1]==1)) {
         const auto &mask_values = program.attention_masks[node_index];
         if (mask_values.empty())
           return {};
@@ -1476,6 +1477,25 @@ bool native_invocation_reads_pages(void *slot,std::span<const std::int32_t> page
   }
   return false;
 }
+static ggml_tensor* q1_page_node(void*slot)noexcept{
+  if(!native_invocation_reads_kv(slot))return nullptr;
+  auto&invocation=*static_cast<Invocation*>(slot);ggml_tensor*found=nullptr;
+  for(int index=0;index<ggml_graph_n_nodes(invocation.graph);++index){
+    auto*node=ggml_graph_node(invocation.graph,index);if(node->op!=GGML_OP_FLASH_ATTN_EXT)continue;
+    if(found || !node->src[5] || node->src[5]->type!=GGML_TYPE_I32 || node->src[0]->ne[1]!=1 ||
+       node->src[3] || node->op_params[5]!=0x48595047)return nullptr;
+    found=node;
+  }
+  return found;
+}
+bool native_invocation_can_update_q1_pages(void*slot)noexcept{return q1_page_node(slot)!=nullptr;}
+void native_invocation_update_q1_pages(void*slot,std::span<const std::int32_t>pages,std::uint32_t rows)noexcept{
+  auto*node=q1_page_node(slot);HYLE_FATAL_ASSERT(node!=nullptr);
+  auto*table=node->src[5];table->data=const_cast<std::int32_t*>(pages.data());
+  table->ne[0]=static_cast<std::int64_t>(pages.size());
+  table->nb[1]=table->nb[2]=table->nb[3]=pages.size()*sizeof(std::int32_t);
+  ggml_flash_attn_ext_set_n_kv_max(node,static_cast<std::int32_t>(rows));
+}
 ProviderRuntimeProperties runtime(void *value) noexcept {
   return {.mode = ProviderRuntimeMode::kSharedQueue,
           .workspace_owner = ProviderWorkspaceOwner::kProvider,
@@ -1898,6 +1918,7 @@ ProviderPrepareOutcome compile(void *context, Recipe recipe,
                                                                           : 2U;
         const auto query_length = static_cast<std::size_t>(
             recipe.values[node.inputs[0]].dimensions()[sequence]);
+        if(paged && query_length==1)continue; // Its causal mask is identically zero.
         const auto key_length = paged?static_cast<std::size_t>(paged->logical_rows):static_cast<std::size_t>(
             recipe.values[node.inputs[1]].dimensions()[sequence]);
         if (query_length > SIZE_MAX / key_length)

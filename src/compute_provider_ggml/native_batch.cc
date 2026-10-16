@@ -20,6 +20,8 @@ struct Request final {
   std::array<std::size_t, 3> input_bytes{};
   std::size_t output_bytes = 0;
   std::size_t query_offset = 0, key_offset = 0, value_offset = 0, output_offset = 0;
+  BatchLayoutVersion compiled_layout;
+  std::uint32_t request_index=0;
   Request() = default;
   Request(const Request &) = delete;
   Request &operator=(const Request &) = delete;
@@ -107,14 +109,29 @@ Result<bool> update(void *value, const BatchLayoutVersion &layout,
   const auto equal = [](auto a, auto b) {
     return a.size() == b.size() && std::equal(a.begin(), a.end(), b.begin());
   };
-  if (!equal(old.query_indptr, next.query_indptr) ||
-      !equal(old.kv_indptr, next.kv_indptr) ||
-      !equal(old.page_indices,next.page_indices) ||
-      !equal(old.last_page_lengths,next.last_page_lengths))
-    return false;
-  // Paged recipes borrow this immutable topology, not the caller's arrays.
-  // Equal content permits reuse while its original owner remains retained.
-  if(slot.capacity.storage==BatchStorage::kRagged)slot.layout = layout;
+  if(!equal(old.query_indptr,next.query_indptr))return false;
+  const bool same=equal(old.kv_indptr,next.kv_indptr) && equal(old.page_indices,next.page_indices) &&
+      equal(old.last_page_lengths,next.last_page_lengths);
+  const bool paged=slot.capacity.storage==BatchStorage::kPaged;bool runtime=paged;
+  for(std::size_t index=0;runtime && index+1<next.query_indptr.size();++index)
+    if(next.query_indptr[index+1]-next.query_indptr[index]>1)runtime=false;
+  // No mutation until every native request accepts the same runtime contract.
+  if(runtime)for(const auto*request:slot.requests)
+    if(!native_invocation_can_update_q1_pages(request->invocation)){runtime=false;break;}
+  if(!same && !runtime)return false;
+  if(runtime){
+    for(auto*request:slot.requests){
+      const auto index=request->request_index;const auto first=std::size_t(next.kv_indptr[index]);
+      const auto refs=std::size_t(next.kv_indptr[index+1])-first;
+      const auto rows=std::uint32_t((refs-1)*slot.capacity.page_size+std::uint32_t(next.last_page_lengths[index]));
+      native_invocation_update_q1_pages(request->invocation,next.page_indices.subspan(first,refs),rows);
+    }
+  }
+  // Each recipe retains its first compiled layout separately. Runtime leaf
+  // pointers borrow only this current owning version, never caller spans.
+  // Equal general paged recipes keep the version their original leaf still
+  // points into. Q1 refreshes even equal-content pointers before owner change.
+  if(runtime || !paged)slot.layout=layout;
   *output = report(slot, true);
   output->layout_generation=layout.generation();
   return true;
@@ -156,7 +173,7 @@ detail::EnqueueResult plan(void *value, Queue &, const BatchLayoutVersion &layou
       const bool boxed=slot.options.window_left>=0 ||
           !slot.capacity.key_storage.format().is_plain() ||
           slot.capacity.qk_head_dim!=slot.capacity.value_head_dim;
-      const auto mask_bytes = slot.options.causal && !boxed
+      const auto mask_bytes = slot.options.causal && !boxed && !(paged && queries==1)
           ? static_cast<std::uint64_t>(queries)*static_cast<std::uint64_t>(keys)*2u : 0u;
       const auto query_row_bytes = std::uint64_t(slot.capacity.query_heads)*slot.capacity.qk_head_dim*8u;
       const auto available = slot.options.max_float_workspace_bytes - slot.known_bytes;
@@ -171,6 +188,7 @@ detail::EnqueueResult plan(void *value, Queue &, const BatchLayoutVersion &layou
         return detail::EnqueueResult::rejected(Status::ResourceExhausted("ggml CPU ragged request metadata"));
       }
       request->allocator = slot.allocator;
+      request->compiled_layout=layout;request->request_index=static_cast<std::uint32_t>(index);
       // Insert immediately so every partial compile/slot is cleaned on failure.
       slot.requests.push_back(request);
       auto q = TensorDesc::dense(slot.capacity.query_type,

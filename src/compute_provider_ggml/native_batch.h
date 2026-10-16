@@ -42,4 +42,7 @@ std::size_t native_invocation_bytes(void *, void *) noexcept;
 bool native_invocation_reads_kv(void *) noexcept;
 bool native_invocation_reads_pages(void *,std::span<const std::int32_t>,
     std::uint32_t,std::uint32_t) noexcept;
+bool native_invocation_can_update_q1_pages(void *) noexcept;
+// Caller preflights every request and retains the new immutable layout.
+void native_invocation_update_q1_pages(void *,std::span<const std::int32_t>,std::uint32_t) noexcept;
 }
