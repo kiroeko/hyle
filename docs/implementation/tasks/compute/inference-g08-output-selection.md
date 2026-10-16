@@ -234,3 +234,24 @@ Cast/Add，65步/两slots，仅迁移R个I32与R个F32；CUDA两跳staging明确
 GDB定位在CommonSession析构的mimalloc free。尚未归因，不将前序部分PASS写为整项PASS。
 先对真实caller workspace添加前后guard并输出有限阶段标识，区分数值写越界、消费寿命
 与哪个dtype/shape；不修改Mem/SIMD等关闭模块，不靠重复全局构建排查。
+
+
+## G08真实消费者依赖修复：Mem over-aligned sized free
+
+2026-10-16，最小复现不执行任何Compute：system_resource Buffer 884 bytes、alignment256，
+写满再销毁即SIGSEGV；208 bytes配对和prepare/close-only也保留。GDB与诊断源码在
+`.scratch/inference-gaps/g08-cpu-debug-2`。原native GPU端点1048772对已PASS，CPU计算
+数值/guard成功后释放失败，因此本问题不能靠改sampling shape或丢弃正常输入掩盖。
+
+owner `mem`从原CLOSED有限重开到SCOPED；前轮 `docs/implementation/tasks/mem/mem-v10-external-byte-reservation.md`、candidate
+`4e9f74a09b7218f6053038cc5c5b091e73ff0bc5` 维持原证据，新baseline
+`994fc6b006990f12e32dc41b8055a391732e593c`。
+仅审Mem system.cc/system_inline.h到锁定mimalloc3.5.1的over-aligned释放接线。
+不改vendor、Allocator/Buffer布局、分配策略、quota或普通natural-alignment分支。
+这是一项G08旅程必需的可复现correctness依赖修复，不新增G11功能族或重开缺口扫描。
+
+验证冻结：请求size跨small-class边界且alignment16/64/256/4096的完整写入/释放、
+allocate/reallocate/Buffer/SystemAllocator/跨线程释放及零/大请求留出；原Mem实际适用
+correctness/公开头与三个OS source/static/shared，host sanitizer facets和G08真实CPU/
+Graph/joint直接消费者。沿原树、串行、普通最多4jobs、保留已有失败/费用。停止于此一
+分支修复及适用验证，不扩写allocator或公共构建/统计仪器。当前无Mem产品修改。

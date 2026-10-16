@@ -143,14 +143,9 @@
     },
     {
       "module": "mem",
-      "state": "CLOSED",
-      "record": "docs/implementation/tasks/mem/mem-v10-external-byte-reservation.md",
-      "candidate": "4e9f74a09b7218f6053038cc5c5b091e73ff0bc5",
-      "summary": "mem v10 CLOSED：M100/M101 外部 Reservation 与 Graph 预算尾项完成；复用 W1 不变实现与三交付，补齐 WSL/两 Mac、ASan/UBSan/TSan、红队和 P0；原 allocator 路径/布局无变化。",
-      "performance": {
-        "tier": "P0",
-        "evidence": "docs/implementation/tasks/mem/mem-v10-external-byte-reservation.md"
-      }
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/compute/inference-g08-output-selection.md",
+      "summary": "G08 concrete dependency defect: Buffer884/alignment256 crashes with allocation/fill/free only. Finite over-aligned deallocation seam audit; original natural path/layout/quota/vendor unchanged. No Mem product authorization yet."
     },
     {
       "module": "mem_vm",
