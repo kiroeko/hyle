@@ -1,6 +1,6 @@
 # G04/G05 编码 KV 与有限 attention 语义实施批
 
-状态：**G06独立范围已验收；FI的G04/G05 CUDA工程性能BLOCKED/INCONCLUSIVE；下文新增集中归因方案尚未执行，其余owner按registry，2026-10-16**。baseline `694a3d1a4b02540cb56b6ceae35b73dd1dd93440`；
+状态：**G06独立范围已验收；集中归因已定位FP8加载/转换与F32 merge成本，未改产品；FI的G04/G05 CUDA工程性能仍BLOCKED/INCONCLUSIVE，其余owner按registry，2026-10-16**。baseline `694a3d1a4b02540cb56b6ceae35b73dd1dd93440`；
 共同批owner见下表：九个原实际组件及下文新增CUDA数值状态owner；有限CE01–07/API/成本合同已冻结。原 G03 已 CLOSED，不由本卡重开其权限/
 退休实现。九owner已合法SCOPED后进入AUDITED；仅下列有限FIX授权产品实现。
 本批沿[十项总卡](../project/inference-gaps-goal-execution-2026-10.md)，
@@ -2723,7 +2723,7 @@ G07–G10独立继续，不把未决项改名完成，也不继续消费这次�
 ## 集中归因方案：缩短性能诊断反馈周期
 
 2026-10-16 用户要求对久未定位的04/05改变排查方式。本段固定新的诊断范围，替代继续
-只读猜测或逐个小改后跑完整验收的推进方式；**方案已固定，尚未执行新采集/构建**。
+只读猜测或逐个小改后跑完整验收的推进方式；**本批已执行，结果与停止裁决见末节**。
 registry仍为BLOCKED，产品FIX集为空；诊断专用源码只放可丢弃副本，不改公共API、产品
 算法、构建系统或统一性能统计。需要产品修正时仍先合法SCOPED/AUDITED。
 
@@ -2759,3 +2759,53 @@ D3每个可执行变体必须先通过原独立oracle、有效区/readonly KV和
 换目录或追加时间增加实验数。工具不可用不重建仪器；证据相互矛盾或低于扰动分辨率，
 明确记录哪个变量尚不能区分。首批结束必须交付“主要差额归属+被排除假设+具体FIX或
 未识别的变量”，不得以继续研究代替结果；诊断未运行不写PASS。G07现有定界与验收不变。
+
+## 集中归因终态：表示转换是主要差额，F32 merge是次要成本
+
+[实际记录与原始归档](../../../../evidence/architecture/inference-g04-g05-causal-diagnostic/receipt.json)
+绑定当前完整产品669、FI0a29和原数学830；G06 CUDA static SDK的37个artifact、17个
+已验header、原reference对象/头身份核验后复用。只构建可丢弃消费程序及一个包含两个
+具名反事实的CUDA TU，未重建SDK、ggml、其它平台或产品代码。没有新正式P1。
+
+D1共12组未标注短对照（两种A/A与A/B，双执行/分配顺序），一次四顺序timeline。
+按runtime/driver correlation实际匹配12,288个完整episode与16,384个kernel，原独立
+oracle/readonly检查通过。主prefill四顺序的阶段中位数差额为attention **3.950–4.134µs**、
+merge **0.895–1.111µs**；这证明当前候选的GPU阶段差异，不能升级成正式性能门结论。
+短A/A的host墙钟波动较大；CPU/GPU时钟校准还出现578个负的before-GPU offset，不能
+把wall减kernel和叫纯CPU成本，也不能用该trace完成精确host临界路径裁决。
+
+唯一一次定向NCU采集被驱动以`ERR_NVGPUCTRPERM`拒绝；记录实际失败，不改驱动权限、
+不重试计数采集、不重建仪器。随后按实际阶段差异与源码表示机制执行预固定的两个
+反事实；两者只覆盖原prefill形状，数值/readonly及memcheck先通过，再做短对照与采集：
+
+| 反事实，与同批原FP8/F32候选交错比较 | 保持 | 改变 | 四顺序阶段中位数差额（原候选减反事实） |
+|---|---|---|---|
+| BF16载体/F32 partial | 原FP8值精确冷解码为未缩放BF16；相同F32 partial/merge、key .5/value 2缩放位置；原planner几何 | KV物理载体及其加载/转换实现，另付双倍KV驻留与冷展开 | attention 3.058–3.184µs；merge -0.126–0.189µs |
+| FP8载体/BF16 partial | 原FP8字节、页/几何、相同query与输出oracle | partial/merge为BF16；value scale在partial窄化前应用 | attention 0.060–0.237µs；merge 1.066–1.155µs |
+
+所有反事实实际attention grid40×1×2、block32×4×1，merge grid460×1×1与block相同。
+attention shared都为49,152 bytes，无local spill；F32 merge保持8,704 bytes。原FP8/F32
+与BF16/F32的merge同为48 registers。故现阶段差额不能再泛称为tile/shared预算不匹配，
+或把F32 partial写出当作主attention热点。
+
+同一实际二进制中三个实际dispatch的SASS已提取：原FP8/F32与BF16/F32都含65条静态
+HMMA，而前者有PRMT32/LOP3 218/HFMA2 64，后者PRMT0/LOP3 59/HFMA2 0；与实际FP8
+加载/解码指令路径一致。静态总数1809/1414，不当动态指令、stall或周期计数。BF16
+partial反事实反而引入额外shared重排（LDS22/STS76，原F32为LDS0/STS16），其attention
+并未显著缩短；不能靠中间精度降低推断整体更快。
+
+结论仅到**物理表示及加载/转换路径的因果层**：保持F32时换载体使主要attention差额
+缩小，而只降partial精度主要影响merge。尚未量化软件转换、load依赖和异步重叠各自
+的周期；没有计数器证据声称某条指令或stall已经被单独归因。两批采集的绝对时间不能
+直接拼成贡献百分比，也不外推完整引擎token/s或所有长上下文。
+
+冷展开BF16违反原原生压缩KV驻留成本目标，不能作为产品修复；BF16 partial也不能
+凭本fixture通过撤销已有`SplitKvScalesOnlyAfterF32MergeAgainstPartialOverflow`、
+`SplitKvPreservesBfloat16PartialCancellationResidual`等真实数值反例。因此本批不产生
+新的产品FIX，不放宽5%门，不追加第三个实验或旧P1。精度/驻留取舍已明确，后续若要
+优化，只能针对**保留压缩驻留和F32精度的FP8加载/转换**提出具体源码机制及有限FIX，
+再合法SCOPED/AUDITED；不能继续盲改merge、planner、tile或常态metadata。
+
+本轮诊断到此TERMINAL，FI原BLOCKED/engineering INCONCLUSIVE保持；G01/G02/G03/G06
+验收不变。私有启动器的Linux affinity误配、console数量guard误判、namespace生成断言
+和nvcc收到host-only flags的失败与修正均保留；产品未因这些启动/记录问题被判失败。
