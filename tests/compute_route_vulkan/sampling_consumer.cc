@@ -24,8 +24,9 @@ public:
         const auto storage = take(c::TensorDesc::strided_bytes(description.data_type(),
             std::array<std::int64_t,1>{std::int64_t(bytes+byte_origin_)},std::array<std::int64_t,1>{1}));
         uploads_.push_back(take(context_.allocate(storage)));
-        auto view = take(uploads_.back().view(take(c::View::slice(0,std::int64_t(byte_origin_),
-            std::int64_t(take(description.element_count())),std::int64_t(c::data_type_size(description.data_type())))))));
+        const auto slice = take(c::View::slice(0,std::int64_t(byte_origin_),
+            std::int64_t(take(description.element_count())),std::int64_t(c::data_type_size(description.data_type()))));
+        auto view = take(uploads_.back().view(slice));
         view = take(view.view(take(c::View::reshape(take(c::TensorShape::create(description.dimensions()))))));
         check(view.description()==description,"Vulkan origin fixture did not retain the dense logical shape");
         inputs_.push_back(std::move(view));
