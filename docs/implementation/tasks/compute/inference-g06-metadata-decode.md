@@ -706,3 +706,17 @@ ASan attempt1已完成产品与两FI CUDA TU编译，configure56.062s、compile5
 新私有验证target漏显式链接hyle_graph_batch而link FAIL，测试未启动。只修私有验证链接，
 不改产品、公共构建或san配置；第二轮沿同原树增量，原FAIL/成本不重置，不重编native。
 原ggml archive、242派生及5 canonical输入identity通过，借用不代签改变的host/FI源码。
+
+### 最终 ASan 地址检查通过
+
+[实际宿主 ASan 证据](../../../../evidence/correctness/inference-g06-final-host-asan/receipt.json)
+绑定冻结产品0a29d1194与测试快照b8b8ca926。第二轮同树增量build80.260s、零CUDA重编；
+19项native/common与263项core/runtime共282项PASS、零失败/跳过。原ordinary五风险模式、
+plain/FP8 captured各五风险模式，以及public Direct/Graph、CPU+CUDA、pending capture
+实际消费者全部通过。封存前独立重核8个实际binary和原native archive，共804617140bytes。
+第一轮私有验证target漏链接graph_batch导致compile/link FAIL524.750s与configure56.062s
+保留；第二轮configure53.249s、全部stage186.116s，原失败费用不重置。
+
+本项只签host address facet；NVIDIA进程LSan仍INCONCLUSIVE，driver/shader/private-pool
+不由本项覆盖。产品/API/算法未变，11个owner仍CANDIDATE。UBSan/TSan、补充post-record
+artifact OOM、23独立头/迁址SDK、P0/必要P1和最终七门仍待；G04/G05原未决保留。
