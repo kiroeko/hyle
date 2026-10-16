@@ -128,5 +128,14 @@
     "FI Q1/capture, final G06 gates and G04/G05 unresolved remain mandatory"
   ],
   "elapsed": "Full design intake elapsed not completely captured; UNKNOWN not zero",
-  "timestamp_utc": "2026-10-16T03:57:00.275929+00:00"
+  "timestamp_utc": "2026-10-16T03:57:00.275929+00:00",
+  "revision_after_actual_compile_failure": {
+    "basis": "native ragged Air attempt2: Vulkan Recorder::append cold-copies ProgramState at vulkan_recorder.cc:111; unique_ptr deletes its copy constructor",
+    "source": {
+      "path": "src/compute_route_vulkan/vulkan_recorder.cc",
+      "sha256": "de668bb1adabb6c69b12fb5484e9af904eac33fe73b2df4adb062d7eab250f4c"
+    },
+    "decision": "Immutable shared_ptr<const RaggedContract>, 16byte per cold ProgramState and one ragged-only make_shared allocation. Recorder cold copies share immutable anchor; ordinary invocation/submit costs unchanged. Original unique_ptr design and two failed attempts retained.",
+    "validation": "Borrow exact matching Apple attempt2 passed subgates only, preserve overall attempt2 FAIL. Third attempt reruns Vulkan source risks/provider/alias-phase/ragged only. Windows unchanged source/artifacts reuse D4."
+  }
 }

@@ -443,7 +443,7 @@ CPU Provider仍AUDITED；本批没有改runtime/vendor/数学/公共API/CMake，
 | D5.2 Apple复用D3桥 | 原immutable callable增加原attention causal/window冷事实，原ragged纯builder进入同一per-Invocation layout桥。Q/output固定，初始KV走原compiled，其它KV用原worker/MLX fast。无普通Invocation新字段、无新worker/vendor/math | F16/BF16、plain/Q8、D64/128/256、D64/Dv128/window、causal/noncausal；single Q1、multi Q1、mixed各64步；原checked trace/native drain/poison保持，managed建图/private费用UNKNOWN |
 | D5.3 Vulkan原参数桥 | 原private runtime request tag准入ragged，通用Region先预检所有rows/offset/root容量/causal，再使原recording失效并改参数。公开更新先全regions预检，再释放旧import/应用；接受后任一步失败将原run标失败，不能半更新后继续使用 | 同原F16/plain/Q8/几何有限域和64步；原graph/gallocr/output storage保留，重新编码成本披露；原provider及alias/phase、paged/联合/pending风险回归 |
 
-Vulkan原冷ProgramState增加一个nullable unique_ptr，ragged才冷分配immutable schema/layout及
+Vulkan原冷ProgramState增加一个nullable shared_ptr，ragged才冷分配immutable schema/layout及
 causal/window合同；普通submit不读取此字段，不增加Invocation字段。当前每Invocation native
 graph只保存已验证的标量，无悬空layout spans；Apple当前layout由各Invocation独立持有。
 两route都复用原idle/result/checked completion/取消/关闭/退休，无复制执行器或通用planner。
@@ -455,3 +455,11 @@ SHA与实际artifact借用D4普通62/真实26/pending18；不重跑未变CPU或�
 selector保适用/跳过原因。最终san/header/迁址static/shared待完整G06固定后集中做。
 调查/实现/验证各2h检查点按用户授权有限追加，旧失败/UNKNOWN保留；FI Q1/capture与最终
 性能/交付仍为完整目标必做，本批尚无运行PASS，不签G06/G04/G05完成。
+
+
+D5首次Apple构建发现新GTest的Status/macro写法错误，定向修正后Apple整组source已过。
+第二轮Vulkan实际编译发现原`Recorder::append`冷复制ProgramState；原unique_ptr合同
+因此改为shared_ptr<const contract>，一ragged冷make_shared分配及16byte Program字段，
+原Recorder冷复制共享immutable anchor。无新Invocation字段/普通submit分支。此修订先
+回写AUDITED账，再改产品；原两轮失败与费用保留。Apple输入未改且artifact匹配时复用
+第二轮已过子门；第三轮只运行同缓存Vulkan整组，不重跑未变Apple/Windows。
