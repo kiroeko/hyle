@@ -189,18 +189,28 @@ std::vector<mx::array> top_k(const TopK &operation, const mx::array &input,
       if (input.dtype() == mx::int32)
         return operation.largest ? mx::argmax(input, axis, true, stream)
                                    : mx::argmin(input, axis, true, stream);
-      // Native arg reductions choose the first tied index. A valid-tie
-      // mask distinguishes a real +/-Inf from a masked NaN; all-NaN rows
-      // deliberately retain index zero, as the stable argsort does.
-      const auto valid = mx::logical_not(mx::isnan(input, stream), stream);
-      const auto sentinel = operation.largest
-                                ? -std::numeric_limits<float>::infinity()
-                                : std::numeric_limits<float>::infinity();
-      const auto keys = mx::where(valid, input, mx::array(sentinel), stream);
-      const auto value = operation.largest ? mx::max(keys, axis, true, stream)
-                                            : mx::min(keys, axis, true, stream);
-      const auto tied = mx::logical_and(valid, mx::equal(input, value, stream), stream);
-      return mx::argmax(tied, axis, true, stream);
+      // Order original IEEE storage as unsigned integers. This preserves
+      // subnormals even when native floating reductions/comparisons flush
+      // them, and canonicalizes +/-0 only in the key, never in the value.
+      const bool wide = input.dtype() == mx::float32;
+      const std::uint32_t sign = wide ? 0x80000000U : 0x8000U;
+      const std::uint32_t mask = wide ? 0xffffffffU : 0xffffU;
+      const std::uint32_t infinity = wide ? 0x7f800000U
+          : input.dtype() == mx::float16 ? 0x7c00U : 0x7f80U;
+      auto bits = mx::astype(mx::view(input, wide ? mx::uint32 : mx::uint16, stream),
+                             mx::uint32, stream);
+      const auto magnitude = mx::bitwise_and(bits, mx::array(sign - 1), stream);
+      const auto nan = mx::greater(magnitude, mx::array(infinity), stream);
+      bits = mx::where(mx::equal(magnitude, mx::array(std::uint32_t{0}), stream),
+                       mx::array(std::uint32_t{0}), bits, stream);
+      const auto negative = mx::not_equal(mx::bitwise_and(bits, mx::array(sign), stream),
+                                          mx::array(std::uint32_t{0}), stream);
+      const auto keys = mx::where(nan,
+          mx::array(operation.largest ? std::uint32_t{0} : UINT32_MAX),
+          mx::where(negative, mx::bitwise_xor(bits, mx::array(mask), stream),
+                     mx::bitwise_xor(bits, mx::array(sign), stream), stream), stream);
+      return operation.largest ? mx::argmax(keys, axis, true, stream)
+                                 : mx::argmin(keys, axis, true, stream);
     }();
     order = mx::astype(order, mx::int32, stream);
     return {mx::take_along_axis(input, order, axis, stream), std::move(order)};

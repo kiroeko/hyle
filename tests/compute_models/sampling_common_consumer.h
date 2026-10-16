@@ -114,6 +114,9 @@ public:
     auto &slot = slots_[std::size_t(bank)];
     auto &queue = queues_[std::size_t(bank)];
 #if defined(HYLE_G08_GRAPH)
+    // Destinations are fresh owners on each run. Drop the old borrowed
+    // binding set before installing a new set that may reuse its addresses.
+    HYLE_RETURN_IF_ERROR(slot.reset());
     for (std::size_t i = 0; i < views_.size(); ++i)
       HYLE_RETURN_IF_ERROR(slot.bind(input_ids_[i], views_[i]));
     for (std::size_t i = 0; i < destination.size(); ++i)

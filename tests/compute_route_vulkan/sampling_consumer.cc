@@ -90,7 +90,7 @@ int main([[maybe_unused]] int argc, [[maybe_unused]] char **argv) {
       sampling_test::graph_port_liveness<sampling_test::VulkanSession>(); return 0;
     }
 #endif
-    sampling_test::run<sampling_test::VulkanSession>(); return 0;
+    sampling_test::run<sampling_test::VulkanSession>(argc == 2 ? std::string_view(argv[1]) : std::string_view{}); return 0;
   }
   catch (const std::exception &error) {
     std::fprintf(stderr, "FAIL Vulkan sampling: %s\n", error.what()); return 1;

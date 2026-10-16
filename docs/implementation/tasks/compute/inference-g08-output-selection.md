@@ -343,3 +343,17 @@ Apple首批fc15404bb使用原tree、4jobs，产品CPP已通过，测试TU在cons
 本轮累计33.741s不重置。另补原预声明四条Graph的categorical
 ID-only/score-only/both独立port发布，变化输入、内部依赖、单port错误和旧owner；
 提供--ports-only，只补新分支时不重跑已过的全词表/质量旅程。尚无Apple runtime PASS。
+
+
+Apple a2真实普通批：Air Mem244、schema3、CPU Direct全数值/分布、Apple实际端点
+1048772对(maxabs3.72330296e-6<2e-5)、CPU+Apple 24-byte lookup/add联合65步均PASS。
+Apple Direct/Graph先在TopK顺序oracle失败；S1改用原IEEE storage的U32有序key原生
+arg reduction，明确保subnormal/NaN-last/±0首index，原take_along_axis发布源bits，
+I32及k>1不变。仍属已冻结S1，未启动P1、不改变公共形状或增加排序scratch。
+
+Air CPU Graph数值至R1全词表时遇旧borrowed输出binding地址被allocator复用后的过渡
+alias拒绝；仅修测试先reset旧binding集合再绑定新owner，不改Graph产品。旧目标在该
+接口采用逐个bind会检查当前绑定集；稳定地址的引擎replay不需要每步这样重绑。
+私有holdout实际输出在bin，a2 runner最后错误路径的SETUP_FAIL及全部前序测试日志保留；
+只修runner定位，后续定向跑未过目标。测试增加有限phase参数用于独立补验，不重跑已过
+的Mem/CPU Direct/math/joint或恢复全库测试。

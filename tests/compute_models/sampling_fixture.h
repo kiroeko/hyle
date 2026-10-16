@@ -16,6 +16,7 @@
 #include <span>
 #include <stdexcept>
 #include <string>
+#include <string_view>
 #include <utility>
 #include <vector>
 
@@ -356,6 +357,10 @@ template<class Session> void topk_selection() {
         for (int j=0;j<count;++j) {
           const auto expected=order[std::size_t(j)];
           const auto index=std::size_t(r*count+j);
+          if(ids[index]!=expected)
+            std::fprintf(stderr,"TopK row=%d width=%d k=%d largest=%d actual=%d expected=%d actual_bits=%08x expected_bits=%08x\n",
+                r,width,count,int(largest),ids[index],expected,bits[index],
+                std::bit_cast<std::uint32_t>(values[std::size_t(r*width+expected)]));
           check(ids[index]==expected,"TopK NaN-last/first tie/numeric order differs");
           check(bits[index]==std::bit_cast<std::uint32_t>(values[std::size_t(r*width+expected)]),
                 "TopK changed selected source storage bits");
@@ -411,13 +416,18 @@ template<class Session> void graph_port_liveness() {
   }
   std::puts("PASS Graph categorical: ID-only/score-only/both ports; live inputs/internal dependencies/checked failure/old owner");
 }
-template<class Session> void run() {
-  topk_selection<Session>();
+template<class Session> void run(std::string_view phase = {}) {
+  if(phase=="--topk-only") {topk_selection<Session>();return;}
+  if(phase=="--random-only") {random_journey<Session>();return;}
+  if(phase=="--categorical-only") {categorical_journey<Session>();return;}
+  if(phase=="--quality-only") {categorical_quality<Session>();return;}
+  check(phase.empty()||phase=="--sampling-only","unknown sampling test phase");
+  if(phase.empty()) topk_selection<Session>();
   random_journey<Session>();
   categorical_journey<Session>();
   categorical_quality<Session>();
 #if defined(HYLE_G08_GRAPH)
-  graph_port_liveness<Session>();
+  if(phase.empty()) graph_port_liveness<Session>();
 #endif
 }
 } // namespace sampling_test
