@@ -1,0 +1,301 @@
+{
+  "schema": "hyle.inference-g09-intake/v1",
+  "state": "SCOPED_AUDIT_PENDING_NO_PRODUCT_IMPLEMENTATION_AUTHORIZATION",
+  "baseline": "9e2f25c469634a6f723e76eaf1aa2db5973bca9a",
+  "card": "docs/implementation/tasks/graph/inference-g09-joint-pipeline.md",
+  "owners": [
+    "graph_route_cpu_apple",
+    "graph_route_cpu_vulkan"
+  ],
+  "previous_registry_sha256": "a418e1b0787f45f69e559619ce5fb9c350752dd4c27e46dd6f630b73ef51ef78",
+  "previous_owners": [
+    {
+      "module": "graph_route_cpu_apple",
+      "state": "CLOSED",
+      "record": "docs/implementation/tasks/compute/inference-g06-final-closure.md",
+      "summary": "G06 CLOSED finite M/S/L/D scope: active immutable metadata, qualified delta/shared mirrors, exact grouped permissions and route-specific runtime/capture bridge. Current source/host risks/relocated static-shared/23-header union/P0 and seven gates passed; explicit version allocations, checked waits, native managed/re-encode and private UNKNOWN retained. Original G04/G05 CUDA performance gate and other goal items remain.",
+      "candidate": "0a29d119426b2975d48c238c37a2994675e0ba9f",
+      "performance": {
+        "tier": "P0",
+        "evidence": "evidence/architecture/inference-g06-final-cost-review/p0.json"
+      }
+    },
+    {
+      "module": "graph_route_cpu_vulkan",
+      "state": "CLOSED",
+      "record": "docs/implementation/tasks/compute/inference-g06-final-closure.md",
+      "summary": "G06 CLOSED finite M/S/L/D scope: active immutable metadata, qualified delta/shared mirrors, exact grouped permissions and route-specific runtime/capture bridge. Current source/host risks/relocated static-shared/23-header union/P0 and seven gates passed; explicit version allocations, checked waits, native managed/re-encode and private UNKNOWN retained. Original G04/G05 CUDA performance gate and other goal items remain.",
+      "candidate": "0a29d119426b2975d48c238c37a2994675e0ba9f",
+      "performance": {
+        "tier": "P0",
+        "evidence": "evidence/architecture/inference-g06-final-cost-review/p0.json"
+      }
+    }
+  ],
+  "source_inputs": [
+    {
+      "path": "src/graph_route_cpu_apple/compile.cc",
+      "sha256": "1197508f62804c6093d0acd4f535f8447a2303e8f93f27bc01ace9f433b2c567",
+      "anchors": []
+    },
+    {
+      "path": "src/graph_route_cpu_apple/invocation.cc",
+      "sha256": "773be9ed03475a613bd7fb413bdf8598072c0ea603e98e0a075cecbdbb9af6b3",
+      "anchors": [
+        {
+          "line": 245,
+          "text": "while (run.running.load(std::memory_order_acquire)) {"
+        },
+        {
+          "line": 258,
+          "text": "Status drive_graph(RunState &run, bool &accepted) noexcept {"
+        },
+        {
+          "line": 281,
+          "text": "HYLE_RETURN_IF_ERROR(await_completion(run, completion));"
+        },
+        {
+          "line": 289,
+          "text": "for (std::size_t index = 0; index < run.fragments.size(); ++index) {"
+        },
+        {
+          "line": 297,
+          "text": "HYLE_RETURN_IF_ERROR(await_completion(run, completion));"
+        },
+        {
+          "line": 336,
+          "text": "HYLE_RETURN_IF_ERROR(await_completion(run, submitted.completion()));"
+        },
+        {
+          "line": 865,
+          "text": "while (run.running.load(std::memory_order_acquire))"
+        }
+      ]
+    },
+    {
+      "path": "src/graph_route_cpu_apple/plan.h",
+      "sha256": "2b9f13e858d4bfc46ea3bb5addf76e8f4bb8d3aa5e2b87d8750dac590d50d2a4",
+      "anchors": []
+    },
+    {
+      "path": "include/hyle/graph/cpu_apple.h",
+      "sha256": "645f557d8a6fefe3f69bc25f37c03e637ed28311fb7817bfb8de0e5373b0eb32",
+      "anchors": []
+    },
+    {
+      "path": "src/graph_route_cpu_vulkan/compile.cc",
+      "sha256": "b41e3a4d0c3645e249c68019a9088f63462c30f1e9dc83e9107a5dced1c7c66e",
+      "anchors": []
+    },
+    {
+      "path": "src/graph_route_cpu_vulkan/invocation.cc",
+      "sha256": "538b67c55718a79d0ec54bc0d7e7fce15cf55679690c3abbf686849767c93580",
+      "anchors": [
+        {
+          "line": 265,
+          "text": "while (run.running.load(std::memory_order_acquire)) {"
+        },
+        {
+          "line": 278,
+          "text": "Status drive_graph(RunState &run, bool &accepted) noexcept {"
+        },
+        {
+          "line": 293,
+          "text": "HYLE_RETURN_IF_ERROR(await_completion(run, copy));"
+        },
+        {
+          "line": 304,
+          "text": "HYLE_RETURN_IF_ERROR(await_completion(run, completion));"
+        },
+        {
+          "line": 309,
+          "text": "HYLE_RETURN_IF_ERROR(await_completion(run, copy));"
+        },
+        {
+          "line": 314,
+          "text": "for (std::size_t index = 0; index < run.fragments.size(); ++index) {"
+        },
+        {
+          "line": 322,
+          "text": "HYLE_RETURN_IF_ERROR(await_completion(run, completion));"
+        },
+        {
+          "line": 336,
+          "text": "HYLE_RETURN_IF_ERROR(await_completion(run, copy));"
+        },
+        {
+          "line": 356,
+          "text": "HYLE_RETURN_IF_ERROR(await_completion(run, submitted.completion()));"
+        },
+        {
+          "line": 372,
+          "text": "HYLE_RETURN_IF_ERROR(await_completion(run, copy));"
+        },
+        {
+          "line": 974,
+          "text": "while (run.running.load(std::memory_order_acquire))"
+        }
+      ]
+    },
+    {
+      "path": "src/graph_route_cpu_vulkan/plan.h",
+      "sha256": "c771f5639987bf6cec4415f5f080403547fa1890a05fbfb9c71760610a2e0d6e",
+      "anchors": []
+    },
+    {
+      "path": "include/hyle/graph/cpu_vulkan.h",
+      "sha256": "9b4c99f9ef9948f85435de4415a788b83d17a00752664074edf462addc6693f6",
+      "anchors": []
+    },
+    {
+      "path": "src/graph_route_cpu_cuda/invocation.cc",
+      "sha256": "d069fb89c22f6f9f1d8b794859fe126a59eac465f046591d84f2880b57b1509e",
+      "anchors": [
+        {
+          "line": 255,
+          "text": "while (run.running.load(std::memory_order_acquire))"
+        },
+        {
+          "line": 319,
+          "text": "while (!run.cursor.done()) {"
+        },
+        {
+          "line": 656,
+          "text": "while (run.running.load(std::memory_order_acquire))"
+        }
+      ]
+    },
+    {
+      "path": "src/graph_route_cpu_cuda/progress.cc",
+      "sha256": "fd9aa5491165e58ad6d4db9f8fd83b1e6dc139a9199b8760476f9bcbe0b2d3d5",
+      "anchors": []
+    },
+    {
+      "path": "include/hyle/graph/cpu_cuda.h",
+      "sha256": "b3fe45dc75ce6c999857bca3130816132018eb3c845e0c889d577165d8f1b098",
+      "anchors": []
+    },
+    {
+      "path": "src/graph/submission_internal.h",
+      "sha256": "9c6ff5d28f436c3e30733a9cddc24831c7bc7e269c6e5af349c0b4892aa1fbb4",
+      "anchors": [
+        {
+          "line": 94,
+          "text": "std::size_t next_segment_ = 0;"
+        }
+      ]
+    },
+    {
+      "path": "src/graph/executable.cc",
+      "sha256": "73db1a8bb8a3a1696239456c35c84b7103e1024010eb2de71d3276d1d9fecb6e",
+      "anchors": [
+        {
+          "line": 7948,
+          "text": "next_segment_(other.next_segment_),"
+        },
+        {
+          "line": 7960,
+          "text": "next_segment_ = other.next_segment_;"
+        },
+        {
+          "line": 7990,
+          "text": "next_segment_ == state_->plan->segments.size();"
+        },
+        {
+          "line": 7997,
+          "text": "return plan.lanes[plan.segments[next_segment_].lane.ordinal()].target;"
+        },
+        {
+          "line": 8019,
+          "text": "Result<bool> detail::SubmissionCursor::advance(bool wait_dependencies,"
+        },
+        {
+          "line": 8030,
+          "text": "const std::size_t segment_index = next_segment_;"
+        },
+        {
+          "line": 8078,
+          "text": "pending_ = &source;"
+        },
+        {
+          "line": 8218,
+          "text": "++next_segment_;"
+        }
+      ]
+    },
+    {
+      "path": "tests/graph/cpu_vulkan_native_overlap.cc",
+      "sha256": "6e2180110b067c5b1189b3958eb54230febc09d9c2ade22e02441943701e6670",
+      "anchors": []
+    },
+    {
+      "path": "tests/graph/cpu_apple_contracts/CMakeLists.txt",
+      "sha256": "e9a422b5edbf2c7b400518d518c0012c155d88936aa925310479d1f72b3faeaa",
+      "anchors": []
+    },
+    {
+      "path": "tests/graph/cpu_vulkan_contracts/CMakeLists.txt",
+      "sha256": "5df197d1897908bf22d6ca89616f45ec6cf94787c42c76193091d72bebdc939a",
+      "anchors": []
+    },
+    {
+      "path": "tests/graph/cpu_cuda_contracts/CMakeLists.txt",
+      "sha256": "ff47461dea53fbca5811f0178aa8809b987e37e47e0cfb62faf0b55603585f23",
+      "anchors": []
+    }
+  ],
+  "peer_source_inputs": [
+    {
+      "project": "sglang",
+      "commit": "7224fce1b5e488c9916f20ec0556d696e595d512",
+      "path": "python/sglang/srt/utils/offloader.py",
+      "sha256": "dd22b59385b01b4a05ef98436679811b863c4a581e50d2a4753c2a3e0218899d",
+      "checkout_head_before_after": "234ccba7f625e12639e621044496bcc6197c3758",
+      "checkout_status_unchanged": true
+    },
+    {
+      "project": "sglang",
+      "commit": "7224fce1b5e488c9916f20ec0556d696e595d512",
+      "path": "python/sglang/srt/batch_overlap/two_batch_overlap.py",
+      "sha256": "546a65df0bf472a63c9d24c794760c7c436cb5ca370bf8fc6202aa48556c3265",
+      "checkout_head_before_after": "234ccba7f625e12639e621044496bcc6197c3758",
+      "checkout_status_unchanged": true
+    },
+    {
+      "project": "vllm",
+      "commit": "98f721116227f0f48690deb05c815c057bac0668",
+      "path": "vllm/model_executor/offloader/prefetch.py",
+      "sha256": "d835fa9292f52f283835f724951bae645a84d554c48f30ed639e3297e7eeb776",
+      "checkout_head_before_after": "276fbcff2717bd934cfa37c8a2e4c391f3e7237b",
+      "checkout_status_unchanged": true
+    },
+    {
+      "project": "llama.cpp",
+      "commit": "cbe28bb3cb0758f0c566a9a3561766821aeb0748",
+      "path": "ggml/src/ggml-backend.cpp",
+      "sha256": "43dea13b13c2a15afd83f53515f3488c17072fc107a6ba4a5e0370f90b4fe7ff",
+      "checkout_head_before_after": "23b0202a189c44a54625aadcb37a946dd1d6278d",
+      "checkout_status_unchanged": true
+    }
+  ],
+  "initial_findings": [
+    {
+      "id": "J1",
+      "fact": "Apple/Vulkan fragment loops await each submitted fragment before visiting later independent branches; no ready-fragment dependency table in current Plan.",
+      "basis": "Actual current source, not measured elapsed/overlap or qualified performance.",
+      "disposition": "Legitimate finite consumer-shape trigger; audit dependency/scheduling/alias/completion ownership before FIX."
+    },
+    {
+      "id": "CUDA_CHECK",
+      "fact": "CUDA wrapper borrows common SubmissionCursor and blocks on its current pending host dependency; independent-slot/native-progress support already exists.",
+      "basis": "Source observation; exact public-consumer consequence not yet reproduced.",
+      "disposition": "CUDA/common remain CLOSED and read-only until concrete need/owner is proved."
+    }
+  ],
+  "validation": "No product build, runtime overlap or P1 executed. This intake proves only source identity/reopen facts and preserves prior owner terminals.",
+  "raw": {
+    "path": "source.zip",
+    "sha256": "34b99cd1e6125653547d0dbca9302701797ba468851376189638320af5d2ef65",
+    "bytes": 174491
+  }
+}
