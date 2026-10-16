@@ -7,6 +7,9 @@
 #include "hyle/compute/vulkan_batch.h"
 #endif
 #include <array>
+#include <algorithm>
+#include <limits>
+#include <type_traits>
 #include <cmath>
 #include <cstring>
 #include <vector>
@@ -126,5 +129,114 @@ TEST(NativeRaggedLayout, EightRequestsJoinOnlyTheirActiveRows){
 #endif
   for(unsigned r=0;r<8;++r)for(unsigned i=0;i<512;++i)EXPECT_EQ(actual[r*512+i].bits,half_test::encode<F16>(float(r)*.125F).bits);
   result={};done={};ASSERT_TRUE(context.close().ok());
+}
+
+// The physical ports stay at capacity; only this immutable host layout changes.
+// Zero Q/K makes the expected result an independent average of physical V.
+template<class T>void runtime_native_ragged(bool encoded,unsigned depth,unsigned value_depth,int window,unsigned mode){
+  SCOPED_TRACE(::testing::Message()<<"encoded="<<encoded<<" D="<<depth<<" Dv="<<value_depth<<" window="<<window<<" mode="<<mode);
+  auto context=n::Context::create().value();
+#if defined(HYLE_G01_APPLE_RAGGED)
+  auto memory=n::MemoryResource::create(context).value();
+#else
+  ASSERT_FALSE(context.environment().software_device);auto memory=n::MemoryResource::create(context,n::MemoryKind::kDevice).value();
+#endif
+  const auto type=half_test::data_type<T>();const bool causal=window>=0 || depth!=128;
+  const auto storage=encoded?c::CacheStorage::q8_0().value():c::CacheStorage::plain(type).value();
+  const c::BatchCapacity cap{.storage=c::BatchStorage::kRagged,.query_type=type,.output_type=type,
+    .key_storage=storage,.value_storage=storage,.max_requests=3,.max_query_rows=24,.max_kv_rows=192,
+    .max_pages=0,.max_page_refs=0,.query_heads=8,.kv_heads=2,.qk_head_dim=depth,.value_head_dim=value_depth,.page_size=1};
+  const std::vector<std::int32_t> qp=mode==0?std::vector<std::int32_t>{0,1}:
+      mode==1?std::vector<std::int32_t>{0,1,2,2}:std::vector<std::int32_t>{0,17,18,18};
+  std::vector<std::int32_t> kp(qp.size(),0);
+  for(std::size_t r=0;r+1<qp.size();++r)kp[r+1]=kp[r]+qp[r+1]-qp[r];
+  auto schema=c::BatchSchema::create(cap).value();auto initial=schema.version({qp,kp,{},{}}).value();
+  auto program=n::prepare_ragged_batch(context,initial,{cap,.125F,causal,window}).value();
+  auto slot=program.create_invocation().value(),other=program.create_invocation().value();
+  n::Invocation invalid;EXPECT_FALSE(n::update_ragged_batch(invalid,initial));
+  const auto qd=c::batch_query_description(cap).value(),kd=c::batch_cache_description(cap,c::BatchCacheRole::kKey).value(),
+      vd=c::batch_cache_description(cap,c::BatchCacheRole::kValue).value();
+#if defined(HYLE_G01_APPLE_RAGGED)
+  auto pool=c::LeasePool::create(memory.ref(),qd.required_bytes().value()+kd.required_bytes().value()+vd.required_bytes().value()+256).value();
+#endif
+  const auto upload=[&](const c::TensorDesc& desc,const std::vector<std::byte>& bytes){
+#if defined(HYLE_G01_APPLE_RAGGED)
+    auto writer=pool.allocate(bytes.size(),64).value();EXPECT_TRUE(writer.view()->write(bytes).ok());return memory.binding(writer.publish().value(),desc).value();
+#else
+    return context.upload(desc,bytes).value();
+#endif
+  };
+  const auto code=[](unsigned row,unsigned head){return int((row*3+head*5)%63)-31;};
+  const auto cache_bytes=[&](bool value){const auto desc=value?vd:kd;const auto width=value?value_depth:depth;
+    std::vector<std::byte> bytes(desc.required_bytes().value(),std::byte{0});
+    if(encoded){
+      for(unsigned row=0;row<192;++row)for(unsigned head=0;head<2;++head)for(unsigned block=0;block<width/32;++block){
+        const auto offset=((row*2+head)*(width/32)+block)*34;
+        const std::uint16_t scale=row==191?0x7e00:value?0x2400:0;std::memcpy(bytes.data()+offset,&scale,2);
+        std::fill_n(bytes.begin()+offset+2,32,std::byte{std::uint8_t(value?code(row,head):0)});
+      }
+    }else{
+      std::vector<T> words(192*2*width);
+      for(unsigned row=0;row<192;++row)for(unsigned head=0;head<2;++head)for(unsigned d=0;d<width;++d)
+        words[(row*2+head)*width+d]=half_test::encode<T>(row==191?std::numeric_limits<float>::quiet_NaN():value?float(code(row,head))/64.F:0.F);
+      std::memcpy(bytes.data(),words.data(),bytes.size());
+    }return bytes;
+  };
+  const std::array inputs{upload(qd,std::vector<std::byte>(qd.required_bytes().value(),std::byte{0})),upload(kd,cache_bytes(false)),upload(vd,cache_bytes(true))};
+  const auto verify=[&](const n::Results& result,const c::BatchLayoutVersion& selected){
+    const auto host=selected.host();std::vector<T> actual(std::size_t(qp.back())*8*value_depth);
+#if defined(HYLE_G01_APPLE_RAGGED)
+    auto od=c::TensorDesc::dense(type,std::array<std::int64_t,3>{qp.back(),8,value_depth}).value();
+    auto lease=memory.import_readonly(result.arrays()[0],od).value();ASSERT_TRUE(lease.view()->read(std::as_writable_bytes(std::span(actual))).ok());
+#else
+    ASSERT_TRUE(context.download(result.tensors()[0],std::as_writable_bytes(std::span(actual))).ok());
+#endif
+    for(std::size_t r=0;r+1<qp.size();++r){const auto nq=unsigned(qp[r+1]-qp[r]),nk=unsigned(host.kv_indptr[r+1]-host.kv_indptr[r]);
+      for(unsigned row=0;row<nq;++row){const auto end=causal?nk-nq+row+1:nk;
+        const auto first=window<0?0:end>unsigned(window+1)?end-unsigned(window+1):0;
+        for(unsigned head=0;head<8;++head){double expected=0;
+          for(unsigned j=first;j<end;++j)expected+=double(code(unsigned(host.kv_indptr[r])+j,head/4))/64.;
+          expected/=double(end-first);
+          for(unsigned d=0;d<value_depth;++d){const auto value=half_test::decode(actual[(std::size_t(qp[r])+row)*8*value_depth+head*value_depth+d]);
+            ASSERT_TRUE(std::isfinite(value));EXPECT_NEAR(value,expected,std::is_same_v<T,BF16>?.008:.002);
+          }
+        }
+      }
+    }
+  };
+  ASSERT_TRUE(other.bind(inputs).ok());auto old_run=other.submit().value();auto old=old_run.wait().value();verify(*old,initial);
+  ASSERT_TRUE(slot.bind(inputs).ok());auto foreign_schema=c::BatchSchema::create(cap).value();
+  auto foreign=foreign_schema.version({qp,kp,{},{}}).value();EXPECT_TRUE(n::update_ragged_batch(slot,foreign).IsInvalidArgument());
+  auto no_queries=qp;std::fill(no_queries.begin(),no_queries.end(),0);auto changed=schema.version({no_queries,kp,{},{}}).value();
+  EXPECT_TRUE(n::update_ragged_batch(slot,changed).IsInvalidArgument());
+  if(causal && mode==2){const std::array<std::int32_t,4> short_kv{0,1,2,2};auto short_layout=schema.version({qp,short_kv,{},{}}).value();
+    EXPECT_TRUE(n::update_ragged_batch(slot,short_layout).IsInvalidArgument());}
+  {auto preserved=slot.submit().value();auto result=preserved.wait().value();verify(*result,initial);}
+  for(unsigned step=0;step<64;++step){
+    SCOPED_TRACE(step);std::vector<std::int32_t> current_k{0};
+    for(std::size_t r=0;r+1<qp.size();++r){const auto nq=unsigned(qp[r+1]-qp[r]);
+      current_k.push_back(current_k.back()+int(nq?nq+(step*(17+unsigned(r)*6))%79:0));}
+    auto layout=schema.version({qp,current_k,{},{}}).value();
+    ASSERT_TRUE(n::update_ragged_batch(slot,layout).ok());EXPECT_FALSE(slot.submit()); // Success unbinds old imports.
+    ASSERT_TRUE(slot.bind(inputs).ok());auto run=slot.submit().value();
+    EXPECT_FALSE(n::update_ragged_batch(slot,layout)); // Owning completion/pending work excludes reuse.
+    auto result=run.wait().value();verify(*result,layout);verify(*old,initial);
+    EXPECT_FALSE(n::update_ragged_batch(slot,layout)); // The old output still excludes reuse.
+  }
+  old={};old_run={};ASSERT_TRUE(context.close().ok());EXPECT_FALSE(n::update_ragged_batch(slot,initial));
+}
+TEST(NativeRaggedLayout, PublicRuntimeKvUpdatesKeepIndependentSlotsAndCheckedBoundaries){
+  for(unsigned mode:{0U,1U,2U})for(bool encoded:{false,true}){
+    for(unsigned depth:{64U,128U,256U}){
+      runtime_native_ragged<F16>(encoded,depth,depth,-1,mode);
+#if defined(HYLE_G01_APPLE_RAGGED)
+      runtime_native_ragged<BF16>(encoded,depth,depth,-1,mode);
+#endif
+    }
+    runtime_native_ragged<F16>(encoded,64,128,16,mode);
+#if defined(HYLE_G01_APPLE_RAGGED)
+    runtime_native_ragged<BF16>(encoded,64,128,16,mode);
+#endif
+  }
 }
 } // namespace

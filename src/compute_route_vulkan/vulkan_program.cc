@@ -632,8 +632,51 @@ Status detail::PagedBatchAccess::update_layout(Invocation& invocation,
   auto& state=*invocation.state_;const auto host=layout.host();
   std::lock_guard lock(state.program->runtime->mutex);
   for(auto& stage:state.run->stages)
-    if(stage.managed)HYLE_RETURN_IF_ERROR(stage.managed->update_paged_layout(host.kv_indptr,host.last_page_lengths));
+    if(stage.managed)HYLE_RETURN_IF_ERROR(stage.managed->update_batch_layout(host.kv_indptr,host.last_page_lengths));
   return Status::Ok();
+}
+Result<Program> detail::PagedBatchAccess::prepare_ragged_program(const Context& context,
+    const Plan& plan,BatchLayoutVersion initial,bool causal,std::int32_t window_left) noexcept {
+  try {
+    HYLE_ASSIGN_OR_RETURN(auto program,prepare_plan(context,plan));
+    program.state_->ragged=std::make_unique<const RaggedContract>(
+        RaggedContract{std::move(initial),causal,window_left});
+    return program;
+  } catch(const std::bad_alloc&) {
+    return std::unexpected(Status::ResourceExhausted("Vulkan ragged update contract"));
+  }
+}
+Status detail::PagedBatchAccess::update_ragged(Invocation& invocation,
+    const BatchLayoutVersion& layout) noexcept {
+  auto* state=invocation.state_.get();
+  if(!state || !state->program->ragged)
+    return Status::InvalidArgument("Vulkan ragged update requires a ragged Program");
+  const auto& contract=*state->program->ragged;
+  const auto a=contract.initial.host(),b=layout.host();
+  if(!contract.initial.schema().owns(layout) || a.query_indptr.size()!=b.query_indptr.size() ||
+      !std::equal(a.query_indptr.begin(),a.query_indptr.end(),b.query_indptr.begin()))
+    return Status::InvalidArgument("Vulkan ragged update schema/Q topology differs");
+  HYLE_RETURN_IF_ERROR(validate_batch_attention_layout(layout,contract.causal,contract.window_left));
+  HYLE_RETURN_IF_ERROR(reuse_gate(invocation));
+  auto& runtime=*state->program->runtime;auto& run=*state->run;
+  {
+    std::lock_guard lock(runtime.mutex);
+    for(const auto& stage:run.stages)
+      if(stage.managed)HYLE_RETURN_IF_ERROR(stage.managed->validate_batch_layout(b.kv_indptr,{}));
+  }
+  const auto cleared=release_inputs(invocation);
+  std::lock_guard lock(runtime.mutex);
+  // Once old imports have been released, no failed suffix may publish a
+  // partially updated slot as usable. The original bind/submit gates retain it.
+  if(!cleared.ok()){run.submission_failure=cleared;return cleared;}
+  for(auto& stage:run.stages)if(stage.managed){
+    const auto status=stage.managed->update_batch_layout(b.kv_indptr,{});
+    if(!status.ok()){run.submission_failure=status;return status;}
+  }
+  return Status::Ok();
+}
+Status update_ragged_batch(Invocation& invocation,const BatchLayoutVersion& layout) noexcept {
+  return detail::PagedBatchAccess::update_ragged(invocation,layout);
 }
 Status Invocation::bind(std::span<const Tensor> inputs) noexcept {
   if (!state_ || inputs.size() != state_->program->inputs.size())

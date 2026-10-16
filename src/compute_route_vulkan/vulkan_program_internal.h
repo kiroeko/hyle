@@ -9,6 +9,7 @@
 #include "../compute_provider_iree_vulkan/native_program.h"
 #include "hyle/compute/detail/generated_result.h"
 #include "hyle/compute/detail/vulkan_plan.h"
+#include "hyle/compute/batch_layout.h"
 #include "vulkan_internal.h"
 
 namespace hyle::compute::vulkan::detail {
@@ -44,6 +45,11 @@ struct ValueAlias final {
   VkDeviceSize byte_offset = 0;
 };
 
+struct RaggedContract final {
+  BatchLayoutVersion initial;
+  bool causal=true;
+  std::int32_t window_left=-1;
+};
 struct ProgramState final {
   std::shared_ptr<Runtime> runtime;
   WorkloadContext workload;
@@ -60,6 +66,8 @@ struct ProgramState final {
   std::vector<std::uint32_t> storage_blocks;
   std::vector<VkDeviceSize> block_bytes;
   std::optional<std::uint32_t> status_value;
+  // Cold opt-in immutable update contract; ordinary submit never reads it.
+  std::unique_ptr<const RaggedContract> ragged;
 };
 
 struct ResultValues final {

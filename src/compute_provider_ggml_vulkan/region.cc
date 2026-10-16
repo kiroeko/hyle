@@ -16,7 +16,33 @@
 namespace hyle::compute::ggml_vulkan::detail {
 namespace {
 // Host-only tag, ignored by the native backend. Keep it out of its TU seam.
-constexpr int kPagedRuntimeRequestSlot = 11;
+constexpr int kBatchRuntimeRequestSlot = 11;
+bool runtime_attention_node(const ggml_tensor* node) noexcept {
+  return node->op==GGML_OP_FLASH_ATTN_EXT &&
+      node->op_params[bridge::kFlashAttentionCacheSlot]==bridge::kFlashAttentionCache &&
+      node->op_params[kBatchRuntimeRequestSlot]>=0;
+}
+Result<std::int32_t> runtime_kv_rows(const ggml_tensor* node,
+    std::span<const std::int32_t> indptr,std::span<const std::int32_t> tails) noexcept {
+  const auto r=std::size_t(node->op_params[kBatchRuntimeRequestSlot]);
+  if(r+1>=indptr.size() || indptr[r]<0 || indptr[r+1]<=indptr[r])
+    return std::unexpected(Status::InvalidArgument("Vulkan runtime KV interval differs"));
+  const bool paged=node->op_params[bridge::kFlashAttentionPagedSlot]==bridge::kFlashAttentionPaged;
+  std::int64_t rows=indptr[r+1]-indptr[r];
+  if(paged){
+    if(r>=tails.size() || tails[r]<1 || tails[r]>16 || !node->src[5] ||
+        indptr[r+1]>ggml_nelements(node->src[5]))
+      return std::unexpected(Status::InvalidArgument("Vulkan runtime page table extent differs"));
+    rows=(rows-1)*16+tails[r];
+  }else if(!node->src[1] || !node->src[2] ||
+      indptr[r+1]>node->src[1]->ne[1] || indptr[r+1]>node->src[2]->ne[1]){
+    return std::unexpected(Status::InvalidArgument("Vulkan runtime ragged root extent differs"));
+  }
+  if(rows>INT32_MAX || (node->op_params[bridge::kFlashAttentionCausalSlot] && rows<node->src[0]->ne[1]))
+    return std::unexpected(Status::InvalidArgument("Vulkan runtime logical KV extent differs"));
+  return static_cast<std::int32_t>(rows);
+}
+
 bool floating(DataType type) noexcept {
   return type == DataType::kFloat32 || type == DataType::kFloat16 ||
          type == DataType::kBFloat16;
@@ -991,7 +1017,7 @@ Result<Region> Region::create(NativeDevice device,
         output->op_params[bridge::kFlashAttentionCausalSlot] = paged->causal;
         output->op_params[bridge::kFlashAttentionWindowSlot] = paged->window_left;
         output->op_params[bridge::kFlashAttentionCacheSlot] = bridge::kFlashAttentionCache;
-        output->op_params[kPagedRuntimeRequestSlot] = paged->runtime_request == UINT32_MAX
+        output->op_params[kBatchRuntimeRequestSlot] = paged->runtime_request == UINT32_MAX
             ? -1 : static_cast<std::int32_t>(paged->runtime_request);
         if (!ggml_prec_set_acc(output, GGML_PREC_F32))
           return std::unexpected(Status::Unimplemented("Vulkan paged flash accumulation"));
@@ -1400,43 +1426,35 @@ Result<Region> Region::create(NativeDevice device,
   }
 }
 
-Status Region::update_paged_layout(std::span<const std::int32_t> indptr,
-                                  std::span<const std::int32_t> tails) noexcept {
-  if (!state_ || state_->pending)
-    return Status::FailedPrecondition("Vulkan paged layout requires an idle region");
-  auto active = state_->device.activate();
-  auto *graph = state_->graph.get();
-  const auto selected = [](const ggml_tensor *node) {
-    return node->op == GGML_OP_FLASH_ATTN_EXT &&
-        node->op_params[bridge::kFlashAttentionPagedSlot] == bridge::kFlashAttentionPaged &&
-        node->op_params[kPagedRuntimeRequestSlot] >= 0;
-  };
-  bool changed = false;
-  for (int i = 0; i < ggml_graph_n_nodes(graph); ++i) {
-    const auto *node = ggml_graph_node(graph, i);
-    if (!selected(node)) continue;
-    const auto r = std::size_t(node->op_params[kPagedRuntimeRequestSlot]);
-    if (r >= tails.size() || r + 1 >= indptr.size() || indptr[r] < 0 ||
-        indptr[r+1] <= indptr[r] || tails[r] < 1 || tails[r] > 16 ||
-        !node->src[5] || indptr[r+1] > ggml_nelements(node->src[5]))
-      return Status::InvalidArgument("Vulkan runtime page table extent differs");
-    const auto rows = std::int64_t(indptr[r+1] - indptr[r] - 1)*16 + tails[r];
-    if (rows > INT32_MAX || (node->op_params[bridge::kFlashAttentionCausalSlot] &&
-                            rows < node->src[0]->ne[1]))
-      return Status::InvalidArgument("Vulkan runtime logical KV extent differs");
-    changed = changed || rows != node->op_params[bridge::kFlashAttentionLogicalRowsSlot] ||
-        indptr[r] != node->op_params[bridge::kFlashAttentionTableOffsetSlot];
+Status Region::validate_batch_layout(std::span<const std::int32_t> indptr,
+    std::span<const std::int32_t> tails) const noexcept {
+  if(!state_ || state_->pending)
+    return Status::FailedPrecondition("Vulkan runtime layout requires an idle region");
+  auto active=state_->device.activate();auto* graph=state_->graph.get();
+  for(int i=0;i<ggml_graph_n_nodes(graph);++i){
+    const auto* node=ggml_graph_node(graph,i);if(!runtime_attention_node(node))continue;
+    if(auto rows=runtime_kv_rows(node,indptr,tails);!rows)return rows.error();
   }
-  if (!changed) return Status::Ok();
+  return Status::Ok();
+}
+Status Region::update_batch_layout(std::span<const std::int32_t> indptr,
+    std::span<const std::int32_t> tails) noexcept {
+  HYLE_RETURN_IF_ERROR(validate_batch_layout(indptr,tails));
+  auto active=state_->device.activate();auto* graph=state_->graph.get();bool changed=false;
+  for(int i=0;i<ggml_graph_n_nodes(graph);++i){
+    const auto* node=ggml_graph_node(graph,i);if(!runtime_attention_node(node))continue;
+    const auto r=std::size_t(node->op_params[kBatchRuntimeRequestSlot]);
+    changed=changed || runtime_kv_rows(node,indptr,tails).value()!=node->op_params[bridge::kFlashAttentionLogicalRowsSlot] ||
+        indptr[r]!=node->op_params[bridge::kFlashAttentionTableOffsetSlot];
+  }
+  if(!changed)return Status::Ok();
   HYLE_RETURN_IF_ERROR(state_->work.invalidate_recording());
-  // Every tagged node was checked before invalidating or changing any scalar.
-  for (int i = 0; i < ggml_graph_n_nodes(graph); ++i) {
-    auto *node = ggml_graph_node(graph, i);
-    if (!selected(node)) continue;
-    const auto r = std::size_t(node->op_params[kPagedRuntimeRequestSlot]);
-    node->op_params[bridge::kFlashAttentionLogicalRowsSlot] =
-        (indptr[r+1] - indptr[r] - 1)*16 + tails[r];
-    node->op_params[bridge::kFlashAttentionTableOffsetSlot] = indptr[r];
+  // Preflight completed for every tagged node; the caller serializes control.
+  for(int i=0;i<ggml_graph_n_nodes(graph);++i){
+    auto* node=ggml_graph_node(graph,i);if(!runtime_attention_node(node))continue;
+    const auto r=std::size_t(node->op_params[kBatchRuntimeRequestSlot]);
+    node->op_params[bridge::kFlashAttentionLogicalRowsSlot]=runtime_kv_rows(node,indptr,tails).value();
+    node->op_params[bridge::kFlashAttentionTableOffsetSlot]=indptr[r];
   }
   return Status::Ok();
 }

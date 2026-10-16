@@ -117,21 +117,22 @@ Result<Program> prepare_ragged_batch(const Context&context,BatchLayoutVersion la
     };
     constexpr std::uint32_t key_root=1,value_root=2;
     const auto host=layout.host();std::vector<std::uint32_t> parts;
-    struct Request { std::uint32_t q,kv,offset;std::int32_t rows; };
+    struct Request { std::uint32_t q,kv,offset;std::int32_t rows;std::uint32_t index; };
     std::vector<Request> requests;
     for(std::size_t request=0;request<layout.facts().requests;++request){
       const auto nq=host.query_indptr[request+1]-host.query_indptr[request];
       const auto nk=host.kv_indptr[request+1]-host.kv_indptr[request];if(!nq)continue;
       if(!nk||(attention.causal&&nk<nq))return std::unexpected(Status::Unimplemented("Vulkan ragged nonempty Q needs sufficient KV"));
       HYLE_ASSIGN_OR_RETURN(auto qv,view(0,host.query_indptr[request],nq,c.query_heads));
-      requests.push_back({qv,std::uint32_t(nk),std::uint32_t(host.kv_indptr[request]),nq});
+      requests.push_back({qv,std::uint32_t(nk),std::uint32_t(host.kv_indptr[request]),nq,std::uint32_t(request)});
     }
     // External aliases precede the arithmetic region. Zero-cost output
     // reshapes can then remain inside one original managed submission.
     for(const auto &request:requests){
       const auto operation=Operation::custom(ggml_vulkan::detail::PagedAttentionRead{
           .logical_rows=request.kv,.table_offset=request.offset,.scale=attention.scale,
-          .causal=attention.causal,.paged=false,.window_left=attention.window_left});
+          .causal=attention.causal,.paged=false,.window_left=attention.window_left,
+          .runtime_request=request.index});
       HYLE_ASSIGN_OR_RETURN(auto output,add(operation,{request.q,key_root,value_root}));
       HYLE_ASSIGN_OR_RETURN(auto shape,TensorShape::create(std::array<std::int64_t,3>{request.rows,c.query_heads,c.value_head_dim}));
       HYLE_ASSIGN_OR_RETURN(auto reshape,View::reshape(shape));HYLE_ASSIGN_OR_RETURN(auto packed,add(Operation(reshape),{output}));
@@ -141,7 +142,8 @@ Result<Program> prepare_ragged_batch(const Context&context,BatchLayoutVersion la
     if(parts.empty()){HYLE_ASSIGN_OR_RETURN(auto empty,View::slice(0,0,0));HYLE_ASSIGN_OR_RETURN(auto sliced,add(Operation(empty),{0}));HYLE_ASSIGN_OR_RETURN(auto shape,TensorShape::create(std::array<std::int64_t,3>{0,c.query_heads,c.value_head_dim}));HYLE_ASSIGN_OR_RETURN(auto packed,add(Operation(Copy{}),{sliced}));HYLE_ASSIGN_OR_RETURN(auto reshape,View::reshape(shape));HYLE_ASSIGN_OR_RETURN(output,add(Operation(reshape),{packed}));}
     else if(parts.size()==1)output=parts[0];
     else{HYLE_ASSIGN_OR_RETURN(output,add(Operation(Concat{.axis=0}),std::move(parts)));}
-    plan.outputs={output};return detail::prepare_plan(context,plan);
+    plan.outputs={output};return detail::PagedBatchAccess::prepare_ragged_program(
+        context,plan,std::move(layout),attention.causal,attention.window_left);
   }catch(const std::bad_alloc&){return std::unexpected(Status::ResourceExhausted("Vulkan ragged cold recipe metadata"));}
 }
 Result<Program> prepare_materialized_batch(const Context&context,

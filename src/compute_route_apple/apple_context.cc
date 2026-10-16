@@ -271,11 +271,13 @@ struct MlxProgram {
       compiled;
 };
 
-// Immutable Program-owned recipe. The current version belongs to each paged
+// Immutable Program-owned recipe. The current version belongs to each native batch
 // invocation; sharing a Program never shares mutable attention lengths.
-struct RuntimePagedFunction {
+struct RuntimeBatchFunction {
   BatchLayoutVersion initial;
   PagedBatchAccess::RuntimeFunction build;
+  bool causal=true;
+  std::int32_t window_left=-1;
   std::function<std::vector<mx::array>(const std::vector<mx::array>&)> compiled;
   auto operator()(const std::vector<mx::array>& inputs) const {
     return compiled(inputs);
@@ -375,16 +377,16 @@ struct InvocationState : Job {
   }
 };
 
-struct PagedInvocationState final : InvocationState {
+struct RuntimeBatchInvocationState final : InvocationState {
   BatchLayoutVersion layout;
-  PagedInvocationState(std::shared_ptr<ProgramState> p, cd::ResultSlot<Results> slot,
+  RuntimeBatchInvocationState(std::shared_ptr<ProgramState> p, cd::ResultSlot<Results> slot,
                        BatchLayoutVersion initial)
       : InvocationState(std::move(p),std::move(slot)),layout(std::move(initial)) {}
 };
-void execute_paged_invocation(Job*) noexcept;
+void execute_batch_invocation(Job*) noexcept;
 
-Status evaluate_paged(PagedInvocationState& state, mx::Stream stream) {
-  const auto& fn=*state.program->compiled.target<RuntimePagedFunction>();
+Status evaluate_batch(RuntimeBatchInvocationState& state, mx::Stream stream) {
+  const auto& fn=*state.program->compiled.target<RuntimeBatchFunction>();
   const auto a=fn.initial.host(),b=state.layout.host();
   const auto equal=[](auto x,auto y){return x.size()==y.size() && std::equal(x.begin(),x.end(),y.begin());};
   if(equal(a.kv_indptr,b.kv_indptr) && equal(a.last_page_lengths,b.last_page_lengths))
@@ -446,8 +448,8 @@ void retain(InvocationState *state) noexcept {
 void release(InvocationState *state) noexcept {
   if (state != nullptr &&
       state->refs.fetch_sub(1, std::memory_order_acq_rel) == 1) {
-    if(state->execute==execute_paged_invocation)
-      delete static_cast<PagedInvocationState*>(state);
+    if(state->execute==execute_batch_invocation)
+      delete static_cast<RuntimeBatchInvocationState*>(state);
     else delete state;
   }
 }
@@ -512,9 +514,9 @@ void execute_invocation(Job* job) noexcept {
         evaluate_mlx(*state.program,state.inputs,state.values->arrays,stream);
   });
 }
-void execute_paged_invocation(Job* job) noexcept {
-  auto& state=*static_cast<PagedInvocationState*>(job);
-  execute_with(state,[&](mx::Stream stream){return evaluate_paged(state,stream);});
+void execute_batch_invocation(Job* job) noexcept {
+  auto& state=*static_cast<RuntimeBatchInvocationState*>(job);
+  execute_with(state,[&](mx::Stream stream){return evaluate_batch(state,stream);});
 }
 
 const cd::CompletionVTable completion_vtable{
@@ -829,9 +831,9 @@ Program::create_invocation(mem::AllocatorRef allocator) const noexcept {
   if (!slot)
     return std::unexpected(std::move(slot).error());
   try {
-    if(const auto* fn=state_->compiled.target<detail::RuntimePagedFunction>()) {
-      auto state=std::make_unique<detail::PagedInvocationState>(state_,std::move(*slot),fn->initial);
-      state->execute=detail::execute_paged_invocation;
+    if(const auto* fn=state_->compiled.target<detail::RuntimeBatchFunction>()) {
+      auto state=std::make_unique<detail::RuntimeBatchInvocationState>(state_,std::move(*slot),fn->initial);
+      state->execute=detail::execute_batch_invocation;
       return Invocation(state.release());
     }
     auto state = std::make_unique<detail::InvocationState>(state_, std::move(*slot));
@@ -916,30 +918,57 @@ Status detail::PagedBatchAccess::release_inputs(Invocation&invocation)noexcept{
 }
 Result<Program> detail::PagedBatchAccess::prepare_runtime_program(const Context& context,
     BatchLayoutVersion initial,std::span<const InputSpec> inputs,RuntimeFunction build,
-    const WorkloadContext& workload) noexcept {
+    const WorkloadContext& workload,bool causal,std::int32_t window_left) noexcept {
   try {
     HYLE_ASSIGN_OR_RETURN(auto program,context.compile(
         [initial,build](const std::vector<mx::array>& args,mx::Stream stream){return build(initial,args,stream);},
         inputs,workload));
     auto& compiled=program.state_->compiled;
-    compiled=RuntimePagedFunction{std::move(initial),std::move(build),std::move(compiled)};
+    compiled=RuntimeBatchFunction{std::move(initial),std::move(build),causal,window_left,std::move(compiled)};
     return program;
   } catch(...) {return std::unexpected(native_exception());}
 }
 Status detail::PagedBatchAccess::update_layout(Invocation& invocation,
     const BatchLayoutVersion& layout) noexcept {
   HYLE_RETURN_IF_ERROR(reuse_gate(invocation));auto& state=*invocation.state_;
-  if(state.execute!=execute_paged_invocation)
+  if(state.execute!=execute_batch_invocation)
     return Status::InvalidArgument("Apple runtime page layout requires a paged invocation");
-  const auto& initial=state.program->compiled.target<RuntimePagedFunction>()->initial;
+  const auto& initial=state.program->compiled.target<RuntimeBatchFunction>()->initial;
   const auto a=initial.host(),b=layout.host();
-  const auto empty_ports=[](const BatchLayoutVersion& v){return v.facts().query_rows==0 && v.facts().page_refs==0;};
+  const auto empty_ports=[](const BatchLayoutVersion& v){return v.schema().capacity().storage==BatchStorage::kPaged && v.facts().query_rows==0 && v.facts().page_refs==0;};
   if(!initial.schema().owns(layout) || a.query_indptr.size()!=b.query_indptr.size() ||
       !std::equal(a.query_indptr.begin(),a.query_indptr.end(),b.query_indptr.begin()) ||
       empty_ports(initial)!=empty_ports(layout))
     return Status::InvalidArgument("Apple runtime page Q topology differs");
   std::lock_guard lock(state.binding_mutex);
-  static_cast<PagedInvocationState&>(state).layout=layout;return Status::Ok();
+  static_cast<RuntimeBatchInvocationState&>(state).layout=layout;return Status::Ok();
+}
+Status detail::PagedBatchAccess::update_ragged(Invocation& invocation,
+    const BatchLayoutVersion& layout) noexcept {
+  auto* state=invocation.state_;
+  if(!state || state->execute!=execute_batch_invocation)
+    return Status::InvalidArgument("Apple ragged update requires a ragged Program");
+  const auto& fn=*state->program->compiled.target<RuntimeBatchFunction>();
+  const auto a=fn.initial.host(),b=layout.host();
+  if(fn.initial.schema().capacity().storage!=BatchStorage::kRagged ||
+      !fn.initial.schema().owns(layout) || a.query_indptr.size()!=b.query_indptr.size() ||
+      !std::equal(a.query_indptr.begin(),a.query_indptr.end(),b.query_indptr.begin()))
+    return Status::InvalidArgument("Apple ragged update schema/Q topology differs");
+  HYLE_RETURN_IF_ERROR(validate_batch_attention_layout(layout,fn.causal,fn.window_left));
+  for(std::size_t r=0;r<layout.facts().requests;++r)
+    if(b.query_indptr[r+1]>b.query_indptr[r] && b.kv_indptr[r+1]==b.kv_indptr[r])
+      return Status::InvalidArgument("Apple nonempty ragged query requires KV");
+  {
+    std::lock_guard lock(state->program->runtime->queue_mutex);
+    if(!state->program->runtime->accepting)return Status::FailedPrecondition("Apple ragged Context is closed");
+    if(!state->program->runtime->failure.ok())return state->program->runtime->failure;
+  }
+  HYLE_RETURN_IF_ERROR(release_inputs(invocation));
+  std::lock_guard lock(state->binding_mutex);
+  static_cast<RuntimeBatchInvocationState&>(*state).layout=layout;return Status::Ok();
+}
+Status update_ragged_batch(Invocation& invocation,const BatchLayoutVersion& layout) noexcept {
+  return detail::PagedBatchAccess::update_ragged(invocation,layout);
 }
 Result<OwnedResult<Results>> Invocation::submit() noexcept {
   return submit_guarded({});

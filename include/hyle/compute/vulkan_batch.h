@@ -8,11 +8,18 @@
 namespace hyle::compute::vulkan {
 // Cold immutable host-known ragged layout. Three packed-capacity Q/K/V ports;
 // output contains this layout's active packed Q rows. Reuse the original
-// Program/Invocation and owners; another topology needs explicit preparation.
+// Program/Invocation and owners; another Q topology needs explicit preparation.
 // Qualified F16 D64/128/256 reads original resident K/V request slices. Query,
 // mask and packed output costs remain; no native paged/capture claim.
 HYLE_COMPUTE_ROUTE_VULKAN_API Result<Program> prepare_ragged_batch(
     const Context&,BatchLayoutVersion,RaggedAttention,const WorkloadContext& = {}) noexcept;
+// Same schema/full Q-indptr; KV extents/offsets may change. Control is externally
+// serialized; old results, pending/failed work or closed Context reject reuse.
+// Invalid layout preserves previous bindings. Success releases old imports;
+// bind all three packed-capacity Q/K/V again. Accepted update failure retires
+// this slot. Native graph/storage remain, changed scalars require re-encoding.
+HYLE_COMPUTE_ROUTE_VULKAN_API Status update_ragged_batch(
+    Invocation&, const BatchLayoutVersion&) noexcept;
 // Explicit GPU materialization reference over the original fixed native Plan.
 // Cold preparation qualifies each typed step; run uses the original Program
 // and independent native slots, with no new Queue/runtime or warm planning.

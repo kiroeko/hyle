@@ -75,7 +75,10 @@ public:
       Status validate(std::span<const RegionBinding>) const noexcept;
   HYLE_GGML_VULKAN_INTERNAL_API
       Status bind(std::span<const RegionBinding>) noexcept;
-  HYLE_GGML_VULKAN_INTERNAL_API Status update_paged_layout(
+  HYLE_GGML_VULKAN_INTERNAL_API Status validate_batch_layout(
+      std::span<const std::int32_t> kv_indptr,
+      std::span<const std::int32_t> last_page_lengths) const noexcept;
+  HYLE_GGML_VULKAN_INTERNAL_API Status update_batch_layout(
       std::span<const std::int32_t> kv_indptr,
       std::span<const std::int32_t> last_page_lengths) noexcept;
   HYLE_GGML_VULKAN_INTERNAL_API WorkState submit() noexcept;

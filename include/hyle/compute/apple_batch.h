@@ -8,10 +8,17 @@
 namespace hyle::compute::apple {
 // Cold immutable host-known ragged layout, F16/BF16 D64/128/256. Three original
 // packed-capacity Q/K/V ports and one active packed Q output. Original MLX
-// views/SDPA/Program own execution; another topology needs explicit prepare.
+// views/SDPA/Program own execution; another Q topology needs explicit prepare.
 // Native metadata/private storage remain unknown; no paged/capture claim.
 HYLE_COMPUTE_ROUTE_APPLE_API Result<Program> prepare_ragged_batch(
     const Context&,BatchLayoutVersion,RaggedAttention,const WorkloadContext& = {}) noexcept;
+// Same schema and full Q-indptr only; KV extents/offsets may change. Externally
+// serialized; old results, in-flight/failed work or closed Context reject reuse.
+// Invalid layout leaves previous bindings usable. Success releases old input
+// imports; bind all three packed-capacity Q/K/V again before submit. Original
+// managed execution costs remain; this does not promise capture/zero allocation.
+HYLE_COMPUTE_ROUTE_APPLE_API Status update_ragged_batch(
+    Invocation&, const BatchLayoutVersion&) noexcept;
 // Explicit GPU materialization reference. Cold traces the fixed original
 // typed recipe into one original MLX Program; run performs no recipe traversal
 // or planning. Bind Q/K/V and same-version uploaded indices/mask in that order.

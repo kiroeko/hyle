@@ -1,6 +1,7 @@
 #pragma once
 #include "hyle/compute/apple_memory.h"
 #if defined(HYLE_COMPUTE_APPLE)
+#include <cstdint>
 #include <functional>
 #include <vector>
 #include "hyle/compute/detail/completion_access.h"
@@ -12,9 +13,11 @@ namespace hyle::compute::apple::detail {
 struct PagedBatchAccess final {
   using RuntimeFunction = std::function<Result<std::vector<mlx::core::array>>(
       const BatchLayoutVersion&, const std::vector<mlx::core::array>&, mlx::core::Stream)>;
-  // Only the cold-qualified pure paged builder may enter this managed bridge.
+  // Only cold-qualified pure paged/ragged builders enter this managed bridge.
   static Result<Program> prepare_runtime_program(const Context&, BatchLayoutVersion,
-      std::span<const InputSpec>, RuntimeFunction, const WorkloadContext&) noexcept;
+      std::span<const InputSpec>, RuntimeFunction, const WorkloadContext&,
+      bool causal = true, std::int32_t window_left = -1) noexcept;
+  static Status update_ragged(Invocation&, const BatchLayoutVersion&) noexcept;
   HYLE_COMPUTE_ROUTE_APPLE_API static Status update_layout(
       Invocation&, const BatchLayoutVersion&) noexcept;
   HYLE_COMPUTE_ROUTE_APPLE_API static Result<Program> prepare_program(

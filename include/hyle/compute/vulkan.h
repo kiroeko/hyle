@@ -293,6 +293,7 @@ public:
 
 private:
   friend struct detail::Access;
+  friend struct detail::PagedBatchAccess;
   explicit Program(std::shared_ptr<detail::ProgramState> state) noexcept
       : state_(std::move(state)) {}
   std::shared_ptr<detail::ProgramState> state_;

@@ -1,13 +1,18 @@
 #pragma once
 #include "hyle/compute/vulkan_memory.h"
 #if defined(HYLE_COMPUTE_VULKAN)
+#include <cstdint>
 #include "hyle/compute/detail/completion_access.h"
 #include "hyle/compute/paged_arena.h"
 #include "hyle/compute/vulkan_batch.h"
 namespace hyle::compute::vulkan::detail {
+struct Plan;
 // Trusted fixed-batch adapters only; never a whole-arena ReadLease. The native
 // view retains its original backing and the immutable exact page footprint.
 struct PagedBatchAccess final {
+  static Result<Program> prepare_ragged_program(const Context&, const Plan&,
+      BatchLayoutVersion, bool causal, std::int32_t window_left) noexcept;
+  static Status update_ragged(Invocation&, const BatchLayoutVersion&) noexcept;
   HYLE_COMPUTE_ROUTE_VULKAN_API static Status update_layout(
       Invocation&, const BatchLayoutVersion&) noexcept;
   HYLE_COMPUTE_ROUTE_VULKAN_API static Result<Program> prepare_program(

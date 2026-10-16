@@ -111,7 +111,8 @@ Result<Program> prepare_ragged_batch(const Context&context,BatchLayoutVersion la
       if(nq&&(!nk||(attention.causal&&nk<nq)))return std::unexpected(Status::Unimplemented("Apple ragged nonempty Q needs sufficient KV"));}
     // The original MLX compiler retains the callable. Retain the immutable
     // owned version, never spans from the caller's metadata arrays.
-    return context.compile([layout=std::move(layout),attention](const std::vector<mlx::core::array>&inputs,mlx::core::Stream stream)->Result<std::vector<mlx::core::array>>{
+    return detail::PagedBatchAccess::prepare_runtime_program(context,layout,inputs,
+        [attention](const BatchLayoutVersion& layout,const std::vector<mlx::core::array>&inputs,mlx::core::Stream stream)->Result<std::vector<mlx::core::array>>{
       if(inputs.size()!=3)return std::unexpected(Status::InvalidArgument("Apple ragged needs Q/K/V"));
       const auto c=attention.capacity;const auto host=layout.host();std::vector<mlx::core::array> parts;
       const auto view=[&](const mlx::core::array &input,std::int32_t start,std::int32_t rows,std::uint32_t heads,int width)->Result<mlx::core::array>{
@@ -136,7 +137,7 @@ Result<Program> prepare_ragged_batch(const Context&context,BatchLayoutVersion la
       if(parts.empty()){HYLE_ASSIGN_OR_RETURN(auto empty,View::slice(0,0,0));HYLE_ASSIGN_OR_RETURN(auto sliced,lower(Operation(empty),std::span(&inputs[0],1),stream));return std::vector{mlx::core::reshape(sliced[0],{0,int(c.query_heads),int(c.value_head_dim)},stream)};}
       if(parts.size()==1)return parts;
       return lower(Operation(Concat{.axis=0}),parts,stream);
-    },inputs,workload);
+    },workload,attention.causal,attention.window_left);
   }catch(const std::bad_alloc&){return std::unexpected(Status::ResourceExhausted("Apple ragged cold tracing metadata"));}
 }
 Result<Program> prepare_materialized_batch(const Context&context,
