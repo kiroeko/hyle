@@ -2696,3 +2696,26 @@ merge和scale/cast所承担的同合同工作，并检查已有trace/反事实�
 输出明确源码锚点与可归属成本；无新机制/material消费双钥匙就结束该调查并保留未决。
 没有授权新P1/n63/profile/tile/阈值搜索、数学修改或公共仪器重写；新FIX须另行冻结并
 合法回AUDITED。其它G项继续推进，整个goal保持ACTIVE，不以G06代签剩余六项。
+
+## Post-G06 只读成本复核终态
+
+[本轮复核](../../../../evidence/architecture/inference-g04-g05-post-g06-cost-review/receipt.json)已结束。
+当前完整产品669、FI产品0a29，原CE28数学830；attention/merge与两个benchmark消费者源码
+逐文件SHA证明未变。G06使双方共同的active metadata扫描、零delta上传/等待及准确页准入
+改变；同一layout不进入新的chunk比较循环，冷planner读取4字节事实与本例不选capture
+均不能冒充warm内核优化。参考额外layout/frame检查仍在，没有新的candidate独有公共费用。
+
+须纠正本卡/G06记录此前的kernel-only简称：原contract与实际execute计完整warm Batch
+lifecycle（update、准确权限、enqueue、checked wait、输出owner取得/释放），不是只计kernel。
+版本创建、参考BF16冷展开与teardown在区间外单独记账。本次只更正解释，原输入、精度、
+输出、cold账、5%耗时门、多重校正和[15,31]完全不变。
+
+FP8读取/scale及F32 partial/merge与参考BF16冷展开/partial确有源码机制差异，但没有当前
+同合同因果计时能把剩余差距归给它们。CE27 trace已过期；CE28 VERIFY_ONLY只证明旧830
+dispatch和数值，不能签当前669的时长。精确原因仍UNPROVEN，不新增FI数学FIX。
+
+有限审查到此停止。FI以本轮CANDIDATE为来源回到BLOCKED，engineering_performance仍
+INCONCLUSIVE；G06验收不撤回，整个goal继续ACTIVE/4of10。未来恢复必须用一张明确新卡
+绑定G06后真实改变的完整候选与原完整warm合同，合法SCOPED/AUDITED后固定一次当前资格；
+不是重采旧830，也不能重置旧失败或放宽统计门。本次未授权新P1/profile/tile或产品改动。
+G07–G10独立继续，不把未决项改名完成，也不继续消费这次只读预算。

@@ -1,0 +1,247 @@
+{
+  "state": "TERMINAL_READONLY_REVIEW_NO_NEW_CAUSAL_FIX",
+  "timestamp_utc": "2026-10-16T08:10:22.672567+00:00",
+  "head": "0a73bfa434cc3a1af917848f77526e6468043026",
+  "full_product_candidate": "669121418669b31f6849c74f64362aaf8d6eb919",
+  "fi_product_candidate": "0a29d119426b2975d48c238c37a2994675e0ba9f",
+  "original_math_candidate": "830dd9e01829e3e5850ddff7eaa6355ee7c8fd0d",
+  "record": "docs/implementation/tasks/compute/inference-g04-g05-cache-attention-domain.md",
+  "source_anchors": [
+    {
+      "path": "bench/inference_resident_sdpa/cuda_encoded_page_bench.cc",
+      "sha256": "d08de20041bc2d9dd36c9da2078145f68000b5dcbb25b653936fc49b708d658c",
+      "original_ce28_sha256": "d08de20041bc2d9dd36c9da2078145f68000b5dcbb25b653936fc49b708d658c",
+      "unchanged_from_ce28": true,
+      "line_ranges": [
+        [
+          141,
+          175
+        ],
+        [
+          185,
+          186
+        ],
+        [
+          198,
+          214
+        ]
+      ]
+    },
+    {
+      "path": "bench/inference_resident_sdpa/cuda_encoded_page_reference.cc",
+      "sha256": "df7603d499d58f009194f46f060c58fe0aed7e4ca778f1c47b5849fea1ec7924",
+      "original_ce28_sha256": "df7603d499d58f009194f46f060c58fe0aed7e4ca778f1c47b5849fea1ec7924",
+      "unchanged_from_ce28": true,
+      "line_ranges": [
+        [
+          19,
+          25
+        ],
+        [
+          65,
+          68
+        ],
+        [
+          100,
+          123
+        ],
+        [
+          152,
+          209
+        ]
+      ]
+    },
+    {
+      "path": "bench/inference_resident_sdpa/cuda_encoded_page_native.cu",
+      "sha256": "cb7f2079a32b24b4956860e695d2e8328d04648f1f911a6b912ff30045ed5474",
+      "original_ce28_sha256": "cb7f2079a32b24b4956860e695d2e8328d04648f1f911a6b912ff30045ed5474",
+      "unchanged_from_ce28": true,
+      "line_ranges": [
+        [
+          38,
+          64
+        ],
+        [
+          68,
+          93
+        ]
+      ]
+    },
+    {
+      "path": "bench/inference_resident_sdpa/cuda_encoded_p1/contract.json",
+      "sha256": "de39ecaa98b113c6ed25e7cd306a0f9a820473230b07ceab2d7dfb72414a57bc",
+      "original_ce28_sha256": "80fb343e2e9602d4e82ee135a6a4c67e11f1b953d642644c849c61dd7b329352",
+      "unchanged_from_ce28": false,
+      "line_ranges": [
+        [
+          5,
+          5
+        ],
+        [
+          166,
+          167
+        ],
+        [
+          262,
+          262
+        ]
+      ]
+    },
+    {
+      "path": "src/compute_batch/batch_execution.cc",
+      "sha256": "0a190e184daedb7708d2c819d60317683673df1743d152c4f1a8a9f3a2e9937b",
+      "original_ce28_sha256": "09c9fb3b55b716cc7f6a1fb15ce14f6b423eadbcb5e4f1b6051d19f2bc59a577",
+      "unchanged_from_ce28": false,
+      "line_ranges": [
+        [
+          126,
+          166
+        ],
+        [
+          310,
+          400
+        ]
+      ]
+    },
+    {
+      "path": "src/compute_provider_flashinfer/flashinfer_provider.cc",
+      "sha256": "8425c496c9221fbd5d19a638fb01b76b1d5fada6dcb848e70c92926b50a9b097",
+      "original_ce28_sha256": "ca6d5b837e1e8e03703768ffb12b1b899193817c41acfaccfed73f3dd8aabe1a",
+      "unchanged_from_ce28": false,
+      "line_ranges": [
+        [
+          170,
+          198
+        ],
+        [
+          203,
+          248
+        ]
+      ]
+    },
+    {
+      "path": "src/compute_provider_flashinfer/native_batch.cu",
+      "sha256": "9f1b6e032e17c69a6221fe6850d12534dcb9ce5189ba80bdc83899aa6ba6f336",
+      "original_ce28_sha256": "f4ed4d922d3151728593058538feb534fef6546b11c79560b0faf7dc71b705e7",
+      "unchanged_from_ce28": false,
+      "line_ranges": [
+        [
+          15,
+          36
+        ]
+      ]
+    },
+    {
+      "path": "src/compute_provider_flashinfer/native_cache.cu",
+      "sha256": "62ace94e0809144aca540fa317f72e9a2bc2b1d29b5099ef15048d3da6b92858",
+      "original_ce28_sha256": "62ace94e0809144aca540fa317f72e9a2bc2b1d29b5099ef15048d3da6b92858",
+      "unchanged_from_ce28": true,
+      "line_ranges": [
+        [
+          16,
+          35
+        ],
+        [
+          45,
+          53
+        ],
+        [
+          84,
+          130
+        ]
+      ]
+    }
+  ],
+  "evidence": [
+    {
+      "path": "evidence/performance/inference-g04-g05-cuda-encoded-w1-wsl-p1-attempt-14/receipt.json",
+      "sha256": "cbd64128c3307e318c8a0fa18f160c0c5241689b569243186b4bcb5968412f55"
+    },
+    {
+      "path": "evidence/architecture/inference-g04-g05-cuda-ce28-producer-stage/consumer-cost-checkpoint.json",
+      "sha256": "8523ad72809f6f0cf6cca48c9f918a92aa4bb64bfbacb6024b243abc661a97d2"
+    },
+    {
+      "path": "evidence/architecture/inference-g04-g05-cuda-ce28-producer-stage/runtime-receipt.json",
+      "sha256": "f309d942060129886013f3c725b75333514d246e286c7b282529f047b2306082"
+    },
+    {
+      "path": "evidence/architecture/inference-g06-final-cost-review/p0.json",
+      "sha256": "b918ee11ca55e8b987c2e03da542765862a19e12641033d12de34ac8f5458a44"
+    },
+    {
+      "path": "evidence/correctness/inference-g06-final-qualification/validation-result.json",
+      "sha256": "96c17a89432b1c785d7e673d413768af32009a62b00a415e36555fad52ba425e"
+    }
+  ],
+  "timing_boundary_correction": "The frozen contract and executable measure a complete warm Batch lifecycle, not kernel-only time: update_batch -> exact paged admission -> native enqueue -> checked Completion.wait -> owning output acquisition and release. Snapshot creation, cold BF16 decode and teardown are outside the warm interval and separately charged. Previous kernel-only shorthand in G06 records is imprecise; this correction changes no workload, output, precision, margin or statistical gate.",
+  "cost_ledger": [
+    {
+      "stage": "snapshot/version/cold peer expansion",
+      "boundary": "OUTSIDE_WARM",
+      "g06_effect": "Active immutable backing helps real version creation; Harness creates one version before sampling. Peer cold BF16 expansion and extra retained bytes remain charged cold, never removed."
+    },
+    {
+      "stage": "common metadata update",
+      "boundary": "CHARGED_BOTH",
+      "g06_effect": "Same frozen version is supplied repeatedly. Both sides scan the same active extents; no changed words means no metadata upload or its explicit checked host wait after cold preparation. No new timing evidence."
+    },
+    {
+      "stage": "common page permission/queue/completion/output",
+      "boundary": "CHARGED_BOTH",
+      "g06_effect": "Both use the same original BatchInvocation/PreparedBatch path and exact grouped page admission. G06 reduces common guard work; output ownership and actual retirement remain. Direct Harness does not use Graph sharing."
+    },
+    {
+      "stage": "FI schedule-equivalence bridge",
+      "boundary": "CANDIDATE_HOST",
+      "g06_effect": "Frozen repeated layout has equal q/kv indptr, so the new changed-KV chunk loop is not entered. Actual chunk scalar is read from original host plan shadow once during cold planning. New zero-Q branch is false for all three shapes."
+    },
+    {
+      "stage": "peer extra checks",
+      "boundary": "PEER_HOST",
+      "g06_effect": "Reference still compares all four layout arrays twice and checks original pinned frame identity. This cannot establish a candidate-only extra lifecycle toll."
+    },
+    {
+      "stage": "native mathematical work",
+      "boundary": "DIFFERENT_STORAGE_SAME_FROZEN_OUTPUT_TOLERANCE",
+      "g06_effect": "Candidate still loads FP8 and applies key scale, retains F32 split partials and merges/scales/casts to BF16. Peer retains a cold-expanded BF16 cache and original BF16 partial/merge path. Both use original FI host merge device/occupancy/attribute calls. Native source files are byte-identical to CE28."
+    },
+    {
+      "stage": "capture",
+      "boundary": "NOT_SELECTED",
+      "g06_effect": "Harness does not call prepare_replay. No capture benefit or capture setup is inserted into this original warm comparison."
+    }
+  ],
+  "trace_verdict": "CE27 diagnostic durations predate CE28 FP8 conversion and cannot quantify CE28. CE28 VERIFY_ONLY trace proves old830 dispatch identity and numeric oracle only; current host product differs, and even identical kernel source does not establish current durations. No current P1 ratio/causal counterfactual can be inferred.",
+  "outcome": "G06 changed real common costs but found no new candidate-only material consumer+mechanism key. Exact remaining timing cause is UNPROVEN. No product FIX, profile, P1 repeat, threshold/tile or instrumentation search authorized by this review.",
+  "disposition": "Stop this finite investigation. Preserve original qualified LOSS, prefill UNRESOLVED and exhausted [15,31]/attempt14. FI engineering gate remains INCONCLUSIVE; G07-G10 and full ACTIVE goal continue. Any future current-candidate qualification needs its own explicitly scoped original-contract rebind; do not repeat unchanged830 or accept G04/G05 through G06 P0.",
+  "limits": [
+    "Read-only source review, not execution or throughput evidence; no new build/profile/server/model/test started.",
+    "Source/hash checks prove which work is selected, not how much latency each stage contributes. FP8/F32 work is a mechanism difference, not measured causal attribution.",
+    "Budget: one finite review, at most2h checkpoint, terminated now; total investigation/editorial elapsed was not independently timed and remains UNKNOWN, not zero. Original failures and cumulative costs remain in their receipts."
+  ],
+  "maintenance_validation": {
+    "baseline": "0a73bfa434cc3a1af917848f77526e6468043026",
+    "selector": "READY docs,closure;146 skipped/reused",
+    "commands": [
+      {
+        "command": "python -X utf8 scripts/check-module-closure.py --previous-ref 0a73bfa434cc3a1af917848f77526e6468043026 --write-status",
+        "exit_code": 0
+      },
+      {
+        "command": "python -X utf8 scripts/check-module-closure.py --previous-ref 0a73bfa434cc3a1af917848f77526e6468043026",
+        "exit_code": 0,
+        "result": "64 components, schema4"
+      },
+      {
+        "command": "python -X utf8 scripts/check-docs.py",
+        "exit_code": 0,
+        "result": "1249 Markdown files,6374 relative links"
+      },
+      {
+        "command": "git diff --check",
+        "exit_code": 0
+      }
+    ]
+  }
+}

@@ -589,10 +589,14 @@
     },
     {
       "module": "compute_provider_flashinfer",
-      "state": "CANDIDATE",
+      "state": "BLOCKED",
       "record": "docs/implementation/tasks/compute/inference-g04-g05-cache-attention-domain.md",
-      "summary": "G06 D6/D7 metadata/schedule/capture finite scope ACCEPTED/P0 with current source/host risks/relocated SDK. Component remains CANDIDATE0a29 for original G04/G05 CUDA prefill noninferiority UNRESOLVED; no old P1 retry or threshold reset. Current card admits only one bounded post-G06 read-only cost review; any new product FIX requires AUDITED.",
-      "candidate": "0a29d119426b2975d48c238c37a2994675e0ba9f"
+      "summary": "G06 D6/D7 ACCEPTED/P0. G04/G05 engineering performance BLOCKED after finite post-G06 read-only review: shared common costs changed, native CE28 math unchanged, exact residual timing cause UNPROVEN; old qualified LOSS/UNRESOLVED and failures/costs retained. Goal ACTIVE4/10; G07-G10 continue.",
+      "candidate": "0a29d119426b2975d48c238c37a2994675e0ba9f",
+      "blocked_from": "CANDIDATE",
+      "blocker": "Original qualified CE28 attempt14 CUDA prefill noninferiority UNRESOLVED at exhausted [15,31]. Post-G06 finite read-only source review terminated without a causal material FIX; current complete warm-lifecycle performance is not qualified.",
+      "blocker_owner": "G04/G05 engineering performance; independent G07-G10 remain available.",
+      "resume_condition": "Explicitly scope qualification of the materially changed post-G06 complete candidate against the unchanged original full warm Batch lifecycle and gate; resume through SCOPED/AUDITED and freeze candidate/contract before one current qualification. Do not resample unchanged830, reset prior failures or relax threshold. A new product FIX additionally requires real consumer plus mechanism evidence."
     },
     {
       "module": "compute_provider_ggml_metal",
