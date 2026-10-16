@@ -1,6 +1,6 @@
 # G06 metadata 与 decode 成本收口
 
-状态：**G06 CANDIDATE；Graph L补齐源码已过，原四路线runtime/capture与ASan/UBSan保留，最终门待，2026-10-16**。本卡沿[完整十项目标](../project/inference-gaps-goal-execution-2026-10.md)，
+状态：**G06 CANDIDATE；四路线迁址SDK八配置与23头通过，WSL三宿主san通过；Air原生宿主风险和最终成本门待，2026-10-16**。本卡沿[完整十项目标](../project/inference-gaps-goal-execution-2026-10.md)，
 不缩减 CPU、单 GPU、CPU＋单 GPU、单/多请求或四原生路线。先完成四组共同审计和形状冻结，
 再集中实施、批量检查、按实际失败定向修正；产品修改仅限下文已冻结且owner为AUDITED的批次。
 
@@ -790,3 +790,39 @@ cold capture、compute107、Graph执行289/Graph51与四个pending target各五�
 
 本段只签已声明host/risk门，不签交付或G06最终通过。11个owner保持CANDIDATE；下一批
 四路线各static/shared搬迁SDK与23独立头串行；最终P0/必要P1/七门红队/LOC仍待。
+
+
+### 四路线八配置最终 SDK 与不可变候选 LOC
+
+[最终迁址 SDK](../../../../evidence/correctness/inference-g06-final-relocated-sdk/receipt.json)
+实际八配置全过：Windows CPU每配置91项、WSL CUDA每配置110项、Air Apple每配置111项、
+Air Vulkan每配置108项，零失败/跳过；另有CUDA每配置三capture消费者、Apple/Vulkan每配置
+真实CPU/native/CPU联合消费者，Apple安装Metal生命周期UB检查。四路线独立头联合23个：
+CPU/CUDA各17个共同头，Apple/Vulkan各加自己3个native头为20；未选路线的3个头按中央
+SPLIT_PUBLIC_HEADERS语义不安装，不能要求CPU包携带Apple/Vulkan或用空guard冒充资格。
+实际消费者26/31/33个TU分别沿其包配置核对；精确数以receipt为准，只用relocated include，
+shipping HYLE_TESTING/san关闭。安装库、测试binary与Windows staged DLL的SHA及实际消费
+loader依赖已独立重核；完整库SHA清单不扩大成未改可选Provider的重新资格。
+
+原CPU static1头矩阵误要求缺席native头，static2漏显式Compute State链接、native launcher
+GBK读取与Vulkan static1预检查失败均保留。static3复用原成功安装与已有consumer对象；
+CUDA两配置均复核146 native对象、零CUDA重编。Vulkan static1实际没有启动build；upstream
+ExternalProject固定BUILD_ALWAYS检查被私有guard误判，内部generator实际no work且外层零
+shader生成。static2复用原配置后CXX build26.976s，shared build27.425s，均max4。
+初次私有封存器对未消费的旧可选Torch CUDA库单独ldd超出本轮范围，在canonical发布前
+失败；改为本轮真实消费者的loader闭包核对，保全部安装库SHA。产品/测试没有因此重跑。
+297个raw文件与原失败/重叠费用封存，调查/编辑/启动未测费用UNKNOWN。
+
+[不可变候选LOC](../../../../evidence/architecture/inference-g06-final-cost-review/loc.json)
+按统一工具对669实算：全库3718683、自实现不含测试180623、本轮11 owner唯一实现联合
+54333行/228文件；联合值不是本次新增行数，也不是引擎所需代码。只归档候选一次；先前
+clean-worktree统计仅诊断，其76.063s及正式不可变132.266s费用均保留。
+
+最终风险矩阵复核：上述三宿主san291项/15模式是WSL host/FI与共同Graph资格，不能代签
+本轮Apple/Vulkan平台分支。原Air六配置san证据绑定G04/G05旧输入，G06 controller/runtime/
+ragged ownership已变，故按原预声明门沿原foundation-f5-native-host缓存，各route补
+ASan/UBSan/TSan：实际paged runtime、ragged update/Recorder、encoded/native/joint/pending
+与错误/退休消费者，保原refcount/Metal TSan边界模型与LSan/driver/private限制。
+这一批不改产品、不重跑已过SDK或未变G04/G05 P1，Win/WSL/Air heavy串行、max4。
+原2h检查点与用户常设有限追加沿原账。七门/P0与必要P1适用性、红队最终裁决仍待；
+11 owner保持CANDIDATE，G06粗估90%，整goal仍3/10。
