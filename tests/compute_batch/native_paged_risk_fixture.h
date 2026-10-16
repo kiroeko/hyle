@@ -148,7 +148,16 @@ inline Status cold_failures(n::Context& context,n::MemoryResource& device,n::Mem
         slot.report().layout_generation==data.next.generation(),"ID-only prepare allocated/rebuilt native topology"));
     fault.fail=SIZE_MAX;
     HYLE_RETURN_IF_ERROR(slot.bind(data.query,data.next_keys,data.next_values));
+    {
     HYLE_ASSIGN_OR_RETURN(auto reused,slot.submit());HYLE_ASSIGN_OR_RETURN(auto result,reused.wait());
+    }
+    HYLE_RETURN_IF_ERROR(slot.prepare_batch(data.next));
+    data.key_frame={};data.next_keys={};
+    auto writable=data.keys.acquire(data.key_reads[0]);
+    HYLE_RETURN_IF_ERROR(require(writable.has_value(),"same-topology prepare retained old exact native page imports"));
+    HYLE_ASSIGN_OR_RETURN(data.key_reads[0],writable->publish(data.schema.capacity().page_size));
+    HYLE_ASSIGN_OR_RETURN(data.key_frame,data.keys.read(data.layout,data.key_reads));
+    HYLE_ASSIGN_OR_RETURN(data.next_keys,data.keys.read(data.next,data.key_reads));
   }
   HYLE_RETURN_IF_ERROR(require(fault.live==0,"cold prepare rejection metadata leaked"));
   std::printf("%s native page cold create all %zu allocation faults and rejected prepare/old generation PASS\n",route,count);return Status::Ok();

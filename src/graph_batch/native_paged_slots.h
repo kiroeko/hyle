@@ -23,6 +23,7 @@ template<class Traits> struct NativePagedSlots final {
     std::size_t fragment;
     std::span<const std::size_t> inputs;
     std::array<compute::PagedArenaRead,2> frames;
+    bool output_bridges_ready=false;
   };
   struct Delete final {
     mem::AllocatorRef allocator;
@@ -96,6 +97,7 @@ template<class Traits> struct NativePagedSlots final {
       slot->frames={};
       const auto found=std::find_if(layouts.begin(),layouts.end(),[&](const auto& l){return l.node==slot->binding->node;});
       HYLE_RETURN_IF_ERROR(slot->controller.prepare(found->layout));
+      if(!slot->controller.report.reused_native_plan)slot->output_bridges_ready=false;
     }
     prepared=true;return Status::Ok();
   }

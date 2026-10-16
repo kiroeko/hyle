@@ -247,3 +247,14 @@ OOM改用真正改变tail编译key的版本，保原ResourceExhausted/旧generat
 另核ID-only更新在禁止下一次controller allocation时成功且reuse；双node pending保
 两真实paged/CPU fragment与独立数学、所有失败/旧结果门，改核实际delta上界和同表零上传。
 不改数学/vendor/公共工具，六owner保持AUDITED；同一缓存串行复验本批native构造与消费者。
+
+Air attempt3共31 stage、外层93.629s，Apple全部PASS；Vulkan Direct、plain/encoded原
+风险、reference及真实pending联合64步等PASS，普通联合64步与encoded单/多请求联合
+FAIL，统一错误为`invalid cold Vulkan composition output`。复用后的原Invocation已经
+封存output bridge；原Graph却仍把每次prepare当新native owner再次取cold output/seal。
+有限修正保留原CompositionAccess门：只在真正native替换后重建bridge；opt-in page Slot
+持一位bridge-ready，在每个controller成功prepare且未复用时立即失效（含多node部分失败），
+Vulkan桥全部成功seal后才置位。原old-result/retirement gate仍先执行，不重开原output。
+另补真实原pending消费者要求的同topology prepare释放旧native输入import反证：实际结果
+释放、prepare、移除caller frames后，准确旧页必须能沿原acquire/publish更新；不豁免F1
+独占门。此项在attempt3未测，当前UNPROVEN，将随定向原native风险批核实。

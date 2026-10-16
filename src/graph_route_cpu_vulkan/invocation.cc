@@ -713,6 +713,9 @@ Status Invocation::prepare_batch(std::span<const batch::NodeLayout> layouts) noe
   HYLE_RETURN_IF_ERROR(run.pages->prepare(layouts));
   run.pages->prepared=false; // All cold output bridges must qualify before admission.
   for(const auto& page:run.pages->slots){
+    // Exact native reuse preserves its sealed output owner and original
+    // download bridge. Only a real replacement establishes a new baseline.
+    if(page->output_bridges_ready)continue;
     HYLE_ASSIGN_OR_RETURN(auto output,ca::detail::CompositionAccess::output(page->controller.native,0));
     const auto id=run.plan->fragments[page->fragment].outputs[0];
     auto& value=run.values[id];
@@ -734,6 +737,7 @@ Status Invocation::prepare_batch(std::span<const batch::NodeLayout> layouts) noe
     // baseline even if this finite variant is not submitted this episode;
     // a later idle prepare must not mistake our own exports for user results.
     HYLE_RETURN_IF_ERROR(ca::detail::CompositionAccess::seal(page->controller.native));
+    page->output_bridges_ready=true;
   }
   run.pages->prepared=true;
   return Status::Ok();
