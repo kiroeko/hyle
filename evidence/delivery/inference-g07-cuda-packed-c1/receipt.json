@@ -1,0 +1,42 @@
+{
+  "schema": "hyle.inference-g07-sdk/v1",
+  "verdict": "PASS_RELOCATED_STATIC_SHARED_CONSUMERS_AND_HEADERS",
+  "candidate": "4274ee6cb6275bf36bda1d8c8c0e223f0fa65db5",
+  "rows": [
+    {
+      "id": "cuda-static-c1",
+      "verdict": "PASS",
+      "result_sha256": "3b6543033ae4d45a9f457c77ef1a1904e3e3c031292d1c3398e54d0ba11f80ca",
+      "consumers": 3,
+      "independent_public_headers": 5,
+      "owner_artifacts": [
+        {
+          "path": "/root/hyle-scratch/compute-unified/g07-sdk/cuda-static-c1/relocated/lib/libhyle_compute_provider_torch_cuda.a",
+          "sha256": "8e247c79a54285504721228264dfdd193e6aefe447b918bee2c268b05bca94e7",
+          "bytes": 320588
+        }
+      ]
+    },
+    {
+      "id": "cuda-shared-c1",
+      "verdict": "PASS",
+      "result_sha256": "976d55366b1943b9ece1f2a7f4aa0231254b87de9ec8e390badece74f4e6e4be",
+      "consumers": 3,
+      "independent_public_headers": 5,
+      "owner_artifacts": [
+        {
+          "path": "/root/hyle-scratch/compute-unified/g07-sdk/cuda-shared-c1/relocated/lib/libhyle_compute_provider_torch_cuda.so.0.1.0",
+          "sha256": "90ebc1fdcbd8a912cc85a84a741570058da2ba20771ece37e6b5224a819b9904",
+          "bytes": 275424
+        }
+      ]
+    }
+  ],
+  "consumer_runs": 6,
+  "independent_header_compilations": 10,
+  "raw_archive": {
+    "path": "raw.zip",
+    "sha256": "309a3a47d62c926d5efa42c4246bda77da0cb2f3f767957a76319fcdd803d746"
+  },
+  "scope": "Actual W1-WSL C1 four-row reuse shipping SDKs. Old prefix absent after relocation, installed-only compile, packed64step/weight migration/CPU+CUDA consumers pass, native146unchanged objects reused by actual input identity. Apple D2 qualification/evidence unchanged. C1 same-contract P1 pending."
+}

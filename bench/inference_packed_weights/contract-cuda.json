@@ -359,7 +359,7 @@
           "CMAKE_INTERPROCEDURAL_OPTIMIZATION": "OFF",
           "HYLE_SIMD_EXACT_TARGET": "",
           "CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
-          "CMAKE_PREFIX_PATH": "/root/hyle-scratch/compute-unified/g07-sdk/cuda-static-1/relocated",
+          "CMAKE_PREFIX_PATH": "/root/hyle-scratch/compute-unified/g07-sdk/cuda-static-c1/relocated",
           "HYLE_G07_ROUTE": "cuda",
           "CMAKE_CXX_COMPILER": "g++-14",
           "CMAKE_C_COMPILER": "gcc-14",

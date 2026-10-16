@@ -416,3 +416,13 @@ CUDA C1现按原排队在Apple终态后执行source/公开64步、实际N2 Direc
 三hostsan各22项；Windows显式Provider四项也通过，包含M5尾块及全部FP8码值。没有skip。
 仅本owner从AUDITED进入CANDIDATE，产品固定4274、实际测试快照2c174；两迁址SDK和
 相同两shape/104轮/原669/5%门P1待做。Apple D2停止重复，既有W1、原失败/UNKNOWN保留。
+
+C1的[两迁址SDK](../../../../evidence/delivery/inference-g07-cuda-packed-c1/receipt.json)已通过：
+六次公开消费者、十次独立头编译；146个未变native CUDA对象按真实输入复用，只有本Provider
+CUDA对象允许编译。共享SDK111步为所选CPU/CUDA与真实联合交付闭包，不是全库CUDA重编。
+benchmark精确改绑C1 static受验prefix，下一步只执行原两shape的固定完整P1。
+
+[最终统一LOC](../../../../evidence/architecture/inference-g07-packed-weight-audit/loc-final.json)
+测不可变5f83快照、自检PASS：全库3759879、自实现不含测试180904、两owner唯一实现
+联合6110行/38文件。两owner产品仍分别为4274/91ae；这是完整实现总量，不是新增行数或
+引擎工作量预测。后续证据/文档不改变这个不可变计数身份，也不触发已过产品门重跑。
