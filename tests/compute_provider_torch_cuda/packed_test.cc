@@ -47,13 +47,17 @@ struct InputSet {
 };
 class NoTorchAllocation final {
 public:
-  NoTorchAllocation() : previous_(c10::cuda::CUDACachingAllocator::getMemoryFraction(0)) {
+  NoTorchAllocation() {
+    // Native packed preparation deliberately never enters ATen. Initialize
+    // only the original allocator metadata before applying its real limit.
+    c10::cuda::CUDACachingAllocator::init(1);
+    previous_=c10::cuda::CUDACachingAllocator::getMemoryFraction(0);
     c10::cuda::CUDACachingAllocator::emptyCache();
     c10::cuda::CUDACachingAllocator::setMemoryFraction(0, 0);
   }
   ~NoTorchAllocation() { c10::cuda::CUDACachingAllocator::setMemoryFraction(previous_, 0); }
 private:
-  double previous_;
+  double previous_=1;
 };
 
 TEST(CudaPackedWeights, Grouped64StepsObserveChangedWordsAndIdsWithoutTorchTemporaries) {
@@ -194,6 +198,42 @@ TEST(CudaPackedWeights, EmbeddingPreservesStorageRoundingBeforeBiasAndCheckedOut
     EXPECT_TRUE(failed.wait().IsOutOfRange());
     std::vector<std::byte> retained(output.size());ASSERT_TRUE(output.view().read(retained).ok());
     EXPECT_EQ(actual,retained);
+  }
+}
+
+TEST(CudaPackedWeights, MixedAffinePromotesWithoutRoundingDecodedWeights) {
+  using Half=hyle::simd::float16_t;
+  using Bfloat=hyle::simd::bfloat16_t;
+  constexpr std::int64_t n=7,k=256;
+  for(const unsigned group:{32U,64U,128U}) {
+    SCOPED_TRACE(group);
+    std::vector<Half> activation(k);
+    activation[0]=half_test::encode<Half>(1);
+    activation[1]=half_test::encode<Half>(-1.375);
+    activation[129]=half_test::encode<Half>(.75);
+    std::vector<Bfloat> scales(n*k/group,half_test::encode<Bfloat>(.1));
+    std::vector<Bfloat> biases(scales.size(),half_test::encode<Bfloat>(.03));
+    const std::vector<std::uint32_t> words(n*k/8,0x76543210U);
+    InputSet data({dense(c::DataType::kFloat16,{1,k}),dense(c::DataType::kUInt32,{n,k/8}),
+        dense(c::DataType::kBFloat16,{n,k/group}),dense(c::DataType::kBFloat16,{n,k/group})},
+        {bytes(activation),bytes(words),bytes(scales),bytes(biases)});
+    const auto op=c::model_ops::mlx_quantized_matmul(c::model_ops::MlxWeightFormat::kAffine4,group);
+    std::array<c::TensorDesc,1> desc;
+    ASSERT_TRUE(c::infer_output_descriptions(op,data.descriptions,desc).ok());
+    ASSERT_EQ(desc[0].data_type(),c::DataType::kFloat32);
+    NoTorchAllocation no_torch;
+    auto prepared=c::prepare(data.context,op,data.descriptions,desc,data.resource.ref()).value();
+    auto slot=prepared.create_invocation().value();
+    auto output=mem::Buffer::create(data.resource.ref(),n*sizeof(float),256).value();
+    const std::array target{c::TensorView::create(desc[0],output.view()).value()};
+    auto work=slot.submit(data.queue,data.views,target).value();ASSERT_TRUE(work.wait().ok());
+    std::vector<float> actual(n);ASSERT_TRUE(output.view().read(std::as_writable_bytes(std::span(actual))).ok());
+    double expected=0,magnitude=0;
+    for(int j=0;j<k;++j) {
+      const float decoded=float(j%8)*float(half_test::decode(scales[j/group]))+float(half_test::decode(biases[j/group]));
+      const double term=half_test::decode(activation[j])*decoded;expected+=term;magnitude+=std::abs(term);
+    }
+    for(float value:actual)EXPECT_NEAR(value,expected,8*std::numeric_limits<float>::epsilon()*magnitude);
   }
 }
 } // namespace
