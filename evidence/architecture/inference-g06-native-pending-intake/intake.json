@@ -1,0 +1,197 @@
+{
+  "kind": "G06_NATIVE_PENDING_SCOPE_INTAKE_READONLY",
+  "baseline": "e533327918789edf60a474f4d6ad423ae57ae8e6",
+  "owners": [
+    {
+      "module": "compute_route_apple",
+      "state": "CLOSED",
+      "record": "docs/implementation/tasks/compute/inference-g04-g05-apple-ce14-terminal.md",
+      "summary": "G04/G05 Apple finite encoded-page domain CLOSED at CE14: original Q8_0/page16 F16/BF16/window/noncausal/unequal Dv and native/required CPU+Apple producer/F2 journeys; source/static/shared/host risks/shader checks and qualified P1 PASS/verify0. Three F16 finite workload directions WIN. Original failures, host sanitizer models, metadata waits/private UNKNOWN retained; whole G04/G05, CUDA/G02 and G06-G10 remain.",
+      "candidate": "3b51575320c3f823ad1a31d18e99b8c55523a117",
+      "performance": {
+        "tier": "P1",
+        "evidence": "docs/implementation/evidence/performance/inference-encoded-g04-g05-2026-10.md",
+        "material_margin_pct": 5
+      }
+    },
+    {
+      "module": "compute_route_vulkan",
+      "state": "CANDIDATE",
+      "record": "docs/implementation/tasks/compute/inference-g04-g05-cache-attention-domain.md",
+      "summary": "G04/G05 CANDIDATE: CE01-11 finite encoded KV/independent geometry/window/noncausal/unequal Dv frozen. Four-native/three-joint source, finite source risks, CPU+Apple/Vulkan host sanitizers and eight SDK configurations PASS. Cost review/CPU peer oracle PASS; CUDA new-domain host risk and qualified P1 remain pending. Original closed scopes/failures/unknown native private costs retained.",
+      "candidate": "982676cb05a6e6244e66e0a596347aa96043617b"
+    },
+    {
+      "module": "graph_route_cpu_apple",
+      "state": "CLOSED",
+      "record": "docs/implementation/tasks/compute/inference-g03-final-closure.md",
+      "summary": "G03 CLOSED finite admitted producer/update/Direct/Graph journeys. Four original and three required CPU+GPU routes qualified through public64, lifetime/host risks/source-static-shared; independent native source owners and true CPU+CUDA8 covered. Original native math/slots/queues reused, exact permissions and source errors retained. P0 bind allocations/checked waits/private UNKNOWN explicit; original G01/G02 whole-item gates and G04-G10 remain.",
+      "candidate": "11b2403e794b6eed2c89418d72b8c89aeaaac746",
+      "performance": {
+        "tier": "P0",
+        "evidence": "docs/implementation/tasks/compute/inference-g03-final-closure.md"
+      }
+    },
+    {
+      "module": "graph_route_cpu_vulkan",
+      "state": "CLOSED",
+      "record": "docs/implementation/tasks/compute/inference-g03-final-closure.md",
+      "summary": "G03 CLOSED finite admitted producer/update/Direct/Graph journeys. Four original and three required CPU+GPU routes qualified through public64, lifetime/host risks/source-static-shared; independent native source owners and true CPU+CUDA8 covered. Original native math/slots/queues reused, exact permissions and source errors retained. P0 bind allocations/checked waits/private UNKNOWN explicit; original G01/G02 whole-item gates and G04-G10 remain.",
+      "candidate": "11b2403e794b6eed2c89418d72b8c89aeaaac746",
+      "performance": {
+        "tier": "P0",
+        "evidence": "docs/implementation/tasks/compute/inference-g03-final-closure.md"
+      }
+    },
+    {
+      "module": "compute_batch",
+      "state": "AUDITED",
+      "record": "docs/implementation/tasks/compute/inference-g06-metadata-decode.md",
+      "summary": "G06共同基础批M1/M2/S1/L1已集中实施：active快照/显式固定导出、五段delta、上传前共享及ready lease去重。096fb6b09实际Windows source56+6+24 PASS/零SKIP；pending/native准入、四路线decode及最终风险/交付仍待，不签G06或G04/G05完成。"
+    },
+    {
+      "module": "graph_batch",
+      "state": "AUDITED",
+      "record": "docs/implementation/tasks/compute/inference-g06-metadata-decode.md",
+      "summary": "G06共同基础批M1/M2/S1/L1已集中实施：active快照/显式固定导出、五段delta、上传前共享及ready lease去重。096fb6b09实际Windows source56+6+24 PASS/零SKIP；pending/native准入、四路线decode及最终风险/交付仍待，不签G06或G04/G05完成。"
+    }
+  ],
+  "sources": [
+    {
+      "path": "include/hyle/compute/detail/materialized_native_controller.h",
+      "sha256": "9c92224885493ccfea20e872ae631b0c70142da31068f36b4a239fce0e4719f4",
+      "anchors": {
+        "prepare(BatchLayoutVersion": [
+          94
+        ],
+        "recipe.version": [
+          95
+        ],
+        "T::prepare_program": [
+          98
+        ],
+        "Policy::read": [
+          113
+        ],
+        "batch.read(page)": [
+          180,
+          181
+        ]
+      }
+    },
+    {
+      "path": "src/compute_batch/batch_paged_native.cc",
+      "sha256": "d0276acb6dc6a0212402c26ecafc356b7799fc0bf39b02930b9e677ce0d97fda",
+      "anchors": {
+        "NativePagedBatchProgram::version": [
+          94
+        ],
+        "costs.index_bytes": [
+          83,
+          99
+        ],
+        "std::fill_n": [
+          104
+        ]
+      }
+    },
+    {
+      "path": "src/compute_route_apple/apple_batch.cc",
+      "sha256": "1ba19bbb95773b5e15e4830eac7107be71072e3db454c71ac8d1086708657672",
+      "anchors": {
+        "const auto host=layout.host()": [
+          40,
+          63,
+          107,
+          114
+        ],
+        "hyle_paged_attention": [
+          78
+        ]
+      }
+    },
+    {
+      "path": "src/compute_route_vulkan/vulkan_batch.cc",
+      "sha256": "40cceb2370284ba6ab4fafea5295d840b8097714f3658188d3a0f6090645bbd7",
+      "anchors": {
+        "const auto host=layout.host()": [
+          52,
+          118
+        ],
+        "logical_rows=request.kv": [
+          71,
+          132
+        ]
+      }
+    },
+    {
+      "path": "src/graph_route_cpu_apple/paged.h",
+      "sha256": "716c973b06a4f2fb872c32b81e051d40f93ca6bd2f5f32c7b472df9cbcdd557d",
+      "anchors": {
+        "MaterializedNative": [],
+        "prepare_program": [
+          36,
+          39
+        ]
+      }
+    },
+    {
+      "path": "src/graph_route_cpu_vulkan/paged.h",
+      "sha256": "234d8840de9cfab1535dfbcc96359ac64f866f16d76b7ff56c66524d8b25d4c9",
+      "anchors": {
+        "MaterializedNative": [],
+        "prepare_program": [
+          29,
+          32
+        ]
+      }
+    },
+    {
+      "path": "src/graph_batch/native_paged_slots.h",
+      "sha256": "e479b0f89273eabd4db8e0db0b5506d42738e95e31cbab08bf9711c40d1b3386",
+      "anchors": {
+        "MaterializedNativeState": [
+          15
+        ]
+      }
+    },
+    {
+      "path": "src/graph_batch/batch.cc",
+      "sha256": "e347b6851938e524d82cd20ab0b45fdc037b5ce64f5650e2577508727567eb16",
+      "anchors": {
+        "PagedArenaAccess::admit_read": [
+          380
+        ]
+      }
+    },
+    {
+      "path": "src/compute_batch/batch_execution.cc",
+      "sha256": "2d48fe97c37bc3c411123769d50e04f42ff302bbafed62c3d7e84ef3ebbf51c1",
+      "anchors": {
+        "PagedArenaAccess::admit_read": [
+          434,
+          435
+        ]
+      }
+    },
+    {
+      "path": "include/hyle/compute/detail/paged_arena_access.h",
+      "sha256": "47e4c88a517ee066a45010c974b9207ee2b230e890a04b67081a24e012797d28",
+      "anchors": {
+        "uses.read(page)": [
+          43
+        ],
+        "Access::admit_read": [
+          44
+        ]
+      }
+    }
+  ],
+  "findings": [
+    "Original Apple/Vulkan paged metadata version materializes/zeros capacity-sized page table each prepare; current native controller always builds a new native Program/Invocation and stages/uploads full table.",
+    "Native programs consume page IDs through original device table; compile-time constants depend on Q/KV indptr, tail/derived logical rows and immutable schema/attention recipe, not page values. Exact equal-topology replay/page reorder can reuse original Program; changed lengths cannot use stale constants.",
+    "The shared controller is instantiated by actual CPU+Apple/CPU+Vulkan Graph paged traits as well as native Direct wrappers, requiring scoped direct-consumer owners before changing its runtime behavior.",
+    "Pending ready pages still use ordinary F1 read scans; original ordered mutable-page reads already use ordered_read_unique and preserve actual producer dependency qualification.",
+    "No new CUDA kernel/P1, native runtime shape, capture or whole G06 verdict. Full runtime lengths/decode qualification remains separate required work under original G06-D."
+  ]
+}

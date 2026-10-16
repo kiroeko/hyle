@@ -155,3 +155,21 @@ manifest0.187s另保，三个private setup失败/原观察缺口及raw全部封�
 owner仍AUDITED；本证据不签三san/SDK/header/native新资格、pending L或四路线D完成。
 下步先补本G06依赖批后的native metadata/topology/runtime设计和实现，再对最终适用
 不可变候选集中做风险、三交付与各直接消费者；不为每个helper重复整套验证。
+
+## 原生与 pending 批 SCOPED
+
+[本批源码反证](../../../../evidence/architecture/inference-g06-native-pending-intake/intake.json)
+绑定baseline e533327918789edf60a474f4d6ad423ae57ae8e6。新增施工owner为原Apple route
+（baseline3b51575320c3f823ad1a31d18e99b8c55523a117）及原CPU+Apple/CPU+Vulkan
+Graph route（baseline11b2403e794b6eed2c89418d72b8c89aeaaac746）；三者合法CLOSED→SCOPED，
+仅重开G06准备/metadata/准确页准入成本，不重做已关闭数学、原producer/退休机制。
+原Vulkan route仍为旧CANDIDATE，进入本批AUDITED前不改其产品；CPU/FI/ggml runtime
+继续只读，不由本批自动取得施工权。共同compute_batch/graph_batch维持AUDITED。
+
+实际controller及两个hybrid traits都实例化同一MaterializedNativeState；每prepare原生
+Program/Invocation重建、全容量索引快照与完整上传已由当前源码核实。原native程序的
+常量只取Q/KV indptr及tail，page IDs经原device输入，给出了保完整key的有限复用入口。
+范围仍为原G06四组；本批先固定lazy index导出、逐bank准确delta、原native对象复用和
+pending/原生readonly页准入，不把长度变化假装静态复用。长度runtime、四路线decode
+与实际capture裁决仍是原G06-D必做后续。主/正交消费者、预算、失败/关闭与预声明
+source/三san/SDK/直接native及三联合验证沿本卡，新增风险见AUDITED有限表后才实施。
