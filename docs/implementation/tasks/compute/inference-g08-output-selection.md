@@ -379,3 +379,10 @@ Apple S1 P1增加且仅增加一个holdout：R16×V248320、count3、largest、�
 owning完成/5%门；普通有限normal logits让旧版也满足同一oracle，不以旧版会崩的Tiny
 案例做速度比较。其他三路线仍各两形状，Apple原R1/R16 count1保持。尚未构造P1。
 先完成此AUDITED有限决定再改产品，产品实现后普通数值通过再冻结candidate。
+
+
+447a6289a Apple Direct/Graph完整TopK、raw/categorical三dtype/full-vocab/65步/
+质量均PASS，Graph独立port与原4个TopK留出也PASS。CPU Graph在a3已完整PASS。
+下一Vulkan普通批补原native View输入byte origin1/3/17（旧公开typed carrier可消费）
+到TopK1、raw U32与三categorical dtype；Graph用原View producer保留origin，
+不由Copy物化掩盖Direct/Graph消费差异。仅是原S1/S2/S3有限dense/stride合同测试。
