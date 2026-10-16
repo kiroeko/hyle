@@ -51,6 +51,10 @@ public:
     };
     return Output{reader(), std::move(reader)};
   }
+  void renew_failed_slot(int bank) {
+    slots_[std::size_t(bank)] = {};
+    slots_[std::size_t(bank)] = take(program_.create_invocation());
+  }
   void close() {
     for (auto &slot : slots_) slot = {};
     program_ = {}; require(context_.close());

@@ -2,6 +2,7 @@
 
 #include "sampling_fixture.h"
 #include <hyle/graph/cpu.h>
+#include <hyle/mem/buffer.h>
 #include <hyle/sched/scheduler.h>
 
 #if defined(HYLE_G08_APPLE)
@@ -38,7 +39,14 @@ inline void native_joint() {
   auto staging=take(native::MemoryResource::create(context,native::MemoryKind::kStaging));
 #endif
   hyle::sched::Scheduler scheduler(2,m::system_allocator(),64);
+  auto table_buffer=take(m::Buffer::create(m::system_resource(),width*sizeof(float),256));
+  std::array<float,width> table_data;
+  for(int j=0;j<width;++j)table_data[std::size_t(j)]=float(j)*2+.25F;
+  require(table_buffer.view().write(std::as_bytes(std::span(table_data))));
+  const auto table_view=take(c::ConstTensorView::create(dense(c::DataType::kFloat32,{width}),table_buffer.view()));
   auto builder=take(g::GraphBuilder::create());
+  const auto table=take(builder.constant(table_view.description()));
+  const std::array constants{g::ConstantBinding{table,table_view,g::ConstantPolicy::kMaterialize}};
   const auto logits_desc=dense(c::DataType::kFloat32,{rows,width});
   const auto keys_desc=dense(c::DataType::kUInt32,{rows,4});
   const auto x=take(builder.input(logits_desc)),key=take(builder.input(keys_desc));
@@ -46,8 +54,8 @@ inline void native_joint() {
   const auto counter=take(builder.add(c::Copy{},key));
   const auto sampled=take(builder.add_node(c::sampling_ops::categorical(true),std::array{produced,counter}));
   const auto index=take(builder.result(sampled,0)),score=take(builder.result(sampled,1));
-  const auto cast=take(builder.add(c::Cast{c::DataType::kFloat32},index));
-  const auto sum=take(builder.add(c::Binary{c::BinaryKind::kAdd},cast,score));
+  const auto gathered=take(builder.add(c::Gather{},table,index));
+  const auto sum=take(builder.add(c::Binary{c::BinaryKind::kAdd},gathered,score));
   require(builder.publish(sum));auto logical=take(std::move(builder).finish());
   const std::array placements{
       g::NodePlacement{take(logical.node_id(3)),bridge::kCpuTarget,g::PlacementStrength::kRequired},
@@ -55,10 +63,10 @@ inline void native_joint() {
   bridge::CompileReport report;
 #if defined(HYLE_G08_APPLE)
   auto program=take(bridge::compile(logical,{.cpu=&cpu,.apple=&context,.native=&memory},
-      {.node_placements=placements},&report));
+      {.node_placements=placements,.constants=constants},&report));
 #else
   auto program=take(bridge::compile(logical,{.cpu=&cpu,.vulkan=&context,.device=&memory,.staging=&staging},
-      {.node_placements=placements},&report));
+      {.node_placements=placements,.constants=constants},&report));
 #endif
   check(report.fragments.size()==2,"native joint lost GPU selection/CPU math partition");
   std::array<c::Queue,2> queues;
@@ -96,13 +104,13 @@ inline void native_joint() {
     require(output.storage().read(std::as_writable_bytes(std::span(actual))));
     for(int r=0;r<rows;++r) {
       const int first=(step*7+r*13)%width,second=(first+65)%width;
-      const auto error=std::min(std::abs(double(actual[std::size_t(r)])-(first-std::log(2.))),
-                                std::abs(double(actual[std::size_t(r)])-(second-std::log(2.))));
-      check(error<2e-5,"GPU selection -> CPU cast/add independent numerical oracle differs");
+      const auto error=std::min(std::abs(double(actual[std::size_t(r)])-(2*first+.25-std::log(2.))),
+                                std::abs(double(actual[std::size_t(r)])-(2*second+.25-std::log(2.))));
+      check(error<2e-5,"GPU selection -> CPU lookup/add independent numerical oracle differs");
     }
   }
   for(auto &slot:slots)require(slot.close());
   require(context.close());require(cpu.close());
-  std::puts("PASS native joint: resident GPU producer/checked categorical -> 24-byte CPU cast+add, 65 steps/two slots");
+  std::puts("PASS native joint: resident GPU producer/checked categorical -> 24-byte CPU lookup+add, 65 steps/two slots");
 }
 } // namespace sampling_test

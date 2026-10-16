@@ -273,6 +273,9 @@ template<class Session> void categorical_journey() {
     else bad[9] = invalid;
     auto failed = session.run({pack(bad), pack(keys)}, 1);
     check(!failed && failed.error().IsInvalidArgument(), "invalid row did not fail checked completion");
+    // Common failed invocations are terminal. Renew this failed slot only;
+    // the Program, healthy replay slot and explicit key/draw stay unchanged.
+    session.renew_failed_slot(1);
     auto after = take(session.run({pack(valid), pack(keys)}, 0));
     check(after.bytes == before.bytes, "failed draw changed later successful result");
     check(before.read_again() == before.bytes, "failed draw corrupted old native output");

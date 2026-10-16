@@ -278,3 +278,16 @@ realloc/跨线程及Buffer完整payload/移动回归。独立批结果也已收�
 写0被原结构合同拒绝，已定向改为一次合法backend episode（零native kernel事实保留）；
 CUDA实际math1048772对PASS、maxabs1.30670895e-6；joint路由尚失败，留待后续定向
 裁决，不签PASS。原日志source5-remaining-tests及五次源码批费用均保留。
+
+
+joint定向诊断确认测试选了现公开Cast不支持的I32→F32域；该功能不是G08验收前置。
+将同一选中I32接现成CPU Gather查F32表，再与selected logprob做CPU Add，覆盖引擎
+实际ID消费，仍只迁移24 bytes/3rows和两跳staging；只改消费者，不新增整数Cast能力
+或修改其他owner。旧路由失败保留，正式旅程改签GPU selection→CPU lookup/add。
+
+
+825e662a3源码批Mem244/244 PASS（含M1回归），同一CPU消费者已通过三浮点dtype、
+独立logprob/重排/旧owner及真实R1/R16各65步。失败测试第二次沿用已失败的原invocation，
+原operation.cc明确要求failed invocation recreated，故仅更新测试：重建failed slot1，
+原Program/healthy slot0/key/draw/旧输出保留；按原合同检查每个InvalidArgument及同key复现。
+本次不改产品，不重跑已通过且输入未变的Mem244项；保持后续平台/交付/风险待验。

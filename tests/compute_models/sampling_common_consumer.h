@@ -142,6 +142,16 @@ public:
     };
     return Output{reader(), std::move(reader)};
   }
+  void renew_failed_slot(int bank) {
+    slots_[std::size_t(bank)] = {};
+#if defined(HYLE_G08_GRAPH)
+    slots_[std::size_t(bank)] = take(program_.create_invocation());
+#else
+    const auto range = workspace_size_ == 0 ? m::BufferView{} :
+        take(workspaces_[std::size_t(bank)].view().subview(workspace_guard_,workspace_size_));
+    slots_[std::size_t(bank)] = take(program_.create_invocation(range));
+#endif
+  }
   void close() {
     for (auto &slot : slots_) slot = {};
     program_ = {};
