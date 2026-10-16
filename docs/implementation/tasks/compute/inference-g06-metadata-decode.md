@@ -463,3 +463,27 @@ D5首次Apple构建发现新GTest的Status/macro写法错误，定向修正后Ap
 原Recorder冷复制共享immutable anchor。无新Invocation字段/普通submit分支。此修订先
 回写AUDITED账，再改产品；原两轮失败与费用保留。Apple输入未改且artifact匹配时复用
 第二轮已过子门；第三轮只运行同缓存Vulkan整组，不重跑未变Apple/Windows。
+
+### 原生 ragged runtime source 通过（cc3b30b26）
+
+[D5实际source证据](../../../../evidence/correctness/inference-g06-native-ragged-runtime-source/receipt.json)
+绑定cc3b30b26c7f18812dc8fc1c0fdeb81e5094b6a1。实际Air Apple48/Vulkan24组各64步，
+single Q1/multi Q1/mixed17+1和空request、plain/Q8、Apple F16/BF16/Vulkan F16、
+D64/128/256、D64/Dv128/window16及causal/noncausal全部PASS。独立uniform oracle与
+poison未用KV尾行、旧slot数值、更新后必须重bind、foreign/Q变动/不足causal KV/旧结果/
+在途owner/关闭拒绝，以及拒绝后保原绑定运行均通过。原两项native ragged测试也通过。
+
+采用第二轮Apple已过14次消费者与第三轮Vulkan15次，共29次native执行及6个适用setup/
+build stage；原paged/CPU-native-CPU/encoded/pending/unknown/cancel/abandon/multi-source
+及Vulkan provider10/alias-phase2继续通过。第三轮只改变两份Vulkan私有文件，完整manifest
+核实Apple输入及artifact匹配；第二轮整体仍记FAIL，不能把其Vulkan失败改为PASS。
+Windows D4普通62/真实26/pending18按实际CPU源码与原artifact SHA匹配借用。
+
+第一轮外层15.211s、第二轮81.335s及各build失败保留；第二轮Apple build6.316s，第三轮
+Vulkan build12.945s/外层67.139s，stage与外层重叠。缺失archive/launch/观察费用UNKNOWN。
+最终Vulkan不可变contract用shared_ptr，原Recorder冷复制可编译；其适当runtime回归随
+完整G06最终风险批，不以编译冒充该运行门。没有数学/vendor/shader/runtime/公共工具修改。
+
+D5只签有限source正确性/P0，最终san/header/迁址static/shared与性能待完整G06固定后。
+Apple managed建图、Vulkan重新编码与private/driver UNKNOWN保持；FI Q1/原生schedule复用
+及实际capture仍待下一批审计。owner仍AUDITED，G04/G05未决与整十项范围保持，完成数3/10。

@@ -37,7 +37,7 @@ causal `Q×K` mask与float shared scratch仍是真成本，没有capture或全dt
 owned host `BatchLayoutVersion` 和相同容量的 `RaggedAttention`。三个输入是 packed NHD
 容量 Q/K/V，单输出是实际 active packed Q rows。有限 F16 D64/128/256域借原View/
 SDPA/Concat/Program；qualified request slices保原KV root和对齐origin，不按每Q/head
-展开历史。原query转换、mask、输出拼接与native私有费用仍存在。
+展开历史。必要query转换、输出拼接与native私有费用仍存在。
 
 ```cpp
 auto program = hyle::compute::vulkan::prepare_ragged_batch(
@@ -46,11 +46,20 @@ auto slot = program.create_invocation().value();
 HYLE_RETURN_IF_ERROR(slot.bind(std::array{query_tensor, key_tensor, value_tensor}));
 auto done = slot.submit().value();
 auto result = done.wait().value();
+result = {}; done = {};
+HYLE_RETURN_IF_ERROR(hyle::compute::vulkan::update_ragged_batch(slot, next_layout));
+HYLE_RETURN_IF_ERROR(slot.bind(std::array{query_tensor, key_tensor, value_tensor}));
 ```
 
-Q0 request跳过，全空输出为空；非空Q需KV，causal需KV≥Q。拓扑变动显式重新准备，
-现有Program/slots/旧结果/实际退休按原native规则保留；不声称native paged、增长规划
-或一般capture。实际Air source/static/shared、宿主风险、Windows定向编译和同合同
+Q0 request跳过，全空输出为空；非空Q需KV，causal需KV≥Q。改变Q拓扑显式重新准备。
+同schema/完整Q indptr可显式更新KV长度和packed起点，保原Program/graph/storage；
+变化的标量使原录制失效并重新编码，不表示capture。更新前检查全部native region，非法布局
+保原绑定；成功后旧input imports释放，必须重新bind。旧结果、在途/失败工作或关闭Context
+拒绝更新；接受后的更新错误使原slot失败，不能继续运行半更新状态。
+新入口的[实际Air source验证](../../evidence/correctness/inference-g06-native-ragged-runtime-source/receipt.json)
+覆盖单/多请求Q1、混合Q、plain/Q8及有限几何；最终sanitizer/迁址SDK/header与性能资格待G06收口。
+caller需要取得KV writer时也须释放自己的旧native views/reader。
+初始固定布局候选的实际Air source/static/shared、宿主风险、Windows定向编译和同合同
 多请求性能非劣門均已通过，见[有限终审](../implementation/tasks/compute/inference-g01-vulkan-ragged-terminal.md)。
 原tagged多flash/Concat图仅在实际record-safe成立时复用固定记录；绑定origin/owner变化
 仍会失效，不将其他graph自动标为固定重放。

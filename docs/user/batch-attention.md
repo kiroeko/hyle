@@ -160,6 +160,11 @@ caller 创建的新版本仍拥有 active-sized snapshot，metadata delta 上传
 覆盖单/多请求32组×64步与原数值/风险；最终 sanitizer/SDK/header 和新性能资格仍待。
 另有[CPU ragged Q1 source 验证](../../evidence/correctness/inference-g06-cpu-ragged-runtime-source/receipt.json)
 覆盖32组×64步 packed KV 增长/缩短、后续 request 起点移动、长 KV 及独立旧 slot 输出。
+Apple/Vulkan原生ragged沿各自`prepare_ragged_batch`返回的Program/Invocation，使用公开
+`update_ragged_batch(slot, layout)`，固定schema/完整Q拓扑下更新KV长度与packed起点，
+成功后重新bind原三个容量输入。调用外部串行，旧结果/在途/失败/关闭受原门保护；非法布局
+保旧绑定。其[当前source资格](../../evidence/correctness/inference-g06-native-ragged-runtime-source/receipt.json)
+不签capture、零native分配或最终SDK/性能；Apple变化长度仍managed建图，Vulkan仍重新编码。
 
 Linux CUDA的公开factory随普通产品传递，消费者只链接hyle::compute/hyle::graph；
 cuda.h在实际HYLE_COMPUTE_FLASHINFER资格下供应原factory头，未准入平台不供应该API。

@@ -506,7 +506,7 @@
       "module": "compute_route_apple",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/inference-g06-metadata-decode.md",
-      "summary": "G06-D3 runtime lengths source通过：两native同Q拓扑保Program/Invocation，KV indptr/tail逐Invocation更新，原delta/准确页/退休不变。Windows91＋pending18、Air实际Direct/联合/pending等27执行及Vulkan provider10/alias-phase2 PASS；无数学/vendor/runtime/shader/P1。仍AUDITED；ragged/FI Q1/capture与最终san/header/SDK待，原失败/费用保留。"
+      "summary": "G06共同/CPU Q1/native paged及D5原生ragged source通过。两route公开同schema/Q拓扑更新KV extent/offset，保旧结果/在途/失败门；Air新Apple48/Vulkan24组各64步、原native/联合/pending等29执行及provider/alias-phase PASS，Windows按D4精确SHA借用。两轮构建失败保留，owner仍AUDITED；FI Q1/schedule/capture及最终san/header/SDK/性能待，无新P1或整项完成。"
     },
     {
       "module": "graph_route_apple",
@@ -523,7 +523,7 @@
       "module": "compute_route_vulkan",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/inference-g06-metadata-decode.md",
-      "summary": "G06-D3 runtime lengths source通过：两native同Q拓扑保Program/Invocation，KV indptr/tail逐Invocation更新，原delta/准确页/退休不变。Windows91＋pending18、Air实际Direct/联合/pending等27执行及Vulkan provider10/alias-phase2 PASS；无数学/vendor/runtime/shader/P1。仍AUDITED；ragged/FI Q1/capture与最终san/header/SDK待，原失败/费用保留。"
+      "summary": "G06共同/CPU Q1/native paged及D5原生ragged source通过。两route公开同schema/Q拓扑更新KV extent/offset，保旧结果/在途/失败门；Air新Apple48/Vulkan24组各64步、原native/联合/pending等29执行及provider/alias-phase PASS，Windows按D4精确SHA借用。两轮构建失败保留，owner仍AUDITED；FI Q1/schedule/capture及最终san/header/SDK/性能待，无新P1或整项完成。"
     },
     {
       "module": "graph_route_vulkan",
@@ -536,7 +536,7 @@
       "module": "compute_provider_ggml_vulkan",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/inference-g06-metadata-decode.md",
-      "summary": "G06-D3 runtime lengths source通过：两native同Q拓扑保Program/Invocation，KV indptr/tail逐Invocation更新，原delta/准确页/退休不变。Windows91＋pending18、Air实际Direct/联合/pending等27执行及Vulkan provider10/alias-phase2 PASS；无数学/vendor/runtime/shader/P1。仍AUDITED；ragged/FI Q1/capture与最终san/header/SDK待，原失败/费用保留。"
+      "summary": "G06共同/CPU Q1/native paged及D5原生ragged source通过。两route公开同schema/Q拓扑更新KV extent/offset，保旧结果/在途/失败门；Air新Apple48/Vulkan24组各64步、原native/联合/pending等29执行及provider/alias-phase PASS，Windows按D4精确SHA借用。两轮构建失败保留，owner仍AUDITED；FI Q1/schedule/capture及最终san/header/SDK/性能待，无新P1或整项完成。"
     },
     {
       "module": "compute_ggml_runtime",
@@ -627,13 +627,13 @@
       "module": "graph_route_cpu_apple",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/inference-g06-metadata-decode.md",
-      "summary": "G06-D3 runtime lengths source通过：两native同Q拓扑保Program/Invocation，KV indptr/tail逐Invocation更新，原delta/准确页/退休不变。Windows91＋pending18、Air实际Direct/联合/pending等27执行及Vulkan provider10/alias-phase2 PASS；无数学/vendor/runtime/shader/P1。仍AUDITED；ragged/FI Q1/capture与最终san/header/SDK待，原失败/费用保留。"
+      "summary": "G06共同/CPU Q1/native paged及D5原生ragged source通过。两route公开同schema/Q拓扑更新KV extent/offset，保旧结果/在途/失败门；Air新Apple48/Vulkan24组各64步、原native/联合/pending等29执行及provider/alias-phase PASS，Windows按D4精确SHA借用。两轮构建失败保留，owner仍AUDITED；FI Q1/schedule/capture及最终san/header/SDK/性能待，无新P1或整项完成。"
     },
     {
       "module": "graph_route_cpu_vulkan",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/inference-g06-metadata-decode.md",
-      "summary": "G06-D3 runtime lengths source通过：两native同Q拓扑保Program/Invocation，KV indptr/tail逐Invocation更新，原delta/准确页/退休不变。Windows91＋pending18、Air实际Direct/联合/pending等27执行及Vulkan provider10/alias-phase2 PASS；无数学/vendor/runtime/shader/P1。仍AUDITED；ragged/FI Q1/capture与最终san/header/SDK待，原失败/费用保留。"
+      "summary": "G06共同/CPU Q1/native paged及D5原生ragged source通过。两route公开同schema/Q拓扑更新KV extent/offset，保旧结果/在途/失败门；Air新Apple48/Vulkan24组各64步、原native/联合/pending等29执行及provider/alias-phase PASS，Windows按D4精确SHA借用。两轮构建失败保留，owner仍AUDITED；FI Q1/schedule/capture及最终san/header/SDK/性能待，无新P1或整项完成。"
     },
     {
       "module": "compute_stream",
@@ -661,13 +661,13 @@
       "module": "compute_batch",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/inference-g06-metadata-decode.md",
-      "summary": "G06-D3 runtime lengths source通过：两native同Q拓扑保Program/Invocation，KV indptr/tail逐Invocation更新，原delta/准确页/退休不变。Windows91＋pending18、Air实际Direct/联合/pending等27执行及Vulkan provider10/alias-phase2 PASS；无数学/vendor/runtime/shader/P1。仍AUDITED；ragged/FI Q1/capture与最终san/header/SDK待，原失败/费用保留。"
+      "summary": "G06共同/CPU Q1/native paged及D5原生ragged source通过。两route公开同schema/Q拓扑更新KV extent/offset，保旧结果/在途/失败门；Air新Apple48/Vulkan24组各64步、原native/联合/pending等29执行及provider/alias-phase PASS，Windows按D4精确SHA借用。两轮构建失败保留，owner仍AUDITED；FI Q1/schedule/capture及最终san/header/SDK/性能待，无新P1或整项完成。"
     },
     {
       "module": "graph_batch",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/inference-g06-metadata-decode.md",
-      "summary": "G06-D3 runtime lengths source通过：两native同Q拓扑保Program/Invocation，KV indptr/tail逐Invocation更新，原delta/准确页/退休不变。Windows91＋pending18、Air实际Direct/联合/pending等27执行及Vulkan provider10/alias-phase2 PASS；无数学/vendor/runtime/shader/P1。仍AUDITED；ragged/FI Q1/capture与最终san/header/SDK待，原失败/费用保留。"
+      "summary": "G06共同/CPU Q1/native paged及D5原生ragged source通过。两route公开同schema/Q拓扑更新KV extent/offset，保旧结果/在途/失败门；Air新Apple48/Vulkan24组各64步、原native/联合/pending等29执行及provider/alias-phase PASS，Windows按D4精确SHA借用。两轮构建失败保留，owner仍AUDITED；FI Q1/schedule/capture及最终san/header/SDK/性能待，无新P1或整项完成。"
     }
   ]
 }

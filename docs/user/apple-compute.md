@@ -18,9 +18,12 @@ Graph 的 typed lowering 收到同一份冷信息。无注解继续使用合法 
 host-owned `BatchLayoutVersion`，`operation` 为相同容量的 `RaggedAttention`。输入是三个
 packed NHD 容量 Q/K/V，输出只有该布局的实际 packed Q rows；F16/BF16、D64/128/256
 沿原 MLX View/fast SDPA/Program 执行，原运行槽和结果 owner 合同不变。Q0 request 跳过，
-非空 Q 需有 KV，causal 还需 KV≥Q；全空 Q 返回空输出。新拓扑显式冷准备，run 不读
-host metadata 或重新建图；规划增长复用、paged 和 capture 仍有独立限制。
-该有限域 source/static/shared、宿主风险与实际Air F16同合同性能非劣门均已通过；
+非空 Q 需有 KV，causal 还需 KV≥Q；全空 Q 返回空输出。改变 Q 拓扑须显式冷准备。
+同 schema/完整 Q indptr 可显式 `update_ragged_batch(slot, next_layout)` 更新 KV 长度与
+packed 起点。成功后重新 bind 三个容量输入；旧结果、在途/失败工作或关闭 Context 会拒绝
+更新，非法布局保原绑定。初始 KV 走原 compiled 路径，变化后在原 worker 上 managed 建图，
+会核对 host-known 布局；不逐长度 Context.compile，也不声称 capture/零分配。
+初始固定布局候选的 source/static/shared、宿主风险与实际Air F16非劣门已通过；
 长prefill小幅落后仍如实保留，见[有限终审](../implementation/tasks/compute/inference-g01-apple-ragged-terminal.md)。
 
 ```cpp
@@ -30,7 +33,14 @@ auto slot = program.create_invocation().value();
 HYLE_RETURN_IF_ERROR(slot.bind(std::array{query_array, key_array, value_array}));
 auto done = slot.submit().value();
 auto result = done.wait().value();
+result = {}; done = {};
+HYLE_RETURN_IF_ERROR(hyle::compute::apple::update_ragged_batch(slot, next_layout));
+HYLE_RETURN_IF_ERROR(slot.bind(std::array{query_array, key_array, value_array}));
 ```
+
+新更新入口的[实际Air source验证](../../evidence/correctness/inference-g06-native-ragged-runtime-source/receipt.json)
+覆盖单/多请求Q1和混合Q、plain/Q8及有限几何；最终sanitizer/迁址SDK/header与性能资格待G06收口。
+更新只释放slot保留的输入；需要重新取得KV writer时，caller也要释放自身旧native views/reader。
 
 原生输入必须成功 ready；由 `MemoryResource::binding` 导入的数组保留原 readonly lease，
 资源/allocator 必须晚于派生槽与输入 owner 销毁。输出数组与 ResultLease 保持原保活规则，
