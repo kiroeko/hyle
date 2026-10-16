@@ -392,7 +392,7 @@ facet和Windows显式Provider、两迁址SDK按实际影响重验。Apple/W1未�
 candidate冻结后仍只用原两shape/669/104轮与相同5%/n15–31完整资格一次；旧费用保留，
 不再改测量姿势，不扫tile，不扩数学/API/格式域。Apple D2的原有限资格继续串行运行。
 
-C1实现已提交`4274ee6cb6275bf36bda1d8c8c0e223f0fa65db5`，测试输入为`cc0a5b9953ac2fcf2f195f97ca15e9baf3345a2f`。
+C1实现已提交`4274ee6cb6275bf36bda1d8c8c0e223f0fa65db5`，测试输入为`2c1746168bc94a640c51efded7d18f8ff3e5dc8a`。
 [C1静态费用](../../../../evidence/architecture/inference-g07-packed-weight-audit/p0-c1.json)
 绑定实际文件SHA、四行寄存器复用及未变费用。原FP8全部码值用例同时扩至五个不同输入行，
 Windows显式Provider也能覆盖尾块。当前没有C1运行PASS，保持AUDITED；重型检查已排在

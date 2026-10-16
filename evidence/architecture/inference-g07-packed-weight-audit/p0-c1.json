@@ -2,7 +2,7 @@
   "schema": "hyle.inference-g07-cuda-c1-static-cost/v1",
   "verdict": "PASS_BOUNDED_SOURCE_STRUCTURE_RUNTIME_QUALIFICATION_PENDING",
   "product_candidate": "4274ee6cb6275bf36bda1d8c8c0e223f0fa65db5",
-  "test_snapshot": "cc0a5b9953ac2fcf2f195f97ca15e9baf3345a2f",
+  "test_snapshot": "2c1746168bc94a640c51efded7d18f8ff3e5dc8a",
   "inputs": [
     {
       "path": "src/compute_provider_torch_cuda/mlx_packed_kernel.cu",
@@ -10,7 +10,7 @@
     },
     {
       "path": "tests/compute_provider_torch_cuda/packed_test.cc",
-      "sha256": "ae294bd5ea750edc4951b9e8e39d35a0d3de679ce7a20d14afe805095e25d8b8"
+      "sha256": "a1a73253bb4a01e0274105067185fe006aa01eaadc7eb36bba0aeecdc4737c08"
     },
     {
       "path": "tests/compute_provider_torch_cuda/mlx_precision_test.cc",
@@ -40,5 +40,7 @@
   ],
   "precision": "Original explicit F32 rounded dequantization, per-output lane FMA, warp_sum, MX after-dot scale and ordered group accumulation; original output dtype cast. No TF32/half intermediate substitution.",
   "verification": "M1 and M5 differing signed power-of-two rows across original nine dtype/format cases, all256 FP8 codes at M5 including tail, original actual-width M17/M64 Direct/Graph, public64step and declared risks/SDK/P1 remain to execute.",
-  "performance": "Old b483 qualified M1 WIN and M64 direction INCONCLUSIVE/5%FAIL retained in inference-g07-cuda-packed-attempt-2. No timing or improvement verdict for C1 yet."
+  "performance": "Old b483 qualified M1 WIN and M64 direction INCONCLUSIVE/5%FAIL retained in inference-g07-cuda-packed-attempt-2. No timing or improvement verdict for C1 yet.",
+  "previous_test_snapshot": "cc0a5b9953ac2fcf2f195f97ca15e9baf3345a2f",
+  "test_snapshot_note": "Before any C1 runtime/build, combine two same-line SCOPED_TRACE macros into one diagnostic message. Numerical test data/assertions unchanged; no failed run or performance sample exists."
 }
