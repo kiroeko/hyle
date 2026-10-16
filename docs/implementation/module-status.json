@@ -272,14 +272,14 @@
       "module": "compute",
       "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/inference-g06-metadata-decode.md",
-      "summary": "G06最终候选：API/算法冻结，四路线runtime及CUDA真实capture普通source已通过；最终instrumented故障/Vulkan Recorder/san/header/迁址static+shared/P0/P1与七门红队待实际验证。原失败/费用及G04/G05未决保留，完整goal仍3/10。",
+      "summary": "G06 CANDIDATE0a29d1194：四路线runtime/capture普通source及最终CUDA故障通过（static23含真实录制/启动错误；两配置40次pending模式），Air29执行含Vulkan Recorder冷复制后真实重放、Windows569项通过。原static fixture失败/费用及G04/G05未决保留。最终三san/header/迁址SDK/P0/P1与七门红队待；整goal仍3/10，G06粗估80%。",
       "candidate": "0a29d119426b2975d48c238c37a2994675e0ba9f"
     },
     {
       "module": "graph",
       "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/inference-g06-metadata-decode.md",
-      "summary": "G06最终候选：API/算法冻结，四路线runtime及CUDA真实capture普通source已通过；最终instrumented故障/Vulkan Recorder/san/header/迁址static+shared/P0/P1与七门红队待实际验证。原失败/费用及G04/G05未决保留，完整goal仍3/10。",
+      "summary": "G06 CANDIDATE0a29d1194：四路线runtime/capture普通source及最终CUDA故障通过（static23含真实录制/启动错误；两配置40次pending模式），Air29执行含Vulkan Recorder冷复制后真实重放、Windows569项通过。原static fixture失败/费用及G04/G05未决保留。最终三san/header/迁址SDK/P0/P1与七门红队待；整goal仍3/10，G06粗估80%。",
       "candidate": "0a29d119426b2975d48c238c37a2994675e0ba9f"
     },
     {
@@ -367,7 +367,7 @@
       "module": "compute_provider_ggml",
       "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/inference-g06-metadata-decode.md",
-      "summary": "G06最终候选：API/算法冻结，四路线runtime及CUDA真实capture普通source已通过；最终instrumented故障/Vulkan Recorder/san/header/迁址static+shared/P0/P1与七门红队待实际验证。原失败/费用及G04/G05未决保留，完整goal仍3/10。",
+      "summary": "G06 CANDIDATE0a29d1194：四路线runtime/capture普通source及最终CUDA故障通过（static23含真实录制/启动错误；两配置40次pending模式），Air29执行含Vulkan Recorder冷复制后真实重放、Windows569项通过。原static fixture失败/费用及G04/G05未决保留。最终三san/header/迁址SDK/P0/P1与七门红队待；整goal仍3/10，G06粗估80%。",
       "candidate": "0a29d119426b2975d48c238c37a2994675e0ba9f"
     },
     {
@@ -499,7 +499,7 @@
       "module": "compute_route_apple",
       "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/inference-g06-metadata-decode.md",
-      "summary": "G06最终候选：API/算法冻结，四路线runtime及CUDA真实capture普通source已通过；最终instrumented故障/Vulkan Recorder/san/header/迁址static+shared/P0/P1与七门红队待实际验证。原失败/费用及G04/G05未决保留，完整goal仍3/10。",
+      "summary": "G06 CANDIDATE0a29d1194：四路线runtime/capture普通source及最终CUDA故障通过（static23含真实录制/启动错误；两配置40次pending模式），Air29执行含Vulkan Recorder冷复制后真实重放、Windows569项通过。原static fixture失败/费用及G04/G05未决保留。最终三san/header/迁址SDK/P0/P1与七门红队待；整goal仍3/10，G06粗估80%。",
       "candidate": "0a29d119426b2975d48c238c37a2994675e0ba9f"
     },
     {
@@ -517,7 +517,7 @@
       "module": "compute_route_vulkan",
       "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/inference-g06-metadata-decode.md",
-      "summary": "G06最终候选：API/算法冻结，四路线runtime及CUDA真实capture普通source已通过；最终instrumented故障/Vulkan Recorder/san/header/迁址static+shared/P0/P1与七门红队待实际验证。原失败/费用及G04/G05未决保留，完整goal仍3/10。",
+      "summary": "G06 CANDIDATE0a29d1194：四路线runtime/capture普通source及最终CUDA故障通过（static23含真实录制/启动错误；两配置40次pending模式），Air29执行含Vulkan Recorder冷复制后真实重放、Windows569项通过。原static fixture失败/费用及G04/G05未决保留。最终三san/header/迁址SDK/P0/P1与七门红队待；整goal仍3/10，G06粗估80%。",
       "candidate": "0a29d119426b2975d48c238c37a2994675e0ba9f"
     },
     {
@@ -531,7 +531,7 @@
       "module": "compute_provider_ggml_vulkan",
       "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/inference-g06-metadata-decode.md",
-      "summary": "G06最终候选：API/算法冻结，四路线runtime及CUDA真实capture普通source已通过；最终instrumented故障/Vulkan Recorder/san/header/迁址static+shared/P0/P1与七门红队待实际验证。原失败/费用及G04/G05未决保留，完整goal仍3/10。",
+      "summary": "G06 CANDIDATE0a29d1194：四路线runtime/capture普通source及最终CUDA故障通过（static23含真实录制/启动错误；两配置40次pending模式），Air29执行含Vulkan Recorder冷复制后真实重放、Windows569项通过。原static fixture失败/费用及G04/G05未决保留。最终三san/header/迁址SDK/P0/P1与七门红队待；整goal仍3/10，G06粗估80%。",
       "candidate": "0a29d119426b2975d48c238c37a2994675e0ba9f"
     },
     {
@@ -567,7 +567,7 @@
       "module": "compute_provider_flashinfer",
       "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/inference-g06-metadata-decode.md",
-      "summary": "G06最终候选：API/算法冻结，四路线runtime及CUDA真实capture普通source已通过；最终instrumented故障/Vulkan Recorder/san/header/迁址static+shared/P0/P1与七门红队待实际验证。原失败/费用及G04/G05未决保留，完整goal仍3/10。",
+      "summary": "G06 CANDIDATE0a29d1194：四路线runtime/capture普通source及最终CUDA故障通过（static23含真实录制/启动错误；两配置40次pending模式），Air29执行含Vulkan Recorder冷复制后真实重放、Windows569项通过。原static fixture失败/费用及G04/G05未决保留。最终三san/header/迁址SDK/P0/P1与七门红队待；整goal仍3/10，G06粗估80%。",
       "candidate": "0a29d119426b2975d48c238c37a2994675e0ba9f"
     },
     {
@@ -619,14 +619,14 @@
       "module": "graph_route_cpu_apple",
       "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/inference-g06-metadata-decode.md",
-      "summary": "G06最终候选：API/算法冻结，四路线runtime及CUDA真实capture普通source已通过；最终instrumented故障/Vulkan Recorder/san/header/迁址static+shared/P0/P1与七门红队待实际验证。原失败/费用及G04/G05未决保留，完整goal仍3/10。",
+      "summary": "G06 CANDIDATE0a29d1194：四路线runtime/capture普通source及最终CUDA故障通过（static23含真实录制/启动错误；两配置40次pending模式），Air29执行含Vulkan Recorder冷复制后真实重放、Windows569项通过。原static fixture失败/费用及G04/G05未决保留。最终三san/header/迁址SDK/P0/P1与七门红队待；整goal仍3/10，G06粗估80%。",
       "candidate": "0a29d119426b2975d48c238c37a2994675e0ba9f"
     },
     {
       "module": "graph_route_cpu_vulkan",
       "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/inference-g06-metadata-decode.md",
-      "summary": "G06最终候选：API/算法冻结，四路线runtime及CUDA真实capture普通source已通过；最终instrumented故障/Vulkan Recorder/san/header/迁址static+shared/P0/P1与七门红队待实际验证。原失败/费用及G04/G05未决保留，完整goal仍3/10。",
+      "summary": "G06 CANDIDATE0a29d1194：四路线runtime/capture普通source及最终CUDA故障通过（static23含真实录制/启动错误；两配置40次pending模式），Air29执行含Vulkan Recorder冷复制后真实重放、Windows569项通过。原static fixture失败/费用及G04/G05未决保留。最终三san/header/迁址SDK/P0/P1与七门红队待；整goal仍3/10，G06粗估80%。",
       "candidate": "0a29d119426b2975d48c238c37a2994675e0ba9f"
     },
     {
@@ -655,14 +655,14 @@
       "module": "compute_batch",
       "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/inference-g06-metadata-decode.md",
-      "summary": "G06最终候选：API/算法冻结，四路线runtime及CUDA真实capture普通source已通过；最终instrumented故障/Vulkan Recorder/san/header/迁址static+shared/P0/P1与七门红队待实际验证。原失败/费用及G04/G05未决保留，完整goal仍3/10。",
+      "summary": "G06 CANDIDATE0a29d1194：四路线runtime/capture普通source及最终CUDA故障通过（static23含真实录制/启动错误；两配置40次pending模式），Air29执行含Vulkan Recorder冷复制后真实重放、Windows569项通过。原static fixture失败/费用及G04/G05未决保留。最终三san/header/迁址SDK/P0/P1与七门红队待；整goal仍3/10，G06粗估80%。",
       "candidate": "0a29d119426b2975d48c238c37a2994675e0ba9f"
     },
     {
       "module": "graph_batch",
       "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/inference-g06-metadata-decode.md",
-      "summary": "G06最终候选：API/算法冻结，四路线runtime及CUDA真实capture普通source已通过；最终instrumented故障/Vulkan Recorder/san/header/迁址static+shared/P0/P1与七门红队待实际验证。原失败/费用及G04/G05未决保留，完整goal仍3/10。",
+      "summary": "G06 CANDIDATE0a29d1194：四路线runtime/capture普通source及最终CUDA故障通过（static23含真实录制/启动错误；两配置40次pending模式），Air29执行含Vulkan Recorder冷复制后真实重放、Windows569项通过。原static fixture失败/费用及G04/G05未决保留。最终三san/header/迁址SDK/P0/P1与七门红队待；整goal仍3/10，G06粗估80%。",
       "candidate": "0a29d119426b2975d48c238c37a2994675e0ba9f"
     }
   ]

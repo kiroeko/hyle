@@ -1,6 +1,6 @@
 # G06 metadata 与 decode 成本收口
 
-状态：**G06 CANDIDATE；共同及四路线runtime与CUDA capture有限source通过，最终风险/交付/性能待，2026-10-16**。本卡沿[完整十项目标](../project/inference-gaps-goal-execution-2026-10.md)，
+状态：**G06 CANDIDATE；共同及四路线runtime/capture与普通风险通过，san/交付/性能待，2026-10-16**。本卡沿[完整十项目标](../project/inference-gaps-goal-execution-2026-10.md)，
 不缩减 CPU、单 GPU、CPU＋单 GPU、单/多请求或四原生路线。先完成四组共同审计和形状冻结，
 再集中实施、批量检查、按实际失败定向修正；产品修改仅限下文已冻结且owner为AUDITED的批次。
 
@@ -664,3 +664,32 @@ CUDA native pool1/split3/Ninja2；不重写公共工具，不增加全局验证�
 未到实际注入即unchecked expected异常。仅修fixture为明确零pages/refs，并补schema/layout
 错误传播。原static configure53.062s、build370.055s和21/23 FAIL账保留；两FI CUDA TU已编，
 下一轮精确复用原配置/树，必须零CUDA重编。产品API/算法、11个owner的CANDIDATE不变。
+
+### 最终候选普通 source 与原故障批通过
+
+产品candidate仍为`0a29d119426b2975d48c238c37a2994675e0ba9f`；后续29dc5c6bb只修
+CUDA test ragged capacity/诊断和说明，include/src/cmake/root CMake与候选逐项不变。
+原static attempt1的21/23 FAIL及370.055s构建保留；修fixture后的static2零CUDA重编，
+23项全过，含原partial native故障以及plain/FP8真实录制错误、cudaGraphLaunch错误，检查
+原CUDA错误domain/code、failed slot拒用、独立新slot数值和metadata释放。
+[CUDA最终有限故障证据](../../../../evidence/correctness/inference-g06-final-cuda-risks/receipt.json)
+同时覆盖shared/static的plain/FP8×ordinary/captured各五pending模式、原compute108/
+Graph289/FI20或23及fresh-process32×64。两配置共40次pending故障模式；没有新数学、
+产品hook或旧P1重跑。封存前独立重核shared48/static47个实际artifact SHA，分别
+202805000/229069020bytes。hook只开原backend单host TU，不能代签shipping SDK。
+
+[实际Air最终source/Recorder证据](../../../../evidence/correctness/inference-g06-final-native-air-source/receipt.json)
+绑定真实Mac16,12/arm64和canonical→disposable单向同步。Apple14/Vulkan15次实际
+Direct/joint/encoded/plain/pending/失败/多source执行全部PASS，另有6个setup/build stage。
+原ragged Apple48/Vulkan24组×64 runtime继续通过；Vulkan新增原ragged Program经Recorder
+冷复制，销毁caller Program后D64/128/256各两次真实重放独立oracle通过。142实际artifact
+SHA重核，共141220088bytes。Apple managed/Vulkan重新编码与private/driver UNKNOWN保持。
+
+[Windows最终源码证据](../../../../evidence/correctness/inference-g06-final-windows-source/receipt.json)
+同一原MSVC/CPU树增量，max4worker，原compute108/batch60/Graph285/graph_batch6/
+CPU provider84/encoded26共569项PASS、零skip，49个实际EXE/DLL SHA重核。configure
+113.453s、build43.938s、CPU provider45.047s、encoded44.609s，outer与stage重叠；全量
+调查/编辑/启动/观察成本UNKNOWN。未构建CUDA或运行P1。
+
+11个owner保持CANDIDATE、全goal仍3/10。G06整体工作量粗估约80%，最终三san、独立头、
+迁址static/shared、P0/必要P1、七门/红队/LOC仍待实际验收，不从上述source/风险代签。
