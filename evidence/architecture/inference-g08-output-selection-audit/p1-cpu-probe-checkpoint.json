@@ -1,0 +1,43 @@
+{
+  "schema": "hyle.inference-g08-p1-cpu-probe-checkpoint/v1",
+  "verdict": "CPU_DIAGNOSTIC_ORACLE_WORKLOAD_AA_AND_VERIFY_PASS_NOT_P1_QUALIFIED",
+  "candidate": "5103c13d8ed119b06aa64e799f9768aea45ab913",
+  "benchmark_revision": "5fbc13992137af26d0766f026415d5a80c7f2dd8",
+  "qualification": "DIAGNOSTIC",
+  "probe_exit_code": 0,
+  "verify_exit_code": 0,
+  "workload_aa_gate": "PASS",
+  "workload_aa_runs": 16,
+  "numerical_preflight": "Both actual primary/placement binaries passed independently checked source-storage bits and first-index oracle for R1/R16 V248320 K1, three cycles plus8warm cycles.",
+  "generic_controls": [
+    {
+      "id": "aa",
+      "gate": "FAIL"
+    },
+    {
+      "id": "delta5",
+      "gate": "FAIL"
+    },
+    {
+      "id": "delta10",
+      "gate": "FAIL"
+    },
+    {
+      "id": "timer-floor",
+      "gate": "PASS"
+    },
+    {
+      "id": "placement",
+      "gate": "PASS"
+    }
+  ],
+  "diagnostic_limit": "Stock probe intentionally has only one independent product/control sample. Generic aa/delta5/delta10 gates report FAIL with insufficient-independent-samples; median controls are diagnostic only. Timer floor and placement PASS. This is no formal performance verdict; unchanged n15/31 qualification is pending.",
+  "elapsed_seconds": 103.01500000001397,
+  "cumulative_elapsed_seconds": 117.03100000001723,
+  "retained_dispatch_setup": "The first remote launch used absent receipt paths under sparse checkouts; failed before any route probe job/build/sample. Exact receipt copied and SHA verified for Air; WSL uses canonical mounted receipt. Original three logs and2.875s retained. Corrected dispatch now serially runs CUDA, Apple, Vulkan diagnostics only.",
+  "raw": {
+    "path": "p1-cpu-probe-checkpoint-raw.zip",
+    "sha256": "744402dab6918bcf4612d32f1a9237978b5e7549d3a619c524c83f5162be7f6f",
+    "bytes": 79555
+  }
+}

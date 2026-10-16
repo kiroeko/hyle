@@ -1,6 +1,6 @@
 # G08 设备端输出数值选择与可定位随机数
 
-状态：**CANDIDATE，2026-10-17；八owner的S1–S4/M1接口与算法冻结于5103c13d8，普通数值及适用device/host风险已过，交付18/18已过，S1时序账与基准输入已固定，CPU probe首次构建接线已定位，四路线P1与终审待完成**。baseline 为
+状态：**CANDIDATE，2026-10-17；八owner的S1–S4/M1接口与算法冻结于5103c13d8，普通数值及适用device/host风险已过，交付18/18已过，S1时序账与基准输入已固定，CPU数值及workload A/A通过，CUDA实际probe进行中，四路线P1与终审待完成**。baseline 为
 `85bcfa4eb`，G07已经整项接受，新G07–G10 goal完成1/4。原G01–G07不重跑，G09/G10未开始。
 本卡只处理原[G08发现](../project/inference-single-machine-foundation-audit-2026-10.md)与
 [消费形状计划](../project/inference-consumer-adaptation-plan-2026-10.md)的有限输出数值域。
@@ -594,3 +594,12 @@ CPU原对照内部provider的ggml.h/ggml-cpu.h私有编译头未接入，首次b
 同CPU producer的e74fc9派生include，contract显式绑定，22份native头加入现有逐artifact
 hash核查；不修改产品或统计仪器。原失败/output/build完整保留。新目录/私有头配置需要
 新的不可变benchmark输入及明确setup-resume tree，原费用累计；不把它写成P1通过。
+
+[CPU实际diagnostic结果](../../../../evidence/architecture/inference-g08-output-selection-audit/p1-cpu-probe-checkpoint.json)：
+修正后的干净benchmark固定`5fbc139921`，仅CPU原对照私有头/目录输入变化，所有产品路径未变。
+CPU两个实际binary独立数值oracle、16次workload A/A及stock verify均PASS，运行103.015s，
+连原失败累计117.031s。stock probe仍为DIAGNOSTIC/n1，generic aa/delta5/delta10因独立样本
+不足写FAIL，timer-floor/placement为PASS；不能据此签正式性能。原private远程启动在sparse
+checkout内寻找未物化交付凭据，三路线均在probe/build前失败，共2.875s及日志保留；按同一
+receipt的SHA验证外置路径后续跑。WSL/Air干净source均已固定同一5fbc；CUDA实际probe
+已经启动，其后串行Apple/Vulkan。没有启动正式qualification或G09/G10。
