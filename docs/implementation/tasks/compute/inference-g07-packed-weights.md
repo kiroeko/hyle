@@ -1,6 +1,6 @@
 # G07 packed 权重消费与 checked selection
 
-状态：**CANDIDATE，2026-10-16，产品/API冻结，新G07–G10 goal ACTIVE**。G01–G06已告一段落，
+状态：**2026-10-16，CUDA CANDIDATE；Apple按合格M64回退退回AUDITED；G07–G10 goal ACTIVE**。G01–G06已告一段落，
 本卡不重开它们。原baseline为 `a638938b783b6fdae57e83f572aa0427d7188e7f`；
 产品输入保持完整 `669121418669b31f6849c74f64362aaf8d6eb919`。
 当前施工 owner 仅 `compute_provider_torch_cuda`、`compute_route_apple`，从各自 CLOSED
@@ -273,3 +273,24 @@ Apple修正后的bench为04c。正式统一资格会在最终bench每个进程�
 以不可变7da快照测量（产品与b483相同）：全库3749352、自实现不含测试180854、两个owner
 唯一实现联合6060行/38文件。统一工具的原self-check通过；这些是实现总量，不是本轮新增
 或推理引擎待写代码预测。
+
+### Apple首轮P1裁决与有限纠正
+
+[原始合格结果](../../../../evidence/performance/inference-g07-apple-packed-attempt-1/receipt.json)
+完整保留：n15×8执行/分配/placement组合、route-local A/A与原controls资格PASS、verify0；
+M1吞吐比2.030–2.052，WIN/5%门PASS；M64比0.729–0.732，LOSS/5%门FAIL，用时约1.37倍。
+不是地址/顺序翻转或未资格点值。原记录及全库性能总账保留失败，不将M1收益代签M64。
+
+仅`compute_route_apple`退回AUDITED，CUDA产品与其candidate不变。授权一次有限W-APPLE-D1：
+原FP8 tile热环为每个码调用通用`ldexp`，同一权重在不同M tile重复解码；先将正常E4M3FN
+值转换为等价F32 exponent/mantissa位构造，保零/subnormal/NaN/符号及所有F32矩阵、block128
+scale顺序。固定MLX原`fp8.h`也直接用码位转换，不能据其half转换忽略NaN或改变本轮精度。
+这是待验证的具体成本机制，尚不声称它解释全部37%回退。不换tile、不扫描形状、不改API、
+不移数学到冷期，不引入FP16矩阵或完整float权重shadow。
+
+改后只重验Apple原相关20项、Graph13项、65步CPU+Apple及两个公开消费者/迁址static/shared、
+实际Metal validation和受影响宿主facet；CUDA/W1未变输入继续复用。冻结新Apple candidate后
+只按同一两形状、原669 peer和相同5%/n15–31合同重新资格；原费用/失败不重置。
+
+CUDA首轮A/A的M1不稳定，未形成合格P1结果；原始资格失败保留，只能修正测量资格，不能
+据此改CUDA产品或宣称胜负。原完整数值与SDK/风险证据仍有效。G08–G10尚未开始。

@@ -1,0 +1,58 @@
+{
+  "schema": "hyle.inference-g07-packed-p1/v1",
+  "state": "QUALIFIED_M1_WIN_M64_MATERIAL_LOSS",
+  "route": "apple",
+  "candidate": "b483b8939e9c1d28a98eee3a6ecd13b3fd45fc88",
+  "source_revision": "04c4958b02e46545802107d4c6a92d7057c8b2f1",
+  "qualification": "PASS",
+  "performance_gate": "FAIL",
+  "verify_exit": 0,
+  "elapsed_seconds": 564.2184938749999,
+  "rows": [
+    {
+      "id": "packed-m1",
+      "exact_verdict": "WIN",
+      "noninferiority_gate": "PASS",
+      "independent_samples_per_stratum": 15,
+      "strata_count": 8,
+      "median_advantage_ratio_range": [
+        2.0295410213626,
+        2.0524901696244275
+      ],
+      "individual_ci_envelope": [
+        2.0144747431709513,
+        2.073201122588008
+      ],
+      "note": "Envelope of eight individual CIs, not a pooled CI. Full original summary retained."
+    },
+    {
+      "id": "packed-m64",
+      "exact_verdict": "LOSE",
+      "noninferiority_gate": "FAIL",
+      "independent_samples_per_stratum": 15,
+      "strata_count": 8,
+      "median_advantage_ratio_range": [
+        0.7293111310281931,
+        0.7317440165514647
+      ],
+      "individual_ci_envelope": [
+        0.7244843750000001,
+        0.737840390366756
+      ],
+      "note": "Envelope of eight individual CIs, not a pooled CI. Full original summary retained."
+    }
+  ],
+  "raw_archive": {
+    "path": "raw.zip",
+    "sha256": "5730cebc4d514701d08af672636a08a4968503f8229ca55e43078406b1baed51"
+  },
+  "summary_sha256": "59e4757a2a857eae20ea8a48e6e0c0175efa408c58dc541465c0d8fdb35a157c",
+  "manifest_sha256": "1055b062788d1bd26902c22f45a524afa859ad03462bbf3a2bf3fb6bfb601bcd",
+  "decision": "Retain complete qualified loss; retreat only Apple owner to AUDITED for one bounded exact FP8 conversion cost correction. CUDA candidate unchanged and its finite qualification continues.",
+  "limits": [
+    "No kernel-only/half-precision/cold-expanded peer substitution.",
+    "Full public warm replay; final retained native result/cache/Program teardown remains explicitly deferred.",
+    "M1 throughput approximately2.04x; M64 approximately0.73x throughput (about1.37x time).",
+    "No tokens/s or llama.cpp comparison."
+  ]
+}

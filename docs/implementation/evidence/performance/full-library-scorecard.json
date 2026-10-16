@@ -1601,6 +1601,66 @@
       "mechanism": "Correct two manifest hashes and call the existing audit at owning factor admission",
       "limitations": "No new GPU timing or broader hardware/version qualification; earlier measured manifest-order values remain historical, measured source bytes are unchanged",
       "evidence": ["docs/implementation/tasks/build/cuda-vendor-content-audit-v1.md", "evidence/correctness/cuda-vendor-content-audit-v1/README.md"]
+    },
+    {
+      "id": "inference-g07-apple-packed-packed-m1-attempt-1",
+      "modules": [
+        "compute_route_apple"
+      ],
+      "kind": "P1_WORKLOAD",
+      "comparison": "SAME_CONTRACT_INTERNAL",
+      "qualification": "QUALIFIED_RETAINED",
+      "direction": "WIN",
+      "practical_result": "PASS",
+      "engineering_action": "KEEP",
+      "consumer_weight": "HIGH",
+      "candidate_binding": "EXACT",
+      "recorded_date": "2026-10-16",
+      "product_candidate": "b483b8939e9c1d28a98eee3a6ecd13b3fd45fc88",
+      "consumer_shape": "Apple BF16 dynamic activation + resident E4M3FN/F32 block128 weight, packed-m1 K2048 N2048",
+      "contract": "Same original669 complete warm public invocation; F32 dot and original ordered scales/final BF16 cast. Deferred final retained native result and process caches explicit.",
+      "peer": "Original product669 lowering, exported symbols renamed only; same Context.compile/native lifecycle",
+      "scale": "One frozen projection; n15 x8execution/allocation/placement strata;16paired rounds, original/selected A/A and controls qualified",
+      "absolute": "Full summary retains candidate/peer op/s per stratum; no full-engine token/s",
+      "ratio_ci": "Eight stratum median ratios [2.0295410213626, 2.0524901696244275]; individual CI envelope [2.0144747431709513, 2.073201122588008] (not pooled)",
+      "sensitivity": "Both execution/allocation orders, primary/placement; both route-local A/A variants PASS",
+      "mechanism": "Direct packed16x16/F32 tile avoids full F32 weight/dots arrays. M64 qualified material regression triggers one bounded exact decoder-cost correction; do not erase loss.",
+      "limitations": "Engineering actual Air M4 only; original native private pool upper UNKNOWN; no all-shape or complete engine claim",
+      "evidence": [
+        "evidence/performance/inference-g07-apple-packed-attempt-1/receipt.json",
+        "evidence/performance/inference-g07-apple-packed-attempt-1/summary.json",
+        "evidence/architecture/inference-g07-packed-weight-audit/p1-adapter.json"
+      ]
+    },
+    {
+      "id": "inference-g07-apple-packed-packed-m64-attempt-1",
+      "modules": [
+        "compute_route_apple"
+      ],
+      "kind": "P1_WORKLOAD",
+      "comparison": "SAME_CONTRACT_INTERNAL",
+      "qualification": "QUALIFIED_RETAINED",
+      "direction": "LOSS",
+      "practical_result": "FAIL",
+      "engineering_action": "REOPEN",
+      "consumer_weight": "HIGH",
+      "candidate_binding": "EXACT",
+      "recorded_date": "2026-10-16",
+      "product_candidate": "b483b8939e9c1d28a98eee3a6ecd13b3fd45fc88",
+      "consumer_shape": "Apple BF16 dynamic activation + resident E4M3FN/F32 block128 weight, packed-m64 K2048 N2048",
+      "contract": "Same original669 complete warm public invocation; F32 dot and original ordered scales/final BF16 cast. Deferred final retained native result and process caches explicit.",
+      "peer": "Original product669 lowering, exported symbols renamed only; same Context.compile/native lifecycle",
+      "scale": "One frozen projection; n15 x8execution/allocation/placement strata;16paired rounds, original/selected A/A and controls qualified",
+      "absolute": "Full summary retains candidate/peer op/s per stratum; no full-engine token/s",
+      "ratio_ci": "Eight stratum median ratios [0.7293111310281931, 0.7317440165514647]; individual CI envelope [0.7244843750000001, 0.737840390366756] (not pooled)",
+      "sensitivity": "Both execution/allocation orders, primary/placement; both route-local A/A variants PASS",
+      "mechanism": "Direct packed16x16/F32 tile avoids full F32 weight/dots arrays. M64 qualified material regression triggers one bounded exact decoder-cost correction; do not erase loss.",
+      "limitations": "Engineering actual Air M4 only; original native private pool upper UNKNOWN; no all-shape or complete engine claim",
+      "evidence": [
+        "evidence/performance/inference-g07-apple-packed-attempt-1/receipt.json",
+        "evidence/performance/inference-g07-apple-packed-attempt-1/summary.json",
+        "evidence/architecture/inference-g07-packed-weight-audit/p1-adapter.json"
+      ]
     }
   ]
 }
