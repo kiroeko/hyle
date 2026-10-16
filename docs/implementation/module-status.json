@@ -373,14 +373,9 @@
     },
     {
       "module": "compute_provider_ggml",
-      "state": "CLOSED",
-      "record": "docs/implementation/tasks/compute/inference-g06-final-closure.md",
-      "summary": "G06 CLOSED finite M/S/L/D scope: active immutable metadata, qualified delta/shared mirrors, exact grouped permissions and route-specific runtime/capture bridge. Current source/host risks/relocated static-shared/23-header union/P0 and seven gates passed; explicit version allocations, checked waits, native managed/re-encode and private UNKNOWN retained. Original G04/G05 CUDA performance gate and other goal items remain.",
-      "candidate": "0a29d119426b2975d48c238c37a2994675e0ba9f",
-      "performance": {
-        "tier": "P0",
-        "evidence": "evidence/architecture/inference-g06-final-cost-review/p0.json"
-      }
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/compute/inference-g08-output-selection.md",
+      "summary": "G08 SCOPED from accepted baseline85bc: finite TopK1 arg selection, explicit counter-addressed random numerical schema, categorical quality/endpoint and real small-result consumer audit. No product edits or runtime/P1 PASS; G07 acceptance retained, G09-G10 unstarted."
     },
     {
       "module": "graph_provider_onednn",
@@ -395,14 +390,9 @@
     },
     {
       "module": "compute_ops",
-      "state": "CLOSED",
-      "record": "docs/implementation/tasks/compute/inference-g04-g05-final-closure.md",
-      "summary": "G04/G05 finite domain CLOSED: encoded append/resident/direct attention, window/noncausal/independent geometry, numerical/lifecycle/device/host risks and three deliveries accepted using matching immutable evidence. User-selected storage/numerical tradeoffs pass bounded P0; original CUDA warm LOSS/5% UNRESOLVED retained, no timing PASS or llama.cpp comparison. No product change; G07-G10 and full-engine tokens/s remain separate.",
-      "candidate": "982676cb05a6e6244e66e0a596347aa96043617b",
-      "performance": {
-        "tier": "P0",
-        "evidence": "evidence/correctness/inference-g04-g05-final-closure/receipt.json"
-      }
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/compute/inference-g08-output-selection.md",
+      "summary": "G08 SCOPED from accepted baseline85bc: finite TopK1 arg selection, explicit counter-addressed random numerical schema, categorical quality/endpoint and real small-result consumer audit. No product edits or runtime/P1 PASS; G07 acceptance retained, G09-G10 unstarted."
     },
     {
       "module": "compute_backend_cpu",
@@ -428,14 +418,9 @@
     },
     {
       "module": "compute_provider_native",
-      "state": "CLOSED",
-      "record": "docs/implementation/tasks/compute/foundation-f5-final-closure.md",
-      "summary": "F5 finite typed paged/ragged and state/Graph seams CLOSED; actual native/reference qualifications, host risks, SDK18 and component contract verified. IREE owner only TSAN configuration fix; original scopes and vendor/capture/performance limits retained.",
-      "candidate": "11c348e404df2c3fc404056ff3a9e885d4d990bc",
-      "performance": {
-        "tier": "P0",
-        "evidence": "evidence/correctness/foundation-f5-final/receipt.json"
-      }
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/compute/inference-g08-output-selection.md",
+      "summary": "G08 SCOPED from accepted baseline85bc: finite TopK1 arg selection, explicit counter-addressed random numerical schema, categorical quality/endpoint and real small-result consumer audit. No product edits or runtime/P1 PASS; G07 acceptance retained, G09-G10 unstarted."
     },
     {
       "module": "compute_route_cpu",
@@ -483,15 +468,9 @@
     },
     {
       "module": "compute_provider_cuda",
-      "state": "CLOSED",
-      "record": "docs/implementation/tasks/compute/cuda-best-of-completion.md",
-      "summary": "CLOSED：23精确CUDA叶优选、169成熟默认、14单承载；79重复程序实例清退。两OS三交付/Core63/严格profile资源回退及终审通过；原性能聚合和static批次FAIL保留，不外推全硬件/完整region。",
-      "candidate": "cd53173946564155121819f1ccae7f6726b908ed",
-      "performance": {
-        "tier": "P1",
-        "evidence": "evidence/performance/cuda-best-of-c2/README.md",
-        "material_margin_pct": 5
-      }
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/compute/inference-g08-output-selection.md",
+      "summary": "G08 SCOPED from accepted baseline85bc: finite TopK1 arg selection, explicit counter-addressed random numerical schema, categorical quality/endpoint and real small-result consumer audit. No product edits or runtime/P1 PASS; G07 acceptance retained, G09-G10 unstarted."
     },
     {
       "module": "compute_route_cuda",
@@ -517,15 +496,9 @@
     },
     {
       "module": "compute_route_apple",
-      "state": "CLOSED",
-      "record": "docs/implementation/tasks/compute/inference-g07-final-closure.md",
-      "summary": "G07 CLOSED D2 packed FP8 MLX carrier91ae; source/Metal/scoped host risks, relocated static/shared and M1/17/64x65 Graph supplement PASS. Same669 full warm P1 M1 WIN2.038-2.060 and M64 WIN1.227-1.238, both5% PASS/verify0. Seven gates/LOC accepted; original two material losses/cost/private limits retained. G08-G10 and engine tokens/s remain.",
-      "candidate": "91ae8e67faa028061d8f5e8e216310c827e024a3",
-      "performance": {
-        "tier": "P1",
-        "evidence": "docs/implementation/tasks/compute/inference-g07-final-closure.md",
-        "material_margin_pct": 5
-      }
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/compute/inference-g08-output-selection.md",
+      "summary": "G08 SCOPED from accepted baseline85bc: finite TopK1 arg selection, explicit counter-addressed random numerical schema, categorical quality/endpoint and real small-result consumer audit. No product edits or runtime/P1 PASS; G07 acceptance retained, G09-G10 unstarted."
     },
     {
       "module": "graph_route_apple",
@@ -540,14 +513,9 @@
     },
     {
       "module": "compute_route_vulkan",
-      "state": "CLOSED",
-      "record": "docs/implementation/tasks/compute/inference-g06-final-closure.md",
-      "summary": "G06 CLOSED finite M/S/L/D scope: active immutable metadata, qualified delta/shared mirrors, exact grouped permissions and route-specific runtime/capture bridge. Current source/host risks/relocated static-shared/23-header union/P0 and seven gates passed; explicit version allocations, checked waits, native managed/re-encode and private UNKNOWN retained. Original G04/G05 CUDA performance gate and other goal items remain.",
-      "candidate": "0a29d119426b2975d48c238c37a2994675e0ba9f",
-      "performance": {
-        "tier": "P0",
-        "evidence": "evidence/architecture/inference-g06-final-cost-review/p0.json"
-      }
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/compute/inference-g08-output-selection.md",
+      "summary": "G08 SCOPED from accepted baseline85bc: finite TopK1 arg selection, explicit counter-addressed random numerical schema, categorical quality/endpoint and real small-result consumer audit. No product edits or runtime/P1 PASS; G07 acceptance retained, G09-G10 unstarted."
     },
     {
       "module": "graph_route_vulkan",

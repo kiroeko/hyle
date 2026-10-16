@@ -1,0 +1,200 @@
+{
+  "schema": "hyle.inference-g08-intake/v1",
+  "state": "SCOPED_AUDIT_PENDING_NO_PRODUCT_AUTHORIZATION",
+  "baseline": "85bcfa4ebc29cc4d2ed5fb122074204aca675d58",
+  "card": "docs/implementation/tasks/compute/inference-g08-output-selection.md",
+  "previous_registry_sha256": "e073468f8e25d2a9853008b4fdf1abfcfa3408af2ee8092b8b4d3d55d3ea8fe6",
+  "previous_owners": [
+    {
+      "module": "compute_provider_ggml",
+      "state": "CLOSED",
+      "record": "docs/implementation/tasks/compute/inference-g06-final-closure.md",
+      "summary": "G06 CLOSED finite M/S/L/D scope: active immutable metadata, qualified delta/shared mirrors, exact grouped permissions and route-specific runtime/capture bridge. Current source/host risks/relocated static-shared/23-header union/P0 and seven gates passed; explicit version allocations, checked waits, native managed/re-encode and private UNKNOWN retained. Original G04/G05 CUDA performance gate and other goal items remain.",
+      "candidate": "0a29d119426b2975d48c238c37a2994675e0ba9f",
+      "performance": {
+        "tier": "P0",
+        "evidence": "evidence/architecture/inference-g06-final-cost-review/p0.json"
+      }
+    },
+    {
+      "module": "compute_ops",
+      "state": "CLOSED",
+      "record": "docs/implementation/tasks/compute/inference-g04-g05-final-closure.md",
+      "summary": "G04/G05 finite domain CLOSED: encoded append/resident/direct attention, window/noncausal/independent geometry, numerical/lifecycle/device/host risks and three deliveries accepted using matching immutable evidence. User-selected storage/numerical tradeoffs pass bounded P0; original CUDA warm LOSS/5% UNRESOLVED retained, no timing PASS or llama.cpp comparison. No product change; G07-G10 and full-engine tokens/s remain separate.",
+      "candidate": "982676cb05a6e6244e66e0a596347aa96043617b",
+      "performance": {
+        "tier": "P0",
+        "evidence": "evidence/correctness/inference-g04-g05-final-closure/receipt.json"
+      }
+    },
+    {
+      "module": "compute_provider_native",
+      "state": "CLOSED",
+      "record": "docs/implementation/tasks/compute/foundation-f5-final-closure.md",
+      "summary": "F5 finite typed paged/ragged and state/Graph seams CLOSED; actual native/reference qualifications, host risks, SDK18 and component contract verified. IREE owner only TSAN configuration fix; original scopes and vendor/capture/performance limits retained.",
+      "candidate": "11c348e404df2c3fc404056ff3a9e885d4d990bc",
+      "performance": {
+        "tier": "P0",
+        "evidence": "evidence/correctness/foundation-f5-final/receipt.json"
+      }
+    },
+    {
+      "module": "compute_provider_cuda",
+      "state": "CLOSED",
+      "record": "docs/implementation/tasks/compute/cuda-best-of-completion.md",
+      "summary": "CLOSED\uff1a23\u7cbe\u786eCUDA\u53f6\u4f18\u9009\u3001169\u6210\u719f\u9ed8\u8ba4\u300114\u5355\u627f\u8f7d\uff1b79\u91cd\u590d\u7a0b\u5e8f\u5b9e\u4f8b\u6e05\u9000\u3002\u4e24OS\u4e09\u4ea4\u4ed8/Core63/\u4e25\u683cprofile\u8d44\u6e90\u56de\u9000\u53ca\u7ec8\u5ba1\u901a\u8fc7\uff1b\u539f\u6027\u80fd\u805a\u5408\u548cstatic\u6279\u6b21FAIL\u4fdd\u7559\uff0c\u4e0d\u5916\u63a8\u5168\u786c\u4ef6/\u5b8c\u6574region\u3002",
+      "candidate": "cd53173946564155121819f1ccae7f6726b908ed",
+      "performance": {
+        "tier": "P1",
+        "evidence": "evidence/performance/cuda-best-of-c2/README.md",
+        "material_margin_pct": 5
+      }
+    },
+    {
+      "module": "compute_route_apple",
+      "state": "CLOSED",
+      "record": "docs/implementation/tasks/compute/inference-g07-final-closure.md",
+      "summary": "G07 CLOSED D2 packed FP8 MLX carrier91ae; source/Metal/scoped host risks, relocated static/shared and M1/17/64x65 Graph supplement PASS. Same669 full warm P1 M1 WIN2.038-2.060 and M64 WIN1.227-1.238, both5% PASS/verify0. Seven gates/LOC accepted; original two material losses/cost/private limits retained. G08-G10 and engine tokens/s remain.",
+      "candidate": "91ae8e67faa028061d8f5e8e216310c827e024a3",
+      "performance": {
+        "tier": "P1",
+        "evidence": "docs/implementation/tasks/compute/inference-g07-final-closure.md",
+        "material_margin_pct": 5
+      }
+    },
+    {
+      "module": "compute_route_vulkan",
+      "state": "CLOSED",
+      "record": "docs/implementation/tasks/compute/inference-g06-final-closure.md",
+      "summary": "G06 CLOSED finite M/S/L/D scope: active immutable metadata, qualified delta/shared mirrors, exact grouped permissions and route-specific runtime/capture bridge. Current source/host risks/relocated static-shared/23-header union/P0 and seven gates passed; explicit version allocations, checked waits, native managed/re-encode and private UNKNOWN retained. Original G04/G05 CUDA performance gate and other goal items remain.",
+      "candidate": "0a29d119426b2975d48c238c37a2994675e0ba9f",
+      "performance": {
+        "tier": "P0",
+        "evidence": "evidence/architecture/inference-g06-final-cost-review/p0.json"
+      }
+    }
+  ],
+  "peers": [
+    {
+      "project": "sglang",
+      "commit": "7224fce1b5e488c9916f20ec0556d696e595d512",
+      "path": "python/sglang/srt/layers/sampler.py",
+      "sha256": "cc5eb725eeeeb906ba56fdb4e1400d8cf7d94ba8ccbc043841ee3676349b016c",
+      "scratch": "sglang-sampler.py",
+      "lines": 1037
+    },
+    {
+      "project": "vllm",
+      "commit": "98f721116227f0f48690deb05c815c057bac0668",
+      "path": "vllm/v1/sample/ops/topk_topp_sampler.py",
+      "sha256": "970afd0e8565ddfdcf50dc99892d893b20cb186214cc35e15aeb97d1dba90bd0",
+      "scratch": "vllm-topk_topp_sampler.py",
+      "lines": 621
+    },
+    {
+      "project": "llama.cpp",
+      "commit": "cbe28bb3cb0758f0c566a9a3561766821aeb0748",
+      "path": "src/llama-sampler.cpp",
+      "sha256": "d0c147129ded606691b0b3e78562bec36f53459446aa7a5bac23bb93a01c86f6",
+      "scratch": "llama.cpp-llama-sampler.cpp",
+      "lines": 4391
+    }
+  ],
+  "canonical_inputs": [
+    {
+      "path": "include/hyle/compute/operation.h",
+      "sha256": "584e57c2a1a10b7c17ee80d4a6f992b73f488f4cdbf1e71e39d908cd89600808"
+    },
+    {
+      "path": "include/hyle/compute/model_ops.h",
+      "sha256": "165cfc86281d90e246f137892c0fa1f625421a53f6bdbf9877aef9828773f8c9"
+    },
+    {
+      "path": "include/hyle/util/random.h",
+      "sha256": "28463daa826c69f453b5a9f2081b174002bcccc58394cb5833fdfe92757425df"
+    },
+    {
+      "path": "include/hyle/simd/random.h",
+      "sha256": "b258ce03e1687fffbb898efdc0be62ec1883344b7399248d22484a31583655f3"
+    },
+    {
+      "path": "src/compute_provider_ggml/standard_index.cc",
+      "sha256": "a069b7ec6b4eb06851c60e8140db7226903c0821e2a6e63f3cb4f245a0c4e3e8"
+    },
+    {
+      "path": "src/compute_provider_native/native_provider.cc",
+      "sha256": "691ff63a6d6f7b42d6f2abd2747cfa7478a2308e09f5e7b3a9e40bb5c21f3885"
+    },
+    {
+      "path": "src/compute_provider_cuda/collectives.cu",
+      "sha256": "75714efd0be20d9ea3c733734f3fa17d80d8e6676d52e1cc28b7c0e082d36493"
+    },
+    {
+      "path": "src/compute_provider_cuda/collectives_provider.cc",
+      "sha256": "c5d8bea4f5fae0fc32ca39d2f6f7da8eb55ecebe4bc8480f39943ec30031cb90"
+    },
+    {
+      "path": "src/compute_route_apple/apple_mature_indexing.cc",
+      "sha256": "b1ab46d533fde8d3ad09a25df4e3d0aa4eddd7b381c38bf18810488d13c070e4"
+    },
+    {
+      "path": "src/compute_route_apple/apple_tensor.cc",
+      "sha256": "93462583dfeb859fc9a59a5a8eef36540a84346bebca9cf6e331934bd10dc1f7"
+    },
+    {
+      "path": "src/compute_route_vulkan/vulkan_region.cc",
+      "sha256": "8d5d62804351798413941324cdd38497148c22b8b5345acf84dd09406c2b9792"
+    },
+    {
+      "path": "src/compute_route_vulkan/shaders/tensor.comp",
+      "sha256": "0015a81877af5ec7b3d433c41718a2f6471aae84cf29d47433a30264b3c2ad31"
+    },
+    {
+      "path": "src/graph_route_apple/apple_lowering.cc",
+      "sha256": "060d8730e2cf78d0e268b3e29753ec92d78ab5ac35f79ac1dc8729a1001490e3"
+    },
+    {
+      "path": "src/graph_route_vulkan/vulkan_lowering.cc",
+      "sha256": "a4beb31bbdb5706000779526f02bbf1699adad1ea0e9b4ff226df02917231d96"
+    },
+    {
+      "path": "src/compute_backend_cuda/device_status_kernel.h",
+      "sha256": "ef331996915f9881e62d2f4fb2c4a3aa77440463ddd13320a7f34461fee70304"
+    }
+  ],
+  "consumer": {
+    "path": "C:\\Users\\kiro\\Downloads\\Qwen3.5-2B\\config.json",
+    "sha256": "ed1c1723241f23f7f4e23430759cbd7dcfb4103cbdfe052bfe7626b57c2615b4",
+    "vocabulary": 248320,
+    "workload": "Resident R1/R16 full-vocabulary logits, GPU numerical selection and small ID/scalar readback, at least65 steps and reordering/two slots; full model CLI remains outside current goal."
+  },
+  "triggers": [
+    "Concrete original G08 consumer lacks public device counter-addressed RNG/categorical numerical schema; old util/SIMD sequential generators do not provide it.",
+    "Existing TopK1 full CUDA radix keys/indices, MLX/Vulkan full sort and CPU width Entry allocation are actual normal large-vocabulary costs, not timing evidence."
+  ],
+  "scope": [
+    "S1 existing TopK1 semantic-preserving arg selection",
+    "S2 explicit counter-addressed raw random numerical domain",
+    "S3 selected finite categorical domain with independent quality/endpoint audit",
+    "S4 full native/public journey and actual small result return, original completion owner"
+  ],
+  "decisions_pending": [
+    "Exact typed custom schema, counter mapping and selected scalar meaning",
+    "Mature RNG license/carrier and no-native-F64 endpoint/quality proof",
+    "Finite FIX and risk/source/static/shared/P1 contracts before AUDITED"
+  ],
+  "archive": {
+    "path": "inputs.zip",
+    "sha256": "39be98fa08237287f7970a67a9cbfeecfefa180b9821c4e08c76b27609a7b6d2"
+  },
+  "costs": {
+    "new_product_builds": 0,
+    "new_runtime_tests": 0,
+    "new_p1": 0,
+    "source_reading_elapsed": "UNKNOWN; not separately stopwatched"
+  },
+  "limits": [
+    "This intake is source evidence, not implementation or runtime PASS.",
+    "No G01-G07 reopen/retest, global gaps sweep or G09/G10 implementation."
+  ]
+}
