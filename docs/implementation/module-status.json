@@ -517,9 +517,10 @@
     },
     {
       "module": "compute_route_apple",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/inference-g07-packed-weights.md",
-      "summary": "G07 AUDITED correction: immutable b483 Apple P1 qualified, M1 WIN about2.04x and M64 material LOSS about0.73x throughput; full original evidence retained. Only exact FP8 decoder cost correction authorized, F32 matrix/scale order and public API unchanged. CUDA owner remains frozen CANDIDATE."
+      "summary": "G07 CANDIDATE Apple exact F32 FP8 decoder correction0333: all declared20Direct/13Graph,65step joint/public, Metal validation and3hostsan facets pass. Prior b483 P1 M1 WIN/M64 material LOSS preserved; new SDK and same-contract P1 pending. CUDA product candidateb483 unchanged.",
+      "candidate": "0333ed2cc9025dd976d7d2118dcd6759cffb5242"
     },
     {
       "module": "graph_route_apple",
