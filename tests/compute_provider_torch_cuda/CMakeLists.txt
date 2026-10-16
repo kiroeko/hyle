@@ -14,4 +14,7 @@ if(HYLE_COMPUTE_CUDA_ENABLED)
     target_compile_options(hyle_compute_provider_torch_cuda_test PRIVATE ${_torch_flags})
   endif()
   hyle_stage_runtime(hyle_compute_provider_torch_cuda_test)
+  hyle_add_test(compute_provider_torch_cuda NAME packed_consumer
+    SOURCES packed_resident_consumer.cc DEPS hyle_compute_backend_cuda)
+  hyle_stage_runtime(hyle_compute_provider_torch_cuda_packed_consumer_test)
 endif()
