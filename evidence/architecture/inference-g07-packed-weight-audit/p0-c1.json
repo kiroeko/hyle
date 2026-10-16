@@ -1,0 +1,44 @@
+{
+  "schema": "hyle.inference-g07-cuda-c1-static-cost/v1",
+  "verdict": "PASS_BOUNDED_SOURCE_STRUCTURE_RUNTIME_QUALIFICATION_PENDING",
+  "product_candidate": "4274ee6cb6275bf36bda1d8c8c0e223f0fa65db5",
+  "test_snapshot": "cc0a5b9953ac2fcf2f195f97ca15e9baf3345a2f",
+  "inputs": [
+    {
+      "path": "src/compute_provider_torch_cuda/mlx_packed_kernel.cu",
+      "sha256": "018d2dafa2c265253010e71be0facf2aad27043d95373bb715cecc3a4ddfe337"
+    },
+    {
+      "path": "tests/compute_provider_torch_cuda/packed_test.cc",
+      "sha256": "ae294bd5ea750edc4951b9e8e39d35a0d3de679ce7a20d14afe805095e25d8b8"
+    },
+    {
+      "path": "tests/compute_provider_torch_cuda/mlx_precision_test.cc",
+      "sha256": "c34763282a1fd8321f012ea6935e085b91f2ecabe67eb6f4ad056c6e1c3f2a83"
+    }
+  ],
+  "decision": "Same packed kernel template, four independent output rows per warp for linear M>1. Existing single-row mapping for M1/grouped/embedding; no width table/search.",
+  "source_counts": {
+    "M": 64,
+    "N": 6144,
+    "K": 2048,
+    "group": 64,
+    "old": {
+      "threadblocks": 49152,
+      "per_lane_code_extractions_and_dequantizations": 805306368
+    },
+    "c1": {
+      "threadblocks": 12288,
+      "per_lane_code_extractions_and_dequantizations": 201326592
+    },
+    "interpretation": "Source counts for fully populated fixed shape, not measured cache traffic or latency. FMA/output count and each output group reduction order unchanged."
+  },
+  "cost": "Four independent result/dot scalar values per lane instead of one in the multirow instantiation. Code/scale/bias read/decode shared, activation reads and original F32 FMA/warp_sum/group scaling retained. Tail rows guard activation reads and output stores; no new global buffer, repack, allocation, host wait or status owner.",
+  "unknowns": [
+    "Exact register allocation/spill/occupancy and driver module memory require actual toolchain/qualification; not claimed from source counts.",
+    "Original driver/native/private-pool bounds and final retained native result teardown limits remain."
+  ],
+  "precision": "Original explicit F32 rounded dequantization, per-output lane FMA, warp_sum, MX after-dot scale and ordered group accumulation; original output dtype cast. No TF32/half intermediate substitution.",
+  "verification": "M1 and M5 differing signed power-of-two rows across original nine dtype/format cases, all256 FP8 codes at M5 including tail, original actual-width M17/M64 Direct/Graph, public64step and declared risks/SDK/P1 remain to execute.",
+  "performance": "Old b483 qualified M1 WIN and M64 direction INCONCLUSIVE/5%FAIL retained in inference-g07-cuda-packed-attempt-2. No timing or improvement verdict for C1 yet."
+}
