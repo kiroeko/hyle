@@ -429,3 +429,29 @@ helper保留，修正后读取同一已过日志，不重跑产品；缺失计�
 CPU Provider仍AUDITED；本批没有改runtime/vendor/数学/公共API/CMake，没有GPU或P1资格。
 下一批继续Apple/Vulkan ragged runtime及FI Q1/capture审计，最终san/header/搬迁SDK待完整
 算法冻结。G04/G05及全十项范围、失败、费用与剩余工作均保留，整项完成数仍3/10。
+
+## 原生 ragged runtime 批：SCOPED / AUDITED
+
+[D5接口与源码审计](../../../../evidence/architecture/inference-g06-native-ragged-runtime-intake/intake.json)
+绑定b81b22b401ce3a6caa3aa91ab0be2fdd978ae724。Apple/Vulkan route及ggml Vulkan Provider
+均已AUDITED；本批仅这三个owner施工。真实consumer为原NativeRaggedLayout两request/八request
+公开旅程及G06连续decode/混合Q；保Q1、mixed、单/多、空request和已有plain/Q8数值域。
+
+| FIX | 固定公开形状、ownership与成本 | 有限验证 |
+|---|---|---|
+| D5.1 显式ragged更新 | 两route公开`update_ragged_batch(Invocation&, const BatchLayoutVersion&)`。只接受原ragged Program、同schema/完整Q indptr/原attention合同；非法layout在mutation前拒绝，原绑定可继续。成功清除旧input imports，caller重新bind原三个packed-capacity Q/K/V，沿原submit/Completion/results；Q拓扑变化显式重新prepare | 外部串行；旧结果/在途/已失败/关闭拒绝更新，foreign/不足KV/Q变化拒绝后旧绑定仍可运行；独立slot持旧output，空Q保三port，不读inactive尾行 |
+| D5.2 Apple复用D3桥 | 原immutable callable增加原attention causal/window冷事实，原ragged纯builder进入同一per-Invocation layout桥。Q/output固定，初始KV走原compiled，其它KV用原worker/MLX fast。无普通Invocation新字段、无新worker/vendor/math | F16/BF16、plain/Q8、D64/128/256、D64/Dv128/window、causal/noncausal；single Q1、multi Q1、mixed各64步；原checked trace/native drain/poison保持，managed建图/private费用UNKNOWN |
+| D5.3 Vulkan原参数桥 | 原private runtime request tag准入ragged，通用Region先预检所有rows/offset/root容量/causal，再使原recording失效并改参数。公开更新先全regions预检，再释放旧import/应用；接受后任一步失败将原run标失败，不能半更新后继续使用 | 同原F16/plain/Q8/几何有限域和64步；原graph/gallocr/output storage保留，重新编码成本披露；原provider及alias/phase、paged/联合/pending风险回归 |
+
+Vulkan原冷ProgramState增加一个nullable unique_ptr，ragged才冷分配immutable schema/layout及
+causal/window合同；普通submit不读取此字段，不增加Invocation字段。当前每Invocation native
+graph只保存已验证的标量，无悬空layout spans；Apple当前layout由各Invocation独立持有。
+两route都复用原idle/result/checked completion/取消/关闭/退休，无复制执行器或通用planner。
+
+实际Air一次增加g06_native_ragged target（原各route native_ragged_test.cc），两route原Direct、
+联合、encoded、pending/失败/multi-source及Vulkan ce16_provider/ce16_public按原缓存批量
+执行；不启动P1，max4，Win/Air heavy串行。Windows CPU本批源码/编译输入未改，按精确
+SHA与实际artifact借用D4普通62/真实26/pending18；不重跑未变CPU或冒充native资格。
+selector保适用/跳过原因。最终san/header/迁址static/shared待完整G06固定后集中做。
+调查/实现/验证各2h检查点按用户授权有限追加，旧失败/UNKNOWN保留；FI Q1/capture与最终
+性能/交付仍为完整目标必做，本批尚无运行PASS，不签G06/G04/G05完成。

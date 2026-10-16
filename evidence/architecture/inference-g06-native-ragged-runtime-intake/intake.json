@@ -1,0 +1,132 @@
+{
+  "kind": "G06_D5_NATIVE_RAGGED_RUNTIME_SCOPE_AND_AUDIT",
+  "baseline": "b81b22b401ce3a6caa3aa91ab0be2fdd978ae724",
+  "owners": [
+    "compute_route_apple",
+    "compute_route_vulkan",
+    "compute_provider_ggml_vulkan"
+  ],
+  "owner_states_before_product": "All AUDITED under current G06 card",
+  "sources": [
+    {
+      "path": "include/hyle/compute/apple_batch.h",
+      "sha256": "09fca736588dd38c1c189a0fb3b4fdbb4000c5078207e64caebf1cc33bae92f2"
+    },
+    {
+      "path": "include/hyle/compute/vulkan_batch.h",
+      "sha256": "5f8e29e31e6d3a3177632f5a9055916ef21a4e8733ef90fdfaebc31fbaed6078"
+    },
+    {
+      "path": "include/hyle/compute/detail/apple_batch_access.h",
+      "sha256": "65a8cba9cb654f6e5ae708e7c8de7538b6571dbc3a6ec166b56ff335b408d78b"
+    },
+    {
+      "path": "include/hyle/compute/detail/vulkan_batch_access.h",
+      "sha256": "cc707ce3b6e2a219bab12d7d3cd7ef6eaed6af1b21d9a38a58088c29e03d7052"
+    },
+    {
+      "path": "src/compute_route_apple/apple_context.cc",
+      "sha256": "c0679e6bce91b877c1f964949404cd5bc1e7f83a219f1bddf0057fe19fd902af"
+    },
+    {
+      "path": "src/compute_route_apple/apple_batch.cc",
+      "sha256": "afcf30d92f08c5d0964d131744ebd8a1e97dbfbccf77c264688c18bef36c30dc"
+    },
+    {
+      "path": "src/compute_route_vulkan/vulkan_program_internal.h",
+      "sha256": "6b3e17e08406e4aa484b0e2a8a031f36441d86257aefedba8e261bde761a8eb9"
+    },
+    {
+      "path": "src/compute_route_vulkan/vulkan_program.cc",
+      "sha256": "fa8b04a5d8af1e1a1d5aa5ce0c2c9c1a9f067e3ced769169846fb91fc07d226e"
+    },
+    {
+      "path": "src/compute_route_vulkan/vulkan_batch.cc",
+      "sha256": "afb0b828c1782b6ece8ae3e10234f3d918feacf912b9d62b76935d30be8dd25f"
+    },
+    {
+      "path": "src/compute_provider_ggml_vulkan/region.cc",
+      "sha256": "baef4528ec3ec05851277f38ec77276679f673b90c554dce78742e1fb6267dd2"
+    },
+    {
+      "path": "src/compute_provider_ggml_vulkan/region.h",
+      "sha256": "6599ebf255f60ba3ad813bff01488fdc99c4119e4929eeb1048a5280b4fb98fb"
+    },
+    {
+      "path": "tests/compute_batch/native_ragged_layout_test.h",
+      "sha256": "06a1346b74b1d839de9f7fc36d601fcd003c987d313ab5eb79649a906fd0fb9f"
+    }
+  ],
+  "fixed_peer_anchor_reuse": [
+    {
+      "name": "sglang",
+      "commit": "7224fce1b5e488c9916f20ec0556d696e595d512",
+      "archive_sha256": "21559aac7538426c4d75262a25d041d8c24070785a4d8f550459f68c3398b0e0",
+      "path": "python/sglang/srt/layers/attention/flashinfer_backend.py",
+      "file_sha256": "a5649f67038153c35864b3f50d5c368071a56cbef75f266bec804dbf7e64363f",
+      "line_ranges": [
+        [
+          203,
+          220
+        ],
+        [
+          251,
+          260
+        ]
+      ]
+    },
+    {
+      "name": "vllm",
+      "commit": "98f721116227f0f48690deb05c815c057bac0668",
+      "archive_sha256": "984cc5cd0ddc5bc93c8f1055f7b2a19da128d372343896510952060bd2b71423",
+      "path": "vllm/v1/attention/backends/flashinfer.py",
+      "file_sha256": "343b949d62db7fc03f6ca0c682e1ec1cb60125461069b081ac1554b7a05214e9",
+      "line_ranges": [
+        [
+          1310,
+          1345
+        ]
+      ]
+    },
+    {
+      "name": "llama.cpp",
+      "commit": "cbe28bb3cb0758f0c566a9a3561766821aeb0748",
+      "archive_sha256": "e71cd4a1645b151a45c46a9d4c0bf5de0fa2a94080ce31ca508a6c65ad1a3562",
+      "path": "src/models/llama.cpp",
+      "file_sha256": "10af5226730900378be77318691f4acbfccb46809c41a81a195a0ca0d5d48109",
+      "line_ranges": [
+        [
+          113,
+          126
+        ],
+        [
+          169,
+          169
+        ]
+      ]
+    }
+  ],
+  "finding": "Existing public prepare_ragged_batch has immutable initial lengths and no update journey. Existing Apple D3 managed builder/per-invocation layout and Vulkan original FA rows/offsets can serve real packed-KV runtime extents under exact Q topology without new math/executor.",
+  "fixed": [
+    "D5.1 public update_ragged_batch(Invocation&, const BatchLayoutVersion&) on both native routes. Same original schema/full Q indptr/attention contract; all invalid facts rejected before mutation. Original idle/old result/failed/closed gates; success unbinds previous inputs, caller rebinds original3 packed-capacity ports.",
+    "D5.2 Apple original tagged callable carries cold causal/window facts; ragged builder enters same original compiled/managed runtime bridge, per-invocation current layout, original worker/check/drain/completion. No ordinary Invocation fields.",
+    "D5.3 Vulkan cold Program nullable unique_ptr holds immutable initial layout/schema/causal/window. Original graph tag and scalar update support ragged too. Full regions preflight precedes input release/apply; accepted failure poisons original run. No mutable Program lengths, new Invocation fields or normal submit branch."
+  ],
+  "costs": [
+    "Host O(requests + existing region nodes), host-known facts have no D2H. Apple changed lengths still managed native graph construction; Vulkan changed scalar parameters cause original re-encoding, not capture/zero allocation.",
+    "Vulkan one pointer per cold ProgramState plus one ragged-only immutable-contract allocation. No ordinary hot field read/branch; original unknown native/driver bytes retained. Apple opt-in callable gets causal/window facts cold only."
+  ],
+  "validation": [
+    "Actual Air canonical-source sync, fresh identity Mac16,12; original cached mixed build configs max4 heavy serial. New g06_native_ragged target compiles original route native_ragged_test.cc including new64 public runtime sequence and original2 tests.",
+    "Finite new Apple48/Vulkan24 configurations: single Q1, multi Q1, mixed17+1/empty; plain/Q8, Apple F16/BF16 and Vulkan F16, D64/128/256, D64/Dv128 window16; growth/shrink, packed offsets and original independent uniform oracle with poison inactive rows, old-slot output, foreign/Q topology and invalid causal/KV rejection, success requires rebind.",
+    "Original Direct/CPU-native-CPU/paged/encoded/pending/unknown/cancel/abandon/multi-source native source suite and Vulkan provider/alias-phase targets in one batch.",
+    "Windows unchanged CPU source and matching actual artifacts reuse D4 receipt88 tests plus18 pending; no redundant CPU run. Full final sanitizer/header/relocated SDK and engineering performance later."
+  ],
+  "negative_space": [
+    "Q topology changes still explicit cold prepare; no engine scheduling/bucket policy",
+    "No native math/shader/vendor/runtime/build-tool changes",
+    "FI Q1/capture, final G06 gates and G04/G05 unresolved remain mandatory"
+  ],
+  "elapsed": "Full design intake elapsed not completely captured; UNKNOWN not zero",
+  "timestamp_utc": "2026-10-16T03:57:00.275929+00:00"
+}
