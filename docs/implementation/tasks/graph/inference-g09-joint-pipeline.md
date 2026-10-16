@@ -1,7 +1,8 @@
 # G09 单CPU与单GPU联合流水
 
-状态：**AUDITED，2026-10-17；有限FIX及依赖/推进形状已冻结，进入批量实现；新实现尚未验收**。
+状态：**CANDIDATE，2026-10-17；API、算法和产品形状冻结，交付/P1/终审尚未验收**。
 baseline为`9e2f25c469634a6f723e76eaf1aa2db5973bca9a`。
+candidate为`3524413272cb52d06af5e64d634edbfef09b9864`；产品实现自`e09f30925`未再变化。
 G07/G08已接受，当前G07–G10 goal完成2/4；G10和完整文本CLI未开始。
 
 ## 需求、真实事实与owner
@@ -20,7 +21,7 @@ Vulkan同样先完成fragment和需要的transfer才推进下一个。冷compile
 
 初始intake只打开Apple/Vulkan；随后一次最小CUDA公开consumer反证已确认同一J1旅程的额外串行化。
 当前施工owner为`graph_route_cpu_apple`、`graph_route_cpu_vulkan`、`graph`、`graph_route_cpu_cuda`，
-均为AUDITED。common/CUDA只纳入原cold segment边界与联合提交推进，不扩大为普通Graph全面重构。
+在审计时均为AUDITED，现进入上述固定candidate。common/CUDA只纳入原cold segment边界与联合提交推进，不扩大为普通Graph全面重构。
 leaf数学、native Queue/transfer/allocator继续借原已签owner，不因此自动重开。
 不重新打开G01–G08已接受的数学、packed、分页或数值选择范围。
 
@@ -143,7 +144,7 @@ Mac只用实际确认身份的MacBook Air。使用原合格依赖/对象和SDK�
 
 ## 实现检查点，2026-10-17
 
-仍为AUDITED。J-F1–J-F4实现已接齐，三native路线首轮实际消费者已运行；尚未固定最终candidate，
+此检查点当时仍为AUDITED。J-F1–J-F4实现已接齐，三native路线首轮实际消费者已运行；当时尚未固定最终candidate，
 不把局部运行结果当成G09聚合验收。G07/G08仍为本goal已验收2/4，G10未开始。
 
 - J-F1：common segment与Apple/Vulkan冷分片保留独立prefix；真实data/control以及lane/预算复用边保留。
@@ -268,8 +269,15 @@ HYLE_TESTING-only的accepted-observation拒绝故障分支此次确实编译并�
 TSan运行了同七组：common、executable和两个G06消费者PASS；retirement、contracts、pipeline
 各报一条销毁/deallocate与先前atomic引用释放的竞争，原退出66和完整栈保留。首次WSL配置没有
 编入单独的既有refcount acquire-fence观测模型；仍须逐条核对实际owner/HB并作有限复测，
-不能仅凭已有工具限制判PASS。三配置累计608.510秒，包含这次TSan失败，不重置成本。
+不能仅凭已有工具限制判PASS。首次三配置累计608.510秒，包含这次TSan失败，不重置成本。
 该记录未裁决全部host风险、Metal/Vulkan validation、CUDA device tools、交付或P1。
+
+随后同树使用既有G02/G06/G08字节相同的final-acquire观测模型复测，七组全部PASS：
+61 common、289 executable、4 retirement及contracts/流水/G06两消费者。模型只作用于实际
+compute runtime、Graph、CPU+CUDA owner及fixture的编译单元，未改shipping源码或添加抑制。
+首次过宽的CXX include方案在dry-run拒绝289条build边，未编译；限定到上述真实owner后为
+94条增量边、CUDA对象0。原预检/配置费不重置，复测累计362.561秒；该CUDA host记录现合计
+971.071秒。原三报FAIL仍在raw包，不能把有模型的host结论扩大成driver/私有分配器或设备shader证明。
 
 [Air Apple原始记录](../../../../evidence/correctness/inference-g09-apple-host-risk-checkpoint/receipt.json)
 中ASan、UBSan各通过61项common与285项executable，以及原contracts、新流水5场景和原G06
@@ -281,6 +289,21 @@ pending联合消费者。TSan中common/executable、新流水5场景与G06 pendi
 确认WSL三报分别对应原SignatureState、RunState、ResultStorage末减引用fence，仍需既有模型复测；
 Air回调源码与G09 baseline完全相同，现有模型的边界明确。局部PASS不代签这些待裁决边。
 
+该边随后由独立有限[Metal ObjC观测工具任务](../../../../evidence/architecture/inference-g09-metal-objc-tsan-tool/tool-task.json)
+完成：先按原SDK合同独立审查，仅在可丢弃验证副本给原command commit前加release、completion
+callback第一句用其completed参数acquire，保原数学、byref捕获、owner与GPU退休。独立Mach-O
+relocation复核确认注册0x4580→release0x462c→commit0x4634；callback acquire0x49f0在首个
+capture读取0x49f8/0x49fc之前，未给G09内部同步附加HB或使用抑制。相同contracts、新流水5场景、
+G06 pending在此模型下均PASS。完整3325文件副本和parent已恢复，五份原测试binary哈希不变。
+原FAIL仍保留；首次33边预检拒绝和未链接otool符号guard失败均计入工具累计102.712秒，后者复用
+同一已链接object/binary，用nm+relocation核对而未重编。Apple host记录现累计288.558秒。
+该工具任务已CLOSED；command地址复用与外部模型可见性边界仍明确，不签全进程race-free或泄漏。
+
+[Air Vulkan host风险原件](../../../../evidence/correctness/inference-g09-vulkan-host-risk-checkpoint/receipt.json)
+中ASan/UBSan及使用原final-acquire观测模型的TSan均PASS；每配置61 common、285 executable，
+另有原contracts、5组双slot/65步/取消流水和G06 pending联合消费者。沿原hash合同复用已资格的
+generated Vulkan输入，未重新编译shader。三配置累计263.792秒；设备validation层、交付和P1另验。
+
 [独立有限P0账](../../../../evidence/architecture/inference-g09-implementation-review/g09-p0-cost-review-7.json)
 已复核14份产品源码身份；仅frontier/CSR与具名依赖投影具有所列线性界，每slot metadata有界。
 Apple/Vulkan在每次新native入场前扫描现有pending：若N个ready任务持续pending，仅入场阶段就可能
@@ -290,6 +313,29 @@ prepare_replay、原复制、Sched fiber/唤醒、native私有资源与真实退
 分配临时scratch并排序去重，ReplayReport不是实际poll/kernel/时间线计数。没有发现本轮新增
 具体MUST；不以成本结构单独授权改产品或更换P1形状，实际性能仍按固定合同待测。
 
-下一步限于本卡剩余验收：其余适用host/device风险、三交付/公开头；candidate固定后按预声明
-两自然形状与必要串行holdout，先独立artifact/text预检，再正式P1，最后终审/LOC。
+### 固定candidate与设备风险，2026-10-17
+
+J-F1–J-F5产品实现已停止变化；本轮普通消费者、真实退休、三路线host风险与有限P0账已补证。
+四owner进入上述CANDIDATE，不再写产品代码；交付、P1与终审仍待验收，状态不等于CLOSED。
+
+[具名设备工具原件](../../../../evidence/correctness/inference-g09-native-device-validation/receipt.json)：
+Windows原contracts与5场景流水确实加载Khronos instance/device validation layer，并识别
+sync validation配置，VUID/同步hazard为0；Air原contracts与5场景流水实际打印Metal API/GPU
+Validation Enabled且错误为0；WSL原contracts与4场景CUDA流水在memcheck/racecheck均为
+0 errors/0 hazards，原checked数学/取消/退休检查均PASS。三组活动累计188.869秒，无新编译。
+Windows保留陈旧OBS registry JSON及配置弃用提示，未改用户注册表；这些不是产品validation错误。
+设备结论限于具名平台和变动owner的提交/退休旅程，未变叶数学/barrier资格沿原身份BORROW。
+不将WSL或Windows的一份工具记录改写成所有平台工具已跑，也不签私有driver/全进程泄漏。
+
+[P1具体消费草案](../../../../evidence/architecture/inference-g09-p1-prospective/proposal.json)
+复用已固定功能consumer的4M F32维度，补齐两插入顺序、两microbatch与必要串行holdout的阶段/迭代账；
+已通过独立[prospective设计审查](../../../../evidence/architecture/inference-g09-p1-prospective/review-11.json)，
+仍未构造benchmark或采样；实际SDK、私有符号/loader隔离、完成账与原仪器资格五组预检均待证。
+两侧persistent/cache/DSO最终销毁同列DEFERRED；逐replay结果owner与accepted work仍在warm内退休。
+baseline所对应的原G08静态SDK产品
+src/include/cmake/root CMake与9e2f25逐字节相同；实际baseline/candidate SDK仍须逐项hash绑定，
+不能只改revision标签或混链不同private Graph layout。
+
+下一步限于本卡剩余验收：三交付/公开头；按预声明两自然形状与必要串行holdout，
+先完成prospective源/阶段审查和独立artifact/text预检，再正式P1，最后终审/LOC。
 尚未完成的门均待证；不追加缺口穷尽调研，不提前推进G10，不重跑已接受G01–G08数学/P1。

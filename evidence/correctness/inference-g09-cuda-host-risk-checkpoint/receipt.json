@@ -1,6 +1,6 @@
 {
   "schema": "hyle.inference-g09-cuda-host-risk-checkpoint/v1",
-  "state": "ASAN_UBSAN_HOST_FACETS_PASS_TSAN_OBSERVATIONS_PENDING_REVIEW",
+  "state": "ASAN_UBSAN_AND_EXISTING_MODEL_TSAN_HOST_FACETS_PASS",
   "canonical_product_commit": "e09f30925c6dba5cf4540669fd3b4874f45bb158",
   "canonical_validation_head": "3524413272cb52d06af5e64d634edbfef09b9864",
   "validation_source_tree": "c1e52cd0b4061706bbbfca7ad6fa575ea2d5d238",
@@ -13,7 +13,7 @@
     "Original external CUDA/runtime/private allocator instrumentation limits remain.",
     "No Metal/Vulkan validation, device tool, relocated SDK, immutable-candidate P1 or aggregate G09 acceptance is signed."
   ],
-  "actual_cumulative_seconds": 608.51046867,
+  "actual_cumulative_seconds": 971.071219633,
   "cost_reset": false,
   "cases": [
     {
@@ -627,9 +627,42 @@
   ],
   "raw": {
     "path": "raw.zip",
-    "sha256": "d32563025441fd4f81eaf8d267e6ff73b05165f56e5959f68930fbaaa465ac39",
-    "bytes": 1068027,
+    "sha256": "50af21dfd3f9ff02695bba7a0a36d7822fab23d1ee350ff23e75d8b963dc7194",
+    "bytes": 1195612,
     "crc": "PASS"
   },
-  "binary_retention": "Each actually executed binary absolute WSL path and SHA256 is in its result.json. Large original static ELF files remain in the unchanged verification build tree; they are not duplicated in this raw package."
+  "binary_retention": "Each actually executed binary is identified by its absolute WSL path and execution-time SHA256. Large original static ELF files are not duplicated in raw.zip. The first unmodeled TSan images at those paths were superseded by the same-tree modeled recheck; their source, original commands, hashes and full reports remain archived. The final modeled images and ASan/UBSan images are retained in their verification build trees.",
+  "followup": {
+    "state": "HOST_FACET_PASS",
+    "raw_prefix": "tsan-existing-model-recheck/",
+    "gtest_execution_totals": [
+      {
+        "target": "g09_common",
+        "tests": 61
+      },
+      {
+        "target": "g09_executable",
+        "tests": 289
+      },
+      {
+        "target": "g09_retirement",
+        "tests": 4
+      }
+    ],
+    "other_passed_targets": [
+      "g09_contracts",
+      "g09_pipeline",
+      "g09_g06_hybrid",
+      "g09_g06_pending"
+    ],
+    "model": {
+      "path": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g09-tsan-refcount-model/hyle/util/ref_counted.h",
+      "sha256": "2b90ab655a49ec3b9158a964872cd1fc3395ebf64d8ae430a2e19c4805bf5416",
+      "kind": "Byte-identical pre-existing G02/G06/G08 validation-only final-acquire-fence observation. No new suppression. Exact compute runtime, common Graph and CPU-CUDA owners plus seven fixtures; other original dependencies retain their previous instrumentation boundary."
+    },
+    "actual_cumulative_seconds": 362.560750963,
+    "retained_preflight": "First broad CXX include placement was refused at dry run before any build. Same build tree was reconfigured with the unchanged existing model on exact compute runtime/common Graph/CPU-CUDA owner and fixture TUs. Both original configure/preflight times and dry plans remain; the final build has 94 edges and no CUDA objects.",
+    "review": "evidence/architecture/inference-g09-implementation-review/g09-tsan-observation-review-8.json",
+    "qualification": "This finite existing acquire-fence observation model adds TSan visibility for the source-established release sequence. It is not shipping code, a new broad suppression, a shader/driver/private allocator/leak certificate or whole-process external runtime model."
+  }
 }

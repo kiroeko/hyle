@@ -281,9 +281,10 @@
     },
     {
       "module": "graph",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/graph/inference-g09-joint-pipeline.md",
-      "summary": "G09 AUDITED: finite J-F1..J-F5 cold dependency boundaries, bounded original-Sched CPU/native ready progress, original transfers and all accepted-prefix retirement frozen. Batch implementation authorized; no new implementation runtime/delivery/P1 verdict."
+      "summary": "G09 CANDIDATE: fixed public API/algorithm/product shape, original-Sched joint progress and accepted-prefix retirement. Actual three-route correctness/overlap, selected modeled host/device risks and finite P0 ledger recorded; source/static/shared delivery, P1 and final review remain unaccepted.",
+      "candidate": "3524413272cb52d06af5e64d634edbfef09b9864"
     },
     {
       "module": "container_concurrent",
@@ -649,21 +650,24 @@
     },
     {
       "module": "graph_route_cpu_cuda",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/graph/inference-g09-joint-pipeline.md",
-      "summary": "G09 AUDITED: finite J-F1..J-F5 cold dependency boundaries, bounded original-Sched CPU/native ready progress, original transfers and all accepted-prefix retirement frozen. Batch implementation authorized; no new implementation runtime/delivery/P1 verdict."
+      "summary": "G09 CANDIDATE: fixed public API/algorithm/product shape, original-Sched joint progress and accepted-prefix retirement. Actual three-route correctness/overlap, selected modeled host/device risks and finite P0 ledger recorded; source/static/shared delivery, P1 and final review remain unaccepted.",
+      "candidate": "3524413272cb52d06af5e64d634edbfef09b9864"
     },
     {
       "module": "graph_route_cpu_apple",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/graph/inference-g09-joint-pipeline.md",
-      "summary": "G09 AUDITED: finite J-F1..J-F5 cold dependency boundaries, bounded original-Sched CPU/native ready progress, original transfers and all accepted-prefix retirement frozen. Batch implementation authorized; no new implementation runtime/delivery/P1 verdict."
+      "summary": "G09 CANDIDATE: fixed public API/algorithm/product shape, original-Sched joint progress and accepted-prefix retirement. Actual three-route correctness/overlap, selected modeled host/device risks and finite P0 ledger recorded; source/static/shared delivery, P1 and final review remain unaccepted.",
+      "candidate": "3524413272cb52d06af5e64d634edbfef09b9864"
     },
     {
       "module": "graph_route_cpu_vulkan",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/graph/inference-g09-joint-pipeline.md",
-      "summary": "G09 AUDITED: finite J-F1..J-F5 cold dependency boundaries, bounded original-Sched CPU/native ready progress, original transfers and all accepted-prefix retirement frozen. Batch implementation authorized; no new implementation runtime/delivery/P1 verdict."
+      "summary": "G09 CANDIDATE: fixed public API/algorithm/product shape, original-Sched joint progress and accepted-prefix retirement. Actual three-route correctness/overlap, selected modeled host/device risks and finite P0 ledger recorded; source/static/shared delivery, P1 and final review remain unaccepted.",
+      "candidate": "3524413272cb52d06af5e64d634edbfef09b9864"
     },
     {
       "module": "compute_stream",

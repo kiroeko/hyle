@@ -1,0 +1,82 @@
+{
+  "schema": "hyle.finite-prospective-model-review.v1",
+  "reviewed_at_utc": "2026-10-16T23:30:38.712157+00:00",
+  "decision": "SEMANTICALLY_VALID_MINIMAL_EXTERNAL_PUBLICATION_MODEL_FOR_THIS_EXACT_OBJC_LEAF_ENTRY; NOT_YET_IMPLEMENTED_OR_RUNTIME_QUALIFIED",
+  "scope": "Separate validation-tool task only; disposable validation copy apple_weights.mm, no shipping source/public API/registry/Graph synchronization changes, no suppression. This review did not compile, run hardware or create a model/framework.",
+  "source_identity": {
+    "path": "src/compute_route_apple/apple_weights.mm",
+    "sha256": "c15e7514bf7b509c19a94c7500d68ae42743388ad6664d117877594291016d6f",
+    "baseline": "9e2f25c469634a6f723e76eaf1aa2db5973bca9a",
+    "baseline_equal": "Prior review8 verified exact baseline/canonical/actual Air bytes equal.",
+    "public_contract": "include/hyle/compute/apple_weights.h:35-40,56-58,66-72",
+    "public_contract_sha256": "78197354b92152d701f320078f373868152ba8d68268442bfc825742bd10809f",
+    "previous_review": ".scratch/inference-gaps/g09-tsan-observation-review-8.json",
+    "previous_review_sha256": "702fece2274f56977957c78caec60b0d30bc6b3045cb5c73f5e43d3a2267050a"
+  },
+  "proposed_exact_boundary": {
+    "release": "Immediately before original [command commit] at original line359, after registration has returned and after existing retained command/progress initialization. Use __tsan_release((void*)command). This exact late placement avoids ambiguity about which caller writes are published.",
+    "acquire": "First source statement inside existing line345 block: __tsan_acquire((void*)completed), using only original callback argument. Do not read/capture command, state, retained, progress, event or generation in this expression.",
+    "declarations": "Use the installed sanitizer/tsan_interface.h in validation-only TSan TU; current Objective-C++ TU is manual reference counting, so this void* identity cast requires no new retain/message/owner.",
+    "preserve": "Original addCompletedHandler block registration/copy, original captures, original command retain/release, original status/error handling, original commit, actual GPU completion and original retirement all remain intact. No fake success, synchronization wait, callback scheduling or new key allocation."
+  },
+  "primary_evidence": [
+    {
+      "kind": "Actual installed SDK read over read-only Air SSH",
+      "path": "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/System/Library/Frameworks/Metal.framework/Headers/MTLCommandBuffer.h",
+      "sdk_version": "27.0",
+      "sha256": "d84dda866f07ffc37ce68e3c635177373cdefa419fc1f64c766442ed81966895",
+      "anchors": "36-62 command-buffer state progression;221 callback receives id<MTLCommandBuffer>;302-306 commit;344-354 completed handler / wait.",
+      "support": "Completion notification belongs to the command buffer after its execution, including error status; enqueue is distinct from commit."
+    },
+    {
+      "kind": "Apple primary documentation",
+      "url": "https://developer.apple.com/documentation/metal/mtlcommandbuffer/commit%28%29?language=objc",
+      "support": "A command buffer is committed once; encoding and handler registration must finish before commit. Commit submits that command buffer to its queue."
+    },
+    {
+      "kind": "Apple primary documentation",
+      "url": "https://developer.apple.com/documentation/metal/mtlcommandbuffer/addcompletedhandler%28_%3A%29?language=objc",
+      "support": "CPU driver invokes registered completion handlers after command-buffer execution. Register before commit; status/error remain available in the handler."
+    },
+    {
+      "kind": "Installed public sanitizer annotation declarations",
+      "path": "/Library/Developer/CommandLineTools/usr/lib/clang/21/include/sanitizer/tsan_interface.h",
+      "sha256": "f91dbdf74ce69e8b8ae227c5e169a35025b24e0db6dfa31cff33b643bf7d9968",
+      "anchors": "22-25 __tsan_acquire(void*) / __tsan_release(void*) public interface.",
+      "limit": "Annotation availability does not qualify any actual modeled binary; current source review is prospective."
+    }
+  ],
+  "timing_and_paths": {
+    "publication_hb": "Caller byref promotion/copy occurs during original handler registration. Registration returns before the proposed release; release is sequenced before original commit. Native Metal publication/dispatch to the completed handler is the otherwise opaque cross-thread edge. At callback entry, acquire of the same original command key precedes captured byref forwarding/payload reads. This represents a real incoming host publication relation, not GPU math instrumentation.",
+    "before_commit": "This exact command is newly created, has an ended encoder, and has never been committed. Its handler cannot legally run before its sole commit. No helper in lines330-359 enqueues execution or registers after commit. Do not generalize the model to registration on an already-committed/completed buffer.",
+    "during_commit": "A very small/empty buffer may complete while commit itself is returning. This is still valid: release is before entering commit, so the callback does not need commit to return.",
+    "multiplicity": "Current source registers exactly one completion block and commits once; Metal has one terminal execution per original MTLCommandBuffer. Multiple distinct registered handlers are allowed, but this model does not order them against each other. Header/docs do not supply a separate universal exactly-once counter guarantee; do not use the annotation to manufacture/deduplicate callback counts. Any repeated invocation/retirement defect remains a separate failure.",
+    "error": "All input/byte/capacity and nil allocation rejections occur before handler registration and release. After registration the existing path has no recoverable early-return branch before commit. Successful and native-error callbacks acquire the publication edge equally; metal_status and finish_weight retain original outcomes. A missing/stalled callback remains missing/stalled; annotations do not create completion. A runtime/exception that never reaches callback gets no modeled acquire."
+  },
+  "key_and_lifetime": {
+    "identity": "Only the original per-submission command object address is used. Callback parameter is the associated command buffer, so no captured-byref key load is necessary. Queue, WeightState/WeightProgress, shared event, slot ordinal, or process-global token are invalid replacements because they collapse independent native operations.",
+    "native_lifetime": "Current source retains command in state.command before commit (350-351); old state.command is released only on replacement or WeightState destruction (47-50). Metal dispatches the registered block with the command alive. The callback captures backing/progress independently of the slot, so early public owner drop does not invalidate the argument key. Do not add an extra ownership cycle to support the model.",
+    "same_slot_reuse": "A new command is created at330 before the previous state.command release at350, so two adjacent live slot submissions cannot be that same object. Upload admission at280-286 also excludes retained/pending old selection/backing. This is single-use original MTLCommandBuffer, not reusable MTL4CommandBuffer.",
+    "address_recycling_limit": "After object destruction allocator addresses may recycle. The annotation supplies no universal cross-lifetime generation/reset proof. The finite contracts upload caller is serial test/main; its own earlier release histories are dominated by its later release, and simultaneously live command objects cannot share an address. However existing Metal-cpp annotations elsewhere may also use recycled command addresses on other threads. Actual proprietary object-pool allocation/reset behavior is not proved here; persistent/merged detector metadata could over-order unrelated lifetimes. Do not extrapolate this finite publication model to global race freedom or arbitrary multi-producer workloads. This is an explicit false-negative boundary, not authorization to add a token/reset framework."
+  },
+  "current_warning": {
+    "source_log": "/Users/kiro/hyle-scratch/compute-unified/g09-apple-host-tsan-1/g09_contracts.log",
+    "sha256": "18d2207a67df4b1af0beccf2ffff0c5ac87b803a9b527ec316d889e44cff73a5",
+    "address": "0x00010bcb7830 in64-byte byref heap allocation at0x00010bcb7800",
+    "prior_writer": "main __Block_byref_object_copy_.22 during block registration/copy",
+    "reader": "external GCD/Metal MTLDispatchListApply invokes original WeightSlots::upload block and first reads captured byref field",
+    "expected_coverage": "The proposed release follows this exact copy write and the proposed acquire precedes this exact read. It is sufficient semantically to supply the missing publication HB. Whether compiler codegen/TSan actually observes that edge remains to be demonstrated by the separate finite tool recheck; original report stays FAIL.",
+    "old_model": "Existing G04 Metal-cpp model SHA4a58c6e564e3a7efcdf5c7709eeee99ec7b7c40594e2ada5ec5c91012171d504 annotates C++ wrappers, not these direct ObjC selector sends; G01 identical bytes / include order cannot cover this entry."
+  },
+  "false_negative_and_noncoverage": [
+    "First source statement is the necessary placement, but actual modeled binary must show __tsan_acquire before the first captured byref forwarding/value access. Implicit block prologue or compiler hoisting before the annotation would leave this very report unmodeled; no suppression is justified.",
+    "The release orders only caller accesses already sequenced before native commit. It does not order caller writes after commit, byref disposal after the scope exits, two different callbacks against each other, or two unrelated producers. Those races must stay observable.",
+    "Incoming publication is not a modeled reverse callback-to-wait edge or completion/worker join. Existing progress mutex and original completion ownership must still establish outgoing delivery/retirement. No annotation is added to G09 mailbox, frontier, CPU child, lease, cancellation or internal fields.",
+    "TSan annotations do not prove GPU execution, buffer coherency, kernel math, resource lifetime, success status, liveness, whole-process race freedom, or driver/private allocator instrumentation. A modeled run may claim only its explicit host observation boundary.",
+    "Do not use a reused global/queue/slot/progress key, __tsan_acquire after reading captures, a release after commit, or a completed synthetic callback. Each would either miss the real warning or add unjustified HB.",
+    "No broad suppression, no extra native wait, no callback ownership rewrite, no fake GPU completion, and no shipping implementation changes are needed for the proposed narrow observation."
+  ],
+  "finite_tool_followup": "One independent validation-tool attempt may apply these exact two call-site annotations plus declarations to the disposable source, record before/after hashes and actual TU/object/binary selection, retain original failure, check actual acquire-before-first-capture code order, and rerun the original contracts in the existing batch. Any new warning is a new concrete observation, not automatic coverage. This review neither runs nor pre-signs that attempt.",
+  "alternative_required": false,
+  "stop": "Prospective review complete; no wider Metal model, new runtime/tool framework, product fix, stress sweep or capability review authorized by this artifact."
+}

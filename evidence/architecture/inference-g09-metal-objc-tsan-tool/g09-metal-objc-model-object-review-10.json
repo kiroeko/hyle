@@ -1,0 +1,122 @@
+{
+  "schema": "hyle.finite-model-object-review.v1",
+  "reviewed_at_utc": "2026-10-16T23:36:30.011364+00:00",
+  "verdict": "PASS_EXACT_TWO_CALLSITE_OBJECT_ORDER_AND_EVIDENCE_PRESERVATION; NO_NEW_MUST",
+  "scope": "Independent read-only object/source audit of already built validation-only Metal ObjC publication model. No test/build/GPU workload/model/product/registry/public-tool changes performed by reviewer.",
+  "prospective_review": {
+    "path": ".scratch/inference-gaps/g09-metal-objc-model-prospective-review-9.json",
+    "sha256": "2f9baa76b9bd0a3ce84c0728fe583664dcc3d94c97fe6574e02e6e2458621cec"
+  },
+  "remote_root": "/Users/kiro/hyle-scratch/compute-unified/g09-metal-objc-tsan-tool-1",
+  "input_sha256": {
+    "canonical-apple_weights.mm": "c15e7514bf7b509c19a94c7500d68ae42743388ad6664d117877594291016d6f",
+    "modeled-apple_weights.mm": "ba7921e64331073e339c459af822f37f67fa81407c46f491e4ebe753f83e881d",
+    "object-disassembly.log": "2876cb0705024e72a879c806e5974adc8916b3ed5507dd3e78eef781d4f1a904",
+    "object-relocations.log": "7fd65f04b0a62ace74c6f2bcbb38dfb6f5d088780b53472ed6dd651f1032160d",
+    "object-symbols.log": "8775802f07043e7a384713a02b3db47794614997a73a40fe75fcfc39b5b5e389",
+    "modeled-compile-input.json": "c4b63285bce943462a2ea727794a6df4fccc02ecb751a1f3cf390a2aca0ed9c5",
+    "result.json_at_read": "e56a4582ed512b38d1fd4abbea8864a425ee06f2d21eab5307986cc7341c42e0"
+  },
+  "object_identity": {
+    "path": "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-apple-tsan/build/hyle/src/compute_route_apple/CMakeFiles/hyle_compute_route_apple.dir/apple_weights.mm.o",
+    "sha256": "b0221705972696da0cd0b1e7a67435310db2823bfe0360a420dea89f32ac14ba",
+    "read_only_rehashed": true,
+    "compile": "/usr/bin/clang++ -x objective-c++ -O3 -DNDEBUG -std=c++23 -arch arm64 -mmacosx-version-min=14.4 -fsanitize=thread; original source-c8874688 path and original source/object target retained",
+    "scope_note": "Mach-O object is unlinked. otool unresolved bl targets print the callsite address, not the symbol. Call identity below uses matching BR26 external relocation entries, not substring inference from disassembly."
+  },
+  "source_delta": {
+    "verdict": "PASS_ONLY_ONE_INCLUDE_AND_TWO_CALLS",
+    "added_lines": [
+      "#include <sanitizer/tsan_interface.h>",
+      "      __tsan_acquire((__bridge void*)completed);",
+      "    __tsan_release((__bridge void*)command);"
+    ],
+    "original_anchors": "src/compute_route_apple/apple_weights.mm original345 handler registration/body and original359 commit",
+    "semantics": "__bridge void* is an identity cast, no ownership transfer/retain/release. No original registration, capture, block-copy, math, status/error, completion, queue or ownership statement was changed. No G09 internal annotation or suppression."
+  },
+  "callback_actual_order": {
+    "verdict": "PASS_ACQUIRE_BEFORE_FIRST_CAPTURED_BYREF_ACCESS",
+    "symbol": "____ZN4hyle7compute5apple11WeightSlots6uploadEmNSt3__14spanIKNS1_14WeightFragmentELm18446744073709551615EEE_block_invoke",
+    "entry": "0x49c8",
+    "argument_provenance": [
+      "0x49dc mov x20, x1: preserve original completed argument",
+      "0x49e0 mov x19, x0: preserve block object separately",
+      "0x49e8 bl -> ___tsan_func_entry (relocation)",
+      "0x49ec mov x0, x20: annotation argument is completed, without a captured-field load",
+      "0x49f0 bl -> ___tsan_acquire (BR26 relocation)"
+    ],
+    "first_captured_byref_reads": [
+      "0x49f4 add x0,x19,#0x28",
+      "0x49f8 bl -> ___tsan_read8: FIRST instrumented captured field read",
+      "0x49fc ldr x21,[x19,#0x28]: captured progress byref pointer",
+      "0x4a00 add x0,x21,#0x8; 0x4a04 bl -> ___tsan_read8",
+      "0x4a08 ldr x21,[x21,#0x8]: byref forwarding pointer",
+      "0x4a0c add x0,x21,#0x30; 0x4a10 bl -> ___tsan_read8; 0x4a14 ldr x21,[x21,#0x30]: actual captured shared owner payload"
+    ],
+    "pre_acquire_audit": "Only normal stack frame/callee-save stores, argument-register moves and original TSan function-entry call precede acquire. No captured/byref load or captured-field TSan read occurs before 0x49f0 in this actual callback object code.",
+    "difference_from_original_report": "The original report read at byref payload offset0x30 is now strictly after the modeled acquire. The key is not obtained by first reading the very captured byref allocation at issue."
+  },
+  "caller_actual_order": {
+    "verdict": "PASS_REGISTER_COPY_BEFORE_RELEASE_BEFORE_COMMIT",
+    "original_command_provenance": [
+      "0x4314 bl -> _objc_msgSend$commandBuffer (BR26 relocation)",
+      "0x4318 mov x23,x0: preserve original newly created command object",
+      "Original nil admission and encoding remain before registration."
+    ],
+    "sequence": [
+      "0x4578 add x2,sp,#0x68: original registered block argument",
+      "0x457c mov x0,x23",
+      "0x4580 bl -> _objc_msgSend$addCompletedHandler: (BR26 relocation)",
+      "0x4584 onwards: registration has returned; original old-command release, new-command retain, state generation/count updates and progress mutex initialization",
+      "0x4628 mov x0,x23",
+      "0x462c bl -> ___tsan_release (BR26 relocation)",
+      "0x4630 mov x0,x23",
+      "0x4634 bl -> _objc_msgSend$commit (BR26 relocation)",
+      "0x4638 onwards: original byref/block disposal tail remains after commit"
+    ],
+    "block_copy_boundary": "Original registration block and compiler-generated byref copy helpers remain intact; the reported main-thread byref promotion/copy occurs in the original registration. Release is after the registration call returns, not before it and not after commit. No synthetic block or alternate completion path was inserted.",
+    "key": "release receives the original command object in x23; acquire receives the associated completed parameter in x1/x20. No queue, slot, progress, global-token or captured command key."
+  },
+  "canonical_and_old_evidence": {
+    "windows_shipping_path": "C:/public/project-hyle/hyle/src/compute_route_apple/apple_weights.mm",
+    "windows_actual_sha256": "c15e7514bf7b509c19a94c7500d68ae42743388ad6664d117877594291016d6f",
+    "remote_disposable_source_path": "/Users/kiro/hyle-scratch/compute-unified/source-c8874688/src/compute_route_apple/apple_weights.mm",
+    "remote_actual_restored_sha256": "c15e7514bf7b509c19a94c7500d68ae42743388ad6664d117877594291016d6f",
+    "canonical_source_restored": true,
+    "parent_cmake_restored": "Recorded true by tool result; source/object review independently checked actual source restoration, and does not re-sign a separate parent CMake restoration diff.",
+    "original_three_binaries": [
+      {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-apple-tsan/build/g09_contracts",
+        "original_recorded_sha256": "7657f0e5ec780b9b9bdb244a9a786864cb637121e85f40859e642627c9c28a3e",
+        "actual_rehash_matches": true
+      },
+      {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-apple-tsan/build/g09_pipeline",
+        "original_recorded_sha256": "771db9b29858a99840fe747b78df32453742d01ce0722dc56a1d9c8c90df6caa",
+        "actual_rehash_matches": true
+      },
+      {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-apple-tsan/build/g09_pending",
+        "original_recorded_sha256": "39724cddfd036f89c21174c151457ec4d6a2ccadca688b22fabe29cc50cb7a0b",
+        "actual_rehash_matches": true
+      }
+    ],
+    "modeled_binary_separation": "New modeled fixtures link under g09-metal-objc-tsan-tool-1/bin, while original three binaries above retained their exact original bytes. The intermediate cached static archive/object may contain the validation model, so neither that cached archive nor current source-restored tree is a fresh shipping SDK certificate.",
+    "failures_preserved": "Original ObjC byref warning and original no-symbol-text disassembly guard refusal remain separate observations. This audit neither overwrites nor converts original failures to PASS."
+  },
+  "runtime_observation_boundary": {
+    "result_state_when_read": "RUNNING",
+    "contracts": "Original contracts under new model binary actually exited0; recorded3.514961208s. This is a tool host-observation result, not a reviewer-run test.",
+    "pipeline_pending": "Not signed by this object review; still in flight at the reviewed result snapshot. Parent may reconcile later actual terminal outputs separately.",
+    "not_claimed": [
+      "GPU math/correctness by annotation",
+      "whole-process race freedom",
+      "absence of cross-lifetime command-key metadata effects",
+      "G09 internal synchronization by this leaf model",
+      "native driver/private allocator instrumentation",
+      "new shipping source/SDK qualification"
+    ]
+  },
+  "must_found": [],
+  "stop": "Finite actual-object review complete. No additional framework/model/shape or rerun is requested by this artifact."
+}

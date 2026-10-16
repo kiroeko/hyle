@@ -1,0 +1,275 @@
+{
+  "schema": "hyle.inference-g09-native-device-validation/v1",
+  "state": "SELECTED_CHANGED_OWNER_DEVICE_RISKS_PASS",
+  "canonical_product_commit": "e09f30925c6dba5cf4540669fd3b4874f45bb158",
+  "scope": "Existing qualified shipping binaries only; original contracts plus ordinary full joint pipeline with numerical/cancellation/retirement checks. Windows Vulkan Khronos core+sync validation; actual Air Metal API/GPU validation; WSL CUDA Compute Sanitizer memcheck/racecheck. No new source/native kernel compilation.",
+  "cases": {
+    "windows_vulkan": {
+      "result": {
+        "state": "ALL_RUNS_EXIT_ZERO_REQUIRES_LAYER_ACTIVATION_REVIEW",
+        "pid": 45592,
+        "canonical_product_commit": "e09f30925c6dba5cf4540669fd3b4874f45bb158",
+        "stages": [
+          {
+            "stage": "hyle_cpu_vulkan_contracts.exe",
+            "exit_code": 0,
+            "elapsed_seconds": 0.6560000000172295,
+            "validation_error_lines": []
+          },
+          {
+            "stage": "hyle_cpu_vulkan_pipeline.exe",
+            "exit_code": 0,
+            "elapsed_seconds": 11.75,
+            "validation_error_lines": []
+          }
+        ],
+        "scope": "Original qualified Windows CPU+Vulkan contracts and ordinary five-case two-slot/65-step independent math/cancel pipeline, with actual Khronos validation and requested synchronization validation. No new build, shader qualification or P1 claim.",
+        "artifacts": [
+          {
+            "target": "hyle_cpu_vulkan_contracts",
+            "path": "C:\\h7\\w-cpu-vulkan\\selected-graph\\source-build\\hyle_cpu_vulkan_contracts.exe",
+            "sha256": "148982e1cbd9c49abbdfeab61805ce09795efecc8048d4de2d75cbf3e8387e61"
+          },
+          {
+            "path": "C:\\h7\\w-cpu-vulkan\\selected-graph\\source-build\\hyle_cpu_vulkan_pipeline.exe",
+            "sha256": "c21db12a0ea646ae7952957cd847a489caacf9960bf9ef942236c9b06e2e5a90"
+          }
+        ],
+        "environment": {
+          "VK_LAYER_PATH": "C:\\public\\tools\\hyle-vulkan\\1.4.357.0\\Bin",
+          "VK_INSTANCE_LAYERS": "VK_LAYER_KHRONOS_validation",
+          "VK_LOADER_DEBUG": "error,warn,layer",
+          "VK_LAYER_ENABLES": "VK_VALIDATION_FEATURE_ENABLE_SYNCHRONIZATION_VALIDATION_EXT"
+        },
+        "layer": [
+          {
+            "path": "C:\\public\\tools\\hyle-vulkan\\1.4.357.0\\Bin\\VkLayer_khronos_validation.json",
+            "sha256": "20d3ef44fe96aa41fceefab2308892f9d4b346d23eebfe8b5e1690715f23f472"
+          },
+          {
+            "path": "C:\\public\\tools\\hyle-vulkan\\1.4.357.0\\Bin\\VkLayer_khronos_validation.dll",
+            "sha256": "9725ce7a9225f42f8961c433dacae4cc8fae3a16e95ef1d0a7c7e8bc09132c40"
+          }
+        ],
+        "max_jobs": 0,
+        "priority": "BELOW_NORMAL",
+        "logical_cpu_limit": 4,
+        "stage": "hyle_cpu_vulkan_pipeline.exe",
+        "affinity_mask": "0xf",
+        "elapsed_seconds": 12.40600000001723,
+        "failures": []
+      },
+      "activation_review": [
+        {
+          "case": "hyle_cpu_vulkan_contracts.exe",
+          "khronos_instance_insertions": 2,
+          "khronos_device_insertions": 2,
+          "synchronization_setting_recognized": true
+        },
+        {
+          "case": "hyle_cpu_vulkan_pipeline.exe",
+          "khronos_instance_insertions": 1,
+          "khronos_device_insertions": 1,
+          "synchronization_setting_recognized": true
+        }
+      ]
+    },
+    "air_metal": {
+      "result": {
+        "state": "METAL_CONSUMERS_EXIT_ZERO_ACTIVATION_REVIEW_PENDING",
+        "pid": 46408,
+        "canonical_product_commit": "e09f30925c6dba5cf4540669fd3b4874f45bb158",
+        "identity": {
+          "model": "Mac16,12",
+          "chip": "Apple M4",
+          "system": "ProductName:\t\tmacOS\nProductVersion:\t\t27.0.1\nBuildVersion:\t\t26A434",
+          "compiler": "Apple clang version 21.0.0 (clang-2100.3.34.2)\nTarget: arm64-apple-darwin27.0.0\nThread model: posix\nInstalledDir: /Library/Developer/CommandLineTools/usr/bin",
+          "metal": "Apple metal version 32023.883 (metalfe-32023.883)\nTarget: air64-apple-darwin27.0.0\nThread model: posix\nInstalledDir: /Users/kiro/hyle-verify-tools/metal-17F109/Metal.xctoolchain/usr/metal/current/bin"
+        },
+        "stages": [
+          {
+            "stage": "hyle_cpu_apple_contracts",
+            "exit_code": 0,
+            "elapsed_seconds": 0.680172375,
+            "validation_error_lines": []
+          },
+          {
+            "stage": "hyle_cpu_apple_pipeline",
+            "exit_code": 0,
+            "elapsed_seconds": 4.646320208,
+            "validation_error_lines": []
+          }
+        ],
+        "environment": {
+          "MTL_DEBUG_LAYER": "1",
+          "MTL_SHADER_VALIDATION": "1"
+        },
+        "nice": 10,
+        "build_jobs": 0,
+        "scope": "Actual Air M4 original shipping-profile CPU+Apple contracts and five original joint pipeline scenarios under Metal API/shader validation. Same numerical/cancel/retirement consumers, unchanged kernels borrowed. No host sanitizer, whole-process leak, SDK or P1 certificate.",
+        "artifacts": [
+          {
+            "path": "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-build/hyle_cpu_apple_contracts",
+            "sha256": "c8bac10c1ce779db271a6396d46b1acbc817b46d8b9da5415c2d12ffdd394b8e"
+          },
+          {
+            "path": "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-build/hyle_cpu_apple_pipeline",
+            "sha256": "4fded7db4b3de870374ccdf504315d28fe327b727549ab2c78a16118b29ba8bb"
+          }
+        ],
+        "stage": "hyle_cpu_apple_pipeline",
+        "elapsed_seconds": 5.327262875000001,
+        "failures": []
+      },
+      "activation_review": [
+        {
+          "case": "hyle_cpu_apple_contracts",
+          "api_validation_enabled": true,
+          "gpu_validation_enabled": true
+        },
+        {
+          "case": "hyle_cpu_apple_pipeline",
+          "api_validation_enabled": true,
+          "gpu_validation_enabled": true
+        }
+      ]
+    },
+    "wsl_cuda": {
+      "result": {
+        "state": "CUDA_MEMCHECK_RACECHECK_TWO_CONSUMERS_PASS",
+        "pid": 555,
+        "canonical_product_commit": "e09f30925c6dba5cf4540669fd3b4874f45bb158",
+        "stages": [
+          {
+            "stage": "tool-version",
+            "command": [
+              "/usr/local/cuda-13.3/bin/compute-sanitizer",
+              "--version"
+            ],
+            "exit_code": 0,
+            "elapsed_seconds": 0.04500442699999985
+          },
+          {
+            "stage": "memcheck-hyle_cpu_cuda_contracts",
+            "command": [
+              "/usr/local/cuda-13.3/bin/compute-sanitizer",
+              "--tool",
+              "memcheck",
+              "--error-exitcode",
+              "86",
+              "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/source-build/hyle_cpu_cuda_contracts"
+            ],
+            "exit_code": 0,
+            "elapsed_seconds": 1.7263443609999998
+          },
+          {
+            "stage": "memcheck-hyle_cpu_cuda_pipeline",
+            "command": [
+              "/usr/local/cuda-13.3/bin/compute-sanitizer",
+              "--tool",
+              "memcheck",
+              "--error-exitcode",
+              "86",
+              "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/source-build/hyle_cpu_cuda_pipeline"
+            ],
+            "exit_code": 0,
+            "elapsed_seconds": 9.896240192
+          },
+          {
+            "stage": "racecheck-hyle_cpu_cuda_contracts",
+            "command": [
+              "/usr/local/cuda-13.3/bin/compute-sanitizer",
+              "--tool",
+              "racecheck",
+              "--error-exitcode",
+              "86",
+              "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/source-build/hyle_cpu_cuda_contracts"
+            ],
+            "exit_code": 0,
+            "elapsed_seconds": 0.9010517509999989
+          },
+          {
+            "stage": "racecheck-hyle_cpu_cuda_pipeline",
+            "command": [
+              "/usr/local/cuda-13.3/bin/compute-sanitizer",
+              "--tool",
+              "racecheck",
+              "--error-exitcode",
+              "86",
+              "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/source-build/hyle_cpu_cuda_pipeline"
+            ],
+            "exit_code": 0,
+            "elapsed_seconds": 158.15402750700002
+          }
+        ],
+        "scope": "Actual WSL RTX4070 original shipping-profile CPU+CUDA contracts and five-scenario independent branch/two-slot pipeline, memcheck/racecheck only. No shader/source edits or new compilation. Original unchanged device kernel barriers/math qualifications are borrowed; no whole-process leak or new SDK/P1 claim.",
+        "artifacts": [
+          {
+            "path": "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/source-build/hyle_cpu_cuda_contracts",
+            "sha256": "dccf789a24d52ac30ea07e5f0cbb18900825ad5b214e3eb27ee1f99cb9cc138a"
+          },
+          {
+            "path": "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/source-build/hyle_cpu_cuda_pipeline",
+            "sha256": "52b5b55d0a92ab454119030d812f131516ab5047b12bb56da664e54e65a7afd1"
+          }
+        ],
+        "identity": {
+          "system": "Linux kiro-workstation 6.18.54.1-microsoft-standard-WSL2 #1 SMP PREEMPT_DYNAMIC Tue Oct  6 19:13:07 UTC 2026 x86_64 x86_64 x86_64 GNU/Linux",
+          "compiler": "g++-14 (Ubuntu 14.2.0-4ubuntu2~24.04.1) 14.2.0\nCopyright (C) 2024 Free Software Foundation, Inc.\nThis is free software; see the source for copying conditions.  There is NO\nwarranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.",
+          "gpu": "NVIDIA GeForce RTX 4070, GPU-e7376560-6f5d-ec19-6ee4-3dd3a2c81ef8, 617.14"
+        },
+        "logical_cpus": [
+          0,
+          1,
+          2,
+          3
+        ],
+        "nice": 10,
+        "build_jobs": 0,
+        "stage": "racecheck-hyle_cpu_cuda_pipeline",
+        "elapsed_seconds": 171.13536864099999,
+        "failures": []
+      },
+      "actual_pipeline_case_review": [
+        {
+          "tool": "memcheck",
+          "target": "hyle_cpu_cuda_contracts",
+          "pipeline_scenarios": 0,
+          "summary": "0 errors"
+        },
+        {
+          "tool": "memcheck",
+          "target": "hyle_cpu_cuda_pipeline",
+          "pipeline_scenarios": 4,
+          "summary": "0 errors"
+        },
+        {
+          "tool": "racecheck",
+          "target": "hyle_cpu_cuda_contracts",
+          "pipeline_scenarios": 0,
+          "summary": "0 hazards"
+        },
+        {
+          "tool": "racecheck",
+          "target": "hyle_cpu_cuda_pipeline",
+          "pipeline_scenarios": 4,
+          "summary": "0 hazards"
+        }
+      ]
+    }
+  },
+  "actual_cumulative_seconds": 188.86863151601722,
+  "cost_reset": false,
+  "retained_tool_details": [
+    "Windows loader reports a stale missing OBS implicit-layer JSON; original registry was not edited. Khronos layer insertions are independently observed.",
+    "The installed 1.4.357 layer explicitly recognizes the deprecated enables setting and maps it to validate_sync. Its deprecation warning remains; no VUID/sync hazard/product validation error was reported.",
+    "The CUDA runner scope label said five-scenario in error: its immutable actual fixture runs four insertion-order/worker scenarios, all present in each tool log. The receipt counts the four actual cases."
+  ],
+  "qualification_boundary": "These tools sign the selected changed-owner host/native submission and lifetime journeys on the named platforms. Unchanged leaf math/barrier qualification is borrowed; no new shader algorithm or barrier was introduced. This is not all-platform device-tool coverage, whole-process private allocator/leak/race-free evidence, physical overlap, SDK delivery or P1.",
+  "raw": {
+    "path": "raw.zip",
+    "sha256": "a350fcda59f260bd961ed4c9d043a7fa9a259eb9d083f390da5988413fe67c79",
+    "bytes": 31495,
+    "crc": "PASS"
+  }
+}

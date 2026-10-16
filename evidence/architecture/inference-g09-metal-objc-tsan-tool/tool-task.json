@@ -1,0 +1,49 @@
+{
+  "task": "T-G09-METAL-OBJC-PUBLICATION",
+  "state": "CLOSED",
+  "owner": "validation-only external Metal observation; no product component reopen",
+  "baseline": "9e2f25c469634a6f723e76eaf1aa2db5973bca9a",
+  "product_commit": "e09f30925c6dba5cf4540669fd3b4874f45bb158",
+  "prospective_review": {
+    "path": "g09-metal-objc-model-prospective-review-9.json",
+    "sha256": "2f9baa76b9bd0a3ce84c0728fe583664dcc3d94c97fe6574e02e6e2458621cec"
+  },
+  "finite_fix": [
+    "Discardable Air verification source only: TSan acquire first callback statement keyed by callback command parameter; release immediately before original command commit.",
+    "Keep original RefCounted and Metal-cpp models, math, block captures, status, ownership and native retirement; no suppressions."
+  ],
+  "gates": [
+    "Exact canonical/model source diff and source restoration",
+    "Instrumented object: acquire before first byref capture read, release before original commit",
+    "Same original contracts, five pipeline cases, G06 pending consumers under TSan"
+  ],
+  "budget": "One finite same-profile incremental build and three consumer runs; preserve prior contracts FAIL and add actual cumulative cost; same live process may extend time.",
+  "nonclaims": [
+    "No new shipping code/public API/tool framework or broad process race-free claim.",
+    "Command-address reuse and external model instrumentation limits remain explicit."
+  ],
+  "terminal_verdict": "PASS_EXACT_EXTERNAL_PUBLICATION_MODEL_WITH_EXPLICIT_BOUNDARIES",
+  "actual_cumulative_seconds": 102.712071458,
+  "cost_reset": false,
+  "runtime_result": "EXACT_EXTERNAL_OBJC_PUBLICATION_MODEL_THREE_CONSUMERS_PASS",
+  "object_review": {
+    "path": "g09-metal-objc-model-object-review-10.json",
+    "sha256": "6e00a12c9bde3848b056cbdc413d141fb62d39a04fcd15c7d978681b0089c290"
+  },
+  "object_callsite_proof": {
+    "handler_registration": "0x4580",
+    "release": "0x462c",
+    "commit": "0x4634",
+    "callback_acquire": "0x49f0",
+    "first_capture_read": "0x49f8/0x49fc"
+  },
+  "restoration": "Full 3325-file canonical source tree matches frozen inputs, parent restored; all five original host TSan binaries rehashed unchanged. Only model fixtures under unique bin directory were executed.",
+  "retained_failures": "Original Metal contracts FAIL remains in its original host receipt. <20-line dry-run guard refused 33 finite edges before build; after exact scope guard the one ObjC unit and config-generated SIMD compiled. Unlinked otool disassembly did not inline relocation names; resumed exact linked object/binaries using nm+relocations without rebuild. All costs retained.",
+  "raw": {
+    "path": "raw.zip",
+    "sha256": "ec20b2a0c12a5698466f707fe3b317494714b7f6c061399cf6c50aaaba069da2",
+    "bytes": 386531,
+    "crc": "PASS"
+  },
+  "reopen_trigger": "Actual source/SDK callback contract, command lifetime identity or instrumentation callsite order changes; this tool record is not authority to add other models or product work."
+}

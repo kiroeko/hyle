@@ -1,0 +1,179 @@
+{
+  "schema": "hyle.g09.finite-prospective-p1-review.v1",
+  "reviewed_at_utc": "2026-10-16T23:55:08.598596+00:00",
+  "verdict": "ACCEPT_FINITE_PROSPECTIVE_DESIGN_FOR_WINDOWS_PE_AND_AIR_MACHO; ACTUAL_ADAPTER_AND_PERFORMANCE_NOT_YET_QUALIFIED",
+  "proposal": {
+    "path": "evidence/architecture/inference-g09-p1-prospective/proposal.json",
+    "sha256": "1fcbca5331d4291b983fe20ed92e2c0e18b1380a3f44bb762182e22eff9d1c69",
+    "state": "DRAFT_PENDING_INDEPENDENT_REVIEW_NOT_BENCHMARK_CONSTRUCTED",
+    "baseline": "9e2f25c469634a6f723e76eaf1aa2db5973bca9a",
+    "candidate": "3524413272cb52d06af5e64d634edbfef09b9864",
+    "product_code_commit": "e09f30925c6dba5cf4540669fd3b4874f45bb158"
+  },
+  "scope": "One independent preconstruction review of the already authorized two natural G09 shapes plus serial holdout; no benchmark implementation/build/run/performance, product/registry/perf-core changes, new consumer domain or agent.",
+  "platform_binding": {
+    "authoritative_clarification": "Parent explicitly confirms W1-WIN means native Windows PE for CUDA/Vulkan; WSL is host/device risk validation only and is NOT a proposed P1 platform. Mac is actual Air Mac16,12.",
+    "baseline_prefixes": {
+      "W1-WIN/CUDA": "C:/h7/g08-sdk/cuda-static-1/relocated",
+      "W1-WIN/Vulkan": "C:/h7/g08-sdk/vulkan-static-1/relocated",
+      "M1-MAC/Apple": "/Users/kiro/hyle-scratch/compute-unified/g08-sdk/apple-static-1/relocated",
+      "M1-MAC/Vulkan": "/Users/kiro/hyle-scratch/compute-unified/g08-sdk/vulkan-static-1/relocated"
+    },
+    "actual_windows_check": "Both Windows prefixes exist. Installed graph/cpu_cuda.h SHA b3fe45dc75ce6c999857bca3130816132018eb3c845e0c889d577165d8f1b098 and graph/cpu_vulkan.h SHA9b4c99f9ef9948f85435de4415a788b83d17a00752664074edf462addc6693f6 exactly match canonical public headers. This is partial identity verification, not a complete SDK/artifact audit.",
+    "required_binding_note": "Write these exact OS/object-format/prefix bindings into the spec/actual artifact manifest before construction/qualification; do not inherit the old generic qualified-sdk-cuda.json Linux prefix by route name."
+  },
+  "natural_consumer_judgment": {
+    "decision": "PASS_PROSPECTIVE_SCOPE_AND_SEMANTICS",
+    "basis": [
+      "Original card82-86/133-136 fixes two natural shapes, insertion orders and serial holdout before construction. Proposal fixes4M F32, workers2 and default original CPU provider/executor. Existing consumers use4M F32, Abs and Neg and a real CPU Add join; no late Exp trace-math or size fitting is imported into P1.",
+      "Independent CPU Abs(host x) and GPU Neg(ready resident a) really have no data edge until CPU Add. Both insertion orders are legitimate rows of this same shape, not extra capability domains. Required placement and appropriate public resource contracts must prevent either arm from silently moving all math to CPU/GPU.",
+      "Two microbatches are two original mutable invocation/queue/workspace owners of the same CPU Abs -> GPU Neg -> CPU Add chain. Both submits precede either checked wait. One measured logical unit is the COMPLETE PAIR, not one request; serial holdout is one complete chain. No per-request ratio may silently divide one arm by2.",
+      "The immutable deterministic input formula is a ready-buffer replay contract. Initialization is cold on both sides. It need not repeat the correctness fixture changing step input each replay, but cannot claim to measure input generation/token scheduling/dynamic metadata or full-engine throughput. Actual diagnostic must confirm native Neg and required bridge copies execute rather than a constant/folded output."
+    ],
+    "anchors": [
+      "tests/graph/native_joint_pipeline.cc:40-117,119-137",
+      "tests/graph/cpu_cuda_pipeline.cc:95-155",
+      "docs/implementation/tasks/graph/inference-g09-joint-pipeline.md:82-86,120-136"
+    ]
+  },
+  "phase_and_lifetime_judgment": {
+    "decision": "PASS_REVISED_PROSPECTIVE_LEDGER; FINAL_SOURCE_LEDGER_STILL_REQUIRED",
+    "initial_must_and_resolution": {
+      "initial": "Original draft combined dropping all timed owners with a full oracle after measurement, without defining a legal retained output owner. Native Results views are borrowed through a successful ResultLease. Reading an escaped bare view after its lease, or deferring only the last timed owner release, would violate the declared journey/cost boundary.",
+      "status": "RESOLVED_IN_REVIEWED_PROPOSAL_BEFORE_ANY_BENCHMARK_EXISTS",
+      "revised": "Each timed slot waits successful owning result, gets host output and reads a four-byte storage.subview while lease lives, then releases all views/results and drains original Scheduler before returning. Full numerical qualification uses separate before/after untimed COMPLETE replays, preserving lease until full read/oracle and explicitly not claiming the last timed output.",
+      "anchors": [
+        "include/hyle/graph/cpu_apple.h:135-137",
+        "include/hyle/graph/cpu_vulkan.h:139-141",
+        "include/hyle/mem/buffer.h: BufferView::subview/read exact-size contract"
+      ]
+    },
+    "charged": [
+      "Identical per-episode public bind and prepare calls in both facades; only route-required differences are disclosed. Persistent buffers are not regenerated/copied by driver on one arm only.",
+      "One or two submits, all required CPU/native math, upload/download/repack/staging/UMA work and actual native completion/status observation. For chain, both cross-domain directions belong inside replay; for resident independent branch, cold resident upload is cold for BOTH.",
+      "Successful result acquisition, small observable output read per slot, release of every returned view/lease/OwnedResult, and Scheduler.drain covering admitted root/CPU child retirement. No owner from the final timed iteration escapes timing."
+    ],
+    "cold_and_deferred": [
+      "Compile/program preparation, resource/queue/Scheduler creation, first touch/initialization and exactly8 complete symmetric warmups remain separately recorded. Allocation order is labelled; no5% cold performance claim because shared vendor first-use initialization may benefit one arm.",
+      "The actual adapter ledger must explicitly mark persistent Invocation/CompiledProgram/Context/queue/buffer/static/native-cache teardown and DSO lifetime DEFERRED on BOTH sides. Per-step drain does not mean all cold caches/descriptors/private driver allocations are destroyed. This is a finite ledger completion item under the existing card, not a new product mechanism.",
+      "Actual leaf/native private late callback/free costs and UMA effects remain UNKNOWN where source/actual completion cannot resolve them. Do not replace real native retirement by enqueue/pending or claim whole-runtime zero allocations."
+    ],
+    "source_tail_basis": {
+      "CUDA": {
+        "baseline": "src/graph_route_cpu_cuda/invocation.cc@9e2f25c:269-292,375,590-650",
+        "candidate": "same path@352441327:283-303,363-369,554,794-854"
+      },
+      "Apple": {
+        "baseline": "src/graph_route_cpu_apple/invocation.cc@9e2f25c:194,355-361,807-860",
+        "candidate": "same path@352441327:212,534-540,1019-1072"
+      },
+      "Vulkan": {
+        "baseline": "src/graph_route_cpu_vulkan/invocation.cc@9e2f25c:214,383-389,916-969",
+        "candidate": "same path@352441327:233,601-607,1167-1220"
+      }
+    },
+    "source_vs_runtime": "Source shows the worker-reference tails after terminal publication on both generations, and the candidate extra coarse child. Charged drain is the appropriate declared boundary; actual final preflight must bind the implemented adapter code and native accepted-prefix completion, not rely on this draft text alone."
+  },
+  "facade_feasibility": {
+    "decision": "NO_INHERENT_TWO_IMAGE_ISOLATION_DEFECT_FOUND_FOR_PE_MACHO; ACTUAL_ARTIFACT_PROOF_PENDING",
+    "valid_minimum": "One identical public consumer source compiled against each original qualified SDK. Only opaque state and versioned POD/scalar C function table cross the driver boundary. Every HYLE construction, status/error conversion, C++ exception catch and allocation/destruction remains inside its creating facade; no HYLE/MLX/GGML object/RTTI/std::shared_ptr or deleter crosses. Driver does not import/link a competing HYLE runtime. Host float bytes via plain pointer/length can be caller-owned, but HYLE views are constructed privately.",
+    "private_abi": "Unchanged public headers do NOT make private Graph/RunState/SubmissionCursor layout ABI-compatible. Distinct state pointers may never be passed to the opposite table. Private weak template/RTTI/vtable/data/guard/deleter symbols need local binding as well as function isolation. Hiding only exported hyle::* function names or adding RTLD_LOCAL is insufficient proof.",
+    "vendor_boundary": "Only explicitly identical compatible vendor/native dependencies may be shared, with hashes and ABI identity. Include dynamically opened private CPU-program libraries/RUNPATH, not merely static link dependencies. Do not inadvertently pull a current HYLE graph dylib/DLL through an import library into both sides. Keep facade images loaded until all own workers/results/contexts are destroyed; no timed iteration dlclose/unload.",
+    "platform_examples": "PE: explicit C export whitelist plus no HYLE imports/cross-facade import descriptors. Mach-O: explicit export/private symbol policy and actual bind/weak-bind/fixup checks; two-level namespace alone does not prove private weak/type/data isolation. The mechanism is feasible but no built facade exists in this review."
+  },
+  "actual_artifact_gate_five_groups": [
+    {
+      "id": "A1",
+      "check": "SDK/source/config identity and supported image format",
+      "required": "Hash exact installed headers/archive/object closure and vendor/resource files against each qualified delivery; bind OS/compiler/CRT/ISA/flags/HYLE_STATIC/no-testing/no-sanitizer and the immutable product candidate. Capture link maps proving relevant original SDK members, not current canonical objects or shared import stubs. Verify static archives are actually suitable for intended PE/Mach-O link. Candidate delivery still needs its actual qualification."
+    },
+    {
+      "id": "A2",
+      "check": "Private C++ definitions and relocations stay within their own facade",
+      "required": "Export only named POD C-table getters; dump full exports/imports/symbols/weak definitions/typeinfo/vtables/guards and local relocation/binding records, including templates whose mangled name contains HYLE later in the name. Require no private HYLE weak/type/data reference to resolve to driver/opposite facade. Preserve .text sizes and selected Graph/RunState/SubmissionCursor/deleter disassembly to establish real original/candidate code and compiler/link conditions. PE dumpbin/link-map; Mach-O nm/otool/dyld export/bind/fixup views as available."
+    },
+    {
+      "id": "A3",
+      "check": "Actual loader/dependency/process-global ownership",
+      "required": "Distinct facade filenames/install identities and actual loaded module paths/hashes; function-table entries and selected internal code/data resolve to the expected image in both load/execution/allocation orders. Explicitly account for unchanged shared vendor/private CPU-program libraries, native resources/shader identities and any linked Objective-C class or CUDA registration metadata. Export whitelisting does not by itself isolate ObjC runtime classes or native process registries; if duplicates conflict, reject that adapter before sampling rather than rename product/alter math."
+    },
+    {
+      "id": "A4",
+      "check": "Actual public math/completion/retirement ledger",
+      "required": "Short diagnostic validates full independent oracles before/after, both slots, both insertion orders and serial holdout, required placements/native dispatch and actual copy bytes/directions. Bind source line ledger for bind/prepare/submit/wait/read/drop/drain and cold/deferred cleanup; errors abort without leaking accepted prefixes. Same minimal C table boundary and no tracing/custom executor remains in timed product route."
+    },
+    {
+      "id": "A5",
+      "check": "Original instrument qualification and controls before first formal sample",
+      "required": "Use original nanobench paired-row topology/perf_process/hyle-perf with exact1 logical replay,11epochs, min=max1 iterations, 8 warmups and fixed n15->31/5%/alpha. Workload A/A must use two equivalently isolated same-SDK facades with the SAME loading/state/queues/Scheduler/warmup/iteration/execution/allocation topology as product A/B, plus original controls and applicable placement. Do not substitute arithmetic A/A, process-only timers, a separate-process A/A, or tune size/margin/iterations after seeing result. Save independent final source/artifact/text/binding signoff before formal sampling."
+    }
+  ],
+  "baseline_reuse": {
+    "decision": "SOURCE_EQUIVALENCE_CONFIRMED; ACTUAL_PLATFORM_SDK_HASH_REUSE_CONDITIONAL",
+    "tree_ids": {
+      "src": {
+        "5103c13d8ed119b06aa64e799f9768aea45ab913": "e51300dd0096a2f2980282d0bcfe949494709742",
+        "9e2f25c469634a6f723e76eaf1aa2db5973bca9a": "e51300dd0096a2f2980282d0bcfe949494709742",
+        "3524413272cb52d06af5e64d634edbfef09b9864": "1e6f3da771b5cfd66667eed473670c2da39643b0"
+      },
+      "include": {
+        "5103c13d8ed119b06aa64e799f9768aea45ab913": "f4c2972f2274aec814db125e3dbcfa794893d10a",
+        "9e2f25c469634a6f723e76eaf1aa2db5973bca9a": "f4c2972f2274aec814db125e3dbcfa794893d10a",
+        "3524413272cb52d06af5e64d634edbfef09b9864": "f4c2972f2274aec814db125e3dbcfa794893d10a"
+      },
+      "cmake": {
+        "5103c13d8ed119b06aa64e799f9768aea45ab913": "e2d1ef54634da643cf94edeec9392c97961603ff",
+        "9e2f25c469634a6f723e76eaf1aa2db5973bca9a": "e2d1ef54634da643cf94edeec9392c97961603ff",
+        "3524413272cb52d06af5e64d634edbfef09b9864": "e2d1ef54634da643cf94edeec9392c97961603ff"
+      },
+      "CMakeLists.txt": {
+        "5103c13d8ed119b06aa64e799f9768aea45ab913": "2cb1739ae0df6ac482b95046014ffb70ce673699",
+        "9e2f25c469634a6f723e76eaf1aa2db5973bca9a": "2cb1739ae0df6ac482b95046014ffb70ce673699",
+        "3524413272cb52d06af5e64d634edbfef09b9864": "2cb1739ae0df6ac482b95046014ffb70ce673699"
+      }
+    },
+    "extra_read": "git diff G08 candidate5103 vs G09 baseline9e2 for third_party/CMakePresets/cmake/rootCMake is empty; candidate public include tree is also identical. This justifies reuse without inventing a baseline rebuild from docs-only commits, subject to exact qualified platform artifact and toolchain binding."
+  },
+  "nonapplicable_elf_artifact_fact": {
+    "classification": "REAL_LIMIT_OF_OLD_LINUX_STATIC_ARCHIVE; NOT_CURRENT_PE_MACHO_PROPOSAL_MUST",
+    "archive": "/root/hyle-scratch/compute-unified/g08-sdk/cuda-static-1/relocated/lib/libhyle_sched.a",
+    "sha256": "7082e46522fcc71ce2eee9192da80491070d1b6c5be758a7fa15deb7ac595118",
+    "bytes": 333442,
+    "read_only_command": "readelf -rW <archive>",
+    "readelf_stdout_sha256": "26e8375af379329510ffea548768aa2637f37eafe744e23fcfc29a3263bfc1a1",
+    "observed": "158 R_X86_64_TPOFF32 relocations: fiber12/scheduler124/sync5/blocking8/cancel3/task_scope3/bulk3. Example fiber.cc.o0xa10 local t_current; scheduler.cc.o0x427 Impl::t_current. Local-exec TLS cannot be used to construct an ELF shared object; facade -fPIC/export hiding does not rewrite existing archive instructions.",
+    "source": "https://sourceware.org/pipermail/binutils/2025-September/144197.html",
+    "resolution": "Explicitly exclude this WSL artifact from current P1. Current selected CUDA P1 uses existing Windows PE SDK; no WSL PIC rebuild or extra P1 platform is requested."
+  },
+  "finite_remaining_spec_clarifications": [
+    "Bind the parent-confirmed four platform SDK prefixes/object formats into spec/artifact manifest so old CUDA Linux route metadata cannot be selected.",
+    "Mark final persistent/cached/DSO teardown DEFERRED symmetrically, plus UNKNOWN native/private costs; bind actual implemented source before final artifact preflight. No additional shape, product feature or new instrument."
+  ],
+  "unresolved_product_must": [],
+  "qualification_status": "No benchmark constructed/sample/result certified. A1-A5 are existing finite pre-sampling work, not PASS or new product defects. Reject an actually unisolatable adapter before A/A or formal sample; do not paper over private ABI mixing.",
+  "primary_linker_references": [
+    {
+      "url": "https://developer.apple.com/library/archive/documentation/DeveloperTools/Conceptual/DynamicLibraries/100-Articles/DynamicLibraryDesignGuidelines.html",
+      "use": "Apple supports restricting exported symbols/private visibility; two-level namespace and explicit symbol control are design tools, not proof of this unborn artifact."
+    },
+    {
+      "url": "https://learn.microsoft.com/en-us/cpp/build/reference/dumpbin-reference/",
+      "use": "Official COFF object/library/DLL examination tool for actual exports/imports/symbol evidence."
+    }
+  ],
+  "input_source_sha256": {
+    "docs/implementation/tasks/graph/inference-g09-joint-pipeline.md": "51184e8a01fbf9f966dc2ad7c80eea6978ca497b8f09bf45338270ca00cfa446",
+    "tests/graph/native_joint_pipeline.cc": "a74a7c257eebb05964d9f45c4cb3c3f6fd2b5af9e2524b7d4aef63f0ca3412a3",
+    "tests/graph/cpu_cuda_pipeline.cc": "949cab23ebdfdc6d99fd08f93b6cafe434d069ce2d91c5d9beff9aeaaa1bea8c",
+    "include/hyle/graph/cpu_apple.h": "645f557d8a6fefe3f69bc25f37c03e637ed28311fb7817bfb8de0e5373b0eb32",
+    "include/hyle/graph/cpu_vulkan.h": "9b4c99f9ef9948f85435de4415a788b83d17a00752664074edf462addc6693f6",
+    "include/hyle/graph/cpu_cuda.h": "b3fe45dc75ce6c999857bca3130816132018eb3c845e0c889d577165d8f1b098",
+    "include/hyle/mem/buffer.h": "346a4f810babb8c5dacba49faaf57903d998a3cbb49af12b8c62acc85f7be72c",
+    "bench/common/perf_process.h": "988c5af99fbf3169fb8e828da2dc26452a823bf459eac43716dd91501574e496",
+    "docs/developer/performance/instrument-v1.md": "04fbe94defe0f73079a80f7ec1d1d081d015518116168f650e29f94e64d3473e",
+    "docs/developer/performance/benchmark-evidence-standard.md": "e1b1e352bb99d447d728cdc4bc1cf8122a708dfd956efc03459e116ff8d3a88d",
+    "cmake/HyleAppleDependencies.cmake": "0545f54c8f24a0da3429306b27c2833a3d90284df5f1dc68918569ad18a0a2c1",
+    "src/compute_ggml_runtime/cpu_program.cmake": "255bf04a9fe0e73e30e1aae28d30c4870ccfba948dac39412263243d97daa91e"
+  },
+  "stop": "Bounded preconstruction review complete. No generalized scheduler/runtime/benchmark framework or additional consumer/P1 shape requested."
+}

@@ -1,0 +1,176 @@
+{
+  "schema": "hyle.g09-p1-prospective/v1",
+  "state": "FINITE_PROSPECTIVE_DESIGN_REVIEWED_NOT_BENCHMARK_CONSTRUCTED",
+  "baseline": "9e2f25c469634a6f723e76eaf1aa2db5973bca9a",
+  "candidate": "3524413272cb52d06af5e64d634edbfef09b9864",
+  "product_code_commit": "e09f30925c6dba5cf4540669fd3b4874f45bb158",
+  "basis": "Existing frozen functional public consumer has 4M F32 elements. Reuse that dimension before any P1 construction or sampling, without fitting sizes or math to diagnostic walltimes.",
+  "platforms": [
+    {
+      "machine": "W1-WIN",
+      "route": "cuda",
+      "os_object_format": "Windows native PE/COFF"
+    },
+    {
+      "machine": "W1-WIN",
+      "route": "vulkan",
+      "os_object_format": "Windows native PE/COFF"
+    },
+    {
+      "machine": "M1-MAC",
+      "route": "apple",
+      "os_object_format": "macOS actual Air Mac16,12 arm64 Mach-O"
+    },
+    {
+      "machine": "M1-MAC",
+      "route": "vulkan",
+      "os_object_format": "macOS actual Air Mac16,12 arm64 Mach-O"
+    }
+  ],
+  "fixed_shape": {
+    "elements": 4194304,
+    "dtype": "F32",
+    "scheduler_workers": 2,
+    "cpu": "original default CPU context/provider/executor; no custom trace executor or new G10 policy",
+    "resident_readonly_gpu_input": 1.25,
+    "host_readonly_residual": 1.25,
+    "input_formula": "float(int(i % 101)-50)*0.125f + slot*0.25f; deterministic finite data, independent slot workspaces"
+  },
+  "workloads": [
+    {
+      "id": "independent-cpu-first",
+      "slots": 1,
+      "dag": "CPU Abs(x) and GPU Neg(resident_a) independently, then CPU Add join",
+      "insertion_order": "cpu-first",
+      "expected": "abs(x)-1.25"
+    },
+    {
+      "id": "independent-gpu-first",
+      "slots": 1,
+      "dag": "Same independent branches and join",
+      "insertion_order": "gpu-first",
+      "expected": "abs(x)-1.25"
+    },
+    {
+      "id": "two-microbatches",
+      "slots": 2,
+      "dag": "Per slot CPU Abs(x) -> GPU Neg -> CPU Add(readonly host residual); submit both independent slots before either checked wait",
+      "expected": "1.25-abs(x)"
+    },
+    {
+      "id": "serial-holdout",
+      "slots": 1,
+      "dag": "Same CPU Abs -> GPU Neg -> CPU Add residual required chain",
+      "expected": "1.25-abs(x)"
+    }
+  ],
+  "phase_ledger": {
+    "cold_separate": [
+      "Context/queue/Scheduler/resources, graph construction/compile",
+      "Invocation creation/backing and first prepare/native preparation",
+      "Initialization, first touch, full numerical oracle and exactly 8 symmetric complete warmup replays"
+    ],
+    "warm_charged": [
+      "Bind persistent input/output views as required by each original public route",
+      "prepare_replay on every logical replay",
+      "One submit or both microbatch submits before wait",
+      "All original CPU/native math, bridge copies/repack, staging/UMA copies, native waits/observation",
+      "Checked owning results, release of returned owners and real native accepted-prefix retirement",
+      "Original Scheduler.drain before the timed logical replay returns; no accepted work escapes timing",
+      "While each successful ResultLease is alive, get its host output and use storage.subview(0, sizeof(float)).read(one_float) as a minimal checked observable read; both microbatch outputs are observed. Then release every lease/view before drain."
+    ],
+    "outside_warm": [
+      "Before/after timed epochs, a separate complete untimed replay of identical original public calls supplies full independent output qualification. Keep each successful ResultLease alive through the entire output read/oracle, then drop it and drain. This is not a claim to read the final timed output.",
+      "No borrowed Results output view escapes its ResultLease. No uncharged final timed owner retention or post-release access.",
+      "Cold compile/native preparation reported separately and allocation-order labelled; vendor first-user initialization may differ by allocation order, so these cold diagnostics do not sign a 5% cold comparison."
+    ],
+    "deferred_symmetric": [
+      "Persistent Context/queues/Scheduler, CompiledProgram/Invocation/backings and static/native caches remain alive across warm replays on BOTH sides. Their final close/destruction and facade DSO unload are outside warm, separately accounted diagnostic teardown; per-step drain does not destroy these persistent resources.",
+      "Every per-replay returned view/result/lease and all accepted prefix work still retire inside warm before return. No final timed result owner escapes to teardown.",
+      "Provider/driver-private late callback, free and cache reclamation costs remain UNKNOWN where the public completion contract cannot resolve them. Neither zero total-process cost nor complete private allocator reclamation is claimed."
+    ]
+  },
+  "fixed_measurement": {
+    "warmup_replays": 8,
+    "epochs_per_process": 11,
+    "min_epoch_iterations": 1,
+    "max_epoch_iterations": 1,
+    "logical_replays_per_call": 1,
+    "logical_unit": "one full branch/join or one full one/two-slot chain journey",
+    "process_samples": [
+      15,
+      31
+    ],
+    "margin_percent": 5,
+    "tail_alpha": 0.01,
+    "controls": "Preserve original workload A/A, known delta5/delta10, timer-floor and applicable code placement controls; fixed dual execution and allocation orders. No manual sleep/late size/iteration tuning."
+  },
+  "baseline_reuse": {
+    "qualified_sdk_candidate": "5103c13d8ed119b06aa64e799f9768aea45ab913",
+    "product_equivalence": "git diff for src/include/cmake/root CMake between qualified G08 SDK candidate and G09 baseline is empty. Other changes are docs/evidence/G08 benchmarks. Must still rehash each actual old SDK prefix and compiler/linkage identity.",
+    "root_tree_ids": {
+      "src": {
+        "5103c13d8ed119b06aa64e799f9768aea45ab913": "e51300dd0096a2f2980282d0bcfe949494709742",
+        "9e2f25c469634a6f723e76eaf1aa2db5973bca9a": "e51300dd0096a2f2980282d0bcfe949494709742"
+      },
+      "include": {
+        "5103c13d8ed119b06aa64e799f9768aea45ab913": "f4c2972f2274aec814db125e3dbcfa794893d10a",
+        "9e2f25c469634a6f723e76eaf1aa2db5973bca9a": "f4c2972f2274aec814db125e3dbcfa794893d10a"
+      },
+      "cmake": {
+        "5103c13d8ed119b06aa64e799f9768aea45ab913": "e2d1ef54634da643cf94edeec9392c97961603ff",
+        "9e2f25c469634a6f723e76eaf1aa2db5973bca9a": "e2d1ef54634da643cf94edeec9392c97961603ff"
+      }
+    },
+    "platform_prefixes": [
+      {
+        "machine": "W1-WIN",
+        "route": "cuda",
+        "prefix": "C:/h7/g08-sdk/cuda-static-1/relocated"
+      },
+      {
+        "machine": "W1-WIN",
+        "route": "vulkan",
+        "prefix": "C:/h7/g08-sdk/vulkan-static-1/relocated"
+      },
+      {
+        "machine": "M1-MAC",
+        "route": "apple",
+        "prefix": "/Users/kiro/hyle-scratch/compute-unified/g08-sdk/apple-static-1/relocated"
+      },
+      {
+        "machine": "M1-MAC",
+        "route": "vulkan",
+        "prefix": "/Users/kiro/hyle-scratch/compute-unified/g08-sdk/vulkan-static-1/relocated"
+      }
+    ],
+    "linux_artifact_limit": "The earlier G08 qualified-sdk-cuda.json points to a WSL ELF static archive with local-exec TLS relocations; it cannot be linked into a facade.so by adding -fPIC to only the facade. That artifact is NOT selected here: current CUDA P1 uses the actual Windows PE SDK. WSL remains correctness/device risk coverage; no new PIC build or P1 platform expansion."
+  },
+  "reference_proposal": {
+    "kind": "Two private benchmark facade DSOs, each statically linked to its own complete qualified HYLE SDK; identical public consumer source, compiler flags and workloads; baseline original code unmodified.",
+    "isolation": "Opaque state and scalar/POD C function table only; all HYLE C++ ownership and deletion stays in its own facade. Export whitelist and symbol/binding audit must prove no HYLE private weak/type/data symbol interposition between baseline and candidate. Original unchanged vendor dynamic dependencies may be shared with explicit hashes.",
+    "driver": "Existing nanobench/perf_process and hyle-perf instrument; private facade is consumer adapter only, no public API, new benchmark framework or perf-core edits.",
+    "rejection": "If object/export/weak/binding isolation or real native dispatch/copy accounting cannot be proved, reject adapter before any formal sampling; do not treat identical labels or SDK files as a performance result."
+  },
+  "required_before_sampling": [
+    "Qualified current candidate source/static/shared/relocation consumers and header hash reuse",
+    "Both baseline/candidate SDK artifact binding and identical original public-header bytes",
+    "Independent prospective source/phase ledger review before benchmark construction",
+    "Original math and real native dispatch plus copies/full completion oracle in short diagnostic",
+    "Independent final artifact/text/link/symbol review after build; actual unchanged candidate identity",
+    "Machine/clock/calibration/strata controls pass under the original instrument"
+  ],
+  "nonclaims": [
+    "No benchmark built, diagnostic timed or formal P1 sample taken by this proposal.",
+    "Not engine token/s, all shapes/providers or full physical symmetry."
+  ],
+  "prospective_corrections": [
+    "Review-11 preliminary MUST: define lease-safe full-oracle qualification and do not read a borrowed final timed output after dropping its owner. Public BufferView read requires exact size, so the timed scalar observation explicitly makes a four-byte subview first. No benchmark exists yet."
+  ],
+  "independent_preconstruction_review": {
+    "path": "review-11.json",
+    "sha256": "f15bc5fd2cbbdc1f04159425ff58aafaf0eb6867d0c8dc9128922062ca659220",
+    "reviewed_proposal_sha256": "1fcbca5331d4291b983fe20ed92e2c0e18b1380a3f44bb762182e22eff9d1c69",
+    "finite_postreview_clarifications": "Only requested platform object-format labels and symmetric persistent/cache/DSO final teardown ledger were added after review. No workload, dimensions, iterations, measurement or adapter changed. A1-A5 remain pending actual source/artifact/instrument qualification."
+  }
+}
