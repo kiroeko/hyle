@@ -67,7 +67,7 @@ struct ProgramState final {
   std::vector<VkDeviceSize> block_bytes;
   std::optional<std::uint32_t> status_value;
   // Cold opt-in immutable update contract; ordinary submit never reads it.
-  std::unique_ptr<const RaggedContract> ragged;
+  std::shared_ptr<const RaggedContract> ragged;
 };
 
 struct ResultValues final {

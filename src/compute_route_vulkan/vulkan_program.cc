@@ -639,7 +639,7 @@ Result<Program> detail::PagedBatchAccess::prepare_ragged_program(const Context& 
     const Plan& plan,BatchLayoutVersion initial,bool causal,std::int32_t window_left) noexcept {
   try {
     HYLE_ASSIGN_OR_RETURN(auto program,prepare_plan(context,plan));
-    program.state_->ragged=std::make_unique<const RaggedContract>(
+    program.state_->ragged=std::make_shared<const RaggedContract>(
         RaggedContract{std::move(initial),causal,window_left});
     return program;
   } catch(const std::bad_alloc&) {
