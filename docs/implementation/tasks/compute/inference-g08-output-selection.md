@@ -452,3 +452,18 @@ grid8×0×0。原TopK/softmax/reduce已有空域返回；普通Binary divide仍�
 该owner原apple_tensor.cc，不改Graph API/owner或MLX vendor。非空lowering保原式；新增
 shape检查只在原冷tracing，固定形状warm不新增逐元素运算/资源/等待，S1 P1范围不扩大。
 保原abort及四个已过Metal结果，定向同形状后重跑本Apple有限Metal批。
+
+### 2026-10-17 device/host风险检查点
+
+[全部原始结果与失败](../../../../evidence/correctness/inference-g08-device-host-checkpoint/receipt.json)
+保留CPU Graph零用例误选、Windows预检/端点失败、Apple零行Metal abort及各次修正。
+bba0a5a35 Apple a6在实际Metal API/GPU validation下五目标全部PASS，原四项留出的
+零行Graph/Direct、三dtype均PASS。Windows Vulkan W3/W4与Air v6新版数值/数学已过；
+Windows layer实枚举、实请求，接受日志无Validation Error/VUID/SYNC-HAZARD。
+实际CUDA memcheck/racecheck各六组、ASan/UBSan/TSan静态host七目标均PASS；Mem修改TU
+三facet分别51/50/50项，schema每facet3项，CPU/CUDA四完整消费者含新port与joint，13个相关TU
+有实际san flag，native archive输入与真实链接hash相符。
+
+CPU/CUDA三host facet原树串行已结束；Apple/Vulkan其余host facets、三交付与独立头、
+S1精确P1、文档/LOC/终审仍待完成。八owner保持AUDITED，尚不冻结candidate。
+G08施工粗估约75%，当前G07–G10 goal约45%，正式仅G07完成1/4；G09/G10与CLI未开始。

@@ -145,7 +145,7 @@
       "module": "mem",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/inference-g08-output-selection.md",
-      "summary": "G08 M1 AUDITED: mature mi_free_aligned fixes original Buffer884/alignment256 allocation-only crash. WSL and Air source244/244 PASS; Windows/static/shared/host risks pending. Natural path/layout/quota/vendor unchanged."
+      "summary": "G08 M1 AUDITED: mi_free_aligned fix source244/244 each on Windows/WSL/Air; selected static ASan51/UBSan50/TSan50 allocation/Buffer tests PASS. SDK/native host facets pending; natural path/layout/quota/vendor unchanged."
     },
     {
       "module": "mem_vm",
@@ -370,7 +370,7 @@
       "module": "compute_provider_ggml",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/inference-g08-output-selection.md",
-      "summary": "G08 AUDITED: finite TopK1 O(1) width-scratch single scan implemented; CPU public Direct/Graph bits/NaN/tie/subnormal/full-vocabulary and k>1 holdout PASS. Existing axis/stride/risk/delivery and S1 P1 pending."
+      "summary": "G08 AUDITED: TopK1 scan without V-sized Entry scratch, CPU full Direct/Graph numerical and original selected TopK provider/Graph holdouts PASS. Three static host sanitizer consumer facets PASS; SDK/S1 P1 pending."
     },
     {
       "module": "graph_provider_onednn",
@@ -415,7 +415,7 @@
       "module": "compute_provider_native",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/inference-g08-output-selection.md",
-      "summary": "G08 AUDITED: CPU counter/CDF implementation and public Direct/Graph dtype/numerical/distribution/65-step consumers PASS. Candidate/risk/three-delivery qualification pending; no P1 claim."
+      "summary": "G08 AUDITED: CPU counter/CDF full Direct/Graph numerical/distribution/65-step and independent-port consumers PASS, including all three static host sanitizer facets. SDK/final qualification pending; no speed claim."
     },
     {
       "module": "compute_route_cpu",
@@ -465,7 +465,7 @@
       "module": "compute_provider_cuda",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/inference-g08-output-selection.md",
-      "summary": "G08 AUDITED: source build, public CUDA Direct/Graph and CPU+CUDA joint numeric consumers PASS; actual device1048772-pair open64 endpoint gate PASS (maxabs1.31e-6). GPU risks/SDK/S1 P1 pending."
+      "summary": "G08 AUDITED: Direct/Graph/joint numerics and device1048772-pair math PASS; actual memcheck/racecheck all12 groups zero errors/hazards and all three static host sanitizer consumer facets PASS. SDK/S1 P1 pending."
     },
     {
       "module": "compute_route_cuda",
@@ -493,7 +493,7 @@
       "module": "compute_route_apple",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/inference-g08-output-selection.md",
-      "summary": "G08 AUDITED: Apple Direct/Graph full numerical/distribution/65-step, independent categorical ports, actual Metal1048772-pair endpoints, CPU+Apple joint and original4TopK holdouts PASS. SDK/risks/S1 P1 pending."
+      "summary": "G08 AUDITED: exact TopK keys and empty Binary consumer fix; all5 actual Metal API/GPU validation targets PASS a6 (Direct/Graph/math/joint/original4TopK), including zero-row normalization. Host sanitizer/SDK/S1 P1 pending."
     },
     {
       "module": "graph_route_apple",
@@ -510,13 +510,13 @@
       "module": "compute_route_vulkan",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/inference-g08-output-selection.md",
-      "summary": "G08 AUDITED: Vulkan Direct/Graph full numerical/distribution/65-step/independent ports/byte origins1/3/17, device1048772-pair math, CPU+Vulkan joint and original17TopK holdouts PASS without validation. Validation layer/risks/SDK/S1 P1 pending."
+      "summary": "G08 AUDITED: centered math/byte origins and stable small-tail log fix; Windows Khronos validation plus full Direct/Graph/ports/origins and actual1048772-pair math PASS, Air MoltenVK numerics/math/joint PASS. Host facets/SDK/S1 P1 pending."
     },
     {
       "module": "graph_route_vulkan",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/inference-g08-output-selection.md",
-      "summary": "G08 AUDITED: original plan/liveness/status/owners carry random/categorical, including ID-only/score-only/both and origin-preserving View producers; source consumers PASS without validation. Actual validation/SDK qualification pending."
+      "summary": "G08 AUDITED: original plan/liveness/status/owners carry both sampling schemas; ID-only/score-only/both and native-origin View consumers PASS on actual Windows validation and Air ordinary route. SDK/final qualification pending."
     },
     {
       "module": "compute_provider_ggml_vulkan",
