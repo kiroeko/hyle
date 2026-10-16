@@ -1,6 +1,6 @@
 # G06 metadata 与 decode 成本收口
 
-状态：**G06 AUDITED；共同、原生/pending及CPU runtime Q1 source批通过，2026-10-16**。本卡沿[完整十项目标](../project/inference-gaps-goal-execution-2026-10.md)，
+状态：**G06 AUDITED；共同、CPU Q1与Apple/Vulkan runtime lengths source批通过，2026-10-16**。本卡沿[完整十项目标](../project/inference-gaps-goal-execution-2026-10.md)，
 不缩减 CPU、单 GPU、CPU＋单 GPU、单/多请求或四原生路线。先完成四组共同审计和形状冻结，
 再集中实施、批量检查、按实际失败定向修正；产品修改仅限下文已冻结且owner为AUDITED的批次。
 
@@ -363,3 +363,26 @@ source；Vulkan额外原ce16_provider/ce16_public风险target。冷OOM反证改�
 独立double oracle及精度不放宽。Win/Air heavy串行、max4，预算沿原2h检查点有限追加且
 保累计失败/UNKNOWN。最终san/header/搬迁SDK在完整G06固定后集中做；当前无本批运行
 PASS，ragged/FI Q1/capture及原完整十项不删减，不重跑未变CUDA/P1。
+
+### 原生 runtime lengths source 通过（f53f88186）
+
+[D3实际source证据](../../../../evidence/correctness/inference-g06-native-runtime-lengths-source/receipt.json)
+绑定f53f88186e73eb81b9f6eee8bd315ea4a59c7dbc：Windows共同/Graph/CPU91项及原pending
+18场景PASS；实际Air Apple/Vulkan共27次消费者执行、6个配置/manifest/build stage均PASS。
+Apple12与Vulkan6常规域各新增64步固定mixed Q拓扑、KV增长/缩短/跨页/offset变化、重复/
+重排页的独立double oracle；同IDs零上传/等待、保旧slot输出和原精度全部通过。Apple16
+长页域保原64拓扑变化/第二次replay覆盖，不重复新增64步runtime序列。
+
+原CPU/native/CPU64、encoded单/多请求与paired/separate、pending Direct/双node Graph64、
+late/multi-source/失败/取消/abandon与准确页退休继续通过。真正Q拓扑变化的冷OOM保旧
+generation、ID-only禁止下一次注入分配、旧页writer重取均保留。Vulkan额外provider10及
+public alias/phase2项通过。原数学、vendor/runtime/shader、公共工具没有修改。
+
+Windows build2.484s/外层47.516s；Air两build13.426/13.242s/外层121.073s，外层与stage
+重叠。Windows启动器错误SHA在构建前被拒绝，Air过早启动被Windows尚未完成的guard拒绝；
+两次setup失败及未观察费用UNKNOWN保留。Air attempt1无产品失败/重试，原各批失败不抹去。
+
+D3有限source通过，不是完整G06或P1/capture。Apple变长度仍managed建图，Vulkan变参数
+仍原重新编码；native/driver私有分配和费用仍UNKNOWN。owner继续AUDITED，下一批为原
+ragged动态extent与FI Q1/capture定界；完整候选后再集中最终san/header/迁址static/shared。
+G04/G05原CUDA非劣UNRESOLVED与全部失败/费用仍保留，完成项仍3/10。

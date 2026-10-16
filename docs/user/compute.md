@@ -196,8 +196,9 @@ HYLE_RETURN_IF_ERROR(done.wait());
 auto output = slot.output().value();
 ```
 
-更新前释放旧 output、prepared token 和 Completion。query/KV indptr、页索引和尾长
-完全相同才能复用 native plan；改变 topology 时显式 `update_batch()` 重建。frame
+更新前释放旧 output、prepared token 和 Completion。CPU paged 每 request 为0或1 query、
+完整 query indptr 相同时，KV indptr、页索引和尾长可通过显式 `update_batch()` 更新，复用
+原 graph/pool/scratch；其它 paged 形状仍需完整布局相同，否则冷重建。frame
 必须属于当前 schema/layout，所有 reader 和实际 native uses 退休后才能复用物理页。
 热数学不按 query/head 复制整个 KV 历史；query 转换、冷 causal mask、页表节点与原
 metadata/workspace 仍计费，private pool 上界未知。CPU capture、增量 producer、低成本

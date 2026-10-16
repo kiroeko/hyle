@@ -200,8 +200,9 @@ foreign schema，不扩大未引用页权限。已 ready 页可共享，未引�
 其它代际的 live frames，旧空结果同样阻止 slot 更新。PagedArena.read 的原非空页权限
 合同保持不变；reference 或 Graph 的空域须按各自资格判断。
 
-原生分页 controller 在 schema、Q/KV indptr 与 tail 全部相等时复用原生 topology；长度
-变化仍显式冷建。page IDs 由 device 表消费，单独重排不会使 topology 失效。每个 mirror
+原生分页 controller 在 schema、完整 Q indptr 与空输入端口域相同时复用 Program/Invocation；
+KV indptr、tail 和 page IDs 可在显式 prepare 中更新。Q 拓扑变化，或从“Q/KV全空的一端口”
+切换到“Q空但保留KV的四端口”时仍冷建。page IDs 由 device 表消费。每个 mirror
 记录自己的有效页表，只通过原 F2 上传实际变化区间并清除缩小留下的旧值；相同表可零上传、
 零上传等待。staging 容量仍为 `4 * max_page_refs`，device mirrors 为其两倍，固定 backing
 cap 还需三组64byte对齐的最坏 padding。report 的 uploaded bytes/waits 是当次实际费用，
@@ -210,8 +211,12 @@ controller 创建时经原 F2 分别清零两 bank，显式冷费用为两次全
 它们不计入以后每次 prepare 的 delta 报告。device 不要求 host-mappable。
 `NativePagedBatchVersion::indices()` 是显式、可并发的固定容量导出，首次分配填零并缓存，
 失败可重试；普通 version 与 controller prepare 不必生成这个全容量 blob。本批 G06 的
-[Air native/联合 source 验证](../../evidence/correctness/inference-g06-native-pending-air-attempt-5/receipt.json)
+[Air runtime lengths/native/联合 source 验证](../../evidence/correctness/inference-g06-native-runtime-lengths-source/receipt.json)
 已通过，最终适用风险与交付资格仍待；不继承旧候选的性能证书。
+Apple 每个 Invocation 独立保留当前 layout，初始长度使用原 compiled 路径，其它长度
+在原 worker 上组合原 MLX fast primitive；不逐 tail 重新 Context.compile，但仍有 managed
+图构造费用。Vulkan 更新当前 Invocation 的逻辑长度/表偏移，并让原录制失效后重新编码；
+原 graph 与 storage 保留。`reused_native_plan` 不表示 capture 或 native 零分配。
 无需全历史 KV gather、按 Q/head 展开或上传 additive mask。原 query/output/MLX compiled
 metadata、shader scratch 与 driver 存储仍是额外费用，private bytes 可以 UNKNOWN；
 不由这个入口签 delta planning、capture 或吞吐完全对称。

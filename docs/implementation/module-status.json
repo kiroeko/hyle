@@ -506,7 +506,7 @@
       "module": "compute_route_apple",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/inference-g06-metadata-decode.md",
-      "summary": "G06 AUDITED：共同active/delta/Graph首上传共享与原生lazy index、逐bank delta、完整key复用和准确页组准入已实施；Windows90项＋18个pending场景、Air真实Apple/Vulkan Direct/联合/原风险source通过。原四轮失败保留；完整runtime lengths/Q1 decode/capture与最终san/header/SDK仍待，无新P1或整体完成。"
+      "summary": "G06-D3 runtime lengths source通过：两native同Q拓扑保Program/Invocation，KV indptr/tail逐Invocation更新，原delta/准确页/退休不变。Windows91＋pending18、Air实际Direct/联合/pending等27执行及Vulkan provider10/alias-phase2 PASS；无数学/vendor/runtime/shader/P1。仍AUDITED；ragged/FI Q1/capture与最终san/header/SDK待，原失败/费用保留。"
     },
     {
       "module": "graph_route_apple",
@@ -523,7 +523,7 @@
       "module": "compute_route_vulkan",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/inference-g06-metadata-decode.md",
-      "summary": "G06 AUDITED：共同active/delta/Graph首上传共享与原生lazy index、逐bank delta、完整key复用和准确页组准入已实施；Windows90项＋18个pending场景、Air真实Apple/Vulkan Direct/联合/原风险source通过。原四轮失败保留；完整runtime lengths/Q1 decode/capture与最终san/header/SDK仍待，无新P1或整体完成。"
+      "summary": "G06-D3 runtime lengths source通过：两native同Q拓扑保Program/Invocation，KV indptr/tail逐Invocation更新，原delta/准确页/退休不变。Windows91＋pending18、Air实际Direct/联合/pending等27执行及Vulkan provider10/alias-phase2 PASS；无数学/vendor/runtime/shader/P1。仍AUDITED；ragged/FI Q1/capture与最终san/header/SDK待，原失败/费用保留。"
     },
     {
       "module": "graph_route_vulkan",
@@ -536,7 +536,7 @@
       "module": "compute_provider_ggml_vulkan",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/inference-g06-metadata-decode.md",
-      "summary": "G06-D3 AUDITED：原CE15/16候选范围保留，仅准入原生paged runtime rows/offset更新与原recording失效；固定Q拓扑/empty port域复用、完整预检/原退休与错误门。不改数学/vendor/shader/runtime；两route source及原alias/phase/provider风险待验，旧失败和最终资格保留。"
+      "summary": "G06-D3 runtime lengths source通过：两native同Q拓扑保Program/Invocation，KV indptr/tail逐Invocation更新，原delta/准确页/退休不变。Windows91＋pending18、Air实际Direct/联合/pending等27执行及Vulkan provider10/alias-phase2 PASS；无数学/vendor/runtime/shader/P1。仍AUDITED；ragged/FI Q1/capture与最终san/header/SDK待，原失败/费用保留。"
     },
     {
       "module": "compute_ggml_runtime",
@@ -627,13 +627,13 @@
       "module": "graph_route_cpu_apple",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/inference-g06-metadata-decode.md",
-      "summary": "G06 AUDITED：共同active/delta/Graph首上传共享与原生lazy index、逐bank delta、完整key复用和准确页组准入已实施；Windows90项＋18个pending场景、Air真实Apple/Vulkan Direct/联合/原风险source通过。原四轮失败保留；完整runtime lengths/Q1 decode/capture与最终san/header/SDK仍待，无新P1或整体完成。"
+      "summary": "G06-D3 runtime lengths source通过：两native同Q拓扑保Program/Invocation，KV indptr/tail逐Invocation更新，原delta/准确页/退休不变。Windows91＋pending18、Air实际Direct/联合/pending等27执行及Vulkan provider10/alias-phase2 PASS；无数学/vendor/runtime/shader/P1。仍AUDITED；ragged/FI Q1/capture与最终san/header/SDK待，原失败/费用保留。"
     },
     {
       "module": "graph_route_cpu_vulkan",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/inference-g06-metadata-decode.md",
-      "summary": "G06 AUDITED：共同active/delta/Graph首上传共享与原生lazy index、逐bank delta、完整key复用和准确页组准入已实施；Windows90项＋18个pending场景、Air真实Apple/Vulkan Direct/联合/原风险source通过。原四轮失败保留；完整runtime lengths/Q1 decode/capture与最终san/header/SDK仍待，无新P1或整体完成。"
+      "summary": "G06-D3 runtime lengths source通过：两native同Q拓扑保Program/Invocation，KV indptr/tail逐Invocation更新，原delta/准确页/退休不变。Windows91＋pending18、Air实际Direct/联合/pending等27执行及Vulkan provider10/alias-phase2 PASS；无数学/vendor/runtime/shader/P1。仍AUDITED；ragged/FI Q1/capture与最终san/header/SDK待，原失败/费用保留。"
     },
     {
       "module": "compute_stream",
@@ -661,13 +661,13 @@
       "module": "compute_batch",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/inference-g06-metadata-decode.md",
-      "summary": "G06 AUDITED：共同active/delta/Graph首上传共享与原生lazy index、逐bank delta、完整key复用和准确页组准入已实施；Windows90项＋18个pending场景、Air真实Apple/Vulkan Direct/联合/原风险source通过。原四轮失败保留；完整runtime lengths/Q1 decode/capture与最终san/header/SDK仍待，无新P1或整体完成。"
+      "summary": "G06-D3 runtime lengths source通过：两native同Q拓扑保Program/Invocation，KV indptr/tail逐Invocation更新，原delta/准确页/退休不变。Windows91＋pending18、Air实际Direct/联合/pending等27执行及Vulkan provider10/alias-phase2 PASS；无数学/vendor/runtime/shader/P1。仍AUDITED；ragged/FI Q1/capture与最终san/header/SDK待，原失败/费用保留。"
     },
     {
       "module": "graph_batch",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/inference-g06-metadata-decode.md",
-      "summary": "G06 AUDITED：共同active/delta/Graph首上传共享与原生lazy index、逐bank delta、完整key复用和准确页组准入已实施；Windows90项＋18个pending场景、Air真实Apple/Vulkan Direct/联合/原风险source通过。原四轮失败保留；完整runtime lengths/Q1 decode/capture与最终san/header/SDK仍待，无新P1或整体完成。"
+      "summary": "G06-D3 runtime lengths source通过：两native同Q拓扑保Program/Invocation，KV indptr/tail逐Invocation更新，原delta/准确页/退休不变。Windows91＋pending18、Air实际Direct/联合/pending等27执行及Vulkan provider10/alias-phase2 PASS；无数学/vendor/runtime/shader/P1。仍AUDITED；ragged/FI Q1/capture与最终san/header/SDK待，原失败/费用保留。"
     }
   ]
 }
