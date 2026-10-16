@@ -228,3 +228,9 @@ Cast/Add，65步/两slots，仅迁移R个I32与R个F32；CUDA两跳staging明确
 并修测试range-loop/dangling-else编译警告。原轮费用142.06s和FAIL日志
 保留；Graph/CUDA/joint/device math尚未执行，不代签PASS。测试正文增量复用同tree/configure，
 不为此重跑CUDA编译或无关模块。
+
+
+19b6320c9测试正文增量仅14edges、无CUDA编译；CPU categorical随后发生SIGSEGV，
+GDB定位在CommonSession析构的mimalloc free。尚未归因，不将前序部分PASS写为整项PASS。
+先对真实caller workspace添加前后guard并输出有限阶段标识，区分数值写越界、消费寿命
+与哪个dtype/shape；不修改Mem/SIMD等关闭模块，不靠重复全局构建排查。

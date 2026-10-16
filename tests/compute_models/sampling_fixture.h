@@ -205,6 +205,7 @@ template<class Session> void random_journey() {
 template<class Session> void categorical_journey() {
   constexpr auto f32 = c::DataType::kFloat32;
   for (const auto type : {f32, c::DataType::kFloat16, c::DataType::kBFloat16}) {
+    std::printf("START categorical narrow dtype %u\n",unsigned(type));std::fflush(stdout);
     constexpr int rows = 13, width = 17;
     const std::vector<c::TensorDesc> desc{dense(type, {rows, width}),
                                          dense(c::DataType::kUInt32, {rows, 4})};
@@ -230,10 +231,12 @@ template<class Session> void categorical_journey() {
           "categorical row permutation changed request draw");
     scored.close(); plain.close();
     check(first.read_again() == first.bytes, "categorical old native result changed after close");
+    std::printf("PASS categorical narrow dtype %u\n",unsigned(type));std::fflush(stdout);
   }
   // Large real vocabulary plus independent live-input/slot sequence. Only
   // selected ID/scalar outputs are downloaded; logits stay on the route.
   for (const int rows : {1, 16}) {
+    std::printf("START categorical full vocabulary R=%d\n",rows);std::fflush(stdout);
     constexpr int width = 248320;
     Session session(c::sampling_ops::categorical(true),
         {dense(f32, {rows, width}), dense(c::DataType::kUInt32, {rows, 4})});
