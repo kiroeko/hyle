@@ -215,6 +215,7 @@ public:
 private:
   friend class Context;
   friend struct detail::ContextAccess;
+  friend struct detail::PagedBatchAccess;
   explicit Program(std::shared_ptr<detail::ProgramState> state) noexcept
       : state_(std::move(state)) {}
   std::shared_ptr<detail::ProgramState> state_;

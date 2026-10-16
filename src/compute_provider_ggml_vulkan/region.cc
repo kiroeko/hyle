@@ -15,6 +15,8 @@
 
 namespace hyle::compute::ggml_vulkan::detail {
 namespace {
+// Host-only tag, ignored by the native backend. Keep it out of its TU seam.
+constexpr int kPagedRuntimeRequestSlot = 11;
 bool floating(DataType type) noexcept {
   return type == DataType::kFloat32 || type == DataType::kFloat16 ||
          type == DataType::kBFloat16;
@@ -989,6 +991,8 @@ Result<Region> Region::create(NativeDevice device,
         output->op_params[bridge::kFlashAttentionCausalSlot] = paged->causal;
         output->op_params[bridge::kFlashAttentionWindowSlot] = paged->window_left;
         output->op_params[bridge::kFlashAttentionCacheSlot] = bridge::kFlashAttentionCache;
+        output->op_params[kPagedRuntimeRequestSlot] = paged->runtime_request == UINT32_MAX
+            ? -1 : static_cast<std::int32_t>(paged->runtime_request);
         if (!ggml_prec_set_acc(output, GGML_PREC_F32))
           return std::unexpected(Status::Unimplemented("Vulkan paged flash accumulation"));
         output = ggml_cast(context, output, GGML_TYPE_F16);
@@ -1394,6 +1398,47 @@ Result<Region> Region::create(NativeDevice device,
     return std::unexpected(
         Status::ResourceExhausted("ggml Vulkan typed region"));
   }
+}
+
+Status Region::update_paged_layout(std::span<const std::int32_t> indptr,
+                                  std::span<const std::int32_t> tails) noexcept {
+  if (!state_ || state_->pending)
+    return Status::FailedPrecondition("Vulkan paged layout requires an idle region");
+  auto active = state_->device.activate();
+  auto *graph = state_->graph.get();
+  const auto selected = [](const ggml_tensor *node) {
+    return node->op == GGML_OP_FLASH_ATTN_EXT &&
+        node->op_params[bridge::kFlashAttentionPagedSlot] == bridge::kFlashAttentionPaged &&
+        node->op_params[kPagedRuntimeRequestSlot] >= 0;
+  };
+  bool changed = false;
+  for (int i = 0; i < ggml_graph_n_nodes(graph); ++i) {
+    const auto *node = ggml_graph_node(graph, i);
+    if (!selected(node)) continue;
+    const auto r = std::size_t(node->op_params[kPagedRuntimeRequestSlot]);
+    if (r >= tails.size() || r + 1 >= indptr.size() || indptr[r] < 0 ||
+        indptr[r+1] <= indptr[r] || tails[r] < 1 || tails[r] > 16 ||
+        !node->src[5] || indptr[r+1] > ggml_nelements(node->src[5]))
+      return Status::InvalidArgument("Vulkan runtime page table extent differs");
+    const auto rows = std::int64_t(indptr[r+1] - indptr[r] - 1)*16 + tails[r];
+    if (rows > INT32_MAX || (node->op_params[bridge::kFlashAttentionCausalSlot] &&
+                            rows < node->src[0]->ne[1]))
+      return Status::InvalidArgument("Vulkan runtime logical KV extent differs");
+    changed = changed || rows != node->op_params[bridge::kFlashAttentionLogicalRowsSlot] ||
+        indptr[r] != node->op_params[bridge::kFlashAttentionTableOffsetSlot];
+  }
+  if (!changed) return Status::Ok();
+  HYLE_RETURN_IF_ERROR(state_->work.invalidate_recording());
+  // Every tagged node was checked before invalidating or changing any scalar.
+  for (int i = 0; i < ggml_graph_n_nodes(graph); ++i) {
+    auto *node = ggml_graph_node(graph, i);
+    if (!selected(node)) continue;
+    const auto r = std::size_t(node->op_params[kPagedRuntimeRequestSlot]);
+    node->op_params[bridge::kFlashAttentionLogicalRowsSlot] =
+        (indptr[r+1] - indptr[r] - 1)*16 + tails[r];
+    node->op_params[bridge::kFlashAttentionTableOffsetSlot] = indptr[r];
+  }
+  return Status::Ok();
 }
 
 Status

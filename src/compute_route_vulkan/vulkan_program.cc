@@ -626,6 +626,15 @@ Status detail::PagedBatchAccess::release_inputs(Invocation&invocation)noexcept{
   }
   for(auto&input:state.old_inputs)input.reset();return status;
 }
+Status detail::PagedBatchAccess::update_layout(Invocation& invocation,
+    const BatchLayoutVersion& layout) noexcept {
+  HYLE_RETURN_IF_ERROR(reuse_gate(invocation));
+  auto& state=*invocation.state_;const auto host=layout.host();
+  std::lock_guard lock(state.program->runtime->mutex);
+  for(auto& stage:state.run->stages)
+    if(stage.managed)HYLE_RETURN_IF_ERROR(stage.managed->update_paged_layout(host.kv_indptr,host.last_page_lengths));
+  return Status::Ok();
+}
 Status Invocation::bind(std::span<const Tensor> inputs) noexcept {
   if (!state_ || inputs.size() != state_->program->inputs.size())
     return Status::InvalidArgument("Vulkan input binding arity");

@@ -119,7 +119,8 @@ template<class T,class Policy=MaterializedMetadataPolicy>struct MaterializedNati
     if constexpr(Policy::prepare_native){
       const auto old=version.layout(),current=next.layout();const auto a=old.host(),b=current.host();
       const auto equal=[](auto x,auto y){return x.size()==y.size()&&std::equal(x.begin(),x.end(),y.begin());};
-      reused_native=native.valid()&&current.schema().owns(old)&&equal(a.query_indptr,b.query_indptr)&&equal(a.kv_indptr,b.kv_indptr)&&equal(a.last_page_lengths,b.last_page_lengths);
+      const auto empty_ports=[](const BatchLayoutVersion& v){return v.facts().query_rows==0 && v.facts().page_refs==0;};
+      reused_native=native.valid()&&current.schema().owns(old)&&equal(a.query_indptr,b.query_indptr)&&empty_ports(old)==empty_ports(current);
       if(!reused_native){
         HYLE_ASSIGN_OR_RETURN(auto program,T::prepare_program(*preparation.context,recipe,current,preparation.workload));
         HYLE_ASSIGN_OR_RETURN(auto prepared_native,T::invocation(program,allocator));
@@ -133,6 +134,7 @@ template<class T,class Policy=MaterializedMetadataPolicy>struct MaterializedNati
     const auto transfer=[&]()noexcept->Status{
       if constexpr(Policy::prepare_native){
         if(reused_native)HYLE_RETURN_IF_ERROR(T::release_inputs(native));
+        HYLE_RETURN_IF_ERROR(T::update_layout(native,next.layout()));
         const auto current=next.layout();const auto pages=current.host().page_indices;
         const auto equal=[](auto a,auto b){return a.size()==b.size()&&std::equal(a.begin(),a.end(),b.begin());};
         // An unchanged table can keep the current readonly bank even while the

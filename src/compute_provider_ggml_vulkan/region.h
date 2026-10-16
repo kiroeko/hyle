@@ -21,6 +21,8 @@ struct PagedAttentionRead final {
   bool causal = true;
   bool paged = true;
   std::int32_t window_left = -1;
+  // Only fixed-Q paged batch recipes opt into host-known runtime KV extents.
+  std::uint32_t runtime_request = UINT32_MAX;
   static constexpr OperationId operation_id{0x48594c45564b4641ULL,
                                            0x5041474544524401ULL};
   static constexpr std::string_view operation_name = "ggml-vulkan-paged-read";
@@ -73,6 +75,9 @@ public:
       Status validate(std::span<const RegionBinding>) const noexcept;
   HYLE_GGML_VULKAN_INTERNAL_API
       Status bind(std::span<const RegionBinding>) noexcept;
+  HYLE_GGML_VULKAN_INTERNAL_API Status update_paged_layout(
+      std::span<const std::int32_t> kv_indptr,
+      std::span<const std::int32_t> last_page_lengths) noexcept;
   HYLE_GGML_VULKAN_INTERNAL_API WorkState submit() noexcept;
   HYLE_GGML_VULKAN_INTERNAL_API WorkState poll() noexcept;
   HYLE_GGML_VULKAN_INTERNAL_API WorkState wait() noexcept;

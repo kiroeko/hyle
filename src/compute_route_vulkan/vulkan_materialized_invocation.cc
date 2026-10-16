@@ -25,6 +25,7 @@ struct BatchTraits final {
   static Status wait_native(Invocation&i){return PagedBatchAccess::wait_native(i);}
   static Status reuse_gate(Invocation&i){return PagedBatchAccess::reuse_gate(i);}
   static Status release_inputs(Invocation&i){return PagedBatchAccess::release_inputs(i);}
+  static auto update_layout(Invocation& i,const BatchLayoutVersion& l){return PagedBatchAccess::update_layout(i,l);}
   static auto prepare_program(const Context&c,const NativePagedBatchProgram&p,
       BatchLayoutVersion l,const WorkloadContext&w){return PagedBatchAccess::prepare_program(c,p,std::move(l),w);}
 };

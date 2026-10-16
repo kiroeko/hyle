@@ -271,6 +271,17 @@ struct MlxProgram {
       compiled;
 };
 
+// Immutable Program-owned recipe. The current version belongs to each paged
+// invocation; sharing a Program never shares mutable attention lengths.
+struct RuntimePagedFunction {
+  BatchLayoutVersion initial;
+  PagedBatchAccess::RuntimeFunction build;
+  std::function<std::vector<mx::array>(const std::vector<mx::array>&)> compiled;
+  auto operator()(const std::vector<mx::array>& inputs) const {
+    return compiled(inputs);
+  }
+};
+
 // Compile each maximal MLX region once. Native region boundaries preserve its
 // private fusion and do not expose its internal node/value table to replay.
 std::vector<mx::array> prepare_mlx(MlxProgram &program, RegionFunction region,
@@ -364,6 +375,33 @@ struct InvocationState : Job {
   }
 };
 
+struct PagedInvocationState final : InvocationState {
+  BatchLayoutVersion layout;
+  PagedInvocationState(std::shared_ptr<ProgramState> p, cd::ResultSlot<Results> slot,
+                       BatchLayoutVersion initial)
+      : InvocationState(std::move(p),std::move(slot)),layout(std::move(initial)) {}
+};
+void execute_paged_invocation(Job*) noexcept;
+
+Status evaluate_paged(PagedInvocationState& state, mx::Stream stream) {
+  const auto& fn=*state.program->compiled.target<RuntimePagedFunction>();
+  const auto a=fn.initial.host(),b=state.layout.host();
+  const auto equal=[](auto x,auto y){return x.size()==y.size() && std::equal(x.begin(),x.end(),y.begin());};
+  if(equal(a.kv_indptr,b.kv_indptr) && equal(a.last_page_lengths,b.last_page_lengths))
+    return evaluate_mlx(*state.program,state.inputs,state.values->arrays,stream);
+  CheckTrace trace;
+  HYLE_ASSIGN_OR_RETURN(auto outputs,fn.build(state.layout,state.inputs,stream));
+  // This private builder has the same cold-validated, selected-stream topology.
+  // Preserve reachable checked statuses if a checked primitive is ever used.
+  const bool checked=!trace.checks.empty() && validate_region(outputs,stream,trace);
+  state.values->arrays=std::move(outputs);
+  mx::async_eval(state.values->arrays);mx::synchronize(stream);
+  for(auto& output:state.values->arrays)output.wait();
+  if(!checked)return Status::Ok();
+  const auto code=state.values->arrays.back().data<std::int32_t>()[0];
+  state.values->arrays.pop_back();return algorithm_status(code);
+}
+
 Status execute_plan(InvocationState &state, mx::Stream stream) {
   const auto &prepared = *state.program->native;
   const auto &plan = prepared.description;
@@ -407,8 +445,11 @@ void retain(InvocationState *state) noexcept {
 }
 void release(InvocationState *state) noexcept {
   if (state != nullptr &&
-      state->refs.fetch_sub(1, std::memory_order_acq_rel) == 1)
-    delete state;
+      state->refs.fetch_sub(1, std::memory_order_acq_rel) == 1) {
+    if(state->execute==execute_paged_invocation)
+      delete static_cast<PagedInvocationState*>(state);
+    else delete state;
+  }
 }
 
 void finish(InvocationState &state, Status terminal) noexcept {
@@ -430,9 +471,9 @@ void finish(InvocationState &state, Status terminal) noexcept {
   deliver(abandoned, std::move(terminal), hint);
 }
 
-void execute_invocation(Job *job) noexcept {
+template<class Evaluate>
+void execute_with(InvocationState& state, Evaluate evaluate) noexcept {
   HYLE_TRACE_ZONE_NAMED("hyle.apple.execute");
-  auto &state = *static_cast<InvocationState *>(job);
   auto &runtime = *state.program->runtime;
   Status terminal;
   {
@@ -444,10 +485,7 @@ void execute_invocation(Job *job) noexcept {
         Status::Cancelled("Apple submission cancelled before native execution");
   if (terminal.ok()) {
     try {
-      terminal = state.program->native
-                     ? execute_plan(state, *runtime.stream)
-                     : evaluate_mlx(*state.program, state.inputs,
-                                    state.values->arrays, *runtime.stream);
+      terminal = evaluate(*runtime.stream);
     } catch (...) {
       terminal = native_exception();
       // Native construction/eval may already have accepted a prefix. Keep
@@ -465,6 +503,18 @@ void execute_invocation(Job *job) noexcept {
   }
   finish(state, std::move(terminal));
   release(&state); // admitted worker reference
+}
+
+void execute_invocation(Job* job) noexcept {
+  auto& state=*static_cast<InvocationState*>(job);
+  execute_with(state,[&](mx::Stream stream){
+    return state.program->native ? execute_plan(state,stream) :
+        evaluate_mlx(*state.program,state.inputs,state.values->arrays,stream);
+  });
+}
+void execute_paged_invocation(Job* job) noexcept {
+  auto& state=*static_cast<PagedInvocationState*>(job);
+  execute_with(state,[&](mx::Stream stream){return evaluate_paged(state,stream);});
 }
 
 const cd::CompletionVTable completion_vtable{
@@ -779,6 +829,11 @@ Program::create_invocation(mem::AllocatorRef allocator) const noexcept {
   if (!slot)
     return std::unexpected(std::move(slot).error());
   try {
+    if(const auto* fn=state_->compiled.target<detail::RuntimePagedFunction>()) {
+      auto state=std::make_unique<detail::PagedInvocationState>(state_,std::move(*slot),fn->initial);
+      state->execute=detail::execute_paged_invocation;
+      return Invocation(state.release());
+    }
     auto state = std::make_unique<detail::InvocationState>(state_, std::move(*slot));
     state->execute = detail::execute_invocation;
     if (state_->native) {
@@ -858,6 +913,33 @@ Status detail::PagedBatchAccess::release_inputs(Invocation&invocation)noexcept{
   state.bound=false;state.inputs.clear();state.values->arrays.clear();
   for(auto&value:state.native_values)value.reset();
   state.arguments.clear();state.region_outputs.clear();return Status::Ok();
+}
+Result<Program> detail::PagedBatchAccess::prepare_runtime_program(const Context& context,
+    BatchLayoutVersion initial,std::span<const InputSpec> inputs,RuntimeFunction build,
+    const WorkloadContext& workload) noexcept {
+  try {
+    HYLE_ASSIGN_OR_RETURN(auto program,context.compile(
+        [initial,build](const std::vector<mx::array>& args,mx::Stream stream){return build(initial,args,stream);},
+        inputs,workload));
+    auto& compiled=program.state_->compiled;
+    compiled=RuntimePagedFunction{std::move(initial),std::move(build),std::move(compiled)};
+    return program;
+  } catch(...) {return std::unexpected(native_exception());}
+}
+Status detail::PagedBatchAccess::update_layout(Invocation& invocation,
+    const BatchLayoutVersion& layout) noexcept {
+  HYLE_RETURN_IF_ERROR(reuse_gate(invocation));auto& state=*invocation.state_;
+  if(state.execute!=execute_paged_invocation)
+    return Status::InvalidArgument("Apple runtime page layout requires a paged invocation");
+  const auto& initial=state.program->compiled.target<RuntimePagedFunction>()->initial;
+  const auto a=initial.host(),b=layout.host();
+  const auto empty_ports=[](const BatchLayoutVersion& v){return v.facts().query_rows==0 && v.facts().page_refs==0;};
+  if(!initial.schema().owns(layout) || a.query_indptr.size()!=b.query_indptr.size() ||
+      !std::equal(a.query_indptr.begin(),a.query_indptr.end(),b.query_indptr.begin()) ||
+      empty_ports(initial)!=empty_ports(layout))
+    return Status::InvalidArgument("Apple runtime page Q topology differs");
+  std::lock_guard lock(state.binding_mutex);
+  static_cast<PagedInvocationState&>(state).layout=layout;return Status::Ok();
 }
 Result<OwnedResult<Results>> Invocation::submit() noexcept {
   return submit_guarded({});

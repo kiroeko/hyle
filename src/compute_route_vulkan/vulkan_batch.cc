@@ -50,7 +50,7 @@ Result<Program> detail::PagedBatchAccess::prepare_program(const Context& context
     }
     constexpr std::uint32_t k=1,v=2;
     const auto host=layout.host();
-    struct Request{std::uint32_t q,rows,kv,offset;};std::vector<Request> requests;
+    struct Request{std::uint32_t q,rows,kv,offset,index;};std::vector<Request> requests;
     for(std::size_t r=0;r<layout.facts().requests;++r){
       const auto nq=host.query_indptr[r+1]-host.query_indptr[r];
       const auto refs=host.kv_indptr[r+1]-host.kv_indptr[r];
@@ -63,13 +63,14 @@ Result<Program> detail::PagedBatchAccess::prepare_program(const Context& context
       HYLE_ASSIGN_OR_RETURN(auto shape,TensorShape::create(std::array<std::int64_t,4>{1,nq,c.query_heads,c.qk_head_dim}));
       HYLE_ASSIGN_OR_RETURN(auto reshape,View::reshape(shape));
       HYLE_ASSIGN_OR_RETURN(auto q,add(Operation(reshape),{sliced}));
-      requests.push_back({q,std::uint32_t(nq),std::uint32_t(nk),std::uint32_t(host.kv_indptr[r])});
+      requests.push_back({q,std::uint32_t(nq),std::uint32_t(nk),std::uint32_t(host.kv_indptr[r]),std::uint32_t(r)});
     }
     std::vector<std::uint32_t> parts;
     for(const auto& request:requests){
       const auto op=Operation::custom(ggml_vulkan::detail::PagedAttentionRead{
           .logical_rows=request.kv,.table_offset=request.offset,
-          .scale=recipe.scale(),.causal=recipe.causal(),.window_left=recipe.window_left()});
+          .scale=recipe.scale(),.causal=recipe.causal(),.window_left=recipe.window_left(),
+          .runtime_request=request.index});
       HYLE_ASSIGN_OR_RETURN(auto output,add(op,{request.q,k,v,3}));
       HYLE_ASSIGN_OR_RETURN(auto shape,TensorShape::create(std::array<std::int64_t,3>{request.rows,c.query_heads,c.value_head_dim}));
       HYLE_ASSIGN_OR_RETURN(auto reshape,View::reshape(shape));

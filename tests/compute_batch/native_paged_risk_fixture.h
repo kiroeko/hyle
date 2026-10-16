@@ -127,8 +127,8 @@ inline Status cold_failures(n::Context& context,n::MemoryResource& device,n::Mem
   fault.fail=SIZE_MAX;fault.attempts=0;
   {HYLE_ASSIGN_OR_RETURN(auto slot,create(context,device,staging,data,fault.ref()));
     HYLE_RETURN_IF_ERROR(slot.prepare_batch(data.layout));
-    const auto host=data.next.host();std::array<std::int32_t,2> cold_tails{6,15};
-    HYLE_ASSIGN_OR_RETURN(auto cold_layout,data.schema.version({host.query_indptr,host.kv_indptr,host.page_indices,cold_tails}));
+    const auto host=data.next.host();std::array<std::int32_t,3> cold_queries{0,2,2};
+    HYLE_ASSIGN_OR_RETURN(auto cold_layout,data.schema.version({cold_queries,host.kv_indptr,host.page_indices,host.last_page_lengths}));
     fault.fail=fault.attempts;
     const auto denied=slot.prepare_batch(cold_layout);
     HYLE_RETURN_IF_ERROR(require(denied.IsResourceExhausted() && slot.report().layout_generation==data.layout.generation(),"cold native allocation rejection changed generation"));

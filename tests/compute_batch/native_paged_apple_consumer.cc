@@ -112,7 +112,10 @@ template<class T> Status exercise(n::Context& context, n::MemoryResource& device
   HYLE_ASSIGN_OR_RETURN(auto slot,n::PagedBatchInvocation::create(context,recipe,device,staging,options));
   HYLE_ASSIGN_OR_RETURN(auto other,n::PagedBatchInvocation::create(context,recipe,device,staging,options));
   HYLE_RETURN_IF_ERROR(require(!slot.prepare_batch(foreign).ok(),"foreign schema accepted"));
-  const auto oracle=[&](auto queries){
+  const auto oracle=[&](const c::BatchLayoutVersion& selected){
+    const auto selected_host=selected.host();
+    const auto queries=selected_host.query_indptr, kp=selected_host.kv_indptr,
+        pages=selected_host.page_indices, tails=selected_host.last_page_lengths;
     std::vector<double> output(18*query_heads*depth), weights;
     for(unsigned request=0;request<2;++request){
       const unsigned nq=queries[request+1]-queries[request];
@@ -133,7 +136,7 @@ template<class T> Status exercise(n::Context& context, n::MemoryResource& device
       }
     }return output;
   };
-  const auto expected=oracle(qp), next_expected=oracle(next_qp);
+  const auto expected=oracle(layout), next_expected=oracle(next);
   const auto verify=[&](const n::Results& result,const auto& expected)->Status{
     std::vector<T> actual(expected.size());
     HYLE_ASSIGN_OR_RETURN(auto output_description,c::TensorDesc::dense(cap.query_type,std::array<std::int64_t,3>{18,query_heads,depth}));
@@ -177,14 +180,43 @@ template<class T> Status exercise(n::Context& context, n::MemoryResource& device
         report.uploaded_bytes<=4*pages.size(),"page ID change did not reuse plan with actual delta upload"));
     HYLE_RETURN_IF_ERROR(slot.bind(query,reordered_keys,reordered_values));
     HYLE_ASSIGN_OR_RETURN(auto run,slot.submit());HYLE_ASSIGN_OR_RETURN(auto result,run.wait());
-    HYLE_RETURN_IF_ERROR(verify(*result,oracle(next_qp)));
+    HYLE_RETURN_IF_ERROR(verify(*result,oracle(reordered)));
     HYLE_RETURN_IF_ERROR(verify(*old,expected));
+  }
+  if(first_refs==5){
+  // Q topology remains mixed prefill/decode. KV rows, page counts and each
+  // later request's table offset vary without rebuilding native storage.
+  auto previous=reordered;
+  for(unsigned episode=0;episode<64;++episode){
+    const unsigned rows0=17+episode%63,rows1=1+episode%32;
+    const unsigned refs0=(rows0+15)/16,refs1=(rows1+15)/16;
+    const std::array<std::int32_t,4> dynamic_kp{0,int(refs0),int(refs0+refs1),int(refs0+refs1)};
+    const std::array<std::int32_t,3> dynamic_tails{int((rows0-1)%16+1),int((rows1-1)%16+1),0};
+    std::vector<std::int32_t> dynamic_pages(refs0+refs1,0);
+    for(unsigned i=0;i<refs0;++i)dynamic_pages[i]=(i+episode/4)%2?1:3;
+    HYLE_ASSIGN_OR_RETURN(auto dynamic_layout,schema.version({next_qp,dynamic_kp,dynamic_pages,dynamic_tails}));
+    HYLE_ASSIGN_OR_RETURN(auto dynamic_keys,keys.read(dynamic_layout,exact_k));
+    HYLE_ASSIGN_OR_RETURN(auto dynamic_values,values.read(dynamic_layout,exact_v));
+    HYLE_RETURN_IF_ERROR(slot.prepare_batch(dynamic_layout));
+    const auto report=slot.report();
+    HYLE_RETURN_IF_ERROR(require(report.reused_native_plan,"runtime KV extent rebuilt native plan"));
+    const auto before=previous.host().page_indices,after=dynamic_layout.host().page_indices;
+    if(before.size()==after.size() && std::equal(before.begin(),before.end(),after.begin()))
+      HYLE_RETURN_IF_ERROR(require(report.uploaded_bytes==0 && report.upload_host_waits==0,
+          "runtime lengths with unchanged IDs uploaded metadata"));
+    HYLE_RETURN_IF_ERROR(require(report.uploaded_bytes<=recipe.costs().index_bytes,
+        "runtime KV metadata delta exceeded table capacity"));
+    HYLE_RETURN_IF_ERROR(slot.bind(query,dynamic_keys,dynamic_values));
+    HYLE_ASSIGN_OR_RETURN(auto run,slot.submit());HYLE_ASSIGN_OR_RETURN(auto result,run.wait());
+    HYLE_RETURN_IF_ERROR(verify(*result,oracle(dynamic_layout)));
+    HYLE_RETURN_IF_ERROR(verify(*old,expected));previous=std::move(dynamic_layout);
+  }
   }
   HYLE_RETURN_IF_ERROR(slot.close());HYLE_RETURN_IF_ERROR(slot.drain());
   HYLE_RETURN_IF_ERROR(require(!slot.prepare_batch(layout).ok(),"closed slot accepted work"));
   other={};HYLE_RETURN_IF_ERROR(verify(*old,expected));old={};submitted={};slot={};
   HYLE_RETURN_IF_ERROR(require(metadata.used()==0,"native page controller metadata leaked"));
-  std::printf("Apple page16 %s D%u causal=%u H%u/2: double oracle, 64 topology episodes, two slots, logical%u>physical64, exact guards/costs PASS\n",std::is_same_v<T,Half>?"F16":"BF16",depth,causal,query_heads,16*(first_refs-1)+15);
+  std::printf("Apple page16 %s D%u causal=%u H%u/2: double oracle, 64 topology plus runtime KV episodes, two slots, logical%u>physical64, exact guards/costs PASS\n",std::is_same_v<T,Half>?"F16":"BF16",depth,causal,query_heads,16*(first_refs-1)+15);
   return Status::Ok();
 }
 Status run(bool long_reads){

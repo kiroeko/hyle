@@ -1,6 +1,8 @@
 #pragma once
 #include "hyle/compute/apple_memory.h"
 #if defined(HYLE_COMPUTE_APPLE)
+#include <functional>
+#include <vector>
 #include "hyle/compute/detail/completion_access.h"
 #include "hyle/compute/paged_arena.h"
 #include "hyle/compute/apple_batch.h"
@@ -8,6 +10,13 @@ namespace hyle::compute::apple::detail {
 // Trusted fixed-batch adapters only. Capacity is an address view; the frame
 // retains exact page permissions. Submit must admit every actual page guard.
 struct PagedBatchAccess final {
+  using RuntimeFunction = std::function<Result<std::vector<mlx::core::array>>(
+      const BatchLayoutVersion&, const std::vector<mlx::core::array>&, mlx::core::Stream)>;
+  // Only the cold-qualified pure paged builder may enter this managed bridge.
+  static Result<Program> prepare_runtime_program(const Context&, BatchLayoutVersion,
+      std::span<const InputSpec>, RuntimeFunction, const WorkloadContext&) noexcept;
+  HYLE_COMPUTE_ROUTE_APPLE_API static Status update_layout(
+      Invocation&, const BatchLayoutVersion&) noexcept;
   HYLE_COMPUTE_ROUTE_APPLE_API static Result<Program> prepare_program(
       const Context&, const NativePagedBatchProgram&, BatchLayoutVersion,
       const WorkloadContext&) noexcept;

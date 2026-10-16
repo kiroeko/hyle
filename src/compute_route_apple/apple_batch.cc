@@ -49,15 +49,17 @@ Result<Program> detail::PagedBatchAccess::prepare_program(const Context& context
     std::array<InputSpec,4> specs;
     for(std::size_t i=0;i<4;++i){HYLE_ASSIGN_OR_RETURN(specs[i],input_spec(recipe.descriptions()[i]));}
     if(layout.facts().query_rows==0 && layout.facts().page_refs==0){
-      return context.compile([heads=int(c.query_heads),depth=int(c.value_head_dim)](const std::vector<mlx::core::array>& inputs,
+      return prepare_runtime_program(context,layout,std::span(specs).first(1),
+          [heads=int(c.query_heads),depth=int(c.value_head_dim)](const BatchLayoutVersion&,
+          const std::vector<mlx::core::array>& inputs,
           mlx::core::Stream stream)->Result<std::vector<mlx::core::array>>{
         if(inputs.size()!=1)return std::unexpected(Status::InvalidArgument("empty Apple page episode needs only Q"));
         HYLE_ASSIGN_OR_RETURN(auto empty,View::slice(0,0,0));
         HYLE_ASSIGN_OR_RETURN(auto sliced,lower(Operation(empty),std::span(&inputs[0],1),stream));
         return std::vector{mlx::core::reshape(sliced[0],{0,heads,depth},stream)};
-      },std::span(specs).first(1),workload);
+      },workload);
     }
-    return context.compile([recipe,layout=std::move(layout)](
+    return prepare_runtime_program(context,layout,specs,[recipe](const BatchLayoutVersion& layout,
         const std::vector<mlx::core::array>& inputs,mlx::core::Stream stream)->Result<std::vector<mlx::core::array>>{
       if(inputs.size()!=4)return std::unexpected(Status::InvalidArgument("Apple paged needs four native ports"));
       const auto c=recipe.schema().capacity();const auto host=layout.host();
@@ -81,7 +83,7 @@ Result<Program> detail::PagedBatchAccess::prepare_program(const Context& context
       if(parts.empty()){HYLE_ASSIGN_OR_RETURN(auto empty,View::slice(0,0,0));HYLE_ASSIGN_OR_RETURN(auto sliced,lower(Operation(empty),std::span(&inputs[0],1),stream));return std::vector{mlx::core::reshape(sliced[0],{0,int(c.query_heads),int(c.value_head_dim)},stream)};}
       if(parts.size()==1)return parts;
       return lower(Operation(Concat{.axis=0}),parts,stream);
-    },specs,workload);
+    },workload);
   } catch(const std::bad_alloc&) {
     return std::unexpected(Status::ResourceExhausted("Apple paged cold tracing metadata"));
   }
