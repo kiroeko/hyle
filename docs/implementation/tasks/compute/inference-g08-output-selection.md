@@ -1,7 +1,7 @@
 # G08 设备端输出数值选择与可定位随机数
 
-状态：**CANDIDATE，2026-10-17；八owner的S1–S4/M1接口与算法冻结于5103c13d8，普通数值及适用device/host风险已过，交付18/18已过，四路线正式P1与回溯artifact终审补证已过，最终LOC/状态落账待完成**。baseline 为
-`85bcfa4eb`，G07已经整项接受，新G07–G10 goal完成1/4。原G01–G07不重跑，G09/G10未开始。
+状态：**CLOSED，2026-10-17；S1–S4/M1已按[最终有限终审](inference-g08-final-closure.md)接受，八owner、18交付、四路线九形状P1、终审和LOC均已完成**。baseline 为
+`85bcfa4eb`，G07/G08已经整项接受，新G07–G10 goal完成2/4。原G01–G07不重跑，G09/G10未开始。
 本卡只处理原[G08发现](../project/inference-single-machine-foundation-audit-2026-10.md)与
 [消费形状计划](../project/inference-consumer-adaptation-plan-2026-10.md)的有限输出数值域。
 

@@ -34,8 +34,8 @@ Gumbel 选择。同一路线、相同输入/counter可重放和重排；不承�
 完成和少量结果读取沿原路线 owner，不能由“设备端选择”推断零分配、零等待或新增 capture 支持。
 temperature、top-p、penalty、grammar、EOS 等政策由应用组合，本数值域不接管这些政策。
 
-这些能力当前处于 [G08 候选验收](../implementation/tasks/compute/inference-g08-output-selection.md)：
-普通数值与适用设备/host风险已通过；平台交付矩阵和 TopK 性能对照仍按该卡收口。
+这些能力已通过 [G08 有限验收](../implementation/tasks/compute/inference-g08-final-closure.md)：
+普通数值、适用设备/host风险、六平台profile的source/static/shared交付及固定TopK性能对照均已通过。
 没有据此声明完整推理引擎的 prefill/decode 吞吐。
 
 ## 有界文件与资源管线

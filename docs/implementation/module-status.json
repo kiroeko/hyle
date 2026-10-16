@@ -143,10 +143,14 @@
     },
     {
       "module": "mem",
-      "state": "CANDIDATE",
-      "record": "docs/implementation/tasks/compute/inference-g08-output-selection.md",
-      "summary": "G08 CANDIDATE 5103c13d8: finite S1-S4/M1 API and algorithms frozen; four-route numeric/distribution/65-step/independent ports, three joint consumers, actual CUDA/Metal/Vulkan device risks and CPU/CUDA/Apple/Vulkan scoped host facets PASS. Source/static/shared SDK, public headers, exact S1 P1 and terminal review pending.",
-      "candidate": "5103c13d8ed119b06aa64e799f9768aea45ab913"
+      "state": "CLOSED",
+      "record": "docs/implementation/tasks/compute/inference-g08-final-closure.md",
+      "summary": "G08 CLOSED 5103: finite S1-S4/M1, four-route numerical/65-step/two-slot/joint consumers, scoped actual device/host risks and18 source/static/shared configs PASS. Four-route9workload P1 qualified/5% PASS; strict9 WIN (AppleK3 instrument PARITY retained). Seven gates/LOC accepted; retrospective review timing, original failures/cost and private/binary-retention limits explicit.",
+      "candidate": "5103c13d8ed119b06aa64e799f9768aea45ab913",
+      "performance": {
+        "tier": "P0",
+        "evidence": "docs/implementation/tasks/compute/inference-g08-final-closure.md"
+      }
     },
     {
       "module": "mem_vm",
@@ -369,10 +373,15 @@
     },
     {
       "module": "compute_provider_ggml",
-      "state": "CANDIDATE",
-      "record": "docs/implementation/tasks/compute/inference-g08-output-selection.md",
-      "summary": "G08 CANDIDATE 5103c13d8: finite S1-S4/M1 API and algorithms frozen; four-route numeric/distribution/65-step/independent ports, three joint consumers, actual CUDA/Metal/Vulkan device risks and CPU/CUDA/Apple/Vulkan scoped host facets PASS. Source/static/shared SDK, public headers, exact S1 P1 and terminal review pending.",
-      "candidate": "5103c13d8ed119b06aa64e799f9768aea45ab913"
+      "state": "CLOSED",
+      "record": "docs/implementation/tasks/compute/inference-g08-final-closure.md",
+      "summary": "G08 CLOSED 5103: finite S1-S4/M1, four-route numerical/65-step/two-slot/joint consumers, scoped actual device/host risks and18 source/static/shared configs PASS. Four-route9workload P1 qualified/5% PASS; strict9 WIN (AppleK3 instrument PARITY retained). Seven gates/LOC accepted; retrospective review timing, original failures/cost and private/binary-retention limits explicit.",
+      "candidate": "5103c13d8ed119b06aa64e799f9768aea45ab913",
+      "performance": {
+        "tier": "P1",
+        "evidence": "docs/implementation/tasks/compute/inference-g08-final-closure.md",
+        "material_margin_pct": 5
+      }
     },
     {
       "module": "graph_provider_onednn",
@@ -387,10 +396,14 @@
     },
     {
       "module": "compute_ops",
-      "state": "CANDIDATE",
-      "record": "docs/implementation/tasks/compute/inference-g08-output-selection.md",
-      "summary": "G08 CANDIDATE 5103c13d8: finite S1-S4/M1 API and algorithms frozen; four-route numeric/distribution/65-step/independent ports, three joint consumers, actual CUDA/Metal/Vulkan device risks and CPU/CUDA/Apple/Vulkan scoped host facets PASS. Source/static/shared SDK, public headers, exact S1 P1 and terminal review pending.",
-      "candidate": "5103c13d8ed119b06aa64e799f9768aea45ab913"
+      "state": "CLOSED",
+      "record": "docs/implementation/tasks/compute/inference-g08-final-closure.md",
+      "summary": "G08 CLOSED 5103: finite S1-S4/M1, four-route numerical/65-step/two-slot/joint consumers, scoped actual device/host risks and18 source/static/shared configs PASS. Four-route9workload P1 qualified/5% PASS; strict9 WIN (AppleK3 instrument PARITY retained). Seven gates/LOC accepted; retrospective review timing, original failures/cost and private/binary-retention limits explicit.",
+      "candidate": "5103c13d8ed119b06aa64e799f9768aea45ab913",
+      "performance": {
+        "tier": "P0",
+        "evidence": "docs/implementation/tasks/compute/inference-g08-final-closure.md"
+      }
     },
     {
       "module": "compute_backend_cpu",
@@ -416,10 +429,14 @@
     },
     {
       "module": "compute_provider_native",
-      "state": "CANDIDATE",
-      "record": "docs/implementation/tasks/compute/inference-g08-output-selection.md",
-      "summary": "G08 CANDIDATE 5103c13d8: finite S1-S4/M1 API and algorithms frozen; four-route numeric/distribution/65-step/independent ports, three joint consumers, actual CUDA/Metal/Vulkan device risks and CPU/CUDA/Apple/Vulkan scoped host facets PASS. Source/static/shared SDK, public headers, exact S1 P1 and terminal review pending.",
-      "candidate": "5103c13d8ed119b06aa64e799f9768aea45ab913"
+      "state": "CLOSED",
+      "record": "docs/implementation/tasks/compute/inference-g08-final-closure.md",
+      "summary": "G08 CLOSED 5103: finite S1-S4/M1, four-route numerical/65-step/two-slot/joint consumers, scoped actual device/host risks and18 source/static/shared configs PASS. Four-route9workload P1 qualified/5% PASS; strict9 WIN (AppleK3 instrument PARITY retained). Seven gates/LOC accepted; retrospective review timing, original failures/cost and private/binary-retention limits explicit.",
+      "candidate": "5103c13d8ed119b06aa64e799f9768aea45ab913",
+      "performance": {
+        "tier": "P0",
+        "evidence": "docs/implementation/tasks/compute/inference-g08-final-closure.md"
+      }
     },
     {
       "module": "compute_route_cpu",
@@ -467,10 +484,15 @@
     },
     {
       "module": "compute_provider_cuda",
-      "state": "CANDIDATE",
-      "record": "docs/implementation/tasks/compute/inference-g08-output-selection.md",
-      "summary": "G08 CANDIDATE 5103c13d8: finite S1-S4/M1 API and algorithms frozen; four-route numeric/distribution/65-step/independent ports, three joint consumers, actual CUDA/Metal/Vulkan device risks and CPU/CUDA/Apple/Vulkan scoped host facets PASS. Source/static/shared SDK, public headers, exact S1 P1 and terminal review pending.",
-      "candidate": "5103c13d8ed119b06aa64e799f9768aea45ab913"
+      "state": "CLOSED",
+      "record": "docs/implementation/tasks/compute/inference-g08-final-closure.md",
+      "summary": "G08 CLOSED 5103: finite S1-S4/M1, four-route numerical/65-step/two-slot/joint consumers, scoped actual device/host risks and18 source/static/shared configs PASS. Four-route9workload P1 qualified/5% PASS; strict9 WIN (AppleK3 instrument PARITY retained). Seven gates/LOC accepted; retrospective review timing, original failures/cost and private/binary-retention limits explicit.",
+      "candidate": "5103c13d8ed119b06aa64e799f9768aea45ab913",
+      "performance": {
+        "tier": "P1",
+        "evidence": "docs/implementation/tasks/compute/inference-g08-final-closure.md",
+        "material_margin_pct": 5
+      }
     },
     {
       "module": "compute_route_cuda",
@@ -496,10 +518,15 @@
     },
     {
       "module": "compute_route_apple",
-      "state": "CANDIDATE",
-      "record": "docs/implementation/tasks/compute/inference-g08-output-selection.md",
-      "summary": "G08 CANDIDATE 5103c13d8: finite S1-S4/M1 API and algorithms frozen; four-route numeric/distribution/65-step/independent ports, three joint consumers, actual CUDA/Metal/Vulkan device risks and CPU/CUDA/Apple/Vulkan scoped host facets PASS. Source/static/shared SDK, public headers, exact S1 P1 and terminal review pending.",
-      "candidate": "5103c13d8ed119b06aa64e799f9768aea45ab913"
+      "state": "CLOSED",
+      "record": "docs/implementation/tasks/compute/inference-g08-final-closure.md",
+      "summary": "G08 CLOSED 5103: finite S1-S4/M1, four-route numerical/65-step/two-slot/joint consumers, scoped actual device/host risks and18 source/static/shared configs PASS. Four-route9workload P1 qualified/5% PASS; strict9 WIN (AppleK3 instrument PARITY retained). Seven gates/LOC accepted; retrospective review timing, original failures/cost and private/binary-retention limits explicit.",
+      "candidate": "5103c13d8ed119b06aa64e799f9768aea45ab913",
+      "performance": {
+        "tier": "P1",
+        "evidence": "docs/implementation/tasks/compute/inference-g08-final-closure.md",
+        "material_margin_pct": 5
+      }
     },
     {
       "module": "graph_route_apple",
@@ -514,17 +541,26 @@
     },
     {
       "module": "compute_route_vulkan",
-      "state": "CANDIDATE",
-      "record": "docs/implementation/tasks/compute/inference-g08-output-selection.md",
-      "summary": "G08 CANDIDATE 5103c13d8: finite S1-S4/M1 API and algorithms frozen; four-route numeric/distribution/65-step/independent ports, three joint consumers, actual CUDA/Metal/Vulkan device risks and CPU/CUDA/Apple/Vulkan scoped host facets PASS. Source/static/shared SDK, public headers, exact S1 P1 and terminal review pending.",
-      "candidate": "5103c13d8ed119b06aa64e799f9768aea45ab913"
+      "state": "CLOSED",
+      "record": "docs/implementation/tasks/compute/inference-g08-final-closure.md",
+      "summary": "G08 CLOSED 5103: finite S1-S4/M1, four-route numerical/65-step/two-slot/joint consumers, scoped actual device/host risks and18 source/static/shared configs PASS. Four-route9workload P1 qualified/5% PASS; strict9 WIN (AppleK3 instrument PARITY retained). Seven gates/LOC accepted; retrospective review timing, original failures/cost and private/binary-retention limits explicit.",
+      "candidate": "5103c13d8ed119b06aa64e799f9768aea45ab913",
+      "performance": {
+        "tier": "P1",
+        "evidence": "docs/implementation/tasks/compute/inference-g08-final-closure.md",
+        "material_margin_pct": 5
+      }
     },
     {
       "module": "graph_route_vulkan",
-      "state": "CANDIDATE",
-      "record": "docs/implementation/tasks/compute/inference-g08-output-selection.md",
-      "summary": "G08 CANDIDATE 5103c13d8: finite S1-S4/M1 API and algorithms frozen; four-route numeric/distribution/65-step/independent ports, three joint consumers, actual CUDA/Metal/Vulkan device risks and CPU/CUDA/Apple/Vulkan scoped host facets PASS. Source/static/shared SDK, public headers, exact S1 P1 and terminal review pending.",
-      "candidate": "5103c13d8ed119b06aa64e799f9768aea45ab913"
+      "state": "CLOSED",
+      "record": "docs/implementation/tasks/compute/inference-g08-final-closure.md",
+      "summary": "G08 CLOSED 5103: finite S1-S4/M1, four-route numerical/65-step/two-slot/joint consumers, scoped actual device/host risks and18 source/static/shared configs PASS. Four-route9workload P1 qualified/5% PASS; strict9 WIN (AppleK3 instrument PARITY retained). Seven gates/LOC accepted; retrospective review timing, original failures/cost and private/binary-retention limits explicit.",
+      "candidate": "5103c13d8ed119b06aa64e799f9768aea45ab913",
+      "performance": {
+        "tier": "P0",
+        "evidence": "docs/implementation/tasks/compute/inference-g08-final-closure.md"
+      }
     },
     {
       "module": "compute_provider_ggml_vulkan",
