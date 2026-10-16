@@ -116,6 +116,9 @@ Status hybrid_paged(bool bf16) {
     HYLE_ASSIGN_OR_RETURN(auto writer,host_pool.allocate(xs.size()*sizeof(float)));
     HYLE_RETURN_IF_ERROR(invocation.bind(output,xdesc,std::move(writer)));
     {HYLE_ASSIGN_OR_RETURN(auto unused,keys.acquire(3));HYLE_RETURN_IF_ERROR(check(unused.valid(),"hybrid page frame retained unreferenced capacity"));}
+#if defined(HYLE_G06_CAPTURE_REPLAY)
+    HYLE_RETURN_IF_ERROR(invocation.prepare_replay());
+#endif
     HYLE_ASSIGN_OR_RETURN(auto done,invocation.submit());HYLE_RETURN_IF_ERROR(done.wait());
     HYLE_ASSIGN_OR_RETURN(auto result,invocation.output(output));
     HYLE_ASSIGN_OR_RETURN(auto lease,result.storage_lease());
@@ -128,6 +131,11 @@ Status hybrid_paged(bool bf16) {
     HYLE_RETURN_IF_ERROR(check(!invocation.prepare_batch(std::array{gb::NodeLayout{attention,layout}}).ok(),"hybrid overwritten retained old output"));
     HYLE_ASSIGN_OR_RETURN(auto report,invocation.report(attention));
     HYLE_RETURN_IF_ERROR(check(report.layout_generation==layout.generation() && (!episode || report.reused_native_plan),"hybrid metadata generation/topology differs"));
+#if defined(HYLE_G06_CAPTURE_REPLAY)
+    HYLE_RETURN_IF_ERROR(check(report.capture_compatible,"hybrid native batch capture not prepared"));
+    if(episode)HYLE_RETURN_IF_ERROR(check(report.host_waits==(report.metadata_upload.physical_bytes?1u:0u),"hybrid recreated capture at unchanged native storage"));
+    HYLE_RETURN_IF_ERROR(check(!invocation.prepare_replay().ok(),"hybrid captured replay ignored old output"));
+#endif
     std::printf("G02 CPU RMS/Cast -> CUDA paged GQA8/2 D256 -> CPU Cast/Neg, %s episode=%u precise-pages/old-output/oracle PASS\n",bf16?"BF16":"F16",episode);
   }
   HYLE_RETURN_IF_ERROR(invocation.close());HYLE_RETURN_IF_ERROR(invocation.drain());

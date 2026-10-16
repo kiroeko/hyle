@@ -3,6 +3,21 @@
 #include <utility>
 
 namespace hyle::compute::detail {
+namespace {
+struct CaptureLaunch final {
+  const CommandCaptureVTable *expected;
+  void *state;
+};
+EnqueueResult launch_captured(void *backend_context, const void *interface_value,
+                             void *backend_queue, void *opaque) noexcept {
+  auto &call = *static_cast<CaptureLaunch *>(opaque);
+  const auto *table = static_cast<const CommandCaptureVTable *>(interface_value);
+  if (table != call.expected || table == nullptr || table->launch == nullptr)
+    return EnqueueResult::rejected(
+        Status::Internal("command capture launch table changed"));
+  return table->launch(backend_context, backend_queue, call.state);
+}
+} // namespace
 
 CapturedCommands::CapturedCommands(CapturedCommands &&other) noexcept
     : extension_(std::move(other.extension_)), table_(other.table_),
@@ -43,25 +58,18 @@ EnqueueResult CapturedCommands::enqueue(QueueSequence &sequence) noexcept {
     return EnqueueResult::rejected(
         Status::FailedPrecondition("captured compute commands are invalid"));
   }
-  struct Episode final {
-    const CommandCaptureVTable *expected = nullptr;
-    void *state = nullptr;
-  } episode{table_, state_};
+  CaptureLaunch episode{table_, state_};
   return BackendExtensionAccess::enqueue_admitted(
-      extension_, sequence,
-      +[](void *backend_context, const void *interface_value,
-          void *backend_queue, void *opaque) noexcept -> EnqueueResult {
-        auto &call = *static_cast<Episode *>(opaque);
-        const auto *table =
-            static_cast<const CommandCaptureVTable *>(interface_value);
-        if (table != call.expected || table == nullptr ||
-            table->launch == nullptr) {
-          return EnqueueResult::rejected(
-              Status::Internal("command capture launch table changed"));
-        }
-        return table->launch(backend_context, backend_queue, call.state);
-      },
-      &episode);
+      extension_, sequence, &launch_captured, &episode);
+}
+
+EnqueueResult CapturedCommands::enqueue_borrowed(Queue &queue) noexcept {
+  if (!valid())
+    return EnqueueResult::rejected(
+        Status::FailedPrecondition("captured compute commands are invalid"));
+  CaptureLaunch episode{table_, state_};
+  return BackendExtensionAccess::enqueue_borrowed(
+      extension_, queue, &launch_captured, &episode);
 }
 
 Result<BackendExtensionRef>

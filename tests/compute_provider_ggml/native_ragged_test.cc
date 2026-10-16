@@ -104,6 +104,7 @@ template<class T>void runtime_ragged_q1(bool encoded,unsigned depth,unsigned val
     EXPECT_EQ(slot.report().reused_native_plan,reuse);
     if(reuse){EXPECT_EQ(fault.attempts,before);EXPECT_EQ(slot.report().float_workspace_bytes,workspace);}
     workspace=slot.report().float_workspace_bytes;previous=q;
+    if(step==0){const auto attempts=fault.attempts;EXPECT_TRUE(prepared->prepare_replay(inputs).IsUnimplemented());EXPECT_EQ(fault.attempts,attempts);}
     auto done=prepared->run(inputs);ASSERT_TRUE(done)<<done.error().message();ASSERT_TRUE(done->wait().ok());
     auto output=slot.output().value();*done={};*prepared={};EXPECT_FALSE(slot.update_batch(layout));
     std::vector<T> actual(2*8*value_depth);ASSERT_TRUE(output.view()->read(std::as_writable_bytes(std::span(actual))).ok());

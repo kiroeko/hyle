@@ -1,4 +1,5 @@
 #include "hyle/graph/executable.h"
+#include "hyle/graph/detail/region_access.h"
 #include "hyle/graph/native_variants.h"
 
 #include "hyle/obs/trace.h"
@@ -7366,6 +7367,32 @@ std::optional<std::size_t> Invocation::exact_variant_index() const noexcept {
 bool Invocation::in_flight() const noexcept {
   return state_ != nullptr && state_->phase.load(std::memory_order_acquire) ==
                                   detail::InvocationPhase::kRunning;
+}
+
+Status detail::RegionAccess::visit_bound(Invocation &invocation,
+                                        detail::RegionAccessFn callback,
+                                        void *user) noexcept {
+  auto *state = detail::InvocationAccess::state(invocation);
+  if (state == nullptr || callback == nullptr)
+    return Status::InvalidArgument("bound region access requires an invocation and callback");
+  if (state->phase.load(std::memory_order_acquire) != detail::InvocationPhase::kIdle)
+    return Status::FailedPrecondition("region access requires an idle successful invocation");
+  HYLE_RETURN_IF_ERROR(prepare_invocation_bindings(*state));
+  struct Call final {
+    detail::InvocationState *state;
+    detail::RegionAccessFn callback;
+    void *user;
+  } call{state, callback, user};
+  return visit(invocation, +[](void *opaque, const detail::RegionAccessView &view) noexcept -> Status {
+    auto &call = *static_cast<Call *>(opaque);
+    const auto &step = call.state->plan->steps[view.step];
+    auto bound = view;
+    bound.inputs = std::span<const compute::ConstTensorView>(call.state->submission_inputs.data(),
+        call.state->submission_inputs.size()).subspan(step.input_begin, step.input_count);
+    bound.outputs = std::span<const compute::TensorView>(call.state->submission_outputs.data(),
+        call.state->submission_outputs.size()).subspan(step.output_begin, step.output_count);
+    return call.callback(call.user, bound);
+  }, &call);
 }
 
 Status Invocation::reset() noexcept {

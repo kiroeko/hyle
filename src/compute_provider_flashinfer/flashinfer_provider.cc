@@ -245,7 +245,7 @@ Result<bool> update_batch_slot(void*opaque,const BatchLayoutVersion&layout,Batch
   slot.layout=layout;slot.generation=layout.generation();*report=slot.report;report->layout_generation=slot.generation;report->reused_native_plan=true;
   slot.report=*report;return true;
 }
-const detail::BatchProviderVTable kBatchVTable{&qualify_batch,&create_batch_slot,&destroy_batch_slot,&update_batch_slot,&plan_batch_slot,&run_batch_slot};
+const detail::BatchProviderVTable kBatchVTable{&qualify_batch,&create_batch_slot,&destroy_batch_slot,&update_batch_slot,&plan_batch_slot,&run_batch_slot,true};
 const void*query_extension(void*,ProviderExtensionId id)noexcept{return id==detail::kBatchPlanningExtensionId?&kBatchVTable:nullptr;}
 
 struct Prepared final {

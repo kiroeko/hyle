@@ -66,14 +66,33 @@ Status run(bool host_receiver){
     const std::array inputs{rq,rk,rv};
     HYLE_ASSIGN_OR_RETURN(auto done,prepared.run(inputs));HYLE_RETURN_IF_ERROR(done.wait());
   }
-  HYLE_ASSIGN_OR_RETURN(auto receiver,c::PagedBatchReceiver::create(std::move(native),4));
-  HYLE_RETURN_IF_ERROR(receiver.prepare_batch(layout));
   HYLE_ASSIGN_OR_RETURN(auto keys,c::PagedArena::create(schema,c::BatchCacheRole::kKey,resource,{.max_backing_bytes=8192}));
   HYLE_ASSIGN_OR_RETURN(auto values,c::PagedArena::create(schema,c::BatchCacheRole::kValue,resource,{.max_backing_bytes=8192}));
   HYLE_ASSIGN_OR_RETURN(auto kw,keys.acquire(1));HYLE_ASSIGN_OR_RETURN(auto vw,values.acquire(1));
   HYLE_ASSIGN_OR_RETURN(auto pool,c::LeasePool::create(resource,1024));
   HYLE_ASSIGN_OR_RETURN(auto q,pool.allocate(256));HYLE_RETURN_IF_ERROR(q.view()->fill(std::byte{0}));
   HYLE_ASSIGN_OR_RETURN(auto query,q.publish());
+#if defined(HYLE_G06_CAPTURE_REPLAY)
+  {
+    HYLE_RETURN_IF_ERROR(kw.lease().view()->fill(std::byte{0}));
+    HYLE_RETURN_IF_ERROR(vw.lease().view()->fill(std::byte{0}));
+    HYLE_ASSIGN_OR_RETURN(auto ready_k,kw.publish(16));
+    HYLE_ASSIGN_OR_RETURN(auto ready_v,vw.publish(16));
+    HYLE_ASSIGN_OR_RETURN(auto kr,keys.read(layout,std::span(&ready_k,1)));
+    HYLE_ASSIGN_OR_RETURN(auto vr,values.read(layout,std::span(&ready_v,1)));
+    HYLE_ASSIGN_OR_RETURN(auto prepared,native.update_batch(layout));
+    HYLE_RETURN_IF_ERROR(prepared.prepare_replay(query,kr,vr));
+  }
+  // An idle capture stores addresses, never page read permission. Reuse the
+  // exact backing pages for the next real producer after dropping all readers.
+  HYLE_ASSIGN_OR_RETURN(kw,keys.acquire(1));
+  HYLE_ASSIGN_OR_RETURN(vw,values.acquire(1));
+#endif
+  HYLE_ASSIGN_OR_RETURN(auto receiver,c::PagedBatchReceiver::create(std::move(native),4));
+  HYLE_RETURN_IF_ERROR(receiver.prepare_batch(layout));
+#if defined(HYLE_G06_CAPTURE_REPLAY)
+  HYLE_RETURN_IF_ERROR(require(receiver.report().capture_compatible,"pending receiver lost inherited native capture"));
+#endif
   HYLE_ASSIGN_OR_RETURN(auto source_pool,c::LeasePool::create(device.ref(),1024));
   HYLE_ASSIGN_OR_RETURN(auto source,source_pool.allocate(512));
   HYLE_ASSIGN_OR_RETURN(auto hp,c::LeasePool::create(host.ref(),1024));HYLE_ASSIGN_OR_RETURN(auto h,hp.allocate(512));

@@ -11,6 +11,10 @@ struct RegionAccessView final {
   void*prepared=nullptr;
   void*invocation=nullptr;
   ExecutionLaneId lane{};
+  // Only visit_bound supplies these original prepared port arrays. Borrowed
+  // for this cold callback; no tensor execution or ready permission is implied.
+  std::span<const compute::ConstTensorView> inputs{};
+  std::span<const compute::TensorView> outputs{};
 };
 using RegionAccessFn=Status(*)(void*,const RegionAccessView&) noexcept;
 struct OrderedGraphSubmission final {
@@ -36,6 +40,10 @@ struct RegionAccess final {
   HYLE_GRAPH_API static Status visit(const Executable&,RegionAccessFn,void*) noexcept;
   HYLE_GRAPH_API static Status visit(Invocation&,RegionAccessFn,void*) noexcept;
   HYLE_GRAPH_API static Status visit(LeasedInvocation&,RegionAccessFn,void*) noexcept;
+  // Requires complete current bindings and the same original idle/result gate.
+  // Uses the invocation's existing preallocated port arrays, without copying.
+  HYLE_GRAPH_API static Status visit_bound(Invocation&,RegionAccessFn,void*) noexcept;
+  HYLE_GRAPH_API static Status visit_bound(LeasedInvocation&,RegionAccessFn,void*) noexcept;
   // Cold opt-in capacity; ordinary leased invocations retain their old cost.
   HYLE_GRAPH_API static Status reserve_reads(LeasedInvocation&,std::uint32_t,
       LeasedInvocationOptions) noexcept;

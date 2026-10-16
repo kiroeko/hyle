@@ -1,6 +1,7 @@
 #include "hyle/compute/batch_execution.h"
 #include "hyle/compute/detail/batch_provider.h"
 #include "hyle/compute/detail/batch_graph_access.h"
+#include "hyle/compute/detail/command_capture.h"
 #include "hyle/compute/detail/paged_arena_access.h"
 #include "hyle/compute/detail/lease_access.h"
 #include "hyle/compute/detail/retained_completion.h"
@@ -29,10 +30,15 @@ struct BatchBuffers final:util::RefCounted<BatchBuffers>{
   void destroy()noexcept{auto*p=program;const auto a=allocator;this->~BatchBuffers();p->invocations.fetch_sub(1,std::memory_order_relaxed);p->decref();a.deallocate(this,sizeof(*this),alignof(BatchBuffers));}
   BatchProgramData*program;mem::AllocatorRef allocator;ProviderExtensionRef provider_owner;LeasePool device,host;
 };
+struct BatchReplay final {
+  CapturedCommands commands;
+  std::array<mem::ConstBufferView,5> bindings{};
+};
 struct BatchInvocationData final:util::RefCounted<BatchInvocationData>{
   explicit BatchInvocationData(BatchProgramData*p):program(p),read_set(p->allocator){p->incref();}
   void destroy()noexcept{
     auto*p=program;const auto a=p->allocator;
+    if(replay)a.destroy(replay);
     if(native)p->table->destroy(native,a);
     if(buffers)buffers->decref();else p->invocations.fetch_sub(1,std::memory_order_relaxed);
     this->~BatchInvocationData();p->decref();
@@ -43,6 +49,7 @@ struct BatchInvocationData final:util::RefCounted<BatchInvocationData>{
     decref();
   }
   BatchProgramData*program;BatchBuffers*buffers=nullptr;Queue*queue=nullptr;void*native=nullptr;
+  BatchReplay*replay=nullptr;
   WriteLease mirror,output,float_workspace,int_workspace,host_workspace,staging;
   ReadLease mirror_ready,output_ready,staging_ready;
   ReadLease graph_shared_metadata;
@@ -90,22 +97,48 @@ Result<d::BatchWorkspaceViews> workspace_views(d::BatchInvocationData&s)noexcept
   HYLE_ASSIGN_OR_RETURN(views.host_workspace,s.host_workspace.view());
   if(s.output.valid()){HYLE_ASSIGN_OR_RETURN(views.output,s.output.view());}return views;
 }
+std::array<mem::ConstBufferView,5> replay_bindings(std::span<const ConstTensorView>inputs,
+    d::BatchWorkspaceViews views)noexcept{
+  return {inputs[0].storage(),inputs[1].storage(),inputs[2].storage(),views.metadata,mem::ConstBufferView(views.output)};
+}
+bool same_storage(mem::ConstBufferView a,mem::ConstBufferView b)noexcept{
+  return a.resource()==b.resource() && a.native_handle()==b.native_handle() && a.offset()==b.offset() && a.size()==b.size();
+}
+bool same_replay(const d::BatchReplay&replay,std::span<const ConstTensorView>inputs,
+    d::BatchWorkspaceViews views)noexcept{
+  const auto bindings=replay_bindings(inputs,views);
+  for(std::size_t i=0;i<bindings.size();++i)if(!same_storage(bindings[i],replay.bindings[i]))return false;
+  return true;
+}
+Status validate_replay_storage(const d::BatchInvocationData&s,std::span<const ConstTensorView>inputs,
+    d::BatchWorkspaceViews views)noexcept{
+  if(s.replay && s.replay->commands.valid() && !same_replay(*s.replay,inputs,views))
+    return Status::FailedPrecondition("batch replay storage changed; explicitly prepare_replay again");
+  return Status::Ok();
+}
+Result<Completion> retain_native(d::BatchInvocationData&s,LeaseUseBatch&&use,Completion&&completion)noexcept{
+  HYLE_FATAL_ASSERT(use.attach(completion).ok());
+  s.incref();s.pending.fetch_add(1,std::memory_order_relaxed);
+  s.native_retention.own={&s,&native_terminal,&native_release};
+  HYLE_FATAL_ASSERT(d::CompletionAccess::attach_retention(completion,s.native_retention).ok());
+  return std::move(completion);
+}
 Result<Completion> finish_native(d::BatchInvocationData&s,bool planning,
     std::span<const ConstTensorView> inputs,d::BatchWorkspaceViews views,
     LeaseUseBatch&&use,d::QueueSequence&sequence)noexcept{
   struct Call{d::BatchInvocationData*state;bool planning;std::span<const ConstTensorView> inputs;d::BatchWorkspaceViews views;}call{&s,planning,inputs,views};
-  if(sequence.terminal().ok())sequence.record(d::ProviderExtensionAccess::enqueue_admitted(s.program->extension,sequence,inputs,{},
-    [](void*,const void*interface_value,void*opaque,Queue&queue)noexcept{
-      const auto&call=*static_cast<Call*>(opaque);auto&state=*call.state;const auto*table=static_cast<const d::BatchProviderVTable*>(interface_value);
-      return call.planning?table->plan(state.native,queue,state.layout,call.views,&state.report):table->run(state.native,queue,call.inputs,call.views);
-    },&call));
-  auto completion=sequence.finish();
-  if(!completion)return std::unexpected(completion.error());
-  HYLE_FATAL_ASSERT(use.attach(*completion).ok());
-  s.incref();s.pending.fetch_add(1,std::memory_order_relaxed);
-  s.native_retention.own={&s,&native_terminal,&native_release};
-  HYLE_FATAL_ASSERT(d::CompletionAccess::attach_retention(*completion,s.native_retention).ok());
-  return std::move(*completion);
+  if(sequence.terminal().ok()){
+    if(!planning && s.replay && s.replay->commands.valid()){
+      const auto valid=validate_replay_storage(s,inputs,views);
+      sequence.record(valid.ok()?s.replay->commands.enqueue(sequence):d::EnqueueResult::rejected(valid));
+    }else sequence.record(d::ProviderExtensionAccess::enqueue_admitted(s.program->extension,sequence,inputs,{},
+      [](void*,const void*interface_value,void*opaque,Queue&queue)noexcept{
+        const auto&call=*static_cast<Call*>(opaque);auto&state=*call.state;const auto*table=static_cast<const d::BatchProviderVTable*>(interface_value);
+        return call.planning?table->plan(state.native,queue,state.layout,call.views,&state.report):table->run(state.native,queue,call.inputs,call.views);
+      },&call));
+  }
+  HYLE_ASSIGN_OR_RETURN(auto completion,sequence.finish());
+  return retain_native(s,std::move(use),std::move(completion));
 }
 Result<Completion> submit_native(d::BatchInvocationData&s,bool planning,
     std::span<const ReadLease> leases,std::span<const ConstTensorView> inputs,d::BatchWorkspaceViews views,
@@ -124,6 +157,74 @@ Result<Completion> submit_native(d::BatchInvocationData&s,bool planning,
   HYLE_ASSIGN_OR_RETURN(auto sequence,d::QueueSequence::begin(*s.queue));
   HYLE_ASSIGN_OR_RETURN(auto completion,finish_native(s,planning,inputs,views,std::move(use),sequence));
   return s.completion.publish(std::move(completion));
+}
+Status capture_batch(d::BatchInvocationData&s,std::span<const ConstTensorView>inputs,
+    d::BatchWorkspaceViews views)noexcept{
+  if(!s.program->table->supports_command_capture || !s.layout.facts().query_rows)
+    return Status::Unimplemented("native batch command capture is not qualified for this provider/empty batch");
+  if(inputs.size()!=3 || s.closed || s.failed || !s.prepared || s.ran)
+    return Status::FailedPrecondition("batch replay needs its live prepared token");
+  if(s.pending.load(std::memory_order_acquire) || s.uses.active_batches() || !s.completion.available())
+    return Status::Unavailable("batch replay has outstanding native work/completion");
+  HYLE_ASSIGN_OR_RETURN(auto extension,d::CommandCaptureAccess::query(*s.queue));
+  if(s.replay && s.replay->commands.valid() && same_replay(*s.replay,inputs,views)){
+    s.report.capture_compatible=true;return Status::Ok();
+  }
+  if(!s.replay){s.replay=s.program->allocator.construct<d::BatchReplay>();
+    if(!s.replay)return Status::ResourceExhausted("batch replay metadata allocation");}
+  // Recording captures argument identities, never tensor execution. Only the
+  // original private workspace/mirror uses are needed through its checked
+  // preparation event; actual Q/K/V/page permissions are admitted at replay.
+  HYLE_ASSIGN_OR_RETURN(auto use,s.uses.begin());
+  HYLE_RETURN_IF_ERROR(use.read(s.graph_shared_metadata.valid()?s.graph_shared_metadata:s.mirror_ready));
+  HYLE_RETURN_IF_ERROR(use.write(s.float_workspace));HYLE_RETURN_IF_ERROR(use.write(s.int_workspace));
+  HYLE_ASSIGN_OR_RETURN(auto sequence,d::QueueSequence::begin(*s.queue));
+  const auto begun=d::CommandCaptureAccess::begin(extension,sequence);
+  if(!begun.ok()){
+    sequence.record(d::EnqueueResult::rejected(begun));
+    auto finished=sequence.finish();return finished?begun:finished.error();
+  }
+  struct Call{d::BatchInvocationData*state;std::span<const ConstTensorView>inputs;d::BatchWorkspaceViews views;}call{&s,inputs,views};
+  sequence.record(d::ProviderExtensionAccess::enqueue_admitted(s.program->extension,sequence,inputs,{},
+    [](void*,const void*interface_value,void*opaque,Queue&queue)noexcept{
+      auto&call=*static_cast<Call*>(opaque);
+      return static_cast<const d::BatchProviderVTable*>(interface_value)->run(call.state->native,queue,call.inputs,call.views);
+    },&call));
+  d::CapturedCommands captured;
+  if(sequence.terminal().ok()){
+    auto ended=d::CommandCaptureAccess::end(extension,sequence,s.program->allocator);
+    if(ended)captured=std::move(*ended);else sequence.record(d::EnqueueResult::rejected(ended.error()));
+  }else{
+    const auto aborted=d::CommandCaptureAccess::abort(extension,sequence);
+    if(!aborted.ok())sequence.record(d::EnqueueResult::rejected(aborted));
+  }
+  const bool accepted=sequence.accepted();
+  auto finished=sequence.finish();
+  if(!finished){if(accepted)s.failed=true;return finished.error();}
+  HYLE_ASSIGN_OR_RETURN(auto retained,retain_native(s,std::move(use),std::move(*finished)));
+  HYLE_ASSIGN_OR_RETURN(auto completion,s.completion.publish(std::move(retained)));
+  const auto terminal=completion.wait();completion={};++s.report.host_waits;
+  if(!terminal.ok() || s.pending.load(std::memory_order_acquire) || s.uses.active_batches()){
+    s.failed=true;return terminal.ok()?Status::Unavailable("batch capture preparation retirement unproven"):terminal;
+  }
+  if(!captured.valid())return Status::Internal("batch capture returned no artifact");
+  s.replay->commands=std::move(captured);s.replay->bindings=replay_bindings(inputs,views);
+  s.report.capture_compatible=true;return Status::Ok();
+}
+Result<d::BatchWorkspaceViews> graph_views(d::BatchInvocationData*s,Queue&queue,
+    std::span<const ConstTensorView>inputs,std::span<const TensorView>outputs)noexcept{
+  if(!s || !s->external_output || s->queue!=&queue || s->closed || s->failed || !s->prepared || s->ran)
+    return std::unexpected(Status::FailedPrecondition("Graph batch token/slot/queue is stale"));
+  if(inputs.size()!=4 || outputs.size()!=1)return std::unexpected(Status::InvalidArgument("Graph batch region port count"));
+  HYLE_ASSIGN_OR_RETURN(auto descriptions,input_descriptions(s->program->schema.capacity()));
+  for(std::size_t i=0;i<3;++i)if(inputs[i].description()!=descriptions[i])
+    return std::unexpected(Status::InvalidArgument("Graph batch input capacity mismatch"));
+  HYLE_ASSIGN_OR_RETURN(auto mirror,(s->graph_shared_metadata.valid()?s->graph_shared_metadata:s->mirror_ready).view());
+  if(!same_storage(inputs[3].storage(),mirror))
+    return std::unexpected(Status::InvalidArgument("Graph batch metadata is not the prepared slot mirror"));
+  HYLE_ASSIGN_OR_RETURN(auto output,batch_output_description(s->program->schema.capacity(),s->program->schema.capacity().max_query_rows));
+  if(outputs[0].description()!=output)return std::unexpected(Status::InvalidArgument("Graph batch output capacity mismatch"));
+  HYLE_ASSIGN_OR_RETURN(auto views,workspace_views(*s));views.metadata=mirror;views.output=outputs[0].storage();return views;
 }
 } // namespace
 BatchProgram::BatchProgram(const BatchProgram&p)noexcept:data_(p.data_){if(data_)data_->incref();}
@@ -287,12 +388,13 @@ Result<PreparedBatch> BatchInvocation::prepare(const BatchLayoutVersion&layout,b
     },&call);if(!status.ok()){s.failed=true;return std::unexpected(status);}reused=call.reused;
   }
   if(!reused){
+    if(s.replay)s.replay->commands.reset();
     auto planned=submit_native(s,true,{}, {},views);
     if(!planned){s.failed=true;return std::unexpected(planned.error());}
     const auto terminal=planned->wait();*planned={};
     if(!terminal.ok() || s.pending.load(std::memory_order_acquire) || s.uses.active_batches()){s.failed=true;return std::unexpected(!terminal.ok()?terminal:Status::Unavailable("batch planning retirement unproven"));}
   }
-  s.report.metadata_upload=upload_report;s.report.metadata_staging_bytes=staging_bytes;s.report.host_waits=upload_waits+(reused?0u:1u);s.report.reused_native_plan=reused;s.prepared=true;
+  s.report.metadata_upload=upload_report;s.report.metadata_staging_bytes=staging_bytes;s.report.host_waits=upload_waits+(reused?0u:1u);s.report.reused_native_plan=reused;s.report.capture_compatible=s.replay && s.replay->commands.valid();s.prepared=true;
   ++s.tickets;++s.users;s.incref();return PreparedBatch(&s,s.epoch);
 }
 bool BatchInvocation::in_flight()const noexcept{return data_ && (data_->pending.load(std::memory_order_acquire) || data_->uses.active_batches() || data_->upload.in_flight());}
@@ -321,6 +423,32 @@ PreparedBatch::PreparedBatch(PreparedBatch&&b)noexcept:data_(std::exchange(b.dat
 PreparedBatch&PreparedBatch::operator=(PreparedBatch&&b)noexcept{if(this!=&b){PreparedBatch old(std::move(*this));data_=std::exchange(b.data_,nullptr);epoch_=b.epoch_;}return *this;}
 PreparedBatch::~PreparedBatch(){if(data_){--data_->tickets;data_->release_user();}}
 std::uint64_t PreparedBatch::generation()const noexcept{return data_?data_->layout.generation():0;}
+Status PreparedBatch::prepare_replay(std::span<const ReadLease>leases)noexcept{
+  auto*s=data_;
+  if(!s || s->external_output || s->closed || s->failed || !s->prepared || s->ran || epoch_!=s->epoch)
+    return Status::FailedPrecondition("batch replay token is closed/stale/already consumed");
+  if(leases.size()!=3)return Status::InvalidArgument("batch replay needs Q/K/V readonly leases");
+  HYLE_ASSIGN_OR_RETURN(auto descriptions,input_descriptions(s->program->schema.capacity()));
+  std::array<ConstTensorView,3>inputs;
+  for(std::size_t i=0;i<3;++i){HYLE_ASSIGN_OR_RETURN(inputs[i],leases[i].tensor(descriptions[i]));}
+  HYLE_ASSIGN_OR_RETURN(auto views,workspace_views(*s));return capture_batch(*s,inputs,views);
+}
+Status PreparedBatch::prepare_replay(const ReadLease&query,const PagedArenaRead&keys,const PagedArenaRead&values)noexcept{
+  auto*s=data_;
+  if(!s || s->external_output || s->closed || s->failed || !s->prepared || s->ran || epoch_!=s->epoch ||
+      s->program->schema.capacity().storage!=BatchStorage::kPaged)
+    return Status::FailedPrecondition("paged batch replay token is closed/stale/already consumed");
+  if(keys.layout()!=s->layout || values.layout()!=s->layout)return Status::InvalidArgument("paged replay layout differs from prepared metadata");
+  const auto capacity=s->program->schema.capacity();
+  HYLE_RETURN_IF_ERROR(d::PagedArenaAccess::validate_storage(keys,capacity.key_storage));
+  HYLE_RETURN_IF_ERROR(d::PagedArenaAccess::validate_storage(values,capacity.value_storage));
+  HYLE_ASSIGN_OR_RETURN(auto descriptions,input_descriptions(capacity));std::array<ConstTensorView,3>inputs;
+  HYLE_ASSIGN_OR_RETURN(inputs[0],query.tensor(descriptions[0]));
+  HYLE_ASSIGN_OR_RETURN(inputs[1],d::PagedArenaAccess::tensor(keys));HYLE_ASSIGN_OR_RETURN(inputs[2],d::PagedArenaAccess::tensor(values));
+  for(std::size_t i=1;i<3;++i)if(inputs[i].description()!=descriptions[i] || inputs[i].storage().resource()!=s->program->options.resource)
+    return Status::InvalidArgument("paged replay capacity/resource differs from native slot");
+  HYLE_ASSIGN_OR_RETURN(auto views,workspace_views(*s));return capture_batch(*s,inputs,views);
+}
 Result<Completion> PreparedBatch::run(std::span<const ReadLease>leases)noexcept{
   if(!data_ || data_->closed || data_->failed || !data_->prepared || data_->ran || epoch_!=data_->epoch)
     return std::unexpected(Status::FailedPrecondition("batch token is closed/stale/already consumed"));
@@ -330,6 +458,7 @@ Result<Completion> PreparedBatch::run(std::span<const ReadLease>leases)noexcept{
   std::array<ConstTensorView,3> inputs;
   for(std::size_t i=0;i<3;++i){HYLE_ASSIGN_OR_RETURN(inputs[i],leases[i].tensor(descriptions[i]));}
   HYLE_ASSIGN_OR_RETURN(auto views,workspace_views(s));
+  HYLE_RETURN_IF_ERROR(validate_replay_storage(s,inputs,views));
   auto submitted=submit_native(s,false,leases,inputs,views);
   if(!submitted){s.failed=true;s.prepared=false;return std::unexpected(submitted.error());}
   s.ran=true;s.prepared=false;return std::move(*submitted);
@@ -352,6 +481,7 @@ Result<Completion> PreparedBatch::run(const ReadLease&query,const PagedArenaRead
   for(std::size_t i=1;i<3;++i)if(inputs[i].description()!=descriptions[i] || inputs[i].storage().resource()!=s.program->options.resource)
     return std::unexpected(Status::InvalidArgument("paged arena capacity/resource differs from native slot"));
   HYLE_ASSIGN_OR_RETURN(auto views,workspace_views(s));const std::array ordinary{query};
+  HYLE_RETURN_IF_ERROR(validate_replay_storage(s,inputs,views));
   auto submitted=submit_native(s,false,ordinary,inputs,views,d::PagedArenaAccess::pages(keys),d::PagedArenaAccess::pages(values));
   if(!submitted){s.failed=true;s.prepared=false;return std::unexpected(submitted.error());}s.ran=true;s.prepared=false;return std::move(*submitted);
 }
@@ -465,21 +595,28 @@ Result<PreparedBatch> d::BatchGraphAccess::prepare_shared(BatchInvocation&target
 void d::BatchGraphAccess::clear_shared_metadata(BatchInvocation&invocation)noexcept{
   if(invocation.data_)invocation.data_->graph_shared_metadata.reset();
 }
+Status d::BatchGraphAccess::prepare_replay(PreparedBatch&token,Queue&queue,
+    std::span<const ConstTensorView>inputs,std::span<const TensorView>outputs)noexcept{
+  if(!token.data_ || token.epoch_!=token.data_->epoch)return Status::FailedPrecondition("Graph batch replay token is stale");
+  HYLE_ASSIGN_OR_RETURN(auto views,graph_views(token.data_,queue,inputs,outputs));
+  return capture_batch(*token.data_,inputs.first(3),views);
+}
+Status d::BatchGraphAccess::validate_replay(PreparedBatch&token,Queue&queue,
+    std::span<const ConstTensorView>inputs,std::span<const TensorView>outputs)noexcept{
+  if(!token.data_ || token.epoch_!=token.data_->epoch)return Status::FailedPrecondition("Graph batch replay token is stale");
+  HYLE_ASSIGN_OR_RETURN(auto views,graph_views(token.data_,queue,inputs,outputs));
+  if(!token.data_->replay || !token.data_->replay->commands.valid())
+    return Status::FailedPrecondition("Graph batch replay needs explicit preparation");
+  return validate_replay_storage(*token.data_,inputs.first(3),views);
+}
 d::EnqueueResult d::BatchGraphAccess::enqueue(PreparedBatch&token,Queue&queue,std::span<const ConstTensorView>inputs,std::span<const TensorView>outputs)noexcept{
   auto*s=token.data_;
-  if(!s || !s->external_output || s->queue!=&queue || s->closed || s->failed || !s->prepared || s->ran || token.epoch_!=s->epoch)
-    return EnqueueResult::rejected(Status::FailedPrecondition("Graph batch token/slot/queue is stale"));
-  if(inputs.size()!=4 || outputs.size()!=1)return EnqueueResult::rejected(Status::InvalidArgument("Graph batch region port count"));
-  auto descriptions=input_descriptions(s->program->schema.capacity());if(!descriptions)return EnqueueResult::rejected(descriptions.error());
-  for(std::size_t i=0;i<3;++i)if(inputs[i].description()!=(*descriptions)[i])return EnqueueResult::rejected(Status::InvalidArgument("Graph batch input capacity mismatch"));
-  auto mirror=(s->graph_shared_metadata.valid()?s->graph_shared_metadata:s->mirror_ready).view();if(!mirror)return EnqueueResult::rejected(mirror.error());const auto supplied=inputs[3].storage();
-  if(supplied.resource()!=mirror->resource() || supplied.native_handle()!=mirror->native_handle() || supplied.offset()!=mirror->offset() || supplied.size()!=mirror->size())
-    return EnqueueResult::rejected(Status::InvalidArgument("Graph batch metadata is not the prepared slot mirror"));
-  auto output=batch_output_description(s->program->schema.capacity(),s->program->schema.capacity().max_query_rows);
-  if(!output)return EnqueueResult::rejected(output.error());
-  if(outputs[0].description()!=*output)return EnqueueResult::rejected(Status::InvalidArgument("Graph batch output capacity mismatch"));
-  auto views=workspace_views(*s);if(!views)return EnqueueResult::rejected(views.error());views->metadata=*mirror;views->output=outputs[0].storage();
-  auto enqueued=s->program->table->run(s->native,queue,inputs.first(3),*views);
+  if(!s || token.epoch_!=s->epoch)return EnqueueResult::rejected(Status::FailedPrecondition("Graph batch token/slot/queue is stale"));
+  auto views=graph_views(s,queue,inputs,outputs);if(!views)return EnqueueResult::rejected(views.error());
+  const auto valid=validate_replay_storage(*s,inputs.first(3),*views);
+  if(!valid.ok())return EnqueueResult::rejected(valid);
+  auto enqueued=s->replay && s->replay->commands.valid()?s->replay->commands.enqueue_borrowed(queue):
+      s->program->table->run(s->native,queue,inputs.first(3),*views);
   s->prepared=false;s->ran=true;return enqueued;
 }
 } // namespace hyle::compute

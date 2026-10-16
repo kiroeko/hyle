@@ -62,6 +62,14 @@ Status RegionAccess::visit(LeasedInvocation&invocation,RegionAccessFn callback,v
   return visit(state->invocation,callback,user);
 }
 
+Status RegionAccess::visit_bound(LeasedInvocation&invocation,RegionAccessFn callback,void*user)noexcept{
+  auto*state=invocation.state_;
+  if(!state)return Status::FailedPrecondition("leased region invocation is empty");
+  if(state->closed || state->busy.load(std::memory_order_acquire) || state->results.load(std::memory_order_acquire) ||
+     !state->completion.available())return Status::Unavailable("leased region has closed/busy/old output/completion ownership");
+  return visit_bound(state->invocation,callback,user);
+}
+
 void release_owner(LeasedInvocationState *state) noexcept {
   bool last;
   {

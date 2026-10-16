@@ -317,7 +317,15 @@ detail::EnqueueResult detail::BackendExtensionAccess::enqueue_admitted(
     return EnqueueResult::rejected(
         Status::FailedPrecondition("compute queue sequence is invalid"));
   }
-  Queue &queue = sequence.queue();
+  return enqueue_borrowed(extension, sequence.queue(), function, call_context);
+}
+
+detail::EnqueueResult detail::BackendExtensionAccess::enqueue_borrowed(
+    const BackendExtensionRef &extension, Queue &queue,
+    BackendExtensionEnqueueFn function, void *call_context) noexcept {
+  if (!extension.valid() || function == nullptr)
+    return EnqueueResult::rejected(
+        Status::InvalidArgument("compute backend extension submit is invalid"));
   detail::QueueState *state = detail::ContextAccess::state(queue);
   if (state == nullptr || state->context != extension.owner_) {
     return EnqueueResult::rejected(Status::InvalidArgument(

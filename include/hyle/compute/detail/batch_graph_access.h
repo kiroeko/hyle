@@ -13,6 +13,11 @@ struct BatchGraphAccess final {
   HYLE_COMPUTE_BATCH_API static Result<PreparedBatch> prepare_shared(BatchInvocation&,
       const BatchLayoutVersion&,bool update,const BatchInvocation&) noexcept;
   HYLE_COMPUTE_BATCH_API static void clear_shared_metadata(BatchInvocation&) noexcept;
+  // Cold Graph owns these exact bound ports; recording executes no tensors.
+  HYLE_COMPUTE_BATCH_API static Status prepare_replay(PreparedBatch&,Queue&,
+      std::span<const ConstTensorView>,std::span<const TensorView>) noexcept;
+  HYLE_COMPUTE_BATCH_API static Status validate_replay(PreparedBatch&,Queue&,
+      std::span<const ConstTensorView>,std::span<const TensorView>) noexcept;
   HYLE_COMPUTE_BATCH_API static EnqueueResult enqueue(PreparedBatch&,Queue&,std::span<const ConstTensorView>,std::span<const TensorView>) noexcept;
 };
 } // namespace hyle::compute::detail

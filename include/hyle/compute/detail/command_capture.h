@@ -42,6 +42,9 @@ public:
   }
   explicit operator bool() const noexcept { return valid(); }
   HYLE_COMPUTE_API EnqueueResult enqueue(QueueSequence &sequence) noexcept;
+  // Trusted already-admitted provider/Graph callback. Its original sequence
+  // owns the accepted prefix and retains this artifact through retirement.
+  HYLE_COMPUTE_API EnqueueResult enqueue_borrowed(Queue &queue) noexcept;
   HYLE_COMPUTE_API void reset() noexcept;
 
 private:

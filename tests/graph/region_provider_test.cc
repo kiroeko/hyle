@@ -4326,6 +4326,28 @@ TEST(GraphRegions, PreparedReplayChecksReplacedQueueOwnerAndClosedContext) {
   EXPECT_EQ(probe.submit_count, 1u);
 }
 
+TEST(GraphRegions, BorrowedCaptureLaunchUsesOriginalAdmissionAndRejectsForeignContext) {
+  namespace cd=hyle::compute::detail;
+  RegionProbe probe{.mode=ProposalMode::kAsyncPairs};probe.capture_supported=true;
+  Context context=make_context(probe);Queue queue=context.create_queue().value();
+  auto extension=cd::CommandCaptureAccess::query(queue);ASSERT_TRUE(extension);
+  auto recording=cd::QueueSequence::begin(queue);ASSERT_TRUE(recording);
+  ASSERT_TRUE(cd::CommandCaptureAccess::begin(*extension,*recording).ok());
+  auto captured=cd::CommandCaptureAccess::end(*extension,*recording,hyle::mem::system_allocator());
+  ASSERT_TRUE(captured);auto recorded=recording->finish();ASSERT_TRUE(recorded);
+  ASSERT_TRUE(recorded->wait().ok());
+  RegionProbe foreign_probe{.mode=ProposalMode::kAsyncPairs};foreign_probe.capture_supported=true;
+  Context foreign=make_context(foreign_probe);Queue foreign_queue=foreign.create_queue().value();
+  auto foreign_sequence=cd::QueueSequence::begin(foreign_queue);ASSERT_TRUE(foreign_sequence);
+  const auto rejected=captured->enqueue_borrowed(foreign_queue);
+  EXPECT_TRUE(rejected.status.IsInvalidArgument());EXPECT_EQ(probe.capture_launch_count,0u);
+  auto foreign_done=foreign_sequence->finish();ASSERT_TRUE(foreign_done);ASSERT_TRUE(foreign_done->wait().ok());
+  auto admitted=cd::QueueSequence::begin(queue);ASSERT_TRUE(admitted);
+  admitted->record(captured->enqueue_borrowed(queue));
+  auto done=admitted->finish();ASSERT_TRUE(done);ASSERT_TRUE(done->wait().ok());
+  EXPECT_EQ(probe.capture_launch_count,1u);captured->reset();EXPECT_EQ(probe.capture_destroy_count,1u);
+}
+
 TEST(GraphRegions, CapturesAndReplaysACommandSegmentWithoutRewalkingItsSteps) {
   RegionProbe probe{.mode = ProposalMode::kAsyncPairs};
   probe.capture_supported = true;
@@ -4345,6 +4367,17 @@ TEST(GraphRegions, CapturesAndReplaysACommandSegmentWithoutRewalkingItsSteps) {
   OwnedTensor output = make_tensor(row(8));
   ASSERT_TRUE(invocation.bind(logical.input, input.view).ok());
   ASSERT_TRUE(invocation.bind(logical.output, output.view).ok());
+  struct BoundPorts { const OwnedTensor* input; const OwnedTensor* output; unsigned count=0; } bound{&input,&output};
+  const auto visitor=+[](void* opaque,const hyle::graph::detail::RegionAccessView& view) noexcept -> Status {
+    auto& bound=*static_cast<BoundPorts*>(opaque);
+    if(view.inputs.size()!=1 || view.outputs.size()!=1 ||
+       view.inputs[0].storage().native_handle()!=bound.input->view.storage().native_handle() ||
+       view.outputs[0].storage().native_handle()!=bound.output->view.storage().native_handle())
+      return Status::Internal("bound visitor lost actual region ports");
+    ++bound.count;return Status::Ok();
+  };
+  ASSERT_TRUE(hyle::graph::detail::RegionAccess::visit_bound(invocation,visitor,&bound).ok());
+  EXPECT_EQ(bound.count,1u);EXPECT_EQ(probe.submit_count,0u);
   Queue queue = context.create_queue().value();
   const std::array queues{
       hyle::graph::QueueBinding{.lane = environment.lane(0), .queue = &queue}};

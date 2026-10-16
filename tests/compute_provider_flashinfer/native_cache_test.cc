@@ -173,7 +173,7 @@ template<class T>void boxed_case(bool paged,bool quantized,unsigned depth,unsign
 // These episodes exercise that actual table on both sides of its boundary;
 // the expected reuse decisions do not call the implementation's predicate.
 template<class T>void runtime_schedule(bool paged,bool fp8,unsigned depth,unsigned value_depth,
-                                      int window,unsigned mode){
+                                      int window,unsigned mode,bool captured=false){
   hyle_f5_fault_fixture::Allocator fault;
   {
   const auto type=half_test::data_type<T>();const bool causal=depth!=128;
@@ -264,7 +264,6 @@ template<class T>void runtime_schedule(bool paged,bool fp8,unsigned depth,unsign
       }
       return prepared.run(std::array{query,key,value});
     };
-    if(step==0){initial=layout;auto prepared=other.prepare_batch(layout).value();auto done=run(prepared).value();ASSERT_TRUE(done.wait().ok());retained=other.output().value();}
     const bool reuse=step!=0 && step!=48 && step!=56 && (window>=0 || (step!=16 && step!=32));
     const auto before=fault.attempts;if(reuse)fault.fail=before;
     auto prepared=slot.update_batch(layout);fault.fail=SIZE_MAX;ASSERT_TRUE(prepared)<<prepared.error().message();
@@ -272,7 +271,41 @@ template<class T>void runtime_schedule(bool paged,bool fp8,unsigned depth,unsign
     if(reuse){EXPECT_EQ(fault.attempts,before);EXPECT_EQ(report.float_workspace_bytes,previous.float_workspace_bytes);
       EXPECT_EQ(report.int_workspace_bytes,previous.int_workspace_bytes);EXPECT_EQ(report.padded_batch_size,previous.padded_batch_size);
       EXPECT_EQ(report.host_waits,report.metadata_upload.physical_bytes?1u:0u);}
-    previous=report;auto done=run(*prepared);ASSERT_TRUE(done)<<done.error().message();ASSERT_TRUE(done->wait().ok());
+    if(captured){
+      const auto prepare_capture=[&](){
+        if(paged){auto selected=ids;std::sort(selected.begin(),selected.end());selected.erase(std::unique(selected.begin(),selected.end()),selected.end());
+          std::vector<c::ReadLease> keys,values;for(auto page:selected){keys.push_back(key_pages[page]);values.push_back(value_pages[page]);}
+          auto kr=ka.read(layout,keys).value(),vr=va.read(layout,values).value();return prepared->prepare_replay(query,kr,vr);}
+        return prepared->prepare_replay(std::array{query,key,value});
+      };
+      if(step==0){
+        fault.fail=fault.attempts;const auto rejected=prepare_capture();fault.fail=SIZE_MAX;
+        ASSERT_TRUE(rejected.IsResourceExhausted())<<rejected.message();
+        EXPECT_FALSE(slot.report().capture_compatible);
+      }
+      const auto before_capture=fault.attempts;const bool kept=reuse && previous.capture_compatible;
+      if(kept)fault.fail=before_capture;
+      const auto status=prepare_capture();fault.fail=SIZE_MAX;
+      ASSERT_TRUE(status.ok())<<status.message();EXPECT_TRUE(slot.report().capture_compatible);
+      if(kept)EXPECT_EQ(fault.attempts,before_capture);
+      EXPECT_EQ(slot.report().host_waits,report.host_waits+(kept?0u:1u));
+      if(step==0 && !paged && !fp8 && depth==64 && mode==1 && type==c::DataType::kFloat16){
+        auto replacement_pool=c::LeasePool::create(memory.ref(),qwords.size()*sizeof(T)+256).value();
+        auto writer=replacement_pool.allocate(qwords.size()*sizeof(T)).value();
+        ASSERT_TRUE(writer.view()->write(std::as_bytes(std::span(qwords))).ok());
+        auto replacement=writer.publish().value();const std::array changed{replacement,key,value};
+        const auto rejected=prepared->run(changed);
+        ASSERT_FALSE(rejected);EXPECT_TRUE(rejected.error().IsFailedPrecondition());
+        const auto waits=slot.report().host_waits;
+        ASSERT_TRUE(prepared->prepare_replay(changed).ok());
+        EXPECT_EQ(slot.report().host_waits,waits+1);
+        ASSERT_TRUE(prepare_capture().ok());EXPECT_EQ(slot.report().host_waits,waits+2);
+      }
+    }
+    // Capture first, before another slot executes a tensor kernel: a separate
+    // fresh-process run of this test proves genuinely cold native recording.
+    if(step==0){initial=layout;auto reference=other.prepare_batch(layout).value();auto done=run(reference).value();ASSERT_TRUE(done.wait().ok());retained=other.output().value();}
+    previous=slot.report();auto done=run(*prepared);ASSERT_TRUE(done)<<done.error().message();ASSERT_TRUE(done->wait().ok());
     auto output=slot.output().value();*done={};*prepared={};EXPECT_FALSE(slot.update_batch(layout));
     verify(output,layout);verify(retained,initial);
   }
@@ -286,6 +319,14 @@ TEST(FlashinferCache, RuntimeScheduleReusesActualTilesAcrossKvExtents){
     for(unsigned mode:{1u,2u}){runtime_schedule<F16>(paged,fp8,64,64,-1,mode);runtime_schedule<BF16>(paged,fp8,64,64,-1,mode);}
     runtime_schedule<F16>(paged,fp8,128,128,-1,2);runtime_schedule<BF16>(paged,fp8,256,256,-1,2);
     runtime_schedule<F16>(paged,fp8,64,128,16,2);runtime_schedule<BF16>(paged,fp8,64,128,-1,18);
+  }
+}
+TEST(FlashinferBatchReplay, ColdRecordAndRuntimeSchedule){
+  using F16=hyle::simd::float16_t;using BF16=hyle::simd::bfloat16_t;
+  for(bool paged:{false,true})for(bool fp8:{false,true}){
+    for(unsigned mode:{1u,2u}){runtime_schedule<F16>(paged,fp8,64,64,-1,mode,true);runtime_schedule<BF16>(paged,fp8,64,64,-1,mode,true);}
+    runtime_schedule<F16>(paged,fp8,128,128,-1,2,true);runtime_schedule<BF16>(paged,fp8,256,256,-1,2,true);
+    runtime_schedule<F16>(paged,fp8,64,128,16,2,true);runtime_schedule<BF16>(paged,fp8,64,128,-1,18,true);
   }
 }
 TEST(FlashinferCache, EmptyRequestsAndAllZeroQueriesUseCheckedNoOp){
@@ -316,6 +357,7 @@ TEST(FlashinferCache, EmptyRequestsAndAllZeroQueriesUseCheckedNoOp){
         HYLE_ASSIGN_OR_RETURN(auto layout,schema.version({ptr,ptr,{},tails}));
         HYLE_ASSIGN_OR_RETURN(auto prepared,slot.update_batch(layout));
         EXPECT_EQ(slot.report().float_workspace_bytes,0u);EXPECT_EQ(slot.report().int_workspace_bytes,0u);
+        EXPECT_TRUE(prepared.prepare_replay(inputs).IsUnimplemented());
         if(paged){
           HYLE_ASSIGN_OR_RETURN(auto ka,c::PagedArena::create(schema,c::BatchCacheRole::kKey,memory.ref(),{.max_backing_bytes=4160}));
           HYLE_ASSIGN_OR_RETURN(auto va,c::PagedArena::create(schema,c::BatchCacheRole::kValue,memory.ref(),{.max_backing_bytes=4160}));

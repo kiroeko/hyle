@@ -127,6 +127,7 @@ struct InvocationData final {
   explicit InvocationData(mem::AllocatorRef a):allocator(a),queues(mem::StdAllocator<QueueBinding>(a)),bindings(mem::StdAllocator<Binding>(a)){}
   mem::AllocatorRef allocator;LeasedInvocation original;
   ReplayOptions replay{};
+  bool replay_requested=false;
   std::vector<QueueBinding,mem::StdAllocator<QueueBinding>>queues;
   std::vector<Binding,mem::StdAllocator<Binding>>bindings;
 };
@@ -160,6 +161,21 @@ struct PendingInvocationData final:util::RefCounted<PendingInvocationData>{
 };
 void destroy(InvocationData*p)noexcept{if(p){const auto allocator=p->allocator;allocator.destroy(p);}}
 } // namespace detail
+namespace {
+Status batch_replay(detail::InvocationData&data,bool record)noexcept{
+  struct Call{detail::InvocationData*data;bool record;}call{&data,record};
+  return gd::RegionAccess::visit_bound(data.original,[](void*opaque,const gd::RegionAccessView&view)noexcept->Status{
+    if(view.owner->provider().id!=kProviderId)return Status::Ok();
+    auto&call=*static_cast<Call*>(opaque);auto&r=*static_cast<Region*>(view.prepared);auto&s=*static_cast<Slot*>(view.invocation);
+    const auto queued=std::find_if(call.data->queues.begin(),call.data->queues.end(),[&](const auto&binding){return binding.lane==view.lane;});
+    if(queued==call.data->queues.end() || !queued->queue)return Status::InvalidArgument("batch replay lane has no original Queue");
+    if(view.inputs.size()!=4 || view.outputs.size()!=1)return Status::InvalidArgument("batch replay needs its actual bound region ports");
+    std::array<c::ConstTensorView,4>ordered;for(std::size_t i=0;i<4;++i)ordered[i]=view.inputs[r.inputs[i]];
+    return call.record?cd::BatchGraphAccess::prepare_replay(s.token,*queued->queue,ordered,view.outputs):
+        cd::BatchGraphAccess::validate_replay(s.token,*queued->queue,ordered,view.outputs);
+  },&call);
+}
+} // namespace
 Result<MaterializedGraph> materialized_graph(const c::MaterializedBatchProgram&program,GraphBuilderOptions options)noexcept{
   if(!program.valid())return std::unexpected(Status::InvalidArgument("materialized Graph program is empty"));
   HYLE_ASSIGN_OR_RETURN(auto builder,GraphBuilder::create(options));MaterializedGraph result;
@@ -254,8 +270,13 @@ Status Invocation::bind(ValueId value,c::PagedArenaRead frame)noexcept{
   for(auto&b:data_->bindings){if(b.region->values[1]==value)b.slot->keys=frame;if(b.region->values[2]==value)b.slot->values=frame;}
   return Status::Ok();
 }
+Status Invocation::prepare_replay()noexcept{
+  if(!data_)return Status::FailedPrecondition("Graph batch coordinator is empty");
+  HYLE_RETURN_IF_ERROR(batch_replay(*data_,true));data_->replay_requested=true;return Status::Ok();
+}
 Result<c::Completion> Invocation::submit()noexcept{
   if(!data_)return std::unexpected(Status::FailedPrecondition("Graph batch coordinator is empty"));
+  if(data_->replay_requested)HYLE_RETURN_IF_ERROR(batch_replay(*data_,false));
   if(data_->original.replay_route()==ReplayRoute::kUnprepared)HYLE_RETURN_IF_ERROR(data_->original.prepare_replay(data_->queues,data_->replay));
   return data_->original.submit(data_->queues);
 }
@@ -358,6 +379,7 @@ Result<c::Completion> PendingInvocation::submit(c::CopyBatchUpdate&&update)noexc
   if(p.inputs.empty() || p.submitted)return std::unexpected(Status::FailedPrecondition("pending Graph has no unconsumed page inputs"));
   for(const auto&input:p.inputs)
     HYLE_RETURN_IF_ERROR((cd::PagedArenaAccess::validate<c::CopyBatchUpdate,cd::CopyStreamAccess>(input.frame,update)));
+  if(original.replay_requested)HYLE_RETURN_IF_ERROR(batch_replay(original,false));
   if(original.original.replay_route()==ReplayRoute::kUnprepared)
     HYLE_RETURN_IF_ERROR(original.original.prepare_replay(original.queues,original.replay));
   HYLE_ASSIGN_OR_RETURN(p.sources,p.source.take(std::move(update)));

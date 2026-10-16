@@ -100,6 +100,14 @@ public:
   HYLE_COMPUTE_BATCH_API ~PreparedBatch();
   bool valid() const noexcept{return data_!=nullptr;}
   HYLE_COMPUTE_BATCH_API std::uint64_t generation() const noexcept;
+  // Explicit cold recording over these exact storage identities. Does not
+  // execute tensors or consume this token. Reuses an existing capture only
+  // while native plan and Q/K/V, metadata and output storage stay unchanged.
+  // Original input/page permissions are admitted again on every actual run;
+  // idle captures do not retain them. Unsupported/empty capture rejects here.
+  HYLE_COMPUTE_BATCH_API Status prepare_replay(std::span<const ReadLease> inputs) noexcept;
+  HYLE_COMPUTE_BATCH_API Status prepare_replay(const ReadLease&query,
+      const PagedArenaRead&keys,const PagedArenaRead&values) noexcept;
   // Q/K/V exact capacity descriptions; actual rows are from this layout.
   // Runs this prepared plan once. No plan/JIT/metadata reread occurs here.
   HYLE_COMPUTE_BATCH_API Result<Completion> run(std::span<const ReadLease> inputs) noexcept;

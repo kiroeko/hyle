@@ -147,6 +147,10 @@ public:
   // capacity cannot be published or consumed by ordinary dense operations.
   HYLE_GRAPH_BATCH_API Status bind(ValueId,compute::PagedArenaRead) noexcept;
   HYLE_GRAPH_BATCH_API Status bind(ValueId,compute::TensorDesc,compute::WriteLease&&) noexcept;
+  // Explicit cold capture of selected native batch regions using current bound
+  // storage. Outer Graph/CPU stages keep their original command replay route.
+  // After native-plan/storage changes call again; submit never records capture.
+  HYLE_GRAPH_BATCH_API Status prepare_replay() noexcept;
   HYLE_GRAPH_BATCH_API Result<compute::Completion> submit() noexcept;
   HYLE_GRAPH_BATCH_API Result<LeasedGraphOutput> output(ValueId) noexcept;
   HYLE_GRAPH_BATCH_API Result<compute::BatchPlanReport> report(NodeId) const noexcept;

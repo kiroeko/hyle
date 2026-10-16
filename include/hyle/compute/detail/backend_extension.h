@@ -63,6 +63,13 @@ struct BackendExtensionAccess final {
   submit(const BackendExtensionRef &extension, Queue &queue,
          BackendExtensionEnqueueFn function, void *call_context) noexcept;
 
+  // Trusted provider/Graph callback only: caller already owns this Queue's
+  // original admitted sequence and records the returned accepted prefix there.
+  // Does not open admission, begin a nested sequence or create a Completion.
+  HYLE_COMPUTE_API static EnqueueResult enqueue_borrowed(
+      const BackendExtensionRef &extension, Queue &queue,
+      BackendExtensionEnqueueFn function, void *call_context) noexcept;
+
   HYLE_COMPUTE_API static EnqueueResult enqueue_admitted(
       const BackendExtensionRef &extension, QueueSequence &sequence,
       BackendExtensionEnqueueFn function, void *call_context) noexcept;

@@ -133,6 +133,10 @@ Status exercise(bool paged, bool bf16) {
   HYLE_ASSIGN_OR_RETURN(auto rv, load(pool, v));
   const std::array leases{rq, rk, rv};
   HYLE_ASSIGN_OR_RETURN(auto prepared, direct.prepare_batch(layout));
+#if defined(HYLE_G06_CAPTURE_REPLAY)
+  HYLE_RETURN_IF_ERROR(prepared.prepare_replay(leases));
+  HYLE_RETURN_IF_ERROR(check(direct.report().capture_compatible,"public Direct batch capture not prepared"));
+#endif
   HYLE_ASSIGN_OR_RETURN(auto done, prepared.run(leases));
   HYLE_RETURN_IF_ERROR(done.wait());
   HYLE_ASSIGN_OR_RETURN(auto direct_output, direct.output());
@@ -164,6 +168,9 @@ Status exercise(bool paged, bool bf16) {
   for (unsigned i = 0; i < leases.size(); ++i) HYLE_RETURN_IF_ERROR(invocation.bind(inputs[i], descriptions[i], leases[i]));
   HYLE_ASSIGN_OR_RETURN(auto writer, pool.allocate(q.size() * 2));
   HYLE_RETURN_IF_ERROR(invocation.bind(output_id, qdesc, std::move(writer)));
+#if defined(HYLE_G06_CAPTURE_REPLAY)
+  HYLE_RETURN_IF_ERROR(invocation.prepare_replay());
+#endif
   HYLE_ASSIGN_OR_RETURN(auto graph_done, invocation.submit());
   HYLE_RETURN_IF_ERROR(graph_done.wait());
   HYLE_ASSIGN_OR_RETURN(auto graph_output, invocation.output(output_id));
@@ -172,6 +179,10 @@ Status exercise(bool paged, bool bf16) {
   HYLE_RETURN_IF_ERROR(check(!invocation.prepare_batch(layouts).ok(), "public Graph old output allowed overwrite"));
   HYLE_ASSIGN_OR_RETURN(auto report, invocation.report(node));
   HYLE_RETURN_IF_ERROR(check(report.layout_generation == layout.generation(), "public Graph mirror generation differs"));
+#if defined(HYLE_G06_CAPTURE_REPLAY)
+  HYLE_RETURN_IF_ERROR(check(report.capture_compatible,"public Graph native batch capture not prepared"));
+  HYLE_RETURN_IF_ERROR(check(!invocation.prepare_replay().ok(),"public Graph captured replay ignored old output"));
+#endif
   std::printf("public CUDA FlashInfer %s %s D256 Direct/Graph GQA/causal/active-capacity/page-tail/old-output PASS\n",
               paged ? "paged" : "ragged", bf16 ? "BF16" : "F16");
   return Status::Ok();

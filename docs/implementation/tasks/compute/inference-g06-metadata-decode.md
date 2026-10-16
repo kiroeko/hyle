@@ -595,3 +595,9 @@ storage identity，PreparedBatch显式prepare_replay录制原命令并checked-re
 captured Direct、原Graph和CPU+CUDA、idle后writer恢复/原pending，两个桥对应原测试。
 CXX修改预期零CUDA TU；guard保原146对象精确输入/命令复用。最终instrumented风险、
 san/header/迁址static/shared/不可变candidate性能/红队仍必做，未运行不签PASS。
+
+D7实现检查点：六处FIX及普通source fixture已集中写出，尚未编译或运行，不签capture PASS。
+新增fresh-process32组×64步、首cold metadata OOM后原token可继续、地址改变拒旧录制并显式
+recapture、原public Direct/Graph/CPU+CUDA、idle页writer恢复及同controller继承capture的
+pending producer/F2，以及原Graph bound-port/borrowed launch exact-context反证。下一步固定
+不可变源码candidate，在原WSL缓存树一次source批，禁止无关ggml或FI CUDA TU重编。
