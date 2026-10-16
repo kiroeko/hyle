@@ -77,7 +77,17 @@ public:
 #else
     program_ = take(c::prepare(context_, operation, descriptions_, outputs_, memory_));
 #endif
+#if defined(HYLE_G08_GRAPH)
     for (auto &slot : slots_) slot = take(program_.create_invocation());
+#else
+    const auto requirement = program_.workspace_requirement();
+    for (std::size_t bank = 0; bank < slots_.size(); ++bank) {
+      if (requirement.size != 0) {
+        workspaces_[bank] = take(m::Buffer::create(memory_, requirement.size, requirement.alignment));
+        slots_[bank] = take(program_.create_invocation(workspaces_[bank].view()));
+      } else slots_[bank] = take(program_.create_invocation());
+    }
+#endif
   }
 
   hyle::Result<Output> run(const Payloads &payloads, int bank) {
@@ -141,6 +151,7 @@ private:
   std::array<g::Invocation, 3> slots_;
   std::vector<g::ValueId> input_ids_, output_ids_;
 #else
+  std::array<m::Buffer, 3> workspaces_;
   c::PreparedOperation program_;
   std::array<c::OperationInvocation, 3> slots_;
 #endif

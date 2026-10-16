@@ -316,7 +316,7 @@ template<class Session> void categorical_quality() {
   std::puts("PASS quality: 262144 fixed-seed samples per uniform/nonuniform/masked law; every bucket checked");
 }
 template<class Session> void topk_selection() {
-  for (const auto [rows, width] : {std::pair{5,17},std::pair{1,248320},std::pair{16,248320}}) {
+  for (const auto &[rows, width] : {std::pair{5,17},std::pair{1,248320},std::pair{16,248320}}) {
     std::vector<float> values(std::size_t(rows) * std::size_t(width));
     for (std::size_t i = 0; i < values.size(); ++i)
       values[i] = float(int((i * 131 + 37) % 1709) - 854) * .125F;

@@ -26,7 +26,7 @@ TEST(SamplingSchema, ExplicitCounterShapeArityDenseAndLimits) {
   EXPECT_TRUE(c::infer_single_output(c::sampling_ops::random_bits(),
       std::array{t::dense(c::DataType::kUInt32, {0,4})}));
   const auto sentinel = t::dense(c::DataType::kInt32, {7});
-  for (const auto invalid : {c::TensorDesc{},
+  for (const auto &invalid : {c::TensorDesc{},
        t::dense(c::DataType::kInt32,{13,4}),
        t::dense(c::DataType::kUInt32,{52}),
        t::dense(c::DataType::kUInt32,{13,3}),
@@ -54,11 +54,11 @@ TEST(SamplingSchema, FiniteCategoricalDtypesOptionalPortEmptyAndInvalidLayouts) 
       const auto result = t::outputs(op, std::array{logits,keys});
       ASSERT_EQ(result.size(), scored ? 2U : 1U);
       EXPECT_EQ(result[0],t::dense(c::DataType::kInt32,{rows}));
-      if (scored) EXPECT_EQ(result[1],t::dense(c::DataType::kFloat32,{rows}));
+      if (scored) { EXPECT_EQ(result[1],t::dense(c::DataType::kFloat32,{rows})); }
       EXPECT_EQ(c::operation_traits(op).alias,c::AliasPolicy::kNone);
     }
   const auto keys = t::dense(c::DataType::kUInt32,{3,4});
-  for (const auto invalid : {c::TensorDesc{},t::dense(c::DataType::kInt32,{3,7}),
+  for (const auto &invalid : {c::TensorDesc{},t::dense(c::DataType::kInt32,{3,7}),
        t::dense(c::DataType::kFloat32,{3,0}),t::dense(c::DataType::kFloat32,{2,7}),
        t::dense(c::DataType::kFloat32,{21}),
        c::TensorDesc::strided_bytes(c::DataType::kFloat32,

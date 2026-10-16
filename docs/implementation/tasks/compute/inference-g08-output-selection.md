@@ -220,3 +220,11 @@ enable_language(CUDA)的兄弟目录，缺CMAKE_CUDA_COMPILE_OBJECT；只在该�
 启用原已锁定CUDA language，产品构建算法未改。此轮66.804s及
 原失败完整保留。三joint公开消费者已写：GPU Copy producer→categorical双结果→CPU
 Cast/Add，65步/两slots，仅迁移R个I32与R个F32；CUDA两跳staging明确收费，仍待运行。
+
+
+首轮完整构建4e0bd29a5已通过（含三CUDA TU），schema三测试PASS，CPU TopK/raw RNG
+旅程PASS；CPU categorical在消费者create_invocation缺显式caller workspace而FAIL，
+已仅修公开测试适配器按workspace_requirement为各slot配置真实原资源workspace。
+并修测试range-loop/dangling-else编译警告。原轮费用142.06s和FAIL日志
+保留；Graph/CUDA/joint/device math尚未执行，不代签PASS。测试正文增量复用同tree/configure，
+不为此重跑CUDA编译或无关模块。
