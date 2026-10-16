@@ -1337,7 +1337,7 @@
       "class": "in_tree",
       "vendored": {
         "path": "third_party/mlx_cuda_quant",
-        "tree_sha256": "88856ca923079d3b6e3ca9f7fd67d2974af78a62c02bbfdf5f867658ad9239f1"
+        "tree_sha256": "c025438b536274e363f992915681ec920a230e636af912cdd651edd24e133cb9"
       },
       "license": {
         "expression": "MIT",
