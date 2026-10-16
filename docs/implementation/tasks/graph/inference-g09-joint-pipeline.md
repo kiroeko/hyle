@@ -230,7 +230,32 @@ Exp是最后一次固定补充诊断，不再换尺寸或算子。以上同树�
 运行源码及三份原快照、raw日志、binary hash与独立观察复核均在receipt归档中；最后只恢复
 `native_joint_pipeline.cc`原有LF，保留CRLF→LF逐字节相等证明，不为格式变化重复构建。
 
-下一步限于本卡剩余验收：Vulkan原生执行时间线，原G02/G03/G06直接消费、适用host/device风险、
+### Vulkan原数学时间线检查点，2026-10-17
+
+[双机原件及独立复核](../../../../evidence/correctness/inference-g09-vulkan-real-math-timeline/receipt.json)
+补齐本卡Vulkan时间线正证。仍是同4M F32默认CPU Exp、原ggml GPU Neg与CPU join，单活动slot，
+warm一次后每插入顺序8次；未换尺寸或数学。Windows RTX4070与Air M4均为原Neg query
+8/8、完整GPU区间包含于独立CPU Exp task 8/8；两机默认5组双slot/65步/取消close也PASS。
+
+测试专用loader沿原public loader_path透明转发，原logical device只附加其实际支持的
+calibrated-timestamps扩展，原queues/features/pNext与数学不变。完整SPIRV字节识别原module，
+再追踪原pipeline/bind/dispatch和实际QueueSubmit；不用只覆盖Recorder的旧钩子冒充ggml数学。
+原neg_f32_data为4692字节；原ggml按actual Vulkan12浮点控制能力冷注入FP16控制指令，
+Windows RTE+Denorm得到4768字节，Air RTE得到4744字节。夹具只对参照复现这段已锁定算法，
+仍按最终完整长度/字节匹配，原shader照常转发；原始及派生SHA、具体能力与源码身份均保留。
+
+Windows用实际10MHz QPC域，Air用实际MONOTONIC_RAW ns域。逐replay保存前后DEVICE+host
+校准、maxDeviation、validBits/period、实际offset drift与有符号模差；只签计入这些观测误差后
+的整个GPU dispatch bracket落入CPU数学区间。1us是诊断guard，双校准模型不作普适drift或
+统计置信保证；这仍不是5% P1。query按原recording分配不同pair，在原command buffer中reset，
+原checked completion之后只读availability、不追加host WAIT，原device销毁时释放pool。
+
+原失败保留：首次未加入原设备浮点控制变换，原module未命中、query为0，未证明重叠；普通
+数学和生命周期仍PASS。一次过严scratch预检拒绝了8条边中的未变外部生成器metadata与staging，
+未启动build；修正后只重编两个夹具C++对象，无CUDA或shader重编。Windows同树累计
+142.510秒包含原135.484秒及预检拒绝；Air30.696秒。没有产品源码改动或新的聚合gate PASS。
+
+下一步限于本卡剩余验收：原G02/G03/G06直接消费、适用host/device风险、
 三交付/公开头、P0完整账；candidate固定后按预声明
 两自然形状与必要串行holdout，先独立artifact/text预检，再正式P1，最后终审/LOC。
 尚未完成的门均待证；不追加缺口穷尽调研，不提前推进G10，不重跑已接受G01–G08数学/P1。

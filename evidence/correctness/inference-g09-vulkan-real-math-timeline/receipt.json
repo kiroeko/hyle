@@ -1,0 +1,357 @@
+{
+  "schema": "hyle.inference-g09-vulkan-real-math-timeline/v1",
+  "state": "PARTIAL_FIXED_SHAPE_VULKAN_P0_MATH_TIMELINE_PASS",
+  "canonical_product_commit": "e09f30925c6dba5cf4540669fd3b4874f45bb158",
+  "canonical_validation_base": "d4313f2cf",
+  "validation_source_tree": "50484d64810d83f8e855128db8cd3b59a98c2c68",
+  "scope": "Actual original ggml F32 Neg GPU dispatch, default CPU Exp and original CPU join, same 4M inputs, one active slot, one warm then fixed eight diagnostic replays per graph insertion order, on Windows RTX4070 and Air M4 Vulkan. Same ordinary two-slot/65-step changed-input and cancellation/close oracle checks pass on both machines. No P1 or complete G09 gate verdict.",
+  "attribution": "Existing public loader_path points to a test-local transparent forwarding loader. Device logical create retains all original features/queues/pNext and additionally enables only a supported calibrated-timestamps extension. Original generated neg_f32_data source+SHA are bound; its reference is cold transformed by the locked ggml float-controls algorithm for actual Vulkan12 RTE/DenormPreserve FP16 flags. Full final bytes and length must match original vkCreateShaderModule, then original pipeline/main, bind, CmdDispatch and actual QueueSubmit ownership are tracked. No recorder-only hook or replacement math.",
+  "clock": "Windows actual DEVICE+QPC, actual 10MHz QPC; Air actual DEVICE+MONOTONIC_RAW ns. Each replay retains before/after calibrated raw ticks, maxDeviation, timestampPeriod/validBits, signed modular differences, observed offset drift and conservative mapped envelope. Full GPU bracket must lie inside the actual CPU Exp executor episode after uncertainty and 1us diagnostic guard. Same-phase joins remain after GPU completion. This observed two-calibration model is not a statistical or universal drift/timestamp confidence guarantee.",
+  "query_lifetime": "Bounded 512 timestamp queries, distinct pairs per original recording, reset in that original command buffer on replay; only one live slot is observed. Attribution occurs at original submit, availability is read only after original checked completion without extra host WAIT, pool is destroyed at original device destruction after original work owners retire. Copy/other shaders are forwarded without a false Neg identity.",
+  "retained_failures": [
+    {
+      "record": "windows/run/result-original-shader-unmatched.json",
+      "verdict": "Numerical and ordinary lifecycle consumers pass; untransformed raw SPIRV identity misses device-injected float controls. Zero matched module/query is NOT an overlap/performance loss."
+    },
+    {
+      "record": "windows/run/dry-run-fp16-reference.log",
+      "verdict": "Strict <8-line scratch guard refused an eight-edge plan before any build; original refusal is recorded as 1.6198767 seconds. Corrected guard requires exactly two changed fixture CXX objects, permits unchanged external-generator metadata/staging and links. No new CUDA or shader compilation."
+    }
+  ],
+  "actual_cost": {
+    "windows_cumulative_seconds": 142.50987670000177,
+    "windows_includes_initial_seconds": 135.48399999999674,
+    "air_seconds": 30.696142458,
+    "reset": false
+  },
+  "cases": [
+    {
+      "platform": "windows",
+      "result": {
+        "state": "ORIGINAL_VULKAN_NEG_CALIBRATED_TIMELINE_AND_ORDINARY_CONSUMERS_PASS",
+        "stages": [
+          {
+            "stage": "manifest",
+            "command": [
+              "ninja",
+              "-C",
+              "C:\\h7\\w-cpu-vulkan\\selected-graph\\source-build",
+              "build.ninja"
+            ],
+            "exit_code": 0,
+            "elapsed_seconds": 57.25
+          },
+          {
+            "stage": "build",
+            "command": [
+              "ninja",
+              "-C",
+              "C:\\h7\\w-cpu-vulkan\\selected-graph\\source-build",
+              "-f",
+              "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g09-vulkan-timeline-check-1\\preview.ninja",
+              "-j",
+              "4",
+              "hyle_g09_vulkan_trace_loader",
+              "hyle_cpu_vulkan_pipeline_trace",
+              "hyle_cpu_vulkan_pipeline"
+            ],
+            "exit_code": 0,
+            "elapsed_seconds": 65.10999999998603
+          },
+          {
+            "stage": "ordinary-pipeline",
+            "command": [
+              "C:\\h7\\w-cpu-vulkan\\selected-graph\\source-build\\hyle_cpu_vulkan_pipeline.exe"
+            ],
+            "exit_code": 0,
+            "elapsed_seconds": 11.75
+          },
+          {
+            "stage": "vulkan-real-neg-timeline",
+            "command": [
+              "C:\\h7\\w-cpu-vulkan\\selected-graph\\source-build\\hyle_cpu_vulkan_pipeline_trace.exe",
+              "--trace",
+              "C:\\h7\\w-cpu-vulkan\\selected-graph\\source-build\\hyle_g09_vulkan_trace_loader.dll",
+              "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g09-vulkan-timeline-check-1\\original-ggml-neg-f32.spv"
+            ],
+            "exit_code": 1,
+            "elapsed_seconds": 1.2650000000139698
+          },
+          {
+            "stage": "fp16-reference-preflight-refused",
+            "exit_code": 1,
+            "elapsed_seconds": 1.6198767,
+            "reason": "Strict <8-line guard rejected an 8-edge plan: two changed fixture CXX objects, two links, three unchanged external shader-generator metadata steps and runtime staging. No build started; guard corrected to require only the two fixture CXX objects."
+          },
+          {
+            "stage": "retry1-build",
+            "command": [
+              "ninja",
+              "-C",
+              "C:\\h7\\w-cpu-vulkan\\selected-graph\\source-build",
+              "-f",
+              "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g09-vulkan-timeline-check-1\\preview.ninja",
+              "-j",
+              "4",
+              "hyle_g09_vulkan_trace_loader",
+              "hyle_cpu_vulkan_pipeline_trace"
+            ],
+            "exit_code": 0,
+            "elapsed_seconds": 4.046999999962281
+          },
+          {
+            "stage": "retry1-vulkan-real-neg-timeline",
+            "command": [
+              "C:\\h7\\w-cpu-vulkan\\selected-graph\\source-build\\hyle_cpu_vulkan_pipeline_trace.exe",
+              "--trace",
+              "C:\\h7\\w-cpu-vulkan\\selected-graph\\source-build\\hyle_g09_vulkan_trace_loader.dll",
+              "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g09-vulkan-timeline-check-1\\original-ggml-neg-f32.spv"
+            ],
+            "exit_code": 0,
+            "elapsed_seconds": 1.1880000000237487
+          }
+        ],
+        "canonical_head": "d4313f2cf471ddd712a564d42df81e24329f9fac",
+        "source_tree": "ea7ef571648ec43611767deed55061fc336a9dbc",
+        "pid": 44912,
+        "max_jobs": 4,
+        "logical_cpus": 4,
+        "priority": "BELOW_NORMAL",
+        "scope": "Fixed G09 same-DAG CPU Exp/GPU original ggml Neg/join actual calibrated Vulkan timestamp diagnostic, not P1 or aggregate risk/delivery acceptance.",
+        "input_hashes": [
+          {
+            "path": "tests/graph/cpu_vulkan_pipeline_trace.cc",
+            "sha256": "cc6609940b25a27d492544c5fc0e9ee97150c84a3dbfada6263cf40ef430223c"
+          },
+          {
+            "path": "tests/graph/vulkan_pipeline_trace.h",
+            "sha256": "ce0edbcb4bfd7e380970edb7ad2724c862050a591929e8eae658919e057d431c"
+          },
+          {
+            "path": "tests/graph/vulkan_pipeline_trace_loader.cc",
+            "sha256": "565044b883a556b4525d5d27d30208b4b10dd95949bad9edbd4122cda3bb993e"
+          },
+          {
+            "path": "tests/graph/native_joint_pipeline.cc",
+            "sha256": "a74a7c257eebb05964d9f45c4cb3c3f6fd2b5af9e2524b7d4aef63f0ca3412a3"
+          },
+          {
+            "path": "tests/graph/cpu_vulkan_contracts/CMakeLists.txt",
+            "sha256": "aade2709dcaacb84b09b6a16a3312abb477c2ba0aa8fbeff3629c8e304b01f58"
+          }
+        ],
+        "original_shader_reference": {
+          "generated_source": "C:\\h7\\w-cpu-vulkan\\selected-graph\\source-build\\hyle\\src\\compute_ggml_runtime\\vendor\\src\\ggml-vulkan\\unary.comp.cpp",
+          "generated_source_sha256": "f3ad0e94110a2ad50cffbcd46ea43406e87fe4325c010de241918753309d4f6e",
+          "symbol": "neg_f32_data",
+          "bytes": 4692,
+          "sha256": "578ead60cbb9ae3e01dbcc809b2fca82f0127e5daabcbdf19b9f42a9f45b08ed"
+        },
+        "stage": "retry1-vulkan-real-neg-timeline",
+        "elapsed_seconds": 142.50987670000177,
+        "dry_run_edges": 57,
+        "source_tree_fp16_reference": "50484d64810d83f8e855128db8cd3b59a98c2c68",
+        "retained_failure": "result-original-shader-unmatched.json",
+        "derived_shader_reference": {
+          "path": "original-ggml-neg-f32.spv.actual.spv",
+          "sha256": "de019d1aaf3de4adf756f9f2895c66847ee1afcf50909afd99a6da7831844f2f",
+          "bytes": 4768
+        },
+        "binaries": [
+          {
+            "path": "C:\\h7\\w-cpu-vulkan\\selected-graph\\source-build\\hyle_g09_vulkan_trace_loader.dll",
+            "sha256": "82a2cf5b63cf652fedcd656332a63e1d0c07e787b26dc966dbf14a7c811f1548"
+          },
+          {
+            "path": "C:\\h7\\w-cpu-vulkan\\selected-graph\\source-build\\hyle_cpu_vulkan_pipeline_trace.exe",
+            "sha256": "87392ed35c08ca649ad490ccd78802614a7883273bfe88c9f2fe659cd11d3593"
+          },
+          {
+            "path": "C:\\h7\\w-cpu-vulkan\\selected-graph\\source-build\\hyle_cpu_vulkan_pipeline.exe",
+            "sha256": "c21db12a0ea646ae7952957cd847a489caacf9960bf9ef942236c9b06e2e5a90"
+          }
+        ]
+      },
+      "actual_device": {
+        "vulkan_trace_device": true,
+        "device": "NVIDIA GeForce RTX 4070",
+        "calibrated_extension": "VK_EXT_calibrated_timestamps",
+        "host_domain": 3,
+        "host_frequency": 10000000,
+        "timestamp_bits": 64,
+        "timestamp_period_ns": 1,
+        "fp16_controls": 3,
+        "derived_reference_bytes": 4768,
+        "ready": true
+      },
+      "actual_summary": {
+        "single_dag": true,
+        "warm_episodes_per_order": 8,
+        "timestamp_bits": 64,
+        "host_domain": 3,
+        "host_frequency": 10000000,
+        "period_ns": 1,
+        "matched_neg_shader_modules": 1,
+        "matched_neg_pipelines": 1,
+        "observed_negative_dispatches": [
+          8,
+          8
+        ],
+        "whole_gpu_inside_cpu_task": [
+          8,
+          8
+        ]
+      }
+    },
+    {
+      "platform": "air",
+      "result": {
+        "state": "ORIGINAL_VULKAN_NEG_CALIBRATED_TIMELINE_AND_ORDINARY_CONSUMERS_PASS",
+        "stages": [
+          {
+            "stage": "manifest",
+            "command": [
+              "/opt/homebrew/bin/ninja",
+              "-C",
+              "/Users/kiro/hyle-scratch/compute-unified/a-cpu-vulkan/selected-graph/source-build",
+              "build.ninja"
+            ],
+            "exit_code": 0,
+            "elapsed_seconds": 14.659352584
+          },
+          {
+            "stage": "build",
+            "command": [
+              "/opt/homebrew/bin/ninja",
+              "-C",
+              "/Users/kiro/hyle-scratch/compute-unified/a-cpu-vulkan/selected-graph/source-build",
+              "-f",
+              "/Users/kiro/hyle-scratch/compute-unified/g09-vulkan-timeline-check-1/preview.ninja",
+              "-j",
+              "4",
+              "hyle_g09_vulkan_trace_loader",
+              "hyle_cpu_vulkan_pipeline_trace",
+              "hyle_cpu_vulkan_pipeline"
+            ],
+            "exit_code": 0,
+            "elapsed_seconds": 6.106331584000001
+          },
+          {
+            "stage": "ordinary-pipeline",
+            "command": [
+              "/Users/kiro/hyle-scratch/compute-unified/a-cpu-vulkan/selected-graph/source-build/hyle_cpu_vulkan_pipeline"
+            ],
+            "exit_code": 0,
+            "elapsed_seconds": 8.330380125000001
+          },
+          {
+            "stage": "vulkan-real-neg-timeline",
+            "command": [
+              "/Users/kiro/hyle-scratch/compute-unified/a-cpu-vulkan/selected-graph/source-build/hyle_cpu_vulkan_pipeline_trace",
+              "--trace",
+              "/Users/kiro/hyle-scratch/compute-unified/a-cpu-vulkan/selected-graph/source-build/libhyle_g09_vulkan_trace_loader.dylib",
+              "/Users/kiro/hyle-scratch/compute-unified/g09-vulkan-timeline-check-1/original-ggml-neg-f32.spv"
+            ],
+            "exit_code": 0,
+            "elapsed_seconds": 1.1428570409999992
+          }
+        ],
+        "source_tree": "50484d64810d83f8e855128db8cd3b59a98c2c68",
+        "canonical_head": "d4313f2cf471ddd712a564d42df81e24329f9fac",
+        "source": "/Users/kiro/hyle-scratch/compute-unified/source-c8874688",
+        "max_jobs": 4,
+        "nice": 10,
+        "identity": {
+          "model": "Mac16,12",
+          "chip": "Apple M4",
+          "system": "ProductName:\t\tmacOS\nProductVersion:\t\t27.0.1\nBuildVersion:\t\t26A434",
+          "compiler": "Apple clang version 21.0.0 (clang-2100.3.34.2)\nTarget: arm64-apple-darwin27.0.0\nThread model: posix\nInstalledDir: /Library/Developer/CommandLineTools/usr/bin"
+        },
+        "scope": "Air original Vulkan Neg calibrated CPU/native single-DAG diagnostic plus ordinary five 2-slot 65-step consumers. No P1/aggregate risk or SDK delivery verdict.",
+        "changed_files": [
+          "docs/implementation/tasks/graph/inference-g09-joint-pipeline.md",
+          "tests/graph/cpu_vulkan_contracts/CMakeLists.txt",
+          "tests/graph/cpu_vulkan_pipeline_trace.cc",
+          "tests/graph/native_joint_pipeline.cc",
+          "tests/graph/vulkan_pipeline_trace.h",
+          "tests/graph/vulkan_pipeline_trace_loader.cc"
+        ],
+        "original_shader_reference": {
+          "generated_source": "/Users/kiro/hyle-scratch/compute-unified/a-cpu-vulkan/selected-graph/source-build/hyle/src/compute_ggml_runtime/vendor/src/ggml-vulkan/unary.comp.cpp",
+          "generated_source_sha256": "bd87f561e8b6db08c1d66fbd22cd29a7abf8b3f69f8ef448e49d51fcc2da257c",
+          "symbol": "neg_f32_data",
+          "bytes": 4692,
+          "sha256": "578ead60cbb9ae3e01dbcc809b2fca82f0127e5daabcbdf19b9f42a9f45b08ed"
+        },
+        "stage": "vulkan-real-neg-timeline",
+        "elapsed_seconds": 30.696142458,
+        "dry_run_edges": 46,
+        "derived_shader_reference": {
+          "path": "original-ggml-neg-f32.spv.actual.spv",
+          "sha256": "f7c2bebcef9872ef725a3114efc31d1a42bd847a766c06aff6f6891b2d5b5b5e",
+          "bytes": 4744
+        },
+        "binaries": [
+          {
+            "path": "/Users/kiro/hyle-scratch/compute-unified/a-cpu-vulkan/selected-graph/source-build/libhyle_g09_vulkan_trace_loader.dylib",
+            "sha256": "afe057d14027b161287b145adde20d88a86dc64de0d09bb9e39ddd81985127f0"
+          },
+          {
+            "path": "/Users/kiro/hyle-scratch/compute-unified/a-cpu-vulkan/selected-graph/source-build/hyle_cpu_vulkan_pipeline_trace",
+            "sha256": "09ad76c643fbbe41addab25561e73372027b4e90871033d3e3fee1005ddbe926"
+          },
+          {
+            "path": "/Users/kiro/hyle-scratch/compute-unified/a-cpu-vulkan/selected-graph/source-build/hyle_cpu_vulkan_pipeline",
+            "sha256": "cf261f1c1b7f9aa4609ca1b50ba54de542e7f30c9387a5a29fa3ed7a462ef7c6"
+          }
+        ]
+      },
+      "actual_device": {
+        "vulkan_trace_device": true,
+        "device": "Apple M4",
+        "calibrated_extension": "VK_EXT_calibrated_timestamps",
+        "host_domain": 2,
+        "host_frequency": 1000000000,
+        "timestamp_bits": 64,
+        "timestamp_period_ns": 1,
+        "fp16_controls": 1,
+        "derived_reference_bytes": 4744,
+        "ready": true
+      },
+      "actual_summary": {
+        "single_dag": true,
+        "warm_episodes_per_order": 8,
+        "timestamp_bits": 64,
+        "host_domain": 2,
+        "host_frequency": 1000000000,
+        "period_ns": 1,
+        "matched_neg_shader_modules": 1,
+        "matched_neg_pipelines": 1,
+        "observed_negative_dispatches": [
+          8,
+          8
+        ],
+        "whole_gpu_inside_cpu_task": [
+          8,
+          8
+        ]
+      }
+    }
+  ],
+  "review": {
+    "path": "review/g09-vulkan-timeline-review-6.json",
+    "sha256": "a88bbc33f9bf1c6d6954ab7f8efdb2cdd197f38055b769f5f80885b10a76ffde"
+  },
+  "raw": {
+    "path": "raw.zip",
+    "sha256": "4ddd6ff65df829eb080aa39dc1014d3e698ff20f7d3378c6680f8f100acd5f13",
+    "bytes": 1351474,
+    "crc": "PASS"
+  },
+  "not_signed": [
+    "Any immutable-candidate 5% P1 result.",
+    "ASan/UBSan/TSan or aggregate Metal/Vulkan validation/CUDA tools.",
+    "Fresh relocated static/shared SDK delivery or G09 aggregate closure.",
+    "All providers/shapes or default ATen SiLU observation."
+  ]
+}
