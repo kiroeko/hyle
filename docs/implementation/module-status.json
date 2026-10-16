@@ -584,14 +584,9 @@
     },
     {
       "module": "compute_provider_flashinfer",
-      "state": "BLOCKED",
-      "record": "docs/implementation/tasks/compute/inference-g04-g05-cache-attention-domain.md",
-      "summary": "G06 D6/D7 ACCEPTED/P0. G04/G05 engineering performance BLOCKED after finite post-G06 read-only review: shared common costs changed, native CE28 math unchanged, exact residual timing cause UNPROVEN; old qualified LOSS/UNRESOLVED and failures/costs retained. Goal ACTIVE4/10; G07-G10 continue.",
-      "candidate": "0a29d119426b2975d48c238c37a2994675e0ba9f",
-      "blocked_from": "CANDIDATE",
-      "blocker": "Original qualified CE28 attempt14 CUDA prefill noninferiority UNRESOLVED at exhausted [15,31]. Post-G06 finite read-only source review terminated without a causal material FIX; current complete warm-lifecycle performance is not qualified.",
-      "blocker_owner": "G04/G05 engineering performance; independent G07-G10 remain available.",
-      "resume_condition": "Explicitly scope qualification of the materially changed post-G06 complete candidate against the unchanged original full warm Batch lifecycle and gate; resume through SCOPED/AUDITED and freeze candidate/contract before one current qualification. Do not resample unchanged830, reset prior failures or relax threshold. A new product FIX additionally requires real consumer plus mechanism evidence."
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/compute/inference-g04-g05-final-closure.md",
+      "summary": "G04/G05 final closeout SCOPED by explicit user selection of compressed residency/F32 tradeoffs. Product FIX empty; bounded evidence/P0 review only. Original CUDA qualified warm LOSS and5% UNRESOLVED retained; comparator is expanded-BF16 FlashInfer, not llama.cpp. No build/P1 or engine implementation."
     },
     {
       "module": "compute_provider_ggml_metal",
