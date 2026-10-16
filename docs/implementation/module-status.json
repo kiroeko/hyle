@@ -277,10 +277,9 @@
     },
     {
       "module": "graph",
-      "state": "CANDIDATE",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/inference-g06-metadata-decode.md",
-      "summary": "G06 CANDIDATE0a29d1194：四路线runtime/capture普通source及最终CUDA故障通过（static23含真实录制/启动错误；两配置40次pending模式），Air29执行含Vulkan Recorder冷复制后真实重放、Windows569项通过。原static fixture失败/费用及G04/G05未决保留。最终三san/header/迁址SDK/P0/P1与七门红队待；整goal仍3/10，G06粗估80%。",
-      "candidate": "0a29d119426b2975d48c238c37a2994675e0ba9f"
+      "summary": "G06 L红队确认普通paged Graph两层仍逐页F1去重扫描，固定内部排序去重借原read_unique/write_unique(false)，只改Graph私有准入，不改公共F1/capture/native数学。原0a29全部source风险与ASan/UBSan证据保留；新增Graph成本修正及受影响门待。"
     },
     {
       "module": "container_concurrent",

@@ -1,6 +1,6 @@
 # G06 metadata 与 decode 成本收口
 
-状态：**G06 CANDIDATE；共同及四路线runtime/capture与普通风险通过，san/交付/性能待，2026-10-16**。本卡沿[完整十项目标](../project/inference-gaps-goal-execution-2026-10.md)，
+状态：**G06 Graph AUDITED补齐L；其它owner CANDIDATE，四路线runtime/capture与ASan/UBSan已过，最终门待，2026-10-16**。本卡沿[完整十项目标](../project/inference-gaps-goal-execution-2026-10.md)，
 不缩减 CPU、单 GPU、CPU＋单 GPU、单/多请求或四原生路线。先完成四组共同审计和形状冻结，
 再集中实施、批量检查、按实际失败定向修正；产品修改仅限下文已冻结且owner为AUDITED的批次。
 
@@ -720,3 +720,28 @@ plain/FP8 captured各五风险模式，以及public Direct/Graph、CPU+CUDA、pe
 本项只签host address facet；NVIDIA进程LSan仍INCONCLUSIVE，driver/shader/private-pool
 不由本项覆盖。产品/API/算法未变，11个owner仍CANDIDATE。UBSan/TSan、补充post-record
 artifact OOM、23独立头/迁址SDK、P0/必要P1和最终七门仍待；G04/G05原未决保留。
+
+### 最终 UBSan 通过；L 红队补齐 Graph 页准入
+
+[实际 UBSan 证据](../../../../evidence/correctness/inference-g06-final-host-ubsan/receipt.json)
+绑定0a29产品/b8测试，282测试、15风险模式和三capture实际消费者PASS，零失败/跳过。
+configure55.191s、build440.577s；8个binary与原archive共625519640bytes重核。适用host
+UB检查通过，原vendor/private限制、ASan首轮失败与全部历史费用保留。
+
+独立成本复核的[有限审计](../../../../evidence/architecture/inference-g06-graph-page-admission-audit/audit.json)
+基于c8df02f51，确认真实PagedArenaRead的Graph外层LeasedInvocation与native composition
+LeaseSubmission仍逐页走F1公共read扫描；P不同页需要P(P−1)/2次比较。D5修正的Direct、
+native controller与pending callback不能代签这两层。该问题属于原G06-L承诺范围。
+
+Graph从CANDIDATE合法退回AUDITED，产品baseline0a29与所有原通过/费用保留。有限FIX：
+在现有Graph私有submission header/源中共享cold-reserved permission set；只对有exact-page
+容量的owner使用完整block/generation排序去重，混合权限拒绝，借原read_unique与
+write_unique(false)，保留原F1全部真实检查及actual retirement。原绑定数组/页range不排序，
+不改变输入映射、公共API、组件依赖、capture或native数学。私有vector控制对象与冷预留
+至多16×(普通binding容量＋page容量)字节在64位按实际allocator计费；warm无分配。
+
+集中修改Graph两准入点，再一次源码批：原Graph/LeaseSubmission、公共Direct/Graph/joint/
+pending/captured；补256不同block/共享backing/重排重复与跨group重绑的独立active-use
+census及禁止warm分配，保原OOM/closed/unknown/multi-prefix。固定候选后增量补适用三san，
+禁止CUDA重编；最终SDK/头/P0/必要P1/七门继续，不恢复G04/G05旧P1。2h检查点与自动有限
+追加沿原账，本段尚未改产品或运行新PASS；其它10个owner维持CANDIDATE。

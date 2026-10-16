@@ -1,0 +1,57 @@
+{
+  "state": "AUDITED_FINITE_G06_L_REMAINDER_NO_PRODUCT_EDIT_YET",
+  "baseline": "c8df02f51cbedece42a6d8007c13cf1571060f61",
+  "product_baseline": "0a29d119426b2975d48c238c37a2994675e0ba9f",
+  "owner": "graph",
+  "record": "docs/implementation/tasks/compute/inference-g06-metadata-decode.md",
+  "inputs": [
+    {
+      "path": "src/graph/lease_submission.cc",
+      "sha256": "d8c4931cb08567c9aedbad3ade284bc1ddb8dbe05f79015600bd7626248b3cfc"
+    },
+    {
+      "path": "src/graph/leased_invocation.cc",
+      "sha256": "a07f903893a07c3a4b7937c81025516a27ca590df6d7a22fd056be1c1cb1d758"
+    },
+    {
+      "path": "src/graph/submission_internal.h",
+      "sha256": "8a48ad4a490bb9bc7a57dd67e7ecc6500ab091141e75230221a5b1ada5ea0f66"
+    },
+    {
+      "path": "src/compute/resource_leases.cc",
+      "sha256": "6d6caa01b517ae13cd04044ebc8eb481d9b3338f45623dc5d341038f37729801"
+    },
+    {
+      "path": "include/hyle/compute/detail/lease_access.h",
+      "sha256": "a51b7fd93c33f76820189c18ae37377d49b7aa320399dc32a75c78a2d6c10e18"
+    },
+    {
+      "path": "src/graph_batch/batch.cc",
+      "sha256": "27cdcdee67ad7f9b71aeb2f444c253dc27d9c34f776bbe19dd94e33d0f28b35f"
+    },
+    {
+      "path": "tests/compute_batch/public_batch_cuda_consumer.cc",
+      "sha256": "c84d50396b1fcff3f42665817a4471fd042c86904b5cb56b30f08a2af062f585"
+    },
+    {
+      "path": "tests/graph/lease_submission_test.cc",
+      "sha256": "d3914dfa9058c119ce23014d740e6cf8bf60e00cef0f14e811e5842a710b8de8"
+    }
+  ],
+  "consumer": "Original public batch paged Graph binds actual PagedArenaRead through graph::batch::Invocation::bind -> RegionAccess::bind_projected -> LeasedInvocation::submit; native composition also uses LeaseSubmission::bind_pages/begin. Existing user-facing journeys, no benchmark-derived API.",
+  "facts": [
+    "LeaseUseBatch::read calls add_use<false>; each different block scans all preceding entries. Both Graph begin loops retain this path for actual exact page guards, hence P distinct pages cause P*(P-1)/2 comparisons before native execution.",
+    "D5 optimized original BatchPageReads in Direct/native/pending callbacks, but did not replace Graph outer LeasedInvocation or native composition LeaseSubmission ready-page loops. These loops remain in the current G06 L MUST scope.",
+    "Original F1 read_unique and write_unique(false) already skip only dedup scanning while retaining original closed/permission/failure/write-exclusion/refcount operations. No compute/backend/kernel edit is required."
+  ],
+  "fix": [
+    "One graph-private cold-reserved permission set in existing submission_internal.h/lease_submission.cc, reused by both original owners only when exact page capacity is opted in. Sort complete current read/write block+generation groups, reject mixed permissions, then call existing read_unique/write_unique(false) once per unique block. No public API or new dependency.",
+    "Reserve through each original metadata allocator/resource-budget path, no allocation during submit; new private vector object and at most16*(ordinary binding capacity + exact page capacity) scratch bytes on qualified64-bit machines are charged, not zero. Nonpaged path has no new heap allocation or sorting.",
+    "Keep original input/page arrays and range ordering untouched, exact caller ownership/native accepted-prefix retirement/unknown/close/error state unchanged. Reset scratch after admission; do not retain borrowed entries for replay."
+  ],
+  "checks": [
+    "Existing complete Graph/LeaseSubmission, common Graph batch, plain/encoded actual public Direct/Graph/joint/pending/captured consumers; new256-block overlapping/reordered/rebound exact-page groups with no-warm-allocation and independent active-use census. Existing cold OOM/closed/unknown/multi-prefix tests retained.",
+    "Affected source and existing cached host sanitizer facets incrementally rechecked after freeze, zero CUDA TU change/rebuild. All final SDK/header/native route checks still required; previously passed native mathematics stay exact-input reusable.",
+    "P0 exact loop/complexity, allocation and metadata ledger. No timer or unchanged G04/G05 P1 search. Two-hour checkpoint, automatic finite extension with all previous cost retained."
+  ]
+}
