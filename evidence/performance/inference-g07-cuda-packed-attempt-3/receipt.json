@@ -1,0 +1,63 @@
+{
+  "schema": "hyle.inference-g07-packed-p1/v1",
+  "state": "QUALIFIED_FINITE_P1_PASS",
+  "route": "cuda",
+  "candidate": "4274ee6cb6275bf36bda1d8c8c0e223f0fa65db5",
+  "source_revision": "179fb9e101e9115475f3c123e185361eac16ba5b",
+  "qualification": "PASS",
+  "performance_gate": "PASS",
+  "verify_exit": 0,
+  "elapsed_seconds": 1057.5698976439999,
+  "cumulative_elapsed_seconds": 2201.57357262,
+  "rows": [
+    {
+      "id": "packed-m1",
+      "exact_verdict": "WIN",
+      "noninferiority_gate": "PASS",
+      "independent_samples_per_stratum": [
+        15
+      ],
+      "strata_count": 8,
+      "median_advantage_ratio_range": [
+        23.896662007031814,
+        24.30235678189705
+      ],
+      "individual_ci_envelope": [
+        23.616702536186015,
+        24.78560669456067
+      ],
+      "note": "Envelope of eight individual CIs, not a pooled CI. Full original summary retained."
+    },
+    {
+      "id": "packed-m64",
+      "exact_verdict": "WIN",
+      "noninferiority_gate": "PASS",
+      "independent_samples_per_stratum": [
+        15
+      ],
+      "strata_count": 8,
+      "median_advantage_ratio_range": [
+        1.7572788353863382,
+        1.8251213680168104
+      ],
+      "individual_ci_envelope": [
+        1.7407497735349453,
+        1.8798448077912822
+      ],
+      "note": "Envelope of eight individual CIs, not a pooled CI. Full original summary retained."
+    }
+  ],
+  "raw_archive": {
+    "path": "raw.zip",
+    "sha256": "6609b21511ee03a98fe50e857b3c17dc6f79d918e0368ec9ea7b01d7d3eba253"
+  },
+  "summary_sha256": "161d0dc0c50064d4f5532903e58d64dcc03e7cdb1e4c0f9559140898015caab4",
+  "manifest_sha256": "419d81eb26e07b9a46240769d7b85a151bd86a52705e3cfbf769910eded6b06c",
+  "decision": "Retain complete qualified result and all earlier failures; activity card owns any next product correction. Apple product qualification tracked independently.",
+  "limits": [
+    "No kernel-only/half-precision/cold-expanded peer substitution.",
+    "Full public warm replay; final retained native result/cache/Program teardown remains explicitly deferred.",
+    "Ratios/absolute op/s are the actual8strata in original summary, not pooled CI or engine throughput.",
+    "No tokens/s or llama.cpp comparison."
+  ]
+}

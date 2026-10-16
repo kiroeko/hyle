@@ -1,6 +1,6 @@
 # G07 packed 权重消费与 checked selection
 
-状态：**2026-10-16，CUDA C1 4274/Apple D2 91ae CANDIDATE；Apple性能PASS；G07–G10 goal ACTIVE**。G01–G06已告一段落，
+状态：**2026-10-16，CUDA C1 4274/Apple D2 91ae CLOSED；G07 ACCEPTED，新goal完成1/4；G07–G10 goal ACTIVE**。G01–G06已告一段落，
 本卡不重开它们。原baseline为 `a638938b783b6fdae57e83f572aa0427d7188e7f`；
 产品输入保持完整 `669121418669b31f6849c74f64362aaf8d6eb919`。
 当前施工 owner 仅 `compute_provider_torch_cuda`、`compute_route_apple`，从各自 CLOSED
@@ -444,3 +444,14 @@ oracle校验全部输出。产品/API/算法及P1比较仍冻结；这是原W2�
 只在现有CUDA P1终态后串行执行，不重新安装/重建产品、不重复原22/24/32集合、不重跑P1。
 alias反证另核`compute/operation.cc:402`的公共bind验证和Provider的`alias_support=false`，
 非法input/output覆盖在kernel前拒绝；没有因去掉ATen临时值而悄悄准入原地写。
+
+
+### 最终验收与停止
+
+CUDA C1最终两形状QUALIFIED/verify0，M1吞吐比23.897–24.302、M64比1.757–1.825，
+均WIN/原5%门PASS；1057.570秒，连原失败累计2201.574秒。Apple D2原两项PASS不重复。
+两路线source/static/shared的Graph M1/17/64各65步及新增CUDA memcheck/racecheck、Apple
+实际Metal验证均通过；原N2 M1误读、首次consumer编译/源码配置失败和同树恢复费用保留。
+见[最终记录](inference-g07-final-closure.md)与其证据索引：七门、七问、统一LOC和独立阶段
+自审已聚合。两owner保持原candidate后CLOSED；G07整项接受，新goal1/4、历史7/10。
+本卡停止产品与重复资格；下一项G08沿原数值选择/随机域定界，不再扩展W1–W4。

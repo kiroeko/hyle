@@ -1841,6 +1841,66 @@
         "evidence/performance/inference-g07-apple-packed-attempt-3/summary.json",
         "evidence/architecture/inference-g07-packed-weight-audit/p1-adapter.json"
       ]
+    },
+    {
+      "id": "inference-g07-cuda-packed-packed-m1-attempt-3",
+      "modules": [
+        "compute_provider_torch_cuda"
+      ],
+      "kind": "P1_WORKLOAD",
+      "comparison": "SAME_CONTRACT_INTERNAL",
+      "qualification": "QUALIFIED_RETAINED",
+      "direction": "WIN",
+      "practical_result": "PASS",
+      "engineering_action": "KEEP",
+      "consumer_weight": "HIGH",
+      "candidate_binding": "EXACT",
+      "recorded_date": "2026-10-16",
+      "product_candidate": "4274ee6cb6275bf36bda1d8c8c0e223f0fa65db5",
+      "consumer_shape": "CUDA F32 activation/scales/noninteger affine bias + resident U32affine4/group64 weight, packed-m1 K2048 N6144",
+      "contract": "Same original669 complete warm public invocation; Original affine dequantization and F32 accumulation, exact stored-byte independent oracle. Deferred final retained native result and process caches explicit.",
+      "peer": "Original product669 lowering, exported symbols renamed only; same Context.compile/native lifecycle",
+      "scale": "One frozen projection; 15-or31 independent processes per eight execution/allocation/placement strata;104paired rounds, original/selected A/A and controls qualified",
+      "absolute": "Full summary retains candidate/peer op/s per stratum; no full-engine token/s",
+      "ratio_ci": "Eight stratum median ratios [23.896662007031814, 24.30235678189705]; individual CI envelope [23.616702536186015, 24.78560669456067] (not pooled)",
+      "sensitivity": "Both execution/allocation orders, primary/placement; both route-local A/A variants PASS",
+      "mechanism": "Native packed kernel reads current words/scales/bias without K-group ATen unpack/matmul temporaries or selected-ID host wait. Qualified material regressions remain in the ledger; corrections require activity-card audit.",
+      "limitations": "Engineering actual RTX4070 W1-WSL only; original native private pool upper UNKNOWN; no all-shape or complete engine claim",
+      "evidence": [
+        "evidence/performance/inference-g07-cuda-packed-attempt-3/receipt.json",
+        "evidence/performance/inference-g07-cuda-packed-attempt-3/summary.json",
+        "evidence/architecture/inference-g07-packed-weight-audit/p1-adapter.json"
+      ]
+    },
+    {
+      "id": "inference-g07-cuda-packed-packed-m64-attempt-3",
+      "modules": [
+        "compute_provider_torch_cuda"
+      ],
+      "kind": "P1_WORKLOAD",
+      "comparison": "SAME_CONTRACT_INTERNAL",
+      "qualification": "QUALIFIED_RETAINED",
+      "direction": "WIN",
+      "practical_result": "PASS",
+      "engineering_action": "KEEP",
+      "consumer_weight": "HIGH",
+      "candidate_binding": "EXACT",
+      "recorded_date": "2026-10-16",
+      "product_candidate": "4274ee6cb6275bf36bda1d8c8c0e223f0fa65db5",
+      "consumer_shape": "CUDA F32 activation/scales/noninteger affine bias + resident U32affine4/group64 weight, packed-m64 K2048 N6144",
+      "contract": "Same original669 complete warm public invocation; Original affine dequantization and F32 accumulation, exact stored-byte independent oracle. Deferred final retained native result and process caches explicit.",
+      "peer": "Original product669 lowering, exported symbols renamed only; same Context.compile/native lifecycle",
+      "scale": "One frozen projection; 15-or31 independent processes per eight execution/allocation/placement strata;104paired rounds, original/selected A/A and controls qualified",
+      "absolute": "Full summary retains candidate/peer op/s per stratum; no full-engine token/s",
+      "ratio_ci": "Eight stratum median ratios [1.7572788353863382, 1.8251213680168104]; individual CI envelope [1.7407497735349453, 1.8798448077912822] (not pooled)",
+      "sensitivity": "Both execution/allocation orders, primary/placement; both route-local A/A variants PASS",
+      "mechanism": "Native packed kernel reads current words/scales/bias without K-group ATen unpack/matmul temporaries or selected-ID host wait. Qualified material regressions remain in the ledger; corrections require activity-card audit.",
+      "limitations": "Engineering actual RTX4070 W1-WSL only; original native private pool upper UNKNOWN; no all-shape or complete engine claim",
+      "evidence": [
+        "evidence/performance/inference-g07-cuda-packed-attempt-3/receipt.json",
+        "evidence/performance/inference-g07-cuda-packed-attempt-3/summary.json",
+        "evidence/architecture/inference-g07-packed-weight-audit/p1-adapter.json"
+      ]
     }
   ]
 }

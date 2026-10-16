@@ -1,0 +1,127 @@
+{
+  "schema": "hyle.inference-g07-packed-graph-consumers/v1",
+  "state": "PASS_SOURCE_STATIC_SHARED_65STEP_BOTH_ROUTES_AND_DEVICE_FACETS",
+  "candidates": {
+    "cuda": "4274ee6cb6275bf36bda1d8c8c0e223f0fa65db5",
+    "apple": "91ae8e67faa028061d8f5e8e216310c827e024a3"
+  },
+  "test_snapshot": "dda9840331466b81509d49d89a692bb9931a01a3",
+  "rows": [
+    {
+      "id": "g07-graph-extra-cuda-source",
+      "route": "cuda",
+      "verdict": "PASS",
+      "result_sha256": "df4dc0fcfd130b4d0cd34d5b56dcfb5a0b7e520fc680a342c81a4953b97bd135",
+      "consumer_source": {
+        "path": "tests/graph_route_cuda/packed_resident_consumer.cc",
+        "sha256": "b61b878cd60b2e5980edf6f2d5f3137b88c2b7d54cf2e45fa97675940b08f7a3"
+      },
+      "elapsed_seconds": 61.31961111300001,
+      "artifact": {
+        "path": "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/shared-sdk-build/bin/hyle_graph_route_cuda_packed_consumer_test",
+        "sha256": "544fa7ea8907afdf6e3ca0f5c88d65830a2fa0e7954c1a335479d7dc1fef8353"
+      }
+    },
+    {
+      "id": "g07-graph-consumer-c1-static",
+      "route": "cuda",
+      "verdict": "PASS",
+      "result_sha256": "27e2e84aa1edb9e8e7b597fede36e8a5e24df41c1c6388c5d23cabe597cc6bcf",
+      "consumer_source": {
+        "path": "tests/graph_route_cuda/packed_resident_consumer.cc",
+        "sha256": "b61b878cd60b2e5980edf6f2d5f3137b88c2b7d54cf2e45fa97675940b08f7a3"
+      },
+      "elapsed_seconds": 134.31533418999993,
+      "artifact": {
+        "path": "/root/hyle-scratch/compute-unified/g07-graph-consumer-c1-static/build/g07_graph_packed",
+        "sha256": "daad6bd7579127e2334dcc71b700c190b37a3855a92ad69e98984ea08461884a"
+      }
+    },
+    {
+      "id": "g07-graph-consumer-c1-shared",
+      "route": "cuda",
+      "verdict": "PASS",
+      "result_sha256": "0f524c9513a07f2f756990f640aebab906890c85312058736408eb0447d3ac70",
+      "consumer_source": {
+        "path": "tests/graph_route_cuda/packed_resident_consumer.cc",
+        "sha256": "b61b878cd60b2e5980edf6f2d5f3137b88c2b7d54cf2e45fa97675940b08f7a3"
+      },
+      "elapsed_seconds": 30.87976770200021,
+      "artifact": {
+        "path": "/root/hyle-scratch/compute-unified/g07-graph-consumer-c1-shared/build/g07_graph_packed",
+        "sha256": "d1bd458f41cecc6324ca799af61d60cf1eb19a540c93c616e995edd392b06b89"
+      }
+    },
+    {
+      "id": "g07-graph-extra-apple-source",
+      "route": "apple",
+      "verdict": "PASS",
+      "result_sha256": "21aa06596a9cfd140399f2969557264f5a994a389938eec7f081c50b8fff426c",
+      "consumer_source": {
+        "path": "tests/graph_route_apple/packed_resident_consumer.cc",
+        "sha256": "97f80f341c98329a05ef637e3338201bdba6c0dd438970ed84e0964b28f804e9"
+      },
+      "elapsed_seconds": 13.853998541000001,
+      "artifact": {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-build/bin/hyle_graph_route_apple_packed_consumer_test",
+        "sha256": "ddf3f87e001a4d2785a0d6c83775b0b2f00aba3082f2d4cdc386c1d355e985e1"
+      }
+    },
+    {
+      "id": "g07-graph-extra-apple-static",
+      "route": "apple",
+      "verdict": "PASS",
+      "result_sha256": "7f52f8a4f82848fde3b41892794eedb6ce9c6f2fffd3984ff50549fdcd8f0cf3",
+      "consumer_source": {
+        "path": "tests/graph_route_apple/packed_resident_consumer.cc",
+        "sha256": "97f80f341c98329a05ef637e3338201bdba6c0dd438970ed84e0964b28f804e9"
+      },
+      "elapsed_seconds": 3.316118625,
+      "artifact": {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/g07-graph-apple-static/build/consumer",
+        "sha256": "26ba162900db111cf8ba8701c8db5c55d0c77169b6533da121a2d2127d559f3a"
+      }
+    },
+    {
+      "id": "g07-graph-extra-apple-shared",
+      "route": "apple",
+      "verdict": "PASS",
+      "result_sha256": "3313bf55d163630a425d12bb77202c81c43886c887a346a1c62ca650b129a076",
+      "consumer_source": {
+        "path": "tests/graph_route_apple/packed_resident_consumer.cc",
+        "sha256": "97f80f341c98329a05ef637e3338201bdba6c0dd438970ed84e0964b28f804e9"
+      },
+      "elapsed_seconds": 2.581453084,
+      "artifact": {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/g07-graph-apple-shared/build/consumer",
+        "sha256": "633c90c9f576b1b8d4e9dbaa29a47cabb778e4e69d264e4ca8e82314c7ec963e"
+      }
+    }
+  ],
+  "normal_consumer_runs": 6,
+  "shapes_per_run": [
+    1,
+    17,
+    64
+  ],
+  "replays_per_shape": 65,
+  "device_facets": {
+    "cuda_memcheck": "PASS_0_ERRORS",
+    "cuda_racecheck": "PASS_0_HAZARDS_ERRORS_WARNINGS",
+    "apple_metal": "PASS_ACTUAL_API_AND_GPU_VALIDATION"
+  },
+  "raw_archive": {
+    "path": "raw.zip",
+    "sha256": "d9b402f1a433b8cd723bb29ccbf9570596a9d7a8ece281b6066c78503589c48c"
+  },
+  "scope": "Independent final-review evidence supplement only. CUDA affine4/group64 K128/N9 linear and grouped, real device TopK IDs, repeat/reorder/invalid/failure, shared backing, two queues/slots and old caller output after teardown. Apple block128 FP8 K256/N19, two slots, changed codes/scales and ordered-scale oracle, retained native array after Program/Context close. All M1/17/64 and65steps. Full real-role N/K fixtures and full-shape P1 are separate evidence, not these small orthogonal shapes.",
+  "retained_failures": [
+    "CUDA installed static consumer initial View::reshape array compile failure, corrected using explicit public TensorShape::create in same build/prefix; original source reconstructed from exact recorded Git blob with provenance.",
+    "CUDA source configure initially mixed HYLE_INSTALL=ON with tests ON; corrected packaging switch to OFF in same source/build. Original failure and cumulative cost retained."
+  ],
+  "limits": [
+    "No product/API/precision/performance change or new P1.",
+    "Host facets and original W1 reuse remain bound to exact candidate inputs; this supplement does not certify all formats/routes/shapes/capture/private upper.",
+    "Source builds are actual root Hyle test targets; SDK builds are installed-only pure-public consumers. Source mirror Git-free and Windows canonical; no remote product copyback."
+  ]
+}

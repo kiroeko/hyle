@@ -1,7 +1,7 @@
 # 单机推理基础缺口补齐执行总卡
 
 状态：**G01–G06六项已验收；新G07–G10 goal ACTIVE，2026-10-16**。旧goal不恢复；用户
-已明确要求创建新goal并开始剩余四项，现推进G07：CUDA C1 4274/Apple D2 91ae CANDIDATE；Apple性能已PASS。
+已明确要求创建新goal并开始剩余四项，G07已整项验收，新goal完成1/4、历史累计7/10；下一项G08。
 四项完成后再开发Qwen3.5-2B full CUDA文本CLI，与llama.cpp比较prefill/decode tokens/s；
 CLI实现在本goal之外。原G01–G10的修正、成熟承载或完整路线反证范围保留。
 不能以延后、引擎自己写胶水或一个小模型出字代替完成。
@@ -56,7 +56,7 @@ G06–G10 不由该聚合裁决代签。
 | G04 量化 KV | [已验收，有限资源/精度取舍终审](../compute/inference-g04-g05-final-closure.md)。CPU/Apple/Vulkan原P1保留；CUDA按原生FP8驻留/F32 partial的P0成本合同收口，原warm LOSS/5%未决不改PASS。五个剩余owner结束本轮，所有旧失败/费用保留 | 实际编码append→resident→直接attention，不常驻完整历史解码副本 | compute_ops/batch、实际Provider/native route |
 | G05 attention 语义域 | [同终审已验收](../compute/inference-g04-g05-final-closure.md)：causal-window/full noncausal/有限Dqk≠Dv及原完整数值/生命周期/交付域；不以本轮收口声称所有未来数学域或完整引擎性能 | 固定有限window/mask/维度与失败边界 | compute_ops/batch、实际Provider/native route |
 | G06 metadata/decode | [原独立终审已验收](../compute/inference-g06-final-closure.md)：active/delta、共享上传、GlogG准入、四路线runtime与有限capture。当前FI另由G04/G05终审收口；原G06证据与所有限制保留 | host-known/device-produced、topology/runtime复用和decode成本 | compute_batch、FI/native Provider、graph_batch |
-| G07 packed 权重 | [CUDA C1 4274 / Apple D2 91ae CANDIDATE](../compute/inference-g07-packed-weights.md)：Apple D2源码/风险/两SDK及完整P1均通过，M1约2.04倍、M64约1.23倍，停止追加。CUDA原M64合格5%FAIL保留；C1四行复用已过24Provider/32Direct+Graph/公开64步/设备与三san、Windows4项，两新SDK与相同P1待验。W1/P0已回映，七门/红队/LOC未聚合，不计整项完成 | 锁定 artifact→resident→selected math，借原生packed/冷repack；checked IDs保错误，排除warm完整展开/多余host检查 | 实际低精度 Provider/native route及资源桥 |
+| G07 packed 权重 | [ACCEPTED](../compute/inference-g07-final-closure.md)：CUDA C1 4274/Apple D2 91ae CLOSED；两路线源码/实际风险/迁址static-shared及M1/17/64各65步Graph补证通过；原669同合同P1四项均WIN/5%PASS，原失败/费用/限制保留 | 原驻留packed/checked IDs、生命周期与七门验收完成；不代签整引擎token/s | 两owner保持各自candidate，停止重跑 |
 | G08 数值输出选择 | 待有限数值域选择 | row-wise greedy/selection与选定随机数值域，counter/state、质量/分布和少量结果返回 | compute_ops、实际 Provider/native route；模型采样政策不下沉 |
 | G09 联合流水 | 待最小consumer | 原有限slots/依赖推进，真实无依赖CPU/GPU支路及microbatch trace；不重复scheduler | 三个graph hybrid及必要原native执行桥 |
 | G10 CPU预算 | 待最小consumer | executor/native private pools明确报告和约束边界，阶段与并发invocation组合 | compute_route_cpu及实际CPU Provider |
@@ -295,3 +295,13 @@ G01–G06告一段落。剩余G07 packed权重、G08输出数值选择、G09联�
 本节和顶部为当前调度；下文及上文历史日期的ACTIVE/旧完成数/继续语句只保留当时事实，
 不得据此恢复已清除的goal或重跑已结束实验。G07当前CUDA C1 4274/Apple D2 91ae为CANDIDATE；
 执行只按活动卡冻结范围。G08–G10不因未来引擎暂时用不到而删除，也不扩大为无终点调研。
+
+
+### 2026-10-16 G07整项接受
+
+[最终记录](../compute/inference-g07-final-closure.md)关闭两owner有限W1–W4；新goal完成1/4，
+历史累计7/10。CUDA/Apple最终四项同669完整warm调用均WIN/原5%PASS；源码/风险/四SDK/
+独立头与新增两路线Graph M1/17/64各65步补证均通过。原N2实际M1、旧失败/费用及native
+限制如实保留。本节更新当前调度，上节“完成0/4/仍CANDIDATE”为当时历史，不再生效。
+下一步只对G08原row-wise greedy/selection和有限随机数值域做scope/audit；G09/G10未开始。
+不重开已接受G01–G07，不追加全库缺口调研；完整Qwen CLI仍在四项之后。

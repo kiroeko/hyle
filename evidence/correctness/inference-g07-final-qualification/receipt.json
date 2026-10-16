@@ -1,0 +1,278 @@
+{
+  "schema": "hyle.inference-g07-final-qualification/v1",
+  "state": "PASS_FINITE_G07_ACCEPTED",
+  "previous_registry_ref": "dda9840331466b81509d49d89a692bb9931a01a3",
+  "product_baseline": "669121418669b31f6849c74f64362aaf8d6eb919",
+  "owners": [
+    {
+      "module": "compute_provider_torch_cuda",
+      "candidate": "4274ee6cb6275bf36bda1d8c8c0e223f0fa65db5",
+      "files": [
+        {
+          "path": "src/compute_provider_torch_cuda/artifact_provider.cc",
+          "sha256": "eb2a53e76d3bb307436b956eb7b12159a289eecbc07f2c4e701b32d29f9e1a20"
+        },
+        {
+          "path": "src/compute_provider_torch_cuda/CMakeLists.txt",
+          "sha256": "0219249f7ccda525bdea300ed53f55dd259eef802052a1306c913378cdca7675"
+        },
+        {
+          "path": "src/compute_provider_torch_cuda/HyleTorchCudaSdkConfig.cmake",
+          "sha256": "8c18f38c2b87aeacf274d60603d8ce21da6780b389ce617b9ad9bbfc9c0ed287"
+        },
+        {
+          "path": "src/compute_provider_torch_cuda/mlx_packed_kernel.cu",
+          "sha256": "018d2dafa2c265253010e71be0facf2aad27043d95373bb715cecc3a4ddfe337"
+        },
+        {
+          "path": "src/compute_provider_torch_cuda/mlx_packed_kernel.h",
+          "sha256": "d88163997086a4cf51e9217aa57f67e09bafb1aed6f0a5c9188f367a3c6aa2bc"
+        },
+        {
+          "path": "src/compute_provider_torch_cuda/torch_cuda_fetch.cmake",
+          "sha256": "7610909071928564dabfc87d898a6fc8a59eb59fb3297931ad704fc2eab2ed41"
+        },
+        {
+          "path": "src/compute_provider_torch_cuda/torch_cuda_linux.cmake",
+          "sha256": "d598d5f7a7b6bf4e25e7aac8446ab41c8ec4721f0c68ea889a44355796240700"
+        }
+      ]
+    },
+    {
+      "module": "compute_route_apple",
+      "candidate": "91ae8e67faa028061d8f5e8e216310c827e024a3",
+      "files": [
+        {
+          "path": "src/compute_route_apple/apple_batch.cc",
+          "sha256": "d63100040d3624f2e477849126b26ae5a5823ec8493b0f144302c7c19e000ae9"
+        },
+        {
+          "path": "src/compute_route_apple/apple_build.h.in",
+          "sha256": "05caf23a07d9df00934c827fd89ba16c9b7dc85c0cd658be01e4ccf89f557996"
+        },
+        {
+          "path": "src/compute_route_apple/apple_checks.h",
+          "sha256": "ad551180e3211086858440f36dd2e1b0f624436973a40bd2c8875e45a4496543"
+        },
+        {
+          "path": "src/compute_route_apple/apple_context.cc",
+          "sha256": "274037dda5c58fda4aab3a210a0606f1e86954385d62d448ed44e9802843fb37"
+        },
+        {
+          "path": "src/compute_route_apple/apple_copy_internal.h",
+          "sha256": "ff139033c6cd0a9472ae5e68cd7962cecb64ceb96d13ee4fa3bdf632db1c6d88"
+        },
+        {
+          "path": "src/compute_route_apple/apple_copy_program.cc",
+          "sha256": "5c705087c887fbb02b2cb44eb0089eb498d9395c6b078b754d9cf7d18fcef6e0"
+        },
+        {
+          "path": "src/compute_route_apple/apple_copy_recording.mm",
+          "sha256": "b2786a571ad4fe67973da0f64b8c230acc1bc9fad6d49cf6f229fa8e001af3bb"
+        },
+        {
+          "path": "src/compute_route_apple/apple_environment.mm",
+          "sha256": "afea659e9df760e9b4af37b5c77cd6d9cf64c50005e08627d89ab21dd55943eb"
+        },
+        {
+          "path": "src/compute_route_apple/apple_file_stream_access.h",
+          "sha256": "85fd9d1b1c3f73ec1b1a42c1fbd94bd7ee97f3d6efaf802a0952ffb58386e5f3"
+        },
+        {
+          "path": "src/compute_route_apple/apple_internal.h",
+          "sha256": "ee14ab5edf41c20aa9fd83767a6a8481fec83c8fd4510a6cd7c253caef633e1c"
+        },
+        {
+          "path": "src/compute_route_apple/apple_leased_invocation.cc",
+          "sha256": "9674b5eaff32201aa4741497b966604796601137f8a3e8267248572d1375c111"
+        },
+        {
+          "path": "src/compute_route_apple/apple_materialized_invocation.cc",
+          "sha256": "92af14159524491b977073cb586713a8c1527bca84d080f7b93e72c9c07a5e0b"
+        },
+        {
+          "path": "src/compute_route_apple/apple_mature_artifact.cc",
+          "sha256": "e178b97861054d062bc271d2cafdc0a5ad0c0fddf55dd584164902566f1ebe89"
+        },
+        {
+          "path": "src/compute_route_apple/apple_mature_artifact.h",
+          "sha256": "13eea79e2cceef1c734cf11c89e2a4352d6e73f61f730b21f6cac25fe8f54e86"
+        },
+        {
+          "path": "src/compute_route_apple/apple_mature_float.cc",
+          "sha256": "60cd69990e1430e854a8614edef691b35ad86404460977667374bdf4043592e1"
+        },
+        {
+          "path": "src/compute_route_apple/apple_mature_gguf.cc",
+          "sha256": "8dcb44488a72c2bfc4cef47f4edcc46d9f1bd9b9fa7e66a06308d3e7ead1e400"
+        },
+        {
+          "path": "src/compute_route_apple/apple_mature_indexing.cc",
+          "sha256": "b1ab46d533fde8d3ad09a25df4e3d0aa4eddd7b381c38bf18810488d13c070e4"
+        },
+        {
+          "path": "src/compute_route_apple/apple_mature_indexing.h",
+          "sha256": "e6536bcb3c31f26c1952a8f0ea5e52d1dc8f1ef0ee5d1ce29409da22d988585a"
+        },
+        {
+          "path": "src/compute_route_apple/apple_mature_reduction.cc",
+          "sha256": "9648c57f3050a92192f3b0ed025a9c99c41ab2816af18a8ab3d5bc6f5e04f9ec"
+        },
+        {
+          "path": "src/compute_route_apple/apple_mature_reduction.h",
+          "sha256": "00d0c40bc483379af8470b517d518e360dca05e900505a13480e67cadd792a26"
+        },
+        {
+          "path": "src/compute_route_apple/apple_memory.mm",
+          "sha256": "2da66548242675285830054cd6e6a82422630f28cab4113ca45e9f3eddc156af"
+        },
+        {
+          "path": "src/compute_route_apple/apple_operations.cc",
+          "sha256": "4c90b14e44cc3a438c16c9935ef19e1e14a1642790179261004cb2d8d6065ee2"
+        },
+        {
+          "path": "src/compute_route_apple/apple_recurrent.cc",
+          "sha256": "eec482f1d99e5cbe0a0102a0ecf73d73afa339d1d7f60df2811e2830fbf35bda"
+        },
+        {
+          "path": "src/compute_route_apple/apple_recurrent.h",
+          "sha256": "272dc6bf20b3aa99822e5ac56bc33eefe6a6ba4da73685ca6224225e249aef07"
+        },
+        {
+          "path": "src/compute_route_apple/apple_runtime_internal.h",
+          "sha256": "d081f2b519f87e6420345c94e92475aaf93b1c9cade591fd46bbe8a01f4a398a"
+        },
+        {
+          "path": "src/compute_route_apple/apple_tensor.cc",
+          "sha256": "93462583dfeb859fc9a59a5a8eef36540a84346bebca9cf6e331934bd10dc1f7"
+        },
+        {
+          "path": "src/compute_route_apple/apple_tensor.h",
+          "sha256": "c28c1096b66603324641c79b7096beefee6ca8d47a21637b7eec3c8474abc450"
+        },
+        {
+          "path": "src/compute_route_apple/apple_weights.mm",
+          "sha256": "c15e7514bf7b509c19a94c7500d68ae42743388ad6664d117877594291016d6f"
+        },
+        {
+          "path": "src/compute_route_apple/CMakeLists.txt",
+          "sha256": "328cfc8fbf425a214c0864c1286bb0ce073f74cceddce970e7e4d54ceb58a2f8"
+        },
+        {
+          "path": "src/compute_route_apple/file_stream.cc",
+          "sha256": "696a74b36b61914fb11eb8ea58fd87727898711278fcdb5de5fc917ebd1c8b74"
+        }
+      ]
+    }
+  ],
+  "evidence": [
+    {
+      "path": "evidence/architecture/inference-g07-packed-weight-audit/audit.json",
+      "sha256": "628be1f33e496c562dd2d1203ae1fbe05325251ae834f5f39ebec4d1ec453fe1"
+    },
+    {
+      "path": "evidence/architecture/inference-g07-packed-weight-audit/w1-reconciliation.json",
+      "sha256": "5cc937053e750d1f07ba80d54aacbfa1837067de27a8434175a6a7f5d2377a6c"
+    },
+    {
+      "path": "evidence/architecture/inference-g07-packed-weight-audit/p0.json",
+      "sha256": "b88bfa59c32bbec2f6ecbe97eececba3df9fb9a14cdfc11765338b7897c82cfc"
+    },
+    {
+      "path": "evidence/architecture/inference-g07-packed-weight-audit/p0-c1.json",
+      "sha256": "ec407f38d5c96b89a8b5f6f2c2faeb6fe50e7d7252400b79b3fbaa3af1c48e72"
+    },
+    {
+      "path": "evidence/architecture/inference-g07-packed-weight-audit/p0-d2.json",
+      "sha256": "db6f8f5163eca5ec4ca78e273238066894d1de0b3cef137a73708388c6e21b28"
+    },
+    {
+      "path": "evidence/architecture/inference-g07-packed-weight-audit/p1-adapter.json",
+      "sha256": "ed8c247b81f25894f7d01aeaef173b0f88427ef9dbe8c0ec2678280345ea86ba"
+    },
+    {
+      "path": "evidence/architecture/inference-g07-packed-weight-audit/loc-final.json",
+      "sha256": "f6a6f09b48894d23882a6a1c7b05203a84d17857040285d8d6ff7a618ab48b38"
+    },
+    {
+      "path": "evidence/correctness/inference-g07-cuda-row-reuse-c1/receipt.json",
+      "sha256": "51d3dfb3441a51a76e45d97303137a05d09f0b311c88cf6449a15812d7c7001d",
+      "raw_archive_sha256": "a34f2b7e634f92a422a97678c809d4eb9d91fb4f931c8530ae7fded5ba30ed90"
+    },
+    {
+      "path": "evidence/correctness/inference-g07-apple-blocked-d2/receipt.json",
+      "sha256": "d908a01424773243d6a2bf7af783a57eeabb548d2ec17242f8b4b4f1f8d0129d",
+      "raw_archive_sha256": "ce9de482fb652fff2ee725eb0e715a733adaf320bd7110e9abb5e0c47e38ad5b"
+    },
+    {
+      "path": "evidence/correctness/inference-g07-packed-graph-consumers/receipt.json",
+      "sha256": "5132bd46a6ee3e4ae6429659e68363f588d1f9de75b69153ed74290d3d3461b1",
+      "raw_archive_sha256": "d9b402f1a433b8cd723bb29ccbf9570596a9d7a8ece281b6066c78503589c48c"
+    },
+    {
+      "path": "evidence/delivery/inference-g07-cuda-packed-c1/receipt.json",
+      "sha256": "cb4a9162a5936df90df862d7a86bb77ea9d55e0ef1905d75511f08053fa3dbdd",
+      "raw_archive_sha256": "309a3a47d62c926d5efa42c4246bda77da0cb2f3f767957a76319fcdd803d746"
+    },
+    {
+      "path": "evidence/delivery/inference-g07-apple-packed-d2/receipt.json",
+      "sha256": "a6aa20b07d71c22b9c39c26f678306c9dec3bedf1128304663f3b4888f66333d",
+      "raw_archive_sha256": "8f7e982dcb7ea6146479036b4eb6a668c0fdb854c7ebe7a7fe95487a0b4c18f3"
+    },
+    {
+      "path": "evidence/performance/inference-g07-cuda-packed-attempt-3/receipt.json",
+      "sha256": "65dd574289e09d1043f6ff8f3ed55dd9c919ec7b76293053fd973a18b71607b4",
+      "raw_archive_sha256": "6609b21511ee03a98fe50e857b3c17dc6f79d918e0368ec9ea7b01d7d3eba253"
+    },
+    {
+      "path": "evidence/performance/inference-g07-apple-packed-attempt-3/receipt.json",
+      "sha256": "b4c432b796e3a616456ff15c8459de2dd9c8a842a5866c01ed2167f1410f5c17",
+      "raw_archive_sha256": "7d0c89906e9607407665d0410c8fe7817b1548f42959489908a3e798dae081a1"
+    }
+  ],
+  "w1_reverified": {
+    "source_files": 70,
+    "records": 20
+  },
+  "product_gates": {
+    "scope": "PASS",
+    "architecture": "PASS",
+    "correctness": "PASS",
+    "delivery": "PASS",
+    "usability_docs": "PASS",
+    "red_team": "PASS",
+    "engineering_performance": "PASS"
+  },
+  "review": {
+    "mode": "Separate final self-review phase, not a second reviewer",
+    "findings": [
+      "Original N2 activation M1/two replays was incorrectly inferred as M17/M64. Corrected explicitly and supplemented both routes with actual M1/17/64 x65 source/static/shared and actual CUDA/Metal device facets.",
+      "Common alias validation plus Provider no-alias capability rejects overlapping output before kernel; native checked-ID kernel completes before payload and nonzero status prevents payload reads/writes.",
+      "Stored-byte independent oracles, original scales/dtypes, live mutable inputs, accepted prefix, old outputs and true native owners retained.",
+      "Original669 full warm-call performance contract, AA/orders/placement qualification, charged/deferred lifetime ledger and all prior qualified failures retained.",
+      "Installed-only SDK/public headers and real source targets pass. No public API, vendor version, capture/private upper or model throughput expansion."
+    ]
+  },
+  "limits": [
+    "W1 is exact unchanged-source/evidence reconciliation; not newly run every GGUF/route/joint/64 combination.",
+    "Host ASan/UBSan/TSan do not certify device/driver/native private pools or complete LSan. Windows explicit Provider is four cases, not complete native route qualification.",
+    "Terminal record owns finite scope, all seven questions, costs, LOC and reopen triggers; G08-G10 and full Qwen CLI remain."
+  ],
+  "mechanical_checks": {
+    "verdict": "PASS",
+    "previous_registry_ref": "dda9840331466b81509d49d89a692bb9931a01a3",
+    "selected_gates": [
+      "docs",
+      "closure"
+    ],
+    "skipped_gates": 146,
+    "selector_result_sha256": "418425d2574a1128a311767653e41516af0e6f4b834cbe12582f2ca014375fd5",
+    "maintenance_archive": {
+      "path": "maintenance.zip",
+      "sha256": "07c306b6457862d483563112888ccf104f4358c6c7f9e8f24a5076a34d70368f"
+    },
+    "git_diff_check": "PASS",
+    "initial_projection_check": "First closure check reported stale generated status.md; --write-status regenerated it, explicit previous-ref check and selector closure then passed. No product gate repeated.",
+    "scope": "Final docs/state/evidence-only delta from dda984; ordinary/source/SDK/risk/P1 actual runs separately indexed above. The audit receipt state is finalized after this successful maintenance snapshot; no product byte changed."
+  }
+}

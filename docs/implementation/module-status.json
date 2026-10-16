@@ -517,10 +517,15 @@
     },
     {
       "module": "compute_route_apple",
-      "state": "CANDIDATE",
-      "record": "docs/implementation/tasks/compute/inference-g07-packed-weights.md",
-      "summary": "G07 CANDIDATE D2 91ae: declared source/joint/public, Metal/three host facets and relocated static/shared SDK pass. Full qualified P1 M1 WIN2.038-2.060, M64 WIN1.227-1.238; both5% gates PASS/verify0. Earlier two material losses/cost retained; final aggregate/red-team/LOC pending. CUDA C1 independently AUDITED.",
-      "candidate": "91ae8e67faa028061d8f5e8e216310c827e024a3"
+      "state": "CLOSED",
+      "record": "docs/implementation/tasks/compute/inference-g07-final-closure.md",
+      "summary": "G07 CLOSED D2 packed FP8 MLX carrier91ae; source/Metal/scoped host risks, relocated static/shared and M1/17/64x65 Graph supplement PASS. Same669 full warm P1 M1 WIN2.038-2.060 and M64 WIN1.227-1.238, both5% PASS/verify0. Seven gates/LOC accepted; original two material losses/cost/private limits retained. G08-G10 and engine tokens/s remain.",
+      "candidate": "91ae8e67faa028061d8f5e8e216310c827e024a3",
+      "performance": {
+        "tier": "P1",
+        "evidence": "docs/implementation/tasks/compute/inference-g07-final-closure.md",
+        "material_margin_pct": 5
+      }
     },
     {
       "module": "graph_route_apple",
@@ -635,10 +640,15 @@
     },
     {
       "module": "compute_provider_torch_cuda",
-      "state": "CANDIDATE",
-      "record": "docs/implementation/tasks/compute/inference-g07-packed-weights.md",
-      "summary": "G07 CANDIDATE C1 fixed four-row packed linear reuse4274:24Provider,32Direct/Graph, public64step, actual memcheck/racecheck22each, three host facets22each and Windows explicit Provider pass. New relocated SDKs and unchanged-contract P1 pending. Old qualified gate failure/cost retained; Apple D2 already P1 PASS.",
-      "candidate": "4274ee6cb6275bf36bda1d8c8c0e223f0fa65db5"
+      "state": "CLOSED",
+      "record": "docs/implementation/tasks/compute/inference-g07-final-closure.md",
+      "summary": "G07 CLOSED C1 fixed four-row packed linear reuse4274; source/Windows/scoped device-host risks, relocated static/shared and M1/17/64x65 Graph supplement PASS. Same669 full warm P1 M1 WIN23.897-24.302 and M64 WIN1.757-1.825, both5% PASS/verify0. Seven gates/LOC accepted; original failures/cost/private limits retained. G08-G10 and engine tokens/s remain.",
+      "candidate": "4274ee6cb6275bf36bda1d8c8c0e223f0fa65db5",
+      "performance": {
+        "tier": "P1",
+        "evidence": "docs/implementation/tasks/compute/inference-g07-final-closure.md",
+        "material_margin_pct": 5
+      }
     },
     {
       "module": "graph_route_cpu_cuda",
