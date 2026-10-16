@@ -7,4 +7,7 @@ if(HYLE_COMPUTE_CUDA_ENABLED)
   target_link_libraries(hyle_graph_route_cuda_test PRIVATE ggml)
   target_include_directories(hyle_graph_route_cuda_test PRIVATE "${HYLE_GGML_SOURCE_DIR}/src")
   hyle_stage_runtime(hyle_graph_route_cuda_test)
+  hyle_add_test(graph_route_cuda NAME packed_consumer
+    SOURCES packed_resident_consumer.cc DEPS hyle_compute_backend_cuda)
+  hyle_stage_runtime(hyle_graph_route_cuda_packed_consumer_test)
 endif()
