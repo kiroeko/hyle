@@ -97,7 +97,7 @@ struct Harness {
 #else
 namespace mx=mlx::core;
 namespace a=c::apple;
-constexpr int n=2048,group=128;
+constexpr int n=2048;
 constexpr const char* route="Apple";
 float fp8(std::uint8_t code){const int e=(code>>3)&15,f=code&7;const float v=e?std::ldexp(1.F+float(f)/8,e-7):std::ldexp(float(f),-9);return code&128?-v:v;}
 std::uint16_t bf16(float value){auto bits=std::bit_cast<std::uint32_t>(value);return std::uint16_t((bits+0x7fff+((bits>>16)&1))>>16);}

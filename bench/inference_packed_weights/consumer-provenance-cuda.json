@@ -1,0 +1,19 @@
+{
+  "consumer": "Single-machine resident packed projection after prepare, dynamic natural input, M1 decode / M64 prefill fragment",
+  "provenance": "Fixed G07 card W2/W3 P1; CUDA hidden2048 toFFN6144 affine MLX projection, Apple2048 block128 FP8 projection. Provisional consumer archetypes, no end-to-end frequency or token/s claim.",
+  "scope": {
+    "M": [
+      1,
+      64
+    ],
+    "K": 2048,
+    "N": 6144
+  },
+  "peer_revision": "669121418669b31f6849c74f64362aaf8d6eb919",
+  "source": "packed_bench.cc",
+  "sha256": "b7db81238009596832c5d3319026ac41f069ed1bdbf3dc983f9d449757f5440b",
+  "adapter_audit": {
+    "path": "../../evidence/architecture/inference-g07-packed-weight-audit/p1-adapter.json",
+    "sha256": "ed8c247b81f25894f7d01aeaef173b0f88427ef9dbe8c0ec2678280345ea86ba"
+  }
+}

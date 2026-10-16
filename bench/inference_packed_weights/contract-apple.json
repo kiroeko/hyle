@@ -1,0 +1,464 @@
+{
+  "schema": "hyle.perf.contract/v1",
+  "id": "inference-g07-apple-packed-p1-v1",
+  "module": "compute_route_apple",
+  "claim": "Finite same-semantics resident packed warm complete call versus original product669. Two fixed shapes, F32 math, explicit deferred final native-owner/cache destruction; engineering qualification only, no token/s or llama.cpp claim.",
+  "candidate": {
+    "target": "g07_packed_primary",
+    "delivery_shape": "static",
+    "revision": "runtime-bound",
+    "component": "compute_route_apple",
+    "entrypoint": "packed_bench.cc"
+  },
+  "peers": [
+    {
+      "id": "original669",
+      "revision": "669121418669b31f6849c74f64362aaf8d6eb919",
+      "configuration": {
+        "delivery_shape": "source",
+        "role": "Original HYLE product lowering, link-symbol-only renaming",
+        "precision": "Same F32 math, original dtype casts and scale order",
+        "scope": "Same ready resident weight/input and public submission/completion lifecycle"
+      }
+    }
+  ],
+  "strata": [
+    {
+      "id": "primary-candidate-first-candidate-allocation-first",
+      "dimensions": {
+        "placement": "primary",
+        "execution_order": "candidate-first",
+        "allocation_order": "candidate-first"
+      },
+      "target_variant": "primary"
+    },
+    {
+      "id": "primary-candidate-first-peer-allocation-first",
+      "dimensions": {
+        "placement": "primary",
+        "execution_order": "candidate-first",
+        "allocation_order": "peer-first"
+      },
+      "environment": {
+        "HYLE_BENCH_PEER_ALLOCATION_FIRST": "1"
+      },
+      "target_variant": "primary"
+    },
+    {
+      "id": "primary-peer-first-candidate-allocation-first",
+      "dimensions": {
+        "placement": "primary",
+        "execution_order": "peer-first",
+        "allocation_order": "candidate-first"
+      },
+      "environment": {
+        "HYLE_BENCH_RIVAL_FIRST": "1"
+      },
+      "target_variant": "primary"
+    },
+    {
+      "id": "primary-peer-first-peer-allocation-first",
+      "dimensions": {
+        "placement": "primary",
+        "execution_order": "peer-first",
+        "allocation_order": "peer-first"
+      },
+      "environment": {
+        "HYLE_BENCH_RIVAL_FIRST": "1",
+        "HYLE_BENCH_PEER_ALLOCATION_FIRST": "1"
+      },
+      "target_variant": "primary"
+    },
+    {
+      "id": "placement-candidate-first-candidate-allocation-first",
+      "dimensions": {
+        "placement": "perturbed",
+        "execution_order": "candidate-first",
+        "allocation_order": "candidate-first"
+      },
+      "target_variant": "placement"
+    },
+    {
+      "id": "placement-candidate-first-peer-allocation-first",
+      "dimensions": {
+        "placement": "perturbed",
+        "execution_order": "candidate-first",
+        "allocation_order": "peer-first"
+      },
+      "environment": {
+        "HYLE_BENCH_PEER_ALLOCATION_FIRST": "1"
+      },
+      "target_variant": "placement"
+    },
+    {
+      "id": "placement-peer-first-candidate-allocation-first",
+      "dimensions": {
+        "placement": "perturbed",
+        "execution_order": "peer-first",
+        "allocation_order": "candidate-first"
+      },
+      "environment": {
+        "HYLE_BENCH_RIVAL_FIRST": "1"
+      },
+      "target_variant": "placement"
+    },
+    {
+      "id": "placement-peer-first-peer-allocation-first",
+      "dimensions": {
+        "placement": "perturbed",
+        "execution_order": "peer-first",
+        "allocation_order": "peer-first"
+      },
+      "environment": {
+        "HYLE_BENCH_RIVAL_FIRST": "1",
+        "HYLE_BENCH_PEER_ALLOCATION_FIRST": "1"
+      },
+      "target_variant": "placement"
+    }
+  ],
+  "controls": [
+    {
+      "id": "aa",
+      "kind": "aa",
+      "parameters": {
+        "maximum_bias_percent": 5
+      }
+    },
+    {
+      "id": "delta5",
+      "kind": "known-delta",
+      "parameters": {
+        "nominal_percent": 5
+      }
+    },
+    {
+      "id": "delta10",
+      "kind": "known-delta",
+      "parameters": {
+        "nominal_percent": 10
+      }
+    },
+    {
+      "id": "timer-floor",
+      "kind": "timer-floor",
+      "parameters": {
+        "minimum_workload_floor_multiple": 20
+      }
+    },
+    {
+      "id": "placement",
+      "kind": "placement",
+      "parameters": {}
+    }
+  ],
+  "workloads": [
+    {
+      "id": "packed-m1",
+      "tier": "consumer",
+      "gate_role": "product",
+      "consumer_key": "inference-apple-resident-packed/m1",
+      "provenance": {
+        "path": "consumer-provenance-apple.json",
+        "sha256": "13eb72201554e4350f637a741c1311d09f306c4edeccd36fa94a5503dba40883"
+      },
+      "ownership_topology": {
+        "candidate": "One public prepared Program/Invocation with resident immutable explicit inputs, complete submit/wait/public temporary release",
+        "peer": "Same public owner graph, exact original lowering under native runtime; last native result retained through next replacement/final destruction",
+        "equivalence": "Warm steady replay includes previous result replacement; last native result, Program/Invocation and process caches deferred identically. No mathematical work lifted cold."
+      },
+      "material_contribution": {
+        "frequency": 1,
+        "value": 1,
+        "unit": "complete-packed-projection",
+        "budget": 5,
+        "denominator": "one full public warm packed projection including completion and result owner handling",
+        "derivation": "Frozen provisional inference projection archetype, not measured full-engine fraction"
+      },
+      "semantic_contract": "BF16 input/output, E4M3FN block128/F32 scales, full dynamic quantization, F32 dots and ordered scales; M1 K2048 N2048",
+      "comparability": "COMPARABLE",
+      "peer_id": "original669",
+      "metric": {
+        "name": "operations-per-second",
+        "unit": "op/s",
+        "direction": "higher-is-better"
+      },
+      "input": {
+        "distribution": "Deterministic nonzero signed finite dyadic activation and packed values, varying scales; CUDA noninteger bias; independent stored-byte double oracle and three replays per arm",
+        "scale": {
+          "M": 1,
+          "K": 2048,
+          "N": 2048,
+          "group_size": 128
+        }
+      },
+      "setup": "Context, Program/Invocation, resident input/weight allocation/upload and initial native library/JIT warmup cold. Per-call conversion/quantization/math/allocations/native completion charged. Final retained native result/driver allocator cache/Program destruction deferred. Private native pool upper UNKNOWN.",
+      "charged_phases": [
+        "public submit/admission and real payload-dependent graph/kernel dispatch",
+        "all dynamic quantization/decode/native math/scaling/cast and necessary destination copy",
+        "actual completion/status/result wait, public temporary owner release",
+        "previous private result replacement/release in steady replay"
+      ],
+      "pair": {
+        "candidate": "HYLE Apple resident packed",
+        "peer": "Original669 Apple packed"
+      },
+      "practical_margin_percent": 5,
+      "noninferiority_margin_percent": 5,
+      "estimator": {
+        "kind": "process-median",
+        "minimum_independent_samples": 15,
+        "tail_alpha": 0.01
+      },
+      "required_strata": [
+        "primary-candidate-first-candidate-allocation-first",
+        "primary-candidate-first-peer-allocation-first",
+        "primary-peer-first-candidate-allocation-first",
+        "primary-peer-first-peer-allocation-first",
+        "placement-candidate-first-candidate-allocation-first",
+        "placement-candidate-first-peer-allocation-first",
+        "placement-peer-first-candidate-allocation-first",
+        "placement-peer-first-peer-allocation-first"
+      ],
+      "required_controls": [
+        "aa",
+        "delta5",
+        "delta10",
+        "timer-floor",
+        "placement"
+      ]
+    },
+    {
+      "id": "packed-m64",
+      "tier": "consumer",
+      "gate_role": "product",
+      "consumer_key": "inference-apple-resident-packed/m64",
+      "provenance": {
+        "path": "consumer-provenance-apple.json",
+        "sha256": "13eb72201554e4350f637a741c1311d09f306c4edeccd36fa94a5503dba40883"
+      },
+      "ownership_topology": {
+        "candidate": "One public prepared Program/Invocation with resident immutable explicit inputs, complete submit/wait/public temporary release",
+        "peer": "Same public owner graph, exact original lowering under native runtime; last native result retained through next replacement/final destruction",
+        "equivalence": "Warm steady replay includes previous result replacement; last native result, Program/Invocation and process caches deferred identically. No mathematical work lifted cold."
+      },
+      "material_contribution": {
+        "frequency": 1,
+        "value": 1,
+        "unit": "complete-packed-projection",
+        "budget": 5,
+        "denominator": "one full public warm packed projection including completion and result owner handling",
+        "derivation": "Frozen provisional inference projection archetype, not measured full-engine fraction"
+      },
+      "semantic_contract": "BF16 input/output, E4M3FN block128/F32 scales, full dynamic quantization, F32 dots and ordered scales; M64 K2048 N2048",
+      "comparability": "COMPARABLE",
+      "peer_id": "original669",
+      "metric": {
+        "name": "operations-per-second",
+        "unit": "op/s",
+        "direction": "higher-is-better"
+      },
+      "input": {
+        "distribution": "Deterministic nonzero signed finite dyadic activation and packed values, varying scales; CUDA noninteger bias; independent stored-byte double oracle and three replays per arm",
+        "scale": {
+          "M": 64,
+          "K": 2048,
+          "N": 2048,
+          "group_size": 128
+        }
+      },
+      "setup": "Context, Program/Invocation, resident input/weight allocation/upload and initial native library/JIT warmup cold. Per-call conversion/quantization/math/allocations/native completion charged. Final retained native result/driver allocator cache/Program destruction deferred. Private native pool upper UNKNOWN.",
+      "charged_phases": [
+        "public submit/admission and real payload-dependent graph/kernel dispatch",
+        "all dynamic quantization/decode/native math/scaling/cast and necessary destination copy",
+        "actual completion/status/result wait, public temporary owner release",
+        "previous private result replacement/release in steady replay"
+      ],
+      "pair": {
+        "candidate": "HYLE Apple resident packed",
+        "peer": "Original669 Apple packed"
+      },
+      "practical_margin_percent": 5,
+      "noninferiority_margin_percent": 5,
+      "estimator": {
+        "kind": "process-median",
+        "minimum_independent_samples": 15,
+        "tail_alpha": 0.01
+      },
+      "required_strata": [
+        "primary-candidate-first-candidate-allocation-first",
+        "primary-candidate-first-peer-allocation-first",
+        "primary-peer-first-candidate-allocation-first",
+        "primary-peer-first-peer-allocation-first",
+        "placement-candidate-first-candidate-allocation-first",
+        "placement-candidate-first-peer-allocation-first",
+        "placement-peer-first-candidate-allocation-first",
+        "placement-peer-first-peer-allocation-first"
+      ],
+      "required_controls": [
+        "aa",
+        "delta5",
+        "delta10",
+        "timer-floor",
+        "placement"
+      ]
+    }
+  ],
+  "experiment": {
+    "sample_schedule": [
+      15,
+      31
+    ],
+    "order_policy": "fixed-dual",
+    "holdout": false
+  },
+  "build": {
+    "configuration": "Release",
+    "fresh": true,
+    "linkage": "static",
+    "lto": "off",
+    "isa": "portable",
+    "toolchain": "machine-profile-bound"
+  },
+  "artifacts": {
+    "validators": [
+      "artifact-identity",
+      "build-contract",
+      "packed-aa"
+    ]
+  },
+  "hosts": {
+    "allowed_platforms": [
+      "macos"
+    ],
+    "certification_platforms": [
+      "macos"
+    ],
+    "requirements": {
+      "machine_profiles": [
+        "M1-MAC"
+      ],
+      "qualified_role": "engineering",
+      "formal_independent_hardware": true
+    }
+  },
+  "extensions": {
+    "runner": {
+      "schema": "hyle.perf.nanobench-runner/v1",
+      "sampling_topology": "single-logical-cpu",
+      "cmake": {
+        "cache": {
+          "HYLE_STATIC": "ON",
+          "HYLE_BUILD_TESTS": "OFF",
+          "HYLE_BUILD_BENCH": "OFF",
+          "HYLE_COMPUTE_ROUTES": "cpu;apple",
+          "HYLE_COMPONENTS": "compute",
+          "HYLE_INSTALL": "OFF",
+          "HYLE_SANITIZER": "off",
+          "HYLE_TRACE": "OFF",
+          "HYLE_WERROR": "ON",
+          "CMAKE_INTERPROCEDURAL_OPTIMIZATION": "OFF",
+          "HYLE_SIMD_EXACT_TARGET": "",
+          "CMAKE_OSX_DEPLOYMENT_TARGET": "14.4",
+          "CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
+          "HYLE_DEP_SOURCE_CACHE": "/Users/kiro/Library/Caches/hyle/dependencies/v1",
+          "CMAKE_PREFIX_PATH": "/Users/kiro/hyle-scratch/compute-unified/g07-sdk/apple-static-1/relocated",
+          "HYLE_G07_ROUTE": "apple"
+        },
+        "peer_cache": {
+          "original669": "HYLE_G07_REFERENCE_SOURCE"
+        }
+      },
+      "profiles": {
+        "M1-MAC": {
+          "generator": "Ninja",
+          "compiler_id": "AppleClang",
+          "compiler_version_prefix": "21.0",
+          "cache": {}
+        }
+      },
+      "executables": [
+        {
+          "id": "packed-primary",
+          "target": "g07_packed_primary",
+          "stem": "g07_packed_primary",
+          "target_variant": "primary",
+          "measurement_batch": 1,
+          "telemetry_prefixes": [
+            "# HYLE_PACKED_RUN "
+          ],
+          "workloads": [
+            {
+              "id": "packed-m1",
+              "title": "Apple resident packed M=1 K=2048 N=2048"
+            },
+            {
+              "id": "packed-m64",
+              "title": "Apple resident packed M=64 K=2048 N=2048"
+            }
+          ]
+        },
+        {
+          "id": "packed-placement",
+          "target": "g07_packed_placement",
+          "stem": "g07_packed_placement",
+          "target_variant": "placement",
+          "measurement_batch": 1,
+          "telemetry_prefixes": [
+            "# HYLE_PACKED_RUN "
+          ],
+          "workloads": [
+            {
+              "id": "packed-m1",
+              "title": "Apple resident packed M=1 K=2048 N=2048"
+            },
+            {
+              "id": "packed-m64",
+              "title": "Apple resident packed M=64 K=2048 N=2048"
+            }
+          ]
+        }
+      ],
+      "control_executable": {
+        "target": "g07_packed_control",
+        "stem": "g07_packed_control"
+      },
+      "controlled_environment": [
+        "HYLE_BENCH_RIVAL_FIRST",
+        "HYLE_BENCH_PEER_ALLOCATION_FIRST",
+        "HYLE_PERF_APPLE_QOS",
+        "HYLE_BENCH_AA_ROUTE",
+        "HYLE_BENCH_VERIFY_ONLY"
+      ],
+      "validators": [
+        {
+          "id": "artifact-identity",
+          "kind": "artifact-identity"
+        },
+        {
+          "id": "build-contract",
+          "kind": "build-contract"
+        },
+        {
+          "id": "packed-aa",
+          "kind": "command",
+          "command": [
+            "{python}",
+            "validate_aa.py",
+            "--build",
+            "{build}",
+            "--output",
+            "{output}"
+          ]
+        }
+      ],
+      "measurement_adapter": "nanobench-paired-rows-v1"
+    },
+    "measurement_recipe": {
+      "paired_rounds": 16,
+      "minimum_epoch_iterations": 1,
+      "minimum_epoch_time_ms": 4,
+      "preflight_only": false,
+      "reason": "Frozen finite G07 complete warm call. Independent oracle before every timed process, original/selected A/A each8strata, n15/31 and5% unchanged; no kernel-only substitution."
+    }
+  }
+}
