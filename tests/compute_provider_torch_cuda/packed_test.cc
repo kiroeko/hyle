@@ -13,7 +13,6 @@
 
 #include "../compute_provider_native/half_test_support.h"
 #include "hyle/compute/backends/cuda.h"
-#include "hyle/compute/cuda.h"
 #include "hyle/compute/model_ops.h"
 #include "hyle/compute/prepared_operation.h"
 #include "hyle/compute/providers/torch_cuda.h"
@@ -29,7 +28,12 @@ c::TensorDesc dense(c::DataType type, std::initializer_list<std::int64_t> shape)
   return c::TensorDesc::dense(type, {shape.begin(), shape.size()}).value();
 }
 struct InputSet {
-  c::Context context = c::cuda::create_context().value();
+  // The kernel unit tests need only its real public Provider. Natural default
+  // Direct/Graph selection is exercised by the full-width N2 model fixtures.
+  c::Context context = [] {
+    const std::array providers{c::ProviderBinding{c::torch_cuda::provider(),0}};
+    return c::Context::create(c::cuda::device(0).value(),{.providers=providers}).value();
+  }();
   c::cuda::MemoryResource resource = c::cuda::MemoryResource::create(context,
       c::cuda::MemoryKind::kDevice).value();
   c::Queue queue = context.create_queue().value();
