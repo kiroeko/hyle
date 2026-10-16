@@ -571,7 +571,7 @@ FlashInfer 的显式 update 在同 schema、完整 Q indptr 下，检查原计�
 及每个有效 request 的 chunk 数；调度表等价时复用原 plan，边界变化时真正 cold replan。
 KV offset、page IDs、tail 仍由原 runtime metadata 消费；该判断扫描 requests，原 F2
 另计 active metadata delta。当前[FI 普通source资格](../../evidence/correctness/inference-g06-fi-schedule-runtime-source/receipt.json)
-覆盖32组×64步及原Direct/Graph、CPU+CUDA和pending消费者；capture、instrumented风险、
+覆盖32组×64步及原Direct/Graph、CPU+CUDA和pending消费者；capture另有上述source资格，instrumented风险、
 最终SDK/性能尚待验收。零Q可经完整 owning Q/K/V入口执行 checked no-op，显式准备仍可
 计一次立即completion的host wait；PagedArena.read继续要求非空准确页集合。原生private/
 driver费用仍为UNKNOWN。
@@ -592,5 +592,12 @@ accepted native prefix已退休；drain按实际guard/fence/worker等待并保�
 CUDA 已接纳 native work 的 request_cancel 可返回 Unimplemented；必须检查返回值，
 不能把拒绝取消当成已经取消或退休。停止提交后继，等原实际工作退休后再释放相关权限。
 
-当前F5 batch没有已资格的capture；稳定地址、固定batch size或MLX shapeless本身不能
-证明capture topology。需要不同容量/算法域时冷创建新的受资格program/slot，明确计预算。
+G06 已有[CUDA/FI capture有限普通source资格](../../evidence/correctness/inference-g06-capture-replay-source/receipt.json)，
+最终风险、SDK与性能尚待验收。`PreparedBatch::prepare_replay(inputs)`或query＋paged ready
+frames显式录制，之后仍调用原`run`；Graph batch在prepare/bind后显式`prepare_replay()`，
+再原submit。录制checked-retire但不执行用户tensor或消费run token；每次真正执行重新准入
+当前权限，idle artifact不持page read权限。原native plan复用且Q/K/V、metadata、output
+storage完全相同时可保留捕获；真replan使其失效，地址变化须显式重新准备，run不暗中录制。
+零Q及未资格provider拒capture，原普通run/no-op保持；driver/private费用仍UNKNOWN。
+稳定地址、固定batch size或MLX shapeless本身不能证明capture topology。不同容量/算法域
+仍须冷创建新的受资格program/slot并计预算。

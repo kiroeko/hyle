@@ -272,13 +272,13 @@
       "module": "compute",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/inference-g06-metadata-decode.md",
-      "summary": "G06 D7 AUDITED：固定原capture borrowed launch与cold bound-port visitor内部桥；原G03 baseline/全部失败成本保留。显式batch replay复用原Queue/F1/Completion，不改普通queue/Graph reset算法；仅冻结有限FIX，实际capture/source及最终七门待。"
+      "summary": "G06 D7普通source通过：真实fresh-process cold capture及32×64 replay、FI20项、Direct/Graph/CPU+CUDA/pending六消费者与原compute108/batch60/Graph289等PASS；每次准入、idle writer恢复、地址变更显式recapture。原native math/Queue/Graph reset不变；原编译FAIL/费用及G04/G05未决保留。仍AUDITED，最终instrumented风险/Vulkan Recorder/san/header/SDK/P1待，整goal3/10。"
     },
     {
       "module": "graph",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/inference-g06-metadata-decode.md",
-      "summary": "G06 D7 AUDITED：固定原capture borrowed launch与cold bound-port visitor内部桥；原G03 baseline/全部失败成本保留。显式batch replay复用原Queue/F1/Completion，不改普通queue/Graph reset算法；仅冻结有限FIX，实际capture/source及最终七门待。"
+      "summary": "G06 D7普通source通过：真实fresh-process cold capture及32×64 replay、FI20项、Direct/Graph/CPU+CUDA/pending六消费者与原compute108/batch60/Graph289等PASS；每次准入、idle writer恢复、地址变更显式recapture。原native math/Queue/Graph reset不变；原编译FAIL/费用及G04/G05未决保留。仍AUDITED，最终instrumented风险/Vulkan Recorder/san/header/SDK/P1待，整goal3/10。"
     },
     {
       "module": "container_concurrent",
@@ -365,7 +365,7 @@
       "module": "compute_provider_ggml",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/inference-g06-metadata-decode.md",
-      "summary": "G06-D2/D4 CPU paged与ragged Q1 runtime source通过：保原graph/pool/scratch，分别更新页leaf/长度或packed KV root/view extent/offset；原mask与预算一致。新D4 Windows普通62＋真实26＋pending18、Air两mixed core各26 PASS，32×64步核无warm注入分配/固定workspace。仍AUDITED；native ragged、FI Q1/capture及最终san/header/SDK待，原失败/UNKNOWN保留。"
+      "summary": "G06-D2/D4 CPU paged与ragged Q1 runtime source通过：保原graph/pool/scratch，分别更新页leaf/长度或packed KV root/view extent/offset；原mask与预算一致。新D4 Windows普通62＋真实26＋pending18、Air两mixed core各26 PASS，32×64步核无warm注入分配/固定workspace。仍AUDITED；native ragged、FI schedule/capture普通source亦已通过；最终san/header/SDK待，原失败/UNKNOWN保留。"
     },
     {
       "module": "graph_provider_onednn",
@@ -496,7 +496,7 @@
       "module": "compute_route_apple",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/inference-g06-metadata-decode.md",
-      "summary": "G06共同/CPU Q1/native paged及D5原生ragged source通过。两route公开同schema/Q拓扑更新KV extent/offset，保旧结果/在途/失败门；Air新Apple48/Vulkan24组各64步、原native/联合/pending等29执行及provider/alias-phase PASS，Windows按D4精确SHA借用。两轮构建失败保留，owner仍AUDITED；FI Q1/schedule/capture及最终san/header/SDK/性能待，无新P1或整项完成。"
+      "summary": "G06 D7普通source通过：真实fresh-process cold capture及32×64 replay、FI20项、Direct/Graph/CPU+CUDA/pending六消费者与原compute108/batch60/Graph289等PASS；每次准入、idle writer恢复、地址变更显式recapture。原native math/Queue/Graph reset不变；原编译FAIL/费用及G04/G05未决保留。仍AUDITED，最终instrumented风险/Vulkan Recorder/san/header/SDK/P1待，整goal3/10。"
     },
     {
       "module": "graph_route_apple",
@@ -513,7 +513,7 @@
       "module": "compute_route_vulkan",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/inference-g06-metadata-decode.md",
-      "summary": "G06共同/CPU Q1/native paged及D5原生ragged source通过。两route公开同schema/Q拓扑更新KV extent/offset，保旧结果/在途/失败门；Air新Apple48/Vulkan24组各64步、原native/联合/pending等29执行及provider/alias-phase PASS，Windows按D4精确SHA借用。两轮构建失败保留，owner仍AUDITED；FI Q1/schedule/capture及最终san/header/SDK/性能待，无新P1或整项完成。"
+      "summary": "G06 D7普通source通过：真实fresh-process cold capture及32×64 replay、FI20项、Direct/Graph/CPU+CUDA/pending六消费者与原compute108/batch60/Graph289等PASS；每次准入、idle writer恢复、地址变更显式recapture。原native math/Queue/Graph reset不变；原编译FAIL/费用及G04/G05未决保留。仍AUDITED，最终instrumented风险/Vulkan Recorder/san/header/SDK/P1待，整goal3/10。"
     },
     {
       "module": "graph_route_vulkan",
@@ -526,7 +526,7 @@
       "module": "compute_provider_ggml_vulkan",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/inference-g06-metadata-decode.md",
-      "summary": "G06共同/CPU Q1/native paged及D5原生ragged source通过。两route公开同schema/Q拓扑更新KV extent/offset，保旧结果/在途/失败门；Air新Apple48/Vulkan24组各64步、原native/联合/pending等29执行及provider/alias-phase PASS，Windows按D4精确SHA借用。两轮构建失败保留，owner仍AUDITED；FI Q1/schedule/capture及最终san/header/SDK/性能待，无新P1或整项完成。"
+      "summary": "G06 D7普通source通过：真实fresh-process cold capture及32×64 replay、FI20项、Direct/Graph/CPU+CUDA/pending六消费者与原compute108/batch60/Graph289等PASS；每次准入、idle writer恢复、地址变更显式recapture。原native math/Queue/Graph reset不变；原编译FAIL/费用及G04/G05未决保留。仍AUDITED，最终instrumented风险/Vulkan Recorder/san/header/SDK/P1待，整goal3/10。"
     },
     {
       "module": "compute_ggml_runtime",
@@ -561,7 +561,7 @@
       "module": "compute_provider_flashinfer",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/inference-g06-metadata-decode.md",
-      "summary": "G06 D6普通source通过：原schedule等价复用与零Q原生no-op；FI19项含32组×64步、Direct/Graph、CPU+CUDA与pending消费者PASS。4次原失败/费用保留；common冗余fallback已撤回。实际capture、instrumented故障风险及最终san/头/SDK/P1待，G04/G05原CUDA prefill非劣未决保留，整goal仍3/10。"
+      "summary": "G06 D7普通source通过：真实fresh-process cold capture及32×64 replay、FI20项、Direct/Graph/CPU+CUDA/pending六消费者与原compute108/batch60/Graph289等PASS；每次准入、idle writer恢复、地址变更显式recapture。原native math/Queue/Graph reset不变；原编译FAIL/费用及G04/G05未决保留。仍AUDITED，最终instrumented风险/Vulkan Recorder/san/header/SDK/P1待，整goal3/10。"
     },
     {
       "module": "compute_provider_ggml_metal",
@@ -612,13 +612,13 @@
       "module": "graph_route_cpu_apple",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/inference-g06-metadata-decode.md",
-      "summary": "G06共同/CPU Q1/native paged及D5原生ragged source通过。两route公开同schema/Q拓扑更新KV extent/offset，保旧结果/在途/失败门；Air新Apple48/Vulkan24组各64步、原native/联合/pending等29执行及provider/alias-phase PASS，Windows按D4精确SHA借用。两轮构建失败保留，owner仍AUDITED；FI Q1/schedule/capture及最终san/header/SDK/性能待，无新P1或整项完成。"
+      "summary": "G06 D7普通source通过：真实fresh-process cold capture及32×64 replay、FI20项、Direct/Graph/CPU+CUDA/pending六消费者与原compute108/batch60/Graph289等PASS；每次准入、idle writer恢复、地址变更显式recapture。原native math/Queue/Graph reset不变；原编译FAIL/费用及G04/G05未决保留。仍AUDITED，最终instrumented风险/Vulkan Recorder/san/header/SDK/P1待，整goal3/10。"
     },
     {
       "module": "graph_route_cpu_vulkan",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/inference-g06-metadata-decode.md",
-      "summary": "G06共同/CPU Q1/native paged及D5原生ragged source通过。两route公开同schema/Q拓扑更新KV extent/offset，保旧结果/在途/失败门；Air新Apple48/Vulkan24组各64步、原native/联合/pending等29执行及provider/alias-phase PASS，Windows按D4精确SHA借用。两轮构建失败保留，owner仍AUDITED；FI Q1/schedule/capture及最终san/header/SDK/性能待，无新P1或整项完成。"
+      "summary": "G06 D7普通source通过：真实fresh-process cold capture及32×64 replay、FI20项、Direct/Graph/CPU+CUDA/pending六消费者与原compute108/batch60/Graph289等PASS；每次准入、idle writer恢复、地址变更显式recapture。原native math/Queue/Graph reset不变；原编译FAIL/费用及G04/G05未决保留。仍AUDITED，最终instrumented风险/Vulkan Recorder/san/header/SDK/P1待，整goal3/10。"
     },
     {
       "module": "compute_stream",
@@ -646,13 +646,13 @@
       "module": "compute_batch",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/inference-g06-metadata-decode.md",
-      "summary": "G06共同/CPU Q1/native paged及D5原生ragged source通过。两route公开同schema/Q拓扑更新KV extent/offset，保旧结果/在途/失败门；Air新Apple48/Vulkan24组各64步、原native/联合/pending等29执行及provider/alias-phase PASS，Windows按D4精确SHA借用。两轮构建失败保留，owner仍AUDITED；FI Q1/schedule/capture及最终san/header/SDK/性能待，无新P1或整项完成。"
+      "summary": "G06 D7普通source通过：真实fresh-process cold capture及32×64 replay、FI20项、Direct/Graph/CPU+CUDA/pending六消费者与原compute108/batch60/Graph289等PASS；每次准入、idle writer恢复、地址变更显式recapture。原native math/Queue/Graph reset不变；原编译FAIL/费用及G04/G05未决保留。仍AUDITED，最终instrumented风险/Vulkan Recorder/san/header/SDK/P1待，整goal3/10。"
     },
     {
       "module": "graph_batch",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/inference-g06-metadata-decode.md",
-      "summary": "G06共同/CPU Q1/native paged及D5原生ragged source通过。两route公开同schema/Q拓扑更新KV extent/offset，保旧结果/在途/失败门；Air新Apple48/Vulkan24组各64步、原native/联合/pending等29执行及provider/alias-phase PASS，Windows按D4精确SHA借用。两轮构建失败保留，owner仍AUDITED；FI Q1/schedule/capture及最终san/header/SDK/性能待，无新P1或整项完成。"
+      "summary": "G06 D7普通source通过：真实fresh-process cold capture及32×64 replay、FI20项、Direct/Graph/CPU+CUDA/pending六消费者与原compute108/batch60/Graph289等PASS；每次准入、idle writer恢复、地址变更显式recapture。原native math/Queue/Graph reset不变；原编译FAIL/费用及G04/G05未决保留。仍AUDITED，最终instrumented风险/Vulkan Recorder/san/header/SDK/P1待，整goal3/10。"
     }
   ]
 }

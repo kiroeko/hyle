@@ -1,6 +1,6 @@
 # G06 metadata 与 decode 成本收口
 
-状态：**G06 AUDITED；共同及四路线runtime复用有限source通过，capture与最终验收待，2026-10-16**。本卡沿[完整十项目标](../project/inference-gaps-goal-execution-2026-10.md)，
+状态：**G06 AUDITED；共同及四路线runtime与CUDA capture有限source通过，最终风险/交付/性能待，2026-10-16**。本卡沿[完整十项目标](../project/inference-gaps-goal-execution-2026-10.md)，
 不缩减 CPU、单 GPU、CPU＋单 GPU、单/多请求或四原生路线。先完成四组共同审计和形状冻结，
 再集中实施、批量检查、按实际失败定向修正；产品修改仅限下文已冻结且owner为AUDITED的批次。
 
@@ -606,3 +606,28 @@ D7 source attempt1：configure62.309s，零CUDA guard及146对象复用通过；
 发现新增capture helper两处返回类型误用：Status/ResultError三元歧义，以及原publish直接
 返回Completion却使用Result宏。定向修正，保留本轮编译FAIL；实际capture测试尚未启动。
 原cache/config及其它输入一致时第二轮复用已成功configure，只重编受这两处改动影响的CXX。
+
+### D7 实际 capture/replay 普通 source 通过（76b14ad40）
+
+[独立cold record与完整原失败账](../../../../evidence/correctness/inference-g06-capture-replay-source/receipt.json)
+绑定76b14ad40f52f9785ff6f5976ffd667310c33085。新进程先运行真实首次attention捕获，
+32组×64步涵盖paged/ragged、plain/FP8独立scale、F16/BF16、single/multi Q1与mixed17+1、
+D64/128/256/独立Dv/window/noncausal，通过独立数值oracle。原FI19与新capture共20项PASS。
+真实replan先失效；调度等价复用同capture且下一次注入分配禁止，准备不新增wait。首个
+cold replay metadata OOM后原token仍可准备；输入地址变化在接受前拒旧录制，显式recapture
+成功。录制未执行用户tensor warmup，不产生用户结果，不消费实际run token。
+
+原public Direct/Graph、CPU+CUDA及gated producer/F2 pending的ordinary/captured共六个
+消费者通过。Graph两episode重置/布局更新与当前绑定复用；原controller捕获后释放所有
+page readers，再取得同arena页writer并转入receiver，证明idle artifact不持KV读权限，
+实际pending原序列/权限/旧output/ready恢复及.25 oracle通过。两个内部桥由原compute108、
+batch60、Graph289、graph_batch6、CPU ragged5测试覆盖；含实际bound ports、borrowed
+foreign Context拒绝，以及原generic capture/失败退休门。CPU明确拒capture，普通运行有效。
+
+attempt1 configure62.309s与CXX buildFAIL103.211s保留；attempt2精确输入复用已成功配置，
+build6.336s、outer37.298s与各stage重叠。全程零CUDA TU重编，146原ggml对象验证复用；
+封存前独立重核53个实际artifact SHA，共208386136bytes。完整调查/编辑/启动费用UNKNOWN。
+原native math/backend CUDA/vendor未改；cold capture checked wait与control metadata真实
+计费，driver/private UNKNOWN。当前仅普通source PASS，不签instrumented故障、Vulkan
+Recorder runtime、三san/header/迁址static/shared/P1或G06最终完成。owner仍AUDITED；
+G06粗估约75%整体工作量，不推算剩余小时。G04/G05原未决/归因UNKNOWN与整goal3/10保留。
