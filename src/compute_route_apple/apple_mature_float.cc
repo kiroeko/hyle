@@ -5,9 +5,11 @@
 #include <array>
 #include <cstdint>
 #include <limits>
+#include <stdexcept>
 #include <utility>
 
 #include <mlx/ops.h>
+#include <mlx/fast.h>
 
 #include "apple_checks.h"
 #include "apple_internal.h"
@@ -204,7 +206,95 @@ Quantized weight4(const mx::array &carrier, int count, int n, int k,
   return {codes, mx::expand_dims(scales, -1, s)};
 }
 
-mx::array block_dot(const Quantized &a, const Quantized &b, mx::Stream s) {
+mx::array packed_fp8_dot(const Quantized &a, const Quantized &b, mx::Stream s) {
+  // Original MLX SIMDgroup F32 matmul/FP8 decode, with the same per-block
+  // scale order as block_dot. Stage only a16x32/b32x16 tile, not float weights
+  // or the complete [Kblocks,M,N] dots. MLX owns pipeline/stream/completion.
+  static const auto kernel = mx::fast::metal_kernel("hyle_fp8_block128_f32",
+      {"qa", "qw", "qs", "ws"}, {"out"}, R"METAL(
+    const uint tid = thread_index_in_threadgroup;
+    const uint sg = simdgroup_index_in_threadgroup;
+    const uint batch = threadgroup_position_in_grid.z;
+    const uint row0 = threadgroup_position_in_grid.y * 16;
+    const uint column0 = threadgroup_position_in_grid.x * 16;
+    const uint rows = qa_shape[1], columns = qw_shape[1];
+    threadgroup float left[512];
+    threadgroup float right[512];
+    float accumulated[2] = {0.f, 0.f};
+    for (uint block = 0; block < uint(qa_shape[2]); ++block) {
+      auto partial = make_filled_simdgroup_matrix<float, 8>(0.f);
+      for (uint chunk = 0; chunk < 128; chunk += 32) {
+        for (uint index = tid; index < 512; index += 128) {
+          const uint row = row0 + index / 32;
+          const uint k = chunk + index % 32;
+          left[index] = row < rows ? hyle_fp8_value(qa[
+              batch * qa_strides[0] + row * qa_strides[1] +
+              block * qa_strides[2] + k * qa_strides[3]]) : 0.f;
+          const uint column = column0 + index % 16;
+          const uint wk = chunk + index / 16;
+          right[index] = column < columns ? hyle_fp8_value(qw[
+              batch * qw_strides[0] + column * qw_strides[1] +
+              block * qw_strides[2] + wk * qw_strides[3]]) : 0.f;
+        }
+        threadgroup_barrier(mem_flags::mem_threadgroup);
+        for (uint k = 0; k < 32; k += 8) {
+          simdgroup_float8x8 lhs, rhs;
+          simdgroup_load(lhs, left + (sg / 2) * 8 * 32 + k, 32);
+          simdgroup_load(rhs, right + k * 16 + (sg % 2) * 8, 16);
+          simdgroup_multiply_accumulate(partial, lhs, rhs, partial);
+        }
+        threadgroup_barrier(mem_flags::mem_threadgroup);
+      }
+      // Reuse left only after every SIMDgroup has finished reading it.
+      simdgroup_store(partial, left + (sg / 2) * 8 * 16 + (sg % 2) * 8, 16);
+      threadgroup_barrier(mem_flags::mem_threadgroup);
+      for (uint part = 0; part < 2; ++part) {
+        const uint index = tid + part * 128;
+        const uint row = row0 + index / 16;
+        const uint column = column0 + index % 16;
+        if (row < rows && column < columns) {
+          float value = left[index] * qs[batch * qs_strides[0] +
+              row * qs_strides[1] + block * qs_strides[2]];
+          value = value * ws[batch * ws_strides[0] + column * ws_strides[1] +
+              block * ws_strides[2]];
+          accumulated[part] = accumulated[part] + value;
+        }
+      }
+      threadgroup_barrier(mem_flags::mem_threadgroup);
+    }
+    for (uint part = 0; part < 2; ++part) {
+      const uint index = tid + part * 128;
+      const uint row = row0 + index / 16;
+      const uint column = column0 + index % 16;
+      if (row < rows && column < columns)
+        out[(ulong(batch) * rows + row) * columns + column] = accumulated[part];
+    }
+  )METAL", R"METAL(
+    #include <metal_simdgroup_matrix>
+    #pragma clang fp contract(off)
+    inline float hyle_fp8_value(uchar code) {
+      const uint exponent = (code >> 3) & 15;
+      const uint mantissa = code & 7;
+      if (exponent == 15 && mantissa == 7)
+        return as_type<float>(uint(0x7fc00000) | ((uint(code) & 128) << 24));
+      const float value = exponent == 0 ? float(mantissa) * 0.001953125f
+          : ldexp(1.f + float(mantissa) * 0.125f, int(exponent) - 7);
+      return (code & 128) ? -value : value;
+    }
+  )METAL", false, false, mx::CompileOptions{});
+  const int batch = a.codes.shape(0), rows = a.codes.shape(1), columns = b.codes.shape(1);
+  if (rows == 0 || columns == 0)
+    return mx::zeros({batch, rows, columns}, mx::float32, s);
+  if (columns > (std::numeric_limits<int>::max)() / 128 * 16)
+    throw std::overflow_error("Apple FP8 native grid exceeds int capacity");
+  return kernel({a.codes, b.codes, a.scales, b.scales}, {{batch, rows, columns}},
+      {mx::float32}, {((columns + 15) / 16) * 128, (rows + 15) / 16, batch},
+      {128, 1, 1}, {}, std::nullopt, false, s)[0];
+}
+
+mx::array block_dot(const Quantized &a, const Quantized &b, mx::Stream s,
+                    bool packed_fp8 = true) {
+  if (packed_fp8) return packed_fp8_dot(a, b, s);
   // [batch,M,Kblocks,128] x [batch,N,Kblocks,128]. Apply scales
   // after each original F32 dot, before reducing Kblocks.
   auto lhs = mx::transpose(decode(a.codes, s), {0, 2, 1, 3}, s);
@@ -332,7 +422,7 @@ Result<std::vector<mx::array>> lower_mlx_float(
       }
       q.codes = mx::reshape(q.codes, {rows, 1, k / block, block}, s);
       q.scales = mx::reshape(q.scales, {rows, 1, k / block, 1}, s);
-      auto value = mx::astype(mx::reshape(block_dot(q, w, s), {t, slots, n}, s), type, s);
+      auto value = mx::astype(mx::reshape(block_dot(q, w, s, !four), {t, slots, n}, s), type, s);
       auto status = mx::where(mx::any(invalid, s), mx::array(kIndexOutOfRange), mx::array(0), s);
       HYLE_ASSIGN_OR_RETURN(auto checked, with_device_status(std::move(value), std::move(status), s));
       return std::vector{std::move(checked)};

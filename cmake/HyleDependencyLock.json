@@ -1337,7 +1337,7 @@
       "class": "in_tree",
       "vendored": {
         "path": "third_party/mlx_cuda_quant",
-        "tree_sha256": "fd2221480b278d7228b0e62d2ff5ef7955193722d8f7462052112c23d504e8aa"
+        "tree_sha256": "88856ca923079d3b6e3ca9f7fd67d2974af78a62c02bbfdf5f867658ad9239f1"
       },
       "license": {
         "expression": "MIT",
@@ -1350,7 +1350,7 @@
           {
             "root": "hyle",
             "path": "third_party/mlx_cuda_quant/NOTICE.md",
-            "sha256": "412fef7f61fb59b9d86acc04e2f67ab5f85ed45ae034c34c238075187b048a00"
+            "sha256": "0c6abb1d0bbd959997192bc69274236120cf2bb4fabff73bb0184cb3bb8657ab"
           }
         ]
       }

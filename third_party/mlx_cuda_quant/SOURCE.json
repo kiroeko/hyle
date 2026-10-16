@@ -1,5 +1,5 @@
 {
-  "name": "mlx_cpu_quant",
+  "name": "mlx_cuda_quant",
   "repository": "https://github.com/ml-explore/mlx.git",
   "revision": "2b2bb49790158ecd008d1685c94e3ef119792a00",
   "git_tree": "56ba183d94c673f590ce257b2297920c420a2928",
@@ -26,6 +26,12 @@
       "url": "https://raw.githubusercontent.com/ml-explore/mlx/2b2bb49790158ecd008d1685c94e3ef119792a00/python/mlx/nn/layers/quantized.py",
       "bytes": 15026,
       "sha256": "8ca4574a212f14cbec4c446826474583ef0bf1e2cb1630574fd730c77af03b33"
+    },
+    {
+      "path": "mlx/backend/cuda/quantized/qmm/qmv.cu",
+      "url": "https://raw.githubusercontent.com/ml-explore/mlx/2b2bb49790158ecd008d1685c94e3ef119792a00/mlx/backend/cuda/quantized/qmm/qmv.cu",
+      "bytes": 15358,
+      "sha256": "023d967bdab912ee954258153ee9b200bdc9f7ed690f3ecd3b9d3b1eac74171d"
     }
   ]
 }
