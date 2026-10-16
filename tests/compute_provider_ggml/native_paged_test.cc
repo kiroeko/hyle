@@ -1,6 +1,7 @@
 #include <gtest/gtest.h>
 #include <hyle/compute/cpu.h>
 #include <hyle/compute/batch_execution.h>
+#include <hyle/compute/detail/batch_graph_access.h>
 #include <hyle/compute/paged_arena.h>
 #include <hyle/compute/model_ops.h>
 #include <hyle/compute/prepared_operation.h>
@@ -585,4 +586,39 @@ TEST(GgmlCpuPaged, OriginalFlashReadsExactPhysicalPagesAndTail){
     paged_case<hyle::simd::float16_t>(d,causal);paged_case<hyle::simd::bfloat16_t>(d,causal);
   }
 }
+}
+
+TEST(GgmlCpuPaged, DeltaMetadataMirrorMatchesIndependentFullWireAcrossGrowShrinkAndEmpty){
+  const auto resource=hyle::mem::system_resource();
+  c::BatchCapacity cap{.max_requests=3,.max_query_rows=3,.max_kv_rows=96,.max_pages=6,.max_page_refs=6,
+      .query_heads=8,.kv_heads=2,.qk_head_dim=64,.value_head_dim=64,.page_size=16};
+  auto schema=c::BatchSchema::create(cap).value();
+  auto context=c::Context::create(c::cpu::device(),c::ggml_cpu::provider({.native_threads=2})).value();
+  auto queue=context.create_queue().value();
+  auto program=c::BatchProgram::prepare(context,schema,{.resource=resource,.max_float_workspace_bytes=2u<<20,.max_int_workspace_bytes=4096,.scale=.125F}).value();
+  auto slot=c::BatchInvocation::create(program,queue).value();c::BatchLayoutVersion version;
+  for(unsigned step=0;step<64;++step){
+    std::vector<std::int32_t> q,k,ids,tails;
+    switch((step/2)%6){
+      case 0:q={0};k={0};break;
+      case 1:q={0,1};k={0,2};ids={2,0};tails={3};break;
+      case 2:q={0,1,2};k={0,1,3};ids={4,1,4};tails={16,7};break;
+      case 3:q={0,1,2};k={0,1,3};ids={1,4,1};tails={7,16};break;
+      case 4:q={0,0,1};k={0,0,1};ids={3};tails={0,1};break;
+      default:q={0,1,1,2};k={0,2,2,4};ids={0,2,3,1};tails={16,0,8};break;
+    }
+    if(!(step%2))version=schema.version({q,k,ids,tails}).value();
+    auto prepared=slot.update_batch(version);ASSERT_TRUE(prepared)<<prepared.error().message();
+    auto mirror=c::detail::BatchGraphAccess::metadata(slot);ASSERT_TRUE(mirror)<<mirror.error().message();
+    const auto offsets=schema.metadata_offsets();std::vector<std::byte> expected(offsets.bytes,std::byte{0}),actual(offsets.bytes);
+    const auto put=[&](std::size_t offset,const auto&values){const auto bytes=std::as_bytes(std::span(values));if(!bytes.empty())std::memcpy(expected.data()+offset,bytes.data(),bytes.size());};
+    std::uint32_t rows=0;
+    for(std::size_t r=0;r<tails.size();++r)if(k[r+1]!=k[r])rows+=std::uint32_t(k[r+1]-k[r]-1)*16+std::uint32_t(tails[r]);
+    const std::array<std::uint64_t,2> prefix{0x48594c45424c0001ULL,version.generation()};
+    const std::array<std::uint32_t,4> facts{std::uint32_t(q.size()-1),std::uint32_t(q.back()),rows,std::uint32_t(ids.size())};
+    put(0,prefix);put(16,facts);put(offsets.query_indptr,q);put(offsets.kv_indptr,k);put(offsets.page_indices,ids);put(offsets.last_page_lengths,tails);
+    ASSERT_TRUE(mirror->view()->read(actual).ok());EXPECT_EQ(actual,expected)<<"step="<<step;
+    if(step%2){EXPECT_TRUE(slot.report().reused_native_plan);EXPECT_EQ(slot.report().metadata_staging_bytes,0u);EXPECT_EQ(slot.report().metadata_upload.logical_bytes,0u);EXPECT_EQ(slot.report().host_waits,0u);}
+  }
+  ASSERT_TRUE(context.drain().ok());
 }

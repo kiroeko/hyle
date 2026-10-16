@@ -226,7 +226,7 @@ Result<PreparedBatch> BatchInvocation::prepare(const BatchLayoutVersion&layout,b
   ReadLease shared;
   if(metadata_source){
     const auto*source=metadata_source->data_;
-    if(!source || source==&s || !s.external_output || !source->external_output || !source->prepared || source->ran || source->layout!=layout ||
+    if(!source || source==&s || !s.external_output || !source->external_output || source->closed || source->failed || !source->prepared || source->ran || source->layout!=layout ||
         source->program->options.resource!=s.program->options.resource)
       return std::unexpected(Status::InvalidArgument("shared Graph metadata needs a prepared same-layout resource"));
     shared=source->graph_shared_metadata.valid()?source->graph_shared_metadata:source->mirror_ready;
