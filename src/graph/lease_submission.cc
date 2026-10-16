@@ -1,7 +1,9 @@
 #include "hyle/graph/detail/lease_submission.h"
+#include "submission_internal.h"
 
 #include <algorithm>
 #include <atomic>
+#include <functional>
 #include <memory>
 #include <mutex>
 #include <utility>
@@ -14,6 +16,60 @@
 #include "hyle/util/spin_lock.h"
 
 namespace hyle::graph::detail {
+Status LeasePermissionSet::reserve(std::size_t capacity) noexcept {
+  try { entries_.reserve(capacity); }
+  catch (...) { return Status::ResourceExhausted("graph permission scratch metadata"); }
+  return Status::Ok();
+}
+Status LeasePermissionSet::add(const compute::ReadLease &read) noexcept {
+  if (!read.valid()) return Status::FailedPrecondition("graph read permission is empty");
+  if (entries_.size() == entries_.capacity())
+    return Status::ResourceExhausted("graph permission scratch capacity");
+  entries_.push_back({&read, nullptr});
+  return Status::Ok();
+}
+Status LeasePermissionSet::add(const compute::WriteLease &write) noexcept {
+  if (!write.valid()) return Status::FailedPrecondition("graph write permission is empty");
+  if (entries_.size() == entries_.capacity())
+    return Status::ResourceExhausted("graph permission scratch capacity");
+  entries_.push_back({nullptr, &write});
+  return Status::Ok();
+}
+Status LeasePermissionSet::admit(compute::LeaseUseBatch &uses) noexcept {
+  struct Reset final {
+    LeasePermissionSet &set;
+    ~Reset() { set.reset(); }
+  } reset{*this};
+  const auto identity = [](const Entry &entry) {
+    return entry.read ? compute::detail::LeaseAccess::identity(*entry.read)
+                      : compute::detail::LeaseAccess::identity(*entry.write);
+  };
+  const auto generation = [](const Entry &entry) {
+    return entry.read ? entry.read->generation() : entry.write->generation();
+  };
+  std::sort(entries_.begin(), entries_.end(), [&](const Entry &a, const Entry &b) {
+    return std::less<const void *>{}(identity(a), identity(b));
+  });
+  // Validate the entire group before using the trusted no-rescan F1 entries.
+  // Backing identity cannot replace block identity: one arena has many blocks.
+  for (std::size_t i = 1; i < entries_.size(); ++i) {
+    if (identity(entries_[i - 1]) != identity(entries_[i])) continue;
+    if (generation(entries_[i - 1]) != generation(entries_[i]))
+      return Status::FailedPrecondition("graph permission generation changed");
+    if (bool(entries_[i - 1].read) != bool(entries_[i].read))
+      return Status::InvalidArgument("one use cannot mix lease permissions");
+  }
+  const Entry *previous = nullptr;
+  for (const auto &entry : entries_) {
+    if (previous && identity(*previous) == identity(entry)) continue;
+    HYLE_RETURN_IF_ERROR(entry.read
+        ? compute::detail::LeaseAccess::read_unique(uses, *entry.read)
+        : compute::detail::LeaseAccess::write_unique(uses, *entry.write, false));
+    previous = &entry;
+  }
+  return Status::Ok();
+}
+
 struct LeasePrefix final {
   LeaseSubmissionState *owner = nullptr;
   compute::detail::CompletionRetention retention;
@@ -26,11 +82,13 @@ struct LeaseSubmissionState final {
       : allocator(selected), reads(mem::StdAllocator<compute::ReadLease>(selected)),
         pages(mem::StdAllocator<compute::ReadLease>(selected)),
         page_ranges(mem::StdAllocator<LeasePageRange>(selected)),
+        permissions(selected),
         prefixes(mem::StdAllocator<LeasePrefix>(selected)) {}
   mem::AllocatorRef allocator;
   std::vector<compute::ReadLease, mem::StdAllocator<compute::ReadLease>> reads;
   std::vector<compute::ReadLease, mem::StdAllocator<compute::ReadLease>> pages;
   std::vector<LeasePageRange, mem::StdAllocator<LeasePageRange>> page_ranges;
+  LeasePermissionSet permissions;
   std::size_t page_count = 0;
   std::vector<LeasePrefix, mem::StdAllocator<LeasePrefix>> prefixes;
   compute::LeaseUsePool uses;
@@ -125,6 +183,7 @@ Result<LeaseSubmission> LeaseSubmission::create(std::size_t inputs, std::size_t 
     if (options.max_page_reads != 0) {
       state->pages.resize(options.max_page_reads);
       state->page_ranges.resize(inputs);
+      HYLE_RETURN_IF_ERROR(state->permissions.reserve(inputs + options.max_page_reads));
     }
     for (auto &prefix : state->prefixes) prefix.owner = state;
   } catch (...) { return std::unexpected(Status::ResourceExhausted("composition lease tables")); }
@@ -168,9 +227,18 @@ void LeaseSubmission::reset() noexcept {
 Status LeaseSubmission::begin(void *owner, ReferenceFn retain, ReferenceFn release, TerminalFn terminal) noexcept {
   HYLE_FATAL_ASSERT(state_ && owner && retain && release && terminal);
   HYLE_ASSIGN_OR_RETURN(auto batch, state_->uses.begin());
-  for (const auto &read : state_->reads) if (read.valid()) HYLE_RETURN_IF_ERROR(batch.read(read));
-  for (std::size_t i = 0; i < state_->page_count; ++i)
-    HYLE_RETURN_IF_ERROR(batch.read(state_->pages[i]));
+  if (state_->permissions.enabled()) {
+    auto &permissions = state_->permissions;
+    permissions.reset();
+    for (const auto &read : state_->reads)
+      if (read.valid()) HYLE_RETURN_IF_ERROR(permissions.add(read));
+    for (std::size_t i = 0; i < state_->page_count; ++i)
+      HYLE_RETURN_IF_ERROR(permissions.add(state_->pages[i]));
+    HYLE_RETURN_IF_ERROR(permissions.admit(batch));
+  } else {
+    for (const auto &read : state_->reads)
+      if (read.valid()) HYLE_RETURN_IF_ERROR(batch.read(read));
+  }
   state_->parent = owner; state_->retain = retain; state_->release = release; state_->terminal = terminal;
   state_->batch = std::move(batch); state_->next_prefix = 0; state_->accepted = false;
   { std::lock_guard guard(state_->lock); state_->first_error = Status::Ok(); }

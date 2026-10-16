@@ -2,13 +2,38 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <vector>
 
 #include "hyle/graph/executable.h"
+#include "hyle/compute/resource_leases.h"
 #include "hyle/compute/detail/queue_sequence.h"
+#include "hyle/mem/std_allocator.h"
 
 namespace hyle::graph::detail {
 
 struct InvocationState;
+
+// Exact-page owners reserve once and borrow their current bindings only during
+// admission. The original F1 checks and retirement still own every native use.
+class LeasePermissionSet final {
+public:
+  explicit LeasePermissionSet(mem::AllocatorRef allocator) noexcept
+      : entries_(mem::StdAllocator<Entry>(allocator)) {}
+  Status reserve(std::size_t capacity) noexcept;
+  bool enabled() const noexcept { return entries_.capacity() != 0; }
+  void reset() noexcept { entries_.clear(); }
+  Status add(const compute::ReadLease &) noexcept;
+  Status add(const compute::WriteLease &) noexcept;
+  Status admit(compute::LeaseUseBatch &) noexcept;
+
+private:
+  struct Entry final {
+    const compute::ReadLease *read = nullptr;
+    const compute::WriteLease *write = nullptr;
+  };
+  std::vector<Entry, mem::StdAllocator<Entry>> entries_;
+};
+
 using AcceptedCompletionFn = void (*)(void *owner, std::size_t segment,
                                       compute::Completion &completion) noexcept;
 // Opt-in composition admission inside the original ordered sequence. The

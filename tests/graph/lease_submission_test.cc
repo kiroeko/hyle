@@ -1,6 +1,8 @@
 #include <gtest/gtest.h>
 
 #include <array>
+#include <algorithm>
+#include <vector>
 
 #include "../compute_batch/allocation_fault_fixture.h"
 #include "../../src/compute/completion_internal.h"
@@ -233,5 +235,43 @@ TEST(LeaseSubmission, UnselectedGroupsAndOverflowRejectBeforeAllocating) {
   ASSERT_FALSE(rejected);
   EXPECT_TRUE(rejected.error().IsInvalidArgument());
   EXPECT_EQ(cold.attempts, 0u);
+}
+TEST(LeaseSubmission, ReorderedLargeGroupsDeduplicateAllBlocksWithoutWarmAllocation) {
+  constexpr std::size_t count = 256;
+  auto pool = c::LeasePool::create(hyle::mem::system_resource(), count * 256,
+      {.max_blocks = count}).value();
+  std::array<c::ReadLease, count> reads;
+  for (auto &read : reads) read = pool.allocate(16).value().publish().value();
+  hyle_f5_fault_fixture::Allocator allocator;
+  auto submission = hyle::graph::detail::LeaseSubmission::create(3, 1,
+      {.allocator = allocator.ref(), .max_page_reads = count * 2}).value();
+  const auto cold_attempts = allocator.attempts;
+  allocator.fail = cold_attempts;
+  Parent parent;
+  for (std::size_t step = 0; step < 64; ++step) {
+    std::array<bool, count> selected{};
+    std::vector<c::ReadLease> first, second;
+    const auto first_count = step % 2 ? count / 4 : count;
+    for (std::size_t i = 0; i < first_count; ++i) {
+      const auto index = (count - 1 - i + step) % count;
+      first.push_back(reads[index]); selected[index] = true;
+    }
+    for (std::size_t i = count / 4; i < 3 * count / 4; ++i) {
+      second.push_back(reads[i]); selected[i] = true;
+    }
+    // A normal input overlaps both page groups. All blocks share one backing.
+    submission.bind(2, reads[count / 2]); selected[count / 2] = true;
+    ASSERT_TRUE(submission.bind_pages(0, first).ok());
+    ASSERT_TRUE(submission.bind_pages(1, second).ok());
+    ASSERT_TRUE(begin(submission, parent).ok());
+    const auto expected = std::count(selected.begin(), selected.end(), true);
+    EXPECT_EQ(pool.stats().active_uses, std::size_t(expected)) << step;
+    submission.finish(hyle::Status::Ok(), false);
+    EXPECT_EQ(pool.stats().active_uses, 0u);
+  }
+  EXPECT_EQ(allocator.attempts, cold_attempts);
+  ASSERT_TRUE(pool.close().ok());
+  EXPECT_FALSE(begin(submission, parent).ok());
+  EXPECT_EQ(pool.stats().active_uses, 0u);
 }
 } // namespace

@@ -32,6 +32,7 @@ struct LeaseBinding final {
 struct LeasedInvocationState final : util::RefCounted<LeasedInvocationState> {
   explicit LeasedInvocationState(mem::AllocatorRef selected) noexcept
       : allocator(selected), bindings(mem::StdAllocator<LeaseBinding>(selected)),
+        permissions(selected),
         retentions(mem::StdAllocator<compute::detail::CompletionRetention>(selected)) {}
   void destroy() noexcept {
     const auto selected = allocator;
@@ -41,6 +42,7 @@ struct LeasedInvocationState final : util::RefCounted<LeasedInvocationState> {
   mem::AllocatorRef allocator;
   // Native invocation destruction precedes its external payload owners.
   std::vector<LeaseBinding, mem::StdAllocator<LeaseBinding>> bindings;
+  LeasePermissionSet permissions;
   Invocation invocation{};
   compute::LeaseUsePool uses{};
   std::vector<compute::detail::CompletionRetention,
@@ -107,6 +109,7 @@ Status RegionAccess::reserve_reads(LeasedInvocation&invocation,std::uint32_t ext
     .allocator=options.allocator,.resource_budget=options.resource_budget}));
   try{state->bindings.reserve(state->bindings.size()+extra);}
   catch(...){return Status::ResourceExhausted("projected graph fixed permission metadata");}
+  if(extra)HYLE_RETURN_IF_ERROR(state->permissions.reserve(state->bindings.size()+extra));
   state->uses=std::move(uses);return Status::Ok();
 }
 Status bind_projected(LeasedInvocationState*state,ValueId value,
@@ -488,11 +491,18 @@ Result<compute::Completion> detail::RegionAccess::submit(LeasedInvocation&invoca
     }
   }
   HYLE_ASSIGN_OR_RETURN(auto batch, state_->uses.begin());
+  auto &permissions = state_->permissions;
+  permissions.reset();
   for (const auto &binding : state_->bindings) {
     if(!binding.exclusive && !binding.read.valid() && binding.input &&
         ordered.pending_input && ordered.pending_input(ordered.owner,binding.value))continue;
-    HYLE_RETURN_IF_ERROR(binding.exclusive ? batch.write(binding.write) : batch.read(binding.read));
+    if (permissions.enabled()) {
+      HYLE_RETURN_IF_ERROR(binding.exclusive ? permissions.add(binding.write) : permissions.add(binding.read));
+    } else {
+      HYLE_RETURN_IF_ERROR(binding.exclusive ? batch.write(binding.write) : batch.read(binding.read));
+    }
   }
+  if (permissions.enabled()) HYLE_RETURN_IF_ERROR(permissions.admit(batch));
   HYLE_ASSIGN_OR_RETURN(auto cursor, detail::SubmissionCursor::begin(state_->invocation, queues));
   state_->completion_retirement = state_->completion.reserve_retirement();
   {
