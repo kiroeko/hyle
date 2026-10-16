@@ -1,6 +1,6 @@
 # G06 metadata 与 decode 成本收口
 
-状态：**G06 AUDITED；共同、CPU Q1与Apple/Vulkan runtime lengths source批通过，2026-10-16**。本卡沿[完整十项目标](../project/inference-gaps-goal-execution-2026-10.md)，
+状态：**G06 AUDITED；共同及四路线runtime复用有限source通过，capture与最终验收待，2026-10-16**。本卡沿[完整十项目标](../project/inference-gaps-goal-execution-2026-10.md)，
 不缩减 CPU、单 GPU、CPU＋单 GPU、单/多请求或四原生路线。先完成四组共同审计和形状冻结，
 再集中实施、批量检查、按实际失败定向修正；产品修改仅限下文已冻结且owner为AUDITED的批次。
 
@@ -534,3 +534,27 @@ unchecked expected取值失败，先补原错误传播定位。未签本批/完�
 MetadataHeader encoding/generation，首个空布局仍会真实上传并发布mirror。因此删除
 fca058dc1中新增的冗余fallback，common实现恢复原字节；不为虚构问题新增常态分支。
 D6.1原调度等价及D6.2原生零query guard保留，空用例继续验证，不放宽合同。
+
+### D6 FI 普通 source 通过（4fb74d07c）
+
+[普通source与完整失败账](../../../../evidence/correctness/inference-g06-fi-schedule-runtime-source/receipt.json)
+绑定4fb74d07c220156bff8aa830a20c4eda08d0b266。FI19项全部PASS，含32组×64步：
+paged/ragged、plain/FP8独立scale、F16/BF16、single/multi Q1与mixed17+1、
+D64/128/256/独立Dv/window/noncausal。原128-row chunk边界增长/缩短、packed offsets、
+页重排/共享、Q0和Q拓扑变化、workspace/grid恒定、下一次control分配禁用、实际
+metadata bytes/waits和独立slot旧结果均有实际数值/P0反证；未改原attention数学。
+原public CUDA四组Direct/Graph、CPU+CUDA F16/BF16各两episode与gated native producer
+pending/F2聚合消费者PASS。零request和all-Q0通过原complete owning Q/K/V入口执行
+checked no-op；PagedArena.read仍按原非空准确页集合合同拒绝空frame，原测试误用已修正。
+
+attempt1 setup拦无关CUDA重编、attempt2编译/风险hook链接失败、attempt3/4空fixture
+误用全部保留FAIL与费用。最终source build4.881s，外层18.460s与各stage重叠；早先实际
+两FI CUDA TU只编译一次，后续零CUDA重编，原146个ggml CUDA对象按实际242派生/5
+canonical输入、原command/deps与artifact SHA复用。完整调查/编辑耗时UNKNOWN。
+当前common实现已恢复D5原字节；未把冗余修正留下，也不因本批重跑Windows/Air全套。
+
+本证据仅签普通source；原plain/FP8 backend观察风险及static provider故障注入留完整G06
+最终instrumented风险批，不能把shipping缺hook的链接失败写成PASS/NOT_APPLICABLE。
+实际capture/replay、最终适用san/独立头/迁址static/shared与性能仍必做。FI保持AUDITED；
+G04/G05原CUDA prefill非劣UNRESOLVED、精确归因UNKNOWN及原失败/费用继续保留。
+完成项仍为G01/G02/G03共3/10；G06按整体实施工作量粗估约65%，不据此外推剩余时间。

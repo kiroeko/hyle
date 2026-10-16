@@ -1,0 +1,620 @@
+{
+  "kind": "G06_D6_FLASHINFER_SCHEDULE_ORDINARY_SOURCE",
+  "product_candidate": "4fb74d07c220156bff8aa830a20c4eda08d0b266",
+  "verdict": "PASS_ORDINARY_SOURCE_ONLY_INSTRUMENTED_RISKS_PENDING",
+  "owners": [
+    "compute_provider_flashinfer"
+  ],
+  "owner_state": "AUDITED",
+  "card": "docs/implementation/tasks/compute/inference-g06-metadata-decode.md",
+  "scope": "Original native schedule equivalence and checked empty owning-input execution; original mathematical domain. No capture/P1/sanitizer/header/relocated-SDK or complete G06 verdict.",
+  "identity": {
+    "host": "Linux kiro-workstation 6.18.54.1-microsoft-standard-WSL2 #1 SMP PREEMPT_DYNAMIC Tue Oct  6 19:13:07 UTC 2026 x86_64 x86_64 x86_64 GNU/Linux",
+    "compiler": "g++-14 (Ubuntu 14.2.0-4ubuntu2~24.04.1) 14.2.0\nCopyright (C) 2024 Free Software Foundation, Inc.\nThis is free software; see the source for copying conditions.  There is NO\nwarranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.",
+    "cuda": "nvcc: NVIDIA (R) Cuda compiler driver\nCopyright (c) 2005-2026 NVIDIA Corporation\nBuilt on Tue_Jun_09_02:43:40_PM_PDT_2026\nCuda compilation tools, release 13.3, V13.3.73\nBuild cuda_13.3.r13.3/compiler.38244171_0",
+    "gpu": "NVIDIA GeForce RTX 4070, 617.14, GPU-e7376560-6f5d-ec19-6ee4-3dd3a2c81ef8, 8.9"
+  },
+  "source_manifest": "raw.zip:attempt-5/input-manifest.json",
+  "native_source_reuse": {
+    "from_attempt": 2,
+    "explanation": "Attempt2 overall FAIL retained; its two required FI native CUDA objects completed and linked. All five listed native/product inputs match final candidate exactly; final attempts compile zero native CUDA translation units.",
+    "inputs": [
+      {
+        "path": "src/compute_provider_flashinfer/native_batch.h",
+        "sha256": "7af513e476847f8c266e247efb6b50197e8f7f8e964b6e1217d79859221b9de0"
+      },
+      {
+        "path": "src/compute_provider_flashinfer/native_batch.cu",
+        "sha256": "9f1b6e032e17c69a6221fe6850d12534dcb9ce5189ba80bdc83899aa6ba6f336"
+      },
+      {
+        "path": "src/compute_provider_flashinfer/flashinfer_provider.cc",
+        "sha256": "ac1d6492ee701bf02ca2767f19c85a9a74754a90f1318798a6d1141e5246f0a0"
+      },
+      {
+        "path": "src/compute_provider_flashinfer/native_cache.cu",
+        "sha256": "62ace94e0809144aca540fa317f72e9a2bc2b1d29b5099ef15048d3da6b92858"
+      },
+      {
+        "path": "third_party/flashinfer_cache/patches.json",
+        "sha256": "1977b83b67495c4aedb391517c2f35c6034ea4b986716591732ddb2612cd1712"
+      }
+    ]
+  },
+  "unchanged_common": {
+    "path": "src/compute_batch/batch_execution.cc",
+    "baseline": "81aed8f30c71f382811dc690a992c51efccc3cfc",
+    "decision": "Redundant cold-mirror fallback removed after complete MetadataHeader segment check; common source restored to original product bytes modulo Git line endings."
+  },
+  "tests": {
+    "provider": {
+      "count": 19,
+      "failures": 0,
+      "skipped": 0,
+      "cases": [
+        {
+          "name": "ColdAllocationFailuresRollBack",
+          "file": "/root/hyle-scratch/compute-unified/source-7a7b4c3b/tests/compute_provider_flashinfer/failure_test.cc",
+          "line": "82",
+          "status": "run",
+          "result": "completed",
+          "time": "0.174",
+          "timestamp": "2026-10-16T12:51:47.473",
+          "classname": "Flashinfer"
+        },
+        {
+          "name": "UnqualifiedSemanticsDeclineDuringPrepare",
+          "file": "/root/hyle-scratch/compute-unified/source-7a7b4c3b/tests/compute_provider_flashinfer/failure_test.cc",
+          "line": "125",
+          "status": "run",
+          "result": "completed",
+          "time": "0.003",
+          "timestamp": "2026-10-16T12:51:47.648",
+          "classname": "Flashinfer"
+        },
+        {
+          "name": "Fp16PrefillAndDecodeThroughCompute",
+          "file": "/root/hyle-scratch/compute-unified/source-7a7b4c3b/tests/compute_provider_flashinfer/flashinfer_provider_test.cc",
+          "line": "78",
+          "status": "run",
+          "result": "completed",
+          "time": "0.046",
+          "timestamp": "2026-10-16T12:51:47.656",
+          "classname": "Flashinfer"
+        },
+        {
+          "name": "Bf16PrefillAndDecodeThroughCompute",
+          "file": "/root/hyle-scratch/compute-unified/source-7a7b4c3b/tests/compute_provider_flashinfer/flashinfer_provider_test.cc",
+          "line": "83",
+          "status": "run",
+          "result": "completed",
+          "time": "0.023",
+          "timestamp": "2026-10-16T12:51:47.704",
+          "classname": "Flashinfer"
+        },
+        {
+          "name": "RuntimeScheduleReusesActualTilesAcrossKvExtents",
+          "file": "/root/hyle-scratch/compute-unified/source-7a7b4c3b/tests/compute_provider_flashinfer/native_cache_test.cc",
+          "line": "283",
+          "status": "run",
+          "result": "completed",
+          "time": "6.409",
+          "timestamp": "2026-10-16T12:51:47.732",
+          "classname": "FlashinferCache"
+        },
+        {
+          "name": "EmptyRequestsAndAllZeroQueriesUseCheckedNoOp",
+          "file": "/root/hyle-scratch/compute-unified/source-7a7b4c3b/tests/compute_provider_flashinfer/native_cache_test.cc",
+          "line": "291",
+          "status": "run",
+          "result": "completed",
+          "time": "0.01",
+          "timestamp": "2026-10-16T12:51:54.142",
+          "classname": "FlashinferCache"
+        },
+        {
+          "name": "MixedFp8ShortKeyStrongWeightsInLoopAndRepackedTiles",
+          "file": "/root/hyle-scratch/compute-unified/source-7a7b4c3b/tests/compute_provider_flashinfer/native_cache_test.cc",
+          "line": "339",
+          "status": "run",
+          "result": "completed",
+          "time": "0.166",
+          "timestamp": "2026-10-16T12:51:54.153",
+          "classname": "FlashinferCache"
+        },
+        {
+          "name": "QuantizedPagedAndRaggedIndependentValueDepthAndWindow",
+          "file": "/root/hyle-scratch/compute-unified/source-7a7b4c3b/tests/compute_provider_flashinfer/native_cache_test.cc",
+          "line": "345",
+          "status": "run",
+          "result": "completed",
+          "time": "0.308",
+          "timestamp": "2026-10-16T12:51:54.320",
+          "classname": "FlashinferCache"
+        },
+        {
+          "name": "QuantizedFullNoncausalAllowsMoreQueriesThanKeys",
+          "file": "/root/hyle-scratch/compute-unified/source-7a7b4c3b/tests/compute_provider_flashinfer/native_cache_test.cc",
+          "line": "351",
+          "status": "run",
+          "result": "completed",
+          "time": "0.145",
+          "timestamp": "2026-10-16T12:51:54.628",
+          "classname": "FlashinferCache"
+        },
+        {
+          "name": "PlainWindowAndIndependentValueDepth",
+          "file": "/root/hyle-scratch/compute-unified/source-7a7b4c3b/tests/compute_provider_flashinfer/native_cache_test.cc",
+          "line": "357",
+          "status": "run",
+          "result": "completed",
+          "time": "0.349",
+          "timestamp": "2026-10-16T12:51:54.774",
+          "classname": "FlashinferCache"
+        },
+        {
+          "name": "QuantizedCoupledDepthsIncludingMainD256AndLongPrefill",
+          "file": "/root/hyle-scratch/compute-unified/source-7a7b4c3b/tests/compute_provider_flashinfer/native_cache_test.cc",
+          "line": "363",
+          "status": "run",
+          "result": "completed",
+          "time": "1.119",
+          "timestamp": "2026-10-16T12:51:55.125",
+          "classname": "FlashinferCache"
+        },
+        {
+          "name": "PlainLongWindowAgainstCancellation",
+          "file": "/root/hyle-scratch/compute-unified/source-7a7b4c3b/tests/compute_provider_flashinfer/native_cache_test.cc",
+          "line": "373",
+          "status": "run",
+          "result": "completed",
+          "time": "0.113",
+          "timestamp": "2026-10-16T12:51:56.245",
+          "classname": "FlashinferCache"
+        },
+        {
+          "name": "SplitKvScalesOnlyAfterF32MergeAgainstPartialOverflow",
+          "file": "/root/hyle-scratch/compute-unified/source-7a7b4c3b/tests/compute_provider_flashinfer/native_cache_test.cc",
+          "line": "464",
+          "status": "run",
+          "result": "completed",
+          "time": "0.074",
+          "timestamp": "2026-10-16T12:51:56.377",
+          "classname": "FlashinferCache"
+        },
+        {
+          "name": "SplitKvPreservesBfloat16PartialCancellationResidual",
+          "file": "/root/hyle-scratch/compute-unified/source-7a7b4c3b/tests/compute_provider_flashinfer/native_cache_test.cc",
+          "line": "467",
+          "status": "run",
+          "result": "completed",
+          "time": "0.074",
+          "timestamp": "2026-10-16T12:51:56.490",
+          "classname": "FlashinferCache"
+        },
+        {
+          "name": "SplitKvPreservesFloat16PartialCancellationResidual",
+          "file": "/root/hyle-scratch/compute-unified/source-7a7b4c3b/tests/compute_provider_flashinfer/native_cache_test.cc",
+          "line": "470",
+          "status": "run",
+          "result": "completed",
+          "time": "0.046",
+          "timestamp": "2026-10-16T12:51:56.565",
+          "classname": "FlashinferCache"
+        },
+        {
+          "name": "SplitKvSinglePartialScalesBeforeFinalNarrowing",
+          "file": "/root/hyle-scratch/compute-unified/source-7a7b4c3b/tests/compute_provider_flashinfer/native_cache_test.cc",
+          "line": "473",
+          "status": "run",
+          "result": "completed",
+          "time": "0.16",
+          "timestamp": "2026-10-16T12:51:56.618",
+          "classname": "FlashinferCache"
+        },
+        {
+          "name": "IndependentBytesForThreeInputsAndScales",
+          "file": "/root/hyle-scratch/compute-unified/source-7a7b4c3b/tests/compute_provider_flashinfer/native_cache_test.cc",
+          "line": "377",
+          "status": "run",
+          "result": "completed",
+          "time": "0.026",
+          "timestamp": "2026-10-16T12:51:56.782",
+          "classname": "FlashinferCacheEncode"
+        },
+        {
+          "name": "FiniteFloat8ExtremePositiveScalesSaturateAndPreserveZero",
+          "file": "/root/hyle-scratch/compute-unified/source-7a7b4c3b/tests/compute_provider_flashinfer/native_cache_test.cc",
+          "line": "388",
+          "status": "run",
+          "result": "completed",
+          "time": "0.011",
+          "timestamp": "2026-10-16T12:51:56.809",
+          "classname": "FlashinferCacheEncode"
+        },
+        {
+          "name": "NumericDomainUsesOriginalCompletionStatus",
+          "file": "/root/hyle-scratch/compute-unified/source-7a7b4c3b/tests/compute_provider_flashinfer/native_cache_test.cc",
+          "line": "399",
+          "status": "run",
+          "result": "completed",
+          "time": "0.023",
+          "timestamp": "2026-10-16T12:51:56.821",
+          "classname": "FlashinferCacheEncode"
+        }
+      ]
+    },
+    "runtime": {
+      "configurations": 32,
+      "episodes_each": 64,
+      "storage": [
+        "ragged",
+        "paged"
+      ],
+      "kv": [
+        "plain",
+        "FP8 with independent K/V scales"
+      ],
+      "types": [
+        "F16",
+        "BF16"
+      ],
+      "geometry": [
+        "single/multi Q1",
+        "mixed17+1",
+        "D64/128/256",
+        "D64/Dv128",
+        "causal/window/noncausal"
+      ],
+      "proof": [
+        "Independent uniform attention oracle from nonconstant physical V, actual FP8-byte decode and three sampled value coordinates; inactive last-row poison.",
+        "Original128-row scheduling boundary, growth/shrink, packed offsets/page ID reorder/shared pages, Q0 requests and Q topology changes.",
+        "No next injected control allocation on reuse, stable float/int workspace/grid, actual metadata bytes/waits, independent other-slot old result and original old-output rejection."
+      ]
+    },
+    "empty": "Zero requests and all-Q0 through original complete owning Q/K/V API, paged/ragged, original checked Completion; original nonempty PagedArena projection contract explicitly rejects empty guards.",
+    "consumers": [
+      {
+        "stage": "hyle_g06_fi_public",
+        "command": [
+          "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/shared-sdk-build/bin/hyle_g06_fi_public"
+        ],
+        "exit_code": 0,
+        "elapsed_seconds": 0.2009741890000072,
+        "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g06/fi-schedule-source-5/hyle_g06_fi_public.log"
+      },
+      {
+        "stage": "hyle_g06_fi_hybrid",
+        "command": [
+          "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/shared-sdk-build/bin/hyle_g06_fi_hybrid"
+        ],
+        "exit_code": 0,
+        "elapsed_seconds": 1.3093526640000022,
+        "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g06/fi-schedule-source-5/hyle_g06_fi_hybrid.log"
+      },
+      {
+        "stage": "hyle_g06_fi_pending",
+        "command": [
+          "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/shared-sdk-build/bin/hyle_g06_fi_pending"
+        ],
+        "exit_code": 0,
+        "elapsed_seconds": 0.31150196800000174,
+        "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g06/fi-schedule-source-5/hyle_g06_fi_pending.log"
+      }
+    ]
+  },
+  "cost": {
+    "private_facts": "One u32 cached original chunk fact; native metadata allocation follows original sizeof/allocator accounting, with padding not assumed zero.",
+    "cold": "Read four bytes from original planner host shadow, no D2H. Original nonempty native planning and accepted H2D prefix unchanged.",
+    "warm": "O(requests) equivalence at actual original chunk/CTA/window, then original F2 active metadata delta; skip query/plan/integer H2D iff schedule equivalent. No retile/tuning or claim of optimal native schedule.",
+    "empty": "Native query/plan/run bypassed or no_op at zero Q; common explicit immediate-completion wait may still be charged.",
+    "native_private_driver": "UNKNOWN; no opaque zero-allocation/hard-budget claim."
+  },
+  "artifacts": {
+    "state": "PASS_CURRENT_ARTIFACT_IDENTITY",
+    "artifacts": 44,
+    "bytes": 196134368
+  },
+  "artifact_manifest": "raw.zip:attempt-5/artifacts.json",
+  "build_limits": {
+    "ninja": 2,
+    "nvcc_pool": 1,
+    "nvcc_split_compile": 3,
+    "unrelated_cuda_objects_reused": 146,
+    "proof": {
+      "state": "PASS_146_SHIPPING_OBJECTS_NATIVE_NINJA_NO_WORK",
+      "elapsed_seconds": 0.28648170999997546,
+      "build": "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/shared-sdk-build",
+      "old_derived_source": "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/shared-sdk-build/src/compute_ggml_runtime/source-c41bfd1864980360",
+      "new_derived_source": "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/shared-sdk-build/src/compute_ggml_runtime/source-2f41ad48bddb8a44",
+      "original_manifest_sha256": "e75ec48d28914d68ed7324e8f6bba7b839983dc32d755ca3071f561ba58cd11d",
+      "reuse_manifest_sha256": "d7e8fb05530aa8f6f732c72186913ca0f06aef7263f915f56fce94bc88339569",
+      "verified_derived_inputs": 242,
+      "verified_canonical_inputs": 5,
+      "native_object_count": 146,
+      "original_object_checks": "Ninja validates original command identity and dependency freshness on old-source paths; no native compile is scheduled",
+      "scope": "Private build-local manifest maps only byte-identical ggml CUDA source/include paths and the precise unary object reference; all current CPU/FlashInfer/other product edges retained."
+    }
+  },
+  "attempts": [
+    {
+      "attempt": 1,
+      "candidate": "fca058dc1a698853cc991c9e6ce51eab9258f547",
+      "state": "TERMINAL_SETUP_FAIL",
+      "outer_elapsed_seconds": 162.31789323799998,
+      "stages": [
+        {
+          "stage": "configure",
+          "command": [
+            "cmake",
+            "-S",
+            "/root/hyle-scratch/compute-unified/source-7a7b4c3b",
+            "-B",
+            "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/shared-sdk-build",
+            "-DHYLE_INSTALL=OFF",
+            "-DHYLE_BUILD_TESTS=ON",
+            "-DHYLE_BUILD_BENCH=OFF",
+            "-DHYLE_TEST_INSTRUMENTATION=OFF",
+            "-DCMAKE_PROJECT_INCLUDE=/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g06/fi_schedule_project.cmake"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 57.959206266999985,
+          "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g06/fi-schedule-source-1/configure.log"
+        },
+        {
+          "stage": "prepare-manifest",
+          "command": [
+            "ninja",
+            "-C",
+            "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/shared-sdk-build",
+            "build.ninja"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 0.14113099900001203,
+          "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g06/fi-schedule-source-1/prepare-manifest.log"
+        }
+      ]
+    },
+    {
+      "attempt": 2,
+      "candidate": "fca058dc1a698853cc991c9e6ce51eab9258f547",
+      "state": "TERMINAL_FAIL",
+      "outer_elapsed_seconds": 374.996144074,
+      "stages": [
+        {
+          "stage": "prepare-manifest",
+          "command": [
+            "ninja",
+            "-C",
+            "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/shared-sdk-build",
+            "build.ninja"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 0.08151522200000727,
+          "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g06/fi-schedule-source-2/prepare-manifest.log"
+        },
+        {
+          "stage": "build",
+          "command": [
+            "ninja",
+            "-C",
+            "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/shared-sdk-build",
+            "-f",
+            "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g06/fi-schedule-source-2/preview.ninja",
+            "-j",
+            "2",
+            "-k",
+            "0",
+            "hyle_compute_provider_flashinfer_test",
+            "hyle_g06_fi_public",
+            "hyle_g06_fi_hybrid",
+            "hyle_g06_fi_pending",
+            "hyle_g06_fi_plain_risks",
+            "hyle_g06_fi_encoded_risks"
+          ],
+          "exit_code": 1,
+          "elapsed_seconds": 374.08395947900004,
+          "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g06/fi-schedule-source-2/build.log"
+        }
+      ]
+    },
+    {
+      "attempt": 3,
+      "candidate": "1049fbe6facaa0bc8357000346e53cb14e195fd8",
+      "state": "TERMINAL_FAIL",
+      "outer_elapsed_seconds": 14.452673546000028,
+      "stages": [
+        {
+          "stage": "prepare-manifest",
+          "command": [
+            "ninja",
+            "-C",
+            "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/shared-sdk-build",
+            "build.ninja"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 0.077195856000003,
+          "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g06/fi-schedule-source-3/prepare-manifest.log"
+        },
+        {
+          "stage": "build",
+          "command": [
+            "ninja",
+            "-C",
+            "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/shared-sdk-build",
+            "-f",
+            "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g06/fi-schedule-source-3/preview.ninja",
+            "-j",
+            "2",
+            "-k",
+            "0",
+            "hyle_compute_provider_flashinfer_test",
+            "hyle_g06_fi_public",
+            "hyle_g06_fi_hybrid",
+            "hyle_g06_fi_pending"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 3.038799202000064,
+          "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g06/fi-schedule-source-3/build.log"
+        },
+        {
+          "stage": "hyle_compute_provider_flashinfer_test",
+          "command": [
+            "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/shared-sdk-build/bin/hyle_compute_provider_flashinfer_test",
+            "--gtest_output=xml:/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g06/fi-schedule-source-3/provider.xml"
+          ],
+          "exit_code": 1,
+          "elapsed_seconds": 10.225510099000076,
+          "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g06/fi-schedule-source-3/hyle_compute_provider_flashinfer_test.log"
+        }
+      ]
+    },
+    {
+      "attempt": 4,
+      "candidate": "3664f5a330352af3f8396042606aab02e801806f",
+      "state": "TERMINAL_FAIL",
+      "outer_elapsed_seconds": 17.603315224000003,
+      "stages": [
+        {
+          "stage": "prepare-manifest",
+          "command": [
+            "ninja",
+            "-C",
+            "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/shared-sdk-build",
+            "build.ninja"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 0.1077184020000006,
+          "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g06/fi-schedule-source-4/prepare-manifest.log"
+        },
+        {
+          "stage": "build",
+          "command": [
+            "ninja",
+            "-C",
+            "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/shared-sdk-build",
+            "-f",
+            "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g06/fi-schedule-source-4/preview.ninja",
+            "-j",
+            "2",
+            "-k",
+            "0",
+            "hyle_compute_provider_flashinfer_test",
+            "hyle_g06_fi_public",
+            "hyle_g06_fi_hybrid",
+            "hyle_g06_fi_pending"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 5.481959999,
+          "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g06/fi-schedule-source-4/build.log"
+        },
+        {
+          "stage": "hyle_compute_provider_flashinfer_test",
+          "command": [
+            "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/shared-sdk-build/bin/hyle_compute_provider_flashinfer_test",
+            "--gtest_output=xml:/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g06/fi-schedule-source-4/provider.xml"
+          ],
+          "exit_code": 1,
+          "elapsed_seconds": 9.958997857,
+          "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g06/fi-schedule-source-4/hyle_compute_provider_flashinfer_test.log"
+        }
+      ]
+    },
+    {
+      "attempt": 5,
+      "candidate": "4fb74d07c220156bff8aa830a20c4eda08d0b266",
+      "state": "TERMINAL_ORDINARY_PASS_RISKS_PENDING",
+      "outer_elapsed_seconds": 18.459601938999995,
+      "stages": [
+        {
+          "stage": "prepare-manifest",
+          "command": [
+            "ninja",
+            "-C",
+            "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/shared-sdk-build",
+            "build.ninja"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 0.09480161099999407,
+          "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g06/fi-schedule-source-5/prepare-manifest.log"
+        },
+        {
+          "stage": "build",
+          "command": [
+            "ninja",
+            "-C",
+            "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/shared-sdk-build",
+            "-f",
+            "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g06/fi-schedule-source-5/preview.ninja",
+            "-j",
+            "2",
+            "-k",
+            "0",
+            "hyle_compute_provider_flashinfer_test",
+            "hyle_g06_fi_public",
+            "hyle_g06_fi_hybrid",
+            "hyle_g06_fi_pending"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 4.881211792000002,
+          "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g06/fi-schedule-source-5/build.log"
+        },
+        {
+          "stage": "hyle_compute_provider_flashinfer_test",
+          "command": [
+            "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/shared-sdk-build/bin/hyle_compute_provider_flashinfer_test",
+            "--gtest_output=xml:/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g06/fi-schedule-source-5/provider.xml"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 9.41374012499999,
+          "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g06/fi-schedule-source-5/hyle_compute_provider_flashinfer_test.log"
+        },
+        {
+          "stage": "hyle_g06_fi_public",
+          "command": [
+            "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/shared-sdk-build/bin/hyle_g06_fi_public"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 0.2009741890000072,
+          "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g06/fi-schedule-source-5/hyle_g06_fi_public.log"
+        },
+        {
+          "stage": "hyle_g06_fi_hybrid",
+          "command": [
+            "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/shared-sdk-build/bin/hyle_g06_fi_hybrid"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 1.3093526640000022,
+          "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g06/fi-schedule-source-5/hyle_g06_fi_hybrid.log"
+        },
+        {
+          "stage": "hyle_g06_fi_pending",
+          "command": [
+            "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/shared-sdk-build/bin/hyle_g06_fi_pending"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 0.31150196800000174,
+          "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g06/fi-schedule-source-5/hyle_g06_fi_pending.log"
+        }
+      ]
+    }
+  ],
+  "failures_retained": [
+    "Attempt1 setup guard caught146 unrelated native CUDA rebuilds before compilation.",
+    "Attempt2 existing public consumer missing-initializer/unused-variable warnings fixed1049fbe6f; original instrumented risk hooks absent from shipping backend produced link failures, retained.",
+    "Attempt3 empty fixture unchecked expected threw; attempt4 diagnosed original PagedArena nonempty contract. Fixture corrected to original owning-input API; original failures remain FAIL."
+  ],
+  "remaining": [
+    "Actual capture/replay and Direct/Graph/hybrid lifecycle qualification remain mandatory full G06 work.",
+    "Original plain/FP8 CUDA backend observation risks and applicable static provider fault injection remain mandatory in final instrumented risk batch.",
+    "Final G06 ASan/UBSan/TSan, independent public headers, relocated static/shared SDK and applicable fixed-candidate performance remain unrun.",
+    "G04/G05 original CUDA prefill noninferiority UNRESOLVED and exact cost attribution UNKNOWN retained; no unchanged P1 rerun or new speed claim. Full goal accepted count remains3/10."
+  ],
+  "elapsed": "Stage/outer timings overlap; all five attempts retained. Complete investigation/editorial/sealing elapsed UNKNOWN, not zero.",
+  "bundle": {
+    "path": "raw.zip",
+    "sha256": "caeb70c8d0acfeaefaae0a98ae1392791e87f7c3a7cc99c643730a19b22f365c",
+    "bytes": 1468842
+  },
+  "timestamp_utc": "2026-10-16T04:53:40.136364+00:00"
+}

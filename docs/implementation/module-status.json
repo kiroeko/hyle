@@ -571,7 +571,7 @@
       "module": "compute_provider_flashinfer",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/inference-g06-metadata-decode.md",
-      "summary": "G06 D6 AUDITED：固定原chunk/CTA及逐active-request chunk数证明schedule等价，cold host shadow读取事实；空Q原生no-op。保原数学/F1/F2/Queue及G04/G05全部原门，32组64步与原消费者集中source验证；capture及最终风险/交付/性能仍待。"
+      "summary": "G06 D6普通source通过：原schedule等价复用与零Q原生no-op；FI19项含32组×64步、Direct/Graph、CPU+CUDA与pending消费者PASS。4次原失败/费用保留；common冗余fallback已撤回。实际capture、instrumented故障风险及最终san/头/SDK/P1待，G04/G05原CUDA prefill非劣未决保留，整goal仍3/10。"
     },
     {
       "module": "compute_provider_ggml_metal",

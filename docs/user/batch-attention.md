@@ -567,6 +567,15 @@ split与host waits；MaterializedBatchCosts是保守logical上限，包含view/a
 在首上传前共享镜像，每个 node 保留自己的 plan/workspace。此 G06 共同改动目前已有
 [Windows CPU source 资格](../../evidence/correctness/inference-g06-common-source-windows-attempt-4/receipt.json)；
 新平台/交付资格及 Apple/Vulkan controller 自身的 index banks、原生规划仍按各自状态验收。
+FlashInfer 的显式 update 在同 schema、完整 Q indptr 下，检查原计划实际 chunk/CTA/window
+及每个有效 request 的 chunk 数；调度表等价时复用原 plan，边界变化时真正 cold replan。
+KV offset、page IDs、tail 仍由原 runtime metadata 消费；该判断扫描 requests，原 F2
+另计 active metadata delta。当前[FI 普通source资格](../../evidence/correctness/inference-g06-fi-schedule-runtime-source/receipt.json)
+覆盖32组×64步及原Direct/Graph、CPU+CUDA和pending消费者；capture、instrumented风险、
+最终SDK/性能尚待验收。零Q可经完整 owning Q/K/V入口执行 checked no-op，显式准备仍可
+计一次立即completion的host wait；PagedArena.read继续要求非空准确页集合。原生private/
+driver费用仍为UNKNOWN。
+
 native controller报告staging、两份device mirror、固定backing、实际上传字节和原生计划复用；未知private
 metadata/scratch/driver费仍是UNKNOWN，硬拒未知预算按原资格明确拒绝。
 
