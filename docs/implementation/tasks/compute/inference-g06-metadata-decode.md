@@ -499,3 +499,19 @@ compute_provider_flashinfer由原G04/G05 BLOCKED合法进入本卡SCOPED；原ca
 数学族，不因命名新建decode kernel。新事实是KV indptr变化仍可能有完全相同的原调度表，
 以及零request的原planner除零；只定界原schedule复用与空执行边界，不扩数学/调优搜索。
 本段无产品修改或运行PASS；实际capture及Graph/联合完整资格仍为完整G06必做后续。
+
+### D6 AUDITED：原调度等价与空执行
+
+FI在SCOPED提交b55c2ab102a4645320ab2f0475fcc19beaa1d560后进入AUDITED，才实施以下两处。
+D6.1只冷读取原host shadow中的实际chunk rows，Slot保一u32；同schema/完整Q拓扑，按
+原chunk/CTA/window计算每个active request的chunk数，全部相同才复用原tile/o/merge表。
+Q0不贡献任何tile或输出偏移；KV runtime offset/IDs/tail仍由原kernel消费，原metadata
+F2 delta和所有权限/退休门不变。没有新调度器、阈值、数学、公共API或capture标志。
+D6.2零query绕过原scheduler除零并清零native plan/facts，plan/run走原no_op；原common
+显式completion wait仍如实计费，不因无GPU工作宣称零host wait。非空H2D接受前缀不改。
+source批固定原FI math/cache/encoder/failure加32组×64步独立数值/成本反证及空布局；
+单/多Q1、mixed17+1、plain/FP8、F16/BF16、D64/128/256/独立Dv、window/noncausal，
+覆盖128-row chunk增长/缩短、packed offsets/页重排/空request、Q拓扑真正replan、旧输出
+和下一次注入分配禁用。复用原WSL shared树，Ninja2/pool1/split3，最多两native CUDA TU，
+禁止ggml-cuda无关重建；直接消费者按原target固定后同批运行。失败只定向修正，不重跑P1。
+本段未签运行PASS；实际capture、最终风险/头/迁址SDK/性能和G04/G05原门继续保留。

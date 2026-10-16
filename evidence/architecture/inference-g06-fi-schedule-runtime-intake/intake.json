@@ -1,5 +1,5 @@
 {
-  "kind": "G06_D6_FLASHINFER_SCHEDULE_RUNTIME_SCOPE",
+  "kind": "G06_D6_FLASHINFER_SCHEDULE_RUNTIME_SCOPE_AND_AUDIT",
   "baseline": "81aed8f30c71f382811dc690a992c51efccc3cfc",
   "owner": "compute_provider_flashinfer",
   "previous_owner": {
@@ -243,5 +243,30 @@
     "url": "https://github.com/flashinfer-ai/flashinfer/blob/69ff11fc4954396d98326656dc85debd2223f637/include/flashinfer/attention/scheduler.cuh"
   },
   "timestamp_utc": "2026-10-16T04:29:18.897443+00:00",
-  "elapsed": "Full read-only intake wall time UNKNOWN; no build/P1 run."
+  "elapsed": "Full read-only intake wall time UNKNOWN; no build/P1 run.",
+  "audit_baseline": "b55c2ab102a4645320ab2f0475fcc19beaa1d560",
+  "finite_fix": [
+    {
+      "id": "D6.1",
+      "decision": "BORROW original native schedule, SELF host reuse proof",
+      "shape": "Cold successful PrefillPlan copies actual kv_chunk_size scalar from its original pinned host shadow into private BatchFacts/BatchSlot. Same schema/full Q topology reuses the original plan iff each active request has the same ceil(max(effective_KV_units,1)/cached_chunk_units). Units are pages for paged, rows for ragged; effective units retain original ceil((window_left+CTA_TILE_Q)/page_size) clamp. Q0 requests contribute no tile/output/merge entries and do not affect equivalence. No retile, tuning, kernel, public API or runtime property changes.",
+      "cost": "One private u32 in native facts/slot; one cold memcpy of four original host bytes; warm O(requests), no query/plan/H2D for schedule-equivalent layout. Snapshot/F2 delta costs remain actual. Runtime kernel still reads updated device KV offsets/IDs/tails. Native/driver hidden costs remain UNKNOWN."
+    },
+    {
+      "id": "D6.2",
+      "decision": "SELF zero-work guard, BORROW checked completion",
+      "shape": "query_rows==0 bypasses native scheduler and resets native plan/facts to zero. Native plan/run reports original no_op with no GPU launch; common framework may still count explicit immediate plan completion wait. Q topology changes return to original cold planning.",
+      "failure": "Non-empty native planning retains original accepted H2D prefix/error/poison handling. Original idle/ticket/old-output/foreign-schema/pending/retirement gates run before Provider update. Failed equivalence causes real cold plan, never partial metadata edit."
+    }
+  ],
+  "validation": [
+    "One frozen source batch: existing hyle_compute_provider_flashinfer_test ordinary math/cache/encoder/failure tests plus 32 configurations x64 runtime episodes: paged/ragged plain/FP8, F16/BF16, single/multi Q1, mixed17+1, D64/128/256 and D64/Dv128/window/noncausal. Independent uniform-attention oracle from varying V coordinates and actual FP8 byte decode, inactive poison, grow/shrink across original128-row chunk boundary, IDs reorder/shared pages/packed offsets, Q0 requests, Q topology change, stable workspace on reuse, next injected allocation refused and old output preserved.",
+    "Zero-request and all-Q0 layouts must prepare/run through original checked Completion without scheduler division or native launch.",
+    "WSL original cached SM89 shared tree, Ninja2/NVCC pool1 split3, refuse ggml-cuda vendor rebuild and more than2 native CUDA translation units. Reconfigure once for full canonical changed-byte source sync; record all source/artifact/identity/logs.",
+    "Original public CUDA Direct/Graph, CPU+CUDA and plain/encoded pending consumers selected from existing build; exact target list bound before run. No unchanged G04/G05 P1; final G06 ASan/UBSan/TSan/header/relocated static/shared/P1 remain mandatory after full G06 API/algorithm freeze."
+  ],
+  "remaining": [
+    "Actual capture and corresponding Direct/Graph/hybrid lifetime qualification remain mandatory full G06 work, not inferred from schedule reuse or enabled by a Provider flag.",
+    "Original G04/G05 CUDA prefill noninferiority UNRESOLVED and cost attribution UNKNOWN remain; no new performance PASS."
+  ]
 }

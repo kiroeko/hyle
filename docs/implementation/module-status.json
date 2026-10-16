@@ -569,9 +569,9 @@
     },
     {
       "module": "compute_provider_flashinfer",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/inference-g06-metadata-decode.md",
-      "summary": "G06 D6 scoped：实际锁定调度器/已编译WSL源码反证raw KV-indptr全等过严及空batch除零；仅审计原schedule等价复用和空执行，原G04/G05性能未决与全部失败/成本保留，未签新产品或capture资格。"
+      "summary": "G06 D6 AUDITED：固定原chunk/CTA及逐active-request chunk数证明schedule等价，cold host shadow读取事实；空Q原生no-op。保原数学/F1/F2/Queue及G04/G05全部原门，32组64步与原消费者集中source验证；capture及最终风险/交付/性能仍待。"
     },
     {
       "module": "compute_provider_ggml_metal",
