@@ -15,6 +15,6 @@ if(HYLE_COMPUTE_CUDA_ENABLED)
   endif()
   hyle_stage_runtime(hyle_compute_provider_torch_cuda_test)
   hyle_add_test(compute_provider_torch_cuda NAME packed_consumer
-    SOURCES packed_resident_consumer.cc DEPS hyle_compute_backend_cuda)
+    SOURCES packed_resident_consumer.cc DEPS hyle_compute_backend_cuda hyle_compute_route_cuda)
   hyle_stage_runtime(hyle_compute_provider_torch_cuda_packed_consumer_test)
 endif()

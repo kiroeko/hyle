@@ -9,6 +9,7 @@
 #include <vector>
 
 #include <hyle/compute/backends/cuda.h>
+#include <hyle/compute/cuda.h>
 #include <hyle/compute/model_ops.h>
 #include <hyle/compute/prepared_operation.h>
 #include <hyle/compute/providers/torch_cuda.h>
@@ -26,8 +27,7 @@ void require(hyle::Status status) {
 }
 void run() {
   constexpr std::int64_t n=9,k=128,group=64;
-  const std::array providers{c::ProviderBinding{c::torch_cuda::provider(),0}};
-  auto context=take(c::Context::create(take(c::cuda::device(0)),{.providers=providers}));
+  auto context=take(c::cuda::create_context());
   auto memory=take(c::cuda::MemoryResource::create(context,c::cuda::MemoryKind::kDevice));
   auto queue=take(context.create_queue());
   const std::array descriptions{
