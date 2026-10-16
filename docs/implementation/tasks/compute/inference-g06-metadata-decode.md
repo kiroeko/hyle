@@ -657,3 +657,10 @@ CUDA native pool1/split3/Ninja2；不重写公共工具，不增加全局验证�
 
 最终候选绑定`0a29d119426b2975d48c238c37a2994675e0ba9f`；本卡11个owner由AUDITED进入CANDIDATE。
 未运行的最终门保持待验证，完成项仍3/10。
+
+最终风险检查点：WSL shared原观察hook四个pending target（plain/FP8×普通/captured）各五模式，
+及core108/Graph289/FI20和fresh cold32×64全部PASS。static attempt1首次真实cold捕获及
+原21项通过；新增两故障fixture在setup用ragged capacity却保默认paged max_pages/ref=1，
+未到实际注入即unchecked expected异常。仅修fixture为明确零pages/refs，并补schema/layout
+错误传播。原static configure53.062s、build370.055s和21/23 FAIL账保留；两FI CUDA TU已编，
+下一轮精确复用原配置/树，必须零CUDA重编。产品API/算法、11个owner的CANDIDATE不变。

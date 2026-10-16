@@ -173,9 +173,9 @@ void batch_capture_fault(bool encoded,bool launch_failure) {
     const auto storage=encoded?compute::CacheStorage::float8(2.F).value():compute::CacheStorage::plain(type).value();
     const compute::BatchCapacity cap{.storage=compute::BatchStorage::kRagged,.query_type=type,.output_type=type,
       .key_storage=storage,.value_storage=storage,.max_requests=1,.max_query_rows=1,.max_kv_rows=2,
-      .query_heads=2,.kv_heads=1,.qk_head_dim=64,.value_head_dim=encoded?128u:64u,.page_size=1};
-    auto schema=compute::BatchSchema::create(cap).value();
-    const std::array<std::int32_t,2> qp{0,1},kp{0,2};auto layout=schema.version({qp,kp,{},{}}).value();
+      .max_pages=0,.max_page_refs=0,.query_heads=2,.kv_heads=1,.qk_head_dim=64,.value_head_dim=encoded?128u:64u,.page_size=1};
+    auto made_schema=compute::BatchSchema::create(cap);ASSERT_TRUE(made_schema)<<made_schema.error().message();auto schema=std::move(*made_schema);
+    const std::array<std::int32_t,2> qp{0,1},kp{0,2};auto made_layout=schema.version({qp,kp,{},{}});ASSERT_TRUE(made_layout)<<made_layout.error().message();auto layout=std::move(*made_layout);
     auto program=compute::BatchProgram::prepare(context,schema,{.resource=memory.ref(),.host_workspace=host.ref(),
       .max_float_workspace_bytes=8u<<20,.max_int_workspace_bytes=16384,.max_invocations=2,.scale=.125F,
       .window_left=encoded?16:-1,.allocator=allocator.ref()}).value();
