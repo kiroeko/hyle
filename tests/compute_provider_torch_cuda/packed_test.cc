@@ -125,9 +125,11 @@ TEST(CudaPackedWeights, Grouped64StepsObserveChangedWordsAndIdsWithoutTorchTempo
     ASSERT_TRUE(outputs[1].view().read(std::as_writable_bytes(std::span(before))).ok());
     auto queue=data.context.create_queue().value();
     const std::array target{c::TensorView::create(output_desc[0],outputs[1].view()).value()};
-    auto submitted=first.submit(queue,data.views,target);
+    auto checked=prepared.create_invocation().value();
+    auto submitted=checked.submit(queue,data.views,target);
     ASSERT_TRUE(submitted)<<submitted.error().message();
     EXPECT_TRUE(submitted->wait().IsOutOfRange());
+    EXPECT_FALSE(checked.submit(queue,data.views,target));
     ASSERT_TRUE(outputs[1].view().read(std::as_writable_bytes(std::span(after))).ok());
     EXPECT_EQ(before,after);
   }
