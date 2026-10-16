@@ -1,0 +1,74 @@
+{
+  "schema": "hyle.inference-g08-performance-ledger/v1",
+  "state": "IN_PROGRESS_CPU_QUALIFIED_OTHER_ROUTES_PENDING",
+  "candidate": "5103c13d8ed119b06aa64e799f9768aea45ab913",
+  "baseline": "85bcfa4ebc29cc4d2ed5fb122074204aca675d58",
+  "scope": "Finite complete warm TopK(1) public comparison; Apple adds frozenTopK(3) holdout. No categorical/RNG speed or full-engine/llama.cpp ranking.",
+  "expected_routes": [
+    "cpu",
+    "cuda",
+    "apple",
+    "vulkan"
+  ],
+  "expected_workloads": 9,
+  "completed_qualified_routes": [
+    "cpu"
+  ],
+  "qualified_workloads": [
+    {
+      "route": "cpu",
+      "id": "topk-r1-k1",
+      "strict_direction": "WIN",
+      "instrument_exact_verdict": "WIN",
+      "noninferiority_gate": "PASS",
+      "median_ratio_range": [
+        1.2186603772623772,
+        1.255562208496155
+      ],
+      "confidence_interval_envelope": [
+        1.2073103174885522,
+        1.2625085928824495
+      ],
+      "strata": 8,
+      "independent_processes_per_stratum": [
+        15
+      ],
+      "comparability": "COMPARABLE"
+    },
+    {
+      "route": "cpu",
+      "id": "topk-r16-k1",
+      "strict_direction": "WIN",
+      "instrument_exact_verdict": "WIN",
+      "noninferiority_gate": "PASS",
+      "median_ratio_range": [
+        1.2180296940365845,
+        1.266141462579209
+      ],
+      "confidence_interval_envelope": [
+        1.2090954858197682,
+        1.2716832362015769
+      ],
+      "strata": 8,
+      "independent_processes_per_stratum": [
+        15
+      ],
+      "comparability": "COMPARABLE"
+    }
+  ],
+  "pending_routes": [
+    "cuda",
+    "apple",
+    "vulkan"
+  ],
+  "evidence": [
+    {
+      "route": "cpu",
+      "receipt": "evidence/performance/inference-g08-output-selection/cpu/receipt.json",
+      "benchmark_revision": "5fbc13992137af26d0766f026415d5a80c7f2dd8",
+      "qualification": "QUALIFIED",
+      "performance_gate": "PASS"
+    }
+  ],
+  "historical_2026_09_claim_counts_unchanged": true
+}

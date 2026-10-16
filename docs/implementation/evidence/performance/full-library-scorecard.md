@@ -10,6 +10,9 @@
 [编码页分账](inference-encoded-g04-g05-2026-10.md)：保留CPU/Apple/Vulkan原方向及CUDA
 warm LOSS/5%未决；当前资源/精度取舍P0收口不提升旧P1、不外推llama.cpp整引擎胜负。
 
+2026-10的G08输出选择见[独立分账](inference-output-selection-g08-2026-10.md)：逐路线登记
+新旧HYLE TopK的合格方向和5%工程门，原98组计数及G04/G05历史方向保持原值。
+
 本页是 [`full-library-scorecard.json`](full-library-scorecard.json) 的人读结论。机器账本绑定
 当轮 48 个 `CLOSED` factor，覆盖 R2 共同语义、
 Mem 定向尾项、R3–R6 四路线及 [R7 终局](../../tasks/compute/four-route-foundation-final-review.md)。

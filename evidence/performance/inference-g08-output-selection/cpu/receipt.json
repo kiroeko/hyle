@@ -1,0 +1,92 @@
+{
+  "schema": "hyle.inference-g08-topk-p1-route/v1",
+  "verdict": "CPU_QUALIFIED_P1_PASS",
+  "route": "cpu",
+  "candidate": "5103c13d8ed119b06aa64e799f9768aea45ab913",
+  "benchmark_revision": "5fbc13992137af26d0766f026415d5a80c7f2dd8",
+  "original_revision": "85bcfa4ebc29cc4d2ed5fb122074204aca675d58",
+  "machine": "W1-WIN",
+  "qualification": "QUALIFIED",
+  "qualification_gate": "PASS",
+  "performance_gate": "PASS",
+  "stock_verify_exit_code": 0,
+  "contract_sha256": "b6bab183026956d6707aceeec0c2ce17f9ee8d8e6167c24d169214d21d7aca33",
+  "contract_file_sha256": "ff2f3b8b35cb9744b5a8bcd9ffe9cbed4af12802b627d163c84979e8ec3f7269",
+  "manifest_sha256": "49de563a6df6a45944dc1058b71765c5d4a27fb3ea2a7e42ea931f81ee1b7d4e",
+  "summary_sha256": "897404de0df0dacc8f1c4188c29b86f4e1715377109c5b2c4eb4f158da9bccc6",
+  "controls": [
+    {
+      "id": "aa",
+      "gate": "PASS"
+    },
+    {
+      "id": "delta5",
+      "gate": "PASS"
+    },
+    {
+      "id": "delta10",
+      "gate": "PASS"
+    },
+    {
+      "id": "timer-floor",
+      "gate": "PASS"
+    },
+    {
+      "id": "placement",
+      "gate": "PASS"
+    }
+  ],
+  "workloads": [
+    {
+      "id": "topk-r1-k1",
+      "strict_direction": "WIN",
+      "instrument_exact_verdict": "WIN",
+      "noninferiority_gate": "PASS",
+      "median_ratio_range": [
+        1.2186603772623772,
+        1.255562208496155
+      ],
+      "confidence_interval_envelope": [
+        1.2073103174885522,
+        1.2625085928824495
+      ],
+      "strata": 8,
+      "independent_processes_per_stratum": [
+        15
+      ],
+      "comparability": "COMPARABLE"
+    },
+    {
+      "id": "topk-r16-k1",
+      "strict_direction": "WIN",
+      "instrument_exact_verdict": "WIN",
+      "noninferiority_gate": "PASS",
+      "median_ratio_range": [
+        1.2180296940365845,
+        1.266141462579209
+      ],
+      "confidence_interval_envelope": [
+        1.2090954858197682,
+        1.2716832362015769
+      ],
+      "strata": 8,
+      "independent_processes_per_stratum": [
+        15
+      ],
+      "comparability": "COMPARABLE"
+    }
+  ],
+  "ratio_definition": "candidate/peer for higher-is-better; peer/candidate for lower-is-better; greater than one favors candidate",
+  "mechanism": "Both O(RV); candidate removes V-sized Entry scratch/fill and partial_sort passes.",
+  "qualified_elapsed_seconds": 508.26500000001397,
+  "retained_diagnostic_seconds": 117.03100000001723,
+  "known_qualified_and_diagnostic_seconds": 625.2960000000312,
+  "preflight": "evidence/architecture/inference-g08-output-selection-audit/p1-preflight-final.json",
+  "scope": "Complete warm public TopK including native work, checked completion, both stored-F32 values/I32 indices readback and step-local handles. R1/R16 V248320 K1 plus Apple R16 K3, eight execution/allocation/placement strata; original15-to31 independent process schedule and5percent. No categorical/RNG speed, llama.cpp or full-engine token/s claim.",
+  "limits": "Final retained invocation result/runtime/cache destruction remains deferred as frozen source ledger. Private native/cache upper bounds not inferred from timers. Only this route/profile/finite shapes; not whole G08 acceptance.",
+  "raw": {
+    "path": "raw.zip",
+    "sha256": "03630e615202637f00b69c48ef21a8a590c8edede6f4783d4fe52ea1eecc2c4d",
+    "bytes": 11047858
+  }
+}

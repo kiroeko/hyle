@@ -1,6 +1,6 @@
 # G08 设备端输出数值选择与可定位随机数
 
-状态：**CANDIDATE，2026-10-17；八owner的S1–S4/M1接口与算法冻结于5103c13d8，普通数值及适用device/host风险已过，交付18/18已过，S1时序账与基准输入已固定，CPU数值及workload A/A通过，四路线数值及workload A/A/短预检已过，正式P1与终审待完成**。baseline 为
+状态：**CANDIDATE，2026-10-17；八owner的S1–S4/M1接口与算法冻结于5103c13d8，普通数值及适用device/host风险已过，交付18/18已过，S1时序账与基准输入已固定，CPU数值及workload A/A通过，四路线数值及workload A/A/短预检已过，CPU正式P1通过、CUDA正式批次进行中，其余P1与终审待完成**。baseline 为
 `85bcfa4eb`，G07已经整项接受，新G07–G10 goal完成1/4。原G01–G07不重跑，G09/G10未开始。
 本卡只处理原[G08发现](../project/inference-single-machine-foundation-audit-2026-10.md)与
 [消费形状计划](../project/inference-consumer-adaptation-plan-2026-10.md)的有限输出数值域。
@@ -636,3 +636,16 @@ placement为PASS；两执行顺序的校准中位数都在原预声明点值带�
 各原profile、八strata/placement、两小输出及完成/owner账不变；重型仍CPU→CUDA→Apple→
 Vulkan串行。新qualified-build是原仪器fresh要求，不覆盖或重置旧probe失败/树/费用。
 正式资格/性能及终审未签，八owner仍CANDIDATE，G09/G10未开始。
+
+### 2026-10-17 首路线正式P1：CPU已接受，GPU批次继续
+
+[CPU正式证据](../../../../evidence/performance/inference-g08-output-selection/cpu/receipt.json)与
+[性能分账](../../evidence/performance/inference-output-selection-g08-2026-10.md)：固定CPU
+benchmark5fbc、产品5103及原85bc，八strata各n15、120产品进程与30公共控制完成，
+qualification/controls/stock verify/5%非劣门全PASS，n15停止。R1与R16严格方向均WIN，
+各分层吞吐ratio分别1.218660–1.255562、1.218030–1.266141，均非整引擎加速比。
+CPU新旧都O(RV)，所省的是V宽Entry scratch/fill与partial_sort触达。
+
+CPU正式阶段508.265s及原117.031s诊断分别保留；没有复位原失败。CUDA正式P1已经接上，
+其后Apple、Vulkan按原批次串行，不能提前接受整项G08。八owner保持CANDIDATE；
+G09/G10与CLI仍未开始。
