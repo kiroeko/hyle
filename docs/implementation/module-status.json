@@ -519,14 +519,9 @@
     },
     {
       "module": "graph_route_vulkan",
-      "state": "CLOSED",
-      "record": "docs/implementation/tasks/compute/inference-g04-g05-final-closure.md",
-      "summary": "G04/G05 finite domain CLOSED: encoded append/resident/direct attention, window/noncausal/independent geometry, numerical/lifecycle/device/host risks and three deliveries accepted using matching immutable evidence. User-selected storage/numerical tradeoffs pass bounded P0; original CUDA warm LOSS/5% UNRESOLVED retained, no timing PASS or llama.cpp comparison. No product change; G07-G10 and full-engine tokens/s remain separate.",
-      "candidate": "982676cb05a6e6244e66e0a596347aa96043617b",
-      "performance": {
-        "tier": "P0",
-        "evidence": "evidence/correctness/inference-g04-g05-final-closure/receipt.json"
-      }
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/compute/inference-g08-output-selection.md",
+      "summary": "G08 finite native sampling Graph seam: explicit custom whitelist and optional second categorical result. Original plan/status/liveness/owners borrowed; no new Graph API or execution machinery. Source audit pending; no product authorization."
     },
     {
       "module": "compute_provider_ggml_vulkan",

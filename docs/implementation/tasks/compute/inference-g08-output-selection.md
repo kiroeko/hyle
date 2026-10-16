@@ -148,3 +148,30 @@ adapter必须在构造benchmark前审完，不改公共统计核心。新categor
 
 六owner本轮只从SCOPED进入AUDITED；产品实现后先完成上述批量普通门才冻结candidate。
 当前0个新产品build、0个runtime用例、0个P1，没有任何G08完成或性能PASS声明。
+
+### 首批实现检查点
+
+已写通用sampling_ops schema、固定Philox core/许可登记、CPU native随机字/CDF数值路径，
+并将CPU TopK1改为原比较合同的单趟选择、去掉V个Entry scratch；均尚未编译或验收。
+继续同一实现批的CUDA/Apple/Vulkan与公开消费者，然后集中运行冻结验证；不逐函数反复建树。
+
+新公共头在中央SPLIT_PUBLIC_HEADERS登记一项，component ID/边、原Operation variant与旧
+公共头没有变化。selector因中央manifest路径保守选中全库，原计划保留在scratch，尚未执行
+native gates；不能把这些未运行项写PASS。批末核实际header/依赖/包投影与输入身份，按
+本卡六owner/真实消费者及适用交付执行；无相关语义变化的独立产品需明确保留跳过理由。
+不在本轮重写selector、公共构建系统或恢复旧重型交付脚本。
+
+
+## G08 原定Graph消费者接缝：Vulkan owner补入
+
+2026-10-16，编写S4公开消费者时，确认`graph_route_vulkan/vulkan_lowering.cc`
+在两个位置按显式custom白名单拒绝新schema：双输出仅允许原recurrent，默认native
+承载也只列原model_ops。这是本卡原定Direct/Graph同行为的可复现源码缺口；不是
+新增抽样能力或改变Graph资源合同。原terminal `docs/implementation/tasks/compute/inference-g04-g05-final-closure.md`、candidate
+`982676cb05a6e6244e66e0a596347aa96043617b` 保持旧范围有效，新baseline `1e58e644a5dc9306b05315e8f1d679a5dcc4b179`。
+
+仅`graph_route_vulkan`进入SCOPED；审计限两个白名单与同一头注释，准备验证原计划
+Vulkan Graph sampling消费者、双结果独立发布/Copy消费、原TopK留出和static/shared
+迁址。复用原PlanStep可变outputs、prepare_plan、status、owner、liveness与真实fence；
+不加Graph API、对象字段、dependency edge、private pool或新shader。P0接线无新增
+热路径循环/分配；G08已有四路线S1 P1范围不增。无该owner产品改动，无runtime PASS。
