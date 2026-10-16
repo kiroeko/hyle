@@ -9,6 +9,8 @@ from hyle_perf.machine import applied_macos_qos,evaluate_machine_profile,get_mac
 from hyle_perf.nanobench import parse_nanobench,select_pair
 from hyle_perf.controls import AA_MAXIMUM_BIAS_PERCENT
 from hyle_perf.stats import equivalence_band
+from hyle_perf import expected_child_policy
+from hyle_perf.runner import _apply_sampling_policy,_creation_flags,_probe_child_policy
 
 def digest(path):return hashlib.sha256(path.read_bytes()).hexdigest()
 
@@ -19,8 +21,10 @@ def main():
     machine={'cpu':'W1-WIN','cuda':'W1-WSL','apple':'M1-MAC','vulkan':'M1-MAC'}[route]
     air=platform.system()=='Darwin';assert air==(route in ['apple','vulkan'])
     if air:assert subprocess.check_output(['/usr/sbin/sysctl','-n','hw.model'],text=True).strip()=='Mac16,12'
-    gate=evaluate_machine_profile(get_machine_profile(load_registry(),machine),probe_machine(paths=[('build',a.build)],expected_qos='interactive' if air else None),role='engineering')
+    profile=get_machine_profile(load_registry(),machine);host=probe_machine(paths=[('build',a.build)],expected_qos='interactive' if air else None)
+    gate=evaluate_machine_profile(profile,host,role='engineering')
     if gate['gate']!='PASS':raise RuntimeError('A/A machine gate failed: '+str(gate['errors']))
+    sampling_policy=expected_child_policy(profile,sampling_topology='single-logical-cpu',probe=host)
     suffix='.exe' if platform.system()=='Windows' else ''
     executables={v:a.build/'bin'/('g08_topk_'+v+suffix) for v in ['primary','placement']}
     artifacts={v:digest(f) for v,f in executables.items()};assert len(set(artifacts.values()))==2,'placement artifacts identical'
@@ -77,7 +81,9 @@ def main():
         e={k:v for k,v in os.environ.items() if k not in PERF_ENVIRONMENT_BLOCKLIST and not any(k.startswith(x) for x in PERF_ENVIRONMENT_PREFIXES)}
         e.update(PERF_ENVIRONMENT_FIXED);e.update(HYLE_PERF_RUN_NONCE=uuid.uuid4().hex,HYLE_PERF_APPLE_QOS='interactive');return e
     def execute(exe,log,e):
-        with log.open('w') as stream:result=subprocess.run([str(exe)],env=e,stdout=stream,stderr=subprocess.STDOUT)
+        with _apply_sampling_policy(sampling_policy):
+            flags=_creation_flags(sampling_policy);_probe_child_policy(sampling_policy,flags)
+            with log.open('w') as stream:result=subprocess.run([str(exe)],env=e,stdout=stream,stderr=subprocess.STDOUT,creationflags=flags)
         if result.returncode:raise RuntimeError('numerical/A-A process failed: '+str(log))
         text=log.read_text();records=[x for x in text.splitlines() if x.startswith('# G08_ORACLE ')]
         assert len(records)==len(shapes) and all(sum(f'route={route} R={rows} V=248320 K={count} ' in x and 'stored_bits_and_first_index=PASS cycles=3 warm_cycles=8' in x for x in records)==1 for rows,count in shapes),'missing independent numerical preflight'
@@ -113,7 +119,7 @@ def main():
             if any(not gross[0]<=x<=gross[1] for x in values):errors.append(arm+title+': gross instability')
             if any(not narrow[0]<=x<=narrow[1] for x in medians.values()):errors.append(arm+title+': factor median bias')
             summaries[arm+'/'+title]=dict(ratios=values,factor_medians=medians)
-    verify_sdk();result=dict(gate='FAIL' if errors else 'PASS',identity=identity,runs=runs,summaries=summaries,errors=errors);target.write_text(json.dumps(result,indent=2)+'\n')
+    verify_sdk();result=dict(gate='FAIL' if errors else 'PASS',identity=identity,sampling_policy=sampling_policy,runs=runs,summaries=summaries,errors=errors);target.write_text(json.dumps(result,indent=2)+'\n')
     if not errors:ready.write_text('PASS\n')
     print(json.dumps(dict(gate=result['gate'],errors=errors)));return 2 if errors else 0
 
