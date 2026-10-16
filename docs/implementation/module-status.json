@@ -507,7 +507,7 @@
       "module": "compute_route_apple",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/inference-g06-metadata-decode.md",
-      "summary": "G06原生/pending批AUDITED：固定M3 lazy index导出、M4逐bank准确delta、D1保完整编译key的原Program/Invocation复用、L2准确page-group准入。原数学/权限/producer/退休机制复用，长度runtime与完整decode/capture仍待，未签新运行资格。"
+      "summary": "G06 AUDITED：共同active/delta/Graph首上传共享与原生lazy index、逐bank delta、完整key复用和准确页组准入已实施；Windows90项＋18个pending场景、Air真实Apple/Vulkan Direct/联合/原风险source通过。原四轮失败保留；完整runtime lengths/Q1 decode/capture与最终san/header/SDK仍待，无新P1或整体完成。"
     },
     {
       "module": "graph_route_apple",
@@ -524,7 +524,7 @@
       "module": "compute_route_vulkan",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/inference-g06-metadata-decode.md",
-      "summary": "G06原生/pending批AUDITED：固定M3 lazy index导出、M4逐bank准确delta、D1保完整编译key的原Program/Invocation复用、L2准确page-group准入。原数学/权限/producer/退休机制复用，长度runtime与完整decode/capture仍待，未签新运行资格。"
+      "summary": "G06 AUDITED：共同active/delta/Graph首上传共享与原生lazy index、逐bank delta、完整key复用和准确页组准入已实施；Windows90项＋18个pending场景、Air真实Apple/Vulkan Direct/联合/原风险source通过。原四轮失败保留；完整runtime lengths/Q1 decode/capture与最终san/header/SDK仍待，无新P1或整体完成。"
     },
     {
       "module": "graph_route_vulkan",
@@ -629,13 +629,13 @@
       "module": "graph_route_cpu_apple",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/inference-g06-metadata-decode.md",
-      "summary": "G06原生/pending批AUDITED：固定M3 lazy index导出、M4逐bank准确delta、D1保完整编译key的原Program/Invocation复用、L2准确page-group准入。原数学/权限/producer/退休机制复用，长度runtime与完整decode/capture仍待，未签新运行资格。"
+      "summary": "G06 AUDITED：共同active/delta/Graph首上传共享与原生lazy index、逐bank delta、完整key复用和准确页组准入已实施；Windows90项＋18个pending场景、Air真实Apple/Vulkan Direct/联合/原风险source通过。原四轮失败保留；完整runtime lengths/Q1 decode/capture与最终san/header/SDK仍待，无新P1或整体完成。"
     },
     {
       "module": "graph_route_cpu_vulkan",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/inference-g06-metadata-decode.md",
-      "summary": "G06原生/pending批AUDITED：固定M3 lazy index导出、M4逐bank准确delta、D1保完整编译key的原Program/Invocation复用、L2准确page-group准入。原数学/权限/producer/退休机制复用，长度runtime与完整decode/capture仍待，未签新运行资格。"
+      "summary": "G06 AUDITED：共同active/delta/Graph首上传共享与原生lazy index、逐bank delta、完整key复用和准确页组准入已实施；Windows90项＋18个pending场景、Air真实Apple/Vulkan Direct/联合/原风险source通过。原四轮失败保留；完整runtime lengths/Q1 decode/capture与最终san/header/SDK仍待，无新P1或整体完成。"
     },
     {
       "module": "compute_stream",
@@ -663,13 +663,13 @@
       "module": "compute_batch",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/inference-g06-metadata-decode.md",
-      "summary": "G06共同基础批M1/M2/S1/L1已集中实施：active快照/显式固定导出、五段delta、上传前共享及ready lease去重。096fb6b09实际Windows source56+6+24 PASS/零SKIP；pending/native准入、四路线decode及最终风险/交付仍待，不签G06或G04/G05完成。"
+      "summary": "G06 AUDITED：共同active/delta/Graph首上传共享与原生lazy index、逐bank delta、完整key复用和准确页组准入已实施；Windows90项＋18个pending场景、Air真实Apple/Vulkan Direct/联合/原风险source通过。原四轮失败保留；完整runtime lengths/Q1 decode/capture与最终san/header/SDK仍待，无新P1或整体完成。"
     },
     {
       "module": "graph_batch",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/inference-g06-metadata-decode.md",
-      "summary": "G06共同基础批M1/M2/S1/L1已集中实施：active快照/显式固定导出、五段delta、上传前共享及ready lease去重。096fb6b09实际Windows source56+6+24 PASS/零SKIP；pending/native准入、四路线decode及最终风险/交付仍待，不签G06或G04/G05完成。"
+      "summary": "G06 AUDITED：共同active/delta/Graph首上传共享与原生lazy index、逐bank delta、完整key复用和准确页组准入已实施；Windows90项＋18个pending场景、Air真实Apple/Vulkan Direct/联合/原风险source通过。原四轮失败保留；完整runtime lengths/Q1 decode/capture与最终san/header/SDK仍待，无新P1或整体完成。"
     }
   ]
 }

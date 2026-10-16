@@ -270,3 +270,22 @@ Vulkan复用原Region::bind允许idle空port的合同；不改ggml/IREE/provider
 此私有操作无warm allocation，失败进入controller原failed状态；reference policy不调用。
 两route实际Direct/联合/原pending与alias/phase/OOM/关闭门再次按相同缓存串行验证；
 原90项Windows共同source产品输入未改，继续复用source5，不因native修正重跑CPU全套。
+
+### 原生/pending source 批通过（42cae9837）
+
+[Air source5终态](../../../../evidence/correctness/inference-g06-native-pending-air-attempt-5/receipt.json)
+为PASS：实际M4 GPU及MoltenVK上的Apple/Vulkan共25次消费者可执行运行、6个配置/
+manifest/build stage均通过。Direct每原64次拓扑变化增加同布局第二次replay及ID重排
+独立double oracle；Apple12常规＋16长页域、Vulkan6常规、真实CPU/native/CPU联合
+Apple12/Vulkan6组64步、encoded单/多请求和paired/separate生产者、原plain/encoded
+六模式风险、pending Direct64/双node联合64和多source均通过。改后same-topology
+释放旧import、禁止下一次allocation的ID-only复用、真正tail变化OOM保旧generation
+也通过；数学精度、旧输出和actual retirement门未放宽。
+此轮Apple增量build6.954s、Vulkan6.431s，外层96.970s包含并重叠所有stage；原四轮
+失败与16.458/108.541/93.629/64.907s外层费用及raw完整封存，不把观察缺口记零。
+Windows source5的90项＋18个pending场景按确实未变的共同产品输入和原artifact SHA
+复用，匹配检查见receipt；不把CPU证据扩成native资格。owner仍AUDITED，无P1重跑。
+
+M3/M4/D1/L2当前有限source批完成，未签完整G06：四路线runtime lengths、CPU/FI Q1
+decode规划与实际capture裁决仍必做，最终适用三san/header/迁址static/shared及各真实
+直接消费者待API/算法固定后集中验收。G04/G05原CUDA prefill非劣门与精确归因仍未解决。

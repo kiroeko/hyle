@@ -200,18 +200,22 @@ staging/device/backing bytes 是容量；`reused_native_plan` 表示通过原结
 controller 创建时经原 F2 分别清零两 bank，显式冷费用为两次全容量 copy 与完成等待；
 它们不计入以后每次 prepare 的 delta 报告。device 不要求 host-mappable。
 `NativePagedBatchVersion::indices()` 是显式、可并发的固定容量导出，首次分配填零并缓存，
-失败可重试；普通 version 与 controller prepare 不必生成这个全容量 blob。本批 G06 改动
-尚待实际 native/联合与交付资格，不继承旧候选的性能证书。
+失败可重试；普通 version 与 controller prepare 不必生成这个全容量 blob。本批 G06 的
+[Air native/联合 source 验证](../../evidence/correctness/inference-g06-native-pending-air-attempt-5/receipt.json)
+已通过，最终适用风险与交付资格仍待；不继承旧候选的性能证书。
 无需全历史 KV gather、按 Q/head 展开或上传 additive mask。原 query/output/MLX compiled
 metadata、shader scratch 与 driver 存储仍是额外费用，private bytes 可以 UNKNOWN；
 不由这个入口签 delta planning、capture 或吞吐完全对称。
 
 Context/device/staging/injected allocator 保持地址稳定，活过所有 native work 和结果；
-控制调用外部串行，多个 slot 独立。旧 result 阻止同 slot prepare；close 停止新工作，
+控制调用外部串行，多个 slot 独立。旧 result 阻止同 slot prepare；原结果与实际退休门
+通过后的 prepare 释放旧 input import，同 topology 也可重新取得准确页 writer；caller
+仍须释放自己保留的旧 frame/reader。计划与原 Vulkan output bridge 可保留。close 停止新工作，
 drain 沿原实际退休观察，已接纳错误或未知完成不许可提前释放页 guard。结果按本 route
-原 Results/readonly import 使用。新native accepted-prefix/未知退休与三交付已验；宿主san有活动卡记录的插桩边界，
-不签shader/driver。两route同合同P1与有限终审通过；Windows仅定向
-compile/link通过。这些native入口证据不能代签新的CPU+GPU联合分页。
+原 Results/readonly import 使用。原 native accepted-prefix/未知退休、三交付及 P1
+记录绑定各自旧候选；本批输入释放、计划复用与 delta 的当前资格见上方 source 证据，
+最终 sanitizer/SDK/header 门仍待。宿主 sanitizer 不签 shader/driver；
+Windows CPU source 不代签 Windows native GPU。
 
 ## CPU 与 Apple/Vulkan 联合分页
 
