@@ -397,3 +397,14 @@ C1实现已提交`4274ee6cb6275bf36bda1d8c8c0e223f0fa65db5`，测试输入为`2c
 绑定实际文件SHA、四行寄存器复用及未变费用。原FP8全部码值用例同时扩至五个不同输入行，
 Windows显式Provider也能覆盖尾块。当前没有C1运行PASS，保持AUDITED；重型检查已排在
 Apple D2完整P1终态之后。Apple D2 A/A已通过、正式资格仍运行，不以中间数据签性能门。
+
+### Apple D2性能门通过
+
+[第三轮完整结果](../../../../evidence/performance/inference-g07-apple-packed-attempt-3/receipt.json)
+为QUALIFIED/verify0，n15×8组合及A/A/controls通过；M1吞吐比2.038–2.060、M64比
+1.227–1.238，均WIN、5%门PASS。565.708秒，连原两次合格LOSS累计1694.059秒保留。
+固定分块的跨行复用消除了本轮M64回退；不改变精度或把原warm数学挪到冷期。Apple停止
+追加产品/性能检查，待本卡七门/红队/LOC聚合；不将这些op/s推导为引擎token/s。
+
+CUDA C1现按原排队在Apple终态后执行source/公开64步、实际N2 Direct/Graph、设备与三
+宿主facet；仍AUDITED，尚不能签新CUDA性能或G07整项完成。G08–G10保持原完整目标。

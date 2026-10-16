@@ -1781,6 +1781,66 @@
         "evidence/performance/inference-g07-cuda-packed-attempt-2/summary.json",
         "evidence/architecture/inference-g07-packed-weight-audit/p1-adapter.json"
       ]
+    },
+    {
+      "id": "inference-g07-apple-packed-packed-m1-attempt-3",
+      "modules": [
+        "compute_route_apple"
+      ],
+      "kind": "P1_WORKLOAD",
+      "comparison": "SAME_CONTRACT_INTERNAL",
+      "qualification": "QUALIFIED_RETAINED",
+      "direction": "WIN",
+      "practical_result": "PASS",
+      "engineering_action": "KEEP",
+      "consumer_weight": "HIGH",
+      "candidate_binding": "EXACT",
+      "recorded_date": "2026-10-16",
+      "product_candidate": "91ae8e67faa028061d8f5e8e216310c827e024a3",
+      "consumer_shape": "Apple BF16 dynamic activation + resident E4M3FN/F32 block128 weight, packed-m1 K2048 N2048",
+      "contract": "Same original669 complete warm public invocation; F32 dot and original ordered scales/final BF16 cast. Deferred final retained native result and process caches explicit.",
+      "peer": "Original product669 lowering, exported symbols renamed only; same Context.compile/native lifecycle",
+      "scale": "One frozen projection; n15 x8execution/allocation/placement strata;16paired rounds, original/selected A/A and controls qualified",
+      "absolute": "Full summary retains candidate/peer op/s per stratum; no full-engine token/s",
+      "ratio_ci": "Eight stratum median ratios [2.0375747123721326, 2.059552718610514]; individual CI envelope [2.018265972394413, 2.1009812403241965] (not pooled)",
+      "sensitivity": "Both execution/allocation orders, primary/placement; both route-local A/A variants PASS",
+      "mechanism": "Direct packed/F32 tile avoids full F32 weight/dots arrays. Qualified material regressions remain in the ledger; corrections require activity-card audit.",
+      "limitations": "Engineering actual Air M4 only; original native private pool upper UNKNOWN; no all-shape or complete engine claim",
+      "evidence": [
+        "evidence/performance/inference-g07-apple-packed-attempt-3/receipt.json",
+        "evidence/performance/inference-g07-apple-packed-attempt-3/summary.json",
+        "evidence/architecture/inference-g07-packed-weight-audit/p1-adapter.json"
+      ]
+    },
+    {
+      "id": "inference-g07-apple-packed-packed-m64-attempt-3",
+      "modules": [
+        "compute_route_apple"
+      ],
+      "kind": "P1_WORKLOAD",
+      "comparison": "SAME_CONTRACT_INTERNAL",
+      "qualification": "QUALIFIED_RETAINED",
+      "direction": "WIN",
+      "practical_result": "PASS",
+      "engineering_action": "KEEP",
+      "consumer_weight": "HIGH",
+      "candidate_binding": "EXACT",
+      "recorded_date": "2026-10-16",
+      "product_candidate": "91ae8e67faa028061d8f5e8e216310c827e024a3",
+      "consumer_shape": "Apple BF16 dynamic activation + resident E4M3FN/F32 block128 weight, packed-m64 K2048 N2048",
+      "contract": "Same original669 complete warm public invocation; F32 dot and original ordered scales/final BF16 cast. Deferred final retained native result and process caches explicit.",
+      "peer": "Original product669 lowering, exported symbols renamed only; same Context.compile/native lifecycle",
+      "scale": "One frozen projection; n15 x8execution/allocation/placement strata;16paired rounds, original/selected A/A and controls qualified",
+      "absolute": "Full summary retains candidate/peer op/s per stratum; no full-engine token/s",
+      "ratio_ci": "Eight stratum median ratios [1.2272119122947853, 1.237719203541188]; individual CI envelope [1.2149539984743996, 1.2457154368239995] (not pooled)",
+      "sensitivity": "Both execution/allocation orders, primary/placement; both route-local A/A variants PASS",
+      "mechanism": "Direct packed/F32 tile avoids full F32 weight/dots arrays. Qualified material regressions remain in the ledger; corrections require activity-card audit.",
+      "limitations": "Engineering actual Air M4 only; original native private pool upper UNKNOWN; no all-shape or complete engine claim",
+      "evidence": [
+        "evidence/performance/inference-g07-apple-packed-attempt-3/receipt.json",
+        "evidence/performance/inference-g07-apple-packed-attempt-3/summary.json",
+        "evidence/architecture/inference-g07-packed-weight-audit/p1-adapter.json"
+      ]
     }
   ]
 }

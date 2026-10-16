@@ -519,7 +519,7 @@
       "module": "compute_route_apple",
       "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/inference-g07-packed-weights.md",
-      "summary": "G07 CANDIDATE Apple D2 fixed MLX blocked F32 packed carrier91ae: declared Direct/Graph/joint/public, Metal and three host facets pass; new static/shared SDK and same-contract P1 pending. Both prior qualified M64 losses retained. CUDA b483 unchanged.",
+      "summary": "G07 CANDIDATE D2 91ae: declared source/joint/public, Metal/three host facets and relocated static/shared SDK pass. Full qualified P1 M1 WIN2.038-2.060, M64 WIN1.227-1.238; both5% gates PASS/verify0. Earlier two material losses/cost retained; final aggregate/red-team/LOC pending. CUDA C1 independently AUDITED.",
       "candidate": "91ae8e67faa028061d8f5e8e216310c827e024a3"
     },
     {
