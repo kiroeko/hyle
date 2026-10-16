@@ -1,0 +1,1182 @@
+{
+  "schema": "hyle.g08-air-implementation-checkpoint/v1",
+  "state": "IN_PROGRESS_NOT_ACCEPTED",
+  "checkpoint_head": "f273c9707084008e2c9be7e7bbf49f5ef6d497b2",
+  "closure_card": "docs/implementation/tasks/compute/inference-g08-output-selection.md",
+  "prior_cpu_cuda_checkpoint": "evidence/correctness/inference-g08-implementation-checkpoint/receipt.json",
+  "source_batches": [
+    {
+      "state": "FAIL",
+      "scope": "G08 ordinary implementation source batch; not immutable candidate/SDK/P1 acceptance",
+      "route": "apple",
+      "label": "a1",
+      "pid": 29169,
+      "source": "/Users/kiro/hyle-scratch/compute-unified/source-c8874688",
+      "build": "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-build",
+      "max_jobs": 4,
+      "stages": [
+        {
+          "stage": "configure",
+          "command": [
+            "/opt/homebrew/bin/cmake",
+            "-S",
+            "/Users/kiro/hyle-scratch/compute-unified/source-c8874688",
+            "-B",
+            "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-build",
+            "-DHYLE_BUILD_TESTS=ON",
+            "-DHYLE_INSTALL=OFF",
+            "-DHYLE_BUILD_BENCH=OFF",
+            "-DHYLE_TEST_INSTRUMENTATION=OFF",
+            "-DCMAKE_PROJECT_INCLUDE=/Users/kiro/hyle-scratch/compute-unified/g08_air_profile.cmake"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 6.132938917,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g08-apple-source-a1/configure.log"
+        },
+        {
+          "stage": "manifest",
+          "command": [
+            "/opt/homebrew/bin/ninja",
+            "-C",
+            "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-build",
+            "build.ninja"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 0.07365554200000002,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g08-apple-source-a1/manifest.log"
+        },
+        {
+          "stage": "build",
+          "command": [
+            "/opt/homebrew/bin/ninja",
+            "-C",
+            "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-build",
+            "-f",
+            "/Users/kiro/hyle-scratch/compute-unified/g08-apple-source-a1/preview.ninja",
+            "-j",
+            "4",
+            "hyle_mem_test",
+            "hyle_compute_ops_sampling_test",
+            "hyle_compute_route_cpu_sampling_consumer_test",
+            "hyle_graph_route_cpu_sampling_consumer_test",
+            "hyle_compute_route_apple_sampling_consumer_test",
+            "hyle_graph_route_apple_sampling_consumer_test",
+            "hyle_compute_route_apple_sampling_math_test",
+            "hyle_graph_route_cpu_apple_sampling_consumer_test",
+            "g08_apple_topk_holdout"
+          ],
+          "exit_code": 1,
+          "elapsed_seconds": 26.509028083,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g08-apple-source-a1/build.log"
+        }
+      ],
+      "identity": {
+        "model": "Mac16,12",
+        "arch": "arm64",
+        "os": "ProductName:\t\tmacOS\nProductVersion:\t\t27.0.1\nBuildVersion:\t\t26A434",
+        "compiler": "Apple clang version 21.0.0 (clang-2100.3.34.2)\nTarget: arm64-apple-darwin27.0.0\nThread model: posix\nInstalledDir: /Library/Developer/CommandLineTools/usr/bin",
+        "metal": "Apple metal version 32023.883 (metalfe-32023.883)\nTarget: air64-apple-darwin27.0.0\nThread model: posix\nInstalledDir: /Users/kiro/hyle-verify-tools/metal-17F109/Metal.xctoolchain/usr/metal/current/bin",
+        "gpu": "Graphics/Displays:\n\n    Apple M4:\n\n      Chipset Model: Apple M4\n      Type: GPU\n      Bus: Built-In\n      Total Number of Cores: 8\n      Vendor: Apple (0x106b)\n      Metal Support: Metal 4\n      Displays:\n        Color LCD:\n          Display Type: Built-in Liquid Retina Display\n          Resolution: 2560 x 1664 Retina\n          Main Display: Yes\n          Mirror: Off\n          Online: Yes\n          Automatically Adjust Brightness: Yes\n          Display Asleep: Yes\n          Connection Type: Internal"
+      },
+      "source_snapshot": "fc15404bb1fbf86ca4fa5125180b8763c27d42e7",
+      "synced_paths": [],
+      "stage": "build",
+      "elapsed_seconds": 33.740948041,
+      "build_edges": 185,
+      "retained_preflight_failures": [
+        {
+          "state": "SETUP_FAIL",
+          "error": "AssertionError()",
+          "elapsed_seconds": 6.815670833,
+          "reason": "Preserve original dry run; use byte-identical frozen manifest as in existing source qualification, avoiding VERIFY_GLOBS dry-run regeneration."
+        }
+      ],
+      "configure_reuse": "Original successful configure/manifest; exact source archive and options unchanged",
+      "frozen_manifest_sha256": "f73ca7d99bfe5c5854fa9ac596fa3e550bae73be0d6131871bb03a691d2da2c6"
+    },
+    {
+      "state": "SETUP_FAIL",
+      "scope": "G08 ordinary implementation source batch; not immutable candidate/SDK/P1 acceptance",
+      "route": "apple",
+      "label": "a2",
+      "pid": 29599,
+      "source": "/Users/kiro/hyle-scratch/compute-unified/source-c8874688",
+      "build": "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-build",
+      "max_jobs": 4,
+      "stages": [
+        {
+          "stage": "manifest",
+          "command": [
+            "/opt/homebrew/bin/ninja",
+            "-C",
+            "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-build",
+            "build.ninja"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 0.05532500000000001,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g08-apple-source-a2/manifest.log"
+        },
+        {
+          "stage": "build",
+          "command": [
+            "/opt/homebrew/bin/ninja",
+            "-C",
+            "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-build",
+            "-f",
+            "/Users/kiro/hyle-scratch/compute-unified/g08-apple-source-a2/preview.ninja",
+            "-j",
+            "4",
+            "hyle_mem_test",
+            "hyle_compute_ops_sampling_test",
+            "hyle_compute_route_cpu_sampling_consumer_test",
+            "hyle_graph_route_cpu_sampling_consumer_test",
+            "hyle_compute_route_apple_sampling_consumer_test",
+            "hyle_graph_route_apple_sampling_consumer_test",
+            "hyle_compute_route_apple_sampling_math_test",
+            "hyle_graph_route_cpu_apple_sampling_consumer_test",
+            "g08_apple_topk_holdout"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 3.4740581660000003,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g08-apple-source-a2/build.log"
+        },
+        {
+          "stage": "hyle_mem_test",
+          "command": [
+            "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-build/bin/hyle_mem_test"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 0.7419354579999999,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g08-apple-source-a2/hyle_mem_test.log"
+        },
+        {
+          "stage": "hyle_compute_ops_sampling_test",
+          "command": [
+            "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-build/bin/hyle_compute_ops_sampling_test"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 0.5036175409999997,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g08-apple-source-a2/hyle_compute_ops_sampling_test.log"
+        },
+        {
+          "stage": "hyle_compute_route_cpu_sampling_consumer_test",
+          "command": [
+            "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-build/bin/hyle_compute_route_cpu_sampling_consumer_test"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 5.178462957999999,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g08-apple-source-a2/hyle_compute_route_cpu_sampling_consumer_test.log"
+        },
+        {
+          "stage": "hyle_graph_route_cpu_sampling_consumer_test",
+          "command": [
+            "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-build/bin/hyle_graph_route_cpu_sampling_consumer_test"
+          ],
+          "exit_code": 1,
+          "elapsed_seconds": 0.9562549160000007,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g08-apple-source-a2/hyle_graph_route_cpu_sampling_consumer_test.log"
+        },
+        {
+          "stage": "hyle_compute_route_apple_sampling_consumer_test",
+          "command": [
+            "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-build/bin/hyle_compute_route_apple_sampling_consumer_test"
+          ],
+          "exit_code": 1,
+          "elapsed_seconds": 1.4898222910000012,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g08-apple-source-a2/hyle_compute_route_apple_sampling_consumer_test.log"
+        },
+        {
+          "stage": "hyle_graph_route_apple_sampling_consumer_test",
+          "command": [
+            "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-build/bin/hyle_graph_route_apple_sampling_consumer_test"
+          ],
+          "exit_code": 1,
+          "elapsed_seconds": 0.8670731670000009,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g08-apple-source-a2/hyle_graph_route_apple_sampling_consumer_test.log"
+        },
+        {
+          "stage": "hyle_compute_route_apple_sampling_math_test",
+          "command": [
+            "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-build/bin/hyle_compute_route_apple_sampling_math_test"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 0.4349144589999998,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g08-apple-source-a2/hyle_compute_route_apple_sampling_math_test.log"
+        },
+        {
+          "stage": "hyle_graph_route_cpu_apple_sampling_consumer_test",
+          "command": [
+            "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-build/bin/hyle_graph_route_cpu_apple_sampling_consumer_test"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 1.7596725830000004,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g08-apple-source-a2/hyle_graph_route_cpu_apple_sampling_consumer_test.log"
+        }
+      ],
+      "identity": {
+        "model": "Mac16,12",
+        "arch": "arm64",
+        "os": "ProductName:\t\tmacOS\nProductVersion:\t\t27.0.1\nBuildVersion:\t\t26A434",
+        "compiler": "Apple clang version 21.0.0 (clang-2100.3.34.2)\nTarget: arm64-apple-darwin27.0.0\nThread model: posix\nInstalledDir: /Library/Developer/CommandLineTools/usr/bin",
+        "metal": "Apple metal version 32023.883 (metalfe-32023.883)\nTarget: air64-apple-darwin27.0.0\nThread model: posix\nInstalledDir: /Users/kiro/hyle-verify-tools/metal-17F109/Metal.xctoolchain/usr/metal/current/bin",
+        "gpu": "Graphics/Displays:\n\n    Apple M4:\n\n      Chipset Model: Apple M4\n      Type: GPU\n      Bus: Built-In\n      Total Number of Cores: 8\n      Vendor: Apple (0x106b)\n      Metal Support: Metal 4\n      Displays:\n        Color LCD:\n          Display Type: Built-in Liquid Retina Display\n          Resolution: 2560 x 1664 Retina\n          Main Display: Yes\n          Mirror: Off\n          Online: Yes\n          Automatically Adjust Brightness: Yes\n          Display Asleep: Yes\n          Connection Type: Internal"
+      },
+      "source_snapshot": "963e4681619ab678914f69eaa5907b7c2a4e6208",
+      "synced_paths": [
+        "docs/implementation/tasks/compute/inference-g08-output-selection.md",
+        "tests/compute_models/sampling_common_consumer.h",
+        "tests/compute_models/sampling_fixture.h",
+        "tests/compute_models/sampling_native_joint_consumer.h",
+        "tests/compute_route_apple/sampling_consumer.cc",
+        "tests/compute_route_apple/sampling_math_test.cc",
+        "tests/compute_route_cpu/sampling_consumer.cc",
+        "tests/compute_route_cuda/sampling_consumer.cc",
+        "tests/compute_route_vulkan/sampling_consumer.cc"
+      ],
+      "configure_reuse": "Same source/tree/options/profile, existing source/header/consumer bodies only",
+      "stage": "hyle_graph_route_cpu_apple_sampling_consumer_test",
+      "elapsed_seconds": 15.867502167000001,
+      "frozen_manifest_sha256": "f73ca7d99bfe5c5854fa9ac596fa3e550bae73be0d6131871bb03a691d2da2c6",
+      "build_edges": 23,
+      "artifacts": [
+        {
+          "target": "hyle_mem_test",
+          "sha256": "99c36a925546260e2f4c36aa0542ffe0d8c88199039051a411c0a72c300f5515"
+        },
+        {
+          "target": "hyle_compute_ops_sampling_test",
+          "sha256": "d1b294cb6799efa1d0f5b3bdf1c7e56c460f09028bfd923c6064b73d8c44ef4e"
+        },
+        {
+          "target": "hyle_compute_route_cpu_sampling_consumer_test",
+          "sha256": "1c83d4c89beea0d7e8eb5d4451a72e9cc3f2e65eb62ceeba6fe5d12646b8b6cb"
+        },
+        {
+          "target": "hyle_graph_route_cpu_sampling_consumer_test",
+          "sha256": "b0bdebaf36855c257bc1f32ff9b8fc4fb418c2bbfe9831e32e62692ab0dbe692"
+        },
+        {
+          "target": "hyle_compute_route_apple_sampling_consumer_test",
+          "sha256": "8f623680c403e17c05152a558bd31935a200af763586fa686c2e0e0b3aed00bf"
+        },
+        {
+          "target": "hyle_graph_route_apple_sampling_consumer_test",
+          "sha256": "4be24e0389977eac38f264ad854f5b33e68ee32dcf15a1508a711997485d9958"
+        },
+        {
+          "target": "hyle_compute_route_apple_sampling_math_test",
+          "sha256": "3544c5265b875bf89aa3e23eab9607009c3dcb884f0f7c7a6856f782a94e490f"
+        },
+        {
+          "target": "hyle_graph_route_cpu_apple_sampling_consumer_test",
+          "sha256": "f154ace0294c8b5b97885f2c7eee9fef245ebc57046537590ccc5a60799172c3"
+        }
+      ],
+      "error": "FileNotFoundError(2, 'No such file or directory')"
+    },
+    {
+      "state": "FAIL_WITH_ALL_TARGETS_OBSERVED",
+      "scope": "G08 ordinary implementation source batch; not immutable candidate/SDK/P1 acceptance",
+      "route": "apple",
+      "label": "a3",
+      "pid": 29751,
+      "source": "/Users/kiro/hyle-scratch/compute-unified/source-c8874688",
+      "build": "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-build",
+      "max_jobs": 4,
+      "stages": [
+        {
+          "stage": "manifest",
+          "command": [
+            "/opt/homebrew/bin/ninja",
+            "-C",
+            "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-build",
+            "build.ninja"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 0.05554245899999999,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g08-apple-source-a3/manifest.log"
+        },
+        {
+          "stage": "build",
+          "command": [
+            "/opt/homebrew/bin/ninja",
+            "-C",
+            "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-build",
+            "-f",
+            "/Users/kiro/hyle-scratch/compute-unified/g08-apple-source-a3/preview.ninja",
+            "-j",
+            "4",
+            "hyle_graph_route_cpu_sampling_consumer_test",
+            "hyle_compute_route_apple_sampling_consumer_test",
+            "hyle_graph_route_apple_sampling_consumer_test",
+            "g08_apple_topk_holdout"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 2.4639986250000003,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g08-apple-source-a3/build.log"
+        },
+        {
+          "stage": "hyle_graph_route_cpu_sampling_consumer_test",
+          "command": [
+            "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-build/bin/hyle_graph_route_cpu_sampling_consumer_test"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 1.8752864159999998,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g08-apple-source-a3/hyle_graph_route_cpu_sampling_consumer_test.log"
+        },
+        {
+          "stage": "hyle_compute_route_apple_sampling_consumer_test",
+          "command": [
+            "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-build/bin/hyle_compute_route_apple_sampling_consumer_test"
+          ],
+          "exit_code": 1,
+          "elapsed_seconds": 0.8697658330000007,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g08-apple-source-a3/hyle_compute_route_apple_sampling_consumer_test.log"
+        },
+        {
+          "stage": "hyle_graph_route_apple_sampling_consumer_test",
+          "command": [
+            "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-build/bin/hyle_graph_route_apple_sampling_consumer_test"
+          ],
+          "exit_code": 1,
+          "elapsed_seconds": 0.40852191599999976,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g08-apple-source-a3/hyle_graph_route_apple_sampling_consumer_test.log"
+        },
+        {
+          "stage": "g08_apple_topk_holdout",
+          "command": [
+            "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-build/bin/g08_apple_topk_holdout",
+            "--gtest_filter=AppleReduction.*TopK*:AppleReduction.EmptyResultsAndPreparationRejections:AppleGraph.*"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 3.087545542000001,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g08-apple-source-a3/g08_apple_topk_holdout.log"
+        }
+      ],
+      "identity": {
+        "model": "Mac16,12",
+        "arch": "arm64",
+        "os": "ProductName:\t\tmacOS\nProductVersion:\t\t27.0.1\nBuildVersion:\t\t26A434",
+        "compiler": "Apple clang version 21.0.0 (clang-2100.3.34.2)\nTarget: arm64-apple-darwin27.0.0\nThread model: posix\nInstalledDir: /Library/Developer/CommandLineTools/usr/bin",
+        "metal": "Apple metal version 32023.883 (metalfe-32023.883)\nTarget: air64-apple-darwin27.0.0\nThread model: posix\nInstalledDir: /Users/kiro/hyle-verify-tools/metal-17F109/Metal.xctoolchain/usr/metal/current/bin",
+        "gpu": "Graphics/Displays:\n\n    Apple M4:\n\n      Chipset Model: Apple M4\n      Type: GPU\n      Bus: Built-In\n      Total Number of Cores: 8\n      Vendor: Apple (0x106b)\n      Metal Support: Metal 4\n      Displays:\n        Color LCD:\n          Display Type: Built-in Liquid Retina Display\n          Resolution: 2560 x 1664 Retina\n          Main Display: Yes\n          Mirror: Off\n          Online: Yes\n          Automatically Adjust Brightness: Yes\n          Display Asleep: Yes\n          Connection Type: Internal"
+      },
+      "source_snapshot": "b06bf3bf11ed797270fd50264b3a4b399351b1dc",
+      "synced_paths": [
+        "docs/implementation/tasks/compute/inference-g08-output-selection.md",
+        "src/compute_route_apple/apple_mature_indexing.cc",
+        "tests/compute_models/sampling_common_consumer.h",
+        "tests/compute_models/sampling_fixture.h",
+        "tests/compute_route_apple/sampling_consumer.cc",
+        "tests/compute_route_cpu/sampling_consumer.cc",
+        "tests/compute_route_cuda/sampling_consumer.cc",
+        "tests/compute_route_vulkan/sampling_consumer.cc"
+      ],
+      "configure_reuse": "Same source/tree/options/profile, existing source/header/consumer bodies only",
+      "stage": "g08_apple_topk_holdout",
+      "elapsed_seconds": 9.157294792,
+      "frozen_manifest_sha256": "f73ca7d99bfe5c5854fa9ac596fa3e550bae73be0d6131871bb03a691d2da2c6",
+      "build_edges": 17,
+      "artifacts": [
+        {
+          "target": "hyle_graph_route_cpu_sampling_consumer_test",
+          "sha256": "d38d9a44f39078bda3bd17a274e30edd3502c3e2818c4067ea90ec4c986ac449"
+        },
+        {
+          "target": "hyle_compute_route_apple_sampling_consumer_test",
+          "sha256": "6953c99a17b960fe1cccde20e185d66ff15b10631f23e3945c1dd69230398766"
+        },
+        {
+          "target": "hyle_graph_route_apple_sampling_consumer_test",
+          "sha256": "a67aa4d6db485aae01a48b3961fc56aa20455be325e793f8effc53bdc5e203ff"
+        },
+        {
+          "target": "g08_apple_topk_holdout",
+          "sha256": "2fb192a00826d109f8dc86a4afa456df8b8fd7b9e1569948b9ac490a16c36b60"
+        }
+      ],
+      "failures": [
+        {
+          "target": "hyle_compute_route_apple_sampling_consumer_test",
+          "exit_code": 1
+        },
+        {
+          "target": "hyle_graph_route_apple_sampling_consumer_test",
+          "exit_code": 1
+        }
+      ]
+    },
+    {
+      "state": "SOURCE_BATCH_PASS_RISKS_DELIVERY_PERF_PENDING",
+      "scope": "G08 ordinary implementation source batch; not immutable candidate/SDK/P1 acceptance",
+      "route": "apple",
+      "label": "a4",
+      "pid": 29859,
+      "source": "/Users/kiro/hyle-scratch/compute-unified/source-c8874688",
+      "build": "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-build",
+      "max_jobs": 4,
+      "stages": [
+        {
+          "stage": "manifest",
+          "command": [
+            "/opt/homebrew/bin/ninja",
+            "-C",
+            "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-build",
+            "build.ninja"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 0.054792958,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g08-apple-source-a4/manifest.log"
+        },
+        {
+          "stage": "build",
+          "command": [
+            "/opt/homebrew/bin/ninja",
+            "-C",
+            "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-build",
+            "-f",
+            "/Users/kiro/hyle-scratch/compute-unified/g08-apple-source-a4/preview.ninja",
+            "-j",
+            "4",
+            "hyle_compute_route_apple_sampling_consumer_test",
+            "hyle_graph_route_apple_sampling_consumer_test",
+            "g08_apple_topk_holdout"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 2.1464744999999996,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g08-apple-source-a4/build.log"
+        },
+        {
+          "stage": "hyle_compute_route_apple_sampling_consumer_test",
+          "command": [
+            "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-build/bin/hyle_compute_route_apple_sampling_consumer_test"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 3.72522675,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g08-apple-source-a4/hyle_compute_route_apple_sampling_consumer_test.log"
+        },
+        {
+          "stage": "hyle_graph_route_apple_sampling_consumer_test",
+          "command": [
+            "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-build/bin/hyle_graph_route_apple_sampling_consumer_test"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 1.4781991249999997,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g08-apple-source-a4/hyle_graph_route_apple_sampling_consumer_test.log"
+        },
+        {
+          "stage": "g08_apple_topk_holdout",
+          "command": [
+            "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-build/bin/g08_apple_topk_holdout",
+            "--gtest_filter=AppleReduction.*TopK*:AppleReduction.EmptyResultsAndPreparationRejections:AppleGraph.*"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 0.9098279590000002,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g08-apple-source-a4/g08_apple_topk_holdout.log"
+        }
+      ],
+      "identity": {
+        "model": "Mac16,12",
+        "arch": "arm64",
+        "os": "ProductName:\t\tmacOS\nProductVersion:\t\t27.0.1\nBuildVersion:\t\t26A434",
+        "compiler": "Apple clang version 21.0.0 (clang-2100.3.34.2)\nTarget: arm64-apple-darwin27.0.0\nThread model: posix\nInstalledDir: /Library/Developer/CommandLineTools/usr/bin",
+        "metal": "Apple metal version 32023.883 (metalfe-32023.883)\nTarget: air64-apple-darwin27.0.0\nThread model: posix\nInstalledDir: /Users/kiro/hyle-verify-tools/metal-17F109/Metal.xctoolchain/usr/metal/current/bin",
+        "gpu": "Graphics/Displays:\n\n    Apple M4:\n\n      Chipset Model: Apple M4\n      Type: GPU\n      Bus: Built-In\n      Total Number of Cores: 8\n      Vendor: Apple (0x106b)\n      Metal Support: Metal 4\n      Displays:\n        Color LCD:\n          Display Type: Built-in Liquid Retina Display\n          Resolution: 2560 x 1664 Retina\n          Main Display: Yes\n          Mirror: Off\n          Online: Yes\n          Automatically Adjust Brightness: Yes\n          Display Asleep: Yes\n          Connection Type: Internal"
+      },
+      "source_snapshot": "447a6289a01c91c2a4d978f65a2aed9074edb1f8",
+      "synced_paths": [
+        "docs/implementation/tasks/compute/inference-g08-output-selection.md",
+        "src/compute_route_apple/apple_mature_indexing.cc"
+      ],
+      "configure_reuse": "Same source/tree/options/profile, existing source/header/consumer bodies only",
+      "stage": "g08_apple_topk_holdout",
+      "elapsed_seconds": 8.699727000000001,
+      "frozen_manifest_sha256": "f73ca7d99bfe5c5854fa9ac596fa3e550bae73be0d6131871bb03a691d2da2c6",
+      "build_edges": 13,
+      "artifacts": [
+        {
+          "target": "hyle_compute_route_apple_sampling_consumer_test",
+          "sha256": "6953c99a17b960fe1cccde20e185d66ff15b10631f23e3945c1dd69230398766"
+        },
+        {
+          "target": "hyle_graph_route_apple_sampling_consumer_test",
+          "sha256": "a67aa4d6db485aae01a48b3961fc56aa20455be325e793f8effc53bdc5e203ff"
+        },
+        {
+          "target": "g08_apple_topk_holdout",
+          "sha256": "2fb192a00826d109f8dc86a4afa456df8b8fd7b9e1569948b9ac490a16c36b60"
+        }
+      ],
+      "failures": []
+    },
+    {
+      "state": "FAIL",
+      "scope": "G08 ordinary implementation source batch; not immutable candidate/SDK/P1 acceptance",
+      "route": "vulkan",
+      "label": "v1",
+      "pid": 29964,
+      "source": "/Users/kiro/hyle-scratch/compute-unified/source-c8874688",
+      "build": "/Users/kiro/hyle-scratch/compute-unified/a-cpu-vulkan/selected-graph/shared-sdk-build",
+      "max_jobs": 4,
+      "stages": [
+        {
+          "stage": "configure",
+          "command": [
+            "/opt/homebrew/bin/cmake",
+            "-S",
+            "/Users/kiro/hyle-scratch/compute-unified/source-c8874688",
+            "-B",
+            "/Users/kiro/hyle-scratch/compute-unified/a-cpu-vulkan/selected-graph/shared-sdk-build",
+            "-DHYLE_BUILD_TESTS=ON",
+            "-DHYLE_INSTALL=OFF",
+            "-DHYLE_BUILD_BENCH=OFF",
+            "-DHYLE_TEST_INSTRUMENTATION=OFF",
+            "-DCMAKE_PROJECT_INCLUDE=/Users/kiro/hyle-scratch/compute-unified/g08_air_profile.cmake"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 17.421735666,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g08-vulkan-source-v1/configure.log"
+        },
+        {
+          "stage": "manifest",
+          "command": [
+            "/opt/homebrew/bin/ninja",
+            "-C",
+            "/Users/kiro/hyle-scratch/compute-unified/a-cpu-vulkan/selected-graph/shared-sdk-build",
+            "build.ninja"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 0.08725679200000158,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g08-vulkan-source-v1/manifest.log"
+        },
+        {
+          "stage": "build",
+          "command": [
+            "/opt/homebrew/bin/ninja",
+            "-C",
+            "/Users/kiro/hyle-scratch/compute-unified/a-cpu-vulkan/selected-graph/shared-sdk-build",
+            "-f",
+            "/Users/kiro/hyle-scratch/compute-unified/g08-vulkan-source-v1/preview.ninja",
+            "-j",
+            "4",
+            "hyle_mem_test",
+            "hyle_compute_ops_sampling_test",
+            "hyle_compute_route_cpu_sampling_consumer_test",
+            "hyle_graph_route_cpu_sampling_consumer_test",
+            "hyle_compute_route_vulkan_sampling_consumer_test",
+            "hyle_graph_route_vulkan_sampling_consumer_test",
+            "hyle_compute_route_vulkan_sampling_math_test",
+            "hyle_graph_route_cpu_vulkan_sampling_consumer_test",
+            "g08_vulkan_topk_holdout"
+          ],
+          "exit_code": 1,
+          "elapsed_seconds": 28.123496125000003,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g08-vulkan-source-v1/build.log"
+        }
+      ],
+      "identity": {
+        "model": "Mac16,12",
+        "arch": "arm64",
+        "os": "ProductName:\t\tmacOS\nProductVersion:\t\t27.0.1\nBuildVersion:\t\t26A434",
+        "compiler": "Apple clang version 21.0.0 (clang-2100.3.34.2)\nTarget: arm64-apple-darwin27.0.0\nThread model: posix\nInstalledDir: /Library/Developer/CommandLineTools/usr/bin",
+        "metal": "Apple metal version 32023.883 (metalfe-32023.883)\nTarget: air64-apple-darwin27.0.0\nThread model: posix\nInstalledDir: /Users/kiro/hyle-verify-tools/metal-17F109/Metal.xctoolchain/usr/metal/current/bin",
+        "gpu": "Graphics/Displays:\n\n    Apple M4:\n\n      Chipset Model: Apple M4\n      Type: GPU\n      Bus: Built-In\n      Total Number of Cores: 8\n      Vendor: Apple (0x106b)\n      Metal Support: Metal 4\n      Displays:\n        Color LCD:\n          Display Type: Built-in Liquid Retina Display\n          Resolution: 2560 x 1664 Retina\n          Main Display: Yes\n          Mirror: Off\n          Online: Yes\n          Automatically Adjust Brightness: Yes\n          Display Asleep: Yes\n          Connection Type: Internal"
+      },
+      "source_snapshot": "e26af2d18287a89bd343b93788c6477f1472ba1d",
+      "synced_paths": [
+        "docs/implementation/tasks/compute/inference-g08-output-selection.md",
+        "tests/compute_route_vulkan/sampling_consumer.cc"
+      ],
+      "stage": "build",
+      "elapsed_seconds": 46.042557416,
+      "frozen_manifest_sha256": "e0189fd43a3d6a84800850aa5362c3ec663e21ba870846cf1a644f18f601c591",
+      "build_edges": 199
+    },
+    {
+      "state": "FAIL_WITH_ALL_TARGETS_OBSERVED",
+      "scope": "G08 ordinary implementation source batch; not immutable candidate/SDK/P1 acceptance",
+      "route": "vulkan",
+      "label": "v2",
+      "pid": 30745,
+      "source": "/Users/kiro/hyle-scratch/compute-unified/source-c8874688",
+      "build": "/Users/kiro/hyle-scratch/compute-unified/a-cpu-vulkan/selected-graph/shared-sdk-build",
+      "max_jobs": 4,
+      "stages": [
+        {
+          "stage": "manifest",
+          "command": [
+            "/opt/homebrew/bin/ninja",
+            "-C",
+            "/Users/kiro/hyle-scratch/compute-unified/a-cpu-vulkan/selected-graph/shared-sdk-build",
+            "build.ninja"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 0.06876366700000003,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g08-vulkan-source-v2/manifest.log"
+        },
+        {
+          "stage": "build",
+          "command": [
+            "/opt/homebrew/bin/ninja",
+            "-C",
+            "/Users/kiro/hyle-scratch/compute-unified/a-cpu-vulkan/selected-graph/shared-sdk-build",
+            "-f",
+            "/Users/kiro/hyle-scratch/compute-unified/g08-vulkan-source-v2/preview.ninja",
+            "-j",
+            "4",
+            "hyle_mem_test",
+            "hyle_compute_ops_sampling_test",
+            "hyle_compute_route_cpu_sampling_consumer_test",
+            "hyle_graph_route_cpu_sampling_consumer_test",
+            "hyle_compute_route_vulkan_sampling_consumer_test",
+            "hyle_graph_route_vulkan_sampling_consumer_test",
+            "hyle_compute_route_vulkan_sampling_math_test",
+            "hyle_graph_route_cpu_vulkan_sampling_consumer_test",
+            "g08_vulkan_topk_holdout"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 1.5104907499999998,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g08-vulkan-source-v2/build.log"
+        },
+        {
+          "stage": "hyle_mem_test",
+          "command": [
+            "/Users/kiro/hyle-scratch/compute-unified/a-cpu-vulkan/selected-graph/shared-sdk-build/bin/hyle_mem_test"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 1.342687417,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g08-vulkan-source-v2/hyle_mem_test.log"
+        },
+        {
+          "stage": "hyle_compute_ops_sampling_test",
+          "command": [
+            "/Users/kiro/hyle-scratch/compute-unified/a-cpu-vulkan/selected-graph/shared-sdk-build/bin/hyle_compute_ops_sampling_test"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 0.529303584,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g08-vulkan-source-v2/hyle_compute_ops_sampling_test.log"
+        },
+        {
+          "stage": "hyle_compute_route_cpu_sampling_consumer_test",
+          "command": [
+            "/Users/kiro/hyle-scratch/compute-unified/a-cpu-vulkan/selected-graph/shared-sdk-build/bin/hyle_compute_route_cpu_sampling_consumer_test"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 6.022888667,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g08-vulkan-source-v2/hyle_compute_route_cpu_sampling_consumer_test.log"
+        },
+        {
+          "stage": "hyle_graph_route_cpu_sampling_consumer_test",
+          "command": [
+            "/Users/kiro/hyle-scratch/compute-unified/a-cpu-vulkan/selected-graph/shared-sdk-build/bin/hyle_graph_route_cpu_sampling_consumer_test"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 2.332828832999999,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g08-vulkan-source-v2/hyle_graph_route_cpu_sampling_consumer_test.log"
+        },
+        {
+          "stage": "hyle_compute_route_vulkan_sampling_consumer_test",
+          "command": [
+            "/Users/kiro/hyle-scratch/compute-unified/a-cpu-vulkan/selected-graph/shared-sdk-build/bin/hyle_compute_route_vulkan_sampling_consumer_test"
+          ],
+          "exit_code": 1,
+          "elapsed_seconds": 1.3606225829999996,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g08-vulkan-source-v2/hyle_compute_route_vulkan_sampling_consumer_test.log"
+        },
+        {
+          "stage": "hyle_graph_route_vulkan_sampling_consumer_test",
+          "command": [
+            "/Users/kiro/hyle-scratch/compute-unified/a-cpu-vulkan/selected-graph/shared-sdk-build/bin/hyle_graph_route_vulkan_sampling_consumer_test"
+          ],
+          "exit_code": 1,
+          "elapsed_seconds": 0.8435194999999993,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g08-vulkan-source-v2/hyle_graph_route_vulkan_sampling_consumer_test.log"
+        },
+        {
+          "stage": "hyle_compute_route_vulkan_sampling_math_test",
+          "command": [
+            "/Users/kiro/hyle-scratch/compute-unified/a-cpu-vulkan/selected-graph/shared-sdk-build/bin/hyle_compute_route_vulkan_sampling_math_test"
+          ],
+          "exit_code": 1,
+          "elapsed_seconds": 0.3198282910000003,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g08-vulkan-source-v2/hyle_compute_route_vulkan_sampling_math_test.log"
+        },
+        {
+          "stage": "hyle_graph_route_cpu_vulkan_sampling_consumer_test",
+          "command": [
+            "/Users/kiro/hyle-scratch/compute-unified/a-cpu-vulkan/selected-graph/shared-sdk-build/bin/hyle_graph_route_cpu_vulkan_sampling_consumer_test"
+          ],
+          "exit_code": 1,
+          "elapsed_seconds": 1.0029780000000006,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g08-vulkan-source-v2/hyle_graph_route_cpu_vulkan_sampling_consumer_test.log"
+        },
+        {
+          "stage": "g08_vulkan_topk_holdout",
+          "command": [
+            "/Users/kiro/hyle-scratch/compute-unified/a-cpu-vulkan/selected-graph/shared-sdk-build/bin/g08_vulkan_topk_holdout"
+          ],
+          "exit_code": 1,
+          "elapsed_seconds": 0.3555182090000013,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g08-vulkan-source-v2/g08_vulkan_topk_holdout.log"
+        }
+      ],
+      "identity": {
+        "model": "Mac16,12",
+        "arch": "arm64",
+        "os": "ProductName:\t\tmacOS\nProductVersion:\t\t27.0.1\nBuildVersion:\t\t26A434",
+        "compiler": "Apple clang version 21.0.0 (clang-2100.3.34.2)\nTarget: arm64-apple-darwin27.0.0\nThread model: posix\nInstalledDir: /Library/Developer/CommandLineTools/usr/bin",
+        "metal": "Apple metal version 32023.883 (metalfe-32023.883)\nTarget: air64-apple-darwin27.0.0\nThread model: posix\nInstalledDir: /Users/kiro/hyle-verify-tools/metal-17F109/Metal.xctoolchain/usr/metal/current/bin",
+        "gpu": "Graphics/Displays:\n\n    Apple M4:\n\n      Chipset Model: Apple M4\n      Type: GPU\n      Bus: Built-In\n      Total Number of Cores: 8\n      Vendor: Apple (0x106b)\n      Metal Support: Metal 4\n      Displays:\n        Color LCD:\n          Display Type: Built-in Liquid Retina Display\n          Resolution: 2560 x 1664 Retina\n          Main Display: Yes\n          Mirror: Off\n          Online: Yes\n          Automatically Adjust Brightness: Yes\n          Display Asleep: Yes\n          Connection Type: Internal"
+      },
+      "source_snapshot": "b7a72e1775678468df5bbfd5df08199001030f19",
+      "synced_paths": [
+        "tests/compute_route_vulkan/sampling_consumer.cc"
+      ],
+      "configure_reuse": "Same source/tree/options/profile, existing source/header/consumer bodies only",
+      "stage": "g08_vulkan_topk_holdout",
+      "elapsed_seconds": 16.226769084,
+      "frozen_manifest_sha256": "e0189fd43a3d6a84800850aa5362c3ec663e21ba870846cf1a644f18f601c591",
+      "build_edges": 16,
+      "artifacts": [
+        {
+          "target": "hyle_mem_test",
+          "sha256": "c797ab9d98bd9de14b83ed44b24229bb2a0b4da09c2bf39508ef2dba2d39d3c8"
+        },
+        {
+          "target": "hyle_compute_ops_sampling_test",
+          "sha256": "194d2ba0a67c09b7cbdc25ddc78c1208ac17576044f9973f31f0fe826da441e7"
+        },
+        {
+          "target": "hyle_compute_route_cpu_sampling_consumer_test",
+          "sha256": "c6993e927dae8edda036387c5f93377ac4deb5aed50a0d0af8c11272fb834a97"
+        },
+        {
+          "target": "hyle_graph_route_cpu_sampling_consumer_test",
+          "sha256": "685ae66bbb95fb2cb7abd033480675c4395303d940309b146afad4627e660860"
+        },
+        {
+          "target": "hyle_compute_route_vulkan_sampling_consumer_test",
+          "sha256": "3705daec493e561da27be590c294f202ec871532fde4facee9fbee760bccc7e2"
+        },
+        {
+          "target": "hyle_graph_route_vulkan_sampling_consumer_test",
+          "sha256": "cad5a6b769e3eb9e5b58d3ae5449642e9cb43d8eb73d51d715f68b60240d87c8"
+        },
+        {
+          "target": "hyle_compute_route_vulkan_sampling_math_test",
+          "sha256": "cd4cde33977df1b79c04cc794b73d5aab4b45f08fff0a6621e44ecdf2bdeafa1"
+        },
+        {
+          "target": "hyle_graph_route_cpu_vulkan_sampling_consumer_test",
+          "sha256": "5b6886b357538aa4169302d4618d65edfc3de6e8a7bc5e087888b12d2917c7ac"
+        },
+        {
+          "target": "g08_vulkan_topk_holdout",
+          "sha256": "da66ac983b668605341381a3d8dd8210d11c4f0ae7fcb68274369bee000810e7"
+        }
+      ],
+      "failures": [
+        {
+          "target": "hyle_compute_route_vulkan_sampling_consumer_test",
+          "exit_code": 1
+        },
+        {
+          "target": "hyle_graph_route_vulkan_sampling_consumer_test",
+          "exit_code": 1
+        },
+        {
+          "target": "hyle_compute_route_vulkan_sampling_math_test",
+          "exit_code": 1
+        },
+        {
+          "target": "hyle_graph_route_cpu_vulkan_sampling_consumer_test",
+          "exit_code": 1
+        },
+        {
+          "target": "g08_vulkan_topk_holdout",
+          "exit_code": 1
+        }
+      ]
+    },
+    {
+      "state": "FAIL_WITH_ALL_TARGETS_OBSERVED",
+      "scope": "G08 ordinary implementation source batch; not immutable candidate/SDK/P1 acceptance",
+      "route": "vulkan",
+      "label": "v3",
+      "pid": 30889,
+      "source": "/Users/kiro/hyle-scratch/compute-unified/source-c8874688",
+      "build": "/Users/kiro/hyle-scratch/compute-unified/a-cpu-vulkan/selected-graph/shared-sdk-build",
+      "max_jobs": 4,
+      "stages": [
+        {
+          "stage": "manifest",
+          "command": [
+            "/opt/homebrew/bin/ninja",
+            "-C",
+            "/Users/kiro/hyle-scratch/compute-unified/a-cpu-vulkan/selected-graph/shared-sdk-build",
+            "build.ninja"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 0.08177920799999994,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g08-vulkan-source-v3/manifest.log"
+        },
+        {
+          "stage": "build",
+          "command": [
+            "/opt/homebrew/bin/ninja",
+            "-C",
+            "/Users/kiro/hyle-scratch/compute-unified/a-cpu-vulkan/selected-graph/shared-sdk-build",
+            "-f",
+            "/Users/kiro/hyle-scratch/compute-unified/g08-vulkan-source-v3/preview.ninja",
+            "-j",
+            "4",
+            "hyle_compute_route_vulkan_sampling_consumer_test",
+            "hyle_graph_route_vulkan_sampling_consumer_test",
+            "hyle_compute_route_vulkan_sampling_math_test",
+            "hyle_graph_route_cpu_vulkan_sampling_consumer_test",
+            "g08_vulkan_topk_holdout"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 1.438535833,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g08-vulkan-source-v3/build.log"
+        },
+        {
+          "stage": "hyle_compute_route_vulkan_sampling_consumer_test",
+          "command": [
+            "/Users/kiro/hyle-scratch/compute-unified/a-cpu-vulkan/selected-graph/shared-sdk-build/bin/hyle_compute_route_vulkan_sampling_consumer_test"
+          ],
+          "exit_code": 1,
+          "elapsed_seconds": 1.2563606250000001,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g08-vulkan-source-v3/hyle_compute_route_vulkan_sampling_consumer_test.log"
+        },
+        {
+          "stage": "hyle_graph_route_vulkan_sampling_consumer_test",
+          "command": [
+            "/Users/kiro/hyle-scratch/compute-unified/a-cpu-vulkan/selected-graph/shared-sdk-build/bin/hyle_graph_route_vulkan_sampling_consumer_test"
+          ],
+          "exit_code": 1,
+          "elapsed_seconds": 1.1483355,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g08-vulkan-source-v3/hyle_graph_route_vulkan_sampling_consumer_test.log"
+        },
+        {
+          "stage": "hyle_compute_route_vulkan_sampling_math_test",
+          "command": [
+            "/Users/kiro/hyle-scratch/compute-unified/a-cpu-vulkan/selected-graph/shared-sdk-build/bin/hyle_compute_route_vulkan_sampling_math_test"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 0.4198533339999999,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g08-vulkan-source-v3/hyle_compute_route_vulkan_sampling_math_test.log"
+        },
+        {
+          "stage": "hyle_graph_route_cpu_vulkan_sampling_consumer_test",
+          "command": [
+            "/Users/kiro/hyle-scratch/compute-unified/a-cpu-vulkan/selected-graph/shared-sdk-build/bin/hyle_graph_route_cpu_vulkan_sampling_consumer_test"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 0.9068986250000002,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g08-vulkan-source-v3/hyle_graph_route_cpu_vulkan_sampling_consumer_test.log"
+        },
+        {
+          "stage": "g08_vulkan_topk_holdout",
+          "command": [
+            "/Users/kiro/hyle-scratch/compute-unified/a-cpu-vulkan/selected-graph/shared-sdk-build/bin/g08_vulkan_topk_holdout"
+          ],
+          "exit_code": 1,
+          "elapsed_seconds": 1.9201851250000006,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g08-vulkan-source-v3/g08_vulkan_topk_holdout.log"
+        }
+      ],
+      "vulkan_validation_requested": false,
+      "identity": {
+        "model": "Mac16,12",
+        "arch": "arm64",
+        "os": "ProductName:\t\tmacOS\nProductVersion:\t\t27.0.1\nBuildVersion:\t\t26A434",
+        "compiler": "Apple clang version 21.0.0 (clang-2100.3.34.2)\nTarget: arm64-apple-darwin27.0.0\nThread model: posix\nInstalledDir: /Library/Developer/CommandLineTools/usr/bin",
+        "metal": "Apple metal version 32023.883 (metalfe-32023.883)\nTarget: air64-apple-darwin27.0.0\nThread model: posix\nInstalledDir: /Users/kiro/hyle-verify-tools/metal-17F109/Metal.xctoolchain/usr/metal/current/bin",
+        "gpu": "Graphics/Displays:\n\n    Apple M4:\n\n      Chipset Model: Apple M4\n      Type: GPU\n      Bus: Built-In\n      Total Number of Cores: 8\n      Vendor: Apple (0x106b)\n      Metal Support: Metal 4\n      Displays:\n        Color LCD:\n          Display Type: Built-in Liquid Retina Display\n          Resolution: 2560 x 1664 Retina\n          Main Display: Yes\n          Mirror: Off\n          Online: Yes\n          Automatically Adjust Brightness: Yes\n          Display Asleep: Yes\n          Connection Type: Internal"
+      },
+      "source_snapshot": "4deb807b7703fd8cd0a8cb6f3aec4d1c36ca7218",
+      "synced_paths": [
+        "src/compute_route_vulkan/vulkan_program.cc"
+      ],
+      "configure_reuse": "Same source/tree/options/profile, existing source/header/consumer bodies only",
+      "stage": "g08_vulkan_topk_holdout",
+      "elapsed_seconds": 7.706889041,
+      "frozen_manifest_sha256": "e0189fd43a3d6a84800850aa5362c3ec663e21ba870846cf1a644f18f601c591",
+      "build_edges": 16,
+      "artifacts": [
+        {
+          "target": "hyle_compute_route_vulkan_sampling_consumer_test",
+          "sha256": "3705daec493e561da27be590c294f202ec871532fde4facee9fbee760bccc7e2"
+        },
+        {
+          "target": "hyle_graph_route_vulkan_sampling_consumer_test",
+          "sha256": "cad5a6b769e3eb9e5b58d3ae5449642e9cb43d8eb73d51d715f68b60240d87c8"
+        },
+        {
+          "target": "hyle_compute_route_vulkan_sampling_math_test",
+          "sha256": "cd4cde33977df1b79c04cc794b73d5aab4b45f08fff0a6621e44ecdf2bdeafa1"
+        },
+        {
+          "target": "hyle_graph_route_cpu_vulkan_sampling_consumer_test",
+          "sha256": "5b6886b357538aa4169302d4618d65edfc3de6e8a7bc5e087888b12d2917c7ac"
+        },
+        {
+          "target": "g08_vulkan_topk_holdout",
+          "sha256": "da66ac983b668605341381a3d8dd8210d11c4f0ae7fcb68274369bee000810e7"
+        }
+      ],
+      "failures": [
+        {
+          "target": "hyle_compute_route_vulkan_sampling_consumer_test",
+          "exit_code": 1
+        },
+        {
+          "target": "hyle_graph_route_vulkan_sampling_consumer_test",
+          "exit_code": 1
+        },
+        {
+          "target": "g08_vulkan_topk_holdout",
+          "exit_code": 1
+        }
+      ]
+    },
+    {
+      "state": "FAIL_WITH_ALL_TARGETS_OBSERVED",
+      "scope": "G08 ordinary implementation source batch; not immutable candidate/SDK/P1 acceptance",
+      "route": "vulkan",
+      "label": "v4",
+      "pid": 30983,
+      "source": "/Users/kiro/hyle-scratch/compute-unified/source-c8874688",
+      "build": "/Users/kiro/hyle-scratch/compute-unified/a-cpu-vulkan/selected-graph/shared-sdk-build",
+      "max_jobs": 4,
+      "stages": [
+        {
+          "stage": "manifest",
+          "command": [
+            "/opt/homebrew/bin/ninja",
+            "-C",
+            "/Users/kiro/hyle-scratch/compute-unified/a-cpu-vulkan/selected-graph/shared-sdk-build",
+            "build.ninja"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 0.06724137499999999,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g08-vulkan-source-v4/manifest.log"
+        },
+        {
+          "stage": "build",
+          "command": [
+            "/opt/homebrew/bin/ninja",
+            "-C",
+            "/Users/kiro/hyle-scratch/compute-unified/a-cpu-vulkan/selected-graph/shared-sdk-build",
+            "-f",
+            "/Users/kiro/hyle-scratch/compute-unified/g08-vulkan-source-v4/preview.ninja",
+            "-j",
+            "4",
+            "hyle_compute_route_vulkan_sampling_consumer_test"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 1.22926025,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g08-vulkan-source-v4/build.log"
+        },
+        {
+          "stage": "hyle_compute_route_vulkan_sampling_consumer_test",
+          "command": [
+            "/Users/kiro/hyle-scratch/compute-unified/a-cpu-vulkan/selected-graph/shared-sdk-build/bin/hyle_compute_route_vulkan_sampling_consumer_test",
+            "--categorical-only"
+          ],
+          "exit_code": 1,
+          "elapsed_seconds": 0.4034413749999999,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g08-vulkan-source-v4/hyle_compute_route_vulkan_sampling_consumer_test.log"
+        }
+      ],
+      "vulkan_validation_requested": false,
+      "identity": {
+        "model": "Mac16,12",
+        "arch": "arm64",
+        "os": "ProductName:\t\tmacOS\nProductVersion:\t\t27.0.1\nBuildVersion:\t\t26A434",
+        "compiler": "Apple clang version 21.0.0 (clang-2100.3.34.2)\nTarget: arm64-apple-darwin27.0.0\nThread model: posix\nInstalledDir: /Library/Developer/CommandLineTools/usr/bin",
+        "metal": "Apple metal version 32023.883 (metalfe-32023.883)\nTarget: air64-apple-darwin27.0.0\nThread model: posix\nInstalledDir: /Users/kiro/hyle-verify-tools/metal-17F109/Metal.xctoolchain/usr/metal/current/bin",
+        "gpu": "Graphics/Displays:\n\n    Apple M4:\n\n      Chipset Model: Apple M4\n      Type: GPU\n      Bus: Built-In\n      Total Number of Cores: 8\n      Vendor: Apple (0x106b)\n      Metal Support: Metal 4\n      Displays:\n        Color LCD:\n          Display Type: Built-in Liquid Retina Display\n          Resolution: 2560 x 1664 Retina\n          Main Display: Yes\n          Mirror: Off\n          Online: Yes\n          Automatically Adjust Brightness: Yes\n          Display Asleep: Yes\n          Connection Type: Internal"
+      },
+      "source_snapshot": "5d0ff517a6fbf9657ba313cd607a550639f20378",
+      "synced_paths": [
+        "tests/compute_models/sampling_fixture.h"
+      ],
+      "configure_reuse": "Same source/tree/options/profile, existing source/header/consumer bodies only",
+      "stage": "hyle_compute_route_vulkan_sampling_consumer_test",
+      "elapsed_seconds": 2.081017042,
+      "frozen_manifest_sha256": "e0189fd43a3d6a84800850aa5362c3ec663e21ba870846cf1a644f18f601c591",
+      "build_edges": 6,
+      "artifacts": [
+        {
+          "target": "hyle_compute_route_vulkan_sampling_consumer_test",
+          "sha256": "20de0ba1f77d3e8227bf3015fd0044eaaca8fa16893ee49e26eee143407d5711"
+        }
+      ],
+      "failures": [
+        {
+          "target": "hyle_compute_route_vulkan_sampling_consumer_test",
+          "exit_code": 1
+        }
+      ]
+    },
+    {
+      "state": "SOURCE_BATCH_PASS_RISKS_DELIVERY_PERF_PENDING",
+      "scope": "G08 ordinary implementation source batch; not immutable candidate/SDK/P1 acceptance",
+      "route": "vulkan",
+      "label": "v5",
+      "pid": 31038,
+      "source": "/Users/kiro/hyle-scratch/compute-unified/source-c8874688",
+      "build": "/Users/kiro/hyle-scratch/compute-unified/a-cpu-vulkan/selected-graph/shared-sdk-build",
+      "max_jobs": 4,
+      "stages": [
+        {
+          "stage": "manifest",
+          "command": [
+            "/opt/homebrew/bin/ninja",
+            "-C",
+            "/Users/kiro/hyle-scratch/compute-unified/a-cpu-vulkan/selected-graph/shared-sdk-build",
+            "build.ninja"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 0.0686985,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g08-vulkan-source-v5/manifest.log"
+        },
+        {
+          "stage": "build",
+          "command": [
+            "/opt/homebrew/bin/ninja",
+            "-C",
+            "/Users/kiro/hyle-scratch/compute-unified/a-cpu-vulkan/selected-graph/shared-sdk-build",
+            "-f",
+            "/Users/kiro/hyle-scratch/compute-unified/g08-vulkan-source-v5/preview.ninja",
+            "-j",
+            "4",
+            "hyle_compute_route_vulkan_sampling_consumer_test",
+            "hyle_graph_route_vulkan_sampling_consumer_test",
+            "hyle_graph_route_cpu_vulkan_sampling_consumer_test",
+            "g08_vulkan_topk_holdout"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 2.34907875,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g08-vulkan-source-v5/build.log"
+        },
+        {
+          "stage": "hyle_compute_route_vulkan_sampling_consumer_test",
+          "command": [
+            "/Users/kiro/hyle-scratch/compute-unified/a-cpu-vulkan/selected-graph/shared-sdk-build/bin/hyle_compute_route_vulkan_sampling_consumer_test"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 3.338806375,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g08-vulkan-source-v5/hyle_compute_route_vulkan_sampling_consumer_test.log"
+        },
+        {
+          "stage": "hyle_graph_route_vulkan_sampling_consumer_test",
+          "command": [
+            "/Users/kiro/hyle-scratch/compute-unified/a-cpu-vulkan/selected-graph/shared-sdk-build/bin/hyle_graph_route_vulkan_sampling_consumer_test"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 2.7548766659999995,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g08-vulkan-source-v5/hyle_graph_route_vulkan_sampling_consumer_test.log"
+        },
+        {
+          "stage": "hyle_graph_route_cpu_vulkan_sampling_consumer_test",
+          "command": [
+            "/Users/kiro/hyle-scratch/compute-unified/a-cpu-vulkan/selected-graph/shared-sdk-build/bin/hyle_graph_route_cpu_vulkan_sampling_consumer_test"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 0.5838609160000008,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g08-vulkan-source-v5/hyle_graph_route_cpu_vulkan_sampling_consumer_test.log"
+        },
+        {
+          "stage": "g08_vulkan_topk_holdout",
+          "command": [
+            "/Users/kiro/hyle-scratch/compute-unified/a-cpu-vulkan/selected-graph/shared-sdk-build/bin/g08_vulkan_topk_holdout"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 1.8505062079999988,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g08-vulkan-source-v5/g08_vulkan_topk_holdout.log"
+        }
+      ],
+      "vulkan_validation_requested": false,
+      "identity": {
+        "model": "Mac16,12",
+        "arch": "arm64",
+        "os": "ProductName:\t\tmacOS\nProductVersion:\t\t27.0.1\nBuildVersion:\t\t26A434",
+        "compiler": "Apple clang version 21.0.0 (clang-2100.3.34.2)\nTarget: arm64-apple-darwin27.0.0\nThread model: posix\nInstalledDir: /Library/Developer/CommandLineTools/usr/bin",
+        "metal": "Apple metal version 32023.883 (metalfe-32023.883)\nTarget: air64-apple-darwin27.0.0\nThread model: posix\nInstalledDir: /Users/kiro/hyle-verify-tools/metal-17F109/Metal.xctoolchain/usr/metal/current/bin",
+        "gpu": "Graphics/Displays:\n\n    Apple M4:\n\n      Chipset Model: Apple M4\n      Type: GPU\n      Bus: Built-In\n      Total Number of Cores: 8\n      Vendor: Apple (0x106b)\n      Metal Support: Metal 4\n      Displays:\n        Color LCD:\n          Display Type: Built-in Liquid Retina Display\n          Resolution: 2560 x 1664 Retina\n          Main Display: Yes\n          Mirror: Off\n          Online: Yes\n          Automatically Adjust Brightness: Yes\n          Display Asleep: Yes\n          Connection Type: Internal"
+      },
+      "source_snapshot": "f273c9707084008e2c9be7e7bbf49f5ef6d497b2",
+      "synced_paths": [
+        "docs/implementation/tasks/compute/inference-g08-output-selection.md",
+        "src/compute_route_vulkan/shaders/sampling.comp",
+        "src/compute_route_vulkan/vulkan_sampling.cc",
+        "tests/compute_route_vulkan/topk_test.cc"
+      ],
+      "configure_reuse": "Same source/tree/options/profile, existing source/header/consumer bodies only",
+      "stage": "g08_vulkan_topk_holdout",
+      "elapsed_seconds": 11.342466374999999,
+      "frozen_manifest_sha256": "e0189fd43a3d6a84800850aa5362c3ec663e21ba870846cf1a644f18f601c591",
+      "build_edges": 21,
+      "artifacts": [
+        {
+          "target": "hyle_compute_route_vulkan_sampling_consumer_test",
+          "sha256": "20de0ba1f77d3e8227bf3015fd0044eaaca8fa16893ee49e26eee143407d5711"
+        },
+        {
+          "target": "hyle_graph_route_vulkan_sampling_consumer_test",
+          "sha256": "ca93ba9091581631ecffda801d5f8d01afb009da7bf069a6cc604615c614d66e"
+        },
+        {
+          "target": "hyle_graph_route_cpu_vulkan_sampling_consumer_test",
+          "sha256": "5b6886b357538aa4169302d4618d65edfc3de6e8a7bc5e087888b12d2917c7ac"
+        },
+        {
+          "target": "g08_vulkan_topk_holdout",
+          "sha256": "9504d8f54d1d042d7494254b83f0181350ca8515bc39a3125fe0cf064945c17f"
+        }
+      ],
+      "failures": []
+    }
+  ],
+  "accepted_ordinary_facts": [
+    "Air Mem244/schema3 and CPU Direct in a2; CPU Graph including independent categorical ports in a3 PASS.",
+    "Actual Metal1048772 open64 endpoint/corpus pairs and CPU+Apple65-step24-byte joint in a2 PASS.",
+    "Apple Direct/Graph complete numerical/distribution/full-vocabulary65-step and independent ports, four original TopK holdouts in a4 PASS.",
+    "Actual Vulkan1048772 open64 endpoint/corpus pairs in v3 PASS with validation explicitly disabled.",
+    "Vulkan Direct/Graph complete numerical/distribution/full-vocabulary65-step, independent ports, byte origins1/3/17; CPU+Vulkan joint and original17TopK holdouts in v5 PASS with validation explicitly disabled."
+  ],
+  "retained_failures": [
+    "a1 original dry-run preflight retained across resume; test const array.wait compile errors retained.",
+    "a2 old float keys fail TopK and common Graph rebinding transient alias; wrong private holdout path leaves SETUP_FAIL after real passed stages.",
+    "a3 count3/smallest negative-subnormal old argsort key failure retained despite original4TopK holdouts passing.",
+    "v1 newly added origin fixture syntax compile failure retained.",
+    "v2 validation-requested native failures retained; discovery confirms original layer directory absent and enumerated layers empty.",
+    "v3/V4 large-offset selected logprob precision failures and v3 structural old-region test expectation retained.",
+    "Additional same-binary --origins-only command failed with native fragment unaligned range before unused raw binding fix; output observed in session, elapsed time UNKNOWN."
+  ],
+  "costs": {
+    "source_batch_elapsed_seconds": 150.865170958,
+    "complete_cost": "UNKNOWN: transfer/packing/inspection and the extra origin-only diagnosis were not timed; no zero-cost claim or budget reset."
+  },
+  "pending": [
+    "WSL CPU/CUDA newly added independent Graph publication tests; original CPU/CUDA TopK axis/stride/dtype/empty holdouts.",
+    "Applicable host sanitizers, CUDA memcheck/racecheck, actual Vulkan validation layer qualification and remaining native risks.",
+    "Remaining source/static/shared relocated SDK and public-header qualification including Mem changed backings.",
+    "Immutable candidate freeze, S1 exact timing/CHARGED-DEFERRED preflight and qualified P1 four routes plus Apple count3 holdout.",
+    "P0 final ledger, user documentation, independent review and G08 terminal verdict; G09/G10 unstarted."
+  ],
+  "coarse_estimates": {
+    "g08_percent": 70,
+    "g07_g10_goal_percent": 44,
+    "formally_accepted_items": 1,
+    "total_items": 4,
+    "meaning": "Implementation estimate, not passed acceptance-gate percentage."
+  },
+  "raw_archive": {
+    "path": "raw.zip",
+    "sha256": "cb42a1b1e407cdbeab4c28a7993dcdf309da2cb9c1359dedf1a4521c5c140a37"
+  }
+}

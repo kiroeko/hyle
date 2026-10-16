@@ -1,6 +1,6 @@
 # G08 设备端输出数值选择与可定位随机数
 
-状态：**AUDITED，2026-10-16；八owner按S1–S4及Mem M1有限FIX施工，首批CPU/CUDA runtime已过，尚未整项验收/P1**。baseline 为
+状态：**AUDITED，2026-10-17；八owner按S1–S4及Mem M1有限FIX施工，四路线主要普通数值已过，风险/交付/P1及整项验收待完成**。baseline 为
 `85bcfa4eb`，G07已经整项接受，新G07–G10 goal完成1/4。原G01–G07不重跑，G09/G10未开始。
 本卡只处理原[G08发现](../project/inference-single-machine-foundation-audit-2026-10.md)与
 [消费形状计划](../project/inference-consumer-adaptation-plan-2026-10.md)的有限输出数值域。
@@ -400,3 +400,19 @@ byte1原native View在未用raw scratch descriptor上被拒绝：改复用已拥
 仍使用原byte-origin push常量与descriptor。原17项TopK留出16项PASS，唯一失败仅要求
 所有count走旧managed region；count1改验原新两dispatch，所有原独立bits断言保留。
 这些属于原AUDITED S1–S4有限实现纠错；未进入CANDIDATE或启动P1。
+
+### 2026-10-17 Apple/Vulkan源码普通门检查点
+
+[原始结果、全部失败与身份归档](../../../../evidence/correctness/inference-g08-air-implementation-checkpoint/receipt.json)
+保留a1–a4、v1–v5全部日志、manifest与二进制hash。Apple a4与Vulkan v5公开Direct/Graph
+完整数值、三dtype、F64 score、全词表R1/R16各65步、每law262144样本、错误和旧owner
+均PASS；两路线Graph独立port均PASS，Vulkan原生View byte1/3/17 raw/三dtype categorical/
+TopK1也PASS。CPU+Apple、CPU+Vulkan 24-byte CPU lookup/add联合65步、两槽PASS；
+原Apple4项、Vulkan17项TopK留出PASS。实际Metal/Vulkan1048772对数学端点均PASS，
+maxabs均3.72330296e-6。Air Mem244与ARM CPU Direct/Graph已PASS。
+
+Vulkan v3/v5明确未启validation，原validation-requested环境失败不能由这些PASS覆盖；
+仍须恢复真实layer并运行适用风险门。WSL CPU/CUDA新独立port补验、剩余host/device风险、
+三交付/公开头、S1精确P1及最终文档/审查仍待完成，八owner保持AUDITED。
+G08施工粗估约70%，G07–G10 goal约44%，正式仍仅G07完成1/4；比例不是验收门通过率。
+本批已结束，没有重型任务遗留运行；继续原有限门，不启动新缺口调研、G09/G10或CLI。

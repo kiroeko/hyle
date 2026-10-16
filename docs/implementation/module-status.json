@@ -145,7 +145,7 @@
       "module": "mem",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/inference-g08-output-selection.md",
-      "summary": "G08 finite M1 dependency fix AUDITED: original Buffer884/alignment256 allocation-only crash fixed by mature mi_free_aligned in static/shared backings. WSL source244/244 and actual CPU/CUDA sampling consumers PASS; other OS/SDK/host risks pending. Natural path/layout/quota/vendor unchanged."
+      "summary": "G08 M1 AUDITED: mature mi_free_aligned fixes original Buffer884/alignment256 allocation-only crash. WSL and Air source244/244 PASS; Windows/static/shared/host risks pending. Natural path/layout/quota/vendor unchanged."
     },
     {
       "module": "mem_vm",
@@ -387,7 +387,7 @@
       "module": "compute_ops",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/inference-g08-output-selection.md",
-      "summary": "G08 AUDITED: typed random/categorical schema and official Philox KAT source3/3 PASS; four CPU/CUDA public Direct/Graph consumers PASS. Four-route delivery/risks and final finite acceptance pending."
+      "summary": "G08 AUDITED: typed random/categorical schema, official Philox KAT3/3 and four-route main Direct/Graph numerical/distribution consumers PASS. Full risk/delivery/finite acceptance pending."
     },
     {
       "module": "compute_backend_cpu",
@@ -493,7 +493,7 @@
       "module": "compute_route_apple",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/inference-g08-output-selection.md",
-      "summary": "G08 AUDITED: finite TopK1 and counter/categorical native implementation plus public Direct/Graph, joint and actual-device math tests written. Apple actual build/runtime/risk/three-delivery/S1 P1 pending."
+      "summary": "G08 AUDITED: Apple Direct/Graph full numerical/distribution/65-step, independent categorical ports, actual Metal1048772-pair endpoints, CPU+Apple joint and original4TopK holdouts PASS. SDK/risks/S1 P1 pending."
     },
     {
       "module": "graph_route_apple",
@@ -510,13 +510,13 @@
       "module": "compute_route_vulkan",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/inference-g08-output-selection.md",
-      "summary": "G08 AUDITED: finite TopK1 and counter/categorical native shader implementation plus public Direct/Graph, joint and endpoint tests written. Vulkan actual build/runtime/validation/three-delivery/S1 P1 pending."
+      "summary": "G08 AUDITED: Vulkan Direct/Graph full numerical/distribution/65-step/independent ports/byte origins1/3/17, device1048772-pair math, CPU+Vulkan joint and original17TopK holdouts PASS without validation. Validation layer/risks/SDK/S1 P1 pending."
     },
     {
       "module": "graph_route_vulkan",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/inference-g08-output-selection.md",
-      "summary": "G08 AUDITED: finite native sampling custom whitelist and optional categorical second port implemented using original plan/status/liveness/owners. Actual source/SDK Graph consumer qualification pending."
+      "summary": "G08 AUDITED: original plan/liveness/status/owners carry random/categorical, including ID-only/score-only/both and origin-preserving View producers; source consumers PASS without validation. Actual validation/SDK qualification pending."
     },
     {
       "module": "compute_provider_ggml_vulkan",
