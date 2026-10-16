@@ -1,0 +1,48 @@
+{
+  "schema": "hyle.inference-g08-p1-adapter-source-corrections/v1",
+  "state": "SOURCE_CORRECTIONS_BEFORE_ANY_WORKLOAD_BUILD_NUMERICAL_PREFLIGHT_AA_OR_P1",
+  "candidate": "5103c13d8ed119b06aa64e799f9768aea45ab913",
+  "original_revision": "85bcfa4ebc29cc4d2ed5fb122074204aca675d58",
+  "previous_checkpoint": "p1-adapter-checkpoint.json",
+  "fixed_timing_boundary": {
+    "path": "p1-boundary.json",
+    "sha256": "45f6a6845f826ab2ed1a3d4272b529ba6fac08dffe332d22290ba573418b0fb4",
+    "change": "NONE: same nine shapes, full original math/owner/completion/readback,5%,n15/31 and controls"
+  },
+  "corrections": [
+    {
+      "id": "ADAPTER-GIT-PEER",
+      "finding": "The existing unified runner requires an actual clean original85 Git checkout. A materialized directory nested in the current checkout alone does not meet peer identity.",
+      "fix": "Separate HYLE_G08_REFERENCE_SOURCE from HYLE_G08_REFERENCE_DIR. The former binds the original clean Git peer; verify_reference compares every original blob to that peer and verifies namespace-only inverse/body hashes. Qualified A/A requires this proof.",
+      "verified": "Actual clean Windows original85 peer and CPU/Apple materializations verified against the pinned Git blobs. Remote peer setup remains before qualified runs."
+    },
+    {
+      "id": "ADAPTER-APPLE-ORIGINAL-INDEXING",
+      "finding": "Original apple_tensor.cc delegates TopK to lower_mature_indexing at original line452. Compiling only the renamed original tensor TU would resolve that call to the current indexing implementation.",
+      "fix": "Compile both original apple_tensor.cc and apple_mature_indexing.cc, with lower_tensor and lower_mature_indexing independently renamed for both TUs. Original helper bodies remain byte-identical to Git85; native MLX/context/worker/result lifetime still shared as frozen.",
+      "source_identity_sha256": "bef145ee442e12a168e22c86c822e7dffee5dbe580adf18a512d69f7a1855888",
+      "compiled_original_sources": [
+        "src/compute_route_apple/apple_tensor.cc",
+        "src/compute_route_apple/apple_mature_indexing.cc"
+      ],
+      "compile_definitions": [
+        "lower_tensor=g08_original_lower_tensor",
+        "lower_mature_indexing=g08_original_lower_mature_indexing"
+      ],
+      "verified": "Both original TU bodies and common private bridge hashes match the clean pinned Git checkout. Actual object symbol binding, build and numerical oracle remain UNPROVEN."
+    }
+  ],
+  "configuration_checkpoint": {
+    "scope": "Four lightweight configurations/benchmark-only previews passed for the earlier archived draft. They are not compilation, runtime or final revised-adapter qualification.",
+    "cpu": "CONFIGURE_AND_PRIVATE_BENCHMARK_ONLY_PREVIEW_PASS",
+    "cuda": "CONFIGURE_AND_PRIVATE_BENCHMARK_ONLY_PREVIEW_PASS",
+    "apple": "CONFIGURE_AND_PRIVATE_BENCHMARK_ONLY_PREVIEW_PASS",
+    "vulkan": "CONFIGURE_AND_PRIVATE_BENCHMARK_ONLY_PREVIEW_PASS"
+  },
+  "raw": {
+    "path": "p1-adapter-source-corrections-raw.zip",
+    "sha256": "1bef70a33c6f1de50db0fa6ac45d257183643372e9663d28376a4786ebd51694",
+    "bytes": 917690
+  },
+  "scope": "Benchmark setup/source binding correction only. All previous draft/checkpoint evidence retained; no product/candidate/API/algorithm change or P1 result."
+}

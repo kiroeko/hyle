@@ -1,0 +1,466 @@
+{
+  "schema": "hyle.perf.contract/v1",
+  "id": "inference-g08-vulkan-topk-p1-v1",
+  "module": "compute_route_vulkan",
+  "claim": "Complete warm public TopK against pinned original85 on nine predeclared finite normal-F32 output-selection shapes. Includes both values and I32 indices, actual completion, both host reads and step-local owner release. Engineering comparison only; no categorical/RNG speed, engine token/s or llama.cpp claim.",
+  "candidate": {
+    "target": "g08_topk_primary",
+    "delivery_shape": "static",
+    "revision": "runtime-bound",
+    "component": "compute_route_vulkan",
+    "entrypoint": "topk_bench.cc"
+  },
+  "peers": [
+    {
+      "id": "original85",
+      "revision": "85bcfa4ebc29cc4d2ed5fb122074204aca675d58",
+      "configuration": {
+        "delivery_shape": "source",
+        "role": "Original full provider/lowering/route with private symbol or namespace isolation only",
+        "precision": "Identical stored normal F32 inputs and outputs; first-index tie and source bits oracle",
+        "scope": "Same route ownership, checked native completion and two small result reads"
+      }
+    }
+  ],
+  "strata": [
+    {
+      "id": "primary-candidate-first-candidate-allocation-first",
+      "dimensions": {
+        "placement": "primary",
+        "execution_order": "candidate-first",
+        "allocation_order": "candidate-first"
+      },
+      "target_variant": "primary"
+    },
+    {
+      "id": "primary-candidate-first-peer-allocation-first",
+      "dimensions": {
+        "placement": "primary",
+        "execution_order": "candidate-first",
+        "allocation_order": "peer-first"
+      },
+      "environment": {
+        "HYLE_BENCH_PEER_ALLOCATION_FIRST": "1"
+      },
+      "target_variant": "primary"
+    },
+    {
+      "id": "primary-peer-first-candidate-allocation-first",
+      "dimensions": {
+        "placement": "primary",
+        "execution_order": "peer-first",
+        "allocation_order": "candidate-first"
+      },
+      "environment": {
+        "HYLE_BENCH_RIVAL_FIRST": "1"
+      },
+      "target_variant": "primary"
+    },
+    {
+      "id": "primary-peer-first-peer-allocation-first",
+      "dimensions": {
+        "placement": "primary",
+        "execution_order": "peer-first",
+        "allocation_order": "peer-first"
+      },
+      "environment": {
+        "HYLE_BENCH_RIVAL_FIRST": "1",
+        "HYLE_BENCH_PEER_ALLOCATION_FIRST": "1"
+      },
+      "target_variant": "primary"
+    },
+    {
+      "id": "placement-candidate-first-candidate-allocation-first",
+      "dimensions": {
+        "placement": "perturbed",
+        "execution_order": "candidate-first",
+        "allocation_order": "candidate-first"
+      },
+      "target_variant": "placement"
+    },
+    {
+      "id": "placement-candidate-first-peer-allocation-first",
+      "dimensions": {
+        "placement": "perturbed",
+        "execution_order": "candidate-first",
+        "allocation_order": "peer-first"
+      },
+      "environment": {
+        "HYLE_BENCH_PEER_ALLOCATION_FIRST": "1"
+      },
+      "target_variant": "placement"
+    },
+    {
+      "id": "placement-peer-first-candidate-allocation-first",
+      "dimensions": {
+        "placement": "perturbed",
+        "execution_order": "peer-first",
+        "allocation_order": "candidate-first"
+      },
+      "environment": {
+        "HYLE_BENCH_RIVAL_FIRST": "1"
+      },
+      "target_variant": "placement"
+    },
+    {
+      "id": "placement-peer-first-peer-allocation-first",
+      "dimensions": {
+        "placement": "perturbed",
+        "execution_order": "peer-first",
+        "allocation_order": "peer-first"
+      },
+      "environment": {
+        "HYLE_BENCH_RIVAL_FIRST": "1",
+        "HYLE_BENCH_PEER_ALLOCATION_FIRST": "1"
+      },
+      "target_variant": "placement"
+    }
+  ],
+  "controls": [
+    {
+      "id": "aa",
+      "kind": "aa",
+      "parameters": {
+        "maximum_bias_percent": 5
+      }
+    },
+    {
+      "id": "delta5",
+      "kind": "known-delta",
+      "parameters": {
+        "nominal_percent": 5
+      }
+    },
+    {
+      "id": "delta10",
+      "kind": "known-delta",
+      "parameters": {
+        "nominal_percent": 10
+      }
+    },
+    {
+      "id": "timer-floor",
+      "kind": "timer-floor",
+      "parameters": {
+        "minimum_workload_floor_multiple": 20
+      }
+    },
+    {
+      "id": "placement",
+      "kind": "placement",
+      "parameters": {}
+    }
+  ],
+  "workloads": [
+    {
+      "id": "topk-r1-k1",
+      "tier": "consumer",
+      "gate_role": "product",
+      "consumer_key": "inference-vulkan-output-selection/r1-k1",
+      "provenance": {
+        "path": "consumer-provenance-vulkan.json",
+        "sha256": "eabb68fb18b9009a6d787687b8d3c2288f255bcd3df1659eab1d2921fa1ccdbb"
+      },
+      "ownership_topology": {
+        "candidate": "Resident input and prepared invocation; public submit, checked actual native completion, both small outputs read, step-local Completion/OwnedResult/lease release",
+        "peer": "Same original route lifecycle and result boundary; entire original selection or full sort remains inside replay",
+        "equivalence": "Invocation retains its original native allocations/last result until replacement/final teardown as frozen in the source timing ledger. Both steady replacement tails are charged; final retained owner and runtime cache destruction deferred symmetrically."
+      },
+      "material_contribution": {
+        "frequency": 1,
+        "value": 1,
+        "unit": "complete-output-selection",
+        "budget": 5,
+        "denominator": "one complete public TopK invocation with values, indices and host readback",
+        "derivation": "One output-selection consumer fragment; no measured full-engine share"
+      },
+      "semantic_contract": "Dense last-axis F32[1,248320], TopK(1) values plus I32 indices; exact stored value bits and earliest-index ordering for normal finite maxima/ties",
+      "comparability": "COMPARABLE",
+      "peer_id": "original85",
+      "metric": {
+        "name": "operations-per-second",
+        "unit": "op/s",
+        "direction": "higher-is-better"
+      },
+      "input": {
+        "distribution": "Fixed 32-bit integer mix generates normal signed F32 with full mantissa entropy; explicit9,8.5,9maxima yield independent closed-form oracle. Same bytes per arm, three complete numerical cycles and eight completed warm cycles before sampling.",
+        "scale": {
+          "R": 1,
+          "V": 248320,
+          "K": 1
+        }
+      },
+      "setup": "Context, resident inputs/upload, public Program/Invocation, caller workspace where applicable and host readback buffers are cold. Actual selection/full sort, native status/completion, both reads and step-local handle release are charged. Final retained invocation result, Program/Invocation/runtime/cache destruction deferred as source ledger specifies; private driver cache upper UNKNOWN.",
+      "charged_phases": [
+        "public submit/admission and original queue/worker/dispatch",
+        "all selected reduction or complete original sorting and intermediate runtime work",
+        "actual checked native completion and both values/indices host readback including Vulkan staging/fences",
+        "step-local Completion/OwnedResult/lease release and previous invocation-native result replacement in steady replay"
+      ],
+      "pair": {
+        "candidate": "HYLE TopK",
+        "peer": "Original85 TopK"
+      },
+      "practical_margin_percent": 5,
+      "noninferiority_margin_percent": 5,
+      "estimator": {
+        "kind": "process-median",
+        "minimum_independent_samples": 15,
+        "tail_alpha": 0.01
+      },
+      "required_strata": [
+        "primary-candidate-first-candidate-allocation-first",
+        "primary-candidate-first-peer-allocation-first",
+        "primary-peer-first-candidate-allocation-first",
+        "primary-peer-first-peer-allocation-first",
+        "placement-candidate-first-candidate-allocation-first",
+        "placement-candidate-first-peer-allocation-first",
+        "placement-peer-first-candidate-allocation-first",
+        "placement-peer-first-peer-allocation-first"
+      ],
+      "required_controls": [
+        "aa",
+        "delta5",
+        "delta10",
+        "timer-floor",
+        "placement"
+      ]
+    },
+    {
+      "id": "topk-r16-k1",
+      "tier": "consumer",
+      "gate_role": "product",
+      "consumer_key": "inference-vulkan-output-selection/r16-k1",
+      "provenance": {
+        "path": "consumer-provenance-vulkan.json",
+        "sha256": "eabb68fb18b9009a6d787687b8d3c2288f255bcd3df1659eab1d2921fa1ccdbb"
+      },
+      "ownership_topology": {
+        "candidate": "Resident input and prepared invocation; public submit, checked actual native completion, both small outputs read, step-local Completion/OwnedResult/lease release",
+        "peer": "Same original route lifecycle and result boundary; entire original selection or full sort remains inside replay",
+        "equivalence": "Invocation retains its original native allocations/last result until replacement/final teardown as frozen in the source timing ledger. Both steady replacement tails are charged; final retained owner and runtime cache destruction deferred symmetrically."
+      },
+      "material_contribution": {
+        "frequency": 1,
+        "value": 1,
+        "unit": "complete-output-selection",
+        "budget": 5,
+        "denominator": "one complete public TopK invocation with values, indices and host readback",
+        "derivation": "One output-selection consumer fragment; no measured full-engine share"
+      },
+      "semantic_contract": "Dense last-axis F32[16,248320], TopK(1) values plus I32 indices; exact stored value bits and earliest-index ordering for normal finite maxima/ties",
+      "comparability": "COMPARABLE",
+      "peer_id": "original85",
+      "metric": {
+        "name": "operations-per-second",
+        "unit": "op/s",
+        "direction": "higher-is-better"
+      },
+      "input": {
+        "distribution": "Fixed 32-bit integer mix generates normal signed F32 with full mantissa entropy; explicit9,8.5,9maxima yield independent closed-form oracle. Same bytes per arm, three complete numerical cycles and eight completed warm cycles before sampling.",
+        "scale": {
+          "R": 16,
+          "V": 248320,
+          "K": 1
+        }
+      },
+      "setup": "Context, resident inputs/upload, public Program/Invocation, caller workspace where applicable and host readback buffers are cold. Actual selection/full sort, native status/completion, both reads and step-local handle release are charged. Final retained invocation result, Program/Invocation/runtime/cache destruction deferred as source ledger specifies; private driver cache upper UNKNOWN.",
+      "charged_phases": [
+        "public submit/admission and original queue/worker/dispatch",
+        "all selected reduction or complete original sorting and intermediate runtime work",
+        "actual checked native completion and both values/indices host readback including Vulkan staging/fences",
+        "step-local Completion/OwnedResult/lease release and previous invocation-native result replacement in steady replay"
+      ],
+      "pair": {
+        "candidate": "HYLE TopK",
+        "peer": "Original85 TopK"
+      },
+      "practical_margin_percent": 5,
+      "noninferiority_margin_percent": 5,
+      "estimator": {
+        "kind": "process-median",
+        "minimum_independent_samples": 15,
+        "tail_alpha": 0.01
+      },
+      "required_strata": [
+        "primary-candidate-first-candidate-allocation-first",
+        "primary-candidate-first-peer-allocation-first",
+        "primary-peer-first-candidate-allocation-first",
+        "primary-peer-first-peer-allocation-first",
+        "placement-candidate-first-candidate-allocation-first",
+        "placement-candidate-first-peer-allocation-first",
+        "placement-peer-first-candidate-allocation-first",
+        "placement-peer-first-peer-allocation-first"
+      ],
+      "required_controls": [
+        "aa",
+        "delta5",
+        "delta10",
+        "timer-floor",
+        "placement"
+      ]
+    }
+  ],
+  "experiment": {
+    "sample_schedule": [
+      15,
+      31
+    ],
+    "order_policy": "fixed-dual",
+    "holdout": false
+  },
+  "build": {
+    "configuration": "Release",
+    "fresh": true,
+    "linkage": "static",
+    "lto": "off",
+    "isa": "portable",
+    "toolchain": "machine-profile-bound"
+  },
+  "artifacts": {
+    "validators": [
+      "artifact-identity",
+      "build-contract",
+      "topk-aa"
+    ]
+  },
+  "hosts": {
+    "allowed_platforms": [
+      "macos"
+    ],
+    "certification_platforms": [
+      "macos"
+    ],
+    "requirements": {
+      "machine_profiles": [
+        "M1-MAC"
+      ],
+      "qualified_role": "engineering",
+      "formal_independent_hardware": true
+    }
+  },
+  "extensions": {
+    "runner": {
+      "schema": "hyle.perf.nanobench-runner/v1",
+      "sampling_topology": "single-logical-cpu",
+      "cmake": {
+        "cache": {
+          "HYLE_STATIC": "ON",
+          "HYLE_BUILD_TESTS": "OFF",
+          "HYLE_BUILD_BENCH": "OFF",
+          "HYLE_COMPUTE_ROUTES": "cpu;vulkan",
+          "HYLE_COMPONENTS": "compute",
+          "HYLE_INSTALL": "OFF",
+          "HYLE_SANITIZER": "off",
+          "HYLE_TRACE": "OFF",
+          "HYLE_WERROR": "ON",
+          "CMAKE_INTERPROCEDURAL_OPTIMIZATION": "OFF",
+          "HYLE_SIMD_EXACT_TARGET": "",
+          "CMAKE_OSX_DEPLOYMENT_TARGET": "14.4",
+          "CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
+          "HYLE_DEP_SOURCE_CACHE": "/Users/kiro/Library/Caches/hyle/dependencies/v1",
+          "CMAKE_PREFIX_PATH": "/Users/kiro/hyle-scratch/compute-unified/g08-sdk/vulkan-static-1/relocated",
+          "HYLE_G08_ROUTE": "vulkan",
+          "HYLE_G08_SOURCE": "/Users/kiro/hyle-scratch/compute-unified/g08-p1-vulkan/source",
+          "HYLE_G08_REFERENCE_DIR": "/Users/kiro/hyle-scratch/compute-unified/g08-p1-vulkan/reference85",
+          "HYLE_G08_VULKAN_PRODUCER": "/Users/kiro/hyle-scratch/compute-unified/a-cpu-vulkan/selected-graph/static-sdk-build/src/compute_route_vulkan",
+          "HYLE_G08_GLSLANG": "/opt/homebrew/bin/glslangValidator"
+        },
+        "peer_cache": {
+          "original85": "HYLE_G08_REFERENCE_SOURCE"
+        }
+      },
+      "profiles": {
+        "M1-MAC": {
+          "generator": "Ninja",
+          "compiler_id": "AppleClang",
+          "compiler_version_prefix": "21.0",
+          "cache": {}
+        }
+      },
+      "executables": [
+        {
+          "id": "topk-primary",
+          "target": "g08_topk_primary",
+          "stem": "g08_topk_primary",
+          "target_variant": "primary",
+          "measurement_batch": 1,
+          "telemetry_prefixes": [
+            "# HYLE_TOPK_RUN "
+          ],
+          "workloads": [
+            {
+              "id": "topk-r1-k1",
+              "title": "vulkan TopK R=1 V=248320 K=1"
+            },
+            {
+              "id": "topk-r16-k1",
+              "title": "vulkan TopK R=16 V=248320 K=1"
+            }
+          ]
+        },
+        {
+          "id": "topk-placement",
+          "target": "g08_topk_placement",
+          "stem": "g08_topk_placement",
+          "target_variant": "placement",
+          "measurement_batch": 1,
+          "telemetry_prefixes": [
+            "# HYLE_TOPK_RUN "
+          ],
+          "workloads": [
+            {
+              "id": "topk-r1-k1",
+              "title": "vulkan TopK R=1 V=248320 K=1"
+            },
+            {
+              "id": "topk-r16-k1",
+              "title": "vulkan TopK R=16 V=248320 K=1"
+            }
+          ]
+        }
+      ],
+      "control_executable": {
+        "target": "g08_topk_control",
+        "stem": "g08_topk_control"
+      },
+      "controlled_environment": [
+        "HYLE_BENCH_RIVAL_FIRST",
+        "HYLE_BENCH_PEER_ALLOCATION_FIRST",
+        "HYLE_PERF_APPLE_QOS",
+        "HYLE_BENCH_AA_ROUTE",
+        "HYLE_BENCH_VERIFY_ONLY"
+      ],
+      "validators": [
+        {
+          "id": "artifact-identity",
+          "kind": "artifact-identity"
+        },
+        {
+          "id": "build-contract",
+          "kind": "build-contract"
+        },
+        {
+          "id": "topk-aa",
+          "kind": "command",
+          "command": [
+            "{python}",
+            "validate_aa.py",
+            "--build",
+            "{build}",
+            "--output",
+            "{output}"
+          ]
+        }
+      ],
+      "measurement_adapter": "nanobench-paired-rows-v1"
+    },
+    "measurement_recipe": {
+      "paired_rounds": 16,
+      "minimum_epoch_iterations": 1,
+      "minimum_epoch_time_ms": 4,
+      "preflight_only": false,
+      "reason": "Frozen before G08 samples: three complete oracle cycles and eight warm cycles, paired cyclic complete public calls; existing n15/31,5%,controls and two execution/allocation orders with pure placement replica unchanged."
+    }
+  }
+}

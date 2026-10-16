@@ -1,0 +1,28 @@
+{
+  "consumer": "Single-machine resident logits output selection, one or16active rows, Qwen3.5 vocabulary248320; finite S1 card shapes",
+  "scope": {
+    "rows": [
+      1,
+      16,
+      16
+    ],
+    "count": [
+      1,
+      1,
+      3
+    ],
+    "vocabulary": 248320
+  },
+  "source": "topk_bench.cc",
+  "sha256": "8c2aa70fac212c1d9590cec80602380e9cc8a601a68eb8eca763315087d497e4",
+  "peer_revision": "85bcfa4ebc29cc4d2ed5fb122074204aca675d58",
+  "source_boundary": {
+    "path": "../../evidence/architecture/inference-g08-output-selection-audit/p1-boundary.json",
+    "sha256": "45f6a6845f826ab2ed1a3d4272b529ba6fac08dffe332d22290ba573418b0fb4"
+  },
+  "limitation": "Frozen provisional output-selection consumer fragment. No measured full-engine frequency, logits upload in warm, categorical/RNG performance or engine token/s claim.",
+  "source_corrections": {
+    "path": "../../evidence/architecture/inference-g08-output-selection-audit/p1-adapter-source-corrections.json",
+    "sha256": "8b794a4ea4ce97ad2aee1faff342c29de91319f6e2e03b749b1ae94f07fbf3dc"
+  }
+}

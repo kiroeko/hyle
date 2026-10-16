@@ -1,0 +1,293 @@
+{
+  "schema": "hyle.inference-g08-source-red-team/v1",
+  "state": "SOURCE_REVIEW_PASS_FINAL_DELIVERY_PERFORMANCE_AND_ADAPTER_RUNTIME_REVIEW_PENDING",
+  "reviewer": "Separate final self-review phase after candidate freeze; not a second reviewer",
+  "baseline": "85bcfa4ebc29cc4d2ed5fb122074204aca675d58",
+  "candidate": "5103c13d8ed119b06aa64e799f9768aea45ab913",
+  "product_files_reviewed": 37,
+  "product_findings": [],
+  "checks": [
+    {
+      "area": "schema/RNG",
+      "sources": [
+        "include/hyle/compute/sampling_ops.h",
+        "src/compute_ops/sampling_ops.cc",
+        "third_party/random123_counter/philox.h"
+      ],
+      "conclusion": "Versioned custom IDs, dtype/rank/arity/dense/count/row/capacity inference and full64-bit caller key/draw addressing. No mutable RNG owner or implicit state advance. CPU/CUDA/Metal/GLSL implement the same fixed Philox words; native categorical ID equality is intentionally narrower than raw-word equality."
+    },
+    {
+      "area": "CPU validation/mapping/executor",
+      "sources": [
+        "src/compute_provider_native/sampling.cc",
+        "src/compute_provider_native/native_provider.cc"
+      ],
+      "conclusion": "Mapping alignment checked before typed access; host visibility/close/first-error paths retained. Every categorical row validates before outputs are mapped/written. Explicit overflow-checked row maxima plus1024-float tiles per existing bounded parallel task, F64 CDF accumulation. Original executor, no new workers/state owner."
+    },
+    {
+      "area": "CUDA lifetime/error/capacity",
+      "sources": [
+        "src/compute_provider_cuda/sampling_provider.cc",
+        "src/compute_provider_cuda/sampling_kernel.cu"
+      ],
+      "conclusion": "Fixed shape and PTRDIFF/I32/grid/workspace limits are checked cold; invocation borrows caller workspace. Queue status acquisition and original stream acceptance/retirement are retained. Validation/reduction finishes before status-guarded payload writes; launch return codes preserve an accepted prefix. External capture explicitly rejected; no new capture claim."
+    },
+    {
+      "area": "TopK stored values/order/cost",
+      "sources": [
+        "src/compute_provider_ggml/standard_index.cc",
+        "src/compute_provider_cuda/collectives.cu",
+        "src/compute_route_apple/apple_mature_indexing.cc",
+        "src/compute_route_vulkan/vulkan_sampling.cc"
+      ],
+      "conclusion": "CPU compares the original Entry key and copies original value bytes, with no V-entry scratch at K1. CUDA total-order/tie reduction uses reserved INT32_MAX sentinel and gathers source storage; full prior sort remains for other K. Apple integer IEEE keys preserve subnormal/zero/NaN order and original native values, including the affected K>1 key path. Vulkan dense last-axis F32 uses original invocation-owned8-byte partial pairs and two dispatches. Timing/parity remains UNPROVEN."
+    },
+    {
+      "area": "Apple validation/zero/native owners",
+      "sources": [
+        "src/compute_route_apple/apple_sampling.cc",
+        "src/compute_route_apple/apple_tensor.cc"
+      ],
+      "conclusion": "Flat native index/grid capacity bounded; zero domains return typed empty arrays. All-invalid/NaN/+Inf input carries checked status on both published ports; safe internal arrays may compute but failed submissions cannot yield a usable lease. Public Context/Invocation/array ownership unchanged; empty Binary fix runs only after schema/floating-domain checks."
+    },
+    {
+      "area": "Vulkan byte origins/status/ports",
+      "sources": [
+        "src/compute_route_vulkan/shaders/sampling.comp",
+        "src/compute_route_vulkan/vulkan_sampling.cc",
+        "src/compute_route_vulkan/vulkan_pipeline.cc",
+        "src/compute_route_vulkan/vulkan_device.cc",
+        "src/graph_route_vulkan/vulkan_lowering.cc"
+      ],
+      "conclusion": "Native descriptor_buffer rounds prefix+payload to buffer_capacity and rejects an insufficient padded range; byte-origin loads use that original checked path. Output ports are independent padded owners. Group/scratch limits checked, status dispatches ordered through original barriers/fence; no shaderInt64/Float64 requirement or host payload read. Graph changes are finite schema/arity whitelists."
+    },
+    {
+      "area": "Mem integration",
+      "sources": [
+        "include/hyle/mem/system_inline.h",
+        "src/mem/system.cc"
+      ],
+      "conclusion": "Both over-aligned free paths call mi_free_aligned, retaining actual allocation-page identity when an aligned request crosses a small-page boundary. Natural<=16-byte path unchanged. Existing public regressions, host facets and13current SDK passes provide actual execution coverage; remaining SDK configurations still pending."
+    },
+    {
+      "area": "consumer/documentation boundaries",
+      "sources": [
+        "docs/user/compute.md",
+        "docs/user/apple-compute.md",
+        "docs/user/vulkan-compute.md"
+      ],
+      "conclusion": "Documents raw counter addressing versus native categorical replay, caller state/temperature/filter/token policy, checked completion, native limits, temporary allocation/wait and no new capture/engine token/s claim. G09/G10/CLI and old G04/G05 evidence untouched."
+    },
+    {
+      "area": "dependency/header/selector ownership",
+      "sources": [
+        "cmake/HyleComponents.cmake",
+        "cmake/HyleDependencyLock.json",
+        "scripts/validation-policy.json",
+        "src/compute_ops/CMakeLists.txt"
+      ],
+      "conclusion": "Adds one sampling_ops public header to the existing compute_ops factor, fixed Random123 in-tree lock and BSD3 license/NOTICE install, and one vendored_input_owners mapping. No new factor/component graph edge, tool algorithm/statistics rewrite or native dependency version change. License file hashes match the lock."
+    }
+  ],
+  "benchmark_findings": {
+    "record": "p1-adapter-source-corrections.json",
+    "sha256": "8b794a4ea4ce97ad2aee1faff342c29de91319f6e2e03b749b1ae94f07fbf3dc",
+    "summary": "Before any workload build/sample, fixed clean peer Git binding and Apple original indexing dispatch isolation. Actual linking, numerical oracle, A/A/orders/placement/controls/P1 remain required."
+  },
+  "loc": {
+    "path": "loc-final.json",
+    "sha256": "cf5992c6bcd14898a4318cb3d3632a061889085d538faa53b75ac29788b246ab",
+    "note": "Unified tool at immutable8349757: eight CANDIDATE owners; product include/src/third_party/cmake bytes match5103. Not a manual sum or engine LOC estimate."
+  },
+  "raw": {
+    "path": "red-team-source-checkpoint-raw.zip",
+    "sha256": "b6d5bab39b402838dbe9a1016fdecbf54645d1cd76e9dc014094f763bc4ba8e7",
+    "bytes": 147574
+  },
+  "inputs": [
+    {
+      "path": "include/hyle/compute/sampling_ops.h",
+      "sha256": "887faba6ebe6249a0e2f766e2ea4b6bd83900bcf1e85165ad55e3e9be18528da"
+    },
+    {
+      "path": "include/hyle/graph/vulkan.h",
+      "sha256": "2bed7d4b76f28f1e96c170a7ebb077f8aa5246ac2fc2906b2dc0e9b64b4c236f"
+    },
+    {
+      "path": "include/hyle/mem/system_inline.h",
+      "sha256": "d890fe66b1a83a5f1a8f2b22c368276e7b3fadcfd0946df5279692ce055164f1"
+    },
+    {
+      "path": "src/compute_ops/CMakeLists.txt",
+      "sha256": "bcf4b29d9524a9d8d6e0cce1f4babcabd4a18e78679e0bb3f4710db8a4c8dc4a"
+    },
+    {
+      "path": "src/compute_ops/sampling_ops.cc",
+      "sha256": "b0bed8e183d819f67cd93eeb33466b8d8f36e4849dfb5aec33c4b8ffe26c14d1"
+    },
+    {
+      "path": "src/compute_provider_cuda/CMakeLists.txt",
+      "sha256": "0c65ba397c6240b9377cc18032eb387ff29593e8f6a949aa13050882229aab1b"
+    },
+    {
+      "path": "src/compute_provider_cuda/collectives.cu",
+      "sha256": "ef401e862ab615d24c94d82bec9420a09ce8c82399407756538c1c6a93de0017"
+    },
+    {
+      "path": "src/compute_provider_cuda/cuda_provider.cc",
+      "sha256": "b0e0642b0ae9d978f47f21f87e15d6b63662bdab42229472d92a602f373e8252"
+    },
+    {
+      "path": "src/compute_provider_cuda/sampling_kernel.cu",
+      "sha256": "24e860e3c1c6e5cfbe2e43c559179bb22475e36baf62f7eddf3858704a788787"
+    },
+    {
+      "path": "src/compute_provider_cuda/sampling_kernel.h",
+      "sha256": "36f9c472e3860696a91a2ed01f1819782c5bd97fd279a4b29f33c0ce7b70b585"
+    },
+    {
+      "path": "src/compute_provider_cuda/sampling_math.cuh",
+      "sha256": "7a6cac25bec6b727c1403c6f0da32d9a03e7aaae585a25d46dde2a29e428eb71"
+    },
+    {
+      "path": "src/compute_provider_cuda/sampling_provider.cc",
+      "sha256": "de5d9c56fb0cffbadfd12555fbd181fad44e6e5e7ef1c71e940b0a5bd8016d4e"
+    },
+    {
+      "path": "src/compute_provider_cuda/sampling_provider.h",
+      "sha256": "7c0a1729682fec9043e7f7b10ea40deb18c1f24475377844036da07848466577"
+    },
+    {
+      "path": "src/compute_provider_ggml/standard_index.cc",
+      "sha256": "93ec25752e1dd62efed1f036513c5f4a53c29ef93f9d8c7e0fcf776b05a787ce"
+    },
+    {
+      "path": "src/compute_provider_native/CMakeLists.txt",
+      "sha256": "028327ac406651c8bb3aaf726fa899c3793474a857f470f6aa7b11e0c657588f"
+    },
+    {
+      "path": "src/compute_provider_native/native_plan.h",
+      "sha256": "54e9d973eed41bce2800b39806f6a475a3774ac305805765930b48657d028a22"
+    },
+    {
+      "path": "src/compute_provider_native/native_provider.cc",
+      "sha256": "985e51c2d35718a52124af47072dacb95706624930168f4b2c5e7d55903bedae"
+    },
+    {
+      "path": "src/compute_provider_native/sampling.cc",
+      "sha256": "01b808c627eef131d38f3bfdb3de003df3a37725c5670581e4fd71fbfef2ba0b"
+    },
+    {
+      "path": "src/compute_route_apple/CMakeLists.txt",
+      "sha256": "d0b5398a3b2c48c5de8aee486cb9b5ccb75c489482c14969db493eb16f06bdeb"
+    },
+    {
+      "path": "src/compute_route_apple/apple_context.cc",
+      "sha256": "46b4c5bbf6a66bddfa8059d6a8648240244a21035cce20be2d4d2640edd07f43"
+    },
+    {
+      "path": "src/compute_route_apple/apple_mature_indexing.cc",
+      "sha256": "6941cfd9d1b6038c1111e5407e0820b702cd3605936209fc9ed1480dfc0df907"
+    },
+    {
+      "path": "src/compute_route_apple/apple_sampling.cc",
+      "sha256": "be2fa55f69d4dcd35143679a7876d6449a178051d843cc3a95e7d329ed3c53d5"
+    },
+    {
+      "path": "src/compute_route_apple/apple_sampling_math.h",
+      "sha256": "673968cccd521956486bbd746645a7757b1cb97b26e9e7046f446656f2277e10"
+    },
+    {
+      "path": "src/compute_route_apple/apple_tensor.cc",
+      "sha256": "bd828b715b28a453c83f995a3de78ced688d68692b8c8604ec10751daf8bc313"
+    },
+    {
+      "path": "src/compute_route_apple/apple_tensor.h",
+      "sha256": "fd8045747e21d86b961e528e2b6c483e2d57153b8d7e7bc153dd351acf5ab13a"
+    },
+    {
+      "path": "src/compute_route_vulkan/CMakeLists.txt",
+      "sha256": "2c98619efbc9935c1a3f4d6b64cac820d18ab2d85f133424279e206d688da8ce"
+    },
+    {
+      "path": "src/compute_route_vulkan/build_shaders.py",
+      "sha256": "1efd30ee4fc1190fbd8894683406ca890b09f2d511d9dd5d9ca388b9b2780821"
+    },
+    {
+      "path": "src/compute_route_vulkan/shaders/sampling.comp",
+      "sha256": "68f4bf7a7313f22115d773426dd5e8bcd14c70b567164ea8ed06a3b8c5101478"
+    },
+    {
+      "path": "src/compute_route_vulkan/shaders/sampling_math.glsl",
+      "sha256": "df80378019a18a6ae8ce369bdd18a74782e72e980eaa8d392e238cf3a76b1318"
+    },
+    {
+      "path": "src/compute_route_vulkan/vulkan_operations.cc",
+      "sha256": "399a5d194b45d7cf97d3d8ae24a080d47592004c27c08b90ed8cc4bb339d3f44"
+    },
+    {
+      "path": "src/compute_route_vulkan/vulkan_program.cc",
+      "sha256": "e795f7aeeeea4f210a88d0d000c95d60fd24491a402fb82e65f66dece7de1902"
+    },
+    {
+      "path": "src/compute_route_vulkan/vulkan_program_internal.h",
+      "sha256": "88484845f91919d31a9b24b6807e90a4c6e4447261d8c543b38ef3f121cf2414"
+    },
+    {
+      "path": "src/compute_route_vulkan/vulkan_region.cc",
+      "sha256": "886f2e8a70dd4d3998e2815b86c2e652aa9cb8db3aa3de2342909b1ce931f73b"
+    },
+    {
+      "path": "src/compute_route_vulkan/vulkan_run.cc",
+      "sha256": "4e39ed74ffec1386c1c9cc3ad4b1f2270e1ba8b3dd097f3f8e86115124701ff9"
+    },
+    {
+      "path": "src/compute_route_vulkan/vulkan_sampling.cc",
+      "sha256": "c402ff9fdbd47e44ca2735dffda564e5ce8970db6a9996afb1624eb62d051a3e"
+    },
+    {
+      "path": "src/graph_route_vulkan/vulkan_lowering.cc",
+      "sha256": "f5caf743bf93b3fe23e0d97b02d1ab4ffe8ccf854df87c6300fbaf3414312ec5"
+    },
+    {
+      "path": "src/mem/system.cc",
+      "sha256": "1ef412d722386d04f3fb8d6b9caf7835c9d5b5644c1edf60e8e2c66f36b8565f"
+    },
+    {
+      "path": "third_party/random123_counter/LICENSE",
+      "sha256": "5fd0885ab205878bd90c19144677286252eb9b988c1545a3a910edfe1e27b6df"
+    },
+    {
+      "path": "third_party/random123_counter/NOTICE.md",
+      "sha256": "af105c0b38b45cd3c41848058b56bbb38e86907acc56f51ae740556d7150a87b"
+    },
+    {
+      "path": "third_party/random123_counter/philox.h",
+      "sha256": "1fe1633555aba8dba18c4ebe6141bd4615b3c73787c0b166a4c0f2cf96569b79"
+    },
+    {
+      "path": "cmake/HyleComponents.cmake",
+      "sha256": "9ecd0235fa3078046b9d0cd3edaed69f525a02b65d8cf90c811aca886f237b99"
+    },
+    {
+      "path": "cmake/HyleDependencyLock.json",
+      "sha256": "b972666affe72bbb1a41626dc8ab8ba218811ee5d8bda055c7d4a4ee38dd5df3"
+    },
+    {
+      "path": "scripts/validation-policy.json",
+      "sha256": "25f67091418668e6b75d3f1f35547b7aad4d5763a3dd03c831f11271e9e02a99"
+    }
+  ],
+  "remaining": [
+    "Four adapters actual build/link/numerical preflight, including original Apple indexing symbol binding",
+    "All remaining SDK/source delivery configurations and targeted retained WSL source resume",
+    "Same-workload A/A, both execution/allocation orders, placement, standard controls and fixed n15/31 P1",
+    "Final evidence/SDK/performance review, seven gates and questions, documentation/state/selector checks"
+  ],
+  "scope": "Finite S1-S4/M1 source review only, relying on already archived actual numerical/device/host evidence. No new product change, risk rerun or complete red_team/engineering-performance/delivery verdict.",
+  "configuration_files_reviewed": [
+    "cmake/HyleComponents.cmake",
+    "cmake/HyleDependencyLock.json",
+    "scripts/validation-policy.json"
+  ]
+}
