@@ -1,0 +1,121 @@
+{
+  "schema": "hyle.inference-g07-apple-blocked-carrier/v1",
+  "state": "PASS_SOURCE_DEVICE_AND_HOST_FACETS_SDK_P1_PENDING",
+  "candidate": "91ae8e67faa028061d8f5e8e216310c827e024a3",
+  "source_snapshot": "66efefb42c176fe3ad026ae5755f4dc679101f7f",
+  "runs": [
+    {
+      "id": "g07-apple-source-d2",
+      "state": "SOURCE_TEST_PASS_RISKS_DELIVERY_PERF_PENDING",
+      "result_sha256": "65e2420b52b0e31465707f43501ae43fa8147b1bfd62dfe3c9d4f7c330a4abc9",
+      "tests": [
+        {
+          "path": "g07_existing_weight_consumers.xml",
+          "tests": 18,
+          "failures": 0
+        },
+        {
+          "path": "g07_graph_weight_consumers.xml",
+          "tests": 13,
+          "failures": 0
+        },
+        {
+          "path": "g07_joint_weight_consumer.xml",
+          "tests": 1,
+          "failures": 0
+        },
+        {
+          "path": "g07_packed_fp8.xml",
+          "tests": 2,
+          "failures": 0
+        }
+      ],
+      "elapsed_seconds": 44.428617583000005
+    },
+    {
+      "id": "g07-apple-device-risks-d2",
+      "state": "APPLE_DEVICE_VALIDATION_PASS",
+      "result_sha256": "a2f6ec61be18ed0666e416d94c67ccfe014fa124080e98b80c5a610d6e6f76af",
+      "tests": [
+        {
+          "path": "g07_existing_weight_consumers.xml",
+          "tests": 11,
+          "failures": 0
+        },
+        {
+          "path": "g07_packed_fp8.xml",
+          "tests": 2,
+          "failures": 0
+        }
+      ],
+      "elapsed_seconds": 20.794066417
+    },
+    {
+      "id": "g07-apple-host-asan-d2",
+      "state": "HOST_FACET_PASS",
+      "result_sha256": "91d62df2f95c54983d90b211efa606e2a96c08cfd2b52a175f1b21a058adaae7",
+      "tests": [
+        {
+          "path": "tests.xml",
+          "tests": 2,
+          "failures": 0
+        }
+      ],
+      "elapsed_seconds": 15.561813375
+    },
+    {
+      "id": "g07-apple-host-ubsan-d2",
+      "state": "HOST_FACET_PASS",
+      "result_sha256": "a9761c652be03ac9271fe67c3916a8c6f869a38a991f4712f9ad77db2e9d947c",
+      "tests": [
+        {
+          "path": "tests.xml",
+          "tests": 2,
+          "failures": 0
+        }
+      ],
+      "elapsed_seconds": 12.97441575
+    },
+    {
+      "id": "g07-apple-host-tsan-d2",
+      "state": "HOST_FACET_PASS",
+      "result_sha256": "0d2deccc722aa59f5ad1e6b8394ec199a5430f5a9579cc3d944764e3abb9876e",
+      "tests": [
+        {
+          "path": "tests.xml",
+          "tests": 2,
+          "failures": 0
+        }
+      ],
+      "elapsed_seconds": 14.537284042
+    }
+  ],
+  "product_input_count": 1108,
+  "product_manifest": {
+    "archive_entry": "g07-apple-source-d2/input-manifest.json",
+    "sha256": "f2acbbe67cd47b507cd94e7c82ed1cc390f7375d0785c7f07800dc7279689d0d"
+  },
+  "raw_archive": {
+    "path": "raw.zip",
+    "sha256": "ce9de482fb652fff2ee725eb0e715a733adaf320bd7110e9abb5e0c47e38ad5b"
+  },
+  "change": "One fixed source-derived MLX64x32x32 four-SIMDgroup carrier for M>16; existing16x16 for M<=16. Same F32 block128 math, scale order, packed storage, API, owner and completion. Large threadgroup scratch12KiB; small4KiB; no full decoded global bank.",
+  "native_reference": {
+    "revision": "1f8e74e3f12f31365464a6867c6579f0e9b29d85",
+    "files": [
+      {
+        "path": "mlx/backend/metal/matmul.cpp",
+        "sha256": "84d49f069d2538bf727b6af32df812a76bfff142c132d2a70f6abc7475d904fb"
+      },
+      {
+        "path": "mlx/backend/metal/kernels/steel/gemm/mma.h",
+        "sha256": "9b37709de40c3acaa5411875e52c8d26e6de093261741f671fbdab9c39a852b7"
+      }
+    ]
+  },
+  "limits": [
+    "Both earlier qualified M64 material losses and cumulative1128.351seconds retained; D2 same-contract P1 pending.",
+    "CUDA product/ordinary+SDK+risk evidence unchanged; its finite second qualification tracked separately.",
+    "Host sanitizer facets do not certify shader/driver/private pools."
+  ]
+}

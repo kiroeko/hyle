@@ -1,6 +1,6 @@
 # G07 packed 权重消费与 checked selection
 
-状态：**2026-10-16，CUDA b483 CANDIDATE；Apple按D1合格回退AUDITED；G07–G10 goal ACTIVE**。G01–G06已告一段落，
+状态：**2026-10-16，CUDA b483/Apple D2 91ae CANDIDATE；CUDA批量性能门失败保留；G07–G10 goal ACTIVE**。G01–G06已告一段落，
 本卡不重开它们。原baseline为 `a638938b783b6fdae57e83f572aa0427d7188e7f`；
 产品输入保持完整 `669121418669b31f6849c74f64362aaf8d6eb919`。
 当前施工 owner 仅 `compute_provider_torch_cuda`、`compute_route_apple`，从各自 CLOSED
@@ -350,3 +350,16 @@ D2产品实现为`91ae8e67faa028061d8f5e8e216310c827e024a3`，当前仍AUDITED�
 [D2静态费用](../../../../evidence/architecture/inference-g07-packed-weight-audit/p0-d2.json)
 绑定91ae实际源码，更新两种固定tile的staging、源码操作计数与原费用/UNKNOWN复用边界；
 这些计数不是缓存流量、实际峰值或速度测量，不能替代D2实机与P1。
+
+### CUDA第二轮完整裁决与Apple D2普通门
+
+[CUDA第二轮](../../../../evidence/performance/inference-g07-cuda-packed-attempt-2/receipt.json)
+为QUALIFIED、verify0，A/A及全部controls通过；n15×8组合的M1吞吐比24.450–24.730、WIN/PASS，
+M64比0.936–0.966、聚合方向INCONCLUSIVE、5%门FAIL。不是无资格计时，也不把未决方向写成
+稳定LOSS或parity；1066.905秒、连原失败累计1144.004秒保留。需有限审计批量权重解码/行复用
+成本；审计前CUDA产品仍为b483不可变，不再调整104轮harness或追加旧候选采样。
+
+[Apple D2源码与风险](../../../../evidence/correctness/inference-g07-apple-blocked-d2/receipt.json)
+的20Direct、13Graph、65步联合/公开消费、Metal13项、三hostsan各2项均通过，冻结91ae。
+仅两份新迁址SDK、原两形状同合同P1及最终聚合待做；D1及首版的合格M64 LOSS全部保留。
+CUDA/W1未变输入复用，G08–G10仍未开始；没有新增产品域或完整引擎吞吐结论。
