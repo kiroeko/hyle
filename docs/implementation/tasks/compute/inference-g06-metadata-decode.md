@@ -558,3 +558,19 @@ canonical输入、原command/deps与artifact SHA复用。完整调查/编辑耗�
 实际capture/replay、最终适用san/独立头/迁址static/shared与性能仍必做。FI保持AUDITED；
 G04/G05原CUDA prefill非劣UNRESOLVED、精确归因UNKNOWN及原失败/费用继续保留。
 完成项仍为G01/G02/G03共3/10；G06按整体实施工作量粗估约65%，不据此外推剩余时间。
+
+## D7 capture/replay：SCOPED
+
+[真实consumer与两个内部接缝定界](../../../../evidence/architecture/inference-g06-capture-replay-intake/intake.json)
+绑定e7342dde8e37141fac1efa9128806b0abd4f19a4。原G03 terminal允许新的实际consumer需求
+触发scope；compute与graph由CLOSED合法重开SCOPED，原G03有限范围、候选/费用/失败
+作为baseline保留，不由本次新需求倒销。其它三个owner仍在本卡AUDITED，但capture
+新FIX只在本批审计完成后实施。原backend/普通Graph capture/reset算法和native数学不改。
+
+实际缺口：原command capture只接收QueueSequence，原Graph region已准入callback只有
+Queue；cold RegionAccess只暴露slot而没有当前ports。重复起sequence/新Completion或只开
+capture标志均不成立。拟借原捕获对象与Queue/Completion，在显式cold准备记录，按实际
+native plan及storage identity复用；每次执行仍准入当前Q/KV/页，idle捕获对象不持输入
+读权限。Graph reset仍按原算法销毁其generic captures；batch opt-in对象自己保原命令。
+本段无新产品或capture PASS。Direct/Graph/CPU+GPU、pending及最终所有风险/三交付/P1
+保持完整目标；G04/G05未决不以capture代签，也不恢复旧候选测量搜索。

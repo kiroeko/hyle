@@ -1,0 +1,130 @@
+{
+  "kind": "G06_D7_CAPTURE_REPLAY_SCOPE",
+  "baseline": "e7342dde8e37141fac1efa9128806b0abd4f19a4",
+  "owners": [
+    "compute",
+    "graph",
+    "compute_batch",
+    "graph_batch",
+    "compute_provider_flashinfer"
+  ],
+  "closed_owners_before": [
+    {
+      "module": "compute",
+      "state": "CLOSED",
+      "record": "docs/implementation/tasks/compute/inference-g03-final-closure.md",
+      "summary": "G03 CLOSED finite admitted producer/update/Direct/Graph journeys. Four original and three required CPU+GPU routes qualified through public64, lifetime/host risks/source-static-shared; independent native source owners and true CPU+CUDA8 covered. Original native math/slots/queues reused, exact permissions and source errors retained. P0 bind allocations/checked waits/private UNKNOWN explicit; original G01/G02 whole-item gates and G04-G10 remain.",
+      "candidate": "11b2403e794b6eed2c89418d72b8c89aeaaac746",
+      "performance": {
+        "tier": "P0",
+        "evidence": "docs/implementation/tasks/compute/inference-g03-final-closure.md"
+      }
+    },
+    {
+      "module": "graph",
+      "state": "CLOSED",
+      "record": "docs/implementation/tasks/compute/inference-g03-final-closure.md",
+      "summary": "G03 CLOSED finite admitted producer/update/Direct/Graph journeys. Four original and three required CPU+GPU routes qualified through public64, lifetime/host risks/source-static-shared; independent native source owners and true CPU+CUDA8 covered. Original native math/slots/queues reused, exact permissions and source errors retained. P0 bind allocations/checked waits/private UNKNOWN explicit; original G01/G02 whole-item gates and G04-G10 remain.",
+      "candidate": "11b2403e794b6eed2c89418d72b8c89aeaaac746",
+      "performance": {
+        "tier": "P0",
+        "evidence": "docs/implementation/tasks/compute/inference-g03-final-closure.md"
+      }
+    }
+  ],
+  "reopen_trigger": {
+    "record": "docs/implementation/tasks/compute/inference-g03-final-closure.md",
+    "fact": "New actual consumer requirement allowed by G03 terminal: low-cost checked native batch capture reused across decode layout updates, with per-run page/input permission and original actual retirement."
+  },
+  "sources": [
+    {
+      "path": "include/hyle/compute/detail/command_capture.h",
+      "sha256": "6f40aeb2b44d2b0820e895bfb6667e0308c6dbb12ba4374571dbc076287aa6b0"
+    },
+    {
+      "path": "include/hyle/compute/detail/backend_extension.h",
+      "sha256": "0a67fcfb43e69f7106a2b4628442a74d14e9e18f0efe691109973b701d065cd4"
+    },
+    {
+      "path": "src/compute/device.cc",
+      "sha256": "7d4bc3d31a755ca57637f16571452d913fe46a7d7fb8258da0db6bc9f898c2cd"
+    },
+    {
+      "path": "src/compute/command_capture.cc",
+      "sha256": "ccc5a0a68cad14804d56ad4593a89f8dbbede87b748287e0014f9a824ab91433"
+    },
+    {
+      "path": "include/hyle/graph/detail/region_access.h",
+      "sha256": "ab9974ad248e491e47659c5020b0cdc337156cc42f7e24feb525ef0557bcfc13"
+    },
+    {
+      "path": "src/graph/region_access.cc",
+      "sha256": "54d981c5ec548232e2cbfbdeae6200775b0ca9d4721c106d3fcb0413c454df68"
+    },
+    {
+      "path": "src/graph/leased_invocation.cc",
+      "sha256": "d2e07eaa53072b6cae6f5182bb0c4590eac2ab5ed492c1c3aae2f2392bdc8260"
+    },
+    {
+      "path": "src/graph/executable.cc",
+      "sha256": "5514ae6bdf3548a356b2b04e8b12435e8625ba3debe6036641736a5ad5c5ab45"
+    },
+    {
+      "path": "include/hyle/compute/batch_execution.h",
+      "sha256": "3f60215aaa831ac0e15dd13b10fefbb7446705f152f5aaf069a00e4388cd3d59"
+    },
+    {
+      "path": "include/hyle/compute/detail/batch_provider.h",
+      "sha256": "73a7d76f9082c58cbf5826585220f63c6df8b1015d4c98225651529dbb52dd86"
+    },
+    {
+      "path": "include/hyle/compute/detail/batch_graph_access.h",
+      "sha256": "900b699f342fd9eb03dc1590bfb28a19ad8d7ab534a8a1c520833d8fa11b2520"
+    },
+    {
+      "path": "src/compute_batch/batch_execution.cc",
+      "sha256": "07df206d163931e65506891ac0261773e41a52a92f1c8f97d6302fa81d2e6d79"
+    },
+    {
+      "path": "src/graph_batch/batch.cc",
+      "sha256": "77e4532fe76124d83e3edc89f0d72b72626a2bcd3909ce96afee4dffb8ffa85a"
+    },
+    {
+      "path": "include/hyle/graph/batch.h",
+      "sha256": "ab0eb43aec5dfb4018ec81c55c885d07f5c8783fe1e1f9983f5def7fa92888b8"
+    },
+    {
+      "path": "src/compute_provider_flashinfer/flashinfer_provider.cc",
+      "sha256": "ac1d6492ee701bf02ca2767f19c85a9a74754a90f1318798a6d1141e5246f0a0"
+    }
+  ],
+  "peer_anchor_reuse": [
+    {
+      "name": "sglang",
+      "url": "https://raw.githubusercontent.com/sgl-project/sglang/7224fce1b5e488c9916f20ec0556d696e595d512/python/sglang/srt/layers/attention/flashinfer_backend.py",
+      "sha256": "a5649f67038153c35864b3f50d5c368071a56cbef75f266bec804dbf7e64363f",
+      "matched_fixed_intake": true
+    },
+    {
+      "name": "vllm",
+      "url": "https://raw.githubusercontent.com/vllm-project/vllm/98f721116227f0f48690deb05c815c057bac0668/vllm/v1/attention/backends/flashinfer.py",
+      "sha256": "343b949d62db7fc03f6ca0c682e1ec1cb60125461069b081ac1554b7a05214e9",
+      "matched_fixed_intake": true
+    }
+  ],
+  "peer_facts": [
+    "Fixed SGLang7224 host-known plan and prior real capture/native buffers refresh, lines203-260.",
+    "Fixed vLLM98f721 decode wrappers per graph batch, stable indptr/IDs/tails and tensor-core Q1, lines1310-1340. These support consumer shape, not HYLE lifetime/native-capture qualification."
+  ],
+  "consumer": "Original PreparedBatch -> checked Completion and original Graph/CPU+CUDA/pending batch journeys; fixed Q topology/schedule and stable actual storage, runtime KV offsets/IDs/tails updated through original F2 outside capture.",
+  "observed_gaps": [
+    "CapturedCommands launch only accepts a QueueSequence; the already-admitted original Graph region callback receives Queue. Nested QueueSequence/alternate Completion is invalid.",
+    "Cold RegionAccess visitor exposes actual slot identity but not current bound port views. Generic Graph reset discards its captures, so merely setting provider capture_compatible would recapture per batch and consume the one-use token during recording.",
+    "A capture must not retain idle input/page ReadLease permissions; producer writers need recovery each decode step. Actual replay must admit the current inputs/pages and retain the original slot/workspaces/capture artifact through original Completion."
+  ],
+  "scope": "Audit original command-capture borrowing and two cold/internal bridges plus opt-in batch replay owner. No native math/planner threshold, public queue worker/state, generic Graph capture/reset algorithms, or performance tooling changes. Actual kernel capturability remains unproven until source tests.",
+  "remaining": "Full G01-G10 goal intact,3/10 accepted. D6 ordinary source qualified; actual capture/final instrumented risks/sans/headers/static+shared/performance and original G04/G05 unresolved gates remain.",
+  "budget": "Audit/implementation/source checkpoints2h, finite automatic extensions per user preserving original failures/costs. Native math unchanged: no NVCC or vendor rebuild expected for new CXX bridges; guard before source build.",
+  "timestamp_utc": "2026-10-16T05:01:43.637706+00:00",
+  "elapsed": "Complete capture design/read-only intake wall time UNKNOWN, not zero."
+}
