@@ -1,0 +1,204 @@
+{
+  "state": "PASS_G06_GRAPH_PAGE_AND_POST_RECORD_ARTIFACT_OOM_CUDA_RISKS_ONLY",
+  "product_candidate": "669121418669b31f6849c74f64362aaf8d6eb919",
+  "source_snapshot": "51c34de91b2d5cfeed4a0c8ca2c8f552b917803a",
+  "record": "docs/implementation/tasks/compute/inference-g06-metadata-decode.md",
+  "provider": {
+    "tests": "24",
+    "failures": "0",
+    "disabled": "0",
+    "errors": "0",
+    "time": "15.859",
+    "timestamp": "2026-10-16T14:43:52.775",
+    "name": "AllTests"
+  },
+  "tests_and_modes": {
+    "hyle_compute_test": 107,
+    "hyle_graph_executable_test": 289,
+    "hyle_graph_test": 51,
+    "hyle_g06_risk_plain_ordinary": 5,
+    "hyle_g06_risk_plain_captured": 5,
+    "hyle_g06_risk_encoded_ordinary": 5,
+    "hyle_g06_risk_encoded_captured": 5
+  },
+  "artifact_recheck_count_bytes": "48 231780660",
+  "stages": [
+    {
+      "stage": "prepare-manifest",
+      "command": [
+        "ninja",
+        "-C",
+        "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/static-sdk-build",
+        "build.ninja"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 0.07209067799999502,
+      "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g06/final-risks-static-3/prepare-manifest.log"
+    },
+    {
+      "stage": "native-reuse-proof",
+      "command": [
+        "python3",
+        "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/ce28_shipping_native_reuse_wsl.py",
+        "static",
+        "g06-final-static-3"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 0.3699217439999529,
+      "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g06/final-risks-static-3/native-reuse-proof.log"
+    },
+    {
+      "stage": "build",
+      "command": [
+        "ninja",
+        "-C",
+        "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/static-sdk-build",
+        "-f",
+        "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g06/final-risks-static-3/preview.ninja",
+        "-j",
+        "2",
+        "-k",
+        "0",
+        "hyle_compute_provider_flashinfer_test",
+        "hyle_compute_test",
+        "hyle_graph_executable_test",
+        "hyle_graph_test",
+        "hyle_g06_risk_plain_ordinary",
+        "hyle_g06_risk_plain_captured",
+        "hyle_g06_risk_encoded_ordinary",
+        "hyle_g06_risk_encoded_captured"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 15.352991054999961,
+      "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g06/final-risks-static-3/build.log"
+    },
+    {
+      "stage": "cold-capture",
+      "command": [
+        "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/static-sdk-build/bin/hyle_compute_provider_flashinfer_test",
+        "--gtest_filter=FlashinferBatchReplay.ColdRecordAndRuntimeSchedule",
+        "--gtest_output=xml:/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g06/final-risks-static-3/cold-capture.xml"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 7.06355462099998,
+      "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g06/final-risks-static-3/cold-capture.log"
+    },
+    {
+      "stage": "hyle_compute_provider_flashinfer_test",
+      "command": [
+        "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/static-sdk-build/bin/hyle_compute_provider_flashinfer_test",
+        "--gtest_output=xml:/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g06/final-risks-static-3/provider.xml"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 15.92663820000007,
+      "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g06/final-risks-static-3/hyle_compute_provider_flashinfer_test.log"
+    },
+    {
+      "stage": "hyle_compute_test",
+      "command": [
+        "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/static-sdk-build/bin/hyle_compute_test"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 0.1258731049999824,
+      "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g06/final-risks-static-3/hyle_compute_test.log"
+    },
+    {
+      "stage": "hyle_graph_executable_test",
+      "command": [
+        "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/static-sdk-build/bin/hyle_graph_executable_test"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 0.6214982010000085,
+      "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g06/final-risks-static-3/hyle_graph_executable_test.log"
+    },
+    {
+      "stage": "hyle_graph_test",
+      "command": [
+        "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/static-sdk-build/bin/hyle_graph_test"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 0.27529261200004385,
+      "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g06/final-risks-static-3/hyle_graph_test.log"
+    },
+    {
+      "stage": "hyle_g06_risk_plain_ordinary",
+      "command": [
+        "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/static-sdk-build/bin/hyle_g06_risk_plain_ordinary"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 0.37712934099999984,
+      "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g06/final-risks-static-3/hyle_g06_risk_plain_ordinary.log"
+    },
+    {
+      "stage": "hyle_g06_risk_plain_captured",
+      "command": [
+        "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/static-sdk-build/bin/hyle_g06_risk_plain_captured"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 0.41983270399998673,
+      "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g06/final-risks-static-3/hyle_g06_risk_plain_captured.log"
+    },
+    {
+      "stage": "hyle_g06_risk_encoded_ordinary",
+      "command": [
+        "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/static-sdk-build/bin/hyle_g06_risk_encoded_ordinary"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 0.4732718909999676,
+      "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g06/final-risks-static-3/hyle_g06_risk_encoded_ordinary.log"
+    },
+    {
+      "stage": "hyle_g06_risk_encoded_captured",
+      "command": [
+        "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/static-sdk-build/bin/hyle_g06_risk_encoded_captured"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 0.5918008890000692,
+      "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g06/final-risks-static-3/hyle_g06_risk_encoded_captured.log"
+    }
+  ],
+  "outer_elapsed_seconds": 43.49704748700003,
+  "native_object_reuse": {
+    "state": "PASS_146_SHIPPING_OBJECTS_NATIVE_NINJA_NO_WORK",
+    "elapsed_seconds": 0.2912308899999516,
+    "build": "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/static-sdk-build",
+    "old_derived_source": "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/static-sdk-build/src/compute_ggml_runtime/source-c41bfd1864980360",
+    "new_derived_source": "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/static-sdk-build/src/compute_ggml_runtime/source-2f41ad48bddb8a44",
+    "original_manifest_sha256": "8e7284e7136991cca312a2767a08a504f6d7012653f18a0d7803836ea8dac0b5",
+    "reuse_manifest_sha256": "bdce0f9923bf98b04261363ee6a124cb7f1bfa8a4f2dd6f19755be3a612b1adb",
+    "verified_derived_inputs": 242,
+    "verified_canonical_inputs": 5,
+    "native_object_count": 146,
+    "original_object_checks": "Ninja validates original command identity and dependency freshness on old-source paths; no native compile is scheduled",
+    "scope": "Private build-local manifest maps only byte-identical ggml CUDA source/include paths and the precise unary object reference; all current CPU/FlashInfer/other product edges retained."
+  },
+  "qualification": [
+    "Static24 contains real plain/FP8 original CUDA artifact allocation failure after stream-end/instantiate, preserved ResourceExhausted message, failed slot rejection, independently owned fresh captured slot .25 oracle and metadata allocator return tozero. Original capture attribute and launch faults stillpass.",
+    "Fresh process cold-capture32x64, original core/Graph and nine LeaseSubmission tests, ordinary/captured plain/FP8 pending five-mode sets all pass withnewGraph admission.",
+    "Original static configuration/tree exactly reused, no CUDA recompilation; unchanged146 native objects independently verified. Original backend single-host-TU observation hook only, not shipping SDK."
+  ],
+  "prior_risk_evidence": {
+    "path": "evidence\\correctness\\inference-g06-final-cuda-risks\\receipt.json",
+    "sha256": "1610be074c37072b490dd0c0b93ed6ba27c1bf60e1dbe403e9ccde3e9ea9df0d",
+    "scope": "Original shared/static qualifications and original fixture FAIL/cumulative costs remain; changedGraph/static24 supplemental risk actually rerun here."
+  },
+  "limits": [
+    "Not shipping SDK/header/P1/fullG06 acceptance; applicable host sanitizer receipts separate.",
+    "Graph source changes only; FI/native/backend mathematics unchanged. Original G04/G05 performance unresolved and private/driver cost UNKNOWN remain.",
+    "Stage/outer costs overlap; unmeasured investigation/edit/launch cost UNKNOWN."
+  ],
+  "raw_sha256": "b6e5bfc2c42ee565c1bdfd6f8160827eafde3db16232cf6f9135b12b7f3734f0",
+  "timestamp_utc": "2026-10-16T06:44:39.789226+00:00",
+  "count_clarification": {
+    "original_shared1_core_tests": 108,
+    "original_static2_core_tests": 107,
+    "current_static3_core_tests": 107,
+    "shared_only_case": "OwnedResult.ProducerDsoOwnsDestructionAfterConsumerLeaseOutlivesSubmission",
+    "reason": "Original shared-only DSO lifetime test is not compiled for static linkage. Old summary used108 generically; raw static2 and static3 sets are exactly equal, no test dropped."
+  },
+  "packer_failure": {
+    "state": "FAILED_BEFORE_CANONICAL_PUBLICATION",
+    "reason": "Initial private packer treated WSL /mnt/c log paths as Windows absolute paths; only mapping to the same retained local log filenames was corrected. No product or test rerun.",
+    "elapsed_seconds": null
+  }
+}

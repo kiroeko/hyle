@@ -1,0 +1,211 @@
+{
+  "state": "PASS_HOST_ASAN_FACET_ONLY",
+  "product_candidate": "669121418669b31f6849c74f64362aaf8d6eb919",
+  "source_snapshot": {
+    "head": "51c34de91b2d5cfeed4a0c8ca2c8f552b917803a",
+    "product_candidate": "669121418669b31f6849c74f64362aaf8d6eb919"
+  },
+  "record": "docs/implementation/tasks/compute/inference-g06-metadata-decode.md",
+  "identity": {
+    "host": "Linux kiro-workstation 6.18.54.1-microsoft-standard-WSL2 #1 SMP PREEMPT_DYNAMIC Tue Oct  6 19:13:07 UTC 2026 x86_64 x86_64 x86_64 GNU/Linux",
+    "compiler": "g++-14 (Ubuntu 14.2.0-4ubuntu2~24.04.1) 14.2.0\nCopyright (C) 2024 Free Software Foundation, Inc.\nThis is free software; see the source for copying conditions.  There is NO\nwarranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.",
+    "cuda": "nvcc: NVIDIA (R) Cuda compiler driver\nCopyright (c) 2005-2026 NVIDIA Corporation\nBuilt on Tue_Jun_09_02:43:40_PM_PDT_2026\nCuda compilation tools, release 13.3, V13.3.73\nBuild cuda_13.3.r13.3/compiler.38244171_0",
+    "gpu": "NVIDIA GeForce RTX 4070, GPU-e7376560-6f5d-ec19-6ee4-3dd3a2c81ef8, 617.14, 12282 MiB"
+  },
+  "tests": {
+    "tests.xml": {
+      "tests": "19",
+      "failures": "0",
+      "disabled": "0",
+      "errors": "0",
+      "time": "17.736",
+      "timestamp": "2026-10-16T14:29:55.981",
+      "name": "AllTests"
+    },
+    "core.xml": {
+      "tests": "272",
+      "failures": "0",
+      "disabled": "0",
+      "errors": "0",
+      "time": "27.891",
+      "timestamp": "2026-10-16T14:30:15.145",
+      "name": "AllTests"
+    }
+  },
+  "risk_modes": {
+    "five-risk-modes": 5,
+    "g06_risk_plain": 5,
+    "g06_risk_encoded": 5
+  },
+  "public_capture_consumers": [
+    "g06_capture_public",
+    "g06_capture_hybrid",
+    "g06_capture_pending"
+  ],
+  "artifact_recheck_count_bytes": "9 805364060",
+  "stages": [
+    {
+      "stage": "configure",
+      "command": [
+        "cmake",
+        "-S",
+        "/root/hyle-scratch/compute-unified/foundation-f5-native-host-cuda-asan/parent",
+        "-B",
+        "/root/hyle-scratch/compute-unified/foundation-f5-native-host-cuda-asan/build",
+        "-UCMAKE_PROJECT_TOP_LEVEL_INCLUDES",
+        "-DCMAKE_PROJECT_INCLUDE=/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g06/final-host-asan-5/targets.cmake",
+        "-DHYLE_BUILD_TESTS=OFF",
+        "-DHYLE_BUILD_BENCH=OFF",
+        "-DHYLE_INSTALL=OFF"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 54.290405048,
+      "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g06/final-host-asan-5/configure.log"
+    },
+    {
+      "stage": "prepare-manifest",
+      "command": [
+        "ninja",
+        "-C",
+        "/root/hyle-scratch/compute-unified/foundation-f5-native-host-cuda-asan/build",
+        "build.ninja"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 0.07605104699999998,
+      "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g06/final-host-asan-5/prepare-manifest.log"
+    },
+    {
+      "stage": "compile",
+      "command": [
+        "cmake",
+        "--build",
+        "/root/hyle-scratch/compute-unified/foundation-f5-native-host-cuda-asan/build",
+        "--target",
+        "g04_cuda_encoded_host_tests",
+        "g04_cuda_encoded_host_risks",
+        "g06_core_host_tests",
+        "g06_capture_public",
+        "g06_capture_hybrid",
+        "g06_capture_pending",
+        "g06_risk_plain",
+        "g06_risk_encoded",
+        "--parallel",
+        "2"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 83.69028141700001,
+      "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g06/final-host-asan-5/compile.log"
+    },
+    {
+      "stage": "tests",
+      "command": [
+        "/root/hyle-scratch/compute-unified/foundation-f5-native-host-cuda-asan/build/hyle/g04_cuda_encoded_host_tests",
+        "--gtest_output=xml:/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g06/final-host-asan-5/tests.xml"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 18.190865615000007,
+      "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g06/final-host-asan-5/tests.log"
+    },
+    {
+      "stage": "five-risk-modes",
+      "command": [
+        "/root/hyle-scratch/compute-unified/foundation-f5-native-host-cuda-asan/build/hyle/g04_cuda_encoded_host_risks"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 0.9888365719999967,
+      "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g06/final-host-asan-5/five-risk-modes.log"
+    },
+    {
+      "stage": "g06_core_host_tests",
+      "command": [
+        "/root/hyle-scratch/compute-unified/foundation-f5-native-host-cuda-asan/build/hyle/g06_core_host_tests",
+        "--gtest_output=xml:/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g06/final-host-asan-5/core.xml"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 28.253105953000016,
+      "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g06/final-host-asan-5/g06_core_host_tests.log"
+    },
+    {
+      "stage": "g06_capture_public",
+      "command": [
+        "/root/hyle-scratch/compute-unified/foundation-f5-native-host-cuda-asan/build/hyle/g06_capture_public"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 0.668268721000004,
+      "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g06/final-host-asan-5/g06_capture_public.log"
+    },
+    {
+      "stage": "g06_capture_hybrid",
+      "command": [
+        "/root/hyle-scratch/compute-unified/foundation-f5-native-host-cuda-asan/build/hyle/g06_capture_hybrid"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 1.1931729700000062,
+      "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g06/final-host-asan-5/g06_capture_hybrid.log"
+    },
+    {
+      "stage": "g06_capture_pending",
+      "command": [
+        "/root/hyle-scratch/compute-unified/foundation-f5-native-host-cuda-asan/build/hyle/g06_capture_pending"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 0.6924544160000039,
+      "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g06/final-host-asan-5/g06_capture_pending.log"
+    },
+    {
+      "stage": "g06_risk_plain",
+      "command": [
+        "/root/hyle-scratch/compute-unified/foundation-f5-native-host-cuda-asan/build/hyle/g06_risk_plain"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 0.692563290999999,
+      "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g06/final-host-asan-5/g06_risk_plain.log"
+    },
+    {
+      "stage": "g06_risk_encoded",
+      "command": [
+        "/root/hyle-scratch/compute-unified/foundation-f5-native-host-cuda-asan/build/hyle/g06_risk_encoded"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 1.039492432000003,
+      "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g06/final-host-asan-5/g06_risk_encoded.log"
+    }
+  ],
+  "cumulative_seconds": 189.77549748200005,
+  "failed_attempts": [],
+  "prior_facet_evidence": {
+    "path": "evidence\\correctness\\inference-g06-final-host-asan\\receipt.json",
+    "sha256": "3920a7a22b1273c515e4e094fc1da02d7d04bef71715609ae77864f70a479ef7",
+    "scope": "Original0a29 host facet and failure/cost history retained; changed Graph facet actually rerun here."
+  },
+  "instrumentation": "All affected compute, graph, graph_batch, batch, joint route, CPU provider and FI native host TUs verified with the original per-mode sanitizer; exact checked commands are archived. Only the unchanged original ggml CUDA native archive is imported after 242 derived and5 canonical inputs plus exact archive SHA verification.",
+  "reused_native_current_inputs": {
+    "derived_root": "/root/hyle-scratch/compute-unified/foundation-f5-native-host-cuda-asan/build/hyle/src/compute_ggml_runtime/source-2f41ad48bddb8a44",
+    "derived_verified": 242,
+    "canonical_verified": 5,
+    "archive_sha256": "f0f900aee245acf47cc5d5862d1237c4939e3fac32fb6a16f5220c46ebe9b4d5"
+  },
+  "environment": {
+    "ASAN_OPTIONS": "halt_on_error=1:protect_shadow_gap=0:detect_leaks=0",
+    "UBSAN_OPTIONS": "halt_on_error=1:print_stacktrace=1",
+    "TSAN_OPTIONS": "halt_on_error=1:report_thread_leaks=0"
+  },
+  "previous_f5_sanitizer_scope": {
+    "asan_configuration": {
+      "ASAN_OPTIONS": "halt_on_error=1:protect_shadow_gap=0:detect_leaks=0",
+      "reason": "NVIDIA-required CUDA shadow-gap compatibility independently proved with no-HYLE control; address-access gate separate from LSan. Original LSan FAIL retained and native vendor reports not called PASS.",
+      "reference": "https://docs.nvidia.com/rapidsmpf/latest/getting-started/"
+    },
+    "lsan_verdict": "INCONCLUSIVE_NATIVE_VENDOR_REPORTS: public HYLE 2320 bytes/8 allocations exactly reproduced by no-HYLE CUDA/NVML init/query/shutdown/dlclose; not whole-process LSan PASS",
+    "verdict": "PASS_F5_ACTUAL_CUDA_HOST_ASAN"
+  },
+  "limits": [
+    "Host instrumentation only; no shader/driver/private-pool byte certificate",
+    "ASan address facet only; original NVIDIA process LSan remains INCONCLUSIVE",
+    "TSan data races only; original independently reproduced NVIDIA diagnostic-thread lifetime remains INCONCLUSIVE",
+    "Source risk observation hook in one backend host TU; not shipping SDK qualification",
+    "Not device/shader instrumentation, shipping SDK/header/P1 or final G06 acceptance. Original failures/cost retained; cumulative stage cost excludes unmeasured investigation/edit/launch cost."
+  ],
+  "raw_sha256": "4cbf1f35d0b0dc314f57dd6cdfd965271b205407a7679c1931bc5451a1404cfe",
+  "timestamp_utc": "2026-10-16T06:44:24.668315+00:00"
+}

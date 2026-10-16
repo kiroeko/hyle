@@ -765,3 +765,28 @@ Graph合法AUDITED→CANDIDATE绑定669，其余10个owner仍绑定各自未改�
 本轮产品快照用669；此前0a29 source/host证据只对未变输入复用。新Graph按原缓存增量补
 ASan/UBSan，不触发CUDA重编；TSan的首个G06资格仍允许原D6/D7两FI TU按原预算编译。
 补充post-record OOM、实际CUDA Graph与最终四路线SDK/23头/P0/必要P1/红队/LOC继续待。
+
+### 当前候选三项 host sanitizer 与补充 CUDA 故障通过
+
+产品669未再变化。[ASan](../../../../evidence/correctness/inference-g06-graph-page-host-asan/receipt.json)、
+[UBSan](../../../../evidence/correctness/inference-g06-graph-page-host-ubsan/receipt.json)、
+[TSan](../../../../evidence/correctness/inference-g06-graph-page-host-tsan/receipt.json)
+各291项测试（native/common19＋含LeaseSubmission9的core272）、15个实际故障模式、
+public Direct/Graph、CPU+CUDA与pending capture消费者全部通过，零失败/跳过。
+ASan/UBSan分别增量build83.690/55.061s且零CUDA重编，全部stage189.775/150.906s；
+TSan首次本轮资格build415.876s（原两FI TU）、全部stage569.754s。三个配置的8实际binary
+与原native archive各重核，共805364060/626144640/512897714bytes，242派生＋5 canonical
+与同san/archive identity继续通过。原NVIDIA LSan、diagnostic-thread lifetime及private
+限制不由这些facet代签；原失败/费用/未测调查成本保留。
+
+[static补充故障及Graph实际源码批](../../../../evidence/correctness/inference-g06-graph-page-cuda-risks/receipt.json)
+原配置复用、零CUDA重编，build15.353s。provider24全过：新增plain/FP8真实stream-end/
+instantiate后的artifact metadata OOM检查原ResourceExhausted、失败slot拒用、独立新slot
+capture/run的.25 oracle与metadata归零；原录制/启动fault仍过。独立fresh-process32×64
+cold capture、compute107、Graph执行289/Graph51与四个pending target各五模式通过。
+原shared108比static107多唯一DSO销毁寿命case，static2与static3原始测试集合完全相同，
+此前泛称108在此澄清。48个实际artifact共231780660bytes重核；初次私有封存器WSL日志
+路径映射失败发生在canonical发布前，仅修路径，没有重跑产品/测试，旧封存器与未知费用保留。
+
+本段只签已声明host/risk门，不签交付或G06最终通过。11个owner保持CANDIDATE；下一批
+四路线各static/shared搬迁SDK与23独立头串行；最终P0/必要P1/七门红队/LOC仍待。
