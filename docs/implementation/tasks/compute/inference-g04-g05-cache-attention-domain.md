@@ -1,6 +1,6 @@
 # G04/G05 编码 KV 与有限 attention 语义实施批
 
-状态：**G06独立范围已验收；集中归因已定位FP8加载/转换与F32 merge成本，未改产品；FI的G04/G05 CUDA工程性能仍BLOCKED/INCONCLUSIVE，其余owner按registry，2026-10-16**。baseline `694a3d1a4b02540cb56b6ceae35b73dd1dd93440`；
+状态：**G06独立范围已验收；跨表示warm延迟差异已复现，其同约束算法归因不成立；C1 packed转换候选否决、未改产品；FI工程性能仍BLOCKED/INCONCLUSIVE，其余owner按registry，2026-10-16**。旧goal已由用户清除，本轮仅执行明确授权的有限诊断；baseline `694a3d1a4b02540cb56b6ceae35b73dd1dd93440`；
 共同批owner见下表：九个原实际组件及下文新增CUDA数值状态owner；有限CE01–07/API/成本合同已冻结。原 G03 已 CLOSED，不由本卡重开其权限/
 退休实现。九owner已合法SCOPED后进入AUDITED；仅下列有限FIX授权产品实现。
 本批沿[十项总卡](../project/inference-gaps-goal-execution-2026-10.md)，
@@ -2760,7 +2760,7 @@ D3每个可执行变体必须先通过原独立oracle、有效区/readonly KV和
 明确记录哪个变量尚不能区分。首批结束必须交付“主要差额归属+被排除假设+具体FIX或
 未识别的变量”，不得以继续研究代替结果；诊断未运行不写PASS。G07现有定界与验收不变。
 
-## 集中归因终态：表示转换是主要差额，F32 merge是次要成本
+## 集中归因终态：GPU阶段差异已测得，反事实因果归属经C1降级
 
 [实际记录与原始归档](../../../../evidence/architecture/inference-g04-g05-causal-diagnostic/receipt.json)
 绑定当前完整产品669、FI0a29和原数学830；G06 CUDA static SDK的37个artifact、17个
@@ -2794,8 +2794,9 @@ HMMA，而前者有PRMT32/LOP3 218/HFMA2 64，后者PRMT0/LOP3 59/HFMA2 0；与�
 partial反事实反而引入额外shared重排（LDS22/STS76，原F32为LDS0/STS16），其attention
 并未显著缩短；不能靠中间精度降低推断整体更快。
 
-结论仅到**物理表示及加载/转换路径的因果层**：保持F32时换载体使主要attention差额
-缩小，而只降partial精度主要影响merge。尚未量化软件转换、load依赖和异步重叠各自
+本批原解释到**物理表示及加载/转换路径的因果层**，但C1随后发现未改转换的裁剪桥
+也有稳定偏移，因此该因果表述已撤回；上表只保留各实验路径的实际观测，不能据此
+断言各因素的纯贡献或降低partial精度几乎不影响attention。尚未量化转换、load依赖各自
 的周期；没有计数器证据声称某条指令或stall已经被单独归因。两批采集的绝对时间不能
 直接拼成贡献百分比，也不外推完整引擎token/s或所有长上下文。
 
@@ -2809,3 +2810,119 @@ partial反事实反而引入额外shared重排（LDS22/STS76，原F32为LDS0/STS
 本轮诊断到此TERMINAL，FI原BLOCKED/engineering INCONCLUSIVE保持；G01/G02/G03/G06
 验收不变。私有启动器的Linux affinity误配、console数量guard误判、namespace生成断言
 和nvcc收到host-only flags的失败与修正均保留；产品未因这些启动/记录问题被判失败。
+
+## C1：保精度packed转换候选（实验已终止，否决采用）
+
+用户在集中归因后明确要求尝试保精度转换优化。新范围baseline `1bf3f2c32909152daab1b1aed61ab870c76a789e`，
+只尝试**一个**转换候选，不重跑上一批D1–D3、不恢复旧P1，不改产品/registry/公共API。
+上一批的失败、成本、FP8驻留/F32数值合同与5%门保持；本段是新的有限实验范围，
+不是延长上一批两个反事实的数量。首批约90min检查点，构建按既有常设授权有限续时。
+
+具体源码机会是原BF16/E4M3向量特化使用Marlin式软件转换，而本机CUDA13.3的
+`cuda_fp8.hpp`为`__CUDA_ARCH__>=890`提供`cvt.rn.f16x2.e4m3x2`。候选借用该原生packed
+转换，再通过CUDA原生half2→float2→bfloat162精确转换。FP8有限值都可被FP16和BF16
+精确表示；仍须实际穷举验证，不能仅由类型范围签正确性。特殊码值与旧packed转换
+行为逐码对照，若与CUDA标量NaN行为不同，保留旧行为并明确记录，不能顺手改语义。
+
+只在可丢弃header副本改BF16/E4M3向量转换，不改F32 partial/merge、scale/rounding、
+页布局、planner、tile、同步、常驻metadata和原始压缩KV。原头/SDK不得原地修改。
+预声明验证：全部256码值的每个向量位置、所有65536二码组合及混合normal/subnormal/
+零/符号/特殊码；独立有限值oracle与旧packed实现差分；实际SASS/资源；若等价则只
+编当前prefill所需native实例，跑原数值/readonly和memcheck后做A/A、双执行/分配顺序
+的同形状短对照。短样本只诊断，不能回填正式性能PASS。
+
+普通/特殊码行为不等价即修正或否决；该单候选若增加成本或没有可辨认收益就撤回，
+记录实际结果并停止，不扫转换变体。只有原consumer与生成代码共同证明值得采用时，
+另冻结有限产品FIX并合法SCOPED/AUDITED后实施、集中验证；否则产品保持原样。
+
+C1首轮穷举全部通过，但裁剪native消费桥的未改转换control相对真实SDK内核也出现
+约5.6–6.2%偏移（四执行/分配顺序均存在）。不能将跨桥差值当成转换纯收益；前一批
+D3的3.1µs/1.1µs数值也降级为对应实验路径的观测差值，撤回其精确因果分解及“降partial
+几乎不影响attention”的确定表述。D1真实产品与原peer的实测阶段差异、旧正式P1不变。
+本轮只为**同一C1候选**补一次直接产品TU承载：从已验SDK archive抽取实际native_cache
+对象作control，用原生成编译命令/完整原源码、仅替换私有vec header编候选对象；两者
+链接同一原公开consumer/peer。仍只有一个转换候选，不增加P1或转换变体，不动产品
+文件/已验SDK。若仍无可靠收益即停止，不扩成编译器/仪器优化任务。
+
+### C1终态：逐位等价，但真实产品路径稳定更慢
+
+[本轮证据](../../../../evidence/architecture/inference-g04-g05-c1-packed-conversion/receipt.json)
+及原始归档保存一个候选、两个承载阶段及全部失败/耗时。GPU穷举70,656个四码向量，
+包含全部65,536二码组合、256码值在四位置与混合normal/subnormal/符号/零/特殊值，
+共282,624输出；原packed实现差分0，有限值独立oracle差分0，5,160个特殊码观测也
+逐位保留。两类真实prefill数值/readonly与memcheck均通过；直接产品候选另通过racecheck。
+
+最终裁决只用直接产品TU承载：control取实际G06 SDK archive中的`native_cache.cu.o`；
+候选沿原完整源码/真实生成命令，仅替换私有vec header，编281.240s。未重编ggml/SDK，
+未改canonical产品或原cache header。两者链接同一原公开consumer和原BF16 peer；
+control实际内核SASS与原SDK中抽出的同内核规范化指令完全一致。
+
+| 执行顺序 / 分配顺序 | 原attention中位数µs | 候选attention中位数µs | 各自除以未变peer后的候选/原比值 |
+|---|---:|---:|---:|
+| candidate / candidate | 41.728 | 44.083 | 1.060859 |
+| peer / candidate | 41.822 | 44.020 | 1.060549 |
+| candidate / peer | 41.696 | 43.895 | 1.058064 |
+| peer / peer | 41.664 | 43.958 | 1.063928 |
+
+这只是短diagnostic：四顺序都未见收益，足够**否决这个候选**，不签新的正式LOSS/
+material FAIL或原5%验收门。主机墙钟仍波动，不拿跨进程绝对时间算精确性能结论；
+未变peer归一化用于排除明显clock漂移，仍不替代原P1资格/统计。
+
+实际grid/block、attention shared49,152 bytes与无spill保持；register248→244。生成
+指令1809→2320，F2FP4→132、BRA14→78，包含特殊码原行为分支及额外格式转换；静态
+指令不当动态计数，但未支持“硬件packed转换一定减少实际成本”的假设。merge保持
+原F32路径，未出现对应收益。本轮硬件计数器未重试，也未修改驱动权限。
+
+本批TERMINAL/REJECTED，原产品/registry/失败/正式P1保持。前一批D3原始数据封存不改，
+本卡与本轮receipt明确撤回其纯成本分解；真实D1阶段差异和原attempt14八层换向LOSS/
+5%UNRESOLVED仍有效。不为该候选启动三交付、全套sanitizer或长P1，不继续扫转换写法。
+如开展下一轮，须另固定保压缩/F32精度的load/convert/compute重叠机制及时间依赖证明，
+沿真实产品TU承载先做同实现control，不再从裁剪桥差值直接归因。
+
+### 对照合同适用性更正：不能用跨表示warm差距证明同约束实现缺陷
+
+用户进一步指出测试是否偏向参考实现、冷展开不计入warm是否仍可比较。本轮只读复核
+[原合同](../../../../bench/inference_resident_sdpa/cuda_encoded_p1/consumer-provenance.md)、
+[机器合同](../../../../bench/inference_resident_sdpa/cuda_encoded_p1/contract.json)与实际consumer；
+源码身份与裁决封存在同一C1 receipt。原合同已明确披露额外BF16驻留、冷展开和原BF16
+partial，未发现未记录的隐藏转换。此前的问题在于扩大了该合同结论的适用范围。
+
+两边计时起点的存储条件不同：产品保留FP8、读取时转换；peer保留原FP8并额外常驻BF16
+完整页副本，固定scale在冷阶段吸收，展开、分配及其checked completion另记。双方warm
+都计update、权限、实际attention/merge、checked wait与输出owner返回，但这些共同边界
+不使存储/中间精度约束自动相等。主prefill只含两个请求Q64/128、KV1024/768、D256、
+GQA8/2、page16，反复消费同一不可变历史，没有本次计时内的KV增长/快照刷新。
+
+因此原比较可回答**两种已准备好且披露资源取舍的方案，其warm延迟如何**；不能回答
+**同FP8驻留/显存与数值要求下实现谁更好**，也不能外推增长KV的完整引擎token/s。只在
+当前fixture通过的BF16 partial，不代表已覆盖产品F32 partial所保护的全部数值反例。
+主形状来自实际模型域，不因这一发现自动作废；五码相关输入用于反证漏载，其数值分布
+是否偏置运行时间尚无证据。把当前warm LOSS直接当成算法缺陷、要求无条件消掉差距，
+或声称转换的独立贡献已经查清，都不成立。
+
+到此停止由该跨表示差距单独驱动的产品优化。原qualified结果、5%门、全部费用与
+BLOCKED/INCONCLUSIVE保留，不回写为PASS，不删除或重标原contract。C1相对**未变真实
+产品control**四顺序均慢的否决仍成立，不依赖跨表示peer是否满足新的验收目的。
+
+若以后另行启动验收范围设计，须先选清问题：同约束实现比较需要同FP8驻留、有效区、
+完成语义和数值要求的peer；方案比较则固定实际KV新增/复用/刷新序列、复用次数和
+峰值驻留预算，合计初次准备、必要刷新与执行成本后再摊销。不能只把全部冷展开塞进
+每个warm episode，也不能让它无限摊销来替代真实引擎生命周期。本段不授权新benchmark、
+重采P1、改门槛或自动关闭G04/G05；先前关于下一轮load/convert优化的建议也不是当前待办。
+
+### 当前性能回答
+
+G04是编码KV的producer/驻留/直接消费能力，G05是window、noncausal与Dqk/Dv语义域，
+不能把二者概括成一个已证明更快的算法。可交付的判断分别为：
+
+| 维度 | 当前可支持的结论 | 尚不能支持的结论 |
+|---|---|---|
+| CUDA KV payload | FP8每元素1字节，BF16每元素2字节；原生FP8无需常驻额外完整BF16副本 | 整个引擎显存减半或并发自动翻倍；workspace、metadata、模型权重等未包含 |
+| 数值与语义 | 已实现本卡有限语义，保留F32 partial及其具体溢出/消去反例保护 | 对所有模型质量更好，或仅凭该fixture接受原BF16 partial覆盖整个产品数值域 |
+| 当前CUDA warm延迟 | attempt14主prefill相对冷展开BF16方案约多4.0–4.9%耗时；5%非劣仍UNRESOLVED，窗口与留出有限门已PASS | 同资源FP8实现更差、所有prefill/decode都慢，或G04/G05总体算法更快 |
+| 实际单机引擎 | 可提供压缩驻留与普通BF16等既有路线的选择，等待真实生命周期消费测量 | 压缩驻留一定抵消解码成本、总体token/s更高或总体性能已经验收 |
+
+性能结论应表述为：**能力与具体资源/精度取舍已实现；当前CUDA不可变历史warm延迟存在
+相对优势基线的劣势；同约束实现效率与真实引擎综合收益尚未验证。** CPU、Apple、Vulkan
+已通过的有限资格按各自原合同保留，不代签CUDA，也不外推所有模型。C1约5.8–6.4%的
+退化仅属于已否决的私有候选，不是现有产品新增退化，更不能与原4.0–4.9%相加。
