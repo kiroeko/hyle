@@ -1,0 +1,6 @@
+{
+  "candidate": "b483b8939e9c1d28a98eee3a6ecd13b3fd45fc88",
+  "prefix": "/root/hyle-scratch/compute-unified/g07-sdk/cuda-static-1/relocated",
+  "receipt": "evidence/delivery/inference-g07-packed-weights/receipt.json",
+  "result_archive_entry": "cuda-static-1/result.json"
+}

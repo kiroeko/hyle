@@ -1,0 +1,42 @@
+{
+  "schema": "hyle.inference-g07-sdk/v1",
+  "verdict": "PASS_RELOCATED_STATIC_SHARED_CONSUMERS_AND_HEADERS",
+  "candidate": "0333ed2cc9025dd976d7d2118dcd6759cffb5242",
+  "rows": [
+    {
+      "id": "apple-static-d1",
+      "verdict": "PASS",
+      "result_sha256": "7d70e693448cd44f713e92c460dc13d3653c2a738ccbde40250fd1daf6c37940",
+      "consumers": 3,
+      "independent_public_headers": 4,
+      "owner_artifacts": [
+        {
+          "path": "/Users/kiro/hyle-scratch/compute-unified/g07-sdk/apple-static-d1/relocated/lib/libhyle_compute_route_apple.a",
+          "sha256": "fd220119903bba816129d19c8d1fc60be28ed9e657dcb212242502810a0424e4",
+          "bytes": 1298920
+        }
+      ]
+    },
+    {
+      "id": "apple-shared-d1",
+      "verdict": "PASS",
+      "result_sha256": "841cc93ff30ce3fda32e8a72a098b7017aefc150e13cd465eeefbb8dba2e15a5",
+      "consumers": 3,
+      "independent_public_headers": 4,
+      "owner_artifacts": [
+        {
+          "path": "/Users/kiro/hyle-scratch/compute-unified/g07-sdk/apple-shared-d1/relocated/lib/libhyle_compute_route_apple.0.1.0.dylib",
+          "sha256": "b8b3123b0a0503468fa30113ced017b4edca79643d5dc935f28ebe425dc0ba90",
+          "bytes": 823704
+        }
+      ]
+    }
+  ],
+  "consumer_runs": 6,
+  "independent_header_compilations": 8,
+  "raw_archive": {
+    "path": "raw.zip",
+    "sha256": "b39b51fe5caeb40a75c84c09a62850e59663949a65e12100cfcc347796f491ff"
+  },
+  "scope": "Actual MacBook Air D1 corrected shipping SDKs. Old prefix absent after relocation, installed-only compile, packed64step/weight migration/CPU+Apple samples pass. Original CUDA SDK identity/evidence unchanged. New Apple P1 still pending."
+}

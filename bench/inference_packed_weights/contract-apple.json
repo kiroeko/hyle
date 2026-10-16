@@ -361,7 +361,7 @@
           "CMAKE_OSX_DEPLOYMENT_TARGET": "14.4",
           "CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
           "HYLE_DEP_SOURCE_CACHE": "/Users/kiro/Library/Caches/hyle/dependencies/v1",
-          "CMAKE_PREFIX_PATH": "/Users/kiro/hyle-scratch/compute-unified/g07-sdk/apple-static-1/relocated",
+          "CMAKE_PREFIX_PATH": "/Users/kiro/hyle-scratch/compute-unified/g07-sdk/apple-static-d1/relocated",
           "HYLE_G07_ROUTE": "apple"
         },
         "peer_cache": {

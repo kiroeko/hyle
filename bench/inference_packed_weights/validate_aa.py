@@ -40,12 +40,20 @@ def main():
     artifacts = {v: digest(f) for v, f in executables.items()}
     if len(set(artifacts.values())) != 2:
         raise RuntimeError('placement did not change artifact')
-    delivery = ROOT/'evidence/delivery/inference-g07-packed-weights'
+    specification = Path(__file__).parent/('qualified-sdk-'+key+'.json')
+    sdk_identity = json.loads(specification.read_text())
+    delivery = (ROOT/sdk_identity['receipt']).parent
     receipt = json.loads((delivery/'receipt.json').read_text())
     if digest(delivery/'raw.zip') != receipt['raw_archive']['sha256']:
         raise RuntimeError('SDK receipt archive changed')
     with zipfile.ZipFile(delivery/'raw.zip') as z:
-        sdk = json.loads(z.read(key+'-static-1/result.json'))
+        sdk = json.loads(z.read(sdk_identity['result_archive_entry']))
+    if sdk['candidate'] != sdk_identity['candidate']:
+        raise RuntimeError('wrong qualified product candidate')
+    cache = dict(x.split('=',1) for x in (a.build/'CMakeCache.txt').read_text().splitlines()
+                 if '=' in x and not x.startswith(('#','//')))
+    if str(Path(cache['Hyle_DIR:PATH']).parents[2]) != sdk_identity['prefix']:
+        raise RuntimeError('wrong qualified installed SDK prefix')
     for row in sdk['owner_artifacts']:
         if digest(Path(row['path'])) != row['sha256']:
             raise RuntimeError('qualified SDK owner changed')
@@ -57,7 +65,7 @@ def main():
         if digest(provenance.parent/Path(row['path']).name) != row['generated_sha256']:
             raise RuntimeError('generated original source changed')
     identity = dict(artifacts=artifacts, validator=digest(Path(__file__)), machine=gate['physical_host_identity'],
-        original_source=digest(provenance), sdk_record=digest(delivery/'receipt.json'),
+        original_source=digest(provenance), sdk_record=digest(delivery/'receipt.json'), sdk_identity=digest(specification),
         benchmark_source=digest(Path(__file__).parent/'packed_bench.cc'))
     ready = a.build/'bin/g07_packed_aa.ready'
     ready.write_text('FAIL\n')
