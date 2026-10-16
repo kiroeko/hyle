@@ -373,9 +373,9 @@
     },
     {
       "module": "compute_provider_ggml",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/inference-g08-output-selection.md",
-      "summary": "G08 SCOPED from accepted baseline85bc: finite TopK1 arg selection, explicit counter-addressed random numerical schema, categorical quality/endpoint and real small-result consumer audit. No product edits or runtime/P1 PASS; G07 acceptance retained, G09-G10 unstarted."
+      "summary": "G08 AUDITED finite S1-S4/API frozen: existing TopK1 reduction, versioned Philox key64/draw64 raw words, categorical log-weights/optional logprob, original native/check/retirement and real Direct/Graph/joint small-result journey. Endpoint feasibility only; product/runtime/SDK/risk/P1 unrun. G07 accepted; G09-G10 remain."
     },
     {
       "module": "graph_provider_onednn",
@@ -390,9 +390,9 @@
     },
     {
       "module": "compute_ops",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/inference-g08-output-selection.md",
-      "summary": "G08 SCOPED from accepted baseline85bc: finite TopK1 arg selection, explicit counter-addressed random numerical schema, categorical quality/endpoint and real small-result consumer audit. No product edits or runtime/P1 PASS; G07 acceptance retained, G09-G10 unstarted."
+      "summary": "G08 AUDITED finite S1-S4/API frozen: existing TopK1 reduction, versioned Philox key64/draw64 raw words, categorical log-weights/optional logprob, original native/check/retirement and real Direct/Graph/joint small-result journey. Endpoint feasibility only; product/runtime/SDK/risk/P1 unrun. G07 accepted; G09-G10 remain."
     },
     {
       "module": "compute_backend_cpu",
@@ -418,9 +418,9 @@
     },
     {
       "module": "compute_provider_native",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/inference-g08-output-selection.md",
-      "summary": "G08 SCOPED from accepted baseline85bc: finite TopK1 arg selection, explicit counter-addressed random numerical schema, categorical quality/endpoint and real small-result consumer audit. No product edits or runtime/P1 PASS; G07 acceptance retained, G09-G10 unstarted."
+      "summary": "G08 AUDITED finite S1-S4/API frozen: existing TopK1 reduction, versioned Philox key64/draw64 raw words, categorical log-weights/optional logprob, original native/check/retirement and real Direct/Graph/joint small-result journey. Endpoint feasibility only; product/runtime/SDK/risk/P1 unrun. G07 accepted; G09-G10 remain."
     },
     {
       "module": "compute_route_cpu",
@@ -468,9 +468,9 @@
     },
     {
       "module": "compute_provider_cuda",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/inference-g08-output-selection.md",
-      "summary": "G08 SCOPED from accepted baseline85bc: finite TopK1 arg selection, explicit counter-addressed random numerical schema, categorical quality/endpoint and real small-result consumer audit. No product edits or runtime/P1 PASS; G07 acceptance retained, G09-G10 unstarted."
+      "summary": "G08 AUDITED finite S1-S4/API frozen: existing TopK1 reduction, versioned Philox key64/draw64 raw words, categorical log-weights/optional logprob, original native/check/retirement and real Direct/Graph/joint small-result journey. Endpoint feasibility only; product/runtime/SDK/risk/P1 unrun. G07 accepted; G09-G10 remain."
     },
     {
       "module": "compute_route_cuda",
@@ -496,9 +496,9 @@
     },
     {
       "module": "compute_route_apple",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/inference-g08-output-selection.md",
-      "summary": "G08 SCOPED from accepted baseline85bc: finite TopK1 arg selection, explicit counter-addressed random numerical schema, categorical quality/endpoint and real small-result consumer audit. No product edits or runtime/P1 PASS; G07 acceptance retained, G09-G10 unstarted."
+      "summary": "G08 AUDITED finite S1-S4/API frozen: existing TopK1 reduction, versioned Philox key64/draw64 raw words, categorical log-weights/optional logprob, original native/check/retirement and real Direct/Graph/joint small-result journey. Endpoint feasibility only; product/runtime/SDK/risk/P1 unrun. G07 accepted; G09-G10 remain."
     },
     {
       "module": "graph_route_apple",
@@ -513,9 +513,9 @@
     },
     {
       "module": "compute_route_vulkan",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/inference-g08-output-selection.md",
-      "summary": "G08 SCOPED from accepted baseline85bc: finite TopK1 arg selection, explicit counter-addressed random numerical schema, categorical quality/endpoint and real small-result consumer audit. No product edits or runtime/P1 PASS; G07 acceptance retained, G09-G10 unstarted."
+      "summary": "G08 AUDITED finite S1-S4/API frozen: existing TopK1 reduction, versioned Philox key64/draw64 raw words, categorical log-weights/optional logprob, original native/check/retirement and real Direct/Graph/joint small-result journey. Endpoint feasibility only; product/runtime/SDK/risk/P1 unrun. G07 accepted; G09-G10 remain."
     },
     {
       "module": "graph_route_vulkan",

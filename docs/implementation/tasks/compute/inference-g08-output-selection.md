@@ -1,6 +1,6 @@
 # G08 设备端输出数值选择与可定位随机数
 
-状态：**SCOPED，2026-10-16；尚未授权产品实现**。baseline 为
+状态：**AUDITED，2026-10-16；仅授权末节有限FIX，尚无runtime/P1验收**。baseline 为
 `85bcfa4eb`，G07已经整项接受，新G07–G10 goal完成1/4。原G01–G07不重跑，G09/G10未开始。
 本卡只处理原[G08发现](../project/inference-single-machine-foundation-audit-2026-10.md)与
 [消费形状计划](../project/inference-consumer-adaptation-plan-2026-10.md)的有限输出数值域。
@@ -66,3 +66,85 @@ Windows/WSL/Air重型任务串行，Mac仅实际确认身份的MacBook Air。时
 保原失败和同树费用；不因换日志目录重置预算，不扩建公共统计/收口工具。
 每轮按selector选择影响，运行docs/closure/状态投影与diff检查；候选后聚合七门/七问、
 独立阶段红队和统一LOC。全部适用证据到位才关闭G08，保持G09/G10和CLI范围不变。
+
+## AUDITED：接口、承载与有限改动集
+
+[固定审计与原文](../../../../evidence/architecture/inference-g08-output-selection-audit/audit.json)
+确认三peer的数值/政策边界、原native执行和错误owner；Random123 v1.14.0固定
+`726a093cd9a73f3ec3c8d7a70ff10ed8efec8d13`，借其Philox4x32-10方程/官方known-answer，
+BSD-3-Clause原许可/NOTICE随公共schema依赖交付，不拉入完整新runtime。原MLX提供log1p；
+无log1p的GLSL用稳定补偿对数，数学与Eigen3.3.7独立参考的fallback相同，不依赖Eigen。
+这是必要的整数/数学承载，不复制util/SIMD的顺序RNG或新增全局generator。
+
+公开头冻结为 `hyle/compute/sampling_ops.h`，归compute_ops；使用现有typed custom schema，
+不扩大Operation variant或新增runtime extension总API。C++自然入口：
+
+```cpp
+using namespace hyle::compute;
+// Direct prepare 或 builder.add 接收同一 Operation；context 属于所选原路线。
+auto bits = sampling_ops::random_bits(8);
+auto selection = sampling_ops::categorical();       // I32[R]
+auto scored = sampling_ops::categorical(true);      // I32[R], F32[R] log probability
+```
+
+`RandomBits{word_count=4}`读dense U32[R,4]，每行依次key低/高32位、draw低/高32位；
+word j为Philox counter `{floor(j/4)低/高32位,draw低/高32位}`的lane j%4。
+raw words输出dense U32[R,word_count]，跨合格路线逐bit相同、前缀不随word_count变。
+word_count≤INT32_MAX，零count/零R合法；没有隐式counter加法，全部64位draw值合法。
+下次draw与溢出处理属于caller，不引入内部可变状态、host seed同步或地址cache。
+
+`Categorical{return_log_probability=false}`读dense F16/BF16/F32[R,V] log-weights和相同
+U32[R,4]，V>0且≤INT32_MAX；零R合法。有限值有效，-Inf表示零质量，NaN/+Inf或任一
+全-Inf行经原checked完成返回InvalidArgument，不发布可用输出。只读输入、输出不别名。
+可选F32结果为原存储log-weights归一化后的选中项log probability；没有temperature/
+过滤/penalty/EOS等策略。若不要该结果，省去其normalizer工作；不可读回完整词表求它。
+
+CPU借llama的CDF数值档：原SIMD exp、F64累计/阈值，复用原executor与显式有界scratch。
+GPU借SGLang/vLLM的Gumbel/arg-reduction任务分解，先减row max，column j用raw words
+2j/2j+1组成开区间64位midpoint；直接从原/补码计算U或1-U较小的一侧，稳定计算指数噪声。
+不先舍入U到F32再截断端点，不冒充native F64。native数学允许合格误差；同一native recipe
+固定输入/key/draw须可重放且不依赖batch排列，**categorical ID不承诺CPU/GPU间逐bit相同**。
+所有路线共享输入、错误、ownership、计数和质量验收，raw随机字有更强的逐bit合同。
+
+| FIX | 冻结处理 | 保留边界 |
+|---|---|---|
+| S1 | CPU TopK1单趟保原key/tie/源bits、无V个Entry；CUDA借CCCL arg/segmented reduction及原Layout，不全量radix-sort；Apple借原native max/argmax和NaN有效tie组合；Vulkan为原row-wise dense F32单选使用有界分块pair reduction | 其它TopK count/axis/stride/dtype原合同与路径保持；常用dense last-axis优先，原native域不支持的dtype不因此新增；无独立greedy状态owner |
+| S2 | compute_ops登记两个typed数值schema和版本化Philox合同；四native借同一固定方程、license和known-answer | CPU/CUDA/Metal/GLSL各自原编译/内存/完成owner；不建立随机库facade、依赖服务或新的总Operation分发 |
+| S3 | CPU原NativePlan submit/allocator/executor；CUDA原Queue设备status/CUB/native kernel；Apple原MLX编译/array/check trace；Vulkan原dispatch/status/fence | CUDA先验证全部row再写caller输出；native拥有的中间值可以安全默认执行但失败不发布；无提交前payload D2H/控制等待。Metal/GLSL不要求F64/int64 shader feature |
+| S4 | 主/正交公开Direct/Graph与三个joint消费者、65步/两个slots/重排/旧结果/失败和小结果回读 | 原F1–F3/Graph/传输/取消/关闭协议复用；不改既有packed权重/attention数学，不借本轮恢复G07或旧CUDA交付脚本 |
+
+常态费用：raw bits为O(R×words)，无常驻generator；CPU categorical为O(RV)，有界每worker
+scratch、SIMD exp和F64累计；GPU为O(RV)的随机/变换/归约，必要native张量或分块scratch
+明确计费，**不承诺O(R)临时空间或零分配**。选中ID为4R字节，可选logprob再4R字节，
+加原必要status；codes/counters/输入上传显式。prepare只读描述，JIT/pipeline为冷费用。
+borrowed输入和allocator保活至实际退休，重绑/修改须等原完成；原取消不能撤销已接纳计算。
+native独立invocations/旧结果/close仍沿各自原对象，不合并平台原生owner或伪造capture资格。
+
+### 冻结验收与P1准入
+
+新增正常source目标固定为`hyle_compute_ops_sampling_test`，以及CPU/CUDA/Apple/Vulkan
+各`hyle_compute_route_<route>_sampling_consumer_test`和
+`hyle_graph_route_<route>_sampling_consumer_test`；对应新SDK消费者使用同源码installed-only。
+三个joint补实际GPU数值选择→少量结果→CPU消费，原资源桥不因新schema重复全套历史验证。
+原TopK受影响用例仅按count1/NaN/tie/axis/stride/empty，保count>1代表性holdout；
+原packed/attention、其它provider不作为额外测试根。host三san只选新schema/CPU与实际
+修改的native adapter facet；CUDA两工具、Metal、Vulkan validation签实际设备范围。
+
+raw bits逐bit对官方Philox4x32-10三组known-answer、独立scalar corpus和跨路线数据；
+检查word前缀/高key与draw/重排/两slots/失败不前进。categorical固定seed、至少262144
+样本的非均匀/均匀/屏蔽分布，bucket期望≥20时每项误差≤7×sqrt(Np(1-p))+8，
+所有bucket均检查；质量不是只验证ID范围。另验大common offset、窄dtype、极端log差、
+all-invalid及独立F64 logprob，通常误差门2e-5+2e-5×abs(ref)。GPU尾部变换须包含原字
+0/UINT32_MAX组合与独立F64方程；宿主约105万组预检最大误差1.31e-6仅证明可行，
+实际shader仍须同一2e-5误差门；初次scratch符号错误被断言拒绝，原脚本/失败保留。
+
+P1仍仅S1、各受影响路线R1/R16×V248320，原85bc TopK(1)值+I32索引与新实现同输入/
+NaN/tie/源bits/owning结果/完成边界；原统一5%/n15–31、A/A、执行/分配/placement资格。
+冷prepare/JIT不进warm；submit→完整native完成/必要status→结果取得/释放计费，最后
+Program/Invocation/cache析构若DEFERRED须双方明列。不得用只产ID的轻量argmax代替
+原两输出peer，不以只计GPU kernel/省略结果寿命换PASS。精确源码时序账与自然peer
+adapter必须在构造benchmark前审完，不改公共统计核心。新categorical/RNG只签质量与P0，
+不把不同状态/分布/完成的peer硬做同合同速度门；完整CLI/token/s仍在本goal之后。
+
+六owner本轮只从SCOPED进入AUDITED；产品实现后先完成上述批量普通门才冻结candidate。
+当前0个新产品build、0个runtime用例、0个P1，没有任何G08完成或性能PASS声明。

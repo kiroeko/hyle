@@ -1,0 +1,153 @@
+{
+  "schema": "hyle.inference-g08-audit/v1",
+  "state": "AUDITED_FINITE_API_AND_FIX_FROZEN_NOT_RUNTIME_ACCEPTANCE",
+  "baseline": "85bcfa4ebc29cc4d2ed5fb122074204aca675d58",
+  "previous_registry_ref": "908d4f478e572ad0bccc438a039725610651ae20",
+  "card": "docs/implementation/tasks/compute/inference-g08-output-selection.md",
+  "owners": [
+    "compute_ops",
+    "compute_provider_native",
+    "compute_provider_ggml",
+    "compute_provider_cuda",
+    "compute_route_apple",
+    "compute_route_vulkan"
+  ],
+  "families": [
+    "S1 TopK1 existing contract",
+    "S2 explicit counter-addressed raw words",
+    "S3 categorical log-weights and optional selected log probability",
+    "S4 actual resident Direct/Graph/joint consumer and small result"
+  ],
+  "fixed_peers": [
+    {
+      "project": "sglang",
+      "commit": "7224fce1b5e488c9916f20ec0556d696e595d512",
+      "path": "python/sglang/srt/layers/sampler.py",
+      "sha256": "cc5eb725eeeeb906ba56fdb4e1400d8cf7d94ba8ccbc043841ee3676349b016c",
+      "scratch": "sglang-sampler.py",
+      "lines": 1037
+    },
+    {
+      "project": "vllm",
+      "commit": "98f721116227f0f48690deb05c815c057bac0668",
+      "path": "vllm/v1/sample/ops/topk_topp_sampler.py",
+      "sha256": "970afd0e8565ddfdcf50dc99892d893b20cb186214cc35e15aeb97d1dba90bd0",
+      "scratch": "vllm-topk_topp_sampler.py",
+      "lines": 621
+    },
+    {
+      "project": "llama.cpp",
+      "commit": "cbe28bb3cb0758f0c566a9a3561766821aeb0748",
+      "path": "src/llama-sampler.cpp",
+      "sha256": "d0c147129ded606691b0b3e78562bec36f53459446aa7a5bac23bb93a01c86f6",
+      "scratch": "llama.cpp-llama-sampler.cpp",
+      "lines": 4391
+    }
+  ],
+  "numerical_sources": [
+    {
+      "file": "random123-philox.h",
+      "url": "https://raw.githubusercontent.com/DEShawResearch/random123/726a093cd9a73f3ec3c8d7a70ff10ed8efec8d13/include/Random123/philox.h",
+      "sha256": "6c2ef219a855885499a73b338d5f41dafe079618b2dae2f60ea86ee785d771e2",
+      "bytes": 22028
+    },
+    {
+      "file": "random123-uniform.hpp",
+      "url": "https://raw.githubusercontent.com/DEShawResearch/random123/726a093cd9a73f3ec3c8d7a70ff10ed8efec8d13/include/Random123/uniform.hpp",
+      "sha256": "921805e7617674e60ed8afa9ca04fb6d807d129aa6ef8ea1aa12b0d46f2e1848",
+      "bytes": 11442
+    },
+    {
+      "file": "random123-u01.h",
+      "url": "https://raw.githubusercontent.com/DEShawResearch/random123/726a093cd9a73f3ec3c8d7a70ff10ed8efec8d13/include/Random123/u01fixedpt.h",
+      "sha256": "55e07e08c7f93a94680e06b5238e80f109fb58ddadb2cfd09fdaa740f9fb553a",
+      "bytes": 7927
+    },
+    {
+      "file": "random123-known-vectors",
+      "url": "https://raw.githubusercontent.com/DEShawResearch/random123/726a093cd9a73f3ec3c8d7a70ff10ed8efec8d13/tests/kat_vectors",
+      "sha256": "aab5ebabf40003f63d6d87b24cbd2c8a02652e00cf8bad64226fd50586929183",
+      "bytes": 8885
+    },
+    {
+      "file": "pytorch-transformation.h",
+      "url": "https://raw.githubusercontent.com/pytorch/pytorch/v2.8.0/aten/src/ATen/core/TransformationHelper.h",
+      "sha256": "77ba7f2ca028c5258f8cf0cfb26354f71a2a93369e0b82c8f7c09ca1ca1c7b45",
+      "bytes": 6854
+    },
+    {
+      "file": "eigen-math.h",
+      "url": "https://raw.githubusercontent.com/eigenteam/eigen-git-mirror/3.3.7/Eigen/src/Core/MathFunctions.h",
+      "sha256": "4fbbeffbf049571ac562c28ee5d7c19cca7f726add23a87bb49df1f41975f996",
+      "bytes": 40865
+    }
+  ],
+  "counter": {
+    "revision": "726a093cd9a73f3ec3c8d7a70ff10ed8efec8d13",
+    "git_tree": "73e4186ef73e469fd3c17d02b9a427567ee5c168",
+    "archive": {
+      "url": "https://codeload.github.com/DEShawResearch/random123/tar.gz/726a093cd9a73f3ec3c8d7a70ff10ed8efec8d13",
+      "sha256": "8190cdbe6f31307a642a465f8ff4770d06502962690062e3ec040573baef9382"
+    },
+    "license": {
+      "path": "random123-726a093cd9a73f3ec3c8d7a70ff10ed8efec8d13/LICENSE",
+      "sha256": "5fd0885ab205878bd90c19144677286252eb9b988c1545a3a910edfe1e27b6df"
+    }
+  },
+  "mlx_math": {
+    "path": "mlx/backend/metal/kernels/unary_ops.h",
+    "source": "Current relocated Apple D2 MLX SDK, independently read only",
+    "sha256": "0a5492b65ae39ecb6d8b04e64ea5007e0a4ff60d8d9428559bfbfd03387ece2a",
+    "finding": "Log1p typed native operation calls log1p; native stream/check tracing and raw word storage already supported."
+  },
+  "decisions": {
+    "api": "New compute sampling_ops.h uses existing typed custom Operation; raw U32[R,4] key64/draw64 -> U32[R,word_count]; categorical dense half/bfloat/float[R,V]+same counters -> I32[R], optional F32[R] normalized log probability. No Operation variant growth or model policies.",
+    "counter": "Philox4x32-10 exact fixed mapping; raw words cross-qualified-route exact, batch/word_count-prefix independent. Caller owns counter uniqueness/advance/overflow; prepare reads no payload.",
+    "categorical": "CPU mature CDF/SIMD exp/F64 accumulation; GPU centered Gumbel+arg selection with two original words/open64 midpoint, direct smaller side and stable log1p/correction. Same native recipe replay/permutation deterministic; no CPU/GPU exact same selected-ID promise.",
+    "failure": "NaN/+Inf/all-masked any row -> original checked InvalidArgument, no usable publication; -Inf excluded. CUDA validates all rows before caller output writes; original owner/accepted prefix/retirement retained on every route.",
+    "s1": "CPU no Entry width scratch for count1; CUDA mature CCCL arg/segmented reduction; MLX native max/argmax plus valid tied first index; Vulkan bounded pair reduction for original row-wise dense F32 domain; other original TopK domains retained.",
+    "carrier": "BORROW mature RNG equations/reduction/exponential race/CDF and Hyle SIMD/Queue/allocator/native runtime; SELF only versioned schema, fixed word addressing, necessary precision/error/completion glue. APPLICATION owns model sampling policies.",
+    "licensing": "Random123 original BSD-3-Clause license, source/archive/hash and port NOTICE installed through schema dependency shared by every route; no full additional runtime. Eigen fallback used as independent mathematical reference, not new dependency.",
+    "performance": "P0 categorical/raw bits, no false same-state speed peer; S1 P1 only original85bc same TopK1 both outputs/full completion/owner, R1/R16 V248320 per changed route, existing5%/n15-31 and all qualifications. Exact source timing ledger required before any benchmark construction."
+  },
+  "finite_fix": [
+    "S1",
+    "S2",
+    "S3",
+    "S4"
+  ],
+  "diagnostic": {
+    "state": "DIAGNOSTIC_NUMERICAL_FEASIBILITY_PASS_NOT_PRODUCT_ACCEPTANCE",
+    "samples": 1048772,
+    "pair_word_midpoint": "U=(hi*2^32+lo+0.5)*2^-64; evaluate the smaller of U and 1-U directly from original/complemented words",
+    "upper_exponential": "-log1p(-v), compensated logarithm fallback when native log1p absent; t==1 uses v, otherwise v*log(t)/(t-1)",
+    "lower_exponential": "-log(u)",
+    "f32_gumbel_max_abs_error_vs_independent_f64": 1.3067089454921188e-06,
+    "f32_error_p999": 2.943359037939083e-07,
+    "all_finite": true,
+    "endpoint_cases": 196,
+    "lowest_midpoint": 2.710505431213761e-20,
+    "elapsed_seconds": 0.09399999998277053,
+    "script_sha256": "e709d4cadc1e654b96f9c0b11058d96f66dede4c289ac92531c4ebdf8f972da1",
+    "scope": "Feasibility check for CPU/CUDA/Metal/GLSL common integer inputs and stable transform; no vendor/device product executed. Does not prove categorical distribution or runtime determinism; those remain actual tests after AUDITED implementation.",
+    "limits": [
+      "NumPy ufunc/math is host diagnostic only, not actual native shader log accuracy.",
+      "Categorical must center logits before adding noise; finite common offsets otherwise erase F32 noise.",
+      "Counter raw words need exact mature known-answer and actual four-route checks.",
+      "Cross-backend bit-identical selected categorical IDs are not implied."
+    ]
+  },
+  "validation": "Source schema + four Direct/Graph targets, three joint consumers, current static/shared/header qualification, scoped host/device risks; exact card shapes/quality gates. All product/device/runtime/P1 gates remain UNPROVEN.",
+  "costs": {
+    "new_product_builds": 0,
+    "new_product_runtime_tests": 0,
+    "new_p1": 0,
+    "host_diagnostic_samples": 1048772,
+    "host_diagnostic_failure": "One scratch sign error rejected by nonfinite assertion; original source/observed failure retained. Corrected probe is feasibility only.",
+    "audit_elapsed": "UNKNOWN; source reading not separately stopwatched"
+  },
+  "raw_archive": {
+    "path": "sources.zip",
+    "sha256": "28475a44eadb3191b1adb50dfa760c6355502b66e75c82601cd0fea8d277ba22"
+  }
+}
