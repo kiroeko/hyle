@@ -88,7 +88,8 @@ void run(std::int64_t rows) {
         ids[0],ids[3],ids[4],ids[5]));
     const auto top = take(builder.add_node(c::Operation(c::TopK{.count=1}), std::array{ids[2]}));
     const auto produced = take(builder.result(top,1));
-    const auto chosen = take(builder.add(take(c::View::reshape(std::array<std::int64_t,2>{1,slots})), produced));
+    const auto chosen = take(builder.add(take(c::View::reshape(
+        take(c::TensorShape::create(std::array<std::int64_t,2>{1,slots})))), produced));
     const auto product = take(builder.add(
         c::model_ops::mlx_grouped_matmul(c::model_ops::MlxWeightFormat::kAffine4,group),
         ids[1],ids[6],ids[7],ids[8],chosen));
