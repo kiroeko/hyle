@@ -8,7 +8,10 @@ if(HYLE_COMPUTE_APPLE_ENABLED AND HYLE_COMPUTE_CPU)
     SOURCES ../../samples/package/graph/cpu_apple/main.cc DEPS hyle_graph_route_cpu)
   hyle_add_test(graph_route_cpu_apple NAME finite
     SOURCES ../graph/route_symmetry_apple.cc DEPS hyle_graph_route_cpu)
+  hyle_add_test(graph_route_cpu_apple NAME packed_weights
+    SOURCES packed_weight_test.cc DEPS hyle_graph_route_cpu)
   hyle_stage_runtime(hyle_graph_route_cpu_apple_contracts_test)
   hyle_stage_runtime(hyle_graph_route_cpu_apple_public_consumer_test)
   hyle_stage_runtime(hyle_graph_route_cpu_apple_finite_test)
+  hyle_stage_runtime(hyle_graph_route_cpu_apple_packed_weights_test)
 endif()
