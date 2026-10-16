@@ -517,9 +517,9 @@
     },
     {
       "module": "compute_route_apple",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/inference-g07-packed-weights.md",
-      "summary": "G07 SCOPED W1-W4 packed-weight intake: repeated prefill/decode and checked selection expose source-level warm group temporaries/IDs host control or non-GGUF decode costs. Existing GGUF/MLX native paths must be falsified before FIX; finite owner/API/carrier audit pending. No product implementation/P1 authorization; G06 finite acceptance retained."
+      "summary": "G07 AUDITED W-CUDA/W-CHECK/W-APPLE/W-QUAL finite FIX frozen: native packed F32 CUDA equations/device checked status, Apple FP8 tile-local F32 math with original scale order,64-step/lifetime/route qualification. Existing public shapes/encodings and other closed scopes unchanged; no new runtime/P1 verdict yet."
     },
     {
       "module": "graph_route_apple",
@@ -634,9 +634,9 @@
     },
     {
       "module": "compute_provider_torch_cuda",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/inference-g07-packed-weights.md",
-      "summary": "G07 SCOPED W1-W4 packed-weight intake: repeated prefill/decode and checked selection expose source-level warm group temporaries/IDs host control or non-GGUF decode costs. Existing GGUF/MLX native paths must be falsified before FIX; finite owner/API/carrier audit pending. No product implementation/P1 authorization; G06 finite acceptance retained."
+      "summary": "G07 AUDITED W-CUDA/W-CHECK/W-APPLE/W-QUAL finite FIX frozen: native packed F32 CUDA equations/device checked status, Apple FP8 tile-local F32 math with original scale order,64-step/lifetime/route qualification. Existing public shapes/encodings and other closed scopes unchanged; no new runtime/P1 verdict yet."
     },
     {
       "module": "graph_route_cpu_cuda",

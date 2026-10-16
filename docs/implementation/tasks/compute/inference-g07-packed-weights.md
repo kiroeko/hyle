@@ -1,11 +1,11 @@
 # G07 packed 权重消费与 checked selection
 
-状态：**SCOPED，2026-10-16，新G07–G10 goal已开始续跑本卡**。G01–G06已告一段落，
+状态：**AUDITED，2026-10-16，有限FIX已冻结，新G07–G10 goal ACTIVE**。G01–G06已告一段落，
 本卡不重开它们。原baseline为 `a638938b783b6fdae57e83f572aa0427d7188e7f`；
 产品输入保持完整 `669121418669b31f6849c74f64362aaf8d6eb919`。
 当前施工 owner 仅 `compute_provider_torch_cuda`、`compute_route_apple`，从各自 CLOSED
 进入 SCOPED。其它 owner 只作只读复用/消费审计；需要改产品时先明确纳入合法阶段。
-**本卡尚未 AUDITED，不授权产品实现或 P1。**
+**只授权末节冻结的有限FIX和对应验证；P1仍须产品冻结及普通门通过后启动。**
 
 ## 任务与输入
 
@@ -113,3 +113,61 @@ Windows 是产品真相；普通并行最多4 workers，重型 Windows/WSL/Air �
 已有quantized_matmul/gather_qmm，应先证明复用；block128的decode位于建图路径，仍须核
 explicit constant和runtime input的实际求值边界，不能只凭源码出现decode就认定每步重复。
 不按地址缓存可变输入，不新增测试专用公共入口，不因启动新goal重复旧全局缺口调查。
+
+## AUDITED：原生承载、公开合同与有限FIX
+
+[审计记录与受锁定源码](../../../../evidence/architecture/inference-g07-packed-weight-audit/audit.json)
+保存实际归档/三peer文件SHA、承载裁决、有限FIX与未运行门；不是新的runtime PASS。
+
+本轮实际核了锁定MLX `2b2bb49790158ecd008d1685c94e3ef119792a00` 的归档SHA，CPU
+原公式与CUDA `qmv.cu` 的直接packed行读取/warp归约；未刷新peer checkout。SGLang
+固定awq_linear的load后处理/apply分离和vLLM固定auto_awq的冷repack证明准备边界，
+不把其整数zero-point公式当任意MLX affine bias的替代。实际Air为Mac16,12、arm64、
+macOS27.0.1；已验MLX提供`fast::metal_kernel`及Safe编译模式，不新建Metal runtime。
+
+| FIX | 冻结实现与归属 | 不改变的合同 |
+|---|---|---|
+| W-CUDA | `compute_provider_torch_cuda`：借原MLX packed qmv行映射/warp归约及已移植的CPU affine/MX公式，在私有CUDA TU中直接读U32 codes、原scale/bias，F32计算；覆盖现有linear/grouped/affine embedding。去掉逐K组ATen展开、matmul/加法temporary与selected `item()`控制等待 | 保所有既有F16/BF16/F32、mixed affine提升、group32/64/128、原MX先dot后scale及E8M0→输出dtype边界；embedding保其乘/加各次原dtype舍入；不无损假定AWQ转换 |
+| W-CHECK | 同owner：复用`cuda::detail::acquire_device_status(Queue&)`及原Completion协议，先检查全部I32 IDs，再让native计算在非零status时不读取/写入payload | 越界仍OutOfRange、输出不发布且原内容不改，accepted prefix/旧结果/suffix/close与实际退休不变；没有新status owner、host-known信任捷径或D2H前置等待 |
+| W-APPLE | `compute_route_apple`：block128 FP8 dense/原FP8 grouped消费借MLX原SIMDgroup矩阵乘和Safe custom-kernel编译，tile内解FP8并F32累加；每128元素块严格先乘activation scale、再weight scale、再顺序加到F32输出 | 直接读原strided packed数组，禁止完整FP32权重/dots temporary或每步完整格式repack；原FP8量化器、有效区/输出cast、checked IDs/原native生命周期保持；GroupedFloat4保原独立路径 |
+| W-QUAL | 两owner及实际consumer测试/文档：补至少64步自然调用、修改输入与IDs、两slots/旧输出/失败及数值反例；既有W1 GGUF路径优先用实际ROUTED与费用证据验收 | W1 Q4_K/Q6_K/Q8_0、BF16控制、四native/三joint不取消；不重写已CLOSED owner，不新增loader、格式registry、通用GEMM或scheduler |
+
+CUDA数据来自本次绑定的borrowed TensorView，每次读真实内容，不缓存地址；prepared只存
+不可变形状/类型，invocation没有展开权重bank。linear一条native数学kernel；grouped/
+embedding增加一次全IDs checked kernel，Queue自身reset/report按原协议计费。Mlx路径不再
+进入ATen准备/提交，ArtifactWeightDecode和Softplus仍走原ATen carrier并保其未知私有分配。
+同一个provider按operation报告runtime/cost：MLX不阻塞host、无repack/copy/临时展开workspace；
+不新增external capture或strict-budget资格，不改原准备失败/借用寿命合同。
+
+Apple继续由MLX拥有原stream、pipeline、数组分配和完成。私有tile取16×16输出/32元素
+staging，F32 SIMDgroup乘加，128元素一组；不通过FP16窄化中间值获取收益，不搜索tile。
+框架编译metadata与JIT为冷费用；真实每步codes/scales/quantize/status/输出分配和native
+等待照实收费。API签名/物理编码不变，公开头只纠正选型与费用说明，无兼容转发。
+
+### 冻结验证和性能对照
+
+- source：`hyle_compute_provider_torch_cuda_test`的原失败/9精度组合及新增native packed
+  tests；现有`hyle_compute_route_cuda_test`/`hyle_graph_route_cuda_test`中受影响的MLX
+  N2/model片段和checked失败；Apple `hyle_compute_route_apple_test`及原FP8/block128、
+  affine/FP4反偏置、Graph和CPU+Apple实际直接consumer。未变W1其它路线按精确输入复用。
+- 数值：独立解码/高精度oracle，mixed affine、非整数bias、多个K组、F32消去与原TF32
+  foreign-policy测试；FP8全部码值/符号/零/subnormal与原scale顺序、极端E8M0、非整tile
+  M/N、grouped重复/重排/负/上界IDs、失败后原输出不变；原阈值不临时放宽。
+- 设备/生命周期：受影响CUDA测试先memcheck/racecheck，Apple单独Metal shader validation；
+  原分配/OOM/accepted prefix/两个slots/旧结果/关闭与适用ASan/UBSan/TSan宿主facet。
+  shader/driver和private upper的未知保留；只跑本卡实际适用目标，不制造全局san矩阵。
+- 交付：两owner受影响公开头与源码/迁址static/shared consumer，借原SDK/编译缓存与未变
+  vendor对象。公共签名与DAG不变，module-local增加CUDA TU不授权改公共构建系统。
+- P0：核无逐group全局float权重temporary、无selected前置host控制等待、不整bank冷/热
+  展开；显式统计packed/active/scales/输出、必要status和未知native费用，64步覆盖W4。
+- P1仅在正确性、风险和产品不可变后运行一次：CUDA affine4/group64的完整checked
+  warm linear调用，M1与M64、K2048/N6144；Apple block128 FP8同合同完整warm调用，
+  M1与M64、K2048/N2048。候选与旧不可变669原公开路径分别准备，消费相同真实输入/
+  物理权重/scale/输出oracle，包含submit、checked完成、结果取得/释放；冷准备单列。
+  该peer是同语义旧实现，不是额外BF16驻留或较低partial精度的替代；不推导token/s。
+  用原统一仪器5%耗时门、route-local A/A、双执行/分配顺序与原n15/必要n31，至多这两
+  形状/路线；不因换目录重置失败，不扫姿势或改门槛，先核完成边界与分辨率再采样。
+
+普通构建最多4 workers、native CUDA pool1/split3/Ninja2/SM89，Windows/WSL/Air重型
+任务串行。先批量实现上述集合，再批量验证并针对真实失败修复；新系统性决定或新能力
+必须退回审计。有限FIX、候选后的七门/红队/LOC和原费用/停止规则不变。

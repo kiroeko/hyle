@@ -1,0 +1,136 @@
+{
+  "state": "AUDITED_FINITE_FIX_FROZEN_NOT_RUNTIME_ACCEPTANCE",
+  "created_utc": "2026-10-16T10:26:59.291862+00:00",
+  "baseline": "93b33e4f94640eba92bd17dbd7d7a781d50e48d2",
+  "product_baseline": "669121418669b31f6849c74f64362aaf8d6eb919",
+  "card": "docs/implementation/tasks/compute/inference-g07-packed-weights.md",
+  "owners": [
+    "compute_provider_torch_cuda",
+    "compute_route_apple"
+  ],
+  "fixes": [
+    "W-CUDA",
+    "W-CHECK",
+    "W-APPLE",
+    "W-QUAL"
+  ],
+  "public_api": "Existing signatures and physical encodings unchanged; only provider runtime/cost and usage documentation corrected. No compatibility layer, address cache, loader or scheduler.",
+  "sources": [
+    {
+      "path": "mlx/backend/cpu/quantized.cpp",
+      "sha256": "8890160da0a884b559aad18ce20a2b08170b721c38ce1c800229ae9998ed846d",
+      "url": "https://raw.githubusercontent.com/ml-explore/mlx/2b2bb49790158ecd008d1685c94e3ef119792a00/mlx/backend/cpu/quantized.cpp"
+    },
+    {
+      "path": "mlx/backend/cuda/quantized/qmm/qmv.cu",
+      "sha256": "023d967bdab912ee954258153ee9b200bdc9f7ed690f3ecd3b9d3b1eac74171d",
+      "url": "https://raw.githubusercontent.com/ml-explore/mlx/2b2bb49790158ecd008d1685c94e3ef119792a00/mlx/backend/cuda/quantized/qmm/qmv.cu"
+    },
+    {
+      "path": "mlx/backend/cuda/quantized/qmm/qmm_naive.cu",
+      "sha256": "e206d50d1af926c051b48511770a84b055fa9ea14606b42e4bcec3e35e425744",
+      "url": "https://raw.githubusercontent.com/ml-explore/mlx/2b2bb49790158ecd008d1685c94e3ef119792a00/mlx/backend/cuda/quantized/qmm/qmm_naive.cu"
+    },
+    {
+      "path": "mlx/backend/cuda/quantized/qmm/qmm.cu",
+      "sha256": "ca61e819800d6ee1054f771cd132cfa084a2ef9e0b6b45334e0862bb5e4d3309",
+      "url": "https://raw.githubusercontent.com/ml-explore/mlx/2b2bb49790158ecd008d1685c94e3ef119792a00/mlx/backend/cuda/quantized/qmm/qmm.cu"
+    },
+    {
+      "path": "mlx/backend/metal/kernels/fp_quantized.h",
+      "sha256": "c44c10a252096937fecb8db16eeb2cd35ac3163e1740b3af21b91ed1d43af706",
+      "url": "https://raw.githubusercontent.com/ml-explore/mlx/2b2bb49790158ecd008d1685c94e3ef119792a00/mlx/backend/metal/kernels/fp_quantized.h"
+    },
+    {
+      "path": "LICENSE",
+      "sha256": "ccfab7ccb2ea306f71531c8ca77bb55507606cd90768b1e32b8b52ab5b48cf01",
+      "url": "https://raw.githubusercontent.com/ml-explore/mlx/2b2bb49790158ecd008d1685c94e3ef119792a00/LICENSE"
+    }
+  ],
+  "fixed_peer_source_hashes_verified": [
+    {
+      "name": "sglang",
+      "commit": "7224fce1b5e488c9916f20ec0556d696e595d512",
+      "archive_sha256": "21559aac7538426c4d75262a25d041d8c24070785a4d8f550459f68c3398b0e0",
+      "path": "python/sglang/srt/layers/quantization/awq/schemes/awq_linear.py",
+      "file_sha256": "cda3a8a9950edd0030f65748928ee8b17b1dad3555290509c5d55fade723bf4c",
+      "line_ranges": [
+        [
+          95,
+          101
+        ]
+      ]
+    },
+    {
+      "name": "vllm",
+      "commit": "98f721116227f0f48690deb05c815c057bac0668",
+      "archive_sha256": "984cc5cd0ddc5bc93c8f1055f7b2a19da128d372343896510952060bd2b71423",
+      "path": "vllm/model_executor/layers/quantization/auto_awq.py",
+      "file_sha256": "3c11c974ca3b506a12f6c13f6c8c620a1f5bac78249f360e5ab1b1b98b1eb86e",
+      "line_ranges": [
+        [
+          95,
+          160
+        ],
+        [
+          506,
+          514
+        ]
+      ]
+    },
+    {
+      "name": "llama.cpp",
+      "commit": "cbe28bb3cb0758f0c566a9a3561766821aeb0748",
+      "archive_sha256": "e71cd4a1645b151a45c46a9d4c0bf5de0fa2a94080ce31ca508a6c65ad1a3562",
+      "path": "ggml/src/ggml-metal/ggml-metal-ops.cpp",
+      "file_sha256": "c7b0b2789db4b79e6a0bd16f5c27bfc174cccc44bd6bd7d6dc871a976bd13c1a",
+      "line_ranges": [
+        [
+          2589,
+          2646
+        ],
+        [
+          2819,
+          2855
+        ]
+      ]
+    }
+  ],
+  "source_verdicts": {
+    "W1": "Existing native carriers KEEP/BORROW, actual finite repeated/lifetime qualification in W-QUAL remains required.",
+    "W2_CUDA": "Port original packed row/warp structure with original widened F32 affine and per-group MX scaling, retaining all original typed domains; no new universal GEMM or narrower-decoder substitution.",
+    "W3_CUDA": "Existing exported acquire_device_status(Queue&) and completion protocol are available. Separate all-IDs check precedes native math; nonzero status prevents invalid payload reads and output writes.",
+    "W2_Apple": "Program constants pass as MLX compiled region arguments. Existing block_dot decodes full unscaled weights/dots in the compiled execution graph; replace only FP8 block128 path with original SIMDgroup F32 matrix tiles and ordered scales. FP4 path retained.",
+    "native_Apple_API": "Actual Air SDK fast.h provides metal_kernel with CompileOptions; actual machine Mac16,12/arm64/macOS27.0.1. No new Metal runtime/vendor patch planned.",
+    "precision": "No implicit AWQ integer-zero conversion; no FP16 dequant/partial narrowing; original current mathematical error gates retained."
+  },
+  "validation": {
+    "ordinary_targets": [
+      "hyle_compute_provider_torch_cuda_test",
+      "affected MLX/model cases in hyle_compute_route_cuda_test and hyle_graph_route_cuda_test",
+      "hyle_compute_route_apple_test and affected native/Graph/CPU+Apple consumers"
+    ],
+    "risk": "Affected CUDA memcheck/racecheck, actual Metal shader validation, scoped ASan/UBSan/TSan facets, OOM/prefix/old output/close; preserve driver/private limitations.",
+    "delivery": "Affected source/relocated static/shared/owned public headers; reuse unchanged lower/vendor inputs, no full rebuild.",
+    "numeric": "All original F16/BF16/F32 and mixed affine, noninteger bias, E8M0 limits, FP8 codes, multiple groups, TF32 policy, edge tiles and checked IDs; original tolerances.",
+    "lifecycle": "At least64 steps, changed weight/IDs, two slots, old output, accepted failure and real retirement; W1 finite four-native/three-joint qualifications retained.",
+    "p1": "Only after ordinary gates and immutable candidate. Two fixed workloads/route, old669 same-contract whole-completion baseline, route-local AA/orders,5% original instrument/n15 or n31. No product/P1 PASS now."
+  },
+  "costs": {
+    "archive_fetch": "Python urllib SSL EOF retained; curl fetched the same4.29MiB locked archive successfully, exact486e8b... SHA verified. No checkout or dependency revision changed.",
+    "investigation": "Source preparation and reading not separately stopwatched; UNKNOWN, original intake budget/cost retained.",
+    "new_builds": 0,
+    "new_runtime_tests": 0,
+    "new_p1": 0
+  },
+  "raw": {
+    "path": "evidence/architecture/inference-g07-packed-weight-audit/audit-sources.zip",
+    "sha256": "b685e5c3739573b5ba655388f922bb8931f848b2368a5d4f0c55c5c367b1dd8a",
+    "entries_sha256_verified": true
+  },
+  "limits": [
+    "Implementation and all new runtime gates still unrun.",
+    "This freeze does not sign all-format/native performance or engine token/s.",
+    "Systematic scope/API/owner changes require return to audit."
+  ]
+}
