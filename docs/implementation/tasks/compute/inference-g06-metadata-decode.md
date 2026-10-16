@@ -487,3 +487,15 @@ Vulkan build12.945s/外层67.139s，stage与外层重叠。缺失archive/launch/
 D5只签有限source正确性/P0，最终san/header/迁址static/shared与性能待完整G06固定后。
 Apple managed建图、Vulkan重新编码与private/driver UNKNOWN保持；FI Q1/原生schedule复用
 及实际capture仍待下一批审计。owner仍AUDITED，G04/G05未决与整十项范围保持，完成数3/10。
+
+## FI runtime schedule 批：SCOPED
+
+[D6实际编译源码与固定peer反证](../../../../evidence/architecture/inference-g06-fi-schedule-runtime-intake/intake.json)
+绑定baseline `81aed8f30c71f382811dc690a992c51efccc3cfc`。本批满足原FI resume_condition的新consumer-cost事实，
+compute_provider_flashinfer由原G04/G05 BLOCKED合法进入本卡SCOPED；原candidate
+830dd9e01829e3e5850ddff7eaa6355ee7c8fd0d、性能未决、全部失败/费用与未知保留。
+实际WSL Ninja include指向的patched FI与干净69ff peer scheduler SHA一致；不能以
+.scratch辅助源码的未patch prefill行号冒充实际kernel。vLLM tensor-core Q1沿原Prefill
+数学族，不因命名新建decode kernel。新事实是KV indptr变化仍可能有完全相同的原调度表，
+以及零request的原planner除零；只定界原schedule复用与空执行边界，不扩数学/调优搜索。
+本段无产品修改或运行PASS；实际capture及Graph/联合完整资格仍为完整G06必做后续。

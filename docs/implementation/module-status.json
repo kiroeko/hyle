@@ -569,14 +569,9 @@
     },
     {
       "module": "compute_provider_flashinfer",
-      "state": "BLOCKED",
-      "record": "docs/implementation/tasks/compute/inference-g04-g05-cache-attention-domain.md",
-      "summary": "G04/G05 finite aggregate BLOCKED：CUDA attempt14 prefill非劣UNRESOLVED，原正确性/交付证据和候选保留；只读成本检查已终止、无新FI FIX。goal ACTIVE/3of10，按新卡推进已冻结G06；全部旧失败/未知/费用保留。",
-      "candidate": "830dd9e01829e3e5850ddff7eaa6355ee7c8fd0d",
-      "blocked_from": "CANDIDATE",
-      "blocker": "CE28 attempt14 qualified/strict0; CUDA prefill noninferiority remains UNRESOLVED at the unchanged finite [15,31] limit. Engineering performance cannot be accepted.",
-      "blocker_owner": "G04/G05 engineering performance; independent G06 consumer-cost work remains available.",
-      "resume_condition": "New scoped consumer/contract evidence or admitted product-cost work creates a materially different complete candidate; resume through SCOPED/AUDITED and validate the original applicable gates. Do not repeat unchanged candidate P1 or relax threshold."
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/compute/inference-g06-metadata-decode.md",
+      "summary": "G06 D6 scoped：实际锁定调度器/已编译WSL源码反证raw KV-indptr全等过严及空batch除零；仅审计原schedule等价复用和空执行，原G04/G05性能未决与全部失败/成本保留，未签新产品或capture资格。"
     },
     {
       "module": "compute_provider_ggml_metal",

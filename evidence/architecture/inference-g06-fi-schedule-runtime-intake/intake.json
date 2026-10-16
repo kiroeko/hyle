@@ -1,0 +1,247 @@
+{
+  "kind": "G06_D6_FLASHINFER_SCHEDULE_RUNTIME_SCOPE",
+  "baseline": "81aed8f30c71f382811dc690a992c51efccc3cfc",
+  "owner": "compute_provider_flashinfer",
+  "previous_owner": {
+    "module": "compute_provider_flashinfer",
+    "state": "BLOCKED",
+    "record": "docs/implementation/tasks/compute/inference-g04-g05-cache-attention-domain.md",
+    "summary": "G04/G05 finite aggregate BLOCKED：CUDA attempt14 prefill非劣UNRESOLVED，原正确性/交付证据和候选保留；只读成本检查已终止、无新FI FIX。goal ACTIVE/3of10，按新卡推进已冻结G06；全部旧失败/未知/费用保留。",
+    "candidate": "830dd9e01829e3e5850ddff7eaa6355ee7c8fd0d",
+    "blocked_from": "CANDIDATE",
+    "blocker": "CE28 attempt14 qualified/strict0; CUDA prefill noninferiority remains UNRESOLVED at the unchanged finite [15,31] limit. Engineering performance cannot be accepted.",
+    "blocker_owner": "G04/G05 engineering performance; independent G06 consumer-cost work remains available.",
+    "resume_condition": "New scoped consumer/contract evidence or admitted product-cost work creates a materially different complete candidate; resume through SCOPED/AUDITED and validate the original applicable gates. Do not repeat unchanged candidate P1 or relax threshold."
+  },
+  "active_source": {
+    "state": "BOUNDED_READONLY_ACTIVE_SOURCE",
+    "source": "/root/hyle-scratch/compute-unified/source-7a7b4c3b",
+    "build": "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/shared-sdk-build",
+    "native_batch_build_rule": "native_batch.cu.o: CUDA_COMPILER__hyle_compute_provider_flashinfer_unscanned_Release /root/hyle-scratch/compute-unified/source-7a7b4c3b/src/compute_provider_flashinfer/native_batch.cu || cmake_object_order_depends_target_hyle_compute_provider_flashinfer\n  DEFINES = -DFLASHINFER_ENABLE_BF16 -DFLASHINFER_ENABLE_F16 -DHYLE_COMPUTE_CUDA=1 -DHYLE_COMPUTE_FLASHINFER=1 -DHYLE_COMPUTE_PROVIDER_FLASHINFER_BUILD -Dhyle_compute_provider_flashinfer_EXPORTS\n  DEP_FILE = src/compute_provider_flashinfer/CMakeFiles/hyle_compute_provider_flashinfer.dir/native_batch.cu.o.d\n  FLAGS = -O3 -DNDEBUG -std=c++17 \"--generate-code=arch=compute_89,code=[sm_89]\" -Xcompiler=-fPIC -Xcompiler=-fvisibility=hidden,-fvisibility-inlines-hidden --split-compile=3\n  INCLUDES = -I/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/shared-sdk-build/src/compute_provider_flashinfer/cache-source-92767c3031b8a0a753f0cd36ce14ea792ac4595d7e1939c81d8deadf49ba7c4b/include -I/root/hyle-scratch/compute-unified/source-7a7b4c3b/include -I/root/hyle-scratch/compute-unified/source-7a7b4c3b/src/compute_provider_flashinfer -I/root/hyle-scratch/compute-unified/source-7a7b4c3b/src/compute_provider_flashinfer/../compute -I/root/hyle-scratch/compute-unified/source-7a7b4c3b/src/compute_provider_flashinfer/../compute_backend_cuda -isystem /root/.cache/hyle/dependencies/v1/sources/flashinfer-69ff11fc4954-dda66e35e348/include -isystem /usr/local/cuda-13.3/targets/x86_64-linux/include\n  OBJECT_DIR = src/compute_provider_flashinfer/CMakeFiles/hyle_compute_provider_flashinfer.dir\n  OBJECT_FILE_DIR = src/compute_provider_flashinfer/CMakeFiles/hyle_compute_provider_flashinfer.dir\n  pool = ce19_cuda_compile",
+    "files": [
+      {
+        "path": "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/shared-sdk-build/src/compute_provider_flashinfer/cache-source-92767c3031b8a0a753f0cd36ce14ea792ac4595d7e1939c81d8deadf49ba7c4b/include/flashinfer/attention/scheduler.cuh",
+        "sha256": "a11a39aea393cdb380ad9439aac9170cd96849d7426ebbb920c5c8cdadfcc575"
+      },
+      {
+        "path": "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/shared-sdk-build/src/compute_provider_flashinfer/cache-source-92767c3031b8a0a753f0cd36ce14ea792ac4595d7e1939c81d8deadf49ba7c4b/include/flashinfer/attention/prefill.cuh",
+        "sha256": "8146bd05db566d6f3c999a3aa3b83d91f7a565a343d06780edf2abd5faa0840f"
+      },
+      {
+        "path": "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/shared-sdk-build/src/compute_provider_flashinfer/cache-source-92767c3031b8a0a753f0cd36ce14ea792ac4595d7e1939c81d8deadf49ba7c4b/include/flashinfer/attention/default_prefill_params.cuh",
+        "sha256": "5b0545df7e134dc031e6a1179ec9c64a6d6b0e4d41b2cd98d3826165b3ed3615"
+      },
+      {
+        "path": "/root/hyle-scratch/compute-unified/source-7a7b4c3b/src/compute_provider_flashinfer/native_batch.cu",
+        "canonical": "src/compute_provider_flashinfer/native_batch.cu",
+        "sha256": "f4ed4d922d3151728593058538feb534fef6546b11c79560b0faf7dc71b705e7",
+        "canonical_match": true
+      },
+      {
+        "path": "/root/hyle-scratch/compute-unified/source-7a7b4c3b/src/compute_provider_flashinfer/native_batch.h",
+        "canonical": "src/compute_provider_flashinfer/native_batch.h",
+        "sha256": "49949837c8a0390683b5f8630b0e4a85c47db0c5580eff875dd07a9b51ba60ff",
+        "canonical_match": true
+      },
+      {
+        "path": "/root/hyle-scratch/compute-unified/source-7a7b4c3b/src/compute_provider_flashinfer/flashinfer_provider.cc",
+        "canonical": "src/compute_provider_flashinfer/flashinfer_provider.cc",
+        "sha256": "ca6d5b837e1e8e03703768ffb12b1b899193817c41acfaccfed73f3dd8aabe1a",
+        "canonical_match": true
+      },
+      {
+        "path": "/root/hyle-scratch/compute-unified/source-7a7b4c3b/third_party/flashinfer_cache/patches.json",
+        "canonical": "third_party/flashinfer_cache/patches.json",
+        "sha256": "1977b83b67495c4aedb391517c2f35c6034ea4b986716591732ddb2612cd1712",
+        "canonical_match": true
+      }
+    ],
+    "identity": {
+      "host": "Linux kiro-workstation 6.18.54.1-microsoft-standard-WSL2 #1 SMP PREEMPT_DYNAMIC Tue Oct  6 19:13:07 UTC 2026 x86_64 x86_64 x86_64 GNU/Linux",
+      "compiler": "g++-14 (Ubuntu 14.2.0-4ubuntu2~24.04.1) 14.2.0\nCopyright (C) 2024 Free Software Foundation, Inc.\nThis is free software; see the source for copying conditions.  There is NO\nwarranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.",
+      "cuda": "nvcc: NVIDIA (R) Cuda compiler driver\nCopyright (c) 2005-2026 NVIDIA Corporation\nBuilt on Tue_Jun_09_02:43:40_PM_PDT_2026\nCuda compilation tools, release 13.3, V13.3.73\nBuild cuda_13.3.r13.3/compiler.38244171_0",
+      "gpu": "NVIDIA GeForce RTX 4070, 617.14, GPU-e7376560-6f5d-ec19-6ee4-3dd3a2c81ef8, 8.9"
+    },
+    "peer": {
+      "root": "/root/hyle-scratch/compute-unified/peers/flashinfer-69ff-git-1",
+      "commit": "69ff11fc4954396d98326656dc85debd2223f637",
+      "status": "",
+      "scheduler_sha256": "a11a39aea393cdb380ad9439aac9170cd96849d7426ebbb920c5c8cdadfcc575"
+    },
+    "runtime_kernel_proof": [
+      {
+        "needle": "const uint32_t kv_chunk_size = *(params.kv_chunk_size_ptr);",
+        "first_line": 2927,
+        "lines": [
+          "    if constexpr (has_maybe_v_cache_sf_v<Params>) {",
+          "      maybe_v_cache_sf = params.maybe_v_cache_sf;",
+          "    }",
+          "",
+          "    static_assert(sizeof(DTypeQ) == 2);",
+          "    const uint32_t kv_chunk_size = *(params.kv_chunk_size_ptr);",
+          "    const dim3& tid = threadIdx;",
+          "",
+          "    auto block = cg::this_thread_block();",
+          "    const uint32_t bx = blockIdx.x, lane_idx = tid.x,",
+          "                   warp_idx = get_warp_idx<KTraits>(tid.y, tid.z), kv_head_idx = blockIdx.z;",
+          "    if (block_valid_mask && !block_valid_mask[bx]) {",
+          "      return;",
+          "    }",
+          "    const uint32_t num_kv_heads = gridDim.z, num_qo_heads = group_size * num_kv_heads;",
+          "    const uint32_t request_idx = request_indices[bx], qo_tile_idx = qo_tile_indices[bx],",
+          "                   kv_tile_idx = kv_tile_indices[bx];"
+        ]
+      },
+      {
+        "needle": "const uint32_t kv_chunk_size = *(params.kv_chunk_size_ptr);",
+        "first_line": 3735,
+        "lines": [
+          "    const uint32_t v_sf_stride_n = params.v_sf_stride_n;",
+          "    const uint32_t v_sf_stride_h = params.v_sf_stride_h;",
+          "",
+          "    static_assert(sizeof(DTypeQ) == 2);",
+          "    auto block = cg::this_thread_block();",
+          "    const uint32_t kv_chunk_size = *(params.kv_chunk_size_ptr);",
+          "",
+          "    const uint32_t lane_idx = tid.x, warp_idx = get_warp_idx<KTraits>(tid.y, tid.z);",
+          "    if (block_valid_mask && !block_valid_mask[bx]) {",
+          "      return;",
+          "    }",
+          "    const uint32_t num_qo_heads = num_kv_heads * group_size;",
+          "",
+          "    const uint32_t request_idx = request_indices[bx], qo_tile_idx = qo_tile_indices[bx],",
+          "                   kv_tile_idx = kv_tile_indices[bx];",
+          "    auto smem = reinterpret_cast<uint8_t*>(&smem_storage);",
+          "    AttentionVariant variant(params, /*batch_idx=*/request_idx, smem);"
+        ]
+      },
+      {
+        "needle": "const uint32_t kv_abs_base = kv_indptr[request_idx] + chunk_start;",
+        "first_line": 2961,
+        "lines": [
+          "        partition_kv ? min(kv_tile_idx * max_chunk_size + kv_start_idx, kv_len) : kv_start_idx;",
+          "    const uint32_t chunk_end =",
+          "        partition_kv ? min((kv_tile_idx + 1) * max_chunk_size + kv_start_idx, kv_len) : kv_len;",
+          "    const uint32_t chunk_size = chunk_end - chunk_start;",
+          "    // Absolute first token index for this CTA tile (used by produce_kv_sf).",
+          "    const uint32_t kv_abs_base = kv_indptr[request_idx] + chunk_start;",
+          "",
+          "    DTypeQKAccum s_frag[NUM_MMA_Q][NUM_MMA_KV][8];",
+          "    constexpr uint32_t O_FRAG_D =",
+          "        KTraits::USE_SOFTMAX_VO_SPLIT ? KTraits::NUM_MMA_D_VO_PER_WARP : KTraits::NUM_MMA_D_VO_TILE;",
+          "    alignas(16) float o_frag[NUM_MMA_Q][O_FRAG_D][8];",
+          "    [[maybe_unused]] float o_scale[NUM_MMA_Q][2];",
+          "    DTypeQKAccum m[NUM_MMA_Q][2];",
+          "    float d[NUM_MMA_Q][2];",
+          "    constexpr uint32_t LOCAL_ROPE_FREQ_ROWS =",
+          "        (KTraits::POS_ENCODING_MODE == PosEncodingMode::kRoPELlama &&",
+          "         !KTraits::USE_SHARED_ROPE_FREQ)"
+        ]
+      },
+      {
+        "needle": "const uint32_t num_kv_chunks =",
+        "first_line": 3299,
+        "lines": [
+          "      cp_async::wait_group<0>();",
+          "      block.sync();",
+          "",
+          "      finalize_m<KTraits>(variant, m);",
+          "",
+          "      const uint32_t num_kv_chunks =",
+          "          ceil_div(min(kv_len_safe, window_left + CTA_TILE_Q), kv_chunk_size);",
+          "      if constexpr (KTraits::USE_SOFTMAX_VO_SPLIT) {",
+          "        vosplit_write_o<KTraits>(o_frag, d, o_ptr_base, qo_packed_idx_base, qo_len,",
+          "                                 partition_kv ? num_kv_chunks * o_stride_n : o_stride_n, o_stride_h,",
+          "                                 get_warp_idx_kv<KTraits>(tid.z) * KTraits::NUM_MMA_D_VO_PER_WARP,",
+          "                                 group_size, lane_idx);",
+          "      } else {",
+          "        // threadblock synchronization",
+          "        threadblock_sync_mdo_states<KTraits>(o_frag, &smem_storage, m, d, warp_idx, lane_idx, tid);",
+          "",
+          "        // transform output"
+        ]
+      },
+      {
+        "needle": "const uint32_t num_kv_chunks =",
+        "first_line": 4221,
+        "lines": [
+          "      cp_async::wait_group<0>();",
+          "      block.sync();",
+          "",
+          "      finalize_m<KTraits>(variant, m);",
+          "",
+          "      const uint32_t num_kv_chunks =",
+          "          ceil_div(min(kv_len_safe, window_left + CTA_TILE_Q), kv_chunk_size);",
+          "",
+          "      if constexpr (KTraits::USE_VO_SPLIT) {",
+          "        vosplit_write_o<KTraits>(o_frag, d, o_ptr_base, qo_packed_idx_base, qo_len,",
+          "                                 partition_kv ? num_kv_chunks * o_stride_n : o_stride_n, o_stride_h,",
+          "                                 get_warp_idx_kv<KTraits>(tid.z) * KTraits::NUM_MMA_D_VO_PER_WARP,",
+          "                                 group_size, lane_idx);",
+          "      } else {",
+          "        // threadblock synchronization",
+          "        threadblock_sync_mdo_states<KTraits>(o_frag, &smem_storage, m, d, warp_idx, lane_idx, tid);",
+          ""
+        ]
+      }
+    ]
+  },
+  "fixed_peers": [
+    {
+      "name": "sglang",
+      "url": "https://raw.githubusercontent.com/sgl-project/sglang/7224fce1b5e488c9916f20ec0556d696e595d512/python/sglang/srt/layers/attention/flashinfer_backend.py",
+      "sha256": "a5649f67038153c35864b3f50d5c368071a56cbef75f266bec804dbf7e64363f",
+      "matched_fixed_intake": true
+    },
+    {
+      "name": "vllm",
+      "url": "https://raw.githubusercontent.com/vllm-project/vllm/98f721116227f0f48690deb05c815c057bac0668/vllm/v1/attention/backends/flashinfer.py",
+      "sha256": "343b949d62db7fc03f6ca0c682e1ec1cb60125461069b081ac1554b7a05214e9",
+      "matched_fixed_intake": true
+    }
+  ],
+  "source_facts": [
+    {
+      "path": "src/compute_provider_flashinfer/native_batch.h",
+      "sha256": "49949837c8a0390683b5f8630b0e4a85c47db0c5580eff875dd07a9b51ba60ff"
+    },
+    {
+      "path": "src/compute_provider_flashinfer/native_batch.cu",
+      "sha256": "f4ed4d922d3151728593058538feb534fef6546b11c79560b0faf7dc71b705e7"
+    },
+    {
+      "path": "src/compute_provider_flashinfer/flashinfer_provider.cc",
+      "sha256": "ca6d5b837e1e8e03703768ffb12b1b899193817c41acfaccfed73f3dd8aabe1a"
+    },
+    {
+      "path": "tests/compute_provider_flashinfer/native_cache_test.cc",
+      "sha256": "c046dda1ce8dc188e81d8dd5abfd46b98b34008d5cb14372c16c9971587d2660"
+    }
+  ],
+  "consumer": "Single/multi-request Q1 plus existing mixed prefill/decode, paged/ragged plain/FP8; original checked Direct/Graph/hybrid/pending journey.",
+  "new_evidence": [
+    "Locked scheduler derives request/q/kv tile and output/merge indptr from fixed Q topology and per-request chunk counts at the original chunk size; actual kernels read current KV offsets/IDs/tails. Raw KV-indptr equality is conservative, forcing redundant native query/plan and integer H2D.",
+    "PrefillSplitQOKVIndptr divides sum_packed_qo_len by batch_size without a zero-request guard; public schema permits an empty request set."
+  ],
+  "scope": "Audit exact original schedule reuse and explicit empty no-op; retain original native math/workspace/Queue/F1/F2 and all G04/G05 gates. Capture remains separately mandatory in full G06.",
+  "scheduler_proof": {
+    "sha256": "a11a39aea393cdb380ad9439aac9170cd96849d7426ebbb920c5c8cdadfcc575",
+    "lines": [
+      [
+        545,
+        682
+      ],
+      [
+        817,
+        845
+      ],
+      [
+        886,
+        888
+      ]
+    ],
+    "url": "https://github.com/flashinfer-ai/flashinfer/blob/69ff11fc4954396d98326656dc85debd2223f637/include/flashinfer/attention/scheduler.cuh"
+  },
+  "timestamp_utc": "2026-10-16T04:29:18.897443+00:00",
+  "elapsed": "Full read-only intake wall time UNKNOWN; no build/P1 run."
+}
