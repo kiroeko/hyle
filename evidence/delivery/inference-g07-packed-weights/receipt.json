@@ -1,0 +1,96 @@
+{
+  "schema": "hyle.inference-g07-sdk/v1",
+  "verdict": "PASS_RELOCATED_STATIC_SHARED_CONSUMERS_AND_HEADERS",
+  "candidate": "b483b8939e9c1d28a98eee3a6ecd13b3fd45fc88",
+  "test_revision": "c6b9f3aefc129ea640c26819248397285db8ac7b",
+  "rows": [
+    {
+      "id": "cuda-shared-1",
+      "route": "cuda",
+      "linkage": "shared",
+      "verdict": "PASS",
+      "result_path": "cuda-shared-1/result.json",
+      "result_sha256": "d84aee576b06013ac6e8db6fe45a2b2f61dc8d36669730cefbf10f6dd141bea8",
+      "consumer_count": 3,
+      "independent_public_headers": 5,
+      "owner_artifacts": [
+        {
+          "path": "/root/hyle-scratch/compute-unified/g07-sdk/cuda-shared-1/relocated/lib/libhyle_compute_provider_torch_cuda.so.0.1.0",
+          "sha256": "20cfbd447b2c7a4642e0dac432e8e02320900665aa4e62bbe0cbc8e8f1758dbc",
+          "bytes": 206248
+        }
+      ],
+      "retained_failure": "Public test called a Provider factory not directly linked by the shared public facade; switch only this test to the normal public CUDA Context. Product and installed prefix unchanged.",
+      "elapsed_seconds": 119.939174464
+    },
+    {
+      "id": "cuda-static-1",
+      "route": "cuda",
+      "linkage": "static",
+      "verdict": "PASS",
+      "result_path": "cuda-static-1/result.json",
+      "result_sha256": "95b6ef4a034d2d3d364cbf96d29d034729cbd89d258d7ff2ec74af9b2edfdd69",
+      "consumer_count": 3,
+      "independent_public_headers": 5,
+      "owner_artifacts": [
+        {
+          "path": "/root/hyle-scratch/compute-unified/g07-sdk/cuda-static-1/relocated/lib/libhyle_compute_provider_torch_cuda.a",
+          "sha256": "d3a2e765d8567a4bf3cd1323dea51d4144f89e47f12f8f3918bda02d572b726a",
+          "bytes": 251748
+        }
+      ],
+      "retained_failure": null,
+      "elapsed_seconds": 117.71451129500001
+    },
+    {
+      "id": "apple-shared-1",
+      "route": "apple",
+      "linkage": "shared",
+      "verdict": "PASS",
+      "result_path": "apple-shared-1/result.json",
+      "result_sha256": "a23e49a5ab381a5acec20de73dbb631773f0495afd7a346bce6bdcc8d1022a73",
+      "consumer_count": 3,
+      "independent_public_headers": 4,
+      "owner_artifacts": [
+        {
+          "path": "/Users/kiro/hyle-scratch/compute-unified/g07-sdk/apple-shared-1/relocated/lib/libhyle_compute_route_apple.0.1.0.dylib",
+          "sha256": "90fe4491b267e3e90fee189c80f3b7d56c853fc79d45ba78c9c994409df82842",
+          "bytes": 823704
+        }
+      ],
+      "retained_failure": "AssertionError()",
+      "elapsed_seconds": 25.078832334
+    },
+    {
+      "id": "apple-static-1",
+      "route": "apple",
+      "linkage": "static",
+      "verdict": "PASS",
+      "result_path": "apple-static-1/result.json",
+      "result_sha256": "c544bba7f805ec3d2e6a2d76a882d1f2ebedeb93ac00a4f8ea7161fe5c3c4d46",
+      "consumer_count": 3,
+      "independent_public_headers": 4,
+      "owner_artifacts": [
+        {
+          "path": "/Users/kiro/hyle-scratch/compute-unified/g07-sdk/apple-static-1/relocated/lib/libhyle_compute_route_apple.a",
+          "sha256": "6856f612ce93fbb430e0ae4df2a6dda5ef7fe5b76732c8abbb49eb28e0cca52b",
+          "bytes": 1298624
+        }
+      ],
+      "retained_failure": null,
+      "elapsed_seconds": 16.612499375
+    }
+  ],
+  "consumer_runs": 12,
+  "independent_header_compilations": 18,
+  "raw_archive": {
+    "path": "raw.zip",
+    "sha256": "483a67c63b439472154d2ef340df1ccc355ff19241e142532d4701feab6f4ca1"
+  },
+  "scope": "Actual WSL CUDA and MacBook Air Apple shipping SDKs; prefix renamed, old staging absent; three consumers per linkage, public compile include isolation and runtime dependency checks. No Windows SDK or full-engine claim.",
+  "retained_limits": [
+    "Original CUDA shared fixture link failure and same-prefix test-only resume retained.",
+    "Apple shared missing disposable old-prefix setup failure and same-producer install resume retained.",
+    "Public source/risk qualification is separate; P1, W1 reconciliation and final module closure remain pending."
+  ]
+}

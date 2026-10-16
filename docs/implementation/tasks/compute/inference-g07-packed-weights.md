@@ -235,3 +235,17 @@ Apple保留原MLX私有缓存/完成owner。这些原生私有释放事实必须
 分配顺序和原统一仪器资格；随后沿原n15/必要n31与5%门执行，不刷新失败/未知费用。基准只是
 两种具名正常调用的工程比较，不推导token/s、完整模型或llama.cpp成绩。发现产品问题退回
 AUDITED；不得在CANDIDATE下改kernel、公共形状或精度。G08–G10仍未开始。
+
+### 迁址SDK与P1适配源码审计
+
+[四种迁址SDK记录](../../../../evidence/delivery/inference-g07-packed-weights/receipt.json)
+现已通过：WSL CUDA及实际Air Apple的static/shared各运行packed、权重迁移、联合执行
+三个纯公开消费者，共12次；独立公开头共编译18次。原CUDA shared测试链接失败和Apple
+shared缺少已清理旧prefix的setup失败、同配置续跑全部保留；不扩大为Windows SDK资格。
+
+[P1适配源码账单](../../../../evidence/architecture/inference-g07-packed-weight-audit/p1-adapter.json)
+已核原669实际ATen/from_blob/NoTF32Guard/逐group数学/输出copy及Apple原prepare→compile、
+动态量化、native同步/输出wait。两端旧结果都有跨调用保留：稳态的上次释放归入下一次submit，
+最后一份结果及Program/Invocation/native缓存最终销毁明确DEFERRED。独立benchmark只重命名
+原导出符号，使用同一公共提交与完成路径；不搬动数学到冷期。此记录只是可比性源码预审，
+尚未运行独立数值preflight、A/A或P1，不签速度门。owner仍CANDIDATE。

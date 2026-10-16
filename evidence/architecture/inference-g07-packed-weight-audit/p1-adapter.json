@@ -1,0 +1,80 @@
+{
+  "schema": "hyle.inference-g07-p1-adapter-audit/v1",
+  "verdict": "SOURCE_AUDIT_COMPARABLE_PENDING_RUNTIME_PREFLIGHT",
+  "original_revision": "669121418669b31f6849c74f64362aaf8d6eb919",
+  "candidate": "b483b8939e9c1d28a98eee3a6ecd13b3fd45fc88",
+  "sources": [
+    {
+      "path": "src/compute_provider_torch_cuda/artifact_provider.cc",
+      "original_sha256": "c4f6e71cdd8135b409c0fef020fe77fc2eb4528e06fd5163846b27a631477d49",
+      "current_sha256": "eb2a53e76d3bb307436b956eb7b12159a289eecbc07f2c4e701b32d29f9e1a20",
+      "byte_identical": false
+    },
+    {
+      "path": "third_party/mlx_cuda_quant/mlx_cuda_quant.h",
+      "original_sha256": "672189b4cc387811845eb30ddceaaa5f40d1943723608740ec23fd57885233af",
+      "current_sha256": "c390f4a047ec1af47182cbac7e1c39438fcf4a5c83fcedbea8ef3a6095d06ea5",
+      "byte_identical": false
+    },
+    {
+      "path": "src/compute_route_apple/apple_mature_float.cc",
+      "original_sha256": "20ffaec7840532a910596268546b5679e228a07e1a1a8613fcd8ce27aeebb962",
+      "current_sha256": "06c7c152fcc064f8af049b3ad8a6b5fbe4fb7c24a6b225c4188dc4de001d6779",
+      "byte_identical": false
+    },
+    {
+      "path": "src/compute_route_apple/apple_operations.cc",
+      "original_sha256": "4c90b14e44cc3a438c16c9935ef19e1e14a1642790179261004cb2d8d6065ee2",
+      "current_sha256": "4c90b14e44cc3a438c16c9935ef19e1e14a1642790179261004cb2d8d6065ee2",
+      "byte_identical": true
+    },
+    {
+      "path": "src/compute_route_apple/apple_context.cc",
+      "original_sha256": "274037dda5c58fda4aab3a210a0606f1e86954385d62d448ed44e9802843fb37",
+      "current_sha256": "274037dda5c58fda4aab3a210a0606f1e86954385d62d448ed44e9802843fb37",
+      "byte_identical": true
+    },
+    {
+      "path": "src/compute/operation.cc",
+      "original_sha256": "6e615128d5980d2a32dc8ddb2107b9489ea070268d0e094fe4854d6b21951a14",
+      "current_sha256": "6e615128d5980d2a32dc8ddb2107b9489ea070268d0e094fe4854d6b21951a14",
+      "byte_identical": true
+    }
+  ],
+  "cuda": {
+    "original": "Original provider wraps real borrowed payload using ATen from_blob under original external Queue stream and NoTF32Guard. Original MLX matmul expands codes, forms per-group F32 values, performs F32 matmul and ordered sum, stores result in Invocation, then copies to caller output. No decode/repack lifted to preparation.",
+    "candidate": "Private native CUDA TU reads original U32 codes/scales/noninteger biases. Same public explicit ProviderBinding, Context, prepare, OperationInvocation, Queue and Completion.",
+    "charged": [
+      "public submit/admission/from_blob metadata",
+      "all original per-call unpack/conversion/group temporaries/matmul/sum/destination copy OR complete native kernel",
+      "actual Queue event/native prefix completion/status wait",
+      "Completion and public temporary owner release",
+      "steady-cycle previous Invocation.result replacement/free on the next submission"
+    ],
+    "deferred": [
+      "context/program/invocation creation",
+      "input upload and first library/JIT/cache warmup",
+      "final retained Invocation.result destruction",
+      "process and library allocator/driver cache teardown"
+    ],
+    "selection_note": "Frozen P1 is linear with no IDs. Checked-ID correctness and removed item wait qualified separately; do not ascribe a checked selection speedup to this linear measurement."
+  },
+  "apple": {
+    "original": "Original lower_mlx_float passed as public Context.compile RegionFunction with the same operation, checked logical descriptions/InputSpecs and supplied stream; this is exactly the original Context.prepare branch. Same unchanged prepare_mlx mx::compile(False), isolated cold warmup, evaluate_mlx async_eval/synchronize/each-output.wait.",
+    "candidate": "Normal public Context.prepare, same logical inputs and invocation path. Original BF16 dynamic activation quantizer remains hot in both. Immutable packed weights remain explicit inputs in both.",
+    "charged": [
+      "Invocation.submit clears prior native arrays, creates/publishes result owner and enqueues original worker",
+      "all per-call dynamic quantization, scale repetition, original decode/batched F32 matmul/ordered scaling OR native packed tile",
+      "native compiled graph evaluation, stream synchronize, each output wait",
+      "checked result wait and public owner release; next submit clears previous retained array"
+    ],
+    "deferred": [
+      "Context/Program/Invocation setup and initial isolated compile/JIT warmup",
+      "input carrier upload/evaluation",
+      "final retained Results arrays/native allocator cache and runtime destruction"
+    ],
+    "precision": "BF16 input and final BF16 output; both F32 dot, per-block activation scale then weight scale and ordered F32 accumulation. Native path does not substitute FP16 matrix operands."
+  },
+  "numerical_preflight": "Both M1/M64 full fixed K/N shapes, 3 replays each arm and independent stored-byte double oracle before timing. CUDA finite dyadic F32 tolerance1e-4, Apple exact BF16 rounding for chosen exact finite dyadic input; dynamic quantizer still executes every call.",
+  "qualification": "No sample has run at this audit. Use existing unified runner/statistics/controls, route-local selected-selected and original-original A/A, both execution/allocation orders and placement, n15/31 and5% unchanged. Product bytes immutable; real product defect requires retreat to AUDITED."
+}
