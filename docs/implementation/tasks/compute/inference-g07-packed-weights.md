@@ -1,7 +1,7 @@
 # G07 packed 权重消费与 checked selection
 
-状态：**SCOPED，2026-10-16**。本卡承接完整 G01–G10 goal 中的 G07，不验收 G04/G05，
-也不重开 G06 的 M/S/L/D。baseline 为 `a638938b783b6fdae57e83f572aa0427d7188e7f`；
+状态：**SCOPED，2026-10-16，新G07–G10 goal已开始续跑本卡**。G01–G06已告一段落，
+本卡不重开它们。原baseline为 `a638938b783b6fdae57e83f572aa0427d7188e7f`；
 产品输入保持完整 `669121418669b31f6849c74f64362aaf8d6eb919`。
 当前施工 owner 仅 `compute_provider_torch_cuda`、`compute_route_apple`，从各自 CLOSED
 进入 SCOPED。其它 owner 只作只读复用/消费审计；需要改产品时先明确纳入合法阶段。
@@ -100,3 +100,16 @@ Windows 是产品真相；普通并行最多4 workers，重型 Windows/WSL/Air �
 文档修改重跑。固定命令仍为 selector、`check-module-closure.py --previous-ref <改前提交>`、
 生成 status、`check-docs.py`、`git diff --check`。预算/停止条件到达时必须按协议明确裁决；
 现阶段的下一步是完成上述有限能力/承载与 API 审计，不能把 SCOPED 当产品授权。
+
+## 新goal续跑检查点
+
+用户在G04/G05收口后明确要求创建新goal并开始剩余四项，现已ACTIVE。续跑文档baseline
+为`6d8f4395d09ba0d96e2c48f26c9a212a8c920f3b`，原产品与W1–W4集合不变，原调查费用/
+预算及失败不重置。[首个检查点](../../../../evidence/architecture/inference-g07-packed-weight-audit/checkpoint-1.json)
+核9个intake源码SHA仍匹配，并补4个实际测试/构建/Apple执行锚点；尚未冻结产品FIX。
+
+当前先裁决CUDA逐group临时值与IDs checked wait的成熟承载。现有MLX affine测试包含
+非整数bias/scale关系，不能默认无损改装为整数zero-point的AWQ/Marlin。Apple affine
+已有quantized_matmul/gather_qmm，应先证明复用；block128的decode位于建图路径，仍须核
+explicit constant和runtime input的实际求值边界，不能只凭源码出现decode就认定每步重复。
+不按地址缓存可变输入，不新增测试专用公共入口，不因启动新goal重复旧全局缺口调查。

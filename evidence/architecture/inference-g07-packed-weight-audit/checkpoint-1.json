@@ -1,0 +1,150 @@
+{
+  "state": "AUDIT_CHECKPOINT_1_NOT_FIX_FREEZE",
+  "timestamp_utc": "2026-10-16T10:13:35.733170+00:00",
+  "head": "6d8f4395d09ba0d96e2c48f26c9a212a8c920f3b",
+  "product_candidate": "669121418669b31f6849c74f64362aaf8d6eb919",
+  "card": "docs/implementation/tasks/compute/inference-g07-packed-weights.md",
+  "goal": {
+    "status": "ACTIVE",
+    "scope": [
+      "G07",
+      "G08",
+      "G09",
+      "G10"
+    ],
+    "accepted_before_goal": [
+      "G01",
+      "G02",
+      "G03",
+      "G04",
+      "G05",
+      "G06"
+    ],
+    "completed_in_goal": 0
+  },
+  "owners": [
+    "compute_provider_torch_cuda",
+    "compute_route_apple"
+  ],
+  "owner_state": "SCOPED",
+  "source_anchors": [
+    {
+      "path": "include/hyle/compute/model_ops.h",
+      "sha256": "165cfc86281d90e246f137892c0fa1f625421a53f6bdbf9877aef9828773f8c9",
+      "matched_scoped_intake": true
+    },
+    {
+      "path": "src/compute_provider_torch_cuda/artifact_provider.cc",
+      "sha256": "c4f6e71cdd8135b409c0fef020fe77fc2eb4528e06fd5163846b27a631477d49",
+      "matched_scoped_intake": true
+    },
+    {
+      "path": "src/compute_route_apple/apple_mature_float.cc",
+      "sha256": "20ffaec7840532a910596268546b5679e228a07e1a1a8613fcd8ce27aeebb962",
+      "matched_scoped_intake": true
+    },
+    {
+      "path": "src/compute_route_apple/apple_tensor.cc",
+      "sha256": "93462583dfeb859fc9a59a5a8eef36540a84346bebca9cf6e331934bd10dc1f7",
+      "matched_scoped_intake": true
+    },
+    {
+      "path": "src/compute_route_apple/apple_operations.cc",
+      "sha256": "4c90b14e44cc3a438c16c9935ef19e1e14a1642790179261004cb2d8d6065ee2",
+      "matched_scoped_intake": true
+    },
+    {
+      "path": "src/compute_route_apple/apple_context.cc",
+      "sha256": "274037dda5c58fda4aab3a210a0606f1e86954385d62d448ed44e9802843fb37",
+      "matched_scoped_intake": true
+    },
+    {
+      "path": "src/compute_provider_ggml_cuda/tensor_program.cc",
+      "sha256": "c25c915b548b48298388ad0ffdf796aafbf0a2508ce7808f29bd96e4acf098e0",
+      "matched_scoped_intake": true
+    },
+    {
+      "path": "src/compute_route_vulkan/vulkan_mlx.cc",
+      "sha256": "dca494fd5cf471ebe09b7e1710939f686d03c9bd6814140c823a47e31ed542a9",
+      "matched_scoped_intake": true
+    },
+    {
+      "path": "third_party/mlx_cuda_quant/mlx_cuda_quant.h",
+      "sha256": "672189b4cc387811845eb30ddceaaa5f40d1943723608740ec23fd57885233af",
+      "matched_scoped_intake": true
+    },
+    {
+      "path": "tests/compute_provider_torch_cuda/mlx_precision_test.cc",
+      "sha256": "8bedd9ff0eadbd904dfa4e22b28d8bf2c4d119e3e33beca744908d59f227781f"
+    },
+    {
+      "path": "src/compute_provider_torch_cuda/CMakeLists.txt",
+      "sha256": "fbed96e95c94737d5ab16b84a141f94bbbcd13d6fc77ee43a3e722868987088e"
+    },
+    {
+      "path": "src/compute_route_apple/apple_context.cc",
+      "sha256": "274037dda5c58fda4aab3a210a0606f1e86954385d62d448ed44e9802843fb37"
+    },
+    {
+      "path": "tests/compute_provider_torch_cuda/CMakeLists.txt",
+      "sha256": "38a8d7333c306dcea2707f67217754222532746b0df38358f6c9c5f8a95db9c0"
+    }
+  ],
+  "current_findings": [
+    {
+      "family": "W1",
+      "disposition": "Existing native carrier reuse remains the first route",
+      "fact": "Q4_K/Q6_K/Q8_0 carriers are already present; repeated-cost and ownership qualification still required. The Qwen vocabulary role is Q6_K, not inferred from Q4 filename."
+    },
+    {
+      "family": "W2 CUDA",
+      "disposition": "Finite execution mechanism to resolve before FIX",
+      "fact": "Borrowed ATen matmul loops over every K group, unpacks selected current group, creates float values and invokes matmul/add. It does not expand the entire expert bank, but repeats temporary values and calls on warm execution."
+    },
+    {
+      "family": "W3 CUDA",
+      "disposition": "Preserve checked errors while selecting device checked carrier",
+      "fact": "artifact_provider.cc currently converts IDs then performs any().item<bool>() before index_select, forcing a GPU-to-host control check. Do not remove bounds checks or publish a successful invalid result."
+    },
+    {
+      "family": "W2 Apple affine",
+      "disposition": "KEEP/BORROW candidate, requires actual consumer qualification",
+      "fact": "Existing quantized_matmul/gather_qmm and device status already provide a native packed route; do not replace this merely to create new code."
+    },
+    {
+      "family": "W2 Apple block128 / W4",
+      "disposition": "Warm repetition not proven by decode source alone",
+      "fact": "block_dot contains decode/matmul while Apple region compilation and explicit constants also exist. Must resolve compile/evaluation and constant/runtime-input boundaries before attributing a per-step cost or adding a cache."
+    },
+    {
+      "family": "Precision/repack",
+      "disposition": "No automatic AWQ/Marlin equivalence",
+      "fact": "Existing affine precision test admits scale=.1 and bias=.03 for q7/q5 with activation1/-1.375; bias/scale=.3 is not an integer zero point. A representation requiring integer zero points cannot be assumed to preserve this affine domain.",
+      "proof": "Source-level algebraic constraint from an existing test, not a newly executed GPU test; mature repack/native backend precision must be checked separately."
+    }
+  ],
+  "frozen_scope_unchanged": true,
+  "product_fix_set_frozen": false,
+  "product_changes": [],
+  "registry_changes": [],
+  "new_builds": 0,
+  "new_runtime_tests": 0,
+  "new_p1_runs": 0,
+  "next_action": "Finish the existing W1-W4 native-carrier/input-mutability and checked-status audit, freeze finite KEEP/FIX/BORROW plus API/cost/validation before entering AUDITED. No additional all-library or peer feature sweep.",
+  "cost": "Existing G07 intake costs retained. This checkpoint is source-only and not separately stopwatched; no reset of original budget/failures. No heavy job.",
+  "setup_notes": [
+    "Attempted to open a presumed foundation-audit raw.zip; no such archive exists. Used its actual source-manifest and existing scoped receipt instead; no build/runtime effect."
+  ],
+  "limits": [
+    "No new mathematical/runtime PASS or performance direction.",
+    "G08-G10 remain future scoped work in this goal; CLI implementation follows all four and is not part of the goal."
+  ],
+  "maintenance_validation": {
+    "base": "6d8f4395d09ba0d96e2c48f26c9a212a8c920f3b",
+    "selector": "READY:docs,closure;146 skipped/reused",
+    "module_closure": "PASS:64 components,schema4",
+    "docs": "PASS:1251 Markdown files,6399 links",
+    "diff": "PASS",
+    "registry_or_product_changed": false
+  }
+}

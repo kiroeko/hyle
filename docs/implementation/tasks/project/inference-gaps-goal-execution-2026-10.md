@@ -1,8 +1,9 @@
 # 单机推理基础缺口补齐执行总卡
 
-状态：**G01–G06六项已验收；G07–G10全部保留，2026-10-16**。旧goal已由用户清除，
-当前用户要求先完成这四项有限范围，再开发Qwen3.5-2B full CUDA命令行引擎与llama.cpp比较
-prefill/decode tokens/s；本卡不自动创建或恢复goal。原G01–G10的修正、成熟承载或完整路线反证范围保留。
+状态：**G01–G06六项已验收；新G07–G10 goal ACTIVE，2026-10-16**。旧goal不恢复；用户
+已明确要求创建新goal并开始剩余四项，现从原G07两SCOPED owner的有限审计续跑。
+四项完成后再开发Qwen3.5-2B full CUDA文本CLI，与llama.cpp比较prefill/decode tokens/s；
+CLI实现在本goal之外。原G01–G10的修正、成熟承载或完整路线反证范围保留。
 不能以延后、引擎自己写胶水或一个小模型出字代替完成。
 
 baseline：`5d46db5fd99322e2f75d3fe07553c61fadff8eb9`。创建时工作树干净，64 个 registry owner
@@ -278,6 +279,12 @@ requirement；历史FAIL、预算/费用和private UNKNOWN保留。goal更新3/1
 四组完整范围、原生与联合资格、冷热成本/权限/失败边界和预声明验收均保留，当前未改产品。
 
 ## 2026-10-16 当前交接
+
+本次用户明确授权后已创建**新的G07–G10 goal**，当前ACTIVE、完成0/4；本总清单历史
+累计完成6/10。G07已开始W1–W4源码与自然路线审计，见
+[当前卡](../compute/inference-g07-packed-weights.md)。顺序为G07→G08→G09→G10；每项先定
+有限owner/API/语义/费用与适用验收，批量实现、集中检查、定向修复。范围独立且不冲突的
+只读准备可并行；重型构建/验证串行，不默认生成新subagent或全库build。
 
 G01–G06告一段落。剩余G07 packed权重、G08输出数值选择、G09联合流水、G10 CPU预算
 全部完成有限范围后，再按[Qwen CLI合同](qwen35-2b-command-consumer-scope-2026-10.md#7-g01g10之后的full-cuda命令与性能交付)
