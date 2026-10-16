@@ -1,0 +1,1582 @@
+{
+  "schema": "hyle.inference-g08-cuda-sdk-checkpoint/v1",
+  "verdict": "WINDOWS_SHARED_AND_WSL_STATIC_PUBLIC_CONSUMERS_HEADERS_LICENSE_PASS",
+  "candidate": "5103c13d8ed119b06aa64e799f9768aea45ab913",
+  "source_snapshot": "d5b9490a5958593915d69750cb3a4470866a7176",
+  "cases": [
+    {
+      "platform_mode": "windows-shared",
+      "result": {
+        "state": "RELOCATED_SDK_PUBLIC_CONSUMERS_HEADERS_LICENSE_RUNTIME_PASS",
+        "pid": 53276,
+        "route": "cuda",
+        "mode": "shared",
+        "producer": "C:\\h7\\w-cuda\\selected-graph\\shared-sdk-build",
+        "max_jobs": 2,
+        "stages": [
+          {
+            "stage": "producer-configure",
+            "command": [
+              "cmake",
+              "-S",
+              "C:/public/project-hyle/hyle",
+              "-B",
+              "C:/h7/w-cuda/selected-graph/shared-sdk-build",
+              "-DHYLE_BUILD_TESTS=OFF",
+              "-DHYLE_BUILD_BENCH=OFF",
+              "-DHYLE_INSTALL=ON",
+              "-DHYLE_TEST_INSTRUMENTATION=OFF",
+              "-DHYLE_COMPONENTS=compute;graph",
+              "-DHYLE_COMPUTE_ROUTES=cpu;cuda",
+              "-DHYLE_STATIC=OFF",
+              "-DCMAKE_PROJECT_INCLUDE=C:/public/project-hyle/hyle/.scratch/inference-gaps/g08_shipping_cuda_profile.cmake"
+            ],
+            "exit_code": 1,
+            "elapsed_seconds": 52.67200000002049,
+            "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g08-sdk-windows\\cuda-shared-1\\producer-configure.log"
+          },
+          {
+            "stage": "producer-configure",
+            "command": [
+              "cmake",
+              "-S",
+              "C:/public/project-hyle/hyle",
+              "-B",
+              "C:/h7/w-cuda/selected-graph/shared-sdk-build",
+              "-DHYLE_BUILD_TESTS=OFF",
+              "-DHYLE_BUILD_BENCH=OFF",
+              "-DHYLE_INSTALL=ON",
+              "-DHYLE_TEST_INSTRUMENTATION=OFF",
+              "-DHYLE_COMPONENTS=compute;graph",
+              "-DHYLE_COMPUTE_ROUTES=cpu;cuda",
+              "-DHYLE_STATIC=OFF",
+              "-DCMAKE_PROJECT_INCLUDE=C:/public/project-hyle/hyle/.scratch/inference-gaps/g08_shipping_cuda_profile.cmake"
+            ],
+            "exit_code": 0,
+            "elapsed_seconds": 59.98399999999674,
+            "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g08-sdk-windows\\cuda-shared-1\\producer-configure-resume1.log"
+          },
+          {
+            "stage": "producer-build-manifest",
+            "command": [
+              "ninja",
+              "-C",
+              "C:\\h7\\w-cuda\\selected-graph\\shared-sdk-build",
+              "build.ninja"
+            ],
+            "exit_code": 0,
+            "elapsed_seconds": 0.17199999996228144,
+            "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g08-sdk-windows\\cuda-shared-1\\producer-build-manifest-resume1.log"
+          },
+          {
+            "stage": "producer-build-manifest",
+            "command": [
+              "ninja",
+              "-C",
+              "C:\\h7\\w-cuda\\selected-graph\\shared-sdk-build",
+              "build.ninja"
+            ],
+            "exit_code": 0,
+            "elapsed_seconds": 0.17199999996228144,
+            "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g08-sdk-windows\\cuda-shared-1\\producer-build-manifest-resume2.log"
+          },
+          {
+            "stage": "producer-build",
+            "command": [
+              "ninja",
+              "-C",
+              "C:\\h7\\w-cuda\\selected-graph\\shared-sdk-build",
+              "-f",
+              "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g08-sdk-windows\\cuda-shared-1\\producer-build-preview.ninja",
+              "-j",
+              "2",
+              "hyle_compute",
+              "hyle_compute_ops",
+              "hyle_compute_batch",
+              "hyle_compute_state",
+              "hyle_compute_stream",
+              "hyle_graph",
+              "hyle_graph_batch",
+              "hyle_compute_route_cpu",
+              "hyle_graph_route_cpu",
+              "hyle_compute_route_cuda",
+              "hyle_graph_route_cuda",
+              "hyle_graph_route_cpu_cuda"
+            ],
+            "exit_code": 2,
+            "elapsed_seconds": 112.45400000002701,
+            "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g08-sdk-windows\\cuda-shared-1\\producer-build-resume2.log"
+          },
+          {
+            "stage": "producer-configure",
+            "command": [
+              "cmake",
+              "-S",
+              "C:/public/project-hyle/hyle",
+              "-B",
+              "C:/h7/w-cuda/selected-graph/shared-sdk-build",
+              "-DHYLE_BUILD_TESTS=OFF",
+              "-DHYLE_BUILD_BENCH=OFF",
+              "-DHYLE_INSTALL=ON",
+              "-DHYLE_TEST_INSTRUMENTATION=OFF",
+              "-DHYLE_COMPONENTS=compute;graph",
+              "-DHYLE_COMPUTE_ROUTES=cpu;cuda",
+              "-DHYLE_STATIC=OFF",
+              "-DCMAKE_PROJECT_INCLUDE=C:/public/project-hyle/hyle/.scratch/inference-gaps/g08_shipping_cuda_profile.cmake"
+            ],
+            "exit_code": 0,
+            "elapsed_seconds": 184.42199999996228,
+            "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g08-sdk-windows\\cuda-shared-1\\producer-configure-resume3.log"
+          },
+          {
+            "stage": "producer-build-manifest",
+            "command": [
+              "ninja",
+              "-C",
+              "C:\\h7\\w-cuda\\selected-graph\\shared-sdk-build",
+              "build.ninja"
+            ],
+            "exit_code": 0,
+            "elapsed_seconds": 0.17099999997299165,
+            "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g08-sdk-windows\\cuda-shared-1\\producer-build-manifest-resume3.log"
+          },
+          {
+            "stage": "producer-build-native-reuse",
+            "command": [
+              "C:\\Program Files\\Python312\\python.exe",
+              "-X",
+              "utf8",
+              "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g08_windows_cuda_native_reuse.py",
+              "shared",
+              "2"
+            ],
+            "exit_code": 0,
+            "elapsed_seconds": 11.062999999965541,
+            "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g08-sdk-windows\\cuda-shared-1\\producer-build-native-reuse-resume3.log"
+          },
+          {
+            "stage": "producer-build",
+            "command": [
+              "ninja",
+              "-C",
+              "C:\\h7\\w-cuda\\selected-graph\\shared-sdk-build",
+              "-f",
+              "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g08-sdk-windows\\cuda-shared-1\\producer-build-preview.ninja",
+              "-j",
+              "2",
+              "hyle_compute",
+              "hyle_compute_ops",
+              "hyle_compute_batch",
+              "hyle_compute_state",
+              "hyle_compute_stream",
+              "hyle_graph",
+              "hyle_graph_batch",
+              "hyle_compute_route_cpu",
+              "hyle_graph_route_cpu",
+              "hyle_compute_route_cuda",
+              "hyle_graph_route_cuda",
+              "hyle_graph_route_cpu_cuda"
+            ],
+            "exit_code": 0,
+            "elapsed_seconds": 176.18699999997625,
+            "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g08-sdk-windows\\cuda-shared-1\\producer-build-resume3.log"
+          },
+          {
+            "stage": "install",
+            "command": [
+              "cmake",
+              "--install",
+              "C:\\h7\\w-cuda\\selected-graph\\shared-sdk-build",
+              "--prefix",
+              "C:\\h7\\g08-sdk\\cuda-shared-1\\staging"
+            ],
+            "exit_code": 0,
+            "elapsed_seconds": 1.6880000000237487,
+            "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g08-sdk-windows\\cuda-shared-1\\install-resume3.log"
+          },
+          {
+            "stage": "consumer-configure",
+            "command": [
+              "cmake",
+              "-S",
+              "C:/h7/g08-sdk/cuda-shared-1/consumer",
+              "-B",
+              "C:/h7/g08-sdk/cuda-shared-1/consumer-build",
+              "-G",
+              "Ninja",
+              "-DCMAKE_BUILD_TYPE=Release",
+              "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON",
+              "-DCMAKE_PREFIX_PATH=C:/h7/g08-sdk/cuda-shared-1/relocated",
+              "-DCUDAToolkit_ROOT=C:/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v13.3"
+            ],
+            "exit_code": 0,
+            "elapsed_seconds": 143.5470000000205,
+            "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g08-sdk-windows\\cuda-shared-1\\consumer-configure-resume3.log"
+          },
+          {
+            "stage": "consumer-build-manifest",
+            "command": [
+              "ninja",
+              "-C",
+              "C:\\h7\\g08-sdk\\cuda-shared-1\\consumer-build",
+              "build.ninja"
+            ],
+            "exit_code": 0,
+            "elapsed_seconds": 0.046999999962281436,
+            "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g08-sdk-windows\\cuda-shared-1\\consumer-build-manifest-resume3.log"
+          },
+          {
+            "stage": "consumer-build",
+            "command": [
+              "ninja",
+              "-C",
+              "C:\\h7\\g08-sdk\\cuda-shared-1\\consumer-build",
+              "-f",
+              "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g08-sdk-windows\\cuda-shared-1\\consumer-build-preview.ninja",
+              "-j",
+              "2",
+              "cpu_direct",
+              "cpu_graph",
+              "native_direct",
+              "native_graph",
+              "joint",
+              "mem",
+              "headers"
+            ],
+            "exit_code": 0,
+            "elapsed_seconds": 55.35999999998603,
+            "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g08-sdk-windows\\cuda-shared-1\\consumer-build-resume3.log"
+          },
+          {
+            "stage": "cpu_direct",
+            "command": [
+              "C:\\h7\\g08-sdk\\cuda-shared-1\\consumer-build\\cpu_direct.exe"
+            ],
+            "exit_code": 0,
+            "elapsed_seconds": 2.6089999999967404,
+            "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g08-sdk-windows\\cuda-shared-1\\cpu_direct-resume3.log"
+          },
+          {
+            "stage": "cpu_graph",
+            "command": [
+              "C:\\h7\\g08-sdk\\cuda-shared-1\\consumer-build\\cpu_graph.exe"
+            ],
+            "exit_code": 0,
+            "elapsed_seconds": 2.6560000000172295,
+            "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g08-sdk-windows\\cuda-shared-1\\cpu_graph-resume3.log"
+          },
+          {
+            "stage": "native_direct",
+            "command": [
+              "C:\\h7\\g08-sdk\\cuda-shared-1\\consumer-build\\native_direct.exe"
+            ],
+            "exit_code": 0,
+            "elapsed_seconds": 1.827999999979511,
+            "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g08-sdk-windows\\cuda-shared-1\\native_direct-resume3.log"
+          },
+          {
+            "stage": "native_graph",
+            "command": [
+              "C:\\h7\\g08-sdk\\cuda-shared-1\\consumer-build\\native_graph.exe"
+            ],
+            "exit_code": 0,
+            "elapsed_seconds": 1.8130000000237487,
+            "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g08-sdk-windows\\cuda-shared-1\\native_graph-resume3.log"
+          },
+          {
+            "stage": "joint",
+            "command": [
+              "C:\\h7\\g08-sdk\\cuda-shared-1\\consumer-build\\joint.exe"
+            ],
+            "exit_code": 0,
+            "elapsed_seconds": 1.5,
+            "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g08-sdk-windows\\cuda-shared-1\\joint-resume3.log"
+          },
+          {
+            "stage": "mem",
+            "command": [
+              "C:\\h7\\g08-sdk\\cuda-shared-1\\consumer-build\\mem.exe"
+            ],
+            "exit_code": 0,
+            "elapsed_seconds": 0.0470000000204891,
+            "log": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g08-sdk-windows\\cuda-shared-1\\mem-resume3.log"
+          }
+        ],
+        "candidate": "5103c13d8ed119b06aa64e799f9768aea45ab913",
+        "scope": "G08 Windows public numerical consumers, affected Mem regression cases, independent headers and source or relocated shipping SDK. No P1/full-engine claim.",
+        "source_snapshot": "d5b9490a5958593915d69750cb3a4470866a7176",
+        "identity": {
+          "host": "KIRO-WORKSTATIO",
+          "compiler": "14.50.35717",
+          "os": "Microsoft Windows [Version 10.0.26200.9457]",
+          "gpu": "NVIDIA GeForce RTX 4070, GPU-e7376560-6f5d-ec19-6ee4-3dd3a2c81ef8, 617.14",
+          "cuda": "nvcc: NVIDIA (R) Cuda compiler driver\nCopyright (c) 2005-2026 NVIDIA Corporation\nBuilt on Tue_Jun__9_14:30:19_Pacific_Daylight_Time_2026\nCuda compilation tools, release 13.3, V13.3.73\nBuild cuda_13.3.r13.3/compiler.38244171_0"
+        },
+        "resource_profile": {
+          "priority": "BELOW_NORMAL",
+          "logical_cpus": 4,
+          "affinity_mask": "0xf",
+          "jobs": 2,
+          "cuda_compile_pool": 1
+        },
+        "stage": "mem",
+        "elapsed_seconds": 831.6719999999623,
+        "retained_setup_failures": [
+          {
+            "error": null,
+            "state": "FAIL",
+            "stage": "producer-configure",
+            "elapsed_seconds": 53.57799999997951
+          },
+          {
+            "error": "AssertionError(['[16/344] Building CUDA object src\\\\compute_ggml_runtime\\\\CMakeFiles\\\\ggml-cuda-precise-unary.dir\\\\source-2f41ad48bddb8a44\\\\src\\\\ggml-cuda\\\\unary.cu.obj', '[32/344] Building CUDA object src\\\\compute_ggml_runtime\\\\vendor\\\\src\\\\ggml-cuda\\\\CMakeFiles\\\\ggml-cuda.dir\\\\acc.cu.obj', '[33/344] Building CUDA object src\\\\compute_ggml_runtime\\\\vendor\\\\src\\\\ggml-cuda\\\\CMakeFiles\\\\ggml-cuda.dir\\\\add-id.cu.obj', '[34/344] Building CUDA object src\\\\compute_ggml_runtime\\\\vendor\\\\src\\\\ggml-cuda\\\\CMakeFiles\\\\ggml-cuda.dir\\\\allreduce.cu.obj', '[35/344] Building CUDA object src\\\\compute_ggml_runtime\\\\vendor\\\\src\\\\ggml-cuda\\\\CMakeFiles\\\\ggml-cuda.dir\\\\arange.cu.obj', '[36/344] Building CUDA object src\\\\compute_ggml_runtime\\\\vendor\\\\src\\\\ggml-cuda\\\\CMakeFiles\\\\ggml-cuda.dir\\\\argmax.cu.obj', '[37/344] Building CUDA object src\\\\compute_ggml_runtime\\\\vendor\\\\src\\\\ggml-cuda\\\\CMakeFiles\\\\ggml-cuda.dir\\\\argsort.cu.obj', '[38/344] Building CUDA object src\\\\compute_ggml_runtime\\\\vendor\\\\src\\\\ggml-cuda\\\\CMakeFiles\\\\ggml-cuda.dir\\\\binbcast.cu.obj', '[39/344] Building CUDA object src\\\\compute_ggml_runtime\\\\vendor\\\\src\\\\ggml-cuda\\\\CMakeFiles\\\\ggml-cuda.dir\\\\clamp.cu.obj', '[40/344] Building CUDA object src\\\\compute_ggml_runtime\\\\vendor\\\\src\\\\ggml-cuda\\\\CMakeFiles\\\\ggml-cuda.dir\\\\col2im-1d.cu.obj'])",
+            "state": "SETUP_FAIL",
+            "stage": "producer-build-manifest",
+            "elapsed_seconds": 114.875
+          },
+          {
+            "error": null,
+            "state": "FAIL",
+            "stage": "producer-build",
+            "elapsed_seconds": 228.64100000000326
+          }
+        ],
+        "producer-build_preflight": {
+          "edges": 85,
+          "cuda_edges": [
+            "[29/84] Building CUDA object src\\compute_provider_cuda\\CMakeFiles\\hyle_compute_provider_cuda.dir\\collectives.cu.obj",
+            "[61/84] Building CUDA object src\\compute_provider_cuda\\CMakeFiles\\hyle_compute_provider_cuda.dir\\sampling_kernel.cu.obj",
+            "[67/84] Building CUDA object src\\compute_provider_cuda\\CMakeFiles\\hyle_compute_provider_cuda.dir\\sglang_router_kernel.cu.obj",
+            "[77/84] Building CUDA object src\\compute_provider_cuda\\CMakeFiles\\hyle_compute_provider_cuda.dir\\scatter_kernel.cu.obj",
+            "[80/84] Building CUDA object src\\compute_provider_torch_cuda\\CMakeFiles\\hyle_compute_provider_torch_cuda.dir\\mlx_packed_kernel.cu.obj"
+          ]
+        },
+        "native_reuse": {
+          "state": "PASS_146_WINDOWS_NATIVE_OBJECTS_INPUTS_AND_ORIGINAL_NINJA_COMMANDS_FRESH",
+          "build": "C:\\h7\\w-cuda\\selected-graph\\shared-sdk-build",
+          "stages": [],
+          "old_derived_source": "C:\\h7\\w-cuda\\selected-graph\\shared-sdk-build\\src\\compute_ggml_runtime\\source-f99368c68335266b",
+          "current_derived_source": "C:\\h7\\w-cuda\\selected-graph\\shared-sdk-build\\src\\compute_ggml_runtime\\source-2f41ad48bddb8a44",
+          "native_objects": 146,
+          "actual_derived_dependencies": 242,
+          "actual_canonical_dependencies": 5,
+          "differences": [],
+          "objects": [
+            {
+              "path": "src\\compute_ggml_runtime\\CMakeFiles\\ggml-cuda-precise-unary.dir\\source-f99368c68335266b\\src\\ggml-cuda\\unary.cu.obj",
+              "sha256": "b5d050c351296535ed41de2ccd42e0901313f93902cc5944516d55e14806f0e8"
+            },
+            {
+              "path": "src\\compute_ggml_runtime\\vendor\\src\\ggml-cuda\\CMakeFiles\\ggml-cuda.dir\\acc.cu.obj",
+              "sha256": "84b27d6c5f271bae9d32cee0bef4705e246115f4fab03901977f3f9ef7dcca12"
+            },
+            {
+              "path": "src\\compute_ggml_runtime\\vendor\\src\\ggml-cuda\\CMakeFiles\\ggml-cuda.dir\\add-id.cu.obj",
+              "sha256": "a095ccca9bc296518404ccbebaa7104a977ba4e930c83c5dd85af2360c79baa9"
+            },
+            {
+              "path": "src\\compute_ggml_runtime\\vendor\\src\\ggml-cuda\\CMakeFiles\\ggml-cuda.dir\\allreduce.cu.obj",
+              "sha256": "2dca56aaf0d570ce12e2cecc010d80dcbf7a26728e5d3419e4f771db37cfd517"
+            },
+            {
+              "path": "src\\compute_ggml_runtime\\vendor\\src\\ggml-cuda\\CMakeFiles\\ggml-cuda.dir\\arange.cu.obj",
+              "sha256": "232253db287e19d1d173aa08c226f35e26a3f2848679921526629173e4ffd765"
+            },
+            {
+              "path": "src\\compute_ggml_runtime\\vendor\\src\\ggml-cuda\\CMakeFiles\\ggml-cuda.dir\\argmax.cu.obj",
+              "sha256": "bbd8ad0016b1aa3d4934246d3c6db77370d44f0212e4f8f7f6adaf4f81d622f7"
+            },
+            {
+              "path": "src\\compute_ggml_runtime\\vendor\\src\\ggml-cuda\\CMakeFiles\\ggml-cuda.dir\\argsort.cu.obj",
+              "sha256": "774a5737f90c7237ef927f10d4cdd08750d5d1a3fc70838aff1a92e91d2259ef"
+            },
+            {
+              "path": "src\\compute_ggml_runtime\\vendor\\src\\ggml-cuda\\CMakeFiles\\ggml-cuda.dir\\binbcast.cu.obj",
+              "sha256": "92c1e6122c996de85ccd49b795c93165dd92d65fe33da6acd6133145ab98502b"
+            },
+            {
+              "path": "src\\compute_ggml_runtime\\vendor\\src\\ggml-cuda\\CMakeFiles\\ggml-cuda.dir\\clamp.cu.obj",
+              "sha256": "c03f56516f3dad99d49e64349e9286bb60fc2ddaa3b1e4777d5b7ed118e277b6"
+            },
+            {
+              "path": "src\\compute_ggml_runtime\\vendor\\src\\ggml-cuda\\CMakeFiles\\ggml-cuda.dir\\col2im-1d.cu.obj",
+              "sha256": "5246c3022398334117d1ad234ed02fb29fe5d48964ffcaa49ecc57d5e42e8c33"
+            },
+            {
+              "path": "src\\compute_ggml_runtime\\vendor\\src\\ggml-cuda\\CMakeFiles\\ggml-cuda.dir\\concat.cu.obj",
+              "sha256": "b62b2691f1e9de91764a2b230b7bffc8d8f4978b277c3eafb194ae6aa721d32d"
+            },
+            {
+              "path": "src\\compute_ggml_runtime\\vendor\\src\\ggml-cuda\\CMakeFiles\\ggml-cuda.dir\\conv-transpose-1d.cu.obj",
+              "sha256": "607946b5e3491a41e64cbcaded6a9dafcd50f6b4669a57c958e8ce127242b2b5"
+            },
+            {
+              "path": "src\\compute_ggml_runtime\\vendor\\src\\ggml-cuda\\CMakeFiles\\ggml-cuda.dir\\conv2d-dw.cu.obj",
+              "sha256": "e9bd28a441a43c07ee0381b952224ac447dcf3f9e1363ec3b6e56b7cfdade4fe"
+            },
+            {
+              "path": "src\\compute_ggml_runtime\\vendor\\src\\ggml-cuda\\CMakeFiles\\ggml-cuda.dir\\conv2d-transpose.cu.obj",
+              "sha256": "d933e91dcf5c06c662ca41cd9366ba42974fccfdd98dc8513552265353d6183e"
+            },
+            {
+              "path": "src\\compute_ggml_runtime\\vendor\\src\\ggml-cuda\\CMakeFiles\\ggml-cuda.dir\\conv2d.cu.obj",
+              "sha256": "cc66eb74572b049d403c95d7a0c85a1cfc4e99e89d6004d38fb27762be0f1286"
+            },
+            {
+              "path": "src\\compute_ggml_runtime\\vendor\\src\\ggml-cuda\\CMakeFiles\\ggml-cuda.dir\\convert.cu.obj",
+              "sha256": "a714ad3dc76a373ee7599e91fa16b419f0ee867e6bc130527a8cf31415db3697"
+            },
+            {
+              "path": "src\\compute_ggml_runtime\\vendor\\src\\ggml-cuda\\CMakeFiles\\ggml-cuda.dir\\count-equal.cu.obj",
+              "sha256": "1132eaee77de81deb6c67cbe5505f6064ff963f998e5d341032986e01e6427bc"
+            },
+            {
+              "path": "src\\compute_ggml_runtime\\vendor\\src\\ggml-cuda\\CMakeFiles\\ggml-cuda.dir\\cpy.cu.obj",
+              "sha256": "1533411333288baaf4b39ab81377bb5e46813440ec2286f3127f92dfa636b3f2"
+            },
+            {
+              "path": "src\\compute_ggml_runtime\\vendor\\src\\ggml-cuda\\CMakeFiles\\ggml-cuda.dir\\cross-entropy-loss.cu.obj",
+              "sha256": "8ec40ea482988ad99b4ef86ddaaadabbda496ed9c8c5d092689150daf898c3f9"
+            },
+            {
+              "path": "src\\compute_ggml_runtime\\vendor\\src\\ggml-cuda\\CMakeFiles\\ggml-cuda.dir\\cumsum.cu.obj",
+              "sha256": "cfad43ab010758764f6ee201294c6534c1784b312405c06bb5ae3bc7445394e7"
+            },
+            {
+              "path": "src\\compute_ggml_runtime\\vendor\\src\\ggml-cuda\\CMakeFiles\\ggml-cuda.dir\\diag.cu.obj",
+              "sha256": "e128e300edcc67aa2a7152ee651da046531df2fd78808538fcf47c28d646db26"
+            },
+            {
+              "path": "src\\compute_ggml_runtime\\vendor\\src\\ggml-cuda\\CMakeFiles\\ggml-cuda.dir\\diagmask.cu.obj",
+              "sha256": "fc72a4349e57b984abd81acf8235a77fb7a1e3501c16a8724373f8e0feca9fcc"
+            },
+            {
+              "path": "src\\compute_ggml_runtime\\vendor\\src\\ggml-cuda\\CMakeFiles\\ggml-cuda.dir\\dsv4-hc.cu.obj",
+              "sha256": "872982f6af13299755f90f099a88c7aba8eb6a93beb74d35b835e60fbb9a7f11"
+            },
+            {
+              "path": "src\\compute_ggml_runtime\\vendor\\src\\ggml-cuda\\CMakeFiles\\ggml-cuda.dir\\fattn-tile.cu.obj",
+              "sha256": "2d746db7856ad4f88b3d377c422064366e627aa62709e7da515a416baadc6c0e"
+            },
+            {
+              "path": "src\\compute_ggml_runtime\\vendor\\src\\ggml-cuda\\CMakeFiles\\ggml-cuda.dir\\fattn.cu.obj",
+              "sha256": "5b2a1cae709659482d4d4e6a58d0d46544bca8e9ccc218f3022b4b91aa9f6998"
+            },
+            {
+              "path": "src\\compute_ggml_runtime\\vendor\\src\\ggml-cuda\\CMakeFiles\\ggml-cuda.dir\\fill.cu.obj",
+              "sha256": "64b8e897aacfb3be80beeedc5cb6036696f0250ec90e51d9a28ebd5c4db6d1b3"
+            },
+            {
+              "path": "src\\compute_ggml_runtime\\vendor\\src\\ggml-cuda\\CMakeFiles\\ggml-cuda.dir\\fwht.cu.obj",
+              "sha256": "1801c1d4a07936a0db53aa1de833a2b353aca6b70f0376de6abb4d904e16d12e"
+            },
+            {
+              "path": "src\\compute_ggml_runtime\\vendor\\src\\ggml-cuda\\CMakeFiles\\ggml-cuda.dir\\gated_delta_net.cu.obj",
+              "sha256": "877134e21f3d42c90592493b688b211f185044b79911cfbd0a49d44bbbc92a91"
+            },
+            {
+              "path": "src\\compute_ggml_runtime\\vendor\\src\\ggml-cuda\\CMakeFiles\\ggml-cuda.dir\\getrows.cu.obj",
+              "sha256": "a686a29c9da44c4ce9e6a7f2a4139e3abf0a6c38b7a659163916b66250f313ea"
+            },
+            {
+              "path": "src\\compute_ggml_runtime\\vendor\\src\\ggml-cuda\\CMakeFiles\\ggml-cuda.dir\\ggml-cuda.cu.obj",
+              "sha256": "2c9c39133cfac13b4feadfce1bec58213c47d028d78b307943ab4eddbfd9998f"
+            },
+            {
+              "path": "src\\compute_ggml_runtime\\vendor\\src\\ggml-cuda\\CMakeFiles\\ggml-cuda.dir\\gla.cu.obj",
+              "sha256": "5a2a12ab845eef152451df2365b1aec22c74449fe4ecf2db13ae29a369dee248"
+            },
+            {
+              "path": "src\\compute_ggml_runtime\\vendor\\src\\ggml-cuda\\CMakeFiles\\ggml-cuda.dir\\im2col.cu.obj",
+              "sha256": "7e8193874229db23abfb9ac56b186f4ecc97c671b61d6ea6e5c3474e767bedb2"
+            },
+            {
+              "path": "src\\compute_ggml_runtime\\vendor\\src\\ggml-cuda\\CMakeFiles\\ggml-cuda.dir\\lightning-indexer.cu.obj",
+              "sha256": "e84ca2e39de7f2c79dac3ec19a1ff29844e0d29acd816d72e0889a6a9d61109f"
+            },
+            {
+              "path": "src\\compute_ggml_runtime\\vendor\\src\\ggml-cuda\\CMakeFiles\\ggml-cuda.dir\\mean.cu.obj",
+              "sha256": "acc766a7f50da7e0d86133190efa93a3b81d08d6404b41c42f13437ac758155e"
+            },
+            {
+              "path": "src\\compute_ggml_runtime\\vendor\\src\\ggml-cuda\\CMakeFiles\\ggml-cuda.dir\\mmf.cu.obj",
+              "sha256": "dd0ffa9136e6e77a93f02b9117e4dee74312a87d7a7376928f634409561b2e19"
+            },
+            {
+              "path": "src\\compute_ggml_runtime\\vendor\\src\\ggml-cuda\\CMakeFiles\\ggml-cuda.dir\\mmid.cu.obj",
+              "sha256": "11260496d0e08d93c27fa3dcba343b3639b5782922f11a7f1e80a625b7c34c40"
+            },
+            {
+              "path": "src\\compute_ggml_runtime\\vendor\\src\\ggml-cuda\\CMakeFiles\\ggml-cuda.dir\\mmq.cu.obj",
+              "sha256": "9d89b89ce194ec05bbfcc311569a46e8136afdb1f7bcf815998124ac64f74b50"
+            },
+            {
+              "path": "src\\compute_ggml_runtime\\vendor\\src\\ggml-cuda\\CMakeFiles\\ggml-cuda.dir\\mmvf.cu.obj",
+              "sha256": "5323598df9f9707e96e3d6e6b66fb11a62836601aefad22fecaa88db2807a0cf"
+            },
+            {
+              "path": "src\\compute_ggml_runtime\\vendor\\src\\ggml-cuda\\CMakeFiles\\ggml-cuda.dir\\mmvq.cu.obj",
+              "sha256": "f01ef2ed1fc946585ef28b37434cdf2c55f3e1808c889aa62690e7d7c23a157c"
+            },
+            {
+              "path": "src\\compute_ggml_runtime\\vendor\\src\\ggml-cuda\\CMakeFiles\\ggml-cuda.dir\\moe-weighted-reduction.cu.obj",
+              "sha256": "5d742ac33c0217ea1b5bafe7f70dc03435346d9ee0b5e4e3855316204e399ece"
+            },
+            {
+              "path": "src\\compute_ggml_runtime\\vendor\\src\\ggml-cuda\\CMakeFiles\\ggml-cuda.dir\\norm.cu.obj",
+              "sha256": "882007168671a368ebda633e6fc70e701e383274a7bd1974616bb3ad969d3015"
+            },
+            {
+              "path": "src\\compute_ggml_runtime\\vendor\\src\\ggml-cuda\\CMakeFiles\\ggml-cuda.dir\\opt-step-adamw.cu.obj",
+              "sha256": "31c7438b5848823d4535f5cbf3a020ddaad06f7fffd48eb8807905ccdc5bf8c5"
+            },
+            {
+              "path": "src\\compute_ggml_runtime\\vendor\\src\\ggml-cuda\\CMakeFiles\\ggml-cuda.dir\\opt-step-sgd.cu.obj",
+              "sha256": "d3ff833c924637997e4c9ce7a614c65c131af668514e56481917b9196317903d"
+            },
+            {
+              "path": "src\\compute_ggml_runtime\\vendor\\src\\ggml-cuda\\CMakeFiles\\ggml-cuda.dir\\out-prod.cu.obj",
+              "sha256": "6cfdf049e82d3f841ab5e50e8850e82e291b00a6e1c4f5d06a1e9446207e9722"
+            },
+            {
+              "path": "src\\compute_ggml_runtime\\vendor\\src\\ggml-cuda\\CMakeFiles\\ggml-cuda.dir\\pad.cu.obj",
+              "sha256": "32d4f6be0080ab5f2b2d0c99df0aae4b016575032833aa3dea126507b0339be0"
+            },
+            {
+              "path": "src\\compute_ggml_runtime\\vendor\\src\\ggml-cuda\\CMakeFiles\\ggml-cuda.dir\\pad_reflect_1d.cu.obj",
+              "sha256": "833a4da47a3630c06691cc0a0c30810f2d67fb8a6145f0507c2310c7b24e257f"
+            },
+            {
+              "path": "src\\compute_ggml_runtime\\vendor\\src\\ggml-cuda\\CMakeFiles\\ggml-cuda.dir\\pool1d.cu.obj",
+              "sha256": "37ebecb35d6a94238cab3aa327f942902688f6ebab04c075ae70224a95a10a5e"
+            },
+            {
+              "path": "src\\compute_ggml_runtime\\vendor\\src\\ggml-cuda\\CMakeFiles\\ggml-cuda.dir\\pool2d.cu.obj",
+              "sha256": "083dd1d5f462b3a692a9c985ee64e42f31311af3a00ccb933f8082fcde0b07fe"
+            },
+            {
+              "path": "src\\compute_ggml_runtime\\vendor\\src\\ggml-cuda\\CMakeFiles\\ggml-cuda.dir\\quantize.cu.obj",
+              "sha256": "1165f0b78e0593ff646406605c7d362c3fde8435bfc43dcf7190a20f15ba97f6"
+            },
+            {
+              "path": "src\\compute_ggml_runtime\\vendor\\src\\ggml-cuda\\CMakeFiles\\ggml-cuda.dir\\roll.cu.obj",
+              "sha256": "e123fa5de96cf8982daa6ef43cd15adeb33d7b987cd685b6434cb71181ba40bc"
+            },
+            {
+              "path": "src\\compute_ggml_runtime\\vendor\\src\\ggml-cuda\\CMakeFiles\\ggml-cuda.dir\\rope.cu.obj",
+              "sha256": "bdd99db0ada22fcf58d876686b87f10c546d2dc51798ba36e29a9c44ffced796"
+            },
+            {
+              "path": "src\\compute_ggml_runtime\\vendor\\src\\ggml-cuda\\CMakeFiles\\ggml-cuda.dir\\scale.cu.obj",
+              "sha256": "d28185e3c5d192e470cccd5ef5025c5b382414c9a595eaccdd434a045394945a"
+            },
+            {
+              "path": "src\\compute_ggml_runtime\\vendor\\src\\ggml-cuda\\CMakeFiles\\ggml-cuda.dir\\set-rows.cu.obj",
+              "sha256": "4af68a16569f479d0afc8ee1804263fba7949ff046d09dd4b5fb7486a8d940dd"
+            },
+            {
+              "path": "src\\compute_ggml_runtime\\vendor\\src\\ggml-cuda\\CMakeFiles\\ggml-cuda.dir\\set.cu.obj",
+              "sha256": "c7ab853fa441e14461f12912d0a0d2798ca5b91b8c5713e01466e4b21fde61ae"
+            },
+            {
+              "path": "src\\compute_ggml_runtime\\vendor\\src\\ggml-cuda\\CMakeFiles\\ggml-cuda.dir\\snake.cu.obj",
+              "sha256": "1ee856c2050668918d51d950ba38eb72806d61769fca59cda7bc67b03397c85d"
+            },
+            {
+              "path": "src\\compute_ggml_runtime\\vendor\\src\\ggml-cuda\\CMakeFiles\\ggml-cuda.dir\\softcap.cu.obj",
+              "sha256": "d59620e2287b05f9ab8da10f2c5d61be0b1605fd7bb1340e4a3205228ea429ac"
+            },
+            {
+              "path": "src\\compute_ggml_runtime\\vendor\\src\\ggml-cuda\\CMakeFiles\\ggml-cuda.dir\\softmax.cu.obj",
+              "sha256": "c4c83ebfbdde17f0ed8d5b788f002d2eaee331556c4ab2c04a903f53e771dfec"
+            },
+            {
+              "path": "src\\compute_ggml_runtime\\vendor\\src\\ggml-cuda\\CMakeFiles\\ggml-cuda.dir\\solve_tri.cu.obj",
+              "sha256": "d8de2e15be6f2c036fd1006b5088ad7d2ac0e34a5608b702f0f7ce2b2c341cd4"
+            },
+            {
+              "path": "src\\compute_ggml_runtime\\vendor\\src\\ggml-cuda\\CMakeFiles\\ggml-cuda.dir\\ssm-conv.cu.obj",
+              "sha256": "e5fe65a98436b29ebce7ec4db6f258d79ec04c5694466d314f120dae70a4214f"
+            },
+            {
+              "path": "src\\compute_ggml_runtime\\vendor\\src\\ggml-cuda\\CMakeFiles\\ggml-cuda.dir\\ssm-scan.cu.obj",
+              "sha256": "792776b50ee1a8e11d03e3be56d62c101dd2688b58ae90ae724232ef86258749"
+            },
+            {
+              "path": "src\\compute_ggml_runtime\\vendor\\src\\ggml-cuda\\CMakeFiles\\ggml-cuda.dir\\sum.cu.obj",
+              "sha256": "70c2b860c663d88413a99610a2a2b033a2f4eedecaabf3bd87e15025c78b86f6"
+            },
+            {
+              "path": "src\\compute_ggml_runtime\\vendor\\src\\ggml-cuda\\CMakeFiles\\ggml-cuda.dir\\sumrows.cu.obj",
+              "sha256": "843598e74e094e71df420a2d941e4df681dc6e08be5b8d2ee8edc5292c9cbe60"
+            },
+            {
+              "path": "src\\compute_ggml_runtime\\vendor\\src\\ggml-cuda\\CMakeFiles\\ggml-cuda.dir\\top-k.cu.obj",
+              "sha256": "2ee3b228979c3a1898fbccee6a079458721e6f7a410cfc05ca99e6ae4c028144"
+            },
+            {
+              "path": "src\\compute_ggml_runtime\\vendor\\src\\ggml-cuda\\CMakeFiles\\ggml-cuda.dir\\topk-moe.cu.obj",
+              "sha256": "c36317ec637247c88b2af5c2386b8d9a001ebb807df400554b1f60756ecd9594"
+            },
+            {
+              "path": "src\\compute_ggml_runtime\\vendor\\src\\ggml-cuda\\CMakeFiles\\ggml-cuda.dir\\tri.cu.obj",
+              "sha256": "443701e13c0f8c0d25f812f3d718d457cefb92fc7a758c4fe2d7590322382392"
+            },
+            {
+              "path": "src\\compute_ggml_runtime\\vendor\\src\\ggml-cuda\\CMakeFiles\\ggml-cuda.dir\\tsembd.cu.obj",
+              "sha256": "555092465d0c2309e91d83a691ee62edfb4ece50781d83d0e64e214ae1eb6674"
+            },
+            {
+              "path": "src\\compute_ggml_runtime\\vendor\\src\\ggml-cuda\\CMakeFiles\\ggml-cuda.dir\\upscale.cu.obj",
+              "sha256": "52052f4abae51ca19fcf059e7d227015c004caf0aa7e8311f87cdfd718fdb119"
+            },
+            {
+              "path": "src\\compute_ggml_runtime\\vendor\\src\\ggml-cuda\\CMakeFiles\\ggml-cuda.dir\\wkv.cu.obj",
+              "sha256": "a024a6f508d3e178d2987867b06766da12d8f2c4b6ebee7677a5dc6abde0e65f"
+            },
+            {
+              "path": "src\\compute_ggml_runtime\\vendor\\src\\ggml-cuda\\CMakeFiles\\ggml-cuda.dir\\template-instances\\fattn-tile-instance-dkq112-dv112.cu.obj",
+              "sha256": "d78581f73eca3a711cbc8f1eeafa612b69cac4af391178343fab43dafbe18f3e"
+            },
+            {
+              "path": "src\\compute_ggml_runtime\\vendor\\src\\ggml-cuda\\CMakeFiles\\ggml-cuda.dir\\template-instances\\fattn-tile-instance-dkq128-dv128.cu.obj",
+              "sha256": "ef092f3f2c25a73a0d87c56f256218d7d4d8d2e90657714d744db976d269c05c"
+            },
+            {
+              "path": "src\\compute_ggml_runtime\\vendor\\src\\ggml-cuda\\CMakeFiles\\ggml-cuda.dir\\template-instances\\fattn-tile-instance-dkq192-dv128.cu.obj",
+              "sha256": "115e70b9f0c90991592100dba6242498ad5a514089f827af63741db32649aac5"
+            },
+            {
+              "path": "src\\compute_ggml_runtime\\vendor\\src\\ggml-cuda\\CMakeFiles\\ggml-cuda.dir\\template-instances\\fattn-tile-instance-dkq256-dv256.cu.obj",
+              "sha256": "e71d268c1fbb6d63c156038a3166890382b87a643e84325bb4ca1204d00e4f6d"
+            },
+            {
+              "path": "src\\compute_ggml_runtime\\vendor\\src\\ggml-cuda\\CMakeFiles\\ggml-cuda.dir\\template-instances\\fattn-tile-instance-dkq320-dv256.cu.obj",
+              "sha256": "abb15ea1e2d23914439e53239a36b07256e48edd43a927c7cc22150c3e585514"
+            },
+            {
+              "path": "src\\compute_ggml_runtime\\vendor\\src\\ggml-cuda\\CMakeFiles\\ggml-cuda.dir\\template-instances\\fattn-tile-instance-dkq40-dv40.cu.obj",
+              "sha256": "200b8035ff029ee7928ee71568f2b83ad0fa701cc7f71b8c75dac85628f62b88"
+            },
+            {
+              "path": "src\\compute_ggml_runtime\\vendor\\src\\ggml-cuda\\CMakeFiles\\ggml-cuda.dir\\template-instances\\fattn-tile-instance-dkq512-dv512.cu.obj",
+              "sha256": "55ed2addaa6d0f1a62f311ea5a01fb75c17497a34a492449bbb89951ddafc7bc"
+            },
+            {
+              "path": "src\\compute_ggml_runtime\\vendor\\src\\ggml-cuda\\CMakeFiles\\ggml-cuda.dir\\template-instances\\fattn-tile-instance-dkq576-dv512.cu.obj",
+              "sha256": "38f5267ea7581df34dca5ed240d6a6b5792d14824e4a16d365317752e6cf2836"
+            },
+            {
+              "path": "src\\compute_ggml_runtime\\vendor\\src\\ggml-cuda\\CMakeFiles\\ggml-cuda.dir\\template-instances\\fattn-tile-instance-dkq64-dv64.cu.obj",
+              "sha256": "4626d07c4847e44160150a359204d7afc267842ed114536201a12cf21015f4f4"
+            },
+            {
+              "path": "src\\compute_ggml_runtime\\vendor\\src\\ggml-cuda\\CMakeFiles\\ggml-cuda.dir\\template-instances\\fattn-tile-instance-dkq72-dv72.cu.obj",
+              "sha256": "e0b3256f60289a158004523ed1b0c3f6717621726f4310459e7f9eb39aa11a42"
+            },
+            {
+              "path": "src\\compute_ggml_runtime\\vendor\\src\\ggml-cuda\\CMakeFiles\\ggml-cuda.dir\\template-instances\\fattn-tile-instance-dkq80-dv80.cu.obj",
+              "sha256": "dd017012d1b5f224c96092d267637a37eb013d70275798a8d5d38ac3e04b17c4"
+            },
+            {
+              "path": "src\\compute_ggml_runtime\\vendor\\src\\ggml-cuda\\CMakeFiles\\ggml-cuda.dir\\template-instances\\fattn-tile-instance-dkq96-dv96.cu.obj",
+              "sha256": "3c79e4cf44fd55f0e4f9905ef9620444d5c2a381feed41a317feb3876ebfb504"
+            },
+            {
+              "path": "src\\compute_ggml_runtime\\vendor\\src\\ggml-cuda\\CMakeFiles\\ggml-cuda.dir\\template-instances\\fattn-mma-f16-instance-ncols1_1-ncols2_16.cu.obj",
+              "sha256": "37316e123c614b74212b729309e6f207b5f64f5cf89e9d8296fd546435dffdb3"
+            },
+            {
+              "path": "src\\compute_ggml_runtime\\vendor\\src\\ggml-cuda\\CMakeFiles\\ggml-cuda.dir\\template-instances\\fattn-mma-f16-instance-ncols1_1-ncols2_32.cu.obj",
+              "sha256": "44a101ff4bbc86848deb529d20a32f8f8a3c31c85fa965d746dd5f16d318d01f"
+            },
+            {
+              "path": "src\\compute_ggml_runtime\\vendor\\src\\ggml-cuda\\CMakeFiles\\ggml-cuda.dir\\template-instances\\fattn-mma-f16-instance-ncols1_1-ncols2_8.cu.obj",
+              "sha256": "d15873ed77e756005487d47c4a3f13cc212a32c423c56678ee885ddafa173be1"
+            },
+            {
+              "path": "src\\compute_ggml_runtime\\vendor\\src\\ggml-cuda\\CMakeFiles\\ggml-cuda.dir\\template-instances\\fattn-mma-f16-instance-ncols1_16-ncols2_1.cu.obj",
+              "sha256": "8579f22f652515f068760700bf2d269733846fea73349706be998705f63bf1c9"
+            },
+            {
+              "path": "src\\compute_ggml_runtime\\vendor\\src\\ggml-cuda\\CMakeFiles\\ggml-cuda.dir\\template-instances\\fattn-mma-f16-instance-ncols1_16-ncols2_2.cu.obj",
+              "sha256": "1c321993c9efb3a6013528ec0618395309a280ab0e519c29fff3d1f890704fb2"
+            },
+            {
+              "path": "src\\compute_ggml_runtime\\vendor\\src\\ggml-cuda\\CMakeFiles\\ggml-cuda.dir\\template-instances\\fattn-mma-f16-instance-ncols1_16-ncols2_4.cu.obj",
+              "sha256": "b36f92b1b0fc64066071005b96283d80354ea0685f1d50dd36bee2830e8e1718"
+            },
+            {
+              "path": "src\\compute_ggml_runtime\\vendor\\src\\ggml-cuda\\CMakeFiles\\ggml-cuda.dir\\template-instances\\fattn-mma-f16-instance-ncols1_2-ncols2_16.cu.obj",
+              "sha256": "9369301de5ec104104f5773554143cf35fd71c8317ae36f8d1de5432a5488900"
+            },
+            {
+              "path": "src\\compute_ggml_runtime\\vendor\\src\\ggml-cuda\\CMakeFiles\\ggml-cuda.dir\\template-instances\\fattn-mma-f16-instance-ncols1_2-ncols2_32.cu.obj",
+              "sha256": "fd4d17c9bc68acba77cf82ba691a991d13f29880232612e75dcdbd0b3eab88c3"
+            },
+            {
+              "path": "src\\compute_ggml_runtime\\vendor\\src\\ggml-cuda\\CMakeFiles\\ggml-cuda.dir\\template-instances\\fattn-mma-f16-instance-ncols1_2-ncols2_4.cu.obj",
+              "sha256": "9d1ca588029d564255d6b89e130aa6d921b84723214f52b13e2fb988b6ae364e"
+            },
+            {
+              "path": "src\\compute_ggml_runtime\\vendor\\src\\ggml-cuda\\CMakeFiles\\ggml-cuda.dir\\template-instances\\fattn-mma-f16-instance-ncols1_2-ncols2_8.cu.obj",
+              "sha256": "40b28cd97a535854518e90aef06da1d7314b689d6ed8ba1d7cc82f9ede93af57"
+            },
+            {
+              "path": "src\\compute_ggml_runtime\\vendor\\src\\ggml-cuda\\CMakeFiles\\ggml-cuda.dir\\template-instances\\fattn-mma-f16-instance-ncols1_32-ncols2_1.cu.obj",
+              "sha256": "a2a5e05ff1978fe159ccdf2de4835f5efba69635220d619fed2c9c5133aa057c"
+            },
+            {
+              "path": "src\\compute_ggml_runtime\\vendor\\src\\ggml-cuda\\CMakeFiles\\ggml-cuda.dir\\template-instances\\fattn-mma-f16-instance-ncols1_32-ncols2_2.cu.obj",
+              "sha256": "2dad6edf68e6b5f86a6c5e7af52593b89de4984487fd22c39af077c2d94e9d61"
+            },
+            {
+              "path": "src\\compute_ggml_runtime\\vendor\\src\\ggml-cuda\\CMakeFiles\\ggml-cuda.dir\\template-instances\\fattn-mma-f16-instance-ncols1_4-ncols2_16.cu.obj",
+              "sha256": "0646a8b39ee1905244e4a9e1230d168a201423e4b50748b4af6bdc96cb3bd807"
+            },
+            {
+              "path": "src\\compute_ggml_runtime\\vendor\\src\\ggml-cuda\\CMakeFiles\\ggml-cuda.dir\\template-instances\\fattn-mma-f16-instance-ncols1_4-ncols2_2.cu.obj",
+              "sha256": "e39ad2e6ddf10f3b567211f341055a4f7d147a9f3e878c6d9988e66cbe59ce24"
+            },
+            {
+              "path": "src\\compute_ggml_runtime\\vendor\\src\\ggml-cuda\\CMakeFiles\\ggml-cuda.dir\\template-instances\\fattn-mma-f16-instance-ncols1_4-ncols2_4.cu.obj",
+              "sha256": "ef0a95e23134a822430d346cd3ef8697e3ac80ef539890a5e65db106d9a8e3a5"
+            },
+            {
+              "path": "src\\compute_ggml_runtime\\vendor\\src\\ggml-cuda\\CMakeFiles\\ggml-cuda.dir\\template-instances\\fattn-mma-f16-instance-ncols1_4-ncols2_8.cu.obj",
+              "sha256": "3b8f193b3a207d5161bfeae47fbea2bcd5e29a5e9c4ef5d41846bdc0b0893e50"
+            },
+            {
+              "path": "src\\compute_ggml_runtime\\vendor\\src\\ggml-cuda\\CMakeFiles\\ggml-cuda.dir\\template-instances\\fattn-mma-f16-instance-ncols1_64-ncols2_1.cu.obj",
+              "sha256": "c35fe1fe95ff7f311de0d0b97ebae31f10a491f8413cec08c6614071d5916094"
+            },
+            {
+              "path": "src\\compute_ggml_runtime\\vendor\\src\\ggml-cuda\\CMakeFiles\\ggml-cuda.dir\\template-instances\\fattn-mma-f16-instance-ncols1_8-ncols2_1.cu.obj",
+              "sha256": "beda9a2ca55aee18c070257044b47a36559e63500e97f2fef0dca2a689246c29"
+            },
+            {
+              "path": "src\\compute_ggml_runtime\\vendor\\src\\ggml-cuda\\CMakeFiles\\ggml-cuda.dir\\template-instances\\fattn-mma-f16-instance-ncols1_8-ncols2_2.cu.obj",
+              "sha256": "baa27c7f99b24ea3417b3a85695b13fd4ec5d67ed193395e72ea5c7cf069e1f8"
+            },
+            {
+              "path": "src\\compute_ggml_runtime\\vendor\\src\\ggml-cuda\\CMakeFiles\\ggml-cuda.dir\\template-instances\\fattn-mma-f16-instance-ncols1_8-ncols2_4.cu.obj",
+              "sha256": "14d455447f9ac86d9755f0da0a19f169da88838b249dce9f25c02fe678e26033"
+            },
+            {
+              "path": "src\\compute_ggml_runtime\\vendor\\src\\ggml-cuda\\CMakeFiles\\ggml-cuda.dir\\template-instances\\fattn-mma-f16-instance-ncols1_8-ncols2_8.cu.obj",
+              "sha256": "12fcafc78c6959a3cf1944331cd65d2c1b3208a91933d7f39297cd06c50f95f0"
+            },
+            {
+              "path": "src\\compute_ggml_runtime\\vendor\\src\\ggml-cuda\\CMakeFiles\\ggml-cuda.dir\\template-instances\\mmq-instance-iq1_s.cu.obj",
+              "sha256": "dae1b99c3fac60512bdfdae0555630410ed2393e18373fdbd985fedfafe5fb4a"
+            },
+            {
+              "path": "src\\compute_ggml_runtime\\vendor\\src\\ggml-cuda\\CMakeFiles\\ggml-cuda.dir\\template-instances\\mmq-instance-iq2_s.cu.obj",
+              "sha256": "9c99cc0f4a140e273a642dc06196eb1a63d754c66bd17b69e44835d3dfaf04d0"
+            },
+            {
+              "path": "src\\compute_ggml_runtime\\vendor\\src\\ggml-cuda\\CMakeFiles\\ggml-cuda.dir\\template-instances\\mmq-instance-iq2_xs.cu.obj",
+              "sha256": "2244f07856781a128f468d9b4bc51884b19ec5b7498f2c686302fd2794e46200"
+            },
+            {
+              "path": "src\\compute_ggml_runtime\\vendor\\src\\ggml-cuda\\CMakeFiles\\ggml-cuda.dir\\template-instances\\mmq-instance-iq2_xxs.cu.obj",
+              "sha256": "9889a74c294b7e24be43a6016867cc98a49caa0b109a8e92e253b24b000923c0"
+            },
+            {
+              "path": "src\\compute_ggml_runtime\\vendor\\src\\ggml-cuda\\CMakeFiles\\ggml-cuda.dir\\template-instances\\mmq-instance-iq3_s.cu.obj",
+              "sha256": "84b515843341dc30b22238db0146cdc7d5e630f1359ac5b54215df8a74dde052"
+            },
+            {
+              "path": "src\\compute_ggml_runtime\\vendor\\src\\ggml-cuda\\CMakeFiles\\ggml-cuda.dir\\template-instances\\mmq-instance-iq3_xxs.cu.obj",
+              "sha256": "a84d784cbb0f5f5e1c3a672319145d0f88a5df034200feae803508b38e45dabe"
+            },
+            {
+              "path": "src\\compute_ggml_runtime\\vendor\\src\\ggml-cuda\\CMakeFiles\\ggml-cuda.dir\\template-instances\\mmq-instance-iq4_nl.cu.obj",
+              "sha256": "083794a8b7909b7a2c15f7273326de2f2463f5c062a8b9810eab0f368d577194"
+            },
+            {
+              "path": "src\\compute_ggml_runtime\\vendor\\src\\ggml-cuda\\CMakeFiles\\ggml-cuda.dir\\template-instances\\mmq-instance-iq4_xs.cu.obj",
+              "sha256": "ec655e17e086049b13a5bb92320d4ac4cd0fb21c9beaac0e0c4ed2a60c934598"
+            },
+            {
+              "path": "src\\compute_ggml_runtime\\vendor\\src\\ggml-cuda\\CMakeFiles\\ggml-cuda.dir\\template-instances\\mmq-instance-mxfp4.cu.obj",
+              "sha256": "c707dc1d0434f050d959d5ae92ae791a08bd025f43b824fbf0d89400c7e3a7ad"
+            },
+            {
+              "path": "src\\compute_ggml_runtime\\vendor\\src\\ggml-cuda\\CMakeFiles\\ggml-cuda.dir\\template-instances\\mmq-instance-nvfp4.cu.obj",
+              "sha256": "e175df30fbc4745abea5c8df405859024ffe67df1ad56380aec0c1fa4f76408e"
+            },
+            {
+              "path": "src\\compute_ggml_runtime\\vendor\\src\\ggml-cuda\\CMakeFiles\\ggml-cuda.dir\\template-instances\\mmq-instance-q1_0.cu.obj",
+              "sha256": "3ecc333db5ddd2f9fa1651917e0c8cfbdb910f55c552de6858300cdb9b851ea6"
+            },
+            {
+              "path": "src\\compute_ggml_runtime\\vendor\\src\\ggml-cuda\\CMakeFiles\\ggml-cuda.dir\\template-instances\\mmq-instance-q2_0.cu.obj",
+              "sha256": "0a90b5303373fbbe51188475781839743a68f8adb0b1ef5e41f4e2c1ff5eebd9"
+            },
+            {
+              "path": "src\\compute_ggml_runtime\\vendor\\src\\ggml-cuda\\CMakeFiles\\ggml-cuda.dir\\template-instances\\mmq-instance-q2_k.cu.obj",
+              "sha256": "8ada9486fdf39c9ae670a81d791ee7b872d682d7816a1ee1d5d455cc218ec4ec"
+            },
+            {
+              "path": "src\\compute_ggml_runtime\\vendor\\src\\ggml-cuda\\CMakeFiles\\ggml-cuda.dir\\template-instances\\mmq-instance-q3_k.cu.obj",
+              "sha256": "a66f1f5f81380af96a10518f8f018d9e53361ab8c1a91659debea62985887735"
+            },
+            {
+              "path": "src\\compute_ggml_runtime\\vendor\\src\\ggml-cuda\\CMakeFiles\\ggml-cuda.dir\\template-instances\\mmq-instance-q4_0.cu.obj",
+              "sha256": "ee76d3e52a0b32dc201949f752b4024a88513e0a4fedd3f9c650c52ee96e179e"
+            },
+            {
+              "path": "src\\compute_ggml_runtime\\vendor\\src\\ggml-cuda\\CMakeFiles\\ggml-cuda.dir\\template-instances\\mmq-instance-q4_1.cu.obj",
+              "sha256": "2d1b21bcd802f935b6bcdf29204674185bac8267167b969be89251f264a55a3e"
+            },
+            {
+              "path": "src\\compute_ggml_runtime\\vendor\\src\\ggml-cuda\\CMakeFiles\\ggml-cuda.dir\\template-instances\\mmq-instance-q4_k.cu.obj",
+              "sha256": "d30dd61b6137c52ce1bdb2b7ad05fd01ee94039c076d02287176ecbface0470d"
+            },
+            {
+              "path": "src\\compute_ggml_runtime\\vendor\\src\\ggml-cuda\\CMakeFiles\\ggml-cuda.dir\\template-instances\\mmq-instance-q5_0.cu.obj",
+              "sha256": "55155bdad144c91f31ecd127a67f5c1e3777ee8c860c0632364acba6983d97d5"
+            },
+            {
+              "path": "src\\compute_ggml_runtime\\vendor\\src\\ggml-cuda\\CMakeFiles\\ggml-cuda.dir\\template-instances\\mmq-instance-q5_1.cu.obj",
+              "sha256": "fd6381d86f437a4371d5b26236316279012eee209f46803a2f1cb29a45ae0b43"
+            },
+            {
+              "path": "src\\compute_ggml_runtime\\vendor\\src\\ggml-cuda\\CMakeFiles\\ggml-cuda.dir\\template-instances\\mmq-instance-q5_k.cu.obj",
+              "sha256": "c8a4534ffbe9c1e97dd7adbf5e78253a2f1efb0343d0ea0cea1e32b9aa5d26b8"
+            },
+            {
+              "path": "src\\compute_ggml_runtime\\vendor\\src\\ggml-cuda\\CMakeFiles\\ggml-cuda.dir\\template-instances\\mmq-instance-q6_k.cu.obj",
+              "sha256": "2b06a0198f3a8c86f1bac36a008cfc22b1047e8280f9b8761d223a6a2718c613"
+            },
+            {
+              "path": "src\\compute_ggml_runtime\\vendor\\src\\ggml-cuda\\CMakeFiles\\ggml-cuda.dir\\template-instances\\mmq-instance-q8_0.cu.obj",
+              "sha256": "b8195990a7b99a058b5c2b00e1a4f244bc22d033d121e5bd12c47a84044b9603"
+            },
+            {
+              "path": "src\\compute_ggml_runtime\\vendor\\src\\ggml-cuda\\CMakeFiles\\ggml-cuda.dir\\template-instances\\mmf-instance-ncols_1.cu.obj",
+              "sha256": "7bc37228e5af2971c1f4573e7fb63fa4f4e900bd1f35770d99f3eb5fc34aeaea"
+            },
+            {
+              "path": "src\\compute_ggml_runtime\\vendor\\src\\ggml-cuda\\CMakeFiles\\ggml-cuda.dir\\template-instances\\mmf-instance-ncols_10.cu.obj",
+              "sha256": "aef7c910d543395a926dd767a6a177c92d17480ba01cdc4c8cca9503ef50a4bc"
+            },
+            {
+              "path": "src\\compute_ggml_runtime\\vendor\\src\\ggml-cuda\\CMakeFiles\\ggml-cuda.dir\\template-instances\\mmf-instance-ncols_11.cu.obj",
+              "sha256": "b40a8edd37d247be36d57d1c6cd02d123081f444686f8092a50b6192f6339d1c"
+            },
+            {
+              "path": "src\\compute_ggml_runtime\\vendor\\src\\ggml-cuda\\CMakeFiles\\ggml-cuda.dir\\template-instances\\mmf-instance-ncols_12.cu.obj",
+              "sha256": "f42c164650c002e3727ebd5a6ee7be73998afef17f7b9f002cc2deefbf9ab29d"
+            },
+            {
+              "path": "src\\compute_ggml_runtime\\vendor\\src\\ggml-cuda\\CMakeFiles\\ggml-cuda.dir\\template-instances\\mmf-instance-ncols_13.cu.obj",
+              "sha256": "75cfac6dccc16a34340b5033165dedba5b35c91ef82a9257260774003328dcee"
+            },
+            {
+              "path": "src\\compute_ggml_runtime\\vendor\\src\\ggml-cuda\\CMakeFiles\\ggml-cuda.dir\\template-instances\\mmf-instance-ncols_14.cu.obj",
+              "sha256": "4ff3335300107793e02d2b05ac20925f5330ef8e6806d35428c6126d709afdcd"
+            },
+            {
+              "path": "src\\compute_ggml_runtime\\vendor\\src\\ggml-cuda\\CMakeFiles\\ggml-cuda.dir\\template-instances\\mmf-instance-ncols_15.cu.obj",
+              "sha256": "4712a8f9e602fae24b51a65531b089854ab4f6f4729120b62fb302a43c73a641"
+            },
+            {
+              "path": "src\\compute_ggml_runtime\\vendor\\src\\ggml-cuda\\CMakeFiles\\ggml-cuda.dir\\template-instances\\mmf-instance-ncols_16.cu.obj",
+              "sha256": "a02915861afd1b979df7bfc001fd7614bd00ae0e1d876ae824e32da8fa632604"
+            },
+            {
+              "path": "src\\compute_ggml_runtime\\vendor\\src\\ggml-cuda\\CMakeFiles\\ggml-cuda.dir\\template-instances\\mmf-instance-ncols_2.cu.obj",
+              "sha256": "2b56751ed9ab8e7a056e89ff209dfd8652b764345b3448936143c25b158c6261"
+            },
+            {
+              "path": "src\\compute_ggml_runtime\\vendor\\src\\ggml-cuda\\CMakeFiles\\ggml-cuda.dir\\template-instances\\mmf-instance-ncols_3.cu.obj",
+              "sha256": "04a237c304eeef5d5fe64975d52bea1208f8903ece543a5c99f9db2cb99f3742"
+            },
+            {
+              "path": "src\\compute_ggml_runtime\\vendor\\src\\ggml-cuda\\CMakeFiles\\ggml-cuda.dir\\template-instances\\mmf-instance-ncols_4.cu.obj",
+              "sha256": "8bad49acee81e0c6e994793790c17343ab03840cfce5958855d39c3736dff814"
+            },
+            {
+              "path": "src\\compute_ggml_runtime\\vendor\\src\\ggml-cuda\\CMakeFiles\\ggml-cuda.dir\\template-instances\\mmf-instance-ncols_5.cu.obj",
+              "sha256": "ff2e4ee6aac6e71f3bc2cc2eac68b7e7800f775489b5806283534d189f06b917"
+            },
+            {
+              "path": "src\\compute_ggml_runtime\\vendor\\src\\ggml-cuda\\CMakeFiles\\ggml-cuda.dir\\template-instances\\mmf-instance-ncols_6.cu.obj",
+              "sha256": "deafeb8a03f716f43c68107488139287c1a487e88b535c4b26d5bab782a11323"
+            },
+            {
+              "path": "src\\compute_ggml_runtime\\vendor\\src\\ggml-cuda\\CMakeFiles\\ggml-cuda.dir\\template-instances\\mmf-instance-ncols_7.cu.obj",
+              "sha256": "1ae97514f04f584a457032a50edc4c81677c80a304fe0f22746351ce9f009a1b"
+            },
+            {
+              "path": "src\\compute_ggml_runtime\\vendor\\src\\ggml-cuda\\CMakeFiles\\ggml-cuda.dir\\template-instances\\mmf-instance-ncols_8.cu.obj",
+              "sha256": "c6886b42506bbfef4c6885ba9478cd816de5a9b197fd28e3cb02d1123755ae64"
+            },
+            {
+              "path": "src\\compute_ggml_runtime\\vendor\\src\\ggml-cuda\\CMakeFiles\\ggml-cuda.dir\\template-instances\\mmf-instance-ncols_9.cu.obj",
+              "sha256": "b13a87637e47fab83c2043fc8584c5bdc84ba90acc63ca3b851b0b18c55f0919"
+            },
+            {
+              "path": "src\\compute_ggml_runtime\\vendor\\src\\ggml-cuda\\CMakeFiles\\ggml-cuda.dir\\template-instances\\fattn-vec-instance-f16-f16.cu.obj",
+              "sha256": "ccc69a223bf3d93f89e031ef0d848325d0cd27ebfaee6aba759555a0b5611b3f"
+            },
+            {
+              "path": "src\\compute_ggml_runtime\\vendor\\src\\ggml-cuda\\CMakeFiles\\ggml-cuda.dir\\template-instances\\fattn-vec-instance-q4_0-q4_0.cu.obj",
+              "sha256": "508f8989c3a49494a574493e8876d4ffa4dc004736c7d6c37ed42d747daa623e"
+            },
+            {
+              "path": "src\\compute_ggml_runtime\\vendor\\src\\ggml-cuda\\CMakeFiles\\ggml-cuda.dir\\template-instances\\fattn-vec-instance-q8_0-q8_0.cu.obj",
+              "sha256": "b52d8c12cdb3026ff46976bcac18099b0d364636dd1f98175876e2948e467c7a"
+            },
+            {
+              "path": "src\\compute_ggml_runtime\\vendor\\src\\ggml-cuda\\CMakeFiles\\ggml-cuda.dir\\template-instances\\fattn-vec-instance-bf16-bf16.cu.obj",
+              "sha256": "cca56624555e74f306a0ade52ea12a4e8c1578f1d52fc16b92e6aaab420fc36b"
+            },
+            {
+              "path": "src\\compute_ggml_runtime\\vendor\\src\\ggml-cuda\\CMakeFiles\\ggml-cuda.dir\\C_\\public\\project-hyle\\hyle\\third_party\\ggml_cuda_runtime\\mmq-instance-iq1_xs.cu.obj",
+              "sha256": "49617476c71dbae83fea582e5f1746716a497ee1615616389d91d9b3e0ee07d6"
+            },
+            {
+              "path": "src\\compute_ggml_runtime\\vendor\\src\\ggml-cuda\\CMakeFiles\\ggml-cuda.dir\\C_\\public\\project-hyle\\hyle\\third_party\\ggml_cuda_runtime\\mmq-instance-iq1_xxs.cu.obj",
+              "sha256": "db3155854e3960180be963f5f3d9d941edf229799c65e8dc525988fcd6bb964d"
+            },
+            {
+              "path": "src\\compute_ggml_runtime\\vendor\\src\\ggml-cuda\\CMakeFiles\\ggml-cuda.dir\\C_\\public\\project-hyle\\hyle\\third_party\\ggml_cuda_runtime\\mmq-instance-iq1_xxxs.cu.obj",
+              "sha256": "6bd5dd56e30010b5ed4ddce4a0dff5fbfa937d3136aed9a1d4196fa7aa38bccf"
+            }
+          ],
+          "original_manifest_sha256": "da24bcc84271d5145aa6018a2edb8833a33d8d671d94c7d9b488255c4ae2a501",
+          "reuse_manifest_sha256": "d5ef0b9599e5836bd44ddd050c6f76157f940c3c057e82c91dd73ab6ba64d82f",
+          "scope": "Private same-tree manifest path mapping only. All actual recorded Windows native derived dependencies are byte-compared, canonical shared inputs match fixed qualified proof, and Ninja checks original command identity/dependency freshness. Current product/C++/CPU native edges remain current. No object timestamp/content mutation or product source copyback.",
+          "elapsed_seconds": 10.98399999999674
+        },
+        "effective_static": false,
+        "dependency_tool": {
+          "path": "C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\bin\\Hostx64\\x64\\dumpbin.exe",
+          "sha256": "003959d2e77e464cd90f1b09bcd593e908a3922398b0e193cceab67d22d86df2"
+        },
+        "consumer-build_preflight": {
+          "edges": 36,
+          "cuda_edges": []
+        },
+        "staged_runtime": [
+          {
+            "staged": "C:\\h7\\g08-sdk\\cuda-shared-1\\consumer-build\\hyle_mem.dll",
+            "original": "C:\\h7\\g08-sdk\\cuda-shared-1\\relocated\\bin\\hyle_mem.dll",
+            "sha256": "4fa479f50618455b079e5262247c7697caae019cb01d71764660f4b7c9a3856c"
+          },
+          {
+            "staged": "C:\\h7\\g08-sdk\\cuda-shared-1\\consumer-build\\hyle_error.dll",
+            "original": "C:\\h7\\g08-sdk\\cuda-shared-1\\relocated\\bin\\hyle_error.dll",
+            "sha256": "e521b5e53a46e398e904cfed1919c899a0a5b1fc1faf3c6e5d01f3db2a5bbee3"
+          },
+          {
+            "staged": "C:\\h7\\g08-sdk\\cuda-shared-1\\consumer-build\\hyle_platform.dll",
+            "original": "C:\\h7\\g08-sdk\\cuda-shared-1\\relocated\\bin\\hyle_platform.dll",
+            "sha256": "524948ce13c21d3f51d4bec5cef3c37ac42d3f306ada459597740edf4428f4ad"
+          },
+          {
+            "staged": "C:\\h7\\g08-sdk\\cuda-shared-1\\consumer-build\\hyle_graph_route_cpu_cuda.dll",
+            "original": "C:\\h7\\g08-sdk\\cuda-shared-1\\relocated\\bin\\hyle_graph_route_cpu_cuda.dll",
+            "sha256": "4d01f3e8f6fb842b850b0f38e3dffd1dc95fea9dbdda72bd78d9c29d9c33b21d"
+          },
+          {
+            "staged": "C:\\h7\\g08-sdk\\cuda-shared-1\\consumer-build\\hyle_graph_route_cpu.dll",
+            "original": "C:\\h7\\g08-sdk\\cuda-shared-1\\relocated\\bin\\hyle_graph_route_cpu.dll",
+            "sha256": "a56b1740d939ce2e394c7c160e3fc7b143dc7aa88b9adab89f797accc52e7087"
+          },
+          {
+            "staged": "C:\\h7\\g08-sdk\\cuda-shared-1\\consumer-build\\hyle_graph_route_cuda.dll",
+            "original": "C:\\h7\\g08-sdk\\cuda-shared-1\\relocated\\bin\\hyle_graph_route_cuda.dll",
+            "sha256": "c03a4e770f14eed49d2ca818d3c7be97c4c5c4df4badd69737341753963b3cc6"
+          },
+          {
+            "staged": "C:\\h7\\g08-sdk\\cuda-shared-1\\consumer-build\\hyle_graph.dll",
+            "original": "C:\\h7\\g08-sdk\\cuda-shared-1\\relocated\\bin\\hyle_graph.dll",
+            "sha256": "37f3945dc17fec5c165065ed02304259cb8e43d2fae394105212166d21b5f418"
+          },
+          {
+            "staged": "C:\\h7\\g08-sdk\\cuda-shared-1\\consumer-build\\hyle_compute_backend_cuda.dll",
+            "original": "C:\\h7\\g08-sdk\\cuda-shared-1\\relocated\\bin\\hyle_compute_backend_cuda.dll",
+            "sha256": "4469e5b6ee0098db8be73329fad78b09c7e4de35f0836f32de4c137adb8b2594"
+          },
+          {
+            "staged": "C:\\h7\\g08-sdk\\cuda-shared-1\\consumer-build\\hyle_compute.dll",
+            "original": "C:\\h7\\g08-sdk\\cuda-shared-1\\relocated\\bin\\hyle_compute.dll",
+            "sha256": "3f3dd8d0edf97d1cce32f092e43c5a5bb85af53e4ac362e7a5fae0a4d5f58ec0"
+          },
+          {
+            "staged": "C:\\h7\\g08-sdk\\cuda-shared-1\\consumer-build\\hyle_compute_ops.dll",
+            "original": "C:\\h7\\g08-sdk\\cuda-shared-1\\relocated\\bin\\hyle_compute_ops.dll",
+            "sha256": "c6ec60f62787c4c4f9c758a2effeafd090a738bb5e98ecd75f5ca2bf8ce5a7eb"
+          },
+          {
+            "staged": "C:\\h7\\g08-sdk\\cuda-shared-1\\consumer-build\\hyle_sched.dll",
+            "original": "C:\\h7\\g08-sdk\\cuda-shared-1\\relocated\\bin\\hyle_sched.dll",
+            "sha256": "107fc8752438149155cddf2d1c77233902d50de455d9288162640ae7c39ed14d"
+          },
+          {
+            "staged": "C:\\h7\\g08-sdk\\cuda-shared-1\\consumer-build\\hyle_platform_thread.dll",
+            "original": "C:\\h7\\g08-sdk\\cuda-shared-1\\relocated\\bin\\hyle_platform_thread.dll",
+            "sha256": "f3752d570df897eb57a064e6fedfa2d137c841302ac2f59bdbd0f224e18430d4"
+          },
+          {
+            "staged": "C:\\h7\\g08-sdk\\cuda-shared-1\\consumer-build\\hyle_container.dll",
+            "original": "C:\\h7\\g08-sdk\\cuda-shared-1\\relocated\\bin\\hyle_container.dll",
+            "sha256": "c917252faa4b884c686aec7b39571bfb2df1fb98b9065d4c3d0949a18183cebd"
+          },
+          {
+            "staged": "C:\\h7\\g08-sdk\\cuda-shared-1\\consumer-build\\hyle_graph_provider_ggml_cuda.dll",
+            "original": "C:\\h7\\g08-sdk\\cuda-shared-1\\relocated\\bin\\hyle_graph_provider_ggml_cuda.dll",
+            "sha256": "0312d68e9ce090fc4d2919a857fd4b1356506ac38d8dce46424bf6984302fa96"
+          },
+          {
+            "staged": "C:\\h7\\g08-sdk\\cuda-shared-1\\consumer-build\\hyle_compute_route_cuda.dll",
+            "original": "C:\\h7\\g08-sdk\\cuda-shared-1\\relocated\\bin\\hyle_compute_route_cuda.dll",
+            "sha256": "4ddd4f0e9bfe85691653ec240d99d9eb1ba0e57265bb9786e572058b4ebffff7"
+          },
+          {
+            "staged": "C:\\h7\\g08-sdk\\cuda-shared-1\\consumer-build\\hyle_compute_provider_cublas.dll",
+            "original": "C:\\h7\\g08-sdk\\cuda-shared-1\\relocated\\bin\\hyle_compute_provider_cublas.dll",
+            "sha256": "68d82b80445bc7a95a7f9f2525f0c346c9cab35dffd7eec2e94df651af964925"
+          },
+          {
+            "staged": "C:\\h7\\g08-sdk\\cuda-shared-1\\consumer-build\\hyle_compute_provider_cuda.dll",
+            "original": "C:\\h7\\g08-sdk\\cuda-shared-1\\relocated\\bin\\hyle_compute_provider_cuda.dll",
+            "sha256": "2e9f68fb31b17e7257c0534c6f166ebd6b4edeaa33b72bf3b741ffffac402d73"
+          },
+          {
+            "staged": "C:\\h7\\g08-sdk\\cuda-shared-1\\consumer-build\\hyle_compute_provider_ggml_cuda.dll",
+            "original": "C:\\h7\\g08-sdk\\cuda-shared-1\\relocated\\bin\\hyle_compute_provider_ggml_cuda.dll",
+            "sha256": "4880d8bd0e348eb07903410658aff4288aaea43d511a8b53be75ec6e2b47978d"
+          },
+          {
+            "staged": "C:\\h7\\g08-sdk\\cuda-shared-1\\consumer-build\\hyle_compute_provider_torch_cuda.dll",
+            "original": "C:\\h7\\g08-sdk\\cuda-shared-1\\relocated\\bin\\hyle_compute_provider_torch_cuda.dll",
+            "sha256": "c594848fc77b5a2e198fcd24e391398ffad53cba2a970a276291f284fc381645"
+          },
+          {
+            "staged": "C:\\h7\\g08-sdk\\cuda-shared-1\\consumer-build\\hyle_compute_stream.dll",
+            "original": "C:\\h7\\g08-sdk\\cuda-shared-1\\relocated\\bin\\hyle_compute_stream.dll",
+            "sha256": "3fb3667412cc2648fab1d63036cc2f2e8c02fd08caaf03034ddc0cee1d1443d3"
+          },
+          {
+            "staged": "C:\\h7\\g08-sdk\\cuda-shared-1\\consumer-build\\hyle_io_core.dll",
+            "original": "C:\\h7\\g08-sdk\\cuda-shared-1\\relocated\\bin\\hyle_io_core.dll",
+            "sha256": "e2c19f65e24f4437ed0a281d32109f4d8579af2c66ee9375a799c3f80ecf1b5c"
+          },
+          {
+            "staged": "C:\\h7\\g08-sdk\\cuda-shared-1\\consumer-build\\hyle_mem_vm.dll",
+            "original": "C:\\h7\\g08-sdk\\cuda-shared-1\\relocated\\bin\\hyle_mem_vm.dll",
+            "sha256": "90903f8206bc317cdf67a7b1f4bbaf006b654743f81d4a93856f3b6cd4fae4bc"
+          },
+          {
+            "staged": "C:\\h7\\g08-sdk\\cuda-shared-1\\consumer-build\\hyle_platform_fs.dll",
+            "original": "C:\\h7\\g08-sdk\\cuda-shared-1\\relocated\\bin\\hyle_platform_fs.dll",
+            "sha256": "ab6edeb755d04a5cf2892e9820c69526b364df69b7d9a1731dbd16e209c0280a"
+          },
+          {
+            "staged": "C:\\h7\\g08-sdk\\cuda-shared-1\\consumer-build\\hyle_compute_ggml_runtime.dll",
+            "original": "C:\\h7\\g08-sdk\\cuda-shared-1\\relocated\\bin\\hyle_compute_ggml_runtime.dll",
+            "sha256": "259f90d87337cf07c9897a498af21c3bf7abc7f1fcd711eea64bbee0d056b904"
+          },
+          {
+            "staged": "C:\\h7\\g08-sdk\\cuda-shared-1\\consumer-build\\hyle_graph_provider_onednn.dll",
+            "original": "C:\\h7\\g08-sdk\\cuda-shared-1\\relocated\\bin\\hyle_graph_provider_onednn.dll",
+            "sha256": "9f6be7664efcf7a1c20e9e7a632fe4802d9d57462f11a3dd7482f10a29f64fe5"
+          },
+          {
+            "staged": "C:\\h7\\g08-sdk\\cuda-shared-1\\consumer-build\\hyle_compute_route_cpu.dll",
+            "original": "C:\\h7\\g08-sdk\\cuda-shared-1\\relocated\\bin\\hyle_compute_route_cpu.dll",
+            "sha256": "ca8d229a38252a9460b7d05b12315694e26a3b7e89105be06e2d092d1785c09e"
+          },
+          {
+            "staged": "C:\\h7\\g08-sdk\\cuda-shared-1\\consumer-build\\hyle_compute_provider_native.dll",
+            "original": "C:\\h7\\g08-sdk\\cuda-shared-1\\relocated\\bin\\hyle_compute_provider_native.dll",
+            "sha256": "c56a8eb01984db61783d19dc9228d1d092458a7e6fe25f06ea13fbca3dc6dd3c"
+          },
+          {
+            "staged": "C:\\h7\\g08-sdk\\cuda-shared-1\\consumer-build\\hyle_compute_provider_onednn.dll",
+            "original": "C:\\h7\\g08-sdk\\cuda-shared-1\\relocated\\bin\\hyle_compute_provider_onednn.dll",
+            "sha256": "53abac1ef4dc677a251819defbedb06e5ebd8de0091b6406650774c7d6b09ffe"
+          },
+          {
+            "staged": "C:\\h7\\g08-sdk\\cuda-shared-1\\consumer-build\\hyle_compute_provider_ggml.dll",
+            "original": "C:\\h7\\g08-sdk\\cuda-shared-1\\relocated\\bin\\hyle_compute_provider_ggml.dll",
+            "sha256": "0b0f84e6c7ba2691edf6a2919ae7ea90f282c8ebf1d5b5cfb63fffb419728644"
+          },
+          {
+            "staged": "C:\\h7\\g08-sdk\\cuda-shared-1\\consumer-build\\hyle_compute_backend_cpu.dll",
+            "original": "C:\\h7\\g08-sdk\\cuda-shared-1\\relocated\\bin\\hyle_compute_backend_cpu.dll",
+            "sha256": "a1dc393db5abcdce86bdee0fe27d2cb39fd678f191824d7304584b61c2dd18e8"
+          },
+          {
+            "staged": "C:\\h7\\g08-sdk\\cuda-shared-1\\consumer-build\\hyle_compute_batch.dll",
+            "original": "C:\\h7\\g08-sdk\\cuda-shared-1\\relocated\\bin\\hyle_compute_batch.dll",
+            "sha256": "c221d6740371cef476afb0968cea26a49c6eba84ff8ed64a52eef76be34fc104"
+          },
+          {
+            "staged": "C:\\h7\\g08-sdk\\cuda-shared-1\\consumer-build\\hyle_simd.dll",
+            "original": "C:\\h7\\g08-sdk\\cuda-shared-1\\relocated\\bin\\hyle_simd.dll",
+            "sha256": "633c2bad1916a642b51ebf872065ffd6307215d8c1c7209eff262e79e235d631"
+          }
+        ],
+        "consumers": [
+          {
+            "name": "cpu_direct",
+            "path": "C:\\h7\\g08-sdk\\cuda-shared-1\\consumer-build\\cpu_direct.exe",
+            "sha256": "ee2101f2cd6a7b79b79f18fb06086cad319d460ab81ffbf91fd667a5f60b8c54"
+          },
+          {
+            "name": "cpu_graph",
+            "path": "C:\\h7\\g08-sdk\\cuda-shared-1\\consumer-build\\cpu_graph.exe",
+            "sha256": "85e09c212f61aa05be93d64d54131d57ba117d7ff949517e3d230a9b3e34ba93"
+          },
+          {
+            "name": "native_direct",
+            "path": "C:\\h7\\g08-sdk\\cuda-shared-1\\consumer-build\\native_direct.exe",
+            "sha256": "67335ad514d5ec13537354ab2e4a7af475fc7deeaef0196d5b7c3dc07d5e0436"
+          },
+          {
+            "name": "native_graph",
+            "path": "C:\\h7\\g08-sdk\\cuda-shared-1\\consumer-build\\native_graph.exe",
+            "sha256": "07ed752b4ce3e0acf1a81aea1d0ab922001e841e978b0429396fe80f942d045f"
+          },
+          {
+            "name": "joint",
+            "path": "C:\\h7\\g08-sdk\\cuda-shared-1\\consumer-build\\joint.exe",
+            "sha256": "ffcd50e4f61bcec551b1d67cd0466226e24335c4ab3d689200d3ab532307414a"
+          },
+          {
+            "name": "mem",
+            "path": "C:\\h7\\g08-sdk\\cuda-shared-1\\consumer-build\\mem.exe",
+            "sha256": "a7e53942c689172430426f84af55a38ded3d6a4aba4dc899a1e9e3b266fa55ab"
+          }
+        ],
+        "independent_headers": [
+          {
+            "path": "compute/sampling_ops.h",
+            "sha256": "887faba6ebe6249a0e2f766e2ea4b6bd83900bcf1e85165ad55e3e9be18528da"
+          },
+          {
+            "path": "compute/operation.h",
+            "sha256": "584e57c2a1a10b7c17ee80d4a6f992b73f488f4cdbf1e71e39d908cd89600808"
+          },
+          {
+            "path": "compute/prepared_operation.h",
+            "sha256": "3fe6a6f1ddc31c2181a208658e627be20933bde325ec0b63dba06281d007ed7b"
+          },
+          {
+            "path": "compute/cpu.h",
+            "sha256": "bccb8e5d310086b41c6f010a84f56219ac33830e92e5da22ce2ff12cd608ccb6"
+          },
+          {
+            "path": "graph/cpu.h",
+            "sha256": "207f78caafbec1e73966f0ead5563b51aa2aaf3e5eccabde15b6a20447a25f99"
+          },
+          {
+            "path": "mem/allocator.h",
+            "sha256": "8beaac413632fdc4409c2384f1cda7d6d5e75b72aafad73d188e13dbfa50781a"
+          },
+          {
+            "path": "mem/system_inline.h",
+            "sha256": "d890fe66b1a83a5f1a8f2b22c368276e7b3fadcfd0946df5279692ce055164f1"
+          },
+          {
+            "path": "mem/buffer.h",
+            "sha256": "346a4f810babb8c5dacba49faaf57903d998a3cbb49af12b8c62acc85f7be72c"
+          },
+          {
+            "path": "compute/cuda.h",
+            "sha256": "13757830a7d376d94d9ffc1993dd56b6872d5c7168961eb630c014e1efa57fa6"
+          },
+          {
+            "path": "graph/cuda.h",
+            "sha256": "059264fb0360cfd298ea7e543ac153b334209e04ab90f0e5a66ea2857f4986e3"
+          },
+          {
+            "path": "graph/cpu_cuda.h",
+            "sha256": "b3fe45dc75ce6c999857bca3130816132018eb3c845e0c889d577165d8f1b098"
+          },
+          {
+            "path": "compute/backends/cuda.h",
+            "sha256": "9b1565cee1a199e46a524da1d244f6f5e1c3d8236bd5e69849583ee5ff27a91f"
+          },
+          {
+            "path": "compute/providers/cuda.h",
+            "sha256": "1b8c91cfd65b52b19503c3a8ddc31af9524093f35c1063071a2c0a56e4603106"
+          }
+        ],
+        "random123_license": [
+          {
+            "path": "C:\\h7\\g08-sdk\\cuda-shared-1\\relocated\\share\\licenses\\Hyle\\random123-counter-LICENSE",
+            "sha256": "5fd0885ab205878bd90c19144677286252eb9b988c1545a3a910edfe1e27b6df"
+          },
+          {
+            "path": "C:\\h7\\g08-sdk\\cuda-shared-1\\relocated\\share\\licenses\\Hyle\\random123-counter-NOTICE.md",
+            "sha256": "af105c0b38b45cd3c41848058b56bbb38e86907acc56f51ae740556d7150a87b"
+          }
+        ]
+      }
+    },
+    {
+      "platform_mode": "wsl-static",
+      "result": {
+        "state": "RELOCATED_SDK_PUBLIC_CONSUMERS_HEADERS_LICENSE_PASS",
+        "pid": 543,
+        "route": "cuda",
+        "mode": "static",
+        "producer": "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/static-sdk-build",
+        "max_jobs": 2,
+        "stages": [
+          {
+            "stage": "producer-configure",
+            "command": [
+              "cmake",
+              "-S",
+              "/root/hyle-scratch/compute-unified/source-7a7b4c3b",
+              "-B",
+              "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/static-sdk-build",
+              "-DHYLE_BUILD_TESTS=OFF",
+              "-DHYLE_BUILD_BENCH=OFF",
+              "-DHYLE_INSTALL=ON",
+              "-DHYLE_TEST_INSTRUMENTATION=OFF",
+              "-DHYLE_COMPONENTS=compute;graph",
+              "-DHYLE_COMPUTE_ROUTES=cpu;cuda",
+              "-DHYLE_STATIC=ON",
+              "-DCMAKE_PROJECT_INCLUDE=/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g08_shipping_cuda_profile.cmake"
+            ],
+            "exit_code": 0,
+            "elapsed_seconds": 52.103681029,
+            "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g08-sdk/cuda-static-1/producer-configure.log"
+          },
+          {
+            "stage": "producer-manifest",
+            "command": [
+              "ninja",
+              "-C",
+              "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/static-sdk-build",
+              "build.ninja"
+            ],
+            "exit_code": 0,
+            "elapsed_seconds": 0.07799929600000155,
+            "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g08-sdk/cuda-static-1/producer-manifest.log"
+          },
+          {
+            "stage": "native-reuse",
+            "command": [
+              "python3",
+              "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/ce28_shipping_native_reuse_wsl.py",
+              "static",
+              "g08-sdk-1"
+            ],
+            "exit_code": 0,
+            "elapsed_seconds": 0.32978822700000876,
+            "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g08-sdk/cuda-static-1/native-reuse.log"
+          },
+          {
+            "stage": "producer-build",
+            "command": [
+              "ninja",
+              "-C",
+              "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/static-sdk-build",
+              "-f",
+              "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g08-sdk/cuda-static-1/preview.ninja",
+              "-j",
+              "2",
+              "hyle_compute",
+              "hyle_compute_ops",
+              "hyle_compute_batch",
+              "hyle_compute_state",
+              "hyle_compute_stream",
+              "hyle_graph",
+              "hyle_graph_batch",
+              "hyle_compute_route_cuda",
+              "hyle_graph_route_cuda",
+              "hyle_graph_route_cpu_cuda"
+            ],
+            "exit_code": 0,
+            "elapsed_seconds": 102.760993599,
+            "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g08-sdk/cuda-static-1/producer-build.log"
+          },
+          {
+            "stage": "install",
+            "command": [
+              "cmake",
+              "--install",
+              "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/static-sdk-build",
+              "--prefix",
+              "/root/hyle-scratch/compute-unified/g08-sdk/cuda-static-1/staging"
+            ],
+            "exit_code": 0,
+            "elapsed_seconds": 0.3777101519999917,
+            "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g08-sdk/cuda-static-1/install.log"
+          },
+          {
+            "stage": "consumer-configure",
+            "command": [
+              "cmake",
+              "-S",
+              "/root/hyle-scratch/compute-unified/g08-sdk/cuda-static-1/consumer",
+              "-B",
+              "/root/hyle-scratch/compute-unified/g08-sdk/cuda-static-1/consumer-build",
+              "-G",
+              "Ninja",
+              "-DCMAKE_BUILD_TYPE=Release",
+              "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON",
+              "-DCMAKE_PREFIX_PATH=/root/hyle-scratch/compute-unified/g08-sdk/cuda-static-1/relocated",
+              "-DCMAKE_CXX_COMPILER=/usr/bin/g++-14",
+              "-DCUDAToolkit_ROOT=/usr/local/cuda-13.3"
+            ],
+            "exit_code": 0,
+            "elapsed_seconds": 29.717257028999995,
+            "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g08-sdk/cuda-static-1/consumer-configure.log"
+          },
+          {
+            "stage": "consumer-manifest",
+            "command": [
+              "ninja",
+              "-C",
+              "/root/hyle-scratch/compute-unified/g08-sdk/cuda-static-1/consumer-build",
+              "build.ninja"
+            ],
+            "exit_code": 0,
+            "elapsed_seconds": 0.017943655000010494,
+            "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g08-sdk/cuda-static-1/consumer-manifest.log"
+          },
+          {
+            "stage": "consumer-build",
+            "command": [
+              "ninja",
+              "-C",
+              "/root/hyle-scratch/compute-unified/g08-sdk/cuda-static-1/consumer-build",
+              "-f",
+              "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g08-sdk/cuda-static-1/consumer-preview.ninja",
+              "-j",
+              "2",
+              "cpu_direct",
+              "cpu_graph",
+              "native_direct",
+              "native_graph",
+              "joint",
+              "mem",
+              "headers"
+            ],
+            "exit_code": 0,
+            "elapsed_seconds": 27.265324305000007,
+            "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g08-sdk/cuda-static-1/consumer-build.log"
+          },
+          {
+            "stage": "cpu_direct",
+            "command": [
+              "/root/hyle-scratch/compute-unified/g08-sdk/cuda-static-1/consumer-build/cpu_direct"
+            ],
+            "exit_code": 0,
+            "elapsed_seconds": 2.669546276999995,
+            "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g08-sdk/cuda-static-1/cpu_direct.log"
+          },
+          {
+            "stage": "cpu_graph",
+            "command": [
+              "/root/hyle-scratch/compute-unified/g08-sdk/cuda-static-1/consumer-build/cpu_graph"
+            ],
+            "exit_code": 0,
+            "elapsed_seconds": 3.1882340930000055,
+            "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g08-sdk/cuda-static-1/cpu_graph.log"
+          },
+          {
+            "stage": "native_direct",
+            "command": [
+              "/root/hyle-scratch/compute-unified/g08-sdk/cuda-static-1/consumer-build/native_direct"
+            ],
+            "exit_code": 0,
+            "elapsed_seconds": 2.6905157169999825,
+            "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g08-sdk/cuda-static-1/native_direct.log"
+          },
+          {
+            "stage": "native_graph",
+            "command": [
+              "/root/hyle-scratch/compute-unified/g08-sdk/cuda-static-1/consumer-build/native_graph"
+            ],
+            "exit_code": 0,
+            "elapsed_seconds": 2.355835092999996,
+            "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g08-sdk/cuda-static-1/native_graph.log"
+          },
+          {
+            "stage": "joint",
+            "command": [
+              "/root/hyle-scratch/compute-unified/g08-sdk/cuda-static-1/consumer-build/joint"
+            ],
+            "exit_code": 0,
+            "elapsed_seconds": 0.6173605219999558,
+            "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g08-sdk/cuda-static-1/joint.log"
+          },
+          {
+            "stage": "mem",
+            "command": [
+              "/root/hyle-scratch/compute-unified/g08-sdk/cuda-static-1/consumer-build/mem"
+            ],
+            "exit_code": 0,
+            "elapsed_seconds": 0.21998266999997895,
+            "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g08-sdk/cuda-static-1/mem.log"
+          }
+        ],
+        "scope": "G08 fixed candidate public numerical Direct/Graph/joint, CPU and Mem consumers with independent headers; source embedding or relocated shipping SDK. No P1/full-engine claim.",
+        "identity": {
+          "host": "Linux kiro-workstation 6.18.54.1-microsoft-standard-WSL2 #1 SMP PREEMPT_DYNAMIC Tue Oct  6 19:13:07 UTC 2026 x86_64 x86_64 x86_64 GNU/Linux",
+          "compiler": "g++-14 (Ubuntu 14.2.0-4ubuntu2~24.04.1) 14.2.0\nCopyright (C) 2024 Free Software Foundation, Inc.\nThis is free software; see the source for copying conditions.  There is NO\nwarranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.",
+          "cuda": "nvcc: NVIDIA (R) Cuda compiler driver\nCopyright (c) 2005-2026 NVIDIA Corporation\nBuilt on Tue_Jun_09_02:43:40_PM_PDT_2026\nCuda compilation tools, release 13.3, V13.3.73\nBuild cuda_13.3.r13.3/compiler.38244171_0",
+          "gpu": "NVIDIA GeForce RTX 4070, GPU-e7376560-6f5d-ec19-6ee4-3dd3a2c81ef8, 617.14"
+        },
+        "source_snapshot": "d5b9490a5958593915d69750cb3a4470866a7176",
+        "synced_paths": [
+          "docs/implementation/module-status.json",
+          "docs/implementation/status.md",
+          "docs/implementation/tasks/compute/inference-g08-output-selection.md",
+          "docs/user/apple-compute.md",
+          "docs/user/compute.md",
+          "docs/user/vulkan-compute.md",
+          "src/compute_route_apple/apple_tensor.cc",
+          "src/compute_route_vulkan/shaders/sampling_math.glsl",
+          "tests/compute_models/sampling_math_fixture.h",
+          "tests/graph_route_apple/reduction_test.cc"
+        ],
+        "candidate": "5103c13d8ed119b06aa64e799f9768aea45ab913",
+        "stage": "mem",
+        "elapsed_seconds": 226.6393337,
+        "native_reuse": {
+          "state": "PASS_146_SHIPPING_OBJECTS_NATIVE_NINJA_NO_WORK",
+          "elapsed_seconds": 0.25650744000000714,
+          "build": "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/static-sdk-build",
+          "old_derived_source": "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/static-sdk-build/src/compute_ggml_runtime/source-c41bfd1864980360",
+          "new_derived_source": "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/static-sdk-build/src/compute_ggml_runtime/source-2f41ad48bddb8a44",
+          "original_manifest_sha256": "5fdfc5a1f7464342eb7ee5b07c44f4ae967d460d2f1a557e17be513db74e0467",
+          "reuse_manifest_sha256": "d29e90d371aac55001ad1b8fe1a8dc50c3a1723d92a8d9caa2e600e517fd0fbf",
+          "verified_derived_inputs": 242,
+          "verified_canonical_inputs": 5,
+          "native_object_count": 146,
+          "original_object_checks": "Ninja validates original command identity and dependency freshness on old-source paths; no native compile is scheduled",
+          "scope": "Private build-local manifest maps only byte-identical ggml CUDA source/include paths and the precise unary object reference; all current CPU/FlashInfer/other product edges retained."
+        },
+        "cuda_edges": [
+          "[98/119] Building CUDA object src/compute_provider_cuda/CMakeFiles/hyle_compute_provider_cuda.dir/collectives.cu.o",
+          "[109/119] Building CUDA object src/compute_provider_cuda/CMakeFiles/hyle_compute_provider_cuda.dir/sampling_kernel.cu.o"
+        ],
+        "build_edges": 120,
+        "consumer_cuda_edges": [],
+        "consumer_build_edges": 30,
+        "consumers": [
+          {
+            "name": "cpu_direct",
+            "path": "/root/hyle-scratch/compute-unified/g08-sdk/cuda-static-1/consumer-build/cpu_direct",
+            "sha256": "f25e1a075e549cb44c8dcc43724cec813014418dd4feda5b0d7a8300d244b171"
+          },
+          {
+            "name": "cpu_graph",
+            "path": "/root/hyle-scratch/compute-unified/g08-sdk/cuda-static-1/consumer-build/cpu_graph",
+            "sha256": "7cfccde52dba81e1f735cfd65dd49be0c7396f2c011d2804a7c253bab2bd3d9c"
+          },
+          {
+            "name": "native_direct",
+            "path": "/root/hyle-scratch/compute-unified/g08-sdk/cuda-static-1/consumer-build/native_direct",
+            "sha256": "6fa8caa95ada57e444597c9bd556253fa4d4ffdec324cf5cac2cadfc560512c4"
+          },
+          {
+            "name": "native_graph",
+            "path": "/root/hyle-scratch/compute-unified/g08-sdk/cuda-static-1/consumer-build/native_graph",
+            "sha256": "25978caae5586204b54546fa8adafa857f21cd335119b5dd9de77016ca2875ae"
+          },
+          {
+            "name": "joint",
+            "path": "/root/hyle-scratch/compute-unified/g08-sdk/cuda-static-1/consumer-build/joint",
+            "sha256": "67e7eb07f023d47aace7e6da64f7b6aef6f924708c98d8661cbeb5aa2a60f48c"
+          },
+          {
+            "name": "mem",
+            "path": "/root/hyle-scratch/compute-unified/g08-sdk/cuda-static-1/consumer-build/mem",
+            "sha256": "90aa800e4f8b5d31a7be53506ba72c9591c6dfe627e225deb59fd698498f55bd"
+          }
+        ],
+        "independent_headers": [
+          {
+            "path": "compute/sampling_ops.h",
+            "sha256": "887faba6ebe6249a0e2f766e2ea4b6bd83900bcf1e85165ad55e3e9be18528da"
+          },
+          {
+            "path": "compute/operation.h",
+            "sha256": "584e57c2a1a10b7c17ee80d4a6f992b73f488f4cdbf1e71e39d908cd89600808"
+          },
+          {
+            "path": "compute/prepared_operation.h",
+            "sha256": "3fe6a6f1ddc31c2181a208658e627be20933bde325ec0b63dba06281d007ed7b"
+          },
+          {
+            "path": "compute/cpu.h",
+            "sha256": "bccb8e5d310086b41c6f010a84f56219ac33830e92e5da22ce2ff12cd608ccb6"
+          },
+          {
+            "path": "graph/cpu.h",
+            "sha256": "207f78caafbec1e73966f0ead5563b51aa2aaf3e5eccabde15b6a20447a25f99"
+          },
+          {
+            "path": "mem/allocator.h",
+            "sha256": "8beaac413632fdc4409c2384f1cda7d6d5e75b72aafad73d188e13dbfa50781a"
+          },
+          {
+            "path": "mem/system_inline.h",
+            "sha256": "d890fe66b1a83a5f1a8f2b22c368276e7b3fadcfd0946df5279692ce055164f1"
+          },
+          {
+            "path": "mem/buffer.h",
+            "sha256": "346a4f810babb8c5dacba49faaf57903d998a3cbb49af12b8c62acc85f7be72c"
+          },
+          {
+            "path": "compute/cuda.h",
+            "sha256": "13757830a7d376d94d9ffc1993dd56b6872d5c7168961eb630c014e1efa57fa6"
+          },
+          {
+            "path": "graph/cuda.h",
+            "sha256": "059264fb0360cfd298ea7e543ac153b334209e04ab90f0e5a66ea2857f4986e3"
+          },
+          {
+            "path": "graph/cpu_cuda.h",
+            "sha256": "b3fe45dc75ce6c999857bca3130816132018eb3c845e0c889d577165d8f1b098"
+          },
+          {
+            "path": "compute/backends/cuda.h",
+            "sha256": "9b1565cee1a199e46a524da1d244f6f5e1c3d8236bd5e69849583ee5ff27a91f"
+          },
+          {
+            "path": "compute/providers/cuda.h",
+            "sha256": "1b8c91cfd65b52b19503c3a8ddc31af9524093f35c1063071a2c0a56e4603106"
+          }
+        ],
+        "random123_license": [
+          {
+            "path": "/root/hyle-scratch/compute-unified/g08-sdk/cuda-static-1/relocated/share/licenses/Hyle/random123-counter-LICENSE",
+            "sha256": "5fd0885ab205878bd90c19144677286252eb9b988c1545a3a910edfe1e27b6df"
+          },
+          {
+            "path": "/root/hyle-scratch/compute-unified/g08-sdk/cuda-static-1/relocated/share/licenses/Hyle/random123-counter-NOTICE.md",
+            "sha256": "af105c0b38b45cd3c41848058b56bbb38e86907acc56f51ae740556d7150a87b"
+          }
+        ]
+      }
+    }
+  ],
+  "raw": {
+    "path": "raw.zip",
+    "sha256": "b5a38921680759b0b75ca6f091685be5c4158845fe992d3caadfb49533f42177",
+    "bytes": 1532474
+  },
+  "retained_windows_failures": [
+    "Private resource profile initially tried PRIVATE options on the unavailable FlashInfer INTERFACE stub; skip only absent interface targets.",
+    "Original native path change scheduled146 unchanged ggml CUDA objects plus6 real product CUDA dependencies. Initial guard failure retained; actual Windows242 derived and5 canonical dependency inputs compared, original Ninja commands/freshness checked and old146 objects reused without touching contents/timestamps. All current C++/CPU/native host edges retained.",
+    "Private profile SET of source COMPILE_OPTIONS wiped the products existing MSVC conforming-preprocessor option on two TUs. Original CCCL compilation failure retained; changed only scratch profile to APPEND and reconfigured the same producer. Required original flags restored, native-object proof refreshed; all six public consumers then passed."
+  ],
+  "retained_archive_failure": "The first sealer tried opening WSL POSIX executable paths as Windows paths. Its partial archive is retained as raw-first-seal-failure.zip and inside raw.zip; corrected to the actual WSL UNC paths and rechecked binary hashes without rerunning any producer or consumer.",
+  "runtime": "Windows PE import closure plus exact staged Hyle DLL hashes match relocated prefix; runtime PATH excludes canonical/producer paths. WSL actual ldd has no missing/producer Hyle dependencies. External validated LibTorch CPU/CUDA SDK/cache remains required by the existing distribution contract; this is not a hermetic-runtime or module-tracing claim.",
+  "scope": "Two of the six CUDA delivery configurations, each with public CPU/native Direct/Graph numerical/quality/full-vocabulary consumers, joint65-step/two-slot consumer, three public Mem regressions and13 independently compiled headers. Both actual relocated SDKs install Random123 license and NOTICE. No CUDA source/static/shared completion for either full OS matrix yet, no P1 or full-engine claim."
+}

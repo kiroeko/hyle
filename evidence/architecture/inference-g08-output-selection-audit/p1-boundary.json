@@ -1,0 +1,1453 @@
+{
+  "schema": "hyle.inference-g08-p1-source-boundary/v1",
+  "state": "SOURCE_BOUNDARY_FROZEN_ADAPTER_BUILD_AND_RUNTIME_QUALIFICATION_PENDING",
+  "baseline": "85bcfa4ebc29cc4d2ed5fb122074204aca675d58",
+  "candidate": "5103c13d8ed119b06aa64e799f9768aea45ab913",
+  "scope": "S1 only. No performance comparison or speed parity claim for RandomBits/Categorical. No engine token/s claim.",
+  "source_intake": {
+    "path": "p1-boundary-raw.zip",
+    "source_files": 30,
+    "unchanged_files": 21,
+    "sha256": "d98dd096b94b1558a408b11d4f46a941136b19600d6461fce29ae75aaadfde16"
+  },
+  "semantic_contract": "Same normal F32 dense last-axis TopK, largest, K1; both original value bits and first-index I32 outputs, successful checked completion and both small host readbacks. Apple additionally K3 holdout. Inputs remain resident; no sampling policies or arithmetic-precision substitution.",
+  "shapes": [
+    {
+      "route": "cpu",
+      "rows": 1,
+      "vocabulary": 248320,
+      "count": 1
+    },
+    {
+      "route": "cpu",
+      "rows": 16,
+      "vocabulary": 248320,
+      "count": 1
+    },
+    {
+      "route": "cuda",
+      "rows": 1,
+      "vocabulary": 248320,
+      "count": 1
+    },
+    {
+      "route": "cuda",
+      "rows": 16,
+      "vocabulary": 248320,
+      "count": 1
+    },
+    {
+      "route": "apple",
+      "rows": 1,
+      "vocabulary": 248320,
+      "count": 1
+    },
+    {
+      "route": "apple",
+      "rows": 16,
+      "vocabulary": 248320,
+      "count": 1
+    },
+    {
+      "route": "vulkan",
+      "rows": 1,
+      "vocabulary": 248320,
+      "count": 1
+    },
+    {
+      "route": "vulkan",
+      "rows": 16,
+      "vocabulary": 248320,
+      "count": 1
+    },
+    {
+      "route": "apple",
+      "rows": 16,
+      "vocabulary": 248320,
+      "count": 3
+    }
+  ],
+  "input_distribution": "Shared fixed integer hash generates normal F32 sign/exponent/mantissa values with full mantissa entropy, bounded magnitudes and explicit normal maxima/ties. No NaN/subnormal/Inf cases where the original Apple baseline is already known wrong. Independent stored-F32 ordering/value-bit/first-index oracle checks both ports before timing. Exact generator/bytes are locked with the benchmark contract before build.",
+  "topology": "Existing same-process nanobench Bench.compare, same iteration counts, cyclic interleaving and both initial execution orders, two independently constructed arm owners, both allocation orders and a pure link/section-placement replica. No new public runner/statistics adapter.",
+  "references": {
+    "cpu": "Compile complete original GGML CPU provider factory, standard_index.cc and native_batch.cc with its original private headers and fixed native dependency, isolated by private ggml_cpu namespace alias. Public explicit ProviderBinding/prepare/Queue/Completion, same backend as candidate. Preflight must confirm the ordinary default route selects this provider/implementation and both explicit arms match it; no cold-route speed claim.",
+    "cuda": "Compile exact original collectives_provider.cc and collectives.cu/private header with private cuda_native namespace alias; original cccl_provider factory, same original backend primary context and public ProviderBinding/prepare/Queue/Completion. Preserve original toolkit/architecture/flags and per-call key construction, sorting and transforms. Ordinary-route provider/implementation identity must match before sampling.",
+    "apple": "Compile original apple_tensor.cc and its original headers with only exported lower_tensor symbol isolated. Call its full typed lowerer through public Context.compile with the original operation/specs/workload/stream; original Context.prepare takes this same compile/lower route. Candidate uses ordinary Context.prepare. Current runtime differs from baseline only in an unrelated invalid numeric error message; TopK success execution is unchanged.",
+    "vulkan": "Compile the complete original compute_route_vulkan module and its owned public/private headers under an isolated Vulkan route namespace, retaining natural public Context/prepare/Invocation/OwnedResult/download and all original ordinary region choices. Common dependency bytes/toolchains and original shader input/generated-payload identity must be verified. Do not force a fallback, copy a benchmark sorting implementation, or inject current S1 lowering into reference."
+  },
+  "phase_ledger": [
+    {
+      "phase": "Context/Queue/program/slot construction and fixed input/host readback buffer allocation",
+      "candidate": "DEFERRED",
+      "peer": "DEFERRED",
+      "reason": "Persistent single-step decode/batch consumer. Both arms have one independent invocation, queue/native context and stable resident input, two output ports, original workspace and native owners. Cold costs remain in P0; do not move old per-call sort work into construction.",
+      "anchors": [
+        {
+          "path": "src/compute/operation.cc",
+          "versions": {
+            "baseline": {
+              "sha256": "6e615128d5980d2a32dc8ddb2107b9489ea070268d0e094fe4854d6b21951a14",
+              "symbols": {
+                "OperationInvocation::submit": [
+                  1826,
+                  2102,
+                  2109,
+                  2114,
+                  2121,
+                  2128,
+                  2135,
+                  2144
+                ],
+                "create_invocation(": [
+                  1726,
+                  1727,
+                  1732,
+                  1770,
+                  2177,
+                  2210
+                ]
+              }
+            },
+            "candidate": {
+              "sha256": "6e615128d5980d2a32dc8ddb2107b9489ea070268d0e094fe4854d6b21951a14",
+              "symbols": {
+                "OperationInvocation::submit": [
+                  1826,
+                  2102,
+                  2109,
+                  2114,
+                  2121,
+                  2128,
+                  2135,
+                  2144
+                ],
+                "create_invocation(": [
+                  1726,
+                  1727,
+                  1732,
+                  1770,
+                  2177,
+                  2210
+                ]
+              }
+            }
+          }
+        },
+        {
+          "path": "src/compute_route_apple/apple_context.cc",
+          "versions": {
+            "baseline": {
+              "sha256": "274037dda5c58fda4aab3a210a0606f1e86954385d62d448ed44e9802843fb37",
+              "symbols": {
+                "Status evaluate_mlx(": [
+                  320
+                ],
+                "void finish(": [
+                  457
+                ],
+                "void execute_with(": [
+                  477
+                ],
+                "Invocation::submit_guarded(": [
+                  977
+                ],
+                "Context::compile(": [
+                  633,
+                  652
+                ]
+              }
+            },
+            "candidate": {
+              "sha256": "46b4c5bbf6a66bddfa8059d6a8648240244a21035cce20be2d4d2640edd07f43",
+              "symbols": {
+                "Status evaluate_mlx(": [
+                  320
+                ],
+                "void finish(": [
+                  457
+                ],
+                "void execute_with(": [
+                  477
+                ],
+                "Invocation::submit_guarded(": [
+                  977
+                ],
+                "Context::compile(": [
+                  633,
+                  652
+                ]
+              }
+            }
+          }
+        },
+        {
+          "path": "src/compute_route_vulkan/vulkan_program.cc",
+          "versions": {
+            "baseline": {
+              "sha256": "275b9af467839debee263716d989009475fae99033c6b90120540bb1c7a1d979",
+              "symbols": {
+                "Invocation::submit_guarded(": [
+                  807
+                ],
+                "prepare_plan(": [
+                  141,
+                  461,
+                  641
+                ]
+              }
+            },
+            "candidate": {
+              "sha256": "e795f7aeeeea4f210a88d0d000c95d60fd24491a402fb82e65f66dece7de1902",
+              "symbols": {
+                "Invocation::submit_guarded(": [
+                  809
+                ],
+                "prepare_plan(": [
+                  142,
+                  463,
+                  643
+                ]
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "phase": "Input upload and original compile/JIT/library warmup",
+      "candidate": "DEFERRED",
+      "peer": "DEFERRED",
+      "reason": "Upload the exact same normal-F32 bytes once per arm; complete all uploads and cold compilation before timing. Three independent-oracle cycles and eight complete warm iterations per arm precede samples. No logits upload is hidden in one arm only.",
+      "anchors": [
+        {
+          "path": "src/compute_route_apple/apple_context.cc",
+          "versions": {
+            "baseline": {
+              "sha256": "274037dda5c58fda4aab3a210a0606f1e86954385d62d448ed44e9802843fb37",
+              "symbols": {
+                "Status evaluate_mlx(": [
+                  320
+                ],
+                "void finish(": [
+                  457
+                ],
+                "void execute_with(": [
+                  477
+                ],
+                "Invocation::submit_guarded(": [
+                  977
+                ],
+                "Context::compile(": [
+                  633,
+                  652
+                ]
+              }
+            },
+            "candidate": {
+              "sha256": "46b4c5bbf6a66bddfa8059d6a8648240244a21035cce20be2d4d2640edd07f43",
+              "symbols": {
+                "Status evaluate_mlx(": [
+                  320
+                ],
+                "void finish(": [
+                  457
+                ],
+                "void execute_with(": [
+                  477
+                ],
+                "Invocation::submit_guarded(": [
+                  977
+                ],
+                "Context::compile(": [
+                  633,
+                  652
+                ]
+              }
+            }
+          }
+        },
+        {
+          "path": "src/compute/operation.cc",
+          "versions": {
+            "baseline": {
+              "sha256": "6e615128d5980d2a32dc8ddb2107b9489ea070268d0e094fe4854d6b21951a14",
+              "symbols": {
+                "OperationInvocation::submit": [
+                  1826,
+                  2102,
+                  2109,
+                  2114,
+                  2121,
+                  2128,
+                  2135,
+                  2144
+                ],
+                "create_invocation(": [
+                  1726,
+                  1727,
+                  1732,
+                  1770,
+                  2177,
+                  2210
+                ]
+              }
+            },
+            "candidate": {
+              "sha256": "6e615128d5980d2a32dc8ddb2107b9489ea070268d0e094fe4854d6b21951a14",
+              "symbols": {
+                "OperationInvocation::submit": [
+                  1826,
+                  2102,
+                  2109,
+                  2114,
+                  2121,
+                  2128,
+                  2135,
+                  2144
+                ],
+                "create_invocation(": [
+                  1726,
+                  1727,
+                  1732,
+                  1770,
+                  2177,
+                  2210
+                ]
+              }
+            }
+          }
+        },
+        {
+          "path": "src/compute_route_vulkan/vulkan_transfer.cc",
+          "versions": {
+            "baseline": {
+              "sha256": "62b17eb21e8b393ffaf4ddc4f41352f9cddc74bfb84ab3c9d8ff3bfd80633661",
+              "symbols": {
+                "Status transfer(": [
+                  9
+                ],
+                "completion->wait()": [
+                  99
+                ],
+                "Context::download(": [
+                  137
+                ]
+              }
+            },
+            "candidate": {
+              "sha256": "62b17eb21e8b393ffaf4ddc4f41352f9cddc74bfb84ab3c9d8ff3bfd80633661",
+              "symbols": {
+                "Status transfer(": [
+                  9
+                ],
+                "completion->wait()": [
+                  99
+                ],
+                "Context::download(": [
+                  137
+                ]
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "phase": "Stable native input bind",
+      "candidate": "DEFERRED",
+      "peer": "DEFERRED",
+      "reason": "Apple/Vulkan bind original resident input once; CPU/CUDA still pass identical borrowed input/output views at every submit. Bound payload is not preselected, repacked or cached by value.",
+      "anchors": [
+        {
+          "path": "src/compute_route_apple/apple_context.cc",
+          "versions": {
+            "baseline": {
+              "sha256": "274037dda5c58fda4aab3a210a0606f1e86954385d62d448ed44e9802843fb37",
+              "symbols": {
+                "Status evaluate_mlx(": [
+                  320
+                ],
+                "void finish(": [
+                  457
+                ],
+                "void execute_with(": [
+                  477
+                ],
+                "Invocation::submit_guarded(": [
+                  977
+                ],
+                "Context::compile(": [
+                  633,
+                  652
+                ]
+              }
+            },
+            "candidate": {
+              "sha256": "46b4c5bbf6a66bddfa8059d6a8648240244a21035cce20be2d4d2640edd07f43",
+              "symbols": {
+                "Status evaluate_mlx(": [
+                  320
+                ],
+                "void finish(": [
+                  457
+                ],
+                "void execute_with(": [
+                  477
+                ],
+                "Invocation::submit_guarded(": [
+                  977
+                ],
+                "Context::compile(": [
+                  633,
+                  652
+                ]
+              }
+            }
+          }
+        },
+        {
+          "path": "src/compute_route_vulkan/vulkan_program.cc",
+          "versions": {
+            "baseline": {
+              "sha256": "275b9af467839debee263716d989009475fae99033c6b90120540bb1c7a1d979",
+              "symbols": {
+                "Invocation::submit_guarded(": [
+                  807
+                ],
+                "prepare_plan(": [
+                  141,
+                  461,
+                  641
+                ]
+              }
+            },
+            "candidate": {
+              "sha256": "e795f7aeeeea4f210a88d0d000c95d60fd24491a402fb82e65f66dece7de1902",
+              "symbols": {
+                "Invocation::submit_guarded(": [
+                  809
+                ],
+                "prepare_plan(": [
+                  142,
+                  463,
+                  643
+                ]
+              }
+            }
+          }
+        },
+        {
+          "path": "src/compute/operation.cc",
+          "versions": {
+            "baseline": {
+              "sha256": "6e615128d5980d2a32dc8ddb2107b9489ea070268d0e094fe4854d6b21951a14",
+              "symbols": {
+                "OperationInvocation::submit": [
+                  1826,
+                  2102,
+                  2109,
+                  2114,
+                  2121,
+                  2128,
+                  2135,
+                  2144
+                ],
+                "create_invocation(": [
+                  1726,
+                  1727,
+                  1732,
+                  1770,
+                  2177,
+                  2210
+                ]
+              }
+            },
+            "candidate": {
+              "sha256": "6e615128d5980d2a32dc8ddb2107b9489ea070268d0e094fe4854d6b21951a14",
+              "symbols": {
+                "OperationInvocation::submit": [
+                  1826,
+                  2102,
+                  2109,
+                  2114,
+                  2121,
+                  2128,
+                  2135,
+                  2144
+                ],
+                "create_invocation(": [
+                  1726,
+                  1727,
+                  1732,
+                  1770,
+                  2177,
+                  2210
+                ]
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "phase": "Per-step public admission and native enqueue",
+      "candidate": "CHARGED",
+      "peer": "CHARGED",
+      "reason": "CPU/CUDA OperationInvocation.submit and real QueueSequence/phase/alias checks; Apple/Vulkan Invocation.submit, original result slot and worker/native admission. No Graph Copy adapters added to this one-operation S1 comparison.",
+      "anchors": [
+        {
+          "path": "src/compute/operation.cc",
+          "versions": {
+            "baseline": {
+              "sha256": "6e615128d5980d2a32dc8ddb2107b9489ea070268d0e094fe4854d6b21951a14",
+              "symbols": {
+                "OperationInvocation::submit": [
+                  1826,
+                  2102,
+                  2109,
+                  2114,
+                  2121,
+                  2128,
+                  2135,
+                  2144
+                ],
+                "create_invocation(": [
+                  1726,
+                  1727,
+                  1732,
+                  1770,
+                  2177,
+                  2210
+                ]
+              }
+            },
+            "candidate": {
+              "sha256": "6e615128d5980d2a32dc8ddb2107b9489ea070268d0e094fe4854d6b21951a14",
+              "symbols": {
+                "OperationInvocation::submit": [
+                  1826,
+                  2102,
+                  2109,
+                  2114,
+                  2121,
+                  2128,
+                  2135,
+                  2144
+                ],
+                "create_invocation(": [
+                  1726,
+                  1727,
+                  1732,
+                  1770,
+                  2177,
+                  2210
+                ]
+              }
+            }
+          }
+        },
+        {
+          "path": "src/compute_provider_cuda/collectives_provider.cc",
+          "versions": {
+            "baseline": {
+              "sha256": "c5d8bea4f5fae0fc32ca39d2f6f7da8eb55ecebe4bc8480f39943ec30031cb90",
+              "symbols": {
+                "detail::EnqueueResult submit(": [
+                  257
+                ],
+                "Provider cccl_provider(": [
+                  364
+                ]
+              }
+            },
+            "candidate": {
+              "sha256": "c5d8bea4f5fae0fc32ca39d2f6f7da8eb55ecebe4bc8480f39943ec30031cb90",
+              "symbols": {
+                "detail::EnqueueResult submit(": [
+                  257
+                ],
+                "Provider cccl_provider(": [
+                  364
+                ]
+              }
+            }
+          }
+        },
+        {
+          "path": "src/compute_route_apple/apple_context.cc",
+          "versions": {
+            "baseline": {
+              "sha256": "274037dda5c58fda4aab3a210a0606f1e86954385d62d448ed44e9802843fb37",
+              "symbols": {
+                "Status evaluate_mlx(": [
+                  320
+                ],
+                "void finish(": [
+                  457
+                ],
+                "void execute_with(": [
+                  477
+                ],
+                "Invocation::submit_guarded(": [
+                  977
+                ],
+                "Context::compile(": [
+                  633,
+                  652
+                ]
+              }
+            },
+            "candidate": {
+              "sha256": "46b4c5bbf6a66bddfa8059d6a8648240244a21035cce20be2d4d2640edd07f43",
+              "symbols": {
+                "Status evaluate_mlx(": [
+                  320
+                ],
+                "void finish(": [
+                  457
+                ],
+                "void execute_with(": [
+                  477
+                ],
+                "Invocation::submit_guarded(": [
+                  977
+                ],
+                "Context::compile(": [
+                  633,
+                  652
+                ]
+              }
+            }
+          }
+        },
+        {
+          "path": "src/compute_route_vulkan/vulkan_program.cc",
+          "versions": {
+            "baseline": {
+              "sha256": "275b9af467839debee263716d989009475fae99033c6b90120540bb1c7a1d979",
+              "symbols": {
+                "Invocation::submit_guarded(": [
+                  807
+                ],
+                "prepare_plan(": [
+                  141,
+                  461,
+                  641
+                ]
+              }
+            },
+            "candidate": {
+              "sha256": "e795f7aeeeea4f210a88d0d000c95d60fd24491a402fb82e65f66dece7de1902",
+              "symbols": {
+                "Invocation::submit_guarded(": [
+                  809
+                ],
+                "prepare_plan(": [
+                  142,
+                  463,
+                  643
+                ]
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "phase": "All selection, original full-sort work, keys, conversions and result production",
+      "candidate": "CHARGED",
+      "peer": "CHARGED",
+      "reason": "Both output ports are computed each iteration. Original CPU fills all Entry values and partial_sorts; original CUDA builds/sorts keys+indices and extracts both outputs; original Apple stable argsort/slice/gather; original Vulkan ordinary managed/fallback lowering and full sorting. Candidate original S1 scan/reductions remain hot. All native per-call temporaries and their natural replacement/free are charged.",
+      "anchors": [
+        {
+          "path": "src/compute_provider_ggml/standard_index.cc",
+          "versions": {
+            "baseline": {
+              "sha256": "a069b7ec6b4eb06851c60e8140db7226903c0821e2a6e63f3cb4f245a0c4e3e8",
+              "symbols": {
+                "void top_k(": [
+                  156
+                ],
+                "Status run(": [
+                  192
+                ],
+                "Status create_invocation(": [
+                  247
+                ]
+              }
+            },
+            "candidate": {
+              "sha256": "93ec25752e1dd62efed1f036513c5f4a53c29ef93f9d8c7e0fcf776b05a787ce",
+              "symbols": {
+                "void top_k(": [
+                  156
+                ],
+                "Status run(": [
+                  205
+                ],
+                "Status create_invocation(": [
+                  260
+                ]
+              }
+            }
+          }
+        },
+        {
+          "path": "src/compute_provider_cuda/collectives.cu",
+          "versions": {
+            "baseline": {
+              "sha256": "75714efd0be20d9ea3c733734f3fa17d80d8e6676d52e1cc28b7c0e082d36493",
+              "symbols": {
+                "configure_typed(": [
+                  268
+                ],
+                "submit_typed(": [
+                  325
+                ]
+              }
+            },
+            "candidate": {
+              "sha256": "ef401e862ab615d24c94d82bec9420a09ce8c82399407756538c1c6a93de0017",
+              "symbols": {
+                "configure_typed(": [
+                  342
+                ],
+                "submit_typed(": [
+                  410
+                ]
+              }
+            }
+          }
+        },
+        {
+          "path": "src/compute_route_apple/apple_tensor.cc",
+          "versions": {
+            "baseline": {
+              "sha256": "93462583dfeb859fc9a59a5a8eef36540a84346bebca9cf6e331934bd10dc1f7",
+              "symbols": {
+                "lower_tensor(": [
+                  333
+                ]
+              }
+            },
+            "candidate": {
+              "sha256": "bd828b715b28a453c83f995a3de78ced688d68692b8c8604ec10751daf8bc313",
+              "symbols": {
+                "lower_tensor(": [
+                  338
+                ]
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "phase": "Checked completion, native retirement and result/error visibility",
+      "candidate": "CHARGED",
+      "peer": "CHARGED",
+      "reason": "Wait through actual public Completion/OwnedResult. CPU shared submit completes inline; CUDA event synchronization/retire_slot precedes success; Apple evaluates, synchronizes stream and waits every output before done; Vulkan waits fence and retires every managed region before terminal success. No event-record-only or result-submission-only timing.",
+      "anchors": [
+        {
+          "path": "src/compute/completion.cc",
+          "versions": {
+            "baseline": {
+              "sha256": "97e28207d6798bcc367a5073f997e5a99cb70da1a0574898200250d730a05d48",
+              "symbols": {
+                "Completion::wait": [
+                  151
+                ],
+                "Completion::reset": [
+                  174
+                ]
+              }
+            },
+            "candidate": {
+              "sha256": "97e28207d6798bcc367a5073f997e5a99cb70da1a0574898200250d730a05d48",
+              "symbols": {
+                "Completion::wait": [
+                  151
+                ],
+                "Completion::reset": [
+                  174
+                ]
+              }
+            }
+          }
+        },
+        {
+          "path": "src/compute_backend_cuda/cuda_backend.cc",
+          "versions": {
+            "baseline": {
+              "sha256": "10c52cc53f313ee850d71f24b06277fb02f483c82a84c9d143c0f908b31712f5",
+              "symbols": {
+                "Status wait_slot(": [
+                  482
+                ],
+                "Status completion_wait(": [
+                  908,
+                  940
+                ]
+              }
+            },
+            "candidate": {
+              "sha256": "10c52cc53f313ee850d71f24b06277fb02f483c82a84c9d143c0f908b31712f5",
+              "symbols": {
+                "Status wait_slot(": [
+                  482
+                ],
+                "Status completion_wait(": [
+                  908,
+                  940
+                ]
+              }
+            }
+          }
+        },
+        {
+          "path": "src/compute_route_apple/apple_context.cc",
+          "versions": {
+            "baseline": {
+              "sha256": "274037dda5c58fda4aab3a210a0606f1e86954385d62d448ed44e9802843fb37",
+              "symbols": {
+                "Status evaluate_mlx(": [
+                  320
+                ],
+                "void finish(": [
+                  457
+                ],
+                "void execute_with(": [
+                  477
+                ],
+                "Invocation::submit_guarded(": [
+                  977
+                ],
+                "Context::compile(": [
+                  633,
+                  652
+                ]
+              }
+            },
+            "candidate": {
+              "sha256": "46b4c5bbf6a66bddfa8059d6a8648240244a21035cce20be2d4d2640edd07f43",
+              "symbols": {
+                "Status evaluate_mlx(": [
+                  320
+                ],
+                "void finish(": [
+                  457
+                ],
+                "void execute_with(": [
+                  477
+                ],
+                "Invocation::submit_guarded(": [
+                  977
+                ],
+                "Context::compile(": [
+                  633,
+                  652
+                ]
+              }
+            }
+          }
+        },
+        {
+          "path": "src/compute_route_vulkan/vulkan_run.cc",
+          "versions": {
+            "baseline": {
+              "sha256": "f750e64f7bb12738db147e1b2a5b6ba4f5c833aea3d04417820c0f3750bfd6e5",
+              "symbols": {
+                "retire_regions(": [
+                  161,
+                  302
+                ],
+                "WaitForFences(": [
+                  266
+                ],
+                "completion_vtable": [
+                  366,
+                  434,
+                  596
+                ]
+              }
+            },
+            "candidate": {
+              "sha256": "4e39ed74ffec1386c1c9cc3ad4b1f2270e1ba8b3dd097f3f8e86115124701ff9",
+              "symbols": {
+                "retire_regions(": [
+                  161,
+                  302
+                ],
+                "WaitForFences(": [
+                  266
+                ],
+                "completion_vtable": [
+                  366,
+                  434,
+                  596
+                ]
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "phase": "Read both selected values and indices to preallocated host result buffers",
+      "candidate": "CHARGED",
+      "peer": "CHARGED",
+      "reason": "F32 values plus I32 indices, exactly8*R*K bytes. CPU BufferView reads; CUDA two actual device-resource reads; Apple native array data+memcpy after successful evaluation; Vulkan two Context.download calls including their staging allocation, command/fence waits, mapping/invalidate/copy and temporary owner destruction. No full-vocabulary D2H; no first-arm-only readback.",
+      "anchors": [
+        {
+          "path": "src/compute_backend_cuda/cuda_memory.cc",
+          "versions": {
+            "baseline": {
+              "sha256": "8475aafd9c1112189a50025afd700775ea3e048c75bf19a0f04f04f65253aac2",
+              "symbols": {
+                "Status CudaResourceBase::read(": [
+                  107
+                ]
+              }
+            },
+            "candidate": {
+              "sha256": "8475aafd9c1112189a50025afd700775ea3e048c75bf19a0f04f04f65253aac2",
+              "symbols": {
+                "Status CudaResourceBase::read(": [
+                  107
+                ]
+              }
+            }
+          }
+        },
+        {
+          "path": "src/compute_route_apple/apple_context.cc",
+          "versions": {
+            "baseline": {
+              "sha256": "274037dda5c58fda4aab3a210a0606f1e86954385d62d448ed44e9802843fb37",
+              "symbols": {
+                "Status evaluate_mlx(": [
+                  320
+                ],
+                "void finish(": [
+                  457
+                ],
+                "void execute_with(": [
+                  477
+                ],
+                "Invocation::submit_guarded(": [
+                  977
+                ],
+                "Context::compile(": [
+                  633,
+                  652
+                ]
+              }
+            },
+            "candidate": {
+              "sha256": "46b4c5bbf6a66bddfa8059d6a8648240244a21035cce20be2d4d2640edd07f43",
+              "symbols": {
+                "Status evaluate_mlx(": [
+                  320
+                ],
+                "void finish(": [
+                  457
+                ],
+                "void execute_with(": [
+                  477
+                ],
+                "Invocation::submit_guarded(": [
+                  977
+                ],
+                "Context::compile(": [
+                  633,
+                  652
+                ]
+              }
+            }
+          }
+        },
+        {
+          "path": "src/compute_route_vulkan/vulkan_transfer.cc",
+          "versions": {
+            "baseline": {
+              "sha256": "62b17eb21e8b393ffaf4ddc4f41352f9cddc74bfb84ab3c9d8ff3bfd80633661",
+              "symbols": {
+                "Status transfer(": [
+                  9
+                ],
+                "completion->wait()": [
+                  99
+                ],
+                "Context::download(": [
+                  137
+                ]
+              }
+            },
+            "candidate": {
+              "sha256": "62b17eb21e8b393ffaf4ddc4f41352f9cddc74bfb84ab3c9d8ff3bfd80633661",
+              "symbols": {
+                "Status transfer(": [
+                  9
+                ],
+                "completion->wait()": [
+                  99
+                ],
+                "Context::download(": [
+                  137
+                ]
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "phase": "Step-local Completion, successful owned result and temporary public handle release",
+      "candidate": "CHARGED",
+      "peer": "CHARGED",
+      "reason": "All step-local objects leave scope before the measured callback returns. Original invocation/program/context owners remain alive. No abandoned completion, cancellation retention or external callback owner is used in these success-only S1 rows.",
+      "anchors": [
+        {
+          "path": "src/compute/completion.cc",
+          "versions": {
+            "baseline": {
+              "sha256": "97e28207d6798bcc367a5073f997e5a99cb70da1a0574898200250d730a05d48",
+              "symbols": {
+                "Completion::wait": [
+                  151
+                ],
+                "Completion::reset": [
+                  174
+                ]
+              }
+            },
+            "candidate": {
+              "sha256": "97e28207d6798bcc367a5073f997e5a99cb70da1a0574898200250d730a05d48",
+              "symbols": {
+                "Completion::wait": [
+                  151
+                ],
+                "Completion::reset": [
+                  174
+                ]
+              }
+            }
+          }
+        },
+        {
+          "path": "src/compute_route_apple/apple_context.cc",
+          "versions": {
+            "baseline": {
+              "sha256": "274037dda5c58fda4aab3a210a0606f1e86954385d62d448ed44e9802843fb37",
+              "symbols": {
+                "Status evaluate_mlx(": [
+                  320
+                ],
+                "void finish(": [
+                  457
+                ],
+                "void execute_with(": [
+                  477
+                ],
+                "Invocation::submit_guarded(": [
+                  977
+                ],
+                "Context::compile(": [
+                  633,
+                  652
+                ]
+              }
+            },
+            "candidate": {
+              "sha256": "46b4c5bbf6a66bddfa8059d6a8648240244a21035cce20be2d4d2640edd07f43",
+              "symbols": {
+                "Status evaluate_mlx(": [
+                  320
+                ],
+                "void finish(": [
+                  457
+                ],
+                "void execute_with(": [
+                  477
+                ],
+                "Invocation::submit_guarded(": [
+                  977
+                ],
+                "Context::compile(": [
+                  633,
+                  652
+                ]
+              }
+            }
+          }
+        },
+        {
+          "path": "src/compute_route_vulkan/vulkan_run.cc",
+          "versions": {
+            "baseline": {
+              "sha256": "f750e64f7bb12738db147e1b2a5b6ba4f5c833aea3d04417820c0f3750bfd6e5",
+              "symbols": {
+                "retire_regions(": [
+                  161,
+                  302
+                ],
+                "WaitForFences(": [
+                  266
+                ],
+                "completion_vtable": [
+                  366,
+                  434,
+                  596
+                ]
+              }
+            },
+            "candidate": {
+              "sha256": "4e39ed74ffec1386c1c9cc3ad4b1f2270e1ba8b3dd097f3f8e86115124701ff9",
+              "symbols": {
+                "retire_regions(": [
+                  161,
+                  302
+                ],
+                "WaitForFences(": [
+                  266
+                ],
+                "completion_vtable": [
+                  366,
+                  434,
+                  596
+                ]
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "phase": "Prior retained native result replacement / worker tail in steady replay",
+      "candidate": "CHARGED",
+      "peer": "CHARGED",
+      "reason": "Apple clears prior arrays at each submit and the single runtime worker cannot execute the next job until the prior admitted reference tail returns. Full warm cycles place this cost inside steady replay in both arms. Vulkan buffers are original invocation-owned allocations and wait observes retirement. No per-step Context close is invented.",
+      "anchors": [
+        {
+          "path": "src/compute_route_apple/apple_context.cc",
+          "versions": {
+            "baseline": {
+              "sha256": "274037dda5c58fda4aab3a210a0606f1e86954385d62d448ed44e9802843fb37",
+              "symbols": {
+                "Status evaluate_mlx(": [
+                  320
+                ],
+                "void finish(": [
+                  457
+                ],
+                "void execute_with(": [
+                  477
+                ],
+                "Invocation::submit_guarded(": [
+                  977
+                ],
+                "Context::compile(": [
+                  633,
+                  652
+                ]
+              }
+            },
+            "candidate": {
+              "sha256": "46b4c5bbf6a66bddfa8059d6a8648240244a21035cce20be2d4d2640edd07f43",
+              "symbols": {
+                "Status evaluate_mlx(": [
+                  320
+                ],
+                "void finish(": [
+                  457
+                ],
+                "void execute_with(": [
+                  477
+                ],
+                "Invocation::submit_guarded(": [
+                  977
+                ],
+                "Context::compile(": [
+                  633,
+                  652
+                ]
+              }
+            }
+          }
+        },
+        {
+          "path": "src/compute_route_vulkan/vulkan_program.cc",
+          "versions": {
+            "baseline": {
+              "sha256": "275b9af467839debee263716d989009475fae99033c6b90120540bb1c7a1d979",
+              "symbols": {
+                "Invocation::submit_guarded(": [
+                  807
+                ],
+                "prepare_plan(": [
+                  141,
+                  461,
+                  641
+                ]
+              }
+            },
+            "candidate": {
+              "sha256": "e795f7aeeeea4f210a88d0d000c95d60fd24491a402fb82e65f66dece7de1902",
+              "symbols": {
+                "Invocation::submit_guarded(": [
+                  809
+                ],
+                "prepare_plan(": [
+                  142,
+                  463,
+                  643
+                ]
+              }
+            }
+          }
+        },
+        {
+          "path": "src/compute_route_vulkan/vulkan_run.cc",
+          "versions": {
+            "baseline": {
+              "sha256": "f750e64f7bb12738db147e1b2a5b6ba4f5c833aea3d04417820c0f3750bfd6e5",
+              "symbols": {
+                "retire_regions(": [
+                  161,
+                  302
+                ],
+                "WaitForFences(": [
+                  266
+                ],
+                "completion_vtable": [
+                  366,
+                  434,
+                  596
+                ]
+              }
+            },
+            "candidate": {
+              "sha256": "4e39ed74ffec1386c1c9cc3ad4b1f2270e1ba8b3dd097f3f8e86115124701ff9",
+              "symbols": {
+                "retire_regions(": [
+                  161,
+                  302
+                ],
+                "WaitForFences(": [
+                  266
+                ],
+                "completion_vtable": [
+                  366,
+                  434,
+                  596
+                ]
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "phase": "Last retained result, program/workspace/invocation destruction, runtime/library/allocator caches and final Context/Queue close",
+      "candidate": "DEFERRED",
+      "peer": "DEFERRED",
+      "reason": "One terminal retained native result and Apple post-done wake/deliver(empty)/worker-reference tail may outlive a step wait; the Invocation remains owned, so this tail cannot destroy it. Do not claim all host callbacks or private native caches are freed at step return. Teardown is executed after the timed block, separately recorded, and is the same persistence policy on both sides.",
+      "anchors": [
+        {
+          "path": "src/compute_route_apple/apple_context.cc",
+          "versions": {
+            "baseline": {
+              "sha256": "274037dda5c58fda4aab3a210a0606f1e86954385d62d448ed44e9802843fb37",
+              "symbols": {
+                "Status evaluate_mlx(": [
+                  320
+                ],
+                "void finish(": [
+                  457
+                ],
+                "void execute_with(": [
+                  477
+                ],
+                "Invocation::submit_guarded(": [
+                  977
+                ],
+                "Context::compile(": [
+                  633,
+                  652
+                ]
+              }
+            },
+            "candidate": {
+              "sha256": "46b4c5bbf6a66bddfa8059d6a8648240244a21035cce20be2d4d2640edd07f43",
+              "symbols": {
+                "Status evaluate_mlx(": [
+                  320
+                ],
+                "void finish(": [
+                  457
+                ],
+                "void execute_with(": [
+                  477
+                ],
+                "Invocation::submit_guarded(": [
+                  977
+                ],
+                "Context::compile(": [
+                  633,
+                  652
+                ]
+              }
+            }
+          }
+        },
+        {
+          "path": "src/compute/operation.cc",
+          "versions": {
+            "baseline": {
+              "sha256": "6e615128d5980d2a32dc8ddb2107b9489ea070268d0e094fe4854d6b21951a14",
+              "symbols": {
+                "OperationInvocation::submit": [
+                  1826,
+                  2102,
+                  2109,
+                  2114,
+                  2121,
+                  2128,
+                  2135,
+                  2144
+                ],
+                "create_invocation(": [
+                  1726,
+                  1727,
+                  1732,
+                  1770,
+                  2177,
+                  2210
+                ]
+              }
+            },
+            "candidate": {
+              "sha256": "6e615128d5980d2a32dc8ddb2107b9489ea070268d0e094fe4854d6b21951a14",
+              "symbols": {
+                "OperationInvocation::submit": [
+                  1826,
+                  2102,
+                  2109,
+                  2114,
+                  2121,
+                  2128,
+                  2135,
+                  2144
+                ],
+                "create_invocation(": [
+                  1726,
+                  1727,
+                  1732,
+                  1770,
+                  2177,
+                  2210
+                ]
+              }
+            }
+          }
+        },
+        {
+          "path": "src/compute/completion.cc",
+          "versions": {
+            "baseline": {
+              "sha256": "97e28207d6798bcc367a5073f997e5a99cb70da1a0574898200250d730a05d48",
+              "symbols": {
+                "Completion::wait": [
+                  151
+                ],
+                "Completion::reset": [
+                  174
+                ]
+              }
+            },
+            "candidate": {
+              "sha256": "97e28207d6798bcc367a5073f997e5a99cb70da1a0574898200250d730a05d48",
+              "symbols": {
+                "Completion::wait": [
+                  151
+                ],
+                "Completion::reset": [
+                  174
+                ]
+              }
+            }
+          }
+        },
+        {
+          "path": "src/compute_route_vulkan/vulkan_run.cc",
+          "versions": {
+            "baseline": {
+              "sha256": "f750e64f7bb12738db147e1b2a5b6ba4f5c833aea3d04417820c0f3750bfd6e5",
+              "symbols": {
+                "retire_regions(": [
+                  161,
+                  302
+                ],
+                "WaitForFences(": [
+                  266
+                ],
+                "completion_vtable": [
+                  366,
+                  434,
+                  596
+                ]
+              }
+            },
+            "candidate": {
+              "sha256": "4e39ed74ffec1386c1c9cc3ad4b1f2270e1ba8b3dd097f3f8e86115124701ff9",
+              "symbols": {
+                "retire_regions(": [
+                  161,
+                  302
+                ],
+                "WaitForFences(": [
+                  266
+                ],
+                "completion_vtable": [
+                  366,
+                  434,
+                  596
+                ]
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "phase": "Cancellation, error/OOM/recreation and concurrent slots",
+      "candidate": "NOT_APPLICABLE",
+      "peer": "NOT_APPLICABLE",
+      "reason": "This is the fixed success-only S1 performance workload, not the correctness/risk domain; original ordinary and risk evidence separately cover those required journeys. No applicable unrun risk is changed to N/A here."
+    }
+  ],
+  "resource_ledger": {
+    "cpu": "Original Entry has double key+I32 index,16bytes on these ABIs:3,973,120 bytes per invocation at V248320, reused across rows; candidate K1 has no V-sized Entry scratch. Both O(RV), serial rows under the original caller-thread executor, two fixed output buffers, original map/flush and Queue/Completion bookkeeping. Creation/free is cold; every old Entry fill/partial_sort and both output copies remain hot.",
+    "cuda": "Old two RV-sized key arrays, two RV-sized I32 index arrays and original CUB temporary workspace; candidate R*sizeof(ArgPair<Acc>) plus original CUB temporary workspace. Record actual public workspace bytes/alignment and owner metadata during preflight. Both use original shared queue and native event pool; no new private threads/capture promise. Full radix sorting is linear in fixed key width but performs more passes; do not describe it as comparison-sort O(VlogV).",
+    "apple": "Original full argsort/key and layout intermediates versus K1 integer ordered-key native arg reduction; K3 still stable argsort/slice/gather with corrected integer keys. MLX owns its allocations/fusion and private caches; all per-call native arrays are hot, final retained owner/caches are cold. Original runtime job mutex/wake/refcounts and result-slot lifetime stay on both sides.",
+    "vulkan": "Original full sorting region/managed runtime and its cold invocation buffers remain intact. Candidate uses two bounded pair-reduction dispatches and8*R*ceil(V/4096) scratch bytes:488B at R1 and7808B at R16. Original queue mutex/fence/managed-retirement overhead is charged; both selected-output download staging allocations and native command/fence/memcpy teardown are charged. Driver/private pools remain separately unknown.",
+    "common": "Same persistent input/output descriptors/owners and public framework. Record actual provider/implementation/runtime properties, declared workspace/persistent/private bytes, native output arity and exact readback bytes. No shared-atomic/lock/wake/syscall count or allocator-zero promise is inferred from a timer. Source anchors define where those existing operations occur."
+  },
+  "qualification": {
+    "practical_margin_percent": 5,
+    "noninferiority_margin_percent": 5,
+    "sample_schedule": [
+      15,
+      31
+    ],
+    "measurement_batch": 1,
+    "numerical": "Three complete oracle cycles per arm and eight completed warm cycles. Both outputs and selected source bits must agree on the fixed normal input domain.",
+    "controls": "Existing unified instrument: workload/topology-matched selected-selected and original-original A/A in both orders, original allocation-order control, timer/floor and known-delta controls, primary and pure placement replica. Preserve all failures. No samples upgraded to hide order/placement bias or changed boundaries.",
+    "machines": "CPU Windows/MSVC W1-WIN; CUDA same RTX4070 under W1-WSL and CUDA13.3; Apple and Vulkan actual Air Mac16,12 M1-MAC explicit unbound engineering QoS. Exact profile/toolchain/runtime identities are locked by each future contract; do not infer native Linux, Mac mini, or Windows Vulkan P1 from them."
+  },
+  "remaining_qualification": [
+    "Independent source/adapter review must follow these anchors and verify all copied source transforms, unchanged dependency inputs and actual factory routes. This freeze is not a runtime comparability PASS.",
+    "Build/compile/link audit, original native shader payload and public-port oracle, same-topology A/A/placement and all required instrument controls must PASS before qualified P1.",
+    "A product/API/algorithm/normal-cost change requires retreat from CANDIDATE to AUDITED. Failed comparability cannot be repaired by weakening margin, choosing another peer/domain, or moving fees outside the timer."
+  ]
+}

@@ -1,6 +1,6 @@
 # G08 设备端输出数值选择与可定位随机数
 
-状态：**CANDIDATE，2026-10-17；八owner的S1–S4/M1接口与算法冻结于5103c13d8，普通数值及适用device/host风险已过，交付7/18已过，剩余交付/P1与终审待完成**。baseline 为
+状态：**CANDIDATE，2026-10-17；八owner的S1–S4/M1接口与算法冻结于5103c13d8，普通数值及适用device/host风险已过，交付11/18已过，S1时序账已冻结，剩余交付/P1与终审待完成**。baseline 为
 `85bcfa4eb`，G07已经整项接受，新G07–G10 goal完成1/4。原G01–G07不重跑，G09/G10未开始。
 本卡只处理原[G08发现](../project/inference-single-machine-foundation-audit-2026-10.md)与
 [消费形状计划](../project/inference-consumer-adaptation-plan-2026-10.md)的有限输出数值域。
@@ -506,3 +506,32 @@ ggml CPU变体DLL也安装于bin；按实际lib路径修正、保留两次setup�
 冻结产品candidate仍5103c13d8；本批仅说明与证据。G08施工粗估约80%，G07–G10 goal约45%，
 正式仍仅G07完成1/4。余下11项交付、S1精确时序账/P1、最终文档/LOC/独立终审未完成；
 不把当前数值/风险PASS或交付计数当整项验收，不启动G09/G10或CLI。
+
+### 2026-10-17 交付11/18与S1计费边界冻结
+
+[Windows CPU剩余两交付](../../../../evidence/delivery/inference-g08-windows-cpu-sdk-checkpoint/remaining.json)
+证明源码嵌入与迁址static也已PASS；连同前述shared，该profile三交付完成。
+保留源码运行库检查脚本的dumpbin路径失败及385.765s，同树续跑另59步，最终公开CPU
+Direct/Graph、Mem三回归、八独立头与PE import/staged DLL检查通过，不把额外费用抹掉。
+
+[CUDA首两交付](../../../../evidence/delivery/inference-g08-cuda-sdk-checkpoint/receipt.json)：Windows
+shared、WSL static各六个公开CPU/native Direct/Graph、joint与Mem消费者、13独立头、迁址及
+Random123许可/NOTICE全PASS。外部已验证LibTorch SDK/cache按原distribution合同保留要求。
+Windows原私有profile的INTERFACE目标错误、152-CUDA-edge预检及覆盖MSVC原选项的CCCL
+编译失败均保留；只修私有配置，未改产品。Windows实取旧对象记录的242个派生/5个公共输入，
+逐字节及原Ninja命令/依赖freshness检查通过，复用146个未变ggml CUDA对象；六个实际需要的
+产品CUDA依赖正常构建。WSL沿原同资格缓存，无跨平台对象复用。
+
+[S1源码时序账](../../../../evidence/architecture/inference-g08-output-selection-audit/p1-boundary.json)
+在构造benchmark前固定九形状、11阶段、双方CHARGED/DEFERRED/N/A、资源账及自然baseline
+承载；原85bc与candidate共30份关键源码、21份完全相同，原文与行号均归档。计费包含每次
+submit、全部选择/排序、实际checked完成、两个小输出的host读取与步内owner释放；冷准备、
+输入上传、末次保留结果与runtime/private cache最终析构分列，不宣称所有host尾部已退役。
+原完整CPU/CCCL工厂、Apple typed lowerer与Vulkan完整route保持原算法/owner；只做私有符号/
+namespace隔离。已从原Git对象物化CUDA/Vulkan参考源码草稿，未配置/编译benchmark、未跑
+oracle/A/A/placement或P1，不能据此签同合同资格/性能PASS。5%、n15–31与控制门不变。
+
+当前交付11/18：Air两profile六项、Windows CPU三项、Windows CUDA shared、WSL CUDA static。
+剩Windows CUDA static/source、WSL CUDA shared/source及Windows Vulkan三项，按串行一批执行，
+遇真实失败定向处理。产品candidate仍5103c13d8，G08粗估约85%、整个goal约46%，正式仅G07
+完成1/4；G09/G10尚未开始，不新增缺口扫描或CLI范围。
