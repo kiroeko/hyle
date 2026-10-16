@@ -132,6 +132,7 @@ template<class T,class Policy=MaterializedMetadataPolicy>struct MaterializedNati
     prepared_bank=native_bank==0?1:0;
     const auto transfer=[&]()noexcept->Status{
       if constexpr(Policy::prepare_native){
+        if(reused_native)HYLE_RETURN_IF_ERROR(T::release_inputs(native));
         const auto current=next.layout();const auto pages=current.host().page_indices;
         const auto equal=[](auto a,auto b){return a.size()==b.size()&&std::equal(a.begin(),a.end(),b.begin());};
         // An unchanged table can keep the current readonly bank even while the

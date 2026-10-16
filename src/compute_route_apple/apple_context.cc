@@ -852,6 +852,13 @@ Status detail::PagedBatchAccess::reuse_gate(Invocation&invocation)noexcept{
   if(!state->done.load(std::memory_order_acquire) || state->retired.load(std::memory_order_acquire))return Status::Unavailable("Apple batch native slot in flight/failed");
   HYLE_ASSIGN_OR_RETURN(auto writer,state->result_slot.begin());return Status::Ok();
 }
+Status detail::PagedBatchAccess::release_inputs(Invocation&invocation)noexcept{
+  HYLE_RETURN_IF_ERROR(reuse_gate(invocation));auto&state=*invocation.state_;
+  std::lock_guard lock(state.binding_mutex);
+  state.bound=false;state.inputs.clear();state.values->arrays.clear();
+  for(auto&value:state.native_values)value.reset();
+  state.arguments.clear();state.region_outputs.clear();return Status::Ok();
+}
 Result<OwnedResult<Results>> Invocation::submit() noexcept {
   return submit_guarded({});
 }

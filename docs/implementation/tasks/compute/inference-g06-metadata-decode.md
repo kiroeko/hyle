@@ -258,3 +258,15 @@ Vulkan桥全部成功seal后才置位。原old-result/retirement gate仍先执�
 另补真实原pending消费者要求的同topology prepare释放旧native输入import反证：实际结果
 释放、prepare、移除caller frames后，准确旧页必须能沿原acquire/publish更新；不豁免F1
 独占门。此项在attempt3未测，当前UNPROVEN，将随定向原native风险批核实。
+
+Air attempt4定向两route各8个原联合/风险target，外层64.907s：普通联合64步、encoded
+单/多请求、双node pending64与原联合错误/多source生命周期全部PASS。两route plain/
+encoded各一项新增反证FAIL：同topology prepare仍有原Invocation input import持准确页
+reader，阻止原acquire，不是权限门有误。有限修正只给可信内部PagedBatchAccess补
+release_inputs，四traits在已通过reuse/output/退休门、原upload reset后调用；Apple清原
+inputs/result/native临时arrays，Vulkan在原runtime mutex下把原input/alias/managed
+ports置unbound，原root经已有old_inputs冷scratch移到锁外释放，保原计划与封存output。
+Vulkan复用原Region::bind允许idle空port的合同；不改ggml/IREE/provider/vendor。
+此私有操作无warm allocation，失败进入controller原failed状态；reference policy不调用。
+两route实际Direct/联合/原pending与alias/phase/OOM/关闭门再次按相同缓存串行验证；
+原90项Windows共同source产品输入未改，继续复用source5，不因native修正重跑CPU全套。

@@ -19,6 +19,8 @@ struct PagedBatchAccess final {
       Invocation&,LeaseUseBatch) noexcept;
   HYLE_COMPUTE_ROUTE_APPLE_API static Status wait_native(Invocation&) noexcept;
   HYLE_COMPUTE_ROUTE_APPLE_API static Status reuse_gate(Invocation&) noexcept;
+  // Checked idle batch reuse only: release prior input imports, keep the plan.
+  HYLE_COMPUTE_ROUTE_APPLE_API static Status release_inputs(Invocation&) noexcept;
   HYLE_COMPUTE_ROUTE_APPLE_API static Status qualify_source(const Context&,
       compute::detail::CompletionDependency)noexcept;
   HYLE_COMPUTE_ROUTE_APPLE_API static Result<MaterializedBatchInvocation> create(

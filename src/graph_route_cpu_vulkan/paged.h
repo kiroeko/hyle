@@ -26,6 +26,7 @@ struct PageTraits final {
   static auto submit(Invocation& i,compute::LeaseUseBatch u){return compute::vulkan::detail::PagedBatchAccess::submit(i,std::move(u));}
   static auto wait_native(Invocation& i){return compute::vulkan::detail::PagedBatchAccess::wait_native(i);}
   static auto reuse_gate(Invocation& i){return compute::vulkan::detail::PagedBatchAccess::reuse_gate(i);}
+  static auto release_inputs(Invocation& i){return compute::vulkan::detail::PagedBatchAccess::release_inputs(i);}
   static Result<Program> prepare_program(const Context& c,const compute::NativePagedBatchProgram& p,
       compute::BatchLayoutVersion l,const compute::WorkloadContext& w){
     if(l==c.layout)return *c.initial;

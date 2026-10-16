@@ -604,6 +604,28 @@ Status detail::PagedBatchAccess::reuse_gate(Invocation&invocation)noexcept{
   for(std::size_t i=0;i<state->program->outputs.size();++i){const auto output=state->program->outputs[i];if(run.retained_buffers[output].use_count()!=state->output_owner_counts[i])return Status::Unavailable("Vulkan batch native output retained");}
   HYLE_ASSIGN_OR_RETURN(auto writer,state->slot.begin());return Status::Ok();
 }
+Status detail::PagedBatchAccess::release_inputs(Invocation&invocation)noexcept{
+  HYLE_RETURN_IF_ERROR(reuse_gate(invocation));auto&state=*invocation.state_;auto&run=*state.run;
+  Status status;
+  {
+    std::lock_guard lock(state.program->runtime->mutex);state.bound=false;
+    const auto is_input=[&](std::uint32_t value){return std::ranges::find(state.program->inputs,state.program->aliases[value].root)!=state.program->inputs.end();};
+    // Keep original roots alive until after the queue lock. Idle alias and
+    // managed ports become unbound without replacing their prepared owners.
+    for(std::size_t i=0;i<state.program->inputs.size();++i)
+      state.old_inputs[i]=std::move(run.retained_buffers[state.program->inputs[i]]);
+    for(std::size_t value=0;value<state.program->aliases.size();++value){const auto alias=state.program->aliases[value];
+      if(alias.root!=value && is_input(std::uint32_t(value)))detail::bind_view_buffer(*run.retained_buffers[value],{},alias.byte_offset);
+    }
+    detail::refresh_region_bindings(run);
+    for(auto&stage:run.stages){
+      if(stage.managed){const auto cleared=stage.managed->bind(stage.bindings);if(!cleared.ok() && status.ok())status=cleared;}
+      else if(stage.native){for(std::size_t port=0;port<stage.values.size();++port)
+        if(is_input(stage.values[port]))stage.native->retained_buffers[port].reset();}
+    }
+  }
+  for(auto&input:state.old_inputs)input.reset();return status;
+}
 Status Invocation::bind(std::span<const Tensor> inputs) noexcept {
   if (!state_ || inputs.size() != state_->program->inputs.size())
     return Status::InvalidArgument("Vulkan input binding arity");
