@@ -1,6 +1,6 @@
 # G07 packed 权重消费与 checked selection
 
-状态：**2026-10-16，CUDA b483/Apple0333均CANDIDATE；G07–G10 goal ACTIVE**。G01–G06已告一段落，
+状态：**2026-10-16，CUDA b483 CANDIDATE；Apple按D1合格回退AUDITED；G07–G10 goal ACTIVE**。G01–G06已告一段落，
 本卡不重开它们。原baseline为 `a638938b783b6fdae57e83f572aa0427d7188e7f`；
 产品输入保持完整 `669121418669b31f6849c74f64362aaf8d6eb919`。
 当前施工 owner 仅 `compute_provider_torch_cuda`、`compute_route_apple`，从各自 CLOSED
@@ -314,3 +314,31 @@ A/A验证器会核installed owner hash与真实CMake解析prefix。Apple原16轮
 身份；CUDA沿上一节唯一104轮warm纠正。[原CUDA A/A失败](../../../../evidence/performance/inference-g07-cuda-packed-aa-attempt-1/receipt.json)
 和Apple564.218秒合格LOSS均保留。下一次资格仍使用原两形状/原669公式与完全相同的warm
 收费边界，资格前重新执行两端独立oracle。不以SDK通过签速度，G08–G10仍未开始。
+
+### D1完整裁决与D2原生分块审计
+
+[D1完整P1](../../../../evidence/performance/inference-g07-apple-packed-attempt-2/receipt.json)
+再次QUALIFIED/verify0：M1比2.063–2.085，M64比0.754–0.759，M64仍FAIL；564.133秒，
+两次累计1128.351秒。等价解码只改善部分成本，没有消除批量回退；两次LOSS均保留。
+[D1统一LOC](../../../../evidence/architecture/inference-g07-packed-weight-audit/loc-d1.json)
+以682c快照计自实现180857、两owner联合6063行/38文件，不替后续产品计数。
+
+仅Apple退回AUDITED。W-APPLE-D2固定承载为锁定MLX的原small-device NT GEMM分块：
+`mlx/backend/metal/matmul.cpp:98`为BM64/BN32/BK32、WM2/WN2，SHA256
+`84d49f069d2538bf727b6af32df812a76bfff142c132d2a70f6abc7475d904fb`；其
+`steel/gemm/mma.h`的F32 fragment/重复tile复用，SHA256
+`9b37709de40c3acaa5411875e52c8d26e6de093261741f671fbdab9c39a852b7`。依赖版本未变。
+
+具体成本反证：M64/N2048/K2048的当前16×16分块512个threadgroup，逐128组/32 staging
+共81920次threadgroup barrier、33554432次码转换，权重被四个M tile重复读取。固定64×32
+分块为64个threadgroup、10240次barrier、12582912次转换，权重仅一轮；F32数学量不减少。
+这是公开消费与原生成本结构两把钥匙，不是按单次计时搜索tile。
+
+有限FIX只采用一份参数化packed kernel：M≤16保现有16×16；更大M采用上述64×32×32与
+四SIMDgroup，同一shape在冷编译固定原生模板。每输出的128点F32矩阵顺序及先activation/
+再weight scale/顺序相加保持；12KiB threadgroup staging复用为2048个F32 partial，small
+仍4KiB。原始packed显式输入、host/cold边界、错误与owner保持；不增加全局dense bank。
+
+D2验证沿D1相同有限source/Graph/joint/public、Metal/三hostsan和迁址static/shared范围，
+不重跑CUDA/W1；产品冻结后原两形状/原669/相同16轮Apple与5%/n15–31资格一次。该轮只
+包含原small与peer固定分块，不追加候选tile表。CUDA仍只允许已声明的一次harness资格纠正。

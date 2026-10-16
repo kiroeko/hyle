@@ -1,0 +1,104 @@
+{
+  "schema": 3,
+  "repository": {
+    "root": "C:\\public\\project-hyle\\hyle",
+    "commit": "682c49aab687a4df33563de82cf630019a415e4f",
+    "dirty": false,
+    "tracked_regular_files": 15237,
+    "tracked_missing_files": []
+  },
+  "policy": {
+    "snapshot": "immutable Git commit tree",
+    "untracked": "not applicable to immutable commit tree",
+    "self_written_languages": [
+      "C++",
+      "C/C++ Header",
+      "C",
+      "CUDA",
+      "Objective-C++",
+      "GLSL"
+    ],
+    "self_written_excludes": [
+      "bench",
+      "docs",
+      "third_party",
+      "samples",
+      "cmake/build/package scripts",
+      "all build/cache/scratch directories"
+    ],
+    "module_excludes": [
+      "tests",
+      "bench",
+      "docs",
+      "third_party",
+      "CMake"
+    ]
+  },
+  "tool": {
+    "cloc": "2.08"
+  },
+  "module": {
+    "name": "state:CANDIDATE",
+    "boundary": "central-component-ownership",
+    "paths": [],
+    "modules": [
+      "compute_route_apple",
+      "compute_provider_torch_cuda"
+    ]
+  },
+  "metrics": [
+    {
+      "id": "repository",
+      "label": "full repository code",
+      "code": 3758421,
+      "files": 7453,
+      "selected_files": 15237,
+      "paths": [
+        "Git-tracked files at immutable commit"
+      ],
+      "languages": [
+        "all languages recognized by cloc"
+      ]
+    },
+    {
+      "id": "self_without_tests",
+      "label": "self-written excluding tests",
+      "code": 180857,
+      "files": 747,
+      "selected_files": 835,
+      "paths": [
+        "include/hyle",
+        "src"
+      ],
+      "languages": [
+        "C++",
+        "C/C++ Header",
+        "C",
+        "CUDA",
+        "Objective-C++",
+        "GLSL"
+      ]
+    },
+    {
+      "id": "module",
+      "label": "module implementation union (state:CANDIDATE)",
+      "code": 6063,
+      "files": 38,
+      "selected_files": 38,
+      "paths": [],
+      "languages": [
+        "C++",
+        "C/C++ Header",
+        "C",
+        "CUDA",
+        "Objective-C++",
+        "GLSL"
+      ]
+    }
+  ],
+  "self_check": "pass",
+  "product_candidates": {
+    "compute_route_apple": "0333ed2cc9025dd976d7d2118dcd6759cffb5242",
+    "compute_provider_torch_cuda": "b483b8939e9c1d28a98eee3a6ecd13b3fd45fc88"
+  }
+}

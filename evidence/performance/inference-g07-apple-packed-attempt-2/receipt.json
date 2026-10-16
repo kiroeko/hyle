@@ -1,0 +1,59 @@
+{
+  "schema": "hyle.inference-g07-packed-p1/v1",
+  "state": "QUALIFIED_MATERIAL_LOSS_RETAINED",
+  "route": "apple",
+  "candidate": "0333ed2cc9025dd976d7d2118dcd6759cffb5242",
+  "source_revision": "dc7473116e8247fd78af4b3c97818a2d18b32d3a",
+  "qualification": "PASS",
+  "performance_gate": "FAIL",
+  "verify_exit": 0,
+  "elapsed_seconds": 564.132707542,
+  "cumulative_elapsed_seconds": 1128.351201417,
+  "rows": [
+    {
+      "id": "packed-m1",
+      "exact_verdict": "WIN",
+      "noninferiority_gate": "PASS",
+      "independent_samples_per_stratum": 15,
+      "strata_count": 8,
+      "median_advantage_ratio_range": [
+        2.0632933771790247,
+        2.084929599074697
+      ],
+      "individual_ci_envelope": [
+        2.050937640409582,
+        2.0958370555654815
+      ],
+      "note": "Envelope of eight individual CIs, not a pooled CI. Full original summary retained."
+    },
+    {
+      "id": "packed-m64",
+      "exact_verdict": "LOSE",
+      "noninferiority_gate": "FAIL",
+      "independent_samples_per_stratum": 15,
+      "strata_count": 8,
+      "median_advantage_ratio_range": [
+        0.7541836414916954,
+        0.7591254692873142
+      ],
+      "individual_ci_envelope": [
+        0.7498768472906404,
+        0.7626682753365508
+      ],
+      "note": "Envelope of eight individual CIs, not a pooled CI. Full original summary retained."
+    }
+  ],
+  "raw_archive": {
+    "path": "raw.zip",
+    "sha256": "94d61e4c9c6b10a7ed406b6233e72cb9aef6e277a147f759b3c63354095b56ec"
+  },
+  "summary_sha256": "0309f30655d8ef5efda72df8a22c3694cbea190655983cf3af13bc75e9404405",
+  "manifest_sha256": "5a5a7d240f52a4ce39ba8a01e9c4a589baeee784e0a8af3822bb87bfa9bb326e",
+  "decision": "Retain complete qualified result and all earlier failures; activity card owns any next product correction. CUDA product unchanged.",
+  "limits": [
+    "No kernel-only/half-precision/cold-expanded peer substitution.",
+    "Full public warm replay; final retained native result/cache/Program teardown remains explicitly deferred.",
+    "Ratios/absolute op/s are the actual8strata in original summary, not pooled CI or engine throughput.",
+    "No tokens/s or llama.cpp comparison."
+  ]
+}
