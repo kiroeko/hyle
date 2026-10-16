@@ -1,6 +1,6 @@
 # G04/G05 编码 KV 与有限 attention 语义实施批
 
-状态：**G06独立范围已验收；FI以当前0a29保留G04/G05 CUDA性能CANDIDATE，其余owner按registry，2026-10-16**。baseline `694a3d1a4b02540cb56b6ceae35b73dd1dd93440`；
+状态：**G06独立范围已验收；FI的G04/G05 CUDA工程性能BLOCKED/INCONCLUSIVE；下文新增集中归因方案尚未执行，其余owner按registry，2026-10-16**。baseline `694a3d1a4b02540cb56b6ceae35b73dd1dd93440`；
 共同批owner见下表：九个原实际组件及下文新增CUDA数值状态owner；有限CE01–07/API/成本合同已冻结。原 G03 已 CLOSED，不由本卡重开其权限/
 退休实现。九owner已合法SCOPED后进入AUDITED；仅下列有限FIX授权产品实现。
 本批沿[十项总卡](../project/inference-gaps-goal-execution-2026-10.md)，
@@ -2719,3 +2719,43 @@ INCONCLUSIVE；G06验收不撤回，整个goal继续ACTIVE/4of10。未来恢复�
 绑定G06后真实改变的完整候选与原完整warm合同，合法SCOPED/AUDITED后固定一次当前资格；
 不是重采旧830，也不能重置旧失败或放宽统计门。本次未授权新P1/profile/tile或产品改动。
 G07–G10独立继续，不把未决项改名完成，也不继续消费这次只读预算。
+
+## 集中归因方案：缩短性能诊断反馈周期
+
+2026-10-16 用户要求对久未定位的04/05改变排查方式。本段固定新的诊断范围，替代继续
+只读猜测或逐个小改后跑完整验收的推进方式；**方案已固定，尚未执行新采集/构建**。
+registry仍为BLOCKED，产品FIX集为空；诊断专用源码只放可丢弃副本，不改公共API、产品
+算法、构建系统或统一性能统计。需要产品修正时仍先合法SCOPED/AUDITED。
+
+### 已知事实与待排除原因
+
+- 原attempt14完整warm合同的prefill为稳定LOSS、5%非劣UNRESOLVED，不能说已经证明
+  material FAIL。原失败、区间、[15,31]及累计成本保留，诊断结果不覆盖它们。
+- 重新读取已有CE28 SQLite，而非再用早于CE28的CE27 trace：prefill每侧仅8次，attention
+  中位数45.581/37.989µs、merge 9.638/8.639µs（candidate/peer）。这是旧830 VERIFY_ONLY
+  的假设输入，非G06后完整候选性能，更不是因果证明。不能把两组中位数相加当episode。
+  [提取记录](../../../../evidence/architecture/inference-g04-g05-causal-diagnostic/intake.json)保留SHA和限制。
+- 因此先区分H1主机提交/等待与GPU空隙、H2 attention加载/FP8转换与计算、H3 F32 partial/
+  merge、H4真实planner/launch几何差异。先看H2；不再先假定merge或metadata就是原因。
+
+### 一批诊断，按信息增益推进
+
+| 步骤 | 操作与固定边界 | 必须回答的问题 |
+|---|---|---|
+| D0 当前绑定 | 完整产品669、FI0a29、数学830；核实际源码/依赖/对象SHA，使用G06已验证CUDA SDK，复用身份相同的原reference CUDA对象；只编必要host诊断consumer，不重建ggml或全仓 | 当前二进制是否真代表G06后的完整路径？无法证明便停，不拿旧binary冒充 |
+| D1 一次分段采集 | 原三形状、两slot、原FP8输入/scale/输出oracle；主prefill仍Q64/128、KV1024/768、D256、causal/unbounded。短warm控制与CUDA timeline分开采集；每侧先64步warmup，8组×64步，A/A及A/B、B/A，两个allocation顺序；阶段标签只在consumer，不在产品加常态计时 | 完整warm差额主要在host/queue空隙、attention还是merge？用每个episode的CUDA correlation与实际临界路径归属，不能简单wall减kernel sum就叫host成本 |
+| D2 热点验证 | 只看D1指出的主要内核，至多一次定向硬件计数采集；核实际指令、register spill、访存/转换、barrier及occupancy，与真实dispatch/生成代码对应 | 具体哪段额外工作或资源限制解释了差额？计数器相关性本身不算因果 |
+| D3 最多两个反事实 | 在可丢弃诊断副本中，每次只改变D2支持的一个因素；先写预期改变哪个阶段、哪个应不变，再编必要native TU并做同输入短对照。只在类型、scale、归约及中间表示兼容时交叉attention/merge；不兼容则不用拼接 | 去掉该因素时差额是否按预测缩小，其他阶段/数值是否保持？不清楚就否决假设，不继续扫tile/阈值 |
+| D4 集中交付 | 只有因果证据与真实消费需求共同支持才冻结有限产品FIX；集中实现、局部数值/设备风险检查，再固定不可变candidate；复用未变身份的证据，最后一次受影响交付/风险及原合同正式P1 | 修的是哪项可复现成本、收益和代价是什么？正式验收仍由原5%门与原统计合同裁决 |
+
+D1标注版与未标注短控制都保留；profiler会扰动运行，不能拿profile时长签P1，或将
+不同工具/不同执行之间的差额硬凑成因果账。各组只作诊断重复，不当独立P1 cluster。
+D3每个可执行变体必须先通过原独立oracle、有效区/readonly KV和实际完成检查；若变更
+同步/并发，则先跑对应设备风险检查才计时。不同中间精度的变体只能用于解释成本，
+不能凭快就进入产品，也不能用丢读、缩短有效区或删掉必要完成/所有权来制造收益。
+
+首批按一次约2h工作块组织，30min报告信息增益；构建/工具准备超过检查点按用户既有
+授权有限追加并保留原耗时，不强杀重来。上限是一次D1、一次D2、两个具名D3，不能靠
+换目录或追加时间增加实验数。工具不可用不重建仪器；证据相互矛盾或低于扰动分辨率，
+明确记录哪个变量尚不能区分。首批结束必须交付“主要差额归属+被排除假设+具体FIX或
+未识别的变量”，不得以继续研究代替结果；诊断未运行不写PASS。G07现有定界与验收不变。

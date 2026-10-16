@@ -1,0 +1,192 @@
+{
+  "state": "SCOPED_DIAGNOSTIC_PLAN_WITH_HISTORICAL_HYPOTHESIS_INPUT_NOT_NEW_RUNTIME_OR_PERFORMANCE_VERDICT",
+  "created_utc": "2026-10-16T08:36:06.625340+00:00",
+  "baseline": "7a867163a566d3b05460f71ea3d50408de7a712d",
+  "record": "docs/implementation/tasks/compute/inference-g04-g05-cache-attention-domain.md",
+  "full_product_candidate": "669121418669b31f6849c74f64362aaf8d6eb919",
+  "fi_product_candidate": "0a29d119426b2975d48c238c37a2994675e0ba9f",
+  "historical_math_candidate": "830dd9e01829e3e5850ddff7eaa6355ee7c8fd0d",
+  "historical_trace": {
+    "private_path": ".scratch/inference-gaps/g04-g05/ce28-runtime-profile-1/dispatch.sqlite",
+    "sha256": "aa4e73efb87da91e38d3a64677c01c3c5873ced1f1be3d45768d83d2a440fa00",
+    "runtime_receipt": "evidence/architecture/inference-g04-g05-cuda-ce28-producer-stage/runtime-receipt.json",
+    "runtime_receipt_sha256": "f309d942060129886013f3c725b75333514d246e286c7b282529f047b2306082",
+    "sql": "select k.start,k.end,s.value from CUPTI_ACTIVITY_KIND_KERNEL k join StringIds s on k.demangledName=s.id order by k.start",
+    "shape_assignment": "Each pair of original cold decode_rows kernels starts the next original fixed shape. Namespaced original kernels identify peer; candidate attention and merge classified by kernel name.",
+    "unit": "microseconds",
+    "stages": [
+      {
+        "shape": "window",
+        "candidate_attention": {
+          "count": 8,
+          "durations_us": [
+            7.31,
+            6.561,
+            6.998,
+            6.498,
+            6.935,
+            6.124,
+            5.904,
+            5.874
+          ],
+          "median_us": 6.5295000000000005,
+          "min_us": 5.874,
+          "max_us": 7.31
+        },
+        "peer_attention": {
+          "count": 8,
+          "durations_us": [
+            6.498,
+            6.217,
+            5.624,
+            6.06,
+            5.498,
+            5.28,
+            5.311,
+            5.343
+          ],
+          "median_us": 5.561,
+          "min_us": 5.28,
+          "max_us": 6.498
+        }
+      },
+      {
+        "shape": "prefill",
+        "candidate_attention": {
+          "count": 8,
+          "durations_us": [
+            46.924,
+            45.737,
+            47.425,
+            46.05,
+            45.425,
+            41.832,
+            41.677,
+            41.614
+          ],
+          "median_us": 45.581,
+          "min_us": 41.614,
+          "max_us": 47.425
+        },
+        "candidate_merge": {
+          "count": 8,
+          "durations_us": [
+            9.716,
+            10.123,
+            9.529,
+            10.31,
+            9.56,
+            9.778,
+            9.404,
+            9.529
+          ],
+          "median_us": 9.638,
+          "min_us": 9.404,
+          "max_us": 10.31
+        },
+        "peer_attention": {
+          "count": 8,
+          "durations_us": [
+            38.833,
+            38.427,
+            38.302,
+            37.802,
+            38.177,
+            37.49,
+            37.334,
+            37.365
+          ],
+          "median_us": 37.9895,
+          "min_us": 37.334,
+          "max_us": 38.833
+        },
+        "peer_merge": {
+          "count": 8,
+          "durations_us": [
+            8.717,
+            8.685,
+            8.591,
+            8.716,
+            8.592,
+            8.685,
+            8.56,
+            8.592
+          ],
+          "median_us": 8.6385,
+          "min_us": 8.56,
+          "max_us": 8.717
+        }
+      },
+      {
+        "shape": "holdout",
+        "candidate_attention": {
+          "count": 8,
+          "durations_us": [
+            5.436,
+            5.186,
+            4.342,
+            4.343,
+            4.342,
+            4.343,
+            4.343,
+            4.343
+          ],
+          "median_us": 4.343,
+          "min_us": 4.342,
+          "max_us": 5.436
+        },
+        "peer_attention": {
+          "count": 8,
+          "durations_us": [
+            4.624,
+            4.124,
+            3.843,
+            3.843,
+            3.842,
+            3.843,
+            3.812,
+            3.843
+          ],
+          "median_us": 3.843,
+          "min_us": 3.812,
+          "max_us": 4.624
+        }
+      }
+    ]
+  },
+  "source_anchors": [
+    {
+      "path": "bench/inference_resident_sdpa/cuda_encoded_page_bench.cc",
+      "sha256": "d08de20041bc2d9dd36c9da2078145f68000b5dcbb25b653936fc49b708d658c"
+    },
+    {
+      "path": "bench/inference_resident_sdpa/cuda_encoded_page_reference.cc",
+      "sha256": "df7603d499d58f009194f46f060c58fe0aed7e4ca778f1c47b5849fea1ec7924"
+    },
+    {
+      "path": "bench/inference_resident_sdpa/cuda_encoded_page_native.cu",
+      "sha256": "cb7f2079a32b24b4956860e695d2e8328d04648f1f911a6b912ff30045ed5474"
+    },
+    {
+      "path": "src/compute_provider_flashinfer/native_cache.cu",
+      "sha256": "62ace94e0809144aca540fa317f72e9a2bc2b1d29b5099ef15048d3da6b92858"
+    }
+  ],
+  "diagnostic_priority": "H2 attention first; current host/timeline evidence must still distinguish H1 and H3/H4 before causal FIX.",
+  "limits": [
+    "This only reads the existing CE28 VERIFY_ONLY SQLite. No new GPU work, profile, build, P1 or product edits.",
+    "Eight kernel observations per side per shape include verification activity and profiler perturbation; not qualified timing.",
+    "Native math source is unchanged, but this old binary does not represent the G06 complete warm lifecycle.",
+    "Medians from separate stages are not an episode sum, a causal difference or a confidence interval.",
+    "Original attempt14 LOSS/noninferiority UNRESOLVED and [15,31] remain unchanged.",
+    "No finite product FIX or acceptance granted by this intake; module registry unchanged."
+  ],
+  "maintenance_validation": {
+    "base": "7a867163a566d3b05460f71ea3d50408de7a712d",
+    "selector": "READY: docs,closure; 146 skipped/reused",
+    "closure": "PASS: 64 components, schema 4",
+    "docs": "PASS: 1250 Markdown files, 6379 relative links",
+    "diff_check": "PASS",
+    "build_tests_p1": "NOT_RUN: documentation and historical-read-only intake only"
+  }
+}
