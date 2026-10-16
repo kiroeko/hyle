@@ -319,9 +319,14 @@ TEST(FlashinferCache, EmptyRequestsAndAllZeroQueriesUseCheckedNoOp){
         if(paged){
           HYLE_ASSIGN_OR_RETURN(auto ka,c::PagedArena::create(schema,c::BatchCacheRole::kKey,memory.ref(),{.max_backing_bytes=4160}));
           HYLE_ASSIGN_OR_RETURN(auto va,c::PagedArena::create(schema,c::BatchCacheRole::kValue,memory.ref(),{.max_backing_bytes=4160}));
-          HYLE_ASSIGN_OR_RETURN(auto kr,ka.read(layout,{}));HYLE_ASSIGN_OR_RETURN(auto vr,va.read(layout,{}));
-          HYLE_ASSIGN_OR_RETURN(auto done,prepared.run(query,kr,vr));HYLE_RETURN_IF_ERROR(done.wait());
-        }else{HYLE_ASSIGN_OR_RETURN(auto done,prepared.run(inputs));HYLE_RETURN_IF_ERROR(done.wait());}
+          // Arena projection deliberately requires nonempty exact page guards.
+          // Empty native execution uses the existing complete owning Q/K/V API.
+          const auto kr=ka.read(layout,{}),vr=va.read(layout,{});
+          EXPECT_FALSE(kr);EXPECT_FALSE(vr);
+          if(kr || vr)return hyle::Status::Internal("empty arena projection bypassed its nonempty contract");
+          EXPECT_TRUE(kr.error().IsInvalidArgument());EXPECT_TRUE(vr.error().IsInvalidArgument());
+        }
+        HYLE_ASSIGN_OR_RETURN(auto done,prepared.run(inputs));HYLE_RETURN_IF_ERROR(done.wait());
       }
       HYLE_RETURN_IF_ERROR(slot.close());return context.drain();
     };
