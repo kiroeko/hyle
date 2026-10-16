@@ -1,0 +1,198 @@
+{
+  "schema": "hyle.loc-report/v1",
+  "repository": {
+    "root": "C:\\public\\project-hyle\\hyle",
+    "commit": "669121418669b31f6849c74f64362aaf8d6eb919",
+    "dirty": false
+  },
+  "policy": {
+    "snapshot": "immutable Git commit tree",
+    "untracked": "not applicable to immutable commit tree",
+    "self_written_languages": [
+      "C++",
+      "C/C++ Header",
+      "C",
+      "CUDA",
+      "Objective-C++",
+      "GLSL"
+    ],
+    "self_written_excludes": [
+      "bench",
+      "docs",
+      "third_party",
+      "samples",
+      "cmake/build/package scripts",
+      "all build/cache/scratch directories"
+    ],
+    "module_excludes": [
+      "tests",
+      "bench",
+      "docs",
+      "third_party",
+      "CMake"
+    ]
+  },
+  "tool": {
+    "cloc": "2.08"
+  },
+  "module": {
+    "name": "g04-g05-final-owner-union",
+    "boundary": "explicit",
+    "paths": [
+      "include/hyle/compute/backends/cuda.h",
+      "include/hyle/compute/low_precision.h",
+      "include/hyle/compute/model_ops.h",
+      "include/hyle/compute/operation.h",
+      "include/hyle/compute/ops_visibility.h",
+      "include/hyle/compute/providers/flashinfer.h",
+      "include/hyle/compute/tensor_desc.h",
+      "include/hyle/graph/vulkan.h",
+      "src/compute_backend_cuda/cuda_backend.cc",
+      "src/compute_backend_cuda/cuda_batch_transfer.cc",
+      "src/compute_backend_cuda/cuda_device_status.cc",
+      "src/compute_backend_cuda/cuda_internal.h",
+      "src/compute_backend_cuda/cuda_memory.cc",
+      "src/compute_backend_cuda/device_status_kernel.cu",
+      "src/compute_backend_cuda/device_status_kernel.h",
+      "src/compute_backend_cuda/driver_release.cc",
+      "src/compute_backend_cuda/driver_release.h",
+      "src/compute_backend_cuda/native_context.h",
+      "src/compute_backend_cuda/resource_admission.h",
+      "src/compute_ggml_runtime/cpu_execution.cc",
+      "src/compute_ggml_runtime/cpu_execution.h",
+      "src/compute_ggml_runtime/cpu_program.cc",
+      "src/compute_ggml_runtime/cpu_program.h",
+      "src/compute_ggml_runtime/cpu_program_abi.h",
+      "src/compute_ggml_runtime/cpu_program_export.cc",
+      "src/compute_ggml_runtime/explicit_rope.h",
+      "src/compute_ggml_runtime/metadata_arena.cc",
+      "src/compute_ggml_runtime/metadata_arena.h",
+      "src/compute_ops/low_precision.cc",
+      "src/compute_ops/operation.cc",
+      "src/compute_ops/tensor_desc.cc",
+      "src/compute_ops/view_alias.h",
+      "src/compute_ops/weight_decode.cc",
+      "src/compute_provider_flashinfer/flashinfer_provider.cc",
+      "src/compute_provider_flashinfer/native_attention.cu",
+      "src/compute_provider_flashinfer/native_attention.h",
+      "src/compute_provider_flashinfer/native_batch.cu",
+      "src/compute_provider_flashinfer/native_batch.h",
+      "src/compute_provider_flashinfer/native_cache.cu",
+      "src/compute_provider_flashinfer/native_cache_encoder.cu",
+      "src/compute_provider_flashinfer/native_cache_encoder.h",
+      "src/graph_route_vulkan/vulkan_batch.cc",
+      "src/graph_route_vulkan/vulkan_lowering.cc"
+    ],
+    "modules": [
+      "compute_backend_cuda",
+      "compute_ggml_runtime",
+      "compute_ops",
+      "compute_provider_flashinfer",
+      "graph_route_vulkan"
+    ]
+  },
+  "metrics": [
+    {
+      "id": "repository",
+      "label": "full repository code",
+      "code": 3718683,
+      "files": 7399,
+      "selected_files": 15163,
+      "paths": [
+        "Git-tracked files at immutable commit"
+      ],
+      "languages": [
+        "all languages recognized by cloc"
+      ]
+    },
+    {
+      "id": "self_without_tests",
+      "label": "self-written excluding tests",
+      "code": 180623,
+      "files": 745,
+      "selected_files": 833,
+      "paths": [
+        "include/hyle",
+        "src"
+      ],
+      "languages": [
+        "C++",
+        "C/C++ Header",
+        "C",
+        "CUDA",
+        "Objective-C++",
+        "GLSL"
+      ]
+    },
+    {
+      "id": "module",
+      "label": "module implementation (g04-g05-final-owner-union)",
+      "code": 8749,
+      "files": 43,
+      "selected_files": 43,
+      "paths": [
+        "include/hyle/compute/backends/cuda.h",
+        "include/hyle/compute/low_precision.h",
+        "include/hyle/compute/model_ops.h",
+        "include/hyle/compute/operation.h",
+        "include/hyle/compute/ops_visibility.h",
+        "include/hyle/compute/providers/flashinfer.h",
+        "include/hyle/compute/tensor_desc.h",
+        "include/hyle/graph/vulkan.h",
+        "src/compute_backend_cuda/cuda_backend.cc",
+        "src/compute_backend_cuda/cuda_batch_transfer.cc",
+        "src/compute_backend_cuda/cuda_device_status.cc",
+        "src/compute_backend_cuda/cuda_internal.h",
+        "src/compute_backend_cuda/cuda_memory.cc",
+        "src/compute_backend_cuda/device_status_kernel.cu",
+        "src/compute_backend_cuda/device_status_kernel.h",
+        "src/compute_backend_cuda/driver_release.cc",
+        "src/compute_backend_cuda/driver_release.h",
+        "src/compute_backend_cuda/native_context.h",
+        "src/compute_backend_cuda/resource_admission.h",
+        "src/compute_ggml_runtime/cpu_execution.cc",
+        "src/compute_ggml_runtime/cpu_execution.h",
+        "src/compute_ggml_runtime/cpu_program.cc",
+        "src/compute_ggml_runtime/cpu_program.h",
+        "src/compute_ggml_runtime/cpu_program_abi.h",
+        "src/compute_ggml_runtime/cpu_program_export.cc",
+        "src/compute_ggml_runtime/explicit_rope.h",
+        "src/compute_ggml_runtime/metadata_arena.cc",
+        "src/compute_ggml_runtime/metadata_arena.h",
+        "src/compute_ops/low_precision.cc",
+        "src/compute_ops/operation.cc",
+        "src/compute_ops/tensor_desc.cc",
+        "src/compute_ops/view_alias.h",
+        "src/compute_ops/weight_decode.cc",
+        "src/compute_provider_flashinfer/flashinfer_provider.cc",
+        "src/compute_provider_flashinfer/native_attention.cu",
+        "src/compute_provider_flashinfer/native_attention.h",
+        "src/compute_provider_flashinfer/native_batch.cu",
+        "src/compute_provider_flashinfer/native_batch.h",
+        "src/compute_provider_flashinfer/native_cache.cu",
+        "src/compute_provider_flashinfer/native_cache_encoder.cu",
+        "src/compute_provider_flashinfer/native_cache_encoder.h",
+        "src/graph_route_vulkan/vulkan_batch.cc",
+        "src/graph_route_vulkan/vulkan_lowering.cc"
+      ],
+      "languages": [
+        "C++",
+        "C/C++ Header",
+        "C",
+        "CUDA",
+        "Objective-C++",
+        "GLSL"
+      ]
+    }
+  ],
+  "self_check": "pass",
+  "measurement": {
+    "method": "Unmodified official loc-report.py cloc_measure/self_check; reuse existing immutable669 full-repository/self metrics and measure one unique5-owner implementation union. No historical module counts added.",
+    "reuse": "evidence/architecture/inference-g06-final-cost-review/loc.json",
+    "reuse_sha256": "cd778d4891ebf1e3b66a201ba77e57147fa6122482a3bd8108eca7f4d8e43a5f",
+    "current_module_blobs_equal_immutable_candidate": true,
+    "seconds": 0.4529999999795109,
+    "boundary_sha256": "6599d1be877537cbaf69866025ab6aaad72728810a3d8b076cc96537d44b0317",
+    "limits": "Repository total is reused for immutable669, not recounted for current documentation HEAD. Module-only measurement used identical tracked product bytes; no full repository archive or build."
+  }
+}

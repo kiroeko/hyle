@@ -81,8 +81,9 @@ CUDA device resource，BatchProgram的host_workspace使用同设备原pinned-hos
 K/V均为FP8，分别固定scale，Q/output同F16或BF16，几何与窗口合同如上；有限输入的编码
 采用nearest-even及finite saturation，NaN/Inf在接受提交后的原Completion返回InvalidArgument。
 原attention直接读FP8字节；Kscale折入softmax scale，Vscale在F32 partial/merge后乘入并
-转换最终输出。额外float workspace为align16(Qactive*Hq*Dv*4)，并有一次最终scale/cast
-dispatch；不展开整套历史KV。实际RTX4070/SM89的12项测试见
+转换最终输出。当前split-KV使用原planner计费的F32 partial workspace，最终scale/cast
+已合入merge；非split在原输出变换中完成，没有额外最终scale/cast dispatch，也不展开
+整套历史KV。实际RTX4070/SM89的原12项测试见
 [CUDA有限source证据](../../evidence/correctness/inference-g04-g05-cuda-encoding-math-stage/result.json)。
 F16增量F2/Direct/CUDA Graph/CPU+CUDA组合另有
 [有限source证据](../../evidence/correctness/inference-g04-g05-cuda-encoded-page-source/result.json)。
@@ -90,7 +91,12 @@ F16增量F2/Direct/CUDA Graph/CPU+CUDA组合另有
 global cache与QK数学保持64维；额外shared为CTA_TILE_KV*64 bytes。原始依赖cache不变。
 BF16增量组合与强权重paged/ragged、CTA16/repack反例及修复前库负对照见
 [source补充](../../evidence/correctness/inference-g04-g05-cuda-bf16-strong-weight-source/result.json)。
-Linux CUDA 的 source 风险与 SDK 已有独立证据；Windows CUDA、GPU sanitizer 和 P1 未因此获准。
+当前有限source/device、宿主风险及SDK资格见
+[终审记录](../implementation/tasks/compute/inference-g04-g05-final-closure.md)。
+Windows原生CUDA batch不在已验域；宿主sanitizer不签driver。FP8的KV payload为BF16的一半，
+但读取转换及F32中间结果有成本，不能据此宣称整个引擎显存减半或更快。历史warm测试的
+参考方额外常驻完整BF16副本、冷展开另计，主prefill约多4.0–4.9%耗时且5%非劣未决；
+这是有限方案取舍对照，不能代表同资源FP8实现排名或与llama.cpp的整引擎比较。
 
 Apple原MLX入口现可编码Q8_0新行，并在paged/ragged attention中直接读取U8压缩carrier。
 Q/output为F16或BF16，支持上述有限几何、窗口与full noncausal；空输出仍按Dv给出形状。

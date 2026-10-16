@@ -1,6 +1,6 @@
 # G04/G05 有限能力与资源取舍终审
 
-状态：**SCOPED，2026-10-16**。用户明确选择先收口本批，并将完整 Qwen3.5-2B CUDA
+状态：**AUDITED，终审证据已核，2026-10-16**。用户明确选择先收口本批，并将完整 Qwen3.5-2B CUDA
 命令行消费者与 llama.cpp 的 prefill/decode tokens/s 作为后续引擎验收。旧 goal 已清除；
 本轮不恢复 goal，不开始 G07–G10 或引擎实现。
 
@@ -61,13 +61,28 @@ CANDIDATE 终审。阶段提交只维护文档/registry，不产生新产品 can
 
 | Gate | 当前裁决 | 终审依据 |
 |---|---|---|
-| scope | 待终审 | 本卡有限旅程；原 CE01–07/后续有限修正不扩域 |
-| architecture | 待终审 | 原 F1/F2、唯一 native owner 与 actual retirement |
-| correctness | 待终审 | 原独立字节/数学、OOM/并发/退休与适用风险；G06 后续同输入证据 |
-| delivery | 待终审 | 原 source/static/shared 与后续四路线迁址 SDK |
-| usability_docs | 待终审 | batch 指南及编码/精度/资源/限制 |
-| red_team | 待终审 | 与实现分离的一遍自审；不冒充第二审查人 |
-| engineering_performance | 待终审 | 上述 P0 结构合同；旧 P1 结果/方向原样保留 |
+| scope | PASS | 本卡有限旅程；原 CE01–07/后续有限修正不扩域 |
+| architecture | PASS | 原 F1/F2、唯一 native owner 与 actual retirement |
+| correctness | PASS | 原23项证据身份核验；G06后20项当前输入证据，含数值/设备、宿主、OOM/退休与四路线 |
+| delivery | PASS | 原 source/static/shared 与后续四路线八迁址 SDK；不制造新 binary journey |
+| usability_docs | PASS | batch 指南已纠正过期独立scale/cast dispatch描述，补当前费用/资格/比较限制 |
+| red_team | PASS | 与实现分离的一遍自审；纠正对照用途和指南时序，不冒充第二审查人 |
+| engineering_performance | PASS | 上述 P0 结构合同；旧 P1 结果/方向原样保留，不签新计时非劣 |
+
+[聚合证据](../../../../evidence/correctness/inference-g04-g05-final-closure/receipt.json)
+实际核五owner产品路径自各candidate无变化、23项原普通receipt、20项G06后续receipt、
+当前八个consumer/产品源码锚点及四路线原P1身份。旧证据只在各自明确域复用，不从
+“有PASS字样”推导未执行的风险通过。终审无产品FIX；唯一指南错误已在本轮文档更正。
+
+[统一LOC](../../../../evidence/correctness/inference-g04-g05-final-closure/loc.json)
+复用相同不可变669的全库3,718,683、自实现不含测试180,623；用未改官方工具对当前
+五owner唯一实现联合重新计数8,749行/43文件并self-check PASS，全部计数blob与669一致。
+不手工相加历史模块快照，不为文档/状态变化重做整仓archive或产品验证。
+
+原数值域/失败、driver/shader sanitizer边界、native private-pool上界UNKNOWN及所有
+旧失败/费用保留。工程关闭仅签本轮P0与有限能力，不签模型质量、所有上下文、完整
+引擎token/s或与llama.cpp胜负。重开条件是本域可复现correctness/权限/退休/交付缺陷、
+具名真实消费缺失或合格同约束material回归；没有这些事实则停止产品优化。
 
 真实引擎目标与精度策略写入
 [Qwen 命令行消费者范围](../project/qwen35-2b-command-consumer-scope-2026-10.md)。

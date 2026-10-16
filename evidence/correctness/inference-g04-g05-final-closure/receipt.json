@@ -1,0 +1,657 @@
+{
+  "state": "AUDITED_FINITE_EVIDENCE_REUSE_NO_PRODUCT_FIX",
+  "timestamp_utc": "2026-10-16T10:00:46.141028+00:00",
+  "baseline": "68565dfc94f39ab610d1a2c8ad55181b26c6a8fc",
+  "audit_head": "426ff84aef770321a32f791f432db74b0c979aea",
+  "full_product_candidate": "669121418669b31f6849c74f64362aaf8d6eb919",
+  "record": "docs/implementation/tasks/compute/inference-g04-g05-final-closure.md",
+  "owners": [
+    {
+      "module": "compute_ops",
+      "candidate": "982676cb05a6e6244e66e0a596347aa96043617b",
+      "paths": [
+        "src/compute_ops",
+        "include/hyle/compute/low_precision.h",
+        "include/hyle/compute/model_ops.h",
+        "include/hyle/compute/operation.h",
+        "include/hyle/compute/ops_visibility.h",
+        "include/hyle/compute/tensor_desc.h"
+      ],
+      "product_changes_since_candidate": []
+    },
+    {
+      "module": "compute_backend_cuda",
+      "candidate": "982676cb05a6e6244e66e0a596347aa96043617b",
+      "paths": [
+        "src/compute_backend_cuda",
+        "include/hyle/compute/backends/cuda.h"
+      ],
+      "product_changes_since_candidate": []
+    },
+    {
+      "module": "graph_route_vulkan",
+      "candidate": "982676cb05a6e6244e66e0a596347aa96043617b",
+      "paths": [
+        "src/graph_route_vulkan",
+        "include/hyle/graph/vulkan.h"
+      ],
+      "product_changes_since_candidate": []
+    },
+    {
+      "module": "compute_ggml_runtime",
+      "candidate": "42a4c7cdcc0822a7b162efe575909622a906de1d",
+      "paths": [
+        "src/compute_ggml_runtime",
+        "third_party/ggml_runtime",
+        "third_party/ggml_cpu_runtime"
+      ],
+      "product_changes_since_candidate": []
+    },
+    {
+      "module": "compute_provider_flashinfer",
+      "candidate": "0a29d119426b2975d48c238c37a2994675e0ba9f",
+      "paths": [
+        "src/compute_provider_flashinfer",
+        "include/hyle/compute/providers/flashinfer.h",
+        "third_party/flashinfer_cache",
+        "cmake/HyleDependencyLock.json"
+      ],
+      "product_changes_since_candidate": []
+    }
+  ],
+  "ordinary_receipts": [
+    {
+      "path": "evidence/correctness/inference-g04-g05-common-storage-stage/result.json",
+      "sha256": "8dae2ff104c64a723dcb71e43aad804d8b86e512b0a7bdeccdec42667051a074",
+      "declared": {
+        "state": "TERMINAL_PASS"
+      },
+      "product_binding": {}
+    },
+    {
+      "path": "evidence/correctness/inference-g04-g05-shared-geometry-stage/result.json",
+      "sha256": "ffd8ec7e13c3a72988c94c0e1b52a4b9997f5924c7156dfdea0cb3ffbdab5ec0",
+      "declared": {
+        "state": "TERMINAL_PASS"
+      },
+      "product_binding": {}
+    },
+    {
+      "path": "evidence/correctness/inference-g04-g05-cpu-encoding-math-stage/result.json",
+      "sha256": "0e93ba4ba28b0943291e4b12018a81bd8073d2eab176cf4c2dfe234ba5aaae5a",
+      "declared": {
+        "verdict": "PASS_FINITE_WINDOWS_SOURCE_DOMAIN"
+      },
+      "product_binding": {}
+    },
+    {
+      "path": "evidence/correctness/inference-g04-g05-numeric-boundaries/result.json",
+      "sha256": "a6f732ecbf52cb2a13749e0c84c0a6ed167930f6669c7fc0a2eedf7a19c53c55",
+      "declared": {
+        "verdict": "PASS_FINITE_NUMERIC_GRID_AND_CPU_FLOAT_CAST_NEGATIVE_CONTROL"
+      },
+      "product_binding": {}
+    },
+    {
+      "path": "evidence/correctness/inference-g04-g05-cpu-only-encoded-page-source/result.json",
+      "sha256": "e8b6c105538eff13d7a7840a17f65b836e15fec2c0d50a992ce7f72c771a129a",
+      "declared": {
+        "verdict": "PASS_FINITE_WINDOWS_CPU_ONLY_SOURCE"
+      },
+      "product_binding": {}
+    },
+    {
+      "path": "evidence/correctness/inference-g04-g05-cpu-bf16-encoded-page-source/result.json",
+      "sha256": "34c1774a8beb534f0e2ed8a63cdd2ddd102ae0996190c862ed41e45b662b36e4",
+      "declared": {
+        "verdict": "PASS_FINITE_WINDOWS_CPU_ONLY_F16_BF16_SOURCE"
+      },
+      "product_binding": {}
+    },
+    {
+      "path": "evidence/correctness/inference-g04-g05-encoded-native-page-source/result.json",
+      "sha256": "b26338097e1eeb79f91ce1c977acdf405978aab94db4b5f886c703eed1817e74",
+      "declared": {
+        "verdict": "PASS_FINITE_ACTUAL_AIR_APPLE_VULKAN_NATIVE_AND_CPU_JOINT_SOURCE"
+      },
+      "product_binding": {}
+    },
+    {
+      "path": "evidence/correctness/inference-g04-g05-cuda-bf16-strong-weight-source/result.json",
+      "sha256": "3cc359a95e07f3518c4ac74a7f805467efe001ce3172ce6f1819cfcf23008353",
+      "declared": {
+        "verdict": "PASS_FINITE_ACTUAL_CUDA_F16_BF16_AND_CPU_CUDA_WITH_VERIFIED_NEGATIVE_CONTROL"
+      },
+      "product_binding": {}
+    },
+    {
+      "path": "evidence/correctness/inference-g04-g05-encoded-risk-stage/result.json",
+      "sha256": "f2f9dac7cc6da3a7abcf70b262e8c3e0273232e4b150fac034959f00f131ad61",
+      "declared": {
+        "verdict": "PASS_FINITE_ACTUAL_NATIVE_RISK_MODES_AND_CPU_HOST_SANITIZERS"
+      },
+      "product_binding": {}
+    },
+    {
+      "path": "evidence/correctness/inference-g04-g05-native-host-sanitizers/result.json",
+      "sha256": "a124cd096e8db5fc3e413c5b232a28ee1fd533f78df65da3ea30fc6def45e5da",
+      "declared": {
+        "verdict": "PASS_SIX_CONFIGURATIONS_WITH_EXPLICIT_ORIGINAL_TSAN_BOUNDARY_MODELS"
+      },
+      "product_binding": {}
+    },
+    {
+      "path": "evidence/correctness/inference-g04-g05-encoded-sdk/result.json",
+      "sha256": "3bc9f2bdb8b2f3ecd75e5df0b5f6496a5393b555530734ce95d1dbdc116d058a",
+      "declared": {
+        "verdict": "PASS_SIX_CONFIGURATIONS"
+      },
+      "product_binding": {
+        "product_commit": "f772fcad2f2a6a67aa605bbaee10b68f1d540708"
+      }
+    },
+    {
+      "path": "evidence/correctness/inference-g04-g05-cpu-only-encoded-sdk/result.json",
+      "sha256": "d61d34eeb4e17a191a0d52c4615f9ffc527c3128527dcb6cd44c6abfbcbeef16",
+      "declared": {
+        "verdict": "PASS_TWO_CONFIGURATIONS"
+      },
+      "product_binding": {
+        "product_commit": "f772fcad2f2a6a67aa605bbaee10b68f1d540708"
+      }
+    },
+    {
+      "path": "evidence/correctness/inference-g04-g05-ce13-cpu-validation/receipt.json",
+      "sha256": "d3fccc169199aa31ec16d517e9655be5c06af6f954d94b73ea0c206c5215bdaa",
+      "declared": {
+        "verdict": "PASS_FINITE_ORDINARY_GATES"
+      },
+      "product_binding": {
+        "product_commit": "e5bbe1b5ea0dee1ce8e5a4c8dd4b288fd8e806a4"
+      }
+    },
+    {
+      "path": "evidence/correctness/inference-g04-g05-ce13-air-mixed-cpu/receipt.json",
+      "sha256": "8c9156e78c039bacf94576a79eb8b83e07ca8ea81204f03c900e67e6e188ae38",
+      "declared": {
+        "verdict": "PASS_FINITE_CPU_SOURCE"
+      },
+      "product_binding": {
+        "product_candidate": "42a4c7cdcc0822a7b162efe575909622a906de1d"
+      }
+    },
+    {
+      "path": "evidence/correctness/inference-g04-g05-apple-ce14-acceptance/receipt.json",
+      "sha256": "9b0e5e0ab4e0da2a8af62ef960ff5d1a87f53ed9546ffec83015f25bd6dce7fd",
+      "declared": {
+        "state": "CLOSED_FINITE_APPLE_DOMAIN",
+        "performance": "evidence/performance/inference-g04-g05-apple-encoded-m1-p1-attempt-5/receipt.json"
+      },
+      "product_binding": {
+        "product_candidate": "3b51575320c3f823ad1a31d18e99b8c55523a117"
+      }
+    },
+    {
+      "path": "evidence/correctness/inference-g02-vulkan-alias-phase-air/receipt.json",
+      "sha256": "be878168d252ef0aba0ca5b807a289b4dfd2c71c2b24da9617c868aa34d72bf5",
+      "declared": {
+        "verdict": "PASS_FINITE_SOURCE_STATIC_SHARED"
+      },
+      "product_binding": {}
+    },
+    {
+      "path": "evidence/correctness/inference-g04-g05-cuda-ce28-direct-stage-source-device/receipt.json",
+      "sha256": "456ed6088285555732bfe85554246e0408ee92171a1e2076074d236310a2db53",
+      "declared": {
+        "verdict": "PASS_SOURCE17_CACHE_MEM10_RACE10_LEGACY_RACE2_ONLY"
+      },
+      "product_binding": {
+        "product_candidate": "830dd9e01829e3e5850ddff7eaa6355ee7c8fd0d"
+      }
+    },
+    {
+      "path": "evidence/correctness/inference-g04-g05-cuda-ce28-shared-sdk/receipt.json",
+      "sha256": "0af23b7fbce3dd2330ad5397b4efa68081401400005756afc0712c3a7ed85658",
+      "declared": {
+        "verdict": "PASS_SHARED_SDK_ONLY"
+      },
+      "product_binding": {
+        "product_candidate": "830dd9e01829e3e5850ddff7eaa6355ee7c8fd0d"
+      }
+    },
+    {
+      "path": "evidence/correctness/inference-g04-g05-cuda-ce28-static-sdk/receipt.json",
+      "sha256": "13c6910d2ca1d231e4e846ef4697bb7ad8ef0e6f13e1e350f2003020e7422ffd",
+      "declared": {
+        "verdict": "PASS_STATIC_SDK_ONLY"
+      },
+      "product_binding": {
+        "product_candidate": "830dd9e01829e3e5850ddff7eaa6355ee7c8fd0d"
+      }
+    },
+    {
+      "path": "evidence/correctness/inference-g04-g05-cuda-ce28-host-asan/receipt.json",
+      "sha256": "92f92da9748aec775cdf3c67c44695a4507038a9649b5fc3ba500f2a591c510f",
+      "declared": {
+        "verdict": "PASS_HOST_FACET_ONLY"
+      },
+      "product_binding": {
+        "product_candidate": "830dd9e01829e3e5850ddff7eaa6355ee7c8fd0d"
+      }
+    },
+    {
+      "path": "evidence/correctness/inference-g04-g05-cuda-ce28-host-ubsan/receipt.json",
+      "sha256": "e5c868c2a754d6d5505e1ce8697179487914e281f37a2b480d49ab58f7838253",
+      "declared": {
+        "verdict": "PASS_HOST_FACET_ONLY"
+      },
+      "product_binding": {
+        "product_candidate": "830dd9e01829e3e5850ddff7eaa6355ee7c8fd0d"
+      }
+    },
+    {
+      "path": "evidence/correctness/inference-g04-g05-cuda-ce28-host-tsan/receipt.json",
+      "sha256": "38d57d0a11db506e41838752a1e43732239e631a8d55bd641800b500a396e9cc",
+      "declared": {
+        "verdict": "PASS_HOST_FACET_ONLY"
+      },
+      "product_binding": {
+        "product_candidate": "830dd9e01829e3e5850ddff7eaa6355ee7c8fd0d"
+      }
+    },
+    {
+      "path": "evidence/correctness/inference-g04-g05-cuda-ce28-direct-stage-numeric-rebind/receipt.json",
+      "sha256": "57551706796b37267b4a02060d6780fec652d91c7b414b369b5ccdfc27ffc392",
+      "declared": {
+        "state": "TERMINAL_PASS"
+      },
+      "product_binding": {
+        "product_candidate": "830dd9e01829e3e5850ddff7eaa6355ee7c8fd0d"
+      }
+    }
+  ],
+  "post_g06_current_receipts": [
+    {
+      "path": "evidence/architecture/inference-g06-final-cost-review/loc.json",
+      "sha256": "cd778d4891ebf1e3b66a201ba77e57147fa6122482a3bd8108eca7f4d8e43a5f",
+      "original_verdict": "PASS_IMMUTABLE_CANDIDATE_LOC_ONLY"
+    },
+    {
+      "path": "evidence/architecture/inference-g06-final-cost-review/p0.json",
+      "sha256": "b918ee11ca55e8b987c2e03da542765862a19e12641033d12de34ac8f5458a44",
+      "original_verdict": "PASS_G06_P0_STRUCTURE_ONLY"
+    },
+    {
+      "path": "evidence/correctness/inference-g06-capture-replay-source/receipt.json",
+      "sha256": "76d433378b7108f727e6b1de9e61d5457e6d952a69d74a92b4ee7cf559b6b6ea",
+      "original_verdict": "PASS_ORDINARY_SOURCE_ONLY_FINAL_RISKS_PENDING"
+    },
+    {
+      "path": "evidence/correctness/inference-g06-common-source-windows-attempt-4/receipt.json",
+      "sha256": "910f51ee5a00fb74c77183ae3edd516f2fa9bea64af56635c6e405762094b4d1",
+      "original_verdict": "PASS_SOURCE_COMMON_CPU_ONLY"
+    },
+    {
+      "path": "evidence/correctness/inference-g06-cpu-ragged-runtime-source/receipt.json",
+      "sha256": "3cb880ace3fdca7d94c45fbc2f65968ff836f2d781dfd38ac312f143040f2978",
+      "original_verdict": "PASS_WINDOWS_CPU_AND_AIR_MIXED_CORE_SOURCE"
+    },
+    {
+      "path": "evidence/correctness/inference-g06-cpu-runtime-q1-source/receipt.json",
+      "sha256": "8ea31a4ca4e28ed579c7cea4ae0910deebf4bf0e315adb0465633d6f69290d75",
+      "original_verdict": "PASS_WINDOWS_CPU_AND_AIR_MIXED_CORE_SOURCE"
+    },
+    {
+      "path": "evidence/correctness/inference-g06-fi-schedule-runtime-source/receipt.json",
+      "sha256": "f457ab015f33eb66fdf6c5da69d9217e6ae4da2be425ca3c2cb31a3b04657d1a",
+      "original_verdict": "PASS_ORDINARY_SOURCE_ONLY_INSTRUMENTED_RISKS_PENDING"
+    },
+    {
+      "path": "evidence/correctness/inference-g06-final-cuda-risks/receipt.json",
+      "sha256": "1610be074c37072b490dd0c0b93ed6ba27c1bf60e1dbe403e9ccde3e9ea9df0d",
+      "original_verdict": "PASS_FINITE_CUDA_INSTRUMENTED_RISKS_ONLY"
+    },
+    {
+      "path": "evidence/correctness/inference-g06-final-native-air-source/receipt.json",
+      "sha256": "f9983aadf765152ae7fdb61d991748db38b00a7fed2c56e62e1532a05c44a6d7",
+      "original_verdict": "PASS_FINITE_APPLE_VULKAN_SOURCE_AND_RECORDER_RISKS_ONLY"
+    },
+    {
+      "path": "evidence/correctness/inference-g06-final-native-host-sanitizers/receipt.json",
+      "sha256": "ae18341cbaa8e1ae645c40cf0d831fbb39dbbe214c486eee255b23d71664a231",
+      "original_verdict": "PASS_SIX_CURRENT_NATIVE_HOST_SANITIZER_FACETS"
+    },
+    {
+      "path": "evidence/correctness/inference-g06-final-relocated-sdk/receipt.json",
+      "sha256": "0b4990d876ab2fc621cee6bdf602d851584b3b62eaad3db057410b71bb552238",
+      "original_verdict": "PASS_FOUR_ROUTE_RELOCATED_STATIC_SHARED_SDK"
+    },
+    {
+      "path": "evidence/correctness/inference-g06-final-windows-source/receipt.json",
+      "sha256": "585481b73b6f591fedeabf64b40c1afe04f2bc3ed17e623b5639f74fbfd47504",
+      "original_verdict": "PASS_FINITE_WINDOWS_CPU_CORE_GRAPH_SOURCE_ONLY"
+    },
+    {
+      "path": "evidence/correctness/inference-g06-graph-page-admission-windows-source/receipt.json",
+      "sha256": "dbb3c0cae2e8f62ebcfc023b4ad62e21f7c5180f563e9751b57a323485de9d42",
+      "original_verdict": "PASS_FINITE_WINDOWS_CPU_CORE_GRAPH_SOURCE_ONLY"
+    },
+    {
+      "path": "evidence/correctness/inference-g06-graph-page-cuda-risks/receipt.json",
+      "sha256": "3dc0f5d9a5d54e4c4ea87be4e9ff6344ba325456c00fbe2bd0ec0c4fa86190b0",
+      "original_verdict": "PASS_G06_GRAPH_PAGE_AND_POST_RECORD_ARTIFACT_OOM_CUDA_RISKS_ONLY"
+    },
+    {
+      "path": "evidence/correctness/inference-g06-graph-page-host-asan/receipt.json",
+      "sha256": "f6eed6dfd55ec696766ad2c922ab2222e8ba73af170c856573c3e949aaec3c1e",
+      "original_verdict": "PASS_HOST_ASAN_FACET_ONLY"
+    },
+    {
+      "path": "evidence/correctness/inference-g06-graph-page-host-tsan/receipt.json",
+      "sha256": "6cf132d976f369cb9a095393f95ae6b5f17a97bc7c3663a3ab5140c9aca0810b",
+      "original_verdict": "PASS_HOST_TSAN_FACET_ONLY"
+    },
+    {
+      "path": "evidence/correctness/inference-g06-graph-page-host-ubsan/receipt.json",
+      "sha256": "93fa530c0275f4fd19b2bf483970788d0a7811c52019e2c55fe81e02493d7bb4",
+      "original_verdict": "PASS_HOST_UBSAN_FACET_ONLY"
+    },
+    {
+      "path": "evidence/correctness/inference-g06-native-pending-air-attempt-5/receipt.json",
+      "sha256": "f5eef5f1ac20ae397e2a6d7315267c744a2348e618e5e8b230f9e87cf82acaf6",
+      "original_verdict": "PASS_APPLE_VULKAN_NATIVE_AND_CPU_NATIVE_SOURCE"
+    },
+    {
+      "path": "evidence/correctness/inference-g06-native-ragged-runtime-source/receipt.json",
+      "sha256": "0dc8661d1288a92fb7b0d1a20eca4224fdb58de39f0a78b5944c9369332cf986",
+      "original_verdict": "PASS_SELECTED_APPLE_VULKAN_SOURCE_WITH_MATCHED_APPLE_REUSE"
+    },
+    {
+      "path": "evidence/correctness/inference-g06-native-runtime-lengths-source/receipt.json",
+      "sha256": "f5a5e3c08a0c45064c925aa9b405723ecc40ba2ab8c9942cfadc8e1e06c0dae7",
+      "original_verdict": "PASS_SELECTED_NATIVE_COMMON_AND_HYBRID_SOURCE"
+    }
+  ],
+  "qualified_historical_performance": [
+    {
+      "path": "evidence/performance/inference-g04-g05-ce13-cpu-encoded-w1-p1/receipt.json",
+      "sha256": "843fb5a132fb3b49ed2d351ada94642cabc0463eaa910904a03c8970ab7e718c",
+      "candidate": "42a4c7cdcc0822a7b162efe575909622a906de1d",
+      "qualification": "QUALIFIED",
+      "performance": "PASS",
+      "verify_exit": 0
+    },
+    {
+      "path": "evidence/performance/inference-g04-g05-vulkan-encoded-m1-p1-attempt-1/receipt.json",
+      "sha256": "c9a9d087b168356468400c188db026791e7f3ac0fcd389f82546c54c8256d6e7",
+      "candidate": "982676cb05a6e6244e66e0a596347aa96043617b",
+      "qualification": "QUALIFIED",
+      "performance": "PASS",
+      "verify_exit": 0
+    },
+    {
+      "path": "evidence/performance/inference-g04-g05-apple-encoded-m1-p1-attempt-5/receipt.json",
+      "sha256": "b60ffe6f4beb67ca5ed097504cbc53ee19a393b04734784260e649c71735c637",
+      "candidate": "3b51575320c3f823ad1a31d18e99b8c55523a117",
+      "qualification": "QUALIFIED",
+      "performance": "PASS",
+      "verify_exit": 0
+    },
+    {
+      "path": "evidence/performance/inference-g04-g05-cuda-encoded-w1-wsl-p1-attempt-14/receipt.json",
+      "sha256": "cbd64128c3307e318c8a0fa18f160c0c5241689b569243186b4bcb5968412f55",
+      "candidate": "830dd9e01829e3e5850ddff7eaa6355ee7c8fd0d",
+      "qualification": "QUALIFIED",
+      "performance": "FAIL",
+      "verify_exit": 0
+    }
+  ],
+  "current_source_anchors": [
+    {
+      "path": "bench/inference_resident_sdpa/cuda_encoded_page_bench.cc",
+      "sha256": "d08de20041bc2d9dd36c9da2078145f68000b5dcbb25b653936fc49b708d658c",
+      "original_ce28_sha256": "d08de20041bc2d9dd36c9da2078145f68000b5dcbb25b653936fc49b708d658c",
+      "unchanged_from_ce28": true,
+      "line_ranges": [
+        [
+          141,
+          175
+        ],
+        [
+          185,
+          186
+        ],
+        [
+          198,
+          214
+        ]
+      ]
+    },
+    {
+      "path": "bench/inference_resident_sdpa/cuda_encoded_page_reference.cc",
+      "sha256": "df7603d499d58f009194f46f060c58fe0aed7e4ca778f1c47b5849fea1ec7924",
+      "original_ce28_sha256": "df7603d499d58f009194f46f060c58fe0aed7e4ca778f1c47b5849fea1ec7924",
+      "unchanged_from_ce28": true,
+      "line_ranges": [
+        [
+          19,
+          25
+        ],
+        [
+          65,
+          68
+        ],
+        [
+          100,
+          123
+        ],
+        [
+          152,
+          209
+        ]
+      ]
+    },
+    {
+      "path": "bench/inference_resident_sdpa/cuda_encoded_page_native.cu",
+      "sha256": "cb7f2079a32b24b4956860e695d2e8328d04648f1f911a6b912ff30045ed5474",
+      "original_ce28_sha256": "cb7f2079a32b24b4956860e695d2e8328d04648f1f911a6b912ff30045ed5474",
+      "unchanged_from_ce28": true,
+      "line_ranges": [
+        [
+          38,
+          64
+        ],
+        [
+          68,
+          93
+        ]
+      ]
+    },
+    {
+      "path": "bench/inference_resident_sdpa/cuda_encoded_p1/contract.json",
+      "sha256": "de39ecaa98b113c6ed25e7cd306a0f9a820473230b07ceab2d7dfb72414a57bc",
+      "original_ce28_sha256": "80fb343e2e9602d4e82ee135a6a4c67e11f1b953d642644c849c61dd7b329352",
+      "unchanged_from_ce28": false,
+      "line_ranges": [
+        [
+          5,
+          5
+        ],
+        [
+          166,
+          167
+        ],
+        [
+          262,
+          262
+        ]
+      ]
+    },
+    {
+      "path": "src/compute_batch/batch_execution.cc",
+      "sha256": "0a190e184daedb7708d2c819d60317683673df1743d152c4f1a8a9f3a2e9937b",
+      "original_ce28_sha256": "09c9fb3b55b716cc7f6a1fb15ce14f6b423eadbcb5e4f1b6051d19f2bc59a577",
+      "unchanged_from_ce28": false,
+      "line_ranges": [
+        [
+          126,
+          166
+        ],
+        [
+          310,
+          400
+        ]
+      ]
+    },
+    {
+      "path": "src/compute_provider_flashinfer/flashinfer_provider.cc",
+      "sha256": "8425c496c9221fbd5d19a638fb01b76b1d5fada6dcb848e70c92926b50a9b097",
+      "original_ce28_sha256": "ca6d5b837e1e8e03703768ffb12b1b899193817c41acfaccfed73f3dd8aabe1a",
+      "unchanged_from_ce28": false,
+      "line_ranges": [
+        [
+          170,
+          198
+        ],
+        [
+          203,
+          248
+        ]
+      ]
+    },
+    {
+      "path": "src/compute_provider_flashinfer/native_batch.cu",
+      "sha256": "9f1b6e032e17c69a6221fe6850d12534dcb9ce5189ba80bdc83899aa6ba6f336",
+      "original_ce28_sha256": "f4ed4d922d3151728593058538feb534fef6546b11c79560b0faf7dc71b705e7",
+      "unchanged_from_ce28": false,
+      "line_ranges": [
+        [
+          15,
+          36
+        ]
+      ]
+    },
+    {
+      "path": "src/compute_provider_flashinfer/native_cache.cu",
+      "sha256": "62ace94e0809144aca540fa317f72e9a2bc2b1d29b5099ef15048d3da6b92858",
+      "original_ce28_sha256": "62ace94e0809144aca540fa317f72e9a2bc2b1d29b5099ef15048d3da6b92858",
+      "unchanged_from_ce28": true,
+      "line_ranges": [
+        [
+          16,
+          35
+        ],
+        [
+          45,
+          53
+        ],
+        [
+          84,
+          130
+        ]
+      ]
+    }
+  ],
+  "original_cost_ledger": [
+    {
+      "stage": "snapshot/version/cold peer expansion",
+      "boundary": "OUTSIDE_WARM",
+      "g06_effect": "Active immutable backing helps real version creation; Harness creates one version before sampling. Peer cold BF16 expansion and extra retained bytes remain charged cold, never removed."
+    },
+    {
+      "stage": "common metadata update",
+      "boundary": "CHARGED_BOTH",
+      "g06_effect": "Same frozen version is supplied repeatedly. Both sides scan the same active extents; no changed words means no metadata upload or its explicit checked host wait after cold preparation. No new timing evidence."
+    },
+    {
+      "stage": "common page permission/queue/completion/output",
+      "boundary": "CHARGED_BOTH",
+      "g06_effect": "Both use the same original BatchInvocation/PreparedBatch path and exact grouped page admission. G06 reduces common guard work; output ownership and actual retirement remain. Direct Harness does not use Graph sharing."
+    },
+    {
+      "stage": "FI schedule-equivalence bridge",
+      "boundary": "CANDIDATE_HOST",
+      "g06_effect": "Frozen repeated layout has equal q/kv indptr, so the new changed-KV chunk loop is not entered. Actual chunk scalar is read from original host plan shadow once during cold planning. New zero-Q branch is false for all three shapes."
+    },
+    {
+      "stage": "peer extra checks",
+      "boundary": "PEER_HOST",
+      "g06_effect": "Reference still compares all four layout arrays twice and checks original pinned frame identity. This cannot establish a candidate-only extra lifecycle toll."
+    },
+    {
+      "stage": "native mathematical work",
+      "boundary": "DIFFERENT_STORAGE_SAME_FROZEN_OUTPUT_TOLERANCE",
+      "g06_effect": "Candidate still loads FP8 and applies key scale, retains F32 split partials and merges/scales/casts to BF16. Peer retains a cold-expanded BF16 cache and original BF16 partial/merge path. Both use original FI host merge device/occupancy/attribute calls. Native source files are byte-identical to CE28."
+    },
+    {
+      "stage": "capture",
+      "boundary": "NOT_SELECTED",
+      "g06_effect": "Harness does not call prepare_replay. No capture benefit or capture setup is inserted into this original warm comparison."
+    }
+  ],
+  "numerical_counterexamples": {
+    "path": "tests/compute_provider_flashinfer/native_cache_test.cc",
+    "sha256": "caefda838fbbdc602aecbc06c4ac24757adfb37ab37806cabeda3fc742363dec",
+    "tests": [
+      "SplitKvScalesOnlyAfterF32MergeAgainstPartialOverflow",
+      "SplitKvPreservesBfloat16PartialCancellationResidual",
+      "SplitKvPreservesFloat16PartialCancellationResidual",
+      "SplitKvSinglePartialScalesBeforeFinalNarrowing"
+    ]
+  },
+  "p0": {
+    "verdict": "PASS",
+    "tier": "P0",
+    "basis": [
+      "Existing direct encoded math reads compressed resident rows and decodes only tile-local data; no full-history BF16 snapshot in the product path.",
+      "Dirty encoder/update charges actual new rows and preserves original F2 exact ownership/retirement; G06 active/delta facts remain independently qualified.",
+      "CUDA split partial/merge stays F32 with one final scale/narrowing; actual negative tests and unchanged source/device receipts preserve the admitted domain.",
+      "Current CE28 actual kernel resource/codegen and C1 direct control confirm bounded native storage with no local spill in the measured prefill; this is not a universal occupancy or timing claim.",
+      "Ordinary plain F16/BF16 remains a separate existing route; choosing compressed KV is explicit, not forced on every model.",
+      "Allocation, metadata, queue waits, native private pools and driver costs remain disclosed; no zero-overhead or private-pool hard-upper claim."
+    ],
+    "timing_disposition": "Original CUDA cross-representation warm LOSS/5% UNRESOLVED retained as strategy evidence. Not a same-resource FP8 algorithm comparison; no threshold change, P1 resampling or historical PASS promotion."
+  },
+  "independent_phase_red_team": {
+    "verdict": "PASS",
+    "reviewer": "Root agent self-review in a phase separated from implementation; not a second human/agent reviewer.",
+    "findings": [
+      "Fixed the misleading inference that original BF16 FlashInfer peer represents llama.cpp or that the measured gap proves a same-constraint algorithm defect.",
+      "C1 rejected and prior cropped pure causal decomposition withdrawn; no optimization is adopted from unqualified timing.",
+      "Existing public CacheStorage/spec/encoder/page/math routes cover finite accepted domains; model format/sampling/request policy remains with engine.",
+      "Current five-owner product identities and23 ordinary receipt hashes match; later G06 receipts cover actual shared lifecycle changes.",
+      "No new API, dependency, FFI, lifecycle owner, build-system or performance-core change; G07 scoped owners remain untouched.",
+      "Full-engine CUDA placement, model quality and token/s remain explicitly unverified.",
+      "Found stale user-guide description of extra standalone scale/cast dispatch and final float-output scratch. Corrected to actual fused F32 merge/output transform and current finite qualification; documentation-only fix."
+    ]
+  },
+  "finite_fix_set": [],
+  "product_changes": [],
+  "new_runtime_validation_runs": 0,
+  "new_builds": 0,
+  "new_p1_runs": 0,
+  "evidence_reuse_policy": "Reuse exact immutable receipts in their explicit finite domains; receipt/source hashes verified, no re-execution or exhaustive archive rehash.",
+  "loc": {
+    "path": "evidence/correctness/inference-g04-g05-final-closure/loc.json",
+    "sha256": "0f555f45982caabab15fa90c7166470845a49b84f26c06256ec908dddadce3a6",
+    "self_check": "pass",
+    "module_code": 8749,
+    "module_files": 43,
+    "full_code_reused_at_669": 3718683,
+    "self_without_tests_reused_at_669": 180623
+  },
+  "limits": [
+    "P0 closure accepts explicit storage/numerical costs; it does not make original5% UNRESOLVED pass.",
+    "ASan/TSan host facets do not sign driver/shader or native private-pool hard upper; original limits and old failures/costs remain.",
+    "Qwen full CUDA CLI and llama.cpp comparison are a subsequent consumer deliverable after G01-G10, not present functionality."
+  ],
+  "gates": {
+    "scope": "PASS",
+    "architecture": "PASS",
+    "correctness": "PASS",
+    "delivery": "PASS",
+    "usability_docs": "PASS",
+    "red_team": "PASS",
+    "engineering_performance": "PASS"
+  }
+}

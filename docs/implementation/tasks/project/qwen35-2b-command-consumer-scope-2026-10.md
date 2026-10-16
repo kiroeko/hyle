@@ -11,6 +11,11 @@
 承接[一期收口与引擎启动方案](inference-consumer-adaptation-plan-2026-10.md)及
 [单机基础能力审计](inference-single-machine-foundation-audit-2026-10.md)。
 
+**2026-10-16 当前交付决定**：用户选择先完成全部G01–G10，再开发本页的独立命令行引擎；
+首个性能交付限定为Qwen3.5-2B纯文本、单机单卡、full CUDA，关闭MTP/speculative与多模态，
+同机与llama.cpp比较prefill/decode tokens/s。旧goal已清除，本页登记后续任务，不自动创建
+或恢复goal，也不宣称命令已经实现。下面原C1–C5可复用，执行顺序以本决定和末节为准。
+
 ## 1 本地实物与已跑参考
 
 原模型 13 个文件、4,571,274,023 bytes 本轮再次逐文件大小/SHA256 校验，匹配原
@@ -172,3 +177,67 @@ batching 或多机控制。它们在十项基础能力修正或后续引擎合�
 停止条件不写“再也发现不了问题”，而是原输入/C1–C5/有限十项及所选域全部有真实裁决。
 新增真实缺陷保留最小反例与 owner，只有活动卡重新纳入才施工；未做二期多机/多GPU不计
 入本轮失败，仍保[二期边界](inference-consumer-adaptation-plan-2026-10.md#7-二期多-gpu-与多机边界)。
+
+## 7 G01–G10之后的full CUDA命令与性能交付
+
+用户确认剩余G07 packed权重、G08输出数值选择、G09联合流水、G10 CPU预算全部保留，
+完成有限范围后再启动引擎。不能因首个BF16单请求不依赖某项而跳过它，也不能把四项
+扩成新的无限缺口调研。引擎单独作为HYLE的C++消费者；不把模型、tokenizer、请求政策
+放进HYLE组件图，不把未来引擎性能门前移为基础库的循环前置条件。
+
+### 选择与完成边界
+
+G04当前选择的是库的**原生FP8驻留/F32 partial路线**；引擎第一组比较选择双方可匹配的
+**普通BF16权重/KV基线**。两者是不同选择，不要求Qwen引擎强制使用FP8。若锁定的
+双方CUDA实现不能支持共同BF16 KV，则在采样前选定共同支持的F16 KV并显式记录，
+不允许一侧悄悄fallback或扩展为临时修库。原checkpoint中的F32 tensor仍按原dtype保留，
+GGUF转换须核实数值等价和必要布局变换，不能拿Q4权重与BF16权重作实现优劣对照。
+
+第一条命令仍沿上文`hyle-infer --model ... --route cuda`形状，须真正完成C1–C5和连续
+输出；确切参数在引擎scope冻结，当前示例不冒充可执行程序。full CUDA要求24层模型
+计算、权重、六层KV和十八层conv/recurrent状态实际由CUDA承载，禁止CPU数学fallback；
+CPU可负责文件加载、tokenizer、host提交与文本显示。CUDA选择不等于不需要CPU线程预算。
+原本地checkpoint只读；视觉、音频/视频、MTP分支不加载/执行，不使用draft模型。
+
+初始实际HYLE资格以已有WSL CUDA路线为准，双方必须在同一OS/WSL环境、同一物理GPU
+运行，不能拿HYLE WSL与llama.cpp Windows或另一张卡的数字直接排名。运行前读实际
+硬件/驱动/工具链身份与空闲显存；不把既有RTX4070身份或旧测量当作新执行事实。
+
+### 公平性能合同
+
+| 项 | 冻结与输出要求 |
+|---|---|
+| 模型与输入 | 同源文本权重、同token IDs/chat template、相同thinking模式、prompt、context与生成长度；greedy作为首个可复现生成档 |
+| 执行 | 单请求、所有层和状态CUDA；双方允许正常batch/chunk/capture优化，记录各自实际配置、KV dtype和中间精度，不强迫实现相同 |
+| 阶段 | 分别输出prefill和decode tokens/s、实际token/forward次数与耗时；写清首token归属、最终logits/必要选择及checked完成边界 |
+| 费用 | 必需KV追加、conv/recurrent更新、格式转换、同步与状态维护计入对应阶段；模型冷加载、一次性repack/JIT、warmup与文本打印另列，不漏掉反复发生的准备 |
+| 资源 | 记录峰值/稳态显存、权重/KV/recurrent/workspace；同一资源预算下比较，容量收益单列，不用多付副本的warm路径冒充同约束peer |
+| 测试长度 | 首个短命令可用原1024上限；性能首批预定prompt128/512/2048、生成128、context4096，资源可行性在采样前核定，失败不单边缩形状 |
+| 重复 | 一批匹配warmup、独立重复和双执行顺序，串行占用GPU，保留全部样本；先查同实现控制与噪声，不边调参边挑有利重复 |
+| 结论 | 各prompt/context分别给出HYLE与llama.cpp的pp/tg、比值和波动/区间；允许明确WIN/LOSS/未决，不要求用单一平均数隐藏阶段差异 |
+
+真正CLI生成的阶段计时为消费者结果。`llama-bench`可作独立pp/tg/pg诊断，但它的synthetic
+token/forward路径不等于完整greedy采样和文本输出；两组结果分列、不得混算。
+本地参考当前可核身份为`23b0202a189c44a54625aadcb37a946dd1d6278d`，实际实施前再固定
+可运行构建/命令及源码SHA，不无条件更新依赖或把本页reference pin当HYLE产品依赖。
+[官方llama-bench合同](https://github.com/ggml-org/llama.cpp/blob/23b0202a189c44a54625aadcb37a946dd1d6278d/tools/llama-bench/README.md)
+将pp/tg/pg分开；本地源码的实际decode/synchronize与时间边界也须在预检核实。
+
+### 精度策略与终止
+
+采用“任务质量合格范围内追求速度”，不要求逐位一致或所有中间结果F32。先对原模型和
+匹配BF16基线完成teacher-forced层/logits/状态、自由生成和固定文本质量语料检查；误差、
+near-tie及必要质量阈值在性能采样前冻结，不能运行后为快路径临时放宽。格式/shape、
+越界、错误传播与生命周期仍严格验证，数值误差容忍不豁免这些语义。
+
+实用FP8/packed等优化档可以在质量门通过后另列“质量/显存/速度”取舍；同精度基线和
+各自最佳合格配置分开回答，不能用HYLE强精度与对方低精度的数字直接归因实现优劣。
+llama.cpp也显式在attention使用F32累加，见
+[固定源码](https://github.com/ggml-org/llama.cpp/blob/23b0202a189c44a54625aadcb37a946dd1d6278d/src/llama-graph.cpp#L2850)。
+先前不计warm冷展开的BF16参考程序属于HYLE构造的FlashInfer comparator，**不是llama.cpp**；
+其约4–5%warm差距既不证明本引擎更慢，也不构成相对llama.cpp的独有精度/内存优势。
+
+C1–C5、full CUDA身份、分阶段费用和上述有限对照全部有真实结果后结束首轮交付；
+结果落后则按实际trace和material消费者影响另定有限修正，不靠继续扩基础库能力清单
+推迟引擎。Qwen hybrid/GDN数学和prefill状态不得删减成纯Transformer或逐token伪高效
+prefill。单CPU/CPU+GPU的既定一期目标和二期多GPU/多机仍分别保留。
