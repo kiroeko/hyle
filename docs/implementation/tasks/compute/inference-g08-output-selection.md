@@ -437,3 +437,18 @@ small<1/8计算正的-log(1-small)，相对截断界<7.6e-9；其余upper继续�
 中间差值。避免native log在接近1时的相对尾部误差，不放宽原2e-5门、不钳制uniform。
 仍O(RV)、每draw最多八项标量运算，无新临时buffer/owner/状态或host wait；raw Philox和
 TopK算法不改。先定向实际device math，再复验同路线数值/分布与Metal portability。
+
+3a66ab066实际Windows Vulkan端点全1048772对PASS，maxabs5.12140621e-6<2e-5；W4
+Direct/Graph完整数值、质量、独立port与origin复验PASS，validation日志干净。Air Vulkan v6
+新版Direct/Graph、端点与CPU+Vulkan joint全PASS，继续明确区分该机未装Khronos layer。
+
+Apple实际Metal API/GPU validation首批：新Direct/Graph sampling、device math和joint
+均PASS；旧四项TopK留出前三PASS，Graph probability→TopK→sum→divide在零行冷compile
+abort。a5新增shape诊断确认typeF32、rows0、experts256的Graph compile触发dispatch
+grid8×0×0。原TopK/softmax/reduce已有空域返回；普通Binary divide仍交MLX空域融合。
+
+仍在compute_route_apple/AUDITED、原S4零行组合消费：有限A2为已通过公共schema与floating
+域检查的Binary空输出返回原mx::zeros(shape,type,stream)，不发无元素的原生算术。仅改
+该owner原apple_tensor.cc，不改Graph API/owner或MLX vendor。非空lowering保原式；新增
+shape检查只在原冷tracing，固定形状warm不新增逐元素运算/资源/等待，S1 P1范围不扩大。
+保原abort及四个已过Metal结果，定向同形状后重跑本Apple有限Metal批。

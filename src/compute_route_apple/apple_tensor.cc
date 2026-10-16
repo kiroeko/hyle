@@ -545,11 +545,16 @@ Result<std::vector<mx::array>> lower_tensor(const Operation &operation,
     if (const auto *value = operation.get_if<Unary>())
       return std::vector{
           mx::astype(unary(value->kind, first, stream), type, stream)};
-    if (const auto *value = operation.get_if<Binary>())
+    if (const auto *value = operation.get_if<Binary>()) {
+      // The schema and floating domain are already checked. MLX's fused
+      // empty binary kernel can form a zero Metal grid during cold tracing.
+      if (std::find(shape.begin(), shape.end(), 0) != shape.end())
+        return std::vector{mx::zeros(shape, type, stream)};
       return std::vector{
           mx::astype(binary(value->kind, first,
                             mx::astype(inputs[1], mx::float32, stream), stream),
                      type, stream)};
+    }
     if (const auto *gated = operation.get_if<GatedActivation>()) {
       auto up = first;
       if (gated->inputs == GatedInputKind::kSeparate) {
