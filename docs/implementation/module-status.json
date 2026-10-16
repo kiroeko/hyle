@@ -578,10 +578,14 @@
     },
     {
       "module": "compute_provider_flashinfer",
-      "state": "CANDIDATE",
+      "state": "BLOCKED",
       "record": "docs/implementation/tasks/compute/inference-g04-g05-cache-attention-domain.md",
-      "summary": "G04/G05 CE28 CANDIDATE830：全部前置门PASS；attempt14 QUALIFIED/strict0，窗口/留出非劣PASS，prefill两层CI跨原5%耗时门为UNRESOLVED，非已证明material FAIL。停止同候选P1，仅有限只读核实际消费成本；整项未验收，原失败/未知/累计费用保留。",
-      "candidate": "830dd9e01829e3e5850ddff7eaa6355ee7c8fd0d"
+      "summary": "G04/G05 finite aggregate BLOCKED：CUDA attempt14 prefill非劣UNRESOLVED，原正确性/交付证据和候选保留；只读成本检查已终止、无新FI FIX。goal ACTIVE/3of10，按新卡推进已冻结G06；全部旧失败/未知/费用保留。",
+      "candidate": "830dd9e01829e3e5850ddff7eaa6355ee7c8fd0d",
+      "blocked_from": "CANDIDATE",
+      "blocker": "CE28 attempt14 qualified/strict0; CUDA prefill noninferiority remains UNRESOLVED at the unchanged finite [15,31] limit. Engineering performance cannot be accepted.",
+      "blocker_owner": "G04/G05 engineering performance; independent G06 consumer-cost work remains available.",
+      "resume_condition": "New scoped consumer/contract evidence or admitted product-cost work creates a materially different complete candidate; resume through SCOPED/AUDITED and validate the original applicable gates. Do not repeat unchanged candidate P1 or relax threshold."
     },
     {
       "module": "compute_provider_ggml_metal",
@@ -674,17 +678,25 @@
     },
     {
       "module": "compute_batch",
-      "state": "CANDIDATE",
+      "state": "BLOCKED",
       "record": "docs/implementation/tasks/compute/inference-g04-g05-cache-attention-domain.md",
-      "summary": "G04/G05 CANDIDATE: CE01-11 finite encoded KV/independent geometry/window/noncausal/unequal Dv frozen. Four-native/three-joint source, finite source risks, CPU+Apple/Vulkan host sanitizers and eight SDK configurations PASS. Cost review/CPU peer oracle PASS; CUDA new-domain host risk and qualified P1 remain pending. Original closed scopes/failures/unknown native private costs retained.",
-      "candidate": "982676cb05a6e6244e66e0a596347aa96043617b"
+      "summary": "G04/G05 finite aggregate BLOCKED：CUDA attempt14 prefill非劣UNRESOLVED，原正确性/交付证据和候选保留；只读成本检查已终止、无新FI FIX。goal ACTIVE/3of10，按新卡推进已冻结G06；全部旧失败/未知/费用保留。",
+      "candidate": "982676cb05a6e6244e66e0a596347aa96043617b",
+      "blocked_from": "CANDIDATE",
+      "blocker": "CE28 attempt14 qualified/strict0; CUDA prefill noninferiority remains UNRESOLVED at the unchanged finite [15,31] limit. Engineering performance cannot be accepted.",
+      "blocker_owner": "G04/G05 engineering performance; independent G06 consumer-cost work remains available.",
+      "resume_condition": "New scoped consumer/contract evidence or admitted product-cost work creates a materially different complete candidate; resume through SCOPED/AUDITED and validate the original applicable gates. Do not repeat unchanged candidate P1 or relax threshold."
     },
     {
       "module": "graph_batch",
-      "state": "CANDIDATE",
+      "state": "BLOCKED",
       "record": "docs/implementation/tasks/compute/inference-g04-g05-cache-attention-domain.md",
-      "summary": "G04/G05 CANDIDATE: CE01-11 finite encoded KV/independent geometry/window/noncausal/unequal Dv frozen. Four-native/three-joint source, finite source risks, CPU+Apple/Vulkan host sanitizers and eight SDK configurations PASS. Cost review/CPU peer oracle PASS; CUDA new-domain host risk and qualified P1 remain pending. Original closed scopes/failures/unknown native private costs retained.",
-      "candidate": "982676cb05a6e6244e66e0a596347aa96043617b"
+      "summary": "G04/G05 finite aggregate BLOCKED：CUDA attempt14 prefill非劣UNRESOLVED，原正确性/交付证据和候选保留；只读成本检查已终止、无新FI FIX。goal ACTIVE/3of10，按新卡推进已冻结G06；全部旧失败/未知/费用保留。",
+      "candidate": "982676cb05a6e6244e66e0a596347aa96043617b",
+      "blocked_from": "CANDIDATE",
+      "blocker": "CE28 attempt14 qualified/strict0; CUDA prefill noninferiority remains UNRESOLVED at the unchanged finite [15,31] limit. Engineering performance cannot be accepted.",
+      "blocker_owner": "G04/G05 engineering performance; independent G06 consumer-cost work remains available.",
+      "resume_condition": "New scoped consumer/contract evidence or admitted product-cost work creates a materially different complete candidate; resume through SCOPED/AUDITED and validate the original applicable gates. Do not repeat unchanged candidate P1 or relax threshold."
     }
   ]
 }

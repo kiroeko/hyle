@@ -2658,3 +2658,24 @@ UNRESOLVED及方向LOSS本身不作为新material缺口钥匙；只有真实消�
 机制共同成立，才可另行固定有限FIX并合法回AUDITED。没有新证据则结束本次检查并
 明确裁决，不扩成CUDA优化搜索。G04/G05未验收，goal仍3/10，G06暂不实施；
 原13及所有更早失败、未完成/未知和累计费用全部保留。
+
+## CE28 有限成本检查终局与 G06 调度更正
+
+[只读成本检查](../../../../evidence/architecture/inference-g04-g05-cuda-ce28-producer-stage/consumer-cost-checkpoint.json)
+已终止：双方timed execute共用原metadata上传/等待、权限及完成路径；reference还额外
+检查完整layout与原FP8 frame identity。没有查出新的candidate独有公共生命周期费用。
+旧CE27 trace早于CE28转换修改，不能定量归因当前剩余内核时间；原merge两侧均有
+device/SM/occupancy/FuncSetAttribute调用，不重复该旧假设。当前prefill未决不构成新的
+material消费钥匙，因此无新FI FIX，不追加P1/profile/tile搜索。
+
+按原有限门裁决，FI从CANDIDATE830进入BLOCKED，blocked_from=CANDIDATE，
+engineering_performance=INCONCLUSIVE；其他已过正确性/交付门按原候选保留。共同
+compute_batch与graph_batch本批聚合也受此未决门阻断，先明确BLOCKED再按新卡恢复。
+恢复须有改变真实产品成本的已准入工作形成新不可变完整候选及原门验证，或新的可复核
+消费/合同事实，合法回SCOPED/AUDITED；同一候选重采、放宽门槛和旧失败不能触发恢复。
+
+总卡允许按真实依赖调整顺序。现明确更正此前“G06必须等G04/G05验收”的调度：
+已冻结的G06四组是独立真实消费者成本缺口，可先进入新卡定界，不再让一次未决P1
+阻住其余完整goal。此更正不验收G04/G05、不删除任何风险/项目、不承诺G06会使CUDA
+比率改善；双方共同费用下降也可能暴露更大的内核相对差距。原G01–G03已验收，
+完整goal仍ACTIVE/3of10；G06本轮只准入审计，须固定形状并合法AUDITED后才实施。

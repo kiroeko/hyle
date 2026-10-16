@@ -1,0 +1,194 @@
+{
+  "kind": "CE28_FINITE_READONLY_CONSUMER_COST_CHECKPOINT_TERMINAL",
+  "head": "ac075097e3b56f403bc7b80a9325948e497c3f80",
+  "product_candidate": "830dd9e01829e3e5850ddff7eaa6355ee7c8fd0d",
+  "source_anchors": [
+    {
+      "path": "bench/inference_resident_sdpa/cuda_encoded_page_bench.cc",
+      "sha256": "d08de20041bc2d9dd36c9da2078145f68000b5dcbb25b653936fc49b708d658c",
+      "line_ranges": [
+        [
+          141,
+          186
+        ],
+        [
+          198,
+          214
+        ]
+      ]
+    },
+    {
+      "path": "bench/inference_resident_sdpa/cuda_encoded_page_reference.cc",
+      "sha256": "df7603d499d58f009194f46f060c58fe0aed7e4ca778f1c47b5849fea1ec7924",
+      "line_ranges": [
+        [
+          19,
+          25
+        ],
+        [
+          65,
+          68
+        ],
+        [
+          100,
+          123
+        ],
+        [
+          152,
+          209
+        ]
+      ]
+    },
+    {
+      "path": "src/compute_provider_flashinfer/flashinfer_provider.cc",
+      "sha256": "ca6d5b837e1e8e03703768ffb12b1b899193817c41acfaccfed73f3dd8aabe1a",
+      "line_ranges": [
+        [
+          169,
+          226
+        ]
+      ]
+    },
+    {
+      "path": "src/compute_provider_flashinfer/native_cache.cu",
+      "sha256": "62ace94e0809144aca540fa317f72e9a2bc2b1d29b5099ef15048d3da6b92858",
+      "line_ranges": [
+        [
+          16,
+          35
+        ],
+        [
+          84,
+          122
+        ]
+      ]
+    },
+    {
+      "path": "src/compute_batch/batch_execution.cc",
+      "sha256": "09c9fb3b55b716cc7f6a1fb15ce14f6b423eadbcb5e4f1b6051d19f2bc59a577",
+      "line_ranges": [
+        [
+          107,
+          121
+        ],
+        [
+          201,
+          241
+        ]
+      ]
+    },
+    {
+      "path": "src/compute_batch/batch_layout.cc",
+      "sha256": "7579869decc1e88fc6e21a75b017bc7a92ab5f3d0ac0f5a05172c42263df9fd7",
+      "line_ranges": [
+        [
+          177,
+          198
+        ]
+      ]
+    },
+    {
+      "path": "src/graph_batch/batch.cc",
+      "sha256": "a44ec69af0ffbcd4329f417e8c16d731b1faa37025f52aa01dca0fddc563cf7f",
+      "line_ranges": [
+        [
+          218,
+          234
+        ]
+      ]
+    },
+    {
+      "path": "include/hyle/compute/detail/lease_access.h",
+      "sha256": "a51b7fd93c33f76820189c18ae37377d49b7aa320399dc32a75c78a2d6c10e18",
+      "line_ranges": [
+        [
+          5,
+          18
+        ],
+        [
+          33,
+          40
+        ]
+      ]
+    },
+    {
+      "path": "src/compute/resource_leases.cc",
+      "sha256": "6d6caa01b517ae13cd04044ebc8eb481d9b3338f45623dc5d341038f37729801",
+      "line_ranges": [
+        [
+          312,
+          316
+        ]
+      ]
+    }
+  ],
+  "fixed_peers": [
+    {
+      "name": "sglang",
+      "commit": "7224fce1b5e488c9916f20ec0556d696e595d512",
+      "archive_sha256": "21559aac7538426c4d75262a25d041d8c24070785a4d8f550459f68c3398b0e0",
+      "path": "python/sglang/srt/layers/attention/flashinfer_backend.py",
+      "file_sha256": "a5649f67038153c35864b3f50d5c368071a56cbef75f266bec804dbf7e64363f",
+      "line_ranges": [
+        [
+          203,
+          220
+        ],
+        [
+          251,
+          260
+        ]
+      ]
+    },
+    {
+      "name": "vllm",
+      "commit": "98f721116227f0f48690deb05c815c057bac0668",
+      "archive_sha256": "984cc5cd0ddc5bc93c8f1055f7b2a19da128d372343896510952060bd2b71423",
+      "path": "vllm/v1/attention/backends/flashinfer.py",
+      "file_sha256": "343b949d62db7fc03f6ca0c682e1ec1cb60125461069b081ac1554b7a05214e9",
+      "line_ranges": [
+        [
+          1310,
+          1345
+        ]
+      ]
+    },
+    {
+      "name": "llama.cpp",
+      "commit": "cbe28bb3cb0758f0c566a9a3561766821aeb0748",
+      "archive_sha256": "e71cd4a1645b151a45c46a9d4c0bf5de0fa2a94080ce31ca508a6c65ad1a3562",
+      "path": "src/models/llama.cpp",
+      "file_sha256": "10af5226730900378be77318691f4acbfccb46809c41a81a195a0ca0d5d48109",
+      "line_ranges": [
+        [
+          113,
+          126
+        ],
+        [
+          169,
+          169
+        ]
+      ]
+    }
+  ],
+  "outcome": "NO_NEW_MATERIAL_CONSUMER_PLUS_MECHANISM_KEY_FOR_FI_PRODUCT_FIX",
+  "findings": [
+    "Both timed sides call identical Harness.execute: same-topology update, original F1/F2 upload, checked native completion, owning output return/release. Cold snapshots and decoding are outside the warm interval and separately charged.",
+    "Both sides share compute_batch staging/upload/wait and paged lease admission. Native reference additionally compares all four layout arrays twice and validates pinned FP8 frame identity; candidate update compares only q/kv indptr. No missing candidate-only lifecycle toll was established.",
+    "Both merge host paths query device/SM/occupancy and set shared-memory attribute. CE28 current codegen/runtime already proves the intended F32 merge and selected attention identities. Old CE27 timing cannot quantify remaining CE28 kernel cost.",
+    "Current attempt14 has all eight prefill medians inside 5-percent latency limit; two corrected CIs straddle1/1.05. UNRESOLVED/LOSS does not demonstrate a new material regression or authorize another vendor rewrite.",
+    "Independent G06 source gaps remain: capacity-sized immutable snapshot allocation/zero-fill, unconditional full metadata upload/wait, Graph sharing after each node has already uploaded, ordinary lease admission quadratic in page guards.",
+    "Reducing common lifecycle overhead on BOTH sides does not mathematically guarantee a better candidate/peer ratio and can expose a larger kernel ratio. G06 is admitted for its actual consumer complexity, not as a claimed cure for unresolved CUDA P1.",
+    "Full lease identity is LeaseAccess.identity(block) with generation while retained; LeaseBackingInfo.identity is shared by different pool blocks and MUST NOT be used for permission deduplication."
+  ],
+  "decision": {
+    "cuda": "Stop same-candidate P1, n63, profile/tile/threshold searches. Preserve all prior failures/costs. FI finite engineering gate remains INCONCLUSIVE and module BLOCKED, not CLOSED.",
+    "scheduling": "Goal remains ACTIVE. Explicitly permit already-scoped G06 intake before G04/G05 aggregate acceptance; no G item removed and no old gate promoted. Common and Graph owners may resume through BLOCKED->SCOPED on a separate G06 card.",
+    "implementation": "No new product FIX authorized in this checkpoint. G06 needs its own frozen architecture/API/finite FIX and AUDITED owners before implementation."
+  },
+  "limits": [
+    "Read-only source/cost audit, not a new runtime or throughput verdict.",
+    "Exploratory command failure: initial archive member lookup required a leading slash; corrected exact member lookup succeeded and original archive SHAs matched. No build, profile, model or server started.",
+    "No overall audit stopwatch was captured; this investigation elapsed cost is UNKNOWN, not zero. Prior run elapsed remains in attempt14 receipt."
+  ]
+}
