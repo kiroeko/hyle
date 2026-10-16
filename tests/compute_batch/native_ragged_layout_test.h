@@ -74,6 +74,23 @@ template<class T>void ragged_native_case(unsigned depth,bool causal){
     EXPECT_LE(worst,(std::is_same_v<T,BF16>?8e-3:2e-3));};
   ASSERT_TRUE(first.bind(inputs).ok());auto a=first.submit().value();auto old=a.wait().value();const auto expected=oracle(qp);verify(read(*old),expected);
   ASSERT_TRUE(second.bind(inputs).ok());auto b=second.submit().value();auto independent=b.wait().value();verify(read(*independent),expected);verify(read(*old),expected);
+#if !defined(HYLE_G01_APPLE_RAGGED)
+  {
+    // Recorder owns a cold ProgramState copy, including its immutable ragged
+    // contract. Drop the caller's original Program before either real replay.
+    auto borrowed=n::prepare_ragged_batch(context,layout,operation).value();
+    auto od=c::TensorDesc::dense(cap.query_type,std::array<std::int64_t,3>{18,8,depth}).value();
+    auto output=context.allocate(od).value();auto recorder=n::Recorder::create(context).value();
+    ASSERT_TRUE(recorder.append(borrowed,inputs,std::array{output}).ok());borrowed={};
+    auto recorded=recorder.finish().value();
+    for(unsigned repeat=0;repeat<2;++repeat){
+      auto done=recorded.submit().value();ASSERT_TRUE(done.wait().ok());
+      std::vector<T> actual(18*8*depth);
+      ASSERT_TRUE(context.download(output,std::as_writable_bytes(std::span(actual))).ok());
+      verify(actual,expected);
+    }
+  }
+#endif
   const std::array<std::int32_t,4> next_q{0,17,18,18};auto next_layout=schema.version({next_q,kp,{},{}}).value();
   auto next_program=n::prepare_ragged_batch(context,next_layout,operation);ASSERT_TRUE(next_program)<<next_program.error().message();auto next=next_program->create_invocation().value();
   ASSERT_TRUE(next.bind(inputs).ok());auto submitted=next.submit().value();auto current=submitted.wait().value();verify(read(*current),oracle(next_q));verify(read(*old),expected);

@@ -7,6 +7,6 @@ if(HYLE_COMPUTE_CUDA_ENABLED AND CMAKE_SYSTEM_NAME STREQUAL "Linux")
     target_compile_definitions(hyle_compute_provider_flashinfer_test PRIVATE
       HYLE_FLASHINFER_FAULT_INJECTION=1)
     target_link_options(hyle_compute_provider_flashinfer_test PRIVATE
-      LINKER:--wrap=cudaFuncSetAttribute)
+      LINKER:--wrap=cudaFuncSetAttribute LINKER:--wrap=cudaGraphLaunch)
   endif()
 endif()

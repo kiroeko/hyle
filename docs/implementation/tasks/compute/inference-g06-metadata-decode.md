@@ -631,3 +631,26 @@ build6.336s、outer37.298s与各stage重叠。全程零CUDA TU重编，146原ggm
 计费，driver/private UNKNOWN。当前仅普通source PASS，不签instrumented故障、Vulkan
 Recorder runtime、三san/header/迁址static/shared/P1或G06最终完成。owner仍AUDITED；
 G06粗估约75%整体工作量，不推算剩余小时。G04/G05原未决/归因UNKNOWN与整goal3/10保留。
+
+## 完整 G06 最终候选与有限风险批
+
+D2–D7普通source已经给出实际runtime/capture证据。产品API、算法与常态形状停止变化；
+仅补已预声明的风险fixture：原CUDA pending五模式各跑plain/encoded×ordinary/captured，
+static原FI fault wrapper追加真实capture录制错误与cudaGraphLaunch错误，各plain/FP8两域，
+检查原错误、失败slot不复用、独立新slot数值及metadata释放；未引入产品故障hook。
+Vulkan原ragged测试追加Recorder冷复制Program后销毁caller Program、真实重放两次独立
+oracle；原runtime测试与其它Direct/joint/pending风险沿当前输入资格保留。fixture不改变
+产品公开合同、数学或warm workload。下一提交把本卡owner合法转为CANDIDATE并绑定本批。
+
+固定执行顺序与边界：先WSL原shared树只开原cuda_backend.cc单host TU观察hook，四种
+pending风险target及原core/Graph风险；再原static树跑FI完整suite（含三个link-time故障用例），
+146未变ggml CUDA对象继续按实际输入/command/deps精确复用。hook与shipping SDK树分开
+裁决，不把instrumented结果当普通交付。Air读取实际身份，只同步canonical→验证副本，
+原Apple/Vulkan Direct/joint/pending与新增Vulkan Recorder同批；Win/WSL/Air heavy串行。
+
+其后适用宿主ASan/UBSan/TSan沿原缓存配置、独立公开头及搬迁static/shared SDK集中验证。
+原ggml CUDA archive仅在相同san/toolchain/SM89及输入匹配时借用，所有改变的host/FI TU
+仍编译；原LSan/NVIDIA diagnostic-thread lifetime限制保留，不能冒充新内存/线程泄漏PASS。
+最终P0/必要P1、七门/红队/LOC继续待实际证据；不重启旧G04/G05 unchanged候选P1。
+调查/验证2h检查点，按用户常设授权有限追加，保所有失败和累计费用。普通max4worker，
+CUDA native pool1/split3/Ninja2；不重写公共工具，不增加全局验证范围。
