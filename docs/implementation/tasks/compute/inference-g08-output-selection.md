@@ -270,3 +270,11 @@ vendor真实page判断，禁止修改mimalloc或手写新的allocator/free算法
 声称为计时胜利。natural默认路径逐源码保持，已有有效大size的旧over-aligned路径本也
 进入同一mi_free；修复仍O(1)、无新增分配/锁/状态。若实现偏离这个成本边界，先重审；
 不把未测的整库性能写PASS。G08四路线TopK原P1范围、三GPU数学门保持不变。
+
+
+M1实现仅改过对齐释放为现成mi_free_aligned，vendor完整未变；新增size/alignment边界、
+realloc/跨线程及Buffer完整payload/移动回归。独立批结果也已收齐：CPU Direct/Graph
+均同一allocation-only缺陷；CUDA两公开TopK旅程PASS，raw空形状proposal把dispatch_count
+写0被原结构合同拒绝，已定向改为一次合法backend episode（零native kernel事实保留）；
+CUDA实际math1048772对PASS、maxabs1.30670895e-6；joint路由尚失败，留待后续定向
+裁决，不签PASS。原日志source5-remaining-tests及五次源码批费用均保留。

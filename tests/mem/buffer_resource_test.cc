@@ -1,5 +1,6 @@
 #include <gtest/gtest.h>
 
+#include <algorithm>
 #include <array>
 #include <cstddef>
 #include <span>
@@ -243,3 +244,21 @@ TEST(Buffer, FailedProviderMappingsAreStillUnmapped) {
 }
 
 }  // namespace
+
+
+TEST(BufferResource, OverAlignedSmallRequestFullWriteReadMoveAndRelease) {
+  std::array<std::byte,4097> source;source.fill(std::byte{0xa5});
+  for(const std::size_t alignment:{16,64,256,4096})
+    for(const std::size_t size:{1,208,768,883,884,885,1023,1024,1025,4097}) {
+      SCOPED_TRACE(size);
+      SCOPED_TRACE(alignment);
+      auto made=Buffer::create(system_resource(),size,alignment);ASSERT_TRUE(made);
+      auto buffer=std::move(*made);
+      ASSERT_TRUE(buffer.view().write(std::span(source).first(size)).ok());
+      std::array<std::byte,4097> actual{};
+      auto moved=std::move(buffer);EXPECT_FALSE(buffer.valid());
+      ASSERT_TRUE(moved.view().read(std::span(actual).first(size)).ok());
+      EXPECT_TRUE(std::equal(source.begin(),source.begin()+size,actual.begin()));
+      ASSERT_TRUE(moved.reset().ok());
+    }
+}

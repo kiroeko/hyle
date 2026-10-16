@@ -761,3 +761,42 @@ TEST(AllocatorComposition,
   ASSERT_NE(reused, nullptr);
   pool.deallocate(reused);
 }
+
+
+TEST(SystemAllocator, AlignedRequestedSizeCrossingSmallPageKeepsActualPageIdentity) {
+  // Regression: 884 bytes aligned to 256 may use an overallocated page whose
+  // class cannot be inferred from the original <=1024-byte request.
+  for (const std::size_t alignment : {16,64,256,4096})
+    for (const std::size_t size : {1,15,16,17,511,512,767,768,769,883,884,885,1023,1024,1025,1280,4095,4096,4097})
+      for (const bool runtime : {false,true}) {
+        SCOPED_TRACE(size);
+        SCOPED_TRACE(alignment);
+        SCOPED_TRACE(runtime);
+        const auto allocator=system_allocator();
+        auto *pointer=runtime?allocator.allocate(size,alignment):SystemAllocator::allocate(size,alignment);
+        ASSERT_NE(pointer,nullptr);
+        ASSERT_EQ(reinterpret_cast<std::uintptr_t>(pointer)%alignment,0U);
+        std::memset(pointer,0x9a,size);
+        auto *grown=runtime?allocator.reallocate(pointer,size,size+37,alignment)
+                           :SystemAllocator::reallocate(pointer,size,size+37,alignment);
+        ASSERT_NE(grown,nullptr);
+        ASSERT_EQ(reinterpret_cast<std::uintptr_t>(grown)%alignment,0U);
+        for(std::size_t i=0;i<size;++i)ASSERT_EQ(static_cast<unsigned char *>(grown)[i],0x9a);
+        std::memset(grown,0x6d,size+37);
+        if(runtime)allocator.deallocate(grown,size+37,alignment);
+        else SystemAllocator::deallocate(grown,size+37,alignment);
+      }
+}
+
+TEST(SystemAllocator, AlignedSmallRequestCanRetireOnAnotherThread) {
+  for(const std::size_t size:{208,768,884,1024,1025}) {
+    constexpr std::size_t alignment=256;
+    const auto allocator=system_allocator();
+    auto *runtime=allocator.allocate(size,alignment);
+    auto *bound=SystemAllocator::allocate(size,alignment);
+    ASSERT_NE(runtime,nullptr);ASSERT_NE(bound,nullptr);
+    std::memset(runtime,0xa5,size);std::memset(bound,0x5a,size);
+    std::thread retire([=]{allocator.deallocate(runtime,size,alignment);SystemAllocator::deallocate(bound,size,alignment);});
+    retire.join();
+  }
+}

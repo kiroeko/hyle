@@ -47,7 +47,9 @@ void system_backend_deallocate_local(void* ptr, std::size_t size,
   if (alignment <= detail::kMimallocV3NaturalAlignment) {
     mi_free_size(ptr, detail::system_backend_natural_size(size));
   } else {
-    mi_free_size_aligned(ptr, size, alignment);
+    // Aligned allocation can overallocate across the small-page boundary.
+    // Its requested size cannot select mimalloc's sized small-page free.
+    mi_free_aligned(ptr, alignment);
   }
 }
 

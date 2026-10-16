@@ -27,8 +27,7 @@ HYLE_ALLOCATOR_RETURN(1) void* mi_malloc(std::size_t size) noexcept;
 HYLE_ALLOCATOR_RETURN(1) void* mi_malloc_aligned(
     std::size_t size, std::size_t alignment) noexcept;
 void mi_free_size(void* p, std::size_t size) noexcept;
-void mi_free_size_aligned(void* p, std::size_t size,
-                          std::size_t alignment) noexcept;
+void mi_free_aligned(void* p, std::size_t alignment) noexcept;
 void* mi_realloc(void* p, std::size_t newsize) noexcept;
 void* mi_realloc_aligned(void* p, std::size_t newsize, std::size_t alignment) noexcept;
 }
@@ -83,7 +82,9 @@ inline void system_backend_deallocate(void* ptr, std::size_t size,
   if (alignment <= kMimallocV3NaturalAlignment) {
     mi_free_size(ptr, system_backend_natural_size(size));
   } else {
-    mi_free_size_aligned(ptr, size, alignment);
+    // Aligned allocation can overallocate across the small-page boundary.
+    // Its requested size cannot select mimalloc's sized small-page free.
+    mi_free_aligned(ptr, alignment);
   }
 }
 inline void* system_backend_reallocate(void* ptr, std::size_t new_size,

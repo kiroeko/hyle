@@ -163,7 +163,7 @@ Status propose(const detail::ProviderOperationRequest &request,
       .cost = {.workspace = WorkspaceRequirement{program.workspace_bytes, 256},
                 .persistent_bytes = sizeof(Prepared), .copy_bytes = 0,
                 .repack_bytes = 0, .synchronization_count = 0,
-                .dispatch_count = program.rows == 0 || program.width == 0 ? 0U
+                .dispatch_count = program.rows == 0 || program.width == 0 ? 1U
                                    : program.random_bits ? 1U : 4U,
                 .compilation_storage = {.resident_bytes = 0, .peak_bytes = 0}},
       .implementation = ProviderImplementationId{kRoute}};
