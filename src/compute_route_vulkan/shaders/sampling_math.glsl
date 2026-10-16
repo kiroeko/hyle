@@ -16,10 +16,20 @@ float gumbel(uint hi, uint lo) {
   if (upper) { hi = ~hi; lo = ~lo; }
   float small = float(hi) * 2.3283064365386962890625e-10 +
                   (float(lo) + .5) * 5.421010862427522170037264e-20;
-  precise float t = 1.0 - small;
-  // Compensated log1p equation, retaining positive exponential noise even
-  // when 1-small rounds to one. Never clamp an already rounded U to an end.
-  float exponential = upper ? (t == 1.0 ? small : small * (log(t) / (t - 1.0)))
-                              : -log(small);
+  precise float exponential;
+  if (!upper) {
+    exponential = -log(small);
+  } else if (small < .125) {
+    // As in tensor.comp's log1p, avoid native log near one: some drivers
+    // have small absolute error there but large relative tail error. The
+    // eight positive terms of -log(1-small) omit <7.6e-9 relative at 1/8.
+    exponential = small * (1.0 + small * (.5 + small * (1.0/3.0 +
+        small * (.25 + small * (.2 + small * (1.0/6.0 +
+        small * (1.0/7.0 + small * .125)))))));
+  } else {
+    precise float t = 1.0 - small;
+    precise float delta = t - 1.0;
+    exponential = small * (log(t) / delta);
+  }
   return -log(exponential);
 }

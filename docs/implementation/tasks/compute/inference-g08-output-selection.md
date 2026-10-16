@@ -416,3 +416,24 @@ Vulkan v3/v5明确未启validation，原validation-requested环境失败不能�
 三交付/公开头、S1精确P1及最终文档/审查仍待完成，八owner保持AUDITED。
 G08施工粗估约70%，G07–G10 goal约44%，正式仍仅G07完成1/4；比例不是验收门通过率。
 本批已结束，没有重型任务遗留运行；继续原有限门，不启动新缺口调研、G09/G10或CLI。
+
+2026-10-17后续有限门：WSL四条Graph独立port补验PASS；原CPU selection两项、CUDA
+四dtype/axis/stride/empty TopK及CUDA Graph留出PASS。CPU Graph私有target原先因遗漏
+原test DEPS/macro选中0项，不能计PASS；补原依赖后source13实际1项PASS，原0项日志保留。
+实际CUDA memcheck/racecheck各六组（TopK、raw、categorical、Graph ports、joint、端点）
+全PASS，均0 errors/0 hazards。ASan静态host facet：Mem两修改TU51项、schema3项、CPU/
+CUDA Direct+Graph完整数值/质量/独立port及joint均PASS；13个相关TU的实际instrumentation
+与原native archive真实链接hash已核。UBSan/TSan、其他native host facets/SDK/P1仍待验。
+
+Windows原Vulkan tree为当前五个目标补齐实际依赖，原459-edge预检失败及123.469s保留，
+同树续跑，4jobs/4逻辑CPU affinity/BelowNormal，实际compiler子进程已核相同限制。
+新测试Direct/Graph完整旅程、byte origins、Mem244和原TopK17项PASS，validation日志无
+VUID/Validation Error/SYNC-HAZARD；独立device math仍FAIL，不签整项风险PASS。
+首次定位端点i126、words ffff0000:00000000，small=1.5258789062499973e-5，期望
+11.090347259516088，实际11.0932713，abs_error=.002923995977>2e-5。
+
+仍按原AUDITED S3有限数学FIX：借同owner已有tensor.comp log1p的小参数八项级数，
+small<1/8计算正的-log(1-small)，相对截断界<7.6e-9；其余upper继续补偿log，保precise
+中间差值。避免native log在接近1时的相对尾部误差，不放宽原2e-5门、不钳制uniform。
+仍O(RV)、每draw最多八项标量运算，无新临时buffer/owner/状态或host wait；raw Philox和
+TopK算法不改。先定向实际device math，再复验同路线数值/分布与Metal portability。
