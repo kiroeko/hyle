@@ -1,0 +1,352 @@
+{
+  "state": "PASS_G06_P0_STRUCTURE_ONLY",
+  "candidate": "669121418669b31f6849c74f64362aaf8d6eb919",
+  "head": "a10471d7744805c9b468c83db82e7b50bc034a70",
+  "timestamp_utc": "2026-10-16T07:51:56.151597+00:00",
+  "reviewer": "Codex/root, separate source/cost/red-team pass; same agent, not a second independent human reviewer",
+  "budget": "Original2h checkpoints/standing finite extensions; no new timing experiment or public tool changes.",
+  "source_anchors": [
+    {
+      "path": "src/compute_batch/batch_layout.cc",
+      "sha256": "445224004730d5804d0c1e83114d2032c2245ee05a1ca075ff1b8e5cd1307030",
+      "lines": [
+        230
+      ],
+      "anchor": "BatchLayoutVersion::metadata()"
+    },
+    {
+      "path": "src/compute_batch/batch_layout.cc",
+      "sha256": "445224004730d5804d0c1e83114d2032c2245ee05a1ca075ff1b8e5cd1307030",
+      "lines": [
+        21
+      ],
+      "anchor": "active_offsets(BatchLayoutFacts"
+    },
+    {
+      "path": "src/compute_batch/batch_execution.cc",
+      "sha256": "0a190e184daedb7708d2c819d60317683673df1743d152c4f1a8a9f3a2e9937b",
+      "lines": [
+        337
+      ],
+      "anchor": "std::array<CopyRange,5> ranges"
+    },
+    {
+      "path": "src/compute_batch/batch_execution.cc",
+      "sha256": "0a190e184daedb7708d2c819d60317683673df1743d152c4f1a8a9f3a2e9937b",
+      "lines": [
+        397
+      ],
+      "anchor": "upload_waits+(reused?0u:1u)"
+    },
+    {
+      "path": "src/compute_batch/paged_arena.cc",
+      "sha256": "cf4843e36b5676a16d4bbe94bb68c658a403af9c5240e83345005c931b6e5668",
+      "lines": [
+        30
+      ],
+      "anchor": "std::sort(entries_.begin()"
+    },
+    {
+      "path": "src/graph_batch/batch.cc",
+      "sha256": "27cdcdee67ad7f9b71aeb2f444c253dc27d9c34f776bbe19dd94e33d0f28b35f",
+      "lines": [
+        243
+      ],
+      "anchor": "prepare_shared(binding.slot->native"
+    },
+    {
+      "path": "src/graph/lease_submission.cc",
+      "sha256": "6e04d5bc55365313c660ebbcd69a723f8de5584118ce8a544e1623e201a042ac",
+      "lines": [
+        50
+      ],
+      "anchor": "std::sort(entries_.begin()"
+    },
+    {
+      "path": "src/graph/leased_invocation.cc",
+      "sha256": "74ec704b057a65ce1201ccb7ef10aa359f8a59d5b5455e35bf85d00543d42950",
+      "lines": [
+        505
+      ],
+      "anchor": "permissions.admit(batch)"
+    },
+    {
+      "path": "src/compute_provider_flashinfer/native_batch.cu",
+      "sha256": "9f1b6e032e17c69a6221fe6850d12534dcb9ce5189ba80bdc83899aa6ba6f336",
+      "lines": [
+        30,
+        31,
+        51
+      ],
+      "anchor": "kv_chunk_size_ptr_offset"
+    },
+    {
+      "path": "src/compute_provider_flashinfer/flashinfer_provider.cc",
+      "sha256": "8425c496c9221fbd5d19a638fb01b76b1d5fada6dcb848e70c92926b50a9b097",
+      "lines": [
+        237
+      ],
+      "anchor": "equal active-request chunk counts"
+    },
+    {
+      "path": "include/hyle/compute/detail/materialized_native_controller.h",
+      "sha256": "74b219c3783e725b479895b515d0110f232718e63927cff701dc74cb0e559a1b",
+      "lines": [
+        144
+      ],
+      "anchor": "const auto extent=std::max(old.size(),pages.size())"
+    }
+  ],
+  "evidence": [
+    {
+      "path": "evidence/correctness/inference-g06-final-relocated-sdk/receipt.json",
+      "sha256": "0b4990d876ab2fc621cee6bdf602d851584b3b62eaad3db057410b71bb552238",
+      "state": "PASS_FOUR_ROUTE_RELOCATED_STATIC_SHARED_SDK"
+    },
+    {
+      "path": "evidence/correctness/inference-g06-common-source-windows-attempt-4/receipt.json",
+      "sha256": "910f51ee5a00fb74c77183ae3edd516f2fa9bea64af56635c6e405762094b4d1",
+      "state": "PASS_SOURCE_COMMON_CPU_ONLY"
+    },
+    {
+      "path": "evidence/correctness/inference-g06-cpu-runtime-q1-source/receipt.json",
+      "sha256": "8ea31a4ca4e28ed579c7cea4ae0910deebf4bf0e315adb0465633d6f69290d75",
+      "state": "PASS_WINDOWS_CPU_AND_AIR_MIXED_CORE_SOURCE"
+    },
+    {
+      "path": "evidence/correctness/inference-g06-cpu-ragged-runtime-source/receipt.json",
+      "sha256": "3cb880ace3fdca7d94c45fbc2f65968ff836f2d781dfd38ac312f143040f2978",
+      "state": "PASS_WINDOWS_CPU_AND_AIR_MIXED_CORE_SOURCE"
+    },
+    {
+      "path": "evidence/correctness/inference-g06-native-runtime-lengths-source/receipt.json",
+      "sha256": "f5a5e3c08a0c45064c925aa9b405723ecc40ba2ab8c9942cfadc8e1e06c0dae7",
+      "state": "PASS_SELECTED_NATIVE_COMMON_AND_HYBRID_SOURCE"
+    },
+    {
+      "path": "evidence/correctness/inference-g06-native-ragged-runtime-source/receipt.json",
+      "sha256": "0dc8661d1288a92fb7b0d1a20eca4224fdb58de39f0a78b5944c9369332cf986",
+      "state": "PASS_SELECTED_APPLE_VULKAN_SOURCE_WITH_MATCHED_APPLE_REUSE"
+    },
+    {
+      "path": "evidence/correctness/inference-g06-fi-schedule-runtime-source/receipt.json",
+      "sha256": "f457ab015f33eb66fdf6c5da69d9217e6ae4da2be425ca3c2cb31a3b04657d1a",
+      "state": "PASS_ORDINARY_SOURCE_ONLY_INSTRUMENTED_RISKS_PENDING"
+    },
+    {
+      "path": "evidence/correctness/inference-g06-capture-replay-source/receipt.json",
+      "sha256": "76d433378b7108f727e6b1de9e61d5457e6d952a69d74a92b4ee7cf559b6b6ea",
+      "state": "PASS_ORDINARY_SOURCE_ONLY_FINAL_RISKS_PENDING"
+    },
+    {
+      "path": "evidence/correctness/inference-g06-graph-page-admission-windows-source/receipt.json",
+      "sha256": "dbb3c0cae2e8f62ebcfc023b4ad62e21f7c5180f563e9751b57a323485de9d42",
+      "state": "PASS_FINITE_WINDOWS_CPU_CORE_GRAPH_SOURCE_ONLY"
+    },
+    {
+      "path": "evidence/correctness/inference-g06-graph-page-cuda-risks/receipt.json",
+      "sha256": "3dc0f5d9a5d54e4c4ea87be4e9ff6344ba325456c00fbe2bd0ec0c4fa86190b0",
+      "state": "PASS_G06_GRAPH_PAGE_AND_POST_RECORD_ARTIFACT_OOM_CUDA_RISKS_ONLY"
+    },
+    {
+      "path": "evidence/architecture/inference-g06-graph-page-admission-audit/audit.json",
+      "sha256": "b383b9a67658613cf60fa80de0ff69a28689c86d2b3d99151055a2f91f45ac41",
+      "state": "AUDITED_FINITE_G06_L_REMAINDER_NO_PRODUCT_EDIT_YET"
+    },
+    {
+      "path": "evidence/architecture/inference-g06-final-cost-review/loc.json",
+      "sha256": "cd778d4891ebf1e3b66a201ba77e57147fa6122482a3bd8108eca7f4d8e43a5f",
+      "state": "PASS_IMMUTABLE_CANDIDATE_LOC_ONLY"
+    },
+    {
+      "path": "evidence/correctness/inference-g06-final-native-host-sanitizers/receipt.json",
+      "sha256": "ae18341cbaa8e1ae645c40cf0d831fbb39dbbe214c486eee255b23d71664a231",
+      "state": "PASS_SIX_CURRENT_NATIVE_HOST_SANITIZER_FACETS"
+    }
+  ],
+  "fixed_peers": [
+    {
+      "name": "sglang",
+      "commit": "7224fce1b5e488c9916f20ec0556d696e595d512",
+      "archive_sha256": "21559aac7538426c4d75262a25d041d8c24070785a4d8f550459f68c3398b0e0",
+      "path": "python/sglang/srt/layers/attention/flashinfer_backend.py",
+      "file_sha256": "a5649f67038153c35864b3f50d5c368071a56cbef75f266bec804dbf7e64363f",
+      "line_ranges": [
+        [
+          203,
+          220
+        ],
+        [
+          251,
+          260
+        ]
+      ]
+    },
+    {
+      "name": "vllm",
+      "commit": "98f721116227f0f48690deb05c815c057bac0668",
+      "archive_sha256": "984cc5cd0ddc5bc93c8f1055f7b2a19da128d372343896510952060bd2b71423",
+      "path": "vllm/v1/attention/backends/flashinfer.py",
+      "file_sha256": "343b949d62db7fc03f6ca0c682e1ec1cb60125461069b081ac1554b7a05214e9",
+      "line_ranges": [
+        [
+          1310,
+          1345
+        ]
+      ]
+    },
+    {
+      "name": "llama.cpp",
+      "commit": "cbe28bb3cb0758f0c566a9a3561766821aeb0748",
+      "archive_sha256": "e71cd4a1645b151a45c46a9d4c0bf5de0fa2a94080ce31ca508a6c65ad1a3562",
+      "path": "src/models/llama.cpp",
+      "file_sha256": "10af5226730900378be77318691f4acbfccb46809c41a81a195a0ca0d5d48109",
+      "line_ranges": [
+        [
+          113,
+          126
+        ],
+        [
+          169,
+          169
+        ]
+      ]
+    }
+  ],
+  "actual_required_sdk_cases": [
+    "BatchLayout.ActiveSnapshotIsCompactAndExplicitExportZerosAllInactiveCapacity",
+    "BatchLayout.ConcurrentFirstFullExportsShareOneImmutableBacking",
+    "BatchLayout.FailedExplicitExportPreservesActiveVersionAndCanRetry",
+    "NativePagedMetadata.ActiveVersionDefersFullIndexAllocationUntilExplicitExport",
+    "NativePagedMetadata.ConcurrentExplicitExportsShareOneReadonlyTable",
+    "GgmlCpuPaged.DeltaMetadataMirrorMatchesIndependentFullWireAcrossGrowShrinkAndEmpty",
+    "GgmlCpuPaged.RuntimeQ1UsesOriginalDecodeSlotAcrossPagesAndTails",
+    "GgmlCpuRagged.RuntimeQ1KeepsGraphAcrossPackedKvExtents",
+    "FlashinferCache.RuntimeScheduleReusesActualTilesAcrossKvExtents",
+    "FlashinferBatchReplay.ColdRecordAndRuntimeSchedule",
+    "NativeRaggedLayout.PublicRuntimeKvUpdatesKeepIndependentSlotsAndCheckedBoundaries"
+  ],
+  "cost_ledger": [
+    {
+      "id": "M-active/export",
+      "changed": "Per immutable version backing is32+8*(requests+1)+4*page_refs+(paged?4*requests:0) bytes, plus the existing allocator/lease/mapping/control ownership. No max-capacity zeroing unless explicit export.",
+      "retained_cost": "Each successful version allocates active backing and control, copies active metadata, performs generation CAS and retains owners. Fixed-capacity metadata()/indices() explicitly allocate/zero/copy once and lock their cache on repeated calls; no whole-step allocation-free claim.",
+      "proof": [
+        "BatchLayout.ActiveSnapshotIsCompactAndExplicitExportZerosAllInactiveCapacity",
+        "BatchLayout.ConcurrentFirstFullExportsShareOneImmutableBacking",
+        "BatchLayout.FailedExplicitExportPreservesActiveVersionAndCanRetry",
+        "NativePagedMetadata.ActiveVersionDefersFullIndexAllocationUntilExplicitExport",
+        "NativePagedMetadata.ConcurrentExplicitExportsShareOneReadonlyTable"
+      ]
+    },
+    {
+      "id": "M-delta",
+      "changed": "Compare at most the old/new active extent; at most five word ranges for common wire fields, one actual changed-ID interval for the selected native bank. Clear only old active suffix and changed spans.",
+      "retained_cost": "CPU scanning remains O(active requests+page refs), an interval may contain unchanged interior words. Cold staging/mirrors have full fixed capacity; native uses two truthful per-bank identities. Common changed upload incurs one original checked F2 host wait.",
+      "proof": [
+        "GgmlCpuPaged.DeltaMetadataMirrorMatchesIndependentFullWireAcrossGrowShrinkAndEmpty"
+      ]
+    },
+    {
+      "id": "S-shared",
+      "changed": "The first prepared node uploads shared metadata once; later same-input/generation/resource nodes use the original checked-ready mirror before their own native planning.",
+      "retained_cost": "Each node still owns workspace/planning and its necessary waits. Existing complete-node-set validation has a worst-case cubic node search; the exact line predates G06 at baseline10129. Group/lookup passes remain quadratic in node count, separate from page admission. No linear whole-Graph prepare, all-shape latency or peer parity claim.",
+      "proof": [
+        "evidence/correctness/inference-g06-common-source-windows-attempt-4/receipt.json two dependent actual attention nodes, reversed NodeLayout order and three numeric/upload episodes"
+      ]
+    },
+    {
+      "id": "L-exact-permissions",
+      "changed": "Cold-reserved pointer scratch sorts the full admitted group by lease block identity, validates generation/permission and invokes the original unique/ordered unique F1 primitives once per unique group entry. O(G log G) comparisons plus O(G) original permission operations; warm scratch growth prohibited. Both Graph admission layers included in669.",
+      "retained_cost": "Scratch Entry is two pointers (16 bytes on qualified64-bit machines), vector control lives in private owners. Original per-block domain locks/refcounts/atomics, pending validation, lane waits and retirement remain; readonly guards in distinct layers/lanes can remain balanced duplicates. No permission bypass or process/native allocation certificate.",
+      "proof": [
+        "PagedAdmission.ExactBlocksDeduplicateSubviewsWithoutCollapsingSharedBacking",
+        "LeaseSubmission.ReorderedLargeGroupsDeduplicateAllBlocksWithoutWarmAllocation:256 distinct blocks,64 rebind/reorder/shrink episodes and independent active-use census"
+      ]
+    },
+    {
+      "id": "D-CPU",
+      "changed": "Q1 fixed-Q topology updates actual paged IDs/tails and ragged extents/packed offsets on the original graph/pool/workspace. O(requests+page refs) facts, no per-token native replan in qualified same-Q domain.",
+      "retained_cost": "Caller snapshot creation and metadata delta/wait stay charged. Changed Q topology/request set genuinely cold replans. Original masks/kernels and private scratch semantics remain.",
+      "proof": [
+        "GgmlCpuPaged.RuntimeQ1UsesOriginalDecodeSlotAcrossPagesAndTails",
+        "GgmlCpuRagged.RuntimeQ1KeepsGraphAcrossPackedKvExtents"
+      ]
+    },
+    {
+      "id": "D-FI",
+      "changed": "O(requests) comparison at the original actual chunk/CTA/window proves schedule equivalence; reads four-byte chunk fact from original planner host shadow, no D2H. Equivalent runtime metadata skips query/plan/integer-plan upload.",
+      "retained_cost": "Crossing chunk/CTA schedule boundary replans; changed metadata still uploads/waits. Q0 no-op preserves explicit immediate-completion accounting. No retile or optimal schedule/total native-private cost claim.",
+      "proof": [
+        "FlashinferCache.RuntimeScheduleReusesActualTilesAcrossKvExtents"
+      ]
+    },
+    {
+      "id": "D-native",
+      "changed": "Fixed schema and complete Q topology retain original Apple/Vulkan C++ Program/Invocation/storage while host-known KV lengths and packed offsets update explicitly. Native paged banks upload actual changed IDs, unchanged IDs have zero upload/wait.",
+      "retained_cost": "Apple changed-length execution constructs a managed MLX graph; Vulkan changed scalars invalidate recording and re-encode. Ragged Vulkan contract adds cold shared immutable ownership copied by Recorder. Private native/driver allocation and cost remain UNKNOWN; this is not capture or zero native allocation. The controller explicitly creates a small NativePagedBatchVersion owner for each prepare through the recipe allocator; this can allocate even if an injected invocation allocator sees no new attempt. Caller BatchLayoutVersion backing/control allocations and both sets of lifetime refcounts remain charged.",
+      "proof": [
+        "NativeRaggedLayout.PublicRuntimeKvUpdatesKeepIndependentSlotsAndCheckedBoundaries",
+        "evidence/correctness/inference-g06-native-runtime-lengths-source/receipt.json",
+        "evidence/correctness/inference-g06-final-native-air-source/receipt.json actual Recorder copy/drop/replay oracle"
+      ]
+    },
+    {
+      "id": "D-capture",
+      "changed": "Explicit opt-in cold prepare_replay records original CUDA commands without executing caller tensor work or consuming its run token; exact storage/plan can retain the artifact. Run still takes actual F1/Queue/Completion path, idle capture releases page permissions.",
+      "retained_cost": "Cold capture checked wait/control allocation charged; changed storage needs explicit recapture and true replan invalidates artifact. CPU explicitly unsupported, Apple managed and Vulkan Recorder retain their own semantics. Graph outer generic capture flag remains false; internal batch atoms have actual limited capture proof.",
+      "proof": [
+        "FlashinferBatchReplay.ColdRecordAndRuntimeSchedule",
+        "evidence/correctness/inference-g06-graph-page-cuda-risks/receipt.json recorded/launch/post-record-OOM failure and pending retirement"
+      ]
+    }
+  ],
+  "negative_space": [
+    "No full engine/model execution/tokenizer/server or tokens-per-second certificate.",
+    "No arbitrary topology changes without explicit replan, address changes without recapture, new route/provider domains, CPU capture or native Apple/Vulkan capture inferred from plan reuse.",
+    "No hard bound on unknown vendor/driver/private memory and no full-step zero allocation/wait.",
+    "Existing outer Graph node validation cost is retained explicitly; a real large-node consumer hotspot/material trace is a scoped reopen trigger, not a speculative extra product FIX."
+  ],
+  "red_team_findings": [
+    {
+      "id": "RT-L",
+      "severity": "major",
+      "finding": "Graph two-layer per-page admission remained quadratic after earlier Direct/native optimization.",
+      "disposition": "FIXED669; actual256-block independent-use census, source, three WSL host sanitizer facets and six current native Air host facets PASS."
+    },
+    {
+      "id": "RT-platform-risk",
+      "severity": "major qualification",
+      "finding": "WSL sanitizer proof cannot stand for changed Apple/Vulkan native host branches.",
+      "disposition": "Six actual current Air host facets PASS, original explicit TSan models and scope limits retained; raw artifact SHAs/model bytes rechecked. No WSL proof substituted for a native branch."
+    },
+    {
+      "id": "RT-cost-claims",
+      "severity": "documentation/cost boundary",
+      "finding": "reused_native_plan and no injected HYLE allocation do not imply no managed native graphs/driver cost or no caller snapshot allocation.",
+      "disposition": "Keep explicit ledger and update final user guide before usability gate."
+    },
+    {
+      "id": "RT-node-validation",
+      "severity": "retained known cost",
+      "finding": "Outer complete-node-set validation has worst-case cubic lookup, distinct from page G.",
+      "disposition": "Exact baseline line unchanged; retained in P0 ledger, no newly observed consumer hotspot or material double-key to expand current FIX."
+    }
+  ],
+  "remaining": [
+    "Final usability/qualification guide and seven-gate aggregate adjudication.",
+    "Preserve shared FI original G04/G05 required unresolved P1 while resolving G06-specific terminal/owner state; no whole-goal completion."
+  ],
+  "performance_decision": {
+    "tier": "P0",
+    "reason": "The initial G06 closure contract explicitly declares P0/necessary P1. Its finite new promises concern active backing, changed-byte uploads/counts, plan/replan and checked wait counts, exact-page complexity and retention/capture eligibility. Actual report/allocator/oracle observations and source-cost proofs decide those structural promises; no unresolved same-contract timing mechanism has been admitted by this review.",
+    "new_p1": "NOT_REQUIRED_FOR_THE_G06_STRUCTURAL_VERDICT",
+    "timing_direction": "NOT_MEASURED; no 1.0 ratio, throughput parity or speedup claim.",
+    "peer_comparison": "Pinned SGLang/vLLM/llama.cpp establish the mature active-buffer/shared-input/runtime-plan/capture shapes. Their natural tensor/request owners do not supply HYLE immutable-version/F1 permission/error/actual-retirement contracts, so no same-contract end-to-end peer timing ranking is asserted.",
+    "before_after": "Original HYLE structural work is checked from the scoped baseline and current source plus actual counter/oracle tests, not a new latency A/B. Reduced capacity work and fewer required uploads/plans are structural conclusions only.",
+    "retained_required_p1": "G04/G05 qualified kernel-only CUDA prefill remains UNRESOLVED under the original5% time gate and exhausted[15,31] attempt14 contract. No G06 wait/upload/capture observation accepts or resets that original gate.",
+    "interpretation": "Earlier card paragraphs that generically listed pendingP1 do not define an additional workload/peer/margin; this review resolves the original conditional necessaryP1 step against the finite P0 contract, preserving every explicit timing contract in the goal."
+  },
+  "record": "docs/implementation/tasks/compute/inference-g06-metadata-decode.md",
+  "raw_sha256": "c2b28f6115cdcd90c0667594769e0861897c289bd62f059f2783da462dbfe4b8"
+}

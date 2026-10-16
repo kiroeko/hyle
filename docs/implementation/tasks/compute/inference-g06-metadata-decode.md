@@ -1,6 +1,6 @@
 # G06 metadata 与 decode 成本收口
 
-状态：**G06 CANDIDATE；四路线迁址SDK八配置与23头通过，WSL三宿主san通过；Air原生宿主风险和最终成本门待，2026-10-16**。本卡沿[完整十项目标](../project/inference-gaps-goal-execution-2026-10.md)，
+状态：**G06 CANDIDATE；SDK八配置/23头、WSL三宿主san、Air六原生host配置与P0结构通过；最终七门/文档裁决待，2026-10-16**。本卡沿[完整十项目标](../project/inference-gaps-goal-execution-2026-10.md)，
 不缩减 CPU、单 GPU、CPU＋单 GPU、单/多请求或四原生路线。先完成四组共同审计和形状冻结，
 再集中实施、批量检查、按实际失败定向修正；产品修改仅限下文已冻结且owner为AUDITED的批次。
 
@@ -826,3 +826,38 @@ ASan/UBSan/TSan：实际paged runtime、ragged update/Recorder、encoded/native/
 这一批不改产品、不重跑已过SDK或未变G04/G05 P1，Win/WSL/Air heavy串行、max4。
 原2h检查点与用户常设有限追加沿原账。七门/P0与必要P1适用性、红队最终裁决仍待；
 11 owner保持CANDIDATE，G06粗估90%，整goal仍3/10。
+
+
+### Air 六组当前宿主风险与 P0 结构核对通过
+
+[当前Air原生host证据](../../../../evidence/correctness/inference-g06-final-native-host-sanitizers/receipt.json)
+实际Apple/Vulkan各ASan/UBSan/TSan共六配置全过。每配置九个有限target：Apple20个、
+Vulkan17个GTest，另六个实际paged runtime/CPU-native-CPU/pending及plain/encoded错误退休
+消费者；零失败/跳过。Vulkan ragged包含当前Recorder copy/drop/真实重放。封存时各37/38
+个实际binary/library重核；TSan保原refcount与Apple Metal显式边界模型，不能签LSan、shader、
+driver或private pool。原Apple首轮遗漏私有joint选择宏的compileFAIL19.743s、Vulkan预构建
+guard失败和末组TSan链接errno28/33.107s均保留，不重置预算。清理已封存SDK安装/消费副本
+及旧G01-G04 host测试binary，回收约7.3GB；当前G06实际产物、对象、库、源码、模型与日志
+保留并在封存时复核。末组同原树复用成功配置，剩余链接0.529s后实际全过，未重跑前五组。
+
+Vulkan旧san树的派生source namespace触发shader生成；仅借当前已资格SDK的152个生成
+shader数据文件。完整GLSL输入树、生成feature与规范化命令逐项相同；一次性私有Ninja副本
+仅替换152个生成/8个工具边，不改变产品CMake。每个配置151个生成数据C++ wrapper及原生/
+HYLE host仍按相应san实际编译，封存时再核全部flag及生成数据SHA；没有跨san借用object/
+archive或重做shader数学。全部185个raw文件、清理清单与失败费用封存。
+
+[P0结构成本终审](../../../../evidence/architecture/inference-g06-final-cost-review/p0.json)
+逐项核对active backing/显式全blob、delta/零后缀、首上传前共享、两个Graph权限入口、CPU/
+FI/native runtime与显式capture共八行成本，绑定当前源码SHA和11个实际SDK成本测试。
+新版本仍分配active backing/control并计generation CAS、拷贝与refcount；native controller
+每prepare还创建小NativePagedBatchVersion owner，其recipe allocator可分配，不能由另一个
+invocation allocator无新增attempt推导整步零分配。Apple managed建图、Vulkan re-encode、
+checked waits和private UNKNOWN均保留。完整node-set旧校验最坏O(N³)原行在baseline10129
+已存在，与本轮页G的O(GlogG)准入分别计费，无整图线性或全shape延迟结论。
+
+最终性能按原初P0/必要P1定界：这些有限承诺由实际bytes/waits/plan/allocation/oracle和
+复杂度结构裁决，本轮不新增未冻结的计时排名；peer自然owner不等同HYLE F1/版本/退休
+合同。此前泛称P1待验在此落实为P0结构门，不代签任何原已冻结计时合同；G04/G05 CUDA
+原kernel-only P1 UNRESOLVED、阈值/失败/费用继续保留。此处只通过P0，不签七门/易用文档、
+共享FI剩余G04状态或G06整项验收；11 owner仍CANDIDATE。下一步只做最终裁决/guide，
+不重跑已过SDK/LOC/san或unchanged旧P1。G06粗估95%，整goal仍3/10。
