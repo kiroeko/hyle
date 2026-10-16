@@ -44,7 +44,9 @@ void run() {
       g::NodePlacement{t::take(logical.node_id(3)),b::kCpuTarget,g::PlacementStrength::kRequired},
       g::NodePlacement{t::take(logical.node_id(4)),b::kCpuTarget,g::PlacementStrength::kRequired}};
   const std::array external{g::ExternalResourceContract{x,b::kDeviceStorage},
-      g::ExternalResourceContract{key,b::kDeviceStorage},g::ExternalResourceContract{sum,b::kHostStorage}};
+      g::ExternalResourceContract{key,b::kDeviceStorage},
+      g::ExternalResourceContract{table,b::kHostStorage},
+      g::ExternalResourceContract{sum,b::kHostStorage}};
   auto compiled=t::take(b::compile(logical,{.cpu=&cpu,.cuda=&cuda,.staging=&staging,.device=&device,
       .staging_workspace_budget_bytes=512},{.constants=constants,.node_placements=placements,.external_resources=external}));
   std::array<c::Queue,2> gpu_queues,cpu_queues;

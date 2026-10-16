@@ -291,3 +291,11 @@ joint定向诊断确认测试选了现公开Cast不支持的I32→F32域；该�
 原operation.cc明确要求failed invocation recreated，故仅更新测试：重建failed slot1，
 原Program/healthy slot0/key/draw/旧输出保留；按原合同检查每个InvalidArgument及同key复现。
 本次不改产品，不重跑已通过且输入未变的Mem244项；保持后续平台/交付/风险待验。
+
+
+21e925b5a首批普通运行：CPU/CUDA四个Direct/Graph sampling消费者全部PASS，
+含三种浮点storage、R1/R16全词表各65步、每law262144样本、原失败slot重建、
+独立数值/比特/旧结果；schema三测试和CUDA1048772对端点复验PASS。joint唯一剩余
+测试错误是遗漏CPU table常量的host external_resource合同，导致默认storage0尝试
+把普通host常量直接物化到GPU；仅补公开consumer的table→kHostStorage，不改Graph。
+下一增量只构建/运行该joint，四个已过的普通消费者和Mem不重复运行。
