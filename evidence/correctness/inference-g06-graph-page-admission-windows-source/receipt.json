@@ -1,0 +1,378 @@
+{
+  "state": "PASS_FINITE_WINDOWS_CPU_CORE_GRAPH_SOURCE_ONLY",
+  "product_candidate": "669121418669b31f6849c74f64362aaf8d6eb919",
+  "source_snapshot": "669121418669b31f6849c74f64362aaf8d6eb919",
+  "record": "docs/implementation/tasks/compute/inference-g06-metadata-decode.md",
+  "identity": {
+    "host": "KIRO-WORKSTATIO",
+    "compiler": "14.50.35717",
+    "route": "CPU/Windows"
+  },
+  "tests": {
+    "hyle_graph_test": 51,
+    "hyle_graph_executable_test": 285,
+    "hyle_graph_batch_test": 6,
+    "hyle_compute_batch_test": 60,
+    "g04_g05_encoded_common_pages": 26
+  },
+  "stages": [
+    {
+      "stage": "configure",
+      "command": [
+        "cmake",
+        "-S",
+        "C:\\public\\project-hyle\\hyle",
+        "-B",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev",
+        "-DCMAKE_PROJECT_INCLUDE=C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g02\\native-page-node\\project.cmake",
+        "-DHYLE_COMPONENTS=compute;graph",
+        "-DHYLE_COMPUTE_ROUTES=cpu",
+        "-DHYLE_BUILD_TESTS=ON",
+        "-DHYLE_BUILD_BENCH=OFF",
+        "-DHYLE_INSTALL=OFF",
+        "-DHYLE_TEST_INSTRUMENTATION=OFF"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 23.25,
+      "log": "C:/public/project-hyle/hyle/.scratch/inference-gaps/g06/final-windows-source-2/configure.log"
+    },
+    {
+      "stage": "prepare-manifest",
+      "command": [
+        "ninja",
+        "-C",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev",
+        "build.ninja"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 0.2029999999795109,
+      "log": "C:/public/project-hyle/hyle/.scratch/inference-gaps/g06/final-windows-source-2/prepare-manifest.log"
+    },
+    {
+      "stage": "build",
+      "command": [
+        "cmake",
+        "--build",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev",
+        "--target",
+        "hyle_graph_test",
+        "hyle_graph_executable_test",
+        "hyle_graph_batch_test",
+        "hyle_compute_batch_test",
+        "g04_g05_encoded_common_pages",
+        "--parallel",
+        "4",
+        "--",
+        "-k",
+        "0"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 26.84299999999348,
+      "log": "C:/public/project-hyle/hyle/.scratch/inference-gaps/g06/final-windows-source-2/build.log"
+    },
+    {
+      "stage": "hyle_graph_test",
+      "command": [
+        "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\hyle_graph_test.exe",
+        "--gtest_output=xml:C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g06\\final-windows-source-2\\hyle_graph_test.xml"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 0.07900000002700835,
+      "log": "C:/public/project-hyle/hyle/.scratch/inference-gaps/g06/final-windows-source-2/hyle_graph_test.log"
+    },
+    {
+      "stage": "hyle_graph_executable_test",
+      "command": [
+        "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\hyle_graph_executable_test.exe",
+        "--gtest_output=xml:C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g06\\final-windows-source-2\\hyle_graph_executable_test.xml"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 0.3119999999762513,
+      "log": "C:/public/project-hyle/hyle/.scratch/inference-gaps/g06/final-windows-source-2/hyle_graph_executable_test.log"
+    },
+    {
+      "stage": "hyle_graph_batch_test",
+      "command": [
+        "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\hyle_graph_batch_test.exe",
+        "--gtest_output=xml:C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g06\\final-windows-source-2\\hyle_graph_batch_test.xml"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 0.125,
+      "log": "C:/public/project-hyle/hyle/.scratch/inference-gaps/g06/final-windows-source-2/hyle_graph_batch_test.log"
+    },
+    {
+      "stage": "hyle_compute_batch_test",
+      "command": [
+        "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\hyle_compute_batch_test.exe",
+        "--gtest_output=xml:C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g06\\final-windows-source-2\\hyle_compute_batch_test.xml"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 0.01600000000325963,
+      "log": "C:/public/project-hyle/hyle/.scratch/inference-gaps/g06/final-windows-source-2/hyle_compute_batch_test.log"
+    },
+    {
+      "stage": "g04_g05_encoded_common_pages",
+      "command": [
+        "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\g04_g05_encoded_common_pages.exe",
+        "--gtest_output=xml:C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g06\\final-windows-source-2\\g04_g05_encoded_common_pages.xml"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 44.70300000003772,
+      "log": "C:/public/project-hyle/hyle/.scratch/inference-gaps/g06/final-windows-source-2/g04_g05_encoded_common_pages.log"
+    }
+  ],
+  "outer_elapsed_seconds": 97.125,
+  "artifact_rechecks": [
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\asmjit.dll",
+      "sha256": "eb8f9c478bfc4b671f83b630c97424c60b4c948c0a8645fe588aed4f6bab5df5",
+      "bytes": 367104
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\c10.dll",
+      "sha256": "93bff2548e330df0f94ce3c71c531887d049ae645d1e38e3c08689e2d86a7888",
+      "bytes": 1046528
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\fbgemm.dll",
+      "sha256": "250dc6f79b26e022ca3088e9b71a023598c7e997c96b62ef350a74fa1b501d81",
+      "bytes": 5721600
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\g04_g05_encoded_common_pages.exe",
+      "sha256": "e42a72d4e83f40a4260f5774a93834667faf0d54a1e5961ae2ac652dc1b66e64",
+      "bytes": 1197056
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\hyle_compute.dll",
+      "sha256": "0e3ae80bc9c60979e63c45230062160698bd9e9a0e6982968d48f890e69e6063",
+      "bytes": 338432
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\hyle_compute_backend_cpu.dll",
+      "sha256": "c65d7d3e207e878c5c6beadaf2f57e16c0ea30071347c1cadba541a998e206f6",
+      "bytes": 16384
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\hyle_compute_batch.dll",
+      "sha256": "cbc09c1792e87d5eba349799c3300ca6aaae420f96ae19871700e726c417136d",
+      "bytes": 236544
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\hyle_compute_batch_test.exe",
+      "sha256": "f9b2f39de7d5f9991bf01c887a4d122554dbcde98a416bc9e9e948841624409b",
+      "bytes": 755200
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\hyle_compute_ggml_runtime.dll",
+      "sha256": "7461440dc10c07b01808256908b72fd567f5edee9f95c8a39d07fe097bde91fd",
+      "bytes": 1212928
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\hyle_compute_ops.dll",
+      "sha256": "8e051e01edabfcb697bfebdd86ec51ad6866298ea4bea27eed076f52e380dd5d",
+      "bytes": 80384
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\hyle_compute_ops_custom_fixture.dll",
+      "sha256": "c5b5a6d9c0f59e9f43cab22f14c94cf7da0d10964b49d5f554219d3bc5d4c298",
+      "bytes": 13824
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\hyle_compute_provider_ggml.dll",
+      "sha256": "2bbf2d2cf3de82254256099f1fddc40d952db3fc0daf123046e042a48b25d555",
+      "bytes": 466944
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\hyle_compute_provider_native.dll",
+      "sha256": "1ecc28893084f26d069417495e75132a06f568224f7ca5bba65b4b491e4d8434",
+      "bytes": 329216
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\hyle_compute_provider_onednn.dll",
+      "sha256": "49c4e90a6e905f98e5aef15f6e433d03d72792209fae631281b0d4f46cc72e24",
+      "bytes": 16674816
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\hyle_compute_result_fixture.dll",
+      "sha256": "14b06bcf9a6a40114c591d61d2ae16bf625f179c72d85a2de807eb6a85e0ed9d",
+      "bytes": 14336
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\hyle_compute_route_cpu.dll",
+      "sha256": "3aceb3766054320c172fdbf482fd22acb041a108b41551706dfa720c7a81718a",
+      "bytes": 49664
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\hyle_compute_state.dll",
+      "sha256": "39506e9e8f8afa170c7ade5bafb4553643428cbda6269a1f90834e935d80aeb0",
+      "bytes": 73728
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\hyle_compute_stream.dll",
+      "sha256": "6d4621de2e8d5e8c5f8eae99dace85dadbfb0569d872b0c83d7be4e0af5c752d",
+      "bytes": 98816
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\hyle_container.dll",
+      "sha256": "b09cc32be1ec75110fb52781d404a83f509a7633ec60665bf53c62b5aa48ecdc",
+      "bytes": 41472
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\hyle_error.dll",
+      "sha256": "ace97f4d26acc6bf601f28ed80e60571d93029a18465cdf07d14f9e2ac8df55b",
+      "bytes": 28160
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\hyle_ggml_cpu_avx2_456172ec.dll",
+      "sha256": "a93fa6fce7f50fb57e80d834c70dadd4c919b750d87ad72861698df21fce9a21",
+      "bytes": 1153536
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\hyle_ggml_cpu_avx2_ffa4e8b8_731d28a88398ef06.dll",
+      "sha256": "f696603dc3d3d826290ed118688031825c3abda2e52ed9c6906e742ed49aa932",
+      "bytes": 1358336
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\hyle_ggml_cpu_avx2_ffa4e8b8_8570887ac0d71134.dll",
+      "sha256": "143054661c3cd8a8ddc8e5863cf9f8ee49a45002bf4a01e11592e84d4bbcd681",
+      "bytes": 1358336
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\hyle_ggml_cpu_avx2_ffa4e8b8_8dd0d23581da1b0b.dll",
+      "sha256": "36816a49eb47af9c45262662461062e668d4bbb7ba8f07fb94fa973682e0f4d3",
+      "bytes": 1358336
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\hyle_ggml_cpu_avx2_ffa4e8b8_bdae1e43311ee486.dll",
+      "sha256": "22075122e06cb30b77c563de5197b6def549ec80e90229cce16512c327f44b1f",
+      "bytes": 1357824
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\hyle_ggml_cpu_avx2_ffa4e8b8_e74fc9bb8964d04f.dll",
+      "sha256": "09828878dd44d62eb6ae844827e20382ee2b457d0dbd76594b6577bea3ad5434",
+      "bytes": 1358336
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\hyle_graph.dll",
+      "sha256": "e55ced4be730de8bbc199a4075b8156fe789141ed9a52ce45597c7c590290d13",
+      "bytes": 596480
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\hyle_graph_batch.dll",
+      "sha256": "b7730c13b63b24ee668a5726cb65f8afc13aa5718a97601c7d54ca5c659912f2",
+      "bytes": 125952
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\hyle_graph_batch_test.exe",
+      "sha256": "32bfee88b43e2a671fff7571e1554e703f08269caae78397dd16918faffd4b3e",
+      "bytes": 364544
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\hyle_graph_executable_test.exe",
+      "sha256": "7d685f5263ce7058910e08d28100f0c34d7a739ac6f31e0a3c8186005ab50488",
+      "bytes": 3025408
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\hyle_graph_provider_onednn.dll",
+      "sha256": "6dc81a2911f44a9ce7b387197c2b80996d06f3d202e988223fabafd6a97e5de3",
+      "bytes": 35328
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\hyle_graph_route_cpu.dll",
+      "sha256": "b657efa16a7c421b925b01fc0b2fb9cbdf11d2b0fde38dbc6bf8aaec2e922ace",
+      "bytes": 45056
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\hyle_graph_test.exe",
+      "sha256": "de1323c1adbf7b4c48ddca237b393b6a8d2278883e7369e22ee728a77dc7bde9",
+      "bytes": 718848
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\hyle_io_core.dll",
+      "sha256": "78bd88ba43eb3c51fc66cf3eb82b90e857c8eebb4ee77223024c1c5137dc2c21",
+      "bytes": 230912
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\hyle_mem.dll",
+      "sha256": "3816decdb1e75df94cafc51fd71edcb12c56f192a18c5a1582b773d77e5cf73b",
+      "bytes": 230912
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\hyle_mem_vm.dll",
+      "sha256": "f2873eae32e73b81c49669c3b931595c03f5a160216756a993de3533a1d460ec",
+      "bytes": 36864
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\hyle_platform.dll",
+      "sha256": "1026651361a14c1794500708febcfe0ad29e64677985a2b6a78c1e6c445e0f29",
+      "bytes": 86528
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\hyle_platform_fs.dll",
+      "sha256": "331b3f01779ccbb8525a648b97b787cc05af3434776d0b506675702b09162224",
+      "bytes": 53760
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\hyle_platform_thread.dll",
+      "sha256": "47468ff0b0919c057013904205abd9cc3a57f3e7873e0191f98005cf95727aa2",
+      "bytes": 25088
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\hyle_sched.dll",
+      "sha256": "7ef67ee2f01769e4fb5e0e29e3337adcf1d08fafbdd9779286f515a0538f0356",
+      "bytes": 145408
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\hyle_simd.dll",
+      "sha256": "7e5d75f67b4776ff5866ba902cc93b7fafc324a08c977a7f84f6d1070cf03c9c",
+      "bytes": 1571840
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\hyle_time.dll",
+      "sha256": "042915afc129cb921694d31d247632d5656e8e542838f0d2ee7c2cdee5c083fa",
+      "bytes": 20992
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\libiomp5md.dll",
+      "sha256": "d9d66ed25f1a0ea725fa3a41b22cfd5d182c19dbe4771d9c90ca02ad7466f6a1",
+      "bytes": 1613680
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\libiompstubs5md.dll",
+      "sha256": "daeb39e4ced3bfce4a622b63b8b0281613eb8180266f8dd1dc678346df1c7697",
+      "bytes": 43888
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\torch.dll",
+      "sha256": "16a220e55b35fbfd946c26663eb3eefc76782872280cdc47ab0caea1babf0613",
+      "bytes": 9728
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\torch_cpu.dll",
+      "sha256": "2cb91cf2ba957fad5a17eab5bb7af6b3d73bbc98d94e2deeadc9fb9294eea809",
+      "bytes": 255948800
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\torch_global_deps.dll",
+      "sha256": "30273402d3ae7b0841ee8a65ec6464c52ec0f9e8c52ad73908c9d80d113d2692",
+      "bytes": 9728
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\uv.dll",
+      "sha256": "fa569e682fc5fb7a8eb94c6829af9f30a569748dbbc6bce39735d48bc960bcf8",
+      "bytes": 195072
+    }
+  ],
+  "qualification": [
+    "Actual Windows MSVC original Graph51 (including nine LeaseSubmission tests), Graph executable285, graph_batch6, compute_batch60 and encoded common26 all PASS428, no failures or skips.",
+    "New256-block64-episode exact-page census checks shared backing, overlapping ordinary/page groups, reorder/shrink/rebind and zero warm metadata allocation. Original partial-admission rollback, closed sources, unknown observation, both native prefixes and exhaustive cold allocation failures pass.",
+    "Both Graph permission owners share one cold-reserved graph-private set. Original public bindings/page range order, F1 checks and native prefix retirement remain; Graph source only changed from0a29. Same cached CPU tree, max4 workers, no CUDA/P1."
+  ],
+  "limits": [
+    "Source only, not independent headers/relocated static/shared/sanitizers/P1/full G06 acceptance",
+    "Native private/driver costs UNKNOWN and G04/G05 unresolved performance remain"
+  ],
+  "raw_sha256": "cd876a09c9bba531dceda571e4b898164b20c97cecd43c30f5b74ef8a34cb557",
+  "timestamp_utc": "2026-10-16T06:26:23.553620+00:00"
+}

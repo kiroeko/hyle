@@ -1,6 +1,6 @@
 # G06 metadata 与 decode 成本收口
 
-状态：**G06 Graph AUDITED补齐L；其它owner CANDIDATE，四路线runtime/capture与ASan/UBSan已过，最终门待，2026-10-16**。本卡沿[完整十项目标](../project/inference-gaps-goal-execution-2026-10.md)，
+状态：**G06 CANDIDATE；Graph L补齐源码已过，原四路线runtime/capture与ASan/UBSan保留，最终门待，2026-10-16**。本卡沿[完整十项目标](../project/inference-gaps-goal-execution-2026-10.md)，
 不缩减 CPU、单 GPU、CPU＋单 GPU、单/多请求或四原生路线。先完成四组共同审计和形状冻结，
 再集中实施、批量检查、按实际失败定向修正；产品修改仅限下文已冻结且owner为AUDITED的批次。
 
@@ -745,3 +745,23 @@ pending/captured；补256不同block/共享backing/重排重复与跨group重绑
 census及禁止warm分配，保原OOM/closed/unknown/multi-prefix。固定候选后增量补适用三san，
 禁止CUDA重编；最终SDK/头/P0/必要P1/七门继续，不恢复G04/G05旧P1。2h检查点与自动有限
 追加沿原账，本段尚未改产品或运行新PASS；其它10个owner维持CANDIDATE。
+
+### Graph L 修正源码通过并固定候选
+
+产品`669121418669b31f6849c74f64362aaf8d6eb919`只改变三个Graph私有文件及测试，未改
+公开头、F1、native数学、vendor或构建图。新增私有permission set的vector控制对象随原
+owner冷构造；有页容量时按原allocator预留16字节/entry的排序scratch，普通无页路径不
+分配/排序。按完整block/generation分组拒混合权限，原read_unique/write_unique(false)
+仍检查closed/permission/failure/writer exclusion并持有到原实际退休；原绑定/页range不动。
+
+[Windows实际源码批](../../../../evidence/correctness/inference-g06-graph-page-admission-windows-source/receipt.json)
+共428项PASS、零失败/跳过：Graph51（含LeaseSubmission9）、执行285、Graph batch6、
+batch60、encoded26。新增256 block共享backing、普通输入与两页组重叠、64次重排/缩小/
+重绑的独立active-use census及warm禁止分配通过；原OOM穷举、closed、partial rollback、
+unknown和两native prefix退休仍过。48个实际EXE/DLL重核；同树configure23.250s、build
+26.843s，encoded44.703s，费用重叠/未知沿原约束，不算零。无CUDA或P1。
+
+Graph合法AUDITED→CANDIDATE绑定669，其余10个owner仍绑定各自未改产品0a29。完整
+本轮产品快照用669；此前0a29 source/host证据只对未变输入复用。新Graph按原缓存增量补
+ASan/UBSan，不触发CUDA重编；TSan的首个G06资格仍允许原D6/D7两FI TU按原预算编译。
+补充post-record OOM、实际CUDA Graph与最终四路线SDK/23头/P0/必要P1/红队/LOC继续待。
