@@ -162,7 +162,7 @@ TEST(Flashinfer, UnqualifiedSemanticsDeclineDuringPrepare) {
 }
 
 #if defined(HYLE_FLASHINFER_FAULT_INJECTION)
-void batch_capture_fault(bool encoded,bool launch_failure) {
+void batch_capture_fault(bool encoded,bool launch_failure,bool artifact_oom=false) {
   MetadataAllocator allocator;
   {
     auto context=compute::Context::create(cuda::device(0).value(),compute::flashinfer::provider()).value();
@@ -196,12 +196,19 @@ void batch_capture_fault(bool encoded,bool launch_failure) {
         ASSERT_TRUE(prepared.prepare_replay(inputs).ok());fail_graph_launch=true;
         auto submitted=prepared.run(inputs);const bool consumed=!fail_graph_launch;fail_graph_launch=false;
         ASSERT_TRUE(consumed);if(submitted)error=submitted->wait();else error=submitted.error();
+      }else if(artifact_oom){
+        // First allocation is the cold batch replay owner; the next is the
+        // original backend artifact after real stream-end/instantiation.
+        allocator.fail_at=allocator.attempts+1;error=prepared.prepare_replay(inputs);allocator.fail_at=SIZE_MAX;
+        ASSERT_TRUE(error.IsResourceExhausted());
+        EXPECT_NE(error.message().find("artifact allocation"),std::string_view::npos);
       }else{
         fail_attribute_at=1;error=prepared.prepare_replay(inputs);const auto remaining=fail_attribute_at;fail_attribute_at=0;
         ASSERT_EQ(remaining,0);
       }
-      ASSERT_FALSE(error.ok());EXPECT_EQ(error.native_error().domain,hyle::NativeErrorDomain::CudaRuntime);
-      EXPECT_EQ(error.native_error().code,static_cast<std::int64_t>(cudaErrorInvalidValue));
+      ASSERT_FALSE(error.ok());
+      if(!artifact_oom){EXPECT_EQ(error.native_error().domain,hyle::NativeErrorDomain::CudaRuntime);
+        EXPECT_EQ(error.native_error().code,static_cast<std::int64_t>(cudaErrorInvalidValue));}
       EXPECT_FALSE(slot.output());EXPECT_FALSE(prepared.run(inputs));slot.drain().IgnoreError();
     }
     // A failed captured slot cannot be reused; the original Context and a fresh
@@ -222,6 +229,9 @@ TEST(FlashinferBatchReplay, NativeCaptureFailureKeepsOriginalErrorAndRetires) {
 }
 TEST(FlashinferBatchReplay, NativeReplayLaunchFailureKeepsOriginalErrorAndRetires) {
   for(bool encoded:{false,true})batch_capture_fault(encoded,true);
+}
+TEST(FlashinferBatchReplay, NativeArtifactAllocationFailureAfterRecordingRetires) {
+  for(bool encoded:{false,true})batch_capture_fault(encoded,false,true);
 }
 // A link-time CUDA resource failure leaves the actual first native batch in
 // flight. No product hooks or replacement Provider are involved.

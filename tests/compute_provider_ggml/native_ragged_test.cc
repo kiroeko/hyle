@@ -6,7 +6,9 @@
 #include "hyle/compute/providers/ggml_cpu.h"
 #include "../compute_provider_native/half_test_support.h"
 #include "../compute_batch/allocation_fault_fixture.h"
+#if !defined(HYLE_PUBLIC_SDK_ONLY)
 #include "../../src/compute/context_state.h"
+#endif
 
 #include <array>
 #include <algorithm>
@@ -22,6 +24,7 @@ namespace {
 namespace c = hyle::compute;
 using F16 = hyle::simd::float16_t;
 using BF16 = hyle::simd::bfloat16_t;
+#if !defined(HYLE_PUBLIC_SDK_ONLY)
 struct AcceptedFailure final {
   c::detail::ContextState *state;
   const c::detail::BackendVTable *original;
@@ -37,6 +40,7 @@ struct AcceptedFailure final {
   }
   ~AcceptedFailure(){state->backend_vtable=original;active=nullptr;}
 };
+#endif
 template<class T> T encode(float x) { return half_test::encode<T>(x); }
 template<class T> double decode(T x) { return half_test::decode(x); }
 template<class T> c::ReadLease load(c::LeasePool &pool, const std::vector<T> &values) {
@@ -265,6 +269,7 @@ TEST(GgmlCpuRagged, EveryColdAllocationFailureReleasesThePartialNativePlan) {
   }
   ASSERT_TRUE(context.close().ok());
 }
+#if !defined(HYLE_PUBLIC_SDK_ONLY)
 void accepted_failure(bool paged) {
   auto context=c::Context::create(c::cpu::device(),c::ggml_cpu::provider({.native_threads=1})).value();
   auto queue=context.create_queue().value();
@@ -313,4 +318,5 @@ void accepted_failure(bool paged) {
 TEST(GgmlCpuRagged, AcceptedMathFailureRetiresUsesWithoutPublishingOutput) {
   accepted_failure(false);accepted_failure(true);
 }
+#endif
 } // namespace

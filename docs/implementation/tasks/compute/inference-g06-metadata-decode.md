@@ -693,3 +693,16 @@ CPU provider84/encoded26共569项PASS、零skip，49个实际EXE/DLL SHA重核�
 
 11个owner保持CANDIDATE、全goal仍3/10。G06整体工作量粗估约80%，最终三san、独立头、
 迁址static/shared、P0/必要P1、七门/红队/LOC仍待实际验收，不从上述source/风险代签。
+
+最终风险补证据：原backend stream-end/instantiate后artifact metadata OOM清理已有实现，
+但原Graph预算拒绝不足以覆盖新batch接入点。仅给既有static故障fixture追加plain/FP8
+post-record artifact allocation失败，核原错误、失败slot、独立新slot及metadata释放；
+产品不变，不扩FIX。CPU ragged测试用HYLE_PUBLIC_SDK_ONLY仅排除源码内部故障fixture，
+原runtime/数值/公开OOM旅程留给搬迁SDK，source默认仍包含全部五项与内部故障门。
+独立头固定为本轮17个改动头加6个关联公开头，共23个；Apple/Vulkan实际启用平台各验，
+关闭平台的空guard编译不冒充其native头资格。
+
+ASan attempt1已完成产品与两FI CUDA TU编译，configure56.062s、compile524.750s后，
+新私有验证target漏显式链接hyle_graph_batch而link FAIL，测试未启动。只修私有验证链接，
+不改产品、公共构建或san配置；第二轮沿同原树增量，原FAIL/成本不重置，不重编native。
+原ggml archive、242派生及5 canonical输入identity通过，借用不代签改变的host/FI源码。
