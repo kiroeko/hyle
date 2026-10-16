@@ -277,9 +277,15 @@ mx::array packed_fp8_dot(const Quantized &a, const Quantized &b, mx::Stream s) {
       const uint mantissa = code & 7;
       if (exponent == 15 && mantissa == 7)
         return as_type<float>(uint(0x7fc00000) | ((uint(code) & 128) << 24));
-      const float value = exponent == 0 ? float(mantissa) * 0.001953125f
-          : ldexp(1.f + float(mantissa) * 0.125f, int(exponent) - 7);
-      return (code & 128) ? -value : value;
+      // Every finite E4M3 normal maps exactly to these F32 fields. Avoid a
+      // general ldexp for each repeatedly loaded packed tile element; keep
+      // the original exact subnormal and signed-zero equation separately.
+      if (exponent == 0) {
+        const float value = float(mantissa) * 0.001953125f;
+        return (code & 128) ? -value : value;
+      }
+      return as_type<float>(((uint(code) & 128) << 24) |
+          ((exponent + 120) << 23) | (mantissa << 20));
     }
   )METAL", false, false, mx::CompileOptions{});
   const int batch = a.codes.shape(0), rows = a.codes.shape(1), columns = b.codes.shape(1);
