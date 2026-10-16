@@ -635,10 +635,9 @@
     },
     {
       "module": "compute_provider_torch_cuda",
-      "state": "CANDIDATE",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/inference-g07-packed-weights.md",
-      "candidate": "b483b8939e9c1d28a98eee3a6ecd13b3fd45fc88",
-      "summary": "G07 CANDIDATE: native packed CUDA/F32 and checked status, Apple FP8 tile/F32 implementation frozen at b483b8939. WSL/Air ordinary and actual device/host facets passed; Windows explicit Provider source and two public 64-step consumers passed. SDK migration, bounded same-contract P1, W1 evidence reconciliation and final gates remain pending."
+      "summary": "G07 AUDITED C1: b483 full qualified P1 M1 WIN24.45-24.73, M64 INCONCLUSIVE/5%FAIL0.936-0.966 retained. Fixed four-M-row register reuse for linear only, same F32/group/MX/owner contract; no width sweep or new GEMM. Apple D2 candidate91ae unchanged."
     },
     {
       "module": "graph_route_cpu_cuda",

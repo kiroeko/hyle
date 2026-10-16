@@ -1,6 +1,6 @@
 # G07 packed 权重消费与 checked selection
 
-状态：**2026-10-16，CUDA b483/Apple D2 91ae CANDIDATE；CUDA批量性能门失败保留；G07–G10 goal ACTIVE**。G01–G06已告一段落，
+状态：**2026-10-16，CUDA AUDITED C1；Apple D2 91ae CANDIDATE；G07–G10 goal ACTIVE**。G01–G06已告一段落，
 本卡不重开它们。原baseline为 `a638938b783b6fdae57e83f572aa0427d7188e7f`；
 产品输入保持完整 `669121418669b31f6849c74f64362aaf8d6eb919`。
 当前施工 owner 仅 `compute_provider_torch_cuda`、`compute_route_apple`，从各自 CLOSED
@@ -367,3 +367,27 @@ CUDA/W1未变输入复用，G08–G10仍未开始；没有新增产品域或完�
 D2的[迁址static/shared SDK](../../../../evidence/delivery/inference-g07-apple-packed-d2/receipt.json)
 均通过，六次公开消费者与八次独立头编译，绑定91ae实际owner artifact；bench精确改绑D2
 受验prefix。后续Apple P1仅按原669、两shape、16轮/相同5%门/n15–31资格，不复用D1计时。
+
+### CUDA C1有限批量复用审计
+
+CUDA第二轮M64的八个中位数均小于1，但七组合跨5%门、一组合CI上界低于门；如实保留
+聚合INCONCLUSIVE/FAIL，不声称所有姿势都稳定material LOSS。真实M17/M64消费者与源码
+同时指出：现有warp每个输出单独读scale、解packed码，同一权重在64个M行重复执行。此项
+从完整warm消费的P0成本准入；合格5%失败是纠正门，不能仅按benchmark挑参数。
+
+锁定MLX的`qmm_naive.cu`（原审计SHA e206d50d…）和同一归档的
+`device/qmm_naive.cuh`（SHA256 `d00a1771dc7323c9bcc1d119259141e64d8be2ca7901ae1b6851c0a0c33a0376`）
+在batch域共享解码并按M/N tile复用；但其CUTE GEMM的累加/类型及新依赖闭包不能直接冒充
+现有逐group F32/原MX先dot后scale合同。本轮不移植新通用GEMM，也不放宽精度。
+
+仅`compute_provider_torch_cuda`退回AUDITED，有限W-CUDA-C1复用现有同一kernel模板：普通
+linear且M>1时每warp固定四个M行共享本次code/scale/bias读取与解码，四份独立F32 dot/
+warp_sum及group顺序；M1、grouped不同expert及embedding保原单行映射。四行只是有界
+register复用（每lane四份累加），不是MLX原tile的照抄或调参表；不搜索宽度。原输出尾行
+检查、dtype/promotion、MX极端scale、所有权、错误、设备status、无全局workspace均保持。
+
+正确性在原九dtype/format反精度用例同时覆盖M1及M5尾块，使用不同符号/大小的行防止错误
+复用activation；原M17/M64 Direct/Graph、公开64步消费、设备memcheck/racecheck及三host
+facet和Windows显式Provider、两迁址SDK按实际影响重验。Apple/W1未变不重跑。新CUDA
+candidate冻结后仍只用原两shape/669/104轮与相同5%/n15–31完整资格一次；旧费用保留，
+不再改测量姿势，不扫tile，不扩数学/API/格式域。Apple D2的原有限资格继续串行运行。
