@@ -171,3 +171,31 @@ staging，F32 SIMDgroup乘加，128元素一组；不通过FP16窄化中间值�
 普通构建最多4 workers、native CUDA pool1/split3/Ninja2/SM89，Windows/WSL/Air重型
 任务串行。先批量实现上述集合，再批量验证并针对真实失败修复；新系统性决定或新能力
 必须退回审计。有限FIX、候选后的七门/红队/LOC和原费用/停止规则不变。
+
+### 2026-10-16 批量实现与首批验证
+
+产品主体在`218ea6f02`实现，`8775071d4`修正vendored manifest的大小写敏感路径排序；
+后续提交只补测试与用法。当前`aead0206b`的产品字节与已验证`746d498b4`一致。
+[源码与风险检查点](../../../../evidence/correctness/inference-g07-packed-weight-source/receipt.json)
+绑定产品输入、实际命令、原失败/停止、XML与原始归档；它是部分验收，owner继续AUDITED。
+
+- CUDA shipping普通测试15项通过；另以原N2真实全部行/K尺寸分别通过Direct/Graph各16项。
+  新测覆盖64步修改packed words/IDs、两个槽、旧输出、全部FP8码值、embedding逐次舍入和
+  affine混合dtype/group32/64/128。Torch原allocator限额为零时仍能运行native packed数学。
+  非法IDs保持原输出，Completion为OutOfRange；失败槽按原合同重建。
+- Apple Direct及holdout20项、Graph13项通过。新增CPU→Apple FP8→CPU消费者65次执行中
+  改变64次输入、冷常量源释放后持续消费、两个槽和旧结果/close通过；实际报告为两个CPU
+  片段、一个Apple片段、两次必要host copy、零host repack。
+- CUDA memcheck/racecheck各13项通过，零errors/hazards；Air实际日志确认Metal API与GPU
+  validation均启用，新FP8及相关原消费者13项通过。两端ASan/UBSan/TSan宿主facet均通过；
+  原外部driver/private pool、LSan及NVIDIA diagnostic-thread lifetime未知不据此改写。
+- 原65份W1/provider/联合桥源码与669产品字节一致；复用绑定已登记，最终仍须回映原
+  ROUTED/P0/生命周期证据，不能把未变源码等同于所有GGUF交叉组合的新64步实测。
+- 未变GGML CUDA的146对象按原source/command/dependency身份复用；新核构建没有触发
+  这些vendor CUDA重编译。私有精简测试入口的GLOB、include、support TU与binary路径
+  错误均保留；早先过宽的759项Apple运行已显式停止，后续只运行预声明相关域。
+
+当前仍缺Windows/MSVC源码裁决、受影响source/static/shared迁址consumer及公开头、W1/路线
+最终回映、不可变候选后的有限P1、七问/红队/LOC与终审。尚无速度/5%门、token/s或llama.cpp
+结论；G08–G10未开始，不以本检查点宣布G07或goal完成。Windows首轮私有parent缺少
+CUDAToolkit imported target作用域，已在同一source/build追加find_package后续跑，原费用保留。
