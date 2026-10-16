@@ -517,9 +517,10 @@
     },
     {
       "module": "compute_route_apple",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/inference-g07-packed-weights.md",
-      "summary": "G07 AUDITED W-CUDA/W-CHECK/W-APPLE/W-QUAL finite FIX frozen: native packed F32 CUDA equations/device checked status, Apple FP8 tile-local F32 math with original scale order,64-step/lifetime/route qualification. Existing public shapes/encodings and other closed scopes unchanged; no new runtime/P1 verdict yet."
+      "candidate": "b483b8939e9c1d28a98eee3a6ecd13b3fd45fc88",
+      "summary": "G07 CANDIDATE: native packed CUDA/F32 and checked status, Apple FP8 tile/F32 implementation frozen at b483b8939. WSL/Air ordinary and actual device/host facets passed; Windows explicit Provider source and two public 64-step consumers passed. SDK migration, bounded same-contract P1, W1 evidence reconciliation and final gates remain pending."
     },
     {
       "module": "graph_route_apple",
@@ -634,9 +635,10 @@
     },
     {
       "module": "compute_provider_torch_cuda",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/inference-g07-packed-weights.md",
-      "summary": "G07 AUDITED W-CUDA/W-CHECK/W-APPLE/W-QUAL finite FIX frozen: native packed F32 CUDA equations/device checked status, Apple FP8 tile-local F32 math with original scale order,64-step/lifetime/route qualification. Existing public shapes/encodings and other closed scopes unchanged; no new runtime/P1 verdict yet."
+      "candidate": "b483b8939e9c1d28a98eee3a6ecd13b3fd45fc88",
+      "summary": "G07 CANDIDATE: native packed CUDA/F32 and checked status, Apple FP8 tile/F32 implementation frozen at b483b8939. WSL/Air ordinary and actual device/host facets passed; Windows explicit Provider source and two public 64-step consumers passed. SDK migration, bounded same-contract P1, W1 evidence reconciliation and final gates remain pending."
     },
     {
       "module": "graph_route_cpu_cuda",

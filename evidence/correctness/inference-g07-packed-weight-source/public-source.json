@@ -1,0 +1,137 @@
+{
+  "state": "PUBLIC_SOURCE_CONSUMERS_PASS_SDK_MIGRATION_PENDING",
+  "candidate": "b483b8939e9c1d28a98eee3a6ecd13b3fd45fc88",
+  "runs": [
+    {
+      "route": "cuda",
+      "candidate": "b483b8939e9c1d28a98eee3a6ecd13b3fd45fc88",
+      "stages": [
+        {
+          "stage": "manifest",
+          "command": [
+            "ninja",
+            "-C",
+            "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/shared-sdk-build",
+            "build.ninja"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 57.323340667000004,
+          "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g07-cuda-source-7/manifest.log"
+        },
+        {
+          "stage": "native-reuse",
+          "command": [
+            "python3",
+            "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/ce28_shipping_native_reuse_wsl.py",
+            "shared",
+            "g07-7"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 0.5836306690000015,
+          "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g07-cuda-source-7/native-reuse.log"
+        },
+        {
+          "stage": "build",
+          "command": [
+            "ninja",
+            "-C",
+            "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/shared-sdk-build",
+            "-f",
+            "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/ce28-shared-native-reuse-g07-7/reuse.ninja",
+            "-j",
+            "2",
+            "hyle_compute_provider_torch_cuda_test",
+            "hyle_compute_provider_torch_cuda_packed_consumer_test"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 3.7974574899999993,
+          "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g07-cuda-source-7/build.log"
+        },
+        {
+          "stage": "tests",
+          "command": [
+            "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/shared-sdk-build/bin/hyle_compute_provider_torch_cuda_test",
+            "--gtest_output=xml:/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g07-cuda-source-7/provider.xml"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 0.8508326939999904,
+          "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g07-cuda-source-7/tests.log"
+        },
+        {
+          "stage": "public-consumer",
+          "command": [
+            "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/shared-sdk-build/bin/hyle_compute_provider_torch_cuda_packed_consumer_test"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 0.7585444120000062,
+          "log": "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g07-cuda-source-7/public-consumer.log"
+        }
+      ],
+      "log_sha256": "777e68fe3024edeafcdcab47de4c4c32a2c3bae296ff6200da6bb7a6345eb99a"
+    },
+    {
+      "route": "apple",
+      "candidate": "b483b8939e9c1d28a98eee3a6ecd13b3fd45fc88",
+      "stages": [
+        {
+          "stage": "configure",
+          "command": [
+            "/opt/homebrew/bin/cmake",
+            "-S",
+            "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-parent",
+            "-B",
+            "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-build"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 6.078269667,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g07-apple-source-7/configure.log"
+        },
+        {
+          "stage": "manifest",
+          "command": [
+            "/opt/homebrew/bin/ninja",
+            "-C",
+            "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-build",
+            "build.ninja"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 0.0710234999999999,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g07-apple-source-7/manifest.log"
+        },
+        {
+          "stage": "build",
+          "command": [
+            "/opt/homebrew/bin/ninja",
+            "-C",
+            "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-build",
+            "-f",
+            "/Users/kiro/hyle-scratch/compute-unified/g07-apple-source-7/preview.ninja",
+            "-j",
+            "4",
+            "g07_public_weight_consumer"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 5.984779250000001,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g07-apple-source-7/build.log"
+        },
+        {
+          "stage": "g07_public_weight_consumer",
+          "command": [
+            "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-build/g07_public_weight_consumer"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 1.6175038340000008,
+          "log": "/Users/kiro/hyle-scratch/compute-unified/g07-apple-source-7/g07_public_weight_consumer.log"
+        }
+      ],
+      "log_sha256": "2a32cf9fa82d3c39da6c887476352eebc9539af77f90a7ff201b8ec1e3b683f5"
+    }
+  ],
+  "product_inputs": 1108,
+  "raw": {
+    "path": "public-source-raw.zip",
+    "sha256": "258e164ebc729fc87316f4d081ab7f7c6bdadf6e9b06d88168c9ac5cc869773d",
+    "bytes": 340794
+  },
+  "scope": "Both standalone consumers use installed-public HYLE/MLX declarations only, no GTest or product-private headers. Current runs are source builds; they do not sign relocated static/shared SDKs or P1."
+}

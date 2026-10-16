@@ -1,6 +1,6 @@
 # G07 packed 权重消费与 checked selection
 
-状态：**AUDITED，2026-10-16，有限FIX已冻结，新G07–G10 goal ACTIVE**。G01–G06已告一段落，
+状态：**CANDIDATE，2026-10-16，产品/API冻结，新G07–G10 goal ACTIVE**。G01–G06已告一段落，
 本卡不重开它们。原baseline为 `a638938b783b6fdae57e83f572aa0427d7188e7f`；
 产品输入保持完整 `669121418669b31f6849c74f64362aaf8d6eb919`。
 当前施工 owner 仅 `compute_provider_torch_cuda`、`compute_route_apple`，从各自 CLOSED
@@ -199,3 +199,39 @@ staging，F32 SIMDgroup乘加，128元素一组；不通过FP16窄化中间值�
 最终回映、不可变候选后的有限P1、七问/红队/LOC与终审。尚无速度/5%门、token/s或llama.cpp
 结论；G08–G10未开始，不以本检查点宣布G07或goal完成。Windows首轮私有parent缺少
 CUDAToolkit imported target作用域，已在同一source/build追加find_package后续跑，原费用保留。
+
+### 候选冻结与剩余执行入口
+
+不可变candidate为`b483b8939e9c1d28a98eee3a6ecd13b3fd45fc88`，两owner进入CANDIDATE。
+Windows/MSVC现已通过[公共显式Provider源码检查](../../../../evidence/correctness/inference-g07-packed-weight-source/windows-source.json)：
+4项原生packed测试通过。原270步默认路线预览在构建前停止；实际只构建29步、原status核与
+新packed核共用一个CUDA编译pool。默认Direct/Graph的完整N2资格仍明确属于前述WSL记录，
+不把这次Windows单元检查扩称完整默认路线或迁址SDK资格。
+
+两个[纯公开头消费者](../../../../evidence/correctness/inference-g07-packed-weight-source/public-source.json)
+在源码构建通过64步、两个槽和旧结果检查；Apple还验证关闭原Context后的保留array。
+它们分别是`tests/compute_provider_torch_cuda/packed_resident_consumer.cc`与
+`tests/compute_route_apple/packed_resident_consumer.cc`，不依赖GTest、产品私有头或原库故障注入。
+后续直接用同一源码验证WSL CUDA及Air Apple的迁址static/shared SDK、受影响公开头和必要
+现有直接consumer；沿原producer/cache更新两owner，未变vendor对象必须有身份匹配复用证明。
+源码检查已经通过，不能用它代签两种SDK。W1原资格的最终回映、七门/红队/LOC仍保留。
+
+P1继续只允许每路线两种预声明形状，未采过本轮计时。进一步冻结dtype和自然调用，避免比较
+时临时改为更弱的数学或更小的计费边界：
+
+| 路线 | 操作与固定输入 | 形状 | peer与适配边界 |
+|---|---|---|---|
+| CUDA | `mlx_quantized_matmul(kAffine4,64)`；A/scale/bias均F32、原U32 words、F32输出，包含非整数bias；公共Context/prepare/invocation | M1与M64，K2048/N6144 | 原669的同一provider源码及MLX header，允许私有benchmark仅重命名factory以同时实例化两版；用同一公共Context::create/prepare/submit/Completion，不改原数学、临时张量或TF32保护 |
+| Apple | `float8_block_linear(kNone,1e-10)`；BF16 activation、原E4M3FN/F32 block128权重、BF16输出；每次调用包括原动态量化与F32点积/scale/最终cast | M1与M64，K2048/N2048 | 原669的同一下降源码，只为私有reference重命名导出符号；原lowering作为公共Context::compile的region，核对与原prepare的逻辑desc、原生执行、错误和结果生命周期一致。不得把解码或quantize搬到冷期 |
+
+双方warm边界为既有Program/Invocation上的完整submit、原生prefix完成、结果/状态观察及本次
+公共临时owner释放；所有数学、转换、每次必要分配/copy/wait计入。准备、首次JIT、输入上传、
+Program/Invocation最终销毁和进程级driver/cache清理单列为冷/teardown，不能写成已纳入warm。
+CUDA旧invocation保留的最后ATen临时结果按原自然重放周期在下次submit/最终销毁释放；
+Apple保留原MLX私有缓存/完成owner。这些原生私有释放事实必须在适配源码预审和账单再次核实，
+不能凭一条“full drain”签同合同。若适配不能证明同等warm合同，先修适配或写不可比，不采样。
+
+先完成两侧独立数值/有效区验证、逐阶段CHARGED/DEFERRED账单及route-local A/A、双执行/
+分配顺序和原统一仪器资格；随后沿原n15/必要n31与5%门执行，不刷新失败/未知费用。基准只是
+两种具名正常调用的工程比较，不推导token/s、完整模型或llama.cpp成绩。发现产品问题退回
+AUDITED；不得在CANDIDATE下改kernel、公共形状或精度。G08–G10仍未开始。
