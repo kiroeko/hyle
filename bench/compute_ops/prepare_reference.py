@@ -11,7 +11,9 @@ owner=owners[a.route]
 # Whole original public declarations plus private ABI/bridge headers. Only the
 # selected original implementation TUs are compiled by the future workload.
 roots=['include','src/'+owner,'src/compute','src/compute_backend_cuda','src/compute_backend_cpu','src/compute_ggml_runtime','src/compute_provider_ggml_vulkan']
-if a.route=='vulkan':roots.append('third_party/ggml_vulkan_shaders')
+if a.route=='vulkan':roots.extend(['third_party/ggml_vulkan_shaders',
+    'src/compute_ops/view_alias.h','src/compute_provider_iree_vulkan/native_device.h',
+    'src/compute_provider_iree_vulkan/native_program.h'])
 payload=subprocess.check_output(['git','-C',str(repo),'archive','--format=zip',PIN,*roots])
 records=[];overlay=[];shared_private=[]
 with zipfile.ZipFile(io.BytesIO(payload)) as z:
@@ -44,7 +46,7 @@ sources={
  'vulkan':[Path(x['path']).name for x in records if x['path'].startswith('src/compute_route_vulkan/') and Path(x['path']).suffix=='.cc']
 }[a.route]
 assert all((out/'src'/owner/x).is_file() for x in sources)
-definitions={'cpu':['ggml_cpu=g08_original_ggml_cpu'],'cuda':['cuda_native=g08_original_cuda_native'],'apple':['lower_tensor=g08_original_lower_tensor','lower_mature_indexing=g08_original_lower_mature_indexing'],'vulkan':[]}[a.route]
+definitions={'cpu':['ggml_cpu=g08_original_ggml_cpu'],'cuda':['cuda_native=g08_original_cuda_native'],'apple':['lower_tensor=g08_original_lower_tensor','lower_mature_indexing=g08_original_lower_mature_indexing','is_mlx_tensor_custom=g08_original_is_mlx_tensor_custom'],'vulkan':[]}[a.route]
 receipt=dict(schema='hyle.inference-g08-original-source-materialization/v1',state='ORIGINAL_SOURCE_MATERIALIZED_NOT_BUILD_OR_RUNTIME_QUALIFICATION',original_revision=PIN,route=a.route,owner=owner,
     compiled_original_sources=['src/'+owner+'/'+x for x in sources],compile_definitions=definitions,files=records,owned_public_overlay=overlay,shared_private_headers=shared_private,
     public_header_policy='Current qualified SDK supplies all common public declarations, including the same fixed Mem implementation to both arms. The archived full include tree is provenance only and is never an include directory. Vulkan reference TUs alone prepend the owned namespace-only overlay.',

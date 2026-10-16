@@ -59,10 +59,11 @@ def main():
     codegen=dict(original_translation_units=compiled)
     if route=='apple':
         symbols=subprocess.check_output(['nm','-C',str(a.build/'libg08_original85.a')],text=True)
-        for name in ['g08_original_lower_tensor','g08_original_lower_mature_indexing']:
+        for name in ['g08_original_lower_tensor','g08_original_lower_mature_indexing','g08_original_is_mlx_tensor_custom']:
             assert re.search(r'\b[Tt]\s+.*\b'+name+r'\(',symbols),'original Apple definition missing: '+name
         assert re.search(r'\bU\s+.*\bg08_original_lower_mature_indexing\(',symbols),'original Apple tensor caller is not bound to original indexing'
         assert 'hyle::compute::apple::detail::lower_mature_indexing(' not in symbols,'original Apple reference leaks current indexing'
+        assert 'hyle::compute::apple::detail::is_mlx_tensor_custom(' not in symbols,'original Apple predicate is not isolated'
         symbol_log=a.output/'original-apple-symbols.log';symbol_log.write_text(symbols)
         codegen['apple_symbol_binding']=dict(state='ORIGINAL_TENSOR_CALLS_ORIGINAL_INDEXING',sha256=digest(symbol_log),log=str(symbol_log.resolve()))
     sources=['topk_bench.h','topk_bench.cc','generic_arm.cc','apple_arm.cc','vulkan_arm.cc','reference_provider.cc','placement.cc','CMakeLists.txt','verify_reference.py','validate_aa.py']

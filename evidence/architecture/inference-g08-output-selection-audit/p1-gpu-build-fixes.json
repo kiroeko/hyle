@@ -1,0 +1,49 @@
+{
+  "schema": "hyle.inference-g08-p1-gpu-build-fixes/v1",
+  "state": "FINITE_GPU_BENCHMARK_BUILD_WIRING_FIXED_NOT_RUNTIME_QUALIFIED",
+  "candidate": "5103c13d8ed119b06aa64e799f9768aea45ab913",
+  "prior_benchmark_revision": "5fbc13992137af26d0766f026415d5a80c7f2dd8",
+  "failed_probes": [
+    {
+      "route": "cuda",
+      "failed_seconds": 62.65518607599999,
+      "prior_benchmark_revision": "5fbc13992137af26d0766f026415d5a80c7f2dd8"
+    },
+    {
+      "route": "apple",
+      "failed_seconds": 5.317024083,
+      "prior_benchmark_revision": "5fbc13992137af26d0766f026415d5a80c7f2dd8"
+    },
+    {
+      "route": "vulkan",
+      "failed_seconds": 4.148020208,
+      "prior_benchmark_revision": "5fbc13992137af26d0766f026415d5a80c7f2dd8"
+    }
+  ],
+  "fixes": {
+    "cuda": "Include the existing public compute/backends/cuda.h in the CUDA-only benchmark branch for device/MemoryResource; no numerical or lifetime rewrite.",
+    "apple": "Privately rename the third original global symbol is_mlx_tensor_custom in both original TUs; require the renamed definition and absence of the unrenamed predicate in actual nm proof. No function body changed.",
+    "vulkan": "Materialize the three actual required old private bridge headers from clean original85 and require byte equality to current bridge headers; no new original TU or native implementation."
+  },
+  "unchanged_shared_private_headers": [
+    {
+      "path": "src/compute_ops/view_alias.h",
+      "sha256": "a12e5a51e2cce3c30a95e87798e5d3a6995c31f3ce821caf118179c1622782d0"
+    },
+    {
+      "path": "src/compute_provider_iree_vulkan/native_device.h",
+      "sha256": "551009394f1daad65b4ec4e29553b7290ff83de3089854bad8219a252201efb1"
+    },
+    {
+      "path": "src/compute_provider_iree_vulkan/native_program.h",
+      "sha256": "0cfa94ba1e70bb3138d790b01626578f63e29da7f954f1023119d10ec644378f"
+    }
+  ],
+  "scope": "Product/API/algorithm, both inputs/outputs, completion/readback/owner timing, shapes, n15/31, 5% and public instrument all unchanged. These three probes stopped during build before numerical/A-A/product samples; original jobs/logs/outputs and costs retained.",
+  "resume": "CUDA/Apple/Vulkan reuse their same probe-build-setup-resume-1 trees and built objects. Only the new diagnostic output/job is named compile-resume-2 because the immutable benchmark setup changed. CPU keeps its already proven5fbc benchmark; GPU-only fixes do not invalidate its product or measured CPU branch.",
+  "raw": {
+    "path": "p1-gpu-build-fixes-raw.zip",
+    "sha256": "5a153218a973db2d670d1b88fda10b7cdc74d2fcd2043c6ea697b27863c028de",
+    "bytes": 120041
+  }
+}

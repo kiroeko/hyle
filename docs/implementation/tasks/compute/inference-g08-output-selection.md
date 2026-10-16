@@ -1,6 +1,6 @@
 # G08 设备端输出数值选择与可定位随机数
 
-状态：**CANDIDATE，2026-10-17；八owner的S1–S4/M1接口与算法冻结于5103c13d8，普通数值及适用device/host风险已过，交付18/18已过，S1时序账与基准输入已固定，CPU数值及workload A/A通过，CUDA实际probe进行中，四路线P1与终审待完成**。baseline 为
+状态：**CANDIDATE，2026-10-17；八owner的S1–S4/M1接口与算法冻结于5103c13d8，普通数值及适用device/host风险已过，交付18/18已过，S1时序账与基准输入已固定，CPU数值及workload A/A通过，GPU基准三处编译接线已修，四路线P1与终审待完成**。baseline 为
 `85bcfa4eb`，G07已经整项接受，新G07–G10 goal完成1/4。原G01–G07不重跑，G09/G10未开始。
 本卡只处理原[G08发现](../project/inference-single-machine-foundation-audit-2026-10.md)与
 [消费形状计划](../project/inference-consumer-adaptation-plan-2026-10.md)的有限输出数值域。
@@ -603,3 +603,16 @@ CPU两个实际binary独立数值oracle、16次workload A/A及stock verify均PAS
 checkout内寻找未物化交付凭据，三路线均在probe/build前失败，共2.875s及日志保留；按同一
 receipt的SHA验证外置路径后续跑。WSL/Air干净source均已固定同一5fbc；CUDA实际probe
 已经启动，其后串行Apple/Vulkan。没有启动正式qualification或G09/G10。
+
+### 2026-10-17 GPU预检集中失败与同树修复
+
+[三路线实际build失败及有限修正](../../../../evidence/architecture/inference-g08-output-selection-audit/p1-gpu-build-fixes.json)：
+CUDA/Apple/Vulkan分别用62.655s/5.317s/4.148s，均在build停止，未进入数值、A/A或产品采样。
+一次修三处：CUDA benchmark补原公开backend CUDA头；Apple原两TU的第三个global predicate
+仅作私有符号隔离，并扩实际nm检查；Vulkan补原85bc的view_alias与两IREe私有桥头，逐字节
+证明和当前共用私有桥相同。原33个对照TU及数学/完成/双输出读取/owner边界不变。
+
+三GPU路线复用各自`probe-build-setup-resume-1`及已有对象，另存新诊断output/job，保留
+原失败和累计费用；产品candidate、公共仪器、5%、n15/31均未改。CPU保持已验证的5fbc
+benchmark用于其后正式P1；本批只修GPU激活分支与对照构建，不重复CPU/SDK/全库验证。
+四路线正式性能与最终聚合仍待完成，G09/G10未开始。

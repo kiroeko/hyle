@@ -94,7 +94,8 @@ elseif(_cuda)
   target_link_libraries(g08_original85 PRIVATE CUDA::cudart CUDA::cuda_driver)
 elseif(_apple)
   target_compile_definitions(g08_original85 PRIVATE lower_tensor=g08_original_lower_tensor
-    lower_mature_indexing=g08_original_lower_mature_indexing)
+    lower_mature_indexing=g08_original_lower_mature_indexing
+    is_mlx_tensor_custom=g08_original_is_mlx_tensor_custom)
 else()
   if(NOT EXISTS "${HYLE_G08_VULKAN_PRODUCER}/vulkan_build.h" OR NOT EXISTS "${HYLE_G08_GLSLANG}")
     message(FATAL_ERROR "Bind Vulkan to the qualified producer config and shader compiler")

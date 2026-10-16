@@ -7,6 +7,7 @@
 #include <hyle/mem/buffer.h>
 
 #if HYLE_G08_CUDA
+#include <hyle/compute/backends/cuda.h>
 #include <hyle/compute/cuda.h>
 #include <hyle/compute/providers/cuda.h>
 #else

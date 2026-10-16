@@ -18,7 +18,9 @@ if a.original:
     assert not subprocess.check_output(['git','-C',str(a.original),'status','--porcelain','--untracked-files=all'],text=True).strip()
     peer['tree']=subprocess.check_output(['git','-C',str(a.original),'rev-parse','HEAD^{tree}'],text=True).strip()
     roots=['include','src/'+r['owner'],'src/compute','src/compute_backend_cuda','src/compute_backend_cpu','src/compute_ggml_runtime','src/compute_provider_ggml_vulkan']
-    if a.route=='vulkan':roots.append('third_party/ggml_vulkan_shaders')
+    if a.route=='vulkan':roots.extend(['third_party/ggml_vulkan_shaders',
+        'src/compute_ops/view_alias.h','src/compute_provider_iree_vulkan/native_device.h',
+        'src/compute_provider_iree_vulkan/native_program.h'])
     payload=subprocess.check_output(['git','-C',str(a.original),'archive','--format=zip',r['original_revision'],*roots])
     with zipfile.ZipFile(io.BytesIO(payload)) as z:
         for item in r['files']:assert hashlib.sha256(z.read(item['path'])).hexdigest()==item['original_sha256'],('pinned peer blob differs',item['path'])
