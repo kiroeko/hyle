@@ -1,6 +1,7 @@
 #include <gtest/gtest.h>
 
 #include <array>
+#include <cstdio>
 #include <tuple>
 
 #include "../compute_route_apple/reduction_test_support.h"
@@ -49,12 +50,15 @@ TEST(AppleGraph,
       ASSERT_TRUE(builder.publish(probability).ok());
       auto graph = std::move(builder).finish().value();
       ga::CompileReport report;
+      std::fprintf(stderr,"Apple probability/TopK type=%u rows=%d experts=%d: compile Graph\n",
+          unsigned(logical(type)),rows,experts);
       auto program = ga::compile(context, graph, {}, {.report = &report});
       ASSERT_TRUE(program) << program.error().message();
       ASSERT_EQ(report.outputs.size(), 3U);
       EXPECT_EQ(report.outputs[1].data_type(), c::DataType::kInt32);
       EXPECT_FALSE(report.private_storage_bytes);
       graph = {};
+      std::fprintf(stderr,"Apple probability/TopK rows=%d: compile Direct\n",rows);
       auto direct = context.compile(
           [selection, sum](const auto &inputs, mx::Stream stream)
               -> hyle::Result<std::vector<mx::array>> {
