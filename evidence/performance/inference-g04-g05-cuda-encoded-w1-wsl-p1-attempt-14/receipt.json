@@ -1,0 +1,165 @@
+{
+  "kind": "G04_G05_CUDA_CE28_DIRECT_FP8_PRODUCER_STAGE_NATIVE_FINITE_P1",
+  "attempt": "14",
+  "product_candidate": "830dd9e01829e3e5850ddff7eaa6355ee7c8fd0d",
+  "performance_source": "d0e98fcdcf9a1de2f0b318a18903c26f3342fbc0",
+  "qualification": "QUALIFIED",
+  "performance": "FAIL",
+  "rows": [
+    {
+      "id": "cuda-encoded-window-d256",
+      "ratio_range": [
+        0.9889273052377445,
+        0.9921569017029805
+      ],
+      "noninferiority": "PASS",
+      "exact": "PARITY",
+      "direction": "LOSS"
+    },
+    {
+      "id": "cuda-encoded-prefill-d256",
+      "ratio_range": [
+        0.9529721883390984,
+        0.9613753269374385
+      ],
+      "noninferiority": "UNRESOLVED",
+      "exact": "INCONCLUSIVE",
+      "direction": "LOSS"
+    },
+    {
+      "id": "cuda-encoded-holdout-d64-v128",
+      "ratio_range": [
+        0.9825244048885508,
+        0.994021567252807
+      ],
+      "noninferiority": "PASS",
+      "exact": "PARITY",
+      "direction": "INCONCLUSIVE"
+    }
+  ],
+  "aa_processes": 16,
+  "aa_verdict": "PASS",
+  "sample_stages": [
+    15,
+    31
+  ],
+  "product_processes": 368,
+  "control_processes": 92,
+  "job": {
+    "state": "TERMINAL",
+    "snapshot": {
+      "attempt": "14",
+      "source_commit": "d0e98fcdcf9a1de2f0b318a18903c26f3342fbc0",
+      "product_candidate": "830dd9e01829e3e5850ddff7eaa6355ee7c8fd0d",
+      "numeric_receipt_sha256": "57551706796b37267b4a02060d6780fec652d91c7b414b369b5ccdfc27ffc392",
+      "contract_file_sha256": "de39ecaa98b113c6ed25e7cd306a0f9a820473230b07ceab2d7dfb72414a57bc"
+    },
+    "source": "/root/hyle-scratch/compute-unified/g04-cuda-encoded-p1-source-14",
+    "build": "/root/hyle-scratch/compute-unified/g04-cuda-encoded-p1-fresh-14",
+    "output": "/root/hyle-scratch/compute-unified/g04-cuda-encoded-p1-output-14",
+    "observer_pid": 2141,
+    "pid": 2173,
+    "identity": {
+      "host": "Linux kiro-workstation 6.18.54.1-microsoft-standard-WSL2 #1 SMP PREEMPT_DYNAMIC Tue Oct  6 19:13:07 UTC 2026 x86_64 x86_64 x86_64 GNU/Linux",
+      "compiler": "g++-14 (Ubuntu 14.2.0-4ubuntu2~24.04.1) 14.2.0\nCopyright (C) 2024 Free Software Foundation, Inc.\nThis is free software; see the source for copying conditions.  There is NO\nwarranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.",
+      "cuda": "nvcc: NVIDIA (R) Cuda compiler driver\nCopyright (c) 2005-2026 NVIDIA Corporation\nBuilt on Tue_Jun_09_02:43:40_PM_PDT_2026\nCuda compilation tools, release 13.3, V13.3.73\nBuild cuda_13.3.r13.3/compiler.38244171_0",
+      "gpu": "NVIDIA GeForce RTX 4070, 617.14, GPU-e7376560-6f5d-ec19-6ee4-3dd3a2c81ef8, 8.9"
+    },
+    "command": [
+      "python3",
+      "/root/hyle-scratch/compute-unified/g04-cuda-encoded-p1-source-14/scripts/hyle-perf.py",
+      "qualify-platform",
+      "--contract",
+      "/root/hyle-scratch/compute-unified/g04-cuda-encoded-p1-source-14/bench/inference_resident_sdpa/cuda_encoded_p1/contract.json",
+      "--source",
+      "/root/hyle-scratch/compute-unified/g04-cuda-encoded-p1-source-14/bench/inference_resident_sdpa/cuda_encoded_p1",
+      "--machine",
+      "W1-WSL",
+      "--peer",
+      "original-flashinfer=/root/hyle-scratch/compute-unified/peers/flashinfer-69ff-git-1",
+      "--build",
+      "/root/hyle-scratch/compute-unified/g04-cuda-encoded-p1-fresh-14",
+      "--output",
+      "/root/hyle-scratch/compute-unified/g04-cuda-encoded-p1-output-14"
+    ],
+    "qualification_exit_code": 2,
+    "verify_exit": 0,
+    "verify_elapsed_seconds": 0.286124287000348,
+    "exit_code": 2,
+    "elapsed_seconds": 7262.9445349279995
+  },
+  "launch": {
+    "state": "TERMINAL",
+    "pid": 61000,
+    "snapshot": {
+      "attempt": "14",
+      "source_commit": "d0e98fcdcf9a1de2f0b318a18903c26f3342fbc0",
+      "product_candidate": "830dd9e01829e3e5850ddff7eaa6355ee7c8fd0d",
+      "numeric_receipt_sha256": "57551706796b37267b4a02060d6780fec652d91c7b414b369b5ccdfc27ffc392",
+      "contract_file_sha256": "de39ecaa98b113c6ed25e7cd306a0f9a820473230b07ceab2d7dfb72414a57bc"
+    },
+    "command": [
+      "wsl",
+      "-e",
+      "python3",
+      "/mnt/c/public/project-hyle/hyle/.scratch/inference-gaps/g04-g05/ce28_cuda_p1_wsl.py",
+      "14"
+    ],
+    "exit_code": 2,
+    "elapsed_seconds": 7477.108999999997,
+    "actual_job": {
+      "state": "TERMINAL",
+      "snapshot": {
+        "attempt": "14",
+        "source_commit": "d0e98fcdcf9a1de2f0b318a18903c26f3342fbc0",
+        "product_candidate": "830dd9e01829e3e5850ddff7eaa6355ee7c8fd0d",
+        "numeric_receipt_sha256": "57551706796b37267b4a02060d6780fec652d91c7b414b369b5ccdfc27ffc392",
+        "contract_file_sha256": "de39ecaa98b113c6ed25e7cd306a0f9a820473230b07ceab2d7dfb72414a57bc"
+      },
+      "source": "/root/hyle-scratch/compute-unified/g04-cuda-encoded-p1-source-14",
+      "build": "/root/hyle-scratch/compute-unified/g04-cuda-encoded-p1-fresh-14",
+      "output": "/root/hyle-scratch/compute-unified/g04-cuda-encoded-p1-output-14",
+      "observer_pid": 2141,
+      "pid": 2173,
+      "identity": {
+        "host": "Linux kiro-workstation 6.18.54.1-microsoft-standard-WSL2 #1 SMP PREEMPT_DYNAMIC Tue Oct  6 19:13:07 UTC 2026 x86_64 x86_64 x86_64 GNU/Linux",
+        "compiler": "g++-14 (Ubuntu 14.2.0-4ubuntu2~24.04.1) 14.2.0\nCopyright (C) 2024 Free Software Foundation, Inc.\nThis is free software; see the source for copying conditions.  There is NO\nwarranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.",
+        "cuda": "nvcc: NVIDIA (R) Cuda compiler driver\nCopyright (c) 2005-2026 NVIDIA Corporation\nBuilt on Tue_Jun_09_02:43:40_PM_PDT_2026\nCuda compilation tools, release 13.3, V13.3.73\nBuild cuda_13.3.r13.3/compiler.38244171_0",
+        "gpu": "NVIDIA GeForce RTX 4070, 617.14, GPU-e7376560-6f5d-ec19-6ee4-3dd3a2c81ef8, 8.9"
+      },
+      "command": [
+        "python3",
+        "/root/hyle-scratch/compute-unified/g04-cuda-encoded-p1-source-14/scripts/hyle-perf.py",
+        "qualify-platform",
+        "--contract",
+        "/root/hyle-scratch/compute-unified/g04-cuda-encoded-p1-source-14/bench/inference_resident_sdpa/cuda_encoded_p1/contract.json",
+        "--source",
+        "/root/hyle-scratch/compute-unified/g04-cuda-encoded-p1-source-14/bench/inference_resident_sdpa/cuda_encoded_p1",
+        "--machine",
+        "W1-WSL",
+        "--peer",
+        "original-flashinfer=/root/hyle-scratch/compute-unified/peers/flashinfer-69ff-git-1",
+        "--build",
+        "/root/hyle-scratch/compute-unified/g04-cuda-encoded-p1-fresh-14",
+        "--output",
+        "/root/hyle-scratch/compute-unified/g04-cuda-encoded-p1-output-14"
+      ],
+      "qualification_exit_code": 2,
+      "verify_exit": 0,
+      "verify_elapsed_seconds": 0.286124287000348,
+      "exit_code": 2,
+      "elapsed_seconds": 7262.9445349279995
+    }
+  },
+  "verify_exit": 0,
+  "measured_worker_seconds": 7262.9445349279995,
+  "observer_seconds_overlaps": 7477.108999999997,
+  "limits": [
+    "Actual W1-WSL SM89 engineering only; no nativeLinux/Formal",
+    "Resident warm immutable history plus explicit cold BF16 snapshot/extra memory; not direct original FP8/besthost",
+    "No producer/growth/G06/capture/token-s/whole G04-G05 verdict",
+    "Actual CE28 static SDK; product candidate830dd9e01 and sync-fixed native reference with two explicit output barriers",
+    "Private native pool upper remains UNKNOWN"
+  ],
+  "raw_zip_sha256": "ddf67131f562e1ae99cff1d7076eedc8c06d3f0422a95c44e1706c9a79e46ec3"
+}

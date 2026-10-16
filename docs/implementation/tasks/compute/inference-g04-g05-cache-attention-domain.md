@@ -2630,3 +2630,31 @@ tsan stage421.932s/outer433.890s；
 outer与stage重叠不相加。[批次汇总](../../../../evidence/correctness/inference-g04-g05-cuda-ce28-host-tsan/batch-summary.json)
 保原LSan/diagnostic-thread lifetime INCONCLUSIVE及driver/shader/private-pool未知。
 现在只剩原AA/P1/strict与整项终审；本次不签性能或G04/G05完成，不重置旧失败/成本。
+
+## CE28 P1 终态：prefill 非劣未决
+
+[attempt14](../../../../evidence/performance/inference-g04-g05-cuda-encoded-w1-wsl-p1-attempt-14/receipt.json)
+已实际TERMINAL并封存：candidate830dd9e01/source d0e98fcdc，QUALIFIED、strict verify0。
+原16AA、五controls、三consumer、采样前后三validator均PASS，artifact/input/host稳定。
+按原[15,31]完成368产品与92控制进程；worker7262.945s、outer7477.109s重叠不相加。
+window D256 ratio0.988927–0.992157 / LOSS / 5%PASS（exact PARITY）；
+prefill D256 ratio0.952972–0.961375 / LOSS / 5%UNRESOLVED（exact INCONCLUSIVE）；
+noncausal D64/Dv128 ratio0.982524–0.994022 / INCONCLUSIVE / 5%PASS（exact PARITY）；
+整体performance标签为FAIL，因为并非所有门PASS；prefill实际结论为UNRESOLVED，
+不是本候选已证明的material FAIL。原5%耗时门对应ratio下界1/1.05=0.95238095238，
+不能用0.95替代；八层median均在原耗时门内，两层置信区间跨界：
+
+- `primary-candidate-first-candidate-allocation-first`：median 0.952972188339，CI [0.951128142869, 0.957231943227]。
+- `primary-peer-first-candidate-allocation-first`：median 0.954751614488，CI [0.951311056000, 0.958286966689]。
+
+每层31个独立cluster，原多重校正confidence level 0.9893261594697833不变。
+本轮采样到2h检查点时尚余原控制与封存，依常设授权自动追加一次900秒，保同候选/
+合同/进程和原预算记录；未重启、未产生新的TIMEOUT事实，观测时间不与stage费用相加。
+
+FI保持CANDIDATE830；不重复同候选P1、不追加n63、不改输入/peer/精度/tile/统计门。
+下一次15min有限只读检查只核实际timed consumer、原生与公共生命周期成本和已存在
+trace的适用性，输出确切源码位置与可归属成本；不新采profile、不构建、不改产品。
+UNRESOLVED及方向LOSS本身不作为新material缺口钥匙；只有真实消费缺口和精确源码
+机制共同成立，才可另行固定有限FIX并合法回AUDITED。没有新证据则结束本次检查并
+明确裁决，不扩成CUDA优化搜索。G04/G05未验收，goal仍3/10，G06暂不实施；
+原13及所有更早失败、未完成/未知和累计费用全部保留。

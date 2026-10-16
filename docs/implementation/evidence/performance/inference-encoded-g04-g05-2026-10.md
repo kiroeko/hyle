@@ -69,3 +69,14 @@ noncausal D64/Dv128 ratio0.982965–0.994006 / INCONCLUSIVE / 5%PASS（exact PAR
 整体performance FAIL，不追加n31。
 worker2577.782s、outer2666.843s重叠不相加，全部旧失败/方向/未知和累计费用保留。
 静态BAR减少不代签实际吞吐收益，CUDA/G04/G05仍未关闭。
+
+[attempt14](../../../../evidence/performance/inference-g04-g05-cuda-encoded-w1-wsl-p1-attempt-14/receipt.json)
+对应CE28 candidate830dd9e01，QUALIFIED/strict verify0；16AA、五controls、三consumer与
+采样前后三validator均PASS，artifact/input/host稳定。[15,31]完成368产品/92控制。
+window D256 ratio0.988927–0.992157 / LOSS / 5%PASS（exact PARITY）；
+prefill D256 ratio0.952972–0.961375 / LOSS / 5%UNRESOLVED（exact INCONCLUSIVE）；
+noncausal D64/Dv128 ratio0.982524–0.994022 / INCONCLUSIVE / 5%PASS（exact PARITY）；
+整体performance标签FAIL；prefill为UNRESOLVED，非已证明material FAIL。八层median
+均高于原5%耗时门1/1.05，两层CI跨界，不能据此签PASS或改用0.95门。
+worker7262.945s、outer7477.109s重叠不相加；原2h检查点的同run900秒追加、全部旧失败/方向/未知和费用保留。
+CUDA与整个G04/G05未关闭；不重复同候选P1、不追加n63或修改原合同。
