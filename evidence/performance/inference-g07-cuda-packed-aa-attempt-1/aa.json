@@ -1,0 +1,316 @@
+{
+  "gate": "FAIL",
+  "identity": {
+    "artifacts": {
+      "primary": "89e4e2884caa41f545acf6bc1a7679115bbe521d5f9df7b40cd4737e41f78128",
+      "placement": "b25559d2aba876cf625b5751daec466e50db2dfe04d2130bc26576d9aef8455a"
+    },
+    "validator": "9fad738b3d750298ceae88f0e664701ef0134c9f593070df4de1cdd3ae920b0d",
+    "machine": {
+      "schema": "hyle-perf-physical-host-identity-v1",
+      "profile_id": "W1-WSL",
+      "physical_host_id": "W1",
+      "physical_host_key_sha256": "0de152cace15dd26a2a64ba86717299b0e300c4c99284683ec04fa9fe0786816",
+      "environment": "wsl2",
+      "independent_hardware": false,
+      "profile_provisioned": true,
+      "registration_state": "UNREGISTERED",
+      "stable_machine_id_source": "linux-machine-id-sha256",
+      "stable_machine_id_sha256": "525399e45073ec21cc6c449682d5349f30f7c379a80a53c4a9fa6b8f4d19c119",
+      "stable_machine_id_matches_registered": false,
+      "required_host_facts_match": false,
+      "mismatched_host_facts": [],
+      "registered_profile_contract_sha256": "432f7b94d6ffebfc6f5cd714af1e08ddb2ccaf792fcfcfe065797872b96b9caf",
+      "raw_identifier_recorded": false
+    },
+    "original_source": "2c2d36b9feff40f45e022e445f6c14f3725c2bf92e7c7a8003bf4ae225bae3f3",
+    "sdk_record": "5978ae9bb0f9ce5bc7b0953a853bc94f0a4642d87289d34e32beca4bb173cfc4",
+    "benchmark_source": "b7db81238009596832c5d3319026ac41f069ed1bdbf3dc983f9d449757f5440b"
+  },
+  "runs": [
+    {
+      "arm": "native",
+      "variant": "primary",
+      "execution_order": "candidate-first",
+      "allocation_order": "candidate-first",
+      "ratios": {
+        "CUDA resident packed M=1 K=2048 N=6144": 0.9076319232446577,
+        "CUDA resident packed M=64 K=2048 N=6144": 1.0284395659224148
+      },
+      "log": "/root/hyle-scratch/compute-unified/g07-p1-cuda/qualification-1/packed-aa-raw/native-primary-0-0.log",
+      "sha256": "b10151424bd691fbc9aa10c3e079e17cfe88bfc14ad164c0c05c18ea2ef2d292"
+    },
+    {
+      "arm": "native",
+      "variant": "primary",
+      "execution_order": "candidate-first",
+      "allocation_order": "peer-first",
+      "ratios": {
+        "CUDA resident packed M=1 K=2048 N=6144": 0.9968742157019325,
+        "CUDA resident packed M=64 K=2048 N=6144": 1.02607405030286
+      },
+      "log": "/root/hyle-scratch/compute-unified/g07-p1-cuda/qualification-1/packed-aa-raw/native-primary-0-1.log",
+      "sha256": "cdef843f9f21911a989472baf3ff06154bd678bce77cef48923679d39e239a58"
+    },
+    {
+      "arm": "native",
+      "variant": "primary",
+      "execution_order": "peer-first",
+      "allocation_order": "candidate-first",
+      "ratios": {
+        "CUDA resident packed M=1 K=2048 N=6144": 0.6380975594893514,
+        "CUDA resident packed M=64 K=2048 N=6144": 1.0089396176717085
+      },
+      "log": "/root/hyle-scratch/compute-unified/g07-p1-cuda/qualification-1/packed-aa-raw/native-primary-1-0.log",
+      "sha256": "118ea598d211e6cee1184920467916162f731cf63718a3286552f474a7bce315"
+    },
+    {
+      "arm": "native",
+      "variant": "primary",
+      "execution_order": "peer-first",
+      "allocation_order": "peer-first",
+      "ratios": {
+        "CUDA resident packed M=1 K=2048 N=6144": 1.0126483710750063,
+        "CUDA resident packed M=64 K=2048 N=6144": 0.9925754430783968
+      },
+      "log": "/root/hyle-scratch/compute-unified/g07-p1-cuda/qualification-1/packed-aa-raw/native-primary-1-1.log",
+      "sha256": "690388e0c54f0cee8cdd216cce0593616d6faf9d89148461eedba36469fbdb94"
+    },
+    {
+      "arm": "native",
+      "variant": "placement",
+      "execution_order": "candidate-first",
+      "allocation_order": "candidate-first",
+      "ratios": {
+        "CUDA resident packed M=1 K=2048 N=6144": 1.0055227575699868,
+        "CUDA resident packed M=64 K=2048 N=6144": 1.0078277058475078
+      },
+      "log": "/root/hyle-scratch/compute-unified/g07-p1-cuda/qualification-1/packed-aa-raw/native-placement-0-0.log",
+      "sha256": "5cb9a86ffa2dcd7ce99db06efed1339914a66751c474324161a888aad766f02d"
+    },
+    {
+      "arm": "native",
+      "variant": "placement",
+      "execution_order": "candidate-first",
+      "allocation_order": "peer-first",
+      "ratios": {
+        "CUDA resident packed M=1 K=2048 N=6144": 0.9984824446437194,
+        "CUDA resident packed M=64 K=2048 N=6144": 0.9812297734627834
+      },
+      "log": "/root/hyle-scratch/compute-unified/g07-p1-cuda/qualification-1/packed-aa-raw/native-placement-0-1.log",
+      "sha256": "88bf319e663f04cd6116a6d2866a24201dd77a974382c559d2aef7572f117a6a"
+    },
+    {
+      "arm": "native",
+      "variant": "placement",
+      "execution_order": "peer-first",
+      "allocation_order": "candidate-first",
+      "ratios": {
+        "CUDA resident packed M=1 K=2048 N=6144": 0.9943088315962698,
+        "CUDA resident packed M=64 K=2048 N=6144": 1.0493158269398084
+      },
+      "log": "/root/hyle-scratch/compute-unified/g07-p1-cuda/qualification-1/packed-aa-raw/native-placement-1-0.log",
+      "sha256": "624bb241d08c5e7e6c167bc1badd2d1c78c14968d07d460709d1a07339476bc2"
+    },
+    {
+      "arm": "native",
+      "variant": "placement",
+      "execution_order": "peer-first",
+      "allocation_order": "peer-first",
+      "ratios": {
+        "CUDA resident packed M=1 K=2048 N=6144": 0.9892142808382824,
+        "CUDA resident packed M=64 K=2048 N=6144": 0.9888964332787474
+      },
+      "log": "/root/hyle-scratch/compute-unified/g07-p1-cuda/qualification-1/packed-aa-raw/native-placement-1-1.log",
+      "sha256": "0c6a3d72afe593eed04f3005dc20c914d39d6616156d4d2284067f7f2ceda941"
+    },
+    {
+      "arm": "selected",
+      "variant": "primary",
+      "execution_order": "candidate-first",
+      "allocation_order": "candidate-first",
+      "ratios": {
+        "CUDA resident packed M=1 K=2048 N=6144": 0.996287849971559,
+        "CUDA resident packed M=64 K=2048 N=6144": 0.9958068718449765
+      },
+      "log": "/root/hyle-scratch/compute-unified/g07-p1-cuda/qualification-1/packed-aa-raw/selected-primary-0-0.log",
+      "sha256": "6c3388935e8458af696ddde8ff98ddd3dcd28ad05c3d3f65ddb3d360c5400c82"
+    },
+    {
+      "arm": "selected",
+      "variant": "primary",
+      "execution_order": "candidate-first",
+      "allocation_order": "peer-first",
+      "ratios": {
+        "CUDA resident packed M=1 K=2048 N=6144": 0.9931113612321384,
+        "CUDA resident packed M=64 K=2048 N=6144": 1.029494143608895
+      },
+      "log": "/root/hyle-scratch/compute-unified/g07-p1-cuda/qualification-1/packed-aa-raw/selected-primary-0-1.log",
+      "sha256": "b7f5ee38312d9b3cbe0e82684040fe52f3eb3b1f0d45233a882970e251ee8d91"
+    },
+    {
+      "arm": "selected",
+      "variant": "primary",
+      "execution_order": "peer-first",
+      "allocation_order": "candidate-first",
+      "ratios": {
+        "CUDA resident packed M=1 K=2048 N=6144": 0.8958555823024245,
+        "CUDA resident packed M=64 K=2048 N=6144": 0.9987085011015727
+      },
+      "log": "/root/hyle-scratch/compute-unified/g07-p1-cuda/qualification-1/packed-aa-raw/selected-primary-1-0.log",
+      "sha256": "e9388f537547b966885028e19e7c9e473f84a12fe48d1edbcdad5f3f707f323a"
+    },
+    {
+      "arm": "selected",
+      "variant": "primary",
+      "execution_order": "peer-first",
+      "allocation_order": "peer-first",
+      "ratios": {
+        "CUDA resident packed M=1 K=2048 N=6144": 0.9532412405898274,
+        "CUDA resident packed M=64 K=2048 N=6144": 1.0060721062618596
+      },
+      "log": "/root/hyle-scratch/compute-unified/g07-p1-cuda/qualification-1/packed-aa-raw/selected-primary-1-1.log",
+      "sha256": "aabda27685fcd597185f672b78bdba2214fee3c84885a4e72fddbad101e983c4"
+    },
+    {
+      "arm": "selected",
+      "variant": "placement",
+      "execution_order": "candidate-first",
+      "allocation_order": "candidate-first",
+      "ratios": {
+        "CUDA resident packed M=1 K=2048 N=6144": 0.9666085900860477,
+        "CUDA resident packed M=64 K=2048 N=6144": 0.9940098798086274
+      },
+      "log": "/root/hyle-scratch/compute-unified/g07-p1-cuda/qualification-1/packed-aa-raw/selected-placement-0-0.log",
+      "sha256": "6d25d9fb345ea6a4b069cfd3c0e2e3a45ec1d9988fb356dd31a9b1612f8eaeb9"
+    },
+    {
+      "arm": "selected",
+      "variant": "placement",
+      "execution_order": "candidate-first",
+      "allocation_order": "peer-first",
+      "ratios": {
+        "CUDA resident packed M=1 K=2048 N=6144": 0.9469496068572592,
+        "CUDA resident packed M=64 K=2048 N=6144": 0.9844819019225624
+      },
+      "log": "/root/hyle-scratch/compute-unified/g07-p1-cuda/qualification-1/packed-aa-raw/selected-placement-0-1.log",
+      "sha256": "c98de797961e2904ad97dfcfb9ec9c69cd823f4eb3bfee97e0b650876b260978"
+    },
+    {
+      "arm": "selected",
+      "variant": "placement",
+      "execution_order": "peer-first",
+      "allocation_order": "candidate-first",
+      "ratios": {
+        "CUDA resident packed M=1 K=2048 N=6144": 1.0514605510474015,
+        "CUDA resident packed M=64 K=2048 N=6144": 1.0028157175877286
+      },
+      "log": "/root/hyle-scratch/compute-unified/g07-p1-cuda/qualification-1/packed-aa-raw/selected-placement-1-0.log",
+      "sha256": "3c09e1b089bc2a8c3a27a5109e5b26f76e271211022f710aee4daa951aed24be"
+    },
+    {
+      "arm": "selected",
+      "variant": "placement",
+      "execution_order": "peer-first",
+      "allocation_order": "peer-first",
+      "ratios": {
+        "CUDA resident packed M=1 K=2048 N=6144": 0.9423929725968564,
+        "CUDA resident packed M=64 K=2048 N=6144": 0.9821281069309905
+      },
+      "log": "/root/hyle-scratch/compute-unified/g07-p1-cuda/qualification-1/packed-aa-raw/selected-placement-1-1.log",
+      "sha256": "a875844160fe728a3e7a7497b7d11244af4effb8caabff4acbbca3e008ac21ac"
+    }
+  ],
+  "summaries": {
+    "native/CUDA resident packed M=1 K=2048 N=6144": {
+      "ratios": [
+        0.9076319232446577,
+        0.9968742157019325,
+        0.6380975594893514,
+        1.0126483710750063,
+        1.0055227575699868,
+        0.9984824446437194,
+        0.9943088315962698,
+        0.9892142808382824
+      ],
+      "factor_medians": {
+        "all": 0.9955915236491011,
+        "variant=placement": 0.9963956381199945,
+        "variant=primary": 0.9522530694732951,
+        "execution_order=candidate-first": 0.9976783301728259,
+        "execution_order=peer-first": 0.9917615562172761,
+        "allocation_order=candidate-first": 0.9509703774204638,
+        "allocation_order=peer-first": 0.9976783301728259
+      }
+    },
+    "native/CUDA resident packed M=64 K=2048 N=6144": {
+      "ratios": [
+        1.0284395659224148,
+        1.02607405030286,
+        1.0089396176717085,
+        0.9925754430783968,
+        1.0078277058475078,
+        0.9812297734627834,
+        1.0493158269398084,
+        0.9888964332787474
+      ],
+      "factor_medians": {
+        "all": 1.0083836617596083,
+        "variant=placement": 0.9983620695631277,
+        "variant=primary": 1.0175068339872841,
+        "execution_order=candidate-first": 1.016950878075184,
+        "execution_order=peer-first": 1.0007575303750527,
+        "allocation_order=candidate-first": 1.0186895917970618,
+        "allocation_order=peer-first": 0.9907359381785721
+      }
+    },
+    "selected/CUDA resident packed M=1 K=2048 N=6144": {
+      "ratios": [
+        0.996287849971559,
+        0.9931113612321384,
+        0.8958555823024245,
+        0.9532412405898274,
+        0.9666085900860477,
+        0.9469496068572592,
+        1.0514605510474015,
+        0.9423929725968564
+      ],
+      "factor_medians": {
+        "all": 0.9599249153379376,
+        "variant=placement": 0.9567790984716534,
+        "variant=primary": 0.9731763009109828,
+        "execution_order=candidate-first": 0.9798599756590931,
+        "execution_order=peer-first": 0.9478171065933418,
+        "allocation_order=candidate-first": 0.9814482200288033,
+        "allocation_order=peer-first": 0.9500954237235433
+      }
+    },
+    "selected/CUDA resident packed M=64 K=2048 N=6144": {
+      "ratios": [
+        0.9958068718449765,
+        1.029494143608895,
+        0.9987085011015727,
+        1.0060721062618596,
+        0.9940098798086274,
+        0.9844819019225624,
+        1.0028157175877286,
+        0.9821281069309905
+      ],
+      "factor_medians": {
+        "all": 0.9972576864732746,
+        "variant=placement": 0.9892458908655949,
+        "variant=primary": 1.002390303681716,
+        "execution_order=candidate-first": 0.994908375826802,
+        "execution_order=peer-first": 1.0007621093446506,
+        "allocation_order=candidate-first": 0.9972576864732746,
+        "allocation_order=peer-first": 0.995277004092211
+      }
+    }
+  },
+  "errors": [
+    "nativeCUDA resident packed M=1 K=2048 N=6144: gross instability",
+    "nativeCUDA resident packed M=1 K=2048 N=6144: factor median bias",
+    "selectedCUDA resident packed M=1 K=2048 N=6144: gross instability",
+    "selectedCUDA resident packed M=1 K=2048 N=6144: factor median bias"
+  ]
+}

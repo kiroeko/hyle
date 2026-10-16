@@ -1,0 +1,72 @@
+{
+  "schema": "hyle.inference-g07-packed-aa-failure/v1",
+  "state": "UNQUALIFIED_NO_PERFORMANCE_VERDICT",
+  "candidate": "b483b8939e9c1d28a98eee3a6ecd13b3fd45fc88",
+  "route": "cuda",
+  "source_revision": "8d8abcd3460f9baf5646c82e4fb5cf82a366d5d4",
+  "elapsed_seconds": 77.09887793600001,
+  "aa_gate": "FAIL",
+  "aa_errors": [
+    "nativeCUDA resident packed M=1 K=2048 N=6144: gross instability",
+    "nativeCUDA resident packed M=1 K=2048 N=6144: factor median bias",
+    "selectedCUDA resident packed M=1 K=2048 N=6144: gross instability",
+    "selectedCUDA resident packed M=1 K=2048 N=6144: factor median bias"
+  ],
+  "product_samples": "First product process refused before numerical/timed work because A/A ready=FAIL; no qualified P1 outcome.",
+  "retained_setup_failures": {
+    "state": "TERMINAL",
+    "command": [
+      "python3",
+      "/root/hyle-scratch/compute-unified/g07-p1-cuda/source/scripts/hyle-perf.py",
+      "qualify-platform",
+      "--source",
+      "/root/hyle-scratch/compute-unified/g07-p1-cuda/source/bench/inference_packed_weights",
+      "--contract",
+      "/root/hyle-scratch/compute-unified/g07-p1-cuda/source/bench/inference_packed_weights/contract-cuda.json",
+      "--machine",
+      "W1-WSL",
+      "--peer",
+      "original669=/root/hyle-scratch/compute-unified/g07-p1-cuda/original669",
+      "--build",
+      "/root/hyle-scratch/compute-unified/g07-p1-cuda/qualified-build-1",
+      "--output",
+      "/root/hyle-scratch/compute-unified/g07-p1-cuda/qualification-1"
+    ],
+    "source_revision": "8d8abcd3460f9baf5646c82e4fb5cf82a366d5d4",
+    "stages": [],
+    "prior_setup_failure": {
+      "state": "TERMINAL",
+      "command": [
+        "python3",
+        "/root/hyle-scratch/compute-unified/g07-p1-cuda/source/scripts/hyle-perf.py",
+        "qualify-platform",
+        "--source",
+        "/root/hyle-scratch/compute-unified/g07-p1-cuda/source/bench/inference_packed_weights",
+        "--contract",
+        "/root/hyle-scratch/compute-unified/g07-p1-cuda/source/bench/inference_packed_weights/contract-cuda.json",
+        "--machine",
+        "W1-WSL",
+        "--peer",
+        "original669=/root/hyle-scratch/compute-unified/g07-p1-cuda/original669",
+        "--build",
+        "/root/hyle-scratch/compute-unified/g07-p1-cuda/qualified-build-1",
+        "--output",
+        "/root/hyle-scratch/compute-unified/g07-p1-cuda/qualification-1"
+      ],
+      "source_revision": "04c4958b02e46545802107d4c6a92d7057c8b2f1",
+      "stages": [],
+      "elapsed_seconds": 0.4787582600000002,
+      "pid": 672,
+      "qualification_exit": 1
+    },
+    "resume_reason": "Contract host spelling corrected linux->wsl2 before any configure/build/A-A/P1; same fixed semantics, output identity and cumulative cost.",
+    "elapsed_seconds": 0.5412060520000068,
+    "pid": 696,
+    "qualification_exit": 1
+  },
+  "raw_archive": {
+    "path": "raw.zip",
+    "sha256": "5a74acbdfd48d15f8a58be2c94fd6fb2f65b14d0567613acd6206b2045d937ba"
+  },
+  "decision": "One predeclared harness correction only: alternating both complete calls warm1s and104original-instrument paired rounds4ms. No CUDA product edit, API/precision/owners/shape/n15-31/5%/statistics unchanged. New artifacts must requalify all16route-local A/A. Original failures and cumulative cost persist; no repeated posture search."
+}
