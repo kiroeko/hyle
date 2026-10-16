@@ -1,6 +1,6 @@
 # G06 metadata 与 decode 成本收口
 
-状态：**G06 AUDITED；共同及四路线runtime与CUDA capture有限source通过，最终风险/交付/性能待，2026-10-16**。本卡沿[完整十项目标](../project/inference-gaps-goal-execution-2026-10.md)，
+状态：**G06 CANDIDATE；共同及四路线runtime与CUDA capture有限source通过，最终风险/交付/性能待，2026-10-16**。本卡沿[完整十项目标](../project/inference-gaps-goal-execution-2026-10.md)，
 不缩减 CPU、单 GPU、CPU＋单 GPU、单/多请求或四原生路线。先完成四组共同审计和形状冻结，
 再集中实施、批量检查、按实际失败定向修正；产品修改仅限下文已冻结且owner为AUDITED的批次。
 
@@ -654,3 +654,6 @@ pending风险target及原core/Graph风险；再原static树跑FI完整suite（�
 最终P0/必要P1、七门/红队/LOC继续待实际证据；不重启旧G04/G05 unchanged候选P1。
 调查/验证2h检查点，按用户常设授权有限追加，保所有失败和累计费用。普通max4worker，
 CUDA native pool1/split3/Ninja2；不重写公共工具，不增加全局验证范围。
+
+最终候选绑定`0a29d119426b2975d48c238c37a2994675e0ba9f`；本卡11个owner由AUDITED进入CANDIDATE。
+未运行的最终门保持待验证，完成项仍3/10。

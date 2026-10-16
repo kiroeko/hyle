@@ -270,15 +270,17 @@
     },
     {
       "module": "compute",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/inference-g06-metadata-decode.md",
-      "summary": "G06 D7普通source通过：真实fresh-process cold capture及32×64 replay、FI20项、Direct/Graph/CPU+CUDA/pending六消费者与原compute108/batch60/Graph289等PASS；每次准入、idle writer恢复、地址变更显式recapture。原native math/Queue/Graph reset不变；原编译FAIL/费用及G04/G05未决保留。仍AUDITED，最终instrumented风险/Vulkan Recorder/san/header/SDK/P1待，整goal3/10。"
+      "summary": "G06最终候选：API/算法冻结，四路线runtime及CUDA真实capture普通source已通过；最终instrumented故障/Vulkan Recorder/san/header/迁址static+shared/P0/P1与七门红队待实际验证。原失败/费用及G04/G05未决保留，完整goal仍3/10。",
+      "candidate": "0a29d119426b2975d48c238c37a2994675e0ba9f"
     },
     {
       "module": "graph",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/inference-g06-metadata-decode.md",
-      "summary": "G06 D7普通source通过：真实fresh-process cold capture及32×64 replay、FI20项、Direct/Graph/CPU+CUDA/pending六消费者与原compute108/batch60/Graph289等PASS；每次准入、idle writer恢复、地址变更显式recapture。原native math/Queue/Graph reset不变；原编译FAIL/费用及G04/G05未决保留。仍AUDITED，最终instrumented风险/Vulkan Recorder/san/header/SDK/P1待，整goal3/10。"
+      "summary": "G06最终候选：API/算法冻结，四路线runtime及CUDA真实capture普通source已通过；最终instrumented故障/Vulkan Recorder/san/header/迁址static+shared/P0/P1与七门红队待实际验证。原失败/费用及G04/G05未决保留，完整goal仍3/10。",
+      "candidate": "0a29d119426b2975d48c238c37a2994675e0ba9f"
     },
     {
       "module": "container_concurrent",
@@ -363,9 +365,10 @@
     },
     {
       "module": "compute_provider_ggml",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/inference-g06-metadata-decode.md",
-      "summary": "G06-D2/D4 CPU paged与ragged Q1 runtime source通过：保原graph/pool/scratch，分别更新页leaf/长度或packed KV root/view extent/offset；原mask与预算一致。新D4 Windows普通62＋真实26＋pending18、Air两mixed core各26 PASS，32×64步核无warm注入分配/固定workspace。仍AUDITED；native ragged、FI schedule/capture普通source亦已通过；最终san/header/SDK待，原失败/UNKNOWN保留。"
+      "summary": "G06最终候选：API/算法冻结，四路线runtime及CUDA真实capture普通source已通过；最终instrumented故障/Vulkan Recorder/san/header/迁址static+shared/P0/P1与七门红队待实际验证。原失败/费用及G04/G05未决保留，完整goal仍3/10。",
+      "candidate": "0a29d119426b2975d48c238c37a2994675e0ba9f"
     },
     {
       "module": "graph_provider_onednn",
@@ -494,9 +497,10 @@
     },
     {
       "module": "compute_route_apple",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/inference-g06-metadata-decode.md",
-      "summary": "G06 D7普通source通过：真实fresh-process cold capture及32×64 replay、FI20项、Direct/Graph/CPU+CUDA/pending六消费者与原compute108/batch60/Graph289等PASS；每次准入、idle writer恢复、地址变更显式recapture。原native math/Queue/Graph reset不变；原编译FAIL/费用及G04/G05未决保留。仍AUDITED，最终instrumented风险/Vulkan Recorder/san/header/SDK/P1待，整goal3/10。"
+      "summary": "G06最终候选：API/算法冻结，四路线runtime及CUDA真实capture普通source已通过；最终instrumented故障/Vulkan Recorder/san/header/迁址static+shared/P0/P1与七门红队待实际验证。原失败/费用及G04/G05未决保留，完整goal仍3/10。",
+      "candidate": "0a29d119426b2975d48c238c37a2994675e0ba9f"
     },
     {
       "module": "graph_route_apple",
@@ -511,9 +515,10 @@
     },
     {
       "module": "compute_route_vulkan",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/inference-g06-metadata-decode.md",
-      "summary": "G06 D7普通source通过：真实fresh-process cold capture及32×64 replay、FI20项、Direct/Graph/CPU+CUDA/pending六消费者与原compute108/batch60/Graph289等PASS；每次准入、idle writer恢复、地址变更显式recapture。原native math/Queue/Graph reset不变；原编译FAIL/费用及G04/G05未决保留。仍AUDITED，最终instrumented风险/Vulkan Recorder/san/header/SDK/P1待，整goal3/10。"
+      "summary": "G06最终候选：API/算法冻结，四路线runtime及CUDA真实capture普通source已通过；最终instrumented故障/Vulkan Recorder/san/header/迁址static+shared/P0/P1与七门红队待实际验证。原失败/费用及G04/G05未决保留，完整goal仍3/10。",
+      "candidate": "0a29d119426b2975d48c238c37a2994675e0ba9f"
     },
     {
       "module": "graph_route_vulkan",
@@ -524,9 +529,10 @@
     },
     {
       "module": "compute_provider_ggml_vulkan",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/inference-g06-metadata-decode.md",
-      "summary": "G06 D7普通source通过：真实fresh-process cold capture及32×64 replay、FI20项、Direct/Graph/CPU+CUDA/pending六消费者与原compute108/batch60/Graph289等PASS；每次准入、idle writer恢复、地址变更显式recapture。原native math/Queue/Graph reset不变；原编译FAIL/费用及G04/G05未决保留。仍AUDITED，最终instrumented风险/Vulkan Recorder/san/header/SDK/P1待，整goal3/10。"
+      "summary": "G06最终候选：API/算法冻结，四路线runtime及CUDA真实capture普通source已通过；最终instrumented故障/Vulkan Recorder/san/header/迁址static+shared/P0/P1与七门红队待实际验证。原失败/费用及G04/G05未决保留，完整goal仍3/10。",
+      "candidate": "0a29d119426b2975d48c238c37a2994675e0ba9f"
     },
     {
       "module": "compute_ggml_runtime",
@@ -559,9 +565,10 @@
     },
     {
       "module": "compute_provider_flashinfer",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/inference-g06-metadata-decode.md",
-      "summary": "G06 D7普通source通过：真实fresh-process cold capture及32×64 replay、FI20项、Direct/Graph/CPU+CUDA/pending六消费者与原compute108/batch60/Graph289等PASS；每次准入、idle writer恢复、地址变更显式recapture。原native math/Queue/Graph reset不变；原编译FAIL/费用及G04/G05未决保留。仍AUDITED，最终instrumented风险/Vulkan Recorder/san/header/SDK/P1待，整goal3/10。"
+      "summary": "G06最终候选：API/算法冻结，四路线runtime及CUDA真实capture普通source已通过；最终instrumented故障/Vulkan Recorder/san/header/迁址static+shared/P0/P1与七门红队待实际验证。原失败/费用及G04/G05未决保留，完整goal仍3/10。",
+      "candidate": "0a29d119426b2975d48c238c37a2994675e0ba9f"
     },
     {
       "module": "compute_provider_ggml_metal",
@@ -610,15 +617,17 @@
     },
     {
       "module": "graph_route_cpu_apple",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/inference-g06-metadata-decode.md",
-      "summary": "G06 D7普通source通过：真实fresh-process cold capture及32×64 replay、FI20项、Direct/Graph/CPU+CUDA/pending六消费者与原compute108/batch60/Graph289等PASS；每次准入、idle writer恢复、地址变更显式recapture。原native math/Queue/Graph reset不变；原编译FAIL/费用及G04/G05未决保留。仍AUDITED，最终instrumented风险/Vulkan Recorder/san/header/SDK/P1待，整goal3/10。"
+      "summary": "G06最终候选：API/算法冻结，四路线runtime及CUDA真实capture普通source已通过；最终instrumented故障/Vulkan Recorder/san/header/迁址static+shared/P0/P1与七门红队待实际验证。原失败/费用及G04/G05未决保留，完整goal仍3/10。",
+      "candidate": "0a29d119426b2975d48c238c37a2994675e0ba9f"
     },
     {
       "module": "graph_route_cpu_vulkan",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/inference-g06-metadata-decode.md",
-      "summary": "G06 D7普通source通过：真实fresh-process cold capture及32×64 replay、FI20项、Direct/Graph/CPU+CUDA/pending六消费者与原compute108/batch60/Graph289等PASS；每次准入、idle writer恢复、地址变更显式recapture。原native math/Queue/Graph reset不变；原编译FAIL/费用及G04/G05未决保留。仍AUDITED，最终instrumented风险/Vulkan Recorder/san/header/SDK/P1待，整goal3/10。"
+      "summary": "G06最终候选：API/算法冻结，四路线runtime及CUDA真实capture普通source已通过；最终instrumented故障/Vulkan Recorder/san/header/迁址static+shared/P0/P1与七门红队待实际验证。原失败/费用及G04/G05未决保留，完整goal仍3/10。",
+      "candidate": "0a29d119426b2975d48c238c37a2994675e0ba9f"
     },
     {
       "module": "compute_stream",
@@ -644,15 +653,17 @@
     },
     {
       "module": "compute_batch",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/inference-g06-metadata-decode.md",
-      "summary": "G06 D7普通source通过：真实fresh-process cold capture及32×64 replay、FI20项、Direct/Graph/CPU+CUDA/pending六消费者与原compute108/batch60/Graph289等PASS；每次准入、idle writer恢复、地址变更显式recapture。原native math/Queue/Graph reset不变；原编译FAIL/费用及G04/G05未决保留。仍AUDITED，最终instrumented风险/Vulkan Recorder/san/header/SDK/P1待，整goal3/10。"
+      "summary": "G06最终候选：API/算法冻结，四路线runtime及CUDA真实capture普通source已通过；最终instrumented故障/Vulkan Recorder/san/header/迁址static+shared/P0/P1与七门红队待实际验证。原失败/费用及G04/G05未决保留，完整goal仍3/10。",
+      "candidate": "0a29d119426b2975d48c238c37a2994675e0ba9f"
     },
     {
       "module": "graph_batch",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/inference-g06-metadata-decode.md",
-      "summary": "G06 D7普通source通过：真实fresh-process cold capture及32×64 replay、FI20项、Direct/Graph/CPU+CUDA/pending六消费者与原compute108/batch60/Graph289等PASS；每次准入、idle writer恢复、地址变更显式recapture。原native math/Queue/Graph reset不变；原编译FAIL/费用及G04/G05未决保留。仍AUDITED，最终instrumented风险/Vulkan Recorder/san/header/SDK/P1待，整goal3/10。"
+      "summary": "G06最终候选：API/算法冻结，四路线runtime及CUDA真实capture普通source已通过；最终instrumented故障/Vulkan Recorder/san/header/迁址static+shared/P0/P1与七门红队待实际验证。原失败/费用及G04/G05未决保留，完整goal仍3/10。",
+      "candidate": "0a29d119426b2975d48c238c37a2994675e0ba9f"
     }
   ]
 }
