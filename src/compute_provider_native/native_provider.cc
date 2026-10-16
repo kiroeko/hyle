@@ -444,8 +444,11 @@ Status build_plan(Operation operation, std::span<const TensorDesc> inputs,
     break;
   }
   case OperationKind::kCustom: {
-    Status status =
-        internal::prepare_ds4_quantization(operation, inputs, outputs, plan);
+    const bool sampling = operation.custom_as<sampling_ops::RandomBits>() ||
+                          operation.custom_as<sampling_ops::Categorical>();
+    Status status = sampling
+        ? internal::prepare_sampling(operation, inputs, outputs, plan)
+        : internal::prepare_ds4_quantization(operation, inputs, outputs, plan);
     if (!status.ok())
       return status;
     break;
@@ -528,9 +531,6 @@ Status build_plan(Operation operation, std::span<const TensorDesc> inputs,
   case OperationKind::kScaledDotProductAttention:
     return Status::Unimplemented(
         "native SDPA retired; use a mature CPU provider");
-  case OperationKind::kCustom:
-    HYLE_RETURN_IF_ERROR(internal::prepare_sampling(operation, inputs, outputs, plan));
-    break;
   default:
     return Status::Unimplemented(
         "operation has no current HYLE native executable route");
@@ -542,8 +542,12 @@ Status build_plan(Operation operation, std::span<const TensorDesc> inputs,
   switch (operation.kind()) {
   case OperationKind::kRmsNorm:
   case OperationKind::kGatedActivation:
-  case OperationKind::kCustom:
     work_per_unit = plan.parameters[1];
+    break;
+  case OperationKind::kCustom:
+    if (operation.custom_as<sampling_ops::RandomBits>() ||
+        operation.custom_as<sampling_ops::Categorical>())
+      work_per_unit = plan.parameters[1];
     break;
   default:
     break;

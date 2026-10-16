@@ -198,3 +198,18 @@ V248320的R1/R16各65步、变化输入/高draw/请求重排、payload失败后�
 selector首次消费批因Random123新vendor缺少独立归属映射而拒绝；按已审compute_ops
 owner仅追加validation-policy的vendor data entry，算法/门/选择器实现未改，不绕过
 授权。中央manifest/lock造成的保守全库选择仍保留，非相关产品不启动全局编译。
+
+
+实际GPU端点检查增加三个source-only `sampling_math` target：CUDA/Apple/Vulkan都直接
+编译产品使用的同一私有数学函数，输入1048772对原始U32字（196端点组合＋1048576
+固定corpus），逐项签F64方程2e-5绝对误差。CUDA/GLSL仅抽出原函数为私有include，
+不增加测试专用公开schema、产品字段/分支/运行费用；Apple复用原Metal字符串头。
+这些仍待实际编译/设备运行，宿主probe不代签。首轮源码批checkpoint为9d581dc81，
+先集中build/run数值公开旅程，后续私有probe按真实增量接入，同树失败/费用连续保留。
+
+
+首轮9d581dc81集中构建真实FAIL：CPU native build_plan重复kCustom case，尚未启动
+runtime。已定向合并到原custom分支并按两个sampling descriptor分派，原DS4保持原承载；
+并将sampling并行work估计限定为这两个descriptor，避免影响旧custom成本。
+原日志`.scratch/inference-gaps/g08-cuda-source-1`、已用113.327s
+与146个native CUDA对象复用证明保留；同一build tree继续，未更换预算或宣称PASS。

@@ -48,7 +48,7 @@ if(HYLE_COMPUTE_CUDA_ENABLED)
   if(MSVC)
     # SDK collectives include CCCL headers, which require the conforming
     # preprocessor in nvcc's MSVC host preprocessing phase.
-    set_property(SOURCE collectives.cu norm_kernel.cu reduction_kernel.cu scatter_kernel.cu APPEND PROPERTY
+    set_property(SOURCE collectives.cu sampling_kernel.cu norm_kernel.cu reduction_kernel.cu scatter_kernel.cu APPEND PROPERTY
       COMPILE_OPTIONS -Xcompiler=/Zc:preprocessor)
     target_compile_options(hyle_compute_provider_cuda PRIVATE
       "$<$<COMPILE_LANGUAGE:CUDA>:-Xcompiler=/utf-8,/wd4211>")

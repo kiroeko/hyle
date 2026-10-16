@@ -1,4 +1,5 @@
 #include "sampling_kernel.h"
+#include "sampling_math.cuh"
 
 #include <cub/block/block_reduce.cuh>
 #include <cuda_bf16.h>
@@ -72,13 +73,6 @@ __global__ void row_max(Program p, const float *partials, float *maxima,
     maxima[blockIdx.x] = maximum;
   }
 }
-__device__ float gumbel(std::uint32_t hi, std::uint32_t lo) {
-  const bool upper = (hi & 0x80000000U) != 0;
-  if (upper) { hi = ~hi; lo = ~lo; }
-  const auto small = float(hi) * 0x1p-32f + (float(lo) + .5F) * 0x1p-64f;
-  const auto exponential = upper ? -log1pf(-small) : -logf(small);
-  return -logf(exponential);
-}
 template<class T, bool Probability>
 __global__ void scores(Program p, const T *input,
     const std::uint32_t *identities, const float *maxima, Partial *partials,
@@ -95,7 +89,7 @@ __global__ void scores(Program p, const T *input,
     const auto hi = random::lane(words, (column % 2) * 2);
     const auto lo = random::lane(words, (column % 2) * 2 + 1);
     selected = Merge{}(selected,
-        {value + gumbel(hi, lo), static_cast<std::int32_t>(column),
+        {value + math::gumbel(hi, lo), static_cast<std::int32_t>(column),
          Probability ? expf(value) : 0.F});
   }
   selected = Reduce(temporary).Reduce(selected, Merge{});

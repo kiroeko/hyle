@@ -30,3 +30,18 @@ hyle_add_test(compute_route_vulkan NAME sampling_consumer
   SOURCES sampling_consumer.cc)
 hyle_stage_runtime(hyle_compute_route_vulkan_sampling_consumer_test)
 endif()
+
+if(HYLE_COMPUTE_VULKAN_ENABLED)
+  add_custom_command(OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/sampling_math.spv"
+    COMMAND "${HYLE_VULKAN_GLSLANG}" -V --target-env vulkan1.2 -S comp
+      "-I${HYLE_SOURCE_DIR}/src/compute_route_vulkan/shaders"
+      -o "${CMAKE_CURRENT_BINARY_DIR}/sampling_math.spv"
+      "${CMAKE_CURRENT_SOURCE_DIR}/sampling_math.comp"
+    DEPENDS sampling_math.comp "${HYLE_SOURCE_DIR}/src/compute_route_vulkan/shaders/sampling_math.glsl"
+    VERBATIM)
+  hyle_add_test(compute_route_vulkan NAME sampling_math
+    SOURCES sampling_math_test.cc "${CMAKE_CURRENT_BINARY_DIR}/sampling_math.spv")
+  target_compile_definitions(hyle_compute_route_vulkan_sampling_math_test PRIVATE
+    HYLE_G08_VULKAN_MATH_SHADER="${CMAKE_CURRENT_BINARY_DIR}/sampling_math.spv")
+  hyle_stage_runtime(hyle_compute_route_vulkan_sampling_math_test)
+endif()

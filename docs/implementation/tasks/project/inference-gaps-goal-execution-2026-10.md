@@ -42,7 +42,7 @@ Apple/Vulkan 的实际 OS/native 资格。共同验收位置、有效区、shape
 
 ## 十项跟踪
 
-下表是有限工作项跟踪，不是第二份模块registry或活动goal。完整项完成数 **6/10**（G01–G06）。
+下表是有限工作项跟踪，不是第二份模块registry或活动goal。完整项完成数 **7/10**（G01–G07）。
 G01 原 plain 驻留读取范围已按各 finite CLOSED terminal 与原 Linux FI ROUTED/P0
 [聚合验收](../compute/inference-g01-aggregate-acceptance.md)；原八份声明 P1 的最终结果已核对，
 早先 FAIL/STOP/DIAGNOSTIC 和方向限制保留。G04/G05 新编码与数学域、
