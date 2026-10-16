@@ -584,9 +584,10 @@
     },
     {
       "module": "compute_provider_flashinfer",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/inference-g04-g05-final-closure.md",
-      "summary": "G04/G05 final closeout AUDITED: no product FIX;5-owner immutable inputs,23 original and20 post-G06 receipts verified, P0 bounded cost review and separate-phase red team PASS. Old CUDA warm LOSS/UNRESOLVED retained as cross-representation strategy result, not llama.cpp. Final docs/state checks only; no build/P1."
+      "summary": "G04/G05 final closeout CANDIDATE: unchanged existing0a29 product, no new implementation. Finite capability/P0 and evidence-reuse review PASS; original cross-representation CUDA warm LOSS/5% UNRESOLVED retained. Terminal state/docs adjudication only; engine comparison unrun.",
+      "candidate": "0a29d119426b2975d48c238c37a2994675e0ba9f"
     },
     {
       "module": "compute_provider_ggml_metal",
