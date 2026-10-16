@@ -410,3 +410,22 @@ control仍外部串行，原update gate先于mutation，未完成native work或�
 最终san/header/static/shared沿完整G06集中验证。每2h检查点按用户授权有限追加，原失败/
 UNKNOWN保留。此批只完成CPU ragged Q1；非Q1继续原冷规划，Apple/Vulkan ragged runtime、
 FI Q1/capture和完整终验仍为原目标必做，不把本批当整个ragged或G06完成。
+
+### CPU ragged runtime Q1 source 通过（2e56918ec）
+
+[D4实际证据](../../../../evidence/correctness/inference-g06-cpu-ragged-runtime-source/receipt.json)
+绑定2e56918ec60cba5b949d7fa8fc671a86bb206914。Windows普通Provider62、真实消费26项
+与原pending18场景，实际Air两个mixed构建配置中的CPU各26项全部PASS。新32组×64步
+覆盖packed KV增长/缩短/起点移动、512边界、请求加入/结束/空中间request、F16/BF16与
+plain/Q8、D64/128/256和D64/Dv128/window/noncausal。保持原graph/scratch，禁止下一次
+注入分配仍能更新；独立numeric/未使用NaN尾行、旧output gate及独立slot旧数值均通过。
+原mixed/prefill/ordinary、预算/冷OOM/接受前缀错误与退休没有放宽。
+
+Windows build8.500s/外层56.140s；Air两build6.167/6.113s/外层90.409s，stage与外层重叠。
+无产品失败或重试。第一次proof packer沿用旧suite名误判，在canonical发布前拒绝；原失败
+helper保留，修正后读取同一已过日志，不重跑产品；缺失计时UNKNOWN。复用的Windows runner
+保旧D2 scope label，receipt以实际candidate/源码及具名新ragged case核实D4范围。
+
+CPU Provider仍AUDITED；本批没有改runtime/vendor/数学/公共API/CMake，没有GPU或P1资格。
+下一批继续Apple/Vulkan ragged runtime及FI Q1/capture审计，最终san/header/搬迁SDK待完整
+算法冻结。G04/G05及全十项范围、失败、费用与剩余工作均保留，整项完成数仍3/10。

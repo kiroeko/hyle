@@ -150,13 +150,16 @@ Apple/Vulkan参考档真的在原GPU上执行，但它们把页/packed KV显式g
 不能只看接口形状相同而假定性能已经对称。没有submit隐式plan、JIT或自动CPU fallback。
 
 CPU `BatchInvocation::update_batch` 在 Q-indptr 相同、每 request 为0或1 query时，允许
-tail、跨页和页 ID 重排更新原 native leaf；保持原 graph、线程池及 workspace，单查询的
+tail、跨页和页 ID 重排更新原 native leaf；ragged 则更新每 request 的实际 KV extent 和
+packed offset，仍用三个 packed-capacity Q/K/V read ports。保持原 graph、线程池及 workspace，单查询的
 全零 causal mask 不分配。普通调用不需要另写 decode helper。请求集合或 Q 拓扑变化
-仍真正重规划，mixed/prefill 和 ragged 沿各自原合同；旧 output/ticket 仍阻止更新。
+仍真正重规划，mixed/prefill 沿原冷规划合同；旧 output/ticket 仍阻止更新。
 caller 创建的新版本仍拥有 active-sized snapshot，metadata delta 上传也可有原 F2 等待，
 不能把计划零分配解读为整步零分配或零等待。
 [Windows 与 Air mixed-core source 验证](../../evidence/correctness/inference-g06-cpu-runtime-q1-source/receipt.json)
 覆盖单/多请求32组×64步与原数值/风险；最终 sanitizer/SDK/header 和新性能资格仍待。
+另有[CPU ragged Q1 source 验证](../../evidence/correctness/inference-g06-cpu-ragged-runtime-source/receipt.json)
+覆盖32组×64步 packed KV 增长/缩短、后续 request 起点移动、长 KV 及独立旧 slot 输出。
 
 Linux CUDA的公开factory随普通产品传递，消费者只链接hyle::compute/hyle::graph；
 cuda.h在实际HYLE_COMPUTE_FLASHINFER资格下供应原factory头，未准入平台不供应该API。

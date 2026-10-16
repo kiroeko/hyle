@@ -200,6 +200,8 @@ auto output = slot.output().value();
 完整 query indptr 相同时，KV indptr、页索引和尾长可通过显式 `update_batch()` 更新，复用
 原 graph/pool/scratch；其它 paged 形状仍需完整布局相同，否则冷重建。frame
 必须属于当前 schema/layout，所有 reader 和实际 native uses 退休后才能复用物理页。
+CPU ragged 在相同 Q1 拓扑下也能更新实际 KV extent 与 packed 起点；仍绑定原三个
+packed-capacity Q/K/V read ports，内部逐 request 检查实际子范围，不复制完整 KV。
 热数学不按 query/head 复制整个 KV 历史；query 转换、冷 causal mask、页表节点与原
 metadata/workspace 仍计费，private pool 上界未知。CPU capture、增量 producer、低成本
 增长规划及 GPU/联合分页的资格各有独立范围，不由此 CPU 路径推导。
