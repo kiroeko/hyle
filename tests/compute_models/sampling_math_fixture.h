@@ -28,6 +28,9 @@ inline void check_endpoints(std::span<const std::uint32_t> words,
     const double small=std::ldexp(double(hi),-32)+std::ldexp(double(lo)+.5,-64);
     const double reference=-std::log(upper ? -std::log1p(-small) : -std::log(small));
     const double error=std::abs(double(actual[i])-reference);
+    if (!std::isfinite(actual[i])||error>2e-5)
+      std::fprintf(stderr,"open64 math i=%zu words=%08x:%08x upper=%d small=%.17g actual=%.9g expected=%.17g abs_error=%.17g\n",
+          i,words[i*2],words[i*2+1],int(upper),small,double(actual[i]),reference,error);
     check(std::isfinite(actual[i])&&error<=2e-5,
           "actual device open64 Gumbel exceeds frozen endpoint/math gate");
     maximum_error=std::max(maximum_error,error);
