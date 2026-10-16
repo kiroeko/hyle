@@ -1,6 +1,6 @@
 # G09 单CPU与单GPU联合流水
 
-状态：**SCOPED，2026-10-17；有限审计进行中，尚未授权产品实现**。
+状态：**SCOPED，2026-10-17；源码/peer审计及CUDA反证完成，依赖与推进设计待冻结，尚未授权产品实现**。
 baseline为`9e2f25c469634a6f723e76eaf1aa2db5973bca9a`。
 G07/G08已接受，当前G07–G10 goal完成2/4；G10和完整文本CLI未开始。
 
@@ -18,11 +18,28 @@ Vulkan同样先完成fragment和需要的transfer才推进下一个。冷compile
 [当前源码与原owner身份](../../../../evidence/architecture/inference-g09-joint-pipeline-intake/receipt.json)
 保存精确hash/锚点，尚不是运行时重叠或速度证据。
 
-当前施工owner只为`graph_route_cpu_apple`、`graph_route_cpu_vulkan`，由原CLOSED进入SCOPED。
-`graph_route_cpu_cuda`和common Graph先只读：CUDA已有SubmissionCursor/native event推进，但cursor
-遇到当前segment的host dependency会返回pending；需用真实独立支路核定其影响，不能据此直接宣称全域缺陷。
-若确有同一有限旅程需要修改common/CUDA/native seam，先补具体事实、owner与SCOPED再纳入AUDITED。
+初始intake只打开Apple/Vulkan；随后一次最小CUDA公开consumer反证已确认同一J1旅程的额外串行化。
+当前施工owner为`graph_route_cpu_apple`、`graph_route_cpu_vulkan`、`graph`、`graph_route_cpu_cuda`，
+均为SCOPED。common/CUDA只纳入原cold segment边界与联合提交推进，不扩大为普通Graph全面重构。
+leaf数学、native Queue/transfer/allocator继续借原已签owner，不因此自动重开。
 不重新打开G01–G08已接受的数学、packed、分页或数值选择范围。
+
+### 本轮有限审计与反证检查点
+
+[CUDA反证原始记录](../../../../evidence/architecture/inference-g09-cuda-preaudit/receipt.json)
+含两种插入顺序、原SDK输入hash、实际CPU执行区间与CUPTI `cuLaunchKernel`观察、独立数学oracle，
+以及配置/运行环境失败和累计53.962330539秒。只编译一个consumer，未重建产品或依赖。
+原SDK的common Graph、CUDA joint、CPU backend/provider源码hash与当前baseline逐项一致。
+
+- CPU先插入：独立CPU、CUDA segment都无前置依赖，report额外serialization edge为0；
+  实际GPU enqueue仍在整个独立CPU执行结束后才开始。这证明当前公开路线存在额外串行化。
+- GPU先插入：独立CPU节点与后续join进入同一个CPU segment，段入口统一等待GPU；
+  独立prefix因此被join的依赖牵连。Apple/Vulkan的连续target分片有同类边界问题。
+- 两图数学oracle均PASS；这些是旧产品的diagnostic反证，不是新实现correctness/P1或正向设备重叠PASS。
+
+同一raw包保存独立审计`independent-consumer-audit.json`：有限MUST为cold分片边界、真实ready推进、
+control/effect/alias依赖与所有accepted prefixes真实退休。必要lane/预算复用边不能因没有tensor边就删除。
+下一步只冻结这些FIX的owner/API/ownership/失败/并发/资源账后进入AUDITED，不再扩大缺口扫描。
 
 主纵切为单机推理的两microbatch：公开CPU→GPU→CPU链与一条独立CPU数值支路、持久输入和两个slots。
 正交纵切为批处理矩阵/向量管线：两个独立分支、显式join和不同图插入顺序，不引入token/request身份。
@@ -73,4 +90,5 @@ tokenizer、多GPU/多机或G10全进程线程预算放进来。不以要求消�
 普通最多4jobs/4logical、BelowNormal，CUDA pool1/split3/Ninja2；Windows/WSL/Air重型任务串行，
 Mac只用实际确认身份的MacBook Air。使用原合格依赖/对象和SDK，不让加一个joint消费者触发全库构建。
 修改前保存baseline registry，运行selector、docs/closure及状态投影/diff；最终聚合七门/七问、
-独立阶段终审、明确重开条件与统一LOC。当前所有运行时/性能门均为**未运行**，不能记PASS。
+独立阶段终审、明确重开条件与统一LOC。当前新实现的运行时/性能门均为**未运行**，不能记PASS；
+上述旧SDK反证不代签这些门。

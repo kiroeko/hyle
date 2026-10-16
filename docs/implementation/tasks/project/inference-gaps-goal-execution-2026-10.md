@@ -1,7 +1,7 @@
 # 单机推理基础缺口补齐执行总卡
 
 状态：**G01–G06六项已验收；新G07–G10 goal ACTIVE，2026-10-17**。旧goal不恢复；用户
-已明确要求创建新goal并开始剩余四项，G07/G08已整项验收，新goal完成2/4、历史累计8/10；G09的Apple/Vulkan联合owner已SCOPED，CUDA/common先只读核验；G10未开始。
+已明确要求创建新goal并开始剩余四项，G07/G08已整项验收，新goal完成2/4、历史累计8/10；G09源码/peer审计与CUDA反证完成，三个联合及必要common Graph owner已SCOPED、待设计冻结；G10未开始。
 四项完成后再开发Qwen3.5-2B full CUDA文本CLI，与llama.cpp比较prefill/decode tokens/s；
 CLI实现在本goal之外。原G01–G10的修正、成熟承载或完整路线反证范围保留。
 不能以延后、引擎自己写胶水或一个小模型出字代替完成。
@@ -58,7 +58,7 @@ G06–G10 不由该聚合裁决代签。
 | G06 metadata/decode | [原独立终审已验收](../compute/inference-g06-final-closure.md)：active/delta、共享上传、GlogG准入、四路线runtime与有限capture。当前FI另由G04/G05终审收口；原G06证据与所有限制保留 | host-known/device-produced、topology/runtime复用和decode成本 | compute_batch、FI/native Provider、graph_batch |
 | G07 packed 权重 | [ACCEPTED](../compute/inference-g07-final-closure.md)：CUDA C1 4274/Apple D2 91ae CLOSED；两路线源码/实际风险/迁址static-shared及M1/17/64各65步Graph补证通过；原669同合同P1四项均WIN/5%PASS，原失败/费用/限制保留 | 原驻留packed/checked IDs、生命周期与七门验收完成；不代签整引擎token/s | 两owner保持各自candidate，停止重跑 |
 | G08 数值输出选择 | [ACCEPTED](../compute/inference-g08-final-closure.md)：八owner5103、四路线数值/风险、18交付及九形状正式P1/原5%门通过；严格九WIN，AppleK3原PARITY及回溯审查流程偏差保留 | row-wise greedy/selection与选定随机数值域，counter/state、质量/分布和少量结果返回 | compute_ops、实际 Provider/native route；模型采样政策不下沉 |
-| G09 联合流水 | [SCOPED有限审计](../graph/inference-g09-joint-pipeline.md)：Apple/Vulkan原fragment无条件await已定位，CUDA/common只读反证；未改产品、未跑性能 | 原有限slots/依赖推进，真实无依赖CPU/GPU支路及microbatch trace；不重复scheduler | 三个graph hybrid及必要原native执行桥 |
+| G09 联合流水 | [SCOPED有限审计](../graph/inference-g09-joint-pipeline.md)：Apple/Vulkan逐片等待与CUDA同DAG串行化反证已确认；四owner SCOPED待设计冻结，未改产品、未跑性能 | 原有限slots/依赖推进，真实无依赖CPU/GPU支路及microbatch trace；不重复scheduler | 三个graph hybrid及必要原native执行桥 |
 | G10 CPU预算 | 待最小consumer | executor/native private pools明确报告和约束边界，阶段与并发invocation组合 | compute_route_cpu及实际CPU Provider |
 
 编码、数学与数值域由固定 peer/native 实际支持、当前模型和留出消费者共同裁决。总卡不

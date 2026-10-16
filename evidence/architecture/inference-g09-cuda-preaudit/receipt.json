@@ -1,0 +1,296 @@
+{
+  "schema": "hyle.inference-g09-cuda-preaudit/v1",
+  "state": "DIAGNOSTIC_COUNTEREXAMPLE_CONFIRMED_NOT_P1_OR_POSITIVE_OVERLAP",
+  "baseline": "9e2f25c469634a6f723e76eaf1aa2db5973bca9a",
+  "observed_head": "d1648a4d376c64fc6f2a05b4daedfb3e04daa5ad",
+  "sdk_candidate": "5103c13d8ed119b06aa64e799f9768aea45ab913",
+  "sdk_path": "/root/hyle-scratch/compute-unified/g08-sdk/cuda-static-1/relocated",
+  "source_inputs": [
+    {
+      "path": "src/graph/executable.cc",
+      "sha256": "73db1a8bb8a3a1696239456c35c84b7103e1024010eb2de71d3276d1d9fecb6e",
+      "matches_g08_qualified_sdk_input": true
+    },
+    {
+      "path": "src/graph/submission_internal.h",
+      "sha256": "9c6ff5d28f436c3e30733a9cddc24831c7bc7e269c6e5af349c0b4892aa1fbb4",
+      "matches_g08_qualified_sdk_input": true
+    },
+    {
+      "path": "src/graph_route_cpu_cuda/invocation.cc",
+      "sha256": "d069fb89c22f6f9f1d8b794859fe126a59eac465f046591d84f2880b57b1509e",
+      "matches_g08_qualified_sdk_input": true
+    },
+    {
+      "path": "src/compute_backend_cpu/cpu_backend.cc",
+      "sha256": "1595e091a615c67e88944be00dcdafd2b1c7764dd070ce2dcd523f7b0616ecfe",
+      "matches_g08_qualified_sdk_input": true
+    },
+    {
+      "path": "src/compute_provider_ggml/ggml_cpu_provider.cc",
+      "sha256": "86de40460a93736741e1c0e36beebc740cd483ea1f10d9070058ec52df43a275",
+      "matches_g08_qualified_sdk_input": true
+    }
+  ],
+  "previous_owners": [
+    {
+      "module": "graph",
+      "state": "CLOSED",
+      "record": "docs/implementation/tasks/compute/inference-g06-final-closure.md",
+      "summary": "G06 CLOSED finite M/S/L/D scope: active immutable metadata, qualified delta/shared mirrors, exact grouped permissions and route-specific runtime/capture bridge. Current source/host risks/relocated static-shared/23-header union/P0 and seven gates passed; explicit version allocations, checked waits, native managed/re-encode and private UNKNOWN retained. Original G04/G05 CUDA performance gate and other goal items remain.",
+      "candidate": "669121418669b31f6849c74f64362aaf8d6eb919",
+      "performance": {
+        "tier": "P0",
+        "evidence": "evidence/architecture/inference-g06-final-cost-review/p0.json"
+      }
+    },
+    {
+      "module": "graph_route_cpu_cuda",
+      "state": "CLOSED",
+      "record": "docs/implementation/tasks/graph/foundation-a-final-closure.md",
+      "summary": "Foundation A CLOSED：有限exact/control/qualified CPU effects与原身份/alias/OOM/失败前缀/取消/旧结果完成；18 installed格、原生缺CPU、实际Win/WSL/Air适用source及sanitizer、P0/LOC和终审通过。general/capture/GPU mutable/paged与整引擎性能不外推，F4/F5继续独立goal。",
+      "candidate": "546b0d2468e5de29031c34668f4afa4bc31b9a17",
+      "performance": {
+        "tier": "P0",
+        "evidence": "evidence/architecture/foundation-a-p0/README.md"
+      }
+    }
+  ],
+  "public_journey": "One same-DAG CPU Abs branch and CUDA Neg branch, CPU Add join; 4194304 F32 elements, both insertion orders, required placements and external domains, original two queues and Scheduler(2), original compile/create/bind/prepare_replay/submit/checked wait/close. No fake sleep/gate/provider/math.",
+  "observation": "Borrowed public CPU ParallelExecutorRef brackets actual original CPU math; CUPTI driver API callback observes actual cuLaunchKernel entry using same process steady_clock. Native device start/end not collected. All inputs/upload preparation outside active trace.",
+  "cases": [
+    {
+      "report": {
+        "case": "cpu-first",
+        "segments": 3,
+        "serialization_edges": 0
+      },
+      "steps": [
+        {
+          "step": 0,
+          "target": 1,
+          "kind": 0,
+          "blocks_host": true,
+          "nodes": [
+            0
+          ]
+        },
+        {
+          "step": 1,
+          "target": 0,
+          "kind": 0,
+          "blocks_host": true,
+          "nodes": [
+            1
+          ]
+        },
+        {
+          "step": 2,
+          "target": 0,
+          "kind": 2,
+          "blocks_host": false,
+          "nodes": []
+        },
+        {
+          "step": 3,
+          "target": 1,
+          "kind": 2,
+          "blocks_host": false,
+          "nodes": []
+        },
+        {
+          "step": 4,
+          "target": 1,
+          "kind": 0,
+          "blocks_host": true,
+          "nodes": [
+            2
+          ]
+        }
+      ],
+      "segments": [
+        {
+          "segment": 0,
+          "lane": 1,
+          "step_begin": 0,
+          "step_count": 1,
+          "dependencies": []
+        },
+        {
+          "segment": 1,
+          "lane": 0,
+          "step_begin": 1,
+          "step_count": 2,
+          "dependencies": []
+        },
+        {
+          "segment": 2,
+          "lane": 1,
+          "step_begin": 3,
+          "step_count": 2,
+          "dependencies": [
+            0,
+            1
+          ]
+        }
+      ],
+      "events": [
+        {
+          "event": "cpu_begin",
+          "ns": 22732155126,
+          "name": ""
+        },
+        {
+          "event": "cpu_end",
+          "ns": 22736166352,
+          "name": ""
+        },
+        {
+          "event": "gpu_enqueue",
+          "ns": 22746380869,
+          "name": "cuLaunchKernel"
+        },
+        {
+          "event": "cpu_begin",
+          "ns": 22751994497,
+          "name": ""
+        },
+        {
+          "event": "cpu_end",
+          "ns": 22757188331,
+          "name": ""
+        }
+      ],
+      "oracle": {
+        "oracle": "PASS",
+        "cpu_episodes": 2,
+        "actual_cuda_enqueue_callbacks": 1
+      }
+    },
+    {
+      "report": {
+        "case": "gpu-first",
+        "segments": 2,
+        "serialization_edges": 0
+      },
+      "steps": [
+        {
+          "step": 0,
+          "target": 0,
+          "kind": 0,
+          "blocks_host": true,
+          "nodes": [
+            0
+          ]
+        },
+        {
+          "step": 1,
+          "target": 0,
+          "kind": 2,
+          "blocks_host": false,
+          "nodes": []
+        },
+        {
+          "step": 2,
+          "target": 1,
+          "kind": 0,
+          "blocks_host": true,
+          "nodes": [
+            1
+          ]
+        },
+        {
+          "step": 3,
+          "target": 1,
+          "kind": 2,
+          "blocks_host": false,
+          "nodes": []
+        },
+        {
+          "step": 4,
+          "target": 1,
+          "kind": 0,
+          "blocks_host": true,
+          "nodes": [
+            2
+          ]
+        }
+      ],
+      "segments": [
+        {
+          "segment": 0,
+          "lane": 0,
+          "step_begin": 0,
+          "step_count": 2,
+          "dependencies": []
+        },
+        {
+          "segment": 1,
+          "lane": 1,
+          "step_begin": 2,
+          "step_count": 3,
+          "dependencies": [
+            0
+          ]
+        }
+      ],
+      "events": [
+        {
+          "event": "gpu_enqueue",
+          "ns": 22786835979,
+          "name": "cuLaunchKernel"
+        },
+        {
+          "event": "cpu_begin",
+          "ns": 22788045905,
+          "name": ""
+        },
+        {
+          "event": "cpu_end",
+          "ns": 22789889270,
+          "name": ""
+        },
+        {
+          "event": "cpu_begin",
+          "ns": 22791156500,
+          "name": ""
+        },
+        {
+          "event": "cpu_end",
+          "ns": 22792705375,
+          "name": ""
+        }
+      ],
+      "oracle": {
+        "oracle": "PASS",
+        "cpu_episodes": 2,
+        "actual_cuda_enqueue_callbacks": 1
+      }
+    }
+  ],
+  "finding_cpu_first": "Independent segments 0 CPU and 1 CUDA have no dependencies and no reported serialization edges, but actual GPU enqueue begins after entire independent CPU executor episode ended. This is a negative no-overlap counterexample, not a latency ranking.",
+  "finding_gpu_first": "Independent CPU node 1 and dependent join node 2 enter one CPU segment whose prerequisite is CUDA segment 0. The original cursor checks that union host dependency before any CPU step; real math and enqueue observations confirm the selected public route. Does not prove hardware overlap or its absence from API timestamps alone.",
+  "reopen": "Only graph cold segment boundaries/original submission composition plus graph_route_cpu_cuda progress needed for the fixed G09 J1-J4 journey; leaf math/native queue/allocator remain closed.",
+  "failures_retained": [
+    "configure CUDART root missing, 5.766140343s; explicit existing CUDAToolkit_ROOT corrected same tree",
+    "first run could not load installed ggml CPU AVX2 program; original binary rerun with relocated/lib in LD_LIBRARY_PATH"
+  ],
+  "cumulative_elapsed_seconds": 53.962330539,
+  "no_product_or_dependency_rebuild": true,
+  "binary": {
+    "path": "/root/hyle-scratch/compute-unified/g09-cuda-preaudit-1/build/g09_cuda_preaudit",
+    "bytes": 191754488,
+    "sha256": "e7f68180d3a5f2f897539e895d1b84a0e57ea63881a11f0b621d583f5b630d82"
+  },
+  "raw": {
+    "path": "raw.zip",
+    "bytes": 313675,
+    "sha256": "2adb251be924fb5acf6dee6f0aa4261694fc51196fac917a831eeed660e6e988",
+    "crc": "PASS"
+  },
+  "limits": [
+    "One engineering diagnostic batch, not qualified P1 or general CUDA performance claim.",
+    "Enqueue entry plus CPU interval only; no positive native hardware-overlap signature.",
+    "No runtime correctness/retirement/sanitizer/delivery/P1 gate for G09 implementation has run."
+  ]
+}

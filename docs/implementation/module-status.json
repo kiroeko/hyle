@@ -281,14 +281,9 @@
     },
     {
       "module": "graph",
-      "state": "CLOSED",
-      "record": "docs/implementation/tasks/compute/inference-g06-final-closure.md",
-      "summary": "G06 CLOSED finite M/S/L/D scope: active immutable metadata, qualified delta/shared mirrors, exact grouped permissions and route-specific runtime/capture bridge. Current source/host risks/relocated static-shared/23-header union/P0 and seven gates passed; explicit version allocations, checked waits, native managed/re-encode and private UNKNOWN retained. Original G04/G05 CUDA performance gate and other goal items remain.",
-      "candidate": "669121418669b31f6849c74f64362aaf8d6eb919",
-      "performance": {
-        "tier": "P0",
-        "evidence": "evidence/architecture/inference-g06-final-cost-review/p0.json"
-      }
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/graph/inference-g09-joint-pipeline.md",
+      "summary": "G09 SCOPED: finite peer/source audit plus original-SDK CUDA counterexample confirms independent CPU/GPU branch serialization and dependency-union fragment boundary. Freeze original cold dependencies and joint progress/retirement design before implementation; no new-product runtime/P1 verdict."
     },
     {
       "module": "container_concurrent",
@@ -654,26 +649,21 @@
     },
     {
       "module": "graph_route_cpu_cuda",
-      "state": "CLOSED",
-      "record": "docs/implementation/tasks/graph/foundation-a-final-closure.md",
-      "summary": "Foundation A CLOSED：有限exact/control/qualified CPU effects与原身份/alias/OOM/失败前缀/取消/旧结果完成；18 installed格、原生缺CPU、实际Win/WSL/Air适用source及sanitizer、P0/LOC和终审通过。general/capture/GPU mutable/paged与整引擎性能不外推，F4/F5继续独立goal。",
-      "candidate": "546b0d2468e5de29031c34668f4afa4bc31b9a17",
-      "performance": {
-        "tier": "P0",
-        "evidence": "evidence/architecture/foundation-a-p0/README.md"
-      }
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/graph/inference-g09-joint-pipeline.md",
+      "summary": "G09 SCOPED: finite peer/source audit plus original-SDK CUDA counterexample confirms independent CPU/GPU branch serialization and dependency-union fragment boundary. Freeze original cold dependencies and joint progress/retirement design before implementation; no new-product runtime/P1 verdict."
     },
     {
       "module": "graph_route_cpu_apple",
       "state": "SCOPED",
       "record": "docs/implementation/tasks/graph/inference-g09-joint-pipeline.md",
-      "summary": "G09 SCOPED: real independent CPU/GPU branches are delayed by unconditional per-fragment waits; finite dependency/progress, two microbatch/65-step, error/retirement/resource audit. No product implementation or performance verdict; CUDA/common read-only pending concrete consumer proof."
+      "summary": "G09 SCOPED: finite peer/source audit plus original-SDK CUDA counterexample confirms independent CPU/GPU branch serialization and dependency-union fragment boundary. Freeze original cold dependencies and joint progress/retirement design before implementation; no new-product runtime/P1 verdict."
     },
     {
       "module": "graph_route_cpu_vulkan",
       "state": "SCOPED",
       "record": "docs/implementation/tasks/graph/inference-g09-joint-pipeline.md",
-      "summary": "G09 SCOPED: real independent CPU/GPU branches are delayed by unconditional per-fragment waits; finite dependency/progress, two microbatch/65-step, error/retirement/resource audit. No product implementation or performance verdict; CUDA/common read-only pending concrete consumer proof."
+      "summary": "G09 SCOPED: finite peer/source audit plus original-SDK CUDA counterexample confirms independent CPU/GPU branch serialization and dependency-union fragment boundary. Freeze original cold dependencies and joint progress/retirement design before implementation; no new-product runtime/P1 verdict."
     },
     {
       "module": "compute_stream",
