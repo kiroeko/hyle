@@ -635,9 +635,10 @@
     },
     {
       "module": "compute_provider_torch_cuda",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/inference-g07-packed-weights.md",
-      "summary": "G07 AUDITED C1: b483 full qualified P1 M1 WIN24.45-24.73, M64 INCONCLUSIVE/5%FAIL0.936-0.966 retained. Fixed four-M-row register reuse for linear only, same F32/group/MX/owner contract; no width sweep or new GEMM. Apple D2 candidate91ae unchanged."
+      "summary": "G07 CANDIDATE C1 fixed four-row packed linear reuse4274:24Provider,32Direct/Graph, public64step, actual memcheck/racecheck22each, three host facets22each and Windows explicit Provider pass. New relocated SDKs and unchanged-contract P1 pending. Old qualified gate failure/cost retained; Apple D2 already P1 PASS.",
+      "candidate": "4274ee6cb6275bf36bda1d8c8c0e223f0fa65db5"
     },
     {
       "module": "graph_route_cpu_cuda",

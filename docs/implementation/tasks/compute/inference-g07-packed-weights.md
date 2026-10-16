@@ -1,6 +1,6 @@
 # G07 packed 权重消费与 checked selection
 
-状态：**2026-10-16，CUDA AUDITED C1；Apple D2 91ae CANDIDATE；G07–G10 goal ACTIVE**。G01–G06已告一段落，
+状态：**2026-10-16，CUDA C1 4274/Apple D2 91ae CANDIDATE；Apple性能PASS；G07–G10 goal ACTIVE**。G01–G06已告一段落，
 本卡不重开它们。原baseline为 `a638938b783b6fdae57e83f572aa0427d7188e7f`；
 产品输入保持完整 `669121418669b31f6849c74f64362aaf8d6eb919`。
 当前施工 owner 仅 `compute_provider_torch_cuda`、`compute_route_apple`，从各自 CLOSED
@@ -408,3 +408,11 @@ Apple D2完整P1终态之后。Apple D2 A/A已通过、正式资格仍运行，�
 
 CUDA C1现按原排队在Apple终态后执行source/公开64步、实际N2 Direct/Graph、设备与三
 宿主facet；仍AUDITED，尚不能签新CUDA性能或G07整项完成。G08–G10保持原完整目标。
+
+### CUDA C1普通门冻结
+
+[C1源码与风险](../../../../evidence/correctness/inference-g07-cuda-row-reuse-c1/receipt.json)
+已通过：WSL24Provider、16Direct/16Graph及公开64步；实际memcheck/racecheck各22项、
+三hostsan各22项；Windows显式Provider四项也通过，包含M5尾块及全部FP8码值。没有skip。
+仅本owner从AUDITED进入CANDIDATE，产品固定4274、实际测试快照2c174；两迁址SDK和
+相同两shape/104轮/原669/5%门P1待做。Apple D2停止重复，既有W1、原失败/UNKNOWN保留。

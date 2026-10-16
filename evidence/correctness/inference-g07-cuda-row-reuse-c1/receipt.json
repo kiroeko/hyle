@@ -1,0 +1,133 @@
+{
+  "schema": "hyle.inference-g07-cuda-row-reuse/v1",
+  "state": "PASS_SOURCE_DEVICE_AND_HOST_FACETS_SDK_P1_PENDING",
+  "candidate": "4274ee6cb6275bf36bda1d8c8c0e223f0fa65db5",
+  "source_snapshot": "2c1746168bc94a640c51efded7d18f8ff3e5dc8a",
+  "runs": [
+    {
+      "id": "g07-cuda-source-16",
+      "state": "SOURCE_TEST_PASS_RISKS_DELIVERY_PERF_PENDING",
+      "result_sha256": "2219f6e5e1338e47f9ca1b5f720ffc66932edc93792435c88cb50378b39c3096",
+      "tests": [
+        {
+          "path": "provider.xml",
+          "tests": 24,
+          "failures": 0,
+          "skips": 0
+        }
+      ],
+      "elapsed_seconds": 68.956260646
+    },
+    {
+      "id": "g07-cuda-model-consumers-c1",
+      "state": "N2_FULL_SHAPE_DIRECT_GRAPH_PASS",
+      "result_sha256": "d8f125df08201d1004f9e9d5241f36f0391429339e8ed39f0137d6b1d4b16a45",
+      "tests": [
+        {
+          "path": "g07_cuda_mlx_compute.xml",
+          "tests": 16,
+          "failures": 0,
+          "skips": 0
+        },
+        {
+          "path": "g07_cuda_mlx_graph.xml",
+          "tests": 16,
+          "failures": 0,
+          "skips": 0
+        }
+      ],
+      "elapsed_seconds": 57.046735059
+    },
+    {
+      "id": "g07-cuda-device-risks-c1",
+      "state": "CUDA_DEVICE_RISKS_PASS",
+      "result_sha256": "4cf08f5aaa7981467b7ec2508874b286c921473a1adda3ea1a793d937210b314",
+      "tests": [
+        {
+          "path": "memcheck.xml",
+          "tests": 22,
+          "failures": 0,
+          "skips": 0
+        },
+        {
+          "path": "racecheck.xml",
+          "tests": 22,
+          "failures": 0,
+          "skips": 0
+        }
+      ],
+      "elapsed_seconds": 2.6619030059999886
+    },
+    {
+      "id": "g07-cuda-host-asan-c1",
+      "state": "HOST_FACET_PASS",
+      "result_sha256": "07fa284dc34d26f56daf8d5a688e540b15a1f8b6f6370809737980e821f158c3",
+      "tests": [
+        {
+          "path": "tests.xml",
+          "tests": 22,
+          "failures": 0,
+          "skips": 0
+        }
+      ],
+      "elapsed_seconds": 59.76445653799999
+    },
+    {
+      "id": "g07-cuda-host-ubsan-c1",
+      "state": "HOST_FACET_PASS",
+      "result_sha256": "02c8974748a217f6076aaff2168b4ef73c9b9064ece973a10b93b343b7e89414",
+      "tests": [
+        {
+          "path": "tests.xml",
+          "tests": 22,
+          "failures": 0,
+          "skips": 0
+        }
+      ],
+      "elapsed_seconds": 58.78640643
+    },
+    {
+      "id": "g07-cuda-host-tsan-c1",
+      "state": "HOST_FACET_PASS",
+      "result_sha256": "a35936e94250466034fcc7584f5184c33a322b8f40c67b7c1d7253516f7c3d8f",
+      "tests": [
+        {
+          "path": "tests.xml",
+          "tests": 22,
+          "failures": 0,
+          "skips": 0
+        }
+      ],
+      "elapsed_seconds": 61.50361769899999
+    },
+    {
+      "id": "g07-windows-source-c1",
+      "state": "WINDOWS_SOURCE_PASS",
+      "result_sha256": "8412c3e1894fcb9ea1cf9f2b90a5669edd5fcb5cc8d30a5fdc3f75c1f6dfc8d3",
+      "tests": [
+        {
+          "path": "tests.xml",
+          "tests": 4,
+          "failures": 0,
+          "skips": 0
+        }
+      ],
+      "elapsed_seconds": 64.26500000001397
+    }
+  ],
+  "product_input_count": 17,
+  "product_manifest": {
+    "archive_entry": "g07-cuda-source-16/input-manifest.json",
+    "sha256": "37fa57056c59fad7136bcfef7b2e62b11b6a5aff7366a32320917aff765ac25b"
+  },
+  "raw_archive": {
+    "path": "raw.zip",
+    "sha256": "a34f2b7e634f92a422a97678c809d4eb9d91fb4f931c8530ae7fded5ba30ed90"
+  },
+  "change": "Same packed kernel template with fixed four-row register reuse for linear M>1. Each output preserves original F32 lane/FMA/warp reduction and group-scale ordering. M1/grouped/embedding retain one-row mapping; no global workspace, repack, new dependency or status owner.",
+  "limits": [
+    "Old b483 full qualified M1 WIN and M64 INCONCLUSIVE/5%FAIL retained, cumulative qualification cost1144.004seconds. New same-contract P1 pending.",
+    "Host facets do not certify device/driver/private pools or diagnostic-thread/LSan lifetime. Actual compute-sanitizer memcheck/racecheck records remain separate.",
+    "Apple D2 already qualified PASS; no Apple rerun or full-engine token/s claim."
+  ]
+}
