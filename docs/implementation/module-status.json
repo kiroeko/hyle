@@ -270,15 +270,15 @@
     },
     {
       "module": "compute",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/inference-g06-metadata-decode.md",
-      "summary": "G06 D7 scoped：新低成本decode capture消费者需要原Graph绑定端口的cold访问和原已准入Queue中的borrowed capture launch桥。仅审计两个内部接缝；原G03关闭范围/费用/失败保留，无新产品或capture资格。"
+      "summary": "G06 D7 AUDITED：固定原capture borrowed launch与cold bound-port visitor内部桥；原G03 baseline/全部失败成本保留。显式batch replay复用原Queue/F1/Completion，不改普通queue/Graph reset算法；仅冻结有限FIX，实际capture/source及最终七门待。"
     },
     {
       "module": "graph",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/inference-g06-metadata-decode.md",
-      "summary": "G06 D7 scoped：新低成本decode capture消费者需要原Graph绑定端口的cold访问和原已准入Queue中的borrowed capture launch桥。仅审计两个内部接缝；原G03关闭范围/费用/失败保留，无新产品或capture资格。"
+      "summary": "G06 D7 AUDITED：固定原capture borrowed launch与cold bound-port visitor内部桥；原G03 baseline/全部失败成本保留。显式batch replay复用原Queue/F1/Completion，不改普通queue/Graph reset算法；仅冻结有限FIX，实际capture/source及最终七门待。"
     },
     {
       "module": "container_concurrent",

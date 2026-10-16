@@ -574,3 +574,24 @@ native plan及storage identity复用；每次执行仍准入当前Q/KV/页，idl
 读权限。Graph reset仍按原算法销毁其generic captures；batch opt-in对象自己保原命令。
 本段无新产品或capture PASS。Direct/Graph/CPU+GPU、pending及最终所有风险/三交付/P1
 保持完整目标；G04/G05未决不以capture代签，也不恢复旧候选测量搜索。
+
+### D7 AUDITED：显式cold capture与原提交序列
+
+在b16917334a6a345e89f2a1c749bd7466e1993d76完成两个owner的SCOPED之后，固定intake
+六处FIX再进入AUDITED：compute原捕获对象增加already-admitted borrowed launch桥；
+graph显式cold visitor借原预分配port arrays；compute_batch按需冷分配捕获owner与五个
+storage identity，PreparedBatch显式prepare_replay录制原命令并checked-retire，实际run
+仍一次消费且走原F1/Queue/Completion。Graph batch按当前绑定显式准备、实际callback
+借原已准入sequence启动，不修改普通Graph capture/reset。BatchPlanning内部版本升2，
+默认false capability只由FI有限domain显式接纳，原全局runtime capture标志不变。
+
+捕获对象不保idle Q/KV/page ReadLease；每次真正执行仍准入当前permission。native plan
+变化先失效；storage identity变化显式recapture，run不偷偷录制/JIT。捕获销毁先于原native
+与workspace owner。录制不执行warmup tensor、不产生用户结果；零Q与未资格provider
+明确拒capture，原普通run/no-op继续有效。失败按原未接受/accepted-prefix/actual retirement
+裁决；driver/private仍UNKNOWN，完整ABI/metadata费用不得按零估算。
+
+先集中实施六处，再一次source检查：独立fresh-process cold record、原FI19与新32×64
+captured Direct、原Graph和CPU+CUDA、idle后writer恢复/原pending，两个桥对应原测试。
+CXX修改预期零CUDA TU；guard保原146对象精确输入/命令复用。最终instrumented风险、
+san/header/迁址static/shared/不可变candidate性能/红队仍必做，未运行不签PASS。

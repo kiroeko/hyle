@@ -1,5 +1,5 @@
 {
-  "kind": "G06_D7_CAPTURE_REPLAY_SCOPE",
+  "kind": "G06_D7_CAPTURE_REPLAY_SCOPE_AND_AUDIT",
   "baseline": "e7342dde8e37141fac1efa9128806b0abd4f19a4",
   "owners": [
     "compute",
@@ -126,5 +126,56 @@
   "remaining": "Full G01-G10 goal intact,3/10 accepted. D6 ordinary source qualified; actual capture/final instrumented risks/sans/headers/static+shared/performance and original G04/G05 unresolved gates remain.",
   "budget": "Audit/implementation/source checkpoints2h, finite automatic extensions per user preserving original failures/costs. Native math unchanged: no NVCC or vendor rebuild expected for new CXX bridges; guard before source build.",
   "timestamp_utc": "2026-10-16T05:01:43.637706+00:00",
-  "elapsed": "Complete capture design/read-only intake wall time UNKNOWN, not zero."
+  "elapsed": "Complete capture design/read-only intake wall time UNKNOWN, not zero.",
+  "audit_baseline": "b16917334a6a345e89f2a1c749bd7466e1993d76",
+  "finite_fix": [
+    {
+      "id": "D7.1",
+      "owner": "compute",
+      "decision": "BORROW original command-capture artifact; SELF internal already-admitted enqueue bridge",
+      "shape": "Add BackendExtensionAccess::enqueue_borrowed(extension,Queue&,fn,ctx), preserving original exact Context/Queue checks and callback; existing enqueue_admitted(QueueSequence&) validates sequence then delegates. CapturedCommands::enqueue_borrowed(Queue&) uses same original launch callback. Trusted internal caller must already own original admitted sequence and retain artifact/bindings through original Completion. No queue/context layout, locks, worker, backend table or new completion."
+    },
+    {
+      "id": "D7.2",
+      "owner": "graph",
+      "decision": "BORROW original prepared port arrays; SELF cold visitor",
+      "shape": "RegionAccessView gains two default-empty borrowed port spans. New visit_bound(Invocation/LeasedInvocation) uses original idle/closed/old-result/completion gate, prepares original bindings and visits original slot with exact current input/output slices. No new buffers/state or ordinary compile/submit path, no change to generic Graph capture/reset."
+    },
+    {
+      "id": "D7.3",
+      "owner": "compute_batch",
+      "decision": "SELF explicit cold replay owner, BORROW original Queue/capture/F1/Completion",
+      "shape": "PreparedBatch::prepare_replay overloads original owning-QKV and paged ready inputs. A cold allocated replay state contains original CapturedCommands and five storage identities (Q/K/V,metadata,output) only, plus one nullable pointer in explicit BatchInvocationData. No idle input/page ReadLease held. Record original native callback between original begin/end in one original QueueSequence, attach original private-buffer/mirror uses and native retention, checked wait before publishing artifact; recording must not consume actual one-use token. No warmup tensor execution. Zero-Q/unsupported provider explicitly reject capture while normal no_op/run stays valid."
+    },
+    {
+      "id": "D7.4",
+      "owner": "compute_batch",
+      "decision": "KEEP runtime admission and exact invalidation",
+      "shape": "Reuse capture only for original native-plan reuse and exact current storage identities. Invalidate before real cold replan; input/output/mirror storage changes require explicit prepare_replay, never hidden capture in run. Actual Direct/pending replay uses original input/page read_set, private workspaces/output WriteLease, sequence and retained Completion; original rejection/accepted-prefix errors/poison/cancel/abandon/drain remain. Destroy capture before private native/buffer owners. capture_compatible report becomes true only after actual capture preparation; native driver/private allocation stays UNKNOWN."
+    },
+    {
+      "id": "D7.5",
+      "owner": "graph_batch",
+      "decision": "SELF explicit batch-region replay preparation, BORROW original Graph admission/retirement",
+      "shape": "Invocation::prepare_replay cold visits actual bound ports and captures original native batch atoms. Original Graph remains command/managed at outer level; no global capture_compatible flag. Actual region callback uses already-admitted borrowed launch and original Graph slot/input/output/private-buffer retention. A requested-replay control bit gates pre-submit bound-storage validation including PendingInvocation; bind/reset/replan never executes stale capture. CPU before/after GPU remains original. Pending receiver can inherit an idle captured original BatchInvocation after token release; original ordered waits/page guards still govern every real replay."
+    },
+    {
+      "id": "D7.6",
+      "owner": "compute_provider_flashinfer",
+      "decision": "BORROW original native launch, SELF qualified batch capability",
+      "shape": "Append default-false supports_command_capture to original batch vtable; move internal BatchPlanning extension version1->2 with no compatibility shim. FI opt-in true for frozen finite batch domain, other providers remain false. Actual first-record capturability must pass fresh-process source test before qualification. No native_batch.h/cu, native_cache.cu, vendor, math, scale, plan/split/CTA changes; provider-wide runtime capture flag stays unchanged."
+    }
+  ],
+  "failure_contract": [
+    "No new error recovery or retirement observer. Query/preflight/cold replay-owner allocation failure leaves original prepared token usable. Capture errors after native recording preserve original accepted-prefix failure/retention and invalidate the slot as required.",
+    "Graph recording may inspect bound raw port identities for internal intermediates but never executes uninitialized tensors. Actual run uses original producer ordering and current ready/pending read permissions. A native API capture failure is an actual source failure requiring directed audit, not permission to fake capture or warm arbitrary private input.",
+    "No public result from recording. Record completion and waits are explicit cold costs; per-replay artifact creation or idle KV ReadLease retention are forbidden."
+  ],
+  "validation": [
+    "One implementation batch, then immutable candidate source verification. Fresh-process FI cold-record test runs before any ordinary native tensor warmup; original provider19, new real Direct paged/ragged plain/FP8 F16/BF16 single/multi/mixed Q1 schedule reuse across32x64 and true replan/storage changes, old output and unsupported CPU capture.",
+    "Actual public CUDA Direct/Graph and CPU+CUDA, repeated original Graph reset/bind/layout update with stable capture storage, independent output oracle; current page writers recover when idle capture exists. Actual inherited-capture pending producer/F2 and original retained outcome/late source/abandon risks via appropriate instrumented final gate.",
+    "Original compute command-capture/backend extension and Graph bind/capture/leased gates appropriate to two bridges; selected source factors/direct consumers only. Win/WSL/Air heavy serial, ordinary max4. CXX-only changes expect zero native CUDA compile; existing146 ggml objects/source/commands verified before reuse, no unchanged G04/G05 P1.",
+    "Full G06 applicable final ASan/UBSan/TSan, native Recorder and CUDA backend/static-provider faults, independent public headers/relocated static+shared, final immutable-candidate P0/P1 and red-team/LOC remain mandatory; do not sign from partial source."
+  ],
+  "audit_complete": "Object/API/ownership/failure/concurrency/cold-warm cost and finite FIX frozen. Actual native capturability/driver cost remain qualification risks, not pre-signed PASS."
 }
