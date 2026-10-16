@@ -1,0 +1,155 @@
+{
+  "kind": "G06_D3_NATIVE_RUNTIME_LENGTHS_SCOPE_AND_AUDIT",
+  "baseline": "2ed32d28520b89e26cdcb42f0c886df40ef9b99a",
+  "prior_owner": {
+    "module": "compute_provider_ggml_vulkan",
+    "state": "CANDIDATE",
+    "record": "docs/implementation/tasks/compute/inference-g04-g05-cache-attention-domain.md",
+    "summary": "G02 CE15/CE16 CANDIDATE: independent export roots plus bounded split-2pi/FMA Vulkan sin/cos reduction frozen. Scratch unchanged full DeepSeek case and independent phase oracle PASS; normal current-input build, original pending Vulkan cases, source/static/shared and Air alias/phase qualification pending. Old failures/unknown domain beyond abs phase2^20 retained; other routes and lifecycle unchanged.",
+    "candidate": "2b60d9a34be12fda9a9e3fdc26f7a61b495c3be7"
+  },
+  "sources": [
+    {
+      "path": "include/hyle/compute/detail/materialized_native_controller.h",
+      "sha256": "5861d5e5353f97ae1c77ddffd50f0fb1630ca895e0cac18d621f1538b316a911"
+    },
+    {
+      "path": "include/hyle/compute/detail/apple_batch_access.h",
+      "sha256": "c6a0b5c12e83264c721a564eb950d2987cadd61d392cac81198a0ffbfed11bd6"
+    },
+    {
+      "path": "include/hyle/compute/detail/vulkan_batch_access.h",
+      "sha256": "36a4da43059abd459cec119f187d2c3c4854cdb167fb47e79f42408f6319415b"
+    },
+    {
+      "path": "include/hyle/compute/apple.h",
+      "sha256": "8abdb414b5fce2bf8bfb2a275f3f4f253da2f607c4942f27936c15bfe074154a"
+    },
+    {
+      "path": "src/compute_route_apple/apple_context.cc",
+      "sha256": "ad35900f6d33530e72c84a110774937bc110449c218400a3a99968f823da61f0"
+    },
+    {
+      "path": "src/compute_route_apple/apple_batch.cc",
+      "sha256": "1ba19bbb95773b5e15e4830eac7107be71072e3db454c71ac8d1086708657672"
+    },
+    {
+      "path": "src/compute_route_vulkan/vulkan_program.cc",
+      "sha256": "8a8cdb155e50000b441d2edca34d2b6b8a8642fc5e3efa150efdbafc00053dd3"
+    },
+    {
+      "path": "src/compute_route_vulkan/vulkan_batch.cc",
+      "sha256": "40cceb2370284ba6ab4fafea5295d840b8097714f3658188d3a0f6090645bbd7"
+    },
+    {
+      "path": "src/compute_provider_ggml_vulkan/region.h",
+      "sha256": "21dab715781b8631dd629f795163c12a8f2e9553fa7d68e4f66d4ed83ef0f64f"
+    },
+    {
+      "path": "src/compute_provider_ggml_vulkan/region.cc",
+      "sha256": "a3f9b71f0cc52049aaf1c64b416799c90269729b8dc61b9ca7a2e762066679ec"
+    },
+    {
+      "path": "src/compute_provider_ggml_vulkan/native_work_impl.h",
+      "sha256": "eeba414032aff5939d62ae0624f71ef01038a4fe677c82c7b0f1b0b4ddc34f2e"
+    },
+    {
+      "path": "src/compute_provider_ggml_vulkan/native_graph.h",
+      "sha256": "27e8be4e0be5db1e7958a5fa13cc2fe15e657793cc591496a54ee3d8f72e56ab"
+    }
+  ],
+  "fixed_peer_anchor_reuse": [
+    {
+      "name": "sglang",
+      "commit": "7224fce1b5e488c9916f20ec0556d696e595d512",
+      "archive_sha256": "21559aac7538426c4d75262a25d041d8c24070785a4d8f550459f68c3398b0e0",
+      "path": "python/sglang/srt/layers/attention/flashinfer_backend.py",
+      "file_sha256": "a5649f67038153c35864b3f50d5c368071a56cbef75f266bec804dbf7e64363f",
+      "line_ranges": [
+        [
+          203,
+          220
+        ],
+        [
+          251,
+          260
+        ]
+      ]
+    },
+    {
+      "name": "vllm",
+      "commit": "98f721116227f0f48690deb05c815c057bac0668",
+      "archive_sha256": "984cc5cd0ddc5bc93c8f1055f7b2a19da128d372343896510952060bd2b71423",
+      "path": "vllm/v1/attention/backends/flashinfer.py",
+      "file_sha256": "343b949d62db7fc03f6ca0c682e1ec1cb60125461069b081ac1554b7a05214e9",
+      "line_ranges": [
+        [
+          1310,
+          1345
+        ]
+      ]
+    },
+    {
+      "name": "llama.cpp",
+      "commit": "cbe28bb3cb0758f0c566a9a3561766821aeb0748",
+      "archive_sha256": "e71cd4a1645b151a45c46a9d4c0bf5de0fa2a94080ce31ca508a6c65ad1a3562",
+      "path": "src/models/llama.cpp",
+      "file_sha256": "10af5226730900378be77318691f4acbfccb46809c41a81a195a0ca0d5d48109",
+      "line_ranges": [
+        [
+          113,
+          126
+        ],
+        [
+          169,
+          169
+        ]
+      ]
+    }
+  ],
+  "findings": [
+    "Apple native HylePagedAttention captures logical rows/table offset as immutable primitive attributes; widening a reuse key alone is incorrect. Existing fast API receives host-known rows and native pipeline/kernel execution remains borrowed.",
+    "Vulkan original graph has fixed physical arena/Q/output shapes and host op_params for logical rows/table offset. Existing NativeWork invalidation must precede changes; gallocr storage remains cold.",
+    "Q indptr fixes output and per-request Q geometry. Empty Q/no-KV one-port domain differs from empty Q/retained-KV four-port domain and cannot share a plan."
+  ],
+  "fixed": [
+    "D3.1 controller reuse requires same schema, exact Q indptr and empty-port domain. KV indptr/tails become invocation runtime facts; IDs retain existing delta-only device table. Existing gates precede mutation; accepted failure poisons original slot.",
+    "D3.2 Apple immutable tagged callable retains initial layout, original cold-qualified compiled function and private pure paged builder. Only paged derived invocation owns current layout; ordinary invocation size/cost unchanged. Initial shape/length execution keeps compiled path; changed host-known rows use original MLX graph/fast primitives under same worker, cancellation, checked drain and completion. No Context.compile per changed tail.",
+    "D3.3 Vulkan private request index in unused host op_params slot11 tags paged attention only. Region preflights all tagged nodes, invalidates original work recording once if needed, then updates rows/offset. Route admission mutex and original idle/result gates retained. No vendor, shader, runtime, math, worker or public user API change."
+  ],
+  "ownership_checks": [
+    "Program immutable and shareable; current layout belongs to each Invocation, never shared mutable Program capture. Original result/native-use lifetimes and old output exclusion stay in force.",
+    "Apple paged builder uses only selected-stream View/reshape/transpose/concat/native attention; same Q topology preserves cold-validated stream/input topology. Trace any device checks and apply original reachable-check validation if present. No data-dependent index or unchecked consumer callback is admitted to trusted builder.",
+    "Vulkan full checked source layout plus region bounds/causal preflight occurs before mutation; accepted cross-region failure poisons controller rather than publishing a partial new generation."
+  ],
+  "costs": [
+    "Prepare host O(requests + existing graph nodes for Vulkan), no host D2H. Native metadata upload remains actual changed IDs; same IDs zero copy/wait.",
+    "Cold Apple tagged std::function plus per-paged Invocation layout anchor; normal Invocation no new fields. Runtime MLX graph/native/driver allocation remains managed and UNKNOWN until actual cost qualification, never claim zero allocation or capture.",
+    "Vulkan graph/storage retained; changed runtime rows invalidate original recording and require original re-encoding, not a capture claim."
+  ],
+  "validation": [
+    "Freeze both routes and four trait consumers together, then immutable selected Windows common source + original pending scenarios; exact cache max4.",
+    "Air actual Apple/Vulkan Direct independent oracle adds64 episodes with fixed mixed Q topology and growing/shrinking KV/tails/offset/page refs; IDs repeated/reordered, empty request, same-ID zero upload and independent other-slot old output retained.",
+    "Cold OOM fixture must change actual Q topology rather than tails. Preserve existing no-allocation ID reuse, exact old-page writer reacquire, two-node Graph/hybrid/pending/encoded/alias/phase risks. Vulkan ce16_provider and ce16_public source targets added for modified provider.",
+    "Final G06 sanitizer/header/relocated static/shared once complete algorithm frozen; current source batch cannot close G06 or G04/G05. No CUDA/P1."
+  ],
+  "remaining": [
+    "Ragged dynamic extents",
+    "FI Q1 planning/capture",
+    "Final risk/delivery/performance gates"
+  ],
+  "elapsed": "Prior intake elapsed not fully captured; UNKNOWN, not zero",
+  "timestamp_utc": "2026-10-16T03:32:01.479889+00:00",
+  "actual_mlx_intake": {
+    "fast.cpp": {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-build/hyle/_deps/mlx-08f74cff0c0143c5/source/mlx/fast.cpp",
+      "sha256": "3c871a99874c24bdf5d78784962430f0a5c6be7abf1ea2fdc0d3ff1fb63fa2b7",
+      "snippet": "array hyle_paged_attention(const array& q, const array& k, const array& v,\n    const array& pages, int rows, int offset, float scale, bool causal,\n    Stream stream, bool q8, int window) {\n  return hyle_cache_attention(q,k,v,pages,rows,offset,scale,causal,stream,q8,window);\n}\narray hyle_ragged_attention(const array& q, const array& k, const array& v,\n    float scale, bool causal, Stream stream, bool q8, int window) {\n  return hyle_cache_attention(q,k,v,std::nullopt,k.shape(2),-1,scale,causal,stream,q8,window);\n}\n\narray scaled_dot_product_attention(\n    const array& queries,\n    const array& keys,\n    const array& values,\n    const float scale,\n    const std::string& mask_mode /* = \"\" */,\n    std::optional<array> mask_arr /* = {} */,\n    const std::optional<array>& sinks /* = {} */,\n    bool force_fused /* = false */,\n    StreamOrDevice s /* = {} */) {\n  for (const auto& tensor : {queries, keys, values}) {\n    if (tensor.ndim() != 4) {\n      std::ostringstream msg;\n      msg << \"[scaled_dot_product_attention] input with shape \"\n          << tensor.shape() << \" expected to be rank 4\";\n      throw std::invalid_argument(msg.str());\n    }\n  }\n  // Check valid mask\n  if (mask_mode != \"\" && mask_mode != \"causal\" && mask_mode != \"array\") {\n    std::ostringstream msg;\n    msg << \"[scaled_dot_product_attention] Invalid mask_mode \" << mask_mode\n        << \". mask_mode must be 'causal', 'array' or ''.\";\n    throw std::invalid_argument(msg.str());\n  }\n\n  bool do_causal = false;\n  bool has_mask = false;\n  bool has_arr_mask = false;\n  bool has_bool_mask = false;\n\n  if (mask_mode == \"causal\") {\n    has_mask = true;\n    do_causal = true;\n\n    if (mask_arr) {\n      std::ostringstream msg;\n      msg << \"[scaled_dot_product_attention] Invalid mask_arr for mask_mode \"\n          << \"'casusal"
+    },
+    "backend/metal/scaled_dot_product_attention.cpp": {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-build/hyle/_deps/mlx-08f74cff0c0143c5/source/mlx/backend/metal/scaled_dot_product_attention.cpp",
+      "sha256": "08d9db2f0c0594b0ec0d480af10a9d8bb604eca49de637443895820490e6a4fe",
+      "snippet": "void HylePagedAttention::eval_gpu(\n    const std::vector<array>& inputs, std::vector<array>& outputs) {\n  if (inputs.size() != (offset_ < 0 ? 3u : 4u))\n    throw std::invalid_argument(\"HYLE cache attention input arity\");\n  eval_sdpa_native(inputs, outputs, stream(), scale_, causal_, false,\n      HylePageInfo{offset_ < 0 ? std::nullopt : std::optional<array>{inputs[3]},\n                   rows_, offset_, q8_, window_, query_f16_});\n}\n\nbool ScaledDotProductAttentionVJP::use_fallback(const array& q, Stream s) {\n  return true;\n}\n\nvoid ScaledDotProductAttentionVJP::eval_gpu(\n    const std::vector<array>& inputs,\n    std::vector<array>& outputs) {\n  throw std::runtime_error(\"NYI\");\n}\n\n} // namespace mlx::core::fast\n"
+    }
+  }
+}

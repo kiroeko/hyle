@@ -534,10 +534,9 @@
     },
     {
       "module": "compute_provider_ggml_vulkan",
-      "state": "CANDIDATE",
-      "record": "docs/implementation/tasks/compute/inference-g04-g05-cache-attention-domain.md",
-      "summary": "G02 CE15/CE16 CANDIDATE: independent export roots plus bounded split-2pi/FMA Vulkan sin/cos reduction frozen. Scratch unchanged full DeepSeek case and independent phase oracle PASS; normal current-input build, original pending Vulkan cases, source/static/shared and Air alias/phase qualification pending. Old failures/unknown domain beyond abs phase2^20 retained; other routes and lifecycle unchanged.",
-      "candidate": "2b60d9a34be12fda9a9e3fdc26f7a61b495c3be7"
+      "state": "AUDITED",
+      "record": "docs/implementation/tasks/compute/inference-g06-metadata-decode.md",
+      "summary": "G06-D3 AUDITED：原CE15/16候选范围保留，仅准入原生paged runtime rows/offset更新与原recording失效；固定Q拓扑/empty port域复用、完整预检/原退休与错误门。不改数学/vendor/shader/runtime；两route source及原alias/phase/provider风险待验，旧失败和最终资格保留。"
     },
     {
       "module": "compute_ggml_runtime",

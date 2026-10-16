@@ -337,3 +337,29 @@ workspace不变；请求集合/空request拓扑变化实际重规划，旧owning
 CPU Provider保持AUDITED。剩余完整G06-D为ragged动态extent、Apple/Vulkan运行时长度、
 FI Q1规划与实际capture资格；最终三san/header/迁址static/shared在完整算法固定后集中
 验收。G04/G05 CUDA prefill未决与原失败不由本批代签，G07–G10仍保留。
+
+## 原生 runtime lengths 批：SCOPED / AUDITED
+
+[D3源码、owner与有限审计](../../../../evidence/architecture/inference-g06-native-runtime-lengths-intake/intake.json)
+绑定2ed32d28520b89e26cdcb42f0c886df40ef9b99a。compute_provider_ggml_vulkan由原
+CE15/16 CANDIDATE合法回AUDITED；原alias/phase范围、失败和全部资格不重置。其它
+七个本卡owner已AUDITED。runtime、vendor、shader、数学和公共构建工具不修改。
+
+| FIX | 冻结形状与生命周期 | 有限验收 |
+|---|---|---|
+| D3.1 原生共同key | 同schema、完整Q indptr及相同empty port域保Program/Invocation；KV indptr/tail由每Invocation更新，IDs沿原delta表。Q拓扑变化仍cold。原idle/output/permission门先于更新，接受后失败仍poison原slot | 两route固定混合Q拓扑64步KV增长/缩短、跨页、offset变化、重复/重排页、空request；same IDs零上传，独立旧slot输出不变 |
+| D3.2 Apple runtime桥 | immutable tagged callable保初始layout与原cold-qualified compiled函数；仅paged派生Invocation存当前layout，普通Invocation无新增字段。初始长度走原compiled路径，其它长度用原纯paged builder及MLX fast原语，在原worker/取消/drain/completion内运行；不逐tail Context.compile | 原selected-stream拓扑由cold builder和固定Q证明；保CheckTrace，有device checks时用原reachable-status检查。两slot不共享可变长度；原pending/错误/旧output/OOM门保持 |
+| D3.3 Vulkan runtime桥 | 私有host op_params slot11标request index；Region全量预检rows/offset/causal/table容量后，先使原NativeWork recording失效，再更新原参数。graph/gallocr/output storage保留；原admission mutex与checked退休不变 | 原provider及alias/phase source回归、完整Direct/联合/pending/encoded数学及退休；其它attention/ragged节点不打runtime tag |
+
+Apple builder只组合选定stream的View/reshape/transpose/Concat和原native attention；没有
+外来callback或数据相关checked索引进入可信桥。native内部allocation/图构造/driver费用仍
+managed UNKNOWN，复用C++对象不能冒充capture或零分配。Vulkan长度变化需要原recording
+重新编码，不称capture；host-known长度不暗中D2H。empty Q/无KV的一port与empty Q/有KV
+的四port不能混用。共享Program保持immutable，每个Invocation独占当前layout owner。
+
+两route及四trait消费者集中实施，冻结后一次Windows原共同source/pending与Air实际GPU
+source；Vulkan额外原ce16_provider/ce16_public风险target。冷OOM反证改为真正Q拓扑变化，
+不能继续把runtime tail变化错误当cold失败；原ID-only禁止下一次分配、旧页writer重取、
+独立double oracle及精度不放宽。Win/Air heavy串行、max4，预算沿原2h检查点有限追加且
+保累计失败/UNKNOWN。最终san/header/搬迁SDK在完整G06固定后集中做；当前无本批运行
+PASS，ragged/FI Q1/capture及原完整十项不删减，不重跑未变CUDA/P1。
