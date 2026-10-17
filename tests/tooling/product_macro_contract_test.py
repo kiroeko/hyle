@@ -21,12 +21,12 @@ class ProductMacroContractTest(unittest.TestCase):
     def tearDown(self):
         self.temporary.cleanup()
 
-    def configure(self, name, source):
+    def configure(self, name, source, *, language="NONE"):
         directory = self.directory / name
         directory.mkdir(parents=True, exist_ok=True)
         (directory / "CMakeLists.txt").write_text(
             'cmake_minimum_required(VERSION 3.25)\n'
-            'project(ProductMacroFixture LANGUAGES NONE)\n'
+            f'project(ProductMacroFixture LANGUAGES {language})\n'
             f'set(HYLE_SOURCE_DIR "{ROOT.as_posix()}")\n' + source,
             encoding="utf-8")
         result = subprocess.run(
@@ -34,6 +34,36 @@ class ProductMacroContractTest(unittest.TestCase):
             capture_output=True, text=True, timeout=20, **NO_WINDOW)
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
         return directory / "build"
+
+    def test_actual_cpu_ggml_presence_reaches_private_route_dependencies(self):
+        build = self.configure("cpu-ggml-presence", r'''
+include("${HYLE_SOURCE_DIR}/cmake/HyleComputeCapabilities.cmake")
+file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/probe.cc" "int probe() { return 0; }\n")
+add_library(ggml INTERFACE)
+set(HYLE_GGML_CPU_ENABLED ON)
+# Load the owning declaration without configuring or compiling its SDK/math.
+function(hyle_add_module name)
+  add_library(hyle_${name} STATIC EXCLUDE_FROM_ALL
+    "${CMAKE_CURRENT_BINARY_DIR}/probe.cc")
+endfunction()
+include("${HYLE_SOURCE_DIR}/src/compute_provider_ggml/CMakeLists.txt")
+get_target_property(capabilities hyle_compute_provider_ggml HYLE_COMPUTE_CAPABILITIES)
+if(NOT ggml_cpu IN_LIST capabilities)
+  message(FATAL_ERROR "Actual ggml CPU provider lost its capability")
+endif()
+# Both real route contexts use this presence macro and privately link this
+# provider. Verify compile usage, not just package feature metadata.
+foreach(route IN ITEMS compute_route_cpu graph_route_cpu)
+  add_library(hyle_${route} STATIC EXCLUDE_FROM_ALL
+    "${CMAKE_CURRENT_BINARY_DIR}/probe.cc")
+  target_link_libraries(hyle_${route} PRIVATE hyle_compute_provider_ggml)
+  file(GENERATE OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/${route}-defines.txt"
+    CONTENT "$<TARGET_PROPERTY:hyle_${route},COMPILE_DEFINITIONS>\n")
+endforeach()
+''', language="CXX")
+        for route in ("compute_route_cpu", "graph_route_cpu"):
+            definitions = (build / (route + "-defines.txt")).read_text()
+            self.assertIn("HYLE_COMPUTE_GGML_CPU=1", definitions)
 
     def test_cuda_experts_are_public_product_roots(self):
         for system in ("Windows", "Linux"):
