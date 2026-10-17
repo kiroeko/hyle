@@ -1,0 +1,7 @@
+{
+  "path": ".scratch/perf-review-2026-10-18/cpu-cache-encode/raw.zip",
+  "bytes": 123525,
+  "sha256": "e207330251c57e3d8cfa45e73db1c7bb171f6c5e8d7482cea9d4a7bbbb5f07bd",
+  "members": 45,
+  "note": "Sources/commands/identities/all logs only; no obj/exe/DLL/lib/SDK."
+}

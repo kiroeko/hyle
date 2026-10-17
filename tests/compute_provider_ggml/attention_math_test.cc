@@ -436,6 +436,90 @@ TEST(GgmlCpuStorage, OrdinaryChainColdAllocationIsBounded) {
   EXPECT_TRUE(stats.balanced());
 }
 
+d::Recipe encoded_negative_chain(std::int64_t rows, std::int64_t columns,
+                                  c::CacheStorage storage, bool publish = false) {
+  auto recipe = negative_chain(rows, columns);
+  const auto operation = c::Operation::custom(c::model_ops::CacheEncode{storage});
+  recipe.values.push_back(c::infer_single_output(
+      operation, std::span(&recipe.values[64], 1)).value());
+  recipe.nodes.push_back({operation, {64}, {65}});
+  recipe.outputs = publish ? std::vector<std::uint32_t>{31, 65}
+                           : std::vector<std::uint32_t>{65};
+  return recipe;
+}
+
+TEST(GgmlCpuStorage, CacheEncodeChainColdAllocationIsBounded) {
+  auto stats = hyle::mem::StatsAllocator::create(hyle::mem::system_allocator()).value();
+  {
+    RawProgram program(stats.get());
+    ASSERT_TRUE(program.initialize(encoded_negative_chain(
+        256, 1024, c::CacheStorage::q8_0().value())).ok());
+    const auto before = stats.snapshot();
+    ASSERT_TRUE(program.add_slot().ok());
+    const auto bytes = stats.snapshot().live_bytes - before.live_bytes;
+    std::cout << "cache_encode_chain_cold_allocator_bytes=" << bytes
+              << " legacy_owned_float_payload_bytes=" << 64ULL * 1024 * 1024
+              << " graph_executed=false\n";
+    EXPECT_LT(bytes, 8ULL * 1024 * 1024);
+  }
+  EXPECT_TRUE(stats.balanced());
+}
+
+TEST(GgmlCpuStorage, CacheEncodeKeepsPublishedRootAndIndependentSlotBindings) {
+  for (const auto storage : {c::CacheStorage::q8_0().value(),
+                             c::CacheStorage::float8(.5F).value()}) {
+    RawProgram program(hyle::mem::system_allocator());
+    ASSERT_TRUE(program.initialize(encoded_negative_chain(4, 32, storage, true)).ok());
+    ASSERT_TRUE(program.add_slot().ok());
+    ASSERT_TRUE(program.add_slot().ok());
+    std::vector<c::TensorDesc> descriptions = program.inputs;
+    descriptions.insert(descriptions.end(), program.outputs.begin(), program.outputs.end());
+    AttentionPorts first(descriptions), second(descriptions);
+    auto context = c::Context::create(c::cpu::device(), c::ggml_cpu::provider()).value();
+    auto queue = context.create_queue().value();
+    std::vector<std::uint8_t> retained;
+    for (unsigned replay = 0; replay != 2; ++replay) {
+      auto &ports = replay ? second : first;
+      std::vector<double> input(128), negative(128);
+      for (std::size_t i = 0; i != input.size(); ++i) {
+        input[i] = ((i / 32 + replay) % 2 ? -1. : 1.) * double(i / 32 % 3 + 1) / 4.;
+        negative[i] = -input[i];
+      }
+      ports.write(0, descriptions[0], input);
+      std::vector<std::uint8_t> expected(descriptions[2].required_bytes().value());
+      for (std::size_t block = 0; block != 4; ++block) {
+        const auto value = input[block * 32];
+        if (storage == c::CacheStorage::q8_0().value()) {
+          const auto scale = half_test::encode<Half>(float(std::abs(value)) / 127.F).bits;
+          expected[block * 34] = std::uint8_t(scale);
+          expected[block * 34 + 1] = std::uint8_t(scale >> 8);
+          std::fill_n(expected.begin() + block * 34 + 2, 32,
+                      std::uint8_t(value < 0 ? -127 : 127));
+        } else {
+          constexpr std::array<std::uint8_t, 3> codes{0x30, 0x38, 0x3c};
+          std::fill_n(expected.begin() + block * 32, 32,
+                      std::uint8_t(codes[block % 3] | (value < 0 ? 0x80 : 0)));
+        }
+      }
+      for (std::size_t slot = 0; slot != 2; ++slot) {
+        const auto status = program.submit(slot, queue, ports, 1);
+        ASSERT_TRUE(status.ok()) << status.message();
+        EXPECT_EQ(ports.read(descriptions[0], 0), input);
+        EXPECT_EQ(ports.read(descriptions[1], 1), negative);
+        std::vector<std::uint8_t> actual(expected.size());
+        ASSERT_TRUE(ports.views[2].read(std::as_writable_bytes(std::span(actual))).ok());
+        EXPECT_EQ(actual, expected);
+      }
+      if (!replay) retained = expected;
+      else {
+        std::vector<std::uint8_t> actual(retained.size());
+        ASSERT_TRUE(first.views[2].read(std::as_writable_bytes(std::span(actual))).ok());
+        EXPECT_EQ(actual, retained);
+      }
+    }
+  }
+}
+
 TEST(GgmlCpuStorage, PublishedViewRootAndTwoSlotsRebindWithoutAllocation) {
   auto stats =
       hyle::mem::StatsAllocator::create(hyle::mem::system_allocator()).value();

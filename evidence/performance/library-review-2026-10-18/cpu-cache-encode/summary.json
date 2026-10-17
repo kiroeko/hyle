@@ -1,0 +1,39 @@
+{
+  "scope": "Allow existing GraphStorage liveness allocation for immutable multi-node CacheEncode recipes. Keep single-node and PagedRead rules; no native kernel/resource/lock/API or arithmetic change.",
+  "change": "Remove encoders==0 from the multi-node use_liveness condition. Existing callback owners/reserved calls array, all graph nodes/source edges, invalid flag reset/read, published-root flags, mapped ports and worker retirement stay unchanged.",
+  "complexity": "The prior one-encoder exclusion gave a chain ofN full-size arithmetic intermediates flat Θ(N·M) private payload. Native gallocr can reuse only dead internal tensors, giving a bounded live payload frontier for this trace; graph metadata remains Θ(N). No throughput claim.",
+  "toolchain": "Windows x64 MSVC14.50.35717 /O2 /MD /W4 /WX; direct fresh provider/tests/native_batch/selector and existing same-pin foundation+four retained HYCA native ops objects/DLLs. Native kernels were not rebuilt; no full SDK/HEAD build or staging.",
+  "tests": {
+    "passed_executions": 11,
+    "ffa4": "6/6: two new CacheEncode storage tests and four existing public encoder reference/error/recovery tests.",
+    "mixed": "5/5: new published-root/two-slot/bytes test and the same four existing public encoder tests. No second cold-allocation sample.",
+    "new_binding_test": "64Neg→Q8 or FP8, intermediate31 published. Two invocation slots each execute with two independently retained caller Buffer sets at4-byte subview offsets. Exact source preservation, odd published intermediate, independent block-constant Q8 scale/sign bytes and FP8 .5/1/1.5 codes; earlier output buffer survives rebinding.",
+    "existing": [
+      "Q8ReferenceBytesTiesZeroAndThreeInputTypes",
+      "Float8CodesMatchIndependentEnumerationIncludingRoundingAndSaturation",
+      "InvalidPayloadReturnsOriginalCompletionErrorAfterWorkersRetire",
+      "IndependentInvocationsAndFreshRecoveryAfterOriginalWorkersRetire"
+    ],
+    "scratch_graph": "One FFA consumer process, Q8 and FP8. Actual public Graph compile/bind/submit/wait with current ggml_regions factory, one native ggml step, two slots and published odd intermediate. Accepted InvalidArgument terminates and retires failed Invocation; retry rejected, other slot output unchanged, fresh Invocation succeeds. Graph provider factory is explicit; default CPU route factory and mixed Graph variant not exercised."
+  },
+  "cold_private_allocation": {
+    "shape": "F32[256,1024],64Neg→Q8, only encoded U8 result published. One slot per arm after compilation; no caller input/output payload allocation and no graph execution.",
+    "baseline_bytes": 68112224,
+    "candidate_bytes": 3100744,
+    "bytes_removed": 65011480,
+    "method": "StatsAllocator incremental live requested bytes across native create_invocation, includes tracked backing, graph metadata and native workspace. Same FFA module/library closure in both arms; one sample each, no latency collector.",
+    "limits": "Not RSS, peak resident, complete C/global-new allocation count or engine end-to-end footprint. Caller tensors are outside the private count; global C malloc metadata remains untracked."
+  },
+  "failures_and_limits": [
+    "Baseline8eb28b92e intentionally fails the new8MiB cold-allocation assertion at68,112,224B; exit1 and log retained. Candidate is3,100,744B. All final compilation/link/runtime steps otherwise succeeded.",
+    "Both native program owners are logged by test main and match retained current HYCA DLLs. Foundation/non-ops native cached code is reused, not a complete current HEAD rebuild.",
+    "Targeted Windows validation only; no full suite, Linux/macOS, performance timing, arbitrary cache graph matrix or PagedRead allocator expansion."
+  ],
+  "artifacts": {
+    "sources": "candidate/,baseline-provider.cc",
+    "source_identity": "source-identities.json",
+    "commands": "commands.json",
+    "graph_consumer": "graph_probe.cc",
+    "cleanup": "cleanup-and-retain.json"
+  }
+}

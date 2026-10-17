@@ -346,8 +346,8 @@ struct CacheEncodingState final {
   std::vector<const ggml_tensor *,mem::StdAllocator<const ggml_tensor *>> q8_queries;
 };
 
-// Tiled math and ordinary multi-node recipes use native liveness allocation.
-// Private cache paths retain their existing observation/update boundaries.
+// Tiled math and immutable multi-node recipes use native liveness allocation.
+// Paged reads retain their existing runtime description/update boundaries.
 // The buffer adapter changes ownership, not the upstream planner or selected
 // CPU executor.
 struct GraphStorage final {
@@ -1315,7 +1315,7 @@ Status create_invocation(void *value, mem::AllocatorRef allocator,
       capacity += node.inputs.size() * 4;
     }
     const bool use_liveness =
-        tiled || (recipe.nodes.size() > 1 && encoders == 0 &&
+        tiled || (recipe.nodes.size() > 1 &&
                   std::ranges::none_of(recipe.nodes, [](const auto &node) {
                     return node.operation
                         .template custom_as<internal::PagedRead>()
