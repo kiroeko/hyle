@@ -1,6 +1,6 @@
 # G09 native workload A/A 资格阻塞
 
-状态：**BLOCKED-from-AUDITED，2026-10-17；用户授权的管理员重试已执行，留下部分 trace，但以访问冲突退出；完成时延归属和原 A/A 原因仍未决，结果复核待 R26；产品/正式测量 FIX 集为空**。
+状态：**AUDITED，2026-10-17；既有观察访问冲突，当前只给该具名故障收集一次 Windows 最小转储；完成时延归属和原 A/A 原因仍未决，结果复核待 R26；产品/正式测量 FIX 集为空**。
 
 本任务承接[活动 G09](../graph/inference-g09-joint-pipeline.md)的实际停止条件，不扩充基础库能力。
 产品 candidate 固定为 `3524413272cb52d06af5e64d634edbfef09b9864`，实现为 `e09f30925`；
@@ -174,3 +174,23 @@ collector 还提示 NVTX/Vulkan 事件可能不完整。176 个已退休 marker 
 CUDA 原 P1 与三个未资格平台的结论均不变。两入口均已终止，没有追加采集。
 当前具体障碍为诊断入口访问冲突且没有独立 native readiness；须先取得可定位的故障/工具机制并
 复核有限纠正，才能冻结另一入口，不能由部分 host 记录直接修改产品等待或测量统计合同。
+
+### 具名故障定位：一次 Windows local mini dump
+
+上述实际 `0xC0000005` 是新诊断入口的可复现故障事实，当前工作限于取得该故障位置，
+不据此恢复测量资格。既有日志未带异常地址/栈，有限本机查询未取得 dump，亦无现成调试器。
+按 Windows 官方 LocalDumps 接口，仅对唯一 `g09_observed_driver.exe` 设置一次 mini dump；
+无 automatic-debugging Auto 配置，当前管理员 token 已核实。未取得具体位置便不修产品/仪器。
+
+- 复用 R25 已核对的完整 source、SDK、两 facade、driver 和原 Nsight 采集参数，无编译。
+- 本轮 FIX 仅为可丢弃 launcher 增加按该 exe 的 `LocalDumps` 临时配置，`DumpType=1`、
+  `DumpCount=1`，输出到 fresh `g09-completion-observation-25/wer-crash-1/dumps`。
+  仅在应用专属键原本不存在时创建；finally 核对并删除自己的键，原父键若不存在只在恢复为空时删除。
+  不改变系统全局 dump 值、JIT 配置、GPU/overlay 或统计设置。
+- 运行仍仅一个原配置进程，独立路径 `run-wer-crash-1`；正常结束或首次异常均停止。
+  原失败、授权、输出和费用保留；1800 秒只追加同 PID，异常清理仅限自有任务树。
+- 只离线读取 dump 的异常/模块信息及实际保存的 trace；先确定异常地址归属，再决定有限纠正。
+  profiler 内的故障地址也不自动证明其根因归属；缺 dump/缺归属写 UNKNOWN，本轮不再追加复现。
+
+这是活动 goal 中修复自有诊断失败的有限工具动作，不是产品 FIX、性能重跑或新的采样框架。
+应用使用自有 crash reporter 时 LocalDumps 可能不产出；此限制保留为真实失败结果。
