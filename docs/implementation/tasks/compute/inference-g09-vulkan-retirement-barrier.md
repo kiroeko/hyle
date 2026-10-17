@@ -85,3 +85,10 @@ retirement 不在原可组合合同内，本轮不为假设自环增加 thread i
 非阻塞 collect 重入必须安全返回 Pending。
 
 允许上述三文件有限实现与原消费者测试纠正；实现/source/运行审查、candidate 和 P1 仍未签发。
+
+实现检查点：V1–V3 已落在有限三文件；原两处 IREE 外锁观察先记原 Status，其原 NativeProgram/
+IreeStage owner 已承担真实 device-loss 传播，不从 IREE gRPC code 猜新的 VkNativeError。
+测试用原真实 fence 与现有 private owner/PFN seam；原代码提前 Complete 是源码确定的反例，
+尚未实际运行旧 binary 红测。第二观察测试保证旧 observer 在外锁且第二真实 fence wait 返回，
+不声称精确调度到“retirer 已 claim 后才释放 late error”。
+所有实际运行、sizeof 与性能资格尚未取证，原预算/失败仍保留。

@@ -2,6 +2,7 @@
 
 #include <array>
 #include <atomic>
+#include <condition_variable>
 #include <memory>
 #include <mutex>
 #include <vector>
@@ -191,6 +192,7 @@ struct RunStage final {
 struct Runtime final {
   std::shared_ptr<Device> device;
   std::mutex mutex;
+  std::condition_variable retirement_changed;
   Run *pending = nullptr;
   bool closed = false;
   Status failure;
@@ -240,6 +242,9 @@ struct Run final {
   bool needs_drain = false;
   bool pending = false;
   bool cancelled = false;
+  // One observer owns native permission/lifetime retirement while pending
+  // remains linked. After publication, only Completion::destroy may own this
+  // bit for its already-completed lifetime delivery tail.
   bool retiring = false;
   bool encoding_valid = false;
   std::uint32_t observers = 0;

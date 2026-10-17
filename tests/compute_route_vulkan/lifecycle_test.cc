@@ -6,8 +6,11 @@
 #include <atomic>
 #include <barrier>
 #include <chrono>
+#include <condition_variable>
+#include <cstdint>
 #include <iostream>
 #include <memory>
+#include <mutex>
 #include <thread>
 #include <utility>
 
@@ -15,6 +18,9 @@
 
 #include "fixture.h"
 #include "hyle/compute/detail/vulkan_plan.h"
+#include "hyle/compute/detail/generated_result.h"
+#include "hyle/compute/detail/lease_access.h"
+#include "hyle/mem/buffer.h"
 #include "scan_test_support.h"
 #include "vulkan_internal.h"
 
@@ -23,6 +29,35 @@ namespace c = hyle::compute;
 namespace v = c::vulkan;
 namespace d = v::detail;
 namespace t = vulkan_test;
+
+struct RetirementGate final {
+  std::mutex mutex;
+  std::condition_variable changed;
+  bool entered = false, released = false;
+  v::Context *collect_context = nullptr;
+  hyle::Status reentered_collect;
+  void enter() noexcept {
+    std::unique_lock lock(mutex);
+    entered = true;
+    changed.notify_all();
+    changed.wait(lock, [&] { return released; });
+  }
+  bool await() {
+    std::unique_lock lock(mutex);
+    return changed.wait_for(lock, std::chrono::seconds(3), [&] { return entered; });
+  }
+  void release() noexcept {
+    std::lock_guard lock(mutex);
+    released = true;
+    changed.notify_all();
+  }
+  static void release_owner(void *pointer) noexcept {
+    auto &gate = *static_cast<RetirementGate *>(pointer);
+    if (gate.collect_context)
+      gate.reentered_collect = gate.collect_context->collect();
+    gate.enter();
+  }
+};
 
 // Test-only interception of one real Context's native PFNs. All successful
 // execution is still actual Vulkan work on the device. No replacement Provider
@@ -41,6 +76,12 @@ struct NativeBoundary final {
        fail_idle = false;
   bool fail_bind_memory = false, fail_descriptors = false;
   bool fail_flush = false, fail_invalidate = false;
+  RetirementGate *wait_gate = nullptr;
+  std::atomic<bool> wait_gate_taken{false};
+  bool fail_gated_wait = false;
+  std::mutex wait_mutex;
+  std::condition_variable wait_changed;
+  unsigned completed_waits = 0;
   static inline NativeBoundary *active = nullptr;
 
   explicit NativeBoundary(const v::Context &context)
@@ -61,6 +102,11 @@ struct NativeBoundary final {
     device.fn = original;
     device.memory_properties = original_memory;
     active = nullptr;
+  }
+  bool await_completed_wait() {
+    std::unique_lock lock(wait_mutex);
+    return wait_changed.wait_for(lock, std::chrono::seconds(3),
+                                 [&] { return completed_waits != 0; });
   }
   static VKAPI_ATTR VkResult VKAPI_CALL queue_submit(VkQueue queue,
                                                      std::uint32_t count,
@@ -83,6 +129,11 @@ struct NativeBoundary final {
                                                     VkBool32 all,
                                                     std::uint64_t timeout) {
     ++active->waits;
+    if (active->wait_gate && !active->wait_gate_taken.exchange(true)) {
+      active->wait_gate->enter();
+      if (active->fail_gated_wait)
+        return VK_ERROR_OUT_OF_HOST_MEMORY;
+    }
     if (active->hold_wait.exchange(false)) {
       active->waiting.store(true);
       const auto deadline =
@@ -95,7 +146,13 @@ struct NativeBoundary final {
     }
     if (std::exchange(active->fail_wait, false))
       return VK_ERROR_OUT_OF_HOST_MEMORY;
-    return active->original.WaitForFences(device, count, fences, all, timeout);
+    const auto result = active->original.WaitForFences(device, count, fences, all, timeout);
+    {
+      std::lock_guard lock(active->wait_mutex);
+      ++active->completed_waits;
+      active->wait_changed.notify_all();
+    }
+    return result;
   }
   static VKAPI_ATTR VkResult VKAPI_CALL wait_idle(VkQueue queue) {
     if (std::exchange(active->fail_idle, false))
@@ -869,6 +926,230 @@ TEST(VulkanLifecycle,
   auto work = fresh.submit().value();
   ASSERT_TRUE(work.wait());
   EXPECT_TRUE(context.close().ok());
+}
+
+// Gates belong to the test, never to the native execution mechanism. Always
+// release them before joining, including ASSERT early-return paths.
+struct RetirementThreads final {
+  v::Context &context;
+  RetirementGate &permissions, &native_wait, &delivery;
+  std::thread collector, observer, closer;
+  ~RetirementThreads() {
+    permissions.release(); native_wait.release(); delivery.release();
+    join();
+    context.close().IgnoreError();
+  }
+  void join() {
+    for (auto *thread : {&collector, &observer, &closer})
+      if (thread->joinable()) thread->join();
+  }
+};
+
+struct RetirementLifetime final {
+  c::detail::CompletionRetention retention;
+  std::shared_ptr<d::Runtime> runtime;
+  d::Run *run = nullptr;
+  c::LeaseUsePool *uses = nullptr;
+  RetirementGate *delivery = nullptr;
+  std::atomic<unsigned> terminals{0}, releases{0};
+  bool pending_at_release = false, retiring_at_release = false;
+  bool permissions_retired = false;
+  hyle::Status terminal;
+  RetirementLifetime() {
+    retention.own = {this, &on_terminal, &on_release};
+  }
+  static void on_terminal(void *pointer, const hyle::Status &status) noexcept {
+    auto &self = *static_cast<RetirementLifetime *>(pointer);
+    self.terminal = status;
+    self.permissions_retired = self.uses->active_batches() == 0;
+    ++self.terminals;
+  }
+  static void on_release(void *pointer) noexcept {
+    auto &self = *static_cast<RetirementLifetime *>(pointer);
+    {
+      std::lock_guard lock(self.runtime->mutex);
+      self.pending_at_release = self.run->pending;
+      self.retiring_at_release = self.run->retiring;
+    }
+    if (self.delivery) self.delivery->enter();
+    ++self.releases;
+  }
+};
+
+TEST(VulkanRetirementPublication, PermissionsRetireBeforeReadinessAndReuse) {
+  for (bool abandon : {false, true}) {
+    SCOPED_TRACE(abandon);
+    auto context = t::context().value();
+    const auto description = t::dense({2, 2});
+    const auto values = t::data(4, 2);
+    auto input = t::upload(context, description, values).value();
+    auto program = v::prepare(context, c::MatMul{}, description, description).value();
+    auto invocation = program.create_invocation().value();
+    ASSERT_TRUE(invocation.bind(std::array{input, input}).ok());
+    NativeBoundary boundary(context);
+    auto uses = c::LeaseUsePool::create({.max_batches = 1, .max_resources_per_batch = 1}).value();
+    RetirementGate permissions, native_wait, delivery;
+    permissions.collect_context = &context;
+    RetirementLifetime lifetime;
+    auto runtime = d::Access::runtime(context);
+    lifetime.runtime = runtime; lifetime.uses = &uses;
+    auto work = invocation.submit().value();
+    const auto dependency = c::detail::CompletionAccess::dependency(work.completion());
+    ASSERT_NE(dependency.state, nullptr);
+    auto *run = static_cast<d::Run *>(dependency.state);
+    lifetime.run = run;
+    auto backing = hyle::mem::Buffer::create(hyle::mem::system_resource(), 64, 64).value();
+    auto read = c::ReadLease::adopt(std::move(backing)).value();
+    auto batch = uses.begin().value();
+    hyle::Status collected, waited, closed;
+    RetirementThreads threads{context, permissions, native_wait, delivery};
+    ASSERT_TRUE(c::detail::CompletionAccess::attach_retention(
+        c::detail::ResultAccess::completion(work), lifetime.retention).ok());
+    c::detail::LeaseAccess::retain_resource_owner(read, &permissions, &RetirementGate::release_owner);
+    ASSERT_TRUE(batch.read(read).ok());
+    read.reset(); // The admitted episode owns the last domain reference.
+    {
+      std::lock_guard lock(runtime->mutex);
+      run->native_uses = std::move(batch);
+    }
+    // Prove actual GPU completion without observing the public Completion or
+    // releasing its permission batch. Only owner publication is gated below.
+    ASSERT_EQ(boundary.original.WaitForFences(runtime->device->native.device, 1,
+        &run->completion_fence, VK_TRUE, UINT64_MAX), VK_SUCCESS);
+    threads.collector = std::thread([&] { collected = context.collect(); });
+    ASSERT_TRUE(permissions.await());
+    EXPECT_TRUE(permissions.reentered_collect.ok());
+    EXPECT_EQ(uses.active_batches(), 1U);
+    {
+      std::lock_guard lock(runtime->mutex);
+      EXPECT_TRUE(run->pending);
+      EXPECT_NE(run->previous, nullptr);
+      EXPECT_TRUE(run->retiring);
+    }
+    const auto polled = work.poll();
+    ASSERT_TRUE(polled);
+    EXPECT_EQ(*polled, c::CompletionPoll::kPending); // Deterministic old-code red.
+    EXPECT_TRUE(context.collect().ok()); // Nonblocking reentry into this Runtime.
+    if (abandon) {
+      work = {};
+      EXPECT_EQ(lifetime.terminals.load(), 0U);
+      EXPECT_EQ(lifetime.releases.load(), 0U);
+      {
+        std::lock_guard lock(runtime->mutex);
+        EXPECT_TRUE(run->pending);
+        EXPECT_TRUE(run->retiring);
+      }
+      threads.closer = std::thread([&] { closed = context.close(); });
+    } else {
+      lifetime.delivery = &delivery;
+      threads.observer = std::thread([&] { waited = work.completion().wait(); });
+    }
+    permissions.release();
+    if (abandon) {
+      threads.join();
+      EXPECT_TRUE(collected.ok());
+      EXPECT_EQ(uses.active_batches(), 0U);
+      EXPECT_TRUE(closed.ok());
+      EXPECT_EQ(lifetime.terminals.load(), 1U);
+      EXPECT_EQ(lifetime.releases.load(), 1U);
+      EXPECT_TRUE(lifetime.permissions_retired);
+      EXPECT_TRUE(lifetime.pending_at_release);
+      EXPECT_TRUE(lifetime.retiring_at_release);
+      continue;
+    }
+    // Completion::wait settles the published backend and owns this normal
+    // destroy tail. The native collector must not overwrite its retiring bit.
+    ASSERT_TRUE(delivery.await());
+    threads.collector.join();
+    {
+      std::lock_guard lock(runtime->mutex);
+      EXPECT_FALSE(run->pending);
+      EXPECT_TRUE(run->retiring);
+    }
+    EXPECT_FALSE(invocation.bind(std::array{input, input}).ok());
+    delivery.release();
+    threads.join();
+    EXPECT_TRUE(collected.ok());
+    EXPECT_EQ(uses.active_batches(), 0U);
+    ASSERT_TRUE(waited.ok());
+    {
+      auto result = work.wait();
+      ASSERT_TRUE(result);
+      EXPECT_EQ(t::read(context, result->get()->tensors()[0]).value(),
+                t::matmul(values, values, 2, 2, 2));
+    }
+    work = {};
+    EXPECT_EQ(lifetime.terminals.load(), 1U);
+    EXPECT_EQ(lifetime.releases.load(), 1U);
+    EXPECT_TRUE(lifetime.permissions_retired);
+    for (unsigned replay = 0; replay != 65; ++replay) {
+      SCOPED_TRACE(replay);
+      const auto changed = t::data(4, replay + 1);
+      input = t::upload(context, description, changed).value();
+      ASSERT_TRUE(invocation.bind(std::array{input, input}).ok());
+      auto admitted = uses.begin();
+      ASSERT_TRUE(admitted);
+      auto next = invocation.submit().value();
+      const auto next_dependency = c::detail::CompletionAccess::dependency(next.completion());
+      {
+        std::lock_guard lock(runtime->mutex);
+        static_cast<d::Run *>(next_dependency.state)->native_uses = std::move(*admitted);
+      }
+      auto result = next.wait();
+      ASSERT_TRUE(result);
+      EXPECT_EQ(uses.active_batches(), 0U);
+      EXPECT_EQ(t::read(context, result->get()->tensors()[0]).value(),
+                t::matmul(changed, changed, 2, 2, 2));
+    }
+  }
+}
+
+TEST(VulkanRetirementPublication, LateObserverErrorPrecedesPermissionRetirement) {
+  for (bool cancel : {false, true}) {
+    SCOPED_TRACE(cancel);
+    auto context = t::context().value();
+    const auto description = t::dense({2, 2});
+    auto input = t::upload(context, description, t::data(4, 3)).value();
+    auto program = v::prepare(context, c::MatMul{}, description, description).value();
+    auto invocation = program.create_invocation().value();
+    ASSERT_TRUE(invocation.bind(std::array{input, input}).ok());
+    NativeBoundary boundary(context);
+    auto uses = c::LeaseUsePool::create({.max_batches = 1, .max_resources_per_batch = 1}).value();
+    auto pool = c::LeasePool::create(hyle::mem::system_resource(), 64).value();
+    auto writer = pool.allocate(64).value();
+    RetirementGate permissions, native_wait, delivery;
+    auto work = invocation.submit().value();
+    auto runtime = d::Access::runtime(context);
+    const auto dependency = c::detail::CompletionAccess::dependency(work.completion());
+    auto *run = static_cast<d::Run *>(dependency.state);
+    auto batch = uses.begin().value();
+    hyle::Status observed, closed;
+    RetirementThreads threads{context, permissions, native_wait, delivery};
+    ASSERT_TRUE(batch.write(writer).ok());
+    {
+      std::lock_guard lock(runtime->mutex);
+      run->native_uses = std::move(batch);
+    }
+    ASSERT_EQ(boundary.original.WaitForFences(runtime->device->native.device, 1,
+        &run->completion_fence, VK_TRUE, UINT64_MAX), VK_SUCCESS);
+    boundary.wait_gate = &native_wait;
+    boundary.fail_gated_wait = true;
+    threads.observer = std::thread([&] { observed = work.completion().wait(); });
+    ASSERT_TRUE(native_wait.await()); // The old observer is outside Runtime::mutex.
+    threads.closer = std::thread([&] { closed = context.close(); });
+    ASSERT_TRUE(boundary.await_completed_wait()); // A second real fence wait completed.
+    EXPECT_EQ(uses.active_batches(), 1U);
+    if (cancel) EXPECT_TRUE(work.request_cancel().ok());
+    native_wait.release();
+    threads.join();
+    EXPECT_TRUE(observed.IsResourceExhausted());
+    EXPECT_TRUE(closed.IsResourceExhausted());
+    EXPECT_EQ(uses.active_batches(), 0U);
+    EXPECT_FALSE(work.result());
+    auto published = writer.publish();
+    ASSERT_FALSE(published);
+    EXPECT_TRUE(published.error().IsResourceExhausted());
+  }
 }
 
 } // namespace

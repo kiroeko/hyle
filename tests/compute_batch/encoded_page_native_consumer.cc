@@ -261,10 +261,18 @@ Status episode(unsigned dk, unsigned dv, bool combined, bool invalid=false, bool
   HYLE_RETURN_IF_ERROR(joint_slot.reserve_pending_sources(4));
   const std::array versions{g::batch::NodeLayout{node,layout}};
 
+  const auto numeric_failure=[](const Status&status){
+#if defined(HYLE_ENCODED_APPLE)
+    constexpr auto message="Apple numeric input is outside the operation domain";
+#else
+    constexpr auto message="Vulkan numeric input is outside the operation domain";
+#endif
+    return status.IsInvalidArgument() && status.message()==message;
+  };
   const auto failed_result=[&](auto &done,auto &slot,n::CopyBatchUpdate &update)->Status{
     const auto result=done.wait();
-    HYLE_RETURN_IF_ERROR(require(!result && result.error().IsInvalidArgument(),"encoded producer failure published a result or lost numeric error"));
-    HYLE_RETURN_IF_ERROR(require(done.completion().wait().IsInvalidArgument(),"encoded source completion lost numeric error"));
+    HYLE_RETURN_IF_ERROR(require(!result && numeric_failure(result.error()),"encoded producer failure published a result or lost numeric error"));
+    HYLE_RETURN_IF_ERROR(require(numeric_failure(done.completion().wait()),"encoded source completion lost numeric error"));
     done={};HYLE_ASSIGN_OR_RETURN(update,slot.take_update());
     for(unsigned port=2;port<2+2*requests;++port)
       HYLE_RETURN_IF_ERROR(require(!update.take_mutable({port}),"failed encoder source published page writers"));
@@ -303,21 +311,86 @@ Status episode(unsigned dk, unsigned dv, bool combined, bool invalid=false, bool
     if(invalid)vin[0]=std::numeric_limits<float>::quiet_NaN();
     HYLE_ASSIGN_OR_RETURN(auto kt,upload(context,device,kd,std::as_bytes(std::span(kin))));
     HYLE_ASSIGN_OR_RETURN(auto vt,upload(context,device,vd,std::as_bytes(std::span(vin))));
+    c::OwnedResult<n::Results> kdone,vdone,produced;
+    const auto rejected_source=[&](const Status&failure,const char*stage,
+                                   n::CopyBatchUpdate*accepted=nullptr)->Status{
+      if(!invalid)return failure;
+      HYLE_RETURN_IF_ERROR(require(numeric_failure(failure),"encoder rejection lost original numeric-domain error"));
+      // Failed binds preserve the producer owner; successful binds transferred
+      // it to copy. Observe every original owner that is still in our hands.
+      const std::array owners{&kdone,&vdone,&produced};
+      for(std::size_t i=0;i<owners.size();++i)if(owners[i]->valid()){
+        const auto terminal=owners[i]->completion().wait();
+        if(i==0)HYLE_RETURN_IF_ERROR(terminal);
+        else{
+          HYLE_RETURN_IF_ERROR(require(numeric_failure(terminal),"unconsumed encoder lost original numeric-domain error"));
+          HYLE_RETURN_IF_ERROR(require(!owners[i]->result(),"failed original encoder published a result"));
+        }
+        *owners[i]={};
+      }
+      if(accepted){
+        HYLE_RETURN_IF_ERROR(require(accepted->valid(),"rejected receiver consumed its original update"));
+        HYLE_RETURN_IF_ERROR(require(numeric_failure(accepted->wait()),"accepted failed copy lost original numeric-domain error"));
+        HYLE_RETURN_IF_ERROR(require(!accepted->in_flight(),"accepted failed copy did not actually retire"));
+        for(unsigned port=2;port<2+2*requests;++port)
+          HYLE_RETURN_IF_ERROR(require(!accepted->take_mutable({port}),"accepted failed copy published page writers"));
+        HYLE_ASSIGN_OR_RETURN(copy,accepted->release_invocation());
+      }
+      scheduler.drain();
+      // The Context owns every original accepted native input/prefix, including
+      // producers consumed by copy. Keep all controls/tensors alive until close.
+      const auto drained=context.close();
+      HYLE_RETURN_IF_ERROR(require(drained.ok() || numeric_failure(drained),"native drain returned an unrelated failure"));
+      const auto report=copy.report();
+      HYLE_RETURN_IF_ERROR(require(!copy.in_flight(),"rejected encoder source still has accepted copy work"));
+      if(!accepted){
+        HYLE_RETURN_IF_ERROR(require(report.phase_completions==0 && report.native_calls==0,"early producer rejection accepted native copy work"));
+        // No phase was accepted: these original writers remain unpolluted.
+        // Recovery is ownership only; do not publish their uninitialized pages.
+        for(unsigned request=0;request<requests;++request){
+          HYLE_ASSIGN_OR_RETURN(kw[request].lease(),copy.unbind_mutable({2+2*request}));
+          HYLE_ASSIGN_OR_RETURN(vw[request].lease(),copy.unbind_mutable({3+2*request}));
+          HYLE_RETURN_IF_ERROR(require(kw[request].lease().valid() && vw[request].lease().valid(),"unsubmitted page writer was not preserved"));
+        }
+      }else HYLE_RETURN_IF_ERROR(require(report.phase_completions!=0,"accepted update has no actual native phase"));
+      HYLE_RETURN_IF_ERROR(require(!receiver.take_update() && !joint_slot.take_update(),"rejected suffix retained or published a pending update"));
+      std::vector<std::uint8_t> bytes(vb);
+      HYLE_RETURN_IF_ERROR(read_bytes(context,device,vr[1],bytes));
+      HYLE_RETURN_IF_ERROR(require(bytes==constant_q8(.125F,16*2*dv),"rejected encoder source changed old reader bytes"));
+      std::fprintf(stderr,"%s failed encoder rejected at %s: original numeric error, actual drain, accepted_phases=%llu native_calls=%llu, no suffix/page publication, old bytes PASS\n",
+          route,stage,static_cast<unsigned long long>(report.phase_completions),static_cast<unsigned long long>(report.native_calls));
+      return Status::Ok();
+    };
     if(invalid?paired_failure:step%2==0){
-      HYLE_RETURN_IF_ERROR(pe.bind(std::array{kt,vt}));HYLE_ASSIGN_OR_RETURN(auto produced,pe.submit());
+      HYLE_RETURN_IF_ERROR(pe.bind(std::array{kt,vt}));HYLE_ASSIGN_OR_RETURN(produced,pe.submit());
       const std::array<n::ResultCopyBinding,2> ports{{{{0},0,kc},{{1},1,vc}}};
-      HYLE_RETURN_IF_ERROR(copy.bind_source(ports,std::move(produced)));
+      const auto bound=copy.bind_source(ports,std::move(produced));
+      if(!bound.ok()){
+        HYLE_RETURN_IF_ERROR(require(produced.valid(),"rejected paired bind consumed the producer"));
+        return rejected_source(bound,"paired bind_source");
+      }
       HYLE_RETURN_IF_ERROR(require(!produced.valid() && !pe.submit(),"paired encoder result owner escaped F2"));
     }else{
       HYLE_RETURN_IF_ERROR(ke.bind(std::array{kt}));HYLE_RETURN_IF_ERROR(ve.bind(std::array{vt}));
-      HYLE_ASSIGN_OR_RETURN(auto kdone,ke.submit());HYLE_ASSIGN_OR_RETURN(auto vdone,ve.submit());
+      HYLE_ASSIGN_OR_RETURN(kdone,ke.submit());HYLE_ASSIGN_OR_RETURN(vdone,ve.submit());
       const std::array<n::ResultCopyBinding,1> kport{{{{0},0,kc}}},vport{{{{1},0,vc}}};
-      HYLE_RETURN_IF_ERROR(copy.bind_source(kport,std::move(kdone)));HYLE_RETURN_IF_ERROR(copy.bind_source(vport,std::move(vdone)));
+      const auto kbound=copy.bind_source(kport,std::move(kdone));
+      if(!kbound.ok()){
+        HYLE_RETURN_IF_ERROR(require(kdone.valid(),"rejected key bind consumed the producer"));
+        return rejected_source(kbound,"key bind_source");
+      }
+      const auto vbound=copy.bind_source(vport,std::move(vdone));
+      if(!vbound.ok()){
+        HYLE_RETURN_IF_ERROR(require(vdone.valid(),"rejected value bind consumed the producer"));
+        return rejected_source(vbound,"value bind_source");
+      }
       HYLE_RETURN_IF_ERROR(require(!kdone.valid() && !vdone.valid() && !ke.submit() && !ve.submit(),"independent encoder owners escaped F2"));
     }
     const std::array<c::CopyPhase,2> phases{{{}, {.dependency_mask=1}}};
     HYLE_RETURN_IF_ERROR(copy.prepare_replay(phases,ranges));
-    HYLE_ASSIGN_OR_RETURN(auto copied,copy.submit());HYLE_ASSIGN_OR_RETURN(auto update,n::CopyBatchUpdate::take(std::move(copy),std::move(copied)));
+    auto copied=copy.submit();
+    if(!copied)return rejected_source(copied.error(),"copy.submit");
+    HYLE_ASSIGN_OR_RETURN(auto update,n::CopyBatchUpdate::take(std::move(copy),std::move(*copied)));
     const std::array<c::PagedPageUpdate,2> kupdates{{{&kw[0],{2}},{&kw[1],{4}}}},vupdates{{{&vw[0],{3}},{&vw[1],{5}}}};
     const std::array clean_k{kr[0]},clean_v{vr[0]};
     HYLE_ASSIGN_OR_RETURN(auto kframe,keys.pending_read(layout,clean_k,std::span(kupdates).first(requests)));
@@ -342,7 +415,9 @@ Status episode(unsigned dk, unsigned dv, bool combined, bool invalid=false, bool
       HYLE_RETURN_IF_ERROR(joint_slot.bind(qi,host_desc,host_read));HYLE_RETURN_IF_ERROR(joint_slot.bind(ki,kframe));HYLE_RETURN_IF_ERROR(joint_slot.bind(vi,vframe));
       HYLE_RETURN_IF_ERROR(joint_slot.prepare_replay());HYLE_ASSIGN_OR_RETURN(auto report,joint_slot.replay_report());
       HYLE_RETURN_IF_ERROR(require(report.cpu_fragments>=2 && report.paged_fragments==1,"encoded joint graph missed real CPU/native fragments"));
-      HYLE_ASSIGN_OR_RETURN(auto done,joint_slot.submit(std::move(update)));
+      auto submitted=joint_slot.submit(std::move(update));
+      if(!submitted)return rejected_source(submitted.error(),"joint.submit",&update);
+      auto done=std::move(*submitted);
       if(invalid){HYLE_RETURN_IF_ERROR(failed_result(done,joint_slot,update));
         std::fprintf(stderr,"%s CPU+GPU failed %s encoder source retains InvalidArgument/no result/no page publication PASS\n",route,paired_failure?"paired":"independent second");return Status::Ok();}
       {HYLE_ASSIGN_OR_RETURN(auto result,done.wait());HYLE_ASSIGN_OR_RETURN(auto tensor,result->output(output));
@@ -350,7 +425,9 @@ Status episode(unsigned dk, unsigned dv, bool combined, bool invalid=false, bool
         HYLE_RETURN_IF_ERROR(require(!joint_slot.take_update(),"retained joint result released original update"));}
       HYLE_RETURN_IF_ERROR(done.completion().wait());done={};HYLE_ASSIGN_OR_RETURN(update,joint_slot.take_update());
     }else{
-      HYLE_ASSIGN_OR_RETURN(auto done,receiver.submit(query,kframe,vframe,std::move(update)));
+      auto submitted=receiver.submit(query,kframe,vframe,std::move(update));
+      if(!submitted)return rejected_source(submitted.error(),"receiver.submit",&update);
+      auto done=std::move(*submitted);
       if(invalid){HYLE_RETURN_IF_ERROR(failed_result(done,receiver,update));
         std::fprintf(stderr,"%s native failed %s encoder source retains InvalidArgument/no result/no page publication PASS\n",route,paired_failure?"paired":"independent second");return Status::Ok();}
       {HYLE_ASSIGN_OR_RETURN(auto result,done.wait());std::vector<std::uint16_t> words(actual.size());

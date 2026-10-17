@@ -16,7 +16,7 @@
 namespace hyle::compute::vulkan::detail {
 
 Run::~Run() {
-  HYLE_FATAL_ASSERT(!pending && observers == 0);
+  HYLE_FATAL_ASSERT(!pending && !retiring && observers == 0);
   const auto &device = *runtime->device;
   if (command_pool != VK_NULL_HANDLE)
     device.fn.DestroyCommandPool(device.native.device, command_pool, nullptr);
@@ -203,10 +203,34 @@ Result<CompletionPoll> observe(const std::shared_ptr<Run> &run,
   auto &runtime = *run->runtime;
   auto &device = *runtime.device;
   std::unique_lock lock(runtime.mutex);
-  if (!run->pending) {
+  const auto published = [&]() -> Result<CompletionPoll> {
+    if (run->pending)
+      return CompletionPoll::kPending;
     if (!run->terminal.ok())
       return std::unexpected(run->terminal);
     return CompletionPoll::kComplete;
+  };
+  const auto await_retirement = [&]() -> Result<CompletionPoll> {
+    if (!wait)
+      return CompletionPoll::kPending;
+    runtime.retirement_changed.wait(lock, [&] { return !run->retiring; });
+    return published();
+  };
+  const auto leave_observer = [&] {
+    HYLE_FATAL_ASSERT(run->observers != 0);
+    --run->observers;
+    // Only a claimed retirement can be waiting for this old observer. The
+    // ordinary lone observer and nonterminal polls do not issue a wake.
+    if (run->retiring && run->observers == 0)
+      runtime.retirement_changed.notify_all();
+  };
+  if (run->retiring) {
+    if (!wait)
+      return CompletionPoll::kPending;
+    runtime.retirement_changed.wait(lock, [&] { return !run->retiring; });
+  }
+  if (!run->pending) {
+    return published();
   }
   ++run->observers;
   if (run->async) {
@@ -220,9 +244,13 @@ Result<CompletionPoll> observe(const std::shared_ptr<Run> &run,
       lock.lock();
       if (!state.status.ok() && run->observation_error.ok())
         run->observation_error = state.status;
+      if (run->retiring || !run->pending) {
+        leave_observer();
+        return await_retirement();
+      }
       if ((!wait && !run->async->finished) ||
           (state.pending && !state.status.ok())) {
-        --run->observers;
+        leave_observer();
         return CompletionPoll::kPending;
       }
     }
@@ -243,8 +271,12 @@ Result<CompletionPoll> observe(const std::shared_ptr<Run> &run,
     lock.lock();
     if (!failure.ok() && run->observation_error.ok())
       run->observation_error = failure;
+    if (run->retiring || !run->pending) {
+      leave_observer();
+      return await_retirement();
+    }
     if (!retired) {
-      --run->observers;
+      leave_observer();
       return CompletionPoll::kPending;
     }
   }
@@ -278,6 +310,22 @@ Result<CompletionPoll> observe(const std::shared_ptr<Run> &run,
   if (!is_terminal(result) && result != VK_NOT_READY && result != VK_TIMEOUT) {
     observation =
         native_status(result, wait ? "vkWaitForFences" : "vkGetFenceStatus");
+    if (run->observation_error.ok())
+      run->observation_error = observation;
+  }
+  if (result == VK_ERROR_DEVICE_LOST) {
+    runtime.failure = native_status(result, "Vulkan submitted work lost");
+    device.provider.note_device_lost();
+  }
+  // A concurrent observer may already own retirement while this native/API
+  // observation was outside the mutex. Its real error must be committed
+  // before dropping our registration; otherwise permissions could retire OK.
+  if (run->retiring || !run->pending) {
+    leave_observer();
+    return await_retirement();
+  }
+  HYLE_FATAL_ASSERT(run->pending);
+  if (!observation.ok()) {
     if (wait) {
       // Only the exceptional path uses queue-wide drain. Preserve the original
       // diagnosis, even if an independent native observation proves completion.
@@ -285,79 +333,87 @@ Result<CompletionPoll> observe(const std::shared_ptr<Run> &run,
       run->needs_drain = !run->stages.empty();
     }
   }
+  if (result == VK_ERROR_DEVICE_LOST && !device_lost(runtime.failure)) {
+    runtime.failure = native_status(result, "Vulkan submitted work lost");
+    device.provider.note_device_lost();
+  }
+  if (!is_terminal(result)) {
+    leave_observer();
+    return CompletionPoll::kPending;
+  }
+  // poll cannot wait for another thread's native/IREE observation, nor leave
+  // a claimed retirement without an owner to finish it. A blocking observer
+  // can claim now and wait for every already-registered observation/error.
+  if (!wait && run->observers != 1) {
+    leave_observer();
+    return CompletionPoll::kPending;
+  }
+  leave_observer();
+  run->retiring = true;
+  if (run->observers != 0)
+    runtime.retirement_changed.wait(lock, [&] { return run->observers == 0; });
+  if (!retire_regions(*run, wait && run->needs_drain)) {
+    run->needs_drain = true;
+    run->retiring = false;
+    runtime.retirement_changed.notify_all();
+    return CompletionPoll::kPending;
+  }
   std::shared_ptr<Run> retired;
   cd::CompletionLifetime abandoned;
   Status terminal;
   Status hint;
-  bool done = false;
-  {
-    --run->observers;
-    if (!observation.ok() && run->observation_error.ok())
-      run->observation_error = observation;
-    if (run->pending && result == VK_ERROR_DEVICE_LOST) {
-      runtime.failure = native_status(result, "Vulkan submitted work lost");
-      device.provider.note_device_lost();
-    }
-    if (run->pending && is_terminal(result) &&
-        !retire_regions(*run, wait && run->needs_drain)) {
-      // A provider observation/drain error still owns its accepted work.
-      // The final parent fence alone does not authorize destroying that slot.
-      run->needs_drain = true;
-      result = VK_NOT_READY;
-    }
-    if (run->pending && is_terminal(result)) {
-      if (!run->submission_failure.ok()) {
-        run->terminal = run->submission_failure;
-      } else if (device_lost(runtime.failure) && run->stages.empty()) {
-        run->terminal = runtime.failure;
-      } else if (!run->observation_error.ok()) {
-        run->terminal = run->observation_error;
-      } else if (device_lost(runtime.failure)) {
-        run->terminal = runtime.failure;
-      } else {
-        const auto checked = checked_status(*run, false);
-        if (!checked.ok()) {
-          run->terminal = checked;
-          run->submission_failure = checked;
-          if (device_lost(checked)) {
-            runtime.failure = checked;
-            device.provider.note_device_lost();
-          }
-        } else if (run->cancelled) {
-          run->terminal = Status::Cancelled(
-              "Vulkan result cancelled after native retirement");
-        }
+  if (!run->submission_failure.ok()) {
+    run->terminal = run->submission_failure;
+  } else if (device_lost(runtime.failure) && run->stages.empty()) {
+    run->terminal = runtime.failure;
+  } else if (!run->observation_error.ok()) {
+    run->terminal = run->observation_error;
+  } else if (device_lost(runtime.failure)) {
+    run->terminal = runtime.failure;
+  } else {
+    const auto checked = checked_status(*run, false);
+    if (!checked.ok()) {
+      run->terminal = checked;
+      run->submission_failure = checked;
+      if (device_lost(checked)) {
+        runtime.failure = checked;
+        device.provider.note_device_lost();
       }
-      if (!run->stages.empty() && !run->observation_error.ok() &&
-          run->submission_failure.ok())
-        run->submission_failure = run->observation_error;
-      run->pending = false;
-      uses = std::move(run->native_uses);
-      *run->previous = run->next;
-      if (run->next != nullptr)
-        run->next->previous = run->previous;
-      run->next = nullptr;
-      run->previous = nullptr;
-      retired = std::move(run->pending_owner);
-      abandoned = std::exchange(run->abandoned, {});
-      hint = std::move(run->hint);
-      run->retiring = abandoned.valid();
+    } else if (run->cancelled) {
+      run->terminal = Status::Cancelled(
+          "Vulkan result cancelled after native retirement");
     }
-    done = !run->pending;
-    terminal = run->terminal;
   }
+  if (!run->stages.empty() && !run->observation_error.ok() &&
+      run->submission_failure.ok())
+    run->submission_failure = run->observation_error;
+  uses = std::move(run->native_uses);
+  terminal = run->terminal;
   lock.unlock();
   cd::LeaseAccess::retire_native(uses, terminal);
-  // Result destruction can release external owner tokens. Never invoke such
-  // destructors under the native queue lock.
-  if (retired && abandoned.valid()) {
+  lock.lock();
+  // Destroy can attach while native permissions are retiring. Take that late
+  // packet only now; pending/list ownership still protects close and reuse.
+  abandoned = std::exchange(run->abandoned, {});
+  hint = std::move(run->hint);
+  if (abandoned.valid()) {
+    lock.unlock();
     deliver(abandoned, terminal, hint);
     lock.lock();
-    run->retiring = false;
-    lock.unlock();
   }
-  if (!done)
-    return CompletionPoll::kPending;
+  // No packet takes this exact same locked publication path. Once published,
+  // this observer never writes Run again: a normal destroy or new episode may
+  // already own it before our local shared_ptr is released outside the lock.
+  run->pending = false;
+  *run->previous = run->next;
+  if (run->next != nullptr)
+    run->next->previous = run->previous;
+  run->next = nullptr;
+  run->previous = nullptr;
+  retired = std::move(run->pending_owner);
+  run->retiring = false;
+  runtime.retirement_changed.notify_all();
+  lock.unlock();
   if (!terminal.ok())
     return std::unexpected(terminal);
   return CompletionPoll::kComplete;
@@ -378,6 +434,7 @@ const cd::CompletionVTable completion_vtable{
               run.abandoned = lifetime;
               run.hint = hint;
             } else {
+              HYLE_FATAL_ASSERT(!run.retiring);
               terminal = run.terminal;
               run.retiring = true;
             }
@@ -387,6 +444,7 @@ const cd::CompletionVTable completion_vtable{
             deliver(lifetime, terminal, hint);
             std::lock_guard lock(run.runtime->mutex);
             run.retiring = false;
+            run.runtime->retirement_changed.notify_all();
           }
         },
     .poll = [](void *pointer) noexcept -> Result<CompletionPoll> {
@@ -420,6 +478,9 @@ const cd::CompletionVTable completion_vtable{
     .request_cancel = [](void *pointer) noexcept -> Status {
       auto &run = *static_cast<Run *>(pointer);
       std::lock_guard lock(run.runtime->mutex);
+      // Advisory: the unique retirer may already have frozen terminal while
+      // pending remains linked for permission/lifetime release. A request
+      // arriving after that decision does not rewrite the checked outcome.
       if (run.pending)
         run.cancelled = true;
       return Status::Ok();

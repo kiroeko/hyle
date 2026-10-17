@@ -1,0 +1,64 @@
+{
+  "schema_version": 1,
+  "state": "PASS_SOURCE_REVIEW_ONLY_NOT_RUNTIME_OR_PERFORMANCE",
+  "audited_checkpoint": "602614c8b",
+  "timestamp_utc": "2026-10-17T07:22:09.652195+00:00",
+  "inputs": [
+    {
+      "path": "src/compute_route_vulkan/vulkan_internal.h",
+      "sha256": "b15e2ef67f37fd47d902cd17c9757acd3e31a7f557f7924230d2d4d5ea22540e"
+    },
+    {
+      "path": "src/compute_route_vulkan/vulkan_run.cc",
+      "sha256": "1df9aadf91f0da4546a529f14469d6853cc16c8c99e92d4dee1be38af3a9ecaf"
+    },
+    {
+      "path": "tests/compute_route_vulkan/lifecycle_test.cc",
+      "sha256": "71ec0d1095f779d326462e9686d96677575e17f3eb0dcfb36afded6aebd8dd02"
+    },
+    {
+      "path": "tests/compute_batch/encoded_page_native_consumer.cc",
+      "sha256": "95f06d43181ca9a60729a7d20cfb2581f74c1af038e8c100f7ff819bab0e5e0b"
+    }
+  ],
+  "implementation_review": {
+    "reviewer": "/root/graph_coverage_audit",
+    "verdict": "PASS_NO_MUST",
+    "scope": [
+      "Runtime CV and single retirer",
+      "all external-observer errors before terminal freeze",
+      "nonblocking poll and counted observer release",
+      "native permissions and late abandoned packet before publication",
+      "normal destroy cannot be overwritten by old tail",
+      "IREE loss remains with original NativeProgram/IreeStage owner",
+      "real-GPU test gates and failure cleanup"
+    ],
+    "runtime_executed": false
+  },
+  "root_review": {
+    "verdict": "PASS_NO_REMAINING_MUST",
+    "corrected_before_execution": [
+      "Move RetirementThreads guard after work/read/batch/status owners, before callback attachment, so early failure opens gates and joins before owner destruction."
+    ],
+    "consumer_scope": "Accept only the original numeric-domain error at legal bind/submit boundaries; wait still-owned results, actually drain accepted work, retain unsubmitted writers and old bytes, publish no bad pages."
+  },
+  "p0": {
+    "metadata": "One condition_variable per Runtime; no new Run field/public layout/thread/container/normal heap allocation.",
+    "terminal_cost": "One extra Runtime lock round trip after native use retirement to capture late destroy and publish.",
+    "poll": "Nonterminal and single-observer ordinary paths do not wait on CV; nonterminal poll issues no notification.",
+    "notification": "Claimed-retirer last-observer release, publication, normal destroy tail, or failed retirement-proof claim withdrawal.",
+    "sizeof_measured": false
+  },
+  "test_limitations": [
+    "No old binary red run; original early Complete is a source-proven deterministic test counterexample.",
+    "Second observer test proves an old external waiter and a second real fence-wait return, not exact OS scheduling of the retiring claim.",
+    "No runtime/source SDK/host sanitizer/performance verdict from this review."
+  ],
+  "runner": {
+    "path": ".scratch/g09-completion-wake-correction/verify-v3.py",
+    "sha256": "abfc40bb9e25ad07cbfa55f2e9513046f431fbcc16fe37067d1db4545cfd3e45",
+    "review": "Independent narrow entry review PASS; actual plan/build/device are separate.",
+    "inherited_measured_command_seconds": 718.405,
+    "budget_reset": false
+  }
+}

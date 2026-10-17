@@ -195,3 +195,22 @@ reopen trigger，以[有限 native 子卡](../compute/inference-g09-vulkan-retir
 将 `compute_route_vulkan` 从 CLOSED 重新 SCOPED；它是 W3 的原 owner 修正，不能把新问题
 留在 Graph 外层掩盖。该竞态不是本次 NaN fixture 失败的已证原因。子卡完成 AUDITED 之前
 不得修改该 native owner；主卡三个 owner 仍 AUDITED，不恢复旧 profiler/性能重试入口。
+
+### 第二次有限纠正的实现边界
+
+native 子卡 AUDITED checkpoint `602614c8b` 后，V1–V3 只改原 private Runtime/Run 和既有
+lifecycle 测试。新增每 Runtime 一个 CV、终态每次一次额外 Runtime 锁往返；正常 lone observer
+不等 CV，非终态 poll 不通知，无新增 heap/容器/线程/native fence/checked readback。
+实际 sizeof 未取数；不把源码固定空间账包装为实际字节测量。原 W1–W4 API/算法不变。
+encoded consumer 只修合法错误边界及原 owner/permissions 的实际收尾断言，不放宽数值错误种类。
+
+普通 native 验证的轮次明确保留：第一轮在 fixture build 遗漏原 GTest 依赖处停止；第一次
+定向纠正后的第二轮八项 source 通过、设备 encoded 失败；本次为第二次定向纠正，最多再允许
+一次有审计依据的普通纠正。此前 export-subst 准备与 DATA plan guard 两次失败均发生在对应
+native build/设备执行前，原 receipt/时间完整保留，不作为通过，也不因上述轮次口径被删除。
+全部工作仍受原 14:08 +0800 起四小时检查点约束，新的 native 子卡与 v3 不重置任何成本。
+
+新普通 v3 仅增加原 Vulkan lifecycle TU 的三项有限 filter（原 managed 独立进展一项、新
+retirement 两项），并按不可变源码逐名/计数冻结；八项公开 consumer、Apple 原四通知项、
+SDK 八项加公开头与所有身份/152 DATA guard 不变。两次入口独立源码审查通过后才允许运行；
+实际 configure/plan/build/device 仍分阶段裁决，不将入口静态审查当 correctness PASS。
