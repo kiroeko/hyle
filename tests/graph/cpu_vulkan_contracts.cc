@@ -144,8 +144,8 @@ Status leased_contracts() {
   // reclamation after the original Scheduler's admitted callback tails return.
   const auto before_drain = pool.stats().live_blocks;
   scheduler.drain();
-  std::printf("F1 CPU+vulkan: source blocks before/after callback drain: %zu/%zu\n",
-      before_drain, pool.stats().live_blocks);
+  std::printf("F1 CPU+vulkan: source blocks before/after callback drain: %u/%u\n",
+      static_cast<unsigned>(before_drain), static_cast<unsigned>(pool.stats().live_blocks));
   HYLE_RETURN_IF_ERROR(require(pool.stats().live_blocks == 0, "mixed source lease was not reclaimed"));
   std::printf("F1 CPU+vulkan: leased host/native math, eight allocation-free replays, closed admission and retained source alias passed\n");
   return Status::Ok();

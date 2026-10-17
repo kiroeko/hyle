@@ -18,6 +18,7 @@
     "graph_route_cuda": ["Windows", "Linux"],
     "compute_route_apple": ["Darwin"],
     "graph_route_apple": ["Darwin"],
+    "graph_route_cpu_apple": ["Darwin"],
     "compute_route_vulkan": ["Windows", "Linux", "Darwin"],
     "graph_route_vulkan": ["Windows", "Linux", "Darwin"],
     "compute_provider_ggml_vulkan": ["Windows", "Linux", "Darwin"]

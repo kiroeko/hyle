@@ -151,3 +151,26 @@ Windows Vulkan validation、Air Metal validation 与三个 host sanitizer profil
 FIFO/source lifetime 不需要本轮通知 seam，故去掉无实际 caller 的 copy packet/订阅/三项新增
 copy 测试；原 copy 产品/测试保持 KEEP。本轮 native 四项定向测试另覆盖合法 inline terminal，
 不以测试行数推动能力。此收窄不改变已冻结公共形状或扩大 owner。
+
+### 首个普通 checkpoint 与有限纠正，2026-10-17
+
+实现 checkpoint `6c6222e51` 已固定 W1–W4，仍为 AUDITED，并非性能 CANDIDATE。
+两个独立源码审查无 must；Windows source 的 Vulkan `compile.cc`、`invocation.cc` 及新 shared
+owner 已真实编译链接。首个完整 fixture build 随后因新私有 CMake wrapper 遗漏 encoded
+消费者原本需要的 `GTest::gtest_main` 而停止；尚未运行任何 fixture/device/A/A/P1，不能签功能 PASS。
+同时 compiler 指出原 contracts 日志的 `%zu` 与 `uint32_t` 不匹配，本次只校正该格式及显式转换。
+
+原准备的 export-subst 身份拒绝、plan 的错误 DATA 路径拒绝及首次 build 失败全部保留。
+只读补充已证明实际 vendor 目录 152 份 shader DATA 与原同配置资格逐项相同、内层 generator
+无工作；56 个 C++ 单元均有实际 compdb/dirty 理由，未重编 shader/CUDA 数学。configure/manifest/
+两项 dry-run 的已测命令 265.985 秒，首次 build 95.141 秒，累计 361.126 秒；不含审查/编排。
+
+下一有限普通入口只修正私有 fixture 对原 GTest 的借用、实际 DATA 路径、设备 unit 的环境与
+分阶段结果文件；继续原八个消费者，encoded 必须实际执行 Vulkan 三项/Apple 四项 tests，
+共享/静态 SDK 仅复用同机真实 GTest target export，HYLE 头和库仍只来自新迁址 SDK。
+产品算法/API/正常成本与 W1–W4 不变，既有失败、三轮定向修复及四小时检查点预算均继承。
+
+本轮 selector 静态计划另揭示 Windows 错选 Apple hybrid correctness 的既有 policy 漏项。
+由[独立维护工具任务](../tooling/validation-selector-apple-hybrid-platform.md)单列一行 Darwin
+适用性修正与既有平台表测试，旧 policy 的 Windows/Linux 两项红证据及完整 60 tests 绿证据已存。
+不以空 target 签 correctness，也不将工具单测代签 G09；后续用真实 VS 环境重新 plan/run。

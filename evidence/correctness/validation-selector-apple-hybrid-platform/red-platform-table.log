@@ -1,0 +1,27 @@
+FF
+======================================================================
+FAIL: test_native_platforms_keep_off_headers_without_false_correctness (__main__.ImpactTest.test_native_platforms_keep_off_headers_without_false_correctness) (system='Windows')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\public\project-hyle\hyle\.scratch\g09-completion-wake-correction\selector-platform-fix\candidate\tests\tooling\validation_selector_test.py", line 186, in test_native_platforms_keep_off_headers_without_false_correctness
+    self.assertEqual(row["status"], "SELECTED" if supported else "SKIPPED")
+AssertionError: 'SELECTED' != 'SKIPPED'
+- SELECTED
++ SKIPPED
+
+
+======================================================================
+FAIL: test_native_platforms_keep_off_headers_without_false_correctness (__main__.ImpactTest.test_native_platforms_keep_off_headers_without_false_correctness) (system='Linux')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\public\project-hyle\hyle\.scratch\g09-completion-wake-correction\selector-platform-fix\candidate\tests\tooling\validation_selector_test.py", line 186, in test_native_platforms_keep_off_headers_without_false_correctness
+    self.assertEqual(row["status"], "SELECTED" if supported else "SKIPPED")
+AssertionError: 'SELECTED' != 'SKIPPED'
+- SELECTED
++ SKIPPED
+
+
+----------------------------------------------------------------------
+Ran 1 test in 2.549s
+
+FAILED (failures=2)

@@ -161,7 +161,7 @@ class ImpactTest(unittest.TestCase):
         self.assertNotIn("-DHYLE_COMPUTE_CPU=OFF", configure)
 
     def test_native_platforms_keep_off_headers_without_false_correctness(self):
-        for factor in ("compute_route_apple", "graph_route_apple", "compute_route_cuda",
+        for factor in ("compute_route_apple", "graph_route_apple", "graph_route_cpu_apple", "compute_route_cuda",
                        "compute_provider_flashinfer", "compute_provider_ggml_cuda"):
             self.write(f"tests/{factor}/CMakeLists.txt",
                        f"hyle_add_header_self_contained_test({factor})\n")
@@ -178,6 +178,7 @@ class ImpactTest(unittest.TestCase):
                 self.assertFalse(any(arg.startswith("-DHYLE_COMPUTE_") for arg in configure))
                 for factor, supported in (("compute_route_apple", apple),
                                           ("graph_route_apple", apple),
+                                          ("graph_route_cpu_apple", apple),
                                           ("compute_route_cuda", not apple),
                                           ("compute_provider_ggml_cuda", not apple),
                                           ("compute_provider_flashinfer", system == "Linux")):

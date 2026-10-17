@@ -1,0 +1,108 @@
+{
+  "schema_version": 1,
+  "state": "ORDINARY_ENTRY_FAILURES_RETAINED_NOT_RUNTIME_OR_PERFORMANCE_PASS",
+  "product_checkpoint": "6c6222e510853b07b30fb65dd9dcf1054e86bd22",
+  "archive": "ordinary-checkpoint-1.zip",
+  "archive_sha256": "33cc22dcaded7c662ea3680345a5e57d98d13e547bddf9020e2f91864290bb9a",
+  "members": [
+    {
+      "member": "verify.py",
+      "sha256": "18e0460ef38ad113b34a0002291dabfbdcebca6539898c7d68c17c34f08586e2",
+      "bytes": 31583
+    },
+    {
+      "member": "windows-continuation.py",
+      "sha256": "fd88aaa65a12cf9570fb5de4709606ab92d41d4c3409b31d692c0897f21e4f38",
+      "bytes": 7713
+    },
+    {
+      "member": "run-6c6222e51/prepare-failure.json",
+      "sha256": "dc196b4a67cbe3468a87fe397fd2c0dad0a61a1030e565cfef6a15230be70233",
+      "bytes": 1407
+    },
+    {
+      "member": "run-6c6222e51/prepare-failure.log",
+      "sha256": "d7976584657e596359b4546f72ff02e13566dd95685b187bc27a32821aa03527",
+      "bytes": 372
+    },
+    {
+      "member": "run-6c6222e51-prepare-correction1/manifest.json",
+      "sha256": "2382a3b09fd86d1f1e36ed775ce45c24a3ca2e6fe06ccc19047ee6caa09f144c",
+      "bytes": 484469
+    },
+    {
+      "member": "run-6c6222e51-prepare-correction1/windows-vulkan/source/configure-configure.log",
+      "sha256": "3a9e2eaa0559160c60b82584b79708c25409c6e1fbe22205eb8e78e01b4b0c51",
+      "bytes": 5039
+    },
+    {
+      "member": "run-6c6222e51-prepare-correction1/windows-vulkan/source/configure-manifest.log",
+      "sha256": "a02c00d1d3837fb81f3667de26c9425006b68299ebdd2ce4dd95cfc42d7cb32e",
+      "bytes": 160
+    },
+    {
+      "member": "run-6c6222e51-prepare-correction1/windows-vulkan/source/continuation-build.log",
+      "sha256": "3db4c693f5fbc148ac983e315c016487fe661daf16c9f8f39da0433052774f35",
+      "bytes": 10766
+    },
+    {
+      "member": "run-6c6222e51-prepare-correction1/windows-vulkan/source/explicit-build-test-continuation.json",
+      "sha256": "2aa5b67dfb9de7f9a4b25c8c5742e2ffcaf0acae3e512b78ef5a7bc8aa69b6da",
+      "bytes": 45052
+    },
+    {
+      "member": "run-6c6222e51-prepare-correction1/windows-vulkan/source/original-parent.cmake",
+      "sha256": "68bfc90dd6296f583c58880d58e10db33172e5b9f0c7dc02a6d3997d55fba6ce",
+      "bytes": 3601
+    },
+    {
+      "member": "run-6c6222e51-prepare-correction1/windows-vulkan/source/plan-dry-run.log",
+      "sha256": "7137b369d2b00edcf0a76c8467111c24be9c7226236b2aa5a74be446166f4b23",
+      "bytes": 10818
+    },
+    {
+      "member": "run-6c6222e51-prepare-correction1/windows-vulkan/source/plan-original-generator-freshness.log",
+      "sha256": "5bf847f717aec0811f9cbede931efd6ccffe934cb4834ee65458cf1d13295ce6",
+      "bytes": 159
+    },
+    {
+      "member": "run-6c6222e51-prepare-correction1/windows-vulkan/source/plan-readonly-compdb.json",
+      "sha256": "0887ce8de8053a892a6b17f81161676ee344b6e727d9e8abc7e5ebc48df6012b",
+      "bytes": 3741144
+    },
+    {
+      "member": "run-6c6222e51-prepare-correction1/windows-vulkan/source/plan-readonly-explain.log",
+      "sha256": "589ae5792c30437452fdbd5a9484a2f6576526e6437cf65f3a8e814564a286b4",
+      "bytes": 41181
+    },
+    {
+      "member": "run-6c6222e51-prepare-correction1/windows-vulkan/source/plan-readonly-supplement.json",
+      "sha256": "c43e0110c443969e64fca92bba5e4febaf69f881b0dfa53c61cf36f3d478c520",
+      "bytes": 72292
+    },
+    {
+      "member": "run-6c6222e51-prepare-correction1/windows-vulkan/source/preview.ninja",
+      "sha256": "0e46039447a157b43f554cf5dd20f99b47f685b171ef7d4c6a38f6e6ed69d66a",
+      "bytes": 5297088
+    },
+    {
+      "member": "run-6c6222e51-prepare-correction1/windows-vulkan/source/receipt.json",
+      "sha256": "0031b3195092050efb80e70f9e3a4144f36e6afe5f3ad57ba6de6231cdccd83b",
+      "bytes": 5236
+    }
+  ],
+  "actual_owner_compile_link": "Vulkan compile.cc/invocation.cc and shared owner succeeded before fixture dependency failure; see raw build log",
+  "fixture_executions": 0,
+  "device_validation_executions": 0,
+  "aa_executions": 0,
+  "p1_executions": 0,
+  "measured_command_seconds": 361.126,
+  "failures": [
+    "prepare: strict SOURCE-MANIFEST export-subst byte identity refusal",
+    "plan: wrong generated DATA directory assertion; exact 152 same-facet identity established by read-only supplement",
+    "build: encoded GTest fixture lacked its original GTest::gtest_main dependency"
+  ],
+  "next_correction": "Explicit GTest borrowing and known private-entry metadata fixes; contracts printf type warning only; no product algorithm/API change",
+  "raw_source_archive_retention": "Original source ZIPs stay in their scratch bundles. All canonical source bytes are bound by the immutable Git checkpoint and retained manifest; their hashes remain in the original receipts.",
+  "no_budget_reset": true
+}

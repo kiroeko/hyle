@@ -1,0 +1,10 @@
+{
+  "argv": [
+    "C:\\Program Files\\Python312\\python.exe",
+    "tests/tooling/validation_selector_test.py",
+    "ImpactTest.test_native_platforms_keep_off_headers_without_false_correctness"
+  ],
+  "cwd": "C:\\public\\project-hyle\\hyle\\.scratch\\g09-completion-wake-correction\\selector-platform-fix\\candidate",
+  "exit": 1,
+  "elapsed_seconds": 2.75
+}

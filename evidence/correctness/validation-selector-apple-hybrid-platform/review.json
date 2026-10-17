@@ -1,0 +1,141 @@
+{
+  "schema_version": 1,
+  "status": "DRAFT_NOT_MERGED_UNIT_ONLY",
+  "canonical_unchanged": {
+    "head": "6c6222e510853b07b30fb65dd9dcf1054e86bd22",
+    "tree": "f9456b27c91ceeca3254880dea413e660eff1891",
+    "porcelain_after": ""
+  },
+  "scope": [
+    "scripts/validation-policy.json: add graph_route_cpu_apple Darwin applicability",
+    "tests/tooling/validation_selector_test.py: extend existing platform-table fixture and expectation"
+  ],
+  "source_inputs": [
+    {
+      "path": "scripts/validation-graph.cmake",
+      "sha256": "767b67bf42aedc2851db73bbd3f0935d7a7587d43060e1027186f2e6877e8d99"
+    },
+    {
+      "path": "scripts/validation-policy.json",
+      "sha256": "25f67091418668e6b75d3f1f35547b7aad4d5763a3dd03c831f11271e9e02a99"
+    },
+    {
+      "path": "scripts/validation-select.py",
+      "sha256": "c0afef97e33c689d56878d5e73a3d4b8ce5f49fcd9a4468a04985aa7ac00c880"
+    },
+    {
+      "path": "tests/tooling/validation_selector_test.py",
+      "sha256": "7cbd8945238c3df8faad2da30791ebffa20a13bb8809e39a9a47d184f8a1842b"
+    },
+    {
+      "path": "cmake/HyleComponents.cmake",
+      "sha256": "9ecd0235fa3078046b9d0cd3edaed69f525a02b65d8cf90c811aca886f237b99"
+    },
+    {
+      "path": "docs/implementation/module-status.json",
+      "sha256": "44eb5499a09302638920a37462f2dd9d91ad3b26e857675a3f09451f26bed531"
+    },
+    {
+      "path": ".github/workflows/build-system.yml",
+      "sha256": "3375289887d3b4473a391a40f72b1e4f6511cab381d53334d5b837d10121239b"
+    }
+  ],
+  "red": {
+    "argv": [
+      "C:\\Program Files\\Python312\\python.exe",
+      "tests/tooling/validation_selector_test.py",
+      "ImpactTest.test_native_platforms_keep_off_headers_without_false_correctness"
+    ],
+    "cwd": "C:\\public\\project-hyle\\hyle\\.scratch\\g09-completion-wake-correction\\selector-platform-fix\\candidate",
+    "exit": 1,
+    "elapsed_seconds": 2.75,
+    "expected_failure": true,
+    "failure_count": 2,
+    "failed_subtests": [
+      "Windows",
+      "Linux"
+    ],
+    "log_sha256": "e5bc775588e5306a764a32e53f1e486aa7de0c16a5659d8b5cc8637d5a371bf1"
+  },
+  "green": {
+    "argv": [
+      "C:\\Program Files\\Python312\\python.exe",
+      "tests/tooling/validation_selector_test.py"
+    ],
+    "cwd": "C:\\public\\project-hyle\\hyle\\.scratch\\g09-completion-wake-correction\\selector-platform-fix\\candidate",
+    "exit": 0,
+    "elapsed_seconds": 122.70299999997951,
+    "tests": 60,
+    "verdict": "PASS",
+    "log_sha256": "a41e4aa7d7c2304eb763a08d95ce18b44a89b2dfc7bc25957214a1f50f257591"
+  },
+  "patch": {
+    "path": "selector-platform.patch",
+    "sha256": "0ba03ef6cd82c7774f3cfd58e0b6ee5745113d95402b388882d7991fa3f313be",
+    "files": 2,
+    "policy_semantics": "graph_route_cpu_apple correctness Windows/Linux SKIPPED, Darwin SELECTED; existing header fixture expectations retained"
+  },
+  "post_test_format_proof": {
+    "reason": "Scratch writer initially inserted CRLF after the adjacent Apple row in a mixed-newline policy file; remove only that introduced CR to preserve the baseline neighbor byte-for-byte. Delivered patch was already normalized and did not contain this whitespace change.",
+    "tested_policy_sha256": "6044c9a45f9b0e0d27c1d3ab149c92f80957e599640edcb34888a1f28ab5cbef",
+    "delivered_policy_sha256": "13dc6a2f56be1df73805483a9cc78fe6eda2e7db5caf03ce79ffa9d2b954c982",
+    "normalized_bytes_equal": true,
+    "existing_selector_formatting_only_json": true,
+    "json_equal": true,
+    "suite_not_repeated": true
+  },
+  "delivered_file_hashes": [
+    {
+      "path": "scripts/validation-policy.json",
+      "sha256": "13dc6a2f56be1df73805483a9cc78fe6eda2e7db5caf03ce79ffa9d2b954c982"
+    },
+    {
+      "path": "tests/tooling/validation_selector_test.py",
+      "sha256": "7df0bf8f1e93633d3876e60c65e39f59cd369a8f3f18c5b352c25c9383b49693"
+    }
+  ],
+  "patch_checks": [
+    {
+      "argv": [
+        "git",
+        "diff",
+        "--check",
+        "--",
+        "scripts/validation-policy.json",
+        "tests/tooling/validation_selector_test.py"
+      ],
+      "exit": 0,
+      "output": ""
+    },
+    {
+      "argv": [
+        "git",
+        "apply",
+        "--reverse",
+        "--check",
+        "../selector-platform.patch"
+      ],
+      "exit": 0,
+      "output": ""
+    },
+    {
+      "argv": [
+        "git",
+        "diff",
+        "--numstat",
+        "--",
+        "scripts/validation-policy.json",
+        "tests/tooling/validation_selector_test.py"
+      ],
+      "exit": 0,
+      "output": "1\t0\tscripts/validation-policy.json\n2\t1\ttests/tooling/validation_selector_test.py\n"
+    }
+  ],
+  "limits": [
+    "No canonical tracked file or HEAD modified.",
+    "No product configure/build/test, GPU, benchmark, remote or shader generation performed.",
+    "Unit fixtures run graph metadata CMake -P and existing mocked/synthetic process contracts.",
+    "Original G09 Windows plan remains static READY and never executed; it is not PASS.",
+    "Root independent review/merge and fresh exact-context product selector execution remain required."
+  ]
+}

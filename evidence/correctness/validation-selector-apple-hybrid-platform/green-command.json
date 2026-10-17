@@ -1,0 +1,9 @@
+{
+  "argv": [
+    "C:\\Program Files\\Python312\\python.exe",
+    "tests/tooling/validation_selector_test.py"
+  ],
+  "cwd": "C:\\public\\project-hyle\\hyle\\.scratch\\g09-completion-wake-correction\\selector-platform-fix\\candidate",
+  "exit": 0,
+  "elapsed_seconds": 122.70299999997951
+}
