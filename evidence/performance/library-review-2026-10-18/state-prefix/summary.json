@@ -1,0 +1,93 @@
+{
+  "change": "Skip invalid prefix once; outer and prior-root loops both start at first valid anchor. No allocation, index, sorting, API, accounting or lifetime changes.",
+  "sampling": "Exactly two pairs: baseline/candidate AB then candidate/baseline BA. No samples excluded. Setup/import/collect/destruction outside each stats interval.",
+  "host": {
+    "platform": "Windows-11-10.0.26200-SP0",
+    "affinity": "logical CPU4; physical core type not inferred",
+    "qpc_frequency_hz": 10000000,
+    "qpc_tick_ns": 100
+  },
+  "tests": {
+    "StateVersions": 14,
+    "StateClone": 11,
+    "passed": 25,
+    "log": "tests.stdout.txt"
+  },
+  "measurement_scope": "Public StateStore::stats only; not inference throughput.",
+  "limits": [
+    "Different roots and internal holes can still produce quadratic prior-root search.",
+    "Small dense-control differences are retained without significance or regression claim.",
+    "Only fresh compute_state TU and related public test/probe TUs; foundation static libraries reused; not a full rebuild."
+  ],
+  "rows": [
+    {
+      "shape": "collected-prefix",
+      "live_blocks": 128,
+      "prefix_holes": 128,
+      "samples": [
+        {
+          "baseline_ns": 4691.796875,
+          "candidate_ns": 186.71875,
+          "baseline_over_candidate": 25.127615062761507,
+          "candidate_change_percent": -96.02031471151444,
+          "baseline_interval_ns": 9608800,
+          "candidate_interval_ns": 382400
+        },
+        {
+          "baseline_ns": 4694.140625,
+          "candidate_ns": 174.609375,
+          "baseline_over_candidate": 26.88366890380313,
+          "candidate_change_percent": -96.2802696180411,
+          "baseline_interval_ns": 9613600,
+          "candidate_interval_ns": 357600
+        }
+      ]
+    },
+    {
+      "shape": "collected-prefix",
+      "live_blocks": 2048,
+      "prefix_holes": 2048,
+      "samples": [
+        {
+          "baseline_ns": 1063764.0625,
+          "candidate_ns": 2484.375,
+          "baseline_over_candidate": 428.1817610062893,
+          "candidate_change_percent": -99.76645432125603,
+          "baseline_interval_ns": 68080900,
+          "candidate_interval_ns": 159000
+        },
+        {
+          "baseline_ns": 1050240.625,
+          "candidate_ns": 2443.75,
+          "baseline_over_candidate": 429.7659846547315,
+          "candidate_change_percent": -99.7673152283554,
+          "baseline_interval_ns": 67215400,
+          "candidate_interval_ns": 156400
+        }
+      ]
+    },
+    {
+      "shape": "dense-control",
+      "live_blocks": 2048,
+      "prefix_holes": 0,
+      "samples": [
+        {
+          "baseline_ns": 2055.46875,
+          "candidate_ns": 2084.619141,
+          "baseline_over_candidate": 0.9860164427992268,
+          "candidate_change_percent": 1.418187019384276,
+          "baseline_interval_ns": 16838400,
+          "candidate_interval_ns": 17077200
+        },
+        {
+          "baseline_ns": 2051.245117,
+          "candidate_ns": 2053.527832,
+          "baseline_over_candidate": 0.9988883934444769,
+          "candidate_change_percent": 0.11128435997638242,
+          "baseline_interval_ns": 16803800,
+          "candidate_interval_ns": 16822500
+        }
+      ]
+    }
+  ]
+}

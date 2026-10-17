@@ -9,7 +9,7 @@
 | 项目 | 证据与影响 | 本轮处理 |
 |---|---|---|
 | CPU 普通路线漏注册 ggml | [owner CMake](../../../src/compute_provider_ggml/CMakeLists.txt) 用 `NO_DEFINE`，而 [Direct](../../../src/compute_route_cpu/cpu_context.cc) / [Graph](../../../src/graph_route_cpu/cpu_context.cc) 以该 presence 宏编译注册。实际库虽链接，候选却消失，旧 CPU 排名不能直接继承 | 已恢复 target 的宏传播；实际 owner 声明的配置回归通过。未测修复后的 CPU 模型倍率 |
-| StateStore 重复扫描同池 roots | [stats_locked](../../../src/compute_state/state_versions.cc) 对已命中 root 仍扫描所有更早块；`replace` / `import` 等也调用它。密集单池 B 块为二次扫描 | 已在命中后停止。相同 API、计费与输入实测见下；不增加字段、分配或 backing |
+| StateStore 重复扫描同池 roots | [stats_locked](../../../src/compute_state/state_versions.cc) 对已命中 root 仍扫描所有更早块；回收形成的前缀空洞也被逐块重扫，`replace` / `import` 等会调用它 | 已在命中后停止，并将前缀空洞一次跳过。相同 API、计费与输入实测见下；不增加字段、分配或 backing |
 | CUDA attention 的平方 scratch | [ggml CUDA](../../../src/compute_provider_ggml_cuda/ggml_cuda_provider.cc) 原BF16/F32物化scores，F16物化causal mask。B1/H8/Q=KV8192时，单个F32 scores为2 GiB | BF16适用域已融合；ggml大型独立SDPA已按Q分块、复用完整KV与临时空间。实际8K F32显式private从8368降至48.5 MiB，见下 |
 | CUDA声明F32但实际缩精度 | ggml默认cuBLAS handle启用TF32；F16 flash的PV为Half累加且不读PREC_F32 | 显式F32源请求局部切DEFAULT_MATH并恢复；ggml F16改F32 math再转最终端口。未把旧低精度速度作同合同输项 |
 | io_uring CQE 分类的线性查表 | [Proactor::reap](../../../src/io_core/proactor.cc) 原来每个 CQE 扫描 pending accept/close/statx；N 个未决 special op 可使完成批次最坏 O(N²)，不相关 read/write 也付扫描成本 | 已改为单个 token 索引；真实 native 同工规模对照见下，accept找空位/close提交去重的扫描仍保留 |
@@ -279,8 +279,23 @@ QPC频率10 MHz、tick 100 ns；最快聚合区间22.1 μs，未用单次100 ns�
 25项 StateVersions/StateClone 测试通过，含 A/B/A roots、独立metadata及collect后前段空洞的精确计费。
 
 这里证明的是统计调用及其重复 root 扫描，**不是引擎 tokens/s 提高这些倍数**。
-密集单池降为线性；不同 root、长空洞前缀和 clone-route 查找仍有扫描，最坏复杂度没有普遍降为线性。
+密集单池降为线性；不同 root、内部空洞和 clone-route 查找仍有扫描，最坏复杂度没有普遍降为线性。
 `import` 的其它去重扫描也未被这项修复消除。
+
+随后补查回收形成的长空洞前缀：先保留旧池全部块，再导入新池，释放旧version/member并collect。
+原循环对每个存活块重扫这段空洞；现在只找一次首个有效anchor，两层循环均从这里开始，
+不新增状态、排序、索引或分配。Windows同配置、CPU4，完整stats与checksum一致，25项原状态测试通过。
+
+| 前缀空洞 / 同池存活块 | 原 μs/call，两对 | 修后 μs/call，两对 |
+|---|---:|---:|
+| 128 / 128 | 4.692 / 4.694 | 0.187 / 0.175 |
+| 2048 / 2048 | 1063.764 / 1050.241 | 2.484 / 2.444 |
+| 0 / 2048，密集control | 2.055 / 2.051 | 2.085 / 2.054 |
+
+仅两对AB/BA、4进程，无删样本。QPC为10 MHz，最快聚合区间156.4 μs；准备/导入/回收/销毁不计时。
+密集control的+1.42%/+0.11%全部保留，不据此判定稳定退化或严格等价。
+[摘要](state-prefix/summary.json)与[源码/原始结果包](state-prefix/source-evidence.zip)保存源码和复用库hash、
+命令及测试日志。只直接编译相关TU，未全量重建；结果仍仅说明stats调用，不外推引擎吞吐。
 
 ## io_uring 同工规模实测
 

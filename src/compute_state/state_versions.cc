@@ -71,13 +71,17 @@ StateStoreStats stats_locked(const d::StateStoreData &s) noexcept {
     stats.clone_capacity_bytes += r.capacity;
   }
   stats.backing_bytes = stats.clone_capacity_bytes;
-  for (std::size_t i = 0; i < s.backing.size(); ++i) {
+  // Collected prefix slots cannot match any retained root. Skip them once,
+  // rather than rediscovering the same empty prefix for every live anchor.
+  std::size_t first = 0;
+  while (first < s.backing.size() && !s.backing[first].anchor.valid()) ++first;
+  for (std::size_t i = first; i < s.backing.size(); ++i) {
     const auto &b = s.backing[i]; if (!b.anchor.valid()) continue;
     ++stats.retained_blocks;
     bool previous = clone_root(s, b.backing.identity);
     // A root is charged once. Once it is found, inspecting further anchors
     // cannot change the result; shared-pool pages must not all rescan a prefix.
-    for (std::size_t j = 0; !previous && j < i; ++j)
+    for (std::size_t j = first; !previous && j < i; ++j)
       previous = s.backing[j].anchor.valid() && s.backing[j].backing.identity == b.backing.identity;
     if (!previous) { ++stats.backing_roots; stats.backing_bytes += b.backing.bytes; }
     if (b.metadata) stats.host_snapshot_bytes += b.anchor.size();
