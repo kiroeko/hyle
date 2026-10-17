@@ -1,0 +1,433 @@
+{
+  "schema": "hyle.finite-source-review.v1",
+  "task": "G10 CPU thread-budget peer/source and prospective API review",
+  "date": "2026-10-17",
+  "canonical_root": "C:/public/project-hyle/hyle",
+  "baseline": "0f852b231",
+  "inspected_head": "1eb750df7e9ed0b0f75bc6129af04049750e8b86",
+  "status": "SOURCE_REVIEW_ONLY_SCOPED_NOT_IMPLEMENTATION_OR_RUNTIME_PASS",
+  "decision": "FINITE_STARTUP_CONTROL_AND_LIMIT_REPORT_DESIGN_ACCEPTABLE_WITH_FOUR_FIXED_ITEMS",
+  "authorization_limits": [
+    "Read-only product/source inspection; only this ignored JSON written.",
+    "No build, test, performance, GPU, checkout/update, product/registry/public-tool edit or subagent.",
+    "No reopening G01–G09 or claims that G10 fixes G09 instrument qualification."
+  ],
+  "conclusion_cn": "可用原ATen启动期配置及真实limit报告补齐控制/可观测接缝，保留原ggml每invocation预算与借用executor。它不提供两个任意并发invocation的全进程活跃线程总上界；硬总预算仍由应用用原Sched准入/预算分配完成。root最后四项FIX方案在下述作用域、首次使用、失败和冷资格约束下可冻结AUDITED。",
+  "source_identity": {
+    "hyle": [
+      {
+        "path": "docs/implementation/tasks/compute/inference-g10-cpu-thread-budget.md",
+        "sha256": "e8cf3289df85e837f751750ae6473183bd2b15b5d06c540983ef2435bfa7c528",
+        "bytes": 3185
+      },
+      {
+        "path": "include/hyle/compute/cpu.h",
+        "sha256": "bccb8e5d310086b41c6f010a84f56219ac33830e92e5da22ce2ff12cd608ccb6",
+        "bytes": 1703
+      },
+      {
+        "path": "src/compute_route_cpu/cpu_context.cc",
+        "sha256": "20146823875d3c9cdde2de3ac6574a61cf46c297d667335b1f823379e762f4f6",
+        "bytes": 2087
+      },
+      {
+        "path": "src/compute_provider_native/aten_cpu_provider.cc",
+        "sha256": "8f6e1393b4319971a8c3fa78dd3eba7b55e6cd3dea8aabbecc7887bf79cfc79a",
+        "bytes": 45603
+      },
+      {
+        "path": "src/compute_provider_native/torch_cpu_program.cc",
+        "sha256": "7123fa45fdc4c137a49ed537cf879af6b0a4019971f9256285a740507060315b",
+        "bytes": 25223
+      },
+      {
+        "path": "src/compute_provider_native/torch_cpu_program.h",
+        "sha256": "ca4ef34232a74b88489a686834eea4d79e77c63ae359e044c3534ba9067fd03d",
+        "bytes": 808
+      },
+      {
+        "path": "src/compute_provider_native/native_provider.cc",
+        "sha256": "985e51c2d35718a52124af47072dacb95706624930168f4b2c5e7d55903bedae",
+        "bytes": 35128
+      },
+      {
+        "path": "src/compute_provider_native/native_plan.h",
+        "sha256": "54e9d973eed41bce2800b39806f6a475a3774ac305805765930b48657d028a22",
+        "bytes": 9550
+      },
+      {
+        "path": "src/compute_provider_native/default_rules.cc",
+        "sha256": "5cdcc9165dd8099d55aadf4b46ec58db240229c80ff88b50d99a8a7356f44464",
+        "bytes": 11396
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\src\\compute_route_cpu\\default_policy.cc",
+        "sha256": "3b0d5aca67390514cce2d4ede5749ce567cb5debd0219811976ad420167d603a",
+        "bytes": 6578
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\docs\\implementation\\module-status.json",
+        "sha256": "6147569bed029b51df55b13364b07ebfba89f033a71c19ab5d85b8ec1d50782c",
+        "bytes": 46310
+      }
+    ],
+    "peers": [
+      {
+        "name": "sglang",
+        "repo": "C:\\public\\project-hyle\\sglang",
+        "fixed_ref": "7224fce1b5e488c9916f20ec0556d696e595d512",
+        "head_read_only": "234ccba7f625e12639e621044496bcc6197c3758",
+        "files": [
+          {
+            "path": "python/sglang/srt/model_executor/model_runner.py",
+            "sha256": "406d6216df70c9013142311470e87944f6eb12cf9264a2f350ef5f720fcad3ad",
+            "bytes": 101874,
+            "lines": 2486
+          },
+          {
+            "path": "python/sglang/srt/distributed/bootstrap.py",
+            "sha256": "fc31071a2e6d56b865f8e15b416f3261016583bcd7e55c483f6731215c39a676",
+            "bytes": 16375,
+            "lines": 446
+          },
+          {
+            "path": "python/sglang/kernels/aot/csrc/cpu/numa_utils.cpp",
+            "sha256": "32bdc91aa9cbf9fd00777adb19954a0a10952e8d46314234c718ed75699c765d",
+            "bytes": 3080,
+            "lines": 98
+          }
+        ]
+      },
+      {
+        "name": "vllm",
+        "repo": "C:\\public\\project-hyle\\vllm",
+        "fixed_ref": "98f721116227f0f48690deb05c815c057bac0668",
+        "head_read_only": "276fbcff2717bd934cfa37c8a2e4c391f3e7237b",
+        "files": [
+          {
+            "path": "vllm/utils/torch_utils.py",
+            "sha256": "3518e60b59b657fda45bb8df09a05f2fcd78e94ae36a46d58953cd180351c00f",
+            "bytes": 39132,
+            "lines": 1105
+          },
+          {
+            "path": "vllm/v1/executor/multiproc_executor.py",
+            "sha256": "948c15e09617b02e2d0746d9ee20b43168b083da71313d05f06b29a753f8570b",
+            "bytes": 45633,
+            "lines": 1134
+          },
+          {
+            "path": "vllm/v1/worker/cpu_worker.py",
+            "sha256": "5889af10bfa836b8d7b141c56af85305f367e19b95ef208d5cbfebc1cff0894f",
+            "bytes": 11364,
+            "lines": 277
+          }
+        ]
+      },
+      {
+        "name": "llama.cpp",
+        "repo": "C:\\public\\project-hyle\\llama.cpp",
+        "fixed_ref": "cbe28bb3cb0758f0c566a9a3561766821aeb0748",
+        "head_read_only": "23b0202a189c44a54625aadcb37a946dd1d6278d",
+        "files": [
+          {
+            "path": "include/llama.h",
+            "sha256": "f2498d8bc9f25730643ff8240b87c2c28b7696274b7db60b958222a70819738d",
+            "bytes": 90629,
+            "lines": 1745
+          },
+          {
+            "path": "src/llama-context.cpp",
+            "sha256": "8db8e93a10dcb3ecbc75090a3c6a02c0262f222226e16088fbe4165a34f6a76f",
+            "bytes": 168904,
+            "lines": 4715
+          },
+          {
+            "path": "common/common.cpp",
+            "sha256": "0595137725df615ac952c943f06cdc8198cec0694f648358343fbdd667641da9",
+            "bytes": 83632,
+            "lines": 2459
+          },
+          {
+            "path": "ggml/src/ggml-cpu/ggml-cpu.c",
+            "sha256": "70796abaa0c71f5bbddfb82dd2e5587c1cea6832bc0aadea6fce55408fbd3900",
+            "bytes": 132735,
+            "lines": 3942
+          }
+        ]
+      }
+    ],
+    "locked_torch": {
+      "sdk_root": "C:/public/tools/hyle-dependencies/v1/sdks/torch-cpu/Windows-bf0079104e068dcbd60b2f8de589dc725282cbe865a85016cc5b8aa46cab519d/libtorch",
+      "version": "2.8.0+cpu",
+      "build_hash": "a1cb3cc05d46d198467bebbb6e8fba50a325d4e7",
+      "configuration": "AT_PARALLEL_OPENMP=1, AT_PARALLEL_NATIVE=0, MKLDNN=1, MKL=1, MKL_SEQUENTIAL=0",
+      "files": [
+        {
+          "path": "C:\\public\\tools\\hyle-dependencies\\v1\\sdks\\torch-cpu\\Windows-bf0079104e068dcbd60b2f8de589dc725282cbe865a85016cc5b8aa46cab519d\\libtorch\\build-version",
+          "sha256": "ff2aeb34a556ecaff18ceeb6387c55769dd9b8ac8588529b17b15c0fb8973dfc",
+          "bytes": 12
+        },
+        {
+          "path": "C:\\public\\tools\\hyle-dependencies\\v1\\sdks\\torch-cpu\\Windows-bf0079104e068dcbd60b2f8de589dc725282cbe865a85016cc5b8aa46cab519d\\libtorch\\build-hash",
+          "sha256": "1eb66b25f534aaed7aa785e9aa6ce55c44d2f8fc2e240bf64a60f953f168918f",
+          "bytes": 41
+        },
+        {
+          "path": "C:\\public\\tools\\hyle-dependencies\\v1\\sdks\\torch-cpu\\Windows-bf0079104e068dcbd60b2f8de589dc725282cbe865a85016cc5b8aa46cab519d\\libtorch\\include\\ATen\\Config.h",
+          "sha256": "681f1e7ff46e945203dae52ed02b5b959fb2525e6ad4ac0da718e08b92dea666",
+          "bytes": 791
+        },
+        {
+          "path": "C:\\public\\tools\\hyle-dependencies\\v1\\sdks\\torch-cpu\\Windows-bf0079104e068dcbd60b2f8de589dc725282cbe865a85016cc5b8aa46cab519d\\libtorch\\include\\ATen\\Parallel.h",
+          "sha256": "1d3be1116638dfcdbf42e550ae70fef0074bd5d8284d4de891ee883b7da1cfd9",
+          "bytes": 4911
+        },
+        {
+          "path": "C:\\public\\tools\\hyle-dependencies\\v1\\sdks\\torch-cpu\\Windows-bf0079104e068dcbd60b2f8de589dc725282cbe865a85016cc5b8aa46cab519d\\libtorch\\include\\ATen\\Parallel-inl.h",
+          "sha256": "dac206f127868c443d28801b999003579e62847d4352d4d119989cb3d42c7491",
+          "bytes": 2386
+        },
+        {
+          "path": "C:\\public\\tools\\hyle-dependencies\\v1\\sdks\\torch-cpu\\Windows-bf0079104e068dcbd60b2f8de589dc725282cbe865a85016cc5b8aa46cab519d\\libtorch\\include\\ATen\\ParallelOpenMP.h",
+          "sha256": "08bdf8e355f0bfcc5ae6d71b5b440eb8d03df3f1a533d555d8372319b9583ff7",
+          "bytes": 1337
+        },
+        {
+          "path": "C:\\public\\tools\\hyle-dependencies\\v1\\sdks\\torch-cpu\\Windows-bf0079104e068dcbd60b2f8de589dc725282cbe865a85016cc5b8aa46cab519d\\libtorch\\include\\ATen\\ParallelNative.h",
+          "sha256": "390147cef397478fa4825e86c96d31509080ca8813163b1cc2ae6a324129e47d",
+          "bytes": 307
+        }
+      ],
+      "primary_implementation": [
+        {
+          "url": "https://raw.githubusercontent.com/pytorch/pytorch/a1cb3cc05d46d198467bebbb6e8fba50a325d4e7/aten/src/ATen/ParallelOpenMP.cpp",
+          "sha256": "047b1d09112530c33b1e668436f624f11bf6a01ab4fc1e094f3b36245ec64281",
+          "bytes": 2922,
+          "lines": 116
+        },
+        {
+          "url": "https://raw.githubusercontent.com/pytorch/pytorch/a1cb3cc05d46d198467bebbb6e8fba50a325d4e7/aten/src/ATen/ParallelNative.cpp",
+          "sha256": "009c4c44761a9f9557c09b3571a5e38c5be428739f6d2d4a35defade4577373b",
+          "bytes": 8852,
+          "lines": 320
+        },
+        {
+          "url": "https://raw.githubusercontent.com/pytorch/pytorch/a1cb3cc05d46d198467bebbb6e8fba50a325d4e7/aten/src/ATen/ParallelThreadPoolNative.cpp",
+          "sha256": "3a07dc25a4ba97c3a4510f03630e1929a6c82bb47bf3616bde847b329b8087b8",
+          "bytes": 2564,
+          "lines": 95
+        }
+      ]
+    }
+  },
+  "archive_caveat": "The .scratch/inference-single-machine peer trees are plain fixed archives without .git; git -C there ascends to HYLE. Fixed peer contents were instead read with git show <fixed>:<path> in the original three repositories. Their current HEADs were only recorded, never checked out/updated. No inference from current HEAD content.",
+  "peer_mechanisms": [
+    {
+      "peer": "llama.cpp",
+      "mechanisms": [
+        {
+          "anchors": [
+            "include/llama.h:374–375,498–504,1098–1105",
+            "src/llama-context.cpp:1281–1302,2727–2748"
+          ],
+          "fact": "Context stores ordinary/batch thread counts and caller-owned pools; graph_compute chooses the count/pool then configures original CPU backend. This is explicit context/phase resource selection."
+        },
+        {
+          "anchors": [
+            "common/common.cpp:1771–1820"
+          ],
+          "fact": "Cold pool construction reuses persistent pools; second batch pool only when parameters differ, ordinary pool starts paused; ownership stays with common_init_result."
+        }
+      ],
+      "counterbias": {
+        "anchors": [
+          "src/llama-context.cpp:1566",
+          "ggml/src/ggml-cpu/ggml-cpu.c:3391–3415"
+        ],
+        "fact": "Batched is selected by ubatch.n_tokens>1, so multi-request Q1 decode may use batch threads. A reused ggml pool rewrites graph/plan fields while requiring workers quiescent; sharing a pointer is not proof of safe simultaneous independent graphs or global admission."
+      },
+      "hyle_decision": "KEEP explicit phase contexts and original per-invocation ggml budget. Do not infer thread pool from phase labels or add a global pool framework."
+    },
+    {
+      "peer": "sglang",
+      "mechanisms": [
+        {
+          "anchors": [
+            "python/sglang/srt/model_executor/model_runner.py:1221–1230"
+          ],
+          "fact": "Non-CPU model load sets Torch threads to 1 as startup conflict-reduction policy; this is not a CPU-only recommendation or per-invocation cap."
+        },
+        {
+          "anchors": [
+            "python/sglang/srt/distributed/bootstrap.py:124,140–144,271–294",
+            "python/sglang/kernels/aot/csrc/cpu/numa_utils.cpp:11–81"
+          ],
+          "fact": "CPU rank binding initializes CPU IDs/NUMA and OpenMP/ATen counts at worker setup, including original OpenMP thread affinity and count checks."
+        }
+      ],
+      "counterbias": {
+        "anchors": [
+          "python/sglang/srt/distributed/bootstrap.py:271–294",
+          "python/sglang/kernels/aot/csrc/cpu/numa_utils.cpp:11–81"
+        ],
+        "fact": "The binding is architecture/platform-conditional and changes process NUMA/worker state. It cannot be transplanted into independent library contexts; it does not prove a sum cap for two invocations."
+      },
+      "hyle_decision": "BORROW existing Platform placement; application owns worker/rank/CPU-vs-GPU policy. FIX only explicit runtime startup control/report."
+    },
+    {
+      "peer": "vllm",
+      "mechanisms": [
+        {
+          "anchors": [
+            "vllm/utils/torch_utils.py:257–300",
+            "vllm/v1/executor/multiproc_executor.py:1106–1134"
+          ],
+          "fact": "Startup divides CPU availability/quota among local processes; serving runtime prefers Torch 1 absent external OMP setting, configured before worker startup to avoid spin/fork issues."
+        },
+        {
+          "anchors": [
+            "vllm/v1/worker/cpu_worker.py:107–145"
+          ],
+          "fact": "CPU init binds threads and then replaces later Torch setters with warning/no-op to preserve placement."
+        }
+      ],
+      "counterbias": {
+        "anchors": [
+          "vllm/utils/torch_utils.py:303–332"
+        ],
+        "fact": "A temporary set/restore helper exists but supplies no concurrent per-context safety. It does not remove original ATen global/pool initialization restrictions."
+      },
+      "hyle_decision": "Startup-only control is natural. Do not copy temporary setter/restore or process/worker policy into HYLE."
+    }
+  ],
+  "aten_scope_facts": [
+    {
+      "anchors": [
+        "Locked include/ATen/Parallel.h:13–37,70–73,129–148",
+        "Locked include/ATen/Parallel-inl.h:20–37",
+        "Locked include/ATen/ParallelOpenMP.h:25–42"
+      ],
+      "fact": "Thread limits and lazy per-caller initialization are original runtime interfaces. parallel_for avoids nested expansion but copies no general TLS and its raw callback must not perform Tensor operations. This is not a context-local executor override."
+    },
+    {
+      "anchors": [
+        "ParallelOpenMP.cpp:23–77 at locked build hash"
+      ],
+      "fact": "Global requested count drives per-caller OpenMP/MKL initialization. Setter also changes MKL/dynamic/cache state; temporary restore is not a pure local transaction. Query may initialize caller TLS."
+    },
+    {
+      "anchors": [
+        "ParallelNative.cpp:64–97,215–255 at locked build hash"
+      ],
+      "fact": "One original intraop pool plus caller-master execution; late differing setter warns without changing its size. A void setter must be checked by observed getter; N does not bound N-1 workers plus multiple simultaneous callers."
+    },
+    {
+      "anchors": [
+        "ParallelThreadPoolNative.cpp:20–30,50–68 at locked build hash"
+      ],
+      "fact": "Interop has a distinct once-configured runtime pool. G10 need not set it; report its limit, without claiming live OS threads."
+    }
+  ],
+  "hyle_existing_seams": [
+    {
+      "anchors": [
+        "include/hyle/compute/cpu.h:20–29",
+        "src/compute_route_cpu/cpu_context.cc:17–50"
+      ],
+      "fact": "native_threads controls only original ggml persistent workers per invocation, includes submitter; borrowed executor concurrency is a separate backing. Ordinary context includes ATen provider with no thread options."
+    },
+    {
+      "anchors": [
+        "src/compute_provider_native/aten_cpu_provider.cc:31–39,914–924",
+        "src/compute_provider_native/torch_cpu_program.cc:53–61,418–444",
+        "src/compute_provider_native/native_provider.cc:747–749,818–819"
+      ],
+      "fact": "Both public ATen provider and Native low-precision Torch path advertise private threads. Native prepare warms ATen through call_once before real operation execution; freezing ordinary ATen context alone leaves this real bypass."
+    },
+    {
+      "anchors": [
+        "src/compute_provider_native/native_plan.h:86–113"
+      ],
+      "fact": "Native/oneDNN use original borrowed executor semantics; nested behavior follows the executor's declared in_parallel contract. No new pool or admission manager is justified."
+    },
+    {
+      "anchors": [
+        "src/compute_provider_native/default_rules.cc:174–195",
+        "src/compute_route_cpu/default_policy.cc:93–112",
+        "src/compute_route_cpu/cpu_context.cc:19–23",
+        "src/compute_provider_native/native_provider.cc:178"
+      ],
+      "fact": "Qualified recipe environment currently checks fixed hardware/toolchain/single available P-core, while decorator also checks native/executor 1. Newly explicit ATen N!=1 or failed/partial mutation is outside that original thread premise."
+    }
+  ],
+  "finite_fix_candidates": [
+    {
+      "id": "F1",
+      "owner": "compute_route_cpu + compute_provider_native",
+      "decision": "FIX",
+      "scope": "Startup-only cpu::configure_runtime_threads(uint32) and cold runtime_thread_info POD; native implementation/helper in existing aten_cpu_provider.cc / torch_cpu_program.h, public conversion in cpu_context.cc.",
+      "requirements": [
+        "Guard/requested state belongs to the actual HYLE native code image. One shared native library shares it; independent statically embedded HYLE facade/DSO copies do not, even if a Torch DLL is shared. Sibling HYLE copies are foreign users, coordinated by application before any use.",
+        "Before configuration or first use, report compiled availability/backend and UNKNOWN limits without calling ATen getters. After successful configure or a closed first-use window, report current-caller runtime limits, not live thread count.",
+        "Application must configure before all external ATen/OMP users and sibling HYLE images; foreign prior initialization cannot be detected or rolled back generally. Report requested separately from observed; foreign drift is visible, not enforced.",
+        "0 or >INT_MAX InvalidArgument; disabled configure Unimplemented and report unavailable/unknown. Interop is report-only; HYLE does not schedule work through ATen interop."
+      ]
+    },
+    {
+      "id": "F2",
+      "owner": "compute_provider_native",
+      "decision": "FIX",
+      "scope": "One cold mutex serializes configure and first-use admission; freeze ordinary ATen context and Native prepare_torch_cpu before call_once warmup.",
+      "requirements": [
+        "No mutex held across real math/replay. No per-context/per-replay setter/restore, no prepared/hot layout change.",
+        "Successful setter must be followed by getter equality before publishing requested. Native backend may only WARN on late resize; void return cannot prove application.",
+        "Conservatively close configuration after failed/partial setter or admitted first-use initialization attempt; requested remains UNKNOWN unless a prior successful setting existed. Do not promise rollback or reopen after partial runtime initialization.",
+        "Same-value idempotence requires a prior successful explicit request and matching observed limit, without setting again; a closed never-configured state cannot retroactively configure merely because its current limit matches. Different/late requests fail; foreign mismatch is report/refusal, not a repair setter."
+      ]
+    },
+    {
+      "id": "F3",
+      "owner": "compute_provider_native; original compute_route_cpu decorator",
+      "decision": "FIX",
+      "scope": "Original cold qualified_default_environment admission must reject explicit intraop !=1 and failed/partial state.",
+      "requirements": [
+        "Preserve pre-existing unconfigured default behavior and original rule table/math/P1 identities.",
+        "Use the cold HYLE state snapshot for new admission; do not initialize ATen just to check a recipe. Validate complete context/prepare ordering so a recipe is not qualified before newly legal mutable configuration can change its premise.",
+        "This is respecting the existing qualification premise, not making a new performance claim or repairing G09 noise."
+      ]
+    },
+    {
+      "id": "F4",
+      "owner": "compute_route_cpu + compute_provider_native and direct public consumers",
+      "decision": "FIX_VALIDATION_AND_DOCS_AFTER_AUDITED",
+      "scope": "Finite meaningful API/race/disabled/bypass tests, CPU-only and CPU+GPU public sketches; selected Windows/WSL/Air source/static/shared CPU delivery plus featureOFF as root's planned gates.",
+      "requirements": [
+        "Exercise same/different/late, invalid range, configuration vs first-use serialization, failed-set/observed mismatch, no early getter, disabled and Native low-precision bypass.",
+        "Two phase contexts and simultaneous invocations retain original output/error/retirement contracts. They share one immutable ATen limit within a native code-image domain, not two independently configured ATen phase pools.",
+        "Explicitly document caller masters, ggml per-invocation workers, borrowed executor, unknown vendor/background threads and application admission responsibility. No total-process thread cap asserted.",
+        "Do not introduce a P1 claim, change math/rule tables/thresholds or repeat unchanged full GPU delivery. Exact selected gates and owner audit remain parent's card responsibility."
+      ]
+    }
+  ],
+  "natural_consumption": {
+    "cpu_only": "Application sets one ATen runtime startup limit before any HYLE/foreign use, optionally inspects after success, creates separate prefill/decode CPU contexts using existing native_threads/executor options, and prepares/invokes original public Programs. GGML may use distinct phase budgets; ATen uses the shared immutable startup setting. Two independent calls require application/Sched admission if a strict aggregate budget is desired.",
+    "cpu_gpu": "Same startup contract; reserve host CPU work/progress budget separately and keep original joint Graph/native completion/retirement. GPU-side/background/private vendor threads are not covered by reported ATen limits.",
+    "concurrency_caveat": "Original Native pool has shared workers plus external caller masters; OpenMP teams can belong to concurrent callers. Neither a limit getter nor configure(N) proves aggregate active threads <=N.",
+    "scope_decision": "Sufficient for the stated new runtime control/observability seam, not an implementation of automatic engine phase scheduling or a hard global live-thread ceiling."
+  },
+  "accepted_parent_updates": [
+    "query-before-startup UNKNOWN without getter",
+    "code-image-local HYLE guard, foreign/sibling app coordination",
+    "post-set getter verification and failed-mutation close",
+    "cold recipe admission honors explicit non-1/partial status",
+    "no interop setter, no P1/no hotmath change"
+  ],
+  "qualification_limits": [
+    "No proposed API implementation was present or tested at inspected SCOPED snapshot.",
+    "Windows CPU OpenMP compile configuration was read; other platform backend/SDK behavior requires the planned actual selected qualification, not extrapolation from conditional PyTorch source.",
+    "No OS/live-thread counts, strict aggregate cap, phase-specific ATen pool isolation, external foreign-user rollback or cross-DSO guard sharing proved.",
+    "Future implementation must be AUDITED/fixed before product edits; this review itself changes no owner state."
+  ],
+  "terminal": "FINITE_REVIEW_COMPLETE_NO_MORE_RESEARCH_OR_HEAVY_ACTION"
+}

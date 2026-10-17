@@ -1,0 +1,128 @@
+{
+  "schema": "hyle.g10.finite-thread-budget-audit/v1",
+  "state": "AUDITED_FOUR_FIXED_ITEMS_NO_PRODUCT_IMPLEMENTATION_YET",
+  "baseline": "0f852b231c6b9235620e0c291b143ac901bfa27d",
+  "inspected_head": "1eb750df7e9ed0b0f75bc6129af04049750e8b86",
+  "source_inputs": [
+    {
+      "path": "include/hyle/compute/cpu.h",
+      "sha256": "bccb8e5d310086b41c6f010a84f56219ac33830e92e5da22ce2ff12cd608ccb6",
+      "bytes": 1703
+    },
+    {
+      "path": "include/hyle/compute/provider.h",
+      "sha256": "1a4650e03cb2a0f6f46d22d914db197fb4bb7a59cd5aced180140feee0a7f337",
+      "bytes": 10124
+    },
+    {
+      "path": "src/compute_route_cpu/cpu_context.cc",
+      "sha256": "20146823875d3c9cdde2de3ac6574a61cf46c297d667335b1f823379e762f4f6",
+      "bytes": 2087
+    },
+    {
+      "path": "src/compute_route_cpu/default_policy.cc",
+      "sha256": "3b0d5aca67390514cce2d4ede5749ce567cb5debd0219811976ad420167d603a",
+      "bytes": 6578
+    },
+    {
+      "path": "src/compute_provider_native/aten_cpu_provider.cc",
+      "sha256": "8f6e1393b4319971a8c3fa78dd3eba7b55e6cd3dea8aabbecc7887bf79cfc79a",
+      "bytes": 45603
+    },
+    {
+      "path": "src/compute_provider_native/native_provider.cc",
+      "sha256": "985e51c2d35718a52124af47072dacb95706624930168f4b2c5e7d55903bedae",
+      "bytes": 35128
+    },
+    {
+      "path": "src/compute_provider_native/torch_cpu_program.cc",
+      "sha256": "7123fa45fdc4c137a49ed537cf879af6b0a4019971f9256285a740507060315b",
+      "bytes": 25223
+    },
+    {
+      "path": "src/compute_provider_native/torch_cpu_program.h",
+      "sha256": "ca4ef34232a74b88489a686834eea4d79e77c63ae359e044c3534ba9067fd03d",
+      "bytes": 808
+    },
+    {
+      "path": "src/compute_provider_native/default_rules.cc",
+      "sha256": "5cdcc9165dd8099d55aadf4b46ec58db240229c80ff88b50d99a8a7356f44464",
+      "bytes": 11396
+    },
+    {
+      "path": "src/compute_ggml_runtime/cpu_execution.cc",
+      "sha256": "7afabc73d8ab541c98fde67e41f2e1384994c15cd123582ef218f89322a0d2db",
+      "bytes": 3907
+    },
+    {
+      "path": "src/compute_provider_onednn/normalization_internal.cc",
+      "sha256": "ec4f59b2b18e62a3346d2be25cc3dbdcd18ed78769046953468a5fa7c2dc0816",
+      "bytes": 31738
+    },
+    {
+      "path": "src/graph_route_cpu/cpu_context.cc",
+      "sha256": "cd658c0c917a1f79df9a4869449808ecda44f48bdbe6c91f281b5c932b8b4138",
+      "bytes": 2723
+    }
+  ],
+  "peer_review": {
+    "path": "peer-review.json",
+    "sha256": "b8fadeebd6d08e64976f51f160dc1e07024375a057df222c85894156aacd0f92"
+  },
+  "decision": "Ordinary startup-only shared ATen runtime intra-op limit control and cold scope-correct reporting. Existing caller/executor/ggml per-invocation budgets retained; no per-context/per-replay process setter or aggregate live-OS-thread cap.",
+  "finite_fix": [
+    {
+      "id": "F1",
+      "owner": "compute_route_cpu + compute_provider_native",
+      "decision": "FIX",
+      "scope": "Startup-only cpu::configure_runtime_threads(uint32) and cold runtime_thread_info POD; native implementation/helper in existing aten_cpu_provider.cc / torch_cpu_program.h, public conversion in cpu_context.cc.",
+      "requirements": [
+        "Guard/requested state belongs to the actual HYLE native code image. One shared native library shares it; independent statically embedded HYLE facade/DSO copies do not, even if a Torch DLL is shared. Sibling HYLE copies are foreign users, coordinated by application before any use.",
+        "Before configuration or first use, report compiled availability/backend and UNKNOWN limits without calling ATen getters. After successful configure or a closed first-use window, report current-caller runtime limits, not live thread count.",
+        "Application must configure before all external ATen/OMP users and sibling HYLE images; foreign prior initialization cannot be detected or rolled back generally. Report requested separately from observed; foreign drift is visible, not enforced.",
+        "0 or >INT_MAX InvalidArgument; disabled configure Unimplemented and report unavailable/unknown. Interop is report-only; HYLE does not schedule work through ATen interop."
+      ]
+    },
+    {
+      "id": "F2",
+      "owner": "compute_provider_native",
+      "decision": "FIX",
+      "scope": "One cold mutex serializes configure and first-use admission; freeze ordinary ATen context and Native prepare_torch_cpu before call_once warmup.",
+      "requirements": [
+        "No mutex held across real math/replay. No per-context/per-replay setter/restore, no prepared/hot layout change.",
+        "Successful setter must be followed by getter equality before publishing requested. Native backend may only WARN on late resize; void return cannot prove application.",
+        "Conservatively close configuration after failed/partial setter or admitted first-use initialization attempt; requested remains UNKNOWN unless a prior successful setting existed. Do not promise rollback or reopen after partial runtime initialization.",
+        "Same-value idempotence requires a prior successful explicit request and matching observed limit, without setting again; a closed never-configured state cannot retroactively configure merely because its current limit matches. Different/late requests fail; foreign mismatch is report/refusal, not a repair setter."
+      ]
+    },
+    {
+      "id": "F3",
+      "owner": "compute_provider_native; original compute_route_cpu decorator",
+      "decision": "FIX",
+      "scope": "Original cold qualified_default_environment admission must reject explicit intraop !=1 and failed/partial state.",
+      "requirements": [
+        "Preserve pre-existing unconfigured default behavior and original rule table/math/P1 identities.",
+        "Use the cold HYLE state snapshot for new admission; do not initialize ATen just to check a recipe. Validate complete context/prepare ordering so a recipe is not qualified before newly legal mutable configuration can change its premise.",
+        "This is respecting the existing qualification premise, not making a new performance claim or repairing G09 noise."
+      ]
+    },
+    {
+      "id": "F4",
+      "owner": "compute_route_cpu + compute_provider_native and direct public consumers",
+      "decision": "FIX_VALIDATION_AND_DOCS_AFTER_AUDITED",
+      "scope": "Finite meaningful API/race/disabled/bypass tests, CPU-only and CPU+GPU public sketches; selected Windows/WSL/Air source/static/shared CPU delivery plus featureOFF as root's planned gates.",
+      "requirements": [
+        "Exercise same/different/late, invalid range, configuration vs first-use serialization, failed-set/observed mismatch, no early getter, disabled and Native low-precision bypass.",
+        "Two phase contexts and simultaneous invocations retain original output/error/retirement contracts. They share one immutable ATen limit within a native code-image domain, not two independently configured ATen phase pools.",
+        "Explicitly document caller masters, ggml per-invocation workers, borrowed executor, unknown vendor/background threads and application admission responsibility. No total-process thread cap asserted.",
+        "Do not introduce a P1 claim, change math/rule tables/thresholds or repeat unchanged full GPU delivery. Exact selected gates and owner audit remain parent's card responsibility."
+      ]
+    }
+  ],
+  "source_archive": {
+    "path": "source.zip",
+    "sha256": "129af429c3a88b7aed6612983bcfa6cc7145253e408049efc381b099f0a3ec83",
+    "bytes": 45858
+  },
+  "nonclaims": "No product code, native build, timing/GPU or acceptance in this snapshot. Three G09 failed AA qualifications remain separate; this is not a demonstrated G09 fix. No compatibility layer or new threadpool framework."
+}

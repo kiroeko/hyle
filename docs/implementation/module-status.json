@@ -429,15 +429,15 @@
     },
     {
       "module": "compute_provider_native",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/inference-g10-cpu-thread-budget.md",
-      "summary": "G10 SCOPED under the active G07-G10 goal, baseline0f852b231. Audit actual CPU-only and CPU+one-GPU phase/concurrent consumers and executor/ggml/oneDNN/ATen private-pool control/reporting scope before finite FIX or product changes. No compatibility burden, no model scheduler or global benchmark-driven changes. G09 performance qualification remains separate and unaccepted."
+      "summary": "G10 AUDITED: four finite fixes for startup-only shared ATen intra-op configuration/reporting, native/ATen first-use freeze and failure/foreign-drift boundaries, cold qualified-rule thread premise, scoped consumers/risks/CPU deliveries. Existing executor and ggml per-invocation budgets reused; no process live-thread cap, per-replay setter, product math rewrite or G09 qualification waiver."
     },
     {
       "module": "compute_route_cpu",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/inference-g10-cpu-thread-budget.md",
-      "summary": "G10 SCOPED under the active G07-G10 goal, baseline0f852b231. Audit actual CPU-only and CPU+one-GPU phase/concurrent consumers and executor/ggml/oneDNN/ATen private-pool control/reporting scope before finite FIX or product changes. No compatibility burden, no model scheduler or global benchmark-driven changes. G09 performance qualification remains separate and unaccepted."
+      "summary": "G10 AUDITED: four finite fixes for startup-only shared ATen intra-op configuration/reporting, native/ATen first-use freeze and failure/foreign-drift boundaries, cold qualified-rule thread premise, scoped consumers/risks/CPU deliveries. Existing executor and ggml per-invocation budgets reused; no process live-thread cap, per-replay setter, product math rewrite or G09 qualification waiver."
     },
     {
       "module": "graph_route_cpu",
