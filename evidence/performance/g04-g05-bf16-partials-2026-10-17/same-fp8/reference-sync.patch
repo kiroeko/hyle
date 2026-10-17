@@ -1,0 +1,22 @@
+--- pristine/include/flashinfer/attention/prefill.cuh
++++ sync-fixed/include/flashinfer/attention/prefill.cuh
+@@ -2040,16 +2040,19 @@
+           ((uint32_t*)(o_smem->base + o_smem_offset_w + 8 * UPCAST_STRIDE_O))[lane_idx % 4] =
+               o_frag_f16[1];
+           ((uint32_t*)(o_smem->base + (o_smem_offset_w ^ 0x1)))[lane_idx % 4] = o_frag_f16[2];
+           ((uint32_t*)(o_smem->base + (o_smem_offset_w ^ 0x1) +
+                        8 * UPCAST_STRIDE_O))[lane_idx % 4] = o_frag_f16[3];
+ #endif
+         }
+       }
++
++      // Publish this warp's cross-lane BF16 output rearrangement before its reads.
++      __syncwarp();
+ 
+       uint32_t o_smem_offset_w = o_smem->template get_permuted_offset<UPCAST_STRIDE_O>(
+           warp_idx_x * KTraits::NUM_MMA_Q * 16 + lane_idx / 8, lane_idx % 8);
+ 
+ #pragma unroll
+       for (uint32_t mma_q = 0; mma_q < KTraits::NUM_MMA_Q; ++mma_q) {
+ #pragma unroll
+         for (uint32_t j = 0; j < 2 * 2; ++j) {
