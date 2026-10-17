@@ -198,17 +198,11 @@ detail::EnqueueResult plan(void *value, Queue &, const BatchLayoutVersion &layou
         slot.clear();
         return detail::EnqueueResult::rejected(Status::Unimplemented("ggml CPU ragged flash requires nonempty sufficient KV"));
       }
-      const bool boxed=slot.options.window_left>=0 ||
-          !slot.capacity.key_storage.format().is_plain() ||
-          slot.capacity.qk_head_dim!=slot.capacity.value_head_dim;
-      const auto mask_bytes = slot.options.causal && !boxed && queries!=1
-          ? static_cast<std::uint64_t>(queries)*static_cast<std::uint64_t>(keys)*2u : 0u;
       const auto query_row_bytes = std::uint64_t(slot.capacity.query_heads)*slot.capacity.qk_head_dim*8u;
       const auto available = slot.options.max_float_workspace_bytes - slot.known_bytes;
-      if (mask_bytes > available || (query_row_bytes &&
-          std::uint64_t(queries) > (available - mask_bytes)/query_row_bytes)) {
+      if (query_row_bytes && std::uint64_t(queries) > available/query_row_bytes) {
         slot.clear();
-        return detail::EnqueueResult::rejected(Status::ResourceExhausted("ggml CPU ragged mask/query lower bound exceeds budget"));
+        return detail::EnqueueResult::rejected(Status::ResourceExhausted("ggml CPU ragged query lower bound exceeds budget"));
       }
       auto *request = slot.allocator.construct<Request>();
       if (!request) {

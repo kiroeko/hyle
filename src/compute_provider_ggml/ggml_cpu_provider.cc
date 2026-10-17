@@ -46,9 +46,6 @@ struct Program final {
   internal::Recipe recipe;
   // The selected native CPU program owns the unary FWHT implementation.
   ggml_custom_op_t hadamard = nullptr;
-  // Cold causal masks for ggml flash attention. They are ordinary upstream
-  // mask payloads, broadcast across batch and heads during replay.
-  std::vector<std::vector<ggml_fp16_t>> attention_masks;
   std::vector<IndexCheck> index_checks;
   // Exact native scalar bytes, owned by the immutable prepared program.
   struct alignas(float) FillValue {
@@ -1165,17 +1162,7 @@ std::vector<ggml_tensor *> lower(Program &program, Invocation &invocation,
       value = ggml_permute(context, value, 0, 2, 1, 3);
     }
     if (native_flash(recipe.values[node.inputs[0]].data_type())) {
-      ggml_tensor *mask = nullptr;
-      if (paged && attention->causal && !boxed && query->ne[1]!=1) {
-        const auto &mask_values = program.attention_masks[node_index];
-        if (mask_values.empty())
-          return {};
-        mask = ggml_new_tensor_2d(context, GGML_TYPE_F16,
-                                  paged?paged->logical_rows:key->ne[1],
-                                  query->ne[1]);
-        mask->data = const_cast<ggml_fp16_t *>(mask_values.data());
-      }
-      result = ggml_flash_attn_ext(context, query, key, value, mask,
+      result = ggml_flash_attn_ext(context, query, key, value, nullptr,
                                    attention->scale, 0.0F, 0.0F);
       if (!ggml_prec_set_acc(result, GGML_PREC_F32))
         return {};
@@ -1191,7 +1178,7 @@ std::vector<ggml_tensor *> lower(Program &program, Invocation &invocation,
         result->op_params[7]=0x48594258;
         result->op_params[8]=paged->window_left;
         result->op_params[9]=paged->causal?1:0;
-      } else if (ordinary && attention->causal && query->ne[1] > 1) {
+      } else if (attention->causal && query->ne[1] > 1) {
         // Implicit bottom-right mask in the original native vector/tiled paths.
         // Unlike the boxed tag, this preserves prefill and split-KV selection.
         result->op_params[7] = 0x48594341;
@@ -1721,8 +1708,7 @@ bool native_invocation_reads_kv(void *slot) noexcept {
   }
   return false;
 }
-std::size_t native_invocation_bytes(void *prepared, void *slot) noexcept {
-  const auto &program = *static_cast<Program *>(prepared);
+std::size_t native_invocation_bytes(void *, void *slot) noexcept {
   const auto &invocation = *static_cast<Invocation *>(slot);
   auto bytes = invocation.storage_bytes;
   const auto add = [&](std::size_t amount) {
@@ -1735,8 +1721,6 @@ std::size_t native_invocation_bytes(void *prepared, void *slot) noexcept {
     add(invocation.encoding->calls.capacity()*sizeof(CacheEncodingCall));
     add(invocation.encoding->q8_queries.capacity()*sizeof(const ggml_tensor *));
   }
-  for (const auto &mask : program.attention_masks)
-    add(mask.size() * sizeof(ggml_fp16_t));
   return bytes;
 }
 bool native_invocation_reads_pages(void *slot,std::span<const std::int32_t> pages,
@@ -2189,7 +2173,6 @@ ProviderPrepareOutcome compile(void *context, Recipe recipe,
         return ProviderPrepareOutcome::error(std::move(selected).error());
       hadamard = (*selected)->hadamard;
     }
-    std::vector<std::vector<ggml_fp16_t>> attention_masks(recipe.nodes.size());
     std::vector<Program::FillValue> fill_values;
     if (std::ranges::any_of(recipe.nodes, [](const auto &node) {
           return node.operation.template get_if<Fill>() != nullptr;
@@ -2207,35 +2190,13 @@ ProviderPrepareOutcome compile(void *context, Recipe recipe,
           std::memcpy(fill_values[node_index].bytes.data(), &bits, sizeof(bits));
         }
       }
-      const auto paged=node.operation.custom_as<PagedRead>();
-      if (paged && paged->causal && paged->window_left < 0 &&
-          !native_quantized(recipe.values[node.inputs[1]]) &&
-          recipe.values[node.inputs[0]].dimensions().back() ==
-              recipe.values[node.inputs[2]].dimensions().back() &&
-          native_flash(recipe.values[node.inputs[0]].data_type())) {
-        const auto query_length = static_cast<std::size_t>(
-            recipe.values[node.inputs[0]].dimensions()[1]);
-        if(query_length==1)continue; // Its causal mask is identically zero.
-        const auto key_length = static_cast<std::size_t>(paged->logical_rows);
-        if (query_length > SIZE_MAX / key_length)
-          return ProviderPrepareOutcome::error(
-              Status::OutOfRange("attention mask size overflows"));
-        auto &mask = attention_masks[node_index];
-        mask.resize(query_length * key_length);
-        const auto past = key_length - query_length;
-        for (std::size_t query = 0; query < query_length; ++query)
-          for (std::size_t key = 0; key < key_length; ++key)
-            mask[query * key_length + key] =
-                ggml_fp32_to_fp16(key <= past + query ? 0.0F : -INFINITY);
-      }
     }
     void *storage = allocator.allocate(sizeof(Program), alignof(Program));
     if (!storage)
       return ProviderPrepareOutcome::resource_declined(allocation_failure());
     auto *program = ::new (storage)
         Program{static_cast<Configuration *>(context)->options,
-                std::move(recipe), hadamard,
-                std::move(attention_masks), std::move(index_checks),
+                std::move(recipe), hadamard, std::move(index_checks),
                 std::move(fill_values)};
     *output = {.vtable = &kPrepared,
                .state = program,

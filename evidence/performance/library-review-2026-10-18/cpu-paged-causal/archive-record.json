@@ -1,0 +1,7 @@
+{
+  "path": ".scratch/perf-review-2026-10-18/cpu-paged-causal/raw.zip",
+  "bytes": 143810,
+  "sha256": "047d906bef4f81a403d503e8f3cab5d91fe2563bc0c61aa2357b3c57791b82f9",
+  "members": 47,
+  "note": "Sources/commands/diff/logs/identities only; no obj/exe/DLL/lib/SDK."
+}

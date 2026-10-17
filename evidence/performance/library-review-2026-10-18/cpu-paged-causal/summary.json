@@ -1,0 +1,91 @@
+{
+  "scope": "Remove the remaining private CPU paged/ragged non-boxed causal Q>1 ProgramHalf mask seed. Ordinary native causal already used HYCA. No public API, native resource, CMake, dependency or numerical contract change.",
+  "implementation": {
+    "native": "Reuse existing HYCA tag in non-boxed causal Q>1. Both vector and tile paths obtain logical rows via hyle_flash_rows; real page table still supplies row addresses. Boxed HYBX takes precedence for Q8/window/independent Dq-Dv; Q1 receives no tag and retains original split-KV eligibility.",
+    "program": "Remove Program attention_masks, outer node vector, seed construction, explicit FLASH mask leaf and mask storage accounting.",
+    "budget": "Remove only the obsolete Q×KV mask lower bound in native_batch; retain query lower bound, metadata checks and final actual native_invocation_bytes budget admission.",
+    "layout": "Q>1 same active query/KV indptr, page IDs and tails can reuse the immutable compiled layout owner; changes replan. Q1 keeps existing runtime pointer/logicalRows refresh. No newly mutable compiled topology."
+  },
+  "validation": {
+    "toolchain": "Windows x64 MSVC14.50.35717 /O2 /MD /W4 /WX. Direct small TU compile/link, no full HEAD/SDK rebuild. No throughput or latency samples collected.",
+    "native_identity": "Both same-pin retained HYCA ops baseline objects and AVX2 ABI2 DLLs reused unchanged; runtime logs confirm compute_owner points to the corresponding cpu-native-causal DLL. No old Hadamard-only module or new native compile.",
+    "closure": "Fresh frozen provider, native_batch, native_paged/native_ragged tests, selector/main; same-pin native static libs and shared foundation .scratch/build-compute-v2-dev. Tests explicitly select ggml_cpu provider rather than default CPU route, preserving native thread counts and avoiding unrelated route dependency closure.",
+    "measured_to_applied": [
+      {
+        "path": "tests/compute_provider_ggml/native_ragged_test.cc",
+        "measured_sha256": "d1ab7d7a38abff29b6201e53c6899b6afdcf22fd25491c2306e6a0b9f998819a",
+        "applied_sha256": "853ecc4ae7dd6437168732d7c2432efdba8edd04d594ad08c4f5202e522c91e8",
+        "change": "Root removed one duplicate guarded header include after validation; no semantic change, no recompile. Measured candidate snapshot remains unchanged."
+      }
+    ],
+    "passed": 12,
+    "per_pin_tests": [
+      "GgmlCpuPaged.ImplicitCausalPrefillUsesLogicalRowsAcrossLayoutChanges",
+      "GgmlCpuPaged.ImplicitCausalPlanChargesActualWorkspaceWithoutMaskSeed",
+      "GgmlCpuRagged.NativeFlashReadsTwoRequestsWithoutKvMaterialization",
+      "GgmlCpuRagged.ColdBudgetAndPagedQualificationAreExplicit",
+      "GgmlCpuBoxed.PlainWindowAndIndependentValueDepth",
+      "GgmlCpuBoxed.QuantizedFullNoncausalAllowsMoreQueriesThanKeys"
+    ],
+    "new_paged_oracle": "Independent FP64 dot/softmax/PV using actual finite representable F16/BF16 inputs, GQA H4/KVhead2, D64. Nonlinear page IDs and tails: Q65/KV93 original and equal-content owner reuse, reordered pages/tail Q65/KV91 replan, Q63/KV91 query-change replan; Q1/KV513 replan then Q1/KV529 in-place logical-row/page-count reuse. F16 tiled Q65 and vector Q63, BF16 vector, original F16 decode split remain eligible under unchanged selection rules.",
+    "max_abs_by_dtype": {
+      "F16": 3.22980653e-05,
+      "BF16": 6.09101415e-05
+    },
+    "unchanged_absolute_budgets": {
+      "F16": 0.002,
+      "BF16": 0.008
+    },
+    "known_budget_case": "F16 Q2048/logicalKV16384 with two physical pages referenced1024 times: both pins plan successfully at8MiB, report1,269,488B known native storage; budget1,269,487B fails specifically at the final known-native-workspace admission. Baseline907247284 new-budget regression deliberately fails at old mask/query lower bound; exit1 log retained."
+  },
+  "cold_public_batch_plan_global_new": {
+    "method": "One prewarmed public prepare_batch per arm, FFA pin, same128MiB configured float-workspace budget. F16 Q2048/logicalKV16384/H1/D64, page_size16, two physical pages and1024 repeating page refs. BatchProgram/BatchInvocation and generic pool created before counting; no attention execution or caller Q/K/V payloads.",
+    "baseline": {
+      "dtype": "F16",
+      "Q": 2048,
+      "logical_KV": 16384,
+      "physical_pages": 2,
+      "page_refs": 1024,
+      "old_seed_bytes": 67108864,
+      "successful_unaligned_new_calls": 27,
+      "requested_bytes": 67111611,
+      "largest_request": 67108903,
+      "requests_at_least_seed_bytes": 1,
+      "reported_known_native_bytes": 68378352,
+      "budget_bytes": 134217728,
+      "executed": false,
+      "compute_owner": "C:/public/project-hyle/hyle/.scratch/perf-review-2026-10-18/cpu-native-causal/ffa4/hyle_ggml_cpu_avx2_ffa4_causal_overlay.dll"
+    },
+    "candidate": {
+      "dtype": "F16",
+      "Q": 2048,
+      "logical_KV": 16384,
+      "physical_pages": 2,
+      "page_refs": 1024,
+      "old_seed_bytes": 67108864,
+      "successful_unaligned_new_calls": 25,
+      "requested_bytes": 2684,
+      "largest_request": 736,
+      "requests_at_least_seed_bytes": 0,
+      "reported_known_native_bytes": 1269488,
+      "budget_bytes": 134217728,
+      "executed": false,
+      "compute_owner": "C:/public/project-hyle/hyle/.scratch/perf-review-2026-10-18/cpu-native-causal/ffa4/hyle_ggml_cpu_avx2_ffa4_causal_overlay.dll"
+    },
+    "requested_bytes_removed": 67108927,
+    "reported_known_bytes_removed": 67108864,
+    "interpretation": "Remove64MiB seed, its39B MSVC release x64 vector manual-alignment overhead, and24B outer node-vector allocation: ordinary new calls27→25, requested67,111,611→2,684B. Actual known-native report68,378,352→1,269,488B differs by exactly the logical64MiB mask.",
+    "limits": "Successful ordinary operator new/new[] requested bytes only. Excludes aligned new/C allocations and precreated generic pool. The generic batch float-workspace pool still reserves the same128MiB configured budget in this matched probe; this is not total/RSS/peak memory or throughput evidence."
+  },
+  "failures_and_limits": [
+    "Initial provider compile /WX failed on an unused Program local left after mask accounting removal. Removed local and unnamed the retained private argument; preserved compiler log and explicitly reconstructed failed source. All final compiled sources are frozen in candidate/.",
+    "Baseline budget test exit1 is intentional and retained. All other final commands succeeded; no failed sample exclusion or performance samples.",
+    "Only Windows, both locked native pins, the six listed tests and one FFA cold-plan allocation example. No full suite/SDK, Linux/macOS validation or broader nonfinite qualification. Existing native partial-tile NaN/Inf behavior is unchanged."
+  ],
+  "artifacts": {
+    "sources": "candidate/,baseline/,source-identities.json",
+    "commands": "commands.json",
+    "raw": "raw.zip",
+    "cleanup": "cleanup-and-retain.json"
+  }
+}

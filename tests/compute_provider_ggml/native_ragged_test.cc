@@ -1,6 +1,5 @@
 #include <gtest/gtest.h>
 #include "hyle/compute/backends/cpu.h"
-#include "hyle/compute/cpu.h"
 #include "hyle/compute/batch_execution.h"
 #include "hyle/compute/paged_arena.h"
 #include "hyle/compute/providers/ggml_cpu.h"
@@ -59,7 +58,7 @@ template<class T>void runtime_ragged_q1(bool encoded,unsigned depth,unsigned val
       .max_pages=0,.max_page_refs=0,.query_heads=8,.kv_heads=2,.qk_head_dim=depth,
       .value_head_dim=value_depth,.page_size=1};
   auto schema=c::BatchSchema::create(cap).value();
-  auto context=c::cpu::create_context({.native_threads=2}).value();auto queue=context.create_queue().value();
+  auto context=c::Context::create(c::cpu::device(),c::ggml_cpu::provider({.native_threads=2})).value();auto queue=context.create_queue().value();
   const auto kd=c::batch_cache_description(cap,c::BatchCacheRole::kKey).value();
   const auto vd=c::batch_cache_description(cap,c::BatchCacheRole::kValue).value();
   auto pool=c::LeasePool::create(hyle::mem::system_resource(),kd.required_bytes().value()+vd.required_bytes().value()+2*8*depth*2+256).value();
@@ -139,7 +138,7 @@ TEST(GgmlCpuRagged, RuntimeQ1KeepsGraphAcrossPackedKvExtents){
 }
 template<class T> void exercise(int depth, bool causal) {
   constexpr int heads=8, kv_heads=2, queries=18, keys=78;
-  auto context=c::cpu::create_context({.native_threads=1}).value();
+  auto context=c::Context::create(c::cpu::device(),c::ggml_cpu::provider({.native_threads=1})).value();
   auto queue=context.create_queue().value();
   const c::BatchCapacity capacity{.storage=c::BatchStorage::kRagged,
       .query_type=half_test::data_type<T>(),.output_type=half_test::data_type<T>(),.key_storage=c::CacheStorage::plain(half_test::data_type<T>()).value(),.value_storage=c::CacheStorage::plain(half_test::data_type<T>()).value(),
