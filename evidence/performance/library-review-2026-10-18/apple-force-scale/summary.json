@@ -1,0 +1,107 @@
+{
+  "result": "Applied a cold scale-range guard only to the newly forced ordinary F32 Steel domain. The one new regression passed all4 requested executions on the existing Apple SDK/current host closure.",
+  "head_at_packaging": "a68828a4043292f9af74a50d32cc4e0867a6ca6f",
+  "source_risk": {
+    "schema": "src/compute_ops/operation.cc:669 accepts anyfinite SDPA scale, including positive/negativeFLT_MAX.",
+    "kernel": "Local compact steel_attention.sdk.h:175 computes float scale*M_LOG2E_F before its302-305 QK scaling. Extremefinite scale may overflow this factor at source IEEE evaluation order.",
+    "distinction": "The compact candidate was rejected; ordinary F32 force shares the relevant scale calculation. No rawSink change was applied here. No baseline device execution or assertion that oldMetal necessarily producesNaN."
+  },
+  "fix": {
+    "file": "src/compute_route_apple/apple_tensor.cc",
+    "guard": "abs(double(scale))*double(actualfloatLOG2E)<=double(FLT_MAX)",
+    "scope": "Only the F32 term of the force_fused condition. Extreme scales stop being forced; native selection/existingmathblocks remain available.",
+    "unchanged": "Half/BF16 force term, schema, dtype, ordinary normal-scale selectors, masks, defaultnative domain, shaders/manifest/API/ABI and all other operation lowerings.",
+    "caveat": "This guards log2-scale preconversion overflow only; it does not establish numerical equivalence for every extreme QK value or change precision budgets."
+  },
+  "regression": {
+    "name": "AppleAttention.ExtremeFiniteFloat32ScaleRetainsZeroScoreReference",
+    "actual_gtest_tests": 1,
+    "passed": 1,
+    "operation_executions": 4,
+    "cases": [
+      "F32 B1/H2/Hkv1/Q9/K17/D192 noncausal/none mask,+FLT_MAX",
+      "sameD192 with-FLT_MAX",
+      "F32 B1/H2/Hkv1/Q9/K17/D256 bottomrightcausal/none mask,+FLT_MAX",
+      "sameD256 with-FLT_MAX"
+    ],
+    "input": "Q/K allzero. V varies bykey/channel usingexact F32 binaryfractions from-9/8 to9/8.",
+    "oracle": "Independent FP64 mean of visiblekeys; D192all17, D256causalprefix9..17. Existingexpect() rounding/comparison unchanged, F32 output dtype asserted.",
+    "original_budget": "F32 rel6e-6+abs2e-6",
+    "expected_elements_compared": 16128,
+    "measured_result": "measured/new-regression.json and stdout/stderr",
+    "no_baseline_or_other_test_suite_or_timing": true
+  },
+  "machine": {
+    "host": "kiro@172.22.10.198 usingdefaultWindowsOpenSSHidentity",
+    "measured_model": "Mac16,12",
+    "measured_chip": "AppleM4",
+    "measured_memory_bytes": 17179869184,
+    "compiler": "Appleclang21.0.0 arm64-apple-darwin27.0.0; actual compilerstdout retained"
+  },
+  "validation_closure": {
+    "fresh_TUs": [
+      "apple_tensor.measured.cc",
+      "attention_test.cc"
+    ],
+    "reused": "Stablecurrent Q128candidate context/operations/graph hostobjects and originalSDK/foundationarchives. SDK inputs SHA recorded in measured/runtime-identities.json.",
+    "lowerer_object": {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/library-review-20261018-apple-force-scale/apple_tensor.o",
+      "bytes": 126016,
+      "sha256": "cb31c6ec728dfb5fd090468c6baf94e50698d62a364af4d8e5fe330e71c6c8d0"
+    },
+    "Q128_reuse": "Objectpath/SHA sent toQ128agent for itsfinalcanonical Direct/Graph tests; thisbatch did not rerunSinktests.",
+    "link_ownership": "link-map-check.json confirms lower_tensor andlower_attention from freshobject[5].",
+    "no_nativehost_or_shader_source_build_or_sdk_copy_download": true,
+    "native_fallback": "Q9 turns off querymathblocking. Guardprevents\u65b0\u589eF32force so existingnative/mathfallback executes; source selection is not an instrumented dispatch counter."
+  },
+  "sources": {
+    "measured": [
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\perf-review-2026-10-18\\apple-force-scale\\apple_tensor.measured.cc",
+        "bytes": 33374,
+        "sha256": "b526937bd0ad08451fa36b8211bc761ea5e3db5731d9f7443c93262463b50384"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\perf-review-2026-10-18\\apple-force-scale\\attention_test.cc",
+        "bytes": 18821,
+        "sha256": "4d3a01d7725576e146d402d40927a190a2d04ea57e030c3365d82a18853a8675"
+      }
+    ],
+    "applied": [
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\perf-review-2026-10-18\\apple-force-scale\\apple_tensor.applied.cc",
+        "bytes": 33374,
+        "sha256": "b526937bd0ad08451fa36b8211bc761ea5e3db5731d9f7443c93262463b50384"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\perf-review-2026-10-18\\apple-force-scale\\attention_test.applied.cc",
+        "bytes": 18821,
+        "sha256": "4d3a01d7725576e146d402d40927a190a2d04ea57e030c3365d82a18853a8675"
+      }
+    ],
+    "measured_applied_byte_identical": true,
+    "source_diff": "applied.diff"
+  },
+  "failures": [
+    {
+      "stage": "Initial local preparation",
+      "result": "Incorrect parents[4] resolvedROOTonelevelhigh; failedbeforeSSH/build. Correctedto[3]. Originalrunner and error note retained."
+    },
+    {
+      "stage": "First remotecompile",
+      "result": "Missingexisting projectprivate apple_mature_indexing.h; preserve measured/compile-apple-command.json and stderr. Syncedonly3tinyexistingmature declarationheaders, thensame2TUclosure compiled successfully."
+    }
+  ],
+  "limitations": [
+    "Only the new regression was run, no wholeApple/Graph/testmatrix or baseline numeric result.",
+    "No performance, allocation-space or before/after speedclaim.",
+    "Actual reference numerical checks passed for this finitefallback domain; no generalproof over all scales/inputs."
+  ],
+  "cleanup": {
+    "manifest": "cleanup-candidates.json",
+    "files": 4,
+    "bytes": 13339283,
+    "deleted": false,
+    "temporary_retention": "Keep apple_tensor.o until Q128 finalconsumers finish; root handles precise cleanup."
+  }
+}

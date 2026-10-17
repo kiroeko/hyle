@@ -1,0 +1,469 @@
+{
+  "status": "Q128_applied_and_root_committed; final_filtered_canonical_tests_passed",
+  "root_commit": "e94f73c29",
+  "independent_ordinary_guard_commit": "2f68636d0",
+  "machine": {
+    "host": "kiro@172.22.10.198",
+    "model": "Mac16,12",
+    "chip": "Apple M4",
+    "sdk": "/Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/apple-sdk"
+  },
+  "selection": "Only existing legal all-F32 five-port Sink B1/H64or128/KVhead1/D512; Q>=1024 and int64(Q-128)*KV>2*Q*512. Short/no-benefit shapes retain original pure MLX. This Q128 change does not alter ordinary attention/native/shader/dtype/TF32/environment; the independent ordinary force-scale guard commit is recorded separately.",
+  "execution": "One existing owner Job and whole-Job Completion; private RegionPlan kind has full128 and tail compiled original fallback. Slice BSHD Q axis1 and caller global mask axis0; share full K/V/sinks. Each block uses existing evaluate_mlx async_eval+synchronize+wait, then clears temporary arguments and retains only its output. Final concat on axis1 uses one checked drain. No per-block cache clear, asynchronous activeJob, extra thread/queue or public setting.",
+  "interfaces": {
+    "direct": "Both array-example and InputSpec prepare enter the same selected private RegionPlan; lower remains pure and unchanged.",
+    "graph": "Selected Sink is a private region at first-node dispatch, maximal-MLX scanning stop and overall compile_regions selection. Ordinary MLX regions before/after remain; last_use, constants and published outputs use original plan.",
+    "lifetime": "Same Invocation worker ref/program/input owners/ResultSlot/native lease uses/execute_with/finish. Error-path three chunk temporaries clear only after existing accepted-prefix checked drain, before finish. Cancellation remains existing whole-Job before/after behavior; no block-level cancellation claim.",
+    "opaque_compile": "Opaque Context::compile(RegionFunction) is deliberately unchanged and is not introspected/split. A caller embedding Sink there still gets original whole-graph fallback; typed prepare and graph::apple::compile are the changed routes.",
+    "visibility": "Old installed static SDK uses historical export macro names. Both paired source compilations receive empty current route API macros, equivalent to HYLE_STATIC; no DLL/API/ABI change or SDK source replacement."
+  },
+  "source_identity": {
+    "product_files": [
+      {
+        "path": "include/hyle/compute/detail/apple_plan.h",
+        "identical_to_tested": true,
+        "sha256": "9063b827ade39d75a3bdd569745ff0b065d00318fe33a290835a95d2eec593a1"
+      },
+      {
+        "path": "src/compute_route_apple/apple_context.cc",
+        "identical_to_tested": true,
+        "sha256": "bb02ca30785a403ffe59188ce18b3c92cf76a66a9092adc63d6aa672775fad4a"
+      },
+      {
+        "path": "src/compute_route_apple/apple_operations.cc",
+        "identical_to_tested": true,
+        "sha256": "3c27e13c6c794178e73409009dcc99d844d4d5f6fe58afe8006e7f083fb6a51f"
+      },
+      {
+        "path": "src/graph_route_apple/apple_lowering.cc",
+        "identical_to_tested": true,
+        "sha256": "42743c847822daf4f31dd3586e0c6dee225fda132909a239fb980d4830dc10a8"
+      }
+    ],
+    "tested_to_applied_products_diff": "tested-to-applied-products.diff is empty",
+    "host": "Baseline and candidate each fresh current canonical context/operations/graph lowering TUs with identical flags. Reused original tensor lowerer for every comparative number, original SDK MLX/native/foundation and same test/space/latency objects.",
+    "maps": {
+      "baseline-tests": {
+        "fresh_context": true,
+        "fresh_operations": true,
+        "fresh_graph_lowering": true,
+        "same_original_tensor_lowerer": true,
+        "sdk_context": false,
+        "sdk_operations": false,
+        "sdk_graph_lowering": false
+      },
+      "baseline-graph-tests": {
+        "fresh_context": true,
+        "fresh_operations": true,
+        "fresh_graph_lowering": true,
+        "same_original_tensor_lowerer": true,
+        "sdk_context": false,
+        "sdk_operations": false,
+        "sdk_graph_lowering": false
+      },
+      "baseline-space": {
+        "fresh_context": true,
+        "fresh_operations": true,
+        "fresh_graph_lowering": true,
+        "same_original_tensor_lowerer": true,
+        "sdk_context": false,
+        "sdk_operations": false,
+        "sdk_graph_lowering": false
+      },
+      "baseline-latency": {
+        "fresh_context": true,
+        "fresh_operations": true,
+        "fresh_graph_lowering": true,
+        "same_original_tensor_lowerer": true,
+        "sdk_context": false,
+        "sdk_operations": false,
+        "sdk_graph_lowering": false
+      },
+      "candidate-tests": {
+        "fresh_context": true,
+        "fresh_operations": true,
+        "fresh_graph_lowering": true,
+        "same_original_tensor_lowerer": true,
+        "sdk_context": false,
+        "sdk_operations": false,
+        "sdk_graph_lowering": false
+      },
+      "candidate-graph-tests": {
+        "fresh_context": true,
+        "fresh_operations": true,
+        "fresh_graph_lowering": true,
+        "same_original_tensor_lowerer": true,
+        "sdk_context": false,
+        "sdk_operations": false,
+        "sdk_graph_lowering": false
+      },
+      "candidate-space": {
+        "fresh_context": true,
+        "fresh_operations": true,
+        "fresh_graph_lowering": true,
+        "same_original_tensor_lowerer": true,
+        "sdk_context": false,
+        "sdk_operations": false,
+        "sdk_graph_lowering": false
+      },
+      "candidate-latency": {
+        "fresh_context": true,
+        "fresh_operations": true,
+        "fresh_graph_lowering": true,
+        "same_original_tensor_lowerer": true,
+        "sdk_context": false,
+        "sdk_operations": false,
+        "sdk_graph_lowering": false
+      }
+    },
+    "sdk_identity": "prior-sdk-runtime-identities.json plus measured/graph-library-identity.json",
+    "comparative_identity": "comparative-measured/runtime-identities.json and original maps/raw preserve the exact measured executable group; current measured/runtime-identities.json reflects later redundant relinks and is not substituted for that group.",
+    "new_product_scope": "Four private product files; original controls moved to two existing canonical test TUs with one shared test-only Sink oracle header. No CMake/native/SDK patch."
+  },
+  "controls": {
+    "processes": "One baseline and one candidate for each original Direct suite and Graph boundary suite; all original input/scale/F32 budgets retained.",
+    "paired": {
+      "baseline": {
+        "tests": {
+          "tests": 2,
+          "failures": 0,
+          "numeric_observations": [
+            {
+              "kind": "sink_numeric",
+              "Q": 1025,
+              "H": 64,
+              "maximum_error": 4.33824060126764e-07,
+              "maximum_budget_fraction": 0.18268049532022862,
+              "finite": true
+            },
+            {
+              "kind": "sink_numeric",
+              "Q": 1025,
+              "H": 64,
+              "maximum_error": 3.259787679996129e-07,
+              "maximum_budget_fraction": 0.13726738925953508,
+              "finite": true
+            },
+            {
+              "kind": "sink_numeric",
+              "Q": 1025,
+              "H": 64,
+              "maximum_error": 3.259787679996129e-07,
+              "maximum_budget_fraction": 0.13726738925953508,
+              "finite": true
+            },
+            {
+              "kind": "sink_numeric",
+              "Q": 17,
+              "H": 128,
+              "maximum_error": 2.206993009179481e-08,
+              "maximum_budget_fraction": 0.009138941820000641,
+              "finite": true
+            }
+          ]
+        },
+        "graph-tests": {
+          "tests": 1,
+          "failures": 0,
+          "numeric_observations": [
+            {
+              "kind": "sink_numeric",
+              "Q": 1025,
+              "H": 64,
+              "maximum_error": 4.33824060126764e-07,
+              "maximum_budget_fraction": 0.18268049532022862,
+              "finite": true
+            },
+            {
+              "kind": "sink_numeric",
+              "Q": 1025,
+              "H": 64,
+              "maximum_error": 4.33824060126764e-07,
+              "maximum_budget_fraction": 0.18268049532022862,
+              "finite": true
+            }
+          ]
+        }
+      },
+      "candidate": {
+        "tests": {
+          "tests": 2,
+          "failures": 0,
+          "numeric_observations": [
+            {
+              "kind": "sink_numeric",
+              "Q": 1025,
+              "H": 64,
+              "maximum_error": 4.33824060126764e-07,
+              "maximum_budget_fraction": 0.18268049532022862,
+              "finite": true
+            },
+            {
+              "kind": "sink_numeric",
+              "Q": 1025,
+              "H": 64,
+              "maximum_error": 3.259787679996129e-07,
+              "maximum_budget_fraction": 0.13726738925953508,
+              "finite": true
+            },
+            {
+              "kind": "sink_numeric",
+              "Q": 1025,
+              "H": 64,
+              "maximum_error": 3.259787679996129e-07,
+              "maximum_budget_fraction": 0.13726738925953508,
+              "finite": true
+            },
+            {
+              "kind": "sink_numeric",
+              "Q": 17,
+              "H": 128,
+              "maximum_error": 2.206993009179481e-08,
+              "maximum_budget_fraction": 0.009138941820000641,
+              "finite": true
+            }
+          ]
+        },
+        "graph-tests": {
+          "tests": 1,
+          "failures": 0,
+          "numeric_observations": [
+            {
+              "kind": "sink_numeric",
+              "Q": 1025,
+              "H": 64,
+              "maximum_error": 4.33824060126764e-07,
+              "maximum_budget_fraction": 0.18268049532022862,
+              "finite": true
+            },
+            {
+              "kind": "sink_numeric",
+              "Q": 1025,
+              "H": 64,
+              "maximum_error": 4.33824060126764e-07,
+              "maximum_budget_fraction": 0.18268049532022862,
+              "finite": true
+            }
+          ]
+        }
+      }
+    },
+    "graph": "Same H64/Q1025/KV2049 nonzero dyadic QK/row-mask/head-sink input as original Direct reference. CopyQ->Sink->Neg publishes all3; CopyQ payload hash equals caller Q, Sink and Neg each use independent FP64 reference, not candidate-to-candidate comparison.",
+    "coverage": "Original Direct two invocations/all5port rebind/old native output and independent result lifetime, fullmask rows15/16/last, cross-block/tail; H128/Q17 outsideguard control. All output channels checked. H128 long selected path and other shapes not separately measured."
+  },
+  "fixed_space": {
+    "processes": "Exactly one independent baseline and one candidate after controls; original space.o unchanged.",
+    "input": "Q1025/KV2049/H64/KVhead1/D512, Q/K/mask/sinks0, V alternating+1.25/-1.25 byKVrow; all33587200 outputs vsFP64 1.25/2050, rel6e-6+abs2e-6.",
+    "baseline": {
+      "dtype": "F32",
+      "B": 1,
+      "H": 64,
+      "Hkv": 1,
+      "D": 512,
+      "Q": 1025,
+      "KV": 2049,
+      "input": "QKmaskSink0,V alternating +1.25/-1.25",
+      "caller_qkv_mask_sinks_bytes": 151142660,
+      "output_bytes": 134348800,
+      "original_score_bytes": 537657600,
+      "active_before": 151175428,
+      "cache_before": 0,
+      "active_after": 285524228,
+      "peak": 1495482628,
+      "peak_minus_active_before": 1344307200,
+      "cache_after": 1209958400,
+      "max_abs_error": 5.678796191968538e-13,
+      "checked_elements": 33587200,
+      "oracle_passed": true
+    },
+    "candidate": {
+      "dtype": "F32",
+      "B": 1,
+      "H": 64,
+      "Hkv": 1,
+      "D": 512,
+      "Q": 1025,
+      "KV": 2049,
+      "input": "QKmaskSink0,V alternating +1.25/-1.25",
+      "caller_qkv_mask_sinks_bytes": 151142660,
+      "output_bytes": 134348800,
+      "original_score_bytes": 537657600,
+      "active_before": 151175432,
+      "cache_before": 0,
+      "active_after": 285524232,
+      "peak": 436486408,
+      "peak_minus_active_before": 285310976,
+      "cache_after": 287719424,
+      "max_abs_error": 5.678796191968538e-13,
+      "checked_elements": 33587200,
+      "oracle_passed": true
+    },
+    "extra_peak_reduction_bytes": 1058996224,
+    "extra_peak_reduction_fraction": 0.7877635588056063,
+    "boundary": "Original MLX active/peak/cache after prepare/create/bind, clear_cache/reset_peak then submit/checkedwait/default synchronize. Cold prepare/JIT excluded; includes output/frontiers/private active buffers. Active peak is not whole-device memory or RSS; cache_after is reported separately.",
+    "limit": "Actual measured fixed-shape reduction; not a source-only one-block peak proof. Full output frontier plus final output remain; synchronization does not promise all native cache storage is released."
+  },
+  "matched_latency": {
+    "order": [
+      "baseline",
+      "candidate",
+      "candidate",
+      "baseline"
+    ],
+    "process_results": [
+      {
+        "dtype": "F32",
+        "B": 1,
+        "H": 64,
+        "Hkv": 1,
+        "D": 512,
+        "Q": 1025,
+        "KV": 2049,
+        "warm_invocations": 2,
+        "oracle_elements_each": 33587200,
+        "oracle_before_maxabs": 5.678796191968538e-13,
+        "oracle_after_maxabs": 5.678796191968538e-13,
+        "oracle_passed": true,
+        "timed_submit_checkedwait_ns": [
+          170951709,
+          173182500,
+          172208250,
+          171637459,
+          173200542,
+          171025209,
+          172060250,
+          171547750,
+          171752292
+        ],
+        "process_order": 0,
+        "arm": "baseline",
+        "median_ns": 171752292
+      },
+      {
+        "dtype": "F32",
+        "B": 1,
+        "H": 64,
+        "Hkv": 1,
+        "D": 512,
+        "Q": 1025,
+        "KV": 2049,
+        "warm_invocations": 2,
+        "oracle_elements_each": 33587200,
+        "oracle_before_maxabs": 5.678796191968538e-13,
+        "oracle_after_maxabs": 5.678796191968538e-13,
+        "oracle_passed": true,
+        "timed_submit_checkedwait_ns": [
+          167950083,
+          167680791,
+          167525583,
+          167074709,
+          167622042,
+          167641125,
+          167270834,
+          167773916,
+          167473417
+        ],
+        "process_order": 1,
+        "arm": "candidate",
+        "median_ns": 167622042
+      },
+      {
+        "dtype": "F32",
+        "B": 1,
+        "H": 64,
+        "Hkv": 1,
+        "D": 512,
+        "Q": 1025,
+        "KV": 2049,
+        "warm_invocations": 2,
+        "oracle_elements_each": 33587200,
+        "oracle_before_maxabs": 5.678796191968538e-13,
+        "oracle_after_maxabs": 5.678796191968538e-13,
+        "oracle_passed": true,
+        "timed_submit_checkedwait_ns": [
+          168592250,
+          167754250,
+          167201167,
+          167877584,
+          167984167,
+          167202167,
+          167634625,
+          168051125,
+          167316500
+        ],
+        "process_order": 2,
+        "arm": "candidate",
+        "median_ns": 167754250
+      },
+      {
+        "dtype": "F32",
+        "B": 1,
+        "H": 64,
+        "Hkv": 1,
+        "D": 512,
+        "Q": 1025,
+        "KV": 2049,
+        "warm_invocations": 2,
+        "oracle_elements_each": 33587200,
+        "oracle_before_maxabs": 5.678796191968538e-13,
+        "oracle_after_maxabs": 5.678796191968538e-13,
+        "oracle_passed": true,
+        "timed_submit_checkedwait_ns": [
+          173402375,
+          172978708,
+          171216500,
+          171257583,
+          172852542,
+          171027875,
+          170573375,
+          171761666,
+          171950375
+        ],
+        "process_order": 3,
+        "arm": "baseline",
+        "median_ns": 171761666
+      }
+    ],
+    "median_candidate_over_baseline": [
+      0.9759522859817207,
+      0.9766687405093055
+    ],
+    "boundary": "Original latency.o reused: fixed inputs/public prepare+bind outside,2untimed warm invocations, full FP64 oracle before/after,9timed submit-to-successful checkedwait each; lease/OwnedResult release between samples outside timing. All36 rawns and8complete oracle outcomes retained.",
+    "limit": "Only four ordered processes on one fixed shape, noAA/confidence interval/throughput matrix. Roughly2.3-2.4% lower median observed, no general acceleration claim; primary demonstrated benefit is memory reduction without the compact candidate7x latency penalty.",
+    "power_before": "Now drawing from 'AC Power'\n -InternalBattery-0 (id=51314787)\t77%; AC attached; not charging present: true\n",
+    "power_after": "Now drawing from 'AC Power'\n -InternalBattery-0 (id=51314787)\t77%; AC attached; not charging present: true\n",
+    "thermal_before": "Note: No thermal warning level has been recorded\nNote: No performance warning level has been recorded\nNote: No CPU power status has been recorded\n",
+    "thermal_after": "Note: No thermal warning level has been recorded\nNote: No performance warning level has been recorded\nNote: No CPU power status has been recorded\n",
+    "environmental_limit": "No actual GPU frequency/temperature sampled or adjusted; rawpmset showsAC77% before/after and no recorded thermal/performance warning."
+  },
+  "final_canonical": {
+    "results": {
+      "direct": {
+        "tests": 2,
+        "failures": 0,
+        "disabled": 0
+      },
+      "graph": {
+        "tests": 1,
+        "failures": 0,
+        "disabled": 0
+      }
+    },
+    "scope": "Only freshly compiled two canonical test TUs, filtered2Direct+1Graph tests; candidate product objects reused because applied four source files match tested bytes. No repeated baseline/space/latency or full suite.",
+    "lowerer": {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/library-review-20261018-apple-force-scale/apple_tensor.o",
+      "bytes": 126016,
+      "sha256": "cb31c6ec728dfb5fd090468c6baf94e50698d62a364af4d8e5fe330e71c6c8d0",
+      "note": "Q128 numerical/space/latency used original baseline lowerer. A separate ordinary force-scale guard may be linked here only for final combined canonical tests; Sink lowering remains unchanged."
+    },
+    "ordinary_change": "Separate ordinary F32 force-scale guard may be linked in final closure; it did not participate in comparative Q128 data and does not alter Sink lowering."
+  },
+  "failures_retained": [
+    "Initial baseline context compile failed because oldSDK visibility header lacked new routeAPI macro names; matched static empty aliases supplied on both sides.",
+    "Scratch Graph consumer first had a remote include-directory name mismatch, then incorrectly used GraphBuilder.add with array; corrected to same-directory helper and existing five-ValueId overload. Both failed compile records retained. No failed numerical run was discarded.",
+    "Final applied wrapper initially passed --link through an imported driver, redundantly compiling the small scratch Graph consumer once and relinking8comparison executables. No product/native/SDK TU or comparative measurement reran. Original comparative hashes/maps/raw were already archived and remain in comparative-measured unchanged; cleanup hashes describe current relinked files. Wrapper now isolates sys.argv during import; this script-only fix was not executed for confirmation."
+  ],
+  "precision": "Original native F32 math fallback reused, full KV and original mask/sink normalization unchanged. Independent FP64 moderate-input controls passed original6e-6relative+2e-6absolute. This does not certify all NaN/Inf/extreme finite F32 payloads, allshapes or every SDK/environment.",
+  "prior_results": "Q16 single lazy graph negative peak and compact float tile positive space/negative7x latency remain unchanged in separate evidence; neither is recast as a success.",
+  "cleanup": "cleanup-candidates.json owns only this batch Air products; four prior preserved objects remain separate. Source/logs/data/SDK/cache not deleted by this agent. Root committed product/test changes after independent byte review."
+}

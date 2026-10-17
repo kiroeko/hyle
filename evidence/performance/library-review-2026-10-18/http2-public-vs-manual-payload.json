@@ -1,0 +1,42 @@
+{
+  "status": "read_only_current_source_review; no measurement, instruction count or product change",
+  "main_conclusion": "The current canonical manual peer does not validate DATA directly in its nghttp2 callback. Both arms retain DATA in a per-stream receive buffer, then validate it in chunks and return stream plus connection credit. The remaining public-versus-manual time difference cannot be labeled a Hyle-only receive-copy cost or attributed wholesale to scheduling.",
+  "same_application_work": {
+    "source": "bench/io_http2/http2_p1_bench.cc:164-261,466-608,950-964",
+    "trace": "Four streams, each256KiB request and256KiB response; pairs complete in reverse order; every byte checked by memcmp, exact lengths and relevant headers checked, both flow-control windows consumed, sessions and sockets closed.",
+    "payload_byte_arithmetic": "4*(256KiB+256KiB)=2097152 received body bytes per episode across the two endpoints. This is source-derived payload volume, not a runtime copy counter or timing attribution."
+  },
+  "copies_and_views": [
+    {
+      "source": "bench/io_http2/http2_p1_bench.cc:466-514,576-608",
+      "manual": "raw_data_chunk reserves a per-stream vector, appends DATA with memcpy, queues that stream readable. raw_consume_readable later memcmps at most16KiB, calls nghttp2_session_consume_stream plus consume_connection, and advances/clears the vector. It is not callback-only zero-copy verification."
+    },
+    {
+      "source": "src/io_http2/http2.cc:675-729,1974-2041",
+      "hyle": "on_data_chunk copies DATA into a preallocated per-stream receive ring; a wrapped append can use two memcpy calls whose total length is still the incoming length. read_body returns a span into that ring; it does not copy into an owning chunk buffer. The benchmark memcmps this span. No additional Hyle receive-body payload copy is established by this path."
+    },
+    {
+      "source": "bench/io_http2/http2_p1_bench.cc:363-379,668-680; src/io_http2/http2.cc:853-866,1282-1310",
+      "both": "Both data-provider callbacks copy borrowed application body bytes into nghttp2's output. Both also copy encoded wire bytes into a pending-send buffer before partial socket writes. Native protocol/kernel copies are not counted here."
+    },
+    {
+      "source": "bench/io_http2/http2_p1_bench.cc:497-513,660-666; src/io_http2/http2.cc:710-720",
+      "other_source_work": "The manual vector has a conditional compaction memmove and resize/value-initialization; RawWire value-initializes two64KiB arrays per endpoint. Hyle's receive ring avoids compaction and writes only free spans. These are source-level differences, not measured instruction counts; the compiler may remove redundant stores, and this review did not establish how often compaction occurs."
+    }
+  ],
+  "reader_and_ack_contract": {
+    "sources": ["include/hyle/io/http2.h:164-201", "src/io_http2/http2.cc:1884-1910,1974-2076,1814-1852"],
+    "hyle": "Reader validity includes session owner/generation/active-reader checks; one operation may be in flight. A borrowed view remains part of occupied ring storage until the next read/terminal consume acknowledges it, so another stream's transport progress cannot overwrite it. consume calls the sink synchronously on the same fiber; the sink may not retain the view or reenter the session. Rejection invalidates/cancels the reader, and destruction handles unread body/flow-control cleanup. These are real reusable-API obligations, not extra data copies.",
+    "manual": "The closed benchmark loop owns all per-stream vectors, never exposes a borrow across another call and validates/ACKs directly in its drain loop. It therefore has no general reader generation/busy/borrow lifetime object or recoverable caller sink failure contract.",
+    "ack_boundary": "Hyle ACKs the previous successful borrow before the next read and ACKs the terminal borrow before consume returns. The manual loop ACKs immediately after each successful memcmp. Both return both credits for all accepted payload, but segmentation and notification timing need not be identical. Removing Hyle guards/borrow accounting/credit updates would change its public contract."
+  },
+  "tasks_and_lifecycle": {
+    "sources": ["bench/io_http2/http2_p1_bench.cc:164-303,785-903", "src/io_http2/http2.cc:2052-2076,2392-2445", "include/hyle/sched/join.h:299-312,564-607"],
+    "hyle": "Two top-level public client/server Tasks run on one persistent Scheduler/IoContext worker and join from the external caller. API operations remain Tasks; the benchmark read_hyle_body wrapper awaits one whole-body consume Task. consume's loop calls synchronous read_body, so there is no Task allocation per DATA chunk. The fixed-send private helper is now synchronous, so its former internal frame must not be counted as a current residual.",
+    "manual": "One persistent RawHarness thread drives both endpoints in one explicit loop, then destroys sessions/socket state and wakes the external caller through a condition variable. No owner/thief-style worker starts per stream; no public Task/readiness object per operation is provided.",
+    "end_condition": "Hyle's terminal Event prevents the server session from disappearing before the client consumed the responses; manual completed counters provide an analogous application end condition without a second fiber. Both retain one fresh socket pair/session lifecycle inside each episode. Persistent harness creation/destruction is outside the per-episode interval.",
+    "retirement_limit": "Hyle join observes task result publication; TaskDriver coroutine/frame/fiber destruction is an off-stack finish hook after entry returns. The benchmark does not explicitly Scheduler::drain per episode, so do not call join return proof that every driver resource has retired. Top-level session/body locals have already unwound on co_return. Manual loop cleanup runs before its caller notification. This source boundary is not a quantified source of the time delta."
+  },
+  "optimization_boundary": "It remains fair to remove demonstrably redundant lookups, state scans, frame allocations, notifications or repeated checks while preserving the same owner/cancel/deadline/borrow/failure/completion behavior. This review establishes no new redundant operation or current root cause. Do not remove receive retention, ACKs, reader lifetime checks, socket readiness, Event/end conditions or off-stack safety merely to imitate the specialized loop.",
+  "interpretation": "The formal comparison is useful end-to-end public API versus a specialized native-session driver under the same application payload, not an isolated protocol/kernel/scheduler experiment or a promise of identical internal work. No fraction of the remaining15-17% is assigned here."
+}

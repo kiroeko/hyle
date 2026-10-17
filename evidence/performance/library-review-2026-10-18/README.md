@@ -4,9 +4,10 @@
 本次调研覆盖中央构建表的64个 factor（含退役 Marlin 占位），不是64个模块都已重新计时。
 旧结果只有在当前实现仍对应、输入与完成边界一致时才作为线索；旧 PASS、5%容忍带和状态标签不决定结论。
 
-**仍未解决**：HTTP2相对手工单loop的大报文慢点；Apple Sink数学fallback及部分普通未分块域的完整scores空间。
-HTTP2在header/body修复后复测仍慢约15.6–17.5%；其后仅去掉一个冗余私有Task帧，未重测该微改动的吞吐。
-Apple Sink纯图Q16候选峰值反增10.17%；另一个原生compact融合候选虽省90%峰值，同工却慢约7倍，均未应用。
+**仍未解决**：HTTP2相对手工单loop的大报文慢点；Apple部分普通fallback、typed Sink guard外及opaque compile等未覆盖域的scores空间。
+HTTP2在header/body、冗余私有Task帧及benchmark启动竞态修复后的当前复测仍慢约14.7–17.1%；跨轮绝对时间变化不作微改动收益归因。
+Apple Sink最终采用单owner Job内同步Q128数学分块：固定点extra active peak降78.8%，同工时延未见退步；Direct/Graph已接通，原F32预算保留。
+此前纯图Q16峰值反增10.17%、compact融合省90%但慢约7倍，两个负候选均未应用。
 CUDA长域F32探针的原1e-5预算仍失败，现已定位到原生PV长归约舍入；同native对照输出完全相同，没有证实Hyle额外精度损失，见下。
 普通CPU及多节点CacheEncode已复用生命周期，普通/私有paged/ragged causal冷mask已移除；动态PagedRead保留旧arena边界。
 Apple已知无NAX硬件的受限F32 D192及D256 causal已融合，D256旧Q2048失败形状在新路线通过；旧失败记录仍保留。
@@ -32,8 +33,8 @@ Apple已知无NAX硬件的受限F32 D192及D256 causal已融合，D256旧Q2048�
 | CPU / Vulkan Concat重复复制前缀 | 两个provider仍线性拼接；CPU保留全部中间payload，Vulkan虽有gallocr复用，复制工作仍为二次项 | 已移植平衡树，保持各自dtype/stride受理域；CPU修正重复ports元数据预算。实测与空间边界见下 |
 | FlatHash近满rolling churn反复重建 | [grow](../../../include/hyle/container/detail/flat_hash_table.h) 在7/8负载附近反复同容量rehash，清理后几乎没有插入余量 | 自动增长/prepare改为密集时加倍、稀疏时清理；显式reserve合同不变。工作量计数与增加容量的代价见下 |
 | Apple普通SDPA启发式回落 | 锁定MLX对Q>8、D192/256默认unfused，物化scores/probabilities；私有ragged的force不影响普通入口 | F16/BF16受限域已融合，1K F16额外峰值约12→2 MiB；后补已知无NAX硬件的F32 D256 causal及D192 tile，两个短Q长KV样本分别约65.66 MiB→528 KiB、65.41 MiB→400 KiB。其余域仍待补 |
-| Apple Sink数学fallback绕过分块 | 当前schema为F32/B1/H64或128/KV1/D512，独立Sink入口直接调用原生fast数学fallback，保留完整scores并追加sink列归一化 | Q16图候选峰值反增10.17%；BQ8/BK8 compact融合峰值降90%但同工慢约7倍，均未应用。下一步考虑已有owner Job内真正checked completion的分块，不引入新调度系统 |
-| HTTP2大body背压holdout | 修正peer后旧轮慢5.59–8.27%，后续有漂移；header/body修复及当前proactor的单一holdout又观察到15.6–17.5%点差 | 当前残差仍在；只去掉一个无await私有Task帧，原协议/allocator/pins不变，未测其速度收益。两endpoint Task与手工双端loop差异继续分开调查 |
+| Apple Sink数学fallback绕过分块 | 既有schema为F32/B1/H64或128/KV1/D512，完整math会保留scores及sink归一化中间值 | typed Direct/Graph的长Q收益域改用单Job同步Q128块，原固定extra peak1344307200→285310976 B（−78.8%），同工时延未见退步。Q16图/compact负候选拒绝；guard外及opaque compile保留原路线 |
+| HTTP2大body背压holdout | 修正peer后旧轮慢5.59–8.27%，后续有漂移；header/body、当前proactor及私有帧/benchmark竞态修复后的单一holdout仍慢14.7–17.1% | 当前残差仍在；私有帧消除有静态资源证据，但不把跨轮差值归因该微改。两endpoint Task与手工双端loop差异继续分开调查 |
 | Vulkan普通causal SDPA平方mask | 已融合的F32/F16分支仍用Q×KV F32 seed与F16 mask承载因果条件 | 复用既有FullF32 causal/window字段，3项定向测试通过；1025×1041 native gallocr容量6402176→0 B，未称total scratch为零或吞吐无退化 |
 | Vulkan math attention平方scratch与F32 source遗漏 | wide/Sink物化全scores，部分非连续Q还会在原生dispatch转Half，只有F32 accumulation请求不足以保持乘法精度 | 先补F32 source与Q连续布局，再同精度Q分块；4项测试通过，Sink样本gallocr容量340527360→176687104 B。小KV/大输出保留普通路线，无吞吐结论 |
 | CPU Hadamard冷矩阵 | 原生FWHT已是O(WlogW)，但prepare仍构造W² host矩阵，W4096为64 MiB | unary bridge复用各pin原生FWHT，移除矩阵；私有program ABI2随baseline/AVX2选择callback，无新增用户设置或数学内核 |
@@ -885,7 +886,7 @@ StoredHeader的FieldRef与HttpHeader是交错布局，原span在第二项便按�
 新回归双向3条regular header、2条trailer，逐项迭代/find，并保留head view跨body/trailer和trailer view跨terminal read。
 before同回归失败；candidate14/14及定向强制epoll通过，未修改正式bench/driver或追加计时。
 只读复查未确认当前body热路径的渐进扫描：native user-data获取本身也查nghttp2 map，简单替换Hyle lookup不能凭空消掉一次hash。
-explicit drain有retained-stream扫描，但正式holdout不走此路径，不能把它当作当前大body根因。旧manual-loop排名保留，修后完整吞吐未复测。
+explicit drain有retained-stream扫描，但正式holdout不走此路径，不能把它当作当前大body根因。该阶段未复测完整吞吐，后续当前复测见文末。
 [摘要](http2/header-storage/summary.json)/[源码与只读依据](http2/header-storage/source-results.zip)记录空间布局和残差边界。
 
 ## io_uring direct槽位：先纠正native合同，再去掉受理扫描
@@ -1044,7 +1045,7 @@ MSVC一TU与Rust offline/locked本地3crates编译，四个功能smoke各200wave
 send_submitted_fixed零co_await，只同步驱动已有stackful drive_until，却再建一个Task；两个公开父Task又等待它。
 该private helper现返回普通Status，保留AllocatorRef向下传递、惰性公开父Task、body借用、取消/失败和pin清理/退休顺序。
 旧GCC14 O3 object有真实256B/alignment16的内部frame factory；新object没有该private actor/destroy/frame，4请求+4响应正常路径不再经过该8个frame。
-这不表示所有其它分配或OOM点相同；少掉的是多余资源需求，不是协议工作。未做新alloc probe或计时，不能据此称前述15.6–17.5%已改善。
+这不表示所有其它分配或OOM点相同；少掉的是多余资源需求，不是协议工作。微改提交时未做新alloc probe或计时，不能据此称前述15.6–17.5%已改善；后续当前复测见文末。
 当前default15/15与forced epoll15/15通过；实测/应用仅缩进及return合行差，未为排版重测，提交`ba85438de`。
 [摘要](http2/fixed-send-frame/summary.json)/[原始包](http2/fixed-send-frame/source-results.zip)保留前后源、objects静态证据及全部协议结果。
 [执行策略设计](http2-execution-control-design.json)还纠正旧线索：canonical manual同样有两块128KiB RawWire，不能将其清零成本写成two-fiber独有。
@@ -1093,3 +1094,55 @@ scratch只移动worker成员到状态之后，随后上述完整运行通过；c
 本批先写根目录`test.ps1`，对三系统全部精确目标完成路径/size/SHA预检，再逐文件重检删除38项，逻辑大小合计82599370 B（约78.77 MiB）。
 保留下一步可复用的4个Apple小对象、2个WSL当前IO对象/库、Cargo依赖cache及4个CPU native文件，合计49项10829962 B；源码、日志、数据、原始包和SDK保留。
 Cargo可能hardlink，因此逻辑大小不等于实测物理回收量。[执行结果](cleanup-sink-http2-owner.json)记录实际删除及保留数。
+
+## HTTP2当前公开路线：私有帧及夹具修复后仍慢
+
+只fresh当前canonical benchmark的单main TU，复用前述current proactor库和Status helper对象；严格diff确认peer相对前轮仅移后worker成员并加说明，协议与计时边界未改。
+唯一fullsmoke两侧各4streams通过；随后只跑固定AB/BA各9epochs，无AA、新shape、重试或正式hot instrumentation：
+
+| 顺序 | Hyle μs/stream | 原manual peer μs/stream | Hyle点延迟差 |
+|---|---:|---:|---:|
+| AB | 182.797542 | 156.144050 | +17.070% |
+| BA | 177.007950 | 154.320050 | +14.702% |
+
+36epochs与实际3.017–5.086ms窗口全保留。两侧绝对时间都较前轮变化，不能据跨轮差值称private frame改善了多少；当前公开路线残差仍在。
+没有用common-episode替换正式peer，也不将其差额跨轮相减；源码/ldd/对象身份、完整协议检查和全部raw在[摘要](http2/current-holdout-status/summary.json)/[原始包](http2/current-holdout-status/source-results.zip)。
+
+[当前源码公平性核对](http2-public-vs-manual-payload.json)明确：raw同样将DATA复制到每stream缓存，再按16KiB校验并返还两层credit；Hyle借用环视图没有再做一份owning chunk复制。
+正常路径两侧各2097152 B接收缓存复制只是源码算数，未做运行计数；不能把残差归因于Hyle独有copy。
+Hyle另有通用reader/generation/busy/borrow寿命及失败/取消职责，两个fiber与单loop的执行/清理边界也不同；尚无时间证据将差额分摊到这些工作。
+
+## Apple Sink：既有owner内同步Q128块已应用
+
+typed Direct两个prepare入口与Graph共用私有region：仅原合法F32 Sink、Q≥1024且`(Q−128)×KV > 2×Q×512`时启用。
+full128与精确tail各一份compiled原math；切原BSHD Q轴1和全局mask轴0，共享完整KV/sinks。每块沿既有checked drain完成后才建下一块，保留块输出，末尾concat一次。
+沿用原Job/Completion/关闭/失败及whole-Job native-use退休，不增加线程、调度器、公开选项、shader或精度转换；cancel仍在整个Job前后检查。
+
+同原Q1025/KV2049/H64/D512样本，各一个进程，完整33587200元素原FP64预算通过：
+
+| 指标 B | 原math | 同步Q128 |
+|---|---:|---:|
+| extra active peak | 1344307200 | 285310976 |
+| cache after | 1209958400 | 287719424 |
+
+extra peak降78.78%，包括134348800 B输出；151142660 B caller端口另计。未每块clear_cache，这不是总VRAM/RSS、任意形状硬峰值或caller显式mask的空间消除。
+同latency consumer固定ABBA，2warm、9次submit→checkedwait与前后完整oracle：四进程中位数171.752/167.622/167.754/171.762ms。
+36样本全保留，点估计约2.3–2.4%更低，本轮未见退速；无AA/CI，不称跨硬件稳定加速。
+
+原2Direct控制两侧通过，含非零QK、逐行mask/头sink、全遮蔽、tail、5port重绑及旧输出；另Graph CopyQ→Sink→Neg发布3输出，两侧独立FP64检查通过。
+最终仅fresh两canonical测试TU，过滤2Direct+1Graph通过；4产品文件与实测候选逐字一致，提交`e94f73c29`。
+最终测试复用独立ordinary scale guard lowerer，比较数据仍对应原lowerer，Sink语义无差；没有为此重跑比较。
+导入临时driver时曾误透传`--link`、多重链8个比较exe，未重跑测量/重建产品依赖；原执行身份与重链后清理身份分存，脚本修复未额外执行确认。
+短Q/收益guard外及opaque RegionFunction compile保留原路线。[摘要](apple-sink-q128/summary.json)/[源码与完整结果](apple-sink-q128/source-results.zip)记录配对host身份、全部失败与边界。
+
+## Apple F32 force：极大scale回到原选择
+
+Steel源码先以F32计算scale×log2(e)，再乘QK；新ordinary F32 D192/D256 force原来只继承finite约束，存在极大finite值溢出的源级风险，未证明旧Metal必现NaN。
+新增cold double可表示性guard仅限制F32 force，超界继续原native/math选择；合法schema、Half/BF16和默认native策略不变。
+新1test在D192非因果/D256因果各测±FLT_MAX，Q/K0、非平凡dyadic V，独立FP64可见key均值及原F32预算，四次执行16128元素通过。
+只编lowerer和attention test两个TU，缺私有声明头的初次编译失败保留；无baseline/速度结论，提交`2f68636d0`。
+[摘要](apple-force-scale/summary.json)/[源码、命令及结果](apple-force-scale/source-results.zip)保留实际lowerer归属与实测/应用一致性。
+
+收尾重新写根目录`test.ps1`并完成三平台精确预检后，删除WSL2及Air17个可重建产物，共110433264逻辑B（约105.3 MiB）。
+Air保留9个当前产品/测试/consumer对象1207392 B供下一轮复用，map日志、全部源码/数据/原始包、SDK及其它共享缓存保留；无递归/模糊路径清理。
+[执行结果](cleanup-q128-force-http2.json)记录实际删除与55项显式保留目标，未将逻辑长度称为实测物理回收量。
