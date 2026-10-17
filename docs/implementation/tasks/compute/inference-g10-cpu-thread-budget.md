@@ -1,6 +1,6 @@
 # G10 CPU 线程预算与实际消费
 
-状态：**CANDIDATE，2026-10-17；四项有限 FIX、9项独立进程检查、9项交付、CPU+CUDA消费及三项宿主sanitizer通过，待最终维护门与terminal登记**。
+状态：**CLOSED，2026-10-17；T-F1–T-F4接受，九项交付、CPU+CUDA实际消费、新状态适用sanitizer、P0及有限终审通过**。
 
 本轮由当前 G07–G10 goal 明确授权，承接[原 G10 候选](../project/inference-single-machine-foundation-audit-2026-10.md)
 和[消费适配](../project/inference-consumer-adaptation-plan-2026-10.md)。
@@ -187,7 +187,7 @@ R1/R2已修问题由首轮原件保留。R3不代签随后才实际执行的sani
 | architecture | PASS：原CPU public头/Native owner承载；原executor、ggml与native完成语义复用 |
 | correctness | PASS：具名状态、OOM、竞态、真实数学/生命周期及新状态适用sanitizer；不适用/仅源审格明确区分 |
 | delivery | PASS：同候选九项source/static/shared公开头与消费者；原GPU资格不混签 |
-| usability_docs | PENDING：guide已说明启动期共享作用域、foreign协调、非总线程上界及当前CPU路线强制依赖；待最终docs检查 |
+| usability_docs | PASS：guide说明启动期共享作用域、foreign协调、非总线程上界及当前CPU路线强制依赖；docs合同已检查 |
 | red_team | PASS：有限独立审查无open MUST，全部前置失败/费用与未运行限制保留 |
 | engineering_performance | PASS/P0：仅cold常数状态与锁，数学/replay无新增字段、setter或锁；不新增P1 |
 
@@ -200,3 +200,13 @@ HYLE线程池。vendor/platform启动内存、池及锁竞争OS费用继续unkno
 
 本轮产品停止变化。只有当前合同的可复现缺陷、真实消费者新语义或SDK/threading backend变化等具名事实
 可以触发新轮；普通复看或未资格化benchmark不重开。G09三组A/A/P1不因G10获得豁免。
+
+## Terminal
+
+两个owner依次由AUDITED进入CANDIDATE，再以同一不可变产品候选进入CLOSED；
+registry维护门使用包含前态的明确Git revision。候选后仅文档、证据与派生报告末尾空行规范化，
+原始报告及首次staged whitespace拒绝的说明保留，未重跑数学或sanitizer。
+[最终维护裁决](../../../../evidence/architecture/inference-g10-runtime-final-validation/acceptance.json)
+保存selector的docs/closure选择、146项skip/reuse、带前态的状态检查、docs和diff结果。
+验收只覆盖本卡冻结的线程预算语义；G09原有三组资格阻塞不变。本goal已接受G07/G08/G10三项，
+剩G09三组A/A资格及其后续P1/终审；不把功能完成写成四项全部验收。

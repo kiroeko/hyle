@@ -18,4 +18,3 @@ path/language policy:
   module boundary (conventional):
     - src/compute_route_cpu
 self-check: PASS
-

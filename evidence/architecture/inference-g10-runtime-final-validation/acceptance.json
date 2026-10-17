@@ -1,0 +1,44 @@
+{
+  "schema": "hyle.g10-acceptance/v1",
+  "state": "CLOSED_PASS",
+  "previous_registry_revision": "5eecb4eb38c2267daa942abf8e745aa02e076cb3",
+  "product_candidate": "0022dd6adc3b2d903f91e9a1db0e73517dd142ba",
+  "functional_delivery_risk": "PASS",
+  "remaining_goal": "G09 three missing native A/A qualifications and subsequent P1/terminal review",
+  "owners": [
+    "compute_provider_native",
+    "compute_route_cpu"
+  ],
+  "accepted_goal_items": [
+    "G07",
+    "G08",
+    "G10"
+  ],
+  "formal_accepted_items": 3,
+  "total_goal_items": 4,
+  "goal_status": "ACTIVE",
+  "gates": [
+    {
+      "kind": "selector",
+      "exit_code": 0,
+      "output": "READY: selected=docs,closure; skipped/reused=146\r\n"
+    },
+    {
+      "kind": "closure_with_previous_registry",
+      "exit_code": 0,
+      "output": "module closure contract passed: 64 components, schema 4\r\n"
+    },
+    {
+      "kind": "docs",
+      "exit_code": 0,
+      "output": "documentation contract passed: 1258 Markdown files, 6561 relative links checked\r\n"
+    },
+    {
+      "kind": "all_changes_whitespace_and_product_unchanged",
+      "exit_code": 0,
+      "output": ""
+    }
+  ],
+  "limitations": "Source-reviewed but uninduced vendor setter/getter exception branches are not runtime PASS; current CPU+ATen-OFF and ATen Native-thread-backend/positive F4 configurations have explicit current-domain applicability decisions. Raw failures, source/model identities and cumulative costs retained.",
+  "candidate_commit_whitespace_correction": "Two derived LOC report EOF blank lines detected at staged candidate check were normalized before terminal acceptance. Original reports and receipt retained in retained-report-text.zip; terminal diff check covers all changes since the product candidate."
+}

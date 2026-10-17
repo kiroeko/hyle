@@ -133,6 +133,11 @@
       "path": "retained-partial-source.zip",
       "bytes": 19924,
       "sha256": "7a54b18f286a85afc9f5f8a07ab562cb76b46be0b6661036f2bf810b81fce0b5"
+    },
+    {
+      "path": "retained-report-text.zip",
+      "bytes": 4350,
+      "sha256": "b687ce555417f23c5c4489b806a6121b3df36d5f299046d4f07047b5f028b464"
     }
   ],
   "files": [
@@ -150,11 +155,16 @@
     },
     {
       "path": "loc-cpu.txt",
-      "sha256": "7d689568e424e41e8e822e4257f790a9388b5dcd0e94bdc90ab57a0a35813467"
+      "sha256": "38d279968cac9c67a96e62196a23f208795ac8ca0824a2ff6442e94297923147"
     },
     {
       "path": "loc-native.txt",
-      "sha256": "67797e38f68d43d3e654d318956ee2236055055f37c4856d7b2fa45423bc0a8e"
+      "sha256": "a96aa2afc6db02ae7b3ade248fc46ff627344e5667a0d4a6db9bb9ab085e63a2"
     }
-  ]
+  ],
+  "derived_report_format_correction": {
+    "previous_commit": "5eecb4eb38c2267daa942abf8e745aa02e076cb3",
+    "reason": "Candidate staged diff check found one extra blank line at EOF in two derived LOC text reports. The command sequence still committed the candidate; final normalization fixes only trailing blank lines. Original reports/receipt retained, counts and immutable test/source archives unchanged.",
+    "archive": "retained-report-text.zip"
+  }
 }

@@ -429,17 +429,25 @@
     },
     {
       "module": "compute_provider_native",
-      "state": "CANDIDATE",
+      "state": "CLOSED",
       "record": "docs/implementation/tasks/compute/inference-g10-cpu-thread-budget.md",
-      "summary": "G10 CANDIDATE: startup shared runtime control/reporting and first-use/foreign failure boundaries implemented; nine CPU deliveries, public CPU+CUDA math and feature-ON ASan/UBSan/TSan passed. P0 cold state, prior math and G09 qualification boundaries retained; final maintenance/terminal registration pending.",
-      "candidate": "0022dd6adc3b2d903f91e9a1db0e73517dd142ba"
+      "summary": "G10 accepted: explicit startup shared ATen intra-op control/reporting, first-use and foreign failure boundaries; nine CPU source/static/shared deliveries, public CPU+CUDA math, feature-ON ASan/UBSan/TSan and P0 cold-state review passed. Existing executor/ggml budgets reused. No process-wide live-thread cap, hot setter/state, vendor-pool/leak certificate or G09 performance waiver.",
+      "candidate": "0022dd6adc3b2d903f91e9a1db0e73517dd142ba",
+      "performance": {
+        "tier": "P0",
+        "evidence": "evidence/architecture/inference-g10-runtime-final-validation/p0.json"
+      }
     },
     {
       "module": "compute_route_cpu",
-      "state": "CANDIDATE",
+      "state": "CLOSED",
       "record": "docs/implementation/tasks/compute/inference-g10-cpu-thread-budget.md",
-      "summary": "G10 CANDIDATE: startup shared runtime control/reporting and first-use/foreign failure boundaries implemented; nine CPU deliveries, public CPU+CUDA math and feature-ON ASan/UBSan/TSan passed. P0 cold state, prior math and G09 qualification boundaries retained; final maintenance/terminal registration pending.",
-      "candidate": "0022dd6adc3b2d903f91e9a1db0e73517dd142ba"
+      "summary": "G10 accepted: explicit startup shared ATen intra-op control/reporting, first-use and foreign failure boundaries; nine CPU source/static/shared deliveries, public CPU+CUDA math, feature-ON ASan/UBSan/TSan and P0 cold-state review passed. Existing executor/ggml budgets reused. No process-wide live-thread cap, hot setter/state, vendor-pool/leak certificate or G09 performance waiver.",
+      "candidate": "0022dd6adc3b2d903f91e9a1db0e73517dd142ba",
+      "performance": {
+        "tier": "P0",
+        "evidence": "evidence/architecture/inference-g10-runtime-final-validation/p0.json"
+      }
     },
     {
       "module": "graph_route_cpu",
