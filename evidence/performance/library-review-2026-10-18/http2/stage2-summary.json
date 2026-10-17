@@ -1,0 +1,239 @@
+{
+  "result": "Current large-body holdout residual remains unresolved. Neither removing a duplicate notification nor retrying write before the second read established a repeatable latency gain. Both product candidates were reverted. Retain no current noninferiority/equivalence claim from historical PASS/PARITY.",
+  "remaining_changes": {
+    "benchmark": "Monotonic peer next_response_pair skips retired response scheduling work; optional JSON exports all nanobench epochs after timing and smoke reports completion counts.",
+    "test": "POSIX 4KiB-socket regression: peer reads partial fixed body then closes, writer must terminate with a non-deadline/non-cancel failure. Added test passes both candidate and unchanged product baseline.",
+    "product_http2_sha256": "ef4a1febb929d19bb257671c279cef742c123b6175fc71f7d111605eaf63e3a5"
+  },
+  "diagnostic": {
+    "baseline": {
+      "route": "hyle",
+      "completed": 4,
+      "threads_before": 3,
+      "threads_after": 3,
+      "counts": {
+        "recv_attempts": 1032,
+        "recv_ready": 323,
+        "recv_would_block": 709,
+        "recv_other": 0,
+        "recv_bytes": 2091990,
+        "send_attempts": 772,
+        "send_ready": 514,
+        "send_would_block": 258,
+        "send_other": 0,
+        "send_bytes": 2092087,
+        "write_yields": 256,
+        "read_yields": 259,
+        "async_read": 1,
+        "async_write": 1,
+        "notify_owner": 1529,
+        "notify_cancel": 0,
+        "wait_for_change": 0,
+        "inbound_copy_calls": 384,
+        "inbound_copy_bytes": 2097152,
+        "inbound_compaction_calls": 0,
+        "inbound_compaction_bytes": 0,
+        "wire_copy_calls": 259,
+        "wire_copy_bytes": 2100151,
+        "direction_claim_busy": 0,
+        "process_received": 324,
+        "body_ack_calls": 264,
+        "body_ack_bytes": 2097152,
+        "outbound_copy_calls": 128,
+        "outbound_copy_bytes": 2097152,
+        "stream_find": 456
+      }
+    },
+    "write_first_candidate": {
+      "route": "hyle",
+      "completed": 4,
+      "threads_before": 3,
+      "threads_after": 3,
+      "counts": {
+        "recv_attempts": 840,
+        "recv_ready": 323,
+        "recv_would_block": 517,
+        "recv_other": 0,
+        "recv_bytes": 2091990,
+        "send_attempts": 835,
+        "send_ready": 514,
+        "send_would_block": 321,
+        "send_other": 0,
+        "send_bytes": 2092087,
+        "write_yields": 256,
+        "read_yields": 259,
+        "async_read": 1,
+        "async_write": 1,
+        "notify_owner": 1529,
+        "notify_cancel": 0,
+        "wait_for_change": 0,
+        "inbound_copy_calls": 384,
+        "inbound_copy_bytes": 2097152,
+        "inbound_compaction_calls": 0,
+        "inbound_compaction_bytes": 0,
+        "wire_copy_calls": 259,
+        "wire_copy_bytes": 2100151,
+        "direction_claim_busy": 0,
+        "process_received": 324,
+        "body_ack_calls": 264,
+        "body_ack_bytes": 2097152,
+        "outbound_copy_calls": 128,
+        "outbound_copy_bytes": 2097152,
+        "stream_find": 456
+      }
+    },
+    "delta": "Candidate removes192 empty reads but adds63 empty writes, net129 fewer no-progress I/O attempts. Successful reads323/writes514, all copied payload/wire bytes, inbound compaction0,515 yields,1529 owner notifications, async read/write each1 and ownerwait0 are unchanged in these two observed episodes.",
+    "limits": "One source-instrumented, strace-disturbed complete episode per original route and one Hyle candidate episode. No latency derived from counters/strace; io_uring kernel workers do not expose every I/O as a userspace syscall. Current code has no added counters or hot-path diagnostic branches."
+  },
+  "write_first_candidate": {
+    "source_sha256": "b1710981438fb6a6ffac139937bb7e6b3cb770a47932471516963c3d4c2ced70",
+    "implementation": "Keep pre-yield read and one cooperative yield/cancellation check. After yield, retry_write; Ready goes through the original sent-byte/error handling, any non-Ready keeps the original second read and async fallback.",
+    "tests": "14 protocol/feature tests plus forced-epoll duplex and peer-close2 tests all pass. Each baseline/candidate full-payload smoke passes64/64/4/4. Baseline-only new peer-close test separately passes after reverting product source.",
+    "timing": "Original two journeys, two same-header baseline/candidate order pairs only. Candidate holdout195.419us vs baseline194.866us(+0.284%); other order194.119us vs197.019us(-1.472%). Peer179.850/193.177/184.246/200.068us varies materially. Small-body candidate also not consistently faster. No stable gain established; reverted.",
+    "identity": "Both protocol TUs rebuilt using the same frozen header state and same existing foundation shared libraries, locked nghttp2_static and corrected peer/consumer. This is not a full HEAD rebuild."
+  },
+  "resources": {
+    "public_capabilities_and_affinity": [
+      {
+        "role": "external-caller",
+        "tid": 651,
+        "affinity_errno": 0,
+        "logical_cpus": [
+          2
+        ]
+      },
+      {
+        "public_backend": 2,
+        "io_workers": 1
+      },
+      {
+        "role": "hyle-scheduler-worker",
+        "tid": 652,
+        "affinity_errno": 0,
+        "logical_cpus": [
+          2
+        ]
+      },
+      {
+        "role": "nghttp2-direct-worker",
+        "tid": 653,
+        "affinity_errno": 0,
+        "logical_cpus": [
+          2
+        ]
+      }
+    ],
+    "limit": "Separate later resource-only process: actual backend2=kIoUring and one IO worker; caller and both OS worker TIDs affinity[2]. Observed diagnostic episode user threads3->3. Does not backfill formal-run snapshots. Earlier summary metadata taskset0-31 describes its metadata parent, not formal consumers."
+  },
+  "fairness_and_next_direction": "Both routes retain equal protocol/payload/flow-control/connection-lifetime/cleanup work with one active persistent worker plus external caller. Execution strategy differs: public Hyle drives two endpoint fibers and readiness machinery; direct adapter advances both endpoints in one manual loop. Review that thread/fiber work model next, without dropping public lifecycle responsibilities or collecting another copy of the same AB matrix.",
+  "formal_results": [
+    {
+      "file": "postfix-0-baseline-4.json",
+      "ns_per_stream": {
+        "HYLE HTTP/2 public session": 194865.95,
+        "nghttp2 direct HTTP/2 session": 179849.85
+      },
+      "epoch_counts": {
+        "HYLE HTTP/2 public session": 9,
+        "nghttp2 direct HTTP/2 session": 9
+      }
+    },
+    {
+      "file": "postfix-0-baseline-64.json",
+      "ns_per_stream": {
+        "HYLE HTTP/2 public session": 4949.122395833328,
+        "nghttp2 direct HTTP/2 session": 6440.790625
+      },
+      "epoch_counts": {
+        "HYLE HTTP/2 public session": 9,
+        "nghttp2 direct HTTP/2 session": 9
+      }
+    },
+    {
+      "file": "postfix-1-candidate-4.json",
+      "ns_per_stream": {
+        "HYLE HTTP/2 public session": 195419.15,
+        "nghttp2 direct HTTP/2 session": 193177.15
+      },
+      "epoch_counts": {
+        "HYLE HTTP/2 public session": 9,
+        "nghttp2 direct HTTP/2 session": 9
+      }
+    },
+    {
+      "file": "postfix-1-candidate-64.json",
+      "ns_per_stream": {
+        "HYLE HTTP/2 public session": 5047.146875,
+        "nghttp2 direct HTTP/2 session": 6180.315625
+      },
+      "epoch_counts": {
+        "HYLE HTTP/2 public session": 9,
+        "nghttp2 direct HTTP/2 session": 9
+      }
+    },
+    {
+      "file": "postfix-2-candidate-4.json",
+      "ns_per_stream": {
+        "nghttp2 direct HTTP/2 session": 184245.625,
+        "HYLE HTTP/2 public session": 194119.375
+      },
+      "epoch_counts": {
+        "nghttp2 direct HTTP/2 session": 9,
+        "HYLE HTTP/2 public session": 9
+      }
+    },
+    {
+      "file": "postfix-2-candidate-64.json",
+      "ns_per_stream": {
+        "nghttp2 direct HTTP/2 session": 6148.239583333328,
+        "HYLE HTTP/2 public session": 4735.9296875
+      },
+      "epoch_counts": {
+        "nghttp2 direct HTTP/2 session": 9,
+        "HYLE HTTP/2 public session": 9
+      }
+    },
+    {
+      "file": "postfix-3-baseline-4.json",
+      "ns_per_stream": {
+        "nghttp2 direct HTTP/2 session": 200067.70833333323,
+        "HYLE HTTP/2 public session": 197019.1
+      },
+      "epoch_counts": {
+        "nghttp2 direct HTTP/2 session": 9,
+        "HYLE HTTP/2 public session": 9
+      }
+    },
+    {
+      "file": "postfix-3-baseline-64.json",
+      "ns_per_stream": {
+        "nghttp2 direct HTTP/2 session": 6438.440625,
+        "HYLE HTTP/2 public session": 4617.5
+      },
+      "epoch_counts": {
+        "nghttp2 direct HTTP/2 session": 9,
+        "HYLE HTTP/2 public session": 9
+      }
+    }
+  ],
+  "formal_log_completion_times": [
+    {
+      "file": "postfix-0-baseline.log",
+      "completion_log_write_utc": "2026-10-17T20:22:39.559258+00:00"
+    },
+    {
+      "file": "postfix-1-candidate.log",
+      "completion_log_write_utc": "2026-10-17T20:22:39.706237+00:00"
+    },
+    {
+      "file": "postfix-2-candidate.log",
+      "completion_log_write_utc": "2026-10-17T20:22:39.836604+00:00"
+    },
+    {
+      "file": "postfix-3-baseline.log",
+      "completion_log_write_utc": "2026-10-17T20:22:39.976346+00:00"
+    }
+  ],
+  "background_io_check": "Concat owner reported its~190MiB SHA pass at20:23:28.3-20:23:29.802UTC. Formal completion logs are20:22:39.559-20:22:39.976UTC, about48seconds earlier, so that reported activity did not overlap. This is not a claim that all system I/O was monitored. No additional samples taken.",
+  "probe_errors": "First write-first build orchestration hashed the vendor library under the small experiment subdirectory instead of its reused parent; compilation/link had succeeded. Corrected metadata path without rebuilding those objects. Earlier diagnostic/resource generator errors are recorded separately. No failed payload results or outliers removed."
+}

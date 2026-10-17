@@ -1,0 +1,10 @@
+{
+  "stage1-summary.json": {
+    "bytes": 16409,
+    "sha256": "8b88534814cea916951eeea3c6f3375b93d7d2bf4957ebf70676a7dfd09f4da7"
+  },
+  "stage1-raw.zip": {
+    "bytes": 208493,
+    "sha256": "ffced8f71c8b75159373d196e7b68c7baeafe6b1cf40d4ad0078b181997a690d"
+  }
+}

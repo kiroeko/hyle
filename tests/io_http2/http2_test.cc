@@ -549,6 +549,67 @@ TEST(IoHttp2, DuplexProgressSurvivesSmallSocketAndFlowControl) {
     EXPECT_EQ(result->completed[base + 1], result->submitted[base]);
   }
 }
+
+struct ClosedWriterResult {
+  std::string request = std::string(256 * 1024, 'q');
+  std::atomic<std::size_t> peer_bytes{0};
+  std::atomic<bool> write_failed{false};
+};
+
+Task<int> closing_writer_client(AllocatorRef allocator, TcpStream transport,
+                               ClosedWriterResult *result) noexcept {
+  auto made = Http2ClientSession::create(allocator, std::move(transport));
+  if (!made.has_value())
+    co_return 0;
+  auto session = std::move(*made);
+  const Http2RequestHead head{.method = "POST", .scheme = "http",
+                             .authority = "localhost", .path = "/peer-close"};
+  auto sent = co_await session.send_request(head, bytes(result->request), budget());
+  result->write_failed.store(
+      !sent.has_value() && !sent.error().IsDeadlineExceeded() &&
+          !sent.error().IsCancelled(),
+      std::memory_order_release);
+  co_return 0;
+}
+
+Task<int> close_after_partial_body(AllocatorRef, TcpStream transport,
+                                 ClosedWriterResult *result) noexcept {
+  std::array<std::byte, 4096> input{};
+  auto received = co_await transport.read_some(input, budget());
+  if (received.ok())
+    result->peer_bytes.store(received.bytes, std::memory_order_release);
+  // Close now, while the sender still owns the remainder of its fixed body.
+  transport = TcpStream{};
+  co_return 0;
+}
+
+TEST(IoHttp2, PeerCloseTerminatesBackpressuredFixedBodyWrite) {
+  std::array<int, 2> sockets{};
+  ASSERT_TRUE(make_small_socket_pair(sockets));
+  Scheduler scheduler(1, system_allocator(), 256);
+  IoContext io(scheduler);
+  ASSERT_TRUE(io.valid());
+  auto client_transport = TcpStream::adopt(io, kOwner, sockets[0]);
+  auto peer_transport = TcpStream::adopt(io, kOwner, sockets[1]);
+  ASSERT_TRUE(client_transport.has_value());
+  ASSERT_TRUE(peer_transport.has_value());
+  auto result = std::make_unique<ClosedWriterResult>();
+  auto client = std::make_unique<Drive>();
+  auto peer = std::make_unique<Drive>();
+  client->task = closing_writer_client(system_allocator(),
+                                      std::move(*client_transport), result.get());
+  peer->task = close_after_partial_body(system_allocator(),
+                                       std::move(*peer_transport), result.get());
+  Fiber client_fiber(kDefaultStackSize, drive, client.get());
+  Fiber peer_fiber(kDefaultStackSize, drive, peer.get());
+  ASSERT_TRUE(scheduler.spawn_on(kOwner, &client_fiber));
+  ASSERT_TRUE(scheduler.spawn_on(kOwner, &peer_fiber));
+  scheduler.drain();
+  scheduler.shutdown();
+  EXPECT_GT(result->peer_bytes.load(), 1024u);
+  EXPECT_LT(result->peer_bytes.load(), result->request.size());
+  EXPECT_TRUE(result->write_failed.load());
+}
 #endif
 
 struct ReuseResult {

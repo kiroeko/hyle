@@ -21,6 +21,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <condition_variable>
+#include <fstream>
 #include <mutex>
 #include <span>
 #include <string>
@@ -335,6 +336,7 @@ struct RawEndpoint {
   bool server = false;
   bool failed = false;
   int completed = 0;
+  std::size_t next_response_pair = 0;
 };
 
 bool raw_queue_readable(RawEndpoint &endpoint, RawStream &stream) noexcept {
@@ -742,7 +744,10 @@ bool raw_advance(RawEndpoint &client, RawEndpoint &server,
     }
   }
 
-  for (std::size_t base = 0; base + 1 < server.streams.size(); base += 2) {
+  // Submitted pairs need no more response scheduling work. Do not rescan
+  // completed streams on every transport turn as the connection grows.
+  for (std::size_t base = server.next_response_pair;
+       base + 1 < server.streams.size(); base += 2) {
     RawStream &first = server.streams[base];
     RawStream &second = server.streams[base + 1];
     if (!first.input_done || !second.input_done)
@@ -752,9 +757,10 @@ bool raw_advance(RawEndpoint &client, RawEndpoint &server,
         return false;
     } else if (second.output_done &&
                server_wire.begin == server_wire.end &&
-               !first.response_submitted &&
-               !raw_submit_response(server, first)) {
-      return false;
+               !first.response_submitted) {
+      if (!raw_submit_response(server, first))
+        return false;
+      server.next_response_pair = base + 2;
     }
   }
   return true;
@@ -921,6 +927,15 @@ void run_workload(const Workload &workload, HyleHarness &hyle,
     bench.run("HYLE HTTP/2 public session", run_hyle);
     bench.run("nghttp2 direct HTTP/2 session", run_peer);
   }
+  if (const char *prefix = std::getenv("HYLE_BENCH_JSON")) {
+    std::ofstream output(std::string(prefix) + "-" +
+                         std::to_string(workload.streams) + ".json");
+    if (!output)
+      std::abort();
+    bench.render(ankerl::nanobench::templates::json(), output);
+    if (!output)
+      std::abort();
+  }
 }
 
 } // namespace
@@ -945,6 +960,10 @@ int main() {
     const int peer_normal = peer.run(normal);
     const int hyle_holdout = hyle.run(holdout);
     const int peer_holdout = peer.run(holdout);
+    std::fprintf(stderr,
+                 "# HYLE_IO_HTTP2_SMOKE hyle_normal=%d peer_normal=%d "
+                 "hyle_holdout=%d peer_holdout=%d\n",
+                 hyle_normal, peer_normal, hyle_holdout, peer_holdout);
     return hyle_normal == normal.streams && peer_normal == normal.streams &&
                    hyle_holdout == holdout.streams &&
                    peer_holdout == holdout.streams

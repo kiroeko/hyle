@@ -1,0 +1,399 @@
+{
+  "scope": "Current Linux/WSL public HTTP2 fixed-body connection episodes; not a current cross-platform ranking or an inference-engine test.",
+  "method": {
+    "cpu": "All formal consumers and both persistent workers inherit Linux logical CPU2 affinity.",
+    "configured_resources": "One Hyle Scheduler worker plus one direct nghttp2 worker; both harnesses exist in every process, one route active at a time. Actual userspace thread snapshots were not collected.",
+    "timed": "Fresh nonblocking Unix socket pair, 4KiB socket buffers, both HTTP2 sessions, full header/body work and exact checks, reverse pair response completion, body acknowledgements at both flow-control levels, session/socket destruction and external completion handoff.",
+    "not_charged": "Persistent harness construction/destruction, fixed workload-body string generation, one untimed preflight per route, optional JSON serialization after each workload.",
+    "normal": "64 streams, two active at a time, 1KiB request and response each, 1MiB connection receive window.",
+    "holdout": "4 streams, two active at a time, 256KiB request and response each, 65535-byte connection window.",
+    "stream_window": 65536,
+    "read_chunk": 16384,
+    "sampling": "Four processes per formal phase, two execution orders. Nine nanobench epochs per route/workload, at least five complete episodes per epoch. No samples filtered; no cross-process CI or equivalence conclusion."
+  },
+  "fairness_fix": "Peer raw_advance formerly rescanned every completed pair on every protocol turn. A monotonic next_response_pair now skips pairs after both reverse-ordered responses have been submitted; all DATA/write/consume/validation/teardown work remains.",
+  "current_result": "With corrected peer wrapper, 64x1KiB is faster for Hyle in all four initial processes; 4x256KiB is slower by 5.59-8.27%. Do not inherit historical WIN/PARITY or the old 5% practical pass rule.",
+  "aa_limit": "One scratch-only process per same route, both labels run the same Hyle or peer call. Second-position holdout advantage approximately 5.04% Hyle / 2.66% peer. These are observed position/warm-state differences, not correction factors, CIs, hardware timer resolution, or proof that the formal residual is noise.",
+  "candidate": {
+    "description": "Do not notify again when releasing the immediate read-direction claim; process_received already published input changes. Async read path unchanged.",
+    "tests": "13 current HTTP2/feature tests pass, plus separate forced-epoll duplex test. Both rebuilt baseline and candidate smoke return 64/64/4/4.",
+    "comparison": "Both protocol TUs rebuilt against the same then-current headers because unrelated container headers changed during this task. Foundation shared cache and peer/consumer objects identical. Two baseline/candidate order pairs retained without filtering.",
+    "result": "Not an established speedup: one holdout candidate point is slower, the other close in absolute Hyle time, while peer times drift. Reverted product source to original; frozen candidate and raw logs retained. Holdout residual remains unresolved."
+  },
+  "identity_limits": "Only nghttp2_static and current HTTP/HTTP2/consumer TUs built. Foundation libraries reused from io-watch-v2-dev and hashed; this is not a full HEAD rebuild. Initial formal and later candidate phase header environments differ and must not be directly attributed to the notify change.",
+  "nghttp2": {
+    "version": "1.70.0",
+    "source_commit": "85e300c79fb6dbcfa9c1013215c8710c1c2cd3d2",
+    "source_cache": "/root/.cache/hyle/dependencies/v1/sources/nghttp2-85e300c79fb6-ca7aa79a25b3",
+    "static_sha256": "a2c944fbc51f82b5b0e363a30974e8603c247d454edc289065bfaea9be2443d5",
+    "build": "Existing locked source, lib-only/static/Release/GCC14, no downloads, no SDK staging or Hyle CMake configure."
+  },
+  "metadata": {
+    "kernel": "Linux kiro-workstation 6.18.54.1-microsoft-standard-WSL2 #1 SMP PREEMPT_DYNAMIC Tue Oct  6 19:13:07 UTC 2026 x86_64 x86_64 x86_64 GNU/Linux\n",
+    "compiler": "g++-14 (Ubuntu 14.2.0-4ubuntu2~24.04.1) 14.2.0\nCopyright (C) 2024 Free Software Foundation, Inc.\nThis is free software; see the source for copying conditions.  There is NO\nwarranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.\n\n",
+    "affinity": "pid 546's current affinity list: 0-31\n",
+    "loaded_libraries": "\tlinux-vdso.so.1 (0x00007b73d8b9f000)\n\tlibhyle_io_core.so.0.1.0 => /root/hyle-scratch/io-watch-v2-dev/bin/libhyle_io_core.so.0.1.0 (0x00007b73d8aa1000)\n\tlibhyle_container.so.0.1.0 => /root/hyle-scratch/io-watch-v2-dev/bin/libhyle_container.so.0.1.0 (0x00007b73d8a95000)\n\tlibhyle_sched.so.0.1.0 => /root/hyle-scratch/io-watch-v2-dev/bin/libhyle_sched.so.0.1.0 (0x00007b73d8a6c000)\n\tlibhyle_mem.so.0.1.0 => /root/hyle-scratch/io-watch-v2-dev/bin/libhyle_mem.so.0.1.0 (0x00007b73d8a11000)\n\tlibhyle_platform.so.0.1.0 => /root/hyle-scratch/io-watch-v2-dev/bin/libhyle_platform.so.0.1.0 (0x00007b73d89e6000)\n\tlibhyle_error.so.0.1.0 => /root/hyle-scratch/io-watch-v2-dev/bin/libhyle_error.so.0.1.0 (0x00007b73d89db000)\n\tlibstdc++.so.6 => /lib/x86_64-linux-gnu/libstdc++.so.6 (0x00007b73d8600000)\n\tlibm.so.6 => /lib/x86_64-linux-gnu/libm.so.6 (0x00007b73d88e9000)\n\tlibgcc_s.so.1 => /lib/x86_64-linux-gnu/libgcc_s.so.1 (0x00007b73d88bb000)\n\tlibc.so.6 => /lib/x86_64-linux-gnu/libc.so.6 (0x00007b73d8200000)\n\t/lib64/ld-linux-x86-64.so.2 (0x00007b73d8ba1000)\n\tlibhyle_platform_fs.so.0.1.0 => /root/hyle-scratch/io-watch-v2-dev/bin/libhyle_platform_fs.so.0.1.0 (0x00007b73d88aa000)\n\tlibhyle_platform_thread.so.0.1.0 => /root/hyle-scratch/io-watch-v2-dev/bin/libhyle_platform_thread.so.0.1.0 (0x00007b73d88a2000)\n"
+  },
+  "results": [
+    {
+      "file": "formal-0-current-first-4.json",
+      "routes": [
+        {
+          "label": "HYLE HTTP/2 public session",
+          "ns_per_stream": 205041.1,
+          "epoch_count": 9,
+          "median_absolute_percent_error": 0.0353181565190719
+        },
+        {
+          "label": "nghttp2 direct HTTP/2 session",
+          "ns_per_stream": 191581.04166666674,
+          "epoch_count": 9,
+          "median_absolute_percent_error": 0.0202530479273737
+        }
+      ],
+      "hyle_over_peer": 1.0702577782030882
+    },
+    {
+      "file": "formal-0-current-first-64.json",
+      "routes": [
+        {
+          "label": "HYLE HTTP/2 public session",
+          "ns_per_stream": 5151.759375,
+          "epoch_count": 9,
+          "median_absolute_percent_error": 0.0616534891144675
+        },
+        {
+          "label": "nghttp2 direct HTTP/2 session",
+          "ns_per_stream": 6461.1875,
+          "epoch_count": 9,
+          "median_absolute_percent_error": 0.0166930357377745
+        }
+      ],
+      "hyle_over_peer": 0.7973394016192843
+    },
+    {
+      "file": "formal-1-peer-first-4.json",
+      "routes": [
+        {
+          "label": "nghttp2 direct HTTP/2 session",
+          "ns_per_stream": 185005.41666666674,
+          "epoch_count": 9,
+          "median_absolute_percent_error": 0.0163771564476825
+        },
+        {
+          "label": "HYLE HTTP/2 public session",
+          "ns_per_stream": 200311.59999999998,
+          "epoch_count": 9,
+          "median_absolute_percent_error": 0.0168508005078883
+        }
+      ],
+      "hyle_over_peer": 1.082733703742908
+    },
+    {
+      "file": "formal-1-peer-first-64.json",
+      "routes": [
+        {
+          "label": "nghttp2 direct HTTP/2 session",
+          "ns_per_stream": 6379.278125,
+          "epoch_count": 9,
+          "median_absolute_percent_error": 0.028515367717324
+        },
+        {
+          "label": "HYLE HTTP/2 public session",
+          "ns_per_stream": 4912.4114583333285,
+          "epoch_count": 9,
+          "median_absolute_percent_error": 0.0378345486735792
+        }
+      ],
+      "hyle_over_peer": 0.7700575773741373
+    },
+    {
+      "file": "formal-2-peer-first-4.json",
+      "routes": [
+        {
+          "label": "nghttp2 direct HTTP/2 session",
+          "ns_per_stream": 184989.83333333326,
+          "epoch_count": 9,
+          "median_absolute_percent_error": 0.0244819413135264
+        },
+        {
+          "label": "HYLE HTTP/2 public session",
+          "ns_per_stream": 198659.375,
+          "epoch_count": 9,
+          "median_absolute_percent_error": 0.0136798605067057
+        }
+      ],
+      "hyle_over_peer": 1.0738934752270175
+    },
+    {
+      "file": "formal-2-peer-first-64.json",
+      "routes": [
+        {
+          "label": "nghttp2 direct HTTP/2 session",
+          "ns_per_stream": 6655.9427083333285,
+          "epoch_count": 9,
+          "median_absolute_percent_error": 0.0256273366390336
+        },
+        {
+          "label": "HYLE HTTP/2 public session",
+          "ns_per_stream": 4741.7916666666715,
+          "epoch_count": 9,
+          "median_absolute_percent_error": 0.0140813694193022
+        }
+      ],
+      "hyle_over_peer": 0.7124147358915643
+    },
+    {
+      "file": "formal-3-current-first-4.json",
+      "routes": [
+        {
+          "label": "HYLE HTTP/2 public session",
+          "ns_per_stream": 197837.6,
+          "epoch_count": 9,
+          "median_absolute_percent_error": 0.0138843210271186
+        },
+        {
+          "label": "nghttp2 direct HTTP/2 session",
+          "ns_per_stream": 187367.25,
+          "epoch_count": 9,
+          "median_absolute_percent_error": 0.00785041869252705
+        }
+      ],
+      "hyle_over_peer": 1.0558814307196163
+    },
+    {
+      "file": "formal-3-current-first-64.json",
+      "routes": [
+        {
+          "label": "HYLE HTTP/2 public session",
+          "ns_per_stream": 4906.0390625,
+          "epoch_count": 9,
+          "median_absolute_percent_error": 0.0511585839102214
+        },
+        {
+          "label": "nghttp2 direct HTTP/2 session",
+          "ns_per_stream": 6634.34375,
+          "epoch_count": 9,
+          "median_absolute_percent_error": 0.0479693831562932
+        }
+      ],
+      "hyle_over_peer": 0.7394912364165634
+    },
+    {
+      "file": "postfix-0-baseline-4.json",
+      "routes": [
+        {
+          "label": "HYLE HTTP/2 public session",
+          "ns_per_stream": 178333.91666666674,
+          "epoch_count": 9,
+          "median_absolute_percent_error": 0.0143278493293582
+        },
+        {
+          "label": "nghttp2 direct HTTP/2 session",
+          "ns_per_stream": 172601.85,
+          "epoch_count": 9,
+          "median_absolute_percent_error": 0.0309245171450585
+        }
+      ],
+      "hyle_over_peer": 1.0332097637810183
+    },
+    {
+      "file": "postfix-0-baseline-64.json",
+      "routes": [
+        {
+          "label": "HYLE HTTP/2 public session",
+          "ns_per_stream": 4485.446875000001,
+          "epoch_count": 9,
+          "median_absolute_percent_error": 0.0367941462216619
+        },
+        {
+          "label": "nghttp2 direct HTTP/2 session",
+          "ns_per_stream": 6072.325000000001,
+          "epoch_count": 9,
+          "median_absolute_percent_error": 0.0320046439422948
+        }
+      ],
+      "hyle_over_peer": 0.7386704227787544
+    },
+    {
+      "file": "postfix-1-candidate-4.json",
+      "routes": [
+        {
+          "label": "HYLE HTTP/2 public session",
+          "ns_per_stream": 187469.95,
+          "epoch_count": 9,
+          "median_absolute_percent_error": 0.0449887088958278
+        },
+        {
+          "label": "nghttp2 direct HTTP/2 session",
+          "ns_per_stream": 176118.58333333326,
+          "epoch_count": 9,
+          "median_absolute_percent_error": 0.0477485351560079
+        }
+      ],
+      "hyle_over_peer": 1.0644529751024765
+    },
+    {
+      "file": "postfix-1-candidate-64.json",
+      "routes": [
+        {
+          "label": "HYLE HTTP/2 public session",
+          "ns_per_stream": 4427.425,
+          "epoch_count": 9,
+          "median_absolute_percent_error": 0.00954312791705756
+        },
+        {
+          "label": "nghttp2 direct HTTP/2 session",
+          "ns_per_stream": 5934.450520833328,
+          "epoch_count": 9,
+          "median_absolute_percent_error": 0.0144576629130252
+        }
+      ],
+      "hyle_over_peer": 0.7460547500492585
+    },
+    {
+      "file": "postfix-2-candidate-4.json",
+      "routes": [
+        {
+          "label": "nghttp2 direct HTTP/2 session",
+          "ns_per_stream": 170409.15,
+          "epoch_count": 9,
+          "median_absolute_percent_error": 0.0164463673886365
+        },
+        {
+          "label": "HYLE HTTP/2 public session",
+          "ns_per_stream": 191926.79166666674,
+          "epoch_count": 9,
+          "median_absolute_percent_error": 0.0105042141243311
+        }
+      ],
+      "hyle_over_peer": 1.126270459459875
+    },
+    {
+      "file": "postfix-2-candidate-64.json",
+      "routes": [
+        {
+          "label": "nghttp2 direct HTTP/2 session",
+          "ns_per_stream": 6043.5963541666715,
+          "epoch_count": 9,
+          "median_absolute_percent_error": 0.021656723633594
+        },
+        {
+          "label": "HYLE HTTP/2 public session",
+          "ns_per_stream": 4778.896874999999,
+          "epoch_count": 9,
+          "median_absolute_percent_error": 0.0486210015353062
+        }
+      ],
+      "hyle_over_peer": 0.7907372688292224
+    },
+    {
+      "file": "postfix-3-baseline-4.json",
+      "routes": [
+        {
+          "label": "nghttp2 direct HTTP/2 session",
+          "ns_per_stream": 185363.25,
+          "epoch_count": 9,
+          "median_absolute_percent_error": 0.0289846504339078
+        },
+        {
+          "label": "HYLE HTTP/2 public session",
+          "ns_per_stream": 192181.5,
+          "epoch_count": 9,
+          "median_absolute_percent_error": 0.0102121676051803
+        }
+      ],
+      "hyle_over_peer": 1.0367831811321824
+    },
+    {
+      "file": "postfix-3-baseline-64.json",
+      "routes": [
+        {
+          "label": "nghttp2 direct HTTP/2 session",
+          "ns_per_stream": 6501.721875,
+          "epoch_count": 9,
+          "median_absolute_percent_error": 0.0223913198377384
+        },
+        {
+          "label": "HYLE HTTP/2 public session",
+          "ns_per_stream": 5257.2057291666715,
+          "epoch_count": 9,
+          "median_absolute_percent_error": 0.0944085949152733
+        }
+      ],
+      "hyle_over_peer": 0.8085866836877994
+    },
+    {
+      "file": "aa-hyle-4.json",
+      "routes": [
+        {
+          "label": "HYLE HTTP/2 public session",
+          "ns_per_stream": 206603.66666666674,
+          "epoch_count": 9,
+          "median_absolute_percent_error": 0.0230991314788627
+        },
+        {
+          "label": "nghttp2 direct HTTP/2 session",
+          "ns_per_stream": 196198.70833333326,
+          "epoch_count": 9,
+          "median_absolute_percent_error": 0.0238384579663996
+        }
+      ],
+      "hyle_over_peer": 1.0530327565442272
+    },
+    {
+      "file": "aa-hyle-64.json",
+      "routes": [
+        {
+          "label": "HYLE HTTP/2 public session",
+          "ns_per_stream": 5007.721354166672,
+          "epoch_count": 9,
+          "median_absolute_percent_error": 0.0253671690653308
+        },
+        {
+          "label": "nghttp2 direct HTTP/2 session",
+          "ns_per_stream": 4731.9427083333285,
+          "epoch_count": 9,
+          "median_absolute_percent_error": 0.0167716325381035
+        }
+      ],
+      "hyle_over_peer": 1.0582802165689107
+    },
+    {
+      "file": "aa-peer-4.json",
+      "routes": [
+        {
+          "label": "HYLE HTTP/2 public session",
+          "ns_per_stream": 183128.25,
+          "epoch_count": 9,
+          "median_absolute_percent_error": 0.0349084226691442
+        },
+        {
+          "label": "nghttp2 direct HTTP/2 session",
+          "ns_per_stream": 178259.65,
+          "epoch_count": 9,
+          "median_absolute_percent_error": 0.0126261614515779
+        }
+      ],
+      "hyle_over_peer": 1.0273118453895764
+    },
+    {
+      "file": "aa-peer-64.json",
+      "routes": [
+        {
+          "label": "HYLE HTTP/2 public session",
+          "ns_per_stream": 6621.915625000001,
+          "epoch_count": 9,
+          "median_absolute_percent_error": 0.0677285436503796
+        },
+        {
+          "label": "nghttp2 direct HTTP/2 session",
+          "ns_per_stream": 6571.065625,
+          "epoch_count": 9,
+          "median_absolute_percent_error": 0.0174669907914149
+        }
+      ],
+      "hyle_over_peer": 1.007738470881578
+    }
+  ]
+}
