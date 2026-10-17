@@ -95,21 +95,11 @@ function Get-LatestSupportedVs2022Toolset {
 }
 
 function Get-HyleClosedProducts {
-    $python = Get-Command python -ErrorAction SilentlyContinue
-    if (-not $python) {
-        throw 'CLOSED-product qualification requires Python on PATH.'
+    # Compatibility name only: no lifecycle registry or governance projection.
+    if ($Component) {
+        return $Component
     }
-    $inventory = Join-Path $sourceDir 'scripts\correctness-inventory.py'
-    $products = & $python.Source $inventory --root $sourceDir --revision WORKTREE `
-        --check --print-closed-products
-    if ($LASTEXITCODE -ne 0) {
-        throw "Cannot project CLOSED HYLE products (exit $LASTEXITCODE)."
-    }
-    $result = ($products -join "`n").Trim()
-    if ($result -notmatch '^[a-z0-9_]+(,[a-z0-9_]+)*$') {
-        throw "Invalid CLOSED HYLE product projection: '$result'"
-    }
-    return $result
+    return 'all'
 }
 
 $installation = & $vswhere -latest -products * `
@@ -276,7 +266,9 @@ switch ($Action) {
             throw 'Action PackageSmoke requires -SmokeRoot <scratch-directory>.'
         }
         $smokeScript = Join-Path $sourceDir 'cmake\HyleCiPackageSmoke.cmake'
+        $smokeComponents = Get-HyleClosedProducts
         & cmake "-DHYLE_SOURCE_DIR=$sourceDir" "-DHYLE_SMOKE_ROOT=$SmokeRoot" `
+            "-DHYLE_SMOKE_COMPONENTS=$smokeComponents" `
             -DHYLE_SMOKE_GENERATOR=Ninja -P $smokeScript
     }
     'ProductShapeSmoke' {
@@ -284,7 +276,9 @@ switch ($Action) {
             throw 'Action ProductShapeSmoke requires -SmokeRoot <scratch-directory>.'
         }
         $smokeScript = Join-Path $sourceDir 'cmake\HyleCiProductShapeSmoke.cmake'
+        $smokeComponents = Get-HyleClosedProducts
         & cmake "-DHYLE_SOURCE_DIR=$sourceDir" "-DHYLE_SMOKE_ROOT=$SmokeRoot" `
+            "-DHYLE_SMOKE_COMPONENTS=$smokeComponents" `
             -DHYLE_SMOKE_GENERATOR=Ninja @ExtraArgs -P $smokeScript
     }
     'SourcePackageSmoke' {
@@ -305,6 +299,7 @@ switch ($Action) {
             & cmake "-DHYLE_SOURCE_DIR=$sourceDir" `
                 "-DHYLE_PACKAGE_BUILD=$packageBuild" `
                 "-DHYLE_SMOKE_ROOT=$SmokeRoot" `
+                "-DHYLE_SMOKE_COMPONENTS=$closedProducts" `
                 -DHYLE_SMOKE_GENERATOR=Ninja -P $smokeScript
         }
     }

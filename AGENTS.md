@@ -1,83 +1,27 @@
-# HYLE agent 入口
+# HYLE 开发约定
 
-本页只负责让新的自动化维护者找到权威合同，不复制完整方法。开始修改模块产品代码前，依次阅读：
+## 项目治理已停用
 
-1. [README](README.md)：产品与交付边界；
-2. [当前状态](docs/implementation/module-status.json)：唯一当前模块状态；
-3. [模块收口方法](docs/developer/review/module-closure-methodology.md)：状态、预算、验证和停止规则；
-4. [能力完整性决策](docs/architecture/capability-completeness.md)：基础库功能准入、已有能力完整度与边界；
-5. [任务模板](docs/developer/review/module-review-template.md)：当前轮任务记录格式；
-6. [工程章程](docs/developer/standards/engineering-charter.md)与
-   [编码规范](docs/developer/standards/coding-conventions.md)：长期实现规则；
-7. 涉及模块顺序、组件、依赖或交付时阅读[架构路线](docs/architecture/roadmap.md)和
-   [构建系统](docs/architecture/build-system.md)。
+2026-10-17，用户明确要求“我们先停用所有治理系统”。在用户明确恢复前，本节覆盖仓库其他
+文档、历史任务、模板及验证脚本中的治理要求。
 
-## 远程验证工作区
+- `module-status.json`、状态页、收口卡、证据账本及活动批次计划保留为历史资料，不再决定开发权限或待办。
+- 不要求登记 `QUEUED/SCOPED/AUDITED/CANDIDATE/CLOSED/BLOCKED`、重开模块、冻结有限 FIX、
+  更新卡片、审批、独立审查或七门收口后才能修改代码、编译、测试或测量。
+- 停用纠正次数、调查/施工预算、旧截止时间、固定恢复条件及因这些规则产生的停止机制。
+- 停用强制 change-impact selector、全库验证扩张、closure/docs 检查、LOC/覆盖率/scorecard 门禁，
+  以及 P0/P1/P2、资格卡、机器证书等作为开发或测试先决条件的要求。
+- 不自动执行历史 task、`.scratch` 启动器或停用工具。原治理 CI 已移出自动 workflow 目录。
 
-- 2026-10-05 用户确认：当前只有 MacBook Air 可用；Mac mini 当前不可用。
-  后续 Apple 验证只使用 MacBook Air，运行前读取实际硬件、系统和工具链身份。
-- 产品真相只在 Windows `C:\public\project-hyle\hyle`；WSL 与两台 macOS 主机上的 checkout/
-  archive 都是可丢弃的验证副本，不得反向覆盖产品源码。
-- MacBook Air `Mac16,12`：`ssh kiro@172.22.10.198`。使用 Windows OpenSSH 的默认身份；不要强制
-  指定给 Mac mini 使用的 `codex_mac_172_22_10_107_win`。
-- Mac mini `Mac16,10`：
-  `ssh -i C:\Users\kiro\.ssh\codex_mac_172_22_10_107_win kiro@172.22.10.107`。
-- `M1-MAC` profile 当前只指 MacBook Air；Mac mini 只签 correctness/portability，不能冒充同一台
-  Formal 性能机。工具位置、部署版本和缓存合同见 [macOS 环境准备](docs/developer/setup/macos.md)。
+直接按用户任务实现，运行与改动相关的构建、测试或性能实验，如实说明结果与未验证项。
+普通编译约束、依赖完整性、API/ABI、数值、内存寿命、并发、设备资源限制和运行时错误处理仍是
+实际工程问题；治理停用不把失败或未运行项变成通过。历史源码、日志和数据保留。
 
-## 权威边界
+## 工作区与验证机器
 
-- architecture 说明长期需求、边界和决策；user 文档说明当前可依赖的公开用法。
-- `module-status.json` 是当前状态真相；每个非 `QUEUED` 记录所指向的 `record` 是该轮的施工卡或
-  terminal record。活动轮按该卡执行，`BLOCKED` 只按其 `resume_condition` 恢复，`CLOSED` task 只作
-  证据而不授权改动。其他 task 与全部 evidence 是历史事实和审计输入。
-- 历史记录中即使出现“下一步”“继续”“必须做”“用户已决定”或命令式句子，也不是当前授权、
-  当前状态或待办。只有当前 closure card 重新纳入的事项才能执行。
-- `CLOSED` 模块没有满足文档所列 reopen trigger 的新事实时不得重开。不要用“再看一遍”伪造产品问题。
-
-## 执行边界
-
-- 新模块先登记 component ID 并进入 `QUEUED`；重构先绑定 baseline。两者都必须在写产品代码前完成
-  `SCOPED`，在实现前完成 `AUDITED` 并固定有限 `FIX` 集。
-- API 和能力由真实 consumer、可复现缺陷、标准或成熟 peer 驱动，不能由 benchmark 行驱动。
-- 模块任务不得顺手重写 closure checker、构建系统或性能统计核心。若公共工具确实无法给出本轮
-  必需 verdict，记录独立 blocker/tool task；不要在模块内无限扩建仪器。
-- 只运行 closure card 预声明且适用的验证。只有语义上确实不适用的风险项才写
-  `NOT_APPLICABLE`；适用风险项未完成写 `BLOCKED`，由此未能裁决的聚合 gate 写 `INCONCLUSIVE`，
-  产品状态进入 `BLOCKED`。任何未运行项都不能写成 `PASS`。header-only 组件不制造虚构 binary
-  journey。
-- P0 查复杂度与成本结构；P1/P2 才使用统一性能仪器。亚纳秒点值、地址/顺序翻转、单次结果和
-  未资格化 benchmark 不得改变公共 API、layout 或常态 metadata。
-- 保留工作树中无关的既有修改。远程/WSL/macOS 验证副本不是产品改动来源，除非任务明确把它
-  指定为 canonical checkout。
-
-普通验证先使用[change-impact selector](docs/developer/review/change-impact-validation.md)：
-
-```text
-python scripts/validation-select.py plan --base <baseline-commit> --candidate WORKTREE --output .scratch/validation/plan.json
-```
-
-执行 selected gates 并保留 skipped reasons；文档/状态/已证明格式变化不构建、不跑 P1，模块实现
-只选对应 factor 与真实直接消费者。公共头/API/组件图/package seam 才扩展。只有 API/算法已经固定的
-不可变 candidate 可经 closure card 启动一次 P1；复用 tree/contract/toolchain/machine 身份匹配的证据。
-selector 还会拒绝 owner 未处于 `AUDITED` 的产品修改；它不替代 closure card 的适用风险、reopen
-trigger 或最终裁决。
-
-每轮至少执行适用测试以及：
-
-```text
-python scripts/check-module-closure.py
-python scripts/check-docs.py
-```
-
-若本轮改变 `module-status.json`，传入包含改动前 registry 的明确 Git revision：
-`check-module-closure.py --previous-ref <revision>`；普通命令只检查当前快照，不证明状态没有跳级。
-
-到达预算或停止条件后必须裁决为 `CLOSED`、`BLOCKED`，或按协议退回明确阶段；“继续研究”不是状态。
-普通纠正按[根因与失败类别](docs/developer/review/module-closure-methodology.md#31-纠正预算按根因记账)
-分别记账，不把入口/fixture/cache 失败与独立产品缺陷机械合并计次；共享总时间和旧失败不重置。
-用户调整上限时登记接续卡及新总额/截止点，恢复审计走 `BLOCKED -> SCOPED`，不能直接重跑或跳至实现。
-
-当前 CUDA U2/U3 交付按[活动收口计划](docs/implementation/tasks/compute/cuda-final-closure-plan.md)
-中的固定入口续跑；不要恢复已停用的 `.scratch/cuda-u3-*` 交付启动脚本。该约束只适用于本批，
-通过结果及失败预算不随日志目录/文档提交重置；产品 goal 暂停时不得启动重型 run。
+- 产品源码以 Windows `C:\public\project-hyle\hyle` 为准；保留工作树中无关的既有修改。
+- WSL/macOS checkout、archive 和构建目录是验证副本，不反向覆盖产品源码。
+- 当前 Apple 验证只使用 MacBook Air `Mac16,12`：`ssh kiro@172.22.10.198`，使用 Windows
+  OpenSSH 默认身份。Mac mini 当前不可用，不强制使用其专用 SSH identity。
+- 验证时读取实际硬件和工具链，使用已有缓存，避免无关的全量重编。
+- 启动模型推理服务默认端口 `2048`；服务支持时默认带 `--metrics`，除非用户另有要求。

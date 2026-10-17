@@ -1,5 +1,7 @@
 # HYLE 维护脚本
 
+> **项目治理已停用（2026-10-17）**：按用户指令，直到用户明确恢复，本页中的状态、预算、closure card、强制审查、selector/checker 与旧 P0/P1 等资格门仅作历史参考，不再形成准入、阻塞或自动任务。当前指令见[根 AGENTS](../AGENTS.md)；普通编译、测试与诚实报告继续。
+
 本页是当前入口索引，不复制工具的完整 `--help`、历史模块命令或一次性调查。规则分别见
 [维护者文档](../docs/developer/README.md)、[构建架构](../docs/architecture/build-system.md)和
 [性能仪器](../docs/developer/performance/instrument-v1.md)。

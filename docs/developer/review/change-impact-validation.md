@@ -1,5 +1,7 @@
 # 按变更影响选择验证
 
+> **项目治理已停用（2026-10-17）**：按用户指令，直到用户明确恢复，本页中的状态、预算、closure card、强制审查、selector/checker 与旧 P0/P1 等资格门仅作历史参考，不再形成准入、阻塞或自动任务。当前指令见[根 AGENTS](../../../AGENTS.md)；普通编译、测试与诚实报告继续。
+
 `scripts/validation-select.py` 是普通本地迭代和 PR/main push 的验证入口。给定两份 Git 快照，
 它输出 `selected_gates`、`skipped_gates` 和逐项理由，再按需执行；不改变产品状态，也不授权
 重开 `CLOSED` 模块。适用风险及最终裁决仍以当前 closure card 和

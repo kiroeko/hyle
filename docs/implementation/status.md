@@ -1,5 +1,7 @@
 # 当前模块施工状态
 
+> **项目治理已停用（2026-10-17）**：按用户指令，直到用户明确恢复，本页中的状态、预算、closure card、强制审查、selector/checker 与旧 P0/P1 等资格门仅作历史参考，不再形成准入、阻塞或自动任务。当前指令见[根 AGENTS](../../AGENTS.md)；普通编译、测试与诚实报告继续。
+
 > 唯一机器真相是 [`module-status.json`](module-status.json)；下表由
 > `python scripts/check-module-closure.py` 校验并可用 `--write-status` 更新。architecture、user、历史 task、性能页标题或 summary
 > 中的状态词都不能覆盖 registry。

@@ -512,4 +512,6 @@ def main() -> int:
 
 
 if __name__ == "__main__":
-    raise SystemExit(main())
+    from governance_cli_suspended import report_suspended
+
+    raise SystemExit(report_suspended("correctness-coverage.py"))

@@ -1,5 +1,8 @@
 # HYLE
 
+项目治理已按用户要求于2026-10-17停用，直到用户明确恢复。旧模块状态、收口卡、预算、审批及
+强制验证流程保留为历史，不再阻挡开发。日常直接实现任务并运行相关测试，详见[开发约定](AGENTS.md)。
+
 HYLE（HYbrid LEvels）是面向 AI 推理、异构渲染/资源流送、低延迟服务与工程计算的 C++23 基础
 加速库。它希望让内存、数据结构、
 SIMD、调度、I/O 和异构计算在同一套依赖与生命周期合同下组合，而不是让每个子系统各自维护
@@ -42,11 +45,9 @@ HYLE 面向 C++ 用户提供三种交付形式：
 - [developer](docs/developer/README.md)：维护规则、review、构建测试、性能仪器和排障；
 - [user](docs/user/README.md)：C++ 用户的选型、用法、生命周期与陷阱。
 
-自动化维护者先读仓库级 [agent 入口](AGENTS.md)。模块当前状态只以
-[implementation/status](docs/implementation/status.md) 及其机器源为准；不要从本页推断当前施工模块。
-模块审查方法见
-[module closure methodology](docs/developer/review/module-closure-methodology.md)，真实消费者边界见
-[inference engine north star](docs/architecture/inference-engine-north-star.md)。
+自动化维护者先读仓库级 [开发约定](AGENTS.md)。
+[implementation/status](docs/implementation/status.md)及其机器源保留停用前的历史状态，开发不受这些状态约束。
+真实消费者边界见[inference engine north star](docs/architecture/inference-engine-north-star.md)。
 
 ## 仓库结构
 

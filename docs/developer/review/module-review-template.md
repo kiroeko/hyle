@@ -1,5 +1,7 @@
 # HYLE 模块任务模板
 
+> **项目治理已停用（2026-10-17）**：按用户指令，直到用户明确恢复，本页中的状态、预算、closure card、强制审查、selector/checker 与旧 P0/P1 等资格门仅作历史参考，不再形成准入、阻塞或自动任务。当前指令见[根 AGENTS](../../../AGENTS.md)；普通编译、测试与诚实报告继续。
+
 复制到 `docs/implementation/tasks/<area>/<round>.md`，删掉不适用的提示和空表。小组件应有小记录；
 完整事实、七问、适用验证和裁决不能省略。状态规则见[收口协议](module-closure-methodology.md)。
 

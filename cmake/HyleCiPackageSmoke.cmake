@@ -153,10 +153,11 @@ foreach(_linkage IN ITEMS shared static)
     if(_focused_probe_product STREQUAL "util_core")
       set(_focused_probe_product "util")
     endif()
-    if(NOT _focused_probe_product IN_LIST _hyle_closed_product_list)
+    if(NOT "all" IN_LIST _hyle_closed_product_list AND
+       NOT _focused_probe_product IN_LIST _hyle_closed_product_list)
       message(STATUS
         "skip focused probe '${_focused_probe_name}': product "
-        "'${_focused_probe_product}' is not in this CLOSED SDK")
+        "'${_focused_probe_product}' is not selected for this SDK")
       continue()
     endif()
     string(REPLACE "\\" "-" _focused_probe_id "${_focused_probe_name}")

@@ -1,5 +1,7 @@
 # HYLE 工程章程
 
+> **项目治理已停用（2026-10-17）**：按用户指令，直到用户明确恢复，本页中的状态、预算、closure card、强制审查、selector/checker 与旧 P0/P1 等资格门仅作历史参考，不再形成准入、阻塞或自动任务。当前指令见[根 AGENTS](../../../AGENTS.md)；普通编译、测试与诚实报告继续。
+
 > 本章程规定维护者不能靠一次任务随意改变的工程原则。产品方向见
 > [architecture](../../architecture/README.md)，具体代码规则见
 > [coding conventions](coding-conventions.md)，模块验收见

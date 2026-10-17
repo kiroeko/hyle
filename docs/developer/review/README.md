@@ -1,5 +1,7 @@
 # 模块 review
 
+> **项目治理已停用（2026-10-17）**：按用户指令，直到用户明确恢复，本页中的状态、预算、closure card、强制审查、selector/checker 与旧 P0/P1 等资格门仅作历史参考，不再形成准入、阻塞或自动任务。当前指令见[根 AGENTS](../../../AGENTS.md)；普通编译、测试与诚实报告继续。
+
 - [模块重构与收口标准](module-closure-methodology.md)
 - [审查记录模板](module-review-template.md)
 - [P0 候选验证 profile](correctness-profile-v1.md)

@@ -533,4 +533,6 @@ def main(argv: list[str] | None = None) -> int:
 
 
 if __name__ == "__main__":
-    raise SystemExit(main())
+    from governance_cli_suspended import report_suspended
+
+    raise SystemExit(report_suspended("check-module-closure.py"))
