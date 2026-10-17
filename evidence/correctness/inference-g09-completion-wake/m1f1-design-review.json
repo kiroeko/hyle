@@ -1,0 +1,240 @@
+{
+  "schema": 1,
+  "kind": "INDEPENDENT_M1F1_FINITE_PRODUCT_DESIGN_REVIEW",
+  "reviewer": "/root/budget_policy_review",
+  "reviewed_utc": "2026-10-17T10:03:26.720721+00:00",
+  "verdict": "SOURCE_DESIGN_PASS",
+  "unresolved_musts": [],
+  "active_card": "docs\\implementation\\tasks\\graph\\inference-g09-correction-budget-continuation.md",
+  "reviewed_card_sha256": "6457f9fcdcfd85e287d3c8721ee33871863f10d0833bc5cb7910d4a156da52eb",
+  "reviewed_M1F1_section_sha256": "c41a93df074af47843201bc05de6d575760e97559c140c86f708c2f3b0406d75",
+  "scope": "Finite M1F1 host/header ordered patches plus corresponding vendored-tree lock hash, no implementation reviewed or product gate signed. Root must commit the freeze before product writing.",
+  "source_references": [
+    "Canonical src/compute_route_apple/apple_batch.cc cache_domain and prepare_program/prepare_ragged_batch admission",
+    "Locked MLX tar + canonical patches: steel/attn/loader.h, mma.h, kernels/steel_attention.h and scaled_dot_product_attention.cpp",
+    "Canonical src/compute_route_apple/apple_context.cc native_exception, prepare_mlx, execute_with and finish"
+  ],
+  "public_domain": {
+    "query_output_types": [
+      "F16",
+      "BF16"
+    ],
+    "cache_storage": [
+      "same-typed plain",
+      "Q8_0"
+    ],
+    "DK_DV_pairs": [
+      [
+        64,
+        64
+      ],
+      [
+        64,
+        128
+      ],
+      [
+        128,
+        128
+      ],
+      [
+        256,
+        256
+      ]
+    ],
+    "geometry": {
+      "BQ": 8,
+      "BK": 8,
+      "WM": 1,
+      "WN": 1,
+      "threads": 32,
+      "compact_padQ_padK_padV": 0
+    },
+    "noncompact_layout": "Retain original16-byte padding exactly."
+  },
+  "all_public_compact_loader_arithmetic": [
+    {
+      "DK": 64,
+      "DV": 64,
+      "loaders": [
+        {
+          "loader": "Q",
+          "BCOLS": 64,
+          "n_reads": 16,
+          "TCOLS": 4,
+          "TROWS": 8,
+          "max_destination_index": 511,
+          "logical_elements": 512
+        },
+        {
+          "loader": "K",
+          "BCOLS": 64,
+          "n_reads": 16,
+          "TCOLS": 4,
+          "TROWS": 8,
+          "max_destination_index": 511,
+          "logical_elements": 512
+        },
+        {
+          "loader": "V",
+          "BCOLS": 64,
+          "n_reads": 16,
+          "TCOLS": 4,
+          "TROWS": 8,
+          "max_destination_index": 511,
+          "logical_elements": 512
+        }
+      ],
+      "KV_storage_elements": 512,
+      "static_bytes_plain_2byte": 2048,
+      "static_bytes_Q8_original_F16": 3072,
+      "static_bytes_Q8_original_BF16": 4096
+    },
+    {
+      "DK": 64,
+      "DV": 128,
+      "loaders": [
+        {
+          "loader": "Q",
+          "BCOLS": 64,
+          "n_reads": 16,
+          "TCOLS": 4,
+          "TROWS": 8,
+          "max_destination_index": 511,
+          "logical_elements": 512
+        },
+        {
+          "loader": "K",
+          "BCOLS": 64,
+          "n_reads": 16,
+          "TCOLS": 4,
+          "TROWS": 8,
+          "max_destination_index": 511,
+          "logical_elements": 512
+        },
+        {
+          "loader": "V",
+          "BCOLS": 128,
+          "n_reads": 32,
+          "TCOLS": 4,
+          "TROWS": 8,
+          "max_destination_index": 1023,
+          "logical_elements": 1024
+        }
+      ],
+      "KV_storage_elements": 1024,
+      "static_bytes_plain_2byte": 3072,
+      "static_bytes_Q8_original_F16": 5120,
+      "static_bytes_Q8_original_BF16": 6144
+    },
+    {
+      "DK": 128,
+      "DV": 128,
+      "loaders": [
+        {
+          "loader": "Q",
+          "BCOLS": 128,
+          "n_reads": 32,
+          "TCOLS": 4,
+          "TROWS": 8,
+          "max_destination_index": 1023,
+          "logical_elements": 1024
+        },
+        {
+          "loader": "K",
+          "BCOLS": 128,
+          "n_reads": 32,
+          "TCOLS": 4,
+          "TROWS": 8,
+          "max_destination_index": 1023,
+          "logical_elements": 1024
+        },
+        {
+          "loader": "V",
+          "BCOLS": 128,
+          "n_reads": 32,
+          "TCOLS": 4,
+          "TROWS": 8,
+          "max_destination_index": 1023,
+          "logical_elements": 1024
+        }
+      ],
+      "KV_storage_elements": 1024,
+      "static_bytes_plain_2byte": 4096,
+      "static_bytes_Q8_original_F16": 6144,
+      "static_bytes_Q8_original_BF16": 8192
+    },
+    {
+      "DK": 256,
+      "DV": 256,
+      "loaders": [
+        {
+          "loader": "Q",
+          "BCOLS": 256,
+          "n_reads": 64,
+          "TCOLS": 4,
+          "TROWS": 8,
+          "max_destination_index": 2047,
+          "logical_elements": 2048
+        },
+        {
+          "loader": "K",
+          "BCOLS": 256,
+          "n_reads": 64,
+          "TCOLS": 4,
+          "TROWS": 8,
+          "max_destination_index": 2047,
+          "logical_elements": 2048
+        },
+        {
+          "loader": "V",
+          "BCOLS": 256,
+          "n_reads": 64,
+          "TCOLS": 4,
+          "TROWS": 8,
+          "max_destination_index": 2047,
+          "logical_elements": 2048
+        }
+      ],
+      "KV_storage_elements": 2048,
+      "static_bytes_plain_2byte": 8192,
+      "static_bytes_Q8_original_F16": 12288,
+      "static_bytes_Q8_original_BF16": 16384
+    }
+  ],
+  "legality_and_lifetime_findings": [
+    "TQ=BQ/(WM*WN*8)=1 and TK=BK/8=1 meet the existing fragment static_asserts. All public depths are multiples of8.",
+    "Actual BlockLoaderT writes scalar logical elements through kDstStrRow/kDstStrCol, including paged and Q8 loaders. It has no ReadVector16-byte row-padding prerequisite.",
+    "For BCOLS64/128/256,32threads cover8rows with16/32/64 reads each, TCOLS4 and TROWS8. Destination elements are unique and bounded exactly as the recorded max indices.",
+    "Each Q8 n_reads value meets the existing complete32-element block fast-loader divisibility predicate. Invalid tail rows follow existing zero-fill branches without indexing a nonexistent logical page.",
+    "MMATile.load invokes BaseMMAFrag.load using explicit strides and scalar element casts. Both writers and readers derive all layout offsets from the same pad values; changing all three pads together keeps the logical matrix mapping.",
+    "Q has independent storage. K and V retain intentional shared max-sized storage and all barriers before consumption, overwrite and next-iteration writes. No new global/result alias or ownership object.",
+    "NQ/NK/rem, align_Q/K, specialization cache identity and grid/group must be recomputed for the final selected tile. Logical GQA, causal/window/page indices and output-tail checks are unchanged.",
+    "Small nonempty K is supported by the existing safe/paged/Q8 zero-fill and score-mask branches. Full noncausal Q>K remains allowed. Existing public admission rejects nonempty Q withK0 and causal Q>K; empty Q is skipped before this full-kernel path. No new restriction on small M/K is introduced.",
+    "Preserve Q8 T=float, original F16 QueryT=half, original BF16 QueryT=float and F32 accumulation. A smaller BK can change floating-point grouping, so original numerical tolerances/oracles remain necessary.",
+    "Resource check must precede set_compute_pipeline_state/current-kernel bindings/dispatch. Original and the sole compact candidate both require actual pipeline static-memory checks; existing thread-limit check moves before binding without adding a duplicate read.",
+    "Original unchanged shader ABI requires dynamic_threadgroup_bytes=0; original encoder dynamic history remainsNOT_OBSERVED. No CommandEncoder binding reset or generic state change is justified.",
+    "If both returned pipelines do not fit, original exception-to-Status, accepted-prefix stream drain, first-error preservation, native permission retirement and notification lifetime must remain. This is not a successful support verdict for a valid shape. Arbitrary JIT/OOM exceptions must not be swallowed as resource evidence."
+  ],
+  "normal_cost_review": "Card honestly charges two added Objective-C resource property reads and one branch per Hyle Steel full dispatch. Existing thread-limit read is moved, not added. Original fitting tile remains normal. Backup cache/JIT construction and per-dispatch base/hash string allocation/lookup costs are explicit; no claim of warm zero-allocation or pure-cold checking. No new allocator object/tensor copy/thread.",
+  "finite_validation_review": {
+    "existing_7_tests_verified_present_exactly_once": [
+      "AppleCache.Q8PagedRaggedWindowsAndIndependentValueDepth",
+      "AppleCache.FullNoncausalAllowsMoreQueriesThanKeys",
+      "AppleCache.PlainWindowAndIndependentValueDepth",
+      "AppleCache.OriginalPlainCoupledUnboundedPaths",
+      "AppleCache.MainDepthsAndLongPrefill",
+      "AppleCache.SmallSoftmaxWeightsKeepLargeValueContributions",
+      "AppleCache.SubnormalQueryKeepsLargeKeyScores"
+    ],
+    "ordinary_and_API_GPU_required": true,
+    "original_public_consumers": 8,
+    "original_native_completion_tests": 4,
+    "encoded_and_pending_workload": "Retained unchanged; Q1/Q17/64step growth retained.",
+    "additional_aggregate_gates": "Original host sanitizer, static/shared relocation, selector and qualified P1 requirements remain applicable and uncompleted gates cannot be waived.",
+    "entry_boundaries": "New complete archive/sync/configure/actual-plan review precede build/test/device/SDK; original stopped verify-v4 is not resumed. No native running authorized by this review itself.",
+    "stop": "Any new shader creation, actual capacity, numerical or lifetime failure stops the affected branch. No unreviewed third tile or environment change; inherited20:08 deadline, product batch3/6 and M1 batch1/2, original P1 one-entry rules."
+  },
+  "runtime_limits": "All size arithmetic and loader reasoning are source-only. No new compact pipeline has been compiled or queried by reviewer; the old observed validation2x ratio does not guarantee any alternative fits, including nominal16384 BF16/Q8.",
+  "native_or_SSH_execution_by_reviewer": false,
+  "product_files_modified_by_reviewer": false
+}

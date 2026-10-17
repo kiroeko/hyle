@@ -1,9 +1,9 @@
 # G09 纠正预算接续与 Metal 失败归属审计
 
-状态：**AUDITED（仅 M1Q1 资源诊断），2026-10-17**。用户明确要求“改一下机制，要不改一下上限”，并追问 Metal
+状态：**AUDITED（M1F1 有限产品纠正），2026-10-17**。用户明确要求“改一下机制，要不改一下上限”，并追问 Metal
 断言与 32,768 字节的含义。本卡按[按根因记账规则](../../../developer/review/module-closure-methodology.md#31-纠正预算按根因记账)
 接续审计。原 SCOPED checkpoint 为 `9b09b57af`；此前只读阶段事实保留。
-当前仅解锁末节冻结的 M1Q1 查询入口，不授权产品实现、原 fixture 重放或性能运行。
+M1Q1诊断已完成。当前仅解锁末节冻结的M1F1产品实现与源码审核；新普通入口仍须独审后另行GO，性能尚未解锁。
 
 ## 身份、范围与现状
 
@@ -169,3 +169,73 @@ root另在09:55:52 UTC确认已结束，均在600秒内。原 child 精确退出
 明确的跨进程时间合同。总截止20:08 +0800保持。
 
 资源准入与合法备用分块进入下一有限设计审计；在该 FIX 独审并冻结前，仍不授权产品修改。
+
+## AUDITED：M1F1 有限设计与产品实现授权
+
+[有限设计独审](../../../../evidence/correctness/inference-g09-completion-wake/m1f1-design-review.json)
+`0a11b1e6...2f215` 为 SOURCE_DESIGN_PASS，无未决MUST；
+[源码反证](../../../../evidence/correctness/inference-g09-completion-wake/m1f1-source-audit.json)
+`f5bacb58...09af` 与[逐规则身份/算术](../../../../evidence/correctness/inference-g09-completion-wake/m1f1-source-and-arithmetic.json)
+绑定同一原patch和tar。本节据此冻结，仅授权下述两产品文件实现与随后源码审核，未签实际GPU编译、容量或数学PASS。
+
+M1Q1 已区分普通编译与验证态资源需求。M1F1 归为**产品纠正**，因为它改变实际资源准入、
+备用内核和正常提交的检查成本；进入验证时计为累计第3/6次、M1第1/2次。没有新增公共API，
+不升级MLX，不改Graph/Completion/allocator/CommandEncoder，不改变D256、外部dtype或验证层。
+
+### 唯一 FIX
+
+1. 只在原 `sdpa_full_self_attention_metal` 的 Hyle cache attention（`page` info 存在，包含paged/ragged）
+   Steel 路径补准入；NAX/vector/two-pass及标准MLX非Hyle路径不扩改。原默认tile先正常创建，
+   在本kernel的pipeline绑定、输入输出绑定和dispatch前，检查实际
+   `staticThreadgroupMemoryLength <= device.maxThreadgroupMemoryLength`。
+   此kernel签名没有动态threadgroup参数，其ABI需求为0；原encoder历史仍不能回填成0，
+   也不声称上游尚无copy/其他accepted prefix。
+2. 默认pipeline若不适合，仅尝试一个原模板支持的最小tile：BQ8/BK8/WM1/WN1。
+   按最终tile整体重算base/hash、align常量、NQ/NK/rem、grid/group；保留原线程数合法性检查并在绑定前完成。
+   备用也必须查实际static字节；仍不适合则经原异常→Status/accepted-prefix drain/lease退休路径失败，
+   不assert、不提交超限kernel、不发布假结果，不静默转CPU或新增dense gather。
+3. 该最小geometry唯一确定compact shared布局：padQ/padK/padV=0；其他geometry保持原16字节padding。
+   `BlockLoaderT`及实际MMA load使用标量stride，原padding不属于数学前提；Q独立、K/V复用及原barrier位置不变。
+   仅有geometry→layout一种映射，现base已包含BQ/BK/WM/WN/BD/BV/dtype/query-half，不建立同名两种layout。
+   不根据环境变量或“除二”经验选择实现。
+
+完整类型桥必须保留：Q8将query升F32，原F16仅令QueryT=half，原BF16令QueryT=float；
+不能将KV/累加或BF16 query偷改为half。D256最小compact的声明账分别为plain8192、Q8/F16为12288、
+Q8/BF16为16384字节；这只是源码算术，**不保证编译后特别是验证态实际容量**。
+已有 `AppleCache.MainDepthsAndLongPrefill` 同时调用F16/BF16的Q8 D256，不能把正常形状拒绝后签能力PASS。
+公开cache域仍为DK64/128/256，DV与DK相同或DK64/DV128；同一最小geometry对这些域的TQ/TK约束保持。
+
+允许产品文件仅 `third_party/mlx_cast/patches.json` 中host/header两组有序编辑及
+`cmake/HyleDependencyLock.json` 的对应vendored tree hash；旧锁revision、license不变。
+不得反向复制远端源码，不改公共构建/closure/性能工具，不顺手扩建其他Metal内核准入。
+
+### 成本与验证
+
+普通资源适合时仍使用原默认geometry、shader数学和缓存；每次Hyle Steel full dispatch新增两次
+Objective-C资源属性读取/一次容量分支，不能写成纯cold或零成本。超限时额外一次备用lookup/JIT，
+每种实际dtype/常量的原MLX缓存分别保留两种pipeline；不新建allocator对象，不增加tensor复制或后台线程。
+这不代表无allocation：备用每次仍会重组base/hash并做缓存查询，
+其 `std::string` 分配和查找成本须计入，不能因pipeline已经缓存就写成备用warm零分配。
+compact去padding可能增加bank冲突；当前普通默认不触发该备用，仍须按原G09消费者合同验证性能。
+
+本FIX先做严格源码重建/patch只命中一次/锁hash审核、selector及独立源码审查，再冻结单候选。
+普通入口先完整archive→sync→configure→实际plan停审，不直接复用旧verify-v4；入口和plan另行独审后
+才GO build/test/device/SDK。原8项public、原4项native completion和encoded cases全部保留。
+另以原 `native_cache_test.cc` 的单独target，在source普通与API＋GPU验证各跑以下7项，核精确名称、
+计数、无skip与数值oracle：
+
+```text
+AppleCache.Q8PagedRaggedWindowsAndIndependentValueDepth
+AppleCache.FullNoncausalAllowsMoreQueriesThanKeys
+AppleCache.PlainWindowAndIndependentValueDepth
+AppleCache.OriginalPlainCoupledUnboundedPaths
+AppleCache.MainDepthsAndLongPrefill
+AppleCache.SmallSoftmaxWeightsKeepLargeValueContributions
+AppleCache.SubnormalQueryKeepsLargeKeyScores
+```
+
+这些现有测试覆盖plain/Q8、F16/BF16、D64/128/256、独立DV、paged/ragged、GQA、causal/window、
+跨页与tail、长prefill、subnormal及大value贡献；原pending consumer保持Q1/Q17和64步KV增长。
+原CPU/Apple组合宿主风险、static/shared迁址消费者及未资格P1仍是原聚合验收的必需项；
+它们尚未解锁或未运行时继续如实记录。任一新shader编译/容量/数学/寿命失败停止受影响分支，
+不自动改tile再试；总截止20:08、原费用/产品预算和P1一次入口规则保持。

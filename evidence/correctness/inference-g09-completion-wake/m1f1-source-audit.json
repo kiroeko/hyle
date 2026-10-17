@@ -1,0 +1,717 @@
+{
+  "schema": 1,
+  "kind": "INDEPENDENT_M1F1_COMPACT_TILE_FINITE_DESIGN_REVIEW",
+  "reviewer": "/root/g09_resume_audit",
+  "verdict": "ACCEPT_SOURCE_DESIGN_PENDING_ROOT_FREEZE_AND_GO",
+  "no_product_edits": true,
+  "no_compiler_or_native_runs": true,
+  "no_SSH_for_this_design_audit": true,
+  "product_implementation_authorized_by_this_report": false,
+  "source_and_arithmetic": {
+    "path": ".scratch\\g09-completion-wake-correction\\m1-tile-analysis\\source-and-arithmetic.json",
+    "sha256": "c494ef8c042612aadcf33f27c439e0d3efc89fe6d41ff2def33d4eded1969db8"
+  },
+  "source_reconstruction_sha": [
+    {
+      "path": "mlx/backend/metal/jit_kernels.cpp",
+      "scratch_source": "C:\\public\\project-hyle\\hyle\\.scratch\\g09-completion-wake-correction\\m1-tile-analysis\\source\\mlx\\backend\\metal\\jit_kernels.cpp",
+      "before_sha256": "8201a166cc426cd7b1f6983e5e6f282d3ca7a1992cc4c3a80fa42cf8dd237c46",
+      "after_sha256": "63ca81b97f2c9afad509ebd8ad7687369b0564efada95b067b4410e575e2ec68",
+      "ordered_edits": 6
+    },
+    {
+      "path": "mlx/backend/metal/scaled_dot_product_attention.cpp",
+      "scratch_source": "C:\\public\\project-hyle\\hyle\\.scratch\\g09-completion-wake-correction\\m1-tile-analysis\\source\\mlx\\backend\\metal\\scaled_dot_product_attention.cpp",
+      "before_sha256": "215ebac6495706cf01a2635c4dcec29802e130165ed8704f212d789679d2e673",
+      "after_sha256": "08d9db2f0c0594b0ec0d480af10a9d8bb604eca49de637443895820490e6a4fe",
+      "ordered_edits": 67
+    },
+    {
+      "path": "mlx/backend/metal/kernels/steel/attn/kernels/steel_attention.h",
+      "scratch_source": "C:\\public\\project-hyle\\hyle\\.scratch\\g09-completion-wake-correction\\m1-tile-analysis\\source\\mlx\\backend\\metal\\kernels\\steel\\attn\\kernels\\steel_attention.h",
+      "before_sha256": "3e9334c9ec3298fc7fb21a9468816d1b7c6e3c11da8494df7ae4fc7a4c04f570",
+      "after_sha256": "fc2a9a08032a7be4f59ec39e6e1f0d5ff624a47cadb90a71f23a5ba5329de5d8",
+      "ordered_edits": 30
+    },
+    {
+      "path": "mlx/backend/metal/kernels/steel/attn/loader.h",
+      "scratch_source": "C:\\public\\project-hyle\\hyle\\.scratch\\g09-completion-wake-correction\\m1-tile-analysis\\source\\mlx\\backend\\metal\\kernels\\steel\\attn\\loader.h",
+      "before_sha256": "e435f413d71d44ca4ad72a59d192046be77388f63936179c58882286f4cc5dab",
+      "after_sha256": "a1ea2458b08bd2f259024eb5a06e56036fad1ddb703d14847ce7b8209d4c038e",
+      "ordered_edits": 5
+    },
+    {
+      "path": "mlx/backend/metal/kernels/steel/attn/attn.h",
+      "scratch_source": "C:\\public\\project-hyle\\hyle\\.scratch\\g09-completion-wake-correction\\m1-tile-analysis\\source\\mlx\\backend\\metal\\kernels\\steel\\attn\\attn.h",
+      "before_sha256": "67722214ff487ec95df675e2f135ccd7fbe639b6eb6ab98b14bcefa58d66ba95",
+      "after_sha256": "67722214ff487ec95df675e2f135ccd7fbe639b6eb6ab98b14bcefa58d66ba95",
+      "ordered_edits": 0
+    },
+    {
+      "path": "mlx/backend/metal/kernels/steel/attn/mma.h",
+      "scratch_source": "C:\\public\\project-hyle\\hyle\\.scratch\\g09-completion-wake-correction\\m1-tile-analysis\\source\\mlx\\backend\\metal\\kernels\\steel\\attn\\mma.h",
+      "before_sha256": "6f22866c76a1f15cf27681d3a8700f3419412a954d00e0810c87f7dac82ddeab",
+      "after_sha256": "6f22866c76a1f15cf27681d3a8700f3419412a954d00e0810c87f7dac82ddeab",
+      "ordered_edits": 0
+    },
+    {
+      "path": "mlx/backend/metal/kernels/steel/gemm/mma.h",
+      "scratch_source": "C:\\public\\project-hyle\\hyle\\.scratch\\g09-completion-wake-correction\\m1-tile-analysis\\source\\mlx\\backend\\metal\\kernels\\steel\\gemm\\mma.h",
+      "before_sha256": "9b37709de40c3acaa5411875e52c8d26e6de093261741f671fbdab9c39a852b7",
+      "after_sha256": "9b37709de40c3acaa5411875e52c8d26e6de093261741f671fbdab9c39a852b7",
+      "ordered_edits": 0
+    },
+    {
+      "path": "mlx/backend/metal/kernels/steel/utils.h",
+      "scratch_source": "C:\\public\\project-hyle\\hyle\\.scratch\\g09-completion-wake-correction\\m1-tile-analysis\\source\\mlx\\backend\\metal\\kernels\\steel\\utils.h",
+      "before_sha256": "d4c36298145d1c5617a94f07dbfabf6ac932afe2fd7ea0c9291f1fb385c5404a",
+      "after_sha256": "d4c36298145d1c5617a94f07dbfabf6ac932afe2fd7ea0c9291f1fb385c5404a",
+      "ordered_edits": 0
+    },
+    {
+      "path": "mlx/fast.h",
+      "scratch_source": "C:\\public\\project-hyle\\hyle\\.scratch\\g09-completion-wake-correction\\m1-tile-analysis\\source\\mlx\\fast.h",
+      "before_sha256": "f3ed6a3a4e47e1061beda2594cb4dc916cf364d5021bf5e16b80ce60da8ff380",
+      "after_sha256": "df2d37f780abd40411228084aa2e38f13bd6fc92c3b659688c401f0ba09d281f",
+      "ordered_edits": 2
+    },
+    {
+      "path": "mlx/fast_primitives.h",
+      "scratch_source": "C:\\public\\project-hyle\\hyle\\.scratch\\g09-completion-wake-correction\\m1-tile-analysis\\source\\mlx\\fast_primitives.h",
+      "before_sha256": "297e29e71f5eec513045662b7d0180769e6f2cd338039a03237f22e3b59001f7",
+      "after_sha256": "c7a392a2b331add37103fbc7f50c31c09123facae5478aa921f1452b95c32c59",
+      "ordered_edits": 11
+    },
+    {
+      "path": "mlx/fast.cpp",
+      "scratch_source": "C:\\public\\project-hyle\\hyle\\.scratch\\g09-completion-wake-correction\\m1-tile-analysis\\source\\mlx\\fast.cpp",
+      "before_sha256": "29b31f96bdb02afdadbde3f2bcf42cf458fc69385a908bbde9fc3a14d23de077",
+      "after_sha256": "3c871a99874c24bdf5d78784962430f0a5c6be7abf1ea2fdc0d3ff1fb63fa2b7",
+      "ordered_edits": 5
+    }
+  ],
+  "card_snapshot": {
+    "path": "docs\\implementation\\tasks\\graph\\inference-g09-correction-budget-continuation.md",
+    "sha256": "6457f9fcdcfd85e287d3c8721ee33871863f10d0833bc5cb7910d4a156da52eb",
+    "M1F1_section_sha256": "57fdbfce2551eb418d70a31824dab49d0eb8d554cf6632f6c6a306f4ea6b6f58"
+  },
+  "scope": {
+    "host": "sdpa_full_self_attention_metal, only Hyle page-info-present Steel path (paged or ragged)",
+    "KEEP": [
+      "default legal geometry and dtype",
+      "standard MLX non-Hyle path",
+      "NAX",
+      "vector",
+      "two-pass",
+      "Graph/Completion/lease/allocator/CommandEncoder",
+      "original validation layers and public shapes"
+    ],
+    "allowed_product_files": [
+      "third_party/mlx_cast/patches.json",
+      "cmake/HyleDependencyLock.json"
+    ],
+    "lock_change": "mlx_cast_patches.vendored.tree_sha256 only; retain pinned upstream revision/archive/license",
+    "old_lock_sha256": "b972666affe72bbb1a41626dc8ab8ba218811ee5d8bda055c7d4a4ee38dd5df3",
+    "old_patch_tree_sha256": "08f74cff0c0143c522786f517eacf5235d653cef5ca2c13fd6b8d0c6053e34a2"
+  },
+  "known_pipeline_fact": {
+    "review_path": ".scratch\\g09-completion-wake-correction\\m1-pipeline-query-result-independent-review.json",
+    "review_sha256": "9a07b6d9ecafa92aced77c34200f8f4a78fd1dcada4166d3200992bf74c3cf28",
+    "rows": [
+      {
+        "variant": "none",
+        "static_threadgroup_bytes": 29184,
+        "shader_validation_numeric": 2,
+        "shader_validation_decoded": "Disabled",
+        "api_activation_log": false,
+        "gpu_activation_log": false,
+        "log_sha256": "67c093cb5959896acaafdba900e0ed66aeb3cc480b3c33181c3eca43d1865818"
+      },
+      {
+        "variant": "api",
+        "static_threadgroup_bytes": 29184,
+        "shader_validation_numeric": 2,
+        "shader_validation_decoded": "Disabled",
+        "api_activation_log": true,
+        "gpu_activation_log": false,
+        "log_sha256": "394814fc38aba8cdeb774ab2dbc83f54528f0f6db6e1cb68118f5b4d88c1e96c"
+      },
+      {
+        "variant": "api_gpu",
+        "static_threadgroup_bytes": 58368,
+        "shader_validation_numeric": 1,
+        "shader_validation_decoded": "Enabled",
+        "api_activation_log": true,
+        "gpu_activation_log": true,
+        "log_sha256": "23d32ef5147754ca57f9b72556369dcfc0325b645f7b674e92811e417b5b57cd"
+      }
+    ],
+    "boundary": "Original default F16 32/16/4 pipeline only. No compact pipeline queried by this audit; no universal multiplier inferred."
+  },
+  "template_and_loader": {
+    "minimum_geometry": {
+      "BQ": 8,
+      "BK": 8,
+      "WM": 1,
+      "WN": 1,
+      "threads": 32,
+      "TQ": 1,
+      "TK": 1
+    },
+    "source_constraints": "BQ == WM*WN*8 due divisibility and TQ==1; all admitted DK/DV multiples of8",
+    "all_public_domains": [
+      [
+        64,
+        64
+      ],
+      [
+        64,
+        128
+      ],
+      [
+        128,
+        128
+      ],
+      [
+        256,
+        256
+      ]
+    ],
+    "Q_K_loader_n_reads": "DK/4",
+    "V_loader_n_reads": "DV/4",
+    "all_loader_TCOLS": 4,
+    "all_loader_TROWS": 8,
+    "source_rejection_of_zero_padding": "NONE_FOUND_IN_ACTIVE_TEMPLATE_OR_LOADERS",
+    "alignment": "Active BlockLoaderT and BaseMMAFrag/MMATile loads are scalar/explicit-stride; the distinct ReadVector BlockLoader is not used.",
+    "compact_array_bounds": "Q and transposed K max index=8*DK-1; V max=8*DV-1; KV allocation=max(8*DK,8*DV); Q independent.",
+    "synchronization": "Original K/V reuse barriers and Q lifetime retained; no barrier moves or new early-return condition.",
+    "causal_mask_paging": "Logical page16 mapping and valid_rows checks are independent of padding. Recompute BQ/BK function constants and NQ/NK/rem/grid/group as one selected geometry.",
+    "compact_all_public_domain_arithmetic": [
+      {
+        "case": "plain_f16",
+        "DK": 64,
+        "DV": 64,
+        "BQ": 8,
+        "BK": 8,
+        "WM": 1,
+        "WN": 1,
+        "Q_smem_bytes": 1024,
+        "KV_smem_bytes": 1024,
+        "declared_total_bytes": 2048,
+        "Q_max_index": 511,
+        "K_transposed_max_index": 511,
+        "V_max_index": 511,
+        "Q_K_loader_n_reads": 16,
+        "V_loader_n_reads": 16,
+        "all_loaders_TCOLS": 4,
+        "all_loaders_TROWS": 8,
+        "TQ": 1,
+        "TK": 1,
+        "TD": 8,
+        "TV": 8,
+        "pipeline_fit": "NOT_QUERIED"
+      },
+      {
+        "case": "plain_bf16",
+        "DK": 64,
+        "DV": 64,
+        "BQ": 8,
+        "BK": 8,
+        "WM": 1,
+        "WN": 1,
+        "Q_smem_bytes": 1024,
+        "KV_smem_bytes": 1024,
+        "declared_total_bytes": 2048,
+        "Q_max_index": 511,
+        "K_transposed_max_index": 511,
+        "V_max_index": 511,
+        "Q_K_loader_n_reads": 16,
+        "V_loader_n_reads": 16,
+        "all_loaders_TCOLS": 4,
+        "all_loaders_TROWS": 8,
+        "TQ": 1,
+        "TK": 1,
+        "TD": 8,
+        "TV": 8,
+        "pipeline_fit": "NOT_QUERIED"
+      },
+      {
+        "case": "q8_original_f16",
+        "DK": 64,
+        "DV": 64,
+        "BQ": 8,
+        "BK": 8,
+        "WM": 1,
+        "WN": 1,
+        "Q_smem_bytes": 1024,
+        "KV_smem_bytes": 2048,
+        "declared_total_bytes": 3072,
+        "Q_max_index": 511,
+        "K_transposed_max_index": 511,
+        "V_max_index": 511,
+        "Q_K_loader_n_reads": 16,
+        "V_loader_n_reads": 16,
+        "all_loaders_TCOLS": 4,
+        "all_loaders_TROWS": 8,
+        "TQ": 1,
+        "TK": 1,
+        "TD": 8,
+        "TV": 8,
+        "pipeline_fit": "NOT_QUERIED"
+      },
+      {
+        "case": "q8_original_bf16",
+        "DK": 64,
+        "DV": 64,
+        "BQ": 8,
+        "BK": 8,
+        "WM": 1,
+        "WN": 1,
+        "Q_smem_bytes": 2048,
+        "KV_smem_bytes": 2048,
+        "declared_total_bytes": 4096,
+        "Q_max_index": 511,
+        "K_transposed_max_index": 511,
+        "V_max_index": 511,
+        "Q_K_loader_n_reads": 16,
+        "V_loader_n_reads": 16,
+        "all_loaders_TCOLS": 4,
+        "all_loaders_TROWS": 8,
+        "TQ": 1,
+        "TK": 1,
+        "TD": 8,
+        "TV": 8,
+        "pipeline_fit": "NOT_QUERIED"
+      },
+      {
+        "case": "plain_f16",
+        "DK": 64,
+        "DV": 128,
+        "BQ": 8,
+        "BK": 8,
+        "WM": 1,
+        "WN": 1,
+        "Q_smem_bytes": 1024,
+        "KV_smem_bytes": 2048,
+        "declared_total_bytes": 3072,
+        "Q_max_index": 511,
+        "K_transposed_max_index": 511,
+        "V_max_index": 1023,
+        "Q_K_loader_n_reads": 16,
+        "V_loader_n_reads": 32,
+        "all_loaders_TCOLS": 4,
+        "all_loaders_TROWS": 8,
+        "TQ": 1,
+        "TK": 1,
+        "TD": 8,
+        "TV": 16,
+        "pipeline_fit": "NOT_QUERIED"
+      },
+      {
+        "case": "plain_bf16",
+        "DK": 64,
+        "DV": 128,
+        "BQ": 8,
+        "BK": 8,
+        "WM": 1,
+        "WN": 1,
+        "Q_smem_bytes": 1024,
+        "KV_smem_bytes": 2048,
+        "declared_total_bytes": 3072,
+        "Q_max_index": 511,
+        "K_transposed_max_index": 511,
+        "V_max_index": 1023,
+        "Q_K_loader_n_reads": 16,
+        "V_loader_n_reads": 32,
+        "all_loaders_TCOLS": 4,
+        "all_loaders_TROWS": 8,
+        "TQ": 1,
+        "TK": 1,
+        "TD": 8,
+        "TV": 16,
+        "pipeline_fit": "NOT_QUERIED"
+      },
+      {
+        "case": "q8_original_f16",
+        "DK": 64,
+        "DV": 128,
+        "BQ": 8,
+        "BK": 8,
+        "WM": 1,
+        "WN": 1,
+        "Q_smem_bytes": 1024,
+        "KV_smem_bytes": 4096,
+        "declared_total_bytes": 5120,
+        "Q_max_index": 511,
+        "K_transposed_max_index": 511,
+        "V_max_index": 1023,
+        "Q_K_loader_n_reads": 16,
+        "V_loader_n_reads": 32,
+        "all_loaders_TCOLS": 4,
+        "all_loaders_TROWS": 8,
+        "TQ": 1,
+        "TK": 1,
+        "TD": 8,
+        "TV": 16,
+        "pipeline_fit": "NOT_QUERIED"
+      },
+      {
+        "case": "q8_original_bf16",
+        "DK": 64,
+        "DV": 128,
+        "BQ": 8,
+        "BK": 8,
+        "WM": 1,
+        "WN": 1,
+        "Q_smem_bytes": 2048,
+        "KV_smem_bytes": 4096,
+        "declared_total_bytes": 6144,
+        "Q_max_index": 511,
+        "K_transposed_max_index": 511,
+        "V_max_index": 1023,
+        "Q_K_loader_n_reads": 16,
+        "V_loader_n_reads": 32,
+        "all_loaders_TCOLS": 4,
+        "all_loaders_TROWS": 8,
+        "TQ": 1,
+        "TK": 1,
+        "TD": 8,
+        "TV": 16,
+        "pipeline_fit": "NOT_QUERIED"
+      },
+      {
+        "case": "plain_f16",
+        "DK": 128,
+        "DV": 128,
+        "BQ": 8,
+        "BK": 8,
+        "WM": 1,
+        "WN": 1,
+        "Q_smem_bytes": 2048,
+        "KV_smem_bytes": 2048,
+        "declared_total_bytes": 4096,
+        "Q_max_index": 1023,
+        "K_transposed_max_index": 1023,
+        "V_max_index": 1023,
+        "Q_K_loader_n_reads": 32,
+        "V_loader_n_reads": 32,
+        "all_loaders_TCOLS": 4,
+        "all_loaders_TROWS": 8,
+        "TQ": 1,
+        "TK": 1,
+        "TD": 16,
+        "TV": 16,
+        "pipeline_fit": "NOT_QUERIED"
+      },
+      {
+        "case": "plain_bf16",
+        "DK": 128,
+        "DV": 128,
+        "BQ": 8,
+        "BK": 8,
+        "WM": 1,
+        "WN": 1,
+        "Q_smem_bytes": 2048,
+        "KV_smem_bytes": 2048,
+        "declared_total_bytes": 4096,
+        "Q_max_index": 1023,
+        "K_transposed_max_index": 1023,
+        "V_max_index": 1023,
+        "Q_K_loader_n_reads": 32,
+        "V_loader_n_reads": 32,
+        "all_loaders_TCOLS": 4,
+        "all_loaders_TROWS": 8,
+        "TQ": 1,
+        "TK": 1,
+        "TD": 16,
+        "TV": 16,
+        "pipeline_fit": "NOT_QUERIED"
+      },
+      {
+        "case": "q8_original_f16",
+        "DK": 128,
+        "DV": 128,
+        "BQ": 8,
+        "BK": 8,
+        "WM": 1,
+        "WN": 1,
+        "Q_smem_bytes": 2048,
+        "KV_smem_bytes": 4096,
+        "declared_total_bytes": 6144,
+        "Q_max_index": 1023,
+        "K_transposed_max_index": 1023,
+        "V_max_index": 1023,
+        "Q_K_loader_n_reads": 32,
+        "V_loader_n_reads": 32,
+        "all_loaders_TCOLS": 4,
+        "all_loaders_TROWS": 8,
+        "TQ": 1,
+        "TK": 1,
+        "TD": 16,
+        "TV": 16,
+        "pipeline_fit": "NOT_QUERIED"
+      },
+      {
+        "case": "q8_original_bf16",
+        "DK": 128,
+        "DV": 128,
+        "BQ": 8,
+        "BK": 8,
+        "WM": 1,
+        "WN": 1,
+        "Q_smem_bytes": 4096,
+        "KV_smem_bytes": 4096,
+        "declared_total_bytes": 8192,
+        "Q_max_index": 1023,
+        "K_transposed_max_index": 1023,
+        "V_max_index": 1023,
+        "Q_K_loader_n_reads": 32,
+        "V_loader_n_reads": 32,
+        "all_loaders_TCOLS": 4,
+        "all_loaders_TROWS": 8,
+        "TQ": 1,
+        "TK": 1,
+        "TD": 16,
+        "TV": 16,
+        "pipeline_fit": "NOT_QUERIED"
+      },
+      {
+        "case": "plain_f16",
+        "DK": 256,
+        "DV": 256,
+        "BQ": 8,
+        "BK": 8,
+        "WM": 1,
+        "WN": 1,
+        "Q_smem_bytes": 4096,
+        "KV_smem_bytes": 4096,
+        "declared_total_bytes": 8192,
+        "Q_max_index": 2047,
+        "K_transposed_max_index": 2047,
+        "V_max_index": 2047,
+        "Q_K_loader_n_reads": 64,
+        "V_loader_n_reads": 64,
+        "all_loaders_TCOLS": 4,
+        "all_loaders_TROWS": 8,
+        "TQ": 1,
+        "TK": 1,
+        "TD": 32,
+        "TV": 32,
+        "pipeline_fit": "NOT_QUERIED"
+      },
+      {
+        "case": "plain_bf16",
+        "DK": 256,
+        "DV": 256,
+        "BQ": 8,
+        "BK": 8,
+        "WM": 1,
+        "WN": 1,
+        "Q_smem_bytes": 4096,
+        "KV_smem_bytes": 4096,
+        "declared_total_bytes": 8192,
+        "Q_max_index": 2047,
+        "K_transposed_max_index": 2047,
+        "V_max_index": 2047,
+        "Q_K_loader_n_reads": 64,
+        "V_loader_n_reads": 64,
+        "all_loaders_TCOLS": 4,
+        "all_loaders_TROWS": 8,
+        "TQ": 1,
+        "TK": 1,
+        "TD": 32,
+        "TV": 32,
+        "pipeline_fit": "NOT_QUERIED"
+      },
+      {
+        "case": "q8_original_f16",
+        "DK": 256,
+        "DV": 256,
+        "BQ": 8,
+        "BK": 8,
+        "WM": 1,
+        "WN": 1,
+        "Q_smem_bytes": 4096,
+        "KV_smem_bytes": 8192,
+        "declared_total_bytes": 12288,
+        "Q_max_index": 2047,
+        "K_transposed_max_index": 2047,
+        "V_max_index": 2047,
+        "Q_K_loader_n_reads": 64,
+        "V_loader_n_reads": 64,
+        "all_loaders_TCOLS": 4,
+        "all_loaders_TROWS": 8,
+        "TQ": 1,
+        "TK": 1,
+        "TD": 32,
+        "TV": 32,
+        "pipeline_fit": "NOT_QUERIED"
+      },
+      {
+        "case": "q8_original_bf16",
+        "DK": 256,
+        "DV": 256,
+        "BQ": 8,
+        "BK": 8,
+        "WM": 1,
+        "WN": 1,
+        "Q_smem_bytes": 8192,
+        "KV_smem_bytes": 8192,
+        "declared_total_bytes": 16384,
+        "Q_max_index": 2047,
+        "K_transposed_max_index": 2047,
+        "V_max_index": 2047,
+        "Q_K_loader_n_reads": 64,
+        "V_loader_n_reads": 64,
+        "all_loaders_TCOLS": 4,
+        "all_loaders_TROWS": 8,
+        "TQ": 1,
+        "TK": 1,
+        "TD": 32,
+        "TV": 32,
+        "pipeline_fit": "NOT_QUERIED"
+      }
+    ]
+  },
+  "q8_type_bridge": {
+    "public_query_and_output": "F16/BF16 only (batch_layout.cc87-88; MLX fast.cpp domain)",
+    "plain_f16": {
+      "T": "half",
+      "QueryT": "half"
+    },
+    "plain_bf16": {
+      "T": "bfloat16",
+      "QueryT": "bfloat16"
+    },
+    "q8_original_f16": {
+      "q_after_fast_cast": "float32",
+      "T": "float",
+      "QueryT": "half"
+    },
+    "q8_original_bf16": {
+      "q_after_fast_cast": "float32",
+      "T": "float",
+      "QueryT": "float"
+    },
+    "q8_result": "F32 intermediate casts back to original public query dtype; no narrowing of KV/probabilities/accumulator proposed",
+    "source_anchors": [
+      "mlx/fast.cpp716-747",
+      "jit_kernels.cpp1308-1340",
+      "scaled_dot_product_attention.cpp256-261"
+    ]
+  },
+  "admission_and_failure": {
+    "order": "Create default pipeline -> actual static+required dynamic capacity and maxthreads check -> one compact pipeline if needed -> actual check -> bind/dispatch only a legal selected pipeline.",
+    "dynamic_bytes": 0,
+    "dynamic_boundary": "0 is the unchanged signature ABI requirement, not an observation of old encoder state; no dynamic binding reset is authorized.",
+    "failure": "Existing MLX exception -> native_exception Status -> synchronize accepted prefix -> poison/finish/native lease retirement. No assertion, oversized dispatch, fake success or silent CPU/dense gather.",
+    "failure_status_boundary": "std::runtime_error currently maps to Status::Internal; this review does not invent a ResourceExhausted mapping or public exception API.",
+    "positive_capability": "Safe rejection cannot replace positive normal Q8/D256 correctness PASS."
+  },
+  "cache_identity": {
+    "rule": "Compact iff exact BQ8/BK8/WM1/WN1; every other geometry retains original padding.",
+    "existing_key_fields": [
+      "BQ",
+      "BK",
+      "BD",
+      "BV",
+      "WM",
+      "WN",
+      "dtype",
+      "mask dtype",
+      "query-half",
+      "function constants"
+    ],
+    "extra_layout_tag_required": false,
+    "condition": "False only while geometry uniquely determines layout; if padded+compact can coexist for same geometry, add distinct library and pipeline layout keys."
+  },
+  "cost": {
+    "normal_legal_default": "Same geometry/math/cache; two Objective-C resource property reads and capacity branch per Hyle Steel full dispatch.",
+    "fallback": "One additional pipeline lookup/JIT and actual static-memory query; original MLX cache may retain default and compact pipeline for each actual dtype/specialization.",
+    "not_free": [
+      "bank conflicts",
+      "fewer SIMD groups per query tile",
+      "more BK iterations",
+      "floating-point regrouping",
+      "possible register pressure/spills"
+    ],
+    "no_new_contract": [
+      "per-request allocator",
+      "CPU/KV gather copy",
+      "background thread",
+      "public API"
+    ],
+    "performance": "Original G09 qualification/P1 remains required; source arithmetic does not sign performance."
+  },
+  "predeclared_seven_tests": {
+    "path": "tests\\compute_route_apple\\native_cache_test.cc",
+    "sha256": "e898f9af94292150721fdc23dfef0ccbfa7b5ca45d92a73ba47624677f35570d",
+    "count": 7,
+    "tests": [
+      {
+        "name": "AppleCache.Q8PagedRaggedWindowsAndIndependentValueDepth",
+        "declaration_line": 184,
+        "actual_execution": "NOT_RUN_BY_THIS_AUDIT"
+      },
+      {
+        "name": "AppleCache.FullNoncausalAllowsMoreQueriesThanKeys",
+        "declaration_line": 189,
+        "actual_execution": "NOT_RUN_BY_THIS_AUDIT"
+      },
+      {
+        "name": "AppleCache.PlainWindowAndIndependentValueDepth",
+        "declaration_line": 192,
+        "actual_execution": "NOT_RUN_BY_THIS_AUDIT"
+      },
+      {
+        "name": "AppleCache.OriginalPlainCoupledUnboundedPaths",
+        "declaration_line": 195,
+        "actual_execution": "NOT_RUN_BY_THIS_AUDIT"
+      },
+      {
+        "name": "AppleCache.MainDepthsAndLongPrefill",
+        "declaration_line": 201,
+        "actual_execution": "NOT_RUN_BY_THIS_AUDIT"
+      },
+      {
+        "name": "AppleCache.SmallSoftmaxWeightsKeepLargeValueContributions",
+        "declaration_line": 211,
+        "actual_execution": "NOT_RUN_BY_THIS_AUDIT"
+      },
+      {
+        "name": "AppleCache.SubnormalQueryKeepsLargeKeyScores",
+        "declaration_line": 216,
+        "actual_execution": "NOT_RUN_BY_THIS_AUDIT"
+      }
+    ],
+    "coverage": "Collectively plain/Q8,F16/BF16,DK64/128/256,DV==DK or64/128,paged/ragged,GQA,causal/window,active tails,crosspage,long prefill,subnormal and small-softmax/large-value boundaries.",
+    "additional_retained": "Original8 public consumers,4 native notification tests,encoded cases; pending Q1/Q17 growth and lease/Graph retirement unchanged.",
+    "source_proof_only": true
+  },
+  "must_before_runtime_verdict": [
+    "Root freezes audited finite FIX and exact two-file patch scope before product edit.",
+    "Reconstruct every canonical edit exactly once and update only correct vendored tree hash; no remote source backcopy.",
+    "Check actual compiled compact resources for all real dtype/function-constant cases; especially float/float may be at32768 but is NOT_PROVEN.",
+    "Preserve query-half/subnormal and F32 KV/accumulator semantics; do not introduce resource-fit narrowing.",
+    "Recompute key/constants/params/grid/group coherently; preserve maxthreads check before bind/dispatch.",
+    "Run all7 named native cache tests under ordinary and actual combined API+GPU validation plus retained gates; require exact counts/no skip and original oracles.",
+    "Retain original fatal and missing host/SDK/selector/P1; a source review is not a runtime/delivery/performance PASS."
+  ],
+  "not_claimed": [
+    "compact compiler acceptance",
+    "actual compact static memory fit",
+    "normal/Q8 math PASS",
+    "no bank conflicts or register spills",
+    "universal ShaderValidation doubling",
+    "old encoder dynamic state",
+    "SDK/host/selector/P1 completion"
+  ],
+  "same_budget": {
+    "original_start": "2026-10-17T14:08:00+08:00",
+    "deadline": "2026-10-17T20:08:00+08:00",
+    "product_before_M1F1": 2,
+    "product_limit": 6,
+    "M1F1_when_entering_validation": "3/6 and M1 first of2",
+    "reset": false
+  }
+}
