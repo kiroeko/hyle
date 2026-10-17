@@ -71,7 +71,8 @@ std::int64_t attention_query_block(const internal::Recipe &recipe) noexcept {
   if (recipe.nodes.size() != 1)
     return 0;
   const auto &node = recipe.nodes.front();
-  if (!node.operation.get_if<ScaledDotProductAttention>())
+  if (!node.operation.get_if<ScaledDotProductAttention>() &&
+      !node.operation.custom_as<model_ops::SinkAttention>())
     return 0;
   const auto &query = recipe.values[node.inputs[0]];
   const auto q = query.dimensions();
@@ -214,7 +215,8 @@ struct Invocation final {
   ggml_tensor *tiled_attention(const internal::Recipe &recipe,
                                const internal::Node &node,
                                std::int64_t block_rows) {
-    const auto &operation = *node.operation.get_if<ScaledDotProductAttention>();
+    const auto *operation = node.operation.get_if<ScaledDotProductAttention>();
+    const auto sink = node.operation.custom_as<model_ops::SinkAttention>();
     auto *context = arena.get();
     auto *source = tensors[node.inputs[0]];
     auto *key = tensors[node.inputs[1]];
@@ -241,10 +243,20 @@ struct Invocation final {
       auto *scores = ggml_mul_mat(context, key, query);
       (void)ggml_prec_set_acc(scores, GGML_PREC_F32);
       (void)ggml_prec_set_src(scores, GGML_PREC_F32, 1);
-      scores = ggml_scale(context, scores, operation.scale);
-      if (operation.causal)
-        scores = ggml_diag_mask_inf(context, scores, past);
-      auto *probabilities = ggml_soft_max(context, scores);
+      ggml_tensor *probabilities = nullptr;
+      if (sink) {
+        auto *mask = tensors[node.inputs[3]];
+        mask = ggml_view_2d(context, mask, mask->ne[0], rows, mask->nb[1],
+            static_cast<std::size_t>(begin) * mask->nb[1]);
+        probabilities = ggml_soft_max_ext(context, scores, mask,
+                                           sink->scale, 0.0F);
+        ggml_soft_max_add_sinks(probabilities, tensors[node.inputs[4]]);
+      } else {
+        scores = ggml_scale(context, scores, operation->scale);
+        if (operation->causal)
+          scores = ggml_diag_mask_inf(context, scores, past);
+        probabilities = ggml_soft_max(context, scores);
+      }
       auto *result = ggml_mul_mat(context, value, probabilities);
       (void)ggml_prec_set_acc(result, GGML_PREC_F32);
       (void)ggml_prec_set_src(result, GGML_PREC_F32, 1);
@@ -407,7 +419,7 @@ struct Invocation final {
     views.reserve(resources);
     auto *type = ggml_backend_cuda_buffer_type(program.device);
     if (attention_rows != 0) {
-      // Standalone SDPA has no cold uploaded constants. Intermediates are
+      // Standalone attention has no cold uploaded constants. Intermediates are
       // allocated by lifetime rather than retaining every block's payload.
       for (auto *tensor = ggml_get_first_tensor(arena.get()); tensor;
            tensor = ggml_get_next_tensor(arena.get(), tensor))

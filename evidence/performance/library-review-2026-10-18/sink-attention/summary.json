@@ -1,0 +1,95 @@
+{
+  "change": "Single-node large SinkAttention reuses Q tiling/gallocr. Slice original F32 mask [S,T] by begin*nb1; reuse unscaled per-head sinks. Complete KV and F32 QK/PV precision stay unchanged. CUDA region discovery excludes Sink like ordinary SDPA.",
+  "tests": {
+    "baseline_pass": true,
+    "candidate_pass": true,
+    "test": "GgmlCudaSinkAttention.BlocksTailMaskRowsSinksAndRebinding",
+    "cases": [
+      {
+        "q": 257,
+        "kv": 273,
+        "heads": 64,
+        "blocks": [
+          128,
+          128,
+          1
+        ]
+      },
+      {
+        "q": 129,
+        "kv": 145,
+        "heads": 128,
+        "blocks": [
+          128,
+          1
+        ]
+      }
+    ],
+    "coverage": [
+      "Nonzero sparse Q/K",
+      "Nonzero positive/negative additive mask and masked positions",
+      "Per-head sink logits",
+      "All-masked rows with finite sinks yield zero",
+      "Every output element checked against independent FP64 separable-V formula",
+      "Two invocations/two queues, plus rebind of all five inputs and output"
+    ],
+    "absolute_budget": 1e-05,
+    "oracle_limit": "Q/K have only two nonzero dimensions. V is exactly binary-rational affine in row factor; FP64 softmax computes weighted row factor/mass, then derives every output channel. Not a full dense random QK oracle or a universal numeric bound.",
+    "formatting": "Measured source and final applied test source differ only by clang-format LLVM formatting/include ordering; canonical formatter output equality checked, no rebuild/retest for formatting."
+  },
+  "space": {
+    "baseline": {
+      "q": 1025,
+      "kv": 1041,
+      "heads": 64,
+      "depth": 512,
+      "ports_requested_bytes": 277229892,
+      "external_mask_bytes": 4268100,
+      "old_single_scores_bytes": 273158400,
+      "cuda_used_after_ports": 1522008064,
+      "cuda_used_after_prepare": 1522008064,
+      "cuda_used_after_invocation": 2211971072,
+      "cuda_used_after_wait": 2226651136,
+      "maximum_error": 1.3918e-06,
+      "absolute_budget": 1e-05,
+      "timing": false,
+      "residency_is_peak": false,
+      "provider_verified": true,
+      "explicit_scratch_bytes": 682797568,
+      "explicit_gallocr_bytes": 0,
+      "explicit_private_bytes": 682797568
+    },
+    "candidate": {
+      "q": 1025,
+      "kv": 1041,
+      "heads": 64,
+      "depth": 512,
+      "ports_requested_bytes": 277229892,
+      "external_mask_bytes": 4268100,
+      "old_single_scores_bytes": 273158400,
+      "cuda_used_after_ports": 1522008064,
+      "cuda_used_after_prepare": 1522008064,
+      "cuda_used_after_invocation": 1551368192,
+      "cuda_used_after_wait": 1566048256,
+      "maximum_error": 1.3918e-06,
+      "absolute_budget": 1e-05,
+      "timing": false,
+      "residency_is_peak": false,
+      "provider_verified": true,
+      "explicit_scratch_bytes": 0,
+      "explicit_gallocr_bytes": 28913152,
+      "explicit_private_bytes": 28913152
+    }
+  },
+  "space_block_rows": 62,
+  "space_blocks": 17,
+  "space_tail_rows": 33,
+  "counter_scope": "sum owned ggml scratch buffer sizes plus gallocr buffer0 after cold initialize; excludes caller ports, native pools, cuBLAS/runtime/driver. cudaMemGetInfo values are synchronized residency snapshots, not whole-device peak.",
+  "remaining_square_input": "The explicit caller-supplied mask remains dense Q*KV; it is an external port, not copied per block. This change removes quadratic provider-owned scores/probabilities, not the public mask representation.",
+  "not_measured": [
+    "Throughput/tokens per second/latency",
+    "Generic Graph execution; changed region TU compiled only",
+    "Full provider/default routing/IQ1: the validation helper admits Sink plus dense rank1/2/4 input creation and declines unrelated tensor operations"
+  ],
+  "reuse": "Existing shared foundation/native pinned ggml archives and previously compiled strict host dispatch overlay, explicitly linked before ggml-cuda archive. No CMake configure/build, no SDK copy/download, no CUDA kernel rebuild."
+}

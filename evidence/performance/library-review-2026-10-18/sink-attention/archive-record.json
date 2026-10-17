@@ -1,0 +1,10 @@
+{
+  "summary.json": {
+    "bytes": 4110,
+    "sha256": "72f8e034506f0e604b0f014e3402aaee29143ef8fcd597462cf0a394441d0e28"
+  },
+  "source-evidence.zip": {
+    "bytes": 101658,
+    "sha256": "3ab634423898c9060fae8124440ec1e23cb3273a3fcb5dbf984466cce44a204b"
+  }
+}

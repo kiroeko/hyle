@@ -11,6 +11,9 @@
 | CPU 普通路线漏注册 ggml | [owner CMake](../../../src/compute_provider_ggml/CMakeLists.txt) 用 `NO_DEFINE`，而 [Direct](../../../src/compute_route_cpu/cpu_context.cc) / [Graph](../../../src/graph_route_cpu/cpu_context.cc) 以该 presence 宏编译注册。实际库虽链接，候选却消失，旧 CPU 排名不能直接继承 | 已恢复 target 的宏传播；实际 owner 声明的配置回归通过。未测修复后的 CPU 模型倍率 |
 | StateStore 重复扫描同池 roots | [stats_locked](../../../src/compute_state/state_versions.cc) 对已命中 root 仍扫描所有更早块；回收形成的前缀空洞也被逐块重扫，`replace` / `import` 等会调用它 | 已在命中后停止，并将前缀空洞一次跳过。相同 API、计费与输入实测见下；不增加字段、分配或 backing |
 | CUDA attention 的平方 scratch | [ggml CUDA](../../../src/compute_provider_ggml_cuda/ggml_cuda_provider.cc) 原BF16/F32物化scores，F16物化causal mask。B1/H8/Q=KV8192时，单个F32 scores为2 GiB | BF16适用域已融合；ggml大型独立SDPA已按Q分块、复用完整KV与临时空间。实际8K F32显式private从8368降至48.5 MiB，见下 |
+| CUDA SinkAttention的按头展开平方scratch | 同provider的独立Sink原来仍分配完整scores/probabilities；H64、Q=KV2048时两块各1 GiB，属于schema允许的prefill | 已复用Q分块并使Graph走单Compute步骤。1025×1041实际private从651.17降至27.57 MiB；调用方mask仍为O(Q·KV)，见下 |
+| CUDA variadic Concat重复复制前缀 | [lowering](../../../src/compute_provider_ggml_cuda/tensor_program.cc) 线性链保留每个累积前缀；64个各1 MiB输入会额外保留2016 MiB前缀，最终输出仅64 MiB | 正在改为原生平衡树，保持Graph依赖。目标是消除二次复制/空间，不宣称一次写完的最优线性算法 |
+| CUDA Hadamard平方矩阵 | [准备与lowering](../../../src/compute_provider_ggml_cuda/ggml_cuda_provider.cc) 保存并上传W²矩阵；W4096时主机/设备各64 MiB。64–512宽度即使可走FWHT仍创建矩阵 | 尚未改。原生融合可能绕过FWHT而读取矩阵，不能直接删payload；4096也不在当前FWHT支持域，需明确执行路线后再优化 |
 | CUDA声明F32但实际缩精度 | ggml默认cuBLAS handle启用TF32；F16 flash的PV为Half累加且不读PREC_F32 | 显式F32源请求局部切DEFAULT_MATH并恢复；ggml F16改F32 math再转最终端口。未把旧低精度速度作同合同输项 |
 | io_uring CQE 分类的线性查表 | [Proactor::reap](../../../src/io_core/proactor.cc) 原来每个 CQE 扫描 pending accept/close/statx；N 个未决 special op 可使完成批次最坏 O(N²)，不相关 read/write 也付扫描成本 | 已改为单个 token 索引；真实 native 同工规模对照见下，accept找空位/close提交去重的扫描仍保留 |
 | Linux watch重复close-write唤醒 | [inotify mask](../../../src/io_watch/watch_linux.cc) 同时订阅IN_MODIFY和IN_CLOSE_WRITE；公开接口只提供内容变化提示，未承诺writer-close。即使最终忽略sibling名称，额外通知也会唤醒owner | 已去冗余close订阅；实际减少约1.97次上下文切换/发布。16项watch测试通过，剩余小负样本未声称全部解决 |
@@ -129,6 +132,29 @@ helper显式拒绝其它算子，以复用缺新IQ1实例的旧CUDA cache。不�
 [摘要](ggml-attention/summary.json)列边界；[运行原始包](ggml-attention/raw-results.zip)保留失败、最终测试源码/命令/hash、
 两版空间探针及Torch F16反例，[实现来源包](ggml-attention/provider-source.zip)保留native patch和provider验证闭包。
 依赖tree/NOTICE锁已同步并通过局部完整性检查。
+
+### SinkAttention：切mask行并保留sink语义
+
+同一Q分块也用于独立F32 SinkAttention，沿完整KV计算；mask仅创建原始`[KV,Q]`的行view，
+偏移为`q0*nb[1]`，不复制、不按head展开。每块保留`soft_max_ext(scale,mask)`及同一per-head sink向量，
+sink只进入分母。QK/PV继续显式F32；Graph region像普通SDPA一样排除Sink，让它走完整单Compute程序。
+没有放宽分块recipe的单节点限制，以免输出叶子与copy terminals在多节点图内失去写入依赖。
+
+新[Sink测试](../../../tests/compute_provider_ggml_cuda/sink_attention_test.cc)在H64/Q257/KV273、
+H128/Q129/KV145验证跨块、尾块、非零QK与正负mask、全遮蔽行、每头不同sink、双invocation/Queue及全端口重绑。
+稀疏QK与精确可分离V的独立FP64公式逐元素检查，两侧都通过原定1e-5；不是任意dense输入的误差上界。
+只格式化最终测试，保留实测/应用两版源码及hash，未为格式重复测试。
+
+RTX4070上唯一空间对照为B1/H64/KV头1/D512、Q1025/KV1041：
+显式owned scratch＋gallocr由682797568 B（651.17 MiB）降至28913152 B（27.57 MiB），
+两侧同一FP64常量V公式max误差1.3918e-6，provider/Queue检查成功。
+外部端口总请求277229892 B，其中dense mask4268100 B仍为公开接口必需的O(Q·KV)输入，
+不能把整个调用称为线性空间；此处消除的是按head放大的平方provider scratch。
+cudaMemGetInfo仅为同步边界驻留快照，不是峰值；上述private计数不含caller、native pool、cuBLAS与driver。
+
+[摘要](sink-attention/summary.json)及[源码/命令/原始包](sink-attention/source-evidence.zip)记录限定验证闭包：
+直接编译当前provider、dense rank1/2/4与Sink专用helper、现成strict host overlay及同pin native缓存，
+没有SDK复制或CUDA全量构建。region TU编译通过，generic Graph实际执行、全provider/IQ1与吞吐未测。
 
 ## 有效历史小输，当前版本待复测
 

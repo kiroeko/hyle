@@ -7,6 +7,7 @@
 #include <vector>
 
 #include "hyle/graph/region_provider.h"
+#include "hyle/compute/model_ops.h"
 #include "program.h"
 
 namespace hyle::graph::ggml_cuda {
@@ -24,7 +25,8 @@ Result<bool> supported_node(void *context, const Graph &graph,
     return false; // Symbolic metadata views are not this exact native domain.
   // Attention already lowers to a complete native program through Compute.
   // Keep its independent native program while batching the pure tensor set.
-  if (operation->get_if<compute::ScaledDotProductAttention>())
+  if (operation->get_if<compute::ScaledDotProductAttention>() ||
+      operation->custom_as<compute::model_ops::SinkAttention>())
     return false;
   auto input_count = graph.node_input_count(node);
   auto output_count = graph.node_output_count(node);
