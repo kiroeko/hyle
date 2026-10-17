@@ -149,12 +149,21 @@ function(_hyle_check_compute_route_platform routes)
           "for its locked ATen SDK; '${CMAKE_SYSTEM_NAME}/${HYLE_TARGET_PROCESSOR}' "
           "has no supported complete CPU recipe. Select another supported route.")
       endif()
+    elseif(_route STREQUAL "cuda")
+      # A complete CUDA product also carries the locked ATen CPU host runtime.
+      # Exact backend factors retain their own, broader SDK platform checks.
+      _hyle_compute_route_supported(cuda _supported)
+      _hyle_compute_cpu_provider_supported(torch_cpu _host_supported)
+      if(NOT _supported OR NOT _host_supported)
+        message(FATAL_ERROR
+          "The complete CUDA route requires Windows/Linux x86_64 for its locked "
+          "ATen host SDK; '${CMAKE_SYSTEM_NAME}/${HYLE_TARGET_PROCESSOR}' has no "
+          "supported complete CUDA recipe. Select another supported route.")
+      endif()
     else()
       _hyle_compute_route_supported("${_route}" _supported)
       if(_supported)
         continue()
-      elseif(_route STREQUAL "cuda")
-        message(FATAL_ERROR "The CUDA route requires Windows or Linux")
       elseif(_route STREQUAL "apple")
         message(FATAL_ERROR "The Apple route requires macOS Apple Silicon")
       else()

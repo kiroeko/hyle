@@ -186,10 +186,10 @@ endif()
 if(HYLE_BUILD_CONTAINER)
   list(APPEND _hyle_active_in_tree_dependencies xxhash wyhash)
 endif()
-if(HYLE_BUILD_TEXT)
+if(HYLE_BUILD_CONTAINER_TEXT)
   list(APPEND _hyle_active_in_tree_dependencies simdutf)
 endif()
-if(HYLE_BUILD_IO_CORE AND HYLE_FCONTEXT_SUPPORTED)
+if(HYLE_BUILD_IO_HTTP)
   list(APPEND _hyle_active_in_tree_dependencies picohttpparser)
 endif()
 if(HYLE_BUILD_SCHED AND HYLE_FCONTEXT_SUPPORTED)
@@ -325,6 +325,20 @@ endif()
 cmake_path(ABSOLUTE_PATH _hyle_dep_build_dir_input
   BASE_DIRECTORY "${HYLE_BINARY_DIR}" NORMALIZE
   OUTPUT_VARIABLE _hyle_dep_build_dir_normalized)
+# Immutable sources and per-build compiler state must never contain each other.
+_hyle_dependency_cache_path_is_within(
+  "${_hyle_dep_build_dir_normalized}" "${HYLE_DEP_SOURCE_CACHE}"
+  _hyle_dep_build_inside_source_cache)
+_hyle_dependency_cache_path_is_within(
+  "${HYLE_DEP_SOURCE_CACHE}" "${_hyle_dep_build_dir_normalized}"
+  _hyle_dep_source_cache_inside_build)
+if(_hyle_dep_build_inside_source_cache OR _hyle_dep_source_cache_inside_build)
+  message(FATAL_ERROR
+    "HYLE_DEP_BUILD_DIR and HYLE_DEP_SOURCE_CACHE must not overlap. "
+    "Keep dependency binary/subbuild state separate from shared immutable sources.\n"
+    "  build: ${_hyle_dep_build_dir_normalized}\n"
+    "  cache: ${HYLE_DEP_SOURCE_CACHE}")
+endif()
 set(HYLE_DEP_BUILD_DIR "${_hyle_dep_build_dir_normalized}" CACHE PATH
     "Build-local binary/subbuild directory for HYLE dependencies" FORCE)
 # Keep the effective directory value and its cache description identical for
@@ -332,6 +346,8 @@ set(HYLE_DEP_BUILD_DIR "${_hyle_dep_build_dir_normalized}" CACHE PATH
 set(HYLE_DEP_BUILD_DIR "${_hyle_dep_build_dir_normalized}")
 unset(_hyle_dep_build_dir_input)
 unset(_hyle_dep_build_dir_normalized)
+unset(_hyle_dep_build_inside_source_cache)
+unset(_hyle_dep_source_cache_inside_build)
 mark_as_advanced(HYLE_DEP_BUILD_DIR)
 # FetchContent is directory-scoped, so keep this as a normal variable owned by
 # the HYLE subproject.  Every HYLE dependency (including test-only GoogleTest)

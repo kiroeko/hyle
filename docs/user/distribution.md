@@ -111,6 +111,12 @@ endif()
 
 Visual Studio 生成器下，在创建 consumer target 的同一 CMake 目录调用
 `hyle_stage_runtime()`；其链接的库可以来自其它目录。
+安装 SDK 的 `find_package(Hyle)` 应放在该应用目录或公共祖先目录，使其 imported
+targets 对 staging 可见；也可由应用显式选择标准 CMake 的 `find_package(Hyle GLOBAL ...)`。
+子目录 wrapper 可以正常使用。若它引用仅对子目录可见的 Hyle SDK，或显式登记了附加
+资源的私有 SDK owner，staging 会在构建所选配置时给出可见性错误，避免静默漏掉 DLL
+或 Metal 资源；未启用的条件分支不会触发该错误。源码嵌入无需为 Hyle 内部第三方库
+重复调用 `find_package`；普通导入 DLL 继续使用 CMake 原有的依赖收集。
 该函数用于本地构建运行：Unix 仅补充 `BUILD_RPATH`，不会把本机 SDK 路径写入
 应用的 `INSTALL_RPATH`。应用安装时的动态库布局和 loader 路径由应用工程设置。
 
@@ -202,7 +208,8 @@ Mac受管stage修正原CPU dylib的libomp加载边并保留原archive身份，�
 Compute/Graph 的 CUDA 路线由 `HYLE_COMPUTE_ROUTES=cuda` 选择，
 普通 `compute-cuda` configure/build preset 选择 CUDA-only Compute+Graph、Release、tests/bench OFF，
 build 并行度 2；`"-DHYLE_COMPUTE_ROUTES=cpu;cuda"` 可显式取得 mixed SDK，三交付仍用既有 install/static 参数。
-选中时要求用户预装 CUDA Toolkit 13.3+，缺失失败；未选完全不探测。
+完整 CUDA 产品当前支持 Windows/Linux x86_64（含锁定的 ATen host SDK），
+要求用户预装 CUDA Toolkit 13.3+，缺失失败；未选完全不探测。
 CUDA Toolkit 是机器 SDK，不进入 FetchContent cache，也不会由 HYLE 下载。启用后的 source/static/shared
 都传播 `CUDAToolkit` package requirement；安装包消费者同样必须能被 `find_package(CUDAToolkit 13.3)`
 找到。选择公开产品会接入 ggml CUDA、cuBLASLt、SGLang、DeepSeek 与 CCCL 等实现；Direct 使用

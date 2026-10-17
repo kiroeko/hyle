@@ -87,6 +87,24 @@ class ComputeRoutesTest(unittest.TestCase):
         self.assertEqual(self.resolve('hyle_resolve_compute_product_routes("core;mem")'),
                          "|OFF|OFF|OFF|OFF")
 
+    def test_complete_cuda_requires_locked_host_sdk_architecture(self):
+        product = ('set(HYLE_COMPUTE_ROUTES cuda)\n'
+                   'hyle_resolve_compute_product_routes("graph")')
+        for system in ("Windows", "Linux"):
+            with self.subTest(system=system):
+                self.assertEqual(self.resolve(product, system=system),
+                                 "cuda|OFF|ON|OFF|OFF")
+                message = self.resolve(product, system=system,
+                                       processor="aarch64", success=False)
+                self.assertIn("complete CUDA route requires Windows/Linux x86_64", message)
+                # Exact backend maintenance must not inherit the full product's
+                # locked ATen host restriction before its own SDK is checked.
+                self.assertEqual(self.resolve(
+                    'set(HYLE_BUILD_COMPUTE_BACKEND_CUDA ON)\n'
+                    'hyle_resolve_compute_factor_routes()',
+                    system=system, processor="aarch64"),
+                    "cuda|OFF|ON|OFF|OFF")
+
     def test_developer_factor_closure_and_platform_off_headers(self):
         body = ('set(HYLE_BUILD_COMPUTE_BACKEND_CPU ON)\n'
                 'set(HYLE_BUILD_COMPUTE_BACKEND_CUDA ON)\n'

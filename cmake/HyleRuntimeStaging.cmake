@@ -9,6 +9,7 @@ function(hyle_register_runtime_files)
     message(FATAL_ERROR "hyle_register_runtime_files requires TARGETS and FILES")
   endif()
   foreach(_owner IN LISTS ARG_TARGETS)
+    set(_registered_owner "${_owner}")
     if(TARGET "${_owner}")
       get_target_property(_alias "${_owner}" ALIASED_TARGET)
       if(_alias)
@@ -28,6 +29,13 @@ function(hyle_register_runtime_files)
       list(REMOVE_DUPLICATES _files)
       set_property(DIRECTORY PROPERTY "HYLE_RUNTIME_PENDING_${_key}" "${_files}")
     endif()
+    # A parent can inspect directory properties after this scope is processed,
+    # even when it cannot inspect the imported target. Record only the fact
+    # that this owner needs HYLE's extra resources, including a supplied alias.
+    foreach(_registered_name IN ITEMS "${_registered_owner}" "${_owner}")
+      string(SHA256 _key "${_registered_name}")
+      set_property(DIRECTORY PROPERTY "HYLE_RUNTIME_REGISTERED_${_key}" TRUE)
+    endforeach()
   endforeach()
 endfunction()
 
@@ -52,12 +60,38 @@ function(_hyle_registered_runtime_files owner output)
   set(${output} "${_files}" PARENT_SCOPE)
 endfunction()
 
+# Imported targets belong to their find_package directory and descendants.
+# Ordinary cross-directory wrappers are globally visible, but their private
+# imported SDK targets may be invisible where an application requests staging.
+# Guard Hyle entry points and explicitly registered extra resources. Ordinary
+# imported DLLs still use CMake's TARGET_RUNTIME_DLLS closure; source embedding
+# must not require users to rediscover private CUDA/OpenSSL dependencies.
+function(_hyle_runtime_target_is_hidden owner candidate output)
+  if(candidate MATCHES "^hyle::")
+    set(${output} TRUE PARENT_SCOPE)
+    return()
+  endif()
+  get_target_property(_directory "${owner}" SOURCE_DIR)
+  string(SHA256 _key "${candidate}")
+  while(_directory)
+    get_property(_registered DIRECTORY "${_directory}"
+      PROPERTY "HYLE_RUNTIME_REGISTERED_${_key}")
+    if(_registered)
+      set(${output} TRUE PARENT_SCOPE)
+      return()
+    endif()
+    get_property(_directory DIRECTORY "${_directory}" PROPERTY PARENT_DIRECTORY)
+  endwhile()
+  set(${output} FALSE PARENT_SCOPE)
+endfunction()
+
 function(_hyle_collect_runtime_files target output)
   # CMake configure is serialized and this walker does not invoke callbacks.
   # Reset per collection: targets/runtime assets may change before a later call.
   set_property(GLOBAL PROPERTY HYLE_RUNTIME_WALK_SEEN "")
   set_property(GLOBAL PROPERTY HYLE_RUNTIME_WALK_APPLE_ASSETS "")
   set_property(GLOBAL PROPERTY HYLE_RUNTIME_WALK_APPLE_PRODUCERS "")
+  set_property(GLOBAL PROPERTY HYLE_RUNTIME_WALK_UNRESOLVED "")
   _hyle_runtime_files_walk("${target}" "1" "" _files)
   list(REMOVE_DUPLICATES _files)
   set(${output} "${_files}" PARENT_SCOPE)
@@ -99,14 +133,46 @@ function(_hyle_runtime_files_walk owner condition ancestors output)
       endif()
     endif()
   endif()
-  foreach(_property IN ITEMS LINK_LIBRARIES INTERFACE_LINK_LIBRARIES
-      IMPORTED_LINK_DEPENDENT_LIBRARIES IMPORTED_LINK_DEPENDENT_LIBRARIES_RELEASE
-      IMPORTED_LINK_DEPENDENT_LIBRARIES_DEBUG IMPORTED_LINK_DEPENDENT_LIBRARIES_RELWITHDEBINFO)
+  set(_link_properties LINK_LIBRARIES INTERFACE_LINK_LIBRARIES
+    IMPORTED_LINK_DEPENDENT_LIBRARIES)
+  get_target_property(_configurations "${owner}" IMPORTED_CONFIGURATIONS)
+  if(NOT _configurations)
+    set(_configurations "")
+  endif()
+  # Handwritten imports may set configuration properties without listing
+  # IMPORTED_CONFIGURATIONS. Include ordinary and consumer configurations too.
+  list(APPEND _configurations Debug Release RelWithDebInfo MinSizeRel
+    ${CMAKE_BUILD_TYPE} ${CMAKE_CONFIGURATION_TYPES})
+  list(TRANSFORM _configurations TOUPPER)
+  list(REMOVE_DUPLICATES _configurations)
+  foreach(_configuration IN LISTS _configurations)
+    list(APPEND _link_properties
+      "IMPORTED_LINK_DEPENDENT_LIBRARIES_${_configuration}")
+  endforeach()
+  foreach(_property IN LISTS _link_properties)
     get_target_property(_links "${owner}" "${_property}")
     list(REMOVE_DUPLICATES _links)
     set(_property_condition "${condition}")
-    if(_property MATCHES "_(RELEASE|DEBUG|RELWITHDEBINFO)$")
-      set(_property_condition "$<AND:${condition},$<CONFIG:${CMAKE_MATCH_1}>>")
+    if(_links AND _property MATCHES "^IMPORTED_LINK_DEPENDENT_LIBRARIES_(.+)$")
+      set(_configuration "${CMAKE_MATCH_1}")
+      get_target_property(_location "${owner}" "IMPORTED_LOCATION_${_configuration}")
+      if(NOT _location)
+        get_target_property(_location "${owner}" IMPORTED_LOCATION)
+      endif()
+      # Let CMake select the imported artifact, including explicit mappings and
+      # its default fallback. Configurations sharing one binary share the union
+      # of its declared loader dependencies; none may be silently omitted.
+      set(_property_condition
+        "$<AND:${condition},$<CONFIG:${_configuration}>>")
+      get_target_property(_owner_type "${owner}" TYPE)
+      if(_location AND _owner_type MATCHES "^(STATIC|SHARED|MODULE|UNKNOWN)_LIBRARY$")
+        file(TO_CMAKE_PATH "${_location}" _location)
+        get_target_property(_owner_directory "${owner}" SOURCE_DIR)
+        cmake_path(ABSOLUTE_PATH _location BASE_DIRECTORY "${_owner_directory}"
+          NORMALIZE OUTPUT_VARIABLE _location)
+        set(_property_condition
+          "$<AND:${condition},$<PATH_EQUAL:$<TARGET_FILE:${owner}>,${_location}>>")
+      endif()
     endif()
     foreach(_link IN LISTS _links)
       # These single-target wrappers have no conditional runtime branch in the
@@ -129,16 +195,57 @@ function(_hyle_runtime_files_walk owner condition ancestors output)
         string(REGEX MATCHALL "[A-Za-z0-9_.+-]+(::[A-Za-z0-9_.+-]+)*" _names "${_link}")
         list(REMOVE_DUPLICATES _names)
         foreach(_name IN LISTS _names)
+          set(_edge "$<IN_LIST:${_name},$<TARGET_GENEX_EVAL:${owner},${_evaluated_link}>>")
           if(TARGET "${_name}")
-            set(_edge "$<IN_LIST:${_name},$<TARGET_GENEX_EVAL:${owner},${_evaluated_link}>>")
             _hyle_runtime_files_walk("${_name}" "$<AND:${_property_condition},${_edge}>" "${ancestors}" _linked_files)
             list(APPEND _files ${_linked_files})
+          else()
+            _hyle_runtime_target_is_hidden("${owner}" "${_name}" _hidden)
+            if(_hidden)
+              # Preserve the evaluated edge. A private SDK in an inactive
+              # branch does not prevent another configuration from building.
+              set_property(GLOBAL APPEND PROPERTY HYLE_RUNTIME_WALK_UNRESOLVED
+                "$<$<AND:${_property_condition},${_edge}>:${_name} (via ${owner})>")
+            endif()
           endif()
         endforeach()
       endif()
     endforeach()
   endforeach()
   set(${output} "${_files}" PARENT_SCOPE)
+endfunction()
+
+# Build-time checking keeps conditional links conditional without inventing a
+# second directory/target registry. The selected configuration must fail before
+# application linkage instead of silently staging an incomplete runtime closure.
+function(_hyle_check_runtime_visibility target)
+  get_property(_unresolved GLOBAL PROPERTY HYLE_RUNTIME_WALK_UNRESOLVED)
+  if(NOT _unresolved)
+    return()
+  endif()
+  set(_stage "hyle_runtime_visibility_${target}")
+  set(_script "${CMAKE_CURRENT_BINARY_DIR}/hyle-runtime/${target}-visibility-$<CONFIG>.cmake")
+  set(_content [=[
+set(_unresolved [==[@_unresolved@]==])
+list(FILTER _unresolved EXCLUDE REGEX "^$")
+if(_unresolved)
+  list(REMOVE_DUPLICATES _unresolved)
+  list(JOIN _unresolved ", " _names)
+  message(FATAL_ERROR
+    "hyle_stage_runtime(@target@) cannot inspect scoped SDK target(s): ${_names}. "
+    "Call find_package in the application directory or a common ancestor, or "
+    "explicitly use find_package(... GLOBAL). Imported SDK targets must be "
+    "visible where hyle_stage_runtime is called; refusing incomplete runtime staging.")
+endif()
+]=])
+  string(CONFIGURE "${_content}" _content @ONLY)
+  file(GENERATE OUTPUT "${_script}" CONTENT "${_content}" TARGET ${target})
+  add_custom_target(${_stage}
+    COMMAND "${CMAKE_COMMAND}" -P "${_script}"
+    VERBATIM)
+  set_target_properties(${_stage} PROPERTIES FOLDER "hyle/runtime-staging")
+  add_dependencies(${target} ${_stage})
+  set_property(TARGET ${target} PROPERTY HYLE_RUNTIME_VISIBILITY_TARGET ${_stage})
 endfunction()
 
 # Opt-in Windows DLL staging and Linux SDK loader paths. This file is shared by
@@ -155,6 +262,7 @@ function(_hyle_stage_runtime_dependencies target)
 
   if(CMAKE_SYSTEM_NAME MATCHES "^(Linux|Darwin)$")
     _hyle_collect_runtime_files("${target}" _runtime_files)
+    _hyle_check_runtime_visibility(${target})
     if(_runtime_files)
       set(_runtime_paths "")
       foreach(_file IN LISTS _runtime_files)
@@ -179,6 +287,7 @@ function(_hyle_stage_runtime_dependencies target)
 
   set(_stage "hyle_runtime_${target}")
   _hyle_collect_runtime_files("${target}" _extra_runtime_files)
+  _hyle_check_runtime_visibility(${target})
   set(_script "${CMAKE_CURRENT_BINARY_DIR}/hyle-runtime/${target}-$<CONFIG>.cmake")
   set(_content [=[
 set(_directory [==[$<TARGET_FILE_DIR:@target@>]==])
@@ -218,6 +327,10 @@ endforeach()
     DEPENDS "$<TARGET_RUNTIME_DLLS:${target}>" ${_extra_runtime_files}
     VERBATIM)
   set_target_properties(${_stage} PROPERTIES FOLDER "hyle/runtime-staging")
+  get_target_property(_visibility_stage ${target} HYLE_RUNTIME_VISIBILITY_TARGET)
+  if(_visibility_stage)
+    add_dependencies(${_stage} ${_visibility_stage})
+  endif()
   add_dependencies(${target} ${_stage})
   set_property(TARGET ${target} PROPERTY HYLE_RUNTIME_STAGING_TARGET ${_stage})
 endfunction()
