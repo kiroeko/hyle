@@ -1,0 +1,148 @@
+{
+  "date": "2026-10-18",
+  "mode": "read-only source investigation; no product edits, builds or timing",
+  "native_revision": "ffa4e8b80930029a35991f94e7c8a93cd67730ab plus locked Hyle patches",
+  "conclusion": "The current CPU fast kernel already computes matrix-free FWHT. Its public expression is still MUL_MAT(matrix,input)+hint, so dropping the matrix payload is not a valid current API use. Keep the current constant pending a native unary/bridge API that explicitly owns no matrix storage. No GPU Kronecker scheme or logW operator graph is proposed for this batch.",
+  "current_hyle": [
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\src\\compute_provider_ggml\\ggml_cpu_provider.cc",
+      "line": 1948,
+      "note": "One cold immutable F32 Sylvester matrix per Hadamard node; W*W overflow checks, resize(W*W), +/-1/sqrt(W) generation. W4096 is 67,108,864 bytes (64 MiB) per node; W8192 is 256 MiB. This is a cold host constant, not a measured hot-path performance loss."
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\src\\compute_provider_ggml\\ggml_cpu_provider.cc",
+      "line": 922,
+      "note": "Creates a real W-by-W F32 tensor backed by the program matrix, MUL_MAT(as_float(input)), Hadamard hint and F32 accumulation. as_output performs the final public dtype conversion."
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\src\\compute_provider_ggml\\ggml_cpu_provider.cc",
+      "line": 1807,
+      "note": "Provider accepts one dense floating input and F32 accumulation. F16/BF16 inputs widen via as_float, so this path reaches native FWHT with F32 input."
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\src\\compute_ops\\operation.cc",
+      "line": 1518,
+      "note": "Public schema requires floating rank>=1 and positive power-of-two last dimension; output keeps input dtype."
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\src\\compute_ggml_runtime\\cpu_execution.cc",
+      "line": 45,
+      "note": "Uses selected CpuProgram graph plan/compute and does not enable use_ref."
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\src\\compute_ggml_runtime\\cpu_program.cc",
+      "line": 21,
+      "note": "Selected baseline or isolated AVX2 complete CPU program. A private direct kernel call must not accidentally bypass this ISA selection/ABI."
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\src\\compute_provider_ggml\\ggml_cpu_provider.cc",
+      "line": 1148,
+      "note": "Invocation manual allocator skips the real constant because its data is non-null; dropping data would instead request native W*W nbytes."
+    }
+  ],
+  "kernel_and_support": [
+    {
+      "path": "C:\\public\\tools\\hyle-dependencies\\v1\\sources\\ggml_cpu-ffa4e8b80930-ac5706fbc134\\src\\ggml-cpu\\ops.cpp",
+      "line": 12255,
+      "note": "FWHT implementation reads src0 only through tensor metadata locals; there is no src0->data read. Reads src1 rows, computes scale=1/sqrtf(n), writes F32 destination and performs scalar/SIMD butterflies. Supports all positive power-of-two widths; no 64..512 GPU-style width limit."
+    },
+    {
+      "path": "C:\\public\\tools\\hyle-dependencies\\v1\\sources\\ggml_cpu-ffa4e8b80930-ac5706fbc134\\src\\ggml-cpu\\ops.cpp",
+      "line": 12331,
+      "note": "Native input dispatch is F32 or F16 only; destination F32. Hyle widens BF16 before this point."
+    },
+    {
+      "path": "C:\\public\\tools\\hyle-dependencies\\v1\\sources\\ggml_cpu-ffa4e8b80930-ac5706fbc134\\src\\ggml-cpu\\ggml-cpu.c",
+      "line": 1263,
+      "note": "Hint and !use_ref enter FWHT and return before tiled/ordinary GEMM. This is the current actual Hyle path."
+    },
+    {
+      "path": "C:\\public\\tools\\hyle-dependencies\\v1\\sources\\ggml_cpu-ffa4e8b80930-ac5706fbc134\\src\\ggml-cpu\\ggml-cpu.cpp",
+      "line": 454,
+      "note": "Backend supports-op recognizes hinted F32 src0/F32 dst with F32 or F16 src1. No public unary FWHT is declared."
+    },
+    {
+      "path": "C:\\public\\tools\\hyle-dependencies\\v1\\sources\\ggml_cpu-ffa4e8b80930-ac5706fbc134\\src\\ggml-blas\\ggml-blas.cpp",
+      "line": 424,
+      "note": "BLAS backend explicitly declines the Hadamard hint so CPU FWHT remains owner."
+    },
+    {
+      "path": "C:\\public\\tools\\hyle-dependencies\\v1\\sources\\ggml_cpu-ffa4e8b80930-ac5706fbc134\\src\\ggml-cpu\\ggml-cpu.c",
+      "line": 3077,
+      "note": "Current CPU graph fusion handles RMSNorm+Mul, not a Hadamard+quantization or other matrix-reading fusion."
+    },
+    {
+      "path": "C:\\public\\tools\\hyle-dependencies\\v1\\sources\\ggml_cpu-ffa4e8b80930-ac5706fbc134\\src\\ggml-cpu\\tiled\\tiled.cpp",
+      "line": 617,
+      "note": "Tiled helper accepts quantized src0 types, excludes F32 Hadamard matrix. No extra W-squared tiled workspace is inferred for this path."
+    },
+    {
+      "path": "C:\\public\\tools\\hyle-dependencies\\v1\\sources\\ggml_cpu-ffa4e8b80930-ac5706fbc134\\src\\ggml-cpu\\repack.cpp",
+      "line": 5191,
+      "note": "Repacked weight kernels require a special repack buffer. Current Hyle constant is a raw program-owned F32 pointer with no such buffer; no repack/quantization transforms it."
+    }
+  ],
+  "why_not_dummy_storage": [
+    {
+      "path": "C:\\public\\tools\\hyle-dependencies\\v1\\sources\\ggml_cpu-ffa4e8b80930-ac5706fbc134\\src\\ggml.c",
+      "line": 3350,
+      "note": "ggml_mul_mat constructs its result from a.ne[1], b dimensions and stores both source tensors. The hint setter changes op_params only, not source storage semantics."
+    },
+    {
+      "path": "C:\\public\\tools\\hyle-dependencies\\v1\\sources\\ggml_cpu-ffa4e8b80930-ac5706fbc134\\src\\ggml.c",
+      "line": 1298,
+      "note": "ggml_nbytes computes actual tensor span from dimensions/strides; a normal contiguous W-by-W F32 tensor requires 4W^2 bytes."
+    },
+    {
+      "path": "C:\\public\\tools\\hyle-dependencies\\v1\\sources\\ggml_cpu-ffa4e8b80930-ac5706fbc134\\src\\ggml-cpu\\ggml-cpu.c",
+      "line": 1263,
+      "note": "With use_ref=true the FWHT early-return is disabled. The ordinary matmul path then reads src0 rows (e.g. 1313/1395) and all W-by-W values are required."
+    },
+    {
+      "path": "C:\\public\\tools\\hyle-dependencies\\v1\\sources\\ggml_cpu-ffa4e8b80930-ac5706fbc134\\include\\ggml-cpu.h",
+      "line": 139,
+      "note": "The native backend exposes ggml_backend_cpu_set_use_ref. Although Hyle does not enable it now, the matrix remains part of the native operation contract."
+    }
+  ],
+  "api_options": [
+    {
+      "option": "Existing public API",
+      "finding": "No unary Hadamard/FWHT entry found in pinned include/ggml.h or ggml-cpu.h. The only named Hadamard facility is GGML_HINT_SRC0_IS_HADAMARD on MUL_MAT."
+    },
+    {
+      "option": "Generic custom operator",
+      "reference": {
+        "path": "C:\\public\\tools\\hyle-dependencies\\v1\\sources\\ggml_cpu-ffa4e8b80930-ac5706fbc134\\include\\ggml.h",
+        "line": 2738,
+        "note": "map_custom1/custom_4d can express a unary node but require a callback implementation."
+      },
+      "finding": "They are not an existing callable public FWHT kernel API. ggml_compute_forward_fwht is private ops.h and consumes private ggml_compute_params. Calling it from a new Hyle callback would depend on internal ABI and selected CPU program/ISA; do not treat this as a drop-in public-API fix."
+    },
+    {
+      "option": "Native primitive butterfly graph",
+      "finding": "Add/Sub/Concat can mathematically express logW stages without W^2 constants or a new numerical kernel, but creates multiple operators/barriers and with the current manual allocator retains stage payloads. No timing/precision/allocator validation was performed. Explicitly rejected for this batch rather than risk an unproven hot-path tradeoff."
+    },
+    {
+      "option": "Minimum next implementation",
+      "finding": "Add a native unary Hadamard constructor or a private same-revision CPU bridge that accepts only the actual input/output and delegates to the existing FWHT body; preserve its F32 accumulation/scaling and expose no fake matrix. Route through the selected baseline/AVX2 program. This is a native API/bridge extension, not a new numerical kernel. It needs affected adapter/dispatch objects and relink; exact minimal build closure has not been implemented or verified."
+    }
+  ],
+  "status": "Pending native unary/bridge support. Current 64 MiB W4096 cold constant remains. No current throughput loss is claimed and no tests/benchmarks were run.",
+  "source_sha256": {
+    "C:\\public\\project-hyle\\hyle\\src\\compute_provider_ggml\\ggml_cpu_provider.cc": "5950dd8b9ad93dc584857b56631e4789cb3d86b29fc6b1e798ef3243228329e7",
+    "C:\\public\\tools\\hyle-dependencies\\v1\\sources\\ggml_cpu-ffa4e8b80930-ac5706fbc134\\include\\ggml.h": "12ee71f99db7db9b353bc02b1fbb57c344ee17c01ac5fb7952b41a637a747ea9",
+    "C:\\public\\tools\\hyle-dependencies\\v1\\sources\\ggml_cpu-ffa4e8b80930-ac5706fbc134\\src\\ggml-cpu\\ops.cpp": "215d16e7ebbb4066920e2d7a5f7ea6c46636d298aedd553e00f0b3ebb0d59305",
+    "C:\\public\\tools\\hyle-dependencies\\v1\\sources\\ggml_cpu-ffa4e8b80930-ac5706fbc134\\src\\ggml-cpu\\ggml-cpu.c": "45b22f8c83b2cbccabfc2f81a38ef8a5810223e1ce366b7c6f77d42faa5cc6f3"
+  },
+  "actual_patched_cache_check": {
+    "note": "Above cached upstream source lines are pristine ffa4; root separately verified actual patched native FWHT body is identical, while attention edits shift its lines. No locked patch changes Hadamard dispatch.",
+    "patched_FWHT_impl_line": 12309,
+    "patched_FWHT_dispatch_line": 12385,
+    "patched_mul_mat_hint_line": 1281,
+    "body_identical": true,
+    "files_sha256": {
+      "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\src\\compute_ggml_runtime\\source-e74fc9bb8964d04f\\src\\ggml-cpu\\ops.cpp": "18c32123603a0d461851757463cd4274bc6f7c4a7cd5d5b4e9ad675e00802c03",
+      "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\src\\compute_ggml_runtime\\source-e74fc9bb8964d04f\\src\\ggml-cpu\\ggml-cpu.c": "5a5c47ef5d1a4ccbf4c818cc2706fb85ca88f419d8a70f11d11aa6d04c8d4797"
+    }
+  }
+}

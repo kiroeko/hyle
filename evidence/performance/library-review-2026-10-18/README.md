@@ -4,6 +4,9 @@
 本次调研覆盖中央构建表的64个 factor（含退役 Marlin 占位），不是64个模块都已重新计时。
 旧结果只有在当前实现仍对应、输入与完成边界一致时才作为线索；旧 PASS、5%容忍带和状态标签不决定结论。
 
+**仍未解决**：HTTP2大报文背压的当前慢点；CPU causal mask、CPU/Vulkan Sink与wide fallback、Apple F32/显式mask等空间项；
+CPU Hadamard冷矩阵；queue等旧小输的当前同责重测。已确认的源码缺口与已实测输项分列，不能据首轮扫描称所有shape已穷尽。
+
 ## 当前源码明确的问题
 
 | 项目 | 证据与影响 | 本轮处理 |
@@ -24,6 +27,7 @@
 | FlatHash近满rolling churn反复重建 | [grow](../../../include/hyle/container/detail/flat_hash_table.h) 在7/8负载附近反复同容量rehash，清理后几乎没有插入余量 | 自动增长/prepare改为密集时加倍、稀疏时清理；显式reserve合同不变。工作量计数与增加容量的代价见下 |
 | Apple普通SDPA启发式回落 | 锁定MLX对Q>8、D192/256默认unfused，物化scores/probabilities；私有ragged的force不影响普通入口 | 仅非空、无显式mask的F16/BF16适用域强制既有融合；4项回归通过，1K F16额外MLX峰值约12→2 MiB。F32等仍待补 |
 | HTTP2大body背压holdout | 对照peer原先反复扫描已退休response pairs；修正公平性后首轮4进程中Hyle慢5.59–8.27%，后续存在明显位置/绝对漂移 | peer冗余工作已去；两种未证收益的产品候选已撤回，当前仍未解决；细节及执行策略差异见下 |
+| Vulkan普通causal SDPA平方mask | 已融合的F32/F16分支仍用Q×KV F32 seed与F16 mask承载因果条件 | 复用既有FullF32 causal/window字段，3项定向测试通过；1025×1041 native gallocr容量6402176→0 B，未称total scratch为零或吞吐无退化 |
 
 原CUDA F16 flash分支还会物化Q×KV的F16 causal mask，8K方形时为128 MiB；
 这条分支已因实际Half累加问题替换，不能仅凭主kernel融合推断整个调用空间或精度。
@@ -437,10 +441,10 @@ token/8B数据校验及inflight归零；init/reserve、fd打开/预热、用户b
 | 路线 | 已确认工作/空间 | 下一步 |
 |---|---|---|
 | CPU ggml / Vulkan Concat | 已改平衡树；CPU owned payload126→20 MiB，Vulkan真实gallocr容量11.25→7.75 MiB | 定向测试与唯一代表形状完成，见下；未测完整引擎或所有shape |
-| CPU / Vulkan ordinary causal SDPA | 无外部mask端口仍物化内部Q×KV mask；CPU直接借冷Half常量，Vulkan用seed/diag/cast构建 | 先核原生cache/boxed causal字段能否同义复用，再决定Q分块；不把构造尺寸和实测峰值混同 |
+| CPU / Vulkan ordinary causal SDPA | Vulkan已有fused域的内部mask已消除；CPU仍直接借冷Half Q×KV常量 | CPU现boxed字段会禁tiled/split-KV且改变F16中间累加，未贸然默认切换；Vulkan实测边界见下 |
 | CPU / Vulkan Sink与Vulkan wide fallback | scores/probabilities仍带H×Q×KV；caller原mask是必须输入，额外head维不是 | 保持F32数学与单节点边界，先明确allocator生命周期再分块，不能只拆图而保留全部块 |
 | Apple ordinary SDPA | 无显式mask、非空、F16/BF16 D192/256 prefill已融合；其余域仍保留原路径 | F32受实际线程组资源限制，不能直接force；显式mask语义保留，D512仍在fused域外，见下 |
-| CPU Hadamard冷常量 | 仍准备W² host矩阵，4096为64 MiB；但CPU pin的原生FWHT已支持任意power-of-two，运算本身为O(WlogW) | 不盲移可能拖慢单级FWHT的两级GPU算法；保留为冷空间项，借用host矩阵不能称双份device分配 |
+| CPU Hadamard冷常量 | 仍准备W² host矩阵，4096为64 MiB；原生FWHT本身已为O(WlogW)，但现API仍要求矩阵 | [源码复核](cpu-hadamard/source-feasibility.json)确认需要原生unary/薄bridge才能安全省常量；不以小dummy/null伪造矩阵storage，不盲移GPU两级图 |
 | FlatHash近阈值rolling churn / Queue政策 | 已实证近满rolling keys造成频繁全表重建，增长策略已修；queue容量、空扫与重试合同尚未同责核齐 | map计数见下；queue目前不判输赢，不以membership读取代替安全erase/reclaim |
 
 - Core/Error/Obs/Math/Time/TimerQueue/Platform/Thread/FS/Process/Util：查现有证据与机制；
@@ -577,3 +581,35 @@ Hyle原有1032次try-read、其中709次WouldBlock。两个小候选分别去重
 
 本批源码/日志/原始数据归档后，先写`test.ps1`再按精确路径、大小及hash清理可重建产物：
 Windows Concat27文件197362252 B、Air普通SDPA8文件36649824 B；未删除源码、日志、数据或原有SDK/cache。
+
+## Queue：先修测量工具的完成与数据合同
+
+SPSC原来判断completed不等于2后，又独立读取wait值；最后worker若在两次load间完成，主线程可能wait(2)永久等待。
+现只对同一个observed值判断和wait，醒后acquire-load。MPMC原来在producer最后发布前读到empty、随后看见all-done，
+会用过早的empty判断退出；现确认all-done后进入局部drain，再次pop为空才结束。两项均为benchmark竞态，不当作库queue丢数据。
+双方SPSC核sum；MPMC每consumer在局部累计count/sum/xor，join后汇总核1..N，无热共享计数器；moody enqueue失败不再静默少做工作。
+
+两个当前TU直接编译通过，四路MPMC各4P/4C/200000消息、两路SPSC各1P/1C/262144消息的最小smoke通过。
+未跑完整benchmark、TBB可选分支或其它平台，也未据此更新性能排名。原owner/steal/vector区域逐byte保留。
+bounded Hyle/rigtorp的usable容量均1024，可按同一冷episode或同一warm边界继续比较；当前SPSC对手只是受控手写shape，不能称实际Folly成绩。
+Sharded的P×1024总容量与单shard满策略，不同于moody初始1024却可扩容/implicit producer的合同；旧倍率不继承。
+策略对齐后，空扫、重试及回收本身仍可能是真成本，不能拿算法不同自动豁免小输。
+[摘要](queue-contract/summary.json)和[源码/命令包](queue-contract/raw.zip)保留实际peer header hash、编译与smoke范围。
+
+## Vulkan普通causal SDPA：因果条件不再占矩阵
+
+既有BSHD F32/F16、D64/128/256融合分支改用同一FullF32 shader的causal/cache字段，无新kernel或dtype收窄。
+window=KV−1使所有合法query的左界仍为0，并裁掉全部位于未来的KV tiles；因果偏移仍为KV−Q+q。
+普通固定算子显式设置runtime-request slot为−1，避免误认为batch request0；非因果、BF16、wide和Sink路径未改。
+
+两版普通Region数值/受理回归均通过，候选3项通过；覆盖B2/GQA、padded batch pitch、非方形、Q1/3/5/17、
+D64/128/256、正/零/负scale、两套真实buffer重绑定与旧结果保留，FP64参考及原F32/F16预算不变。
+validate/update_batch_layout空请求也通过，未将私有paged测试替代普通入口验证。
+
+唯一空间形状为F32 B1/H8/KV头2/D64、Q1025/KV1041，双方完整524800元素满足常量0.25的4e-6 oracle。
+native gallocr容量6402176→0 B，caller四端口requested及native容量均5264384 B，输出2099200 B完整存在。
+原版仅新增线性空间上界测试按预期失败并保留日志。NativeWork split-K、commands/descriptors、driver/pool仍另计，
+不推断零total scratch、整机峰值或吞吐无退化；本批没有计时或公共Graph/default roster全构建。
+[摘要](causal-mask/summary.json)及[源码/原始包](causal-mask/source-evidence.zip)保留既有shader字段依据、CPU defer原因、
+source/link身份及全部定向结果。CPU暂不切boxed，以免为去mask关闭现有tiled prefill/split-KV；该域仍待补。
+归档后按新的`test.ps1`精确清理本批5个可重建exe/obj，共90630052 B；原SDK/shader/source/log不动。
