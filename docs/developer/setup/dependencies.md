@@ -1,169 +1,56 @@
-# 外部依赖：怎么装、哪些必需、哪些可选
+# 依赖与缓存
 
-> 跨平台通用。平台专属的安装命令在各平台文件里，这里讲**每个依赖是什么角色、怎么被 CMake 发现、装不装的后果**。
+初始化参数只选择产品、后端与明确的可选能力。各算子由哪些 Provider 执行，以及需要接入哪些第三方实现，
+由 HYLE 内部装配；普通用户无需枚举 oneDNN、ggml、Torch 等开关。
 
-## 总览
+## 三类依赖
 
-| 依赖 | 类别 | 缺了会怎样 | 怎么被发现 |
-|---|---|---|---|
-| C++ 编译器 / CMake / generator / 汇编器 | **硬门槛** | CMake FATAL_ERROR，配置失败 | CMake 自带检查；Ninja 不是唯一 generator |
-| **Highway** | **自动拉取**（FetchContent） | 选择 `simd` 或 `container` 时取得；严格离线 bundle 缺源码则配置失败 | lock pin `18e449b6…`；只执行 HYLE 自己的 target/package 集成 |
-| **xsimd** | **自动拉取**（FetchContent） | 选择 `simd` 时与 Highway 一起取得；严格离线 cache/bundle 缺源码则配置失败 | lock pin `3b3151ff…`；用于锁定的 SIMD provider 路由 |
-| **googletest** | **自动拉取**（FetchContent） | 同上（仅影响测试，`-DHYLE_BUILD_TESTS=OFF` 可跳） | lock pin `v1.18.0` |
-| **nghttp2** | **自动拉取**（FetchContent） | io + sched/fcontext 且启用 HTTP/2 时取得 | lock pin `v1.70.0` |
-| **Tracy** | 启用 trace 时自动取得的外部源码树 | `HYLE_TRACE=ON` 才取得并编译；任意/脏/被改写的覆盖源码会配置失败 | lock pin `v0.14.1`；`HYLE_TRACY_DIR` 仍可显式覆盖 |
-| **OpenSSL 3.0+** | 可选能力 | `HYLE_IO_TLS=AUTO/OFF` 可无 TLS；ON 时缺失或低于 3.0 即配置失败 | `find_package(OpenSSL 3.0 QUIET)` |
+| 类别 | 示例 | 谁准备 |
+|---|---|---|
+| 基础工具与系统 SDK | Python、CMake、C/C++ 工具链、CUDA Toolkit、Metal 组件、OpenSSL | 用户按系统安装；初始化发现并检查 |
+| 所选闭包的锁定源码/SDK 资产 | Highway、xsimd、ggml、oneDNN、LibTorch、GoogleTest、nghttp2、Tracy | 在线初始化按中央 lock 取得，已有合格资产则复用 |
+| benchmark 比较对象 | 独立 Highway/xsimd checkout、其他对手库 | 仅专项 benchmark 准备，不进入普通初始化 |
 
-可选能力的 ON 要求依赖存在，OFF 不探测；SDK/CI 明确能力集合，避免环境暗中改变产物。
-尚未实现的 backend/provider 不提供预留开关或恒失败 target；实际接入时再登记依赖并验证。
+具体版本、来源、hash 和许可证以 [HyleDependencyLock.json](../../../cmake/HyleDependencyLock.json) 为准，
+文档不再维护第二份 pin 清单。CUDA Toolkit 和显卡驱动是系统 SDK，不能由一个源码 commit 代替。
+Vulkan 缺少宿主 glslang 时，初始化可用同一 lock 准备宿主工具；该工具与目标设备 runtime 分开。
+宿主工具的构建保存在共享源码 cache 同级的 `tools-v1/`，按依赖身份、系统、架构与编译器隔离并复用。
 
----
+裸 CMake 的 tests/bench、TLS、HTTP/2、trace 默认关闭；`init.py --tests` 才准备测试依赖，
+`--tls` 自动查找已安装的 OpenSSL 3，`--http2`、`--trace` 分别取得所需锁定源码。
+`--backends all` 请求当前平台支持的全部完整后端，不因缺少某个系统 SDK 而静默裁剪能力。
 
-## FetchContent：固定版本源码依赖
+## 源码与二进制状态分开
 
-**唯一版本源**是 [`../../cmake/HyleDependencyLock.json`](../../../cmake/HyleDependencyLock.json)。每项同时
-登记 class、展示版本、40 位 commit、Git root tree、官方 codeload URL、archive SHA-256、
-SPDX/自定义许可证表达式和许可证文件哈希。FetchContent/external checkout 另登记无 `.git` 展开树
-SHA-256，in-tree snapshot 登记 vendored content tree，修改后并入产品的 port 则登记 HYLE integration path
-集合及其 adapted-content SHA-256。`HyleDependencyVersions.cmake` 只负责验证 JSON 并投影
-`HYLE_DEP_<NAME>_*` 变量；不得在模块 CMake、脚本或文档再手写第二份 pin。
+平台无关的锁定源码保存在 checkout/build 之外的 `HYLE_DEP_SOURCE_CACHE`，
+可用 `init.py --cache-dir <path>` 或同名环境变量指定。默认位置为：
 
-当前产品/测试 FetchContent 快照为：
+- Windows：`%LOCALAPPDATA%/hyle/dependencies/v1`。
+- macOS：`$HOME/Library/Caches/hyle/dependencies/v1`。
+- 其他 Unix：`$XDG_CACHE_HOME/hyle/dependencies/v1`，未设置时为 `$HOME/.cache/hyle/dependencies/v1`。
 
-- Highway `18e449b6…`（`simd` 与选定 `container` kernel 的直接产品源码）；
-- xsimd `3b3151ff…`（`simd` 的锁定 provider 源码）；
-- nghttp2 `v1.70.0`；
-- googletest `v1.18.0`。
+每个 build 的 `_deps` 保存自己的二进制和子构建，不跨编译器/架构共用。
+锁定 LibTorch 等平台 SDK 资产使用共享 cache 内各自的平台/版本身份；不复制进每个 build。
+切换配置可复用源码，但不能把旧对象、CMake cache 或整套 build 当作可搬运依赖包。
+`HYLE_DEP_BUILD_DIR` 是维护者的构建内部布局选项，不是普通初始化所需参数。
 
-中央 lock 可能暂存未来 Compute backend/provider 的候选身份，但没有 active consumer 的条目不是产品
-依赖，也不应加入普通离线 bundle。采用前必须由对应 factor 重新核对上游版本、API、许可证和展开树；
-setup 文档不会把候选 pin 当作已支持能力。
-
-在线取得使用 lock 中的官方 codeload archive，并由 CMake `URL_HASH SHA256=...` 在展开前验证；commit
-仍是源码身份，archive SHA-256 是传输身份，两者不能互相代替。in-tree 快照（mimalloc `v3.5.1`、
-simdutf `v9.1.0`、xxHash dev HEAD `c0b5ea995d66`、wyhash snapshot、nanobench `v4.6.0`、picohttpparser snapshot、
-Boost.Context `boost-1.92.0` fcontext）会在其实际 component/benchmark 闭包被选择时审计规范化内容树和
-许可证；core-only 不因此要求未消费 vendor。`cmake -P cmake/HyleDependencyVersions.cmake` 与完整源码包
-target 仍强制全量审计，防止发布介质夹带未复证快照。
-已经改写并并入 HYLE 源码的部分同样进入中央 lock，而不是因为“不下载”就消失：
-`platform_thread` 的 Parker 记录 Rust std 1.94.1 commit `e408947b…`、原始 tree/archive、adapted HYLE
-content hash 和选择的 MIT 文本；安装包同时携带 `rust-parker-LICENSE-MIT` 与第三方 notices。
-普通 `-DHYLE_DEPENDENCY_LOCK_FILE=...` 不能替换这份中央账本；否则攻击者可同时重写 URL、hash 与预期
-源码身份，使后续校验只证明一份自带的恶意账本。刻意损坏 lock 的合同夹具只能由已执行的受信 CMake
-代码以 GLOBAL property 证明一个精确测试路径；能注入 toolchain/top-level include 的代码本来就在构建
-信任边界内。
-
-Highway/xsimd 的身份不能混为一谈：`highway` 是选择 `simd` 或 `container` 时取得的直接产品源码，
-`xsimd` 是选择 `simd` 时取得的另一条锁定 provider 源码。HYLE 只编译自己的 target-bound TU，不执行
-上游 project，也不把任一供应商类型泄漏进 ordinary batch API；benchmark 使用独立、干净的 sibling
-checkout 作同 identity peer。
-`highway_port` 只登记 SIMD-11 有界裁决后保留的最小 VQSort adaptation，绑定旧 origin、adapted-path
-内容 hash 和 Apache-2.0 payload；它保留 compiler/scalable target glue、HYLE public POD/static entry 与
-产品语义，不能被误记成原创实现。数学与 bitpack port 已被 direct Highway 替代并从账本删除。新增 checkout 本身不
-等于完成迁移，必须同时删除等价产品 route、旧 source audit 与过期许可证投影。
-
-**默认行为（开箱即用，首次需联网）**：新机器 clone HYLE → 跑 `cmake`。所选闭包缺少锁定源码时，
-configure 自动下载官方 archive，在共享 `HYLE_DEP_SOURCE_CACHE` 内校验、展开并原子落盘；依赖的
-binary/subbuild 只进入当前 build 的 `HYLE_DEP_BUILD_DIR`。删除 build tree 不删除源码，后续新 build
-复用同一份源码且不联网；不同编译器、架构、sanitizer 或 CMake option 仍各自生成 binary/subbuild。
-
-默认共享源码位置为：
-
-- Windows：`%LOCALAPPDATA%/hyle/dependencies/v1`；
-- macOS：`$HOME/Library/Caches/hyle/dependencies/v1`；
-- 其他 Unix：`$XDG_CACHE_HOME/hyle/dependencies/v1`，未设置时为
-  `$HOME/.cache/hyle/dependencies/v1`。
-
-`-DHYLE_DEP_SOURCE_CACHE=<absolute-path>` 优先于同名环境变量，可把它统一放到例如
-`C:\public\project-hyle\.deps`。`HYLE_DEP_BUILD_DIR` 默认是当前 Hyle binary tree 的 `_deps`，只能由
-该 build 使用。源码 cache 不得放进源码树或 build tree，binary/subbuild 也不得反过来放进共享 cache。
-
-**离线/已审查源码**：用 FetchContent 标准 override 给每个依赖注入源码，而不是共享另一个 build tree：
-
-```bash
-cmake -S . -B build -DFETCHCONTENT_SOURCE_DIR_HIGHWAY=/approved/highway
-```
-
-这个标准变量不是绕过 lock 的后门：全部 locked consumer 都经统一 wrapper，在 `MakeAvailable` 前接受两种且仅两种
-身份——精确 commit/tree/clean 的 Git checkout，或与 lock 的官方 archive 展开树哈希完全一致、无需 `.git`
-的目录。文件修改、增加、删除、空目录变化、链接拼写变化或逃逸链接都会配置失败。FetchContent 的
-“第一次声明胜出”也不能绕过：wrapper 会复验 `MakeAvailable` 实际使用的 source，父工程同名预声明若
-不是 locked identity，整个 HYLE configure 失败。父 CMake/toolchain 是可执行信任根；这里保证最终产品
-不能带着错误身份成功生成，并不把父脚本当成可沙箱执行的数据。其他名字同理：
-`HIGHWAY`、`XSIMD`、`GOOGLETEST`、`NGHTTP2`。
-benchmark 对手的 sibling checkout 根使用环境变量 `HYLE_BENCH_DEPS_DIR`；它刻意不是
-`HYLE_DEP_SOURCE_CACHE` 或 `HYLE_DEP_BUILD_DIR`，也不参与产品 dependency population。仓库内旧
-`.deps/` 已删除；不要恢复一个同时装 source/build/subbuild 的模糊目录。
-
-共享 cache 的管理入口不会修改中央 lock：
-
-```bash
-cmake -DHYLE_DEP_ACTION=status -P cmake/HyleDependencyCacheTool.cmake
-cmake -DHYLE_DEP_ACTION=sync -P cmake/HyleDependencyCacheTool.cmake
-cmake -DHYLE_DEP_ACTION=sync -DHYLE_DEP_NAMES='highway;xsimd' \
-  -P cmake/HyleDependencyCacheTool.cmake
-cmake -DHYLE_DEP_ACTION=sync -DHYLE_DEP_NAMES=xsimd -DHYLE_DEP_REPAIR=YES \
-  -P cmake/HyleDependencyCacheTool.cmake
-cmake -DHYLE_DEP_ACTION=check-updates -P cmake/HyleDependencyCacheTool.cmake
-cmake -DHYLE_DEP_ACTION=prune -DHYLE_DEP_PRUNE_CONFIRM=YES \
-  -P cmake/HyleDependencyCacheTool.cmake
-```
-
-`sync` 与首次 configure 使用同一下载/校验实现；`status` 复验当前 identity。损坏时普通 configure
-fail closed，只有具名依赖加 `HYLE_DEP_REPAIR=YES` 才删除其损坏展开树，并优先从仍通过 SHA-256 的
-cache archive 重建。`check-updates` 只给维护者 upstream 差异输入；`prune` 只删除带 HYLE cache marker
-且不由当前 lock 引用的旧 identity，并要求明确确认。版本升级仍必须原子修改
-lock/provenance/license 并运行受影响模块的相关测试。
-
-源码树已提供根文件 `hyle-offline-deps.cmake`。制作 offline source bundle 时，把依赖分别放在
-`deps/<lock-name>/`。目录可以是 lock commit 的**干净 Git checkout**，也可以是 lock 中官方 archive
-未经编辑的展开根目录；前者验证 HEAD/root tree、零 tracked/untracked/ignored 文件（ignored build/cache
-同样可能被上游 glob/include 消费），后者验证包含目录、文件原始字节和安全相对
-symlink 目标的完整 manifest，两者都重验许可证。通过后才设置
-`FETCHCONTENT_SOURCE_DIR_<UPPERCASE_NAME>`。Tracy 同样可用两种形状，映射为 `HYLE_TRACY_DIR`。允许的名字
-直接来自 lock，不另维护供应商名单。例如：
+共享 cache 的状态检查和预取仍使用现有维护工具：
 
 ```text
-hyle-offline-deps.cmake
-deps/
-  highway/         # 选择 simd 或 container 时需要
-  xsimd/           # 选择 simd 时需要
-  nghttp2/
-  googletest/       # 构建 tests 时需要
-  tracy/            # 仅 HYLE_TRACE=ON 时需要
+cmake -DHYLE_DEP_ACTION=status -P cmake/HyleDependencyCacheTool.cmake
+cmake -DHYLE_DEP_ACTION=sync -P cmake/HyleDependencyCacheTool.cmake
 ```
 
-```bash
-cmake -C hyle-offline-deps.cmake \
-  -S hyle-<version>-source -B build -DHYLE_COMPONENTS=all
-```
+无参数 `sync` 预取工具管理的锁定源码集合，不代表已准备每个后端的平台 SDK 资产。
+普通初始化只准备所选闭包，避免无关下载。损坏资产会明确失败；具名修复、清理旧身份及
+版本升级的方法见该工具参数与中央 lock，不由初始化删除用户目录或更新依赖版本。
 
-目录名必须使用中央 lock 的精确小写 `name`。脚本强制
-`FETCHCONTENT_FULLY_DISCONNECTED=ON` 与 `FETCHCONTENT_UPDATES_DISCONNECTED=ON`；缺少已启用 feature 的
-源码会直接失败，不会回退联网。lock 的 expanded-tree hash 使官方 codeload 解压目录无需携带 `.git`；
-传输 archive 仍先核对其独立 SHA-256。只有组织使用不同但由外部系统独立证明的展开源码时，才可在 preload
-显式使用 `-DHYLE_OFFLINE_ALLOW_UNVERIFIED_EXPANDED_SOURCES=ON`；该 mismatch 逃生形状核对许可证并拒绝
-**任何** symlink（即便目标看似是安全相对路径），避免多级链接把词法根内目标重新导向根外。普通 direct
-override 也不能自我声明为已证明。
-完整准备命令和风险边界见 [`offline.md`](offline.md)。
-`HYLE_BUILD_TESTS=OFF` 且不触达 Tracy 的 core/error-only 选择允许没有 `deps/`；这不是降级，所需
-源码集合为空且断网门仍为 ON。后来启用 tests、trace 或 HTTP/2 时，对应预期本地路径缺失会立即失败。
+## 离线和直接 CMake
 
-OpenSSL 及未来 GPU backend 使用的 SDK/driver 属于宿主 SDK/运行时：它们由 `find_package()`、toolchain、
-sysroot 或 driver 提供，不能用某个源码 commit 冒充机器环境 pin。正式构建应固定 feature ON/OFF，并在
-构建证明中记录实际发现版本；这类 SDK 不放进 FetchContent source bundle。
+`init.py --offline` 使用已取得的依赖和系统 SDK，缺少时明确失败，不退回联网。
+完整介质准备、宿主工具和测试示例见[离线构建](offline.md)。
 
-从零准备 Windows/Linux/macOS 工具链、系统 SDK、依赖介质并做真实断网验收，见
-[`offline.md`](offline.md)。
-
-## OpenSSL（io-08 TLS，可选）
-
-TLS 是三态能力，当前默认 `OFF`：`AUTO` 自动发现 OpenSSL 3.0+，`ON` 要求 OpenSSL 3.0+，`OFF` 不探测且保持零 OpenSSL
-依赖。启用后编 `tls.cc` 并对消费者公开同名编译宏。OpenSSL 使用动态链（安全库应跟随系统 CVE
-更新，不静态焊死）。这项 option 只在可构建的 io 闭包中存在；无 fcontext 目标会拒绝 io 根，
-不会退化成 TLS stub。
-
-- **Linux/WSL**：`sudo apt install libssl-dev`，再显式配置 `-DHYLE_IO_TLS=ON`；本地探索也可用
-  `AUTO`，但正式 SDK/CI 应固定为 `ON` 或 `OFF`。
-- **Windows**：无系统级 MSVC OpenSSL 开发库，用 **vcpkg**（详见 [`windows.md`](windows.md) 依赖节）。
-- 运行 TLS 测试要 OpenSSL 的 DLL 在 PATH（Windows）——见平台文件。
+组织已有逐项来源审核的源码包时，可保留原生入口 `hyle-offline-deps.cmake`，
+将精确源码放在 `deps/<lock-name>/`。它验证中央 lock、展开内容和许可证后，
+设置标准 `FETCHCONTENT_SOURCE_DIR_<NAME>`；Tracy 使用 `HYLE_TRACY_DIR`。
+完整源码交付与安装消费见[交付说明](../../user/distribution.md)。

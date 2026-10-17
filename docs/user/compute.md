@@ -336,17 +336,17 @@ factor seam，也不要把单个 family 的域支持当成整个算子目录都�
 
 ### 可选 CPU FP8/FP4 成熟程序
 
-普通CPU源码构建选择`HYLE_COMPONENTS="compute;graph"`即可；CPU默认开启，其它路线默认关闭，
-oneDNN、ggml与支持平台的TorchAO/ATen依赖由HYLE组装。顶层可直接使用：
+普通 CPU 构建由 HYLE 自动组装 oneDNN、ggml 与支持平台的 TorchAO/ATen。
+Windows、Linux、macOS 使用相同入口：
 
 ```text
-cmake --preset compute-cpu
-cmake --build --preset compute-cpu
+python scripts/init.py --backends cpu --components compute,graph
+python scripts/build.py --jobs 2
 ```
 
-Windows未初始化开发工具链的shell先用`./scripts/hyle-windows.ps1 -Action Configure -Preset compute-cpu`，
-再用同脚本`-Action Build -Preset compute-cpu`；预设构建并行2。源码嵌入只设置产品并`add_subdirectory`，
-不需要手工枚举Provider。
+Python 3.10+、CMake 3.26+ 与基础工具链须已安装；脚本发现工具并为 Windows 子进程恢复 VS 环境。
+默认 Release、共享库、tests/bench OFF。源码嵌入只设置产品并 `add_subdirectory`，
+不需要手工枚举 Provider。更多参数见[初始化指南](../developer/setup/README.md)。
 
 选择完整 CPU 路线时，Windows/Linux x86_64自动取得CPU-only LibTorch `2.8.0+cpu`，
 使用中央锁中的原archive/SHA与统一cache的SDK子区；有合格本地SDK则复用，缺少时取得一次，
@@ -360,7 +360,8 @@ Windows未初始化开发工具链的shell先用`./scripts/hyle-windows.ps1 -Act
 | `FETCHCONTENT_FULLY_DISCONNECTED=ON` | 禁止网络；使用已转移cache、本地archive或外部SDK，真正miss明确失败 |
 
 `Torch_DIR`与`CMAKE_PREFIX_PATH`中的CPU SDK仍可复用。明确root优先于这些发现与archive输入。
-`OFF` 不探测 Torch。CUDA Torch SDK 不能替代它。GLM 5.3/Flash 官方FP8、DeepSeek V4
+这些高级输入用于复用或离线准备锁定资产，不是关闭必需 Provider 的开关。
+CUDA Torch SDK 不能替代该 CPU SDK。GLM 5.3/Flash 官方FP8、DeepSeek V4
 Pro/Flash 官方FP4/FP8的普通完整片段已通过正确性、Windows三交付与WSL检查；两条代表
 完整MoE的Graph/Direct成本通过原5%门。具体模型与平台范围见
 [能力账本](../implementation/tasks/compute/llm-moe-d5-acceptance-ledger.json)。
@@ -622,25 +623,25 @@ dtype、shape、layout 与资源是否可执行；此时无需分配 tensor payl
 
 ### 创建 CUDA 程序
 
-普通构建选择 `compute-cuda` preset，取得 CUDA-only Compute 与 Graph；它组装路线的现有成熟 Provider，
-关闭其它路线、tests 和 bench，Release build 的并行度为 2。系统须预装受支持的 C++ 工具链、Ninja 与
-CUDA Toolkit 13.3+；缺 Toolkit 时 configure 明确失败。
+Windows/Linux x86_64 选择 CUDA 后端即可取得 CUDA-only Compute 与 Graph，
+自动组装路线所需的成熟 Provider。系统须预装受支持的 C++ 工具链和 CUDA Toolkit 13.3+；
+缺 Toolkit 时初始化明确失败。
 
 ```text
-cmake --preset compute-cuda
-cmake --build --preset compute-cuda
+python scripts/init.py --backends cuda --components compute,graph
+python scripts/build.py --jobs 2
 ```
 
-Windows 从已初始化的 developer shell 执行上述命令，或用既有
-`scripts/hyle-windows.ps1 -Action Configure -Preset compute-cuda` 与
-`scripts/hyle-windows.ps1 -Action Build -Preset compute-cuda` 导入受支持的 MSVC 环境。
-CPU+CUDA SDK 可在 configure 时显式覆盖 `"-DHYLE_COMPUTE_ROUTES=cpu;cuda"`；static、install、目标 arch
-按普通 CMake 参数选，不需要内部 Provider flags 或排序。源码与安装包均链接 `hyle::compute`，
+同时编入 CPU 与 CUDA 使用 `--backends cpu,cuda`，只编入 Vulkan 使用 `--backends vulkan`；
+Windows/Linux x86_64 的 `--backends all` 同时提供 CPU、CUDA 和 Vulkan。
+编译可用集合不替代引擎运行时的 CPU/GPU/混合执行选择。
+静态库用 `init.py --static`，安装用 `build.py --install <prefix>`，无需内部 Provider flags 或排序。
+源码与安装包均链接 `hyle::compute`，
 应用链接后调用 `hyle_stage_runtime(app)`，Windows 把依赖 DLL 邻置 exe。
 构建选择不代替具体输入的支持检查；prepare 按实际模型格式、dtype、布局、设备和资源约束绑定实现，
 不满足条件时返回明确错误。
 
-不用 preset 时选择 `HYLE_COMPONENTS=compute`、`HYLE_COMPUTE_ROUTES=cuda`。自然 C++ 入口如下：
+直接使用 CMake 时选择 `HYLE_COMPONENTS=compute`、`HYLE_COMPUTE_ROUTES=cuda`。自然 C++ 入口如下：
 
 ```cpp
 #include <hyle/compute/cuda.h>

@@ -1,12 +1,14 @@
 # 构建与诊断脚本
 
-完整参数以各脚本的 `--help` 为准。[环境准备](../docs/developer/setup/README.md)说明平台与依赖，
+Windows、Linux、macOS 使用同样的三个入口：`python scripts/init.py`、
+`python scripts/build.py`、`python scripts/test.py`。完整参数以各脚本的 `--help` 为准。[环境准备](../docs/developer/setup/README.md)说明平台与依赖，
 [性能比较](../docs/developer/performance/README.md)说明计时、统计和公平比较。
 
 | 任务 | 入口 |
 |---|---|
-| 选择已安装的 Unix 工具链并执行命令 | `hyle-unix.sh` |
-| 选择已安装的 VS/SDK，配置、构建与测试 | `hyle-windows.ps1` |
+| 发现工具链、选择可用后端、准备依赖并保存 CMake 配置 | `init.py` |
+| 增量构建、选择目标、安装到指定 prefix | `build.py` |
+| 运行已构建的 CTest，可按名称过滤 | `test.py` |
 | 取得 benchmark 的外部参考库 | `fetch-bench-vendors.{sh,ps1}`、`setup-bench-libs.sh` |
 | 汇总 nanobench 的重复运行与配对数据 | `bench-stat.py` |
 | 分析 SIMD 操作比较与校准输出 | `op-parity-report.py` |
@@ -21,7 +23,10 @@
 `hyle_perf/` 保留可复用的统计、数据模型和日志解析函数。专项 `validate-*-bench.py` 用于检查对应
 benchmark 的结构、输出或资源事实，不决定是否可以开发，也不代替数值和实际运行验证。
 
-构建、测试与 benchmark 直接用对应 CMake target 和 CTest；按改动运行相关检查，报告失败与未运行项。
+`build.py` 和 `test.py` 默认使用当前选中的初始化目录，也可用 `--name` 或 `--build-dir` 选择其它配置。
+初始化失败后默认操作会拒绝旧产物，修复后运行 `init.py` 重试。
+`test.py` 不隐式构建；安装使用 `build.py --install [prefix]`，不更改用户环境。
+专项维护检查仍直接使用 CMake target、CTest 或 `cmake -P`；按改动运行相关检查，报告失败与未运行项。
 旧状态机、selector、收口检查、预算和机器证书已删除，不保留打印“未检查”却返回成功的兼容入口。
 
 产品依赖由 [HyleDependencyLock.json](../cmake/HyleDependencyLock.json) 管理，benchmark fetcher

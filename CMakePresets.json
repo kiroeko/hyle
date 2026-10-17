@@ -75,7 +75,7 @@
     {
       "name": "windows",
       "displayName": "Windows VS 2022 CPU development",
-      "description": "Visual Studio 2022 solution fallback. Use scripts/hyle-windows.ps1 so side-by-side v143 toolsets resolve to the highest installed MSVC 19.43+ version.",
+      "description": "Direct CMake/IDE preset for Visual Studio 2022. Use an initialized developer shell with a supported v143 toolset; ordinary builds use scripts/init.py and scripts/build.py.",
       "inherits": "hyle-dev",
       "generator": "Visual Studio 17 2022",
       "binaryDir": "${sourceDir}/build-windows",
@@ -93,7 +93,7 @@
     {
       "name": "windows-ninja",
       "displayName": "Windows selected MSVC + Ninja",
-      "description": "Ninja build using the MSVC environment selected by scripts/hyle-windows.ps1 (or an already initialized developer shell).",
+      "description": "Direct CMake/IDE Ninja preset; requires an initialized MSVC developer shell. Ordinary builds use scripts/init.py and scripts/build.py.",
       "inherits": "hyle-dev",
       "generator": "Ninja",
       "binaryDir": "${sourceDir}/build-windows-ninja",
@@ -102,7 +102,7 @@
     {
       "name": "windows-clangcl",
       "displayName": "Windows clang-cl + Ninja",
-      "description": "Clang frontend with the Windows/MSVC ABI and SDK. The wrapper imports the Visual Studio environment; clang-cl must be installed and discoverable on PATH.",
+      "description": "Direct CMake/IDE Clang frontend with the Windows/MSVC ABI and SDK. Requires an initialized developer shell and clang-cl on PATH; ordinary builds use scripts/init.py --compiler clang-cl.",
       "inherits": "windows-ninja",
       "binaryDir": "${sourceDir}/build-windows-clangcl",
       "environment": {

@@ -1,244 +1,40 @@
-# Windows 环境准备（MSVC / clang-cl）
+# Windows 基础环境
 
-> 主开发平台之一。当前主机使用 **MSVC 14.50（VS18 Enterprise）**；HYLE 的合同是
-> MSVC 19.43+。CMake 4.2+ 可生成 VS 2026 solution；更旧 CMake 走 VS 2022 generator 回退。
-> 覆盖：构建 / 测试 / 性能测试三件事 + 依赖（OpenSSL）。跨平台依赖总览见 [`dependencies.md`](dependencies.md)。
-> 无网机器的 Build Tools layout、依赖介质与断网验收见 [`offline.md`](offline.md)。
+普通初始化、构建、测试和安装统一使用[三个 Python 入口](README.md)，无需每次手工初始化 VS shell。
+脚本按已保存的编译器和 VS 实例恢复子进程环境，不永久修改当前用户的 PATH、INCLUDE 或 LIB。
 
-## 一、硬门槛（必需，缺了 CMake 直接 FATAL_ERROR）
+## 已安装工具
 
-| 组件 | 要求 | 装法 |
-|---|---|---|
-| Visual Studio / Build Tools | C++ 工作负载（cl / MASM / Windows SDK） | VS Installer 勾「使用 C++ 的桌面开发」 |
-| MSVC 编译器 | 19.43+（VS 17.13+） | 随 VS，C++23 `std::expected` 需要 |
-| clang-cl frontend | 18+（`windows-clangcl` 可移植性验证） | VS Installer 安装「C++ Clang tools for Windows」，或使用 LLVM 安装，并确保 `clang-cl` 在 PATH |
-| CMake | 3.25+ | `winget install Kitware.CMake` 或随 VS |
-| Generator | VS generator 自带；Ninja 可选 | 新版 MSVC 尚未被当前 CMake generator 识别时用 `winget install Ninja-build.Ninja` |
-| Git | Git-for-Windows（自带 git-bash） | `winget install Git.Git` |
+| 工具 | 要求 |
+|---|---|
+| Python | 3.10+，安装入口见 [Python](https://www.python.org/downloads/windows/) |
+| CMake | 3.26+，见 [CMake 下载](https://cmake.org/download/) |
+| Visual Studio / Build Tools | MSVC 19.43+，包含 C++ 桌面工作负载、Windows SDK 和 MASM |
+| clang-cl | 可选，18+；仍需 Windows SDK 与 MSVC 头、库 |
+| Ninja | 安装后可使用；初始化会发现已有的构建工具 |
 
-**fcontext 门控**：CMake 先把目标平台是否有已接线汇编计算为内部
-`HYLE_FCONTEXT_SUPPORTED`；只有 component 闭包实际选择 sched 时，内部 `HYLE_HAS_FCONTEXT` 才为真并
-启用汇编语言。x86_64 Windows 的 cl.exe 与 clang-cl 都走 MSVC ABI + MASM（ml64）实现。两者都不是
-用户可写的 cache 选项；要不要 sched 由 `HYLE_COMPONENTS` 和依赖闭包决定。
+Visual Studio 的安装步骤见 [Microsoft C++ 安装说明](https://learn.microsoft.com/en-us/cpp/build/vscpp-step-0-installation?view=msvc-170)。
+已有多个 VS/toolset 时，初始化选择合格实例；后续 build/test 使用相同工具链。
+切换 MSVC 与 clang-cl 应重新初始化相应配置，不在原 CMake cache 中原地换编译器。
 
-根 `project()` 只启用 CXX。在 `HYLE_BUILD_TESTS=OFF` 的产品/source 形状中，C 是内部实现语言，
-只有所选闭包含 mem/mimalloc 时才按需启用；core/error 等纯 C++ 产品闭包不要求 C frontend。
-测试形状会进入 GoogleTest 自己的 CMake project，并可能同时探测 C compiler，因此运行
-`hyle_core_tests` 等验证仍应准备完整的 MSVC C/C++ workload。
+CPU 与 CUDA 完整产品当前支持 Windows x86_64；CUDA 另需 CUDA Toolkit 13.3+ 和可用驱动。
+Vulkan 源码构建需要宿主 shader 编译器；缺少时初始化可从中央 lock 准备它。
+脚本不会替用户安装 CUDA Toolkit 或显卡驱动。
 
-## 二、环境初始化（关键，每个构建 shell 都要先做）
+## 平台注意事项
 
-Visual Studio generator 会选择对应 IDE 实例，但在同一 VS 内并存多套 v143 时不保证选择数值最高
-的 toolset；Ninja 则完全使用 shell 中的 `cl.exe`。推荐统一走仓库脚本，
-优先使用已配置 cache 的 VS 实例、编译器和 toolset。新配置按所选 generator 选择对应 VS 版本；
-VS 2022 solution 显式选择已安装的最高合格 v143。已有 Ninja cache 不会因机器另装新版 VS 而漂移，
-脚本也不自动清空 cache。显式编译器或自定义 toolchain 没有 VS 路径时沿用调用方环境，
-由该 toolchain 提供 SDK，不盲目注入最新 VS。Edition/安装路径均不写死：
+- 从普通 PowerShell 运行 `python scripts/test.py` 时，独立头测试也会取得对应 MSVC 环境。
+- `--sanitizer asan` 支持 Windows；TSan/UBSan 使用受支持的 Unix 工具链。ASan runtime 必须与编译器匹配。
+- 构建目录过长时，使用仓库内较短的 `--build-dir .scratch/b/<label>`。
+  系统长路径开关不能解除每个编译器或第三方子工具的路径限制，见
+  [Windows 长路径说明](https://learn.microsoft.com/en-us/windows/win32/fileio/maximum-file-path-limitation)。
+- CMake preset 仍可供 IDE 或直接 CMake 使用；直接维护命令需要相应 Developer Shell。
+  VS 2026 generator 本身需要 CMake 4.2+，普通 Python 入口无需用户选择 generator/preset。
 
-```powershell
-scripts/hyle-windows.ps1 -Action Configure -Preset windows-ninja
-scripts/hyle-windows.ps1 -Action Build -Preset windows-ninja --parallel 2
-scripts/hyle-windows.ps1 -Action Test -Preset windows-ninja --output-on-failure
+TLS 需要与 MSVC ABI 匹配的 OpenSSL 3 开发包；可按组织既有方式安装，例如
+[vcpkg](https://learn.microsoft.com/en-us/vcpkg/get_started/get-started-msbuild)。
+`init.py --tls` 会自动查找常见安装位置；非标准位置可用高级参数
+`-D OPENSSL_ROOT_DIR=<prefix>` 指定。
+不要使用 Git for Windows 附带的 MinGW OpenSSL 代替 MSVC 开发库。
 
-# 可移植性复核：Clang frontend + Windows/MSVC ABI，不能复用 MSVC cache
-scripts/hyle-windows.ps1 -Action Configure -Preset windows-clangcl
-scripts/hyle-windows.ps1 -Action Build -Preset windows-clangcl --parallel 2
-scripts/hyle-windows.ps1 -Action Test -Preset windows-clangcl --output-on-failure
-
-# CMake 4.2+ + VS 2026：原生 v145 solution
-scripts/hyle-windows.ps1 -Action Configure -Preset windows-vs2026 -DHYLE_COMPONENTS=core
-
-# 较旧 CMake：VS 2022 solution，脚本选择最高合格 v143
-scripts/hyle-windows.ps1 -Action Configure -Preset windows -DHYLE_COMPONENTS=core
-scripts/hyle-windows.ps1 -Action Build -Preset windows --target hyle_core_tests --parallel 2
-```
-
-多个 agent/session 并行时不得复用上述 preset 的固定 build tree。为每个会话分配独占绝对路径：
-
-```powershell
-$scratch = Join-Path (Get-Location).Path '.scratch\build\core-<session-id>'
-scripts/hyle-windows.ps1 -Action Configure -Preset windows-ninja `
-  -BinaryDir $scratch -Component core `
-  -DHYLE_BUILD_TESTS=ON -DHYLE_BUILD_BENCH=OFF
-scripts/hyle-windows.ps1 -Action Build -BinaryDir $scratch `
-  --target hyle_core_tests --parallel 2
-scripts/hyle-windows.ps1 -Action Test -BinaryDir $scratch --output-on-failure
-```
-
-模块交接再用独立 scratch 跑 source/shared/static/relocated consumer 全旅程：
-
-```powershell
-$smokeRoot = Join-Path (Get-Location).Path '.scratch\smoke\core-delivery-<session-id>'
-scripts/hyle-windows.ps1 -Action SelectedComponentSmoke `
-  -Component core -SmokeRoot $smokeRoot
-```
-
-`-BinaryDir` 只用于 Configure/Build/Test，且必须是绝对、由当前会话拥有的路径；
-`SelectedComponentSmoke` 的 `-SmokeRoot` 同样不得与其他任务共享。需要显式共用源码 cache 时使用
-wrapper 的 `-DependencySourceCache C:\public\project-hyle\.deps`；它会设置同名环境输入，避免
-PowerShell 把含盘符冒号的原始 `-DHYLE_DEP_SOURCE_CACHE=C:/...` 错拆成脚本参数。直接调用 CMake 时
-仍使用标准 `-D` 形式。
-
-也可手工初始化：
-
-```bat
-:: 方式 A（推荐，最全）：VsDevCmd
-call "C:\Program Files\Microsoft Visual Studio\18\Enterprise\Common7\Tools\VsDevCmd.bat" -arch=x64
-
-:: 方式 B：vcvars64（本仓库脚本一直用这个，也 OK）
-call "C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Auxiliary\Build\vcvars64.bat"
-```
-
-- ⚠️ **INCLUDE 没注入的症状**：ninja 用 cache 里的 cl 报 `C1083: 找不到 <chrono>/<stdbool.h>`——**不是缺头，是环境没注入**（新开 shell 没 call vcvars/VsDevCmd，或在半配置的 build `_deps` 状态下 rebuild）。对策：确保每个跑 cmake 的 shell 都先 call 一次。
-- VsDevCmd 可能打印 `vswhere.exe 不是内部或外部命令`——**无害**，有 fallback，照样正确注入。
-
-## 三、git-bash 调 cmd 的坑（本仓库常用 git-bash 驱动）
-
-- git-bash 的 MSYS 路径转换会把 `cmd.exe /c` 的 `/c` 当路径 `C:\` 吞掉 → 进交互模式不执行。**必须双斜杠 `cmd.exe //c "..."`**。
-- cmd 等 stdin 会挂起，追加 `< /dev/null`。
-- 最稳套路：把 `call vcvars >nul && cmake ... && echo EXIT=%errorlevel% > log` 写进一个 `.bat`，用 `cmd.exe //c "bat路径" < /dev/null` 跑，再**读 log 文件**看结果（别靠 stdout——cmd 横幅糊屏 + 中文编码乱）。
-
-## 四、构建
-
-```bat
-:: CMake 4.2+：原生 VS 2026 / v145 solution
-powershell -File scripts/hyle-windows.ps1 -Action Configure -Preset windows-vs2026
-
-:: 旧 CMake 回退：生成 VS 2022 solution，并显式选择最高合格 v143
-powershell -File scripts/hyle-windows.ps1 -Action Configure -Preset windows
-
-:: 或已初始化 dev shell 的 Ninja 入口
-cmake --preset windows-ninja
-
-:: 构建单个目标 / 全部
-cmake --build --preset windows --target hyle_io_core_test --parallel 2
-cmake --build --preset windows --parallel 2
-```
-
-VS 2026 preset 生成 `build-windows-vs2026/hyle.slnx`；VS 2022 回退生成
-`build-windows/hyle.sln`。两者都是 multi-config generator，preset 的 build/test 阶段固定选 Release。
-
-直接运行 `cmake --preset windows` 只适合 VS 默认 v143 本身已经是 14.43+ 的机器；CMake 不承诺从
-side-by-side toolset 中挑最高版本。例如 VS 2022 同时有 14.38/14.44 时，默认可能仍落到 14.38。
-包装脚本会探测后传 `-T version=14.44`（具体值随机器变化），若旧 cache 使用了另一 toolset，
-只用 `--fresh` 重建 CMake cache/生成文件，不删除源码、依赖 checkout 或编译产物。
-`Visual Studio 18 2026` generator 从 CMake 4.2 才存在；CMake 4.1 及更早版本不能通过安装 IDE 获得
-新 generator。此时 VS 2026 仍可打开 VS 2022 solution，命令行最新编译器走 Ninja 入口。
-
-`windows-clangcl` 仍由同一 wrapper 导入 Windows SDK、MSVC headers/libraries 和 MASM 环境，但
-将 C/C++ frontend 固定为 PATH 中的 `clang-cl`；它与 cl.exe 使用同一 Windows ABI，却不是
-`CMAKE_CXX_COMPILER_ID=MSVC`。因此 ISA/告警逻辑必须按 compiler ID 区分，不能把 CMake 的
-`MSVC` ABI-family 变量误当成 cl.exe 身份。
-
-```powershell
-Get-Command clang-cl
-clang-cl --version  # 必须为 18+
-```
-
-wrapper 只验证并使用已安装的 frontend，不替用户安装 LLVM；不要让 `windows-clangcl` 复用任何 cl.exe
-build tree。
-
-IO 的 TLS/HTTP2 和 trace 默认 OFF，并只在 owner 闭包中声明。
-
-- 目标名：`hyle_add_test(<mod>)` → `hyle_<mod>_test`；带 NAME 的 → `hyle_<mod>_<name>_test`。
-- MSVC 默认 /W4；改导出宏/类布局注意 C4251/C4273。全局已加 `/Zc:__cplusplus`（否则 C++23 feature-test 宏误触发）+ `/utf-8`（杀 C4819）。
-
-### 长路径与第三方子构建
-
-`LongPathsEnabled=1` 只放宽主动支持长路径的应用；编译器、链接器和构建子工具仍各有边界，见
-[Windows 长路径条件](https://learn.microsoft.com/zh-cn/windows/win32/fileio/maximum-file-path-limitation)。
-若 CMake 已提示 object 目录过长，随后 compiler probe 在生成文件时失败，先检查生成物的完整路径。
-不要只量源码路径，也不要把所有 `C1083` 都归因为长路径。
-
-优先使用会话独占的短 binary root，例如仓库内的 `.scratch\b\vk-y1`；源码工作区不必搬迁。
-构建、缓存和实验输出放在项目目录内，不在 `C:\` 根目录创建项目目录。若完整路径仍过长，
-先缩短项目内的 build 名称和第三方子构建层级。
-第三方 owner 应用 CMake 的
-[`EP_PREFIX` / `BINARY_DIR`](https://cmake.org/cmake/help/latest/module/ExternalProject.html#directory-options)
-控制子构建层级。ggml Vulkan 的 host shader 工具已放到当前 build 的
-`HYLE_DEP_BUILD_DIR/gvk-<patch-id>`，避免继承整串 vendor 子目录；短补丁身份隔离不同 source
-对应的 CMake cache，不写共享源码 cache。
-[`CMAKE_OBJECT_PATH_MAX`](https://cmake.org/cmake/help/latest/variable/CMAKE_OBJECT_PATH_MAX.html)
-是生成工具的路径预算，CMake 会尝试哈希缩短对象名；调大它不会解除编译器的限制，过长的父目录
-也无法靠缩短文件名解决。无需为这一问题反复修改系统长路径开关。
-
-## 五、测试
-
-```bat
-powershell -File scripts/hyle-windows.ps1 -Action Test -Preset windows --output-on-failure
-
-:: 仅在当前 shell 已手工 call VsDevCmd/vcvars64 后可直接运行：
-ctest --preset windows --output-on-failure
-```
-
-header-self-contained 测试会在 CTest 期间再次调用 `cl.exe`；普通 PowerShell 即使复用已配置的
-build tree 也没有 MSVC 的 `INCLUDE`。仓库 wrapper 会为该次 Test 动作重新导入环境，且不会把
-环境永久写回调用方。
-
-### ASan
-
-Windows 的 sanitizer 配置只支持 ASan；TSan/UBSan 应在 WSL/Linux 的独立构建中运行。cl.exe 与
-clang-cl 都必须使用 fresh、互不复用的 build tree：
-
-```powershell
-$scratch = Join-Path (Get-Location).Path '.scratch\build\platform-msvc-asan-<session-id>'
-scripts/hyle-windows.ps1 -Action Configure -Preset windows-ninja `
-  -BinaryDir $scratch -Component platform -DHYLE_SANITIZER=asan
-scripts/hyle-windows.ps1 -Action Build -BinaryDir $scratch `
-  --target hyle_platform_tests --parallel 2
-scripts/hyle-windows.ps1 -Action Test -BinaryDir $scratch `
-  --output-on-failure -L platform
-```
-
-把 preset 换成 `windows-clangcl` 即为 clang-cl 验证。配置会从当前编译器安装中解析并链接匹配的
-ASan dynamic runtime/thunk，生成可符号化调试信息，并把 runtime DLL 复制到 EXE/DLL 目录；因此
-验收不能只看 `/fsanitize=address` 是否出现在编译命令中，还要确认测试实际启动且产物导入
-`clang_rt.asan_dynamic-*`。若父工程预先提供 `GTest::gtest_main`，该 GoogleTest 也必须由父工程
-按相同 ASan/MSVC STL 注解形状构建。
-
-- **TLS 测试**：需 OpenSSL DLL 在 PATH，见第七节。
-
-## 六、性能测试（bench）
-
-```bat
-:: 先拉固定版 Highway/xsimd；默认根为 C:/public/project-hyle
-powershell -ExecutionPolicy Bypass -File scripts/fetch-bench-vendors.ps1
-
-:: bench 用独立 build-bench，不能污染日常 build 的产品 cache。
-cmake -S . -B build-bench -G Ninja -DCMAKE_BUILD_TYPE=Release -DHYLE_BUILD_BENCH=ON
-cmake --build build-bench --target hyle_sched_bench
-cd build-bench\bin && hyle_sched_bench.exe
-```
-
-- 所有 SIMD bench 都用 `HYLE_BENCH_VENDOR_DIR` 下的固定版 Highway/xsimd；Windows 默认
-  `C:/public/project-hyle`，改目录时 CMake 也传 `-DHYLE_BENCH_VENDOR_DIR=<root>`。
-- bench 目标名：`hyle_add_bench(<mod>)` → `hyle_<mod>_bench`。
-- **Windows 性能数字注意**：Release + 关掉后台干扰；nanobench 自带统计。跨平台对标以 Linux 原生 ext4 为准（Windows NTFS 亦可信，但重 IO 对比看 Linux）。
-- Windows 与 WSL 是同一物理主机，性能采样错开运行；P-core、NTFS 与电源设置见
-  [验证环境](../performance/machines.md)。
-
-## 七、可选依赖：OpenSSL（TLS）
-
-### OpenSSL（vcpkg，Windows 标准做法）
-
-Windows 无系统级 MSVC OpenSSL 开发库（Git 自带的是 mingw64 运行时，链不进 MSVC）。用 vcpkg：
-
-```bash
-git clone --depth 1 https://github.com/microsoft/vcpkg.git C:/public/vcpkg
-cmd.exe //c "C:\public\vcpkg\bootstrap-vcpkg.bat -disableMetrics"
-cmd.exe //c "C:\public\vcpkg\vcpkg.exe install openssl:x64-windows"
-```
-
-配置时指向它（对现有 build 目录也能加）：
-
-```bat
-cmake -S . -B build -DHYLE_IO_TLS=ON ^
-  -DOPENSSL_ROOT_DIR=C:/public/vcpkg/installed/x64-windows
-```
-
-成功打印 `HYLE: io TLS ON -- enabled with OpenSSL 3.x`。**运行 TLS 测试**加 DLL 到 PATH：
-
-```bat
-set PATH=C:\public\vcpkg\installed\x64-windows\bin;%PATH%
-cd build\bin && hyle_io_tls_test.exe
-```
+离线介质准备见[离线构建](offline.md)；性能采样要求见[验证环境](../performance/machines.md)。

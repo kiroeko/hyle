@@ -9,6 +9,18 @@ HYLE（HYbrid LEvels）是面向本地 AI 推理、异构计算、资源流送�
 
 ## 开始使用
 
+安装 Python 3.10+、CMake 3.26+ 与受支持的 C++ 工具链后，三平台使用同一入口：
+
+```text
+python scripts/init.py
+python scripts/build.py
+```
+
+默认 CPU、Release、共享库，测试关闭。用 `init.py --backends cpu,cuda` 选择所需编译后端；
+可选 `cpu`、`cuda`、`metal`、`vulkan` 或逗号组合，运行时的设备和混合执行策略由引擎决定。
+开启测试时先 `init.py --tests`，构建后运行 `python scripts/test.py`。
+参数、配置复用和安装说明见[初始化指南](docs/developer/setup/README.md)，各脚本均提供 `--help`。
+
 - [C++ 使用指南](docs/user/usage-guide.md)
 - [源码、静态库与共享库集成](docs/user/distribution.md)
 - [可运行样例](samples/README.md)

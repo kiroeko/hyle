@@ -4,12 +4,13 @@
 from __future__ import annotations
 
 import argparse
-import os
 import platform
 import re
 import subprocess
 import tempfile
 from pathlib import Path
+
+from hyle_environment import windows_compiler_environment
 
 
 def parse_args() -> argparse.Namespace:
@@ -101,79 +102,16 @@ def compile_header(
 def visual_studio_environment(
     instance: str, platform_name: str, toolset_version: str, compiler: str
 ) -> dict[str, str] | None:
-    """Load the compiler's VS environment once per module.
-
-    Ninja has no CMAKE_GENERATOR_INSTANCE, so derive the installation from the
-    selected cl.exe/clang-cl.exe path instead of making direct CTest execution
-    depend on an already-open Developer Command Prompt.
-    """
+    """Use the same cache/toolset-aware environment as the development scripts."""
     if platform.system() != "Windows":
         return None
 
-    # The Windows wrapper already imports one coherent VS/SDK environment before
-    # launching CTest. Calling VsDevCmd a second time prepends the same tool paths
-    # again; on a feature-rich VS installation that can push cmd.exe past its
-    # 8191-character input limit. Reuse the initialized environment when present.
-    if (
-        os.environ.get("VSCMD_VER")
-        and os.environ.get("VCINSTALLDIR")
-        and os.environ.get("WindowsSdkDir")
-    ):
-        return os.environ.copy()
-
-    install_dir: Path | None = None
-    if instance:
-        # CMAKE_GENERATOR_INSTANCE may append a version selector.
-        install_dir = Path(instance.split(",", maxsplit=1)[0])
-    else:
-        compiler_path = Path(compiler).resolve()
-        for parent in compiler_path.parents:
-            if parent.name.lower() == "vc":
-                install_dir = parent.parent
-                break
-    if install_dir is None:
-        return None
-    vsdevcmd = install_dir / "Common7" / "Tools" / "VsDevCmd.bat"
-    if not vsdevcmd.is_file():
-        raise RuntimeError(f"Visual Studio environment script not found: {vsdevcmd}")
-
-    arch = {
-        "win32": "x86",
-        "x64": "x64",
-        "arm64": "arm64",
-    }.get(platform_name.lower(), platform_name)
-    arguments = ["-no_logo", f"-arch={arch}", "-host_arch=x64"]
-    if toolset_version:
-        # VsDevCmd selects a toolset family (14.44), while CMake may report the
-        # full directory version (14.44.35207).
-        family = ".".join(toolset_version.split(".")[:2])
-        arguments.append(f"-vcvars_ver={family}")
-    # Passing a quoted batch path through `cmd /c <string>` is re-escaped by
-    # Python's Windows argv conversion. A tiny temporary batch avoids that
-    # ambiguity and lets `set` expose the initialized child environment.
-    with tempfile.TemporaryDirectory(prefix="hyle-vs-env-") as temp:
-        bootstrap = Path(temp) / "environment.cmd"
-        bootstrap.write_text(
-            f'@call "{vsdevcmd}" {" ".join(arguments)} >nul\n@set\n',
-            encoding="utf-8",
-        )
-        result = subprocess.run(
-            ["cmd.exe", "/d", "/c", str(bootstrap)],
-            text=True,
-            capture_output=True,
-            check=False,
-        )
-    if result.returncode != 0:
-        raise RuntimeError(
-            f"could not initialize Visual Studio compiler environment:\n{result.stderr}"
-        )
-
-    compiler_env = os.environ.copy()
-    for line in result.stdout.splitlines():
-        key, separator, value = line.partition("=")
-        if separator and key:
-            compiler_env[key] = value
-    return compiler_env
+    return windows_compiler_environment({
+        "CMAKE_CXX_COMPILER": compiler,
+        "CMAKE_GENERATOR_INSTANCE": instance,
+        "CMAKE_GENERATOR_PLATFORM": platform_name,
+        "CMAKE_VS_PLATFORM_TOOLSET_VERSION": toolset_version,
+    })
 
 
 def main() -> int:

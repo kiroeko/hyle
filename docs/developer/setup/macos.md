@@ -1,104 +1,38 @@
-# macOS 环境准备（Apple Silicon）
+# macOS 基础环境
 
-> ARM/NEON + kqueue 真机验证平台。
-> 覆盖：构建 / 测试 / 性能测试 + 依赖。当前验证只使用 MacBook Air
-> `Mac16,12`（`ssh kiro@172.22.10.198`）；Mac mini 不可用。
-> 无网机器的 Command Line Tools/CMake 介质与断网验收见 [`offline.md`](offline.md)。
+普通初始化、构建、测试和安装使用[三个 Python 入口](README.md)。当前完整 CPU 与 Apple Compute
+产品支持 Apple Silicon；选择 `--backends metal` 使用 MLX/Metal，`--backends cpu,metal` 同时构建 CPU 与 Apple GPU 能力。
 
-从 Windows canonical workspace 连接时，MacBook Air 使用 OpenSSH 默认身份：
+## 已安装工具
 
-```powershell
-ssh kiro@172.22.10.198
-```
+需要 Python 3.10+、CMake 3.26+、AppleClang/Clang 18+、匹配的 macOS SDK 和 Ninja 或 Make。
+Command Line Tools 的安装方式见 [Apple 官方说明](https://developer.apple.com/documentation/xcode/installing-the-command-line-tools/)，
+Python 和 CMake 可从[Python](https://www.python.org/downloads/macos/)与[CMake](https://cmake.org/download/)取得。
+初始化发现已有工具；不替换全局 developer directory 或修改 Shell 启动文件。
+系统自带的 `python3` 可能低于要求；使用已安装的 Python 3.10+ 运行三个入口，版本不足时会给出提示。
 
-只记录 identity 的位置与连接方法，不把私钥内容、远端临时源码或构建产物提交进仓库。
+包含原生地址等待实现的 `platform_thread` 要求 macOS deployment target 14.4+。
+顶层构建有对应默认值；父工程源码嵌入应在 `add_subdirectory(hyle)` 前设置合格的
+`CMAKE_OSX_DEPLOYMENT_TARGET`。显式 `CMAKE_OSX_ARCHITECTURES` 每个 build 只接受一个架构，
+不能用单一 Hyle 依赖/ISA 图直接构建 universal binary。
 
-## 一、硬门槛
+## Metal 与其他依赖
 
-| 组件 | 要求 | 装法 |
-|---|---|---|
-| Apple clang | **18+**（Command Line Tools） | `xcode-select --install` |
-| CMake | 3.25+ | `brew install cmake` |
-| Ninja *或* make | 二选一 | `brew install ninja`（若无 ninja 用 `-G "Unix Makefiles"`） |
+Apple 后端需要可执行的 `metal` 和 `metallib`。Command Line Tools 存在不等于 Metal 组件已经安装；
+缺失时按 [Apple 额外组件说明](https://developer.apple.com/documentation/Xcode/downloading-and-installing-additional-xcode-components)
+在 Xcode Settings → Components 中安装 Metal Toolchain。初始化会检查并给出指引，
+不把某台验证机的工具目录、签名组件或临时 shim 当成用户安装步骤。
 
-- clang 在 `/Library/Developer/CommandLineTools/usr/bin/clang{,++}`。
-- 选择 `platform`（以及依赖它的 mem/simd/container/sched）时，macOS deployment target
-  必须 ≥14.4；Parker/address wait 使用该版本才公开的系统接口。HYLE 顶层构建未指定时默认
-  14.4；嵌入父工程时请在 `add_subdirectory(hyle)` 前设置
-  `CMAKE_OSX_DEPLOYMENT_TARGET=14.4` 或更高，低版本会在 configure 阶段明确失败。
-- ⚠️ **brew / cmake 不在非登录 shell 的 PATH**（Apple Silicon 装在 `/opt/homebrew/bin`）——用绝对路径 `/opt/homebrew/bin/cmake` 或先 `export PATH=/opt/homebrew/bin:$PATH`。非交互 ssh 命令里 `$HOMEBREW_PREFIX` 等为空，别依赖。
-- **fcontext**：arm64 macho 汇编已 vendored 并接线，fiber 在 mac 真跑。
+Vulkan 源码构建还需要宿主 shader 编译器；在线初始化可按 lock 准备缺少的 glslang。
+TLS 需要 OpenSSL 3 开发包；`init.py --tls` 自动查找常见安装位置，
+非标准位置可用高级参数 `-D OPENSSL_ROOT_DIR=<prefix>` 指定。
+非登录 SSH 中若找不到已安装的 Python/CMake，应使用实际可执行文件路径或临时进程 PATH。
 
-## 二、构建
+## 验证副本与测量
 
-`macos` preset 不指定 generator；有 Ninja 就可用 Ninja，没有时 CMake 选择 Unix Makefiles：
+按 [AGENTS.md](../../../AGENTS.md) 使用当前可用验证机。验证副本不反向覆盖产品源码，
+也不把远端工具、SDK、旧 build 或整套依赖复制回工作区；优先复用固定 Hyle 工作目录里的缓存。
 
-```bash
-export PATH=/opt/homebrew/bin:$PATH
-cd ~/hyle
-scripts/hyle-unix.sh /opt/homebrew/bin/cmake --preset macos
-scripts/hyle-unix.sh /opt/homebrew/bin/cmake --build --preset macos --parallel 2
-```
-
-- 默认 preset 是 `all` + tests 的 CPU baseline；TLS、HTTP/2 和 trace 都是 `OFF`。首次配置通过
-  FetchContent 取得所选闭包与 googletest 的锁定源码。显式开启 HTTP/2 才会把 nghttp2 放到
-  `$HOME/Library/Caches/hyle/dependencies/v1`（或显式
-  `HYLE_DEP_SOURCE_CACHE`）。每个 build tree 的 `_deps` 只保存自己的 binary/subbuild；删掉 build
-  不会删源码，后续 build 不重新下载。
-
-## 三、测试
-
-```bash
-export PATH=/opt/homebrew/bin:$PATH
-cd ~/hyle
-/opt/homebrew/bin/ctest --preset macos --output-on-failure
-```
-
-- **NEON simd 变体**：`tests/simd/CMakeLists.txt` 按归一化后的 `HYLE_TARGET_PROCESSOR` 分支——arm64 建 `hyle_simd_neon_test`（x86 建 sse4/avx2）。这是 neon.h 全 op 对拍 scalar 的真闸门。
-- **kqueue io 后端**：mac 的 io proactor 走 kqueue，`hyle_io_core_*` 测试真跑该路径。
-- **独立头检查**：非登录 SSH 下直接调用 AppleClang 必须带 macOS SDK sysroot；
-  `header-self-contained.py` 会通过 `/usr/bin/xcrun --sdk macosx --show-sdk-path`
-  自动发现，不要把标准库 `<cstddef>` 找不到误判成 HYLE 头文件缺依赖。
-
-## 四、性能测试（bench）
-
-```bash
-# 固定版 external Highway/xsimd 默认写入 ~/vendor。
-scripts/fetch-bench-vendors.sh
-
-# preset 不锁 generator，并独占 build-bench，不污染日常 build。
-/opt/homebrew/bin/cmake --preset bench
-/opt/homebrew/bin/cmake --build --preset bench --target hyle_sched_bench --parallel 2
-./build-bench/bin/hyle_sched_bench
-```
-
-- mac 是本地磁盘（APFS），性能数字可信；ARM 侧数字与 x86 不直接可比（架构不同）。
-- macOS 无受支持的 hard affinity；性能数据记录实际 process QoS、交流电与 low-power
-  状态。默认 `interactive` 与 `utility` 是不同合同，不冒充 P/E-core pin；见
-  [验证环境](../performance/machines.md)。
-- SIMD 产品从中央 lock 获取 Highway 源并直接编译进 HYLE target TU；
-  `~/vendor/{highway,xsimd}` 的独立 checkout 只作 benchmark 对照。
-
-## 五、同步工作流（SSH 开发机）
-
-- 当前只使用 MacBook Air `Mac16,12`：`ssh kiro@172.22.10.198`，Windows OpenSSH 默认身份；Mac mini 不可用。
-- Air 常驻 clone 在 `~/hyle`（`/Users/kiro/hyle`）。用 Git checkout 或从 Windows 产品工作树生成完整
-  archive，同步到独立验证目录并核对版本；不覆盖远端无关修改，不从验证副本反向恢复产品源码。
-- 不用 scp 手选文件拼接源码，避免漏传内部头或混合新旧实现。复用已有依赖 cache 与对应构建目录，
-  只重编受影响部分。
-- ⚠️ **SSH 免密不生效**：多半是 macOS sshd 权限严格检查——`chmod g-w,o-w ~` + `chmod 700 ~/.ssh` + `chmod 600 ~/.ssh/authorized_keys`。
-
-## 六、可选依赖
-
-### Apple Compute 的 Metal 工具
-
-Air 验证机已有 Apple 签名的独立 Metal 17F109 组件，位置为
-`~/hyle-verify-tools/metal-17F109/Metal.xctoolchain`。非交互验证脚本须把
-`~/hyle-verify-tools/metal-17F109/shim` 放在 PATH 最前；其中 `xcrun` 仅把
-`-sdk macosx metal/metallib` 转到此组件，其余调用仍转给 `/usr/bin/xcrun` 与当前 CLT SDK。
-2026-09-20 Air 实查版本为 `32023.883`；不能把该 compiler 版本当成驱动或部署版本。
-默认 CLT 的 `xcrun` 可能找不到 Metal，不应因此重新安装工具或更改全局 developer directory。
-
-### 其他依赖
-
-- **OpenSSL**：`brew install openssl@3`，配置时 `-DHYLE_IO_TLS=ON -DOPENSSL_ROOT_DIR=/opt/homebrew/opt/openssl@3` 启用 TLS。
+ARM 与 x86 的吞吐不能直接解释为库实现胜负。macOS 的 QoS 不等于固定到特定 P/E 核；
+测量时记录实际电源、QoS 和低功耗状态，见[验证环境](../performance/machines.md)。
+离线工具与依赖介质见[离线构建](offline.md)。

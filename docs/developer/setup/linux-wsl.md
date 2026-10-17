@@ -1,137 +1,37 @@
-# Linux / WSL 环境准备（GCC14 + Sanitizer）
+# Linux / WSL 基础环境
 
-> 本仓库使用 WSL Ubuntu 24.04 验证 Linux 路线和 TSan；Windows 本身不提供 TSan。
-> 覆盖：构建 / 测试 / 性能测试 + TSan + 9p 铁律 + 依赖（OpenSSL）。
-> 无网机器的 repository mirror、依赖介质与断网验收见 [`offline.md`](offline.md)。
+普通初始化、构建、测试和安装使用[三个 Python 入口](README.md)。脚本发现已安装的受支持
+GCC/Clang，不把发行版默认的旧编译器自动当成合格环境，也不修改系统编译器链接。
 
-## 一、硬门槛
+## 已安装工具
 
-| 组件 | 要求 | 装法（Ubuntu 24.04） |
-|---|---|---|
-| GCC | **14+**（默认 gcc-13 过不了门槛） | `sudo apt install g++-14 gcc-14` |
-| CMake | 3.25+ | `sudo apt install cmake`（24.04 源 3.28） |
-| Generator | Ninja 或 Make | `sudo apt install ninja-build`；没有 Ninja 时使用系统 Make |
-| GAS | 随 gcc（fcontext ELF 汇编） | 自带 |
+需要 Python 3.10+、CMake 3.26+、GCC 14+ 或 Clang 18+，以及 Ninja 或 Make 和系统汇编工具。
+按实际发行版的软件源安装；例如 Ubuntu 24.04 可以使用其 GCC 14 包。
+其他发行版应使用自己的包管理文档，不照搬不匹配的软件包命令。
 
-统一入口会从已安装 toolchain 中优先选择 `gcc-14/g++-14`，因此不会再继承 Ubuntu 24.04 默认
-GCC 13。它只选择、不安装；显式覆盖仍必须同时设置 `CC/CXX`：
+选择 Clang 时使用 `python scripts/init.py --compiler clang`；完整 CPU 产品当前要求 Linux x86_64。
+Linux AArch64 可构建受支持的基础组件，完整 CPU/CUDA 产品未提供该架构的依赖配方。
 
-```bash
-scripts/hyle-unix.sh --print-toolchain
-scripts/hyle-unix.sh cmake --preset linux
-scripts/hyle-unix.sh cmake --build --preset linux --parallel 2
-scripts/hyle-unix.sh ctest --preset linux --output-on-failure
+CUDA 需要 Linux CUDA Toolkit 13.3+ 和驱动。WSL 中应发现 Linux `nvcc` 与 Linux runtime，
+不能把 Windows PATH 中的 `nvcc.exe` 当成 Linux 编译器。已有 cache 选错工具链时应重新初始化，
+不把 Windows 的对象文件、SDK 或 CMake cache 搬进 Linux 构建目录。
+Vulkan 缺少宿主 glslang 时，在线初始化可按中央 lock 准备它；离线时须提前准备相应工具。
 
-# 需要显式选择 Clang 等其它受支持 pair 时：
-CC=clang-18 CXX=clang++-18 scripts/hyle-unix.sh cmake --preset linux
-```
+## WSL 目录与缓存
 
-`cmake --preset wsl` 仍是名称固定为 `gcc-14/g++-14` 时的方便入口。已有 cache 若曾绑定 GCC 13，必须
-换新的独占 build/scratch；CMake 不支持原地换 compiler，wrapper 也不会删除旧目录。
+源码副本、构建目录和依赖 cache 放在 WSL 自己的原生文件系统，避免在 `/mnt/c` 上做构建、
+压力或性能测试。Windows 与 WSL 共享同一物理主机，不能当作两台独立性能机并行采样。
 
-选择 CUDA 路线时，使用已安装的 **Linux** Toolkit。WSL 继承的 Windows PATH 可能让 CMake 先找到
-`nvcc.exe`，随后无法找到 Linux `cudart`。例如本机 Toolkit 13.3 使用：
+验证副本只同步源码和所需改动；排除 `.scratch/`、`build*/`、`_deps/`、对象和 SDK 安装目录。
+复用同一固定 Hyle 工作目录中的对应 cache，不为每次实验复制整套依赖或 build。
+项目当前源与验证机约定见 [AGENTS.md](../../../AGENTS.md)。
 
-```bash
-export PATH=/usr/local/cuda-13.3/bin:$PATH
-command -v nvcc
-nvcc --version
-```
+## Sanitizer 与可选能力
 
-路径按实际安装位置选择；CUDA 13.3+ 由机器环境提供，HYLE 不下载 SDK。已经选错 Toolkit 的 cache
-使用新的独占 build 目录验证。CPU-only/无 backend 配置不需要 CUDA Toolkit。
+`init.py --sanitizer tsan --tests` 选择线程检查；ASan/UBSan 同样由 `--sanitizer` 指定。
+若运行时因高熵 ASLR 报 `unexpected memory mapping`，按实际内核及 sanitizer 文档诊断；
+需要关闭 ASLR 时可从 `setarch -R` 子进程运行测试。不要自动忽略新的 sanitizer 报告。
 
-## 二、⚠️ 9p 铁律（血泪，最重要）
-
-**把 WSL 当一个独立执行环境，用它自己的原生 ext4，绝不在 `/mnt/c` 上构建/测试。** 它与
-Windows 共享同一物理主机，不是独立性能机，结果也不能直接外推 bare-metal Linux；限制见
-[验证环境](../performance/machines.md)。
-
-- `/mnt/c/...` 是 **9p 网络挂载**（Windows 盘），不稳、慢、CPU 打不饱和——重 IO / 构建 / 压力测试在上面**性能数字全废**，还可能触发诡异卡顿。
-- **唯一权威源是 Windows 工作树** `C:\public\project-hyle\hyle`；`/root/hyle` 只是可丢弃、可覆盖的原生 ext4 执行镜像，不从 WSL 目录反向恢复或合并代码。
-- 验证前只同步源码和本次未提交改动，不复制 Windows 的构建、`.scratch` 或 `.git`。
-  使用下面的明确排除项；被排除的 WSL 本机目录保留，不加 `--delete-excluded`。
-  目标固定为 `/root/hyle/`，不得解压或同步到 Linux 根目录 `/`。
-- 锁定第三方源码位于 WSL 自己的 `$HOME/.cache/hyle/dependencies/v1`；优先复用已有构建，
-  只有工具链、配置冲突或确需隔离时才另建目录。
-- 同步只负责搬源码；构建、测试、调试、压力与 benchmark 全部在 `/root/hyle` 运行，`/mnt/c` 上的执行结果不作验收证据。
-- build 目录及其 `_deps` 留在 `/root/hyle`；共享 source cache 也必须位于 WSL ext4，不能指向
-  `/mnt/c` 或与 Windows cache 跨 9p 共用。
-
-```bash
-mkdir -p /root/hyle
-rsync -a --delete \
-  --exclude='/.git/' --exclude='/.scratch/' \
-  --exclude='/build/' --exclude='/build-*/' \
-  --exclude='/out/' --exclude='/cmake-build-*/' \
-  /mnt/c/public/project-hyle/hyle/ /root/hyle/
-```
-
-## 三、构建
-
-```bash
-cd /root/hyle   # 原生 ext4，不是 /mnt/c
-
-cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release \
-  -DCMAKE_C_COMPILER=gcc-14 -DCMAKE_CXX_COMPILER=g++-14
-cmake --build build
-```
-
-- 这条命令使用默认 `all` + tests；TLS、HTTP/2 和 trace 保持默认 `OFF`。首次配置只通过
-  FetchContent 取得所选闭包与 googletest 的锁定源码。显式开启 HTTP/2 才会取得 nghttp2。删除 build 只删除本 build 的
-  binary/subbuild；共享源码保留，toolchain 状态不会跨 build 混用。
-- `wsl.exe` 从 Windows 侧驱动的坑：`wsl.exe -e bash -lc '...'` 外层 git-bash 会吃掉 `$VAR`；把逻辑写成 `.sh`（在 WSL 原生 bash 里跑变量才正常）。传 `/mnt/c/x.sh` 路径给 wsl.exe 会被 git-bash 改写 → 用 `wsl.exe -e bash -lc 'bash /root/x.sh'`，脚本直接在 `/root` 用 heredoc 生成、别 cp。
-
-## 四、测试
-
-```bash
-cd /root/hyle
-./build/bin/hyle_sched_test        # 单个
-ctest --test-dir build --output-on-failure   # 全部
-```
-
-## 五、TSan（lock-free / 并发改动必过）
-
-```bash
-cmake -S . -B build-tsan -G Ninja -DCMAKE_BUILD_TYPE=Debug \
-  -DCMAKE_C_COMPILER=gcc-14 -DCMAKE_CXX_COMPILER=g++-14 \
-  -DHYLE_SANITIZER=tsan
-cmake --build build-tsan --target hyle_sched_test
-setarch -R ./build-tsan/bin/hyle_sched_test    # -R 关 ASLR，稳定 TSan
-```
-
-- `HYLE_SANITIZER` = `off|asan|tsan|ubsan`（也接受 `address/thread/undefined/none`；**拼错 FATAL_ERROR**，不静默降级成假 PASS）。
-- **必须 `setarch -R`**——否则新内核高熵 ASLR 触发 "FATAL: ThreadSanitizer: unexpected memory mapping"。
-- mimalloc 3.5 在 TSan 形状中必须与 HYLE 一起用 `MI_TSAN=1` 和
-  `-fsanitize=thread` 编译；并发压力测试直接使用 shipping
-  `system_allocator()`，不再绕到 malloc。旧版的启动断言和回收地址假 race 已在升级复验中消失，
-  因此新的 sanitizer 报告不能按历史 KI-2/KI-3 自动忽略，必须按真实缺陷调查。
-
-## 六、性能测试（bench）
-
-```bash
-# external vendor 和构建均在 ext4；WSL 不设隐式默认目录。
-scripts/fetch-bench-vendors.sh --dir "$HOME/vendor"
-
-cmake -S . -B build-bench -G Ninja -DCMAKE_BUILD_TYPE=Release \
-  -DCMAKE_C_COMPILER=gcc-14 -DCMAKE_CXX_COMPILER=g++-14 -DHYLE_BUILD_BENCH=ON \
-  -DHYLE_BENCH_VENDOR_DIR="$HOME/vendor"
-cmake --build build-bench --target hyle_sched_bench
-./build-bench/bin/hyle_sched_bench
-```
-
-- **必须原生 ext4**（见 9p 铁律）——`/mnt/c` 上 bench 数字无效（CPU 打不饱和）。
-- guest CPU affinity 只用于工程重复性，不能证明固定到物理 P/E core；Windows 与 WSL 必须使用同一
-  `W1` 主机互斥锁，禁止并行采样。
-- SIMD 产品从中央 lock 获取 Highway 源并直接编译进 HYLE target TU；
-  `HYLE_BENCH_VENDOR_DIR` 中独立、干净的 Highway/xsimd checkout 只作同身份/同 ISA 对照。
-- 统计对标用 `scripts/bench-stat.py`（多遍取统计，防单遍噪声）。
-
-## 七、可选依赖
-
-### OpenSSL（显式开启 TLS）
-```bash
-sudo apt install libssl-dev          # 24.04 上 3.0.13
-CC=gcc-14 CXX=g++-14 cmake --preset linux -B build-linux-tls \
-  -DHYLE_COMPONENTS=io -DHYLE_IO_TLS=ON
-```
+TLS 需要 OpenSSL 3 开发包，再选择 `init.py --tls`；HTTP/2 源码由 `--http2` 按 lock 准备。
+更多依赖角色见[依赖说明](dependencies.md)，断网介质见[离线构建](offline.md)。
+性能工具与比较方法见[性能比较](../performance/README.md)。
