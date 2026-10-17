@@ -395,6 +395,133 @@ TEST(IoHttp2, ConsumerProgressDrivesBothFlowControlWindows) {
   EXPECT_EQ(result->client_bytes.load(), result->response.size());
 }
 
+struct BorrowedBodyResult {
+  BorrowedBodyResult() : request(96 * 1024, '\0') {
+    for (std::size_t i = 0; i < request.size(); ++i)
+      request[i] = static_cast<char>(i % 251);
+  }
+  std::string request;
+  std::atomic<bool> borrow_preserved{false};
+  std::atomic<bool> server_ok{false};
+  std::atomic<bool> client_ok{false};
+  Event client_finished;
+};
+
+Task<int> borrowed_body_server(AllocatorRef allocator, TcpListener *listener,
+                               BorrowedBodyResult *result) noexcept {
+  auto accepted = co_await listener->accept(kOwner);
+  if (!accepted.has_value())
+    co_return 0;
+  auto made = Http2ServerSession::create(allocator, std::move(*accepted));
+  if (!made.has_value())
+    co_return 0;
+  Http2ServerSession session = std::move(*made);
+  auto first = co_await session.accept(budget());
+  if (!first.has_value() || !first->has_value())
+    co_return 0;
+  Http2IncomingRequest request = std::move(**first);
+  std::string received;
+  // ACK half the stream window, allowing the sender to finish 96KiB. Keep
+  // the next view borrowed while accept() drives DATA for this same stream.
+  while (received.size() < 32 * 1024) {
+    auto part = co_await request.body.read(
+        (std::min)(std::size_t{16 * 1024}, 32 * 1024 - received.size()),
+        budget());
+    if (!part.has_value() || part->bytes.empty())
+      co_return 0;
+    received.append(reinterpret_cast<const char *>(part->bytes.data()),
+                    part->bytes.size());
+  }
+  auto borrowed = co_await request.body.read(16 * 1024, budget());
+  if (!borrowed.has_value() || borrowed->bytes.empty())
+    co_return 0;
+  const std::size_t borrowed_offset = received.size();
+  received.append(reinterpret_cast<const char *>(borrowed->bytes.data()),
+                  borrowed->bytes.size());
+  auto second = co_await session.accept(budget());
+  if (!second.has_value() || !second->has_value())
+    co_return 0;
+  Http2IncomingRequest next = std::move(**second);
+  result->borrow_preserved.store(
+      std::memcmp(borrowed->bytes.data(),
+                  result->request.data() + borrowed_offset,
+                  borrowed->bytes.size()) == 0,
+      std::memory_order_release);
+  if (!(co_await read_body(allocator, request.body, &received)).ok() ||
+      received != result->request ||
+      !(co_await next.body.discard(budget())).ok())
+    co_return 0;
+  for (auto id : {request.stream_id, next.stream_id}) {
+    if (!(co_await session.send_response(
+              id, Http2ResponseHead{.status = 204},
+              std::span<const std::byte>{}, budget())).ok())
+      co_return 0;
+  }
+  result->server_ok.store(true, std::memory_order_release);
+  (void)result->client_finished.wait_for(hyle::time::Duration(5'000'000'000));
+  co_return 0;
+}
+
+Task<int> borrowed_body_client(AllocatorRef allocator, IoContext *io,
+                               std::uint16_t port,
+                               BorrowedBodyResult *result) noexcept {
+  SignalOnReturn finish{&result->client_finished};
+  auto opened = TcpStream::open(*io, kOwner);
+  if (!opened.has_value())
+    co_return 0;
+  TcpStream transport = std::move(*opened);
+  if (!(co_await transport.connect(
+            Endpoint::loopback(AddressFamily::kIpv4, port), budget())).ok())
+    co_return 0;
+  auto made = Http2ClientSession::create(allocator, std::move(transport));
+  if (!made.has_value())
+    co_return 0;
+  Http2ClientSession session = std::move(*made);
+  Http2RequestHead head{.method = "POST", .scheme = "http",
+                        .authority = "127.0.0.1", .path = "/borrowed"};
+  auto first = co_await session.send_request(head, bytes(result->request), budget());
+  if (!first.has_value())
+    co_return 0;
+  head.path = "/advance-other-stream";
+  auto second = co_await session.send_request(
+      head, std::span<const std::byte>{}, budget());
+  if (!second.has_value())
+    co_return 0;
+  for (auto id : {*first, *second}) {
+    auto response = co_await session.read_response(id, budget());
+    if (!response.has_value() || response->head.status() != 204 ||
+        !(co_await response->body.discard(budget())).ok())
+      co_return 0;
+  }
+  result->client_ok.store(true, std::memory_order_release);
+  co_return 0;
+}
+
+TEST(IoHttp2, BorrowedBodySurvivesOtherStreamReceivingMoreData) {
+  Scheduler scheduler(2, system_allocator(), 256);
+  IoContext io(scheduler);
+  ASSERT_TRUE(io.valid());
+  auto listener_result = bind_test_listener(io);
+  ASSERT_TRUE(listener_result.has_value());
+  TestListener listener = std::move(*listener_result);
+  auto result = std::make_unique<BorrowedBodyResult>();
+  auto server = std::make_unique<Drive>();
+  auto client = std::make_unique<Drive>();
+  server->task = borrowed_body_server(system_allocator(), &listener.listener,
+                                      result.get());
+  client->task = borrowed_body_client(system_allocator(), &io, listener.port,
+                                      result.get());
+  Fiber server_fiber(kDefaultStackSize, drive, server.get());
+  Fiber client_fiber(kDefaultStackSize, drive, client.get());
+  ASSERT_TRUE(scheduler.spawn_on(kOwner, &server_fiber));
+  ASSERT_TRUE(scheduler.spawn_on(kOwner, &client_fiber));
+  scheduler.drain();
+  scheduler.shutdown();
+  EXPECT_TRUE(result->server_ok.load());
+  EXPECT_TRUE(result->client_ok.load());
+  EXPECT_TRUE(result->borrow_preserved.load());
+}
+
 #if !HYLE_OS_WINDOWS
 constexpr std::size_t kDuplexStreams = 4;
 

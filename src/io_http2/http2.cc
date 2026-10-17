@@ -149,6 +149,8 @@ struct Http2StreamState {
 
   ByteBuffer head_bytes;
   ByteBuffer trailer_bytes;
+  // Fixed receive ring: size includes all unacknowledged bytes, including the
+  // borrowed chunk. Appending another stream's IO must not move that view.
   ByteBuffer inbound;
   StoredHeader *headers = nullptr;
   StoredHeader *trailers = nullptr;
@@ -179,7 +181,7 @@ struct Http2StreamState {
   Http2StreamState *garbage_next = nullptr;
   std::uint64_t generation = 1;
   std::uint64_t received_total = 0;
-  std::size_t inbound_start = 0;
+  std::size_t inbound_start = 0; // Physical head in the receive ring.
   std::size_t borrowed_bytes = 0;
   std::int32_t id = 0;
   int status = 0;
@@ -698,23 +700,25 @@ int on_data_chunk(nghttp2_session *, std::uint8_t, std::int32_t stream_id,
         Status::ResourceExhausted("HTTP/2 receive window allocation"),
         Http2Error::kInternal);
   }
-  if (length > stream->inbound.capacity - stream->inbound.size &&
-      stream->inbound_start != 0) {
-    const std::size_t remaining = stream->inbound.size - stream->inbound_start;
-    if (remaining != 0)
-      std::memmove(stream->inbound.data,
-                   stream->inbound.data + stream->inbound_start, remaining);
-    stream->inbound_start = 0;
-    stream->inbound.size = remaining;
-  }
   if (length > stream->inbound.capacity - stream->inbound.size) {
     return reject_data(
         state, *stream, length,
         Status::ResourceExhausted("HTTP/2 receive window exhausted"),
         Http2Error::kFlowControl);
   }
-  if (length != 0)
-    std::memcpy(stream->inbound.data + stream->inbound.size, data, length);
+  if (length != 0) {
+    // Derive the tail without overflowing head + size. Only free space is
+    // written; a borrow stays in size until its reader acknowledges it.
+    const std::size_t suffix = stream->inbound.capacity - stream->inbound_start;
+    const std::size_t tail = stream->inbound.size < suffix
+        ? stream->inbound_start + stream->inbound.size
+        : stream->inbound.size - suffix;
+    const std::size_t first =
+        (std::min)(length, stream->inbound.capacity - tail);
+    std::memcpy(stream->inbound.data + tail, data, first);
+    if (length != first)
+      std::memcpy(stream->inbound.data, data + first, length - first);
+  }
   stream->inbound.size += length;
   stream->received_total += length;
   // The transport read publishes the whole nghttp2 callback batch once after
@@ -821,7 +825,7 @@ int on_stream_close(nghttp2_session *, std::int32_t stream_id,
       // after a stream is reset. The application can no longer consume those
       // bytes through this reader, so return connection credit here; otherwise
       // one abandoned/reset stream can stall every later stream indefinitely.
-      const std::size_t unread = stream->inbound.size - stream->inbound_start;
+      const std::size_t unread = stream->inbound.size;
       if (unread != 0) {
         const int consumed =
             nghttp2_session_consume_connection(state.session, unread);
@@ -1815,12 +1819,11 @@ void Http2SessionAccess::release(Http2BodyReader &reader) noexcept {
   Http2SessionState *state = reader.session_;
   Http2StreamState *stream = reader.stream_;
   if (stream != nullptr && stream->generation == reader.generation_) {
-    const std::size_t unread = stream->inbound.size - stream->inbound_start;
+    const std::size_t unread = stream->inbound.size;
     const std::size_t delivered =
         stream->body_borrowed ? stream->borrowed_bytes : 0;
     const bool body_fully_delivered =
-        stream->inbound_end &&
-        stream->inbound_start + delivered == stream->inbound.size;
+        stream->inbound_end && delivered == stream->inbound.size;
     if (unread != 0 && state->session != nullptr) {
       if (!stream->closed)
         (void)nghttp2_session_consume_stream(state->session, stream->id,
@@ -1893,10 +1896,11 @@ Status acknowledge_body(Http2SessionState &state,
                                                     : connection_result,
                                  "nghttp2 receive consumption");
     ++state.submit_epoch;
+    stream.inbound.size -= consumed;
     stream.inbound_start += consumed;
-    if (stream.inbound_start == stream.inbound.size) {
+    if (stream.inbound.size == 0 ||
+        stream.inbound_start == stream.inbound.capacity) {
       stream.inbound_start = 0;
-      stream.inbound.size = 0;
     }
   }
   stream.borrowed_bytes = 0;
@@ -1956,7 +1960,7 @@ bool Http2BodyReader::done() const noexcept {
     return false;
   const std::size_t exposed =
       stream_->body_borrowed ? stream_->borrowed_bytes : 0;
-  return stream_->inbound_start + exposed == stream_->inbound.size;
+  return exposed == stream_->inbound.size;
 }
 
 std::optional<Http2Error> Http2BodyReader::stream_error() const noexcept {
@@ -1996,7 +2000,7 @@ Result<HttpBodyChunkView> detail::Http2SessionAccess::read_body(
   }
 
   auto ready = [&]() noexcept {
-    return stream.inbound_start != stream.inbound.size || stream.inbound_end ||
+    return stream.inbound.size != 0 || stream.inbound_end ||
            stream.closed || stream.reset_received || stream.local_reset ||
            !stream.failure.ok();
   };
@@ -2018,12 +2022,13 @@ Result<HttpBodyChunkView> detail::Http2SessionAccess::read_body(
     return make_unexpected(detail::stream_reset_status(stream.reset_code));
   }
 
-  const std::size_t available = stream.inbound.size - stream.inbound_start;
+  const std::size_t available = stream.inbound.size;
   if (available == 0) {
     stream.reader_busy = false;
     return HttpBodyChunkView{{}, detail::trailer_headers(stream), true};
   }
-  const std::size_t count = (std::min)(available, limit);
+  const std::size_t count = (std::min)(
+      (std::min)(available, limit), stream.inbound.capacity - stream.inbound_start);
   stream.body_borrowed = true;
   stream.borrowed_bytes = count;
   stream.reader_busy = false;
