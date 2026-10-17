@@ -1,0 +1,86 @@
+{
+  "result": "Both raw drivers reach the same socketpair quiescence boundary after a common postjoin terminal pump. In this diagnostic episode, the65B server-to-client difference persists after that pump and consists of fiveWINDOW_UPDATE frames, rather than unflushed server-to-client bytes at exit.",
+  "scope": {
+    "head": "74fc012eb1f5c6bd9795437e28c48c76f8e6d0b5",
+    "trace": "Only4streams x256KiB request/response and originalwindow/reversepair",
+    "processes": 2,
+    "untimed_episodes_per_driver": 1,
+    "original_driver_algorithms_preserved": true,
+    "public_Hyle_HTTP2_executed": false,
+    "formal_timing": false,
+    "extra_AA_retry_or_shape": false,
+    "product_or_canonical_peer_changes": false
+  },
+  "quiescence": {
+    "boundary": "After all driverjoins, samecaller pump fills/writes/reads/consumes bothsides. Successfulfinalsweep has no progress, twoactualrecv EAGAIN, bothRawWire empty, nativewant_write0, completed4, no unreadbody/readableitems.",
+    "manual_passes": 2,
+    "two_task_passes": 1,
+    "no_new_GOAWAY_shutdown_yield_or_worker": true,
+    "failure_policy": "Existing drivererrorhelper retained. Terminalpump adds no shutdown; idle-but-not-quiescent fails immediately, max1024passes/external20s timeout.",
+    "applicability": "OnlyAF_UNIXsocketpair with nofuturewriter afteralljoins. Not a generalremoteTCP/TLS flushproof; want_read neednotbezero.",
+    "observations": "Native/wire snapshots atPRE andPOST. Terminalphase has actualbyteinterval/framephase/passcount; intermediateperpass nativestates were not recorded."
+  },
+  "actual_wire": {
+    "manual": {
+      "c2s_before": 1050124,
+      "c2s_after": 1050137,
+      "s2c_before": 1050092,
+      "s2c_after": 1050092
+    },
+    "two_tasks": {
+      "c2s_before": 1050124,
+      "c2s_after": 1050124,
+      "s2c_before": 1050027,
+      "s2c_after": 1050027
+    },
+    "terminal": "Manual adds one13B connectionWINDOW_UPDATE clienttoserver; twoTask adds no successfulsendbytes. Server-to-client adds0B in bothterminalphases.",
+    "parser": "parsed-frames.json retains everyframe offset/type/stream/flags/length/WUincrement and phase, parsedoffline from actualsuccessfulsend streams. Actualrecv counts are usedonlyas conservationcheck, never duplicatedaswireframes.",
+    "body": "Eachdirection eacharm has64DATAframes,262144bodybytes perstream1/3/5/7, oneEND_STREAM perstream,4HEADERS and2SETTINGS; noRST_STREAM/GOAWAY. Non-WU wirebyte totals match acrossarms.",
+    "post_frame_counts": {
+      "manual_c2s_WU": 60,
+      "two_task_c2s_WU": 59,
+      "manual_s2c_WU": 64,
+      "two_task_s2c_WU": 59
+    }
+  },
+  "credit": {
+    "application": "Eacharm eachreceiver successfullycalls consume_stream andconsume_connection for1048576bodybytes. Allfourstream bodyoracles/headerrequirements/reversecompletionchecks and closedfdchecks pass.",
+    "native_connection": {
+      "manual_advertised_increment_sum": 1048576,
+      "two_task_advertised_increment_sum": 1023863,
+      "two_task_unadvertised_difference": 24713,
+      "manual_post_local_window": 65535,
+      "two_task_post_local_window": 40822
+    },
+    "interpretation": "Applicationcreditcalls and nativeadvertisedcredit are distinct. nghttp2 queues/mergesupdates atwindowthresholds and suppressesstreamupdates afterEND_STREAM; a fullyconsumedbody can leave subthresholdcredit without a sendableframe.",
+    "sources": "nghttp2_session.c5141-5192 and2677-2712, version1.70 lockedcache. Outboundqueuegetter7667 omitsstreamattacheditems; PREwant_write1/queue0 was actuallyobserved."
+  },
+  "interpretation": [
+    "Thisdiagnostic identifies thedifference in thisrun only. It cannot retroactively prove whichframes made the earlier65B without oldframecapture.",
+    "Equalquiescence doesnot imply identicalframegrouping/windowfrontier. ForcingequalWUcounts/increments would alterconsumptionbatching/thresholds orsubmitextracredit and change the testedpolicy.",
+    "Noelapsedtime wasrecorded: theseeventcounts do notassign anypartofthe17% public-route loss toframes/Task/contextswitches.",
+    "Theofficialpublic-versusmanual peer remains unchanged. Publicsessionsdieinsidetasks; scratchcaller-owned terminalpump is not transparentlyavailable throughthesamepublicfixture.",
+    "Public drain() submitsGOAWAY and close() also shutsdown; neither canbe silentlyinserted as a pureflush.",
+    "Generalowner/error/cancel/deadline/borrow/generation/flushedepoch duties remainpubliccontracts. No new redundantproductwork is established by thisdiagnostic."
+  ],
+  "instrumentation": {
+    "method": "Preallocatedowner-local captures, rawsendpositivebytes and validatedasyncwrite resultbytes recordedexactlyonce; no extraatomics/locks/QPC/thread. Offlinefullframeparser afterprocessesexit.",
+    "caveat": "Instrumentationadds copies/counters and mayaffectprogresscadence. Thisis a twoepisode untimedmechanismobservation, not a latency result or distribution."
+  },
+  "validation_identity": {
+    "source": "source-identity.json",
+    "build": "build-identity.json",
+    "closure": "Fresh1scratchmainTU; actualexistingcurrentproactoroverride/helperobjects recheckedandhashed. Otherfoundation/SDKcache retained, notwholeHEADbuild.",
+    "full_original_checks": "Rawcallbacks validate allbodybytes, requiredmethod/path/status/contentlengthheaders, reversepairorder; originalbody/wirebuffers/socketsettings/nativeoptions and commondestruction retained.",
+    "no_compile_link_run_failure": true,
+    "warning": "The inheritedexplicitEvent aggregateinitializer warning retained; no codechange made for it.",
+    "packaging": "Initialreadonlypackaging hit Windowsabsolute-path normalization underWSL; fixedonlypackaginghelper, noexperimentrerun. Originalerror/source preserved."
+  },
+  "design": "../../source-review/http2-terminal-control-design.json",
+  "cleanup": {
+    "manifest": "cleanup-candidates.json",
+    "files": 2,
+    "bytes": 1052224,
+    "deleted": false
+  }
+}

@@ -9,7 +9,7 @@ HTTP2在header/body、冗余私有Task帧及benchmark启动竞态修复后的当
 Apple Sink最终采用单owner Job内同步Q128数学分块：固定点extra active peak降78.8%，同工时延未见退步；Direct/Graph已接通，原F32预算保留。
 此前纯图Q16峰值反增10.17%、compact融合省90%但慢约7倍，两个负候选均未应用。
 CUDA长域F32探针的原1e-5预算仍失败，现已定位到原生PV长归约舍入；同native对照输出完全相同，没有证实Hyle额外精度损失，见下。
-普通CPU及多节点CacheEncode已复用生命周期，普通/私有paged/ragged causal冷mask已移除；动态PagedRead保留旧arena边界。
+普通CPU及多节点CacheEncode已复用生命周期，普通/私有paged/ragged causal冷mask已移除。动态PagedRead只有私有单节点入口，不能将其arena排除认定为当前普通多节点空间缺陷，见末尾源审。
 Apple已知无NAX硬件的受限F32 D192及D256 causal已融合，D256旧Q2048失败形状在新路线通过；旧失败记录仍保留。
 其余queue政策和旧小输仍缺当前同责数据。CPU/Vulkan math attention、Apple受限长Q fallback与CPU Hadamard冷矩阵已修；bounded、ST512、实际Folly SPSC及Sharded非满载当前有限trace均未复现输项。
 已确认的源码缺口与已实测输项分列，不能据64个factor扫描称所有shape已穷尽。
@@ -463,7 +463,7 @@ token/8B数据校验及inflight归零；init/reserve、fd打开/预热、用户b
 |---|---|---|
 | CPU ggml / Vulkan Concat | 已改平衡树；CPU owned payload126→20 MiB，Vulkan真实gallocr容量11.25→7.75 MiB | 定向测试与唯一代表形状完成，见下；未测完整引擎或所有shape |
 | CPU / Vulkan ordinary causal SDPA | 两者受理域内的内部平方mask已消除；CPU私有paged/ragged非boxed域也复用HYCA | HYCA保持原native vector/tiled/split及Half PV，独立于boxed reference路线；不外推其它dtype、ISA或非有限值 |
-| CPU Sink与混合旧pin F32 math / 多节点 | 分块recipe、普通多节点与多节点CacheEncode已接官方gallocr与既有可恢复OOM补丁，cold reserve保留kPrepared | 两pin相关回归通过；Sink冷私有请求156.48→48.97 MB，64步Neg约67.05→3.09 MB，末端Q8约68.11→3.10 MB。含动态PagedRead的非分块recipe仍保留旧arena |
+| CPU Sink与混合旧pin F32 math / 多节点 | 分块recipe、普通多节点与多节点CacheEncode已接官方gallocr与既有可恢复OOM补丁，cold reserve保留kPrepared | 两pin相关回归通过；Sink冷私有请求156.48→48.97 MB，64步Neg约67.05→3.09 MB，末端Q8约68.11→3.10 MB。动态PagedRead是私有单节点边界，未发现当前可达的深链空间缺陷 |
 | Apple ordinary SDPA | F16/BF16受限无mask域及已知无NAX硬件F32 D192、D256 causal已融合；其它GPU长Q静态fallback以原数学16行分块 | typed入口拒绝CPU stream，不列为合法慢路径；显式mask、wide/不同Dv、causal Q>KV及未知/新架构仍需分开。短Q数学分块负候选已撤回，不能称所有完整scores空间已消除 |
 | CPU Hadamard冷常量 | W²冷矩阵已由原生unary桥移除 | [前置源码复核](cpu-hadamard/source-feasibility.json)的API缺口已补；实际两pin/baseline/AVX2结果见下，不以dummy/null伪造矩阵storage |
 | FlatHash近阈值rolling churn / Queue政策 | map增长策略已修；bounded、ST512、真实Folly SPSC及Sharded非满载均有当前有限对照 | 均未确认当前输项；owner/steal现补完整校验和原始epochs保留，Crossbeam batch32/动态缩容职责明确不同，不继承旧倍率 |
@@ -1146,3 +1146,20 @@ Steel源码先以F32计算scale×log2(e)，再乘QK；新ordinary F32 D192/D256 
 收尾重新写根目录`test.ps1`并完成三平台精确预检后，删除WSL2及Air17个可重建产物，共110433264逻辑B（约105.3 MiB）。
 Air保留9个当前产品/测试/consumer对象1207392 B供下一轮复用，map日志、全部源码/数据/原始包、SDK及其它共享缓存保留；无递归/模糊路径清理。
 [执行结果](cleanup-q128-force-http2.json)记录实际删除与55项显式保留目标，未将逻辑长度称为实测物理回收量。
+
+## CPU PagedRead：排除不存在的普通多节点缺陷
+
+[源码复核](cpu-paged-liveness-boundary.json)确认唯一构造是native batch的单节点request；普通Graph的operation白名单不包含PagedRead。
+因此当前排除规则未造成已证实的普通深链Θ(N·payload)问题，不为假设入口另造allocator或移除边界。
+页表、Q1更新及ragged K/V仍借用有owner的外部布局；Q8检查在native执行前读外部Q，未来若接内部Q producer须另行处理该语义。
+gallocr本身支持非空data的外部叶子，不能把边界解释成其无法承载页表。本次仅源审，无新编译或性能测量。
+
+## HTTP2：共同静止边界下的窗口帧差异
+
+只在scratch对原manual与双Task各做一次无计时episode，join后由相同caller推进至两端真实EAGAIN、wire空且native want_write=0。
+不添加GOAWAY/shutdown或改原driver；manual两pass、双Task一pass达到边界。两侧应用均消费双向各1 MiB，完整payload/header/逆序/关闭检查通过。
+本次S→C的65 B差异仍在：实际成功send字节流解析为64对59个WINDOW_UPDATE，其余帧数量与字节一致。
+消费同量应用数据不要求native广告credit同批发送；threshold以下可留未广告credit，不能强行补帧对齐。
+这解释本次事件差异，不能倒推无逐帧记录的历史65 B，也不能把当前约15–17%耗时残差分摊给这些帧或Task。
+公开路线与原peer未更换；记录copy/counter可能影响推进节奏，不用于性能排名。
+[摘要](http2/terminal-drain/summary.json)与[源码、完整帧流和结果](http2/terminal-drain/source-results.zip)保留两次观察及失败的只读打包步骤。

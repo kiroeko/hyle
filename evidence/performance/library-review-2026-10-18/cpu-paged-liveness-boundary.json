@@ -1,0 +1,75 @@
+{
+  "kind": "Read-only source review; no compilation, measurement or product change.",
+  "source_head": "74fc012eb",
+  "conclusion": "The PagedRead liveness exclusion is a private batch boundary, not a confirmed currently reachable ordinary multi-node arena defect. No existing public/Graph construction path was found that compiles a multi-node PagedRead recipe.",
+  "actual_paths": [
+    {
+      "file": "src/compute_provider_ggml/native_batch.cc",
+      "lines": "248-257",
+      "fact": "The sole PagedRead construction builds one request-local Recipe with exactly one node and three external Q/K/V inputs."
+    },
+    {
+      "file": "src/compute_provider_ggml/native_batch.h",
+      "lines": "5-8",
+      "fact": "The private operation borrows the native batch slot immutable topology; it is not exposed by the ordinary public operation factory."
+    },
+    {
+      "file": "src/graph_route_cpu/ggml_region.cc",
+      "lines": "74-78",
+      "fact": "Ordinary Graph native region admission first requires region_operation."
+    },
+    {
+      "file": "src/compute_provider_ggml/ggml_cpu_provider.cc",
+      "lines": "2074-2095",
+      "fact": "region_operation includes ordinary SDPA and CacheEncode but excludes private PagedRead."
+    },
+    {
+      "file": "src/compute_provider_ggml/ggml_cpu_provider.cc",
+      "lines": "1653-1667",
+      "fact": "Ordinary Direct prepare also creates a single-node recipe."
+    }
+  ],
+  "necessary_boundaries": [
+    {
+      "file": "src/compute_provider_ggml/ggml_cpu_provider.cc",
+      "lines": "1169-1175,1726-1759",
+      "fact": "Paged topology is an external I32 src5 leaf borrowing actual layout data. Q1 updates can replace its pointer and shape/strides plus logical KV rows."
+    },
+    {
+      "file": "src/compute_provider_ggml/ggml_cpu_provider.cc",
+      "lines": "1761-1791",
+      "fact": "The contiguous Q1 ragged update mutates real external K/V root and view extents/strides, while immutable query/output remain fixed."
+    },
+    {
+      "file": "src/compute_provider_ggml/native_batch.cc",
+      "lines": "23,119-163,210",
+      "fact": "Request.compiled_layout and Slot.layout retain the owning immutable versions. Equal non-Q1 paged recipes keep their original compiled-layout owner; Q1 refreshes pointers before replacing the current owner."
+    },
+    {
+      "file": "src/compute_provider_ggml/ggml_cpu_provider.cc",
+      "lines": "1154-1155,1466-1471",
+      "fact": "Q8 attention records the original dense query and validates it before graph execution. Current batch Q is an external input. A future multi-node producer of Q would require an explicit checked execution boundary; merely removing the allocator exclusion would read an uncomputed/reused internal tensor. Old arena allocation does not solve that semantic issue."
+    },
+    {
+      "file": "pinned src/ggml-cpu/ggml-cpu.c",
+      "lines": "FLASH_ATTN_EXT graph-plan branch",
+      "fact": "The original flash workspace plan is based on DK/DV/query-heads/thread count and fixed tile maxima, not the current KV row count. Existing Q1 metadata refresh relies on this finite contract."
+    },
+    {
+      "file": "pinned src/ggml-alloc.c",
+      "lines": "593-596,893-896,984-991",
+      "fact": "Official gallocr recognizes a non-null data pointer as externally owned. Thus a borrowed page table is not intrinsically incompatible with gallocr; its current identity/lifetime must remain external."
+    }
+  ],
+  "minimal_recommendation": "Keep the current private dynamic boundary. Removing the multi-node PagedRead exclusion has no current ordinary-graph benefit. If a real future multi-node entry is introduced, first restrict it to immutable topology and external checked Q8 query, then reuse GraphStorage; do not invent an allocator/planner or claim all dynamic descriptions are safe after one reserve.",
+  "complexity_scope": "No currently reachable multi-node PagedRead chain retaining Theta(N * payload) was established. Current requests have fixed native graph depth; per-request query conversion, output and native plan scratch remain distinct from a deep ordinary chain.",
+  "source_sha256": {
+    "src/compute_provider_ggml/ggml_cpu_provider.cc": "5a88b7bff91e54e8cb542ac9b7e37e6c18bf4c1700f6c28c69c4a6d399ec9afe",
+    "src/compute_provider_ggml/native_batch.cc": "a7e460fee39ee98ce1b64d34be41bd07cfe32990bee9cb7beb75413ca8b0ad87",
+    "src/compute_provider_ggml/native_batch.h": "db7e1d74af8d9edbf8c84337c2e0e3c817b7ddbcf89da1be81daaec4f4dd2054",
+    "src/graph_route_cpu/ggml_region.cc": "cbd366dca805b13bba4e44abd34c6ac44899992ef02f041d005031a7595a0273",
+    "src/compute_ggml_runtime/cpu_execution.cc": "7afabc73d8ab541c98fde67e41f2e1384994c15cd123582ef218f89322a0d2db",
+    "third_party/ggml_cpu_runtime/patches.json": "85684f25c059e06c45379f36acab5819c1c526bcfab9cbe374c7dd9f850d9b4c",
+    "third_party/ggml_runtime/patches.json": "4d32abad8adbbe8a48b49eb3a6bfa7e7b9ef2743a4728d222591723c7b1c760f"
+  }
+}
