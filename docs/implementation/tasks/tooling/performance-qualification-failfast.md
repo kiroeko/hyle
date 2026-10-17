@@ -1,6 +1,6 @@
 # 性能资格预验证失败即停止
 
-状态：**SCOPED，2026-10-17**。独立工具任务，不属于 G09 产品 FIX；baseline
+状态：**AUDITED，2026-10-17**。SCOPED checkpoint `7175d12df`。独立工具任务，不属于 G09 产品 FIX；baseline
 `3ed603a48`，`scripts/hyle_perf/runner.py` 原 SHA256
 `df415c5bb04c1096c568cae75c84e83672d2282ef43c7965d905f3ba1d21e022`。
 
@@ -23,3 +23,8 @@ canonical 尚未应用。预声明应用后65项相关测试、docs/closure/diff
 七问：依赖/许可不变；原真实资格旅程补 stop 边界；复用原 validators/error/raw 机制；
 只在既有冷 preflight 遍历结果，不改采样成本；无 C/FFI/API；纯 Python 无虚构 binary/SDK 旅程；
 CLI 原错误出口给出失败 ID，无新增用户选择或统计档位。
+
+AUDITED：root 逐行核八行 guard/五项真实 orchestrator 测试，独立 Graph 审查 SOURCE_PASS，
+无 must；审查确认 probe 必须继续原 diagnostic 路线、source/artifact mutation 原 guard 优先。
+隔离 patch SHA256 `2841f096a21a9dd927be8b061a8026b5b1cf84047a9b3e0a3d65df6062bbaafb`。
+批准只应用上述精确两文件补丁；工具身份独立冻结，不借原工具授权签新 P1。
