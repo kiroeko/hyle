@@ -1,0 +1,277 @@
+{
+  "schema": "hyle.g09.pe-vendor-export-review.v1",
+  "reviewed_at_utc": "2026-10-17T00:45:13.149056+00:00",
+  "decision": "ALLOW_CANDIDATE_CONSTRUCTION_WITH_EXACT_77_SYMBOL_VENDOR_EXCEPTION_FROZEN_BEFORE_RUNTIME; HYLE_PRIVATE_ABI_DENY_RULE_UNCHANGED; NOT_ARTIFACT_OR_P1_PASS",
+  "scope": "Finite read-only actual Windows PE baseline image/import/export/map/SDK-object audit. Only dumpbin metadata inspection; no DLL execution, configure/link/build/test/GPU/A-A/performance, product/SDK-object/benchmark/perf-core changes.",
+  "original_failure": {
+    "path": ".scratch\\inference-gaps\\g09-p1-builds\\windows-cuda-baseline\\result.json",
+    "sha256": "2452f1249d89e1620af8c52ab5d7df5852e92fbf3581b08dd278b5cffb2e03cc",
+    "state": "SETUP_FAIL",
+    "actual_build_exit": 0,
+    "failing_guard": "runner.py:78 names == [hyle_g09_facade_v1]",
+    "retained_elapsed_seconds": 74.29700000002049,
+    "meaning": "Both original facade links completed, then exact C-only export guard rejected first inspected image. Preserve original SETUP_FAIL, raw exports and time. No image runtime or performance observation informed this finite clarification."
+  },
+  "actual_images": [
+    {
+      "path": "C:\\h7\\g09-p1\\cuda-baseline\\bin\\g09_cuda_baseline_1.dll",
+      "sha256": "5f3ee813851833d696be0138a16d4af922383f3cda456b48a071e2c3599023ad",
+      "bytes": 126718976
+    },
+    {
+      "path": "C:\\h7\\g09-p1\\cuda-baseline\\bin\\g09_cuda_baseline_2.dll",
+      "sha256": "c0a0c58993f0e137d1f00052c7a941dd7bc40af9bdf506ad08d9242299d46fde",
+      "bytes": 126718976
+    }
+  ],
+  "source_binding": {
+    "source_snapshot": "5b55597df80c78fe683226e43e7fc5309874d155",
+    "baseline": "9e2f25c469634a6f723e76eaf1aa2db5973bca9a",
+    "candidate": "3524413272cb52d06af5e64d634edbfef09b9864",
+    "product_code_commit": "e09f30925c6dba5cf4540669fd3b4874f45bb158",
+    "draft_files_recorded": [
+      {
+        "path": "facade_api.h",
+        "sha256": "3733fe1dd21f5822a06793ece597d805f29828d180810e9696b20335dddd3155",
+        "bytes": 905
+      },
+      {
+        "path": "facade.cc",
+        "sha256": "6cf2455f160b0625be4af7c001e38beeb84a8146f2ff53d50982cec635e59687",
+        "bytes": 13430
+      },
+      {
+        "path": "driver.cc",
+        "sha256": "8f58350e6b39f051730d47f0565d62b1c3bf449636e3a1885a99deca5719ea25",
+        "bytes": 11337
+      },
+      {
+        "path": "CMakeLists.txt",
+        "sha256": "297409b492f44aa01af0c174cc379f95fbee5a4fa19695dfa7c3915dc4a6403a",
+        "bytes": 3208
+      },
+      {
+        "path": "runtime_probe.cc",
+        "sha256": "83b7c3ce0cccd1c5be501fe0e440b042378a4c671c764996d7b409765d807c69",
+        "bytes": 100
+      }
+    ],
+    "public_boundary": "Original facade owns its HYLE/MLX/GGML C++ states, exceptions, results and allocation/deletion. Driver crosses only C getter/opaque state/POD table/scalars and caller-owned byte buffers. No vendor C++ or HYLE private object crosses table."
+  },
+  "actual_exports": {
+    "first_count": 78,
+    "second_count": 78,
+    "getter": "hyle_g09_facade_v1",
+    "extra_vendor_count": 77,
+    "exact_vendor_name_set_sha256": "34cf174d8ec647018f818df1f96aa9e562bfe9a26e90f861be80ffdf175ef9d4",
+    "hash_encoding": "UTF-8 sorted raw decorated vendor names joined with LF and one final LF",
+    "vendor_symbol_allowlist": [
+      "??$_typeMetaData@D@TypeMeta@caffe2@@CAGXZ",
+      "??$_typeMetaData@J@TypeMeta@caffe2@@CAGXZ",
+      "??$_typeMetaData@PEAD@TypeMeta@caffe2@@CAGXZ",
+      "??$_typeMetaData@PEAH@TypeMeta@caffe2@@CAGXZ",
+      "??$_typeMetaData@PEAM@TypeMeta@caffe2@@CAGXZ",
+      "??$_typeMetaData@PEAUHalf@c10@@@TypeMeta@caffe2@@CAGXZ",
+      "??$_typeMetaData@PEA_N@TypeMeta@caffe2@@CAGXZ",
+      "??$_typeMetaData@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@TypeMeta@caffe2@@CAGXZ",
+      "??$_typeMetaData@V?$unique_ptr@U?$atomic@_N@std@@U?$default_delete@U?$atomic@_N@std@@@2@@std@@@TypeMeta@caffe2@@CAGXZ",
+      "??$_typeMetaData@V?$unique_ptr@Vmutex@std@@U?$default_delete@Vmutex@std@@@2@@std@@@TypeMeta@caffe2@@CAGXZ",
+      "??$_typeMetaData@V?$vector@HV?$allocator@H@std@@@std@@@TypeMeta@caffe2@@CAGXZ",
+      "??$_typeMetaData@V?$vector@JV?$allocator@J@std@@@std@@@TypeMeta@caffe2@@CAGXZ",
+      "??$_typeMetaData@V?$vector@KV?$allocator@K@std@@@std@@@TypeMeta@caffe2@@CAGXZ",
+      "??$_typeMetaData@V?$vector@_JV?$allocator@_J@std@@@std@@@TypeMeta@caffe2@@CAGXZ",
+      "??$_typeMetaData@V_Uninitialized@detail@caffe2@@@TypeMeta@caffe2@@CAGXZ",
+      "??0Await@ivalue@c10@@AEAA@V?$SingletonOrSharedTypePtr@UType@c10@@@Type@2@@Z",
+      "??0Await@ivalue@c10@@AEAA@V?$SingletonOrSharedTypePtr@UType@c10@@@Type@2@V?$function@$$A6A?AUIValue@c10@@XZ@std@@@Z",
+      "??0Future@ivalue@c10@@AEAA@V?$SingletonOrSharedTypePtr@UType@c10@@@Type@2@V?$vector@UDevice@c10@@V?$allocator@UDevice@c10@@@std@@@std@@@Z",
+      "??0Object@ivalue@c10@@QEAA@$$QEAU012@@Z",
+      "??0Object@ivalue@c10@@QEAA@AEBU012@@Z",
+      "??0Object@ivalue@c10@@QEAA@UStrongTypePtr@2@_K@Z",
+      "??0Object@ivalue@c10@@QEAA@UWeakOrStrongTypePtr@2@_K@Z",
+      "??0RRefInterface@c10@@QEAA@XZ",
+      "??1Await@ivalue@c10@@UEAA@XZ",
+      "??1Future@ivalue@c10@@UEAA@XZ",
+      "??1Object@ivalue@c10@@UEAA@XZ",
+      "??1RRefInterface@c10@@UEAA@XZ",
+      "??4Object@ivalue@c10@@QEAAAEAU012@$$QEAU012@@Z",
+      "??4Object@ivalue@c10@@QEAAAEAU012@AEBU012@@Z",
+      "??_7Await@ivalue@c10@@6B@",
+      "??_7Future@ivalue@c10@@6B@",
+      "??_7Object@ivalue@c10@@6B@",
+      "??_7RRefInterface@c10@@6B@",
+      "?args@Await@ivalue@c10@@QEAAAEAV?$vector@UIValue@c10@@V?$allocator@UIValue@c10@@@std@@@std@@XZ",
+      "?compilation_unit@Object@ivalue@c10@@QEAA?AV?$shared_ptr@UCompilationUnit@jit@torch@@@std@@XZ",
+      "?completed@Await@ivalue@c10@@QEAA_NXZ",
+      "?completed@Future@ivalue@c10@@QEBA_NXZ",
+      "?constValue@Future@ivalue@c10@@QEBAAEBUIValue@3@XZ",
+      "?create@Object@ivalue@c10@@SA?AV?$intrusive_ptr@UObject@ivalue@c10@@U?$intrusive_target_default_null_type@UObject@ivalue@c10@@@detail@3@@3@UStrongTypePtr@3@_K@Z",
+      "?create@Object@ivalue@c10@@SA?AV?$intrusive_ptr@UObject@ivalue@c10@@U?$intrusive_target_default_null_type@UObject@ivalue@c10@@@detail@3@@3@UWeakOrStrongTypePtr@3@_K@Z",
+      "?createInstance@Future@ivalue@c10@@QEAA?AV?$intrusive_ptr@UFuture@ivalue@c10@@U?$intrusive_target_default_null_type@UFuture@ivalue@c10@@@detail@3@@3@V?$SingletonOrSharedTypePtr@UType@c10@@@Type@3@@Z",
+      "?devices@Future@ivalue@c10@@QEBAAEBV?$vector@UDevice@c10@@V?$allocator@UDevice@c10@@@std@@@std@@XZ",
+      "?elementType@Await@ivalue@c10@@QEBAAEBV?$SingletonOrSharedTypePtr@UType@c10@@@Type@3@XZ",
+      "?elementType@Future@ivalue@c10@@QEBAAEBV?$SingletonOrSharedTypePtr@UType@c10@@@Type@3@XZ",
+      "?ensureIsSubsetOfDevices@Future@ivalue@c10@@CAXAEBV?$vector@UDevice@c10@@V?$allocator@UDevice@c10@@@std@@@std@@0@Z",
+      "?exception_ptr@Future@ivalue@c10@@QEBA?AV0std@@XZ",
+      "?formatSetOfDevices@Future@ivalue@c10@@CA?AV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@AEBV?$vector@UDevice@c10@@V?$allocator@UDevice@c10@@@std@@@5@@Z",
+      "?getDevicesOfStorages@Future@ivalue@c10@@CA?AV?$vector@UDevice@c10@@V?$allocator@UDevice@c10@@@std@@@std@@AEBVVirtualGuardImpl@impl@3@AEBV?$vector@V?$weak_intrusive_ptr@UStorageImpl@c10@@U?$intrusive_target_default_null_type@UStorageImpl@c10@@@detail@2@@c10@@V?$allocator@V?$weak_intrusive_ptr@UStorageImpl@c10@@U?$intrusive_target_default_null_type@UStorageImpl@c10@@@detail@2@@c10@@@std@@@5@@Z",
+      "?getSlot@Object@ivalue@c10@@QEBAAEBUIValue@3@_K@Z",
+      "?getTypeOfDevices@Future@ivalue@c10@@CA?AW4DeviceType@3@AEBV?$vector@UDevice@c10@@V?$allocator@UDevice@c10@@@std@@@std@@@Z",
+      "?hasError@Future@ivalue@c10@@QEBA_NXZ",
+      "?hasValue@Future@ivalue@c10@@QEBA_NXZ",
+      "?is_empty_strong_compilation_ref@Object@ivalue@c10@@QEBA_NXZ",
+      "?is_weak_compilation_ref@Object@ivalue@c10@@QEBA_NXZ",
+      "?markCompleted@Await@ivalue@c10@@QEAAXUIValue@3@@Z",
+      "?markCompleted@Future@ivalue@c10@@QEAAXUIValue@3@V?$optional@V?$vector@V?$weak_intrusive_ptr@UStorageImpl@c10@@U?$intrusive_target_default_null_type@UStorageImpl@c10@@@detail@2@@c10@@V?$allocator@V?$weak_intrusive_ptr@UStorageImpl@c10@@U?$intrusive_target_default_null_type@UStorageImpl@c10@@@detail@2@@c10@@@std@@@std@@@std@@@Z",
+      "?markCompleted@Future@ivalue@c10@@QEAAXXZ",
+      "?setArgs@Await@ivalue@c10@@QEAAXV?$vector@UIValue@c10@@V?$allocator@UIValue@c10@@@std@@@std@@@Z",
+      "?setError@Future@ivalue@c10@@QEAAXVexception_ptr@std@@@Z",
+      "?setErrorIfNeeded@Future@ivalue@c10@@QEAAXVexception_ptr@std@@@Z",
+      "?setErrorInternal@Future@ivalue@c10@@AEAAXVexception_ptr@std@@AEAV?$unique_lock@Vmutex@std@@@5@@Z",
+      "?setFn@Await@ivalue@c10@@QEAAXV?$function@$$A6A?AUIValue@c10@@XZ@std@@@Z",
+      "?setSlot@Object@ivalue@c10@@QEAAX_KUIValue@3@@Z",
+      "?slots@Object@ivalue@c10@@QEBAAEBV?$vector@UIValue@c10@@V?$allocator@UIValue@c10@@@std@@@std@@XZ",
+      "?sortAndDeduplicateDevices@Future@ivalue@c10@@CA?AV?$vector@UDevice@c10@@V?$allocator@UDevice@c10@@@std@@@std@@AEBVVirtualGuardImpl@impl@3@V45@@Z",
+      "?storages@Future@ivalue@c10@@QEBAAEBV?$vector@V?$weak_intrusive_ptr@UStorageImpl@c10@@U?$intrusive_target_default_null_type@UStorageImpl@c10@@@detail@2@@c10@@V?$allocator@V?$weak_intrusive_ptr@UStorageImpl@c10@@U?$intrusive_target_default_null_type@UStorageImpl@c10@@@detail@2@@c10@@@std@@@std@@XZ",
+      "?synchronizeWithCurrentStreams@Future@ivalue@c10@@AEAAXXZ",
+      "?tryRetrieveErrorMessage@Future@ivalue@c10@@QEBA?AV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@XZ",
+      "?tryRetrieveErrorMessageInternal@Future@ivalue@c10@@AEBA?AV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@Vexception_ptr@5@@Z",
+      "?type@Await@ivalue@c10@@QEBAAEBV?$SingletonOrSharedTypePtr@UType@c10@@@Type@3@XZ",
+      "?unsafeRemoveSlot@Object@ivalue@c10@@QEAAX_K@Z",
+      "?unsafe_make_weak_compilation_ref@Object@ivalue@c10@@QEAAXXZ",
+      "?value@Await@ivalue@c10@@QEAA?AUIValue@3@XZ",
+      "?value@Future@ivalue@c10@@QEAA?AUIValue@3@XZ",
+      "?wait@Await@ivalue@c10@@QEAA?AUIValue@3@XZ",
+      "?wait@Future@ivalue@c10@@QEAAXXZ",
+      "?waitAndThrow@Future@ivalue@c10@@QEAAXXZ"
+    ],
+    "vendor_data_symbols": [
+      "??_7Await@ivalue@c10@@6B@",
+      "??_7Future@ivalue@c10@@6B@",
+      "??_7Object@ivalue@c10@@6B@",
+      "??_7RRefInterface@c10@@6B@"
+    ],
+    "hyle_private_exports": [],
+    "nonvendor_unexplained_exports": [],
+    "export_forwarders": [],
+    "first_log_sha256": "7699e72c302d4ecadbb62a632e534fad02fb9d48566ada427d29a10b2050da87",
+    "second_independent_dumpbin": {
+      "tool_stdout_sha256": "1bbecfaf6e8b3cd497d3a294cc285fdd2415d0ca0d46cef66b1a76109b82e684",
+      "hyle_lines": [],
+      "exact_names_equal_first": true
+    },
+    "maps": {
+      "1": {
+        "path": "C:\\h7\\g09-p1\\cuda-baseline\\g09_cuda_baseline_1.map",
+        "sha256": "a65c1387c5f34971b303453e56c72123278313301435bb2ff8f29e48008813e1",
+        "matched_exports": 78,
+        "origins": {
+          "facade.cc.obj": 1,
+          "hyle_compute_provider_native:aten_cpu_provider.cc.obj": 77
+        }
+      },
+      "2": {
+        "path": "C:\\h7\\g09-p1\\cuda-baseline\\g09_cuda_baseline_2.map",
+        "sha256": "a1f47a6fdca0e4ef489e0ee74115cddfa957ea57540454c4752a50d06ddc09ee",
+        "matched_exports": 78,
+        "origins": {
+          "facade.cc.obj": 1,
+          "hyle_compute_provider_native:aten_cpu_provider.cc.obj": 77
+        }
+      }
+    }
+  },
+  "sdk_archive_object_provenance": {
+    "baseline_archive": "C:/h7/g08-sdk/cuda-static-1/relocated/lib/hyle_compute_provider_native.lib",
+    "candidate_archive": "C:/h7/g09-sdk/cuda-static-1/relocated/lib/hyle_compute_provider_native.lib",
+    "both_actual_archive_sha256": "d76ddf1e071fdd97f29b82dde3f70822554037cfb3a78f14586fa8131353e091",
+    "archive_bytes": 5027470,
+    "both_actual_archives_independently_rehashed_equal": true,
+    "member": "src\\compute_provider_native\\CMakeFiles\\hyle_compute_provider_native.dir\\aten_cpu_provider.cc.obj",
+    "member_payload_bytes": 1450747,
+    "member_object_sha256": "5c0eb5e8c99f1c072a71f5eb829ade288df55125aa5a33c665fc65daeaacc437",
+    "both_actual_member_bytes_independently_hashed_equal": true,
+    "directives_section_bytes": 7225,
+    "directives_sha256": "f9da4eb02b2225d8da66c024c81f4ad9a900474dfab86bf62b1cfa42c00e61fb",
+    "directives_export_count": 77,
+    "directives_exact_name_set_matches_extra_exports": true,
+    "data_directives": "Four original vftable directives include ,DATA. All other extra exports are original vendor code; none mentions HYLE private types.",
+    "method": "Parsed existing COFF archive/member/.drectve bytes in memory only; no extracted/rewritten object. Both maps assign all77 extra exports to hyle_compute_provider_native:aten_cpu_provider.cc.obj; C getter belongs to facade.cc.obj.",
+    "same_source_both_revisions": {
+      "src/compute_provider_native/aten_cpu_provider.cc": "8f6e1393b4319971a8c3fa78dd3eba7b55e6cd3dea8aabbecc7887bf79cfc79a",
+      "src/compute_provider_native/CMakeLists.txt": "028327ac406651c8bb3aaf726fa899c3793474a857f470f6aa7b11e0c657588f"
+    },
+    "native_runtime_dll_identity": "Not signed here. Before running/qualifying the pair, freeze/recheck actual torch_cpu/c10/torch_cuda/c10_cuda/CUDA/native CPU-program and remaining runtime dependency paths/hashes/ABI compatibility as already required by A1-A3. Archive equality does not prove which DLL loader will select."
+  },
+  "actual_imports": {
+    "first_log_sha256": "9a51d29180eff0fdcfcf2612e35a9e182e2ccb96c8d1d5ad7171fb0754a9384e",
+    "first_hyle_lines": [],
+    "second_independent_dumpbin": {
+      "tool_stdout_sha256": "9d6487428df397ca205ad6dd696d81edc34d2b65976f5498a1f8fcc903de37e3",
+      "hyle_lines": []
+    },
+    "direct_dependencies": [
+      "torch_cpu.dll",
+      "c10.dll",
+      "torch_cuda.dll",
+      "c10_cuda.dll",
+      "cublas64_13.dll",
+      "cublasLt64_13.dll",
+      "api-ms-win-core-synch-l1-2-0.dll",
+      "KERNEL32.dll",
+      "ADVAPI32.dll",
+      "MSVCP140.dll",
+      "MSVCP140_ATOMIC_WAIT.dll",
+      "VCRUNTIME140.dll",
+      "VCRUNTIME140_1.dll",
+      "api-ms-win-crt-heap-l1-1-0.dll",
+      "api-ms-win-crt-runtime-l1-1-0.dll",
+      "api-ms-win-crt-stdio-l1-1-0.dll",
+      "api-ms-win-crt-string-l1-1-0.dll",
+      "api-ms-win-crt-math-l1-1-0.dll",
+      "api-ms-win-crt-convert-l1-1-0.dll",
+      "api-ms-win-crt-time-l1-1-0.dll",
+      "api-ms-win-crt-environment-l1-1-0.dll"
+    ],
+    "opposite_facade_or_hyle_runtime_dll_dependencies": [],
+    "pe_headers_log_sha256": "0fd9c1d4c11cad7dd86baa20e75b153882e427811fb69936abd730eb0b13c4f4",
+    "headers": "Actual x64 PE image with dynamic base, named Import Directory; Bound Import Directory and Delay Import Directory are zero. No export forwarders. SDK-native program dlopen/GetProcAddress paths remain an actual-loader qualification item."
+  },
+  "isolation_reasoning": {
+    "pe_binding": "A normal PE import identifies a DLL in its import descriptor and a symbol/ordinal in that DLL. Exporting the same vendor decorated name from another loaded facade does not turn this into ELF/Mach-O-style process-global weak-name interposition. Current imports explicitly refer to torch/c10/CUDA/system DLLs, and contain no HYLE private import or opposite-facade dependency. Each facade link resolves private static HYLE definitions inside its own image.",
+    "private_graph": "These77 symbols are exact unchanged vendor methods/vftables/type metadata from one same SDK object. None names a private HYLE Graph/RunState/SubmissionCursor/template instance. Their mere presence cannot resolve an unexported HYLE private Graph symbol across facades. The opaque boundary never hands those objects to the opposite image.",
+    "qualification_limit": "No claim of universal ABI safety for arbitrary shared vendor registrations/callbacks, explicit GetProcAddress misuse, forwarders, injected hooks or different runtime versions. Same vendor/native DLL identities and actual two-image load, native math/completion and ownership behavior still need original finite qualification. No HYLE private symbol exception is allowed."
+  },
+  "finite_contract_clarification": {
+    "why_C_only_was_stronger": "The original purpose was preventing changed-layout private HYLE C++ interposition. It additionally required zero inherited vendor exports, which is stronger than necessary for this actual native PE binding model. The initial guard found real metadata, not a HYLE product math/lifetime failure. This is a pre-sampling scope correction, not relabeling that assertion as PASS.",
+    "accepted_envelope": [
+      "Export set MUST equal exactly {hyle_g09_facade_v1} union the frozen77 raw names above for Windows CUDA, not a c10/caffe2 wildcard/count-only match. No unknown extra function/data/RTTI/forwarder allowed.",
+      "Every vendor exception must map to the same original native provider object/directive identity; baseline/candidate archive+object equality above is actual evidence. If later artifact/source differs, this receipt does not auto-approve a new list.",
+      "All HYLE private symbols, including names embedded in templates/RTTI/vtable/deleter/guard data, remain forbidden as cross-image export/import/binding. No opposite-facade or shared changed-layout HYLE DLL dependency.",
+      "Native/vendor versions, source/archive and actual DLL/runtime load identity must be fixed before any runtime qualification/formal sampling; original C-table module membership/loader/order/math/A-A/artifact/text gates remain required.",
+      "Use this envelope to construct candidate unchanged. Preserve first SETUP_FAIL; a future actual artifact gate may issue its own result. No SDK dllexport directive removal, shipping macro change, archive rewriting or public perf framework modification."
+    ],
+    "msvc_whitelist": "No subtractive native linker whitelist is claimed or needed. Microsoft documents .DEF EXPORTS and __declspec(dllexport) as compatible additive export mechanisms; .DEF PRIVATE only omits an entry from generated import library and does not remove the actual DLL export. A one-entry .DEF or PRIVATE cannot be presented as eliminating these77 original directives."
+  },
+  "pending": [
+    "Candidate facade has not been built/reviewed here",
+    "Actual two-DSO loader paths/IAT/native dependency hashes/code/data identity",
+    "Actual original CPU/native math, copies, completion and retirement",
+    "Original same-topology workload A/A, placement/controls, final .text/disassembly and formal P1"
+  ],
+  "product_must_found": [],
+  "primary_sources": [
+    {
+      "url": "https://learn.microsoft.com/en-gb/windows/win32/debug/pe-format",
+      "support": "PE Import Directory contains one descriptor for each referenced DLL and its associated import lookup/address tables."
+    },
+    {
+      "url": "https://learn.microsoft.com/en-us/cpp/build/reference/exports?view=msvc-170",
+      "support": "EXPORTS definitions and other export mechanisms coexist; PRIVATE affects generated import library, not image export table."
+    },
+    {
+      "url": "https://learn.microsoft.com/en-us/cpp/cpp/using-dllimport-and-dllexport-in-cpp-classes?view=msvc-170",
+      "support": "Exportable class attributes can emit vendor member/data exports from original compiled definitions."
+    }
+  ],
+  "stop": "R13 bounded actual baseline PE export review complete. Candidate construction may proceed under frozen exception; no runtime/performance PASS and no new export-isolation framework authorized."
+}

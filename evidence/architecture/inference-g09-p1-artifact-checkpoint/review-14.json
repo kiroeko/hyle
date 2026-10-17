@@ -1,0 +1,742 @@
+{
+  "schema": "hyle.bounded-independent-artifact-review.v1",
+  "reviewed_at_utc": "2026-10-17T00:53:44.466245+00:00",
+  "decision": "ALLOW_VERIFY_ONLY_LOADER_MATH_COMPLETION_DIAGNOSTICS_NOT_AA_OR_P1",
+  "scope": "R14 Windows PE CUDA only. Static inspection after both image sets linked; no DLL loaded/executed, no build, GPU, benchmark, A/A or sampling. No product/source edits.",
+  "source_binding": {
+    "baseline": "9e2f25c469634a6f723e76eaf1aa2db5973bca9a",
+    "candidate": "3524413272cb52d06af5e64d634edbfef09b9864",
+    "product": "e09f30925c6dba5cf4540669fd3b4874f45bb158",
+    "draft_source_snapshot": "cc21fc113e5e3f8f0038599b506d7b6000e7f6c4",
+    "files": [
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g09-p1-draft\\facade_api.h",
+        "sha256": "3733fe1dd21f5822a06793ece597d805f29828d180810e9696b20335dddd3155",
+        "bytes": 905,
+        "both_build_records_match": true
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g09-p1-draft\\facade.cc",
+        "sha256": "6cf2455f160b0625be4af7c001e38beeb84a8146f2ff53d50982cec635e59687",
+        "bytes": 13430,
+        "both_build_records_match": true
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g09-p1-draft\\driver.cc",
+        "sha256": "8f58350e6b39f051730d47f0565d62b1c3bf449636e3a1885a99deca5719ea25",
+        "bytes": 11337,
+        "both_build_records_match": true
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g09-p1-draft\\CMakeLists.txt",
+        "sha256": "297409b492f44aa01af0c174cc379f95fbee5a4fa19695dfa7c3915dc4a6403a",
+        "bytes": 3208,
+        "both_build_records_match": true
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g09-p1-draft\\runtime_probe.cc",
+        "sha256": "83b7c3ce0cccd1c5be501fe0e440b042378a4c671c764996d7b409765d807c69",
+        "bytes": 100,
+        "both_build_records_match": true
+      }
+    ],
+    "phase_ledger": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g09-p1-draft\\phase-ledger.json",
+      "sha256": "887bd1cbef4ba727c2511606e95ef11a159769dbc87d9178902bd230ac9bac09",
+      "bytes": 6639,
+      "both_build_records_match": true
+    },
+    "installed_header_manifest_count": 273,
+    "both_installed_public_header_manifests_identical": true,
+    "baseline_source_relation": "R11 existing evidence: G08 candidate5103 SDK src/include/cmake/root CMake byte-identical to baseline9e2; no new source qualification inferred from tags."
+  },
+  "build_records": [
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g09-p1-builds\\windows-cuda-baseline\\result.json",
+      "sha256": "bb8cdfb9b4ab684b514967005a03d96b9861b4dcfa7c54d0cccfad2c88f04d12",
+      "bytes": 138140,
+      "state": "TWO_PRIVATE_IMAGES_BUILT_EXPORT_IMPORT_INITIAL_CHECKS_PASS_NOT_FINAL_ARTIFACT_QUALIFICATION",
+      "elapsed_seconds": 88.42200000002049
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g09-p1-builds\\windows-cuda-candidate\\result.json",
+      "sha256": "14aaa944ec896498d3c87f40b70cdb50227c5828a071b4f23c92f2101643340d",
+      "bytes": 136299,
+      "state": "TWO_PRIVATE_IMAGES_BUILT_EXPORT_IMPORT_INITIAL_CHECKS_PASS_NOT_FINAL_ARTIFACT_QUALIFICATION",
+      "elapsed_seconds": 77.75
+    }
+  ],
+  "images": [
+    {
+      "path": "C:\\h7\\g09-p1\\cuda-baseline\\bin\\g09_cuda_baseline_1.dll",
+      "sha256": "5f3ee813851833d696be0138a16d4af922383f3cda456b48a071e2c3599023ad",
+      "bytes": 126718976,
+      "arm": "baseline",
+      "recorded_hash_matches": true,
+      "export_check": {
+        "dumpbin_exit": 0,
+        "names": 78,
+        "exact_r13_getter_plus_77": true,
+        "recorded_list_matches": true,
+        "vendor_set_sha256": "34cf174d8ec647018f818df1f96aa9e562bfe9a26e90f861be80ffdf175ef9d4",
+        "hyle_private": [],
+        "forwarders": false,
+        "unexplained": []
+      },
+      "import_check": {
+        "dumpbin_exit": 0,
+        "direct_dlls": [
+          "torch_cpu.dll",
+          "c10.dll",
+          "torch_cuda.dll",
+          "c10_cuda.dll",
+          "cublas64_13.dll",
+          "cublasLt64_13.dll",
+          "api-ms-win-core-synch-l1-2-0.dll",
+          "KERNEL32.dll",
+          "ADVAPI32.dll",
+          "MSVCP140.dll",
+          "MSVCP140_ATOMIC_WAIT.dll",
+          "VCRUNTIME140.dll",
+          "VCRUNTIME140_1.dll",
+          "api-ms-win-crt-heap-l1-1-0.dll",
+          "api-ms-win-crt-runtime-l1-1-0.dll",
+          "api-ms-win-crt-stdio-l1-1-0.dll",
+          "api-ms-win-crt-string-l1-1-0.dll",
+          "api-ms-win-crt-math-l1-1-0.dll",
+          "api-ms-win-crt-convert-l1-1-0.dll",
+          "api-ms-win-crt-time-l1-1-0.dll",
+          "api-ms-win-crt-environment-l1-1-0.dll"
+        ],
+        "recorded_dlls_match": true,
+        "hyle_private_names": [],
+        "hyle_or_facade_dlls": []
+      },
+      "map": {
+        "path": "C:\\h7\\g09-p1\\cuda-baseline\\g09_cuda_baseline_1.map",
+        "sha256": "a65c1387c5f34971b303453e56c72123278313301435bb2ff8f29e48008813e1",
+        "bytes": 44450820,
+        "recorded_hash_matches": true
+      },
+      "export_owner_check": {
+        "matched": 78,
+        "all_77_vendor_from_original_aten_object": true,
+        "getter_owner": "facade.cc.obj"
+      },
+      "pe": {
+        "image_base": "0x180000000",
+        "text_virtual_bytes": 30610087,
+        "text_raw_bytes": 30610432,
+        "text_rva": "0x1000",
+        "text_raw_sha256": "c4c9ab67d82a690656b8e213f5bfb7c5764d7a0521d2927ab14758c40e4ed0e8",
+        "bound_import_directory": [
+          0,
+          0
+        ],
+        "delay_import_directory": [
+          0,
+          0
+        ]
+      },
+      "finite_disassembly": [
+        {
+          "function": "getter",
+          "va": "0x180007930",
+          "owner": "facade.cc.obj",
+          "range_end": "0x180007940",
+          "dumpbin_exit": 0,
+          "instruction_lines": [
+            "0000000180007930: 48 8D 05 89 CE D2  lea         rax,[0000000181D347C0h]",
+            "0000000180007937: C3                 ret",
+            "0000000180007938: CC                 int         3",
+            "0000000180007939: CC                 int         3",
+            "000000018000793A: CC                 int         3",
+            "000000018000793B: CC                 int         3",
+            "000000018000793C: CC                 int         3",
+            "000000018000793D: CC                 int         3",
+            "000000018000793E: CC                 int         3",
+            "000000018000793F: CC                 int         3",
+            "0000000180007940: 4C"
+          ],
+          "range_sha256": "fddb82319550283f8a5f312ef70b41247ca968a075cbfa81dd126c790b7f3924",
+          "nonempty_code": true
+        },
+        {
+          "function": "drive",
+          "va": "0x00000001800098d0",
+          "owner": "hyle_graph_route_cpu_cuda:invocation.cc.obj",
+          "range_end": "0x180009950",
+          "dumpbin_exit": 0,
+          "instruction_lines": [
+            "00000001800098D0: 4C 8B DC           mov         r11,rsp",
+            "00000001800098D3: 55                 push        rbp",
+            "00000001800098D4: 49 8D 6B B8        lea         rbp,[r11-48h]",
+            "00000001800098D8: 48 81 EC 40 01 00  sub         rsp,140h",
+            "00000001800098DF: 48 8B 05 5A D7 63  mov         rax,qword ptr [0000000182647040h]",
+            "00000001800098E6: 48 33 C4           xor         rax,rsp",
+            "00000001800098E9: 48 89 45 08        mov         qword ptr [rbp+8],rax",
+            "00000001800098ED: 49 89 5B 10        mov         qword ptr [r11+10h],rbx",
+            "00000001800098F1: 49 89 7B 20        mov         qword ptr [r11+20h],rdi",
+            "00000001800098F5: 4D 89 63 F0        mov         qword ptr [r11-10h],r12",
+            "00000001800098F9: 4D 89 6B E8        mov         qword ptr [r11-18h],r13",
+            "00000001800098FD: 45 33 ED           xor         r13d,r13d",
+            "0000000180009900: 4D 89 73 E0        mov         qword ptr [r11-20h],r14",
+            "0000000180009904: 45 8B E5           mov         r12d,r13d"
+          ],
+          "range_sha256": "99861375677a19b1b761e0ac0387771ea146ca62ee3dbfc9e26826a8f923f572",
+          "nonempty_code": true
+        },
+        {
+          "function": "advance",
+          "va": "0x00000001810b74d0",
+          "owner": "hyle_graph:executable.cc.obj",
+          "range_end": "0x1810b7550",
+          "dumpbin_exit": 0,
+          "instruction_lines": [
+            "00000001810B74D0: 48 89 5C 24 18     mov         qword ptr [rsp+18h],rbx",
+            "00000001810B74D5: 4C 89 4C 24 20     mov         qword ptr [rsp+20h],r9",
+            "00000001810B74DA: 48 89 54 24 10     mov         qword ptr [rsp+10h],rdx",
+            "00000001810B74DF: 48 89 4C 24 08     mov         qword ptr [rsp+8],rcx",
+            "00000001810B74E4: 55                 push        rbp",
+            "00000001810B74E5: 56                 push        rsi",
+            "00000001810B74E6: 57                 push        rdi",
+            "00000001810B74E7: 41 54              push        r12",
+            "00000001810B74E9: 41 55              push        r13",
+            "00000001810B74EB: 41 56              push        r14",
+            "00000001810B74ED: 41 57              push        r15",
+            "00000001810B74EF: 48 8D 6C 24 D0     lea         rbp,[rsp-30h]",
+            "00000001810B74F4: 48 81 EC 30 01 00  sub         rsp,130h",
+            "00000001810B74FB: 45 0F B6 F0        movzx       r14d,r8b"
+          ],
+          "range_sha256": "86754921860b592531786944bad628d049d026251239a18feb78cdb2074c00fe",
+          "nonempty_code": true
+        }
+      ]
+    },
+    {
+      "path": "C:\\h7\\g09-p1\\cuda-baseline\\bin\\g09_cuda_baseline_2.dll",
+      "sha256": "c0a0c58993f0e137d1f00052c7a941dd7bc40af9bdf506ad08d9242299d46fde",
+      "bytes": 126718976,
+      "arm": "baseline",
+      "recorded_hash_matches": true,
+      "export_check": {
+        "dumpbin_exit": 0,
+        "names": 78,
+        "exact_r13_getter_plus_77": true,
+        "recorded_list_matches": true,
+        "vendor_set_sha256": "34cf174d8ec647018f818df1f96aa9e562bfe9a26e90f861be80ffdf175ef9d4",
+        "hyle_private": [],
+        "forwarders": false,
+        "unexplained": []
+      },
+      "import_check": {
+        "dumpbin_exit": 0,
+        "direct_dlls": [
+          "torch_cpu.dll",
+          "c10.dll",
+          "torch_cuda.dll",
+          "c10_cuda.dll",
+          "cublas64_13.dll",
+          "cublasLt64_13.dll",
+          "api-ms-win-core-synch-l1-2-0.dll",
+          "KERNEL32.dll",
+          "ADVAPI32.dll",
+          "MSVCP140.dll",
+          "MSVCP140_ATOMIC_WAIT.dll",
+          "VCRUNTIME140.dll",
+          "VCRUNTIME140_1.dll",
+          "api-ms-win-crt-heap-l1-1-0.dll",
+          "api-ms-win-crt-runtime-l1-1-0.dll",
+          "api-ms-win-crt-stdio-l1-1-0.dll",
+          "api-ms-win-crt-string-l1-1-0.dll",
+          "api-ms-win-crt-math-l1-1-0.dll",
+          "api-ms-win-crt-convert-l1-1-0.dll",
+          "api-ms-win-crt-time-l1-1-0.dll",
+          "api-ms-win-crt-environment-l1-1-0.dll"
+        ],
+        "recorded_dlls_match": true,
+        "hyle_private_names": [],
+        "hyle_or_facade_dlls": []
+      },
+      "map": {
+        "path": "C:\\h7\\g09-p1\\cuda-baseline\\g09_cuda_baseline_2.map",
+        "sha256": "a1f47a6fdca0e4ef489e0ee74115cddfa957ea57540454c4752a50d06ddc09ee",
+        "bytes": 44450820,
+        "recorded_hash_matches": true
+      },
+      "export_owner_check": {
+        "matched": 78,
+        "all_77_vendor_from_original_aten_object": true,
+        "getter_owner": "facade.cc.obj"
+      },
+      "pe": {
+        "image_base": "0x180000000",
+        "text_virtual_bytes": 30610087,
+        "text_raw_bytes": 30610432,
+        "text_rva": "0x1000",
+        "text_raw_sha256": "c4c9ab67d82a690656b8e213f5bfb7c5764d7a0521d2927ab14758c40e4ed0e8",
+        "bound_import_directory": [
+          0,
+          0
+        ],
+        "delay_import_directory": [
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "path": "C:\\h7\\g09-p1\\cuda-candidate\\bin\\g09_cuda_candidate_1.dll",
+      "sha256": "e18943becc90d6d210ba7f1fb82c8b492b87e9e66ad07ab659ea6aa73845c3fd",
+      "bytes": 126739968,
+      "arm": "candidate",
+      "recorded_hash_matches": true,
+      "export_check": {
+        "dumpbin_exit": 0,
+        "names": 78,
+        "exact_r13_getter_plus_77": true,
+        "recorded_list_matches": true,
+        "vendor_set_sha256": "34cf174d8ec647018f818df1f96aa9e562bfe9a26e90f861be80ffdf175ef9d4",
+        "hyle_private": [],
+        "forwarders": false,
+        "unexplained": []
+      },
+      "import_check": {
+        "dumpbin_exit": 0,
+        "direct_dlls": [
+          "torch_cpu.dll",
+          "c10.dll",
+          "torch_cuda.dll",
+          "c10_cuda.dll",
+          "cublas64_13.dll",
+          "cublasLt64_13.dll",
+          "api-ms-win-core-synch-l1-2-0.dll",
+          "KERNEL32.dll",
+          "ADVAPI32.dll",
+          "MSVCP140.dll",
+          "MSVCP140_ATOMIC_WAIT.dll",
+          "VCRUNTIME140.dll",
+          "VCRUNTIME140_1.dll",
+          "api-ms-win-crt-heap-l1-1-0.dll",
+          "api-ms-win-crt-runtime-l1-1-0.dll",
+          "api-ms-win-crt-stdio-l1-1-0.dll",
+          "api-ms-win-crt-string-l1-1-0.dll",
+          "api-ms-win-crt-math-l1-1-0.dll",
+          "api-ms-win-crt-convert-l1-1-0.dll",
+          "api-ms-win-crt-time-l1-1-0.dll",
+          "api-ms-win-crt-environment-l1-1-0.dll"
+        ],
+        "recorded_dlls_match": true,
+        "hyle_private_names": [],
+        "hyle_or_facade_dlls": []
+      },
+      "map": {
+        "path": "C:\\h7\\g09-p1\\cuda-candidate\\g09_cuda_candidate_1.map",
+        "sha256": "1c05f7ab242be976b9f1f878521c73cace57fec609ecc8d73bf3063f6729f415",
+        "bytes": 44489080,
+        "recorded_hash_matches": true
+      },
+      "export_owner_check": {
+        "matched": 78,
+        "all_77_vendor_from_original_aten_object": true,
+        "getter_owner": "facade.cc.obj"
+      },
+      "pe": {
+        "image_base": "0x180000000",
+        "text_virtual_bytes": 30627927,
+        "text_raw_bytes": 30628352,
+        "text_rva": "0x1000",
+        "text_raw_sha256": "a0b2e3b0008fbddfeea62dc4f41b4f560c9453d6e0d33ea15b22de0cef2ec189",
+        "bound_import_directory": [
+          0,
+          0
+        ],
+        "delay_import_directory": [
+          0,
+          0
+        ]
+      },
+      "finite_disassembly": [
+        {
+          "function": "getter",
+          "va": "0x180007930",
+          "owner": "facade.cc.obj",
+          "range_end": "0x180007940",
+          "dumpbin_exit": 0,
+          "instruction_lines": [
+            "0000000180007930: 48 8D 05 89 0E D3  lea         rax,[0000000181D387C0h]",
+            "0000000180007937: C3                 ret",
+            "0000000180007938: CC                 int         3",
+            "0000000180007939: CC                 int         3",
+            "000000018000793A: CC                 int         3",
+            "000000018000793B: CC                 int         3",
+            "000000018000793C: CC                 int         3",
+            "000000018000793D: CC                 int         3",
+            "000000018000793E: CC                 int         3",
+            "000000018000793F: CC                 int         3",
+            "0000000180007940: 4C"
+          ],
+          "range_sha256": "1461e23198a657413c593ccb863266e96f621c989f66792647c81c5f84674da3",
+          "nonempty_code": true
+        },
+        {
+          "function": "drive",
+          "va": "0x000000018000bb00",
+          "owner": "hyle_graph_route_cpu_cuda:invocation.cc.obj",
+          "range_end": "0x18000bb80",
+          "dumpbin_exit": 0,
+          "instruction_lines": [
+            "000000018000BB00: 4C 8B DC           mov         r11,rsp",
+            "000000018000BB03: 55                 push        rbp",
+            "000000018000BB04: 49 8D 6B C8        lea         rbp,[r11-38h]",
+            "000000018000BB08: 48 81 EC 30 01 00  sub         rsp,130h",
+            "000000018000BB0F: 48 8B 05 2A F5 63  mov         rax,qword ptr [000000018264B040h]",
+            "000000018000BB16: 48 33 C4           xor         rax,rsp",
+            "000000018000BB19: 48 89 45 F8        mov         qword ptr [rbp-8],rax",
+            "000000018000BB1D: 49 89 5B 10        mov         qword ptr [r11+10h],rbx",
+            "000000018000BB21: 49 89 7B 20        mov         qword ptr [r11+20h],rdi",
+            "000000018000BB25: 4D 89 63 F0        mov         qword ptr [r11-10h],r12",
+            "000000018000BB29: 45 33 E4           xor         r12d,r12d",
+            "000000018000BB2C: 4D 89 6B E8        mov         qword ptr [r11-18h],r13",
+            "000000018000BB30: 41 8B DC           mov         ebx,r12d",
+            "000000018000BB33: 4D 89 73 E0        mov         qword ptr [r11-20h],r14"
+          ],
+          "range_sha256": "681946dd828e0e4b27de01631788a2c19567da63814f87a06d2dccf9b8b31bcc",
+          "nonempty_code": true
+        },
+        {
+          "function": "parallel",
+          "va": "0x000000018000c490",
+          "owner": "hyle_graph_route_cpu_cuda:invocation.cc.obj",
+          "range_end": "0x18000c510",
+          "dumpbin_exit": 0,
+          "instruction_lines": [
+            "000000018000C490: 48 89 4C 24 08     mov         qword ptr [rsp+8],rcx",
+            "000000018000C495: 55                 push        rbp",
+            "000000018000C496: 53                 push        rbx",
+            "000000018000C497: 56                 push        rsi",
+            "000000018000C498: 57                 push        rdi",
+            "000000018000C499: 41 54              push        r12",
+            "000000018000C49B: 41 55              push        r13",
+            "000000018000C49D: 41 56              push        r14",
+            "000000018000C49F: 41 57              push        r15",
+            "000000018000C4A1: 48 8D AC 24 38 FF  lea         rbp,[rsp+FFFFFFFFFFFFFF38h]",
+            "000000018000C4A9: 48 81 EC C8 01 00  sub         rsp,1C8h",
+            "000000018000C4B0: 0F 29 B4 24 B0 01  movaps      xmmword ptr [rsp+00000000000001B0h],xmm6",
+            "000000018000C4B8: 48 8B DA           mov         rbx,rdx",
+            "000000018000C4BB: 4C 8B F9           mov         r15,rcx"
+          ],
+          "range_sha256": "0089af5338d5688631fab7f9d5a946c11edab31f7782b34381f126c73c7c74e1",
+          "nonempty_code": true
+        },
+        {
+          "function": "cpu_lane",
+          "va": "0x000000018000c160",
+          "owner": "hyle_graph_route_cpu_cuda:invocation.cc.obj",
+          "range_end": "0x18000c1e0",
+          "dumpbin_exit": 0,
+          "instruction_lines": [
+            "000000018000C160: 48 8B C4           mov         rax,rsp",
+            "000000018000C163: 55                 push        rbp",
+            "000000018000C164: 53                 push        rbx",
+            "000000018000C165: 56                 push        rsi",
+            "000000018000C166: 57                 push        rdi",
+            "000000018000C167: 41 54              push        r12",
+            "000000018000C169: 41 55              push        r13",
+            "000000018000C16B: 41 56              push        r14",
+            "000000018000C16D: 41 57              push        r15",
+            "000000018000C16F: 48 8D 6C 24 B8     lea         rbp,[rsp-48h]",
+            "000000018000C174: 48 81 EC 48 01 00  sub         rsp,148h",
+            "000000018000C17B: 0F 29 70 A8        movaps      xmmword ptr [rax-58h],xmm6",
+            "000000018000C17F: 0F 29 78 98        movaps      xmmword ptr [rax-68h],xmm7",
+            "000000018000C183: 48 8B F1           mov         rsi,rcx"
+          ],
+          "range_sha256": "da7c53f700bda6b781b6bcf04c64eacda5d65de645273a72e503ae88c761b958",
+          "nonempty_code": true
+        },
+        {
+          "function": "advance",
+          "va": "0x00000001810bb010",
+          "owner": "hyle_graph:executable.cc.obj",
+          "range_end": "0x1810bb090",
+          "dumpbin_exit": 0,
+          "instruction_lines": [
+            "00000001810BB010: 40 53              push        rbx",
+            "00000001810BB012: 55                 push        rbp",
+            "00000001810BB013: 56                 push        rsi",
+            "00000001810BB014: 57                 push        rdi",
+            "00000001810BB015: 41 56              push        r14",
+            "00000001810BB017: 41 57              push        r15",
+            "00000001810BB019: 48 81 EC C8 00 00  sub         rsp,0C8h",
+            "00000001810BB020: 4D 8B F9           mov         r15,r9",
+            "00000001810BB023: 45 0F B6 C8        movzx       r9d,r8b",
+            "00000001810BB027: 48 8B FA           mov         rdi,rdx",
+            "00000001810BB02A: 48 8B F1           mov         rsi,rcx",
+            "00000001810BB02D: 48 8B 01           mov         rax,qword ptr [rcx]",
+            "00000001810BB030: 48 85 C0           test        rax,rax",
+            "00000001810BB033: 0F 84 E2 01 00 00  je          00000001810BB21B"
+          ],
+          "range_sha256": "b2f4311b1d018bb661ae01555b85ec3068d09b1b749d315d1c875f51d93d05b2",
+          "nonempty_code": true
+        },
+        {
+          "function": "submit_segment",
+          "va": "0x00000001810f6a00",
+          "owner": "hyle_graph:executable.cc.obj",
+          "range_end": "0x1810f6a80",
+          "dumpbin_exit": 0,
+          "instruction_lines": [
+            "00000001810F6A00: 48 89 5C 24 20     mov         qword ptr [rsp+20h],rbx",
+            "00000001810F6A05: 4C 89 44 24 18     mov         qword ptr [rsp+18h],r8",
+            "00000001810F6A0A: 48 89 54 24 10     mov         qword ptr [rsp+10h],rdx",
+            "00000001810F6A0F: 48 89 4C 24 08     mov         qword ptr [rsp+8],rcx",
+            "00000001810F6A14: 55                 push        rbp",
+            "00000001810F6A15: 56                 push        rsi",
+            "00000001810F6A16: 57                 push        rdi",
+            "00000001810F6A17: 41 54              push        r12",
+            "00000001810F6A19: 41 55              push        r13",
+            "00000001810F6A1B: 41 56              push        r14",
+            "00000001810F6A1D: 41 57              push        r15",
+            "00000001810F6A1F: 48 8D 6C 24 C0     lea         rbp,[rsp-40h]",
+            "00000001810F6A24: 48 81 EC 40 01 00  sub         rsp,140h",
+            "00000001810F6A2B: 45 0F B6 F9        movzx       r15d,r9b"
+          ],
+          "range_sha256": "3c4a5f5097d7977389d01c90ad063c857fcb5c0e7c904e9fcd45109bad2cb387",
+          "nonempty_code": true
+        }
+      ]
+    },
+    {
+      "path": "C:\\h7\\g09-p1\\cuda-candidate\\bin\\g09_cuda_candidate_2.dll",
+      "sha256": "04e8b4cf4ff2c676487fe46a6d91e94e620625166a0c425882423dc710315bd8",
+      "bytes": 126739968,
+      "arm": "candidate",
+      "recorded_hash_matches": true,
+      "export_check": {
+        "dumpbin_exit": 0,
+        "names": 78,
+        "exact_r13_getter_plus_77": true,
+        "recorded_list_matches": true,
+        "vendor_set_sha256": "34cf174d8ec647018f818df1f96aa9e562bfe9a26e90f861be80ffdf175ef9d4",
+        "hyle_private": [],
+        "forwarders": false,
+        "unexplained": []
+      },
+      "import_check": {
+        "dumpbin_exit": 0,
+        "direct_dlls": [
+          "torch_cpu.dll",
+          "c10.dll",
+          "torch_cuda.dll",
+          "c10_cuda.dll",
+          "cublas64_13.dll",
+          "cublasLt64_13.dll",
+          "api-ms-win-core-synch-l1-2-0.dll",
+          "KERNEL32.dll",
+          "ADVAPI32.dll",
+          "MSVCP140.dll",
+          "MSVCP140_ATOMIC_WAIT.dll",
+          "VCRUNTIME140.dll",
+          "VCRUNTIME140_1.dll",
+          "api-ms-win-crt-heap-l1-1-0.dll",
+          "api-ms-win-crt-runtime-l1-1-0.dll",
+          "api-ms-win-crt-stdio-l1-1-0.dll",
+          "api-ms-win-crt-string-l1-1-0.dll",
+          "api-ms-win-crt-math-l1-1-0.dll",
+          "api-ms-win-crt-convert-l1-1-0.dll",
+          "api-ms-win-crt-time-l1-1-0.dll",
+          "api-ms-win-crt-environment-l1-1-0.dll"
+        ],
+        "recorded_dlls_match": true,
+        "hyle_private_names": [],
+        "hyle_or_facade_dlls": []
+      },
+      "map": {
+        "path": "C:\\h7\\g09-p1\\cuda-candidate\\g09_cuda_candidate_2.map",
+        "sha256": "f89fcc51156fda14bcdab05f8d560ee8408a35aa41b947bb68ace0e3eee7d38d",
+        "bytes": 44489081,
+        "recorded_hash_matches": true
+      },
+      "export_owner_check": {
+        "matched": 78,
+        "all_77_vendor_from_original_aten_object": true,
+        "getter_owner": "facade.cc.obj"
+      },
+      "pe": {
+        "image_base": "0x180000000",
+        "text_virtual_bytes": 30627927,
+        "text_raw_bytes": 30628352,
+        "text_rva": "0x1000",
+        "text_raw_sha256": "a0b2e3b0008fbddfeea62dc4f41b4f560c9453d6e0d33ea15b22de0cef2ec189",
+        "bound_import_directory": [
+          0,
+          0
+        ],
+        "delay_import_directory": [
+          0,
+          0
+        ]
+      }
+    }
+  ],
+  "driver": {
+    "path": "C:\\h7\\g09-p1\\cuda-candidate\\bin\\g09_pipeline_driver.exe",
+    "sha256": "d0c61cd4ddaa552c050d8cdc2f3d007ffebc59ce872e4c54529098dba85731f4",
+    "bytes": 133120,
+    "recorded_hash_matches": true,
+    "imports_dumpbin_exit": 0,
+    "import_dlls": [
+      "KERNEL32.dll",
+      "MSVCP140.dll",
+      "VCRUNTIME140.dll",
+      "VCRUNTIME140_1.dll",
+      "api-ms-win-crt-stdio-l1-1-0.dll",
+      "api-ms-win-crt-filesystem-l1-1-0.dll",
+      "api-ms-win-crt-heap-l1-1-0.dll",
+      "api-ms-win-crt-environment-l1-1-0.dll",
+      "api-ms-win-crt-string-l1-1-0.dll",
+      "api-ms-win-crt-math-l1-1-0.dll",
+      "api-ms-win-crt-locale-l1-1-0.dll",
+      "api-ms-win-crt-runtime-l1-1-0.dll"
+    ],
+    "hyle_vendor_private_import_names": []
+  },
+  "archive_checks": [
+    {
+      "path": "C:\\h7\\g08-sdk\\cuda-static-1\\relocated\\lib\\hyle_compute_provider_native.lib",
+      "sha256": "d76ddf1e071fdd97f29b82dde3f70822554037cfb3a78f14586fa8131353e091",
+      "bytes": 5027470,
+      "arm": "baseline",
+      "installed_manifest_matches": true
+    },
+    {
+      "path": "C:\\h7\\g08-sdk\\cuda-static-1\\relocated\\lib\\hyle_graph.lib",
+      "sha256": "6aea5cc849b7cddef9429eeb385aa51b27c7d4ffffc7bc7fd32bf2102612ac82",
+      "bytes": 5951360,
+      "arm": "baseline",
+      "installed_manifest_matches": true
+    },
+    {
+      "path": "C:\\h7\\g08-sdk\\cuda-static-1\\relocated\\lib\\hyle_graph_route_cpu_cuda.lib",
+      "sha256": "4311f3b4722b679e1475571090753bc49286630ef70f25037fcb46c24702969e",
+      "bytes": 516636,
+      "arm": "baseline",
+      "installed_manifest_matches": true
+    },
+    {
+      "path": "C:\\h7\\g08-sdk\\cuda-static-1\\relocated\\lib\\hyle_sched.lib",
+      "sha256": "0a67c98c027b3a0231c539eca04ca49fa195f53e4fd5f609d8de41abc07e539e",
+      "bytes": 1643702,
+      "arm": "baseline",
+      "installed_manifest_matches": true
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\cuda-static-1\\relocated\\lib\\hyle_compute_provider_native.lib",
+      "sha256": "d76ddf1e071fdd97f29b82dde3f70822554037cfb3a78f14586fa8131353e091",
+      "bytes": 5027470,
+      "arm": "candidate",
+      "installed_manifest_matches": true
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\cuda-static-1\\relocated\\lib\\hyle_graph.lib",
+      "sha256": "241633891bdcbfba0d26ee67db5a910516aa58292fdfc46e1fc8cb66db4583fc",
+      "bytes": 5975318,
+      "arm": "candidate",
+      "installed_manifest_matches": true
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\cuda-static-1\\relocated\\lib\\hyle_graph_route_cpu_cuda.lib",
+      "sha256": "5c10b8d760e7644d542a14b5dac56b52d62e1917f34370557dd7c75a3e5b6396",
+      "bytes": 813638,
+      "arm": "candidate",
+      "installed_manifest_matches": true
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\cuda-static-1\\relocated\\lib\\hyle_sched.lib",
+      "sha256": "0a67c98c027b3a0231c539eca04ca49fa195f53e4fd5f609d8de41abc07e539e",
+      "bytes": 1643702,
+      "arm": "candidate",
+      "installed_manifest_matches": true
+    }
+  ],
+  "original_vendor_object": {
+    "prior_review": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g09-pe-vendor-export-review-13.json",
+      "sha256": "3612325962ad2575e7a5b096a112624393edc72d59545f12c6bb58d0c7abf291",
+      "bytes": 19864
+    },
+    "raw_77_name_set_sha256": "34cf174d8ec647018f818df1f96aa9e562bfe9a26e90f861be80ffdf175ef9d4",
+    "original_object_sha256": "5c0eb5e8c99f1c072a71f5eb829ade288df55125aa5a33c665fc65daeaacc437",
+    "directives_sha256": "f9da4eb02b2225d8da66c024c81f4ad9a900474dfab86bf62b1cfa42c00e61fb",
+    "identity_reason": "Both actual installed provider archives rehashed to original R13 archive identity; both candidate maps attribute all exact77 exports to unchanged aten_cpu_provider.cc.obj. The exact original object and directives proof is reused, not redefined as wildcard."
+  },
+  "private_binding_judgment": {
+    "status": "PASS_STATIC_METADATA_ONLY",
+    "reason": "Own-image static definitions of private Graph/SubmissionCursor code occur in each map and real .text. HYLE private functions/data/types are absent from PE export/import tables; no facade or HYLE DLL import, no forwarding, no bound/delay import directory. PE named-DLL imports do not introduce ELF-style flat symbol preemption. The extra exact77 vendor exports remain within the R13 exception, not a C++ ABI across the opaque C table.",
+    "actual_runtime_registry_identity": "UNKNOWN until verify-only actual loaded-module/path/hash and registry/math checks; same vendor exports can still expose vendor process-global state and must not be called across facade boundary.",
+    "selected_disassembly_limit": "Finite getter/Graph prologues plus linkmap ownership and section hashes establish presence/identity only; no claim of whole-program equivalence, overlap, math, completion or performance.",
+    "clone_text_bytes_equal": {
+      "baseline": true,
+      "candidate": true
+    },
+    "candidate_text_virtual_delta_bytes": 17840
+  },
+  "r12_stager_fix": {
+    "status": "PASS_SOURCE_AND_SUCCESSFUL_LINK_METADATA",
+    "anchors": [
+      ".scratch/inference-gaps/g09-p1-draft/CMakeLists.txt:22-25 private EXCLUDE_FROM_ALL EXECUTABLE runtime probe links SDK and alone calls hyle_stage_runtime",
+      ".scratch/inference-gaps/g09-p1-draft/CMakeLists.txt:45 facade add_dependencies(probe)",
+      ".scratch/inference-gaps/g09-p1-draft/CMakeLists.txt:56 driver links only nanobench"
+    ],
+    "boundary": "Probe not run or timed. Staged contents frozen separately; successful build is not actual loader proof."
+  },
+  "staged_runtime_freeze": {
+    "receipt": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g09-p1-cuda-runtime-preflight\\freeze.json",
+      "sha256": "64d7ab6d0dcc4ff833362a2a33a63acec5f5cc73240d3cd5069644705167cad7",
+      "bytes": 55570
+    },
+    "state": "BOTH_STAGED_RUNTIME_DLL_SETS_EXACT_IDENTICAL_FROZEN_NOT_EXECUTED",
+    "counts": {
+      "baseline": 39,
+      "candidate": 39
+    },
+    "metadata_name_hash_sets_equal": true,
+    "review_method": "Bound existing parent actual per-file hash freeze; do not rehash all large vendor files here. Actual runtime selections still unobserved.",
+    "gpu": "NVIDIA GeForce RTX 4070, GPU-e7376560-6f5d-ec19-6ee4-3dd3a2c81ef8, 617.14"
+  },
+  "retained_failures": [
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g09-p1-builds\\windows-cuda-baseline\\initial-strict-export-failure.json",
+      "sha256": "2452f1249d89e1620af8c52ab5d7df5852e92fbf3581b08dd278b5cffb2e03cc",
+      "bytes": 124039,
+      "state": "SETUP_FAIL",
+      "cumulative_elapsed_seconds": 74.29700000002049,
+      "error_prefix": "AssertionError(['??$_typeMetaData@D@TypeMeta@caffe2@@CAGXZ', '??$_typeMetaData@J@TypeMeta@caffe2@@CA"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g09-p1-builds\\windows-cuda-baseline\\inspection-before-1.json",
+      "sha256": "6a0e83e38b2551038b66cbdcfb5a591c769a055f9052cf3412db33852491068e",
+      "bytes": 118470,
+      "state": "SETUP_FAIL",
+      "cumulative_elapsed_seconds": 75.34400000004098,
+      "error_prefix": "AssertionError('ninja: Entering directory `C:\\\\h7\\\\g09-p1\\\\cuda-baseline\\'\\n[1/1] C:\\\\WINDOWS\\\\syste"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g09-p1-builds\\windows-cuda-baseline\\inspection-before-2.json",
+      "sha256": "12b28fbefefc35f5036be9444087dcce2ce7bb1f2ed2109a2171ad2572e94bdf",
+      "bytes": 183762,
+      "state": "SETUP_FAIL",
+      "cumulative_elapsed_seconds": 76.32800000003772,
+      "error_prefix": "UnicodeDecodeError('gbk', b'{\\r\\n  \"schema_version\": 4,\\r\\n  \"methodology\": \"module-closure-v4\",\\r\\n"
+    }
+  ],
+  "reviewer_static_command_correction": "Initial dumpbin /RANGE unprefixed hex values either produced no instructions or LNK1147. Correct documented VA syntax /RANGE:0x... used; inspection only, no artifact mutation/rebuild or product failure.",
+  "next_allowed": {
+    "only": "Original verify-only diagnostics in both load/allocation orders, capture actual loaded facade/vendor/CPU-program paths+hashes, registry, complete math/oracle, output/lease completion and state/DSO retirement. Keep failures.",
+    "before_formal": "Actual artifact loader/isolation, full public journey and original same-topology A/A/controls still pending; do not start formal measurement based on this review.",
+    "additional_static_evidence_must": []
+  },
+  "product_must_found": [],
+  "stop": "Completed the requested finite static artifact audit. No additional source audit or functionality proposal."
+}

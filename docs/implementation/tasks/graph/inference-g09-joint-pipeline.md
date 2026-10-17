@@ -1,6 +1,6 @@
 # G09 单CPU与单GPU联合流水
 
-状态：**CANDIDATE，2026-10-17；API、算法和产品形状冻结，交付/P1/终审尚未验收**。
+状态：**CANDIDATE，2026-10-17；API、算法和产品形状冻结，选定交付已通过，P1/终审尚未验收**。
 baseline为`9e2f25c469634a6f723e76eaf1aa2db5973bca9a`。
 candidate为`3524413272cb52d06af5e64d634edbfef09b9864`；产品实现自`e09f30925`未再变化。
 G07/G08已接受，当前G07–G10 goal完成2/4；G10和完整文本CLI未开始。
@@ -398,3 +398,32 @@ Windows CUDA baseline两份private facade随后已按原静态SDK完成真实编
 重编；初始产物预检拒绝了额外的caffe2/c10 vendor自动导出符号，严格C-getter-only assert的原FAIL保留。
 尚未构建candidate、加载/执行benchmark或采样。需有限独立复核其原SDK directive、PE import归属与
 private HYLE隔离边界；不能只凭源码隐藏声明或额外符号属于vendor就改记PASS，也不因此改shipping源码。
+
+### 实际P1产物与CUDA不计时检查点，2026-10-17
+
+[实际产物与不计时检查原件](../../../../evidence/architecture/inference-g09-p1-artifact-checkpoint/receipt.json)
+现记录Windows CUDA、Air Apple/Vulkan三组profile的baseline/candidate各两份private facade，
+共六套、十二个真实映像。全部仅编译公开消费者并链接既有静态SDK；未改产品、数学、CUDA算子或
+公共性能仪器。Air逐份初始导出检查均仅有C getter，但尚未签实际Mach-O绑定、加载和运行。
+
+独立R13确认Windows CUDA额外77项原caffe2/c10导出逐字来自同一原ATen对象/directive，
+两侧原archive/object相同；冻结精确名单而非vendor通配，HYLE私有import/export/跨映像绑定拒绝门不变。
+初始严格C-only FAIL、两次inspection helper预检失败和累计费用均保留。
+R14已核四份实际PE映像/关键archive/273份同一公开头、有限反汇编与text归属；只允许下一步diagnostic，
+不签A/A/P1。两侧39份实际staged runtime DLL逐文件hash相同。
+
+首个verify-only已通过四场景前后完整4M输出oracle和八次State销毁，但最终显式FreeLibrary挂起。
+WCT观察主线程等待另一线程，cycle=false；原baseline/candidate相同的CUDA静态CompletionReaper
+析构会join线程，与DLL-detach loader-lock风险一致，尚未由完整native栈确认具体环。
+原HANG、进程身份、WCT与费用保留；没有把它记为G09新产品缺陷或性能结果。
+
+按独立R15有限建议，只为Windows另编driver，让两侧private映像对称保留至process exit；
+原driver、四份facade、SDK未覆盖，所有warm数学/prepare/submit/原生完成、结果观察、drain和State销毁
+均未改变。新driver的两种加载/分配顺序均通过完整oracle、全部State销毁及正常进程退出，
+实际81/82个模块的路径/hash已核对，原CPU program实际加载。最终映像/私有cache回收仍不签dynamic-unload。
+以上六套构造、冻结、原失败、driver纠正和两顺序不计时检查的已记录case费用合计387.998秒，
+不含编排/源码准备/审查时间；没有重置原预算或失败。
+
+尚无Bench::compare、workload A/A或正式P1样本。剩余Windows Vulkan产物、Air实际绑定/运行、
+原A1–A5与同拓扑A/A/仪器控制、四组profile正式P1和终审/LOC依旧待证。
+G09保持固定CANDIDATE，G07–G10 goal仍为已接受2/4，G10未开始；已通过15项交付不重跑。

@@ -1,0 +1,1416 @@
+{
+  "schema": "hyle.inference-g09-p1-artifact-checkpoint/v1",
+  "state": "CUDA_AND_AIR_PRIVATE_IMAGES_BUILT_CUDA_VERIFY_ONLY_BOTH_ORDERS_PASS_NOT_AA_OR_FORMAL_P1",
+  "baseline": "9e2f25c469634a6f723e76eaf1aa2db5973bca9a",
+  "candidate": "3524413272cb52d06af5e64d634edbfef09b9864",
+  "product_code_commit": "e09f30925c6dba5cf4540669fd3b4874f45bb158",
+  "scope": "Only existing fixed four4M F32 workloads, original default CPU and Scheduler2, immutable original math/queues/providers. No product change, source/SDK/kernel rebuild or performance-framework change. No WSL formal P1.",
+  "image_sets": [
+    {
+      "platform": "W1-WIN",
+      "route": "cuda",
+      "image_set": "baseline",
+      "record": ".scratch/inference-gaps/g09-p1-builds/windows-cuda-baseline/result.json",
+      "sha256": "bb8cdfb9b4ab684b514967005a03d96b9861b4dcfa7c54d0cccfad2c88f04d12",
+      "elapsed_seconds": 88.42200000002049,
+      "images": [
+        {
+          "path": "C:\\h7\\g09-p1\\cuda-baseline\\bin\\g09_cuda_baseline_1.dll",
+          "sha256": "5f3ee813851833d696be0138a16d4af922383f3cda456b48a071e2c3599023ad",
+          "bytes": 126718976,
+          "exports": [
+            "??$_typeMetaData@D@TypeMeta@caffe2@@CAGXZ",
+            "??$_typeMetaData@J@TypeMeta@caffe2@@CAGXZ",
+            "??$_typeMetaData@PEAD@TypeMeta@caffe2@@CAGXZ",
+            "??$_typeMetaData@PEAH@TypeMeta@caffe2@@CAGXZ",
+            "??$_typeMetaData@PEAM@TypeMeta@caffe2@@CAGXZ",
+            "??$_typeMetaData@PEAUHalf@c10@@@TypeMeta@caffe2@@CAGXZ",
+            "??$_typeMetaData@PEA_N@TypeMeta@caffe2@@CAGXZ",
+            "??$_typeMetaData@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@TypeMeta@caffe2@@CAGXZ",
+            "??$_typeMetaData@V?$unique_ptr@U?$atomic@_N@std@@U?$default_delete@U?$atomic@_N@std@@@2@@std@@@TypeMeta@caffe2@@CAGXZ",
+            "??$_typeMetaData@V?$unique_ptr@Vmutex@std@@U?$default_delete@Vmutex@std@@@2@@std@@@TypeMeta@caffe2@@CAGXZ",
+            "??$_typeMetaData@V?$vector@HV?$allocator@H@std@@@std@@@TypeMeta@caffe2@@CAGXZ",
+            "??$_typeMetaData@V?$vector@JV?$allocator@J@std@@@std@@@TypeMeta@caffe2@@CAGXZ",
+            "??$_typeMetaData@V?$vector@KV?$allocator@K@std@@@std@@@TypeMeta@caffe2@@CAGXZ",
+            "??$_typeMetaData@V?$vector@_JV?$allocator@_J@std@@@std@@@TypeMeta@caffe2@@CAGXZ",
+            "??$_typeMetaData@V_Uninitialized@detail@caffe2@@@TypeMeta@caffe2@@CAGXZ",
+            "??0Await@ivalue@c10@@AEAA@V?$SingletonOrSharedTypePtr@UType@c10@@@Type@2@@Z",
+            "??0Await@ivalue@c10@@AEAA@V?$SingletonOrSharedTypePtr@UType@c10@@@Type@2@V?$function@$$A6A?AUIValue@c10@@XZ@std@@@Z",
+            "??0Future@ivalue@c10@@AEAA@V?$SingletonOrSharedTypePtr@UType@c10@@@Type@2@V?$vector@UDevice@c10@@V?$allocator@UDevice@c10@@@std@@@std@@@Z",
+            "??0Object@ivalue@c10@@QEAA@$$QEAU012@@Z",
+            "??0Object@ivalue@c10@@QEAA@AEBU012@@Z",
+            "??0Object@ivalue@c10@@QEAA@UStrongTypePtr@2@_K@Z",
+            "??0Object@ivalue@c10@@QEAA@UWeakOrStrongTypePtr@2@_K@Z",
+            "??0RRefInterface@c10@@QEAA@XZ",
+            "??1Await@ivalue@c10@@UEAA@XZ",
+            "??1Future@ivalue@c10@@UEAA@XZ",
+            "??1Object@ivalue@c10@@UEAA@XZ",
+            "??1RRefInterface@c10@@UEAA@XZ",
+            "??4Object@ivalue@c10@@QEAAAEAU012@$$QEAU012@@Z",
+            "??4Object@ivalue@c10@@QEAAAEAU012@AEBU012@@Z",
+            "??_7Await@ivalue@c10@@6B@",
+            "??_7Future@ivalue@c10@@6B@",
+            "??_7Object@ivalue@c10@@6B@",
+            "??_7RRefInterface@c10@@6B@",
+            "?args@Await@ivalue@c10@@QEAAAEAV?$vector@UIValue@c10@@V?$allocator@UIValue@c10@@@std@@@std@@XZ",
+            "?compilation_unit@Object@ivalue@c10@@QEAA?AV?$shared_ptr@UCompilationUnit@jit@torch@@@std@@XZ",
+            "?completed@Await@ivalue@c10@@QEAA_NXZ",
+            "?completed@Future@ivalue@c10@@QEBA_NXZ",
+            "?constValue@Future@ivalue@c10@@QEBAAEBUIValue@3@XZ",
+            "?create@Object@ivalue@c10@@SA?AV?$intrusive_ptr@UObject@ivalue@c10@@U?$intrusive_target_default_null_type@UObject@ivalue@c10@@@detail@3@@3@UStrongTypePtr@3@_K@Z",
+            "?create@Object@ivalue@c10@@SA?AV?$intrusive_ptr@UObject@ivalue@c10@@U?$intrusive_target_default_null_type@UObject@ivalue@c10@@@detail@3@@3@UWeakOrStrongTypePtr@3@_K@Z",
+            "?createInstance@Future@ivalue@c10@@QEAA?AV?$intrusive_ptr@UFuture@ivalue@c10@@U?$intrusive_target_default_null_type@UFuture@ivalue@c10@@@detail@3@@3@V?$SingletonOrSharedTypePtr@UType@c10@@@Type@3@@Z",
+            "?devices@Future@ivalue@c10@@QEBAAEBV?$vector@UDevice@c10@@V?$allocator@UDevice@c10@@@std@@@std@@XZ",
+            "?elementType@Await@ivalue@c10@@QEBAAEBV?$SingletonOrSharedTypePtr@UType@c10@@@Type@3@XZ",
+            "?elementType@Future@ivalue@c10@@QEBAAEBV?$SingletonOrSharedTypePtr@UType@c10@@@Type@3@XZ",
+            "?ensureIsSubsetOfDevices@Future@ivalue@c10@@CAXAEBV?$vector@UDevice@c10@@V?$allocator@UDevice@c10@@@std@@@std@@0@Z",
+            "?exception_ptr@Future@ivalue@c10@@QEBA?AV0std@@XZ",
+            "?formatSetOfDevices@Future@ivalue@c10@@CA?AV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@AEBV?$vector@UDevice@c10@@V?$allocator@UDevice@c10@@@std@@@5@@Z",
+            "?getDevicesOfStorages@Future@ivalue@c10@@CA?AV?$vector@UDevice@c10@@V?$allocator@UDevice@c10@@@std@@@std@@AEBVVirtualGuardImpl@impl@3@AEBV?$vector@V?$weak_intrusive_ptr@UStorageImpl@c10@@U?$intrusive_target_default_null_type@UStorageImpl@c10@@@detail@2@@c10@@V?$allocator@V?$weak_intrusive_ptr@UStorageImpl@c10@@U?$intrusive_target_default_null_type@UStorageImpl@c10@@@detail@2@@c10@@@std@@@5@@Z",
+            "?getSlot@Object@ivalue@c10@@QEBAAEBUIValue@3@_K@Z",
+            "?getTypeOfDevices@Future@ivalue@c10@@CA?AW4DeviceType@3@AEBV?$vector@UDevice@c10@@V?$allocator@UDevice@c10@@@std@@@std@@@Z",
+            "?hasError@Future@ivalue@c10@@QEBA_NXZ",
+            "?hasValue@Future@ivalue@c10@@QEBA_NXZ",
+            "?is_empty_strong_compilation_ref@Object@ivalue@c10@@QEBA_NXZ",
+            "?is_weak_compilation_ref@Object@ivalue@c10@@QEBA_NXZ",
+            "?markCompleted@Await@ivalue@c10@@QEAAXUIValue@3@@Z",
+            "?markCompleted@Future@ivalue@c10@@QEAAXUIValue@3@V?$optional@V?$vector@V?$weak_intrusive_ptr@UStorageImpl@c10@@U?$intrusive_target_default_null_type@UStorageImpl@c10@@@detail@2@@c10@@V?$allocator@V?$weak_intrusive_ptr@UStorageImpl@c10@@U?$intrusive_target_default_null_type@UStorageImpl@c10@@@detail@2@@c10@@@std@@@std@@@std@@@Z",
+            "?markCompleted@Future@ivalue@c10@@QEAAXXZ",
+            "?setArgs@Await@ivalue@c10@@QEAAXV?$vector@UIValue@c10@@V?$allocator@UIValue@c10@@@std@@@std@@@Z",
+            "?setError@Future@ivalue@c10@@QEAAXVexception_ptr@std@@@Z",
+            "?setErrorIfNeeded@Future@ivalue@c10@@QEAAXVexception_ptr@std@@@Z",
+            "?setErrorInternal@Future@ivalue@c10@@AEAAXVexception_ptr@std@@AEAV?$unique_lock@Vmutex@std@@@5@@Z",
+            "?setFn@Await@ivalue@c10@@QEAAXV?$function@$$A6A?AUIValue@c10@@XZ@std@@@Z",
+            "?setSlot@Object@ivalue@c10@@QEAAX_KUIValue@3@@Z",
+            "?slots@Object@ivalue@c10@@QEBAAEBV?$vector@UIValue@c10@@V?$allocator@UIValue@c10@@@std@@@std@@XZ",
+            "?sortAndDeduplicateDevices@Future@ivalue@c10@@CA?AV?$vector@UDevice@c10@@V?$allocator@UDevice@c10@@@std@@@std@@AEBVVirtualGuardImpl@impl@3@V45@@Z",
+            "?storages@Future@ivalue@c10@@QEBAAEBV?$vector@V?$weak_intrusive_ptr@UStorageImpl@c10@@U?$intrusive_target_default_null_type@UStorageImpl@c10@@@detail@2@@c10@@V?$allocator@V?$weak_intrusive_ptr@UStorageImpl@c10@@U?$intrusive_target_default_null_type@UStorageImpl@c10@@@detail@2@@c10@@@std@@@std@@XZ",
+            "?synchronizeWithCurrentStreams@Future@ivalue@c10@@AEAAXXZ",
+            "?tryRetrieveErrorMessage@Future@ivalue@c10@@QEBA?AV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@XZ",
+            "?tryRetrieveErrorMessageInternal@Future@ivalue@c10@@AEBA?AV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@Vexception_ptr@5@@Z",
+            "?type@Await@ivalue@c10@@QEBAAEBV?$SingletonOrSharedTypePtr@UType@c10@@@Type@3@XZ",
+            "?unsafeRemoveSlot@Object@ivalue@c10@@QEAAX_K@Z",
+            "?unsafe_make_weak_compilation_ref@Object@ivalue@c10@@QEAAXXZ",
+            "?value@Await@ivalue@c10@@QEAA?AUIValue@3@XZ",
+            "?value@Future@ivalue@c10@@QEAA?AUIValue@3@XZ",
+            "?wait@Await@ivalue@c10@@QEAA?AUIValue@3@XZ",
+            "?wait@Future@ivalue@c10@@QEAAXXZ",
+            "?waitAndThrow@Future@ivalue@c10@@QEAAXXZ",
+            "hyle_g09_facade_v1"
+          ],
+          "direct_import_dlls": [
+            "torch_cpu.dll",
+            "c10.dll",
+            "torch_cuda.dll",
+            "c10_cuda.dll",
+            "cublas64_13.dll",
+            "cublasLt64_13.dll",
+            "api-ms-win-core-synch-l1-2-0.dll",
+            "KERNEL32.dll",
+            "ADVAPI32.dll",
+            "MSVCP140.dll",
+            "MSVCP140_ATOMIC_WAIT.dll",
+            "VCRUNTIME140.dll",
+            "VCRUNTIME140_1.dll",
+            "api-ms-win-crt-heap-l1-1-0.dll",
+            "api-ms-win-crt-runtime-l1-1-0.dll",
+            "api-ms-win-crt-stdio-l1-1-0.dll",
+            "api-ms-win-crt-string-l1-1-0.dll",
+            "api-ms-win-crt-math-l1-1-0.dll",
+            "api-ms-win-crt-convert-l1-1-0.dll",
+            "api-ms-win-crt-time-l1-1-0.dll",
+            "api-ms-win-crt-environment-l1-1-0.dll"
+          ],
+          "map_sha256": "a65c1387c5f34971b303453e56c72123278313301435bb2ff8f29e48008813e1"
+        },
+        {
+          "path": "C:\\h7\\g09-p1\\cuda-baseline\\bin\\g09_cuda_baseline_2.dll",
+          "sha256": "c0a0c58993f0e137d1f00052c7a941dd7bc40af9bdf506ad08d9242299d46fde",
+          "bytes": 126718976,
+          "exports": [
+            "??$_typeMetaData@D@TypeMeta@caffe2@@CAGXZ",
+            "??$_typeMetaData@J@TypeMeta@caffe2@@CAGXZ",
+            "??$_typeMetaData@PEAD@TypeMeta@caffe2@@CAGXZ",
+            "??$_typeMetaData@PEAH@TypeMeta@caffe2@@CAGXZ",
+            "??$_typeMetaData@PEAM@TypeMeta@caffe2@@CAGXZ",
+            "??$_typeMetaData@PEAUHalf@c10@@@TypeMeta@caffe2@@CAGXZ",
+            "??$_typeMetaData@PEA_N@TypeMeta@caffe2@@CAGXZ",
+            "??$_typeMetaData@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@TypeMeta@caffe2@@CAGXZ",
+            "??$_typeMetaData@V?$unique_ptr@U?$atomic@_N@std@@U?$default_delete@U?$atomic@_N@std@@@2@@std@@@TypeMeta@caffe2@@CAGXZ",
+            "??$_typeMetaData@V?$unique_ptr@Vmutex@std@@U?$default_delete@Vmutex@std@@@2@@std@@@TypeMeta@caffe2@@CAGXZ",
+            "??$_typeMetaData@V?$vector@HV?$allocator@H@std@@@std@@@TypeMeta@caffe2@@CAGXZ",
+            "??$_typeMetaData@V?$vector@JV?$allocator@J@std@@@std@@@TypeMeta@caffe2@@CAGXZ",
+            "??$_typeMetaData@V?$vector@KV?$allocator@K@std@@@std@@@TypeMeta@caffe2@@CAGXZ",
+            "??$_typeMetaData@V?$vector@_JV?$allocator@_J@std@@@std@@@TypeMeta@caffe2@@CAGXZ",
+            "??$_typeMetaData@V_Uninitialized@detail@caffe2@@@TypeMeta@caffe2@@CAGXZ",
+            "??0Await@ivalue@c10@@AEAA@V?$SingletonOrSharedTypePtr@UType@c10@@@Type@2@@Z",
+            "??0Await@ivalue@c10@@AEAA@V?$SingletonOrSharedTypePtr@UType@c10@@@Type@2@V?$function@$$A6A?AUIValue@c10@@XZ@std@@@Z",
+            "??0Future@ivalue@c10@@AEAA@V?$SingletonOrSharedTypePtr@UType@c10@@@Type@2@V?$vector@UDevice@c10@@V?$allocator@UDevice@c10@@@std@@@std@@@Z",
+            "??0Object@ivalue@c10@@QEAA@$$QEAU012@@Z",
+            "??0Object@ivalue@c10@@QEAA@AEBU012@@Z",
+            "??0Object@ivalue@c10@@QEAA@UStrongTypePtr@2@_K@Z",
+            "??0Object@ivalue@c10@@QEAA@UWeakOrStrongTypePtr@2@_K@Z",
+            "??0RRefInterface@c10@@QEAA@XZ",
+            "??1Await@ivalue@c10@@UEAA@XZ",
+            "??1Future@ivalue@c10@@UEAA@XZ",
+            "??1Object@ivalue@c10@@UEAA@XZ",
+            "??1RRefInterface@c10@@UEAA@XZ",
+            "??4Object@ivalue@c10@@QEAAAEAU012@$$QEAU012@@Z",
+            "??4Object@ivalue@c10@@QEAAAEAU012@AEBU012@@Z",
+            "??_7Await@ivalue@c10@@6B@",
+            "??_7Future@ivalue@c10@@6B@",
+            "??_7Object@ivalue@c10@@6B@",
+            "??_7RRefInterface@c10@@6B@",
+            "?args@Await@ivalue@c10@@QEAAAEAV?$vector@UIValue@c10@@V?$allocator@UIValue@c10@@@std@@@std@@XZ",
+            "?compilation_unit@Object@ivalue@c10@@QEAA?AV?$shared_ptr@UCompilationUnit@jit@torch@@@std@@XZ",
+            "?completed@Await@ivalue@c10@@QEAA_NXZ",
+            "?completed@Future@ivalue@c10@@QEBA_NXZ",
+            "?constValue@Future@ivalue@c10@@QEBAAEBUIValue@3@XZ",
+            "?create@Object@ivalue@c10@@SA?AV?$intrusive_ptr@UObject@ivalue@c10@@U?$intrusive_target_default_null_type@UObject@ivalue@c10@@@detail@3@@3@UStrongTypePtr@3@_K@Z",
+            "?create@Object@ivalue@c10@@SA?AV?$intrusive_ptr@UObject@ivalue@c10@@U?$intrusive_target_default_null_type@UObject@ivalue@c10@@@detail@3@@3@UWeakOrStrongTypePtr@3@_K@Z",
+            "?createInstance@Future@ivalue@c10@@QEAA?AV?$intrusive_ptr@UFuture@ivalue@c10@@U?$intrusive_target_default_null_type@UFuture@ivalue@c10@@@detail@3@@3@V?$SingletonOrSharedTypePtr@UType@c10@@@Type@3@@Z",
+            "?devices@Future@ivalue@c10@@QEBAAEBV?$vector@UDevice@c10@@V?$allocator@UDevice@c10@@@std@@@std@@XZ",
+            "?elementType@Await@ivalue@c10@@QEBAAEBV?$SingletonOrSharedTypePtr@UType@c10@@@Type@3@XZ",
+            "?elementType@Future@ivalue@c10@@QEBAAEBV?$SingletonOrSharedTypePtr@UType@c10@@@Type@3@XZ",
+            "?ensureIsSubsetOfDevices@Future@ivalue@c10@@CAXAEBV?$vector@UDevice@c10@@V?$allocator@UDevice@c10@@@std@@@std@@0@Z",
+            "?exception_ptr@Future@ivalue@c10@@QEBA?AV0std@@XZ",
+            "?formatSetOfDevices@Future@ivalue@c10@@CA?AV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@AEBV?$vector@UDevice@c10@@V?$allocator@UDevice@c10@@@std@@@5@@Z",
+            "?getDevicesOfStorages@Future@ivalue@c10@@CA?AV?$vector@UDevice@c10@@V?$allocator@UDevice@c10@@@std@@@std@@AEBVVirtualGuardImpl@impl@3@AEBV?$vector@V?$weak_intrusive_ptr@UStorageImpl@c10@@U?$intrusive_target_default_null_type@UStorageImpl@c10@@@detail@2@@c10@@V?$allocator@V?$weak_intrusive_ptr@UStorageImpl@c10@@U?$intrusive_target_default_null_type@UStorageImpl@c10@@@detail@2@@c10@@@std@@@5@@Z",
+            "?getSlot@Object@ivalue@c10@@QEBAAEBUIValue@3@_K@Z",
+            "?getTypeOfDevices@Future@ivalue@c10@@CA?AW4DeviceType@3@AEBV?$vector@UDevice@c10@@V?$allocator@UDevice@c10@@@std@@@std@@@Z",
+            "?hasError@Future@ivalue@c10@@QEBA_NXZ",
+            "?hasValue@Future@ivalue@c10@@QEBA_NXZ",
+            "?is_empty_strong_compilation_ref@Object@ivalue@c10@@QEBA_NXZ",
+            "?is_weak_compilation_ref@Object@ivalue@c10@@QEBA_NXZ",
+            "?markCompleted@Await@ivalue@c10@@QEAAXUIValue@3@@Z",
+            "?markCompleted@Future@ivalue@c10@@QEAAXUIValue@3@V?$optional@V?$vector@V?$weak_intrusive_ptr@UStorageImpl@c10@@U?$intrusive_target_default_null_type@UStorageImpl@c10@@@detail@2@@c10@@V?$allocator@V?$weak_intrusive_ptr@UStorageImpl@c10@@U?$intrusive_target_default_null_type@UStorageImpl@c10@@@detail@2@@c10@@@std@@@std@@@std@@@Z",
+            "?markCompleted@Future@ivalue@c10@@QEAAXXZ",
+            "?setArgs@Await@ivalue@c10@@QEAAXV?$vector@UIValue@c10@@V?$allocator@UIValue@c10@@@std@@@std@@@Z",
+            "?setError@Future@ivalue@c10@@QEAAXVexception_ptr@std@@@Z",
+            "?setErrorIfNeeded@Future@ivalue@c10@@QEAAXVexception_ptr@std@@@Z",
+            "?setErrorInternal@Future@ivalue@c10@@AEAAXVexception_ptr@std@@AEAV?$unique_lock@Vmutex@std@@@5@@Z",
+            "?setFn@Await@ivalue@c10@@QEAAXV?$function@$$A6A?AUIValue@c10@@XZ@std@@@Z",
+            "?setSlot@Object@ivalue@c10@@QEAAX_KUIValue@3@@Z",
+            "?slots@Object@ivalue@c10@@QEBAAEBV?$vector@UIValue@c10@@V?$allocator@UIValue@c10@@@std@@@std@@XZ",
+            "?sortAndDeduplicateDevices@Future@ivalue@c10@@CA?AV?$vector@UDevice@c10@@V?$allocator@UDevice@c10@@@std@@@std@@AEBVVirtualGuardImpl@impl@3@V45@@Z",
+            "?storages@Future@ivalue@c10@@QEBAAEBV?$vector@V?$weak_intrusive_ptr@UStorageImpl@c10@@U?$intrusive_target_default_null_type@UStorageImpl@c10@@@detail@2@@c10@@V?$allocator@V?$weak_intrusive_ptr@UStorageImpl@c10@@U?$intrusive_target_default_null_type@UStorageImpl@c10@@@detail@2@@c10@@@std@@@std@@XZ",
+            "?synchronizeWithCurrentStreams@Future@ivalue@c10@@AEAAXXZ",
+            "?tryRetrieveErrorMessage@Future@ivalue@c10@@QEBA?AV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@XZ",
+            "?tryRetrieveErrorMessageInternal@Future@ivalue@c10@@AEBA?AV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@Vexception_ptr@5@@Z",
+            "?type@Await@ivalue@c10@@QEBAAEBV?$SingletonOrSharedTypePtr@UType@c10@@@Type@3@XZ",
+            "?unsafeRemoveSlot@Object@ivalue@c10@@QEAAX_K@Z",
+            "?unsafe_make_weak_compilation_ref@Object@ivalue@c10@@QEAAXXZ",
+            "?value@Await@ivalue@c10@@QEAA?AUIValue@3@XZ",
+            "?value@Future@ivalue@c10@@QEAA?AUIValue@3@XZ",
+            "?wait@Await@ivalue@c10@@QEAA?AUIValue@3@XZ",
+            "?wait@Future@ivalue@c10@@QEAAXXZ",
+            "?waitAndThrow@Future@ivalue@c10@@QEAAXXZ",
+            "hyle_g09_facade_v1"
+          ],
+          "direct_import_dlls": [
+            "torch_cpu.dll",
+            "c10.dll",
+            "torch_cuda.dll",
+            "c10_cuda.dll",
+            "cublas64_13.dll",
+            "cublasLt64_13.dll",
+            "api-ms-win-core-synch-l1-2-0.dll",
+            "KERNEL32.dll",
+            "ADVAPI32.dll",
+            "MSVCP140.dll",
+            "MSVCP140_ATOMIC_WAIT.dll",
+            "VCRUNTIME140.dll",
+            "VCRUNTIME140_1.dll",
+            "api-ms-win-crt-heap-l1-1-0.dll",
+            "api-ms-win-crt-runtime-l1-1-0.dll",
+            "api-ms-win-crt-stdio-l1-1-0.dll",
+            "api-ms-win-crt-string-l1-1-0.dll",
+            "api-ms-win-crt-math-l1-1-0.dll",
+            "api-ms-win-crt-convert-l1-1-0.dll",
+            "api-ms-win-crt-time-l1-1-0.dll",
+            "api-ms-win-crt-environment-l1-1-0.dll"
+          ],
+          "map_sha256": "a1f47a6fdca0e4ef489e0ee74115cddfa957ea57540454c4752a50d06ddc09ee"
+        }
+      ],
+      "driver": null
+    },
+    {
+      "platform": "W1-WIN",
+      "route": "cuda",
+      "image_set": "candidate",
+      "record": ".scratch/inference-gaps/g09-p1-builds/windows-cuda-candidate/result.json",
+      "sha256": "14aaa944ec896498d3c87f40b70cdb50227c5828a071b4f23c92f2101643340d",
+      "elapsed_seconds": 77.75,
+      "images": [
+        {
+          "path": "C:\\h7\\g09-p1\\cuda-candidate\\bin\\g09_cuda_candidate_1.dll",
+          "sha256": "e18943becc90d6d210ba7f1fb82c8b492b87e9e66ad07ab659ea6aa73845c3fd",
+          "bytes": 126739968,
+          "exports": [
+            "??$_typeMetaData@D@TypeMeta@caffe2@@CAGXZ",
+            "??$_typeMetaData@J@TypeMeta@caffe2@@CAGXZ",
+            "??$_typeMetaData@PEAD@TypeMeta@caffe2@@CAGXZ",
+            "??$_typeMetaData@PEAH@TypeMeta@caffe2@@CAGXZ",
+            "??$_typeMetaData@PEAM@TypeMeta@caffe2@@CAGXZ",
+            "??$_typeMetaData@PEAUHalf@c10@@@TypeMeta@caffe2@@CAGXZ",
+            "??$_typeMetaData@PEA_N@TypeMeta@caffe2@@CAGXZ",
+            "??$_typeMetaData@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@TypeMeta@caffe2@@CAGXZ",
+            "??$_typeMetaData@V?$unique_ptr@U?$atomic@_N@std@@U?$default_delete@U?$atomic@_N@std@@@2@@std@@@TypeMeta@caffe2@@CAGXZ",
+            "??$_typeMetaData@V?$unique_ptr@Vmutex@std@@U?$default_delete@Vmutex@std@@@2@@std@@@TypeMeta@caffe2@@CAGXZ",
+            "??$_typeMetaData@V?$vector@HV?$allocator@H@std@@@std@@@TypeMeta@caffe2@@CAGXZ",
+            "??$_typeMetaData@V?$vector@JV?$allocator@J@std@@@std@@@TypeMeta@caffe2@@CAGXZ",
+            "??$_typeMetaData@V?$vector@KV?$allocator@K@std@@@std@@@TypeMeta@caffe2@@CAGXZ",
+            "??$_typeMetaData@V?$vector@_JV?$allocator@_J@std@@@std@@@TypeMeta@caffe2@@CAGXZ",
+            "??$_typeMetaData@V_Uninitialized@detail@caffe2@@@TypeMeta@caffe2@@CAGXZ",
+            "??0Await@ivalue@c10@@AEAA@V?$SingletonOrSharedTypePtr@UType@c10@@@Type@2@@Z",
+            "??0Await@ivalue@c10@@AEAA@V?$SingletonOrSharedTypePtr@UType@c10@@@Type@2@V?$function@$$A6A?AUIValue@c10@@XZ@std@@@Z",
+            "??0Future@ivalue@c10@@AEAA@V?$SingletonOrSharedTypePtr@UType@c10@@@Type@2@V?$vector@UDevice@c10@@V?$allocator@UDevice@c10@@@std@@@std@@@Z",
+            "??0Object@ivalue@c10@@QEAA@$$QEAU012@@Z",
+            "??0Object@ivalue@c10@@QEAA@AEBU012@@Z",
+            "??0Object@ivalue@c10@@QEAA@UStrongTypePtr@2@_K@Z",
+            "??0Object@ivalue@c10@@QEAA@UWeakOrStrongTypePtr@2@_K@Z",
+            "??0RRefInterface@c10@@QEAA@XZ",
+            "??1Await@ivalue@c10@@UEAA@XZ",
+            "??1Future@ivalue@c10@@UEAA@XZ",
+            "??1Object@ivalue@c10@@UEAA@XZ",
+            "??1RRefInterface@c10@@UEAA@XZ",
+            "??4Object@ivalue@c10@@QEAAAEAU012@$$QEAU012@@Z",
+            "??4Object@ivalue@c10@@QEAAAEAU012@AEBU012@@Z",
+            "??_7Await@ivalue@c10@@6B@",
+            "??_7Future@ivalue@c10@@6B@",
+            "??_7Object@ivalue@c10@@6B@",
+            "??_7RRefInterface@c10@@6B@",
+            "?args@Await@ivalue@c10@@QEAAAEAV?$vector@UIValue@c10@@V?$allocator@UIValue@c10@@@std@@@std@@XZ",
+            "?compilation_unit@Object@ivalue@c10@@QEAA?AV?$shared_ptr@UCompilationUnit@jit@torch@@@std@@XZ",
+            "?completed@Await@ivalue@c10@@QEAA_NXZ",
+            "?completed@Future@ivalue@c10@@QEBA_NXZ",
+            "?constValue@Future@ivalue@c10@@QEBAAEBUIValue@3@XZ",
+            "?create@Object@ivalue@c10@@SA?AV?$intrusive_ptr@UObject@ivalue@c10@@U?$intrusive_target_default_null_type@UObject@ivalue@c10@@@detail@3@@3@UStrongTypePtr@3@_K@Z",
+            "?create@Object@ivalue@c10@@SA?AV?$intrusive_ptr@UObject@ivalue@c10@@U?$intrusive_target_default_null_type@UObject@ivalue@c10@@@detail@3@@3@UWeakOrStrongTypePtr@3@_K@Z",
+            "?createInstance@Future@ivalue@c10@@QEAA?AV?$intrusive_ptr@UFuture@ivalue@c10@@U?$intrusive_target_default_null_type@UFuture@ivalue@c10@@@detail@3@@3@V?$SingletonOrSharedTypePtr@UType@c10@@@Type@3@@Z",
+            "?devices@Future@ivalue@c10@@QEBAAEBV?$vector@UDevice@c10@@V?$allocator@UDevice@c10@@@std@@@std@@XZ",
+            "?elementType@Await@ivalue@c10@@QEBAAEBV?$SingletonOrSharedTypePtr@UType@c10@@@Type@3@XZ",
+            "?elementType@Future@ivalue@c10@@QEBAAEBV?$SingletonOrSharedTypePtr@UType@c10@@@Type@3@XZ",
+            "?ensureIsSubsetOfDevices@Future@ivalue@c10@@CAXAEBV?$vector@UDevice@c10@@V?$allocator@UDevice@c10@@@std@@@std@@0@Z",
+            "?exception_ptr@Future@ivalue@c10@@QEBA?AV0std@@XZ",
+            "?formatSetOfDevices@Future@ivalue@c10@@CA?AV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@AEBV?$vector@UDevice@c10@@V?$allocator@UDevice@c10@@@std@@@5@@Z",
+            "?getDevicesOfStorages@Future@ivalue@c10@@CA?AV?$vector@UDevice@c10@@V?$allocator@UDevice@c10@@@std@@@std@@AEBVVirtualGuardImpl@impl@3@AEBV?$vector@V?$weak_intrusive_ptr@UStorageImpl@c10@@U?$intrusive_target_default_null_type@UStorageImpl@c10@@@detail@2@@c10@@V?$allocator@V?$weak_intrusive_ptr@UStorageImpl@c10@@U?$intrusive_target_default_null_type@UStorageImpl@c10@@@detail@2@@c10@@@std@@@5@@Z",
+            "?getSlot@Object@ivalue@c10@@QEBAAEBUIValue@3@_K@Z",
+            "?getTypeOfDevices@Future@ivalue@c10@@CA?AW4DeviceType@3@AEBV?$vector@UDevice@c10@@V?$allocator@UDevice@c10@@@std@@@std@@@Z",
+            "?hasError@Future@ivalue@c10@@QEBA_NXZ",
+            "?hasValue@Future@ivalue@c10@@QEBA_NXZ",
+            "?is_empty_strong_compilation_ref@Object@ivalue@c10@@QEBA_NXZ",
+            "?is_weak_compilation_ref@Object@ivalue@c10@@QEBA_NXZ",
+            "?markCompleted@Await@ivalue@c10@@QEAAXUIValue@3@@Z",
+            "?markCompleted@Future@ivalue@c10@@QEAAXUIValue@3@V?$optional@V?$vector@V?$weak_intrusive_ptr@UStorageImpl@c10@@U?$intrusive_target_default_null_type@UStorageImpl@c10@@@detail@2@@c10@@V?$allocator@V?$weak_intrusive_ptr@UStorageImpl@c10@@U?$intrusive_target_default_null_type@UStorageImpl@c10@@@detail@2@@c10@@@std@@@std@@@std@@@Z",
+            "?markCompleted@Future@ivalue@c10@@QEAAXXZ",
+            "?setArgs@Await@ivalue@c10@@QEAAXV?$vector@UIValue@c10@@V?$allocator@UIValue@c10@@@std@@@std@@@Z",
+            "?setError@Future@ivalue@c10@@QEAAXVexception_ptr@std@@@Z",
+            "?setErrorIfNeeded@Future@ivalue@c10@@QEAAXVexception_ptr@std@@@Z",
+            "?setErrorInternal@Future@ivalue@c10@@AEAAXVexception_ptr@std@@AEAV?$unique_lock@Vmutex@std@@@5@@Z",
+            "?setFn@Await@ivalue@c10@@QEAAXV?$function@$$A6A?AUIValue@c10@@XZ@std@@@Z",
+            "?setSlot@Object@ivalue@c10@@QEAAX_KUIValue@3@@Z",
+            "?slots@Object@ivalue@c10@@QEBAAEBV?$vector@UIValue@c10@@V?$allocator@UIValue@c10@@@std@@@std@@XZ",
+            "?sortAndDeduplicateDevices@Future@ivalue@c10@@CA?AV?$vector@UDevice@c10@@V?$allocator@UDevice@c10@@@std@@@std@@AEBVVirtualGuardImpl@impl@3@V45@@Z",
+            "?storages@Future@ivalue@c10@@QEBAAEBV?$vector@V?$weak_intrusive_ptr@UStorageImpl@c10@@U?$intrusive_target_default_null_type@UStorageImpl@c10@@@detail@2@@c10@@V?$allocator@V?$weak_intrusive_ptr@UStorageImpl@c10@@U?$intrusive_target_default_null_type@UStorageImpl@c10@@@detail@2@@c10@@@std@@@std@@XZ",
+            "?synchronizeWithCurrentStreams@Future@ivalue@c10@@AEAAXXZ",
+            "?tryRetrieveErrorMessage@Future@ivalue@c10@@QEBA?AV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@XZ",
+            "?tryRetrieveErrorMessageInternal@Future@ivalue@c10@@AEBA?AV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@Vexception_ptr@5@@Z",
+            "?type@Await@ivalue@c10@@QEBAAEBV?$SingletonOrSharedTypePtr@UType@c10@@@Type@3@XZ",
+            "?unsafeRemoveSlot@Object@ivalue@c10@@QEAAX_K@Z",
+            "?unsafe_make_weak_compilation_ref@Object@ivalue@c10@@QEAAXXZ",
+            "?value@Await@ivalue@c10@@QEAA?AUIValue@3@XZ",
+            "?value@Future@ivalue@c10@@QEAA?AUIValue@3@XZ",
+            "?wait@Await@ivalue@c10@@QEAA?AUIValue@3@XZ",
+            "?wait@Future@ivalue@c10@@QEAAXXZ",
+            "?waitAndThrow@Future@ivalue@c10@@QEAAXXZ",
+            "hyle_g09_facade_v1"
+          ],
+          "direct_import_dlls": [
+            "torch_cpu.dll",
+            "c10.dll",
+            "torch_cuda.dll",
+            "c10_cuda.dll",
+            "cublas64_13.dll",
+            "cublasLt64_13.dll",
+            "api-ms-win-core-synch-l1-2-0.dll",
+            "KERNEL32.dll",
+            "ADVAPI32.dll",
+            "MSVCP140.dll",
+            "MSVCP140_ATOMIC_WAIT.dll",
+            "VCRUNTIME140.dll",
+            "VCRUNTIME140_1.dll",
+            "api-ms-win-crt-heap-l1-1-0.dll",
+            "api-ms-win-crt-runtime-l1-1-0.dll",
+            "api-ms-win-crt-stdio-l1-1-0.dll",
+            "api-ms-win-crt-string-l1-1-0.dll",
+            "api-ms-win-crt-math-l1-1-0.dll",
+            "api-ms-win-crt-convert-l1-1-0.dll",
+            "api-ms-win-crt-time-l1-1-0.dll",
+            "api-ms-win-crt-environment-l1-1-0.dll"
+          ],
+          "map_sha256": "1c05f7ab242be976b9f1f878521c73cace57fec609ecc8d73bf3063f6729f415"
+        },
+        {
+          "path": "C:\\h7\\g09-p1\\cuda-candidate\\bin\\g09_cuda_candidate_2.dll",
+          "sha256": "04e8b4cf4ff2c676487fe46a6d91e94e620625166a0c425882423dc710315bd8",
+          "bytes": 126739968,
+          "exports": [
+            "??$_typeMetaData@D@TypeMeta@caffe2@@CAGXZ",
+            "??$_typeMetaData@J@TypeMeta@caffe2@@CAGXZ",
+            "??$_typeMetaData@PEAD@TypeMeta@caffe2@@CAGXZ",
+            "??$_typeMetaData@PEAH@TypeMeta@caffe2@@CAGXZ",
+            "??$_typeMetaData@PEAM@TypeMeta@caffe2@@CAGXZ",
+            "??$_typeMetaData@PEAUHalf@c10@@@TypeMeta@caffe2@@CAGXZ",
+            "??$_typeMetaData@PEA_N@TypeMeta@caffe2@@CAGXZ",
+            "??$_typeMetaData@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@TypeMeta@caffe2@@CAGXZ",
+            "??$_typeMetaData@V?$unique_ptr@U?$atomic@_N@std@@U?$default_delete@U?$atomic@_N@std@@@2@@std@@@TypeMeta@caffe2@@CAGXZ",
+            "??$_typeMetaData@V?$unique_ptr@Vmutex@std@@U?$default_delete@Vmutex@std@@@2@@std@@@TypeMeta@caffe2@@CAGXZ",
+            "??$_typeMetaData@V?$vector@HV?$allocator@H@std@@@std@@@TypeMeta@caffe2@@CAGXZ",
+            "??$_typeMetaData@V?$vector@JV?$allocator@J@std@@@std@@@TypeMeta@caffe2@@CAGXZ",
+            "??$_typeMetaData@V?$vector@KV?$allocator@K@std@@@std@@@TypeMeta@caffe2@@CAGXZ",
+            "??$_typeMetaData@V?$vector@_JV?$allocator@_J@std@@@std@@@TypeMeta@caffe2@@CAGXZ",
+            "??$_typeMetaData@V_Uninitialized@detail@caffe2@@@TypeMeta@caffe2@@CAGXZ",
+            "??0Await@ivalue@c10@@AEAA@V?$SingletonOrSharedTypePtr@UType@c10@@@Type@2@@Z",
+            "??0Await@ivalue@c10@@AEAA@V?$SingletonOrSharedTypePtr@UType@c10@@@Type@2@V?$function@$$A6A?AUIValue@c10@@XZ@std@@@Z",
+            "??0Future@ivalue@c10@@AEAA@V?$SingletonOrSharedTypePtr@UType@c10@@@Type@2@V?$vector@UDevice@c10@@V?$allocator@UDevice@c10@@@std@@@std@@@Z",
+            "??0Object@ivalue@c10@@QEAA@$$QEAU012@@Z",
+            "??0Object@ivalue@c10@@QEAA@AEBU012@@Z",
+            "??0Object@ivalue@c10@@QEAA@UStrongTypePtr@2@_K@Z",
+            "??0Object@ivalue@c10@@QEAA@UWeakOrStrongTypePtr@2@_K@Z",
+            "??0RRefInterface@c10@@QEAA@XZ",
+            "??1Await@ivalue@c10@@UEAA@XZ",
+            "??1Future@ivalue@c10@@UEAA@XZ",
+            "??1Object@ivalue@c10@@UEAA@XZ",
+            "??1RRefInterface@c10@@UEAA@XZ",
+            "??4Object@ivalue@c10@@QEAAAEAU012@$$QEAU012@@Z",
+            "??4Object@ivalue@c10@@QEAAAEAU012@AEBU012@@Z",
+            "??_7Await@ivalue@c10@@6B@",
+            "??_7Future@ivalue@c10@@6B@",
+            "??_7Object@ivalue@c10@@6B@",
+            "??_7RRefInterface@c10@@6B@",
+            "?args@Await@ivalue@c10@@QEAAAEAV?$vector@UIValue@c10@@V?$allocator@UIValue@c10@@@std@@@std@@XZ",
+            "?compilation_unit@Object@ivalue@c10@@QEAA?AV?$shared_ptr@UCompilationUnit@jit@torch@@@std@@XZ",
+            "?completed@Await@ivalue@c10@@QEAA_NXZ",
+            "?completed@Future@ivalue@c10@@QEBA_NXZ",
+            "?constValue@Future@ivalue@c10@@QEBAAEBUIValue@3@XZ",
+            "?create@Object@ivalue@c10@@SA?AV?$intrusive_ptr@UObject@ivalue@c10@@U?$intrusive_target_default_null_type@UObject@ivalue@c10@@@detail@3@@3@UStrongTypePtr@3@_K@Z",
+            "?create@Object@ivalue@c10@@SA?AV?$intrusive_ptr@UObject@ivalue@c10@@U?$intrusive_target_default_null_type@UObject@ivalue@c10@@@detail@3@@3@UWeakOrStrongTypePtr@3@_K@Z",
+            "?createInstance@Future@ivalue@c10@@QEAA?AV?$intrusive_ptr@UFuture@ivalue@c10@@U?$intrusive_target_default_null_type@UFuture@ivalue@c10@@@detail@3@@3@V?$SingletonOrSharedTypePtr@UType@c10@@@Type@3@@Z",
+            "?devices@Future@ivalue@c10@@QEBAAEBV?$vector@UDevice@c10@@V?$allocator@UDevice@c10@@@std@@@std@@XZ",
+            "?elementType@Await@ivalue@c10@@QEBAAEBV?$SingletonOrSharedTypePtr@UType@c10@@@Type@3@XZ",
+            "?elementType@Future@ivalue@c10@@QEBAAEBV?$SingletonOrSharedTypePtr@UType@c10@@@Type@3@XZ",
+            "?ensureIsSubsetOfDevices@Future@ivalue@c10@@CAXAEBV?$vector@UDevice@c10@@V?$allocator@UDevice@c10@@@std@@@std@@0@Z",
+            "?exception_ptr@Future@ivalue@c10@@QEBA?AV0std@@XZ",
+            "?formatSetOfDevices@Future@ivalue@c10@@CA?AV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@AEBV?$vector@UDevice@c10@@V?$allocator@UDevice@c10@@@std@@@5@@Z",
+            "?getDevicesOfStorages@Future@ivalue@c10@@CA?AV?$vector@UDevice@c10@@V?$allocator@UDevice@c10@@@std@@@std@@AEBVVirtualGuardImpl@impl@3@AEBV?$vector@V?$weak_intrusive_ptr@UStorageImpl@c10@@U?$intrusive_target_default_null_type@UStorageImpl@c10@@@detail@2@@c10@@V?$allocator@V?$weak_intrusive_ptr@UStorageImpl@c10@@U?$intrusive_target_default_null_type@UStorageImpl@c10@@@detail@2@@c10@@@std@@@5@@Z",
+            "?getSlot@Object@ivalue@c10@@QEBAAEBUIValue@3@_K@Z",
+            "?getTypeOfDevices@Future@ivalue@c10@@CA?AW4DeviceType@3@AEBV?$vector@UDevice@c10@@V?$allocator@UDevice@c10@@@std@@@std@@@Z",
+            "?hasError@Future@ivalue@c10@@QEBA_NXZ",
+            "?hasValue@Future@ivalue@c10@@QEBA_NXZ",
+            "?is_empty_strong_compilation_ref@Object@ivalue@c10@@QEBA_NXZ",
+            "?is_weak_compilation_ref@Object@ivalue@c10@@QEBA_NXZ",
+            "?markCompleted@Await@ivalue@c10@@QEAAXUIValue@3@@Z",
+            "?markCompleted@Future@ivalue@c10@@QEAAXUIValue@3@V?$optional@V?$vector@V?$weak_intrusive_ptr@UStorageImpl@c10@@U?$intrusive_target_default_null_type@UStorageImpl@c10@@@detail@2@@c10@@V?$allocator@V?$weak_intrusive_ptr@UStorageImpl@c10@@U?$intrusive_target_default_null_type@UStorageImpl@c10@@@detail@2@@c10@@@std@@@std@@@std@@@Z",
+            "?markCompleted@Future@ivalue@c10@@QEAAXXZ",
+            "?setArgs@Await@ivalue@c10@@QEAAXV?$vector@UIValue@c10@@V?$allocator@UIValue@c10@@@std@@@std@@@Z",
+            "?setError@Future@ivalue@c10@@QEAAXVexception_ptr@std@@@Z",
+            "?setErrorIfNeeded@Future@ivalue@c10@@QEAAXVexception_ptr@std@@@Z",
+            "?setErrorInternal@Future@ivalue@c10@@AEAAXVexception_ptr@std@@AEAV?$unique_lock@Vmutex@std@@@5@@Z",
+            "?setFn@Await@ivalue@c10@@QEAAXV?$function@$$A6A?AUIValue@c10@@XZ@std@@@Z",
+            "?setSlot@Object@ivalue@c10@@QEAAX_KUIValue@3@@Z",
+            "?slots@Object@ivalue@c10@@QEBAAEBV?$vector@UIValue@c10@@V?$allocator@UIValue@c10@@@std@@@std@@XZ",
+            "?sortAndDeduplicateDevices@Future@ivalue@c10@@CA?AV?$vector@UDevice@c10@@V?$allocator@UDevice@c10@@@std@@@std@@AEBVVirtualGuardImpl@impl@3@V45@@Z",
+            "?storages@Future@ivalue@c10@@QEBAAEBV?$vector@V?$weak_intrusive_ptr@UStorageImpl@c10@@U?$intrusive_target_default_null_type@UStorageImpl@c10@@@detail@2@@c10@@V?$allocator@V?$weak_intrusive_ptr@UStorageImpl@c10@@U?$intrusive_target_default_null_type@UStorageImpl@c10@@@detail@2@@c10@@@std@@@std@@XZ",
+            "?synchronizeWithCurrentStreams@Future@ivalue@c10@@AEAAXXZ",
+            "?tryRetrieveErrorMessage@Future@ivalue@c10@@QEBA?AV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@XZ",
+            "?tryRetrieveErrorMessageInternal@Future@ivalue@c10@@AEBA?AV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@Vexception_ptr@5@@Z",
+            "?type@Await@ivalue@c10@@QEBAAEBV?$SingletonOrSharedTypePtr@UType@c10@@@Type@3@XZ",
+            "?unsafeRemoveSlot@Object@ivalue@c10@@QEAAX_K@Z",
+            "?unsafe_make_weak_compilation_ref@Object@ivalue@c10@@QEAAXXZ",
+            "?value@Await@ivalue@c10@@QEAA?AUIValue@3@XZ",
+            "?value@Future@ivalue@c10@@QEAA?AUIValue@3@XZ",
+            "?wait@Await@ivalue@c10@@QEAA?AUIValue@3@XZ",
+            "?wait@Future@ivalue@c10@@QEAAXXZ",
+            "?waitAndThrow@Future@ivalue@c10@@QEAAXXZ",
+            "hyle_g09_facade_v1"
+          ],
+          "direct_import_dlls": [
+            "torch_cpu.dll",
+            "c10.dll",
+            "torch_cuda.dll",
+            "c10_cuda.dll",
+            "cublas64_13.dll",
+            "cublasLt64_13.dll",
+            "api-ms-win-core-synch-l1-2-0.dll",
+            "KERNEL32.dll",
+            "ADVAPI32.dll",
+            "MSVCP140.dll",
+            "MSVCP140_ATOMIC_WAIT.dll",
+            "VCRUNTIME140.dll",
+            "VCRUNTIME140_1.dll",
+            "api-ms-win-crt-heap-l1-1-0.dll",
+            "api-ms-win-crt-runtime-l1-1-0.dll",
+            "api-ms-win-crt-stdio-l1-1-0.dll",
+            "api-ms-win-crt-string-l1-1-0.dll",
+            "api-ms-win-crt-math-l1-1-0.dll",
+            "api-ms-win-crt-convert-l1-1-0.dll",
+            "api-ms-win-crt-time-l1-1-0.dll",
+            "api-ms-win-crt-environment-l1-1-0.dll"
+          ],
+          "map_sha256": "f89fcc51156fda14bcdab05f8d560ee8408a35aa41b947bb68ace0e3eee7d38d"
+        }
+      ],
+      "driver": {
+        "path": "C:\\h7\\g09-p1\\cuda-candidate\\bin\\g09_pipeline_driver.exe",
+        "sha256": "d0c61cd4ddaa552c050d8cdc2f3d007ffebc59ce872e4c54529098dba85731f4",
+        "bytes": 133120
+      }
+    },
+    {
+      "platform": "M1-MAC actual Air Mac16,12/M4",
+      "route": "apple",
+      "image_set": "baseline",
+      "record": ".scratch/inference-gaps/g09-p1-air-collected/g09-p1-builds/air-apple-baseline/result.json",
+      "sha256": "cbaaee2c9c76479f228657954751275332b98c701213e0e98319db8ef9e59862",
+      "elapsed_seconds": 2.472467167,
+      "images": [
+        {
+          "path": "/Users/kiro/hyle-scratch/compute-unified/g09-p1/apple-baseline/bin/libg09_apple_baseline_1.dylib",
+          "sha256": "0c0c48b8bf43d006b82c19f257cf3e7e0c5f9d4608c12ec65f62d98c5ec38f5b",
+          "bytes": 12565856,
+          "exports": [
+            "_hyle_g09_facade_v1"
+          ],
+          "map_sha256": "b18e81a716b3b581f52afd90426248f991cc664101c5d7c07a5020c2486b9a08"
+        },
+        {
+          "path": "/Users/kiro/hyle-scratch/compute-unified/g09-p1/apple-baseline/bin/libg09_apple_baseline_2.dylib",
+          "sha256": "5cf9b6bd7aaa0701ef5a7f43735b7007c95e73aed932babe4d2547eb53ba3ab5",
+          "bytes": 12565856,
+          "exports": [
+            "_hyle_g09_facade_v1"
+          ],
+          "map_sha256": "5534df9a6f19ac4c3cf06accf29b4b1541b39d7cd85d4cdbeeca559909537387"
+        }
+      ],
+      "driver": null
+    },
+    {
+      "platform": "M1-MAC actual Air Mac16,12/M4",
+      "route": "apple",
+      "image_set": "candidate",
+      "record": ".scratch/inference-gaps/g09-p1-air-collected/g09-p1-builds/air-apple-candidate/result.json",
+      "sha256": "fdae1d8e469379db30ed3abd98876ce1f6a73b14115297398ece1c0e9662e7f9",
+      "elapsed_seconds": 2.95915,
+      "images": [
+        {
+          "path": "/Users/kiro/hyle-scratch/compute-unified/g09-p1/apple-candidate/bin/libg09_apple_candidate_1.dylib",
+          "sha256": "3faf5144fa193ac7ccadeea1ef32b27914febab4835c29f1647f43841f10546a",
+          "bytes": 12615488,
+          "exports": [
+            "_hyle_g09_facade_v1"
+          ],
+          "map_sha256": "838274d0fcfbf68d52344d958478572b180adc7f37f440421ea5303944138db4"
+        },
+        {
+          "path": "/Users/kiro/hyle-scratch/compute-unified/g09-p1/apple-candidate/bin/libg09_apple_candidate_2.dylib",
+          "sha256": "f9fd1f316711f10611a387d01065c90a0032d047360372831f2badeb7866de52",
+          "bytes": 12615488,
+          "exports": [
+            "_hyle_g09_facade_v1"
+          ],
+          "map_sha256": "60fc7ef1e36da7033a5725061e321296014abb84d0522dcaba87324223d05d03"
+        }
+      ],
+      "driver": {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/g09-p1/apple-candidate/bin/g09_pipeline_driver",
+        "sha256": "1277fe8d7e790d2cc07724e0532987287dfda8d984bd4f436939bee3b17004f9",
+        "bytes": 249488
+      }
+    },
+    {
+      "platform": "M1-MAC actual Air Mac16,12/M4",
+      "route": "vulkan",
+      "image_set": "baseline",
+      "record": ".scratch/inference-gaps/g09-p1-air-collected/g09-p1-builds/air-vulkan-baseline/result.json",
+      "sha256": "abb6253d93fce8aeccf8d64965856a8affe7bf114e716048603a6d7e00827711",
+      "elapsed_seconds": 2.502987792,
+      "images": [
+        {
+          "path": "/Users/kiro/hyle-scratch/compute-unified/g09-p1/vulkan-baseline/bin/libg09_vulkan_baseline_1.dylib",
+          "sha256": "132b43c7600b79d5f54e4a5c6ef08da9b6ba1033eae6065e9146b0df4dc51411",
+          "bytes": 50802000,
+          "exports": [
+            "_hyle_g09_facade_v1"
+          ],
+          "map_sha256": "2d0a38b18142a533e3ccd83a6671e97bf33013fe8d7eb4b65cd02069eb620b18"
+        },
+        {
+          "path": "/Users/kiro/hyle-scratch/compute-unified/g09-p1/vulkan-baseline/bin/libg09_vulkan_baseline_2.dylib",
+          "sha256": "3e390d1237e326e439753bf843e4f1d60ea2791fd2af63a310b583cc9fe2c50f",
+          "bytes": 50802000,
+          "exports": [
+            "_hyle_g09_facade_v1"
+          ],
+          "map_sha256": "1222b030bd58d4c0787b50f2de9cbe17ec16c4e6e874347a09bc8cbccec72f50"
+        }
+      ],
+      "driver": null
+    },
+    {
+      "platform": "M1-MAC actual Air Mac16,12/M4",
+      "route": "vulkan",
+      "image_set": "candidate",
+      "record": ".scratch/inference-gaps/g09-p1-air-collected/g09-p1-builds/air-vulkan-candidate/result.json",
+      "sha256": "760fa61ebf45976d5654a6059d767deffc319c646d2f95c7f2742666b9ae3bef",
+      "elapsed_seconds": 2.970336375,
+      "images": [
+        {
+          "path": "/Users/kiro/hyle-scratch/compute-unified/g09-p1/vulkan-candidate/bin/libg09_vulkan_candidate_1.dylib",
+          "sha256": "86f1dafab6f46228f6b6212dfd8802d5356b3d9a8e6dd10cb9006a3ebf02278f",
+          "bytes": 50852368,
+          "exports": [
+            "_hyle_g09_facade_v1"
+          ],
+          "map_sha256": "6982b61503cb8cb00db9c42afae95948dbadf978f311ed3be42ec894a53e01cb"
+        },
+        {
+          "path": "/Users/kiro/hyle-scratch/compute-unified/g09-p1/vulkan-candidate/bin/libg09_vulkan_candidate_2.dylib",
+          "sha256": "b89fac547f0f71d5dabb44d45e624407d3449a31d497204ad0d40c975ca78eaf",
+          "bytes": 50852368,
+          "exports": [
+            "_hyle_g09_facade_v1"
+          ],
+          "map_sha256": "f9cbe897396a97734c1755fecc272e49a3fe5c31dce039b0f95397745ccf79b7"
+        }
+      ],
+      "driver": {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/g09-p1/vulkan-candidate/bin/g09_pipeline_driver",
+        "sha256": "e6b291de84c19c80dc83377957c7d35689c1494bd8946906b127ffc71b9a57ff",
+        "bytes": 249488
+      }
+    }
+  ],
+  "independent_reviews": {
+    "13": {
+      "path": "review-13.json",
+      "sha256": "3612325962ad2575e7a5b096a112624393edc72d59545f12c6bb58d0c7abf291",
+      "decision": "ALLOW_CANDIDATE_CONSTRUCTION_WITH_EXACT_77_SYMBOL_VENDOR_EXCEPTION_FROZEN_BEFORE_RUNTIME; HYLE_PRIVATE_ABI_DENY_RULE_UNCHANGED; NOT_ARTIFACT_OR_P1_PASS"
+    },
+    "14": {
+      "path": "review-14.json",
+      "sha256": "ccf13a956354c5cce5ec6fd1f3fb4a8676421d0ab6ae28b3e7e235027927092d",
+      "decision": "ALLOW_VERIFY_ONLY_LOADER_MATH_COMPLETION_DIAGNOSTICS_NOT_AA_OR_P1"
+    },
+    "15": {
+      "path": "review-15.json",
+      "sha256": "f0a3f3b6bcddcc3934573baf2734bbcbae7d8d083863536c29af75fb843dcd11",
+      "decision": "ALLOW_SYMMETRIC_WINDOWS_PROCESS_LIFETIME_DIAGNOSTIC_ADAPTER; NEW_SOURCE_AND_RUNTIME_NOT_SIGNED"
+    }
+  },
+  "cuda_runtime": {
+    "freeze_record": "raw.zip:cuda-runtime/freeze.json",
+    "freeze_sha256": "64d7ab6d0dcc4ff833362a2a33a63acec5f5cc73240d3cd5069644705167cad7",
+    "exact_equal_staged_dll_pairs": 39,
+    "pass_record": "raw.zip:cuda-runtime/process-lifetime/runtime-result.json",
+    "pass_sha256": "7319b47d90cd18f45558e77585d5718f3a2137e4736088d5e3bbef7136d9ff33",
+    "orders": [
+      {
+        "order": "candidate-first",
+        "exit_code": 0,
+        "elapsed_seconds": 1.6869999999762513,
+        "actual_loaded_module_count": 82,
+        "actual_cpu_programs": [
+          "C:\\h7\\g09-p1\\cuda-candidate\\bin\\hyle_ggml_cpu_avx2_456172ec_2f41ad48bddb8a44.dll"
+        ]
+      },
+      {
+        "order": "baseline-first",
+        "exit_code": 0,
+        "elapsed_seconds": 1.812999999965541,
+        "actual_loaded_module_count": 81,
+        "actual_cpu_programs": [
+          "C:\\h7\\g09-p1\\cuda-candidate\\bin\\hyle_ggml_cpu_avx2_456172ec_2f41ad48bddb8a44.dll"
+        ]
+      }
+    ],
+    "checks": "Each order: two actual separate facade images/C-table7-address membership, four full before and four full after4M output oracles including both microbatches,8 symmetric warmups per arm, checked returned observations/native completion, all8 State destroy status0, normal process exit, actual loaded paths/hash equal frozen staged counterparts. Original CPU program actually observed. No Bench::compare invocation.",
+    "lifetime_correction": {
+      "state": "DRIVER_ONLY_PROCESS_LIFETIME_CORRECTION_BUILT_NO_HYLE_PRODUCT_LINK_OR_EXECUTION",
+      "stages": [
+        {
+          "stage": "configure",
+          "command": [
+            "cmake",
+            "-S",
+            "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g09-p1-windows-process-lifetime-driver",
+            "-B",
+            "C:\\h7\\g09-p1\\cuda-driver-process-lifetime",
+            "-G",
+            "Ninja",
+            "-DCMAKE_BUILD_TYPE=Release",
+            "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 1.1089999999967404
+        },
+        {
+          "stage": "build",
+          "command": [
+            "cmake",
+            "--build",
+            "C:\\h7\\g09-p1\\cuda-driver-process-lifetime",
+            "-j",
+            "4"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 2.672000000020489
+        },
+        {
+          "stage": "imports",
+          "command": [
+            "C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\bin\\Hostx64\\x64\\dumpbin.exe",
+            "/nologo",
+            "/imports",
+            "C:\\h7\\g09-p1\\cuda-candidate\\bin\\g09_pipeline_driver_process_lifetime.exe"
+          ],
+          "exit_code": 0,
+          "elapsed_seconds": 0.031000000017229468
+        }
+      ],
+      "source_record_sha256": "64379a328ae0639715a77619701dcf384a73002b4fdb0dcd0088a4095b6034c0",
+      "source_driver_sha256": "b6bd560850e4fd1e5d094fe43c18cbe6500d4eaf1dc866437d3f26227ea457c9",
+      "max_jobs": 4,
+      "logical_cpu_limit": 4,
+      "priority": "BELOW_NORMAL",
+      "product_or_facade_rebuilds": 0,
+      "stage": "imports",
+      "elapsed_seconds": 3.8429999999934807,
+      "driver": {
+        "path": "C:\\h7\\g09-p1\\cuda-candidate\\bin\\g09_pipeline_driver_process_lifetime.exe",
+        "sha256": "f9ddda8dde34c139172d352256214faea51f7486bad3282ba28059f47cef50a9",
+        "bytes": 132608
+      }
+    },
+    "attribution_limit": "Initial main thread waited for thread68432 after all state destruction and before first FreeLibrary return; WCT cycle=false. Same original CUDA static CompletionReaper dtor joins under DLL CRT detach, consistent with loader-lock risk, not a confirmed full native stack or a new G09 product failure. Only private Windows driver changed; explicit image unload symmetrically deferred to process exit. No dynamic-unload/private-cache cleanup PASS."
+  },
+  "retained_failures": [
+    {
+      "record": "raw.zip:windows-cuda-baseline/initial-strict-export-failure.json",
+      "state": "SETUP_FAIL",
+      "elapsed_seconds": 74.29700000002049,
+      "meaning": "Both baseline links succeeded; initial strict C-getter-only export guard rejected inherited77 exact original vendor exports before any DLL execution. R13 finite exception preserves private HYLE denial; not rewritten PASS."
+    },
+    {
+      "record": "raw.zip:windows-cuda-baseline/inspection-before-2.json and inspection-before-3.json",
+      "meaning": "Inspection-only helper wrongly required no-work despite original always-run runtime-copy target, then default GBK read rejected UTF-8 registry. Retained snapshots and cumulative inspection cost; no build/relink/product changes."
+    },
+    {
+      "record": "raw.zip:cuda-runtime/runtime-result.json",
+      "state": "DIAGNOSTIC_FAIL",
+      "elapsed_seconds": 175.21899999998277,
+      "meaning": "All four workload oracles and8 State destroys passed but first explicit private facade FreeLibrary did not return. Own verified diagnostic process terminated; no benchmark/A-A/formal samples. Actual WCT and process identity retained."
+    }
+  ],
+  "recorded_case_seconds": 387.9979413340517,
+  "cost_scope": "Sum of recorded serial case totals, includes original failed stages/resumes and original hung diagnostic. Excludes orchestration/source preparation/review time; no original budget or failure reset.",
+  "formal_samples": 0,
+  "workload_aa_samples": 0,
+  "remaining": [
+    "Windows Vulkan baseline/candidate artifact construction and exact native export provenance; no unreviewed vendor wildcard exception",
+    "Actual Air Mach-O weak/fixup/type/data/native registry/resource/loader/math/retirement qualification; initial C-only exports do not sign this",
+    "Complete original A1-A5 including native dispatch/copy/completion ledger, final source/artifact identity, same-topology workload A/A and unchanged original delta/timer/placement controls before first formal process sample",
+    "Original fixed5%/n15-to31 paired formal P1 on all four selected native profile/routes; no warm perf or engine tokens/s verdict yet",
+    "Final independent review/seven gates/LOC and G09 aggregated decision; G10 unstarted"
+  ],
+  "archive": {
+    "path": "raw.zip",
+    "sha256": "b506569527ae4603949ce92268e85a309422761184ef6e1f55bac2eaf7fdf090",
+    "bytes": 15710165,
+    "entries": [
+      {
+        "path": "windows-cuda-baseline/build.log",
+        "sha256": "c7c5592525c63ec6f7e0310da483ef70f6033038b86ecded1622bd807e072e74",
+        "bytes": 701
+      },
+      {
+        "path": "windows-cuda-baseline/compile-commands.json",
+        "sha256": "3ef15ca8318d4742351133a25004452e0098c06b0a74c8bd467bf6d9597d809d",
+        "bytes": 3600
+      },
+      {
+        "path": "windows-cuda-baseline/configure.log",
+        "sha256": "e27d71d4dd38534d8f5ecea45f78039de0778c7f04be427ca64318c48751562c",
+        "bytes": 1397
+      },
+      {
+        "path": "windows-cuda-baseline/dry-run.log",
+        "sha256": "c7c5592525c63ec6f7e0310da483ef70f6033038b86ecded1622bd807e072e74",
+        "bytes": 701
+      },
+      {
+        "path": "windows-cuda-baseline/g09_cuda_baseline_1-dependents.log",
+        "sha256": "a48382f58bc5c59356a5bb67f0f5a6ddde4b1c57c13fa84991cda431077af0fe",
+        "bytes": 925
+      },
+      {
+        "path": "windows-cuda-baseline/g09_cuda_baseline_1-exports.log",
+        "sha256": "7699e72c302d4ecadbb62a632e534fad02fb9d48566ada427d29a10b2050da87",
+        "bytes": 8916
+      },
+      {
+        "path": "windows-cuda-baseline/g09_cuda_baseline_1-headers.log",
+        "sha256": "0fd9c1d4c11cad7dd86baa20e75b153882e427811fb69936abd730eb0b13c4f4",
+        "bytes": 6844
+      },
+      {
+        "path": "windows-cuda-baseline/g09_cuda_baseline_1-imports.log",
+        "sha256": "9a51d29180eff0fdcfcf2612e35a9e182e2ccb96c8d1d5ad7171fb0754a9384e",
+        "bytes": 44314
+      },
+      {
+        "path": "windows-cuda-baseline/g09_cuda_baseline_1.map",
+        "sha256": "a65c1387c5f34971b303453e56c72123278313301435bb2ff8f29e48008813e1",
+        "bytes": 44450820
+      },
+      {
+        "path": "windows-cuda-baseline/g09_cuda_baseline_2.map",
+        "sha256": "a1f47a6fdca0e4ef489e0ee74115cddfa957ea57540454c4752a50d06ddc09ee",
+        "bytes": 44450820
+      },
+      {
+        "path": "windows-cuda-baseline/initial-strict-export-failure.json",
+        "sha256": "2452f1249d89e1620af8c52ab5d7df5852e92fbf3581b08dd278b5cffb2e03cc",
+        "bytes": 124039
+      },
+      {
+        "path": "windows-cuda-baseline/inspection-before-1.json",
+        "sha256": "6a0e83e38b2551038b66cbdcfb5a591c769a055f9052cf3412db33852491068e",
+        "bytes": 118470
+      },
+      {
+        "path": "windows-cuda-baseline/inspection-before-2.json",
+        "sha256": "12b28fbefefc35f5036be9444087dcce2ce7bb1f2ed2109a2171ad2572e94bdf",
+        "bytes": 183762
+      },
+      {
+        "path": "windows-cuda-baseline/manifest.log",
+        "sha256": "7447644f96e633af92830b4282a17b1361562144e48eecbb0387d855dbde1011",
+        "bytes": 79
+      },
+      {
+        "path": "windows-cuda-baseline/result.json",
+        "sha256": "bb8cdfb9b4ab684b514967005a03d96b9861b4dcfa7c54d0cccfad2c88f04d12",
+        "bytes": 138140
+      },
+      {
+        "path": "windows-cuda-baseline/resume-dry-run.log",
+        "sha256": "9bdb5030e2c699a2f5215c32ee958162e5b2b4e32568aa44632acfbf2e574b2b",
+        "bytes": 260
+      },
+      {
+        "path": "windows-cuda-baseline/resume-inspect-g09_cuda_baseline_1-dependents.log",
+        "sha256": "a48382f58bc5c59356a5bb67f0f5a6ddde4b1c57c13fa84991cda431077af0fe",
+        "bytes": 925
+      },
+      {
+        "path": "windows-cuda-baseline/resume-inspect-g09_cuda_baseline_1-exports.log",
+        "sha256": "7699e72c302d4ecadbb62a632e534fad02fb9d48566ada427d29a10b2050da87",
+        "bytes": 8916
+      },
+      {
+        "path": "windows-cuda-baseline/resume-inspect-g09_cuda_baseline_1-headers.log",
+        "sha256": "0fd9c1d4c11cad7dd86baa20e75b153882e427811fb69936abd730eb0b13c4f4",
+        "bytes": 6844
+      },
+      {
+        "path": "windows-cuda-baseline/resume-inspect-g09_cuda_baseline_1-imports.log",
+        "sha256": "9a51d29180eff0fdcfcf2612e35a9e182e2ccb96c8d1d5ad7171fb0754a9384e",
+        "bytes": 44314
+      },
+      {
+        "path": "windows-cuda-baseline/resume-inspect-g09_cuda_baseline_2-dependents.log",
+        "sha256": "a8e223de74a9d0597a65be4f1cbb5af4757ee848862f158e289b3b25d91964c7",
+        "bytes": 925
+      },
+      {
+        "path": "windows-cuda-baseline/resume-inspect-g09_cuda_baseline_2-exports.log",
+        "sha256": "1bbecfaf6e8b3cd497d3a294cc285fdd2415d0ca0d46cef66b1a76109b82e684",
+        "bytes": 8916
+      },
+      {
+        "path": "windows-cuda-baseline/resume-inspect-g09_cuda_baseline_2-headers.log",
+        "sha256": "95f8cbe6b55867a5e5c7bb09490a33df440857c8ea62f21f55b8718055872f99",
+        "bytes": 6844
+      },
+      {
+        "path": "windows-cuda-baseline/resume-inspect-g09_cuda_baseline_2-imports.log",
+        "sha256": "9d6487428df397ca205ad6dd696d81edc34d2b65976f5498a1f8fcc903de37e3",
+        "bytes": 44314
+      },
+      {
+        "path": "windows-cuda-baseline/runner-resume-inspect.py",
+        "sha256": "ba3574a72f64ceec35c2d23694517f22d681e223707dad52fbed36b4779a9cad",
+        "bytes": 11471
+      },
+      {
+        "path": "windows-cuda-baseline/runner.py",
+        "sha256": "c449042af0bd5128ffff49befc9b9215be4bc37244c92da6809f99dedc6f5cc6",
+        "bytes": 8552
+      },
+      {
+        "path": "windows-cuda-candidate/build.log",
+        "sha256": "880df97d64a8213e0db2642f144a7ee07fe29438ca239610635d39c847dddc2f",
+        "bytes": 1022
+      },
+      {
+        "path": "windows-cuda-candidate/compile-commands.json",
+        "sha256": "3ffb7e6c17b97edccc32cf801dc5806904a40ade07886a4ef4027a269a1e9ea6",
+        "bytes": 5181
+      },
+      {
+        "path": "windows-cuda-candidate/configure.log",
+        "sha256": "77dbc1a716b19c6ddf0bd0bfc145198b04e6d1cff1994c0a3cf5b90fb0a1cc1e",
+        "bytes": 1398
+      },
+      {
+        "path": "windows-cuda-candidate/dry-run.log",
+        "sha256": "a69c9e2aa9f233be0ed2154129cad394cacfa4b3b94c9b2b79b37209f89c9389",
+        "bytes": 1022
+      },
+      {
+        "path": "windows-cuda-candidate/g09_cuda_candidate_1-dependents.log",
+        "sha256": "6f5b2409287240e941f4b1cac55ad9fa6dd7fae44d40269b3a4adb2a880f316e",
+        "bytes": 927
+      },
+      {
+        "path": "windows-cuda-candidate/g09_cuda_candidate_1-exports.log",
+        "sha256": "eb40cf46669865ba83bb1ac0ac3e4d40e82829f3ac0a8b1a23ac865b91018584",
+        "bytes": 8919
+      },
+      {
+        "path": "windows-cuda-candidate/g09_cuda_candidate_1-headers.log",
+        "sha256": "a66b219a0afc5470ed1010eb5bf61662e4eb986723149a64313deed2585d02fe",
+        "bytes": 6846
+      },
+      {
+        "path": "windows-cuda-candidate/g09_cuda_candidate_1-imports.log",
+        "sha256": "49fd051a7b0a14e131f2f1524f2ae7a2777ba6cf6a82420bbf8b61a25be3f251",
+        "bytes": 44316
+      },
+      {
+        "path": "windows-cuda-candidate/g09_cuda_candidate_1.map",
+        "sha256": "1c05f7ab242be976b9f1f878521c73cace57fec609ecc8d73bf3063f6729f415",
+        "bytes": 44489080
+      },
+      {
+        "path": "windows-cuda-candidate/g09_cuda_candidate_2-dependents.log",
+        "sha256": "bb265d77354e0fb02c543eabb32c8e7ccdfd5c8fab2c9a6e8529f20b2f3c9c75",
+        "bytes": 927
+      },
+      {
+        "path": "windows-cuda-candidate/g09_cuda_candidate_2-exports.log",
+        "sha256": "569021e974d13fbb050b95e362663bb2322413017841dbe13c445ba3a11771c7",
+        "bytes": 8919
+      },
+      {
+        "path": "windows-cuda-candidate/g09_cuda_candidate_2-headers.log",
+        "sha256": "063051975eef4cc01f8e0eb9848846cf263c1885c0e857c4bce06fdda579e8ce",
+        "bytes": 6846
+      },
+      {
+        "path": "windows-cuda-candidate/g09_cuda_candidate_2-imports.log",
+        "sha256": "05fe7adf889fc63f2d0aa92f9c56b4c86e57545b0f1ff61252f94899507d7c30",
+        "bytes": 44316
+      },
+      {
+        "path": "windows-cuda-candidate/g09_cuda_candidate_2.map",
+        "sha256": "f89fcc51156fda14bcdab05f8d560ee8408a35aa41b947bb68ace0e3eee7d38d",
+        "bytes": 44489081
+      },
+      {
+        "path": "windows-cuda-candidate/manifest.log",
+        "sha256": "2984fc49f25ae37cdf1c7c205784d3b3236592666c85bddd632bca0c701aeb4d",
+        "bytes": 80
+      },
+      {
+        "path": "windows-cuda-candidate/result.json",
+        "sha256": "14aaa944ec896498d3c87f40b70cdb50227c5828a071b4f23c92f2101643340d",
+        "bytes": 136299
+      },
+      {
+        "path": "windows-cuda-candidate/runner.py",
+        "sha256": "ba3574a72f64ceec35c2d23694517f22d681e223707dad52fbed36b4779a9cad",
+        "bytes": 11471
+      },
+      {
+        "path": "air-builds/air-apple-baseline/build.log",
+        "sha256": "67f1096503aa16b1d97cbda27662ce323eb7a54486c3c919ae94f51ad491c53d",
+        "bytes": 763
+      },
+      {
+        "path": "air-builds/air-apple-baseline/compile-commands.json",
+        "sha256": "e60fd2e6357624578f4b2046e8a213cfd410f706686637a81cec48b001816011",
+        "bytes": 2999
+      },
+      {
+        "path": "air-builds/air-apple-baseline/configure.log",
+        "sha256": "8b5776db50ba3bc70430e095840200d102184d2ef474d78ea9a0f5c073a99127",
+        "bytes": 941
+      },
+      {
+        "path": "air-builds/air-apple-baseline/dry-run.log",
+        "sha256": "eb75163d0f681f66c3c8a6f3c96df30fa826644ecb482d06d3d43e937599a92d",
+        "bytes": 763
+      },
+      {
+        "path": "air-builds/air-apple-baseline/g09_apple_baseline_1-dependencies.log",
+        "sha256": "fdac611f9c5b3872351f128b378b3f026cf8f5f2b0a3e25b04ee0f810e8fa17b",
+        "bytes": 1299
+      },
+      {
+        "path": "air-builds/air-apple-baseline/g09_apple_baseline_1-exports.log",
+        "sha256": "451e48ce5ffcb8d826ab27082853f2f79b01f1e31900d1b34c8a860a741367ba",
+        "bytes": 39
+      },
+      {
+        "path": "air-builds/air-apple-baseline/g09_apple_baseline_1-indirect-symbols.log",
+        "sha256": "94e14ae288ad91821b3cb179f2d8395a0b5bd4ff52642d54ffab84ec166077b0",
+        "bytes": 62947
+      },
+      {
+        "path": "air-builds/air-apple-baseline/g09_apple_baseline_1-load-commands.log",
+        "sha256": "56383dd54079135c010a1bdd71d0e91b7c279a8ee0bf512eba878e884bc0872a",
+        "bytes": 10258
+      },
+      {
+        "path": "air-builds/air-apple-baseline/g09_apple_baseline_1.map",
+        "sha256": "b18e81a716b3b581f52afd90426248f991cc664101c5d7c07a5020c2486b9a08",
+        "bytes": 3361690
+      },
+      {
+        "path": "air-builds/air-apple-baseline/g09_apple_baseline_2-dependencies.log",
+        "sha256": "69cec11eedb4f2988c25d09cda97230e9f3763b7141e991cc7a6ed060509632c",
+        "bytes": 1299
+      },
+      {
+        "path": "air-builds/air-apple-baseline/g09_apple_baseline_2-exports.log",
+        "sha256": "451e48ce5ffcb8d826ab27082853f2f79b01f1e31900d1b34c8a860a741367ba",
+        "bytes": 39
+      },
+      {
+        "path": "air-builds/air-apple-baseline/g09_apple_baseline_2-indirect-symbols.log",
+        "sha256": "0cab3c384068b7cff6b5c250655f67889e018d2abf170c17473e9674ef244cf9",
+        "bytes": 62947
+      },
+      {
+        "path": "air-builds/air-apple-baseline/g09_apple_baseline_2-load-commands.log",
+        "sha256": "c35ebf3abf7486ed8ce130d12193717bbafce7634bf27259890a0ea904e233bc",
+        "bytes": 10258
+      },
+      {
+        "path": "air-builds/air-apple-baseline/g09_apple_baseline_2.map",
+        "sha256": "5534df9a6f19ac4c3cf06accf29b4b1541b39d7cd85d4cdbeeca559909537387",
+        "bytes": 3361690
+      },
+      {
+        "path": "air-builds/air-apple-baseline/manifest.log",
+        "sha256": "01a8fb27316cfbc09c34df58a176e5e9ffc41880daeb3870c74f309a9790c850",
+        "bytes": 113
+      },
+      {
+        "path": "air-builds/air-apple-baseline/result.json",
+        "sha256": "cbaaee2c9c76479f228657954751275332b98c701213e0e98319db8ef9e59862",
+        "bytes": 171257
+      },
+      {
+        "path": "air-builds/air-apple-baseline/runner.py",
+        "sha256": "9cb38143d861c05d0d7020a79d6c39397f5c7bd80cf1ef6a8eb2f3c7194ee4f2",
+        "bytes": 6369
+      },
+      {
+        "path": "air-builds/air-apple-candidate/build.log",
+        "sha256": "d1c8f04e64341c3740f093f919da064cd641177d490e542da0befb989c91145d",
+        "bytes": 1120
+      },
+      {
+        "path": "air-builds/air-apple-candidate/compile-commands.json",
+        "sha256": "b7e09f5db39ace137cc7b9c43193148dab19e6d1397bfaeb0ff161a4ae7658b4",
+        "bytes": 4703
+      },
+      {
+        "path": "air-builds/air-apple-candidate/configure.log",
+        "sha256": "ed6e8044fdea4f94d15030038ce10d56b87f8ca2f59156b3e872e8dc88148a1a",
+        "bytes": 942
+      },
+      {
+        "path": "air-builds/air-apple-candidate/dry-run.log",
+        "sha256": "1dd6472ba074d42c63bbffb02f6602f5ca10bb9e3dcc8907ff8bbe774aa1f8a6",
+        "bytes": 1120
+      },
+      {
+        "path": "air-builds/air-apple-candidate/g09_apple_candidate_1-dependencies.log",
+        "sha256": "3a799d8f23e86567f21a26bee38cc2c50e75a9e9491c36760038b8a5df62bbde",
+        "bytes": 1302
+      },
+      {
+        "path": "air-builds/air-apple-candidate/g09_apple_candidate_1-exports.log",
+        "sha256": "451e48ce5ffcb8d826ab27082853f2f79b01f1e31900d1b34c8a860a741367ba",
+        "bytes": 39
+      },
+      {
+        "path": "air-builds/air-apple-candidate/g09_apple_candidate_1-indirect-symbols.log",
+        "sha256": "e2c0dd2238abd71605a178221462ad6ba88f33ad40685917297fb5b299b398c4",
+        "bytes": 62949
+      },
+      {
+        "path": "air-builds/air-apple-candidate/g09_apple_candidate_1-load-commands.log",
+        "sha256": "c540945bf0aa592ade485fba381ef3c8f49ab8c05d675ec28a6281f8919cb43d",
+        "bytes": 10261
+      },
+      {
+        "path": "air-builds/air-apple-candidate/g09_apple_candidate_1.map",
+        "sha256": "838274d0fcfbf68d52344d958478572b180adc7f37f440421ea5303944138db4",
+        "bytes": 3382286
+      },
+      {
+        "path": "air-builds/air-apple-candidate/g09_apple_candidate_2-dependencies.log",
+        "sha256": "cb8ae1230c8dc86a6f64aea401371b05b28fdd01ea8864a71b543da1caeab5b7",
+        "bytes": 1302
+      },
+      {
+        "path": "air-builds/air-apple-candidate/g09_apple_candidate_2-exports.log",
+        "sha256": "451e48ce5ffcb8d826ab27082853f2f79b01f1e31900d1b34c8a860a741367ba",
+        "bytes": 39
+      },
+      {
+        "path": "air-builds/air-apple-candidate/g09_apple_candidate_2-indirect-symbols.log",
+        "sha256": "1a7188d8a6ff8bf7188df56a21f1af58b60a1cd098b4187aea7da35474183d82",
+        "bytes": 62949
+      },
+      {
+        "path": "air-builds/air-apple-candidate/g09_apple_candidate_2-load-commands.log",
+        "sha256": "e02171bfecc952f7df7632027472fb6419c4e90bd959fdaf817b26bd835b7634",
+        "bytes": 10261
+      },
+      {
+        "path": "air-builds/air-apple-candidate/g09_apple_candidate_2.map",
+        "sha256": "60fc7ef1e36da7033a5725061e321296014abb84d0522dcaba87324223d05d03",
+        "bytes": 3382286
+      },
+      {
+        "path": "air-builds/air-apple-candidate/manifest.log",
+        "sha256": "8938ef149db451e75b32abc1b5a3b1f7de93106898b89a8b5e8012bfe0858aa1",
+        "bytes": 114
+      },
+      {
+        "path": "air-builds/air-apple-candidate/result.json",
+        "sha256": "fdae1d8e469379db30ed3abd98876ce1f6a73b14115297398ece1c0e9662e7f9",
+        "bytes": 171531
+      },
+      {
+        "path": "air-builds/air-apple-candidate/runner.py",
+        "sha256": "9cb38143d861c05d0d7020a79d6c39397f5c7bd80cf1ef6a8eb2f3c7194ee4f2",
+        "bytes": 6369
+      },
+      {
+        "path": "air-builds/air-vulkan-baseline/build.log",
+        "sha256": "e682ba3d1fc22840968ea3de9f0e54440428f33f0728c5def9d0b06eda216825",
+        "bytes": 539
+      },
+      {
+        "path": "air-builds/air-vulkan-baseline/compile-commands.json",
+        "sha256": "f9d745b764eafdf3b5fa77eed428d79c557831c2fa6b5ca2fa1e70ff6dc26c4e",
+        "bytes": 2679
+      },
+      {
+        "path": "air-builds/air-vulkan-baseline/configure.log",
+        "sha256": "a0acf035aac4c41ed79ebe8bc008515696ce4747445067c918e71266f2420029",
+        "bytes": 942
+      },
+      {
+        "path": "air-builds/air-vulkan-baseline/dry-run.log",
+        "sha256": "e986c1edec65c830ff985d260f0cdfdf870da6078a7c75b38e6bfb476db5b9eb",
+        "bytes": 539
+      },
+      {
+        "path": "air-builds/air-vulkan-baseline/g09_vulkan_baseline_1-dependencies.log",
+        "sha256": "7cc554d26ea138b32b3ae83a55cbf39fd8bf1710b6719e94160fa4a0033f4551",
+        "bytes": 588
+      },
+      {
+        "path": "air-builds/air-vulkan-baseline/g09_vulkan_baseline_1-exports.log",
+        "sha256": "7c3cb367848f489a23ebd2a0a249e04b47e845e41180620af57bd0cc6844e954",
+        "bytes": 39
+      },
+      {
+        "path": "air-builds/air-vulkan-baseline/g09_vulkan_baseline_1-indirect-symbols.log",
+        "sha256": "0068ed71a561163f998968110ab1dab05ef706dc5fd3ef1c7c3116d6b9bd02d3",
+        "bytes": 54587
+      },
+      {
+        "path": "air-builds/air-vulkan-baseline/g09_vulkan_baseline_1-load-commands.log",
+        "sha256": "1a4dc0cc7e763fee456c725bae006ac097f40bb60bd5978384e1851583785495",
+        "bytes": 7417
+      },
+      {
+        "path": "air-builds/air-vulkan-baseline/g09_vulkan_baseline_1.map",
+        "sha256": "2d0a38b18142a533e3ccd83a6671e97bf33013fe8d7eb4b65cd02069eb620b18",
+        "bytes": 2436083
+      },
+      {
+        "path": "air-builds/air-vulkan-baseline/g09_vulkan_baseline_2-dependencies.log",
+        "sha256": "11412a11476974b8e0e3d1d669294a808f04fff11ab73bb8fbb398a08f2498ca",
+        "bytes": 588
+      },
+      {
+        "path": "air-builds/air-vulkan-baseline/g09_vulkan_baseline_2-exports.log",
+        "sha256": "7c3cb367848f489a23ebd2a0a249e04b47e845e41180620af57bd0cc6844e954",
+        "bytes": 39
+      },
+      {
+        "path": "air-builds/air-vulkan-baseline/g09_vulkan_baseline_2-indirect-symbols.log",
+        "sha256": "6f80817be97e9342b2b6905a50311173c8b4fe768e64f2ee19bca9ed97e9906a",
+        "bytes": 54587
+      },
+      {
+        "path": "air-builds/air-vulkan-baseline/g09_vulkan_baseline_2-load-commands.log",
+        "sha256": "61bf1ac1d1d0fe63a20181a4887f7210017dffcebec8ee619cfc95dc9a5ecabe",
+        "bytes": 7417
+      },
+      {
+        "path": "air-builds/air-vulkan-baseline/g09_vulkan_baseline_2.map",
+        "sha256": "1222b030bd58d4c0787b50f2de9cbe17ec16c4e6e874347a09bc8cbccec72f50",
+        "bytes": 2436083
+      },
+      {
+        "path": "air-builds/air-vulkan-baseline/manifest.log",
+        "sha256": "2f15d21e592a3ef3234f68f5155fceab23b37f1e63ae8226e8b77a96ea258386",
+        "bytes": 114
+      },
+      {
+        "path": "air-builds/air-vulkan-baseline/result.json",
+        "sha256": "abb6253d93fce8aeccf8d64965856a8affe7bf114e716048603a6d7e00827711",
+        "bytes": 116391
+      },
+      {
+        "path": "air-builds/air-vulkan-baseline/runner.py",
+        "sha256": "9cb38143d861c05d0d7020a79d6c39397f5c7bd80cf1ef6a8eb2f3c7194ee4f2",
+        "bytes": 6369
+      },
+      {
+        "path": "air-builds/air-vulkan-candidate/build.log",
+        "sha256": "c19030001005a6d3ac7b8a70e82fbe629ad91878f1214413c4c0a1dbc6ef1615",
+        "bytes": 891
+      },
+      {
+        "path": "air-builds/air-vulkan-candidate/compile-commands.json",
+        "sha256": "824354b2bf727bd060502c8af9fd07da82551bbf2fe51b3bcc0fcd30bef1e6fd",
+        "bytes": 4388
+      },
+      {
+        "path": "air-builds/air-vulkan-candidate/configure.log",
+        "sha256": "3c10977b2a3f8118b4c94d93a0af9e963b75d053652ba4d0f3ce022deaa22836",
+        "bytes": 943
+      },
+      {
+        "path": "air-builds/air-vulkan-candidate/dry-run.log",
+        "sha256": "8673132f866abb1d261ecdde0b26e4f6c7089630632f7a50dcb98a77923b7f11",
+        "bytes": 891
+      },
+      {
+        "path": "air-builds/air-vulkan-candidate/g09_vulkan_candidate_1-dependencies.log",
+        "sha256": "ba7a8ef7597eaf6f06a5445151754ff2191407608f0d983f133ac51dbc225232",
+        "bytes": 591
+      },
+      {
+        "path": "air-builds/air-vulkan-candidate/g09_vulkan_candidate_1-exports.log",
+        "sha256": "7c3cb367848f489a23ebd2a0a249e04b47e845e41180620af57bd0cc6844e954",
+        "bytes": 39
+      },
+      {
+        "path": "air-builds/air-vulkan-candidate/g09_vulkan_candidate_1-indirect-symbols.log",
+        "sha256": "48c11d7bba932eaafeb199ea9ad1f121d40063fbe8cf3e6007c2a88c1445d0ec",
+        "bytes": 54589
+      },
+      {
+        "path": "air-builds/air-vulkan-candidate/g09_vulkan_candidate_1-load-commands.log",
+        "sha256": "14cd09f3dd71830b65b9f7ec255ab906cb8280cf838e6b634741dedab7ce806b",
+        "bytes": 7420
+      },
+      {
+        "path": "air-builds/air-vulkan-candidate/g09_vulkan_candidate_1.map",
+        "sha256": "6982b61503cb8cb00db9c42afae95948dbadf978f311ed3be42ec894a53e01cb",
+        "bytes": 2457403
+      },
+      {
+        "path": "air-builds/air-vulkan-candidate/g09_vulkan_candidate_2-dependencies.log",
+        "sha256": "fb4cec0ef99891c4cfae01eee02804a9d54e345a5b7c4fe686e69d4963ca721d",
+        "bytes": 591
+      },
+      {
+        "path": "air-builds/air-vulkan-candidate/g09_vulkan_candidate_2-exports.log",
+        "sha256": "7c3cb367848f489a23ebd2a0a249e04b47e845e41180620af57bd0cc6844e954",
+        "bytes": 39
+      },
+      {
+        "path": "air-builds/air-vulkan-candidate/g09_vulkan_candidate_2-indirect-symbols.log",
+        "sha256": "cf2c7c992e94e5fcd80030113df87f2ac1101ddc9f895e302a22986ceda1b445",
+        "bytes": 54589
+      },
+      {
+        "path": "air-builds/air-vulkan-candidate/g09_vulkan_candidate_2-load-commands.log",
+        "sha256": "140ba673504a8fe91c3d69d049149486fade3ff55d83b0c342c96a5549c6becd",
+        "bytes": 7420
+      },
+      {
+        "path": "air-builds/air-vulkan-candidate/g09_vulkan_candidate_2.map",
+        "sha256": "f9cbe897396a97734c1755fecc272e49a3fe5c31dce039b0f95397745ccf79b7",
+        "bytes": 2457403
+      },
+      {
+        "path": "air-builds/air-vulkan-candidate/manifest.log",
+        "sha256": "4f8338a35832bc0a398325f24a3731eb2c7c016c3b280c1df1156e864fcb8612",
+        "bytes": 115
+      },
+      {
+        "path": "air-builds/air-vulkan-candidate/result.json",
+        "sha256": "760fa61ebf45976d5654a6059d767deffc319c646d2f95c7f2742666b9ae3bef",
+        "bytes": 116683
+      },
+      {
+        "path": "air-builds/air-vulkan-candidate/runner.py",
+        "sha256": "9cb38143d861c05d0d7020a79d6c39397f5c7bd80cf1ef6a8eb2f3c7194ee4f2",
+        "bytes": 6369
+      },
+      {
+        "path": "cuda-runtime/candidate-first.log",
+        "sha256": "7353f1d8a259eb7b7abd696812f5dc1d73682a1f26b0724da6d8d685c022684d",
+        "bytes": 33792
+      },
+      {
+        "path": "cuda-runtime/freeze.json",
+        "sha256": "64d7ab6d0dcc4ff833362a2a33a63acec5f5cc73240d3cd5069644705167cad7",
+        "bytes": 55570
+      },
+      {
+        "path": "cuda-runtime/process-lifetime/baseline-first.log",
+        "sha256": "ba5c8ceafdb09f50b7a88ad3eb92a19f3928123bf06958689672c38fdce24ce8",
+        "bytes": 33714
+      },
+      {
+        "path": "cuda-runtime/process-lifetime/candidate-first.log",
+        "sha256": "54b88c5539c69cb0626a6e67beb8af52abafd931dbfb27f9d14a914bcf1e667e",
+        "bytes": 34091
+      },
+      {
+        "path": "cuda-runtime/process-lifetime/runtime-result.json",
+        "sha256": "7319b47d90cd18f45558e77585d5718f3a2137e4736088d5e3bbef7136d9ff33",
+        "bytes": 36089
+      },
+      {
+        "path": "cuda-runtime/retained-hung-process-identity.json",
+        "sha256": "3c61f057297a5ab73b0172d36beae43d39e0d0fb5e5a7cf3cce8cd0c830641b1",
+        "bytes": 523
+      },
+      {
+        "path": "cuda-runtime/runner-freeze.py",
+        "sha256": "00335c345db828a648cc869dc8f22ac90ed58f9e2c8e3d046e6908ba55c299aa",
+        "bytes": 7245
+      },
+      {
+        "path": "cuda-runtime/runtime-result.json",
+        "sha256": "202a11eeb300a2cdac406ced5285bd051f6a31a728579124d472be98e69ba8d6",
+        "bytes": 6474
+      },
+      {
+        "path": "cuda-runtime/unload-wait-chain.json",
+        "sha256": "7acabce3e599303545ae68bd3692c445d2f8c2e9485da99e344c72e5ebd69582",
+        "bytes": 528
+      },
+      {
+        "path": "windows-process-lifetime-driver/build-result.json",
+        "sha256": "5694e1261976d182c7bf1b9b446047bb1e2a5fdff0358682cbbe5a54fcd4bcef",
+        "bytes": 1845
+      },
+      {
+        "path": "windows-process-lifetime-driver/build.log",
+        "sha256": "bbb30041446c7dd13b3c5d445fb554cb11b6a0b012ec87edc4a879fde86e7b64",
+        "bytes": 360
+      },
+      {
+        "path": "windows-process-lifetime-driver/CMakeLists.txt",
+        "sha256": "f0df943391a8d0767def27ac573f9f26522e1a9f963f15dbe7400fd128c24d3a",
+        "bytes": 1101
+      },
+      {
+        "path": "windows-process-lifetime-driver/compile-commands.json",
+        "sha256": "976e35498fc5394f52e95da99af974195b4e6f607c451da7bdd6af05a3d89293",
+        "bytes": 1799
+      },
+      {
+        "path": "windows-process-lifetime-driver/configure.log",
+        "sha256": "8e33294197714e2e16402dabed083dc906801dea661bc179d6e7170e89a60936",
+        "bytes": 490
+      },
+      {
+        "path": "windows-process-lifetime-driver/driver.cc",
+        "sha256": "b6bd560850e4fd1e5d094fe43c18cbe6500d4eaf1dc866437d3f26227ea457c9",
+        "bytes": 11711
+      },
+      {
+        "path": "windows-process-lifetime-driver/imports.log",
+        "sha256": "262cc54c80bc1c53bb73133eca88d982acdb556f229b3da673c3b8ea353318aa",
+        "bytes": 15488
+      },
+      {
+        "path": "windows-process-lifetime-driver/original-driver.cc",
+        "sha256": "8f58350e6b39f051730d47f0565d62b1c3bf449636e3a1885a99deca5719ea25",
+        "bytes": 11337
+      },
+      {
+        "path": "windows-process-lifetime-driver/source-record.json",
+        "sha256": "64379a328ae0639715a77619701dcf384a73002b4fdb0dcd0088a4095b6034c0",
+        "bytes": 1238
+      },
+      {
+        "path": "private-tools/g09_p1_build_windows.py",
+        "sha256": "ba3574a72f64ceec35c2d23694517f22d681e223707dad52fbed36b4779a9cad",
+        "bytes": 11471
+      },
+      {
+        "path": "private-tools/g09_p1_build_air.py",
+        "sha256": "9cb38143d861c05d0d7020a79d6c39397f5c7bd80cf1ef6a8eb2f3c7194ee4f2",
+        "bytes": 6369
+      },
+      {
+        "path": "private-tools/g09_start_p1_air_build.py",
+        "sha256": "70df1a2fdb6feb0e04ba138d41a9f261354ac599e7590030ae98888a9a6ec9c2",
+        "bytes": 1669
+      },
+      {
+        "path": "private-tools/g09_p1_cuda_verify_windows.py",
+        "sha256": "0661b92a98862d7475a117b4bdeb72b7d9005f96ff24ec65430711546807abc5",
+        "bytes": 8250
+      },
+      {
+        "path": "private-tools/g09_cuda_unload_wait_chain.py",
+        "sha256": "f9a32b7949c023a86b37e0c2f12dfbcd236d56d15740599baab94c3999ed7aec",
+        "bytes": 1742
+      },
+      {
+        "path": "private-tools/g09_p1_process_lifetime_driver.py",
+        "sha256": "a8cd2308f737d86f3c58f1719c5ac48dca1424621ec1e9bc180097402003e9c2",
+        "bytes": 4264
+      },
+      {
+        "path": "private-tools/g09_build_process_lifetime_driver.py",
+        "sha256": "16576a620e5e89e5cb45ffd6658cc9b932ec4153ba8fefc28b843826405ba4d3",
+        "bytes": 3741
+      }
+    ]
+  },
+  "nonclaims": "12 private facade images across6 image sets constructed, not final artifact/P1 acceptance. All15 selected deliveries accepted separately; this does not rerun or reopen them, old G01-G08, leaf math or product FIX. Current G07-G10 goal still2/4 accepted."
+}

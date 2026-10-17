@@ -1,0 +1,56 @@
+{
+  "schema": "hyle.bounded-image-lifetime-review.v1",
+  "decision": "ALLOW_SYMMETRIC_WINDOWS_PROCESS_LIFETIME_DIAGNOSTIC_ADAPTER; NEW_SOURCE_AND_RUNTIME_NOT_SIGNED",
+  "scope": "R15 seals the already completed finite Windows unload-edge review. No new product audit, build, DLL execution, GPU, A/A or sampling.",
+  "independently_observed": {
+    "original_log": ".scratch/inference-gaps/g09-p1-cuda-runtime-preflight/candidate-first.log",
+    "log_counts": {"before_full_4194304_oracle_pass": 4, "after_full_4194304_oracle_pass": 4, "arm_destroy_status0": 8, "deferred_dso_unload_reports": 0},
+    "driver_source": ".scratch/inference-gaps/g09-p1-draft/driver.cc",
+    "driver_sha256": "8f58350e6b39f051730d47f0565d62b1c3bf449636e3a1885a99deca5719ea25",
+    "driver_anchors": ["91-104: Image destructor calls FreeLibrary before logging unload completion", "156-167: Arm::finish invokes facade destroy and records status", "215-220: final full oracle precedes both Arm::finish calls", "242-251: both images live over all four shapes, then destruct on main return"],
+    "facade_source": ".scratch/inference-gaps/g09-p1-draft/facade.cc",
+    "facade_sha256": "6cf2455f160b0625be4af7c001e38beeb84a8146f2ff53d50982cec635e59687",
+    "facade_anchors": ["262-274: State::close closes all valid slots and drains Scheduler; destructor calls close", "306-308: destroy owns State in unique_ptr; return includes State member destruction"],
+    "backend_source": "src/compute_backend_cuda/cuda_backend.cc",
+    "baseline": "9e2f25c469634a6f723e76eaf1aa2db5973bca9a",
+    "candidate": "3524413272cb52d06af5e64d634edbfef09b9864",
+    "both_git_blob_content_sha256": "10c52cc53f313ee850d71f24b06277fb02f483c82a84c9d143c0f908b31712f5",
+    "backend_anchors": ["523-531: image-local static CompletionReaper destructor sets stopping, unparks, then joins worker", "535-547: start creates persistent hyle-cuda-reaper thread", "584-619: idle worker parks until stop or abandonment; user State destruction does not stop singleton", "816: Context construction calls CompletionReaper::instance().start()"],
+    "linked_candidate_map_anchor": {"path": ".scratch/inference-gaps/g09-p1-builds/windows-cuda-candidate/g09_cuda_candidate_1.map", "line": 87345, "static_destructor_thunk_va": "0x181d34e10", "owner": "hyle_compute_backend_cuda:cuda_backend.cc.obj"},
+    "thread_join_anchor": "src/platform_thread/thread.cc:325-328: Windows Thread::join uses WaitForSingleObject(handle, INFINITE)",
+    "published_boundary": "docs/user/compute.md:1624 does not promise an arbitrary-unload dynamic-plugin system. This alone does not identify the hanging stack."
+  },
+  "causal_judgment": {
+    "status": "CONCRETE_SOURCE_RISK_CHAIN; EXACT_CURRENT_STACK_UNPROVEN",
+    "mechanism": "FreeLibrary invokes CRT/static teardown under Windows loader synchronization. The image-local reaper destructor waits for its worker. Worker exit can require DLL_THREAD_DETACH/loader synchronization, yielding a known deadlock condition. Source and linkmap establish this reachable pattern, not conclusive attribution of the current hang.",
+    "not_established": ["No complete main-thread stack proving CRT detach -> reaper destructor -> Thread::join", "No worker stack proving a loader-lock wait", "Vendor global teardown has not been excluded", "No new G09 product correctness or performance defect follows from this timeout"],
+    "same_before_after": "Relevant backend source is exactly identical in baseline and candidate. No product reopening is authorized."
+  },
+  "parent_supplied_observations_not_independently_reexecuted": {
+    "original_pid": 44036,
+    "main_tid": 59560,
+    "wait_chain": {"file": "unload-wait-chain.json", "edge": "59560 WctThreadWaitType -> 68432", "cycle": false, "limit": "Shows a thread wait, insufficient to establish a loader-lock cycle or precise destructor."},
+    "original_terminal": "Parent checked executable identity, stopped the hung process, and retained DIAGNOSTIC_FAIL and elapsed cost. This review does not rewrite the result.",
+    "new_driver_root": ".scratch/inference-gaps/g09-p1-windows-process-lifetime-driver",
+    "new_driver": "g09_pipeline_driver_process_lifetime.exe",
+    "reported_change": "Windows-only Image destructor retains both loader references until process exit. Original driver, four facades and SDK remain unchanged.",
+    "reported_build_seconds": 3.843,
+    "reported_metadata": "No FreeLibrary import and no driver linkage to HYLE product.",
+    "new_source_receipts": ["source-record.json", "build-result.json"],
+    "new_source_review_status": "NOT_READ_OR_SIGNED_BY_THIS_REVIEW",
+    "runtime_status": "Both-order verify-only reported in progress; no new result signed."
+  },
+  "finite_recommendation": {
+    "platform": "Windows only; no Apple/Mach-O dlclose qualification inferred.",
+    "ownership": "Keep both facade images mapped for process lifetime. Preserve explicit user State destruction and original warm output/lease release plus Scheduler::drain. Do not retain user invocations/results to bypass retirement.",
+    "fairness": "Apply the same image lifetime to both arms and both load/allocation orders. Record image-local worker/vendor cache memory as process-retained or UNKNOWN, not zero cost. Charged warm retirement remains unchanged.",
+    "process_exit": "Normal process exit remains an actual diagnostic requirement. Retaining images removes the explicit-unload edge but does not guarantee all vendor or process-detach code is safe. Do not mask a hang/nonzero exit with an exit shortcut.",
+    "verdict_limit": "Public computation and explicit user-state retirement may be assessed separately while dynamic unload remains unqualified. This is a benchmark lifetime choice, not a shipping SDK change or plugin-unload feature."
+  },
+  "primary_sources": [
+    {"title": "Microsoft Dynamic-Link Library Best Practices", "url": "https://learn.microsoft.com/en-us/windows/win32/dlls/dynamic-link-library-best-practices", "support": "Waiting on a thread to exit in DllMain can deadlock with DLL_THREAD_DETACH."},
+    {"title": "Microsoft DllMain entry point", "url": "https://learn.microsoft.com/en-us/windows/win32/dlls/dllmain", "support": "FreeLibrary detach differs from process-termination detach; terminated threads can leave state inconsistent."}
+  ],
+  "evidence_write_method": "Initial shell-based audit-JSON write was rejected by automatic approval review with only 'blocked by policy' and did not execute. Saved the same bounded audit data via explicit apply_patch; no shell process actions occurred.",
+  "stop": "Finite analysis sealed. No new source review or runtime qualification; no A/A/P1 claim."
+}
