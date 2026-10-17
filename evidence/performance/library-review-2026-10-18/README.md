@@ -4,8 +4,8 @@
 本次调研覆盖中央构建表的64个 factor（含退役 Marlin 占位），不是64个模块都已重新计时。
 旧结果只有在当前实现仍对应、输入与完成边界一致时才作为线索；旧 PASS、5%容忍带和状态标签不决定结论。
 
-**仍未解决**：HTTP2大报文背压的当前慢点；CPU Sink、混合旧ggml路线F32 math、CPU causal mask及Apple F32/显式mask等空间项；
-其余queue政策和旧小输仍缺当前同责数据。Vulkan wide/Sink分块与CPU Hadamard冷矩阵已修，bounded queue当前未复现输项。
+**仍未解决**：HTTP2大报文背压的当前慢点；CPU causal mask、一般多节点arena及Apple尚未覆盖的fallback等空间项；
+其余queue政策和旧小输仍缺当前同责数据。CPU/Vulkan math attention、Apple受限长Q fallback与CPU Hadamard冷矩阵已修，bounded queue当前未复现输项。
 已确认的源码缺口与已实测输项分列，不能据64个factor扫描称所有shape已穷尽。
 
 ## 当前源码明确的问题
@@ -31,6 +31,7 @@
 | Vulkan普通causal SDPA平方mask | 已融合的F32/F16分支仍用Q×KV F32 seed与F16 mask承载因果条件 | 复用既有FullF32 causal/window字段，3项定向测试通过；1025×1041 native gallocr容量6402176→0 B，未称total scratch为零或吞吐无退化 |
 | Vulkan math attention平方scratch与F32 source遗漏 | wide/Sink物化全scores，部分非连续Q还会在原生dispatch转Half，只有F32 accumulation请求不足以保持乘法精度 | 先补F32 source与Q连续布局，再同精度Q分块；4项测试通过，Sink样本gallocr容量340527360→176687104 B。小KV/大输出保留普通路线，无吞吐结论 |
 | CPU Hadamard冷矩阵 | 原生FWHT已是O(WlogW)，但prepare仍构造W² host矩阵，W4096为64 MiB | unary bridge复用各pin原生FWHT，移除矩阵；私有program ABI2随baseline/AVX2选择callback，无新增用户设置或数学内核 |
+| Apple GPU长Q数学fallback | 原生unfused保留全Q scores/probabilities；逻辑分块也可能被Metal待完成command buffers同时保留 | 静态fallback域以原数学16行分块，默认设置实测额外MLX峰值80→58.81 MiB；64行版反增8 MiB的负点保留，未称覆盖全部fallback |
 
 原CUDA F16 flash分支还会物化Q×KV的F16 causal mask，8K方形时为128 MiB；
 这条分支已因实际Half累加问题替换，不能仅凭主kernel融合推断整个调用空间或精度。
@@ -445,8 +446,8 @@ token/8B数据校验及inflight归零；init/reserve、fd打开/预热、用户b
 |---|---|---|
 | CPU ggml / Vulkan Concat | 已改平衡树；CPU owned payload126→20 MiB，Vulkan真实gallocr容量11.25→7.75 MiB | 定向测试与唯一代表形状完成，见下；未测完整引擎或所有shape |
 | CPU / Vulkan ordinary causal SDPA | Vulkan已有fused域的内部mask已消除；CPU仍直接借冷Half Q×KV常量 | CPU现boxed字段会禁tiled/split-KV且改变F16中间累加，未贸然默认切换；Vulkan实测边界见下 |
-| CPU Sink与混合旧pin F32 math | 这些分支仍物化H×Q×KV scores/probabilities；CPU-only新pin普通F32/F16/BF16已走flash，不混入此项 | CPU手写arena保留全部中间量，简单分块无益；需复用官方gallocr及既有可恢复OOM补丁，冷reserve并保留kPrepared。Vulkan同项已修，见下 |
-| Apple ordinary SDPA | 无显式mask、非空、F16/BF16 D192/256 prefill已融合；其余域仍保留原路径 | F32受实际线程组资源限制，不能直接force；显式mask语义保留，D512仍在fused域外，见下 |
+| CPU Sink与混合旧pin F32 math | 原分支物化H×Q×KV scores/probabilities；CPU-only新pin普通F32/F16/BF16已走flash | 分块recipe已接官方gallocr与既有可恢复OOM补丁，冷reserve保留kPrepared；两pin各5项通过，实际私有分配请求156.48→48.97 MB，见下。其它CPU recipe仍用原arena |
+| Apple ordinary SDPA | F16/BF16受限无mask域已融合；GPU长Q静态fallback已按原数学16行分块 | 保留F32/显式mask语义；CPU stream、小Q、可能NAX的D256 causal无mask等仍走旧入口，不能据此称所有平方空间已消除 |
 | CPU Hadamard冷常量 | W²冷矩阵已由原生unary桥移除 | [前置源码复核](cpu-hadamard/source-feasibility.json)的API缺口已补；实际两pin/baseline/AVX2结果见下，不以dummy/null伪造矩阵storage |
 | FlatHash近阈值rolling churn / Queue政策 | map增长策略已修；bounded queue已完成容量/重试/完成合同对齐，其余政策不相同 | bounded 4P/4C冷trace四进程未复现Hyle更慢；A/A漂移仍明显，不能外推其它queue或warm吞吐 |
 
@@ -664,4 +665,42 @@ CPU program DLL均在计数前预热，未声称首次加载成本、全部alloc
 [摘要](cpu-hadamard/summary.json)/[源码原始包](cpu-hadamard/source-results.zip)保留全部命令、link maps、初次计数修正及真实shared边界结果。
 
 本批按先写`test.ps1`、核精确路径/size/SHA再删除的顺序，清理Windows Vulkan/queue8文件93754784 B、WSL HTTP2首批8文件5162160 B；
-CPU Hadamard约26.5 MB产物仍供下一CPU Sink闭包复用，原SDK/cache、源码与日志数据保留。
+CPU Hadamard产物曾供后续CPU Sink闭包复用；完成后统一回收冗余，只保留两pin最小native对象/DLL，原SDK/cache、源码与日志数据保留。
+
+## CPU math attention：官方allocator复用生命周期
+
+只让实际分块的Sink与混合旧pin F32 math recipe使用官方gallocr；其余CPU flash/paged、causal mask和小域策略保留。
+私有CPU buffer适配通过原AllocatorRef分配payload，真实容量的外部port描述器支持原有4 B偏移映射，不抬高caller对齐。
+冷reserve准备backing/元数据，首次真实映射后alloc_graph绑定；固定图重绑刷新roots/views，execution先于buffer/metadata退休。
+Q分块保留完整KV、scale/全Q因果偏移、原mask行与per-head sinks，平衡concat保持发布中间值和下游依赖，复制成本仍为O(output·log块数)。
+既有32条可恢复OOM edits移到common资源并按CPU pin认证，Vulkan最终allocator原字节不变；公共fault fixture原字节移至runtime测试目录。
+
+两个pin各5/5通过，原版各4/5，仅新增cold空间上界预期失败。FP64预算不变，覆盖Sink非零/全遮蔽mask、GQA/B2、布局/Dq≠Dv、
+负/零scale、tail、两独立slots和重绑、发布值→Neg；CPU-only普通flash作为未分块控制也通过。
+实际provider首次submit/重绑的AllocatorRef分配次数不增；独立native fixture的C malloc计数冷reserve12、first-bind仍12，逐冷失败回收通过。
+后者未注入实际provider，不将两项观察合称全heap监控或并发slot压力测试。
+
+冷Sink F32 B1/Q129/KV2049/H64/KV头1/D512：实际增量AllocatorRef私有请求156480184→48970792/48970760 B（两pin），包括arena/workspace/backing。
+caller逻辑需求43266820 B未在这个冷测试中分配，也未执行此大形状；数值由前述单独场景覆盖。不是RSS、瞬时peak或吞吐数据。
+[摘要](cpu-math-attention/summary.json)/[源码原始包](cpu-math-attention/source-evidence.zip)保留baseline失败、同pin host overlays、全部命令与root独立依赖锁检查。
+没有configure、SDK复制或全native构建；一般多节点CPU arena的生命周期复用尚未全面扩展。
+
+## Apple长Q fallback：逻辑分块还须服从实际提交窗口
+
+仅GPU、Q≥1024、静态确定原生会fallback且scores节省足够的域使用16行块；既有force融合和可能NAX的D256 causal无mask域优先保留。
+直接复用原MLX math的dtype/GQA、scale→QK→mask→precise softmax→PV，不对子块调用会改变kernel选择的fast SDPA。
+完整KV不裁短；因果行号为KV−全Q+块起点+局部行号。Bool全遮蔽保留finite-min后的uniform，Additive全−Inf保留原NaN。
+depends同时序列化Q与mask生成源，仍为纯lazy graph，不在tracing中eval/synchronize；最后一次concatenate，增加图元数据与launch。
+
+Air M4上新旧各6项回归通过，预算不变；覆盖非零QK、GQA、Q1025尾块、Q>KV因果全遮蔽、两布局/两batch、广播mask、双slot和重绑。
+最终再加GPU-only策略guard及显式causal/mask准入整理后，仅相关1项在两侧重跑通过；实测GPU空间路径不变，未重新计时/测空间。
+唯一空间形状F32 B1/H4/KV头2/D256、Q=KV2048、Bool dense mask：原额外MLX峰值83886080 B，初版64行块92274688 B（反增8 MiB）。
+只作一次16行调整后为61669376 B（−26.49%）；总peak104857608→82641912 B。两侧完整2097152输出均为1.25、误差0。
+输入QKV16 MiB、mask4 MiB；额外峰值包含8 MiB结果，submit前active差1008 B冷常量另列。不是严格provider-private、单块硬峰值或全设备VRAM。
+
+MLX每command buffer及active-task窗口会同时保留多个块，环境设置也影响峰值；不外推吞吐、全Apple suite或其它硬件。
+CPU stream、Q<1024、可能NAX等边界仍保留；Air若实际不启用NAX，其D256 causal无mask F32仍可能平方fallback。
+[摘要](apple-sdpa-blocks/summary.json)/[源码原始包](apple-sdpa-blocks/source-results.zip)保留64行负点、16行全结果、最终applied与measured源码差别；无SDK/metallib重建。
+
+本轮全部按`test.ps1`核精确路径/size/SHA清理：Windows两批79文件145734659 B、WSL15文件9385152 B、Air8文件36820176 B，合计191939987 B（约183 MiB）。
+仅保留两pin的4个最小CPU native对象/v2 DLL共4281057 B供继续复用；源码、压缩原始数据与原SDK/cache保留。
