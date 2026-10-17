@@ -518,9 +518,9 @@
     },
     {
       "module": "compute_route_apple",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/graph/inference-g09-correction-budget-continuation.md",
-      "summary": "G09 user-authorized budget continuation SCOPED: classify corrections by mechanism (product2/6, same-cause cap2), retain old failures/costs and original14:08 start; total6h ends20:08+0800. Read-only audit of Metal validation58368 versus declared29184 bytes and two host contexts. Actual device FAIL and missing gates remain; no product/native/P1 execution authorized at SCOPED."
+      "summary": "G09 continuation AUDITED for M1Q1 pipeline-resource query only: exact original MSL/library/constants, one helper TU, no GPU math dispatch; three fresh validation modes once within600s/20:08 deadline. Product2/6 and old failures retained; W1-W4/V1-V4 KEEP, no new product FIX or old fixture/P1 execution. Host entries remain unaudited for execution."
     },
     {
       "module": "graph_route_apple",
@@ -535,9 +535,9 @@
     },
     {
       "module": "compute_route_vulkan",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/graph/inference-g09-correction-budget-continuation.md",
-      "summary": "G09 user-authorized budget continuation SCOPED: classify corrections by mechanism (product2/6, same-cause cap2), retain old failures/costs and original14:08 start; total6h ends20:08+0800. Read-only audit of Metal validation58368 versus declared29184 bytes and two host contexts. Actual device FAIL and missing gates remain; no product/native/P1 execution authorized at SCOPED."
+      "summary": "G09 continuation AUDITED for M1Q1 pipeline-resource query only: exact original MSL/library/constants, one helper TU, no GPU math dispatch; three fresh validation modes once within600s/20:08 deadline. Product2/6 and old failures retained; W1-W4/V1-V4 KEEP, no new product FIX or old fixture/P1 execution. Host entries remain unaudited for execution."
     },
     {
       "module": "graph_route_vulkan",
@@ -653,15 +653,15 @@
     },
     {
       "module": "graph_route_cpu_apple",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/graph/inference-g09-correction-budget-continuation.md",
-      "summary": "G09 user-authorized budget continuation SCOPED: classify corrections by mechanism (product2/6, same-cause cap2), retain old failures/costs and original14:08 start; total6h ends20:08+0800. Read-only audit of Metal validation58368 versus declared29184 bytes and two host contexts. Actual device FAIL and missing gates remain; no product/native/P1 execution authorized at SCOPED."
+      "summary": "G09 continuation AUDITED for M1Q1 pipeline-resource query only: exact original MSL/library/constants, one helper TU, no GPU math dispatch; three fresh validation modes once within600s/20:08 deadline. Product2/6 and old failures retained; W1-W4/V1-V4 KEEP, no new product FIX or old fixture/P1 execution. Host entries remain unaudited for execution."
     },
     {
       "module": "graph_route_cpu_vulkan",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/graph/inference-g09-correction-budget-continuation.md",
-      "summary": "G09 user-authorized budget continuation SCOPED: classify corrections by mechanism (product2/6, same-cause cap2), retain old failures/costs and original14:08 start; total6h ends20:08+0800. Read-only audit of Metal validation58368 versus declared29184 bytes and two host contexts. Actual device FAIL and missing gates remain; no product/native/P1 execution authorized at SCOPED."
+      "summary": "G09 continuation AUDITED for M1Q1 pipeline-resource query only: exact original MSL/library/constants, one helper TU, no GPU math dispatch; three fresh validation modes once within600s/20:08 deadline. Product2/6 and old failures retained; W1-W4/V1-V4 KEEP, no new product FIX or old fixture/P1 execution. Host entries remain unaudited for execution."
     },
     {
       "module": "compute_stream",

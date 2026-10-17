@@ -1,13 +1,15 @@
 # G09 纠正预算接续与 Metal 失败归属审计
 
-状态：**SCOPED，2026-10-17**。用户明确要求“改一下机制，要不改一下上限”，并追问 Metal
+状态：**AUDITED（仅 M1Q1 资源诊断），2026-10-17**。用户明确要求“改一下机制，要不改一下上限”，并追问 Metal
 断言与 32,768 字节的含义。本卡按[按根因记账规则](../../../developer/review/module-closure-methodology.md#31-纠正预算按根因记账)
-接续审计；SCOPED 只授权本卡只读审计与文档/状态维护，不授权产品实现、native 重放或性能运行。
+接续审计。原 SCOPED checkpoint 为 `9b09b57af`；此前只读阶段事实保留。
+当前仅解锁末节冻结的 M1Q1 查询入口，不授权产品实现、原 fixture 重放或性能运行。
 
 ## 身份、范围与现状
 
 - owner：`graph_route_cpu_vulkan`、`graph_route_cpu_apple`、`compute_route_apple`、
-  `compute_route_vulkan`，均从 BLOCKED 恢复 SCOPED。API/算法不因改预算而变成已验收。
+  `compute_route_vulkan`，先从 BLOCKED 恢复 SCOPED，再按末节进入有限诊断 AUDITED。
+  API/算法不因改预算而变成已验收。
 - baseline：`401195a12232d7315f382f9c8658c4cad40d8cc1`；产品 checkpoint 保留
   `a0cc517332129c403b4e464a2e865712a2842290`。
 - 原记录：[完成唤醒主卡](inference-g09-completion-wake-correction.md)、
@@ -94,7 +96,7 @@ D256、paged 表、active length、causal 与 lease 语义。若备用路线需�
 这些是源码机制与边界对照，不是三家在本 Air、同输入和同 Metal 验证层下的运行 PASS。
 29,184→58,368 仍须有限诊断证据解释，不得直接按名义字节除二或把验证层限制调大。
 
-## 阶段与下一步准入
+## SCOPED 阶段的准入（当前以末节为准）
 
 SCOPED 本轮只运行文档/closure selector 与维护检查，读取原源码、缓存元数据、官方文档和
 已封存日志。不得启动旧 verify-v4、fixture、SDK、sanitizer、层变体或新 A/A/P1。
@@ -105,3 +107,35 @@ SCOPED 本轮只运行文档/closure selector 与维护检查，读取原源码�
 
 全部真实失败与未运行风险继续阻止聚合 CLOSED。原 SDK、旧 CUDA PASS 和窄 Windows device
 PASS 都不能代签新未运行门。当前仅解除机械次数上限导致的审计停止，尚未解除技术验证缺口。
+
+## AUDITED：M1Q1 的唯一有限诊断入口
+
+实现者与独立审查均已核定
+[冻结合同](../../../../evidence/correctness/inference-g09-completion-wake/m1-pipeline-query-contract.json)
+`48303c2b...afd9b` 及
+[源码独审](../../../../evidence/correctness/inference-g09-completion-wake/m1-pipeline-query-source-review.json)
+`62ffa4fc...c6df`，只签 SOURCE。入口源码与只读身份在
+[冻结包](../../../../evidence/correctness/inference-g09-completion-wake/m1-pipeline-query-entry.zip)。
+四 owner 进入 AUDITED 仅承载本节诊断；W1–W4/V1–V4 保持 KEEP，**没有新产品 FIX 授权**。
+若查询形成具体纠正设计，须先更新有限 FIX、独审并提交，再改产品。
+
+- 精确原 kernel：half、BQ32/BK16/BD256/BV256/WM4/WN1，原完整函数名/八项 Bool 常量、
+  123,307 字节 MSL 与 SHA `5749a119...22e77f`；不以普通 SDPA 或 NAX 代替 paged 变体。
+- 单私有 query TU，复用原两枚字符串对象、原 source facet `libmlx.dylib`、原共享 DSO 邻置
+  metallib 与原 Safe/MSL 默认值。直接工厂因未导出不可用，复用原导出的 Device 工厂与完全
+  相同 MSL；不修改 exports、不重编产品/vendor，不更新原 cache。
+- 只创建/查询 pipeline：staticThreadgroupMemoryLength、device 上限、maxthreads、
+  execution width 与 shaderValidation。helper 不创建 encoder、不调 eval/dispatch/queue submit；
+  原 Device 冷初始化及 Apple compiler/validation 内部资源不声明为零。原 encoder 动态内存
+  **NOT_OBSERVED**，不能填零。
+- 三个 fresh process，顺序为无验证、API-only、API+GPU，各一次；实际层激活与 requested env
+  分开记录。它们是资源归因诊断，不是减少原验收验证层或新增性能资格尝试。
+- 固定阶段：configure（45秒）→plan（15秒）停审，实际必须只有 1 TU+1 link；再逐次 GO
+  build（60秒）/otool（10秒）停审，再三次 query（各90秒）。独立入口总限600秒，与原20:08
+  截止共同约束；nice10、串行，compile -j1。任一失败/超时保留结果，不自动重跑或追加dispatch。
+- source/objects/library/metallib/CompileOptions 头/controls 每阶段前后核 SHA；结果只允许
+  解释本 pipeline 的资源差异或保持 UNKNOWN，不能签原 correctness/device/SDK/P1 PASS。
+
+H1/H2 只读方案已查明：Apple TSan 要显式 cpu;apple 并清旧 G10 hook，且全阶段恢复原模型；
+Vulkan ASan 要以真实 `/usr/bin/c++` 独立 context 保留路径 guard，并核真实 Vulkan owner/
+fixture 的 sanitizer 编译项。新 host 控制入口仍未冻结、未授权运行，不因 M1Q1 解锁而解锁。

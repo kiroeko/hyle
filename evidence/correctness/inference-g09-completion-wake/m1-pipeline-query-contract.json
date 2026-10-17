@@ -1,0 +1,204 @@
+{
+  "schema": 1,
+  "state": "PREPARATION_ONLY_NO_CONFIGURE_BUILD_OR_PIPELINE_EXECUTED",
+  "remote_directory": "/Users/kiro/hyle-scratch/g09-completion-wake-correction/m1-pipeline-query-20261017",
+  "scope": "M1Q1 original failed pipeline resource attribution only. Single helper TU, original two generated-string objects, original same-facet libmlx/Metal. No product/vendor compilation, original fixture run, encoder creation, eval, explicit buffer creation, GPU math dispatch, or queue submission in helper.",
+  "product_baseline": "a0cc517332129c403b4e464a2e865712a2842290",
+  "continuation_scope_checkpoint": "9b09 (parent resolves complete commit)",
+  "entry_files": [
+    {
+      "path": "/Users/kiro/hyle-scratch/g09-completion-wake-correction/m1-pipeline-query-20261017/query.cc",
+      "sha256": "20fa723861435476d17e49b651eac40ed010f413c3ec7a7eb1d7d28c1c7ced99",
+      "bytes": 7106
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/g09-completion-wake-correction/m1-pipeline-query-20261017/CMakeLists.txt",
+      "sha256": "32694358cad11fc5c2ddbf08bbc20cc7908ea5fcf2bffedf804ccc12aac20bc8",
+      "bytes": 1732
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/g09-completion-wake-correction/m1-pipeline-query-20261017/supervise.py",
+      "sha256": "eb731c1cb4dc56ac6deaac817e6ce97ae2e9aa20dc6e7462fa19654ab03cc6ed",
+      "bytes": 8555
+    }
+  ],
+  "original_inputs": [
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-build/hyle/_deps/mlx-08f74cff0c0143c5/source/mlx/array.h",
+      "sha256": "5c90807aa44226c557c5bda740bdc1732109810e8862697ad5d374092669db65",
+      "bytes": 17893
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-build/hyle/_deps/mlx-08f74cff0c0143c5/source/mlx/backend/metal/device.h",
+      "sha256": "ab1e07495b916a86eb762cddc68c6f1ae5e4c61020baacdea3c0dadd59150603",
+      "bytes": 7964
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-build/hyle/_deps/mlx-08f74cff0c0143c5/source/mlx/backend/metal/kernels.h",
+      "sha256": "c40fe30e2f71e19203dac1991d1b340155881d3a94a774752d7c42ff84992e04",
+      "bytes": 10546
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-build/hyle/_deps/mlx-08f74cff0c0143c5/source/mlx/backend/metal/jit_kernels.cpp",
+      "sha256": "63ca81b97f2c9afad509ebd8ad7687369b0564efada95b067b4410e575e2ec68",
+      "bytes": 44606
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-build/hyle/_deps/mlx-08f74cff0c0143c5/source/mlx/backend/metal/kernels/steel/attn/kernels/steel_attention.h",
+      "sha256": "fc2a9a08032a7be4f59ec39e6e1f0d5ff624a47cadb90a71f23a5ba5329de5d8",
+      "bytes": 16776
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-build/hyle/_deps/mlx-08f74cff0c0143c5/source/mlx/backend/metal/device.cpp",
+      "sha256": "008b67e599f5508ab670a91f2ea80372162a8767b5226fbbeb9f3d23c85cdb7c",
+      "bytes": 30586
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-build/hyle/_deps/metal-cpp-08f74cff0c0143c5/source/Metal/MTLComputePipeline.hpp",
+      "sha256": "07e1903f91380ca6ba32835fe7656992dee6b96c11474029801607e40c9eaf29",
+      "bytes": 17245
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-build/hyle/_deps/mlx-build/libmlx.dylib",
+      "sha256": "2b976f95a0fb977c0a1adf84510d80d905d90e5cbdb644c0cf5356e63fe78d85",
+      "bytes": 6209056
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-build/hyle/_deps/mlx-build/mlx/backend/metal/kernels/mlx.metallib",
+      "sha256": "2f149b1a4c8fccd585410c1ee4abb0e5a711a574935d4dcc24f4458f5c9951d4",
+      "bytes": 1666984
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-build/CMakeCache.txt",
+      "sha256": "22eda5e31b9a558bd84264c14382339a733e2f62b16663725e818fc38d744a04",
+      "bytes": 41562
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-build/hyle/_deps/mlx-build/mlx/backend/metal/jit/utils.cpp",
+      "sha256": "0ce8973bb883011cec354c6ba197d0e3939dfed7889541fbee41b688413f236c",
+      "bytes": 53098
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-build/hyle/_deps/mlx-build/CMakeFiles/mlx.dir/mlx/backend/metal/jit/utils.cpp.o",
+      "sha256": "8b7ed1c62985d27c0d7958ee6dfc4898806cd687b269e0ddb4952f6484408208",
+      "bytes": 53680
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-build/hyle/_deps/mlx-build/mlx/backend/metal/jit/steel_attention.cpp",
+      "sha256": "dad97d3d12b1d85f2179750eea49d1b2ce57ba4a44144359ffd1d0ca4403315e",
+      "bytes": 70224
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-build/hyle/_deps/mlx-build/CMakeFiles/mlx.dir/mlx/backend/metal/jit/steel_attention.cpp.o",
+      "sha256": "b481ed00859b8daecc2c8c67360be27bae150df2157c0c0186f8a903f913b117",
+      "bytes": 70816
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-build/hyle/_deps/mlx-build/mlx.metallib",
+      "sha256": "2f149b1a4c8fccd585410c1ee4abb0e5a711a574935d4dcc24f4458f5c9951d4",
+      "bytes": 1666984
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-build/hyle/_deps/mlx-08f74cff0c0143c5/source/mlx/backend/common/metal_kernel.h",
+      "sha256": "b64ca4cebcba530d8ec1e0a0f23b57313507a37d05e3615ded3796b563cc83fc",
+      "bytes": 560,
+      "qualification": "Exact actual-cache SHA equals original pinned 1f8e74 tar unpatched header; inline CompileOptions default MathMode::Safe (0). Executed source read only."
+    }
+  ],
+  "global_deadline_utc": "2026-10-17T12:08:00+00:00",
+  "private_max_elapsed_seconds": 600,
+  "budget_reset": false,
+  "product_attempt_budget_unchanged": true,
+  "source_mapping": {
+    "frozen_original_header_sha256": "fc2a9a08032a7be4f59ec39e6e1f0d5ff624a47cadb90a71f23a5ba5329de5d8",
+    "frozen_original_jit_sha256": "63ca81b97f2c9afad509ebd8ad7687369b0564efada95b067b4410e575e2ec68",
+    "kernel_base": "steel_attention_float16_bq32_bk16_bd256_wm4_wn1_maskfloat16_bv256",
+    "kernel_hash": "steel_attention_float16_bq32_bk16_bd256_wm4_wn1_maskfloat16_bv256_align_Q_n_align_K_n_has_mask_n_do_causal_t_has_sinks_n_hyle_1_0_0",
+    "template_instantiation": "\ntemplate [[host_name(\"steel_attention_float16_bq32_bk16_bd256_wm4_wn1_maskfloat16_bv256\")]] [[kernel]] decltype(attention<half, 32, 16, 256, 4, 1, half, float, 256, half>) attention<half, 32, 16, 256, 4, 1, half, float, 256, half>;\n",
+    "factory": "Reuse original prebuilt metal::utils() + metal::steel_attention() source-string objects. Append exact original get_template_definition output. Call original exported Device::get_library(base,builder) then Device::get_kernel(base,library,hash,constants). No whole jit_kernels object link or vendor source compilation.",
+    "reason_for_minimal_equivalent_factory": "get_steel_attention_kernel has no MLX_API export in this shared facet; direct dylib-only linking is unavailable. Original source-string objects have no undefined symbols.",
+    "constant_ids_values": {
+      "200": false,
+      "201": false,
+      "300": false,
+      "301": true,
+      "302": false,
+      "303": true,
+      "304": false,
+      "305": false
+    },
+    "CompileOptions": "Original Device inline overload supplies CompileOptions{} using actual-cache metal_kernel.h, whose SHA is pinned against original locked tar. Default MathMode::Safe (0) is retained. Original prebuilt Device::build_library_ selects its original runtime MSL version; libmlx was built NDEBUG and MLX_METAL_NO_NAX.",
+    "raw_msl_bytes": 123307
+  },
+  "expected_msl_sha256": "5749a119fa92574afd316b2a551577c2d95ab9f9bcf1d76605372068f022e77f",
+  "default_metallib": {
+    "custom_override": "Require original get_metallib_path() empty; helper does not call setter.",
+    "lookup": "Original libmlx current_binary_dir() uses dladdr(&current_binary_dir) and returns original dylib directory; first load_colocated_library(mlx) finds same-directory mlx.metallib.",
+    "first_existing_path": "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-build/hyle/_deps/mlx-build/mlx.metallib",
+    "sha256": "2f149b1a4c8fccd585410c1ee4abb0e5a711a574935d4dcc24f4458f5c9951d4",
+    "fallback_compiled_METAL_PATH": "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-build/hyle/_deps/mlx-build/mlx/backend/metal/kernels//mlx.metallib",
+    "fallback_same_sha256": true,
+    "original_fixture_bin_copy": "Same SHA exists beside original fixture, but that copy is not asserted to be the actually loaded first resource."
+  },
+  "process_contract": {
+    "variants_in_order": [
+      {
+        "label": "none",
+        "MTL_DEBUG_LAYER": null,
+        "MTL_SHADER_VALIDATION": null
+      },
+      {
+        "label": "api",
+        "MTL_DEBUG_LAYER": "1",
+        "MTL_SHADER_VALIDATION": null
+      },
+      {
+        "label": "api_gpu",
+        "MTL_DEBUG_LAYER": "1",
+        "MTL_SHADER_VALIDATION": "1"
+      }
+    ],
+    "fresh_processes": 3,
+    "attempts_per_variant": 1,
+    "automatic_retries": 0,
+    "environment": "Reject ambient MLX_* or DYLD_* overrides; record then clear ambient MTL_* before all three variants. The variants differ only in the two selected MTL variables. Do not alter fail mode or disable selected shader checks.",
+    "requested_vs_actual": "Record requested environment, raw activation logs, and pipeline-reported shaderValidation numeric separately; missing activation is not a qualified product verdict.",
+    "priority": "nice 10; serial; top-level helper thread count one; OMP/MKL/OpenBLAS threads one. Apple compiler/validation/service internal concurrency/resources are not measured or claimed absent.",
+    "limits": "configure 45s, dryplan15s, build60s, otool10s, each fresh query90s. 600s private entry wall budget and inherited 20:08 +0800 deadline both enforced. Stop at any stage failure/timeout; terminate only own process group, preserve partial logs, no replay."
+  },
+  "build_contract": {
+    "configure": "Standalone CMake Ninja project, original compiler /usr/bin/clang++, arm64, macOS14.4 deployment, original MacOSX SDK, Release. No find_package(Hyle), add_subdirectory or dependency fetch. Ordinary CMake compiler identity/ABI checks may compile small toolchain probes; they do not invoke Metal or rebuild product.",
+    "target_plan_required": "Exactly one new query.cc compilation and one executable link; link two original EXTERNAL_OBJECT .o files and original imported libmlx.dylib/frameworks. No target references to product/vendor build rules. Dryplan before build; independent GO on actual plan.",
+    "original_prebuilt_string_object_bytes": 124496,
+    "actual_dryplan": "NOT_RUN; source-only proposed bound, not a build PASS."
+  },
+  "attribution_limits": [
+    "Helper explicitly never obtains a command encoder, evaluates an array, creates an MTLBuffer, or calls dispatch/queue submit. This does not claim that Device cold initialization or Apple compiler/validation internals create no queues, buffers, or other resources.",
+    "No helper encoder exists, so dynamic bytes are NOT_OBSERVED, not an original-fixture measurement of zero.",
+    "If all three pipeline static queries are 29184, the original encode-time 58368 remains UNKNOWN. Do not add a dispatch to force a result.",
+    "A validation-only pipeline increase identifies a compiler/validation resource difference for this exact source, not a universal shadow-memory doubling rule.",
+    "Original combined API+GPU fixture run stays FAIL. This diagnostic cannot satisfy original ordinary correctness, device, SDK, performance, or closure gates."
+  ],
+  "preparation_notes": [
+    "Read-only first SSH command used nonexistent /opt/homebrew/bin/python3 and failed before Python; corrected to actual /usr/bin/python3. No helper, pipeline or native math ran.",
+    "Read-only whole-JIT object symbol closure exploration found hidden get_type_string unresolved. No compilation/link was attempted. Final entry instead reuses only the two no-undefined source-string objects."
+  ],
+  "supporting_readonly_records": [
+    {
+      "path": "m1-air-readonly-source-bindings.json",
+      "sha256": "b15789fd7bd5bd851f50cec5b82b0afae1ffd335d1b831b85108387438cfe2d5"
+    },
+    {
+      "path": "m1-air-readonly-private-symbols.json",
+      "sha256": "43b98cf0bb91c47f71d6a6e43f3c47bd5123ac0a6f33b0895298a2d6a9e14cec"
+    },
+    {
+      "path": "m1-air-readonly-link-closure.json",
+      "sha256": "f0b4693750799d8bf533f88a6c4abe8a58840273e24e3b4570813c135d77e0bb"
+    },
+    {
+      "path": "m1-air-readonly-original-msl.json",
+      "sha256": "7dc6009a2181d88d4991ecc39ddb019ee1a28b076cd0015141da762de70626ee"
+    }
+  ]
+}

@@ -1,0 +1,62 @@
+{
+  "schema": 1,
+  "kind": "INDEPENDENT_M1Q1_SOURCE_ENTRY_REVIEW",
+  "reviewer": "/root/budget_policy_review",
+  "reviewed_utc": "2026-10-17T09:49:19+00:00",
+  "verdict": "PASS_SOURCE_ONLY",
+  "unresolved_source_musts": [],
+  "scoped_checkpoint": "9b09b57af6639b77ed01cba85baaccad0755ada4",
+  "product_checkpoint": "a0cc517332129c403b4e464a2e865712a2842290",
+  "reviewed_files": {
+    "query.cc": "20fa723861435476d17e49b651eac40ed010f413c3ec7a7eb1d7d28c1c7ced99",
+    "CMakeLists.txt": "32694358cad11fc5c2ddbf08bbc20cc7908ea5fcf2bffedf804ccc12aac20bc8",
+    "supervise.py": "eb731c1cb4dc56ac6deaac817e6ce97ae2e9aa20dc6e7462fa19654ab03cc6ed",
+    "contract.json": "48303c2bb907244ae5915f0f5a956982e4e2757b6fb542cb929872d7c0dafd9b"
+  },
+  "source_equivalence_review": {
+    "locked_mlx_revision": "1f8e74e3f12f31365464a6867c6579f0e9b29d85",
+    "locked_archive_sha256": "cb988a5bdc38c798918d042b9b1c6edda3ccc5f23a2155138d3aa5c1b2acc301",
+    "method": "Read original tar and canonical ordered patches in memory; compare original host dispatch, JIT factory, template helper and Device implementation against the private helper. Read all four frozen entry files and supporting original-image/string-object/source receipts. No native compilation or execution by reviewer.",
+    "base": "steel_attention_float16_bq32_bk16_bd256_wm4_wn1_maskfloat16_bv256",
+    "specialized_hash": "steel_attention_float16_bq32_bk16_bd256_wm4_wn1_maskfloat16_bv256_align_Q_n_align_K_n_has_mask_n_do_causal_t_has_sinks_n_hyle_1_0_0",
+    "template_arguments": ["half", 32, 16, 256, 4, 1, "half", "float", 256, "half"],
+    "bool_constant_ids_values": {
+      "200": false, "201": false, "300": false, "301": true,
+      "302": false, "303": true, "304": false, "305": false
+    },
+    "template_instantiation": "Byte-equivalent original get_template_definition output, including host_name, decltype, argument order, spaces and newlines. Host name is base; original Device supplies the specialized hash.",
+    "factory": "Original hidden get_steel_attention_kernel cannot be linked from this shared DSO. Its exact original utils/steel source strings plus exact instantiation are passed through the same exported Device::get_library and Device::get_kernel APIs. No ordinary-SDPA fallback, NAX kernel, new tile or whole-JIT object was substituted.",
+    "full_msl_bytes": 123307,
+    "full_msl_sha256": "5749a119fa92574afd316b2a551577c2d95ab9f9bcf1d76605372068f022e77f",
+    "msl_guards": "Helper verifies both embedded source-string SHA values and full instantiated MSL SHA before Device/pipeline construction. Supervisor verifies original generated source and two prebuilt string-object inputs before and after every stage.",
+    "compile_options": "Inline Device overload supplies CompileOptions{} from the guarded common/metal_kernel.h: MathMode::Safe=0. Original DSO selects MSL version and preserves its NDEBUG build behavior. No custom newLibrary/math-mode path.",
+    "compile_options_header_sha256": "b64ca4cebcba530d8ec1e0a0f23b57313507a37d05e3615ded3796b563cc83fc",
+    "module_guard": "dladdr of metal::device must name the exact original same-facet libmlx.dylib, whose SHA is checked by supervisor.",
+    "metallib_equivalence": "Canonical Context::create calls read_environment -> device_info(gpu), then new_stream, without setting metallib path or math/TF32 options. Original MLX current_binary_dir uses dladdr of its own function; both shared-facet callers therefore use the original libmlx directory. The exact first colocated mlx.metallib and compiled fallback file are SHA-guarded. The old fixture-bin copy is not misreported as the actual first-loaded resource. Helper requires the original empty override and does not call its setter."
+  },
+  "entry_review": {
+    "build": "Standalone CMake target, exactly one new helper TU and one link with two unchanged external string objects and imported original DSO. No product add_subdirectory, find_package(Hyle), fetch or vendor/shader build rules. Actual configure/dryplan still require execution and independent inspection.",
+    "finite_stages": ["configure", "plan", "build", "query"],
+    "processes": "Exactly three one-shot fresh processes: none, API-only, API+GPU. Ambient MTL keys are recorded and cleared; ambient MLX/DYLD overrides are refused. Only the two declared MTL variables differ.",
+    "activation": "Requested environment, raw API/GPU activation markers and pipeline.shaderValidation numeric are recorded separately. Missing activation cannot qualify a product or establish the intended layer comparison.",
+    "observations": "Read pipeline static threadgroup bytes/max threads/execution width/shaderValidation, device limit/name/architecture, exact source/kernel identity. Over-limit bytes are reported rather than discarded by a helper memory-limit assertion.",
+    "no_workload": "Source contains no array/eval, command encoder, explicit MTL buffer creation, dispatch or queue submission. This is not a claim that Apple compiler/validation or Device cold initialization has no internal resources.",
+    "budgets": "nice10, serial, helper build -j1, one-shot stages, frozen contract/binary hashes, 600-second entry wall budget and inherited 2026-10-17T12:08:00Z deadline. Remaining private/global budget is checked before each bounded command. Failures and partial logs persist; only own child process group is terminated on timeout.",
+    "source_checks_performed": ["Read all frozen entry files", "Recompute all four SHA256 values", "Parse supervisor AST without executing it", "Compare CompileOptions header SHA with original locked tar"],
+    "source_findings_resolved_before_execution": [
+      "Initial private dryplan regex matched legitimate utils.cpp.o / steel_attention.cpp.o link inputs as source recompilation; final supervisor no longer has this false rejection and still requires two actions with one query.cc compile.",
+      "Inline CompileOptions default source was stated but initially not SHA-guarded; final contract guards common/metal_kernel.h and its original Safe=0 default."
+    ]
+  },
+  "execution_authorization_boundary": "This review may support AUDITED for M1Q1 diagnostic only. Root must commit the phase/entry, then separately authorize one configure -> plan sequence and stop for actual-plan review. Build and the three queries need subsequent root GO. No original fixture, host sanitizer, SDK, performance run, product modification or closure verdict is authorized by this source-only review.",
+  "interpretation_limits": [
+    "Original API+GPU fixture failure remains FAIL.",
+    "Helper has no original encoder; its dynamic threadgroup state is NOT_OBSERVED, not measured zero.",
+    "If all three static queries are 29184, original encode-time 58368 remains unexplained; stop this entry without adding a dispatch or layer variant.",
+    "A validation-specific change would identify a resource difference only for this frozen source/pipeline; it does not prove a universal factor-of-two rule or a product correctness PASS.",
+    "H1/H2 host context designs and all original product/device/delivery/performance gates remain separately unproven."
+  ],
+  "native_execution_by_reviewer": false,
+  "ssh_by_reviewer": false,
+  "runtime_gate_claims": "NONE"
+}
