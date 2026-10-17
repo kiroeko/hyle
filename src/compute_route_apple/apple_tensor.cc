@@ -447,6 +447,10 @@ mx::array lower_attention(const ScaledDotProductAttention &attention,
   const bool force_fused = stream.device == mx::Device::gpu &&
       ((query.dtype() == mx::float16 || query.dtype() == mx::bfloat16) ||
        (query.dtype() == mx::float32 &&
+        // Keep the existing route if converting scale to log2 would overflow.
+        std::abs(static_cast<double>(attention.scale)) *
+                static_cast<double>(1.4426950408889634F) <=
+            static_cast<double>(std::numeric_limits<float>::max()) &&
         (query.shape(3) == 192 ||
          (query.shape(3) == 256 && attention.causal)) &&
         known_gpu_without_nax())) &&

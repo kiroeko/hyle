@@ -347,4 +347,48 @@ TEST(AppleAttention, HalfPrefillRetainsWeakProbabilitiesBeforeLargeValues) {
       }
   }
 }
+TEST(AppleAttention, ExtremeFiniteFloat32ScaleRetainsZeroScoreReference) {
+  constexpr int heads = 2, kv_heads = 1, queries = 9, keys = 17;
+  auto context = a::Context::create().value();
+  for (int depth : {192, 256}) {
+    const bool causal = depth == 256;
+    std::vector<double> v(kv_heads * keys * depth);
+    for (int s = 0; s < keys; ++s)
+      for (int d = 0; d < depth; ++d)
+        v[s * depth + d] = double((s * 7 + d * 3) % 19 - 9) / 8;
+    const std::array inputs{
+        make(std::vector<double>(heads * queries * depth),
+             {1, heads, queries, depth}, mx::float32),
+        make(std::vector<double>(kv_heads * keys * depth),
+             {1, kv_heads, keys, depth}, mx::float32),
+        make(v, {1, kv_heads, keys, depth}, mx::float32)};
+
+    // Exact zero Q/K scores give a uniform distribution over visible keys.
+    // V's binary fractions are exactly representable as F32. Compute each
+    // nontrivial channel/prefix mean in FP64, independently of native SDPA.
+    std::vector<double> expected(heads * queries * depth);
+    for (int h = 0; h < heads; ++h)
+      for (int t = 0; t < queries; ++t) {
+        const int visible = causal ? keys - queries + t + 1 : keys;
+        for (int d = 0; d < depth; ++d) {
+          double sum = 0;
+          for (int s = 0; s < visible; ++s)
+            sum += v[s * depth + d];
+          expected[(h * queries + t) * depth + d] = sum / visible;
+        }
+      }
+    for (float scale : {std::numeric_limits<float>::max(),
+                         -std::numeric_limits<float>::max()}) {
+      SCOPED_TRACE(::testing::Message() << "depth=" << depth
+          << " causal=" << causal << " scale=" << scale);
+      auto output = execute(context, c::ScaledDotProductAttention{
+          .layout = c::AttentionLayout::kBatchHeadSequenceDepth,
+          .scale = scale, .causal = causal}, inputs);
+      ASSERT_TRUE(output) << output.error().message();
+      ASSERT_EQ(output->dtype(), mx::float32);
+      // Reuse the existing F32 rel6e-6 + abs2e-6 comparison unchanged.
+      expect(*output, expected);
+    }
+  }
+}
 } // namespace
