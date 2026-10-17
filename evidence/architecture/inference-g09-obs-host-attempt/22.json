@@ -1,0 +1,206 @@
+{
+  "schema": "hyle.independent-review/g09-obs-entry/v1",
+  "review": "R22",
+  "created_utc": "2026-10-17T03:54:38.146252+00:00",
+  "decision": "SUPPORT_ONE_FIXED_OBS_FREE_WINDOWS_VULKAN_ATTEMPT_AFTER_AUTHORIZATION_SEAL_AND_CLEAN_COMMIT",
+  "scope": "Offline source/contract/entry review only. No native execution, build, GPU, workload qualification, A/A, A/B or performance sample performed by reviewer.",
+  "reviewed_snapshots": {
+    "initial_launcher_sha256": "c43a9345599273b557e7fad771a9348644d301d69c4063c8196751c20eba04c2",
+    "final_launcher_sha256": "72bc687bcd9ae43987c85e79fe34275e42856bcae0687abd9bd54cdba782d8b3",
+    "private_base_commit": "35ec95dbfb7012c746c4a4114c5b3bcffaf3d12e"
+  },
+  "finding_history": [
+    {
+      "id": "R22-M1",
+      "severity": "MUST",
+      "state": "RESOLVED_IN_READ_SNAPSHOT",
+      "initial_anchor": "g09_run_obs_host.py:55-87 (initial snapshot)",
+      "defect": "After Popen, affinity or save failure recorded LAUNCH_FAIL but did not stop its still-running owned runner/descendants; the declared one-attempt failure stop could be bypassed.",
+      "fix_anchor": "g09_run_obs_host.py:55,85-99 (final snapshot)",
+      "fix": "Keep child=None before launch. On exception, record owned PID; if still live, taskkill /PID child.pid /T /F and retain cleanup exit/stdout/stderr, kill parent if necessary, wait and record exit, then retain LAUNCH_FAIL and rethrow. No restart.",
+      "verification": "Read actual final source; cleanup success is not claimed tested. No new remaining correctness MUST found in the bounded entry review."
+    }
+  ],
+  "checks": [
+    {
+      "item": "Comparison and consumer invariance",
+      "verdict": "PASS_STATIC",
+      "anchors": [
+        "validate_obs_host.py:1-74,142-177,236-265",
+        "original runner.py:834-839"
+      ],
+      "facts": "Exact JSON delta is only /id, /claim, /extensions/runner/validators (old validator filename replaced). All work, strata, data, ownership/completion/retirement, cold/warm boundaries, estimator, n15->31, 5%/10%, controls and build fields are unchanged. Eight actual compile inputs are byte-equal to fixed 35ec commit. Original runner builds only three declared adapter TUs with --parallel 2; no product/facade/native rebuild."
+    },
+    {
+      "item": "OBS environment propagation",
+      "verdict": "PASS_STATIC",
+      "anchors": [
+        "g09_run_obs_host.py:36-43,58-59",
+        "original runner.py:1157-1196,1894-1903",
+        "validate_obs_host.py:105-120,202-206"
+      ],
+      "facts": "Launcher sets ordinary DISABLE_VULKAN_OBS_CAPTURE=1 before original runner startup. Original command validators inherit that environment; _child_environment keeps this nonblocked, non-HYLE-prefix, noncontrolled name for formal product/control children. Private verify/A/A additionally set it explicitly. No public environment policy change or additional overlay exclusion. CUDA/NVTX injection variables are refused."
+    },
+    {
+      "item": "Verify, all qualification phases and ready ordering",
+      "verdict": "PASS_STATIC",
+      "anchors": [
+        "validate_obs_host.py:77-102,135-138,202-240,249-275"
+      ],
+      "facts": "Ready starts FAIL before auth/environment checks. One verify must exit0 with exact four workload snapshot labels, a Vulkan loader per phase, no known OBS path/basename, four before and four after full-oracle markers and eight successful destroy markers. Only then are baseline/candidate x execution-order x allocation-order (8 processes) run. Original factor median 5% and individual gross 10% rules remain. Only successful original A/A plus host recheck writes ready PASS; failures retain FAIL and existing no-repeat policy."
+    },
+    {
+      "item": "Post-sampling revalidation",
+      "verdict": "PASS_STATIC",
+      "anchors": [
+        "validate_obs_host.py:94-102,183-194",
+        "original runner.py:2210-2225,2242-2249,2292-2330"
+      ],
+      "facts": "The retained-PASS branch rebinds identical identity and hashes all nine qualification logs, rechecks those logs and every output/raw/n-*/product-*.log, and records host FAIL on exception. Initial pre-sampling host record can correctly contain zero product logs; original collector subsequently creates/attests required products and post-validator checks them before overall qualification. Snapshot checks are outside timed regions. No claim of continuous module tracing."
+    },
+    {
+      "item": "Fixed attempt and provenance",
+      "verdict": "PASS_STATIC_WITH_PREEXECUTION_CONDITIONS",
+      "anchors": [
+        "g09_run_obs_host.py:11-34,41-49,55-99",
+        "validate_obs_host.py:105-120,142-172"
+      ],
+      "facts": "Fixed build/output must not exist. Launcher demands clean private source and exact clean original peer; auth binds build/output and file hashes. New validator retains R18 authorization, actual .text, original instrument/source/SDK/resource identities and G09_BASE/peer root/cache/three-TU commands. Same-PID time extensions do not restart qualification. New auth and new clean private commit are not yet present in the reviewed snapshot, so neither is signed as satisfied."
+    }
+  ],
+  "fixed_paths": {
+    "build": "C:/h7/g09-p1-instrument/vulkan/qualified-build-obs-free-1",
+    "output": "C:/public/project-hyle/hyle/.scratch/inference-gaps/g09-p1-obs-free-1/evidence"
+  },
+  "before_execution": [
+    "Seal obs-host-authorization.json over the actual final launcher, new validator/contract, current manifest/hook/OBS metadata, R21/R22 and immutable R18/old contract/old validator identities as declared; bind the fixed paths.",
+    "Commit only the new private inputs and authorization into a clean private Git revision. The present new files are untracked, so current entry intentionally cannot launch.",
+    "Retain every prior failed attempt. Execute at most the card-frozen fresh verify and 8 A/A; only actual PASS permits the original n15->31/P1. Any identity/no-OBS/oracle/retirement/A/A failure stops this attempt; no other overlay exploration or same-configuration retry."
+  ],
+  "limits": [
+    "Actual host normalization, native verify/exit, A/A readiness, formal observations, controls and performance verdict remain NOT_RUN by this review; static synthetic checks are not native qualification.",
+    "The four existing snapshots are pre-timing point observations, not continuous absence of injection and not proof that OBS caused the historical bias. nvspcap may remain; no all-capture-free claim.",
+    "Current manifest/hook identities are current observations only, not historical DLL/source identity. R21 facts.scope typo32 is retained; actual count is36=4profiles x9logs.",
+    "This supports only Windows Vulkan host normalization. No Air result, product performance defect, G10 change, product owner reopening, statistical relaxation or new framework is authorized."
+  ],
+  "inputs": [
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g09_run_obs_host.py",
+      "sha256": "72bc687bcd9ae43987c85e79fe34275e42856bcae0687abd9bd54cdba782d8b3",
+      "bytes": 5356
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g09-p1-instrument-adapter\\validate_obs_host.py",
+      "sha256": "1d69f2daa5e5aaf84dd9b61028e5476cf2a27c3ea662d5b3c9727322c1292f5a",
+      "bytes": 16532
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g09-p1-instrument-adapter\\contract-windows-vulkan-obs-free.json",
+      "sha256": "56432f9f1a3a4436584bcb2976540a98d54afbdf5e48b6142ba85afc24359a66",
+      "bytes": 21640
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g09-p1-instrument-adapter\\validate_aa.py",
+      "sha256": "1b72362ddf5189a5fc5df7eaa8034b8ae57df0ba0dfe1437867e380757e28ecf",
+      "bytes": 13070
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g09-p1-instrument-adapter\\contract-windows-vulkan.json",
+      "sha256": "25a85764b3d91b69ddbd08a06503bc772b45a451733890424a2ed00e162280c0",
+      "bytes": 21961
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g09-p1-instrument-adapter\\review-authorization.json",
+      "sha256": "b811021521fb276055b9482062b85772d6239fa4b189536b4b58579bba2fd4fd",
+      "bytes": 6248
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g09-p1-instrument-adapter\\CMakeLists.txt",
+      "sha256": "66cda4c10e246806c47a18465f4acbc9212fba2740e104c10d23f83d65a320a8",
+      "bytes": 3576
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g09-obs-host-review-21.json",
+      "sha256": "0723f499cfb5ec3109318b4a755556ff4b9a8fa3065c788d46746d30a3d7d06b",
+      "bytes": 24125
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g09-obs-entry-checks-22\\checks.json",
+      "sha256": "ab893f1806a42ae12d1ca41aed93b4a9078d61f737bec06af8b23cd4718886c5",
+      "bytes": 1164
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\docs\\implementation\\tasks\\tooling\\inference-g09-native-workload-aa.md",
+      "sha256": "388d73c975266631efd221d1656c04949daec0d918d99f772eff617b5cd14f49",
+      "bytes": 6452
+    },
+    {
+      "path": "C:\\h7\\g09-p1-peer-9e2\\scripts\\hyle_perf\\runner.py",
+      "sha256": "df415c5bb04c1096c568cae75c84e83672d2282ef43c7965d905f3ba1d21e022",
+      "bytes": 115468
+    },
+    {
+      "path": "C:\\h7\\g09-p1-peer-9e2\\scripts\\hyle_perf\\environment.py",
+      "sha256": "a47cd3fb09787244136aba46dd628c0172ecef37bd8b234c631bc834351ccc79",
+      "bytes": 6640
+    },
+    {
+      "path": "C:\\ProgramData\\obs-studio-hook\\obs-vulkan64.json",
+      "sha256": "7b6b0813fb58b276847a8583eb5c3f94aee7d7ad0ae3a1ef6133d5d8771f20f4",
+      "bytes": 514
+    },
+    {
+      "path": "C:\\ProgramData\\obs-studio-hook\\graphics-hook64.dll",
+      "sha256": "f89ade59480de0d55fcc100495d78e8e491bed469fab4dbd3d430837b58b27a5",
+      "bytes": 303464
+    }
+  ],
+  "unchanged_eight_compile_inputs": [
+    {
+      "path": "driver.cc",
+      "sha256": "b6bd560850e4fd1e5d094fe43c18cbe6500d4eaf1dc866437d3f26227ea457c9",
+      "byte_equal_fixed_commit": true
+    },
+    {
+      "path": "wrapper.cc",
+      "sha256": "b0057be32be8c64cc8bfc701e46a75ff933b6abc26a38bd5dba4822047419151",
+      "byte_equal_fixed_commit": true
+    },
+    {
+      "path": "facade_api.h",
+      "sha256": "3733fe1dd21f5822a06793ece597d805f29828d180810e9696b20335dddd3155",
+      "byte_equal_fixed_commit": true
+    },
+    {
+      "path": "retained/facade.cc",
+      "sha256": "6cf2455f160b0625be4af7c001e38beeb84a8146f2ff53d50982cec635e59687",
+      "byte_equal_fixed_commit": true
+    },
+    {
+      "path": "instrument/bench/common/perf_process.h",
+      "sha256": "988c5af99fbf3169fb8e828da2dc26452a823bf459eac43716dd91501574e496",
+      "byte_equal_fixed_commit": true
+    },
+    {
+      "path": "instrument/bench/integration/perf_control_bench.cc",
+      "sha256": "a6a6d33d1c83b9b008ef60805fe223984103f46905deae5daef8e0fa08bc1ada",
+      "byte_equal_fixed_commit": true
+    },
+    {
+      "path": "instrument/bench/nanobench_impl.cc",
+      "sha256": "40ffacc30949a5a66b651ea492f5666e48e698564824414e5b4f183884f45a27",
+      "byte_equal_fixed_commit": true
+    },
+    {
+      "path": "instrument/third_party/nanobench/nanobench.h",
+      "sha256": "2cfcdd57044fd0ee11d1be2b5dc545781b05c36049613c0089a73b332afd8c4d",
+      "byte_equal_fixed_commit": true
+    }
+  ],
+  "runtime_claims": {
+    "native_verify": "NOT_RUN",
+    "workload_aa": "NOT_RUN",
+    "formal_p1": "NOT_RUN",
+    "historical_failure_reclassification": "NONE"
+  }
+}

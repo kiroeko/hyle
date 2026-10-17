@@ -1,0 +1,24 @@
+{
+  "schema": "hyle.g09.obs-host-attempt-pre-run.v1",
+  "state": "FROZEN_NOT_EXECUTED",
+  "source_revision": "1757a6b3a4047790c94b43beb3492823fc0dcdf7",
+  "source_tree": "434417a406048ac043c5d346bf0a2d6c7881760d",
+  "source_archive_sha256": "49cbe9316b0d09a70d195eb441e4f6b33156cb9b99d251c67273f579e0a09515",
+  "source_archive_bytes": 135706,
+  "tool_card_sha256": "388d73c975266631efd221d1656c04949daec0d918d99f772eff617b5cd14f49",
+  "authorization_sha256": "4ae76c841bcbcb12e0228d19d1052cc6031fef8ba4067527fc23a02b1a7d5a3b",
+  "static_authorization_preflight": {
+    "authorization_sha256": "4ae76c841bcbcb12e0228d19d1052cc6031fef8ba4067527fc23a02b1a7d5a3b",
+    "validator_sha256": "1d69f2daa5e5aaf84dd9b61028e5476cf2a27c3ea662d5b3c9727322c1292f5a",
+    "environment": {
+      "DISABLE_VULKAN_OBS_CAPTURE": "1"
+    },
+    "manifest_sha256": "7b6b0813fb58b276847a8583eb5c3f94aee7d7ad0ae3a1ef6133d5d8771f20f4"
+  },
+  "unchanged_original_files": "Original R18 source_files hashes checked again by unchanged logic before any native verify.",
+  "original_receipt_sha256": "0eaf29dcc6e661c46af7bc7715937c80768c7a144258a667833281f811ae07df",
+  "build": "C:/h7/g09-p1-instrument/vulkan/qualified-build-obs-free-1",
+  "output": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g09-p1-obs-free-1\\evidence",
+  "one_attempt": true,
+  "no_product_or_facade_build": true
+}

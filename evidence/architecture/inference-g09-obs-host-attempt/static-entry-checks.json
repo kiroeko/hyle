@@ -1,0 +1,26 @@
+{
+  "gate": "PASS",
+  "scope": "Static parser synthetic fixtures and exact contract delta only; no native verify/AA/P1 qualification",
+  "checks": [
+    "Actual historical OBS log rejected",
+    "Synthetic removed-OBS parser fixture accepted",
+    "Missing phase rejected",
+    "Only id/claim/validator contract delta",
+    "Python syntax valid"
+  ],
+  "files": [
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g09-p1-instrument-adapter\\validate_obs_host.py",
+      "sha256": "1d69f2daa5e5aaf84dd9b61028e5476cf2a27c3ea662d5b3c9727322c1292f5a"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g09-p1-instrument-adapter\\contract-windows-vulkan-obs-free.json",
+      "sha256": "56432f9f1a3a4436584bcb2976540a98d54afbdf5e48b6142ba85afc24359a66"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g09_run_obs_host.py",
+      "sha256": "72bc687bcd9ae43987c85e79fe34275e42856bcae0687abd9bd54cdba782d8b3"
+    }
+  ],
+  "source_fact_count_note": "R21 host-facts.json scope says32; actual4profiles x9logs=36. Original bytes/hash preserved."
+}

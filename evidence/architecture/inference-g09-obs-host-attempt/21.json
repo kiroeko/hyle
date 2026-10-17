@@ -1,0 +1,537 @@
+{
+  "schema": "hyle.bounded-host-control-review.v1",
+  "review": "R21 Windows Vulkan OBS host-layer prospective decision",
+  "date": "2026-10-17",
+  "decision": "SUFFICIENT_NAMED_HOST_EXPOSURE_AND_CONTROL_FOR_ONE_BOUNDED_NORMALIZATION_PLAN_NOT_PROVEN_AA_CAUSE",
+  "execution_authority": "This is a static prospective decision. Tool card is currently SCOPED; root must freeze the one host-only FIX, source/artifact/environment identity and finite checks in its existing tool task before execution. No GPU/run was started or authorized by a hidden tool action in this review.",
+  "scope": "Windows Vulkan capture-layer host condition only. Existing Windows CUDA logs are a bounded contrast; no Air analysis, qualification, product reopen or public perf-core edit. Only this ignored JSON written; read-only registry/files/logs and primary documentation.",
+  "source_identity": [
+    {
+      "path": "docs/implementation/tasks/tooling/inference-g09-native-workload-aa.md",
+      "sha256": "927579759378892c6e0c4cc8e703808f06b6b39b0de3bfdf993faf18339897e4",
+      "bytes": 3709
+    },
+    {
+      "path": ".scratch/inference-gaps/g09-p1-formal/windows-vulkan/evidence/pipeline-aa.json",
+      "sha256": "15cc4c40a8aa73b2eff10fa7bfa277770ddade17181c7735fa99eb9ee55b7dc3",
+      "bytes": 21186
+    },
+    {
+      "path": ".scratch/inference-gaps/g09-p1-formal/windows-cuda/evidence/pipeline-aa.json",
+      "sha256": "27aacbec3b641950afd00b0263e0f447a6f874f4825c036c7b01fed469454be9",
+      "bytes": 34006
+    },
+    {
+      "path": ".scratch/inference-gaps/g09-p1-instrument-adapter/contract-windows-vulkan.json",
+      "sha256": "25a85764b3d91b69ddbd08a06503bc772b45a451733890424a2ed00e162280c0",
+      "bytes": 21961
+    },
+    {
+      "path": ".scratch/inference-gaps/g09-p1-instrument-adapter/validate_aa.py",
+      "sha256": "1b72362ddf5189a5fc5df7eaa8034b8ae57df0ba0dfe1437867e380757e28ecf",
+      "bytes": 13070
+    },
+    {
+      "path": ".scratch/inference-gaps/g09-p1-instrument-adapter/driver.cc",
+      "sha256": "b6bd560850e4fd1e5d094fe43c18cbe6500d4eaf1dc866437d3f26227ea457c9",
+      "bytes": 11711
+    },
+    {
+      "path": "C:/h7/g09-p1-peer-9e2/scripts/hyle_perf/environment.py",
+      "sha256": "a47cd3fb09787244136aba46dd628c0172ecef37bd8b234c631bc834351ccc79",
+      "bytes": 6640
+    },
+    {
+      "path": "C:/h7/g09-p1-peer-9e2/scripts/hyle_perf/runner.py",
+      "sha256": "df415c5bb04c1096c568cae75c84e83672d2282ef43c7965d905f3ba1d21e022",
+      "bytes": 115468
+    },
+    {
+      "path": ".scratch/inference-gaps/g09-native-aa-mechanism-review-20.json",
+      "sha256": "77513f47376e88b3860d76b5a86e6960b5667d4d1570e3af207856ca54a11dcf",
+      "bytes": 12909
+    },
+    {
+      "path": ".scratch/inference-gaps/g09-host-modules-21/facts.json",
+      "sha256": "29321f22a708355545d8dd88d7394344b256dcecc2618a15a92ece4f5291d85c",
+      "bytes": 110932
+    },
+    {
+      "path": ".scratch/inference-gaps/g09-host-modules-21/vulkan-capture.c",
+      "sha256": "28290619b66ddb838a548961a4f3b35de445b17696ab66f981c030925fc7382f",
+      "bytes": 64625
+    }
+  ],
+  "historical_log_evidence": {
+    "windows-vulkan": [
+      {
+        "file": "baseline-0-0.log",
+        "sha256": "f0c7b94713176b0ec306a3034187deeca983b3c2c328d0ff34a2a3e60d735a4e",
+        "r19_match": true,
+        "module_snapshots": 4,
+        "hook_phases": {
+          "obs": [
+            "independent-cpu-first",
+            "independent-gpu-first",
+            "serial-holdout",
+            "two-microbatches"
+          ],
+          "nvspcap": [
+            "independent-cpu-first",
+            "independent-gpu-first",
+            "serial-holdout",
+            "two-microbatches"
+          ]
+        },
+        "oracle_before": 4,
+        "oracle_after": 4,
+        "destroy0": 8
+      },
+      {
+        "file": "baseline-0-1.log",
+        "sha256": "a4cc747f575686c08877a99a17cd32548b86a624af847de9ee785f6bd0687ff3",
+        "r19_match": true,
+        "module_snapshots": 4,
+        "hook_phases": {
+          "obs": [
+            "independent-cpu-first",
+            "independent-gpu-first",
+            "serial-holdout",
+            "two-microbatches"
+          ],
+          "nvspcap": [
+            "independent-cpu-first",
+            "independent-gpu-first",
+            "serial-holdout",
+            "two-microbatches"
+          ]
+        },
+        "oracle_before": 4,
+        "oracle_after": 4,
+        "destroy0": 8
+      },
+      {
+        "file": "baseline-1-0.log",
+        "sha256": "aa0531f0e56ed129e4758f657a4974e413b83448f8fe27e3d01096353a6b5470",
+        "r19_match": true,
+        "module_snapshots": 4,
+        "hook_phases": {
+          "obs": [
+            "independent-cpu-first",
+            "independent-gpu-first",
+            "serial-holdout",
+            "two-microbatches"
+          ],
+          "nvspcap": [
+            "independent-cpu-first",
+            "independent-gpu-first",
+            "serial-holdout",
+            "two-microbatches"
+          ]
+        },
+        "oracle_before": 4,
+        "oracle_after": 4,
+        "destroy0": 8
+      },
+      {
+        "file": "baseline-1-1.log",
+        "sha256": "fcf3cd6bc18c1d32391042de826f5f22c9381373710e96f7ea971a062add9b2b",
+        "r19_match": true,
+        "module_snapshots": 4,
+        "hook_phases": {
+          "obs": [
+            "independent-cpu-first",
+            "independent-gpu-first",
+            "serial-holdout",
+            "two-microbatches"
+          ],
+          "nvspcap": [
+            "independent-cpu-first",
+            "independent-gpu-first",
+            "serial-holdout",
+            "two-microbatches"
+          ]
+        },
+        "oracle_before": 4,
+        "oracle_after": 4,
+        "destroy0": 8
+      },
+      {
+        "file": "candidate-0-0.log",
+        "sha256": "25060caba21e0b400070ec6f85ee693af7018e9afbe299c3c748430f2e8542ad",
+        "r19_match": true,
+        "module_snapshots": 4,
+        "hook_phases": {
+          "obs": [
+            "independent-cpu-first",
+            "independent-gpu-first",
+            "serial-holdout",
+            "two-microbatches"
+          ],
+          "nvspcap": [
+            "independent-cpu-first",
+            "independent-gpu-first",
+            "serial-holdout",
+            "two-microbatches"
+          ]
+        },
+        "oracle_before": 4,
+        "oracle_after": 4,
+        "destroy0": 8
+      },
+      {
+        "file": "candidate-0-1.log",
+        "sha256": "8650d25d98ae75e1eab0b0bdf2b78e83ebb7193cc6385a564c011e8ec6e87eb0",
+        "r19_match": true,
+        "module_snapshots": 4,
+        "hook_phases": {
+          "obs": [
+            "independent-cpu-first",
+            "independent-gpu-first",
+            "serial-holdout",
+            "two-microbatches"
+          ],
+          "nvspcap": [
+            "independent-cpu-first",
+            "independent-gpu-first",
+            "serial-holdout",
+            "two-microbatches"
+          ]
+        },
+        "oracle_before": 4,
+        "oracle_after": 4,
+        "destroy0": 8
+      },
+      {
+        "file": "candidate-1-0.log",
+        "sha256": "6df3b818f7fcada5bdc694fff41df146d400e86ed6f9c66c4f09fa31c33f3154",
+        "r19_match": true,
+        "module_snapshots": 4,
+        "hook_phases": {
+          "obs": [
+            "independent-cpu-first",
+            "independent-gpu-first",
+            "serial-holdout",
+            "two-microbatches"
+          ],
+          "nvspcap": [
+            "independent-cpu-first",
+            "independent-gpu-first",
+            "serial-holdout",
+            "two-microbatches"
+          ]
+        },
+        "oracle_before": 4,
+        "oracle_after": 4,
+        "destroy0": 8
+      },
+      {
+        "file": "candidate-1-1.log",
+        "sha256": "b0f79e1fa3ce8e335d683288536ee50d5799a74cc2fe2d9e638ccc6899031800",
+        "r19_match": true,
+        "module_snapshots": 4,
+        "hook_phases": {
+          "obs": [
+            "independent-cpu-first",
+            "independent-gpu-first",
+            "serial-holdout",
+            "two-microbatches"
+          ],
+          "nvspcap": [
+            "independent-cpu-first",
+            "independent-gpu-first",
+            "serial-holdout",
+            "two-microbatches"
+          ]
+        },
+        "oracle_before": 4,
+        "oracle_after": 4,
+        "destroy0": 8
+      },
+      {
+        "file": "verify.log",
+        "sha256": "0f583503c08264bba3bf513daf1eb608947a2d6bda3b503aa868b3db029c1ad8",
+        "r19_match": null,
+        "module_snapshots": 4,
+        "hook_phases": {
+          "obs": [
+            "independent-cpu-first",
+            "independent-gpu-first",
+            "serial-holdout",
+            "two-microbatches"
+          ],
+          "nvspcap": [
+            "independent-cpu-first",
+            "independent-gpu-first",
+            "serial-holdout",
+            "two-microbatches"
+          ]
+        },
+        "oracle_before": 4,
+        "oracle_after": 4,
+        "destroy0": 8
+      }
+    ],
+    "windows-cuda": [
+      {
+        "file": "baseline-0-0.log",
+        "sha256": "e768d387d3208bfb56117ec4ddd50593d1d5ef41280ca556a38f39d7ab5940d1",
+        "r19_match": null,
+        "module_snapshots": 4,
+        "hook_phases": {
+          "obs": [],
+          "nvspcap": []
+        },
+        "oracle_before": 4,
+        "oracle_after": 4,
+        "destroy0": 8
+      },
+      {
+        "file": "baseline-0-1.log",
+        "sha256": "d4662277a186952161ea197ac99e09b1425bbd39462084150648d8b2bc1521c1",
+        "r19_match": null,
+        "module_snapshots": 4,
+        "hook_phases": {
+          "obs": [],
+          "nvspcap": []
+        },
+        "oracle_before": 4,
+        "oracle_after": 4,
+        "destroy0": 8
+      },
+      {
+        "file": "baseline-1-0.log",
+        "sha256": "3823b27d074b10eeb27513893baac36853882c9e8ad9534cebdf3895dd11722c",
+        "r19_match": null,
+        "module_snapshots": 4,
+        "hook_phases": {
+          "obs": [],
+          "nvspcap": []
+        },
+        "oracle_before": 4,
+        "oracle_after": 4,
+        "destroy0": 8
+      },
+      {
+        "file": "baseline-1-1.log",
+        "sha256": "769cecdf8315302954f76e58e8bd2a6841bd19acebc49402f1886c34836a8fc1",
+        "r19_match": null,
+        "module_snapshots": 4,
+        "hook_phases": {
+          "obs": [],
+          "nvspcap": []
+        },
+        "oracle_before": 4,
+        "oracle_after": 4,
+        "destroy0": 8
+      },
+      {
+        "file": "candidate-0-0.log",
+        "sha256": "167c7bd89aa8d0ec80c9358e50cd0cbfd2f8294153aafb984cea8b46db2cb7b5",
+        "r19_match": null,
+        "module_snapshots": 4,
+        "hook_phases": {
+          "obs": [],
+          "nvspcap": []
+        },
+        "oracle_before": 4,
+        "oracle_after": 4,
+        "destroy0": 8
+      },
+      {
+        "file": "candidate-0-1.log",
+        "sha256": "69c0b86a5c23f92e1574570535499dad04b3792b5a049390d0ddf59741f173fb",
+        "r19_match": null,
+        "module_snapshots": 4,
+        "hook_phases": {
+          "obs": [],
+          "nvspcap": []
+        },
+        "oracle_before": 4,
+        "oracle_after": 4,
+        "destroy0": 8
+      },
+      {
+        "file": "candidate-1-0.log",
+        "sha256": "09e41c9b0112a3aae4f65da63eabd2cf6f30b0aaae5b0d0d4d466a571386133c",
+        "r19_match": null,
+        "module_snapshots": 4,
+        "hook_phases": {
+          "obs": [],
+          "nvspcap": []
+        },
+        "oracle_before": 4,
+        "oracle_after": 4,
+        "destroy0": 8
+      },
+      {
+        "file": "candidate-1-1.log",
+        "sha256": "3adda315be03a56914d0d39a1f6dce6fd2cf0984967a68a206d95ebbf6631960",
+        "r19_match": null,
+        "module_snapshots": 4,
+        "hook_phases": {
+          "obs": [],
+          "nvspcap": []
+        },
+        "oracle_before": 4,
+        "oracle_after": 4,
+        "destroy0": 8
+      },
+      {
+        "file": "verify.log",
+        "sha256": "3a53b2d3d1d82039796cf8c5ef4ad88a7236f8367daa88fac689deaa537f75cd",
+        "r19_match": null,
+        "module_snapshots": 4,
+        "hook_phases": {
+          "obs": [],
+          "nvspcap": []
+        },
+        "oracle_before": 4,
+        "oracle_after": 4,
+        "destroy0": 8
+      }
+    ]
+  },
+  "historical_facts": [
+    "All8 Windows Vulkan A/A logs match their R19 hashes. Each, plus the original verify log, contains4 existing module-snapshot phases with C:/ProgramData/obs-studio-hook/graphics-hook64.dll and C:/WINDOWS/system32/nvspcap64.dll. Every process has4before/4after full oracles and8 successful State destroys.",
+    "All9 same-batch Windows CUDA A/A/verify logs have the4 snapshot phases but no search hit for those two modules. This contrast does not isolate hardware/driver/API causation or transfer CUDA qualification.",
+    "Historical evidence establishes loaded-image exposure at the observed phases. It does not establish which historical DLL bytes were loaded, historical OBS executable version, active capture session, exact layer chaining, per-submit interception, lock cost or the reason the Windows Vulkan factor ratio failed.",
+    "Root facts collection has4profiles x9logs=36, not32 as its current scope string says. This is a scope-string bookkeeping error; this reviewer independently inspected only the18 Windows logs for this decision. No inference about Air is made."
+  ],
+  "current_host_observation": {
+    "role": "CURRENT_ONLY_NOT_HISTORICAL_BINARY_ATTESTATION",
+    "registry_location": "HKLM/SOFTWARE/Khronos/Vulkan/ImplicitLayers (64-bit view)",
+    "independently_read_obs_entries": [
+      {
+        "registry_name": "C:\\ProgramData\\obs-studio-hook\\obs-vulkan64.json",
+        "registry_value": 0,
+        "registry_type": 4,
+        "file_exists": true,
+        "manifest_sha256": "7b6b0813fb58b276847a8583eb5c3f94aee7d7ad0ae3a1ef6133d5d8771f20f4",
+        "manifest": {
+          "file_format_version": "1.1.2",
+          "layer": {
+            "name": "VK_LAYER_OBS_HOOK",
+            "type": "GLOBAL",
+            "library_path": ".\\graphics-hook64.dll",
+            "api_version": "1.3.216",
+            "implementation_version": "1",
+            "description": "Open Broadcaster Software hook",
+            "functions": {
+              "vkNegotiateLoaderLayerInterfaceVersion": "OBS_Negotiate"
+            },
+            "disable_environment": {
+              "DISABLE_VULKAN_OBS_CAPTURE": "1"
+            }
+          }
+        }
+      },
+      {
+        "registry_name": "C:\\Users\\kiro\\AppData\\Local\\obs-studio-hook\\obs-vulkan64.json",
+        "registry_value": 0,
+        "registry_type": 4,
+        "file_exists": false,
+        "manifest_sha256": null,
+        "manifest": null
+      }
+    ],
+    "hook": {
+      "path": "C:/ProgramData/obs-studio-hook/graphics-hook64.dll",
+      "sha256": "f89ade59480de0d55fcc100495d78e8e491bed469fab4dbd3d430837b58b27a5",
+      "bytes": 303464,
+      "file_version": "1.8.7.0",
+      "description": "OBS Graphics Hook"
+    },
+    "current_loader": {
+      "path": "C:/Windows/System32/vulkan-1.dll",
+      "bytes": 1730096,
+      "file_version": "1.4.341.0",
+      "limit": "Current file metadata only, not a historical loader attestation or source-commit proof."
+    },
+    "observation_process_disable_value": null,
+    "interpretation": "The real current ProgramData manifest is enabled by DWORD0 discovery, declares GLOBAL VK_LAYER_OBS_HOOK, resolves its relative graphics-hook64.dll to the same path family observed historically, and names DISABLE_VULKAN_OBS_CAPTURE=1. The second registered per-user manifest path is currently missing. No registry value, file or global process setting was changed."
+  },
+  "primary_sources": [
+    {
+      "title": "Khronos Vulkan Loader Layer Interface",
+      "url": "https://github.com/KhronosGroup/Vulkan-Loader/blob/main/docs/LoaderLayerInterface.md",
+      "anchors": "Windows Layer Discovery; Manifest File Format disable_environment; meta-layer limitations",
+      "finding": "Windows DWORD0 entries name discoverable manifests. Implicit layers normally auto-enable; setting their declared disable variable before Vulkan calls disables that loader path. Active meta-layer use can override that rule, so prospective actual module absence is essential. This documents the control, not this machine's historical dispatch chain."
+    },
+    {
+      "title": "Official OBS32.1.0 vulkan-capture.c",
+      "url": "https://raw.githubusercontent.com/obsproject/obs-studio/32.1.0/plugins/win-capture/graphics-hook/vulkan-capture.c",
+      "local_path": ".scratch/inference-gaps/g09-host-modules-21/vulkan-capture.c",
+      "sha256": "28290619b66ddb838a548961a4f3b35de445b17696ab66f981c030925fc7382f",
+      "anchors": "OBS_GetDeviceProcAddr:1991–2013; OBS_GetInstanceProcAddr:2019 onwards",
+      "finding": "This tag selects device/swapchain/present/image-view/framebuffer/render-pass intercepts; QueueSubmit and WaitForFences are not its advertised intercept table entries, and unselected device names delegate downstream. Capture internals call queue/fence APIs elsewhere. This counters any blanket claim of an OBS lock on every compute submission.",
+      "identity_limit": "Fetched official tag source, not proven equivalent to current hook1.8.7.0 or a historical loaded DLL. Current OBS exe32.1.0 reported in root facts does not create that equivalence."
+    }
+  ],
+  "adjudication": {
+    "proven_mechanism": "An external, named capture-hook image was actually present in the Windows Vulkan measurement processes, and the currently installed Vulkan implicit-layer manifest exposes a standard per-process exclusion control for that exact hook family. This is concrete host-condition exposure and a deterministic prospective control, not merely a generic noise guess.",
+    "why_a_bounded_fix_is_justified": "One can remove a named external capture layer from the declared native measurement host condition without changing the product, consumer semantics or statistics, then falsify whether that control took effect before accepting any new samples. Establishing its5% effect is not a prerequisite to declaring the new no-OBS host condition.",
+    "unproven": "Not proven that OBS changed the warm compute path, that it caused the original0.94695274 factor failure, that all loaded graphics-hook code was active, or that exclusion will make A/A pass. Even a future normalized PASS establishes qualification of the new host condition, not retrospective causal attribution.",
+    "residual_nvspcap": "nvspcap64.dll remains a separately observed module. No source/disable mechanism/cost was adjudicated here; do not claim it was disabled or all capture instrumentation removed. Record its presence/absence and frozen residual host state. This review does not authorize a second switch or an overlay hunt.",
+    "no_product_must": "No G09/G10 product correctness or performance FIX follows from this evidence."
+  },
+  "minimal_host_only_fix": {
+    "setting": {
+      "name": "DISABLE_VULKAN_OBS_CAPTURE",
+      "value": "1",
+      "scope": "Only the new Windows Vulkan qualification's fresh parent/child processes, before any Vulkan instance/library initialization; both same-implementation A/A arms, later A/B arms and both orders."
+    },
+    "forbidden": [
+      "No system registry edits, DLL deletion/rename or uninstall/kill of unrelated applications.",
+      "No Vulkan/ggml/HYLE math, SDK, facade, native kernel, workload, input, output/owner/read/drain boundary or scheduler changes.",
+      "No blanket VK_LOADER_LAYERS_DISABLE filtering or additional overlay variables as an automatic fallback.",
+      "No n/epochs/warmup/shape/provider/estimator/5%/10% threshold changes."
+    ],
+    "concrete_propagation_constraint": {
+      "anchors": [
+        "fixed environment.py:22–58",
+        "fixed runner.py:274–286,482–493,1157–1196",
+        "private validate_aa.py CONTROLLED and invoke"
+      ],
+      "fact": "The original child sanitizer retains ordinary process environment; this DISABLE_* key is neither in its blocklist/prefixes nor the existing controlled list. Directly adding it as a new runner controlled_environment key is rejected by the unchanged original runner, and controlled names are removed unless re-added.",
+      "minimum_supported_path": "Freeze this exact ordinary host environment value in a private Windows-Vulkan contract extension/provenance plus dedicated launcher; pass it to the original runner process. The private AA validator must assert it and explicitly propagate the same value for every fresh verify/A/A child. Keep the original controlled_environment contract/core unchanged. Static review of that finite source delta must confirm the formal child path preserves it too; new actual module checks supply the observable effect gate.",
+      "no_cpp_rebuild_requirement": "Existing driver already emits module snapshots for all4 shapes. The minimal Python/launcher/metadata change need not modify consumer C++ or old facades; retain exact reviewed text/SDK/runtime identities. Any optional new C++ telemetry would instead require its own limited equivalent-artifact review before use, not an assumed R18 PASS."
+    }
+  },
+  "finite_validation_and_stops": [
+    {
+      "stage": "Before any new execution",
+      "must": "Freeze the one host exclusion FIX under the existing tool card, exact value/manifest/current host identity, source delta and preserved original binary/SDK/consumer/instrument/contract identity. Retain original failures/costs separately; no historical file rewritten. No blanket permission for unreviewed code."
+    },
+    {
+      "stage": "One fresh verify-only process",
+      "must": "Reuse fixed4M F32/four shapes/2worker/phase ownership and original complete oracles. Verify new setting reaches the fresh process and require all4 existing phase module snapshots present with no OBS hook path/basename. Preserve full module inventory,8 State destroy successes and normal exit. If OBS remains (including meta-layer or other injection) or any oracle/identity/completion fails, stop before A/A; no fallback variable."
+    },
+    {
+      "stage": "One8-process workload A/A configuration",
+      "must": "Only after that verify gate, run the original2SDK x2execution x2allocation topology. Require the same setting and actual no-OBS snapshots in every process/phase, original5% factor medians and10% gross rule, same12 paired rounds/epochIterations1. Missing snapshots, unexpected host/artifact change or any A/A failure is terminal for this fixed attempt; preserve FAIL and0valid A/B, do not repeat or add samples."
+    },
+    {
+      "stage": "P1 only if eligibility is obtained",
+      "must": "Only a complete actual A/A PASS permits the original Windows Vulkan n15->31/P1 path and required common AA/delta5/delta10/timer-floor controls under the same frozen no-OBS host condition. Maintain4shapes/four factors/complete warm billing/5% NI. Preserve and check existing module inventories for later children too; OBS reappearance invalidates that new claim. This review pre-signs neither A/A nor performance."
+    },
+    {
+      "stage": "Scope exit",
+      "must": "No new Air/Apple/Air-Vulkan/CUDA run or conclusion; no G10 reopen. If normalized Windows Vulkan still fails qualification, retain the tool blocker and stop. Future changes require a newly named mechanism, not this review's authority."
+    }
+  ],
+  "original_verdicts_unchanged": {
+    "windows_vulkan": "Original A/A FAIL/0valid A/B/engineering NI unresolved/direction INCONCLUSIVE.",
+    "windows_cuda": "Its own existing QUALIFIED/P1 remains; no new run.",
+    "air": "All previous independent verdicts remain; no conclusion or recovery permission here."
+  },
+  "musts": {
+    "host_tool": [
+      "Exact per-process early control propagation must be frozen and checked.",
+      "Actual no-OBS module gate must fail closed before progressing from verify to A/A and from A/A to P1.",
+      "Preserve unchanged semantics/statistics and all historical failures; report residual module/causal limits."
+    ],
+    "product": []
+  },
+  "terminal": "STATIC_PROSPECTIVE_REVIEW_COMPLETE_BOUNDED_HOST_PLAN_SUPPORTED_NO_EXECUTION_OR_PERFORMANCE_PASS"
+}

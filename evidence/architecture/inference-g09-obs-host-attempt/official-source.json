@@ -1,0 +1,7 @@
+{
+  "url": "https://raw.githubusercontent.com/obsproject/obs-studio/32.1.0/plugins/win-capture/graphics-hook/vulkan-capture.c",
+  "bytes": 64625,
+  "sha256": "28290619b66ddb838a548961a4f3b35de445b17696ab66f981c030925fc7382f",
+  "archive_sha256": "532f34490145af7c2b7ce6d987cd55c1f1cc4ad4c373c40452c4907b278533c4",
+  "packaging_note": "First staged diff --check rejected pre-existing upstream trailing whitespace at source line1100. Exact source bytes are now archived, not rewritten; this is no product or native test failure."
+}
