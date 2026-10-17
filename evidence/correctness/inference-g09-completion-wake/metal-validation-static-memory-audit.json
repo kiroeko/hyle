@@ -1,0 +1,1155 @@
+{
+  "schema": 1,
+  "kind": "READ_ONLY_SOURCE_AND_EXISTING_LOG_AUDIT",
+  "created_utc": "2026-10-17T09:36:34.393721+00:00",
+  "no_native_execution": true,
+  "no_ssh_or_layer_variants": true,
+  "no_product_files_modified": true,
+  "candidate": "a0cc517332129c403b4e464a2e865712a2842290",
+  "manifest": {
+    "path": ".scratch\\g09-completion-wake-correction\\run-final-v4\\manifest.json",
+    "sha256": "4b76cb54b5f00ed3b9577dfe7d2ea369acdc2f8821c6683c95250f4d45333c45",
+    "source_zip_sha256": "0bd691bcb2c8f992796ae192aa292fafe7f592a44c85ae5cb374dc431cbdff92"
+  },
+  "locked_dependency": {
+    "name": "mlx",
+    "class": "fetchcontent",
+    "repository": "https://github.com/ml-explore/mlx.git",
+    "version": "0.32.2",
+    "revision": "1f8e74e3f12f31365464a6867c6579f0e9b29d85",
+    "git_tree": "05433bcb7241af2b3531e7ee94f1eed07d4bf15c",
+    "archive": {
+      "url": "https://codeload.github.com/ml-explore/mlx/tar.gz/1f8e74e3f12f31365464a6867c6579f0e9b29d85",
+      "sha256": "cb988a5bdc38c798918d042b9b1c6edda3ccc5f23a2155138d3aa5c1b2acc301"
+    },
+    "expanded_tree_sha256": "95caa530dd4168a96f1100637a718f103873f6acd11718a50ddabbe9aa180ee8",
+    "license": {
+      "expression": "MIT",
+      "files": [
+        {
+          "root": "dependency",
+          "path": "LICENSE",
+          "sha256": "ccfab7ccb2ea306f71531c8ca77bb55507606cd90768b1e32b8b52ab5b48cf01"
+        }
+      ]
+    }
+  },
+  "archive": {
+    "path": ".scratch\\inference-gaps\\g04-g05\\metal-lifetime\\mlx-1f8e74e3f12f31365464a6867c6579f0e9b29d85.tar.gz",
+    "sha256": "cb988a5bdc38c798918d042b9b1c6edda3ccc5f23a2155138d3aa5c1b2acc301",
+    "matches_lock": true
+  },
+  "canonical_inputs": [
+    {
+      "path": "cmake\\HyleDependencyLock.json",
+      "sha256": "b972666affe72bbb1a41626dc8ab8ba218811ee5d8bda055c7d4a4ee38dd5df3",
+      "matches_candidate_manifest": true
+    },
+    {
+      "path": "third_party\\mlx_cast\\patches.json",
+      "sha256": "51596c099e7b3a654bf4c7da4cf13298c6847dcd1e7a6d283b7eb6e5f5f7b9b4",
+      "matches_candidate_manifest": true
+    }
+  ],
+  "reconstruction": {
+    "method": "Read locked tar archive in memory, require original file SHA, apply canonical edits in declared order exactly once each, require final SHA. No extraction or product writes.",
+    "files": [
+      {
+        "path": "mlx/backend/metal/jit_kernels.cpp",
+        "archive_member": "mlx-1f8e74e3f12f31365464a6867c6579f0e9b29d85/mlx/backend/metal/jit_kernels.cpp",
+        "before_sha256": "8201a166cc426cd7b1f6983e5e6f282d3ca7a1992cc4c3a80fa42cf8dd237c46",
+        "after_sha256": "63ca81b97f2c9afad509ebd8ad7687369b0564efada95b067b4410e575e2ec68",
+        "all_ordered_rules_applied_once": true,
+        "rules": [
+          {
+            "zero_based_index": 0,
+            "before_occurrences": 1,
+            "before_sha256": "1a5b543e695ea0522ae9afad8d1762a57dbc021f6a4c73f0c5f9c241debdbe2c",
+            "after_sha256": "727d4c770f7da2116c07b44864101f454e51a344ad15c0064083003f67169dd4"
+          },
+          {
+            "zero_based_index": 1,
+            "before_occurrences": 1,
+            "before_sha256": "cb1c78bf8e1fce64c8894e45e7f04d25f226d36d67b35aa71c960d82b0f03f78",
+            "after_sha256": "cf2171644e0797e6687ac870c7a7362927576c0d65fceff5e083e023d114c1a2"
+          },
+          {
+            "zero_based_index": 2,
+            "before_occurrences": 1,
+            "before_sha256": "604c741d894abdf5bfc56bb18ce491f821ba003ef0d04ebb20e311f1b09f153e",
+            "after_sha256": "c54aeee8e0ab67115a730fd85098c59cbe65440d8137d76536e515460c1760de"
+          },
+          {
+            "zero_based_index": 3,
+            "before_occurrences": 1,
+            "before_sha256": "7dace5fcd699e424a09dccd4ce5a8d33a8976dfe941be39abadccce90ade154e",
+            "after_sha256": "e4056bf093745eedc072a8767f8e001fcc5ce12e81e60b5dcf21c5f4e652f668"
+          },
+          {
+            "zero_based_index": 4,
+            "before_occurrences": 1,
+            "before_sha256": "c815832b8b14659eaae56f653dfb926ae33b7f698b8c0950db33231bbe36c109",
+            "after_sha256": "e200eafc39cbc9e4d761cf0687ec335c25e193be94ea54aae0523be2983e2c2d"
+          },
+          {
+            "zero_based_index": 5,
+            "before_occurrences": 1,
+            "before_sha256": "b518aea81114ebfd46c67a7f165ee22e0188427b5bf5c02fab30db4676b7eb13",
+            "after_sha256": "541de9f99b36bab569cbadb0e15e0236e396548e6270c42b93a4ff09548732e8"
+          }
+        ]
+      },
+      {
+        "path": "mlx/backend/metal/scaled_dot_product_attention.cpp",
+        "archive_member": "mlx-1f8e74e3f12f31365464a6867c6579f0e9b29d85/mlx/backend/metal/scaled_dot_product_attention.cpp",
+        "before_sha256": "215ebac6495706cf01a2635c4dcec29802e130165ed8704f212d789679d2e673",
+        "after_sha256": "08d9db2f0c0594b0ec0d480af10a9d8bb604eca49de637443895820490e6a4fe",
+        "all_ordered_rules_applied_once": true,
+        "rules": [
+          {
+            "zero_based_index": 0,
+            "before_occurrences": 1,
+            "before_sha256": "c603336bd83a499e68f2497f7ad5a9aff82539e6d4e189612b04c8f6a2e00156",
+            "after_sha256": "42c738f15ca54528e1bf258116ee1b6cd63949fb080ca48c712de9d37dfdcf29"
+          },
+          {
+            "zero_based_index": 1,
+            "before_occurrences": 1,
+            "before_sha256": "481a2f00c0628f5037d755b359054535932baddadf683291914d30d5f9b44065",
+            "after_sha256": "c038d689b5f5cecead00167086de4955222ccacc29ec0a99ef25127ce48cdf9e"
+          },
+          {
+            "zero_based_index": 2,
+            "before_occurrences": 1,
+            "before_sha256": "e1fd1fa71fc52a28fed6853c986fb7f665769b8aa5897ed959083726243f8c69",
+            "after_sha256": "e704f6c99ebff6730f3d665f2015273662934b036204fddee70aa5a993e20c1d"
+          },
+          {
+            "zero_based_index": 3,
+            "before_occurrences": 1,
+            "before_sha256": "e76fac34d7a9dd1487a6855eb6ecda508e64f906f7da9e978559dedc31d16881",
+            "after_sha256": "ef14450666723e4d8215effdf408476c0d9cdf0b8d205bbaae4c8a27b2e2b3c0"
+          },
+          {
+            "zero_based_index": 4,
+            "before_occurrences": 1,
+            "before_sha256": "4dc024f2d485d080101f897e218a67b025105d0b9175b3d1d9318079ed4aed81",
+            "after_sha256": "5aa60c6fac0809af4f77f658fdc3a26da6b32acaeb39cd60e43410e1e548252c"
+          },
+          {
+            "zero_based_index": 5,
+            "before_occurrences": 1,
+            "before_sha256": "747f15d072bb7b3f45e6db2363ab7486a827b662c0c86747304d841e4e9ef4b2",
+            "after_sha256": "92c3a636cfa5cc8d751de5e24710082fc2c2e2e463efc734f67b90a1738de838"
+          },
+          {
+            "zero_based_index": 6,
+            "before_occurrences": 1,
+            "before_sha256": "0dff2bb69d280dce37f4fe036d4de13feb3871ab5a12e74e2fad41aae1633bcb",
+            "after_sha256": "afdd1abf5bbbccd9fe930fb8899e58b1bb301dfb30a7df6a17abb730c6c9b83d"
+          },
+          {
+            "zero_based_index": 7,
+            "before_occurrences": 1,
+            "before_sha256": "5125df3c946359f06f229f687b42564a65483439e2e5cdabdb9a1bdf22fc02db",
+            "after_sha256": "ed42a25d25aad151a8a7ac02bf5513aaca2e961443d217f1bbf89b93048721ca"
+          },
+          {
+            "zero_based_index": 8,
+            "before_occurrences": 1,
+            "before_sha256": "f0b8cbf4d12d7983ab561f228132df3c3ac60385d3b046d24ff018b0adee39be",
+            "after_sha256": "cf0dc3556d56e916f909bf22a35c4e2de76cbef1b2205df64b82cd1d025fc60a"
+          },
+          {
+            "zero_based_index": 9,
+            "before_occurrences": 1,
+            "before_sha256": "71fca9a1f8ab1f2389460939793274c74a0d7f959b182b57818ae41267b8c020",
+            "after_sha256": "e8406f57f36072cd343fdffe68d9269207cba54b2f3fe3c89c8c64441246deaf"
+          },
+          {
+            "zero_based_index": 10,
+            "before_occurrences": 1,
+            "before_sha256": "194f39dbb1e18252e85928ac1053c1f0bedbf0df28bcf61ce473726e4fec8487",
+            "after_sha256": "1fdd757e0ece3b0fceb9484adccf213ae9ab677bc06f3875a0acbe57be4530c0"
+          },
+          {
+            "zero_based_index": 11,
+            "before_occurrences": 1,
+            "before_sha256": "1ef8308972427bc12f2e6f60b96556b733e5a92df02d6537315d1c99315bbf6e",
+            "after_sha256": "613a9dd794e19b2412c08ca9fe0c4507603b8ab3e89795a286738918324e72e6"
+          },
+          {
+            "zero_based_index": 12,
+            "before_occurrences": 1,
+            "before_sha256": "43995f0e20331881c33ee1c0d0054b92be3bfb937573667ef28fced1147367eb",
+            "after_sha256": "c1032e18bb0d786b9a9a643f3a11d3719cafbd43b3eb6c1a4d7bccfa0efa2221"
+          },
+          {
+            "zero_based_index": 13,
+            "before_occurrences": 1,
+            "before_sha256": "e42221472bd55f097b2f74b28eade8dfd8ceb6cf408443f39e134bead0c91bde",
+            "after_sha256": "c4d87321ffced10a4330ffae52f1f0e7dd936839e4d91303c45c85860bb2cf58"
+          },
+          {
+            "zero_based_index": 14,
+            "before_occurrences": 1,
+            "before_sha256": "f71837b9e99ac32625e976d05e1c6bf4635206555734e859d4d4ad43da5ebeec",
+            "after_sha256": "1fec57c9e19aee7963a1030565a691afc409c546267d050848c2e7c5dae22b1d"
+          },
+          {
+            "zero_based_index": 15,
+            "before_occurrences": 1,
+            "before_sha256": "18c868096f8aebfc6085d6f11f770c8a2ca495d7e769e621fa9c35bfa6934330",
+            "after_sha256": "a9ef65f3da4a32e9d26eb544d2f523fa8cb7dfe293e0f8c2cf6b3e5fbd7a049a"
+          },
+          {
+            "zero_based_index": 16,
+            "before_occurrences": 1,
+            "before_sha256": "eac8db0f51d1ad42a1a57fc7a82382c7ea44627f7e4e46ee32623189e6e0db76",
+            "after_sha256": "8e735dc6c73f3dd45eed55693bbd097536ef8a054b41571aa695b3487e2632a1"
+          },
+          {
+            "zero_based_index": 17,
+            "before_occurrences": 1,
+            "before_sha256": "884a9ccf8b0848e3eaf968ab0f7d4f79a3db2733498f6e2e6dbf85a4000360ed",
+            "after_sha256": "263231d555bde1dc96a320a7a6db8710f5cfea53905cda3041972c82f776d1f2"
+          },
+          {
+            "zero_based_index": 18,
+            "before_occurrences": 1,
+            "before_sha256": "0bad23dfcdfcadd26a8ce7e0178d1c66072fb58cf6fa070882084c0fcb848902",
+            "after_sha256": "555f5bcc768f7792f7edb4650e2ba29c549b123e5ef2dd66522c6b2b2e1925c1"
+          },
+          {
+            "zero_based_index": 19,
+            "before_occurrences": 1,
+            "before_sha256": "533548724cc596e18590f0ac5e741f3adc4da394d5ea125762372d6cf648149e",
+            "after_sha256": "dea61dcd62d1edc2fdbe762112f1393b19d4e514c78252bd9b13ea0d72560670"
+          },
+          {
+            "zero_based_index": 20,
+            "before_occurrences": 1,
+            "before_sha256": "9b23f519c30f26ee0cdd3f6020a75fe6b1750ad4a9b2420dc6a968f56ff8fa10",
+            "after_sha256": "c0ea3789dc7377d802e8955b1571227771647f29ba89a5b5772778a36d97a0e1"
+          },
+          {
+            "zero_based_index": 21,
+            "before_occurrences": 1,
+            "before_sha256": "c0417951900cbd5c886fc635568eb0c6caaed6fe473a7ef7cf83484d041e2b53",
+            "after_sha256": "abfe70f665f00941129138b97f99a70d7961142dd63362e4df6a50556c4c55d3"
+          },
+          {
+            "zero_based_index": 22,
+            "before_occurrences": 1,
+            "before_sha256": "068a046c0392b79d06a2e309dead7e3f49f7784cf2e11f3578f66f8705cc8744",
+            "after_sha256": "32123616475f352f7e25fddcc62f48d5e727ac84d68d1f9a93d88acfbe5757ee"
+          },
+          {
+            "zero_based_index": 23,
+            "before_occurrences": 1,
+            "before_sha256": "7f27920fe5b41fb40785d6bcaf3ecf64e6ae43ccb11ce29b26af33fdcd01ca70",
+            "after_sha256": "0a5a78647b38ca37d240c84c5227ef966f370f724e121eacb5fd6809c811f6a9"
+          },
+          {
+            "zero_based_index": 24,
+            "before_occurrences": 1,
+            "before_sha256": "ae7601d83c70cea7a002093819702c4cbf736e731c36b4254a93eb3c08026b3a",
+            "after_sha256": "b9dd8a461ba95889645c38b88c9aae687bea2087534c0f05e289410e158c1752"
+          },
+          {
+            "zero_based_index": 25,
+            "before_occurrences": 1,
+            "before_sha256": "cf0d41a3f1059499fdad706127ee610c28c2136a7a31369b955914442d0df806",
+            "after_sha256": "748171a6c017ba281f2db45403c263647179174784e6ad778bc18787da93882e"
+          },
+          {
+            "zero_based_index": 26,
+            "before_occurrences": 1,
+            "before_sha256": "7cd79e7565ebf28fb5c625d0cd72e0be1136e45e87c37076506caf1385094005",
+            "after_sha256": "cfabd20f363b484aa5a4ff00b9cd1b7470c2140cbe55d2bd61796c031c3c8770"
+          },
+          {
+            "zero_based_index": 27,
+            "before_occurrences": 1,
+            "before_sha256": "440287e753b894a88a1d694e5847e1a0e31d4ee658416d073862c2601cf636c7",
+            "after_sha256": "a9d7780395716d0c008dc3d3967083bf5a12a85296eedc028bef30c4688cb1a0"
+          },
+          {
+            "zero_based_index": 28,
+            "before_occurrences": 1,
+            "before_sha256": "d68fd3cd70f8977a3aaaf28de1fea40a1052fae01888044af59c5bf03446b984",
+            "after_sha256": "e21bd190bd7f4b546e5e698750aaee9c6f0ce67b9805f27200dab79d79822e99"
+          },
+          {
+            "zero_based_index": 29,
+            "before_occurrences": 1,
+            "before_sha256": "ace5a09338df4a7db5798dceb3fd39bd8010f80e8a5646be0ec015dc35fadef3",
+            "after_sha256": "7e0b8c114ca3c446cf93cdf4761d4a8b3f8ff461538baf6633e2f6500c627128"
+          },
+          {
+            "zero_based_index": 30,
+            "before_occurrences": 1,
+            "before_sha256": "1a350978d307b4afecfb28b7839d7db992e668d06803e0a9eb03aba37d644ffd",
+            "after_sha256": "ef1e2a1043ffde049f052f43e00f9755443f019d889fcc032c3ad03eed58e677"
+          },
+          {
+            "zero_based_index": 31,
+            "before_occurrences": 1,
+            "before_sha256": "bdb8cafbed0698dd08cf8fef54acc9b55744920ed18569c32634da813b7b1399",
+            "after_sha256": "ef3db12d346fe595de2f9a6a7395d125cc06cb6d5468503105a99cfdf6ce74ed"
+          },
+          {
+            "zero_based_index": 32,
+            "before_occurrences": 1,
+            "before_sha256": "cdc46785e195e77b17adc50cf5047a56ea4731f25d80dab087182f2c8db82595",
+            "after_sha256": "1a62c32f8ff3982d42fc8707f53a6a42fdf5901218cec22bb76ef090985c0e97"
+          },
+          {
+            "zero_based_index": 33,
+            "before_occurrences": 1,
+            "before_sha256": "38e9666daf8dcc270dd76154b0810c8a230dcf7a3602121788f3aee678cb3041",
+            "after_sha256": "2b64ab63445ef9f11e722c1725dc24cde2cb4760b3e71505ec669009c8bd76c3"
+          },
+          {
+            "zero_based_index": 34,
+            "before_occurrences": 1,
+            "before_sha256": "b7a3af72bed7917817d4ed22fadf8925eb2befddc21ab224cfc24213c59bc9c3",
+            "after_sha256": "c511a0bf143e36c991c20a9a698963a72be5a198e0fd87ef4e1ead27069f43dd"
+          },
+          {
+            "zero_based_index": 35,
+            "before_occurrences": 1,
+            "before_sha256": "3a913084e7ce0ed11f9d56b7ce29118e68a1eaa130d998b8c0798cb37c45625f",
+            "after_sha256": "c4b932d479973d81f545784220f978affcea7f5e18f4e57fb928d1c6bdb7a54d"
+          },
+          {
+            "zero_based_index": 36,
+            "before_occurrences": 1,
+            "before_sha256": "8171bdf9e3014bd7e4992825332509eb54a5b18ec732521170c4bf2b7c1ca378",
+            "after_sha256": "f8e9e02e080f2d2fcdd45c44cb0d974abc194408b5753ca89a2cfc838d7387d5"
+          },
+          {
+            "zero_based_index": 37,
+            "before_occurrences": 1,
+            "before_sha256": "e7a5bfa7a7d5a301e68bc6993eb303eec9430d52f00d6aca8d419532ab9de8b4",
+            "after_sha256": "32233dadcdcbbe7fb32ad0686b4b42c360eec7db253e094a322290dce7811f92"
+          },
+          {
+            "zero_based_index": 38,
+            "before_occurrences": 1,
+            "before_sha256": "4bfaa9950e5b9238132ac2218a390f43d8478387dd086f64ea2acaffb4b8b1bb",
+            "after_sha256": "3654235bc762de9ec08470e0df6c3a353a01a1ff42e0af7f5ae15edaa198a8d8"
+          },
+          {
+            "zero_based_index": 39,
+            "before_occurrences": 1,
+            "before_sha256": "cf0dc3556d56e916f909bf22a35c4e2de76cbef1b2205df64b82cd1d025fc60a",
+            "after_sha256": "2cfb833ac61ca14e3aef6c4237bf10a00cbdb75a147c132f1ff52db58f61660c"
+          },
+          {
+            "zero_based_index": 40,
+            "before_occurrences": 1,
+            "before_sha256": "4b04a1220a1abd74229537e7f961b9c6e4dac11484124e264e3308bfa61d4535",
+            "after_sha256": "843352103ef0ff95fdce0bdf615126769b67207991429ec33b1f39c4ede4105c"
+          },
+          {
+            "zero_based_index": 41,
+            "before_occurrences": 1,
+            "before_sha256": "446a7069a9b09c1b515d5a7c71c3494b76374dbb34acd45f46b791427e4532fb",
+            "after_sha256": "fbb72a5da6e34385007ebe4ad55adfcd52bad6bb5f4dc22ed1d39f470d77a26c"
+          },
+          {
+            "zero_based_index": 42,
+            "before_occurrences": 1,
+            "before_sha256": "06ad85844b935f3125faa58290ecd252f09db84b21c15c387dcb7512719e0420",
+            "after_sha256": "e07779a479e377d8bdd8105a98adbb06d80810e90229400b10bb8a047c52874f"
+          },
+          {
+            "zero_based_index": 43,
+            "before_occurrences": 1,
+            "before_sha256": "c4d87321ffced10a4330ffae52f1f0e7dd936839e4d91303c45c85860bb2cf58",
+            "after_sha256": "316f76e421e99bebfddbf941f55385e61b78f8d1aca4e7860bd9516d3d2810f0"
+          },
+          {
+            "zero_based_index": 44,
+            "before_occurrences": 1,
+            "before_sha256": "0c66cc8a3b98e5dfc62858462ebebee9356f910fa4d55c6e5a10f8313a5aba1b",
+            "after_sha256": "4eb8bd89d47bacdaa0268153414489ea123b23d803fe6b04977c097dbbe16849"
+          },
+          {
+            "zero_based_index": 45,
+            "before_occurrences": 1,
+            "before_sha256": "a9ef65f3da4a32e9d26eb544d2f523fa8cb7dfe293e0f8c2cf6b3e5fbd7a049a",
+            "after_sha256": "d87eca53a5dda38e84eedd59d7bb2acbf5d6a189f8ba1d4b3d06c4102e037a5f"
+          },
+          {
+            "zero_based_index": 46,
+            "before_occurrences": 1,
+            "before_sha256": "dafbebd9810908700e998dda9b539564637f89bfe55df4c8c868e2b0b775c165",
+            "after_sha256": "0cc9fcffa60af2adba2d9d908edca107aa1e32b92f5a027d1b1378c4e1149125"
+          },
+          {
+            "zero_based_index": 47,
+            "before_occurrences": 1,
+            "before_sha256": "290f2edba0074f9c58d58e6438e27f0ce9124e62947cf42e7b625647ed3f3252",
+            "after_sha256": "6cdcf0f49110724c276e5d560968c3752cbb2f71b8bd05dc3b5559d86e9953fb"
+          },
+          {
+            "zero_based_index": 48,
+            "before_occurrences": 1,
+            "before_sha256": "4c7cdd2adc53f31c7558fa4767e82e55b370ab764123f2d061a623ccf5b99598",
+            "after_sha256": "7671a2991f9083a15b704de66bedea1650e9eebb3b4623fe20c586dcbf91f13e"
+          },
+          {
+            "zero_based_index": 49,
+            "before_occurrences": 1,
+            "before_sha256": "dea61dcd62d1edc2fdbe762112f1393b19d4e514c78252bd9b13ea0d72560670",
+            "after_sha256": "16075e8a27994cb5dbebc94e6224eaa39fd0956c2ef510db119f347183873658"
+          },
+          {
+            "zero_based_index": 50,
+            "before_occurrences": 1,
+            "before_sha256": "cf728e63fd9e2b79fa4d99b5079fb9421db776816fc5eb0e3088b9715eb27367",
+            "after_sha256": "9330a160011b0e36e7be12a5adf609788af04f1f445f29468b42fb9e89858cad"
+          },
+          {
+            "zero_based_index": 51,
+            "before_occurrences": 1,
+            "before_sha256": "f1ceee8c60c9cbd56907de7f28250762ef7701f4182c8580cac356bb9a30c582",
+            "after_sha256": "d95402f9317278ccf56784710cd23335b4f6fc1b8d55e3bcc026ee679f037206"
+          },
+          {
+            "zero_based_index": 52,
+            "before_occurrences": 1,
+            "before_sha256": "abfe70f665f00941129138b97f99a70d7961142dd63362e4df6a50556c4c55d3",
+            "after_sha256": "209410fed537ce388a5f467ea4a3abb287dfda597a3270fd372ec423701fb8bf"
+          },
+          {
+            "zero_based_index": 53,
+            "before_occurrences": 1,
+            "before_sha256": "372275a54a7700314e7d7b87f079721eda58f7c66b409132c91d292e91b7988f",
+            "after_sha256": "cda979e98d61152eea922dd875eab04ae427bd9a6b43142719bf107c72e89334"
+          },
+          {
+            "zero_based_index": 54,
+            "before_occurrences": 1,
+            "before_sha256": "a020d4e78d089b3df0d5ed064928d67c2af6050bd4b2299c2776cdfc94bb3a79",
+            "after_sha256": "4bfa9c6bf271d7cac15972ce3f2d1d12c145ba9e242073f3dace118a5e02186a"
+          },
+          {
+            "zero_based_index": 55,
+            "before_occurrences": 1,
+            "before_sha256": "abe8f5f247989777ae43604091eb7af9bb514ea9cb22175c0d7eabe45e6c7ac6",
+            "after_sha256": "111c1375e1d683030d036e2d11724fdfb744837071b24442f348438121e0f083"
+          },
+          {
+            "zero_based_index": 56,
+            "before_occurrences": 1,
+            "before_sha256": "e21bd190bd7f4b546e5e698750aaee9c6f0ce67b9805f27200dab79d79822e99",
+            "after_sha256": "e78a896cef39fef497025b1d9fc96ffdb01e124eaf44c919322243961df05eae"
+          },
+          {
+            "zero_based_index": 57,
+            "before_occurrences": 1,
+            "before_sha256": "b5db4607bf6a4a5bbe6aa1e006e57e4362c18f8815678a20ec567f736b91e423",
+            "after_sha256": "ef919cbeaa00f1d9f98173b92d17a8d596d44c2240189e08a5ce338b445fa858"
+          },
+          {
+            "zero_based_index": 58,
+            "before_occurrences": 1,
+            "before_sha256": "80703fe890c7149e5f78bc5a8c08da88a89146312cb77b4005711eac76082c09",
+            "after_sha256": "b42bc327b839b3e4546516607b8942a367bd6542f5955045848b23e655cead1e"
+          },
+          {
+            "zero_based_index": 59,
+            "before_occurrences": 1,
+            "before_sha256": "91e5ab59c7747b2e2b7df0b6fd2a2a5f1f72e52ece3fc4af1f5812039650c875",
+            "after_sha256": "5b26c28c0a32afc647df05e54b7ac8a391a0524bc6ee8503f6f74c997fcc0ec7"
+          },
+          {
+            "zero_based_index": 60,
+            "before_occurrences": 1,
+            "before_sha256": "5b26c28c0a32afc647df05e54b7ac8a391a0524bc6ee8503f6f74c997fcc0ec7",
+            "after_sha256": "44bef8da4f7eabf1107f6a5963593b78063d468070fda87cf1a1545557edf8a7"
+          },
+          {
+            "zero_based_index": 61,
+            "before_occurrences": 1,
+            "before_sha256": "aab69630d9c582453261ead8578dbfde1f7cd1c23528c13d9c7de2ab02632e9e",
+            "after_sha256": "eb4bb54c283db130b80fef5c139fdef4f9fc7a6f781fe8d454c105811fcce2f2"
+          },
+          {
+            "zero_based_index": 62,
+            "before_occurrences": 1,
+            "before_sha256": "938bbbb63f9c51635dbed52761bf6180a2a7de31a6b6b8990ee4f801f9d889c5",
+            "after_sha256": "cb63524c99d462a04ac5e434b4196963e47c04bf9037955e60f58f46b21f5c0c"
+          },
+          {
+            "zero_based_index": 63,
+            "before_occurrences": 1,
+            "before_sha256": "adffc8162cde1f695ed3503f7520ceba3111a472acbb97e5b093352948edcae9",
+            "after_sha256": "f500a66c71ec9b590427a8a9987ea0be22ffe6157981923ac8132a81d78606a5"
+          },
+          {
+            "zero_based_index": 64,
+            "before_occurrences": 1,
+            "before_sha256": "94dc7a7b8f4d9b760e55fd2e6cb4992284615a18ff487dc1ea0d432270341355",
+            "after_sha256": "ec794613982f6a4927446f1149fa327835044259500adc67d498e359eb2d22b5"
+          },
+          {
+            "zero_based_index": 65,
+            "before_occurrences": 1,
+            "before_sha256": "36a449d578ce6fca3fad6773d909609d7c2f06ad9930014056fc103219983679",
+            "after_sha256": "c4c08534bc8ab0a0e4917f4e7bd5389954cbd3109dbf2db35b10f45c001cc08c"
+          },
+          {
+            "zero_based_index": 66,
+            "before_occurrences": 1,
+            "before_sha256": "badda4b10ab5b4d772e4b4d80ead1b6c09b46b35d7521e61c7c012f0a936ce61",
+            "after_sha256": "579d4b86c2658d6c99f3d4ff7fb55f1cba19ef2acecdc78bda2982e5c43ac798"
+          }
+        ]
+      },
+      {
+        "path": "mlx/backend/metal/kernels/steel/attn/kernels/steel_attention.h",
+        "archive_member": "mlx-1f8e74e3f12f31365464a6867c6579f0e9b29d85/mlx/backend/metal/kernels/steel/attn/kernels/steel_attention.h",
+        "before_sha256": "3e9334c9ec3298fc7fb21a9468816d1b7c6e3c11da8494df7ae4fc7a4c04f570",
+        "after_sha256": "fc2a9a08032a7be4f59ec39e6e1f0d5ff624a47cadb90a71f23a5ba5329de5d8",
+        "all_ordered_rules_applied_once": true,
+        "rules": [
+          {
+            "zero_based_index": 0,
+            "before_occurrences": 1,
+            "before_sha256": "41f6ddb6e67b7ce00c6c5001fb923d9b02dd338b1e9bb5b6060a9631a7bfe963",
+            "after_sha256": "51f100c45666249fce4b20e19b70e4e4c461b01770c7367530bdc102fb7d4e26"
+          },
+          {
+            "zero_based_index": 1,
+            "before_occurrences": 1,
+            "before_sha256": "37add84dcf7a0dc47d347e2c97043ea6fb71c5497efb1812cfb182523437d034",
+            "after_sha256": "16c61437baa732135f596c4018f57ab63454bccc93a06eceb07241c12e75d722"
+          },
+          {
+            "zero_based_index": 2,
+            "before_occurrences": 1,
+            "before_sha256": "c9e7ca06cd56864de3249648d7344ba96b50ab0ba3ab5a85953d704585c5ee8b",
+            "after_sha256": "388567fd0916c05d8864f8f3f9855cb59ccc774849d7e6970edc74fb1c9edfcd"
+          },
+          {
+            "zero_based_index": 3,
+            "before_occurrences": 1,
+            "before_sha256": "4e61713c408b4ebf6c35ebbb70001a4dcae6d4358857545ce1c6912ca1f045a7",
+            "after_sha256": "c2c9369ed14f21b0a7d1b894d1a931ae97677ebc135e8d6b96aca5e773514628"
+          },
+          {
+            "zero_based_index": 4,
+            "before_occurrences": 1,
+            "before_sha256": "f02dd72fcf896ecbee322bbd841ea2a418315ed916d289976996d85551a02196",
+            "after_sha256": "fd7684d54397ea41db403c50f4370b4a44981355f83fb08dfc315d8d2d4708dc"
+          },
+          {
+            "zero_based_index": 5,
+            "before_occurrences": 1,
+            "before_sha256": "0be55639dca62f30603ba2318b7c2221a4815addc42b68a12bad65634e87fc53",
+            "after_sha256": "cd95f1219ce7dc294078307ca35d5af28f057b42e38ef2e5614d9543863447f1"
+          },
+          {
+            "zero_based_index": 6,
+            "before_occurrences": 1,
+            "before_sha256": "51f100c45666249fce4b20e19b70e4e4c461b01770c7367530bdc102fb7d4e26",
+            "after_sha256": "0f54a3e73011a9f9aff2fa418d1f8a1aec089240015593b85d3b5916f41053f8"
+          },
+          {
+            "zero_based_index": 7,
+            "before_occurrences": 1,
+            "before_sha256": "7034654d79926499ff2c1d1d2317fcf80fd544b546b53c6717ea7634a0cef9c4",
+            "after_sha256": "94a44cd0f03d6e6443901ba357de913e519929821f8644278830d6368ddedb05"
+          },
+          {
+            "zero_based_index": 8,
+            "before_occurrences": 1,
+            "before_sha256": "0cb05abf6ad6151af355ffbf60fd7e3d154722ad194d9e5d31098303ee443c4a",
+            "after_sha256": "876ebbf9ab1b02f9b975f3a38e01fcfa708909b47f7926ead5c7c0a9a3177aef"
+          },
+          {
+            "zero_based_index": 9,
+            "before_occurrences": 1,
+            "before_sha256": "cdec4df1f96f317aab60c541dd23c27b126a7a967044465cb793a7efe57e150c",
+            "after_sha256": "ba31e71cb5d87cc8e07f64c8125668173b51bd6b3eee7475059044beb6938269"
+          },
+          {
+            "zero_based_index": 10,
+            "before_occurrences": 1,
+            "before_sha256": "f610382d67032dbba753984af9fcb0f419bc681344ad4a99f17971ed9f057212",
+            "after_sha256": "5c99ec46d612115f95ff1c9ffb24ea787e58494aa96822ee2426c6107a51a587"
+          },
+          {
+            "zero_based_index": 11,
+            "before_occurrences": 1,
+            "before_sha256": "ade3954aa61f19f4a81dbc8c74af630b75ba4ba761753b56765b82eb137e259d",
+            "after_sha256": "332445e1f1ef996efd543eeee7aca4546f72340862370e824af5d52c415c86e6"
+          },
+          {
+            "zero_based_index": 12,
+            "before_occurrences": 1,
+            "before_sha256": "6b651270a39930ffb09bb63f854a1b008617481c80bbeda78e334aa679d74c9c",
+            "after_sha256": "e6db16709bc64ec722e3f87efee5826eb9230499ea598ec4ae26d62dc1c58d35"
+          },
+          {
+            "zero_based_index": 13,
+            "before_occurrences": 1,
+            "before_sha256": "304c87ec9cc39e00c92a8804fc98f62485d7661b1760ba708a4eb130a5dbcfe6",
+            "after_sha256": "40cf415c2286899327ed9b8a65951513df365de7cb152b6bfe2251a6d864e0ec"
+          },
+          {
+            "zero_based_index": 14,
+            "before_occurrences": 1,
+            "before_sha256": "5371d5e32f4cb98b4be54ea1290a74217d4e36c37bdcc14e13a7a935af48259b",
+            "after_sha256": "d859d7bb9dc03da7ca4bc2ef69fbc98e12ac1f598425fb12acf794ed88c19774"
+          },
+          {
+            "zero_based_index": 15,
+            "before_occurrences": 1,
+            "before_sha256": "e0cce1e1f4d47f74395951f9f87e827c6a1248c03cf4c781680c5b650ff9edaf",
+            "after_sha256": "3043b3867d54b36af57aed023cfe791ab5720d10ef2ae313050bd3a3b36004f6"
+          },
+          {
+            "zero_based_index": 16,
+            "before_occurrences": 1,
+            "before_sha256": "4ca1053f8818fac30d503142c41b368783647e1f2a934df09eb084ede65b21e7",
+            "after_sha256": "264134c2cb005dee8ef9e4acc7c71280879401a122cc59fa91ba22663deaf853"
+          },
+          {
+            "zero_based_index": 17,
+            "before_occurrences": 1,
+            "before_sha256": "926be895849044891c51be76cd2560407547a62fefaa997a6738b301cf0a788c",
+            "after_sha256": "d59975608edf6f6f22e589a8f712f9a80c3f4bd2fe6d2e68bff64cdd1f734ca1"
+          },
+          {
+            "zero_based_index": 18,
+            "before_occurrences": 1,
+            "before_sha256": "25fabc53913b2a6d7a7206c31aee6e473e1cce60a4f2aa46c9c50d9b11e82ba3",
+            "after_sha256": "4dc5efdb81de6797b3ec36774d210e5e746d1b92147e0d1628e2be64b7c1ff14"
+          },
+          {
+            "zero_based_index": 19,
+            "before_occurrences": 1,
+            "before_sha256": "15643693f1b87fba609fa60407e4e9415f19aa19e7557103c325e90804919f43",
+            "after_sha256": "dffcebbdd34a1a1f19b9a9ddfc0d7dfb56bcc80572fa5df5df1573323ea1e171"
+          },
+          {
+            "zero_based_index": 20,
+            "before_occurrences": 1,
+            "before_sha256": "428291f2008d5ed2b80e3800c9934fdf9d06c77d63607011b57afd7aad37b70f",
+            "after_sha256": "1dcb9b899c86eeb2aedf39cc7f144942f766897c41185aabd0dc410215fe3ccc"
+          },
+          {
+            "zero_based_index": 21,
+            "before_occurrences": 1,
+            "before_sha256": "5c5d161937229e11dfc56d9b1504d1199901daade4677facb1842350770213cb",
+            "after_sha256": "5fc038615dc5c6c274750cf7a7bd875bcbe513322621fc955241b23b9acf5519"
+          },
+          {
+            "zero_based_index": 22,
+            "before_occurrences": 1,
+            "before_sha256": "41047257a4eb0292dcfea1613e7a255acea43dc7084c7cffcdb7eaf8946dab86",
+            "after_sha256": "1d0e1e720c3dafa43f17efca16ae87a66bd142fc9bfe37bc133d5ce731d427e4"
+          },
+          {
+            "zero_based_index": 23,
+            "before_occurrences": 1,
+            "before_sha256": "76c58c2ed0df3337cdf58b26970a62d52c6a437adfbbb9657241ae1b27a1b620",
+            "after_sha256": "10e95ecf687abab06894fe55ea6498a86bc689f0da313e7544a01cb5d1317026"
+          },
+          {
+            "zero_based_index": 24,
+            "before_occurrences": 1,
+            "before_sha256": "80b7832020cf8aa0f3c1130e76c44d6c50e6396d3b66cd343965467c9d1dfa49",
+            "after_sha256": "609851932319e3c174127f90ae3f91382e53a8624fdd9be498f2551471e431fc"
+          },
+          {
+            "zero_based_index": 25,
+            "before_occurrences": 1,
+            "before_sha256": "c6cbb9c5f5192667b8d5fbee9cf442ab00257e9e1fa345968ad80e2cc8405b2c",
+            "after_sha256": "d9b7f314875e30d2f2891671c9aed620387e1108be4c284819eb09f228ec4d17"
+          },
+          {
+            "zero_based_index": 26,
+            "before_occurrences": 1,
+            "before_sha256": "3482a99b69eac712f3261da2a28372cb1bf16cfb918eb7738014712732702121",
+            "after_sha256": "b793abc656b01fe53336c1eb88e0a87818fe6f730016b5cb95417fd9dfc53ad7"
+          },
+          {
+            "zero_based_index": 27,
+            "before_occurrences": 1,
+            "before_sha256": "2913d68992c4c2803bf35782641a81c363cedd50534da4c489de9c9dd44aa48e",
+            "after_sha256": "277382cf36b29476471b0a45ef5a3bbd61dafeaf584b5e0b95d4acdd979aa4ae"
+          },
+          {
+            "zero_based_index": 28,
+            "before_occurrences": 1,
+            "before_sha256": "f458c875c5af9bc515e32724e34d32c5a98ae2bdb7c33c9d5da9162820c8ee2e",
+            "after_sha256": "c9ec07e800dec0832aa435154893de4362391b77e0e5e5b1f25a95c462302a05"
+          },
+          {
+            "zero_based_index": 29,
+            "before_occurrences": 1,
+            "before_sha256": "0eb1fe5c2cd10a0bfd7d752547c86703c210c20737f15b7d7dc493f4668414ab",
+            "after_sha256": "7f71acd1d878ba92e06c030348199750daaf2b1b1b606e8b09adebfb463b49d3"
+          }
+        ]
+      }
+    ]
+  },
+  "source_excerpts": {
+    "header_static_arrays": [
+      {
+        "line": 120,
+        "text": "  // Prepare threadgroup memory"
+      },
+      {
+        "line": 121,
+        "text": "  constexpr short padQ = 16 / sizeof(QueryT);"
+      },
+      {
+        "line": 122,
+        "text": "  constexpr short padK = 16 / sizeof(T);"
+      },
+      {
+        "line": 123,
+        "text": "  constexpr short padV = 16 / sizeof(T);"
+      },
+      {
+        "line": 124,
+        "text": ""
+      },
+      {
+        "line": 125,
+        "text": "  constexpr short LDQ_tgp = BD + padQ;"
+      },
+      {
+        "line": 126,
+        "text": "  constexpr short LDK_tgp = BK + padK;"
+      },
+      {
+        "line": 127,
+        "text": "  constexpr short LDV_tgp = BV + padV;"
+      },
+      {
+        "line": 128,
+        "text": ""
+      },
+      {
+        "line": 129,
+        "text": "  constexpr short tgp_mem_0 = (BK + padK) * (BD);"
+      },
+      {
+        "line": 130,
+        "text": "  constexpr short tgp_mem_1 = BK * (BV + padV);"
+      },
+      {
+        "line": 131,
+        "text": "  constexpr short tgp_mem_s = tgp_mem_0 > tgp_mem_1 ? tgp_mem_0 : tgp_mem_1;"
+      },
+      {
+        "line": 132,
+        "text": ""
+      },
+      {
+        "line": 133,
+        "text": "  threadgroup QueryT Q_smem[BQ * (BD + padQ)];"
+      },
+      {
+        "line": 134,
+        "text": "  threadgroup T KV_smem[tgp_mem_s];"
+      },
+      {
+        "line": 135,
+        "text": ""
+      },
+      {
+        "line": 136,
+        "text": "  threadgroup QueryT* Qs = Q_smem;"
+      },
+      {
+        "line": 137,
+        "text": "  threadgroup T* Ks = KV_smem;"
+      },
+      {
+        "line": 138,
+        "text": "  threadgroup T* Vs = KV_smem;"
+      }
+    ],
+    "jit_template_arguments": [
+      {
+        "line": 1308,
+        "text": "MTL::ComputePipelineState* get_steel_attention_kernel("
+      },
+      {
+        "line": 1309,
+        "text": "    metal::Device& d,"
+      },
+      {
+        "line": 1310,
+        "text": "    const std::string& kernel_name,"
+      },
+      {
+        "line": 1311,
+        "text": "    const std::string& hash_name,"
+      },
+      {
+        "line": 1312,
+        "text": "    const metal::MTLFCList& func_consts,"
+      },
+      {
+        "line": 1313,
+        "text": "    const array& q,"
+      },
+      {
+        "line": 1314,
+        "text": "    int bq,"
+      },
+      {
+        "line": 1315,
+        "text": "    int bk,"
+      },
+      {
+        "line": 1316,
+        "text": "    int bd,"
+      },
+      {
+        "line": 1317,
+        "text": "    int wm,"
+      },
+      {
+        "line": 1318,
+        "text": "    int wn,"
+      },
+      {
+        "line": 1319,
+        "text": "    const array& m, int bv, bool half_query) {"
+      },
+      {
+        "line": 1320,
+        "text": "  const auto& lib_name = kernel_name;"
+      },
+      {
+        "line": 1321,
+        "text": "  auto lib = d.get_library(lib_name, [&]() {"
+      },
+      {
+        "line": 1322,
+        "text": "    std::string kernel_source;"
+      },
+      {
+        "line": 1323,
+        "text": "    concatenate("
+      },
+      {
+        "line": 1324,
+        "text": "        kernel_source,"
+      },
+      {
+        "line": 1325,
+        "text": "        metal::utils(),"
+      },
+      {
+        "line": 1326,
+        "text": "        metal::steel_attention(),"
+      },
+      {
+        "line": 1327,
+        "text": "        get_template_definition("
+      },
+      {
+        "line": 1328,
+        "text": "            lib_name,"
+      },
+      {
+        "line": 1329,
+        "text": "            \"attention\","
+      },
+      {
+        "line": 1330,
+        "text": "            get_type_string(q.dtype()),"
+      },
+      {
+        "line": 1331,
+        "text": "            bq,"
+      },
+      {
+        "line": 1332,
+        "text": "            bk,"
+      },
+      {
+        "line": 1333,
+        "text": "            bd,"
+      },
+      {
+        "line": 1334,
+        "text": "            wm,"
+      },
+      {
+        "line": 1335,
+        "text": "            wn,"
+      },
+      {
+        "line": 1336,
+        "text": "            get_type_string(m.dtype()), \"float\", bv < 0 ? bd : bv,"
+      },
+      {
+        "line": 1337,
+        "text": "            half_query ? \"half\" : get_type_string(q.dtype())));"
+      },
+      {
+        "line": 1338,
+        "text": "    return kernel_source;"
+      },
+      {
+        "line": 1339,
+        "text": "  });"
+      },
+      {
+        "line": 1340,
+        "text": "  return d.get_kernel(kernel_name, lib, hash_name, func_consts);"
+      },
+      {
+        "line": 1341,
+        "text": "}"
+      }
+    ],
+    "header_template_types": [
+      {
+        "line": 56,
+        "text": "struct DivOp {"
+      },
+      {
+        "line": 57,
+        "text": "  template <typename T>"
+      },
+      {
+        "line": 58,
+        "text": "  METAL_FUNC static constexpr T apply(T x, T y) {"
+      },
+      {
+        "line": 59,
+        "text": "    return x / y;"
+      },
+      {
+        "line": 60,
+        "text": "  }"
+      },
+      {
+        "line": 61,
+        "text": "};"
+      },
+      {
+        "line": 62,
+        "text": ""
+      },
+      {
+        "line": 63,
+        "text": "// clang-format off"
+      },
+      {
+        "line": 64,
+        "text": "template <"
+      },
+      {
+        "line": 65,
+        "text": "    typename T,"
+      },
+      {
+        "line": 66,
+        "text": "    int BQ,"
+      },
+      {
+        "line": 67,
+        "text": "    int BK,"
+      },
+      {
+        "line": 68,
+        "text": "    int BD,"
+      },
+      {
+        "line": 69,
+        "text": "    int WM,"
+      },
+      {
+        "line": 70,
+        "text": "    int WN,"
+      },
+      {
+        "line": 71,
+        "text": "    typename MaskType = float,"
+      },
+      {
+        "line": 72,
+        "text": "    typename AccumType = float, int BV = BD, typename QueryT = T>"
+      },
+      {
+        "line": 73,
+        "text": "[[kernel, max_total_threads_per_threadgroup(WM * WN * 32)]] void attention("
+      },
+      {
+        "line": 74,
+        "text": "    const device T* Q [[buffer(0)]],"
+      },
+      {
+        "line": 75,
+        "text": "    const device T* K [[buffer(1)]],"
+      },
+      {
+        "line": 76,
+        "text": "    const device T* V [[buffer(2)]],"
+      },
+      {
+        "line": 77,
+        "text": "    device T* O [[buffer(3)]],"
+      },
+      {
+        "line": 78,
+        "text": "    const constant AttnParams* params [[buffer(4)]],"
+      },
+      {
+        "line": 79,
+        "text": "    const constant AttnMaskParams* mask_params [[buffer(5), function_constant(has_mask)]],"
+      },
+      {
+        "line": 80,
+        "text": "    const device MaskType* mask [[buffer(6), function_constant(has_mask)]],"
+      },
+      {
+        "line": 81,
+        "text": "    const device T* sinks [[buffer(7), function_constant(has_sinks)]],"
+      },
+      {
+        "line": 82,
+        "text": "    const device int* hyle_pages [[buffer(8), function_constant(hyle_paged)]],"
+      },
+      {
+        "line": 83,
+        "text": "    const constant int& hyle_offset [[buffer(9), function_constant(hyle_paged)]],"
+      },
+      {
+        "line": 84,
+        "text": "    const constant int& hyle_window_left [[buffer(10), function_constant(hyle_window)]],"
+      },
+      {
+        "line": 85,
+        "text": "    uint simd_lane_id [[thread_index_in_simdgroup]],"
+      },
+      {
+        "line": 86,
+        "text": "    uint simd_group_id [[simdgroup_index_in_threadgroup]],"
+      },
+      {
+        "line": 87,
+        "text": "    uint3 tid [[threadgroup_position_in_grid]],"
+      },
+      {
+        "line": 88,
+        "text": "    uint3 lid [[thread_position_in_threadgroup]]) { // clang-format on"
+      },
+      {
+        "line": 89,
+        "text": ""
+      }
+    ]
+  },
+  "fault_template": {
+    "T": "half (float16)",
+    "QueryT": "half (JIT default equals q dtype for this call)",
+    "BQ": 32,
+    "BK": 16,
+    "BD": 256,
+    "BV": 256,
+    "WM": 4,
+    "WN": 1,
+    "hyle_paged": true,
+    "hyle_q8": false,
+    "hyle_window": false
+  },
+  "declared_static_array_arithmetic": {
+    "padQ_padK_padV_elements": 8,
+    "Q_smem_expression": "BQ * (BD + 16 / sizeof(QueryT)) * sizeof(QueryT)",
+    "Q_smem_bytes": 16896,
+    "KV_smem_expression": "max((BK + 16 / sizeof(T)) * BD, BK * (BV + 16 / sizeof(T))) * sizeof(T)",
+    "KV_smem_bytes": 12288,
+    "declared_total_bytes": 29184,
+    "device_limit_in_failure_bytes": 32768,
+    "reported_total_used_bytes": 58368,
+    "reported_equals_twice_declared": true,
+    "declared_total_below_failure_limit": true
+  },
+  "host_source_check": {
+    "function": "sdpa_full_self_attention_metal",
+    "explicit_dynamic_threadgroup_memory_length_setter_in_function": false,
+    "limitation": "This is a function source check, not a runtime trace of encoder state or a query of compiled pipeline resource usage."
+  },
+  "existing_failure": {
+    "log": ".scratch\\g09-completion-wake-correction\\run-final-v4\\air-apple\\source\\device-g09_wake_v4_pending.log",
+    "log_sha256": "42a8b10676bcc4e0ee98c3d410c5f01a597004de5d0ff3cbbdeb12d1d08cad42",
+    "raw_lines": [
+      "2026-10-17 15:52:12.026 g09_wake_v4_pending[55132:11393121] Metal API Validation Enabled",
+      "2026-10-17 15:52:12.026 g09_wake_v4_pending[55132:11393121] Metal GPU Validation Enabled",
+      "validateComputeFunctionArguments:1272: failed assertion `Functon(steel_attention_float16_bq32_bk16_bd256_wm4_wn1_maskfloat16_bv256_align_Q_n_align_K_n_has_mask_n_do_causal_t_has_sinks_n_hyle_1_0_0): total used threadgroupMemoryLength(58368) must be <= 32768.'"
+    ],
+    "receipt": ".scratch\\g09-completion-wake-correction\\run-final-v4\\air-apple\\source\\receipt.json",
+    "receipt_sha256": "ac5fa3b18690f2f1e3ffe1075eeb68b81176c9bdef9430c01fc60173ba17c1eb",
+    "command": {
+      "label": "g09_wake_v4_pending",
+      "command": [
+        "/Users/kiro/hyle-scratch/g09-completion-wake-correction/run-final-v4/air-apple/source/bin/g09_wake_v4_pending"
+      ],
+      "log": "/Users/kiro/hyle-scratch/g09-completion-wake-correction/run-final-v4/air-apple/source/device-g09_wake_v4_pending.log",
+      "child_pid": 55132,
+      "seconds": 1.7115389169999995,
+      "log_sha256": "42a8b10676bcc4e0ee98c3d410c5f01a597004de5d0ff3cbbdeb12d1d08cad42",
+      "exit_code": -6
+    },
+    "classification": "Metal validateComputeFunctionArguments logs a definite resource-limit assertion and the host process aborts (SIGABRT / subprocess -6). This is not a recoverable Hyle Status return. Existing evidence does not establish a GPU hardware hang or an arbitrary memory crash."
+  },
+  "inference": {
+    "status": "UNKNOWN_COMPILED_PIPELINE_MEMORY_CAUSE",
+    "finding": "The explicit original template arrays total 29184 bytes, while the validation-enabled process reports exactly 58368 bytes. Together with known Shader Validation instrumentation overhead, this is strong evidence to investigate validation/compiler resource changes, and a counterexample to treating 58368 as proven original-source allocation demand.",
+    "not_proven": [
+      "That Metal Shader Validation always doubles threadgroup memory.",
+      "That this exact pipeline doubled because of shadow-memory instrumentation rather than another compiler/validation accounting effect.",
+      "The runtime staticThreadgroupMemoryLength with only API Validation, only Shader Validation, or neither.",
+      "That the original product kernel is safe in all environments, or that validation may be silently suppressed.",
+      "That the G09 notification change caused the reported resource allocation."
+    ],
+    "failure_verdict_preserved": "Original combined API+GPU validation run remains FAIL; audit does not convert it to PASS."
+  },
+  "primary_sources": [
+    {
+      "url": "https://developer.apple.com/documentation/xcode/validating-your-apps-metal-api-usage",
+      "supports": "API Validation checks API misuse; MTL_DEBUG_LAYER_ERROR_MODE defaults to assert, logging then asserting on error."
+    },
+    {
+      "url": "https://developer.apple.com/documentation/xcode/validating-your-apps-metal-shader-usage",
+      "supports": "Shader Validation adds instrumentation to GPU functions and affects compile/runtime work and memory accesses; this does not document a fixed double threadgroup factor."
+    },
+    {
+      "url": "https://developer.apple.com/videos/play/wwdc2020/10616/",
+      "supports": "Shader Validation has high performance and memory impact, and can change pipeline query values; API Validation errors are distinguished from GPU execution faults."
+    },
+    {
+      "url": "https://developer.apple.com/documentation/metal/mtldevice/maxthreadgroupmemorylength",
+      "supports": "Device maximum threadgroup memory is a Metal device capability."
+    },
+    {
+      "url": "https://developer.apple.com/documentation/metal/mtlcomputecommandencoder/setthreadgroupmemorylength(_:index:)",
+      "supports": "Static shader and encoder dynamic threadgroup memory allocations together must not exceed device limits."
+    },
+    {
+      "url": "https://developer.apple.com/metal/Metal-Feature-Set-Tables.pdf",
+      "supports": "Apple GPU feature tables specify 32 KB maximum total threadgroup memory for relevant Apple families."
+    },
+    {
+      "url": "https://github.com/ml-explore/mlx/blob/1f8e74e3f12f31365464a6867c6579f0e9b29d85/mlx/backend/metal/kernels/steel/attn/kernels/steel_attention.h",
+      "supports": "Pinned upstream origin; exact Hyle final bytes additionally require canonical patches.json reconstruction recorded above."
+    }
+  ]
+}

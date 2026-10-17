@@ -74,6 +74,9 @@ python scripts/check-docs.py
 `check-module-closure.py --previous-ref <revision>`；普通命令只检查当前快照，不证明状态没有跳级。
 
 到达预算或停止条件后必须裁决为 `CLOSED`、`BLOCKED`，或按协议退回明确阶段；“继续研究”不是状态。
+普通纠正按[根因与失败类别](docs/developer/review/module-closure-methodology.md#31-纠正预算按根因记账)
+分别记账，不把入口/fixture/cache 失败与独立产品缺陷机械合并计次；共享总时间和旧失败不重置。
+用户调整上限时登记接续卡及新总额/截止点，恢复审计走 `BLOCKED -> SCOPED`，不能直接重跑或跳至实现。
 
 当前 CUDA U2/U3 交付按[活动收口计划](docs/implementation/tasks/compute/cuda-final-closure-plan.md)
 中的固定入口续跑；不要恢复已停用的 `.scratch/cuda-u3-*` 交付启动脚本。该约束只适用于本批，

@@ -1,0 +1,17 @@
+READ-ONLY SOURCE AUDIT; no native execution, no SSH, no layer variants.
+Candidate a0cc517332129c403b4e464a2e865712a2842290
+Locked archive SHA256 cb988a5bdc38c798918d042b9b1c6edda3ccc5f23a2155138d3aa5c1b2acc301
+Patch rules SHA256 51596c099e7b3a654bf4c7da4cf13298c6847dcd1e7a6d283b7eb6e5f5f7b9b4
+Final header SHA256 fc2a9a08032a7be4f59ec39e6e1f0d5ff624a47cadb90a71f23a5ba5329de5d8
+Final JIT SHA256 63ca81b97f2c9afad509ebd8ad7687369b0564efada95b067b4410e575e2ec68
+
+Q_smem: 32 * (256 + 8) * 2 = 16896 bytes
+KV_smem: max((16 + 8) * 256, 16 * (256 + 8)) * 2 = 12288 bytes
+Explicit template arrays total 29184 bytes < 32768.
+Reported combined-validation total is 58368 = 2 * 29184.
+No explicit dynamic threadgroup memory setter appears in sdpa_full_self_attention_metal.
+
+The existing Metal host API validation assertion and subprocess exit -6 establish a deliberate diagnostic abort. They do not establish a GPU hang or an arbitrary crash. The exact reason that compiled/validated usage differs from declared original arrays is UNKNOWN. Apple documents shader instrumentation and memory impact, not an always-2x rule. No pipeline resource query or separated layer run was performed. The original combined validation remains FAIL.
+
+Full hashes, ordered patch verification, source line excerpts, logs, limitations, and primary Apple links are in metal-validation-static-memory-audit.json
+JSON SHA256 c334cd30b3b24bf6a7a4700e0eae45d8875e4b962daeb82f4ab76707f6197b85
