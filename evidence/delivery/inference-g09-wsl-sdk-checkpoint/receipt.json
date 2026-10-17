@@ -1,0 +1,198 @@
+{
+  "schema": "hyle.inference-g09-wsl-sdk-checkpoint/v1",
+  "state": "THREE_WSL_CUDA_DELIVERIES_PUBLIC_CONSUMERS_HEADERS_PASS",
+  "candidate": "3524413272cb52d06af5e64d634edbfef09b9864",
+  "product_code_commit": "e09f30925c6dba5cf4540669fd3b4874f45bb158",
+  "cases": [
+    {
+      "mode": "static",
+      "state": "RELOCATED_SDK_PUBLIC_CONSUMERS_HEADERS_PASS",
+      "candidate": "3524413272cb52d06af5e64d634edbfef09b9864",
+      "source_snapshot": {
+        "head": "bc6ad5c4b744cdbad9a572d62a187b0cb2f94736",
+        "tree": "b325038c6003d992fb4b4c71f1ffbf9386d8acea",
+        "archive_sha256": "dc578b0dca6dcb4305be39a0ec7420e11de93719bfb011a4e0b0f02604808354"
+      },
+      "identity": {
+        "host": "Linux kiro-workstation 6.18.54.1-microsoft-standard-WSL2 #1 SMP PREEMPT_DYNAMIC Tue Oct  6 19:13:07 UTC 2026 x86_64 x86_64 x86_64 GNU/Linux",
+        "compiler": "g++-14 (Ubuntu 14.2.0-4ubuntu2~24.04.1) 14.2.0\nCopyright (C) 2024 Free Software Foundation, Inc.\nThis is free software; see the source for copying conditions.  There is NO\nwarranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.",
+        "cuda": "nvcc: NVIDIA (R) Cuda compiler driver\nCopyright (c) 2005-2026 NVIDIA Corporation\nBuilt on Tue_Jun_09_02:43:40_PM_PDT_2026\nCuda compilation tools, release 13.3, V13.3.73\nBuild cuda_13.3.r13.3/compiler.38244171_0",
+        "gpu": "NVIDIA GeForce RTX 4070, GPU-e7376560-6f5d-ec19-6ee4-3dd3a2c81ef8, 617.14"
+      },
+      "producer": "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/static-sdk-build",
+      "relocated_prefix": "/root/hyle-scratch/compute-unified/g09-sdk/cuda-static-1/relocated",
+      "binaries": [
+        {
+          "path": "/root/hyle-scratch/compute-unified/g09-sdk/cuda-static-1/evidence/bin/g09_contracts",
+          "sha256": "9dbca0bb2b320d745ea8109a234231eac92afedb540babd9aebd0202cb980416"
+        },
+        {
+          "path": "/root/hyle-scratch/compute-unified/g09-sdk/cuda-static-1/evidence/bin/g09_pipeline",
+          "sha256": "a656b3584a621fe531026187dc4f1cb27334b305e0ea4a0a4feecc0f84bd3c6a"
+        },
+        {
+          "path": "/root/hyle-scratch/compute-unified/g09-sdk/cuda-static-1/evidence/bin/g09_g06_hybrid",
+          "sha256": "1b23c0b9d3bb4699e6da17cf645ec0a9b7ca12d5975f0678c2bca1f2874da40e"
+        },
+        {
+          "path": "/root/hyle-scratch/compute-unified/g09-sdk/cuda-static-1/evidence/bin/g09_g06_pending",
+          "sha256": "249032fa0b2c4ceb579accb9be98397143e4337f9e5ed0bda9c096b94402e248"
+        }
+      ],
+      "public_header_inputs": [
+        {
+          "path": "graph/cpu.h",
+          "sha256": "207f78caafbec1e73966f0ead5563b51aa2aaf3e5eccabde15b6a20447a25f99"
+        },
+        {
+          "path": "graph/cpu_cuda.h",
+          "sha256": "b3fe45dc75ce6c999857bca3130816132018eb3c845e0c889d577165d8f1b098"
+        }
+      ],
+      "max_jobs": 2,
+      "logical_cpus": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "nice": 10,
+      "actual_cumulative_seconds": 141.80658977299998,
+      "preflight_edges": {
+        "producer_build_edges": 46,
+        "consumer_build_edges": 11
+      },
+      "result_origin": "cuda-static/result.json"
+    },
+    {
+      "mode": "shared",
+      "state": "RELOCATED_SDK_PUBLIC_CONSUMERS_HEADERS_PASS",
+      "candidate": "3524413272cb52d06af5e64d634edbfef09b9864",
+      "source_snapshot": {
+        "head": "bc6ad5c4b744cdbad9a572d62a187b0cb2f94736",
+        "tree": "b325038c6003d992fb4b4c71f1ffbf9386d8acea",
+        "archive_sha256": "dc578b0dca6dcb4305be39a0ec7420e11de93719bfb011a4e0b0f02604808354"
+      },
+      "identity": {
+        "host": "Linux kiro-workstation 6.18.54.1-microsoft-standard-WSL2 #1 SMP PREEMPT_DYNAMIC Tue Oct  6 19:13:07 UTC 2026 x86_64 x86_64 x86_64 GNU/Linux",
+        "compiler": "g++-14 (Ubuntu 14.2.0-4ubuntu2~24.04.1) 14.2.0\nCopyright (C) 2024 Free Software Foundation, Inc.\nThis is free software; see the source for copying conditions.  There is NO\nwarranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.",
+        "cuda": "nvcc: NVIDIA (R) Cuda compiler driver\nCopyright (c) 2005-2026 NVIDIA Corporation\nBuilt on Tue_Jun_09_02:43:40_PM_PDT_2026\nCuda compilation tools, release 13.3, V13.3.73\nBuild cuda_13.3.r13.3/compiler.38244171_0",
+        "gpu": "NVIDIA GeForce RTX 4070, GPU-e7376560-6f5d-ec19-6ee4-3dd3a2c81ef8, 617.14"
+      },
+      "producer": "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/shared-sdk-build",
+      "relocated_prefix": "/root/hyle-scratch/compute-unified/g09-sdk/cuda-shared-1/relocated",
+      "binaries": [
+        {
+          "path": "/root/hyle-scratch/compute-unified/g09-sdk/cuda-shared-1/evidence/bin/g09_contracts",
+          "sha256": "b4817b2806d083bd54a3902f39dabd217c9a9c946b34e9c88166c91846c9f693"
+        },
+        {
+          "path": "/root/hyle-scratch/compute-unified/g09-sdk/cuda-shared-1/evidence/bin/g09_pipeline",
+          "sha256": "5e06f311147bce22dfcd2c4c0434f36b88ee92009a1245677963def1a09f23ef"
+        },
+        {
+          "path": "/root/hyle-scratch/compute-unified/g09-sdk/cuda-shared-1/evidence/bin/g09_g06_hybrid",
+          "sha256": "df0f246accf87e5eaec4a1c206d82b4e3d1b73cc8c9f2ba338917cdf66791b62"
+        },
+        {
+          "path": "/root/hyle-scratch/compute-unified/g09-sdk/cuda-shared-1/evidence/bin/g09_g06_pending",
+          "sha256": "1581c4da144c6f7cfa32039eddf522b296e3977bc046c253fe69bf358ff2d220"
+        }
+      ],
+      "public_header_inputs": [
+        {
+          "path": "graph/cpu.h",
+          "sha256": "207f78caafbec1e73966f0ead5563b51aa2aaf3e5eccabde15b6a20447a25f99"
+        },
+        {
+          "path": "graph/cpu_cuda.h",
+          "sha256": "b3fe45dc75ce6c999857bca3130816132018eb3c845e0c889d577165d8f1b098"
+        }
+      ],
+      "max_jobs": 2,
+      "logical_cpus": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "nice": 10,
+      "actual_cumulative_seconds": 142.982604227,
+      "preflight_edges": {
+        "producer_build_edges": 65,
+        "consumer_build_edges": 11
+      },
+      "result_origin": "cuda-shared/result.json"
+    },
+    {
+      "mode": "source",
+      "state": "SOURCE_PUBLIC_CONSUMERS_HEADERS_PASS",
+      "candidate": "3524413272cb52d06af5e64d634edbfef09b9864",
+      "source_snapshot": {
+        "head": "bc6ad5c4b744cdbad9a572d62a187b0cb2f94736",
+        "tree": "b325038c6003d992fb4b4c71f1ffbf9386d8acea",
+        "archive_sha256": "dc578b0dca6dcb4305be39a0ec7420e11de93719bfb011a4e0b0f02604808354"
+      },
+      "identity": {
+        "host": "Linux kiro-workstation 6.18.54.1-microsoft-standard-WSL2 #1 SMP PREEMPT_DYNAMIC Tue Oct  6 19:13:07 UTC 2026 x86_64 x86_64 x86_64 GNU/Linux",
+        "compiler": "g++-14 (Ubuntu 14.2.0-4ubuntu2~24.04.1) 14.2.0\nCopyright (C) 2024 Free Software Foundation, Inc.\nThis is free software; see the source for copying conditions.  There is NO\nwarranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.",
+        "cuda": "nvcc: NVIDIA (R) Cuda compiler driver\nCopyright (c) 2005-2026 NVIDIA Corporation\nBuilt on Tue_Jun_09_02:43:40_PM_PDT_2026\nCuda compilation tools, release 13.3, V13.3.73\nBuild cuda_13.3.r13.3/compiler.38244171_0",
+        "gpu": "NVIDIA GeForce RTX 4070, GPU-e7376560-6f5d-ec19-6ee4-3dd3a2c81ef8, 617.14"
+      },
+      "producer": "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/source-build",
+      "relocated_prefix": null,
+      "binaries": [
+        {
+          "path": "/root/hyle-scratch/compute-unified/g09-sdk/cuda-source-1/evidence/bin/g09_contracts",
+          "sha256": "b73a895ed879a3f78fa2d20aeed0e5ae0ae80b89e0b8ec3923e5d7ac65d1d906"
+        },
+        {
+          "path": "/root/hyle-scratch/compute-unified/g09-sdk/cuda-source-1/evidence/bin/g09_pipeline",
+          "sha256": "147835f12934588d024bf423855cd5f2097a9c6de3469812ab2cb526faff3bb1"
+        },
+        {
+          "path": "/root/hyle-scratch/compute-unified/g09-sdk/cuda-source-1/evidence/bin/g09_g06_hybrid",
+          "sha256": "c391a1cc263a906de323afa15f20a13886251e512f7b2607e37add09f84fc650"
+        },
+        {
+          "path": "/root/hyle-scratch/compute-unified/g09-sdk/cuda-source-1/evidence/bin/g09_g06_pending",
+          "sha256": "065f578ffce28971373afcfdbadf1fab226564fdc49f9da08b91f29199a26169"
+        }
+      ],
+      "public_header_inputs": [
+        {
+          "path": "graph/cpu.h",
+          "sha256": "207f78caafbec1e73966f0ead5563b51aa2aaf3e5eccabde15b6a20447a25f99"
+        },
+        {
+          "path": "graph/cpu_cuda.h",
+          "sha256": "b3fe45dc75ce6c999857bca3130816132018eb3c845e0c889d577165d8f1b098"
+        }
+      ],
+      "max_jobs": 2,
+      "logical_cpus": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "nice": 10,
+      "actual_cumulative_seconds": 100.39807509399998,
+      "preflight_edges": {
+        "consumer_build_edges": 50
+      },
+      "result_origin": "cuda-source/result.json"
+    }
+  ],
+  "actual_cumulative_seconds": 385.18726909399993,
+  "cost_reset": false,
+  "scope": "Actual WSL Linux CUDA source/static/shared, four original real public consumers each: Graph contracts, two-slot/65-step joint pipeline, G06 hybrid paged Graph and G06 pending CUDA receiver. Two independently compiled public Graph headers per configuration. Linux FlashInfer fixtures are actually built/run here, unlike their explicitly inapplicable Windows profile. Installed consumers use renamed relocated SDK and installed-only includes; ldd reports no missing dependency or canonical source/producer linkage. Source parent restored.",
+  "reuse": "Current ordinary shipping common/CPU-CUDA owner C++ libraries and consumers incrementally built with no test/sanitizer instrumentation. Exact unchanged native CUDA objects reused only after current original commands, dependency freshness and byte identity proof; no native kernel recompilation. Full canonical verification source archive3325files/headbc6ad5c4b, input manifest, actual SDK file hashes/commands/native proofs and logs retained.",
+  "boundary": "These are Linux delivery/correctness consumers on WSL engineering profile, not native Linux formal P1, sanitizer/device/physical-overlap proof, Windows support for FlashInfer or G09 aggregate acceptance. Public CMake/header/package seams and unchanged leaf qualifications retain their existing source-identity reuse boundary.",
+  "raw": {
+    "path": "raw.zip",
+    "sha256": "240e43805313a3622e9146d45b45459641cee7039db4d9444c5466149c18bcf6",
+    "bytes": 1245097,
+    "crc": "PASS"
+  }
+}

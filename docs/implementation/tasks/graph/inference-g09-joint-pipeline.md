@@ -379,3 +379,22 @@ prepared copy字段明确仅slot0的per-invocation计划，不冒充两slot合�
 剩余仍限本卡：完成WSL交付；实际SDK/object、私有weak/type/data/loader/原生注册与资源身份、
 数学/dispatch/copy/退休账和原workload A/A等五组预检；正式P1；终审/LOC与聚合裁决。
 G09保持固定CANDIDATE，G10未开始，不因此追加功能缺口扫描或重开已接受数学。
+
+### 选定交付矩阵完成，2026-10-17
+
+[WSL CUDA交付原件](../../../../evidence/delivery/inference-g09-wsl-sdk-checkpoint/receipt.json)
+现补齐source/static/shared三项：每配置实际通过原Graph contracts、两slot/65步流水、
+G06 hybrid paged Graph、G06 pending receiver，以及两个独立公开Graph头。Linux FlashInfer消费者
+实际在此编译运行；没有把Windows不适用项算成PASS。原native CUDA对象仍按输入/原命令/依赖
+资格复用，无CUDA算子重编；当前common/hybrid C++与消费者实际增量构建。source parent已恢复，
+SDK迁址/installed-only头与ldd依赖检查通过。这里不是native Linux P1资格。
+
+本轮选定的五个真实native profile共15项source/static/shared交付均已通过；未变公开header/export/
+package seam和叶资格的复用边界不变，不改写为全库全部配置重跑。产品依然为固定candidate。
+已开始Windows CUDA baseline私有P1 facade的普通构建；此时没有benchmark执行、A/A或正式样本。
+后续仍按五组实际产物/同合同/仪器预检、正式P1、终审与LOC收口，不增加产品FIX或G10范围。
+
+Windows CUDA baseline两份private facade随后已按原静态SDK完成真实编译链接，没有HYLE产品/native
+重编；初始产物预检拒绝了额外的caffe2/c10 vendor自动导出符号，严格C-getter-only assert的原FAIL保留。
+尚未构建candidate、加载/执行benchmark或采样。需有限独立复核其原SDK directive、PE import归属与
+private HYLE隔离边界；不能只凭源码隐藏声明或额外符号属于vendor就改记PASS，也不因此改shipping源码。
