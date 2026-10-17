@@ -919,7 +919,7 @@
       },
       "vendored": {
         "path": "third_party/ggml_runtime",
-        "tree_sha256": "35362dfcd15a927b51412379fb6483282b8c5587a3bc4e6ff943d3731c5cbffe"
+        "tree_sha256": "117265bb5d46bd45dd86b506af008109cf6f4c76c54a549ae8a52d172798b21d"
       },
       "license": {
         "expression": "MIT",
@@ -932,7 +932,7 @@
           {
             "root": "hyle",
             "path": "third_party/ggml_runtime/NOTICE.md",
-            "sha256": "6b912c773dec4bb673eef914b25815c0ebedd84ccd8086a296479b2e73c96846"
+            "sha256": "e219c4882fb7fc108541d49fe473afbf5bb3f736a1118303468d4361a5e95564"
           }
         ]
       }
@@ -1089,7 +1089,7 @@
       },
       "vendored": {
         "path": "third_party/ggml_cpu_runtime",
-        "tree_sha256": "fac0b1c718bc238e8c1cadd1eef512049889285c33209c13fc085c3a792e4579"
+        "tree_sha256": "2366c53d7d1f03d5c2b582aa83243addaae08e76c081cfed028a1be86c383256"
       },
       "license": {
         "expression": "MIT",
@@ -1102,7 +1102,7 @@
           {
             "root": "hyle",
             "path": "third_party/ggml_cpu_runtime/NOTICE.md",
-            "sha256": "83615d1ffce3d8725e9170362c18bda30b79077758cd5ac02fd30d43f54a3a2f"
+            "sha256": "3213442caded72b216a655e499306b710aef54fc43dd790c7643b82c23ad137f"
           }
         ]
       }

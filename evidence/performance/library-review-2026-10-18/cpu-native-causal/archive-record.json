@@ -1,0 +1,7 @@
+{
+  "path": ".scratch/perf-review-2026-10-18/cpu-native-causal/raw.zip",
+  "bytes": 325847,
+  "sha256": "e956e834f0083bccb1bd421d14c6c1406805bba76abfbfb4660b34aacfe2ef38",
+  "members": 74,
+  "note": "Source, diffs, commands and all available logs only; no obj/exe/DLL/lib or SDK. Cleanup candidates have not been deleted."
+}

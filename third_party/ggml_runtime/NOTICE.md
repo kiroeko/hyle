@@ -47,3 +47,10 @@ kernel or a public ggml ABI promise; Vulkan/Metal algorithms are unchanged.
 The generic CPU loop resolves one physical row per effective KV token and
 applies the independent K/V strides to that row, avoiding duplicate page-table
 resolution across the original dot product.
+
+Ordinary CPU causal attention can use a private HYCA tag without a Q-by-KV
+half-mask payload. The vector loop limits logical KV rows; tiled attention
+constructs the equivalent zero/negative-infinity values in its existing tile
+scratch. Native tiled/split selection and QK/softmax/PV arithmetic, including
+the vector Half PV path, are retained. The boxed-window tag remains separate.
+These CPU-only changes do not alter Vulkan or Metal attention kernels.

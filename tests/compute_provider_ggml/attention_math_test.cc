@@ -1,8 +1,10 @@
 #include "../compute_ggml_runtime/gallocr_faults.h"
 #include "../compute_provider_native/half_test_support.h"
+#include "cpu_program.h"
 #include "ggml-backend-impl.h"
 #include "hyle/compute/backends/cpu.h"
 #include "hyle/compute/model_ops.h"
+#include "hyle/compute/prepared_operation.h"
 #include "hyle/mem/quota_allocator.h"
 #include "hyle/mem/stats.h"
 #include "metadata_arena.h"
@@ -14,6 +16,7 @@
 #include <gtest/gtest.h>
 #include <iostream>
 #include <limits>
+#include <memory>
 #include <vector>
 
 namespace {
@@ -562,5 +565,166 @@ TEST(GgmlCpuStorage, ColdQuotaFailureRollsBackAndCanRecover) {
     ASSERT_TRUE(program.add_slot().ok());
   }
   EXPECT_TRUE(stats.balanced());
+}
+
+void compare_native_causal_mask(ggml_type type, std::int64_t queries,
+                                std::int64_t keys, std::int64_t batch,
+                                float scale) {
+  const auto selected = c::ggml_runtime::select_cpu_program();
+  ASSERT_TRUE(selected.has_value());
+  const auto &native = **selected;
+  native.initialize();
+  std::unique_ptr<ggml_context, decltype(&ggml_free)> context(
+      ggml_init({8 * 1024 * 1024, nullptr, false}), &ggml_free);
+  ASSERT_NE(context, nullptr);
+  constexpr std::int64_t depth = 16, value_depth = 24, heads = 4, kv_heads = 2;
+  auto *q = ggml_new_tensor_4d(context.get(), GGML_TYPE_F32, depth,
+                               queries, heads, batch);
+  auto *k = ggml_new_tensor_4d(context.get(), type, depth, keys, kv_heads, batch);
+  auto *v = ggml_new_tensor_4d(context.get(), type, value_depth, keys,
+                               kv_heads, batch);
+  for (std::int64_t i = 0; i != ggml_nelements(q); ++i)
+    static_cast<float *>(q->data)[i] = float(i % 17 - 8) / 16.F;
+  const auto fill = [](ggml_tensor *tensor, int period) {
+    for (std::int64_t i = 0; i != ggml_nelements(tensor); ++i) {
+      const float x = float((i * 7 + i / 13) % period - period / 2) / 32.F;
+      if (tensor->type == GGML_TYPE_F16)
+        static_cast<ggml_fp16_t *>(tensor->data)[i] = ggml_fp32_to_fp16(x);
+      else if (tensor->type == GGML_TYPE_BF16)
+        static_cast<ggml_bf16_t *>(tensor->data)[i] = ggml_fp32_to_bf16(x);
+      else
+        static_cast<float *>(tensor->data)[i] = x;
+    }
+  };
+  fill(k, 19);
+  fill(v, 23);
+  auto *mask = ggml_new_tensor_2d(context.get(), GGML_TYPE_F16, keys, queries);
+  for (std::int64_t row = 0; row != queries; ++row)
+    for (std::int64_t key = 0; key != keys; ++key)
+      static_cast<ggml_fp16_t *>(mask->data)[row * keys + key] =
+          ggml_fp32_to_fp16(key <= keys - queries + row ? 0.F : -INFINITY);
+  auto *expected = ggml_flash_attn_ext(context.get(), q, k, v, mask,
+                                       scale, 0.F, 0.F);
+  auto *actual = ggml_flash_attn_ext(context.get(), q, k, v, nullptr,
+                                     scale, 0.F, 0.F);
+  if (queries > 1)
+    actual->op_params[7] = 0x48594341;
+  ASSERT_TRUE(ggml_prec_set_acc(expected, GGML_PREC_F32));
+  ASSERT_TRUE(ggml_prec_set_acc(actual, GGML_PREC_F32));
+  auto *graph = ggml_new_graph_custom(context.get(), 32, false);
+  ggml_build_forward_expand(graph, expected);
+  ggml_build_forward_expand(graph, actual);
+  auto pool_options = ggml_threadpool_params_default(3);
+  int native_error = 0;
+  std::unique_ptr<ggml_threadpool, decltype(native.free_pool)> pool(
+      native.create_pool(&pool_options, &native_error), native.free_pool);
+  ASSERT_NE(pool, nullptr) << native_error;
+  auto plan = native.plan(graph, 3, pool.get());
+  std::vector<std::uint8_t> workspace(plan.work_size);
+  plan.work_data = workspace.data();
+  ASSERT_EQ(native.compute(graph, &plan), GGML_STATUS_SUCCESS);
+  const auto count = ggml_nelements(actual);
+  const auto *reference = static_cast<const float *>(expected->data);
+  const auto *observed = static_cast<const float *>(actual->data);
+  for (std::int64_t i = 0; i != count; ++i)
+    ASSERT_EQ(observed[i], reference[i]) << "index=" << i;
+  std::cout << "native_causal_type=" << type << " Q=" << queries
+            << " KV=" << keys << " B=" << batch << " scale=" << scale
+            << " compared_f32_elements=" << count << " exact_match=true\n";
+}
+
+TEST(GgmlCpuMathAttention, ImplicitCausalMatchesNativeTiledMask) {
+  // Both locked cores use 64x64 tiles; cross query/KV tails and per-head batches.
+  compare_native_causal_mask(GGML_TYPE_F16, 129, 193, 2, -.25F);
+  compare_native_causal_mask(GGML_TYPE_F16, 65, 65, 2, 0.F);
+#if defined(HYLE_GGML_CPU_F32_FLASH)
+  compare_native_causal_mask(GGML_TYPE_F32, 65, 69, 2, .25F);
+#endif
+}
+
+TEST(GgmlCpuMathAttention, ImplicitCausalMatchesNativeVectorMask) {
+  // Preserve original Half PV, and BF16's existing non-tiled implementation.
+  compare_native_causal_mask(GGML_TYPE_F16, 17, 33, 2, .125F);
+  compare_native_causal_mask(GGML_TYPE_BF16, 65, 69, 2, .125F);
+}
+
+TEST(GgmlCpuMathAttention, DecodeOmitsZeroMaskAndRetainsNativeSplit) {
+  // Q1 has no tag. Three native threads and KV>=512 retain the F16 split path.
+  compare_native_causal_mask(GGML_TYPE_F16, 1, 513, 1, .25F);
+  compare_native_causal_mask(GGML_TYPE_BF16, 1, 513, 1, .25F);
+}
+
+template <class Value> void check_public_causal_rebind() {
+  constexpr std::int64_t batch = 2, queries = 65, keys = 69, heads = 4,
+                         kv_heads = 2, depth = 16, value_depth = 24;
+  const auto dense = [](auto dimensions) {
+    return c::TensorDesc::dense(half_test::data_type<Value>(), dimensions).value();
+  };
+  const std::array inputs{
+      dense(std::array{batch, queries, heads, depth}),
+      dense(std::array{batch, keys, kv_heads, depth}),
+      dense(std::array{batch, keys, kv_heads, value_depth})};
+  const auto output = dense(std::array{batch, queries, heads, value_depth});
+  auto context = c::Context::create(
+      c::cpu::device(), c::ggml_cpu::provider({.native_threads = 3})).value();
+  auto queue = context.create_queue().value();
+  const c::Operation operation(c::ScaledDotProductAttention{
+      .layout = c::AttentionLayout::kBatchSequenceHeadDepth,
+      .scale = -.25F,
+      .causal = true});
+  auto prepared = c::prepare(context, operation, inputs, std::span(&output, 1),
+                             hyle::mem::system_resource()).value();
+  ASSERT_EQ(prepared.provider().id, c::ggml_cpu::kProviderId);
+  auto invocation = prepared.create_invocation().value();
+  std::array<std::vector<hyle::mem::Buffer>, 2> retained_owners;
+  for (int replay = 0; replay != 2; ++replay) {
+    auto &owners = retained_owners[replay];
+    for (const auto &desc : inputs)
+      owners.push_back(hyle::mem::Buffer::create(
+          hyle::mem::system_resource(), desc.required_bytes().value(), 64).value());
+    owners.push_back(hyle::mem::Buffer::create(
+        hyle::mem::system_resource(), output.required_bytes().value(), 64).value());
+    // Q/K are exactly zero. The FP64 oracle is the mean of the allowed V prefix.
+    for (std::size_t port = 0; port != 2; ++port) {
+      const std::vector<Value> zero(inputs[port].element_count().value(),
+                                    half_test::encode<Value>(0.));
+      ASSERT_TRUE(owners[port].view().write(std::as_bytes(std::span(zero))).ok());
+    }
+    const std::array views{
+        c::ConstTensorView::create(inputs[0], owners[0].view()).value(),
+        c::ConstTensorView::create(inputs[1], owners[1].view()).value(),
+        c::ConstTensorView::create(inputs[2], owners[2].view()).value()};
+    const auto destination = c::TensorView::create(output, owners[3].view()).value();
+    std::vector<Value> values(inputs[2].element_count().value());
+    for (std::int64_t b = 0; b != batch; ++b)
+      for (std::int64_t row = 0; row != keys; ++row)
+        for (std::int64_t head = 0; head != kv_heads; ++head)
+          for (std::int64_t z = 0; z != value_depth; ++z)
+            values[((b * keys + row) * kv_heads + head) * value_depth + z] =
+                half_test::encode<Value>(double(row) / 128. + double(b) / 8. +
+                                         double(head) / 16. + double(replay) / 32.);
+    ASSERT_TRUE(owners[2].view().write(std::as_bytes(std::span(values))).ok());
+    auto completion = invocation.submit(queue, views, std::span(&destination, 1))
+                          .value();
+    ASSERT_TRUE(completion.wait().ok());
+    const auto observed = half_test::read<Value>(owners[3]);
+    for (std::int64_t b = 0; b != batch; ++b)
+      for (std::int64_t row = 0; row != queries; ++row)
+        for (std::int64_t head = 0; head != heads; ++head) {
+          const auto kv_head = head / (heads / kv_heads);
+          const double expected = double(keys - queries + row) / 256. +
+                                  double(b) / 8. + double(kv_head) / 16. +
+                                  double(replay) / 32.;
+          for (std::int64_t z = 0; z != value_depth; ++z)
+            half_test::expect_near(
+                observed[((b * queries + row) * heads + head) * value_depth + z],
+                expected);
+        }
+  }
+}
+
+TEST(GgmlCpuMathAttention, PublicCausalHalfAndBfloat16Rebind) {
+  check_public_causal_rebind<hyle::simd::float16_t>();
+  check_public_causal_rebind<hyle::simd::bfloat16_t>();
 }
 } // namespace

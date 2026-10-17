@@ -1,0 +1,71 @@
+{
+  "scope": "Ordinary CPU causal native flash only: remove ProgramHalf Q×KV mask seed; preserve original native tile/vector/split and Half PV arithmetic. Paged non-boxed Q>1 seed remains.",
+  "implementation": {
+    "private_tag": "HYCA / op_params[7] == 0x48594341, distinct from boxed HYBX",
+    "ordinary_Q_gt_1": "Vector loop uses bottom-right upper bound; tiled kernel fills its existing fixed scratch from that same bound. No change to native tiled/split selection, dot/softmax/PV or accumulation kernels.",
+    "ordinary_Q_eq_1": "No mask and no tag; old zero mask omitted and original split-KV remains available.",
+    "Q_gt_KV": "CPU provider still declines ordinary causal Q>KV; generic public inference is not globally restricted by this change.",
+    "native_storage": "No new Q×KV allocation or new native scratch; reuses existing fixed thread-local tile mask scratch."
+  },
+  "method": {
+    "system": "Windows x64, MSVC14.50.35717, optimized /O2 /MD, HYLE_TESTING not defined. Functional tests and allocation counting only; no throughput/ranking/timed experiment.",
+    "closure": "Direct fresh native ops baseline+AVX2 TU for each pin, export TU and AVX2 DLL using same-pin cached non-ops native objects. Fresh current provider/test/selector TUs, existing same-pin native libraries and foundation .scratch/build-compute-v2-dev. No full HEAD/SDK rebuild or staging.",
+    "selection": "Runtime logs print actual compute/callback owner. Selected tests and space probe use new causal DLL; baseline executor tests use new ops linked into the test executable. Old Hadamard-only v2 modules were not selected.",
+    "pin_ffa4": "ffa4e8b80930029a35991f94e7c8a93cd67730ab CPU-only; F32 native flash enabled.",
+    "pin_mixed": "456172ec733a135778adcd32d00e576a58232e45 with unchanged23 IQ1/FWHT mixed additions; F32 provider stays existing math path."
+  },
+  "final_tests": {
+    "executions_passed": 16,
+    "per_pin_selected": "5/5: ImplicitCausalMatchesNativeTiledMask; ImplicitCausalMatchesNativeVectorMask; DecodeOmitsZeroMaskAndRetainsNativeSplit; PublicCausalHalfAndBfloat16Rebind; existing LayoutsBatchGqaAndOutputDepth.",
+    "per_pin_baseline_executor": "3/3: the same three native mask-comparison tests, baseline selector with compute_owner equal to executable.",
+    "native_oracle": "Original explicit F16 mask in the same native math kernel, exact F32 output equality. This is equivalence to the prior kernel, NOT independent FP64 qualification.",
+    "native_shapes": "Both executors: F16 Q129/KV193/B2 and Q65/KV65/B2 tiled, Q17/KV33/B2 vector; BF16 Q65/KV69/B2 vector; Q1/KV513 F16 split and BF16 vector. H4/KVhead2, Dq16/Dv24. Scales -.25/0/.125/.25; FFA additionally F32 Q65/KV69/B2.",
+    "public_oracle": "New test: actual public prepare/invocation/submit/wait, F16 and BF16 B2/Q65/KV69/H4/KVhead2/Dq16/Dv24 BSHD. Q/K exactly zero, independent FP64 V-prefix mean, existing half_test dtype rounding/tolerance. Two independently retained Buffer sets rebind one invocation. Existing F32 layouts/GQA/depth test checks nonzero-QK FP64 formula, negative and zero scale, BHSD and BSHD, two slots and rebinding.",
+    "nonfinite": "Preserves existing native behavior. Vector masks skip before QK/PV; tiled fully future tiles skip, but partial tiles retain prior possible NaN/Inf propagation. No comprehensive nonfinite isolation claim.",
+    "resource_audit": "Root independently reported successful CMake-P audit of CPU/common/Vulkan resource tree hashes and licenses; script included. No resource file changed after that audit."
+  },
+  "cold_prepare_global_new": {
+    "probe": "One prewarmed public-prepare sample per arm on FFA. F16 B1/Q2048/KV16384/H1/D16 causal; no invocation, caller tensor buffers or kernel execution. Same fresh native module/context configuration in both arms. Baseline is general-arena commit2ad93d274 provider; candidate is current HYCA provider.",
+    "baseline": {
+      "query": 2048,
+      "keys": 16384,
+      "dtype": "F16",
+      "old_mask_seed_bytes": 67108864,
+      "successful_unaligned_new_calls": 21,
+      "requested_bytes": 67112291,
+      "largest_request": 67108903,
+      "exact_seed_size_requests": 0,
+      "compute_owner": "C:/public/project-hyle/hyle/.scratch/perf-review-2026-10-18/cpu-native-causal/ffa4/hyle_ggml_cpu_avx2_ffa4_causal_overlay.dll",
+      "prepared": true,
+      "executed": false
+    },
+    "candidate": {
+      "query": 2048,
+      "keys": 16384,
+      "dtype": "F16",
+      "old_mask_seed_bytes": 67108864,
+      "successful_unaligned_new_calls": 20,
+      "requested_bytes": 3388,
+      "largest_request": 736,
+      "exact_seed_size_requests": 0,
+      "compute_owner": "C:/public/project-hyle/hyle/.scratch/perf-review-2026-10-18/cpu-native-causal/ffa4/hyle_ggml_cpu_avx2_ffa4_causal_overlay.dll",
+      "prepared": true,
+      "executed": false
+    },
+    "request_bytes_removed": 67108903,
+    "interpretation": "64MiB seed removed, plus39B MSVC release x64 vector manual-alignment overhead (sizeof(void*) +32 -1, xmemory165-188). Exact-seed-size-request field is0 in both raw logs because native request is seed+39; retain this instrumentation result unchanged.",
+    "limits": "Successful ordinary operator new/new[] requested sizes only; not aligned new, C allocation, RSS, peak resident or total memory. It does not claim invocation scratch or throughput improvement. Paged Program seed remains."
+  },
+  "reproduction_limits": [
+    "No full product/SDK rebuild, Linux/macOS run, full provider suite or broad numerical matrix. Existing baseline non-ops cache reused; fresh ops execution owner verified.",
+    "One-shot resource-edit script initially failed to locate an edit anchor (trailing newline mismatch) before changes; fixed anchor lookup and regenerated exact manifests/source.",
+    "Initial mixed-native compile/link logs exist and all returned0, but concurrent commands.json writers overwrote its four argv records. mixed-native-commands-recovered.json regenerates exact deterministic arguments without execution and labels this provenance; it is not original runtime capture. Subsequent steps were sequential.",
+    "The first successful FFA final test run used the same caller buffers twice; source was corrected to retain two distinct Buffer sets, then the final5/3 FFA tests and all mixed final tests ran on the frozen current source. Earlier successful log labels were overwritten; commands history retains those executions. They are not added to the final16 total."
+  ],
+  "artifacts": {
+    "source_identities": "source-identities.json",
+    "commands": "commands.json",
+    "native_mixed_recovered_commands": "mixed-native-commands-recovered.json",
+    "cleanup": "cleanup-and-retain.json"
+  }
+}

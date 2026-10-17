@@ -47,3 +47,13 @@ CUSTOM entry takes one real input, without a synthetic matrix or payload. Its
 callback belongs to the selected baseline/AVX2 CPU program. The legacy matrix
 hint and its `use_ref` matrix fallback remain intact; unary CUSTOM execution
 uses the same FWHT body in either reference setting.
+
+# CPU implicit causal integration
+
+Ordinary causal attention may carry a private HYCA tag instead of an owned
+Q-by-KV half mask. The vector loop limits each query's logical KV end; the
+tiled loop fills its existing fixed-size mask scratch with the same zero or
+negative-infinity values. Bottom-right positions use the query index within
+each head/batch. Native tiled/split selection, QK/softmax/PV arithmetic and
+workspace remain unchanged, including the vector path's original Half PV.
+The separate boxed-window tag retains its existing reference-path semantics.

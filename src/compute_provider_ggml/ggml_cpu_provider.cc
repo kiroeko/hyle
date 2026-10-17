@@ -1166,7 +1166,7 @@ std::vector<ggml_tensor *> lower(Program &program, Invocation &invocation,
     }
     if (native_flash(recipe.values[node.inputs[0]].data_type())) {
       ggml_tensor *mask = nullptr;
-      if (attention->causal && !boxed && !(paged && query->ne[1]==1)) {
+      if (paged && attention->causal && !boxed && query->ne[1]!=1) {
         const auto &mask_values = program.attention_masks[node_index];
         if (mask_values.empty())
           return {};
@@ -1191,6 +1191,10 @@ std::vector<ggml_tensor *> lower(Program &program, Invocation &invocation,
         result->op_params[7]=0x48594258;
         result->op_params[8]=paged->window_left;
         result->op_params[9]=paged->causal?1:0;
+      } else if (ordinary && attention->causal && query->ne[1] > 1) {
+        // Implicit bottom-right mask in the original native vector/tiled paths.
+        // Unlike the boxed tag, this preserves prefill and split-KV selection.
+        result->op_params[7] = 0x48594341;
       }
       if (!bshd)
         result = ggml_permute(context, result, 0, 2, 1, 3);
@@ -2204,22 +2208,15 @@ ProviderPrepareOutcome compile(void *context, Recipe recipe,
         }
       }
       const auto paged=node.operation.custom_as<PagedRead>();
-      const ScaledDotProductAttention paged_attention{
-          .layout=AttentionLayout::kBatchSequenceHeadDepth,
-          .scale=paged?paged->scale:1.F,.causal=paged?paged->causal:false};
-      if (const auto *attention = paged?&paged_attention:node.operation.get_if<ScaledDotProductAttention>();
-          attention && attention->causal &&
-          !(paged && (paged->window_left>=0 || native_quantized(recipe.values[node.inputs[1]]) ||
-              recipe.values[node.inputs[0]].dimensions().back()!=recipe.values[node.inputs[2]].dimensions().back())) &&
+      if (paged && paged->causal && paged->window_left < 0 &&
+          !native_quantized(recipe.values[node.inputs[1]]) &&
+          recipe.values[node.inputs[0]].dimensions().back() ==
+              recipe.values[node.inputs[2]].dimensions().back() &&
           native_flash(recipe.values[node.inputs[0]].data_type())) {
-        const auto sequence =
-            attention->layout == AttentionLayout::kBatchSequenceHeadDepth ? 1U
-                                                                          : 2U;
         const auto query_length = static_cast<std::size_t>(
-            recipe.values[node.inputs[0]].dimensions()[sequence]);
-        if(paged && query_length==1)continue; // Its causal mask is identically zero.
-        const auto key_length = paged?static_cast<std::size_t>(paged->logical_rows):static_cast<std::size_t>(
-            recipe.values[node.inputs[1]].dimensions()[sequence]);
+            recipe.values[node.inputs[0]].dimensions()[1]);
+        if(query_length==1)continue; // Its causal mask is identically zero.
+        const auto key_length = static_cast<std::size_t>(paged->logical_rows);
         if (query_length > SIZE_MAX / key_length)
           return ProviderPrepareOutcome::error(
               Status::OutOfRange("attention mask size overflows"));
