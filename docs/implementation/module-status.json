@@ -518,15 +518,9 @@
     },
     {
       "module": "compute_route_apple",
-      "state": "CLOSED",
-      "record": "docs/implementation/tasks/compute/inference-g08-final-closure.md",
-      "summary": "G08 CLOSED 5103: finite S1-S4/M1, four-route numerical/65-step/two-slot/joint consumers, scoped actual device/host risks and18 source/static/shared configs PASS. Four-route9workload P1 qualified/5% PASS; strict9 WIN (AppleK3 instrument PARITY retained). Seven gates/LOC accepted; retrospective review timing, original failures/cost and private/binary-retention limits explicit.",
-      "candidate": "5103c13d8ed119b06aa64e799f9768aea45ab913",
-      "performance": {
-        "tier": "P1",
-        "evidence": "docs/implementation/tasks/compute/inference-g08-final-closure.md",
-        "material_margin_pct": 5
-      }
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/graph/inference-g09-completion-wake-correction.md",
+      "summary": "G09 completion-wake correction SCOPED: user selected product repair after bounded causal diagnosis; freeze borrowed Vulkan BlockingPool and Apple original-owner notification, single-worker/multi-slot/cancel/actual-retirement contracts before implementation. Original performance failures and unchanged CUDA qualification retained."
     },
     {
       "module": "graph_route_apple",
@@ -665,25 +659,15 @@
     },
     {
       "module": "graph_route_cpu_apple",
-      "state": "BLOCKED",
-      "record": "docs/implementation/tasks/graph/inference-g09-joint-pipeline.md",
-      "summary": "G09 BLOCKED-from-CANDIDATE on three native performance qualifications only. Functional/host/device risks/P0 and all15 SDK deliveries retained; CUDA original n15 P1 QUALIFIED/PASS. One reviewed OBS-free Windows Vulkan attempt passed native oracles/36 module snapshots but original AA still FAIL; no product regression proven. G07/G08/G10 separately CLOSED.",
-      "candidate": "3524413272cb52d06af5e64d634edbfef09b9864",
-      "blocked_from": "CANDIDATE",
-      "blocker": "G09 selected Windows Vulkan/Air Apple/Air Vulkan workload-AA qualification FAIL; zero valid A/B samples on those profiles. CUDA original n15 P1 QUALIFIED/PASS remains valid.",
-      "blocker_owner": "Independent native-workload performance tooling task: docs/implementation/tasks/tooling/inference-g09-native-workload-aa.md",
-      "resume_condition": "First identify a concrete instrument/host/contract mechanism and independently review its correction; freeze a new bounded entry before measurement, retain original failures/costs and original5%/10% AA/four-order/n15-to31 gates, then obtain missing profile qualification/P1 and G09 terminal review. Blind same-config repeats, more epochs/n, changed metric/size/provider/margin are not a resume condition."
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/graph/inference-g09-completion-wake-correction.md",
+      "summary": "G09 completion-wake correction SCOPED: user selected product repair after bounded causal diagnosis; freeze borrowed Vulkan BlockingPool and Apple original-owner notification, single-worker/multi-slot/cancel/actual-retirement contracts before implementation. Original performance failures and unchanged CUDA qualification retained."
     },
     {
       "module": "graph_route_cpu_vulkan",
-      "state": "BLOCKED",
-      "record": "docs/implementation/tasks/graph/inference-g09-joint-pipeline.md",
-      "summary": "G09 BLOCKED-from-CANDIDATE on three native performance qualifications only. Functional/host/device risks/P0 and all15 SDK deliveries retained; CUDA original n15 P1 QUALIFIED/PASS. One reviewed OBS-free Windows Vulkan attempt passed native oracles/36 module snapshots but original AA still FAIL; no product regression proven. G07/G08/G10 separately CLOSED.",
-      "candidate": "3524413272cb52d06af5e64d634edbfef09b9864",
-      "blocked_from": "CANDIDATE",
-      "blocker": "G09 selected Windows Vulkan/Air Apple/Air Vulkan workload-AA qualification FAIL; zero valid A/B samples on those profiles. CUDA original n15 P1 QUALIFIED/PASS remains valid.",
-      "blocker_owner": "Independent native-workload performance tooling task: docs/implementation/tasks/tooling/inference-g09-native-workload-aa.md",
-      "resume_condition": "First identify a concrete instrument/host/contract mechanism and independently review its correction; freeze a new bounded entry before measurement, retain original failures/costs and original5%/10% AA/four-order/n15-to31 gates, then obtain missing profile qualification/P1 and G09 terminal review. Blind same-config repeats, more epochs/n, changed metric/size/provider/margin are not a resume condition."
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/graph/inference-g09-completion-wake-correction.md",
+      "summary": "G09 completion-wake correction SCOPED: user selected product repair after bounded causal diagnosis; freeze borrowed Vulkan BlockingPool and Apple original-owner notification, single-worker/multi-slot/cancel/actual-retirement contracts before implementation. Original performance failures and unchanged CUDA qualification retained."
     },
     {
       "module": "compute_stream",
