@@ -1,0 +1,342 @@
+{
+  "candidate": "C1 explicit BF16 partial policy; remaining peer gap not resolved",
+  "baseline_commit": "0103f2d5893db8e295985eac79abf316c68c9e4e",
+  "canonical_source_sha256": {
+    "cmake/HyleDependencyLock.json": "e02147b3d14ecd145add299d6ac7e26adf97fbceb806e54da5697a6013cbf6a2",
+    "include/hyle/compute/batch_execution.h": "21921ccc19a2c2b9239be88f754add2232de46643ec290d98e263e58b1dbd9f0",
+    "include/hyle/compute/batch_ops.h": "452b251f72e5c801687c2a1c257f74ecc90ba2d56f18886088e541f000ca0781",
+    "src/compute_provider_flashinfer/flashinfer_provider.cc": "2ea9b5d92c6f770beb00418ea7f2726e4f0f47c2559e29913525babce369402f",
+    "src/compute_provider_flashinfer/native_batch.cu": "c17e99b53e793e3357b36eec288d2a1e36211081b95a8d2145c4ff3b4234d6da",
+    "src/compute_provider_flashinfer/native_batch.h": "2bccbf5b9d9d87f9f5611162e785b5fdfc5912a54b7bf68b30cef1e9dce201dc",
+    "src/compute_provider_flashinfer/native_cache.cu": "faa9302aa42b599b864d640eca2ea80750b1d72bc2911db1e440f5e9246d2b3f",
+    "src/graph_batch/batch.cc": "0d5163de97f9e9867f445ac5535309ac0006646309ce431cf0644fc9e27f275a",
+    "third_party/flashinfer_cache/NOTICE.md": "83131a06ea708e3eeaedeed9791cbcfc3ae78d3cef1d4e0f927f147f4346bb84",
+    "third_party/flashinfer_cache/patches.json": "d3a74bb62465b19d5d4e8d47d4ef8e0f6568de0020ed8d52df7b96c37489d6b5",
+    "tests/compute_batch/g04_bf16_partials_consumer.cc": "e92cbe9a25e825f37cb030d36ab38c97d86bf601910c5a0d340260b4983700e5",
+    "tests/compute_provider_flashinfer/native_cache_test.cc": "3ae772b78b5de52a4df080c3a96f3fd70c3a7dd781a3c5350600e79df85916a8"
+  },
+  "build": [
+    {
+      "stage": "configure",
+      "argv": [
+        "cmake",
+        "-S",
+        "/root/hyle-scratch/compute-unified/source-7a7b4c3b",
+        "-B",
+        "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/static-sdk-build",
+        "-DHYLE_COMPUTE_ROUTES=cpu;cuda"
+      ],
+      "started_unix": 1792236101.8651803,
+      "elapsed_s": 54.603572845458984,
+      "returncode": 0
+    },
+    {
+      "stage": "build",
+      "argv": [
+        "cmake",
+        "--build",
+        "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/static-sdk-build",
+        "--target",
+        "hyle_compute_batch",
+        "hyle_graph_batch",
+        "hyle_compute_provider_flashinfer",
+        "--parallel",
+        "2"
+      ],
+      "started_unix": 1792236156.4733284,
+      "elapsed_s": 1222.2249503135681,
+      "returncode": 0
+    }
+  ],
+  "abi_complete_archive_identity": {
+    "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/static-sdk-build/bin/libhyle_compute_batch.a": {
+      "sha256": "ee79debfd1f0f834485e971ad33aa0b58a96fbfd1d6a239380ca44879bdd1000",
+      "bytes": 448036
+    },
+    "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/static-sdk-build/bin/libhyle_graph_batch.a": {
+      "sha256": "fb6a10f579305504063855eaccbe680931d5192d5a9d00062e976137685b8338",
+      "bytes": 195590
+    },
+    "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/static-sdk-build/bin/libhyle_compute_provider_flashinfer.a": {
+      "sha256": "de8dbd313b03b4c4b40707976f0a8c77221ad0b144794103d8362a748042ff43",
+      "bytes": 81074096
+    },
+    "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/static-sdk-build/bin/libhyle_compute_provider_ggml.a": {
+      "sha256": "7a5dc444474f187e7f96d6c67c5babf89cbd11eed5820ed64f1d5c10471c4f07",
+      "bytes": 239472
+    }
+  },
+  "ggml_ABI_host_member_replacement": {
+    "archive": "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/static-sdk-build/bin/libhyle_compute_provider_ggml.a",
+    "archive_sha256": "7a5dc444474f187e7f96d6c67c5babf89cbd11eed5820ed64f1d5c10471c4f07",
+    "object": "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/static-sdk-build/src/compute_provider_ggml/CMakeFiles/hyle_compute_provider_ggml.dir/native_batch.cc.o",
+    "object_sha256": "68575c9120643496ee549448f1c321f3c0db21805e27418585a992a1f96c7e08",
+    "members_before": {
+      "ggml_cpu_provider.cc.o": "a23a845159dcd2bc46422155c510e025e28f7be5f44fa00fdfdb2add07d41fcf",
+      "standard_index.cc.o": "bc51c16b345f152b3aca417ac8f33efe68958ffa9b911302d076349192419b2e",
+      "native_batch.cc.o": "70f0d22eb8d3ba6d6f475857bf7e4ccaf9453a64ed119ab7889e465ca3dca769"
+    },
+    "members_after": {
+      "ggml_cpu_provider.cc.o": "a23a845159dcd2bc46422155c510e025e28f7be5f44fa00fdfdb2add07d41fcf",
+      "standard_index.cc.o": "bc51c16b345f152b3aca417ac8f33efe68958ffa9b911302d076349192419b2e",
+      "native_batch.cc.o": "68575c9120643496ee549448f1c321f3c0db21805e27418585a992a1f96c7e08"
+    },
+    "method": "Ninja rebuilt ABI-affected host TU; atomic archive replacement retains other members unchanged; unchanged runtime libraries reused."
+  },
+  "tests": {
+    "ordinary": {
+      "argv": [
+        "/root/hyle-scratch/compute-unified/g04-bf16-product/public_consumer"
+      ],
+      "binary": "/root/hyle-scratch/compute-unified/g04-bf16-product/public_consumer",
+      "binary_sha256": "59959e9c2afd6e6104a3be0b5f212538092f20fde17288f13d6402a1b2f3c2d1",
+      "gpu_pre": {
+        "returncode": 0,
+        "stdout": "NVIDIA GeForce RTX 4070, GPU-e7376560-6f5d-ec19-6ee4-3dd3a2c81ef8, 617.14, 2822 MiB, 49\n",
+        "stderr": ""
+      },
+      "started_unix": 1792237495.116432,
+      "elapsed_s": 0.7139639854431152,
+      "returncode": 0
+    },
+    "native-test": {
+      "argv": [
+        "/root/hyle-scratch/compute-unified/g04-bf16-product/native_cache_test",
+        "--gtest_filter=FlashinferCache.*:FlashinferCacheEncode.*:FlashinferBatchReplay.*"
+      ],
+      "binary": "/root/hyle-scratch/compute-unified/g04-bf16-product/native_cache_test",
+      "binary_sha256": "8d5b2c90f765d072c4d13a55e87c9a5b5d239fee4acb48fab3aadf56289485d9",
+      "gpu_pre": {
+        "returncode": 0,
+        "stdout": "NVIDIA GeForce RTX 4070, GPU-e7376560-6f5d-ec19-6ee4-3dd3a2c81ef8, 617.14, 2822 MiB, 49\n",
+        "stderr": ""
+      },
+      "started_unix": 1792237498.2150187,
+      "elapsed_s": 17.291934967041016,
+      "returncode": 0
+    },
+    "memcheck": {
+      "argv": [
+        "/usr/local/cuda-13.3/bin/compute-sanitizer",
+        "--tool",
+        "memcheck",
+        "--error-exitcode",
+        "86",
+        "/root/hyle-scratch/compute-unified/g04-bf16-product/public_consumer"
+      ],
+      "binary": "/root/hyle-scratch/compute-unified/g04-bf16-product/public_consumer",
+      "binary_sha256": "59959e9c2afd6e6104a3be0b5f212538092f20fde17288f13d6402a1b2f3c2d1",
+      "gpu_pre": {
+        "returncode": 0,
+        "stdout": "NVIDIA GeForce RTX 4070, GPU-e7376560-6f5d-ec19-6ee4-3dd3a2c81ef8, 617.14, 2822 MiB, 50\n",
+        "stderr": ""
+      },
+      "started_unix": 1792237549.0971093,
+      "elapsed_s": 1.2961182594299316,
+      "returncode": 0
+    },
+    "synccheck": {
+      "argv": [
+        "/usr/local/cuda-13.3/bin/compute-sanitizer",
+        "--tool",
+        "synccheck",
+        "--error-exitcode",
+        "87",
+        "/root/hyle-scratch/compute-unified/g04-bf16-product/public_consumer"
+      ],
+      "binary": "/root/hyle-scratch/compute-unified/g04-bf16-product/public_consumer",
+      "binary_sha256": "59959e9c2afd6e6104a3be0b5f212538092f20fde17288f13d6402a1b2f3c2d1",
+      "gpu_pre": {
+        "returncode": 0,
+        "stdout": "NVIDIA GeForce RTX 4070, GPU-e7376560-6f5d-ec19-6ee4-3dd3a2c81ef8, 617.14, 2822 MiB, 50\n",
+        "stderr": ""
+      },
+      "started_unix": 1792237554.2306747,
+      "elapsed_s": 1.278717279434204,
+      "returncode": 0
+    },
+    "feature-memcheck": {
+      "argv": [
+        "/usr/local/cuda-13.3/bin/compute-sanitizer",
+        "--tool",
+        "memcheck",
+        "--error-exitcode",
+        "88",
+        "/root/hyle-scratch/compute-unified/g04-bf16-product/native_cache_test",
+        "--gtest_filter=FlashinferCache.OptInBfloat16PartialsAgainstFeatureOracle"
+      ],
+      "binary": "/root/hyle-scratch/compute-unified/g04-bf16-product/native_cache_test",
+      "binary_sha256": "8d5b2c90f765d072c4d13a55e87c9a5b5d239fee4acb48fab3aadf56289485d9",
+      "gpu_pre": {
+        "returncode": 0,
+        "stdout": "NVIDIA GeForce RTX 4070, GPU-e7376560-6f5d-ec19-6ee4-3dd3a2c81ef8, 617.14, 2822 MiB, 50\n",
+        "stderr": ""
+      },
+      "started_unix": 1792237559.683048,
+      "elapsed_s": 1.2220933437347412,
+      "returncode": 0
+    }
+  },
+  "precision": {
+    "argv": [
+      "/root/hyle-scratch/compute-unified/g04-bf16-product-precision/consumer"
+    ],
+    "binary_sha256": "ad57fe28bee143aae8b9cb767f5c8a117894e27f9f6190da00967434e0552bc7",
+    "source_sha256": "f4158622136476864b043bd997aa8ed4c9712102149ecf53c4596928eb066218",
+    "linked_static_inputs_sha256": {
+      "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/static-sdk-build/bin/libhyle_compute_state.a": "80cf9cd8d4168aa9bdab6b3542c11a519ff573646951b26185fe3bab26d4b1b2",
+      "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/static-sdk-build/bin/libhyle_compute_route_cpu.a": "1b3a00b7c00ee396882111d629f7ec26bca851852d1e5f0301f65d868f3e1262",
+      "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/static-sdk-build/bin/libhyle_compute_route_cuda.a": "6f5a2cd7ce268aa989fe4f0e529827f99af6a8abc2f2bfe1c81b9b542b0194b8",
+      "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/static-sdk-build/bin/libhyle_compute_stream.a": "8ed380abc1060a102be88c1d39b0ffa8208ba8dffd0740c2091c44df25585c77",
+      "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/static-sdk-build/bin/libhyle_io_core.a": "b28bf98204632e6eb1eb0300353d8eb1149f6e3b6288817a0ed988a81a51cfc9",
+      "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/static-sdk-build/bin/libhyle_sched.a": "7082e46522fcc71ce2eee9192da80491070d1b6c5be758a7fa15deb7ac595118",
+      "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/static-sdk-build/bin/libhyle_mem_vm.a": "69ba52f79cf8e830371e551c71a96747fbcd97a9b79e3bb9e539aea78888e2e5",
+      "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/static-sdk-build/bin/libhyle_platform_fs.a": "c51987bdf5587bc9416253c0e571de999bba7944fbca9f03875700f93fb4af29",
+      "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/static-sdk-build/bin/libhyle_container.a": "34b676ef9acb99cfeeb8d9e140dbf92d7e5c418459349bdc4f3e0ff6c4d0ffe4",
+      "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/static-sdk-build/bin/libhyle_compute_provider_cublas.a": "0cb66257dcedcfc2f3681f6466b92673e3dd62e7b9e05834ae8145105056989c",
+      "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/static-sdk-build/bin/libhyle_compute_provider_cuda.a": "f4fc6b3407eb8375b81e3eecb9d32f36c7f8722791c081b4bbb031536eabd79b",
+      "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/static-sdk-build/bin/libhyle_compute_provider_ggml_cuda.a": "37d60301d154ffce40cc2fc2754a22288cf132806df61a9ce88ea74bb59a20af",
+      "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/static-sdk-build/bin/libhyle_compute_provider_torch_cuda.a": "8e247c79a54285504721228264dfdd193e6aefe447b918bee2c268b05bca94e7",
+      "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/static-sdk-build/bin/libhyle_compute_provider_flashinfer.a": "de8dbd313b03b4c4b40707976f0a8c77221ad0b144794103d8362a748042ff43",
+      "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/static-sdk-build/bin/libhyle_compute_backend_cuda.a": "8817037ca1e03a4c4f58f8489dc27bd2e561a01a1c3fc58052fe13c0d1aff6d7",
+      "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/static-sdk-build/bin/libhyle_platform_thread.a": "b2dc2541ee46c2e1d8f5a7201a235b714202d1656b5d37a5223b1ec495f75fcf",
+      "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/static-sdk-build/bin/libhyle_time.a": "31137efe0fdd645d572b1cce86e7d06a78b38a77f57066c5cf1970abd2bcbcc3",
+      "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/static-sdk-build/bin/libhyle_compute_provider_native.a": "5dc51f40603edd343b86dbf8d1764b4c83f4f9c88eac5dc2346d7b32419a40a2",
+      "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/static-sdk-build/bin/libhyle_compute_provider_onednn.a": "0f080a4646919c535c6d3bf4e488bc27e17e8a6244bf39ca56f0acb0a804d260",
+      "/root/hyle-scratch/compute-unified/g06-final-sdk/cuda-static-1/relocated/lib/libdnnl.a": "ed81c96c2626142076441ed4808f35f37510fe9a8214ecdf8fa57d51de4fc168",
+      "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/static-sdk-build/bin/libhyle_compute_provider_ggml.a": "7a5dc444474f187e7f96d6c67c5babf89cbd11eed5820ed64f1d5c10471c4f07",
+      "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/static-sdk-build/bin/libhyle_compute_batch.a": "ee79debfd1f0f834485e971ad33aa0b58a96fbfd1d6a239380ca44879bdd1000",
+      "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/static-sdk-build/bin/libhyle_compute_backend_cpu.a": "9162e82080bf8240bb3a857defb70e42a8b23452316b8f709463558dafad11ab",
+      "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/static-sdk-build/bin/libhyle_compute.a": "10b17b41c6e1ce3b1b3291c68a21c74dfb8487409926a169637c5e9a9e08301c",
+      "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/static-sdk-build/bin/libhyle_compute_ops.a": "d18dbaeedfb6b0e59203b3d2bef0a53e5fd0c8405e3c0dc77a0ad2b434cd7016",
+      "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/static-sdk-build/bin/libhyle_simd.a": "f3fa16bf3de16be0d495d89f03aa9ef82cb01fe4dcd4c24173fe22d71ed2437a",
+      "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/static-sdk-build/bin/libhyle_compute_ggml_runtime.a": "38e46cf820fc02276ef4a8b4a9f851add8fcd9fadad8bc4d12a335235d024749",
+      "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/static-sdk-build/bin/libhyle_mem.a": "acfe84d45afb0dfc82c9445723e993ecfa8d3bd2d54c4280f1196d2530392e26",
+      "/root/hyle-scratch/compute-unified/g06-final-sdk/cuda-static-1/relocated/lib/libmimalloc_static.a": "6d58fad0037a9fefac0f3a61ea8e1b57c8571f50e2c8a430d607e92fd2ccf4d9",
+      "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/static-sdk-build/bin/libhyle_platform.a": "0d1c492a7736e81748f0f71d01150316fce114738314f1bbecde29e77873e9d9",
+      "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/static-sdk-build/bin/libhyle_error.a": "017c25f6a233a5afec65714fdb408b9cca94822a10464018fa21cba3fc8f9e6d",
+      "/root/hyle-scratch/compute-unified/g06-final-sdk/cuda-static-1/relocated/lib/libggml.a": "bac7d2a0d94bd27ab7a79927e216b8c63631e7c7d3a7a7e9cc222b8394f83a84",
+      "/root/hyle-scratch/compute-unified/g06-final-sdk/cuda-static-1/relocated/lib/libggml-cpu.a": "c08c4a8ecae462d9d2245eb9b18307a716329dd36e0291015b94e04dfde831f2",
+      "/root/hyle-scratch/compute-unified/g06-final-sdk/cuda-static-1/relocated/lib/libggml-cuda.a": "f335776c314e99573289a601da24d6beb24c748afea155c339d30e31c7a3f6b7",
+      "/usr/local/cuda-13.3/targets/x86_64-linux/lib/libculibos.a": "6b8782dcda51e108d779f3c23be1885a630ab6f304439b2b2be1a03c0ac9594f",
+      "/root/hyle-scratch/compute-unified/g06-final-sdk/cuda-static-1/relocated/lib/libggml-base.a": "c7ea4945b7b658b8753fbcc114dda8d4864d9c0a69bc8b725127621c8d6ea8e5",
+      "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/static-sdk-build/bin/libhyle_graph_batch.a": "fb6a10f579305504063855eaccbe680931d5192d5a9d00062e976137685b8338",
+      "/root/hyle-scratch/compute-unified/g06-final-sdk/cuda-static-1/relocated/lib/libhyle_graph.a": "6c97d197847906269f2c6d7207c337d81ee07ec011c91d1ade7f5214f50ff68e",
+      "/root/hyle-scratch/compute-unified/g06-final-sdk/cuda-static-1/relocated/lib/libhyle_graph_provider_ggml_cuda.a": "7865ed9876d6900a66a4c6064e034f8320f30402fbcc0456336eb017c02e4137",
+      "/root/hyle-scratch/compute-unified/g06-final-sdk/cuda-static-1/relocated/lib/libhyle_graph_provider_onednn.a": "030e25a5af182812e702e3dcce7d2129e26fbd44ec136b485cd4ec2ffe13838e",
+      "/root/hyle-scratch/compute-unified/g06-final-sdk/cuda-static-1/relocated/lib/libhyle_graph_route_cpu.a": "2b7891a21b7f014800fe9df4beda450aa43368de84c5e0433fcb53af19cd7ea0",
+      "/root/hyle-scratch/compute-unified/g06-final-sdk/cuda-static-1/relocated/lib/libhyle_graph_route_cpu_cuda.a": "beca45288a64445ce63544c01697ceeed01f28b08f0dc36effd87f9e3f0d5bf7",
+      "/root/hyle-scratch/compute-unified/g06-final-sdk/cuda-static-1/relocated/lib/libhyle_graph_route_cuda.a": "8aad0986e0a584c95f17dc1a1204669e37b520b92e96dc6ab0cf18b07d3cb20c"
+    },
+    "CUDA_VISIBLE_DEVICES": null,
+    "G04_TRACE": null,
+    "started_unix": 1792237594.9170437,
+    "gpu_pre": {
+      "returncode": 0,
+      "stdout": "NVIDIA GeForce RTX 4070, GPU-e7376560-6f5d-ec19-6ee4-3dd3a2c81ef8, 617.14, 2822 MiB, 50\n",
+      "stderr": ""
+    },
+    "returncode": 0,
+    "elapsed_s": 2.82942277799998
+  },
+  "memory": {
+    "scope": "actual Hyle CUDA resource request bytes for program and two slots; driver/private excluded",
+    "f32_increment_used_bytes": 47746048,
+    "bf16_increment_used_bytes": 24677376,
+    "saved_bytes": 23068672,
+    "float_workspace_required_f32": 21053440,
+    "float_workspace_required_bf16": 10567680,
+    "per_slot_cap_f32": 23068672,
+    "per_slot_cap_bf16": 11534336
+  },
+  "performance_F32_vs_optin": {
+    "argv": [
+      "/root/hyle-scratch/compute-unified/g04-bf16-product-bench/product_bench"
+    ],
+    "binary_sha256": "19e3a0ebc7c12ba3d9b1e459d1035b2c5c7ea1e3b9502ab411b28891268ef74c",
+    "source_sha256": "a8dd7326e4a412dbe090308a464325b34fbd9fdaf4c6c1e50f7a52209718c30d",
+    "predeclared_schedule": "32 blocks x 128 pairs; 2 allocation x 2 execution x 2 capture modes x 3 shapes; retain all tails",
+    "primary": "complete public episode arithmetic mean; no control normalization or trimming",
+    "gpu_pre": {
+      "returncode": 0,
+      "stdout": "NVIDIA GeForce RTX 4070, GPU-e7376560-6f5d-ec19-6ee4-3dd3a2c81ef8, 617.14, 2822 MiB, 50\n",
+      "stderr": ""
+    },
+    "started_unix": 1792237623.07687,
+    "returncode": 0,
+    "elapsed_s": 21.01080822944641
+  },
+  "performance_same_source_BF16_peer_vs_optin": {
+    "argv": [
+      "/root/hyle-scratch/compute-unified/g04-bf16-product-peer-bench/consumer"
+    ],
+    "binary_sha256": "6e6856ab72d096552fd58f87735d3d7cd5e9e35bfdb0fe920dd24291eaa10074",
+    "source_sha256": "f27e606b2b73e7b811168833222da64e9ad1de10ca152a566f71623715240846",
+    "linked_static_inputs_sha256": {
+      "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/static-sdk-build/bin/libhyle_compute_state.a": "80cf9cd8d4168aa9bdab6b3542c11a519ff573646951b26185fe3bab26d4b1b2",
+      "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/static-sdk-build/bin/libhyle_compute_route_cpu.a": "1b3a00b7c00ee396882111d629f7ec26bca851852d1e5f0301f65d868f3e1262",
+      "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/static-sdk-build/bin/libhyle_compute_route_cuda.a": "6f5a2cd7ce268aa989fe4f0e529827f99af6a8abc2f2bfe1c81b9b542b0194b8",
+      "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/static-sdk-build/bin/libhyle_compute_stream.a": "8ed380abc1060a102be88c1d39b0ffa8208ba8dffd0740c2091c44df25585c77",
+      "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/static-sdk-build/bin/libhyle_io_core.a": "b28bf98204632e6eb1eb0300353d8eb1149f6e3b6288817a0ed988a81a51cfc9",
+      "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/static-sdk-build/bin/libhyle_sched.a": "7082e46522fcc71ce2eee9192da80491070d1b6c5be758a7fa15deb7ac595118",
+      "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/static-sdk-build/bin/libhyle_mem_vm.a": "69ba52f79cf8e830371e551c71a96747fbcd97a9b79e3bb9e539aea78888e2e5",
+      "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/static-sdk-build/bin/libhyle_platform_fs.a": "c51987bdf5587bc9416253c0e571de999bba7944fbca9f03875700f93fb4af29",
+      "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/static-sdk-build/bin/libhyle_container.a": "34b676ef9acb99cfeeb8d9e140dbf92d7e5c418459349bdc4f3e0ff6c4d0ffe4",
+      "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/static-sdk-build/bin/libhyle_compute_provider_cublas.a": "0cb66257dcedcfc2f3681f6466b92673e3dd62e7b9e05834ae8145105056989c",
+      "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/static-sdk-build/bin/libhyle_compute_provider_cuda.a": "f4fc6b3407eb8375b81e3eecb9d32f36c7f8722791c081b4bbb031536eabd79b",
+      "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/static-sdk-build/bin/libhyle_compute_provider_ggml_cuda.a": "37d60301d154ffce40cc2fc2754a22288cf132806df61a9ce88ea74bb59a20af",
+      "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/static-sdk-build/bin/libhyle_compute_provider_torch_cuda.a": "8e247c79a54285504721228264dfdd193e6aefe447b918bee2c268b05bca94e7",
+      "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/static-sdk-build/bin/libhyle_compute_provider_flashinfer.a": "de8dbd313b03b4c4b40707976f0a8c77221ad0b144794103d8362a748042ff43",
+      "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/static-sdk-build/bin/libhyle_compute_backend_cuda.a": "8817037ca1e03a4c4f58f8489dc27bd2e561a01a1c3fc58052fe13c0d1aff6d7",
+      "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/static-sdk-build/bin/libhyle_platform_thread.a": "b2dc2541ee46c2e1d8f5a7201a235b714202d1656b5d37a5223b1ec495f75fcf",
+      "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/static-sdk-build/bin/libhyle_time.a": "31137efe0fdd645d572b1cce86e7d06a78b38a77f57066c5cf1970abd2bcbcc3",
+      "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/static-sdk-build/bin/libhyle_compute_provider_native.a": "5dc51f40603edd343b86dbf8d1764b4c83f4f9c88eac5dc2346d7b32419a40a2",
+      "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/static-sdk-build/bin/libhyle_compute_provider_onednn.a": "0f080a4646919c535c6d3bf4e488bc27e17e8a6244bf39ca56f0acb0a804d260",
+      "/root/hyle-scratch/compute-unified/g06-final-sdk/cuda-static-1/relocated/lib/libdnnl.a": "ed81c96c2626142076441ed4808f35f37510fe9a8214ecdf8fa57d51de4fc168",
+      "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/static-sdk-build/bin/libhyle_compute_provider_ggml.a": "7a5dc444474f187e7f96d6c67c5babf89cbd11eed5820ed64f1d5c10471c4f07",
+      "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/static-sdk-build/bin/libhyle_compute_batch.a": "ee79debfd1f0f834485e971ad33aa0b58a96fbfd1d6a239380ca44879bdd1000",
+      "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/static-sdk-build/bin/libhyle_compute_backend_cpu.a": "9162e82080bf8240bb3a857defb70e42a8b23452316b8f709463558dafad11ab",
+      "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/static-sdk-build/bin/libhyle_compute.a": "10b17b41c6e1ce3b1b3291c68a21c74dfb8487409926a169637c5e9a9e08301c",
+      "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/static-sdk-build/bin/libhyle_compute_ops.a": "d18dbaeedfb6b0e59203b3d2bef0a53e5fd0c8405e3c0dc77a0ad2b434cd7016",
+      "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/static-sdk-build/bin/libhyle_simd.a": "f3fa16bf3de16be0d495d89f03aa9ef82cb01fe4dcd4c24173fe22d71ed2437a",
+      "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/static-sdk-build/bin/libhyle_compute_ggml_runtime.a": "38e46cf820fc02276ef4a8b4a9f851add8fcd9fadad8bc4d12a335235d024749",
+      "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/static-sdk-build/bin/libhyle_mem.a": "acfe84d45afb0dfc82c9445723e993ecfa8d3bd2d54c4280f1196d2530392e26",
+      "/root/hyle-scratch/compute-unified/g06-final-sdk/cuda-static-1/relocated/lib/libmimalloc_static.a": "6d58fad0037a9fefac0f3a61ea8e1b57c8571f50e2c8a430d607e92fd2ccf4d9",
+      "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/static-sdk-build/bin/libhyle_platform.a": "0d1c492a7736e81748f0f71d01150316fce114738314f1bbecde29e77873e9d9",
+      "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/static-sdk-build/bin/libhyle_error.a": "017c25f6a233a5afec65714fdb408b9cca94822a10464018fa21cba3fc8f9e6d",
+      "/root/hyle-scratch/compute-unified/g06-final-sdk/cuda-static-1/relocated/lib/libggml.a": "bac7d2a0d94bd27ab7a79927e216b8c63631e7c7d3a7a7e9cc222b8394f83a84",
+      "/root/hyle-scratch/compute-unified/g06-final-sdk/cuda-static-1/relocated/lib/libggml-cpu.a": "c08c4a8ecae462d9d2245eb9b18307a716329dd36e0291015b94e04dfde831f2",
+      "/root/hyle-scratch/compute-unified/g06-final-sdk/cuda-static-1/relocated/lib/libggml-cuda.a": "f335776c314e99573289a601da24d6beb24c748afea155c339d30e31c7a3f6b7",
+      "/usr/local/cuda-13.3/targets/x86_64-linux/lib/libculibos.a": "6b8782dcda51e108d779f3c23be1885a630ab6f304439b2b2be1a03c0ac9594f",
+      "/root/hyle-scratch/compute-unified/g06-final-sdk/cuda-static-1/relocated/lib/libggml-base.a": "c7ea4945b7b658b8753fbcc114dda8d4864d9c0a69bc8b725127621c8d6ea8e5",
+      "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/static-sdk-build/bin/libhyle_graph_batch.a": "fb6a10f579305504063855eaccbe680931d5192d5a9d00062e976137685b8338",
+      "/root/hyle-scratch/compute-unified/g06-final-sdk/cuda-static-1/relocated/lib/libhyle_graph.a": "6c97d197847906269f2c6d7207c337d81ee07ec011c91d1ade7f5214f50ff68e",
+      "/root/hyle-scratch/compute-unified/g06-final-sdk/cuda-static-1/relocated/lib/libhyle_graph_provider_ggml_cuda.a": "7865ed9876d6900a66a4c6064e034f8320f30402fbcc0456336eb017c02e4137",
+      "/root/hyle-scratch/compute-unified/g06-final-sdk/cuda-static-1/relocated/lib/libhyle_graph_provider_onednn.a": "030e25a5af182812e702e3dcce7d2129e26fbd44ec136b485cd4ec2ffe13838e",
+      "/root/hyle-scratch/compute-unified/g06-final-sdk/cuda-static-1/relocated/lib/libhyle_graph_route_cpu.a": "2b7891a21b7f014800fe9df4beda450aa43368de84c5e0433fcb53af19cd7ea0",
+      "/root/hyle-scratch/compute-unified/g06-final-sdk/cuda-static-1/relocated/lib/libhyle_graph_route_cpu_cuda.a": "beca45288a64445ce63544c01697ceeed01f28b08f0dc36effd87f9e3f0d5bf7",
+      "/root/hyle-scratch/compute-unified/g06-final-sdk/cuda-static-1/relocated/lib/libhyle_graph_route_cuda.a": "8aad0986e0a584c95f17dc1a1204669e37b520b92e96dc6ab0cf18b07d3cb20c"
+    },
+    "CUDA_VISIBLE_DEVICES": null,
+    "G04_TRACE": null,
+    "started_unix": 1792237646.4269269,
+    "gpu_pre": {
+      "returncode": 0,
+      "stdout": "NVIDIA GeForce RTX 4070, GPU-e7376560-6f5d-ec19-6ee4-3dd3a2c81ef8, 617.14, 2822 MiB, 50\n",
+      "stderr": ""
+    },
+    "returncode": 0,
+    "elapsed_s": 13.428273662000038
+  },
+  "performance_summary": "new-product-results-summary.json",
+  "precision_review": "product-precision-review.json",
+  "not_measured": [
+    "whole-model quality",
+    "three external inference engines",
+    "other GPU performance"
+  ],
+  "retained_non_product_events": [
+    "precision run1 harness strict output capacity read-size failure; fixed host harness, no product change",
+    "stopped unrelated full GGML vendor rebuild; rebuilt only ABI-affected host TU and retained other archive member hashes"
+  ]
+}

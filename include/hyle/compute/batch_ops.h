@@ -16,10 +16,14 @@ struct PagedAttention final {
   // Inclusive past count at the bottom-right aligned query position. -1 is
   // unbounded, 0 is self-only. This batch admits a window only with causal.
   std::int32_t window_left = -1;
-  static constexpr OperationId operation_id{0x48594c4542415443ULL,0x5041474544410001ULL};
+  // Must match the batch provider's immutable program option. This permits
+  // reduced intermediate storage, while accumulation remains F32.
+  bool allow_bf16_partials = false;
+  static constexpr OperationId operation_id{0x48594c4542415443ULL,0x5041474544410002ULL};
   static constexpr std::string_view operation_name="paged-attention";
   constexpr OperationTraits operation_traits() const noexcept {
-    return {{4,4},1,AliasPolicy::kNone,EffectKind::kPure,PrecisionPolicy::kExact,DataType::kFloat32};
+    return {{4,4},1,AliasPolicy::kNone,EffectKind::kPure,
+      allow_bf16_partials?PrecisionPolicy::kAccumulateInDeclaredType:PrecisionPolicy::kExact,DataType::kFloat32};
   }
   Status infer_output_descriptions(std::span<const TensorDesc> in,std::span<TensorDesc> out) const noexcept {
     if(!std::isfinite(scale))return Status::InvalidArgument("paged attention scale must be finite");
@@ -32,10 +36,12 @@ struct RaggedAttention final {
   float scale = 1.0F;
   bool causal = true;
   std::int32_t window_left = -1;
-  static constexpr OperationId operation_id{0x48594c4542415443ULL,0x5241474745440001ULL};
+  bool allow_bf16_partials = false;
+  static constexpr OperationId operation_id{0x48594c4542415443ULL,0x5241474745440002ULL};
   static constexpr std::string_view operation_name="ragged-attention";
   constexpr OperationTraits operation_traits() const noexcept {
-    return {{4,4},1,AliasPolicy::kNone,EffectKind::kPure,PrecisionPolicy::kExact,DataType::kFloat32};
+    return {{4,4},1,AliasPolicy::kNone,EffectKind::kPure,
+      allow_bf16_partials?PrecisionPolicy::kAccumulateInDeclaredType:PrecisionPolicy::kExact,DataType::kFloat32};
   }
   Status infer_output_descriptions(std::span<const TensorDesc> in,std::span<TensorDesc> out) const noexcept {
     if(!std::isfinite(scale))return Status::InvalidArgument("ragged attention scale must be finite");

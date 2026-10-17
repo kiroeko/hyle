@@ -34,6 +34,24 @@ template<class Q,unsigned Depth>cudaError_t merge_f32(float *values,float *score
   void *arguments[]{&values,&scores,&indptr,&output,&lse,&rows,&actual_rows,&heads,&scale};
   return cudaLaunchKernel(reinterpret_cast<const void*>(kernel),dim3(blocks),dim3(x,y),arguments,shared,stream);
 }
+template<class Q,unsigned Depth>cudaError_t merge_bf16(Q *values,float *scores,std::int32_t *indptr,
+    Q *output,float *lse,unsigned rows,unsigned *actual_rows,unsigned heads,float scale,cudaStream_t stream){
+  static_assert(std::is_same_v<Q,__nv_bfloat16> && Depth==256);
+  constexpr unsigned vector=Depth/32,x=Depth/vector,y=128/x;
+  // Four BF16 stages use the original two-stage F32 shared-memory budget.
+  constexpr unsigned stages=4,shared=stages*y*Depth*sizeof(Q)+128*sizeof(float);
+  auto kernel=::flashinfer::PersistentVariableLengthMergeStatesKernel<vector,x,y,stages,Q,Q,std::int32_t,true>;
+  if(!rows || !heads)return cudaSuccess;
+  int device=0,sms=0,occupancy=0;
+  auto status=cudaGetDevice(&device);if(status!=cudaSuccess)return status;
+  status=cudaDeviceGetAttribute(&sms,cudaDevAttrMultiProcessorCount,device);if(status!=cudaSuccess)return status;
+  status=cudaOccupancyMaxActiveBlocksPerMultiprocessor(&occupancy,kernel,128,shared);if(status!=cudaSuccess)return status;
+  const auto needed=(std::uint64_t(rows)*heads+unsigned(sms)-1)/unsigned(sms);
+  const auto blocks=unsigned(sms)*unsigned((std::min)(std::uint64_t(occupancy),needed));
+  status=cudaFuncSetAttribute(kernel,cudaFuncAttributeMaxDynamicSharedMemorySize,shared);if(status!=cudaSuccess)return status;
+  void *arguments[]{&values,&scores,&indptr,&output,&lse,&rows,&actual_rows,&heads,&scale};
+  return cudaLaunchKernel(reinterpret_cast<const void*>(kernel),dim3(blocks),dim3(x,y),arguments,shared,stream);
+}
 }
 }
 #include <flashinfer/attention/prefill.cuh>
@@ -42,6 +60,11 @@ namespace hyle::compute::flashinfer::native {
 namespace fi=::flashinfer;
 
 namespace {
+struct Bf16PartialAttention:fi::DefaultAttention<false,true,false,false> {
+  using Base=fi::DefaultAttention<false,true,false,false>;
+  using Base::Base;
+  static constexpr bool hyle_bf16_partials=true;
+};
 template<class Base>struct OutputParams:Base {float v_scale=1.F;};
 
 template<class Base,class Q,unsigned Depth>struct MergeParams:Base {
@@ -49,6 +72,15 @@ template<class Base,class Q,unsigned Depth>struct MergeParams:Base {
   float final_scale=1.F;
   cudaError_t merge_states(float *values,float *scores,float *final_lse,cudaStream_t stream) const {
     return merge_f32<Q,Depth>(values,scores,this->merge_indptr,final_output,final_lse,
+        this->max_total_num_rows,this->total_num_rows,this->num_qo_heads,final_scale,stream);
+  }
+};
+
+template<class Base,class Q,unsigned Depth>struct Bf16MergeParams:Base {
+  Q *final_output=nullptr;
+  float final_scale=1.F;
+  cudaError_t merge_states(Q *values,float *scores,float *final_lse,cudaStream_t stream) const {
+    return merge_bf16<Q,Depth>(values,scores,this->merge_indptr,final_output,final_lse,
         this->max_total_num_rows,this->total_num_rows,this->num_qo_heads,final_scale,stream);
   }
 };
@@ -66,7 +98,9 @@ template<class Params>void bind_plan(Params &params,const fi::PrefillPlanInfo &p
 }
 template<unsigned QK,unsigned VO,bool Paged,fi::MaskMode Mask,class Params>
 cudaError_t launch(Params params,const fi::PrefillPlanInfo &plan,void *floating,cudaStream_t stream){
-  using Variant=fi::DefaultAttention<false,true,false,false>;
+  using Variant=std::conditional_t<fi::HyleHasMergeStates<Params>::value &&
+      std::is_same_v<typename Params::DTypeO,__nv_bfloat16>,Bf16PartialAttention,
+      fi::DefaultAttention<false,true,false,false>>;
   auto *temporary=plan.split_kv?reinterpret_cast<typename Params::DTypeO*>(static_cast<char*>(floating)+plan.v_offset):nullptr;
   auto *scores=plan.split_kv?reinterpret_cast<float*>(static_cast<char*>(floating)+plan.s_offset):nullptr;
   switch(plan.cta_tile_q){
@@ -81,12 +115,12 @@ cudaError_t launch_mask(Params params,const fi::PrefillPlanInfo &plan,BatchSpec 
   return spec.causal?launch<QK,VO,Paged,fi::MaskMode::kCausal>(params,plan,floating,stream):
                      launch<QK,VO,Paged,fi::MaskMode::kNone>(params,plan,floating,stream);
 }
-template<class Q,class KV,unsigned QK,unsigned VO,bool Split>
+template<class Q,class KV,unsigned QK,unsigned VO,bool Split,bool Bf16Partials=false>
 cudaError_t run_output(const fi::PrefillPlanInfo &plan,BatchSpec spec,const void *q,const void *k,
                      const void *v,const void *metadata,void *output,void *floating,void *integer,cudaStream_t stream){
   constexpr bool fp8=sizeof(KV)==1;
-  using O=std::conditional_t<Split,float,Q>;
-  // Split kernels write F32 partials; their host merge writes the final Q output.
+  using O=std::conditional_t<Split && !Bf16Partials,float,Q>;
+  // The explicit BF16 option narrows partials; both paths scale after merging.
   auto *native_output=static_cast<O*>(output);
   const auto bind_output=[&](auto &params){
     if constexpr(Split){params.final_output=static_cast<Q*>(output);params.final_scale=spec.value_scale;}
@@ -96,7 +130,7 @@ cudaError_t run_output(const fi::PrefillPlanInfo &plan,BatchSpec spec,const void
   cudaError_t status;
   if(spec.paged){
     using Base=fi::BatchPrefillPagedParams<Q,KV,O,std::int32_t>;
-    std::conditional_t<Split,MergeParams<Base,Q,VO>,OutputParams<Base>> params;
+    std::conditional_t<Split,std::conditional_t<Bf16Partials,Bf16MergeParams<Base,Q,VO>,MergeParams<Base,Q,VO>>,OutputParams<Base>> params;
     params.q=const_cast<Q*>(static_cast<const Q*>(q));params.o=native_output;
     params.q_indptr=pointer(spec.query_indptr_offset);
     const std::int64_t ks[]{std::int64_t(spec.page_size)*spec.kv_heads*QK,std::int64_t(spec.kv_heads)*QK,QK,1};
@@ -110,7 +144,7 @@ cudaError_t run_output(const fi::PrefillPlanInfo &plan,BatchSpec spec,const void
     status=launch_mask<QK,VO,true>(params,plan,spec,floating,stream);
   }else{
     using Base=fi::BatchPrefillRaggedParams<Q,KV,O,std::int32_t>;
-    std::conditional_t<Split,MergeParams<Base,Q,VO>,OutputParams<Base>> params;
+    std::conditional_t<Split,std::conditional_t<Bf16Partials,Bf16MergeParams<Base,Q,VO>,MergeParams<Base,Q,VO>>,OutputParams<Base>> params;
     params.q=const_cast<Q*>(static_cast<const Q*>(q));params.k=const_cast<KV*>(static_cast<const KV*>(k));
     params.v=const_cast<KV*>(static_cast<const KV*>(v));params.o=native_output;
     params.q_indptr=pointer(spec.query_indptr_offset);params.kv_indptr=pointer(spec.kv_indptr_offset);
@@ -154,6 +188,8 @@ cudaError_t run_cache_batch(const void *state,BatchSpec spec,const void *q,const
     const void *metadata,void *output,void *floating,void *integer,cudaStream_t stream){
   if(!spec.query_rows)return cudaSuccess;
   const auto &plan=*static_cast<const fi::PrefillPlanInfo*>(state);
+  if(bf16_partials_active(spec,std::uint32_t(plan.cta_tile_q),plan.split_kv))
+    return run_output<__nv_bfloat16,__nv_fp8_e4m3,256,256,true,true>(plan,spec,q,k,v,metadata,output,floating,integer,stream);
   return spec.bfloat16?dispatch_kv<__nv_bfloat16>(plan,spec,q,k,v,metadata,output,floating,integer,stream):
                       dispatch_kv<half>(plan,spec,q,k,v,metadata,output,floating,integer,stream);
 }

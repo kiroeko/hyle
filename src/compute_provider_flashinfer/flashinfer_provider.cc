@@ -160,7 +160,8 @@ Status create_batch_slot(void*opaque,BatchCapacity capacity,const BatchProgramOp
     .query_indptr_offset=offsets.query_indptr,.kv_indptr_offset=offsets.kv_indptr,.page_indices_offset=offsets.page_indices,.tail_offset=offsets.last_page_lengths,
     .scale=options.scale,.key_scale=capacity.key_storage.scale(),.value_scale=capacity.value_storage.scale(),
     .window_left=options.window_left,.paged=capacity.storage==BatchStorage::kPaged,.bfloat16=capacity.query_type==DataType::kBFloat16,
-    .fp8=capacity.key_storage.data_type()==DataType::kFloat8E4M3FN,.causal=options.causal};
+    .fp8=capacity.key_storage.data_type()==DataType::kFloat8E4M3FN,.causal=options.causal,
+    .allow_bf16_partials=options.allow_bf16_partials};
   *output=p;return Status::Ok();
 }
 void destroy_batch_slot(void*opaque,mem::AllocatorRef allocator)noexcept {
@@ -193,7 +194,7 @@ detail::EnqueueResult plan_batch_slot(void*opaque,Queue&queue,const BatchLayoutV
     // After this boundary preserve a possibly accepted original H2D prefix.
     try {
       status=cuda::status(native::plan_batch(slot.plan,spec,metadata.query_indptr.data(),metadata.kv_indptr.data(),*floating,workspace.float_workspace.size(),*integer,host_pointer,workspace.int_workspace.size(),*stream,facts));
-      if(status.ok()){slot.kv_chunk_rows=facts.kv_chunk_rows;slot.spec=spec;slot.generation=layout.generation();slot.layout=layout;*report={.layout_generation=layout.generation(),.float_workspace_bytes=facts.float_bytes,.int_workspace_bytes=facts.int_bytes,.cta_tile_q=facts.cta_tile_q,.padded_batch_size=facts.padded_batch_size,.split_kv=facts.split_kv};slot.report=*report;}
+      if(status.ok()){slot.kv_chunk_rows=facts.kv_chunk_rows;slot.spec=spec;slot.generation=layout.generation();slot.layout=layout;*report={.layout_generation=layout.generation(),.float_workspace_bytes=facts.float_bytes,.int_workspace_bytes=facts.int_bytes,.cta_tile_q=facts.cta_tile_q,.padded_batch_size=facts.padded_batch_size,.split_kv=facts.split_kv,.bf16_partials=facts.bf16_partials};slot.report=*report;}
       return spec.query_rows==0 && status.ok()?detail::EnqueueResult::no_op():detail::EnqueueResult::accepted_command(status);
     }catch(const std::bad_alloc&){return detail::EnqueueResult::accepted_command(Status::ResourceExhausted("FlashInfer batch planning host allocation"));}
      catch(const std::exception&e){return detail::EnqueueResult::accepted_command(Status::Internal(e.what()));}

@@ -67,7 +67,8 @@ double fp8_value(std::uint8_t code){
   return code&128?-value:value;
 }
 template<class T>void boxed_case(bool paged,bool quantized,unsigned depth,unsigned value_depth,
-                                bool causal,int window,bool long_precision=false,bool long_prefill=false,bool strong_weights=false){
+                                bool causal,int window,bool long_precision=false,bool long_prefill=false,
+                                bool strong_weights=false,bool allow_bf16_partials=false){
   SCOPED_TRACE(::testing::Message()<<"paged="<<paged<<" quantized="<<quantized<<" depth="<<depth
       <<" value_depth="<<value_depth<<" window="<<window<<" long_prefill="<<long_prefill);
   const unsigned query_rows=long_precision?1u:(long_prefill?66u:strong_weights?2u:(causal?18u:68u));
@@ -136,9 +137,15 @@ template<class T>void boxed_case(bool paged,bool quantized,unsigned depth,unsign
   }else{key_lease=load(std::as_bytes(std::span(kb)));value_lease=load(std::as_bytes(std::span(vb)));}
   const float scale=1.F/std::sqrt(float(depth));
   auto program=c::BatchProgram::prepare(context,schema,{.resource=memory.ref(),.host_workspace=host.ref(),
-      .max_float_workspace_bytes=8u<<20,.max_int_workspace_bytes=4096,.scale=scale,.causal=causal,.window_left=window});
+      .max_float_workspace_bytes=8u<<20,.max_int_workspace_bytes=4096,.scale=scale,.causal=causal,
+      .window_left=window,.allow_bf16_partials=allow_bf16_partials});
   ASSERT_TRUE(program)<<program.error().message();auto slot=c::BatchInvocation::create(*program,queue).value();
   auto prepared=slot.prepare_batch(layout);ASSERT_TRUE(prepared)<<prepared.error().message();
+  if(allow_bf16_partials){
+    ASSERT_EQ(slot.report().cta_tile_q,64u);
+    ASSERT_TRUE(slot.report().split_kv);
+    ASSERT_TRUE(slot.report().bf16_partials);
+  }
   if(strong_weights){
     if(long_prefill){ASSERT_GT(slot.report().cta_tile_q,16u);}
     else {ASSERT_EQ(slot.report().cta_tile_q,16u);}
@@ -411,6 +418,9 @@ TEST(FlashinferCache, QuantizedCoupledDepthsIncludingMainD256AndLongPrefill){
     boxed_case<hyle::simd::float16_t>(paged,true,256,256,true,-1,false,true);
     boxed_case<hyle::simd::bfloat16_t>(paged,true,256,256,true,-1,false,true);
   }
+}
+TEST(FlashinferCache, OptInBfloat16PartialsAgainstFeatureOracle){
+  boxed_case<hyle::simd::bfloat16_t>(true,true,256,256,true,-1,false,true,false,true);
 }
 TEST(FlashinferCache, PlainLongWindowAgainstCancellation){
   boxed_case<hyle::simd::float16_t>(false,false,64,128,true,4095,true);

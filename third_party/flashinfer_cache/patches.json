@@ -1,11 +1,11 @@
 {
   "upstream_revision": "69ff11fc4954396d98326656dc85debd2223f637",
-  "scope": "One provider-private verified header set: finite mixed FP8 QK64/VO128 physical K tile; original F32 partial/merge with optional final scale; shared-storage handoff and warp output synchronization; original cooperative prefill tile repack with matching storage/traits/dispatcher budgets; FP8 exact128B/64B producer row divisibility and original native16-bit per-warp work footprint bound; scaled F32 merge uses one final output group while retaining original local reductions and synchronization; producer-owned full-row FP8 conversion uses the existing post-conversion publication barriers; F32 split batch decodes packed global vectors directly into bounded native16 K/V shared tiles",
+  "scope": "One provider-private verified header set: finite mixed FP8 QK64/VO128 physical K tile; original F32 partial/merge with optional final scale; shared-storage handoff and warp output synchronization; original cooperative prefill tile repack with matching storage/traits/dispatcher budgets; FP8 exact128B/64B producer row divisibility and original native16-bit per-warp work footprint bound; scaled F32 merge uses one final output group while retaining original local reductions and synchronization; producer-owned full-row FP8 conversion uses the existing post-conversion publication barriers; F32 split batch decodes packed global vectors directly into bounded native16 K/V shared tiles; explicit private D256 CTA64 BF16 partial marker and shared query/materialize workspace width selection, default FP32 retained",
   "files": [
     {
       "path": "include/flashinfer/attention/prefill.cuh",
       "before_sha256": "f93cbea96e3a723254c15f5a52d6dd4c13e3892e88eb9b9fed1c0c0048c7d710",
-      "after_sha256": "8146bd05db566d6f3c999a3aa3b83d91f7a565a343d06780edf2abd5faa0840f",
+      "after_sha256": "c912541502674c9449ad87aa5002219625c815d2ddfb4fb415a223be5fb13ab2",
       "edits": [
         {
           "before": "      alignas(16) DTypeKV k_smem[CTA_TILE_KV * HEAD_DIM_QK];",
@@ -154,6 +154,14 @@
         {
           "before": "            KernelTraits<MASK_MODE, CTA_TILE_Q, NUM_MMA_Q, NUM_MMA_KV, NUM_MMA_D_QK, NUM_MMA_D_VO,\n                         NUM_WARPS_Q, NUM_WARPS_KV, POS_ENCODING_MODE, DTypeQ, DTypeKV, DTypeO,\n                         DTypeQKAccum, typename Params::IdType, AttentionVariant>;\n        if constexpr (KTraits::IsInvalid()) {\n          // Invalid configuration, skip\n          std::ostringstream err_msg;\n          err_msg << \"FlashInfer Internal Error: Invalid configuration : NUM_MMA_Q=\" << NUM_MMA_Q\n                  << \" NUM_MMA_D_QK=\" << NUM_MMA_D_QK << \" NUM_MMA_D_VO=\" << NUM_MMA_D_VO\n                  << \" NUM_MMA_KV=\" << NUM_MMA_KV << \" NUM_WARPS_Q=\" << NUM_WARPS_Q\n                  << \" NUM_WARPS_KV=\" << NUM_WARPS_KV\n                  << \" please create an issue (https://github.com/flashinfer-ai/flashinfer/issues)\"\n                     \" and report the issue to the developers.\";\n          FLASHINFER_ERROR(err_msg.str());\n        } else {\n          using SmemStorage = std::conditional_t<KTraits::USE_SOFTMAX_VO_SPLIT,\n                                                 typename KTraits::SharedStoragePaged,\n                                                 typename KTraits::SharedStorage>;\n          size_t smem_size = sizeof(SmemStorage);\n          auto kernel = BatchPrefillWithRaggedKVCacheKernel<KTraits, Params>;\n          // Exact final check: the analytic NUM_MMA_KV budget can slightly\n          // under-count the real struct (cross-warp merge buffers, padding);\n          // fail with a clear error instead of a launch-time cudaErrorInvalidValue.\n          if (smem_size > (size_t)max_smem_per_block_optin) {\n            std::ostringstream err_msg;\n            err_msg << \"Required shared memory (\" << smem_size\n                    << \" bytes) for head_dim_qk=\" << HEAD_DIM_QK << \", head_dim_vo=\" << HEAD_DIM_VO\n                    << \", cta_tile_q=\" << CTA_TILE_Q << \" exceeds this GPU's per-block limit (\"\n                    << max_smem_per_block_optin\n                    << \" bytes); this configuration is not supported on this architecture.\";\n            FLASHINFER_ERROR(err_msg.str());\n          }\n          FLASHINFER_CUDA_CALL(\n              cudaFuncSetAttribute(kernel, cudaFuncAttributeMaxDynamicSharedMemorySize, smem_size));\n",
           "after": "            KernelTraits<MASK_MODE, CTA_TILE_Q, NUM_MMA_Q, NUM_MMA_KV, NUM_MMA_D_QK, NUM_MMA_D_VO,\n                         NUM_WARPS_Q, NUM_WARPS_KV, POS_ENCODING_MODE, DTypeQ, DTypeKV, DTypeO,\n                         DTypeQKAccum, typename Params::IdType, AttentionVariant>;\n        if constexpr (KTraits::IsInvalid()) {\n          // Invalid configuration, skip\n          std::ostringstream err_msg;\n          err_msg << \"FlashInfer Internal Error: Invalid configuration : NUM_MMA_Q=\" << NUM_MMA_Q\n                  << \" NUM_MMA_D_QK=\" << NUM_MMA_D_QK << \" NUM_MMA_D_VO=\" << NUM_MMA_D_VO\n                  << \" NUM_MMA_KV=\" << NUM_MMA_KV << \" NUM_WARPS_Q=\" << NUM_WARPS_Q\n                  << \" NUM_WARPS_KV=\" << NUM_WARPS_KV\n                  << \" please create an issue (https://github.com/flashinfer-ai/flashinfer/issues)\"\n                     \" and report the issue to the developers.\";\n          FLASHINFER_ERROR(err_msg.str());\n        } else {\n          using SmemStorage = std::conditional_t<KTraits::USE_SOFTMAX_VO_SPLIT,\n                                                 typename KTraits::SharedStoragePaged,\n                                                 typename KTraits::SharedStorageBatch>;\n          size_t smem_size = sizeof(SmemStorage);\n          auto kernel = BatchPrefillWithRaggedKVCacheKernel<KTraits, Params>;\n          // Exact final check: the analytic NUM_MMA_KV budget can slightly\n          // under-count the real struct (cross-warp merge buffers, padding);\n          // fail with a clear error instead of a launch-time cudaErrorInvalidValue.\n          if (smem_size > (size_t)max_smem_per_block_optin) {\n            std::ostringstream err_msg;\n            err_msg << \"Required shared memory (\" << smem_size\n                    << \" bytes) for head_dim_qk=\" << HEAD_DIM_QK << \", head_dim_vo=\" << HEAD_DIM_VO\n                    << \", cta_tile_q=\" << CTA_TILE_Q << \" exceeds this GPU's per-block limit (\"\n                    << max_smem_per_block_optin\n                    << \" bytes); this configuration is not supported on this architecture.\";\n            FLASHINFER_ERROR(err_msg.str());\n          }\n          FLASHINFER_CUDA_CALL(\n              cudaFuncSetAttribute(kernel, cudaFuncAttributeMaxDynamicSharedMemorySize, smem_size));\n"
+        },
+        {
+          "before": "template <MaskMode MASK_MODE_, uint32_t CTA_TILE_Q_",
+          "after": "template <typename Variant, typename = void>\nstruct HyleBf16Partials : std::false_type {};\ntemplate <typename Variant>\nstruct HyleBf16Partials<Variant, std::void_t<decltype(Variant::hyle_bf16_partials)>>\n    : std::bool_constant<Variant::hyle_bf16_partials> {};\n\ntemplate <MaskMode MASK_MODE_, uint32_t CTA_TILE_Q_"
+        },
+        {
+          "before": "USE_KV_REPACK && std::is_same_v<DTypeO_, float> &&",
+          "after": "USE_KV_REPACK &&\n       (std::is_same_v<DTypeO_, float> ||\n        (HyleBf16Partials<AttentionVariant_>::value && std::is_same_v<DTypeO_, __nv_bfloat16> &&\n         HEAD_DIM_QK == 256 && HEAD_DIM_VO == 256 && CTA_TILE_Q == 64)) &&"
         }
       ]
     },
@@ -199,6 +207,37 @@
         }
       ],
       "after_sha256": "bb8892c4160b9095579a626b43ebb3cc55289a2e60c3bca06a168215cc65e9fa"
+    },
+    {
+      "path": "include/flashinfer/attention/scheduler.cuh",
+      "before_sha256": "a11a39aea393cdb380ad9439aac9170cd96849d7426ebbb920c5c8cdadfcc575",
+      "after_sha256": "d57a9e018dfa1e430f41b3d8da4891299c23ffbced1b1e75e235c011f56d2883",
+      "edits": [
+        {
+          "before": "    int64_t uniform_q_len, cudaStream_t stream, uint32_t kv_dtype_bytes = 2) {",
+          "after": "    int64_t uniform_q_len, cudaStream_t stream, uint32_t kv_dtype_bytes = 2,\n    bool hyle_bf16_partials = false) {"
+        },
+        {
+          "before": "                               int64_t uniform_q_len, cudaStream_t stream,\n                               uint32_t kv_dtype_bytes = 2) {",
+          "after": "                               int64_t uniform_q_len, cudaStream_t stream,\n                               uint32_t kv_dtype_bytes = 2, bool hyle_bf16_partials = false) {"
+        },
+        {
+          "before": "    bool disable_split_kv, int64_t num_colocated_ctas, int64_t uniform_q_len, cudaStream_t stream,\n    uint32_t kv_dtype_bytes = 2) {",
+          "after": "    bool disable_split_kv, int64_t num_colocated_ctas, int64_t uniform_q_len, cudaStream_t stream,\n    uint32_t kv_dtype_bytes = 2, bool hyle_bf16_partials = false) {"
+        },
+        {
+          "before": "    plan_info.v_offset = float_allocator.aligned_alloc_offset(\n        num_qo_heads * padded_batch_size * cta_tile_q * head_dim_vo * sizeof(float), 16,\n        \"batch_prefill_tmp_v\");",
+          "after": "    // The caller admits the private BF16-partial domain. Select its width\n    // only after this same query/materialize implementation chose the tile.\n    const size_t partial_value_bytes =\n        hyle_bf16_partials && plan_info.cta_tile_q == 64 && plan_info.split_kv\n            ? sizeof(uint16_t)\n            : sizeof(float);\n    plan_info.v_offset = float_allocator.aligned_alloc_offset(\n        num_qo_heads * padded_batch_size * cta_tile_q * head_dim_vo * partial_value_bytes, 16,\n        \"batch_prefill_tmp_v\");"
+        },
+        {
+          "before": "                               uniform_q_len, stream, kv_dtype_bytes);",
+          "after": "                               uniform_q_len, stream, kv_dtype_bytes, hyle_bf16_partials);"
+        },
+        {
+          "before": "                                num_colocated_ctas, uniform_q_len, stream, kv_dtype_bytes);",
+          "after": "                                num_colocated_ctas, uniform_q_len, stream, kv_dtype_bytes,\n                                hyle_bf16_partials);"
+        }
+      ]
     }
   ]
 }

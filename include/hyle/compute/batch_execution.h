@@ -14,6 +14,10 @@ struct BatchProgramOptions final {
   float scale = 1.0F;
   bool causal = true;
   std::int32_t window_left = -1;
+  // Permit BF16 split-KV intermediates where supported. Local accumulation
+  // remains F32; reductions can lose residuals that the default preserves.
+  // Immutable for this program, its plans and recorded replays.
+  bool allow_bf16_partials = false;
   mem::AllocatorRef allocator = mem::system_allocator();
   ResourceBudget resource_budget{};
 };
@@ -23,6 +27,7 @@ struct BatchPlanReport final {
   std::size_t float_workspace_bytes = 0, int_workspace_bytes = 0;
   std::uint32_t cta_tile_q = 0, padded_batch_size = 0;
   bool split_kv = false, native_metadata_unknown = true, capture_compatible = false;
+  bool bf16_partials = false;
   bool reused_native_plan = false;
   std::uint32_t host_waits = 0;
   CopyBatchReport metadata_upload{};

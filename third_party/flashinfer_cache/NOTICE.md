@@ -9,9 +9,9 @@ No complete cache history is padded or dequantized. Other native domains are unc
 The immutable upstream source cache is never modified. Original copyright/license apply.
 
 The private encoded-cache adapter also permits a final merge callback and an optional
-scale epilogue in the original persistent merge. FP32 partials and accumulation remain
+scale epilogue in the original persistent merge. By default, FP32 partials and accumulation remain
 unchanged; scaling precedes the sole final cast, including a single partial. Default
-upstream routes retain their original output semantics. No public HYLE API is added.
+upstream routes retain their original output semantics. This merge epilogue itself adds no public HYLE API.
 
 The 16-bit output writer synchronizes the CTA before reusing its aliased shared
 storage, and the output warp before reading its rearranged stores. FP32 direct
@@ -61,3 +61,19 @@ wait0 drains Q loads before the retained CTA publication barriers; consumer
 retirement, final and output barriers remain. Other paths and single-prefill
 retain their original producers, layouts and arithmetic. This structural
 change alone does not assert a qualified throughput improvement.
+
+An explicit private BF16-partial attention marker also admits the existing
+direct FP8 tile producer for BF16 output at equal D256 and CTA64. All other
+direct-stage gates, the packed decoder, shared layout and synchronization
+remain unchanged; this does not include the unadopted K-load or overlap experiments.
+The caller opts into intermediate BF16 partial values while attention and
+merge accumulation remain FP32. Final scaling still precedes the final output
+cast. Intermediate rounding can differ from the default FP32-partial path.
+
+The private prefill planner accepts a default-false BF16-partial flag after
+kv_dtype_bytes. Query and materialization share one implementation: only an
+enabled flag with the actual split CTA64 plan uses two bytes per temporary
+value; other plans retain four. Temporary scores remain FP32. The native
+adapter must admit the finite domain before passing this flag and select
+the same predicate for execution. This changes required workspace bytes;
+actual reserved memory still follows the caller's workspace cap.

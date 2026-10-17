@@ -17,13 +17,13 @@ void destroy_batch_state(void *p) noexcept{static_cast<fi::PrefillPlanInfo*>(p)-
 cudaError_t query_batch_workspace(BatchSpec s,const std::int32_t*q,const std::int32_t*k,cudaStream_t stream,BatchFacts&facts){
   facts={};
   if(s.query_rows==0)return cudaSuccess;
-  const auto status=fi::PrefillPlanWorkspaceSize(facts.float_bytes,facts.int_bytes,const_cast<std::int32_t*>(q),const_cast<std::int32_t*>(k),s.query_rows,s.requests,s.query_heads,s.kv_heads,s.qk_head_dim,s.value_head_dim,s.paged?s.page_size:1,false,s.fp8?4:2,s.window_left,-1,false,0,0,stream,s.fp8?1:2);
+  const auto status=fi::PrefillPlanWorkspaceSize(facts.float_bytes,facts.int_bytes,const_cast<std::int32_t*>(q),const_cast<std::int32_t*>(k),s.query_rows,s.requests,s.query_heads,s.kv_heads,s.qk_head_dim,s.value_head_dim,s.paged?s.page_size:1,false,s.fp8?4:2,s.window_left,-1,false,0,0,stream,s.fp8?1:2,bf16_partial_domain(s));
   return status;
 }
 cudaError_t plan_batch(void *state,BatchSpec s,const std::int32_t*q,const std::int32_t*k,void*f,std::size_t fb,void*i,void*h,std::size_t ib,cudaStream_t stream,BatchFacts&facts){
   auto&plan=*static_cast<fi::PrefillPlanInfo*>(state);
   if(s.query_rows==0){plan={};facts={};return cudaSuccess;}
-  const auto result=fi::PrefillPlan(f,fb,i,h,ib,plan,const_cast<std::int32_t*>(q),const_cast<std::int32_t*>(k),s.query_rows,s.requests,s.query_heads,s.kv_heads,s.qk_head_dim,s.value_head_dim,s.paged?s.page_size:1,false,s.fp8?4:2,s.window_left,-1,false,0,0,stream,s.fp8?1:2);
+  const auto result=fi::PrefillPlan(f,fb,i,h,ib,plan,const_cast<std::int32_t*>(q),const_cast<std::int32_t*>(k),s.query_rows,s.requests,s.query_heads,s.kv_heads,s.qk_head_dim,s.value_head_dim,s.paged?s.page_size:1,false,s.fp8?4:2,s.window_left,-1,false,0,0,stream,s.fp8?1:2,bf16_partial_domain(s));
   if(result!=cudaSuccess)return result;
   // The scheduler already materialized this scalar in the original host shadow.
   // Reuse must preserve that actual chunk size, rather than rerun its heuristic.
@@ -31,7 +31,8 @@ cudaError_t plan_batch(void *state,BatchSpec s,const std::int32_t*q,const std::i
   const auto offset=std::size_t(plan.kv_chunk_size_ptr_offset);
   if(offset>facts.int_bytes || facts.int_bytes-offset<sizeof(facts.kv_chunk_rows))return cudaErrorInvalidValue;
   std::memcpy(&facts.kv_chunk_rows,static_cast<const char*>(h)+offset,sizeof(facts.kv_chunk_rows));
-  facts.cta_tile_q=std::uint32_t(plan.cta_tile_q);facts.padded_batch_size=std::uint32_t(plan.padded_batch_size);facts.split_kv=plan.split_kv;return result;
+  facts.cta_tile_q=std::uint32_t(plan.cta_tile_q);facts.padded_batch_size=std::uint32_t(plan.padded_batch_size);facts.split_kv=plan.split_kv;
+  facts.bf16_partials=bf16_partials_active(s,facts.cta_tile_q,facts.split_kv);return result;
 }
 namespace {
 template<unsigned D,bool Paged,class Params>cudaError_t launch(Params params,const fi::PrefillPlanInfo&plan,void*float_base,cudaStream_t stream){

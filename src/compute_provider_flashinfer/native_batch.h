@@ -11,11 +11,20 @@ struct BatchSpec final {
   float key_scale=1.0F,value_scale=1.0F;
   std::int32_t window_left=-1;
   bool paged=false,bfloat16=false,fp8=false,causal=true;
+  bool allow_bf16_partials=false;
 };
+inline bool bf16_partial_domain(const BatchSpec &s) noexcept {
+  return s.allow_bf16_partials && s.bfloat16 && s.fp8 && s.paged && s.page_size==16 &&
+      s.causal && s.window_left==-1 && s.qk_head_dim==256 && s.value_head_dim==256;
+}
+inline bool bf16_partials_active(const BatchSpec &s,std::uint32_t tile,bool split) noexcept {
+  return bf16_partial_domain(s) && tile==64 && split;
+}
 struct BatchFacts final {
   std::size_t float_bytes=0,int_bytes=0;
   std::uint32_t cta_tile_q=0,padded_batch_size=0,kv_chunk_rows=0;
   bool split_kv=false;
+  bool bf16_partials=false;
 };
 std::size_t batch_state_bytes() noexcept;
 void initialize_batch_state(void *) noexcept;

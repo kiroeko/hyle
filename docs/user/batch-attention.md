@@ -119,6 +119,23 @@ Vulkan原Plan可以编码同一Q8_0 carrier，F16 paged/ragged路径在原FullF3
 F16原生及CPU+Vulkan增量组合见上述共同source证据。极小 scale/subnormal/FTZ 边界、
 实际Air当前宿主ASan/UBSan/TSan、风险和SDK已通过；原有限P1已过，BF16 attention仍未准入。
 
+## 允许 BF16 split-KV 中间结果
+
+`BatchProgramOptions::allow_bf16_partials` 默认为 `false`。设为 `true` 允许 CUDA
+FlashInfer 在 BF16 Q/output、FP8 K/V、paged page16、Dqk/Dv=256、causal 无界且实际
+CTA64/split-KV 的路径存储 BF16 中间结果。FP8 KV 不展开，局部累加、softmax 和 merge
+累加仍为 F32；中间舍入可能丢失默认路径保留的抵消残差。其他路径保持原实现。
+`BatchPlanReport::bf16_partials` 表示本次计划实际是否采用它。
+
+该选项固定在 program 中；改变选项需要重新创建 program、计划和 replay。Graph 的
+`PagedAttention` / `RaggedAttention` descriptor 与 batch provider options 必须设置相同值。
+两份 descriptor 的 schema ID 已升为 v2；更新时一起重建相关 Compute、Graph、provider 库及消费者程序。
+
+工作区需求也按实际中间表示计算。两请求 Q=64/128、KV=1024/768、GQA=8/2 的 D256
+例子，需求由 21,053,440 降为 10,567,680 bytes（score 保持 F32）。slot 仍按
+`max_float_workspace_bytes` 预留 backing；需要同时调低该容量，例如本例设为 `11u << 20`，
+才能减少实际显存预留。该容量不是其他形状的通用上限，不能只打开选项就宣称预留减半。
+
 ## 编码新行并接入原分页更新
 
 完整可编译旅程见

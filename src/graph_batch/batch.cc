@@ -40,12 +40,12 @@ constexpr c::ProviderRuntimeProperties runtime{.mode=c::ProviderRuntimeMode::kSh
 Status supports(const Graph&graph,NodeId node,const Config&config)noexcept{
   HYLE_ASSIGN_OR_RETURN(auto op,graph.operation(node));
   if(const auto value=op.custom_as<c::PagedAttention>()){
-    if(value->capacity!=config.schema.capacity() || value->scale!=config.options.scale || value->causal!=config.options.causal || value->window_left!=config.options.window_left)
+    if(value->capacity!=config.schema.capacity() || value->scale!=config.options.scale || value->causal!=config.options.causal || value->window_left!=config.options.window_left || value->allow_bf16_partials!=config.options.allow_bf16_partials)
       return Status::Unimplemented("paged graph node differs from batch domain");
     return Status::Ok();
   }
   if(const auto value=op.custom_as<c::RaggedAttention>()){
-    if(value->capacity!=config.schema.capacity() || value->scale!=config.options.scale || value->causal!=config.options.causal || value->window_left!=config.options.window_left)
+    if(value->capacity!=config.schema.capacity() || value->scale!=config.options.scale || value->causal!=config.options.causal || value->window_left!=config.options.window_left || value->allow_bf16_partials!=config.options.allow_bf16_partials)
       return Status::Unimplemented("ragged graph node differs from batch domain");
     return Status::Ok();
   }return Status::Unimplemented("graph batch provider does not support this node");
