@@ -1,0 +1,7 @@
+{
+  "archive": "C:\\public\\project-hyle\\hyle\\.scratch\\perf-review-2026-10-18\\g09\\raw-results.zip",
+  "bytes": 1015288,
+  "sha256": "a8e09cddfec282093eb2ff441f6b7ffb2ee92ee7d05e72ad7aeb890183601f26",
+  "remote_archive_before_local_orchestration_append_sha256": "683b20d4e1464ab4f43217fee10e15ab48e7c43da10eca89471d4476ae0bab2b",
+  "retained": "All 4 formal processes and samples, both smoke/full oracles, thread snapshots, exact probe source, CMake, compile/link commands, link maps, source/SDK/binary hashes. No SDK or binary copy in archive."
+}

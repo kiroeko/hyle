@@ -91,7 +91,7 @@ F16则会把指数权重tile缩成Half后再乘V；这里只证明源级差异�
 | Apple ragged F16 prefill、D256 | [旧summary](../inference-g01-native-ragged-apple-m1-p1/summary.json)，8组比值0.98266–0.98941，所有CI上界低于1；约1.07%–1.76%延迟差 | 已在Air复测当前对应路径；默认fast较快但不满足同数值合同，同合同force-fused未确认当前稳定慢，见下。旧小输不直接继承 |
 | WSL 单文件 atomic replace watch | [旧summary](../io-watch-p1-v1-30e133db-w1-wsl-4c06445c/summary.json)，4点0.96813–0.98638，2组CI上界低于1 | 当前已复测并修掉冗余close-write唤醒；修后仍有0.1–1.0%小负样本，未确认稳定或严格等价，见下 |
 | TaskScope、32 child、4 workers | 本机历史 `C:/public/project-hyle/_validation/sched-v9-task-scope-cost-audit/p1-qualified-evidence/summary.json`；一个 placement+peer-first 组合0.970796，CI[0.955245,0.989531]，其它3组跨1 | 当前4组复现约4–7%差，随后应用私有布局优化；混合peer漂移与scope-only小样本限制均保留，见下。不能宣称所有scope负载已解决 |
-| G09 混合 GPU 完成观察 | 旧 native-wait 诊断把等待放在 Scheduler worker；当前 Vulkan 已用 BlockingPool，Apple 已有 native subscription | 旧倍率不是同线程资源方案；修后缺同输入、同线程预算的完整性能包。历史 BLOCKED 不是性能证据 |
+| G09 混合 GPU 完成观察 | 旧 native-wait 诊断把等待放在 Scheduler worker；当前 Vulkan 已用 BlockingPool，Apple 已有 native subscription | Air当前同owner/线程资源控制未建立稳定输项，见下；Windows Vulkan及完整多slot对照仍未测。历史 BLOCKED 不是性能证据 |
 
 旧报告中的摊销空 harness ns/op 不等于硬件时钟分辨率。历史CI同侧不能替代当前版本的同路径 A/A、
 顺序/布局响应和完整完成边界核对。
@@ -168,6 +168,26 @@ destructive-interference常量对齐，分开admission写入与child读取的tok
 [原始包](task-scope/raw-results.zip)保留28进程、失败候选、布局、命令和测试；
 [源码身份](task-scope/final-source-identity.json)区分基线、测量与应用源码。
 只重编TaskScope TU并复用相同foundation缓存，不是整个HEAD运行库重建，也未跑全Sched/TSan或跨系统矩阵。
+
+### G09：当前订阅与同owner等待控制
+
+Air上只重编当前[observer TU](../../../src/graph_route_cpu_apple/invocation.cc)，
+其原始源码及Apple context与Windows hash一致，复用同一SDK/foundation和patched MLX。
+诊断控制只在parallel native lane有一个pending且无ready时解开monitor、等待原Completion；
+两侧保留subscription、owner、lease、checked finish、callback join及退休，不能称理论最小native成本。
+同一4194304元素F32 Graph、2个Scheduler workers；两侧进程均观察到7个线程，
+含调用线程、hyle-mlx及3个匿名runtime线程。快照不等于瞬时同时runnable数量。
+
+| 顺序 | 当前订阅 ms | 直接等待控制 ms | 串行同路径：当前 / 控制 ms |
+|---|---:|---:|---:|
+| AB | 2.158958 | 2.122333 | 3.080542 / 3.172834 |
+| BA | 2.070042 | 2.090375 | 2.995125 / 2.917584 |
+
+每进程8次warm、31个原始样本；计时包含bind/prepare、submit、owning wait、标量核对、结果释放及drain。
+每进程前后完整oracle均通过。smoke计数确认独立形状命中、serial不命中；正式两侧均关闭计数。
+[全部原始包](g09/raw-results.zip)保留源码/命令/link map/hash和线程CPU增量；[摘要](g09/summary.json)列边界。
+差额反向，未建立稳定当前输项，也未证明等价或serial波动是其原因；未另做A/A，不虚构跨进程CI。
+产品未改；这不是原版MLX排名、整个HEAD重建、Windows Vulkan或多slot验证。
 
 ## 已排除的旧“输项”
 

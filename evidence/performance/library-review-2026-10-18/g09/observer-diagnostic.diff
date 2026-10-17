@@ -1,0 +1,47 @@
+--- current-product-invocation.cc
++++ diagnostic-same-source-invocation.cc
+@@ -18,6 +18,20 @@
+ #include "hyle/sched/scheduler.h"
+ #include "hyle/sched/sync.h"
+ #include "hyle/util/ref_counted.h"
++
++namespace {
++#if G09_COUNT_GUARDS
++std::atomic<std::uint64_t> g09_guard_visits{0};
++#endif
++}
++extern "C" __attribute__((visibility("default"))) std::uint64_t
++hyle_g09_guard_visits() noexcept {
++#if G09_COUNT_GUARDS
++  return g09_guard_visits.load(std::memory_order_relaxed);
++#else
++  return 0;
++#endif
++}
+ 
+ namespace hyle::graph::cpu_apple {
+ namespace ca = compute::apple;
+@@ -561,6 +575,23 @@
+              run.frontier.done() || run.frontier.ready(PipelineLane::kNative) ||
+              run.native_epoch != epoch;
+     };
++    // Diagnostic only: preserve all subscriptions and owners. Both arms count
++    // the same eligible guard, outside any native producer callback.
++    if (pending == 1 && !changed()) {
++#if G09_COUNT_GUARDS
++      g09_guard_visits.fetch_add(1, std::memory_order_relaxed);
++#endif
++#if G09_NATIVE_WAIT_CONTROL
++      const auto &stage = run.plan->pipeline_stages[run.pending_native[0]];
++      HYLE_FATAL_ASSERT(stage.kind == graph::detail::NativePipelineStage::Kind::kFragment);
++      const auto &completion = run.fragments[stage.index].pending.completion();
++      lock.unlock();
++      const auto status = completion.wait();
++      lock.lock();
++      if (!status.ok()) run.pipeline_error.Update(status);
++      continue; // Original poll, checked result, callback join and retirement.
++#endif
++    }
+     run.pipeline_ready.wait(lock, changed);
+   }
+ }

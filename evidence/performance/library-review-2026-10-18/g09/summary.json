@@ -1,0 +1,736 @@
+{
+  "experiment": "Current Apple Graph subscription vs constrained native-wait diagnostic",
+  "decision": "NO_STABLE_CURRENT_LOSS_ESTABLISHED_IN_THESE_TWO_ORDERS",
+  "source_and_cache": {
+    "original_invocation_sha256": "357274722348b979b0f8e8e675d27edeab4db2c0d56490895cf36b7323ff596b",
+    "compiled_invocation_sha256": "d8e838514d5f608af59c9cf63b0825faf9529600bf5f9fb9ad1b597560dde87b",
+    "sdk": "/Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/apple-sdk",
+    "current_windows_matching_hot_source": {
+      "src/graph_route_cpu_apple/invocation.cc": "357274722348b979b0f8e8e675d27edeab4db2c0d56490895cf36b7323ff596b",
+      "src/compute_route_apple/apple_context.cc": "5bb2691c198cf25ad2d113b5126c683fe81e3acc1cd09089f08f4e68daf9e040"
+    },
+    "limit": "Only observer TU freshly compiled; both arms share existing static foundation/SDK and pinned patched MLX. Not an entire current HEAD rebuild or independent native-engine ranking."
+  },
+  "boundary": {
+    "input": "4194304 F32 values, exact same source tensors/math and CPU/GPU placements in both arms; shape 0 independent CPU Abs and resident Apple Neg joined by CPU Add; shape 3 serial CPU Abs -> Apple Neg -> CPU residual Add.",
+    "timed": "One Python ctypes replay call: bind, prepare_replay, submit, checked owning wait/output scalar check, release every view/ResultLease/OwnedResult, Scheduler.drain before return.",
+    "outside_timing": "Context/Graph compilation, slot/resource construction, first replay, full all-element oracles before/after, 8 warmups, thread snapshots, close/destroy/process exit.",
+    "control": "Only parallel native lane with one pending and no ready native work unlocks the same pipeline monitor and waits the original Completion. Subscriptions, native FIFO owner, leases, checked finish, callback join and final retirement remain.",
+    "meaning": "Control retains subscription/owner services and is not a theoretical minimal native wait. Serial holdout does not reach the modified parallel-lane branch.",
+    "instrumentation": "Guard counters enabled for two smoke processes; disabled in both formal arm macros. The diagnostic source is identical between arms except compile definitions. No per-stage clocks or monitoring thread.",
+    "numeric": "Every smoke/formal process passes the full exact all-element oracle before and after timing, plus the timed scalar check."
+  },
+  "method": {
+    "order": [
+      "current",
+      "control",
+      "control",
+      "current"
+    ],
+    "formal_processes": 4,
+    "samples_per_shape_per_process": 31,
+    "shapes": [
+      0,
+      3
+    ],
+    "aa": "No additional A/A run.",
+    "inference_limit": "Four processes are not a cross-process confidence interval, equivalence proof or hardware timer-resolution diagnosis. No samples/outliers filtered."
+  },
+  "processes": [
+    {
+      "file": "paired-0-current.json",
+      "label": "paired-0-current",
+      "pid": 67570,
+      "image_sha256": "94a9cfa1a0fd44a4b9d554a7186f75d1acd3ade21dafbe06fb672ec6929b7f70",
+      "shapes": [
+        {
+          "shape": 0,
+          "name": "independent-cpu-first",
+          "facts": {
+            "elements": 4194304,
+            "slots": 1,
+            "cold_fragments": 3,
+            "planned_copy_count": 1,
+            "planned_copy_bytes": 16777216,
+            "cpu_target": 1,
+            "gpu_target": 0
+          },
+          "warm": {
+            "n": 31,
+            "median_ns": 2158958,
+            "p90_ns": 2368333,
+            "p99_ns": 2600333,
+            "min_ns": 1864667,
+            "max_ns": 2600333
+          },
+          "oracle": "PASS_ALL_ELEMENTS_ALL_SLOTS_BEFORE_AND_AFTER",
+          "threads_before": 7,
+          "threads_after": 7,
+          "thread_cpu_deltas_us": [
+            {
+              "pthread": 8369602432,
+              "name": "unnamed",
+              "user_us": 668,
+              "system_us": 243
+            },
+            {
+              "pthread": 6092124160,
+              "name": "hyle-mlx",
+              "user_us": 1616,
+              "system_us": 1165
+            },
+            {
+              "pthread": 6092697600,
+              "name": "unnamed",
+              "user_us": 0,
+              "system_us": 0
+            },
+            {
+              "pthread": 6093271040,
+              "name": "unnamed",
+              "user_us": 444,
+              "system_us": 1431
+            },
+            {
+              "pthread": 6093844480,
+              "name": "unnamed",
+              "user_us": 422,
+              "system_us": 1428
+            },
+            {
+              "pthread": 6094417920,
+              "name": "hyle-wkr-0",
+              "user_us": 29920,
+              "system_us": 265
+            },
+            {
+              "pthread": 6094991360,
+              "name": "hyle-wkr-1",
+              "user_us": 23805,
+              "system_us": 930
+            }
+          ],
+          "formal_guard_counter": [
+            0,
+            0
+          ]
+        },
+        {
+          "shape": 3,
+          "name": "serial-holdout",
+          "facts": {
+            "elements": 4194304,
+            "slots": 1,
+            "cold_fragments": 3,
+            "planned_copy_count": 2,
+            "planned_copy_bytes": 33554432,
+            "cpu_target": 1,
+            "gpu_target": 0
+          },
+          "warm": {
+            "n": 31,
+            "median_ns": 3080542,
+            "p90_ns": 3195125,
+            "p99_ns": 3232583,
+            "min_ns": 2577250,
+            "max_ns": 3232583
+          },
+          "oracle": "PASS_ALL_ELEMENTS_ALL_SLOTS_BEFORE_AND_AFTER",
+          "threads_before": 7,
+          "threads_after": 7,
+          "thread_cpu_deltas_us": [
+            {
+              "pthread": 8369602432,
+              "name": "unnamed",
+              "user_us": 722,
+              "system_us": 366
+            },
+            {
+              "pthread": 6092697600,
+              "name": "unnamed",
+              "user_us": 499,
+              "system_us": 1664
+            },
+            {
+              "pthread": 6093271040,
+              "name": "unnamed",
+              "user_us": 0,
+              "system_us": 0
+            },
+            {
+              "pthread": 6093844480,
+              "name": "unnamed",
+              "user_us": 212,
+              "system_us": 726
+            },
+            {
+              "pthread": 6092124160,
+              "name": "hyle-mlx",
+              "user_us": 1194,
+              "system_us": 1003
+            },
+            {
+              "pthread": 6094417920,
+              "name": "hyle-wkr-0",
+              "user_us": 3295,
+              "system_us": 55
+            },
+            {
+              "pthread": 6094991360,
+              "name": "hyle-wkr-1",
+              "user_us": 59397,
+              "system_us": 318
+            }
+          ],
+          "formal_guard_counter": [
+            0,
+            0
+          ]
+        }
+      ]
+    },
+    {
+      "file": "paired-1-control.json",
+      "label": "paired-1-control",
+      "pid": 67573,
+      "image_sha256": "db13b55d12ce01d04ad5064f7fc009f268b4f1c80a6e148a199b25fbc0b9fb57",
+      "shapes": [
+        {
+          "shape": 0,
+          "name": "independent-cpu-first",
+          "facts": {
+            "elements": 4194304,
+            "slots": 1,
+            "cold_fragments": 3,
+            "planned_copy_count": 1,
+            "planned_copy_bytes": 16777216,
+            "cpu_target": 1,
+            "gpu_target": 0
+          },
+          "warm": {
+            "n": 31,
+            "median_ns": 2122333,
+            "p90_ns": 2219750,
+            "p99_ns": 2374542,
+            "min_ns": 1810084,
+            "max_ns": 2374542
+          },
+          "oracle": "PASS_ALL_ELEMENTS_ALL_SLOTS_BEFORE_AND_AFTER",
+          "threads_before": 7,
+          "threads_after": 7,
+          "thread_cpu_deltas_us": [
+            {
+              "pthread": 8369602432,
+              "name": "unnamed",
+              "user_us": 579,
+              "system_us": 229
+            },
+            {
+              "pthread": 6131937280,
+              "name": "hyle-mlx",
+              "user_us": 1337,
+              "system_us": 983
+            },
+            {
+              "pthread": 6132510720,
+              "name": "unnamed",
+              "user_us": 441,
+              "system_us": 1640
+            },
+            {
+              "pthread": 6133084160,
+              "name": "unnamed",
+              "user_us": 0,
+              "system_us": 0
+            },
+            {
+              "pthread": 6133657600,
+              "name": "unnamed",
+              "user_us": 294,
+              "system_us": 1071
+            },
+            {
+              "pthread": 6134231040,
+              "name": "hyle-wkr-0",
+              "user_us": 19160,
+              "system_us": 263
+            },
+            {
+              "pthread": 6134804480,
+              "name": "hyle-wkr-1",
+              "user_us": 31049,
+              "system_us": 247
+            }
+          ],
+          "formal_guard_counter": [
+            0,
+            0
+          ]
+        },
+        {
+          "shape": 3,
+          "name": "serial-holdout",
+          "facts": {
+            "elements": 4194304,
+            "slots": 1,
+            "cold_fragments": 3,
+            "planned_copy_count": 2,
+            "planned_copy_bytes": 33554432,
+            "cpu_target": 1,
+            "gpu_target": 0
+          },
+          "warm": {
+            "n": 31,
+            "median_ns": 3172834,
+            "p90_ns": 3582917,
+            "p99_ns": 3675167,
+            "min_ns": 2617708,
+            "max_ns": 3675167
+          },
+          "oracle": "PASS_ALL_ELEMENTS_ALL_SLOTS_BEFORE_AND_AFTER",
+          "threads_before": 7,
+          "threads_after": 7,
+          "thread_cpu_deltas_us": [
+            {
+              "pthread": 8369602432,
+              "name": "unnamed",
+              "user_us": 743,
+              "system_us": 407
+            },
+            {
+              "pthread": 6132510720,
+              "name": "unnamed",
+              "user_us": 344,
+              "system_us": 1212
+            },
+            {
+              "pthread": 6133084160,
+              "name": "unnamed",
+              "user_us": 409,
+              "system_us": 1375
+            },
+            {
+              "pthread": 6133657600,
+              "name": "unnamed",
+              "user_us": 0,
+              "system_us": 0
+            },
+            {
+              "pthread": 6131937280,
+              "name": "hyle-mlx",
+              "user_us": 1222,
+              "system_us": 1083
+            },
+            {
+              "pthread": 6134231040,
+              "name": "hyle-wkr-0",
+              "user_us": 3267,
+              "system_us": 61
+            },
+            {
+              "pthread": 6134804480,
+              "name": "hyle-wkr-1",
+              "user_us": 60486,
+              "system_us": 360
+            }
+          ],
+          "formal_guard_counter": [
+            0,
+            0
+          ]
+        }
+      ]
+    },
+    {
+      "file": "paired-2-control.json",
+      "label": "paired-2-control",
+      "pid": 67576,
+      "image_sha256": "db13b55d12ce01d04ad5064f7fc009f268b4f1c80a6e148a199b25fbc0b9fb57",
+      "shapes": [
+        {
+          "shape": 0,
+          "name": "independent-cpu-first",
+          "facts": {
+            "elements": 4194304,
+            "slots": 1,
+            "cold_fragments": 3,
+            "planned_copy_count": 1,
+            "planned_copy_bytes": 16777216,
+            "cpu_target": 1,
+            "gpu_target": 0
+          },
+          "warm": {
+            "n": 31,
+            "median_ns": 2090375,
+            "p90_ns": 2202042,
+            "p99_ns": 2380291,
+            "min_ns": 1749875,
+            "max_ns": 2380291
+          },
+          "oracle": "PASS_ALL_ELEMENTS_ALL_SLOTS_BEFORE_AND_AFTER",
+          "threads_before": 7,
+          "threads_after": 7,
+          "thread_cpu_deltas_us": [
+            {
+              "pthread": 8369602432,
+              "name": "unnamed",
+              "user_us": 529,
+              "system_us": 243
+            },
+            {
+              "pthread": 6093549568,
+              "name": "hyle-mlx",
+              "user_us": 1282,
+              "system_us": 887
+            },
+            {
+              "pthread": 6094123008,
+              "name": "unnamed",
+              "user_us": 281,
+              "system_us": 1117
+            },
+            {
+              "pthread": 6094696448,
+              "name": "unnamed",
+              "user_us": 0,
+              "system_us": 0
+            },
+            {
+              "pthread": 6095269888,
+              "name": "unnamed",
+              "user_us": 405,
+              "system_us": 1443
+            },
+            {
+              "pthread": 6095843328,
+              "name": "hyle-wkr-0",
+              "user_us": 20304,
+              "system_us": 324
+            },
+            {
+              "pthread": 6096416768,
+              "name": "hyle-wkr-1",
+              "user_us": 31201,
+              "system_us": 331
+            }
+          ],
+          "formal_guard_counter": [
+            0,
+            0
+          ]
+        },
+        {
+          "shape": 3,
+          "name": "serial-holdout",
+          "facts": {
+            "elements": 4194304,
+            "slots": 1,
+            "cold_fragments": 3,
+            "planned_copy_count": 2,
+            "planned_copy_bytes": 33554432,
+            "cpu_target": 1,
+            "gpu_target": 0
+          },
+          "warm": {
+            "n": 31,
+            "median_ns": 2917584,
+            "p90_ns": 3050833,
+            "p99_ns": 3138416,
+            "min_ns": 2568750,
+            "max_ns": 3138416
+          },
+          "oracle": "PASS_ALL_ELEMENTS_ALL_SLOTS_BEFORE_AND_AFTER",
+          "threads_before": 7,
+          "threads_after": 7,
+          "thread_cpu_deltas_us": [
+            {
+              "pthread": 8369602432,
+              "name": "unnamed",
+              "user_us": 677,
+              "system_us": 367
+            },
+            {
+              "pthread": 6094123008,
+              "name": "unnamed",
+              "user_us": 308,
+              "system_us": 1130
+            },
+            {
+              "pthread": 6094696448,
+              "name": "unnamed",
+              "user_us": 325,
+              "system_us": 1175
+            },
+            {
+              "pthread": 6095269888,
+              "name": "unnamed",
+              "user_us": 0,
+              "system_us": 0
+            },
+            {
+              "pthread": 6093549568,
+              "name": "hyle-mlx",
+              "user_us": 1124,
+              "system_us": 951
+            },
+            {
+              "pthread": 6095843328,
+              "name": "hyle-wkr-0",
+              "user_us": 3266,
+              "system_us": 57
+            },
+            {
+              "pthread": 6096416768,
+              "name": "hyle-wkr-1",
+              "user_us": 57380,
+              "system_us": 331
+            }
+          ],
+          "formal_guard_counter": [
+            0,
+            0
+          ]
+        }
+      ]
+    },
+    {
+      "file": "paired-3-current.json",
+      "label": "paired-3-current",
+      "pid": 67579,
+      "image_sha256": "94a9cfa1a0fd44a4b9d554a7186f75d1acd3ade21dafbe06fb672ec6929b7f70",
+      "shapes": [
+        {
+          "shape": 0,
+          "name": "independent-cpu-first",
+          "facts": {
+            "elements": 4194304,
+            "slots": 1,
+            "cold_fragments": 3,
+            "planned_copy_count": 1,
+            "planned_copy_bytes": 16777216,
+            "cpu_target": 1,
+            "gpu_target": 0
+          },
+          "warm": {
+            "n": 31,
+            "median_ns": 2070042,
+            "p90_ns": 2200792,
+            "p99_ns": 2351083,
+            "min_ns": 1748250,
+            "max_ns": 2351083
+          },
+          "oracle": "PASS_ALL_ELEMENTS_ALL_SLOTS_BEFORE_AND_AFTER",
+          "threads_before": 7,
+          "threads_after": 7,
+          "thread_cpu_deltas_us": [
+            {
+              "pthread": 8369602432,
+              "name": "unnamed",
+              "user_us": 570,
+              "system_us": 223
+            },
+            {
+              "pthread": 6102478848,
+              "name": "hyle-mlx",
+              "user_us": 1331,
+              "system_us": 977
+            },
+            {
+              "pthread": 6103052288,
+              "name": "unnamed",
+              "user_us": 0,
+              "system_us": 0
+            },
+            {
+              "pthread": 6103625728,
+              "name": "unnamed",
+              "user_us": 344,
+              "system_us": 1287
+            },
+            {
+              "pthread": 6104199168,
+              "name": "unnamed",
+              "user_us": 342,
+              "system_us": 1282
+            },
+            {
+              "pthread": 6104772608,
+              "name": "hyle-wkr-0",
+              "user_us": 33731,
+              "system_us": 324
+            },
+            {
+              "pthread": 6105346048,
+              "name": "hyle-wkr-1",
+              "user_us": 20253,
+              "system_us": 190
+            }
+          ],
+          "formal_guard_counter": [
+            0,
+            0
+          ]
+        },
+        {
+          "shape": 3,
+          "name": "serial-holdout",
+          "facts": {
+            "elements": 4194304,
+            "slots": 1,
+            "cold_fragments": 3,
+            "planned_copy_count": 2,
+            "planned_copy_bytes": 33554432,
+            "cpu_target": 1,
+            "gpu_target": 0
+          },
+          "warm": {
+            "n": 31,
+            "median_ns": 2995125,
+            "p90_ns": 3181375,
+            "p99_ns": 3412125,
+            "min_ns": 2729541,
+            "max_ns": 3412125
+          },
+          "oracle": "PASS_ALL_ELEMENTS_ALL_SLOTS_BEFORE_AND_AFTER",
+          "threads_before": 7,
+          "threads_after": 7,
+          "thread_cpu_deltas_us": [
+            {
+              "pthread": 8369602432,
+              "name": "unnamed",
+              "user_us": 699,
+              "system_us": 415
+            },
+            {
+              "pthread": 6103052288,
+              "name": "unnamed",
+              "user_us": 270,
+              "system_us": 955
+            },
+            {
+              "pthread": 6103625728,
+              "name": "unnamed",
+              "user_us": 399,
+              "system_us": 1436
+            },
+            {
+              "pthread": 6104199168,
+              "name": "unnamed",
+              "user_us": 0,
+              "system_us": 0
+            },
+            {
+              "pthread": 6102478848,
+              "name": "hyle-mlx",
+              "user_us": 1155,
+              "system_us": 1006
+            },
+            {
+              "pthread": 6104772608,
+              "name": "hyle-wkr-0",
+              "user_us": 3305,
+              "system_us": 57
+            },
+            {
+              "pthread": 6105346048,
+              "name": "hyle-wkr-1",
+              "user_us": 57505,
+              "system_us": 331
+            }
+          ],
+          "formal_guard_counter": [
+            0,
+            0
+          ]
+        }
+      ]
+    }
+  ],
+  "paired_ratios": [
+    {
+      "current": "paired-0-current",
+      "control": "paired-1-control",
+      "shape": "independent-cpu-first",
+      "current_median_ns": 2158958,
+      "control_median_ns": 2122333,
+      "control_over_current": 0.9830357978246913
+    },
+    {
+      "current": "paired-0-current",
+      "control": "paired-1-control",
+      "shape": "serial-holdout",
+      "current_median_ns": 3080542,
+      "control_median_ns": 3172834,
+      "control_over_current": 1.0299596629424304
+    },
+    {
+      "current": "paired-3-current",
+      "control": "paired-2-control",
+      "shape": "independent-cpu-first",
+      "current_median_ns": 2070042,
+      "control_median_ns": 2090375,
+      "control_over_current": 1.009822506016786
+    },
+    {
+      "current": "paired-3-current",
+      "control": "paired-2-control",
+      "shape": "serial-holdout",
+      "current_median_ns": 2995125,
+      "control_median_ns": 2917584,
+      "control_over_current": 0.9741109302616752
+    }
+  ],
+  "smoke": [
+    {
+      "file": "smoke-control.json",
+      "shapes": [
+        {
+          "name": "independent-cpu-first",
+          "oracle": "PASS_ALL_ELEMENTS_ALL_SLOTS_BEFORE_AND_AFTER",
+          "guard_hits_in_one_replay": 1
+        },
+        {
+          "name": "serial-holdout",
+          "oracle": "PASS_ALL_ELEMENTS_ALL_SLOTS_BEFORE_AND_AFTER",
+          "guard_hits_in_one_replay": 0
+        }
+      ]
+    },
+    {
+      "file": "smoke-current.json",
+      "shapes": [
+        {
+          "name": "independent-cpu-first",
+          "oracle": "PASS_ALL_ELEMENTS_ALL_SLOTS_BEFORE_AND_AFTER",
+          "guard_hits_in_one_replay": 1
+        },
+        {
+          "name": "serial-holdout",
+          "oracle": "PASS_ALL_ELEMENTS_ALL_SLOTS_BEFORE_AND_AFTER",
+          "guard_hits_in_one_replay": 0
+        }
+      ]
+    }
+  ],
+  "product_changes": 0,
+  "old_reference": {
+    "path": ".scratch/inference-gaps/g09-native-wait-29/source/invocation.cc:571-590",
+    "meaning": "Old R29 was an instrumented same-Graph causal intervention replacing its then-1ms observation with original Completion.wait on Scheduler root. It preserved math/owners; it is not the current Vulkan dedicated BlockingPool or Apple subscription path.",
+    "current_vulkan": "One embedded resident BlockingJob per active invocation/replay, explicit caller-owned pool; start/response/stop-destroy handoffs are charged. Only worker observes selected original Completion; unbridged additional prefixes retain bounded observation. No current Vulkan timing performed."
+  },
+  "threads": {
+    "observed": "All formal shape snapshots have 7 threads before and after: caller, hyle-mlx owner, hyle-wkr-0/1, three unnamed native-runtime threads. Six show positive user CPU deltas; one unnamed thread has zero measured delta.",
+    "limit": "Snapshots outside replay blocks identify names/counts and block CPU deltas, not instantaneous simultaneous runnable threads; unnamed runtime roles were not inferred."
+  },
+  "interpretation": "The independent-case order differences reverse sign. The unchanged serial path also varies between processes. This experiment has not established a stable current subscription loss. It does not establish equivalence, a win over MLX, or that the serial drift caused the observed difference.",
+  "binary_hashes": {
+    "smoke": {
+      "current": "e8dd9ceacf60064be4094c87c7e70541a65c57637c694560fe7d30b6c0e0232a",
+      "control": "c1897baeccfa1ccb785967177ed86c191d5afef93a58d18b8d936ed526ab772e"
+    },
+    "formal": {
+      "current": "94a9cfa1a0fd44a4b9d554a7186f75d1acd3ade21dafbe06fb672ec6929b7f70",
+      "control": "db13b55d12ce01d04ad5064f7fc009f268b4f1c80a6e148a199b25fbc0b9fb57"
+    }
+  }
+}
