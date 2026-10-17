@@ -1,0 +1,221 @@
+{
+  "schema": "hyle.g09.handoff-capture-independent-review/v1",
+  "review": "R27",
+  "reviewed_on": "2026-10-17",
+  "reviewer": "/root/g09_transfer_capture_review",
+  "state": "READ_ONLY_REVIEW_COMPLETE_ONE_FINITE_TOOL_DIAGNOSTIC_SUPPORTED",
+  "scope_head": "e0bb85205416385da3c4a8b93113a419f1a37145",
+  "product_candidate": "3524413272cb52d06af5e64d634edbfef09b9864",
+  "authority": "AGENTS.md and current docs/implementation/tasks/tooling/inference-g09-native-workload-aa.md; parent assigned a bounded independent review, not execution or a replacement signature for R26.",
+  "actions": {
+    "application_gpu_profile_build_runs": 0,
+    "product_or_public_instrument_changes": 0,
+    "registry_changes": 0,
+    "offline_only": [
+      "Read current card, receipts, existing DbgEng unwind, exact link map, compiler disassembly and producer sources.",
+      "Independently decoded MINIDUMP streams/context/module list and memory ranges with Python; did not start or attach a debugger.",
+      "Read frozen PE call instructions directly and resolved relative call targets against exact map.",
+      "Rehashed all 430 manifest entries and compared key raw ZIP members to their live originals.",
+      "Read primary NVIDIA/Khronos documentation and the specifically supplied original NVIDIA forum report."
+    ]
+  },
+  "summary": {
+    "capture_verdict": "SUPPORTED_WITH_NARROWER_CALLSITE",
+    "exact_callsite": "submit_transfer second provider.with_queue call: compute handoff after accepted transfer copy, containing one recorded empty PRIMARY command buffer and one binary-semaphore wait.",
+    "product_contract_verdict": "NO_SPECIFIC_VULKAN_CONTRACT_VIOLATION_ESTABLISHED",
+    "tool_candidate_verdict": "ALLOW_ONE_NEWLY_FROZEN_NONRANKING_DIAGNOSTIC_WITH_ONLY_BATCH_TO_INDIVIDUAL_COLLECTION_MODE_CHANGE",
+    "causality": "UNKNOWN: neither batch mode fault nor profiler/driver/application root cause is established.",
+    "formal_qualification": "UNCHANGED; no A/A or P1 recovery, no valid formal A/B samples."
+  },
+  "independent_binary_checks": {
+    "dump": {
+      "path": ".scratch/inference-gaps/g09-completion-observation-25/run-nsys-procdump-1/dumps/g09_observed_driver.exe_261017_125131.dmp",
+      "bytes": 383182,
+      "sha256": "876b83f0ae2090f76bd876d05d579dc03901fe15963042d75af08cadd02772a7",
+      "exception_thread_id": 71868,
+      "exception_code": "0xc0000005",
+      "exception_address_and_rip": "0x7fffe0b3b77a",
+      "access_kind": "READ",
+      "accessed_address_and_rdx": "0x0",
+      "actual_instruction_bytes": "8b0a85c9742e83f9",
+      "actual_instruction": "mov ecx, dword ptr [rdx]",
+      "icd_base": "0x7fffdfca0000",
+      "icd_rva": "0xe9b77a",
+      "icd_timestamp": 1789685756,
+      "icd_version_from_existing_identity": "32.0.16.1714"
+    },
+    "exact_map_and_pe": {
+      "observed_1_base_in_dump": "0x7ffffa3f0000",
+      "observed_1_sha256": "5c52845fabdf308ff1105d63ec87fb9b9d17a361e71cd1c786a14d7c08243ad8",
+      "observed_2_sha256": "030948791f8961a87cc91a855c2460180f03ffa18146bfe57a9f9a9d4035142c",
+      "driver_exe_sha256": "455e646f367f667afb0c41cd5ff3ae2386627057b3e933220c2c1ea038c46a96",
+      "map_sha256": "757503c26bca7c16dbcfb7cdbe107f18dc2b6b49de4a6c383b3663bc144f5153",
+      "build_and_saved_map_identical": true,
+      "first_call": {
+        "call_rva": "0x1067f07",
+        "bytes": "e8041f0400",
+        "target_rva": "0x10a9e10",
+        "target": "NativeDevice::with_transfer_queue",
+        "return_rva": "0x1067f0c"
+      },
+      "second_call": {
+        "call_rva": "0x1067fac",
+        "bytes": "e8df1d0400",
+        "target_rva": "0x10a9d90",
+        "target": "NativeDevice::with_queue",
+        "return_rva": "0x1067fb1",
+        "matches_real_dbgeng_unwind": true
+      },
+      "inference": "The active with_queue frame returns to the second call, not the first copy submit. Source and compiled successful-first-call branch set accepted/transfer_submitted before this handoff. Accepted means host submit success, not GPU completion."
+    },
+    "frozen_manifest": {
+      "total_entries_rehashed": 430,
+      "current_matches": 428,
+      "only_current_mismatches": [
+        "docs/implementation/tasks/graph/inference-g09-joint-pipeline.md",
+        "docs/implementation/tasks/tooling/inference-g09-native-workload-aa.md"
+      ],
+      "interpretation": "These are postrun result-card prose edits made by the root task. Product/source/SDK/facade/PE/map/tool entries still match. Do not describe the current live tree as all430 unchanged.",
+      "relevant_product_source_diff_candidate_to_scope_head": []
+    },
+    "raw_archive": {
+      "path": "evidence/architecture/inference-g09-completion-observation/nsys-procdump-raw.zip",
+      "sha256": "f55f8745a69d4e7d36c01f90b63822303703f4ab89d80d3e618f26b716ce3cd1",
+      "live_and_archived_members_identical": [
+        "run/dumps/g09_observed_driver.exe_261017_125131.dmp",
+        "run/dbgeng-stack.log",
+        "run/hyle-stack-map.json",
+        "run/exception-address.json",
+        "run/fault-driver-identity.json"
+      ],
+      "not_present_in_existing_archive": [
+        "submit-transfer-disassembly.txt",
+        "handoff-submit-structure.json",
+        "this R27 review"
+      ]
+    },
+    "new_offline_attachment_hashes": {
+      "submit-transfer-disassembly.txt": "92848f3dcd77b128b968a92a131515e4f32bb2b5d5fce85277df13dd6feb79c3",
+      "handoff-submit-structure.json": "b495f54bd5fd8651645a549a27b0bb3dd44d4408a1fbf1d7d89c8081ae35e262"
+    }
+  },
+  "static_producer_review": {
+    "finding": "NO_SPECIFIC_PRODUCT_MUST",
+    "facts": [
+      {
+        "anchors": ["src/compute_route_vulkan/vulkan_transfer_slot.cc:29", "src/compute_route_vulkan/vulkan_transfer_slot.cc:158", "src/compute_route_vulkan/vulkan_run.cc:515"],
+        "support": "Upload/record/submit execute under Runtime::mutex. Reuse is rejected while pending/completion_owner/observers/retiring retain the slot."
+      },
+      {
+        "anchors": ["src/compute_route_vulkan/vulkan_run.cc:39", "src/compute_route_vulkan/vulkan_transfer_slot.cc:99", "src/compute_route_vulkan/vulkan_internal.h:206"],
+        "support": "Each Run owns its primary command buffers/pools, compute and transfer fences and binary semaphore. Compute pool uses compute queue family; transfer pool uses transfer family. Shared Runtime/Run/Buffer ownership spans this synchronous upload and subsequent pending completion."
+      },
+      {
+        "anchors": ["src/compute_route_vulkan/vulkan_transfer_slot.cc:48", "src/compute_route_vulkan/vulkan_transfer_slot.cc:91", "src/compute_route_vulkan/vulkan_transfer_slot.cc:94"],
+        "support": "The copy buffer is recorded/ended. The handoff buffer is separately Begin/End recorded with no commands; PRIMARY, one-time-submit, reset-capable pool. This is one valid command-buffer object with empty recorded contents, not commandBufferCount=0 or a NULL pCommandBuffers in the source. Both transfer buffers are retained."
+      },
+      {
+        "anchors": ["src/compute_route_vulkan/vulkan_run.cc:458", "src/compute_route_vulkan/vulkan_run.cc:473", "src/compute_route_vulkan/vulkan_run.cc:483"],
+        "support": "Copy signals transfer_ready; only after successful submission does handoff wait on it with ALL_COMMANDS and the run fence. SubmitInfo, wait-stage word, Submission carrier and Run handles remain live throughout synchronous callbacks. Fences are reset only after idle/reuse checks."
+      },
+      {
+        "anchors": ["src/compute_provider_ggml_vulkan/native_device.cc:205", "src/compute_provider_ggml_vulkan/native_runtime_impl.h:125"],
+        "support": "Provider invokes callback synchronously under the original optional device-submit mutex followed by native queue lock; no absent host queue serialization is demonstrated."
+      },
+      {
+        "anchors": ["src/compute_route_vulkan/vulkan_device.cc:230"],
+        "support": "Eligible storage shared between distinct queue families is created CONCURRENT with both family indices; same-family queues need no family ownership transfer. No missing release/acquire violation is established in this path."
+      }
+    ],
+    "dump_parameter_limit": "The original handoff SubmitInfo is present at 0x1c4bee107c0, but triage replaces wait/count/pointer words and wait-stage referent with 0xAAAAAAAA. DbgEng expressly documents this sanitization. Those words cannot be treated as original invalid counts, pointers or flags. The final submit seen by the ICD after profiler interception is not recoverable here.",
+    "limits": [
+      "This narrow source/binary review is not a complete Vulkan validation certificate and excludes timing-sensitive misuse only when evidence actually supports exclusion.",
+      "No product reopen trigger follows from one profiler/debugger first-chance AV or the absence of a defect in this review."
+    ]
+  },
+  "tool_candidate": {
+    "decision": "SUPPORTED_AS_ONE_FALSIFIABLE_TOOL_DIAGNOSTIC_NOT_AN_ESTABLISHED_FIX",
+    "static_support": [
+      "The failure is localized to vkQueueSubmit interception during an empty compute handoff after a transfer signal, rather than generic initialization.",
+      "The frozen local 2026.1.3 help and official NVIDIA guide distinguish batch tracing by vkQueueSubmit batches from individual workload tracing; individual is the documented default.",
+      "Thus batch-level collection of this semaphore/fence handoff is a concrete interaction to test by changing one tool mode. This targets the observed callsite while retaining actual product synchronization and work.",
+      "The unchanged observed binary completed once under direct ProcDump without Nsight according to the retained direct receipt: four before/four after oracles, eight retirements, eight nonoverflow record blocks, 7472 records and main code0. This is a contrast, not proof of profiler causality."
+    ],
+    "hypothesis": "Batch GPU-workload instrumentation may interact with the legal transfer-to-compute empty-command-buffer handoff in this Nsight Systems/driver combination. Individual selects a documented different workload-collection granularity and can test whether this same diagnostic can complete.",
+    "unknown": [
+      "No profiler source, ICD internal symbol or transformed-submit evidence demonstrates an empty-workload assumption, a timestamp-query injection bug or a particular batch implementation defect.",
+      "A successful individual run would support a usable tool configuration for this diagnostic, not establish historical batch causality or prove absence of an application fault.",
+      "A failed individual run would terminate this candidate without authorizing more mode/driver/provider/debugger combinations.",
+      "The cause of each original unqualified A/A remains UNKNOWN."
+    ]
+  },
+  "one_diagnostic_permission_scope": {
+    "configuration_count": 1,
+    "maximum_math_application_processes": 1,
+    "collector": "Existing Nsight Systems 2026.1.3 ordinary profile launches original g09_observed_driver.exe directly; no debugger or dump setup.",
+    "only_collection_delta": "--vulkan-gpu-workload=batch -> --vulkan-gpu-workload=individual",
+    "retain": [
+      "Original source, SDK, two candidate facade DLLs, driver exe, Vulkan loader/ICD driver, all hashed runtime inputs; no rebuild.",
+      "Original Windows Vulkan 4M F32 mathematical input, four shapes, two workers, 8 warmups, 12 paired rounds, exact epochIterations1; candidate-first and candidate-allocation-first.",
+      "Existing NVTX/Vulkan trace, sample=none, cpuctxsw=none, backtrace=none, no CUDA/WDDM/kernel ETW tracing and original direct-profile process-wait/stop/kill policy.",
+      "Original host identity/policy, caller CPU2, parent0x14, actual AboveNormal identity assertion, DISABLE_VULKAN_OBS_CAPTURE=1 and original checked wait/result observation/drain boundaries.",
+      "Fresh unique output, nonce and authorization; all old failures, data and accumulated costs retained."
+    ],
+    "remaining_must_before_launch": [
+      "Freeze and actually review the new minimal launcher, exact command/environment, fresh output path, R27 and all source/tool/runtime hashes before execution. This configuration review does not pretend to be review of a not-yet-written launcher.",
+      "Use the already demonstrated SQLite embedded target-stderr decoding and normalize only NUL/newlines for ASCII acceptance markers. Do not depend on unreliable forwarding by --show-output or on the outer collector exit alone. Verify decoder against existing captured data before this one launch.",
+      "Preserve owned-child cleanup with actual PID/nonce/full-image checks, including collector-error paths where console forwarding was absent. No process cleanup may target unrelated applications."
+    ],
+    "acceptance": [
+      "One actual target identity/nonce and original policy; four before/four after complete oracles; eight State retirements; eight nonoverflow QPC record blocks; four module phases with OBS absent; explicit main code0 and target termination.",
+      "Capture/export validity, completeness warnings, source-record identities and actual Vulkan/NVTX/GPU tables recorded truthfully. Missing information remains UNKNOWN; no missing gate is marked PASS.",
+      "Any completion-observation interval requires justified clock and exact submission attribution. NVIDIA documents that Compute/Transfer command-buffer execution range ends can appear early; a GPU range end alone cannot certify native readiness or public Completion.",
+      "Any crash, missing identity/oracle/retirement/main-exit/overflow evidence, frozen-input mismatch or unusable capture ends this fixed candidate. No automatic retry; timeout extension may continue only the same owned PID under the existing finite policy."
+    ],
+    "forbidden": [
+      "Product waiting, transfer enablement, provider route, public API/layout or metadata changes.",
+      "Changing workload/size/shape, warmups, epochs, n, estimator, A/A thresholds, sample selection or ranking contracts.",
+      "Any new debugger/profile combination, driver update, validation-layer or overlay matrix, stress loop, rebuild or unrelated host changes.",
+      "A/A/P1 recovery, performance ranking, reclassification of old failures or reopening G07/G08/G10/closed owners."
+    ],
+    "after_one_process": "Stop and review this sole result. Success is diagnostic completion only; failure preserves UNKNOWN/BLOCKED. Neither result authorizes another configuration or formal qualification."
+  },
+  "remaining_product_must": [],
+  "remaining_formal_must": [
+    "G09 still lacks qualification on the original Windows Vulkan, Air Apple and Air Vulkan workload A/A contracts; 0 valid A/B for those platforms remains.",
+    "Any eventual formal recovery still requires the current closure card's independently reviewed concrete instrument/host/contract correction and original qualification gates; this R27 does not supply an A/A cause."
+  ],
+  "causality_limits": [
+    "One first-chance C0000005 is not a certificate that this exception caused either prior fatal exit.",
+    "ICD instruction location and NSYS interception frame do not allocate root cause. Nearest exported C10/vkGetInstanceProcAddr labels are not actual internal function identities.",
+    "R26 pending_init is not an executed review. R27 independently covers only this explicitly bounded capture/callsite/source/mode-candidate review."
+  ],
+  "primary_sources": [
+    {
+      "url": "https://docs.nvidia.com/nsight-systems/UserGuide/index.html",
+      "local_version_check": ".scratch/inference-gaps/g09-nsys-profile-help-24.txt:503",
+      "support": "Vulkan workload modes, documented default individual, and Vulkan GPU Trace Notes warning about early Compute/Transfer execution-range endings. The versioned /2026.1/ web URL was unavailable; the frozen installed help independently confirms this exact tool's modes/default."
+    },
+    {
+      "url": "https://docs.vulkan.org/refpages/latest/refpages/source/vkQueueSubmit.html",
+      "support": "Fence, semaphore prerequisite, command-buffer/family state and host queue/fence synchronization requirements."
+    },
+    {
+      "url": "https://docs.vulkan.org/refpages/latest/refpages/source/vkBeginCommandBuffer.html",
+      "support": "Reset-capable command-pool reuse and nonpending recording requirements."
+    },
+    {
+      "url": "https://docs.vulkan.org/refpages/latest/refpages/source/vkEndCommandBuffer.html",
+      "support": "Ending recording establishes executable command-buffer state; no requirement that a primary buffer contain a copy/draw/dispatch was identified."
+    },
+    {
+      "url": "https://docs.vulkan.org/refpages/latest/refpages/source/VkSubmitInfo.html",
+      "support": "Submit-array/count relationships and semaphore wait-stage structure contract."
+    },
+    {
+      "url": "https://forums.developer.nvidia.com/t/intermittent-crash-in-nsight-graphics-frame-debug-capture/255292",
+      "classification": "ORIGINAL_USER_REPORT_ONLY_NOT_CAUSAL_SUPPORT",
+      "support": "A 2023 Nsight Graphics frame-capture report describes an intermittent driver/interception crash and separate-transfer-queue correlation. NVIDIA asks for a reproducer; no public causal resolution appears. Different tool/version, rendering and capture path; it does not establish a Nsight Systems batch bug or authorize transfer removal."
+    }
+  ]
+}

@@ -1,6 +1,6 @@
 # G09 native workload A/A 资格阻塞
 
-状态：**BLOCKED-from-AUDITED，2026-10-17；已捕获 NVIDIA 驱动内的 first-chance NULL-read，真实栈经过 Nsight vkQueueSubmit 拦截层及 HYLE 上传提交；具体根因、完成时延和原 A/A 原因仍未决，结果复核待 R26；产品/正式测量 FIX 集为空**。
+状态：**AUDITED，2026-10-17；独立 R27 复核实际故障调用点，冻结一次仅 batch→individual 的非排名采集纠正；具体根因、完成时延和原 A/A 原因仍未决，产品/正式测量 FIX 集为空**。
 
 本任务承接[活动 G09](../graph/inference-g09-joint-pipeline.md)的实际停止条件，不扩充基础库能力。
 产品 candidate 固定为 `3524413272cb52d06af5e64d634edbfef09b9864`，实现为 `e09f30925`；
@@ -254,3 +254,33 @@ driver 指令与 Nsight frame 也不证明是哪一方违反合同。
 读取工具，约 0.500 秒，读取 0.250 秒，无 HYLE/SDK/consumer 重编译。
 原件、完整栈、map 对照、工具源码/日志和失败成本保留；无残留诊断进程，0 个有效 A/B。
 该组合已结束；后续仅先做只读独立复核并提出具名有限纠正，不追加 debugger/profile 组合。
+
+### R27：空 handoff 调用点与一次采集模式纠正
+
+[独立 R27](../../../../evidence/architecture/inference-g09-completion-observation/27.json)
+用真实 unwind、精确 map 和冻结 PE 的 call 编码确认：故障栈经过 `submit_transfer` 的第二次
+`with_queue`，此前 transfer copy 的 host submit 已被接受，正在向 compute queue 提交一个已
+Begin/End 的空 primary command buffer。`commandBufferCount=1`，并非零个命令缓冲。
+triage dump 把多个参数字段清理成 `0xAAAAAAAA`；这些字节不能当作实际坏计数或坏指针。
+R27 未找到具体 Vulkan 合同违规，也未证明 Nsight batch bug；此前 R26 未实际执行，不代签。
+
+该调用点为一次可反证工具假说提供依据：batch 按 `vkQueueSubmit` 聚合采集，可能与这个空 handoff
+发生交互。当前仅授权一次普通 Nsight 直接启动原程序，将 `--vulkan-gpu-workload=batch` 改为
+文档默认的 `individual`；没有 debugger、dump 设置、重新编译或产品修正。
+
+- 唯一入口 `.scratch/inference-gaps/g09_capture_individual.py`；fresh 输出
+  `.scratch/inference-gaps/g09-completion-observation-25/run-individual-1`。
+- 复用原 source/SDK/两 facade/driver、ICD、四形状 4M F32、2 worker、8 warmups、12 paired rounds、
+  exact1、自配对及原候选先执行/先分配顺序；AboveNormal/0x14、caller CPU2、OBS 禁用条件不变。
+  原 direct-profile 的 `wait=primary`、trace/sample/context-switch/stop/kill 参数保持。
+- 新 entry、R27、launcher 实际审查、全部源码/产物/工具 hash 在运行前封存。先离线复核保存 trace
+  的 SQLite `ANALYSIS_FILE`/`StringIds` stderr 解码；不能依赖外层 `--show-output`。
+  验收只对 ASCII 标记去 NUL、规范化 CRLF；保留原日志、原数值和原统计合同。
+- 一个进程后停止。要求实际 PID/nonce/策略/映像、4+4 oracle、8 次 State 退休、8 块无溢出记录、
+  四阶段无 OBS、明确 main code0 和目标已退出。profile 非零仍先离线导出，再按实际子进程标记
+  检查/清理自有 PID；绝不终止不相关程序。
+- 成功只表示这次诊断完成；失败保留 UNKNOWN/BLOCKED，不追加模式、driver、Provider 或 debugger
+  组合。原失败、成本、0 有效 A/B 及全部产品 owner 状态保留；超时只延长同 PID。
+
+即使取得 GPU workload 表，官方明确 Compute/Transfer execution range 的结束时间可能早于实际；
+不得据此直接签 native readiness，更不能代替 public Completion 或恢复 A/A/P1 资格。

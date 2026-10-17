@@ -1,0 +1,83 @@
+{
+  "schema": "hyle.g09.individual-launcher-independent-review/v1",
+  "review": "R27_LAUNCHER",
+  "reviewed_on": "2026-10-17",
+  "reviewer": "/root/g09_transfer_capture_review",
+  "state": "PASS_STATIC_REVIEW_READY_FOR_ONE_NEWLY_FROZEN_DIAGNOSTIC",
+  "mechanism_review": ".scratch/inference-gaps/g09-handoff-capture-review-27.json",
+  "mechanism_review_sha256": "a2fa73b2bafee014f4ec8a042e518f4a82e43f08b4d308a3939864f85296fe66",
+  "launcher": {
+    "path": ".scratch/inference-gaps/g09_capture_individual.py",
+    "bytes": 13543,
+    "sha256": "a3b7ea9596f49c21bfa6646895f2856d5e168acffea3bc6c907bcfffe8061de8",
+    "borrowed_runner_path": ".scratch/inference-gaps/g09_run_completion_observation_admin_retry.py",
+    "borrowed_runner_source_sha256": "8bfbfac9e025b3d60e5efd4509c142c3717e570013f8fb8be5b727dc59a22696",
+    "transformed_runner_sha256": "9c339ed0c464a13cd62916b95e8f78f8ff2b85b3b04a196b5768fe612e282a55",
+    "fixed_run": ".scratch/inference-gaps/g09-completion-observation-25/run-individual-1",
+    "authorization_expected": ".scratch/inference-gaps/g09-completion-observation-25/individual-authorization.json"
+  },
+  "actions": {
+    "application_gpu_profile_build_runs": 0,
+    "launcher_executed_or_imported": false,
+    "product_changes": 0,
+    "offline_checks": [
+      "Read the final launcher and its exact dynamically borrowed runner source.",
+      "Parsed and compiled launcher AST without execution or importing it.",
+      "Reconstructed the two literal runner substitutions; each matches exactly once; transformed function compiles without execution.",
+      "Executed only the decoder SQL/normalization against an already saved old trace.sqlite in read-only mode; no collector or target process started."
+    ]
+  },
+  "finite_scope_findings": [
+    "One ordinary Nsight profile command launches original observed driver directly. No ProcDump, dump registry setup, extra application mode, build, product replacement or debugger/profile combination is present.",
+    "Relative to the original ordinary diagnostic, collector workload mode alone changes batch to individual; --wait=primary returns to the original ordinary-profile setting. Other Vulkan/NVTX/sample/cpuctxsw/backtrace/stop/kill settings are retained.",
+    "Original candidate-first/allocation-first environment, runtime-pair host gate/policy, nonce, OBS exclusion and absence of pre-existing CUDA/NVTX injection variables are checked. Runtime input hashes are checked before and after.",
+    "Export occurs offline after profile process termination and is attempted even when profile returns nonzero. No assertion depends on --show-output forwarding target stderr.",
+    "Embedded stderr is selected from ANALYSIS_FILE/StringIds, with only NUL and newline normalization for marker parsing. Schema/counts/diagnostics are retained.",
+    "Acceptance checks four before/four after oracles, eight retirements, exactly four nonzero nonoverflow QPC summaries per candidate, one nonce-bound actual-policy PID, four module phases with OBS absent, each facade path/tag exactly once and explicit main0 marker.",
+    "Success additionally requires the actual PID in retained owned_handles, every retained target already exited with GetExitCodeProcess=0, no remaining exact/unknown target, unchanged frozen files and profile code0. Any launcher termination of an owned target prevents CAPTURED_NOT_INTERPRETED."
+  ],
+  "owned_cleanup_review": {
+    "finding": "ACCEPTABLE_BOUNDED_CONTROL_PLANE_GUARD",
+    "support": [
+      "Toolhelp snapshots discover only descendants of this exact collector PID; root and intermediate process handles are retained.",
+      "GetProcessTimes checks child creation within the actual parent's creation/exit interval, rejecting recycled numeric parent PID chains.",
+      "Only an ancestry-qualified target with the exact complete driver image path enters owned_handles. Target termination uses that same retained handle, not an image name or a newly reopened stderr PID.",
+      "Old stop_owned_application_on_failure is no longer extracted or called. Its path/PID taskkill route cannot bypass the retained-handle guard.",
+      "Snapshots occur immediately in the first wait loop, every 0.25 seconds while profiling, and after collector exit. They are owned-process housekeeping, not timing samples, and do not produce ranking evidence.",
+      "The original stage runner's cleanup is limited to its own retained Popen collector object/tree. The new target cleanup still runs on export/SQLite/marker failure without needing embedded stderr.",
+      "Pre/post exact-image inventory never kills by name. Uninspectable same-name candidates are recorded UNKNOWN_UNINSPECTABLE and make the pre/post gate fail. Unattributed survivors remain failure/unknown rather than being silently declared clean.",
+      "Handles close in finally. A missed or inaccessible target can make this sole attempt inconclusive; that does not authorize another run."
+    ]
+  },
+  "review_findings_resolved_before_final_hash": [
+    "Restored nonzero record-count acceptance and exact candidate tag multiplicities.",
+    "Added retained-ancestry cleanup for missing embedded stderr or failed export/decode.",
+    "Removed the legacy stderr-PID cleanup bypass and stopped treating uninspectable processes as absent.",
+    "Added actual retained target exit-code0 requirement; forced termination can never count as a normal capture."
+  ],
+  "offline_decoder_check": {
+    "input": ".scratch/inference-gaps/g09-completion-observation-25/run-nsys-procdump-1/trace.sqlite",
+    "mode": "READ_ONLY_EXISTING_TRACE",
+    "embedded_stderr_streams": 1,
+    "normalized_text_exactly_equals_preserved_embedded_stderr_log": true,
+    "before_oracles": 2,
+    "after_oracles": 2,
+    "retirements": 4,
+    "record_counts": [784, 758, 742, 704],
+    "actual_policy_nonce_markers": 1,
+    "facade_images": ["candidate-1", "candidate-2"],
+    "normal_main0": false,
+    "verdict": "Existing incomplete capture is decoded accurately and cannot satisfy the new complete criteria."
+  },
+  "remaining_must_before_run": [
+    "Root must freeze this exact launcher/hash, actual helper/runtime/input identities, R27 documents, new authorization and fresh output path before launching. This review did not inspect an authorization file not yet created.",
+    "Preserve all earlier data/costs and execute at most this one mathematical process/configuration. Any change to reviewed launcher/helpers requires review before execution."
+  ],
+  "remaining_product_must": [],
+  "limits": [
+    "Static review and offline decoder checks do not mark runtime oracle, cleanup, capture completeness or native-completion attribution PASS before the run.",
+    "The batch/empty-handoff interaction remains a hypothesis, not an established cause. Individual may also fail.",
+    "Compute/transfer GPU range endings may be early per official Nsight documentation; GPU-table presence alone does not certify native readiness or public Completion.",
+    "No A/A/P1 qualification, performance ranking, statistics/workload/threshold change, product change, owner reopening or further configuration/debugger matrix is authorized. R26 remains independently pending."
+  ]
+}

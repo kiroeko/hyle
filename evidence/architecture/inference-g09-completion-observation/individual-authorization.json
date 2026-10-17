@@ -1,0 +1,2280 @@
+{
+  "schema": "hyle.g09.r27-mode-only-capture/v1",
+  "created_utc": "2026-10-17T05:14:23.101388+00:00",
+  "decision": "ALLOW_ONE_MODE_ONLY_NONRANKING_CAPTURE",
+  "maximum_math_processes": 1,
+  "builds": 0,
+  "source_product_changes": 0,
+  "fixed_run": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g09-completion-observation-25\\run-individual-1",
+  "launcher": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g09_capture_individual.py",
+  "launcher_sha256": "a3b7ea9596f49c21bfa6646895f2856d5e168acffea3bc6c907bcfffe8061de8",
+  "review_sha256": "a2fa73b2bafee014f4ec8a042e518f4a82e43f08b4d308a3939864f85296fe66",
+  "launcher_review_sha256": "188f1e6a4c6f1662175329ef89a8353ebb78dc31856719251dceb429ac469936",
+  "only_collection_delta": "batch -> individual; ordinary original direct profile, no debugger",
+  "scope": "Original four shapes/4M F32/2workers/8warmups/12paired/exact1/candidate self-pair/original order/policy; one process then stop.",
+  "forbidden": [
+    "No A/A/P1 qualification or ranking",
+    "No product/statistical/provider/driver changes",
+    "No further configuration/debugger combination after this one attempt"
+  ],
+  "prior430_live_input_matches": 428,
+  "retained_historical_card_snapshots": [
+    {
+      "archive": "wer-scope-source.zip",
+      "member": "docs/implementation/tasks/graph/inference-g09-joint-pipeline.md",
+      "sha256": "933900b808c2736ef786a07a144f71a864d8a4e3728ab233736beefc5b42d53a"
+    },
+    {
+      "archive": "nsys-procdump-source.zip",
+      "member": "docs/implementation/tasks/tooling/inference-g09-native-workload-aa.md",
+      "sha256": "25fe6891eeec713e518f765afe730069709b3f978d75d4eb824d2885be6eab6a"
+    }
+  ],
+  "files": [
+    {
+      "path": "C:\\Program Files\\NVIDIA Corporation\\Nsight Systems 2026.1.3\\target-windows-x64\\ToolsInjection64.dll",
+      "bytes": 12231816,
+      "sha256": "4af21dcb9afada3ff3d000542b6849bda5677f58c487fd6e2ae14817b6935ed4"
+    },
+    {
+      "path": "C:\\Program Files\\NVIDIA Corporation\\Nsight Systems 2026.1.3\\target-windows-x64\\ToolsInjectionHelper64.dll",
+      "bytes": 1098888,
+      "sha256": "91d72752cc6c8bb2113d3748306946e23e12dab08e86c0b16e9daf2d5b72e18f"
+    },
+    {
+      "path": "C:\\Program Files\\NVIDIA Corporation\\Nsight Systems 2026.1.3\\target-windows-x64\\nsys.exe",
+      "bytes": 65146496,
+      "sha256": "a54d5e465086380373adc7b4cfeab771ed6f7cca98caa45b6393ed676dbb56ec"
+    },
+    {
+      "path": "C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v13.3\\include\\nvtx3\\nvToolsExt.h",
+      "bytes": 60523,
+      "sha256": "2513b9e9795bffab986f6347d6d2f52eeccdba27a94ea51c7002338c7a0a9b08"
+    },
+    {
+      "path": "C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v13.3\\include\\nvtx3\\nvToolsExtCounters.h",
+      "bytes": 10294,
+      "sha256": "380625542dd7741a9a2dffc09ca1439fbd9a396d0d78445a2111eb7249b65ba3"
+    },
+    {
+      "path": "C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v13.3\\include\\nvtx3\\nvToolsExtCuda.h",
+      "bytes": 5638,
+      "sha256": "0e3132efda6dafae646dc6003390f621513d9015d5367345fd22e0ba78fd84a3"
+    },
+    {
+      "path": "C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v13.3\\include\\nvtx3\\nvToolsExtCudaRt.h",
+      "bytes": 4780,
+      "sha256": "f0a1dfcb3190ec652f0991bdcc40089bef5af788bb38d69e8f8aa99a3d6b5383"
+    },
+    {
+      "path": "C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v13.3\\include\\nvtx3\\nvToolsExtMem.h",
+      "bytes": 29410,
+      "sha256": "2ccd39b905b191aa5492675edcdac2f8734f20d7cda5c1782bea8edee9fa6e7c"
+    },
+    {
+      "path": "C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v13.3\\include\\nvtx3\\nvToolsExtMemCudaRt.h",
+      "bytes": 8052,
+      "sha256": "5a42921d1ed44df3862694131f2300f686f76beadeda266a8b2fe33e6e7c5f6a"
+    },
+    {
+      "path": "C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v13.3\\include\\nvtx3\\nvToolsExtOpenCL.h",
+      "bytes": 8019,
+      "sha256": "c8208283d11493c8955562980d73a596837596dc5e9d9973736a82fcdfea99ca"
+    },
+    {
+      "path": "C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v13.3\\include\\nvtx3\\nvToolsExtPayload.h",
+      "bytes": 53043,
+      "sha256": "34d6cce01a4be9405a41f6f90405d20df1966e879624e1cc8cf17fa6a5e0c1be"
+    },
+    {
+      "path": "C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v13.3\\include\\nvtx3\\nvToolsExtPayloadHelper.h",
+      "bytes": 7767,
+      "sha256": "41fcb25c559177eb057416175ea194d53203862a5581e8f23b514101c28a8c1e"
+    },
+    {
+      "path": "C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v13.3\\include\\nvtx3\\nvToolsExtSemanticsCorrelation.h",
+      "bytes": 2335,
+      "sha256": "fc333f5c72e0d011b2f87b45b3887fe1742d19df840f3898aead4f5919d173a5"
+    },
+    {
+      "path": "C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v13.3\\include\\nvtx3\\nvToolsExtSemanticsCounters.h",
+      "bytes": 4273,
+      "sha256": "6ec5f9071aad33c72995aad81bb509a08cb065a028f6aba319c7fd172f14ddaa"
+    },
+    {
+      "path": "C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v13.3\\include\\nvtx3\\nvToolsExtSemanticsScope.h",
+      "bytes": 1866,
+      "sha256": "e655d08854d59e04a351960b7e70d185683dc99ef352633bb7d70721f8ded519"
+    },
+    {
+      "path": "C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v13.3\\include\\nvtx3\\nvToolsExtSemanticsTime.h",
+      "bytes": 1696,
+      "sha256": "00954019c1d0c6986b9e8a220d3606ef7102ff443768266fc9059e5433efe2ed"
+    },
+    {
+      "path": "C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v13.3\\include\\nvtx3\\nvToolsExtSync.h",
+      "bytes": 14416,
+      "sha256": "4453a3f1e380faa4c6ad480c7b09317d124f25ccfe203ca34df99f6cf48d4268"
+    },
+    {
+      "path": "C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v13.3\\include\\nvtx3\\nvtx3.hpp",
+      "bytes": 121139,
+      "sha256": "7884b43eebd821bccc7650db373a12b0e8d5fd6f60b04d8430f5160e7a97617f"
+    },
+    {
+      "path": "C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v13.3\\include\\nvtx3\\nvtxDetail\\nvtxExtHelperMacros.h",
+      "bytes": 2539,
+      "sha256": "5fc474979d84137a5feeece9cee2c4734fb85167ae5c9950c363c58662f8f1ac"
+    },
+    {
+      "path": "C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v13.3\\include\\nvtx3\\nvtxDetail\\nvtxExtImpl.h",
+      "bytes": 3459,
+      "sha256": "7c167277bdba598bb48fc62267e35cb13fab9996f6b8a9ed17f0bd90394f8256"
+    },
+    {
+      "path": "C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v13.3\\include\\nvtx3\\nvtxDetail\\nvtxExtImplCounters_v1.h",
+      "bytes": 6052,
+      "sha256": "fe78e36a391fa8a3344fa39355e479bc24f4ed46d7caac6eee7a37341448cf59"
+    },
+    {
+      "path": "C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v13.3\\include\\nvtx3\\nvtxDetail\\nvtxExtImplMemCudaRt_v1.h",
+      "bytes": 2743,
+      "sha256": "19e16ef51bf668afbd415f0431b212bd770b140987039244d6be9fb016e6de46"
+    },
+    {
+      "path": "C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v13.3\\include\\nvtx3\\nvtxDetail\\nvtxExtImplMem_v1.h",
+      "bytes": 6828,
+      "sha256": "7ec0b3f942b6747eb69b1085afdf29fb81843b2a79627413ea8157c9a56069fa"
+    },
+    {
+      "path": "C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v13.3\\include\\nvtx3\\nvtxDetail\\nvtxExtImplPayload_v1.h",
+      "bytes": 10686,
+      "sha256": "4695f2de2bcfc0a89a11c5c7f9af9a47d02c18ad27e0cb65d0ad9b4afb4ab593"
+    },
+    {
+      "path": "C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v13.3\\include\\nvtx3\\nvtxDetail\\nvtxExtInit.h",
+      "bytes": 18726,
+      "sha256": "6ebcda2332dd3852eba6cbf5542b538d89260025ed198b9c31f6bd07361d6100"
+    },
+    {
+      "path": "C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v13.3\\include\\nvtx3\\nvtxDetail\\nvtxExtPayloadHelperInternal.h",
+      "bytes": 19078,
+      "sha256": "97b48671fdf2f0b1d90457ebf88d4c717b07b69d6da205957032dd9083940687"
+    },
+    {
+      "path": "C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v13.3\\include\\nvtx3\\nvtxDetail\\nvtxExtPayloadTypeInfo.h",
+      "bytes": 7355,
+      "sha256": "c0254f0e4d9d0ab2a623b1a804694ad4537c48c0818fb0215a483c3f731b7a10"
+    },
+    {
+      "path": "C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v13.3\\include\\nvtx3\\nvtxDetail\\nvtxExtTypes.h",
+      "bytes": 2247,
+      "sha256": "f427cb555233e0c05198e6899dbd3a7956e63a9bebd7b819de6b964083472f1a"
+    },
+    {
+      "path": "C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v13.3\\include\\nvtx3\\nvtxDetail\\nvtxImpl.h",
+      "bytes": 20430,
+      "sha256": "84a528a24e1c44cb867635571eaaa2b500b6f1645eaa72430ea571011c59d44b"
+    },
+    {
+      "path": "C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v13.3\\include\\nvtx3\\nvtxDetail\\nvtxImplCore.h",
+      "bytes": 14452,
+      "sha256": "706bf278f339e8664a737b6c648b459f6e48f46a5c8b170914a7d5b656436de0"
+    },
+    {
+      "path": "C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v13.3\\include\\nvtx3\\nvtxDetail\\nvtxImplCudaRt_v3.h",
+      "bytes": 4749,
+      "sha256": "c8c665ec225f04d1a92661dbb8d99931f8415cda86c1e13503c4e18b57ca5e00"
+    },
+    {
+      "path": "C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v13.3\\include\\nvtx3\\nvtxDetail\\nvtxImplCuda_v3.h",
+      "bytes": 5825,
+      "sha256": "96ace12bf3fea25fe66ca3adaaea731674a8659837f6c32452f2a7e18a0f0060"
+    },
+    {
+      "path": "C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v13.3\\include\\nvtx3\\nvtxDetail\\nvtxImplOpenCL_v3.h",
+      "bytes": 9549,
+      "sha256": "066161a2938797d4612fd22dd74c1a09e61f3a6eefbe91715cea85a9a60237d1"
+    },
+    {
+      "path": "C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v13.3\\include\\nvtx3\\nvtxDetail\\nvtxImplSync_v3.h",
+      "bytes": 5026,
+      "sha256": "7b6de5c487d6927181129265b78a08c60969d7eafcedb21e97381652ca07dc07"
+    },
+    {
+      "path": "C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v13.3\\include\\nvtx3\\nvtxDetail\\nvtxInit.h",
+      "bytes": 22549,
+      "sha256": "3c39cb41108ec94b5366576d4fe762c16790ba2b5ad39e95023a577dc916f59a"
+    },
+    {
+      "path": "C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v13.3\\include\\nvtx3\\nvtxDetail\\nvtxInitDecls.h",
+      "bytes": 10592,
+      "sha256": "edb6fea752ca9025520daaead402fa7fdcf7a280654cbcba32e4e6411c6fccf6"
+    },
+    {
+      "path": "C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v13.3\\include\\nvtx3\\nvtxDetail\\nvtxInitDefs.h",
+      "bytes": 37694,
+      "sha256": "94c947f0615b16e3c452bad6a2185eaec2de0ec37147a3e1ee1f415149c01503"
+    },
+    {
+      "path": "C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v13.3\\include\\nvtx3\\nvtxDetail\\nvtxLinkOnce.h",
+      "bytes": 4204,
+      "sha256": "af77fd20d6e7ba46e909e5a7817316c8cabc32c34da384336e8ff823068b286b"
+    },
+    {
+      "path": "C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v13.3\\include\\nvtx3\\nvtxDetail\\nvtxTypes.h",
+      "bytes": 16921,
+      "sha256": "9a605cba6f9e28ca1991aea88b9ffe25b10b848ac0ae0467d95e2f13644d119b"
+    },
+    {
+      "path": "C:\\Users\\kiro\\AppData\\Local\\hyle\\dependencies\\v1\\sdks\\torch-cpu\\Windows-bf0079104e068dcbd60b2f8de589dc725282cbe865a85016cc5b8aa46cab519d\\libtorch\\lib\\c10.lib",
+      "bytes": 778152,
+      "sha256": "3b9653f65f59c09915aa425fb1ebc9abbf5f1f524b94e98e607c2301183724ba"
+    },
+    {
+      "path": "C:\\Users\\kiro\\AppData\\Local\\hyle\\dependencies\\v1\\sdks\\torch-cpu\\Windows-bf0079104e068dcbd60b2f8de589dc725282cbe865a85016cc5b8aa46cab519d\\libtorch\\lib\\torch.lib",
+      "bytes": 1832,
+      "sha256": "a31e4708d2727f3fd81be6957fe8fa6158719d3a03a22cb38c9fa1ad68766daa"
+    },
+    {
+      "path": "C:\\Users\\kiro\\AppData\\Local\\hyle\\dependencies\\v1\\sdks\\torch-cpu\\Windows-bf0079104e068dcbd60b2f8de589dc725282cbe865a85016cc5b8aa46cab519d\\libtorch\\lib\\torch_cpu.lib",
+      "bytes": 29046564,
+      "sha256": "5c2c703cf2f71e0124228a19cedc7a1a334dd1260b6494d01bbbb5a58b33b3a1"
+    },
+    {
+      "path": "C:\\Windows\\System32\\DriverStore\\FileRepository\\nv_dispi.inf_amd64_da865124972e1f80\\nvoglv64.dll",
+      "bytes": 48639720,
+      "sha256": "68b2d0f82e69e6bb7af67ea554c11caba783e2c75f5ab475db108ff55bf1313c"
+    },
+    {
+      "path": "C:\\Windows\\System32\\vulkan-1.dll",
+      "bytes": 1730096,
+      "sha256": "12195bbe9f2d8c27606772f72dae564bb7a7ddb9669d169e1676c3edc1c61f3e"
+    },
+    {
+      "path": "C:\\h7\\g09-completion-observation-25\\CMakeCache.txt",
+      "bytes": 17377,
+      "sha256": "d3fd160ada4505b81728e3ea09f0c1b840f01c1f8b64fd8b15cef4a6fc726aad"
+    },
+    {
+      "path": "C:\\h7\\g09-completion-observation-25\\CMakeFiles\\g09_observed_1.dir\\facade.cc.obj",
+      "bytes": 390823,
+      "sha256": "3e4dd41c7d3bcf4e6f64c09ca78eeb599e8365a478f08ac97fbf8f9138000f23"
+    },
+    {
+      "path": "C:\\h7\\g09-completion-observation-25\\CMakeFiles\\g09_observed_1.rsp",
+      "bytes": 3480,
+      "sha256": "0c06837d6dfbc19860b4e64d27affce7221d096a066d5715bc63414614a60775"
+    },
+    {
+      "path": "C:\\h7\\g09-completion-observation-25\\CMakeFiles\\g09_observed_2.dir\\facade.cc.obj",
+      "bytes": 390824,
+      "sha256": "1e1adda624ecaca055d576ad8188a2e3eafd2d249368c11ae9b8f0f102d168ce"
+    },
+    {
+      "path": "C:\\h7\\g09-completion-observation-25\\CMakeFiles\\g09_observed_2.rsp",
+      "bytes": 3480,
+      "sha256": "ce585009241d7235a3d36e436b6f7daa0b8b6b551cb9283f31e63d617cb83fdd"
+    },
+    {
+      "path": "C:\\h7\\g09-completion-observation-25\\CMakeFiles\\g09_observed_driver.dir\\wrapper.cc.obj",
+      "bytes": 563196,
+      "sha256": "1b6a7cb893610b8035e4e031518d5a7d5205ad9c25783b317da3aaa767a245ac"
+    },
+    {
+      "path": "C:\\h7\\g09-completion-observation-25\\CMakeFiles\\g09_observed_invocation.dir\\invocation.cc.obj",
+      "bytes": 1617664,
+      "sha256": "20645ad107400a7c35b75be7974f1a711c00d5656b83cd4a10f55d06e7f116f6"
+    },
+    {
+      "path": "C:\\h7\\g09-completion-observation-25\\bin\\asmjit.dll",
+      "bytes": 367104,
+      "sha256": "eb8f9c478bfc4b671f83b630c97424c60b4c948c0a8645fe588aed4f6bab5df5"
+    },
+    {
+      "path": "C:\\h7\\g09-completion-observation-25\\bin\\c10.dll",
+      "bytes": 1046528,
+      "sha256": "93bff2548e330df0f94ce3c71c531887d049ae645d1e38e3c08689e2d86a7888"
+    },
+    {
+      "path": "C:\\h7\\g09-completion-observation-25\\bin\\fbgemm.dll",
+      "bytes": 5721600,
+      "sha256": "250dc6f79b26e022ca3088e9b71a023598c7e997c96b62ef350a74fa1b501d81"
+    },
+    {
+      "path": "C:\\h7\\g09-completion-observation-25\\bin\\g09_observed_1.dll",
+      "bytes": 66080768,
+      "sha256": "5c52845fabdf308ff1105d63ec87fb9b9d17a361e71cd1c786a14d7c08243ad8"
+    },
+    {
+      "path": "C:\\h7\\g09-completion-observation-25\\bin\\g09_observed_2.dll",
+      "bytes": 66080768,
+      "sha256": "030948791f8961a87cc91a855c2460180f03ffa18146bfe57a9f9a9d4035142c"
+    },
+    {
+      "path": "C:\\h7\\g09-completion-observation-25\\bin\\g09_observed_driver.exe",
+      "bytes": 135168,
+      "sha256": "455e646f367f667afb0c41cd5ff3ae2386627057b3e933220c2c1ea038c46a96"
+    },
+    {
+      "path": "C:\\h7\\g09-completion-observation-25\\bin\\hyle_ggml_cpu_avx2_456172ec_5909b243d5fdb965.dll",
+      "bytes": 1203712,
+      "sha256": "c7983d08d66c0f44ed06c8a1a653aa200e962db30f8f3de376f1d805f1727f19"
+    },
+    {
+      "path": "C:\\h7\\g09-completion-observation-25\\bin\\libiomp5md.dll",
+      "bytes": 1613680,
+      "sha256": "d9d66ed25f1a0ea725fa3a41b22cfd5d182c19dbe4771d9c90ca02ad7466f6a1"
+    },
+    {
+      "path": "C:\\h7\\g09-completion-observation-25\\bin\\torch.dll",
+      "bytes": 9728,
+      "sha256": "16a220e55b35fbfd946c26663eb3eefc76782872280cdc47ab0caea1babf0613"
+    },
+    {
+      "path": "C:\\h7\\g09-completion-observation-25\\bin\\torch_cpu.dll",
+      "bytes": 255948800,
+      "sha256": "2cb91cf2ba957fad5a17eab5bb7af6b3d73bbc98d94e2deeadc9fb9294eea809"
+    },
+    {
+      "path": "C:\\h7\\g09-completion-observation-25\\bin\\uv.dll",
+      "bytes": 195072,
+      "sha256": "fa569e682fc5fb7a8eb94c6829af9f30a569748dbbc6bce39735d48bc960bcf8"
+    },
+    {
+      "path": "C:\\h7\\g09-completion-observation-25\\build.ninja",
+      "bytes": 48412,
+      "sha256": "6dbe96c183a674e7d245915d8b4472e4e67141f80fad151e079f0da8462f8212"
+    },
+    {
+      "path": "C:\\h7\\g09-completion-observation-25\\compile_commands.json",
+      "bytes": 4614,
+      "sha256": "120b2ed05de5b354c213e7e37d4df7d89469b4eedd7c3cb81018d99d07a2314f"
+    },
+    {
+      "path": "C:\\h7\\g09-completion-observation-25\\g09_observed_1.map",
+      "bytes": 29657020,
+      "sha256": "757503c26bca7c16dbcfb7cdbe107f18dc2b6b49de4a6c383b3663bc144f5153"
+    },
+    {
+      "path": "C:\\h7\\g09-completion-observation-25\\g09_observed_2.map",
+      "bytes": 29657021,
+      "sha256": "6d2f38e8b980ad2303b947171eee8cab4e02616c99e78d06b4c9a539220dc422"
+    },
+    {
+      "path": "C:\\h7\\g09-p1-instrument\\vulkan\\qualified-build-obs-free-1\\g09_nanobench.lib",
+      "bytes": 2236544,
+      "sha256": "1fe49b2a6c7718d5cc2b9d3bd3f452317eaab07713367a99e70b2d526f368951"
+    },
+    {
+      "path": "C:\\h7\\g09-p1-peer-9e2\\scripts\\hyle_perf\\__init__.py",
+      "bytes": 804,
+      "sha256": "2d6a25042595f5c9af2532f211e7cee8ae5f9cb23964e69ead570391996bbaaa"
+    },
+    {
+      "path": "C:\\h7\\g09-p1-peer-9e2\\scripts\\hyle_perf\\build_replay.py",
+      "bytes": 21144,
+      "sha256": "b5d30f9bff39ce64b6cd429c671d65e474d1c6235d21ea9edbf7150e9efe24ca"
+    },
+    {
+      "path": "C:\\h7\\g09-p1-peer-9e2\\scripts\\hyle_perf\\contract.py",
+      "bytes": 23503,
+      "sha256": "6982aacea604f37c07f10e12e0026530f10f31b7cdb522b1bde7229324022da7"
+    },
+    {
+      "path": "C:\\h7\\g09-p1-peer-9e2\\scripts\\hyle_perf\\controls.py",
+      "bytes": 17738,
+      "sha256": "a376a0e4c9c164415dd7f3f38b1410dcbc48abefb50e8aeeb2c3b71c7531b82e"
+    },
+    {
+      "path": "C:\\h7\\g09-p1-peer-9e2\\scripts\\hyle_perf\\environment.py",
+      "bytes": 6640,
+      "sha256": "a47cd3fb09787244136aba46dd628c0172ecef37bd8b234c631bc834351ccc79"
+    },
+    {
+      "path": "C:\\h7\\g09-p1-peer-9e2\\scripts\\hyle_perf\\evidence.py",
+      "bytes": 81436,
+      "sha256": "a232dd0ef5965b5929150030703fef13dd5e8cd4b323c2901572aa6634d51598"
+    },
+    {
+      "path": "C:\\h7\\g09-p1-peer-9e2\\scripts\\hyle_perf\\machine.py",
+      "bytes": 70145,
+      "sha256": "31e1c44b3fc4ae461f060a1b9d694f0c13404ea9435e28c474831515f43923c2"
+    },
+    {
+      "path": "C:\\h7\\g09-p1-peer-9e2\\scripts\\hyle_perf\\model.py",
+      "bytes": 10757,
+      "sha256": "58c1965896b11792970b00aaf761d0613438741ca926e51091646158c4613580"
+    },
+    {
+      "path": "C:\\h7\\g09-p1-peer-9e2\\scripts\\hyle_perf\\nanobench.py",
+      "bytes": 5081,
+      "sha256": "c3e3ee5ebbff830dc608643bd885e0016af5e8207e59413ac45c6fe57e8dd585"
+    },
+    {
+      "path": "C:\\h7\\g09-p1-peer-9e2\\scripts\\hyle_perf\\provenance.py",
+      "bytes": 10517,
+      "sha256": "4cb1a2d752b60f150b6385a7c67ee75e5bacb25712d7ca84639e198bb80f1c3f"
+    },
+    {
+      "path": "C:\\h7\\g09-p1-peer-9e2\\scripts\\hyle_perf\\raw_replay.py",
+      "bytes": 24437,
+      "sha256": "5baf02e0ee76745e0dbc211469bb0cc89225231f60dc5972f51f269e5c5b4850"
+    },
+    {
+      "path": "C:\\h7\\g09-p1-peer-9e2\\scripts\\hyle_perf\\runner.py",
+      "bytes": 115468,
+      "sha256": "df415c5bb04c1096c568cae75c84e83672d2282ef43c7965d905f3ba1d21e022"
+    },
+    {
+      "path": "C:\\h7\\g09-p1-peer-9e2\\scripts\\hyle_perf\\stats.py",
+      "bytes": 11599,
+      "sha256": "1e770796f67ea12a7c00d41c162954e5618e18a21a13a466ca3a84891160969e"
+    },
+    {
+      "path": "C:\\h7\\g09-p1-peer-9e2\\scripts\\hyle_perf\\structured.py",
+      "bytes": 7791,
+      "sha256": "aacd66ea5f86e96c88896abd2b24b38f2812227e486b6ab90e704c3cc1b2336c"
+    },
+    {
+      "path": "C:\\h7\\g09-p1-peer-9e2\\scripts\\perf-machines.json",
+      "bytes": 6883,
+      "sha256": "b67be3cce212b94ad7f882714ae2cd50d7b0235a0024c75d3b1bd603c32b1f59"
+    },
+    {
+      "path": "C:\\h7\\g09-procdump-1\\Procdump.zip",
+      "bytes": 1295601,
+      "sha256": "5fe68e81632f13188930affff20a9a9910170bae654360850d3108cead708a2d"
+    },
+    {
+      "path": "C:\\h7\\g09-procdump-1\\help-decoded.txt",
+      "bytes": 8804,
+      "sha256": "c9f31e552ffaf8b37eced7e5b3a8d9f77d0ff87a270adaaab06492251a7a45d9"
+    },
+    {
+      "path": "C:\\h7\\g09-procdump-1\\help.raw",
+      "bytes": 17286,
+      "sha256": "8f3c7e151d32d1d1ff1c9c78e288fa38052ccfbadf149ba6f1d80431674b42b2"
+    },
+    {
+      "path": "C:\\h7\\g09-procdump-1\\procdump64.exe",
+      "bytes": 743752,
+      "sha256": "22c2a2b09ade73a342a18dab838354385f73fc98e324b9903fd61fff949c5124"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\include\\hyle\\compute\\backends\\cpu.h",
+      "bytes": 1814,
+      "sha256": "a0b99762a3620c1b44b6856263c172d12fa6e482282fe9c2fcc06aa7d82a1d4d"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\include\\hyle\\compute\\batch_execution.h",
+      "bytes": 8789,
+      "sha256": "7c1d9431a83eaf6fbf45bb9fb50a9267b38ed9fd7741c5d7066bb39e95bfa404"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\include\\hyle\\compute\\batch_layout.h",
+      "bytes": 6128,
+      "sha256": "d48ed59a9090194d797422e6ddc86f8d12a9e4a98182e84c2307e4057a70e08e"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\include\\hyle\\compute\\batch_materialize.h",
+      "bytes": 7245,
+      "sha256": "9f57cfe9748faf89faae485b604a4b14d6f222bc3ce475bc40a1a265b405b50b"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\include\\hyle\\compute\\batch_ops.h",
+      "bytes": 2592,
+      "sha256": "8af72d0f6d584ad38f596aa080d5f775aed857337beec6748cda4a8e7377165a"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\include\\hyle\\compute\\batch_paged_native.h",
+      "bytes": 4379,
+      "sha256": "7fa33691681f37390d6db444f27a1f1745850283709d6828a6ab9027515b5d3f"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\include\\hyle\\compute\\batch_transfer.h",
+      "bytes": 11229,
+      "sha256": "3319446ddbfb9b58b3ee5ddef6b4ca63dfc6d34c9e4423fe6edf865d98fedb60"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\include\\hyle\\compute\\completion.h",
+      "bytes": 1959,
+      "sha256": "98b34b9ee4665e9aedac719504c029a509f304b0a4f566bf6b7f76d88dc2ef34"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\include\\hyle\\compute\\cpu.h",
+      "bytes": 1703,
+      "sha256": "bccb8e5d310086b41c6f010a84f56219ac33830e92e5da22ce2ff12cd608ccb6"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\include\\hyle\\compute\\custom_kernel.h",
+      "bytes": 15045,
+      "sha256": "12ea43a8f599d6179d484b11e872ee998bbc47c61f9be66db90ac992e1532cbc"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\include\\hyle\\compute\\delegated_operation.h",
+      "bytes": 6174,
+      "sha256": "43a8c35359d39cb5db489892a5f9b79cd22a90af3b876992509353ad696ae960"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\include\\hyle\\compute\\detail\\backend_extension.h",
+      "bytes": 3245,
+      "sha256": "4710543965b514881c1ceee91b3a1a7961f98693714b5d5493f9127a07b54370"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\include\\hyle\\compute\\detail\\batch_graph_access.h",
+      "bytes": 1676,
+      "sha256": "ebbaf4ebe2785691b59a7872323a92cca9e5a9459f75fea82a3acbd84f658607"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\include\\hyle\\compute\\detail\\batch_provider.h",
+      "bytes": 1786,
+      "sha256": "9a512c121c201fb16d69a670abfc4f6c995015a7b9ffc071104d07a63a5cca1f"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\include\\hyle\\compute\\detail\\command_capture.h",
+      "bytes": 3189,
+      "sha256": "c75ffbf2029b3166eca03fcf28b12985ad5d09112866345ea0ebcf28639b6d3d"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\include\\hyle\\compute\\detail\\completion_access.h",
+      "bytes": 4164,
+      "sha256": "8699638e39a1a7d5708cbb6a5e41f191228b3ac571b16b026eadcc1aa6765e34"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\include\\hyle\\compute\\detail\\context_ref.h",
+      "bytes": 1401,
+      "sha256": "0e44878fc04ea7b7378078e81045dcfb4760a27d44a5fc843b874ff612051ab3"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\include\\hyle\\compute\\detail\\copy_backend.h",
+      "bytes": 1968,
+      "sha256": "6a6b2a44a81292297e5f5eb44eefe4e360a6003995a516676932de5e1b55b324"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\include\\hyle\\compute\\detail\\copy_control.h",
+      "bytes": 2622,
+      "sha256": "8fd8ba40beeb810bcc7d635853b6f94e860e3dce4b22fa06fe5830dc10f7e909"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\include\\hyle\\compute\\detail\\copy_outcome_source.h",
+      "bytes": 6694,
+      "sha256": "b6a6d6648e6fa3a351cedace1a7f598fc086e1671414061bf1a2ab4e99dcdbfa"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\include\\hyle\\compute\\detail\\copy_ranges.h",
+      "bytes": 1796,
+      "sha256": "86b711e8dd26d63bba37e0ebbd47956f28bfd58b28934ac8073f28df81c543e7"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\include\\hyle\\compute\\detail\\copy_stream_access.h",
+      "bytes": 3259,
+      "sha256": "18174b9024917acdcc1d985265a1a0da6afc5f29a2b437c80ebf52163aab1bb4"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\include\\hyle\\compute\\detail\\dependent_completion.h",
+      "bytes": 2699,
+      "sha256": "25aecc0c64d1edfad3d71523b04dc222f523ac7cd71f99e63193495a8431cc9b"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\include\\hyle\\compute\\detail\\file_stream_access.h",
+      "bytes": 2004,
+      "sha256": "de668186ac0617204ed5473880f811a0268b1b07c842329a979b34b0c0f40d2e"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\include\\hyle\\compute\\detail\\file_stream_copy.h",
+      "bytes": 9412,
+      "sha256": "27b8705a7731d63a953e3bd93118d9420a0b95168abd9b884ec37dea7e166dc0"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\include\\hyle\\compute\\detail\\generated_result.h",
+      "bytes": 5574,
+      "sha256": "bc47c925ff3302bd0ffb7df04ed68fa9ae7ad0865d021cc8b471a7547307d4aa"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\include\\hyle\\compute\\detail\\lease_access.h",
+      "bytes": 3401,
+      "sha256": "a51b7fd93c33f76820189c18ae37377d49b7aa320399dc32a75c78a2d6c10e18"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\include\\hyle\\compute\\detail\\materialized_native_controller.h",
+      "bytes": 24918,
+      "sha256": "74b219c3783e725b479895b515d0110f232718e63927cff701dc74cb0e559a1b"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\include\\hyle\\compute\\detail\\native_lease_inputs.h",
+      "bytes": 4975,
+      "sha256": "eca0780a39defc70e73ccbd1f8a2aec1aac66e67af95078b6912d7671f7ff7d6"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\include\\hyle\\compute\\detail\\paged_arena_access.h",
+      "bytes": 4162,
+      "sha256": "5a053111b9e6a77203adbf553a9955ba581e3cc754a0e290225739369aac1dd7"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\include\\hyle\\compute\\detail\\prepared_callbacks.h",
+      "bytes": 2376,
+      "sha256": "2d00a2e823af0bcdaa9fc0330aa441b18ce6932f090dc903be876f1b08e449a1"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\include\\hyle\\compute\\detail\\provider_extension.h",
+      "bytes": 3608,
+      "sha256": "fd2441737a83d03544fac2b63092c5d4ca880bebeb009fc65bfddbf022b8909d"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\include\\hyle\\compute\\detail\\queue_sequence.h",
+      "bytes": 7296,
+      "sha256": "e2df077fcccf12d4d7f1225df238376e309d18a1a9d386310f6d2156c3062f5c"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\include\\hyle\\compute\\detail\\resource_binding.h",
+      "bytes": 333,
+      "sha256": "5728b7fc8d0b9e6faf413dd5f8e5ba13e7ddf4d86354a722770f554c1591c6e5"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\include\\hyle\\compute\\detail\\retained_completion.h",
+      "bytes": 2159,
+      "sha256": "fdb06b6ccaebce4fe43eee5f926f4a912c1342deb475e99a9e4d86c933b9df07"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\include\\hyle\\compute\\detail\\state_clone_access.h",
+      "bytes": 1714,
+      "sha256": "b56629d38582f595a9b46eb74d9e6d4b983868bf3a73cf91fb4a965248ee9608"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\include\\hyle\\compute\\detail\\vulkan_batch_access.h",
+      "bytes": 2168,
+      "sha256": "86ab7457f47a86448960f92f4ca998bfc5a9ade459b49cb836ac2ddb96a38c09"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\include\\hyle\\compute\\detail\\vulkan_plan.h",
+      "bytes": 2032,
+      "sha256": "88d3b62666ce55fba3a8e6b1b52348ec5d0377501b796ed6475b9c66d3cf8f2c"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\include\\hyle\\compute\\device.h",
+      "bytes": 7681,
+      "sha256": "6fabfe06600cad6f12ec70a0b83246d8dbbf8ea9a8f9fcc002e9dfab7f801c5a"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\include\\hyle\\compute\\file_stream.h",
+      "bytes": 10150,
+      "sha256": "b668f8b7480df6e0ade7785fe8a6581c6753ac422f1aae419caa33c38dae9cc6"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\include\\hyle\\compute\\leased_operation.h",
+      "bytes": 3118,
+      "sha256": "f86ac789b456e8084061f068de2ac947fddbdaf552ed1042585dd5beb1c56185"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\include\\hyle\\compute\\low_precision.h",
+      "bytes": 8193,
+      "sha256": "6488d615af7bb970472b2ccd84a8081e9b3bad12ea0e599651abc5706ff2db60"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\include\\hyle\\compute\\model_ops.h",
+      "bytes": 45441,
+      "sha256": "165cfc86281d90e246f137892c0fa1f625421a53f6bdbf9877aef9828773f8c9"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\include\\hyle\\compute\\operation.h",
+      "bytes": 23223,
+      "sha256": "584e57c2a1a10b7c17ee80d4a6f992b73f488f4cdbf1e71e39d908cd89600808"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\include\\hyle\\compute\\ops_visibility.h",
+      "bytes": 237,
+      "sha256": "ae84b32667858fd2dd679bf2ba68e50d7405e9164ec0fd317173f20086b5fa6d"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\include\\hyle\\compute\\paged_arena.h",
+      "bytes": 7313,
+      "sha256": "15218780da6f3d1a8ee8de1e51cb9e6482448998c4ed44f95717809ce31f888c"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\include\\hyle\\compute\\prepared_operation.h",
+      "bytes": 20309,
+      "sha256": "3fe6a6f1ddc31c2181a208658e627be20933bde325ec0b63dba06281d007ed7b"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\include\\hyle\\compute\\provider.h",
+      "bytes": 10124,
+      "sha256": "1a4650e03cb2a0f6f46d22d914db197fb4bb7a59cd5aced180140feee0a7f337"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\include\\hyle\\compute\\providers\\ggml_cpu.h",
+      "bytes": 1282,
+      "sha256": "1df53042a6ad5d6e899aca9fc75418d9fa561c85eb769d79ea72b88f3530d6b1"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\include\\hyle\\compute\\providers\\native.h",
+      "bytes": 980,
+      "sha256": "3be77c0f4ecda743d7b03d27658120d27867d281c77fd0ed5eaa5ad12ac3ad5d"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\include\\hyle\\compute\\providers\\onednn.h",
+      "bytes": 726,
+      "sha256": "3e9fbdfa34e309f2695600a043adf15828643feb6aa8d37c23f1358826bc681b"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\include\\hyle\\compute\\resource_budget.h",
+      "bytes": 4499,
+      "sha256": "7e04cba9fb6727e883ef89a66a80b1f50b363c0b250bf327711ac430b6f13c5b"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\include\\hyle\\compute\\resource_leases.h",
+      "bytes": 8533,
+      "sha256": "22d7f2153ef8c0b1f6602b84ab00d96d75afc576f3b093a59749ab4f6891446d"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\include\\hyle\\compute\\resource_requirement.h",
+      "bytes": 749,
+      "sha256": "0a1260090ba84ed86cf26b27ec5d187c8ed5d39b1acda641b632a3b84d3acf76"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\include\\hyle\\compute\\result.h",
+      "bytes": 4704,
+      "sha256": "07a584147b7de3b3f3c1a238207df4ec548130308295b583fc8c93a4d36a4164"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\include\\hyle\\compute\\route_policy.h",
+      "bytes": 10464,
+      "sha256": "71a4fd38cb6702769cf9879e9c02a631797986f6c1f18417f014b65bb8d70926"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\include\\hyle\\compute\\sampling_ops.h",
+      "bytes": 3673,
+      "sha256": "887faba6ebe6249a0e2f766e2ea4b6bd83900bcf1e85165ad55e3e9be18528da"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\include\\hyle\\compute\\state_clone.h",
+      "bytes": 14192,
+      "sha256": "1e20c2363bb1fc6c1aa7b6b72247d5f1a2fde4d4f5ab04e5c2e7791c14d64b3f"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\include\\hyle\\compute\\state_versions.h",
+      "bytes": 8749,
+      "sha256": "a83193baa10ff4f00fc6eb7289b7f25091038096877ee3dc3aa0053a7b5ca878"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\include\\hyle\\compute\\tensor.h",
+      "bytes": 1980,
+      "sha256": "ac00f221a66d0f9044a2b49a1123a6b99a6c425568790898129c31d81519c538"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\include\\hyle\\compute\\tensor_desc.h",
+      "bytes": 8700,
+      "sha256": "e5496e00c643bcce2efbb42666773f4172243d10458b756d6f9881b0e677eb9a"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\include\\hyle\\compute\\transfer.h",
+      "bytes": 2259,
+      "sha256": "240e618942e9975640dac7ebcd4ce1b0fbbc2d01b1eb19a4576bf1be39e8090c"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\include\\hyle\\compute\\visibility.h",
+      "bytes": 1131,
+      "sha256": "fb05970d03d232298d57da8921c3a441cd93cd0d9dbb6cbcfcaa5b6a51964aa5"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\include\\hyle\\compute\\vulkan.h",
+      "bytes": 17409,
+      "sha256": "0edeb32b828136e277df83109f0ad5d0fb7c98cbfaa766055426ea36b115716b"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\include\\hyle\\compute\\vulkan_batch.h",
+      "bytes": 8048,
+      "sha256": "40a75218b37885769eb8d59a7b991a8eeddf3530fab435af6ed73336286e2d52"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\include\\hyle\\compute\\vulkan_memory.h",
+      "bytes": 13173,
+      "sha256": "0fa5c0ffa7b316da2645f03c8176d02fc871151700720c195d2e238c802b53fc"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\include\\hyle\\compute\\vulkan_weights.h",
+      "bytes": 3146,
+      "sha256": "7d1edd718226dbec3bc270da7250930d23ba367201b0a3eecaea4a3f45d302ff"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\include\\hyle\\compute\\workload.h",
+      "bytes": 5017,
+      "sha256": "2e7509d99d986e71b06788e4dd1dcb9595799e2ad972df48449ff0b58f0815ad"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\include\\hyle\\container\\bounded_queue.h",
+      "bytes": 10617,
+      "sha256": "fbf607da23ef58190f81fa6f58be24402ad19749c9d44018db05e5b947ea7f30"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\include\\hyle\\container\\btree.h",
+      "bytes": 62654,
+      "sha256": "cdabf1dd740a88281a461a64394c231da56830054864f22d8e5944b0ce0d8be1"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\include\\hyle\\container\\btree_map.h",
+      "bytes": 48,
+      "sha256": "bc452a21c1c6e75a427a6eb3bc6772db3516c10e0e646103173ae1edd7667b13"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\include\\hyle\\container\\btree_set.h",
+      "bytes": 48,
+      "sha256": "bc452a21c1c6e75a427a6eb3bc6772db3516c10e0e646103173ae1edd7667b13"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\include\\hyle\\container\\byte_ring_buffer.h",
+      "bytes": 6644,
+      "sha256": "0d7bd808bd9848a5534a3a7f099095ef8c3289b6a8534435d2308948fcea8c49"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\include\\hyle\\container\\circular_buffer.h",
+      "bytes": 6305,
+      "sha256": "3934a4e6b40418c5be12d3badba23aa4328a5a3602d141123539d4809869d542"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\include\\hyle\\container\\detail\\adaptive_mutex.h",
+      "bytes": 2442,
+      "sha256": "600d1fb746f5a35438eb29177ecd281c08f662c7b8558b83df1045a0d264c472"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\include\\hyle\\container\\detail\\adaptive_rw_lock.h",
+      "bytes": 6010,
+      "sha256": "a70ad907ba44d399f36284c87318022b0517314755d112ccf43a5e053b1825ae"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\include\\hyle\\container\\detail\\flat_hash_probe.h",
+      "bytes": 11389,
+      "sha256": "9415366e42de93d3d7932745783b0964280e5d92f3a484f77b1d109a07d48582"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\include\\hyle\\container\\detail\\flat_hash_table.h",
+      "bytes": 44213,
+      "sha256": "4e53aee82efdbb4b2bd6d50b523dc4ddc868f0d636d9f2e1dae1cfecd8cbf977"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\include\\hyle\\container\\detail\\intrusive_member.h",
+      "bytes": 1822,
+      "sha256": "e3ea047e3ed723ab47061422c72ca83526ad107b983d3b6072d47fca91082f80"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\include\\hyle\\container\\dynamic_bitset.h",
+      "bytes": 7464,
+      "sha256": "8c0425e6f12e97dbe0880bb0b4881b7eea563438f406ba8cd5d548aa7d6a8036"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\include\\hyle\\container\\flat_hash_map.h",
+      "bytes": 65,
+      "sha256": "0043e05aca5e33ab67af266e59dc44336e65babca9ffeddba696b6741d694b20"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\include\\hyle\\container\\flat_hash_set.h",
+      "bytes": 56,
+      "sha256": "42a57cbe47983cdbb92041f374112e1b1f3ccd67401bed5748c8f865096dbdc9"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\include\\hyle\\container\\flat_map.h",
+      "bytes": 54,
+      "sha256": "ed57615f51dad6355458fa0ae12c4f3804b092a1d7f6fcbe527935af3e5d0b8a"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\include\\hyle\\container\\flat_set.h",
+      "bytes": 54,
+      "sha256": "ed57615f51dad6355458fa0ae12c4f3804b092a1d7f6fcbe527935af3e5d0b8a"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\include\\hyle\\container\\flat_sorted.h",
+      "bytes": 40527,
+      "sha256": "82bf77a6c6dc3d9d162c9f7949218c1e4946468b54df4913c3f5f4d31cad9537"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\include\\hyle\\container\\hash.h",
+      "bytes": 28870,
+      "sha256": "4ff2c8bfaf8b2bb683f05c676c741f8bbeca1e4d926061ae0cc58cb524e4e0d0"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\include\\hyle\\container\\inplace_vector.h",
+      "bytes": 56,
+      "sha256": "decc3c909b493af3ab1dba1d379aa0cf3b6b398dc9a850482e718e72ecb8b82b"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\include\\hyle\\container\\intrusive_forward_list.h",
+      "bytes": 16797,
+      "sha256": "7e3c36a91067eb8b1ec8e9370b8fb001545804b2842e19c776eb02f1633bbb46"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\include\\hyle\\container\\intrusive_hlist.h",
+      "bytes": 15077,
+      "sha256": "ec18650198cd65bed765a6ebb83396cfc4b3bb9fff9704a6206bbc6378e4e680"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\include\\hyle\\container\\intrusive_list.h",
+      "bytes": 33222,
+      "sha256": "ad4739927482839590c349e5a6eeb9808f724406b0a27d9c5f46892148b7e688"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\include\\hyle\\container\\lru_cache.h",
+      "bytes": 10852,
+      "sha256": "0744e618e9500c0135c1a4d56cc38eea862360073d71a845578deb0199b96e24"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\include\\hyle\\container\\pod_vector.h",
+      "bytes": 17833,
+      "sha256": "8b933769d0123a3c320007ae6bd0f98e3537d7700a622adad5b5630dd012e387"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\include\\hyle\\container\\ring_deque.h",
+      "bytes": 15154,
+      "sha256": "e588950a503951eda12b2ba7e4e3123eaf38b74cf7c4f0262b88bacc018ab3c3"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\include\\hyle\\container\\sharded_queue.h",
+      "bytes": 8176,
+      "sha256": "2bb473724a1cd6011f0e0183c69239fa5b5d8f68dd9343abf5e011825a540a61"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\include\\hyle\\container\\small_vector.h",
+      "bytes": 30022,
+      "sha256": "cd04f94cac8c7be603600dfeb2a343a88a576bb5230c914d6d38ae5676b99cee"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\include\\hyle\\container\\sparse_set.h",
+      "bytes": 3699,
+      "sha256": "02ade678ec0254381c5669fd0913a7ca02785fb8df939e82efeefa272a4f80b3"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\include\\hyle\\container\\spsc_queue.h",
+      "bytes": 7272,
+      "sha256": "25b7da4ed5c9988309d7d09af4efe395f56a9c4ba29847b860ef22116a5790f7"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\include\\hyle\\container\\static_vector.h",
+      "bytes": 22481,
+      "sha256": "d7531ee32750aeabdc8699893853da0caf80fa27469b69ab5caaf270dfdafc33"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\include\\hyle\\container\\unbounded_queue.h",
+      "bytes": 7084,
+      "sha256": "db346ccfc311529b5cee6d8f2ff23662031e4171049a6cae9543c3c3ac5e64f6"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\include\\hyle\\container\\visibility.h",
+      "bytes": 842,
+      "sha256": "431ce63538dd91c9f32742f654ab3f8eaaa6cfc16f004ea6bb8b0b171063d332"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\include\\hyle\\container\\work_stealing_deque.h",
+      "bytes": 8748,
+      "sha256": "a0fe74f0d2969e24a0ccb18a87913ee4b2a8384b60595e02559e9b1324403689"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\include\\hyle\\container\\ws_fifo_queue.h",
+      "bytes": 10635,
+      "sha256": "70208b3484fc6c8b0603f45a6e63f84d27cf36af3f743a18760efb88af2dc4cc"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\include\\hyle\\core\\assert.h",
+      "bytes": 16114,
+      "sha256": "5596728bc220ea27696be4f25e2f9eb9cf2705930f8eb0461747c4a862615790"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\include\\hyle\\core\\cache.h",
+      "bytes": 3625,
+      "sha256": "96ec55f30f1e6ec2e46c32b0ec01063e2feb0d0ee72ee7a353d1cd29e03e7048"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\include\\hyle\\core\\compiler.h",
+      "bytes": 4287,
+      "sha256": "e31151f0ed73c532e464c6568483acecd80a2da9c1ee7afc7e081db87d6fb687"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\include\\hyle\\core\\detail\\compiler_attributes.h",
+      "bytes": 1913,
+      "sha256": "263c7691f9984073e198b69328092330bf572195113d3994d1ab54fe4564d88a"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\include\\hyle\\core\\detail\\preprocessor.h",
+      "bytes": 409,
+      "sha256": "1d9872ef98db007dcbed7e0128771244640e1de4092830d52a7a83537f98eb84"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\include\\hyle\\core\\environment.h",
+      "bytes": 6712,
+      "sha256": "3d289765b1b677499a444b38d1dbe366bb5e99f89fcb7670af2d08106fd958fa"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\include\\hyle\\error\\format.h",
+      "bytes": 2914,
+      "sha256": "2a10b7dfa4dafd3e5c7af610fa50a4ba6bb2520e5409fd01038871875261fa68"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\include\\hyle\\error\\result.h",
+      "bytes": 30856,
+      "sha256": "7718409ab2854eb76959215b356bf8077007134d87db1a24f9384a9b5deff2b5"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\include\\hyle\\error\\status.h",
+      "bytes": 18286,
+      "sha256": "e45875924420148b2af5d6195b1cdac86ef40d312fa963f1b3839acfbe071575"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\include\\hyle\\error\\system_error.h",
+      "bytes": 3096,
+      "sha256": "b02c11cd7cea737899d72d9dcea93f246fee021bdfc697ab6d744b0cc26d0f0c"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\include\\hyle\\graph\\batch.h",
+      "bytes": 11493,
+      "sha256": "9f458f8f1b24c947e77043e7344021642d372d40afe1cc5167f3a46445d610cd"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\include\\hyle\\graph\\compile_report.h",
+      "bytes": 577,
+      "sha256": "c42c30527d581975c49ddfebb182b0ae7928d799eed91172cb631779a2ad5b4f"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\include\\hyle\\graph\\cpu.h",
+      "bytes": 732,
+      "sha256": "207f78caafbec1e73966f0ead5563b51aa2aaf3e5eccabde15b6a20447a25f99"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\include\\hyle\\graph\\cpu_vulkan.h",
+      "bytes": 10276,
+      "sha256": "9b4c99f9ef9948f85435de4415a788b83d17a00752664074edf462addc6693f6"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\include\\hyle\\graph\\detail\\lease_submission.h",
+      "bytes": 2312,
+      "sha256": "8efde18219e777f49026fabe884956500377ffb4f9d6034d8631433d55550684"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\include\\hyle\\graph\\detail\\region_access.h",
+      "bytes": 4433,
+      "sha256": "b6e26b31db75a215187362e1f50b165f8fd1e4df02c02a012efd7053d498a9e7"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\include\\hyle\\graph\\executable.h",
+      "bytes": 45007,
+      "sha256": "8494f631596c1fefa336385fb909e9a9baee7708549abd4c8b5e8ce1a203e75f"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\include\\hyle\\graph\\graph.h",
+      "bytes": 19988,
+      "sha256": "c7a93ccf9fd1c86fb9dec286e7d3345aabcb1810c2fb6793a66093480a5a2136"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\include\\hyle\\graph\\leased_invocation.h",
+      "bytes": 4538,
+      "sha256": "093f1c04307abcc885c9d8ba0319531d10848ef500293da2289b6b038679ee75"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\include\\hyle\\graph\\native_variants.h",
+      "bytes": 4939,
+      "sha256": "59132374915cb4ca88528952f4aa4c0a091e6660e4a128c49e4f503d21f4a96b"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\include\\hyle\\graph\\providers\\onednn.h",
+      "bytes": 1103,
+      "sha256": "f593cd6715b39ab2deb01eb4b1d5cbaac74988579a60927445161d25de91bf7f"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\include\\hyle\\graph\\region_provider.h",
+      "bytes": 15731,
+      "sha256": "22b75e8e11f0763324385b607a14abec27ce1080d1302bfd9cdc8e9a99734d6b"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\include\\hyle\\graph\\visibility.h",
+      "bytes": 213,
+      "sha256": "77700b210193f978cdec750c765fbf728e824409ace0566c1d870785fcb97005"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\include\\hyle\\graph\\vulkan.h",
+      "bytes": 5731,
+      "sha256": "2bed7d4b76f28f1e96c170a7ebb077f8aa5246ac2fc2906b2dc0e9b64b4c236f"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\include\\hyle\\io\\buffer.h",
+      "bytes": 10908,
+      "sha256": "a8f184f572e7d7336bbeddbd6fdf0361173f8e0dd5e96e0ab4b028c9c64982cf"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\include\\hyle\\io\\capabilities.h",
+      "bytes": 5390,
+      "sha256": "747420b1f218e059f1f64b83b40ff20729899effcb7a5e82b4cc4297752605e8"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\include\\hyle\\io\\detail\\io_context_access.h",
+      "bytes": 1286,
+      "sha256": "898fe60ba5e8604fba78a03d3468be1c9a89b1a13e6f43208fbe80e601214061"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\include\\hyle\\io\\detail\\io_uring_access.h",
+      "bytes": 656,
+      "sha256": "ef8e452cd95e2036769dc6b456ae477a4206201a2177a58bd9da0584fdafed41"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\include\\hyle\\io\\detail\\net.h",
+      "bytes": 12394,
+      "sha256": "4b6fa8a2a90cc79b06fb275343069d5b466cee78abfd98756cdb71ceaadcfc14"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\include\\hyle\\io\\detail\\net_budget.h",
+      "bytes": 9883,
+      "sha256": "558f0ac110e788bcf845ef9491fe5b0687ecd942913e03a1d68727c9721cb44d"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\include\\hyle\\io\\detail\\net_cancel.h",
+      "bytes": 12237,
+      "sha256": "de65440fe690430e89a926bd8b139f0d13aebb57463843178480d2c00a153450"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\include\\hyle\\io\\detail\\net_multishot.h",
+      "bytes": 17174,
+      "sha256": "7ea7c900fa1c432f07b96517d1070ee5f43cadad409046ab9540b334a6ac4cd9"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\include\\hyle\\io\\detail\\net_timeout.h",
+      "bytes": 19178,
+      "sha256": "de05d4505d9d7cdac9a0a80809b6b4aef12fd96b994e2e01e05f90fe5843bb9a"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\include\\hyle\\io\\detail\\proactor.h",
+      "bytes": 27791,
+      "sha256": "f0a70581e15132e686c255bbbff738ea2788750eb8c3f9afb2749b845fe8ab21"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\include\\hyle\\io\\dns.h",
+      "bytes": 2702,
+      "sha256": "4d9ef11b85075476747bc380cc6a68b4f5043dc955e45645883e8ffaa5ccb04c"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\include\\hyle\\io\\endpoint.h",
+      "bytes": 3048,
+      "sha256": "c95e2daf18be56a1642ce590eed0a6671346c3205395c059d7145dd12864dd81"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\include\\hyle\\io\\file.h",
+      "bytes": 12742,
+      "sha256": "385736644f18017bcc0f84c46e5de86505104f2369b3035fbea27e3b8a1f1106"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\include\\hyle\\io\\io_context.h",
+      "bytes": 4472,
+      "sha256": "97447d869458169ac8aa92e98b9a5e77ce49233d87568ff329d82c760b9b6beb"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\include\\hyle\\io\\io_uring.h",
+      "bytes": 3482,
+      "sha256": "985672fb3aea8f22e4c2c76ba31e19dafd142822aea38b50d08f20f7e9f9732b"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\include\\hyle\\io\\local.h",
+      "bytes": 10437,
+      "sha256": "e2cd6019fb918a1559f2108b90dd16b972e9619efa3d78d56fe532773a27850a"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\include\\hyle\\io\\operation.h",
+      "bytes": 3620,
+      "sha256": "780ac4f2b61e2cf3d2bef2fa852e48b6b9789f6b156a1067599e385ca0d944d6"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\include\\hyle\\io\\signal.h",
+      "bytes": 2916,
+      "sha256": "c61e75cc31f6ff14a26b83d4e311d0cffb305449e1c50d958e78db0dc0068f24"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\include\\hyle\\io\\tcp.h",
+      "bytes": 18524,
+      "sha256": "dd2312d729e3a993ea73b4548ee67776c88f0717848302926837805df30f73c9"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\include\\hyle\\io\\udp.h",
+      "bytes": 7145,
+      "sha256": "db88bcb39425ef71e13a7657f1d4136c2da10b45c2b44d859d5e5c386edadb65"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\include\\hyle\\math\\scalar.h",
+      "bytes": 17828,
+      "sha256": "10ca4013013fafc5383310bb0128ce6f11f389e77c815648b8c48bb06a00210a"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\include\\hyle\\mem\\alignment.h",
+      "bytes": 3645,
+      "sha256": "3ae961e6556cf2a3e5e56f5de9c80db224c7a50a591ce998d81b347a8c4be9ae"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\include\\hyle\\mem\\allocator.h",
+      "bytes": 11717,
+      "sha256": "8beaac413632fdc4409c2384f1cda7d6d5e75b72aafad73d188e13dbfa50781a"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\include\\hyle\\mem\\arena.h",
+      "bytes": 347,
+      "sha256": "186d9f90620d9b81688c568cb0bcfc1fc0bef9e4a415ea6c99800822a6b7bc77"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\include\\hyle\\mem\\buffer.h",
+      "bytes": 19273,
+      "sha256": "346a4f810babb8c5dacba49faaf57903d998a3cbb49af12b8c62acc85f7be72c"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\include\\hyle\\mem\\buffer_pool.h",
+      "bytes": 4331,
+      "sha256": "b5bfcd6b861d2b54425c619097fdca65eb5ac6add7f0b443c815784c1e661951"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\include\\hyle\\mem\\fiber_stack.h",
+      "bytes": 5697,
+      "sha256": "d53e766fdac6fe9ee6fa3d0ba6b730f4fe9aa7d28c43a6d0cd60a0c5131bad30"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\include\\hyle\\mem\\fixed_pool.h",
+      "bytes": 23485,
+      "sha256": "1c7687075438c812a374c70df955c510cadc18498d62502fa063cb8b7bf4f828"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\include\\hyle\\mem\\growable_pool.h",
+      "bytes": 12352,
+      "sha256": "02f73b151d81f4e83d6be1a7929ffae6b9c24b5d6dfbbb63f25bad304e154f3b"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\include\\hyle\\mem\\heap.h",
+      "bytes": 2589,
+      "sha256": "a1bb4ea396d735d1de598e2d3656014066a80888a41aaf40c8f66a094a5cb2d2"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\include\\hyle\\mem\\large_mapping.h",
+      "bytes": 13526,
+      "sha256": "4431a447ac72eeea7ad7df59b9c5837c07afb8170f60cf85872d53aeb40ce8c1"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\include\\hyle\\mem\\large_page_reservation.h",
+      "bytes": 2094,
+      "sha256": "40bd1bf19d7582fca6a2af57c18cdc6b4d0045349bf8912c6d62b0845e9a0ffc"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\include\\hyle\\mem\\lifetime_plan.h",
+      "bytes": 7018,
+      "sha256": "72277c027d1b76a9c813bcfe7ef3420759274375f5647362ae915e8672bb3b1f"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\include\\hyle\\mem\\mapping.h",
+      "bytes": 7139,
+      "sha256": "98b1a1ea8c4d85eff4fb8ddeb0fd7a425e7619128c468ae29e11c5e3fbfd05c3"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\include\\hyle\\mem\\object_pool.h",
+      "bytes": 10517,
+      "sha256": "ddf1379e9dbcbe42f1dab99f3fcc28bac6af86e5dd6f3a818659b865a244a964"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\include\\hyle\\mem\\pmr.h",
+      "bytes": 5439,
+      "sha256": "bd3c370b8729b5d82eeb62fa86798f020b8ffe22afdbaef023acbe7105e9f38f"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\include\\hyle\\mem\\pool.h",
+      "bytes": 576,
+      "sha256": "092acd7e9799aafb99db7c9b3f8d484a609ccc8ad07852e4b49dc068feb7c112"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\include\\hyle\\mem\\pool_cache.h",
+      "bytes": 7232,
+      "sha256": "992b1684e2409aacb207dff234301a2a39fff9d6a2d4dc28dd02a086210eba91"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\include\\hyle\\mem\\pool_loan.h",
+      "bytes": 1601,
+      "sha256": "9ad610a96ad71f9ca9eb64241d57e60d036aed6ac939d36fd143a1c1e06fa8c0"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\include\\hyle\\mem\\quota_allocator.h",
+      "bytes": 7124,
+      "sha256": "a88fe230dc5358ddde6209de96cc61a59e3f6e60d30b9e7534e986fab10224c9"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\include\\hyle\\mem\\range_allocator.h",
+      "bytes": 4780,
+      "sha256": "ad1b8455a5f940a08e9877526c21feaa2dd19c0344dcad01bd1e423ac898c20c"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\include\\hyle\\mem\\region.h",
+      "bytes": 17710,
+      "sha256": "d2e83898337b974a8b70d8bdceff37d4644ef17eaa781a030420430813f64baf"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\include\\hyle\\mem\\resource.h",
+      "bytes": 7378,
+      "sha256": "3fc711a80803758b4a2cc573ffa5faee0703a7abf8ac3d45e248da257845d51e"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\include\\hyle\\mem\\shared_pool.h",
+      "bytes": 40019,
+      "sha256": "461e00d3021be144472781aba73ded3c271bf55e548f6ef3cb7cd7ff963e1649"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\include\\hyle\\mem\\stack_allocator.h",
+      "bytes": 4753,
+      "sha256": "dc64cfd68e49403d359fe96987c8f2c4c39891b2f4f2f7968f7a620a4eaff89c"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\include\\hyle\\mem\\stats.h",
+      "bytes": 11884,
+      "sha256": "aa52b5b04711711db64bb1b3bb770fe8118f4e436d95c929b8381e49a863a75c"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\include\\hyle\\mem\\std_allocator.h",
+      "bytes": 5150,
+      "sha256": "adee9ae71753fa27e001b7b71b1d57b61e14f7ebcfdea57bb3993d2a3e9550e4"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\include\\hyle\\mem\\system_inline.h",
+      "bytes": 8762,
+      "sha256": "d890fe66b1a83a5f1a8f2b22c368276e7b3fadcfd0946df5279692ce055164f1"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\include\\hyle\\mem\\visibility.h",
+      "bytes": 379,
+      "sha256": "c50f284339daa23058f71da43b99404a2c7cf523ccb350509c43b5b00cbcd76f"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\include\\hyle\\obs\\trace.h",
+      "bytes": 8554,
+      "sha256": "be0df49a044a0888d46c6c2411a292fdd04908b7bdc393557b87d68a70cf1f6f"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\include\\hyle\\platform\\cpu.h",
+      "bytes": 14870,
+      "sha256": "033953ef33ba5fd57c98af540818bb7c82b8189a4ca1e2502e3297dddde48342"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\include\\hyle\\platform\\cpu_convenience.h",
+      "bytes": 2201,
+      "sha256": "08bc95125239b63678d47571f6dd63e8059ad84af9dc09a0015e308906bbeaaf"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\include\\hyle\\platform\\dynlib.h",
+      "bytes": 3927,
+      "sha256": "39c8553b815e6af94377c7d9e911c6b03a38757e671d089509b74ff0fec54b3e"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\include\\hyle\\platform\\environment.h",
+      "bytes": 795,
+      "sha256": "4b28bf70cc14f979b9a6b5c9a05bf3d3778814354c2a02c45ab312b349b4a5e9"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\include\\hyle\\platform\\environment_convenience.h",
+      "bytes": 1298,
+      "sha256": "468efe77558862d8801936bb1a175621c969c3113321fde2fbd037c0efdff117"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\include\\hyle\\platform\\fs.h",
+      "bytes": 24891,
+      "sha256": "2af351149fc82762267b89303439ef71626a2eb541d1922ff6f66014136a9ffa"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\include\\hyle\\platform\\fs_convenience.h",
+      "bytes": 2094,
+      "sha256": "338f513e95c69c6c78b2d71f4f442d9905c11b72d3dcf9e10453ece014456385"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\include\\hyle\\platform\\fs_visibility.h",
+      "bytes": 237,
+      "sha256": "ab726b37038ea97cdd73ee48531ef78f4c9171cea6ce2c08bc643f7b85de6e8d"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\include\\hyle\\platform\\host_memory.h",
+      "bytes": 2915,
+      "sha256": "b190afc8630d8dd6a30d6b0b917338a150c5e4a52dfcb1ae1d85897208b72df1"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\include\\hyle\\platform\\numa.h",
+      "bytes": 8400,
+      "sha256": "e154f229dc7f6f5ceb1c44f20f769204b48bd422e57c5fed1e53c490607b8fde"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\include\\hyle\\platform\\process.h",
+      "bytes": 1281,
+      "sha256": "8f03d24953d964f8097be427616b7e40845f285a110e62a7d2ca24260c3f83c3"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\include\\hyle\\platform\\random.h",
+      "bytes": 481,
+      "sha256": "2d7157339e2c8f2a6db20d6f82a7d33e3464ab066f14b18b2ca8800acaae6b04"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\include\\hyle\\platform\\thread.h",
+      "bytes": 8423,
+      "sha256": "fe5d5dd5ff4a7190f9f9d98e5cbbf924a6d44ce62c30d257556b96ff6f711d1d"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\include\\hyle\\platform\\thread_convenience.h",
+      "bytes": 1260,
+      "sha256": "f0d0c6e5b5a7f0943bb35f26b5ecf1ef8c90eea7a98c227a70a60ce2d6ae2eda"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\include\\hyle\\platform\\thread_visibility.h",
+      "bytes": 253,
+      "sha256": "e81f90677f996179981bfd377cffa4fb5d439198afb813992f7a9881752aee87"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\include\\hyle\\platform\\virtual_memory.h",
+      "bytes": 10485,
+      "sha256": "1b01086d44f330a592a5d3b4946fb213e485095dce904db99bb71103e2a578b8"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\include\\hyle\\platform\\visibility.h",
+      "bytes": 225,
+      "sha256": "49b4328d0b32ba9d211f2ce49b7b9ffa217baeff20a4ab855f8ffb7f874a781b"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\include\\hyle\\platform\\wait.h",
+      "bytes": 4708,
+      "sha256": "460fa7b1cab2f50b65b37a3f738cf0065bb607cde34cabf975cecc6e88f8d61f"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\include\\hyle\\sched\\blocking.h",
+      "bytes": 11347,
+      "sha256": "470034ee8a224d651c9947fd7d4a0627b1b8b6a929d87dca19fda4df2d673c9d"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\include\\hyle\\sched\\bulk.h",
+      "bytes": 4043,
+      "sha256": "9db1afd12f5ba19e6a20a89f35d3283b8fea082536d064e15cfcf885cd073458"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\include\\hyle\\sched\\cancel.h",
+      "bytes": 4963,
+      "sha256": "11cd27341282367f7d366e7a802b09f0699c868903bdc5657ac59388b2a8b11e"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\include\\hyle\\sched\\coro.h",
+      "bytes": 11737,
+      "sha256": "8694732bb1a069fde73f0359399b13f893d41c6981800f05cd824b293d93df54"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\include\\hyle\\sched\\fiber.h",
+      "bytes": 12216,
+      "sha256": "906427614832e3653d3ca78913b7b4cb7ef357fa09a5ba475a7bc0f650386318"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\include\\hyle\\sched\\join.h",
+      "bytes": 33859,
+      "sha256": "ddff411dbf716c7fa1566ef115e8ddbe8ab010f8db701d82c6ccfee4077f8df4"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\include\\hyle\\sched\\priority.h",
+      "bytes": 1391,
+      "sha256": "2e86acbc6a9f8b7d80a9692682be4eca2340f132aacec76b3456a90f2d9aee1e"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\include\\hyle\\sched\\scheduler.h",
+      "bytes": 20666,
+      "sha256": "38a0dd5081479ddb3dc41b149be84bbedb8928cfbf67d9bf6b38f8ccf9354c5b"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\include\\hyle\\sched\\sync.h",
+      "bytes": 78297,
+      "sha256": "dfcc2c05e0205a22ce42634643aec65ccf85eda7fccae40c7a353fb6ed1d56d5"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\include\\hyle\\sched\\task_scope.h",
+      "bytes": 15510,
+      "sha256": "0cf2d97ee6b9578e3b95e2126cdd90f47c35c83018722cb8f394bcebb1ca0bdd"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\include\\hyle\\sched\\timer.h",
+      "bytes": 3816,
+      "sha256": "29c47e9eb3da00c19f9620d64c5cb572d6397b3625eab79ed75d7a16f8fe46c3"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\include\\hyle\\sched\\waker.h",
+      "bytes": 3544,
+      "sha256": "cc89173f57dd37373899ad0955c37c203108fa2ff0932136f3451d657db2d0d7"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\include\\hyle\\simd\\bitpack.h",
+      "bytes": 5615,
+      "sha256": "0f097b727d8989a7f0bdb9cf3dcfa6bdb7618164bacf851f9fd75e93b164ea90"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\include\\hyle\\simd\\dtype.h",
+      "bytes": 12213,
+      "sha256": "ef351c21ddf58309cd1bca6c7558862eb10fd53934194065e3a9d7d62f590ae8"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\include\\hyle\\simd\\dtype_ops.h",
+      "bytes": 2711,
+      "sha256": "67f53a3095f2a27fda8445c378d3154385fba06a70b28408cb082be333d8a822"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\include\\hyle\\simd\\fat_kernel.h",
+      "bytes": 5233,
+      "sha256": "82ebf7c6ab617b67bd18f2d2544f12c1900abe233d720fbb8423a0b1ff3dd989"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\include\\hyle\\simd\\math.h",
+      "bytes": 24767,
+      "sha256": "fbc4f22a4bd329c37fdb7cf08b6be2f56ba24cb1fbe2781bd1babf11c5c50dd6"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\include\\hyle\\simd\\narrow_ops.h",
+      "bytes": 3404,
+      "sha256": "98f9b01e898fc2f38deb0951e2f6c771ccb00c17e1882749ab1d9ab0a4df2298"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\include\\hyle\\simd\\ops.h",
+      "bytes": 5114,
+      "sha256": "7ca600d232b2dfcf0b0b3143678818a250d8aba2216febaee0438e1b94c1fd45"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\include\\hyle\\simd\\random.h",
+      "bytes": 5292,
+      "sha256": "b258ce03e1687fffbb898efdc0be62ec1883344b7399248d22484a31583655f3"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\include\\hyle\\simd\\runtime.h",
+      "bytes": 1481,
+      "sha256": "9bce97120633ed2b1b9e17e040a8b8726ab3800ffb8c9d63d9c13ffaedb7e166"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\include\\hyle\\simd\\scan.h",
+      "bytes": 2156,
+      "sha256": "c3712705333942794196603254345f9b8860e7398d64fb497aebf33c543eaa57"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\include\\hyle\\simd\\search.h",
+      "bytes": 2790,
+      "sha256": "b1a753bcddefeb3a6dbe74e821be15f80f094777a3ce84a00464e59bb3878ff2"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\include\\hyle\\simd\\sort.h",
+      "bytes": 12596,
+      "sha256": "5d3b5cd320fef2e6922e6ca7b68a52adcf7895828aa2e96bdb521ecc9396005a"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\include\\hyle\\simd\\target.h",
+      "bytes": 2812,
+      "sha256": "c6f6b7e3b4f9b1cca02b3957d4d0ff59e352c0da791c08aa16b5442e6c6e22b8"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\include\\hyle\\simd\\types.h",
+      "bytes": 1658,
+      "sha256": "e79863029c8036f918f36f93dd0267b8d42857516e0d74678584d75f8926abbd"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\include\\hyle\\simd\\visibility.h",
+      "bytes": 209,
+      "sha256": "e6220681c938d0b898165975736f412d3025050e10597b57f62ee7b49799eb03"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\include\\hyle\\time\\clock.h",
+      "bytes": 30827,
+      "sha256": "78febfa3783722c360f4ad548b7b28c750296666c7897434918d8489a3a47f4e"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\include\\hyle\\time\\common_timeout_queue.h",
+      "bytes": 9866,
+      "sha256": "cc74aaf465f7965bd913f32225a0c0ee5dd3bf2aa012406b246cf86a0698d3a7"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\include\\hyle\\time\\native_interop.h",
+      "bytes": 1913,
+      "sha256": "b435bd3f7ba07dbf575dc0de837e959f854aa369df6b5f0d136bcbc855cd2ddf"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\include\\hyle\\time\\timer_entry.h",
+      "bytes": 3392,
+      "sha256": "7c4e58dc71513648edeeaf2e3eda9d1b2126356054332ac911c6b2a9743bfa83"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\include\\hyle\\time\\timer_queue.h",
+      "bytes": 11347,
+      "sha256": "c902b7e6ce94409f47a09568ec0bff309ffae8059e6b8253a6c0cb94c4d79330"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\include\\hyle\\time\\unix_timestamp.h",
+      "bytes": 11791,
+      "sha256": "bcd6bdc860d6ee1e73004ebd15e3b2b2a60ca3dff7a0818deecf9420f95b4496"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\include\\hyle\\util\\borrow.h",
+      "bytes": 2417,
+      "sha256": "c8940170d33e227c0861fafa63334502b00fa78cf86a808777d2555c0ab20cac"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\include\\hyle\\util\\function_ref.h",
+      "bytes": 19444,
+      "sha256": "e06e706944fd0a6a05ff21f3abd863ca47595775c8cdaf454f1182545643e304"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\include\\hyle\\util\\random.h",
+      "bytes": 12750,
+      "sha256": "28463daa826c69f453b5a9f2081b174002bcccc58394cb5833fdfe92757425df"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\include\\hyle\\util\\ref_counted.h",
+      "bytes": 15931,
+      "sha256": "47cc650a3bb704ace90bd718fc3e8f0b9d10485a32009551e3e7f456d9f5b5d6"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\include\\hyle\\util\\scope_guard.h",
+      "bytes": 7381,
+      "sha256": "eec76c62b7b3035c978182a31405e145e3cd1c9faa4ee3f15d04e4bf91cdc13d"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\include\\hyle\\util\\spin_lock.h",
+      "bytes": 4393,
+      "sha256": "2de2d1d1718fdd07a46335fdda7f61bbf2b84f214a9f3ccbc661707141095fce"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\include\\hyle\\util\\type_name.h",
+      "bytes": 3282,
+      "sha256": "ff992e70082c80d595b024a73d7e1d9470b1e779c6c2529937c01a924d71a066"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\include\\hyle\\util\\unique_resource.h",
+      "bytes": 11625,
+      "sha256": "4a10bf96cef94563c068c4d06b194b20efbfdf19b468681375d148d8f685f4e4"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\include\\hyle\\version.h",
+      "bytes": 1322,
+      "sha256": "eb910c915e9ea9bf52c69d0e1cd7fef16dba76bac8916cf42b895c92b7fa6dea"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\include\\hyle\\visibility.h",
+      "bytes": 638,
+      "sha256": "c6207853e7c4c90bdc9ebde3157581eb88b4a59c6e3be87e7aecfafd35da7165"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\lib\\dnnl.lib",
+      "bytes": 835133530,
+      "sha256": "e1120ab3c4bf88a39965bb305b67b32087a6858a72bc34227dffbaaab0d02781"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\lib\\flatcc_parsing.lib",
+      "bytes": 44074,
+      "sha256": "06b105cae60c0786ab26b8b099423d8c50df86dd36d038592eb96c78907da148"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\lib\\ggml-base.lib",
+      "bytes": 5581940,
+      "sha256": "1da4799ead75b616dfe035ebbe157a7f6ce5376462c030f3fef4c3c01c9b264e"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\lib\\ggml-cpu.lib",
+      "bytes": 3046330,
+      "sha256": "82d9cd59088635851185625fda75ac4057b9fc77ad6be7afd191d24652b967d9"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\lib\\ggml-vulkan.lib",
+      "bytes": 52581296,
+      "sha256": "519ec0a79ac67b92c5c830656129d7ad7731c40527aa0aa4a1cba21fb6cdaeda"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\lib\\ggml.lib",
+      "bytes": 651496,
+      "sha256": "18ce806c9db55b0b08add138386f0a53088b4eb1fa51d3e2c7c8f2ee6a2447ff"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\lib\\hyle_compute.lib",
+      "bytes": 4634868,
+      "sha256": "e31857c93343c5ec9ebd2e2ad99fb01e4682ba4fb36e8fd1ff5539424af1cba7"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\lib\\hyle_compute_backend_cpu.lib",
+      "bytes": 82904,
+      "sha256": "8dea0cc4b6b34910f18ddef728ad3d84bc0400e4a0908e59ad749882495da367"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\lib\\hyle_compute_batch.lib",
+      "bytes": 2710572,
+      "sha256": "30ac4e8265976235d41a72009ec725d306a2d76c7dfd5768cde6746c9ae1f7bd"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\lib\\hyle_compute_ggml_runtime.lib",
+      "bytes": 158534,
+      "sha256": "77550c6fe1f73e8b2a014d61620ce7ac3dbe3f38e6a9cbe866991039fbb7f0e6"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\lib\\hyle_compute_ops.lib",
+      "bytes": 858766,
+      "sha256": "b843adf3f0e147e1e6f9b42b472db1ca041d65e8d08ac5c675dd867a23f27f52"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\lib\\hyle_compute_provider_ggml.lib",
+      "bytes": 2030652,
+      "sha256": "4500311db3c03912c43e4ebf1eb52df741e869d8f14f32576f046f3da83b0513"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\lib\\hyle_compute_provider_ggml_vulkan.lib",
+      "bytes": 1374074,
+      "sha256": "564088a47f13266a91b6bdc3662317517426d473279d77c33203f4bd160da9b4"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\lib\\hyle_compute_provider_iree_vulkan.lib",
+      "bytes": 1417862,
+      "sha256": "092848d55d09fe9202ef3a53fd044561b736bcb9eab02478b98cfd5819989afe"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\lib\\hyle_compute_provider_native.lib",
+      "bytes": 5027482,
+      "sha256": "63d8cdb66b4fc8cc0c929f8c7d64550e3e886d931f69629ace336f5e190e32b3"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\lib\\hyle_compute_provider_onednn.lib",
+      "bytes": 548188,
+      "sha256": "bfb8657755f034ffb3cac542e3efe6c43263007ecf7a7a8af217a2ddf714ba75"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\lib\\hyle_compute_route_cpu.lib",
+      "bytes": 650368,
+      "sha256": "a0489d8206be7e01a458eae78ebc75877b54b1a61b823260b60008460a6168e4"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\lib\\hyle_compute_route_vulkan.lib",
+      "bytes": 14754558,
+      "sha256": "82eed5f04d785f89f3efc75582008c0543cf026074be2bce318a18574ec3f717"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\lib\\hyle_compute_state.lib",
+      "bytes": 811538,
+      "sha256": "de66b8497f4a4ab28a8f20a0a738cc3129445170c0c80446c691f995bdf53055"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\lib\\hyle_compute_stream.lib",
+      "bytes": 1188304,
+      "sha256": "c5ba0e60e491cd5b1630225e285a19680821ee57795b18a9fa583eb2227b7be1"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\lib\\hyle_container.lib",
+      "bytes": 300842,
+      "sha256": "a669077dd2928451d6c657f1c8969d5982ffb2f0e03dc497ebb5eec82262f372"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\lib\\hyle_error.lib",
+      "bytes": 136928,
+      "sha256": "291a2973b001cdc143a2da7d1f4f61b8f8b9846350c94e2d3a63b79051e83fe4"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\lib\\hyle_graph.lib",
+      "bytes": 5975326,
+      "sha256": "07468b2d7151a61f56fed8ee375b42116699f82a53bf53ac6db782572d4c31ed"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\lib\\hyle_graph_batch.lib",
+      "bytes": 1449646,
+      "sha256": "8b94f13a00acfbfc06170a75d20ad6797a0a8d9fc277e0a81c9e071051864523"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\lib\\hyle_graph_provider_onednn.lib",
+      "bytes": 286142,
+      "sha256": "d93b402acd938d0a5ff826a5b263f8a8a62de86c501301c7abca9e5281475b72"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\lib\\hyle_graph_route_cpu.lib",
+      "bytes": 516180,
+      "sha256": "6d7ff98edcb67150998e2cee9c19d3d5ded40e4925c966a9d20d262e98055787"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\lib\\hyle_graph_route_cpu_vulkan.lib",
+      "bytes": 3891598,
+      "sha256": "eef925644f515a224823d0a22a2d6b6462517dc531b488ede31076ed51ef6434"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\lib\\hyle_graph_route_vulkan.lib",
+      "bytes": 889368,
+      "sha256": "13c982dfbdbb165a9a61eb690d2245f205d37d97bed6248be1e101a0ef03f5a1"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\lib\\hyle_io_core.lib",
+      "bytes": 2239788,
+      "sha256": "123e32de09154be0278898c070fd028806848d24fcc11f9df4afdb66c5e1d689"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\lib\\hyle_mem.lib",
+      "bytes": 1280586,
+      "sha256": "8345444d44a55b7cbecf14374657b21e2e6de06a3561675a5b28c214dafe975c"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\lib\\hyle_mem_vm.lib",
+      "bytes": 332698,
+      "sha256": "f321437dc3363fe94d5ebe34c8022f6611276e9b25bd0d80cf0bf5476665ab9c"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\lib\\hyle_platform.lib",
+      "bytes": 763974,
+      "sha256": "0eb5cc55a27b371e82f5c00af3371461c10eb150cca40e106e828bde8e7ba4d7"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\lib\\hyle_platform_fs.lib",
+      "bytes": 286788,
+      "sha256": "bca2c6684f016c616ed26c0c14520e05c8b2ed549d110d48758e42046fb3aab0"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\lib\\hyle_platform_thread.lib",
+      "bytes": 119680,
+      "sha256": "3cb6d031b78c9e0d981f0eab4e2aa4c4b9094c6c8cbfdf77bc623e9f9c7be6b7"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\lib\\hyle_sched.lib",
+      "bytes": 1643718,
+      "sha256": "6f458568a76530dc118ed666dcaec30eaa5e7afc7eb8cf8c11cf8203ea5beaf5"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\lib\\hyle_simd.lib",
+      "bytes": 27179272,
+      "sha256": "523993764b72d4887e572f720ca6b99f3ba236abb22b55b5aa9d523de90c8f5e"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\lib\\hyle_time.lib",
+      "bytes": 113562,
+      "sha256": "ae1bc6ca829835289cfd16eb7224517ce5487fe7a10958f3a65159752c0e2004"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\lib\\iree_runtime_unified.lib",
+      "bytes": 4923462,
+      "sha256": "9e90328e5316443d962bbeb3a84002e96bbc8e814ffa3c4c672387775b00c9aa"
+    },
+    {
+      "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated\\lib\\mimalloc_static.lib",
+      "bytes": 989646,
+      "sha256": "97e7a77064fb2c1ec0fa4f06b70c448dfa8218352515bc0e9c33060aa30eb122"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g09-av-debug-1\\run\\offline-verdict.json",
+      "bytes": 1114,
+      "sha256": "7dabd120aa0bf477f9ebb97cc8f2b3babc564b35ccb5d5a3876aba0afcf2bff3"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g09-completion-observation-25\\admin-retry-delta-proof.json",
+      "bytes": 643,
+      "sha256": "264579610e714cb74562c4ff8b9596a8b1a967a52ce0493a5d6e74df349a5273"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g09-completion-observation-25\\admin-retry-host.json",
+      "bytes": 316,
+      "sha256": "3cf1ef0deace6cf8af4e7b8d34508dfb6b21f61a374777037480757450374b32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g09-completion-observation-25\\artifact-binding.json",
+      "bytes": 41981,
+      "sha256": "1649b8c8480fdc222fc4f9df1956f9ef222cda2f03721cddd9f72358fd8500a1"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g09-completion-observation-25\\artifact-logs\\g09_observed_1.dll-dependents.log",
+      "bytes": 859,
+      "sha256": "b10862f17e71d7f2354de50e9f4ace8f7435dc5a4581875b8b5bc5f24722b4fc"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g09-completion-observation-25\\artifact-logs\\g09_observed_1.dll-exports.log",
+      "bytes": 8869,
+      "sha256": "933ea033f4af7fb89cc9c6536243f2bb0d4b9518aa78b65e46d878e33f4efccb"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g09-completion-observation-25\\artifact-logs\\g09_observed_1.dll-headers.log",
+      "bytes": 5964,
+      "sha256": "689cd401cde25776d56e895be0af075b85e56e8ba2d8ba86e74557a36db8401f"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g09-completion-observation-25\\artifact-logs\\g09_observed_1.dll-imports.log",
+      "bytes": 44469,
+      "sha256": "31f0c5c84fbbe2ae66f53277c1e115e0f5c21069dd089b7393569b14bb34c256"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g09-completion-observation-25\\artifact-logs\\g09_observed_2.dll-dependents.log",
+      "bytes": 859,
+      "sha256": "bd75c69fa3995bf1dbbbe5260a9a572b60ca602db7567d433c82396841d247a0"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g09-completion-observation-25\\artifact-logs\\g09_observed_2.dll-exports.log",
+      "bytes": 8869,
+      "sha256": "456868738dc04038790ec9b0600877f5546d9308310d6914af9e8a9ed2aa8c8b"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g09-completion-observation-25\\artifact-logs\\g09_observed_2.dll-headers.log",
+      "bytes": 5964,
+      "sha256": "b8daa06e0a708379e6a138f709b3d41180f17588fdbf39b48559eca8a74482da"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g09-completion-observation-25\\artifact-logs\\g09_observed_2.dll-imports.log",
+      "bytes": 44469,
+      "sha256": "1dd2f2f28dc42492418304176de8908289743bdfd636770712777523a46cfaeb"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g09-completion-observation-25\\artifact-logs\\g09_observed_driver.exe-dependents.log",
+      "bytes": 724,
+      "sha256": "ba2518b5db8c505bc0f9c75cb971ba2bfa22359ad34c1dccb4e30d8795a4897b"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g09-completion-observation-25\\artifact-logs\\g09_observed_driver.exe-exports.log",
+      "bytes": 249,
+      "sha256": "e62895729d60121aa8ad7f479acae728c8fa5560f660879db9036b0fb5d6c092"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g09-completion-observation-25\\artifact-logs\\g09_observed_driver.exe-headers.log",
+      "bytes": 5560,
+      "sha256": "b03ca60014e89358fe2ea396a51c9e52c398c1c1ffc69a2e3cf8b89b904930eb"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g09-completion-observation-25\\artifact-logs\\g09_observed_driver.exe-imports.log",
+      "bytes": 16093,
+      "sha256": "123fa5ce5f03b5704ba82370f8bf1581e0ed928f359ed5c6ff2c54feba8f75ef"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g09-completion-observation-25\\build-logs\\build.log",
+      "bytes": 824,
+      "sha256": "6cccbe847f736d9697d2ac4bf991b984676f727330fda4beb16c5e52d76e0639"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g09-completion-observation-25\\build-logs\\configure.log",
+      "bytes": 1186,
+      "sha256": "a663a8d62da479c81f31c93bd83e9964a81ad21badc854b8899b148f32e9f4be"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g09-completion-observation-25\\build-logs\\dry-run.log",
+      "bytes": 540,
+      "sha256": "f14202ad6829f37889b184c8b6388514ffb7590c1c476f936680ac009e95fb96"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g09-completion-observation-25\\build-logs\\g09_observed_1.map",
+      "bytes": 29657020,
+      "sha256": "757503c26bca7c16dbcfb7cdbe107f18dc2b6b49de4a6c383b3663bc144f5153"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g09-completion-observation-25\\build-logs\\g09_observed_2.map",
+      "bytes": 29657021,
+      "sha256": "6d2f38e8b980ad2303b947171eee8cab4e02616c99e78d06b4c9a539220dc422"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g09-completion-observation-25\\build-result.json",
+      "bytes": 4072,
+      "sha256": "5f61416341d074ebdd075e6c8e43bb5de7ecf67a221b8eac2265515ba3050bb6"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g09-completion-observation-25\\handoff-triage-interpretation.json",
+      "bytes": 545,
+      "sha256": "e5cee0342a654f959e7c23f001239b3b60995769aad357f4a191a94d3aaa12ca"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g09-completion-observation-25\\individual-decoder-regression.json",
+      "bytes": 410,
+      "sha256": "ec29f5a9e044baa2ad511e7e3c81ae5f9dd59888c406028d4c3f66ee8a8c6af7"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g09-completion-observation-25\\nsys-procdump-authorization.json",
+      "bytes": 98065,
+      "sha256": "b01fbc5f30e03eca7c11450691bb29ed2e7f8ae60f0a3a3517de6406d7c61bc9"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g09-completion-observation-25\\observation-authorization.json",
+      "bytes": 91881,
+      "sha256": "f4086ce05d31e43d74cb6cc3a5a3985cbc6fc1f265ed2d8e927eeba9052403fc"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g09-completion-observation-25\\run-admin-retry-1\\result.json",
+      "bytes": 4387,
+      "sha256": "709a13dd00be30840ed0fdcf3053b484479a81b1507e9f813def91a213af62f5"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g09-completion-observation-25\\run-nsys-procdump-1\\dbgeng-stack.log",
+      "bytes": 7719,
+      "sha256": "702c3e565f9f6bf51e0c64c5c310c0adb8523d8c165e3fe426c573b2a5e01131"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g09-completion-observation-25\\run-nsys-procdump-1\\fault-driver-identity.json",
+      "bytes": 753,
+      "sha256": "ac523c274215de73e194fffedbb53a16081591961c23521914293ec18d5d8630"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g09-completion-observation-25\\run-nsys-procdump-1\\handoff-submit-structure.json",
+      "bytes": 1315,
+      "sha256": "b495f54bd5fd8651645a549a27b0bb3dd44d4408a1fbf1d7d89c8081ae35e262"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g09-completion-observation-25\\run-nsys-procdump-1\\hyle-stack-map.json",
+      "bytes": 3094,
+      "sha256": "21dcc44d595c6c31d18a762992d89033c5d03c78e10352b78ae5efe98b6e0c93"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g09-completion-observation-25\\run-nsys-procdump-1\\submit-transfer-disassembly.txt",
+      "bytes": 8384,
+      "sha256": "92848f3dcd77b128b968a92a131515e4f32bb2b5d5fce85277df13dd6feb79c3"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g09-completion-observation-25\\run\\profile.log",
+      "bytes": 101,
+      "sha256": "f0a814732594f59aacd2233bd507e864d54f731794499d555cda9e8f4344b8bb"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g09-completion-observation-25\\run\\result.json",
+      "bytes": 3913,
+      "sha256": "a2545b0a42e21c65cdab7bde423e8eefefbd501fd34799d3cf95deca52713263"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g09-completion-observation-25\\source-manifest.json",
+      "bytes": 3024,
+      "sha256": "742a0ef719e64baad3725db455a7b2ffbbcf86617bb3160132131cd03721379f"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g09-completion-observation-25\\source-proof.json",
+      "bytes": 1922,
+      "sha256": "0d18211ec68b16e9d511ddbbfdb7f5fd929a0a4149e0668e8b86f950ff9173fa"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g09-completion-observation-25\\source\\CMakeLists.txt",
+      "bytes": 2228,
+      "sha256": "016e5cccd8db233e8b771ca849060255e33cdd6afd5d2c6e7bd93ff0379b5049"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g09-completion-observation-25\\source\\driver.cc",
+      "bytes": 11711,
+      "sha256": "b6bd560850e4fd1e5d094fe43c18cbe6500d4eaf1dc866437d3f26227ea457c9"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g09-completion-observation-25\\source\\facade.cc",
+      "bytes": 13808,
+      "sha256": "673729edffeb93c4d51cd5b8dc5e88c0e3cfe5bca17055aa0efd5c5725181bbf"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g09-completion-observation-25\\source\\facade_api.h",
+      "bytes": 905,
+      "sha256": "3733fe1dd21f5822a06793ece597d805f29828d180810e9696b20335dddd3155"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g09-completion-observation-25\\source\\invocation.cc",
+      "bytes": 61046,
+      "sha256": "beb735311c470bdd0ed326506d1a07d8c69d9b02ea2cbe6789fd8996b32f19eb"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g09-completion-observation-25\\source\\recorder.h",
+      "bytes": 2454,
+      "sha256": "8c00345352f56d1f0e2fb0511df92b9611dddf2020e7a14bea0c7834b2078738"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g09-completion-observation-25\\source\\wrapper.cc",
+      "bytes": 2142,
+      "sha256": "ee59a3d9d8721bfb46b084838d8712b0bbd20e79a7b299e286e3f1748fda11ef"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g09-handoff-capture-review-27.json",
+      "bytes": 17377,
+      "sha256": "a2fa73b2bafee014f4ec8a042e518f4a82e43f08b4d308a3939864f85296fe66"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g09-individual-launcher-review-27.json",
+      "bytes": 7213,
+      "sha256": "188f1e6a4c6f1662175329ef89a8353ebb78dc31856719251dceb429ac469936"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g09-nsys-export-help-24.txt",
+      "bytes": 12169,
+      "sha256": "35523923c7dd0e634d65f72e894636ac97af6ef79360f3e82741bca9533b0e75"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g09-nsys-profile-help-24.txt",
+      "bytes": 25570,
+      "sha256": "a743dc0d78bf222294b8b94e853542d3f159711abb49d66777baa0ff4e5df4b5"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g09_add_observation_driver.py",
+      "bytes": 3265,
+      "sha256": "d5a188dcbf2605c1a2a14273b20ad2f313dde64a53460beaf16b75e47b8bc8c9"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g09_build_completion_observation.py",
+      "bytes": 5881,
+      "sha256": "f1500a3e2b562732d8ee67dd2b1e0e73250404647f8ea9a097c8e8f80487d91f"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g09_capture_individual.py",
+      "bytes": 13543,
+      "sha256": "a3b7ea9596f49c21bfa6646895f2856d5e168acffea3bc6c907bcfffe8061de8"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g09_capture_nsys_procdump.py",
+      "bytes": 5625,
+      "sha256": "4da946241ba735bc83e77c0a506d3fd09e343ea509bfddc1bb42804b652a2eb1"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g09_capture_wer_crash.py",
+      "bytes": 4885,
+      "sha256": "61e6b172cfa114fe883e71bc8e91f62882162950eeca86633c3b7078a9c9835a"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g09_check_observation_source.py",
+      "bytes": 3859,
+      "sha256": "b05cf1a915b95c1449da2ef20e70aa812fbc9f3011e08008081079215821707b"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g09_debug_original_observation.py",
+      "bytes": 6247,
+      "sha256": "c34e42197cd70da9e578870b25cd4775ac794ea7f66805797eb4dc6a923d9760"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g09_fix_observation_draft.py",
+      "bytes": 2283,
+      "sha256": "971ce3d7a5d94c9814137f14072b6621c1df634fb0de0995db9000d330ea4d63"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g09_inspect_observation_artifacts.py",
+      "bytes": 3386,
+      "sha256": "11ca59eeeaf16cb7d635688c2952bfd5ac8c5ab136ce650fee56345c1f396bb1"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g09_prepare_completion_observation.py",
+      "bytes": 9270,
+      "sha256": "3b6d0e5d41149ef2afe2deb82867d084bb934dd34c70ba2985299ae3c7cfc42a"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g09_run_completion_observation.py",
+      "bytes": 9418,
+      "sha256": "9219abce6f522b8ca70aed525d78975cfc77f0fd30091b72f17f545d15d43ef3"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g09_run_completion_observation_admin_retry.py",
+      "bytes": 9679,
+      "sha256": "8bfbfac9e025b3d60e5efd4509c142c3717e570013f8fb8be5b727dc59a22696"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g09_run_completion_observation_wer.py",
+      "bytes": 9685,
+      "sha256": "6be1c632812c3e5dc4f0ad67b6a5a276ac39e3ec725541ff7e6b3522de9b75e0"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g09_seal_completion_observation.py",
+      "bytes": 5406,
+      "sha256": "38348e3338dee3ff22d963244b647a8f285b3f2e37d462570784ab2f9ebff7c1"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g09_seal_completion_observation_retry.py",
+      "bytes": 3966,
+      "sha256": "97b625367a5c353db90754b0335a52d368cd135f6addf1549b32a96aa9214c11"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g09_seal_individual.py",
+      "bytes": 6473,
+      "sha256": "a0c9a4cce364a78baed302c9ca0e99517693da39568468a81b73e1e7a9a50c48"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\docs\\implementation\\tasks\\graph\\inference-g09-joint-pipeline.md",
+      "bytes": 50370,
+      "sha256": "88ba8d35ba282113f4fa0e2f87a7db6e7981266e02a7a0044761e57c1fca8865"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\docs\\implementation\\tasks\\tooling\\inference-g09-native-workload-aa.md",
+      "bytes": 25011,
+      "sha256": "8ff4bc4d07c7c9d7443ef483e1677a255e1265a96b0d22a3a5cc487bfe7dff84"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\evidence\\architecture\\inference-g09-completion-observation\\24.json",
+      "bytes": 28223,
+      "sha256": "fb3e0c071bc1ee5397e95e0804bbb7a0c91c45420be24fcc85c9c69a6d986bde"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\evidence\\architecture\\inference-g09-completion-observation\\25-source.json",
+      "bytes": 13104,
+      "sha256": "299df5e54c70a761b80f0df3374f7c199a4b305ae3fd68dd0b0679a39ef9e1b0"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\evidence\\architecture\\inference-g09-completion-observation\\25.json",
+      "bytes": 24970,
+      "sha256": "86f1ce9691204a2ca9efbcdaa5d06af497cc66b0b96e0953477c3f37faf37f6e"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\evidence\\architecture\\inference-g09-completion-observation\\27-launcher.json",
+      "bytes": 7213,
+      "sha256": "188f1e6a4c6f1662175329ef89a8353ebb78dc31856719251dceb429ac469936"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\evidence\\architecture\\inference-g09-completion-observation\\27.json",
+      "bytes": 17377,
+      "sha256": "a2fa73b2bafee014f4ec8a042e518f4a82e43f08b4d308a3939864f85296fe66"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\evidence\\architecture\\inference-g09-completion-observation\\direct-debug-raw.zip",
+      "bytes": 165468,
+      "sha256": "c3ecc27c1bf1d89fe1ce8594eb3ee247f91135e6e7e61c1df4721863580cbc5e"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\evidence\\architecture\\inference-g09-completion-observation\\direct-debug-receipt.json",
+      "bytes": 3978,
+      "sha256": "bac3e6693d6159255f26338f6f57f0410fa4ac9a00daf13ec08c748ce0f04d92"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\evidence\\architecture\\inference-g09-completion-observation\\direct-debug-source.zip",
+      "bytes": 19179,
+      "sha256": "d701edf292584be7620ee445a3dc5595a4de26abaf6e56bc783327d04b970b11"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\evidence\\architecture\\inference-g09-completion-observation\\individual-source.zip",
+      "bytes": 57200,
+      "sha256": "9b7060691e34981e2b62d5bbef732a49ad6fbe03c1823404c40314b905e08547"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\evidence\\architecture\\inference-g09-completion-observation\\nsys-procdump-source.zip",
+      "bytes": 12752,
+      "sha256": "290ea86168fea45b966cc1b83eacec129a19de23348d7c70e8896f285af37728"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\evidence\\architecture\\inference-g09-completion-observation\\pre-run.zip",
+      "bytes": 4663266,
+      "sha256": "f988d9a1acdbd54565dc64bc8ec0aaa6d98eb53b6cec24431cbf4c1a1c4e7abd"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\evidence\\architecture\\inference-g09-completion-observation\\raw.zip",
+      "bytes": 1772,
+      "sha256": "279d64ca3b088c5338c9ed99a38e794d13756b2615a72f546d5b90dd1a8303e1"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\evidence\\architecture\\inference-g09-completion-observation\\receipt.json",
+      "bytes": 15790,
+      "sha256": "00c7a2350c43a0d2e8242a3778644053d3a5f9bd9914967caf71329b67c40ebf"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\evidence\\architecture\\inference-g09-completion-observation\\retry-raw.zip",
+      "bytes": 191813,
+      "sha256": "c24526acb9b26414469f979c79a1d61020b41507b5d3ee2bf6625d9cd275b9cf"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\evidence\\architecture\\inference-g09-completion-observation\\retry-source.zip",
+      "bytes": 50275,
+      "sha256": "6a8a344226b7e156bc7dbcdfa860ca8e6b75f74b4034430fab4ef196a7f813df"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\evidence\\architecture\\inference-g09-completion-observation\\source.zip",
+      "bytes": 82923,
+      "sha256": "e89ad1e62415d08d9a9ec8defef99c4cc470c5101a46660528dd43af1dba52be"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\evidence\\architecture\\inference-g09-completion-observation\\wer-crash-raw.zip",
+      "bytes": 175941,
+      "sha256": "0a1e201ef12583c3e1f09df4d6a9998d438348cfdcca512b20ecdc83a411350a"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\evidence\\architecture\\inference-g09-completion-observation\\wer-receipt.json",
+      "bytes": 7821,
+      "sha256": "9ebe27153a9f14c36deb33e9a5886e300e1049d731aaa091a0d268e1096dcd22"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\evidence\\architecture\\inference-g09-completion-observation\\wer-scope-source.zip",
+      "bytes": 37327,
+      "sha256": "ebab7308f5b9b86ebb3c3614f193996326e96bd297713ee807f962c27b1a4064"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\evidence\\architecture\\inference-g09-p1-instrument-attempt\\receipt.json",
+      "bytes": 85384,
+      "sha256": "0eaf29dcc6e661c46af7bc7715937c80768c7a144258a667833281f811ae07df"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\sched\\scheduler.h",
+      "bytes": 20666,
+      "sha256": "38a0dd5081479ddb3dc41b149be84bbedb8928cfbf67d9bf6b38f8ccf9354c5b"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\src\\sched\\scheduler.cc",
+      "bytes": 104090,
+      "sha256": "c774348a896f24ce7194223a97d42d5b2bffb1f7832b5701b89386895be7c47c"
+    }
+  ]
+}
