@@ -20,6 +20,10 @@
 | TaskScope读写状态布局 | [私有State](../../../src/sched/task_scope.cc) 的cancel token与admission写入共用cache line；32-child消费者当前复现小输 | 已分隔control字段。scope-only绝对时间有改善信号，代价为本机每scope冷状态增加48 B；31项测试通过，未直接测硬件cache事件或跨平台收益 |
 | BlockingPool每次受理扫描所有线程 | [reap_retired](../../../src/sched/blocking.cc) 即使没有退休记录也扫描所有保留句柄，每次submit均付O(live threads)查找 | 同锁下以现有存活数/句柄数跳过无退休扫描，无新增状态；18项测试通过。32 busy-worker同工提交两对约46.5/50.6→43.7/44.5 ns，见下；不是round-trip或外部排名 |
 | ConcurrentHashMap erase重复hash | [erase](../../../include/hyle/container/concurrent_hash_map.h) 先hash选shard，再由table.erase重算同key | 复用私有prehashed路径，锁/回收/析构顺序不变。计数2→1；长key形状两对改善与AA漂移见下，不声称外部赢 |
+| CPU / Vulkan Concat重复复制前缀 | 两个provider仍线性拼接；CPU保留全部中间payload，Vulkan虽有gallocr复用，复制工作仍为二次项 | 已移植平衡树，保持各自dtype/stride受理域；CPU修正重复ports元数据预算。实测与空间边界见下 |
+| FlatHash近满rolling churn反复重建 | [grow](../../../include/hyle/container/detail/flat_hash_table.h) 在7/8负载附近反复同容量rehash，清理后几乎没有插入余量 | 自动增长/prepare改为密集时加倍、稀疏时清理；显式reserve合同不变。工作量计数与增加容量的代价见下 |
+| Apple普通SDPA启发式回落 | 锁定MLX对Q>8、D192/256默认unfused，物化scores/probabilities；私有ragged的force不影响普通入口 | 仅非空、无显式mask的F16/BF16适用域强制既有融合；4项回归通过，1K F16额外MLX峰值约12→2 MiB。F32等仍待补 |
+| HTTP2大body背压holdout | 对照peer原先反复扫描已退休response pairs；修正公平性后首轮4进程中Hyle慢5.59–8.27%，后续存在明显位置/绝对漂移 | peer冗余工作已去；两种未证收益的产品候选已撤回，当前仍未解决；细节及执行策略差异见下 |
 
 原CUDA F16 flash分支还会物化Q×KV的F16 causal mask，8K方形时为128 MiB；
 这条分支已因实际Half累加问题替换，不能仅凭主kernel融合推断整个调用空间或精度。
@@ -432,12 +436,12 @@ token/8B数据校验及inflight归零；init/reserve、fd打开/预热、用户b
 
 | 路线 | 已确认工作/空间 | 下一步 |
 |---|---|---|
-| CPU ggml / Vulkan Concat | 两边仍是左折叠的二次复制；CPU还保留全部中间payload，Vulkan已有gallocr，不能将两边峰值混为一谈 | 正实施平衡树；CPU额外核重复ports元数据预算，保持各自现有dtype/stride域 |
+| CPU ggml / Vulkan Concat | 已改平衡树；CPU owned payload126→20 MiB，Vulkan真实gallocr容量11.25→7.75 MiB | 定向测试与唯一代表形状完成，见下；未测完整引擎或所有shape |
 | CPU / Vulkan ordinary causal SDPA | 无外部mask端口仍物化内部Q×KV mask；CPU直接借冷Half常量，Vulkan用seed/diag/cast构建 | 先核原生cache/boxed causal字段能否同义复用，再决定Q分块；不把构造尺寸和实测峰值混同 |
 | CPU / Vulkan Sink与Vulkan wide fallback | scores/probabilities仍带H×Q×KV；caller原mask是必须输入，额外head维不是 | 保持F32数学与单节点边界，先明确allocator生命周期再分块，不能只拆图而保留全部块 |
-| Apple ordinary SDPA | [普通入口](../../../src/compute_route_apple/apple_tensor.cc) 仍force_fused=false；锁定MLX在Q>8、D192/256主动走unfused，私有ragged/paged的融合结果不能替代它 | 正核支持域、mask及数值，再验证只绕过该启发式；D512 Sink仍在fused域外 |
+| Apple ordinary SDPA | 无显式mask、非空、F16/BF16 D192/256 prefill已融合；其余域仍保留原路径 | F32受实际线程组资源限制，不能直接force；显式mask语义保留，D512仍在fused域外，见下 |
 | CPU Hadamard冷常量 | 仍准备W² host矩阵，4096为64 MiB；但CPU pin的原生FWHT已支持任意power-of-two，运算本身为O(WlogW) | 不盲移可能拖慢单级FWHT的两级GPU算法；保留为冷空间项，借用host矩阵不能称双份device分配 |
-| FlatHash近阈值rolling churn / Queue政策 | grow耗尽可能same-capacity全表rehash；queue容量、空扫与重试合同尚未同责核齐 | 先计数/匹配实际容量与职责，再选代表trace；目前不判输赢，不以membership读取代替安全erase/reclaim |
+| FlatHash近阈值rolling churn / Queue政策 | 已实证近满rolling keys造成频繁全表重建，增长策略已修；queue容量、空扫与重试合同尚未同责核齐 | map计数见下；queue目前不判输赢，不以membership读取代替安全erase/reclaim |
 
 - Core/Error/Obs/Math/Time/TimerQueue/Platform/Thread/FS/Process/Util：查现有证据与机制；
   没有确认新的当前同责输项。许多冷查询只有结构依据，timer主要覆盖64项生命周期。
@@ -453,10 +457,8 @@ token/8B数据校验及inflight归零；init/reserve、fd打开/预热、用户b
 - Marlin factor仅历史占位，不为已退役实现恢复一套性能验证。
 
 后续先处理已确认的平方 scratch/扫描，再复现上述小输；不为旧标签重跑全库或给所有模块补证书。
-HTTP2 benchmark的私有构造接口已改为公开 `TcpStream::adopt`，保留原计时边界；
-现已用Linux GCC14.2/C++23、当前Windows源码与公开头、锁定nghttp2缓存完成
-[`-fsyntax-only -Wall -Wextra -Wpedantic -Werror`检查](http2/syntax-result.json)，无诊断。
-未链接或运行该fixture，不据此继承旧性能排名。
+HTTP2 benchmark已改为公开 `TcpStream::adopt`，先通过Linux严格syntax检查，随后用锁定nghttp2源码和已有基础库实际链接/运行；
+最新同责结果与剩余执行策略差异见下，不继承旧性能排名。
 
 ## BlockingPool：无退休时不扫句柄
 
@@ -491,3 +493,87 @@ Windows CPU4，固定8192个512-byte owning string keys、64 shards、同seed/sh
 QPC10 MHz，最短聚合1.1782 ms；实际波动与100 ns计时分辨率分开处理。
 [摘要](concurrent-erase/summary.json)及[原始包](concurrent-erase/raw-results.zip)保留248个样本、old/new header overlays、
 命令、hash与测试，只编相关probe/test TU并复用相同静态基础缓存，没有库/SDK全量重建。
+
+## CPU / Vulkan Concat：相同顺序的原生平衡树
+
+两边均按相邻ports配对，奇数项保留到下一层；单输入仍输出独立copy，不改Graph依赖或发布中间值。
+CPU继续支持全部15种plain scalar、strided及empty ports；Vulkan保留原F32/F16/BF16/I32、dense/nonempty受理域。
+CPU图元数据还按Concat端口数留出Cont/reshape/concat预算，避免70次引用同一SSA值时仅按unique values估算不足。
+真实lowering census为284个tensor、283个graph nodes，原容量84、修后364；未故意执行越界native arena。
+
+唯一计时形状为F32、64个各64 KiB端口、4 MiB输出，所有逻辑输入alias同一物理buffer。
+两边完整1,048,576元素exact复制oracle在计时前后检查；cold建图/分配不计时。
+Windows各两对AB/BA、无删样本：CPU公共Direct submit+wait为53.099→10.018 ms、52.894→10.056 ms；
+Vulkan原生Region submit+wait为669.503→245.219 μs、738.594→321.750 μs。
+保留Vulkan绝对漂移，不据两对数据计算CI或外推模型tokens/s。
+
+CPU同图owned aligned payload请求126→20 MiB，累计copy输出130→24 MiB；前者不含caller、metadata或执行workspace。
+Vulkan实际gallocr backing为11.25→7.75 MiB，不能把全部逻辑prefix payload相加称为常驻VRAM；copy工作仍从约130降至24 MiB。
+平衡树为O(total bytes·log ports)，未宣称一次写完的最优线性实现。
+
+CPU两版Direct全storage-bit/axes/empty/stride回归通过；候选公共CPU Graph的70重复ports→发布Concat→Neg通过，
+断言一个region及ggml provider。Vulkan两版各3项通过，包含真实Region发布中间值与下游Neg，未额外运行公共Graph分区。
+仅fresh相关provider/region/test TU并复用各自锁定native缓存；CPU与Vulkan使用不同pin，不混成同一后端对照。
+[摘要](concat-cpu-vulkan/summary.json)和[源码/原始包](concat-cpu-vulkan/source-evidence.zip)保存全部命令、hash、早期harness失败及最终结果。
+
+## FlatHash rolling keys：清理后留下增长余量
+
+原自动grow只在live达到7/8时扩大；先erase再insert时live总是略低于该值，导致每次清完tombstone仅剩一两个empty-slot credit。
+现在自动grow与try_prepare_insert统一：live达到3/4时加倍，否则原容量清理，保持7/8最大负载及显式try_reserve(count)合同。
+这让一次O(capacity)清理之后至少留常数比例插入余量；没有改变探测、析构、搬移或OOM回滚。
+容量加倍是明确空间代价，不能将较低负载下的运行时改善称为同容量胜出。
+重分配时旧storage与新双倍storage暂时并存，也可能更早返回OOM；原表失败保留不变。
+
+同一默认整数hash、固定32768轮erase最旧key/insert全新key、完整存活key/value oracle，无计时counter。
+8192槽、7168 live：普通insert触发23736→1次重建，重hash的存活键170115912→7167；
+显式prepare再insert同trace为23742→1次，170158914→7167个键；修后最终容量为16384，原为8192。
+1024槽及离7/8阈值1/16/128项的原始计数均保留；稀疏control仍原容量清理。
+47项FlatHashMap/Set及ConcurrentHashMap/Set测试通过，新增近满rolling trace同时覆盖普通insert和prepare。
+这里只证明消除了重复整表工作，未计时或更新外部排名；[摘要](flat-churn/summary.json)和[源码/原始包](flat-churn/source-evidence.zip)记录范围。
+
+## Apple普通attention：仅在合法窄域绕过unfused启发式
+
+普通入口的锁定MLX在Q>8、D192/256默认物化scores与probabilities。现在仅GPU、F16/BF16、无显式mask、
+Q/V depth相同且为192/256、非空batch/KV时强制已有fused kernel；causal还要求Q≤KV。
+两种layout、GQA、bottom-right causal、非因果Q>KV及零/负scale保留，未新增用户配置或kernel。
+F32、D512、decode、所有显式mask及空域保留原fallback，这些域仍可能有平方scratch。
+
+Mac16,12/M4上的实际F32 D192尝试需要40448 B线程组内存，超过该设备32768 B，故未启用F32 force。
+窄型融合的Boolean全屏蔽行也与原结果不同；所有显式mask静态保留原路径，不读取mask值来选择实现。
+最终4项普通入口回归通过，使用原F32/F16/BF16预算；F16弱概率×V60000另按既有0.002检查。
+原版正常exit1：一般F16与弱概率两项失败，未放宽预算迁就旧实现。
+早期SIGSEGV来自测试下载未eval的transpose，修正为contiguous/eval后两版均正常退出；失败和最初源码均保留。
+
+唯一空间AB各一个新进程：普通公共Context、F16 B1/H4/KV头2/D256、Q=KV1024 causal，完整1,048,576输出均满足0.002。
+MLX peak减submit前active为12,591,104→2,097,152 B，总peak16,785,412→6,291,456 B；
+caller输入4 MiB、输出2 MiB另列。因此新侧额外峰值在此形状仅为输出，而不是还有2 MiB私有scratch。
+这是MLX allocator全局计数，未当成进程RSS、整机VRAM或严格provider-private字节。
+空间测量后只补非空guard并重跑4项测试，非空实测路径相同；未测吞吐、全Apple/Graph roster或其它机器。
+[摘要](apple-sdpa/summary.json)及[原始包](apple-sdpa/raw-results.zip)记录缓存来源、source/link maps、全部失败与最终结果；未重编SDK/metallib。
+
+## HTTP2：修正peer工作量后保留大报文未解项
+
+direct nghttp2 peer原来每轮从头扫描所有已完成response pairs，而两边仅同时激活两个stream。
+现以单调游标跳过已退休的调度工作，仍保留全部header/DATA、反序response、两层流控ack、验证与会话/transport销毁。
+Linux/WSL、GCC14.2、nghttp2 1.70.0，以一个Hyle worker和一个peer worker同时存在、一次仅激活一路，taskset固定逻辑CPU2。
+两边计入新socketpair及H2 sessions、固定body、完整收发/清理与外部完成handoff；持久harness和body字符串生成在外。
+
+修正peer后首轮四进程、每route九epoch：64×1 KiB中Hyle4.742–5.152 μs/stream、peer6.379–6.656 μs；
+4×256 KiB强背压中Hyle197.838–205.041 μs、peer184.990–191.581 μs，四点慢5.59–8.27%。
+同路径AA也观察到第二位置约5.04%/2.66%优势；这些是位置/暖态波动，不能作修正系数或称为时钟分辨率问题。
+后续不同phase的baseline也出现peer绝对漂移及一个反向点，不把首轮差额外推为所有运行的稳定比例。
+
+单次非timed计数显示双方inbound/outbound body copy各2 MiB，compaction均0；不是已证实的整body额外复制或平方compaction。
+Hyle原有1032次try-read、其中709次WouldBlock。两个小候选分别去重复notify、yield后先重试write；
+后者少192次空read但多63次空write，成功收发、全部字节、515次yield和1529次notify未少。
+最后两对同头对照holdout为194.866→195.419 μs、197.019→194.119 μs，小body也未持续更快，故两个产品改动均已撤回。
+14项协议/feature、强制epoll的duplex/关闭两项通过，新peer-close测试也在原产品baseline单独通过。
+
+当前大body项未解决。两边协议/生命周期工作一致，但Hyle使用两个endpoint fibers及readiness，peer在一个手工loop推进两端；
+下一步核该执行模型，不靠少职责或重复同一AB矩阵凑胜。后补资源探针确认backend为io_uring、实际3个用户线程均affinity[2]，
+它不是正式运行现场快照，也未将kernel worker的syscall计数混成用户I/O次数。
+[stage1摘要](http2/stage1-summary.json)/[raw](http2/stage1-raw.zip)及[stage2摘要](http2/stage2-summary.json)/[raw](http2/stage2-raw.zip)
+保存全部epochs、候选、失败、计数与资源边界；只编相关TU和锁定nghttp2静态库，未全量构建Hyle。
+
+本批源码/日志/原始数据归档后，先写`test.ps1`再按精确路径、大小及hash清理可重建产物：
+Windows Concat27文件197362252 B、Air普通SDPA8文件36649824 B；未删除源码、日志、数据或原有SDK/cache。
