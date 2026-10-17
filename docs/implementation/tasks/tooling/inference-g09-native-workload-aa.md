@@ -1,6 +1,6 @@
 # G09 native workload A/A 资格阻塞
 
-状态：**AUDITED，2026-10-17；Windows 自动转储尝试已结束，当前只用现成调试器直接监视原诊断程序一次，区分其自身失败与采集环境；完成时延和原 A/A 原因仍未决，结果复核待 R26；产品/正式测量 FIX 集为空**。
+状态：**AUDITED，2026-10-17；直接调试完整通过，当前只捕获原 Nsight 采集组合的一次 access-violation first-chance 现场；完成时延和原 A/A 原因仍未决，结果复核待 R26；产品/正式测量 FIX 集为空**。
 
 本任务承接[活动 G09](../graph/inference-g09-joint-pipeline.md)的实际停止条件，不扩充基础库能力。
 产品 candidate 固定为 `3524413272cb52d06af5e64d634edbfef09b9864`，实现为 `e09f30925`；
@@ -219,3 +219,19 @@ Windows 自动 dump 未能给出异常地址；新的有限工具动作只使用
 - 一个进程后停止；只离线检查已有 dump/记录。没有复现或归属仍 UNKNOWN，不扩成压力或 profiler 矩阵。
 
 这是具名访问冲突的普通故障定位，前两个采集入口及 Windows dump 尝试的终态、费用与恢复约束均保留。
+
+[直接调试结果](../../../../evidence/architecture/inference-g09-completion-observation/direct-debug-receipt.json)：
+原二进制在无 Nsight 的 ProcDump 监视下完整正常退出，4+4 oracle、8 次 State 退休、8 块记录和
+四阶段无 Nsight/OBS 均通过，7472 条 source 记录，未生成 dump；累计 10.000 秒。
+launcher 原始 verdict 因原始混合日志的 CRLF 行尾锚点误判为 INCOMPLETE；对同一原件只规范化
+NUL/换行后全部完整标记通过，保留原 result，不重跑、不替换任何性能统计量。
+这未证明 Nsight 是根因，但已取得直接运行无崩溃的对照，不支持改产品源码。
+
+下一有限动作只针对仍可复现的采集组合：让 Nsight 启动 ProcDump，再由后者以同一参数启动
+原诊断 exe；`-e 1 -f C0000005 -n 1` 只保存一次 access-violation first-chance 现场，
+`--wait=all` 等待该自有进程树。first-chance 可能被处理，不自动等同导致退出的异常。
+原 Vulkan/NVTX/无 sampling/context-switch/CUDA/WDDM 参数保持，唯一新增为现成调试器的
+目标捕获路径，最多一个数学进程、一个 triage dump。输出为 `run-nsys-procdump-1`，
+源码、SDK、facade/driver 全部复用；无编译、无产品/测量统计修正。
+若 collector 未对该 child 成功注入、无复现或无 dump，均保留 UNKNOWN 并停止这个组合，
+不增加另一个 debugger/profile 组合。原直接调试终态与费用不覆盖，也不恢复原资格。

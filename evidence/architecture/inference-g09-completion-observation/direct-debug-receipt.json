@@ -1,0 +1,114 @@
+{
+  "state": "DIRECT_DEBUG_COMPLETE_OFFLINE_VERIFIED",
+  "source_scope_commit": "f9f62d21b",
+  "initial_result": {
+    "state": "DIRECT_DEBUG_INCOMPLETE",
+    "authorization_sha256": "82d3e51eeb1a2e3ce004944aa335afe743e94c3bdd08a282546dedaec1be6ded",
+    "native_workload_processes_planned": 1,
+    "qualifier": "DIAGNOSTIC_ONLY_NOT_AA_OR_P1",
+    "valid_formal_ab": 0,
+    "stages": [
+      {
+        "command": [
+          "C:\\h7\\g09-procdump-1\\procdump64.exe",
+          "-accepteula",
+          "-mt",
+          "-e",
+          "-n",
+          "1",
+          "-x",
+          "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g09-av-debug-1\\run\\dumps",
+          "C:\\h7\\g09-completion-observation-25\\bin\\g09_observed_driver.exe"
+        ],
+        "exit_code": 0,
+        "elapsed_seconds": 8.875
+      }
+    ],
+    "builds": 0,
+    "source_changes": 0,
+    "nsight": false,
+    "policy": {
+      "environment": "windows",
+      "affinity_mask": "0x14",
+      "logical_cpu": 2,
+      "cpu_set_id": 258,
+      "required_efficiency_class": "maximum",
+      "smt_sibling_logical_cpu": 3,
+      "priority": "above-normal",
+      "applied_by": "benchmark-parent-mask-plus-caller-singleton",
+      "sampling_topology": "native-runtime-pair",
+      "logical_cpus": [
+        2,
+        4
+      ],
+      "cpu_set_ids": [
+        258,
+        260
+      ],
+      "physical_core_indices": [
+        2,
+        4
+      ],
+      "caller_logical_cpu": 2,
+      "distinct_physical_cores": true,
+      "reserved_physical_core_count": 2,
+      "helper_placement": "native-runtime-managed",
+      "launcher_applied": true,
+      "observed_affinity_mask": "0x14",
+      "previous_affinity_mask": "0xffffffff"
+    },
+    "child_canary": {
+      "gate": "PASS",
+      "environment": "windows",
+      "mechanism": "inherited-process-policy-canary",
+      "affinity_mask": "0x14",
+      "ok": true,
+      "priority_class": "0x8000"
+    },
+    "elapsed_seconds": 10.0,
+    "owned_procdump_pid": 66856,
+    "actual_normal_main_exit": true,
+    "oracles_before": 4,
+    "oracles_after": 4,
+    "retired_states": 0,
+    "recorder_blocks": 0,
+    "source_record_count": 0,
+    "dumps": [],
+    "actual_policy_matches": 0,
+    "module_phases": 4,
+    "unexpected_profiler_or_obs_modules": [],
+    "target_cleanup": {
+      "pid": 61800,
+      "state": "NO_LONGER_OPENABLE"
+    }
+  },
+  "offline_verdict": {
+    "state": "DIRECT_DEBUG_COMPLETE_OFFLINE_VERIFIED",
+    "original_launcher_verdict": "INCOMPLETE due only to CRLF anchor parsing; original result.json retained unchanged",
+    "decoding": "ProcDump UTF16+narrow child stdio: raw preserved. For ASCII marker parsing only, remove NUL then normalize CRLF/CR to LF; no numeric/selection criteria change.",
+    "actual_normal_main_exit": true,
+    "oracles_before": 4,
+    "oracles_after": 4,
+    "retired_states": 8,
+    "record_blocks": 8,
+    "source_records": 7472,
+    "module_phases": 4,
+    "unexpected_nsight_obs_modules": [],
+    "actual_policy_matches": 1,
+    "dumps": [],
+    "all425_frozen_inputs_match": true,
+    "conclusions": [
+      "The unchanged observed diagnostic completed allfourshapes in this one direct ProcDump run without Nsight.",
+      "Both Nsight attempts failed before second shape2 arm initialization marker. This contrast does not prove crash cause or exclude timing-sensitive application faults.",
+      "Original A/A/P1 qualifications remain unchanged; this debugger run is not ranking or formal qualification."
+    ],
+    "valid_formal_ab": 0
+  },
+  "raw_archive": {
+    "path": "evidence/architecture/inference-g09-completion-observation/direct-debug-raw.zip",
+    "bytes": 165468,
+    "sha256": "c3ecc27c1bf1d89fe1ce8594eb3ee247f91135e6e7e61c1df4721863580cbc5e"
+  },
+  "original_qualifications": "UNCHANGED: debugger check is not AA/P1",
+  "independent_review": "PENDING_R26"
+}
