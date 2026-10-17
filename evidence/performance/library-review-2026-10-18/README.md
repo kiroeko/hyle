@@ -1208,3 +1208,6 @@ GCC14.2同flags旧对象的容量zero-store循环确实存在，新对象消失�
 
 候选绝对时间小幅更低，但peer下降更多、归一化更差，区间有重叠；不报告已证吞吐提升，也不追加样本找胜点。
 保留这次明确的容量级冗余删除，HTTP2性能残差仍未解决。[摘要](http2/header-lifetime/summary.json)及[源码、静态反汇编、全部测试和样本](http2/header-lifetime/source-results.zip)。
+
+本批先写根目录test.ps1，Windows/WSL全部精确预检后删除18个可重建产物9035979逻辑B；保留6个当前对象/core缓存4191766 B及所有源、日志、原始数据、结果包和SDK。
+[清理结果与精确范围](cleanup-state-http2.json)记录身份；本批没有Mac清理，也未将逻辑长度称为实测物理回收。

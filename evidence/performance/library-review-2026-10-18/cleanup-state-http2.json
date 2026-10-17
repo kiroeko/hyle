@@ -1,0 +1,243 @@
+{
+  "windows": {
+    "delete_count": 11,
+    "delete_logical_bytes": 4355067,
+    "retain_count": 3,
+    "retain_logical_bytes": 2927766
+  },
+  "wsl": {
+    "phase": "remove",
+    "files": 7,
+    "logical_bytes": 4680912,
+    "retained_files": 3,
+    "retained_logical_bytes": 1264000
+  },
+  "total_files": 18,
+  "total_logical_bytes": 9035979,
+  "retained_files": 6,
+  "retained_logical_bytes": 4191766,
+  "plan_sha256": "23378ab85e402480d553bcd8620c2b8633311be270c1854b36a0b3053c8addf5",
+  "note": "Exact generated files only; source/log/raw frame data/results/archives/SDK/foundation caches remain. Logical bytes are not measured physical reclamation. No Mac operation.",
+  "exact_plan": {
+    "status": "Draft exact cleanup plan; wait for root to merge any new HTTP2 artifacts. No deletion, root test.ps1 write or remote command performed.",
+    "windows": [
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\perf-review-2026-10-18\\state-distinct-roots\\baseline.obj",
+        "bytes": 604388,
+        "sha256": "f0708ec2653e1aab1d687fe2f36287e7304866834e84a98c9581177cf7b4d41d",
+        "source_manifest": "C:\\public\\project-hyle\\hyle\\.scratch\\perf-review-2026-10-18\\state-distinct-roots\\cleanup-final-manifest.json",
+        "identity_verification": "Current local explicit file size and SHA match the recorded manifest; no unrelated cache enumeration."
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\perf-review-2026-10-18\\state-distinct-roots\\candidate-v1.obj",
+        "bytes": 653687,
+        "sha256": "18e9d6f3135665a056247773fbd5841ad81fb9c6922c2b0870f7502c5f0d5a34",
+        "source_manifest": "C:\\public\\project-hyle\\hyle\\.scratch\\perf-review-2026-10-18\\state-distinct-roots\\cleanup-final-manifest.json",
+        "identity_verification": "Current local explicit file size and SHA match the recorded manifest; no unrelated cache enumeration."
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\perf-review-2026-10-18\\state-distinct-roots\\probe.obj",
+        "bytes": 191486,
+        "sha256": "d25c8b0ea43eaec68d121ac228e3ace617ac76ff3394c983af7f659d2ca8e3a4",
+        "source_manifest": "C:\\public\\project-hyle\\hyle\\.scratch\\perf-review-2026-10-18\\state-distinct-roots\\cleanup-final-manifest.json",
+        "identity_verification": "Current local explicit file size and SHA match the recorded manifest; no unrelated cache enumeration."
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\perf-review-2026-10-18\\state-distinct-roots\\baseline.exe",
+        "bytes": 216064,
+        "sha256": "b3e410c67cdac730de92ab786d1e3f27c3a999ae6ca61110401ce69f9cc72e24",
+        "source_manifest": "C:\\public\\project-hyle\\hyle\\.scratch\\perf-review-2026-10-18\\state-distinct-roots\\cleanup-final-manifest.json",
+        "identity_verification": "Current local explicit file size and SHA match the recorded manifest; no unrelated cache enumeration."
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\perf-review-2026-10-18\\state-distinct-roots\\candidate-v1.exe",
+        "bytes": 220672,
+        "sha256": "f8c74dda8e9795f881bbf1db6b221ab25b317cd0ade7ed8fbc282881f55bd431",
+        "source_manifest": "C:\\public\\project-hyle\\hyle\\.scratch\\perf-review-2026-10-18\\state-distinct-roots\\cleanup-final-manifest.json",
+        "identity_verification": "Current local explicit file size and SHA match the recorded manifest; no unrelated cache enumeration."
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\perf-review-2026-10-18\\state-distinct-roots\\candidate-v1-tests.exe",
+        "bytes": 794112,
+        "sha256": "a0319a4909c5aaa91e8ec0d7b7e9f8fd2af57d132422b2c15249d4e7633693b8",
+        "source_manifest": "C:\\public\\project-hyle\\hyle\\.scratch\\perf-review-2026-10-18\\state-distinct-roots\\cleanup-final-manifest.json",
+        "identity_verification": "Current local explicit file size and SHA match the recorded manifest; no unrelated cache enumeration."
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\perf-review-2026-10-18\\state-distinct-roots\\v2\\candidate-v2.exe",
+        "bytes": 220672,
+        "sha256": "b41136540e3084131fe9532503b9e24adce58c55ae2fec5a360224326acbcb52",
+        "source_manifest": "C:\\public\\project-hyle\\hyle\\.scratch\\perf-review-2026-10-18\\state-distinct-roots\\cleanup-final-manifest.json",
+        "identity_verification": "Current local explicit file size and SHA match the recorded manifest; no unrelated cache enumeration."
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\perf-review-2026-10-18\\state-distinct-roots\\v2\\candidate-v2-tests.exe",
+        "bytes": 794112,
+        "sha256": "30031782b6d8688d8c7695253d96b9923fcd56be16eb0a1508f42fc54452503d",
+        "source_manifest": "C:\\public\\project-hyle\\hyle\\.scratch\\perf-review-2026-10-18\\state-distinct-roots\\cleanup-final-manifest.json",
+        "identity_verification": "Current local explicit file size and SHA match the recorded manifest; no unrelated cache enumeration."
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\perf-review-2026-10-18\\state-distinct-roots\\cold-update\\probe.obj",
+        "bytes": 209314,
+        "sha256": "086e471e0da2946f93f340aed365b83f3f90299e4ce347704f702a629b8890b4",
+        "source_manifest": "C:\\public\\project-hyle\\hyle\\.scratch\\perf-review-2026-10-18\\state-distinct-roots\\cold-update\\cleanup-additional-manifest.json",
+        "identity_verification": "Current local explicit file size and SHA match the recorded manifest; no unrelated cache enumeration."
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\perf-review-2026-10-18\\state-distinct-roots\\cold-update\\baseline.exe",
+        "bytes": 223232,
+        "sha256": "d73a510e51b1be262449f76ae9f80ad53123293fb0c7d294deb5f7407a0757d5",
+        "source_manifest": "C:\\public\\project-hyle\\hyle\\.scratch\\perf-review-2026-10-18\\state-distinct-roots\\cold-update\\cleanup-additional-manifest.json",
+        "identity_verification": "Current local explicit file size and SHA match the recorded manifest; no unrelated cache enumeration."
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\perf-review-2026-10-18\\state-distinct-roots\\cold-update\\candidate.exe",
+        "bytes": 227328,
+        "sha256": "6572735a26a6de71220d77c5fd87dbd85797b8130fc26b9b996242124e6efeb9",
+        "source_manifest": "C:\\public\\project-hyle\\hyle\\.scratch\\perf-review-2026-10-18\\state-distinct-roots\\cold-update\\cleanup-additional-manifest.json",
+        "identity_verification": "Current local explicit file size and SHA match the recorded manifest; no unrelated cache enumeration."
+      }
+    ],
+    "retain": [
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\perf-review-2026-10-18\\state-distinct-roots\\state_versions_test.obj",
+        "bytes": 893763,
+        "sha256": "0ca718c00f8ae2ee2ca40a27351e53db0ff05530f294b856c928e4288fe88424",
+        "source_manifest": "C:\\public\\project-hyle\\hyle\\.scratch\\perf-review-2026-10-18\\state-distinct-roots\\cleanup-final-manifest.json",
+        "identity_verification": "Current local explicit file size and SHA match the recorded manifest; no unrelated cache enumeration.",
+        "retain_reason": "Current canonical v2 StateVersions or matching StateVersions/StateClone test object cache."
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\perf-review-2026-10-18\\state-distinct-roots\\state_clone_test.obj",
+        "bytes": 1381901,
+        "sha256": "eea409ef1461fb57f5e8bcb6f7f9f80f7754c1f570c0a39e43b9d940005ddbbd",
+        "source_manifest": "C:\\public\\project-hyle\\hyle\\.scratch\\perf-review-2026-10-18\\state-distinct-roots\\cleanup-final-manifest.json",
+        "identity_verification": "Current local explicit file size and SHA match the recorded manifest; no unrelated cache enumeration.",
+        "retain_reason": "Current canonical v2 StateVersions or matching StateVersions/StateClone test object cache."
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\perf-review-2026-10-18\\state-distinct-roots\\v2\\candidate-v2.obj",
+        "bytes": 652102,
+        "sha256": "1e99634b3631446ad5c138d59025c485f0097e8848b532a4c3955f0bafd5fbc7",
+        "source_manifest": "C:\\public\\project-hyle\\hyle\\.scratch\\perf-review-2026-10-18\\state-distinct-roots\\cleanup-final-manifest.json",
+        "identity_verification": "Current local explicit file size and SHA match the recorded manifest; no unrelated cache enumeration.",
+        "retain_reason": "Current canonical v2 StateVersions or matching StateVersions/StateClone test object cache."
+      }
+    ],
+    "windows_roots": [
+      "C:\\public\\project-hyle\\hyle\\.scratch\\perf-review-2026-10-18\\state-distinct-roots",
+      "C:\\public\\project-hyle\\hyle\\.scratch\\perf-review-2026-10-18\\state-distinct-roots\\v2",
+      "C:\\public\\project-hyle\\hyle\\.scratch\\perf-review-2026-10-18\\state-distinct-roots\\cold-update"
+    ],
+    "windows_retain_roots": [
+      "C:\\public\\project-hyle\\hyle\\.scratch\\perf-review-2026-10-18\\state-distinct-roots",
+      "C:\\public\\project-hyle\\hyle\\.scratch\\perf-review-2026-10-18\\state-distinct-roots\\v2"
+    ],
+    "wsl": {
+      "roots": [
+        "/root/hyle-scratch/http2-current-20261018/terminal-drain",
+        "/root/hyle-scratch/http2-current-20261018/header-lifetime",
+        "/root/hyle-scratch/http2-current-20261018/fixed-send-frame",
+        "/root/hyle-scratch/http2-current-20261018/current-holdout"
+      ],
+      "files": [
+        {
+          "path": "/root/hyle-scratch/http2-current-20261018/terminal-drain/consumer",
+          "bytes": 897248,
+          "sha256": "d696c59b7e7e05769d3522cc0238866c864f693ebafa42a6a7c2fd3543a58c31",
+          "source_manifest": "C:\\public\\project-hyle\\hyle\\.scratch\\perf-review-2026-10-18\\http2\\terminal-drain\\cleanup-candidates.json",
+          "remote_verification": "Manifest record only. No WSL command performed; root must preflight exact file path/type/size/SHA."
+        },
+        {
+          "path": "/root/hyle-scratch/http2-current-20261018/terminal-drain/main.o",
+          "bytes": 154976,
+          "sha256": "b0c19a5b37850b367852122dff2c09909174a79cfc8e2ede65c9c4462527103e",
+          "source_manifest": "C:\\public\\project-hyle\\hyle\\.scratch\\perf-review-2026-10-18\\http2\\terminal-drain\\cleanup-candidates.json",
+          "remote_verification": "Manifest record only. No WSL command performed; root must preflight exact file path/type/size/SHA."
+        },
+        {
+          "path": "/root/hyle-scratch/http2-current-20261018/header-lifetime/tests",
+          "bytes": 1559216,
+          "sha256": "019ad518f07ba9a62d99f4932ada9e5c2d16fc67bfeccfbf0d44a61f61bc35d3"
+        },
+        {
+          "path": "/root/hyle-scratch/http2-current-20261018/header-lifetime/holdout.o",
+          "bytes": 110800,
+          "sha256": "604f70345247c6f2b84d206f998cd9b40721c4ebe087cd7c3846dd760183729a"
+        },
+        {
+          "path": "/root/hyle-scratch/http2-current-20261018/header-lifetime/holdout-old",
+          "bytes": 868648,
+          "sha256": "c17b48b9010cced6a00ed8ae3c81bb76088659b05d622f83abea91c072fa16cc"
+        },
+        {
+          "path": "/root/hyle-scratch/http2-current-20261018/header-lifetime/holdout-new",
+          "bytes": 864552,
+          "sha256": "52f6aeb4d679a8b2f4ed2295b0f211a55e37f0732e3c49eb5f87793876f5b88c"
+        },
+        {
+          "path": "/root/hyle-scratch/http2-current-20261018/fixed-send-frame/http2.o",
+          "bytes": 225472,
+          "sha256": "f73a4bb1612bf43a52246c10613497e35c7a8237f73a9568a8d670a2c3d9146f"
+        }
+      ],
+      "retain": [
+        {
+          "path": "/root/hyle-scratch/http2-current-20261018/header-lifetime/http2.o",
+          "bytes": 222272,
+          "sha256": "9ec083687a2fdb420b1ea177d6158d97ceb6ec77dbf6f138b1f80ac82790754b"
+        },
+        {
+          "path": "/root/hyle-scratch/http2-current-20261018/header-lifetime/http2_test.o",
+          "bytes": 654624,
+          "sha256": "debb22bed71cd36bbda594158905dc547ca59655ed62c81f8b4a42c0431f75d3"
+        },
+        {
+          "path": "/root/hyle-scratch/http2-current-20261018/current-holdout/libhyle_io_core.so.0.1.0",
+          "bytes": 387104,
+          "sha256": "9ead235b1bbd72f56d44eab9c8ac135b8c4b0ce0ec0a6fb72660aa917d3b4779"
+        }
+      ]
+    },
+    "source_manifests": [
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\perf-review-2026-10-18\\state-distinct-roots\\cleanup-final-manifest.json",
+        "sha256": "ccc45272a85ac8792c24ffb5c950da11db928e51b85e5d4d9e5abc33863ff16b"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\perf-review-2026-10-18\\state-distinct-roots\\cold-update\\cleanup-additional-manifest.json",
+        "sha256": "4471c35d5ce22e8c8572acfdfec337bcc9398a4a86e9d2aab035ecc32b047f01"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\perf-review-2026-10-18\\http2\\terminal-drain\\cleanup-candidates.json",
+        "sha256": "ed85164c6e6815feca3d8d06546ba06d32daaf138171f21489038b05a47e8d00"
+      }
+    ],
+    "statistics": {
+      "windows": {
+        "delete_count": 11,
+        "delete_logical_bytes": 4355067,
+        "retain_count": 3,
+        "retain_logical_bytes": 2927766
+      },
+      "wsl": {
+        "delete_count": 7,
+        "delete_logical_bytes": 4680912,
+        "retain_count": 3,
+        "retain_logical_bytes": 1264000
+      }
+    },
+    "total_delete_count": 18,
+    "total_delete_logical_bytes": 9035979,
+    "total_retain_count": 6,
+    "total_retain_logical_bytes": 4191766,
+    "duplicate_paths": 0,
+    "delete_retain_overlap": 0,
+    "preserved": "All source, source-review JSON, logs, raw frame data, ordered samples, results, archives, SDKs, foundation and pre-existing unrelated caches remain. No Mac target or preflight. Only the three listed current State objects are explicit retention checks.",
+    "byte_accounting": "Logical file lengths only, not measured physical disk reclamation.",
+    "execution_boundary": "Only exact listed files under fixed scratch roots, with all Windows and WSL checks before any removal and a recheck per file. Root merges new HTTP2 entries, regenerates/reviews the scratch template, then places it at repository-root test.ps1 before any execution.",
+    "purpose": "Completed StateStore and HTTP2 batches only: exact generated artifacts; keep current StateStore/test, HTTP2/test and core objects for reuse. No Mac operation."
+  },
+  "executed_root_script_sha256": "e9c0207e910a051b73bb9f2605742234d0f35107edb587c2acf03145a82fd40d"
+}
