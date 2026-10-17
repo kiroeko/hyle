@@ -4,6 +4,7 @@
 #include <chrono>
 #include <cstddef>
 #include <cstdint>
+#include <cstdlib>
 #include <memory>
 #include <new>
 #include <thread>
@@ -20,11 +21,9 @@ using hyle::container::SpscQueue;
 constexpr std::size_t kCapacity = 1024;
 constexpr std::uint64_t kItems = 1u << 18;
 
-// Same bounded SPSC protocol as folly::ProducerConsumerQueue: one reserved
-// sentinel slot, producer/consumer indices on separate cache lines, and one
-// acquire of the opposite index per operation. Kept local because a raw Folly
-// source checkout has generated-config dependencies; this peer deliberately
-// contains no HYLE optimization (remote-index cache or monotonic mask).
+// Controlled local copy of the basic sentinel SPSC protocol, not the compiled
+// Folly library. Both queues have exactly kCapacity usable slots. A result for
+// this peer does not establish a ranking against a particular Folly revision.
 template <class T>
 class FollyShapedSpsc {
  public:
@@ -104,10 +103,10 @@ class PersistentTransfer {
     completed_.store(0, std::memory_order_relaxed);
     generation_.fetch_add(1, std::memory_order_release);
     generation_.notify_all();
-    while (completed_.load(std::memory_order_acquire) != 2) {
-      const unsigned current = completed_.load(std::memory_order_relaxed);
-      completed_.wait(current, std::memory_order_relaxed);
-    }
+    for (unsigned observed = completed_.load(std::memory_order_acquire);
+         observed != 2;
+         observed = completed_.load(std::memory_order_acquire))
+      completed_.wait(observed, std::memory_order_relaxed);
     return sum_;
   }
 
@@ -175,6 +174,7 @@ int main() {
     consumer_cpu = (*available)[available->size() / 2];
   }
   SpscQueue<std::uint64_t> hyle(kCapacity);
+  if (!hyle.valid()) std::abort();
   FollyShapedSpsc<std::uint64_t> folly(kCapacity);
   // Keep only one worker pair alive at a time. On heterogeneous macOS hosts
   // hard affinity is unavailable; retaining both pairs lets thread creation
@@ -187,8 +187,11 @@ int main() {
         .batch(kItems)
         .minEpochIterations(15)
         .minEpochTime(std::chrono::milliseconds(20));
+    if (std::getenv("HYLE_BENCH_SMOKE") != nullptr)
+      bench.epochs(1).epochIterations(1).output(nullptr);
     bench.run("HYLE SpscQueue", [&] {
       const std::uint64_t sum = runner.run();
+      if (sum != kItems * (kItems + 1) / 2) std::abort();
       nb::doNotOptimizeAway(sum);
     });
   }
@@ -200,8 +203,11 @@ int main() {
         .batch(kItems)
         .minEpochIterations(15)
         .minEpochTime(std::chrono::milliseconds(20));
+    if (std::getenv("HYLE_BENCH_SMOKE") != nullptr)
+      bench.epochs(1).epochIterations(1).output(nullptr);
     bench.run("portable Folly ProducerConsumerQueue shape", [&] {
       const std::uint64_t sum = runner.run();
+      if (sum != kItems * (kItems + 1) / 2) std::abort();
       nb::doNotOptimizeAway(sum);
     });
   }

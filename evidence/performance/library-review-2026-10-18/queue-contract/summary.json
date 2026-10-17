@@ -1,0 +1,28 @@
+{
+  "changes": [
+    "SPSC completion wait now checks and waits on the same observed value, then acquire-loads after waking. Both local peers check the expected payload sum.",
+    "All five MPMC source arms accumulate thread-local count/sum/xor, publish each result once, and verify dense ids1..N after join; no hot shared counter added.",
+    "Consumers enter a local draining phase only after acquiring all producer completion publications, then make a fresh pop before deciding empty. Moody enqueue failure is fatal rather than silently losing messages.",
+    "Historical ranking/theorem claims removed; sharded total capacity and growable peer distinctions stated. mpmc filter and fixed-one-epoch smoke mode added."
+  ],
+  "verification": {
+    "compile": "MSVC14.50 directly compiled the two current benchmark TUs plus shared nanobench implementation, with local rigtorp and moodycamel headers enabled for MPMC. No product library rebuild.",
+    "smoke": "Exit0: one4P/4C200000-message episode for each enabled MPMC row(Hyle bounded/sharded,rigtorp,moodycamel); one1P/1C262144-message episode for each SPSC row. All post-checks passed. Output disabled; no times or ranking collected.",
+    "not_run": "Full nanobench workload, TBB optional branch, other platforms, or new performance comparison.",
+    "helper_link_error": "First standalone SPSC link omitted Synchronization.lib, already declared by product platform_thread CMake. Added it to the hand link and resumed without recompiling passed TUs. Original error retained."
+  },
+  "contracts": {
+    "bounded_mpmc": "Hyle/rigtorp each1024 usable global ring slots, try full/empty + same external yield. Constructor allocates/initializes; no per-op allocation, pop recycles/destroys; destructor only after all workers join. rigtorp allocates an additional padding slot. Current journey includes allocation and P+C fresh thread creation/join.",
+    "spsc": "Hyle and current hand-written Folly-shaped peer both1024 usable/1025 physical slots, one producer/one consumer, acquire/release sentinel protocol, construction-only allocation and slot destruction on pop. One persistent worker pair at a time; allocation/worker creation outside timed runner. Current peer is not compiled Folly. Real local Folly constructor needs1025 to offer1024 usable.",
+    "sharded": "Current P shards each1024 =>2048/4096 total in2P/4P rows, producer chooses stable shard, full means that shard full even if others have room. Pop round-robin scans at mostP shards, success moves past selected shard. Per-shard FIFO, no global FIFO.",
+    "moodycamel": "1024 is initial block storage, not a hard queue capacity nor a guarantee against later allocations. Current enqueue may grow and uses implicit producer registration; no producer/consumer token. Ordering per producer, consumer traversal heuristic differs; retired blocks/producer metadata retained/recycled until proper teardown. Cannot call this the same fixed-capacity full/backpressure contract as either bounded Hyle row.",
+    "empty_scans": "Different search algorithms are potential real costs once the application trace/capacity/identity contract is aligned; they are not a reason to dismiss a fair loss by themselves.",
+    "unbounded": "Hyle UnboundedQueue is absent from this benchmark; its independent producer/consumer locks, global FIFO and block allocation/reclamation are not represented by the moodycamel row."
+  },
+  "minimal_followup_traces": [
+    "Strict bounded4P/4C:Hyle BoundedQueue vs existing rigtorp only,total usable1024,uint64 ids1..200000,same retry-yield,all producer/consumer completion plus verified drain and destruction. State explicitly whether using the existing cold-episode scope or precreated warm queues; do not mix the two.",
+    "Bounded SPSC1P/1C:the existing persistent-runner trace after wait/checksum fixes,both1024 usable,same verified CPU resources. The current hand-written peer can establish controlled mechanism behavior only; an external Folly claim requires the actual local Folly identity/configuration,not the clone label."
+  ],
+  "status": "No queue library implementation modified. No current queue performance winner/loser established. Sharded/growable throughput requires a separately explicit non-full,stable-producer application contract or must remain unranked for strict bounded admission.",
+  "eol": "queue_sota unchanged owner/steal/vector region byte-identical to HEAD. Mixed HEAD EOL preserved for unchanged lines by sequence matching; SPSC remains LF. git diff --check passes."
+}

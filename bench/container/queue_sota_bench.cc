@@ -1,35 +1,17 @@
-// SOTA parity for the lock-free queue cluster (task #9). Until now these four
-// structures claimed to match moodycamel / tokio / oneTBB but had ZERO head-to-
-// head benchmark -- "coverage too low so assume SOTA" is exactly the self-
-// deception this bench kills. Whatever the numbers say, they print.
-//
-// HYLE baselines ALWAYS compile (no gate). SOTA references are opt-in:
-//   -DHYLE_BENCH_MOODYCAMEL=ON  -> moodycamel::ConcurrentQueue (header-only)
-//   -DHYLE_BENCH_TBB=ON         -> tbb::concurrent_bounded_queue + concurrent_vector
-//   -DHYLE_BENCH_RIGTORP=ON     -> rigtorp::mpmc::Queue (the SAME-CONTRACT rival:
-//                                  strict-bounded MPMC, single ring -- the canonical
-//                                  SOTA for exactly BoundedQueue's contract)
-// The Rust crossbeam-deque parity (the true same-family work-stealing rival) is a
-// SEPARATE crate (bench/rust/), since it cannot link into a C++ TU.
-//
-// FAIRNESS NOTES (read before trusting a ratio):
-//  * BoundedQueue is BOUNDED + strict global FIFO (try_push fails when full). Its
-//    APPLES-TO-APPLES rival is rigtorp::mpmc::Queue (also bounded single-ring MPMC)
-//    -- both pay ONE enqueue/dequeue CAS serialization point, which is a THEOREM
-//    WALL for strict-global-FIFO+bounded MPMC, not a HYLE defect. moodycamel is
-//    UNBOUNDED + WEAK order (per-producer subqueues) -> it trades FIFO for producer-
-//    side parallelism; the apples-to-apples answer to THAT trade is HYLE ShardedQueue
-//    (same trade), which wins moodycamel 2.6-3x. tbb::concurrent_bounded_queue is
-//    bounded too. So: vs rigtorp = "is our strict-bounded ring SOTA?"; vs moodycamel
-//    single-ring = "the cost of the FIFO contract" (answered by ShardedQueue).
-//  * WsFifoQueue / WorkStealingDeque OWNER paths are single-owner (no CAS on the
-//    hot push/pop). Racing them against a general MPMC queue is NOT "HYLE beats
-//    moodycamel": it shows the cost a general MPMC pays that a per-core local
-//    queue avoids. The same-family rival is crossbeam (Rust bench).
+// Queue mechanism comparisons. Optional peers come from the caller-selected
+// local moodycamel, rigtorp and oneTBB checkouts; record their actual identities
+// when measuring. No historical result establishes a current ranking.
+// BoundedQueue and rigtorp use one fixed-capacity MPMC ring. ShardedQueue has
+// per-shard bounds/order and total capacity P*kCap here; moodycamel's kCap is
+// initial storage, its enqueue may grow, and order is per producer. Those rows
+// do not share a full/backpressure contract. Owner-only work-stealing paths
+// also have different responsibilities from general MPMC; crossbeam's owner
+// comparison lives separately in bench/rust.
 
 #include <nanobench.h>
 
 #include <atomic>
+#include <array>
 #include <cstdlib>
 #include <cstdint>
 #include <string_view>
@@ -51,7 +33,7 @@
 #include "oneapi/tbb/concurrent_vector.h"
 #endif
 #if defined(HYLE_BENCH_RIGTORP)
-#include "rigtorp/MPMCQueue.h"  // strict-bounded-MPMC SAME-CONTRACT rival
+#include "rigtorp/MPMCQueue.h"
 #endif
 
 using hyle::container::BoundedQueue;
@@ -65,6 +47,31 @@ namespace {
 
 constexpr std::size_t kCap = 1024;   // ring capacity (power of two)
 constexpr int kBatch = 512;          // items per fill/drain wave (< kCap)
+
+struct ConsumerResult {
+  std::uint64_t count = 0;
+  std::uint64_t sum = 0;
+  std::uint64_t xor_sum = 0;
+};
+
+template <std::size_t N>
+void require_conservation(const std::array<ConsumerResult, N>& consumers,
+                          std::uint64_t expected_count) {
+  ConsumerResult total;
+  for (const auto& consumer : consumers) {
+    total.count += consumer.count;
+    total.sum += consumer.sum;
+    total.xor_sum ^= consumer.xor_sum;
+  }
+  const std::uint64_t expected_xor =
+      expected_count % 4 == 0 ? expected_count :
+      expected_count % 4 == 1 ? 1 :
+      expected_count % 4 == 2 ? expected_count + 1 : 0;
+  if (total.count != expected_count ||
+      total.sum != expected_count * (expected_count + 1) / 2 ||
+      total.xor_sum != expected_xor)
+    std::abort();
+}
 
 // ---- 1. single-thread enqueue+dequeue throughput ----------------------------
 // Purest queue overhead: no contention, no thread scheduling. Fill `kBatch`
@@ -115,7 +122,7 @@ void bench_single_thread() {
   });
 #endif
 #if defined(HYLE_BENCH_RIGTORP)
-  b.run("rigtorp MPMCQueue (same-contract SOTA)", [&] {
+  b.run("rigtorp MPMCQueue (bounded ring)", [&] {
     static rigtorp::mpmc::Queue<std::uint64_t> q(kCap);
     for (int i = 0; i < kBatch; ++i) q.try_push(static_cast<std::uint64_t>(i));
     std::uint64_t out = 0, sum = 0;
@@ -149,25 +156,17 @@ void bench_mpmc() {
   char title[96];
   std::snprintf(title, sizeof(title), "queue MPMC %dP/%dC (%d items)",
                 kProducers, kConsumers, kTotal);
-  // Each epoch is a full kTotal-item MPMC run (heavy); too few epochs and
-  // nanobench flags it unstable. The sharded prototype is so fast its per-epoch
-  // time shrinks, so it needs more iterations to stabilize -> 50.
-  //
-  // WHY NOT bump to nanobench's suggested ~543: at 50 iters the single ring
-  // already costs ~8s/variant (200k items * ~70ns * 50); 543 would be ~90s/
-  // variant -> a 15-run bench-stat sweep balloons past an hour. And it would not
-  // fix the sharded variant's spread: its in-process err is only ~5%, but its
-  // ACROSS-PROCESS spread is ~40% (measured, scripts/bench-stat.py -n 15). That
-  // variance is thread spawn/join + OS scheduling jitter (sharded is ~14ns/op,
-  // so per-process system noise dominates), NOT nanobench under-sampling -- more
-  // iterations churn the same jittery spawn/join. The honest fix is the cross-
-  // process median in bench-stat.py, which is what the perf doc reports; the
-  // sharded win is stated as an ORDER OF MAGNITUDE (2-5x), not a point value.
+  // Every episode includes queue allocation/destruction and P+C thread
+  // construction/join. This is not a measurement of warm queue operations alone.
   b.title(title).relative(true).batch(kTotal).minEpochIterations(50);
+  if (std::getenv("HYLE_BENCH_SMOKE") != nullptr)
+    b.epochs(1).epochIterations(1).output(nullptr);
 
   b.run("HYLE BoundedQueue", [&] {
     BoundedQueue<std::uint64_t> q(kCap);
+    if (!q.valid()) std::abort();
     std::atomic<int> producers_done{0};
+    std::array<ConsumerResult, kConsumers> consumers{};
     std::vector<std::thread> ts;
     for (int p = 0; p < kProducers; ++p)
       ts.emplace_back([&q, &producers_done, p] {
@@ -177,28 +176,35 @@ void bench_mpmc() {
         producers_done.fetch_add(1, std::memory_order_release);
       });
     for (int c = 0; c < kConsumers; ++c)
-      ts.emplace_back([&q, &producers_done] {
-        std::uint64_t out = 0, local = 0;
+      ts.emplace_back([&q, &producers_done, &consumers, c] {
+        std::uint64_t out = 0, local = 0, sum = 0, xor_sum = 0;
+        bool draining = false;
         for (;;) {
           if (q.try_pop(out)) {
             ++local;
+            sum += out;
+            xor_sum ^= out;
+          } else if (draining) {
+            break;
           } else if (producers_done.load(std::memory_order_acquire) == kProducers) {
-            break;  // all produced and queue empty -> done
+            draining = true;  // Retry empty only after acquiring all publications.
           } else {
             std::this_thread::yield();
           }
         }
-        ankerl::nanobench::doNotOptimizeAway(local);
+        consumers[static_cast<std::size_t>(c)] = {local, sum, xor_sum};
       });
     for (auto& t : ts) t.join();
+    require_conservation(consumers, static_cast<std::uint64_t>(kTotal));
   });
 
-  // HYLE sharded: one shard per producer (zero inter-producer contention). Same
-  // per-shard cap; drops global FIFO. Quantifies the headroom sharding unlocks
-  // over the single ring under the SAME workload.
+  // One shard per producer: total capacity is P*kCap, and only per-shard order
+  // remains. This is a different bounded-admission policy from the single ring.
   b.run("HYLE ShardedQueue (1 shard/producer)", [&] {
     ShardedQueue<std::uint64_t> q(kProducers, kCap);
+    if (!q.valid()) std::abort();
     std::atomic<int> producers_done{0};
+    std::array<ConsumerResult, kConsumers> consumers{};
     std::vector<std::thread> ts;
     for (int p = 0; p < kProducers; ++p)
       ts.emplace_back([&q, &producers_done, p] {
@@ -209,49 +215,63 @@ void bench_mpmc() {
         producers_done.fetch_add(1, std::memory_order_release);
       });
     for (int c = 0; c < kConsumers; ++c)
-      ts.emplace_back([&q, &producers_done, c] {
-        std::uint64_t out = 0, local = 0;
+      ts.emplace_back([&q, &producers_done, &consumers, c] {
+        std::uint64_t out = 0, local = 0, sum = 0, xor_sum = 0;
+        bool draining = false;
         std::size_t cursor = static_cast<std::size_t>(c);  // spread across shards
         for (;;) {
           if (q.try_pop(cursor, out)) {
             ++local;
-          } else if (producers_done.load(std::memory_order_acquire) == kProducers) {
+            sum += out;
+            xor_sum ^= out;
+          } else if (draining) {
             break;
+          } else if (producers_done.load(std::memory_order_acquire) == kProducers) {
+            draining = true;
           } else {
             std::this_thread::yield();
           }
         }
-        ankerl::nanobench::doNotOptimizeAway(local);
+        consumers[static_cast<std::size_t>(c)] = {local, sum, xor_sum};
       });
     for (auto& t : ts) t.join();
+    require_conservation(consumers, static_cast<std::uint64_t>(kTotal));
   });
 
 #if defined(HYLE_BENCH_MOODYCAMEL)
   b.run("moodycamel ConcurrentQueue", [&] {
     moodycamel::ConcurrentQueue<std::uint64_t> q(kCap);
     std::atomic<int> producers_done{0};
+    std::array<ConsumerResult, kConsumers> consumers{};
     std::vector<std::thread> ts;
     for (int p = 0; p < kProducers; ++p)
       ts.emplace_back([&q, &producers_done, p] {
         std::uint64_t base = 1 + static_cast<std::uint64_t>(p) * kPerThread;
-        for (int k = 0; k < kPerThread; ++k) q.enqueue(base + k);
+        for (int k = 0; k < kPerThread; ++k)
+          if (!q.enqueue(base + k)) std::abort();
         producers_done.fetch_add(1, std::memory_order_release);
       });
     for (int c = 0; c < kConsumers; ++c)
-      ts.emplace_back([&q, &producers_done] {
-        std::uint64_t out = 0, local = 0;
+      ts.emplace_back([&q, &producers_done, &consumers, c] {
+        std::uint64_t out = 0, local = 0, sum = 0, xor_sum = 0;
+        bool draining = false;
         for (;;) {
           if (q.try_dequeue(out)) {
             ++local;
-          } else if (producers_done.load(std::memory_order_acquire) == kProducers) {
+            sum += out;
+            xor_sum ^= out;
+          } else if (draining) {
             break;
+          } else if (producers_done.load(std::memory_order_acquire) == kProducers) {
+            draining = true;
           } else {
             std::this_thread::yield();
           }
         }
-        ankerl::nanobench::doNotOptimizeAway(local);
+        consumers[static_cast<std::size_t>(c)] = {local, sum, xor_sum};
       });
     for (auto& t : ts) t.join();
+    require_conservation(consumers, static_cast<std::uint64_t>(kTotal));
   });
 #endif
 #if defined(HYLE_BENCH_TBB)
@@ -259,6 +279,7 @@ void bench_mpmc() {
     tbb::concurrent_bounded_queue<std::uint64_t> q;
     q.set_capacity(kCap);
     std::atomic<int> producers_done{0};
+    std::array<ConsumerResult, kConsumers> consumers{};
     std::vector<std::thread> ts;
     for (int p = 0; p < kProducers; ++p)
       ts.emplace_back([&q, &producers_done, p] {
@@ -268,28 +289,34 @@ void bench_mpmc() {
         producers_done.fetch_add(1, std::memory_order_release);
       });
     for (int c = 0; c < kConsumers; ++c)
-      ts.emplace_back([&q, &producers_done] {
-        std::uint64_t out = 0, local = 0;
+      ts.emplace_back([&q, &producers_done, &consumers, c] {
+        std::uint64_t out = 0, local = 0, sum = 0, xor_sum = 0;
+        bool draining = false;
         for (;;) {
           if (q.try_pop(out)) {
             ++local;
-          } else if (producers_done.load(std::memory_order_acquire) == kProducers) {
+            sum += out;
+            xor_sum ^= out;
+          } else if (draining) {
             break;
+          } else if (producers_done.load(std::memory_order_acquire) == kProducers) {
+            draining = true;
           } else {
             std::this_thread::yield();
           }
         }
-        ankerl::nanobench::doNotOptimizeAway(local);
+        consumers[static_cast<std::size_t>(c)] = {local, sum, xor_sum};
       });
     for (auto& t : ts) t.join();
+    require_conservation(consumers, static_cast<std::uint64_t>(kTotal));
   });
 #endif
 #if defined(HYLE_BENCH_RIGTORP)
-  // Same-contract rival: strict-bounded single-ring MPMC. Spin-retry on full (like
-  // HYLE BoundedQueue) -> isolates the single-CAS serialization both pay at 4P.
-  b.run("rigtorp MPMCQueue (same-contract SOTA)", [&] {
+  // Fixed-capacity single-ring peer; the same outer retry policy is charged.
+  b.run("rigtorp MPMCQueue (bounded ring)", [&] {
     rigtorp::mpmc::Queue<std::uint64_t> q(kCap);
     std::atomic<int> producers_done{0};
+    std::array<ConsumerResult, kConsumers> consumers{};
     std::vector<std::thread> ts;
     for (int p = 0; p < kProducers; ++p)
       ts.emplace_back([&q, &producers_done, p] {
@@ -299,20 +326,26 @@ void bench_mpmc() {
         producers_done.fetch_add(1, std::memory_order_release);
       });
     for (int c = 0; c < kConsumers; ++c)
-      ts.emplace_back([&q, &producers_done] {
-        std::uint64_t out = 0, local = 0;
+      ts.emplace_back([&q, &producers_done, &consumers, c] {
+        std::uint64_t out = 0, local = 0, sum = 0, xor_sum = 0;
+        bool draining = false;
         for (;;) {
           if (q.try_pop(out)) {
             ++local;
-          } else if (producers_done.load(std::memory_order_acquire) == kProducers) {
+            sum += out;
+            xor_sum ^= out;
+          } else if (draining) {
             break;
+          } else if (producers_done.load(std::memory_order_acquire) == kProducers) {
+            draining = true;
           } else {
             std::this_thread::yield();
           }
         }
-        ankerl::nanobench::doNotOptimizeAway(local);
+        consumers[static_cast<std::size_t>(c)] = {local, sum, xor_sum};
       });
     for (auto& t : ts) t.join();
+    require_conservation(consumers, static_cast<std::uint64_t>(kTotal));
   });
 #endif
 }
@@ -618,6 +651,10 @@ int main() {
   if (filter != nullptr) {
     if (std::string_view(filter) == "concurrent-vector") {
       bench_concurrent_vector();
+      return 0;
+    }
+    if (std::string_view(filter) == "mpmc") {
+      bench_mpmc<4, 4>();
       return 0;
     }
     return 2;
