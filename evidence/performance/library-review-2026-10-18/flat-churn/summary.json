@@ -1,0 +1,369 @@
+{
+  "scope": "Automatic FlatHashMap grow/prepare policy; default integer hash, fixed sequential rolling keys. Not timing, peer ranking, or engine tokens/s.",
+  "policy": "7/8 maximum live load unchanged. On exhausted insertion budget grow at live>=3/4 capacity, otherwise same-capacity cleanup. try_prepare_insert shares grow; explicit try_reserve(count) unchanged.",
+  "workload": "Fill reserved table, then 32768 erase-oldest/insert-new rounds; optional explicit try_prepare_insert before every insert. Counter counts hash calls only, detects old live-key hashes during relocation. Full live key/value oracle and size verified.",
+  "baseline": [
+    {
+      "prepare": false,
+      "initial_capacity": 1024,
+      "live": 896,
+      "rounds": 32768,
+      "rehashes": 23069,
+      "rehashed_keys": 20646755,
+      "final_capacity": 1024,
+      "warm_fill_hash_calls": 896,
+      "oracle": true
+    },
+    {
+      "prepare": false,
+      "initial_capacity": 1024,
+      "live": 895,
+      "rounds": 32768,
+      "rehashes": 11370,
+      "rehashed_keys": 10164780,
+      "final_capacity": 1024,
+      "warm_fill_hash_calls": 895,
+      "oracle": true
+    },
+    {
+      "prepare": false,
+      "initial_capacity": 1024,
+      "live": 880,
+      "rounds": 32768,
+      "rehashes": 1113,
+      "rehashed_keys": 978327,
+      "final_capacity": 1024,
+      "warm_fill_hash_calls": 880,
+      "oracle": true
+    },
+    {
+      "prepare": false,
+      "initial_capacity": 1024,
+      "live": 768,
+      "rounds": 32768,
+      "rehashes": 80,
+      "rehashed_keys": 61360,
+      "final_capacity": 1024,
+      "warm_fill_hash_calls": 768,
+      "oracle": true
+    },
+    {
+      "prepare": false,
+      "initial_capacity": 8192,
+      "live": 7168,
+      "rounds": 32768,
+      "rehashes": 23736,
+      "rehashed_keys": 170115912,
+      "final_capacity": 8192,
+      "warm_fill_hash_calls": 7168,
+      "oracle": true
+    },
+    {
+      "prepare": false,
+      "initial_capacity": 8192,
+      "live": 7167,
+      "rounds": 32768,
+      "rehashes": 11832,
+      "rehashed_keys": 84788112,
+      "final_capacity": 8192,
+      "warm_fill_hash_calls": 7167,
+      "oracle": true
+    },
+    {
+      "prepare": false,
+      "initial_capacity": 8192,
+      "live": 7152,
+      "rounds": 32768,
+      "rehashes": 1347,
+      "rehashed_keys": 9632397,
+      "final_capacity": 8192,
+      "warm_fill_hash_calls": 7152,
+      "oracle": true
+    },
+    {
+      "prepare": false,
+      "initial_capacity": 8192,
+      "live": 7040,
+      "rounds": 32768,
+      "rehashes": 145,
+      "rehashed_keys": 1020655,
+      "final_capacity": 8192,
+      "warm_fill_hash_calls": 7040,
+      "oracle": true
+    },
+    {
+      "prepare": true,
+      "initial_capacity": 1024,
+      "live": 896,
+      "rounds": 32768,
+      "rehashes": 23521,
+      "rehashed_keys": 21051295,
+      "final_capacity": 1024,
+      "warm_fill_hash_calls": 896,
+      "oracle": true
+    },
+    {
+      "prepare": true,
+      "initial_capacity": 1024,
+      "live": 895,
+      "rounds": 32768,
+      "rehashes": 11593,
+      "rehashed_keys": 10364142,
+      "final_capacity": 1024,
+      "warm_fill_hash_calls": 895,
+      "oracle": true
+    },
+    {
+      "prepare": true,
+      "initial_capacity": 1024,
+      "live": 880,
+      "rounds": 32768,
+      "rehashes": 1132,
+      "rehashed_keys": 995028,
+      "final_capacity": 1024,
+      "warm_fill_hash_calls": 880,
+      "oracle": true
+    },
+    {
+      "prepare": true,
+      "initial_capacity": 1024,
+      "live": 768,
+      "rounds": 32768,
+      "rehashes": 81,
+      "rehashed_keys": 62127,
+      "final_capacity": 1024,
+      "warm_fill_hash_calls": 768,
+      "oracle": true
+    },
+    {
+      "prepare": true,
+      "initial_capacity": 8192,
+      "live": 7168,
+      "rounds": 32768,
+      "rehashes": 23742,
+      "rehashed_keys": 170158914,
+      "final_capacity": 8192,
+      "warm_fill_hash_calls": 7168,
+      "oracle": true
+    },
+    {
+      "prepare": true,
+      "initial_capacity": 8192,
+      "live": 7167,
+      "rounds": 32768,
+      "rehashes": 11847,
+      "rehashed_keys": 84895602,
+      "final_capacity": 8192,
+      "warm_fill_hash_calls": 7167,
+      "oracle": true
+    },
+    {
+      "prepare": true,
+      "initial_capacity": 8192,
+      "live": 7152,
+      "rounds": 32768,
+      "rehashes": 1350,
+      "rehashed_keys": 9653850,
+      "final_capacity": 8192,
+      "warm_fill_hash_calls": 7152,
+      "oracle": true
+    },
+    {
+      "prepare": true,
+      "initial_capacity": 8192,
+      "live": 7040,
+      "rounds": 32768,
+      "rehashes": 145,
+      "rehashed_keys": 1020655,
+      "final_capacity": 8192,
+      "warm_fill_hash_calls": 7040,
+      "oracle": true
+    }
+  ],
+  "candidate": [
+    {
+      "prepare": false,
+      "initial_capacity": 1024,
+      "live": 896,
+      "rounds": 32768,
+      "rehashes": 1,
+      "rehashed_keys": 895,
+      "final_capacity": 2048,
+      "warm_fill_hash_calls": 896,
+      "oracle": true
+    },
+    {
+      "prepare": false,
+      "initial_capacity": 1024,
+      "live": 895,
+      "rounds": 32768,
+      "rehashes": 1,
+      "rehashed_keys": 894,
+      "final_capacity": 2048,
+      "warm_fill_hash_calls": 895,
+      "oracle": true
+    },
+    {
+      "prepare": false,
+      "initial_capacity": 1024,
+      "live": 880,
+      "rounds": 32768,
+      "rehashes": 1,
+      "rehashed_keys": 879,
+      "final_capacity": 2048,
+      "warm_fill_hash_calls": 880,
+      "oracle": true
+    },
+    {
+      "prepare": false,
+      "initial_capacity": 1024,
+      "live": 768,
+      "rounds": 32768,
+      "rehashes": 80,
+      "rehashed_keys": 61360,
+      "final_capacity": 1024,
+      "warm_fill_hash_calls": 768,
+      "oracle": true
+    },
+    {
+      "prepare": false,
+      "initial_capacity": 8192,
+      "live": 7168,
+      "rounds": 32768,
+      "rehashes": 1,
+      "rehashed_keys": 7167,
+      "final_capacity": 16384,
+      "warm_fill_hash_calls": 7168,
+      "oracle": true
+    },
+    {
+      "prepare": false,
+      "initial_capacity": 8192,
+      "live": 7167,
+      "rounds": 32768,
+      "rehashes": 1,
+      "rehashed_keys": 7166,
+      "final_capacity": 16384,
+      "warm_fill_hash_calls": 7167,
+      "oracle": true
+    },
+    {
+      "prepare": false,
+      "initial_capacity": 8192,
+      "live": 7152,
+      "rounds": 32768,
+      "rehashes": 1,
+      "rehashed_keys": 7151,
+      "final_capacity": 16384,
+      "warm_fill_hash_calls": 7152,
+      "oracle": true
+    },
+    {
+      "prepare": false,
+      "initial_capacity": 8192,
+      "live": 7040,
+      "rounds": 32768,
+      "rehashes": 1,
+      "rehashed_keys": 7039,
+      "final_capacity": 16384,
+      "warm_fill_hash_calls": 7040,
+      "oracle": true
+    },
+    {
+      "prepare": true,
+      "initial_capacity": 1024,
+      "live": 896,
+      "rounds": 32768,
+      "rehashes": 1,
+      "rehashed_keys": 895,
+      "final_capacity": 2048,
+      "warm_fill_hash_calls": 896,
+      "oracle": true
+    },
+    {
+      "prepare": true,
+      "initial_capacity": 1024,
+      "live": 895,
+      "rounds": 32768,
+      "rehashes": 1,
+      "rehashed_keys": 894,
+      "final_capacity": 2048,
+      "warm_fill_hash_calls": 895,
+      "oracle": true
+    },
+    {
+      "prepare": true,
+      "initial_capacity": 1024,
+      "live": 880,
+      "rounds": 32768,
+      "rehashes": 1,
+      "rehashed_keys": 879,
+      "final_capacity": 2048,
+      "warm_fill_hash_calls": 880,
+      "oracle": true
+    },
+    {
+      "prepare": true,
+      "initial_capacity": 1024,
+      "live": 768,
+      "rounds": 32768,
+      "rehashes": 81,
+      "rehashed_keys": 62127,
+      "final_capacity": 1024,
+      "warm_fill_hash_calls": 768,
+      "oracle": true
+    },
+    {
+      "prepare": true,
+      "initial_capacity": 8192,
+      "live": 7168,
+      "rounds": 32768,
+      "rehashes": 1,
+      "rehashed_keys": 7167,
+      "final_capacity": 16384,
+      "warm_fill_hash_calls": 7168,
+      "oracle": true
+    },
+    {
+      "prepare": true,
+      "initial_capacity": 8192,
+      "live": 7167,
+      "rounds": 32768,
+      "rehashes": 1,
+      "rehashed_keys": 7166,
+      "final_capacity": 16384,
+      "warm_fill_hash_calls": 7167,
+      "oracle": true
+    },
+    {
+      "prepare": true,
+      "initial_capacity": 8192,
+      "live": 7152,
+      "rounds": 32768,
+      "rehashes": 1,
+      "rehashed_keys": 7151,
+      "final_capacity": 16384,
+      "warm_fill_hash_calls": 7152,
+      "oracle": true
+    },
+    {
+      "prepare": true,
+      "initial_capacity": 8192,
+      "live": 7040,
+      "rounds": 32768,
+      "rehashes": 1,
+      "rehashed_keys": 7039,
+      "final_capacity": 16384,
+      "warm_fill_hash_calls": 7040,
+      "oracle": true
+    }
+  ],
+  "tests": "47 tests from FlatHashMap/Set and ConcurrentHashMap/Set pass; meaningful near-full rolling regression covers regular and prepare insertion. Existing collision/alias/owning destructor/OOM/reserve tests included.",
+  "cost": "Dense traces finish at twice original capacity. Resize transiently retains old storage while allocating new twice-size storage, versus same-size old cleanup. May return allocation failure sooner; failure preserves old table. No same-capacity speed claim.",
+  "review": "backend_assembly_design independently read grow/prepare/resize/alias/locking paths; no confirmed lifetime, OOM preservation or explicit reserve-contract issue.",
+  "validation": "Fresh header-only consumers and two test TUs with reused Windows foundation static cache. No native/SDK/full build, no timer or formal latency conclusion.",
+  "product_sha256": {
+    "include/hyle/container/detail/flat_hash_table.h": "c034a533b0554225da54326a7169507c07aa7810504f34b560cfeb80092f0e1f",
+    "tests/container/flat_hash_map_test.cc": "7983f430cfdae6c4baf9f93993d8d077a9b28d8a57f5a2d746b5b76603a9207e"
+  }
+}

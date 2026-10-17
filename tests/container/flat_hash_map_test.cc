@@ -248,7 +248,7 @@ TEST(FlatHashMap, EraseThenReinsertReusesTombstone) {
   }
 }
 
-// Churn: alternate insert/erase heavily. The grow() same-size rehash must keep
+// Churn: alternate insert/erase heavily. Sparse-table reclamation must keep
 // capacity bounded (tombstones reclaimed), not grow unboundedly.
 TEST(FlatHashMap, ChurnBoundedCapacity) {
   FlatHashMap<std::uint64_t, std::uint64_t> t;
@@ -259,6 +259,40 @@ TEST(FlatHashMap, ChurnBoundedCapacity) {
   }
   EXPECT_LE(t.size(), 256u);
   EXPECT_LT(t.capacity(), 4096u) << "tombstones grew capacity unboundedly";
+}
+
+TEST(FlatHashMap, NearFullRollingKeysDoNotRehashEveryInsertion) {
+  struct CountingHash {
+    std::size_t* calls;
+    std::uint64_t operator()(std::uint64_t key) const noexcept {
+      ++*calls;
+      return hyle::container::Hash<std::uint64_t>{}(key);
+    }
+  };
+  constexpr std::uint64_t live = 895, rounds = 4096;
+  for (const bool prepare : {false, true}) {
+    SCOPED_TRACE(prepare);
+    std::size_t calls = 0;
+    FlatHashMap<std::uint64_t, std::uint64_t, CountingHash> table(
+        hyle::mem::SystemAllocator{}, CountingHash{&calls});
+    table.reserve(live);
+    for (std::uint64_t key = 0; key < live; ++key)
+      ASSERT_TRUE(table.insert(key, key + 17));
+    calls = 0;
+    for (std::uint64_t key = 0; key < rounds; ++key) {
+      ASSERT_TRUE(table.erase(key));
+      if (prepare) ASSERT_TRUE(table.try_prepare_insert());
+      ASSERT_TRUE(table.insert(key + live, key + live + 17));
+    }
+    // Generous linear bound on hashing includes erase, insert and relocation.
+    // A near-full same-capacity rebuild after every few inserts exceeds it.
+    EXPECT_LE(calls, 4 * rounds + 2 * live);
+    ASSERT_EQ(table.size(), live);
+    for (std::uint64_t key = rounds; key < rounds + live; ++key) {
+      ASSERT_NE(table.find(key), nullptr);
+      EXPECT_EQ(*table.find(key), key + 17);
+    }
+  }
 }
 
 TEST(FlatHashMap, EraseMatchesOracleUnderMixedOps) {

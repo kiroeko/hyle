@@ -392,8 +392,7 @@ class FlatHashMap {
 
   bool try_prepare_insert() {
     if (!needs_prepare_insert()) return true;
-    if (size_ == static_cast<std::size_t>(-1)) return false;
-    return try_reserve(size_ + 1);
+    return grow();
   }
 
   void clear() noexcept {
@@ -893,13 +892,15 @@ class FlatHashMap {
   }
 
   bool grow() {
-    // Double only when genuinely full; if growth_left hit 0 mostly from
-    // tombstones (real size sparse), rehash SAME size to reclaim instead. The
-    // alloc + reinsert loop itself lives in the type-erased core (one DLL copy).
-    HYLE_FATAL_ASSERT(cap_ == 0 || cap_ <= static_cast<std::size_t>(-1) / 2);
-    std::size_t new_cap = cap_ == 0 ? kMinCap
-                          : size_ >= cap_ - cap_ / 8 ? cap_ * 2
-                                                    : cap_;
+    // Keep a constant fraction of insertion headroom after reclamation. Near
+    // the 7/8 load limit, a same-capacity rehash can leave only one empty-slot
+    // credit and turn rolling erase/insert into an O(size) rebuild per insert.
+    // Sparse tables still reclaim tombstones without growing their storage.
+    std::size_t new_cap = cap_ == 0 ? kMinCap : cap_;
+    if (cap_ != 0 && size_ >= cap_ - cap_ / 4) {
+      if (cap_ > static_cast<std::size_t>(-1) / 2) return false;
+      new_cap = cap_ * 2;
+    }
     return resize_to(new_cap);
   }
 
