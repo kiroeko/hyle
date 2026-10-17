@@ -58,7 +58,8 @@ struct RunState final : util::RefCounted<RunState> {
   std::unique_ptr<PageSlots,PageSlotsDelete> pages;
   sched::Scheduler *scheduler = nullptr;
   compute::Queue *cpu_queue = nullptr;
-  sched::Event progress, finished;
+  sched::Event progress;
+  sched::ConditionVariable finished;
   graph::detail::JointPipelineFrontier frontier;
   Vector<std::uint8_t> initially_complete;
   Vector<std::size_t> pending_native;
@@ -104,10 +105,14 @@ void release_invocation(InvocationState *state) noexcept {
 Status admit(InvocationState *state,bool accepting_source=false) noexcept {
   if (state == nullptr || state->closed)
     return Status::FailedPrecondition("CPU+Apple invocation is empty or closed");
-  if (state->run->running.load(std::memory_order_acquire))
-    return Status::FailedPrecondition("CPU+Apple invocation is running");
-  if (state->run->retired)
-    return Status::FailedPrecondition("CPU+Apple failed invocation is retired");
+  {
+    // Join the last publisher's monitor before reusing any episode fields.
+    std::lock_guard lock(state->run->retirement_mutex);
+    if (state->run->running.load(std::memory_order_acquire))
+      return Status::FailedPrecondition("CPU+Apple invocation is running");
+    if (state->run->retired)
+      return Status::FailedPrecondition("CPU+Apple failed invocation is retired");
+  }
   if(!accepting_source && state->run->pages)HYLE_RETURN_IF_ERROR(state->run->pages->reusable());
   if (!state->write.valid()) {
     HYLE_ASSIGN_OR_RETURN(auto write, state->result.begin());
@@ -280,12 +285,17 @@ void publish_terminal(RunState &run, Status status, bool accepted) noexcept {
     abandoned = std::exchange(run.abandoned, {});
     hint = run.hint;
   }
-  run.finished.signal();
   if (abandoned.valid()) {
     if (status.ok() && !hint.ok()) status = hint;
     abandoned.terminal(abandoned.state, status);
     abandoned.release(abandoned.state);
   }
+  // The driver or the releasing native prefix still owns a strong reference
+  // through this call. Finish callback tails before allowing reuse. Wake under
+  // the predicate monitor before the final store, so every observer sees false
+  // when it reacquires the lock and no old signal can reach a reused episode.
+  std::lock_guard lock(run.retirement_mutex);
+  run.finished.notify_all();
   run.running.store(false, std::memory_order_release);
 }
 const cd::CompletionVTable completion_vtable{
@@ -320,12 +330,14 @@ const cd::CompletionVTable completion_vtable{
     },
     .wait = [](void *opaque) noexcept {
       auto &run = *static_cast<RunState *>(opaque);
+      std::unique_lock lock(run.retirement_mutex);
       while (run.running.load(std::memory_order_acquire)) {
         const auto error = run.leases.observed_error();
         if (!error.ok()) return error;
-        run.finished.wait_for(std::chrono::milliseconds(1));
+        // Keep early accepted-prefix error observation. Normal termination
+        // broadcasts on this monitor and never depends on the timeout.
+        run.finished.wait_for(lock, std::chrono::milliseconds(1));
       }
-      std::lock_guard lock(run.retirement_mutex);
       return run.terminal;
     },
     .request_cancel = [](void *opaque) noexcept {
@@ -1115,12 +1127,12 @@ Result<compute::OwnedResult<Results>> Invocation::submit() noexcept {
     state_->write = {};
     return std::unexpected(emplaced);
   }
-  run.finished.reset(); run.cancel.store(false, std::memory_order_relaxed);
+  run.cancel.store(false, std::memory_order_relaxed);
   {
     std::lock_guard lock(run.retirement_mutex);
     run.done = false; run.terminal = Status::Ok(); run.abandoned = {}; run.hint = Status::Ok();
+    run.running.store(true, std::memory_order_release);
   }
-  run.running.store(true, std::memory_order_release);
   run.incref(); // public Completion
   auto completion = cd::CompletionAccess::make(&completion_vtable, &run);
   auto result = state_->write.publish(std::move(completion));
@@ -1153,8 +1165,10 @@ Status Invocation::close() noexcept {
     run.cancel.store(true, std::memory_order_release);
   }
   run.pipeline_ready.notify_all();
-  while (run.running.load(std::memory_order_acquire))
-    run.finished.wait_for(std::chrono::milliseconds(1));
+  {
+    std::unique_lock lock(run.retirement_mutex);
+    run.finished.wait(lock, [&] { return !run.running.load(std::memory_order_acquire); });
+  }
   state_->write = {};
   if(run.pages)for(const auto& page:run.pages->slots){
     page->controller.close().IgnoreError();

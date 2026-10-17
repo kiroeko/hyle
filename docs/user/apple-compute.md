@@ -48,6 +48,10 @@ HYLE_RETURN_IF_ERROR(slot.bind(std::array{query_array, key_array, value_array}))
 资源/allocator 必须晚于派生槽与输入 owner 销毁。输出数组与 ResultLease 保持原保活规则，
 不能因原数学完成就提前改写仍有读者的数据。private native 内存上界仍未知。
 
+分页和不等长注意力的 full kernel 按实际 Metal pipeline 的线程组共享内存需求选择 tile，
+包括开启 GPU 验证后的实际编译资源。默认 tile 超过设备上限时使用较小 tile；仍无法满足时
+返回原生错误。这个限制约束每个线程组的临时空间，不是模型、KV 或整机内存上限。
+
 只支持 macOS Apple Silicon。源码构建需要可用的 Apple C++/Objective-C/Objective-C++ 和 Metal 编译工具；
 `xcrun -sdk macosx metal --version`、`xcrun -sdk macosx metallib --version` 必须成功。CLT 本身未必
 包含 Metal CLI。HYLE 不代装系统 SDK；ON 缺条件失败，AUTO 不可用时关闭，OFF 不探测或下载 MLX。
