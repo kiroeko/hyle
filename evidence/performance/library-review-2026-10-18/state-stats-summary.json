@@ -1,0 +1,161 @@
+{
+  "baseline_revision": "90e10686e",
+  "change": "stop previous-root scan after first match; no other product changes in measured closure",
+  "metric": "baseline_ns/candidate_ns; >1 favors candidate",
+  "process_pairs": {
+    "aa": 5,
+    "ab": 9
+  },
+  "cpu": "i9-13900K, Windows 11 26200, logical CPU4 affinity",
+  "compiler": "MSVC19.50.35728.0 Release /O2 /MD static, trace OFF, sanitizer OFF",
+  "binary_sha256": {
+    "baseline.exe": "18c8ed7af48b294629814c9b0a532499faff5df6854091f78d5c4db956a3c71b",
+    "candidate.exe": "580d5bb33fb6f5c08cd0ed1187f4961ec4bcdd49de9930ce1a76c498d1b07364"
+  },
+  "rows": [
+    {
+      "blocks": 128,
+      "roots": 1,
+      "aa": {
+        "a_ns": 3290.234,
+        "b_ns": 3271.875,
+        "ratio_median": 1.0085008429118774,
+        "ratio_range": [
+          0.9829545454545454,
+          1.0168720456382738
+        ],
+        "min_aggregate_ns": 829200
+      },
+      "ab": {
+        "a_ns": 3289.453,
+        "b_ns": 100.781,
+        "ratio_median": 32.573719252636906,
+        "ratio_range": [
+          32.213254482491735,
+          34.24039253430706
+        ],
+        "min_aggregate_ns": 25800
+      }
+    },
+    {
+      "blocks": 128,
+      "roots": 4,
+      "aa": {
+        "a_ns": 3944.531,
+        "b_ns": 3937.5,
+        "ratio_median": 1.0001976042571192,
+        "ratio_range": [
+          0.8344074389339976,
+          1.004960253968254
+        ],
+        "min_aggregate_ns": 1002300
+      },
+      "ab": {
+        "a_ns": 3942.969,
+        "b_ns": 160.156,
+        "ratio_median": 24.641499537950498,
+        "ratio_range": [
+          24.44881865181448,
+          25.76101426109543
+        ],
+        "min_aggregate_ns": 40800
+      }
+    },
+    {
+      "blocks": 512,
+      "roots": 1,
+      "aa": {
+        "a_ns": 41525.0,
+        "b_ns": 41318.75,
+        "ratio_median": 1.011810423651326,
+        "ratio_range": [
+          0.9417768063585322,
+          1.5488211848943199
+        ],
+        "min_aggregate_ns": 2620600
+      },
+      "ab": {
+        "a_ns": 41018.75,
+        "b_ns": 346.875,
+        "ratio_median": 118.78750231674543,
+        "ratio_range": [
+          116.91517714285713,
+          123.28378234234233
+        ],
+        "min_aggregate_ns": 22100
+      }
+    },
+    {
+      "blocks": 512,
+      "roots": 4,
+      "aa": {
+        "a_ns": 44107.812,
+        "b_ns": 43834.375,
+        "ratio_median": 1.0062379582234262,
+        "ratio_range": [
+          0.997689945269742,
+          1.080809865642132
+        ],
+        "min_aggregate_ns": 2789700
+      },
+      "ab": {
+        "a_ns": 44515.625,
+        "b_ns": 562.5,
+        "ratio_median": 79.35926073826342,
+        "ratio_range": [
+          57.048780487804876,
+          87.47346052504912
+        ],
+        "min_aggregate_ns": 35900
+      }
+    },
+    {
+      "blocks": 2048,
+      "roots": 1,
+      "aa": {
+        "a_ns": 762643.75,
+        "b_ns": 769937.5,
+        "ratio_median": 0.9924462805876745,
+        "ratio_range": [
+          0.9780763108388404,
+          1.0334643734643734
+        ],
+        "min_aggregate_ns": 12165900
+      },
+      "ab": {
+        "a_ns": 774131.25,
+        "b_ns": 1400.0,
+        "ratio_median": 554.2511210762332,
+        "ratio_range": [
+          542.8973214285714,
+          625.6222222222223
+        ],
+        "min_aggregate_ns": 22300
+      }
+    },
+    {
+      "blocks": 2048,
+      "roots": 4,
+      "aa": {
+        "a_ns": 774743.75,
+        "b_ns": 770950.0,
+        "ratio_median": 1.0018475261868525,
+        "ratio_range": [
+          0.9279157932970616,
+          1.017225814322313
+        ],
+        "min_aggregate_ns": 12262500
+      },
+      "ab": {
+        "a_ns": 776212.5,
+        "b_ns": 2181.25,
+        "ratio_median": 354.70773638968484,
+        "ratio_range": [
+          173.8060522696011,
+          392.8223495702006
+        ],
+        "min_aggregate_ns": 34800
+      }
+    }
+  ]
+}

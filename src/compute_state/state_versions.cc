@@ -75,8 +75,10 @@ StateStoreStats stats_locked(const d::StateStoreData &s) noexcept {
     const auto &b = s.backing[i]; if (!b.anchor.valid()) continue;
     ++stats.retained_blocks;
     bool previous = clone_root(s, b.backing.identity);
-    for (std::size_t j = 0; j < i; ++j)
-      previous |= s.backing[j].anchor.valid() && s.backing[j].backing.identity == b.backing.identity;
+    // A root is charged once. Once it is found, inspecting further anchors
+    // cannot change the result; shared-pool pages must not all rescan a prefix.
+    for (std::size_t j = 0; !previous && j < i; ++j)
+      previous = s.backing[j].anchor.valid() && s.backing[j].backing.identity == b.backing.identity;
     if (!previous) { ++stats.backing_roots; stats.backing_bytes += b.backing.bytes; }
     if (b.metadata) stats.host_snapshot_bytes += b.anchor.size();
   }

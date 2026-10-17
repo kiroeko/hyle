@@ -78,6 +78,33 @@ TEST(StateVersions, BackingCapacityDeduplicatesDifferentBlocksOfOnePool) {
   EXPECT_EQ(store.stats().backing_roots,1u);EXPECT_EQ(store.stats().backing_bytes,256u);
   EXPECT_EQ(store.stats().retained_blocks,2u);(void)version;
 }
+TEST(StateVersions, MixedRootsMetadataAndCollectedPrefixKeepExactAccounting) {
+  const std::array specs{resource_spec(), resource_spec(), resource_spec(),
+      StateEntrySpec{.kind=StateEntryKind::kHostMetadata,.metadata_bytes=4}};
+  auto schema=StateSchema::create(specs).value();
+  auto store=StateStore::create(schema).value();
+  auto a=LeasePool::create(m::system_resource(),128,{.max_blocks=2,.backing_alignment=64}).value();
+  auto b=LeasePool::create(m::system_resource(),64,{.max_blocks=1,.backing_alignment=64}).value();
+  auto first=a.allocate(16,64).value().publish().value();
+  auto middle=b.allocate(16,64).value().publish().value();
+  auto last=a.allocate(16,64).value().publish().value();
+  const std::array<std::byte,4> metadata{};
+  auto base=store.import(std::array{
+      StateMember{schema.entry(0).value(),first}, StateMember{schema.entry(1).value(),middle},
+      StateMember{schema.entry(2).value(),last}, StateMember{schema.entry(3).value(),{},metadata}}).value();
+  first.reset();
+  const auto before=store.stats();
+  EXPECT_EQ(before.retained_blocks,4u);EXPECT_EQ(before.backing_roots,3u);
+  EXPECT_EQ(before.backing_bytes,196u);EXPECT_EQ(before.host_snapshot_bytes,4u);
+  auto draft=store.begin(base).value();
+  ASSERT_TRUE(draft.replace(schema.entry(0).value(),last).ok());
+  auto updated=draft.finalize().value();base.reset();
+  ASSERT_TRUE(store.collect().ok());
+  const auto after=store.stats();
+  EXPECT_EQ(after.retained_blocks,3u);EXPECT_EQ(after.backing_roots,3u);
+  EXPECT_EQ(after.backing_bytes,196u);EXPECT_EQ(after.host_snapshot_bytes,4u);
+  EXPECT_TRUE(updated.valid());
+}
 TEST(StateVersions, CapacityCancelCloseAndCrossStoreAreExplicit) {
   auto schema=StateSchema::create(std::array{resource_spec()}).value();auto id=schema.entry(0).value();
   auto store=StateStore::create(schema,{.max_versions=1,.max_drafts=1}).value(),other=StateStore::create(schema).value();

@@ -1,0 +1,97 @@
+# 八之五：全模块性能排查
+
+基线 `90e10686e`。先核对工作量/精度/生命周期，再核仪器与噪声，最后判断实现。
+本次调研覆盖中央构建表的64个 factor（含退役 Marlin 占位），不是64个模块都已重新计时。
+旧结果只有在当前实现仍对应、输入与完成边界一致时才作为线索；旧 PASS、5%容忍带和状态标签不决定结论。
+
+## 当前源码明确的问题
+
+| 项目 | 证据与影响 | 本轮处理 |
+|---|---|---|
+| CPU 普通路线漏注册 ggml | [owner CMake](../../../src/compute_provider_ggml/CMakeLists.txt) 用 `NO_DEFINE`，而 [Direct](../../../src/compute_route_cpu/cpu_context.cc) / [Graph](../../../src/graph_route_cpu/cpu_context.cc) 以该 presence 宏编译注册。实际库虽链接，候选却消失，旧 CPU 排名不能直接继承 | 已恢复 target 的宏传播；实际 owner 声明的配置回归通过。未测修复后的 CPU 模型倍率 |
+| StateStore 重复扫描同池 roots | [stats_locked](../../../src/compute_state/state_versions.cc) 对已命中 root 仍扫描所有更早块；`replace` / `import` 等也调用它。密集单池 B 块为二次扫描 | 已在命中后停止。相同 API、计费与输入实测见下；不增加字段、分配或 backing |
+| CUDA BF16/F32 attention 的平方 scratch | [ggml CUDA](../../../src/compute_provider_ggml_cuda/ggml_cuda_provider.cc) 仅 F16 走 flash，BF16/F32 物化 scores。B1/H8/Q=KV8192 时，单个 F32 scores 为 **2 GiB**，不含 softmax 等其它 scratch。Windows 当前无 FlashInfer 路线 | 确认空间复杂度问题；未测当前峰值或倍率。优先调查锁定原生库的 BF16 融合接法，不能以窄化 F16 规避 |
+| io_uring CQE 分类的线性查表 | [Proactor::reap](../../../src/io_core/proactor.cc) 每个 CQE 扫描 pending accept/close/statx；N 个未决 special op 可使完成批次最坏 O(N²)，不相关 read/write 也付扫描成本 | 正在用真实 native io_uring 做规模对照；不能把源码复杂度直接写成已测吞吐损失 |
+
+CUDA 的 F16 flash 分支也会物化 Q×KV 的 F16 causal mask，8K方形时为128 MiB；
+不能因为主 attention kernel 融合就假定整个调用的额外空间为线性。
+锁定 Torch CUDA 的 Windows 二进制没有 FlashAttention，但已有 CUTLASS BF16 memory-efficient 内核。
+候选入口是原生 `_efficient_attention_forward`、bottom-right mask type、显式scale、F32 accumulator；
+GQA需核对分组切片与零stride view。内核概率tile使用BF16，与现有全F32中间图并非逐位等价，
+必须先核数值合同与实际设备结果，再决定接线和排序；当前仅是可行性调查。
+
+## 有效历史小输，当前版本待复测
+
+比值统一为吞吐 Hyle/peer，或延迟 peer/Hyle；低于1有利于 peer。
+
+| 项目 | 原证据 | 当前边界 |
+|---|---|---|
+| Apple ragged F16 prefill、D256 | [summary](../inference-g01-native-ragged-apple-m1-p1/summary.json)，8组比值0.98266–0.98941，所有CI上界低于1；约1.07%–1.76%延迟差 | 相同 packed 输入与原 MLX 数学、完整 warm 调用；当前仍有对应实现。需分清 kernel、managed metadata 与完成观察成本 |
+| WSL 单文件 atomic replace watch | [summary](../io-watch-p1-v1-30e133db-w1-wsl-4c06445c/summary.json)，4点0.96813–0.98638，2组CI上界低于1 | 同写入/rename/通知分类/读取generation/完成。当前保留主要机制，但新增递归路径；需重测现版本，不按“低频可接受”免查 |
+| TaskScope、32 child、4 workers | 本机历史 `C:/public/project-hyle/_validation/sched-v9-task-scope-cost-audit/p1-qualified-evidence/summary.json`；一个 placement+peer-first 组合0.970796，CI[0.955245,0.989531]，其它3组跨1 | 两侧含相同 child 工作与 Scheduler::drain。方向依赖布局/顺序，当前增加了 priority 处理；先核 A/A 与布局响应，不能直接宣布当前普遍慢2.92% |
+| G09 混合 GPU 完成观察 | 旧 native-wait 诊断把等待放在 Scheduler worker；当前 Vulkan 已用 BlockingPool，Apple 已有 native subscription | 旧倍率不是同线程资源方案；修后缺同输入、同线程预算的完整性能包。历史 BLOCKED 不是性能证据 |
+
+旧报告中的摊销空 harness ns/op 不等于硬件时钟分辨率。历史CI同侧不能替代当前版本的同路径 A/A、
+顺序/布局响应和完整完成边界核对。
+
+## 已排除的旧“输项”
+
+- G04/G05 按用户决定保持解决；[同 FP8 输入](../g04-g05-bf16-partials-2026-10-17/same-fp8/README.md)
+  已纠正计时内解码与计时前解码的不同工作，不重开旧排名。
+- G07 Apple/CUDA m64 的早期0.73–0.76 / 0.94–0.97 已被
+  [Apple attempt3](../inference-g07-apple-packed-attempt-3/receipt.json) 与
+  [CUDA attempt3](../inference-g07-cuda-packed-attempt-3/receipt.json) 覆盖，当前仍保留修复。
+- SIMD旧逐操作43条负向CI涉及32个操作，当前都已切 Highway；旧 tanh 慢的是未选路线。
+- CPU旧自研SDPA/MatMul、撤回的oneDNN FFN gate和大行RMS旧实现不代表当前默认路线。
+- CPU paged 对手冷阶段另复制约3.67 MB连续KV缓存，候选直接读分页。热期不可变缓存的优势不能称为
+  同分页输入算法胜出；需同时比较冷准备、增长、额外空间和热执行。
+- Obs concurrent atomic limiter 对 single-owner scalar gate；Arena.clear 保留 backing 对 pmr.release
+  释放重分配；裸 atomic pointer 对安全 reclaim；SIMD全域数学对 valid-domain ceiling，均需先对齐职责。
+- CUDA/Apple/Vulkan native-only 边界少了 owner、依赖和真实退休等工作，不能直接作同责算法排名；
+  额外 adapter 成本仍值得用完整消费者定位，不因“不完全可比”而放弃优化。
+
+## StateStore 同工规模实测
+
+Windows11 26200 / i9-13900K；MSVC19.50.35728，Release/O2、static、trace与sanitizer关闭。
+固定逻辑CPU4 affinity，不宣称已证明其P/E核心类型。准备、分配、导入与销毁均在计时外，
+两侧计时相同次数的公共 `StateStore::stats()`；保留同一 schema、version、原始块、root和完整结果校验。
+
+| 块数 / pool roots | 旧实现 μs/call | 修复后 μs/call | 成对倍率中位数 |
+|---|---:|---:|---:|
+| 128 / 1 | 3.289 | 0.101 | 32.57× |
+| 128 / 4 | 3.943 | 0.160 | 24.64× |
+| 512 / 1 | 41.019 | 0.347 | 118.79× |
+| 512 / 4 | 44.516 | 0.563 | 79.36× |
+| 2048 / 1 | 774.131 | 1.400 | 554.25× |
+| 2048 / 4 | 776.213 | 2.181 | 354.71× |
+
+5对独立进程 baseline A/A、9对交替A/B与B/A，全部样本和离群点保留在
+[raw](state-stats-raw.json)，[summary](state-stats-summary.json)记录二进制hash和范围。
+A/A中位数0.992–1.012，单次范围0.834–1.549；A/B最小倍率仍为24.45。
+QPC频率10 MHz、tick 100 ns；最快聚合区间22.1 μs，未用单次100 ns读数裁决差异。
+
+[探针源码](state_stats_probe.cc)对 baseline `90e10686e` 与修复分别链接同配置的基础静态库，
+编译参数与依赖见[构建命令](state-stats-build.json)。只重建 compute_state 及测试，复用基础缓存。
+25项 StateVersions/StateClone 测试通过，含 A/B/A roots、独立metadata及collect后前段空洞的精确计费。
+
+这里证明的是统计调用及其重复 root 扫描，**不是引擎 tokens/s 提高这些倍数**。
+密集单池降为线性；不同 root、长空洞前缀和 clone-route 查找仍有扫描，最坏复杂度没有普遍降为线性。
+`import` 的其它去重扫描也未被这项修复消除。
+
+## 模块覆盖与未测范围
+
+- Core/Error/Obs/Math/Time/TimerQueue/Platform/Thread/FS/Process/Util：查现有证据与机制；
+  没有确认新的当前同责输项。许多冷查询只有结构依据，timer主要覆盖64项生命周期。
+- Mem/VM/Reclaim、Container/Intrusive/Concurrent/Queue/Text：查容量、生命周期、查找/删除机制与现有数据；
+  UTF、membership、Error success等轻微负点值CI跨1。hash churn、并发erase、各queue政策及其它规模仍缺现版本充分数据。
+- SIMD：查原逐操作结果到当前 provider 的映射、row/dtype/activation/inference kernels；
+  不能将少量dense F32 consumer外推所有dtype、ISA、布局和规模。
+- Sched与IO各协议：查现有fanout/completion、HTTP/TLS/HTTP2/transfer/mask/watch及计时源码；
+  当前DNS/UDP/local/signal/file-region、递归watch、priority-enabled、blocking pool等未充分测量。
+- Compute/Ops/State/Batch/Stream、Graph/Batch、全部CPU/CUDA/Apple/Vulkan providers与route、
+  三种CPU＋GPU bridge均纳入调研。证据包括当前原生片段、encoded/paged/ragged、搬运与owner成本；
+  跨形状性能、真实常量与状态增长、混合并行完整生命周期及最终模型tokens/s仍需要实际消费者。
+- Marlin factor仅历史占位，不为已退役实现恢复一套性能验证。
+
+后续先处理已确认的平方 scratch/扫描，再复现上述小输；不为旧标签重跑全库或给所有模块补证书。
+HTTP2 benchmark的私有构造接口也已改为公开 `TcpStream::adopt`，保留原计时边界；尚未在Linux编译该fixture。
