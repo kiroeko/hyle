@@ -1,0 +1,176 @@
+{
+  "status": "focused_correctness_passed; large_space_point_numerical_oracle_FAILED_on_both_variants",
+  "canonical_source_root": "C:\\public\\project-hyle\\hyle",
+  "product_source_sha256": {
+    "src/compute_route_apple/apple_tensor.cc": "aab9ac5849084ba2555784ec4b2856de0bb02a4dcb7e9d13225c7986bda27e32",
+    "tests/compute_route_apple/attention_test.cc": "9e1bc6bbb8a2e71bb639cfc63bf9348208380054a0bab7ee0658f0d54a278c4e"
+  },
+  "baseline_source_sha256": "d5795062e007cac2b54963e5d9b476dcee1783d69f8cd237394d7b084af1b850",
+  "capability": {
+    "device_name": "Apple M4",
+    "architecture": "applegpu_g16g",
+    "native_is_nax_available": false,
+    "enable_tf32": true,
+    "MLX_METAL_GPU_ARCH": "",
+    "MLX_ENABLE_TF32": ""
+  },
+  "machine": {
+    "model": "Mac16,12",
+    "chip": "Apple M4",
+    "os": "macOS27.0.1 (26A434)",
+    "free_space_before": "41 GiB",
+    "compiler": "Apple clang21.0.0",
+    "SDK": "/Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/apple-sdk"
+  },
+  "cause": "Pinned NAX requires macOS>=26.2 and Apple GPU generation>=17 (>=18 phone), and may be disabled at SDK build time. The actual M4 architecture applegpu_g16g independently excludes it. Native enable_tf32 defaults true and was actually true with no relevant env overrides. D256 causal F32 Q>=1024 therefore falls back on this machine.",
+  "implementation": {
+    "public_capability_only": "mx::device_info(Device::gpu), already used by apple_environment.mm; no existing architecture parser was found.",
+    "negative_detection": "Strict 13-character applegpu_g1[3-6][g/s/d/p] recognition. Missing field, wrong variant, unknown/new identifier, or exception returns false and keeps original native selection.",
+    "scope": "Only the otherwise possibly fused D256 causal no-mask path uses this query during cold lowering. All existing GPU-only/Q>=1024/benefit/force-fused guards stay in effect.",
+    "non_changes": "No private native declaration in product, no OS/build/env selector duplication, no SDK/kernel patch, no eval/sync during tracing, no hot replay metadata query, no public API/admission/precision-budget change.",
+    "diagnostic_only_private_query": "capability.cc forward-declares pinned is_nax_available solely to establish actual SDK behavior; product never uses it."
+  },
+  "validation": {
+    "fresh_compile": "Baseline/candidate apple_tensor.cc, current attention_test.cc, and space.cc host TUs only; O3 C++23 arm64 Wall/Wextra/Wpedantic/Werror. Existing SDK/foundation/gtest/metallib reused; no whole configure/build/download/copy.",
+    "targeted_tests": {
+      "baseline": 2,
+      "candidate": 2,
+      "all_exit": 0,
+      "filter": "AppleAttention.LongCausalD256RetainsFp32Reference:AppleAttention.UnsupportedFusedDomainsKeepTheirExistingFallback"
+    },
+    "new_case": "F32 D256 BSHD GQA H4/Hkv2 Q1025/KV1281, causal no mask, nonzero QK, independent existing FP64 oracle including one-row tail.",
+    "small_controls": "Existing D40 fallback, D192 decode, D256 Q17>KV13 causal cases.",
+    "budgets": "Existing F32 rel6e-6+abs2e-6 unchanged.",
+    "maps": {
+      "baseline-tests": {
+        "fresh_apple_tensor_object": true,
+        "old_apple_tensor_archive_member": false
+      },
+      "baseline-space": {
+        "fresh_apple_tensor_object": true,
+        "old_apple_tensor_archive_member": false
+      },
+      "candidate-tests": {
+        "fresh_apple_tensor_object": true,
+        "old_apple_tensor_archive_member": false
+      },
+      "candidate-space": {
+        "fresh_apple_tensor_object": true,
+        "old_apple_tensor_archive_member": false
+      }
+    },
+    "runtime_identity": {
+      "/Users/kiro/hyle-scratch/compute-unified/library-review-20261018-nax-capability/baseline.o": {
+        "bytes": 122304,
+        "sha256": "fa25b6d1417a4d94ac7723e589420ab543debabeb6d3dd09d5513d9e8ddc9c3d"
+      },
+      "/Users/kiro/hyle-scratch/compute-unified/library-review-20261018-nax-capability/candidate-tests": {
+        "bytes": 9366912,
+        "sha256": "dd91cc7d518404ae6e50e2a874fcbce2844391680e92c89c5b47ff0a67c51c1b"
+      },
+      "/Users/kiro/hyle-scratch/compute-unified/library-review-20261018-nax-capability/space.o": {
+        "bytes": 37016,
+        "sha256": "37e5e10b26f1925d1f5e12e7ea09e99e95182f81553595b7b5613a2034a6d670"
+      },
+      "/Users/kiro/hyle-scratch/compute-unified/library-review-20261018-nax-capability/tests.o": {
+        "bytes": 165104,
+        "sha256": "192357c3df2f7d1c71afa185a2f24c176a6c000c01ea7ed941daf0fb71f4b8b1"
+      },
+      "/Users/kiro/hyle-scratch/compute-unified/library-review-20261018-nax-capability/baseline-tests": {
+        "bytes": 9366752,
+        "sha256": "3b475baf7610367ea30259b47c92562902354a83f155958d130271f7492112be"
+      },
+      "/Users/kiro/hyle-scratch/compute-unified/library-review-20261018-nax-capability/capability": {
+        "bytes": 5019464,
+        "sha256": "70e3ae8b2d990dc64d7f903a581c5bc9ee2aeae6cfc559b862cf9740838b4066"
+      },
+      "/Users/kiro/hyle-scratch/compute-unified/library-review-20261018-nax-capability/candidate-space": {
+        "bytes": 8827184,
+        "sha256": "2e15d1d1a8cd6dd750e46ada17d7110e6c81b95d7929f29fe730da8bc5420c1f"
+      },
+      "/Users/kiro/hyle-scratch/compute-unified/library-review-20261018-nax-capability/candidate.o": {
+        "bytes": 125760,
+        "sha256": "9c8bb3a3fe532feb2c2c706dbda2b774af16590e7f80f7910bf5bd11e822f963"
+      },
+      "/Users/kiro/hyle-scratch/compute-unified/library-review-20261018-nax-capability/baseline-space": {
+        "bytes": 8827024,
+        "sha256": "3239c0e71f94abb8e2ef3db00ffd90d355339d21726e66a0a2281cd0a788ecac"
+      },
+      "/Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/apple-sdk/lib/libmlx.a": {
+        "bytes": 11510272,
+        "sha256": "0ec0cd1a0e00c3f75c1ecf9db549b023e6fdc64f3d2f1a63a9a8be809eea9af9"
+      }
+    }
+  },
+  "space_point": {
+    "shape": "F32 B1/Hq4/Hkv2/D256 Q=KV2048, causal, no mask input; QK0/V1.25.",
+    "measurement": "One separate process per arm, same public prepare/create_invocation/bind then clear_cache/reset_peak and submit/wait. Native MLX active/peak/cache only, not process RSS/device-total/private-byte census. Cold prepare is outside peak capture.",
+    "baseline": {
+      "dtype": "F32",
+      "B": 1,
+      "Hq": 4,
+      "Hkv": 2,
+      "D": 256,
+      "Q": 2048,
+      "KV": 2048,
+      "mask": "None",
+      "causal": true,
+      "caller_qkv_bytes": 16777216,
+      "caller_mask_bytes": 0,
+      "output_bytes": 8388608,
+      "active_before": 16777224,
+      "cache_before": 0,
+      "active_after": 25165832,
+      "peak": 100679688,
+      "peak_minus_active_before": 83902464,
+      "cache_after": 75513856,
+      "max_abs_error": 3.43323e-05,
+      "checked_elements": 2097152
+    },
+    "candidate": {
+      "dtype": "F32",
+      "B": 1,
+      "Hq": 4,
+      "Hkv": 2,
+      "D": 256,
+      "Q": 2048,
+      "KV": 2048,
+      "mask": "None",
+      "causal": true,
+      "caller_qkv_bytes": 16777216,
+      "caller_mask_bytes": 0,
+      "output_bytes": 8388608,
+      "active_before": 16778184,
+      "cache_before": 0,
+      "active_after": 25166792,
+      "peak": 77149768,
+      "peak_minus_active_before": 60371584,
+      "cache_after": 53031680,
+      "max_abs_error": 3.43323e-05,
+      "checked_elements": 2097152
+    },
+    "numerical_oracle_status": {
+      "baseline": "FAIL",
+      "candidate": "FAIL",
+      "baseline_exit": 3,
+      "candidate_exit": 3,
+      "abs_budget": 9.5e-06,
+      "max_abs_error_both": 3.43323e-05
+    },
+    "accuracy_interpretation": "Both violate the unchanged public helper budget at this large uniform causal shape. Equal max errors do not establish bit parity, full numerical equivalence, or a passing large-shape oracle. This existing accuracy issue remains unresolved.",
+    "allocation_interpretation": "The real native counters were collected before exit3 and remain reported as measurements only. Extra peak83,902,464 ->60,371,584 bytes (~28.05% decrease) under current default native settings; caller QKV16MiB/output8MiB listed separately. No mask input.",
+    "extra_peak_reduction_fraction": 0.28045517232962314,
+    "warm_constants_difference_bytes": 960
+  },
+  "remaining_limits": [
+    "Unknown/new architectures retain native selection even if their OS/build/env disables NAX, so those fallback cases may still allocate square scores.",
+    "No inference throughput measurement, no strict single-block peak guarantee, no other Apple hardware, no full Apple/Graph suite or HEAD SDK rebuild.",
+    "Large uniform-causal F32 oracle failure on both variants is recorded and not fixed or marked passing in this batch."
+  ],
+  "failures_retained": [
+    "baseline-space exit3 stopped the sequential runner; candidate-space was then run exactly once independently and also exit3. No budget/input change or additional shape.",
+    "One local archive-helper command had a Python quoting SyntaxError before collecting data; rewritten stdin form succeeded. No workload was launched by that failed wrapper."
+  ],
+  "source_evidence": "native-source-evidence.json",
+  "cleanup": "cleanup-candidates.json"
+}

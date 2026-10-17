@@ -11,7 +11,9 @@
 #include <stdexcept>
 #include <string>
 #include <utility>
+#include <variant>
 
+#include <mlx/device.h>
 #include <mlx/fast.h>
 #include <mlx/ops.h>
 #include <mlx/utils.h>
@@ -301,6 +303,25 @@ mx::array lower_rope(const RoPE &rope, std::span<const mx::array> inputs,
 
 constexpr int kAttentionQueryBlock = 16;
 
+bool known_gpu_without_nax() noexcept {
+  try {
+    const auto &info = mx::device_info(mx::Device::gpu);
+    const auto found = info.find("architecture");
+    if (found == info.end())
+      return false;
+    const auto *arch = std::get_if<std::string>(&found->second);
+    // The pinned native NAX path requires generation >=17 (>=18 on phones).
+    // Recognize only known Apple generations 13-16. Unknown/new identifiers
+    // keep the native selector, including its OS/build/environment decisions.
+    return arch && arch->size() == 13 && arch->starts_with("applegpu_g1") &&
+        (*arch)[11] >= '3' && (*arch)[11] <= '6' &&
+        (arch->back() == 'g' || arch->back() == 's' ||
+         arch->back() == 'd' || arch->back() == 'p');
+  } catch (...) {
+    return false;
+  }
+}
+
 bool chunk_attention_math(const ScaledDotProductAttention &attention,
                           const mx::array &query, const mx::array &key,
                           const mx::array &value, bool force_fused) {
@@ -318,10 +339,12 @@ bool chunk_attention_math(const ScaledDotProductAttention &attention,
       (depth == 64 || depth == 72 || depth == 80 || depth == 96 ||
        depth == 128 || depth == 192 || depth == 256);
   // Mirror only statically certain fallback cases in the locked MLX. Leave
-  // existing fused shapes alone, including its possible NAX D256 causal path.
+  // existing fused shapes alone. Query cached public device info only while
+  // cold-lowering the otherwise possibly fused D256 causal path.
   return !full_kernel_shape || (causal && rows > keys) ||
       depth == 192 ||
-      (depth == 256 && (attention.mask != MaskKind::kNone || !causal));
+      (depth == 256 && (attention.mask != MaskKind::kNone || !causal ||
+                        known_gpu_without_nax()));
 }
 
 mx::array attention_math_blocks(const ScaledDotProductAttention &attention,

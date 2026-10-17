@@ -1,0 +1,11 @@
+{
+  "archive": "C:\\public\\project-hyle\\hyle\\.scratch\\perf-review-2026-10-18\\apple-nax-capability\\source-results.zip",
+  "bytes": 1489489,
+  "sha256": "d306563b46edb7ad3f167d30f1279a8b0e5c025c6caa4d55de6168e663385447",
+  "summary_sha256": "448819ec2d8ce1ccbe489306e5c30496291ec7a13545597b2b7950d0dd3f20bb",
+  "product_source_sha256": {
+    "src/compute_route_apple/apple_tensor.cc": "aab9ac5849084ba2555784ec4b2856de0bb02a4dcb7e9d13225c7986bda27e32",
+    "tests/compute_route_apple/attention_test.cc": "9e1bc6bbb8a2e71bb639cfc63bf9348208380054a0bab7ee0658f0d54a278c4e"
+  },
+  "binaries_and_SDK_excluded": true
+}

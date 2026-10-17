@@ -154,6 +154,11 @@ TEST(AppleAttention, MathQueryBlocksKeepMasksLayoutsAndGlobalCausalOffset) {
                  1025, 769, -0.25F, true, c::MaskKind::kNone);
 }
 
+TEST(AppleAttention, LongCausalD256RetainsFp32Reference) {
+  attention_case(256, mx::float32, c::AttentionLayout::kBatchSequenceHeadDepth,
+                 1025, 1281, 0.125F, true, c::MaskKind::kNone);
+}
+
 TEST(AppleAttention, MathQueryBlocksRetainBroadcastMasksAndReboundOwners) {
   constexpr int batches = 2, heads = 2, queries = 1025, keys = 769, depth = 192;
   const auto q = make(std::vector<double>(batches * heads * queries * depth),
