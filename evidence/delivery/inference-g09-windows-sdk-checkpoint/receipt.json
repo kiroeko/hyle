@@ -1,0 +1,2625 @@
+{
+  "schema": "hyle.inference-g09-windows-sdk-checkpoint/v1",
+  "state": "SIX_WINDOWS_DELIVERIES_PUBLIC_CONSUMERS_HEADERS_STAGED_IMPORTS_PASS",
+  "candidate": "3524413272cb52d06af5e64d634edbfef09b9864",
+  "product_code_commit": "e09f30925c6dba5cf4540669fd3b4874f45bb158",
+  "scope": "Native Windows CUDA and Vulkan each source/static/shared. Original public Graph contracts and two-slot/65-step ordinary joint consumer on each; Vulkan also original G06 pending native-joint receiver. Two standalone public Graph headers each. Source embedding and independently relocated find_package SDK consumers use ordinary shipping flags, no sanitizer/testing. Current Graph/hybrid owner C++ libraries actually rebuilt; exact unchanged leaf/native qualifications reused.",
+  "cases": [
+    {
+      "route": "cuda",
+      "mode": "static",
+      "state": "RELOCATED_SDK_PUBLIC_CONSUMERS_HEADERS_PASS",
+      "candidate": "3524413272cb52d06af5e64d634edbfef09b9864",
+      "source_snapshot": "6d260f8bf2bf48f1a1bc9e996fc61df59a05622f",
+      "identity": {
+        "host": "KIRO-WORKSTATIO",
+        "compiler": "14.50.35717",
+        "os": "Microsoft Windows [Version 10.0.26200.9457]",
+        "gpu": "NVIDIA GeForce RTX 4070, GPU-e7376560-6f5d-ec19-6ee4-3dd3a2c81ef8, 617.14"
+      },
+      "binaries": [
+        {
+          "path": "C:\\h7\\g09-sdk\\cuda-static-1\\bin\\g09_contracts.exe",
+          "sha256": "71d251e3c94b34598929ceedf77e88bede29b6dfa18a765ea71622de6cd3c74f"
+        },
+        {
+          "path": "C:\\h7\\g09-sdk\\cuda-static-1\\bin\\g09_pipeline.exe",
+          "sha256": "6761723a74af4fc36ab5c2b47a8ca3a57a4670b22e251b734b2f2ba9b7b4892e"
+        }
+      ],
+      "public_header_inputs": [
+        {
+          "path": "graph/cpu.h",
+          "sha256": "207f78caafbec1e73966f0ead5563b51aa2aaf3e5eccabde15b6a20447a25f99"
+        },
+        {
+          "path": "graph/cpu_cuda.h",
+          "sha256": "b3fe45dc75ce6c999857bca3130816132018eb3c845e0c889d577165d8f1b098"
+        }
+      ],
+      "staged_runtime": [],
+      "not_applicable_consumers": {
+        "files": [
+          "tests/compute_batch/public_hybrid_batch_consumer.cc",
+          "tests/compute_batch/pending_paged_receiver_cuda_consumer.cc"
+        ],
+        "reason": "Existing Linux-only FlashInfer consumer; Windows OPTIONAL_ABSENT provider and split-header export. They run on qualified WSL CUDA, not Windows."
+      },
+      "retained_failure": "retained-inapplicable-fixture-failure/result.json",
+      "actual_cumulative_seconds": 359.7969999999623,
+      "producer": "C:\\h7\\w-cuda\\selected-graph\\static-sdk-build",
+      "relocated_prefix": "C:\\h7\\g09-sdk\\cuda-static-1\\relocated",
+      "preflight_edges": {
+        "producer_build_edges": 46,
+        "consumer_build_edges": 8
+      },
+      "result_origin": "cuda-static-1/result.json"
+    },
+    {
+      "route": "cuda",
+      "mode": "shared",
+      "state": "RELOCATED_SDK_PUBLIC_CONSUMERS_HEADERS_PASS",
+      "candidate": "3524413272cb52d06af5e64d634edbfef09b9864",
+      "source_snapshot": "6d260f8bf2bf48f1a1bc9e996fc61df59a05622f",
+      "identity": {
+        "host": "KIRO-WORKSTATIO",
+        "compiler": "14.50.35717",
+        "os": "Microsoft Windows [Version 10.0.26200.9457]",
+        "gpu": "NVIDIA GeForce RTX 4070, GPU-e7376560-6f5d-ec19-6ee4-3dd3a2c81ef8, 617.14"
+      },
+      "binaries": [
+        {
+          "path": "C:\\h7\\g09-sdk\\cuda-shared-1\\bin\\g09_contracts.exe",
+          "sha256": "1528cd48b6c564b271be72f50e150a2343108f50b4d3db06be9c09fd63832d79"
+        },
+        {
+          "path": "C:\\h7\\g09-sdk\\cuda-shared-1\\bin\\g09_pipeline.exe",
+          "sha256": "b7b036d6c759ea319e4f3b28174e7c365e592dc2c1683f20a18c0332f474fb98"
+        }
+      ],
+      "public_header_inputs": [
+        {
+          "path": "graph/cpu.h",
+          "sha256": "207f78caafbec1e73966f0ead5563b51aa2aaf3e5eccabde15b6a20447a25f99"
+        },
+        {
+          "path": "graph/cpu_cuda.h",
+          "sha256": "b3fe45dc75ce6c999857bca3130816132018eb3c845e0c889d577165d8f1b098"
+        }
+      ],
+      "staged_runtime": [
+        {
+          "staged": "C:\\h7\\g09-sdk\\cuda-shared-1\\bin\\hyle_graph_route_cpu_cuda.dll",
+          "original": "C:\\h7\\g09-sdk\\cuda-shared-1\\relocated\\bin\\hyle_graph_route_cpu_cuda.dll",
+          "sha256": "92bcb35445f099be3605134c9bc8b6a37e2a071b37a5e15f8c084225c40a4866"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\cuda-shared-1\\bin\\hyle_graph_route_cpu.dll",
+          "original": "C:\\h7\\g09-sdk\\cuda-shared-1\\relocated\\bin\\hyle_graph_route_cpu.dll",
+          "sha256": "4b6c04ad17e3d994bd2550919d43f34e4b1da5974a1e8719e580059d808caa8b"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\cuda-shared-1\\bin\\hyle_graph_route_cuda.dll",
+          "original": "C:\\h7\\g09-sdk\\cuda-shared-1\\relocated\\bin\\hyle_graph_route_cuda.dll",
+          "sha256": "febab979c56c62169f412f2af7e1bbccb5ebeea88afaedec5f661de21d21210a"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\cuda-shared-1\\bin\\hyle_graph.dll",
+          "original": "C:\\h7\\g09-sdk\\cuda-shared-1\\relocated\\bin\\hyle_graph.dll",
+          "sha256": "6d3d52ba7ac068024625333bf43694c2643a3471269d59837e513b6f1482d151"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\cuda-shared-1\\bin\\hyle_compute_backend_cuda.dll",
+          "original": "C:\\h7\\g09-sdk\\cuda-shared-1\\relocated\\bin\\hyle_compute_backend_cuda.dll",
+          "sha256": "4469e5b6ee0098db8be73329fad78b09c7e4de35f0836f32de4c137adb8b2594"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\cuda-shared-1\\bin\\hyle_compute.dll",
+          "original": "C:\\h7\\g09-sdk\\cuda-shared-1\\relocated\\bin\\hyle_compute.dll",
+          "sha256": "3f3dd8d0edf97d1cce32f092e43c5a5bb85af53e4ac362e7a5fae0a4d5f58ec0"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\cuda-shared-1\\bin\\hyle_compute_ops.dll",
+          "original": "C:\\h7\\g09-sdk\\cuda-shared-1\\relocated\\bin\\hyle_compute_ops.dll",
+          "sha256": "c6ec60f62787c4c4f9c758a2effeafd090a738bb5e98ecd75f5ca2bf8ce5a7eb"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\cuda-shared-1\\bin\\hyle_sched.dll",
+          "original": "C:\\h7\\g09-sdk\\cuda-shared-1\\relocated\\bin\\hyle_sched.dll",
+          "sha256": "107fc8752438149155cddf2d1c77233902d50de455d9288162640ae7c39ed14d"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\cuda-shared-1\\bin\\hyle_mem.dll",
+          "original": "C:\\h7\\g09-sdk\\cuda-shared-1\\relocated\\bin\\hyle_mem.dll",
+          "sha256": "4fa479f50618455b079e5262247c7697caae019cb01d71764660f4b7c9a3856c"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\cuda-shared-1\\bin\\hyle_error.dll",
+          "original": "C:\\h7\\g09-sdk\\cuda-shared-1\\relocated\\bin\\hyle_error.dll",
+          "sha256": "e521b5e53a46e398e904cfed1919c899a0a5b1fc1faf3c6e5d01f3db2a5bbee3"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\cuda-shared-1\\bin\\hyle_platform.dll",
+          "original": "C:\\h7\\g09-sdk\\cuda-shared-1\\relocated\\bin\\hyle_platform.dll",
+          "sha256": "524948ce13c21d3f51d4bec5cef3c37ac42d3f306ada459597740edf4428f4ad"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\cuda-shared-1\\bin\\hyle_error.dll",
+          "original": "C:\\h7\\g09-sdk\\cuda-shared-1\\relocated\\bin\\hyle_error.dll",
+          "sha256": "e521b5e53a46e398e904cfed1919c899a0a5b1fc1faf3c6e5d01f3db2a5bbee3"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\cuda-shared-1\\bin\\hyle_error.dll",
+          "original": "C:\\h7\\g09-sdk\\cuda-shared-1\\relocated\\bin\\hyle_error.dll",
+          "sha256": "e521b5e53a46e398e904cfed1919c899a0a5b1fc1faf3c6e5d01f3db2a5bbee3"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\cuda-shared-1\\bin\\hyle_platform_thread.dll",
+          "original": "C:\\h7\\g09-sdk\\cuda-shared-1\\relocated\\bin\\hyle_platform_thread.dll",
+          "sha256": "f3752d570df897eb57a064e6fedfa2d137c841302ac2f59bdbd0f224e18430d4"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\cuda-shared-1\\bin\\hyle_platform.dll",
+          "original": "C:\\h7\\g09-sdk\\cuda-shared-1\\relocated\\bin\\hyle_platform.dll",
+          "sha256": "524948ce13c21d3f51d4bec5cef3c37ac42d3f306ada459597740edf4428f4ad"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\cuda-shared-1\\bin\\hyle_error.dll",
+          "original": "C:\\h7\\g09-sdk\\cuda-shared-1\\relocated\\bin\\hyle_error.dll",
+          "sha256": "e521b5e53a46e398e904cfed1919c899a0a5b1fc1faf3c6e5d01f3db2a5bbee3"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\cuda-shared-1\\bin\\hyle_platform.dll",
+          "original": "C:\\h7\\g09-sdk\\cuda-shared-1\\relocated\\bin\\hyle_platform.dll",
+          "sha256": "524948ce13c21d3f51d4bec5cef3c37ac42d3f306ada459597740edf4428f4ad"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\cuda-shared-1\\bin\\hyle_error.dll",
+          "original": "C:\\h7\\g09-sdk\\cuda-shared-1\\relocated\\bin\\hyle_error.dll",
+          "sha256": "e521b5e53a46e398e904cfed1919c899a0a5b1fc1faf3c6e5d01f3db2a5bbee3"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\cuda-shared-1\\bin\\hyle_error.dll",
+          "original": "C:\\h7\\g09-sdk\\cuda-shared-1\\relocated\\bin\\hyle_error.dll",
+          "sha256": "e521b5e53a46e398e904cfed1919c899a0a5b1fc1faf3c6e5d01f3db2a5bbee3"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\cuda-shared-1\\bin\\hyle_mem.dll",
+          "original": "C:\\h7\\g09-sdk\\cuda-shared-1\\relocated\\bin\\hyle_mem.dll",
+          "sha256": "4fa479f50618455b079e5262247c7697caae019cb01d71764660f4b7c9a3856c"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\cuda-shared-1\\bin\\hyle_compute_ops.dll",
+          "original": "C:\\h7\\g09-sdk\\cuda-shared-1\\relocated\\bin\\hyle_compute_ops.dll",
+          "sha256": "c6ec60f62787c4c4f9c758a2effeafd090a738bb5e98ecd75f5ca2bf8ce5a7eb"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\cuda-shared-1\\bin\\hyle_platform.dll",
+          "original": "C:\\h7\\g09-sdk\\cuda-shared-1\\relocated\\bin\\hyle_platform.dll",
+          "sha256": "524948ce13c21d3f51d4bec5cef3c37ac42d3f306ada459597740edf4428f4ad"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\cuda-shared-1\\bin\\hyle_error.dll",
+          "original": "C:\\h7\\g09-sdk\\cuda-shared-1\\relocated\\bin\\hyle_error.dll",
+          "sha256": "e521b5e53a46e398e904cfed1919c899a0a5b1fc1faf3c6e5d01f3db2a5bbee3"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\cuda-shared-1\\bin\\hyle_platform_thread.dll",
+          "original": "C:\\h7\\g09-sdk\\cuda-shared-1\\relocated\\bin\\hyle_platform_thread.dll",
+          "sha256": "f3752d570df897eb57a064e6fedfa2d137c841302ac2f59bdbd0f224e18430d4"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\cuda-shared-1\\bin\\hyle_compute.dll",
+          "original": "C:\\h7\\g09-sdk\\cuda-shared-1\\relocated\\bin\\hyle_compute.dll",
+          "sha256": "3f3dd8d0edf97d1cce32f092e43c5a5bb85af53e4ac362e7a5fae0a4d5f58ec0"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\cuda-shared-1\\bin\\hyle_mem.dll",
+          "original": "C:\\h7\\g09-sdk\\cuda-shared-1\\relocated\\bin\\hyle_mem.dll",
+          "sha256": "4fa479f50618455b079e5262247c7697caae019cb01d71764660f4b7c9a3856c"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\cuda-shared-1\\bin\\hyle_platform.dll",
+          "original": "C:\\h7\\g09-sdk\\cuda-shared-1\\relocated\\bin\\hyle_platform.dll",
+          "sha256": "524948ce13c21d3f51d4bec5cef3c37ac42d3f306ada459597740edf4428f4ad"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\cuda-shared-1\\bin\\hyle_error.dll",
+          "original": "C:\\h7\\g09-sdk\\cuda-shared-1\\relocated\\bin\\hyle_error.dll",
+          "sha256": "e521b5e53a46e398e904cfed1919c899a0a5b1fc1faf3c6e5d01f3db2a5bbee3"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\cuda-shared-1\\bin\\hyle_container.dll",
+          "original": "C:\\h7\\g09-sdk\\cuda-shared-1\\relocated\\bin\\hyle_container.dll",
+          "sha256": "c917252faa4b884c686aec7b39571bfb2df1fb98b9065d4c3d0949a18183cebd"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\cuda-shared-1\\bin\\hyle_compute.dll",
+          "original": "C:\\h7\\g09-sdk\\cuda-shared-1\\relocated\\bin\\hyle_compute.dll",
+          "sha256": "3f3dd8d0edf97d1cce32f092e43c5a5bb85af53e4ac362e7a5fae0a4d5f58ec0"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\cuda-shared-1\\bin\\hyle_mem.dll",
+          "original": "C:\\h7\\g09-sdk\\cuda-shared-1\\relocated\\bin\\hyle_mem.dll",
+          "sha256": "4fa479f50618455b079e5262247c7697caae019cb01d71764660f4b7c9a3856c"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\cuda-shared-1\\bin\\hyle_compute_ops.dll",
+          "original": "C:\\h7\\g09-sdk\\cuda-shared-1\\relocated\\bin\\hyle_compute_ops.dll",
+          "sha256": "c6ec60f62787c4c4f9c758a2effeafd090a738bb5e98ecd75f5ca2bf8ce5a7eb"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\cuda-shared-1\\bin\\hyle_error.dll",
+          "original": "C:\\h7\\g09-sdk\\cuda-shared-1\\relocated\\bin\\hyle_error.dll",
+          "sha256": "e521b5e53a46e398e904cfed1919c899a0a5b1fc1faf3c6e5d01f3db2a5bbee3"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\cuda-shared-1\\bin\\hyle_mem.dll",
+          "original": "C:\\h7\\g09-sdk\\cuda-shared-1\\relocated\\bin\\hyle_mem.dll",
+          "sha256": "4fa479f50618455b079e5262247c7697caae019cb01d71764660f4b7c9a3856c"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\cuda-shared-1\\bin\\hyle_platform.dll",
+          "original": "C:\\h7\\g09-sdk\\cuda-shared-1\\relocated\\bin\\hyle_platform.dll",
+          "sha256": "524948ce13c21d3f51d4bec5cef3c37ac42d3f306ada459597740edf4428f4ad"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\cuda-shared-1\\bin\\hyle_graph_provider_ggml_cuda.dll",
+          "original": "C:\\h7\\g09-sdk\\cuda-shared-1\\relocated\\bin\\hyle_graph_provider_ggml_cuda.dll",
+          "sha256": "a20234d27790ca06322c3416815e9949d607b3193f04d6b42236b2f44fa824ed"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\cuda-shared-1\\bin\\hyle_compute_route_cuda.dll",
+          "original": "C:\\h7\\g09-sdk\\cuda-shared-1\\relocated\\bin\\hyle_compute_route_cuda.dll",
+          "sha256": "4ddd4f0e9bfe85691653ec240d99d9eb1ba0e57265bb9786e572058b4ebffff7"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\cuda-shared-1\\bin\\hyle_graph.dll",
+          "original": "C:\\h7\\g09-sdk\\cuda-shared-1\\relocated\\bin\\hyle_graph.dll",
+          "sha256": "6d3d52ba7ac068024625333bf43694c2643a3471269d59837e513b6f1482d151"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\cuda-shared-1\\bin\\hyle_compute.dll",
+          "original": "C:\\h7\\g09-sdk\\cuda-shared-1\\relocated\\bin\\hyle_compute.dll",
+          "sha256": "3f3dd8d0edf97d1cce32f092e43c5a5bb85af53e4ac362e7a5fae0a4d5f58ec0"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\cuda-shared-1\\bin\\hyle_error.dll",
+          "original": "C:\\h7\\g09-sdk\\cuda-shared-1\\relocated\\bin\\hyle_error.dll",
+          "sha256": "e521b5e53a46e398e904cfed1919c899a0a5b1fc1faf3c6e5d01f3db2a5bbee3"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\cuda-shared-1\\bin\\hyle_compute_provider_cublas.dll",
+          "original": "C:\\h7\\g09-sdk\\cuda-shared-1\\relocated\\bin\\hyle_compute_provider_cublas.dll",
+          "sha256": "68d82b80445bc7a95a7f9f2525f0c346c9cab35dffd7eec2e94df651af964925"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\cuda-shared-1\\bin\\hyle_compute_provider_cuda.dll",
+          "original": "C:\\h7\\g09-sdk\\cuda-shared-1\\relocated\\bin\\hyle_compute_provider_cuda.dll",
+          "sha256": "2e9f68fb31b17e7257c0534c6f166ebd6b4edeaa33b72bf3b741ffffac402d73"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\cuda-shared-1\\bin\\hyle_compute_provider_ggml_cuda.dll",
+          "original": "C:\\h7\\g09-sdk\\cuda-shared-1\\relocated\\bin\\hyle_compute_provider_ggml_cuda.dll",
+          "sha256": "4880d8bd0e348eb07903410658aff4288aaea43d511a8b53be75ec6e2b47978d"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\cuda-shared-1\\bin\\hyle_compute_provider_torch_cuda.dll",
+          "original": "C:\\h7\\g09-sdk\\cuda-shared-1\\relocated\\bin\\hyle_compute_provider_torch_cuda.dll",
+          "sha256": "c594848fc77b5a2e198fcd24e391398ffad53cba2a970a276291f284fc381645"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\cuda-shared-1\\bin\\hyle_compute_backend_cuda.dll",
+          "original": "C:\\h7\\g09-sdk\\cuda-shared-1\\relocated\\bin\\hyle_compute_backend_cuda.dll",
+          "sha256": "4469e5b6ee0098db8be73329fad78b09c7e4de35f0836f32de4c137adb8b2594"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\cuda-shared-1\\bin\\hyle_compute_stream.dll",
+          "original": "C:\\h7\\g09-sdk\\cuda-shared-1\\relocated\\bin\\hyle_compute_stream.dll",
+          "sha256": "3fb3667412cc2648fab1d63036cc2f2e8c02fd08caaf03034ddc0cee1d1443d3"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\cuda-shared-1\\bin\\hyle_compute.dll",
+          "original": "C:\\h7\\g09-sdk\\cuda-shared-1\\relocated\\bin\\hyle_compute.dll",
+          "sha256": "3f3dd8d0edf97d1cce32f092e43c5a5bb85af53e4ac362e7a5fae0a4d5f58ec0"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\cuda-shared-1\\bin\\hyle_compute_ops.dll",
+          "original": "C:\\h7\\g09-sdk\\cuda-shared-1\\relocated\\bin\\hyle_compute_ops.dll",
+          "sha256": "c6ec60f62787c4c4f9c758a2effeafd090a738bb5e98ecd75f5ca2bf8ce5a7eb"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\cuda-shared-1\\bin\\hyle_platform_thread.dll",
+          "original": "C:\\h7\\g09-sdk\\cuda-shared-1\\relocated\\bin\\hyle_platform_thread.dll",
+          "sha256": "f3752d570df897eb57a064e6fedfa2d137c841302ac2f59bdbd0f224e18430d4"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\cuda-shared-1\\bin\\hyle_mem.dll",
+          "original": "C:\\h7\\g09-sdk\\cuda-shared-1\\relocated\\bin\\hyle_mem.dll",
+          "sha256": "4fa479f50618455b079e5262247c7697caae019cb01d71764660f4b7c9a3856c"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\cuda-shared-1\\bin\\hyle_error.dll",
+          "original": "C:\\h7\\g09-sdk\\cuda-shared-1\\relocated\\bin\\hyle_error.dll",
+          "sha256": "e521b5e53a46e398e904cfed1919c899a0a5b1fc1faf3c6e5d01f3db2a5bbee3"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\cuda-shared-1\\bin\\hyle_compute.dll",
+          "original": "C:\\h7\\g09-sdk\\cuda-shared-1\\relocated\\bin\\hyle_compute.dll",
+          "sha256": "3f3dd8d0edf97d1cce32f092e43c5a5bb85af53e4ac362e7a5fae0a4d5f58ec0"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\cuda-shared-1\\bin\\hyle_io_core.dll",
+          "original": "C:\\h7\\g09-sdk\\cuda-shared-1\\relocated\\bin\\hyle_io_core.dll",
+          "sha256": "e2c19f65e24f4437ed0a281d32109f4d8579af2c66ee9375a799c3f80ecf1b5c"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\cuda-shared-1\\bin\\hyle_compute_ops.dll",
+          "original": "C:\\h7\\g09-sdk\\cuda-shared-1\\relocated\\bin\\hyle_compute_ops.dll",
+          "sha256": "c6ec60f62787c4c4f9c758a2effeafd090a738bb5e98ecd75f5ca2bf8ce5a7eb"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\cuda-shared-1\\bin\\hyle_sched.dll",
+          "original": "C:\\h7\\g09-sdk\\cuda-shared-1\\relocated\\bin\\hyle_sched.dll",
+          "sha256": "107fc8752438149155cddf2d1c77233902d50de455d9288162640ae7c39ed14d"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\cuda-shared-1\\bin\\hyle_mem_vm.dll",
+          "original": "C:\\h7\\g09-sdk\\cuda-shared-1\\relocated\\bin\\hyle_mem_vm.dll",
+          "sha256": "90903f8206bc317cdf67a7b1f4bbaf006b654743f81d4a93856f3b6cd4fae4bc"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\cuda-shared-1\\bin\\hyle_mem.dll",
+          "original": "C:\\h7\\g09-sdk\\cuda-shared-1\\relocated\\bin\\hyle_mem.dll",
+          "sha256": "4fa479f50618455b079e5262247c7697caae019cb01d71764660f4b7c9a3856c"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\cuda-shared-1\\bin\\hyle_platform.dll",
+          "original": "C:\\h7\\g09-sdk\\cuda-shared-1\\relocated\\bin\\hyle_platform.dll",
+          "sha256": "524948ce13c21d3f51d4bec5cef3c37ac42d3f306ada459597740edf4428f4ad"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\cuda-shared-1\\bin\\hyle_error.dll",
+          "original": "C:\\h7\\g09-sdk\\cuda-shared-1\\relocated\\bin\\hyle_error.dll",
+          "sha256": "e521b5e53a46e398e904cfed1919c899a0a5b1fc1faf3c6e5d01f3db2a5bbee3"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\cuda-shared-1\\bin\\hyle_mem.dll",
+          "original": "C:\\h7\\g09-sdk\\cuda-shared-1\\relocated\\bin\\hyle_mem.dll",
+          "sha256": "4fa479f50618455b079e5262247c7697caae019cb01d71764660f4b7c9a3856c"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\cuda-shared-1\\bin\\hyle_platform_fs.dll",
+          "original": "C:\\h7\\g09-sdk\\cuda-shared-1\\relocated\\bin\\hyle_platform_fs.dll",
+          "sha256": "ab6edeb755d04a5cf2892e9820c69526b364df69b7d9a1731dbd16e209c0280a"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\cuda-shared-1\\bin\\hyle_platform.dll",
+          "original": "C:\\h7\\g09-sdk\\cuda-shared-1\\relocated\\bin\\hyle_platform.dll",
+          "sha256": "524948ce13c21d3f51d4bec5cef3c37ac42d3f306ada459597740edf4428f4ad"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\cuda-shared-1\\bin\\hyle_error.dll",
+          "original": "C:\\h7\\g09-sdk\\cuda-shared-1\\relocated\\bin\\hyle_error.dll",
+          "sha256": "e521b5e53a46e398e904cfed1919c899a0a5b1fc1faf3c6e5d01f3db2a5bbee3"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\cuda-shared-1\\bin\\hyle_platform.dll",
+          "original": "C:\\h7\\g09-sdk\\cuda-shared-1\\relocated\\bin\\hyle_platform.dll",
+          "sha256": "524948ce13c21d3f51d4bec5cef3c37ac42d3f306ada459597740edf4428f4ad"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\cuda-shared-1\\bin\\hyle_error.dll",
+          "original": "C:\\h7\\g09-sdk\\cuda-shared-1\\relocated\\bin\\hyle_error.dll",
+          "sha256": "e521b5e53a46e398e904cfed1919c899a0a5b1fc1faf3c6e5d01f3db2a5bbee3"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\cuda-shared-1\\bin\\hyle_sched.dll",
+          "original": "C:\\h7\\g09-sdk\\cuda-shared-1\\relocated\\bin\\hyle_sched.dll",
+          "sha256": "107fc8752438149155cddf2d1c77233902d50de455d9288162640ae7c39ed14d"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\cuda-shared-1\\bin\\hyle_platform_fs.dll",
+          "original": "C:\\h7\\g09-sdk\\cuda-shared-1\\relocated\\bin\\hyle_platform_fs.dll",
+          "sha256": "ab6edeb755d04a5cf2892e9820c69526b364df69b7d9a1731dbd16e209c0280a"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\cuda-shared-1\\bin\\hyle_error.dll",
+          "original": "C:\\h7\\g09-sdk\\cuda-shared-1\\relocated\\bin\\hyle_error.dll",
+          "sha256": "e521b5e53a46e398e904cfed1919c899a0a5b1fc1faf3c6e5d01f3db2a5bbee3"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\cuda-shared-1\\bin\\hyle_compute_backend_cuda.dll",
+          "original": "C:\\h7\\g09-sdk\\cuda-shared-1\\relocated\\bin\\hyle_compute_backend_cuda.dll",
+          "sha256": "4469e5b6ee0098db8be73329fad78b09c7e4de35f0836f32de4c137adb8b2594"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\cuda-shared-1\\bin\\hyle_compute.dll",
+          "original": "C:\\h7\\g09-sdk\\cuda-shared-1\\relocated\\bin\\hyle_compute.dll",
+          "sha256": "3f3dd8d0edf97d1cce32f092e43c5a5bb85af53e4ac362e7a5fae0a4d5f58ec0"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\cuda-shared-1\\bin\\hyle_compute_ops.dll",
+          "original": "C:\\h7\\g09-sdk\\cuda-shared-1\\relocated\\bin\\hyle_compute_ops.dll",
+          "sha256": "c6ec60f62787c4c4f9c758a2effeafd090a738bb5e98ecd75f5ca2bf8ce5a7eb"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\cuda-shared-1\\bin\\hyle_error.dll",
+          "original": "C:\\h7\\g09-sdk\\cuda-shared-1\\relocated\\bin\\hyle_error.dll",
+          "sha256": "e521b5e53a46e398e904cfed1919c899a0a5b1fc1faf3c6e5d01f3db2a5bbee3"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\cuda-shared-1\\bin\\hyle_compute_backend_cuda.dll",
+          "original": "C:\\h7\\g09-sdk\\cuda-shared-1\\relocated\\bin\\hyle_compute_backend_cuda.dll",
+          "sha256": "4469e5b6ee0098db8be73329fad78b09c7e4de35f0836f32de4c137adb8b2594"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\cuda-shared-1\\bin\\hyle_compute_ggml_runtime.dll",
+          "original": "C:\\h7\\g09-sdk\\cuda-shared-1\\relocated\\bin\\hyle_compute_ggml_runtime.dll",
+          "sha256": "259f90d87337cf07c9897a498af21c3bf7abc7f1fcd711eea64bbee0d056b904"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\cuda-shared-1\\bin\\hyle_compute.dll",
+          "original": "C:\\h7\\g09-sdk\\cuda-shared-1\\relocated\\bin\\hyle_compute.dll",
+          "sha256": "3f3dd8d0edf97d1cce32f092e43c5a5bb85af53e4ac362e7a5fae0a4d5f58ec0"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\cuda-shared-1\\bin\\hyle_compute_ops.dll",
+          "original": "C:\\h7\\g09-sdk\\cuda-shared-1\\relocated\\bin\\hyle_compute_ops.dll",
+          "sha256": "c6ec60f62787c4c4f9c758a2effeafd090a738bb5e98ecd75f5ca2bf8ce5a7eb"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\cuda-shared-1\\bin\\hyle_error.dll",
+          "original": "C:\\h7\\g09-sdk\\cuda-shared-1\\relocated\\bin\\hyle_error.dll",
+          "sha256": "e521b5e53a46e398e904cfed1919c899a0a5b1fc1faf3c6e5d01f3db2a5bbee3"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\cuda-shared-1\\bin\\hyle_platform.dll",
+          "original": "C:\\h7\\g09-sdk\\cuda-shared-1\\relocated\\bin\\hyle_platform.dll",
+          "sha256": "524948ce13c21d3f51d4bec5cef3c37ac42d3f306ada459597740edf4428f4ad"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\cuda-shared-1\\bin\\hyle_error.dll",
+          "original": "C:\\h7\\g09-sdk\\cuda-shared-1\\relocated\\bin\\hyle_error.dll",
+          "sha256": "e521b5e53a46e398e904cfed1919c899a0a5b1fc1faf3c6e5d01f3db2a5bbee3"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\cuda-shared-1\\bin\\hyle_compute_backend_cuda.dll",
+          "original": "C:\\h7\\g09-sdk\\cuda-shared-1\\relocated\\bin\\hyle_compute_backend_cuda.dll",
+          "sha256": "4469e5b6ee0098db8be73329fad78b09c7e4de35f0836f32de4c137adb8b2594"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\cuda-shared-1\\bin\\hyle_compute.dll",
+          "original": "C:\\h7\\g09-sdk\\cuda-shared-1\\relocated\\bin\\hyle_compute.dll",
+          "sha256": "3f3dd8d0edf97d1cce32f092e43c5a5bb85af53e4ac362e7a5fae0a4d5f58ec0"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\cuda-shared-1\\bin\\hyle_compute_ops.dll",
+          "original": "C:\\h7\\g09-sdk\\cuda-shared-1\\relocated\\bin\\hyle_compute_ops.dll",
+          "sha256": "c6ec60f62787c4c4f9c758a2effeafd090a738bb5e98ecd75f5ca2bf8ce5a7eb"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\cuda-shared-1\\bin\\hyle_error.dll",
+          "original": "C:\\h7\\g09-sdk\\cuda-shared-1\\relocated\\bin\\hyle_error.dll",
+          "sha256": "e521b5e53a46e398e904cfed1919c899a0a5b1fc1faf3c6e5d01f3db2a5bbee3"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\cuda-shared-1\\bin\\hyle_compute_backend_cuda.dll",
+          "original": "C:\\h7\\g09-sdk\\cuda-shared-1\\relocated\\bin\\hyle_compute_backend_cuda.dll",
+          "sha256": "4469e5b6ee0098db8be73329fad78b09c7e4de35f0836f32de4c137adb8b2594"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\cuda-shared-1\\bin\\hyle_compute.dll",
+          "original": "C:\\h7\\g09-sdk\\cuda-shared-1\\relocated\\bin\\hyle_compute.dll",
+          "sha256": "3f3dd8d0edf97d1cce32f092e43c5a5bb85af53e4ac362e7a5fae0a4d5f58ec0"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\cuda-shared-1\\bin\\hyle_compute_ops.dll",
+          "original": "C:\\h7\\g09-sdk\\cuda-shared-1\\relocated\\bin\\hyle_compute_ops.dll",
+          "sha256": "c6ec60f62787c4c4f9c758a2effeafd090a738bb5e98ecd75f5ca2bf8ce5a7eb"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\cuda-shared-1\\bin\\hyle_error.dll",
+          "original": "C:\\h7\\g09-sdk\\cuda-shared-1\\relocated\\bin\\hyle_error.dll",
+          "sha256": "e521b5e53a46e398e904cfed1919c899a0a5b1fc1faf3c6e5d01f3db2a5bbee3"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\cuda-shared-1\\bin\\hyle_compute_provider_ggml_cuda.dll",
+          "original": "C:\\h7\\g09-sdk\\cuda-shared-1\\relocated\\bin\\hyle_compute_provider_ggml_cuda.dll",
+          "sha256": "4880d8bd0e348eb07903410658aff4288aaea43d511a8b53be75ec6e2b47978d"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\cuda-shared-1\\bin\\hyle_graph.dll",
+          "original": "C:\\h7\\g09-sdk\\cuda-shared-1\\relocated\\bin\\hyle_graph.dll",
+          "sha256": "6d3d52ba7ac068024625333bf43694c2643a3471269d59837e513b6f1482d151"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\cuda-shared-1\\bin\\hyle_compute_ops.dll",
+          "original": "C:\\h7\\g09-sdk\\cuda-shared-1\\relocated\\bin\\hyle_compute_ops.dll",
+          "sha256": "c6ec60f62787c4c4f9c758a2effeafd090a738bb5e98ecd75f5ca2bf8ce5a7eb"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\cuda-shared-1\\bin\\hyle_error.dll",
+          "original": "C:\\h7\\g09-sdk\\cuda-shared-1\\relocated\\bin\\hyle_error.dll",
+          "sha256": "e521b5e53a46e398e904cfed1919c899a0a5b1fc1faf3c6e5d01f3db2a5bbee3"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\cuda-shared-1\\bin\\hyle_graph_provider_onednn.dll",
+          "original": "C:\\h7\\g09-sdk\\cuda-shared-1\\relocated\\bin\\hyle_graph_provider_onednn.dll",
+          "sha256": "40c5a9afcf215b0a4fe073bc093b4436d1d67e2170e8539db74b75dae352266b"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\cuda-shared-1\\bin\\hyle_compute_route_cpu.dll",
+          "original": "C:\\h7\\g09-sdk\\cuda-shared-1\\relocated\\bin\\hyle_compute_route_cpu.dll",
+          "sha256": "ca8d229a38252a9460b7d05b12315694e26a3b7e89105be06e2d092d1785c09e"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\cuda-shared-1\\bin\\hyle_graph.dll",
+          "original": "C:\\h7\\g09-sdk\\cuda-shared-1\\relocated\\bin\\hyle_graph.dll",
+          "sha256": "6d3d52ba7ac068024625333bf43694c2643a3471269d59837e513b6f1482d151"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\cuda-shared-1\\bin\\hyle_compute_provider_native.dll",
+          "original": "C:\\h7\\g09-sdk\\cuda-shared-1\\relocated\\bin\\hyle_compute_provider_native.dll",
+          "sha256": "c56a8eb01984db61783d19dc9228d1d092458a7e6fe25f06ea13fbca3dc6dd3c"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\cuda-shared-1\\bin\\hyle_compute_provider_onednn.dll",
+          "original": "C:\\h7\\g09-sdk\\cuda-shared-1\\relocated\\bin\\hyle_compute_provider_onednn.dll",
+          "sha256": "53abac1ef4dc677a251819defbedb06e5ebd8de0091b6406650774c7d6b09ffe"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\cuda-shared-1\\bin\\hyle_compute_provider_ggml.dll",
+          "original": "C:\\h7\\g09-sdk\\cuda-shared-1\\relocated\\bin\\hyle_compute_provider_ggml.dll",
+          "sha256": "0b0f84e6c7ba2691edf6a2919ae7ea90f282c8ebf1d5b5cfb63fffb419728644"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\cuda-shared-1\\bin\\hyle_compute_backend_cpu.dll",
+          "original": "C:\\h7\\g09-sdk\\cuda-shared-1\\relocated\\bin\\hyle_compute_backend_cpu.dll",
+          "sha256": "a1dc393db5abcdce86bdee0fe27d2cb39fd678f191824d7304584b61c2dd18e8"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\cuda-shared-1\\bin\\hyle_compute.dll",
+          "original": "C:\\h7\\g09-sdk\\cuda-shared-1\\relocated\\bin\\hyle_compute.dll",
+          "sha256": "3f3dd8d0edf97d1cce32f092e43c5a5bb85af53e4ac362e7a5fae0a4d5f58ec0"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\cuda-shared-1\\bin\\hyle_compute_ops.dll",
+          "original": "C:\\h7\\g09-sdk\\cuda-shared-1\\relocated\\bin\\hyle_compute_ops.dll",
+          "sha256": "c6ec60f62787c4c4f9c758a2effeafd090a738bb5e98ecd75f5ca2bf8ce5a7eb"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\cuda-shared-1\\bin\\hyle_error.dll",
+          "original": "C:\\h7\\g09-sdk\\cuda-shared-1\\relocated\\bin\\hyle_error.dll",
+          "sha256": "e521b5e53a46e398e904cfed1919c899a0a5b1fc1faf3c6e5d01f3db2a5bbee3"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\cuda-shared-1\\bin\\hyle_compute.dll",
+          "original": "C:\\h7\\g09-sdk\\cuda-shared-1\\relocated\\bin\\hyle_compute.dll",
+          "sha256": "3f3dd8d0edf97d1cce32f092e43c5a5bb85af53e4ac362e7a5fae0a4d5f58ec0"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\cuda-shared-1\\bin\\hyle_mem.dll",
+          "original": "C:\\h7\\g09-sdk\\cuda-shared-1\\relocated\\bin\\hyle_mem.dll",
+          "sha256": "4fa479f50618455b079e5262247c7697caae019cb01d71764660f4b7c9a3856c"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\cuda-shared-1\\bin\\hyle_error.dll",
+          "original": "C:\\h7\\g09-sdk\\cuda-shared-1\\relocated\\bin\\hyle_error.dll",
+          "sha256": "e521b5e53a46e398e904cfed1919c899a0a5b1fc1faf3c6e5d01f3db2a5bbee3"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\cuda-shared-1\\bin\\hyle_compute_batch.dll",
+          "original": "C:\\h7\\g09-sdk\\cuda-shared-1\\relocated\\bin\\hyle_compute_batch.dll",
+          "sha256": "c221d6740371cef476afb0968cea26a49c6eba84ff8ed64a52eef76be34fc104"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\cuda-shared-1\\bin\\hyle_compute_ggml_runtime.dll",
+          "original": "C:\\h7\\g09-sdk\\cuda-shared-1\\relocated\\bin\\hyle_compute_ggml_runtime.dll",
+          "sha256": "259f90d87337cf07c9897a498af21c3bf7abc7f1fcd711eea64bbee0d056b904"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\cuda-shared-1\\bin\\hyle_compute.dll",
+          "original": "C:\\h7\\g09-sdk\\cuda-shared-1\\relocated\\bin\\hyle_compute.dll",
+          "sha256": "3f3dd8d0edf97d1cce32f092e43c5a5bb85af53e4ac362e7a5fae0a4d5f58ec0"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\cuda-shared-1\\bin\\hyle_compute_ops.dll",
+          "original": "C:\\h7\\g09-sdk\\cuda-shared-1\\relocated\\bin\\hyle_compute_ops.dll",
+          "sha256": "c6ec60f62787c4c4f9c758a2effeafd090a738bb5e98ecd75f5ca2bf8ce5a7eb"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\cuda-shared-1\\bin\\hyle_mem.dll",
+          "original": "C:\\h7\\g09-sdk\\cuda-shared-1\\relocated\\bin\\hyle_mem.dll",
+          "sha256": "4fa479f50618455b079e5262247c7697caae019cb01d71764660f4b7c9a3856c"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\cuda-shared-1\\bin\\hyle_error.dll",
+          "original": "C:\\h7\\g09-sdk\\cuda-shared-1\\relocated\\bin\\hyle_error.dll",
+          "sha256": "e521b5e53a46e398e904cfed1919c899a0a5b1fc1faf3c6e5d01f3db2a5bbee3"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\cuda-shared-1\\bin\\hyle_compute.dll",
+          "original": "C:\\h7\\g09-sdk\\cuda-shared-1\\relocated\\bin\\hyle_compute.dll",
+          "sha256": "3f3dd8d0edf97d1cce32f092e43c5a5bb85af53e4ac362e7a5fae0a4d5f58ec0"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\cuda-shared-1\\bin\\hyle_compute_ops.dll",
+          "original": "C:\\h7\\g09-sdk\\cuda-shared-1\\relocated\\bin\\hyle_compute_ops.dll",
+          "sha256": "c6ec60f62787c4c4f9c758a2effeafd090a738bb5e98ecd75f5ca2bf8ce5a7eb"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\cuda-shared-1\\bin\\hyle_mem.dll",
+          "original": "C:\\h7\\g09-sdk\\cuda-shared-1\\relocated\\bin\\hyle_mem.dll",
+          "sha256": "4fa479f50618455b079e5262247c7697caae019cb01d71764660f4b7c9a3856c"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\cuda-shared-1\\bin\\hyle_error.dll",
+          "original": "C:\\h7\\g09-sdk\\cuda-shared-1\\relocated\\bin\\hyle_error.dll",
+          "sha256": "e521b5e53a46e398e904cfed1919c899a0a5b1fc1faf3c6e5d01f3db2a5bbee3"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\cuda-shared-1\\bin\\hyle_compute.dll",
+          "original": "C:\\h7\\g09-sdk\\cuda-shared-1\\relocated\\bin\\hyle_compute.dll",
+          "sha256": "3f3dd8d0edf97d1cce32f092e43c5a5bb85af53e4ac362e7a5fae0a4d5f58ec0"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\cuda-shared-1\\bin\\hyle_mem.dll",
+          "original": "C:\\h7\\g09-sdk\\cuda-shared-1\\relocated\\bin\\hyle_mem.dll",
+          "sha256": "4fa479f50618455b079e5262247c7697caae019cb01d71764660f4b7c9a3856c"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\cuda-shared-1\\bin\\hyle_compute_ops.dll",
+          "original": "C:\\h7\\g09-sdk\\cuda-shared-1\\relocated\\bin\\hyle_compute_ops.dll",
+          "sha256": "c6ec60f62787c4c4f9c758a2effeafd090a738bb5e98ecd75f5ca2bf8ce5a7eb"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\cuda-shared-1\\bin\\hyle_error.dll",
+          "original": "C:\\h7\\g09-sdk\\cuda-shared-1\\relocated\\bin\\hyle_error.dll",
+          "sha256": "e521b5e53a46e398e904cfed1919c899a0a5b1fc1faf3c6e5d01f3db2a5bbee3"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\cuda-shared-1\\bin\\hyle_simd.dll",
+          "original": "C:\\h7\\g09-sdk\\cuda-shared-1\\relocated\\bin\\hyle_simd.dll",
+          "sha256": "bcef29bb6f6030235db5bd6f7905c1bca6c7b08958deeaa02f7eed8fd3a8e763"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\cuda-shared-1\\bin\\hyle_compute.dll",
+          "original": "C:\\h7\\g09-sdk\\cuda-shared-1\\relocated\\bin\\hyle_compute.dll",
+          "sha256": "3f3dd8d0edf97d1cce32f092e43c5a5bb85af53e4ac362e7a5fae0a4d5f58ec0"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\cuda-shared-1\\bin\\hyle_mem.dll",
+          "original": "C:\\h7\\g09-sdk\\cuda-shared-1\\relocated\\bin\\hyle_mem.dll",
+          "sha256": "4fa479f50618455b079e5262247c7697caae019cb01d71764660f4b7c9a3856c"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\cuda-shared-1\\bin\\hyle_compute_ops.dll",
+          "original": "C:\\h7\\g09-sdk\\cuda-shared-1\\relocated\\bin\\hyle_compute_ops.dll",
+          "sha256": "c6ec60f62787c4c4f9c758a2effeafd090a738bb5e98ecd75f5ca2bf8ce5a7eb"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\cuda-shared-1\\bin\\hyle_error.dll",
+          "original": "C:\\h7\\g09-sdk\\cuda-shared-1\\relocated\\bin\\hyle_error.dll",
+          "sha256": "e521b5e53a46e398e904cfed1919c899a0a5b1fc1faf3c6e5d01f3db2a5bbee3"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\cuda-shared-1\\bin\\hyle_platform.dll",
+          "original": "C:\\h7\\g09-sdk\\cuda-shared-1\\relocated\\bin\\hyle_platform.dll",
+          "sha256": "524948ce13c21d3f51d4bec5cef3c37ac42d3f306ada459597740edf4428f4ad"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\cuda-shared-1\\bin\\hyle_compute_provider_native.dll",
+          "original": "C:\\h7\\g09-sdk\\cuda-shared-1\\relocated\\bin\\hyle_compute_provider_native.dll",
+          "sha256": "c56a8eb01984db61783d19dc9228d1d092458a7e6fe25f06ea13fbca3dc6dd3c"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\cuda-shared-1\\bin\\hyle_compute_provider_onednn.dll",
+          "original": "C:\\h7\\g09-sdk\\cuda-shared-1\\relocated\\bin\\hyle_compute_provider_onednn.dll",
+          "sha256": "53abac1ef4dc677a251819defbedb06e5ebd8de0091b6406650774c7d6b09ffe"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\cuda-shared-1\\bin\\hyle_compute_provider_ggml.dll",
+          "original": "C:\\h7\\g09-sdk\\cuda-shared-1\\relocated\\bin\\hyle_compute_provider_ggml.dll",
+          "sha256": "0b0f84e6c7ba2691edf6a2919ae7ea90f282c8ebf1d5b5cfb63fffb419728644"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\cuda-shared-1\\bin\\hyle_compute_backend_cpu.dll",
+          "original": "C:\\h7\\g09-sdk\\cuda-shared-1\\relocated\\bin\\hyle_compute_backend_cpu.dll",
+          "sha256": "a1dc393db5abcdce86bdee0fe27d2cb39fd678f191824d7304584b61c2dd18e8"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\cuda-shared-1\\bin\\hyle_compute_stream.dll",
+          "original": "C:\\h7\\g09-sdk\\cuda-shared-1\\relocated\\bin\\hyle_compute_stream.dll",
+          "sha256": "3fb3667412cc2648fab1d63036cc2f2e8c02fd08caaf03034ddc0cee1d1443d3"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\cuda-shared-1\\bin\\hyle_compute.dll",
+          "original": "C:\\h7\\g09-sdk\\cuda-shared-1\\relocated\\bin\\hyle_compute.dll",
+          "sha256": "3f3dd8d0edf97d1cce32f092e43c5a5bb85af53e4ac362e7a5fae0a4d5f58ec0"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\cuda-shared-1\\bin\\hyle_compute_ops.dll",
+          "original": "C:\\h7\\g09-sdk\\cuda-shared-1\\relocated\\bin\\hyle_compute_ops.dll",
+          "sha256": "c6ec60f62787c4c4f9c758a2effeafd090a738bb5e98ecd75f5ca2bf8ce5a7eb"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\cuda-shared-1\\bin\\hyle_error.dll",
+          "original": "C:\\h7\\g09-sdk\\cuda-shared-1\\relocated\\bin\\hyle_error.dll",
+          "sha256": "e521b5e53a46e398e904cfed1919c899a0a5b1fc1faf3c6e5d01f3db2a5bbee3"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\cuda-shared-1\\bin\\hyle_graph.dll",
+          "original": "C:\\h7\\g09-sdk\\cuda-shared-1\\relocated\\bin\\hyle_graph.dll",
+          "sha256": "6d3d52ba7ac068024625333bf43694c2643a3471269d59837e513b6f1482d151"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\cuda-shared-1\\bin\\hyle_compute_provider_onednn.dll",
+          "original": "C:\\h7\\g09-sdk\\cuda-shared-1\\relocated\\bin\\hyle_compute_provider_onednn.dll",
+          "sha256": "53abac1ef4dc677a251819defbedb06e5ebd8de0091b6406650774c7d6b09ffe"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\cuda-shared-1\\bin\\hyle_compute.dll",
+          "original": "C:\\h7\\g09-sdk\\cuda-shared-1\\relocated\\bin\\hyle_compute.dll",
+          "sha256": "3f3dd8d0edf97d1cce32f092e43c5a5bb85af53e4ac362e7a5fae0a4d5f58ec0"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\cuda-shared-1\\bin\\hyle_compute_ops.dll",
+          "original": "C:\\h7\\g09-sdk\\cuda-shared-1\\relocated\\bin\\hyle_compute_ops.dll",
+          "sha256": "c6ec60f62787c4c4f9c758a2effeafd090a738bb5e98ecd75f5ca2bf8ce5a7eb"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\cuda-shared-1\\bin\\hyle_error.dll",
+          "original": "C:\\h7\\g09-sdk\\cuda-shared-1\\relocated\\bin\\hyle_error.dll",
+          "sha256": "e521b5e53a46e398e904cfed1919c899a0a5b1fc1faf3c6e5d01f3db2a5bbee3"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\cuda-shared-1\\bin\\hyle_compute_route_cuda.dll",
+          "original": "C:\\h7\\g09-sdk\\cuda-shared-1\\relocated\\bin\\hyle_compute_route_cuda.dll",
+          "sha256": "4ddd4f0e9bfe85691653ec240d99d9eb1ba0e57265bb9786e572058b4ebffff7"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\cuda-shared-1\\bin\\hyle_sched.dll",
+          "original": "C:\\h7\\g09-sdk\\cuda-shared-1\\relocated\\bin\\hyle_sched.dll",
+          "sha256": "107fc8752438149155cddf2d1c77233902d50de455d9288162640ae7c39ed14d"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\cuda-shared-1\\bin\\hyle_graph.dll",
+          "original": "C:\\h7\\g09-sdk\\cuda-shared-1\\relocated\\bin\\hyle_graph.dll",
+          "sha256": "6d3d52ba7ac068024625333bf43694c2643a3471269d59837e513b6f1482d151"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\cuda-shared-1\\bin\\hyle_compute_backend_cuda.dll",
+          "original": "C:\\h7\\g09-sdk\\cuda-shared-1\\relocated\\bin\\hyle_compute_backend_cuda.dll",
+          "sha256": "4469e5b6ee0098db8be73329fad78b09c7e4de35f0836f32de4c137adb8b2594"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\cuda-shared-1\\bin\\hyle_compute.dll",
+          "original": "C:\\h7\\g09-sdk\\cuda-shared-1\\relocated\\bin\\hyle_compute.dll",
+          "sha256": "3f3dd8d0edf97d1cce32f092e43c5a5bb85af53e4ac362e7a5fae0a4d5f58ec0"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\cuda-shared-1\\bin\\hyle_compute_ops.dll",
+          "original": "C:\\h7\\g09-sdk\\cuda-shared-1\\relocated\\bin\\hyle_compute_ops.dll",
+          "sha256": "c6ec60f62787c4c4f9c758a2effeafd090a738bb5e98ecd75f5ca2bf8ce5a7eb"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\cuda-shared-1\\bin\\hyle_error.dll",
+          "original": "C:\\h7\\g09-sdk\\cuda-shared-1\\relocated\\bin\\hyle_error.dll",
+          "sha256": "e521b5e53a46e398e904cfed1919c899a0a5b1fc1faf3c6e5d01f3db2a5bbee3"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\cuda-shared-1\\bin\\hyle_graph_route_cpu_cuda.dll",
+          "original": "C:\\h7\\g09-sdk\\cuda-shared-1\\relocated\\bin\\hyle_graph_route_cpu_cuda.dll",
+          "sha256": "92bcb35445f099be3605134c9bc8b6a37e2a071b37a5e15f8c084225c40a4866"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\cuda-shared-1\\bin\\hyle_graph_route_cpu.dll",
+          "original": "C:\\h7\\g09-sdk\\cuda-shared-1\\relocated\\bin\\hyle_graph_route_cpu.dll",
+          "sha256": "4b6c04ad17e3d994bd2550919d43f34e4b1da5974a1e8719e580059d808caa8b"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\cuda-shared-1\\bin\\hyle_graph_route_cuda.dll",
+          "original": "C:\\h7\\g09-sdk\\cuda-shared-1\\relocated\\bin\\hyle_graph_route_cuda.dll",
+          "sha256": "febab979c56c62169f412f2af7e1bbccb5ebeea88afaedec5f661de21d21210a"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\cuda-shared-1\\bin\\hyle_compute_route_cuda.dll",
+          "original": "C:\\h7\\g09-sdk\\cuda-shared-1\\relocated\\bin\\hyle_compute_route_cuda.dll",
+          "sha256": "4ddd4f0e9bfe85691653ec240d99d9eb1ba0e57265bb9786e572058b4ebffff7"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\cuda-shared-1\\bin\\hyle_graph.dll",
+          "original": "C:\\h7\\g09-sdk\\cuda-shared-1\\relocated\\bin\\hyle_graph.dll",
+          "sha256": "6d3d52ba7ac068024625333bf43694c2643a3471269d59837e513b6f1482d151"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\cuda-shared-1\\bin\\hyle_compute_backend_cuda.dll",
+          "original": "C:\\h7\\g09-sdk\\cuda-shared-1\\relocated\\bin\\hyle_compute_backend_cuda.dll",
+          "sha256": "4469e5b6ee0098db8be73329fad78b09c7e4de35f0836f32de4c137adb8b2594"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\cuda-shared-1\\bin\\hyle_compute.dll",
+          "original": "C:\\h7\\g09-sdk\\cuda-shared-1\\relocated\\bin\\hyle_compute.dll",
+          "sha256": "3f3dd8d0edf97d1cce32f092e43c5a5bb85af53e4ac362e7a5fae0a4d5f58ec0"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\cuda-shared-1\\bin\\hyle_compute_ops.dll",
+          "original": "C:\\h7\\g09-sdk\\cuda-shared-1\\relocated\\bin\\hyle_compute_ops.dll",
+          "sha256": "c6ec60f62787c4c4f9c758a2effeafd090a738bb5e98ecd75f5ca2bf8ce5a7eb"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\cuda-shared-1\\bin\\hyle_sched.dll",
+          "original": "C:\\h7\\g09-sdk\\cuda-shared-1\\relocated\\bin\\hyle_sched.dll",
+          "sha256": "107fc8752438149155cddf2d1c77233902d50de455d9288162640ae7c39ed14d"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\cuda-shared-1\\bin\\hyle_mem.dll",
+          "original": "C:\\h7\\g09-sdk\\cuda-shared-1\\relocated\\bin\\hyle_mem.dll",
+          "sha256": "4fa479f50618455b079e5262247c7697caae019cb01d71764660f4b7c9a3856c"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\cuda-shared-1\\bin\\hyle_error.dll",
+          "original": "C:\\h7\\g09-sdk\\cuda-shared-1\\relocated\\bin\\hyle_error.dll",
+          "sha256": "e521b5e53a46e398e904cfed1919c899a0a5b1fc1faf3c6e5d01f3db2a5bbee3"
+        }
+      ],
+      "not_applicable_consumers": {
+        "files": [
+          "tests/compute_batch/public_hybrid_batch_consumer.cc",
+          "tests/compute_batch/pending_paged_receiver_cuda_consumer.cc"
+        ],
+        "reason": "Existing Linux-only FlashInfer consumer; Windows OPTIONAL_ABSENT provider and split-header export. They run on qualified WSL CUDA, not Windows."
+      },
+      "retained_failure": null,
+      "actual_cumulative_seconds": 227.81299999996554,
+      "producer": "C:\\h7\\w-cuda\\selected-graph\\shared-sdk-build",
+      "relocated_prefix": "C:\\h7\\g09-sdk\\cuda-shared-1\\relocated",
+      "preflight_edges": {
+        "producer_build_edges": 44,
+        "consumer_build_edges": 9
+      },
+      "result_origin": "cuda-shared-1/result.json"
+    },
+    {
+      "route": "cuda",
+      "mode": "source",
+      "state": "SOURCE_PUBLIC_CONSUMERS_HEADERS_PASS",
+      "candidate": "3524413272cb52d06af5e64d634edbfef09b9864",
+      "source_snapshot": "6d260f8bf2bf48f1a1bc9e996fc61df59a05622f",
+      "identity": {
+        "host": "KIRO-WORKSTATIO",
+        "compiler": "14.50.35717",
+        "os": "Microsoft Windows [Version 10.0.26200.9457]",
+        "gpu": "NVIDIA GeForce RTX 4070, GPU-e7376560-6f5d-ec19-6ee4-3dd3a2c81ef8, 617.14"
+      },
+      "binaries": [
+        {
+          "path": "C:\\h7\\g09-sdk\\cuda-source-1\\bin\\g09_contracts.exe",
+          "sha256": "ac60766f87bf6a7f9743e92bf56aea52edaee1ff9903669ce2af1aa620f59e35"
+        },
+        {
+          "path": "C:\\h7\\g09-sdk\\cuda-source-1\\bin\\g09_pipeline.exe",
+          "sha256": "04e8f758166a65be1a5adb0e1be39ec1c2c7f17e00613b712a7c2fe8bf421b81"
+        }
+      ],
+      "public_header_inputs": [
+        {
+          "path": "graph/cpu.h",
+          "sha256": "207f78caafbec1e73966f0ead5563b51aa2aaf3e5eccabde15b6a20447a25f99"
+        },
+        {
+          "path": "graph/cpu_cuda.h",
+          "sha256": "b3fe45dc75ce6c999857bca3130816132018eb3c845e0c889d577165d8f1b098"
+        }
+      ],
+      "staged_runtime": [],
+      "not_applicable_consumers": {
+        "files": [
+          "tests/compute_batch/public_hybrid_batch_consumer.cc",
+          "tests/compute_batch/pending_paged_receiver_cuda_consumer.cc"
+        ],
+        "reason": "Existing Linux-only FlashInfer consumer; Windows OPTIONAL_ABSENT provider and split-header export. They run on qualified WSL CUDA, not Windows."
+      },
+      "retained_failure": "retained-source-configure-failure/result.json",
+      "actual_cumulative_seconds": 208.21900000004098,
+      "producer": "C:\\h7\\w-cpu-cuda\\selected-graph\\source-build",
+      "relocated_prefix": null,
+      "preflight_edges": {
+        "consumer_build_edges": 48
+      },
+      "result_origin": "cuda-source-1/result.json"
+    },
+    {
+      "route": "vulkan",
+      "mode": "static",
+      "state": "RELOCATED_SDK_PUBLIC_CONSUMERS_HEADERS_PASS",
+      "candidate": "3524413272cb52d06af5e64d634edbfef09b9864",
+      "source_snapshot": "6d260f8bf2bf48f1a1bc9e996fc61df59a05622f",
+      "identity": {
+        "host": "KIRO-WORKSTATIO",
+        "compiler": "14.50.35717",
+        "os": "Microsoft Windows [Version 10.0.26200.9457]",
+        "gpu": "NVIDIA GeForce RTX 4070, GPU-e7376560-6f5d-ec19-6ee4-3dd3a2c81ef8, 617.14"
+      },
+      "binaries": [
+        {
+          "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\bin\\g09_contracts.exe",
+          "sha256": "1aa7507b572a1154b025b3ac0bf8274b194beb231a7b7040167916c181889f01"
+        },
+        {
+          "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\bin\\g09_pipeline.exe",
+          "sha256": "d4f93b57b390e3d893d625043fafa0392ee6346e7cd95c57fb241e0e96ff8ca6"
+        },
+        {
+          "path": "C:\\h7\\g09-sdk\\vulkan-static-1\\bin\\g09_pending.exe",
+          "sha256": "7d41ffea65864ec4cc9931d1d1ee821ee4c6e9e67dcade7a51281ed2536bfa07"
+        }
+      ],
+      "public_header_inputs": [
+        {
+          "path": "graph/cpu.h",
+          "sha256": "207f78caafbec1e73966f0ead5563b51aa2aaf3e5eccabde15b6a20447a25f99"
+        },
+        {
+          "path": "graph/cpu_vulkan.h",
+          "sha256": "9b4c99f9ef9948f85435de4415a788b83d17a00752664074edf462addc6693f6"
+        }
+      ],
+      "staged_runtime": [],
+      "not_applicable_consumers": null,
+      "retained_failure": "retained-generator-preflight-refusal/result.json",
+      "actual_cumulative_seconds": 222.60999999998603,
+      "producer": "C:\\h7\\w-vulkan\\selected-graph\\static-sdk-build",
+      "relocated_prefix": "C:\\h7\\g09-sdk\\vulkan-static-1\\relocated",
+      "preflight_edges": {
+        "producer_build_edges": 52,
+        "consumer_build_edges": 12
+      },
+      "result_origin": "vulkan-static-1/result.json"
+    },
+    {
+      "route": "vulkan",
+      "mode": "shared",
+      "state": "RELOCATED_SDK_PUBLIC_CONSUMERS_HEADERS_PASS",
+      "candidate": "3524413272cb52d06af5e64d634edbfef09b9864",
+      "source_snapshot": "6d260f8bf2bf48f1a1bc9e996fc61df59a05622f",
+      "identity": {
+        "host": "KIRO-WORKSTATIO",
+        "compiler": "14.50.35717",
+        "os": "Microsoft Windows [Version 10.0.26200.9457]",
+        "gpu": "NVIDIA GeForce RTX 4070, GPU-e7376560-6f5d-ec19-6ee4-3dd3a2c81ef8, 617.14"
+      },
+      "binaries": [
+        {
+          "path": "C:\\h7\\g09-sdk\\vulkan-shared-1\\bin\\g09_contracts.exe",
+          "sha256": "ec9f8ba88476368c65b0595b06062eac0a20991f5580dc8da54a47ff0941b13e"
+        },
+        {
+          "path": "C:\\h7\\g09-sdk\\vulkan-shared-1\\bin\\g09_pipeline.exe",
+          "sha256": "5b97f19e19ec71bf0641571de4be86994f6838934dd43b3a05cacdf5fe68216f"
+        },
+        {
+          "path": "C:\\h7\\g09-sdk\\vulkan-shared-1\\bin\\g09_pending.exe",
+          "sha256": "239d0da9479d5acb7558501a5775f0a52ceb37bbb68cfa0fa11967093a704e52"
+        }
+      ],
+      "public_header_inputs": [
+        {
+          "path": "graph/cpu.h",
+          "sha256": "207f78caafbec1e73966f0ead5563b51aa2aaf3e5eccabde15b6a20447a25f99"
+        },
+        {
+          "path": "graph/cpu_vulkan.h",
+          "sha256": "9b4c99f9ef9948f85435de4415a788b83d17a00752664074edf462addc6693f6"
+        }
+      ],
+      "staged_runtime": [
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-shared-1\\bin\\hyle_graph_route_cpu_vulkan.dll",
+          "original": "C:\\h7\\g09-sdk\\vulkan-shared-1\\relocated\\bin\\hyle_graph_route_cpu_vulkan.dll",
+          "sha256": "2b8db8783801d5667f850ff9e9cbe6e23de494abad5196fa616a9da88da5cf02"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-shared-1\\bin\\hyle_graph_route_cpu.dll",
+          "original": "C:\\h7\\g09-sdk\\vulkan-shared-1\\relocated\\bin\\hyle_graph_route_cpu.dll",
+          "sha256": "6b1eb293d0973e319116688123cb54b53b2e4d80857751bbe972160b5b4e73cf"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-shared-1\\bin\\hyle_compute_route_vulkan.dll",
+          "original": "C:\\h7\\g09-sdk\\vulkan-shared-1\\relocated\\bin\\hyle_compute_route_vulkan.dll",
+          "sha256": "82dfa7a95d618f81e6dcb29bd8556fa863bde79bbf080ea96a6f8ce2377523f1"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-shared-1\\bin\\hyle_graph_batch.dll",
+          "original": "C:\\h7\\g09-sdk\\vulkan-shared-1\\relocated\\bin\\hyle_graph_batch.dll",
+          "sha256": "5060bdff1ced13566100a9d3ff3843965fce20944f5079359b8b8b00f6bc2596"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-shared-1\\bin\\hyle_compute_batch.dll",
+          "original": "C:\\h7\\g09-sdk\\vulkan-shared-1\\relocated\\bin\\hyle_compute_batch.dll",
+          "sha256": "7d97e053f5f5d8ff4ef5b3c3ceb8b15b8bd581d05138973f8ff447c67d0b92dc"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-shared-1\\bin\\hyle_graph.dll",
+          "original": "C:\\h7\\g09-sdk\\vulkan-shared-1\\relocated\\bin\\hyle_graph.dll",
+          "sha256": "ebcaea37e3e7a91f27473cc9c5979444df112ac97bf6e2d2e3824d6ca2229479"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-shared-1\\bin\\hyle_compute.dll",
+          "original": "C:\\h7\\g09-sdk\\vulkan-shared-1\\relocated\\bin\\hyle_compute.dll",
+          "sha256": "6bba07bf0fabda61950a2dee2a9f33e58144b1f1bd01476a998e90788f510f29"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-shared-1\\bin\\hyle_compute_ops.dll",
+          "original": "C:\\h7\\g09-sdk\\vulkan-shared-1\\relocated\\bin\\hyle_compute_ops.dll",
+          "sha256": "32af171c899c4437d87c5856ecaeb4a63adfe1add1c0fbe5e46cee8c79933710"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-shared-1\\bin\\hyle_sched.dll",
+          "original": "C:\\h7\\g09-sdk\\vulkan-shared-1\\relocated\\bin\\hyle_sched.dll",
+          "sha256": "9838e6bcbecc9eb5b9134fd8d228f49f14d5e9fcd410558ba0a6b72e0900edaf"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-shared-1\\bin\\hyle_mem.dll",
+          "original": "C:\\h7\\g09-sdk\\vulkan-shared-1\\relocated\\bin\\hyle_mem.dll",
+          "sha256": "4e59268fc5a955c3bed5870ac380086e5dc0e8ffb44b8fc95460416ae4db7327"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-shared-1\\bin\\hyle_error.dll",
+          "original": "C:\\h7\\g09-sdk\\vulkan-shared-1\\relocated\\bin\\hyle_error.dll",
+          "sha256": "deaf8bbc87a79299cc0ae16e0de06310e20cd177c6749c5e9d61b7ac1451c249"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-shared-1\\bin\\hyle_platform.dll",
+          "original": "C:\\h7\\g09-sdk\\vulkan-shared-1\\relocated\\bin\\hyle_platform.dll",
+          "sha256": "b4d8ce31e14d7fb53c804df58d0e3d3b40aec9bb8723450696ee414146d7be0f"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-shared-1\\bin\\hyle_error.dll",
+          "original": "C:\\h7\\g09-sdk\\vulkan-shared-1\\relocated\\bin\\hyle_error.dll",
+          "sha256": "deaf8bbc87a79299cc0ae16e0de06310e20cd177c6749c5e9d61b7ac1451c249"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-shared-1\\bin\\hyle_error.dll",
+          "original": "C:\\h7\\g09-sdk\\vulkan-shared-1\\relocated\\bin\\hyle_error.dll",
+          "sha256": "deaf8bbc87a79299cc0ae16e0de06310e20cd177c6749c5e9d61b7ac1451c249"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-shared-1\\bin\\hyle_platform_thread.dll",
+          "original": "C:\\h7\\g09-sdk\\vulkan-shared-1\\relocated\\bin\\hyle_platform_thread.dll",
+          "sha256": "2f54aed04e57a6ddc4e5c7be12187f0aafc09e8867c89d8196aa2173fceebb4c"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-shared-1\\bin\\hyle_platform.dll",
+          "original": "C:\\h7\\g09-sdk\\vulkan-shared-1\\relocated\\bin\\hyle_platform.dll",
+          "sha256": "b4d8ce31e14d7fb53c804df58d0e3d3b40aec9bb8723450696ee414146d7be0f"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-shared-1\\bin\\hyle_error.dll",
+          "original": "C:\\h7\\g09-sdk\\vulkan-shared-1\\relocated\\bin\\hyle_error.dll",
+          "sha256": "deaf8bbc87a79299cc0ae16e0de06310e20cd177c6749c5e9d61b7ac1451c249"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-shared-1\\bin\\hyle_platform.dll",
+          "original": "C:\\h7\\g09-sdk\\vulkan-shared-1\\relocated\\bin\\hyle_platform.dll",
+          "sha256": "b4d8ce31e14d7fb53c804df58d0e3d3b40aec9bb8723450696ee414146d7be0f"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-shared-1\\bin\\hyle_error.dll",
+          "original": "C:\\h7\\g09-sdk\\vulkan-shared-1\\relocated\\bin\\hyle_error.dll",
+          "sha256": "deaf8bbc87a79299cc0ae16e0de06310e20cd177c6749c5e9d61b7ac1451c249"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-shared-1\\bin\\hyle_error.dll",
+          "original": "C:\\h7\\g09-sdk\\vulkan-shared-1\\relocated\\bin\\hyle_error.dll",
+          "sha256": "deaf8bbc87a79299cc0ae16e0de06310e20cd177c6749c5e9d61b7ac1451c249"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-shared-1\\bin\\hyle_mem.dll",
+          "original": "C:\\h7\\g09-sdk\\vulkan-shared-1\\relocated\\bin\\hyle_mem.dll",
+          "sha256": "4e59268fc5a955c3bed5870ac380086e5dc0e8ffb44b8fc95460416ae4db7327"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-shared-1\\bin\\hyle_compute_ops.dll",
+          "original": "C:\\h7\\g09-sdk\\vulkan-shared-1\\relocated\\bin\\hyle_compute_ops.dll",
+          "sha256": "32af171c899c4437d87c5856ecaeb4a63adfe1add1c0fbe5e46cee8c79933710"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-shared-1\\bin\\hyle_platform.dll",
+          "original": "C:\\h7\\g09-sdk\\vulkan-shared-1\\relocated\\bin\\hyle_platform.dll",
+          "sha256": "b4d8ce31e14d7fb53c804df58d0e3d3b40aec9bb8723450696ee414146d7be0f"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-shared-1\\bin\\hyle_error.dll",
+          "original": "C:\\h7\\g09-sdk\\vulkan-shared-1\\relocated\\bin\\hyle_error.dll",
+          "sha256": "deaf8bbc87a79299cc0ae16e0de06310e20cd177c6749c5e9d61b7ac1451c249"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-shared-1\\bin\\hyle_container.dll",
+          "original": "C:\\h7\\g09-sdk\\vulkan-shared-1\\relocated\\bin\\hyle_container.dll",
+          "sha256": "5a70773012e296f38c2d130d51f74de5fe2884ea8adce192524b6ebe39eb9ec1"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-shared-1\\bin\\hyle_compute.dll",
+          "original": "C:\\h7\\g09-sdk\\vulkan-shared-1\\relocated\\bin\\hyle_compute.dll",
+          "sha256": "6bba07bf0fabda61950a2dee2a9f33e58144b1f1bd01476a998e90788f510f29"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-shared-1\\bin\\hyle_mem.dll",
+          "original": "C:\\h7\\g09-sdk\\vulkan-shared-1\\relocated\\bin\\hyle_mem.dll",
+          "sha256": "4e59268fc5a955c3bed5870ac380086e5dc0e8ffb44b8fc95460416ae4db7327"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-shared-1\\bin\\hyle_compute_ops.dll",
+          "original": "C:\\h7\\g09-sdk\\vulkan-shared-1\\relocated\\bin\\hyle_compute_ops.dll",
+          "sha256": "32af171c899c4437d87c5856ecaeb4a63adfe1add1c0fbe5e46cee8c79933710"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-shared-1\\bin\\hyle_error.dll",
+          "original": "C:\\h7\\g09-sdk\\vulkan-shared-1\\relocated\\bin\\hyle_error.dll",
+          "sha256": "deaf8bbc87a79299cc0ae16e0de06310e20cd177c6749c5e9d61b7ac1451c249"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-shared-1\\bin\\hyle_mem.dll",
+          "original": "C:\\h7\\g09-sdk\\vulkan-shared-1\\relocated\\bin\\hyle_mem.dll",
+          "sha256": "4e59268fc5a955c3bed5870ac380086e5dc0e8ffb44b8fc95460416ae4db7327"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-shared-1\\bin\\hyle_platform.dll",
+          "original": "C:\\h7\\g09-sdk\\vulkan-shared-1\\relocated\\bin\\hyle_platform.dll",
+          "sha256": "b4d8ce31e14d7fb53c804df58d0e3d3b40aec9bb8723450696ee414146d7be0f"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-shared-1\\bin\\hyle_compute.dll",
+          "original": "C:\\h7\\g09-sdk\\vulkan-shared-1\\relocated\\bin\\hyle_compute.dll",
+          "sha256": "6bba07bf0fabda61950a2dee2a9f33e58144b1f1bd01476a998e90788f510f29"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-shared-1\\bin\\hyle_compute_ops.dll",
+          "original": "C:\\h7\\g09-sdk\\vulkan-shared-1\\relocated\\bin\\hyle_compute_ops.dll",
+          "sha256": "32af171c899c4437d87c5856ecaeb4a63adfe1add1c0fbe5e46cee8c79933710"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-shared-1\\bin\\hyle_mem.dll",
+          "original": "C:\\h7\\g09-sdk\\vulkan-shared-1\\relocated\\bin\\hyle_mem.dll",
+          "sha256": "4e59268fc5a955c3bed5870ac380086e5dc0e8ffb44b8fc95460416ae4db7327"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-shared-1\\bin\\hyle_error.dll",
+          "original": "C:\\h7\\g09-sdk\\vulkan-shared-1\\relocated\\bin\\hyle_error.dll",
+          "sha256": "deaf8bbc87a79299cc0ae16e0de06310e20cd177c6749c5e9d61b7ac1451c249"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-shared-1\\bin\\hyle_graph.dll",
+          "original": "C:\\h7\\g09-sdk\\vulkan-shared-1\\relocated\\bin\\hyle_graph.dll",
+          "sha256": "ebcaea37e3e7a91f27473cc9c5979444df112ac97bf6e2d2e3824d6ca2229479"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-shared-1\\bin\\hyle_compute_batch.dll",
+          "original": "C:\\h7\\g09-sdk\\vulkan-shared-1\\relocated\\bin\\hyle_compute_batch.dll",
+          "sha256": "7d97e053f5f5d8ff4ef5b3c3ceb8b15b8bd581d05138973f8ff447c67d0b92dc"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-shared-1\\bin\\hyle_compute.dll",
+          "original": "C:\\h7\\g09-sdk\\vulkan-shared-1\\relocated\\bin\\hyle_compute.dll",
+          "sha256": "6bba07bf0fabda61950a2dee2a9f33e58144b1f1bd01476a998e90788f510f29"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-shared-1\\bin\\hyle_mem.dll",
+          "original": "C:\\h7\\g09-sdk\\vulkan-shared-1\\relocated\\bin\\hyle_mem.dll",
+          "sha256": "4e59268fc5a955c3bed5870ac380086e5dc0e8ffb44b8fc95460416ae4db7327"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-shared-1\\bin\\hyle_compute_ops.dll",
+          "original": "C:\\h7\\g09-sdk\\vulkan-shared-1\\relocated\\bin\\hyle_compute_ops.dll",
+          "sha256": "32af171c899c4437d87c5856ecaeb4a63adfe1add1c0fbe5e46cee8c79933710"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-shared-1\\bin\\hyle_error.dll",
+          "original": "C:\\h7\\g09-sdk\\vulkan-shared-1\\relocated\\bin\\hyle_error.dll",
+          "sha256": "deaf8bbc87a79299cc0ae16e0de06310e20cd177c6749c5e9d61b7ac1451c249"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-shared-1\\bin\\hyle_compute_provider_iree_vulkan.dll",
+          "original": "C:\\h7\\g09-sdk\\vulkan-shared-1\\relocated\\bin\\hyle_compute_provider_iree_vulkan.dll",
+          "sha256": "af4af650e50e1a068e709d163a7a45ba367c501df3914c93b8edd25a3f15ad32"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-shared-1\\bin\\hyle_compute_stream.dll",
+          "original": "C:\\h7\\g09-sdk\\vulkan-shared-1\\relocated\\bin\\hyle_compute_stream.dll",
+          "sha256": "d5e15ea2f85c080f60572a6fdc4df4db63f5b9bdf373ef577aad6b758523078b"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-shared-1\\bin\\hyle_compute_batch.dll",
+          "original": "C:\\h7\\g09-sdk\\vulkan-shared-1\\relocated\\bin\\hyle_compute_batch.dll",
+          "sha256": "7d97e053f5f5d8ff4ef5b3c3ceb8b15b8bd581d05138973f8ff447c67d0b92dc"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-shared-1\\bin\\hyle_compute_provider_ggml_vulkan.dll",
+          "original": "C:\\h7\\g09-sdk\\vulkan-shared-1\\relocated\\bin\\hyle_compute_provider_ggml_vulkan.dll",
+          "sha256": "e2adc29c0c789bae1892fbac6596ab8c490078fa443b8ace7e06e7b034b707f6"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-shared-1\\bin\\hyle_time.dll",
+          "original": "C:\\h7\\g09-sdk\\vulkan-shared-1\\relocated\\bin\\hyle_time.dll",
+          "sha256": "34a0d304589af84546cc749ea5f168c568abb550d42bfa683c9d90c28ffb0543"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-shared-1\\bin\\hyle_compute.dll",
+          "original": "C:\\h7\\g09-sdk\\vulkan-shared-1\\relocated\\bin\\hyle_compute.dll",
+          "sha256": "6bba07bf0fabda61950a2dee2a9f33e58144b1f1bd01476a998e90788f510f29"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-shared-1\\bin\\hyle_compute_ops.dll",
+          "original": "C:\\h7\\g09-sdk\\vulkan-shared-1\\relocated\\bin\\hyle_compute_ops.dll",
+          "sha256": "32af171c899c4437d87c5856ecaeb4a63adfe1add1c0fbe5e46cee8c79933710"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-shared-1\\bin\\hyle_mem.dll",
+          "original": "C:\\h7\\g09-sdk\\vulkan-shared-1\\relocated\\bin\\hyle_mem.dll",
+          "sha256": "4e59268fc5a955c3bed5870ac380086e5dc0e8ffb44b8fc95460416ae4db7327"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-shared-1\\bin\\hyle_error.dll",
+          "original": "C:\\h7\\g09-sdk\\vulkan-shared-1\\relocated\\bin\\hyle_error.dll",
+          "sha256": "deaf8bbc87a79299cc0ae16e0de06310e20cd177c6749c5e9d61b7ac1451c249"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-shared-1\\bin\\hyle_compute_ops.dll",
+          "original": "C:\\h7\\g09-sdk\\vulkan-shared-1\\relocated\\bin\\hyle_compute_ops.dll",
+          "sha256": "32af171c899c4437d87c5856ecaeb4a63adfe1add1c0fbe5e46cee8c79933710"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-shared-1\\bin\\hyle_compute_ggml_runtime.dll",
+          "original": "C:\\h7\\g09-sdk\\vulkan-shared-1\\relocated\\bin\\hyle_compute_ggml_runtime.dll",
+          "sha256": "6fad8f18d0c985a85a9d006f599a4f3bda747c6c775db9693157816503b80f8c"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-shared-1\\bin\\hyle_mem.dll",
+          "original": "C:\\h7\\g09-sdk\\vulkan-shared-1\\relocated\\bin\\hyle_mem.dll",
+          "sha256": "4e59268fc5a955c3bed5870ac380086e5dc0e8ffb44b8fc95460416ae4db7327"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-shared-1\\bin\\hyle_platform.dll",
+          "original": "C:\\h7\\g09-sdk\\vulkan-shared-1\\relocated\\bin\\hyle_platform.dll",
+          "sha256": "b4d8ce31e14d7fb53c804df58d0e3d3b40aec9bb8723450696ee414146d7be0f"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-shared-1\\bin\\hyle_error.dll",
+          "original": "C:\\h7\\g09-sdk\\vulkan-shared-1\\relocated\\bin\\hyle_error.dll",
+          "sha256": "deaf8bbc87a79299cc0ae16e0de06310e20cd177c6749c5e9d61b7ac1451c249"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-shared-1\\bin\\hyle_platform.dll",
+          "original": "C:\\h7\\g09-sdk\\vulkan-shared-1\\relocated\\bin\\hyle_platform.dll",
+          "sha256": "b4d8ce31e14d7fb53c804df58d0e3d3b40aec9bb8723450696ee414146d7be0f"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-shared-1\\bin\\hyle_error.dll",
+          "original": "C:\\h7\\g09-sdk\\vulkan-shared-1\\relocated\\bin\\hyle_error.dll",
+          "sha256": "deaf8bbc87a79299cc0ae16e0de06310e20cd177c6749c5e9d61b7ac1451c249"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-shared-1\\bin\\hyle_compute.dll",
+          "original": "C:\\h7\\g09-sdk\\vulkan-shared-1\\relocated\\bin\\hyle_compute.dll",
+          "sha256": "6bba07bf0fabda61950a2dee2a9f33e58144b1f1bd01476a998e90788f510f29"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-shared-1\\bin\\hyle_io_core.dll",
+          "original": "C:\\h7\\g09-sdk\\vulkan-shared-1\\relocated\\bin\\hyle_io_core.dll",
+          "sha256": "70ba1164c7c08edd3fd9cc242ff8436da93e8bce62f8e3e6b58cd2c059ba672c"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-shared-1\\bin\\hyle_compute_ops.dll",
+          "original": "C:\\h7\\g09-sdk\\vulkan-shared-1\\relocated\\bin\\hyle_compute_ops.dll",
+          "sha256": "32af171c899c4437d87c5856ecaeb4a63adfe1add1c0fbe5e46cee8c79933710"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-shared-1\\bin\\hyle_sched.dll",
+          "original": "C:\\h7\\g09-sdk\\vulkan-shared-1\\relocated\\bin\\hyle_sched.dll",
+          "sha256": "9838e6bcbecc9eb5b9134fd8d228f49f14d5e9fcd410558ba0a6b72e0900edaf"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-shared-1\\bin\\hyle_mem_vm.dll",
+          "original": "C:\\h7\\g09-sdk\\vulkan-shared-1\\relocated\\bin\\hyle_mem_vm.dll",
+          "sha256": "3f3b481c268a2cdf82e5e9b7c15f77898ab920e3d7c47cde3a6578871d0abb6c"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-shared-1\\bin\\hyle_mem.dll",
+          "original": "C:\\h7\\g09-sdk\\vulkan-shared-1\\relocated\\bin\\hyle_mem.dll",
+          "sha256": "4e59268fc5a955c3bed5870ac380086e5dc0e8ffb44b8fc95460416ae4db7327"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-shared-1\\bin\\hyle_platform.dll",
+          "original": "C:\\h7\\g09-sdk\\vulkan-shared-1\\relocated\\bin\\hyle_platform.dll",
+          "sha256": "b4d8ce31e14d7fb53c804df58d0e3d3b40aec9bb8723450696ee414146d7be0f"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-shared-1\\bin\\hyle_error.dll",
+          "original": "C:\\h7\\g09-sdk\\vulkan-shared-1\\relocated\\bin\\hyle_error.dll",
+          "sha256": "deaf8bbc87a79299cc0ae16e0de06310e20cd177c6749c5e9d61b7ac1451c249"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-shared-1\\bin\\hyle_mem.dll",
+          "original": "C:\\h7\\g09-sdk\\vulkan-shared-1\\relocated\\bin\\hyle_mem.dll",
+          "sha256": "4e59268fc5a955c3bed5870ac380086e5dc0e8ffb44b8fc95460416ae4db7327"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-shared-1\\bin\\hyle_platform_fs.dll",
+          "original": "C:\\h7\\g09-sdk\\vulkan-shared-1\\relocated\\bin\\hyle_platform_fs.dll",
+          "sha256": "eeb943a7f9c929d42af63975704043e9a9c1f64a64ac1bf6655defb8f64b9774"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-shared-1\\bin\\hyle_platform.dll",
+          "original": "C:\\h7\\g09-sdk\\vulkan-shared-1\\relocated\\bin\\hyle_platform.dll",
+          "sha256": "b4d8ce31e14d7fb53c804df58d0e3d3b40aec9bb8723450696ee414146d7be0f"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-shared-1\\bin\\hyle_error.dll",
+          "original": "C:\\h7\\g09-sdk\\vulkan-shared-1\\relocated\\bin\\hyle_error.dll",
+          "sha256": "deaf8bbc87a79299cc0ae16e0de06310e20cd177c6749c5e9d61b7ac1451c249"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-shared-1\\bin\\hyle_platform.dll",
+          "original": "C:\\h7\\g09-sdk\\vulkan-shared-1\\relocated\\bin\\hyle_platform.dll",
+          "sha256": "b4d8ce31e14d7fb53c804df58d0e3d3b40aec9bb8723450696ee414146d7be0f"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-shared-1\\bin\\hyle_error.dll",
+          "original": "C:\\h7\\g09-sdk\\vulkan-shared-1\\relocated\\bin\\hyle_error.dll",
+          "sha256": "deaf8bbc87a79299cc0ae16e0de06310e20cd177c6749c5e9d61b7ac1451c249"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-shared-1\\bin\\hyle_sched.dll",
+          "original": "C:\\h7\\g09-sdk\\vulkan-shared-1\\relocated\\bin\\hyle_sched.dll",
+          "sha256": "9838e6bcbecc9eb5b9134fd8d228f49f14d5e9fcd410558ba0a6b72e0900edaf"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-shared-1\\bin\\hyle_platform_fs.dll",
+          "original": "C:\\h7\\g09-sdk\\vulkan-shared-1\\relocated\\bin\\hyle_platform_fs.dll",
+          "sha256": "eeb943a7f9c929d42af63975704043e9a9c1f64a64ac1bf6655defb8f64b9774"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-shared-1\\bin\\hyle_error.dll",
+          "original": "C:\\h7\\g09-sdk\\vulkan-shared-1\\relocated\\bin\\hyle_error.dll",
+          "sha256": "deaf8bbc87a79299cc0ae16e0de06310e20cd177c6749c5e9d61b7ac1451c249"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-shared-1\\bin\\hyle_compute_provider_ggml_vulkan.dll",
+          "original": "C:\\h7\\g09-sdk\\vulkan-shared-1\\relocated\\bin\\hyle_compute_provider_ggml_vulkan.dll",
+          "sha256": "e2adc29c0c789bae1892fbac6596ab8c490078fa443b8ace7e06e7b034b707f6"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-shared-1\\bin\\hyle_error.dll",
+          "original": "C:\\h7\\g09-sdk\\vulkan-shared-1\\relocated\\bin\\hyle_error.dll",
+          "sha256": "deaf8bbc87a79299cc0ae16e0de06310e20cd177c6749c5e9d61b7ac1451c249"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-shared-1\\bin\\hyle_graph_provider_onednn.dll",
+          "original": "C:\\h7\\g09-sdk\\vulkan-shared-1\\relocated\\bin\\hyle_graph_provider_onednn.dll",
+          "sha256": "5c69e226f69392f6ba64aeb2805630e8feb0dd156ca0ac0d15ec0b5326e1102c"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-shared-1\\bin\\hyle_compute_route_cpu.dll",
+          "original": "C:\\h7\\g09-sdk\\vulkan-shared-1\\relocated\\bin\\hyle_compute_route_cpu.dll",
+          "sha256": "758858d8f057bfcdf417a523379b86ad922e59cf514eccd9fd081eba3ffee691"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-shared-1\\bin\\hyle_graph.dll",
+          "original": "C:\\h7\\g09-sdk\\vulkan-shared-1\\relocated\\bin\\hyle_graph.dll",
+          "sha256": "ebcaea37e3e7a91f27473cc9c5979444df112ac97bf6e2d2e3824d6ca2229479"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-shared-1\\bin\\hyle_compute_provider_native.dll",
+          "original": "C:\\h7\\g09-sdk\\vulkan-shared-1\\relocated\\bin\\hyle_compute_provider_native.dll",
+          "sha256": "b6dffa6b81b1c25fed2b5a3ce504a6457cb7e0ef6616626c9ba7631705b93a74"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-shared-1\\bin\\hyle_compute_provider_onednn.dll",
+          "original": "C:\\h7\\g09-sdk\\vulkan-shared-1\\relocated\\bin\\hyle_compute_provider_onednn.dll",
+          "sha256": "b1727a40ee91dd854a725e290c3d112450bba67cc461426a70ab67d3a7ac54a2"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-shared-1\\bin\\hyle_compute_provider_ggml.dll",
+          "original": "C:\\h7\\g09-sdk\\vulkan-shared-1\\relocated\\bin\\hyle_compute_provider_ggml.dll",
+          "sha256": "4af5749ccd3f9ef261b054f229b2c2c94a2dd608b7747675a7839084beab261c"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-shared-1\\bin\\hyle_compute_backend_cpu.dll",
+          "original": "C:\\h7\\g09-sdk\\vulkan-shared-1\\relocated\\bin\\hyle_compute_backend_cpu.dll",
+          "sha256": "18115e5d178b562a06d9780ebc08847a9c750fde665e334745055717d528a7fe"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-shared-1\\bin\\hyle_compute.dll",
+          "original": "C:\\h7\\g09-sdk\\vulkan-shared-1\\relocated\\bin\\hyle_compute.dll",
+          "sha256": "6bba07bf0fabda61950a2dee2a9f33e58144b1f1bd01476a998e90788f510f29"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-shared-1\\bin\\hyle_compute_ops.dll",
+          "original": "C:\\h7\\g09-sdk\\vulkan-shared-1\\relocated\\bin\\hyle_compute_ops.dll",
+          "sha256": "32af171c899c4437d87c5856ecaeb4a63adfe1add1c0fbe5e46cee8c79933710"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-shared-1\\bin\\hyle_error.dll",
+          "original": "C:\\h7\\g09-sdk\\vulkan-shared-1\\relocated\\bin\\hyle_error.dll",
+          "sha256": "deaf8bbc87a79299cc0ae16e0de06310e20cd177c6749c5e9d61b7ac1451c249"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-shared-1\\bin\\hyle_compute.dll",
+          "original": "C:\\h7\\g09-sdk\\vulkan-shared-1\\relocated\\bin\\hyle_compute.dll",
+          "sha256": "6bba07bf0fabda61950a2dee2a9f33e58144b1f1bd01476a998e90788f510f29"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-shared-1\\bin\\hyle_mem.dll",
+          "original": "C:\\h7\\g09-sdk\\vulkan-shared-1\\relocated\\bin\\hyle_mem.dll",
+          "sha256": "4e59268fc5a955c3bed5870ac380086e5dc0e8ffb44b8fc95460416ae4db7327"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-shared-1\\bin\\hyle_error.dll",
+          "original": "C:\\h7\\g09-sdk\\vulkan-shared-1\\relocated\\bin\\hyle_error.dll",
+          "sha256": "deaf8bbc87a79299cc0ae16e0de06310e20cd177c6749c5e9d61b7ac1451c249"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-shared-1\\bin\\hyle_compute_batch.dll",
+          "original": "C:\\h7\\g09-sdk\\vulkan-shared-1\\relocated\\bin\\hyle_compute_batch.dll",
+          "sha256": "7d97e053f5f5d8ff4ef5b3c3ceb8b15b8bd581d05138973f8ff447c67d0b92dc"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-shared-1\\bin\\hyle_compute_ggml_runtime.dll",
+          "original": "C:\\h7\\g09-sdk\\vulkan-shared-1\\relocated\\bin\\hyle_compute_ggml_runtime.dll",
+          "sha256": "6fad8f18d0c985a85a9d006f599a4f3bda747c6c775db9693157816503b80f8c"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-shared-1\\bin\\hyle_compute.dll",
+          "original": "C:\\h7\\g09-sdk\\vulkan-shared-1\\relocated\\bin\\hyle_compute.dll",
+          "sha256": "6bba07bf0fabda61950a2dee2a9f33e58144b1f1bd01476a998e90788f510f29"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-shared-1\\bin\\hyle_compute_ops.dll",
+          "original": "C:\\h7\\g09-sdk\\vulkan-shared-1\\relocated\\bin\\hyle_compute_ops.dll",
+          "sha256": "32af171c899c4437d87c5856ecaeb4a63adfe1add1c0fbe5e46cee8c79933710"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-shared-1\\bin\\hyle_mem.dll",
+          "original": "C:\\h7\\g09-sdk\\vulkan-shared-1\\relocated\\bin\\hyle_mem.dll",
+          "sha256": "4e59268fc5a955c3bed5870ac380086e5dc0e8ffb44b8fc95460416ae4db7327"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-shared-1\\bin\\hyle_error.dll",
+          "original": "C:\\h7\\g09-sdk\\vulkan-shared-1\\relocated\\bin\\hyle_error.dll",
+          "sha256": "deaf8bbc87a79299cc0ae16e0de06310e20cd177c6749c5e9d61b7ac1451c249"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-shared-1\\bin\\hyle_compute.dll",
+          "original": "C:\\h7\\g09-sdk\\vulkan-shared-1\\relocated\\bin\\hyle_compute.dll",
+          "sha256": "6bba07bf0fabda61950a2dee2a9f33e58144b1f1bd01476a998e90788f510f29"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-shared-1\\bin\\hyle_mem.dll",
+          "original": "C:\\h7\\g09-sdk\\vulkan-shared-1\\relocated\\bin\\hyle_mem.dll",
+          "sha256": "4e59268fc5a955c3bed5870ac380086e5dc0e8ffb44b8fc95460416ae4db7327"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-shared-1\\bin\\hyle_compute_ops.dll",
+          "original": "C:\\h7\\g09-sdk\\vulkan-shared-1\\relocated\\bin\\hyle_compute_ops.dll",
+          "sha256": "32af171c899c4437d87c5856ecaeb4a63adfe1add1c0fbe5e46cee8c79933710"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-shared-1\\bin\\hyle_error.dll",
+          "original": "C:\\h7\\g09-sdk\\vulkan-shared-1\\relocated\\bin\\hyle_error.dll",
+          "sha256": "deaf8bbc87a79299cc0ae16e0de06310e20cd177c6749c5e9d61b7ac1451c249"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-shared-1\\bin\\hyle_simd.dll",
+          "original": "C:\\h7\\g09-sdk\\vulkan-shared-1\\relocated\\bin\\hyle_simd.dll",
+          "sha256": "643a9ceb9fddfd1d559b4b1e850483926024dc254a81a0d96f43bbf3dfb39a9e"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-shared-1\\bin\\hyle_compute.dll",
+          "original": "C:\\h7\\g09-sdk\\vulkan-shared-1\\relocated\\bin\\hyle_compute.dll",
+          "sha256": "6bba07bf0fabda61950a2dee2a9f33e58144b1f1bd01476a998e90788f510f29"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-shared-1\\bin\\hyle_mem.dll",
+          "original": "C:\\h7\\g09-sdk\\vulkan-shared-1\\relocated\\bin\\hyle_mem.dll",
+          "sha256": "4e59268fc5a955c3bed5870ac380086e5dc0e8ffb44b8fc95460416ae4db7327"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-shared-1\\bin\\hyle_compute_ops.dll",
+          "original": "C:\\h7\\g09-sdk\\vulkan-shared-1\\relocated\\bin\\hyle_compute_ops.dll",
+          "sha256": "32af171c899c4437d87c5856ecaeb4a63adfe1add1c0fbe5e46cee8c79933710"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-shared-1\\bin\\hyle_error.dll",
+          "original": "C:\\h7\\g09-sdk\\vulkan-shared-1\\relocated\\bin\\hyle_error.dll",
+          "sha256": "deaf8bbc87a79299cc0ae16e0de06310e20cd177c6749c5e9d61b7ac1451c249"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-shared-1\\bin\\hyle_platform.dll",
+          "original": "C:\\h7\\g09-sdk\\vulkan-shared-1\\relocated\\bin\\hyle_platform.dll",
+          "sha256": "b4d8ce31e14d7fb53c804df58d0e3d3b40aec9bb8723450696ee414146d7be0f"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-shared-1\\bin\\hyle_compute_provider_native.dll",
+          "original": "C:\\h7\\g09-sdk\\vulkan-shared-1\\relocated\\bin\\hyle_compute_provider_native.dll",
+          "sha256": "b6dffa6b81b1c25fed2b5a3ce504a6457cb7e0ef6616626c9ba7631705b93a74"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-shared-1\\bin\\hyle_compute_provider_onednn.dll",
+          "original": "C:\\h7\\g09-sdk\\vulkan-shared-1\\relocated\\bin\\hyle_compute_provider_onednn.dll",
+          "sha256": "b1727a40ee91dd854a725e290c3d112450bba67cc461426a70ab67d3a7ac54a2"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-shared-1\\bin\\hyle_compute_provider_ggml.dll",
+          "original": "C:\\h7\\g09-sdk\\vulkan-shared-1\\relocated\\bin\\hyle_compute_provider_ggml.dll",
+          "sha256": "4af5749ccd3f9ef261b054f229b2c2c94a2dd608b7747675a7839084beab261c"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-shared-1\\bin\\hyle_compute_backend_cpu.dll",
+          "original": "C:\\h7\\g09-sdk\\vulkan-shared-1\\relocated\\bin\\hyle_compute_backend_cpu.dll",
+          "sha256": "18115e5d178b562a06d9780ebc08847a9c750fde665e334745055717d528a7fe"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-shared-1\\bin\\hyle_compute_stream.dll",
+          "original": "C:\\h7\\g09-sdk\\vulkan-shared-1\\relocated\\bin\\hyle_compute_stream.dll",
+          "sha256": "d5e15ea2f85c080f60572a6fdc4df4db63f5b9bdf373ef577aad6b758523078b"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-shared-1\\bin\\hyle_compute.dll",
+          "original": "C:\\h7\\g09-sdk\\vulkan-shared-1\\relocated\\bin\\hyle_compute.dll",
+          "sha256": "6bba07bf0fabda61950a2dee2a9f33e58144b1f1bd01476a998e90788f510f29"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-shared-1\\bin\\hyle_compute_ops.dll",
+          "original": "C:\\h7\\g09-sdk\\vulkan-shared-1\\relocated\\bin\\hyle_compute_ops.dll",
+          "sha256": "32af171c899c4437d87c5856ecaeb4a63adfe1add1c0fbe5e46cee8c79933710"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-shared-1\\bin\\hyle_error.dll",
+          "original": "C:\\h7\\g09-sdk\\vulkan-shared-1\\relocated\\bin\\hyle_error.dll",
+          "sha256": "deaf8bbc87a79299cc0ae16e0de06310e20cd177c6749c5e9d61b7ac1451c249"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-shared-1\\bin\\hyle_graph.dll",
+          "original": "C:\\h7\\g09-sdk\\vulkan-shared-1\\relocated\\bin\\hyle_graph.dll",
+          "sha256": "ebcaea37e3e7a91f27473cc9c5979444df112ac97bf6e2d2e3824d6ca2229479"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-shared-1\\bin\\hyle_compute_provider_onednn.dll",
+          "original": "C:\\h7\\g09-sdk\\vulkan-shared-1\\relocated\\bin\\hyle_compute_provider_onednn.dll",
+          "sha256": "b1727a40ee91dd854a725e290c3d112450bba67cc461426a70ab67d3a7ac54a2"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-shared-1\\bin\\hyle_compute.dll",
+          "original": "C:\\h7\\g09-sdk\\vulkan-shared-1\\relocated\\bin\\hyle_compute.dll",
+          "sha256": "6bba07bf0fabda61950a2dee2a9f33e58144b1f1bd01476a998e90788f510f29"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-shared-1\\bin\\hyle_compute_ops.dll",
+          "original": "C:\\h7\\g09-sdk\\vulkan-shared-1\\relocated\\bin\\hyle_compute_ops.dll",
+          "sha256": "32af171c899c4437d87c5856ecaeb4a63adfe1add1c0fbe5e46cee8c79933710"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-shared-1\\bin\\hyle_error.dll",
+          "original": "C:\\h7\\g09-sdk\\vulkan-shared-1\\relocated\\bin\\hyle_error.dll",
+          "sha256": "deaf8bbc87a79299cc0ae16e0de06310e20cd177c6749c5e9d61b7ac1451c249"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-shared-1\\bin\\hyle_graph_route_vulkan.dll",
+          "original": "C:\\h7\\g09-sdk\\vulkan-shared-1\\relocated\\bin\\hyle_graph_route_vulkan.dll",
+          "sha256": "b3db0bf1113b2fc69e58afa3b67f90f3f82458627f1e55769b6edaf61881e599"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-shared-1\\bin\\hyle_compute_route_vulkan.dll",
+          "original": "C:\\h7\\g09-sdk\\vulkan-shared-1\\relocated\\bin\\hyle_compute_route_vulkan.dll",
+          "sha256": "82dfa7a95d618f81e6dcb29bd8556fa863bde79bbf080ea96a6f8ce2377523f1"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-shared-1\\bin\\hyle_graph.dll",
+          "original": "C:\\h7\\g09-sdk\\vulkan-shared-1\\relocated\\bin\\hyle_graph.dll",
+          "sha256": "ebcaea37e3e7a91f27473cc9c5979444df112ac97bf6e2d2e3824d6ca2229479"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-shared-1\\bin\\hyle_sched.dll",
+          "original": "C:\\h7\\g09-sdk\\vulkan-shared-1\\relocated\\bin\\hyle_sched.dll",
+          "sha256": "9838e6bcbecc9eb5b9134fd8d228f49f14d5e9fcd410558ba0a6b72e0900edaf"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-shared-1\\bin\\hyle_compute_batch.dll",
+          "original": "C:\\h7\\g09-sdk\\vulkan-shared-1\\relocated\\bin\\hyle_compute_batch.dll",
+          "sha256": "7d97e053f5f5d8ff4ef5b3c3ceb8b15b8bd581d05138973f8ff447c67d0b92dc"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-shared-1\\bin\\hyle_compute.dll",
+          "original": "C:\\h7\\g09-sdk\\vulkan-shared-1\\relocated\\bin\\hyle_compute.dll",
+          "sha256": "6bba07bf0fabda61950a2dee2a9f33e58144b1f1bd01476a998e90788f510f29"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-shared-1\\bin\\hyle_mem.dll",
+          "original": "C:\\h7\\g09-sdk\\vulkan-shared-1\\relocated\\bin\\hyle_mem.dll",
+          "sha256": "4e59268fc5a955c3bed5870ac380086e5dc0e8ffb44b8fc95460416ae4db7327"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-shared-1\\bin\\hyle_compute_ops.dll",
+          "original": "C:\\h7\\g09-sdk\\vulkan-shared-1\\relocated\\bin\\hyle_compute_ops.dll",
+          "sha256": "32af171c899c4437d87c5856ecaeb4a63adfe1add1c0fbe5e46cee8c79933710"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-shared-1\\bin\\hyle_error.dll",
+          "original": "C:\\h7\\g09-sdk\\vulkan-shared-1\\relocated\\bin\\hyle_error.dll",
+          "sha256": "deaf8bbc87a79299cc0ae16e0de06310e20cd177c6749c5e9d61b7ac1451c249"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-shared-1\\bin\\hyle_graph_batch.dll",
+          "original": "C:\\h7\\g09-sdk\\vulkan-shared-1\\relocated\\bin\\hyle_graph_batch.dll",
+          "sha256": "5060bdff1ced13566100a9d3ff3843965fce20944f5079359b8b8b00f6bc2596"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-shared-1\\bin\\hyle_compute_route_vulkan.dll",
+          "original": "C:\\h7\\g09-sdk\\vulkan-shared-1\\relocated\\bin\\hyle_compute_route_vulkan.dll",
+          "sha256": "82dfa7a95d618f81e6dcb29bd8556fa863bde79bbf080ea96a6f8ce2377523f1"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-shared-1\\bin\\hyle_compute_batch.dll",
+          "original": "C:\\h7\\g09-sdk\\vulkan-shared-1\\relocated\\bin\\hyle_compute_batch.dll",
+          "sha256": "7d97e053f5f5d8ff4ef5b3c3ceb8b15b8bd581d05138973f8ff447c67d0b92dc"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-shared-1\\bin\\hyle_graph.dll",
+          "original": "C:\\h7\\g09-sdk\\vulkan-shared-1\\relocated\\bin\\hyle_graph.dll",
+          "sha256": "ebcaea37e3e7a91f27473cc9c5979444df112ac97bf6e2d2e3824d6ca2229479"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-shared-1\\bin\\hyle_compute.dll",
+          "original": "C:\\h7\\g09-sdk\\vulkan-shared-1\\relocated\\bin\\hyle_compute.dll",
+          "sha256": "6bba07bf0fabda61950a2dee2a9f33e58144b1f1bd01476a998e90788f510f29"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-shared-1\\bin\\hyle_compute_ops.dll",
+          "original": "C:\\h7\\g09-sdk\\vulkan-shared-1\\relocated\\bin\\hyle_compute_ops.dll",
+          "sha256": "32af171c899c4437d87c5856ecaeb4a63adfe1add1c0fbe5e46cee8c79933710"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-shared-1\\bin\\hyle_mem.dll",
+          "original": "C:\\h7\\g09-sdk\\vulkan-shared-1\\relocated\\bin\\hyle_mem.dll",
+          "sha256": "4e59268fc5a955c3bed5870ac380086e5dc0e8ffb44b8fc95460416ae4db7327"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-shared-1\\bin\\hyle_error.dll",
+          "original": "C:\\h7\\g09-sdk\\vulkan-shared-1\\relocated\\bin\\hyle_error.dll",
+          "sha256": "deaf8bbc87a79299cc0ae16e0de06310e20cd177c6749c5e9d61b7ac1451c249"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-shared-1\\bin\\hyle_graph_route_cpu_vulkan.dll",
+          "original": "C:\\h7\\g09-sdk\\vulkan-shared-1\\relocated\\bin\\hyle_graph_route_cpu_vulkan.dll",
+          "sha256": "2b8db8783801d5667f850ff9e9cbe6e23de494abad5196fa616a9da88da5cf02"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-shared-1\\bin\\hyle_graph_route_cpu.dll",
+          "original": "C:\\h7\\g09-sdk\\vulkan-shared-1\\relocated\\bin\\hyle_graph_route_cpu.dll",
+          "sha256": "6b1eb293d0973e319116688123cb54b53b2e4d80857751bbe972160b5b4e73cf"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-shared-1\\bin\\hyle_compute_route_vulkan.dll",
+          "original": "C:\\h7\\g09-sdk\\vulkan-shared-1\\relocated\\bin\\hyle_compute_route_vulkan.dll",
+          "sha256": "82dfa7a95d618f81e6dcb29bd8556fa863bde79bbf080ea96a6f8ce2377523f1"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-shared-1\\bin\\hyle_graph.dll",
+          "original": "C:\\h7\\g09-sdk\\vulkan-shared-1\\relocated\\bin\\hyle_graph.dll",
+          "sha256": "ebcaea37e3e7a91f27473cc9c5979444df112ac97bf6e2d2e3824d6ca2229479"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-shared-1\\bin\\hyle_compute.dll",
+          "original": "C:\\h7\\g09-sdk\\vulkan-shared-1\\relocated\\bin\\hyle_compute.dll",
+          "sha256": "6bba07bf0fabda61950a2dee2a9f33e58144b1f1bd01476a998e90788f510f29"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-shared-1\\bin\\hyle_compute_ops.dll",
+          "original": "C:\\h7\\g09-sdk\\vulkan-shared-1\\relocated\\bin\\hyle_compute_ops.dll",
+          "sha256": "32af171c899c4437d87c5856ecaeb4a63adfe1add1c0fbe5e46cee8c79933710"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-shared-1\\bin\\hyle_sched.dll",
+          "original": "C:\\h7\\g09-sdk\\vulkan-shared-1\\relocated\\bin\\hyle_sched.dll",
+          "sha256": "9838e6bcbecc9eb5b9134fd8d228f49f14d5e9fcd410558ba0a6b72e0900edaf"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-shared-1\\bin\\hyle_mem.dll",
+          "original": "C:\\h7\\g09-sdk\\vulkan-shared-1\\relocated\\bin\\hyle_mem.dll",
+          "sha256": "4e59268fc5a955c3bed5870ac380086e5dc0e8ffb44b8fc95460416ae4db7327"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-shared-1\\bin\\hyle_error.dll",
+          "original": "C:\\h7\\g09-sdk\\vulkan-shared-1\\relocated\\bin\\hyle_error.dll",
+          "sha256": "deaf8bbc87a79299cc0ae16e0de06310e20cd177c6749c5e9d61b7ac1451c249"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-shared-1\\bin\\hyle_graph_route_cpu_vulkan.dll",
+          "original": "C:\\h7\\g09-sdk\\vulkan-shared-1\\relocated\\bin\\hyle_graph_route_cpu_vulkan.dll",
+          "sha256": "2b8db8783801d5667f850ff9e9cbe6e23de494abad5196fa616a9da88da5cf02"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-shared-1\\bin\\hyle_graph_route_cpu.dll",
+          "original": "C:\\h7\\g09-sdk\\vulkan-shared-1\\relocated\\bin\\hyle_graph_route_cpu.dll",
+          "sha256": "6b1eb293d0973e319116688123cb54b53b2e4d80857751bbe972160b5b4e73cf"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-shared-1\\bin\\hyle_compute_route_vulkan.dll",
+          "original": "C:\\h7\\g09-sdk\\vulkan-shared-1\\relocated\\bin\\hyle_compute_route_vulkan.dll",
+          "sha256": "82dfa7a95d618f81e6dcb29bd8556fa863bde79bbf080ea96a6f8ce2377523f1"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-shared-1\\bin\\hyle_graph.dll",
+          "original": "C:\\h7\\g09-sdk\\vulkan-shared-1\\relocated\\bin\\hyle_graph.dll",
+          "sha256": "ebcaea37e3e7a91f27473cc9c5979444df112ac97bf6e2d2e3824d6ca2229479"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-shared-1\\bin\\hyle_compute.dll",
+          "original": "C:\\h7\\g09-sdk\\vulkan-shared-1\\relocated\\bin\\hyle_compute.dll",
+          "sha256": "6bba07bf0fabda61950a2dee2a9f33e58144b1f1bd01476a998e90788f510f29"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-shared-1\\bin\\hyle_compute_ops.dll",
+          "original": "C:\\h7\\g09-sdk\\vulkan-shared-1\\relocated\\bin\\hyle_compute_ops.dll",
+          "sha256": "32af171c899c4437d87c5856ecaeb4a63adfe1add1c0fbe5e46cee8c79933710"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-shared-1\\bin\\hyle_sched.dll",
+          "original": "C:\\h7\\g09-sdk\\vulkan-shared-1\\relocated\\bin\\hyle_sched.dll",
+          "sha256": "9838e6bcbecc9eb5b9134fd8d228f49f14d5e9fcd410558ba0a6b72e0900edaf"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-shared-1\\bin\\hyle_mem.dll",
+          "original": "C:\\h7\\g09-sdk\\vulkan-shared-1\\relocated\\bin\\hyle_mem.dll",
+          "sha256": "4e59268fc5a955c3bed5870ac380086e5dc0e8ffb44b8fc95460416ae4db7327"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-shared-1\\bin\\hyle_error.dll",
+          "original": "C:\\h7\\g09-sdk\\vulkan-shared-1\\relocated\\bin\\hyle_error.dll",
+          "sha256": "deaf8bbc87a79299cc0ae16e0de06310e20cd177c6749c5e9d61b7ac1451c249"
+        }
+      ],
+      "not_applicable_consumers": null,
+      "retained_failure": "retained-generator-preflight-refusal/result.json",
+      "actual_cumulative_seconds": 215.35899999993853,
+      "producer": "C:\\h7\\w-vulkan\\selected-graph\\shared-sdk-build",
+      "relocated_prefix": "C:\\h7\\g09-sdk\\vulkan-shared-1\\relocated",
+      "preflight_edges": {
+        "producer_build_edges": 58,
+        "consumer_build_edges": 12
+      },
+      "result_origin": "vulkan-shared-1/result.json"
+    },
+    {
+      "route": "vulkan",
+      "mode": "source",
+      "state": "SOURCE_PUBLIC_CONSUMERS_HEADERS_PASS",
+      "candidate": "3524413272cb52d06af5e64d634edbfef09b9864",
+      "source_snapshot": "6d260f8bf2bf48f1a1bc9e996fc61df59a05622f",
+      "identity": {
+        "host": "KIRO-WORKSTATIO",
+        "compiler": "14.50.35717",
+        "os": "Microsoft Windows [Version 10.0.26200.9457]",
+        "gpu": "NVIDIA GeForce RTX 4070, GPU-e7376560-6f5d-ec19-6ee4-3dd3a2c81ef8, 617.14"
+      },
+      "binaries": [
+        {
+          "path": "C:\\h7\\g09-sdk\\vulkan-source-1\\bin\\g09_contracts.exe",
+          "sha256": "c99efe396d0db9b5de27167bd2542381871288af9d2e9352698177716ae7a786"
+        },
+        {
+          "path": "C:\\h7\\g09-sdk\\vulkan-source-1\\bin\\g09_pipeline.exe",
+          "sha256": "bba97f113fc0302b54a8e7d6786f7ff55287bb863869da88cb92dc0294605962"
+        },
+        {
+          "path": "C:\\h7\\g09-sdk\\vulkan-source-1\\bin\\g09_pending.exe",
+          "sha256": "68ae0d156c04cd739d0c88fc764226d95b569d53ca5f7f3db6481babc0ac6f57"
+        }
+      ],
+      "public_header_inputs": [
+        {
+          "path": "graph/cpu.h",
+          "sha256": "207f78caafbec1e73966f0ead5563b51aa2aaf3e5eccabde15b6a20447a25f99"
+        },
+        {
+          "path": "graph/cpu_vulkan.h",
+          "sha256": "9b4c99f9ef9948f85435de4415a788b83d17a00752664074edf462addc6693f6"
+        }
+      ],
+      "staged_runtime": [
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-source-1\\bin\\hyle_graph_route_cpu_vulkan.dll",
+          "original": "C:\\h7\\w-cpu-vulkan\\selected-graph\\source-build\\hyle\\src\\graph_route_cpu_vulkan\\hyle_graph_route_cpu_vulkan.dll",
+          "sha256": "63bac7f7cfe105c3ba7a0210621ec95f86ad90a036d55727257bff9b5686a680"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-source-1\\bin\\hyle_graph_route_cpu.dll",
+          "original": "C:\\h7\\w-cpu-vulkan\\selected-graph\\source-build\\hyle\\src\\graph_route_cpu\\hyle_graph_route_cpu.dll",
+          "sha256": "91ee2843134d95c18678687063f009df3f0382c86d3a47a8fecd4cb0219398e8"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-source-1\\bin\\hyle_compute_route_vulkan.dll",
+          "original": "C:\\h7\\w-cpu-vulkan\\selected-graph\\source-build\\hyle\\src\\compute_route_vulkan\\hyle_compute_route_vulkan.dll",
+          "sha256": "c4127475ea70fbcc6f2eed9747ce83f95481d1f4155bd667ad62939e467e3dc3"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-source-1\\bin\\hyle_graph_batch.dll",
+          "original": "C:\\h7\\w-cpu-vulkan\\selected-graph\\source-build\\hyle\\src\\graph_batch\\hyle_graph_batch.dll",
+          "sha256": "4d8b858725541cc0b04047912c501ceee943b087409f4ec88c7e4fc5523243c6"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-source-1\\bin\\hyle_compute_batch.dll",
+          "original": "C:\\h7\\w-cpu-vulkan\\selected-graph\\source-build\\hyle\\src\\compute_batch\\hyle_compute_batch.dll",
+          "sha256": "4e3ffc2d357d62318c469d0cd18a76e477af6d17d1edc91029aea46077d40881"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-source-1\\bin\\hyle_graph.dll",
+          "original": "C:\\h7\\w-cpu-vulkan\\selected-graph\\source-build\\hyle\\src\\graph\\hyle_graph.dll",
+          "sha256": "1072a8d9df20aedfa86a7babf36869937c668ad8bff76e3737b85b49256ac682"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-source-1\\bin\\hyle_compute.dll",
+          "original": "C:\\h7\\w-cpu-vulkan\\selected-graph\\source-build\\hyle\\src\\compute\\hyle_compute.dll",
+          "sha256": "54d48de60665608cfb50ea5270846f246ab01ad350703d8d43c5778c14cde685"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-source-1\\bin\\hyle_compute_ops.dll",
+          "original": "C:\\h7\\w-cpu-vulkan\\selected-graph\\source-build\\hyle\\src\\compute_ops\\hyle_compute_ops.dll",
+          "sha256": "a85070a482136957f5ca921c55523d278d97d41b3b3f8a1d286ff9803c7b9b32"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-source-1\\bin\\hyle_sched.dll",
+          "original": "C:\\h7\\w-cpu-vulkan\\selected-graph\\source-build\\hyle\\src\\sched\\hyle_sched.dll",
+          "sha256": "3bd723e9cb558e20d9adb470ce4446c1664082e9d6dfbd249ae14a6a351b459d"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-source-1\\bin\\hyle_mem.dll",
+          "original": "C:\\h7\\w-cpu-vulkan\\selected-graph\\source-build\\hyle\\src\\mem\\hyle_mem.dll",
+          "sha256": "e9fb48007d0d7a76ed9d7f5603164f7964fbadf332d8937787a6c93e13f7af6c"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-source-1\\bin\\hyle_error.dll",
+          "original": "C:\\h7\\w-cpu-vulkan\\selected-graph\\source-build\\hyle\\src\\error\\hyle_error.dll",
+          "sha256": "09803ee2b5a8466a270e61917260f8dedf454a95b6b6963dbe1cd1528454d5da"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-source-1\\bin\\hyle_platform.dll",
+          "original": "C:\\h7\\w-cpu-vulkan\\selected-graph\\source-build\\hyle\\src\\platform\\hyle_platform.dll",
+          "sha256": "e30ff2073aa39c7adda9fabd947b1d81f393d7f449cf526d7a4ed13bef4f0e98"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-source-1\\bin\\hyle_error.dll",
+          "original": "C:\\h7\\w-cpu-vulkan\\selected-graph\\source-build\\hyle\\src\\error\\hyle_error.dll",
+          "sha256": "09803ee2b5a8466a270e61917260f8dedf454a95b6b6963dbe1cd1528454d5da"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-source-1\\bin\\hyle_error.dll",
+          "original": "C:\\h7\\w-cpu-vulkan\\selected-graph\\source-build\\hyle\\src\\error\\hyle_error.dll",
+          "sha256": "09803ee2b5a8466a270e61917260f8dedf454a95b6b6963dbe1cd1528454d5da"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-source-1\\bin\\hyle_platform_thread.dll",
+          "original": "C:\\h7\\w-cpu-vulkan\\selected-graph\\source-build\\hyle\\src\\platform_thread\\hyle_platform_thread.dll",
+          "sha256": "6a1bd95106a7c26b07da72e14c30594dbcc20f2ad35a8d1735c14e048915801c"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-source-1\\bin\\hyle_platform.dll",
+          "original": "C:\\h7\\w-cpu-vulkan\\selected-graph\\source-build\\hyle\\src\\platform\\hyle_platform.dll",
+          "sha256": "e30ff2073aa39c7adda9fabd947b1d81f393d7f449cf526d7a4ed13bef4f0e98"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-source-1\\bin\\hyle_error.dll",
+          "original": "C:\\h7\\w-cpu-vulkan\\selected-graph\\source-build\\hyle\\src\\error\\hyle_error.dll",
+          "sha256": "09803ee2b5a8466a270e61917260f8dedf454a95b6b6963dbe1cd1528454d5da"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-source-1\\bin\\hyle_platform.dll",
+          "original": "C:\\h7\\w-cpu-vulkan\\selected-graph\\source-build\\hyle\\src\\platform\\hyle_platform.dll",
+          "sha256": "e30ff2073aa39c7adda9fabd947b1d81f393d7f449cf526d7a4ed13bef4f0e98"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-source-1\\bin\\hyle_error.dll",
+          "original": "C:\\h7\\w-cpu-vulkan\\selected-graph\\source-build\\hyle\\src\\error\\hyle_error.dll",
+          "sha256": "09803ee2b5a8466a270e61917260f8dedf454a95b6b6963dbe1cd1528454d5da"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-source-1\\bin\\hyle_error.dll",
+          "original": "C:\\h7\\w-cpu-vulkan\\selected-graph\\source-build\\hyle\\src\\error\\hyle_error.dll",
+          "sha256": "09803ee2b5a8466a270e61917260f8dedf454a95b6b6963dbe1cd1528454d5da"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-source-1\\bin\\hyle_mem.dll",
+          "original": "C:\\h7\\w-cpu-vulkan\\selected-graph\\source-build\\hyle\\src\\mem\\hyle_mem.dll",
+          "sha256": "e9fb48007d0d7a76ed9d7f5603164f7964fbadf332d8937787a6c93e13f7af6c"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-source-1\\bin\\hyle_compute_ops.dll",
+          "original": "C:\\h7\\w-cpu-vulkan\\selected-graph\\source-build\\hyle\\src\\compute_ops\\hyle_compute_ops.dll",
+          "sha256": "a85070a482136957f5ca921c55523d278d97d41b3b3f8a1d286ff9803c7b9b32"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-source-1\\bin\\hyle_platform.dll",
+          "original": "C:\\h7\\w-cpu-vulkan\\selected-graph\\source-build\\hyle\\src\\platform\\hyle_platform.dll",
+          "sha256": "e30ff2073aa39c7adda9fabd947b1d81f393d7f449cf526d7a4ed13bef4f0e98"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-source-1\\bin\\hyle_error.dll",
+          "original": "C:\\h7\\w-cpu-vulkan\\selected-graph\\source-build\\hyle\\src\\error\\hyle_error.dll",
+          "sha256": "09803ee2b5a8466a270e61917260f8dedf454a95b6b6963dbe1cd1528454d5da"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-source-1\\bin\\hyle_container.dll",
+          "original": "C:\\h7\\w-cpu-vulkan\\selected-graph\\source-build\\hyle\\src\\container\\hyle_container.dll",
+          "sha256": "a1312fa078ae2aeafe455bbbae368d4522892f627507e6b6313f5619421e803c"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-source-1\\bin\\hyle_compute.dll",
+          "original": "C:\\h7\\w-cpu-vulkan\\selected-graph\\source-build\\hyle\\src\\compute\\hyle_compute.dll",
+          "sha256": "54d48de60665608cfb50ea5270846f246ab01ad350703d8d43c5778c14cde685"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-source-1\\bin\\hyle_mem.dll",
+          "original": "C:\\h7\\w-cpu-vulkan\\selected-graph\\source-build\\hyle\\src\\mem\\hyle_mem.dll",
+          "sha256": "e9fb48007d0d7a76ed9d7f5603164f7964fbadf332d8937787a6c93e13f7af6c"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-source-1\\bin\\hyle_compute_ops.dll",
+          "original": "C:\\h7\\w-cpu-vulkan\\selected-graph\\source-build\\hyle\\src\\compute_ops\\hyle_compute_ops.dll",
+          "sha256": "a85070a482136957f5ca921c55523d278d97d41b3b3f8a1d286ff9803c7b9b32"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-source-1\\bin\\hyle_error.dll",
+          "original": "C:\\h7\\w-cpu-vulkan\\selected-graph\\source-build\\hyle\\src\\error\\hyle_error.dll",
+          "sha256": "09803ee2b5a8466a270e61917260f8dedf454a95b6b6963dbe1cd1528454d5da"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-source-1\\bin\\hyle_mem.dll",
+          "original": "C:\\h7\\w-cpu-vulkan\\selected-graph\\source-build\\hyle\\src\\mem\\hyle_mem.dll",
+          "sha256": "e9fb48007d0d7a76ed9d7f5603164f7964fbadf332d8937787a6c93e13f7af6c"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-source-1\\bin\\hyle_platform.dll",
+          "original": "C:\\h7\\w-cpu-vulkan\\selected-graph\\source-build\\hyle\\src\\platform\\hyle_platform.dll",
+          "sha256": "e30ff2073aa39c7adda9fabd947b1d81f393d7f449cf526d7a4ed13bef4f0e98"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-source-1\\bin\\hyle_compute.dll",
+          "original": "C:\\h7\\w-cpu-vulkan\\selected-graph\\source-build\\hyle\\src\\compute\\hyle_compute.dll",
+          "sha256": "54d48de60665608cfb50ea5270846f246ab01ad350703d8d43c5778c14cde685"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-source-1\\bin\\hyle_compute_ops.dll",
+          "original": "C:\\h7\\w-cpu-vulkan\\selected-graph\\source-build\\hyle\\src\\compute_ops\\hyle_compute_ops.dll",
+          "sha256": "a85070a482136957f5ca921c55523d278d97d41b3b3f8a1d286ff9803c7b9b32"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-source-1\\bin\\hyle_mem.dll",
+          "original": "C:\\h7\\w-cpu-vulkan\\selected-graph\\source-build\\hyle\\src\\mem\\hyle_mem.dll",
+          "sha256": "e9fb48007d0d7a76ed9d7f5603164f7964fbadf332d8937787a6c93e13f7af6c"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-source-1\\bin\\hyle_error.dll",
+          "original": "C:\\h7\\w-cpu-vulkan\\selected-graph\\source-build\\hyle\\src\\error\\hyle_error.dll",
+          "sha256": "09803ee2b5a8466a270e61917260f8dedf454a95b6b6963dbe1cd1528454d5da"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-source-1\\bin\\hyle_graph.dll",
+          "original": "C:\\h7\\w-cpu-vulkan\\selected-graph\\source-build\\hyle\\src\\graph\\hyle_graph.dll",
+          "sha256": "1072a8d9df20aedfa86a7babf36869937c668ad8bff76e3737b85b49256ac682"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-source-1\\bin\\hyle_compute_batch.dll",
+          "original": "C:\\h7\\w-cpu-vulkan\\selected-graph\\source-build\\hyle\\src\\compute_batch\\hyle_compute_batch.dll",
+          "sha256": "4e3ffc2d357d62318c469d0cd18a76e477af6d17d1edc91029aea46077d40881"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-source-1\\bin\\hyle_compute.dll",
+          "original": "C:\\h7\\w-cpu-vulkan\\selected-graph\\source-build\\hyle\\src\\compute\\hyle_compute.dll",
+          "sha256": "54d48de60665608cfb50ea5270846f246ab01ad350703d8d43c5778c14cde685"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-source-1\\bin\\hyle_mem.dll",
+          "original": "C:\\h7\\w-cpu-vulkan\\selected-graph\\source-build\\hyle\\src\\mem\\hyle_mem.dll",
+          "sha256": "e9fb48007d0d7a76ed9d7f5603164f7964fbadf332d8937787a6c93e13f7af6c"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-source-1\\bin\\hyle_compute_ops.dll",
+          "original": "C:\\h7\\w-cpu-vulkan\\selected-graph\\source-build\\hyle\\src\\compute_ops\\hyle_compute_ops.dll",
+          "sha256": "a85070a482136957f5ca921c55523d278d97d41b3b3f8a1d286ff9803c7b9b32"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-source-1\\bin\\hyle_error.dll",
+          "original": "C:\\h7\\w-cpu-vulkan\\selected-graph\\source-build\\hyle\\src\\error\\hyle_error.dll",
+          "sha256": "09803ee2b5a8466a270e61917260f8dedf454a95b6b6963dbe1cd1528454d5da"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-source-1\\bin\\hyle_compute_provider_iree_vulkan.dll",
+          "original": "C:\\h7\\w-cpu-vulkan\\selected-graph\\source-build\\hyle\\src\\compute_provider_iree_vulkan\\hyle_compute_provider_iree_vulkan.dll",
+          "sha256": "89421d108f71057bcff26fe4f4f94c3f154c824e1d11b318a835f2b9ab30c9b2"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-source-1\\bin\\hyle_compute_stream.dll",
+          "original": "C:\\h7\\w-cpu-vulkan\\selected-graph\\source-build\\hyle\\src\\compute_stream\\hyle_compute_stream.dll",
+          "sha256": "249298e6bccd7b017f72b0bc9a1148c4b721752443ca4f2a5b6be0298e2655dd"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-source-1\\bin\\hyle_compute_batch.dll",
+          "original": "C:\\h7\\w-cpu-vulkan\\selected-graph\\source-build\\hyle\\src\\compute_batch\\hyle_compute_batch.dll",
+          "sha256": "4e3ffc2d357d62318c469d0cd18a76e477af6d17d1edc91029aea46077d40881"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-source-1\\bin\\hyle_compute_provider_ggml_vulkan.dll",
+          "original": "C:\\h7\\w-cpu-vulkan\\selected-graph\\source-build\\hyle\\src\\compute_provider_ggml_vulkan\\hyle_compute_provider_ggml_vulkan.dll",
+          "sha256": "f8f11e9ad4830df5a55b4a26da5ada45783b7f2c57b1c10640ee3a0a6b8839d5"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-source-1\\bin\\hyle_time.dll",
+          "original": "C:\\h7\\w-cpu-vulkan\\selected-graph\\source-build\\hyle\\src\\time\\hyle_time.dll",
+          "sha256": "a4d6f78d233af94b20d5437592ccf4a58e705cbe583d5aa34b40fab3de618661"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-source-1\\bin\\hyle_compute.dll",
+          "original": "C:\\h7\\w-cpu-vulkan\\selected-graph\\source-build\\hyle\\src\\compute\\hyle_compute.dll",
+          "sha256": "54d48de60665608cfb50ea5270846f246ab01ad350703d8d43c5778c14cde685"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-source-1\\bin\\hyle_compute_ops.dll",
+          "original": "C:\\h7\\w-cpu-vulkan\\selected-graph\\source-build\\hyle\\src\\compute_ops\\hyle_compute_ops.dll",
+          "sha256": "a85070a482136957f5ca921c55523d278d97d41b3b3f8a1d286ff9803c7b9b32"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-source-1\\bin\\hyle_mem.dll",
+          "original": "C:\\h7\\w-cpu-vulkan\\selected-graph\\source-build\\hyle\\src\\mem\\hyle_mem.dll",
+          "sha256": "e9fb48007d0d7a76ed9d7f5603164f7964fbadf332d8937787a6c93e13f7af6c"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-source-1\\bin\\hyle_error.dll",
+          "original": "C:\\h7\\w-cpu-vulkan\\selected-graph\\source-build\\hyle\\src\\error\\hyle_error.dll",
+          "sha256": "09803ee2b5a8466a270e61917260f8dedf454a95b6b6963dbe1cd1528454d5da"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-source-1\\bin\\hyle_compute_ops.dll",
+          "original": "C:\\h7\\w-cpu-vulkan\\selected-graph\\source-build\\hyle\\src\\compute_ops\\hyle_compute_ops.dll",
+          "sha256": "a85070a482136957f5ca921c55523d278d97d41b3b3f8a1d286ff9803c7b9b32"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-source-1\\bin\\hyle_compute_ggml_runtime.dll",
+          "original": "C:\\h7\\w-cpu-vulkan\\selected-graph\\source-build\\hyle\\src\\compute_ggml_runtime\\hyle_compute_ggml_runtime.dll",
+          "sha256": "9e1700a4f8aade3ac1298b21079351b29af2051f0329a4cb4faa66a7283d7618"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-source-1\\bin\\hyle_mem.dll",
+          "original": "C:\\h7\\w-cpu-vulkan\\selected-graph\\source-build\\hyle\\src\\mem\\hyle_mem.dll",
+          "sha256": "e9fb48007d0d7a76ed9d7f5603164f7964fbadf332d8937787a6c93e13f7af6c"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-source-1\\bin\\hyle_platform.dll",
+          "original": "C:\\h7\\w-cpu-vulkan\\selected-graph\\source-build\\hyle\\src\\platform\\hyle_platform.dll",
+          "sha256": "e30ff2073aa39c7adda9fabd947b1d81f393d7f449cf526d7a4ed13bef4f0e98"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-source-1\\bin\\hyle_error.dll",
+          "original": "C:\\h7\\w-cpu-vulkan\\selected-graph\\source-build\\hyle\\src\\error\\hyle_error.dll",
+          "sha256": "09803ee2b5a8466a270e61917260f8dedf454a95b6b6963dbe1cd1528454d5da"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-source-1\\bin\\hyle_platform.dll",
+          "original": "C:\\h7\\w-cpu-vulkan\\selected-graph\\source-build\\hyle\\src\\platform\\hyle_platform.dll",
+          "sha256": "e30ff2073aa39c7adda9fabd947b1d81f393d7f449cf526d7a4ed13bef4f0e98"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-source-1\\bin\\hyle_error.dll",
+          "original": "C:\\h7\\w-cpu-vulkan\\selected-graph\\source-build\\hyle\\src\\error\\hyle_error.dll",
+          "sha256": "09803ee2b5a8466a270e61917260f8dedf454a95b6b6963dbe1cd1528454d5da"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-source-1\\bin\\hyle_compute.dll",
+          "original": "C:\\h7\\w-cpu-vulkan\\selected-graph\\source-build\\hyle\\src\\compute\\hyle_compute.dll",
+          "sha256": "54d48de60665608cfb50ea5270846f246ab01ad350703d8d43c5778c14cde685"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-source-1\\bin\\hyle_io_core.dll",
+          "original": "C:\\h7\\w-cpu-vulkan\\selected-graph\\source-build\\hyle\\src\\io_core\\hyle_io_core.dll",
+          "sha256": "60e1040f2339f7da155555df354465d43138ef674bccf03412799264fc389832"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-source-1\\bin\\hyle_compute_ops.dll",
+          "original": "C:\\h7\\w-cpu-vulkan\\selected-graph\\source-build\\hyle\\src\\compute_ops\\hyle_compute_ops.dll",
+          "sha256": "a85070a482136957f5ca921c55523d278d97d41b3b3f8a1d286ff9803c7b9b32"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-source-1\\bin\\hyle_sched.dll",
+          "original": "C:\\h7\\w-cpu-vulkan\\selected-graph\\source-build\\hyle\\src\\sched\\hyle_sched.dll",
+          "sha256": "3bd723e9cb558e20d9adb470ce4446c1664082e9d6dfbd249ae14a6a351b459d"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-source-1\\bin\\hyle_mem_vm.dll",
+          "original": "C:\\h7\\w-cpu-vulkan\\selected-graph\\source-build\\hyle\\src\\mem_vm\\hyle_mem_vm.dll",
+          "sha256": "d308e502fdcf5724f7e75cba045aae86b7121af0a5dc553620403b02a7b1084a"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-source-1\\bin\\hyle_mem.dll",
+          "original": "C:\\h7\\w-cpu-vulkan\\selected-graph\\source-build\\hyle\\src\\mem\\hyle_mem.dll",
+          "sha256": "e9fb48007d0d7a76ed9d7f5603164f7964fbadf332d8937787a6c93e13f7af6c"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-source-1\\bin\\hyle_platform.dll",
+          "original": "C:\\h7\\w-cpu-vulkan\\selected-graph\\source-build\\hyle\\src\\platform\\hyle_platform.dll",
+          "sha256": "e30ff2073aa39c7adda9fabd947b1d81f393d7f449cf526d7a4ed13bef4f0e98"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-source-1\\bin\\hyle_error.dll",
+          "original": "C:\\h7\\w-cpu-vulkan\\selected-graph\\source-build\\hyle\\src\\error\\hyle_error.dll",
+          "sha256": "09803ee2b5a8466a270e61917260f8dedf454a95b6b6963dbe1cd1528454d5da"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-source-1\\bin\\hyle_mem.dll",
+          "original": "C:\\h7\\w-cpu-vulkan\\selected-graph\\source-build\\hyle\\src\\mem\\hyle_mem.dll",
+          "sha256": "e9fb48007d0d7a76ed9d7f5603164f7964fbadf332d8937787a6c93e13f7af6c"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-source-1\\bin\\hyle_platform_fs.dll",
+          "original": "C:\\h7\\w-cpu-vulkan\\selected-graph\\source-build\\hyle\\src\\platform_fs\\hyle_platform_fs.dll",
+          "sha256": "f273afe9d2564c5d42ee5b311f86708c53b0d9e09a6ae10534e39fca7749977c"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-source-1\\bin\\hyle_platform.dll",
+          "original": "C:\\h7\\w-cpu-vulkan\\selected-graph\\source-build\\hyle\\src\\platform\\hyle_platform.dll",
+          "sha256": "e30ff2073aa39c7adda9fabd947b1d81f393d7f449cf526d7a4ed13bef4f0e98"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-source-1\\bin\\hyle_error.dll",
+          "original": "C:\\h7\\w-cpu-vulkan\\selected-graph\\source-build\\hyle\\src\\error\\hyle_error.dll",
+          "sha256": "09803ee2b5a8466a270e61917260f8dedf454a95b6b6963dbe1cd1528454d5da"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-source-1\\bin\\hyle_platform.dll",
+          "original": "C:\\h7\\w-cpu-vulkan\\selected-graph\\source-build\\hyle\\src\\platform\\hyle_platform.dll",
+          "sha256": "e30ff2073aa39c7adda9fabd947b1d81f393d7f449cf526d7a4ed13bef4f0e98"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-source-1\\bin\\hyle_error.dll",
+          "original": "C:\\h7\\w-cpu-vulkan\\selected-graph\\source-build\\hyle\\src\\error\\hyle_error.dll",
+          "sha256": "09803ee2b5a8466a270e61917260f8dedf454a95b6b6963dbe1cd1528454d5da"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-source-1\\bin\\hyle_sched.dll",
+          "original": "C:\\h7\\w-cpu-vulkan\\selected-graph\\source-build\\hyle\\src\\sched\\hyle_sched.dll",
+          "sha256": "3bd723e9cb558e20d9adb470ce4446c1664082e9d6dfbd249ae14a6a351b459d"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-source-1\\bin\\hyle_platform_fs.dll",
+          "original": "C:\\h7\\w-cpu-vulkan\\selected-graph\\source-build\\hyle\\src\\platform_fs\\hyle_platform_fs.dll",
+          "sha256": "f273afe9d2564c5d42ee5b311f86708c53b0d9e09a6ae10534e39fca7749977c"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-source-1\\bin\\hyle_error.dll",
+          "original": "C:\\h7\\w-cpu-vulkan\\selected-graph\\source-build\\hyle\\src\\error\\hyle_error.dll",
+          "sha256": "09803ee2b5a8466a270e61917260f8dedf454a95b6b6963dbe1cd1528454d5da"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-source-1\\bin\\hyle_compute_provider_ggml_vulkan.dll",
+          "original": "C:\\h7\\w-cpu-vulkan\\selected-graph\\source-build\\hyle\\src\\compute_provider_ggml_vulkan\\hyle_compute_provider_ggml_vulkan.dll",
+          "sha256": "f8f11e9ad4830df5a55b4a26da5ada45783b7f2c57b1c10640ee3a0a6b8839d5"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-source-1\\bin\\hyle_error.dll",
+          "original": "C:\\h7\\w-cpu-vulkan\\selected-graph\\source-build\\hyle\\src\\error\\hyle_error.dll",
+          "sha256": "09803ee2b5a8466a270e61917260f8dedf454a95b6b6963dbe1cd1528454d5da"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-source-1\\bin\\hyle_graph_provider_onednn.dll",
+          "original": "C:\\h7\\w-cpu-vulkan\\selected-graph\\source-build\\hyle\\src\\graph_provider_onednn\\hyle_graph_provider_onednn.dll",
+          "sha256": "6e7c23643681a1c3b9c6faf6cb8022ff2fcc0eaab6085400846f705dc1b29407"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-source-1\\bin\\hyle_compute_route_cpu.dll",
+          "original": "C:\\h7\\w-cpu-vulkan\\selected-graph\\source-build\\hyle\\src\\compute_route_cpu\\hyle_compute_route_cpu.dll",
+          "sha256": "a99f4db6da426af7e01446966ba8e6264b97271b256efb0a91a159d4e7d289a4"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-source-1\\bin\\hyle_graph.dll",
+          "original": "C:\\h7\\w-cpu-vulkan\\selected-graph\\source-build\\hyle\\src\\graph\\hyle_graph.dll",
+          "sha256": "1072a8d9df20aedfa86a7babf36869937c668ad8bff76e3737b85b49256ac682"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-source-1\\bin\\hyle_compute_provider_native.dll",
+          "original": "C:\\h7\\w-cpu-vulkan\\selected-graph\\source-build\\hyle\\src\\compute_provider_native\\hyle_compute_provider_native.dll",
+          "sha256": "7411d1ab8137928d59c8a8c3c1e9bc35415a7c2d89a0e70976ed8d61a5941d10"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-source-1\\bin\\hyle_compute_provider_onednn.dll",
+          "original": "C:\\h7\\w-cpu-vulkan\\selected-graph\\source-build\\hyle\\src\\compute_provider_onednn\\hyle_compute_provider_onednn.dll",
+          "sha256": "3ae0ea5ed1393755c084e770ce88027f67175b1d1532a15d338619e02bbd94d3"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-source-1\\bin\\hyle_compute_provider_ggml.dll",
+          "original": "C:\\h7\\w-cpu-vulkan\\selected-graph\\source-build\\hyle\\src\\compute_provider_ggml\\hyle_compute_provider_ggml.dll",
+          "sha256": "06a9a3aaf6e627d9831fb827972686f1db2d4ba29794d499d18440dca3cae7b7"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-source-1\\bin\\hyle_compute_backend_cpu.dll",
+          "original": "C:\\h7\\w-cpu-vulkan\\selected-graph\\source-build\\hyle\\src\\compute_backend_cpu\\hyle_compute_backend_cpu.dll",
+          "sha256": "bf2726dc7beceaf9686b371fa0a34fd08c2d4f9fc56b10973168778c2f60df66"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-source-1\\bin\\hyle_compute.dll",
+          "original": "C:\\h7\\w-cpu-vulkan\\selected-graph\\source-build\\hyle\\src\\compute\\hyle_compute.dll",
+          "sha256": "54d48de60665608cfb50ea5270846f246ab01ad350703d8d43c5778c14cde685"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-source-1\\bin\\hyle_compute_ops.dll",
+          "original": "C:\\h7\\w-cpu-vulkan\\selected-graph\\source-build\\hyle\\src\\compute_ops\\hyle_compute_ops.dll",
+          "sha256": "a85070a482136957f5ca921c55523d278d97d41b3b3f8a1d286ff9803c7b9b32"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-source-1\\bin\\hyle_error.dll",
+          "original": "C:\\h7\\w-cpu-vulkan\\selected-graph\\source-build\\hyle\\src\\error\\hyle_error.dll",
+          "sha256": "09803ee2b5a8466a270e61917260f8dedf454a95b6b6963dbe1cd1528454d5da"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-source-1\\bin\\hyle_compute.dll",
+          "original": "C:\\h7\\w-cpu-vulkan\\selected-graph\\source-build\\hyle\\src\\compute\\hyle_compute.dll",
+          "sha256": "54d48de60665608cfb50ea5270846f246ab01ad350703d8d43c5778c14cde685"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-source-1\\bin\\hyle_mem.dll",
+          "original": "C:\\h7\\w-cpu-vulkan\\selected-graph\\source-build\\hyle\\src\\mem\\hyle_mem.dll",
+          "sha256": "e9fb48007d0d7a76ed9d7f5603164f7964fbadf332d8937787a6c93e13f7af6c"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-source-1\\bin\\hyle_error.dll",
+          "original": "C:\\h7\\w-cpu-vulkan\\selected-graph\\source-build\\hyle\\src\\error\\hyle_error.dll",
+          "sha256": "09803ee2b5a8466a270e61917260f8dedf454a95b6b6963dbe1cd1528454d5da"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-source-1\\bin\\hyle_compute_batch.dll",
+          "original": "C:\\h7\\w-cpu-vulkan\\selected-graph\\source-build\\hyle\\src\\compute_batch\\hyle_compute_batch.dll",
+          "sha256": "4e3ffc2d357d62318c469d0cd18a76e477af6d17d1edc91029aea46077d40881"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-source-1\\bin\\hyle_compute_ggml_runtime.dll",
+          "original": "C:\\h7\\w-cpu-vulkan\\selected-graph\\source-build\\hyle\\src\\compute_ggml_runtime\\hyle_compute_ggml_runtime.dll",
+          "sha256": "9e1700a4f8aade3ac1298b21079351b29af2051f0329a4cb4faa66a7283d7618"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-source-1\\bin\\hyle_compute.dll",
+          "original": "C:\\h7\\w-cpu-vulkan\\selected-graph\\source-build\\hyle\\src\\compute\\hyle_compute.dll",
+          "sha256": "54d48de60665608cfb50ea5270846f246ab01ad350703d8d43c5778c14cde685"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-source-1\\bin\\hyle_compute_ops.dll",
+          "original": "C:\\h7\\w-cpu-vulkan\\selected-graph\\source-build\\hyle\\src\\compute_ops\\hyle_compute_ops.dll",
+          "sha256": "a85070a482136957f5ca921c55523d278d97d41b3b3f8a1d286ff9803c7b9b32"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-source-1\\bin\\hyle_mem.dll",
+          "original": "C:\\h7\\w-cpu-vulkan\\selected-graph\\source-build\\hyle\\src\\mem\\hyle_mem.dll",
+          "sha256": "e9fb48007d0d7a76ed9d7f5603164f7964fbadf332d8937787a6c93e13f7af6c"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-source-1\\bin\\hyle_error.dll",
+          "original": "C:\\h7\\w-cpu-vulkan\\selected-graph\\source-build\\hyle\\src\\error\\hyle_error.dll",
+          "sha256": "09803ee2b5a8466a270e61917260f8dedf454a95b6b6963dbe1cd1528454d5da"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-source-1\\bin\\hyle_compute.dll",
+          "original": "C:\\h7\\w-cpu-vulkan\\selected-graph\\source-build\\hyle\\src\\compute\\hyle_compute.dll",
+          "sha256": "54d48de60665608cfb50ea5270846f246ab01ad350703d8d43c5778c14cde685"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-source-1\\bin\\hyle_mem.dll",
+          "original": "C:\\h7\\w-cpu-vulkan\\selected-graph\\source-build\\hyle\\src\\mem\\hyle_mem.dll",
+          "sha256": "e9fb48007d0d7a76ed9d7f5603164f7964fbadf332d8937787a6c93e13f7af6c"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-source-1\\bin\\hyle_compute_ops.dll",
+          "original": "C:\\h7\\w-cpu-vulkan\\selected-graph\\source-build\\hyle\\src\\compute_ops\\hyle_compute_ops.dll",
+          "sha256": "a85070a482136957f5ca921c55523d278d97d41b3b3f8a1d286ff9803c7b9b32"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-source-1\\bin\\hyle_error.dll",
+          "original": "C:\\h7\\w-cpu-vulkan\\selected-graph\\source-build\\hyle\\src\\error\\hyle_error.dll",
+          "sha256": "09803ee2b5a8466a270e61917260f8dedf454a95b6b6963dbe1cd1528454d5da"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-source-1\\bin\\hyle_simd.dll",
+          "original": "C:\\h7\\w-cpu-vulkan\\selected-graph\\source-build\\hyle\\src\\simd\\hyle_simd.dll",
+          "sha256": "a975aec276f5a74036d82a9d2bf30db6de05e57d9c224e4166894e55d9071482"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-source-1\\bin\\hyle_compute.dll",
+          "original": "C:\\h7\\w-cpu-vulkan\\selected-graph\\source-build\\hyle\\src\\compute\\hyle_compute.dll",
+          "sha256": "54d48de60665608cfb50ea5270846f246ab01ad350703d8d43c5778c14cde685"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-source-1\\bin\\hyle_mem.dll",
+          "original": "C:\\h7\\w-cpu-vulkan\\selected-graph\\source-build\\hyle\\src\\mem\\hyle_mem.dll",
+          "sha256": "e9fb48007d0d7a76ed9d7f5603164f7964fbadf332d8937787a6c93e13f7af6c"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-source-1\\bin\\hyle_compute_ops.dll",
+          "original": "C:\\h7\\w-cpu-vulkan\\selected-graph\\source-build\\hyle\\src\\compute_ops\\hyle_compute_ops.dll",
+          "sha256": "a85070a482136957f5ca921c55523d278d97d41b3b3f8a1d286ff9803c7b9b32"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-source-1\\bin\\hyle_error.dll",
+          "original": "C:\\h7\\w-cpu-vulkan\\selected-graph\\source-build\\hyle\\src\\error\\hyle_error.dll",
+          "sha256": "09803ee2b5a8466a270e61917260f8dedf454a95b6b6963dbe1cd1528454d5da"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-source-1\\bin\\hyle_platform.dll",
+          "original": "C:\\h7\\w-cpu-vulkan\\selected-graph\\source-build\\hyle\\src\\platform\\hyle_platform.dll",
+          "sha256": "e30ff2073aa39c7adda9fabd947b1d81f393d7f449cf526d7a4ed13bef4f0e98"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-source-1\\bin\\hyle_compute_provider_native.dll",
+          "original": "C:\\h7\\w-cpu-vulkan\\selected-graph\\source-build\\hyle\\src\\compute_provider_native\\hyle_compute_provider_native.dll",
+          "sha256": "7411d1ab8137928d59c8a8c3c1e9bc35415a7c2d89a0e70976ed8d61a5941d10"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-source-1\\bin\\hyle_compute_provider_onednn.dll",
+          "original": "C:\\h7\\w-cpu-vulkan\\selected-graph\\source-build\\hyle\\src\\compute_provider_onednn\\hyle_compute_provider_onednn.dll",
+          "sha256": "3ae0ea5ed1393755c084e770ce88027f67175b1d1532a15d338619e02bbd94d3"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-source-1\\bin\\hyle_compute_provider_ggml.dll",
+          "original": "C:\\h7\\w-cpu-vulkan\\selected-graph\\source-build\\hyle\\src\\compute_provider_ggml\\hyle_compute_provider_ggml.dll",
+          "sha256": "06a9a3aaf6e627d9831fb827972686f1db2d4ba29794d499d18440dca3cae7b7"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-source-1\\bin\\hyle_compute_backend_cpu.dll",
+          "original": "C:\\h7\\w-cpu-vulkan\\selected-graph\\source-build\\hyle\\src\\compute_backend_cpu\\hyle_compute_backend_cpu.dll",
+          "sha256": "bf2726dc7beceaf9686b371fa0a34fd08c2d4f9fc56b10973168778c2f60df66"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-source-1\\bin\\hyle_compute_stream.dll",
+          "original": "C:\\h7\\w-cpu-vulkan\\selected-graph\\source-build\\hyle\\src\\compute_stream\\hyle_compute_stream.dll",
+          "sha256": "249298e6bccd7b017f72b0bc9a1148c4b721752443ca4f2a5b6be0298e2655dd"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-source-1\\bin\\hyle_compute.dll",
+          "original": "C:\\h7\\w-cpu-vulkan\\selected-graph\\source-build\\hyle\\src\\compute\\hyle_compute.dll",
+          "sha256": "54d48de60665608cfb50ea5270846f246ab01ad350703d8d43c5778c14cde685"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-source-1\\bin\\hyle_compute_ops.dll",
+          "original": "C:\\h7\\w-cpu-vulkan\\selected-graph\\source-build\\hyle\\src\\compute_ops\\hyle_compute_ops.dll",
+          "sha256": "a85070a482136957f5ca921c55523d278d97d41b3b3f8a1d286ff9803c7b9b32"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-source-1\\bin\\hyle_error.dll",
+          "original": "C:\\h7\\w-cpu-vulkan\\selected-graph\\source-build\\hyle\\src\\error\\hyle_error.dll",
+          "sha256": "09803ee2b5a8466a270e61917260f8dedf454a95b6b6963dbe1cd1528454d5da"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-source-1\\bin\\hyle_graph.dll",
+          "original": "C:\\h7\\w-cpu-vulkan\\selected-graph\\source-build\\hyle\\src\\graph\\hyle_graph.dll",
+          "sha256": "1072a8d9df20aedfa86a7babf36869937c668ad8bff76e3737b85b49256ac682"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-source-1\\bin\\hyle_compute_provider_onednn.dll",
+          "original": "C:\\h7\\w-cpu-vulkan\\selected-graph\\source-build\\hyle\\src\\compute_provider_onednn\\hyle_compute_provider_onednn.dll",
+          "sha256": "3ae0ea5ed1393755c084e770ce88027f67175b1d1532a15d338619e02bbd94d3"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-source-1\\bin\\hyle_compute.dll",
+          "original": "C:\\h7\\w-cpu-vulkan\\selected-graph\\source-build\\hyle\\src\\compute\\hyle_compute.dll",
+          "sha256": "54d48de60665608cfb50ea5270846f246ab01ad350703d8d43c5778c14cde685"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-source-1\\bin\\hyle_compute_ops.dll",
+          "original": "C:\\h7\\w-cpu-vulkan\\selected-graph\\source-build\\hyle\\src\\compute_ops\\hyle_compute_ops.dll",
+          "sha256": "a85070a482136957f5ca921c55523d278d97d41b3b3f8a1d286ff9803c7b9b32"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-source-1\\bin\\hyle_error.dll",
+          "original": "C:\\h7\\w-cpu-vulkan\\selected-graph\\source-build\\hyle\\src\\error\\hyle_error.dll",
+          "sha256": "09803ee2b5a8466a270e61917260f8dedf454a95b6b6963dbe1cd1528454d5da"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-source-1\\bin\\hyle_graph_route_vulkan.dll",
+          "original": "C:\\h7\\w-cpu-vulkan\\selected-graph\\source-build\\hyle\\src\\graph_route_vulkan\\hyle_graph_route_vulkan.dll",
+          "sha256": "90cdbb26ad6107eda7d9564f3de798b2687f07e43364810d7cc68e52de9cc3d6"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-source-1\\bin\\hyle_compute_route_vulkan.dll",
+          "original": "C:\\h7\\w-cpu-vulkan\\selected-graph\\source-build\\hyle\\src\\compute_route_vulkan\\hyle_compute_route_vulkan.dll",
+          "sha256": "c4127475ea70fbcc6f2eed9747ce83f95481d1f4155bd667ad62939e467e3dc3"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-source-1\\bin\\hyle_graph.dll",
+          "original": "C:\\h7\\w-cpu-vulkan\\selected-graph\\source-build\\hyle\\src\\graph\\hyle_graph.dll",
+          "sha256": "1072a8d9df20aedfa86a7babf36869937c668ad8bff76e3737b85b49256ac682"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-source-1\\bin\\hyle_sched.dll",
+          "original": "C:\\h7\\w-cpu-vulkan\\selected-graph\\source-build\\hyle\\src\\sched\\hyle_sched.dll",
+          "sha256": "3bd723e9cb558e20d9adb470ce4446c1664082e9d6dfbd249ae14a6a351b459d"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-source-1\\bin\\hyle_compute_batch.dll",
+          "original": "C:\\h7\\w-cpu-vulkan\\selected-graph\\source-build\\hyle\\src\\compute_batch\\hyle_compute_batch.dll",
+          "sha256": "4e3ffc2d357d62318c469d0cd18a76e477af6d17d1edc91029aea46077d40881"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-source-1\\bin\\hyle_compute.dll",
+          "original": "C:\\h7\\w-cpu-vulkan\\selected-graph\\source-build\\hyle\\src\\compute\\hyle_compute.dll",
+          "sha256": "54d48de60665608cfb50ea5270846f246ab01ad350703d8d43c5778c14cde685"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-source-1\\bin\\hyle_mem.dll",
+          "original": "C:\\h7\\w-cpu-vulkan\\selected-graph\\source-build\\hyle\\src\\mem\\hyle_mem.dll",
+          "sha256": "e9fb48007d0d7a76ed9d7f5603164f7964fbadf332d8937787a6c93e13f7af6c"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-source-1\\bin\\hyle_compute_ops.dll",
+          "original": "C:\\h7\\w-cpu-vulkan\\selected-graph\\source-build\\hyle\\src\\compute_ops\\hyle_compute_ops.dll",
+          "sha256": "a85070a482136957f5ca921c55523d278d97d41b3b3f8a1d286ff9803c7b9b32"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-source-1\\bin\\hyle_error.dll",
+          "original": "C:\\h7\\w-cpu-vulkan\\selected-graph\\source-build\\hyle\\src\\error\\hyle_error.dll",
+          "sha256": "09803ee2b5a8466a270e61917260f8dedf454a95b6b6963dbe1cd1528454d5da"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-source-1\\bin\\hyle_graph_batch.dll",
+          "original": "C:\\h7\\w-cpu-vulkan\\selected-graph\\source-build\\hyle\\src\\graph_batch\\hyle_graph_batch.dll",
+          "sha256": "4d8b858725541cc0b04047912c501ceee943b087409f4ec88c7e4fc5523243c6"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-source-1\\bin\\hyle_compute_route_vulkan.dll",
+          "original": "C:\\h7\\w-cpu-vulkan\\selected-graph\\source-build\\hyle\\src\\compute_route_vulkan\\hyle_compute_route_vulkan.dll",
+          "sha256": "c4127475ea70fbcc6f2eed9747ce83f95481d1f4155bd667ad62939e467e3dc3"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-source-1\\bin\\hyle_compute_batch.dll",
+          "original": "C:\\h7\\w-cpu-vulkan\\selected-graph\\source-build\\hyle\\src\\compute_batch\\hyle_compute_batch.dll",
+          "sha256": "4e3ffc2d357d62318c469d0cd18a76e477af6d17d1edc91029aea46077d40881"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-source-1\\bin\\hyle_graph.dll",
+          "original": "C:\\h7\\w-cpu-vulkan\\selected-graph\\source-build\\hyle\\src\\graph\\hyle_graph.dll",
+          "sha256": "1072a8d9df20aedfa86a7babf36869937c668ad8bff76e3737b85b49256ac682"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-source-1\\bin\\hyle_compute.dll",
+          "original": "C:\\h7\\w-cpu-vulkan\\selected-graph\\source-build\\hyle\\src\\compute\\hyle_compute.dll",
+          "sha256": "54d48de60665608cfb50ea5270846f246ab01ad350703d8d43c5778c14cde685"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-source-1\\bin\\hyle_compute_ops.dll",
+          "original": "C:\\h7\\w-cpu-vulkan\\selected-graph\\source-build\\hyle\\src\\compute_ops\\hyle_compute_ops.dll",
+          "sha256": "a85070a482136957f5ca921c55523d278d97d41b3b3f8a1d286ff9803c7b9b32"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-source-1\\bin\\hyle_mem.dll",
+          "original": "C:\\h7\\w-cpu-vulkan\\selected-graph\\source-build\\hyle\\src\\mem\\hyle_mem.dll",
+          "sha256": "e9fb48007d0d7a76ed9d7f5603164f7964fbadf332d8937787a6c93e13f7af6c"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-source-1\\bin\\hyle_error.dll",
+          "original": "C:\\h7\\w-cpu-vulkan\\selected-graph\\source-build\\hyle\\src\\error\\hyle_error.dll",
+          "sha256": "09803ee2b5a8466a270e61917260f8dedf454a95b6b6963dbe1cd1528454d5da"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-source-1\\bin\\hyle_graph_route_cpu_vulkan.dll",
+          "original": "C:\\h7\\w-cpu-vulkan\\selected-graph\\source-build\\hyle\\src\\graph_route_cpu_vulkan\\hyle_graph_route_cpu_vulkan.dll",
+          "sha256": "63bac7f7cfe105c3ba7a0210621ec95f86ad90a036d55727257bff9b5686a680"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-source-1\\bin\\hyle_graph_route_cpu.dll",
+          "original": "C:\\h7\\w-cpu-vulkan\\selected-graph\\source-build\\hyle\\src\\graph_route_cpu\\hyle_graph_route_cpu.dll",
+          "sha256": "91ee2843134d95c18678687063f009df3f0382c86d3a47a8fecd4cb0219398e8"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-source-1\\bin\\hyle_compute_route_vulkan.dll",
+          "original": "C:\\h7\\w-cpu-vulkan\\selected-graph\\source-build\\hyle\\src\\compute_route_vulkan\\hyle_compute_route_vulkan.dll",
+          "sha256": "c4127475ea70fbcc6f2eed9747ce83f95481d1f4155bd667ad62939e467e3dc3"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-source-1\\bin\\hyle_graph.dll",
+          "original": "C:\\h7\\w-cpu-vulkan\\selected-graph\\source-build\\hyle\\src\\graph\\hyle_graph.dll",
+          "sha256": "1072a8d9df20aedfa86a7babf36869937c668ad8bff76e3737b85b49256ac682"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-source-1\\bin\\hyle_compute.dll",
+          "original": "C:\\h7\\w-cpu-vulkan\\selected-graph\\source-build\\hyle\\src\\compute\\hyle_compute.dll",
+          "sha256": "54d48de60665608cfb50ea5270846f246ab01ad350703d8d43c5778c14cde685"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-source-1\\bin\\hyle_compute_ops.dll",
+          "original": "C:\\h7\\w-cpu-vulkan\\selected-graph\\source-build\\hyle\\src\\compute_ops\\hyle_compute_ops.dll",
+          "sha256": "a85070a482136957f5ca921c55523d278d97d41b3b3f8a1d286ff9803c7b9b32"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-source-1\\bin\\hyle_sched.dll",
+          "original": "C:\\h7\\w-cpu-vulkan\\selected-graph\\source-build\\hyle\\src\\sched\\hyle_sched.dll",
+          "sha256": "3bd723e9cb558e20d9adb470ce4446c1664082e9d6dfbd249ae14a6a351b459d"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-source-1\\bin\\hyle_mem.dll",
+          "original": "C:\\h7\\w-cpu-vulkan\\selected-graph\\source-build\\hyle\\src\\mem\\hyle_mem.dll",
+          "sha256": "e9fb48007d0d7a76ed9d7f5603164f7964fbadf332d8937787a6c93e13f7af6c"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-source-1\\bin\\hyle_error.dll",
+          "original": "C:\\h7\\w-cpu-vulkan\\selected-graph\\source-build\\hyle\\src\\error\\hyle_error.dll",
+          "sha256": "09803ee2b5a8466a270e61917260f8dedf454a95b6b6963dbe1cd1528454d5da"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-source-1\\bin\\hyle_graph_route_cpu_vulkan.dll",
+          "original": "C:\\h7\\w-cpu-vulkan\\selected-graph\\source-build\\hyle\\src\\graph_route_cpu_vulkan\\hyle_graph_route_cpu_vulkan.dll",
+          "sha256": "63bac7f7cfe105c3ba7a0210621ec95f86ad90a036d55727257bff9b5686a680"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-source-1\\bin\\hyle_graph_route_cpu.dll",
+          "original": "C:\\h7\\w-cpu-vulkan\\selected-graph\\source-build\\hyle\\src\\graph_route_cpu\\hyle_graph_route_cpu.dll",
+          "sha256": "91ee2843134d95c18678687063f009df3f0382c86d3a47a8fecd4cb0219398e8"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-source-1\\bin\\hyle_compute_route_vulkan.dll",
+          "original": "C:\\h7\\w-cpu-vulkan\\selected-graph\\source-build\\hyle\\src\\compute_route_vulkan\\hyle_compute_route_vulkan.dll",
+          "sha256": "c4127475ea70fbcc6f2eed9747ce83f95481d1f4155bd667ad62939e467e3dc3"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-source-1\\bin\\hyle_graph.dll",
+          "original": "C:\\h7\\w-cpu-vulkan\\selected-graph\\source-build\\hyle\\src\\graph\\hyle_graph.dll",
+          "sha256": "1072a8d9df20aedfa86a7babf36869937c668ad8bff76e3737b85b49256ac682"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-source-1\\bin\\hyle_compute.dll",
+          "original": "C:\\h7\\w-cpu-vulkan\\selected-graph\\source-build\\hyle\\src\\compute\\hyle_compute.dll",
+          "sha256": "54d48de60665608cfb50ea5270846f246ab01ad350703d8d43c5778c14cde685"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-source-1\\bin\\hyle_compute_ops.dll",
+          "original": "C:\\h7\\w-cpu-vulkan\\selected-graph\\source-build\\hyle\\src\\compute_ops\\hyle_compute_ops.dll",
+          "sha256": "a85070a482136957f5ca921c55523d278d97d41b3b3f8a1d286ff9803c7b9b32"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-source-1\\bin\\hyle_sched.dll",
+          "original": "C:\\h7\\w-cpu-vulkan\\selected-graph\\source-build\\hyle\\src\\sched\\hyle_sched.dll",
+          "sha256": "3bd723e9cb558e20d9adb470ce4446c1664082e9d6dfbd249ae14a6a351b459d"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-source-1\\bin\\hyle_mem.dll",
+          "original": "C:\\h7\\w-cpu-vulkan\\selected-graph\\source-build\\hyle\\src\\mem\\hyle_mem.dll",
+          "sha256": "e9fb48007d0d7a76ed9d7f5603164f7964fbadf332d8937787a6c93e13f7af6c"
+        },
+        {
+          "staged": "C:\\h7\\g09-sdk\\vulkan-source-1\\bin\\hyle_error.dll",
+          "original": "C:\\h7\\w-cpu-vulkan\\selected-graph\\source-build\\hyle\\src\\error\\hyle_error.dll",
+          "sha256": "09803ee2b5a8466a270e61917260f8dedf454a95b6b6963dbe1cd1528454d5da"
+        }
+      ],
+      "not_applicable_consumers": null,
+      "retained_failure": null,
+      "actual_cumulative_seconds": 169.40600000001723,
+      "producer": "C:\\h7\\w-cpu-vulkan\\selected-graph\\source-build",
+      "relocated_prefix": null,
+      "preflight_edges": {
+        "consumer_build_edges": 60
+      },
+      "result_origin": "vulkan-source-1/result.json"
+    }
+  ],
+  "actual_cumulative_seconds": 1403.2039999999106,
+  "cost_reset": false,
+  "retained_failures": [
+    "Initial Windows CUDA static consumer list accidentally included two explicitly Linux-only FlashInfer consumers; compile failed on the correctly unexported optional header. Existing Windows OPTIONAL_ABSENT platform contract and original Linux-only fixture #error prove nonapplicability. Same installed SDK resumed with actual Windows Graph contracts/pipeline; original failure and cumulative cost retained. Linux G06 FlashInfer consumers remain selected for WSL.",
+    "Original source consumer parent omitted its own find_package(CUDAToolkit), so direct CUDA::cudart imports were out of CMake directory scope. Private consumer CMake was corrected and source parent restored; no product CMake changes. Original configure failure retained.",
+    "Initial Vulkan static/shared preflight rejected the outer ExternalProject shader-generator build/install stamp wrapper. Exact inner original Ninja reports no work. Same configured tree resumed with that explicit freshness check, outer dry-run forbidding actual shader generation, and all152 generated DATA hashes unchanged across the unmodified original build. No phony data or archive projection was used; failures and cost remain."
+  ],
+  "runtime_boundary": "PE imports and staged Hyle DLL hashes are checked against exact relocated prefix/source producer, and runtime PATH excludes canonical product/producer locations. This is not actual loaded-module tracing; P1 has a separate actual-loader gate. Original qualified external LibTorch SDK/cache remains part of the distribution contract.",
+  "reuse_boundary": "Public headers/CMake/export/package seams and unchanged leaf math are borrowed from the qualified G08 baseline by source identity; this record does not claim all leaf tests or global components were rerun.",
+  "qualification_boundary": "Only six named native Windows delivery configurations; WSL/Air, host/device risk, physical overlap, P1 and final aggregate G09 acceptance are separate.",
+  "raw": {
+    "path": "raw.zip",
+    "sha256": "128d628bfc77ade0f44b6e2c5bd8ee56dbb8aa19e831b3013989a92dbe523a85",
+    "bytes": 4662851,
+    "crc": "PASS"
+  }
+}

@@ -1,0 +1,75 @@
+{
+  "schema": "hyle.inference-g09-p1-consumer-source-checkpoint/v1",
+  "state": "INDEPENDENT_SOURCE_REVIEW_RETAINED_FINITE_STAGER_CORRECTION_APPLIED_NOT_BUILT",
+  "baseline": "9e2f25c469634a6f723e76eaf1aa2db5973bca9a",
+  "candidate": "3524413272cb52d06af5e64d634edbfef09b9864",
+  "product_code_commit": "e09f30925c6dba5cf4540669fd3b4874f45bb158",
+  "scope": "Only original frozen two natural4M F32 consumer shapes plus serial holdout, original default CPU/context/provider and Scheduler2, private scalar/POD C-table facades. Source correctness/phase review before any benchmark build/diagnostic/A-A/formal sampling; not an actual artifact or performance certificate.",
+  "independent_review": {
+    "path": "review-12.json",
+    "sha256": "7612d820f5e64c5b7e90693cf1def0ddc6790f9e08fc058d397362683b358d5b",
+    "verdict": "ONE_CONCRETE_CMAKE_MUST; PROPOSED_EXECUTABLE_PROBE_CORRECTION_ACCEPTED_IN_PRINCIPLE; NO_OTHER_SOURCE_MUST_FOUND"
+  },
+  "source_files": [
+    {
+      "path": "facade_api.h",
+      "sha256": "3733fe1dd21f5822a06793ece597d805f29828d180810e9696b20335dddd3155",
+      "bytes": 905
+    },
+    {
+      "path": "facade.cc",
+      "sha256": "6cf2455f160b0625be4af7c001e38beeb84a8146f2ff53d50982cec635e59687",
+      "bytes": 13430
+    },
+    {
+      "path": "driver.cc",
+      "sha256": "8f58350e6b39f051730d47f0565d62b1c3bf449636e3a1885a99deca5719ea25",
+      "bytes": 11337
+    },
+    {
+      "path": "CMakeLists.txt",
+      "sha256": "297409b492f44aa01af0c174cc379f95fbee5a4fa19695dfa7c3915dc4a6403a",
+      "bytes": 3208
+    },
+    {
+      "path": "runtime_probe.cc",
+      "sha256": "83b7c3ce0cccd1c5be501fe0e440b042378a4c671c764996d7b409765d807c69",
+      "bytes": 100
+    }
+  ],
+  "postreview_finite_changes": [
+    "R12-M1: legal unexecuted runtime_probe EXECUTABLE uses unchanged SDK public hyle_stage_runtime; facades depend on that staging. Both SDK build image sets use their own bin; actual driver/loader/assets still need artifact qualification.",
+    "Report slot0 prepared-copy fields explicitly as per-invocation, never a two-slot total or actual dispatch count.",
+    "Final DSO unload is separately logged after both states are gone; private vendor caches remain UNKNOWN. No warm math/shape/ownership boundary changed."
+  ],
+  "actual_instrument_contract": {
+    "implementation": "Original Bench::compare only, no instrument edits",
+    "requested_epochs": 11,
+    "actual_paired_rounds": 12,
+    "reason": "Original compareImpl rounds to complete2-alternative ABBA/BAAB blocks before any measurements. Fixed epochIterations(1) bypasses adaptive calibration; no nonexistent maxEpochIterations API.",
+    "exact_epoch_iterations": 1,
+    "warmup_replays_per_arm": 8,
+    "nanobench_extra_warmup": 0,
+    "logical_replays_per_call": 1,
+    "process_n": [
+      15,
+      31
+    ],
+    "margin_percent": 5,
+    "tail_alpha": 0.01
+  },
+  "ownership_phase_summary": "Both submits precede either wait for two slots. Each timed output4B subview is read while owning successful ResultLease lives. All borrowed views/results/OwnedResult leave scope before RAII Scheduler.drain, including failed/exception journeys. Full4M before/after oracles are separate complete untimed replays. Persistent contexts/programs/backings and final DSO unload remain symmetrically deferred with separate diagnostic timings; native/vendor cache reclamation UNKNOWN.",
+  "pending": "Qualified remaining deliveries; actual SDK/object/ABI/export/weak/type/data/loader/native registration and resource identity, native dispatch/copy/completion diagnostic, same-image-topology workload A-A and original instrument controls, independent final source/artifact preflight, then formal P1. No gate is pre-signed by the source draft.",
+  "toolchain_manual_observation": {
+    "machine": "actual Air Mac16,12",
+    "path": "/Library/Developer/CommandLineTools/usr/share/man/man1/ld.1",
+    "sha256": "4873046da9d3b0020e6ef802603187a935495057cef2a14a0ed3fe099de9e542",
+    "facts": "The actual Apple linker manual documents exported_symbol/list as hiding unlisted globals; no_weak_exports rejects any remaining weak external symbol. It is a construction assertion, not an instruction to silently strengthen weak definitions. Actual bindings/fixups still need inspection."
+  },
+  "raw": {
+    "path": "raw.zip",
+    "sha256": "ed225f772b6442495ad97988cd4d5a0a4f0494cd36e5bbe6e39d906d0fccfcd4",
+    "bytes": 21018,
+    "crc": "PASS"
+  }
+}

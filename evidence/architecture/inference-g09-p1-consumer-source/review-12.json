@@ -1,0 +1,80 @@
+{
+  "schema": "hyle.g09.finite-consumer-source-review.v1",
+  "reviewed_at_utc": "2026-10-17T00:21:36.799275+00:00",
+  "verdict": "ONE_CONCRETE_CMAKE_MUST; PROPOSED_EXECUTABLE_PROBE_CORRECTION_ACCEPTED_IN_PRINCIPLE; NO_OTHER_SOURCE_MUST_FOUND",
+  "scope": "Four actual private draft files only plus necessary accepted contract/public API/nanobench/stager sources. No configure/build/test/sampling, product/public tool edits, new consumer domain or agent.",
+  "snapshot": {
+    "draft_root": ".scratch/inference-gaps/g09-p1-draft",
+    "file_sha256": {
+      "facade_api.h": "3733fe1dd21f5822a06793ece597d805f29828d180810e9696b20335dddd3155",
+      "facade.cc": "6cf2455f160b0625be4af7c001e38beeb84a8146f2ff53d50982cec635e59687",
+      "driver.cc": "3af317b955a8661f36375e8809c790d1aa69e018bd20b4da4853227bc2a959ca",
+      "CMakeLists.txt": "ad44f0391250a0ef255020fd843c8879978070fb8ffd9c8b03cbea0313aaa2ba"
+    },
+    "proposal_path": "evidence/architecture/inference-g09-p1-prospective/proposal.json",
+    "proposal_sha256": "cd1313900da629a38d98cceda97604d19b3484b3bb8043ac1911fe5b5e0303a6",
+    "prior_review_path": ".scratch/inference-gaps/g09-p1-prospective-review-11.json",
+    "prior_review_sha256": "f15bc5fd2cbbdc1f04159425ff58aafaf0eb6867d0c8dc9128922062ca659220",
+    "baseline": "9e2f25c469634a6f723e76eaf1aa2db5973bca9a",
+    "candidate": "3524413272cb52d06af5e64d634edbfef09b9864",
+    "product": "e09f30925c6dba5cf4540669fd3b4874f45bb158"
+  },
+  "must": [
+    {
+      "id": "R12-M1",
+      "status": "ACTUAL_DRAFT_BUG; FIX_PROPOSED_NOT_APPLIED_IN_REVIEWED_SNAPSHOT",
+      "where": "CMakeLists.txt:24,38",
+      "defect": "Each facade target is SHARED, but hyle_stage_runtime is called on it. The original helper requires EXECUTABLE and issues FATAL_ERROR on any SHARED target. This deterministically prevents configuring the draft, before any mathematical/performance qualification.",
+      "evidence": [
+        "cmake/HyleRuntimeStaging.cmake:189-195",
+        "cmake/HyleAppleRuntime.cmake:6-12; static MLX asset is placed next to executable at24-35",
+        "G08/baseline/current public CMake implementation equality from review11; no helper exception for facade exists."
+      ],
+      "minimal_fix": "Remove hyle_stage_runtime(facade). The parent-proposed private runtime-probe executable with only int main(){return0;} may link that SDK hyle::compute/graph and invoke the unchanged public executable-only helper; facades depend on probe staging. Do not run or time the probe; keep driver linked only to nanobench. No public stager changes/new packaging framework.",
+      "correction_judgment": "Accepted as the existing helper legitimate EXECUTABLE entry. Ensure staged files and MLX metallib are available at the ACTUAL driver/loader resource locations, not merely at an unrelated probe directory. Same external consumer CMake uses one bin directory; baseline/candidate vendor identity and runtime load compatibility still require actual artifact proof. The fix is not itself an A1-A3 PASS."
+    }
+  ],
+  "checked_journeys": {
+    "fixed_shapes": "facade.cc:45,99-105,135-152,179-197 construct exactly4M F32/default original CPU context and2 Scheduler workers. shape0/1 differ only insertion order of independent CPU Abs(x), GPU Neg(ready1.25) and CPU Add join; shape2 is2 mutable slots of CPU Abs -> GPU Neg -> CPU Add(host1.25); shape3 is1 slot of same required serial chain. Original required target placements remain explicit. Sched workers2 is not a claim that default CPU/provider has only2 total process workers.",
+    "public_api_and_isolation": "Same public headers as9e2 confirmed in review11. Consumer only includes installed public hyle headers via imported targets; G09_SOURCE is used for original instrument source/includes. Facade_API is opaque void* plus scalar/POD table/facts/error bytes, and creation/destruction/errors/C++ exceptions remain in creator facade. Windows PE/Air Mach-O only; no WSL archive route. C getter/table membership checks in driver.cc:53-87 do not by themselves prove private HYLE weak/type/data binding.",
+    "two_submit_before_wait": "facade.cc:234-240 creates pending/results arrays and completes the entire submit loop for both slots before entering any wait loop. Each slot has independent CPU Queue and mutable Invocation/workspace; CUDA also has independent GPU Queue/caller output. Cold ready resident input and residual are shared readonly, not mutable slot state.",
+    "lease_safe_output": "facade.cc:239-257 retains successful ResultLease while output view and4-byte subview are used. Warm reads exactly one F32 via subview(0,sizeof(float)); both slot outputs are read/checked. Full oracle uses all4M independently calculated exact binary-fraction values in separate complete replays before/after timed epochs (driver183-184/208-209). It does not read a released final timed output.",
+    "warm_boundary": "facade.cc:227-259 charges bind/prepare, all submits, successful waits/native work/copies, each output get/small read/status check, destruction of all borrowed views/ResultLeases/OwnedResults, then original Scheduler.drain via outer RAII destructor before facade replay returns. Driver Arm::replay includes its fixed1024-byte error buffer and indirect C call on both arms; no timing subtraction.",
+    "failure_and_destructor": "If later submit/wait/output/oracle fails, pending/results destruct before outer Drain, retaining original accepted-prefix abandonment semantics while the original Scheduler still exists. State::close:262-274 attempts every valid slot close even after first error, drains Scheduler, and member destruction occurs with contexts/resources/Scheduler/queues still alive. create partial-init failure destroys its State inside facade. destroy owns/deletes State even when close returns an error. Driver states finish before images unload. These source paths use original product retirement; actual runtime failure/cancel facets are not rerun or newly signed here.",
+    "cold_deferred": "Context/resource/program/slot creation and first prepare are cold; driver logs creation duration. Exactly8 complete scalar warmups per arm follow a distinct pre-measure full-oracle replay. Final State close/destruction is separately logged G09_DEFERRED_DESTROY; persistent owners/cache/DSO unload stay outside warm on both arms. Full oracle and cold timing are not a5% cold comparison.",
+    "AA_order": "CMake creates two facade images per SDK from identical source/flags except image label. Driver baseline A/A selects argv2+argv4, candidate A/A argv1+argv3; A/B selects argv1+argv2. Distinct image paths are required. Allocation/load order honors PEER_ALLOCATION_FIRST; compare argument order honors RIVAL_FIRST. Both sides use identical workloads/warmup/replay/drain topology. Actual image/source/hash-bound A/A and loader/weak/type isolation remain pending; a PASS text readiness file alone is not a qualification receipt."
+  },
+  "nanobench_actual_api": {
+    "verdict": "CORRECT_FIXED_ONE_ITERATION_AND_12_ACTUAL_PAIRED_ROUNDS",
+    "source": "third_party/nanobench/nanobench.h",
+    "sha256": "2cfcdd57044fd0ee11d1be2b5dc545781b05c36049613c0089a73b332afd8c4d",
+    "anchors": [
+      "4133-4136 epochIterations()!=0 directly returns exact iteration count, no calibration growth",
+      "4177-4195 warmup(0) and one shared exact iteration count",
+      "4212 rounds=ceil(epochs/numOps)*numOps;11requests/2alternatives ->12; median-interval feasibility loop does not need further growth for this case",
+      "4227-4239 per-block randomized permutation and rotation produce ABBA/BAAB, one complete iteration per arm/round"
+    ],
+    "driver": "driver.cc:193-205 uses batch1/epochs11/epochIterations1/minEpochIterations1/warmup0/performanceCountersfalse and explicitly requires rounds()==12. No nonexistent maxEpochIterations call; no instrument/core change. Each arm executes12 timed complete logical replays per workload; shape2 includes2 slot episodes per logical replay. Requested11 vs actual12 must remain in final actual contract/telemetry."
+  },
+  "finite_evidence_notes": [
+    "facade.cc:198-205 reports prepared slots[0] copy counts/bytes only. Keep the final ledger/telemetry explicit that these are per-invocation preparation facts (shape2 has2 slots), not actual total pair dispatch/copy counts. actual_dispatch_claim=0 correctly avoids signing native dispatch from this report.",
+    "After the one stager correction, retain one actual source/hash snapshot and carry forward existing A1-A5: qualified installed SDK closure, complete facade private-symbol/loader/weak/type/data audit, real required native math/copy/completion short diagnostic, final text/disassembly and original same-topology workload A/A/controls. These are pending qualifications, not additional product MUSTs or automatic PASS.",
+    "Do not treat initial Windows source fixture CUDAToolkit parent-scope configuration issue or Linux-only FlashInfer applicability as a product/consumer math defect; this review did not inspect or reclassify those separate retained run records."
+  ],
+  "not_signed": [
+    "Compilation/configuration success of this draft",
+    "Actual facade exports/weak/data/type/fixup/interposition isolation",
+    "Actual native dispatch/copy counts or hardware completion",
+    "Current candidate SDK matrix beyond parent reported state",
+    "A/A/instrument qualification/P1/performance or full process race freedom"
+  ],
+  "supporting_source_sha256": {
+    "cmake/HyleRuntimeStaging.cmake": "471d95794804c77309e77845beb4b7de4d4bcaa329b58d43bf4299434b935035",
+    "cmake/HyleAppleRuntime.cmake": "70b4dd4f0696a7d12048ae986ac2af4d19189d6d6b30858bc11b06f8d8a17869",
+    "include/hyle/graph/cpu_apple.h": "645f557d8a6fefe3f69bc25f37c03e637ed28311fb7817bfb8de0e5373b0eb32",
+    "include/hyle/graph/cpu_vulkan.h": "9b4c99f9ef9948f85435de4415a788b83d17a00752664074edf462addc6693f6",
+    "include/hyle/graph/cpu_cuda.h": "b3fe45dc75ce6c999857bca3130816132018eb3c845e0c889d577165d8f1b098",
+    "include/hyle/mem/buffer.h": "346a4f810babb8c5dacba49faaf57903d998a3cbb49af12b8c62acc85f7be72c"
+  },
+  "stop": "One four-file source batch complete. Only R12-M1 needs actual draft correction; no new shapes/public API/framework/perf-core/product work requested."
+}

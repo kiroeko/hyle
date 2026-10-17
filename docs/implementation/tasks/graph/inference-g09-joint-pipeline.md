@@ -330,7 +330,7 @@ Windows保留陈旧OBS registry JSON及配置弃用提示，未改用户注册�
 [P1具体消费草案](../../../../evidence/architecture/inference-g09-p1-prospective/proposal.json)
 复用已固定功能consumer的4M F32维度，补齐两插入顺序、两microbatch与必要串行holdout的阶段/迭代账；
 已通过独立[prospective设计审查](../../../../evidence/architecture/inference-g09-p1-prospective/review-11.json)，
-仍未构造benchmark或采样；实际SDK、私有符号/loader隔离、完成账与原仪器资格五组预检均待证。
+截至该次设计审查尚未构造benchmark或采样；实际SDK、私有符号/loader隔离、完成账与原仪器资格五组预检均待证。
 两侧persistent/cache/DSO最终销毁同列DEFERRED；逐replay结果owner与accepted work仍在warm内退休。
 baseline所对应的原G08静态SDK产品
 src/include/cmake/root CMake与9e2f25逐字节相同；实际baseline/candidate SDK仍须逐项hash绑定，
@@ -339,3 +339,43 @@ src/include/cmake/root CMake与9e2f25逐字节相同；实际baseline/candidate 
 下一步限于本卡剩余验收：三交付/公开头；按预声明两自然形状与必要串行holdout，
 先完成prospective源/阶段审查和独立artifact/text预检，再正式P1，最后终审/LOC。
 尚未完成的门均待证；不追加缺口穷尽调研，不提前推进G10，不重跑已接受G01–G08数学/P1。
+
+### 交付与实际P1消费者源码检查点，2026-10-17
+
+[Air交付原件](../../../../evidence/delivery/inference-g09-air-sdk-checkpoint/receipt.json)中，
+Apple/Vulkan各自source/static/shared共6项均PASS；每项实际运行原contracts、两slot/65步流水、
+原G06 pending消费者，独立编译两个公开Graph头。SDK先安装到staging再迁至relocated，
+新consumer只使用installed头；另用实际dyld记录核对Hyle加载路径和hash。累计191.010秒。
+首次Vulkan static验证helper误用embedded路径，在build前失败；同树改正布局后续跑，
+原失败与费用保留，152份shader DATA逐项绑定前一G09资格，未借旧Graph archive代签新交付。
+
+[Windows交付原件](../../../../evidence/delivery/inference-g09-windows-sdk-checkpoint/receipt.json)中，
+CUDA/Vulkan各自source/static/shared共6项均PASS；两路线的原contracts、公开流水及两个独立
+Graph头通过，Vulkan另验原G06 pending消费者。实际重编当前common/hybrid C++ owner，
+CUDA原146个native对象按原命令、实际依赖和输入身份复用，无CUDA算子重编。
+迁址SDK使用installed-only头，PE imports、staged DLL hash与隔离PATH均检查；这不是actual-loader tracing。
+六项累计1403.204秒，含原失败和全部同树复验，不重置费用。
+
+Windows原清单误选两个明确要求Linux FlashInfer的G06消费者，首次消费者编译失败保留。
+原provider CMake在Windows为OPTIONAL_ABSENT且不导出其split头，此两项语义上不适用Windows；
+WSL仍必须运行，不将它们改记Windows PASS。source consumer父scope遗漏CUDAToolkit查找也保留为
+验证CMake失败，已定向修正，产品CMake未改。Vulkan首次预检拒绝外层generator的build/install stamp；
+随后确认其原inner Ninja确实no work、外层无shader DATA生成，并核152份数据在原build前后hash不变，
+沿原manifest完成交付，没有使用phony archive/data替换。WSL三交付此时仍在运行，尚不记PASS。
+
+[实际P1消费者源码检查](../../../../evidence/architecture/inference-g09-p1-consumer-source/receipt.json)
+已经完成一次有限独立review：四个冻结形状、默认原CPU Context/provider、2个原Sched workers、
+双submit先于任一wait、lease内4B读取、前后独立完整run oracle、owner释放与计时内drain符合合同。
+唯一源码MUST是SHARED facade误调executable-only stager；已按review接受的最小修法，给同目录
+未执行的private probe EXEC调用原公开stager，facade依赖其资源stage，driver仍只链接原nanobench。
+不修改公共stager、数学或产品API；实际依赖/MLX资源位置仍须产物预检，源码修改不预签该门。
+
+原instrument用`epochIterations(1)`固定每epoch一次完整逻辑replay；`epochs(11)`按原ABBA规则
+实际补成12 paired rounds，草案明确记录请求11/实际12，未改仪器或按计时调迭代数。
+prepared copy字段明确仅slot0的per-invocation计划，不冒充两slot合计或实际dispatch；
+最终persistent状态与DSO unload两侧同为DEFERRED，单独诊断计时，private vendor cache仍UNKNOWN。
+此时只有源码草案，没有benchmark构建、短diagnostic、A/A或正式P1结果。
+
+剩余仍限本卡：完成WSL交付；实际SDK/object、私有weak/type/data/loader/原生注册与资源身份、
+数学/dispatch/copy/退休账和原workload A/A等五组预检；正式P1；终审/LOC与聚合裁决。
+G09保持固定CANDIDATE，G10未开始，不因此追加功能缺口扫描或重开已接受数学。
