@@ -12,6 +12,7 @@
 | StateStore 重复扫描同池 roots | [stats_locked](../../../src/compute_state/state_versions.cc) 对已命中 root 仍扫描所有更早块；`replace` / `import` 等也调用它。密集单池 B 块为二次扫描 | 已在命中后停止。相同 API、计费与输入实测见下；不增加字段、分配或 backing |
 | CUDA BF16/F32 attention 的平方 scratch | [ggml CUDA](../../../src/compute_provider_ggml_cuda/ggml_cuda_provider.cc) 仅 F16 走 flash，BF16/F32 物化 scores。B1/H8/Q=KV8192 时，单个 F32 scores 为 **2 GiB**，不含 softmax 等其它 scratch。Windows 当前无 FlashInfer 路线 | 已接通适用域的 BF16 融合程序，实际 Hyle 的空间结果见下；F32 和其它不受理域未改，不能外推全部 attention |
 | io_uring CQE 分类的线性查表 | [Proactor::reap](../../../src/io_core/proactor.cc) 原来每个 CQE 扫描 pending accept/close/statx；N 个未决 special op 可使完成批次最坏 O(N²)，不相关 read/write 也付扫描成本 | 已改为单个 token 索引；真实 native 同工规模对照见下，accept找空位/close提交去重的扫描仍保留 |
+| Linux watch重复close-write唤醒 | [inotify mask](../../../src/io_watch/watch_linux.cc) 同时订阅IN_MODIFY和IN_CLOSE_WRITE；公开接口只提供内容变化提示，未承诺writer-close。即使最终忽略sibling名称，额外通知也会唤醒owner | 已去冗余close订阅；实际减少约1.97次上下文切换/发布。16项watch测试通过，剩余小负样本未声称全部解决 |
 
 CUDA 的 F16 flash 分支也会物化 Q×KV 的 F16 causal mask，8K方形时为128 MiB；
 不能因为主 attention kernel 融合就假定整个调用的额外空间为线性。
@@ -81,7 +82,7 @@ pending时销毁artifact/invocation，以及原ATen allocator受控OOM后保活�
 | 项目 | 原证据 | 当前边界 |
 |---|---|---|
 | Apple ragged F16 prefill、D256 | [旧summary](../inference-g01-native-ragged-apple-m1-p1/summary.json)，8组比值0.98266–0.98941，所有CI上界低于1；约1.07%–1.76%延迟差 | 已在Air复测当前对应路径；默认fast较快但不满足同数值合同，同合同force-fused未确认当前稳定慢，见下。旧小输不直接继承 |
-| WSL 单文件 atomic replace watch | [summary](../io-watch-p1-v1-30e133db-w1-wsl-4c06445c/summary.json)，4点0.96813–0.98638，2组CI上界低于1 | 同写入/rename/通知分类/读取generation/完成。当前保留主要机制，但新增递归路径；需重测现版本，不按“低频可接受”免查 |
+| WSL 单文件 atomic replace watch | [旧summary](../io-watch-p1-v1-30e133db-w1-wsl-4c06445c/summary.json)，4点0.96813–0.98638，2组CI上界低于1 | 当前已复测并修掉冗余close-write唤醒；修后仍有0.1–1.0%小负样本，未确认稳定或严格等价，见下 |
 | TaskScope、32 child、4 workers | 本机历史 `C:/public/project-hyle/_validation/sched-v9-task-scope-cost-audit/p1-qualified-evidence/summary.json`；一个 placement+peer-first 组合0.970796，CI[0.955245,0.989531]，其它3组跨1 | 两侧含相同 child 工作与 Scheduler::drain。方向依赖布局/顺序，当前增加了 priority 处理；先核 A/A 与布局响应，不能直接宣布当前普遍慢2.92% |
 | G09 混合 GPU 完成观察 | 旧 native-wait 诊断把等待放在 Scheduler worker；当前 Vulkan 已用 BlockingPool，Apple 已有 native subscription | 旧倍率不是同线程资源方案；修后缺同输入、同线程预算的完整性能包。历史 BLOCKED 不是性能证据 |
 
@@ -106,6 +107,31 @@ raw compiled绕过Hyle Queue/Completion后差额仍在；令fast也走融合路�
 实际Air使用普通Steel（非NAX），BQ32/BK16/WM4、静态threadgroup29184 B。
 唯一保精度的BQ16/WM2候选把该量降为20736 B，但同融合参考下AB/BA稳定慢14–15%，已拒绝。
 产品与SDK原件未改，仅新增约49 MiB小consumer产物；不再为追低精度参考扩展调参。
+
+### Linux watch：冗余事件导致额外往返
+
+[当前对照](io-watch/summary.json)使用相同8-byte generation写入/close→rename→通知匹配→重读确认，
+每行4096次、每路5行，setup/warm/quiescence及销毁在计时外。WSL原生文件系统、guest CPU2，
+两侧实际均2个用户线程；复用GCC14 Release shared缓存，libuv为锁定commit。
+历史static构建不冒充本轮shared构建；初探separate-process没有保存当时exe hash，不补认最终exe身份。
+所有初探、A/A及噪声负对保留在[压缩原始包](io-watch/raw-results.zip)。
+
+同进程两顺序先复现约5.7–6.2%负差。只用诊断shim去掉IN_CLOSE_WRITE，20480次发布的
+context switches从159881降至119515，约少1.97次/发布；libuv相应119384。
+perf/strace只用于机制观察，不计入吞吐样本；未从无法解码的trace推断io-wq根因。
+最后产品直接移除冗余订阅，保持IN_MODIFY、metadata、create/delete、rename及root失效通知。
+新增write/ftruncate在fd仍打开时exact/direct均收到kContent，连同atomic replace、cancel/close、tree共16项通过。
+
+最终同一个exe以不同LD_LIBRARY_PATH选旧/新watch库，ldd/RUNPATH/hash核对，其余io_core/sched依赖相同。
+下表保留两对完整顺序结果，非profile计时：
+
+| 对照 | 旧Hyle μs | 旧过程libuv μs | 新Hyle μs | 新过程libuv μs | 吞吐比旧→新 |
+|---|---:|---:|---:|---:|---:|
+| pair0、Hyle先 | 41.505 | 36.739 | 36.404 | 36.365 | 0.88518→0.99894 |
+| pair1、libuv先 | 38.106 | 37.745 | 36.235 | 35.878 | 0.99054→0.99014 |
+
+确认修掉的是无必要的native唤醒；第二对按peer归一几乎无收益，不选点夸大。
+修后约0.1–1.0%负点仍需进一步判断稳定性，不能称严格等价、所有性能差已消失或时钟分辨率问题。
 
 ## 已排除的旧“输项”
 

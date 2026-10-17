@@ -25,8 +25,11 @@
 namespace hyle::io::detail {
 namespace {
 
+// IN_MODIFY reports writes and truncation while the writer is still open.
+// FileWatcher promises content-change hints, not close/stable-write events;
+// IN_CLOSE_WRITE would add a redundant wake for every writable close.
 constexpr std::uint32_t kWatchMask =
-    IN_ATTRIB | IN_CLOSE_WRITE | IN_MODIFY | IN_CREATE | IN_DELETE |
+    IN_ATTRIB | IN_MODIFY | IN_CREATE | IN_DELETE |
     IN_MOVED_FROM | IN_MOVED_TO | IN_DELETE_SELF | IN_MOVE_SELF | IN_UNMOUNT |
     IN_ONLYDIR | IN_DONT_FOLLOW;
 
@@ -76,7 +79,7 @@ struct InotifyReadAwaitable {
 
 FileWatchChange translate_mask(std::uint32_t mask) noexcept {
   FileWatchChange changes = FileWatchChange::kNone;
-  if ((mask & (IN_MODIFY | IN_CLOSE_WRITE)) != 0)
+  if ((mask & IN_MODIFY) != 0)
     changes |= FileWatchChange::kContent;
   if ((mask & IN_ATTRIB) != 0) changes |= FileWatchChange::kMetadata;
   if ((mask & IN_CREATE) != 0) changes |= FileWatchChange::kCreated;

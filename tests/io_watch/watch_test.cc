@@ -10,6 +10,7 @@
 #include <string_view>
 #include <utility>
 
+#include "hyle/core/environment.h"
 #include "hyle/io/watch.h"
 #include "hyle/mem/allocator.h"
 #include "hyle/platform/fs.h"
@@ -120,6 +121,63 @@ Task<int> observe_created_file(AllocatorRef allocator, IoContext* io,
   outcome->status.Update(watcher.close());
   co_return 0;
 }
+
+#if HYLE_OS_LINUX
+struct OpenWriterOutcome {
+  Status status{};
+  bool exact_content = false;
+  bool directory_content = false;
+  bool writer_still_open = false;
+};
+
+Task<int> observe_open_writer(AllocatorRef allocator, IoContext* io,
+                              std::string root, std::string child,
+                              bool truncate, OpenWriterOutcome* outcome) noexcept {
+  auto writer = hyle::platform::open_file(
+      child.c_str(), hyle::platform::kOpenWrite | hyle::platform::kOpenCreate);
+  if (!writer) {
+    outcome->status = std::move(writer).error();
+    co_return 0;
+  }
+  outcome->status = writer->write_all("initial", 7);
+  if (!outcome->status.ok()) co_return 0;
+
+  // Establish both targets after the initial write. Neither a create event nor
+  // a writable close can satisfy the content checks below.
+  const std::array targets{hyle::io::FileWatchTarget::file(child),
+                            hyle::io::FileWatchTarget::directory(root)};
+  auto made = FileWatcher::create(allocator, *io, kOwner, targets);
+  if (!made) {
+    outcome->status = std::move(made).error();
+    co_return 0;
+  }
+  FileWatcher watcher = std::move(*made);
+  // FileHandle::resize uses ftruncate on Linux. Keep this same writer open
+  // through next(), including for an ordinary write to the existing file.
+  outcome->status = truncate ? writer->resize(2)
+                             : writer->write_all("changed", 7);
+  const auto deadline = hyle::time::deadline_after(std::chrono::seconds(5));
+  while (outcome->status.ok() &&
+         !(outcome->exact_content && outcome->directory_content)) {
+    auto batch = co_await watcher.next({.deadline = deadline});
+    if (!batch) {
+      outcome->status = std::move(batch).error();
+      break;
+    }
+    for (const auto& event : batch->events()) {
+      if (!hyle::io::contains(event.changes, FileWatchChange::kContent)) continue;
+      if (event.target_index == 0 && event.relative_path.empty())
+        outcome->exact_content = true;
+      if (event.target_index == 1 && event.relative_path == "model.json")
+        outcome->directory_content = true;
+    }
+  }
+  outcome->writer_still_open = writer->valid();
+  outcome->status.Update(watcher.close());
+  outcome->status.Update(writer->close());
+  co_return 0;
+}
+#endif
 
 struct CancelOutcome {
   Status status{};
@@ -347,6 +405,36 @@ TEST(FileWatchJourney, ExactAndDirectoryTargetsObserveCreation) {
   EXPECT_TRUE(outcome.saw_directory);
   EXPECT_TRUE(outcome.saw_created_or_content);
 }
+
+#if HYLE_OS_LINUX
+TEST(FileWatchJourney, WriteReportsContentBeforeWriterClose) {
+  TempDirectory temporary;
+  const std::string root = temporary.path().string();
+  const std::string child = (temporary.path() / "model.json").string();
+  OpenWriterOutcome outcome;
+  run_watch_journey(&outcome, [&](IoContext* io, Scheduler*) {
+    return observe_open_writer(system_allocator(), io, root, child, false,
+                                &outcome);
+  });
+  EXPECT_TRUE(outcome.exact_content);
+  EXPECT_TRUE(outcome.directory_content);
+  EXPECT_TRUE(outcome.writer_still_open);
+}
+
+TEST(FileWatchJourney, TruncateReportsContentBeforeWriterClose) {
+  TempDirectory temporary;
+  const std::string root = temporary.path().string();
+  const std::string child = (temporary.path() / "model.json").string();
+  OpenWriterOutcome outcome;
+  run_watch_journey(&outcome, [&](IoContext* io, Scheduler*) {
+    return observe_open_writer(system_allocator(), io, root, child, true,
+                                &outcome);
+  });
+  EXPECT_TRUE(outcome.exact_content);
+  EXPECT_TRUE(outcome.directory_content);
+  EXPECT_TRUE(outcome.writer_still_open);
+}
+#endif
 
 TEST(FileWatchJourney, PreCancelledWaitDoesNotCloseWatcher) {
   TempDirectory temporary;

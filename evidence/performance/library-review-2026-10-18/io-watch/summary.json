@@ -1,0 +1,695 @@
+{
+  "status": "redundant_close_write_wake_fixed; remaining_small_peer_negative_samples_not_established_stable_or_resolved",
+  "product_change": {
+    "file": "src/io_watch/watch_linux.cc",
+    "change": "Remove IN_CLOSE_WRITE subscription and translation; retain IN_MODIFY content, metadata, create/delete, rename and root invalidation events. No public option or other backend change.",
+    "contract_basis": [
+      "include/hyle/io/watch.h exposes kContent without a writer-close/stable-write flag",
+      "docs/user/io.md defines invalidation hints, allows coalescing and puts debounce/reload validation on the application"
+    ],
+    "regression": "Write and FileHandle::resize (ftruncate) with the same descriptor kept open through next() must both produce kContent for exact and direct-directory targets; original atomic-replace/cancel/close/tree tests retained"
+  },
+  "historical_index": {
+    "path": "evidence/performance/io-watch-p1-v1-30e133db-w1-wsl-4c06445c",
+    "strata": [
+      {
+        "id": "primary-candidate-first",
+        "ratio": 0.986377939350912,
+        "ci": [
+          0.9756952270670941,
+          1.0071147932619682
+        ]
+      },
+      {
+        "id": "primary-peer-first",
+        "ratio": 0.9681340036434125,
+        "ci": [
+          0.9546605735846664,
+          0.9936745125520424
+        ]
+      },
+      {
+        "id": "placement-candidate-first",
+        "ratio": 0.982040638111061,
+        "ci": [
+          0.9481037482431213,
+          1.0095633543547164
+        ]
+      },
+      {
+        "id": "placement-peer-first",
+        "ratio": 0.9732306838250127,
+        "ci": [
+          0.9462325302748056,
+          0.9861144090548343
+        ]
+      }
+    ],
+    "use": "index and old observed loss only; old launcher/governance not executed"
+  },
+  "measurement_contract": {
+    "fixture": "watch_p1_bench_fixture.cc snapshot of bench/io_watch/watch_p1_bench.cc; watch_current.cc includes that canonical implementation and supplies the fixed-work timing driver",
+    "target": "one exact file watched through its existing parent directory",
+    "episode": "write and close 8-byte next generation in sibling model.next, atomically rename to model.bin, receive matching native change and re-read exact authoritative generation before next episode",
+    "resources": "one persistent route at a time, one native user owner thread plus main thread; /proc/self/status Threads=2 for every successful row; this does not count possible kernel workers",
+    "preparation": "create fixture/runtime/watcher and bounded readiness warmup plus equal 100ms route quiescence outside timing; cold destruction outside timing",
+    "charged_work": "4096 serialized authoritative publications per row, five rows per route, process median; both routes call the identical Platform FS publish/read helper",
+    "same_process_control": "routes are created, measured and destroyed sequentially in one process, matching the original fixture lifetime; orders hyle-libuv and libuv-hyle",
+    "timer": "std::chrono::steady_clock, one start/end per complete 4096-episode row; no claim that nanobench amortized harness time is clock resolution",
+    "affinity": "taskset -c 2 in WSL; guest affinity only, not proof of physical core class",
+    "filesystem": "TMPDIR=/root/hyle/.scratch/perf-watch/tmp (Linux native work directory, not /mnt/c)",
+    "linkage_limit": "Reused current Hyle shared Release cache; pinned libuv peer statically linked. Historical launcher used static Hyle. Current observations must not be represented as an exact replay of historical build settings."
+  },
+  "build_identity": {
+    "cache": "/root/hyle-scratch/io-watch-v2-dev",
+    "canonical_windows_root": "C:\\public\\project-hyle\\hyle",
+    "cache_facts": {
+      "CMAKE_BUILD_TYPE": "Release",
+      "CMAKE_CXX_COMPILER": "/usr/bin/g++-14",
+      "CMAKE_CXX_FLAGS": "",
+      "CMAKE_CXX_FLAGS_RELEASE": "-O3 -DNDEBUG",
+      "HYLE_BUILD_TESTS": "ON",
+      "HYLE_COMPONENTS": "io",
+      "HYLE_SANITIZER": "off",
+      "HYLE_STATIC": "OFF",
+      "HYLE_TRACE": "OFF",
+      "HYLE_WERROR": "ON",
+      "CMAKE_HOME_DIRECTORY": "/mnt/c/public/project-hyle/hyle"
+    },
+    "source": {
+      "canonical_source": "C:\\public\\project-hyle\\hyle",
+      "build_source": "/mnt/c/public/project-hyle/hyle",
+      "head_when_recorded": "0b3e322a0e3c8f033337eafd126f2d9c3ab77369",
+      "sha256": {
+        "src/io_watch/watch_linux.cc": "3bc874d60fe6862e3f6e5d5e1a0f150ede989658917087425bf40d1a696ffcfb",
+        "tests/io_watch/watch_test.cc": "b0300e969950c790a132ee245e203cc6b59bbae5db698330517a787a3d64a717",
+        "include/hyle/io/watch.h": "dec2e1fa29819f802c3b7a9e7ccddc934c230c1bfef8b3da469a09f9e5b9b82f",
+        "bench/io_watch/watch_p1_bench.cc": "65127526845520ec6f98aedb8e20d2d3b919bc73085fc8c37efb5183392307c6",
+        "src/io_core/proactor.cc": "7fb4d91b2d8d893eb3269decb568e1b8cefd1384cc8cfc0dae039bf880d798cb",
+        "src/sched/scheduler.cc": "c774348a896f24ce7194223a97d42d5b2bffb1f7832b5701b89386895be7c47c"
+      },
+      "consumer_revisions": {
+        "exploratory_separate_process": "watch_single_route_snapshot.cc; no executable hash was saved at sampling time, so the final executable hash is not retrospectively claimed for these samples",
+        "same_process_shim_postfix": "watch_current.cc; final fixed executable sha256 in identity-hashes.txt; identical executable used for both old/new library comparisons; no rebuild between them"
+      }
+    },
+    "kernel": "Linux kiro-workstation 6.18.54.1-microsoft-standard-WSL2 #1 SMP PREEMPT_DYNAMIC Tue Oct  6 19:13:07 UTC 2026 x86_64 x86_64 x86_64 GNU/Linux",
+    "compiler": "g++-14 (Ubuntu 14.2.0-4ubuntu2~24.04.1) 14.2.0\nCopyright (C) 2024 Free Software Foundation, Inc.\nThis is free software; see the source for copying conditions.  There is NO\nwarranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.",
+    "libuv_commit": "3e606bc30a842701f8d12007d3ade662d258b76b",
+    "sha256": {
+      "/root/hyle-scratch/io-watch-v2-dev/bin/libhyle_io_core.so.0.1.0": "864a35ab5216cfafcba804e62ebbf0732c85ea2d1bab2fda9968e7573ee2d8c2",
+      "/root/hyle-scratch/io-watch-v2-dev/bin/libhyle_sched.so.0.1.0": "6c74abd4be5fa450a06d404999b4a2b242ff8731c91edeef63d42236c8787d7e",
+      "/root/hyle/.scratch/perf-watch/watch_current": "1bdeb9d5e6c124885b34af74f4706cbdca9bfcc2e0f7d0ac009967e8eac15604",
+      "/root/hyle/.scratch/perf-watch/baseline-lib/libhyle_io_watch.so.0.1.0": "1cad2f846a2abd14a2a6530107ee6fa2801ababc5f8e305c028d74e9b3bddfb0",
+      "/root/hyle-scratch/io-watch-v2-dev/bin/libhyle_io_watch.so.0.1.0": "82038314128db1588b99e7e09ce4d84883273a605b7eda84a1a3fde52fa33905",
+      "/root/hyle/.scratch/perf-watch/libuv-build/libuv.a": "351a5515b7f2b4a94e76cb3ebb6741142363bda61f442a78f3887802044fc7e6"
+    },
+    "binary_library_use": "Same final consumer executable is reused for old/new watch libraries. Old/new ldd output and ELF RUNPATH are retained in final-loader-baseline.txt, final-loader-candidate.txt and final-elf-dynamic.txt. Both resolve io_core and sched from the same current cache. Only watch library selection changes using child LD_LIBRARY_PATH."
+  },
+  "exploratory_separate_process": {
+    "ab": {
+      "pairs": [
+        {
+          "pair": 0,
+          "order": [
+            0,
+            1
+          ],
+          "route0": "hyle",
+          "route1": "libuv",
+          "median0_ns": 43309.810058594,
+          "median1_ns": 48516.024902344,
+          "advantage_ratio": 1.120208674125019
+        },
+        {
+          "pair": 1,
+          "order": [
+            1,
+            0
+          ],
+          "route0": "hyle",
+          "route1": "libuv",
+          "median0_ns": 38699.553710938,
+          "median1_ns": 45250.3515625,
+          "advantage_ratio": 1.1692732143758673
+        },
+        {
+          "pair": 2,
+          "order": [
+            0,
+            1
+          ],
+          "route0": "hyle",
+          "route1": "libuv",
+          "median0_ns": 42450.207763672,
+          "median1_ns": 41315.852050781,
+          "advantage_ratio": 0.9732779702938992
+        },
+        {
+          "pair": 3,
+          "order": [
+            1,
+            0
+          ],
+          "route0": "hyle",
+          "route1": "libuv",
+          "median0_ns": 48064.652587891,
+          "median1_ns": 42768.149658203,
+          "advantage_ratio": 0.8898046143160441
+        },
+        {
+          "pair": 4,
+          "order": [
+            0,
+            1
+          ],
+          "route0": "hyle",
+          "route1": "libuv",
+          "median0_ns": 47753.591552734,
+          "median1_ns": 39133.395507812,
+          "advantage_ratio": 0.819485911642839
+        }
+      ],
+      "median_ratio": 0.9732779702938992,
+      "min_ratio": 0.819485911642839,
+      "max_ratio": 1.1692732143758673
+    },
+    "aa-hyle": {
+      "pairs": [
+        {
+          "pair": 0,
+          "order": [
+            0,
+            1
+          ],
+          "route0": "hyle",
+          "route1": "hyle",
+          "median0_ns": 43464.838623047,
+          "median1_ns": 42827.789306641,
+          "advantage_ratio": 0.9853433410409994
+        },
+        {
+          "pair": 1,
+          "order": [
+            1,
+            0
+          ],
+          "route0": "hyle",
+          "route1": "hyle",
+          "median0_ns": 42389.520019531,
+          "median1_ns": 41822.661376953,
+          "advantage_ratio": 0.9866273870919788
+        },
+        {
+          "pair": 2,
+          "order": [
+            0,
+            1
+          ],
+          "route0": "hyle",
+          "route1": "hyle",
+          "median0_ns": 41572.126220703,
+          "median1_ns": 45426.648925781,
+          "advantage_ratio": 1.0927189214382411
+        },
+        {
+          "pair": 3,
+          "order": [
+            1,
+            0
+          ],
+          "route0": "hyle",
+          "route1": "hyle",
+          "median0_ns": 45998.493896484,
+          "median1_ns": 45073.537841797,
+          "advantage_ratio": 0.9798916013039788
+        },
+        {
+          "pair": 4,
+          "order": [
+            0,
+            1
+          ],
+          "route0": "hyle",
+          "route1": "hyle",
+          "median0_ns": 47889.655029297,
+          "median1_ns": 45317.507080078,
+          "advantage_ratio": 0.9462901132270538
+        }
+      ],
+      "median_ratio": 0.9853433410409994,
+      "min_ratio": 0.9462901132270538,
+      "max_ratio": 1.0927189214382411
+    },
+    "aa-libuv": {
+      "pairs": [
+        {
+          "pair": 0,
+          "order": [
+            0,
+            1
+          ],
+          "route0": "libuv",
+          "route1": "libuv",
+          "median0_ns": 41245.12890625,
+          "median1_ns": 40590.838134766,
+          "advantage_ratio": 0.984136532268545
+        },
+        {
+          "pair": 1,
+          "order": [
+            1,
+            0
+          ],
+          "route0": "libuv",
+          "route1": "libuv",
+          "median0_ns": 42448.945556641,
+          "median1_ns": 42909.604980469,
+          "advantage_ratio": 1.0108520816662765
+        },
+        {
+          "pair": 2,
+          "order": [
+            0,
+            1
+          ],
+          "route0": "libuv",
+          "route1": "libuv",
+          "median0_ns": 39638.057861328,
+          "median1_ns": 40042.448974609,
+          "advantage_ratio": 1.0102020920070236
+        },
+        {
+          "pair": 3,
+          "order": [
+            1,
+            0
+          ],
+          "route0": "libuv",
+          "route1": "libuv",
+          "median0_ns": 39963.014404297,
+          "median1_ns": 39917.044921875,
+          "advantage_ratio": 0.998849699325558
+        },
+        {
+          "pair": 4,
+          "order": [
+            0,
+            1
+          ],
+          "route0": "libuv",
+          "route1": "libuv",
+          "median0_ns": 40964.627929688,
+          "median1_ns": 40131.497802734,
+          "advantage_ratio": 0.979662206907286
+        }
+      ],
+      "median_ratio": 0.998849699325558,
+      "min_ratio": 0.979662206907286,
+      "max_ratio": 1.0108520816662765
+    }
+  },
+  "same_process_before_fix": [
+    {
+      "command": [
+        "wsl.exe",
+        "-e",
+        "taskset",
+        "-c",
+        "2",
+        "env",
+        "TMPDIR=/root/hyle/.scratch/perf-watch/tmp",
+        "/root/hyle/.scratch/perf-watch/watch_current",
+        "hyle-libuv",
+        "4096",
+        "5"
+      ],
+      "exit": 0,
+      "process_medians_ns": {
+        "hyle": 42286.016113281,
+        "libuv": 39890.579589844
+      },
+      "advantage_ratio": 0.9433515676430758
+    },
+    {
+      "command": [
+        "wsl.exe",
+        "-e",
+        "taskset",
+        "-c",
+        "2",
+        "env",
+        "TMPDIR=/root/hyle/.scratch/perf-watch/tmp",
+        "/root/hyle/.scratch/perf-watch/watch_current",
+        "libuv-hyle",
+        "4096",
+        "5"
+      ],
+      "exit": 0,
+      "process_medians_ns": {
+        "hyle": 42226.482666016,
+        "libuv": 39599.814697266
+      },
+      "advantage_ratio": 0.9377957195837211
+    }
+  ],
+  "shim": {
+    "commands_and_samples": [
+      {
+        "command": [
+          "wsl.exe",
+          "-e",
+          "taskset",
+          "-c",
+          "2",
+          "env",
+          "LD_PRELOAD=/root/hyle/.scratch/perf-watch/mask_variant.so",
+          "TMPDIR=/root/hyle/.scratch/perf-watch/tmp",
+          "/root/hyle/.scratch/perf-watch/watch_current",
+          "hyle-libuv",
+          "4096",
+          "5"
+        ],
+        "exit": 0,
+        "process_medians_ns": {
+          "hyle": 44872.308105469,
+          "libuv": 42551.663085938
+        },
+        "advantage_ratio": 0.9482833596596705
+      },
+      {
+        "command": [
+          "wsl.exe",
+          "-e",
+          "taskset",
+          "-c",
+          "2",
+          "env",
+          "LD_PRELOAD=/root/hyle/.scratch/perf-watch/mask_variant.so",
+          "TMPDIR=/root/hyle/.scratch/perf-watch/tmp",
+          "HYLE_WATCH_DROP_CLOSE_WRITE=1",
+          "/root/hyle/.scratch/perf-watch/watch_current",
+          "hyle-libuv",
+          "4096",
+          "5"
+        ],
+        "exit": 0,
+        "process_medians_ns": {
+          "hyle": 41946.256347656,
+          "libuv": 42880.740234375
+        },
+        "advantage_ratio": 1.0222781236774474
+      },
+      {
+        "command": [
+          "wsl.exe",
+          "-e",
+          "taskset",
+          "-c",
+          "2",
+          "env",
+          "LD_PRELOAD=/root/hyle/.scratch/perf-watch/mask_variant.so",
+          "TMPDIR=/root/hyle/.scratch/perf-watch/tmp",
+          "HYLE_WATCH_DROP_CLOSE_WRITE=1",
+          "/root/hyle/.scratch/perf-watch/watch_current",
+          "libuv-hyle",
+          "4096",
+          "5"
+        ],
+        "exit": 0,
+        "process_medians_ns": {
+          "hyle": 40668.620849609,
+          "libuv": 41339.464599609
+        },
+        "advantage_ratio": 1.0164953651239061
+      },
+      {
+        "command": [
+          "wsl.exe",
+          "-e",
+          "taskset",
+          "-c",
+          "2",
+          "env",
+          "LD_PRELOAD=/root/hyle/.scratch/perf-watch/mask_variant.so",
+          "TMPDIR=/root/hyle/.scratch/perf-watch/tmp",
+          "/root/hyle/.scratch/perf-watch/watch_current",
+          "libuv-hyle",
+          "4096",
+          "5"
+        ],
+        "exit": 0,
+        "process_medians_ns": {
+          "hyle": 41990.863769531,
+          "libuv": 42116.998046875
+        },
+        "advantage_ratio": 1.0030038505051073
+      },
+      {
+        "command": [
+          "wsl.exe",
+          "-e",
+          "/usr/lib/linux-tools/6.18.54.1-microsoft-standard-WSL2/bin/perf",
+          "stat",
+          "-e",
+          "task-clock,context-switches,cpu-migrations,page-faults",
+          "--",
+          "taskset",
+          "-c",
+          "2",
+          "env",
+          "LD_PRELOAD=/root/hyle/.scratch/perf-watch/mask_variant.so",
+          "TMPDIR=/root/hyle/.scratch/perf-watch/tmp",
+          "/root/hyle/.scratch/perf-watch/watch_current",
+          "hyle",
+          "4096",
+          "5"
+        ],
+        "exit": 0
+      },
+      {
+        "command": [
+          "wsl.exe",
+          "-e",
+          "/usr/lib/linux-tools/6.18.54.1-microsoft-standard-WSL2/bin/perf",
+          "stat",
+          "-e",
+          "task-clock,context-switches,cpu-migrations,page-faults",
+          "--",
+          "taskset",
+          "-c",
+          "2",
+          "env",
+          "LD_PRELOAD=/root/hyle/.scratch/perf-watch/mask_variant.so",
+          "TMPDIR=/root/hyle/.scratch/perf-watch/tmp",
+          "HYLE_WATCH_DROP_CLOSE_WRITE=1",
+          "/root/hyle/.scratch/perf-watch/watch_current",
+          "hyle",
+          "4096",
+          "5"
+        ],
+        "exit": 0
+      }
+    ],
+    "context_switches": {
+      "original_context_switches": 159881,
+      "without_close_write_context_switches": 119515,
+      "timed_episodes": 20480,
+      "fewer_switches_per_episode": 1.97099609375,
+      "interpretation": "Same executable and library, shim changes only inotify watch registration mask. Confirms an extra wake round from close-write; does not prove every throughput difference has this single cause."
+    },
+    "interpretation": "A diagnostic registration shim, not a product benchmark optimization. Removing one extra native close-write registration bit reduced approximately 1.971 context switches per episode. The timing samples show drift and do not establish that every difference has this cause."
+  },
+  "postfix": {
+    "all_records": [
+      {
+        "loader": "baseline",
+        "command": [
+          "wsl.exe",
+          "-e",
+          "env",
+          "LD_LIBRARY_PATH=/root/hyle/.scratch/perf-watch/baseline-lib",
+          "ldd",
+          "/root/hyle/.scratch/perf-watch/watch_current"
+        ],
+        "expected_watch_library": "/root/hyle/.scratch/perf-watch/baseline-lib/libhyle_io_watch.so.0.1.0"
+      },
+      {
+        "loader": "candidate",
+        "command": [
+          "wsl.exe",
+          "-e",
+          "env",
+          "LD_LIBRARY_PATH=/root/hyle-scratch/io-watch-v2-dev/bin",
+          "ldd",
+          "/root/hyle/.scratch/perf-watch/watch_current"
+        ],
+        "expected_watch_library": "/root/hyle-scratch/io-watch-v2-dev/bin/libhyle_io_watch.so.0.1.0"
+      },
+      {
+        "command": [
+          "wsl.exe",
+          "-e",
+          "taskset",
+          "-c",
+          "2",
+          "env",
+          "TMPDIR=/root/hyle/.scratch/perf-watch/tmp",
+          "LD_LIBRARY_PATH=/root/hyle/.scratch/perf-watch/baseline-lib",
+          "/root/hyle/.scratch/perf-watch/watch_current",
+          "hyle-libuv",
+          "4096",
+          "5"
+        ],
+        "exit": 0,
+        "pair": 0,
+        "version": "baseline",
+        "order": "hyle-libuv",
+        "process_medians_ns": {
+          "hyle": 41505.096191406,
+          "libuv": 36739.328857422
+        },
+        "advantage_ratio": 0.8851763332385483
+      },
+      {
+        "command": [
+          "wsl.exe",
+          "-e",
+          "taskset",
+          "-c",
+          "2",
+          "env",
+          "TMPDIR=/root/hyle/.scratch/perf-watch/tmp",
+          "LD_LIBRARY_PATH=/root/hyle-scratch/io-watch-v2-dev/bin",
+          "/root/hyle/.scratch/perf-watch/watch_current",
+          "hyle-libuv",
+          "4096",
+          "5"
+        ],
+        "exit": 0,
+        "pair": 0,
+        "version": "candidate",
+        "order": "hyle-libuv",
+        "process_medians_ns": {
+          "hyle": 36403.576660156,
+          "libuv": 36365.026855469
+        },
+        "advantage_ratio": 0.9989410434846311
+      },
+      {
+        "command": [
+          "wsl.exe",
+          "-e",
+          "taskset",
+          "-c",
+          "2",
+          "env",
+          "TMPDIR=/root/hyle/.scratch/perf-watch/tmp",
+          "LD_LIBRARY_PATH=/root/hyle-scratch/io-watch-v2-dev/bin",
+          "/root/hyle/.scratch/perf-watch/watch_current",
+          "libuv-hyle",
+          "4096",
+          "5"
+        ],
+        "exit": 0,
+        "pair": 1,
+        "version": "candidate",
+        "order": "libuv-hyle",
+        "process_medians_ns": {
+          "hyle": 36235.320068359,
+          "libuv": 35877.936035156
+        },
+        "advantage_ratio": 0.9901371360173229
+      },
+      {
+        "command": [
+          "wsl.exe",
+          "-e",
+          "taskset",
+          "-c",
+          "2",
+          "env",
+          "TMPDIR=/root/hyle/.scratch/perf-watch/tmp",
+          "LD_LIBRARY_PATH=/root/hyle/.scratch/perf-watch/baseline-lib",
+          "/root/hyle/.scratch/perf-watch/watch_current",
+          "libuv-hyle",
+          "4096",
+          "5"
+        ],
+        "exit": 0,
+        "pair": 1,
+        "version": "baseline",
+        "order": "libuv-hyle",
+        "process_medians_ns": {
+          "hyle": 38106.05078125,
+          "libuv": 37745.487548828
+        },
+        "advantage_ratio": 0.9905379008049973
+      }
+    ],
+    "remaining_peer_difference": "Candidate advantage ratios 0.998941 and 0.990137 (approximately 0.1% and 1.0% negative). This small sample does not establish a stable residual regression, strict equivalence or complete elimination of the peer loss. It is not dismissed as timer resolution.",
+    "baseline_limits": "One baseline pair was significantly slower; reverse-order normalized baseline/candidate were close. Preserve all rows rather than selecting the favorable pair."
+  },
+  "verification": {
+    "product_build": "product-build-command.json + product-build.log: 7 incremental steps, GCC14 Release -Werror cache; only watch library and watch test target closure",
+    "tests": "test-command.json + test.log: 16/16 pass including 2 held-open content regressions, existing atomic replace/cancel/close and tree behavior",
+    "diff_check": "git diff --check passed",
+    "not_run": [
+      "Windows/macOS build or tests: product change and new regression are Linux-only",
+      "No full IO, system-wide, GPU or original historical launcher rebuild"
+    ]
+  },
+  "failed_or_limited_probes": {
+    "failed_commands": [
+      {
+        "phase": "profile-commands.json",
+        "command": [
+          "wsl.exe",
+          "-e",
+          "perf",
+          "stat",
+          "-e",
+          "task-clock,context-switches,cpu-migrations,page-faults",
+          "--",
+          "taskset",
+          "-c",
+          "2",
+          "env",
+          "TMPDIR=/root/hyle/.scratch/perf-watch/tmp",
+          "/root/hyle/.scratch/perf-watch/watch_current",
+          "hyle",
+          "4096",
+          "5"
+        ],
+        "exit": 1,
+        "meaning": "perf was not resolved by wsl -e PATH; absolute installed tool succeeded later; failed calls do not count as measurements"
+      },
+      {
+        "phase": "profile-commands.json",
+        "command": [
+          "wsl.exe",
+          "-e",
+          "perf",
+          "stat",
+          "-e",
+          "task-clock,context-switches,cpu-migrations,page-faults",
+          "--",
+          "taskset",
+          "-c",
+          "2",
+          "env",
+          "TMPDIR=/root/hyle/.scratch/perf-watch/tmp",
+          "/root/hyle/.scratch/perf-watch/watch_current",
+          "libuv",
+          "4096",
+          "5"
+        ],
+        "exit": 1,
+        "meaning": "perf was not resolved by wsl -e PATH; absolute installed tool succeeded later; failed calls do not count as measurements"
+      }
+    ],
+    "sched_trace_limit": "Trace recording succeeded, but installed perf has no traceevent decoding; text trace payloads are blank. Raw perf.data retained. No io-wq handoff attribution is claimed from these traces.",
+    "profile_limit": "perf/strace runs are diagnostic and perturb workload, never merged with throughput samples"
+  },
+  "retention": "All raw rows, stderr, commands, profiles and source snapshots are in raw-results.zip. There are no SDK or source-tree copies; only one small baseline watch .so is kept in the fixed WSL work directory for local reproduction."
+}
