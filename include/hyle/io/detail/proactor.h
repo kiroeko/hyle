@@ -391,8 +391,12 @@ class Proactor {
   HYLE_IO_API bool register_buf_ring(int bgid, unsigned nentries,
                                      unsigned buf_size) noexcept;
   HYLE_IO_API bool register_file_table(unsigned nr) noexcept;
+  // Returns -1 while direct-accept CQEs have not identified their kernel-owned
+  // slots, so an assignment cannot overwrite an unobserved accepted connection.
   HYLE_IO_API int assign_fixed_slot(std::intptr_t fd) noexcept;
   HYLE_IO_API bool release_fixed_slot(int index) noexcept;
+  // A submitted direct close blocks new IO on that descriptor until its CQE.
+  // A new accept reusing the slot remains usable even if the old close CQE lags.
   HYLE_IO_API bool submit_recv_fixed(int slot, void* buf, std::uint32_t len,
                                      std::uint32_t flags,
                                      std::uint64_t user_data) noexcept;

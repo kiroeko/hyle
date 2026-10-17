@@ -1,0 +1,27 @@
+{
+  "archive": {
+    "path": ".scratch/perf-review-2026-10-18/io-direct-slots/source-results.zip",
+    "bytes": 679538,
+    "sha256": "f23aabd6cf8a2a75d5595a52822eb1ddae865aa4c49911b6132d82d4e2ca71bb"
+  },
+  "members": 135,
+  "canonical_sources": [
+    {
+      "path": "src/io_core/proactor.cc",
+      "bytes": 194823,
+      "sha256": "0be7da95d2e6aff87ab683db1321e5d699bbdb7b74bf5c072054b998e6955157"
+    },
+    {
+      "path": "include/hyle/io/detail/proactor.h",
+      "bytes": 27949,
+      "sha256": "02aa67a112c705effeb1b39b1e35c0336b8a57792b5de82f7aa3b801eb68f133"
+    },
+    {
+      "path": "tests/io_core/proactor_test.cc",
+      "bytes": 64647,
+      "sha256": "d662e51b72e724dfddb7bba56e331d89cb5137b03973e7810abefb28e686d708"
+    }
+  ],
+  "cleanup_files": 26,
+  "cleanup_bytes": 9692776
+}

@@ -1,0 +1,97 @@
+{
+  "result": "Fixed actual io_uring direct-accept/direct-close encoding errors, removed fixed-table accept and pending-close linear scans, and preserved slot ownership under pending-close I/O and deliberately reversed observation of two real close/accept CQEs. No performance timing.",
+  "canonical_sources": [
+    {
+      "path": "src/io_core/proactor.cc",
+      "bytes": 194823,
+      "sha256": "0be7da95d2e6aff87ab683db1321e5d699bbdb7b74bf5c072054b998e6955157"
+    },
+    {
+      "path": "include/hyle/io/detail/proactor.h",
+      "bytes": 27949,
+      "sha256": "02aa67a112c705effeb1b39b1e35c0336b8a57792b5de82f7aa3b801eb68f133"
+    },
+    {
+      "path": "tests/io_core/proactor_test.cc",
+      "bytes": 64647,
+      "sha256": "d662e51b72e724dfddb7bba56e331d89cb5137b03973e7810abefb28e686d708"
+    }
+  ],
+  "historical_failure_evidence": {
+    "original_cached_binary": "baseline-direct.stdout.txt reports2SKIP due actual ACCEPT -EINVAL. Root confirmed flags bug, not missing actual kernel capability.",
+    "accept_flags_only": "test-accept-only.stdout.txt FAIL: closing nonzero slots made live slot0 recv -EBADF and closed process fd0; retained unchanged.",
+    "encoding_fixes": "candidate-proactor.cc removes SOCK_CLOEXEC for direct accept and uses close file_index=slot+1. Root test-candidate.stdout.txt25/25 PASS."
+  },
+  "optimization_and_guard_stages": {
+    "stage2": "final-proactor.cc/free_file_slots plus -3pending-close and direct close_slot. Root test-final.stdout.txt26/26PASS;6non-timed actual native episodes accepted+closed all32/64/128connections, scan-results.json retained.",
+    "admission_counts": "Old accept visits2048/65536/524288 and close visits496/2016/8128; candidate both0 for same table/batch. This is source-instrumented visit census, not timing.",
+    "guard": "applied-proactor.cc rejects negative FILES_UPDATE control-code fds and >INT32_MAX. Root test-guard.stdout.txt1PASS, after valid-fd scan stage; no scan rerun needed.",
+    "final_changes_after_measured_counts": "Current product adds -4reused-before-oldclose-CQE and rejects new fixed I/O on -3. Valid-fd ordinary accept/close steady paths measured in stage2 are unchanged; no final count matrix was rerun."
+  },
+  "final_validation": {
+    "normal_overlay": "Fresh GCC14normal provider/test TU, direct link existing native/foundation cached objects. Two final related tests PASS; not a final full26 rerun.",
+    "simulation": "Separate probe-only provider snapshot waits for2real native CQEs, preserves each entire CQE, and swaps the two unconsumed CQE structs before observation. Actual kernel order was close then accept; accept-first observation is simulated, not natural race reproduction.",
+    "real_cqes": {
+      "observation_order_simulation": true,
+      "swapped": true,
+      "close_cqe": {
+        "user_data": 64032,
+        "res": 0,
+        "flags": 0
+      },
+      "accept_cqe": {
+        "user_data": 64033,
+        "res": 0,
+        "flags": 0
+      }
+    },
+    "complete_episode": {
+      "real_accepts": 2,
+      "real_closes": 2,
+      "old_payload": true,
+      "new_payload": true,
+      "new_reply": true,
+      "new_io_before_old_close_reap": true,
+      "second_close_rejected_while_old_close_pending": true,
+      "other_free_slot_usable": true,
+      "all_slots_reusable": 2,
+      "raw_fds_closed": 3,
+      "stdin_preserved": true
+    },
+    "ownership_rules": "-1free, -2directdescriptor, -3old close pending, -4new direct accept already observed while old close CQE pending. Accept on -3 becomes -4 without free decrement; old close on -4 becomes -2 without free increment. -3rejects new recv/send; -4allows new I/O but rejects second close until old CQE retires. Pending accept guard still blocks assign until every accept CQE is observed.",
+    "failure_and_cancel_review": "Map insertion/reserve failure precedes slot change and rolls record back. Cancellation request does not release target metadata; target finalCQE(success or error) updates counts. Failed close from -3 returns -2 retryable. Public Proactor remainsPImpl; no public signature/layout addition.",
+    "scope": "No SDK copy/download/configure/foundation rebuild; no new public helper/table/useroption; no throughput timing. Reused cached foundation objects and native io_uring kernel path; no Windows/macOS run."
+  },
+  "kernel_source_review": [
+    {
+      "url": "https://raw.githubusercontent.com/torvalds/linux/v6.18/io_uring/filetable.c",
+      "lines": "114–127",
+      "fact": "Direct close removes slot and clears allocation bitmap before completion is observed."
+    },
+    {
+      "url": "https://raw.githubusercontent.com/torvalds/linux/v6.18/io_uring/filetable.h",
+      "lines": "19–30",
+      "fact": "Clearing resets allocator hint to removed slot, so later allocation can immediately reuse it."
+    },
+    {
+      "url": "https://raw.githubusercontent.com/torvalds/linux/v6.18/io_uring/openclose.c",
+      "lines": "179–248",
+      "fact": "Direct close removes under ring lock then returns completion; file_index is one-based."
+    },
+    {
+      "url": "https://raw.githubusercontent.com/torvalds/linux/v6.18/io_uring/net.c",
+      "lines": "1511–1540,1579–1597",
+      "fact": "Direct accept disallows CLOEXEC and independently installs selected fixed descriptor before completion."
+    }
+  ],
+  "cleanup": {
+    "manifest": {
+      "path": ".scratch/perf-review-2026-10-18/io-direct-slots/cleanup-candidates.json",
+      "bytes": 5580,
+      "sha256": "a2149e0d3078e01a0ad201269be09d5412b4a8102e96ea161ec5b9314295a157"
+    },
+    "files": 26,
+    "bytes": 9692776,
+    "action": "Root test.ps1 exact deletion only. Cached io-watch/native/SDK retained; no cleanup executed."
+  }
+}

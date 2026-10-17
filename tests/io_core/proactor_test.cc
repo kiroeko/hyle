@@ -1,5 +1,6 @@
 #include <gtest/gtest.h>
 
+#include <algorithm>
 #include <array>
 #include <atomic>
 #include <cerrno>
@@ -1150,19 +1151,32 @@ TEST(Proactor, DirectCloseBatchRetiresEachReservedSlot) {
     }
     ++accepted;
   }
-  for (int client : clients) ::close(client);
   ASSERT_EQ(accepted, slots.size());
   if (unsupported) {
+    for (int client : clients) ::close(client);
     ::close(listener);
     GTEST_SKIP() << "kernel lacks accept_direct";
   }
+  const bool stdin_open = ::fcntl(STDIN_FILENO, F_GETFD) >= 0;
+  ASSERT_NE(std::find(slots.begin(), slots.end(), 0), slots.end());
+  const char sent = 'k';
+  // All clients send before any close, so accept completion order is irrelevant.
+  for (int client : clients) {
+    ASSERT_EQ(::send(client, &sent, 1, MSG_NOSIGNAL), 1);
+  }
+  // Retire a batch that excludes slot zero. Off-by-one target encoding must
+  // neither close the still-live first connection nor touch a process fd.
+  char pending_byte = 0;
   for (std::size_t i = 0; i < slots.size(); ++i) {
+    if (slots[i] == 0) continue;
     ASSERT_TRUE(p.submit_close_direct(slots[i], 0xC00 + i));
     EXPECT_FALSE(p.submit_close_direct(slots[i], 0xD00 + i));
+    EXPECT_FALSE(p.submit_recv_fixed(slots[i], &pending_byte, 1, 0, 0xD10 + i));
+    EXPECT_FALSE(p.submit_send_fixed(slots[i], &pending_byte, 1, 0, 0xD20 + i));
   }
   std::array<bool, 3> seen{};
   std::size_t closed = 0;
-  for (int tries = 0; tries < 100 && closed < slots.size(); ++tries) {
+  for (int tries = 0; tries < 100 && closed < slots.size() - 1; ++tries) {
     Completion event{};
     if (p.reap(&event, 1, 100'000'000) == 0) continue;
     ASSERT_GE(event.user_data, 0xC00u);
@@ -1173,12 +1187,64 @@ TEST(Proactor, DirectCloseBatchRetiresEachReservedSlot) {
     EXPECT_EQ(event.result, 0);
     ++closed;
   }
-  ASSERT_EQ(closed, slots.size());
+  ASSERT_EQ(closed, slots.size() - 1);
+  char received = 0;
+  ASSERT_TRUE(p.submit_recv_fixed(0, &received, 1, 0, 0xB00));
+  Completion receive{};
+  ASSERT_EQ(p.reap(&receive, 1, 1'000'000'000), 1u);
+  EXPECT_EQ(receive.user_data, 0xB00u);
+  EXPECT_EQ(receive.result, 1);
+  EXPECT_EQ(received, sent);
+  ASSERT_TRUE(p.submit_close_direct(0, 0xC00));
+  Completion final_close{};
+  ASSERT_EQ(p.reap(&final_close, 1, 1'000'000'000), 1u);
+  EXPECT_EQ(final_close.user_data, 0xC00u);
+  EXPECT_EQ(final_close.result, 0);
+  if (stdin_open) {
+    EXPECT_GE(::fcntl(STDIN_FILENO, F_GETFD), 0);
+  }
+  for (int client : clients) ::close(client);
   EXPECT_FALSE(p.in_flight());
   const int reused = p.assign_fixed_slot(listener);
   ASSERT_GE(reused, 0);
   EXPECT_TRUE(p.release_fixed_slot(reused));
   ::close(listener);
+}
+TEST(Proactor, FixedTableAdmissionTracksFailedAcceptAndReleasedMappings) {
+  Proactor p;
+  ASSERT_TRUE(p.init(16));
+  if (p.backend_kind() != BackendKind::kIoUring || !p.register_file_table(2))
+    GTEST_SKIP() << "native registered files unavailable";
+  EXPECT_EQ(p.assign_fixed_slot(-1), -1);
+  EXPECT_EQ(p.assign_fixed_slot(-2), -1);
+  EXPECT_EQ(p.assign_fixed_slot(std::numeric_limits<std::intptr_t>::max()), -1);
+  int sockets[2];
+  ASSERT_EQ(::socketpair(AF_UNIX, SOCK_STREAM | SOCK_CLOEXEC, 0, sockets), 0);
+  const int first = p.assign_fixed_slot(sockets[0]);
+  ASSERT_GE(first, 0);
+  for (unsigned attempt = 0; attempt != 2; ++attempt) {
+    ASSERT_TRUE(p.submit_accept_direct(-1, 0xE00 + attempt));
+    EXPECT_FALSE(p.submit_accept_direct(-1, 0xE10 + attempt));
+    EXPECT_EQ(p.assign_fixed_slot(sockets[0]), -1);
+    Completion failed{};
+    ASSERT_EQ(p.reap(&failed, 1, 1'000'000'000), 1u);
+    EXPECT_EQ(failed.user_data, 0xE00u + attempt);
+    EXPECT_EQ(failed.result, -EBADF);
+    EXPECT_FALSE(p.in_flight());
+  }
+  const int second = p.assign_fixed_slot(sockets[0]);
+  ASSERT_GE(second, 0);
+  EXPECT_NE(first, second);
+  EXPECT_FALSE(p.submit_accept_direct(-1, 0xE20));
+  EXPECT_EQ(p.assign_fixed_slot(sockets[0]), -1);
+  ASSERT_TRUE(p.release_fixed_slot(first));
+  EXPECT_FALSE(p.release_fixed_slot(first));
+  const int reused = p.assign_fixed_slot(sockets[1]);
+  EXPECT_EQ(reused, first);
+  EXPECT_TRUE(p.release_fixed_slot(reused));
+  EXPECT_TRUE(p.release_fixed_slot(second));
+  ::close(sockets[0]);
+  ::close(sockets[1]);
 }
 #endif  // __linux__
 
