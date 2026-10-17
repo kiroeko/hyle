@@ -12,7 +12,7 @@ Direct **651 项**、Graph **649 项**通过，无 skip。包含559固定GGUF数
 MUL_MAT／MMID分发及MMID capture suitability没有先消费该条件。小N／dyadic输入绕开实际
 分支，不能为大shape资格。仅在这三个选择点排除要求F32的F32 MMF，原cuBLAS／sorting程序
 承载；默认native／量化／F16/BF16选择与数学kernel保持。原source／pin／NOTICE／软件身份
-如实更新，未发新版本性能WIN。详见 [施工卡](../../../docs/implementation/tasks/compute/cuda-final-u3-f32-dispatch.md)。
+如实更新，未发新版本性能WIN。详见 [施工卡](https://github.com/axiomates/hyle/blob/d12f2204d23503256220e810385d6cb3e93027a8/docs/implementation/tasks/compute/cuda-final-u3-f32-dispatch.md)。
 
 Kimi MLA大shape回归用不可TF32精确表示的乘数和重复ID，独立源方程通过；完整三profile的
 九输出、四replay、actual cache反馈和原点值门通过。临时operand copies、reference factory及

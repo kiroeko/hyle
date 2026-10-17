@@ -1,16 +1,7 @@
 # SIMD 使用指南
 
-> SIMD 当前只提供 C++ 产品面，可通过完整源码、headers + static libraries 或
-> headers + shared libraries 使用。`hyle/simd/*.h` 中的 whole-buffer 算法供普通 C++ 用户
-> 使用；三种交付都可通过显式 expert target 在 target-bound TU 中直接使用项目锁定的 Highway 或
-> xsimd。旧 `vec.h`/`native/*`/`backend/*` 已删除；`target.h`、`fat_kernel.h` 随 expert SDK 交付，
-> `provider/*` 仍是 HYLE 内部实现。预编译交付遵守其明确的 C++ 工具链合同，
-> 本页适用于 C++23 source/static/shared 三种交付，不承诺任意编译器之间的 C++ ABI，
-> 也不描述 C API 或跨语言调用层。
->
-> 内部 route ledger 已对冻结的 387 个旧 operation 全部终态裁决。Highway 是同合同默认实现；xsimd/HYLE
-> 只保留精确、具证据的 type × target × compiler 例外。expert consumer 可以取得两个锁定 vendor 和
-> fixed/fat target helper；HYLE 内部 route contract 与有限 HYLE winner body 不因此成为用户 API。
+普通 C++ 数组运算链接 `hyle::simd`；固定/多 ISA 自定义 kernel 使用显式专家接口。
+`provider/*` 是内部实现，不属于公共 API。
 
 HYLE SIMD 不要求普通用户认识数百个寄存器原语，也不再复制一套平行 Highway DSL。应用通常只应
 调用处理整段连续数据的语义接口，让预编译库在运行时选择当前 CPU

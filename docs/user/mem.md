@@ -131,9 +131,9 @@ provider adapter 解释，它不是通用 host pointer，不能解引用或做 p
 `std::pmr::memory_resource*`。两者故意不是同一类型：前者承载 Buffer/provider 语义，后者只
 适配标准 PMR 容器。
 
-当前 HYLE 没有已验收的 device/pinned/managed memory provider。外部或未来 provider 可以通过
-`MemoryResourceRef` seam 复用本节 owner/view/pool/planner，但它必须自己文档化 device identity、
-coherence、native handle 与 completion lifetime；Compute 的 CPU device 不等于新增一种 Mem resource。
+Mem 自带通用 host resource；device/pinned/managed 等资源由 [Compute 后端](compute.md)提供。
+它们复用 `MemoryResourceRef`、Buffer 与 view，但另有设备身份、coherence、native handle 和
+Completion 寿命约束；不能把 device handle 当作可直接解引用的 host pointer。
 
 模型分片、超过单次 provider allocation 上限的 storage，或必须保留每段 provider identity 时，
 使用 `CompositeBuffer`，不要先拼成一个临时连续 buffer：
@@ -782,12 +782,4 @@ selected overload 的 flags 默认 `kNone`：精确小条带与 THP 粒度可能
 `clear()` 主动释放 guarded VM；并发 release 允许在 trim 之后重新填充。Scheduler 的确定安全
 回收点是 shutdown：全部 fiber 完成且 worker join 后自动 clear 三个标准 tier，不等对象析构。
 
-## 如何看性能
-
-Mem 的 host allocation 与 VM/model-loader 是不同性能合同：前者必须对齐 allocator backing、owner、
-alignment、failure 和完整 allocate/touch/free；后者必须对齐 mapping、advice、partial release、syscall
-数量和 survivor teardown。一个合同的结果不能替另一个能力背书，WSL guest 也不能冒充 native-Linux
-Formal 证书。性能数字只回答明确列出的 ownership、资源和 charged phase，不外推 planner、所有 OS 或
-端到端推理 SOTA，更不能靠更少 syscall 或更弱持久化保证做苹果对橘子排名。
-
-设计见[Mem 架构](../architecture/mem-design.md)，可运行消费者见[样例](../../samples/package/mem)。
+可运行消费者见[Mem 样例](../../samples/package/mem)。

@@ -16,4 +16,4 @@ SDKshared24.250s/static137.235s producer build；链接模式切换重编真实�
 没有CUDA/Apple/Vulkan Windows全局构建。此前[宿主风险](../inference-g02-exact-read-groups-host/README.md)
 与全部fixtureFAIL仍保留。只签MQ-LP-01有限共同接缝；新native page/layout/generation绑定、
 GPU page math及原26d未跑Windows门继续UNPROVEN，graph/整个G02不因此CLOSED。
-[活动卡](../../../docs/implementation/tasks/graph/inference-g02-multi-queue-batch.md)。
+[活动卡](https://github.com/axiomates/hyle/blob/d12f2204d23503256220e810385d6cb3e93027a8/docs/implementation/tasks/graph/inference-g02-multi-queue-batch.md)。

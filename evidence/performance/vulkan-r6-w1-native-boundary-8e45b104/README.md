@@ -2,7 +2,7 @@
 
 产品候选 `8e45b10423686a0753aaa9d461c4ef3b117412c5`，测量快照
 `3894b72e3b4fbbda9457e2c31730e48bd0d43c49`。按
-[冻结合同](../../../docs/implementation/tasks/compute/vulkan-r6-performance-contract.md)，在对应
+[冻结合同](https://github.com/axiomates/hyle/blob/d12f2204d23503256220e810385d6cb3e93027a8/docs/implementation/tasks/compute/vulkan-r6-performance-contract.md)，在对应
 Direct/Graph 正式 A/A 通过后，分别完成 primary 制品的执行正反序 × 分配正反序四层，各 15 个
 独立进程；每进程含完整 strict-F32 FFN M1/M16。两个入口共 120 个进程，无扩样或新 placement。
 

@@ -1,6 +1,6 @@
 # CPU Cast/stable route：有限审计证据
 
-[当前卡](../../../docs/implementation/tasks/compute/cpu-aten-cast-stable-route.md)，baseline `b881d2788e0848404c536342b806d6642f3aefa7`。
+[当前卡](https://github.com/axiomates/hyle/blob/d12f2204d23503256220e810385d6cb3e93027a8/docs/implementation/tasks/compute/cpu-aten-cast-stable-route.md)，baseline `b881d2788e0848404c536342b806d6642f3aefa7`。
 以下tail-*记录为原已安装SDK的普通Direct/whole Graph尾部diagnostic；产品资格在后续单列，无性能/自研对比。
 
 实际默认gate/Sigmoid与完整gate→MatMul均绑定ggml；Graph只有一个两节点region。

@@ -1,6 +1,6 @@
 # D5 F35：显式 RoPE 相位修正的 CPU 定向证据
 
-任务见 [F35](../../../../docs/implementation/tasks/compute/llm-moe-d5-explicit-rope-phase.md)。
+任务见 [F35](https://github.com/axiomates/hyle/blob/d12f2204d23503256220e810385d6cb3e93027a8/docs/implementation/tasks/compute/llm-moe-d5-explicit-rope-phase.md)。
 
 `4f18811a` 的 CPU Direct/Graph 完整 DeepSeek attention 和长位置压缩状态均失败。
 三个 ggml adapter 原本构造 F32 reciprocal，再由 ggml 除回；Apple 已直接乘频率。

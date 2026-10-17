@@ -1,6 +1,6 @@
 # G03 原 native 取消依赖接纳验证
 
-固定产品 candidate `9404af694`，按[有限卡](../../../docs/implementation/tasks/compute/inference-g03-native-dependency-admission.md)
+固定产品 candidate `9404af694`，按[有限卡](https://github.com/axiomates/hyle/blob/d12f2204d23503256220e810385d6cb3e93027a8/docs/implementation/tasks/compute/inference-g03-native-dependency-admission.md)
 仅修三 qualifier 的原 cancel 检查，没有公共签名/layout/数学/queue/allocator 改动。
 [source 累计](source-receipt.json)/[原始输入与编排](source-raw.zip)/
 [输入逐轮回映](source-input-map.json)，[宿主与 SDK 累计](validation-receipt.json)/

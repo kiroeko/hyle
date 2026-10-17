@@ -1,7 +1,7 @@
 # D5 Vulkan 完整输入循环 A/A：原门仍未通过
 
 候选`3a2e1f01`，产品SDK仍`9273bc71`；
-[有限工具卡](../../../docs/implementation/tasks/compute/llm-moe-d5-vulkan-measurement-balance.md)。
+[有限工具卡](https://github.com/axiomates/hyle/blob/d12f2204d23503256220e810385d6cb3e93027a8/docs/implementation/tasks/compute/llm-moe-d5-vulkan-measurement-balance.md)。
 W1-WIN / RTX4070 / 原native-runtime-pair双P核策略；没有要求用户进一步关闭桌面程序。
 
 ## 已实现和已验证

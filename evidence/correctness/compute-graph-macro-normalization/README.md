@@ -1,6 +1,6 @@
 # Compute + Graph 宏规范验收
 
-当前范围：[宏专题](../../../docs/implementation/tasks/compute/compute-graph-macro-normalization.md)。
+当前范围：[宏专题](https://github.com/axiomates/hyle/blob/d12f2204d23503256220e810385d6cb3e93027a8/docs/implementation/tasks/compute/compute-graph-macro-normalization.md)。
 产品候选 `026d40bcfdde389c9f69b2458b55d8157774ebda`，baseline
 `a3e6046b053c7a40dc52c703ea049a38ec7795d5`；其后只改测试、文档和状态。
 Windows是产品真相；WSL／Mac只前向同步。CUDA本体不要求Mac。

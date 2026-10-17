@@ -45,7 +45,7 @@ selector 的 [选中与跳过原因](final/selection-plan.json)保留。使用�
 当前 oneDNN reference 的 F16 中间舍入、SGLang 的 AMX/W8A16 路线，以及 vLLM 的具名
 W8A16/截断编码程序，都不能直接代替所需合同。这只是排除了这些具体接法。
 后续成熟 CPU 承载至少需要直接 RNE E4M3、动态 group128、K-block scale 累加、DeepSeek
-A8W4 与 FP4 group32 floor；见 [F47 后续边界](../../../../docs/implementation/tasks/compute/llm-moe-d5-cpu-official-boundary.md)。
+A8W4 与 FP4 group32 floor；见 [F47 后续边界](https://github.com/axiomates/hyle/blob/d12f2204d23503256220e810385d6cb3e93027a8/docs/implementation/tasks/compute/llm-moe-d5-cpu-official-boundary.md)。
 本批停止重复试拼和原生调查，不能把新 Provider/runtime 接入暗中扩入 D5。
 其它路线及可用 CPU 画像的交付、性能继续；本结果不宣称整个 Compute+Graph 完成。
 

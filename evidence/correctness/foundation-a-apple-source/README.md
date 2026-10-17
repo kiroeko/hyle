@@ -2,7 +2,7 @@
 
 产品来源为 Windows canonical 的实施 commit e5ab48c2a674d176a9739cf9af89c242d9552af6，
 完整 git archive / SHA256 / checksum rsync receipt 为 source-sync.json；Air 只作可丢弃验证副本。
-这不是 CANDIDATE，活动范围见[四路线卡](../../../docs/implementation/tasks/graph/foundation-a-route-symmetry.md)。
+这不是 CANDIDATE，活动范围见[四路线卡](https://github.com/axiomates/hyle/blob/d12f2204d23503256220e810385d6cb3e93027a8/docs/implementation/tasks/graph/foundation-a-route-symmetry.md)。
 
 实际身份：MacBook Air Mac16,12 /16GiB / macOS27.0.1 build26A434 / Apple Clang21.0.0 /
 CMake4.3.4；沿原锁定 MLX/ggml Metal 与 Metal tool shim，未用 Mac mini。

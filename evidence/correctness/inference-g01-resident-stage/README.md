@@ -1,7 +1,7 @@
 # G01 resident SDPA 实现阶段证据
 
 本轮仍AUDITED，不是candidate/closure或整个G01完成。活动卡见
-[resident SDPA](../../../docs/implementation/tasks/compute/inference-g01-resident-sdpa.md)。
+[resident SDPA](https://github.com/axiomates/hyle/blob/d12f2204d23503256220e810385d6cb3e93027a8/docs/implementation/tasks/compute/inference-g01-resident-sdpa.md)。
 [receipt](receipt.json)与[raw.zip](raw.zip)保存实际输入/binary hash、命令及全部原失败。
 
 旧relocated static SDK普通CPU入口准备BF16 GQA8/2 D256容量cache的有效视图，会选择

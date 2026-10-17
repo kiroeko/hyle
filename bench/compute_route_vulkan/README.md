@@ -36,4 +36,4 @@ MoltenVK on the MacBook Air uses observed QoS, not hard P/E-core affinity.
 
 The retired raw native-cost branch lacked cancellation, abandoned-work quarantine and
 owning output leases. Its historical timings do not rank equivalent public routes.
-Original experiment details remain in the [implementation history](../../docs/implementation/tasks/compute/vulkan-r6-performance-contract.md).
+Original experiment details remain in the [implementation history](../../docs/implementation/README.md#追溯旧文档).

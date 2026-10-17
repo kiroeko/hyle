@@ -1,6 +1,6 @@
 # Vulkan original official float/QAT source batch
 
-Card: [finite official bindings](../../../docs/implementation/tasks/compute/vulkan-parity-v2-official-float-bindings.md).
+Card: [finite official bindings](https://github.com/axiomates/hyle/blob/d12f2204d23503256220e810385d6cb3e93027a8/docs/implementation/tasks/compute/vulkan-parity-v2-official-float-bindings.md).
 Windows RTX4070/NVIDIA617.14; original IREE compiler/runtime6ef606. All children
 are hidden with Windows fault UI disabled, EXEs have adjacent DLLs, validation
 layer is enabled, build2/test1 and serial real GPU execution. No P1 sampling.

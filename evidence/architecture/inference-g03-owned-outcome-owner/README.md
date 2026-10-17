@@ -35,6 +35,6 @@ Vulkan CopyUpdate.wait 的错误不总能单独证明 phase.actual retired；后
 retired/pending及原 native callbacks裁决，不能按一个 Status假定退休。
 
 两轮累计 11.316 秒，全部最终 exit0。八场景输入/source-target编译 SHA核对，原
-数学/P1/全模型/全局构建未运行。[活动观察接缝 scope](../../../docs/implementation/tasks/compute/inference-g03-owned-outcome-observation.md)
-继续固定有限 API/FIX；完整[主卡](../../../docs/implementation/tasks/compute/inference-g03-pending-page-consumption.md)
+数学/P1/全模型/全局构建未运行。[活动观察接缝 scope](https://github.com/axiomates/hyle/blob/d12f2204d23503256220e810385d6cb3e93027a8/docs/implementation/tasks/compute/inference-g03-owned-outcome-observation.md)
+继续固定有限 API/FIX；完整[主卡](https://github.com/axiomates/hyle/blob/d12f2204d23503256220e810385d6cb3e93027a8/docs/implementation/tasks/compute/inference-g03-pending-page-consumption.md)
 仍SCOPED，源码/SDK普通consumer尚没有这些新公共能力。

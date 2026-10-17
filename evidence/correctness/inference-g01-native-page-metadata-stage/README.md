@@ -9,4 +9,4 @@ owned layout、span不借后续、exported只读lease保recipe/layout、空表�
 
 这是metadata阶段证据，不是GPU数学、native controller、P1或整个G01/G02完成。三san/
 三交付和原组件合同等门继续未证；全部未跑项不写PASS。没有fullGPU run或新的queue。
-[活动卡](../../../docs/implementation/tasks/compute/inference-g01-native-paged-read.md)。
+[活动卡](https://github.com/axiomates/hyle/blob/d12f2204d23503256220e810385d6cb3e93027a8/docs/implementation/tasks/compute/inference-g01-native-paged-read.md)。

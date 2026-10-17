@@ -2,7 +2,7 @@
 
 [Summary](summary.json), [artifact identities](identity.json), and
 [raw captures, logs, source and recipes](raw-and-recipes.zip) preserve this
-[bounded investigation](../../../docs/implementation/tasks/compute/cuda-r4-context-causality.md).
+[bounded investigation](https://github.com/axiomates/hyle/blob/d12f2204d23503256220e810385d6cb3e93027a8/docs/implementation/tasks/compute/cuda-r4-context-causality.md).
 These are diagnostics; R4 product qualification remains `BLOCKED`, and P1 remains
 `INCONCLUSIVE` until a sampling repair passes its declared progress checks.
 

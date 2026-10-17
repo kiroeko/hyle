@@ -1,7 +1,7 @@
 # CPU 三项最终接缝与清退资格
 
 - 最终产品候选 `119137681ed03f58e3e193a97c969be4e45ccb34`；之后只有文档、状态、测试和证据。
-- [施工卡](../../../docs/implementation/tasks/compute/cpu-three-operator-route-closure.md)、
+- [施工卡](https://github.com/axiomates/hyle/blob/d12f2204d23503256220e810385d6cb3e93027a8/docs/implementation/tasks/compute/cpu-three-operator-route-closure.md)、
   [实际门及归档身份](receipt.json)、[完整日志/源码consumer/XML/同步身份/selector/LOC](qualification.zip)。
 - [F32 fused四格唯一P1](../../../evidence/performance/cpu-fused-sdpa-current/README.md)资格通过，
   Native全LOSS，已经源级撤回，不优化或重测。

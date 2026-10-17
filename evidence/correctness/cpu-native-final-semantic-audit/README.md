@@ -35,5 +35,5 @@ oracle采用既有独立RNE decoder/encoder与Double稳定公式，F32相对3e-6
 [diagnostic.zip](diagnostic.zip)，计数/hash见[receipt.json](receipt.json)。来源为固定Native源码与
 已关闭MN/TC/TM/AS/CP接线；未重新研究历史全部任务，未优化自研或放宽数值门。
 
-当前[有限裁决卡](../../../docs/implementation/tasks/compute/cpu-native-final-domain-verdict.md)将这些
+当前[有限裁决卡](https://github.com/axiomates/hyle/blob/d12f2204d23503256220e810385d6cb3e93027a8/docs/implementation/tasks/compute/cpu-native-final-domain-verdict.md)将这些
 未资格通用域纳入有限退场FIX；实施/回归尚未完成，不把诊断、文档或旧CLOSED算产品完成。

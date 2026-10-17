@@ -4,7 +4,7 @@ Container 给 C++23 用户提供 HYLE 的高频数据结构、borrowed text、ha
 先按语义选类型，再看 benchmark；如果标准库已经自然满足需求，直接使用标准库通常是正确答案。
 
 构建与三种交付方式见[交付与集成](distribution.md)，长期边界见
-[Container 架构](../architecture/container-design.md)。
+[Container 架构](../architecture/foundation-design.md)。
 
 ## 一分钟选择表
 
@@ -409,10 +409,6 @@ release”。`StringId{0}` 表示空字符串，同时也是非空 acquire 的�
 源码、静态库和动态库用户都 include 同一套 `<hyle/container/...>` 头并链接
 `hyle::container`。模板逻辑通常直接实例化在消费者 TU；compiled hash/container_text/interner 路径通过组件
 target 正确链接。不要直接 include vendor header 或链接私有 Highway/xxHash/simdutf target。
-
-Container 当前只面向 C++ 消费者，没有 C ABI/Native FFI。Java/C# 等 foreign runtime 不能把模板
-容器当作稳定 ABI；只有出现完整 create/call/error/destroy consumer 后才会设计窄 runtime type-erased
-边界。
 
 ## 排错清单
 

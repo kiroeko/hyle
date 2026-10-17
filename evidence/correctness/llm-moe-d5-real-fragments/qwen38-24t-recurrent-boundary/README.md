@@ -62,7 +62,7 @@ FlashInfer 固定版 Mamba helper 同类相消；hash TopK 虽有稳定 helper�
 当前实际连通门控后发现，这些旧结果不足以签完整 R05；ledger 退回 **0 RUN_PASS / 176 未完整资格**，
 原非 R05 region 收据作为 partial receipt 保留。没有删除已有能力或重跑所有通过项。
 
-[最小待决卡](../../../../docs/implementation/tasks/compute/llm-moe-d5-recurrent-gate-numeric-decision.md)
+[最小待决卡](https://github.com/axiomates/hyle/blob/d12f2204d23503256220e810385d6cb3e93027a8/docs/implementation/tasks/compute/llm-moe-d5-recurrent-gate-numeric-decision.md)
 建议保留普通稳定 Softplus 合同，单独资格化成熟模型 gate 的完整片段误差；未选择合同前停止扩张。
 已知绝对小误差不能直接当作整模型不合格，也不能没有完整状态验证就忽略。
 三交付、P1 和聚合验收仍未通过。统一脚本统计见 [loc.json](loc.json)：**58,117实现行 / 228文件**，不含测试。

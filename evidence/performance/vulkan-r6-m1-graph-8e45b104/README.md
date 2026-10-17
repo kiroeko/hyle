@@ -2,7 +2,7 @@
 
 产品候选 `8e45b10423686a0753aaa9d461c4ef3b117412c5`；Apple 测量快照
 `a41d43d531365a1fb8617d60113b37924e9a9864`。按
-[R6 性能合同](../../../docs/implementation/tasks/compute/vulkan-r6-performance-contract.md)，
+[R6 性能合同](https://github.com/axiomates/hyle/blob/d12f2204d23503256220e810385d6cb3e93027a8/docs/implementation/tasks/compute/vulkan-r6-performance-contract.md)，
 普通 typed Graph 冷编译完整 strict-F32 FFN；参考独立描述锁定 ggml shader 的四个 dispatch。
 两侧使用相同 HYLE native 运行槽、bind、checked submit/fence、生成结果 lease 与 owner 回收边界。
 

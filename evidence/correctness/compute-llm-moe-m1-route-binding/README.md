@@ -1,6 +1,6 @@
 # M1-R：冷模型条件与原生路线接缝验收
 
-本证据只签 [M1-R 任务卡](../../../docs/implementation/tasks/compute/llm-moe-m1-route-binding.md)
+本证据只签 [M1-R 任务卡](https://github.com/axiomates/hyle/blob/d12f2204d23503256220e810385d6cb3e93027a8/docs/implementation/tasks/compute/llm-moe-m1-route-binding.md)
 的 R1–R5/R5a/R5b。完整候选为 `c482ce1b33cefecdb949c8b0ec89f9309c3e86ac`，
 最后C++运行时变化为 `7016443b1bf895fc4300958e12099e89385de954`；夹具固定于`d4a4b389`，
 R5b只协调Apple构建期同目录资源复制。

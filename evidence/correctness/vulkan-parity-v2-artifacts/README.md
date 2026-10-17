@@ -1,6 +1,6 @@
 # Vulkan original artifact batch
 
-Owners/card: [audited artifact bindings](../../../docs/implementation/tasks/compute/vulkan-parity-v2-artifact-bindings.md).
+Owners/card: [audited artifact bindings](https://github.com/axiomates/hyle/blob/d12f2204d23503256220e810385d6cb3e93027a8/docs/implementation/tasks/compute/vulkan-parity-v2-artifact-bindings.md).
 Product candidate `9e00073bf`; qualification snapshots include only evidence/test
 changes. Windows RTX4070, NVIDIA617.14, pinned original IREE compiler/runtime
 `6ef606b6fa3e12bd2c12d36a07463069eb71185f`. DLLs are adjacent to the EXEs under

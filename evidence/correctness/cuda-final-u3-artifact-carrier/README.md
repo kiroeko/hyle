@@ -1,6 +1,6 @@
 # CUDA U3 N1 成熟权重准备接线批次
 
-当前任务：[原量化准备载体](../../../docs/implementation/tasks/compute/cuda-final-u3-artifact-carrier.md)。
+当前任务：[原量化准备载体](https://github.com/axiomates/hyle/blob/d12f2204d23503256220e810385d6cb3e93027a8/docs/implementation/tasks/compute/cuda-final-u3-artifact-carrier.md)。
 产品候选 `0cd39365339e75a2d0bdce15a8fa065a8f5408ba`；Windows canonical，RTX4070、
 MSVC19.50.35728、CUDA Toolkit13.3.73。原 carrier 是 LibTorch2.8.0+cu129 CUDA leaf＋
 原 locked LibTorch2.8.0 CPU host dispatch common；CPU common DLL 不替换，GPU 工作没有 CPU fallback。

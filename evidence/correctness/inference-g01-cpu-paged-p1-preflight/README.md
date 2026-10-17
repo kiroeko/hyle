@@ -6,4 +6,4 @@ FAIL/PASS。原无HYLE补丁的ffa4 CPU plan/compute/pool独立AVX2 DLL；实际
 原8e-3不变。静态SDK直接消费，不重编产品；冷alternate cache copy/额外存储明确计账。
 16AA及正式原instrument验收正在独立immutable源码进行，本预检不签性能或CLOSED。
 [消费范围](../../../bench/inference_resident_sdpa/cpu_paged_p1/consumer-provenance.md)保只读快照
-与G03/G06 producer/growth边界；[活动卡](../../../docs/implementation/tasks/compute/inference-g01-cpu-paged-resident.md)。
+与G03/G06 producer/growth边界；[活动卡](https://github.com/axiomates/hyle/blob/d12f2204d23503256220e810385d6cb3e93027a8/docs/implementation/tasks/compute/inference-g01-cpu-paged-resident.md)。

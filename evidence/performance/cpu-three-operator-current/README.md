@@ -2,7 +2,7 @@
 
 2026-10-07，Windows canonical；产品 baseline `d283aae73b5547fdd2833ef1bf43ab3d00c729ec`，
 benchmark candidate `db84a6faf21646c8b17b5bed137efd1bf45cf5bd`。产品实现与最近关闭候选 c740 相同。
-[冻结任务](../../../docs/implementation/tasks/compute/cpu-three-operator-recomparison.md)，
+[冻结任务](https://github.com/axiomates/hyle/blob/d12f2204d23503256220e810385d6cb3e93027a8/docs/implementation/tasks/compute/cpu-three-operator-recomparison.md)，
 [逐格结果及四个 CI](receipt.json)，完整 manifest/observations/controls/validators/原始前置及实际 exe 在
 [qualified.zip](qualified.zip)。SDK、全部 DLL 与 loaded `.text` 身份在冻结 benchmark 的 preflight/SDK 记录。
 

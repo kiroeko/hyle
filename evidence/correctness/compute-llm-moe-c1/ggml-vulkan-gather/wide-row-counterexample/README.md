@@ -11,5 +11,5 @@ Direct读取一个2048宽BF16行时，元素1024起漏写；首次差异为`0000
 
 归档也保留此前外部consumer遗漏既有MSVC C4324对齐padding豁免的编译失败；该编译失败与
 本产品缺陷分别记录。F2修复范围及剩余预算见
-[当前owner卡](../../../../../docs/implementation/tasks/compute/llm-moe-c1-ggml-vulkan-region.md)。
+[当前owner卡](https://github.com/axiomates/hyle/blob/d12f2204d23503256220e810385d6cb3e93027a8/docs/implementation/tasks/compute/llm-moe-c1-ggml-vulkan-region.md)。
 本记录不签修复后结果、完整C1、整模型或性能PASS。

@@ -1,6 +1,6 @@
 # M1-C / 原生接入验收
 
-本目录保存[M1-C资源卡](../../../docs/implementation/tasks/compute/llm-moe-m1-cuda-admission.md)
+本目录保存[M1-C资源卡](https://github.com/axiomates/hyle/blob/d12f2204d23503256220e810385d6cb3e93027a8/docs/implementation/tasks/compute/llm-moe-m1-cuda-admission.md)
 的有界上游入口资格、实施检查点及最终验收。M1-C与GQA语义卡已CLOSED，产品候选为
 `43732241adf81ad2bad9f64594e72d752b900b37`。下文历史检查点保留当时状态，最终结论见本页
 “最终原生、插桩与清理”及施工卡terminal record；新增64域×四路线覆盖格仍为0。

@@ -1,6 +1,6 @@
 # Benchmark build-input selector 修正
 
-归属[独立工具卡](../../../docs/implementation/tasks/build/validation-benchmark-build-inputs-v1.md)。
+归属[独立工具卡](https://github.com/axiomates/hyle/blob/d12f2204d23503256220e810385d6cb3e93027a8/docs/implementation/tasks/build/validation-benchmark-build-inputs-v1.md)。
 [52 项工具测试](tool-tests.log)通过；新增覆盖 factor benchmark CMake 与嵌套 helper、混合产品 seam、
 全局 benchmark root 以及未知 owner。原有 OS/native、P1 拒绝及证据复用回归一并通过。
 

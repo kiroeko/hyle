@@ -1,6 +1,6 @@
 # M2-B1 Vulkan：原版张量映射开发检查点
 
-按[当前任务卡](../../../docs/implementation/tasks/compute/llm-moe-m2-b1-vulkan.md)扩展原版
+按[当前任务卡](https://github.com/axiomates/hyle/blob/d12f2204d23503256220e810385d6cb3e93027a8/docs/implementation/tasks/compute/llm-moe-m2-b1-vulkan.md)扩展原版
 ggml Vulkan region，已接 dense 非空 F32 Copy/Concat、高rank双向广播、既有norm/unary布局域、
 任意选轴Sum/Mean及公开中间结果的producer保护。只增加原版调用和资源适配，没有新增数学kernel。
 

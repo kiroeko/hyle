@@ -47,7 +47,7 @@ RMSNorm 与 Copy 的 whole-domain 接缝可按现有已资格化实现保留，�
 
 ## 有限后续
 
-1. [AS 接线卡](../../../docs/implementation/tasks/compute/cpu-aten-scatter-add-admission.md)：
+1. [AS 接线卡](https://github.com/axiomates/hyle/blob/d12f2204d23503256220e810385d6cb3e93027a8/docs/implementation/tasks/compute/cpu-aten-scatter-add-admission.md)：
    原 ATen ScatterAdd，先产品数值/布局/alias/失败与两平台普通三交付，仍冻结自研比较。
 2. 之后固定同合同普通域的有限自研去留批；严格资源/整域边界单列，不以 fallback 优先级或
    本次 prepare 成功签 WIN，不删 SIMD 基础。冷诊断没有证明所有成熟库的潜在能力缺失。

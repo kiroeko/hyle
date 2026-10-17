@@ -1,6 +1,6 @@
 # Runtime staging collector: bounded tool result
 
-Task: [finite build-tool repair](../../../docs/implementation/tasks/build/runtime-staging-diamond-walk-v1.md).
+Task: [finite build-tool repair](https://github.com/axiomates/hyle/blob/d12f2204d23503256220e810385d6cb3e93027a8/docs/implementation/tasks/build/runtime-staging-diamond-walk-v1.md).
 This is dependency-collection correctness/P0 evidence, not an operator or P1 verdict.
 
 The ten-layer diamond has one reachable runtime asset. The original walker visited

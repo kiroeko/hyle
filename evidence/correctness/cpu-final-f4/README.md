@@ -1,6 +1,6 @@
 # CPU final F4 named-provider preflight
 
-Task: [F4](../../../docs/implementation/tasks/compute/cpu-final-f4-best-of.md).
+Task: [F4](https://github.com/axiomates/hyle/blob/d12f2204d23503256220e810385d6cb3e93027a8/docs/implementation/tasks/compute/cpu-final-f4-best-of.md).
 This page contains capability/numerical preflight, not a performance WIN or
 self-retirement verdict.
 

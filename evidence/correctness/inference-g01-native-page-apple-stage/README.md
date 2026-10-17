@@ -1,7 +1,7 @@
 # G01 Apple 原生 page16 数学阶段证据
 
 产品草稿 `afd2d8df7`，五 owner 仍 AUDITED，不签完整 G01/G02 或其它 G 项。
-活动范围见[原生精确页卡](../../../docs/implementation/tasks/compute/inference-g01-native-paged-read.md)，
+活动范围见[原生精确页卡](https://github.com/axiomates/hyle/blob/d12f2204d23503256220e810385d6cb3e93027a8/docs/implementation/tasks/compute/inference-g01-native-paged-read.md)，
 普通消费者见[公开接入](../../../docs/user/batch-attention.md)。
 
 actual MacBook Air Mac16,12/M4/arm64/macOS27.0.1 26A434/AppleClang21.0.0，只有该 Air

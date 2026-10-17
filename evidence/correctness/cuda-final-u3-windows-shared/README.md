@@ -11,7 +11,7 @@ DLL邻exe，SDK运行PATH仅为系统目录。新交付检查Direct **166项**�
 Source普通入口／纠正reference／本地QwenGraph另有实际smoke，不从link成功推断运行通过。
 
 首次source shared邻置COPY_FILE报output Permission denied：同目录并行writer冲突。
-独立[tool task](../../../docs/implementation/tasks/build/runtime-staging-directory-writer.md)
+独立[tool task](https://github.com/axiomates/hyle/blob/d12f2204d23503256220e810385d6cb3e93027a8/docs/implementation/tasks/build/runtime-staging-directory-writer.md)
 复用原Apple同形目录锁后，实际j2构建从保留对象续跑通过；source与installed helper的
 初次／DLL-only更新／无变化、双consumer／alias／conditional／empty合同亦通过。
 原失败日志没有覆盖或改成PASS。

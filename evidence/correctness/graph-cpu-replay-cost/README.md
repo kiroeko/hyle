@@ -1,6 +1,6 @@
 # Graph prepared-region 成本修正验收
 
-本目录绑定 [定向任务卡](../../../docs/implementation/tasks/compute/cpu-graph-replay-cost-audit.md)，
+本目录绑定 [定向任务卡](https://github.com/axiomates/hyle/blob/d12f2204d23503256220e810385d6cb3e93027a8/docs/implementation/tasks/compute/cpu-graph-replay-cost-audit.md)，
 产品候选 `1a3a8d0e40a2a17250119369331c712718a4d880`。后续合同/状态提交没有修改产品投影。
 新增回归证明 resource validation 留在冷阶段，变化输入正确；错资源、原地址换 Context Queue、
 关闭 Context 仍拒绝。完整 Graph/Executable suite 继续覆盖 async、接纳前缀失败和生命周期。

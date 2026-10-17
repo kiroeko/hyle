@@ -1,6 +1,6 @@
 # R4 失败执行槽退役：产品验证
 
-Owner `compute` / `graph` 的[当前施工卡](../../../docs/implementation/tasks/compute/r4-failed-invocation-retirement.md)
+Owner `compute` / `graph` 的[当前施工卡](https://github.com/axiomates/hyle/blob/d12f2204d23503256220e810385d6cb3e93027a8/docs/implementation/tasks/compute/r4-failed-invocation-retirement.md)
 现为 CLOSED，产品冻结于 `a116280b`。本目录覆盖该有限修复的跨平台验证，不签完整 CUDA 路线。
 
 ## 已运行

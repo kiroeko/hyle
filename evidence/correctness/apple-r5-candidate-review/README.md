@@ -2,7 +2,7 @@
 
 Reviewed immutable candidate `1636365bbe47779de24e84d7c7d1ed8088fe1af2`, tree
 `8e5c24179c53b203ba1509a8d5dff0b805548052`, after implementation freeze. This is
-the separate review pass required by [A5/A6](../../../docs/implementation/tasks/compute/apple-v1-four-route-foundation.md),
+the separate review pass required by [A5/A6](https://github.com/axiomates/hyle/blob/d12f2204d23503256220e810385d6cb3e93027a8/docs/implementation/tasks/compute/apple-v1-four-route-foundation.md),
 performed from failure, consumer and comparison boundaries. No additional agent,
 product edit, timing run or build was used for this review.
 

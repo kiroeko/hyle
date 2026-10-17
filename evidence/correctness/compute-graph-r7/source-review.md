@@ -35,7 +35,7 @@
   [CPU历史fixture](https://github.com/axiomates/hyle/blob/e8fec259ec6e687acce81affd09deec39c0e302b/bench/graph_route_cpu/region_p1_bench.cc)
   （随CPU Native MatMul退役已从当前构建移除）、
   CUDA 历史 fixture `bench/compute_route_cuda/route_p1_bench.cc`（已由
-  [M3-D4](../../../docs/implementation/tasks/compute/llm-moe-d4-self-operator-retirement.md)
+  [M3-D4](https://github.com/axiomates/hyle/blob/d12f2204d23503256220e810385d6cb3e93027a8/docs/implementation/tasks/compute/llm-moe-d4-self-operator-retirement.md)
   随专用 Marlin 路线退场）、
   [Apple fixture](../../../bench/compute_route_apple/route_p1_bench.cc)、
   [Vulkan fixture](../../../bench/compute_route_vulkan/route_p1_bench.cc)。

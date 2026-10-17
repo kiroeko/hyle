@@ -76,8 +76,8 @@ confirmed that both product-identity symbols were absent before reporting PASS.
 | [installed shared C++ CTest](cpp-installed-shared-windows-c0b9a84.log) | 1/1 PASS | `65a6c153849671979e663cb50f8fb51ea363fb69aa19ef9f4ec98df97d696a69` |
 | [installed static C++ CTest](cpp-installed-static-windows-c0b9a84.log) | 1/1 PASS | `3763381a2f15b52c823ddb003433ebe9708612a7106fad42150fc9e5c426752f` |
 | [complete-source C++ CTest](cpp-source-windows-c0b9a84.log) | 1/1 PASS | `dcfc450ccd10a36af56a73aefd2be25df6d812b0927e2b4470359244fa3bf47b` |
-| [managed FFI structured evidence](../../docs/implementation/tasks/core/core-rebuild.md) | Java/.NET positive + negative 4/4 PASS | `0ed17aed817b1f39fcdee7bca0eb83974acb2ed9393050156bbce50eac13de4f` |
-| [FFI export transcript](../../docs/implementation/tasks/core/core-rebuild.md) | product 3 symbols; each incompatible fixture only bootstrap | `f4b0cf1ba2dccb8bb2857ddee7eb9777e2c781b6946fb09737876057f6769e4b` |
+| [managed FFI structured evidence](https://github.com/axiomates/hyle/blob/d12f2204d23503256220e810385d6cb3e93027a8/docs/implementation/tasks/core/core-rebuild.md) | Java/.NET positive + negative 4/4 PASS | `0ed17aed817b1f39fcdee7bca0eb83974acb2ed9393050156bbce50eac13de4f` |
+| [FFI export transcript](https://github.com/axiomates/hyle/blob/d12f2204d23503256220e810385d6cb3e93027a8/docs/implementation/tasks/core/core-rebuild.md) | product 3 symbols; each incompatible fixture only bootstrap | `f4b0cf1ba2dccb8bb2857ddee7eb9777e2c781b6946fb09737876057f6769e4b` |
 
 GitHub Actions was deliberately not invoked: every implementation/evidence
 commit in this round used `[skip ci]` because the monthly quota was nearly

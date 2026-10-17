@@ -1,7 +1,7 @@
 # CPU ATen：稳定数值程序接线资格
 
 MN1–4 **CLOSED**，不可变产品候选 `0763fd3e3163d16eb0b43e684f5881f8314bc1e9`。
-[当前卡](../../../docs/implementation/tasks/compute/cpu-aten-numeric-admission.md)；Windows产品真相，
+[当前卡](https://github.com/axiomates/hyle/blob/d12f2204d23503256220e810385d6cb3e93027a8/docs/implementation/tasks/compute/cpu-aten-numeric-admission.md)；Windows产品真相，
 验证副本单向同步。已锁LibTorch2.8.0 CPU SDK限定Windows/Linux x86_64；本批不签其它CPU平台。
 
 ## 实现与语义

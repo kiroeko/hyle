@@ -1,7 +1,7 @@
 # Foundation A Vulkan：首批原生与混合 source 资格
 
-活动卡：[Graph 对称性](../../../docs/implementation/tasks/graph/foundation-a-route-symmetry.md)、
-[Vulkan 冷控制接缝](../../../docs/implementation/tasks/compute/foundation-a-vulkan-control-seam.md)。
+活动卡：[Graph 对称性](https://github.com/axiomates/hyle/blob/d12f2204d23503256220e810385d6cb3e93027a8/docs/implementation/tasks/graph/foundation-a-route-symmetry.md)、
+[Vulkan 冷控制接缝](https://github.com/axiomates/hyle/blob/d12f2204d23503256220e810385d6cb3e93027a8/docs/implementation/tasks/compute/foundation-a-vulkan-control-seam.md)。
 本目录只签 Windows source 初批旅程；Apple、installed static/shared、独立头、迁址、
 sanitizer、effect 端口和 red team 尚未由本证据裁决。
 

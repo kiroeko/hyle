@@ -1,6 +1,6 @@
 # CUDA R1 当前官方 DSpark：第一批真实链路
 
-当前范围：[R1卡](../../../docs/implementation/tasks/compute/cuda-final-u3-model-regions.md)。
+当前范围：[R1卡](https://github.com/axiomates/hyle/blob/d12f2204d23503256220e810385d6cb3e93027a8/docs/implementation/tasks/compute/cuda-final-u3-model-regions.md)。
 Windows canonical，WSL仅前向验证；原输入来自当前Pro0813／Flash0731 common program，
 没有以旧preview、单次MatMul或CPU PASS代签。
 

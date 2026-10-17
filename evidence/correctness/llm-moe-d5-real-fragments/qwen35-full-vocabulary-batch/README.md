@@ -20,7 +20,7 @@ Provider math changed.
 This is a batch wiring checkpoint. Full owner suites, the complete Windows
 selector, external source/static/shared delivery and applicable P1 were
 deliberately deferred until a complete profile consumer is stable, as the
-[D5 owner card](../../../../docs/implementation/tasks/compute/llm-moe-d5-real-fragment-acceptance.md)
+[D5 owner card](https://github.com/axiomates/hyle/blob/d12f2204d23503256220e810385d6cb3e93027a8/docs/implementation/tasks/compute/llm-moe-d5-real-fragment-acceptance.md)
 requires. They are not PASS. Global out-of-range Gather rejection and exact
 quantized artifact vocabulary formats remain unqualified. No profile cell
 changes status: 0/176 `RUN_PASS`, 176/176 `VALIDATION_NOT_RUN`. The canonical

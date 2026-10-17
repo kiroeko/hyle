@@ -1,6 +1,6 @@
 # CPU final F3: Mac carrier partial qualification
 
-Current task: [F3 platform carriers](../../../docs/implementation/tasks/compute/cpu-final-f3-platform-carriers.md).
+Current task: [F3 platform carriers](https://github.com/axiomates/hyle/blob/d12f2204d23503256220e810385d6cb3e93027a8/docs/implementation/tasks/compute/cpu-final-f3-platform-carriers.md).
 This is not a terminal record or the final CPU coverage certificate.
 
 The product comes from the immutable Windows archive of
@@ -172,7 +172,7 @@ remains unchanged; no further model/quantization/runtime probe was run.
 
 ## Closure and cleanup
 
-F3 is closed at the [current carrier record](../../../docs/implementation/tasks/compute/cpu-final-f3-platform-carriers.md)
+F3 is closed at the [current carrier record](https://github.com/axiomates/hyle/blob/d12f2204d23503256220e810385d6cb3e93027a8/docs/implementation/tasks/compute/cpu-final-f3-platform-carriers.md)
 with immutable product snapshot `560eb1d2332bb69ee5148e899b000fae85d80074`.
 This closes the mature-carrier package, not the complete CPU goal or a global
 best-of claim. F1 mixed/precompile and F4/F5/F6 remain explicit work.

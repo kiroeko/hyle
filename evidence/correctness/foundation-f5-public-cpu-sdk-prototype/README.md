@@ -20,5 +20,5 @@ j4/j2/j1，consumer1，与其他机器重型串行。
 
 当前只是public CPU SDK前置：实际Vulkan两条消费、新detail/split头/negative symbols、
 immutable candidate、完整18格、san/P0/guide/红队未由此签，完整SDK格仍NOT_RUN。
-有限最终清单见[最终计划](../../../docs/implementation/tasks/compute/foundation-f5-final-validation-plan.md)，
+有限最终清单见[最终计划](https://github.com/axiomates/hyle/blob/d12f2204d23503256220e810385d6cb3e93027a8/docs/implementation/tasks/compute/foundation-f5-final-validation-plan.md)，
 变化选择见[validation-plan.json](validation-plan.json)。goal保持active，完整原目标不缩水。

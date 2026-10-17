@@ -2,8 +2,8 @@
 
 产品候选 `65a02982ac108d57b13769029f56a6a6903895be`；Windows 为 canonical，Linux 为单向同步的
 Ubuntu 24.04 / GCC 14.2 验证副本。范围分别由
-[oneDNN 卡](../../../docs/implementation/tasks/compute/cpu-onednn-small-matmul-admission.md)与
-[ggml 卡](../../../docs/implementation/tasks/compute/cpu-ggml-gated-numeric-admission.md)持有。
+[oneDNN 卡](https://github.com/axiomates/hyle/blob/d12f2204d23503256220e810385d6cb3e93027a8/docs/implementation/tasks/compute/cpu-onednn-small-matmul-admission.md)与
+[ggml 卡](https://github.com/axiomates/hyle/blob/d12f2204d23503256220e810385d6cb3e93027a8/docs/implementation/tasks/compute/cpu-ggml-gated-numeric-admission.md)持有。
 本批不裁决 Native 胜负，不宣布 CPU 或所有模型覆盖完成。
 
 ## 实现与普通消费

@@ -14,4 +14,4 @@ source FAIL及检查Result后定位FAIL均保，修512 fixture后PASS，未改�
 source/static/shared新detail seam及现有真实native hybrid消费者尚待交付验证。此共同
 退休承载不产生whole-arena读取许可，native布局/generation与实际page-reading数学仍由
 G01/G02 native owner补齐；原pool查重最坏O(guards²)保留，不签G06/整个G02完成。
-[活动卡](../../../docs/implementation/tasks/graph/inference-g02-multi-queue-batch.md)。
+[活动卡](https://github.com/axiomates/hyle/blob/d12f2204d23503256220e810385d6cb3e93027a8/docs/implementation/tasks/graph/inference-g02-multi-queue-batch.md)。

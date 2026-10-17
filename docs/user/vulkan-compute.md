@@ -3,11 +3,7 @@
 Vulkan 路线使用原生 buffer/device memory、pipeline、descriptor、command buffer 和 fence。
 HYLE 在准备期绑定 ggml region、IREE 原生程序或 HYLE shader，Graph 冷期规划边界资源；原生片段
 复用录制命令，成熟 Provider 保留自己的图/程序、编码和内部资源管理。
-普通用户只选路线，不排序 Provider 或提供 timing profile。当前共同模型目录的Windows RTX4070
-资格覆盖104 GGUF身份、559数值端口、80参数角色、34非GGUF packed、45 plain及八模型族的
-必需片段/状态；详见[当前覆盖](model-fragment-coverage.md#vulkan-当前共同目录资格)。
-Windows和Air M4/MoltenVK的source/static/shared已验证普通Direct/Graph代表片段、重放和失败边界；
-这不将Windows完整矩阵外推为全部设备资格或整模型推理。默认为合格成熟程序，未测条件不称SOTA。
+普通用户只选择后端，具体实现按实际 operation、dtype、shape 与设备能力在准备期绑定。
 
 可选[模型与阶段信息](compute.md#可选模型与阶段信息)可随
 `vulkan::prepare(context, workload, operation, inputs...)` 传入；span 形式则使用最后一个参数
@@ -15,8 +11,6 @@ Windows和Air M4/MoltenVK的source/static/shared已验证普通Direct/Graph代�
 `graph::vulkan::CompileOptions::workload`，原生 `Program::workload()` 保留绑定身份。
 它与既有原生 `Environment` 一起供冷准备匹配规则；无注解仍使用合法 baseline。
 模型名不放宽数值/资源检查，也不代表新增专用优化；变更后重新准备，submit 不查询这些字段。
-
-固定模型画像的当前片段支持、拒绝与数值限制统一见[四路线覆盖表](model-fragment-coverage.md)。
 
 当前驻留SDPA有限高效档为同F32/F16、BSHD、同D64/128/256，GQA/MQA头关系沿公共
 描述检查。直接驻留档要求depth连续、正row-major padding、有效外层byte pitch为16的
@@ -26,83 +20,31 @@ Windows和Air M4/MoltenVK的source/static/shared已验证普通Direct/Graph代�
 概率的精度；F32 accumulator本身不足以防止原native half内部缩窄。必要query转换、
 causal `Q×K` mask与float shared scratch仍是真成本，没有capture或全dtype/shape吞吐
 宣称。其他既有SDPA档保其原承载/费用，不因此签arbitrary page-table或整G01完成。
-当前交付资格与后续风险/性能门见
-[驻留SDPA实施记录](../implementation/tasks/compute/inference-g01-resident-sdpa.md)与
-[端口验证记录](../implementation/tasks/compute/inference-g01-vulkan-resident-ports.md)；当前端口
-修正的Air source数学/复制次数已实跑，其他交付、风险与性能需要按实际改动验证。
-
 ## 构建与运行条件
 
-`hyle/compute/vulkan_batch.h` 的 `prepare_ragged_batch(context, layout, operation)` 冷消费
-owned host `BatchLayoutVersion` 和相同容量的 `RaggedAttention`。三个输入是 packed NHD
-容量 Q/K/V，单输出是实际 active packed Q rows。有限 F16 D64/128/256域借原View/
-SDPA/Concat/Program；qualified request slices保原KV root和对齐origin，不按每Q/head
-展开历史。必要query转换、输出拼接与native私有费用仍存在。
-
-```cpp
-auto program = hyle::compute::vulkan::prepare_ragged_batch(
-    context, layout, hyle::compute::RaggedAttention{capacity, scale, causal}).value();
-auto slot = program.create_invocation().value();
-HYLE_RETURN_IF_ERROR(slot.bind(std::array{query_tensor, key_tensor, value_tensor}));
-auto done = slot.submit().value();
-auto result = done.wait().value();
-result = {}; done = {};
-HYLE_RETURN_IF_ERROR(hyle::compute::vulkan::update_ragged_batch(slot, next_layout));
-HYLE_RETURN_IF_ERROR(slot.bind(std::array{query_tensor, key_tensor, value_tensor}));
-```
-
-Q0 request跳过，全空输出为空；非空Q需KV，causal需KV≥Q。改变Q拓扑显式重新准备。
-同schema/完整Q indptr可显式更新KV长度和packed起点，保原Program/graph/storage；
-变化的标量使原录制失效并重新编码，不表示capture。更新前检查全部native region，非法布局
-保原绑定；成功后旧input imports释放，必须重新bind。旧结果、在途/失败工作或关闭Context
-拒绝更新；接受后的更新错误使原slot失败，不能继续运行半更新状态。
-新入口的[实际Air source验证](../../evidence/correctness/inference-g06-native-ragged-runtime-source/receipt.json)
-覆盖单/多请求Q1、混合Q、plain/Q8及有限几何。当前适用host sanitizer、迁址static/shared与
-独立头已通过，[G06终审](../implementation/tasks/compute/inference-g06-final-closure.md)给出P0成本与资格；
-原生private费用仍UNKNOWN，各路线capture与计时资格保持各自边界。
-caller需要取得KV writer时也须释放自己的旧native views/reader。
-初始固定布局候选的实际Air source/static/shared、宿主风险、Windows定向编译和同合同
-多请求性能非劣門均已通过，见[有限终审](../implementation/tasks/compute/inference-g01-vulkan-ragged-terminal.md)。
-原tagged多flash/Concat图仅在实际record-safe成立时复用固定记录；绑定origin/owner变化
-仍会失效，不将其他graph自动标为固定重放。
-
-源码构建需要 C++23、Python 3、glslangValidator/glslang，以及 Vulkan SDK 提供的 glslc、
-开发链接库和 SPIRV-Headers CMake package；可通过 `VULKAN_SDK` 指定 SDK 根目录。
-Vulkan-Headers 与完整 ggml Vulkan 源码从中央锁取得；窄接入补丁只应用到构建目录中的副本。
-静态 SDK 的导出声明不再要求原厂 `Vulkan` 开发 package；私有 runtime 通过动态 loader 取得函数。
-当前接入原版递归片段、FP8/FP4及21种公共GGUF编码的实际端口；ggml Vulkan承载已资格
-原region，三种IQ1扩展与具名非GGUF程序由IREE承载，具体operation/dtype/shape能力仍须匹配。
-当前[收据和交付范围](../implementation/tasks/compute/vulkan-parity-v4-delivery.md)不复用旧M3的十格式上限。
-IREE C runtime 与锁定的参数化程序由同一个 factor 交付；使用二进制 SDK 不需要 Python、MLIR
-或运行编译器。源码构建中的 Python 只用于核对和准备锁定资源。
-二进制 SDK 已嵌入 SPIR-V，不需要 glslang/glslc 或运行时 shader 文件。用户系统必须提供可用的
-Vulkan loader/driver；HYLE 不下载驱动，也不把设备枚举当作计算成功。
-
 ```sh
-cmake -S . -B build-vulkan -G Ninja \
-  -DHYLE_COMPONENTS="compute;graph" \
-  -DHYLE_COMPUTE_ROUTES=vulkan \
-  -DHYLE_BUILD_TESTS=OFF -DHYLE_STATIC=ON -DHYLE_INSTALL=ON \
-  -DCMAKE_BUILD_TYPE=Release
-cmake --build build-vulkan --parallel 2
-cmake --install build-vulkan --prefix /your/sdk
+python scripts/init.py --name vulkan --components compute,graph --backends vulkan
+python scripts/build.py --install <安装目录>
 ```
 
-源码嵌入使用相同选项、`add_subdirectory` 和 `hyle::compute` / `hyle::graph`；安装 SDK 使用
-`find_package(Hyle 0.1.0 EXACT REQUIRED COMPONENTS compute graph)`。`HYLE_STATIC=OFF` 生成
-shared SDK，使用独立 build/prefix。Windows 消费者调用 `hyle_stage_runtime(app)`
-把 HYLE 及需要的 C++ runtime DLL 放在 EXE 旁。Vulkan loader 使用系统提供的 `vulkan-1.dll`；
-Linux 默认 `libvulkan.so.1`，macOS 默认 `libvulkan.1.dylib`。
+系统工具和 Vulkan SDK 的准备见[环境说明](../developer/setup/README.md)。
+初始化脚本会发现 shader 工具；缺 glslang 时按锁定版本准备 host 工具。后端已选择却缺必需条件时
+明确失败。源码和 SDK 使用相同公开 target，集成见[交付指南](distribution.md)。
 
-macOS 使用已安装的 loader/MoltenVK。若 loader 不在动态库搜索路径，可在 ContextOptions 的
-`loader_path` 指定其绝对路径；驱动发现仍遵守该 loader 的配置。验证副本使用进程级
-`DYLD_LIBRARY_PATH=/opt/homebrew/opt/vulkan-loader/lib`，不改全局系统配置。
+二进制 SDK 内带编译好的 SPIR-V 与匹配原生 runtime，不要求消费者安装 Python、MLIR、glslang/glslc
+或运行 shader 编译器。运行机器必须提供 loader、driver 和适用硬件；Windows loader 为
+`vulkan-1.dll`，Linux 为 `libvulkan.so.1`，macOS 为 `libvulkan.1.dylib`。
+macOS 可用已安装的 loader/MoltenVK。非标准位置可通过 `ContextOptions::loader_path` 给出绝对路径；
+驱动发现仍遵守该 loader 的配置。
 
-基线需要 Vulkan 1.2、所用 shader 的 workgroup/内存限制；既有 F32 布局转换和 ggml 门控片段要求 512-lane
-workgroup。可重新绑定输入的普通 Invocation 还需要设备真实支持
-`descriptorBindingStorageBufferUpdateAfterBind`。缺条件明确报错；固定 caller buffers 的
-Recorder 不强制采用可重绑定 descriptor。默认拒绝软件 device，不做 CPU 模型 fallback。
-未选择 `vulkan` 不探测 SDK、编译 shader 或获取路线依赖；已选择则缺构建条件明确失败。
+基线要求 Vulkan 1.2，并满足实际 shader 的 workgroup/shared-memory/storage-buffer 限制。
+既有 F32 布局转换和 ggml 门控片段需要 512-lane workgroup。可重绑定的普通 Invocation 还要求
+`descriptorBindingStorageBufferUpdateAfterBind`；固定 caller buffers 的 Recorder 无此项要求。
+缺能力时明确报错，默认拒绝软件 device，不隐式转 CPU 执行。
+
+不等长/分页 KV 的准备、更新和结果释放统一见[批次 attention](batch-attention.md)。
+`prepare_ragged_batch()` 绑定 host-owned 布局；改变 Q 拓扑需重新准备，更新 KV 后重新绑定输入。
+变化标量会让原录制失效并重新编码，不表示 capture；在途、失败或旧结果未释放的槽不能更新。
 
 ## 普通 Direct Compute
 
@@ -141,7 +83,6 @@ Recorder由调用者管理固定输出缓冲的重写时机；保留旧结果时
 当前 typed 域包括：
 
 - 二维 F32 MatMul（F32 accumulation），activation dense，RHS dense 或转置的 dense view；
-  MatMul 保持已有设备/shape 性能资格。
 - 二维 GGUF packed weight MatMul：`<hyle/compute/low_precision.h>` 的
   `gguf_weight_description(type, logical_type, k, n)` 表达公共21种GGUF编码；
   原ggml MatMul域包括Q4_0/Q4_1/Q2_K、IQ2/IQ1_S/IQ1_M等实际格式，
@@ -192,14 +133,10 @@ F16结果在同一region舍入；BF16结果经同GPU的IREE转换，在每个公
 非末轴使用原版permute/cont变为行矩阵再恢复；带mask且scale不为1时先用原版Scale，
 保留公开F32乘法中间舍入，再调用原版Softmax。额外物化和dispatch计入实际成本。
 Graph发布的中间值会保护其实际producer storage；两个Invocation独立持有运行状态。
-此项是[M2-B1成熟接入](../implementation/tasks/compute/llm-moe-m2-b1-vulkan.md)的首批域，
-上述实现记录中的运行结果仅覆盖实际受测组合；半精度、stride、empty、索引、掩码及其他
-平台、交付和性能范围需要分别验证。
 
 其它已接张量域包含使用 U32 storage 和固定 specialization 的原生 SPIR-V，128-lane workgroup；
 不要求可选的 shaderFloat16/Int8/Int16/Int64。每个输出 word 单 writer，半精度和 Bool 尾块
-没有并发位覆盖。必要转换、结果/scratch、pipeline 和 descriptor 有实际成本；性能和完整
-三交付资格随 C1 验收，不能继承旧 F32 FFN 结论。其它域明确拒绝，普通 prepare 无 Graph 依赖。
+没有并发位覆盖。必要转换、结果/scratch、pipeline 和 descriptor 有实际成本。其它域明确拒绝，普通 prepare 无 Graph 依赖。
 
 `allocate` 为逻辑 byte span 向上补齐到四字节，并为 empty tensor 保留至少四字节 native
 容量；`upload/download` 的 span 仍必须恰好等于 `description.required_bytes()`，只传逻辑字节。
@@ -220,11 +157,6 @@ shaderFloat16/storageBuffer16BitAccess，Scan 要求 shaderInt64。FP8 准备期
 `min(rows*ceil(columns/64),65535)`，Y/Z=1。合并 F32 临时存储为
 `align64(4*M*K)+align64(4*N*K)`，输出为4*M*N，均须落在 storage buffer range 与32位索引域。
 超出域在准备期拒绝；执行不下载 payload 到 CPU 计算或重新选路。
-既有小形状的普通 Direct/Graph、两个槽和混合片段已有 Windows/Air 正确性与三交付证据；
-当前真实模型宽度、官方FP4/FP8主干/DSpark、Q8/BF16 sidecar与必要MTP在Windows两入口已资格；
-source/static/shared代表消费者在Windows/Air通过。旧D5拒绝和数值FAIL是历史证据，
-当前结果见[共同目录资格](model-fragment-coverage.md#vulkan-当前共同目录资格)。
-本轮性能按用户接受的源等价/成熟默认/P0收口；原placement A/A未资格、正式P1 INCONCLUSIVE保留，不称WIN。
 
 LayerNorm 在设备支持512线程、至少2KiB shared memory、行数不超过X维工作组上限、
 且F32暂存不超过 storage buffer range 的非空域，准备期绑定原版 ggml GroupNorm 的中心化
@@ -236,8 +168,7 @@ F32、用不复制数据的 shape 别名展开行，scale/bias独立转换，aff
 设备/容量不适用上述成熟路径时，LayerNorm沿已支持域使用原生实现；原生归一化为一次
 dispatch和固定shared memory，无额外device scratch。RMSNorm两遍读取输入，LayerNorm三遍
 并使用中心化方差；半精度奇数宽度时一个workgroup处理相邻两行，避免跨组写同一word。
-空输出不发起GPU计算。LayerNorm已通过Windows/Air实际source/static/shared消费及两台Mac
-的适用正确性；完整成本性能优选仍待C1验收。
+空输出不发起 GPU 计算。
 例如 `vk::prepare(context, c::RmsNorm{}, input_description, scale_tensor)` 捕获 scale，随后只绑定输入。
 
 正尺寸 dense F32、rank1–4 的 RMSNorm（F32 累加，可选同类型 scale）和 SiLU gate
@@ -252,9 +183,7 @@ scalar 使用单元素原厂存储。Log/Sqrt、稳定激活的数值边界按�
 执行均计入成本。published 和跨片段使用的结果仍可独立读取。
 准备期无法证明端口起点四字节对齐时，固定加入现有 Copy 适配；这包含描述相同但 View
 起点可能改变的动态输入。已知对齐常量和计算结果直接导入，适配内存与复制属于真实成本。
-空域、设备限制之外及 Min/Max 等未绑定域继续使用已有原生实现。bind/submit 不选择 Provider；
-[Y35 新接线](../implementation/tasks/compute/llm-moe-c1-vulkan-elementwise.md)已完成当前
-Windows/Air/Mini 的适用原生模块资格及 Windows/Air 的实际三交付；完整成本优选仍待验收。
+空域、设备限制之外及 Min/Max 等未绑定域继续使用已有原生实现。
 
 Concat 接受任意正数量的同类型输入、正负 axis、rank1..8 和合法 stride/View，按输入顺序拼接，
 保留原始存储位并生成独立 dense 结果。例如 `vk::prepare(context, c::Concat{-1}, left_desc,
@@ -284,9 +213,7 @@ Softmax 的广播 mask 按实际域适配：Boolean mask 在缩放后用 Select 
 
 Min/Max、LogSoftmax、空域、scalar归约和设备条件不适用成熟路径的已支持域仍使用原生实现。
 原生 Reduce 一次 dispatch，无额外 device scratch；原生概率路径的缓存或两阶段临时存储
-仍按实际条件计入 Graph 容量和 quota。以上成熟接入已通过 W1 static/shared、Air/Mini 的
-适用模块回归，W1/Air本地真实张量的source/static/shared消费及三环境公开头检查；完整成本优选仍待
-[C1-Y34](../implementation/tasks/compute/llm-moe-c1-vulkan-reduction.md) 验收。
+仍按实际条件计入 Graph 容量和 quota。
 
 TopK 使用同一普通入口：`vk::prepare(context, c::TopK{.count = 8}, score_description)`；
 完成后 `result->tensors()[0]` 是 values，`result->tensors()[1]` 是对应轴的 I32 indices。
@@ -298,9 +225,6 @@ TopK 使用同一普通入口：`vk::prepare(context, c::TopK{.count = 8}, score
 这是完整 bitonic 排序，成本为 O(rows × padded_width × log²(padded_width))；全排序索引、
 长行 scratch、取值与布局复制均计费，k=1 也不免除完整排序。dense View 仍可有非对齐字节
 起点；准备时按排序核的设备对齐要求固定必要复制，计入根起点与累计别名偏移。
-目前通过 Windows static/shared 与 Air/Mini 正确性，以及 Windows/Air 三种 C++ 交付；
-完整模型需求域与成熟路径资格按[当前Vulkan收口](../implementation/tasks/compute/vulkan-cpu-cuda-apple-parity-closure.md)
-推进，尚不称为性能优选。
 
 ### 显式递归状态
 
@@ -328,7 +252,7 @@ Graph 使用 `builder.add_node(c::Operation(c::GatedDeltaNet{}), inputs)`，通�
 `builder.result(node, 0/1)` 取得输出/新状态并连接下游；普通 Vulkan compile 自动绑定原版 region。
 初态不被改写。保留任一输出都会占住该 invocation 的结果槽；释放后才可覆盖，或使用另一个
 invocation。输入对齐可能需要已有的 GPU copy，原版打包输出通过 cont 发布为两个独立 owning
-port；这些成本计入本路线 P0，不能视为零复制或完整模型性能资格。
+port；这些成本属于完整调用，不能视为零复制。
 
 ## 零拷贝 View
 
@@ -515,7 +439,6 @@ fence 等待伪造跨队列可见性。`environment().distinct_transfer_queue`�
 Invocation关闭、已接纳原生工作/等待任务尾部以及`scheduler.drain()`，随后才能shutdown。
 主存、device、staging 分域预算与已准备的上传/等待报告均由组合提供；普通入口与资源限制见
 [组合样例](../../samples/package/graph/cpu_vulkan/README.md)。模型层/offload 比例、KV和专家策略由引擎决定。
-三交付已在Windows/Air通过；WSL编译/安装已验、实GPU未资格，完整边界见[H3终局](../implementation/tasks/compute/compute-h3-cpu-vulkan-composition.md)。
 
 ## 可选编译诊断
 
@@ -531,10 +454,8 @@ if (!program) {
 }
 ```
 
-报告复制环境/版本、输入输出描述、live 节点原 ordinal 及数值 traits、固定实现规则、边界和并发
-政策。它不保留 Graph、Program、常量、custom payload 或设备 owner，资源释放后仍可读。
-每次 compile 先 reset；报告自身内存不足也会拒绝编译。默认不传报告，执行期不构造诊断信息。
-同一个 report 不能被并发编译写入。
+报告的快照、寿命、复用与失败规则见 [Graph 原生路线报告](graph.md#原生路线报告)，
+下列字段保留本后端特有的成本边界。
 
 `native_dispatch_count` 是最终 HYLE 原生 dispatch 数（含必要适配），`managed_region_count`
 单独计原厂 region；它们不能互相代替 kernel 数。`invocation_storage_block_bytes` 给出每个槽
@@ -544,6 +465,4 @@ driver/pipeline 分配保持 unknown。常量容量按 HYLE buffer owner 去重�
 外借 owner，其外部物理别名和分配大小未知。`opaque_storage_bytes` 保持 unknown，不把 driver/
 pipeline 私有分配计成零。
 
-需要主机调用跟踪时，构建时设置 `-DHYLE_TRACE=ON`，使用已有 Tracy client。
-prepare/compile、submit、checked wait 或 native owner 的执行范围随实际入口记录；默认 OFF 不
-求值跟踪参数、不创建 profiler 状态。这些是主机范围，不能解释为 GPU kernel 时间。
+主机调用跟踪的开启方式与解释边界见 [Graph 跟踪](graph.md#可选主机跟踪)。

@@ -24,4 +24,4 @@ Completion。计时区内不重建描述、选 Provider 或分配消费者容器
 初始化，不能单据此判定冷启动优劣。设备字节只统计显式分配，Graph workspace 另列；Provider 私有
 池未计入时不能声称总显存峰值。
 
-原始实验身份和历史结果见[实现记录](../../../docs/implementation/tasks/compute/llm-moe-d5-cuda-fragment-performance.md)。
+原始实验身份和历史结果见[实现记录](../../../docs/implementation/README.md#追溯旧文档)。

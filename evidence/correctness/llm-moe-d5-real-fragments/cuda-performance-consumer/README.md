@@ -3,7 +3,7 @@
 **verify-only PASS；性能和 A/A 未运行。** 使用 A5 已通过的 `9273bc71` 搬迁静态 SDK，
 benchmark 源码/fixture/binary 的 SHA256 见 [收据](receipt.json)。仅编译外部消费者与 host oracle，
 未重编 CUDA 产品、未新增产品数学。候选准备见
-[任务卡](../../../../docs/implementation/tasks/compute/llm-moe-d5-cuda-fragment-performance.md)。
+[任务卡](https://github.com/axiomates/hyle/blob/d12f2204d23503256220e810385d6cb3e93027a8/docs/implementation/tasks/compute/llm-moe-d5-cuda-fragment-performance.md)。
 
 两个入口均使用普通 API、固定相同 recipe 与原容差，先完整提交再等全部完成。
 两轮遍历全部输入，共 20 次完整片段运行；最终输出及返回后不 in-flight 检查通过，

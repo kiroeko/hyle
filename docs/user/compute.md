@@ -1,1059 +1,116 @@
-# HYLE Compute：何时直接执行一个计算
+# HYLE Compute：准备并执行计算
 
-普通使用选择设备后端并创建默认 context。所需 Provider 和第三方库由 HYLE 自动组装，
-算子实现按请求与设备能力选择；显式 Provider 接口用于调优或诊断，不是正常接入的必填项。
-引擎仍控制 dtype、设备放置、内存及线程预算，不需要手配 Provider 宏或第三方库开关。
+已知 operation、设备、形状和布局，需要对变化输入重复计算时使用 Compute。
+需要编译多节点拓扑、规划中间存储或组合 CPU/GPU 片段时使用 [Graph](graph.md)。
 
-## 设备端单选与可定位随机数
+普通入口负责组装所需实现，用户不排列 Provider 或第三方库。通用 CPU/CUDA 接口使用
+Context、Queue、PreparedOperation 和 OperationInvocation；[Apple](apple-compute.md) 与
+[Vulkan](vulkan-compute.md) 还提供各自的原生 Program/Invocation，遵守对应资源与完成合同。
+构建后端的方法见[使用指南](usage-guide.md#开始使用-compute--graph)。
 
-确定性单选直接使用原 `TopK{.count = 1}`，仍返回原存储类型的 values 与 I32 indices，
-同分取首索引、NaN 排在非 NaN 后。CPU、CUDA、Apple 和 Vulkan 的适用形状使用归约；
-其它 count 和原先合法的 axis/stride 域沿各路线原合同执行，不需要额外的 greedy API。
+建议按任务阅读：
 
-`hyle/compute/sampling_ops.h` 提供两种独立数值操作，沿原 Direct prepare 或 Graph builder 使用：
+- 首次接入：下面的 Direct 例子，再看 [tensor/storage](#普通block-与-opaque-storage) 与
+  [prepare/submit](#prepareinvocation-与-submit)。
+- 需要具体算子：查看[能力与公共描述](#当前能力)，再核对后端支持的 dtype、布局与资源。
+- 资源复用：看[租约](#外部资源租约与-direct-提交)、[批量搬运](#准备批量范围搬运)与
+  [文件管线](#有界文件与资源管线)。
+- KV/多请求：看[批次 attention](batch-attention.md)；快照和状态分支见[状态版本](state-versions.md)。
+- 诊断或扩展实现：最后阅读显式 Provider、自定义 kernel 和资源访问章节。
 
-```cpp
-#include <hyle/compute/sampling_ops.h>
-namespace c = hyle::compute;
-auto words = c::sampling_ops::random_bits(8);
-auto selected = c::sampling_ops::categorical();
-auto scored = c::sampling_ops::categorical(true);
-```
+## 第一次 Direct 计算
 
-`random_bits(W)` 接收 dense U32[R,4]，每行依次是 key 的低/高32位、draw 的低/高32位，
-输出 dense U32[R,W]。固定 Philox4x32-10 映射让相同 key/draw/word 地址在已验证路线间逐位
-一致；改变请求行顺序或 W 不改变原行的字前缀。W≤INT32_MAX，零行/零W合法，draw 接受全部
-64位值。调用方维护请求身份、draw 唯一性与溢出政策，操作不会隐式前进 counter 或持有全局 RNG。
-
-`categorical()` 接收 dense F16/BF16/F32[R,V] log-weights 和同一 U32[R,4] counter，
-V 为1..INT32_MAX，输出 I32[R]。`categorical(true)` 另返回 F32[R]：选中项归一化后的
-log probability。-Inf 表示零质量；NaN、+Inf 或任一全-Inf行通过原 checked 完成报告
-InvalidArgument，失败不发布可用结果。零行合法。先观察成功完成，再读取或向下游发布结果，
-并按原 invocation 的失败恢复与结果寿命合同复用槽。
-
-CPU 使用 SIMD exp、F64 累加的 CDF；GPU 使用居中 log-weights 与开放64位 midpoint 的
-Gumbel 选择。同一路线、相同输入/counter可重放和重排；不承诺 CPU 与 GPU 选择相同 ID。
-两者扫描词表，复杂度 O(RV)；可选 log probability 增加所选标量的归一化计算，GPU未请求时
-省略对应normalizer。临时资源、native
-完成和少量结果读取沿原路线 owner，不能由“设备端选择”推断零分配、零等待或新增 capture 支持。
-temperature、top-p、penalty、grammar、EOS 等政策由应用组合，本数值域不接管这些政策。
-
-这些能力已通过 [G08 有限验收](../implementation/tasks/compute/inference-g08-final-closure.md)：
-普通数值、适用设备/host风险、六平台profile的source/static/shared交付及固定TopK性能对照均已通过。
-没有据此声明完整推理引擎的 prefill/decode 吞吐。
-
-## 有界文件与资源管线
-
-`hyle/compute/file_stream.h` 的 `FileResourcePipeline` 把原 IO、资源租约与批量搬运组合成
-分块文件旅程。从 `cpu/cuda/apple/vulkan::create_file_pipeline` 创建对应路线管线；CPU/CUDA
-沿原 Context、Queue，Apple/Vulkan 沿各自 Context。创建时明确 stage resource、目标资源域、
-槽数和有限 byte/request/group 容量。CUDA stage 使用原 pinned host resource；不把整个模型 pin。
-本能力已完成本轮四路线的适用 source/static/shared 资格，精确机器、风险和限制见
-[F3 最终收口](../implementation/tasks/compute/foundation-f3-final-closure.md)。
-
-`StreamFile::adopt` 接管已有 `io::File`，`borrow` 保留调用方地址稳定的 File；两者都需明确合法容量。
-File 与原 IoContext 的 owner worker 合同保持不变。`StreamSource` 也可接管或借用稳定只读
-`mem::FileMapping`，其范围偏移相对于映射的 logical bytes，期间不得修改或释放映射。
-模型格式由消费者解释；管线只接受已核验的 offset、bytes、description、group/tag 与目标 WriteLease。
-
-```cpp
-namespace c = hyle::compute;
-std::array<c::StreamReadRange, 1> ranges;
-ranges[0].file_offset = checked_offset;
-ranges[0].bytes = checked_bytes;
-ranges[0].destination = std::move(weight_writer);
-std::array<c::StreamReadGroup, 1> groups{{{layer_tag, ranges}}};
-auto ticket = pipeline.read(c::StreamSource::file(source), groups).value();
-auto group = ticket.wait_next_ready().value();
-auto weight = group.output(0).value();
-// weight 可直接绑定已有 Direct/Graph 租约入口；不必等待其他独立组。
-auto result = ticket.wait();
-HYLE_RETURN_IF_ERROR(result.status);
-```
-
-接纳失败不消费输入权限。一个 group 成功才返回 ready；后组 EOF/失败不会撤销前组结果。
-旧 ReadyGroup、ReadLease 与 native use 继续占有限容量，需要释放并 `collect()` 后才能复用。
-回写用 `StreamWriteRange::ready`，有原生生产者在途时用 `produced` 转交 WriteLease 与原 Completion；
-实际 producer 退休之前不会读取资源。文件短写保留实际 prefix，原子文件发布由应用选择。
-完整 read→math→write→reload→math 和本地 Qwen checked ranges 见
-[普通 C++ 样例](../../samples/package/graph/file_streaming/)。
-
-取消/deadline 在 chunk 边界停止后继，已接纳的 blocking IO/native 工作必须先退休，返回可能晚于 deadline。
-析构放弃观察并停止后继；需要等待本管线实际工作时显式 `drain()`。Context、Queue、resource 与
-allocator 必须活到所有原生 use 和保留结果结束；不会关闭调用方的整个 runtime。
-未知原生退役保持隔离与 `retirement_proven=false`，不能以逻辑释放推断 GPU 已停止或驱动私有内存归零。
-
-## 外部资源租约与 Direct 提交
-
-`hyle/compute/resource_leases.h` 的 `LeasePool` 冷创建有限 backing/块 metadata，
-`WriteLease` 表示独占写，成功发布后得到可复制的 `ReadLease`。两个读者、原生在途 use 或旧结果
-存在时，不得把同一块重新取得为 writer。非重叠块可独立使用；池的 resource、Context 和 allocator
-仍按公开声明的借用寿命保持有效。
-
-CPU/CUDA 的原 prepared operation 可用 `hyle/compute/leased_operation.h` 自动保护 bindings：
-
-```cpp
-auto lane = hyle::compute::LeasedOperationInvocation::create(
-    prepared, std::move(workspace_write_lease)).value();
-const std::array inputs{hyle::compute::LeasedInput(input_description, input_read_lease)};
-const std::array outputs{hyle::compute::LeasedOutput(output_description, output_write_lease)};
-auto done = lane.submit(queue, inputs, outputs).value();
-HYLE_RETURN_IF_ERROR(done.wait());
-auto ready = output_write_lease.publish().value();
-```
-
-这里的端口数量、描述和资源必须符合已准备的 `prepared`；零 workspace 时省略 workspace lease。
-初始化 host bytes 后才 publish；异步 writer 必须实际成功退休后才 publish，失败不会变成 ready。
-`LeasePool::adopt`/`ReadLease::adopt` 接管唯一 `mem::Buffer` 而不复制 payload，拒绝不消费输入；
-readonly adopt 永久只读。原 native buffer/array/tensor 的受控导入见各路线的 memory 头。
-所有未跟踪的 writable aliases 必须停止，不从裸 view 猜拥有权或就绪。
-
-`lane.close()` 停本 adapter 接纳，`lane.drain()` 观察已接受的原 Completion；调用方可以仍持有
-尚未观察的 `done`。一个冷完成槽要求先观察/丢弃旧 Completion 再 replay。控制与 Completion
-观察须外部串行化。未知错误不证明 GPU 已停，保活仍交给原 runtime；取消也不能提前释放 backing。
-池的 drain 等待 admitted uses，保留 reader 仍有效，并且不等待这些 reader 全部销毁。
-
-Apple/Vulkan 的 native Program 使用各自 memory 头里的 `LeasedInvocation` 与 `LeasedInput`；
-bind 冷建立 readonly native view，submit 自动接纳 use，原 native slot 的实际退休归还 use。
-结果/来源 alias 继续由原 native owner 保留。四路线接口独立，不需要通用 Queue 或自写 completion vector。
-新租约能力已完成本轮四路线的适用平台与 source/static/shared 资格，精确环境与限制见
-[F1 收口记录](../implementation/tasks/compute/foundation-f1-resource-leases.md)。不外推未测设备/工具链。
-
-## 准备批量范围搬运
-
-`hyle/compute/batch_transfer.h` 的 `CopyBatchProgram` 冷固定 CPU/CUDA Context、资源域、
-范围/阶段上限和 metadata budget；每个 `CopyBatchInvocation` 是独立运行槽，借用一个地址稳定的
-原 Queue。Apple/Vulkan 使用各自 memory 头中的同名类型及原 native Context，创建槽时省略 Queue。
-resource、Context、Queue 和自定义 allocator 均须活到所有槽与原生在途工作退休。
-
-```cpp
-namespace c = hyle::compute;
-const std::array resources{
-    c::CopyResourceSpec{host_resource, 4096},
-    c::CopyResourceSpec{device_resource, 4096}};
-auto program = c::CopyBatchProgram::prepare(context, resources).value();
-auto slot = c::CopyBatchInvocation::create(program, queue).value();
-HYLE_RETURN_IF_ERROR(slot.bind_source({0}, source_read_lease));
-HYLE_RETURN_IF_ERROR(slot.bind_mutable({1}, std::move(destination_write_lease)));
-const std::array<c::CopyPhase, 1> phases{{{0, 7}}};
-const std::array<c::CopyRange, 1> ranges{{{{0}, {1}, {0}, 0, 0, 4096}}};
-HYLE_RETURN_IF_ERROR(slot.prepare_replay(phases, ranges));
-auto copied = slot.submit().value();
-HYLE_RETURN_IF_ERROR(copied.wait());
-auto ready = copied.output({0}, {1}, 0, 4096).value();
-// ready.tensor(description) 可交给已有 Direct/Graph 租约消费者。
-```
-
-同阶段的范围必须独立：重复读取 source 合法，交叠写及读写冲突被拒绝。A→B→C 使用两个连续阶段，
-各后继的 `dependency_mask` 指向实际先行阶段；数组顺序不能代替依赖。`group_tag` 是调用方标识。
-一个 block 的最后写必须实际成功退休，`output` 才返回被成功复制的 logical 范围；pending、失败、
-取消与未知退役均不发布 ready。较早组可独立观察，后继 readonly 搬运仍保活它。
-生产者有尚未退休的写时，用 `bind_producer` 交接同 native owner 的实际 Completion；未知外部
-完成不能猜成 native fence。失败绑定不消费传入 lease/Completion。
-Apple/Vulkan 的原 native dependency 接纳会拒绝已经请求取消且仍在途的来源，
-返回 Cancelled 并保留传入 Completion。取消不证明退休；接纳之后才发生的取消仍
-按原 native 完成合同处理。排序本身也不替消费者合并来源与后继的最终错误。
-
-搬运保持原编码，不做 dtype 转换或量化重打包。`physical_bytes=0` 为 exact copy；显式 padding
-必须属于源和目标的已分配范围，计入 alias 与 byte budget。Metal 的 offset/size 为 4-byte 对齐；
-Vulkan 也必须符合原 buffer copy 约束，不能以向上取整越过邻块。
-`CopyBatchReport` 分别给出 logical/physical bytes、实际 copy calls、native dependencies、阶段完成
-和 host waits；`native_metadata_unknown` 表示 vendor 内部成本未知，不能据此宣称所有热分配为零。
-Apple 沿原 MLX owner 同步实际 command buffer，每 native phase 的 worker host wait 会计入报告。
-
-旧 submission 保留运行槽；观察、释放它后显式 `slot.reset()` 再绑定下一批。保留的 ready reader
-仍拥有旧数据。`close()` 停止接纳，`drain()` 观察实际工作；析构放弃观察时不会隐式 host wait，
-原 native owner 继续保活资源。设备失败的槽不承诺自动恢复，应按返回错误和实际退役情况重建。
-两组/两槽及原编码数学组合见[批量搬运样例](../../samples/package/graph/batched_transfers/)。
-F2 有限范围已收口，实际平台/交付与未知成本限制见[最终记录](../implementation/tasks/compute/foundation-f2-final-closure.md)。
-
-## 已接纳 copy 的单一观察所有权
-
-需要把一组已接纳更新交给后继持有时，用 `CopyBatchUpdate::take(std::move(slot),
-std::move(submission))` 合并两个原控制。CPU/CUDA 使用 `compute::CopyBatchUpdate`；
-Apple/Vulkan 使用各自 namespace 的同名类型。两个控制必须来自同一实际运行槽；
-失败不消费它们，成功同时移空 caller。该对象只保存两个原 handles，不创建队列、
-Completion 或执行线程。Context、Queue、资源与 allocator 须活到所有实际工作退休。
-
-同一个 update 只有一个串行观察者。`observe()` 非阻塞并返回原 Status；Unavailable
-不等于成功，也不能只按错误码断言 native 工作仍在途。`wait()` 是显式 host 等待，
-`request_cancel()` 沿原提交请求取消；析构仍沿原控制放弃观察，原 native owner 保活。
-成功退休后 `take_mutable(id)` 返回原 caller-owned writer，保留未改写内容和 generation，
-不扩大 F2 `output()` 的成功 logical coverage。`release_invocation()` 只在实际原 copy
-退休后回收原 cold slot；失败/closed 状态保留，回收控制不意味着数据可以发布。
-
-普通用户不能由 update 得到 pending ReadLease 或 host 可读 view。内部 receiver 借用的
-原 native prefix 与 mutable geometry 必须先核实际 endpoint/ordering，并保持原 update
-到后继实际退休；借用期间不能另观察、回收或销毁 source。完整 pending 页到 attention
-仍按[组合实现记录](../implementation/tasks/compute/inference-g03-pending-page-consumption.md)
-施工；本接口的验收进展见[source卡](../implementation/tasks/compute/inference-g03-copy-update-owner.md)。
-
-## CPU 多请求 ragged attention
-
-`hyle/compute/batch_execution.h` 的 `BatchProgram` 在普通 `cpu::create_context()` 中冷选择
-原 ggml flash。当前候选域为 F16/BF16、GQA、D64/128/256，packed NHD Q/K/V；
-`BatchSchema::version()` 拥有 query/KV indptr，空 Q request 可跳过，非空 Q 必须有足够
-的 KV。容量描述实际存储，indptr 描述这一次的有效请求区；未用尾部不参与数学。
-
-```cpp
-auto program = c::BatchProgram::prepare(context, schema,
-    {.resource = hyle::mem::system_resource(),
-     .max_float_workspace_bytes = 8u << 20,
-     .max_int_workspace_bytes = 4096,
-     .scale = scale, .causal = true}).value();
-auto slot = c::BatchInvocation::create(program, queue).value();
-auto prepared = slot.prepare_batch(layout).value();
-auto done = prepared.run(std::array{query_read, key_read, value_read}).value();
-HYLE_RETURN_IF_ERROR(done.wait());
-auto output = slot.output().value();
-```
-
-先释放旧 output、prepared token 和 Completion，再调用 `update_batch(next_layout)`。
-完整 query/KV topology 相同可复用原 native plan；改变则在这次显式更新中重建，run 不建图。
-原 kernel 直接读取每个 request 的 K/V slice，没有按每 Q/head 物化历史；冷 mask、query
-转换与每请求 metadata/workspace 仍计费。CPU `float_workspace_bytes` 暂为已知冷 plan
-占用的保守合计，与外部预留 pool 分开，不能当作总 RSS；private pool 上界未知。
-本档不接原生 paged/capture。普通 Direct 的 source/static/shared 与宿主风险已验证，
-安装的 `ggml_cpu::provider()` 已能通过普通compute/graph target交付给原Graph batch桥，
-source/static/shared的双region消费已验证；batch 性能及其它路线多请求资格仍见
-[实施记录](../implementation/tasks/compute/inference-g01-cpu-native-ragged.md)。
-
-## CPU 准确页直接读取
-
-普通 CPU `BatchProgram` 新增的分页路径沿原 ggml flash 读取物理 K/V 页，使用
-`BatchStorage::kPaged`、`PagedArena` 和同一个 `BatchLayoutVersion`。当前验证域是
-F16/BF16、GQA8/2、D64/128/256、page_size16；页表可重排、跨请求共享物理页，尾长
-只表示最后一页的有效行数。source/static/shared与宿主风险已通过，此路径仍为候选，局部性能裁决见
-[分页实施记录](../implementation/tasks/compute/inference-g01-cpu-paged-resident.md)。
-
-K/V arena 按容量持有连续物理 NHD 页；发布每页 writer 后，用该 layout 所引用的
-准确 ready page 集合构造 frame，不能传多余页或把 arena 当作一个普通 ReadLease：
-
-```cpp
-auto key_frame = keys.read(layout, ready_key_pages).value();
-auto value_frame = values.read(layout, ready_value_pages).value();
-auto prepared = slot.prepare_batch(layout).value();
-auto done = prepared.run(query_read, key_frame, value_frame).value();
-HYLE_RETURN_IF_ERROR(done.wait());
-auto output = slot.output().value();
-```
-
-更新前释放旧 output、prepared token 和 Completion。CPU paged 每 request 为0或1 query、
-完整 query indptr 相同时，KV indptr、页索引和尾长可通过显式 `update_batch()` 更新，复用
-原 graph/pool/scratch；其它 paged 形状仍需完整布局相同，否则冷重建。frame
-必须属于当前 schema/layout，所有 reader 和实际 native uses 退休后才能复用物理页。
-CPU ragged 在相同 Q1 拓扑下也能更新实际 KV extent 与 packed 起点；仍绑定原三个
-packed-capacity Q/K/V read ports，内部逐 request 检查实际子范围，不复制完整 KV。
-热数学不按 query/head 复制整个 KV 历史；query 转换、冷 causal mask、页表节点与原
-metadata/workspace 仍计费，private pool 上界未知。CPU capture、增量 producer、低成本
-增长规划及 GPU/联合分页的资格各有独立范围，不由此 CPU 路径推导。
-
-普通 CPU 入口自动组合已构建的 oneDNN、ggml、ATen 和 Native 实现，
-标准 CPU 配置使用 `HYLE_COMPUTE_ROUTES=cpu`。CUDA 提供 device/context/queue、memory resource、
-stream interop、传输、Completion 和 capture，并接入 ggml CUDA、cuBLASLt、SGLang、CCCL 及有限原生实现。
-Apple 与 Vulkan 的用法和设备限制分别见对应指南；HIP/ROCm 当前没有实现。
-
-当前22个固定模型画像的Direct/Graph结果、逐路线限制及三交付/P1范围见
-[模型片段覆盖](model-fragment-coverage.md)。下文R4/R5/R6基础验收不代签后来新增的全部模型域。
-CPU-only新版的104 GGUF档位、非GGUF与MTP/DSpark原计算合同覆盖另见[CPU当前覆盖](cpu-model-coverage.md)，
-与旧四路线整画像RUN_PASS账本区分。
-
-四路线目标、MLX 内 Metal 扩展与每个 native runtime 的边界见[路线设计](../architecture/compute-routes.md)。
-研究程序不属于安装 SDK；本文的现有 API 也不保证在本次重构后兼容，不把目标设计当成已交付功能。
-`cpu::create_context()` 在冷路径组装默认实现，prepare 只匹配和绑定固定规则，不运行计时比赛。
-普通用户不排列 Provider 或提供性能资料；规则与性能验收状态由当前 CPU 任务卡记录。
-路线原则见[开发期优选规则](../architecture/compute-design.md#41-开发时验证-best-of准备时应用规则)。
-
-CPU 优选规则在冷准备时匹配构建recipe、硬件、编译器、线程合同及完整操作参数。
-旧187／17规则已从当前实现移除。当前版本的
-[有限比较](../../evidence/performance/cpu-final-f4-p1/README.md)给出43个完整候选优选请求，
-其中41个Native、1个ggml、1个ATen；规则身份版本为3。只绑定表中的精确dtype、物理布局、
-shape与属性，不把部分候选比较的WIN外推为完整优选。
-资格限定CPU-only SDK的oneDNN3.13.4、ggml ffa4e8b8＋原IQ1程序、LibTorch2.8 CPU、static Release原优化recipe、
-LTO off、MSVC19.50.35728、i9-13900K（family6/model183/stepping1、AVX2），
-native/executor预算1及进程只允许已测逻辑CPU2。未匹配条件采用下表成熟工程默认；shared/Linux/Mac
-不继承此Windows测量的WIN。应用若改变被规则读取的运行条件，应重新prepare/compile。
-Graph的成熟完整region优先于这些leaf规则，避免破坏融合；执行和重复执行不重新选路。
-严格资源准入仍由Provider真实能力决定，数学候选不等于零private allocation或可捕获。
-当前[CPU收口](../implementation/tasks/compute/cpu-final-closure-plan.md)的F4规则交付已验收；
-F5已物理清退14种冗余自研数学，其三平台与mixed差异验收已完成。SIMD/Mem基础和借入成熟原程序保留。
-
-Native expert只提供当前保留的21种数学／存储机制，不能期待已退役算子的Native后备。
-逐种源码去留、必要dtype／variant和精确性能点见
-[清退账本](../implementation/tasks/compute/cpu-final-f5-source-ledger.json)。普通CPU入口继续使用成熟实现；
-旧Native-only／prepared-only／零私有内存域随退役数学撤回，严格请求没有合格成熟承载时明确拒绝。
-具名F32 RMSNorm和Copy的动态／资源能力保留。
-
-普通入口的工程默认与性能WIN分开记录。候选必须先通过自己的真实精度、布局、资源与状态资格；
-没有专门硬件规则时仍能执行，准备后不再搜索。当前默认如下，F4可按合格完整成本证据修订：
-
-| 合同 | 成熟默认与理由 |
-|---|---|
-| 普通plain MatMul、norm、稳定Softplus | 合格oneDNN；不满足布局/精度/资源时保留ggml/ATen成熟替代 |
-| Copy／Select | Copy优先原ggml prepared storage程序；Select优先合格ATen字节选择。原准入决定布局／类型／资源替代，不将工程默认称统计WIN |
-| 原GGUF/blocked压缩矩阵及其它原生tensor程序 | ggml，保留原格式、实际codec与库自己的ISA/资源管理 |
-| Sigmoid/SiLU/GELU及门控、Min/Max、Bool或LogSoftmax | 合格ATen的稳定/checked数学；其它满足同合同的成熟程序仍可承接 |
-| RoPE、checked索引程序 | 已验ggml prepared路径优先，避免无理由替换为managed临时路线 |
-| Graph完整region | 完整ggml/oneDNN region先于leaf，不为上述默认表拆成熟程序 |
-
-这些是合理基线而非每个硬件/形状的统计冠军。显式expert工厂保留原行为，不附加普通默认policy。
-三平台CPU成熟承载、当前规则、CPU-only／具名mixed SDK与最终清退已按F1–F6验收。
-固定模型／量化／MTP范围与限制见[CPU当前覆盖](cpu-model-coverage.md)，没有任意新制品或全硬件统计最优承诺。
-
-Apple 与 Vulkan 各自使用原生 Program、运行槽和资源；普通 Direct/Graph 用法分别见
-[Apple MLX/Metal](apple-compute.md) 与 [Vulkan](vulkan-compute.md)。本文后续 Queue/Provider 的
-细节属于 CPU/CUDA 接入，不要求这两条原生路线采用同一执行器。
-
-Compute/Graph 构建默认完整 `cpu`；CUDA-only 选择 `HYLE_COMPUTE_ROUTES=cuda`，
-联合 SDK 选择如 `cpu;cuda`。不提供普通用户的无执行路线或 Provider 裁剪模式。
-安装包的实际 capability、头与 CMake 选项见
-[交付配置](distribution.md#4-消费安装包)。
-
-构建集合说明 SDK 可用能力；具体任务仍由所选 Context 及 prepare/compile 的真实 dtype/encoding、
-模型/阶段、硬件/版本和资源条件绑定。`PreparedOperation::implementation()/route_policy()` 与
-Graph/native route 的已有报告解释入选实现；SDK 的 recipe fingerprint 用于核对构建身份，
-不表示该硬件上的新 WIN。精确资格不匹配时仍使用合法成熟默认，缺能力才明确拒绝。
-多路线 SDK 不让 GPU-only Context 自动转 CPU；它也不代签尚未验收的联合计算。
-
-当程序已经知道要执行哪个 operation、在哪个 device 上执行，并希望复用固定 shape/layout 的路线时，
-使用 Compute。跨节点拓扑、liveness 和可复用图执行物使用 [Graph](graph.md)；模型、KV cache、batching、
-sampling 和 serving 留在推理引擎。
-
-计算选择 CPU、CUDA、MLX/Metal、Vulkan 中的一条路线。CUDA 的普通入口和完整 FFN Graph
-已完成 R4 正确性、三交付与适用性能验收；Apple R5 与 Vulkan R6 也已完成各自有限验收。
-HYLE 提供host控制、传输/同步、同GPU多Provider和显式CPU/GPU粗片段基础机制；模型加载、
-层/专家offload策略和完整推理循环由引擎负责。GPU-only任务缺算子不会自动转CPU。
-Direct权重迁移分别使用`hyle/compute/cuda_weights.h`与`hyle/compute/apple_weights.h`；
-[Apple样例](../../samples/package/compute/apple_weights/README.md)保留真实原编码、native完成与array寿命。
-CPU大权重可留普通主存，跨端边界才申请native存储。Apple共享物理内存仍需要提交和完成排序。
-
-direct `prepare()` 仍接收具体 TensorDesc，不要求用户构造 shape program。需要 batch × tokens、concat
-输出轴等派生维度时，使用 [Graph 的独立与派生维度](graph.md#独立与派生维度)：默认 exact compile，
-或显式声明完整域并在创建 Invocation 时绑定。后者目前支持固定 hidden width 的 Native RMSNorm；
-oneDNN 仍 exact-only，可进入 Graph 的预编译 exact 变体；Graph 也已提供
-[有限精确变体与通用回退](graph.md#有限精确变体与通用回退)。完整动态属性尚未交付。不要直接调用私有
-factor seam，也不要把单个 family 的域支持当成整个算子目录都支持动态尺寸。
-
-### 可选 CPU FP8/FP4 成熟程序
-
-普通 CPU 构建由 HYLE 自动组装 oneDNN、ggml 与支持平台的 TorchAO/ATen。
-Windows、Linux、macOS 使用相同入口：
-
-```text
-python scripts/init.py --backends cpu --components compute,graph
-python scripts/build.py --jobs 2
-```
-
-Python 3.10+、CMake 3.26+ 与基础工具链须已安装；脚本发现工具并为 Windows 子进程恢复 VS 环境。
-默认 Release、共享库、tests/bench OFF。源码嵌入只设置产品并 `add_subdirectory`，
-不需要手工枚举 Provider。更多参数见[初始化指南](../developer/setup/README.md)。
-
-选择完整 CPU 路线时，Windows/Linux x86_64自动取得CPU-only LibTorch `2.8.0+cpu`，
-使用中央锁中的原archive/SHA与统一cache的SDK子区；有合格本地SDK则复用，缺少时取得一次，
-不因下载失败静默缺失已验收域。高级参数为：
-
-| 参数 | 含义 |
-|---|---|
-| `HYLE_COMPUTE_TORCH_CPU_ROOT=<prefix>` | 复用外部CPU SDK；错误版本/不完整root明确失败 |
-| `HYLE_COMPUTE_TORCH_CPU_ARCHIVE=<zip>` | 使用已下载的锁定原archive，验SHA后一次解包，不再下载一份 |
-| `HYLE_DEP_SOURCE_CACHE=<path>` | 统一缓存位置；SDK只保留一个平台/版本身份，不复制到每个build |
-| `FETCHCONTENT_FULLY_DISCONNECTED=ON` | 禁止网络；使用已转移cache、本地archive或外部SDK，真正miss明确失败 |
-
-`Torch_DIR`与`CMAKE_PREFIX_PATH`中的CPU SDK仍可复用。明确root优先于这些发现与archive输入。
-这些高级输入用于复用或离线准备锁定资产，不是关闭必需 Provider 的开关。
-CUDA Torch SDK 不能替代该 CPU SDK。GLM 5.3/Flash 官方FP8、DeepSeek V4
-Pro/Flash 官方FP4/FP8的普通完整片段已通过正确性、Windows三交付与WSL检查；两条代表
-完整MoE的Graph/Direct成本通过原5%门。具体模型与平台范围见
-[能力账本](../implementation/tasks/compute/llm-moe-d5-acceptance-ledger.json)。
-
-普通 C++ 入口仍为 `cpu::create_context()` 与 `graph::cpu::create_context()`。
-既有 `Float8BlockLinear`、`GroupedFloat8Linear`、`GroupedFloat4Linear`、block128 encoded
-`MatMul`、`Float8WeightDecode` 与 FP8 group128 roundtrip 由固定的原版 TorchAO tensor
-序列和 ATen CPU 运算组合执行。它保留动态 A8 转换、原权重格式、scale 和输出 dtype；
-CPU 内部把已量化数值表达为 F32 并计算，不宣称硬件原生 FP8 GEMM。
-专家 ID 可以重复；实现先选择所需专家再解码，不预解码全部专家。
-
-这组程序为 managed replay，库管理内部 Tensor、临时内存和线程，提交阻塞 host 至完成。
-它不承诺零热分配、capture 或确定的内部内存上界；要求 prepared-only replay 或不能
-接受未知私有内存的硬预算会拒绝。它不把全局 Torch 线程数当作 Context 局部 executor 设置。
-非有限激活与越界专家 ID 返回失败；失败输出不可消费，失败执行槽需重新创建。
-
-source/static/shared 三种 HYLE 交付都依赖此外部 shared CPU runtime。
-HYLE static 不代表把 LibTorch 静态链接进进程；安装消费者只需提供HYLE prefix，Native依赖shim
-复用或取得同一锁定CPU SDK，高级用户也可提供外部CPU LibTorch prefix。Windows消费者调用
-`hyle_stage_runtime(my_app)`，由HYLE将完整CPU DLL闭包邻置到exe目录；不要让程序依赖
-Python 或 CUDA 的 DLL 搜索目录。Linux使用同一helper为实际CPU SDK依赖绑定loader路径，
-覆盖shared adapter的间接依赖；无需另设`LD_LIBRARY_PATH`或逐应用复制整份SDK。
-分发 CPU SDK 时同时保留其原许可证和第三方 notices，HYLE 安装包另附所借用 TorchAO 的 BSD 许可。
-
-### ggml CPU 优化程序
-
-Windows/Linux x86_64 的普通 CPU 路线包含同一锁定版本的 ggml 基线与独立优化程序。
-准备时依据缓存的 CPU 与操作系统能力绑定原版 AVX2/FMA/F16C/BMI2 程序；不满足条件时使用基线，
-执行时不重新探测、计时或选择。用户不需要选择 ISA。适用的优化程序缺失或版本不匹配时明确报错。
-
-源码、静态与动态交付都须保留随附的私有 CPU 程序 DLL/so，HYLE 静态库也不是无运行资产的单文件交付。
-源与安装消费者均调用 `hyle_stage_runtime(my_app)`：Windows 将 DLL 放到 exe 同目录，
-Linux 为实际运行资产绑定加载路径。私有程序不提供公共 ABI，也不改变普通 Direct/Graph 入口。
-
-## 可选模型与阶段信息
-
-已知模型与固定部署制品的消费者可在冷准备时传入 `WorkloadContext`。普通工程计算省略它即可。
-HYLE 不加载模型文件；调用方先核对实际 checkpoint/GGUF/safetensors，再提供模型 revision、配置摘要、
-制品仓库/revision/variant、manifest 摘要和 container format。画像只绑定部署制品；每个 tensor 的真实
-dtype、物理格式和 shape 仍由本次 operation 的 `TensorDesc` 证明。
-
-```cpp
-auto profile = hyle::compute::ModelArtifactProfile::create({
-    .model_publisher = "Qwen",
-    .model_repository = "Qwen/Qwen3.5-2B",
-    .model_family = "qwen3_5",
-    .model_name = "qwen3.5-2b",
-    .model_revision = "15852e8c16360a2fea060d615a32b45270f8a8fc",
-    .configuration_digest = "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
-    .artifact_repository = "unsloth/Qwen3.5-2B-GGUF",
-    .artifact_revision = "f6d5376be1edb4d416d56da11e5397a961aca8ae",
-    .variant = "UD-Q4_K_XL",
-    .manifest_digest = "abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789",
-    .format_family = "gguf",
-});
-if (!profile) return profile.error();
-hyle::compute::WorkloadContext workload{
-    .profile = *profile,
-    .phase = hyle::compute::WorkloadPhase::kDecode,
-};
-auto program = hyle::compute::prepare(
-    context, hyle::compute::MatMul{}, left_desc, right_desc, resource, workload);
-```
-
-画像创建时一次拷贝拥有字符串，源字符串随后可销毁；多个程序共享同一个不可变画像。完整画像的两个
-digest 必须是规范的 64 位小写十六进制文本；空画像不分配，部分画像会被拒绝。自定义 allocator 的
-backing 必须活到最后一个画像/程序释放。`program.workload()` 返回
-保有所有权的冷诊断副本。阶段或版本变化需要重新准备，不能给运行中的程序换标签。
-可选的 `region` 是带版本的片段语义标识，不替代实际 operation/DAG、精度、资源和状态检查。
-
-### GGUF/ggml 原生压缩权重
-
-CPU-only 构建已追加 Q4_0/Q4_1/Q2_K、IQ2_XXS/XS/S、IQ1_S/M、IQ1_XXXS/XXS/XS 的原 block 描述与
-CPU 接线。最后三种使用固定 Unsloth IQ1 narrow 扩展，不能从文件名中的 UD 档位猜编码。
-包含 GPU 的 SDK 仍保留原 ggml 版本与资格，明确拒绝这批新增 CPU 格式。
-本轮完整画像、交付与资源资格进度见[当前任务](../implementation/tasks/compute/cpu-quant-mtp-c5-batch-qualification.md)。
-
-调用方已经解析 GGUF tensor table 时，用 `<hyle/compute/low_precision.h>` 描述原文件中的压缩字节，
-不需要也不应先展开成常驻浮点权重。`gguf_weight_description()` 接收 Q3_K、Q4_K、Q5_K、Q6_K、
-Q8_0、IQ3_XXS、IQ3_S、IQ4_NL、IQ4_XS 或 MXFP4，返回逻辑 `[K,N]`、物理连续 `[N,K]` 的
-checked `TensorDesc`；`K` 必须包含完整原生 block。`logical_type` 是 MatMul activation/output 的
-浮点类型，不是压缩 code 的位宽。
+以下 CPU 例子对四个值做 RMSNorm。它演示公开样例使用的完整顺序：建立描述与存储、冷准备、
+准备工作区和执行槽、提交、等待成功、读取结果。代码可放在返回 `hyle::Status` 的函数中：
 
 ```cpp
 #include <array>
-#include <hyle/compute/low_precision.h>
+#include <span>
+#include <utility>
+#include <hyle/compute/cpu.h>
+#include <hyle/compute/prepared_operation.h>
+#include <hyle/error/result.h>
+#include <hyle/mem/buffer.h>
 
-auto weight_desc = hyle::compute::gguf_weight_description(
-    hyle::compute::GgufQuantizedType::kQ4K,
-    hyle::compute::DataType::kFloat32, k, n);
-if (!weight_desc) return weight_desc.error();
+namespace c = hyle::compute;
+const std::array<std::int64_t, 1> shape{4};
+const std::array<float, 4> values{1, 2, 3, 4};
+std::array<float, 4> result{};
+const auto resource = hyle::mem::system_resource();
 
-// weight_bytes 是 loader 持有的原始 GGUF payload；HYLE 不读取 GGUF 文件。
-auto weight = hyle::compute::ConstTensorView::create(
-    *weight_desc, weight_bytes);
-if (!weight) return weight.error();
-std::array inputs{activation, *weight};
-std::array outputs{output};
-auto prepared = hyle::compute::prepare(
-    context, hyle::compute::Operation(hyle::compute::MatMul{}), inputs, outputs);
+HYLE_ASSIGN_OR_RETURN(auto desc, c::TensorDesc::dense(c::DataType::kFloat32, shape));
+HYLE_ASSIGN_OR_RETURN(auto input, hyle::mem::Buffer::create(resource, sizeof(values), alignof(float)));
+HYLE_ASSIGN_OR_RETURN(auto output, hyle::mem::Buffer::create(resource, sizeof(result), alignof(float)));
+HYLE_RETURN_IF_ERROR(input.view().write(std::as_bytes(std::span(values))));
+HYLE_ASSIGN_OR_RETURN(auto x, c::ConstTensorView::create(desc, input.view()));
+HYLE_ASSIGN_OR_RETURN(auto y, c::TensorView::create(desc, output.view()));
+
+HYLE_ASSIGN_OR_RETURN(auto context, c::cpu::create_context());
+HYLE_ASSIGN_OR_RETURN(auto queue, context.create_queue());
+HYLE_ASSIGN_OR_RETURN(auto operation, c::prepare(context, c::RmsNorm{}, desc, resource));
+const auto required = operation.workspace_requirement();
+hyle::mem::Buffer workspace;
+if (required.size != 0) {
+  HYLE_ASSIGN_OR_RETURN(workspace,
+      hyle::mem::Buffer::create(resource, required.size, required.alignment));
+}
+HYLE_ASSIGN_OR_RETURN(auto slot, operation.create_invocation(workspace.view()));
+HYLE_ASSIGN_OR_RETURN(auto done, slot.submit(queue, x, y));
+HYLE_RETURN_IF_ERROR(done.wait());
+HYLE_RETURN_IF_ERROR(output.view().read(std::as_writable_bytes(std::span(result))));
+// result 现在可读；函数按自己的需要消费或返回它。
 ```
 
-MoE 的连续专家权重使用 `gguf_grouped_weight_description(type, logical_type, experts, n, k)`，其逻辑与
-物理轴均为 `[E,N,K]`，交给普通 `GroupedMatMul`。当前 CPU、CUDA、Apple 与 Vulkan 默认路线会在准备期把合格的
-MatMul/GroupedMatMul 绑定到固定 ggml 原生程序；具体设备和上游版本仍可能拒绝某种格式或 shape。
-Graph 使用相同描述器与 Provider recipe，重复 submit 不重新选路、不重新量化，也不复制压缩权重。
-伪造已知格式 ID 但给出错误 block byte 数会在准备前被拒绝。Apple 用 `apple::input_spec()` 将逻辑描述
-映射到一维 MLX `uint8` carrier；Vulkan使用其原生buffer与ggml程序。精确画像的当前结果见
-[四路线覆盖](model-fragment-coverage.md)，一种压缩格式接通不代表完整模型的其它必需片段也已通过。
+保持描述和 resource identity 不变时，复用 `operation`、`workspace` 和 `slot`，更新输入后再次 submit。
+等上一轮完成后再覆盖它使用的存储；并发请求各有独立 slot 和工作区。共享计划不保证共享可变槽安全。
+完整工程与 CPU/CUDA/Metal/Vulkan 示例见 [Direct sample](../../samples/package/compute/cpp/)。
 
-固定的模型专用规则必须完整匹配身份及其余适用条件；缺失/未知信息只允许合法通用路径，
-或返回明确拒绝。传入模型名本身不代表已有该模型专用优化。用户无需排列 Provider 或提供计时资料；
-HYLE 的规则匹配在运行期不读取模型字符串、查询设备版本或重选实现；成熟 Provider 自身的
-managed 派发成本另外声明。
+## CPU 与模型格式接入
 
-CUDA 的 `cuda::environment(context)` 返回 Context 创建时采集的设备名、UUID、SM major/minor、
-驱动支持的 CUDA API 版本、独立 `driver_release` 文本、runtime 版本与编译 Toolkit 版本。
-`driver_cuda_version` 对应 `cuDriverGetVersion`，**不是 NVIDIA 驱动安装包版本号**；
-`driver_release` 来自可选系统 NVML，缺少时为空、不禁用 CUDA 路线。冷规则的 `kApiVersion` 为前者，
-`kDriverVersion` 为实际 NVIDIA release 文本，`kDriverName` 为 nvidia。系统 driver DLL 不随 SDK 复制。
-固定规则只能匹配实际具备的事实；
-不能把该字段当作驱动补丁版本。Apple/Vulkan 使用各自原生 `Environment`，Provider 版本来自
-对应实现/锁定依赖；它们不共用一个万能设备结构。
+普通入口是 `compute::cpu::create_context()`；Graph 使用 `graph::cpu::create_context()`。
+CPU 数学依赖自动装配，按实际请求选择合法实现；不要求传性能 profile 或排列 Provider。
+模型加载与 tensor 角色、scale/codebook/zero 的解析由引擎完成，HYLE 不根据模型文件名或“Q4”标签猜格式。
 
-## 普通 CUDA 入口
+- 普通张量算子见下方能力表；GGUF 原编码使用[原生压缩权重](#ggufggml-原生压缩权重)，
+  NF4/AWQ/CT/MLX 使用[非 GGUF 接口](#cpu-非-gguf-原格式与压缩专家)。
+- `Float8BlockLinear`、`GroupedFloat8Linear`、`GroupedFloat4Linear`、编码 `MatMul` 和 roundtrip
+  保留其量化、scale、累加与输出 storage 合同。CPU 可以用 F32 表达已量化值并计算，不代表硬件原生 FP8 GEMM。
+- 某些原格式需要显式冷解码或转换并缓存；这与直接读取压缩权重的成本不同，不能每次 decode 重做全库展开。
+- 原库 managed 程序可能建立临时 Tensor、使用私有线程并阻塞 host。内部内存上界未知时，严格预算或
+  prepared-only 请求可以拒绝；Context 的 `native_threads` 不统一控制所有第三方全局线程池。
+- 完整 CPU 产品支持 Windows/Linux x86_64 和 macOS ARM64；依赖获取、外部 SDK 复用与离线方法见
+  [依赖准备](../developer/setup/dependencies.md)。静态 HYLE 仍可能依赖 shared CPU runtime，部署见
+  [交付说明](distribution.md#compute--graph-后端)。
 
-### 已编码 FP8 block128 投影
-
-`float8_activation_description(M, K, Float8ScaleMode::kFloat32Block128)` 与
-`float8_weight_description(K, N, Float8ScaleMode::kFloat32Block128)` 可以直接送入普通
-`MatMul` 的 Direct/Graph 路径，输出为 F32 `[M,N]`。激活字节是 E4M3FN `[M,K]` 后接
-F32 `[M,K/128]` scale；权重是 E4M3FN `[N,K]` 后接 F32 `[ceil(N/128),K/128]` scale。
-K 须整除128，N允许最后一个不足128行的block；这些描述符不执行模型加载或动态量化。
-
-CUDA 默认接入固定 SGLang 原版 AOT 程序，当前资格为 SM89、`driver_cuda_version == 13040`。
-程序在准备时加载并绑定，重放为一次原生发射，没有额外 payload 工作区或权重展开。
-源码/静态/动态构建都将程序嵌入 Provider，不依赖用户运行 Python/Triton。
-其它硬件域、UE8M0 group32 编码及动态激活量化不能据此视为已支持。
-普通入口与资源验收见 [F37](../implementation/tasks/compute/llm-moe-d5-fp8-native-qualification.md)；
-完整官方画像、三交付和性能验收仍分别登记。
-
-### FP8 权重的一次性准备
-
-`model_ops::float8_weight_decode()` 接受上述逻辑 `[K,N]` block128 权重，输出为明确的
-物理 row-major BF16 `[N,K]`；参数 `DataType::kFloat32` 可保留 F32 结果。普通 Direct
-`prepare()` 或 Graph 节点只绑定描述符与原生程序；真正解码发生在提交后，不隐式读取权重。
-
-当模型需要吸收或拆分 K/V 权重时，消费者先执行这个准备操作，用既有 View/Copy 整理布局，
-等 Completion 成功后将结果作为后续图的常量。消费者持有缓存并复用；不要在每个 token 的图里
-重复解码。BF16 完整矩阵占 `2*N*K` 字节，另计布局整理时的临时矩阵和最终缓存峰值。
-
-CUDA 默认绑定固定 DeepSeek 原版程序，当前有限域为 SM89/Driver API 13040、K 整除128、
-`N*K <= INT32_MAX`、`K/128 <= 65535`；输入需4字节对齐，输出按 BF16/F32 需2/4字节对齐。
-一次原生发射，无额外工作区；支持独立 invocation 并发，输出禁止与输入重叠。编码中的 NaN
-保留为 NaN；该入口不进行模型文件读取或有限权重扫描。AOT 程序随 Provider 嵌入，运行时
-无需 Python/Triton，来源及当前验收状态见
-[F41](../implementation/tasks/compute/llm-moe-d5-fp8-weight-preparation.md)。
-
-### 动态 FP8 模型投影
-
-浮点激活尚未编码时，将 `model_ops::float8_block_linear()` 作为普通 Direct `prepare()` 或
-Graph 节点的 operation，输入为 dense BF16/F32 `[M,K]` 和上述 block128 权重，输出保留激活
-dtype `[M,N]`。它显式包含动态量化，普通 `MatMul` 不暗中量化输入。
-
-默认逐 token/group128 使用 F32 scale 和 absmax floor `1e-10`；
-`model_ops::float8_block_linear(model_ops::Float8ScaleRounding::kPowerOfTwo, 1e-4F)`
-表达 DeepSeek 官方的 BF16 幂次 scale 语义。后者的 F32 激活域尚未资格化，准备时拒绝。
-权重的128×128分组保持不变，不把幂次scale解释成group32存储。
-
-当前 CUDA 资格仍为 SM89/Driver API 13040，有限激活域。准备绑定原版 SGLang 程序，执行为
-量化和 GEMM 两次发射，使用每 invocation 独占的 caller workspace：`M*K + 4*M*(K/128)`
-字节、4字节对齐；没有 host 同步或常驻展开权重。普通scale输入需要16字节对齐，BF16幂次
-scale输入需要2字节对齐；Graph规划会应用这些要求，手动绑定的错位输入在提交前拒绝。
-该接口不加载模型。完整官方模型画像及三交付/P1状态见
-[当前验证记录](../implementation/tasks/compute/llm-moe-d5-real-fragment-acceptance.md)。
-
-### CPU 非 GGUF 原格式与压缩专家
-
-这些接口位于 `<hyle/compute/model_ops.h>`，普通 CPU Direct/Graph 自动绑定已构建的原库组合。
-输入是调用方解析好的原 tensor；HYLE 不读取模型文件，也不把不同的 4-bit 制品视为相同编码。
-
-| 原格式 | 接口与端口 | 输出或执行边界 |
-|---|---|---|
-| NF4 | `artifact_weight_decode(kNf4, group)`；U8 `[N,K/2]`、F32 absmax `[G]`、F32 codebook `[16]` | 高 nibble 在前，默认 BF16 |
-| NF4 double quant | 同接口 `kNf4DoubleQuant`；U8 codes `[N,K/2]`、U8 absmax `[G]`、F32 nested absmax `[ceil(G/256)]`、F32 nested codebook `[256]`、F32 scalar offset、F32 codebook `[16]` | nested scale 与 offset 保留，默认 BF16 |
-| AWQ GEMM int4 | 同接口 `kAwqGemm4`；I32 `[K,N/8]`、I32 zero `[K/group,N/8]`、floating scale `[K/group,N]` | 原 AWQ 列排列与 zero point，默认 scale dtype |
-| compressed-tensors symmetric int4 | 同接口 `kCompressedTensorsSymmetric4`；I32 `[N,K/8]`、floating scale `[N,K/group]` | low-first pack、减 8 后按原 scale dtype 计算；无 g_idx 模式 |
-| MLX affine4 / mxfp4 / mxfp8 | `mlx_quantized_matmul(format, group)`；A `[M,K]`、原 U32 words `[N,K/pack]`、scale、affine bias | 直接消费压缩权重，F32 累加；MX scale 为原 U8 E8M0 group32 |
-| MLX 选中专家 | `mlx_grouped_matmul(format, group)`；A `[T,S,K]`、words/scale/bias 带 expert 首轴、I32 ids `[T,S]` | 只展开当前 K group 与选中专家，不建立整个浮点专家库 |
-| MLX affine embedding | `mlx_quantized_embedding(group)`；原 words/scale/bias、I32 row ids | 只选择所需行，保持原 scale dtype 的解码次序 |
-
-`G=N*K/group`。`artifact_weight_decode()` 显式输出 dense `[N,K]`；调用方运行一次并持有结果，
-随后用其 transposed 描述作为普通 MatMul RHS，或绑定为 Graph constant。重复 MatMul 不应重新插入解码。
-显式 `output_type` 可选 F16/BF16/F32；它不替代制品的原 scale 精度或 packing。
-
-MLX affine 的 group 为 32/64/128，MX 为 32；`pack` 为 affine4/mxfp4 的 8 或 mxfp8 的 4。
-线性与专家输入 A 为 F16/BF16/F32；affine A/scale dtype 相同时保持该类型，混合时输出 F32，
-MX 输出保持 A dtype。scale 先按原 CPU 转为 A dtype，低精度溢出或下溢不会被隐去。
-
-这组实现借用固定 bitsandbytes、AutoAWQ、compressed-tensors、MLX 的原计算组合，由 ATen CPU 承载。
-它们属于 managed replay，存在原库临时分配与线程成本；不保证 capture、零热分配或未知私有内存的硬预算。
-越界索引和分配失败通过 Completion 报错，已失败的执行槽需要重建；独立槽可以共享只读参数。
-当前有限数值、默认精度和资源测试的范围见[验证记录](../../evidence/correctness/cpu-quant-mtp-c3-mixed-batch/README.md)，
-不据此承诺整个模型或其它路线已完成资格。
-实际模型内宽的559类GGUF及34类非GGUF端口已在Windows/Linux普通两入口验证，见
-[实际端口矩阵](../../evidence/correctness/cpu-quant-mtp-c5-matrix/README.md)；修复后的大词表和六个非GGUF族
-也已验证更新后的static/shared SDK。该资格仍按真实packing/group/dtype和端口区分，
-不把一个文件名的“4-bit”当作所有张量格式，也不代签全部混合模型完整片段。
-
-CPU-only LibTorch启用时，`model_ops::causal_conv1d()`的F16/BF16输入现在由原ATen CPU程序承载。
-samples为`[B,W,C]`、weights为`[C,K]`，二者dtype相同；F32累加后一次回原output dtype。
-原`[C,1,K]`文件权重由调用方用View整理。该managed路径包含布局/精度转换、原库临时与结果copy，
-不能要求capture、零热分配或已知严格私有内存界；失败slot需要重建。F32继续走原ggml路径。
-真实dtype/宽度、越界与资源范围见[本批资格](../../evidence/correctness/cpu-quant-mtp-c5-plain/README.md)，
-更新安装SDK的进度另行记录，不以旧二进制代签新增接缝。
-
-### 激活的组量化与还原
-
-`model_ops::block_quantization_roundtrip(format)` 将 dense BF16 `[M,K]` 输入量化后还原为
-相同形状的 BF16，供需要保留量化感知训练边界的消费者组合。两个显式格式为：
-
-- `BlockQuantizationFormat::kFloat8E4M3Block64`：每64值取 absmax，floor为 `1e-4`，除448。
-- `BlockQuantizationFormat::kFloat4E2M1Block32`：每32值取 absmax，floor为 `6*2^-126`，除6。
-
-两者 scale 都向上取二次幂，代码值饱和最近偶数舍入；不等同于其它 MX 格式的 round-even scale。
-输入必须有限，K须整组；量化还原后的极值仍可能溢出。输入输出不重叠，均需16字节对齐。
-当前 CUDA 原版 DeepSeek 程序资格为 SM89/Driver API13040。默认路线自动绑定，Graph使用同一
-运算描述；不需要安装 Python/TileLang 或指定 Provider。每次执行一次原生发射，caller workspace
-为 `4*M*(K/group)` 字节、4字节对齐；独立 invocation 使用独立空间，存储保持到 Completion。
-模型如何切分 RoPE 尾部、更新 cache 或衔接 Hadamard 属于消费者；本操作不隐式管理这些状态。
-
-### 动态 FP8 专家批次
-
-`model_ops::grouped_float8_linear()` 的三个输入依次为：
-
-- `float8_grouped_weight_description(E,N,K)`：全部专家的 E4M3FN `[E,N,K]` codes，
-  后接 F32 `[E,ceil(N/128),K/128]` scales；两部分连续存放，不逐专家交错。
-- dense BF16/F32 激活 `[T,A,K]`：`A=1` 时各专家共享一次量化的 token；`A=S` 时保留
-  每个专家分支的独立激活，例如 down 投影。
-- dense I32 专家 IDs `[T,S]`；输出为同激活 dtype 的 `[T,S,N]`，重复 ID 合法。
-
-当前 CUDA 资格为 SM89/Driver API 13040、`S=8`、`1<=E<=1022` 和完整 K128 分组，
-使用普通 F32 scale、默认 floor `1e-10`。其它域在准备阶段明确拒绝。激活需16字节对齐，
-权重/ID需4字节对齐；工作区大小与16字节对齐由 `workspace_requirement()` 给出。
-每个 invocation 独占量化、专家排序和 padding 空间。准备绑定成熟程序，重放没有专家逐项
-host 调度、ID读回或权重解码。负数及越界 ID 安全返回失败 Completion；失败输出不可消费。
-源码和默认选择依据见 [F39](../implementation/tasks/compute/llm-moe-d5-grouped-fp8-binding.md)。
-
-### 执行前检查具体请求
-
-CPU/CUDA 用描述符和 memory resource 调用普通 `prepare()`，即可检查所选设备上实际的
-dtype、shape、layout 与资源是否可执行；此时无需分配 tensor payload 或创建 Queue。
-准备可能编译并分配程序状态，但不读取或执行输入数据。保留成功结果供后续 invocation 使用，
-无需另做一次查询或再次准备。`infer_output_descriptions()` 只检查共同数学描述，不证明路线支持。
-
-准备失败保留具体原因：`InvalidArgument`/`OutOfRange` 表示请求不合法，`Unimplemented` 表示
-当前资格条件不受支持，资源不足和编译错误按实际错误返回。所有实现都不支持时，错误包含 Provider
-名字和其拒绝原因；已进入实际准备的明确拒绝优先于后续更宽泛的 proposal 拒绝。执行期不重新选择。
-
-### 创建 CUDA 程序
-
-Windows/Linux x86_64 选择 CUDA 后端即可取得 CUDA-only Compute 与 Graph，
-自动组装路线所需的成熟 Provider。系统须预装受支持的 C++ 工具链和 CUDA Toolkit 13.3+；
-缺 Toolkit 时初始化明确失败。
-
-```text
-python scripts/init.py --backends cuda --components compute,graph
-python scripts/build.py --jobs 2
-```
-
-同时编入 CPU 与 CUDA 使用 `--backends cpu,cuda`，只编入 Vulkan 使用 `--backends vulkan`；
-Windows/Linux x86_64 的 `--backends all` 同时提供 CPU、CUDA 和 Vulkan。
-编译可用集合不替代引擎运行时的 CPU/GPU/混合执行选择。
-静态库用 `init.py --static`，安装用 `build.py --install <prefix>`，无需内部 Provider flags 或排序。
-源码与安装包均链接 `hyle::compute`，
-应用链接后调用 `hyle_stage_runtime(app)`，Windows 把依赖 DLL 邻置 exe。
-构建选择不代替具体输入的支持检查；prepare 按实际模型格式、dtype、布局、设备和资源约束绑定实现，
-不满足条件时返回明确错误。
-
-直接使用 CMake 时选择 `HYLE_COMPONENTS=compute`、`HYLE_COMPUTE_ROUTES=cuda`。自然 C++ 入口如下：
-
-```cpp
-#include <hyle/compute/cuda.h>
-#include <hyle/compute/backends/cuda.h>
-
-auto context = hyle::compute::cuda::create_context({.device_ordinal = 0});
-if (!context) return context.error();
-auto resource = hyle::compute::cuda::MemoryResource::create(
-    *context, hyle::compute::cuda::MemoryKind::kDevice);
-if (!resource) return resource.error();
-auto queue = context->create_queue();
-if (!queue) return queue.error();
-
-auto prepared = hyle::compute::prepare(
-    *context, hyle::compute::MatMul{}, activation_desc, weight_desc, resource->ref());
-```
-
-后续依 `workspace_requirement()` 分配 CUDA workspace，为每个并发槽创建 invocation；绑定同设备
-tensor，submit 后显式检查 Completion。完整 dense gate/up → SwiGLU → dense down 样例见
-[CUDA Direct FFN](../../samples/package/compute/cpp/cuda_ffn.h)。该样例连续执行三组变化输入，
-没有 Provider 列表、计时资料或用户 kernel callback。
-
-当前CUDA普通入口按真实端口先检查原Provider能力/精度/资源，再绑定逐算子
-`ENGINEERING_DEFAULT`：plain rank2 GEMM用cuBLAS、GGUF/原tensor程序用ggml、合格
-half weighted RMSNorm与packed gate用SGLang、Scan/TopK/plain Gather用CCCL，artifact/MLX
-与稳定Softplus用Torch；原DeepSeek/FlashInfer AOT硬条件仍须成立。未知模型/driver或没有
-性能证书时不禁用仍合法的成熟基线。实际不可支持的设备/程序/版本仍返回明确错误。
-Graph优先保留已准入完整ggml region，叶默认不拆融合；准备后执行不搜索/计时/重新裁决。
-本轮三组重复域的实际A/A未过，因此没有新增性能WIN；默认依据和限制见
-[U4当前裁决](../implementation/tasks/compute/cuda-final-u4-default-and-best-of.md)。
-
-HYLE CUDA scalar gate及通用stride Unary中的SiLU/GELU/GELU-tanh算术复用同一份锁定的
-SGLang片段，六份重复本地公式已删除；HYLE只保留成熟vector入口不能表达的scalar索引、
-尾宽、separate输入和stride glue。其它Native fallback有具名的prepared/capture、低对齐、
-空张量、Bool mask/LogSoftmax/checked Scatter等未替代能力，保留理由与性能优势分开；
-详见[CUDA自研清退与独有能力](../implementation/tasks/compute/cuda-final-u5-native-retirement.md)。
-
-| 默认规则 | 支持域 |
-|---|---|
-| FlashInfer causal GQA | Linux CUDA SM89；dense BSHD FP16/BF16，Q/KV heads=8/2、Q/K/V depth=256，正 batch/sequence、KV length≥Q length，无额外 mask，FP32 累加；head256 prefill/decode 使用锁定原版实现 |
-| ggml CUDA 张量片段 | 原node支持/编译device程序准入，实际验证SM89；plain F32/F16/BF16，非空 dense rank0..8 或按元素对齐的 rank≤4 stride；Copy/Cast/Concat、Add/Sub/Mul/Div广播、Abs/Neg/Exp/Log/Sqrt/Rsqrt/Tanh、带affine的RMSNorm/LayerNorm、任意轴Sum/Mean与无mask/浮点additive mask的Softmax；FP32中间计算、最终cast；端口对齐与容量限制见下文 |
-| ggml CUDA causal GQA | Windows默认、Linux可显式组合；原device/node准入，实际验证SM89；dense BSHD FP16/BF16，Q/KV heads=8/2、depth=256、KV length≥Q length、无额外mask、FP32累加；每tensor及score矩阵元素数≤INT32_MAX，batch≤65535，端口256字节对齐 |
-| cuBLASLt dense MatMul | 非空 FP16/FP32 rank-2，row/column-major 输入、dense row-major 输出；FP32 accumulation，FP32 不降为 TF32 |
-| SGLang precise gated activation | dense FP16/BF16/FP32 packed halves；SiLU/GELU/GELU-tanh 在 FP32 计算及乘法后一次舍入；FP16/BF16 hidden%8、FP32 hidden%4；输入输出16字节对齐，输出元素数<=INT32_MAX，不重叠 |
-| SGLang RMSNorm | dense 同类型 F16/BF16 输入和必需 scale，F32 累加、输出最终 RNE；宽度64/128/256、256倍数至8192、512倍数至16384；16字节对齐、允许精确 input0 原位；混合F32参数不先窄化，继续由下一合法候选承载 |
-| SGLang Unary | dense F32/F16/BF16 SiLU/GELU/GELU-tanh，完整16字节向量、对齐16字节、允许精确原位；普通 Unary 的稳定尾值和 -Inf 极限合同由明确数学适配保留；输出元素数<=INT32_MAX |
-| CCCL Scan / TopK / Gather | CUDA13.3 toolkit/runtime、CCCL3.3.4与实际compiled device程序，实际验证SM89；Scan为F32/I32，TopK为F32/F16/BF16/I32，Gather为plain1/2/4/8字节storage与I32/I64索引；rank≤8、任意axis/byte stride、dense输出、不重叠；容量及caller workspace见下文，managed执行 |
-| HYLE gated activation | separate 输入或不满足上述向量宽度的 packed halves；dense FP16/BF16/FP32，同三种激活、精度与元素数/不重叠限制 |
-| HYLE 基本 tensor | plain View、Copy、Fill、Select；F32/F16/BF16 Cast、全部既有 Unary/Binary 模式；rank≤8，rank0/broadcast/非负及奇数 byte stride，非 View 输出 dense、元素数≤INT32_MAX |
-| HYLE CUDA norms | dense F32/F16/BF16 RMSNorm、LayerNorm，最后一轴、FP32 accumulation；scale/bias 各自为输入类型或 half 输入的 F32 参数，元素数≤INT32_MAX；LayerNorm 使用先均值再 centered variance |
-
-上述 FlashInfer 域复用普通 `ScaledDotProductAttention`，采用 bottom-right causal 对齐。
-Direct 调用者按 `workspace_requirement()` 为每个并发 invocation 分配独立 CUDA workspace；
-Graph 自动规划同一资源。输入、输出和 workspace 必须活到实际 Completion 结束。
-原版派发包含 capability、occupancy 和 kernel attribute 查询，属于 managed 执行，当前不支持
-外部 capture；普通 Graph 的 prefer-capture 会报告 commands 路线。失败后重建 invocation，
-不在执行时改选其它实现。Windows 未准入此 FlashInfer pin，普通入口在上述域使用ggml。
-
-M2 新增 ggml CUDA 张量映射仍在逐平台验收，具体门见
-[CUDA 实现记录](../implementation/tasks/compute/llm-moe-m2-b1-cuda.md)。普通入口会在符合上述域时
-绑定原版 ggml；这不是全21行或所有平台验证已完成的声明。其元素数上限为
-`(INT32_MAX-1024)/sizeof(float)`，plain storage 的跨度和单stride不超过INT32_MAX；空张量、
-高rank不可折叠stride、奇数字节stride、Select/min/max、稳定激活/gate与索引域尚不由这份映射承载。
-Copy/Cast/Concat接受按storage类型对齐的subview；数学节点仍要求256字节。Graph对边界值的
-所有读写者合并要求，发布的复制结果若被数学节点继续使用也须256字节，准备/提交不会跳过检查。
-LayerNorm 用原版mean/sub/sqr/mean/epsilon/sqrt/div实现两遍中心化方差；gamma/beta遵守公共舍入点。
-Softmax 保留原版scale/mask融合，先应用scale再加可广播同类型浮点mask；任意axis通过原版布局
-变换转为行。无有效值行返回NaN。Direct允许相同dense描述符的精确input0原位，部分重叠或
-mask/output重叠拒绝；Graph region仍要求不别名。Bool mask及LogSoftmax尚未由这份映射承载。
-必要cast/repeat/cont和每slot冷常量上传属于完整成本，managed重放仍可能在原版pool中分配。
-原版内部copy/repack在提案中仍为未知；Graph报告的copy_bytes=0仅表示适配边界没有额外搬运，
-不能用它推断原版程序没有materialization成本。
-
-ggml attention采用相同bottom-right causal合同。FP16保留原版融合attention；该版本的
-SM89融合路径会缩窄BF16 K/V，因此BF16使用原版F32 MatMul/softmax组合与原版cast，
-不将大指数BF16静默转成FP16。此组合持有score矩阵与转换临时值，成本随
-`batch * query_heads * query_length * kv_length`增长，性能资格仍待M2。
-ggml自管每invocation临时资源；`workspace_requirement().size == 0`时直接创建invocation，
-不分配零字节workspace。因果mask只在冷准备时上传，重放只绑定地址。BF16域要求未设置
-`GGML_CUDA_CUBLAS_COMPUTE_TYPE`，否则冷拒绝；Context绑定后不得修改影响上游数值的环境变量。
-
-ggml域由普通CUDA入口冷绑定；expert工厂为`compute::ggml_cuda::provider()`，头为
-`hyle/compute/providers/ggml_cuda.h`。每个invocation独立拥有原版backend、stream、scratch与
-capture cache，输入输出借用到Completion。HYLE用入口/出口两个event连接现有Queue，ggml
-保留片段内部调度和融合。该路径为managed，原版首轮pool/handle与后续capture/cache维护可能
-分配或阻塞host；不在prepare偷跑payload，不支持外部capture。运行失败先收束已接受的原生
-工作并退役该invocation，同一prepared program可创建新槽。上述限定域已完成Windows/WSL
-源码、静态与动态安装消费；全需求域与成熟实现性能规则由M2裁决。
-
-基本 tensor 使用同一普通 `prepare()` 和 CUDA Graph 入口，程序准备后无需 workspace 或槽私有
-device storage。View 按共同 byte offset 必须别名原 storage；其余逐元素操作仅在输入与输出描述符
-完全相同时允许精确原位，Copy/Cast 始终不重叠。Select 原样保留被选择值的位模式；浮点算术使用
-FP32 中间值并在末尾舍入一次，Cast 窄化为 RNE。Norm 参数在计算前保持 F32，不先窄化；允许精确
-input0 原位，其他参数和部分重叠拒绝。非连续 norm 输入先用普通 Copy materialize，并计入实际成本。
-上述 SGLang norm 使用锁定原版 warp/CTA/double-load 算法，其他 norm 候选使用 CUDA SDK
-Cooperative Groups；均一次 native launch、零 workspace/槽私有状态。新 SGLang norm/Unary
-域的完整性能比较仍待 C1 资格，不能从普通入口接通推断为硬件上的性能赢家。
-Reduce 和 Softmax/LogSoftmax 支持 F32/F16/BF16、任意轴/普通 byte stride、dense output 和 F32
-累加；半精度 Reduce 必须显式声明 F32。Reduce 不允许原位，空集合仍写约定 identity，Min/Max
-传播 NaN；Softmax 可用广播 Bool/同类型 additive mask、scale 和精确 input0 原位，无有效值的行
-产生 NaN。每个原子一次 native launch，无 caller workspace 或槽私有状态；Softmax 在≤8192列时
-缓存 F32 行（最多32 KiB片上空间），更长行读取输入三遍。上述输入/输出非空元素数≤INT32_MAX。
-这些新能力尚待 C1 完整片段的等责性能和全部交付验收，不从正确性推断最快规则。
-TopK 在上述已资格化环境通过普通入口绑定原版CCCL，返回原始位模式的 F32/F16/BF16/I32 values
-与 I32 indices；支持任意轴和byte stride，两个输出dense，输入与输出及两输出之间都不重叠。
-同分（包括±0）按较小列号优先，NaN排在全部非NaN后；largest/smallest均可，sorted=false仍可
-返回有序结果。count=1 使用原版CCCL DeviceReduce/DeviceSegmentedReduce，随后Transform
-发布原值/下标；count>1 继续DeviceRadixSort稳定排序与Transform，没有4096列限制。
-按`workspace_requirement()`分配每个invocation的独立CUDA工作区；单选包含行级arg pair及
-SDK临时区，多选包含原两份keys/indices及SDK临时区。默认managed执行不接受外部capture。
-Concat 支持同类型的任意数量 plain 1/2/4/8 字节输入、任意轴/byte stride 和 dense output，
-逐位保留数据，无输入输出重叠，输出元素数≤INT32_MAX。每最多四个输入一组原生 kernel，常见
-双输入一次提交；空组不取指针或启动 kernel，程序元数据按输入数量冷分配，无 caller workspace
-或槽私有状态。普通 Graph 可直接组合 View→Concat 和窗口 append，并使用原生 capture。
-Gather 在上述CCCL环境通过普通入口调用原版`thrust::gather`，支持plain1/2/4/8字节source、
-I32/I64 indices、任意axis/byte stride和dense output，逐位保留数据。默认checked先在GPU用
-原版Reduce Min/Max验证全部索引，只回传两个I64控制标量并等待结果；越界通过Completion返回
-OutOfRange，整个Gather output保持不变，失败Invocation需重建。tensor计算与索引payload不下载到host。
-output不能与source或indices重叠；output/indices元素数各≤INT32_MAX，存储跨度≤PTRDIFF_MAX，
-source轴与地址计算保留64位。每个checked invocation需要独立caller workspace，按查询的大小和
-对齐分配并保活到Completion；Graph自动规划。unchecked由caller保证索引有效，省略检查及工作区。
-空output不访问payload；默认managed路径不接受外部capture。
-CUDA `Scatter` 的 assign 保留1/2/4/8字节storage原始位，add支持F32/F16/BF16。当前过渡实现按
-updates逻辑行主序处理、半精度每次F32求值后舍入；这是该实现特征，公共add合同允许重结合及
-存储精度或更宽的累加。支持I32/I64、任意axis/byte stride、dense输出，
-仅允许同描述input0精确原位更新；非空output/updates/indices各≤INT32_MAX。checked坏索引使整个
-Scatter输出保持原值，通过Completion报告；失败槽退役后可建新槽恢复。
-空indices只保留source，单索引无需workspace；多索引由CUB stable SortPairs对索引/ordinal分组，
-显式caller workspace包含四个I32数组和SDK scratch。每个invocation在冷期固定并上传独立排序图，
-普通Direct复用它，外层CUDA Graph接入原生child graph；执行期不重新调用排序准备。原位更新省去
-整状态复制，opaque CUDA graph私有内存如实报告unknown，不能当成零内存。完整成本包括索引检查、
-排序、必要source复制、逐目标有序更新与完成回报，不等同于无序atomic scatter。
-CUDA `Scan` 在上述环境默认由原版CCCL承载I32/F32、inclusive/exclusive、任意axis/普通byte
-stride与dense输出；非空总元素≤INT32_MAX，空域不访问payload。原版ScanByKey计算每个逻辑行
-的inclusive前缀，再由库Transform提取所需输出；exclusive首项为零。I32先提升到I64扫描，原版
-Reduce检查全部前缀（包括exclusive最后总和），仅两个验证标量返回host；任一越界通过Completion
-返回OutOfRange，所有用户output保持原值。检查包含一次host等待，不能声称整条路径不阻塞host。
-Direct必须提供独立caller workspace，不接受输入/输出别名；Graph规划同一工作区。caller的
-tensor、workspace和Queue须活到Completion结束，即使PreparedOperation/Invocation句柄已释放。
-CCCL这些接线的Windows开发验证与尚未运行的跨平台/三交付/P1见
-[实现记录](../implementation/tasks/compute/llm-moe-m2-b1-cuda-collectives.md)，不代表完整模型覆盖。
-整数/FP8 Cast 与算术等
-尚未由这批 CUDA 接线覆盖。新增 BF16/门控模式及基本 tensor 的完整性能资格仍待 C1 bundle；
-下述 R4 性能结论只签原有 FFN 域。
-
-GGUF 量化权重用 `gguf_weight_description()` 描述，并把已有模型制品中的原生 packed bytes 直接绑定给
-普通 `MatMul`；ggml CUDA Provider 在冷准备解释格式，不建立 Marlin 专用 carrier 或重复 packing。
-其余 dtype/shape/operation 明确拒绝；prepare 绑定规则与 vendor tactic，
-执行期不搜索、计时或重新 packing。向量域在 prepare 固定16字节对齐合同，运行绑定不满足时明确拒绝，
-不会热切换或隐藏 copy；专家可用 `cuda_native::provider()` 保留2/4字节对齐的 HYLE 路径。
-默认激活规则依据完整 FFN 比较：HYLE 未呈现跨实验顺序成立的明确优势，采用合格成熟实现。
-硬件/版本条件仍可在冷匹配时使用；当前性能资格只覆盖 RTX 4070/SM89、driver 610.62、
-Toolkit 13.3.73，不外推其它 GPU 或版本。
-最终默认 Direct/Graph 的两种 FFN 形状均通过5%工程非劣门；这是同生命周期成熟实现的接入验收，
-不代表 HYLE kernel 战胜 SGLang。完整结论、单个小幅负向分层与原生边界成本见
-[R4 验收记录](../implementation/tasks/compute/cuda-v1-four-route-foundation.md#r4-终局closed)。
-
-Context、MemoryResource、外部 tensor/压缩权重 owner 必须覆盖各自借用和在途工作。每槽的 workspace
-与可变 vendor handle 独立，成功完成后复用；失败终态后重建槽。vendor/driver 私有存储可能无法
-精确计费，不能把 unknown 当零。异步上传下载与 native stream 接入仍使用 backend/transfer API。
+算子和状态接口可用于 MTP、MoE 或模型片段，但 HYLE 不提供完整模型 loader、tokenizer、视觉模型管线、
+草稿接受策略或请求循环。片段可执行不意味着整个模型能在当前内存中常驻，也不意味着全部新制品编码自动兼容。
 
 ## 当前能力
 
-| 任务 | 公开形状 | 当前合同 |
+按任务选择 descriptor；完整字段和 shape 推导见[公开 operation 头](../../include/hyle/compute/operation.h)。
+这张表是接口导航，具体请求还要通过 `prepare()` 检查，不是四后端通用支持矩阵。
+
+| 任务 | descriptor / 入口 | 先确定什么 |
 |---|---|---|
-| 设备发现 | `Backend::device_count/device` | 每个显式 backend 只枚举自己的设备；`cpu::device()` 直接取得唯一 CPU |
-| 执行域 | `Backend -> Device -> Context -> Queue` | CPU Queue 在调用线程同步、按序执行；没有全局 registry、隐藏 worker 或默认设备 |
-| tensor schema | `dense/strided_bytes/blocked_dense/blocked_strided/opaque` | rank <= 8；logical dtype 与 physical encoding 分离；stride 明确以 byte 为单位；view 借用 Mem storage |
-| operation schema | typed operation families + inline custom | 含 grouped Q4 的完整 scale/bias schema；可做 arity/shape/layout/alias/effect/precision 检查，schema 存在不等于已有可执行 provider |
-| 零拷贝 tensor 变换 | `View::reshape/slice/permute/broadcast_to` | submit 不映射或搬运数据；输出必须绑定到输入中由 view 推导出的精确起始位置 |
-| materialize / 初始化 | `Copy` / `Fill` | 普通 CPU 的 plain strided Copy 由成熟接缝物化；Native exact 仅保留 dense Mem 拷贝，完整声明动态域仍支持 view/broadcast 物化；Fill 写入精确 bit pattern |
-| 推理浮点 storage 转换 | `Cast` | f32/f16/bf16/E4M3/E5M2 的完整互转；dense 复用 SIMD whole-buffer 路线，strided 输入显式 materialize |
-| 单目计算/激活 | `Unary` | f32/f16/bf16 Abs/Neg/Exp/Log/Sqrt/Rsqrt/Tanh/Sigmoid/ReLU/GELU/GELU-tanh/SiLU/Softplus；稳定GELU/GELU-tanh与F32 SiLU由已构建ATen承载，Native明确拒绝这些已退场域 |
-| 双目计算 | `Binary` | f32/f16/bf16 Add/Sub/Mul/Div/Min/Max 与 NumPy-style broadcast；Min/Max 使用 `fmin/fmax` 语义 |
-| 条件选择 | `Select` | 可广播 Bool condition；对任意 plain 1/2/4/8-byte scalar branch 原样选择 bits |
-| reduction | `Reduce` | f32/f16/bf16 Sum/Mean/Min/Max，半精度显式 F32 accumulation；任意 axis 集、负 axis、keep-dim 与普通 byte stride；dense 常用路线复用 SIMD |
-| 前缀求和 | `Scan` | i32/f32，inclusive 或从零开始 exclusive，正负 axis、普通 byte stride；整数溢出不写任何 output；dense input 可精确原地执行 |
-| normalization | `RmsNorm` / `LayerNorm` | dense f32/f16/bf16 `[..., hidden]`，F32 accumulation；RMSNorm 可选 weight；LayerNorm 可选 scale/bias；半精度参数也可用 F32；允许精确 input/output in-place |
-| matrix multiply | `MatMul` | f32 `[...,M,K] * [...,K,N]` 与 NumPy-style batch broadcast；两端 batch 都可广播，B 的末两维可 row-major 或物理 `[...,N,K]` 的转置 view |
-| gated activation | `GatedActivation` | f32/f16/bf16 packed `[...,2*d]` 或 separate gate/value；成熟ATen三种激活保持F32 activation/mul后一次storage舍入；Native仅保留F16 SiLU待有限裁决 |
-| 索引读写 | `Gather` / `Scatter` | plain scalar storage、i32/i64 indices、dense output；Scatter assign 支持任意标量位宽，add 支持 f32/f16/bf16，并可精确原地更新 input0 |
-| 张量拼接 | `Concat` | 同 dtype/rank 的 variadic plain inputs，沿显式 axis 产生 dense output；dense 输入按连续后缀块复制 |
-| 旋转位置编码 | `RoPE` | f32/f16/bf16 data、i32/i64 positions、显式F32 frequency、interleaved/half-split与未旋转tail；I64普通CPU匹配ATen，Native只保留F32 data/I32域 |
-| 概率归一化 | `Softmax` | f32/f16/bf16 任意 axis、scale、LogSoftmax，以及可广播 Bool/同类型 additive mask；F32 accumulation，半精度使用显式 F32 行工作区；允许精确 input/output in-place；无有效值的 row 产生 NaN |
-| 候选筛选 | `TopK` | f32/f16/bf16 任意 axis，largest/smallest、sorted/stable 语义，返回同类型 values + i32 indices；显式 caller-owned workspace，不隐藏分配 |
-| 注意力 | `ScaledDotProductAttention` | Native 自研执行器已退役；普通 CPU 使用成熟 ggml/ATen 接缝，Native-only 请求明确拒绝 |
+| 改逻辑布局、物化、初始化、转换 | `View`、`Copy`、`Fill`、`Cast` | byte stride、alias、copy 与 numeric cast 的区别 |
+| 逐元素与广播 | `Unary`、`Binary`、`Select`、`Concat` | 模型规定的激活、广播和存储舍入点 |
+| 归约、前缀、归一化 | `Reduce`、`Scan`、`RmsNorm`、`LayerNorm` | axis、空集合、累加精度、workspace |
+| 矩阵、量化权重、专家 | `MatMul`、`QuantizedMatMul`、`GroupedMatMul` | 逻辑 shape、实际编码、scale/group 与资源 |
+| 索引、top-k | `Gather`、`Scatter`、`TopK` | checked 索引、重复写语义、两个输出与临时存储 |
+| 位置与注意力 | `RoPE`、`Softmax`、`ScaledDotProductAttention` | 位置类型、mask、GQA、causal 对齐与数值域 |
+| ragged/paged KV | [批次 attention](batch-attention.md) | 容量与有效区、页身份、更新和发布 |
+| 模型专用片段与状态 | [model_ops.h](../../include/hyle/compute/model_ops.h) | 显式输入状态、原始 gate 与反馈边界 |
+| 一次 CPU callback / 可准备 kernel | `cpu::submit_host` / [自定义执行](#自定义执行接入-direct-与-graph) | callback 不抛异常，kernel 有自己的执行实现 |
 
-公共 SDPA 描述也接受 GQA/MQA：Q head 数必须是正 KV head 数的整数倍，K/V head 数相同；
-Q head `h` 使用 KV head `h / (Qheads / KVheads)`，输出与 mask 的 head 轴仍按 Q。
-Provider 单独声明计算域；当前 CPU Native 只支持同 head MHA，对 GQA/MQA 返回 unsupported。
-| 自定义 CPU 工作 | `cpu::submit_host(queue, callable, args...)` | `noexcept` callable，返回 `void` 或 `Status`，返回前完成 |
-| 可准备、可进入 Graph 的用户 kernel | `make_custom_provider` + `make_custom_kernel` | owning typed factory；shared HYLE Queue，逐 Invocation 状态；见下文完整例子 |
-| CUDA runtime | `cuda::backend/device/MemoryResource/submit` | 显式 device/pinned/managed storage、stream borrow/adopt、typed command、真实 async Completion；不冒充 CUDA 算子目录 |
-| byte transfer | `transfer_properties/copy_async/fill_async` | 对 Mem `BufferView` 做显式 byte copy/fill；不隐藏 tensor repack、pageable staging 或 host wait |
-| 完成边界 | `Queue::reserve_completions` / `Completion` | direct submit 或一个 Graph Queue segment 只产生一个 prefix Completion；销毁 pending handle 不等待 |
-| provider 选择 | `Context::create(device, Provider)` / `ContextOptions::providers` | 显式且有序；冷能力查询不支持或 prepare 明确安全拒绝为 unsupported 才尝试下一项，真正错误不按 code 猜成回退 |
-| 精确资源 prepare | `OperationResourceBindings` / TensorView overload | provider 先报告要求，再对 input/output/workspace 的 exact `MemoryResourceRef` 冷验证；submit 不重新选资源或隐藏 copy |
-| provider 诊断 | `provider_identity` / `runtime_properties` / `persistent_bytes` | O(1) 读取 provider/version、shared/delegated owner、replay 成本类别、threading/capture/workspace owner；`persistent_bytes == nullopt` 表示 provider 无法给出完整精确值，不是零 |
-| 稳定重复执行 | `prepare -> PreparedOperation -> OperationInvocation::submit` | prepared artifact 可共享；每个并发 lane 独占 invocation/workspace；submit 不重新推 shape/路由 |
+`GatedDeltaNet{}` 的 Q/K 是 `[B,T,Hk,Dk]`、V 是 `[B,T,Hv,Dv]`，log-decay/beta 是
+F32 `[B,T,Hv,1]`，初态是 F32 `[B,Hv,Dv,Dk]`；输出为 V 同形结果和新 F32 状态。
+它不隐含 Q/K 归一化、gate 激活或状态写回。`model_ops::recurrent_gated_delta_net()` 另接受
+raw a/b、negative_a、dt_bias，组合 `g = negative_a * softplus(a + dt_bias)` 与 `beta = sigmoid(b)`。
+调用者显式决定何时以 next state 替换旧状态；后续节点失败不会替应用回滚已写数据。
 
-公共schema可以做纯描述推导，存在描述不等于每个Provider都能执行。上表是普通CPU能力与合同，
-不是Native Provider目录；CPU的Scan/TopK由成熟标准库接线承载，原Native域已退场。
-Native自研MatMul已源级退役；普通CPU MatMul由oneDNN、ggml或ATen承载。Native-only矩阵
-准备明确返回Unimplemented。原Native的0额外private invocation及高rank prepared-only矩阵能力
-同时撤回：成熟候选不满足严格unknown-reject/prepared-only请求时明确拒绝，不放宽预算或填假上界。
-默认路线先匹配已接入的oneDNN/ggml合法域，再匹配已构建的ATen原程序，Native只保留具名残余；block/opaque storage、量化
-与窄storage attention由理解相应格式的Provider承载，不会被隐藏materialize成另一种合同。
-
-CPU ATen 接入 Select、Gather、ScatterAssign、Fill、Copy、Concat 的15种 plain scalar位存储，
-exact shape、rank<=8、稠密输出；支持合法odd-byte strides、I32/I64及scalar/多维index、广播条件非零
-判真、重复Assign最后逻辑写入获胜。负零/NaN payload/FP8和宽整数只是原始位，不产生numeric Cast
-或宽math支持。Copy拒绝alias，仅Scatter允许exact dense input0 alias；索引先验界再写输出，失败
-执行槽冷重建。普通Direct与Graph下游无需额外接线；专家factory在`providers/native.h`中的
-`aten_cpu::provider()`，SDK关闭时invalid并由普通assembler跳过。
-
-这组原库程序是managed replay，包含必要index packing、稳定sort、base copy、native scratch与热
-Tensor metadata分配；同步阻塞host、使用原库私有线程、不承诺capture或精确私有内存上界。
-`native_threads`只设置ggml workers，不控制ATen线程池。要求Prepared-only或拒绝unknown的
-invocation硬预算会拒绝该候选。冷compilation的Program/描述由传入allocator计费，额外private
-resident/peak明确为0，总编译内存仍非0；prepared artifact retained bytes已知。因此有限
-compilation/retained预算可接受该候选，实际仍需容纳Graph/Compute metadata。
-source/static/shared继续使用同一shared CPU LibTorch runtime。
-具体域与两平台普通三交付见[CPU ATen资格](../../evidence/correctness/cpu-aten-storage-index/README.md)。
-
-同一ATen接入还覆盖F32/F16/BF16的SiLU、GELU、GELU-tanh、Softplus，三种packed/separate
-gate、number Min/Max和四种Reduce；exact/rank<=8、合法byte stride、dense output。Reduce显式F32
-accumulation（F32也允许Unknown）。稳定activation用原Double Tensor程序后显式F32，gate在F32
-乘法后一次storage舍入；输入必须原Byte packing到冷私有对齐native槽。Unary/Binary只有dense
-equal-desc端口允许精确alias；Gate/Reduce无alias。Double转换/原Tensor节点/临时数据均收费，
-仍为managed leaf，不承诺零热分配或性能WIN。锁定SDK支持Windows/Linux x86_64的`2.8.0+cpu`和
-macOS ARM64的`2.8.0`；Mac标准CPU构建接入原ATen，HYLE Apple路线可保持OFF。
-[原数值范围和两平台交付](../../evidence/correctness/cpu-aten-numeric/README.md)与
-[Mac当前CPU/三交付证据及未完成边界](../../evidence/correctness/cpu-final-f3/README.md)分别记录，不移植性能WIN。
-
-同一factory增加五种浮点storage间的全部25种`Cast`：F32/F16/BF16/E4M3FN/E5M2，
-rank0..8、合法byte stride和dense output。相同dtype保留原bits；不同dtype按公开RNE、
-FP8有限saturation、Inf及NaN映射转换，不能把位copy当数值转换。Cast全部拒绝alias；
-原Tensor cast/clamp/where/bit-view、packing和临时存储计入managed成本。
-稳定Sigmoid使用原Double kernel后F32/storage舍入。限定已锁Windows/Linux x86_64 SDK，
-当前批次资格见[Cast与稳定路由](../../evidence/correctness/cpu-aten-cast-stable-route/README.md)。
-
-ATen factory 还接 plain F32/F16/BF16 的 MatMul、Softmax／LogSoftmax、RMSNorm／LayerNorm
-和完整 SDPA math 程序：合法 byte stride、inferred dense output，矩阵 batch 广播和 K0，任意
-Softmax axis／scale、非零 Bool 或 floating additive mask，以及 SDPA 的 GQA、两种 layout、
-独立 Q/K 与 V depth、bottom-right causal 和零 key 无效行。累加保持 F32；窄 storage 显式
-声明 F32。ATen RoPE 接 F32/F16/BF16 data、F32 frequency、I32/I64 positions、两种 pair layout 和完整 prefix／axis，
-未旋转 tail 保留原 bits。依赖和 SDK 平台同上，具体资格见
-[Transformer／矩阵接入](../implementation/tasks/compute/cpu-aten-transformer-matrix-admission.md)。
-低精度data的实测范围见[实现记录](../implementation/tasks/compute/cpu-residual-scatter-rope-numeric-retirement.md)。
-ATen沿原Double phase程序；普通I32模型路径仍可使用ggml的Float32 phase程序。两种中间精度
-应按实际消费者区分，不能拿Double reference代替明确的Float32模型程序或直接签同合同性能胜负。
-
-这是 managed 原库程序，包含所有 packing、Float／Double 转换、GQA repeat、score/mask 与临时
-Tensor，内存上界未知。Torch 原 fused SDPA 的全 mask 行为不同，因此该通用候选使用满足
-公共合同的原 Tensor math 程序。Softmax／norm／RoPE 只接 equal-dense input0 的精确 alias；
-MatMul／SDPA 拒绝 alias，默认 prepare 仍绑定已有合法成熟域，不在执行时计时或搜索。
-
-ATen还接plain F32/F16/BF16 `Scatter{.kind=ScatterKind::kAdd}` 的I32/I64、scalar/多维indices、
-各轴与合法byte strides，输出为inferred dense。原F32 `index_add_` 累加base和全部重复updates，
-最终一次storage舍入；公共Add允许更宽累加/重排，不保证逐更新窄舍入或位复现。empty indices
-保留base原bits。索引全部checked后才写output，仅equal-dense input0允许alias；其它限制与managed
-成本同上。[两平台接线与三交付资格](../../evidence/correctness/cpu-aten-scatter-add/README.md)。
-
-CPU 默认入口也支持 `model_ops::block_quantization_roundtrip()` 的
-`kFloat8E4M3Block64` 与 `kFloat4E2M1Block32`，调用固定原版 ds4 CPU 程序。
-输入/输出是相同形状、独立存储的 dense BF16 矩阵，最后一维必须是相应分组的正整数倍；
-普通 `prepare()` 与 GraphBuilder 的 `add()` 均可绑定。非有限输入通过 Completion 报错，
-该 invocation 随终态失败退役，后续需从同一 prepared program 创建新 invocation。
-原ds4路径不包含group128；开启上述CPU-only SDK后，group128由固定TorchAO/ATen原程序
-承载，官方完整FP8/FP4片段的验证范围见
-[完整批次](../../evidence/correctness/llm-moe-d5-real-fragments/cpu-official-torch-binding/README.md)。
-ds4两个状态操作自身的边界仍见
-[原批次](../../evidence/correctness/llm-moe-d5-real-fragments/cpu-ds4-roundtrip/README.md)。
-
-`GatedDeltaNet{}` 描述六个显式输入与两个输出：Q/K `[B,T,Hk,Dk]`、V `[B,T,Hv,Dv]`、
-FP32 log-decay/beta `[B,T,Hv,1]`、FP32 初态 `[B,Hv,Dv,Dk]`；输出为 V 同形结果与新 FP32 状态。
-Q/K/V 使用同一 F16/BF16/F32 类型，Hv 是 Hk 的正整数倍。它不修改初态，也不隐含 Q/K 归一化、
-gate 激活或状态写回。四路线已通过固定Qwen画像的完整recurrent消费者，
-见[覆盖范围](model-fragment-coverage.md)；模型的raw gate使用下述完整片段，不以预先在host计算gate代签。
-该资格限实际受测的dtype/shape/数值域，不将描述允许的全部参数组合都视为已验证。
-
-`model_ops::recurrent_gated_delta_net()` 描述包含动态门控的完整模型片段，输入依次为
-Q、K、V、raw a、raw b、negative_a、dt_bias、state；输出只有 attended 与 next state。
-内部语义为 `g = negative_a * softplus(a + dt_bias)`、`beta = sigmoid(b)`，然后执行 GDN。
-Q/K 已归一化，negative_a 是负 decay coefficient；它不修改输入状态，调用方显式反馈 next state。
-初始描述域为 plain dense F32、B=1、T=1、D=128、V 头数16/48/128，K头数16或与V相同。
-a/b/negative_a/dt_bias 均为 `[1,1,Hv,1]`，其它 shape 沿用上面的 GDN 合同。
-模型专用片段按最终输出和状态资格化，不公开中间 g/beta，也不改变普通 Softplus 的精度要求。
-四路线普通入口及精确数值资格进展见[当前验证记录](../implementation/tasks/compute/llm-moe-d5-model-gate-qualification.md)；
-此接口描述不代替整模型或尚未运行的交付/性能验收。
-
-`model_ops::clamp(minimum, maximum)` 为 MoE 归一化下限、clamped SwiGLU 等模型程序绑定原生
-ggml 限幅：单个非空 plain dense F32 张量，rank 1–4，输出同描述。bounds 可为无穷，
-NaN bounds 或下限大于上限会在准备时拒绝。有限值和 ±Inf 按闭区间限幅；NaN 数据及 signed-zero
-位模式遵循原生 backend，不承诺跨路线一致，也不替代普通 Binary minimum/maximum 的合同。
-调用方无须创建阈值张量；Direct/Graph 复用相同描述和各路线既有资源/完成路径。当前接线资格见
-[D5-F24](../implementation/tasks/compute/llm-moe-d5-mature-clamp-binding.md)。
-
-`model_ops::sqrt_softplus_routing(scaling)` 描述 DeepSeek 的完整融合路由片段：
-输入为 F32 plain dense logits `[T,E]` 与 correction bias `[E]`，T>0、E=256或384；
-输出依次为 F32 weights `[T,6]`、I32 expert IDs `[T,6]`。scaling 必须有限且为正。
-使用 `sqrt(softplus(logit)) + bias` 选择专家，用不含 bias 的原始分数归一化再缩放；
-分数总和为零时权重为零。并列专家的成员及顺序不保证稳定，不继承普通 `TopK` 的稳定排序合同。
-logits/bias 应为有限模型值；BF16 权重偏置由调用方在准备阶段显式转为 F32。
-该融合描述由 CUDA 的 SGLang Provider 承载，普通 CUDA Context 在 prepare 时绑定，Direct/Graph
-共享原生 stream/Completion 路径；输入输出不得别名，调用方保活至完成。执行不申请设备 scratch。
-CPU/Apple/Vulkan 的同一模型片段继续使用各自成熟算子组合，不承诺执行这个 CUDA 融合描述。
-接入和验证边界见 [D5-F25](../implementation/tasks/compute/llm-moe-d5-sglang-router-binding.md)，
-此描述不代表完整模型、三交付或性能验收已经完成。
-
-`model_ops::sqrt_softplus_hash_routing()` 是 DeepSeek 前三层的 token 查表路由描述，
-已通过CUDA普通两入口的完整MoE消费与三交付，精确画像见[当前覆盖](model-fragment-coverage.md)。
-输入依次为 plain dense F32 logits `[T,E]`、I64 token IDs `[T]`、I32专家表 `[V,6]`，
-T/V非空、E=256或384；输出依次为 F32 weights `[T,6]`、I32 expert IDs `[T,6]`。
-按表中顺序保留六个专家（包括重复项），以选中 logit 的 `sqrt(softplus)` 分数除以
-`sum+1e-20`；此描述不含模型缩放，消费者另乘一次1.5或2.5。非法 token 或被选专家索引通过
-Completion 报告 `OutOfRange`，失败输出不可消费。非有限 logits 不承诺有效权重。
-CUDA 绑定原 SGLang 程序和现有异步错误通道；其它路线的单 token 消费者用成熟
-Gather/Softplus/Sqrt/Reduce/Divide 组合。禁止输入输出别名，保活至完成；不新增数学 kernel。
-
-`model_ops::sink_attention(scale)` 是 DeepSeek 带 learned sink 的完整注意力描述。
-普通入口已实际接入，完整画像的逐路线结果与Vulkan长位置数值限制见[当前覆盖](model-fragment-coverage.md)。
-五个F32 plain dense输入依次为 Q `[1,T,H,512]`、K/V `[1,S,1,512]`、additive mask `[T,S]`、
-sink `[H]`；H=64或128，T/S非空，scale为正且有限，输出与Q同描述。mask自行表达因果、窗口和
-压缩块选择，接口不再额外施加causal；sink只增加softmax分母，不贡献value。有限输入和sink下，
-mask可含负无穷，全部key被屏蔽时输出零。CPU/CUDA/Vulkan执行ggml原生图，Apple执行MLX
-完整attention调用；mask/sink是可变化输入，输出禁止别名。ggml准备期还会检查分数张量的原生
-索引容量。单个sink-attention程序可执行不代表整幅画像通过；FP8投影、压缩状态等必需片段
-分别由完整画像收据覆盖，拒绝/失败域不能用此接口接通替代。
-
-CUDA runtime 与 CUDA operation provider 是两层。选择 `HYLE_COMPUTE_ROUTES=cuda` 或包含 cuda 的集合时，
-CMake 必须找到所需 CUDA Toolkit，缺失即配置失败；未选择不探测。HYLE 不下载 CUDA Toolkit。
-启用后可以创建 CUDA Context/Queue、device/pinned/managed `MemoryResource`，借入或接管同 primary context
-的非默认 stream，并通过 `cuda::submit()` 录入 typed stream command。Graph 可在冷路径 capture 兼容的
-CUDA command/copy segment。只创建 backend Context 不会自动装入计算 Provider；当前独立接入状态见下表。
-同一 CUDA Context 的不同 Queue 可以用 device event 导入另一个 Queue 的 Completion prefix，不阻塞提交
-线程；跨 context/backend 不会伪装成这条路线，Graph 只能依显式策略选择 host wait 或拒绝。
-同 Context 只表示事件可以互通，不表示不同 stream 天然有序。Graph 根据值依赖为跨 Queue 路线插入
-必要的 device wait；direct 调用方仍须建立完成依赖，不能仅靠 host 端先后调用保证另一 stream 已完成。
-
-真实非法地址、设备assert等终态执行错误会保留在Completion中，失败数据不会变成ready。按
-[CUDA错误合同](https://docs.nvidia.com/cuda/cuda-driver-api/cuda_driver_api/group__CUDA__TYPES.html)，
-这些错误使后续CUDA工作持续失败，继续使用CUDA需要退出并重启进程。HYLE不会自动reset共享
-primary context。已实际退休的HYLE guards与逻辑allocation owner可正常退出；native free若仍返回
-同类终态错误，原生allocation是否实际回收为UNKNOWN，不能把逻辑计数归零当作GPU residency归零。
-非终态错误和错误handle仍保留原诊断。精确本批边界见[F2终态释放记录](../implementation/tasks/compute/foundation-f2-cuda-terminal-cleanup.md)。
-
-CUDA `Buffer/View` 的 `write/fill/copy_from/read` 是同步存储操作：返回成功后本次操作已完成，可用于
-初始化权重后立即在独立 Queue 上消费。它们不是异步传输 API；设备写/填充/复制会等待自身默认流的完成，
-但不替你等待其他 non-blocking Queue 对同一 buffer 的在途访问。先显式完成冲突工作，再调用同步方法。
-需要传输与计算重叠时，用 `copy_async`/`fill_async` 和 Queue dependency；不要在 warm kernel 或 capture
-回调里用同步存储方法。pinned/managed 的直接 host 操作同样要求先结束与其冲突的 GPU 访问。
-
-第三方源码出现在 dependency cache 或最终链接中，不表示其算子已经自动成为 HYLE route。HYLE
-`Operation` 只描述公共语义；一个已交付 Provider 必须在 `prepare()`/Graph compile 冷路径把它翻译成
-第三方 plan、kernel 或 graph artifact。叶函数型 provider 可以产生 `PreparedOperation`；自己 host 图的
-runtime 可经 delegated Direct 或 Graph region 保留原生执行。当前 CPU、CUDA、Metal 与 Vulkan 的 ggml
-Provider 已接入明确有限域；合法的 block-Q4 `TensorDesc` 仍须匹配对应 Provider，否则返回
-`Unimplemented`，不会把压缩 bytes 当普通 scalar 或偷偷反量化。
-
-不同 Q4 格式、activation 临时量化
-与累加类型不是同一件事。当前
-`MatMul::accumulation_type` 不能解释为允许 Provider 静默把 F32 输入量化成 Q8。
-当前 CPU oneDNN MatMul 仅实现显式 F32 累加（也是 `MatMul{}` 的默认值）；
-其他累加类型在准备期返回 `Unimplemented`，默认 Direct/Graph 不会通过 fallback 静默降精度。
-
-### CUDA Provider 接入状态
-
-以下是 [R4 实现记录](../implementation/tasks/compute/cuda-v1-four-route-foundation.md) 中已实现并有
-Windows/SM89 验证的专家接入点。普通入口按前述规则自动组成它们，专家可显式限定 Provider。
-Direct/Graph FFN、完整 CUDA 三交付与当前支持域 P1 已验收；单个 Provider 的可编译域仍不等于
-所有 GPU/驱动组合都已资格化。
-
-| factor / 公共头 | 工厂 / owner | 当前有限域 |
-|---|---|---|
-| `compute_provider_cublas` / `compute/providers/cublas.h` | `cublas::provider()` | FP16/FP32 rank-2 MatMul；输入 row/column-major、输出 dense row-major；FP32 累加；冷绑定算法，每槽独立 handle/workspace |
-| `compute_provider_ggml_cuda` / `compute/providers/ggml_cuda.h` | `ggml_cuda::provider()` | 原生 GGUF block MatMul/GroupedMatMul 及已登记张量/注意力有限域；直接消费 caller-owned packed bytes，不建立全量浮点副本 |
-| `compute_provider_torch_cuda` / `compute/providers/torch_cuda.h` | `torch_cuda::provider()` | MLX affine4/group32、64、128，MXFP4/MXFP8 group32 的原 packed linear/grouped；affine embedding；另有显式 artifact 解码与 Softplus |
-| `compute_provider_cuda` / `compute/providers/cuda.h` | `cuda_native::sglang_provider()` | 锁定 SGLang precise packed 门控片段，支持域与16字节对齐要求见默认规则；不引入 TVM/Python runtime |
-| `compute_provider_cuda` / `compute/providers/cuda.h` | `cuda_native::provider()` | dense FP16/BF16/FP32 SiLU/GELU/GELU-tanh 门控，packed halves 或 separate 输入；FP32 中间计算、输出一次舍入；输出元素数<=INT32_MAX；不允许输入输出重叠 |
-
-这些门控不需要 caller workspace 或额外 native invocation 存储；空 output 不要求 device payload
-allocation，也不发 kernel。Kernel 与 launch 配置在 prepare
-绑定，热提交仅在已有 CUDA stream 上 launch。共同层仍为每个 invocation 管理准入与真实完成。
-CUDA driver/code image 的全局开销不假报为零；payload 必须保活到 Completion 终态。所有 Provider
-失败执行槽都须按本页执行槽合同重建；设备失效仍受 backend 恢复限制。
-
-CUDA 的 MLX packed 接口与前述 CPU 端口相同，保留原 U32 words、scale/bias、dtype 提升与
-MX 每组先点积后缩放。它在调用方 Queue 上直接解码到寄存器并用 F32 累加；embedding 保留
-原 storage dtype 的乘法、加法各次舍入。grouped/embedding 先在设备检查全部 I32 IDs，越界
-由 Completion 报告 OutOfRange，并保留调用前的输出内容；失败执行槽仍需重建。
-线性为一个数学 kernel，checked 路径另有一次 IDs kernel；Queue 自身的 status reset/report
-仍按原协议收费。MLX 路径没有 ATen 权重展开、额外全局权重 workspace 或提交前 IDs host wait，
-允许修改绑定权重后再次提交。该 Provider 仍不接受 external capture 或严格私有内存硬预算；
-driver/code image 的进程费用不由数学 workspace 的零字节结论覆盖。
-显式 artifact 解码和 Softplus 保留 ATen managed 分配及原完成边界。
-这次 packed 实现的当前资格见 [G07 实现记录](../implementation/tasks/compute/inference-g07-packed-weights.md)。
-
-### Grouped Q4 的逻辑描述
-
-`QuantizedMatMul{.mode, .group_size, .accumulation_type}` 描述 `[...,K]` activation 与逻辑 `[N,K]`
-压缩权重相乘，输出 `[...,N]`；activation rank 至少为 2。默认 group 为 64、float32 累加。
-`kSignedSymmetric4` 有 activation、weight、scale 三输入，权重公式为 signed q（-8..7）乘 scale；
-`kUnsignedAffine4` 另有 additive bias 输入，公式为 unsigned q（0..15）乘 scale 加 bias。
-scale/bias 的逻辑形状都是 `[N,K/group]`，K 必须为正且整除 group。输入共享 float16、bfloat16、
-float32 或 float64 逻辑 dtype，输出保留该 dtype；累加类型显式声明，不授权偷偷转换 activation。
-
-普通 Graph 可直接 `builder.add(QuantizedMatMul{...}, input, weight, scales, biases)`；signed 形态
-省去最后一项。权重的 `StorageFormatId` 仍须由具体路线的 packing factory 给出；仅凭 4 bit 无法
-推断物理编码或可否无损换格式。各路线只解释其已登记的 carrier；其它格式需要具备相应 Provider，
-公共描述和校验不等于有可执行实现。
-已有 19 族 CPU kernel 不因此多出 Q4 fallback；数值资格也不保证与先物化权重的逐位结果相同。
+模型专用 MoE、压缩 attention、FP8/FP4 和 MTP 片段仍按真实端口、编码和形状准备，
+不会因模型名相同而继承其它接口的数值或设备支持。常用低精度接入见下文；
+整模型加载、视觉管线、草稿接受和请求调度属于引擎。
 
 ## Queue、byte transfer 与 Completion
 
@@ -1098,8 +155,47 @@ kernel arguments 及其 resource owner 都必须活到 Completion 真正终态�
 浮点add是base与所有updates的归约，允许重结合、不同累加顺序及存储精度或更宽的中间值；
 不承诺逐项舍入、行主序fold或跨调用逐位一致。模型要求F32中间值时，使用已有Cast与F32端口
 明确表达，再在规定的存储边界转换。模型精度档和最终误差门仍适用，不能丢更新或静默降精度。
-CPU低精度Add使用已资格化成熟累加程序，Native只保留F32 Add。Scatter本身不提供不同invocation之间
+CPU 低精度 Add 使用相应的累加程序；具体实现由准备期绑定。Scatter本身不提供不同invocation之间
 对同一状态的并发原子更新保证，调用方仍负责资源排序。
+
+## 普通、block 与 opaque storage
+
+普通用户继续用 `TensorDesc::dense()`；它现在返回 byte stride，例如 dense f32 `[2,3]` 的 stride 是
+`[12,4]`。非连续普通 storage 使用名称明确的 `strided_bytes()`。旧的 `strided()` /
+`element_strides()` 已删除，没有把旧名称悄悄改成新单位的兼容层。
+
+固定块压缩权重由 provider 的 typed factory 创建 `StorageFormat`，再传给 `blocked_dense()`。下面只是说明
+通用 seam；产品代码应使用 provider 发布的具名 identity，而不是散落 magic numbers：
+
+```cpp
+constexpr StorageFormatId codec_id{vendor_namespace, format_value};
+auto format = StorageFormat::blocked(codec_id,
+                                     /* elements_per_block = */ 32,
+                                     /* bytes_per_block = */ 18,
+                                     /* alignment = */ 2);
+if (!format) return format.error();
+
+auto stored = TensorDesc::blocked_dense(
+    DataType::kFloat32, std::array{n, k}, *format);
+if (!stored) return stored.error();
+auto logical_weight = stored->transposed();  // logical [k,n]，不搬数据
+```
+
+`DataType::kFloat32` 在这里表示解码后的数学 element，不表示每个 element 占四个物理 bytes。format 独立
+给出 block elements、block bytes、alignment 与稳定的两字 identity。block axis 的 byte stride 每次推进
+一个完整 block；其他轴推进一个逻辑坐标。该轴长度必须能整除 block size；`required_bytes()` 和
+`transposed()/permuted()` 会一起处理 block axis。
+
+不能由通用 Compute 解释的 vendor-packed、tile 或 sparse descriptor 使用 `StorageFormat::opaque()` 与
+`TensorDesc::opaque()`，并显式给出精确 byte extent。Opaque tensor 没有可公开读取的 stride，也拒绝通用
+`permuted()`；只有理解该 identity 的 typed provider 才能构造另一个被证明等价的 view。scale、zero、bias、
+group size 和量化公式不是 storage format 属性，它们是具体 operation/provider 的独立 typed inputs。
+
+`TensorView::create()` 会把传入 Mem view 收窄到 `required_bytes()`，并拒绝明显不满足格式 alignment 的
+subview offset。普通 host route 映射后还会检查实际地址；设备 native handle 的最终 alignment 必须由能
+解释它的 provider 检查。TensorDesc 不拥有 storage，不保存字符串、vtable、动态内存或进程全局 registry。
+合法但当前 route 不理解的 encoding 返回 `Unimplemented`，从而允许有序 provider fallback；格式参数本身
+畸形则在构造时返回 `InvalidArgument`/`OutOfRange`。
 
 ## View、Copy、Fill 与 Cast
 
@@ -1201,45 +297,6 @@ Native 半精度 `Softmax` 的 workspace 按一行 F32 临时值复用。
 按同一要求管理每个 invocation 的独立工作区。空 output 的需求为零。数据和 mask 内容可在完成后更新，
 重复执行不重新准备或重新选择 Provider。
 
-## 普通、block 与 opaque storage
-
-普通用户继续用 `TensorDesc::dense()`；它现在返回 byte stride，例如 dense f32 `[2,3]` 的 stride 是
-`[12,4]`。非连续普通 storage 使用名称明确的 `strided_bytes()`。旧的 `strided()` /
-`element_strides()` 已删除，没有把旧名称悄悄改成新单位的兼容层。
-
-固定块压缩权重由 provider 的 typed factory 创建 `StorageFormat`，再传给 `blocked_dense()`。下面只是说明
-通用 seam；产品代码应使用 provider 发布的具名 identity，而不是散落 magic numbers：
-
-```cpp
-constexpr StorageFormatId codec_id{vendor_namespace, format_value};
-auto format = StorageFormat::blocked(codec_id,
-                                     /* elements_per_block = */ 32,
-                                     /* bytes_per_block = */ 18,
-                                     /* alignment = */ 2);
-if (!format) return format.error();
-
-auto stored = TensorDesc::blocked_dense(
-    DataType::kFloat32, std::array{n, k}, *format);
-if (!stored) return stored.error();
-auto logical_weight = stored->transposed();  // logical [k,n]，不搬数据
-```
-
-`DataType::kFloat32` 在这里表示解码后的数学 element，不表示每个 element 占四个物理 bytes。format 独立
-给出 block elements、block bytes、alignment 与稳定的两字 identity。block axis 的 byte stride 每次推进
-一个完整 block；其他轴推进一个逻辑坐标。该轴长度必须能整除 block size；`required_bytes()` 和
-`transposed()/permuted()` 会一起处理 block axis。
-
-不能由通用 Compute 解释的 vendor-packed、tile 或 sparse descriptor 使用 `StorageFormat::opaque()` 与
-`TensorDesc::opaque()`，并显式给出精确 byte extent。Opaque tensor 没有可公开读取的 stride，也拒绝通用
-`permuted()`；只有理解该 identity 的 typed provider 才能构造另一个被证明等价的 view。scale、zero、bias、
-group size 和量化公式不是 storage format 属性，它们是具体 operation/provider 的独立 typed inputs。
-
-`TensorView::create()` 会把传入 Mem view 收窄到 `required_bytes()`，并拒绝明显不满足格式 alignment 的
-subview offset。普通 host route 映射后还会检查实际地址；设备 native handle 的最终 alignment 必须由能
-解释它的 provider 检查。TensorDesc 不拥有 storage，不保存字符串、vtable、动态内存或进程全局 registry。
-合法但当前 route 不理解的 encoding 返回 `Unimplemented`，从而允许有序 provider fallback；格式参数本身
-畸形则在构造时返回 `InvalidArgument`/`OutOfRange`。
-
 ## MatMul 权重形状
 
 不要增加 provider-specific `transpose_weight` 标志。若模型存储权重为连续 `[...,N,K]`，创建该 dense
@@ -1312,18 +369,6 @@ Status 诊断分配仍由各自合同负责。direct 用户可在准备后、提
 [`CompileOptions::provider_replay`](graph.md#何时要求-prepared-only) 在创建 artifact 前筛选 leaf/region。
 这不改变 direct `prepare()` 的 Provider 顺序，也不增加每次 submit 的政策查询。
 
-Provider 的冷提案用 `ProviderRouteCostFacts` 声明结构成本，Graph region 也复用这个类型；workspace
-大小/对齐、persistent/copy/repack bytes 与 synchronization/dispatch count 都区分 unknown 和 exact zero。
-它不是时间估值或性能资格证：`valid()` 只检查对齐和非零 dispatch 等结构合法性，不证明某路线快于另一条。
-普通 direct 用户仍使用 `prepare()`，不需要自己构造成本提案。
-
-Provider 实现者使用共同的 `ProviderPrepareOutcome` 声明 prepared、unsupported decline、candidate-local
-resource-budget decline 或 error；`valid()` 只检查 kind/status 合法性，安全拒绝还必须保证未接受用户工作、
-没有外部副作用，且返回的部分 artifact 可由共同 owner 销毁。真正 error 即使带 Unimplemented 或
-ResourceExhausted code 也不会被跳过。普通 direct 调用仍返回 `Result<PreparedOperation>`，只自动跳过
-明确 unsupported；资源预算拒绝直接报告，不自行做 Graph 式资源重选。Graph 可以在有限预算内对两种
-安全拒绝作回退。`submit()` 之后的失败属于 Completion，不能用这个冷编译结果重试已接受的工作。
-
 需要区分同一家 Provider 的多个配置实例时，使用
 `Context::provider_instance_id(index)`；`PreparedOperation` 和 `OperationInvocation` 的同名 accessor
 返回实际选中的实例。`provider()` / `provider_identity()` 描述逻辑家族，不能区分同家族的多个 slot。
@@ -1352,145 +397,558 @@ if (!done) return done.error();       // admission failure
 return done->wait();                  // terminal failure
 ```
 
+## 普通 CUDA 入口
+
+### 已编码 FP8 block128 投影
+
+`float8_activation_description(M, K, Float8ScaleMode::kFloat32Block128)` 与
+`float8_weight_description(K, N, Float8ScaleMode::kFloat32Block128)` 可以直接送入普通
+`MatMul` 的 Direct/Graph 路径，输出为 F32 `[M,N]`。激活字节是 E4M3FN `[M,K]` 后接
+F32 `[M,K/128]` scale；权重是 E4M3FN `[N,K]` 后接 F32 `[ceil(N/128),K/128]` scale。
+K 须整除128，N允许最后一个不足128行的block；这些描述符不执行模型加载或动态量化。
+
+CUDA 默认接入固定 SGLang 原版 AOT 程序，当前支持条件为 SM89、`driver_cuda_version == 13040`。
+程序在准备时加载并绑定，重放为一次原生发射，没有额外 payload 工作区或权重展开。
+源码/静态/动态构建都将程序嵌入 Provider，不依赖用户运行 Python/Triton。
+其它硬件域、UE8M0 group32 编码及动态激活量化不能据此视为已支持。
+
+### FP8 权重的一次性准备
+
+`model_ops::float8_weight_decode()` 接受上述逻辑 `[K,N]` block128 权重，输出为明确的
+物理 row-major BF16 `[N,K]`；参数 `DataType::kFloat32` 可保留 F32 结果。普通 Direct
+`prepare()` 或 Graph 节点只绑定描述符与原生程序；真正解码发生在提交后，不隐式读取权重。
+
+当模型需要吸收或拆分 K/V 权重时，消费者先执行这个准备操作，用既有 View/Copy 整理布局，
+等 Completion 成功后将结果作为后续图的常量。消费者持有缓存并复用；不要在每个 token 的图里
+重复解码。BF16 完整矩阵占 `2*N*K` 字节，另计布局整理时的临时矩阵和最终缓存峰值。
+
+CUDA 默认绑定固定 DeepSeek 原版程序，当前有限域为 SM89/Driver API 13040、K 整除128、
+`N*K <= INT32_MAX`、`K/128 <= 65535`；输入需4字节对齐，输出按 BF16/F32 需2/4字节对齐。
+一次原生发射，无额外工作区；支持独立 invocation 并发，输出禁止与输入重叠。编码中的 NaN
+保留为 NaN；该入口不进行模型文件读取或有限权重扫描。AOT 程序随 Provider 嵌入，运行时无需 Python/Triton。
+
+### 动态 FP8 模型投影
+
+浮点激活尚未编码时，将 `model_ops::float8_block_linear()` 作为普通 Direct `prepare()` 或
+Graph 节点的 operation，输入为 dense BF16/F32 `[M,K]` 和上述 block128 权重，输出保留激活
+dtype `[M,N]`。它显式包含动态量化，普通 `MatMul` 不暗中量化输入。
+
+默认逐 token/group128 使用 F32 scale 和 absmax floor `1e-10`；
+`model_ops::float8_block_linear(model_ops::Float8ScaleRounding::kPowerOfTwo, 1e-4F)`
+表达 DeepSeek 官方的 BF16 幂次 scale 语义。后者的 F32 激活域尚未资格化，准备时拒绝。
+权重的128×128分组保持不变，不把幂次scale解释成group32存储。
+
+当前 CUDA 支持条件为 SM89/Driver API 13040，有限激活域。准备绑定原版 SGLang 程序，执行为
+量化和 GEMM 两次发射，使用每 invocation 独占的 caller workspace：`M*K + 4*M*(K/128)`
+字节、4字节对齐；没有 host 同步或常驻展开权重。普通scale输入需要16字节对齐，BF16幂次
+scale输入需要2字节对齐；Graph规划会应用这些要求，手动绑定的错位输入在提交前拒绝。
+该接口不加载模型。
+
+### 激活的组量化与还原
+
+`model_ops::block_quantization_roundtrip(format)` 将 dense BF16 `[M,K]` 输入量化后还原为
+相同形状的 BF16，供需要保留量化感知训练边界的消费者组合。两个显式格式为：
+
+- `BlockQuantizationFormat::kFloat8E4M3Block64`：每64值取 absmax，floor为 `1e-4`，除448。
+- `BlockQuantizationFormat::kFloat4E2M1Block32`：每32值取 absmax，floor为 `6*2^-126`，除6。
+
+两者 scale 都向上取二次幂，代码值饱和最近偶数舍入；不等同于其它 MX 格式的 round-even scale。
+输入必须有限，K须整组；量化还原后的极值仍可能溢出。输入输出不重叠，均需16字节对齐。
+当前 CUDA 原版 DeepSeek 程序支持条件为 SM89/Driver API13040。默认路线自动绑定，Graph使用同一
+运算描述；不需要安装 Python/TileLang 或指定 Provider。每次执行一次原生发射，caller workspace
+为 `4*M*(K/group)` 字节、4字节对齐；独立 invocation 使用独立空间，存储保持到 Completion。
+模型如何切分 RoPE 尾部、更新 cache 或衔接 Hadamard 属于消费者；本操作不隐式管理这些状态。
+
+### 动态 FP8 专家批次
+
+`model_ops::grouped_float8_linear()` 的三个输入依次为：
+
+- `float8_grouped_weight_description(E,N,K)`：全部专家的 E4M3FN `[E,N,K]` codes，
+  后接 F32 `[E,ceil(N/128),K/128]` scales；两部分连续存放，不逐专家交错。
+- dense BF16/F32 激活 `[T,A,K]`：`A=1` 时各专家共享一次量化的 token；`A=S` 时保留
+  每个专家分支的独立激活，例如 down 投影。
+- dense I32 专家 IDs `[T,S]`；输出为同激活 dtype 的 `[T,S,N]`，重复 ID 合法。
+
+当前 CUDA 支持条件为 SM89/Driver API 13040、`S=8`、`1<=E<=1022` 和完整 K128 分组，
+使用普通 F32 scale、默认 floor `1e-10`。其它域在准备阶段明确拒绝。激活需16字节对齐，
+权重/ID需4字节对齐；工作区大小与16字节对齐由 `workspace_requirement()` 给出。
+每个 invocation 独占量化、专家排序和 padding 空间。准备绑定成熟程序，重放没有专家逐项
+host 调度、ID读回或权重解码。负数及越界 ID 安全返回失败 Completion；失败输出不可消费。
+
+### 执行前检查具体请求
+
+CPU/CUDA 用描述符和 memory resource 调用普通 `prepare()`，即可检查所选设备上实际的
+dtype、shape、layout 与资源是否可执行；此时无需分配 tensor payload 或创建 Queue。
+准备可能编译并分配程序状态，但不读取或执行输入数据。保留成功结果供后续 invocation 使用，
+无需另做一次查询或再次准备。`infer_output_descriptions()` 只检查共同数学描述，不证明路线支持。
+
+准备失败保留具体原因：`InvalidArgument`/`OutOfRange` 表示请求不合法，`Unimplemented` 表示
+当前资格条件不受支持，资源不足和编译错误按实际错误返回。所有实现都不支持时，错误包含 Provider
+名字和其拒绝原因；已进入实际准备的明确拒绝优先于后续更宽泛的 proposal 拒绝。执行期不重新选择。
+
+### 创建 CUDA 程序
+
+Windows/Linux x86_64 选择 CUDA 后端即可取得 CUDA-only Compute 与 Graph，
+自动组装路线所需的成熟 Provider。系统须预装受支持的 C++ 工具链和 CUDA Toolkit 13.3+；
+缺 Toolkit 时初始化明确失败。
+
+```text
+python scripts/init.py --backends cuda --components compute,graph
+python scripts/build.py --jobs 2
+```
+
+同时编入 CPU 与 CUDA 使用 `--backends cpu,cuda`，只编入 Vulkan 使用 `--backends vulkan`；
+Windows/Linux x86_64 的 `--backends all` 同时提供 CPU、CUDA 和 Vulkan。
+编译可用集合不替代引擎运行时的 CPU/GPU/混合执行选择。
+静态库用 `init.py --static`，安装用 `build.py --install <prefix>`，无需内部 Provider flags 或排序。
+源码与安装包均链接 `hyle::compute`，
+应用链接后调用 `hyle_stage_runtime(app)`，Windows 把依赖 DLL 邻置 exe。
+构建选择不代替具体输入的支持检查；prepare 按实际模型格式、dtype、布局、设备和资源约束绑定实现，
+不满足条件时返回明确错误。
+
+直接使用 CMake 时选择 `HYLE_COMPONENTS=compute`、`HYLE_COMPUTE_ROUTES=cuda`。自然 C++ 入口如下：
+
+```cpp
+#include <hyle/compute/cuda.h>
+#include <hyle/compute/backends/cuda.h>
+
+auto context = hyle::compute::cuda::create_context({.device_ordinal = 0});
+if (!context) return context.error();
+auto resource = hyle::compute::cuda::MemoryResource::create(
+    *context, hyle::compute::cuda::MemoryKind::kDevice);
+if (!resource) return resource.error();
+auto queue = context->create_queue();
+if (!queue) return queue.error();
+
+auto prepared = hyle::compute::prepare(
+    *context, hyle::compute::MatMul{}, activation_desc, weight_desc, resource->ref());
+```
+
+后续依 `workspace_requirement()` 分配 CUDA workspace，为每个并发槽创建 invocation；绑定同设备
+tensor，submit 后显式检查 Completion。完整 dense gate/up → SwiGLU → dense down 样例见
+[CUDA Direct FFN](../../samples/package/compute/cpp/cuda_ffn.h)。该样例连续执行三组变化输入，
+没有 Provider 列表、计时资料或用户 kernel callback。
+
+普通 CUDA Context 在准备期选择实际可用的实现。普通张量、GGUF、FP8/FP4 和 managed
+程序的执行边界不同；`prepare()` 成功后可用 `provider()` / `runtime_properties()` 诊断。
+
+需要特别注意：
+
+- GPU descriptor-only prepare 显式传 device resource；查询每个 invocation 的 workspace 大小与对齐，
+  不让首次 submit 猜资源或隐式 staging。
+- 普通 rank-2 F16/F32 GEMM 使用 F32 累加；F32 输入不默认为 TF32。FP8/FP4 模型接口保留各自
+  量化与 scale 合同，不把输入 dtype 当作中间计算精度。
+- Linux 的适用 attention 可以使用 FlashInfer；Windows 使用匹配的其它实现。
+  managed 程序可能分配、阻塞 host，或只支持自己内部 capture。外部 capture 要显式要求并检查。
+- BF16 attention 某些路径使用 F32 score/softmax 组合以避免原生 half 缩窄；score 与转换临时值随
+  `batch * heads * query_length * kv_length` 增长，应把完整成本计入预算。
+- checked Gather/Scan 在 GPU 验证索引或整数前缀，可回传少量控制标量并等待。
+  失败输出不发布，重建失败 invocation；不把 checked 程序当作完全不阻塞 host 的 kernel。
+- 原 ggml 数学节点有容量和对齐要求：通常为 256-byte 数学端口，对复制/转换可有更窄要求。
+  不满足时准备或绑定明确失败，不在 submit 中偷偷复制或换 Provider。
+- 不要在 Context 创建后改变影响数值的上游环境设置。未实现的 dtype/布局、设备失效与普通
+  请求参数错误分别按实际错误返回；重建槽不能修复终态设备故障。
+
+变化输入和完整 FFN 示例见 [CUDA Direct FFN](../../samples/package/compute/cpp/cuda_ffn.h)。
+同 GPU 多 stream 的完成依赖、同步与异步传输见[Queue 与 Completion](#queuebyte-transfer-与-completion)。
+
+## 可选模型与阶段信息
+
+已知模型与固定部署制品的消费者可在冷准备时传入 `WorkloadContext`。普通工程计算省略它即可。
+HYLE 不加载模型文件；调用方先核对实际 checkpoint/GGUF/safetensors，再提供模型 revision、配置摘要、
+制品仓库/revision/variant、manifest 摘要和 container format。画像只绑定部署制品；每个 tensor 的真实
+dtype、物理格式和 shape 仍由本次 operation 的 `TensorDesc` 证明。
+
+```cpp
+auto profile = hyle::compute::ModelArtifactProfile::create({
+    .model_publisher = "Qwen",
+    .model_repository = "Qwen/Qwen3.5-2B",
+    .model_family = "qwen3_5",
+    .model_name = "qwen3.5-2b",
+    .model_revision = "15852e8c16360a2fea060d615a32b45270f8a8fc",
+    .configuration_digest = "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+    .artifact_repository = "unsloth/Qwen3.5-2B-GGUF",
+    .artifact_revision = "f6d5376be1edb4d416d56da11e5397a961aca8ae",
+    .variant = "UD-Q4_K_XL",
+    .manifest_digest = "abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789",
+    .format_family = "gguf",
+});
+if (!profile) return profile.error();
+hyle::compute::WorkloadContext workload{
+    .profile = *profile,
+    .phase = hyle::compute::WorkloadPhase::kDecode,
+};
+auto program = hyle::compute::prepare(
+    context, hyle::compute::MatMul{}, left_desc, right_desc, resource, workload);
+```
+
+画像创建时一次拷贝拥有字符串，源字符串随后可销毁；多个程序共享同一个不可变画像。完整画像的两个
+digest 必须是规范的 64 位小写十六进制文本；空画像不分配，部分画像会被拒绝。自定义 allocator 的
+backing 必须活到最后一个画像/程序释放。`program.workload()` 返回
+保有所有权的冷诊断副本。阶段或版本变化需要重新准备，不能给运行中的程序换标签。
+可选的 `region` 是带版本的片段语义标识，不替代实际 operation/DAG、精度、资源和状态检查。
+
+### GGUF/ggml 原生压缩权重
+
+CPU-only 构建已追加 Q4_0/Q4_1/Q2_K、IQ2_XXS/XS/S、IQ1_S/M、IQ1_XXXS/XXS/XS 的原 block 描述与
+CPU 接线。最后三种使用固定 Unsloth IQ1 narrow 扩展，不能从文件名中的 UD 档位猜编码。
+包含 GPU 的 SDK 仍保留原 ggml 版本与资格，明确拒绝这批新增 CPU 格式。
+
+调用方已经解析 GGUF tensor table 时，用 `<hyle/compute/low_precision.h>` 描述原文件中的压缩字节，
+不需要也不应先展开成常驻浮点权重。`gguf_weight_description()` 接收 Q3_K、Q4_K、Q5_K、Q6_K、
+Q8_0、IQ3_XXS、IQ3_S、IQ4_NL、IQ4_XS 或 MXFP4，返回逻辑 `[K,N]`、物理连续 `[N,K]` 的
+checked `TensorDesc`；`K` 必须包含完整原生 block。`logical_type` 是 MatMul activation/output 的
+浮点类型，不是压缩 code 的位宽。
+
+```cpp
+#include <array>
+#include <hyle/compute/low_precision.h>
+
+auto weight_desc = hyle::compute::gguf_weight_description(
+    hyle::compute::GgufQuantizedType::kQ4K,
+    hyle::compute::DataType::kFloat32, k, n);
+if (!weight_desc) return weight_desc.error();
+
+// weight_bytes 是 loader 持有的原始 GGUF payload；HYLE 不读取 GGUF 文件。
+auto weight = hyle::compute::ConstTensorView::create(
+    *weight_desc, weight_bytes);
+if (!weight) return weight.error();
+std::array inputs{activation, *weight};
+std::array outputs{output};
+auto prepared = hyle::compute::prepare(
+    context, hyle::compute::Operation(hyle::compute::MatMul{}), inputs, outputs);
+```
+
+MoE 的连续专家权重使用 `gguf_grouped_weight_description(type, logical_type, experts, n, k)`，其逻辑与
+物理轴均为 `[E,N,K]`，交给普通 `GroupedMatMul`。当前 CPU、CUDA、Apple 与 Vulkan 默认路线会在准备期把合格的
+MatMul/GroupedMatMul 绑定到固定 ggml 原生程序；具体设备和上游版本仍可能拒绝某种格式或 shape。
+Graph 使用相同描述器与 Provider recipe，重复 submit 不重新选路、不重新量化，也不复制压缩权重。
+伪造已知格式 ID 但给出错误 block byte 数会在准备前被拒绝。Apple 用 `apple::input_spec()` 将逻辑描述
+映射到一维 MLX `uint8` carrier；Vulkan 使用其原生 buffer 与相应程序。
+一种压缩格式可执行，不表示完整模型的其它必需片段也可执行。
+
+固定的模型专用规则必须完整匹配身份及其余适用条件；缺失/未知信息只允许合法通用路径，
+或返回明确拒绝。传入模型名本身不代表已有该模型专用优化。用户无需排列 Provider 或提供计时资料；
+HYLE 的规则匹配在运行期不读取模型字符串、查询设备版本或重选实现；成熟 Provider 自身的
+managed 派发成本另外声明。
+
+CUDA 的 `cuda::environment(context)` 返回 Context 创建时采集的设备名、UUID、SM major/minor、
+驱动支持的 CUDA API 版本、独立 `driver_release` 文本、runtime 版本与编译 Toolkit 版本。
+`driver_cuda_version` 对应 `cuDriverGetVersion`，**不是 NVIDIA 驱动安装包版本号**；
+`driver_release` 来自可选系统 NVML，缺少时为空、不禁用 CUDA 路线。冷规则的 `kApiVersion` 为前者，
+`kDriverVersion` 为实际 NVIDIA release 文本，`kDriverName` 为 nvidia。系统 driver DLL 不随 SDK 复制。
+固定规则只能匹配实际具备的事实；
+不能把该字段当作驱动补丁版本。Apple/Vulkan 使用各自原生 `Environment`，Provider 版本来自
+对应实现/锁定依赖；它们不共用一个万能设备结构。
+
+## CPU 非 GGUF 原格式与压缩专家
+
+这些接口位于 `<hyle/compute/model_ops.h>`，普通 CPU Direct/Graph 自动绑定已构建的原库组合。
+输入是调用方解析好的原 tensor；HYLE 不读取模型文件，也不把不同的 4-bit 制品视为相同编码。
+
+| 原格式 | 接口与端口 | 输出或执行边界 |
+|---|---|---|
+| NF4 | `artifact_weight_decode(kNf4, group)`；U8 `[N,K/2]`、F32 absmax `[G]`、F32 codebook `[16]` | 高 nibble 在前，默认 BF16 |
+| NF4 double quant | 同接口 `kNf4DoubleQuant`；U8 codes `[N,K/2]`、U8 absmax `[G]`、F32 nested absmax `[ceil(G/256)]`、F32 nested codebook `[256]`、F32 scalar offset、F32 codebook `[16]` | nested scale 与 offset 保留，默认 BF16 |
+| AWQ GEMM int4 | 同接口 `kAwqGemm4`；I32 `[K,N/8]`、I32 zero `[K/group,N/8]`、floating scale `[K/group,N]` | 原 AWQ 列排列与 zero point，默认 scale dtype |
+| compressed-tensors symmetric int4 | 同接口 `kCompressedTensorsSymmetric4`；I32 `[N,K/8]`、floating scale `[N,K/group]` | low-first pack、减 8 后按原 scale dtype 计算；无 g_idx 模式 |
+| MLX affine4 / mxfp4 / mxfp8 | `mlx_quantized_matmul(format, group)`；A `[M,K]`、原 U32 words `[N,K/pack]`、scale、affine bias | 直接消费压缩权重，F32 累加；MX scale 为原 U8 E8M0 group32 |
+| MLX 选中专家 | `mlx_grouped_matmul(format, group)`；A `[T,S,K]`、words/scale/bias 带 expert 首轴、I32 ids `[T,S]` | 只展开当前 K group 与选中专家，不建立整个浮点专家库 |
+| MLX affine embedding | `mlx_quantized_embedding(group)`；原 words/scale/bias、I32 row ids | 只选择所需行，保持原 scale dtype 的解码次序 |
+
+`G=N*K/group`。`artifact_weight_decode()` 显式输出 dense `[N,K]`；调用方运行一次并持有结果，
+随后用其 transposed 描述作为普通 MatMul RHS，或绑定为 Graph constant。重复 MatMul 不应重新插入解码。
+显式 `output_type` 可选 F16/BF16/F32；它不替代制品的原 scale 精度或 packing。
+
+MLX affine 的 group 为 32/64/128，MX 为 32；`pack` 为 affine4/mxfp4 的 8 或 mxfp8 的 4。
+线性与专家输入 A 为 F16/BF16/F32；affine A/scale dtype 相同时保持该类型，混合时输出 F32，
+MX 输出保持 A dtype。scale 先按原 CPU 转为 A dtype，低精度溢出或下溢不会被隐去。
+
+这组实现借用固定 bitsandbytes、AutoAWQ、compressed-tensors、MLX 的原计算组合，由 ATen CPU 承载。
+它们属于 managed replay，存在原库临时分配与线程成本；不保证 capture、零热分配或未知私有内存的硬预算。
+越界索引和分配失败通过 Completion 报错，已失败的执行槽需要重建；独立槽可以共享只读参数。该资格仍按真实packing/group/dtype和端口区分，
+不把一个文件名的“4-bit”当作所有张量格式，也不代签全部混合模型完整片段。
+
+CPU-only LibTorch启用时，`model_ops::causal_conv1d()`的F16/BF16输入现在由原ATen CPU程序承载。
+samples为`[B,W,C]`、weights为`[C,K]`，二者dtype相同；F32累加后一次回原output dtype。
+原`[C,1,K]`文件权重由调用方用View整理。该managed路径包含布局/精度转换、原库临时与结果copy，
+不能要求capture、零热分配或已知严格私有内存界；失败slot需要重建。F32继续走原ggml路径。
+
+## 设备端单选与可定位随机数
+
+确定性单选直接使用原 `TopK{.count = 1}`，仍返回原存储类型的 values 与 I32 indices，
+同分取首索引、NaN 排在非 NaN 后。CPU、CUDA、Apple 和 Vulkan 的适用形状使用归约；
+其它 count 和原先合法的 axis/stride 域沿各路线原合同执行，不需要额外的 greedy API。
+
+`hyle/compute/sampling_ops.h` 提供两种独立数值操作，沿原 Direct prepare 或 Graph builder 使用：
+
+```cpp
+#include <hyle/compute/sampling_ops.h>
+namespace c = hyle::compute;
+auto words = c::sampling_ops::random_bits(8);
+auto selected = c::sampling_ops::categorical();
+auto scored = c::sampling_ops::categorical(true);
+```
+
+`random_bits(W)` 接收 dense U32[R,4]，每行依次是 key 的低/高32位、draw 的低/高32位，
+输出 dense U32[R,W]。固定 Philox4x32-10 映射让相同 key/draw/word 地址在已验证路线间逐位
+一致；改变请求行顺序或 W 不改变原行的字前缀。W≤INT32_MAX，零行/零W合法，draw 接受全部
+64位值。调用方维护请求身份、draw 唯一性与溢出政策，操作不会隐式前进 counter 或持有全局 RNG。
+
+`categorical()` 接收 dense F16/BF16/F32[R,V] log-weights 和同一 U32[R,4] counter，
+V 为1..INT32_MAX，输出 I32[R]。`categorical(true)` 另返回 F32[R]：选中项归一化后的
+log probability。-Inf 表示零质量；NaN、+Inf 或任一全-Inf行通过原 checked 完成报告
+InvalidArgument，失败不发布可用结果。零行合法。先观察成功完成，再读取或向下游发布结果，
+并按原 invocation 的失败恢复与结果寿命合同复用槽。
+
+CPU 使用 SIMD exp、F64 累加的 CDF；GPU 使用居中 log-weights 与开放64位 midpoint 的
+Gumbel 选择。同一路线、相同输入/counter可重放和重排；不承诺 CPU 与 GPU 选择相同 ID。
+两者扫描词表，复杂度 O(RV)；可选 log probability 增加所选标量的归一化计算，GPU未请求时
+省略对应normalizer。临时资源、native
+完成和少量结果读取沿原路线 owner，不能由“设备端选择”推断零分配、零等待或新增 capture 支持。
+temperature、top-p、penalty、grammar、EOS 等政策由应用组合，本数值域不接管这些政策。
+
+没有据此声明完整推理引擎的 prefill/decode 吞吐。
+
+## CPU 多请求 ragged attention
+
+`hyle/compute/batch_execution.h` 的 `BatchProgram` 在普通 `cpu::create_context()` 中冷选择
+原 ggml flash。当前候选域为 F16/BF16、GQA、D64/128/256，packed NHD Q/K/V；
+`BatchSchema::version()` 拥有 query/KV indptr，空 Q request 可跳过，非空 Q 必须有足够
+的 KV。容量描述实际存储，indptr 描述这一次的有效请求区；未用尾部不参与数学。
+
+```cpp
+auto program = c::BatchProgram::prepare(context, schema,
+    {.resource = hyle::mem::system_resource(),
+     .max_float_workspace_bytes = 8u << 20,
+     .max_int_workspace_bytes = 4096,
+     .scale = scale, .causal = true}).value();
+auto slot = c::BatchInvocation::create(program, queue).value();
+auto prepared = slot.prepare_batch(layout).value();
+auto done = prepared.run(std::array{query_read, key_read, value_read}).value();
+HYLE_RETURN_IF_ERROR(done.wait());
+auto output = slot.output().value();
+```
+
+先释放旧 output、prepared token 和 Completion，再调用 `update_batch(next_layout)`。
+完整 query/KV topology 相同可复用原 native plan；改变则在这次显式更新中重建，run 不建图。
+原 kernel 直接读取每个 request 的 K/V slice，没有按每 Q/head 物化历史；冷 mask、query
+转换与每请求 metadata/workspace 仍计费。CPU `float_workspace_bytes` 暂为已知冷 plan
+占用的保守合计，与外部预留 pool 分开，不能当作总 RSS；private pool 上界未知。
+本档不接原生 paged/capture。
+
+## CPU 准确页直接读取
+
+普通 CPU `BatchProgram` 新增的分页路径沿原 ggml flash 读取物理 K/V 页，使用
+`BatchStorage::kPaged`、`PagedArena` 和同一个 `BatchLayoutVersion`。当前验证域是
+F16/BF16、GQA8/2、D64/128/256、page_size16；页表可重排、跨请求共享物理页，尾长
+只表示最后一页的有效行数。
+
+K/V arena 按容量持有连续物理 NHD 页；发布每页 writer 后，用该 layout 所引用的
+准确 ready page 集合构造 frame，不能传多余页或把 arena 当作一个普通 ReadLease：
+
+```cpp
+auto key_frame = keys.read(layout, ready_key_pages).value();
+auto value_frame = values.read(layout, ready_value_pages).value();
+auto prepared = slot.prepare_batch(layout).value();
+auto done = prepared.run(query_read, key_frame, value_frame).value();
+HYLE_RETURN_IF_ERROR(done.wait());
+auto output = slot.output().value();
+```
+
+更新前释放旧 output、prepared token 和 Completion。CPU paged 每 request 为0或1 query、
+完整 query indptr 相同时，KV indptr、页索引和尾长可通过显式 `update_batch()` 更新，复用
+原 graph/pool/scratch；其它 paged 形状仍需完整布局相同，否则冷重建。frame
+必须属于当前 schema/layout，所有 reader 和实际 native uses 退休后才能复用物理页。
+CPU ragged 在相同 Q1 拓扑下也能更新实际 KV extent 与 packed 起点；仍绑定原三个
+packed-capacity Q/K/V read ports，内部逐 request 检查实际子范围，不复制完整 KV。
+热数学不按 query/head 复制整个 KV 历史；query 转换、冷 causal mask、页表节点与原
+metadata/workspace 仍计费，private pool 上界未知。CPU capture、增量 producer、低成本
+增长规划及 GPU/联合分页的资格各有独立范围，不由此 CPU 路径推导。
+
+## 外部资源租约与 Direct 提交
+
+`hyle/compute/resource_leases.h` 的 `LeasePool` 冷创建有限 backing/块 metadata，
+`WriteLease` 表示独占写，成功发布后得到可复制的 `ReadLease`。两个读者、原生在途 use 或旧结果
+存在时，不得把同一块重新取得为 writer。非重叠块可独立使用；池的 resource、Context 和 allocator
+仍按公开声明的借用寿命保持有效。
+
+CPU/CUDA 的原 prepared operation 可用 `hyle/compute/leased_operation.h` 自动保护 bindings：
+
+```cpp
+auto lane = hyle::compute::LeasedOperationInvocation::create(
+    prepared, std::move(workspace_write_lease)).value();
+const std::array inputs{hyle::compute::LeasedInput(input_description, input_read_lease)};
+const std::array outputs{hyle::compute::LeasedOutput(output_description, output_write_lease)};
+auto done = lane.submit(queue, inputs, outputs).value();
+HYLE_RETURN_IF_ERROR(done.wait());
+auto ready = output_write_lease.publish().value();
+```
+
+这里的端口数量、描述和资源必须符合已准备的 `prepared`；零 workspace 时省略 workspace lease。
+初始化 host bytes 后才 publish；异步 writer 必须实际成功退休后才 publish，失败不会变成 ready。
+`LeasePool::adopt`/`ReadLease::adopt` 接管唯一 `mem::Buffer` 而不复制 payload，拒绝不消费输入；
+readonly adopt 永久只读。原 native buffer/array/tensor 的受控导入见各路线的 memory 头。
+所有未跟踪的 writable aliases 必须停止，不从裸 view 猜拥有权或就绪。
+
+`lane.close()` 停本 adapter 接纳，`lane.drain()` 观察已接受的原 Completion；调用方可以仍持有
+尚未观察的 `done`。一个冷完成槽要求先观察/丢弃旧 Completion 再 replay。控制与 Completion
+观察须外部串行化。未知错误不证明 GPU 已停，保活仍交给原 runtime；取消也不能提前释放 backing。
+池的 drain 等待 admitted uses，保留 reader 仍有效，并且不等待这些 reader 全部销毁。
+
+Apple/Vulkan 的 native Program 使用各自 memory 头里的 `LeasedInvocation` 与 `LeasedInput`；
+bind 冷建立 readonly native view，submit 自动接纳 use，原 native slot 的实际退休归还 use。
+结果/来源 alias 继续由原 native owner 保留。四路线接口独立，不需要通用 Queue 或自写 completion vector。不外推未测设备/工具链。
+
+## 准备批量范围搬运
+
+`hyle/compute/batch_transfer.h` 的 `CopyBatchProgram` 冷固定 CPU/CUDA Context、资源域、
+范围/阶段上限和 metadata budget；每个 `CopyBatchInvocation` 是独立运行槽，借用一个地址稳定的
+原 Queue。Apple/Vulkan 使用各自 memory 头中的同名类型及原 native Context，创建槽时省略 Queue。
+resource、Context、Queue 和自定义 allocator 均须活到所有槽与原生在途工作退休。
+
+```cpp
+namespace c = hyle::compute;
+const std::array resources{
+    c::CopyResourceSpec{host_resource, 4096},
+    c::CopyResourceSpec{device_resource, 4096}};
+auto program = c::CopyBatchProgram::prepare(context, resources).value();
+auto slot = c::CopyBatchInvocation::create(program, queue).value();
+HYLE_RETURN_IF_ERROR(slot.bind_source({0}, source_read_lease));
+HYLE_RETURN_IF_ERROR(slot.bind_mutable({1}, std::move(destination_write_lease)));
+const std::array<c::CopyPhase, 1> phases{{{0, 7}}};
+const std::array<c::CopyRange, 1> ranges{{{{0}, {1}, {0}, 0, 0, 4096}}};
+HYLE_RETURN_IF_ERROR(slot.prepare_replay(phases, ranges));
+auto copied = slot.submit().value();
+HYLE_RETURN_IF_ERROR(copied.wait());
+auto ready = copied.output({0}, {1}, 0, 4096).value();
+// ready.tensor(description) 可交给已有 Direct/Graph 租约消费者。
+```
+
+同阶段的范围必须独立：重复读取 source 合法，交叠写及读写冲突被拒绝。A→B→C 使用两个连续阶段，
+各后继的 `dependency_mask` 指向实际先行阶段；数组顺序不能代替依赖。`group_tag` 是调用方标识。
+一个 block 的最后写必须实际成功退休，`output` 才返回被成功复制的 logical 范围；pending、失败、
+取消与未知退役均不发布 ready。较早组可独立观察，后继 readonly 搬运仍保活它。
+生产者有尚未退休的写时，用 `bind_producer` 交接同 native owner 的实际 Completion；未知外部
+完成不能猜成 native fence。失败绑定不消费传入 lease/Completion。
+Apple/Vulkan 的原 native dependency 接纳会拒绝已经请求取消且仍在途的来源，
+返回 Cancelled 并保留传入 Completion。取消不证明退休；接纳之后才发生的取消仍
+按原 native 完成合同处理。排序本身也不替消费者合并来源与后继的最终错误。
+
+搬运保持原编码，不做 dtype 转换或量化重打包。`physical_bytes=0` 为 exact copy；显式 padding
+必须属于源和目标的已分配范围，计入 alias 与 byte budget。Metal 的 offset/size 为 4-byte 对齐；
+Vulkan 也必须符合原 buffer copy 约束，不能以向上取整越过邻块。
+`CopyBatchReport` 分别给出 logical/physical bytes、实际 copy calls、native dependencies、阶段完成
+和 host waits；`native_metadata_unknown` 表示 vendor 内部成本未知，不能据此宣称所有热分配为零。
+Apple 沿原 MLX owner 同步实际 command buffer，每 native phase 的 worker host wait 会计入报告。
+
+旧 submission 保留运行槽；观察、释放它后显式 `slot.reset()` 再绑定下一批。保留的 ready reader
+仍拥有旧数据。`close()` 停止接纳，`drain()` 观察实际工作；析构放弃观察时不会隐式 host wait，
+原 native owner 继续保活资源。设备失败的槽不承诺自动恢复，应按返回错误和实际退役情况重建。
+两组/两槽及原编码数学组合见[批量搬运样例](../../samples/package/graph/batched_transfers/)。
+
+## 已接纳 copy 的单一观察所有权
+
+需要把一组已接纳更新交给后继持有时，用 `CopyBatchUpdate::take(std::move(slot),
+std::move(submission))` 合并两个原控制。CPU/CUDA 使用 `compute::CopyBatchUpdate`；
+Apple/Vulkan 使用各自 namespace 的同名类型。两个控制必须来自同一实际运行槽；
+失败不消费它们，成功同时移空 caller。该对象只保存两个原 handles，不创建队列、
+Completion 或执行线程。Context、Queue、资源与 allocator 须活到所有实际工作退休。
+
+同一个 update 只有一个串行观察者。`observe()` 非阻塞并返回原 Status；Unavailable
+不等于成功，也不能只按错误码断言 native 工作仍在途。`wait()` 是显式 host 等待，
+`request_cancel()` 沿原提交请求取消；析构仍沿原控制放弃观察，原 native owner 保活。
+成功退休后 `take_mutable(id)` 返回原 caller-owned writer，保留未改写内容和 generation，
+不扩大批量搬运 `output()` 的成功 logical coverage。`release_invocation()` 只在实际原 copy
+退休后回收原 cold slot；失败/closed 状态保留，回收控制不意味着数据可以发布。
+
+普通用户不能由 update 得到 pending ReadLease 或 host 可读 view。内部 receiver 借用的
+原 native prefix 与 mutable geometry 必须先核实际 endpoint/ordering，并保持原 update
+到后继实际退休；借用期间不能另观察、回收或销毁 source。
+
+## 有界文件与资源管线
+
+`hyle/compute/file_stream.h` 的 `FileResourcePipeline` 把原 IO、资源租约与批量搬运组合成
+分块文件旅程。从 `cpu/cuda/apple/vulkan::create_file_pipeline` 创建对应路线管线；CPU/CUDA
+沿原 Context、Queue，Apple/Vulkan 沿各自 Context。创建时明确 stage resource、目标资源域、
+槽数和有限 byte/request/group 容量。CUDA stage 使用原 pinned host resource；不把整个模型 pin。
+
+`StreamFile::adopt` 接管已有 `io::File`，`borrow` 保留调用方地址稳定的 File；两者都需明确合法容量。
+File 与原 IoContext 的 owner worker 合同保持不变。`StreamSource` 也可接管或借用稳定只读
+`mem::FileMapping`，其范围偏移相对于映射的 logical bytes，期间不得修改或释放映射。
+模型格式由消费者解释；管线只接受已核验的 offset、bytes、description、group/tag 与目标 WriteLease。
+
+```cpp
+namespace c = hyle::compute;
+std::array<c::StreamReadRange, 1> ranges;
+ranges[0].file_offset = checked_offset;
+ranges[0].bytes = checked_bytes;
+ranges[0].destination = std::move(weight_writer);
+std::array<c::StreamReadGroup, 1> groups{{{layer_tag, ranges}}};
+auto ticket = pipeline.read(c::StreamSource::file(source), groups).value();
+auto group = ticket.wait_next_ready().value();
+auto weight = group.output(0).value();
+// weight 可直接绑定已有 Direct/Graph 租约入口；不必等待其他独立组。
+auto result = ticket.wait();
+HYLE_RETURN_IF_ERROR(result.status);
+```
+
+接纳失败不消费输入权限。一个 group 成功才返回 ready；后组 EOF/失败不会撤销前组结果。
+旧 ReadyGroup、ReadLease 与 native use 继续占有限容量，需要释放并 `collect()` 后才能复用。
+回写用 `StreamWriteRange::ready`，有原生生产者在途时用 `produced` 转交 WriteLease 与原 Completion；
+实际 producer 退休之前不会读取资源。文件短写保留实际 prefix，原子文件发布由应用选择。
+完整 read→math→write→reload→math 和本地 Qwen checked ranges 见
+[普通 C++ 样例](../../samples/package/graph/file_streaming/)。
+
+取消/deadline 在 chunk 边界停止后继，已接纳的 blocking IO/native 工作必须先退休，返回可能晚于 deadline。
+析构放弃观察并停止后继；需要等待本管线实际工作时显式 `drain()`。Context、Queue、resource 与
+allocator 必须活到所有原生 use 和保留结果结束；不会关闭调用方的整个 runtime。
+未知原生退役保持隔离与 `retirement_proven=false`，不能以逻辑释放推断 GPU 已停止或驱动私有内存归零。
+
 ## 准备时绑定实现
 
 普通计算不需要用户提供 timing profile。四路线的默认优选规则由 HYLE 研发阶段验证并固定；
 准备时匹配适用条件和资源约束，执行时复用已绑定制品，不计时、不重选。各路线当前能力以其
-公开入口及验收记录为准；本节不把旧 Provider 顺序当作已完成的四路线优选规则。
+公开入口与实际准备结果为准。
 
 `PreparedOperation::implementation()` 返回 Provider 声明的稳定 `ProviderImplementationId`；
 `route_policy()` 与 `route_preference()` 返回本次绑定的版本化规则及优先级。空 policy 表示通用、尚未具名的
-基线路线。单个实现 ID 或 preference 都不证明性能资格；完整资格还包括 build、设备/驱动、模型制品、
-operation、全部端口、资源和完成边界。旧 `RouteProfile`、运行时计时和 Graph 多计划性能竞赛接口已移除。
+基线路线。这些值用于解释实际绑定，不是可持久化的性能结论；普通调用不需要构造规则。
 
 ## CPU 默认规则与显式实现约束
 
-oneDNN 的 MatMul 路线接收 **plain** dense row-major f32 rank-2 MatMul。它适合普通
-`[M,K] * [K,N]`；模型常见的
-物理 `[...,N,K]`、逻辑转置为 `[...,K,N]` 的连续-K权重在满足ggml rank-2..4 F32准入时选择ggml；
-其余域继续匹配已构建且合格的ATen；Native MatMul已退役。
-泛型Sigmoid和SiLU packed/separate门控需要保留有限负尾部；原ggml泛型程序因具名反例
-撤回资格，在已构建ATen的合法域由稳定原程序承载。完整Graph在此必要边界组合后续成熟
-MatMul，packing、临时存储和融合损失计入成本。具名模型原program仍按自己的数值合同资格，
-不由这项泛型反例自动撤回，也不在执行时重新选择实现。
-oneDNN的非空exact dense F32 MatMul也接收单任务`M < 16`，不以未裁决的Native成本推断拒绝成熟能力；
-F32 MatMul 的 rank2..4 dense activation 可配 row-major 或 contiguous-K 转置权重，支持共享/
-逐批及两 leading axes 的双向 NumPy 广播；必要 RHS repack 和 LHS 原repeat展开均包含在执行成本。
-K0非空输出使用原零identity/repeat；rank>4、空输出混合region或未兼容布局继续匹配已构建且合格的成熟leaf。
-ggml ReLU 使用原 kernel 加内部原位 NaN 传播边界，覆盖 F32/F16/BF16，外部 alias 仍拒绝。
-CPU ggml 的 dense F32/F16/BF16 Softmax 支持任意 axis、有限scale和同类型dense additive广播；
-Bool mask、LogSoftmax和非dense/外部alias仍拒绝。非末轴使用原reshape/permute/cont并恢复布局，
-特殊行在原kernel前转成安全行、原kernel后恢复NaN，Graph下游获得修复值。无有效有限值或含
-NaN/+Inf的行输出NaN。安全score缓冲、两次线性检查、轴变换和独立scale/add节点均计入成本。
-无mask SDPA接BSHD/BHSD、三dtype、GQA及独立Q/K与V/output depth。F16 causal用原flash；
-其余用原score→安全Softmax→value整程序，causal施bottom-right mask，noncausal可query长于key。
-Copy/Concat的15种plain scalar借ggml的位复制载体，element-aligned strided输入和空Concat部件已验；
-宽整数/unsigned/FP8 carrier不代表新数学，未接宽Gather/numeric Cast仍拒绝。floating Fill无输入，
-原精确scalar bits→repeat保留signed zero/NaN payload，支持Direct/Graph和空输出。
-合法空输入且非空输出的K0 MatMul/Concat等按同一已验supports进入完整region；空输出仍走leaf。
-这些具名域通过Windows/Linux普通Direct/Graph、变化输入和source/static/shared消费；
-范围、成本及剩余域见[实现记录](../implementation/tasks/compute/cpu-ggml-layout-broadcast-admission.md)。
-当前Native保留分支的精确资格和通用成熟默认见本页开头与清退账本。真实并行executor
-可让oneDNN沿N维分成不重叠tile。所有选择均在准备期固定，submit不重选。
+普通 `cpu::create_context()` 组合合法的 oneDNN、ggml、ATen 与保留的 Native 实现。
+准备期检查真实请求并固定路线；Graph 尽量保留合法完整 region，不为逐节点偏好拆散融合。
+不要从底层库的能力目录推断 HYLE 已接入所有类型，也不要要求已移除的 Native 数学充当后备。
 
-oneDNN 另接入原版 RMSNorm/LayerNorm primitive：dense 非空 `[..., hidden]`，显式 F32
-accumulation，可选 scale/bias；scale 和 bias 同时存在时需同类型。F16/BF16 原生执行受
-oneDNN 的 CPU ISA 要求限制；该 Provider 不隐式转换整个 tensor。不满足时普通 CPU context
-继续匹配ggml／ATen；Native只保留必要RMSNorm分支，LayerNorm已退役。
-F32 norm 后的最多4个 Add/Mul 可由 oneDNN region 绑定原生 post-ops，支持 scalar、
-末轴向量及单行的完整同形状操作数。批量完整同形状 Add/Mul 保留为后续节点，使此前的归一化/
-广播前缀继续使用优化内核；冷准备拒绝已识别的通用慢速融合实现。中间输出被发布或分叉时
-保留边界。半精度跨节点链保留中间舍入。融合接入不代表每个形状都更快，支持范围和数值按实际输入与环境验证。
+通常只需默认入口。需要诊断时检查 `PreparedOperation::provider()`、`runtime_properties()` 与
+`workspace_requirement()`。确实必须限定某家实现时才创建专家 Context，例如：
 
-旧ggml0.26／oneDNN3.13.2的17格证书不属于当前规则。当前全候选比较和适用条件见本页开头；
-Copy的partial WIN不足以证明相对全部成熟候选的完整优势，独有动态／严格资源消费另按实际能力裁决。
-Native SDPA已源级退役，旧严格workspace保证不再提供。CPU-only新core的F32 dense无显式mask SDPA
-使用原F32 fused（含两layout/GQA/causal）；原BF16及旧mixed SDK路径保持已验规则。完整条件与证据见
-[三项最终裁决](../implementation/tasks/compute/cpu-three-operator-route-closure.md)。
-当前有限表之外的重叠域按具名成本和可用性选择成熟工程默认，不声称统计冠军；
-未知硬件、软件、flags/IPO、shared、线程或配置仍可执行已构建且合格的成熟数学。
-完整规则交付与清退终审已在[CPU最终收口](../implementation/tasks/compute/cpu-final-closure-plan.md)中完成。
+```cpp
+#include <hyle/compute/providers/onednn.h>
+auto context = hyle::compute::Context::create(
+    hyle::compute::cpu::device(), hyle::compute::onednn::provider());
+if (!context) return context.error();
+```
 
-归一化 primitive 每次执行有 oneDNN 内部 metadata 分配，报告 `ProviderReplayClass::kManaged`；
-其数量不冒充 HYLE allocator 可计量的零字节。Graph 的 prepared-only 约束会排除该 managed
-路线。每个 invocation 独立拥有 native stream/argument handles 和 caller scratchpad，可并发运行；
-支持精确 input0/output 原地重叠。接受后的执行失败退休当前 invocation，需创建新槽，不能重放
-到另一个 Provider。既有 BRGEMM 的 prepared replay 合同保持不变。
+不支持的形状在准备期失败，专家限定不自动追加其它 Provider。精确 alias、stride 与数据类型
+仍由该实现检查，名称相同不意味着资源或精度相同。
 
-### oneDNN 张量接入检查点
+### 接入已有 executor
 
-[M2-B1 oneDNN](../implementation/tasks/compute/llm-moe-m2-b1-onednn.md)已接入原版`Select`与
-`Copy`：普通CPU Direct/Graph自动绑定，支持plain rank0..8、非负及奇数字节stride、空输出，
-以及已登记1/2/4/8字节scalar存储。Select将条件与两个分支共同广播，可用张量条件选择两个
-标量常量；输出dense，保留所选值的原始位，包括NaN payload、signed zero与大整数。
+`cpu::DefaultContextOptions::executor` 借用 `ParallelExecutorRef`，默认使用调用线程。
+executor 的 `parallel_for` 必须在返回前完成全部工作，不能失败或抛异常，并在嵌套调用时保证进展。
+其 backing 活过 Context 及所有派生执行对象。分片与 scratch 由 prepare 决定，调用者按查询的
+工作区要求分配，不依赖内部 tile 阈值。完整 Scheduler 组合见
+[持久 executor 样例](../../samples/package/graph/cpu_executor/)。
 
-实现用原版oneDNN字节primitive描述存储，无浮点转换、预先展开广播或HYLE数学kernel。
-每个请求复用上述stream/argument handles与caller scratch；managed replay、vendor资源
-未知项和失败退休语义保持。当前这两个映射均要求输出不与输入重叠。
+`native_threads` 是 ggml 的独立预算，默认 1（含提交线程）；显式大于 1 才为 invocation 准备
+持久 workers。executor concurrency 不会自动变成该预算，也不统一控制 ATen 的共享线程池。
+并发多个 invocation 的线程/内存用量要一起考虑。
 
-`Unary{UnaryKind::kSoftplus}` 的 F32 dense 标量/rank1..8/空张量也已接入普通CPU入口及
-Graph叶程序桥接。准备时固定匹配原版 `ref:any`：该版本默认JIT的小负值尾部不符合稳定精度
-合同，因此不用于此域。执行不搜索或计时；输出不能与输入重叠。非连续布局、F16/BF16尚未由
-这条成熟映射支持，准备时明确拒绝。Windows开发验证已通过；完整平台/三交付/成本资格仍按
-任务卡验收，min/max及数值Cast的其余合格映射尚待完成。
+### 限制共享 CPU runtime 线程
 
-### ggml CPU 接入检查点
-
-原版ggml CPU程序已进入普通Direct/Graph；[M2-B1](../implementation/tasks/compute/llm-moe-m2-b1-cpu.md)保留最初接线记录，当前画像结果见[覆盖表](model-fragment-coverage.md)。
-普通 CPU 工厂已组装这一 Provider；独立入口为 `compute/providers/ggml_cpu.h` 中的
-`ggml_cpu::provider()`。当前映射包含 Copy、浮点 Cast、Concat、任意轴 Gather、Add/Sub/Mul/Div、
-Abs/Neg/Exp/Log/Sqrt/Rsqrt/Tanh、RMSNorm/LayerNorm 和任意轴集 Sum/Mean 的有限域。
-不同浮点dtype的Cast保留原转换kernel，另有内部NaN storage位映射边界，以匹配公开Cast规范；
-有限值结果不改，额外一次O(n)检查和原位view节点计入整个原程序成本。
-half 计算显式经过原版 F32 cast/计算/输出舍入；转换属于真实执行成本。dense 可折叠高 rank，
-非连续输入限 ggml 四轴且 stride 满足元素对齐；无 alias 资格。完整特殊值激活等仍等待成熟
-承载，不能由名称相同推导已支持。
-
-CPU ggml 的 SDPA 接受同F32/F16/BF16、rank4、两种公开attention布局及GQA/MQA。驻留
-cache 可以保容量backing，以 `TensorDesc::strided_bytes` 截出有效长度；depth须连续，外层
-stride须是元素对齐、正值且保row-major不重叠padding。K/V沿原fused kernel直接读取，
-不会因每个query/head复制全部历史。query必要F32转换与causal F16 `Q×K` mask仍计入
-成本；mask在冷准备，默认不代表paged/page-table资格。任意stride或未资格组合仍由其他
-明确支持的Provider处理或拒绝。当前验收范围见
-[驻留SDPA实施记录](../implementation/tasks/compute/inference-g01-resident-sdpa.md)，整个G01未完成。
-
-同一 Provider 也接受上文十种精确 GGUF/ggml block storage 作为 MatMul RHS，或 `[E,N,K]`
-GroupedMatMul weight；直接把 caller-owned packed bytes 交给原版 `MUL_MAT`/`MUL_MAT_ID`，不经过
-HYLE decoder、全量重排或常驻浮点副本。CPU/CUDA/Apple 共用公开格式身份，但各自保留原生
-program、resource 和完成语义。
-
-CPU ggml 还接受 plain F32 的 rank-2..4 MatMul：左输入为连续 `[...,M,K]`，右输入为连续
-`[...,N,K]` 权重的转置描述 `[...,K,N]`，输出和累加均为 F32。普通 CPU Direct/Graph 可直接绑定
-这种 router/shared-gate 权重；准备期选择既有 ggml 程序，重复执行不重新选 Provider。
-这项准入不包含任意 stride、左小右大的批次广播或更高 rank 的 F32 MatMul。
-
-Gather 使用 I32 索引，支持标量或多维索引，以及上述已准入的非连续布局；每次运行都先按实际
-索引 stride 检查边界，再调用原版 get_rows。不同 outer 行必要的索引 repeat 保存在每请求工作区。
-二元运算支持公共推导确认的任意合法广播，仍受上述输入布局准入限制，保持左右操作数顺序。
-同形、标量、行/列直接折叠，其余由原版逐轴 repeat 承载。Sum/Mean 支持正负轴集合与
-keep-dim；必要的分组转置沿原版 view/cont 执行。空归约集合发布 Sum=0、Mean=NaN。
-转置、广播与中间 F32 存储均在准备期确定并分配，执行时不重建程序。
-
-同一 CPU 接入还组合 M0 已登记的 C++ 标准库 indexed 路径：F32/I32 `Scan` 调用原版
-`std::inclusive_scan`，I32 在 I64 临时域检查全部前缀和最终总和，再发布 inclusive/exclusive
-结果；越界不写输出。F32/F16/BF16/I32 `TopK` 的count=1沿输入扫描、不分配词表宽度Entry
-scratch，count>1继续调用 `std::partial_sort`，按 value 与原下标
-的全序保留 ties，NaN 始终放在非 NaN 后，values 保留输入位模式，indices 为 I32。
-这两个叶程序支持 rank1..8、任意合法 axis、非负 byte stride；不进入 ggml 数学图，也没有
-私有 worker。每个 invocation 的 scratch 通过所供 allocator 冷分配，执行沿同一 CPU Queue
-与同步 executor。两输出和动态失败边界也适用于普通 Graph。
-
-每个 invocation 在准备期持有 graph、plan、工作区和独立 pool；重复执行只绑定当前数据。
-`cpu::DefaultContextOptions::native_threads` 默认1，包括提交线程，显式大于1才创建持久 workers。
-借用的 executor 接收一个完整原版程序，不把其 concurrency 自动变为 ggml worker 数量。
-程序同步完成后返回终态，索引越界先于输出写入拒绝；一个 invocation 不允许并发运行或关闭。
-当前固定画像已完成普通入口验证；Windows代表消费者的源码/static/shared及两个完整片段P1已通过，
-见[覆盖与限定环境](model-fragment-coverage.md)。其它硬件、形状与未通过画像不能据此取得资格。
-
-需要约束 ATen 共享运行时时，在启动期、任何相关 HYLE Context 或外部 ATen 用户使用前，调用
-`cpu::configure_runtime_threads(N)`。成功表示实际 intra-op getter 与 N 相符；这不是 context 局部设置。
-随后仍分别为各 phase 显式传入原 executor 和 `native_threads`，并为并发调用创建独立 Queue、
-invocation、workspace 与输出。CPU+GPU 消费也先配置 CPU，GPU 的驱动/service 线程另有其合同。
+在任何相关 HYLE Context 尝试创建或外部 ATen 首次使用前，应用可以配置共享 runtime：
 
 ```cpp
 namespace cpu = hyle::compute::cpu;
@@ -1498,73 +956,27 @@ HYLE_RETURN_IF_ERROR(cpu::configure_runtime_threads(2));
 auto prefill = cpu::create_context({.native_threads = 2});
 auto decode = cpu::create_context({.native_threads = 1});
 auto runtime = cpu::runtime_thread_info();
+if (!runtime) return runtime.error();
 ```
 
-`runtime_thread_info()` 区分 OpenMP、Native、不可用后端，以及成功配置的 requested、当前 caller 的
-intra-op/inter-op limits、配置窗口和首次使用状态。未配置且未使用时查询不初始化运行时，limits
-为 unknown。普通CPU路线自动启用该运行时；内部缺席构建的返回值为不可用与 unknown，合法配置返回
-`Unimplemented`，这不提供单独关闭ATen的普通CPU构建选项。interop 只报告。
-limits 不是 live OS 线程计数：两个 OpenMP caller 可各有一组 team，ggml 的两个 invocation 也可
-各有原生 workers。executor、BLAS、vendor 私有池与 GPU 服务线程不能据此推导为零或合并成总上界。
+`configure_runtime_threads()` 控制共享 ATen runtime 的 intra-op 设置，非 Context 局部值。
+`runtime_thread_info()` 只观察 backend、当前 caller 的 limits 和配置窗口；未初始化时 limits
+可为 unknown，查询不会为观察而初始化 runtime。它不统计 live OS threads，也不限制多个并发
+OpenMP team、executor、ggml worker、BLAS 或 GPU service thread 的总和。
 
-普通 CPU 工厂在首层 metadata 分配前关闭窗口，失败也不重开；专家 Context 以相关 provider callback
-入场为界，callback 前的通用参数/metadata 拒绝尚无该 provider 副作用。销毁 Context 不还原。
-相同显式值只有实际 getter 仍匹配才幂等；
-不同值、晚配置和已发生 setter 部分失败的请求被拒绝，HYLE 不回滚、不自动重试或修复 foreign 漂移。
-窗口属于当前 native 实现代码映像：多个静态 HYLE 副本可能共享同一个 Torch DLL，应用须在所有副本
-与 foreign 用户之间协调启动并保持设置，不能假定已存在的 OpenMP caller TLS 都被同步更新。
-显式非1或已检测失败的配置不继承原单线程 CPU 优选规则资格，数学仍走其原合法实现。
-该新增能力正在 [G10](../implementation/tasks/compute/inference-g10-cpu-thread-budget.md) 中验证，尚未签最终交付。
+首个相关 Context 尝试会关闭配置窗口，即使创建失败也不重开；Context 销毁不恢复设置。
+相同显式值只在实际 getter 仍匹配时幂等。晚配置、不同值和 setter 部分失败明确拒绝，不回滚或
+自动修复 foreign 漂移。应用须协调其它 ATen 用户与多个静态 HYLE 副本，不能假定每份静态库
+拥有独立的共享运行时。
 
-```cpp
-#include <hyle/compute/providers/onednn.h>
+### 数值与内存的例外
 
-auto context = Context::create(cpu::device(), onednn::provider());
-if (!context) return context.error();
-auto prepared = prepare(*context, MatMul{}, a_desc, b_desc, c_desc);
-if (!prepared) return prepared.error();
-
-const auto need = prepared->workspace_requirement();
-hyle::mem::Buffer scratch;
-if (need.size != 0) {
-  auto allocated = hyle::mem::Buffer::create(
-      hyle::mem::system_resource(), need.size, need.alignment);
-  if (!allocated) return allocated.error();
-  scratch = std::move(*allocated);
-}
-auto invocation = prepared->create_invocation(scratch.view());
-if (!invocation) return invocation.error();
-```
-
-上例是专家限定 oneDNN 的用法，不支持的形状返回 `Unimplemented`。普通使用选择 CPU 默认入口：
-
-```cpp
-#include <hyle/compute/cpu.h>
-
-auto context = hyle::compute::cpu::create_context();
-```
-
-`Context::create()` 在冷路径把完整 provider 序列复制到 context 自己的一次 metadata allocation；输入
-span 只需活到调用返回。序列没有人为四项上限，也不会自动追加 native。通过
-`PreparedOperation::provider()` 返回的开放 `ProviderIdentity` 可以检查实际路线；是否发生组合回落由
-所选默认规则和最终 identity 解释。确有实现约束时，专家 ContextOptions 仍可显式提供候选序列。
-
-默认 Native 和 oneDNN executor 都是调用线程串行执行；HYLE 不偷偷创建线程池。已有同步线程池的程序可通过
-`cpu::DefaultContextOptions::executor`、`native::Options::executor` 或 `onednn::Options::executor` 传入借用的
-`ParallelExecutorRef`。其 `parallel_for` 必须在返回前完成全部任务、不得失败或抛异常，并在嵌套调用时
-保证进展；executor backing 必须活过由 provider 创建的 Context 及其 retained artifacts。Native 在 prepare
-冷路径按总工作量固定 task count，目前为足够大的 Norm 与 dense gated activation 做
-至多一次同步 fan-out；默认、小工作量与可检测的 nested episode 保持 caller-thread 串行。
-
-并行分片由 HYLE 在 prepare 冷路径决定，不是 oneDNN 的隐藏线程池：正常 tile 宽度至少为 64 columns，
-任务数不超过 executor concurrency，并且至多生成 base/base+1 两种预编译 kernel。每个任务使用独占、
-64-byte-aligned scratch slice；调用方只需按 `workspace_requirement()` 分配一块总 workspace，不应自行
-推导 tile 或依赖该内部阈值。
-
-标准 CPU 配置自动在支持的 x86-64 目标接入 oneDNN，macOS ARM64 使用合格 ggml/ATen/Native 路径。
-普通用户不再设置 oneDNN ON/OFF/AUTO；必要实现随路线自动取得，依赖缺件明确失败。
-`PreparedOperation::provider()` 与 `workspace_requirement()` 可解释实际路线。
-oneDNN 类型不会泄漏到 Tensor、Operation 或 Graph API。
+- 稳定激活、mask、特殊值、低精度累加可能需要 ATen 或显式 F32/Double 转换，形成真实的
+  packing/临时存储与融合边界；不能为了少一次转换换成另一种模型数学。
+- 原库 norm 等 managed 程序可以在 replay 中建立 metadata；某些布局只有 managed 候选。
+  prepared-only 或拒绝未知内存的要求可能没有可行实现，正确行为是报错。
+- 原编码矩阵、paged KV 与普通 dense 矩阵各有资源及格式限制，不能用全量反量化结果证明
+  直接压缩读取的性能。接口导航见前面的模型格式和批次章节。
 
 ## 所有权、失败和限制
 
@@ -1609,16 +1021,6 @@ oneDNN 类型不会泄漏到 Tensor、Operation 或 Graph API。
   原提交对象和生产槽可销毁；同槽仍有结果引用时不能覆盖，另一槽可继续使用。T 的 runtime 决定如何读其数据，
   HYLE 不把它伪装为 Mem allocation，也不隐式创建 host shadow copy。注入 allocator 必须活过所有结果引用。
   这些共同接口不描述 MLX/Metal 或 Vulkan 的原生 Program；其默认规则和验收范围见对应路线指南。
-  组合执行的实现者可在冷路径创建 `detail::DependentCompletion`，用 trusted 来源协议替换原结果的
-  completion；结果 storage 与 payload 保持原样，`completion()`、`wait()`、`result()` 消费同一状态。
-  来源只有一个观察 owner，后继实际退休后才观察或移交原 producer/copy completions；查询错误不能
-  充当实际退休。协议订阅须覆盖全部已接纳来源，并由实际退休回调释放其保活，不能在回调里等待
-  另一个回调。该内部实现接缝不自动给普通原生 Program 添加分页输入或推理策略。
-  原 F2 的实现侧来源可用 `detail::CopyOutcomeSource<Update, Access>` 预留节点；在 source 接纳前
-  create，在 suffix 接纳前 take 原 Update，失败不消费。未接纳 suffix 时释放返回的协议 reference；
-  已接纳则交给原 DependentCompletion。正常完成后通过冷槽的 `update()` 回接原 writer/invocation，
-  再 reset 原 invocation 继续 replay；无需每步重建原复制槽。pending abandon 才移交原 native owner。
-  注入 allocator 须活过冷槽及全部协议/native references；最后一次释放可能在 native 退休线程执行。
 - RMSNorm 允许 input/output 精确同址；所有 operation 拒绝不安全 partial overlap 和第二输入/output
   overlap。CPU route 要求 host-accessible storage，并如实调用 non-coherent resource 的 invalidate/flush。
 - 不同 Queue 可并发；同一 ordered Queue 是单 producer 提交域，两个线程同时录入会明确失败。Graph 会用
@@ -1628,16 +1030,8 @@ oneDNN 类型不会泄漏到 Tensor、Operation 或 Graph API。
   终态。
 - 销毁 pending Completion 从不等待。异步 backend 必须让已接纳工作继续安全存活，并在真实终态后释放
   随 Completion 交接的内部 execution owner；不能把“用户没 wait”解释成工作已取消或 borrow 可回收。
-- HYLE-native route 不隐藏 staging、copy、线程切换、packing 或 JIT。oneDNN BRGEMM handle 只在 prepare
-  冷路径 finalize/generate；每个 Invocation 映射调用方 workspace，steady submit 不创建 descriptor、
-  stream、memory handle、JIT artifact，不 packing/copy，也不执行 route search。当前闭包的六个推理形状
-  曾证明 warm `submit()+wait()` 无 C++ 动态分配；这些是既有 exact 路线的历史证据，当前 foundation
-  proposal/Graph 的其他路线需要各自验证，不能据此推导新合同或 MLX 已通过。
-- oneDNN ukernel C API 在锁定版本中仍标记 experimental。它完全私有于 provider，并由精确版本断言保护；
-  用户不应直接依赖其 header 或 ABI。升级 oneDNN 必须重做源码、符号、分配和正确性审计。
-
-source、headers + static、headers + shared 都选择 `hyle::compute`。三者是同一 C++23 source contract，不是
-Native FFI，也不承诺跨工具链 C++ ABI。
+重复执行成本由实际 `runtime_properties()` 声明，不能由库名或一次局部测试推断。
+其它共同借用、失败与预算规则见[调用安全边界](usage-contract.md)。
 
 ## 自定义执行：接入 direct 与 Graph
 

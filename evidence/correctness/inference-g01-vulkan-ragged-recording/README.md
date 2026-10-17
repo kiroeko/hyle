@@ -17,4 +17,4 @@ Concat连续64步当前payload、step32 invalidate与原四native风险tests通�
 FAIL是已复现缺陷，不能被计成正常gate PASS；最终green十项与三san各十项实际PASS。
 Windows同树四jobs9.734s编译PASS，不运行本机GPU。短三shape诊断3.212s与oracle/
 readonly/tail通过，D64比1.00、CI[0.99,1.02]只为preflight；原两次合格P1 FAIL独立保留。
-适用范围及权限见[活动卡](../../../docs/implementation/tasks/compute/inference-g01-vulkan-ragged-region-fusion.md)。
+适用范围及权限见[活动卡](https://github.com/axiomates/hyle/blob/d12f2204d23503256220e810385d6cb3e93027a8/docs/implementation/tasks/compute/inference-g01-vulkan-ragged-region-fusion.md)。

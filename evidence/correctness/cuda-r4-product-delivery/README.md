@@ -25,14 +25,14 @@ HYLE、CUDA、CRT DLL 邻置，非交互且 timeout 有界；重型串行、构�
 
 本记录签署 **C5 交付范围 CLOSED**，不是完整 R4 terminal。主卡的 CUDA P1、WSL 更完整的 factor
 边界回归/适用 host 插桩及 cuBLAS OOM 尾项仍未完成，不写 PASS。八个旧 owner 已按
-[C5 卡](../../../docs/implementation/tasks/build/cuda-r4-product-delivery.md) 完成交付收口；六个 CUDA
+[C5 卡](https://github.com/axiomates/hyle/blob/d12f2204d23503256220e810385d6cb3e93027a8/docs/implementation/tasks/build/cuda-r4-product-delivery.md) 完成交付收口；六个 CUDA
 owner 继续保持主卡 AUDITED。
 
 初次 backend-only 检查误把顶层维护选项传给嵌入 parent，按构建合同被拒绝；改为真实顶层 factor
 配置后通过，原失败日志保留。Air 的系统 Python 不支持 Path.write_text 的 newline 参数，任务本地
 检查器改用 open 后完成；产品/公共工具未因这两项改变，没有重复已通过的 GPU 交付。
 
-另有独立的 [selector 配置冲突](../../../docs/implementation/tasks/build/validation-cuda-cpu-coexistence-v1.md)：
+另有独立的 [selector 配置冲突](https://github.com/axiomates/hyle/blob/d12f2204d23503256220e810385d6cb3e93027a8/docs/implementation/tasks/build/validation-cuda-cpu-coexistence-v1.md)：
 自动合并合法 CPU/CUDA 测试时得到 oneDNN ON + CPU OFF。该工具反例单独修复/验收，不能把自动门
 未运行误写成三交付失败，也不能以三交付通过代替其它适用门。
 

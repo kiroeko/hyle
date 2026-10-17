@@ -1,6 +1,6 @@
 # Apple R5 product delivery checkpoints
 
-Owned by the finite [D1–D4 delivery card](../../../docs/implementation/tasks/build/apple-r5-product-delivery.md).
+Owned by the finite [D1–D4 delivery card](https://github.com/axiomates/hyle/blob/d12f2204d23503256220e810385d6cb3e93027a8/docs/implementation/tasks/build/apple-r5-product-delivery.md).
 Air's three C++ journeys and WSL's OFF admission checks pass. Mini and the complete
 Windows broad gate are still pending; this record does not close R5 or the delivery card.
 

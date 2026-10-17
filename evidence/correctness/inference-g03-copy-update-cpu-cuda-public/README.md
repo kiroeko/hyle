@@ -1,6 +1,6 @@
 # G03 CPU/CUDA 公共 CopyBatchUpdate source 旅程
 
-2026-10-14，按[活动卡](../../../docs/implementation/tasks/compute/inference-g03-copy-update-owner.md)
+2026-10-14，按[活动卡](https://github.com/axiomates/hyle/blob/d12f2204d23503256220e810385d6cb3e93027a8/docs/implementation/tasks/compute/inference-g03-copy-update-owner.md)
 执行，AUDITED WORKTREE；[公共consumer](consumer.cc)、[CPU](cpu-final.log)、[CUDA](cuda-final.log)、
 [累计记录](receipt.json)、[源码字节](source-identity.json)、[原始日志/编排](raw.zip)。
 WSL Ubuntu24.04 / GCC14.2，actual RTX4070 driver617.14 / CUDA13.3，4jobs串行。

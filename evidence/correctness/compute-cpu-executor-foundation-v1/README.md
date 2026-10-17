@@ -3,7 +3,7 @@
 Candidate `f6c45efd75e63c96aa406fc5ad29209f73e149b0`, 2026-09-15,
 Windows 11 x64 / `kiro-workstation`, MSVC 19.50.35728.0, CMake 4.4.0,
 Ninja Release, C++23, locked oneDNN v3.13.2. Scope and correction history:
-[probe card](../../../docs/implementation/tasks/compute/cpu-executor-foundation-probe.md).
+[probe card](https://github.com/axiomates/hyle/blob/d12f2204d23503256220e810385d6cb3e93027a8/docs/implementation/tasks/compute/cpu-executor-foundation-probe.md).
 No product, registry, dependency lock, public build tool or performance instrument
 changed from the audit baseline `405fd289`.
 

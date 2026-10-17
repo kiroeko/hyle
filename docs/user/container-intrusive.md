@@ -184,7 +184,3 @@ Hlist 没有 back、reverse iterator、range splice、size、sort 或 merge。�
   拥有，但已完成的顺序变化不回滚。`consume_all` callback 必须 `noexcept`。
 - 所有类型只保证 thread-compatible。Mutation、遍历、auto hook 析构和 list 析构必须由同一个外部同步
   协议保护；auto-unlink 不解决 race、ABA 或 UAF。
-
-Pointer-to-member、inline iterator 与 caller-owned C++ lifetime 没有自然的窄 Native FFI。因此本能力的
-Native FFI 是 `N/A`；若未来外语 runtime 需要 callback/timer，应由上层 opaque handle API 拥有 storage
-和生命周期，而不是导出 raw hook layout。

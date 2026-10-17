@@ -35,4 +35,4 @@ affinity. Cold owner QoS is not inferred from the caller label.
 
 The raw native-cost branches were removed because they omitted the managed admission,
 completion and result-lifetime duties. Original experiments and their revision-specific
-boundaries remain in the [implementation history](../../docs/implementation/tasks/compute/apple-v1-four-route-foundation.md).
+boundaries remain in the [implementation history](../../docs/implementation/README.md#追溯旧文档).

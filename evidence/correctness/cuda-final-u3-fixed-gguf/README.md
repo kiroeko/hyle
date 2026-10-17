@@ -16,7 +16,7 @@ fixture 数学保持；GPU quantized reference 调用原 ggml CUDA，以实际 G
 
 一次完整批次检出 8 个失败测试，两入口相同：7 个 BF16 expert 合同的重复 ID，以及 Qwen
 2.4T 完整 NextN 的 Q8 embedding 源大小。两个根因的具名源码审计及有限动作见
-[R1 施工卡](../../../docs/implementation/tasks/compute/cuda-final-u3-model-regions.md)。
+[R1 施工卡](https://github.com/axiomates/hyle/blob/d12f2204d23503256220e810385d6cb3e93027a8/docs/implementation/tasks/compute/cuda-final-u3-model-regions.md)。
 
 - plain GroupedMatMul 使用原 reshape，使每个公共 token/slot 成为原 MUL_MAT_ID 的独立 token，
   结果再 reshape 回原输出。保留 F32 activation、原 BF16→F32 权重转换、checked IDs、原

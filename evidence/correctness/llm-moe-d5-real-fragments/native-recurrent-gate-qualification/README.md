@@ -8,7 +8,7 @@
 普通 `Unary::kSoftplus` 的精度与 Provider 准入没有改变。
 
 预声明协议在 `bbcd3648` 冻结，结果和最终有限接线在 `2b66dd8f` 审定，先于产品候选。
-当前施工卡：[MG1–MG5](../../../../docs/implementation/tasks/compute/llm-moe-d5-model-gate-qualification.md)。
+当前施工卡：[MG1–MG5](https://github.com/axiomates/hyle/blob/d12f2204d23503256220e810385d6cb3e93027a8/docs/implementation/tasks/compute/llm-moe-d5-model-gate-qualification.md)。
 
 ## 输入与独立参考
 

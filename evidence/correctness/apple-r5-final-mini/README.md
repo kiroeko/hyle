@@ -25,6 +25,6 @@ artifact hashes and installed file inventory. SHA-256:
 `ade9655463aa48dcd38165f7b357df7667630e9e9d247ee66a05cee3c9a64fe7`.
 The adjacent identity manifest records every archived file hash.
 
-Owners: [R5 native route](../../../docs/implementation/tasks/compute/apple-v1-four-route-foundation.md)
-and [Apple product delivery](../../../docs/implementation/tasks/build/apple-r5-product-delivery.md).
+Owners: [R5 native route](https://github.com/axiomates/hyle/blob/d12f2204d23503256220e810385d6cb3e93027a8/docs/implementation/tasks/compute/apple-v1-four-route-foundation.md)
+and [Apple product delivery](https://github.com/axiomates/hyle/blob/d12f2204d23503256220e810385d6cb3e93027a8/docs/implementation/tasks/build/apple-r5-product-delivery.md).
 These receipts do not claim a Mini performance result.

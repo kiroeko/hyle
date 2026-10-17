@@ -1,7 +1,7 @@
 # G01 原生分页风险与零域阶段
 
 产品 `520027a57`，实际 MacBook Air Mac16,12/M4/arm64/macOS27.0.1/AppleClang21。
-见[活动卡](../../../docs/implementation/tasks/compute/inference-g01-native-paged-read.md)。
+见[活动卡](https://github.com/axiomates/hyle/blob/d12f2204d23503256220e810385d6cb3e93027a8/docs/implementation/tasks/compute/inference-g01-native-paged-read.md)。
 source 风险只签本记录所跑范围，不代签三交付、宿主 sanitizer 或不可变 P1。
 
 Apple 原 MLX worker/GPU checkpoint 的 metadata 排队错误、取消、放弃、已接纳 native

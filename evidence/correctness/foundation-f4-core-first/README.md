@@ -19,7 +19,7 @@ archive原条目；旁列可读日志仅清理行尾空白。
 selector的初始CLOSED façade roots授权拒绝及后续READY plan都保留：独立package card仅允许
 新Compute产品root交付变化，旧F1–F3/native cpp与public headers没有产品diff。中央manifest
 保守全图选择不作为实际全库测试根；实际有限范围沿
-[F4卡](../../../docs/implementation/tasks/compute/foundation-f4-state-versions.md)及
-[package卡](../../../docs/implementation/tasks/compute/foundation-f4-package-seam.md)。
+[F4卡](https://github.com/axiomates/hyle/blob/d12f2204d23503256220e810385d6cb3e93027a8/docs/implementation/tasks/compute/foundation-f4-state-versions.md)及
+[package卡](https://github.com/axiomates/hyle/blob/d12f2204d23503256220e810385d6cb3e93027a8/docs/implementation/tasks/compute/foundation-f4-package-seam.md)。
 GPU实际consumer、主/正交完整数学、ASan/UBSan/TSan、ordinary source与迁址SDK、P0/LOC/
 终局红队均未由本证据代签，F4状态仍AUDITED；无P1/性能赢家。

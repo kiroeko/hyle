@@ -12,4 +12,4 @@ Vulkan原push constants为128bytes已到原保证上限，不能为pages给普�
 共用MaterializedNativeState归compute_batch，原native bindings、metadata bank、精确frame
 校验和retirement须复用。公共typed调用和新的页metadata/controller形状仍须在AUDITED
 前冻结，本证据不是性能、数学、交付或整个G01/G02完成证书。
-[施工卡](../../../docs/implementation/tasks/compute/inference-g01-native-paged-read.md)。
+[施工卡](https://github.com/axiomates/hyle/blob/d12f2204d23503256220e810385d6cb3e93027a8/docs/implementation/tasks/compute/inference-g01-native-paged-read.md)。

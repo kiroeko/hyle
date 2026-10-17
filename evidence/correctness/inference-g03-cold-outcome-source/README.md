@@ -1,7 +1,7 @@
 # G03 来源冷预留与原控制回接检查点
 
 2026-10-14；baseline `f307dbc5026fdcdffe51b35b64b62dd21545905b`；同一
-[AUDITED 活动卡](../../../docs/implementation/tasks/compute/inference-g03-owned-outcome-observation.md)，
+[AUDITED 活动卡](https://github.com/axiomates/hyle/blob/d12f2204d23503256220e810385d6cb3e93027a8/docs/implementation/tasks/compute/inference-g03-owned-outcome-observation.md)，
 不是 G03 terminal 或七路线证书。前一[聚合 completion 检查点](../inference-g03-owned-outcome-observation/README.md)
 保留原始失败/限制。
 

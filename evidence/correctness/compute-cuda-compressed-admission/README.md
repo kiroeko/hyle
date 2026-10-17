@@ -1,6 +1,6 @@
 # Compressed CUDA kernel admission
 
-Research only; [scope and verdict](../../../docs/implementation/tasks/compute/cuda-compressed-provider-admission.md).
+Research only; [scope and verdict](https://github.com/axiomates/hyle/blob/d12f2204d23503256220e810385d6cb3e93027a8/docs/implementation/tasks/compute/cuda-compressed-provider-admission.md).
 Not a shipping Provider, graph/capture qualification, throughput benchmark or SOTA claim.
 
 The fixture compiles the unmodified original Marlin TU from reference commit

@@ -8,7 +8,7 @@
 
 2026-10-08 执行纠正后的本批入口为[delivery.py](delivery.py)，组合与原shipping用例
 固定在[delivery.json](delivery.json)；工具验收和暂停边界见
-[有限工具卡](../../../docs/implementation/tasks/build/cuda-delivery-execution-control.md)。
+[有限工具卡](https://github.com/axiomates/hyle/blob/d12f2204d23503256220e810385d6cb3e93027a8/docs/implementation/tasks/build/cuda-delivery-execution-control.md)。
 下面`run-groups.py`保留此前原记录，不再作为本批交付启动入口。
 
 ```text

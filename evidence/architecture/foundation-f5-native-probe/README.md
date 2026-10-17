@@ -14,7 +14,7 @@ dense oracle。最大error F16约1.15e-4、BF16约1.01e-3，通过。
 
 build约16.807秒/run约0.365秒只记录预算，不是吞吐benchmark。原源码/输入hash、
 精确机器/工具链、命令、日志和二进制hash在receipt/raw.zip，build1800/run120预算。
-下一步依[活动卡](../../../docs/implementation/tasks/compute/foundation-f5-paged-ragged-batch.md)
+下一步依[活动卡](https://github.com/axiomates/hyle/blob/d12f2204d23503256220e810385d6cb3e93027a8/docs/implementation/tasks/compute/foundation-f5-paged-ragged-batch.md)
 固定capacity/metadata generation/native最后使用与Graph同slot后才AUDITED写产品。
 
 同一原型根/配置沿原预算追加有限head/split核对，见extended-receipt.json/extended-raw.zip：

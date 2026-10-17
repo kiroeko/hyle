@@ -2,7 +2,7 @@
 
 CPU不可变candidate `642cc1e67566994a85a65adbe0db8956c1d0350a`继续保留，Graph batch
 资源接缝candidate `a0c047ea45cb46884da7f578684ff416ccfdefa5`，活动owner卡为
-[Graph卡](../../../docs/implementation/tasks/graph/inference-g02-multi-queue-batch.md)。
+[Graph卡](https://github.com/axiomates/hyle/blob/d12f2204d23503256220e810385d6cb3e93027a8/docs/implementation/tasks/graph/inference-g02-multi-queue-batch.md)。
 [receipt](receipt.json)记录实际命令、退出码与累计尝试；[raw](raw.zip)保留全FAIL/PASS、
 输入SHA、工具链和仪器命令。它是候选证据，不是整个G01或模块的CLOSED证书。
 

@@ -369,8 +369,3 @@ Registry 不提供 unregister：已经创建对象、函数指针和并发 reade
 一个名字表安全推断。需要动态装卸 shared library、依赖排序或在途调用排空时，应由调用方具名的
 module owner 管理 quiescence，再销毁整个 Registry。Registry 必须活过所有 `FrozenView` 和在途操作；
 析构前由调用方让使用者静止。
-
-## 内部组件
-
-`util_core` 是 header-only 内部组件，Registry 和 demangle 位于 util runtime。
-两者通过 `hyle::util` 交付，用户只选择 Util 产品；底层组件无需因使用小工具而链接 runtime。

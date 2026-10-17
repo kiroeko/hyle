@@ -1,6 +1,6 @@
 # G03 CopyBatchUpdate 三交付公共 consumer 资格
 
-2026-10-14，按[活动卡](../../../docs/implementation/tasks/compute/inference-g03-copy-update-owner.md)
+2026-10-14，按[活动卡](https://github.com/axiomates/hyle/blob/d12f2204d23503256220e810385d6cb3e93027a8/docs/implementation/tasks/compute/inference-g03-copy-update-owner.md)
 candidate bcaec010b；[公共consumer](consumer.cc)、[实际结果](final.log)、[累计](receipt.json)、
 [所有安装/relocation/独立头/编译命令/原始日志](raw.zip)。source四路线已另封存；本处
 Apple/Vulkan各static/shared + CPU/CUDA static/shared，共六个SDK交付配置，8次公共65步。

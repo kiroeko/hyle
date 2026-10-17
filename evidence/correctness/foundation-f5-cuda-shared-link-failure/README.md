@@ -6,4 +6,4 @@
 
 原完整job/命令/日志及copied consumer在raw.zip/[receipt](receipt.json)；原owner候选范围
 在[previous owner](previous-owner.json)。本记录只签真实失败，不能写缺席/NA或补内部target
-绕过。有限修复见[活动卡](../../../docs/implementation/tasks/compute/foundation-f5-cuda-public-provider-link.md)。
+绕过。有限修复见[活动卡](https://github.com/axiomates/hyle/blob/d12f2204d23503256220e810385d6cb3e93027a8/docs/implementation/tasks/compute/foundation-f5-cuda-public-provider-link.md)。

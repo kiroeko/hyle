@@ -1,6 +1,6 @@
 # Unified Compute C3 partial delivery receipts
 
-This is ongoing validation for the [active delivery card](../../../docs/implementation/tasks/build/compute-unified-delivery.md).
+This is ongoing validation for the [active delivery card](https://github.com/axiomates/hyle/blob/d12f2204d23503256220e810385d6cb3e93027a8/docs/implementation/tasks/build/compute-unified-delivery.md).
 It is not a terminal verdict for all platforms/routes, hybrid execution, or asynchronous expert transfers.
 
 [Delivery matrix](delivery-matrix.json) fixes the declared applicable scope: 15 platform/route groups,
@@ -8,7 +8,7 @@ It is not a terminal verdict for all platforms/routes, hybrid execution, or asyn
 are documented per actual receipt; the current matrix records 78 PASS and 12 UNQUALIFIED.
 The user explicitly accepted the twelve unqualified real-GPU runs as a non-blocking validation
 limit on 2026-10-10; they are not PASS or N/A. Original build-only receipts retain their historical
-BLOCKED fields; the current matrix and [accepted scope](../../../docs/implementation/tasks/build/compute-c3-hardware-boundary-decision.md)
+BLOCKED fields; the current matrix and [accepted scope](https://github.com/axiomates/hyle/blob/d12f2204d23503256220e810385d6cb3e93027a8/docs/implementation/tasks/build/compute-c3-hardware-boundary-decision.md)
 give the current work verdict.
 The twelve unqualified Vulkan and CPU+Vulkan entries have completed WSL compile/install/relocation/consumer-link
 checks in [Vulkan](wsl-vulkan-build-only/receipt.json) and [CPU+Vulkan](wsl-cpu-vulkan-build-only/receipt.json).
@@ -85,7 +85,7 @@ changed owner TU and links were rebuilt for the source correction.
 The [Air CPU+Apple configuration failure](air-mixed-license-failure/receipt.json) occurred before
 compilation: both routes registered the same DS4 source lock. The original configure log is retained;
 this does not assign a mathematical consumer verdict. The bounded
-[shared license registration repair](../../../docs/implementation/tasks/build/compute-mixed-shared-license-registration.md)
+[shared license registration repair](https://github.com/axiomates/hyle/blob/d12f2204d23503256220e810385d6cb3e93027a8/docs/implementation/tasks/build/compute-mixed-shared-license-registration.md)
 changes only which selected component owns the package license entry.
 The [Air CPU+Apple receipt](air-cpu-apple-partial.json) now signs six actual ordinary Direct/Graph
 consumers across source and relocated shared/static SDKs. The existing SDK loop completed with exit 0;
@@ -106,7 +106,7 @@ stages; source objects and results are retained. Combined delivery does not cert
 contain only CPU. Their raw math PASS observations are retained, but do not qualify a mixed package.
 The effective matrix is 34/90 PASS. Windows CPU+CUDA shared stopped on missing CUDA after the same
 argument loss. [Original claims, metadata and failure](mixed-sdk-route-failure/receipt.json) are preserved;
-the [bounded tool repair](../../../docs/implementation/tasks/build/compute-delivery-route-argv-repair.md)
+the [bounded tool repair](https://github.com/axiomates/hyle/blob/d12f2204d23503256220e810385d6cb3e93027a8/docs/implementation/tasks/build/compute-delivery-route-argv-repair.md)
 must pass before the original SDK stages resume. Source mixed consumers remain valid.
 The [archived SDK metadata audit](mixed-sdk-route-failure/archived-sdk-route-audit.json) checked all
 twelve previously saved configs: ten single-route SDKs match their requests; the two already withdrawn

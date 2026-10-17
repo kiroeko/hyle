@@ -1,13 +1,29 @@
-# 历史实施记录
+# 实施材料与追溯
 
-本目录保留技术调查、实验、失败、版本和当时结论，供查错和追溯。
-旧记录中的状态、审批、预算、收口、截止时间、恢复条件、命令和“下一步”均是历史上下文，
-不再形成开发规则或自动待办。旧治理状态表和登记文件已删除。
+这里保留仍被测试或调查使用的结构化输入、来源与原始资产，不维护逐轮任务卡、资格表或施工计划。
+当前用法见[用户手册](../user/README.md)，设计理由见[架构](../architecture/README.md)，
+实际待办见[当前工作](../developer/current-work.md)。
 
-- [任务与调查](tasks/README.md)
-- [历史性能结果](evidence/performance/README.md)
-- [历史正确性记录](evidence/correctness/README.md)
-- [原始数据](../../evidence/README.md)
+## 仍在使用的材料
 
-当前计划见[当前工作主线](../developer/current-work.md)，当前用法见[用户文档](../user/README.md)。
-需要复原已删除材料时使用 Git 历史。新调查按实际需要记录问题、方法、结果和未验证项即可。
+- [Qwen3.5-2B 本地输入身份](tasks/compute/qwen35-2b-local-input.json)，对应
+  [独立文本参考](../../tests/compute_models/qwen35_reference.py)。这是输入记录，不是完整 Hyle 引擎通过证明。
+- [模型来源](tasks/compute/llm-moe-model-sources.json)、
+  [历史片段映射](tasks/compute/llm-moe-coverage-matrix.json)、
+  [原验收数据](tasks/compute/llm-moe-d5-acceptance-ledger.json)：部分现有测试读取这些 JSON，
+  字段中的阶段名和历史结果不自动代表当前支持范围。
+- `tasks/compute/` 的其余 JSON：原始需求、格式、handoff 与实验索引；不作为新任务或开发门禁。
+- `evidence/` 的 JSON/ZIP：旧实验参数、结果与归档。
+- 根目录 [evidence](../../evidence/README.md)：历史源码、日志、输入、数据与复现资产。
+
+## 追溯旧文档
+
+清理前的任务与过程文档在提交 `d12f2204d` 中，例如：
+
+```text
+git show d12f2204d:docs/implementation/tasks/project/qwen35-2b-command-consumer-scope-2026-10.md
+```
+
+旧报告中的审批、状态、预算、截止时间、命令和“下一步”不是当前规则；
+旧路径、硬件、依赖版本和通过数量也需要重新核实。
+有用的设计取舍与故障模式已归入现行架构、开发或用户指南，不再要求维护者同时更新这些过程记录。

@@ -1,7 +1,7 @@
 # CPU ggml 布局、广播与宽标量接线
 
 候选 `395418f62cfb1226a76c8a5e1d4d319fe5543364`；Windows产品真相，Linux单向验证副本。
-[LB1–5当前卡](../../../docs/implementation/tasks/compute/cpu-ggml-layout-broadcast-admission.md)。
+[LB1–5当前卡](https://github.com/axiomates/hyle/blob/d12f2204d23503256220e810385d6cb3e93027a8/docs/implementation/tasks/compute/cpu-ggml-layout-broadcast-admission.md)。
 
 ## 已实现与实际消费
 

@@ -1,7 +1,7 @@
 # F5 CPU source retirement: verification in progress
 
 Product snapshot: `507bad9698f9988d371c59e5661a69e4394c580a`.
-[Current card](../../../docs/implementation/tasks/compute/cpu-final-f5-retirement.md) is CANDIDATE;
+[Current card](https://github.com/axiomates/hyle/blob/d12f2204d23503256220e810385d6cb3e93027a8/docs/implementation/tasks/compute/cpu-final-f5-retirement.md) is CANDIDATE;
 this partial archive does not close F5 or the CPU goal.
 
 The [source ledger](../../../docs/implementation/tasks/compute/cpu-final-f5-source-ledger.json)
@@ -82,6 +82,6 @@ F5/F6 terminal audit remain pending; GPU mathematical/performance states are unc
 finish all applicable F5 gates. Win CUDA/Vulkan, Mac Apple and Linux CUDA mixed
 CPU envelopes pass 15/15/20/18 steps, all actual source/static/shared 43/48 checks.
 Three native header self-containment gates pass with the real platform compilers.
-The [current card](../../../docs/implementation/tasks/compute/cpu-final-f5-retirement.md)
+The [current card](https://github.com/axiomates/hyle/blob/d12f2204d23503256220e810385d6cb3e93027a8/docs/implementation/tasks/compute/cpu-final-f5-retirement.md)
 records seven-gate closure at product 64b454fa. F6 final goal audit/cleanup remains
 separate; no new GPU mathematical/performance claim or performance sampling.

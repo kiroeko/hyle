@@ -1,7 +1,7 @@
 # Independent model verification consumer
 
 These tools prepare the local input and independent oracle for the
-[LLM/MoE goal](../../docs/implementation/tasks/compute/llm-moe-coverage-completion-plan.md).
+[LLM/MoE goal](../../docs/implementation/README.md#追溯旧文档).
 They are test utilities, never installed SDK APIs or an inference server. C++ route consumers are added with their
 owning capability packages; the current Python reference does not prove any HYLE route passed.
 

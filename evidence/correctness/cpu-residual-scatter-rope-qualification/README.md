@@ -1,7 +1,7 @@
 # CPU RN1/RN4：成熟低精度接线资格
 
 固定产品 candidate `775b2bedace019de423edc5d8a6477772b8ef3ec`，Windows canonical，Linux 前向副本。
-本批只验收[RN1/RN4](../../../docs/implementation/tasks/compute/cpu-residual-scatter-rope-numeric-retirement.md)，
+本批只验收[RN1/RN4](https://github.com/axiomates/hyle/blob/d12f2204d23503256220e810385d6cb3e93027a8/docs/implementation/tasks/compute/cpu-residual-scatter-rope-numeric-retirement.md)，
 不签剩余自研性能胜负或整个 CPU goal 完成。
 
 ## 实现与同合同边界
@@ -12,7 +12,7 @@
   RoPE 在公共 numeric 入口保留 typed Tensor，保证未旋转 tail 的原始位，版本为 programs-6。
 - RN 初案对 RoPE 的不同 phase 比较已撤回。原模型 Float32 phase 程序、Native I32 与 ggml 不改；
   Double oracle 不是 Float32 模型的相同计算程序，不签数值 FAIL/性能 LOSS。解释见
-  [同合同纠正](../cpu-residual-scatter-rope/README.md)与[精度审计](../../../docs/implementation/tasks/compute/cpu-rope-phase-contract-audit.md)。
+  [同合同纠正](../cpu-residual-scatter-rope/README.md)与[精度审计](https://github.com/axiomates/hyle/blob/d12f2204d23503256220e810385d6cb3e93027a8/docs/implementation/tasks/compute/cpu-rope-phase-contract-audit.md)。
 
 ## 实际门
 

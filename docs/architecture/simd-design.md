@@ -1,275 +1,61 @@
-# HYLE SIMD 设计
+# SIMD：静态实现选择与批量边界
 
-SIMD 当前是 C++23 source/static/shared 组件。它不提供 Native FFI，也不承诺跨任意 C++ 工具链 ABI。
+SIMD提供连续buffer上的计算及target-bound源码扩展，不承担tensor stride/broadcast、设备调度或模型政策。
+普通接口不泄漏Highway/xsimd寄存器类型，具体用法见[用户文档](../user/README.md)。
 
-## 产品目标
+## 为什么不维护第三套可移植寄存器库
 
-HYLE SIMD 同时服务推理引擎和普通连续数据消费者：
+Highway/xsimd承担可移植寄存器、编译器和ISA演进。Hyle保留自己的语义、数值/alias合同与批量算法，
+只在真实语义、复杂度、指令或完整消费者收益上保留有限自有实现。
+成熟实现可自然承载时不复制；自有算法获益也不证明它的历史register DSL值得保留。
 
-- ordinary 用户获得按语义组织的 pointer/count whole-buffer API，不需要理解 ISA 或寄存器类型；
-- 三种 C++ 交付的 consumer 都可以为固定 ISA 或多版本 kernel 使用 HYLE 的 target-bound seam；其实现可以静态路由到
-  项目锁定的 Highway、xsimd 或经证明的 HYLE body，保持模板单态化和内联；
-- HYLE 拥有 dtype、rounding、alias、layout、错误、选择和交付合同；成熟 vendor 拥有其已经正确解决的
-  register/target/math 机制；
-- Highway、xsimd 与 HYLE 实现可以同时作为候选，但同合同标准 primitive 以 Highway 为维护性默认；路由以
-  `operation/family × scalar type × target/compiler` 为键，xsimd/HYLE 只保留已证 material 例外。升级
-  vendor 或出现更好的 HYLE 算法时只重签受影响单元，逐步替换而不重塑公开语义；
-- 性能优化以真实 consumer、复杂度或同合同 peer 为输入，不按 benchmark 名字复制 API；
-- tensor shape、stride、broadcast、block quant、operator fusion、模型格式和 GPU policy 属于 Compute 或
-  更高层，不下沉进 SIMD。
+选择细化到operation/family、scalar type、target/compiler，不能把一个获胜点扩成全平台赢家。
+同合同维护默认优先Highway，xsimd和Hyle优化按实际适用条件保留。
+比较先核对accuracy、NaN、稳定性、layout、遍历和临时存储，再评估完整调用成本。
 
-## 分层
+## 两次不同的选择
 
-```text
-ordinary C++ pointer/count API
-              |
-      private family dispatcher  <--- Platform CPU/OS facts
-              |
-     generated per-target entry
-              |
- provider-coherent Highway / xsimd / HYLE body
+Provider选择在编译期由route manifest、模板和target namespace消除。
+未知部署CPU的target选择发生在进程内的冷初始化；随后每个whole-buffer调用只经过一层已缓存的kernel入口。
+不能先由Hyle选ISA，再进入会重复探测的vendor dynamic dispatch，元素循环里也不能逐primitive跨vendor桥接。
 
-expert consumer TU
-      |
-hyle_target_simd() or hyle_add_fat_kernel()
-      |
-compile-time route manifest -> provider adapter/body
-```
+已知ISA的源码/exact路径可以直接绑定并内联；fat源码为同一implementation生成每ISA TU，
+在pointer/POD批量边界选择。宏能消除已知target的分派，不能预知可分发二进制最终运行的CPU。
+很小的融合循环用源码扩展摊销调用成本，而不是要求普通预编译库假装编译期零开销。
 
-第三方 vector/mask/tag 类型只存在于 target-bound implementation TU。跨 TU、静态/动态库和用户公开边界
-只传 pointer、count、标量 POD 或 HYLE 自有稳定 storage type。这样可以独立升级 Highway，也不会把
-target-dependent lane 数或 vendor namespace 固化为 HYLE ABI。
+Provider-coherent完整body优先，混合register类型只有确认无额外copy、spill或二次分派才有意义。
+否则选择另一完整kernel，或把获益算法lower为当前target的原生实现。
 
-### 多实现与静态路由
+## 事实与实际target分开
 
-HYLE 不把“引入 vendor”解释为删除全部自研，也不把“保留优势”解释为继续独立实现整个 portable SIMD
-栈。每个准入能力可以同时拥有三类 implementation candidate：
+Platform拥有OS/CPU事实，SIMD拥有实际编译body、family policy与canonical feature requirements。
+最终选择是CPU事实、可编译实现和产品规则的交集，不存在全库通用的“最高ISA”。
+同一机器不同family可采用不同target，报告实际选择不能替代原始硬件探测。
 
-1. `HIGHWAY`：覆盖广、target/ISA 演进快，通常作为完整性和可移植性的基线；
-2. `XSIMD`：在其支持的 type/ISA/compiler 上作为同合同候选，尤其用于数学和不同 codegen 路线；
-3. `HYLE`：只保存语义、复杂度、指令选择或真实 consumer 证据证明有价值的实现。
+ISA flags必须与runtime gate一致，不能为满足vendor target名字偷偷提高部署最低要求。
+F16C、VNNI、BF16、AES等是有独立前置的扩展；公开inline所需ISA由owner传播，
+更宽compiled TU不应抬高普通consumer的baseline。
 
-这套边界有四个长期产品原则：
+经典cl.exe与clang-cl是不同frontend。锁定Highway对某些AVX-512实现有编译器限制，
+expert固定target不得静默降档；普通fat路径则可如实采用较低的合法body。
+Hyle自己的某个AVX-512算法可用，也不能推出全部vendor/expert surface可用。
 
-1. Highway/xsimd 已经承担 portable SIMD 的广度、编译器适配和新 ISA 演进；HYLE 不再维护第三套大全；
-2. 历史 HYLE 实现中已经明确击败两者的有限算法或 type × ISA/platform scope 必须保全，不能因采用 vendor
-   基线而浪费；
-3. 汇编相同、完整批次无法稳定区分、顺序/编译器反转或差异不 material 时，都没有足够的 HYLE 产品优势，
-   统一采用 Highway；真正显著的优化会在有界证据中明显胜出；
-4. route 必须由模板、宏、target namespace 或生成特化在编译期消失，build system 负责给每个 target body
-   正确的 provider、依赖和 ISA flags。未来真实 consumer 暴露新热点时，可以加入一个 HYLE candidate 并只
-   验证受影响 scope，逐步替换 vendor，而不重建平行 register 库。
+## 数值与内存合同
 
-路由清单是内部机器合同，不是用户 ABI。fixed/exact 构建把选择落实为宏、模板特化或直接 target symbol，
-因此操作调用本身没有函数指针、分支或 CPU 探测。unknown-CPU ordinary/source-fat 仍只在 whole-buffer kernel
-入口选择一次 target；这是未知 CPU 的 ISA 选择成本，不是 provider 路由成本。provider 已在每个 target body
-编译时确定。一个 kernel 内不得因逐个 primitive 选择不同 vendor 而反复桥接寄存器类型：可以由
-同一 provider 完整承载时优先保持 provider-coherent；必须混合时，只有编译后确认没有 spill、copy、二次
-dispatch 或额外指令的 adapter 才可准入，否则把优势算法改写为当前 kernel 的 native lowering，或在更高的
-whole-buffer 边界选择另一套完整 body。
+RNE、饱和、NaN/total-order、稳定排序、prefix/alias、空输入与tail属于具体能力，不只是函数名。
+标量fallback与宽ISA须保持相同语义，近似数学不能偷换完整精度路径。
+FP8/f16/bf16 storage转换不包含模型block scale、tensor layout或量化政策，这些归Compute。
 
-实现选择先比较语义、精度、复杂度、遍历和临时存储，再比较完整调用成本。
-Highway 是标准 primitive 的维护默认；已有 HYLE/xsimd 优化在相应类型、ISA 和工具链范围内保留。
-默认值不表示所有未来硬件上都最快。发现稳定的小幅差距也继续调查，是否替换根据真实收益和维护成本决定。
-依赖升级或新硬件影响路由时检查相关实现与消费者，不需要整轮模块认证。
+pointer/count边界保留caller所有权，算法临时存储和额外遍历要显式。
+argsort、partial/select、stable/unstable与in-place/out-of-place不能按同一“sort”成绩混比。
+随机数需区分可复现非加密批量流与OS安全熵，不因用于采样而把生成策略放进SIMD。
 
-### 普通 whole-buffer 路径
+## 依赖与长期port
 
-未知 CPU 的预编译库在进程内只解析一次 Platform facts、已编译 target 和 family policy，并构造一张私有
-不可变函数表。这里必须区分“解析”和“调用”：CPU/target **解析只发生一次**；之后每个 whole-buffer API
-调用只经过一次已缓存的 kernel-target 间接函数调用。provider 不在运行时选择，也不增加第二个间接层。元素循环内禁止再次探测、callback、第二层
-`HWY_DYNAMIC_DISPATCH`、allocation 或 buffer copy。若采用 Highway dynamic dispatch，它就是唯一
-decision authority，不能先由 HYLE 选一次再进入会二次选择的 vendor 入口。`selected_target(family)` 只报告
-实际产品选择，不用于用户自行派发。
+直接产品依赖、checked-in port和benchmark peer分别记账。普通头不泄漏vendor ABI；
+专家源码target可以携带锁定开发头，但寄存器类型不跨共享库边界。
+依赖来源和许可证由[中央锁与交付](build-system.md)统一处理，改名不抹掉第三方版权。
 
-### 固定和源码路径
-
-- `HYLE_SIMD_EXACT_TARGET` 让整个 HYLE SIMD artifact 只包含一个目标，普通入口由 generated manifest
-  在编译期直接绑定该 target symbol；没有 runtime selector 或间接函数调用。
-- `hyle_target_simd()` 为一个源码 consumer TU 提供中央锁定的 provider 头、静态 target 宏、编译期
-  route manifest 和准确 ISA flags；kernel 由宏、target namespace 和模板直接单态化并可内联，不探测 CPU，
-  也不经过 HYLE 函数表。需要 vendor 原生 API 的 consumer 仍可显式固定 Highway 或 xsimd；此时不承诺
-  HYLE 会替它自动切换 provider。
-- `hyle_add_fat_kernel()` 从同一个 provider-coherent implementation header 生成本平台的 per-ISA TU，只在
-  完整 pointer/POD kernel 入口选择并缓存一次。
-
-fixed source 的热循环应与该 route 在同 TU 原样调用获胜 provider 等价。source-fat 与 ordinary 路径只承担一次
-batch-boundary 间接调用；target 解析本身只在进程内发生一次。宏可以消除已知 target 的 runtime 路由，
-但不能在编译期获知一份可分发二进制最终运行的 CPU。tiny/fused kernel 若无法摊销一次库调用，应由源码
-consumer 通过 fixed/exact seam 融合；HYLE 的 source seam 只暴露经准入的语义能力和 provider 选择，不为
-兼容旧拼写复制 vendor API 全集。
-
-完整构建合同见 [`SIMD dispatch 维护指南`](../developer/maintenance/simd-dispatch-guide.md)。
-
-## Target 与探测 ownership
-
-Platform 是 CPU/OS facts 的唯一 owner；SIMD 不复制或转发其 detector，也不要求 Platform 给出一个
-“最高 ISA”。SIMD 独占公开的无顺序 `KernelTarget`，它只表示 HYLE 实际编译或选择的 body；每个
-canonical target 的完整 feature requirements 也由 SIMD 声明。Highway/xsimd 拥有各自的寄存器 lowering
-和编译器适用边界，SIMD family 选择 host facts、已编译 body、provider blocklist 与产品 policy 的交集，
-所以同一主机上的不同 family 可以诚实报告不同 target。
-
-公开面不提供“当前 consumer TU 编译 target”常量：源码嵌入、static SDK 与 shared SDK 对这种常量没有
-统一语义。fixed/fat helper 的 per-TU target 只在内部/provider 编译期存在；普通用户通过
-`selected_target(family)` 读取运行库实际选择，通过 `cpu_features()` 读取原始主机事实，不能把二者互换。
-
-支持矩阵以 scalar 为兜底，包括 x86 SSE4/AVX2/AVX-512、AArch64 NEON/SVE 和 RVV；VNNI、BF16、F16C、
-AES 等正交 feature 只由需要它的 specialty kernel 单独探测。canonical x86 tier 不偷偷提高 AES/PCLMUL
-最低要求。
-
-锁定 Highway 在经典 `cl.exe` 下禁用 AVX3 family：fixed/exact AVX-512 必须 fail-fast；unknown-CPU
-source-fat 明确封顶 AVX2。需要 direct Highway AVX-512 时使用 clang-cl。静默把 AVX2 产物称为 exact
-AVX-512 不受允许。
-
-## 能力 ownership
-
-| family | HYLE 拥有的公开合同 | 不属于本层 |
-|---|---|---|
-| row ops | 连续 f32/f64 算术、归约、SAXPY；f16/bf16/i8/i16 mixed/storage dot；f32 full-precision reciprocal-sqrt、IEEE number min/max、byte-bool value select | stride、broadcast、tensor fusion、approximation policy |
-| dtype | f32/f16/bf16/E4M3/E5M2 storage、转换、RNE/饱和/NaN/alias | block quant scale、tensor layout |
-| narrow | f16/bf16 数值/bit 搜索、f32 sum、IEEE total-order | 平行 register DSL、tensor narrow policy |
-| math/activation | whole-buffer 数学 accuracy/domain/alias、f32/f16/bf16 激活、split GLU 与单 row normalization 语义 | 模型 operator graph、stride/thread/fused residual |
-| search/scan | 连续数组的查找、归约、有序性和前缀计算 | container index ownership |
-| bitpack/random | 明确 layout 的内存压缩；可复现非加密批量 RNG | 文件/网络 wire format、密码随机数 |
-| ordering | sort/select/partial/radix/argsort 的 key、NaN 和稳定性合同 | distributed/external sort |
-
-当前函数清单只以公开头和用户指南为准；本表划分 owner，不代替 capability closure 证据。
-
-### Row 合同
-
-普通 f32/f64 row operation 是 O(n)、O(1) extra storage，不分配、不加锁。输出允许与一个完整输入精确同址；
-任意部分重叠不受支持。浮点 reduction 的结合顺序可随 target 变化，FMA operation 允许最后舍入不同。
-i8/i16 dot 的乘积精确，累加按模 `2^64` 定义后以二补码 i64 返回，不依赖 signed-overflow UB。
-
-`reciprocal_sqrt` 明确为 `1/sqrt` 的 full-precision row，而不是 Highway/xsimd 的 approximate-rsqrt。
-pairwise `fmin/fmax` 使用 number semantics，并由最小 HYLE adapter 在 Highway lowering 上修正 operand-order
-无关的 `-0/+0`；`search.h` 的 extrema reduction 继续传播任意 NaN，并采用相同 signed-zero 次序。
-byte-bool f32 `select_values` 以窄 condition load、同 lane promote 和一次 mask select 实现，不建立临时
-mask buffer。Tensor layout/broadcast/precision 和 row partition 仍归 Compute；SIMD 不因该消费者吸收
-Tensor API。
-
-### Dtype 与 narrow 合同
-
-`convert(src,dst,n)` 覆盖五种公开 storage 间全部 20 条异类型有向边；同类型复制由标准库承担。
-相同宽度允许 exact alias，不同宽度要求 disjoint，任意部分重叠不受支持。转换是 O(n)、O(1)，不能通过
-建立整段 f32 临时数组实现 storage-to-storage。
-
-Highway 直接承担可表达的 f16/bf16 promotion/demotion 和 target lowering。HYLE 只修补已经确认的上游
-语义差异，并保留 OCP fp8、整数 modulo dot、精确 feature specialization 等具名最小实现。ordinary
-`narrow_ops.h` 保留用户需要的整段语义；源码寄存器 consumer 直接使用 Highway，并自行声明 numeric
-contract。
-
-### Activation、GLU 与 row normalization 合同
-
-模型无关的 f32/f16/bf16 elementwise activation、split-input ReGLU/GeGLU/SwiGLU、单 row
-RMSNorm/LayerNorm 与普通连续 row softmax/log-softmax 属于 SIMD。窄 storage 的 activation、GLU 和
-normalization 在 f32 中计算并在写回时舍入一次；exact-erf、tanh 与 quick GELU 是三个显式合同，不能
-由实现或 benchmark 暗中互换。核心入口采用 pointer/count，允许文档声明的 exact alias 或完全分离区间，
-不支持任意部分 overlap；`n == 0` 允许空指针。它们是 O(n)、O(1) extra storage，不分配、不加锁、不
-建立整段临时数组。normalization 的 epsilon 必须有限且非负；learned scale/weight/bias 不得与输出重叠。
-softmax 使用稳定 max-shift；
-至少存在一个 finite lane 时，`-inf` 可用作 mask。含 NaN、`+inf` 或全为 `-inf` 的 row 没有受支持的
-normalizer，整行确定写入 quiet NaN，避免静默制造概率。
-
-activation body 与数学原语在同一个 direct-Highway target TU 中组合；ordinary/fat 批次只允许一次已缓存
-目标选择，element loop 内不得再次进入 public dispatcher。attention mask、tensor stride/batch、线程、
-online/blocked 算法、backward、fused residual/group norm 和模型 operator fusion 由 Compute 拥有，不能为消除一个 tiny-call
-边界而把 tensor policy 倒灌到 SIMD。
-
-### Search 与 scan 合同
-
-普通 search 覆盖 i/u8、i/u16、i/u32、i/u64、f32/f64 的 count/find、value min/max/minmax、first
-argmin/argmax 与升降序检查。空 index 返回 `n`，相同极值保留第一项；浮点 value extrema 传播任意
-NaN，index extrema 返回第一个 NaN。它们均为 O(n) time、O(1) space、无 heap/lock。Highway contrib
-直接承担 count/find/sortedness 与普通 extrema/index 机制；HYLE 只保留 NaN propagation 和单遍 combined
-minmax 等产品语义差异，不维护第二套 register/search DSL。
-
-scan 的核心是 `const T* src, T* dst, n`，inclusive 无 init，exclusive 显式接受 init；原地和 zero-init
-spelling 只是 inline convenience。支持 u/i32、u/i64、f32/f64，exact alias 或完全 disjoint，部分 overlap
-不受支持。整数按模 `2^bits` 定义且不能借 signed UB 实现；浮点结合顺序随 target。target TU 直接组合
-Highway load/add/slide/store，Runtime 的函数指针与 `selected_target` metadata 同源；每次 ordinary
-whole-buffer API 调用最多经过一次已缓存间接函数调用。custom predicate/op、segmented/parallel/tensor/GPU scan 分别归标准算法、source expert、
-Graph/Compute 或 accelerator owner。
-
-### Ordering 合同
-
-非破坏 `top_k_f32` 读取一行 score 并返回 best-first 的 `ScoredIndexF32 {score,index}`，输入不变，caller
-提供的 `k` 个结果槽就是全部 O(k) workspace。数值优先于 NaN，相同 score（包括 signed zero）按较小原
-index 排序。`k == 1` 和真实 MoE 常见的有界 `k <= 8` 使用 fixed-capacity insertion，因 k 是公开限定的
-小常数而为 O(n)；其余使用 O(n log k + k log k) heap，`k == n` 直接 full sort。这是由 expert-router
-消费形状与复杂度共同决定的算法分区，不是按 benchmark 输入长度设置的经验阈值。
-
-普通 `sort/partial_sort/select` 是原地 comparison ordering，不建立与 `n` 成比例的 heap workspace；
-`partial_sort` 只保证前 `k` 项有序，`select` 只保证第 `k` 项及两侧 partition。普通路径不稳定，不能按
-长度暗中切换到稳定 radix。numeric、
-`UInt128` 与整数 `KeyValue32/64` 的 full/partial/select entry 和 `selected_target` 由同一 Runtime 表生成，
-每次 ordinary whole-buffer API 调用只有一次已缓存间接调用。经典 cl.exe 因 Highway 官方 AVX3 blocklist 将 ordering 降到
-AVX2；这是可报告的 per-family feature，不得伪称 AVX-512 kernel。
-
-`partial_sort` 按算法结构选择机制：请求 prefix 能完整落入 VQSort 已有 sorting-network base-case 容量时，
-使用成熟的 in-place heap selection（`O(n log k)`、`O(1)` extra storage）；更大 prefix 使用向量化
-average-`O(n)` selection 后排序。边界来自 target/base-case 容量，不是输入总长度或某条 benchmark 的
-经验阈值；两条路径都保持相同 NaN、payload、allocation 与公开 API 合同。
-
-稳定 `radix_sort/argsort` 使用 base-256 LSD，时间为 `O(n * sizeof(key))`，空间为 `O(n)`。核心重载接收
-caller-owned typed span，不分配；便利重载只负责分配同样大小的 workspace，失败传播 `std::bad_alloc`，
-不会静默改用不稳定算法。`argsort` 保留 keys，输出 32 位稳定 permutation。浮点有限值按 numeric order，
-NaN 在升降序都排在有限值之后；NaN payload 和 `-0/+0` 的输入顺序保持。keys、indices 与 scratch 的有效
-字节区间必须两两不重叠，不能依赖只比较首地址的弱 alias 检查。
-
-ordering 使用来自 Highway `83eff393...` 的具名最小 VQSort adaptation，而不是第二套 HYLE 排序设计。
-直接以当前锁定 Highway 为 11 种公开类型、三种 operation 生成全部 target TU，在 classic MSVC 的有界
-资格化尝试中无法满足构建时间预算；保留 adaptation 的 delta 限于 compiler/scalable target glue、HYLE
-公开 POD、静态入口及上述产品合同。来源、路径、许可证和内容 hash 由中央 dependency lock 机械验证。
-
-## Vendor 与升级边界
-
-锁定 Highway 与 xsimd 都是 header-only product candidates，不形成第二个 runtime ABI。每个 route 只有在
-语义、资源、type/target 和 current peer 资格化后才进入产品；“两套都能编译”不是胜负证据。多实现通过
-编译期 manifest 或完整 whole-buffer entry 并存，不能为此在元素循环增加 runtime abstraction。
-
-checked-in Highway-derived port 不因改 namespace 就变成自实现。direct wrapper 可行即删除；必须保留时
-只保留真实 contract delta，并登记 origin、local delta、许可证和内容 hash。ordering 的有界裁决保留上述
-最小 adaptation；后续 Highway 升级必须重新移植相关 upstream 修复，而不是把它视为冻结自实现。完整规则见
-[`SIMD vendor ownership`](simd-vendor-surface.md)。
-
-## 依赖与交付
-
-SIMD 的 HYLE 依赖只有 Core 和 Platform。Container 的选定 kernel 与 SIMD 可共享中央锁定 vendor 的
-build-only 外部实现 target，但 Container 不调用或依赖 `hyle::simd`；Compute 可以消费 ordinary SIMD API，
-SIMD 不依赖 Compute。
-
-source、installed static 和 installed shared 三种交付必须分别验证。三者都交付 ordinary pointer/count
-API，也都能由用户显式链接 `hyle::simd_expert`，取得精确锁定 Highway/xsimd 开发头以及同一套 fixed/fat
-CMake helper。旧 `vec.h`、`native/*`、`backend/*` 已物理删除；`target.h` 与 `fat_kernel.h` 属 expert SDK，
-`provider/*` 仍是 HYLE 内部 route 实现，不安装。expert target 只编译进 consumer TU，不产生新的 HYLE 或
-vendor binary ABI；符号检查只允许 HYLE ordinary API 与小型诊断面，不得导出私有 Runtime 表或 vendor 类型。
-
-Highway/xsimd 的原生 namespace 是专家层本身：HYLE 不把其完整函数集重新包装成数百个同义 API。锁定版本
-提供但 387-operation 历史迁移账本未覆盖的 header-only 能力，可由用户在 expert TU 直接调用；需要上游
-`.cc` 的 thread pool、完整 VQSort/image/hash 等 compiled contrib 不因安装头文件而自动成为 HYLE 产品，必须
-由真实 capability owner 单独准入、构建和验证。
-
-## 性能与验证原则
-
-- P0 先检查 O(n) 下界、遍历次数、临时 storage、dispatch 次数和可选 feature gate。
-- P1 candidate 与对应 Highway/xsimd peer 必须同 ISA、同 TU 或等价 codegen 边界，并对齐 alias、rounding、
-  accuracy、dispatch 和资源合同；运行 A/A、正反顺序和真实 size distribution。
-- 排除计时分辨率、噪声和漂移后，稳定的小幅输项也如实记录和调查。
-  公共 API、layout 和常态 metadata 的改动需要真实消费者与机制证据。
-- fixed/fat codegen 必须确认最终 loop 没有 HYLE wrapper、逐元素 callback 或第二次 vendor dispatch。
-- SVE/RVV 模拟器只签 correctness 和 codegen；性能必须来自对应真机。
-
-性能实验方法见
-[`SIMD benchmark methodology`](../developer/performance/simd-op-benchmark-methodology.md)。
-
-## 明确负空间
-
-Native FFI、稳定跨工具链 C++ ABI、per-ISA DLL、公开 register façade、逐 lane runtime callback、tensor/
-model operator 和 GPU backend 均不因 SIMD vendor 集成进入本组件。真实消费者暴露问题时直接调整相关接口和实现，benchmark 不能单独定义产品范围。
-
-## 参考
-
-- [Highway 官方文档](https://google.github.io/highway/)
-- [xsimd](https://github.com/xtensor-stack/xsimd)
-- [`SIMD dispatch 维护指南`](../developer/maintenance/simd-dispatch-guide.md)
+保留的VQSort port承担必要的compiler/scalable/public-POD适配：完整上游实例化存在实际构建/正确性限制。
+它不是第二套公共register库；direct接入能保留合同并消除维护债时应删除port。
+配置生成与维护命令见[SIMD维护指南](../developer/maintenance/simd-dispatch-guide.md)，架构不复制机器清单或旧获胜统计。

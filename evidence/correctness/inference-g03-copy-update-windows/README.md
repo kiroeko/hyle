@@ -1,6 +1,6 @@
 # G03 CopyBatchUpdate Windows 定向验证
 
-2026-10-14，按[活动卡](../../../docs/implementation/tasks/compute/inference-g03-copy-update-owner.md)
+2026-10-14，按[活动卡](https://github.com/axiomates/hyle/blob/d12f2204d23503256220e810385d6cb3e93027a8/docs/implementation/tasks/compute/inference-g03-copy-update-owner.md)
 固定candidate bcaec010b；[实际结果](final.log)、[累计记录](receipt.json)、
 [产品字节](source-identity.json)、[原始日志与编排](raw.zip)。原cached
 C:/h7/inference-g01-native-vulkan/build，MSVC /W4 /WX /utf-8，最多4jobs。

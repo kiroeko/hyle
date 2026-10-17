@@ -3,7 +3,7 @@
 This is diagnostic evidence, **not a passed progress regression or P1**.
 [Summary](summary.json), [identities](identity.json), [raw records and recipes](raw-and-recipes.zip),
 [hashes](sha256.json), and [implementation LOC](loc.json) preserve the result.
-The [bounded task](../../../docs/implementation/tasks/compute/cuda-r4-progress-diagnosis.md)
+The [bounded task](https://github.com/axiomates/hyle/blob/d12f2204d23503256220e810385d6cb3e93027a8/docs/implementation/tasks/compute/cuda-r4-progress-diagnosis.md)
 ended with the CUDA owners still `BLOCKED`.
 
 ## Actual capture

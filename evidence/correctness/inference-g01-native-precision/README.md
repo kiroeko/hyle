@@ -1,7 +1,7 @@
 # G01 原生 Vulkan 精度候选证据
 
 candidate `d91a523df9bce21eb81c13d9bf2a8f3f7d3ea80f`，owner见
-[原生精度卡](../../../docs/implementation/tasks/compute/inference-g01-vulkan-native-precision.md)。
+[原生精度卡](https://github.com/axiomates/hyle/blob/d12f2204d23503256220e810385d6cb3e93027a8/docs/implementation/tasks/compute/inference-g01-vulkan-native-precision.md)。
 [receipt](receipt.json)与[raw.zip](raw.zip)保命令、输入/原生/binary关联及全部失败，不签closure。
 
 实际Windows GPU-only source public consumer通过：F32/F16、D64/128/256、B2/GQA8/2、

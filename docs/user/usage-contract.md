@@ -1,91 +1,77 @@
-# 调用安全边界（Usage Contract）
+# 调用安全边界
 
-> HYLE 以在**明确能力合同、workload、artifact 与平台**上达到或追平成熟实现为目标；只有
-> [当前性能证据](../implementation/evidence/performance/README.md)通过对应的 instrument 与
-> freshness gate 后，具体入口才可以声明 `WIN` / `PARITY`，不得把局部结果外推成模块或
-> 全库 SOTA。为此某些热路径**只保证特定调用方式安全**，或在文档里讲明注意事项——本文件
-> 就是这份“怎么调才对”的契约。**讲明边界优先于牺牲性能去做万能防御**：HYLE 是贴硬件的
-> infra，调用者被假定读过本契约。
->
-> 每条边界都附 **为什么**（机制）+ **怎么调**（安全模式）+ **违反的后果**。带 ⚡ 的是为性能刻意保留的约束。
-> 本契约适用于完整源码、headers + static libraries、headers + shared libraries 三种 C++ 交付；
-> 当前 Native FFI 为 `N/A`，也没有可调用的公开 C schema 或 bridge。
+本页汇总跨模块容易误用的生命周期、并发和编译约束。具体类型仍以公开头和模块指南为准。
+`Status`/`Result` 表达可恢复失败；程序不变量、悬空借用和数据竞争不能靠忽略错误变得安全。
 
----
+## 借用与异步完成
 
-## 1. fiber：不得跨 `yield()`/`suspend()` 持有 thread_local 派生值 ⚡
+- `StringView`、`span`、`FunctionRef`、`AllocatorRef`、buffer/tensor view 等借用不延长 backing 的寿命。
+  保存借用前先确定实际 owner，移动 owner 后检查其地址稳定性约束。
+- 异步提交成功只表示工作被接受。等待成功 `Completion` 后再读结果；取消或返回错误不一定表示 GPU
+  已停止使用资源。Context、Queue、资源、allocator 和外部 buffer 必须按接口合同活到真实退休。
+- 同一可变对象一般需要外部串行化。共享只读计划不等于共享可变执行槽：并发 Compute/Graph 请求使用
+  独立 Invocation，并避免未排序的外部输入输出别名。
+- 错误后可能保留已经完成的写入；没有明确事务合同的接口不保证回滚。根据接口要求重置或重建失败槽。
 
-**契约**：fiber 体（跑在 `Fiber` 栈上的用户代码）中，**任何 `thread_local` 变量的地址、或其读出值缓存到局部，都不得跨 `Fiber::yield()` / `sched::suspend()` 复用**。yield 之后要用，必须**重新读**。
+具体 Compute/Graph 合同见 [Compute](compute.md#所有权失败和限制)、
+[Graph](graph.md#所有权与常见陷阱)。
 
-**为什么**：HYLE 调度器是 work-stealing 的——fiber 在 worker A 上 `yield()` 后，可能被 worker B 偷走、在 **B 线程**上恢复（迁移）。底层 `jump_fcontext` 切换栈与通用寄存器，但**不切换 `%fs`**（TLS 基址寄存器），也不是编译器可见的"线程可能改变"信号。`-O3` 下编译器把 `thread_local` 的 `%fs` 相对地址当作"跨调用稳定"，缓存进 callee-saved 寄存器跨 yield 复用——迁移后该地址仍指向**原线程 A** 的 TLS。实测：强制持有时 **899 万次 / 900 万次迁移全部读到错误线程的 TLS**（见 [KI-1 crash hunt](../developer/debugging/ki-1-crash-hunt.md) E15）。
+## 冷准备、实际能力与资源预算
 
-**怎么调（安全）**：
+Compute 的 `prepare()` 和 Graph 的 `compile()` 检查具体设备、dtype、编码、形状、布局与资源，
+并绑定执行实现；公共描述能够构造或推导 shape，不表示所有后端都可执行。
+准备成功后保留计划，为并发调用建立独立执行槽。普通 submit 不重新选 Provider；
+改变形状、资源 identity、绑定或影响选择的配置时，按对应接口重新准备。
+
+资源报告的 `unknown` 不是零。caller-owned workspace、计划常驻存储、每槽可变存储与原库/driver
+私有内存是不同范围；有限预算只能约束接口明确计入的范围，不能当作整个进程的 RSS/显存硬上限。
+需要拒绝未知内存、host 等待或热分配时，在准备期明确提出约束，并处理无可行实现的错误。
+`kManaged` 程序可能在重复执行中建立原库 metadata 或临时数据；不能仅由“已编译”推断零开销。
+
+## Fiber 与线程本地状态
+
+可窃取的 Fiber 在 `yield()`、等待或挂起后可能换 OS 线程。不要把 `thread_local` 地址、当前 worker 的
+arena/ring、线程身份或其它线程绑定句柄缓存跨越这些操作。栈切换不会切换 OS TLS，优化器也未必把
+挂起调用视为“线程身份改变”；仅在源码中再写一次 TLS 访问不足以提供普遍的编译器保证。
+
+优先把请求状态放在 Fiber 栈或显式 owner 中：
+
 ```cpp
-// 危险:cached/addr 跨 yield 复用 -> 迁移后指向旧线程 TLS
-thread_local Ctx g_ctx;
-Ctx* p = &g_ctx;          // 在 worker A 解析地址
-Fiber::yield();            // 迁移到 worker B
-p->use();                  // ✗ 读到了 A 的 g_ctx
-
-// 安全:yield 之后重新访问
-Fiber::yield();
-g_ctx.use();               // ✓ 在当前线程(B)重新解析
+Ctx request_context;                  // 本任务拥有，不是 thread_local
+hyle::sched::Fiber::yield();
+request_context.use();                // 随 Fiber 一起迁移
 ```
-- 需要"当前 worker / 当前线程"的身份，**在 yield 之后**再取。
-- 把 per-thread 状态换成 **per-fiber 状态**（放进 fiber 自己的栈/上下文，随迁移一起走），或经**显式注入**的对象传递。
 
-**后果**：静默读/写错线程的 TLS → 数据损坏 / 崩溃，且只在真发生迁移（重负载/work-stealing 命中）时出现，极难复现。
+确实依赖某个 worker 的对象时，使用 [Sched](sched.md) 的 pinned 提交入口并保持全部唤醒在该 worker。
+不要在可迁移 Fiber 中持有 OS 线程锁跨越挂起。普通 worker-stack callback 不得调用 Fiber wait/yield；
+阻塞 syscall 和不可切分的长任务交给 `BlockingPool`。
 
-> 这不是 HYLE 独有的——**所有有栈协程库**（Boost.Context、ucontext、早期 Go）都有这条铁律。HYLE 选择"讲明 + 让热路径自然安全"，而非在每个 yield 插屏障（屏障也救不了：`%fs` 缓存被 CSE 到函数入口，memory clobber 与"重取地址"都无效，见 E16）。
+## 分配与释放
 
-## 2. 分配器：跨线程 free 安全；mimalloc 常开、无 off-switch
+`mem::system_allocator()` 使用 mimalloc，支持跨线程释放。自定义 `AllocatorRef` 遵守实际 backing
+的并发合同；arena/pool 并不因为套上 ref 就变成线程安全。allocator 必须活过所有使用它的对象。
 
-**契约**：经 `mem::system_allocator()`（mimalloc 后端）分配的内存，**可以在任意线程释放**——fiber 在 worker A 分配、迁移后在 worker B 释放是**安全且支持**的核心用例。
+分配与释放必须配对原 logical size/alignment。`AllocatorRef`、`SystemAllocator` 和 PMR adapter
+都是 sized-free 路线，不能省略 size 或把实际请求替换为猜测的 backing 大小。需要过对齐时才增加
+alignment。静态链接和 LTO 定制不得把依赖线程状态的分配器实现跨 Fiber 挂起内联；保持实现边界，
+或让相关任务固定在同一 worker。
 
-当前 system allocator 使用锁定的 mimalloc v3.5.1。`AllocatorRef` 通过函数指针调用，
-分配和释放遵守实际 allocator 的跨线程合同；不要把可迁移 fiber 的线程本地状态缓存跨越 yield。
+共享固定池有两种容量语义：
 
-`AllocatorRef`、`SystemAllocator`、PMR adapter 与 `Heap::allocator()` 都是 sized-free 路线：成功分配
-后，deallocate/reallocate 必须带回原 logical size/alignment。实现会把普通 `<16B` 请求的 16B 实际
-backing 大小交给 `mi_free_size`，over-aligned 请求走 `mi_free_size_aligned`；这不增加 HYLE 的
-per-allocation metadata。`SystemAllocator::deallocate` 因而没有省略 size 的入口，错误 size/alignment
-属于与标准 allocator/PMR 相同的调用合同错误。
+| 选择 | 容量可见性 |
+|---|---|
+| `ConcurrentBlockPool` / `ObjectPool<T>` | completed free 立即对其它线程可用，适合严格容量与 handoff |
+| `BlockPoolCache` / `ObjectPoolCache<T>` | 显式 worker cache；本地 free 块在 `publish()` 或析构前可能对其它使用者不可见 |
 
-**⚡ 性能注意事项**：
-- **对齐**：默认对齐（≤16B，`alignof(max_align_t)`）走 `mi_malloc` 快路径；**仅在真需要过对齐**（如 AVX512 的 64B）才传更大 alignment——过对齐路径有额外簿记，紧凑 alloc/free 循环里会变慢。
-- **不要 static-link + LTO 把 `mi_*` 内联进 fiber 体** ⚡：那会打破上面的"不透明边界"，使 `mi_free` 的 TLS heap 读被缓存跨 yield，**复活第 1 条的危险**。HYLE 默认 **shared lib + 无 LTO**，安全;若为极致性能改 static+LTO 发布，须 pin fiber 到创建 worker（禁迁移）或保持分配器 TU 不可内联。
+池 `reset()` 前必须没有 live block，全部 cache 已发布或销毁，并停止并发访问。
+共享缓存的吞吐与软容量行为不能代替硬池合同。详见 [Mem](mem.md)。
 
-**无 off-switch**：没有 `HYLE_USE_MIMALLOC` 开关或 OS 分配器后备。静默 fallback 会掩盖依赖和
-ownership 问题；mimalloc 是出厂分配器，配置失败必须直接报告。
+## ISA 与 LTO
 
-### 2.1 共享固定池：硬容量与软容量必须按合同选
+分发给未知 CPU 的程序保留 HYLE 的 baseline/ISA 编译隔离。CPU 探测位于 Platform，SIMD runtime
+再从已编入且可执行的实现中分派；相应 CMake target 已处理 IPO/LTO 隔离。不要用全局编译参数
+把高 ISA 指令重新带入 baseline 或探测代码。
 
-**硬容量默认**：`ConcurrentBlockPool` / `ObjectPool<T>` 不把块藏在 TLS。一次 `deallocate()` 完成后，该块立即对所有线程可见；`allocate()` 通过稳定双快照排除分片扫描期间的假耗尽。容量紧贴工作集、跨线程 handoff 或固定 quota 必须用这组。
-
-**软容量 opt-in**：每个 worker 显式构造 `BlockPoolCache`（或 typed `ObjectPoolCache<T>`）并绑定一个 hard pool。cache storage、容量和 transfer batch 是构造参数，不是 TLS 常量。同 owner 的 free→alloc 是零原子快路，但 cache 中已 free 的块在 `publish()`/析构前，其他 cache 与 hard core 看不到；软窗口是所有活跃 cache 当前 `cached()` 的总和。
-
-**怎么调**：
-- 要 completed free 立即共享：直接用 `ConcurrentBlockPool` / `ObjectPool<T>`，无需 publish；
-- 选择显式 cache 后要交接容量：owner 调 `publish()`；owner 退出作用域也会发布；
-- `ConcurrentBlockPool::reset()` 前要求无 live block、所有 cache 已 publish/销毁，并静默并发访问。
-
-cache 复用 hard pool 的 batch pop/push；正常走 32-bit tagged CAS，tag 饱和的 shard 永久切入 serialized fallback，绝不回绕。不要把 cache 吞吐数据或软容量语义写成 hard core 合同。
-
-## 3. SIMD：CPUID 探测器 TU 必须 LTO-free（分发型构建）
-
-**契约**：分发给未知 CPU 的二进制（非 `-march=native` 自用），**不要对 `simd/` 模块开全局 LTO/IPO**。
-
-**为什么**：`dispatch.cc` 是 CPUID 探测 TU——它在一台**尚未探明的 CPU** 上**最先**运行，去发现这台 CPU 能跑什么。若 LTO 把某个高 ISA 变体 kernel（AVX2/AVX512）的指令内联进探测器或 baseline dispatcher，探测器会在老 CPU 上**还没来得及报告"这是老 CPU"就先 SIGILL**（llama.cpp 踩过的硬伤，conventions §10）。
-
-**安全模式**：HYLE 的 `src/simd/CMakeLists.txt` 已**强制整个 simd 模块 IPO/LTO off**（防御性，即便未来全局开 LTO 也不波及），探测器 + baseline dispatcher + 各变体 kernel TU 互不内联。**你只要别在消费侧用全局 LTO 重新内联跨 TU 边界**即可；自用 `-march=native` 构建无此约束（无变体、无运行期探测）。**后果**：违反 = 老 CPU 上启动即 SIGILL。
-
-## 4. 通用纪律
-
-- **跨平台代价讲在明处**：HYLE 的所有权/生命周期约定见 [`lifecycle-design.md`](../architecture/lifecycle-design.md)；`StringView` 等借用视图的生命周期由调用者保证，`PodVector` 则拥有自己的连续存储。
-- **线程/迁移模型**：除非文档另述,假定 fiber 可在任意 worker 间迁移;不要假设"同一 fiber 总在同一 OS 线程"。
-- **调用约束随实现演进**：新增热路径若限制调用方式，在相关公开接口和用法说明中写清原因、正确用法与后果。
-
----
-
-性能结论需说明实际 workload、产物、平台和测量边界，并检查分辨率与噪声。
-本页的调用限制来自具体实现和运行记录，不作为开发审批或资格流程。
+固定 `-march=native`、exact ISA 或专家 kernel 的程序只能部署到满足其完整指令要求的机器。
+`hyle_target_simd(... ISA AVX2)` 施加到整个 target，通常应为该 kernel 建单独编译单元/OBJECT target。
+运行时判定与固定目标用法见 [SIMD 指南](simd-usage.md)。

@@ -23,5 +23,5 @@ abandon close/recreate合同，已按公头/原单测补明；原引擎估计的
 本red-team结论对已核源码与证据边界有效，最终terminal仍须将未完成工程门解决并逐项
 裁决；若后续Tsan/运行反证产品，必须重新回AUDITED，不能借此文掩盖。
 
-原输入/范围见[completion audit](../../../docs/implementation/tasks/project/foundation-f45-completion-audit.md)，
+原输入/范围见[completion audit](https://github.com/axiomates/hyle/blob/d12f2204d23503256220e810385d6cb3e93027a8/docs/implementation/tasks/project/foundation-f45-completion-audit.md)，
 当前产品只以registry/候选卡给出。F1–F3/A/F4/R1–R7已签部分未因“再看一遍”重开。

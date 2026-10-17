@@ -1,7 +1,7 @@
 # D5 残余合同：一次批量源码审计与离线日志重放
 
 baseline `416242f8ef2cd9a83d558b3b7879e4c2c1707be4`；产品未改。
-[施工卡](../../../docs/implementation/tasks/compute/llm-moe-d5-residual-contract-audit.md)。
+[施工卡](https://github.com/axiomates/hyle/blob/d12f2204d23503256220e810385d6cb3e93027a8/docs/implementation/tasks/compute/llm-moe-d5-residual-contract-audit.md)。
 本批没有构建产品、启动GPU或生成新性能样本；下述结论不提高154/176覆盖数字。
 
 ## A1：官方低精度要求不是只由权重文件名推测

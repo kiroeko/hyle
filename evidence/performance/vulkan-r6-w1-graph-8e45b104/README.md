@@ -2,7 +2,7 @@
 
 产品候选 `8e45b10423686a0753aaa9d461c4ef3b117412c5`，测量快照
 `3894b72e3b4fbbda9457e2c31730e48bd0d43c49`。按
-[R6 性能合同](../../../docs/implementation/tasks/compute/vulkan-r6-performance-contract.md)，
+[R6 性能合同](https://github.com/axiomates/hyle/blob/d12f2204d23503256220e810385d6cb3e93027a8/docs/implementation/tasks/compute/vulkan-r6-performance-contract.md)，
 比较普通 typed Graph 完整 strict-F32 FFN 与独立锁定 ggml shader recipe；两侧承担相同
 Invocation、bind/submit、fence、生成结果 lease 和 owner 回收。
 

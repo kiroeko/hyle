@@ -1,6 +1,6 @@
 # G03 CopyBatchUpdate 六组宿主 sanitizer
 
-2026-10-14，按[活动卡](../../../docs/implementation/tasks/compute/inference-g03-copy-update-owner.md)
+2026-10-14，按[活动卡](https://github.com/axiomates/hyle/blob/d12f2204d23503256220e810385d6cb3e93027a8/docs/implementation/tasks/compute/inference-g03-copy-update-owner.md)
 固定candidate bcaec010b；[累计](receipt.json)、[实际末段日志](final.log)、[输入字节](inputs.json)、
 [所有编排/编译flags/原始日志/明确模型](raw.zip)。Air Mac16,12 arm64 macOS27.0.1 AppleClang21；
 原foundation-f5-native-host路线/模式树，最多4jobs，六组heavy串行。

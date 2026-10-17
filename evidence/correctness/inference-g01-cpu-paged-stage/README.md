@@ -8,4 +8,4 @@ generation、另64步增长跨页/结束重入/重排独立oracle PASS；原四r
 失败退休回归PASS。计划实际核KV roots和页表参数，原数学不复制，warm不Gather历史。
 source共五tests；两个旧fixture错误与测试登记/config缺GTest失败原样保，不改容差。
 三交付/宿主san/P1仍待，不代签CLOSED/全部G01或native hybrid分页。
-[活动卡](../../../docs/implementation/tasks/compute/inference-g01-cpu-paged-resident.md)固定支持域与后续门。
+[活动卡](https://github.com/axiomates/hyle/blob/d12f2204d23503256220e810385d6cb3e93027a8/docs/implementation/tasks/compute/inference-g01-cpu-paged-resident.md)固定支持域与后续门。

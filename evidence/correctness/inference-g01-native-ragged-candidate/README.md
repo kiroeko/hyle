@@ -1,7 +1,7 @@
 # G01 Apple/Vulkan native ragged 候选交付与宿主风险
 
 不可变candidate `280f6f92ea97bf3b424113346f0264fb7b20df16`，活动
-[卡](../../../docs/implementation/tasks/compute/inference-g01-native-ragged-layout.md)。
+[卡](https://github.com/axiomates/hyle/blob/d12f2204d23503256220e810385d6cb3e93027a8/docs/implementation/tasks/compute/inference-g01-native-ragged-layout.md)。
 [receipt](receipt.json)与[raw](raw.zip)保实际命令/耗时/产物位置、公开consumer源码和
 插桩compile commands。[实现阶段](../inference-g01-native-ragged-stage/README.md)保所有
 compile/run FAIL和source四/两tests；这里没有performance/CLOSED或整个G01声明。

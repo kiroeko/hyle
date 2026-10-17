@@ -7,7 +7,7 @@
 唯一 VUID 为 `VkDeviceCreateInfo-pProperties-04451`：固定 ggml 设备创建遗漏设备已宣告的
 `VK_KHR_portability_subset`。[Vulkan 合同](https://docs.vulkan.org/refpages/latest/refpages/source/VkDeviceCreateInfo.html)
 要求启用此扩展；数值用例通过不能代替合法的设备使用。有限纠正另在
-[当前卡 Y20](../../../../docs/implementation/tasks/compute/llm-moe-c1-ggml-vulkan-region.md#y20moltenvk-必需设备扩展重新定界并-audited)
+[当前卡 Y20](https://github.com/axiomates/hyle/blob/d12f2204d23503256220e810385d6cb3e93027a8/docs/implementation/tasks/compute/llm-moe-c1-ggml-vulkan-region.md#y20moltenvk-必需设备扩展重新定界并-audited)
 审计，不能回写此候选为 PASS。
 
 [结构化结果](result.json)与[原始日志](raw-bundle.zip)包含三次首次编译失败、实际修正、Windows

@@ -37,4 +37,4 @@ TLS 需要与 MSVC ABI 匹配的 OpenSSL 3 开发包；可按组织既有方式�
 `-D OPENSSL_ROOT_DIR=<prefix>` 指定。
 不要使用 Git for Windows 附带的 MinGW OpenSSL 代替 MSVC 开发库。
 
-离线介质准备见[离线构建](offline.md)；性能采样要求见[验证环境](../performance/machines.md)。
+离线介质准备见[离线构建](offline.md)；性能采样要求见[验证环境](../performance/README.md#环境与解释限制)。

@@ -1,6 +1,6 @@
 # oneDNN A/A 差距：现有证据复核
 
-2026-09-21，按[独立后续卡](../../../docs/implementation/tasks/compute/llm-moe-onednn-aa-cause-followup.md)
+2026-09-21，按[独立后续卡](https://github.com/axiomates/hyle/blob/d12f2204d23503256220e810385d6cb3e93027a8/docs/implementation/tasks/compute/llm-moe-onednn-aa-cause-followup.md)
 先复核原Q2包，后完成两组定向诊断；未进行正式产品性能采样或冻结自研比较。
 **当前工程裁决**：用户接受机制与历史限制并授权翻案。旧Q2按环境干扰最可能的无效测量
 处理，撤销产品FAIL含义和M2阻塞；原始FAIL日志保留，不记性能PASS。
@@ -42,4 +42,4 @@ tick差不足1.5%的现象；这是诊断观察，没有据此裁决任何实现
 未保留；本次没有复现其12轮聚合的0.906388。已复现的是足以造成同量级假差的真实运行时
 污染机制。不能进一步指定某个后台进程/驱动，不能把历史FAIL改成PASS，也不能声称物理
 cache布局等其他历史因素全部排除。用户已接受这些边界；工程上不再把该样本视为产品失败，
-M2恢复正常接入，原因调查结束。完整决策见[当前任务裁决](../../../docs/implementation/tasks/compute/llm-moe-onednn-aa-cause-followup.md#当前工程裁决旧样本无效恢复-m2)。
+M2恢复正常接入，原因调查结束。完整决策见[当前任务裁决](https://github.com/axiomates/hyle/blob/d12f2204d23503256220e810385d6cb3e93027a8/docs/implementation/tasks/compute/llm-moe-onednn-aa-cause-followup.md#当前工程裁决旧样本无效恢复-m2)。

@@ -15,5 +15,5 @@ compile commands and executable hashes for each configuration. SHA-256:
 The adjacent identity manifest records every archived file hash.
 
 This satisfies the host-sanitizer obligation of the
-[R5 card](../../../docs/implementation/tasks/compute/apple-v1-four-route-foundation.md).
+[R5 card](https://github.com/axiomates/hyle/blob/d12f2204d23503256220e810385d6cb3e93027a8/docs/implementation/tasks/compute/apple-v1-four-route-foundation.md).
 Final P1 and route closure are separate verdicts.

@@ -1,6 +1,6 @@
 # Apple Q4 / Metal 扩展与 lifetime 研究
 
-范围与判据在[六项复核卡](../../../docs/implementation/tasks/compute/six-point-architecture-review.md)预声明。
+范围与判据在[六项复核卡](https://github.com/axiomates/hyle/blob/d12f2204d23503256220e810385d6cb3e93027a8/docs/implementation/tasks/compute/six-point-architecture-review.md)预声明。
 [探针](mlx_quantized_lifetime.cc)是研究资产，不是 HYLE shipping Provider，也不是 performance sample。
 2026-09-15 第一次构建、第一次执行成功；[原始输出](mlx-air-run.log)保留环境、结果与源码 hash。
 

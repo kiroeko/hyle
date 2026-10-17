@@ -1,7 +1,7 @@
 # CUDA host 插桩参数预检
 
 baseline：`0ca1cd0da9e476be44419a50b5ddfdc34544e293`。
-本记录仅证明 [R4 C1/C5 尾项](../../../docs/implementation/tasks/compute/cuda-v1-four-route-foundation.md)
+本记录仅证明 [R4 C1/C5 尾项](https://github.com/axiomates/hyle/blob/d12f2204d23503256220e810385d6cb3e93027a8/docs/implementation/tasks/compute/cuda-v1-four-route-foundation.md)
 中的 nvcc 参数问题，**不是实际 sanitizer 或 CUDA 路线 PASS**。
 
 - [原参数](nvcc-sanitizer-dryrun.log)：nvcc 13.3 拒绝 `-fsanitize=address`。

@@ -1,6 +1,6 @@
 # C1-Y35 Vulkan 逐元素及门控资格
 
-范围和有限纠正见[Y35施工卡](../../../../docs/implementation/tasks/compute/llm-moe-c1-vulkan-elementwise.md)。
+范围和有限纠正见[Y35施工卡](https://github.com/axiomates/hyle/blob/d12f2204d23503256220e810385d6cb3e93027a8/docs/implementation/tasks/compute/llm-moe-c1-vulkan-elementwise.md)。
 
 | 候选 / 验证 | 结果 | 原始证据 |
 |---|---|---|

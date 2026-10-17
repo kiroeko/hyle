@@ -1,6 +1,6 @@
 # G03 CUDA 原 update 的在途错误、取消与放弃
 
-2026-10-14，按[活动卡](../../../docs/implementation/tasks/compute/inference-g03-copy-update-owner.md)
+2026-10-14，按[活动卡](https://github.com/axiomates/hyle/blob/d12f2204d23503256220e810385d6cb3e93027a8/docs/implementation/tasks/compute/inference-g03-copy-update-owner.md)
 固定candidate bcaec010b；[consumer](consumer.cc)、[实际结果](final.log)、[累计](receipt.json)、
 [源码字节](source-identity.json)、[编排/host TU编译命令/原始日志](raw.zip)。WSL/GCC14.2，
 actual RTX4070 / CUDA13.3，1024bytes原gate/memset/copy，最多4jobs串行。

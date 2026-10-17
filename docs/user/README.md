@@ -1,44 +1,33 @@
 # HYLE C++ 用户文档
 
-这里面向使用 HYLE 的 C++23 开发者：选择交付形式、找到正确模块、理解所有权与并发合同，并在
-不阅读实现源码的前提下完成正常任务。
+从[使用指南](usage-guide.md)开始：准备环境、构建库、嵌入源码或消费 SDK，再选择模块。
+HYLE 面向 C++23，源码、静态 SDK 和动态 SDK 使用相同公开 API；当前没有产品 C API 或跨语言 binding。
 
-## 从这里开始
+## 接入与运行
 
-1. [使用指南](usage-guide.md)：最短接入路径和组件选择。
-2. [三种交付形式](distribution.md)：完整源码、headers + static、headers + shared。
-3. [调用安全合同](usage-contract.md)：热路径、线程、生命周期和内存边界。
-4. [`samples/`](../../samples/README.md)：可编译的 C++ 消费者工程。
+- [使用指南](usage-guide.md)：首次构建、最小消费者和模块选择。
+- [交付与集成](distribution.md)：SDK 安装、版本、动态库、后端资源和部署边界。
+- [调用安全边界](usage-contract.md)：借用、异步完成、fiber、分配器和 ISA。
+- [可编译样例](../../samples/README.md)：完整 C++ 工程和运行说明。
 
-## 模块指南
+## 推理计算
 
-- [Paged/ragged批次attention](batch-attention.md)：四路线选择、显式准备、精确页/F4发布与原生差异。
+- [Compute](compute.md)：准备算子、绑定存储、提交与等待。
+- [Graph](graph.md)：多节点图、编译、独立执行槽与重复执行。
+- [Apple MLX/Metal](apple-compute.md)、[Vulkan](vulkan-compute.md)：后端条件、原生接口和限制。
+- [批次 attention](batch-attention.md)：ragged/paged 请求、KV 编码和页面更新。
+- [状态版本](state-versions.md)：只读快照、dirty clone 和成功发布。
 
-- [core](core.md)
-- [error](error.md)
-- [platform](platform.md)
-- [mem](mem.md)
-- [time](time.md)
-- [obs](obs.md)
-- [util](util.md)
-- [container](container.md)：通用数据结构；稳定节点的零分配链表另见
-  [Container 侵入式链表指南](container-intrusive.md)
-- [math](math.md)：checked integral shape/byte arithmetic、非负 ceil-division 与可表示 multiple round-up
-- [simd](simd-usage.md)
-- [sched](sched.md)：CPU task/fiber runtime、结构化任务、同步与消息
-- [io](io.md)
-- [process](process.md)：受管本地 child、stdio、等待、tree termination 与可靠 reap
-- [compute](compute.md)：显式 CPU execution、tensor binding、prepared operation 与 typed host kernel
-- [graph](graph.md)：逻辑计算图、冷编译、可共享 Executable 与独占 Invocation
-- [固定模型片段覆盖](model-fragment-coverage.md)：22个官方/量化画像的四路线支持、拒绝/数值限制与验收范围
-- [模型／算子／量化需求目录](../architecture/model-compute-catalogue.md)：当前 104 GGUF、non-GGUF、官方混合权重与 MTP／DSpark 的共同计算目标
-- [Apple MLX/Metal](apple-compute.md)：原生 Direct/Graph region、结果 owner、资源随包交付与限制
-- [Vulkan](vulkan-compute.md)：原生录制、Direct/Graph、自定义 SPIR-V、结果寿命和三交付
+## 通用模块
 
-未列出的内部组件由公开产品聚合；正常用法以用户指南和可编译样例为准。
-支持限制按具体系统、设备、数据类型和布局说明，不从历史实验推导所有环境可用。
+| 领域 | 指南 |
+|---|---|
+| 基础与错误 | [core](core.md)、[error](error.md)、[math](math.md) |
+| 系统、内存与时间 | [platform](platform.md)、[mem](mem.md)、[time](time.md) |
+| 数据结构与工具 | [container](container.md)、[侵入式容器](container-intrusive.md)、[util](util.md) |
+| 向量运算 | [simd](simd-usage.md) |
+| 执行与通信 | [sched](sched.md)、[io](io.md)、[process](process.md) |
+| 观测 | [obs](obs.md) |
 
-当前产品没有面向原生 C 程序的独立 API，也没有可承诺的 Java、.NET、Python 或 Rust FFI。
-早期公开 C schema/bridge 已移除；source/static/shared 都是 C++ 交付形式。未来只有在出现已命名
-外语消费者后，才按
-[Native FFI 准入策略](../architecture/native-ffi-policy.md)增加窄而真实的运行时边界。
+支持范围以具体接口的系统、设备、数值和布局条件为准。模型片段或单个平台的结果不代表整模型、
+所有硬件或任意编码均可用。

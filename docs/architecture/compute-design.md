@@ -1,285 +1,189 @@
-# Compute：计算语义、原生执行与提供方
+# Compute：计算语义、实现选择与资源边界
 
-Compute 与 Graph 的环境、模型制品画像、真实端口/DAG 条件、确定性默认优选及 prepare/submit 分界由
-[冷路由系统](compute-routing-system.md)统一定义；路线原生资源和执行差异仍见
-[四路线](compute-routes.md)。
+Compute 为 Direct 调用和 Graph 编译提供共同计算合同，保留 CPU、CUDA、Apple 与 Vulkan 的原生执行方式。
+它不依赖 Graph，也不解释模型文件、生成策略或 serving。用法与限制见[用户 Compute 指南](../user/compute.md)。
 
-## 1. 产品承诺
+## 语义与执行分开
 
-### 1.1 原始需求与架构取舍
+公共语义描述 operation、全部端口的 dtype/encoding/shape/layout、alias、状态、副作用和资源要求。
+Provider 把这个合同绑定成原生调用、完整 region 或原生扩展。设备能分配内存不表示某个 Provider
+能计算任意格式；库名称也不能代替实际算子能力。
 
-HYLE 是 C++ 基础加速库，不经济地自写全平台算子大全。Compute 提供直接计算与原生执行，Graph
-把逻辑计算编译为低运行成本的程序。成熟实现提供广度，HYLE 在确有完整收益或能力缺口处渐进替换。
-目标是同语义真实工作负载中的 SOTA；库名、下载成功、原型正确和“使用模板”都不能证明已达到目标。
+Direct 用户无需取得图编译器。Graph 在相同语义上组合片段、决定跨片段边界和资源计划，
+Provider 继续拥有片段内部的融合、packing 和执行。避免把成熟 region 拆成逐 kernel 的虚调用链，
+也避免为统一外观复制一套线程池、队列或 allocator。
 
-模型格式、tokenizer、KV/prefix-cache 策略、batching、sampling、模型循环和 serving 属于引擎。
-通用 tensor、quantization、kernel、资源/同步、编译和执行属于基础库；渲染/工程计算也可直接使用。
+## Provider 与资源所有权
 
-### 1.2 先证明接得上，再扩大适配
+接入有三种形状：直接调用原生 primitive；将 op/region 编译为 Provider 自有程序；
+在 Provider 明确支持的扩展点内加入原生 kernel。三者可以共存，选择依据是完整计算的成本和能力。
 
-每个 Provider 按 **family + backend/runtime + 版本 + device/格式/数值合同** 准入，不按库名整体准入。
-必须有真实入口、资源/线程 owner、准备/运行分界、错误/回收和交付依据。公开 API 优先；确需私有
-kernel 时建立窄、版本锁定、许可证与升级责任明确的源码 factor，不暗中依赖未导出符号。
+Provider 自有 allocator、tensor、stream、workspace 或 capture 时，HYLE 保留这个执行岛：
+边界完成合法 import 或显式 copy/repack，内部使用原生程序，输出由真实 owner 保活。
+结果不必复制进 HYLE 影子 buffer；也不能修改第三方内部字段或伪造 buffer 来宣称零复制。
 
-不能恢复的运营失败、无法实现的内存/同步要求会否决该候选；不能通过改名或假装成功绕过。
-原型只签所测机制，正式适配和同层性能另验。当前不恢复 Native FFI 或稳定插件 ABI。
+caller-owned storage 只通过实际支持的 typed interop 接入，核对 device、范围、编码、coherence、
+borrow/ownership 和完成边界。CPU external pointer 可用，不能推出 CUDA、MLX 或 Vulkan 同样可用；
+同一 GPU 上的不同 runtime 也不会自动共享 allocator 或 stream。
 
-### 1.3 四条独立路线与明确非目标
+对 ggml，合法适配保有 tensor metadata、backend、常量和 invocation state，用原生 graph compute
+执行已准备的单 op 或完整 region。其内部仍可能编码、分配或同步，应报告真实成本。
+旧桥接中“简单节点成功而 varied-shape 图因伪造 buffer 崩溃”的教训是保留公开 import/allocate 边界，
+而不是恢复旧 adapter 或把私有 kernel 函数当稳定接口。
 
-CPU、CUDA、Apple MLX/Metal、Vulkan 是四条独立计算路线。用户选部署路线，构建取得相应实现；
-准备期绑定实际 device、格式、数值与有限 shape，执行不重新选设备或 Provider。
+## 冷路由
 
-CPU＋单 GPU 组合通过显式放置、搬运、依赖和完成机制接入，见[组合设计](compute-next-stage.md)。
-纯 CPU 保持完整路线；显式单 GPU 请求遇到缺算子或容量不足时匹配合法 GPU 实现或明确拒绝，
-不能静默改用 CPU 模型 kernel。
+普通用户只选择可用设备和实际请求，不排列 Provider、不填写 timing profile。
+实现规则由库维护，在 Context 创建和 prepare/compile 时匹配；submit 只调用已经绑定的制品。
 
-host 控制/metadata、冷权重准备、上传下载、映射、同步和回收仍保留；它们不是模型联合计算。
-同一 GPU 上组合多个 Provider 也在范围内。HIP/ROCm 无设备和维护条件，当前不实现；将来可独立接入，
-不预造空 target/stub。多 GPU 的模型切分和分布式控制属于引擎，不由本轮四路线推导为已支持。
+匹配依赖三类只读事实：
 
-### 1.4 架构速读
+| 事实 | 归属与作用 |
+|---|---|
+| `RouteEnvironment` | Context 捕获的 OS/ABI、设备、ISA/SM、features/limits、driver/runtime/SDK 与 Provider 身份 |
+| workload / `ModelArtifactProfile` | 引擎已核对的模型/制品 revision、配置/manifest digest、phase 和 region 意图；不包含权重或 parser |
+| `RouteSubject` | 本次 operation 全部端口，或真实 Graph region、canonical boundary、state/effects 与资源约束 |
+
+模型画像可为空，普通调用仍能使用合法的通用基线。画像、字符串和 digest 由冷 owner 保活，
+不借用调用栈；模型名或文件名不能代替真实端口检查。未知事实与明确的零值不同，
+规则要求的事实缺失时不命中。region 意图不能替代 Provider 对真实 DAG 的检查。
+
+选择先排除未交付或不满足语义、资源与设备条件的实现，再应用固定规则；Graph 还考虑完整计划的
+覆盖、融合、搬运、等待和 workspace。稳定 Provider/implementation identity 用于诊断和缓存，
+注册顺序、数组顺序和“规则更具体”均不代表更快。同优先级的冲突须明确处理，不能随机挑选。
+
+只在接纳前、无副作用的能力或预算拒绝时，才可尝试预先声明的合法后备。创建制品或接纳工作后的
+真实错误不吞掉、不换设备重算。匹配不到性能规则可使用合法成熟基线，不能把它称为测量赢家。
+
+## 制品与执行状态
+
+不可变代码、权重和 packing 可以共享；bindings、scratch、descriptor/command pool、可变库状态
+及输出按原生并发要求独占或池化。同一槽未到真实终态，不得重绑、覆盖输出或回收其资源。
+共同Operation/Graph invocation接纳后若失败，终态意味着该槽退休，需要重建槽；
+不是错误一返回就可重试。接纳前拒绝可按合同修正输入再试，重建槽也不能修复device loss。
+
+数值/物理格式、shape domain、所读环境事实、Provider/policy版本或相关常量身份改变后需要重新准备。
+普通 payload、token值和域内实际尺寸仍是输入。跨制品 cache由消费者明确拥有，不使用裸地址、
+仅模型名或进程全局隐式 cache 代替完整 identity，也不承诺跨编译器持久化。
+
+普通prepared成功准备后的replay不再做shape推导、heap分配、JIT、tactic搜索或packing。
+managed可承担已声明的metadata/array及cache/shape工作，不因此允许JIT/search/repack或隐藏copy/sync。
+需要native planning的批次走独立layout准备，见下文。prepared/managed、capture与是否阻塞是不同轴，
+不能以同一个“graph replay”名称掩盖不同成本。
+
+## 存储、同步与生命周期
+
+Mem 提供 allocation、mapping、view、quota 和寿命原语；Compute 解释 native resource及异步使用；
+Graph 提供依赖和 liveness/alias事实。host metadata、payload、第三方 heap和driver内存各自计账，
+未知私有内存不能记成零。释放使用原 owner、size和alignment。
+
+CPU happens-before、CUDA event、Metal hazard/fence/event和Vulkan execution/memory dependency
+保留各自语义。unified/shared内存不消除同步；必要的 host wait应显式报告。
+只用于 host编码的临时数据可以按合同提前释放，设备仍引用的数据、参数和代码必须活到真实终态。
+
+部分接纳后保留已提交前缀；事件记录失败不表示没有接纳GPU工作。取消停止后续工作，不等于抢占
+既有kernel。停止接纳与显式drain分开，具体close是否等待服从该owner的API；共同Context的close只停止接纳。
+未知完成状态不得变成可回收状态，
+不能靠析构隐藏无界等待。资源权限和流送还需要下述约束。
+
+
+## 资源权限与有界流送
+
+只读租约可共享，独占写权限要求相应范围没有读者或在途使用。alias按物理范围而非wrapper地址判断；
+成功写入后才发布ready只读内容。Direct/Graph绑定同时保有payload、索引/参数metadata、producer与native owner，
+直到真实最后使用。引用归零与GPU退休是两个条件，不满足任一条件都不能回池。
+
+一个重要反例是“事件记录失败”：前面的kernel可能已经接纳，错误返回不能触发正常释放。
+资源必须留在仍能推进退休的owner中；若完成状态未知，不能凭Status非OK判断它已经结束。
+这种保活也不能形成失败suffix永远持有producer的引用环。
+
+批量byte copy冷准备固定域、范围/groups/slots与bytes上限。独立copy可重复读取source，
+不能隐含destination重叠或批内依赖；有依赖时用明确阶段。全批预检后仍可能部分接纳，
+需保留实际prefix与所有可能被引用的控制数据。copy保持物理bytes，不替代编码转换。
+
+文件流送只处理已有File/Mapping范围与resource范围：
 
 ```text
-独立推理引擎：模型/权重、KV/批处理、生成循环
-  ├─ 单个计算 → Compute 准备/执行
-  └─ 算子 DAG → Graph 编译 → 路线专属执行计划
-两条路径都绑定所选路线的原生执行：CPU / CUDA / Apple MLX-Metal / Vulkan
-实际计算由已验证的 HYLE 或第三方实现提供，Provider 负责接入。
+文件 → 有界staging → native copy → group ready → 计算使用 → 回收
+producer完成 → read lease → D2H/共享可见 → positional write → 完成
 ```
 
-算子描述“算什么”，属于 Compute 的公共语义，不是另一个调度产品；Graph 描述依赖并编译计划，
-单个计算无需它。Compute 提供资源、准备、提交和完成能力。路线区分原生执行体系，Provider 区分
-具体实现；同一路线可有多个 Provider，同一个库也可分别适配多个路线。它们是职责关系，不是每个
-kernel 必须经过的一串虚调用。普通用户选路线和资源约束，HYLE 应用下文已验证的默认优选规则。
+旧ready/use leases继续占slots和预算，容量满产生背压，不自动淘汰用户内容。
+已成功组可消费，后面失败不把整批写成成功。direct IO、short progress及不能被逐操作抢占的文件fallback
+沿原IO合同；取消不等于中断pread/pwrite。格式解析、文件命名、原子发布政策与模型cache属于引擎/IO。
 
-## 2. 两条用户路径与渐进替换
+## 集合发布不是多设备事务
 
-直接用户选择计算/原生 kernel、输入与路线，显式准备后执行；不依赖 HYLE Graph。
-图用户提供模型无关 DAG，由 Graph 编译后重复调用。两者共享数值、资源和完成语义，不必共享执行器。
-普通 C++ 用户不手工拼 target/storage/lane ID 数组；专家控制通过确有意义的显式选项展开。
+状态schema声明有限opaque成员和资源约束；只读版本共享owner而不复制payload。
+draft分享未改成员，显式clone将修改的成员，或替换为成功的out-of-place输出。不能修改base，
+也不能把外部仍可写的native alias称为immutable。
 
-Provider 是具体实现的适配层：准备时翻译计算，执行时提供已绑定的原生制品；不是另一套公共
-`GgmlMatMul/CublasMatMul` 计算语言。三种接入均保留：
+```text
+base → draft共享/显式clone → 新输出全部ready → expected-base检查 → 发布新只读版本
+ └──────────────── 旧读者与native uses继续保活 ─────────────────┘
+```
 
-1. **原生 leaf/融合程序**：HYLE、vendor primitive 或受审源码 kernel 使用所选 native runtime。
-2. **完整 Provider region**：把选定片段交给 ggml、MLX 等自己的计算图/执行制品。
-3. **Provider 内扩展**：若它公开 custom Primitive/lowering，在其编译前插入 HYLE kernel，让它保留
-   内部资源和依赖。不修改已编译黑盒，也不假定每个 Provider 都有这种扩展。
+发布仅改变集合可见性，不回滚已发生的外部device写，也不表示文件已持久化。
+冲突不改变current，不能按branch完成顺序自动选赢家；token绑定store、schema与generation避免ABA。
+旧版本、draft、目录和copy槽有容量上限，clone按dirty bytes计费，不隐式复制整模型。
+停止新更新/发布后，按本store合同显式退休自己的工作，不关闭用户Context。
 
-一个 HYLE kernel 更快，不意味着拆开成熟 region 后仍更快。开发时比较原版 region、包含 HYLE 扩展
-的 region、独立 HYLE 程序的完整边界；layout/repack、copy、同步、融合损失和运行时开销一起计费。
-无可分辨优势使用合格成熟路线，不为裁决微小点值改变公共 API。
+这可承载推理分支，但checkpoint语义、接受前缀、RNG/token和模型策略归引擎。
+recurrent算子有initial/final输出，不自动证明任意中间前缀可恢复。
 
-### 2.4 HYLE 拥有计划与边界，Provider 拥有片段内执行
+## 分页计算为何需要独立准备尺度
 
-| 决策 | owner |
+Paged/ragged attention保持typed数学schema，不将单storage Tensor改成含混分页对象。
+paged描述arena、page IDs、indptr、tail与真实active counts，ragged描述packed segments；
+metadata、device mirror、plan与payload必须有相符generation和owner。
+接纳前校验单调、边界、dtype/layout、overflow/GQA、空序列及causal相对位置，padding不能作为真实KV。
+
+| 时机 | 工作与边界 |
 |---|---|
-| 模型配置、请求/batch、KV 策略、允许的计算路线 | 引擎/调用方 |
-| 逻辑图、region 边界、边界数据与依赖、并发约束、完整路线选择 | HYLE Graph |
-| region 内部融合、kernel、私有 layout/allocator、native 提交 | 入选 Provider/路线实现 |
-| 真正的线程与设备执行、其它进程争用 | OS/驱动 |
+| program准备 | 固定算法域、dtype/head/layout、capacity、workspace和slots，绑定实现 |
+| layout准备 | 复制/验证host快照、native planning、metadata上传及必要host等待，产生本slot/generation的token |
+| native提交 | 执行已准备批次，不再读取可变caller span、搜索Provider或隐藏新planning |
 
-HYLE 可以委托整个图、block、融合片段或单 op；Provider 不得越过选定边界改变放置或资源访问。
-不要求每个 kernel 回到 HYLE host 调度器。一个原生程序可只有一次外层固定调用，必要的跨片段协调
-才保留。CPU worker、CUDA stream、MLX encoder、Vulkan command buffer 不模拟成同一种机器。
+原生planner可能分配临时vectors或查询occupancy，这些是layout准备成本，不是无规划replay。
+多个并发槽各有mutable plan/workspace；布局或失败退休改变后旧token失效。
+只改page IDs能否复用计划取决于原生算法，不能按地址/尺寸猜测；固定batch和稳定地址也不足以保证capture。
 
-## 3. 公共事实与原生差异
+Graph协调同slot的region与prepared token，不能在外部规划A后提交B。
+只读attention不制造effect，KV append/scatter等真实写入才需要writer与顺序。
+把paged数据gather为连续临时再执行dense数学可以是明确参考路线，但必须计copy/capacity/workspace，
+不能把它当原生paged kernel。各后端的dtype/head域与capture能力仍按实际实现说明。
 
-Backend 是设备/内存/执行能力，Provider 是实际计算实现；二者不一一对应。完整对应关系、原生限制
-和参考来源只在[四路线设计](compute-routes.md)维护，不把一个 family 的资格传播给全部 backend。
+## 推理负载与数值边界
 
-execution target、storage domain、execution lane 分别描述谁算、数据在哪、沿哪条时间线执行。
-同 GPU 可有多个 lane/多种 storage；共享物理内存不等于已经同步，host storage 不赋予 CPU 计算资格。
-这些是必须分清的事实，不强制成为普通用户的三套公开容器或固定对象布局。
+需求从真实权重角色、端口和跨调用状态出发，不能把文件名Q4/Q8当整模型dtype，也不能用小矩阵
+覆盖完整推理。以下区分影响公共合同和Provider选择：
 
-### 3.2 Provider 的两种诚实运行模式
+- storage、activation、accumulation、output、cache/state精度分别表达；FP8、GGUF、AWQ/GPTQ、
+  NF4、MLX affine/MX等编码具有不同codes、scales、zero-point、group与舍入规则。
+- attention包括mask、GQA、位置、空/变长序列和KV反馈；recurrent/causal conv的initial/final state
+  与projection权重量化是不同边界。物理布局相同之前不能直接复制编码数据。
+- MoE需保持路由tie、重复/偏斜expert IDs、grouped计算与combine顺序；动态IDs不等于重新选Provider。
+- MTP/speculative需要可共享旧状态、显式候选更新与成功发布。接受前缀、token/RNG与模型分支策略归引擎；
+  基础状态或分页能力存在，不代表已完成MTP引擎。
+- 图像encoder/projector需要其实际算子、布局和资源链路；不能从文本投影算子推导多模态完整性。
 
-- **shared runtime**：真正借入所选资源/Queue/executor 来执行。
-- **delegated runtime**：Provider 自己持有 allocator、线程、stream/context 或图；通过明确输入依赖、
-  结果和 Completion 接入，不能接收一个 HYLE Queue 参数后实际忽略它。
+### 中间值与反馈状态的反例
 
-直接 Compute 也能运行独立 runtime 的计算，不必为一个 MLX 算子依赖 HYLE Graph。共享 Queue 录入
-入口与绑定独立提交 owner 的入口分别兑现真实合同，模式在准备时确定；不把区别塞进逐 op 热分支。
-Provider runtime/单 op lowering 不反向依赖 Graph，Graph region 翻译放在对应组合层。
+原生softplus若用`log(1 + exp(x))`，F32负尾的`1 + exp(x)`可能舍入为1，结果变成零。
+融合region不单独公开中间gate，只说明它应按实际公开的attended输出和next state核对，
+不等于放宽generic Softplus的数值合同。原始GDN primitive也不能自动代替外层Q/K归一化和动态gate计算。
 
-### 3.3 准备先验证资源和数值
+连续状态验证必须让每个实现消费自己上轮输出的state，才能看出误差是否累积。
+每轮重新注入oracle state只能验证单步，不能支持长期反馈的结论。
 
-候选在 prepare 前说明 ports/shape/layout/precision、resource/import、alias、线程/同步、输出 owner、
-workspace/常量 packing、private memory、并发与失败限制。选定候选才创建重型制品；不能到接纳用户
-工作后才发现格式或 storage 不兼容。实际运营错误不能伪装成可回退的能力拒绝。
+typed custom execution须说明端口、数值、layout、alias、workspace、副作用与失败；配置和原生代码
+保活到终态。公开扩展不要求消费者包含`src/`私有头，也不用进程全局字符串注册替代对象局部owner。
 
-prepare 可进行已选实现所需的 JIT、启发式 kernel 配置、constant packing 和受控 warmup；这些不放在
-首 token 内。这不授权跨 Provider 试跑选优；第三方内部若有计时式 tactic 搜索，必须单独披露并在该
-路线准入时裁决，不能仅因它发生在 prepare 就默认允许。
-warmup 可能真执行，必须使用隔离输入/scratch/可变状态，不能推进用户 KV、RNG 或其它副作用。
-无法隔离的计算不自动 warm/capture。纯状态实例化不得偷偷执行、重新搜索或 JIT。
+## 依赖与性能取舍
 
-### 3.4 Replay 成本合同独立于 runtime ownership
+公共语义核不拉入GPU SDK；原生runtime接入各有依赖和资源边界，普通产品由构建系统自动组装。
+必要实现已在[构建图](build-system.md)中表达，不让用户为每个算子选择第三方库。
 
-| 合同 | 重复执行允许的工作 |
-|---|---|
-| prepared | 参数更新、已准备调用/命令；HYLE 与 Provider 不建图、heap allocation、首次 JIT/packing 或 tactic 搜索 |
-| managed | HYLE 计划固定；Provider 可按声明实例化执行节点、分配 metadata/结果/临时 storage、查询内部 cache |
-
-managed 不豁免数值、内存、失败或完成合同，也不隐含未声明的首次编译/copy/sync。默认可选择完整成本
-合格的两类；专家可要求 prepared-only，未知/不满足者拒绝。该要求不应让所有 Apple 用户默认丢失 MLX。
-shared/delegated 不能推导 prepared/managed，`compile` 函数名也不能证明零分配。
-
-### 3.5 共同合同与四套可独立特化的实现
-
-共用必要的逻辑描述、错误/生命周期与边界信息；四条路线各自实现 compiler/lowering、Program、
-run-state 和回收。这里是职责名，不固定旧类、vtable、候选搜索器、segment loop 或 CMake factor。
-只复用同义且成本合适的实现；旧 API 和旧测试没有兼容要求。
-
-- **构建期**：裁剪路线及第三方 backend、SDK、flags、runtime 依赖；不靠消费者宏改变公共对象布局。
-- **准备期**：按已验证规则匹配实际 device、数值/格式/shape，绑定实现、资源和调用入口，不现场比较性能。
-- **执行期**：调用固定程序，更新允许变化的数据。无 Provider 查表、设备查询、策略选择、隐藏建图。
-
-静态可知的局部调用用模板/直接内联；运行时才知道的模型不能靠宏变为编译期常量。固定边界调用也
-有成本，必须以同 Provider direct 对照证明，而非宣布字面“零指令”。完整 region 不应逐 kernel 经过
-多层 HYLE 类型擦除。调试、profile 与 route registry 不进入未启用诊断的热路径。
-
-### 3.6 输出 binding 与生成结果的 owner
-
-预绑定输出适合 caller buffer 与固定地址程序；Provider 生成的输出则由真实 runtime owner 持有，
-发布带所有权的结果。两者都支持，不强迫 MLX 输出再复制到 HYLE 影子 allocation。
-
-逻辑 descriptor/residence 在准备时确定，实际 payload 可在运行时物化。固定 run-slot 可预留句柄
-位置，managed 的实际 allocation 单独计费。Provider 内部中间值不强制导出；跨 region 只有真实
-import/依赖能力成立才借用，否则显式 Copy/转换或拒绝。caller 指定固定目的地址时同样计入必要 Copy。
-
-句柄可取得不等于结果成功就绪。host 读取等成功终态，设备消费用真实依赖；结果 owner 保留到异步
-工作和全部合法借用结束。仍有借用时不得覆盖结果槽；要跨槽复用保留结果，显式保留/转移 owning result
-或用另一个槽。失败不发布成功结果，取消不提前归还 allocation。
-
-真实 allocation 可复用 Mem 的 typed resource/`Buffer::adopt`；未物化 array 或可变 wrapper 不冒充
-稳定 allocation token。Graph 不为 Provider-owned payload 重复规划 backing；capture/严格模式须另证
-地址稳定、导出同步和预算。不由这一机制引入任意数据依赖 output shape。
-
-## 4. 路线与提供方选择
-
-### 4.1 开发时验证 best-of，准备时应用规则
-
-best-of 是 HYLE 维护者的研发责任，不是交给用户或其运行进程做的性能实验。默认路径固定为：
-
-- **开发时**：按硬件/ISA、Provider 版本、数值/格式/shape、布局、资源和并发条件验证完整收益，形成
-  有适用域与成熟基线的实现/融合规则；不把单个 benchmark 点外推到全部设备或尺寸。
-- **交付时**：规则与对应实现一起编译、版本化和验证。规则可用模板、直接分支或私有有界决策表，
-  不要求新增通用规则引擎、外部 profile 数据库或公共配置协议。
-- **准备时**：按实际计算和设备匹配既定规则，检查合法性并绑定程序。静态已知的选择可编译期消除；
-  模型加载后才知道的 shape 只匹配一次，不通过试跑重新确定赢家。
-- **执行时**：调用绑定程序或绑定好的有限变体；不重新探测 ISA、遍历 Provider、测量或改变优选规则。
-
-普通用户只提供计算、路线/设备和所需数值/资源约束，不排序 Provider、不提供 timing profile；指定
-实现或裁剪依赖只是专家控制。Direct 与 Graph 都须使用对应粒度的默认规则，不能只让专家样例选到
-胜出实现。Graph 的融合规则计入完整片段成本，不把逐 op 最快名单机械拼成整图最优。
-
-规则先服从能力/数值/资源硬约束；已选实现缺席或条件不匹配时，只能用预定的合法基线或明确拒绝，
-不能临时测量、隐藏转换/CPU fallback，或把运营错误当安全回退。未知硬件上的兼容基线不获 SOTA
-资格；依赖升级影响的规则需定向复验。原始性能证据留给维护者，普通运行不加载 benchmark 资料。
-本轮不新增用户侧计时 autotuner；profile 驱动的多计划竞赛不是默认能力或必须保留的旧实现。
-
-#### 模型与软件身份也可决定计算方法
-
-固定规则不限于单算子或 shape：允许匹配调用方显式提供的模型家族、模型 revision/配置身份、
-prefill/decode 与片段语义，结合实际 GPU 型号/SM/架构、驱动、Toolkit/runtime、OS、Provider
-版本及数值/量化/布局域，选择模型专用算法、融合片段或完整 region。模型信息来自 consumer，
-不使 HYLE 承担 checkpoint 加载、模型脚本、采样或服务。没有模型注解仍可使用自然通用入口。
-
-模型名称只是适用条件之一，不能代替实际图、数值、状态、资源与完成合同的合法性检查。
-不同配置不得仅凭同名模型命中专用规则；未知/缺失条件使用已声明的合格通用基线或明确拒绝。
-只有影响绑定合法性或已验证计算方法的事实进入规则与计划缓存身份，不为无关标签增加热路径成本。
-模型配置、实现/规则版本或相关驱动/工具链条件变化使受影响计划失效，重新准备后才能运行。
-规则在开发阶段验证，准备时匹配绑定，执行不重新查询模型/驱动、搜索或计时。
-
-此项是架构要求，实际可用性以当前交付记录为准；实现须同时验证专用命中、未知模型/版本回退、
-配置不匹配与缓存失效，不能只加模型字符串字段就宣称支持模型优化。
-
-### 4.2 四路线的实现来源
-
-Apple 与 NVIDIA 是主要优化目标；CPU 是完整基线路线；Vulkan 是正式跨厂商保底，不是实验。
-Apple 上 MoltenVK 是 Vulkan portability，不替代 MLX/native Metal 性能资格。
-
-- CPU 保留 HYLE SIMD/Native 的优势，按实际 ISA/shape 与 oneDNN/BLAS/ggml 等合格实现择优。
-- CUDA 的普通 GEMM 优先资格化 cuBLASLt/cuBLAS，量化/attention/融合则按格式、硬件与完整成本
-  选择 vendor、成熟 kernel 或 HYLE；“CUDA 默认”不是从零手写全部 CUDA 算子。
-- Apple 的 MLX 已通过 Metal 使用 GPU；先保留其高效完整片段。HYLE Metal kernel 优先通过公开
-  扩展进入相同 runtime，独立 native Metal 与 ggml-Metal 另作候选，不强制混用。
-- Vulkan 使用真正的 SPIR-V/pipeline/资源同步，也可借 ggml-Vulkan 完整片段或受审源码 kernel；
-  不模拟 CUDA stream capture。具体硬件能力/限制见[路线设计](compute-routes.md)。
-
-### CUDA Q4 MatMul 的规范例
-
-1. 用完整量化合同描述逻辑计算：activation、压缩 weights 和格式需要的 scales、zero-points/biases/
-   offsets，明确 group、轴、舍入和累加。普通两输入 MatMul 不冒充所有量化格式。
-2. 在选定 CUDA 路线内验证能力。GGUF Q4_0/Q4_K、Marlin W4A16、FP4 是不同合同；相同 4 bit 不保证
-   可无损 repack。cuBLAS 也不自动支持任意 Q4 存储。
-3. 匹配研发时已验证、且当前实际交付的实现规则：原生 kernel/vendor primitive、ggml-CUDA region
-   或 HYLE 融合；不是在用户机器上逐个试跑候选。
-   量化带来的额外 activation 舍入和 reduction 差异不能隐藏；严格数值策略不满足就拒绝。
-4. 兼容的 packed constants 冷生成并按实际 owner 共享；output/scratch/locks 按并发槽独立。
-   默认压缩权重常驻，kernel 内 tile 解码不是全权重浮点常驻。显式展开/再量化另需授权与完整内存计费。
-5. 研发时把转换、融合、copy/sync/launch、准备和内存成本计入完整比较，并固化适用规则。模型准备
-   时按这些规则构造实际计划；局部 kernel 赢但拆图后输的替换不进入默认规则，同-runtime 扩展也按
-   完整收益验证。不是必须把 ggml kernel 拆成函数才能使用。
-6. 绑定有限程序和运行参数后重复执行。没有合法 Q4 carrier 就明确不支持，不偷偷回 CPU 或全量展开。
-
-## 5. Storage、同步与生命周期
-
-Mem 提供 allocation/views/mapping/quota/lifetime primitive；Compute 解释 native resource、执行与
-异步使用；Graph 提供 liveness/alias facts。metadata allocator、payload、第三方 heap、driver 内存
-各有真实 owner，不混成一个“Context 内存”数值。释放使用原来的 owner/size/alignment。
-
-不可变代码/权重可共享；可变 handle、scratch、命令/descriptor pool 和运行状态按 native 并发要求独占
-或池化。只用于 host 编码的临时 metadata 可按合同提前释放；设备仍引用的数据、参数与状态必须留到
-真实终态。资源和代码不能因 C++ wrapper 析构而提前释放或卸载。
-
-接纳前可事务化拒绝；接纳后报错/drain，不在另一个 Provider 重跑。一个提交前缀的终态不得丢失；
-事件记录失败也不等于没有接纳 GPU 工作。取消是请求停止，不是立即可回收，GPU 通常仍需排空。
-关闭提供显式 drain，析构不隐藏无界等待或释放尚在使用的 native state。
-
-同 lane/跨 lane 按原生语义建立依赖：CPU happens-before、CUDA event、Metal hazard/fence/event、
-Vulkan execution + memory dependency 不是同一个实现。必要时显式且计费的 host wait，不隐含每 op
-round-trip。普通 host、pinned、device-local、unified/shared 的可达性、coherence 与寿命分别验证。
-
-## 6. 算子与 C++ 扩展
-
-能力由 ggml/llama.cpp、SGLang、vLLM、ds4 的真实消费和独立成熟库共同驱动：tensor copy/layout、
-cast/quantization、unary/binary/reduction、GEMV/GEMM、normalization/activation、embedding/RoPE、
-attention 及 MoE 所需的通用计算。模型层和策略不下沉；当前阶段先完成基础运行机制，不填全目录。
-
-typed custom schema 与实际 execution 是两种能力，都须向 source/static/shared C++ 用户开放。
-显式、对象局部、owning 的实现配置声明 ports/数值/layout/alias/resource/effect/失败与 workspace，
-在冷路径生成执行物；配置、native 资源与代码保活至终态。不要求用户包含 `src/` 私有头、手写第二套
-Graph，或使用进程全局注册和字符串属性袋；跨 DSO identity 不使用静态对象地址。
-
-### 6.1 算子与片段接入
-
-接入围绕真实模型的权重角色、精度、格式、布局和状态进行，优先复用成熟 Provider 的完整片段。
-先验证端口、资源、准备、失败和重复执行，再根据实际改动运行相关数学、消费者和安装测试。
-共享同一接缝的模型可以使用参数化用例和构建缓存；发现失败时直接定位受影响边界。
-未编译或未运行的接线不宣称可用，不以固定批次、调查预算或流程状态阻止修复。
-
-## 7. 构建和底层依赖
-
-Compute 不依赖 Graph；图组合依赖 Compute。公共语义核不依赖 CUDA、Metal、Vulkan 或任何全套
-Provider runtime。每条路线及每个不同 native runtime 的 adapter 独立拥有依赖/编译/安装资格。
-Apple SDK 不探测 CUDA，也不因选择 Compute/Graph 固定拉入 HYLE CPU 算子和 oneDNN。
-
-普通用户仍选 `hyle::compute/graph` 与真实 backend feature；内部 factor 只在依赖/维护确有必要时
-拆。SDK 发现、第三方 backend 裁剪、nested FetchContent、flags/头/符号隔离遵守
-[build system](build-system.md)，不继承旧 façade 的固定全因子列表。
-
-底层使用 Error、Mem、Platform、SIMD、Sched 等已有正确能力；CPU 持久 executor 若已有自然公开组合，
-不为架构图再造强制 bridge factor。需要下层能力时直接修正其接口和实现，不在 Compute 复制同义机制。
-
-## 8. 性能与验收边界
-
-先审算法与成本结构，再测固定候选。分开证明：同 Provider/direct 的包装税；同精度/形状/资源/并发/
-完成边界下完整片段的竞争力。decode/prefill 不混同，cold、host submit、最终完成、内存分别记录。
-固定小输不能改名为误差；没有合格证据不声称胜出，无收益时保留成熟默认。
-
-每条路线分别证明构建隔离、正确性、资源/线程寿命、部分接纳/晚到错误/关闭、实际组合、三交付和
-完整性能。不能从 CPU 成功推出 GPU 成功，从 M4 推出 M5 矩阵加速，或从 NVIDIA Vulkan 推出 AMD/
-MoltenVK 资格。有限研究、基础实现和 SOTA 验收是不同完成点；当前缺口只记在研究/活动任务，不在
-架构页复制进度表。新增 op/Provider 能进入既定合同就局部演进，真实反例表明共同语义有误时调整架构。
+性能改动比较完整且等价的候选：同Provider直接调用的包装成本，与不同Provider的整体竞争力分别说明。
+packing、数据变换、host submit、最终完成及资源峰值不能省略。收益不足时保留成熟实现；
+不为替换单个leaf破坏更大region的融合和资源复用。

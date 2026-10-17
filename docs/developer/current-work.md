@@ -1,21 +1,19 @@
 # 当前工作主线
 
-2026-10-17，用户明确以下八项工作。用户已授权先彻底清理旧治理，其他项继续讨论后推进。
+2026-10-17，用户明确以下八项工作；后续按用户选择推进。
 本页记录任务与范围，不引入状态机、审批、预算或新的开发门禁。
 
 1. 已删除旧治理工具、状态源、审批与资格流程，精简相关说明；保留实际构建、数值、资源寿命和并发回归。
 2. 删除、合并、简化文档，减少重复和失效规则，保留有用的设计依据与历史源码、日志、数据。
+   已按“首次构建→接入 C++→按任务查模块”重排入口，保留四层分工；共用合同集中说明，
+   复杂边界保留示例与反例，过程卡与过时规则已清理。入口见[文档导航](../README.md)。
 3. 提供统一初始化入口，在受支持系统上用简单参数配置编译环境，复用工具链与依赖缓存。
    2026-10-18 已统一为 `scripts/init.py`、`build.py`、`test.py`：自动发现工具链，按后端与产品
    准备依赖，支持配置切换、增量构建和安装；基础系统工具仍按平台正常安装。用法见[初始化指南](setup/README.md)。
 4. 检查 Compute/Graph 的公共 C++ 接口是否符合推理引擎调用需要，包括易用性、一致性、布局
    转换及暴露给用户的内部 CMake 变量和宏。不按旧六问重新审核全项目。
-   2026-10-18 已完成构建系统专项检查及本轮确认问题的修复：生产/测试依赖分离、按组件加载 SDK、
-   父工程 cache 隔离、宏声明集中、工具链与样例/benchmark 入口统一。公共 C++ 接口的调用形状仍待后续检查。
-   本批继续收敛配置边界：路线、专家工厂与混合桥接统一装配；能力属性复用；Apple 目标架构与插桩请求
-   保持一致。公开选项和内部派生事实的约束见[构建架构](../architecture/build-system.md#option-语义)。
-   后续轻量 review 修复了依赖校验归属、源码 cache/构建目录重叠、CUDA 完整产品架构门槛、
-   Torch 导入来源与作用域、运行资源的配置映射及可见性诊断；继续以实际缺陷和必要的工程简化为准。
+   构建系统已完成路线、依赖、target 宏与资源装配的统一，见[构建设计](../architecture/build-system.md)。
+   公共 C++ 接口的实际调用形状仍待后续检查。
 5. 狩猎剩余性能输项；只要确认超出仪器分辨率与测量噪声，即使差距小也继续调查。
 6. 尽快完成独立的 Qwen3.5-2B 纯文本、无 MTP、无多模态、完整 CUDA C++ 推理消费者，
    在同系统、同设备、同源权重与匹配精度/输入条件下对比 llama.cpp 的 prefill/decode tokens/s。
@@ -49,3 +47,21 @@
 后续接口检查线索：锁定 ggml 的 CUDA GDN/causal conv 原实现要求 F32；这不是已证实的
 BF16/FP8 接入遗漏。上游 GDN 已有多 token 中间 recurrent snapshot，而当前 HYLE 仅输出最终
 state，后续 MTP 接入应核对这项现成能力与接受前缀恢复成本。
+
+## 首个 Qwen3.5-2B 消费者的复用材料
+
+模型输入身份见[本地输入清单](../implementation/tasks/compute/qwen35-2b-local-input.json)，
+独立公式与中间结果生成见[文本参考](../../tests/compute_models/qwen35_reference.py)，
+原运行条件见[参考预检数据](../../evidence/correctness/qwen35-cli-preflight/README.md)。
+这些材料不代表 Hyle 已整模型执行；加载、tokenizer、chat template、生成循环属于独立引擎。
+
+接线时保留模型特有的数值边界，而不是仅匹配算子名字：
+
+- 普通 RMS 的 scale 为模型规定的 `1+weight`；GDN gated RMS 是另一公式。
+- linear Q/K 的 L2 使用 `sum(x*x)+eps`，不是 mean RMS；不要重复施加 GDN 已包含的 `1/sqrt(Dk)`。
+- full-attention 的 Q/gate 按 head 拆分；partial RoPE 旋转 64 维并使用实际绝对位置。
+- conv history 和 F32 recurrent state 逐层、逐步真实反馈；KV active 长度与 capacity 分开，新请求重置状态。
+- 首次 prefill、多 token cached continuation 和单 token decode 分别核对。旧参考依赖的 cached 分支
+  曾重置初始 state，不能把该行为复制为数学标准，也不能每轮把候选 state 换成 oracle state 来掩盖累计误差。
+
+完整 CUDA 首版仍按第六项约定关闭 MTP/视觉，并从同源权重、相同精度和完整生命周期与 llama.cpp 比较。

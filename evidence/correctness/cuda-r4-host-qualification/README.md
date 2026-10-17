@@ -37,7 +37,7 @@ release-sequence 的最终析构始终读到已发布 payload。仅在 TSan 构�
 观察，不改变实际引用计数算法或普通路径。测试 callback 则在最后一次访问后发布 finished，owner
 完成原 native 等待后 acquire 观察，令工具理解真实完成关系；没有用测试信号代替 CUDA 终态。
 
-[定向审计卡](../../../docs/implementation/tasks/compute/cuda-r4-host-validation-visibility.md)与
+[定向审计卡](https://github.com/axiomates/hyle/blob/d12f2204d23503256220e810385d6cb3e93027a8/docs/implementation/tasks/compute/cuda-r4-host-validation-visibility.md)与
 [shipping 源码等价证明](shipping-source-equality.json)保留边界：去除唯一新增的 TSan 条件块后，
 产品源码字节与 baseline 完全相同。ASan/UBSan 及三交付的产品路径因此可继承；fixture 改动通过
 新的 Windows 与 WSL TSan 检查。不重建已通过交付，也不因这些改动重跑 CPU P1。

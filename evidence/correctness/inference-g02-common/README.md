@@ -1,7 +1,7 @@
 # G02 共同多 Queue 接缝候选阶段证据
 
 本记录只签已实际运行的阶段证据，**不是 CLOSED 或整个 G02 完成**。活动卡见
-[多 Queue batch](../../../docs/implementation/tasks/graph/inference-g02-multi-queue-batch.md)。
+[多 Queue batch](https://github.com/axiomates/hyle/blob/d12f2204d23503256220e810385d6cb3e93027a8/docs/implementation/tasks/graph/inference-g02-multi-queue-batch.md)。
 最终 API 为每 lane 的 Context、Queue、host workspace；删除原单 Queue 构造签名，迁移
 现有消费者，保原 region/slot、F2 upload/plan、page permission 与 actual retirement。
 

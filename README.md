@@ -2,7 +2,7 @@
 
 HYLE（HYbrid LEvels）是面向本地 AI 推理、异构计算、资源流送和低延迟服务的 C++23 基础加速库。
 它提供可组合的内存、数据结构、SIMD、调度、I/O、Compute 和 Graph；模型格式、tokenizer、
-采样、KV 缓存策略和 serving 政策由推理引擎拥有。
+生成与采样策略、KV 缓存策略和 serving 政策由推理引擎拥有。
 
 当前推理目标是多系统上的单机 CPU、CPU＋一张 GPU、单 GPU。
 项目仍处于预发布阶段，支持范围和限制以对应接口、后端及实际验证环境为准。
@@ -19,24 +19,21 @@ python scripts/build.py
 默认 CPU、Release、共享库，测试关闭。用 `init.py --backends cpu,cuda` 选择所需编译后端；
 可选 `cpu`、`cuda`、`metal`、`vulkan` 或逗号组合，运行时的设备和混合执行策略由引擎决定。
 开启测试时先 `init.py --tests`，构建后运行 `python scripts/test.py`。
-参数、配置复用和安装说明见[初始化指南](docs/developer/setup/README.md)，各脚本均提供 `--help`。
+各脚本均提供 `--help`，Unix 可使用 `python3`。
 
-- [C++ 使用指南](docs/user/usage-guide.md)
-- [源码、静态库与共享库集成](docs/user/distribution.md)
-- [可运行样例](samples/README.md)
-- [开发环境与离线依赖](docs/developer/setup/README.md)
+接下来按一条路径阅读，不必先通读架构和历史记录：
+
+1. [环境与构建](docs/developer/setup/README.md)：准备工具、选择后端、构建和测试。
+2. [C++ 起步](docs/user/usage-guide.md)：接入自己的工程，运行最小消费者。
+3. [模块手册](docs/user/README.md)：按实际任务查 Compute、Graph 或基础模块。
 
 三种形式均为 C++ 交付，不承诺跨编译器/STL 的二进制 ABI；当前没有独立 C API 或外语绑定。
 
-## 开发与文档
+## 维护与设计
 
-- [开发约定](AGENTS.md)
-- [当前工作主线](docs/developer/current-work.md)
-- [文档入口](docs/README.md)
-- [架构与产品边界](docs/architecture/README.md)
-
-旧治理流程、状态机和审批工具已删除。直接实现任务，运行相关构建、测试或性能实验，
-如实说明结果与未验证项。历史实验和原始数据保留用于追溯。
+修改代码见[开发与维护](docs/developer/README.md)，理解取舍见[架构](docs/architecture/README.md)。
+[文档导航](docs/README.md)区分使用、维护、设计和实施背景；
+工作区约定见 [AGENTS.md](AGENTS.md)，当前任务见[工作主线](docs/developer/current-work.md)。
 
 ## 仓库结构
 

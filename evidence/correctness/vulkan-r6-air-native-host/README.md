@@ -33,7 +33,7 @@ extracted from the official Homebrew bottle; only its private verification copy'
 dependency paths and layer JSON were relocated. No global driver/SDK installation
 or system configuration was changed.
 
-These are [R6 V6](../../../docs/implementation/tasks/compute/vulkan-v1-four-route-foundation.md)
+These are [R6 V6](https://github.com/axiomates/hyle/blob/d12f2204d23503256220e810385d6cb3e93027a8/docs/implementation/tasks/compute/vulkan-v1-four-route-foundation.md)
 correctness/host-instrumentation results. Public three-delivery, rule/P1 and final
 review remain pending. Physical non-coherent memory, deliberate GPU device-loss,
 AMD/Intel and other hardware are not certified by these runs.

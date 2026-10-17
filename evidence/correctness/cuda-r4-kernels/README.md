@@ -1,6 +1,6 @@
 # R4 C3：HYLE CUDA SwiGLU 初始产品验证
 
-Owner `compute_provider_cuda` 仍由 [R4 CUDA 卡](../../../docs/implementation/tasks/compute/cuda-v1-four-route-foundation.md)
+Owner `compute_provider_cuda` 仍由 [R4 CUDA 卡](https://github.com/axiomates/hyle/blob/d12f2204d23503256220e810385d6cb3e93027a8/docs/implementation/tasks/compute/cuda-v1-four-route-foundation.md)
 绑定为 AUDITED。本检查点实现真实中间计算片段；完整 FFN、普通入口、Graph capture、最终三交付及
 P1 仍待本包接线，不用单个 kernel 签完整路线。
 

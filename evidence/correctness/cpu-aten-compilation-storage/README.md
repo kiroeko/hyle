@@ -38,5 +38,5 @@ P0完整成本与原程序相同，新行为发生在冷匹配/预算绑定；�
 consumer/drivers、所有命令/XML/身份、selector/LOC/cleanup见[qualification.zip](qualification.zip)，
 摘要/hash见[receipt.json](receipt.json)。本批没有产品/fixture纠正或预算外重测。
 
-[终审卡](../../../docs/implementation/tasks/compute/cpu-aten-compilation-storage-declaration.md)只关闭CP1–2，
+[终审卡](https://github.com/axiomates/hyle/blob/d12f2204d23503256220e810385d6cb3e93027a8/docs/implementation/tasks/compute/cpu-aten-compilation-storage-declaration.md)只关闭CP1–2，
 不宣称全部CPU自研或Compute+Graph四路线完成。

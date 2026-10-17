@@ -1,6 +1,6 @@
 # Vulkan original MLX packed source batch
 
-Card: [finite audited MLX bindings](../../../docs/implementation/tasks/compute/vulkan-parity-v2-mlx-bindings.md).
+Card: [finite audited MLX bindings](https://github.com/axiomates/hyle/blob/d12f2204d23503256220e810385d6cb3e93027a8/docs/implementation/tasks/compute/vulkan-parity-v2-mlx-bindings.md).
 Product `1ad27d6c8`, final negative-NaN fidelity correction `1df0cc035`;
 source identities are in `source-qualification.json` and the offline receipts.
 Windows RTX4070/NVIDIA617.14, locked original IREE compiler/runtime6ef606.

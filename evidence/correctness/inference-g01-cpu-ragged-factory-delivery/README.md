@@ -3,7 +3,7 @@
 candidate `973d3ffbf642aff06f6316fcec4b3cc99eba2e4d`；原642数学与a0c047ea4 Graph
 exact-resource修正及其三san证据保留。[receipt](receipt.json)与[raw](raw.zip)记录本轮
 真实source/static/shared、输入和产物身份、所有compile/link FAIL。活动卡见
-[CPU卡](../../../docs/implementation/tasks/compute/inference-g01-cpu-native-ragged.md)。
+[CPU卡](https://github.com/axiomates/hyle/blob/d12f2204d23503256220e810385d6cb3e93027a8/docs/implementation/tasks/compute/inference-g01-cpu-native-ragged.md)。
 
 普通consumer仅链接hyle::compute/graph并include公开头，source和实际relocated static/
 shared均PASS：Direct两request F16/BF16三depth、readonly/tail、独立slot、旧output与

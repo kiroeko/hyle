@@ -1,8 +1,4 @@
-# obs 选型与 C++ 使用指南
-
-obs 当前只提供 C++ 产品面。本页适用于 C++23 source/static/shared 三种交付，不描述 C API 或
-跨语言调用层；Native FFI 当前为 `N/A`。三种集成方式、组件选择与工具链合同见
-[`distribution`](distribution.md)。
+# obs：日志、指标与跟踪
 
 obs 有三条彼此独立的通路：**log** 是用户主动产出的同步诊断 record，**metrics** 是 production
 热路径中的数值聚合，**trace** 是 profiling build 才存在的纳秒级时间线。它们都不是 error 的替代品，
@@ -351,8 +347,8 @@ void reap() {
 默认 `HYLE_TRACE=OFF` 时宏参数不求值、没有函数调用、没有后端依赖。开启 Tracy：
 
 ```sh
-cmake -S . -B build-trace \
-  -DHYLE_TRACE=ON
+python scripts/init.py --name trace --components obs --trace
+python scripts/build.py
 ```
 
 首次在线 configure 会从中央 lock 自动准备 Tracy 到共享源码 cache。只有父工程或逐项离线介质需要
@@ -375,7 +371,7 @@ message 会复制文本；动态文本按 Tracy 的 16-bit 长度边界安全截
 多个 DLL/plugin 各自静态链接会得到多个互不相认的 Tracy singleton，不属于受支持形状。此类 host
 必须使用 shared `hyle_obs`，不能把“每个 image 一个”描述成 process-unique。
 
-极热的 C++ 源码路径应使用上述编译期宏。HYLE 内部的 mem/sched/io，以及未来重构后的 Compute，也走同一条
+极热的 C++ 源码路径应使用上述编译期宏。HYLE 内部的 mem/sched/io，以及 Compute，也走同一条
 native trace seam。
 
 ## 7. 常见误用

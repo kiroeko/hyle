@@ -45,7 +45,7 @@ Graph 使用实际普通 facade 与可复用 Invocation，未用 mock、枚举�
 ## 保留源码的真实依据
 
 每族有明确共享 WIN、已验 whole-domain 或资源消费，见
-[域账本](../../../docs/implementation/tasks/compute/cpu-default-domain-ledger.md)。
+[域账本](https://github.com/axiomates/hyle/blob/d12f2204d23503256220e810385d6cb3e93027a8/docs/implementation/tasks/compute/cpu-default-domain-ledger.md)。
 SDPA rows1 不是性能 WIN；资源探针在 Windows installed-shared、Linux installed-static/shared
 实际证明 Native private invocation=0、成熟私有上界未知，普通 Graph 在 invocation<=1MiB 下
 选择 Native，Direct/Graph 输出实际一致。不会以默认后备优先级本身作为保留理由。

@@ -22,7 +22,7 @@ Graph验证Softplus→Select、双发布结果、双slot/变输入重放、旧�
 
 ## 原版 Copy/Select
 
-产品`02fe54151d00b34c09de6d7a452c62097c14182f`，tree`e2db09aa625912d45f6a7004db7d2c7d8b6d381f`。按[当前任务卡](../../../docs/implementation/tasks/compute/llm-moe-m2-b1-onednn.md)接入原版Copy/Select，共用既有执行资源；未新增HYLE数学kernel。
+产品`02fe54151d00b34c09de6d7a452c62097c14182f`，tree`e2db09aa625912d45f6a7004db7d2c7d8b6d381f`。按[当前任务卡](https://github.com/axiomates/hyle/blob/d12f2204d23503256220e810385d6cb3e93027a8/docs/implementation/tasks/compute/llm-moe-m2-b1-onednn.md)接入原版Copy/Select，共用既有执行资源；未新增HYLE数学kernel。
 
 - [开发收据](storage-development.json)：源码/制品身份、11/11 Windows CTest、声明的验证范围与未运行门。
 - [原始记录](storage-development-raw.zip)：原版资格源码/输出、所有构建/测试纠正记录、最后CTest完整日志、selector及LOC；CRC与逐项hash已验证。

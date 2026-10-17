@@ -1,8 +1,7 @@
 # Apple MLX/Metal：Direct Compute 与 Graph
 
 Apple 路线保留 MLX 的原生 arrays、编译融合与内存管理；原版 ggml Metal region 保有自己的
-原生程序与完成边界。普通 typed Direct 和 Graph 应用固定规则；用户不排序 Provider、不提交 timing profile。R5 已完成
-[限定环境验收](../implementation/tasks/compute/apple-v1-four-route-foundation.md)，性能资格不外推其它硬件。
+原生程序与完成边界。普通 typed Direct 和 Graph 在准备期绑定实现，用户不必排序 Provider。
 
 可选[模型与阶段信息](compute.md#可选模型与阶段信息)作为最后一个参数传给
 `Context::prepare(operation, inputs, workload)` 或 `Context::compile(region, inputs, workload)`；
@@ -10,83 +9,39 @@ Graph 使用 `graph::apple::CompileOptions::workload`。原生 `Program::workloa
 Graph 的 typed lowering 收到同一份冷信息。无注解继续使用合法 MLX baseline；这不声明新增了模型
 专用算法。改变身份后重新编译，MLX replay 不读取模型信息或重选规则。
 
-固定模型画像的当前片段支持、拒绝与数值限制统一见[四路线覆盖表](model-fragment-coverage.md)。
+## 构建与运行条件
 
-## 构建与三种 C++ 交付
-
-`hyle/compute/apple_batch.h` 的 `prepare_ragged_batch(context, layout, operation)` 冷准备
-host-owned `BatchLayoutVersion`，`operation` 为相同容量的 `RaggedAttention`。输入是三个
-packed NHD 容量 Q/K/V，输出只有该布局的实际 packed Q rows；F16/BF16、D64/128/256
-沿原 MLX View/fast SDPA/Program 执行，原运行槽和结果 owner 合同不变。Q0 request 跳过，
-非空 Q 需有 KV，causal 还需 KV≥Q；全空 Q 返回空输出。改变 Q 拓扑须显式冷准备。
-同 schema/完整 Q indptr 可显式 `update_ragged_batch(slot, next_layout)` 更新 KV 长度与
-packed 起点。成功后重新 bind 三个容量输入；旧结果、在途/失败工作或关闭 Context 会拒绝
-更新，非法布局保原绑定。初始 KV 走原 compiled 路径，变化后在原 worker 上 managed 建图，
-会核对 host-known 布局；不逐长度 Context.compile，也不声称 capture/零分配。
-初始固定布局候选的 source/static/shared、宿主风险与实际Air F16非劣门已通过；
-长prefill小幅落后仍如实保留，见[有限终审](../implementation/tasks/compute/inference-g01-apple-ragged-terminal.md)。
-
-```cpp
-auto program = hyle::compute::apple::prepare_ragged_batch(
-    context, layout, hyle::compute::RaggedAttention{capacity, scale, causal}).value();
-auto slot = program.create_invocation().value();
-HYLE_RETURN_IF_ERROR(slot.bind(std::array{query_array, key_array, value_array}));
-auto done = slot.submit().value();
-auto result = done.wait().value();
-result = {}; done = {};
-HYLE_RETURN_IF_ERROR(hyle::compute::apple::update_ragged_batch(slot, next_layout));
-HYLE_RETURN_IF_ERROR(slot.bind(std::array{query_array, key_array, value_array}));
-```
-
-新更新入口的[实际Air source验证](../../evidence/correctness/inference-g06-native-ragged-runtime-source/receipt.json)
-覆盖单/多请求Q1、混合Q、plain/Q8及有限几何。当前适用host sanitizer、迁址static/shared与
-独立头已通过，[G06终审](../implementation/tasks/compute/inference-g06-final-closure.md)给出P0成本与资格；
-原生private费用仍UNKNOWN，各路线capture与计时资格保持各自边界。
-更新只释放slot保留的输入；需要重新取得KV writer时，caller也要释放自身旧native views/reader。
-
-原生输入必须成功 ready；由 `MemoryResource::binding` 导入的数组保留原 readonly lease，
-资源/allocator 必须晚于派生槽与输入 owner 销毁。输出数组与 ResultLease 保持原保活规则，
-不能因原数学完成就提前改写仍有读者的数据。private native 内存上界仍未知。
-
-分页和不等长注意力的 full kernel 按实际 Metal pipeline 的线程组共享内存需求选择 tile，
-包括开启 GPU 验证后的实际编译资源。默认 tile 超过设备上限时使用较小 tile；仍无法满足时
-返回原生错误。这个限制约束每个线程组的临时空间，不是模型、KV 或整机内存上限。
-
-只支持 macOS Apple Silicon。源码构建需要可用的 Apple C++/Objective-C/Objective-C++ 和 Metal 编译工具；
-`xcrun -sdk macosx metal --version`、`xcrun -sdk macosx metallib --version` 必须成功。CLT 本身未必
-包含 Metal CLI。HYLE 不代装系统 SDK；ON 缺条件失败，AUTO 不可用时关闭，OFF 不探测或下载 MLX。
+选择 Metal 后端，构建或安装 SDK：
 
 ```sh
-cmake -S . -B build-apple -G Ninja \
-  -DHYLE_COMPONENTS="compute;graph" \
-  -DHYLE_COMPUTE_ROUTES=apple \
-  -DHYLE_BUILD_TESTS=OFF -DHYLE_STATIC=ON -DHYLE_INSTALL=ON \
-  -DCMAKE_BUILD_TYPE=Release
-cmake --build build-apple --parallel 2
-cmake --install build-apple --prefix /your/sdk
+python scripts/init.py --name metal --components compute,graph --backends metal
+python scripts/build.py --install <安装目录>
 ```
 
-完整源码嵌入使用相同选项和公开 target；安装 SDK 用 `find_package(Hyle ... COMPONENTS compute graph)`。
-设置 `HYLE_STATIC=OFF` 交付 shared，使用独立 build/install prefix。shared HYLE 与消费者共用一份
-shared MLX；不要另外链接另一版本或另一份 static MLX。
+编译器、Metal 工具与系统要求见[macOS 环境](../developer/setup/macos.md)。
+只支持 macOS Apple Silicon；已选择后端却缺条件时明确失败，不自动关闭或回退 CPU。
+源码嵌入与 SDK 集成见[交付指南](distribution.md)。
 
 ```cmake
-target_link_libraries(my_app PRIVATE hyle::graph) # Direct-only 用 hyle::compute
+target_link_libraries(my_app PRIVATE hyle::graph) # Direct-only 使用 hyle::compute
 hyle_stage_runtime(my_app)
 ```
 
-这个显式 helper 在 source 和 installed SDK 中相同。它把真实 `mlx.metallib` 放到 EXE 旁，并跟踪资源
-更新；shared SDK 的 native dylib 旁也保有该文件。发布应用时保留邻置资源，不能只复制 executable。
-MLX JIT 仍需要部分预编译基础 kernel，缺文件不是可以忽略的 warning。
+helper 在源码和安装 SDK 中相同，将需要的 `mlx.metallib` 放到应用旁并跟踪更新；
+shared SDK 的 native dylib 旁也保留该资源。发布应用时保留资源布局，不能只复制 executable。
+缺失资源时 `Context::create()` 返回实际加载错误；HYLE 不把它误报为“没有 GPU”，也不下载替代物。
 
-运行时缺失该资源会通过`Context::create()`返回原native加载错误，不把缺文件误报为机器
-没有GPU；调用方应检查结果中的Status消息。HYLE不会自动退到CPU或下载替代资源。
+SDK 提供匹配的 MLX 开发头、库和许可证。Apple 专属 API 公开 MLX C++ 类型，
+应用不要另外链接不匹配版本或重复的 static MLX；共同 Compute/Graph 头不要求使用这些原生类型。
+F32→BF16 转换保留次正规数和最近偶数舍入，实际转换 dispatch/中间数组仍有成本。
 
-SDK 带锁定的 MLX v0.32.2、Metal-C++ 26 和对应许可证；其 CPU/CUDA/Python/GGUF/safetensors 功能
-关闭。MLX 的 F32→BF16 转换带一个复用上游转换函数的窄补丁，保留次正规数和最近偶数舍入；
-该转换保留一次实际存储边界，可能增加原生 dispatch 和中间数组，其余操作仍由 MLX 融合。
-源码、静态与共享构建采用同一补丁及来源声明。源码构建还需要 Python 3，用于生成带哈希检查的
-build-local 依赖源码，原始缓存保持不变。Apple 专属头公开 MLX C++ 类型；共同 Compute/Graph 头不要求这些 SDK。
+分页与不等长 attention 的 full kernel 按实际 Metal pipeline 的线程组共享内存需求选 tile，
+也考虑 GPU 验证后的编译资源。默认 tile 超过设备上限时改用较小 tile，仍不满足则报原生错误。
+它约束每个线程组的临时空间，不是模型、KV、GPU buffer 或整机内存上限。
+
+不等长/分页 KV 的准备、布局更新和结果释放统一见[批次 attention](batch-attention.md)。
+`prepare_ragged_batch()` 接 host-owned 布局；改变 Q 拓扑需重新准备，同拓扑更新 KV 长度后重新绑定。
+变化长度可能在 MLX worker 上建立 managed 图，不意味着 capture 或零分配。
 
 ## 普通 typed Direct
 
@@ -194,14 +149,14 @@ FP8 点积通过 MLX Safe custom Metal 程序直接读取 packed codes/scales，
 最后按 K block 顺序加入 F32 结果；不生成完整 F32 权重或全部 block dots 临时张量。
 量化、选中 codes/scales、scale 广播、结果和必要复制仍由 MLX 管理并计入费用，
 这不是硬件原生 FP8 GEMM 或零分配保证。编译/JIT 属于冷准备，Graph/native 完成与数组
-寿命仍由原 MLX owner 管理。当前资格见 [G07 实现记录](../implementation/tasks/compute/inference-g07-packed-weights.md)。
+寿命仍由原 MLX owner 管理。
 Graph 捕获常量时的折叠由 MLX 管理，HYLE 不提供隐式权重缓存。
 FP8 group64/128 roundtrip 也可用。FP4 group32 roundtrip接BF16二维输入，保留原E2M1
 最近偶数舍入、power2 scale/floor及最终BF16存储；极小值和零符号由GPU位视图适配保真。
 `model_ops::grouped_float4_linear()`消费canonical原E2M1 nibble/F32 group32专家权重、
 BF16 activation和I32 IDs；activation按原group128 E4M3FN量化，F32逐block累加后存BF16。
 重复ID合法，越界在Completion返回OutOfRange，不发布失败结果；它与MXFP4格式不同。
-本批已完成普通入口、资源正确性及最终三交付。当前完整BF16 FFN与量化MoE的[Apple性能批次](../implementation/tasks/compute/llm-moe-d5-portable-fragment-performance.md)也已通过；该成绩不代签FP8所有形状的独立性能。
+本批已完成普通入口、资源正确性及最终三交付。
 
 ### GGUF/ggml 原生压缩权重
 
@@ -246,21 +201,12 @@ codebook；结果[N,K]保留为ready常量，再用于成熟MatMul或Gather。HY
 文件名猜格式，也不把该准备放在每次decode内。原NF4 codebook/nested offset、AWQ列顺序
 和zero、CT减8及源存储舍入均保留。
 
-当前共同目录的559 GGUF、34packed、45plain合同已在两普通入口取得样本数值/replay证据；
-大词表全行按4096-row shards验证，MoE仅共享有限专家witness，不代表巨型整模型驻留。
-新官方DSpark与Qwen/Flash量化MTP片段的准入见[当前Apple实现记录](../implementation/tasks/compute/apple-cpu-cuda-parity-closure.md)。
-官方F32-scale FP4的全部有限BF16存储值、正常/极小scale、中点邻域与符号零已通过精确保真
-验证；Pro0813/Flash0731完整压缩attention/indexer/FP4 MoE与三stage DSpark也已两入口验证。
-这些是实际算子/片段形状、状态与存储验收，不代表当前16GiB机器能驻留这些完整大模型。
-默认为合法成熟承载，尚未实测的
-硬件/driver/模型组合不声明best-of或SOTA。
+这些接口表达具体张量与模型片段，不负责完整模型常驻；准备前仍须核对内存容量与实际设备。
 
 ## 原版 Gated DeltaNet
 
 `context.prepare(GatedDeltaNet{}, inputs)` 冷绑定锁定的 ggml Metal 完整递归程序。当前接入域为
 F32、相同 Q/K/V head 数、D=32/64/128、1≤T≤32767；输入及 packed 输出元素数不超过 INT32_MAX。
-该有限域的原生/资源验证和源码、静态、动态三交付已通过，机器与限制见
-[M1-A 验证记录](../implementation/tasks/compute/llm-moe-m1-apple-admission.md)。
 
 六个输入按 Q、K、V、log-decay、beta、初态排列；Q/K/V 是 `[B,T,H,D]`，两种门是
 `[B,T,H,1]`，初态是 `[B,H,D,D]`（最后两轴为 value/key）。Q/K 是否归一化、beta 是否激活由
@@ -333,7 +279,7 @@ HYLE 逻辑描述推断实际 MLX 分配或声称任意 native View 都零拷贝
 
 `context.environment()` 提供冷创建时记录的 GPU 名称/架构、macOS runtime/build、编译 SDK/部署下限、
 Metal compiler 和 MLX pin。规则可匹配这些事实；执行中不探测或计时选优。未知硬件采用对应
-格式合法的成熟基线，不外推SOTA。默认deployment14.4的构建未启用NAX，不能拿M4验证声明M5/NAX资格。
+格式合法的实现。默认 deployment 14.4 的构建未启用 NAX；其它硬件特性按实际构建与设备检查。
 
 ## 可选编译诊断
 
@@ -349,18 +295,14 @@ if (!program) {
 }
 ```
 
-报告复制环境/版本、输入输出描述、live 节点原 ordinal 及数值 traits、固定实现规则、边界和并发
-政策。它不保留 Graph、Program、常量、custom payload 或设备 owner，资源释放后仍可读。
-每次 compile 先 reset；报告自身内存不足也会拒绝编译。默认不传报告，执行期不构造诊断信息。
-同一个 report 不能被并发编译写入。
+报告的快照、寿命、复用与失败规则见 [Graph 原生路线报告](graph.md#原生路线报告)，
+下列字段保留本后端特有的成本边界。
 
 `declared_constant_count` 与 `logical_constant_bytes` 按声明 views 统计，重复引用也重复计数；
 它们不是实际驻留内存。`private_storage_bytes` 保持 unknown，MLX 内部融合、私有 heap 和 driver
 分配不能从逻辑 shape 精确推断。
 
-需要主机调用跟踪时，构建时设置 `-DHYLE_TRACE=ON`，使用已有 Tracy client。
-prepare/compile、submit、checked wait 或 native owner 的执行范围随实际入口记录；默认 OFF 不
-求值跟踪参数、不创建 profiler 状态。这些是主机范围，不能解释为 GPU kernel 时间。
+主机调用跟踪的开启方式与解释边界见 [Graph 跟踪](graph.md#可选主机跟踪)。
 
 ## CPU/Apple组合与权重片段迁移
 
@@ -385,7 +327,6 @@ Metal传输与MLX计算可以重叠，但硬件/调度/带宽可能降低收益�
 使用同一源码/static/shared入口与`hyle_stage_runtime`，不手配Provider、metallib或动态库。
 引擎管理model/KV、offload比例和专家cache/预测/淘汰；本接口只提供放置、预算、迁移和寿命。
 
-
 ## 原生只读输出到固定 copy slot
 
 成功的原生输出可经 `MemoryResource::import_readonly` 导出为独立永久只读 lease。
@@ -394,7 +335,7 @@ Metal传输与MLX计算可以重叠，但硬件/调度/带宽可能降低收益�
 identity 重建 program/slot。`bind_source` 只接受原资源或受信 MLX readonly 导出家族；
 仅伪造相同 domain、host accessible 或来自其它普通 resource 均不成立。
 
-导出实际拥有者和精确 subview 会由原 F2 binding 保留；每次 replay 仍校验容量、别名和
+导出实际拥有者和精确 subview 会由批量搬运 binding 保留；每次 replay 仍校验容量、别名和
 真实 Metal device，可写 endpoint 仍须精确资源身份。`reset`/重新绑定与关闭沿原实际
 退休规则清理持有者。readonly import 自身仍有冷 metadata/opaque MLX descriptor 成本，
 原 `MemoryResource` 仍需活到所有 program/slot/提交退休，不能经其它 MLX alias 改写源。

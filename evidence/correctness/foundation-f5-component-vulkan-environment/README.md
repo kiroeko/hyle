@@ -7,4 +7,4 @@ ON/OFF用例实际通过。随后maintainer all配置因private runner缺VULKAN_
 
 三次命令/terminal/原FAIL/time/hash、精确修复脚本与唯一差分见[receipt](receipt.json)/raw.zip。
 定向F5真实模块测试/显式SDK资格仍保持各自范围；后续恢复条件见
-[独立工具任务](../../../docs/implementation/tasks/tooling/foundation-f5-component-facade-assertion.md)。
+[独立工具任务](https://github.com/axiomates/hyle/blob/d12f2204d23503256220e810385d6cb3e93027a8/docs/implementation/tasks/tooling/foundation-f5-component-facade-assertion.md)。

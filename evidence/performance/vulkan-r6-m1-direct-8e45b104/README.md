@@ -2,7 +2,7 @@
 
 产品候选 `8e45b10423686a0753aaa9d461c4ef3b117412c5`；Apple 测量快照
 `a41d43d531365a1fb8617d60113b37924e9a9864`，包含 benchmark 冷 loader 路径绑定。
-按 [R6 性能合同](../../../docs/implementation/tasks/compute/vulkan-r6-performance-contract.md)，
+按 [R6 性能合同](https://github.com/axiomates/hyle/blob/d12f2204d23503256220e810385d6cb3e93027a8/docs/implementation/tasks/compute/vulkan-r6-performance-contract.md)，
 比较公开 Direct 完整 strict-F32 FFN 与独立锁定 ggml shader recipe；两侧承担相同 Recorder、
 checked submit/fence、完成与资源 owner 生命周期。
 

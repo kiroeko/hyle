@@ -33,4 +33,4 @@ Historical Graph v1–v3 and Sched v1–v2 sources and contracts can be found at
 candidate. Their retired row names no longer exist at HEAD. Historical numbers
 remain unchanged and do not become successes through retirement. The interpretation of the
 CPU eight rows is recorded in the
-[boundary clarification](../docs/implementation/tasks/compute/cpu-r3-comparison-boundary-clarification.md).
+[boundary clarification](../docs/implementation/README.md#追溯旧文档).

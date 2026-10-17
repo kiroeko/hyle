@@ -1,7 +1,7 @@
 # CPU最终F1：部分证据
 
-当前任务为[F1](../../../docs/implementation/tasks/compute/cpu-final-f1-build-contract.md)，
-总目标为[三平台CPU最终收口](../../../docs/implementation/tasks/compute/cpu-final-closure-plan.md)。
+当前任务为[F1](https://github.com/axiomates/hyle/blob/d12f2204d23503256220e810385d6cb3e93027a8/docs/implementation/tasks/compute/cpu-final-f1-build-contract.md)，
+总目标为[三平台CPU最终收口](https://github.com/axiomates/hyle/blob/d12f2204d23503256220e810385d6cb3e93027a8/docs/implementation/tasks/compute/cpu-final-closure-plan.md)。
 本页不是terminal，不能签F1或整个goal完成。
 
 ## B1构建资格与可用性

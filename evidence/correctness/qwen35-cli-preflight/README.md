@@ -1,7 +1,7 @@
 # Qwen3.5 2B 命令消费者预检
 
 2026-10-13，HYLE 输入为 `1a15794c0`。用户希望用本地模型建立完整命令消费者，并处理前次
-十项机制缺口；[范围与工作量](../../../docs/implementation/tasks/project/qwen35-2b-command-consumer-scope-2026-10.md)
+十项机制缺口；[范围与工作量](https://github.com/axiomates/hyle/blob/d12f2204d23503256220e810385d6cb3e93027a8/docs/implementation/tasks/project/qwen35-2b-command-consumer-scope-2026-10.md)
 保存具体数学、生命周期、所有 G 项的回映及估计条件。
 
 本目录是**外部参考执行**与模型输入证据，不是 HYLE 整模型 verdict，也不是正式 engine

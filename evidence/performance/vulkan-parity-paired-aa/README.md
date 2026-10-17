@@ -17,5 +17,5 @@ FAIL不改写。reader严格拒绝缺/重复round、不同cycle、错iterations�
 只满足旧BLOCKED的具名测量恢复条件；不签n15/P1、Graph/Direct等价或Provider WIN。
 Graph owning result与Direct Recorder caller buffer存在责任差异，正式A/B必须再审
 same-contract，不能由此AA PASS免除。没有更改margin、追加样本或后验追认。
-入口与预算见[独立资格卡](../../../docs/implementation/tasks/compute/vulkan-parity-paired-aa-qualification.md)。
+入口与预算见[独立资格卡](https://github.com/axiomates/hyle/blob/d12f2204d23503256220e810385d6cb3e93027a8/docs/implementation/tasks/compute/vulkan-parity-paired-aa-qualification.md)。
 raw完整归档；DLL从EXE邻置加载，没有缺DLL弹窗/UAC/全局系统修改。

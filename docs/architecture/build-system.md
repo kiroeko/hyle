@@ -1,195 +1,75 @@
-# 构建与组装架构
+# 构建与组装：选择、事实与交付
 
-本文定义 HYLE 的构建原则和配置边界。当前可选项、依赖身份和组件边分别由 CMake/JSON 声明
-给出，不在本文复制易漂移的列表。用户操作见[三种交付](../user/distribution.md)，维护环境见
-[setup](../developer/setup/README.md)。
-
-## 目标
-
-- 每个内部组件有明确源码、公开头、依赖、测试和状态 owner；
-- 授权源码、静态 SDK、共享 SDK 使用同一依赖图和同名 C++ 产品入口；
-- 内部为解环产生的小 factor 不增加普通用户的选择负担；
-- 外部源码的版本、内容、许可证、在线/离线路径来自一份锁；
-- 普通提交只验证真实影响，完整平台/特性矩阵按风险显式运行；
-- 父工程可以裁剪和组装 HYLE，不依赖仓库目录顺序或某个固定 build tree。
-
-构建成功只证明组装合同，不代替模块的功能、API、正确性和性能收口。
+构建系统把用户意图投影为真实target/依赖闭包；它不决定模型运行放置或每个算子的Provider排名。
+源码、静态SDK和共享SDK保持相同产品入口和计算语义。操作步骤只见
+[初始化指南](../developer/setup/README.md)与[交付指南](../user/distribution.md)。
 
 ## 一份内部图，两种消费层
 
-[`cmake/HyleComponents.cmake`](../../cmake/HyleComponents.cmake) 是 HYLE factor DAG 和产品 façade 的
-唯一声明。每个 factor 条目拥有身份、是否可构建、`PUBLIC/PRIVATE/PRIVATE_BUILD/TEST_DEPS` 直接边、公开头例外
-以及构造所需 metadata；同一声明投影选择闭包、稳定拓扑序、真实 target link、头 owner、安装集合和
-测试图。模块目录不得再手写一份 HYLE 内部依赖。
+[`HyleComponents.cmake`](../../cmake/HyleComponents.cmake)声明factor直接边、公开头例外、trace消费和测试夹具。
+同一声明推导闭包、拓扑顺序、真实内部target link、产品聚合和安装集合；模块不再手写第二份内部图。
 
-内部构建 target 名为 `hyle_<factor>`。安装包需要表达传递闭包时可导出 `_factor_*` detail target；
-它不是用户合同。普通源码和安装消费者只使用 `hyle::<product>`，并通过 `HYLE_COMPONENTS` 或
-`find_package(Hyle COMPONENTS ...)` 选择产品问题域。façade 是无源码、无独立状态的 `INTERFACE`
-聚合，不重复拥有 API、算法或 verdict。
+用户通过公开`hyle::<product>`消费。内部factor只为源码、类型或交付边界而拆分，
+不把解环的小模块变成新产品。维护时可以精确选择factor，父工程和安装消费者仍使用产品。
+没有职责的bridge/facade不因架构图对称而存在。
 
-`HYLE_DEV_FACTORS` 只给顶层维护/CI 精确构建内部 factor；父工程嵌入和安装不得依赖它。公开头位于
-另一产品命名空间的 factor 用中央 `SPLIT_PUBLIC_HEADERS` 一次登记，不能在安装、测试和 include audit
-分别维护名单。
+生产闭包与测试夹具闭包分开：测试可复用普通factor，但不能因此制造新公开产品或改变SDK声明。
+普通tests可与install共用构建；改变ABI的测试插桩不能作为生产SDK导出。
 
-`TEST_DEPS` 只描述 factor 测试所需、但不属于产品的 HYLE 夹具 target。它只在
-`HYLE_BUILD_TESTS=ON` 时扩展 developer build selection，并取得这些夹具的正常产品依赖；不进入 module
-link verifier、安装 metadata、产品反向依赖或 tests-off 源码交付。这样 CPU-specific provider 可以用
-CPU backend/Native fallback 做真实测试，而不会谎称其工厂 API 或 artifact 在产品上依赖这些实现。
+## 配置只表达无法推导的选择
 
-中央 resolver 必须拒绝未知依赖、指向不可构建 identity 的边和 cycle，并以 O(V+E) 得到稳定拓扑。
-增加、删除或更名 factor 时同步更新声明与引用。实时 factor/product 数量及边只能从中央声明查询，
-architecture 不维护快照表。
-
-## Target 与传播
-
-`hyle_add_module()` 只接收本 factor 的源码和外部实现 target，内部 `PUBLIC/PRIVATE` link 从中央图
-投影。配置末尾再把实际 target link 与声明对账。header-only factor 仍是正式 target 和状态 owner，
-但不制造虚构 binary journey。
-
-横切 target 有独立职责：
-
-- build contract 只传播全部 C++ factor 共同需要的语言/编译语义；
-- testing 只进入确实包含 instrumentation seam 的测试闭包；
-- trace 只进入声明消费 tracing 的 factor；没有 trace consumer 时不能悄悄取得 profiler runtime；
-- vendor/provider target 是 build-only mechanism，不进入 HYLE semantic DAG 或产品目录。
-
-目标 CPU 由 `HyleTargetPlatform.cmake` 在 compiler 识别后归一化，源码、ISA 和组件能力只读取该结果。
-不能直接拿宿主 `CMAKE_SYSTEM_PROCESSOR` 推断 Visual Studio 多平台目标。公开 inline 所需 ISA 必须由
-owner 作为 usage requirement 传播；compiled variant 的更高 ISA 不得提高普通 consumer TU 的 floor。
-
-SIMD expert journey 是显式 opt-in 的开发 target；普通 SIMD façade 不泄漏 Highway/xsimd 类型或寄存器
-ABI。多个模块可以共享锁定 provider headers，但这不自动形成 HYLE 模块依赖。
-
-## 外部依赖
-
-[`cmake/HyleDependencyLock.json`](../../cmake/HyleDependencyLock.json) 唯一登记依赖名、revision/archive、
-内容 hash、许可证、owner 和投影信息。模块 CMake 只请求具名依赖，不自行写 URL/version。configure
-按所选闭包取得依赖，未选 feature 不探测、不下载。
-
-仅以原文 vendored 的官方程序也可以来自 Hugging Face：`in_tree` 条目固定 canonical 模型仓库、
-40位 revision、`source_file` 的上游相对路径/规范化 SHA256/vendor 内相对文件，并继续绑定
-完整 vendor tree 和许可证。该来源不进入 GitHub archive/FetchContent 下载路径；选中该依赖时
-核对原文 hash，关闭对应路线时不要求该 vendor 目录。不为模型代码下载模型权重或假造 archive。
-
-源码是跨 build 的资源：`HYLE_DEP_SOURCE_CACHE` 保存锁定 source；每个 build tree 的 `_deps`/
-`HYLE_DEP_BUILD_DIR` 只保存 binary/subbuild 状态。首次在线配置可以填充 cache，后续 fresh build 复用；
-离线机器搬运完整受管 cache，或通过根级 `hyle-offline-deps.cmake` 显式注入已审查源码。产品 source
-cache、benchmark peer checkout 和编译产物是三类目录，不能混用。
-
-依赖升级同步更新锁和许可证信息，按实际影响验证直接消费者、交付和性能。
-vendor 的算法、布局或运行时变化也要检查，不通过模块状态或审计许可控制修改。
-
-Compute Provider 接入由 CMake 主导，每个库在 owning factor 的一个接入位置描述所属路线/feature、
-锁定依赖名、必要 vendor options、生成/链接 targets、公开与私有 usage requirements、运行资源和
-许可证投影。源码获取复用 dependency lock/cache，交付复用 package registry；source/static/shared
-从同一份 target/资源描述导出。厂家自己的构建 target 优先复用，不为接一个库复制其全部源文件清单。
-普通消费者继续只选择 HYLE 产品与路线，不手配第三方库、内部 target 或 Provider 排名。
-
-确需窄源码补丁时，原始 source cache 保持不可变；接入声明绑定上游身份、补丁身份和可重复生成的
-build-local 源码，不静默修改缓存或依赖 checkout。关闭路线时不得获取该 Provider 或探测其 SDK；
-缺少必需工具时在配置期给出具名诊断。新接入若暴露公共构建机制缺陷，依具体反例单独定界修复，
-以普通库和实际带补丁库检验描述是否简明，不借此重写构建/治理系统。
-
-CUDA Toolkit 等系统 SDK 不属于 FetchContent 源码资源：由用户按平台安装，HYLE 只在所选 backend/
-Provider 需要时发现并检查版本/targets，不代管安装器。backend 可用不等于它的全部算子 Provider 可用；
-新增 Provider 的 SDK link、runtime staging、许可与交付在 owning factor 接入时处理，不留到完整
-模型阶段。不因计划创建空 target，也不将厂商库的内部开关转成 HYLE 用户选项。
-
-## Option 语义
-
-配置分四层，三平台沿用相同含义，不再为每种 CPU/GPU 组合增加一套开关：
-
-| 层次 | 责任与入口 |
+| 配置层 | 责任 |
 |---|---|
-| 产品与交付 | `HYLE_COMPONENTS`、`HYLE_COMPUTE_ROUTES`、`HYLE_STATIC`、`HYLE_INSTALL`，以及 IO 等真实可选能力 |
-| 开发与诊断 | tests、bench、sanitizer、trace；精确 factor、ISA 与测试插桩属于维护入口 |
-| 工具与依赖位置 | 使用 CMake 工具链、SDK 路径、依赖缓存与离线覆盖；高级路径不参与产品选择 |
-| 内部派生事实 | factor 闭包、Provider 集合、可用能力和宏，由所选目标与平台产生，不是用户开关 |
+| 用户意图 | 选择产品、CPU/GPU/hybrid模式、GPU API、交付及需要的协议能力 |
+| 开发诊断 | tests、bench、sanitizer、trace、精确ISA与内部factor隔离 |
+| 工具和获取路径 | 已安装compiler/SDK、工具路径、锁定源码cache或原始archive override |
+| 内部事实 | 目标平台、选中factor、实际可用实现、capability与需要传播的宏 |
 
-选项只表达用户需要控制且能稳定解释的选择：
+[统一初始化](../developer/setup/README.md)将模式/API转换为后端集合，底层CMake仍只有一个
+`HYLE_COMPUTE_ROUTES`集合，不增加CPU＋GPU或逐Provider布尔选择。
+路线、公开专家入口与混合桥接由内部装配描述推导，factor依赖仍只在中央DAG声明。
+未选后端不探测/下载；已选的完整产品缺必要依赖就明确失败，不静默形成lite版本。
 
-- 普通布尔开关使用 `ON/OFF`；
-- 允许探测降级的系统能力使用 `AUTO/ON/OFF`，`ON` 缺失即失败、`OFF` 不探测；
-- developer/test/benchmark 开关不得改变 shipping ABI；
-- 后端只有一个实现时不保留空 selector；
-- 产品专属 option 只在 owner 进入选择闭包时生效；明确的不合法请求给出错误，不能让 cache 显示
-  ON 而实际用同名普通变量静默关闭。
+普通能力用ON/OFF；确实允许探测降级的能力才用AUTO/ON/OFF，ON缺件失败、OFF不探测。
+从平台、产品或target已能推导的事实不得变成第二个cache输入。
+SDK root/archive override仅改变获取位置，不改变版本、能力或锁身份。
 
-新增 option 前必须证明它不是从平台、编译器、组件选择或 feature presence 可导出的重复状态。正式 CI/
-交付要显式固定重要 feature 集，不能依赖宿主偶然探测结果。
+## Target承担使用要求
 
-Compute 的 CPU/CUDA/Apple/Vulkan 由一个路线集合选择，不保留分散的 Provider 开关，也不增加
-CPU+GPU 联合推理布尔开关。[`HyleComputeRoutes.cmake`](../../cmake/HyleComputeRoutes.cmake)
-集中声明路线根、公开专家工厂、CPU+GPU 桥接和平台适用性，Compute/Graph 按所选路线正向组装；
-factor 之间的真实依赖仍只在中央 DAG 声明。脚本查询完整候选目录，实际构建与安装使用选中闭包。
-当前命令见用户文档。未选路线不探测 SDK、不编译原生实现；已选路线也不等于全部
-算子可用。四条路线可独立编译并采用不同执行器；宏/flags 归 owning target，只有公开头确实需要的
-usage requirement 才传播，不能用消费者宏改变同一公开对象布局。SDK 版本/feature 集在 configure 中
-选定并记录，交付说明保留对应要求；实际模型/device/shape 路线在准备阶段绑定，不是每次执行的 CMake/宏选择。
-尚未实现的路线不为文档先创建空 option/target；具体边界见
-[Compute 四路线设计](compute-routes.md#1-隔离边界)。
+公共头实际需要的语言、include、编译语义、link及presence定义由owning target传播，
+私有实现设置不泄漏给普通用户。`HYLE_*_API/BUILD/STATIC`由构建负责，用户不手动同步宏。
+公共对象布局不能因消费者自行定义feature而改变。
 
-选路线不等于让用户挑算子库。标准发行配置包含该路线默认优选规则所需的实现，并在正常
-C++ 入口自动组装。普通产品不提供必要 Provider 的裁剪/禁用；
-维护隔离只在内部 fixture，真实 expert kernel/Provider 扩展仍有其能力约束，不是逐 op 性能选择。规则与可用实现必须
-由同一构建闭包投影，source/static/shared 不出现“规则指向未交付实现”。裁剪后的合法基线或明确
-能力缺失须可解释；平台不承载的 Provider 由实际资格派生为不可用，不成为普通用户手动开启的负担。
-不自动启用尚未验收的实现，也不在 configure 时跑性能比赛。best-of 的责任见
-[Compute 规则](compute-design.md#41-开发时验证-best-of准备时应用规则)。
+Core-only不链接无关profiler、测试runtime或GPU SDK。更高ISA的实现TU不抬高普通consumer floor。
+目标架构使用compiler/显式目标选择归一化，不能用Visual Studio或macOS宿主架构代替实际target。
+一棵build目录对应一种原生目标/工具链，源码cache则是跨build资源。
 
-一致性由以下边界保持：
+父工程保有自己的编译器、flags、输出目录、sanitizer和包策略。
+第三方的generic options在局部作用域设置，不FORCE改写父cache；upstream不能遵守时，窄适配保存其真实边界，
+而非再建立通用配置语言。
 
-- Windows/Linux/macOS 的差异来自实际目标与工具链；Apple 显式架构和 VS `-A` 优先于宿主架构。
-  当前每个 build tree 只支持一个目标架构，macOS 多架构应分别配置。
-- 后端集合表示编译能力；CPU、单 GPU、CPU+GPU 的执行选择仍由引擎请求决定，精度、放置和预算
-  不变成 CMake 的 Provider 排名或逐算子开关。
-- `_HYLE_COMPUTE_REQUEST_*` 只是路线集合的派生值，`_HYLE_COMPUTE_HAVE_*` 表示实际可用结果；
-  CPU Provider 的平台条件复用同一查询，不再单独保存 Provider 请求布尔值。
-- 能力以 owning target 的 `HYLE_COMPUTE_CAPABILITIES` 记录，公开头确有需要时才传播
-  `HYLE_COMPUTE_*` 存在性宏；测试和 package metadata 读取同一能力声明，不另存启用属性。
-- 源码嵌入与安装包使用相同 `hyle::<product>`、能力含义、链接和运行资源描述。消费者只链接目标，
-  不补内部宏、Provider 库名或仓库私有路径。
+## 依赖身份与原生接入
 
-Compute/Graph 的产品聚合按所选路线生成真实依赖闭包，不固定附带 CPU 算子或 oneDNN；公共语义核
-不引入任何 GPU SDK。隔离继续传入 vendor backend 选择，不能只禁用 HYLE 外层 target 而仍构建依赖
-全家桶。MLX 等依赖自己的 CPU/Metal/CUDA、tests/examples、nested FetchContent 与最低部署版本
-也须由 owning adapter 核对；共享源码缓存不共享跨平台/flags 的构建产物。vendor 所需 host 基础代码
-不等于允许隐藏 CPU 模型 fallback。source/static/shared 都验证选中与未选路线的头、链接和 runtime 闭包。
+[`HyleDependencyLock.json`](../../cmake/HyleDependencyLock.json)记录来源、revision/archive/hash与许可证。
+模块请求具名依赖，不另写pin或下载器。原文源码cache保持不可变，补丁在build-local目录按明确身份生成，
+binary/subbuild与共享source cache不互相包含。离线使用相同身份与既有禁网语义，缺件具名失败。
 
-## 三种 C++ 交付
+CUDA等machine SDK由系统提供，不把SDK/driver冒充FetchContent源码。
+Provider接入由owning factor描述原生target、必要options、usage requirements、资源和许可；
+尽量使用厂家target，而非复制完整源文件清单。host工具与目标runtime分开准备，不能复制整套SDK代替发现。
 
-三种形状共享产品名、头 owner、依赖闭包和语义：
+## 按需安装与运行资源
 
-1. **授权源码**：父工程设置产品集合后 `add_subdirectory()`；HYLE 不能接管父工程全局 flags、输出目录
-   或包管理策略。
-2. **静态 SDK**：安装 owned headers、factor archives、façade targets 和必要依赖 metadata；链接器按需
-   抽取实现。
-3. **共享 SDK**：安装相同 headers/façade 与同级 factor shared artifacts；visibility、runtime 依赖和
-   relocation 必须由真实 consumer 验证。
+安装metadata从生产target/资源图生成，按请求组件先导入必要外部依赖，再导入对应闭包。
+请求Mem不应探测CUDA或Torch；重复find可补充同一SDK的产品，不混用不同安装前缀的同名实现。
+源码与安装target提供同样的公开使用要求，内部detail targets只是链接闭包，不成为用户选择项。
 
-这三种都是 C++ 接口。内部 `extern "C"`、C/汇编编译单元不构成公开 C ABI；Native FFI 只有满足
-[准入策略](native-ffi-policy.md)的具名跨语言消费者后才建立。compiled shared factor 默认隐藏
-C/C++/inline definition，只有显式 `HYLE_*_API` 标注形成 C++ export；安装 smoke 还扫描实际
-PE/ELF/Mach-O artifact，拒绝退役 `hyle_*` C 入口、vendored allocator 符号和 raw 汇编 seam。这个门
-只守住“FFI=N/A”，不把编译器修饰后的 C++ symbol 集伪装成稳定 ABI 白名单。
+静态库的必要runtime链接要求仍需传到最终应用；共享库隐藏内部vendor符号。
+RPATH与loader路径须可迁移，构建机器的SDK绝对路径不能写进安装合同。
 
-源码包不复制联网依赖源码；全离线发布必须同时交付受管 source cache/注入目录和许可证资产。详细用户
-命令与陷阱只在[distribution](../user/distribution.md)和[offline setup](../developer/setup/offline.md)
-维护。
+`hyle_stage_runtime`沿实际链接owner处理DLL和显式额外资源，不能按“应用似乎只调用CPU”省掉已链接GPU依赖。
+普通内部imported依赖交给CMake原生闭包；Hyle入口和额外资源owner需要在调用处可见，
+不能偷偷创建跨目录全局SDK注册表来透明支持任意scope。按实际配置选择artifact，保守保留同artifact依赖。
 
-## 验证与 CI
-
-按实际改动运行相关配置、编译、测试和安装后消费者；不读取模块治理状态，也不要求审批或资格卡。
-后端、工具链和交付方式分别验证，未运行的环境明确说明。源码可编译不代表真实 GPU 运行成功。
-不同工具链使用独立构建目录，优先复用身份匹配的依赖和缓存。
-
-## 新组件接入
-
-1. 确定职责与实际消费者，在中央组件声明中增加真实依赖。
-2. 使用 `hyle_add_module()` 声明源码和外部依赖，避免第二份内部链接图。
-3. 第三方源码加入依赖锁和许可证，保持唯一归属。
-4. 增加公共接口用例与相关测试；影响安装边界时验证静态和共享消费者。
-
-删除未使用组件时同步移除其源码、target 和引用。构建成功不代替数值、内存寿命、并发和性能验证。
-Compute 借用调用方执行器时可组合 `ParallelExecutorRef` 与 Sched，见
-[样例](../../samples/package/graph/cpu_executor/main.cc)。
+许可文本与native资产同属交付闭包，不能只安装头和archive；规则见[许可](licensing.md)。
+ABI、数值、资源寿命、平台限制仍是工程约束，构建成功不代替真机计算或性能结论。

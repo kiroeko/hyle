@@ -1,7 +1,7 @@
 # Apple R5 FFN numerical and Graph refusal checkpoint
 
-Scope: [R5 A5/A6](../../../docs/implementation/tasks/compute/apple-v1-four-route-foundation.md),
-under the [premeasurement comparison contract](../../../docs/implementation/tasks/compute/apple-r5-performance-contract.md).
+Scope: [R5 A5/A6](https://github.com/axiomates/hyle/blob/d12f2204d23503256220e810385d6cb3e93027a8/docs/implementation/tasks/compute/apple-v1-four-route-foundation.md),
+under the [premeasurement comparison contract](https://github.com/axiomates/hyle/blob/d12f2204d23503256220e810385d6cb3e93027a8/docs/implementation/tasks/compute/apple-r5-performance-contract.md).
 This is a correctness checkpoint, not A/A, P1, Mini validation or route closure.
 
 - Air Mac16,12 / M4, macOS 27.0 build 26A428; Release/static/WERROR, Metal-only locked MLX.

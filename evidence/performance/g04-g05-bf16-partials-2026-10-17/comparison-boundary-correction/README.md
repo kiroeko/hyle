@@ -23,7 +23,7 @@ G04/G05 未追平的结论。原始时间、计数器及失败/成功原件全�
 peer 使用 GPU 冷展开并保留 BF16 快照。两者的 warm 区间都不含展开/刷新。不能为弥补
 这个问题，又给合法持久 BF16 缓存的每次 warm 调用人为加一次全历史转换。
 原[消费者说明](../../../../bench/inference_resident_sdpa/cuda_encoded_p1/consumer-provenance.md)
-和[既有适用性更正](../../../../docs/implementation/tasks/compute/inference-g04-g05-cache-attention-domain.md)
+和[既有适用性更正](https://github.com/axiomates/hyle/blob/d12f2204d23503256220e810385d6cb3e93027a8/docs/implementation/tasks/compute/inference-g04-g05-cache-attention-domain.md)
 已经披露该边界；本轮错误是再次扩大了这些时间差的适用范围。
 
 ## 哪些结果仍成立

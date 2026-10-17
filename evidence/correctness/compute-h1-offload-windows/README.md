@@ -2,7 +2,7 @@
 
 产品候选为 `7eaf67b8a496ee19b609533980cd69e7efb5aa49`。本记录保存 H1-07至09新合同下
 实际运行结果，不替代原合同的历史证据。Windows和WSL适用门已齐，H1当前裁决见
-[terminal](../../../docs/implementation/tasks/compute/compute-h1-cpu-cuda-composition.md#h1-terminalcpucuda组合基础机制完成)。
+[terminal](https://github.com/axiomates/hyle/blob/d12f2204d23503256220e810385d6cb3e93027a8/docs/implementation/tasks/compute/compute-h1-cpu-cuda-composition.md#h1-terminalcpucuda组合基础机制完成)。
 
 ## 用户恢复后的当前结果
 

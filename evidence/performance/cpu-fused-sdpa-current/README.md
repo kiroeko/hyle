@@ -1,7 +1,7 @@
 # 接对 F32 fused 后的 CPU SDPA 去留
 
 - 产品候选 `10c7d784d62d6e656b60e533e0f9329a9cb55827`；benchmark `d96a30c6501573f4ad99116eea43a30c51556e5e`。
-- [当前施工卡](../../../docs/implementation/tasks/compute/cpu-three-operator-route-closure.md)，
+- [当前施工卡](https://github.com/axiomates/hyle/blob/d12f2204d23503256220e810385d6cb3e93027a8/docs/implementation/tasks/compute/cpu-three-operator-route-closure.md)，
   [四格CI和逐stratum结果](receipt.json)，[原始manifest/observations/controls/validators/实际exe](qualified.zip)。
 - W1-WIN、i9-13900K、MSVC19.50、Release、installed static、LTO off、单P核CPU2、above-normal、每库1线程。
   普通无限预算，完全相同F32输入/output/layout/scale/causal，完整submit+wait及原库必要mask/资源成本。
@@ -25,7 +25,7 @@ CI固定在预声明5%门外，全部四个执行/分配strata方向一致。原
 省掉原接法的scores/softmax/V转置物化，且保留本身的tiling/向量化/线程计划。
 本批没有修改Native数学、原库数学、统计、阈值、机器电源或用户进程，没有n31或重复竞速。
 
-裁决：在[用户授权的有限N3](../../../docs/implementation/tasks/compute/cpu-three-operator-route-closure.md)下，
+裁决：在[用户授权的有限N3](https://github.com/axiomates/hyle/blob/d12f2204d23503256220e810385d6cb3e93027a8/docs/implementation/tasks/compute/cpu-three-operator-route-closure.md)下，
 整项删除自研SDPA；Native-only/caller-workspace/零额外private及其非dense/mask执行档明确撤回，
 普通CPU的SDPA schema、ggml/ATen GQA/mask/布局数学继续。SIMD、Mem与其它Native算子保留。
 删除后的最终correctness/交付证据由本轮terminal记录，不能用这张性能记录代替。

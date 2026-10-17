@@ -1,6 +1,6 @@
 # 四路线有限架构实验
 
-范围与预声明判据见[研究卡](../../../docs/implementation/tasks/compute/four-route-architecture-decision.md)。
+范围与预声明判据见[研究卡](https://github.com/axiomates/hyle/blob/d12f2204d23503256220e810385d6cb3e93027a8/docs/implementation/tasks/compute/four-route-architecture-decision.md)。
 这里是独立研究程序，不是已交付的 HYLE Provider。源码由 Windows canonical checkout 管理，macOS
 使用完整 Git archive。没有性能计时或 SOTA 签发，也不验证完整 OOM/device-loss/三交付。
 

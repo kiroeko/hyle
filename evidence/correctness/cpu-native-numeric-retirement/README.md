@@ -2,7 +2,7 @@
 
 产品 candidate `f32d261a5a68d5af99233286fcc81603c4bdb87a`；fixture
 `f83aa9f14348c50457ffd4d28cb77bec6ba63e5e`。Windows 是产品真相，Linux 是前向验证副本。
-本批只验收 [当前卡](../../../docs/implementation/tasks/compute/cpu-native-final-domain-verdict.md)
+本批只验收 [当前卡](https://github.com/axiomates/hyle/blob/d12f2204d23503256220e810385d6cb3e93027a8/docs/implementation/tasks/compute/cpu-native-final-domain-verdict.md)
 固定的 ND-R1，不关闭整个 CPU goal，不签性能 WIN/LOSS。
 
 ## 实现与边界

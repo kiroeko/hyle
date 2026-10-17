@@ -2,7 +2,7 @@
 
 初始候选：`79e96cebeb176c48d66f6b6a156fa9d910b89d82`；当前产品投影为 `d9712e68`。
 本目录是进行中的验收记录；R3 总体验收仍 INCONCLUSIVE，尚未宣告路线完成。当前施工卡见
-[CPU 四路线基础任务](../../../docs/implementation/tasks/compute/cpu-v1-four-route-foundation.md)。
+[CPU 四路线基础任务](https://github.com/axiomates/hyle/blob/d12f2204d23503256220e810385d6cb3e93027a8/docs/implementation/tasks/compute/cpu-v1-four-route-foundation.md)。
 
 ## 已完成的本轮验证
 
@@ -103,7 +103,7 @@ low-latency 时 caller 共核的双 worker 片段中位约 70.274ms，独立后�
 证据支持纠正共核资源配置，尚未证明 Sched 内部某一条等待语句就是全部长延迟的原因。
 
 后续明确使用三个独立 P 核的新 v2 合同，见
-[独立 caller 验收卡](../../../docs/implementation/tasks/compute/cpu-graph-external-caller-qualification.md)。
+[独立 caller 验收卡](https://github.com/axiomates/hyle/blob/d12f2204d23503256220e810385d6cb3e93027a8/docs/implementation/tasks/compute/cpu-graph-external-caller-qualification.md)。
 这是有限的新合同资格工作，原 v1 失败保留；新 A/A 未通过就不能计时产品。公共工具补丁另有
 独立 task 和 11 项 PASS，不是 Compute/Graph 产品进度。最新统一 LOC 与 self-check 在
 loc-external-caller-worktree.json：Compute+Graph 实现仍为 31,023 行，不含测试。

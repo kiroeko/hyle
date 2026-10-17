@@ -1,7 +1,7 @@
 # R3 CPU：用户批准的具名验收例外
 
 2026-09-16，用户明确选择“记录验收例外，继续 R4（推荐）”。
-[终局卡](../../../docs/implementation/tasks/compute/cpu-r3-acceptance-exception.md)限定为
+[终局卡](https://github.com/axiomates/hyle/blob/d12f2204d23503256220e810385d6cb3e93027a8/docs/implementation/tasks/compute/cpu-r3-acceptance-exception.md)限定为
 `decode-fused-boundary-1x256x512`：工程动作 ACCEPT_TRADEOFF；原 5% 非劣门仍 INCONCLUSIVE，
 严格方向仍 LOSS。没有新增构建、测试或性能采样，不能把批准写成统计 PASS。
 

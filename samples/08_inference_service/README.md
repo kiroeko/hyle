@@ -50,7 +50,3 @@ shutdown path.
 The fixed-schema parser is sample-only. A production engine should use a
 mature JSON/schema dependency. Model format, tokenization, batching, admission,
 authentication, routing policy, and inference semantics belong to the engine.
-The [consumer-portfolio audit](../../docs/implementation/tasks/project/public-api-consumer-portfolio-audit-2026-09.md)
-records the generic glue that this slice still has to implement itself. Those
-findings are capability candidates or named product triggers, not a silent claim
-that the current API is already a complete server framework.

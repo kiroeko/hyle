@@ -1,7 +1,7 @@
 # CPU 成熟库接线遗漏：批量审计
 
 审计产品 `ef9defea07bbc576a4c6bff1ce0d07e4e53acd19`，Windows canonical；由
-[逐域卡 A1–A3](../../../docs/implementation/tasks/compute/cpu-native-provider-domain-decision.md)持有。
+[逐域卡 A1–A3](https://github.com/axiomates/hyle/blob/d12f2204d23503256220e810385d6cb3e93027a8/docs/implementation/tasks/compute/cpu-native-provider-domain-decision.md)持有。
 本表审计现存 Native payload 的全部能力族，不签性能胜负，不增加自研数学，不将已接域等同完整功能。
 
 ## 实际冷准备矩阵

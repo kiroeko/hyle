@@ -1,6 +1,6 @@
 # R5 A5：Apple 原生生命周期检查点
 
-归属 [R5 主卡](../../../docs/implementation/tasks/compute/apple-v1-four-route-foundation.md) A2/A5，
+归属 [R5 主卡](https://github.com/axiomates/hyle/blob/d12f2204d23503256220e810385d6cb3e93027a8/docs/implementation/tasks/compute/apple-v1-four-route-foundation.md) A2/A5，
 状态仍为 AUDITED。本次不修改产品 C++；在既有 Air 原生构建上增量编译一个测试文件并重新链接
 两个测试程序，14 个 GTest 全部通过，新增 5 个。实际结果见 [原始 GTest 输出](LastTest.log)、
 [CTest](lifecycle-native-tests.log) 与 [源码/二进制身份](receipt.json)。

@@ -278,8 +278,7 @@ admission；随后接纳的 child 会继承已经取消的 token。任务必须�
 
 Scheduler 与 allocator backing 必须活过 scope 及其所有 child。曾经接纳过任务的 scope 必须显式
 `join()`/`cancel_and_join()`；live child 或只等单个 handle 后直接析构 scope 都会 fail-fast。不要在 scope
-自己的 child 内 join 同一个 scope（它会等待自己）；由外层 owner 负责 close/join。多条外部线程或 Fiber
-可以同时等待同一个 scope，都会获得相同首错。对于调用前 membership 已固定、需要全部 typed 结果的集合，
+自己的 child 内 join 同一个 scope（它会等待自己）；由外层 owner 负责 close/join。终结操作只由一个生命周期 owner 调用；其它线程通过 `request_cancel()` 请求停止。对于调用前 membership 已固定、需要全部 typed 结果的集合，
 继续使用 `when_all`；只有计数、不拥有 task/error/cancel 的底层组合才使用 `WaitGroup`。
 
 ## 阻塞工作不是 Fiber 工作
@@ -418,5 +417,4 @@ target_link_libraries(my_runtime PRIVATE hyle::sched)
 x86-64/AArch64；显式请求不支持的平台会在 configure 时失败。`sched/detail`、fcontext assembly 和
 worker-loop integration 不安装，也不是 public API。static/shared 都是 C++ SDK，不提供 C ABI。
 
-长期边界和复杂度预算见 [`sched-design`](../architecture/sched-design.md)。当前性能证据只在与候选
-代码、机器和同合同 workload 绑定后有效；不要从旧 ticket 或 benchmark 名称推断全平台 SOTA。
+调度机制与边界见[架构说明](../architecture/runtime-design.md)。

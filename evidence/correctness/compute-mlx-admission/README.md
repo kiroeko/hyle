@@ -1,6 +1,6 @@
 # MLX delegated-runtime 接入研究
 
-范围和判据见[研究卡](../../../docs/implementation/tasks/compute/foundation-architecture-admission.md)。
+范围和判据见[研究卡](https://github.com/axiomates/hyle/blob/d12f2204d23503256220e810385d6cb3e93027a8/docs/implementation/tasks/compute/foundation-architecture-admission.md)。
 本目录的独立 C++ fixture 只验证公开 MLX API，不是 HYLE Metal backend 或 Provider；不签发性能资格。
 
 版本：MLX v0.32.2 (`1f8e74e3f12f31365464a6867c6579f0e9b29d85`)。

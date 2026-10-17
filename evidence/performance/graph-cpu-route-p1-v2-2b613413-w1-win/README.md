@@ -46,7 +46,7 @@ SHA-256 在 sha256.json。工程包仍引用 Windows 外部冻结 checkout、bui
 命令：外部 qualify-graph-v2.ps1；重放使用
 `python scripts/hyle-perf.py verify --contract bench/contracts/graph-cpu-route-p1-v2.json --manifest <原目录>/manifest.json`。
 当前 owner 的停止/恢复合同见
-[验收卡](../../../docs/implementation/tasks/compute/cpu-graph-external-caller-qualification.md)。
+[验收卡](https://github.com/axiomates/hyle/blob/d12f2204d23503256220e810385d6cb3e93027a8/docs/implementation/tasks/compute/cpu-graph-external-caller-qualification.md)。
 
 统一 loc-report.py --self-check PASS：Compute + Graph 全部实现 31,023 行，不含测试；
 原始统计见 loc.json。该数包含旧 backend/provider，不是新基础架构完成百分比。

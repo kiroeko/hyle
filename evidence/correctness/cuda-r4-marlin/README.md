@@ -1,7 +1,7 @@
 # R4 Marlin 初始产品检查点
 
 Owner 为 `compute_provider_marlin`，当前卡仍是
-[R4 CUDA](../../../docs/implementation/tasks/compute/cuda-v1-four-route-foundation.md)，
+[R4 CUDA](https://github.com/axiomates/hyle/blob/d12f2204d23503256220e810385d6cb3e93027a8/docs/implementation/tasks/compute/cuda-v1-four-route-foundation.md)，
 状态 AUDITED；本目录不签完整路线、三交付、默认 Provider 规则或性能。
 
 ## 已运行

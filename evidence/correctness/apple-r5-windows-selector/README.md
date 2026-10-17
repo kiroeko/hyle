@@ -22,7 +22,7 @@ all 108 PASS/REUSED receipts and their verified raw logs. Its SHA-256 is
 `identity.json` preserves each artifact hash and each gate verdict/reason.
 
 This completes the Windows selector obligation of the
-[Apple delivery task](../../../docs/implementation/tasks/build/apple-r5-product-delivery.md),
-[CUDA vendor audit](../../../docs/implementation/tasks/build/cuda-vendor-content-audit-v1.md)
+[Apple delivery task](https://github.com/axiomates/hyle/blob/d12f2204d23503256220e810385d6cb3e93027a8/docs/implementation/tasks/build/apple-r5-product-delivery.md),
+[CUDA vendor audit](https://github.com/axiomates/hyle/blob/d12f2204d23503256220e810385d6cb3e93027a8/docs/implementation/tasks/build/cuda-vendor-content-audit-v1.md)
 and [native platform selector correction](../../../docs/implementation/tasks/build/validation-native-route-platforms-v1.md).
 It does not close the Apple route's pending P1 or establish Vulkan product validation.

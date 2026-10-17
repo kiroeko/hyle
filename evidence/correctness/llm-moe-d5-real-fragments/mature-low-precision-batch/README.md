@@ -1,7 +1,7 @@
 # C10 / ds4 原生低精度批次
 
 baseline `5fabf548565a4598b8b7bf490b2eaabfc942cca1`；
-[资格卡](../../../../docs/implementation/tasks/compute/llm-moe-d5-mature-low-precision-batch.md)。
+[资格卡](https://github.com/axiomates/hyle/blob/d12f2204d23503256220e810385d6cb3e93027a8/docs/implementation/tasks/compute/llm-moe-d5-mature-low-precision-batch.md)。
 Windows只编译一次CPU原函数调用；MacBook Air M4只编译一次原生调用，原Metal源码在
 同一批次验证默认和上游safe开关。没有产品SDK构建、P1或重复旧F45/F46/F47。
 

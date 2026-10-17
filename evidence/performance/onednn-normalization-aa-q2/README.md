@@ -1,7 +1,7 @@
 # AA-Q2 模块验证记录修复
 
 baseline `d4b13426`，F1 产品 `ae270af9` 不变；
-[有限 ledger](../../../docs/implementation/tasks/compute/llm-moe-c1-normalization-aa-qualification.md#q2-audited固定实现与验收)。
+[有限 ledger](https://github.com/axiomates/hyle/blob/d12f2204d23503256220e810385d6cb3e93027a8/docs/implementation/tasks/compute/llm-moe-c1-normalization-aa-qualification.md#q2-audited固定实现与验收)。
 本节只证明记录修复和冷检查，不是性能资格 PASS；Q1 历史异常与原统计门保持。
 
 ## 冷检查
@@ -60,7 +60,7 @@ dump环境由模块自己的child环境清除/设置，普通采样EXE拒绝未�
 benchmark/冷检查/P1。原323份临时记录移位后再次与ZIP逐字节匹配。
 
 资格仍FAIL、产品性能INCONCLUSIVE，两个owner按原预算进入BLOCKED；恢复要求见
-[终局](../../../docs/implementation/tasks/compute/llm-moe-c1-normalization-aa-qualification.md#q2-终局blocked)。
+[终局](https://github.com/axiomates/hyle/blob/d12f2204d23503256220e810385d6cb3e93027a8/docs/implementation/tasks/compute/llm-moe-c1-normalization-aa-qualification.md#q2-终局blocked)。
 [完整实现LOC](all-implementation-loc.json)为48,294行/195文件，自检PASS，不包含tests/bench/vendor。
 
 ## 终局构建清理

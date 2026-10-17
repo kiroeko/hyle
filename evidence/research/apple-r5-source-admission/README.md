@@ -2,7 +2,7 @@
 
 2026-09-17, canonical Windows baseline `553a7d65`. Source inspection and archive
 identity only; no shipping build, correctness or performance PASS is implied.
-Current task: [Apple R5](../../../docs/implementation/tasks/compute/apple-v1-four-route-foundation.md).
+Current task: [Apple R5](https://github.com/axiomates/hyle/blob/d12f2204d23503256220e810385d6cb3e93027a8/docs/implementation/tasks/compute/apple-v1-four-route-foundation.md).
 
 - MLX v0.32.2 `1f8e74e3f12f31365464a6867c6579f0e9b29d85` (MIT).
 - Official Apple Metal-C++ 26 `f567ed836e4cbb85788c42115a2682bbe68097ee` (Apache-2.0).

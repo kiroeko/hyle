@@ -1,27 +1,19 @@
-# 架构与设计
+# 架构：少数原则与必要差异
 
-HYLE 提供可组合的基础机制；模型和业务策略留在消费者。
-设计页说明产品边界和实现理由，具体用法与支持限制见[用户文档](../user/README.md)，
-当前安排见[工作主线](../developer/current-work.md)。
+这些文档解释为何这样分层，以及哪些原生差异不能被统一外观抹掉。
+API与用法见[用户文档](../user/README.md)，操作与性能方法见[开发文档](../developer/README.md)，
+当前任务见[工作主线](../developer/current-work.md)。这里集中说明长期边界和设计取舍。
 
-## 产品与系统
+从[产品范围](hyle-scope.md)进入：先区分事实、机制、应用政策和资源owner，再看需要深入的设计。
 
-- [产品范围](hyle-scope.md)、[动机](motivation.md)、[推理引擎需求](inference-engine-north-star.md)
-- [能力完整性](capability-completeness.md)、[组件与依赖](capability-factorization.md)、[分层](roadmap.md)
-- [性能比较](performance-strategy.md)、[生命周期和失败](lifecycle-design.md)
-- [构建与交付](build-system.md)、[许可](licensing.md)、[FFI 边界](native-ffi-policy.md)
-- [参考实现](references.md)、[模型与格式需求](model-compute-catalogue.md)
-
-## 模块
-
-- [Core](core-design.md)、[Error](error-design.md)、[Platform](platform-design.md)
-- [Mem](mem-design.md)、[Time](time-design.md)、[Obs](obs-design.md)、[Util](util-design.md)
-- [Container](container-design.md)、[侵入式容器](container-intrusive-design.md)
-- [SIMD](simd-design.md)、[SIMD 第三方边界](simd-vendor-surface.md)、[Math](math-design.md)
-- [Sched](sched-design.md)、[IO](io-design.md)、[Process](process-design.md)
-- [Compute](compute-design.md)、[Graph](graph-design.md)、[后端路线](compute-routes.md)
-- [冷路由](compute-routing-system.md)、[CPU/GPU 组合](compute-next-stage.md)
-- [资源与流送](compute-resource-streaming-design.md)、[版本状态与分页](compute-state-paged-design.md)
-
-已有范围讨论还包括[基础能力](foundation-capability-expansion.md)和
-[候选通用机制](inference-engine-capability-watchlist.md)。它们记录设计需求，不构成完成声明或自动待办。
+| 设计 | 要回答的问题 |
+|---|---|
+| [基础机制](foundation-design.md) | 编译/运行事实、错误值、allocator、容器、时间与观测为何各有边界 |
+| [运行时](runtime-design.md) | 谁负责进展、取消、wake、排空、IO参数和child reap |
+| [SIMD](simd-design.md) | 编译期实现选择与运行时ISA选择如何分开，为什么不维护第三套register库 |
+| [Compute](compute-design.md) | 数值/资源合同、Provider选择、异步保活、状态发布与分页准备 |
+| [原生路线](compute-routes.md) | CPU、CUDA、MLX/Metal、Vulkan及CPU＋GPU哪些条件不能互换 |
+| [Graph](graph-design.md) | DAG、region、shape/effects、并发内存与固定执行计划如何衔接 |
+| [构建与交付](build-system.md) | 用户意图如何变成target、依赖、宏和可迁移SDK |
+| [许可](licensing.md) | 原创、移植和第三方材料的授权与分发边界 |
+| [参考实现](references.md) | 相关问题该参考谁，哪些机制不能直接照搬 |

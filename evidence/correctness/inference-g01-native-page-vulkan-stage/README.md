@@ -2,7 +2,7 @@
 
 产品草稿 `2500128ed`，五 owner 仍 AUDITED；这是有限 source 数学证据，不签
 CANDIDATE/CLOSED、Apple 页数学、全 G01/G02 或其它 G 项。活动范围见
-[原生精确页卡](../../../docs/implementation/tasks/compute/inference-g01-native-paged-read.md)。
+[原生精确页卡](https://github.com/axiomates/hyle/blob/d12f2204d23503256220e810385d6cb3e93027a8/docs/implementation/tasks/compute/inference-g01-native-paged-read.md)。
 
 actual MacBook Air Mac16,12/M4/arm64/macOS27.0.1 26A434/AppleClang21.0.0；原消费者
 报告 Apple M4/MoltenVK1.4.1，新公开 Context 拒绝 software device。Windows canonical

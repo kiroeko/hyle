@@ -48,8 +48,8 @@ test logs, CMake caches and actual test output. Every archived entry was rehashe
 after collection/transfer. Air additionally retains producer compilation commands
 and consumer executable hashes. Windows remains the sole product source of truth.
 
-[D1-D3](../../../docs/implementation/tasks/build/vulkan-r6-product-delivery.md)
+[D1-D3](https://github.com/axiomates/hyle/blob/d12f2204d23503256220e810385d6cb3e93027a8/docs/implementation/tasks/build/vulkan-r6-product-delivery.md)
 still require the remaining selected build/isolation review before closure;
-[R6](../../../docs/implementation/tasks/compute/vulkan-v1-four-route-foundation.md)
+[R6](https://github.com/axiomates/hyle/blob/d12f2204d23503256220e810385d6cb3e93027a8/docs/implementation/tasks/compute/vulkan-v1-four-route-foundation.md)
 still requires final rule/performance qualification and review. No P1 ran in
 these delivery batches, and no unmeasured device or Linux GPU is qualified.

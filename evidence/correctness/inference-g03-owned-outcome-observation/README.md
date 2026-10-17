@@ -2,7 +2,7 @@
 
 2026-10-14；baseline `16d677b38db855482ada49ed260a3611f5c17147`；scope `169783be6`；
 audit `e34080781`；当前三 owner 保持 AUDITED，不是 terminal certificate。
-[活动卡](../../../docs/implementation/tasks/compute/inference-g03-owned-outcome-observation.md)。
+[活动卡](https://github.com/axiomates/hyle/blob/d12f2204d23503256220e810385d6cb3e93027a8/docs/implementation/tasks/compute/inference-g03-owned-outcome-observation.md)。
 
 OO01/OO02 已实现 trusted 原结果 completion access，以及原 accepted phases/实际使用的
 producer bindings 的去重借用；不观察、不分配、不改原对象 identity。OO03 是注入 allocator

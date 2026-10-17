@@ -1,6 +1,6 @@
 # R6 Vulkan source, compiler and environment admission
 
-Bounded input to the [R6 SCOPED audit](../../../docs/implementation/tasks/compute/vulkan-v1-four-route-foundation.md).
+Bounded input to the [R6 SCOPED audit](https://github.com/axiomates/hyle/blob/d12f2204d23503256220e810385d6cb3e93027a8/docs/implementation/tasks/compute/vulkan-v1-four-route-foundation.md).
 No product target or native compute result is delivered by this record. Raw commands,
 logs, SPIR-V, input identities and the executed compiler-admission script are in
 `admission-raw.zip`; `identity.json` binds that archive to the canonical baseline.

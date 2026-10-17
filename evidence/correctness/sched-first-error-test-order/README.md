@@ -19,7 +19,7 @@ test waits for that public completion snapshot before admitting the second child
 while retaining the original first-error and full-drain assertions.
 
 This is bounded test maintenance under the
-[task record](../../../docs/implementation/tasks/sched/sched-first-error-test-order.md).
+[task record](https://github.com/axiomates/hyle/blob/d12f2204d23503256220e810385d6cb3e93027a8/docs/implementation/tasks/sched/sched-first-error-test-order.md).
 No Sched product/API or performance change was made. The original failure is
 not PASS; remaining R6 selector gates are validated separately.
 

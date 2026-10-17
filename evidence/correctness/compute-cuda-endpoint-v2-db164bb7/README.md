@@ -2,7 +2,7 @@
 
 Candidate: `db164bb7dced649c6ae0f5c992be5e7005748c7e`, 2026-09-15.
 The authoritative scope and verdict are in the
-[CUDA v2 record](../../../docs/implementation/tasks/compute/compute-backend-cuda-v2-endpoint-identity.md).
+[CUDA v2 record](https://github.com/axiomates/hyle/blob/d12f2204d23503256220e810385d6cb3e93027a8/docs/implementation/tasks/compute/compute-backend-cuda-v2-endpoint-identity.md).
 This is correctness/P0 evidence, not a timing receipt or full Compute/Graph certificate.
 Native log bytes, line endings and terminal blank lines are preserved by the evidence attributes.
 

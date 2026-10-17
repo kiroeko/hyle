@@ -5,5 +5,5 @@
 façade而FAIL。没有把未选择的compute_state补入Graph来躲断言。
 
 命令、原两个terminal/FAIL/elapsed、完整log及hash见[receipt](receipt.json)/raw.zip；
-产品candidate25e不变。[独立工具任务](../../../docs/implementation/tasks/tooling/foundation-f5-component-facade-assertion.md)
+产品candidate25e不变。[独立工具任务](https://github.com/axiomates/hyle/blob/d12f2204d23503256220e810385d6cb3e93027a8/docs/implementation/tasks/tooling/foundation-f5-component-facade-assertion.md)
 承接公共checker问题，F5模块不顺手改工具。聚合component gate保持未通过，不冒充PASS。

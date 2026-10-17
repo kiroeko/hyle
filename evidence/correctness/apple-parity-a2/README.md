@@ -223,7 +223,7 @@ not an unreported repeat of all559 requests.
 Official FP4 new-source qualification remains failed: original DS4 Metal
 group32 pass at9139e2ae (including its floor) and original Safe-mode host choice
 both yield222/65280 mismatches,190 nonzero outputs lost. Raw evidence and a
-bounded decision are in [the qualification card](../../../docs/implementation/tasks/compute/apple-ds4-fp4-source-qualification.md).
+bounded decision are in [the qualification card](https://github.com/axiomates/hyle/blob/d12f2204d23503256220e810385d6cb3e93027a8/docs/implementation/tasks/compute/apple-ds4-fp4-source-qualification.md).
 No tolerance, CPU-model fallback or model precision substitution is accepted.
 
 ## Exact-row resources and full existing region delta
@@ -351,12 +351,12 @@ confirmation: [Direct](dspark-cause-4ac59a7e-direct-target-hidden.log)/
 [XML](dspark-cause-4ac59a7e-graph-target-hidden.xml)2/2 PASS.
 All three Apple headers compile independently in enabled source/static/shared
 usage requirements,9/9: [per-header receipt](dspark-cause-4ac59a7e-headers.json).
-The [bounded cause record](../../../docs/implementation/tasks/compute/apple-dspark-numeric-cause.md)
+The [bounded cause record](https://github.com/axiomates/hyle/blob/d12f2204d23503256220e810385d6cb3e93027a8/docs/implementation/tasks/compute/apple-dspark-numeric-cause.md)
 is resolved; official FP4 is separate and remains pending. No P1 started.
 
 ## Mature-provider overlap admission
 
-The [fixed scope](../../../docs/implementation/tasks/compute/apple-default-cost-scope.md)
+The [fixed scope](https://github.com/axiomates/hyle/blob/d12f2204d23503256220e810385d6cb3e93027a8/docs/implementation/tasks/compute/apple-default-cost-scope.md)
 compares two original mature mathematical carriers under the same public
 Context admission/completion/result lifetime. It is correctness admission,
 **not a performance ranking or a changed default**.

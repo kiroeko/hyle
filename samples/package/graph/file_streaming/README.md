@@ -34,12 +34,8 @@ layer-0 BF16 projections and F32 norm (about 72 MiB). It does not download weigh
 whole checkpoint. The C++ consumer reads those original ranges using the pipeline, compares
 existing Direct/Graph mathematics against independent references, writes a new temporary file,
 compares every stored original byte in bounded chunks, then reloads and repeats the mathematics. The consumer uses each selected
-route's original Direct/Graph interfaces. Windows CPU/CUDA/Vulkan, WSL CPU/CUDA and Air CPU/Apple/Vulkan
-source and relocated static/shared roundtrips have passed on the recorded machines. Apple retains dense
-original Metal input and forms the transposed view inside the original native Direct region or Graph view node.
-The tested environment and limits are recorded in the [F3 implementation history](../../../../docs/implementation/tasks/compute/foundation-f3-final-closure.md).
-WSL Vulkan has only a software device: source/SDK builds, headers and package checks passed;
-real GPU mathematics was not run there.
+route's original Direct/Graph interfaces. Apple retains dense Metal input and forms the transposed view inside its native region.
+The file/resource lifetime contract is described in the [Compute guide](../../../../docs/user/compute.md).
 
 Cancellation and deadlines stop later chunks; already accepted file/native work must retire.
 They cannot safely interrupt a blocking file operation. Native contexts, queues, resources and

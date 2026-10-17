@@ -1,7 +1,7 @@
 # CPU ATen：存储与索引接线资格
 
 SI1–4 **CLOSED**，不可变产品候选 `91ad443bbaa20d51535d0bfcae145ba46b07b4a4`。
-[当前卡](../../../docs/implementation/tasks/compute/cpu-aten-storage-index-admission.md)；
+[当前卡](https://github.com/axiomates/hyle/blob/d12f2204d23503256220e810385d6cb3e93027a8/docs/implementation/tasks/compute/cpu-aten-storage-index-admission.md)；
 Windows 是产品真相，Linux/Windows 静态 source tree 均仅单向同步，1332 个输入 hash 验证一致。
 
 ## 已实现的六族与普通入口

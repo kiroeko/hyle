@@ -1,6 +1,6 @@
 # CUDA U3 N2：原 MLX packed GPU 资格
 
-任务：[N2当前卡](../../../docs/implementation/tasks/compute/cuda-final-u3-mlx-carrier.md)。
+任务：[N2当前卡](https://github.com/axiomates/hyle/blob/d12f2204d23503256220e810385d6cb3e93027a8/docs/implementation/tasks/compute/cuda-final-u3-mlx-carrier.md)。
 Windows canonical；WSL Ubuntu仅前向验证副本。实际GPU为RTX4070，Toolkit13.3.73；
 原locked Torch2.8.0 CPU common＋Torch2.8.0+cu129 leaf，未替换CPU实现或增加SDK。
 

@@ -15,7 +15,7 @@ baseline `7053e854783c0d9ec42d0b8e80a79a7c02251b14`。这是无计时、未改�
 
 `raw-probe.log`保留三行输入、四种 unary/三种 separate gate 的特殊分类/有限误差和两种 batch。
 探针的 special_mismatches 是诊断计数，不是完整产品 pass/fail gate；未检查全部 dtype/layout/alias。
-普通精确域和新验收由[批量卡](../../../docs/implementation/tasks/compute/cpu-ggml-mature-admission-batch.md)持有。
+普通精确域和新验收由[批量卡](https://github.com/axiomates/hyle/blob/d12f2204d23503256220e810385d6cb3e93027a8/docs/implementation/tasks/compute/cpu-ggml-mature-admission-batch.md)持有。
 
 ## GB1–3 产品资格与终审
 

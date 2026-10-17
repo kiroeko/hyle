@@ -1,7 +1,7 @@
 # CPU 成熟接线：Softmax、非因果 Attention、精确 Fill
 
 产品候选 `5ebd167aa29a5f2bb022c71ddfda6d96f3da6f47`；Windows canonical，Linux 单向验证副本。
-[TF1–4 当前卡](../../../docs/implementation/tasks/compute/cpu-ggml-transformer-fill-admission.md)。
+[TF1–4 当前卡](https://github.com/axiomates/hyle/blob/d12f2204d23503256220e810385d6cb3e93027a8/docs/implementation/tasks/compute/cpu-ggml-transformer-fill-admission.md)。
 
 ## 实现与普通消费
 

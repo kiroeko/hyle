@@ -4,5 +4,5 @@
 common24及ASan/UBSan/TSan各24、P0/LOC完成。receipt重验原stage日志和archive SHA、
 产品输入、同gate累计预算；WSL软件Vulkan只包，其他适用原native实际运行。
 
-[终局记录](../../../docs/implementation/tasks/compute/foundation-f4-final-closure.md)给逐能力
+[终局记录](https://github.com/axiomates/hyle/blob/d12f2204d23503256220e810385d6cb3e93027a8/docs/implementation/tasks/compute/foundation-f4-final-closure.md)给逐能力
 风险/交付/六FIX/七门、独立红队/原失败/限制；不代签F5或整个goal。

@@ -1,7 +1,7 @@
 # M2-B1 CPU 成熟接入证据
 
 `source-audit.json` 记录精确锁定源与有限接入差异，不是执行/覆盖或性能 PASS。
-活动范围和 C1–C6 见[当前任务](../../../docs/implementation/tasks/compute/llm-moe-m2-b1-cpu.md)。
+活动范围和 C1–C6 见[当前任务](https://github.com/axiomates/hyle/blob/d12f2204d23503256220e810385d6cb3e93027a8/docs/implementation/tasks/compute/llm-moe-m2-b1-cpu.md)。
 `development-windows.json` 与 `development-windows-raw.zip` 是首个实现中检查点：Windows
 MSVC Release shared、CPU-only、oneDNN-OFF，7个定向测试目标通过，含20项GoogleTest用例、
 3个头自足检查及实际 executor consumer。原始构建失败/纠正与最终通过日志一并保留。

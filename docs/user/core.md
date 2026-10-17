@@ -31,9 +31,7 @@ target_link_libraries(my_target PRIVATE hyle::core)
 
 ```cmake
 set(HYLE_COMPONENTS core)
-set(HYLE_BUILD_TESTS OFF)
-set(HYLE_BUILD_BENCH OFF)
-add_subdirectory(path/to/hyle)
+add_subdirectory(path/to/hyle hyle-build)
 target_link_libraries(my_target PRIVATE hyle::core)
 ```
 
@@ -256,10 +254,3 @@ prefetch 只是 O(1) best-effort hint；某些 compiler/target 会替换 hint �
 硬件 prefetcher 已能处理很多线性模式。只有正常 consumer workload 证明 latency 能被未来工作
 覆盖且没有额外带宽/cache pollution 时才保留手工 hint；不要根据单条 prefetch 纳秒 benchmark
 修改 API 或对象 metadata。
-
-## Native FFI 与 C
-
-Core 没有 C 产品 API，也没有 Java/.NET/Python/Rust 的 Core binding。compiler attribute、layout
-与 inline prefetch 必须发生在 C++ consumer 的编译单元里，动态函数调用无法提供等价能力。若你
-只需要其他 HYLE runtime 功能，应查看该模块是否通过 Native FFI 准入；不要依赖历史
-`hyle/c/core.h` 或猜测 Core export。

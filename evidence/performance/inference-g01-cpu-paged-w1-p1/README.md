@@ -23,4 +23,4 @@ plan/compute/pool从未打HYLE补丁的DLL；无candidate compile/lower或复制
 原double8e-3、readonly、16paired/4ms/min1/n15/31/双顺序/placement/controls均保。
 private池上界UNKNOWN；不签cache producer/growth/reorder生产、capture、GPU/G02、
 全模型token/s或整个G01。见[消费形状](../../../bench/inference_resident_sdpa/cpu_paged_p1/consumer-provenance.md)
-与[活动卡](../../../docs/implementation/tasks/compute/inference-g01-cpu-paged-resident.md)。
+与[活动卡](https://github.com/axiomates/hyle/blob/d12f2204d23503256220e810385d6cb3e93027a8/docs/implementation/tasks/compute/inference-g01-cpu-paged-resident.md)。

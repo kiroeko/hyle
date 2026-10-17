@@ -1,7 +1,7 @@
 # Foundation A effects 与 CPU+CUDA：第二批 source 事实
 
-活动范围为 [A-04](../../../docs/implementation/tasks/graph/foundation-a-route-symmetry.md) 与
-[A-CUDA-01](../../../docs/implementation/tasks/graph/foundation-a-cpu-cuda-variants.md)。
+活动范围为 [A-04](https://github.com/axiomates/hyle/blob/d12f2204d23503256220e810385d6cb3e93027a8/docs/implementation/tasks/graph/foundation-a-route-symmetry.md) 与
+[A-CUDA-01](https://github.com/axiomates/hyle/blob/d12f2204d23503256220e810385d6cb3e93027a8/docs/implementation/tasks/graph/foundation-a-cpu-cuda-variants.md)。
 所有结果为 AUDITED 实施检查点；没有代签 Apple、本轮完整 sanitizer/installed/红队或 CLOSED。
 
 Windows MSVC19.50，shipping HYLE_TESTING=OFF；库按实际≥12GiB j4，test1。

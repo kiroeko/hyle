@@ -1,6 +1,6 @@
 # R4 C4：CUDA 普通入口与真实 FFN/capture 检查点
 
-[当前施工卡](../../../docs/implementation/tasks/compute/cuda-v1-four-route-foundation.md)仍为 AUDITED。
+[当前施工卡](https://github.com/axiomates/hyle/blob/d12f2204d23503256220e810385d6cb3e93027a8/docs/implementation/tasks/compute/cuda-v1-four-route-foundation.md)仍为 AUDITED。
 已实现路线 factory、默认绑定、Q4 packing owner 的路线名称，以及单 GPU Graph compile/prepare_replay
 冷 helper。公共头没有 CUDA SDK 类型；资源与 stream 专家互操作复用已有 backend。
 

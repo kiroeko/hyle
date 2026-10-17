@@ -23,4 +23,4 @@ K16384/N4 或 24、Qwen BF16 projection K2048/N6144。dense 与物理转置权�
 `HYLE_CPU_BESTOF_PAIR_FILE` 可选择已有条目，不是在线 Provider 搜索。旧 sealed adapter 是特定
 Windows artifact 的传输方式，不能把其启动成本当作同进程调用成本。
 
-原实验及实际 revision 见[实现历史](../../../docs/implementation/tasks/compute/cpu-final-f4-best-of.md)。
+原实验及实际 revision 见[实现历史](../../../docs/implementation/README.md#追溯旧文档)。

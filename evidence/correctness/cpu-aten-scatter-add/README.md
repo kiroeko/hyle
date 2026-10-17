@@ -35,5 +35,5 @@ artifact retained bytes已知，private invocation与当前compilation声明unkn
 未变接缝的既有证据，没有新跑完整feature-off SDK。统一实现LOC **61,516 / 249文件**，不含tests/vendor。
 四个本批consumer目录已清理 **625,241,686 logical bytes**；SDK/producer/dependency cache保留。
 
-[当前卡](../../../docs/implementation/tasks/compute/cpu-aten-scatter-add-admission.md)关闭仅为AS1–3；
+[当前卡](https://github.com/axiomates/hyle/blob/d12f2204d23503256220e810385d6cb3e93027a8/docs/implementation/tasks/compute/cpu-aten-scatter-add-admission.md)关闭仅为AS1–3；
 CPU goal仍有精确资源声明与冻结自研的有限去留裁决，不表示Compute+Graph全路线完成。

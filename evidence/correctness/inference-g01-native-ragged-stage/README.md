@@ -1,6 +1,6 @@
 # G01 原 native ragged 实现阶段
 
-活动卡[NR-01/02/03](../../../docs/implementation/tasks/compute/inference-g01-native-ragged-layout.md)。
+活动卡[NR-01/02/03](https://github.com/axiomates/hyle/blob/d12f2204d23503256220e810385d6cb3e93027a8/docs/implementation/tasks/compute/inference-g01-native-ragged-layout.md)。
 [receipt](receipt.json)与[raw](raw.zip)保存实际Air Mac16,12身份、全部build/run FAIL/PASS、
 2020个canonical输入SHA和两产品TU/公开头/测试身份；只有source阶段，不代签SDK/san/P1。
 

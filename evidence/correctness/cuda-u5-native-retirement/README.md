@@ -9,4 +9,4 @@ Product `657f291f`; test/SDK consumer `b1f3fdc1`. Six duplicated local SiLU/GELU
 - `u6-native-audit.json`: original full native archive and per-input hash check plus exact Linux651/649 union XML. `u6-delivery-audit.json`: eight U23 delivery archives and1147 internal hashes verified. `u6-product-impact-audit.json`: every later product change classified, original vendor math/model programs unchanged.
 - Uniform non-test Compute + Graph LOC **60,774 /255 files** in `loc.json`.
 
-Scope and complete-vs-partial replacement decision: [U5 card](../../../docs/implementation/tasks/compute/cuda-final-u5-native-retirement.md).
+Scope and complete-vs-partial replacement decision: [U5 card](https://github.com/axiomates/hyle/blob/d12f2204d23503256220e810385d6cb3e93027a8/docs/implementation/tasks/compute/cuda-final-u5-native-retirement.md).

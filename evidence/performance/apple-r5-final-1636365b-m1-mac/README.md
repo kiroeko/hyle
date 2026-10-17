@@ -6,7 +6,7 @@ Mac16,12 / Apple M4, macOS 27.0 build 26A428, M1-MAC **engineering** profile.
 Interactive QoS and AC power were observed; macOS has no public hard P-core pin.
 This evidence has no registered-machine Formal certification.
 
-The [comparison contract](../../../docs/implementation/tasks/compute/apple-r5-performance-contract.md)
+The [comparison contract](https://github.com/axiomates/hyle/blob/d12f2204d23503256220e810385d6cb3e93027a8/docs/implementation/tasks/compute/apple-r5-performance-contract.md)
 fixes affine Q4/group64 gate/up, SiLU and F32 down at K4096/H11008/O4096, M1/M16.
 Both formal arms include the same Context admission, owner thread, native MLX
 execution, checked GPU completion and owning-result release. The peer independently

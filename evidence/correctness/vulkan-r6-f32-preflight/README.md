@@ -2,7 +2,7 @@
 
 Baseline `e408536690ea7fc76153f9013bf5aa300feada22`, with the V3 worktree changes
 identified by the archived input hashes. This is correctness/P0 evidence, not P1
-or route closure. The [performance contract](../../../docs/implementation/tasks/compute/vulkan-r6-performance-contract.md)
+or route closure. The [performance contract](https://github.com/axiomates/hyle/blob/d12f2204d23503256220e810385d6cb3e93027a8/docs/implementation/tasks/compute/vulkan-r6-performance-contract.md)
 records the source findings before timing.
 
 - `native-f32-preflight-01`: BK16/shared-memory accounting and safe complete-tile

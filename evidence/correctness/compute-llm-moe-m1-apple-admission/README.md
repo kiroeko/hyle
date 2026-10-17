@@ -1,7 +1,7 @@
 # M1-A：原版 ggml Metal / MLX 接入验收
 
 - 候选：`140054b13ce2515a05bc6eedac7e03e56bbc3662`。
-- 范围与七门：[terminal card](../../../docs/implementation/tasks/compute/llm-moe-m1-apple-admission.md)。
+- 范围与七门：[terminal card](https://github.com/axiomates/hyle/blob/d12f2204d23503256220e810385d6cb3e93027a8/docs/implementation/tasks/compute/llm-moe-m1-apple-admission.md)。
 - 结论：A1–A6 PASS / P0；M2/M3 完整模型覆盖尚未验收，新增 0/256。未运行 P1，无自研比较。
 
 ## 原始证据

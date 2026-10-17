@@ -1,7 +1,7 @@
 # Foundation A 共同精确形状：首批实现证据
 
 当前仅签共同 metadata/static 资格；A 的 native/hybrid、交付、sanitizer、effects 与红队没有由
-本目录代签。活动卡是[四路线对称性](../../../docs/implementation/tasks/graph/foundation-a-route-symmetry.md)。
+本目录代签。活动卡是[四路线对称性](https://github.com/axiomates/hyle/blob/d12f2204d23503256220e810385d6cb3e93027a8/docs/implementation/tasks/graph/foundation-a-route-symmetry.md)。
 
 Windows MSVC 19.50 / Release，shipping Graph（HYLE_TESTING=OFF），复用原 CPU+CUDA source
 树；source-parent 只增加本轮 fixture target。可用内存 42,210,340,864 bytes，库 j4 / test1。

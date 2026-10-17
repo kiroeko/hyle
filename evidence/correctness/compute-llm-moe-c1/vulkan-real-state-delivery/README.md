@@ -2,7 +2,7 @@
 
 候选 `a03f6786bfd9ecdcf0e158d5ea90f1a627f31236`，产品源码与已验收局部回归的
 `55fe0b8a` 相同。范围与首次运行前固定的标准见
-[C1-Y31](../../../../docs/implementation/tasks/compute/llm-moe-c1-tensor-state.md#c1-y31真实张量状态片段与三交付有限验证)。
+[C1-Y31](https://github.com/axiomates/hyle/blob/d12f2204d23503256220e810385d6cb3e93027a8/docs/implementation/tasks/compute/llm-moe-c1-tensor-state.md#c1-y31真实张量状态片段与三交付有限验证)。
 本组局部裁决 **PASS**；没有产品或 consumer 纠正，没有 P1。C1 整包、全局 selector 余门和
 64 行/256 格共同矩阵没有由此签收，CPU oneDNN 性能资格 BLOCKED 不变。
 

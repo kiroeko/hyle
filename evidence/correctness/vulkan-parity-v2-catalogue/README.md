@@ -1,6 +1,6 @@
 # Vulkan actual catalogue and state batch
 
-[Current bounded scope](../../../docs/implementation/tasks/compute/vulkan-parity-v2-catalogue-matrix.md)
+[Current bounded scope](https://github.com/axiomates/hyle/blob/d12f2204d23503256220e810385d6cb3e93027a8/docs/implementation/tasks/compute/vulkan-parity-v2-catalogue-matrix.md)
 uses the shared frozen 559/80/34/45/104 demands and model/state/sidecar programs.
 This first executable batch adds the 34 non-GGUF packed and 45 plain cases to
 both ordinary entrances, including actual N/K, source dtypes, cold native

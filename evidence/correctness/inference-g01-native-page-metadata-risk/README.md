@@ -14,4 +14,4 @@ actual retirement同一实现。实际Air原Apple/Vulkan materialized reference�
 原工具/预算不改。中央新split header引发selector保守全选的计划仍保，实际只有owner
 compute_batch产品改变，不重开/跑全库数学。NP02paged准备/typed wrappers及NP03/04数学、
 新头static/shared和GPU实际页读等门仍未证，不签CANDIDATE/整个G01/G02。
-[活动卡](../../../docs/implementation/tasks/compute/inference-g01-native-paged-read.md)。
+[活动卡](https://github.com/axiomates/hyle/blob/d12f2204d23503256220e810385d6cb3e93027a8/docs/implementation/tasks/compute/inference-g01-native-paged-read.md)。

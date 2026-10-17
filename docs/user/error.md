@@ -1,8 +1,6 @@
-# HYLE error：什么情况用什么
+# HYLE error：返回与传播失败
 
-> error 是 HYLE 的共享失败模型；本页描述当前公开 C++ 产品合同。完整源码、static
-> 与 shared SDK 使用相同的 `Status` / `Result<T>` 语义。项目没有原生 C 产品或受支持的
-> Native FFI，早期 error C schema/bridge 已移除。
+`Status` 表达失败，`Result<T>` 表达成功值或失败；它们不自动记录日志。
 
 ## 一页选择表
 

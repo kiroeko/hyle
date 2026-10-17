@@ -2,17 +2,6 @@
 
 ## 选择执行路线
 
-G04/G05 正在实施；CPU新域已完成Windows source数学检查，CUDA新域已完成Linux/SM89
-source数学检查，Apple/Vulkan新域已完成Air source数学检查。四后端与三联合路线的
-F16增量分页/Graph消费已有有限source证据；CPU/CUDA/Apple的BF16增量组合也已实测。
-当前输入的源码、适用宿主风险与[四路线八份迁址SDK](../../evidence/correctness/inference-g06-final-relocated-sdk/receipt.json)
-已通过，独立头联合23个；Apple/Vulkan另有[六组原生host sanitizer](../../evidence/correctness/inference-g06-final-native-host-sanitizers/receipt.json)。
-宿主检查保留原TSan边界模型及LSan/shader/driver限制。G06工程性能结论为P0结构；
-CPU/Apple/Vulkan原有限P1已过，CUDA prefill非劣仍UNRESOLVED。进度与原计时合同见
-[实施记录](../implementation/tasks/compute/inference-g04-g05-cache-attention-domain.md)。
-普通旧 plain 旅程使用显式的新字段，库不保旧签名转发。schema/descriptor接受一种形状，
-不代表所选native核已支持；当前未接通的组合在准备时返回Unimplemented。
-
 ```cpp
 using namespace hyle::compute;
 const auto plain = CacheStorage::plain(DataType::kBFloat16).value();
@@ -52,24 +41,15 @@ Materialized参考保显式gather/mask费用，支持plain几何与窗口，明�
 
 当前CPU实现可以用 `model_ops::CacheEncode{storage}` 编码实际新行：输入是dense
 F16/BF16/F32，输出描述通过 `infer_single_output` 得到。Q8输出是U8真实carrier，
-FP8输出是E4M3FN carrier；encoder只写所给的新行，页面的准确range和发布仍由原F2管理。
+FP8输出是E4M3FN carrier；encoder只写所给的新行，页面的准确range和发布仍由批量搬运管理。
 CPU attention使用Q8_0，CPU编码FP8供后续CUDA联合消费，当前不因此承诺CPU FP8 attention。
 Q8 K/V同格式、Q/output同F16或BF16；当前有限几何是(64,64)/(128,128)/(256,256)/(64,128)。
 编码输入与Q8 attention查询必须有限，Q8的absmax/127不得超过65504。
 Q8编码先把block scale舍入成F16；若其bits为零，整个34-byte block规范为全零。
-这也覆盖极小的非零输入，避免倒数溢出、FTZ差异和非有限数值转整数。非零F16 scale
-仍使用原F32 scale/inverse及ties-away规则；零scale块的payload字节可能与原ggml参考不同，
-解码值同为零；三路线极小Q8及CPU/CUDA极端FP8 scale见
-[数值边界证据](../../evidence/correctness/inference-g04-g05-numeric-boundaries/result.json)。
+这也覆盖极小的非零输入，避免倒数溢出、FTZ差异和非有限数值转整数。非零 F16 scale 使用 F32 scale/inverse 和 ties-away 规则；零 scale 块的 payload 可能与原 ggml 参考不同，但解码值同为零。
 实际payload违反范围
 由原Completion返回InvalidArgument，失败invocation/slot按原合同重建。原CPU核还会把Q
-转成Q8 dot表示，精度应按这次额外转换评估。新域的字节、窗口、非因果、长prefill和
-F32累加结果见[有限source证据](../../evidence/correctness/inference-g04-g05-cpu-encoding-math-stage/result.json)，
-CPU-only实际ggml核心及F16增量F2/Graph组合另有
-[有限source证据](../../evidence/correctness/inference-g04-g05-cpu-only-encoded-page-source/result.json)；
-[BF16补充](../../evidence/correctness/inference-g04-g05-cpu-bf16-encoded-page-source/result.json)
-覆盖同一Direct/Graph增量旅程。
-CPU 新域原有限P1已通过；当前更新和metadata费用按G06的P0结构合同裁决。
+转成Q8 dot表示，精度应按这次额外转换评估。
 
 Linux CUDA的FlashInfer入口现可用同一CacheEncode操作编码E4M3FN新行。准备时显式传入
 CUDA device resource，BatchProgram的host_workspace使用同设备原pinned-host resource。
@@ -78,20 +58,11 @@ K/V均为FP8，分别固定scale，Q/output同F16或BF16，几何与窗口合同
 原attention直接读FP8字节；Kscale折入softmax scale，Vscale在F32 partial/merge后乘入并
 转换最终输出。当前split-KV使用原planner计费的F32 partial workspace，最终scale/cast
 已合入merge；非split在原输出变换中完成，没有额外最终scale/cast dispatch，也不展开
-整套历史KV。实际RTX4070/SM89的原12项测试见
-[CUDA有限source证据](../../evidence/correctness/inference-g04-g05-cuda-encoding-math-stage/result.json)。
-F16增量F2/Direct/CUDA Graph/CPU+CUDA组合另有
-[有限source证据](../../evidence/correctness/inference-g04-g05-cuda-encoded-page-source/result.json)。
+整套历史KV。
 其中修复了原native FP8 Dqk64/Dv128漏载K的问题：仅tile内K行补至128 bytes并填零，
 global cache与QK数学保持64维；额外shared为CTA_TILE_KV*64 bytes。原始依赖cache不变。
-BF16增量组合与强权重paged/ragged、CTA16/repack反例及修复前库负对照见
-[source补充](../../evidence/correctness/inference-g04-g05-cuda-bf16-strong-weight-source/result.json)。
-当前有限source/device、宿主风险及SDK资格见
-[终审记录](../implementation/tasks/compute/inference-g04-g05-final-closure.md)。
-Windows原生CUDA batch不在已验域；宿主sanitizer不签driver。FP8的KV payload为BF16的一半，
-但读取转换及F32中间结果有成本，不能据此宣称整个引擎显存减半或更快。历史warm测试的
-参考方额外常驻完整BF16副本、冷展开另计，主prefill约多4.0–4.9%耗时且5%非劣未决；
-这是有限方案取舍对照，不能代表同资源FP8实现排名或与llama.cpp的整引擎比较。
+Windows 原生 CUDA batch 当前未准入。FP8 的 KV payload 为 BF16 的一半，但读取转换、
+中间结果和 metadata 仍占资源；比较完整调用时要包含双方实际的展开、规划与等待成本。
 
 Apple原MLX入口现可编码Q8_0新行，并在paged/ragged attention中直接读取U8压缩carrier。
 Q/output为F16或BF16，支持上述有限几何、窗口与full noncausal；空输出仍按Dv给出形状。
@@ -99,20 +70,10 @@ Q/output为F16或BF16，支持上述有限几何、窗口与full noncausal；空
 tile中解码和累加，最后转输出类型。活跃Q/output转换费用为O(Q*Hq*(Dqk+Dv))，二pass
 还有原F32 partial；没有整历史KV解码。窗口核限制实际扫描范围，plain同维无界路径仍复用
 原核。输入NaN/Inf或Q8 scale溢出在接受提交后的原Results返回InvalidArgument。
-实际MacBook Air的10项测试见
-[Apple有限source证据](../../evidence/correctness/inference-g04-g05-apple-encoding-math-stage/result.json)；
-F16原生及CPU+Apple增量F2/Graph已有
-[有限source证据](../../evidence/correctness/inference-g04-g05-encoded-native-page-source/result.json)；
-BF16原生及CPU+Apple增量组合也已完成
-[有限source补充](../../evidence/correctness/inference-g04-g05-apple-bf16-encoded-page-source/result.json)；
-实际Air当前宿主ASan/UBSan/TSan、风险和SDK已通过；原有限P1已过，宿主检查不签GPU shader/driver。
 
 Vulkan原Plan可以编码同一Q8_0 carrier，F16 paged/ragged路径在原FullF32 scalar核中
 直接按页解码，独立Dv与窗口无需整历史KV展开。NaN/Inf和编码scale溢出由原Results报错；
-普通Copy/SetRows保持原规则。实际Air的编码字节、长prefill与大值抵消见
-[Vulkan有限source证据](../../evidence/correctness/inference-g04-g05-vulkan-encoding-math-stage/result.json)，
-F16原生及CPU+Vulkan增量组合见上述共同source证据。极小 scale/subnormal/FTZ 边界、
-实际Air当前宿主ASan/UBSan/TSan、风险和SDK已通过；原有限P1已过，BF16 attention仍未准入。
+普通 Copy/SetRows 保持原规则。此 Vulkan attention 路径尚不支持 BF16。
 
 ## 允许 BF16 split-KV 中间结果
 
@@ -142,7 +103,7 @@ carrier描述，不能把逻辑blocked cache描述当作字节输出。
 
 公共Graph invocation由调用方绑定输出storage时，同Graph的K/V输出可绑定同一个真实
 WriteLease的两个不重叠子视图。原LeaseUsePool写票附着该Graph的原Completion，再把
-该writer和Completion交给原F2的`bind_mutable`/`bind_producer`。两份独立Graph则保留
+该writer和Completion交给批量搬运的`bind_mutable`/`bind_producer`。两份独立Graph则保留
 两套真实writer与Completion。CopyRange使用各自K/V row bytes与实际子视图offset，
 随后将同一CopyBatchUpdate和pending frames交给Direct或Graph receiver，观察最终结果。
 原生Apple/Vulkan Graph使用各自owned Results及原result-source入口，完整调用见夹具。
@@ -157,10 +118,10 @@ WriteLease的两个不重叠子视图。原LeaseUsePool写票附着该Graph的�
 | Linux CUDA | 原FlashInfer C++ native paged/ragged；BatchProgram、BatchInvocation、PreparedBatch；graph::batch::provider/Invocation | 显式active/delta上传；原schedule等价时复用plan，跨界重规划；native private bytes未知 |
 | CPU 参考 | MaterializedBatchProgram；MaterializedBatchInvocation / graph::batch::MaterializedInvocation | 显式gather、GQA展开、F32矩阵、mask与Copy；Direct逐stage同步wait |
 | CPU page16 | 原CPU BatchProgram / BatchInvocation；详见[CPU批次入口](compute.md) | 原ggml flash直接读取确切物理页；Q1可更新运行时页表/长度，保原graph/pool/workspace。Materialized路径另为显式参考算法 |
-| Apple | apple::MaterializedBatchInvocation；graph::apple::prepare_materialized_batch | 原MLX Program/worker，固定两device metadata banks、原F2上传；managed replay/私有storage未知 |
+| Apple | apple::MaterializedBatchInvocation；graph::apple::prepare_materialized_batch | 原MLX Program/worker，固定两device metadata banks、批量搬运上传；managed replay/私有storage未知 |
 | Vulkan | vulkan::MaterializedBatchInvocation；graph::vulkan::prepare_materialized_batch | 原native Plan/command/fence与ggml承载；固定两metadata banks，opaque scratch/driver仍未知 |
-| Apple page16，有限域已收口 | NativePagedBatchProgram；apple::PagedBatchInvocation | 原MLX vector/2pass/NAX直接页读取；单I32表、两个mirror banks；actual Air F16/BF16数学、风险、三交付与同合同P1与终审通过 |
-| Vulkan page16，有限域已收口 | NativePagedBatchProgram；vulkan::PagedBatchInvocation | 原FullF32 scalar flash直接页读取；actual Air F16数学、风险与三交付与同合同P1/终审通过；BF16未签资格 |
+| Apple page16 | NativePagedBatchProgram；apple::PagedBatchInvocation | 原 MLX 直接页读取；F16/BF16，单 I32 表与两个 mirror banks |
+| Vulkan page16 | NativePagedBatchProgram；vulkan::PagedBatchInvocation | F16，原 FullF32 scalar flash 直接页读取；当前不支持 BF16 attention |
 | Windows CUDA native batch | 当前未准入 | 必须给具名unsupported，不能把WSL结果或CPU参考说成Windows native paged |
 
 Apple/Vulkan参考档真的在原GPU上执行，但它们把页/packed KV显式gather/materialize后做
@@ -172,17 +133,12 @@ tail、跨页和页 ID 重排更新原 native leaf；ragged 则更新每 request
 packed offset，仍用三个 packed-capacity Q/K/V read ports。保持原 graph、线程池及 workspace，单查询的
 全零 causal mask 不分配。普通调用不需要另写 decode helper。请求集合或 Q 拓扑变化
 仍真正重规划，mixed/prefill 沿原冷规划合同；旧 output/ticket 仍阻止更新。
-caller 创建的新版本仍拥有 active-sized snapshot，metadata delta 上传也可有原 F2 等待，
+caller 创建的新版本仍拥有 active-sized snapshot，metadata delta 上传也可有批量搬运 等待，
 不能把计划零分配解读为整步零分配或零等待。
-[Windows 与 Air mixed-core source 验证](../../evidence/correctness/inference-g06-cpu-runtime-q1-source/receipt.json)
-覆盖单/多请求32组×64步与原数值/风险；当前适用host风险、SDK与独立头已过，工程性能为P0结构。
-另有[CPU ragged Q1 source 验证](../../evidence/correctness/inference-g06-cpu-ragged-runtime-source/receipt.json)
-覆盖32组×64步 packed KV 增长/缩短、后续 request 起点移动、长 KV 及独立旧 slot 输出。
 Apple/Vulkan原生ragged沿各自`prepare_ragged_batch`返回的Program/Invocation，使用公开
 `update_ragged_batch(slot, layout)`，固定schema/完整Q拓扑下更新KV长度与packed起点，
 成功后重新bind原三个容量输入。调用外部串行，旧结果/在途/失败/关闭受原门保护；非法布局
-保旧绑定。其[当前source资格](../../evidence/correctness/inference-g06-native-ragged-runtime-source/receipt.json)
-当前host风险、迁址SDK和独立头已过；Apple变化长度仍managed建图，Vulkan仍重新编码，capture资格单独声明。
+保旧绑定。变化长度时，Apple 仍可能 managed 建图，Vulkan 仍重新编码；不因此取得 capture 能力。
 
 Linux CUDA的公开factory随普通产品传递，消费者只链接hyle::compute/hyle::graph；
 cuda.h在实际HYLE_COMPUTE_FLASHINFER资格下供应原factory头，未准入平台不供应该API。
@@ -228,39 +184,30 @@ foreign schema，不扩大未引用页权限。已 ready 页可共享，未引�
 原生分页 controller 在 schema、完整 Q indptr 与空输入端口域相同时复用 Program/Invocation；
 KV indptr、tail 和 page IDs 可在显式 prepare 中更新。Q 拓扑变化，或从“Q/KV全空的一端口”
 切换到“Q空但保留KV的四端口”时仍冷建。page IDs 由 device 表消费。每个 mirror
-记录自己的有效页表，只通过原 F2 上传实际变化区间并清除缩小留下的旧值；相同表可零上传、
+记录自己的有效页表，只通过批量搬运 上传实际变化区间并清除缩小留下的旧值；相同表可零上传、
 零上传等待。staging 容量仍为 `4 * max_page_refs`，device mirrors 为其两倍，固定 backing
 cap 还需三组64byte对齐的最坏 padding。report 的 uploaded bytes/waits 是当次实际费用，
 staging/device/backing bytes 是容量；`reused_native_plan` 表示通过原结果/退休门后的计划复用。
-controller 创建时经原 F2 分别清零两 bank，显式冷费用为两次全容量 copy 与完成等待；
+controller 创建时经批量搬运 分别清零两 bank，显式冷费用为两次全容量 copy 与完成等待；
 它们不计入以后每次 prepare 的 delta 报告。device 不要求 host-mappable。
 `NativePagedBatchVersion::indices()` 是显式、可并发的固定容量导出，首次分配填零并缓存，
-失败可重试；普通 version 与 controller prepare 不必生成这个全容量 blob。本批 G06 的
-[Air runtime lengths/native/联合 source 验证](../../evidence/correctness/inference-g06-native-runtime-lengths-source/receipt.json)
-及当前适用host风险、迁址SDK/独立头已通过；本轮结构成本按G06终审，不外推旧候选计时证书。
+失败可重试；普通 version 与 controller prepare 不必生成这个全容量 blob。
 Apple 每个 Invocation 独立保留当前 layout，初始长度使用原 compiled 路径，其它长度
 在原 worker 上组合原 MLX fast primitive；不逐 tail 重新 Context.compile，但仍有 managed
 图构造费用。Vulkan 更新当前 Invocation 的逻辑长度/表偏移，并让原录制失效后重新编码；
 原 graph 与 storage 保留。`reused_native_plan` 不表示 capture 或 native 零分配。
 无需全历史 KV gather、按 Q/head 展开或上传 additive mask。原 query/output/MLX compiled
 metadata、shader scratch 与 driver 存储仍是额外费用，private bytes 可以 UNKNOWN；
-本入口的delta和计划复用按G06的P0合同计费；capture资格按各原生路线声明。
+delta 上传、计划复用与 capture 分别按原生接口检查和报告。
 
 Context/device/staging/injected allocator 保持地址稳定，活过所有 native work 和结果；
 控制调用外部串行，多个 slot 独立。旧 result 阻止同 slot prepare；原结果与实际退休门
 通过后的 prepare 释放旧 input import，同 topology 也可重新取得准确页 writer；caller
 仍须释放自己保留的旧 frame/reader。计划与原 Vulkan output bridge 可保留。close 停止新工作，
-drain 沿原实际退休观察，已接纳错误或未知完成不许可提前释放页 guard。结果按本 route
-原 Results/readonly import 使用。原 native accepted-prefix/未知退休、三交付及 P1
-记录绑定各自旧候选；本批输入释放、计划复用与delta的当前source/host风险/SDK资格
-见G06终审及上方证据。宿主sanitizer不签shader/driver；
-Windows CPU source 不代签 Windows native GPU。
+drain 沿原实际退休观察，已接纳错误或未知完成不许可提前释放页 guard。结果按本 route 的 Results/readonly import 使用；未知退休不能当作已完成。
 
 ## CPU 与 Apple/Vulkan 联合分页
 
-当前接缝的[原生有限域终审](../implementation/tasks/graph/inference-g02-native-paged-terminal.md)
-已完成实际Air数学/风险、四份relocated SDK、宿主san和Windows定向公开链接；原G02
-共同轮的Windows CUDA/Vulkan未决门仍保留，不能由本native域签整个G02完成。
 完整普通调用见[公开联合消费者](../../tests/graph_batch/native_paged_joint_consumer.cc)，只链
 `hyle::graph`，需要配置 `cpu;apple` 或 `cpu;vulkan`。沿原GraphBuilder描述CPU前后段：
 
@@ -330,7 +277,7 @@ CUDA pinned/device carrier不能假装属于这个lane。非batch辅助lane无�
 资源与 Context/Queue 沿原 lifetime
 合同存活，不能在 native work 或旧结果仍被保留时销毁。prepare_batch 后 bind 输入/输出，
 首次 submit 才沿原 Graph prepare_replay 处理完整已绑定 topology；仍无 submit 隐式 batch plan。
-此接口正在 G02 验证，不代签 Apple/Vulkan hybrid native 分页或新吞吐/capture资格。
+Apple/Vulkan 联合分页使用前文各自的原生入口；本 lane 接口不自动增加它们的 capture 能力。
 
 ## 容量、有效区与版本
 
@@ -387,19 +334,19 @@ CPU Graph用同recipe创建graph::batch::MaterializedInvocation，prepare/bind/s
 ## 原生Apple / Vulkan公开旅程
 
 [公开native消费者](../../tests/compute_batch/public_batch_native_consumer.cc)只用公开API：
-创建本route Context、device/staging MemoryResource；原F2上传Q/K/V并取得成功ready lease；
+创建本route Context、device/staging MemoryResource；批量搬运上传Q/K/V并取得成功ready lease；
 创建typed Direct controller或同route的Graph factory；prepare_batch(layout)上传同一
 owned generation，再bind和submit。OwnedResult.wait成功后只借ResultLease访问原native
 数组/tensor。旧ResultLease/Completion仍存活时prepare必须拒绝，不能覆盖旧结果。
 
 Context、resource owner、Queue和借用allocator必须晚于所有相关native work、结果、
-exported storage和F1 uses销毁。控制对象thread-compatible，caller串行控制；独立slots
+exported storage和资源租约 uses销毁。控制对象thread-compatible，caller串行控制；独立slots
 可以独立使用。不要在另一个线程还prepare/bind时同时控制同一个对象。
 
-## 页写入、append与F4发布
+## 页写入、append 与状态发布
 
 PagedArena冷分配连续backing和独立page权限。acquire取得具体physical页writer；经原
-F2 clone/append成功后调用complete(ready, initialized_rows)或publish(initialized_rows)，
+批量搬运 clone/append成功后调用complete(ready, initialized_rows)或publish(initialized_rows)，
 显式提交连续有效行前缀；值须在[0,page_size]内，0表示尚无有效行。read(layout, exact ready pages)
 检查每个引用所需的有效行数，非尾页需要整页，重复/共享页必须满足所有request后才产生精确页frame。
 首次取得页或旧页回收为新generation时前缀为0；acquire(ready)与未提交writer归还保持原前缀。
@@ -416,7 +363,7 @@ initialized_rows()只返回已提交前缀，写入与copy退休不会自动扩�
 Apple/Vulkan 的 `PagedBatchReceiver` 是显式冷扩展，移交一原 `PagedBatchInvocation`，
 保同一 native invocation、queue 和结果槽。`max_source_completions` 按原更新中已接纳
 phase 与实际使用的 producer completion 数量设定；不足时拒绝，不消费 Update。
-先创建 receiver、准备本次 layout，再提交原 F2，最后将 Update 与精确 pending K/V
+先创建 receiver、准备本次 layout，再提交批量搬运，最后将 Update 与精确 pending K/V
 一起移交；两个 frame 可同时包含继承的 ready 页和本次 pending 目的页：
 
 ```cpp
@@ -441,13 +388,12 @@ copy = update.release_invocation().value();
 不发布成功结果，并保全部 source 与页 guards 至实际退休。控制访问外部串行；旧
 OwnedResult/ResultLease、pending 工作或尚未回接的 source 阻止 receiver 复用。
 frame 与 native binding 有显式冷 metadata 分配，原 metadata prepare 的等待和 native
-private unknown 保留。这个 Direct 入口覆盖两 native 路线；Graph与late native producer组合的已准入G03
-范围现见[最终裁决](../implementation/tasks/compute/inference-g03-final-closure.md)。
+private unknown 保留。这个 Direct 入口覆盖两条 native 路线；Graph 的 pending 输入组合见后文。
 
 共同 `hyle::compute::PagedBatchReceiver` 移交原 `BatchInvocation`，沿其原队列、
 PreparedBatch 和输出 buffer 消费同样的 pending frame。CPU 与已资格的 Linux CUDA
 原生路径已有 source/static/shared 双请求、双槽、64步公共旅程；CPU 宿主风险与 CUDA
-实际来源/退休边界也已定向验证。Graph与late native producer组合见G03最终裁决。
+实际来源/退休边界也已定向验证。Graph与late native producer组合见最终裁决。
 CPU 队列只接受已实际完成的 inline 来源，异步来源由原 backend 拒绝，不隐式 host wait。
 
 ```cpp
@@ -470,9 +416,7 @@ update = receiver.take_update().value();
 
 `graph::batch::PendingInvocation` 移交原 Graph batch coordinator，在其原队列和输出槽内
 组合 Update；pending frame 只绑定已准备的 paged 节点 K/V 输入。Q 用 ready lease，外部
-输出用 writer，metadata 由原 prepare_batch 绑定。CPU/CUDA source 的双请求/双槽/64步 F16/BF16
-与required CPU+CUDA的同形状源码/静态/动态交付、生命周期已验证；全部已准入路线及
-限制见[G03最终裁决](../implementation/tasks/compute/inference-g03-final-closure.md)。
+输出用 writer，metadata 由原 prepare_batch 绑定。
 
 ```cpp
 auto pending = graph::batch::PendingInvocation::create(std::move(original), source_capacity).value();
@@ -501,10 +445,10 @@ prepare_batch、bind(PagedArenaPendingRead)、submit(Update&&)、take_update。�
 的 checked等待均计成本。它不创建第二个 Graph 或 native 执行器。
 
 CUDA wrapper 可先用 `BatchProgramOptions.resource={}` 声明 schema，在其 Context 上创建
-实际 device/pinned资源，再通过显式 CompileEnvironment固定这些 storage domain。F2、lane
+实际 device/pinned资源，再通过显式 CompileEnvironment固定这些 storage domain。批量搬运、lane
 workspace和页 arena使用同一个 Context的资源；其它 Context的同设备资源不能冒充这个身份。
 
-Apple/Vulkan 原 F2 可冷绑定同一个已接纳 native producer 的多个输出；以下 `native` 指
+Apple/Vulkan 批量搬运 可冷绑定同一个已接纳 native producer 的多个输出；以下 `native` 指
 `compute::apple` 或 `compute::vulkan`。每条描述必须与实际输出的 dtype、dense shape及字节
 尺寸一致，output_index 指原结果中的输出序号：
 
@@ -525,29 +469,27 @@ update = native::CopyBatchUpdate::take(std::move(copy), std::move(copied)).value
 只保自己的原 completion，不为 K/V或两个 page节点复制 producer执行或来源观察者。
 
 成功绑定才移交整个 OwnedResult与它的唯一 completion owner，拒绝保留入参。输出逻辑尺寸
-不构成 ready/F1 权限：Apple 在原 worker 的 preflight 取得实际 backing 并完整重验范围/别名
+不构成 ready/资源租约 权限：Apple 在原 worker 的 preflight 取得实际 backing 并完整重验范围/别名
 后才 blit；Vulkan 可冷取得实际地址，但来源排序与成功仍由原 producer合同裁决。foreign
 Runtime、未资格的动态 queue prefix及不匹配输出拒绝。producer 槽须等原结果/storage/source
-全部引用与实际工作退休后回收。两路线的实际多输出 Abs→F2→Direct pending attention source
+全部引用与实际工作退休后回收。两路线的实际多输出 Abs→批量搬运→Direct pending attention source
 旅程已验证，独立 Abs多输出→两阶段范围重排→CPU reduction的64步source也已验证；这个
-正交消费者在最终 F2成功后显式搬运256字节至host，不声明 GPU reduction流水或零copy。
-Apple/Vulkan 新接口的上述 Direct/joint/正交消费者已通过 source 与迁址 static/shared；
-已准入G03路线资格与不支持域以最终裁决为准。
+正交消费者在最终 批量搬运成功后显式搬运256字节至host，不声明 GPU reduction流水或零copy。
 
-原F2已消费page writer时，保留PagedPageWriter，等成功ready输出后调用complete；若放弃
+批量搬运已消费page writer时，保留PagedPageWriter，等成功ready输出后调用complete；若放弃
 这个已消费的控制对象，arena不会猜测该页已退休或重新ready。失败/无法完成观察的页按
 已声明合同保持不可再acquire，显式close/recreate arena；不能把它当普通未提交writer归还。
 
-F4 StateStore/StateDraft列出完整K/V/layout及其他需要保留的成员。共享干净页，dirty页显式
+状态版本 StateStore/StateDraft列出完整K/V/layout及其他需要保留的成员。共享干净页，dirty页显式
 clone到新writer；只把所有成功ready成员finalize为candidate，再由StateHead.publish用
-expected-base切换。失败copy不产生ready writer/lease，不能送进F5，也不能发布F4 head。
+expected-base切换。失败copy不产生ready writer/lease，不能送进 attention，也不能发布状态版本 head。
 取消不能回滚已经实际写过的底层字节，不能在失败后伪造整页CoW成功。
 
-G03 的[精确增量有限路径](../implementation/tasks/compute/inference-g03-dirty-page-terminal.md)已验收。`arena.acquire(page_ready)` 只在这个原整页
+`arena.acquire(page_ready)` 只在这个原整页
 没有其它 reader/native use 时消费其 ready lease，返回同 generation 的 writer；拒绝
 保持入参不变。共享页先沿上面的显式 clone 路线处理，不能原地覆盖旧版本。
 
-F2 只写 dirty range 时，`output` 仍不能把未写 bytes 算成成功 copy。保留 page writer，
+批量搬运 只写 dirty range 时，`output` 仍不能把未写 bytes 算成成功 copy。保留 page writer，
 在实际成功退休且 submission 已释放后，用 `copy.unbind_mutable(id)` 取回原 WriteLease，
 放回 `page.lease()`，再 `page.publish(initialized_rows)`。未写部分是 caller 原来已初始化的内容，成本
 只计本次 dirty bytes；新页仍须初始化所有将被读取的 bytes。示例顺序如下：
@@ -555,7 +497,7 @@ F2 只写 dirty range 时，`output` 仍不能把未写 bytes 算成成功 copy�
 ```cpp
 auto page = arena.acquire(page_ready).value();
 HYLE_RETURN_IF_ERROR(copy.bind_mutable(destination, std::move(page.lease())));
-// bind source/producer and prepare exact dirty ranges with the original F2.
+// bind source/producer and prepare exact dirty ranges with the original 批量搬运.
 {
   auto submitted = copy.submit().value();
   HYLE_RETURN_IF_ERROR(submitted.wait());
@@ -567,14 +509,13 @@ page_ready = page.publish(page.initialized_rows()).value();
 
 `unbind_mutable` 不等待、不产生 readonly output；retained submission/后继ordered read use、pending/unknown/
 failure、closed 或已 publish 的 binding 都拒绝。成功使旧 replay preparation 失效。
-它会沿原 F2 作非阻塞退休观察；仅放弃 submission 时仍保留 PagedPageWriter，后续
+它会沿批量搬运 作非阻塞退休观察；仅放弃 submission 时仍保留 PagedPageWriter，后续
 调用可在成功实际退休后取回权限。不能销毁 page writer 后猜测 arena slot 已恢复。
-这里仍有显式 host observation；G03 的异步 producer→attention、G06 decode planning 与
-G09 流水须分别看各自验收，不能由这段精确更新调用推断已完成。
+这里仍有显式 host observation；不能从精确更新本身推断整条 producer→attention 流水完全异步。
 
 Ragged多request append可能需要重排后续request的offset。当前真实两request例子显式
 clone有效prefix、append新行并初始化unused capacity；这不是独立物理页CoW，成本账必须
-把tail初始化和重排算进去。F5不解释token/page eviction/admission或模型scheduler策略。
+把tail初始化和重排算进去。批次接口不解释token/page eviction/admission或模型scheduler策略。
 
 ## 错误、关闭与费用
 
@@ -584,17 +525,12 @@ split与host waits；MaterializedBatchCosts是保守logical上限，包含view/a
 共同 BatchInvocation 只上传有效字段中改变的区间，并清零缩小有效区留下的旧值；同一
 版本且原 plan 可复用时，metadata 上传与准备 host waits 都可以为零。不同 generation
 即使数组值相同，仍须更新版本字段。报告的 staging/upload bytes 是实际搬运量，不代表
-比较有效数组所需的 CPU 扫描量。共同 Graph 中多个 node 读取同一个 metadata 输入时，
-在首上传前共享镜像，每个node保留自己的plan/workspace；对应
-[两个实际attention节点验证](../../evidence/correctness/inference-g06-common-source-windows-attempt-4/receipt.json)
-及当前source/host风险/SDK见G06终审。Apple/Vulkan原生controller各自持有index banks，
+比较有效数组所需的 CPU 扫描量。共同 Graph 中多个 node 读取同一个 metadata 输入时，在首次上传前共享镜像；每个 node 保留自己的 plan/workspace。Apple/Vulkan原生controller各自持有index banks，
 每个bank按自身旧值做delta，原生规划和费用沿各自报告。
 FlashInfer 的显式 update 在同 schema、完整 Q indptr 下，检查原计划实际 chunk/CTA/window
 及每个有效 request 的 chunk 数；调度表等价时复用原 plan，边界变化时真正 cold replan。
-KV offset、page IDs、tail 仍由原 runtime metadata 消费；该判断扫描 requests，原 F2
-另计 active metadata delta。当前[FI 普通source资格](../../evidence/correctness/inference-g06-fi-schedule-runtime-source/receipt.json)
-覆盖32组×64步及原Direct/Graph、CPU+CUDA和pending消费者；当前capture风险和迁址SDK
-已过，P0结构结论保留G04/G05原kernel-only性能未决门。零Q可经完整owning Q/K/V入口
+KV offset、page IDs、tail 仍由原 runtime metadata 消费；该判断扫描 requests，批量搬运
+另计 active metadata delta。零Q可经完整owning Q/K/V入口
 执行checked no-op，显式准备仍可
 计一次立即completion的host wait；PagedArena.read继续要求非空准确页集合。原生private/
 driver费用仍为UNKNOWN。
@@ -612,14 +548,12 @@ accepted native prefix已退休；drain按实际guard/fence/worker等待并保�
 共同 pending Graph每次 `prepare_batch` 清除上次 pending输入，后续 bind会为 reader和lane
 表请求 bounded metadata；外层 reserve不等于每步零分配。warm submit不新增来源协议节点、
 不复制KV或创建队列；完整 prepare/bind/submit费用应分别计入。CPU+CUDA图的 GPU→CPU
-边界可沿原 replay合同执行 checked host wait，因此 submit不保证非阻塞。G06规划与G09
+边界可沿原 replay合同执行 checked host wait，因此 submit不保证非阻塞。规划与
 流水分别处理这些成本，不从 pending页接纳推导完全异步或 capture资格。
 
 CUDA 已接纳 native work 的 request_cancel 可返回 Unimplemented；必须检查返回值，
 不能把拒绝取消当成已经取消或退休。停止提交后继，等原实际工作退休后再释放相关权限。
 
-G06 的[CUDA/FI capture源码](../../evidence/correctness/inference-g06-capture-replay-source/receipt.json)、
-当前宿主/故障风险和迁址SDK已通过，结构费用见G06终审。
 `PreparedBatch::prepare_replay(inputs)`或query＋paged ready
 frames显式录制，之后仍调用原`run`；Graph batch在prepare/bind后显式`prepare_replay()`，
 再原submit。录制checked-retire但不执行用户tensor或消费run token；每次真正执行重新准入

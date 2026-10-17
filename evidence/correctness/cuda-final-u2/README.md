@@ -2,7 +2,7 @@
 
 普通 `compute-cuda` preset 已实现：Compute+Graph、CUDA ON，其它三路线／tests／bench OFF，
 Release、build j2。用户无需传内部 Provider flags；mixed 可显式 CPU=ON。
-来源与有限 owner 范围见 [U2 卡](../../../docs/implementation/tasks/compute/cuda-final-u2-build-contract.md)。
+来源与有限 owner 范围见 [U2 卡](https://github.com/axiomates/hyle/blob/d12f2204d23503256220e810385d6cb3e93027a8/docs/implementation/tasks/compute/cuda-final-u2-build-contract.md)。
 
 ## 实际配置与反例
 

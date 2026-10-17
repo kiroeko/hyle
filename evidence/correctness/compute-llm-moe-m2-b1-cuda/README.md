@@ -1,6 +1,6 @@
 # M2-B1 CUDA 成熟原版批量接入证据
 
-当前卡：[M2-B1 CUDA](../../../docs/implementation/tasks/compute/llm-moe-m2-b1-cuda.md)。
+当前卡：[M2-B1 CUDA](https://github.com/axiomates/hyle/blob/d12f2204d23503256220e810385d6cb3e93027a8/docs/implementation/tasks/compute/llm-moe-m2-b1-cuda.md)。
 
 - [source-audit.json](source-audit.json)：固定 ggml pin、原版承载与有限 C1–C4 域、资源/capacity
   和 slice 对齐审计；不包含冻结自研算法的研究或比较。

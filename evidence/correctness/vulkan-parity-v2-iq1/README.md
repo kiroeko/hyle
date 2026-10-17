@@ -1,6 +1,6 @@
 # Vulkan original IQ1 XS/XXS/XXXS source packet
 
-Owner scope: [current finite I1–I5](../../../docs/implementation/tasks/compute/vulkan-parity-v2-iq1-bindings.md).
+Owner scope: [current finite I1–I5](https://github.com/axiomates/hyle/blob/d12f2204d23503256220e810385d6cb3e93027a8/docs/implementation/tasks/compute/vulkan-parity-v2-iq1-bindings.md).
 Original source: Unsloth `a809594fd2035979ad2b7ef23398127c1d07e891`, registered
 GPU grids and `kernel_mul_mv_iq1_*_f32_impl` in `third_party/ggml_metal_iq1`.
 The standard tensor program retains original lane-strided 32-element subgroup

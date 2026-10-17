@@ -1,6 +1,6 @@
 # G03 Vulkan CopyBatchUpdate 权限与六个生命周期
 
-2026-10-14，按[活动卡](../../../docs/implementation/tasks/compute/inference-g03-copy-update-owner.md)
+2026-10-14，按[活动卡](https://github.com/axiomates/hyle/blob/d12f2204d23503256220e810385d6cb3e93027a8/docs/implementation/tasks/compute/inference-g03-copy-update-owner.md)
 验证candidate bcaec010b；[consumer](consumer.cc)、[实际日志](final.log)、[累计](receipt.json)、
 [源码字节](source-identity.json)、[全部输入/FAIL/编排](raw.zip)。MacBook Air Mac16,12
 arm64 / macOS27.0.1 / AppleClang21，非software Vulkan真实QueueSubmit/fence；4jobs串行。

@@ -27,7 +27,6 @@ benchmark 的结构、输出或资源事实，不决定是否可以开发，也�
 初始化失败后默认操作会拒绝旧产物，修复后运行 `init.py` 重试。
 `test.py` 不隐式构建；安装使用 `build.py --install [prefix]`，不更改用户环境。
 专项维护检查仍直接使用 CMake target、CTest 或 `cmake -P`；按改动运行相关检查，报告失败与未运行项。
-旧状态机、selector、收口检查、预算和机器证书已删除，不保留打印“未检查”却返回成功的兼容入口。
 
 产品依赖由 [HyleDependencyLock.json](../cmake/HyleDependencyLock.json) 管理，benchmark fetcher
 只准备比较对象，不能替代产品依赖解析。SIMD route JSON 是代码生成输入，修改后使用生成器同步
@@ -35,4 +34,4 @@ benchmark 的结构、输出或资源事实，不决定是否可以开发，也�
 
 SIMD 配置检查使用 `python scripts/simd-op-coverage.py --check`；修改配置后用
 `--write-provider-manifest --write-provider-routes` 生成头。`op-parity-report.py --check-orders`
-检查实际采样输入和执行顺序，具体统计解释见[SIMD 测量方法](../docs/developer/performance/simd-op-benchmark-methodology.md)。
+检查实际采样输入和执行顺序，具体统计解释见[SIMD 测量方法](../docs/developer/performance/README.md#分辨率与极短循环)。

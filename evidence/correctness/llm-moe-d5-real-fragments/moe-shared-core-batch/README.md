@@ -2,7 +2,7 @@
 
 **后续形状资格更正：** 此处3584宽 SiTU 是 Kimi latent 宽，不能代签实际 expert3072、shared6144、
 dense33792 的 SiTU；仅保留通用公式证据。更正和实际宽度复核由
-[当前 D5 卡](../../../../docs/implementation/tasks/compute/llm-moe-d5-real-fragment-acceptance.md)持有。
+[当前 D5 卡](https://github.com/axiomates/hyle/blob/d12f2204d23503256220e810385d6cb3e93027a8/docs/implementation/tasks/compute/llm-moe-d5-real-fragment-acceptance.md)持有。
 原运行日志及其它已签局部资格保留，完整画像 ledger 未因本批增加。
 
 候选：`f0bec3afe856533f9fa366ef556c649b53f75f3a`。Windows canonical；Apple 副本由

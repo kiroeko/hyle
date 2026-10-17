@@ -1,6 +1,6 @@
 # 单机推理基础能力审计证据
 
-2026-10-13，[审计结论](../../../docs/implementation/tasks/project/inference-single-machine-foundation-audit-2026-10.md)
+2026-10-13，[审计结论](https://github.com/axiomates/hyle/blob/d12f2204d23503256220e810385d6cb3e93027a8/docs/implementation/tasks/project/inference-single-machine-foundation-audit-2026-10.md)
 以单GPU、一个CPU与一个GPU联合计算、CPU-only为目标，覆盖单/多请求及CUDA、Apple、Vulkan
 实际资格。HYLE baseline为67192441c70e8e07b1cae1b09d221114b738c9ca。
 

@@ -1,8 +1,7 @@
 # HYLE time：什么情况选择什么
 
 `time` 面向 C++23 source/static/shared 用户，提供时钟、可注入的确定性 monotonic time、deadline、
-Unix 时间互操作、OS 线程 sleep 和无分配 timer 容器。内部拆成 host clock 与 timer queue 两个
-factor，但普通用户仍只链接 `hyle::time`。它不提供 C API/Native FFI，也不替 scheduler 执行 callback。
+Unix 时间互操作、OS 线程 sleep 和无分配 timer 容器。链接 `hyle::time`；timer 容器由调用者驱动，不替 scheduler 执行 callback。
 
 ## 一页选择表
 

@@ -1,7 +1,7 @@
 # R6 Windows native implementation checkpoint
 
 The two Vulkan owners remain AUDITED under
-[V1–V7](../../../docs/implementation/tasks/compute/vulkan-v1-four-route-foundation.md).
+[V1–V7](https://github.com/axiomates/hyle/blob/d12f2204d23503256220e810385d6cb3e93027a8/docs/implementation/tasks/compute/vulkan-v1-four-route-foundation.md).
 This checkpoint executes real RTX 4070 GPU mathematics and resource lifetimes;
 it is not a route closure, delivery certificate, or immutable P1 candidate.
 

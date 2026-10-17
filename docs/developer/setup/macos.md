@@ -34,5 +34,5 @@ TLS 需要 OpenSSL 3 开发包；`init.py --tls` 自动查找常见安装位置�
 也不把远端工具、SDK、旧 build 或整套依赖复制回工作区；优先复用固定 Hyle 工作目录里的缓存。
 
 ARM 与 x86 的吞吐不能直接解释为库实现胜负。macOS 的 QoS 不等于固定到特定 P/E 核；
-测量时记录实际电源、QoS 和低功耗状态，见[验证环境](../performance/machines.md)。
+测量时记录实际电源、QoS 和低功耗状态，见[验证环境](../performance/README.md#环境与解释限制)。
 离线工具与依赖介质见[离线构建](offline.md)。

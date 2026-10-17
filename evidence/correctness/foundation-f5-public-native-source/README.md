@@ -16,5 +16,5 @@ actual Air runner核对Mac16,12/16GiB/macOS27.0.1/Clang21/CMake4.3.4，Mini未�
 这只是公开native程序的source资格，尚不签installed static/shared、完整18 SDK格或最终
 closure。安装时复制同一cpp到隔离consumer目录，只有prefix头/库；software Vulkan只包。
 用户使用边界见[批次指南](../../../docs/user/batch-attention.md)，后续计划见
-[完整验证计划](../../../docs/implementation/tasks/compute/foundation-f5-final-validation-plan.md)。
+[完整验证计划](https://github.com/axiomates/hyle/blob/d12f2204d23503256220e810385d6cb3e93027a8/docs/implementation/tasks/compute/foundation-f5-final-validation-plan.md)。
 变化选择与skipped reasons见[validation-plan.json](validation-plan.json)，维护检查另验。

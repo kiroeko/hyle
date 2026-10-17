@@ -1,6 +1,6 @@
 # C1-Y34：成熟归约/概率的原生与三交付资格
 
-范围见[当前施工卡](../../../../docs/implementation/tasks/compute/llm-moe-c1-vulkan-reduction.md)。
+范围见[当前施工卡](https://github.com/axiomates/hyle/blob/d12f2204d23503256220e810385d6cb3e93027a8/docs/implementation/tasks/compute/llm-moe-c1-vulkan-reduction.md)。
 产品候选`05581df80e3b6290d4e7c5fc7a66ecf26821eb09`；
 测试编译修正候选`11804be7e8661cafb535d2b372544e474bc9b1a6`。
 两者只差新增测试的const-reference range-for及任务说明，产品输入不变。

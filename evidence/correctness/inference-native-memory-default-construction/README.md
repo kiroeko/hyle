@@ -9,4 +9,4 @@ assignment、empty moved-from、destroy与Context close实际通过，不include
 SDK实际staging→relocated，原prefix/tree保留，producer只构建对应route目标≤4jobs。
 san覆盖宿主空owner/生命周期，原ASan detect_leaks=0限制，不签GPU math/shader/driver。
 P0空构造零分配/无字段增加，P1不适用于compile/default空对象修正；原NR性能证据保留。
-活动范围见[MC卡](../../../docs/implementation/tasks/compute/inference-native-memory-default-construction.md)。
+活动范围见[MC卡](https://github.com/axiomates/hyle/blob/d12f2204d23503256220e810385d6cb3e93027a8/docs/implementation/tasks/compute/inference-native-memory-default-construction.md)。

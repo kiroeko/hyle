@@ -1,6 +1,6 @@
 # Compute/Graph 入口设计证据
 
-本目录只支撑 [设计轮](../../../docs/implementation/tasks/build/compute-entry-design.md)，不证明新 API、
+本目录只支撑 [设计轮](https://github.com/axiomates/hyle/blob/d12f2204d23503256220e810385d6cb3e93027a8/docs/implementation/tasks/build/compute-entry-design.md)，不证明新 API、
 联合运行、三交付或性能资格。baseline 为 `17ff6555c7af0a8bd44d648209c40f53de758420`。
 
 - [inventory.json](inventory.json)：74 个去重入口族/配置项，源码行/SHA256、owner/consumer、能力影响和设计裁决；

@@ -1,6 +1,6 @@
 # G03 原 copy update Apple source 实跑
 
-2026-10-14，按[活动卡](../../../docs/implementation/tasks/compute/inference-g03-copy-update-owner.md)
+2026-10-14，按[活动卡](https://github.com/axiomates/hyle/blob/d12f2204d23503256220e810385d6cb3e93027a8/docs/implementation/tasks/compute/inference-g03-copy-update-owner.md)
 执行；AUDITED WORKTREE，尚未注册不可变 candidate，CU03其余路线/风险/SDK未签。
 [公共与私有直接consumer](consumer.cc)、[实际日志](final.log)、[累计记录](receipt.json)、
 [源码字节](source-identity.json)、[全部输入与原始编排](raw.zip)。

@@ -1,6 +1,6 @@
 # CUDA vendor identity and consumer admission
 
-Owned by [V1/V2](../../../docs/implementation/tasks/build/cuda-vendor-content-audit-v1.md).
+Owned by [V1/V2](https://github.com/axiomates/hyle/blob/d12f2204d23503256220e810385d6cb3e93027a8/docs/implementation/tasks/build/cuda-vendor-content-audit-v1.md).
 This closes the identified hash/sorting evidence gap. The final applicable
 [Windows selector](../apple-r5-windows-selector/README.md) now passes; the owning
 task records the legal candidate and terminal transitions separately.

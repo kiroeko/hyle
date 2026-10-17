@@ -1,7 +1,7 @@
 # 冻结性能审计逐格矩阵（既有证据摘录）
 
 本表由 [audit-data.json](audit-data.json) 派生，只记录基线审计事实，不生成或续签性能证书。
-任务与判定依据见 [project audit](../../docs/implementation/tasks/project/frozen-performance-opportunity-audit-2026-09.md)。
+任务与判定依据见 [project audit](https://github.com/axiomates/hyle/blob/d12f2204d23503256220e810385d6cb3e93027a8/docs/implementation/tasks/project/frozen-performance-opportunity-audit-2026-09.md)。
 
 `r > 1` 有利于 HYLE；负向幅度使用吞吐下降 `100 × (1-r)`，不是延迟增长 `100 × (1/r-1)`。
 CI 为原记录约 99.26% 的逐层中位数区间；全精度保留在 JSON。原 exact/NI verdict 不等于本次审计新签 PASS。

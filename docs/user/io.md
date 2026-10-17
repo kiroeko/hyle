@@ -314,9 +314,9 @@ auto context = hyle::io::TlsContext::make_server(server);
 HYLE 不把 callback 安装到长期 context，也不保留、记录或拼接 password/PEM；stream 和后续 handshake
 不会再次取密码。没有 password 的 encrypted key 会直接 typed fail，不会退回 OpenSSL 的终端交互提示。
 不要从 callback 返回指向局部临时 string 的 view，也不要在 factory 返回前销毁 options 中借用的 callable。
-证书 watch、失败重试、构造新 context 后的 atomic swap 和 listener 策略属于 `hyle-service` reload 组合；
-已有 stream 会继续保活其旧 context。自定义 cipher suite、provider/HSM、PKCS#12 和证书选择 callback
-仍不在当前合同，见[观察清单](../architecture/inference-engine-capability-watchlist.md)。
+证书 watch、失败重试、构造新 context 后的 atomic swap 和 listener 策略由应用负责；
+已有 stream 继续保活其旧 context。当前接口不提供自定义 cipher suite、provider/HSM、PKCS#12
+或证书选择 callback。
 
 每条 stream 在构造时从 context 的 `connection_allocator` 取得一个可复用的 16 KiB
 pump buffer；默认使用 `mem::system_allocator()`，record 热路不会反复分配。显式注入

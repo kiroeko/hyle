@@ -1,6 +1,6 @@
 # G03 Apple/Vulkan 公共 CopyBatchUpdate 旅程
 
-2026-10-14，按[活动卡](../../../docs/implementation/tasks/compute/inference-g03-copy-update-owner.md)
+2026-10-14，按[活动卡](https://github.com/axiomates/hyle/blob/d12f2204d23503256220e810385d6cb3e93027a8/docs/implementation/tasks/compute/inference-g03-copy-update-owner.md)
 运行，AUDITED WORKTREE；[公共 consumer](consumer.cc)、[Apple](apple-final.log)、
 [Vulkan](vulkan-final.log)、[累计记录](receipt.json)、[源码字节](source-identity.json)、
 [所有输入/失败/编排](raw.zip)。MacBook Air Mac16,12 / arm64 / macOS27.0.1 / AppleClang21；
