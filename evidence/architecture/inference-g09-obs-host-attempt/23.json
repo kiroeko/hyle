@@ -1,0 +1,666 @@
+{
+  "schema": "hyle.independent-review/g09-obs-result/v1",
+  "review": "R23",
+  "created_utc": "2026-10-17T04:00:04.174806+00:00",
+  "decision": "CONFIRM_AGGREGATE_AA_FAIL_AND_STOP_FIXED_ATTEMPT_WITH_ZERO_VALID_AB",
+  "scope": "Offline recomputation and artifact identity reconciliation only; no native execution, GPU, build, A/A or P1 run initiated by reviewer.",
+  "source_identity": {
+    "private_source": "1757a6b3a4047790c94b43beb3492823fc0dcdf7",
+    "parent_root_freeze": "a091178b7 (parent-declared frozen input)"
+  },
+  "terminal": {
+    "launcher_state": "TERMINAL",
+    "launcher_exit_code": 1,
+    "launcher_elapsed_seconds": 34.84299999999348,
+    "verify_plus_aa_elapsed_seconds": 28.64100000000326,
+    "verify_processes": 1,
+    "aa_processes_completed": 8,
+    "aa_aggregate_gate": "FAIL",
+    "ready": "FAIL",
+    "first_product_process": "REJECTED_BEFORE_COMPARE",
+    "valid_ab_samples": 0,
+    "formal_qualification": "NOT_QUALIFIED",
+    "engineering_ni": "INCONCLUSIVE",
+    "product_performance_direction": "UNKNOWN"
+  },
+  "independent_recomputation": {
+    "method": "Independently parse raw nanobench op/s table columns by exact title and legacy labels, without importing the validator; calculate same-SDK clone first/second ratios, factor medians and unchanged closed reciprocal bands. Do not substitute paired relative percentages.",
+    "ratios_recomputed": 32,
+    "match": "ALL_32_RATIOS_AND_ALL_8_SUMMARIES_EXACT",
+    "narrow_factor_band": [
+      0.9523809523809523,
+      1.05
+    ],
+    "gross_process_band": [
+      0.9090909090909091,
+      1.1
+    ],
+    "errors_match_original_exactly": true,
+    "recomputed_errors": [
+      "baseline/independent-gpu-first: factor median bias",
+      "baseline/two-microbatches: gross instability",
+      "baseline/serial-holdout: factor median bias",
+      "candidate/independent-gpu-first: gross instability",
+      "candidate/independent-gpu-first: factor median bias",
+      "candidate/two-microbatches: factor median bias"
+    ],
+    "summaries": {
+      "baseline/independent-cpu-first": {
+        "ratios": [
+          1.0649889849178105,
+          0.9935954600729632,
+          0.990499648135116,
+          0.9856701765497585
+        ],
+        "factor_medians": {
+          "all": 0.9920475541040397,
+          "execution_order=candidate-first": 1.0292922224953869,
+          "execution_order=peer-first": 0.9880849123424373,
+          "allocation_order=candidate-first": 1.0277443165264633,
+          "allocation_order=peer-first": 0.9896328183113609
+        },
+        "outside_gross": [],
+        "outside_factor": {}
+      },
+      "baseline/independent-gpu-first": {
+        "ratios": [
+          0.9860991193230876,
+          1.0181079409946119,
+          0.9332209106239462,
+          0.9152062311913614
+        ],
+        "factor_medians": {
+          "all": 0.9596600149735168,
+          "execution_order=candidate-first": 1.0021035301588497,
+          "execution_order=peer-first": 0.9242135709076538,
+          "allocation_order=candidate-first": 0.9596600149735168,
+          "allocation_order=peer-first": 0.9666570860929866
+        },
+        "outside_gross": [],
+        "outside_factor": {
+          "execution_order=peer-first": 0.9242135709076538
+        }
+      },
+      "baseline/two-microbatches": {
+        "ratios": [
+          1.0768581081081081,
+          0.886063072227874,
+          0.9769362186788156,
+          1.0264919129949805
+        ],
+        "factor_medians": {
+          "all": 1.0017140658368981,
+          "execution_order=candidate-first": 0.981460590167991,
+          "execution_order=peer-first": 1.0017140658368981,
+          "allocation_order=candidate-first": 1.0268971633934618,
+          "allocation_order=peer-first": 0.9562774926114272
+        },
+        "outside_gross": [
+          0.886063072227874
+        ],
+        "outside_factor": {}
+      },
+      "baseline/serial-holdout": {
+        "ratios": [
+          0.9330909090909091,
+          0.9703536135254197,
+          0.981362467866324,
+          0.9757075997325608
+        ],
+        "factor_medians": {
+          "all": 0.9730306066289902,
+          "execution_order=candidate-first": 0.9517222613081644,
+          "execution_order=peer-first": 0.9785350337994424,
+          "allocation_order=candidate-first": 0.9572266884786165,
+          "allocation_order=peer-first": 0.9730306066289902
+        },
+        "outside_gross": [],
+        "outside_factor": {
+          "execution_order=candidate-first": 0.9517222613081644
+        }
+      },
+      "candidate/independent-cpu-first": {
+        "ratios": [
+          1.0007820136852394,
+          0.9774845660331679,
+          1.0031633311814072,
+          0.9984312700176482
+        ],
+        "factor_medians": {
+          "all": 0.9996066418514438,
+          "execution_order=candidate-first": 0.9891332898592037,
+          "execution_order=peer-first": 1.0007973005995277,
+          "allocation_order=candidate-first": 1.0019726724333233,
+          "allocation_order=peer-first": 0.9879579180254081
+        },
+        "outside_gross": [],
+        "outside_factor": {}
+      },
+      "candidate/independent-gpu-first": {
+        "ratios": [
+          1.192071835304424,
+          0.9431651463928048,
+          0.9963458356315499,
+          0.9289446851899058
+        ],
+        "factor_medians": {
+          "all": 0.9697554910121773,
+          "execution_order=candidate-first": 1.0676184908486144,
+          "execution_order=peer-first": 0.9626452604107278,
+          "allocation_order=candidate-first": 1.0942088354679869,
+          "allocation_order=peer-first": 0.9360549157913554
+        },
+        "outside_gross": [
+          1.192071835304424
+        ],
+        "outside_factor": {
+          "execution_order=candidate-first": 1.0676184908486144,
+          "allocation_order=candidate-first": 1.0942088354679869,
+          "allocation_order=peer-first": 0.9360549157913554
+        }
+      },
+      "candidate/two-microbatches": {
+        "ratios": [
+          1.049171115481877,
+          1.0501968503937007,
+          1.0574832464631423,
+          1.0320567375886525
+        ],
+        "factor_medians": {
+          "all": 1.0496839829377889,
+          "execution_order=candidate-first": 1.0496839829377889,
+          "execution_order=peer-first": 1.0447699920258975,
+          "allocation_order=candidate-first": 1.0533271809725098,
+          "allocation_order=peer-first": 1.0411267939911766
+        },
+        "outside_gross": [],
+        "outside_factor": {
+          "allocation_order=candidate-first": 1.0533271809725098
+        }
+      },
+      "candidate/serial-holdout": {
+        "ratios": [
+          0.9558005357510817,
+          1.052747763448356,
+          0.9535381650786853,
+          1.002746061569591
+        ],
+        "factor_medians": {
+          "all": 0.9792732986603363,
+          "execution_order=candidate-first": 1.004274149599719,
+          "execution_order=peer-first": 0.9781421133241381,
+          "allocation_order=candidate-first": 0.9546693504148835,
+          "allocation_order=peer-first": 1.0277469125089733
+        },
+        "outside_gross": [],
+        "outside_factor": {}
+      }
+    },
+    "runs": [
+      {
+        "sdk": "baseline",
+        "execution_order": "candidate-first",
+        "allocation_order": "candidate-first",
+        "log": "baseline-0-0.log",
+        "ratios": {
+          "independent-cpu-first": 1.0649889849178105,
+          "independent-gpu-first": 0.9860991193230876,
+          "two-microbatches": 1.0768581081081081,
+          "serial-holdout": 0.9330909090909091
+        },
+        "raw_ops_per_second": {
+          "independent-cpu-first": {
+            "first_same_sdk_clone": 125.69,
+            "second_same_sdk_clone": 118.02
+          },
+          "independent-gpu-first": {
+            "first_same_sdk_clone": 114.21,
+            "second_same_sdk_clone": 115.82
+          },
+          "two-microbatches": {
+            "first_same_sdk_clone": 76.5,
+            "second_same_sdk_clone": 71.04
+          },
+          "serial-holdout": {
+            "first_same_sdk_clone": 89.81,
+            "second_same_sdk_clone": 96.25
+          }
+        }
+      },
+      {
+        "sdk": "baseline",
+        "execution_order": "candidate-first",
+        "allocation_order": "peer-first",
+        "log": "baseline-0-1.log",
+        "ratios": {
+          "independent-cpu-first": 0.9935954600729632,
+          "independent-gpu-first": 1.0181079409946119,
+          "two-microbatches": 0.886063072227874,
+          "serial-holdout": 0.9703536135254197
+        },
+        "raw_ops_per_second": {
+          "independent-cpu-first": {
+            "first_same_sdk_clone": 122.56,
+            "second_same_sdk_clone": 123.35
+          },
+          "independent-gpu-first": {
+            "first_same_sdk_clone": 115.26,
+            "second_same_sdk_clone": 113.21
+          },
+          "two-microbatches": {
+            "first_same_sdk_clone": 69.68,
+            "second_same_sdk_clone": 78.64
+          },
+          "serial-holdout": {
+            "first_same_sdk_clone": 81.5,
+            "second_same_sdk_clone": 83.99
+          }
+        }
+      },
+      {
+        "sdk": "baseline",
+        "execution_order": "peer-first",
+        "allocation_order": "candidate-first",
+        "log": "baseline-1-0.log",
+        "ratios": {
+          "independent-cpu-first": 0.990499648135116,
+          "independent-gpu-first": 0.9332209106239462,
+          "two-microbatches": 0.9769362186788156,
+          "serial-holdout": 0.981362467866324
+        },
+        "raw_ops_per_second": {
+          "independent-cpu-first": {
+            "first_same_sdk_clone": 112.6,
+            "second_same_sdk_clone": 113.68
+          },
+          "independent-gpu-first": {
+            "first_same_sdk_clone": 110.68,
+            "second_same_sdk_clone": 118.6
+          },
+          "two-microbatches": {
+            "first_same_sdk_clone": 68.62,
+            "second_same_sdk_clone": 70.24
+          },
+          "serial-holdout": {
+            "first_same_sdk_clone": 91.62,
+            "second_same_sdk_clone": 93.36
+          }
+        }
+      },
+      {
+        "sdk": "baseline",
+        "execution_order": "peer-first",
+        "allocation_order": "peer-first",
+        "log": "baseline-1-1.log",
+        "ratios": {
+          "independent-cpu-first": 0.9856701765497585,
+          "independent-gpu-first": 0.9152062311913614,
+          "two-microbatches": 1.0264919129949805,
+          "serial-holdout": 0.9757075997325608
+        },
+        "raw_ops_per_second": {
+          "independent-cpu-first": {
+            "first_same_sdk_clone": 124.5,
+            "second_same_sdk_clone": 126.31
+          },
+          "independent-gpu-first": {
+            "first_same_sdk_clone": 103.4,
+            "second_same_sdk_clone": 112.98
+          },
+          "two-microbatches": {
+            "first_same_sdk_clone": 73.62,
+            "second_same_sdk_clone": 71.72
+          },
+          "serial-holdout": {
+            "first_same_sdk_clone": 87.56,
+            "second_same_sdk_clone": 89.74
+          }
+        }
+      },
+      {
+        "sdk": "candidate",
+        "execution_order": "candidate-first",
+        "allocation_order": "candidate-first",
+        "log": "candidate-0-0.log",
+        "ratios": {
+          "independent-cpu-first": 1.0007820136852394,
+          "independent-gpu-first": 1.192071835304424,
+          "two-microbatches": 1.049171115481877,
+          "serial-holdout": 0.9558005357510817
+        },
+        "raw_ops_per_second": {
+          "independent-cpu-first": {
+            "first_same_sdk_clone": 153.57,
+            "second_same_sdk_clone": 153.45
+          },
+          "independent-gpu-first": {
+            "first_same_sdk_clone": 163.29,
+            "second_same_sdk_clone": 136.98
+          },
+          "two-microbatches": {
+            "first_same_sdk_clone": 74.68,
+            "second_same_sdk_clone": 71.18
+          },
+          "serial-holdout": {
+            "first_same_sdk_clone": 92.77,
+            "second_same_sdk_clone": 97.06
+          }
+        }
+      },
+      {
+        "sdk": "candidate",
+        "execution_order": "candidate-first",
+        "allocation_order": "peer-first",
+        "log": "candidate-0-1.log",
+        "ratios": {
+          "independent-cpu-first": 0.9774845660331679,
+          "independent-gpu-first": 0.9431651463928048,
+          "two-microbatches": 1.0501968503937007,
+          "serial-holdout": 1.052747763448356
+        },
+        "raw_ops_per_second": {
+          "independent-cpu-first": {
+            "first_same_sdk_clone": 161.5,
+            "second_same_sdk_clone": 165.22
+          },
+          "independent-gpu-first": {
+            "first_same_sdk_clone": 147.86,
+            "second_same_sdk_clone": 156.77
+          },
+          "two-microbatches": {
+            "first_same_sdk_clone": 74.69,
+            "second_same_sdk_clone": 71.12
+          },
+          "serial-holdout": {
+            "first_same_sdk_clone": 90.61,
+            "second_same_sdk_clone": 86.07
+          }
+        }
+      },
+      {
+        "sdk": "candidate",
+        "execution_order": "peer-first",
+        "allocation_order": "candidate-first",
+        "log": "candidate-1-0.log",
+        "ratios": {
+          "independent-cpu-first": 1.0031633311814072,
+          "independent-gpu-first": 0.9963458356315499,
+          "two-microbatches": 1.0574832464631423,
+          "serial-holdout": 0.9535381650786853
+        },
+        "raw_ops_per_second": {
+          "independent-cpu-first": {
+            "first_same_sdk_clone": 155.39,
+            "second_same_sdk_clone": 154.9
+          },
+          "independent-gpu-first": {
+            "first_same_sdk_clone": 144.51,
+            "second_same_sdk_clone": 145.04
+          },
+          "two-microbatches": {
+            "first_same_sdk_clone": 71.01,
+            "second_same_sdk_clone": 67.15
+          },
+          "serial-holdout": {
+            "first_same_sdk_clone": 89.07,
+            "second_same_sdk_clone": 93.41
+          }
+        }
+      },
+      {
+        "sdk": "candidate",
+        "execution_order": "peer-first",
+        "allocation_order": "peer-first",
+        "log": "candidate-1-1.log",
+        "ratios": {
+          "independent-cpu-first": 0.9984312700176482,
+          "independent-gpu-first": 0.9289446851899058,
+          "two-microbatches": 1.0320567375886525,
+          "serial-holdout": 1.002746061569591
+        },
+        "raw_ops_per_second": {
+          "independent-cpu-first": {
+            "first_same_sdk_clone": 152.75,
+            "second_same_sdk_clone": 152.99
+          },
+          "independent-gpu-first": {
+            "first_same_sdk_clone": 145.77,
+            "second_same_sdk_clone": 156.92
+          },
+          "two-microbatches": {
+            "first_same_sdk_clone": 72.76,
+            "second_same_sdk_clone": 70.5
+          },
+          "serial-holdout": {
+            "first_same_sdk_clone": 69.38,
+            "second_same_sdk_clone": 69.19
+          }
+        }
+      }
+    ]
+  },
+  "observed_host_and_math": {
+    "snapshot_count": 36,
+    "obs_present_snapshots": 0,
+    "nvspcap_present_snapshots": 36,
+    "complete_before_oracles": 36,
+    "complete_after_oracles": 36,
+    "successful_state_destroy_markers": 72,
+    "recorded_normal_exits": 9,
+    "unique_child_nonces": 9,
+    "measurement": "All 8 A/A children: requested11 / actual12 paired rounds / exact1 epoch iteration / 1 complete logical consumer replay per call; two-microbatch replay contains two slots.",
+    "module_scope": "Four pre-timing snapshots per process only, not continuous tracing. Natural baseline1+2/candidate1+2 self-A/A; baseline1+candidate1 verify.",
+    "logs": [
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g09-p1-obs-free-1\\evidence\\pipeline-aa-raw\\verify.log",
+        "sha256": "3135cd6a122077007233bbf05483c6a2cd843d871d19a74a5903d2dbd84b692a",
+        "bytes": 28103,
+        "recorded_exit_code": 0,
+        "phase_count": 4,
+        "obs_absent": true,
+        "residual_nvspcap_phase_count": 4,
+        "before_full4M_oracles": 4,
+        "after_full4M_oracles": 4,
+        "successful_destroy_markers": 8,
+        "facade_pair_and_telemetry_match": true
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g09-p1-obs-free-1\\evidence\\pipeline-aa-raw\\baseline-0-0.log",
+        "sha256": "2dbbd2722d24e894f09f4b2be183df8b019b37f282f0b8e9c5775ba879509783",
+        "bytes": 30933,
+        "recorded_exit_code": 0,
+        "phase_count": 4,
+        "obs_absent": true,
+        "residual_nvspcap_phase_count": 4,
+        "before_full4M_oracles": 4,
+        "after_full4M_oracles": 4,
+        "successful_destroy_markers": 8,
+        "facade_pair_and_telemetry_match": true
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g09-p1-obs-free-1\\evidence\\pipeline-aa-raw\\baseline-0-1.log",
+        "sha256": "b39d51b50cb8d499527559d40f39f278dd7ee878018d09f1309ac5c76aaddddf",
+        "bytes": 30949,
+        "recorded_exit_code": 0,
+        "phase_count": 4,
+        "obs_absent": true,
+        "residual_nvspcap_phase_count": 4,
+        "before_full4M_oracles": 4,
+        "after_full4M_oracles": 4,
+        "successful_destroy_markers": 8,
+        "facade_pair_and_telemetry_match": true
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g09-p1-obs-free-1\\evidence\\pipeline-aa-raw\\baseline-1-0.log",
+        "sha256": "95f5ffcfb955bdb8b5ad70920d56c0deb077b355aa92b03681c5b7f116823a60",
+        "bytes": 30923,
+        "recorded_exit_code": 0,
+        "phase_count": 4,
+        "obs_absent": true,
+        "residual_nvspcap_phase_count": 4,
+        "before_full4M_oracles": 4,
+        "after_full4M_oracles": 4,
+        "successful_destroy_markers": 8,
+        "facade_pair_and_telemetry_match": true
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g09-p1-obs-free-1\\evidence\\pipeline-aa-raw\\baseline-1-1.log",
+        "sha256": "c3a904d3810f1a2a97ec25ab653232ed18375163f018e72b037970698878a557",
+        "bytes": 30939,
+        "recorded_exit_code": 0,
+        "phase_count": 4,
+        "obs_absent": true,
+        "residual_nvspcap_phase_count": 4,
+        "before_full4M_oracles": 4,
+        "after_full4M_oracles": 4,
+        "successful_destroy_markers": 8,
+        "facade_pair_and_telemetry_match": true
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g09-p1-obs-free-1\\evidence\\pipeline-aa-raw\\candidate-0-0.log",
+        "sha256": "9c8eb66b65f5f7490094b8a406784b579971af4f1bd35f2d318d5841a5d203e1",
+        "bytes": 31028,
+        "recorded_exit_code": 0,
+        "phase_count": 4,
+        "obs_absent": true,
+        "residual_nvspcap_phase_count": 4,
+        "before_full4M_oracles": 4,
+        "after_full4M_oracles": 4,
+        "successful_destroy_markers": 8,
+        "facade_pair_and_telemetry_match": true
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g09-p1-obs-free-1\\evidence\\pipeline-aa-raw\\candidate-0-1.log",
+        "sha256": "ef2e15f3caf06eba1114680391bc50b63b5bf274f14cfaaa2c0c6e6edae4ab03",
+        "bytes": 30992,
+        "recorded_exit_code": 0,
+        "phase_count": 4,
+        "obs_absent": true,
+        "residual_nvspcap_phase_count": 4,
+        "before_full4M_oracles": 4,
+        "after_full4M_oracles": 4,
+        "successful_destroy_markers": 8,
+        "facade_pair_and_telemetry_match": true
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g09-p1-obs-free-1\\evidence\\pipeline-aa-raw\\candidate-1-0.log",
+        "sha256": "8de26cc74f8f359ed3a34ec682d420ce0bf56e30b27b2d51ab50decca3b36d5e",
+        "bytes": 31018,
+        "recorded_exit_code": 0,
+        "phase_count": 4,
+        "obs_absent": true,
+        "residual_nvspcap_phase_count": 4,
+        "before_full4M_oracles": 4,
+        "after_full4M_oracles": 4,
+        "successful_destroy_markers": 8,
+        "facade_pair_and_telemetry_match": true
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g09-p1-obs-free-1\\evidence\\pipeline-aa-raw\\candidate-1-1.log",
+        "sha256": "e78a0ed4456956b97d2054beb4d1205adf1bd77b81552fe3bd093944ac3b1750",
+        "bytes": 31008,
+        "recorded_exit_code": 0,
+        "phase_count": 4,
+        "obs_absent": true,
+        "residual_nvspcap_phase_count": 4,
+        "before_full4M_oracles": 4,
+        "after_full4M_oracles": 4,
+        "successful_destroy_markers": 8,
+        "facade_pair_and_telemetry_match": true
+      }
+    ]
+  },
+  "identity_reconciliation": {
+    "status": "ALL_READ_ONLY_IDENTITY_ASSERTIONS_MATCH",
+    "obs_auth_files": 14,
+    "r18_source_files": 22,
+    "original_instrument_files": 16,
+    "sdk_runtime_files": 20,
+    "sdk_runtime_bytes": 796407520,
+    "primary_sha256": "3ceaf7156f7cc098abb1ad79ef6d90bc90a97706c5a18a003011a6ceaf9ab172",
+    "control_sha256": "d5c6793102f7144f67166a0e4e58a612e1b54e2b3a0eed042274751b3e05e38b",
+    "primary_text_sha256": "7c54fe0b9b997f1a4bb02996fd052e62601caebf0bf70909581e4baa895f3b28",
+    "control_text_sha256": "dda66f2605af1ac822b05365f601d76345858dff212a6cfcf9f6d58e481e0a9f",
+    "copied_resource": {
+      "name": "hyle_ggml_cpu_avx2_456172ec_5909b243d5fdb965.dll",
+      "sha256": "c7983d08d66c0f44ed06c8a1a653aa200e962db30f8f3de376f1d805f1727f19"
+    },
+    "actual_three_compiled_sources": [
+      "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g09-p1-instrument-adapter\\instrument\\bench\\nanobench_impl.cc",
+      "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g09-p1-instrument-adapter\\wrapper.cc",
+      "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g09-p1-instrument-adapter\\instrument\\bench\\integration\\perf_control_bench.cc"
+    ],
+    "private_git_head": "1757a6b3a4047790c94b43beb3492823fc0dcdf7",
+    "private_git_clean": true,
+    "peer_head": "9e2f25c469634a6f723e76eaf1aa2db5973bca9a",
+    "peer_clean": true,
+    "ready": "FAIL",
+    "interpretation": "Current source/auth/artifact hashes exactly match run-bound identity and sealed R18/OBS authorization. Independently read-only rehashed all 14 OBS auth files, 22 R18 source files, 16 original instrument files and 20 SDK/runtime artifacts. Actual transient module selection is supported by raw snapshots; no unrelated historical host DLL identity claim."
+  },
+  "blocked_product": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g09-p1-obs-free-1\\evidence\\raw\\n-15\\product-primary-candidate-first-candidate-allocation-first-pipeline-primary-run-01.log",
+    "sha256": "8fa638af693b8c59917aec5bc1295b96a269fc0a8fcaca918055c65d1cffc2a9",
+    "bytes": 341,
+    "observation": "Telemetry followed by original A/A-not-qualified refusal; no table/oracle/compare. The n-15 directory name is not evidence of completed samples."
+  },
+  "missing_host_summary": "pipeline-obs-host.json is absent on this expected aggregate FAIL path: it is emitted only after A/A PASS. Per-child host snapshots exist in pipeline-aa.json and were independently checked against raw logs. No missing-success certificate is inferred.",
+  "must_fixes": [],
+  "interpretation_and_stop": [
+    "OBS exclusion succeeded in the recorded snapshots but was insufficient for qualification. It neither proves OBS caused historical bias nor proves it had no effect.",
+    "Both baseline and candidate self-A/A retain original-threshold rejections; those deviations do not establish candidate-vs-baseline performance LOSS/WIN.",
+    "No concrete new source, identity, math or entry defect is established here. Preserve original FAIL, logs and full 34.843-second cost; stop this one permitted host-normalization attempt.",
+    "No retry, overlay change, larger sample/epoch, shape/provider/threshold/estimator change, product edit, Air conclusion or broader mechanism scan is authorized by this review."
+  ],
+  "inputs": [
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g09-p1-obs-free-1\\run-result.json",
+      "sha256": "551856adaf772c87143ad6039402e775b8ec55044a28c309a547526d4083d45e",
+      "bytes": 1378
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g09-p1-obs-free-1\\evidence\\pipeline-aa.json",
+      "sha256": "98bd45ca1d3b8bd0c943de13ebb5fa1fdb9510d2954a84abdb9453f29e428ec6",
+      "bytes": 173545
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g09-p1-obs-free-1\\instrument.log",
+      "sha256": "b753a9e622053db626a4a88afdb1ad1a8ac240dd369f77463ce55c85785bfa38",
+      "bytes": 217
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g09-p1-obs-free-1\\evidence\\validators\\pipeline-aa.log",
+      "sha256": "6c5e24e4976bc86ba99a8bd35f9d6ce34a772dca313a1099aac38015eec31563",
+      "bytes": 602
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g09-p1-instrument-adapter\\obs-host-authorization.json",
+      "sha256": "4ae76c841bcbcb12e0228d19d1052cc6031fef8ba4067527fc23a02b1a7d5a3b",
+      "bytes": 3776
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g09-p1-instrument-adapter\\validate_obs_host.py",
+      "sha256": "1d69f2daa5e5aaf84dd9b61028e5476cf2a27c3ea662d5b3c9727322c1292f5a",
+      "bytes": 16532
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g09-p1-instrument-adapter\\contract-windows-vulkan-obs-free.json",
+      "sha256": "56432f9f1a3a4436584bcb2976540a98d54afbdf5e48b6142ba85afc24359a66",
+      "bytes": 21640
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g09-p1-instrument-adapter\\review-authorization.json",
+      "sha256": "b811021521fb276055b9482062b85772d6239fa4b189536b4b58579bba2fd4fd",
+      "bytes": 6248
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g09-p1-instrument-adapter\\artifacts-windows-vulkan.json",
+      "sha256": "14112253e3822566e7cfb7ffbb37773925d96036fb5d6083e5dc5fe8e3550400",
+      "bytes": 7869
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g09-obs-entry-review-22.json",
+      "sha256": "8b419b3f3e8d437afcab91f13fb53cb7c875b5841bc3b7ae40e5944418ba7fd6",
+      "bytes": 11856
+    }
+  ]
+}

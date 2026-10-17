@@ -1,6 +1,6 @@
 # G09 native workload A/A 资格阻塞
 
-状态：**AUDITED，2026-10-17；固定一次 Windows Vulkan OBS 宿主排除验证，产品 FIX 集为空**。
+状态：**BLOCKED，2026-10-17；一次 Windows Vulkan OBS 宿主排除已执行，原 A/A 仍失败，产品 FIX 集为空**。
 
 本任务承接[活动 G09](../graph/inference-g09-joint-pipeline.md)的实际停止条件，不扩充基础库能力。
 产品 candidate 固定为 `3524413272cb52d06af5e64d634edbfef09b9864`，实现为 `e09f30925`；
@@ -78,3 +78,20 @@ Windows Vulkan 的原 9 个 verify/A/A 日志四阶段均加载 `graphics-hook64
 
 本项只恢复一次 Windows Vulkan 宿主条件验证，不恢复 Air/CUDA 运行，不重开 G10；
 G09 四产品 owner 保持 BLOCKED-from-CANDIDATE。旧失败、0 有效 A/B 和成本不覆盖。
+
+### 本次宿主尝试终态
+
+[R22 实际代码复核](../../../../evidence/architecture/inference-g09-obs-host-attempt/22.json)
+修复一个 private launcher 异常退出后自有任务树可能继续运行的问题，随后冻结新 private source
+`1757a6b3a4047790c94b43beb3492823fc0dcdf7`；产品、原 C++/仪器/R18 输入均未改。
+[运行终态](../../../../evidence/architecture/inference-g09-obs-host-attempt/receipt.json)保存全部原件：
+一个 verify 和八个 A/A 均正常退出，完整 oracle/退休与 36 个阶段模块快照全部通过，均无 OBS，
+`nvspcap64.dll` 残余仍在。排除条件实际生效，但原 A/A 仍拒绝多项 factor/gross，
+32 个同实现形状比范围为 0.886063–1.192072。它不能证明历史因果，也没有修复资格。
+
+原 ready guard 在首个产品入口的 compare 前拒绝；有效 A/B 仍为 0，没有正式 P1 性能结论。
+本次新增 case 34.843 秒，其中 A/A/verify 28.641 秒；产品/facade 构建为 0，原失败与费用完整保留。
+[R23 结果复核](../../../../evidence/architecture/inference-g09-obs-host-attempt/23.json)独立核对原判据和原件。
+这一次尝试已终止，不重复、不试其他 overlay 设置。当前阻塞 owner 为本工具任务；
+恢复仍须新的具名 instrument/host/contract 机制、独立复核和新测量前冻结的有限修正，
+不能继续复用 R21/R22 为同配置或另一开关授权。Air/CUDA、G10 和四产品 owner 状态不变。

@@ -1,0 +1,156 @@
+{
+  "schema": "hyle.g09.obs-host-attempt-terminal.v1",
+  "state": "BLOCKED",
+  "tool_candidate": "1757a6b3a4047790c94b43beb3492823fc0dcdf7",
+  "root_freeze_commit": "a091178b7",
+  "product_candidate": "3524413272cb52d06af5e64d634edbfef09b9864",
+  "product_implementation": "e09f30925c6dba5cf4540669fd3b4874f45bb158",
+  "gates": {
+    "identity_and_original_text": "PASS",
+    "complete_native_verify_and_all8AA_oracles_retirement": "PASS",
+    "obs_absent_in_all36_existing_phase_snapshots": "PASS",
+    "original_workload_aa": "FAIL",
+    "p1_qualification": "NOT_OBTAINED",
+    "engineering_ni": "INCONCLUSIVE",
+    "performance_direction": "INCONCLUSIVE"
+  },
+  "processes": {
+    "verify": 1,
+    "workload_aa": 8,
+    "phase_snapshots": 36,
+    "valid_ab": 0,
+    "guard_rejected_product_entries": 1
+  },
+  "ratio_range": [
+    0.886063072227874,
+    1.192071835304424
+  ],
+  "errors": [
+    "baseline/independent-gpu-first: factor median bias",
+    "baseline/two-microbatches: gross instability",
+    "baseline/serial-holdout: factor median bias",
+    "candidate/independent-gpu-first: gross instability",
+    "candidate/independent-gpu-first: factor median bias",
+    "candidate/two-microbatches: factor median bias"
+  ],
+  "residual_nvspcap_all9": true,
+  "causal_limit": "OBS exclusion took effect at existing snapshots but was insufficient for original AA qualification. No attribution of historical bias, no claim of continuous absence/all capture-free host.",
+  "case_seconds": 34.84299999999348,
+  "aa_seconds": 28.64100000000326,
+  "time_extensions": [],
+  "previous_receipt_sha256": "0eaf29dcc6e661c46af7bc7715937c80768c7a144258a667833281f811ae07df",
+  "preserves_all_old_failures_and_costs": true,
+  "original_ready_guard": "FAIL; rejected before any compare/math/oracle in first formal product entry",
+  "product_rebuilds": 0,
+  "facade_rebuilds": 0,
+  "additional_attempts": 0,
+  "other_overlay_controls": 0,
+  "primary_text_sha256": "7c54fe0b9b997f1a4bb02996fd052e62601caebf0bf70909581e4baa895f3b28",
+  "control_text_sha256": "dda66f2605af1ac822b05365f601d76345858dff212a6cfcf9f6d58e481e0a9f",
+  "review_sha256": "e2835d1bbc3357e96b9519e24cf19cc9308f1fa6b1405ed9cc9b9430ebd90b05",
+  "raw_archive_sha256": "71a088152f9190f52e27c6e11049128db99730efcef69348b1aca716d97afe42",
+  "raw_archive_bytes": 143576,
+  "files": [
+    {
+      "path": "run/evidence/pipeline-aa-raw/baseline-0-0.log",
+      "bytes": 30933,
+      "sha256": "2dbbd2722d24e894f09f4b2be183df8b019b37f282f0b8e9c5775ba879509783"
+    },
+    {
+      "path": "run/evidence/pipeline-aa-raw/baseline-0-1.log",
+      "bytes": 30949,
+      "sha256": "b39d51b50cb8d499527559d40f39f278dd7ee878018d09f1309ac5c76aaddddf"
+    },
+    {
+      "path": "run/evidence/pipeline-aa-raw/baseline-1-0.log",
+      "bytes": 30923,
+      "sha256": "95f5ffcfb955bdb8b5ad70920d56c0deb077b355aa92b03681c5b7f116823a60"
+    },
+    {
+      "path": "run/evidence/pipeline-aa-raw/baseline-1-1.log",
+      "bytes": 30939,
+      "sha256": "c3a904d3810f1a2a97ec25ab653232ed18375163f018e72b037970698878a557"
+    },
+    {
+      "path": "run/evidence/pipeline-aa-raw/candidate-0-0.log",
+      "bytes": 31028,
+      "sha256": "9c8eb66b65f5f7490094b8a406784b579971af4f1bd35f2d318d5841a5d203e1"
+    },
+    {
+      "path": "run/evidence/pipeline-aa-raw/candidate-0-1.log",
+      "bytes": 30992,
+      "sha256": "ef2e15f3caf06eba1114680391bc50b63b5bf274f14cfaaa2c0c6e6edae4ab03"
+    },
+    {
+      "path": "run/evidence/pipeline-aa-raw/candidate-1-0.log",
+      "bytes": 31018,
+      "sha256": "8de26cc74f8f359ed3a34ec682d420ce0bf56e30b27b2d51ab50decca3b36d5e"
+    },
+    {
+      "path": "run/evidence/pipeline-aa-raw/candidate-1-1.log",
+      "bytes": 31008,
+      "sha256": "e78a0ed4456956b97d2054beb4d1205adf1bd77b81552fe3bd093944ac3b1750"
+    },
+    {
+      "path": "run/evidence/pipeline-aa-raw/verify.log",
+      "bytes": 28103,
+      "sha256": "3135cd6a122077007233bbf05483c6a2cd843d871d19a74a5903d2dbd84b692a"
+    },
+    {
+      "path": "run/evidence/pipeline-aa.json",
+      "bytes": 173545,
+      "sha256": "98bd45ca1d3b8bd0c943de13ebb5fa1fdb9510d2954a84abdb9453f29e428ec6"
+    },
+    {
+      "path": "run/evidence/raw/n-15/product-primary-candidate-first-candidate-allocation-first-pipeline-primary-run-01.log",
+      "bytes": 341,
+      "sha256": "8fa638af693b8c59917aec5bc1295b96a269fc0a8fcaca918055c65d1cffc2a9"
+    },
+    {
+      "path": "run/evidence/validators/pipeline-aa.log",
+      "bytes": 602,
+      "sha256": "6c5e24e4976bc86ba99a8bd35f9d6ce34a772dca313a1099aac38015eec31563"
+    },
+    {
+      "path": "run/instrument.log",
+      "bytes": 217,
+      "sha256": "b753a9e622053db626a4a88afdb1ad1a8ac240dd369f77463ce55c85785bfa38"
+    },
+    {
+      "path": "run/run-result.json",
+      "bytes": 1378,
+      "sha256": "551856adaf772c87143ad6039402e775b8ec55044a28c309a547526d4083d45e"
+    },
+    {
+      "path": "build/CMakeCache.txt",
+      "bytes": 15017,
+      "sha256": "bc4f1891046b64f711ecfb9a55def9f81912772dce9b58a03df1797acb3862c4"
+    },
+    {
+      "path": "build/compile_commands.json",
+      "bytes": 3439,
+      "sha256": "9b7062785d8caf410ecfc8d7985db04ea163146b8817e29a6d0943bfa13dbc06"
+    },
+    {
+      "path": "build/build.ninja",
+      "bytes": 27066,
+      "sha256": "4af9465854d7c16f01c6fb2630da5c3b7a59d06a361c9d94d1c4c7464270f370"
+    },
+    {
+      "path": "build/bin/g09_pipeline_primary.exe",
+      "bytes": 134144,
+      "sha256": "3ceaf7156f7cc098abb1ad79ef6d90bc90a97706c5a18a003011a6ceaf9ab172"
+    },
+    {
+      "path": "build/bin/g09_pipeline_control.exe",
+      "bytes": 88576,
+      "sha256": "d5c6793102f7144f67166a0e4e58a612e1b54e2b3a0eed042274751b3e05e38b"
+    },
+    {
+      "path": "build/bin/g09_pipeline_aa.ready",
+      "bytes": 6,
+      "sha256": "765489fd1b16cabfd78a744ff35dbeccd0d050fb1bff907dca6e1eafa8d44938"
+    }
+  ],
+  "stop": "This fixed host attempt is terminal. No new native run without a newly named reviewed host/instrument/contract mechanism and independently frozen correction. No Air/CUDA inference or G10 reopen."
+}

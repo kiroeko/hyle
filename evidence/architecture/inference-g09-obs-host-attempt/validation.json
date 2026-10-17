@@ -1,0 +1,13 @@
+{
+  "scope": "Terminal documentation/evidence and four current G09 summary corrections only; no product/API/math/build-system/performance-core change.",
+  "previous_registry_revision": "a091178b7",
+  "checks": [
+    {"command": "python scripts/validation-select.py plan --base a091178b7 --candidate WORKTREE", "result": "READY: docs,closure selected;146 skipped/reused with reasons retained"},
+    {"command": "python scripts/check-module-closure.py --previous-ref a091178b7", "result": "PASS:64 components/schema4; states/candidates/recovery conditions unchanged"},
+    {"command": "python scripts/check-docs.py", "result": "PASS:1258 Markdown files/6567 relative links"},
+    {"command": "git diff --check", "result": "PASS"}
+  ],
+  "native_attempt": "Retained original AA FAIL; zero valid A/B. See receipt.json and independent23.json. No qualifying performance PASS claimed.",
+  "reuse": "G07/G08/G10 acceptance and prior G09 correctness/delivery/CUDA P1 retained; no unrelated/global rebuild or repeated product tests.",
+  "format_failure": "Pre-run unmodified upstream OBS source whitespace rejection was preserved and resolved by lossless ZIP packaging; see official-source.json."
+}

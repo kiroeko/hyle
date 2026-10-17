@@ -526,4 +526,15 @@ engineering_performance为`INCONCLUSIVE`；阶段功能/风险/P0、15项交付�
 初次生成状态投影过期的FAIL及纠正记录保留；没有触发全局构建。
 
 本goal保持active；[G10](../compute/inference-g10-cpu-thread-budget.md)的当前阶段和验收由自身卡与
-registry记录，不以它代签G09。本卡停止点后没有启动新的性能采样；后续有限静态机制审计见独立工具卡。
+registry记录，不以它代签G09。以上为原正式尝试停止点，后续具名工具/宿主验证单列如下。
+
+### OBS 宿主条件排除，2026-10-17
+
+[独立工具任务](../tooling/inference-g09-native-workload-aa.md)经 R21/R22 冻结一次 Windows Vulkan
+宿主排除，未改产品、SDK、原 C++ 消费者、统计核心或 5%/10% 门。
+[完整终态及 R23](../../../../evidence/architecture/inference-g09-obs-host-attempt/receipt.json)
+记录 verify 与原八组 A/A 的 36 个快照均无 OBS，完整 oracle/退休及正常退出通过；
+但同实现比仍为 0.886063–1.192072，原 factor/gross 资格失败。排除 OBS 不足以解决资格，
+不能写为产品 LOSS 或声称历史原因已找到。ready guard 拒绝首个产品 compare，有效 A/B 仍为 0。
+新增 case 34.843 秒/无产品重构建，保留旧失败和费用；本次不再运行。
+三组缺失的 A/A/P1 和 G09 四 owner 的 BLOCKED-from-CANDIDATE 不变；G07/G08/G10 已独立验收。
