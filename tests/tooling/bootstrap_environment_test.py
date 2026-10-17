@@ -185,6 +185,25 @@ class EnvironmentTests(unittest.TestCase):
         glob.assert_not_called()
         run.assert_not_called()
 
+    def test_windows_cuda_child_path_includes_split_runtime_directory(self):
+        for nested in (False, True):
+            with self.subTest(nested=nested):
+                toolkit = self.root / ("split-cuda" if nested else "flat-cuda")
+                compiler = toolkit / "bin/nvcc.exe"
+                compiler.parent.mkdir(parents=True)
+                compiler.write_text("compiler fixture")
+                runtime = compiler.parent / "x64" if nested else compiler.parent
+                runtime.mkdir(exist_ok=True)
+                (runtime / "cudart64_13.dll").write_text("runtime fixture")
+                env = {"PATH": "existing"}
+                with patch.object(tools, "_run", return_value="Cuda compilation tools, release 13.3"):
+                    selected = tools._cuda(env, {"CMAKE_CUDA_COMPILER": str(compiler)}, "Windows")
+                paths = env["PATH"].split(os.pathsep)
+                self.assertIn(str(compiler.parent.resolve()), paths)
+                self.assertIn(str(runtime.resolve()), paths)
+                self.assertIn("existing", paths)
+                self.assertEqual(selected["CUDAToolkit_ROOT"], str(toolkit.resolve()))
+
     def test_macos_nonlogin_environment_includes_homebrew(self):
         observed = []
         def compilers(compiler, cache, env, system):

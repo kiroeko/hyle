@@ -351,7 +351,13 @@ def _cuda(env: dict[str, str], cache: dict[str, str], system: str) -> dict[str, 
         except SetupError:
             continue
         if match and tuple(map(int, match.groups())) >= (13, 3):
-            _prepend(env, [path.parent])
+            # CUDA 13 Windows layouts keep nvcc in bin and runtime DLLs in
+            # bin/x64. CMake's native-architecture probe executes a CUDA
+            # program, so locating only the compiler can hide a working GPU.
+            directories = [path.parent]
+            if system == "Windows":
+                directories.append(path.parent / "x64")
+            _prepend(env, directories)
             return {"CMAKE_CUDA_COMPILER": str(path), "CUDAToolkit_ROOT": str(path.parent.parent)}
     message = "Cached CUDA compiler is missing or unsupported; restore that toolkit" if cached else "Install the host's CUDA Toolkit 13.3+"
     raise SetupError(message + ". WSL requires Linux nvcc, not nvcc.exe. See docs/developer/setup/README.md.")
