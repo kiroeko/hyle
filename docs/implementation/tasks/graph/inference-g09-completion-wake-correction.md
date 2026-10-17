@@ -174,3 +174,24 @@ owner 已真实编译链接。首个完整 fixture build 随后因新私有 CMak
 由[独立维护工具任务](../tooling/validation-selector-apple-hybrid-platform.md)单列一行 Darwin
 适用性修正与既有平台表测试，旧 policy 的 Windows/Linux 两项红证据及完整 60 tests 绿证据已存。
 不以空 target 签 correctness，也不将工具单测代签 G09；后续用真实 VS 环境重新 plan/run。
+
+### 第二普通 checkpoint 与下层缺陷，2026-10-17
+
+固定 checkpoint `e2a55aaab` 的 Windows source build 与八个真实消费者全部通过，包括两个
+slots×65 步、第二 native 支路和 max1 pool 有限进展。实际设备层运行在第四个 encoded fixture
+停止：三项 GTest 中两项通过，故意 NaN 的 failed-encoder 项在原测试强制要求成功的同步
+阶段收到原数值域错误。原 API 允许 bind/submit 较早拒绝已知失败，不能只接受最终 wait 报错。
+有限 consumer 纠正须接受这些合法原边界，并严格保留原错误、尚在 caller 手中的 owning result
+观察、accepted prefix 实际 drain、未提交 writer 归还、不发布坏 page 和旧 reader 字节不变。
+
+设备前三个消费者通过、第四个失败、后四个未运行；四份日志无 Khronos VUID/SYNC-HAZARD，
+但保留 loader 的 OBS manifest 错误和弃用警告，不能写原始日志零错误或推断 OBS 为因。
+[普通 checkpoint 2](../../../../evidence/correctness/inference-g09-completion-wake/ordinary-checkpoint-2.json)
+保留完整冻结入口、实际计划、原日志/JSON、artifact/DATA/源码身份与独立复核；累计命令时间
+718.405 秒，Air/SDK/sanitizer/A/A/P1 仍未开始，原失败和四小时/三轮预算均不重置。
+
+这次源码调查另发现原 Vulkan 完成者在权限退休结束前发布完成的独立竞态。按原 G08 的寿命
+reopen trigger，以[有限 native 子卡](../compute/inference-g09-vulkan-retirement-barrier.md)
+将 `compute_route_vulkan` 从 CLOSED 重新 SCOPED；它是 W3 的原 owner 修正，不能把新问题
+留在 Graph 外层掩盖。该竞态不是本次 NaN fixture 失败的已证原因。子卡完成 AUDITED 之前
+不得修改该 native owner；主卡三个 owner 仍 AUDITED，不恢复旧 profiler/性能重试入口。

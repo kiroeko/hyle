@@ -535,15 +535,9 @@
     },
     {
       "module": "compute_route_vulkan",
-      "state": "CLOSED",
-      "record": "docs/implementation/tasks/compute/inference-g08-final-closure.md",
-      "summary": "G08 CLOSED 5103: finite S1-S4/M1, four-route numerical/65-step/two-slot/joint consumers, scoped actual device/host risks and18 source/static/shared configs PASS. Four-route9workload P1 qualified/5% PASS; strict9 WIN (AppleK3 instrument PARITY retained). Seven gates/LOC accepted; retrospective review timing, original failures/cost and private/binary-retention limits explicit.",
-      "candidate": "5103c13d8ed119b06aa64e799f9768aea45ab913",
-      "performance": {
-        "tier": "P1",
-        "evidence": "docs/implementation/tasks/compute/inference-g08-final-closure.md",
-        "material_margin_pct": 5
-      }
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/compute/inference-g09-vulkan-retirement-barrier.md",
+      "summary": "G09 native 退休发布 SCOPED：真实多 observer 可在权限退休尾部前观察完成；仅审计原 Run 退休发布屏障，不重置原失败与预算。"
     },
     {
       "module": "graph_route_vulkan",

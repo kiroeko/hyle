@@ -1,0 +1,704 @@
+{
+  "schema_version": 1,
+  "state": "ORDINARY_EIGHT_PASS_DEVICE_FAILED_STOPPED_AGGREGATE_NOT_PASSED",
+  "product_checkpoint": "e2a55aaabdd06349f2e2d5efb82423d34e30305c",
+  "audited_checkpoint": "6b26cd4b26488ce3dba451bffba415b7756e504a",
+  "archive": "ordinary-checkpoint-2.zip",
+  "archive_sha256": "d81e93cb7975730068a4e12eea4c622a5ede5329bd1b04f4f4883d50effc42cf",
+  "archive_bytes": 815705,
+  "members": [
+    {
+      "member": "derived/ninja-compdb-from-original-plan.json",
+      "sha256": "7e02c0805e94eb7a2b155bcc10d6bfea210c4d00608f1bde74572f483b2b35f8",
+      "bytes": 3755913
+    },
+    {
+      "member": "external-configured-cache/CMakeCache.txt",
+      "sha256": "a067a053b4fd597985ac0c10e6917b111197f7cd42a3a46e8d7136ed84f79e98",
+      "bytes": 70079
+    },
+    {
+      "member": "external-configured-cache/compile_commands.json",
+      "sha256": "c586013dd77d384c23ece096cd88549755c4437a76bddbb9847eecf87150012b",
+      "bytes": 2195680
+    },
+    {
+      "member": "external-configured-cache/final-parent.cmake",
+      "sha256": "8d4d0be0481c116cc2dc0766c9e2ace5d230ffe8516ee4089625c79d94690155",
+      "bytes": 12756
+    },
+    {
+      "member": "external-configured-cache/windows-envcmd.cmd",
+      "sha256": "a5039583a3cd3b56471278ba40d918a624c675fce28ade93244562979af69548",
+      "bytes": 163
+    },
+    {
+      "member": "independent/source-review.json",
+      "sha256": "e9d14cb404ee8630efd6931202e06c1bd9ac5721982ca05aa5a8ef62f22de9a4",
+      "bytes": 2866
+    },
+    {
+      "member": "run-e2a55aaab-ordinary-v2/context-air.json",
+      "sha256": "f256f3fd18ec89f471f840cd78f217381c4034aa8a287fd8934b3a2e65d7c4d8",
+      "bytes": 504
+    },
+    {
+      "member": "run-e2a55aaab-ordinary-v2/context-windows-vulkan.json",
+      "sha256": "b7975d82b4e8c475142d40740c6e792849918cd84adf8641ff66148738587de2",
+      "bytes": 541
+    },
+    {
+      "member": "run-e2a55aaab-ordinary-v2/manifest.json",
+      "sha256": "b4006c25dd99215aed39f53c1b235001596967ee368253536f644aacebbd04c9",
+      "bytes": 772900
+    },
+    {
+      "member": "run-e2a55aaab-ordinary-v2/models/canonical-apple_weights.mm",
+      "sha256": "c15e7514bf7b509c19a94c7500d68ae42743388ad6664d117877594291016d6f",
+      "bytes": 16902
+    },
+    {
+      "member": "run-e2a55aaab-ordinary-v2/models/modeled-apple_weights.mm",
+      "sha256": "ba7921e64331073e339c459af822f37f67fa81407c46f491e4ebe753f83e881d",
+      "bytes": 17034
+    },
+    {
+      "member": "run-e2a55aaab-ordinary-v2/windows-vulkan/source/GTestReuseTargets.cmake",
+      "sha256": "df98b4ad9c208a8e1819a957da1c6837dc7cc9870973414dd4a7b1bd2cd94ba5",
+      "bytes": 3793
+    },
+    {
+      "member": "run-e2a55aaab-ordinary-v2/windows-vulkan/source/build-build.log",
+      "sha256": "17828e30f6032cc6ac3ef5b656b30e4afe560f59f90403706c18be5018709abc",
+      "bytes": 9158
+    },
+    {
+      "member": "run-e2a55aaab-ordinary-v2/windows-vulkan/source/conditional-build-admission.json",
+      "sha256": "f46e25c8df98c18803cf4ac6cb83b7b9fdc10f546dd2f78e151473051301a823",
+      "bytes": 977
+    },
+    {
+      "member": "run-e2a55aaab-ordinary-v2/windows-vulkan/source/conditional-device-admission.json",
+      "sha256": "d3c9d60e189eebb35bbe2fe1735b19e190a661c743d506f70c042bf9fe31db5b",
+      "bytes": 2344
+    },
+    {
+      "member": "run-e2a55aaab-ordinary-v2/windows-vulkan/source/configure-configure.log",
+      "sha256": "290e6383add1b453fcbb2fc5711d396843f58871ce441a440842169a699adfed",
+      "bytes": 5039
+    },
+    {
+      "member": "run-e2a55aaab-ordinary-v2/windows-vulkan/source/configure-manifest.log",
+      "sha256": "a02c00d1d3837fb81f3667de26c9425006b68299ebdd2ce4dd95cfc42d7cb32e",
+      "bytes": 160
+    },
+    {
+      "member": "run-e2a55aaab-ordinary-v2/windows-vulkan/source/device-encoded.json",
+      "sha256": "dd78da98b89eb2223f1184f183b0708733677f63054ab402c478afe4cacf1090",
+      "bytes": 2073
+    },
+    {
+      "member": "run-e2a55aaab-ordinary-v2/windows-vulkan/source/device-failure-stop.json",
+      "sha256": "ee2c814967692c3055bf550f21bb142f45d8742c01c0e6308c4034845ef607c5",
+      "bytes": 3211
+    },
+    {
+      "member": "run-e2a55aaab-ordinary-v2/windows-vulkan/source/device-g09_wake_v2_contracts.log",
+      "sha256": "6c273d4b5cff85d19405f80b19470b30f1410e3c01e19da93167d28988439dc1",
+      "bytes": 77556
+    },
+    {
+      "member": "run-e2a55aaab-ordinary-v2/windows-vulkan/source/device-g09_wake_v2_encoded.log",
+      "sha256": "04ee3a71480253eef5db26a3ef78e911743a3102a88fcc820f74ec3d3f7c7079",
+      "bytes": 234050
+    },
+    {
+      "member": "run-e2a55aaab-ordinary-v2/windows-vulkan/source/device-g09_wake_v2_pending.log",
+      "sha256": "f1d7bd65f0b9cc42bec9a1ec59610568c3fabe152fd5fc92e6eb3a3500f78d54",
+      "bytes": 26206
+    },
+    {
+      "member": "run-e2a55aaab-ordinary-v2/windows-vulkan/source/device-g09_wake_v2_pipeline.log",
+      "sha256": "3edd97a1a5e3fd4bcc25180d4701d42900012a01d181b4194c39d1546fc29325",
+      "bytes": 28217
+    },
+    {
+      "member": "run-e2a55aaab-ordinary-v2/windows-vulkan/source/gtest-reuse-paths.txt",
+      "sha256": "1409c192ea26852a4b1749c7bd1488e859acfd9c07585c1acddb11a37bc5f3d1",
+      "bytes": 418
+    },
+    {
+      "member": "run-e2a55aaab-ordinary-v2/windows-vulkan/source/gtest-reuse.json",
+      "sha256": "5368093ec070c9546deab15aa1fe61327c1d2479057596e2c0a5b5687119126e",
+      "bytes": 8582
+    },
+    {
+      "member": "run-e2a55aaab-ordinary-v2/windows-vulkan/source/original-parent.cmake",
+      "sha256": "2c89fe37a75efe067d00ae90461d9e237c8b592be4edb25ba080f476a7c549eb",
+      "bytes": 7744
+    },
+    {
+      "member": "run-e2a55aaab-ordinary-v2/windows-vulkan/source/plan-dry-run.log",
+      "sha256": "cd9e69d54aca4326a2d9a14b1e19d8ba67c3058276033962fb5ab374fcda6956",
+      "bytes": 9616
+    },
+    {
+      "member": "run-e2a55aaab-ordinary-v2/windows-vulkan/source/plan-original-generator-freshness.log",
+      "sha256": "5bf847f717aec0811f9cbede931efd6ccffe934cb4834ee65458cf1d13295ce6",
+      "bytes": 159
+    },
+    {
+      "member": "run-e2a55aaab-ordinary-v2/windows-vulkan/source/plan.json",
+      "sha256": "79f6406a5e651bd88e343ccc9d560f693e9f10a2e3cebf568ef939f6411558a5",
+      "bytes": 3873880
+    },
+    {
+      "member": "run-e2a55aaab-ordinary-v2/windows-vulkan/source/preview.ninja",
+      "sha256": "de96c21fd6649bea92228a097dec4e44149bb0646f5653a86cece13530ae90dd",
+      "bytes": 5398457
+    },
+    {
+      "member": "run-e2a55aaab-ordinary-v2/windows-vulkan/source/receipt.json",
+      "sha256": "50a20df49cf0e5dc8960e7ae4b8ecc985ff940eb66550d0d7f466c99e486dc21",
+      "bytes": 33512
+    },
+    {
+      "member": "run-e2a55aaab-ordinary-v2/windows-vulkan/source/test-encoded.json",
+      "sha256": "36304a351aa78bea564240f2a6a7c6095b8c3cafff702206801fd0bc480242db",
+      "bytes": 1607
+    },
+    {
+      "member": "run-e2a55aaab-ordinary-v2/windows-vulkan/source/test-g09_wake_v2_contracts.log",
+      "sha256": "54d3cf8807012a1028b93f4d2a4fe0234d8ae36bd464e445efe5bbfcc9c7946e",
+      "bytes": 504
+    },
+    {
+      "member": "run-e2a55aaab-ordinary-v2/windows-vulkan/source/test-g09_wake_v2_encoded.log",
+      "sha256": "eb328e99a50f0b1270b0721ca4a283959152d090acb42cd1acbb4f6c16bdfe4e",
+      "bytes": 2866
+    },
+    {
+      "member": "run-e2a55aaab-ordinary-v2/windows-vulkan/source/test-g09_wake_v2_paged_joint.log",
+      "sha256": "57b2ba5d59b9fcf85e73f9e5b8a7af7f3288c47dde44ef8b8a2c5630a95e4baf",
+      "bytes": 436
+    },
+    {
+      "member": "run-e2a55aaab-ordinary-v2/windows-vulkan/source/test-g09_wake_v2_pending.log",
+      "sha256": "9a1ee0882ddef567d92267cf608ff3f9671fcfe97226080494ca5a4763863996",
+      "bytes": 522
+    },
+    {
+      "member": "run-e2a55aaab-ordinary-v2/windows-vulkan/source/test-g09_wake_v2_pipeline.log",
+      "sha256": "37b81ac4eecf9e7f99e9475490de0b49ba8c32ffec776796d334d035a6140e2c",
+      "bytes": 2533
+    },
+    {
+      "member": "run-e2a55aaab-ordinary-v2/windows-vulkan/source/test-g09_wake_v2_public_effect.log",
+      "sha256": "89b2c49365a0e257594d1e4f9d81f7990fa6150952ea38772c7514862f2492c5",
+      "bytes": 40
+    },
+    {
+      "member": "run-e2a55aaab-ordinary-v2/windows-vulkan/source/test-g09_wake_v2_sampling.log",
+      "sha256": "60de3c3696cf39302dd19b63aa204e5af7fe22c1556395d40ed0feb6711bedf8",
+      "bytes": 108
+    },
+    {
+      "member": "run-e2a55aaab-ordinary-v2/windows-vulkan/source/test-g09_wake_v2_symmetry.log",
+      "sha256": "c9a5b1a0e133e4341c612c1f24082d9e0bb844a3d4922973d2269f98109fa135",
+      "bytes": 53
+    },
+    {
+      "member": "run-e2a55aaab-ordinary-v2/windows-vulkan/source/windows-source-device-review.json",
+      "sha256": "559e14549c0cf676283cf2636f7609b1300978aa86875a84457f5d995e1a639f",
+      "bytes": 13120
+    },
+    {
+      "member": "selector-windows-v2-plan-command.log",
+      "sha256": "f30ed5e3a69bc5a1b5e05acc5401560558e516083112e772d709ae44d0d7f6b9",
+      "bytes": 277
+    },
+    {
+      "member": "selector-windows-v2-plan-preparation.json",
+      "sha256": "6c692a20cba6d8043ae8b31439bb89324f0b1d5b67439cf61ccabea7c6ac2302",
+      "bytes": 1525
+    },
+    {
+      "member": "selector-windows-v2-plan-review.json",
+      "sha256": "a57793979ebe47db4806516f3f5371d11487bee6604a472b52cee91766e935fd",
+      "bytes": 16012
+    },
+    {
+      "member": "selector-windows-v2-plan.json",
+      "sha256": "496a88affbd405084b19d45c92e244b344e572880cea660873ce475c9b53a3a7",
+      "bytes": 1534421
+    },
+    {
+      "member": "verify-v2-prepare-data-readonly.json",
+      "sha256": "ba4aea2d867d77f138d9a54a2f60022a2de2d6f740621f8c1e8d04b990bd4f56",
+      "bytes": 2373
+    },
+    {
+      "member": "verify-v2.exact.diff",
+      "sha256": "15f21586948b9eeb941f9d82b593ebeca67ae6a222c96aea886ec7cbf3c1a7fc",
+      "bytes": 20783
+    },
+    {
+      "member": "verify-v2.py",
+      "sha256": "46c27ba7e94cabf8f00b083b18cd85dfbdd247a84e58587011015920389ed816",
+      "bytes": 37921
+    }
+  ],
+  "runner_sha256": "46c27ba7e94cabf8f00b083b18cd85dfbdd247a84e58587011015920389ed816",
+  "original_manifest_sha256": "b4006c25dd99215aed39f53c1b235001596967ee368253536f644aacebbd04c9",
+  "ordinary": {
+    "aggregate": "PASS",
+    "processes": 8,
+    "encoded_tests_run": 3,
+    "encoded_tests_passed": 3,
+    "encoded_skipped": 0,
+    "fixtures": [
+      {
+        "fixture": "contracts",
+        "verdict": "PASS",
+        "log": "test-g09_wake_v2_contracts.log"
+      },
+      {
+        "fixture": "pipeline",
+        "verdict": "PASS",
+        "log": "test-g09_wake_v2_pipeline.log"
+      },
+      {
+        "fixture": "pending",
+        "verdict": "PASS",
+        "log": "test-g09_wake_v2_pending.log"
+      },
+      {
+        "fixture": "encoded",
+        "verdict": "PASS",
+        "log": "test-g09_wake_v2_encoded.log"
+      },
+      {
+        "fixture": "paged_joint",
+        "verdict": "PASS",
+        "log": "test-g09_wake_v2_paged_joint.log"
+      },
+      {
+        "fixture": "sampling",
+        "verdict": "PASS",
+        "log": "test-g09_wake_v2_sampling.log"
+      },
+      {
+        "fixture": "public_effect",
+        "verdict": "PASS",
+        "log": "test-g09_wake_v2_public_effect.log"
+      },
+      {
+        "fixture": "symmetry",
+        "verdict": "PASS",
+        "log": "test-g09_wake_v2_symmetry.log"
+      }
+    ]
+  },
+  "device": {
+    "aggregate": "FAIL",
+    "all_eight_gate": "INCONCLUSIVE_DUE_TO_ONE_FAILURE_AND_FOUR_NOT_RUN",
+    "processes_completed": 4,
+    "processes_passed": 3,
+    "processes_failed": 1,
+    "not_run": 4,
+    "fixtures": [
+      {
+        "fixture": "contracts",
+        "verdict": "PASS_PARTIAL_DEVICE_SCOPE",
+        "log": "device-g09_wake_v2_contracts.log"
+      },
+      {
+        "fixture": "pipeline",
+        "verdict": "PASS_PARTIAL_DEVICE_SCOPE",
+        "log": "device-g09_wake_v2_pipeline.log"
+      },
+      {
+        "fixture": "pending",
+        "verdict": "PASS_PARTIAL_DEVICE_SCOPE",
+        "log": "device-g09_wake_v2_pending.log"
+      },
+      {
+        "fixture": "encoded",
+        "verdict": "FAIL",
+        "log": "device-g09_wake_v2_encoded.log"
+      },
+      {
+        "fixture": "paged_joint",
+        "verdict": "NOT_RUN",
+        "log": null
+      },
+      {
+        "fixture": "sampling",
+        "verdict": "NOT_RUN",
+        "log": null
+      },
+      {
+        "fixture": "public_effect",
+        "verdict": "NOT_RUN",
+        "log": null
+      },
+      {
+        "fixture": "symmetry",
+        "verdict": "NOT_RUN",
+        "log": null
+      }
+    ],
+    "encoded": {
+      "tests_run": 3,
+      "passed": 2,
+      "failed": 1,
+      "skipped": 0,
+      "failed_case": "FailedEncoderNeverPublishesPendingPages",
+      "trace": "combined=false paired=false",
+      "error": "Vulkan numeric input is outside the operation domain"
+    },
+    "actual_layer_activation": "Independent raw-log review confirms Khronos instance/device layers and requested synchronization validation in all four executed processes.",
+    "khronos_validation_error_vuid_sync_hazard_messages": 0,
+    "raw_loader_error_counts": {
+      "contracts": 18,
+      "pipeline": 6,
+      "pending": 6,
+      "encoded": 54
+    },
+    "raw_loader_errors_total": 84,
+    "raw_error_boundary": "Zero Khronos validation errors is not zero raw errors. Missing per-user OBS layer-manifest loader ERROR messages, OBS API warnings, and deprecated validation settings remain verbatim in raw logs."
+  },
+  "failure_attribution": {
+    "observed_api_location": "NOT_LOCALIZED_BY_RUNTIME_EVIDENCE",
+    "observed_test_location": "tests/compute_batch/encoded_page_native_consumer.cc:422",
+    "source_facts": [
+      "The invalid fixture deliberately injects NaN and checks repeated !submit calls before copy admission.",
+      "Existing Vulkan copy qualification may synchronously return an already known terminal producer error.",
+      "The observed failure trace uses combined=false/paired=false; the mixed Graph submit branch is not executed in that episode. Its shared setup does cold-create a mixed Graph invocation."
+    ],
+    "limit": "These source facts support a legal early-rejection hypothesis, not identification of the actual failing API or proof of a G09 retirement defect. The separate source-only Vulkan retirement-risk audit is not this failure cause."
+  },
+  "costs": {
+    "measured_command_seconds_this_checkpoint": 357.27899999998044,
+    "inherited_measured_command_seconds": 361.1259999999893,
+    "cumulative_measured_command_seconds": 718.4049999999697,
+    "rounded_cumulative_seconds": 718.405,
+    "new_build_seconds": 84.70299999997951,
+    "boundary": "Command wall times only; stage and preparation bookkeeping are not silently added to command totals. All original stage timings remain in receipts."
+  },
+  "inherited_failures": [
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\g09-completion-wake-correction\\run-6c6222e51\\prepare-failure.json",
+      "sha256": "dc196b4a67cbe3468a87fe397fd2c0dad0a61a1030e565cfef6a15230be70233"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\g09-completion-wake-correction\\run-6c6222e51-prepare-correction1\\windows-vulkan\\source\\receipt.json",
+      "sha256": "0031b3195092050efb80e70f9e3a4144f36e6afe5f3ad57ba6de6231cdccd83b"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\g09-completion-wake-correction\\run-6c6222e51-prepare-correction1\\windows-vulkan\\source\\explicit-build-test-continuation.json",
+      "sha256": "2aa5b67dfb9de7f9a4b25c8c5742e2ffcaf0acae3e512b78ef5a7bc8aa69b6da"
+    }
+  ],
+  "prior_checkpoint": {
+    "summary": {
+      "path": "C:\\public\\project-hyle\\hyle\\evidence\\correctness\\inference-g09-completion-wake\\ordinary-checkpoint-1.json",
+      "sha256": "be4902c3e082d76de41d8e70c15d9b612b0bd917af9a381fa9eae985dffc91d1",
+      "bytes": 4874
+    },
+    "archive": {
+      "path": "C:\\public\\project-hyle\\hyle\\evidence\\correctness\\inference-g09-completion-wake\\ordinary-checkpoint-1.zip",
+      "sha256": "33cc22dcaded7c662ea3680345a5e57d98d13e547bddf9020e2f91864290bb9a",
+      "bytes": 509623
+    }
+  },
+  "binary_data_identity": {
+    "binaries_and_dlls_in_archive": false,
+    "all_built_artifact_hashes": [
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\g09-completion-wake-correction\\run-e2a55aaab-ordinary-v2\\windows-vulkan\\source\\bin\\.hyle-runtime-staging.lock",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\g09-completion-wake-correction\\run-e2a55aaab-ordinary-v2\\windows-vulkan\\source\\bin\\asmjit.dll",
+        "sha256": "eb8f9c478bfc4b671f83b630c97424c60b4c948c0a8645fe588aed4f6bab5df5",
+        "bytes": 367104
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\g09-completion-wake-correction\\run-e2a55aaab-ordinary-v2\\windows-vulkan\\source\\bin\\c10.dll",
+        "sha256": "93bff2548e330df0f94ce3c71c531887d049ae645d1e38e3c08689e2d86a7888",
+        "bytes": 1046528
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\g09-completion-wake-correction\\run-e2a55aaab-ordinary-v2\\windows-vulkan\\source\\bin\\fbgemm.dll",
+        "sha256": "250dc6f79b26e022ca3088e9b71a023598c7e997c96b62ef350a74fa1b501d81",
+        "bytes": 5721600
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\g09-completion-wake-correction\\run-e2a55aaab-ordinary-v2\\windows-vulkan\\source\\bin\\g09_wake_v2_contracts.exe",
+        "sha256": "2606be65a034bbba3804be61896c14b29d309e65c7a697d0279c52e3901cc2f0",
+        "bytes": 176640
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\g09-completion-wake-correction\\run-e2a55aaab-ordinary-v2\\windows-vulkan\\source\\bin\\g09_wake_v2_encoded.exe",
+        "sha256": "b1a439054638d0eb301cea6a037526452f31f84299a5e410e5b5d06d929a766f",
+        "bytes": 626176
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\g09-completion-wake-correction\\run-e2a55aaab-ordinary-v2\\windows-vulkan\\source\\bin\\g09_wake_v2_paged_joint.exe",
+        "sha256": "67fec4c62d536c56a8608aab7b9a26abde89682df457da2637cd6f85e86d6a60",
+        "bytes": 66560
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\g09-completion-wake-correction\\run-e2a55aaab-ordinary-v2\\windows-vulkan\\source\\bin\\g09_wake_v2_pending.exe",
+        "sha256": "c2bbc950bbaa654ff13bf3706052911a352ed9862e0a87297c6a4c3b9ff942cb",
+        "bytes": 108032
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\g09-completion-wake-correction\\run-e2a55aaab-ordinary-v2\\windows-vulkan\\source\\bin\\g09_wake_v2_pipeline.exe",
+        "sha256": "680791dbbb0b09add4deded28f26a061c41b20970bfeb994334cb0ac16f8f03a",
+        "bytes": 53248
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\g09-completion-wake-correction\\run-e2a55aaab-ordinary-v2\\windows-vulkan\\source\\bin\\g09_wake_v2_public_effect.exe",
+        "sha256": "83d4ba461f8b687925a941a33ec23bc691871fed43f25bab655247393236e508",
+        "bytes": 54272
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\g09-completion-wake-correction\\run-e2a55aaab-ordinary-v2\\windows-vulkan\\source\\bin\\g09_wake_v2_sampling.exe",
+        "sha256": "2a56d879f054c8c51bcd72e6fa2578e50277627ccde634ed296791fba2401685",
+        "bytes": 41472
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\g09-completion-wake-correction\\run-e2a55aaab-ordinary-v2\\windows-vulkan\\source\\bin\\g09_wake_v2_symmetry.exe",
+        "sha256": "9f893e51179ed68db71353c5914d379f96d304deebed98e6e50cd22bee0b9b86",
+        "bytes": 82944
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\g09-completion-wake-correction\\run-e2a55aaab-ordinary-v2\\windows-vulkan\\source\\bin\\hyle_compute.dll",
+        "sha256": "54d48de60665608cfb50ea5270846f246ab01ad350703d8d43c5778c14cde685",
+        "bytes": 338432
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\g09-completion-wake-correction\\run-e2a55aaab-ordinary-v2\\windows-vulkan\\source\\bin\\hyle_compute_backend_cpu.dll",
+        "sha256": "bf2726dc7beceaf9686b371fa0a34fd08c2d4f9fc56b10973168778c2f60df66",
+        "bytes": 16384
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\g09-completion-wake-correction\\run-e2a55aaab-ordinary-v2\\windows-vulkan\\source\\bin\\hyle_compute_batch.dll",
+        "sha256": "4e3ffc2d357d62318c469d0cd18a76e477af6d17d1edc91029aea46077d40881",
+        "bytes": 236544
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\g09-completion-wake-correction\\run-e2a55aaab-ordinary-v2\\windows-vulkan\\source\\bin\\hyle_compute_ggml_runtime.dll",
+        "sha256": "9e1700a4f8aade3ac1298b21079351b29af2051f0329a4cb4faa66a7283d7618",
+        "bytes": 1186816
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\g09-completion-wake-correction\\run-e2a55aaab-ordinary-v2\\windows-vulkan\\source\\bin\\hyle_compute_ops.dll",
+        "sha256": "a85070a482136957f5ca921c55523d278d97d41b3b3f8a1d286ff9803c7b9b32",
+        "bytes": 83968
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\g09-completion-wake-correction\\run-e2a55aaab-ordinary-v2\\windows-vulkan\\source\\bin\\hyle_compute_provider_ggml.dll",
+        "sha256": "06a9a3aaf6e627d9831fb827972686f1db2d4ba29794d499d18440dca3cae7b7",
+        "bytes": 459264
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\g09-completion-wake-correction\\run-e2a55aaab-ordinary-v2\\windows-vulkan\\source\\bin\\hyle_compute_provider_ggml_vulkan.dll",
+        "sha256": "f8f11e9ad4830df5a55b4a26da5ada45783b7f2c57b1c10640ee3a0a6b8839d5",
+        "bytes": 43787264
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\g09-completion-wake-correction\\run-e2a55aaab-ordinary-v2\\windows-vulkan\\source\\bin\\hyle_compute_provider_iree_vulkan.dll",
+        "sha256": "89421d108f71057bcff26fe4f4f94c3f154c824e1d11b318a835f2b9ab30c9b2",
+        "bytes": 1382400
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\g09-completion-wake-correction\\run-e2a55aaab-ordinary-v2\\windows-vulkan\\source\\bin\\hyle_compute_provider_native.dll",
+        "sha256": "3692d7fc7b1711316a3294c6f04aebe5d3ccfdbb1db00f8b5f1001322fb53a68",
+        "bytes": 354304
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\g09-completion-wake-correction\\run-e2a55aaab-ordinary-v2\\windows-vulkan\\source\\bin\\hyle_compute_provider_onednn.dll",
+        "sha256": "3ae0ea5ed1393755c084e770ce88027f67175b1d1532a15d338619e02bbd94d3",
+        "bytes": 16674816
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\g09-completion-wake-correction\\run-e2a55aaab-ordinary-v2\\windows-vulkan\\source\\bin\\hyle_compute_route_cpu.dll",
+        "sha256": "02ccad9083538cf153910d54a6f0a8899286062c9723d74111a66f43a069c822",
+        "bytes": 50176
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\g09-completion-wake-correction\\run-e2a55aaab-ordinary-v2\\windows-vulkan\\source\\bin\\hyle_compute_route_vulkan.dll",
+        "sha256": "c4127475ea70fbcc6f2eed9747ce83f95481d1f4155bd667ad62939e467e3dc3",
+        "bytes": 949760
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\g09-completion-wake-correction\\run-e2a55aaab-ordinary-v2\\windows-vulkan\\source\\bin\\hyle_compute_state.dll",
+        "sha256": "1622650c2cddffaa4641e09dbb0050e38b507e7f843a2f88024cbaedabd9b782",
+        "bytes": 73728
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\g09-completion-wake-correction\\run-e2a55aaab-ordinary-v2\\windows-vulkan\\source\\bin\\hyle_compute_stream.dll",
+        "sha256": "249298e6bccd7b017f72b0bc9a1148c4b721752443ca4f2a5b6be0298e2655dd",
+        "bytes": 98816
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\g09-completion-wake-correction\\run-e2a55aaab-ordinary-v2\\windows-vulkan\\source\\bin\\hyle_container.dll",
+        "sha256": "a1312fa078ae2aeafe455bbbae368d4522892f627507e6b6313f5619421e803c",
+        "bytes": 41472
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\g09-completion-wake-correction\\run-e2a55aaab-ordinary-v2\\windows-vulkan\\source\\bin\\hyle_error.dll",
+        "sha256": "09803ee2b5a8466a270e61917260f8dedf454a95b6b6963dbe1cd1528454d5da",
+        "bytes": 28160
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\g09-completion-wake-correction\\run-e2a55aaab-ordinary-v2\\windows-vulkan\\source\\bin\\hyle_ggml_cpu_avx2_456172ec_5909b243d5fdb965.dll",
+        "sha256": "67334c6b76b880d3a7526d1b92290eec29fd986c85577625dd7fa3d66dd8593f",
+        "bytes": 1203712
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\g09-completion-wake-correction\\run-e2a55aaab-ordinary-v2\\windows-vulkan\\source\\bin\\hyle_graph.dll",
+        "sha256": "1072a8d9df20aedfa86a7babf36869937c668ad8bff76e3737b85b49256ac682",
+        "bytes": 601600
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\g09-completion-wake-correction\\run-e2a55aaab-ordinary-v2\\windows-vulkan\\source\\bin\\hyle_graph_batch.dll",
+        "sha256": "4d8b858725541cc0b04047912c501ceee943b087409f4ec88c7e4fc5523243c6",
+        "bytes": 125952
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\g09-completion-wake-correction\\run-e2a55aaab-ordinary-v2\\windows-vulkan\\source\\bin\\hyle_graph_provider_onednn.dll",
+        "sha256": "6e7c23643681a1c3b9c6faf6cb8022ff2fcc0eaab6085400846f705dc1b29407",
+        "bytes": 35328
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\g09-completion-wake-correction\\run-e2a55aaab-ordinary-v2\\windows-vulkan\\source\\bin\\hyle_graph_route_cpu.dll",
+        "sha256": "07659e962d06780a65bffe7cad47546a7f1612106197d7d1fd537a63511fd3aa",
+        "bytes": 45056
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\g09-completion-wake-correction\\run-e2a55aaab-ordinary-v2\\windows-vulkan\\source\\bin\\hyle_graph_route_cpu_vulkan.dll",
+        "sha256": "35a13d1a959d38c85d31fd1abaaa0d68956df9d7021a22f7e60fb4f1f1638943",
+        "bytes": 318464
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\g09-completion-wake-correction\\run-e2a55aaab-ordinary-v2\\windows-vulkan\\source\\bin\\hyle_graph_route_vulkan.dll",
+        "sha256": "90cdbb26ad6107eda7d9564f3de798b2687f07e43364810d7cc68e52de9cc3d6",
+        "bytes": 62464
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\g09-completion-wake-correction\\run-e2a55aaab-ordinary-v2\\windows-vulkan\\source\\bin\\hyle_io_core.dll",
+        "sha256": "60e1040f2339f7da155555df354465d43138ef674bccf03412799264fc389832",
+        "bytes": 230912
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\g09-completion-wake-correction\\run-e2a55aaab-ordinary-v2\\windows-vulkan\\source\\bin\\hyle_mem.dll",
+        "sha256": "e9fb48007d0d7a76ed9d7f5603164f7964fbadf332d8937787a6c93e13f7af6c",
+        "bytes": 230912
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\g09-completion-wake-correction\\run-e2a55aaab-ordinary-v2\\windows-vulkan\\source\\bin\\hyle_mem_vm.dll",
+        "sha256": "d308e502fdcf5724f7e75cba045aae86b7121af0a5dc553620403b02a7b1084a",
+        "bytes": 36864
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\g09-completion-wake-correction\\run-e2a55aaab-ordinary-v2\\windows-vulkan\\source\\bin\\hyle_platform.dll",
+        "sha256": "e30ff2073aa39c7adda9fabd947b1d81f393d7f449cf526d7a4ed13bef4f0e98",
+        "bytes": 86528
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\g09-completion-wake-correction\\run-e2a55aaab-ordinary-v2\\windows-vulkan\\source\\bin\\hyle_platform_fs.dll",
+        "sha256": "f273afe9d2564c5d42ee5b311f86708c53b0d9e09a6ae10534e39fca7749977c",
+        "bytes": 53760
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\g09-completion-wake-correction\\run-e2a55aaab-ordinary-v2\\windows-vulkan\\source\\bin\\hyle_platform_thread.dll",
+        "sha256": "6a1bd95106a7c26b07da72e14c30594dbcc20f2ad35a8d1735c14e048915801c",
+        "bytes": 25088
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\g09-completion-wake-correction\\run-e2a55aaab-ordinary-v2\\windows-vulkan\\source\\bin\\hyle_sched.dll",
+        "sha256": "3bd723e9cb558e20d9adb470ce4446c1664082e9d6dfbd249ae14a6a351b459d",
+        "bytes": 145408
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\g09-completion-wake-correction\\run-e2a55aaab-ordinary-v2\\windows-vulkan\\source\\bin\\hyle_simd.dll",
+        "sha256": "256a6f2d861a3c2781afa3ecee34149dd1ea7aec5d040eaac4d952541296571f",
+        "bytes": 1571328
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\g09-completion-wake-correction\\run-e2a55aaab-ordinary-v2\\windows-vulkan\\source\\bin\\hyle_time.dll",
+        "sha256": "a4d6f78d233af94b20d5437592ccf4a58e705cbe583d5aa34b40fab3de618661",
+        "bytes": 20992
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\g09-completion-wake-correction\\run-e2a55aaab-ordinary-v2\\windows-vulkan\\source\\bin\\libiomp5md.dll",
+        "sha256": "d9d66ed25f1a0ea725fa3a41b22cfd5d182c19dbe4771d9c90ca02ad7466f6a1",
+        "bytes": 1613680
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\g09-completion-wake-correction\\run-e2a55aaab-ordinary-v2\\windows-vulkan\\source\\bin\\torch.dll",
+        "sha256": "16a220e55b35fbfd946c26663eb3eefc76782872280cdc47ab0caea1babf0613",
+        "bytes": 9728
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\g09-completion-wake-correction\\run-e2a55aaab-ordinary-v2\\windows-vulkan\\source\\bin\\torch_cpu.dll",
+        "sha256": "2cb91cf2ba957fad5a17eab5bb7af6b3d73bbc98d94e2deeadc9fb9294eea809",
+        "bytes": 255948800
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\g09-completion-wake-correction\\run-e2a55aaab-ordinary-v2\\windows-vulkan\\source\\bin\\uv.dll",
+        "sha256": "fa569e682fc5fb7a8eb94c6829af9f30a569748dbbc6bce39735d48bc960bcf8",
+        "bytes": 195072
+      }
+    ],
+    "gtest_libraries_and_headers": "All exact hashes remain in original gtest-reuse.json; no libraries were copied into this archive.",
+    "generated_data_items": 152,
+    "generated_data_hashes": "Original plan.json /generated_152_data_before",
+    "canonical_source": "Immutable product checkpoint plus original manifest bind all 2677 files; original source ZIPs remain in the scratch bundle, their hashes in the manifest.",
+    "post_failure_recheck": "Original device-failure-stop.json records all canonical/source/bin/DLL/DATA/script/parent/ninja identities matching after the failure."
+  },
+  "independent_reviews": [
+    {
+      "member": "independent/source-review.json",
+      "scope": "Two independent product-source reviews; runtime and performance not signed"
+    },
+    {
+      "member": "run-e2a55aaab-ordinary-v2/windows-vulkan/source/windows-source-device-review.json",
+      "scope": "Four actual device logs, activation and failure boundary"
+    },
+    {
+      "member": "selector-windows-v2-plan-review.json",
+      "scope": "Isolated selector plan review; no native gate execution"
+    }
+  ],
+  "compdb_derived_view": {
+    "member": "derived/ninja-compdb-from-original-plan.json",
+    "origin_member": "run-e2a55aaab-ordinary-v2/windows-vulkan/source/plan.json",
+    "origin_sha256": "79f6406a5e651bd88e343ccc9d560f693e9f10a2e3cebf568ef939f6411558a5",
+    "json_pointer": "/commands",
+    "transformation": "JSON serialization of the unchanged original plan commands array; no new command or compilation-database query"
+  },
+  "source_compilation": {
+    "objects": 46,
+    "simd_mtime_objects": 38,
+    "fixture_objects": 8,
+    "new_shader_or_cuda_compilation": false
+  },
+  "stop": {
+    "original_receipts_modified": false,
+    "owned_build_fixture_processes_remaining": 0,
+    "native_commands_during_archiving": 0,
+    "automatic_retries": 0,
+    "air_commands": 0,
+    "sdk_commands": 0,
+    "aa_commands": 0,
+    "p1_commands": 0,
+    "failure_budget_reset": false
+  },
+  "unqualified": "Air source/device, host sanitizers, SDK journeys, performance qualification and remaining Windows device fixtures are not certified by this checkpoint."
+}
