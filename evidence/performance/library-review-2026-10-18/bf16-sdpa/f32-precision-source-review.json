@@ -1,0 +1,65 @@
+{
+  "sdk": "locked Torch 2.8.0+cu129 Windows CUDA leaf",
+  "product_modified": false,
+  "compiled_or_executed_probe": false,
+  "reason_no_probe": "SM80+ F32 uses compile-time OpMultiplyAddFastF32 (TF32x3), incompatible with strict no-TF32 policy; numerical examples cannot establish policy compliance.",
+  "files": {
+    "gemm_kernel_utils.h": {
+      "local_path": "C:\\public\\tools\\hyle-dependencies\\v1\\sdks\\torch-cuda-leaf\\Windows-2bc729898e422b9f3da54349eed98f2f0b5dd415434508ee2ab2a13fb021815d\\torch\\include\\ATen\\native\\transformers\\cuda\\mem_eff_attention\\gemm_kernel_utils.h",
+      "local_sha256": "770db10eb6d8cda0df43a611208279efa0d1a513baefaba5b92f2f41c84fb2f3",
+      "official_v2_8_0_url": "https://raw.githubusercontent.com/pytorch/pytorch/v2.8.0/aten/src/ATen/native/transformers/cuda/mem_eff_attention/gemm_kernel_utils.h",
+      "official_v2_8_0_sha256": "ce914b76b79d92c487a44cfc3ed19f41da947d0354672ab716489091fb0a7cbf",
+      "exact_byte_match": false,
+      "line_ending_normalized_match": true,
+      "local_line_count": 209,
+      "official_line_count": 209,
+      "first_diff_lines": []
+    },
+    "kernel_forward.h": {
+      "local_path": "C:\\public\\tools\\hyle-dependencies\\v1\\sdks\\torch-cuda-leaf\\Windows-2bc729898e422b9f3da54349eed98f2f0b5dd415434508ee2ab2a13fb021815d\\torch\\include\\ATen\\native\\transformers\\cuda\\mem_eff_attention\\kernel_forward.h",
+      "local_sha256": "196d980651d951570bfdc3584007bfd9a017e9896ce8fe01d2f154183d3b4d29",
+      "official_v2_8_0_url": "https://raw.githubusercontent.com/pytorch/pytorch/v2.8.0/aten/src/ATen/native/transformers/cuda/mem_eff_attention/kernel_forward.h",
+      "official_v2_8_0_sha256": "6dcc1d40f6f0a92af3a3a3c260cac28a54b45c7ef67b67003ae51878dc412d37",
+      "exact_byte_match": false,
+      "line_ending_normalized_match": true,
+      "local_line_count": 1353,
+      "official_line_count": 1353,
+      "first_diff_lines": []
+    },
+    "gemm/mma_from_smem.h": {
+      "local_path": "C:\\public\\tools\\hyle-dependencies\\v1\\sdks\\torch-cuda-leaf\\Windows-2bc729898e422b9f3da54349eed98f2f0b5dd415434508ee2ab2a13fb021815d\\torch\\include\\ATen\\native\\transformers\\cuda\\mem_eff_attention\\gemm\\mma_from_smem.h",
+      "local_sha256": "87b631f9069fbdeeb570e0b9fa04e54b12ccdca468e1762591cfaf0d0ec60600",
+      "official_v2_8_0_url": "https://raw.githubusercontent.com/pytorch/pytorch/v2.8.0/aten/src/ATen/native/transformers/cuda/mem_eff_attention/gemm/mma_from_smem.h",
+      "official_v2_8_0_sha256": "aa18d0eb6812037d128471464a20887192c84193e8f78396b8d3b1a3442abce8",
+      "exact_byte_match": false,
+      "line_ending_normalized_match": true,
+      "local_line_count": 1948,
+      "official_line_count": 1948,
+      "first_diff_lines": []
+    }
+  },
+  "official_host_source": {
+    "url": "https://raw.githubusercontent.com/pytorch/pytorch/v2.8.0/aten/src/ATen/native/transformers/cuda/attention.cu",
+    "sha256": "77cf05036f511369526c63c2c7e2c9b32cf953fbfc6e948147d1837aed77cb5e",
+    "search_lines": {
+      "NoTF32": [],
+      "allowTF32": [],
+      "allow_tf32": [],
+      "dispatch_cutlassF": [
+        1654
+      ],
+      "_efficient_attention_forward(": [
+        989,
+        1215
+      ]
+    }
+  },
+  "source_facts": {
+    "gemm_kernel_utils.h:114-124": "SM80+ float specialization uses TensorOp, 16x8x8 and OpMultiplyAddFastF32.",
+    "kernel_forward.h:355-394,434-481": "Both QK and PV inherit that compile-time GemmType.",
+    "gemm/mma_from_smem.h:1097-1109": "Explicit tf32x3 staging accumulation comment and FastF32 operator branch.",
+    "kernels/cutlassF.h:310-311": "SM80..120 float dispatches only f32_sm80, not older SIMT variant.",
+    "kernel_forward.h:99-105,1285-1325": "F32 accum/output_accum, softmax exp and row sums; does not make the tensor-core operand math strict F32.",
+    "gemm/mma_from_smem.h:1522-1542": "Probability tile stored as scalar_t; for F16 ports this narrows float exponentials to Half before PV."
+  }
+}

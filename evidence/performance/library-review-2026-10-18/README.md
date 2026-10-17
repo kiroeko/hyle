@@ -72,6 +72,12 @@ pending时销毁artifact/invocation，以及原ATen allocator受控OOM后保活�
 空间复现：`python evidence/performance/library-review-2026-10-18/bf16-sdpa/run_hyle_space.py --compile --run`，
 复用本机锁定SDK与现成基础静态库；捕获的编译/链接命令和[source/binary hash](bf16-sdpa/hyle-source-binary-sha256.json)随数据保存。
 
+不能直接把该融合入口扩至F32/F16。[锁定SDK源码复核](bf16-sdpa/f32-precision-source-review.json)确认：
+SM80+ F32的QK/PV固定选择CUTLASS TF32x3，虽为F32累加，却不是严格F32乘法；
+该入口没有allowTF32运行时开关，关闭cuBLAS TF32也不改变编译好的内核。
+F16则会把指数权重tile缩成Half后再乘V；这里只证明源级差异，未冒称已有Hyle数值回归失败。
+两种扩展均未应用，继续研究保留原精度的有界Q分块。
+
 验证中还修复了Windows CUDA13.3的`bin/x64`运行库搜索，以及backend测试覆盖用户architecture设置的问题。
 临时测试对象构建曾意外触发runtime staging；已先写`test.ps1`再执行，删除29个本轮新副本、回收4.51 GiB，
 原SDK与9个既有缓存runtime全部保留。最终复现编译直接调用生成的cl命令，不再次触发该复制步骤。
