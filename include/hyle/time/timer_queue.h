@@ -115,7 +115,12 @@ class TimerQueue {
     // Reset on the empty transition so the first subsequent arm publishes its
     // exact deadline instead of inheriting a stale early wake from the previous
     // generation. That branch saves a potentially expensive event-loop wake.
-    if (count_ == 0) next_ns_ = UINT64_MAX;
+    if (count_ == 0) {
+      next_ns_ = UINT64_MAX;
+      next_dirty_ = false;
+    } else if (entry->deadline_ns_ == next_ns_) {
+      next_dirty_ = true;
+    }
     return true;
   }
 
@@ -124,6 +129,8 @@ class TimerQueue {
   // timer_set and catches accidentally mixing realtime with monotonic time.
   std::size_t advance(std::uint64_t now_ns, EntryList& out) noexcept {
     HYLE_FATAL_ASSERT(now_ns >= now_ns_);
+    const auto previous_next = next_ns_;
+    const bool previous_dirty = next_dirty_;
     const std::size_t inspect_bucket = bucket_for(now_ns);
     EntryList ready;
 
@@ -152,6 +159,7 @@ class TimerQueue {
     clear_occupied(inspect_bucket);
     now_ns_ = now_ns;
     next_ns_ = UINT64_MAX;
+    next_dirty_ = false;
 
     // The boundary bucket can straddle `now`; deliver its due members and
     // reclassify the rest relative to the new radix origin.
@@ -175,7 +183,12 @@ class TimerQueue {
     // Untouched buckets are farther away than any reinserted boundary entry.
     // Only when no reinsert supplied a minimum do we lazily scan the nearest
     // remaining bucket, matching timer_set's cancellation-friendly policy.
-    if (next_ns_ == UINT64_MAX && count_ != 0) recompute_next();
+    if (next_ns_ == UINT64_MAX && count_ != 0) {
+      // A still-future conservative minimum remains valid. In particular, an
+      // idle poll must not rescan every timer in an untouched nearest bucket.
+      if (!previous_dirty && previous_next > now_ns) next_ns_ = previous_next;
+      else recompute_next();
+    }
     return fired;
   }
 
@@ -215,6 +228,7 @@ class TimerQueue {
     occupied_ = 0;
     due_occupied_ = false;
     next_ns_ = UINT64_MAX;
+    next_dirty_ = false;
     count_ = 0;
     return cancelled;
   }
@@ -259,7 +273,10 @@ class TimerQueue {
     // entering here; avoid repeating the linked-state branch on every arm.
     buckets_[bucket].push_back(entry);
     mark_occupied(bucket);
-    if (entry->deadline_ns_ < next_ns_) next_ns_ = entry->deadline_ns_;
+    if (entry->deadline_ns_ <= next_ns_) {
+      next_ns_ = entry->deadline_ns_;
+      next_dirty_ = false;
+    }
   }
 
   void recompute_next() noexcept {
@@ -299,6 +316,7 @@ class TimerQueue {
   std::uint64_t next_ns_ = UINT64_MAX;
   std::size_t count_ = 0;
   bool due_occupied_ = false;   // bucket 64
+  bool next_dirty_ = false;    // earliest cancellation refreshes on advance
 };
 
 }  // namespace hyle::time

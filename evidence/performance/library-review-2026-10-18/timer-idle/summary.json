@@ -1,0 +1,144 @@
+{
+  "scope": "TimerQueue advance with pending far-future timers; source-defined repeated minimum scans. Not an external-peer ranking or timing claim.",
+  "baseline_commit": "907247284",
+  "mechanism": "advance previously reset cached next and rescanned every entry in the nearest untouched bucket even when no timer was due. Scheduler fire_due_timers calls this on busy worker dispatches with pending timers.",
+  "change": "Reuse an unchanged still-future exact cached minimum; next_dirty remembers earliest cancellation so the next advance still refreshes it as documented. Existing origin/rebucket/delivery/cancel ownership rules remain.",
+  "state": "One private bool uses existing Windows x64 tail padding: measured sizeof TimerQueue1080 and TimerEntry48 unchanged. No new allocation or public option. Other-platform layout/ABI and runtime not measured.",
+  "workload": "64/1024/16384 stable nodes at2^40+i,128 advances1..128, with and without cancelling the minimum before the first poll; verify exact next after every poll, now/count/no-early-fire and final full delivery.",
+  "metric": "Source-instrumented recompute_next callback entry visits, same single increment in both scratch headers. Counter probes are not latency measurements or CPU instruction counts; no production tracing added.",
+  "results": {
+    "baseline": [
+      {
+        "timers": 64,
+        "cancel_minimum": false,
+        "polls": 128,
+        "minimum_visits": 8192,
+        "delivered": 64,
+        "queue_bytes": 1080,
+        "entry_bytes": 48,
+        "oracle": true
+      },
+      {
+        "timers": 64,
+        "cancel_minimum": true,
+        "polls": 128,
+        "minimum_visits": 8064,
+        "delivered": 63,
+        "queue_bytes": 1080,
+        "entry_bytes": 48,
+        "oracle": true
+      },
+      {
+        "timers": 1024,
+        "cancel_minimum": false,
+        "polls": 128,
+        "minimum_visits": 131072,
+        "delivered": 1024,
+        "queue_bytes": 1080,
+        "entry_bytes": 48,
+        "oracle": true
+      },
+      {
+        "timers": 1024,
+        "cancel_minimum": true,
+        "polls": 128,
+        "minimum_visits": 130944,
+        "delivered": 1023,
+        "queue_bytes": 1080,
+        "entry_bytes": 48,
+        "oracle": true
+      },
+      {
+        "timers": 16384,
+        "cancel_minimum": false,
+        "polls": 128,
+        "minimum_visits": 2097152,
+        "delivered": 16384,
+        "queue_bytes": 1080,
+        "entry_bytes": 48,
+        "oracle": true
+      },
+      {
+        "timers": 16384,
+        "cancel_minimum": true,
+        "polls": 128,
+        "minimum_visits": 2097024,
+        "delivered": 16383,
+        "queue_bytes": 1080,
+        "entry_bytes": 48,
+        "oracle": true
+      }
+    ],
+    "candidate": [
+      {
+        "timers": 64,
+        "cancel_minimum": false,
+        "polls": 128,
+        "minimum_visits": 0,
+        "delivered": 64,
+        "queue_bytes": 1080,
+        "entry_bytes": 48,
+        "oracle": true
+      },
+      {
+        "timers": 64,
+        "cancel_minimum": true,
+        "polls": 128,
+        "minimum_visits": 63,
+        "delivered": 63,
+        "queue_bytes": 1080,
+        "entry_bytes": 48,
+        "oracle": true
+      },
+      {
+        "timers": 1024,
+        "cancel_minimum": false,
+        "polls": 128,
+        "minimum_visits": 0,
+        "delivered": 1024,
+        "queue_bytes": 1080,
+        "entry_bytes": 48,
+        "oracle": true
+      },
+      {
+        "timers": 1024,
+        "cancel_minimum": true,
+        "polls": 128,
+        "minimum_visits": 1023,
+        "delivered": 1023,
+        "queue_bytes": 1080,
+        "entry_bytes": 48,
+        "oracle": true
+      },
+      {
+        "timers": 16384,
+        "cancel_minimum": false,
+        "polls": 128,
+        "minimum_visits": 0,
+        "delivered": 16384,
+        "queue_bytes": 1080,
+        "entry_bytes": 48,
+        "oracle": true
+      },
+      {
+        "timers": 16384,
+        "cancel_minimum": true,
+        "polls": 128,
+        "minimum_visits": 16383,
+        "delivered": 16383,
+        "queue_bytes": 1080,
+        "entry_bytes": 48,
+        "oracle": true
+      }
+    ]
+  },
+  "tests": "27 TimerQueue tests passed on actual uninstrumented candidate header, including million-node randomized arm/cancel delivery, radix boundaries, cancellation/rearm, UINT64_MAX, pre-existing delivery-list contents and death/lifetime checks.",
+  "review": "backend_assembly_design independently reviewed dirty/cancel/rearm/rebucket/MAX paths; no confirmed semantic issue. Preserve original next-advance cancellation refresh contract.",
+  "closure": "MSVC14.50.35717 optimized O2/MD/W4/WX fresh probe/test TUs only; existing same-toolchain foundation/gtest reused, no configure or SDK copy/build. Header-only clients do not imply a rebuilt Scheduler runtime.",
+  "initial_failure": "First standalone test link lacked SUBSYSTEM:CONSOLE, LNK1561. Kept failure logs; added console subsystem only and linked existing test object, then ran tests once. run.py now has the successful link flag; finish_tests.py records the actual recovery.",
+  "products": {
+    "include/hyle/time/timer_queue.h": "58d583d6b99506a174fe41d618410b34ae1ea57e2140da3b74318a3779f3a85a",
+    "tests/timer_queue/timer_queue_test.cc": "4b3eb96a18b6b454eebc95eb92a752dd3ad9dffb6e3ae440f4d378765f6d90c4"
+  },
+  "limits": "No Scheduler/IO latency, external Seastar comparison, other OS/ISA, whole-suite or full SDK rebuild. Cancellation of a current minimum may still require one nearest-bucket scan on the next advance."
+}

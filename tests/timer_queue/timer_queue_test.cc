@@ -418,6 +418,51 @@ TEST(TimerQueue, RejectsBackwardAdvance) {
       "");
 }
 
+TEST(TimerQueue, IdleAdvancesKeepCancellationAndRearmAcrossRadixBoundaries) {
+  TimerEntry a = make_entry(1), b = make_entry(2), c = make_entry(3);
+  TimerQueue queue(0);
+  queue.schedule(&a, 1024);
+  queue.schedule(&b, 1056);
+  queue.schedule(&c, 1088);
+  EXPECT_TRUE(queue.cancel(&a));
+  for (const auto now : {1u, 7u, 128u, 512u, 1023u}) {
+    EXPECT_TRUE(advance_collect(queue, now).empty());
+    EXPECT_EQ(queue.now_ns(), now);
+    EXPECT_EQ(queue.next_deadline_ns(), 1056u);
+  }
+  // The stale cancelled minimum may wake early; crossing it must refresh the
+  // minimum and rebucket before a later cancel computes its bucket identity.
+  EXPECT_TRUE(advance_collect(queue, 1024).empty());
+  EXPECT_EQ(queue.next_deadline_ns(), 1056u);
+  EXPECT_TRUE(queue.cancel(&b));
+  queue.schedule(&a, 1040);
+  EXPECT_EQ(advance_collect(queue, 1040), std::vector<int>{1});
+  EXPECT_TRUE(queue.cancel(&c));
+  EXPECT_TRUE(queue.empty());
+  queue.schedule(&c, 1040); // Past/due arms still fire on the next advance.
+  EXPECT_EQ(advance_collect(queue, 1040), std::vector<int>{3});
+}
+
+TEST(TimerQueue, IdleAdvancesPreserveMaxDeadlineAndPublishedDeliveryList) {
+  TimerEntry first = make_entry(1), last = make_entry(2);
+  TimerQueue queue(0);
+  queue.schedule(&first, 1);
+  queue.schedule(&last, UINT64_MAX);
+  TimerQueue::EntryList due;
+  EXPECT_EQ(queue.advance(1, due), 1u);
+  for (const auto now : {2u, 64u, 1024u}) {
+    EXPECT_EQ(queue.advance(now, due), 0u);
+    EXPECT_EQ(queue.now_ns(), now);
+    EXPECT_EQ(queue.next_deadline_ns(), UINT64_MAX);
+  }
+  EXPECT_EQ(due.pop_front(), &first);
+  EXPECT_TRUE(due.empty());
+  EXPECT_EQ(queue.advance(UINT64_MAX, due), 1u);
+  EXPECT_EQ(due.pop_front(), &last);
+  EXPECT_TRUE(due.empty());
+  EXPECT_TRUE(queue.empty());
+}
+
 TEST(TimerQueue, RejectsWrongOwnerAndLinkedOutputReuse) {
   TimerQueue first(0);
   TimerQueue second(0);
